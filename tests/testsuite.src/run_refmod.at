@@ -1,0 +1,441 @@
+## Copyright (C) 2003-2012, 2014-2015, 2017-2020 Free Software Foundation, Inc.
+## Written by Keisuke Nishida, Roger While, Simon Sobisch
+##
+## This file is part of GnuCOBOL.
+## 
+## The GnuCOBOL compiler is free software: you can redistribute it
+## and/or modify it under the terms of the GNU General Public License
+## as published by the Free Software Foundation, either version 3 of the
+## License, or (at your option) any later version.
+## 
+## GnuCOBOL is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+## 
+## You should have received a copy of the GNU General Public License
+## along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+
+### GnuCOBOL Test Suite
+
+### ISO+IEC+1989-2002 8.4.2.3 Reference-modification
+
+## 8.4.2.3.3 General rules
+
+AT_SETUP([Static reference modification])
+AT_KEYWORDS([refmod])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X             PIC X(4) VALUE "abcd".
+       PROCEDURE        DIVISION.
+           DISPLAY X(1:1) ":" X(1:2) ":" X(1:3) ":" X(1:4) ":" X(1:)
+           END-DISPLAY.
+           DISPLAY X(2:1) ":" X(2:2) ":" X(2:3) ":" X(2:)
+           END-DISPLAY.
+           DISPLAY X(3:1) ":" X(3:2) ":" X(3:)
+           END-DISPLAY.
+           DISPLAY X(4:1) ":" X(4:)
+           END-DISPLAY.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[a:ab:abc:abcd:abcd
+b:bc:bcd:bcd
+c:cd:cd
+d:d
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([Dynamic reference modification])
+AT_KEYWORDS([refmod])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X             PIC X(4) VALUE "abcd".
+       01 I             PIC 9.
+       PROCEDURE        DIVISION.
+           MOVE 1 TO I.
+           DISPLAY X(I:1)
+           END-DISPLAY.
+           MOVE 4 TO I.
+           DISPLAY X(I:1)
+           END-DISPLAY.
+           MOVE 1 TO I.
+           DISPLAY X(1:I)
+           END-DISPLAY.
+           MOVE 4 TO I.
+           DISPLAY X(1:I)
+           END-DISPLAY.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[a
+d
+a
+abcd
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([Offset underflow])
+AT_KEYWORDS([refmod])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X             PIC X(4) VALUE "abcd".
+       01 I             PIC 9 VALUE 0.
+       PROCEDURE        DIVISION.
+           DISPLAY X(I:1) NO ADVANCING
+           END-DISPLAY.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
+[libcob: prog.cob:9: error: offset of 'X' out of bounds: 0
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([Offset overflow])
+AT_KEYWORDS([refmod])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X             PIC X(4) VALUE "abcd".
+       01 I             PIC 9 VALUE 5.
+       PROCEDURE        DIVISION.
+           DISPLAY X(I:1) NO ADVANCING
+           END-DISPLAY.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
+[libcob: prog.cob:9: error: offset of 'X' out of bounds: 5, maximum: 4
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
+[libcob: prog.cob:9: error: offset of 'X' out of bounds: 5, maximum: 4
+])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog2.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X             PIC X(4) VALUE "abcd".
+       01 I             PIC 9 VALUE 5.
+       PROCEDURE        DIVISION.
+           DISPLAY X(I:1) NO ADVANCING
+           END-DISPLAY.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2], [1], [],
+[libcob: prog2.cob:9: error: offset of 'X' out of bounds: 5, maximum: 4
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([Length underflow])
+AT_KEYWORDS([refmod])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X             PIC X(4) VALUE "abcd".
+       01 I             PIC 9 VALUE 0.
+       PROCEDURE        DIVISION.
+           DISPLAY X(1:I) NO ADVANCING
+           END-DISPLAY.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
+[libcob: prog.cob:9: error: length of 'X' out of bounds: 0
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([Length overflow])
+AT_KEYWORDS([refmod])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X             PIC X(4) VALUE "abcd".
+       01 I             PIC 9 VALUE 5.
+       PROCEDURE        DIVISION.
+           DISPLAY X(1:I) NO ADVANCING
+           END-DISPLAY.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
+[libcob: prog.cob:9: error: length of 'X' out of bounds: 5, maximum: 4
+])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog2.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X             PIC X(4) VALUE "abcd".
+       01 I             PIC 9 VALUE 5.
+       PROCEDURE        DIVISION.
+           DISPLAY X(3:I) NO ADVANCING
+           END-DISPLAY.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2], [1], [],
+[libcob: prog2.cob:9: error: length of 'X' out of bounds: 5, maximum: 4
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([Length overflow with offset (1)])
+AT_KEYWORDS([refmod])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X             PIC X(4) VALUE "abcd".
+       01 I             PIC 9 VALUE 3.
+       PROCEDURE        DIVISION.
+           DISPLAY X(3:I) NO ADVANCING.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
+[libcob: prog.cob:9: error: length of 'X' out of bounds: 3, starting at: 3, maximum: 4
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([Length overflow with offset (2)])
+AT_KEYWORDS([refmod IF])
+
+# verifies that the check is generated within conditions - simple IF
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X             PIC X(4) VALUE "abcd".
+       01 I             PIC 9 VALUE 3.
+       PROCEDURE        DIVISION.
+           IF X(3:I) <> SPACES
+              DISPLAY X(3:I) NO ADVANCING.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
+[libcob: prog.cob:9: error: length of 'X' out of bounds: 3, starting at: 3, maximum: 4
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([Length overflow with offset (3)])
+AT_KEYWORDS([refmod EVALUATE WHEN])
+
+# verifies that the check is generated within conditions - WHEN
+# complex test for correct place and not raised if guarded by check
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X             PIC X(4) VALUE "abcd".
+       01 I             PIC 9 VALUE 3.
+       PROCEDURE        DIVISION.
+           EVALUATE TRUE
+           WHEN I < 2
+            AND X(3:I) <> SPACES
+              DISPLAY "1-" X(3:I) NO ADVANCING
+           WHEN I < 2
+           WHEN X(3:I) <> SPACES
+              DISPLAY "2-" X(3:I) NO ADVANCING
+           END-EVALUATE
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
+[libcob: prog.cob:14: error: length of 'X' out of bounds: 3, starting at: 3, maximum: 4
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([Reference Modification])
+AT_KEYWORDS([refmod numeric])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA  DIVISION.
+       WORKING-STORAGE SECTION.
+       01  TSTLEN PIC 99 VALUE 10.
+       01  TSTBIN PIC 99 COMP VALUE 10.
+       01  TSTBIN10 PIC 9(9) COMP VALUE 825373492.
+       01  TSTX4    PIC X(4).
+       01  TSTREC.
+         05  TSTTAIL2  PIC X.
+         05  TSTTAIL3  PIC X.
+         05  FILLER    PIC X(8).
+         05  TSTEND    PIC X.
+       01  TSTREC2 PIC X(20).
+       01  TSTXX   PIC X(2).
+       PROCEDURE DIVISION.
+           MOVE ALL "x" TO TSTREC.
+           DISPLAY "MOVEs to TSTTAIL3 (2:8)".
+           MOVE SPACES  TO TSTTAIL3 (2:8).
+           DISPLAY "SPACES : " TSTREC.
+           MOVE ALL "x" TO TSTREC.
+           MOVE ALL " " TO TSTTAIL3 (2:8).
+           DISPLAY "ALL ' ': " TSTREC.
+           MOVE ALL "x" TO TSTREC.
+           MOVE "  "    TO TSTTAIL3 (2:8).
+           DISPLAY "'  '   : " TSTREC.
+           MOVE ALL "x" TO TSTREC.
+           MOVE "ABC"   TO TSTTAIL3 (2:8).
+           DISPLAY "ABC    : " TSTREC.
+           MOVE ALL "x" TO TSTREC.
+           MOVE X"4142" TO TSTTAIL3 (2:8).
+           DISPLAY "x4142  : " TSTREC.
+           IF TSTTAIL3 (2:8) = X"4142"
+               DISPLAY "IF = 'AB' is good"
+           ELSE
+               DISPLAY "IF = 'AB' is Bad!"
+           END-IF.
+
+           DISPLAY "MOVEs to TSTREC2 (3:15)".
+           MOVE ALL "x" TO TSTREC2.
+           MOVE SPACES  TO TSTREC2 (3:15).
+           DISPLAY "SPACE  : " TSTREC2.
+           MOVE ALL "x" TO TSTREC2.
+           MOVE ALL " " TO TSTREC2 (3:15).
+           DISPLAY "ALL' ' : " TSTREC2.
+           MOVE ALL "x" TO TSTREC2.
+           MOVE "  "    TO TSTREC2 (3:15).
+           DISPLAY "'  '   : " TSTREC2.
+           MOVE ALL "x" TO TSTREC2.
+           MOVE "DEF"   TO TSTREC2 (3:15).
+           DISPLAY "DEF    : " TSTREC2.
+           MOVE ALL "x" TO TSTREC2.
+           MOVE X"4344" TO TSTREC2 (3:15).
+           DISPLAY "x4344  : " TSTREC2.
+
+           MOVE SPACES  TO TSTREC2.
+
+           MOVE "  " TO TSTTAIL2 (1:2).
+           MOVE ALL "*" TO TSTREC (1:TSTLEN).
+           MOVE '$' TO TSTEND.
+           DISPLAY "TSTREC is " TSTREC.
+           MOVE ALL "+" TO TSTTAIL3 (1:TSTLEN).
+           MOVE '$' TO TSTEND.
+           DISPLAY "TSTREC is " TSTREC.
+           MOVE 11 to TSTLEN.
+           MOVE SPACES TO TSTTAIL2 (1:TSTLEN).
+           MOVE '$' TO TSTEND.
+           DISPLAY "TSTREC is " TSTREC.
+           MOVE '12' TO TSTXX.
+           MOVE TSTXX TO TSTLEN.
+           DISPLAY "TSTLEN is " TSTLEN.
+           MOVE ' 3' TO TSTXX.
+           MOVE TSTXX TO TSTLEN.
+           DISPLAY "TSTLEN is " TSTLEN.
+           MOVE '  ' TO TSTXX.
+           MOVE TSTXX TO TSTLEN.
+           DISPLAY "TSTLEN is " TSTLEN.
+           MOVE 75 TO TSTLEN.
+           MOVE TSTLEN TO TSTXX.
+           DISPLAY "TSTXX is " TSTXX " vs " TSTLEN.
+           MOVE ' 3' TO TSTXX.
+           MOVE TSTXX TO TSTBIN.
+           DISPLAY "TSTBIN is " TSTBIN.
+           ADD 1 to TSTBIN.
+           MOVE TSTBIN TO TSTXX.
+           DISPLAY "TSTXX is " TSTXX " vs " TSTBIN.
+           MOVE TSTBIN10 (1:4) TO TSTX4 (1:4).
+           DISPLAY "TSTBIN10 is " TSTBIN10 " vs '" TSTX4 "'".
+           MOVE 10 TO TSTLEN.
+           MOVE ALL "x" TO TSTTAIL3 (1:TSTLEN + 2).
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [1],
+[MOVEs to TSTTAIL3 (2:8)
+SPACES : xx        x
+ALL ' ': xx        x
+'  '   : xx        x
+ABC    : xxABC     x
+x4142  : xxAB      x
+IF = 'AB' is good
+MOVEs to TSTREC2 (3:15)
+SPACE  : xx               xxx
+ALL' ' : xx               xxx
+'  '   : xx               xxx
+DEF    : xxDEF            xxx
+x4344  : xxCD             xxx
+TSTREC is **********$
+TSTREC is *+++++++++$
+TSTREC is           $
+TSTLEN is 12
+TSTLEN is 03
+TSTLEN is 00
+TSTXX is 75 vs 75
+TSTBIN is 03
+TSTXX is 04 vs 04
+TSTBIN10 is 825373492 vs '1234'
+],
+[libcob: prog.cob:91: error: length of 'TSTTAIL3' out of bounds: 12, maximum: 10
+])
+
+AT_CLEANUP
+

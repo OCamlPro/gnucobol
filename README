@@ -1,0 +1,211 @@
+
+		                 GnuCOBOL
+		https://www.gnu.org/software/gnucobol/
+		https://sourceforge.net/projects/gnucobol
+		https://savannah.gnu.org/projects/gnucobol
+
+GnuCOBOL is a free (like both in "free speech" and in "free beer")
+COBOL compiler, formerly known as OpenCOBOL.
+It implements a substantial part of the COBOL 85, COBOL 2002 and COBOL 2014
+standards, as well as many extensions included in other COBOL compilers.
+
+GnuCOBOL translates COBOL into C and compiles the translated code
+using the native C compiler on various platforms, including Unix/Linux,
+Mac OS X, and Microsoft Windows.
+
+This package contains the following subdirectories:
+
+    cobc        COBOL compiler
+    libcob      COBOL run-time library
+    bin         COBOL driver program
+    build_aux   Helper scripts
+    lib         Helper routines for missing OS functionality
+    config      Configuration files
+    po          International messages
+    doc         'info' and 'pdf' files
+    tests       Test suite (GnuCOBOL and framework for COBOL85)
+    extras      useful COBOL programs
+
+All programs except those in lib and libcob are distributed under
+the GNU General Public License.  See COPYING for details.
+
+Programs in lib and libcob are distributed under the GNU Lesser
+General Public License.  See COPYING.LESSER for details.
+
+For any copyright year range specified as YYYY-ZZZZ in this package,
+that the range specifies every single year in that closed interval.
+
+Although many have participated, most development thanks go to
+
+    Roger While
+    Keisuke Nishida
+
+See AUTHORS for the author of each file.
+
+============
+Requirements
+============
+
+GnuCOBOL uses other software packages, some of these are necessary,
+some optional.
+See DEPENDENCIES for a complete list of these which may be helpful
+if you build GnuCOBOL from source. You will also likely see some of those
+when using pre-built binaries of this project, for example via your OS
+package manager like apt, yum, pacman, brew, ...
+
+============
+Installation
+============
+
+See the INSTALL file for detailed information about how to configure
+and install GnuCOBOL "building from source".
+Special requirements and further installation notes are listed below.
+
+** NOTE **
+   The default installation path for GnuCOBOL is /usr/local.
+   The installation path may be changed by specifying --prefix=<dir>
+   as a parameter to the configure.
+   Further parameters may be specified to affect
+   include/library search paths.
+   Execute ./configure --help for further details.
+
+To generate/install GnuCOBOL :
+
+**************************************
+
+ Configure and build
+    ./configure
+    make
+
+ Here you may run different tests with the version of GnuCOBOL that is
+ not installed yet, see "Tests" below.
+ This is *highly recommended* before installing.
+
+ Install
+    make install
+
+** NOTE **
+   You generally need super-user privileges to execute "make install"
+   unless you changed the installation directory with
+   "./configure --prefix=<dir>" or install to a different location with
+   "make install DESTDIR=<dir>".
+   In those later cases you only need to have full access to <dir>.
+
+** NOTE **
+   On Linux systems, if you are installing for the
+   -first- time, you may need to run "ldconfig" (as root).
+   In fact, it does not hurt if you always do this.
+
+** NOTE **
+   On some Red Hat (Fedora) installations and
+   possibly other Linux distros, /usr/local/lib
+   is NOT automatically searched at runtime.
+   Edit /etc/ld.so.conf (or the equivalent file) and add
+   /usr/local/lib to the file.
+   Rerun "ldconfig".
+
+**************************************
+
+If you think you have a problem or just want to log
+the output of make then redirect the output with :
+    make 1>mymake.log 2>&1
+    make install 1>myinstall.log 2>&1
+
+**************************************
+
+You can get back to a clean installation status by running :
+    make distclean
+
+**************************************
+
+
+============
+Tests
+============
+
+
+ To run the internal testsuite, simply do
+    make check
+ This MUST succeed - If not, please report.
+
+ You may optionally perform a series of COBOL85 tests.
+    make test
+ It is recommended that you also perform these tests.
+
+** NOTE **
+   The language interpreter "perl" is required to run COBOL85 tests.
+
+** NOTE **
+   Running "make test" will try to download the COBOL85
+   testsuite if it is missing.
+   For details see tests/cobol85/README.
+
+ If you want to run both testsuites you can run
+    make checkall
+
+
+============
+
+The following is only interesting for advanced use.
+A normal user should not have recourse to use these
+options.
+
+There are many configure options (see configure --help for a full list),
+these are the most important ones:
+
+   --with-db             Use Berkeley DB >= 4.1 (libdb) (ISAM handler)
+                         This is the default
+
+   --without-db          Do neither use Berkeley DB nor any other ISAM handler
+                         You will not be able to use indexed I/O
+
+   --with-vbisam         Use VBISAM (libvbisam) (ISAM handler)
+
+   --with-dl             Use the system dynamic linker
+                         This is the default
+
+   --without-dl          Use ltdl for dynamic program loading
+
+   --with-patch-level=<n>  Set internal patch level to n (default 0)
+
+   --with-varseq=<n>     Define the default format for variable
+                         length sequential files.
+
+         The default may be overridden at run time by
+         setting the environment variable
+         COB_VARSEQ_FORMAT to 0, 1, 2, or 3.
+
+         For values of 0, 1 and 2, four bytes are
+         written preceding each record. The format of
+         these four bytes for values of 0, 1, 2 is
+         as follows :
+         n = 0 (default)
+           The first 2 bytes are the record length
+           in big-endian order. This is compatible
+           with mainframe. Bytes 3 and 4 are set
+           to binary 0.
+         n = 1
+           The 4 bytes are the record length in
+           big-endian order.
+         n = 2
+           The 4 bytes are the record length in
+           native machine order (int).
+           (This was previously the default)
+
+         For the value of 3, two bytes are written
+         preceding each record :
+         n = 3
+           The first 2 bytes are the record length
+           in big-endian order. The record follows
+           immediately after beginning at byte 3.
+
+   --enable-debug        Add '-g' debug option to make
+
+============
+
+============
+Development
+============
+
+If you wish to hack the GnuCOBOL source or build from version control,
+see HACKING.

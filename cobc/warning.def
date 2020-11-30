@@ -1,0 +1,115 @@
+/*
+   Copyright (C) 2003-2012, 2016-2018, 2020 Free Software Foundation, Inc.
+   Written by Keisuke Nishida, Roger While, Simon Sobisch
+
+   This file is part of GnuCOBOL.
+
+   The GnuCOBOL compiler is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License
+   as published by the Free Software Foundation, either version 3 of the
+   License, or (at your option) any later version.
+
+   GnuCOBOL is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+
+/* CB_WARNDEF (var, name, doc) */
+
+/* Always active, start doc with do not warn...  */
+/* CB_ONWARNDEF (var, name, doc) */
+
+/* Do not include warning with -Wall */
+/* CB_NOWARNDEF (var, name, doc) */
+
+/* Always active, defaults to an ERROR but could be downgraded to warning */
+/* CB_ERRWARNDEF (var, name, doc) */
+
+CB_WARNDEF (cb_warn_additional, "additional",
+	_("  -Wadditional          additional warnings only raised with -Wall"))
+
+CB_ONWARNDEF (cb_warn_unfinished, "unfinished",
+	_("  -Wno-unfinished       do not warn if unfinished features are used"))
+
+CB_ONWARNDEF (cb_warn_pending, "pending",
+	_("  -Wno-pending          do not warn if pending features are mentioned"))
+
+CB_ONWARNDEF (cb_warn_ignored_error, "ignored-error",
+	_("  -Wno-ignored-error    do not warn about errors in unreachable code parts and so normally ignored"))
+
+CB_WARNDEF (cb_warn_obsolete, "obsolete",
+	_("  -Wobsolete            warn if obsolete features are used"))
+
+CB_WARNDEF (cb_warn_archaic, "archaic",
+	_("  -Warchaic             warn if archaic features are used"))
+
+CB_WARNDEF (cb_warn_redefinition, "redefinition",
+	_("  -Wredefinition        warn about non-referenced ambiguous data items"))
+
+CB_WARNDEF (cb_warn_truncate, "truncate",
+	_("  -Wtruncate            warn about field truncation from constant assignments"))
+
+CB_NOWARNDEF (cb_warn_pos_truncate, "possible-truncate",
+	_("  -Wpossible-truncate   warn about possible field truncation"))
+
+CB_WARNDEF (cb_warn_overlap, "overlap",
+	_("  -Woverlap             warn about overlapping MOVE of items"))
+
+CB_NOWARNDEF (cb_warn_pos_overlap, "possible-overlap",
+	_("  -Wpossible-overlap    warn about MOVE of items that may overlap depending on variables"))
+
+CB_WARNDEF (cb_warn_parentheses, "parentheses",
+	_("  -Wparentheses         warn about lack of parentheses around AND within OR"))
+
+CB_WARNDEF (cb_warn_strict_typing, "strict-typing",
+	_("  -Wstrict-typing       warn strictly about type mismatch"))
+
+CB_ONWARNDEF (cb_warn_implicit_define, "implicit-define",
+	_("  -Wno-implicit-define  do not warn about implicitly defined data items"))
+
+CB_ONWARNDEF (cb_warn_corresponding, "corresponding",
+	_("  -Wno-corresponding    do not warn about CORRESPONDING with no matching items"))
+
+CB_WARNDEF (cb_warn_ignored_initial_val, "initial-value",
+	_("  -Winitial-value       warn if initial VALUE clause is ignored"))
+
+CB_WARNDEF (cb_warn_prototypes, "prototypes",
+	_("  -Wprototypes          warn about missing FUNCTION prototypes/definitions"))
+
+CB_WARNDEF (cb_warn_arithmetic_osvs, "arithmetic-osvs",
+	_("  -Warithmetic-osvs     warn if arithmetic expression precision has changed"))
+
+CB_NOWARNDEF (cb_warn_call_params, "call-params",
+	_("  -Wcall-params         warn about non 01/77 items for CALL parameters"))
+
+CB_WARNDEF (cb_warn_constant_expr, "constant-expression",
+	_("  -Wconstant-expression  warn about expressions that always resolve to true/false"))
+
+CB_NOWARNDEF (cb_warn_column_overflow, "column-overflow",
+	_("  -Wcolumn-overflow     warn about text after program-text area, FIXED format"))
+
+CB_NOWARNDEF (cb_warn_terminator, "terminator",
+	_("  -Wterminator          warn about lack of scope terminator END-XXX"))
+
+CB_NOWARNDEF (cb_warn_linkage, "linkage",
+	_("  -Wlinkage             warn about dangling LINKAGE items"))
+
+CB_NOWARNDEF (cb_warn_unreachable, "unreachable",
+	_("  -Wunreachable         warn about likely unreachable statements"))
+
+CB_ONWARNDEF (cb_warn_dialect, "dialect",
+	_("  -Wno-dialect          do not warn about dialect specific issues"))
+
+CB_NOWARNDEF (cb_warn_source_after_code, "dangling-text",
+	_("  -Wdangling-text       warn source text after program-area"))
+
+CB_ONWARNDEF (cb_warn_filler, "others",
+	_("  -Wno-others           do not warn about different issues"))
+
+CB_ERRWARNDEF (cb_warn_unsupported, "unsupported",
+	_("  -Wno-unsupported      do not warn if runtime does not support a feature used"))

@@ -1,0 +1,15 @@
+<OCCWORKAREA>
+	<VERSION ID="8"/>
+	<PROJECTS SELECTED="cobcrun">
+		<FILE NAME="cobc.exe" CLEAN="0">
+			<DEPENDENCY NAME="libcob.dll" />
+		</FILE>
+		<FILE NAME="cobcrun.exe" CLEAN="0">
+			<DEPENDENCY NAME="libcob.dll" />
+		</FILE>
+		<FILE NAME="libcob.dll" CLEAN="0">
+			<DEPENDENCY NAME="libsupport.l" />
+		</FILE>
+		<FILE NAME="libsupport.l" CLEAN="0"/>
+	</PROJECTS>
+</OCCWORKAREA>

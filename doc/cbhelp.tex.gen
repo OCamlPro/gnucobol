@@ -1,0 +1,183 @@
+#!/usr/bin/awk -f
+# cbhelp.tex.gen gnucobol/doc
+#
+# Copyright (C) 2015-2020 Free Software Foundation, Inc.
+# Written by James K. Lowden, Simon Sobisch
+#
+# This file is part of GnuCOBOL.
+#
+# The GnuCOBOL compiler is free software: you can redistribute it
+# and/or modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# GnuCOBOL is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+
+
+##  $COBC -q --help               2>/dev/null | \
+##  	$GREP    -A2000 "$section" | \
+##  	$GREP -E -B2000 "^$" -m 1  | \
+##  	$SED -e 's/^\t/D~/g'            \
+##  	     -e 's/\t/~/g'              \
+##  	     -e 's/* NOT \(.\+\)/; @emph{not \1}/g' \
+##  	     -e 's/* ALWAYS \(.\+\)/; @emph{always \1}/g' \
+##  	     -e 's/* /; /g' \
+##  	     -e 's/^    \+/D~/g'         \
+##  	     -e 's/^ \+//g'                \
+##  	     -e 's/  \+/~/g'               \
+##  	     -e 's/<\([^>]\+\)>/@var{\1}/g'| \
+##  while IFS='~' read -r name desc; do
+##  	if test -z "$name"; then continue; fi
+##  	if test -z "$header_found"; then
+##  		header_found=1
+##  		echo "@section $section"   >>$1
+##  		echo "@table @code"        >>$1
+##  	else
+##  		if test "$name" != "D"; then
+##  			echo "@item @code{$name}"  >>$1
+##  		fi
+##  		echo "$desc"      | \
+##  		$SED -e 's/ \(-[Wfv][a-zA-Z=-]*\)/ @option{\1}/g'       \
+##  		     -e 's/\([ (]\)\([A-Z][A-Z -]*[A-Z]\)/\1@code{\2}/g' \
+##  		     -e 's/^\([A-Z][A-Z -]*[A-Z]\)/@code{\1}/g' \
+##  		     -e 's/@code{\(IBM\|ANSI\|ISO\|NIST\|COBOL\)}/\1/g'   >>$1
+##  	fi
+##  done
+##  echo "@end table"          >>$1
+
+/[Oo]ptions:$/,/^$/ {
+    if( debug ) { print "@c input:", $0 }
+
+    # blank lines separate sections
+    if( /^$/ ) {
+	print "@end table"
+	next
+    }
+
+    # option heading introduce sections
+    if( /[Oo]ptions:$/ ) {
+	if( /^Options:/ ) {
+	    $0 = "Common " $0
+	}
+	sub(/:$/, "")
+	if( nsection++ ) {
+	    print ""
+	}
+	print "@section", $0
+	print "@table @option"
+	sep = ""
+	next
+    }
+
+    # mark up    
+    gsub(/[*] NOT /, "; @emph{not} ");
+    gsub(/[*] ALWAYS /, "; @emph{always} ");
+    gsub(/[*] /, "; ");
+    gsub(/^ +/, "");
+    gsub(/B'[01]+'/, "@code{&}")
+    gsub(/#[A-Z]/, "@code{&}")
+    sub( /alias$/, "@var{&}")  # special case
+    sub( />>D$/, "@code{&}")   # special case
+
+    # editorial style
+    sub( /is one of the following:/, "is one of:")
+
+    # separate key from value
+    if( /.(\t|  +)/ ) {
+	sub(/\t|  +/, "~")
+    }
+
+    # convert <word> to @var{word}
+    while( match($0, /<[^>]+>/) ) {
+	if( debug == 2 ) { print "@c found:", $0 }
+	$0 = substr($0, 1, RSTART-1) \
+	    "@var{" substr($0, RSTART+1, RLENGTH-2) "}" \
+	    substr($0, RSTART + RLENGTH, length($0))
+	if( debug == 2 ) { print "@c  made:", $0 }
+    }
+
+    # convert 'x' to @samp{x}
+    while( match($0, /'.'/) ) {
+	if( debug == 2 ) { print "@c found:", $0 }
+	$0 = substr($0, 1, RSTART-1) \
+	    "@samp{" substr($0, RSTART+1, RLENGTH-2) "}" \
+	    substr($0, RSTART + RLENGTH, length($0))
+	if( debug == 2 ) { print "@c  made:", $0 }
+    }
+
+    # special case: assign-clause
+    #
+    #   -fassign-clause=<value> how to interpret 'ASSIGN word': as
+    #   'ASSIGN EXTERNAL word' or 'ASSIGN DYNAMIC word', may be one
+    #   of: dynamic, external, ibm (= external), mf (= dynamic)
+    if( /^-fassign-clause=/ ) {
+	gsub(/word'/, "@var{word}'")
+	gsub(/dynamic, external, ibm/,
+	     "@code{dynamic}, @code{external}, @code{ibm}")
+	sub(/mf/, "@code{&}")
+	while( match($0, /'.+?'/) ) {
+	    if( debug == 2 ) { print "@c found:", $0 }
+	    $0 = substr($0, 1, RSTART-1) \
+		"@code{" substr($0, RSTART+1, RLENGTH-2) "}" \
+		substr($0, RSTART + RLENGTH, length($0))
+	    if( debug == 2 ) { print "@c  made:", $0 }
+	}
+
+	sub(/~/, "\n")
+	print sep "@item", $0
+	sep = "\n"
+	next
+    } 
+
+    # special case: assign-disk-from
+    if( /'ok',/ ) {
+	while( match($0, /'.+?'/) ) {
+	    if( debug == 2 ) { print "@c found:", $0 }
+	    $0 = substr($0, 1, RSTART-1) \
+		"@code{" substr($0, RSTART+1, RLENGTH-2) "}" \
+		substr($0, RSTART + RLENGTH, length($0))
+	    if( debug == 2 ) { print "@c  made:", $0 }
+	}
+    }
+    
+    # convert most WORD to @code{WORD}
+    if( /[A-Z][A-Z]+/ ) {
+	n = split($0, a)
+	line = ""
+	for( i=1; i <= n; i++ ) {
+	    w = a[i]
+	    if( w !~ /IBM|ANSI|ISO|NIST|COBOL|EXTFH/ ) {
+		gsub(/[>A-Z'[].*?[]A-Z0-9']+/, "@code{&}", w)
+	    }
+
+	    word = i > 1? " " w : w
+	    line = line word
+	}
+	$0 = line
+	# put LINE [01] all in @code
+	gsub( /} 0/, " 0}")
+	gsub( /} 1/, " 1}")
+	gsub( /} string'/, " @var{string}'}" )
+    }
+
+    # A leading dash indicates a new option. Make it the @item and put
+    # the rest on the next line.  Else just print what we have.  
+    if( /^-/ ) {
+	sub(/~word/, "~@var{word}") # special for reserved=word
+	sub(/~/, "\n")
+	print sep "@item", $0
+	sep = "\n"
+	next
+    } 
+
+    # mark up any options mentioned in running text
+    gsub( /-[Wfvdg][a-zA-Z0-9=-]*/, "@option{&}")
+
+    print
+}

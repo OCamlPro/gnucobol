@@ -1,0 +1,127 @@
+#!/bin/sh
+#
+# cob-config
+#
+# Copyright (C) 2003-2012, 2020 Free Software Foundation, Inc.
+# Written by Keisuke Nishida, Roger While
+#
+# This file is part of GnuCOBOL.
+#
+# The GnuCOBOL compiler is free software: you can redistribute it
+# and/or modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# GnuCOBOL is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+
+
+prefix=@prefix@
+exec_prefix=${prefix}
+exec_prefix_set=no
+libdir=@libdir@
+includedir=@includedir@
+
+version="@VERSION@.@COB_PATCH_LEVEL@"
+cflags="@COB_CFLAGS@"
+libs="@COB_LIBS@"
+
+THIS="libcob (@PACKAGE_NAME@)"
+me=`basename $0` #cob-config
+
+usage()
+{
+	cat <<EOF
+Usage: $me [options]
+
+Options:
+  --prefix           echos the package-prefix of ${THIS}
+  --exec-prefix      echos the executable-prefix of ${THIS}
+
+  --cflags           echos the C compiler flags needed to compile with ${THIS}
+  --libs             echos the libraries needed to link with ${THIS}
+
+  --version          echos the release+patchdate version of ${THIS}
+
+  --bindir           echos the directory containing ${THIS} programs
+  --datadir          echos the directory containing ${THIS} data
+  --includedir       echos the directory containing ${THIS} header files
+  --libdir           echos the directory containing ${THIS} libraries
+  --mandir           echos the directory containing ${THIS} manpages
+
+  --help             prints this message
+EOF
+	exit $1
+}
+
+if test $# -eq 0; then
+	usage 1 1>&2
+fi
+
+while test $# -gt 0; do
+  case "$1" in
+  -*=*) optarg=`echo "$1" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
+  *) optarg= ;;
+  esac
+
+  case $1 in
+    --prefix=*)
+      prefix=$optarg
+      if test $exec_prefix_set = no ; then
+        exec_prefix=$optarg
+      fi
+      ;;
+    --prefix)
+      echo_prefix=yes
+      ;;
+    --exec-prefix=*)
+      exec_prefix=$optarg
+      exec_prefix_set=yes
+      ;;
+    --exec-prefix)
+      echo_exec_prefix=yes
+      ;;
+    --version)
+      echo $version
+      ;;
+    --cflags)
+      echo_cflags=yes
+      ;;
+    --libs)
+      echo_libs=yes
+      ;;
+    --help)
+	cat <<EOF
+This is a shell script which simplifies configuring applications
+against a particular version of the GnuCOBOL library.
+
+EOF
+      usage 0
+      ;;
+    *)
+      usage 1 1>&2
+      ;;
+  esac
+  shift
+done
+
+if test "$echo_prefix" = "yes"; then
+	echo $prefix
+fi
+
+if test "$echo_exec_prefix" = "yes"; then
+	echo $exec_prefix
+fi
+
+if test "$echo_cflags" = "yes"; then
+      echo $cflags
+fi
+
+if test "$echo_libs" = "yes"; then
+      echo $libs
+fi

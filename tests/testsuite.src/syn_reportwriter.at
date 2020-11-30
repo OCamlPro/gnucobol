@@ -1,0 +1,631 @@
+## Copyright (C) 2014-2015, 2017-2020 Free Software Foundation, Inc.
+## Written by Simon Sobisch, Edward Hart, Ron Norman
+##
+## This file is part of GnuCOBOL.
+##
+## The GnuCOBOL compiler is free software: you can redistribute it
+## and/or modify it under the terms of the GNU General Public License
+## as published by the Free Software Foundation, either version 3 of the
+## License, or (at your option) any later version.
+##
+## GnuCOBOL is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+
+### GnuCOBOL Test Suite
+
+### ISO+IEC+1989-2014 REPORT WRITER module
+
+AT_SETUP([REPORT error/warning])
+AT_KEYWORDS([report])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT      DIVISION.
+       INPUT-OUTPUT     SECTION.
+       FILE-CONTROL.
+           SELECT TRANSACTION-DATA
+           ASSIGN TO EXTERNAL DATAIN
+           ORGANIZATION IS LINE SEQUENTIAL.
+
+           SELECT REPORT-FILE
+           ASSIGN TO EXTERNAL LINE ADVANCING SYSPRINT.
+
+       DATA             DIVISION.
+       FILE             SECTION.
+       FD TRANSACTION-DATA.
+       01 TRANSACTION-RECORD.
+          03 TR-CUSTOMER-NUMBER     PIC 9(04).
+          03 FILLER                 PIC X(01).
+          03 TR-CUSTOMER-NAME       PIC X(16).
+          03 FILLER                 PIC X(01).
+          03 TR-ITEM-NUMBER         PIC 9(05).
+          03 FILLER                 REDEFINES TR-ITEM-NUMBER.
+             05 TR-ITEM-DEPARTMENT  PIC 9(01).
+             05 FILLER              PIC 9(04).
+          03 FILLER                 PIC X(01).
+          03 TR-ITEM-COST           PIC 9(03)V99.
+          03 FILLER                 PIC X(47).
+       FD REPORT-FILE
+          REPORT IS NO-REPORT.
+       WORKING-STORAGE  SECTION.
+       01 END-OF-FILE-SWITCH        PIC X(1)    VALUE 'N'.
+          88 END-OF-FILE            VALUE 'Y'.
+          88 GOFOREVER              VALUE 'X'.
+
+       REPORT           SECTION.
+       RD NO-REPORT
+          PAGE LIMIT IS 66 LINES
+          HEADING 1
+          FIRST DETAIL 5
+          LAST DETAIL 58.
+
+       01 PAGE-HEAD-GROUP TYPE PAGE HEADING.
+          02 LINE 1.
+             03 COLUMN 27   PIC X(41) VALUE
+                'S A M P L E  R E P O R T'.
+          02 LINE PLUS 2.
+             03 COLUMN 01   PIC X(09) VALUE 'CUST. NO.'.
+             03 COLUMN 15   PIC X(10) VALUE 'CUST. NAME'.
+             03 COLUMN 30   PIC X(05) VALUE 'DEPT.'.
+             03 COLUMN 39   PIC X(08) VALUE 'ITEM NO.'.
+             03 COLUMN 51   PIC X(09) VALUE 'ITEM COST'.
+
+       01 CHARGE-DETAIL TYPE DETAIL.
+          02 LINE PLUS 1.
+             03 COLUMN 03   PIC Z(04) SOURCE TR-CUSTOMER-NUMBER.
+             03 COLUMN 10   PIC X(16) SOURCE TR-CUSTOMER-NAME.
+             03 COLUMN 32   PIC 9(01) SOURCE TR-ITEM-DEPARTMENT.
+             03 COLUMN 40   PIC 9(05) SOURCE TR-ITEM-NUMBER.
+             03 COLUMN 51   PIC $$$$.99 SOURCE TR-ITEM-COST.
+
+       PROCEDURE        DIVISION.
+
+           OPEN INPUT TRANSACTION-DATA,
+                OUTPUT REPORT-FILE.
+
+           INITIATE CUSTOMER-REPORT.
+
+           READ TRANSACTION-DATA
+               AT END
+                   MOVE 'Y' TO END-OF-FILE-SWITCH
+           END-READ.
+
+           PERFORM UNTIL GOFOREVER
+              GENERATE CHARGE-DETAIL
+              READ TRANSACTION-DATA
+                  AT END
+                     EXIT PERFORM
+              END-READ
+           END-PERFORM.
+
+           TERMINATE CUSTOMER-REPORT.
+
+           CLOSE TRANSACTION-DATA,
+                 REPORT-FILE.
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:67: error: 'CUSTOMER-REPORT' is not defined
+prog.cob:67: error: 'CUSTOMER-REPORT' is not a valid report name
+prog.cob:82: error: 'CUSTOMER-REPORT' is not defined
+prog.cob:82: error: 'CUSTOMER-REPORT' is not a valid report name
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([REPORT not positive integers in COL / LINE PLUS])
+AT_KEYWORDS([LINES COLS COLUMNS])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+       SELECT out-file ASSIGN "blah.txt"
+           ORGANIZATION LINE SEQUENTIAL.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD  out-file REPORT rp.
+
+       REPORT SECTION.
+       RD  rp.
+       01  rp-head TYPE PH.
+          02  LINE NUMBER IS 1, COLUMNS 0 VALUE "Hello!".
+          02  LINE IS 2,        COLS    2 VALUE "Hello!".
+          02  LINE NUMBERS ARE PLUS 1.
+              03 COLUMN NUMBER 01  PIC X(09) VALUE 'CUST. NO.'.
+              03 COLUMN PLUS 0     PIC X(09) VALUE 'ITEM'.
+          02  LINES ARE PLUS 2 COL NUMBERS PLUS 0.
+              03 COLUMN 1.5        PIC X(09) VALUE 'CUST. NO.'.
+              03 COLUMN + -10      PIC X(09) VALUE 'ITEM'.
+
+       01 rp-detail TYPE DETAIL.
+          02 LINE PLUS 1.
+             03 COLUMN 03   PIC X(06) VALUE 'SAMPLE'.
+             03 COLUMN +9   PIC X(06) VALUE 'REPORT'.
+
+       PROCEDURE DIVISION.
+           OPEN OUTPUT out-file.
+           INITIATE rp.
+           GENERATE rp-detail.
+           TERMINATE rp.
+           CLOSE out-file.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY -std=mf prog.cob], [1], [],
+[prog.cob:18: error: invalid COLUMN integer; must be > 0
+prog.cob:24: error: unsigned integer value expected
+prog.cob:25: error: unsigned integer value expected
+prog.cob:30: error: unsigned integer value expected
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([Missing DETAIL line])
+AT_KEYWORDS([report])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+       SELECT out-file ASSIGN "blah.txt"
+           ORGANIZATION LINE SEQUENTIAL.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD  out-file REPORT rp.
+
+       REPORT SECTION.
+       RD  rp.
+       01  rp-head TYPE PH.
+          02  LINE 1, COL 2 VALUE "Hello!".
+          02  LINE PLUS 1.
+              03 COLUMN 01      PIC X(09) VALUE 'CUST. NO.'.
+              03 COLUMN PLUS 20 PIC X(09) VALUE 'ITEM'.
+
+
+       PROCEDURE DIVISION.
+           OPEN OUTPUT out-file.
+           INITIATE rp.
+           GENERATE rp-detail.
+           TERMINATE rp.
+           CLOSE out-file.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:13: warning: no DETAIL line defined in report rp
+prog.cob:27: error: 'rp-detail' is not defined
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([REPORT LINE PLUS ZERO])
+AT_KEYWORDS([report])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+       SELECT out-file ASSIGN "blah.txt"
+           ORGANIZATION LINE SEQUENTIAL.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD  out-file REPORT rp.
+
+       REPORT SECTION.
+       RD  rp.
+       01  rp-head TYPE PH.
+          02  LINE 1  COL 5 PIC X(20) VALUE "Hello World!".
+          02  LINE 2  COL 4 PIC X(20) VALUE "Hello Goodbye!".
+          02  LINE PLUS 0.
+              03 COLUMN  1      PIC X(09) VALUE 'CUST. No.'.
+              03 COLUMN PLUS 0  PIC X(09) VALUE 'ITEM'.
+          02  LINE PLUS ZERO.
+              03 COLUMN 1       PIC X(09) VALUE 'Cust. No.'.
+              03 COLUMN + 10    PIC X(09) VALUE 'Item'.
+
+       01 rp-detail TYPE DETAIL.
+          02 LINE PLUS 1.
+             03 COLUMN 03   PIC X(06) VALUE 'SAMPLE'.
+
+       PROCEDURE DIVISION.
+           OPEN OUTPUT out-file.
+           INITIATE rp.
+           GENERATE rp-detail.
+           TERMINATE rp.
+           CLOSE out-file.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
+[prog.cob:20: warning: LINE PLUS 0 is not implemented
+prog.cob:23: warning: LINE PLUS 0 is not implemented
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([Incorrect REPORT NAME])
+AT_KEYWORDS([report])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT      DIVISION.
+       INPUT-OUTPUT     SECTION.
+       FILE-CONTROL.
+           SELECT TRANSACTION-DATA
+           ASSIGN TO EXTERNAL DATAIN
+           ORGANIZATION IS LINE SEQUENTIAL.
+
+           SELECT REPORT-FILE
+           ASSIGN TO EXTERNAL LINE ADVANCING SYSPRINT.
+
+       DATA             DIVISION.
+       FILE             SECTION.
+       FD TRANSACTION-DATA
+          LABEL RECORDS ARE OMITTED
+         BLOCK CONTAINS 0 RECORDS
+         RECORD CONTAINS 80 CHARACTERS
+         DATA RECORD IS TRANSACTION-RECORD.
+       01 TRANSACTION-RECORD.
+          03 TR-CUSTOMER-NUMBER     PIC 9(04).
+          03 FILLER                 PIC X(01).
+          03 TR-CUSTOMER-NAME       PIC X(16).
+          03 FILLER                 PIC X(01).
+          03 TR-ITEM-NUMBER         PIC 9(05).
+          03 FILLER                 REDEFINES TR-ITEM-NUMBER.
+             05 TR-ITEM-DEPARTMENT  PIC 9(01).
+             05 FILLER              PIC 9(04).
+          03 FILLER                 PIC X(01).
+          03 TR-ITEM-COST           PIC 9(03)V99.
+          03 FILLER                 PIC X(47).
+       FD REPORT-FILE
+          LABEL RECORDS ARE OMITTED
+          REPORT IS NO-REPORT.
+       WORKING-STORAGE  SECTION.
+       01 END-OF-FILE-SWITCH        PIC X(1)    VALUE 'N'.
+          88 END-OF-FILE            VALUE 'Y'.
+          88 GOFOREVER              VALUE 'X'.
+
+       REPORT           SECTION.
+       RD SOME-REPORT
+          PAGE LIMIT IS 66 LINES
+          HEADING 1
+          FIRST DETAIL 5
+          LAST DETAIL 58.
+
+       01 PAGE-HEAD-GROUP TYPE PAGE HEADING.
+          02 LINE 1.
+             03 COLUMN 27   PIC X(41) VALUE
+                'S A M P L E  R E P O R T'.
+          02 LINE PLUS 2.
+             03 COLUMN 01   PIC X(09) VALUE 'CUST. NO.'.
+             03 COLUMN 15   PIC X(10) VALUE 'CUST. NAME'.
+             03 COLUMN 30   PIC X(05) VALUE 'DEPT.'.
+             03 COLUMN 39   PIC X(08) VALUE 'ITEM NO.'.
+             03 COLUMN 51   PIC X(09) VALUE 'ITEM COST'.
+
+       01 CHARGE-DETAIL TYPE DETAIL.
+          02 LINE PLUS 1.
+             03 COLUMN 03   PIC Z(04) SOURCE TR-CUSTOMER-NUMBER.
+             03 COLUMN 10   PIC X(16) SOURCE TR-CUSTOMER-NAME.
+             03 COLUMN 32   PIC 9(01) SOURCE TR-ITEM-DEPARTMENT.
+             03 COLUMN 40   PIC 9(05) SOURCE TR-ITEM-NUMBER.
+             03 COLUMN 51   PIC $$$$.99 SOURCE TR-ITEM-COST.
+
+       PROCEDURE DIVISION.
+
+           OPEN INPUT  TRANSACTION-DATA,
+                OUTPUT REPORT-FILE.
+
+           INITIATE CUSTOMER-REPORT.
+
+           READ TRANSACTION-DATA
+               AT END
+                   MOVE 'Y' TO END-OF-FILE-SWITCH
+           END-READ.
+
+           PERFORM UNTIL GOFOREVER
+              GENERATE CHARGE-DETAIL
+              READ TRANSACTION-DATA
+                  AT END
+                     EXIT PERFORM
+              END-READ
+           END-PERFORM.
+
+           TERMINATE CUSTOMER-REPORT.
+
+           CLOSE TRANSACTION-DATA,
+                 REPORT-FILE.
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY -std=mf-strict prog.cob], [1], [],
+[prog.cob:17: warning: LABEL RECORDS is obsolete in Micro Focus COBOL
+prog.cob:19: warning: RECORD clause ignored for LINE SEQUENTIAL
+prog.cob:20: warning: DATA RECORDS is obsolete in Micro Focus COBOL
+prog.cob:34: warning: LABEL RECORDS is obsolete in Micro Focus COBOL
+prog.cob:42: error: 'SOME-REPORT' is not defined
+prog.cob:42: error: 'SOME-REPORT' is not a valid report name
+])
+
+AT_CHECK([$COMPILE_ONLY -std=cobol2002 -fassign-ext-dyn=ok prog.cob], [1], [],
+[prog.cob:17: error: syntax error, unexpected Identifier, expecting EXTERNAL or GLOBAL
+prog.cob:34: error: syntax error, unexpected Identifier, expecting EXTERNAL or GLOBAL
+prog.cob:36: error: RECORD description missing or invalid
+prog.cob:42: error: 'SOME-REPORT' is not defined
+prog.cob:42: error: 'SOME-REPORT' is not a valid report name
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([REPORT with PLUS RIGHT/CENTER])
+AT_KEYWORDS([report])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+               SELECT INPUT-FILE ASSIGN TO EXTERNAL STUDENT
+                              ORGANIZATION IS LINE SEQUENTIAL.
+               SELECT PRINT-FILE ASSIGN TO EXTERNAL
+                              LINE ADVANCING REPORT1.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD   INPUT-FILE.
+       01   INPUT-REC.
+               05  STUDENT-ID               PIC  9(5).
+               05  STUDENT-NAME             PIC  X(20).
+               05  MAJOR                    PIC  XXX.
+               05  NUM-COURSES              PIC  9(6).
+
+       FD   PRINT-FILE
+             REPORT IS STUDENT-REPORT.
+
+       WORKING-STORAGE SECTION.
+       01   ARE-THERE-MORE-RECORDS       PIC  XXX   VALUE  "YES".
+
+       REPORT SECTION.
+       RD   STUDENT-REPORT
+           PAGE LIMIT 30 LINES
+           HEADING 1
+           FIRST DETAIL 3
+           LAST DETAIL 25
+           FOOTING 28.
+       01   HEADING-LINE
+            TYPE PAGE HEADING LINE PLUS 1.
+            05  COLUMN 1      PIC X(2)  VALUE "Ln".
+            05  COLUMN 4      PIC X(6)  VALUE "--ID--".
+            05  COLUMN 16     PIC X(20) VALUE "--------Name--------".
+            05  COLUMN 39     PIC X(5)  VALUE "  Mjr".
+            05  COLUMN 48     PIC XXX   VALUE "*-*".
+            05  COLUMN 54     PIC X(5)  VALUE "+Num+".
+
+       01   REPORT-LINE
+            TYPE DETAIL LINE PLUS  1.
+            05  COLUMN PLUS 1 PIC 9(2)
+                  SOURCE LINE-COUNTER OF STUDENT-REPORT.
+            05  COLUMN LEFT PLUS 1   PIC Z(5)9 SOURCE STUDENT-ID.
+            05  COLUMN CENTER 25     PIC X(20) SOURCE STUDENT-NAME.
+            05  COLUMN RIGHT  43     PIC X(5)  SOURCE MAJOR.
+            05  COLUMN        48     PIC XXX   VALUE "<->".
+            05  COLUMN CENTER 56     PIC Z(4)9 SOURCE NUM-COURSES.
+            05  COLUMN 60 62 65      PIC Z9 OCCURS 3 TIMES.
+
+       PROCEDURE DIVISION.
+       A000-MAINLINE.
+           OPEN  INPUT  INPUT-FILE
+                 OUTPUT PRINT-FILE
+           PERFORM DO-INIT.
+           READ INPUT-FILE
+               AT END
+                   MOVE "NO" TO ARE-THERE-MORE-RECORDS.
+           PERFORM A001-LOOP
+               UNTIL ARE-THERE-MORE-RECORDS = "NO ".
+           PERFORM DO-TERM.
+           CLOSE INPUT-FILE
+                 PRINT-FILE.
+           STOP RUN.
+
+       A001-LOOP.
+           GENERATE REPORT-LINE.
+           READ INPUT-FILE
+               AT END
+                   MOVE "NO " TO ARE-THERE-MORE-RECORDS.
+       DO-INIT.
+           INITIATE STUDENT-REPORT.
+
+       DO-TERM.
+           TERMINATE STUDENT-REPORT.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:46: warning: PLUS is ignored on first field of line
+prog.cob:48: error: PLUS is not allowed with LEFT, RIGHT or CENTER
+prog.cob:53: error: OCCURS and multi COLUMNs is not allowed
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([PAGE LIMITS clause])
+AT_KEYWORDS([report])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION  DIVISION.
+       PROGRAM-ID.     prog.
+
+       ENVIRONMENT     DIVISION.
+       INPUT-OUTPUT    SECTION.
+       FILE-CONTROL.
+           SELECT f ASSIGN "f.txt".
+
+       DATA            DIVISION.
+       FILE            SECTION.
+       FD  f           REPORT r1, r2.
+       01  f-rec       PIC XXXXX.
+
+       REPORT          SECTION.
+       RD  r1          PAGE LIMIT 1 LINES 1 COLUMNS
+                       HEADING f-rec,
+                       HEADING f-rec,
+                       LINE LIMIT 1.
+
+       RD  r2          PAGE LIMIT 1 COLUMNS
+                       HEADING f-rec.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:19: error: duplicate HEADING clause
+prog.cob:19: error: duplicate LINE LIMIT clause
+prog.cob:22: error: Cannot specify HEADING without number of lines on page
+])
+AT_CLEANUP
+
+
+AT_SETUP([Report FD without period])
+AT_KEYWORDS([report])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION  DIVISION.
+       PROGRAM-ID.     prog.
+
+       ENVIRONMENT     DIVISION.
+       INPUT-OUTPUT    SECTION.
+       FILE-CONTROL.
+           SELECT f ASSIGN "f.txt".
+
+       DATA            DIVISION.
+       FILE            SECTION.
+       FD  f           REPORT r
+])
+
+# In this case, the error handler enters an infinite loop, but it's OK as the
+# error is still easy to identify and it doesn't occur if anything follows the
+# "REPORT r".
+AT_CHECK([$COMPILE_ONLY -fmax-errors=4 prog.cob], [97], [],
+[prog.cob:13: error: syntax error, unexpected end of file
+prog.cob:13: error: syntax error, unexpected end of file
+prog.cob:13: error: syntax error, unexpected end of file
+prog.cob:13: error: syntax error, unexpected end of file
+prog.cob:13: error: syntax error, unexpected end of file
+cobc: too many errors
+
+cobc: aborting compile of prog.cob at line 13 (PROGRAM-ID: prog)
+])
+AT_CLEANUP
+
+
+AT_SETUP([REPORT with unreferenced control field])
+AT_KEYWORDS([report])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION  DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT     DIVISION.
+       INPUT-OUTPUT    SECTION.
+       FILE-CONTROL.
+           SELECT f ASSIGN "f.txt".
+
+       DATA            DIVISION.
+       FILE            SECTION.
+       FD  f           REPORT r.
+       01  f-rec       PIC X.
+
+       REPORT          SECTION.
+       RD  r.
+       01  r0          TYPE DETAIL, PRESENT AFTER NEW f-rec.
+])
+
+# no compile_only here as we check the C generation
+AT_CHECK([$COMPILE prog.cob ], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([Incorrect USAGE clause])
+AT_KEYWORDS([report])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+       SELECT report-file ASSIGN EXTERNAL PRINTOUT
+            ORGANIZATION LINE SEQUENTIAL.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD  report-file REPORT rp.
+
+       WORKING-STORAGE SECTION.
+       01  foo  PIC X(20).
+
+       REPORT SECTION.
+       RD  rp PAGE LIMIT 3.
+
+       01  rp-detail TYPE DE.
+         02  LINE PLUS 1.
+            03  FILLER   SOURCE foo  PIC X(30).
+            03  FILLER                PIC X(6) VALUE "<--->".
+            03  THING1                PIC 9(3) BINARY VALUE 12.
+            03  FILLER                PIC 9 COMP-5 VALUE 1.
+            03  THING3                COMP-2          VALUE 12.
+
+       PROCEDURE DIVISION.
+           OPEN OUTPUT report-file.
+           INITIATE rp.
+
+           MOVE "hello" TO foo.
+            GENERATE rp-detail.
+
+           MOVE "goodbye" TO foo.
+            GENERATE rp-detail.
+
+           TERMINATE rp.
+             CLOSE report-file.
+           STOP RUN.
+           END PROGRAM prog.
+])
+
+AT_CHECK([$COMPILE prog.cob], [1], [],
+[prog.cob:25: error: REPORT SECTION item 'THING1' should be USAGE DISPLAY
+prog.cob:26: error: REPORT SECTION item 'FILLER 4' should be USAGE DISPLAY
+prog.cob:27: error: REPORT SECTION item 'THING3' should be USAGE DISPLAY
+])
+
+AT_CLEANUP
+

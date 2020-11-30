@@ -1,0 +1,1326 @@
+
+2020-10-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am: target for distmingwdir
+
+2020-10-26  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac, m4/ax_ac_define_resolved.m4, Makefile.am:
+	  defaults.h is not created or included any more,
+	  all configure provided defines are now found in the single
+	  header config.h; new macro ax_ac_define_resolved.m4 resolves
+	  variables previously resolved via make, which also limits the amount
+	  of variables defined in every Makefile.in
+	* configure.ac: move LOCALEDIR definition from config.h to Makefiles;
+	  use $() instead of backticks in all places
+
+2020-10-23  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: version check for json-c/cJSON "poor man's check" 
+
+2020-10-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am: added explicit dependency order for subfolders
+	* configure.ac: check for more debugging options and store them
+	  as COB_DEBUG_FLAGS (defaults.h) for use in cobc; include them
+	  for --enable-debug, see FR 388
+
+2020-10-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac (--enable-hardening): new option to enable or disable
+	  GNU C's hardening options or leave as-is (previous versions effectively
+	  used --disable-hardening), see FR 388
+	* configure.ac: "common libs" are now also used for local cJSON check
+	  (needs math lib on some environments, as libcob does)
+	* configure.ac: check for declaration of fmemopen
+
+2020-10-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac (COB_CFLAGS): more cleanup of debugging options from CFLAGS
+	  when creating COB_CFLAGS
+
+2020-10-01  Bob Dubner <rdubner@symas.com>
+
+	* configure.ac (COB_CFLAGS): remove "-Wp,-D_FORTIFY_SOURCE=.'" from CFLAGS
+	  when creating COB_CFLAGS
+
+2020-09-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: replaced --with-cjson and --with-json-c by
+	  --with-json which takes options similar to --with-curses;
+	  dropped support for includes of json-c header via subdirectory
+	  as its documentation specify to explicit include via -I dstdir/json-c
+	* NEWS, DEPENDENCIES: updated
+
+2020-07-19  Edward Hart <edward.dan.hart@gmail.com>
+
+	* configure.ac: added support for JSON-C as JSON handler
+
+2020-06-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: check for (optional) fmemopen -> HAVE_FMEMOPEN
+	* configure.ac: PKG_CHECK_MODULES for gmp both with the official name "gmp"
+	  and with the version found on different environments "libgmp":
+	  fixed its includes to end in the general CPPFLAGS,
+	  not only in LIBCOB_CPPFLAGS (also needed for cobc generated modules)
+
+	update code-coverage setup from autoconf archive -> raises a bunch of
+	compatibility warnings during autoconf, but now runs also on different UNIX
+	machines
+	* m4/ax_code_coverage.m4: updated
+	* m4/ax_ac_append_to_file.m4, m4/ax_ac_print_to_file.m4,
+	  m4/ax_add_am_macro_static.m4, m4/ax_am_macros_static.m4,
+	  m4/ax_check_gnu_make.m4, m4/ax_file_escapes.m4 installed as dependencies
+
+2020-06-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: ensure that libraries for screenio and indexed access
+	  are only applied to LIBCOB_LIBS; gettext is checked and applied after
+	  any other external libraries; replaced COBC_LIBS by PROGRAM_LIBS as this
+	  also applies to cobcrun
+	* Makefile.am (vcs-update): new (maintainer-only) target to ease updating
+	  sourcedir in out-of-tree builds
+
+2020-06-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: fixed missing use of AS_IF
+	* Makefile.am: include possibly transformed program names to defaults.h
+
+2020-06-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: use pkg-config for GMP and MPIR
+	* Makefile.am: build extras before documentation
+	* m4/m4_ax_check_define.m4: renamed to m4/ax_check_define.m4
+	* m4/m4_ax_code_coverage.m4: renamed to m4/ax_code_coverage.m4
+	* m4/fcntl-o.m4, m4/gettext.m4, m4/iconv.m4, m4/intdiv0.m4, m4/intl.m4,
+	  m4/intlmacosx.m4, m4/nls.m4, m4/po.m4, m4/progtest.m4, m4/size_max.m4,
+	  m4/visibility.m4: Upgrade to gettext-runtime-0.20.2.
+
+2020-06-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: Bug #644 (MacOS) check for declaration of fdatasync
+	* Makefile.am: build extras before documentation
+
+2020-05-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* DEPENDENCIES: new file, moved out of README
+	* Makefile.am, gnucobol.spec, HACKING: adjusted for new DEPENDENCIES
+
+2020-04-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* gnucobol.spec: minor cleanup
+
+2020-04-16  Edward Hart <edward.dan.hart@gmail.com>
+
+	* configure.ac: fixed cleaning of COB_CFLAGS again (see Patches #49).
+
+2020-03-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: new check for MAKE supporting order-only prerequisites
+	  resulting in new conditional MAKE_HAS_PREREQ_ONLY
+
+2020-03-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: FR #372 new option --with-math to specify multiple
+	  precision library used (may have the value gmp or mpir or check);
+	  in case of MPIR (or not found GMP) checks for mpir.h (HAVE_MPIR_H)
+	  and libmpir; in general: check header first, then library
+
+2020-03-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: version bump to 4.0 (lt-version 5.0.0)
+	* configure.ac: document the existing environment vars LIBCOB_CPPFLAGS,
+	  LIBCOB_LIBS and COBC_LIBS and test if those actually work
+	* Makefile.am (dist_noinst_SCRIPTS): moved doc/cobcinfo.sh here
+	* extras/Makefile.am: use of return_path instead of atlocal
+	* removed support for Bison < 3
+	* configure.ac: adjusted generation of built-in COB_LDFLAGS
+
+2020-01-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: fix auto-setup for OCI via ORACLE_HOME
+
+2019-12-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: new options --with-indexed=odbc/oci, supporting
+	  ODBC_CFLAGS ODBC_LIBS OCI_CFLAGS OCI_LIBS
+
+2019-10-24  Ron Norman <rjn@inglenet.com> 
+
+	* configure.ac: The -with-indexed now check that the handler had
+	  also been include via -with-db|lmdb|cisam|disam|vbisam
+
+2019-10-21  Ron Norman <rjn@inglenet.com> 
+
+	* configure.ac: Updated for multiple INDEXED file handlers
+	  --with-indexed=db|lmdb|cisam|disam|vbisam defines default
+	  handler. If multiple of C/D/VB-ISAM are used then they are 
+	  built as a shared library and loaded at run time
+
+2019-08-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: check for make
+
+2019-06-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: changed the manual test runner to be a script handled
+	  by autoconf instead of make
+	* configure.ac: check for HAVE_MOUSEINTERVAL
+
+2019-06-16  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am (tarstamp.h, $(top_distdir)/tarstamp.h): targets added
+	* Makefile.am: fixed SUBDIRS handling
+
+2019-06-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: include all (possibly) generated headers by '#include <header>'
+	  (search "system directories" [which in all known compilers are pre-fixed
+	  with the ones specified with '-I', which is done for the builddir
+	  already]) instead of '#include "header"' (which is searched next to the
+	  including file first). This applies to all files that include config.h,
+	  defaults.h, tarstamp.h, parser.h, ppparse.h.
+
+2019-05-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: fix bug #559 avoid useless dependencies (all but libm,
+	  needs to be inspected later) by not copying LIBCOB_LIBS to COB_LIBS
+	  and resetting LIBS after XML2/CJSON check;
+	  now substituting LIBCOB_CPPFLAGS
+	* configure.ac: --with-cjson=local added (defines LOCAL_CJSON),
+	  allowing to built-in cjson into libcob when its sources are found and
+	  linkable in folder libcob (both srcdir and builddir supported);
+	  takes precedence over search by means of pkg-config and/or
+	  CJSON_CFLAGS and CJSON_LIBS
+	* Makefile.am (dist-hook): moved creation of windows source zip to a
+	  separate target and make it work for out-of-tree builds, too
+	* create_win_dist.sh: all external paths are now specified by
+	  environment variables; use rsync with exclude filters for
+	  build_windows instead of plain cp
+
+2019-05-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: set YFLAGS and DIFF_FLAGS depending on
+	  available/requested options
+
+2019-05-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: don't error on bad libxml2 if not explicit requested
+
+2019-05-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac, gnucobol.spec: version dump to 3.1-dev
+	* configure.ac: checks/defines HAVE_CJSON_H as an alternative to
+	  HAVE_CJSON_CJSON_H
+
+2019-05-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* autogen.sh: suppress most error messages (that can also occur if
+	  execution rights are already available but we can't set them)
+	* configure.ac: check for curses has_mouse
+
+2019-04-14  Ron Norman <rjn@inglenet.com>
+
+	* configure.ac [__xlc__]: suppress compiler warning about MAXMEM
+	  optimization
+
+2019-04-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am (noinst_SCRIPTS) add pre-inst-env
+	* configure.ac (AC_CONFIG_FILES): add pre-inst-env (template file
+	  build_aux/pre-inst-env.in) and split existing entries to initialize
+	  scripts to be executable
+
+2019-04-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am (noinst_SCRIPTS) add pre-inst-env
+	* configure.ac (AC_CONFIG_FILES): add pre-inst-env (template file
+	  build_aux/pre-inst-env.in) and split existing entries to initialize
+	  scripts to be executable
+
+2019-03-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* autogen.sh: fixed to work correctly when called as "./autogen.sh"
+
+2019-02-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* autogen.sh: new, wrapper for build_aux/bootstrap
+	* Makefile.am: cleanup distribution rules
+
+2019-01-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: added action "comment" for PKG_CHECK_MODULES
+	  cJSON for action-not-found as the empty (default) action is
+	  to abort configure
+
+2019-01-05  Edward Hart <edward.dan.hart@gmail.com>
+
+	* configure.ac: added detection of cJSON.
+
+2019-01-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: only check for finite function if isfinite is not found
+
+2018-11-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: only warn once about missing headers needed for libxml2
+
+2018-11-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* libcob.h [COB_WITHOUT_DECIMAL]: allow include of libcob.h without
+	  gmp header (for link-only; providing compatibility to GnuCOBOL 1.1)
+
+2018-10-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am: prefer user-specified localedir
+
+2018-09-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: activated translated messages for COBOL runtime
+
+2018-09-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: fixed non-working auto-check for libxml2
+
+2018-08-30  Hal Duston
+
+	* configure.ac: fixed removal of -DFORTIFY_SOURCE not removing -Wp also.
+
+2018-08-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* m4/pkg.m4: added for PKG_PROG_PKG_CONFIG / PKG_CHECK_MODULES macros
+	  from current pkg-config release (0.29.2)
+	* configure.ac: included optional pkg-config (cross-compile aware),
+	  currently only used for libxml2 (and only if xml2-config not found);
+	  always check for existing header / linkable library for xml2
+	* configure.ac: check for libxml2, but don't abort if not available;
+	  prefer pkg-config over xml2-config
+
+2018-08-19  Edward Hart <edward.dan.hart@gmail.com>
+
+	* configure.ac: added detection of libxml2
+	* m4/m4_ax_check_define.m4: added for AC_CHECK_DEFINE macro from the
+	  GNU Autoconf Archive
+
+2018-06-19  Ludwin Janvier <lud.janvier@gmail.com>
+
+	* configure.ac: remove -g from default options and remove removal
+	  of -g from CFLAGS
+
+2018-06-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac [_WIN32]: only set GCC export and linker flag
+	  if we actually compile with GCC
+
+2018-05-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac [_WIN32]: define __GMP_LIBGMP_DLL when importing
+	  and calling gmp functions (done for version check) - to use
+	  a static version define __GMP_LIBGMP_DLL=0 via CPPFLAGS
+
+2018-05-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac (AC_CHECK_FUNCS): removed unused strxfrm, added popen
+	* configure.ac: ensure that we don't replace too much when adjusting
+	  CFLAGS concerning -g
+
+2018-04-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: removed use of line breaks in sysout from C
+	  test compilation for extracting GMP/BDB version numbers
+
+2018-04-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: added --enable-cobc-internal-checks to define
+	  COB_TREE_DEBUG in config.h
+
+2018-04-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* extras/Makefile.am: compile with -O2 and retry without optimization
+	  if first compilation did not work, see Bug #439
+
+2018-03-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am (checkmanual): new target for running manual tests,
+	  note: if needed the test runner tests/run_prog_manual.sh may
+	  be changed by the user
+
+2018-03-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: check for curses define_key function
+
+2018-03-11  Ron Norman <rjn@inglenet.com>
+
+	* configure.ac: COB_STRFTIME and COB_HAS_UTC_OFFSET removed as
+	  no longer needed
+
+2018-02-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* README: Explicitly state we use ranges in copyright years and
+	  mention the INSTALL file as suggested by the GNU maintainer manual
+	* general: add license notice to Changelog files
+
+2018-01-23  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: fix setting of COB_CFLAGS when CFLAGS contains
+	  -fstack-protector-all or -fstack-protector-strong
+
+2017-12-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: version bump to 3.0-dev
+	* general: merged code for REPORTWRITER module from reportwriter branch
+
+2017-12-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am: always use non-localized date formatting for tarstamp.h
+
+2017-11-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am: tweaked dependencies to make sure defaults.h is
+	  even build if another target than all/check is used
+
+2017-11-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: new template COB_COMPUTED_GOTO, defined if
+	  computed gotos can be compiled
+
+2017-10-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: if --with-vbisam is given: check for isfullclose
+	  (available since 2.0) instead of isopen (available since 1.0)
+
+2017-10-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: fixed --with-curses (without option) and adjusted its
+	  help text
+
+2017-10-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: revised all uses of AC_RUN_IFELSE and changed to
+	  AC_COMPILE_IFELSE where the preparser output is enough
+	* configure.ac: allow cross-compiling with --host and --build;
+	  allow to change compiler executable called by cobc with COB_CC
+	* extras/Makefile.am, doc/Makefile.am: don't call generated binaries
+	  if not possible because of cross-compiling
+
+2017-10-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* bin/Makefile.am, cobcrun/Makefile.am: fixed bug #448 parallel build
+	  breaking by matching prerequisites 100% (pointed out by Nick Bowler)
+
+2017-08-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: removed all Makefiles and configure script generated by
+	  autoconf and automake from version control - use build_aux/bootstrap
+	* Makefile.am: ensure correct time stamps for make dist
+	* configure.ac: adjusted GMP version checks,
+	  substitute COB_HAS_64_BIT_POINTER for use in testsuite
+
+2017-08-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* create_win_dist.sh: remove ".in" suffix from template files config.h.in
+	  and defaults.h.in in generated win dist package
+
+2017-07-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: version bump to 2.3-dev
+
+2017-07-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac [_BSD_SOURCE]: set COB_HAS_UTC_OFFSET to "yes" if C compiler
+	  defines _BSD_SOURCE as we can access the offset directly in this case
+	* configure.ac: output detailed version information for BDB, if available
+
+2017-06-16  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: added --enable-code-coverage and test for code-coverage
+	  tools if enabled by AX_CODE_COVERAGE,
+	  always check if user specified optimization options in CFLAGS,
+	  not only when --enable-debug is active,
+	  compile with -O0 for both --enable-debug and --enable-code-coverage
+	* Makefile.am: added CODE_COVERAGE parts as provided by AX_CODE_COVERAGE
+	  which provides new target `make check-code-coverage`
+
+2017-06-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am: added .PHONY to correctly declare logical targets that
+	  always have to be executed and don't result in a file,
+	  define prerequisites to fix parallel builds
+
+2017-06-07  Ron Norman <rjn@inglenet.com>
+
+	* configure.ac,configure,config.h.in: Add check for atoll, strtoll
+	* coblocal.h: if 'atoll' is not available, then use strtoll in #define
+
+2017-05-31  Ron Norman <rjn@inglenet.com>
+
+	* configure.ac: set COB_HAS_ISAM to type of ISAM handler instead of 'yes'
+	  'cisam', 'disam', 'vbisam', 'db', 'index_extfh' - if no ISAM then it is
+	  set to 'no'
+
+2017-05-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: change in library check for BDB - prefer library
+	  with version number from db.h included (-ldb-6.1 over -ldb) to
+	  prevent errors on system with multiple versions that linked
+	  against wrong version, see bug #100
+
+2017-04-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: removed AM_MAINTAINER_MODE, added AM_PROG_LEX,
+	  AC_PROG_YACC, AM_MISSING_PROG([HELP2MAN], [help2man])
+	* create_win_dist.sh: integrated hack for _MSC_VER from
+	  cobc/Makefile.am; use a clean temporary folder for building
+
+2017-04-18  Ron Norman <rjn@inglenet.com>
+
+	* configure.ac: check for 'isfinite' (HAVE_ISFINITE)
+	  'isfinite' is in the C99 standard and 'finite' deprecated with some
+	  compilers
+
+2017-02-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* HACKING: added info how to prepare a distribution
+	* Makefile.am: don't touch any generated files, see HACKING
+	* Makefile.am: chmod for all files to 644,
+	  executable scripts and directories get 755
+
+2017-02-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* HACKING, README: moved instructions for development/svn-builds
+	  from README to new file HACKING and added missing information
+
+2017-02-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: fixed use of undefined COB_TIMEZONE
+
+2017-02-04  Edward Hart <edward.dan.hart@gmail.com>
+
+	* configure.ac: fixed bug where -g3 in CFLAGS was replaced by 3,
+	  instead of being removed.
+
+2016-12-26  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: #bugs 346 moved compiler specific COB_CFLAGS from
+	  cobc/cobc.c to configure, removes the use of HAVE_PSIGN_OPT, too
+
+2016-12-25  Edward Hart <edward.dan.hart@gmail.com>
+
+	* configure.ac: added -Qunused-arguments to clang CFLAGS.
+
+2016-12-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: additional test for libdisam names
+
+2016-12-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: changed package-name to gnucobol
+	* configure.ac: fixing bug #339 added COB_MODULE_EXT to config.h,
+	  renamed COB_OBJEXT->COB_OBJECT_EXT, COB_EXEEXT->COB_EXE_EXT,
+	* configure.ac: exported COB_EXE_EXT to makefiles (used in testsuite)
+	* Makefile.am: fixing bug #339 removed COB_MODULE_EXT and COB_OBJECT_EXT
+	  from being generated in defaults.h
+	* Makefile.am: cleanup of EXTRA_DIST
+
+2016-11-17  Ron Norman <rjn@inglenet.com>
+
+	* configure.ac: check for sys/wait.h (for CBL_GC_WAITPID)
+
+2016-11-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: limit PATCH_LEVEL to numeric, max 8 digits
+	* configure.ac: use AS_HELP_STRING for all options
+
+2016-11-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Bootstrap up to libtool 2.4.6 / automake 1.15
+
+2016-11-05  gettextize  <bug-gnu-gettext@gnu.org>
+
+	* m4/gettext.m4: Upgrade to gettext-0.19.8.1.
+	* m4/iconv.m4: Upgrade to gettext-0.19.8.1.
+	* m4/lib-ld.m4: Upgrade to gettext-0.19.8.1.
+	* m4/lib-link.m4: Upgrade to gettext-0.19.8.1.
+	* m4/lib-prefix.m4: Upgrade to gettext-0.19.8.1.
+	* m4/nls.m4: Upgrade to gettext-0.19.8.1.
+	* m4/po.m4: Upgrade to gettext-0.19.8.1.
+	* m4/progtest.m4: Upgrade to gettext-0.19.8.1.
+	* configure.ac (AM_GNU_GETTEXT_VERSION): Bump to 0.19.8.
+
+2016-08-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am: added manual hook for creating a windows source zip
+	  (not possible with the dist-zip target as this is identical to
+	  dist-gzip), done with optional external shell create_win_dist.sh
+	* create_win_dist.sh: copy an existing source distribution folder,
+	  include build_windows from source tree, change line endings and
+	  create DISTNAME_win.zip
+
+2016-08-10  Edward Hart <edward.dan.hart@gmail.com>
+
+	* configure.ac: added -g3 to CFLAGS with --enable-debug and GCC.
+
+2016-08-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: revised all message strings
+
+2016-05-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: removed project files and references to Visual C < 2005
+	  (GC 2+ will not build with these versions) including define of
+	  COB_USE_VC2005_OR_GREATER
+
+2016-01-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: removed AC_FUNC_ALLOCA
+
+2016-01-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am: added targets "test" (running ANSI testsuite) and
+	  "checkall" (running both GnuCOBOL and ANSI testsuite), both do a
+	  full build of GnuCOBOL if necessary
+
+2015-12-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Taken into account all copyright assignments and rechecking the dates
+	* Changed name spelling to GnuCOBOL
+	* general: update of automake/autoconf/bison/flex
+
+2015-09-15  Brian Tiffin <btiffin@gnu.org>
+
+	* configure.ac, moved COB_DASH names to cobc/cobc.h
+
+2015-08-03  Brian Tiffin <btiffin@gnu.org>
+
+	* configure.ac: added COB_DASH, COB_DASH_NAME, COB_DASH_OUT
+	  to support compile from stdin
+
+2015-04-27  Ron Norman
+
+	* Added support for Micro Focus format sequential and relative
+	  files. New compiler directive -fmf-files sets all sequential
+	  and relative files to match what Micro Focus would create
+	  Numerous runtime.cfg settings added for selecting file
+	  format.
+
+2015-07-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: moved additional build-scripts to build_aux,
+	  regenerated all Makefiles
+	* configure.ac: added AC_CONFIG_AUX_DIR([build_aux])
+
+2015-02-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: removed "Experimental" marker from CISAM/DISAM/VBISAM
+	* configure.ac: define WITH_CURSES for printing library for screenio
+
+2015-02-16  Ron Norman <rjn@inglenet.com>
+
+	Implemented DEBUG logging for Compiler developers
+	* configure.ac: Added --enable-debug-log to configure.ac
+	  Logging can be turned and set to certain level using
+	  an environment variable COB_DEBUG_LOG
+
+2015-03-06  gettextize  <bug-gnu-gettext@gnu.org>
+
+	* m4/gettext.m4: Upgrade to gettext-0.19.4.
+	* m4/iconv.m4: Upgrade to gettext-0.19.4.
+	* m4/lib-ld.m4: Upgrade to gettext-0.19.4.
+	* m4/lib-link.m4: Upgrade to gettext-0.19.4.
+	* m4/lib-prefix.m4: Upgrade to gettext-0.19.4.
+	* m4/nls.m4: Upgrade to gettext-0.19.4.
+	* m4/po.m4: Upgrade to gettext-0.19.4.
+	* m4/progtest.m4: Upgrade to gettext-0.19.4.
+	* configure.ac (AM_GNU_GETTEXT_VERSION): Bump to 0.19.4.
+
+2015-02-12  Ron Norman <rjn@inglenet.com>
+
+	* Merged Report Writer code into 2.0 code base to create a new 2.0
+	  with all collective features
+
+2014-08-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: revised message strings (not all done yet);
+	  similar message strings combined (23 translatable strings removed);
+	  removed line breaks from translatable strings
+	* configure.ac: don't disable NLS automatically for CYGWIN
+	  (--disable-nls can be used by the user instead)
+
+2014-12-04  Edward Hart <edward-h@users.sf.net>
+
+	* configure.ac: #44 Disable optimisation with --enable-debug
+
+2014-09-09  Philipp B�hme <phi.boehme@googlemail.com>
+
+	* configure.ac: new check for mp_get_memory_functions in
+	  libgmp and new preprocessor define HAVE_MP_GET_MEMORY_FUNCTIONS
+
+2014-08-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: add new parameter --with-curses for explicit
+	  selection of used curses library (including "no");
+	  better check of matching version header/library for GMP and BDB;
+	  additional output of configuration summary to config.log;
+	  respect --quite (don't echo or printf to stdout)
+
+2014-06-20  Philipp B�hme <phi.boehme@googlemail.com>
+
+	* New folder build_windows
+	* Added project files for Visual Studio 2003 and newer
+
+2014-06-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* General: Win compatibility: define COB_OBJEXT in defaults.h
+
+2014-04-14  Philipp B�hme <phi.boehme@googlemail.com>
+
+	* moved cobgetopt.c from lib to libcob
+	* link cobc to libcob
+
+2014-04-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: bugfix for systems with prototype for finite function
+	  in ieeefp.h instead of math.h
+
+2013-09-29  Brian Tiffin & Simon Sobisch <simonsobisch@gnu.org>
+
+	* Change package name, and project to GNU Cobol
+	* GNU-ification of source code commencing
+
+2012-??-??  Roger While <simrw@sim-basis.de>
+
+	* General: Affects most directories - use a modified
+	  version of getopt_long_long (placed in lib)
+
+2011-??-??  Roger While <simrw@sim-basis.de>
+
+	* General: Affects most directories - Let make check
+	  skip ISAM tests if not configured with ISAM
+
+2010-06-28  Roger While <simrw@sim-basis.de>
+
+	* MARK - Version 2.0
+	* Move to GPL/LGPL 3
+
+2009-04-11  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Changes for BDB support, support icc
+	* General: Affects all directories - Rebase to latest stable
+	  autoxxxx tools
+
+2009-03-12  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Fix for newest development tools
+
+2009-03-09  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Fix up m4 quoting
+
+2009-03-02  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Correctly test for gcc and icc
+	* cpucheck.c: Remove
+
+2008-11-17  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Correct sed usage
+
+2008-11-15  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Remove lfs64 option, reinstate --enable-debug
+
+2008-11-01  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: nanosleep on Solaris needs extra libs
+
+2008-09-29  Roger While <simrw@sim-basis.de>
+
+	* Makefile.am: Revise format of tarstamp.h
+
+2008-08-20  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Option changes for AIX
+
+2008-08-16  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Fix AIX xlc
+
+2008-08-08  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Take out --enable-debug
+	* Makefile.am: Force permissions when making dist
+
+2008-07-05  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: No need to check for regex or mvgetnstr
+
+2008-04-16  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Add in "copy" directory for OC supplied COPY elements
+
+2008-01-03  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Fix invalid usage of square brackets
+
+2007-12-29  Roger While <simrw@sim-basis.de>
+
+	* Bump version to 1.1
+
+2007-12-27  Roger While <simrw@sim-basis.de>
+
+	* Release 1.0
+
+2007-12-21  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Change order of checking various things
+
+2007-12-18  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Fix WITH_VARSEQ setting
+
+2007-12-03  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Add checks for headers/libraries when using
+			 CISAM/DISAM/VBISAM
+
+2007-11-21  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Add --with-cisam, --with-disam, --with-vbisam
+
+2007-11-09  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Check for sizeof long int == long long
+
+2007-10-23  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Check for __attribute__((aligned))
+
+2007-10-14  Roger While <simrw@sim-basis.de>
+
+	* libcob.h: Add gmp include for C++
+
+2007-10-10  Roger While <simrw@sim-basis.de>
+
+	* General: bootstrap up to libtool 1.5.24
+	* configure.ac: HP specific options
+
+2007-09-18  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Check for mvgetnstr in curses lib
+
+2007-08-31  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Fix insufficient tests for enable/disable
+
+2007-08-09  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Shared option for Solaris
+		New configure option --with-index-extfh, allows
+		usage of an external ISAM file handler
+
+2007-07-14  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Changes for AIX
+
+2007-06-27  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Check if we can use strftime to get timezone
+
+2007-03-13  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Check for sys/time.h
+
+2007-01-30  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Check for langinfo/iconv
+	* README: Update
+
+2007-01-25  Roger While <simrw@sim-basis.de>
+
+	* All: Update Coypright info on all files
+	* README: Update - SORT does not require BDB; Fix typo
+	* cpucheck.c: Uck, Intel, in their infinite wisdom, decided
+		to assign the same family to Core 2 Duo as
+		Pentium (pro/2/3). Check the model number.
+
+2006-10-25  Roger While <simrw@sim-basis.de>
+
+	* README: Update
+
+2006-10-23  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Remove gcc specific options from the
+	  Makefile templates and pull it back into configure.
+	  This should make building on non-gcc systems somewhat easier.
+
+2006-08-29  Roger While <simrw@sim-basis.de>
+
+	* General: FSF address change
+	* COPYING.DOC: New file, GNU Free Documentation license
+
+2006-08-28  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Implement --disable-param-check
+	  and --enable-experimental
+
+2006-08-22  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: BDB neeeds stdlib.h for 64-bit build
+
+2006-08-03  Roger While <simrw@sim-basis.de>
+
+	* README update
+
+2006-07-06  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Revise BDB >= 4.1 checking
+
+2006-06-29  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Revise BDB >= 4.1 checking
+
+2006-06-25  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Check for BDB version major/minor in db.h,
+		if >= 4.1 set extended BDB mode
+
+2006-05-24  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Fix check for GMP
+
+2006-05-05  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Fix default include in COB_CFLAGS
+
+2006-03-31  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Fix AIX64 AR/NM
+
+2006-02-18  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Define __USE_STRING_INLINES
+
+2006-01-26  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Add (OpenCOBOL) to configure help text
+	  so that OC parameters can be easily seen
+
+2006-01-17  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Minor fixes
+	  README: Put in a comment regarding spaces in path names
+
+2006-01-05  Roger While <simrw@sim-basis.de>
+
+	* Bootstrap up to libtool 1.5.22 / automake 1.9.6
+	* configure.ac: Changes for AIX/HP/Sun
+	  default to using system dynamic loading
+	  pass LDFLAGS into COB_LDFLAGS
+
+2006-01-03  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: pass CFLAGS into COB_CFLAGS,
+	  default to using system dynamic loading
+
+2005-12-31  Roger While <simrw@sim-basis.de>
+
+	* Remove COBCRUN SHARE variable
+
+2005-12-30  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Check timezone/gettimeofday
+
+2005-12-21  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: WITH_VARSEQ - Define the format of
+	  variable length sequential files
+
+2005-12-13  Roger While <simrw@sim-basis.de>
+
+	* cpucheck.c: Revert to i686 with -mcpu/tune=
+
+2005-12-08  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Compile cpucheck with COB_CC.
+	  Pass extra compile options as own define.
+	  Put in a hack to stop CXX/F77 checking -
+	  Anybody know a better way ?
+
+2005-12-05  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Pass down EXEEXT
+
+2005-11-25  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Fix typos, cater for DB 4.4 and 4.5
+			 Check for signal.h and sys/types.h
+			 Clean up getopt
+
+2005-11-06  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: minor help text cleanup
+
+2005-11-04  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Fix COB_CC not equal CC
+
+2005-11-01  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Fix missing EGREP
+	  Check for various libdb's individually as libdb may
+	  not be linked to newer version (or at all - Cygwin)
+	  Check for ncurses.h in include/ncurses/ncurses.h
+
+2005-10-31  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Pick up -Wno-pointer-sign
+	  and the visibility attribute
+
+2005-10-28  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Propagate endian value
+
+2005-10-27  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: MAC (Darwin) has different options when creating a
+	  shared library as opposed to creating a loadable module.
+	  Pick this up and export it to the Makefile's.
+
+2005-10-26  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Fix DB checking again
+	* README: Minor corrections/additions
+
+2005-10-14  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Specify srcdir for cpucheck (make distcheck)
+
+2005-10-13  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Use basename for gcc
+
+2005-10-06  Roger While <simrw@sim-basis.de>
+
+	* README: Typo for Bison
+
+2005-10-01  Roger While <simrw@sim-basis.de>
+
+	* cpucheck.c: Some versions of GCC generate wrong SSE code
+	  when compiling with P3/4 options. Stop this by also
+	  specifying -mno-sse.
+
+2005-07-31  Roger While <simrw@sim-basis.de>
+
+	* Change configure default options for db, lfs64, ltdl
+	  Add --with-patch-level=<n>
+	* Add cpucheck.c to top level for configure
+
+2005-06-28  Roger While <simrw@sim-basis.de>
+
+	* Finally FUNCTIONS
+
+2005-06-13  Roger While <simrw@sim-basis.de>
+
+	* If ncurses not found, check for pdcurses
+
+2005-06-11  Roger While <simrw@sim-basis.de>
+
+	* New m4 macro cattribute.m4, autoreconf run
+
+2005-06-01  Roger While <simrw@sim-basis.de>
+
+	* configure.ac, configure: Change for MingW
+
+2005-05-27  Roger While <simrw@sim-basis.de>
+
+	* DB headers can also be in db4/ db4.1/ db4.2/ db4.3/
+
+2005-05-21  Roger While <simrw@sim-basis.de>
+
+	* Allow configure option --with-dl for native dynamic
+	  linking instead of ltdl. This is a win eg. on Linux
+	  as native dl is anyway used.
+
+2005-05-17  Roger While <simrw@sim-basis.de>
+
+	* configure, configure.ac, all Makefile.in
+	  Fix up COB_CFLAGS and COB_LIBS.
+	  Cater for defining CPPFLAGS and LDFLAGS.
+	  We have to propogate these to the compiler.
+
+2005-05-13  Roger While <simrw@sim-basis.de>
+
+	* CVS Version bumped to 0.33
+
+2005-05-12  Roger While <simrw@sim-basis.de>
+
+	* Version 0.32 released
+
+2005-05-03  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Revert WORDS_BIGENDIAN. We do not need it.
+	  configure.ac, configure, Mak**: Fix missing variables.
+	  Run autoreconf
+
+2005-04-15  Keisuke Nishida  <knishida@opencobol.org>
+
+	* configure.ac (WORDS_BIGENDIAN): New variable.
+
+2005-04-13  Keisuke Nishida  <knishida@opencobol.org>
+
+	* configure.ac (LIBCOB_CFLAGS): Set -fPIC when necessary.
+
+2005-03-03  Roger While <simrw@sim-basis.de>
+
+	* configure.ac, configure, config.h.in :
+	  Version to 0.32
+	  Pull out the hard-coded -shared from cobc.c
+	  and define it in configure.
+	  Get the strip command and put into config.h
+	* ltmain.sh: Latest version
+
+2005-02-07  Roger While <simrw@sim-basis.de>
+
+	* configure.ac: Check for cygwin/mingw on
+	  cobcrun make
+
+2005-02-01  Roger While <simrw@sim-basis.de>
+
+	* Version 0.31 released
+
+2005-01-13  Roger While <simrw@sim-basis.de>
+
+	* configure.ac, configure, config.h.in
+	* Generate compiler/linker options in config.h
+	  for exporting symbols and PIC code.
+	  Will eventually be used by cobc.c.
+
+2004-11-29  Roger While <simrw@sim-basis.de>
+
+	* New directory bin for cobcrun driver program
+	* configure.ac, Makefile.am
+
+2004-10-30  Roger While <simrw@sim-basis.de>
+
+	* configure.ac, configure (over autoconf) :
+	  Change entry point name check from __db_dbopen
+	  to __db_open. This fixes configuring against
+	  the NPTL versions of DB (eg. Red Hat, Suse).
+
+2004-08-02  Keisuke Nishida  <knishida@opencobol.org>
+
+	* Version 0.30 released.
+
+2004-03-06  Keisuke Nishida  <knishida@wind.sannet.ne.jp>
+
+	* configure.ac: Checks for fcntl.
+
+2003-08-22  Keisuke Nishida  <kxn30@yahoo.co.jp>
+
+	* libcob.conf: Removed.
+
+2003-06-12  Keisuke Nishida  <knishida@netlab.jp>
+
+	* Version 0.23 released.
+
+2003-06-08  Keisuke Nishida  <knishida@netlab.jp>
+
+	* Version 0.22 released.
+
+2003-05-19  Keisuke Nishida  <knishida@netlab.jp>
+
+	* Version 0.21 released.
+
+2003-04-26  Keisuke Nishida  <knishida@netlab.jp>
+
+	* Version 0.20 released.
+
+2003-04-19  Keisuke Nishida  <knishida@netlab.jp>
+
+	* cob.pc.in: Removed.
+
+	* cobpp: Removed.
+
+2002-03-01  Keisuke Nishida  <knishida@netlab.jp>
+
+	* Version 0.12 released.
+
+2002-01-31  Keisuke Nishida  <knishida@netlab.jp>
+
+	* Version 0.11 released.
+
+2002-12-10  Keisuke Nishida  <knishida@netlab.jp>
+
+	* Version 0.10 released.
+
+	* configure.ac: Updated for autoconf-2.57, and automake-1.7.2.
+
+2002-12-01  Keisuke Nishida  <knishida@netlab.jp>
+
+	* configure.ac: Updated for autoconf-2.56, automake-1.7.1,
+	and libtool-1.4.3.
+
+2002-11-08  Keisuke Nishida  <knishida@netlab.jp>
+
+	* libcob.h: Don't include support.h.
+
+2002-10-14  Keisuke Nishida  <knishida@netlab.jp>
+
+	* Makefile.am: Install libcob.conf in $(sysconfdir), not in
+	$(sysconfdir)/open-cobol.
+	* configure.ac (COB_CONFIG_FILE): Updated.
+
+2002-09-30  Keisuke Nishida  <knishida@netlab.jp>
+
+	* configure.ac: Updated for autoconf-2.54 and automake-1.7.
+	Do not generate libcob/cobconfig.h.
+
+2002-09-24  Keisuke Nishida  <knishida@netlab.jp>
+
+	* configure.ac: Generate libcob/cobconfig.h using AM_CONFIG_HEADER.
+	Check db.h as well as db1/db.h.
+
+2002-09-12  Keisuke Nishida  <knishida@netlab.jp>
+
+	* configure.ac: Add check for regex.
+
+2002-09-09  Keisuke Nishida  <knishida@netlab.jp>
+
+	* Makefile.am (deb, rpm): Removed.
+
+2002-09-06  Keisuke Nishida  <knishida@netlab.jp>
+
+	* configure.ac: Check for db1 instead of db2/db3.
+
+2002-09-05  Keisuke Nishida  <knishida@netlab.jp>
+
+	* Use pkg-config scheme.
+	* cob.pc.in: New file.
+	* cob.m4, cob-config.in: Removed.
+	* Makefile.am, configure.ac: Add cob.pc.  Remove cob-config and cob.m4.
+
+2002-08-30  Keisuke Nishida  <knishida@netlab.jp>
+
+	* configure.ac (AM_INIT_AUTOMAKE): Option 'gnu' and 'no-texinfo.tex'.
+	(AC_FUNC_STAT, AC_HEADER_STAT): Removed.
+	(LTLIBINTL): Used instead of LIBINTL.
+	* Makefile.am (EXTRA_DIST): Don't include 'redhat' and 'debian'.
+
+2002-08-28  Keisuke Nishida  <knishida@netlab.jp>
+
+	* configure.ac: Use AC_LIBOBJ scheme.
+
+2002-08-27  Keisuke Nishida  <knishida@netlab.jp>
+
+	* HACKING: Use automake-1.6.3 and gettext-0.11.5.
+	* configure.ac (COB_COBPP): Don't set path.
+	(AM_GNU_GETTEXT_VERSION): Use gettext-0.11.5.
+	(AC_CONFIG_AUX_DIR): Set to 'config'.
+
+2002-08-05  Keisuke Nishida  <knishida@netlab.jp>
+
+	* configure.ac (LIBCOB_LIBS): Add $LIBINTL.
+
+2002-08-02  Keisuke Nishida  <knishida@netlab.jp>
+
+	* Version 0.9.7 released.
+
+2002-07-30  Keisuke Nishida  <knishida@netlab.jp>
+
+	* configure.ac (LIBCOB_LIBS): Set one by one.
+
+2002-07-29  Keisuke Nishida  <knishida@netlab.jp>
+
+	* configure.ac (COB_CONFIG_FILE): Use sysconfdir, not datadir.
+	* Makefile.am (libcob.conf): Install into pkgconfdir, not pkgdatadir.
+
+2002-07-01  Keisuke Nishida  <knishida@netlab.jp>
+
+	* configure.ac: Checks for ncurses.
+
+	* libcob.h: #include <libcob/screenio.h>
+
+2002-06-18  Keisuke Nishida  <knishida@netlab.jp>
+
+	* configure.ac (COB_MODULE_EXT): Convert dll.a to dll.
+
+2002-06-17  Keisuke Nishida  <knishida@netlab.jp>
+
+	* Makefile.am (EXTRA_DIST): Don't include config.rpath.
+
+2002-06-12  Keisuke Nishida  <knishida@netlab.jp>
+
+	* Version 0.9.6 released.
+
+2002-06-11  Keisuke Nishida  <knishida@netlab.jp>
+
+	* configure.ac (COB_MODULE_EXT): New variable.
+	* Makefile.am (defaults.h): Output COB_MODULE_EXT.
+
+2002-06-08  Keisuke Nishida  <knishida@netlab.jp>
+
+	* configure.ac: Check the existence of gcc (or cc).
+
+2002-06-04  Keisuke Nishida  <knishida@netlab.jp>
+
+	* libcob.conf (ding-on-error): New option.
+
+2002-06-02  Keisuke Nishida  <knishida@netlab.jp>
+
+	* testsuite: New directory.
+
+2002-05-31  Keisuke Nishida  <knishida@netlab.jp>
+
+	* configure.ac (maintainer-mode): Do not define.
+	(LIBCOB_LIBS): Include '-lm'
+
+	* Makefile.am (DISTCLEANFILES): Renamed from CLEANFILES.
+
+2002-05-29  Keisuke Nishida  <knishida@netlab.jp>
+
+	* README, AUTHORS: Add more information.
+	* HACKING: Renamed from README.CVS.  Add more information.
+	* Makefile.am: Include HACKING in the distribution.
+
+2002-05-29  Keisuke Nishida  <knishida@netlab.jp>
+
+	* configure.ac: Check readline only when --with-readline is given.
+
+2002-05-29  Keisuke Nishida  <knishida@netlab.jp>
+
+	* libcob.conf: New file.
+	* configure.ac, Makefile.am: Add 'COB_CONFIG_FILE'.
+
+2002-05-29  Keisuke Nishida  <knishida@netlab.jp>
+
+	* configure.ac, Makefile.am: Rename 'COB_LDADD' to 'COB_LIBS'
+
+2002-05-19  Keisuke Nishida  <knishida@netlab.jp>
+
+	* Version 0.9.5 released.
+
+2002-05-08  Keisuke Nishida  <knishida@netlab.jp>
+
+	* Version 0.9.4 released.
+
+2002-03-10  Keisuke Nishida  <knishida@coboler.com>
+
+	* Version 0.9.3 released.
+
+2002-02-26  Keisuke Nishida  <knishida@coboler.com>
+
+	* Version 0.9.2 released.
+
+2002-02-03  Keisuke Nishida  <knishida@coboler.com>
+
+	* Version 0.9.1 released.
+
+2002-01-25  Keisuke Nishida  <knishida@coboler.com>
+
+	* Version 0.9 released.
+
+
+Copyright 2002-2020 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification, are
+permitted provided the copyright notice and this notice are preserved.

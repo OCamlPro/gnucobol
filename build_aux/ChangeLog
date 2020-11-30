@@ -1,0 +1,125 @@
+
+2020-10-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* create_mingw_bindist.sh: completely revised, now also copying
+	  locales, usable from makefile, generating correct version info
+	  into generated docs + set_env.cmd, set_env.cmd with "drop exe"
+	  and double-click functionality, creating two output folders
+	  (dbg and stripped)
+
+2020-10-26  Simon Sobisch <simonsobisch@gnu.org>
+
+	* pre-inst-env.in: prefix instead of overwriting COB_CFLAGS,
+	  COB_LDFLAGS, COB_LIBS
+
+2020-06-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* compile, config.guess, config.sub, texinfo.tex:
+	  updated to recent version from
+	  https://git.savannah.gnu.org/cgit/gnulib.git/tree/build-aux/
+
+2020-05-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* pre-inst-env.in: portability update
+
+2019-07-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* create_mingw_bindist.sh: initial commit of script to generate binary
+	  distribution from MinGW environments
+	* create_win_dist.sh: moved from top_srcdir
+
+2019-05-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* bootstrap: only set executable bit for current user,
+	  suppress most error messages (that can also occur if
+	  execution rights are already available but we can't set them)
+
+2019-04-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* pre-inst-env.in: new file, for launching programs 
+	  from build directory, after Mathieu Lirzin (automake)
+
+2019-03-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* config.guess, config.sub, texinfo.tex:
+	  updated to recent version from
+	  https://git.savannah.gnu.org/cgit/gnulib.git/tree/build-aux/
+
+2019-02-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* bootstrap: additional user hints,
+	  reading GCMAINPATH to get clean main path (adjusted in autogen.sh)
+
+2018-11-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* bootstrap: added missing setting of LC_ALL for generating tarstamp.h,
+	  added parts (currently commented out) to update files in build-aux,
+	  refactoring
+
+2018-10-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* config.guess, config.sub, install-sh, texinfo.tex:
+	  updated to recent version from
+	  https://git.savannah.gnu.org/cgit/gnulib.git/tree/build-aux/
+
+2018-06-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* ltmain.sh [WIN32, !GCC]: local fix for libtool issue #109514 to
+	  support buildinf with configure using other Win32 compilers than MSC
+
+2018-02-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* bootstrap: ensure auxiliary scripts are executable before
+	  running autoconf; only create tarstamp.h if missing
+
+2017-12-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* bootstrap: ensure auxiliary scripts are executable
+
+2017-12-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* compile, config.guess, config.sub, depcomp, install-sh, mdate-sh,
+	  texinfo.tex: updated to recent version from
+	  https://git.savannah.gnu.org/cgit/gnulib.git/tree/build-aux/
+	* ylwrap, missing: updated to recent version from
+	  https://git.savannah.gnu.org/cgit/automake.git/tree/lib/
+	* missing: adjusted perl_URL and flex_URL
+
+2017-08-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* bootstrap: new script for creating missing files after checkout
+	* config.guess: updated to recent version
+
+2017-07-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* compile, config.guess, config.sub: updated to recent version from
+	  http://git.savannah.gnu.org/cgit/gnulib.git/tree/build-aux/
+	* texinfo.tex: updated from https://ftp.gnu.org/gnu/texinfo
+
+2017-04-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* ylwrap: updated to recent version from
+	  http://git.savannah.gnu.org/cgit/automake.git/tree/lib/ylwrap
+
+2016-08-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: updated to versions from automake 1.15
+	* ylwrap: added from automake 1.15
+	* config.sub, config.guess: updated to recent versions from
+	  git.savannah.gnu.org/gitweb/?p=config.git, backported support
+	  for "ancient" systems without uname(1)
+
+2015-07-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: moved additional build-scripts from rootdir to build_aux
+	* mdate-sh: added from automake 1.11.1
+	* config.sub, config.guess: updated to recent versions from
+	  git.savannah.gnu.org/gitweb/?p=config.git to solve build issues
+	  on different machines, but backported support for "ancient" systems
+	  without uname(1) [removed 2014-01-25] from old version
+
+
+Copyright 2015-2020 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification, are
+permitted provided the copyright notice and this notice are preserved.

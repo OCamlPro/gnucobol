@@ -1,0 +1,823 @@
+## Copyright (C) 2014-2020 Free Software Foundation, Inc.
+## Written by Simon Sobisch, Brian Tiffin
+##
+## This file is part of GnuCOBOL.
+##
+## The GnuCOBOL compiler is free software: you can redistribute it
+## and/or modify it under the terms of the GNU General Public License
+## as published by the Free Software Foundation, either version 3 of the
+## License, or (at your option) any later version.
+##
+## GnuCOBOL is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+
+### GnuCOBOL Test Suite
+
+
+## Note: cobc -c file / cobc --config=file
+##  and  cobcrun -c file / cobcrun --config=file
+##  are tested via configuration.at
+
+
+AT_SETUP([compiler help and information])
+AT_KEYWORDS([runmisc cobc])
+
+# FIXME: check at least some parts of the output by using $GREP
+AT_CHECK([$COBC --version], [0], [ignore], [])
+AT_CHECK([$COBC -v --version], [0], [ignore], [ignore])
+AT_CHECK([$COBC -q --version], [0], [ignore], [])
+AT_CHECK([$COBC --help], [0], [ignore], [])
+AT_CHECK([$COBC --info], [0], [ignore], [])
+AT_CHECK([$COBC -v --info], [0], [ignore], [])
+AT_CHECK([$COBC -q --info], [0], [ignore], [])
+AT_CHECK([$COBC --list-reserved], [0], [ignore], [])
+AT_CHECK([$COBC --list-registers], [0], [ignore], [])
+AT_CHECK([$COBC --list-intrinsics], [0], [ignore], [])
+AT_CHECK([$COBC --list-mnemonics], [0], [ignore], [])
+AT_CHECK([$COBC -std=mf --list-reserved], [0], [ignore], [])
+AT_CHECK([$COBC -std=acu --list-registers], [0], [ignore], [])
+AT_CHECK([$COBC -std=cobol2002 --list-intrinsics], [0], [ignore], [])
+AT_CHECK([$COBC -std=ibm --list-mnemonics], [0], [ignore], [])
+AT_CHECK([$COBC --list-system], [0], [ignore], [])
+AT_CLEANUP
+
+
+AT_SETUP([compiler warnings])
+AT_KEYWORDS([runmisc cobc warning])
+
+AT_DATA([prog.cob],[
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. prog.
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        77 var1    pic 9.
+        77 var2    pic 99.
+        PROCEDURE DIVISION.
+        PERFORM UNTIL 0 = 1
+           DISPLAY 'BLA'
+        END-PERFORM.
+        MOVE var1 to var2
+        MOVE var2 to var1
+        GOBACK.
+])
+AT_CHECK([$COBC -fsyntax-only prog.cob], [0], [], [])
+# increasing to more warnings
+AT_CHECK([$COBC -fsyntax-only -Wadditional prog.cob], [0], [],
+[prog.cob:9: warning: PERFORM FOREVER since UNTIL is always FALSE [[-Wadditional]]
+])
+AT_CHECK([$COBC -fsyntax-only -fno-diagnostics-show-option -Wadditional prog.cob], [0], [],
+[prog.cob:9: warning: PERFORM FOREVER since UNTIL is always FALSE
+])
+# which in this case is also included in -Wall
+AT_CHECK([$COBC -fsyntax-only -Wall prog.cob], [0], [],
+[prog.cob:9: warning: expression '0' EQUALS '1' is always FALSE [[-Wconstant-expression]]
+prog.cob:9: warning: PERFORM FOREVER since UNTIL is always FALSE [[-Wadditional]]
+])
+# -Wextra is more descriptive ...
+AT_CHECK([$COBC -fsyntax-only -Wextra prog.cob], [0], [],
+[prog.cob:9: warning: expression '0' EQUALS '1' is always FALSE [[-Wconstant-expression]]
+prog.cob:9: warning: PERFORM FOREVER since UNTIL is always FALSE [[-Wadditional]]
+prog.cob:10: warning: DISPLAY statement not terminated by END-DISPLAY [[-Wterminator]]
+prog.cob:13: warning: some digits may be truncated [[-Wpossible-truncate]]
+prog.cob:7: note: 'var2' defined here as PIC 99 [[-Wpossible-truncate]]
+prog.cob:6: note: 'var1' defined here as PIC 9 [[-Wpossible-truncate]]
+])
+# ... the old -W is in for backwards portability
+AT_CHECK([$COBC -fsyntax-only -W prog.cob], [0], [],
+[prog.cob:9: warning: expression '0' EQUALS '1' is always FALSE [[-Wconstant-expression]]
+prog.cob:9: warning: PERFORM FOREVER since UNTIL is always FALSE [[-Wadditional]]
+prog.cob:10: warning: DISPLAY statement not terminated by END-DISPLAY [[-Wterminator]]
+prog.cob:13: warning: some digits may be truncated [[-Wpossible-truncate]]
+prog.cob:7: note: 'var2' defined here as PIC 99 [[-Wpossible-truncate]]
+prog.cob:6: note: 'var1' defined here as PIC 9 [[-Wpossible-truncate]]
+])
+# a global "error" use implies no warning settings
+AT_CHECK([$COBC -fsyntax-only -Werror prog.cob], [0], [], [])
+# a concrete "error" use implies setting the warning
+AT_CHECK([$COBC -fsyntax-only -Werror=additional prog.cob], [1], [],
+[prog.cob:9: error: PERFORM FOREVER since UNTIL is always FALSE [[-Werror=additional]]
+])
+AT_CHECK([$COBC -fsyntax-only -fno-diagnostics-show-option -Werror=additional prog.cob], [1], [],
+[prog.cob:9: error: PERFORM FOREVER since UNTIL is always FALSE
+])
+# a "no-error" use implies nothing
+AT_CHECK([$COBC -fsyntax-only -Wno-error=additional prog.cob], [0], [], [])
+# ... now combined
+AT_CHECK([$COBC -fsyntax-only -Werror -Wno-error=additional prog.cob], [0], [], [])
+AT_CHECK([$COBC -fsyntax-only -Werror=additional -Wno-error prog.cob], [1], [],
+[prog.cob:9: error: PERFORM FOREVER since UNTIL is always FALSE [[-Werror=additional]]
+])
+AT_CHECK([$COBC -fsyntax-only -w -Werror=additional prog.cob], [1], [],
+[prog.cob:9: error: PERFORM FOREVER since UNTIL is always FALSE [[-Werror=additional]]
+])
+AT_CHECK([$COBC -fsyntax-only -w -Wadditional prog.cob], [0], [],
+[prog.cob:9: warning: PERFORM FOREVER since UNTIL is always FALSE [[-Wadditional]]
+])
+AT_CHECK([$COBC -fsyntax-only -w -Wpossible-truncate prog.cob], [0], [],
+[prog.cob:13: warning: some digits may be truncated [[-Wpossible-truncate]]
+prog.cob:7: note: 'var2' defined here as PIC 99 [[-Wpossible-truncate]]
+prog.cob:6: note: 'var1' defined here as PIC 9 [[-Wpossible-truncate]]
+])
+# TODO: unknown warnings should only get a diagnostic (in verbose mode)
+#AT_CHECK([$COBC -fsyntax-only -Wunknown-warning prog.cob], [0], [], [])
+#AT_CHECK([$COBC -fsyntax-only -Wno-unknown-warning prog.cob], [0], [], [])
+#AT_CHECK([$COBC -fsyntax-only -v -Wunknown-warning prog.cob], [0], [],
+#[cobc: unknown warning option 'unknown-warning'
+#])
+#AT_CHECK([$COBC -fsyntax-only -v -Wno-unknown-warning prog.cob], [0], [],
+#[cobc: unknown warning option 'unknown-warning'
+#])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 TEST-VAR PIC 9(2) VALUE 'A'.
+       COPY 'CRUD.CPY'.
+       PROCEDURE        DIVISION.
+           DISPLAY TEST-VAR NO ADVANCING
+           END-DISPLAY
+           MOVE 12 TO TEST-VAR
+           DISPLAY TEST-VAR NO ADVANCING
+           END-DISPLAY
+           STOP RUN.
+])
+
+AT_CHECK([$COBC -Wall -fsyntax-only prog2.cob], [1], [],
+[prog2.cob:7: error: CRUD.CPY: No such file or directory
+prog2.cob:6: warning: numeric value is expected [[-Wothers]]
+])
+
+AT_CHECK([$COBC -fsyntax-only -fmax-errors=0 prog2.cob], [97], [],
+[prog2.cob:7: error: CRUD.CPY: No such file or directory
+cobc: too many errors [[-fmax-errors=0]]
+
+cobc: aborting compile of prog2.cob at line 7 (unknown: unknown)
+])
+
+AT_CHECK([$COBC -fsyntax-only -Wfatal-errors prog2.cob], [97], [],
+[prog2.cob:7: error: CRUD.CPY: No such file or directory
+cobc: too many errors [[-Wfatal-errors]]
+
+cobc: aborting compile of prog2.cob at line 7 (unknown: unknown)
+])
+
+AT_CHECK([$COBC -q -Wfatal-errors=123 prog.cob], [1], [],
+[cobc: option '-Wfatal-errors' doesn't allow an argument
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([compiler outputs (general)])
+AT_KEYWORDS([runmisc cobc])
+
+AT_DATA([prog.cob],[
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. prog.
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 BLA PIC X(5) VALUE 'bluBb'.
+        PROCEDURE DIVISION.
+        DISPLAY BLA NO ADVANCING END-DISPLAY
+        STOP RUN.
+])
+
+AT_CHECK([$COBC -C prog.cob], [0], [ignore], [ignore])
+AT_CHECK([$COBC -v -c prog.c], [0], [ignore], [ignore])
+AT_CHECK([$COBC -v prog.$COB_OBJECT_EXT], [0], [ignore], [ignore])
+AT_CHECK([$COBCRUN prog], [0], [bluBb], [])
+AT_CHECK([$COBC -x -C prog.cob], [0], [ignore], [ignore])
+AT_CHECK([$COBC -v -x -c prog.c], [0], [ignore], [ignore])
+AT_CHECK([$COBC -v -x prog.$COB_OBJECT_EXT -o progo], [0], [ignore], [ignore])
+AT_CHECK([$COBCRUN_DIRECT ./progo], [0], [bluBb], [])
+AT_CHECK([$COBC -E prog.cob], [0],
+[#line 1 "prog.cob"
+
+ IDENTIFICATION DIVISION.
+ PROGRAM-ID. prog.
+ DATA DIVISION.
+ WORKING-STORAGE SECTION.
+ 01 BLA PIC X(5) VALUE 'bluBb'.
+ PROCEDURE DIVISION.
+ DISPLAY BLA NO ADVANCING END-DISPLAY
+ STOP RUN.
+], [])
+AT_CHECK([$COBC -E -o prog.i prog.cob], [0], [], [])
+AT_CHECK([$COBC -x prog.i], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [bluBb], [])
+AT_CLEANUP
+
+
+AT_SETUP([compiler outputs (file specified)])
+AT_KEYWORDS([runmisc cobc gen-c-line-directives gen-c-labels gen line labels])
+
+AT_DATA([prog.cob],[
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. prog.
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 BLA PIC X(5) VALUE 'bluBb'.
+        PROCEDURE DIVISION.
+        MAIN-PROC SECTION.
+        COPY PROC.
+        END-PROC  SECTION.
+        STOP RUN.
+])
+
+AT_CHECK([mkdir -p sub/copy], [0], [], [])
+
+AT_DATA([sub/copy/PROC.cpy],[
+        DISPLAY BLA NO ADVANCING.
+])
+
+AT_CHECK([$COBC -I sub/copy prog.cob -o prog.c], [0], [], [])
+AT_CHECK([$COBC -I sub/copy prog.c -o prog.$COB_OBJECT_EXT], [0], [], [])
+AT_CHECK([$COBC -I sub/copy prog.$COB_OBJECT_EXT -o prog])
+AT_CHECK([$COBCRUN prog], [0], [bluBb], [])
+AT_CHECK([$COBC -I sub/copy -x prog.cob -o prog.c], [0], [], [])
+AT_CHECK([$COBC -I sub/copy -x prog.c -o prog.$COB_OBJECT_EXT], [0], [], [])
+AT_CHECK([$COBC -I sub/copy -x prog.$COB_OBJECT_EXT -o progo$COB_EXE_EXT], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./progo], [0], [bluBb], [])
+# making the extension explicit here to not let case-insensitive file-systems catch a .CPY...
+AT_CHECK([$COBC -I sub/copy prog.cob -ext=cpy -o prog.i], [0], [], [])
+AT_CHECK([$COBC -x prog.i -o prog$COB_EXE_EXT], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog$COB_EXE_EXT], [0], [bluBb], [])
+AT_CHECK([$COBC -x prog.i -fgen-c-line-directives -fgen-c-labels -save-temps], [0], [], [])
+AT_CHECK([grep 'prog.i'   prog.c], [0], ignore, [])
+AT_CHECK([grep 'prog.i'   prog.c | grep '#line'], [1], ignore, ignore)
+# TODO revisit later (comparing with 3.1):
+#AT_CHECK([grep 'prog.cob' prog.c | grep '#line'], [0], ignore, [])
+#AT_CHECK([grep 'PROC.cpy' prog.c | grep '#line'], [0], ignore, [])
+AT_CHECK([grep 'ENTRY_PROG:'        prog.c], [0], ignore, [])
+AT_CHECK([grep 'SECTION_END__PROC:' prog.c], [0], ignore, [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [bluBb], [])
+AT_CLEANUP
+
+
+AT_SETUP([compiler outputs (path specified)])
+AT_KEYWORDS([runmisc cobc])
+
+AT_DATA([prog.cob],[
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. prog.
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 BLA PIC X(5) VALUE 'bluBb'.
+        PROCEDURE DIVISION.
+        DISPLAY BLA NO ADVANCING END-DISPLAY
+        STOP RUN.
+])
+
+AT_CHECK([mkdir -p sub], [0], [], [])
+AT_CHECK([$COBC prog.cob -o sub/prog.c], [0], [], [])
+AT_CHECK([$COBC $(_return_path "sub/prog.c") -o $(_return_path "sub/prog.$COB_OBJECT_EXT")], [0], [], [])
+AT_CHECK([$COBC $(_return_path "sub/prog.$COB_OBJECT_EXT") -o $(_return_path "sub/prog")])
+AT_CHECK([$COBCRUN -M $(_return_path "sub/") prog], [0], [bluBb], [])
+AT_CHECK([$COBC -x prog.cob -o $(_return_path "sub/prog.c")], [0], [], [])
+AT_CHECK([$COBC -x $(_return_path "sub/prog.c") -o $(_return_path "sub/prog.$COB_OBJECT_EXT")], [0], [], [])
+AT_CHECK([$COBC -x $(_return_path "sub/prog.$COB_OBJECT_EXT") -o $(_return_path "sub/progo$COB_EXE_EXT")])
+AT_CHECK([$COBCRUN_DIRECT ./sub/progo], [0], [bluBb], [])
+AT_CHECK([$COBC prog.cob -o $(_return_path "sub/prog.i")], [0], [], [])
+AT_CHECK([$COBC -x sub/prog.i -o $(_return_path "sub/prog$COB_EXE_EXT")], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./sub/prog], [0], [bluBb], [])
+AT_CLEANUP
+
+
+AT_SETUP([compiler outputs (assembler)])
+AT_KEYWORDS([runmisc cobc])
+
+AT_DATA([prog.cob],[
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. prog.
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 BLA PIC X(5) VALUE 'bluBb'.
+        PROCEDURE DIVISION.
+        DISPLAY BLA NO ADVANCING END-DISPLAY
+        STOP RUN.
+])
+
+AT_CHECK([$COBC -v -S prog.cob], [0], [ignore], [ignore])
+AT_CHECK([test -f prog.s], [0], [], [],
+# Previous test "failed" --> prog.s not available --> likely a VS build
+# only check for file as cl.exe cannot create executables from self-created
+# assembler sources
+[AT_CHECK([test -f prog.asm], [0], [], [])],
+# Previous test "passed" --> prog.s is available, test compilation and run
+[AT_CHECK([$COBC -v prog.s], [0], [ignore], [ignore])
+ AT_CHECK([$COBCRUN prog], [0], [bluBb], [])])
+AT_CHECK([$COBC -v -x -S prog.cob], [0], [ignore], [ignore])
+AT_CHECK([test -f prog.s], [0], [], [],
+# Previous test "failed" --> prog.s not available --> likely a VS build
+# only check for file as cl.exe cannot create executables from self-created
+# assembler sources
+[AT_CHECK([test -f prog.asm], [0], [], [])],
+# Previous test "passed" --> prog.s is available, test compilation and run
+[AT_CHECK([$COBC -v -x prog.s], [0], [ignore], [ignore])
+ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [bluBb], [])])
+AT_CLEANUP
+
+
+AT_SETUP([source file not found])
+AT_KEYWORDS([cobc runmisc])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[cobc: prog.cob: No such file or directory
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([temporary path invalid])
+AT_KEYWORDS([cobc runmisc])
+
+# Note: may be either removed completely as there was a report about
+#       this test "failing" - or skipped as this very often fails for
+#       WIN32 builds
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           DISPLAY "OK" NO ADVANCING
+           END-DISPLAY.
+           EXIT PROGRAM.
+])
+
+AT_CHECK([TMPDIR="" TMP="notthere" TEMP="" $COMPILE prog.cob], [0], [],
+[libcob: warning: Temporary directory TMP is invalid, adjust TMPDIR!
+])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
+AT_CHECK([TMPDIR="" TMP="" TEMP="./prog.cob" $COMPILE prog.cob], [0], [],
+[libcob: warning: Temporary directory TEMP is invalid, adjust TMPDIR!
+])
+# TMPDIR is only checked when actually needed which is currently only the case
+# for SORT
+#AT_CHECK([TMPDIR="./prog.cob" $COBCRUN_DIRECT ./prog], [0], [OK],
+#[libcob: warning: Temporary directory TEMP is invalid, adjust TMPDIR!
+#])
+#AT_CHECK([COB_DISABLE_WARNINGS=1 TMPDIR="./prog.cob" $COBCRUN_DIRECT ./prog], [0], [OK],
+#[libcob: warning: Temporary directory TEMP is invalid, adjust TMPDIR!
+#])
+
+AT_CLEANUP
+
+
+AT_SETUP([use of full path for cobc])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           DISPLAY "OK" NO ADVANCING
+           END-DISPLAY.
+           EXIT PROGRAM.
+])
+
+AT_CHECK([$COMPILE "$(_return_path "$(pwd)/prog.cob")"], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([C Compiler optimizations])
+AT_KEYWORDS([runmisc cobc optimization])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           DISPLAY "OK" NO ADVANCING
+           END-DISPLAY.
+           EXIT PROGRAM.
+])
+
+AT_CHECK([$COMPILE -v -O  -o prog  prog.cob], [0], [ignore], [ignore])
+AT_CHECK([$COBCRUN_DIRECT ./prog],  [0], [OK], [])
+
+AT_CHECK([$COMPILE -v -O2 -o prog2 prog.cob], [0], [ignore], [ignore])
+AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [OK], [])
+
+AT_CHECK([$COMPILE -v -Os -o progs prog.cob], [0], [ignore], [ignore])
+AT_CHECK([$COBCRUN_DIRECT ./progs], [0], [OK], [])
+
+AT_CHECK([$COMPILE -v -O3 -o prog3 prog.cob], [0], [ignore], [ignore])
+AT_CHECK([$COBCRUN_DIRECT ./prog3], [0], [OK], [])
+
+AT_CHECK([$COMPILE -v -O0  -o prog  prog.cob], [0], [ignore], [ignore])
+AT_CHECK([$COBCRUN_DIRECT ./prog],  [0], [OK], [])
+
+# last test with O2 (strips output) and output name
+AT_CHECK([mkdir -p sub], [0], [], [])
+AT_CHECK([$COMPILE_MODULE -v -O2 -o $(_return_path "sub/prog") prog.cob], [0], [ignore], [ignore])
+AT_CHECK([$COBCRUN -M sub/ prog],  [0], [OK], [])
+AT_CHECK([$COMPILE -v -O2 -o $(_return_path "sub/prog$COB_EXE_EXT") prog.cob], [0], [ignore], [ignore])
+AT_CHECK([$COBCRUN_DIRECT ./sub/prog],  [0], [OK], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([invalid cobc option])
+AT_KEYWORDS([runmisc cobc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+])
+
+# normal option
+AT_CHECK([$COMPILE -q --thisoptiondoesntexist prog.cob], [1], [],
+[cobc: unrecognized option '--thisoptiondoesntexist'
+])
+# flag
+AT_CHECK([$COMPILE -q -flagdoesntexist prog.cob], [1], [],
+[cobc: unrecognized option '-flagdoesntexist'
+])
+# warning
+AT_CHECK([$COMPILE -q -Wdoesntexist prog.cob], [1], [],
+[cobc: unrecognized option '-Wdoesntexist'
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([cobcrun help and information])
+AT_KEYWORDS([runmisc cobcrun])
+
+# FIXME: check at least some parts of the output by using $GREP
+AT_CHECK([$COBCRUN --version], [0], [ignore], [])
+AT_CHECK([$COBCRUN -v --version], [0], [ignore], [])
+AT_CHECK([$COBCRUN -q --version], [0], [ignore], [])
+AT_CHECK([$COBCRUN --help], [0], [ignore], [])
+AT_CHECK([$COBCRUN --info], [0], [ignore], [])
+AT_CHECK([$COBCRUN -v --info], [0], [ignore], [])
+AT_CHECK([$COBCRUN -q --info], [0], [ignore], [])
+AT_CLEANUP
+
+
+AT_SETUP([cobcrun validation])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([callee.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      callee.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 WRK-VAR       PIC X(5).
+       01 EXT-VAR       PIC X(5) EXTERNAL.
+       PROCEDURE        DIVISION.
+           DISPLAY EXT-VAR NO ADVANCING
+           END-DISPLAY.
+           MOVE "World" TO EXT-VAR.
+           EXIT PROGRAM.
+])
+
+AT_DATA([caller.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      caller.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 EXT-VAR       PIC X(5) EXTERNAL.
+       01 WRK-VAR       PIC X(5).
+       PROCEDURE        DIVISION.
+           MOVE "Hello" TO EXT-VAR.
+           CALL "callee"
+           END-CALL.
+           DISPLAY EXT-VAR NO ADVANCING
+           END-DISPLAY.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
+AT_CHECK([$COMPILE_MODULE caller.cob], [0], [], [])
+AT_CHECK([$COBCRUN caller], [0], [HelloWorld], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([cobcrun -M DSO entry argument])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([callee.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      callee.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 EXT-VAR       PIC X(5) EXTERNAL.
+       PROCEDURE        DIVISION.
+           DISPLAY EXT-VAR END-DISPLAY.
+           MOVE "World" TO EXT-VAR.
+           EXIT PROGRAM.
+])
+
+AT_DATA([caller.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      caller.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 EXT-VAR       PIC X(5) EXTERNAL.
+       PROCEDURE        DIVISION.
+           MOVE "Hello" TO EXT-VAR.
+           CALL "callee" END-CALL.
+           DISPLAY EXT-VAR END-DISPLAY.
+           STOP RUN.
+       END PROGRAM caller.
+
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      inside.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 EXT-VAR       PIC X(5) EXTERNAL.
+       01 CLA-VAR       PIC X(5).
+       PROCEDURE        DIVISION.
+           MOVE "Aloha" TO EXT-VAR.
+           CALL "callee" END-CALL.
+           DISPLAY EXT-VAR END-DISPLAY.
+           ACCEPT CLA-VAR FROM COMMAND-LINE END-ACCEPT.
+           DISPLAY CLA-VAR END-DISPLAY.
+           STOP RUN.
+       END PROGRAM inside.
+])
+
+AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
+AT_CHECK([$COMPILE_MODULE caller.cob], [0], [], [])
+AT_CHECK([$COBCRUN -M ./caller inside again], [0],
+[Aloha
+World
+again
+], [])
+
+AT_CLEANUP
+
+
+## FIXME: missing tests:
+## * combining $COBCRUN -M with COB_PRE_LOAD / COB_LIBRARY_PATH
+## * $COBCRUN -m
+
+
+AT_SETUP([cobcrun -M directory/ default])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([callee.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      callee.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 EXT-VAR       PIC X(5) EXTERNAL.
+       PROCEDURE        DIVISION.
+           DISPLAY EXT-VAR END-DISPLAY.
+           MOVE "World" TO EXT-VAR.
+           EXIT PROGRAM.
+])
+
+AT_DATA([caller.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      caller.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 EXT-VAR       PIC X(5) EXTERNAL.
+       PROCEDURE        DIVISION.
+           MOVE "Hello" TO EXT-VAR.
+           CALL "callee" END-CALL.
+           DISPLAY EXT-VAR END-DISPLAY.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
+AT_CHECK([$COMPILE_MODULE caller.cob], [0], [], [])
+AT_CHECK([$COBCRUN -M ./ caller], [0],
+[Hello
+World
+], [])
+
+
+AT_CLEANUP
+
+
+AT_SETUP([cobcrun -M directory/dso alternate])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([callee.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      callee.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 EXT-VAR       PIC X(5) EXTERNAL.
+       PROCEDURE        DIVISION.
+           DISPLAY EXT-VAR END-DISPLAY.
+           MOVE "World" TO EXT-VAR.
+           EXIT PROGRAM.
+])
+
+AT_DATA([caller.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      caller.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 EXT-VAR       PIC X(5) EXTERNAL.
+       PROCEDURE        DIVISION.
+           MOVE "Hello" TO EXT-VAR.
+           CALL "callee" END-CALL.
+           DISPLAY EXT-VAR END-DISPLAY.
+           STOP RUN.
+       END PROGRAM caller.
+
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      inside.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 EXT-VAR       PIC X(5) EXTERNAL.
+       PROCEDURE        DIVISION.
+           MOVE "Aloha" TO EXT-VAR.
+           CALL "callee" END-CALL.
+           DISPLAY EXT-VAR END-DISPLAY.
+           STOP RUN.
+       END PROGRAM inside.
+])
+
+AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
+AT_CHECK([$COMPILE_MODULE caller.cob], [0], [], [])
+AT_CHECK([$COBCRUN -M ./caller inside], [0],
+[Aloha
+World
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([cobcrun -M DSO entry multiple arguments])
+AT_KEYWORDS([runmisc])
+
+# Test that modules can be called with ARGUMENT-VALUES
+AT_DATA([called.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      called.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 CLI-ARGS      PIC X(27).
+       01 ARG-TWO       PIC X(6).
+       PROCEDURE        DIVISION.
+           ACCEPT CLI-ARGS FROM COMMAND-LINE END-ACCEPT.
+           DISPLAY 2 UPON ARGUMENT-NUMBER END-DISPLAY.
+           ACCEPT ARG-TWO FROM ARGUMENT-VALUE END-ACCEPT.
+           DISPLAY CLI-ARGS ":" ARG-TWO END-DISPLAY.
+           EXIT PROGRAM.
+])
+
+AT_DATA([mainer.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      mainer.
+       PROCEDURE        DIVISION.
+           STOP RUN.
+       END PROGRAM mainer.
+])
+
+AT_CHECK([$COBC -b ${FLAGS} mainer.cob called.cob], [0], [], [])
+AT_CHECK([$COBCRUN -M ./mainer called "first argument" "second" "third"], [0],
+[first argument second third:second
+], [])
+
+# additional test with environment configuration settings removed:
+AT_CHECK([unset COB_PRE_LOAD COB_LIBRARY_PATH ; \
+   $COBCRUN -M ./mainer called "first argument" "second" "third"], [0],
+[first argument second third:second
+], [])
+
+# additional test with showing the preloaded environment
+# FIXME: check at least some parts of the output ("configuration" and the expected output) by using $GREP
+AT_CHECK([$COBCRUN -M ./mainer --runtime-conf called "first argument" "second" "third"], [0],
+[ignore], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([cobcrun error messages])
+AT_KEYWORDS([runmisc])
+
+AT_CHECK([$COBCRUN -q], [1], [],
+[cobcrun: missing PROGRAM name
+Try 'cobcrun --help' for more information.
+])
+AT_CHECK([$COBCRUN -q -prog], [1], [],
+[cobcrun: unrecognized option '-prog'
+])
+AT_CHECK([$COBCRUN noprog], [1], [],
+[libcob: error: module 'noprog' not found
+])
+AT_CHECK([$COBCRUN -q -M], [1], [],
+[cobcrun: option requires an argument -- 'M'
+])
+# FIXME - The following doesn't seem to work correct,
+#         we expect an error about missing module name
+#AT_CHECK([$COBCRUN -q -M noprog], [1], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([run job after compilation])
+AT_KEYWORDS([runmisc cobcrun])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       PROCEDURE        DIVISION.
+           DISPLAY "job" WITH NO ADVANCING END-DISPLAY
+           STOP RUN WITH NORMAL STATUS.
+])
+
+AT_CHECK([$COMPILE -jd prog.cob], [0], [job], [])
+AT_CHECK([$COMPILE_MODULE -jd prog.cob], [0], [job], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([run job after compilation (path specified)])
+AT_KEYWORDS([runmisc cobcrun])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       PROCEDURE        DIVISION.
+           DISPLAY "job" WITH NO ADVANCING END-DISPLAY
+           STOP RUN WITH NORMAL STATUS.
+])
+
+AT_CHECK([mkdir -p sub], [0], [], [])
+AT_CHECK([$COMPILE_MODULE -jd -o $(_return_path "sub/prog") prog.cob], [0], [job], [])
+AT_CHECK([$COMPILE -jd -o $(_return_path "sub/prog$COB_EXE_EXT") prog.cob], [0], [job], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([run job with optional arguments])
+AT_KEYWORDS([runmisc cobcrun])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 CLI           PIC X(8).
+       PROCEDURE        DIVISION.
+           ACCEPT CLI FROM COMMAND-LINE
+           DISPLAY CLI WITH NO ADVANCING END-DISPLAY
+           STOP RUN WITH NORMAL STATUS.
+])
+
+AT_CHECK([$COMPILE -j="job 123" prog.cob], [0], [job 123 ], [])
+AT_CHECK([$COMPILE -jdg prog.cob], [0], [        ], [])
+AT_CHECK([$COMPILE_MODULE --job=job123 prog.cob], [0], [job123  ], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([compile from stdin])
+AT_KEYWORDS([runmisc cobc cobcrun])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      a.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       PROCEDURE        DIVISION.
+           STOP RUN WITH NORMAL STATUS.
+])
+
+AT_CHECK([cat prog.cob | $COMPILE -], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./a.out], [0], [], [])
+
+AT_CHECK([cat prog.cob | $COMPILE_MODULE -], [0], [], [])
+AT_CHECK([$COBCRUN a], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([run job after compilation from stdin])
+AT_KEYWORDS([runmisc cobc cobcrun])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      a.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       PROCEDURE        DIVISION.
+           DISPLAY "job" WITH NO ADVANCING END-DISPLAY
+           STOP RUN WITH NORMAL STATUS.
+])
+
+AT_CHECK([cat prog.cob | $COMPILE -j -], [0], [job], [])
+AT_CHECK([cat prog.cob | $COMPILE_MODULE -j -], [0], [job], [])
+
+AT_CLEANUP

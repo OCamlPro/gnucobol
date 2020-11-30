@@ -1,0 +1,6346 @@
+# Serbian translation for gnucobol.
+# Copyright © 2020 Free Software Foundation, Inc.
+# This file is distributed under the same license as the gnucobol package.
+# Мирослав Николић <miroslavnikolic@rocketmail.com>, 2020.
+msgid ""
+msgstr ""
+"Project-Id-Version: gnucobol-3.1-rc1\n"
+"Report-Msgid-Bugs-To: gnucobol-messages@gnu.org\n"
+"POT-Creation-Date: 2020-06-11 17:54+0200\n"
+"PO-Revision-Date: 2020-10-15 10:30+0200\n"
+"Last-Translator: Мирослав Николић <miroslavnikolic@rocketmail.com>\n"
+"Language-Team: Serbian <(nothing)>\n"
+"Language: sr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+
+#: cobc/cobc.c:97
+#, c-format
+msgid "invalid parameter: %s"
+msgstr "неисправан параметар: %s"
+
+#: cobc/cobc.c:152 cobc/cobc.c:2032 cobc/cobc.c:2035 cobc/cobc.c:3827
+#: cobc/parser.y:838 cobc/reserved.c:3791 libcob/common.c:212
+#: libcob/common.c:776 libcob/common.c:1815 libcob/common.c:1819
+#: libcob/common.c:1851 libcob/common.c:1895 libcob/common.c:2092
+#: libcob/common.c:4741 libcob/common.c:6361 libcob/common.c:7322
+#: libcob/common.c:8133 libcob/common.c:8212
+msgid "unknown"
+msgstr "непознато"
+
+#: cobc/cobc.c:901
+msgid "too many errors"
+msgstr "превише грешака"
+
+#: cobc/cobc.c:913
+msgid "internal compiler error"
+msgstr "унутрашња грешка преводиоца"
+
+#: cobc/cobc.c:979 cobc/cobc.c:1066 cobc/cobc.c:1126 cobc/cobc.c:1202
+#: cobc/cobc.c:1242 cobc/cobc.c:1318
+#, c-format
+msgid "cannot allocate %d bytes of memory"
+msgstr "не могу да доделим %d бајта меморије"
+
+#: cobc/cobc.c:992 cobc/cobc.c:1008 cobc/cobc.c:1028 cobc/cobc.c:1086
+#: cobc/cobc.c:1104 cobc/cobc.c:1222 cobc/cobc.c:1337 cobc/cobc.c:1354
+#: cobc/field.c:1965 libcob/common.c:7149
+#, c-format
+msgid "call to %s with NULL pointer"
+msgstr "позив за „%s“ са НИШТАВНИМ показивачем"
+
+#: cobc/cobc.c:1049
+#, c-format
+msgid "cannot reallocate %d bytes of memory"
+msgstr "не могу поново да доделим %d бајта меморије"
+
+#: cobc/cobc.c:1143 cobc/cobc.c:1259
+msgid "attempt to reallocate non-allocated memory"
+msgstr "покушавам да поново доделим не-додељену меморију"
+
+#: cobc/cobc.c:1176 cobc/cobc.c:1292
+#, c-format
+msgid "call to %s with invalid pointer, as it is missing in list"
+msgstr "позив за „%s“ са неисправним показивачем, јер недостаје на списку"
+
+#: cobc/cobc.c:1465
+#, c-format
+msgid "assuming literal for unquoted '%s'"
+msgstr "подразумевам словност за нецитирано „%s“"
+
+#: cobc/cobc.c:1512
+msgid " - length exceeds maximum"
+msgstr " – дужина превазилази максимум"
+
+#: cobc/cobc.c:1516
+msgid " - name cannot be empty"
+msgstr " – назив не може бити празан"
+
+#: cobc/cobc.c:1519
+msgid " - name cannot begin with space or underscore"
+msgstr " – назив не може почети празнином или подвлаком"
+
+#: cobc/cobc.c:1522
+msgid " - name cannot begin with 'cob_' or 'COB_'"
+msgstr " – назив не може почети са „cob_“ или „COB_“"
+
+#: cobc/cobc.c:1525
+msgid " - name duplicates a 'C' keyword"
+msgstr " – назив удвостручава „C“ кључну реч"
+
+#: cobc/cobc.c:1528
+msgid " - name cannot contain a directory separator"
+msgstr " – назив не може да садржи раздвојник директоријума"
+
+#: cobc/cobc.c:1537
+#, c-format
+msgid "invalid file base name '%s'%s"
+msgstr "неисправан назив датотеке основе „%s“%s"
+
+#: cobc/cobc.c:1541
+#, c-format
+msgid "invalid ENTRY '%s'%s"
+msgstr "неисправан ENTRY „%s“%s"
+
+#: cobc/cobc.c:1544
+#, c-format
+msgid "invalid PROGRAM-ID '%s'%s"
+msgstr "неисправан PROGRAM-ID „%s“%s"
+
+#
+# This error message is issued when an environment variable has not been
+# set, it it needs to be.
+#
+#       $Name           The name of the offending environment variable.
+#
+# For consistent translation, here is the English text:
+#  msgstr "environment variable \"$name\" not set"
+# Please translate the English msgstr, not the msgid.
+#: cobc/cobc.c:1671 cobc/cobc.c:8150
+msgid "please check environment variables as noted above"
+msgstr "проверите променљиве окружења као што је напоменуто изнад"
+
+#: cobc/cobc.c:1683 cobc/error.c:254 cobc/error.c:274 cobc/error.c:505
+#: cobc/error.c:528
+msgid "error: "
+msgstr "грешка: "
+
+#: cobc/cobc.c:1706
+#, c-format
+msgid "duplicate DEFINE '%s' - ignored"
+msgstr "удвостручено DEFINE „%s“ – занемарено"
+
+#: cobc/cobc.c:1758
+#, c-format
+msgid "environment variable '%s' is '%s'; should not contain '%c'"
+msgstr "променљива окружења „%s“ је „%s“; не треба да садржи „%c“"
+
+#: cobc/cobc.c:1787
+msgid "parameter buffer size exceeded"
+msgstr "величина међумеморије параметра је превазиђена"
+
+#: cobc/cobc.c:1827
+#, c-format
+msgid "warning: could not move temporary file to %s"
+msgstr "упозорење: не могу да преместим привремену датотеку у „%s“"
+
+#: cobc/cobc.c:2038
+#, c-format
+msgid "aborting codegen for %s (%s: %s)"
+msgstr "прекидам „codegen“ за „%s“ (%s: %s)"
+
+#: cobc/cobc.c:2041
+#, c-format
+msgid "aborting compile of %s at line %d (%s: %s)"
+msgstr "прекидам превођење „%s“ у реду %d (%s: %s)"
+
+#: cobc/cobc.c:2045
+msgid "aborting"
+msgstr "прекидам"
+
+#: cobc/cobc.c:2068 cobc/cobc.c:2103 libcob/common.c:7105 libcob/fileio.c:775
+#: libcob/fileio.c:2975 libcob/numeric.c:1603 bin/cobcrun.c:351
+msgid "Please report this!"
+msgstr "Пријавите ово, не било вам тешко!"
+
+#: cobc/cobc.c:2121 bin/cobcrun.c:107
+msgid "License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>"
+msgstr "Дозвола ОЈЛи3+: Гнуова ОЈЛ издање 3 или касније <https://gnu.org/licenses/gpl.html>"
+
+#: cobc/cobc.c:2122 libcob/common.c:7549 bin/cobcrun.c:108
+msgid ""
+"This is free software; see the source for copying conditions.  There is NO\n"
+"warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
+msgstr ""
+"Ово је слободан софтвер; погледајте изворе за услове копирања.  Нема БИЛО КАКВЕ\n"
+"ГАРАНЦИЈЕ; чак ни за КОМЕРЦИЈАЛНУ ВРЕДНОСТ или ИСПУЊАВАЊЕ ОДРЕЂЕНЕ ПОТРЕБЕ."
+
+#: cobc/cobc.c:2124 libcob/common.c:7551 bin/cobcrun.c:110
+#, c-format
+msgid "Written by %s\n"
+msgstr "Написао је %s\n"
+
+#. TRANSLATORS: This msgid is intended as the "Packaged" msgid, %s expands to date and time
+#: cobc/cobc.c:2125 cobc/cobc.c:2138 libcob/common.c:7554 bin/cobcrun.c:111
+#, c-format
+msgid "Built     %s"
+msgstr "Изградња    %s"
+
+#. TRANSLATORS: This msgid is intended as the "Built" msgid, %s expands to date and time
+#: cobc/cobc.c:2127 cobc/cobc.c:2140 libcob/common.c:7557 bin/cobcrun.c:113
+#, c-format
+msgid "Packaged  %s"
+msgstr "Запаковао је %s"
+
+#: cobc/cobc.c:2129 cobc/cobc.c:2142
+#, c-format
+msgid "C version %s%s"
+msgstr "Ц издање %s%s"
+
+#: cobc/cobc.c:2155
+msgid "executing:"
+msgstr "извршавам:"
+
+#: cobc/cobc.c:2157
+msgid "to be executed:"
+msgstr "биће извршено:"
+
+#: cobc/cobc.c:2195 cobc/cobc.c:2196 libcob/common.c:5857 libcob/common.c:5858
+#: libcob/common.c:5889 libcob/common.c:5890
+msgid "env"
+msgstr "окр"
+
+#: cobc/cobc.c:2231 libcob/common.c:7590
+msgid "build information"
+msgstr "подаци о изградњи"
+
+#: cobc/cobc.c:2232 libcob/common.c:7591
+msgid "build environment"
+msgstr "окружење изградње"
+
+#: cobc/cobc.c:2242 libcob/common.c:7602
+msgid "GnuCOBOL information"
+msgstr "Подаци о ГнуКоболу"
+
+#: cobc/cobc.c:2283 cobc/cobc.c:2301 libcob/common.c:6402 libcob/common.c:7352
+#: libcob/common.c:7359 libcob/common.c:7624 libcob/common.c:7642
+msgid "yes"
+msgstr "да"
+
+#: cobc/cobc.c:2285 cobc/cobc.c:2303 libcob/common.c:6404 libcob/common.c:7354
+#: libcob/common.c:7626 libcob/common.c:7644
+msgid "no"
+msgstr "не"
+
+#: cobc/cobc.c:2289 libcob/common.c:7630
+msgid "8 bytes"
+msgstr "8 бајта"
+
+#: cobc/cobc.c:2291 libcob/common.c:7632
+msgid "4 bytes"
+msgstr "4 бајта"
+
+#: cobc/cobc.c:2295 cobc/cobc.c:2297 libcob/common.c:7636 libcob/common.c:7638
+msgid "endianness"
+msgstr "крајњост"
+
+#: cobc/cobc.c:2295 libcob/common.c:7636
+msgid "big-endian"
+msgstr "велика крајњост"
+
+#: cobc/cobc.c:2297 libcob/common.c:7638
+msgid "little-endian"
+msgstr "мала крајњост"
+
+#: cobc/cobc.c:2301 cobc/cobc.c:2303 libcob/common.c:7642 libcob/common.c:7644
+msgid "native EBCDIC"
+msgstr "изворни EBCDIC"
+
+#: cobc/cobc.c:2306 libcob/common.c:7647
+msgid "extended screen I/O"
+msgstr "проширени У/И екрана"
+
+#: cobc/cobc.c:2309 libcob/common.c:7652
+msgid "variable file format"
+msgstr "променљиви формат датотеке"
+
+#: cobc/cobc.c:2315 cobc/cobc.c:2317 libcob/common.c:7658 libcob/common.c:7660
+msgid "sequential file handler"
+msgstr "секвенцијални руковалац датотеком"
+
+#: cobc/cobc.c:2317 libcob/common.c:7660
+msgid "built-in"
+msgstr "уграђено"
+
+#: cobc/cobc.c:2321 cobc/cobc.c:2323 cobc/cobc.c:2325 cobc/cobc.c:2327
+#: cobc/cobc.c:2330 cobc/cobc.c:2332 cobc/cobc.c:2335 libcob/common.c:7664
+#: libcob/common.c:7678 libcob/common.c:7680 libcob/common.c:7682
+#: libcob/common.c:7685 libcob/common.c:7687 libcob/common.c:7690
+msgid "ISAM file handler"
+msgstr "руковалац ISAM датотеке"
+
+#: cobc/cobc.c:2335 cobc/cobc.c:2347 cobc/cobc.c:2353 libcob/common.c:7362
+#: libcob/common.c:7584 libcob/common.c:7585 libcob/common.c:7620
+#: libcob/common.c:7690 libcob/common.c:7714 libcob/common.c:7732
+msgid "disabled"
+msgstr "искључено"
+
+#: cobc/cobc.c:2339 cobc/cobc.c:2341 libcob/common.c:7696
+msgid "mathematical library"
+msgstr "математичка библиотека"
+
+#: cobc/cobc.c:2345 cobc/cobc.c:2347 libcob/common.c:7707 libcob/common.c:7714
+msgid "XML library"
+msgstr "библиотека XML"
+
+#: cobc/cobc.c:2351 cobc/cobc.c:2353 libcob/common.c:7730 libcob/common.c:7732
+msgid "JSON library"
+msgstr "библиотека JSON"
+
+#: cobc/cobc.c:2360
+msgid "only one of options 'E', 'S', 'C', 'c' may be specified"
+msgstr "може бити наведена само једна од опција E, S, C или c"
+
+#: cobc/cobc.c:2366
+msgid "only one of options 'm', 'x', 'b' may be specified"
+msgstr "може бити наведена само једна од опција m, x или b"
+
+#: cobc/cobc.c:2396
+#, c-format
+msgid "-fdump= requires one of 'ALL', 'FD', 'WS', 'LS', 'RD', 'FD', 'SC' not '%s'"
+msgstr "„-fdump=“ zahteva ALL, FD, WS, LS, RD, FD, SC a ne „%s“"
+
+#: cobc/cobc.c:2421
+#, c-format
+msgid "'%s' is not an intrinsic function"
+msgstr "„%s“ није суштинска функција"
+
+#: cobc/cobc.c:2463 cobc/cobc.c:7507 cobc/cobc.c:7621 cobc/codegen.c:3656
+#: cobc/codegen.c:3774 cobc/codegen.c:5048 cobc/codegen.c:11960
+#: cobc/tree.c:3997 cobc/tree.c:4544 cobc/tree.c:4789 cobc/typeck.c:3058
+#: cobc/typeck.c:7441 cobc/typeck.c:7476 cobc/typeck.c:8291
+#: cobc/typeck.c:10832 cobc/typeck.c:11117 cobc/typeck.c:11160
+#, c-format
+msgid "call to '%s' with invalid parameter '%s'"
+msgstr "позив ка „%s“ са неисправним параметром „%s“"
+
+#: cobc/cobc.c:2763
+msgid "loading standard configuration file 'default.conf'"
+msgstr "учитавам стандардну датотеку подешавања „default.conf“"
+
+#: cobc/cobc.c:2897
+msgid "invalid output file name"
+msgstr "неисправан назив излазне датотеке"
+
+#: cobc/cobc.c:3001
+#, c-format
+msgid "warning: '%s' is not a directory, defaulting to current directory"
+msgstr "упозорење: „%s“ није директоријум, пребацујем се на текући директоријум"
+
+#: cobc/cobc.c:3028
+#, c-format
+msgid "warning: %d lines per listing page specified, using %d"
+msgstr "упозорење: наведено је %d редова по страници списка, користим %d"
+
+#: cobc/cobc.c:3078
+#, c-format
+msgid "warning: assuming '%s' is a DEFINE - did you intend to use -debug?"
+msgstr "упозорење: подразумевам да је „%s“ DEFINE – да ли сте хтели да користите „-debug“?"
+
+#: cobc/cobc.c:3321
+#, c-format
+msgid "unknown warning option '%s'"
+msgstr "непозната опција упозорења: %s"
+
+#: cobc/cobc.c:3373
+#, c-format
+msgid "%s option requires a listing file"
+msgstr "%s опција захтева датотеку списка"
+
+#: cobc/cobc.c:3380
+msgid "output to stdout only valid for preprocess"
+msgstr "излаз на стандардни излаз је важећи само за предпроцес"
+
+#: cobc/cobc.c:3458
+msgid "all runtime checks are enabled"
+msgstr "све провере времена извршења су укључене"
+
+#: cobc/cobc.c:3562
+msgid "only one stdin input allowed"
+msgstr "само један улаз стандардног улаза је дозвољен"
+
+#: cobc/cobc.c:3572
+#, c-format
+msgid "invalid file name parameter (length > %d)"
+msgstr "неисправан параметар назива датотеке (дужина > %d)"
+
+#: cobc/cobc.c:3837
+msgid "return status:"
+msgstr "излазно стање:"
+
+#: cobc/cobc.c:3873 libcob/common.c:4744
+#, c-format
+msgid "external process \"%s\" ended with signal %s (%d)"
+msgstr "спољни процес „%s“ је завршен сигналом %s (%d)"
+
+#: cobc/cobc.c:3896
+msgid "nothing for -j to run"
+msgstr "ништа за „-j“ за извршавање"
+
+#: cobc/cobc.c:4368
+msgid "preprocessing:"
+msgstr "предобрађујем:"
+
+#: cobc/cobc.c:4434
+msgid "'cobxref' execution unsuccessful"
+msgstr "„cobxref“ извршење није успешно"
+
+#: cobc/cobc.c:4437
+#, c-format
+msgid "check that 'cobxref' is in %s"
+msgstr "проверите да ли је „cobxref“ у „%s“"
+
+#: cobc/cobc.c:4439
+msgid "no listing produced"
+msgstr "није произведен списак"
+
+#
+# This error message is issued when a field in an Aegis data file or
+# configuration file is defined more than once.
+#
+#       $Name           The name of the offending field.
+#
+# For consistent translation, here is the English text:
+#  msgstr "field \"$name\" redefined"
+# Please translate the English msgstr, not the msgid.
+#: cobc/cobc.c:5322 cobc/cobc.c:5361
+msgid "No fields defined."
+msgstr "Ниједно поље није дефинисано."
+
+#: cobc/cobc.c:5381
+msgid "No labels defined."
+msgstr "Ниједан натпис није дефинисан."
+
+#: cobc/cobc.c:5403
+msgid "Error/Warning summary:"
+msgstr "Сажетак грешке/упозорења:"
+
+#
+# This warning message is issued when a command which accepts both -Edit
+# and -File is given a file name without the -File option.  This usage
+# is being phased out, so that -Edit can become the default.
+#
+#       $Name           The name of the -File option,
+#                       assuming option names will be internationalized RSN
+#
+# For consistent translation, here is the English text:
+#  msgstr ""
+#  "warning: please use the $name option when specifying an attributes file, the "
+#  "unadorned form is now obsolescent"
+# Please translate the English msgstr, not the msgid.
+#: cobc/cobc.c:5447
+msgid "0 warnings in compilation group"
+msgstr "0 упозорења у групи превођења"
+
+#: cobc/cobc.c:5451
+msgid "1 warning in compilation group"
+msgstr "1 упозорење у групи превођења"
+
+#: cobc/cobc.c:5455
+#, c-format
+msgid "%d warnings in compilation group"
+msgstr "%d упозорења у групи превођења"
+
+#: cobc/cobc.c:5461
+msgid "0 errors in compilation group"
+msgstr "0 грешака у групи превођења"
+
+#: cobc/cobc.c:5465
+msgid "1 error in compilation group"
+msgstr "1 грешка у групи превођења"
+
+#: cobc/cobc.c:5469
+#, c-format
+msgid "%d errors in compilation group"
+msgstr "%d грешке у групи превођења"
+
+#: cobc/cobc.c:5475
+#, c-format
+msgid "Too many errors in compilation group: %d maximum errors"
+msgstr "Превише грешака у групи превођења: највише грешака %d"
+
+#: cobc/cobc.c:6044
+#, c-format
+msgid "%s: %d: Too many continuation lines"
+msgstr "%s: %d: Превише редова настављања"
+
+#: cobc/cobc.c:6967
+msgid "parsing:"
+msgstr "обрађујем:"
+
+#: cobc/cobc.c:7025
+msgid "translating:"
+msgstr "преводим:"
+
+#: cobc/cobc.c:8156
+msgid "no input files"
+msgstr "нема улазних датотека"
+
+#: cobc/cobc.c:8185
+#, c-format
+msgid "%s option invalid in this combination"
+msgstr "неисправних опција у овој комбинацији – %s"
+
+#: cobc/cobc.c:8226
+msgid "command line:"
+msgstr "линија наредби:"
+
+#: cobc/codegen.c:962 cobc/codegen.c:4340 cobc/codegen.c:10560
+#: cobc/codegen.c:11050
+msgid "unexpected CONSTANT item"
+msgstr "неочекивана ставка „CONSTANT“"
+
+#: cobc/codegen.c:1178 cobc/codegen.c:1186 cobc/codegen.c:1267
+#: cobc/codegen.c:1579 cobc/codegen.c:2115 cobc/codegen.c:3058
+#: cobc/codegen.c:3310 cobc/codegen.c:3863 cobc/codegen.c:4307
+#: cobc/codegen.c:8190 cobc/codegen.c:9948 cobc/scanner.l:2084 cobc/tree.c:617
+#: cobc/tree.c:3644 cobc/typeck.c:4697 cobc/typeck.c:8293 cobc/typeck.c:9273
+#, c-format
+msgid "unexpected tree tag: %d"
+msgstr "неочекивана ознака стабла: %d"
+
+#: cobc/codegen.c:2872 cobc/codegen.c:3145 cobc/codegen.c:7803
+#: cobc/tree.c:1194
+#, c-format
+msgid "unexpected cast type: %d"
+msgstr "неочекивана врста одливка: %d"
+
+#: cobc/codegen.c:3585 cobc/codegen.c:4287
+#, c-format
+msgid "internal statement stack depth exceeded: %d"
+msgstr "премашена је унутрашња дубина спремника тврдње: %d"
+
+#: cobc/codegen.c:3658
+#, c-format
+msgid "%s is not a field"
+msgstr "„%s“ није поље"
+
+#: cobc/codegen.c:4061 cobc/codegen.c:4132
+#, c-format
+msgid "unexpected function: %s"
+msgstr "неочекивана функција: %s"
+
+#: cobc/codegen.c:4870
+#, c-format
+msgid "unexpected tree category: %d"
+msgstr "неочекивана категорија стабла: %d"
+
+#: cobc/codegen.c:5264 cobc/codegen.c:5291 cobc/codegen.c:5488
+#: cobc/codegen.c:5520
+#, c-format
+msgid "unexpected size: %d"
+msgstr "неочекивана величина: %d"
+
+#: cobc/codegen.c:6947
+#, c-format
+msgid "No ENTRY FOR GO TO '%s'"
+msgstr "Нема ENTRY FOR GO TO „%s“"
+
+#: cobc/codegen.c:7168 cobc/codegen.c:7470
+#, c-format
+msgid "unexpected handler type: %d"
+msgstr "неочекивана врста руковаоца: %d"
+
+#: cobc/codegen.c:7572
+msgid "unexpected error_node parameter"
+msgstr "неочекивани параметар „error_node“"
+
+#: cobc/codegen.c:7824
+#, c-format
+msgid "unexpected tree type: %d"
+msgstr "неочекивана врста стабла: %d"
+
+#: cobc/codegen.c:8778
+msgid "Nested OCCURS in report"
+msgstr "Угнеждено OCCURS у извештају"
+
+#: cobc/codeoptim.c:2665
+#, c-format
+msgid "unexpected optimization value: %d"
+msgstr "неочекивана вредност оптимизације: %d"
+
+#: cobc/config.c:155 libcob/common.c:6805 libcob/common.c:6819
+#: libcob/common.c:7267
+#, c-format
+msgid "invalid value '%s' for configuration tag '%s'"
+msgstr "неисправна вредност „%s“ за ознаку подешавања „%s“"
+
+#: cobc/config.c:158 libcob/common.c:6133 libcob/common.c:6245
+#, c-format
+msgid "should be one of the following values: %s"
+msgstr "треба бити једна од следећих вредности: %s"
+
+#: cobc/config.c:160
+msgid "must be numeric"
+msgstr "мора бити број"
+
+#: cobc/config.c:162 libcob/common.c:6231
+#, c-format
+msgid "maximum value: %lu"
+msgstr "највећа вредност: %lu"
+
+#: cobc/config.c:164
+#, c-format
+msgid "minimum value: %d"
+msgstr "најмања вриједност: %d"
+
+#: cobc/config.c:195
+#, c-format
+msgid "unsupported value '%s' for configuration tag '%s'"
+msgstr "неподржана вредност „%s“ за ознаку подешавања „%s“"
+
+#: cobc/config.c:302 cobc/pplex.l:968 libcob/common.c:6721
+msgid "recursive inclusion"
+msgstr "дубинско укључивање"
+
+#
+# This message is inserted into the top of the project configuration file
+# automatically created by aeimport.
+#
+# For consistent translation, here is the English text:
+#  msgstr ""
+#  "This file will need to be customized for this project.  See aepconf(5) for a "
+#  "description of the fields in this file.  See\n"
+#  "$datadir/config.example/rcs\n"
+#  "for more information about the history commands.  See\n"
+#  "$datadir/config.example/make\n"
+#  "for examples of how to configure your build tool.\tYou may want to browse "
+#  "some other files in the same directory for more hints."
+# Please translate the English msgstr, not the msgid.
+#: cobc/config.c:377 libcob/common.c:6772
+msgid "configuration file was included here"
+msgstr "датотека подешавања је укључена овде"
+
+#: cobc/config.c:406
+#, c-format
+msgid "The previous loaded configuration '%s' will be discarded."
+msgstr "Претходно учитано подешавање „%s“ биће одбачено."
+
+#: cobc/config.c:440
+msgid "missing definitions:"
+msgstr "недостају дефиниције:"
+
+#: cobc/config.c:442
+#, c-format
+msgid "\tno definition of '%s'"
+msgstr "\tнема дефиниције за „%s“"
+
+#: cobc/config.c:503
+#, c-format
+msgid "invalid configuration tag '%s'"
+msgstr "неисправна ознака подешавања „%s“"
+
+#: cobc/config.c:516 libcob/common.c:6528 libcob/common.c:6611
+#: libcob/common.c:6639
+#, c-format
+msgid "unknown configuration tag '%s'"
+msgstr "непозната ознака подешавања „%s“"
+
+#: cobc/config.c:540
+#, c-format
+msgid "invalid configuration tag '%s' in word-list"
+msgstr "неисправна ознака подешавања „%s“ у списку речи"
+
+#: cobc/config.c:600
+#, c-format
+msgid "Could not access word list for '%s'"
+msgstr "Не могу да приступим списку речи за „%s“"
+
+#: cobc/config.def:47
+msgid "use of complete/fixed reserved words"
+msgstr "коришћење комплетних/непроменљивих резервисаних речи"
+
+#: cobc/config.def:52
+msgid "set number of spaces that are assumed for tabs"
+msgstr "поставља број размака који се подразумевају за ознаке"
+
+#: cobc/config.def:55
+msgid "set right margin for source (fixed format only)"
+msgstr "поставља десну маргину за извор (само фиксни формати)"
+
+#: cobc/config.def:57 cobc/config.def:63
+msgid "<number>"
+msgstr "<број>"
+
+#: cobc/config.def:58
+msgid "maximum number of characters allowed in the PICTURE character-string"
+msgstr "највећи број знакова дозвољеих у нисци знака PICTURE"
+
+#: cobc/config.def:61
+msgid "maximum word-length for COBOL (= programmer defined) words"
+msgstr "највећа дужина речи за COBOL (= одређује програмер) речи"
+
+#: cobc/config.def:64
+msgid "maximum literal size in general"
+msgstr "највећа величина словности у општем"
+
+#: cobc/config.def:67
+msgid "maximum numeric literal size"
+msgstr "највећа величина словности броја"
+
+#: cobc/config.def:75
+msgid "binary byte size - defines the allocated bytes according to PIC, may be one of: 2-4-8, 1-2-4-8, 1--8"
+msgstr "величина бинарног бајта – дефинише додељене бајтове у складу са PIC, може бити једно од: 2-4-8, 1-2-4-8, 1--8"
+
+#: cobc/config.def:78
+msgid "binary byte order, may be one of: native, big-endian"
+msgstr "редослед бинарног бајта, може бити: изворно, велика крајњост"
+
+#: cobc/config.def:81
+msgid "set way of interpreting ASSIGN"
+msgstr "поставља начин тумачења ASSIGN"
+
+#: cobc/config.def:84
+msgid "which compiler's rules to apply to SCREEN SECTION item clauses"
+msgstr "које правило преводиоца ће се применити на клаузуле ставке SCREEN SECTION"
+
+#: cobc/config.def:89
+msgid "resolve file names at run time using environment variables."
+msgstr "решава називе датотека у време извршавања користећи променљиве окружења."
+
+#: cobc/config.def:92
+msgid "alternate formatting of numeric fields"
+msgstr "измењује форматирање бројевних поља"
+
+#: cobc/config.def:95
+msgid "numeric truncation according to ANSI"
+msgstr "бројевно скраћивање у складу са АНСИ-јем"
+
+#: cobc/config.def:98
+msgid "allow complex OCCURS DEPENDING ON"
+msgstr "дозвољава сложено OCCURS DEPENDING ON"
+
+#: cobc/config.def:101
+msgid "allow REDEFINES to other than last equal level number"
+msgstr "дозвољава „REDEFINES“ и на друге осим на последњи исти број нивоа"
+
+#: cobc/config.def:104
+msgid "allow larger REDEFINES items"
+msgstr "дозвољава веће ставке REDEFINES"
+
+#: cobc/config.def:107
+msgid "allow certain syntax variations (e.g. REDEFINES position)"
+msgstr "дозвољава одређене варијације синтаксе (нпр. положај REDEFINES)"
+
+#: cobc/config.def:110
+msgid "allow non-matching level numbers"
+msgstr "дозвољава неподударајуће бројеве нивоа"
+
+#: cobc/config.def:113
+msgid "require ASSIGN USING items to be in WORKING-STORAGE"
+msgstr "захтева да ставке ASSIGN USING буду у WORKING-STORAGE"
+
+#: cobc/config.def:116
+msgid "LINKAGE-SECTION items remain allocated between invocations"
+msgstr "ставке LINKAGE-SECTION остају додељене између призивања"
+
+#: cobc/config.def:119
+msgid "MOVE operates as on IBM (left to right, byte by byte)"
+msgstr "MOVE ради као на ИБМ-у (с лева на десно, бит по бит)"
+
+#: cobc/config.def:122
+msgid "exit point of any currently executing perform is recognized if reached"
+msgstr "излазна тачка било које тренутно извршене изведбе је препозната ако се достигне"
+
+#: cobc/config.def:125
+msgid "limit precision in intermediate results to precision of final result (less accurate)"
+msgstr "тачност ограничења у посредничким резултатима за тачност крајњег резултата (мање тачности)"
+
+#: cobc/config.def:128
+msgid "evaluate constant expressions at compile time"
+msgstr "процењује изразе константе у време превођења"
+
+#: cobc/config.def:131
+msgid "allow hexadecimal value 'F' for NUMERIC test of signed PACKED DECIMAL field"
+msgstr "дозвољава хексадецималну вредност „F“ за NUMERIC тест означеног PACKED DECIMAL поља"
+
+#: cobc/config.def:134
+msgid "program names don't lead to a reserved identifier"
+msgstr "називи програма не воде до резервисаног одредника"
+
+#: cobc/config.def:137
+msgid "set WITH UPDATE clause as default for ACCEPT dest-item, instead of WITH NO UPDATE"
+msgstr "поставља WITH UPDATE клаузулу као основно за одредиште ставке ACCEPT, уместо WITH NO UPDATE"
+
+#: cobc/config.def:140
+msgid "set WITH AUTO clause as default for ACCEPT dest-item, instead of WITH TAB"
+msgstr "поставља WITH AUTO клаузула као основно за одредиште ставке ACCEPT, уместо WITH TAB"
+
+#: cobc/config.def:143
+msgid "assume CONSOLE IS CRT if not set otherwise"
+msgstr "подразумева CONSOLE IS CRT ако није постављено другачије"
+
+#: cobc/config.def:146
+msgid "NO-ECHO hides input with asterisks like SECURE"
+msgstr "NO-ECHO скрива улаз са звездицама као SECURE"
+
+#: cobc/config.def:149
+msgid "assume a field DISPLAY starts at LINE 0 COL 0 (i.e. at the cursor), not LINE 1 COL 1"
+msgstr "подразумева DISPLAY поља почиње у РЕДУ 0 СТУБАЦ 0 (нпр. на курзору), а не РЕД 1 СТУБАЦ 1"
+
+#: cobc/config.def:152
+msgid "special behaviour of DISPLAY SPACE/ALL X'01'/ALL X'02'/ALL X'07'"
+msgstr "посебно понашање DISPLAY SPACE/ALL X'01'/СВИ X'02'/СВИ X'07'"
+
+#: cobc/config.def:155
+msgid "COMP-1 is a 16-bit signed integer"
+msgstr "COMP-1 је 16-битни додељени цео број"
+
+#: cobc/config.def:158
+msgid "POINTER is a 64-bit unsigned integer"
+msgstr "POINTER је 64-битни недодељени цео број"
+
+#: cobc/config.def:161
+msgid "imply zero in move of non-numeric literal to numeric items"
+msgstr "примењује нулу у премештању не-бројевне словности у бројне ставке"
+
+#: cobc/config.def:166
+msgid "comment paragraphs in IDENTIFICATION DIVISION (AUTHOR, DATE-WRITTEN, ...)"
+msgstr "напомене пасуса у IDENTIFICATION DIVISION (АУТОР, ДАТУМ ПИСАЊА, ...)"
+
+#: cobc/config.def:169
+msgid "MEMORY-SIZE clause"
+msgstr "ВЕЛИЧИНА МЕМОРИЈЕ клаузула"
+
+#: cobc/config.def:172
+msgid "MULTIPLE-FILE-TAPE clause"
+msgstr "ВИШЕСТРУКА-ДАТОТЕКА-ТРАКА клаузула"
+
+#: cobc/config.def:175
+msgid "LABEL-RECORDS clause"
+msgstr "ЗАПИСИ НАТПИСА клаузула"
+
+#: cobc/config.def:178
+msgid "VALUE-OF clause"
+msgstr "ВРЕДНОСТ клаузула"
+
+#: cobc/config.def:181
+msgid "DATA-RECORDS clause"
+msgstr "ЗАПИСИ ДАТУМА клаузула"
+
+#: cobc/config.def:184
+msgid "OCCURS clause on top-level"
+msgstr "ДОГАЂАЊА клаузула на највишем нивоу"
+
+#: cobc/config.def:187 cobc/parser.y:6805
+msgid "SAME AS clause"
+msgstr "ИСТО КАО клаузула"
+
+#: cobc/config.def:190 cobc/parser.y:7058
+msgid "TYPE TO clause"
+msgstr "УКУЦАЈ У клаузула"
+
+#: cobc/config.def:193 cobc/parser.y:7078
+msgid "USAGE type-name"
+msgstr "назив-врста КОРИШЋЕЊА"
+
+#: cobc/config.def:196 cobc/parser.y:7596
+msgid "SYNCHRONIZED clause"
+msgstr "СИНХРОНИЗОВАНО клаузула"
+
+#: cobc/config.def:199
+msgid "SPECIAL-NAMES clause"
+msgstr "СПЕЦИЈАЛНИ НАЗИВИ клаузула"
+
+#: cobc/config.def:202
+msgid "GOTO statement without name"
+msgstr "тврдња GOTO без назива"
+
+#: cobc/config.def:205
+msgid "STOP-literal statement"
+msgstr "тврдња STOP-словности"
+
+#: cobc/config.def:208
+msgid "STOP-identifier statement"
+msgstr "тврдња STOP-одредника"
+
+#: cobc/config.def:211
+msgid "DEBUGGING MODE and debugging indicator"
+msgstr "РЕЖИМ ПРОЧИШЋАВАЊА и показивач прочишћавања"
+
+#: cobc/config.def:217
+msgid "PADDING CHARACTER clause"
+msgstr "ЗНАК ПОПУЊАВАЊА клаузула"
+
+#: cobc/config.def:220
+msgid "NEXT SENTENCE phrase"
+msgstr "реченица СЛЕДЕЋЕ МИСЛИ"
+
+#: cobc/config.def:223
+msgid "listing-directive statements EJECT, SKIP1, SKIP2, SKIP3"
+msgstr "тврдње директиве списка EJECT, SKIP1, SKIP2, SKIP3"
+
+#: cobc/config.def:226
+msgid "listing-directive statement TITLE"
+msgstr "тврдња директиве списка TITLE"
+
+#: cobc/config.def:229
+msgid "ENTRY statement"
+msgstr "тврдња ENTRY"
+
+#: cobc/config.def:232
+msgid "move noninteger to alphanumeric"
+msgstr "премешта не-цео број у алфанумерички"
+
+#: cobc/config.def:235
+msgid "move figurative constants to numeric"
+msgstr "премешта фигуративне константе у бројевне"
+
+#: cobc/config.def:238
+msgid "move figurative constant SPACE to numeric"
+msgstr "премешта фигуративну константу SPACE у бројевну"
+
+#: cobc/config.def:241
+msgid "move figurative constant QUOTE to numeric"
+msgstr "премешта фигуративну константу QUOTE у бројевну"
+
+#: cobc/config.def:244
+msgid "OCCURS DEPENDING ON without to"
+msgstr "OCCURS DEPENDING ON без „to“"
+
+#: cobc/config.def:247 cobc/parser.y:10097
+msgid "section segments"
+msgstr "подеоци одељка"
+
+#: cobc/config.def:250
+msgid "ALTER statement"
+msgstr "тврдња ALTER"
+
+#: cobc/config.def:253
+msgid "OVERFLOW clause for CALL"
+msgstr "OVERFLOW клаузула за CALL"
+
+#: cobc/config.def:256
+msgid "boolean literals (B'1010')"
+msgstr "логичка словност (B„1010“)"
+
+#: cobc/config.def:259
+msgid "hexadecimal-boolean literals (BX'A')"
+msgstr "хексадецимална-логичка словност (BX„A“)"
+
+#: cobc/config.def:262
+msgid "national literals (N'UTF-16 string')"
+msgstr "национална словност (N„UTF-16 ниска“)"
+
+#: cobc/config.def:265
+msgid "hexadecimal-national literals (NX'265E')"
+msgstr "хексадецимална-национална словност (NX„265E“)"
+
+#: cobc/config.def:268
+msgid "non-standard national literals (NC'UTF-16 string')"
+msgstr "нестандардна национална словност (NC„UTF-16 ниска“)"
+
+#: cobc/config.def:271
+msgid "HP COBOL octal literals (%377)"
+msgstr "HP COBOL октална словност (%377)"
+
+#: cobc/config.def:274
+msgid "ACUCOBOL-GT literals (#B #O #H #X)"
+msgstr "ACUCOBOL-GT словност (#B #O #H #X)"
+
+#: cobc/config.def:277 cobc/pplex.l:1678
+msgid "continuation of COBOL words"
+msgstr "настављивост COBOL речи"
+
+#: cobc/config.def:280
+msgid "NOT ON EXCEPTION before ON EXCEPTION"
+msgstr "NOT ON EXCEPTION пре ON EXCEPTION"
+
+#: cobc/config.def:283
+msgid "extensions to ACCEPT and DISPLAY"
+msgstr "проширења за ACCEPT и DISPLAY"
+
+#: cobc/config.def:286 cobc/field.c:2933
+msgid "RENAMES of 01-, 66- and 77-level items"
+msgstr "RENAMES ставки 01-, 66- и 77-нивоа"
+
+#: cobc/config.def:289
+msgid "constants defined in SPECIAL-NAMES"
+msgstr "константе дефинисане у SPECIAL-NAMES"
+
+#: cobc/config.def:292
+msgid "constant with level 78 item (note: has left to right precedence in expressions)"
+msgstr "константа са ставком 78 нивоа (напомена: има предност с лева на десно у изразима)"
+
+#: cobc/config.def:295
+msgid "constant with level 01 CONSTANT AS/FROM item"
+msgstr "константа са ставком нивоа 01 CONSTANT AS/FROM"
+
+#: cobc/config.def:298
+msgid "PERFORM VARYING without BY phrase (implies BY 1)"
+msgstr "PERFORM VARYING без BY речи (подразумева BY 1)"
+
+#: cobc/config.def:301
+msgid "references to sections not in DECLARATIVES from within DECLARATIVES"
+msgstr "упуте ка одељцима нису у DECLARATIVES из DECLARATIVES"
+
+#: cobc/config.def:304 cobc/parser.y:11189 cobc/parser.y:11475
+msgid "CALL/CANCEL with program-prototype-name"
+msgstr "CALL/CANCEL са називом-прототипа-програма"
+
+#: cobc/config.def:307
+msgid "specifying call-convention by mnemonic"
+msgstr "наводи договоре позива тастером пречице"
+
+#: cobc/config.def:310
+msgid "specifying call-convention by WITH ... LINKAGE"
+msgstr "наводи договор позива са WITH ... LINKAGE"
+
+#: cobc/config.def:313
+msgid "numeric literals in VALUE clause of numeric-edited items"
+msgstr "бројевна словност у VALUE клаузули бројевно уређеним ставкама"
+
+#: cobc/config.def:316
+msgid "incorrect order of CONFIGURATION SECTION paragraphs"
+msgstr "нетачан редослед параграфа CONFIGURATION SECTION"
+
+#: cobc/config.def:319
+msgid "allow >> DEFINE CONSTANT var AS literal"
+msgstr "дозвољава >> DEFINE CONSTANT вар AS словност"
+
+#: cobc/config.def:322
+msgid "REDEFINES clause not following entry-name in definition"
+msgstr "REDEFINES клаузула не прати називе уноса у дефиницији"
+
+#: cobc/config.def:325
+msgid "record sizes does not match RECORD clause"
+msgstr "величине записа не одговарају RECORD клаузули"
+
+#: cobc/config.def:328 cobc/parser.y:5350 cobc/parser.y:5363
+#: cobc/parser.y:5375 cobc/parser.y:5385
+msgid "RECORD DELIMITER clause"
+msgstr "RECORD DELIMITER клаузула"
+
+#: cobc/config.def:331
+msgid "BINARY-SEQUENTIAL and LINE-SEQUENTIAL phrases in RECORD DELIMITER"
+msgstr "BINARY-SEQUENTIAL и LINE-SEQUENTIAL реченице у RECORD DELIMITER"
+
+#: cobc/config.def:334 cobc/tree.c:4300
+msgid "RECORD DELIMITER clause on file with fixed-length records"
+msgstr "RECORD DELIMITER клаузула на датотеци са записима непромењиве дужине"
+
+#: cobc/config.def:337
+msgid "missing statement (e.g. empty IF / PERFORM)"
+msgstr "недостаје тврдња (нпр. празно IF / PERFORM)"
+
+#: cobc/config.def:340
+msgid "zero-length literals, e.g. '' and \"\""
+msgstr "словност нулте дужине, нпр. '' и \"\""
+
+#: cobc/config.def:343
+msgid "XML GENERATE's phrases other than COUNT IN"
+msgstr "XML GENERATE речи осим COUNT IN"
+
+#: cobc/config.def:346 cobc/typeck.c:6969
+msgid "AFTER phrase in CONTINUE statement"
+msgstr "фраза AFTER у тврдњи CONTINUE"
+
+#: cobc/config.def:349
+msgid "ENTRY FOR GOTO and GOTO ENTRY statements"
+msgstr "тврдње ENTRY FOR GOTO и GOTO ENTRY"
+
+#: cobc/error.c:87
+#, c-format
+msgid "in section '%s':"
+msgstr "у одељку „%s“:"
+
+#: cobc/error.c:98
+#, c-format
+msgid "in paragraph '%s':"
+msgstr "у пасусу „%s“:"
+
+#: cobc/error.c:121 libcob/common.c:7277
+msgid "configuration error:"
+msgstr "грешка подешавања:"
+
+#: cobc/error.c:134 libcob/common.c:678
+#, c-format
+msgid "system error %d"
+msgstr "системска грешка %d"
+
+#: cobc/error.c:231 cobc/error.c:323 cobc/error.c:478
+msgid "error [-Werror]: "
+msgstr "грешка [-Werror]: "
+
+#: cobc/error.c:231 cobc/error.c:323 cobc/error.c:478 cobc/error.c:505
+#: libcob/common.c:6900 libcob/common.c:6925
+#, c-format
+msgid "warning: "
+msgstr "упозорење: "
+
+#: cobc/error.c:274 cobc/error.c:528
+msgid "error (ignored): "
+msgstr "грешка (занемарено): "
+
+#: cobc/error.c:364 cobc/error.c:380 cobc/error.c:563 cobc/error.c:584
+#, c-format
+msgid "%s used"
+msgstr "%s коришћено"
+
+#: cobc/error.c:367 cobc/error.c:566
+#, c-format
+msgid "%s is archaic in %s"
+msgstr "„%s“ је архаично у „%s“"
+
+#: cobc/error.c:371 cobc/error.c:570
+#, c-format
+msgid "%s is obsolete in %s"
+msgstr "„%s“ је застарело у „%s“"
+
+#: cobc/error.c:377 cobc/error.c:576 cobc/parser.y:5213 cobc/parser.y:5352
+#, c-format
+msgid "%s ignored"
+msgstr "„%s“ занемарено"
+
+#: cobc/error.c:383 cobc/error.c:586
+#, c-format
+msgid "%s does not conform to %s"
+msgstr "„%s“ није у складу са „%s“"
+
+#: cobc/error.c:399
+msgid "configuration warning:"
+msgstr "упозорење подешавања:"
+
+#: cobc/error.c:621 cobc/error.c:640
+#, c-format
+msgid "redefinition of '%s'"
+msgstr "поновно дефинисање за „%s“"
+
+#: cobc/error.c:628 cobc/error.c:653
+#, c-format
+msgid "'%s' previously defined here"
+msgstr "„%s“ претходно дефинисано овде"
+
+#: cobc/error.c:677 cobc/error.c:684
+#, c-format
+msgid "'%s' is not defined"
+msgstr "„%s“ није дефинисано"
+
+#: cobc/error.c:680
+#, c-format
+msgid "'%s' cannot be used here"
+msgstr "„%s“ се не може коришстити овде"
+
+#: cobc/error.c:682 cobc/parser.y:7088
+#, c-format
+msgid "'%s' is not defined, but is a reserved word in another dialect"
+msgstr "„%s“ није дефинисано, али је резервисана реч у другом дијалекту"
+
+#: cobc/error.c:716
+#, c-format
+msgid "'%s' is ambiguous; needs qualification"
+msgstr "„%s“ је нејасно; потребна је квалификација"
+
+#: cobc/error.c:746 cobc/parser.y:16743
+#, c-format
+msgid "'%s' defined here"
+msgstr "„%s“ је дефинисано овде"
+
+#: cobc/error.c:757
+#, c-format
+msgid "fatal error: %s"
+msgstr "кобна грешка: %s"
+
+#: cobc/error.c:765
+#, c-format
+msgid "group item '%s' cannot have %s clause"
+msgstr "ставка групе „%s“ не може имати %s клаузулу"
+
+#: cobc/error.c:779
+#, c-format
+msgid "constant item '%s' requires a %s clause"
+msgstr "ставка константе „%s“ захтева %s клаузулу"
+
+#: cobc/error.c:781
+#, c-format
+msgid "level %02d item '%s' requires a %s clause"
+msgstr "ставка нивоа %02d „%s“ захтева %s клаузулу"
+
+#: cobc/error.c:795
+#, c-format
+msgid "constant item '%s' can only have a %s clause"
+msgstr "ставка константе „%s“ може имати само %s клаузулу"
+
+#: cobc/error.c:797
+#, c-format
+msgid "level %02d item '%s' can only have a %s clause"
+msgstr "ставка нивоа %02d „%s“ може имати само %s клаузулу"
+
+#: cobc/field.c:131
+msgid "constant expression has Divide by ZERO"
+msgstr "израз константе има дељење НУЛОМ"
+
+#: cobc/field.c:187 cobc/field.c:324 cobc/field.c:332
+msgid "missing right parenthesis"
+msgstr "недостаје десна заграда"
+
+#: cobc/field.c:216
+#, c-format
+msgid "expression stack overflow at %d entries for operation '%c'"
+msgstr "прекорачење спремника израза код %d уноса за радњу „%c“"
+
+#: cobc/field.c:257
+#, c-format
+msgid "expression stack overflow at %d entries"
+msgstr "прекорачење спремника израза код %d уноса"
+
+#: cobc/field.c:274
+msgid "missing left parenthesis"
+msgstr "недостаје лева заграда"
+
+#: cobc/field.c:315
+#, c-format
+msgid "invalid operator '%s' in expression"
+msgstr "неисправан оператор „%s“ у изразу"
+
+#: cobc/field.c:334
+#, c-format
+msgid "'%c' operator misplaced"
+msgstr "„%c“ оператор је лоше постављен"
+
+#: cobc/field.c:395
+#, c-format
+msgid "invalid level number '%s'"
+msgstr "неисправан број нивоа „%s“"
+
+#: cobc/field.c:455
+#, c-format
+msgid "entry following %s may not be subordinate to it"
+msgstr "унос који следи %s не може му бити подређен"
+
+#: cobc/field.c:462 cobc/field.c:499
+msgid "level number must begin with 01 or 77"
+msgstr "број нивоа мора почети са 01 или 77"
+
+#: cobc/field.c:544 cobc/field.c:560
+#, c-format
+msgid "no previous data item of level %02d"
+msgstr "нема претходне ставке података нивоа %02d"
+
+#: cobc/field.c:597
+#, c-format
+msgid "'%s' cannot be qualified here"
+msgstr "„%s“ се не може квалификовати овде"
+
+#: cobc/field.c:603
+#, c-format
+msgid "'%s' cannot be subscripted here"
+msgstr "„%s“ се не може подскриптовати овде"
+
+#: cobc/field.c:615
+#, c-format
+msgid "'%s' is not defined in '%s'"
+msgstr "„%s“ није дефинисано у „%s“"
+
+#: cobc/field.c:636
+msgid "level number of REDEFINES entries must be identical"
+msgstr "број нивоа REDEFINES уноса мора бити идентичан"
+
+#: cobc/field.c:641
+#, c-format
+msgid "'%s' is not the original definition"
+msgstr "„%s“ није узворна дефиниција"
+
+#: cobc/field.c:851
+#, c-format
+msgid "%s clause not compatible with PIC %s"
+msgstr "%s клаузула није сагласна са PIC %s"
+
+#: cobc/field.c:862 cobc/field.c:894
+#, c-format
+msgid "%s clause not compatible with USAGE %s"
+msgstr "%s клаузула није сагласна са USAGE %s"
+
+#: cobc/field.c:980 cobc/field.c:1044 cobc/field.c:1055
+#, c-format
+msgid "PICTURE clause required for '%s'"
+msgstr "PICTURE клаузула се захтева за „%s“"
+
+#: cobc/field.c:1051
+#, c-format
+msgid "a non-numeric literal is expected for '%s'"
+msgstr "не бројевна словност је очекивана за „%s“"
+
+#: cobc/field.c:1063
+#, c-format
+msgid "defining implicit picture size %d for '%s'"
+msgstr "дефинишем изричиту величину слике %d за „%s“"
+
+#: cobc/field.c:1083
+#, c-format
+msgid "'%s' ANY LENGTH only allowed in LINKAGE"
+msgstr "„%s“ ANY LENGTH је дозвољено само у LINKAGE"
+
+#: cobc/field.c:1087
+#, c-format
+msgid "'%s' ANY LENGTH must be 01 level"
+msgstr "„%s“ ANY LENGTH мора бити 01 ниво"
+
+#: cobc/field.c:1091
+#, c-format
+msgid "'%s' ANY LENGTH cannot be BASED/EXTERNAL"
+msgstr "„%s“ ANY LENGTH не може бити BASED/EXTERNAL"
+
+#: cobc/field.c:1096 cobc/field.c:1124
+#, c-format
+msgid "'%s' ANY LENGTH has invalid definition"
+msgstr "„%s“ ANY LENGTH има неисправну дефиницију"
+
+#: cobc/field.c:1107
+#, c-format
+msgid "'%s' ANY NUMERIC must be PIC 9"
+msgstr "„%s“ ANY NUMERIC мора бити PIC 9"
+
+#: cobc/field.c:1112
+#, c-format
+msgid "'%s' ANY LENGTH must be PIC X or PIC N"
+msgstr "„%s“ ANY LENGTH мора бити PIC X или PIC N"
+
+#: cobc/field.c:1122
+#, c-format
+msgid "'%s' ANY NUMERIC has invalid definition"
+msgstr "„%s“ ANY NUMERIC има неисправну дефиницију"
+
+#: cobc/field.c:1140
+#, c-format
+msgid "'%s' EXTERNAL must be specified at 01/77 level"
+msgstr "„%s“ EXTERNAL мора бити наведено на нивоу 01/77"
+
+#: cobc/field.c:1144
+#, c-format
+msgid "'%s' EXTERNAL can only be specified in WORKING-STORAGE section"
+msgstr "„%s“ EXTERNAL може бити наведено само у одељку WORKING-STORAGE"
+
+#: cobc/field.c:1148
+#, c-format
+msgid "'%s' EXTERNAL and BASED are mutually exclusive"
+msgstr "„%s“ EXTERNAL и BASED се узајамно искључују"
+
+#: cobc/field.c:1151
+#, c-format
+msgid "'%s' EXTERNAL not allowed with REDEFINES"
+msgstr "„%s“ EXTERNAL није дозвољено са REDEFINES"
+
+#: cobc/field.c:1163
+#, c-format
+msgid "'%s' BASED not allowed here"
+msgstr "„%s“ BASED није дозвољено овде"
+
+#: cobc/field.c:1166
+#, c-format
+msgid "'%s' BASED not allowed with REDEFINES"
+msgstr "„%s“ BASED није дозвољено са REDEFINES"
+
+#: cobc/field.c:1169
+#, c-format
+msgid "'%s' BASED only allowed at the 01 and 77 levels"
+msgstr "„%s“ BASED је дозвољено само на нивоима 01 и 77"
+
+#: cobc/field.c:1181
+#, c-format
+msgid "level %02d item '%s' cannot have a %s clause"
+msgstr "ставка нивоа %02d „%s“ не може имати %s клаузулу"
+
+#: cobc/field.c:1196
+#, c-format
+msgid "'%s' cannot have the OCCURS clause due to '%s'"
+msgstr "„%s“ не може имати OCCURS клаузулу због „%s“"
+
+#: cobc/field.c:1215
+#, c-format
+msgid "the original definition '%s' should not have OCCURS clause"
+msgstr "изворна дефиниција „%s“ не треба имати OCCURS клаузулу"
+
+#: cobc/field.c:1222
+msgid "REDEFINES must follow the original definition"
+msgstr "REDEFINES мора следити оригиналну дефиницију"
+
+#: cobc/field.c:1229
+#, c-format
+msgid "'%s' cannot be variable length"
+msgstr "„%s“ не може бити дужина променљиве"
+
+#: cobc/field.c:1232
+#, c-format
+msgid "the original definition '%s' cannot be variable length"
+msgstr "оригинална дефиниција „%s“ не може бити дужина променљиве"
+
+#: cobc/field.c:1256
+#, c-format
+msgid "SCREEN group item '%s' has invalid clause"
+msgstr "ставка SCREEN групе „%s“ има неисправну клаузулу"
+
+#: cobc/field.c:1328
+#, c-format
+msgid "'%s' cannot have PICTURE clause"
+msgstr "„%s“ не може имати PICTURE клаузулу"
+
+#: cobc/field.c:1345
+#, c-format
+msgid "%s item '%s' should be USAGE DISPLAY"
+msgstr "%s ставка „%s“ треба бити USAGE DISPLAY"
+
+#: cobc/field.c:1368
+#, c-format
+msgid "'%s' COMP-6 with sign - changing to COMP-3"
+msgstr "„%s“ COMP-6 са знаком - мењам у COMP-3"
+
+#: cobc/field.c:1394
+msgid "elementary items with SIGN clause must have S in PICTURE"
+msgstr "основне ставке са SIGN клаузулом морају имати S у PICTURE"
+
+#: cobc/field.c:1397
+msgid "elementary items with SIGN clause must be USAGE DISPLAY or NATIONAL"
+msgstr "основне ставке са SIGN клаузулом морају бити USAGE DISPLAY или NATIONAL"
+
+#: cobc/field.c:1414
+#, c-format
+msgid "'%s' cannot have JUSTIFIED RIGHT"
+msgstr "„%s“ не може имати JUSTIFIED RIGHT"
+
+#: cobc/field.c:1427
+#, c-format
+msgid "'%s' cannot have S in PICTURE string and BLANK WHEN ZERO"
+msgstr "„%s“ не може имати S у нисци PICTURE и BLANK WHEN ZERO"
+
+#: cobc/field.c:1432
+#, c-format
+msgid "'%s' cannot have BLANK WHEN ZERO without being USAGE DISPLAY or NATIONAL"
+msgstr "„%s“ не може имати BLANK WHEN ZERO а да није USAGE DISPLAY или NATIONAL"
+
+#: cobc/field.c:1443
+#, c-format
+msgid "'%s' cannot have * in PICTURE string and BLANK WHEN ZERO"
+msgstr "„%s“ не може имати * у нисци PICTURE и BLANK WHEN ZERO"
+
+#: cobc/field.c:1450
+#, c-format
+msgid "'%s' is not numeric, so cannot have BLANK WHEN ZERO"
+msgstr "„%s“ није бројно, тако да не може имати BLANK WHEN ZERO"
+
+#: cobc/field.c:1463
+msgid "only level 88 items may have multiple values"
+msgstr "само ставке нивоа 88 могу имати више вредности"
+
+#: cobc/field.c:1471 cobc/field.c:1475
+#, c-format
+msgid "initial VALUE clause ignored for %s item '%s'"
+msgstr "почетна VALUE клаузула је занемарена за %s ставку „%s“"
+
+#: cobc/field.c:1488
+msgid "FULL has no effect on numeric items; you may want REQUIRED or PIC Z"
+msgstr "FULL нема дејства на бројне вредности; можете желети REQUIRED или PIC Z"
+
+#: cobc/field.c:1516
+msgid "VALUE may not contain a figurative constant"
+msgstr "VALUE не може садржати фигуративну константу"
+
+#: cobc/field.c:1524
+msgid "cannot specify both FULL and JUSTIFIED"
+msgstr "не можете навести и FULL и JUSTIFIED"
+
+#: cobc/field.c:1536
+#, c-format
+msgid "'%s' has FROM, TO or USING without PIC; PIC will be implied"
+msgstr "„%s“ има FROM, TO или USING без PIC; PIC ће бити примењено"
+
+#: cobc/field.c:1550
+#, c-format
+msgid "'%s' has numeric VALUE without PIC; PIC will be implied"
+msgstr "„%s“ има бројну VALUE без PIC; PIC ће бити примењено"
+
+#: cobc/field.c:1565
+#, c-format
+msgid "'%s' cannot have PIC without FROM, TO, USING or numeric VALUE"
+msgstr "„%s“ не може имати PIC без FROM, TO, USING или бројну VALUE"
+
+#: cobc/field.c:1577
+#, c-format
+msgid "'%s' needs a PIC, FROM, TO, USING, VALUE, BELL, BLANK or ERASE clause"
+msgstr "за „%s“ је потребна PIC, FROM, TO, USING, VALUE, BELL, BLANK или ERASE клаузула"
+
+#: cobc/field.c:1591
+msgid "cannot specify both PIC and VALUE"
+msgstr "не можете навести и PIC и VALUE"
+
+#: cobc/field.c:1599
+msgid "cannot have PIC without FROM, TO or USING"
+msgstr "не можете имати PIC без FROM, TO или USING"
+
+#: cobc/field.c:1608
+msgid "cannot have FROM, TO or USING without PIC"
+msgstr "не можете имати FROM, TO или USING без PIC"
+
+#: cobc/field.c:1617
+msgid "VALUE item may not be numeric"
+msgstr "VALUE ставка не може бити бројна"
+
+#: cobc/field.c:1633
+#, c-format
+msgid "'%s' needs a PIC, COL, LINE, VALUE, BELL or BLANK clause"
+msgstr "за „%s“ је потребна PIC, COL, LINE, VALUE, BELL или BLANK клаузула"
+
+#: cobc/field.c:1664
+msgid "cannot use AUTO, FULL, PROMPT, REQUIRED or SECURE on elementary item without TO or USING"
+msgstr "не можете користити AUTO, FULL, PROMPT, REQUIRED или SECURE на основној ставци без TO или USING"
+
+#: cobc/field.c:1671
+msgid "cannot use BLANK WHEN ZERO, JUSTIFIED, OCCURS or SIGN on item without FROM, TO or USING"
+msgstr "не можете користити BLANK WHEN ZERO, JUSTIFIED, OCCURS или SIGN на ставци без FROM, TO или USING"
+
+#: cobc/field.c:1691
+msgid "cannot use AUTO, FULL, REQUIRED or SECURE on elementary item without FROM, TO or USING"
+msgstr "не можете користити AUTO, FULL, REQUIRED или SECURE на основној ставци без FROM, TO или USING"
+
+#: cobc/field.c:1696
+msgid "cannot use BLANK WHEN ZERO, JUSTIFIED or SIGN without FROM, TO or USING"
+msgstr "не можете користити BLANK WHEN ZERO, JUSTIFIED или SIGN без FROM, TO или USING"
+
+#: cobc/field.c:1714
+msgid "cannot have BLANK WHEN ZERO without PIC"
+msgstr "не можете имати BLANK WHEN ZERO без PIC"
+
+#: cobc/field.c:1717
+msgid "cannot have JUSTIFIED without PIC"
+msgstr "не можете имати JUSTIFIED без PIC"
+
+#: cobc/field.c:1737
+msgid "cannot have AUTO without FROM, TO or USING"
+msgstr "не можете имати AUTO без FROM, TO или USING"
+
+#: cobc/field.c:1742
+msgid "cannot use FULL or REQUIRED on item without TO or USING"
+msgstr "не можете користити FULL или REQUIRED на ставци без TO или USING"
+
+#: cobc/field.c:1749
+msgid "SECURE can be used with TO only"
+msgstr "SECURE се може користити само са TO"
+
+#: cobc/field.c:1751
+msgid "SECURE must be used with TO"
+msgstr "SECURE се мора користити са TO"
+
+#: cobc/field.c:1770
+#, c-format
+msgid "'%s' does nothing"
+msgstr "„%s“ не ради ништа"
+
+#: cobc/field.c:1984
+#, c-format
+msgid "'%s' 77 level is not allowed here"
+msgstr "„%s“ 77 ниво није дозвољен овде"
+
+#: cobc/field.c:2369
+msgid "OCCURS and multi COLUMNs is not allowed"
+msgstr "OCCURS и више COLUMN-а није дозвољено"
+
+#: cobc/field.c:2397
+#, c-format
+msgid "ignoring SYNCHRONIZED for group item '%s'"
+msgstr "занемарујем SYNCHRONIZED за ставку групе „%s“"
+
+#: cobc/field.c:2413 cobc/field.c:2426 cobc/field.c:2670 cobc/field.c:2673
+#, c-format
+msgid "size of '%s' larger than size of '%s'"
+msgstr "величина „%s“ је већа од величине „%s“"
+
+#: cobc/field.c:2536 cobc/field.c:2597
+#, c-format
+msgid "'%s' cannot be larger than %d bytes"
+msgstr "„%s“ не може бити веће од %d бајта"
+
+#: cobc/field.c:2570 cobc/field.c:2578
+#, c-format
+msgid "'%s' binary field cannot be larger than %d digits"
+msgstr "„%s“ бинарно поље не може бити веће од %d цифара"
+
+#: cobc/field.c:2656 cobc/field.c:3098
+#, c-format
+msgid "unexpected USAGE: %d"
+msgstr "неочекивано USAGE: %d"
+
+#: cobc/field.c:2764
+msgid "literal type does not match numeric data type"
+msgstr "врста словности не одговара врсти бројевних података"
+
+#: cobc/field.c:2837
+#, c-format
+msgid "THRU item '%s' may not come before '%s'"
+msgstr "THRU ставка „%s“ не може доћи пре „%s“"
+
+#: cobc/field.c:2860
+#, c-format
+msgid "RENAMES cannot start/end at the OCCURS item '%s'"
+msgstr "RENAMES не може почети/завршити на ставци OCCURS „%s“"
+
+#: cobc/field.c:2868
+#, c-format
+msgid "cannot use RENAMES on part of the table '%s'"
+msgstr "не можете користити RENAMES на делу табеле „%s“"
+
+#: cobc/field.c:2906
+#, c-format
+msgid "RENAMES may not contain '%s' as it is a pointer or object reference"
+msgstr "RENAMES не може садржати „%s“ јер је показивач или упута објекта"
+
+#: cobc/field.c:2911
+#, c-format
+msgid "RENAMES may not contain '%s' as it is an OCCURS DEPENDING table"
+msgstr "RENAMES не може садржати „%s“ јер је OCCURS DEPENDING табела"
+
+#: cobc/field.c:2935
+msgid "RENAMES may not reference a level 88"
+msgstr "RENAMES не може да упућује ниво 88"
+
+#: cobc/field.c:2959
+#, c-format
+msgid "'%s' must immediately follow the record '%s'"
+msgstr "„%s“ мора одмах да прати запис „%s“"
+
+#: cobc/field.c:2967
+#, c-format
+msgid "THRU item must be different to '%s'"
+msgstr "THRU ставка мора бити другачија од „%s“"
+
+#: cobc/field.c:2973
+#, c-format
+msgid "'%s' and '%s' must be in the same record"
+msgstr "„%s“ и „%s“ морају бити у истом запису"
+
+#: cobc/field.c:2984
+#, c-format
+msgid "THRU item '%s' may not be subordinate to '%s'"
+msgstr "THRU ставка „%s“ не може бити подређена „%s“"
+
+#: cobc/flag.def:40
+msgid ""
+"  -fstack-size=<number>\tdefine PERFORM stack size\n"
+"                       * default: 255"
+msgstr ""
+"  -fstack-size=<број>\t        дефинише величину PERFORM спремника\n"
+"                               * основно: 255"
+
+#: cobc/flag.def:45
+msgid ""
+"  -fif-cutoff=<number>  define cutoff depth for IF statements\n"
+"                        * default: 3"
+msgstr ""
+"  -fif-cutoff=<број>           дефинише дубину одсецања за IF тврдње\n"
+"                               * основно: 3"
+
+#: cobc/flag.def:50
+msgid ""
+"  -fsign=[ASCII|EBCDIC]\tdefine display sign representation\n"
+"                        * default: machine native"
+msgstr ""
+"  -fsign=[ASCII|EBCDIC]\t      дефинише представљање знака приказа\n"
+"                               * основно: изворно машинско"
+
+#: cobc/flag.def:54
+msgid ""
+"  -ffold-copy=[UPPER|LOWER]\tfold COPY subject to value\n"
+"                        * default: no transformation"
+msgstr ""
+"  -ffold-copy=[UPPER|LOWER]\t  увија COPY субјекат на вредност\n"
+"                               * основно: без преображаја"
+
+#: cobc/flag.def:58
+msgid ""
+"  -ffold-call=[UPPER|LOWER]\tfold PROGRAM-ID, CALL, CANCEL subject to value\n"
+"                        * default: no transformation"
+msgstr ""
+"  -ffold-call=[ГОРЊА|ДОЊА]\t   увија PROGRAM-ID, CALL, CANCEL субјекат на вредност\n"
+"                               * основно: без преображаја"
+
+#: cobc/flag.def:62
+msgid ""
+"  -fdefaultbyte=<value>\tinitialize fields without VALUE to value\n"
+"                        * decimal 0..255 or any quoted character\n"
+"                        * default: initialize to picture"
+msgstr ""
+"  -fdefaultbyte=<вредн>\t      започиње поља без VALUE на вредност\n"
+"                               * децимални 0..255 или било који цитирани знак\n"
+"                               * основно: започиње на слици"
+
+#: cobc/flag.def:67
+msgid ""
+"  -fmax-errors=<number>\tmaximum number of errors to report before\n"
+"                        compilation is aborted\n"
+"                        * default: 100"
+msgstr ""
+"  -fmax-errors=<број>\t        највећи број грешака за извештавање пре\n"
+"                               прекида превођења\n"
+"                               * основно: 100"
+
+#: cobc/flag.def:72
+msgid ""
+"  -fdump=<scope>        dump data fields on abort, <scope> may be\n"
+"                        a combination of: ALL, WS, LS, RD, FD, SC"
+msgstr ""
+"  -fdump=<досег>               исписује поља података на прекид, <досег> може бити\n"
+"                               комбинација: ALL, WS, LS, RD, FD, SC"
+
+#: cobc/flag.def:76
+msgid ""
+"  -fcallfh=<function>   use external provided EXTFH interface module\n"
+"                        <function> for I/O"
+msgstr ""
+"  -fcallfh=<функција>          користи споља достављен EXTFH модул сучеља\n"
+"                               <функција> за У/И"
+
+#: cobc/flag.def:82
+msgid ""
+"  -fintrinsics=[ALL|intrinsic function name(,name,...)]\n"
+"                        intrinsics to be used without FUNCTION keyword\n"
+msgstr ""
+"  -fintrinsics=[СВЕ|суштински назив функције(,назив,...)]\n"
+"                               „intrinsics“ да се користи безкључне речи FUNCTION\n"
+
+#: cobc/flag.def:90
+msgid ""
+"  -fno-recursive-check  disable check of recursive program call;\n"
+"                        effectively compiling as RECURSIVE program"
+msgstr ""
+"  -fno-recursive-check         искључује проверу дубинског позива програма;\n"
+"                               ефективно преводи као RECURSIVE програм"
+
+#: cobc/flag.def:94
+msgid ""
+"  -fwinmain             generate WinMain instead of main when compiling\n"
+"                        as executable"
+msgstr ""
+"  -fwinmain                    ствара „WinMain“ уместо „main“ приликом превођења\n"
+"                               као извршног"
+
+#: cobc/flag.def:98
+msgid "  -fcomputed-goto       generate computed goto C statements"
+msgstr "  -fcomputed-goto              ствара израчунате „goto C“ тврдње"
+
+#: cobc/flag.def:101
+msgid "  -falternate-ebcdic    use restricted ASCII to EBCDIC translate"
+msgstr "  -falternate-ebcdic           користи ограничено ASCII у EBCDIC превођење"
+
+#: cobc/flag.def:104
+msgid "  -fextra-brace         generate extra braces in C source"
+msgstr "  -fextra-brace                ствара додатне заграде у C извору"
+
+#: cobc/flag.def:107
+msgid "  -fgen-c-line-directives\tgenerate source location directives in C code"
+msgstr "  -fgen-c-line-directives\t    ствара директиве места извора у C коду"
+
+#: cobc/flag.def:110
+msgid "  -fgen-c-labels       generate extra labels in C sources"
+msgstr "  -fgen-c-labels               ствара додатне натписе у C изворима"
+
+#: cobc/flag.def:113
+msgid "  -fcorrect-numeric     attempt correction of invalid numeric display items"
+msgstr "  -fcorrect-numeric            покушава исправку неисправних ставки бројног приказа"
+
+#: cobc/flag.def:116
+msgid "  -fstack-on-heap       PERFORM stack allocated on heap"
+msgstr "  -fstack-on-heap              PERFORM спремник додељен на гомили"
+
+#: cobc/flag.def:120
+msgid ""
+"  -fno-remove-unreachable\tdisable remove of unreachable code\n"
+"                        * turned off by -g"
+msgstr ""
+"  -fno-remove-unreachable\t    искључује уклањање недохватљивог кода\n"
+"                               * искључује га „-g“"
+
+#: cobc/flag.def:124
+msgid ""
+"  -ftrace               generate trace code\n"
+"                        * scope: executed SECTION/PARAGRAPH"
+msgstr ""
+"  -ftrace                      ствара код праћења\n"
+"                               * сврха: извршено SECTION/PARAGRAPH"
+
+#: cobc/flag.def:128
+msgid ""
+"  -ftraceall            generate trace code\n"
+"                        * scope: executed SECTION/PARAGRAPH/STATEMENTS\n"
+"                        * turned on by -debug"
+msgstr ""
+"  -ftraceall                   ствара код праћења\n"
+"                               * сврха: извршено SECTION/PARAGRAPH/STATEMENTS\n"
+"                               * искључује га „-debug“"
+
+#: cobc/flag.def:133
+msgid "  -fsyntax-only         syntax error checking only; don't emit any output"
+msgstr "  -fsyntax-only                грешка синтаксе проверавања само; не издаје никакав излаз"
+
+#: cobc/flag.def:136
+msgid ""
+"  -fdebugging-line      enable debugging lines\n"
+"                        * 'D' in indicator column or floating >>D"
+msgstr ""
+"  -fdebugging-line             укључује редове прочишћавања\n"
+"                               * „D“ у ступцу указивача или покретно >>D"
+
+#: cobc/flag.def:140
+msgid ""
+"  -fsource-location     generate source location code\n"
+"                        * turned on by -debug/-g/-ftraceall"
+msgstr ""
+"  -fsource-location            ствара код места извора\n"
+"                               * укључује га „-debug/-g/-ftraceall“"
+
+#: cobc/flag.def:144
+msgid "  -fimplicit-init       automatic initialization of the COBOL runtime system"
+msgstr "  -fimplicit-init              аутоматско започињање COBOL система извршног времена"
+
+#: cobc/flag.def:147
+msgid ""
+"  -fstack-check         PERFORM stack checking\n"
+"                        * turned on by -debug or -g"
+msgstr ""
+"  -fstack-check                ОБАВЉА проверу спремника\n"
+"                               * укључује га „-debug“ или „-g“"
+
+#: cobc/flag.def:151
+msgid ""
+"  -fwrite-after         use AFTER 1 for WRITE of LINE SEQUENTIAL\n"
+"                        * default: BEFORE 1"
+msgstr ""
+"  -fwrite-after                користи AFTER 1 за ПИСАЊЕ „LINE SEQUENTIAL“\n"
+"                               * основно: BEFORE 1"
+
+#: cobc/flag.def:155
+msgid ""
+"  -fmfcomment           '*' or '/' in column 1 treated as comment\n"
+"                        * FIXED format only"
+msgstr ""
+"  -fmfcomment                  „*“ или „/“ у ступцу 1 се сматра напоменом\n"
+"                               * FIXED формат само"
+
+#: cobc/flag.def:159
+msgid ""
+"  -facucomment          '$' in indicator area treated as '*',\n"
+"                        '|' treated as floating comment"
+msgstr ""
+"  -facucomment                 „$“ у области указивача се сматра „*“,\n"
+"                               „|“ се сматра покретном напоменом"
+
+#: cobc/flag.def:163
+msgid ""
+"  -fnotrunc             allow numeric field overflow\n"
+"                        * non-ANSI behaviour"
+msgstr ""
+"  -fnotrunc                    дозвољава прекорачење бројног поља\n"
+"                               * не-ANSI понашање"
+
+#: cobc/flag.def:167
+msgid ""
+"  -fodoslide            adjust items following OCCURS DEPENDING\n"
+"                        * implies -fcomplex-odo"
+msgstr ""
+"  -fodoslide                   поправља ставке које прате OCCURS DEPENDING\n"
+"                               * подразумева „-fcomplex-odo“"
+
+#: cobc/flag.def:171
+msgid ""
+"  -fsingle-quote        use a single quote (apostrophe) for QUOTE\n"
+"                        * default: double quote"
+msgstr ""
+"  -fsingle-quote               користи један наводник (апостроф) за QUOTE\n"
+"                               * основно: двоструки наводник"
+
+#: cobc/flag.def:181
+msgid ""
+"  -foptional-file       treat all files as OPTIONAL\n"
+"                        * unless NOT OPTIONAL specified"
+msgstr ""
+"  -foptional-file              сматра све датотеке ка OPTIONAL\n"
+"                               * осим ако је NOT OPTIONAL наведено"
+
+#: cobc/flag.def:185
+msgid "  -fstatic-call         output static function calls for the CALL statement"
+msgstr "  -fstatic-call                исписује позиве статичке функције за CALL тврдњу"
+
+#: cobc/flag.def:188
+msgid ""
+"  -fno-gen-c-decl-static-call\tdisable generation of C function declations\n"
+"                        for subroutines with static CALL"
+msgstr ""
+"  -fno-gen-c-decl-static-call\tискључује стварање декларације C функције\n"
+"                               за подрутине са статичким CALL"
+
+#: cobc/flag.def:192
+msgid ""
+"  -fno-theaders         suppress all headers and output of compilation\n"
+"                        options from listing while keeping page breaks"
+msgstr ""
+"  -fno-theaders                потискује сва заглавља и излаз опција\n"
+"                               превођења са списка док задржава прекиде страница"
+
+#: cobc/flag.def:196
+msgid "  -fno-tsource          suppress source from listing"
+msgstr "  -fno-tsource                 потискује извор са списка"
+
+#: cobc/flag.def:199
+msgid "  -fno-tmessages        suppress warning and error summary from listing"
+msgstr "  -fno-tmessages               потискује сажетак упозорења и грешке са списка"
+
+#: cobc/flag.def:202
+msgid "  -ftsymbols            specify symbols in listing"
+msgstr "  -ftsymbols                   наводи симболе на списку"
+
+#: cobc/help.c:32
+msgid "GnuCOBOL compiler for most COBOL dialects with lots of extensions"
+msgstr "GnuCOBOL преводилац за већину COBOL дијалеката са много проширења"
+
+#: cobc/help.c:34
+#, c-format
+msgid "Usage: %s [options]... file..."
+msgstr "Употреба: %s [опције]... датотека..."
+
+#: cobc/help.c:47 bin/cobcrun.c:147
+#, c-format
+msgid ""
+"Report bugs to: %s\n"
+"or (preferably) use the issue tracker via the home page."
+msgstr ""
+"Пријавите грешке на: %s\n"
+"или (пожељније) користите пратиоца проблема на матичној страници."
+
+#: cobc/help.c:51 bin/cobcrun.c:150
+msgid "GnuCOBOL home page: <https://www.gnu.org/software/gnucobol/>"
+msgstr "Матична страница GnuCOBOL-а: <https://www.gnu.org/software/gnucobol/>"
+
+#: cobc/help.c:52 bin/cobcrun.c:151
+msgid "General help using GNU software: <https://www.gnu.org/gethelp/>"
+msgstr "Општа помоћ при коришћењу ГНУ софтвера: <https://www.gnu.org/gethelp/>"
+
+#: cobc/help.c:58 bin/cobcrun.c:130
+msgid "Options:"
+msgstr "Опције:"
+
+#: cobc/help.c:59
+msgid "  -h, -help             display this help and exit"
+msgstr "  -h, -help                    приказује ову помоћ и излази"
+
+#: cobc/help.c:60
+msgid "  -V, -version          display compiler version and exit"
+msgstr "  -V, -version                 приказује податке преводиоца и излази"
+
+#: cobc/help.c:61
+msgid ""
+"  -i, -info             display compiler information (build/environment)\n"
+"                        and exit"
+msgstr ""
+"  -i, -info                    приказује податке преводиоца (изградња/окружење)\n"
+"                               и излази"
+
+#: cobc/help.c:63
+msgid ""
+"  -v, -verbose          display compiler version and the commands\n"
+"                        invoked by the compiler"
+msgstr ""
+"  -v, -verbose                 приказује издање преводиоца и наредбе\n"
+"                               које призива преводилац"
+
+#: cobc/help.c:65
+msgid ""
+"  -vv, -verbose=2       like -v but additional pass verbose option\n"
+"                        to assembler/compiler"
+msgstr ""
+"  -vv, -verbose=2              као „-v“ али додатно шаље опширне опције\n"
+"                               асемблеру/преводиоцу"
+
+#: cobc/help.c:67
+msgid ""
+"  -vvv, -verbose=3      like -vv but additional pass verbose option\n"
+"                        to linker"
+msgstr ""
+"  -vvv, -verbose=3             као „-vv“ али додатно шаље опширне опције\n"
+"                               повезивачу"
+
+#: cobc/help.c:69
+msgid "  -q, -brief            reduced displays, commands invoked not shown"
+msgstr "  -q, -brief                   умањени прикази, призване наредбе нису приказане"
+
+#: cobc/help.c:70
+msgid "  -###                  like -v but commands not executed"
+msgstr "  -###                         као „-v“ али наредбе се не извршавају"
+
+#: cobc/help.c:71
+msgid "  -x                    build an executable program"
+msgstr "  -x                           гради извршни програм"
+
+#: cobc/help.c:72
+msgid "  -m                    build a dynamically loadable module (default)"
+msgstr "  -m                           гради динамички учитљив модул (основно)"
+
+#: cobc/help.c:73
+msgid "  -j [<args>], -job[=<args>]\trun program after build, passing <args>"
+msgstr "  -j [<арг>], -job[=<арг>]\t   покреће програм након изградње, прослеђујући <аргументе>"
+
+#: cobc/help.c:74
+msgid ""
+"  -std=<dialect>        warnings/features for a specific dialect\n"
+"                        <dialect> can be one of:\n"
+"                        default, cobol2014, cobol2002, cobol85, xopen,\n"
+"                        ibm-strict, ibm, mvs-strict, mvs,\n"
+"                        mf-strict, mf, bs2000-strict, bs2000,\n"
+"                        acu-strict, acu, rm-strict, rm;\n"
+"                        see configuration files in directory config"
+msgstr ""
+"  -std=<дијалект>              упозорења/функције за посебни дијалект\n"
+"                               <дијалект> може бити један од:\n"
+"                               default, cobol2014, cobol2002, cobol85, xopen,\n"
+"                               ibm-strict, ibm, mvs-strict, mvs,\n"
+"                               mf-strict, mf, bs2000-strict, bs2000,\n"
+"                               acu-strict, acu, rm-strict, rm;\n"
+"                               видите датотеке подешавања у подешавању директоријума"
+
+#: cobc/help.c:81
+msgid "  -F, -free             use free source format"
+msgstr "  -F, -free                    користи слободни формат извора"
+
+#: cobc/help.c:82
+msgid "  -fixed                use fixed source format (default)"
+msgstr "  -fixed                       користи непроменљиви формат извора (основно)"
+
+#: cobc/help.c:83
+msgid "  -O, -O2, -O3, -Os     enable optimization"
+msgstr "  -O, -O2, -O3, -Os            укључује оптимизацију"
+
+#: cobc/help.c:84
+msgid "  -O0                   disable optimization"
+msgstr "  -O0                          искључује оптимизацију"
+
+#: cobc/help.c:85
+msgid "  -g                    enable C compiler debug / stack check / trace"
+msgstr "  -g                           укључује прочишћавање / проверу спремника / праћење Ц преводиоца"
+
+#: cobc/help.c:86
+msgid "  -d, -debug            enable all run-time error checking"
+msgstr "  -d, -debug                   укључује читаву проверу грешака времена извршавања"
+
+#: cobc/help.c:87
+msgid "  -o <file>             place the output into <file>"
+msgstr "  -o <дттка>                   ставља излаз у <датотеку>"
+
+#: cobc/help.c:88
+msgid ""
+"  -b                    combine all input files into a single\n"
+"                        dynamically loadable module"
+msgstr ""
+"  -b                           обједињује све улазне датотеке у један\n"
+"                               динамички учитљив модул"
+
+#: cobc/help.c:90
+msgid "  -E                    preprocess only; do not compile or link"
+msgstr "  -E                           само предобрада; без превођења или повезивања"
+
+#: cobc/help.c:91
+msgid "  -C                    translation only; convert COBOL to C"
+msgstr "  -C                           само превођење; претвара COBOL у C"
+
+#: cobc/help.c:92
+msgid "  -S                    compile only; output assembly file"
+msgstr "  -S                           само превођење; резултира датотеком асемблера"
+
+#: cobc/help.c:93
+msgid "  -c                    compile and assemble, but do not link"
+msgstr "  -c                           преводи и саставља, али не повезује"
+
+#: cobc/help.c:94
+msgid "  -T <file>             generate and place a wide program listing into <file>"
+msgstr "  -T <дттка>                   ствара и ставља велики списак програма у <датотеку>"
+
+#: cobc/help.c:95
+msgid "  -t <file>             generate and place a program listing into <file>"
+msgstr "  -t <дттка>                   ствара и ставља списак програма у <датотеку>"
+
+#: cobc/help.c:96
+msgid "  --tlines=<lines>      specify lines per page in listing, default = 55"
+msgstr "  --tlines=<редови>            наводи редове по страници на списку, основно = 55"
+
+#: cobc/help.c:98
+msgid "  --tsymbols            specify symbols in listing, use -ftsymbols instead"
+msgstr "  --tsymbols                   наводи симболе на списку, користите „-ftsymbols“ уместо тога"
+
+#: cobc/help.c:100
+msgid "  -P[=<dir or file>]    generate preprocessed program listing (.lst)"
+msgstr "  -P[=<дир или дттка>]         ствара предобрађени списак програма (.lst)"
+
+#: cobc/help.c:102
+msgid ""
+"  -Xref                 generate cross reference through 'cobxref'\n"
+"                        (V. Coen's 'cobxref' must be in path)"
+msgstr ""
+"  -Xref                        ствара унакрсну упуту кроз „cobxref“\n"
+"                               (В. Коенов „cobxref“ мора бити у путањи)"
+
+#: cobc/help.c:105
+msgid "  -Xref                 specify cross reference in listing"
+msgstr "  -Xref                        наводи унакрсну упуту на списку"
+
+#: cobc/help.c:107
+msgid "  -I <directory>        add <directory> to copy/include search path"
+msgstr "  -I <директоријум>            додаје <директоријум> у путању претраге умножавања/укључивања"
+
+#: cobc/help.c:108
+msgid "  -L <directory>        add <directory> to library search path"
+msgstr "  -L <директоријум>            додаје <директоријум> у путању претраге библиотеке"
+
+#: cobc/help.c:109
+msgid "  -l <lib>              link the library <lib>"
+msgstr "  -l <библ>                    везује библиотеку <библ>"
+
+#: cobc/help.c:110
+msgid "  -A <options>          add <options> to the C compile phase"
+msgstr "  -A <опције>                  додаје <опције> у фазу C превођења"
+
+#: cobc/help.c:111
+msgid "  -Q <options>          add <options> to the C link phase"
+msgstr "  -Q <опције>                  додаје <опције> у фазу C везивања"
+
+#: cobc/help.c:112
+msgid "  -D <define>           define <define> for COBOL compilation"
+msgstr "  -D <дефин>                   дефинише <дефин> за COBOL превођење"
+
+#: cobc/help.c:113
+msgid "  -K <entry>            generate CALL to <entry> as static"
+msgstr "  -K <унос>                    ствара CALL за <унос> као статички"
+
+#: cobc/help.c:114
+msgid "  -conf=<file>          user-defined dialect configuration; see -std"
+msgstr "  -conf=<дттка>                подешавање дијалекта које дефинише корисник; видите „-std“"
+
+#: cobc/help.c:115
+msgid "  -list-reserved        display reserved words"
+msgstr "  -list-reserved               приказује резервисане речи"
+
+#: cobc/help.c:116
+msgid "  -list-intrinsics      display intrinsic functions"
+msgstr "  -list-intrinsics             приказује суштинске функције"
+
+#: cobc/help.c:117
+msgid "  -list-mnemonics       display mnemonic names"
+msgstr "  -list-mnemonics              приказује мнемоничке називе"
+
+#: cobc/help.c:118
+msgid "  -list-system          display system routines"
+msgstr "  -list-system                 приказује рутине система"
+
+#: cobc/help.c:119
+msgid ""
+"  -save-temps[=<dir>]   save intermediate files\n"
+"                        * default: current directory"
+msgstr ""
+"  -save-temps[=<дир>]          чува посредничке датотеке\n"
+"                               * основно: текући директоријум"
+
+#: cobc/help.c:121
+msgid "  -ext <extension>      add file extension for resolving COPY"
+msgstr "  -ext <проширење>             додаје проширење датотеке за решавање COPY"
+
+#: cobc/help.c:128
+msgid "Warning options:"
+msgstr "Опције упозорења:"
+
+#: cobc/help.c:129
+msgid "  -W                    enable all warnings"
+msgstr "  -W                    укључује сва упозорења"
+
+#: cobc/help.c:130
+msgid "  -Wall                 enable most warnings (all except as noted below)"
+msgstr "  -Wall                 укључује већину упозорења (сва осим као што је напоменуто испод)"
+
+#: cobc/help.c:131
+msgid "  -Wno-<warning>        disable warning enabled by default, -W or -Wall"
+msgstr "  -Wno-<упозорење>      искључије упозорење укључено по основи, „-W“ или „-Wall“"
+
+#. TRANSLATORS: This msgid is appended to msgid for -Wno-pending and others
+#: cobc/help.c:137
+msgid "                        * ALWAYS active"
+msgstr "                        * УВЕК активан"
+
+#. TRANSLATORS: This msgid is appended to msgid for -Wpossible-truncate and others
+#: cobc/help.c:141
+msgid "                        * NOT set with -Wall"
+msgstr "                        * НИЈЕ постављено са „-Wall“"
+
+#: cobc/help.c:146
+msgid "  -Werror               treat all warnings as errors"
+msgstr "  -Werror               сматра сва упозорења грешкама"
+
+#: cobc/help.c:147
+msgid "  -Werror=<warning>     treat specified <warning> as error"
+msgstr "  -Werror=<упозорење>   сматра наведено <упозорење> грешком"
+
+#: cobc/help.c:163
+msgid "Compiler options:"
+msgstr "Опције преводиоца:"
+
+#: cobc/help.c:178
+msgid ""
+"  -fibmcomp             sets -fbinary-size=2-4-8 -fsynchronized-clause=ok\n"
+"  -fno-ibmcomp          sets -fbinary-size=1--8  -fsynchronized-clause=ignore"
+msgstr ""
+"  -fibmcomp             поставља „-fbinary-size=2-4-8“ „-fsynchronized-clause=у реду“\n"
+"  -fno-ibmcomp          поставља „-fbinary-size=1--8“  „-fsynchronized-clause=занемари“"
+
+#: cobc/help.c:207
+msgid "Compiler dialect configuration options:"
+msgstr "Опције подешавања дијалекта превођења:"
+
+#: cobc/help.c:209 cobc/help.c:213
+msgid "<value>"
+msgstr "<вредност>"
+
+#: cobc/help.c:217
+msgid "<support>"
+msgstr "<подршка>"
+
+#: cobc/help.c:225
+msgid "where <support> is one of the following:"
+msgstr "када је <подршка> нешто од следећег:"
+
+#. TRANSLATORS: This msgid is used when a variable name
+#. or label is referenced in a compiler message.
+#: cobc/help.c:228 cobc/help.c:231 cobc/help.c:234 cobc/help.c:237
+#: cobc/help.c:240 cobc/help.c:243 cobc/help.c:246 cobc/help.c:249
+#: cobc/typeck.c:1790
+#, c-format
+msgid "'%s'"
+msgstr "„%s“"
+
+#: cobc/help.c:251
+msgid "word to be taken out of the reserved words list"
+msgstr "реч која ће бити изнесена са списка резервисаних речи"
+
+#: cobc/help.c:251 cobc/help.c:252 cobc/help.c:254 cobc/help.c:255
+msgid "<word>"
+msgstr "<реч>"
+
+#: cobc/help.c:252
+msgid "word to be added to reserved words list"
+msgstr "реч која ће бити додата на списак резервисаних речи"
+
+#: cobc/help.c:253
+msgid "word to be added to reserved words list as alias"
+msgstr "реч која ће бити додата на списак резервисаних речи као алијас"
+
+#: cobc/help.c:253
+msgid "<word>:<alias>"
+msgstr "<реч>:<алијас>"
+
+#: cobc/help.c:254
+msgid "special register to disable"
+msgstr "посебни регистар за искључивање"
+
+#: cobc/help.c:255
+msgid "special register to enable"
+msgstr "посебни регистар за укључивање"
+
+#: cobc/parser.y:280 cobc/parser.y:314
+#, c-format
+msgid "unreachable statement '%s'"
+msgstr "недостижна тврдња „%s“"
+
+#: cobc/parser.y:409 cobc/parser.y:738
+#, c-format
+msgid "'%s' is not in LINKAGE SECTION"
+msgstr "„%s“ није у LINKAGE SECTION"
+
+#: cobc/parser.y:412 cobc/typeck.c:3385
+#, c-format
+msgid "'%s' cannot be BASED/EXTERNAL"
+msgstr "„%s“ не може бити BASED/EXTERNAL"
+
+#: cobc/parser.y:417
+#, c-format
+msgid "'%s' is not in WORKING-STORAGE SECTION"
+msgstr "„%s“ није у WORKING-STORAGE SECTION"
+
+#
+# This error message is issued when a aedbu command is run by a
+# user who was not the developer of the change being operated on.
+#
+# For consistent translation, here is the English text:
+#  msgstr ""
+#  "user \"$user\" was not the developer of this change, only user \"$developer"
+#  "\" may undo develop end"
+# Please translate the English msgstr, not the msgid.
+#: cobc/parser.y:424 cobc/typeck.c:3382
+#, c-format
+msgid "'%s' not level 01 or 77"
+msgstr "„%s“ није ниво 01 или 77"
+
+#: cobc/parser.y:427 cobc/parser.y:462 cobc/typeck.c:3388
+#, c-format
+msgid "'%s' REDEFINES field not allowed here"
+msgstr "„%s“ REDEFINES поље није дозвољено овде"
+
+#: cobc/parser.y:447 cobc/typeck.c:6827
+#, c-format
+msgid "duplicate USING BY REFERENCE item '%s'"
+msgstr "удвостручена USING BY REFERENCE ставка „%s“"
+
+#: cobc/parser.y:475
+#, c-format
+msgid "'%s' USING item duplicates RETURNING item"
+msgstr "„%s“ USING ставка удвостручава RETURNING ставку"
+
+#: cobc/parser.y:485
+#, c-format
+msgid "ENTRY '%s' duplicated"
+msgstr "ENTRY „%s“ је удвостручено"
+
+#: cobc/parser.y:521
+#, c-format
+msgid "ENTRY FOR GO TO '%s' duplicated"
+msgstr "ENTRY FOR GO TO „%s“ је удвостручено"
+
+#: cobc/parser.y:537
+#, c-format
+msgid "maximum nested program depth exceeded (%d)"
+msgstr "премашена је највећа дубина угнежденог програма (%d)"
+
+#: cobc/parser.y:563 cobc/parser.y:590
+#, c-format
+msgid "%s statement not terminated by %s"
+msgstr "%s тврдња није окончана са %s"
+
+#: cobc/parser.y:593
+#, c-format
+msgid "%s statement not terminated"
+msgstr "%s тврдња није окончана"
+
+#: cobc/parser.y:657
+msgid "USE statement invalid for SORT file"
+msgstr "тврдња USE није исправна за SORT датотеку"
+
+#: cobc/parser.y:684 cobc/parser.y:687
+#, c-format
+msgid "duplicate %s clause"
+msgstr "двострука %s клаузула"
+
+#: cobc/parser.y:706
+#, c-format
+msgid "cannot specify both %s and %s; %s is ignored"
+msgstr "не можете навести и %s и %s; %s је занемарено"
+
+#: cobc/parser.y:709 cobc/parser.y:1638 cobc/parser.y:1641
+#, c-format
+msgid "cannot specify both %s and %s"
+msgstr "не можете навести и %s и %s"
+
+#: cobc/parser.y:720
+#, c-format
+msgid "Cannot specify %s without number of lines on page"
+msgstr "Не можете навести %s без броја редова по страници"
+
+#: cobc/parser.y:730
+#, c-format
+msgid "maximum OCCURS depth exceeded (%d)"
+msgstr "максимум OCCURS дубине је премашен (%d)"
+
+#: cobc/parser.y:744 cobc/parser.y:746 cobc/parser.y:6862 cobc/parser.y:6865
+#: cobc/parser.y:6867 cobc/parser.y:6869 cobc/parser.y:6904 cobc/parser.y:7636
+#: cobc/parser.y:7638 cobc/parser.y:7640 cobc/parser.y:7642 cobc/parser.y:7688
+#: cobc/parser.y:7697 cobc/parser.y:9600 cobc/parser.y:11052
+#: cobc/parser.y:12417 cobc/parser.y:13597
+#, c-format
+msgid "%s and %s are mutually exclusive"
+msgstr "%s и %s се међусобно искључују"
+
+#: cobc/parser.y:760 cobc/parser.y:764
+msgid "TO phrase without DEPENDING phrase"
+msgstr "реч TO без речи DEPENDING"
+
+#: cobc/parser.y:761
+msgid "maximum number of occurrences assumed to be exact number"
+msgstr "највећи број понављања је узето да буде тачан број"
+
+#: cobc/parser.y:768 cobc/parser.y:7425
+msgid "OCCURS TO must be greater than OCCURS FROM"
+msgstr "OCCURS TO мора бити веће од OCCURS FROM"
+
+#: cobc/parser.y:777
+msgid "OCCURS DEPENDING ON without TO phrase"
+msgstr "OCCURS DEPENDING ON без речи TO"
+
+#: cobc/parser.y:843
+#, c-format
+msgid "%s header missing - assumed"
+msgstr "%s заглавље недостаје – подразумева се"
+
+#: cobc/parser.y:845
+#, c-format
+msgid "%s header missing"
+msgstr "%s заглавље недостаје"
+
+#: cobc/parser.y:977
+#, c-format
+msgid "duplicate %s"
+msgstr "удвостручено %s"
+
+#: cobc/parser.y:979
+#, c-format
+msgid "%s incorrectly after %s"
+msgstr "%s нетачно након %s"
+
+#: cobc/parser.y:1081
+#, c-format
+msgid "redefinition of program name '%s'"
+msgstr "поновно дефинисање назива програма „%s“"
+
+#: cobc/parser.y:1085
+#, c-format
+msgid "redefinition of program ID '%s'"
+msgstr "поновно дефинисање ИБ-а програма „%s“"
+
+#: cobc/parser.y:1117
+#, c-format
+msgid "FUNCTION '%s' has no PROCEDURE DIVISION"
+msgstr "FUNCTION „%s“ нема PROCEDURE DIVISION"
+
+#: cobc/parser.y:1223
+msgid "functions may not be defined within a program/function"
+msgstr "функције не могу бити дефинисане унутар програма/функције"
+
+#: cobc/parser.y:1273
+#, c-format
+msgid "END FUNCTION '%s' is different from FUNCTION-ID '%s'"
+msgstr "END FUNCTION „%s“ се разликује од FUNCTION-ID „%s“"
+
+#: cobc/parser.y:1287
+#, c-format
+msgid "END PROGRAM '%s' is different from PROGRAM-ID '%s'"
+msgstr "END PROGRAM „%s“ се разликује од PROGRAM-ID „%s“"
+
+#: cobc/parser.y:1336
+msgid "currency symbol must be one character long"
+msgstr "симбол валуте мора бити дужине једног знака"
+
+#: cobc/parser.y:1393
+#, c-format
+msgid "invalid character '%c' in currency symbol"
+msgstr "неисправан знак „%c“ у симболу валуте"
+
+#: cobc/parser.y:1409
+msgid "prototype has same name as current function and will be ignored"
+msgstr "прототип има исти назив као текућа функција и биће занемарен"
+
+#: cobc/parser.y:1436
+#, c-format
+msgid "duplicate REPOSITORY entries for '%s' do not match"
+msgstr "удвостручени REPOSITORY уноси за „%s“ се не поклапају"
+
+#: cobc/parser.y:1440
+#, c-format
+msgid "duplicate REPOSITORY entry for '%s'"
+msgstr "удвостручени REPOSITORY унос за „%s“"
+
+#: cobc/parser.y:1505
+#, c-format
+msgid "ORGANIZATION %s is incompatible with RECORD DELIMITER"
+msgstr "ORGANIZATION %s није сагласно са RECORD DELIMITER-ом"
+
+#: cobc/parser.y:1540 cobc/parser.y:1901 cobc/typeck.c:513
+#, c-format
+msgid "condition-name not allowed here: '%s'"
+msgstr "назив услова није дозвољен овде: „%s“"
+
+#: cobc/parser.y:1546 cobc/parser.y:2097
+msgid "SCREEN item cannot be used here"
+msgstr "SCREEN ставка се не може користити овде"
+
+#: cobc/parser.y:1549
+msgid "REPORT item cannot be used here"
+msgstr "REPORT ставка се не може користити овде"
+
+#: cobc/parser.y:1555
+msgid "TYPEDEF item cannot be used here"
+msgstr "TYPEDEF ставка се не може користити овде"
+
+#: cobc/parser.y:1564
+msgid "elementary item expected"
+msgstr "очекивана је основна ставка"
+
+#: cobc/parser.y:1571
+msgid "item may not reference itself"
+msgstr "ставка не може да упућује на себе"
+
+#: cobc/parser.y:1578
+msgid "item may not be subordinate to any item with USAGE clause"
+msgstr "ставка не може бити подређена било којој ставци са USAGE клаузулом"
+
+#: cobc/parser.y:1580
+msgid "item may not be subordinate to any item with SIGN clause"
+msgstr "ставка не може бити подређена било којој ставци са SIGN клаузулом"
+
+#: cobc/parser.y:1622
+#, c-format
+msgid "illegal combination of %s with other clauses"
+msgstr "неисправна комбинација %s са другим клаузулама"
+
+#: cobc/parser.y:1827
+msgid "FOR phrase cannot immediately follow ALL/LEADING/TRAILING"
+msgstr "FOR фраза не може одмах да следи ALL/LEADING/TRAILING"
+
+#: cobc/parser.y:1829
+msgid "missing CHARACTERS/ALL/LEADING/TRAILING phrase after FOR phrase"
+msgstr "недостаје CHARACTERS/ALL/LEADING/TRAILING након FOR"
+
+#: cobc/parser.y:1836
+msgid "missing value between ALL/LEADING/TRAILING words"
+msgstr "недостаје вредност између речи ALL/LEADING/TRAILING"
+
+#: cobc/parser.y:1841
+msgid "missing FOR phrase before CHARACTERS/ALL/LEADING/TRAILING phrase"
+msgstr "недостаје FOR пре CHARACTERS/ALL/LEADING/TRAILING"
+
+#: cobc/parser.y:1848
+msgid "missing ALL/LEADING/TRAILING before value"
+msgstr "недостаје ALL/LEADING/TRAILING пре вредности"
+
+#: cobc/parser.y:1927
+msgid "cannot specify NO ADVANCING in screen DISPLAY"
+msgstr "не можете навести NO ADVANCING у екрану DISPLAY"
+
+#: cobc/parser.y:1999 cobc/parser.y:2016
+msgid "non-standard DISPLAY"
+msgstr "нестандардно DISPLAY"
+
+#: cobc/parser.y:2003
+msgid "screens may only be displayed on CRT"
+msgstr "екрани могу бити приказани на CRT"
+
+#: cobc/parser.y:2008 cobc/parser.y:2051
+msgid "cannot mix screens and fields in the same DISPLAY statement"
+msgstr "не можете мешати екране и поља у истој DISPLAY тврдњи"
+
+#: cobc/parser.y:2012
+msgid "screen clauses may only be used for DISPLAY on CRT"
+msgstr "клаузула екрана се може користити само за DISPLAY на CRT"
+
+#: cobc/parser.y:2057
+msgid "ambiguous DISPLAY; put items to display on device in separate DISPLAY"
+msgstr "нејасно DISPLAY; ставите ставке за приказ на уређају у одвојеном DISPLAY-у"
+
+#: cobc/parser.y:2073
+#, c-format
+msgid "%s is not an alphanumeric literal"
+msgstr "%s није алфанумеричка словност"
+
+#: cobc/parser.y:2075
+#, c-format
+msgid "'%s' is not USAGE DISPLAY"
+msgstr "„%s“ није USAGE DISPLAY"
+
+#: cobc/parser.y:2090 cobc/typeck.c:8110
+#, c-format
+msgid "invalid target for %s"
+msgstr "неисправна мета за „%s“"
+
+#: cobc/parser.y:2099
+msgid "RENAMES item may not be used here"
+msgstr "RENAMES ставка се не може користити овде"
+
+#: cobc/parser.y:2101 cobc/typeck.c:2133 cobc/typeck.c:2224
+msgid "ANY LENGTH item not allowed here"
+msgstr "ANY LENGTH ставка није дозвољена овде"
+
+#: cobc/parser.y:2105
+#, c-format
+msgid "item '%s' has wrong class for VALIDATE"
+msgstr "ставка „%s“ има погрешну класу за VALIDATE"
+
+#: cobc/parser.y:2114
+msgid "WHEN clause must follow EVERY clause"
+msgstr "WHEN клаузула мора да прати EVERY клаузулу"
+
+#: cobc/parser.y:2196 cobc/parser.y:17200
+msgid "non-zero value expected"
+msgstr "очекивана је ненулта вредност"
+
+#: cobc/parser.y:2202 cobc/tree.c:4248
+#, c-format
+msgid "RECORD size (IDX) exceeds maximum allowed (%d)"
+msgstr "RECORD величина (IDX) премашује дозвољени максимум (%d)"
+
+#: cobc/parser.y:2206 cobc/tree.c:4251
+#, c-format
+msgid "RECORD size exceeds maximum allowed (%d)"
+msgstr "RECORD величина премашује дозвољени максимум (%d)"
+
+#: cobc/parser.y:2211
+msgid "RECORD clause invalid"
+msgstr "RECORD клаузула је неисправна"
+
+#: cobc/parser.y:3285
+msgid "multiple PROGRAM-ID's without matching END PROGRAM"
+msgstr "више PROGRAM-ID-ова без поклапања са END PROGRAM"
+
+#: cobc/parser.y:3288
+msgid "executable requested but no program found"
+msgstr "затражен је извршни али прогрма није нађен"
+
+#: cobc/parser.y:3503 cobc/parser.y:3512
+msgid "COMMON may only be used in a contained program"
+msgstr "COMMON се може користити само у садржаном програму"
+
+#: cobc/parser.y:3521
+msgid "CALL prototypes"
+msgstr "CALL протоврсте"
+
+#: cobc/parser.y:3686 cobc/parser.y:3961 cobc/parser.y:4005 cobc/parser.y:4113
+#: cobc/parser.y:4300 cobc/parser.y:4396 cobc/parser.y:4437 cobc/parser.y:4508
+#: cobc/parser.y:4529 cobc/parser.y:4608 cobc/parser.y:4627 cobc/parser.y:4643
+#: cobc/parser.y:4661 cobc/parser.y:4679 cobc/parser.y:4696 cobc/parser.y:4714
+#: cobc/parser.y:6922 cobc/parser.y:7757
+#, c-format
+msgid "%s not allowed in nested programs"
+msgstr "%s није дозвољено у угнежденим програмима"
+
+#: cobc/parser.y:3838
+msgid "segment-number must be in range of values 1 to 49"
+msgstr "број подеока мора бити у опсегу вредности од 1 до 49"
+
+#: cobc/parser.y:3850
+msgid "duplicate CLASSIFICATION clause"
+msgstr "двострука CLASSIFICATION клаузула"
+
+#: cobc/parser.y:3926
+msgid "PROGRAM phrase"
+msgstr "реч PROGRAM"
+
+#: cobc/parser.y:4021 cobc/parser.y:4032 cobc/parser.y:4348
+#, c-format
+msgid "invalid %s clause"
+msgstr "неисправна %s клаузула"
+
+#: cobc/parser.y:4463 cobc/parser.y:4467
+msgid "CLASS literal with THRU must have size 1"
+msgstr "CLASS словност са THRU мора имати величину 1"
+
+#: cobc/parser.y:4494
+msgid "CLASS IS integer IN alphabet-name"
+msgstr "CLASS ЈЕ цео број У називу алфабета"
+
+#: cobc/parser.y:4541
+msgid "separate currency symbol and currency string"
+msgstr "раздваја симбол валуте и ниску валуте"
+
+#: cobc/parser.y:4574
+#, c-format
+msgid "invalid CURRENCY SIGN '%s'"
+msgstr "неисправан CURRENCY SIGN „%s“"
+
+#: cobc/parser.y:4792
+msgid "cannot use RELATIVE KEY clause on INDEXED files"
+msgstr "не можете користити RELATIVE KEY клаузулу на INDEXED датотекама"
+
+#: cobc/parser.y:4796
+msgid "cannot use RECORD KEY clause on RELATIVE files"
+msgstr "не можете користити RECORD KEY клаузулу на RELATIVE датотекама"
+
+#: cobc/parser.y:5192
+#, c-format
+msgid "'%s' is not an alphabet-name"
+msgstr "„%s“ није назив алфабета"
+
+#: cobc/parser.y:5281
+#, c-format
+msgid "%s only valid with ORGANIZATION %s"
+msgstr "%s је исправно само са ORGANIZATION %s"
+
+#: cobc/parser.y:5348 cobc/parser.y:5371
+#, c-format
+msgid "RECORD DELIMITER %s only allowed with SEQUENTIAL files"
+msgstr "RECORD DELIMITER %s је дозвољено само са датотекама SEQUENTIAL"
+
+#: cobc/parser.y:5359
+#, c-format
+msgid "RECORD DELIMITER %s only allowed with (LINE) SEQUENTIAL files"
+msgstr "RECORD DELIMITER %s је дозвољено само са датотекама (LINE) SEQUENTIAL"
+
+#: cobc/parser.y:5364
+msgid "LINE-SEQUENTIAL phrase"
+msgstr "реч LINE-SEQUENTIAL"
+
+#: cobc/parser.y:5376
+msgid "BINARY-SEQUENTIAL phrase"
+msgstr "реч BINARY-SEQUENTIAL"
+
+#: cobc/parser.y:5384
+msgid "RECORD DELIMITER clause only allowed with (LINE) SEQUENTIAL files"
+msgstr "RECORD DELIMITER клаузула је дозвољена само са датотекама (LINE) SEQUENTIAL"
+
+#: cobc/parser.y:5387
+#, c-format
+msgid "RECORD DELIMITER %s not recognized; will be ignored"
+msgstr "RECORD DELIMITER %s није препознато; биће занемарено"
+
+#: cobc/parser.y:5425
+msgid "DUPLICATES for primary keys"
+msgstr "DUPLICATES за примарне кључеве"
+
+#: cobc/parser.y:5669
+msgid "DOS/VS APPLY phrase"
+msgstr "реч DOS/VS APPLY"
+
+#: cobc/parser.y:5784
+msgid "RECORD description missing or invalid"
+msgstr "опис RECORD недостаје или је неисправно"
+
+#: cobc/parser.y:5810
+#, c-format
+msgid "duplicate file description for %s"
+msgstr "удвостручени опис датотеке за %s"
+
+#: cobc/parser.y:5843 cobc/parser.y:5853
+msgid "file cannot have both EXTERNAL and GLOBAL clauses"
+msgstr "датотека не може имати и EXTERNAL и GLOBAL клаузулу"
+
+#: cobc/parser.y:5857 cobc/parser.y:6446 cobc/parser.y:6907
+#: cobc/parser.y:12410 cobc/parser.y:15300
+#, c-format
+msgid "%s is invalid in a user FUNCTION"
+msgstr "%s је неисправно у корисничкој FUNCTION"
+
+#: cobc/parser.y:5895 cobc/parser.y:5904
+msgid "RECORD clause ignored for LINE SEQUENTIAL"
+msgstr "RECORD клаузула је занемарена за LINE SEQUENTIAL"
+
+#: cobc/parser.y:5996
+msgid "LINAGE clause with wrong file type"
+msgstr "LINAGE клаузула је са погрешном врстом датотеке"
+
+#: cobc/parser.y:6058
+msgid "RECORDING MODE U or S can only be used with RECORD SEQUENTIAL files"
+msgstr "RECORDING MODE U или S се може користити само са RECORD SEQUENTIAL датотекама"
+
+#: cobc/parser.y:6091
+#, c-format
+msgid "ignoring CODE-SET '%s'"
+msgstr "занемарујем CODE-SET „%s“"
+
+#: cobc/parser.y:6102
+msgid "CODE-SET clause invalid for file type"
+msgstr "CODE-SET клаузула је неисправна за врсту датотеке"
+
+#: cobc/parser.y:6124
+msgid "REPORT clause with wrong file type"
+msgstr "REPORT клаузула је са погрешном врстом датотеке"
+
+#: cobc/parser.y:6202
+msgid "CD record missing"
+msgstr "CD снимак недостаје"
+
+#: cobc/parser.y:6633
+msgid "CONSTANT item not at 01 level"
+msgstr "CONSTANT ставка није на нивоу 01"
+
+#: cobc/parser.y:6756
+msgid "REDEFINES clause not following entry-name"
+msgstr "REDEFINES клаузула не прати називе уноса"
+
+#: cobc/parser.y:6827 cobc/parser.y:6857 cobc/parser.y:6899 cobc/parser.y:7632
+#, c-format
+msgid "%s only allowed at 01/77 level"
+msgstr "%s је дозвољено само на нивоу 01/77"
+
+#: cobc/parser.y:6830 cobc/parser.y:6859 cobc/parser.y:6901 cobc/parser.y:7634
+#: cobc/parser.y:7717 cobc/parser.y:7739
+#, c-format
+msgid "%s requires a data name"
+msgstr "%s захтева назив податка"
+
+#: cobc/parser.y:6834
+#, c-format
+msgid "%s not allowed in %s"
+msgstr "%s није дозвољено у %s"
+
+#: cobc/parser.y:6855 cobc/parser.y:6909 cobc/parser.y:7630 cobc/parser.y:7713
+#: cobc/parser.y:7737
+#, c-format
+msgid "%s not allowed here"
+msgstr "%s није дозвољено овде"
+
+#: cobc/parser.y:7012
+msgid "a locale-format PICTURE string must only consist of '9', '.', '+', 'Z' and the currency-sign"
+msgstr "ниска PICTURE формата језика мора садржати само „9“, „.“, „+“, „Z“ и знака валуте"
+
+#: cobc/parser.y:7046 cobc/typeck.c:3338
+#, c-format
+msgid "'%s' is not a locale-name"
+msgstr "„%s“ није назив језика"
+
+#: cobc/parser.y:7086
+#, c-format
+msgid "'%s' is not a valid USAGE"
+msgstr "„%s“ није исправно USAGE"
+
+#: cobc/parser.y:7091
+#, c-format
+msgid "unknown USAGE: %s"
+msgstr "непознато USAGE: %s"
+
+#: cobc/parser.y:7227
+#, c-format
+msgid "unknown HANDLE type: %s"
+msgstr "непозната HANDLE врста: %s"
+
+#: cobc/parser.y:7476 cobc/parser.y:7478
+msgid "INDEXED should follow ASCENDING/DESCENDING"
+msgstr "INDEXED треба да иде за ASCENDING/DESCENDING"
+
+#: cobc/parser.y:7675
+msgid "FALSE clause only allowed for 88 level"
+msgstr "FALSE клаузула је дозвољена само за ниво 88"
+
+#: cobc/parser.y:7715
+#, c-format
+msgid "%s only allowed at 01 level"
+msgstr "%s је дозвољено само на нивоу 01"
+
+#: cobc/parser.y:7719 cobc/parser.y:7741
+#, c-format
+msgid "%s and %s combination not allowed"
+msgstr "%s и %s комбинација није дозвољена"
+
+#: cobc/parser.y:7850
+msgid "GLOBAL is not allowed with RD"
+msgstr "GLOBAL није дозвољено са RD"
+
+#: cobc/parser.y:8382
+msgid "PLUS is not recommended with LEFT, RIGHT or CENTER"
+msgstr "PLUS није препоручљиво са LEFT, RIGHT или CENTER"
+
+#: cobc/parser.y:8384
+msgid "PLUS is not allowed with LEFT, RIGHT or CENTER"
+msgstr "PLUS није дозвољено са LEFT, RIGHT или CENTER"
+
+#: cobc/parser.y:8421
+msgid "PLUS is ignored on first field of line"
+msgstr "PLUS је занемарено у првом пољу у реду"
+
+#: cobc/parser.y:8452
+msgid "invalid COLUMN integer; must be > 0"
+msgstr "неисправан COLUMN цео број; мора бити > 0"
+
+#: cobc/parser.y:8454
+msgid "COLUMN numbers should increase"
+msgstr "COLUMN бројеви треба да се повећавају"
+
+#: cobc/parser.y:8553 cobc/parser.y:8609
+msgid "INITIAL specified on non-input field"
+msgstr "INITIAL је наведено на пољу не-улаза"
+
+#: cobc/parser.y:8565 cobc/parser.y:8621
+msgid "relative LINE/COLUMN clause required with OCCURS"
+msgstr "релативна LINE/COLUMN клаузула се захтева са OCCURS"
+
+#: cobc/parser.y:8723 cobc/parser.y:8727
+msgid "screen positions from data-item"
+msgstr "положаји екрана из ставке података"
+
+#: cobc/parser.y:9550
+msgid "OCCURS screen items"
+msgstr "ставке OCCURS екрана"
+
+#: cobc/parser.y:9562
+msgid "GLOBAL screen items"
+msgstr "ставке GLOBAL екрана"
+
+#: cobc/parser.y:9607
+msgid "overriding convention specified in ENTRY-CONVENTION"
+msgstr "прескаче договор наведен у ENTRY-CONVENTION"
+
+#: cobc/parser.y:9619
+msgid "executable program requested but PROCEDURE/ENTRY has USING clause"
+msgstr "извршни програм је затражен али PROCEDURE/ENTRY има USING клаузулу"
+
+#: cobc/parser.y:9689 cobc/parser.y:9706 cobc/parser.y:11242
+#, c-format
+msgid "number of arguments exceeds maximum %d"
+msgstr "број аргумената превазилази максимум %d"
+
+#: cobc/parser.y:9698
+msgid "CHAINING invalid in user FUNCTION"
+msgstr "CHAINING је неисправно у корисничкој FUNCTION"
+
+#: cobc/parser.y:9734
+msgid "ANY LENGTH items may only be BY REFERENCE formal parameters"
+msgstr "ANY LENGTH ставке могу бити само по REFERENCE формалним параметрима"
+
+#: cobc/parser.y:9751 cobc/parser.y:11308 cobc/parser.y:11317
+#, c-format
+msgid "%s not allowed in CHAINED programs"
+msgstr "%s није дозвољено у CHAINED програмима"
+
+#: cobc/parser.y:9753
+msgid "parameters passed BY VALUE"
+msgstr "параметри које прослеђује BY VALUE"
+
+#: cobc/parser.y:9764 cobc/parser.y:9772 cobc/parser.y:9780 cobc/parser.y:9801
+msgid "SIZE only allowed for BY VALUE items"
+msgstr "SIZE је дозвољена само за BY VALUE ставке"
+
+#: cobc/parser.y:9803 cobc/parser.y:9820
+msgid "invalid value for SIZE"
+msgstr "неисправна вредност за SIZE"
+
+#: cobc/parser.y:9835
+msgid "MEMORY SIZE phrase in CALL statement"
+msgstr "MEMORY SIZE фраза у CALL тврдњи"
+
+#: cobc/parser.y:9847
+msgid "OPTIONAL only allowed for BY REFERENCE items"
+msgstr "OPTIONAL је дозвољено само за BY REFERENCE ставке"
+
+#: cobc/parser.y:9859
+msgid "RETURNING clause is required for a FUNCTION"
+msgstr "RETURNING клаузула се захтева за FUNCTION"
+
+#: cobc/parser.y:9865
+msgid "RETURNING clause cannot be OMITTED for main program"
+msgstr "RETURNING клаузула не може бити OMITTED за главни програм"
+
+#: cobc/parser.y:9868
+msgid "RETURNING clause cannot be OMITTED for a FUNCTION"
+msgstr "RETURNING клаузула не може бити OMITTED за FUNCTION"
+
+#: cobc/parser.y:9881
+msgid "RETURNING item is not defined in LINKAGE SECTION"
+msgstr "RETURNING ставка није дефинисана у LINKAGE SECTION"
+
+#: cobc/parser.y:9883
+msgid "RETURNING item must have level 01"
+msgstr "RETURNING ставка мора имати ниво 01"
+
+#: cobc/parser.y:9885
+msgid "RETURNING item should not have OCCURS"
+msgstr "RETURNING ставка не треба имати OCCURS"
+
+#: cobc/parser.y:9889
+msgid "function RETURNING item may not be ANY LENGTH"
+msgstr "ставка функције RETURNING не може бити ANY LENGTH"
+
+#: cobc/parser.y:10077
+#, c-format
+msgid "'%s' is not a statement"
+msgstr "„%s“ није тврдња"
+
+#: cobc/parser.y:10079
+#, c-format
+msgid "unknown statement '%s'; it may exist in another dialect"
+msgstr "непозната тврдња „%s“; може постојати у другом дијалекту"
+
+#: cobc/parser.y:10082
+#, c-format
+msgid "unknown statement '%s'"
+msgstr "непозната тврдња „%s“"
+
+#: cobc/parser.y:10100
+msgid "SECTION segment-number must be less than or equal to 99"
+msgstr "SECTION број подеока мора бити мањи од 99 или исти"
+
+#: cobc/parser.y:10103
+msgid "SECTION segment-number in DECLARATIVES must be less than 50"
+msgstr "SECTION број подеока у DECLARATIVES мора бити мањи од 50"
+
+#: cobc/parser.y:10111
+msgid "SECTION segment within DECLARATIVES"
+msgstr "SECTION подеок унутар DECLARATIVES"
+
+#: cobc/parser.y:10298 cobc/parser.y:10433
+msgid "non-standard ACCEPT"
+msgstr "нестандардно ACCEPT"
+
+#: cobc/parser.y:10310
+msgid "PROMPT clause"
+msgstr "PROMPT клаузула"
+
+#: cobc/parser.y:10314
+msgid "SIZE IS clause"
+msgstr "ВЕЛИЧИНА ЈЕ клаузула"
+
+#: cobc/parser.y:10529 cobc/parser.y:10821
+msgid "TIME-OUT or BEFORE TIME clauses"
+msgstr "TIME-OUT или BEFORE TIME клаузуле"
+
+#: cobc/parser.y:10555 cobc/parser.y:10571 cobc/parser.y:10586
+msgid "AT screen-location"
+msgstr "AT место екрана"
+
+#: cobc/parser.y:10587
+msgid "LINE or COLUMN"
+msgstr "LINE или COLUMN"
+
+#: cobc/parser.y:10951
+msgid "ALLOCATE CHARACTERS requires RETURNING clause"
+msgstr "ALLOCATE CHARACTERS захтева RETURNING клаузулу"
+
+#: cobc/parser.y:10966 cobc/parser.y:12215
+#, c-format
+msgid "ignoring %s phrase"
+msgstr "занемарује %s реченицу"
+
+#: cobc/parser.y:10968
+msgid "addressing mode should be either 24 or 31 bit"
+msgstr "режим адресирања треба бити или 24 или 31 бита"
+
+#: cobc/parser.y:11040
+msgid "recursive program call - assuming RECURSIVE attribute"
+msgstr "дубински позив програма – подразумевам RECURSIVE атрибут"
+
+#: cobc/parser.y:11059
+msgid "STATIC CALL convention ignored because of ON EXCEPTION"
+msgstr "STATIC CALL договор је занемарен због ON EXCEPTION"
+
+#: cobc/parser.y:11068
+msgid "ON EXCEPTION ignored because of STATIC CALL"
+msgstr "ON EXCEPTION је занемарено због STATIC CALL"
+
+#: cobc/parser.y:11169 cobc/typeck.c:11628
+msgid "invalid mnemonic name"
+msgstr "неисправан назив мнемоника"
+
+#: cobc/parser.y:11193
+msgid "id/literal ignored, using prototype name"
+msgstr "иб/словност је занемарено, користим назив прототипа"
+
+#: cobc/parser.y:11199
+msgid "NESTED phrase is only valid with literal"
+msgstr "NESTED реч је исправна само са словношћу"
+
+#: cobc/parser.y:11260
+msgid "OMITTED only allowed when arguments are passed BY REFERENCE"
+msgstr "OMITTED је дозвољено само када су аргументи прослеђени BY REFERENCE"
+
+#: cobc/parser.y:11273
+msgid "invalid file name reference"
+msgstr "неисправна упута назива датотеке"
+
+#: cobc/parser.y:11281
+#, c-format
+msgid "BY CONTENT assumed for alphanumeric item '%s'"
+msgstr "BY CONTENT је усвојено за алфанумеричку ставку „%s“"
+
+#: cobc/parser.y:11286
+#, c-format
+msgid "BY CONTENT assumed for national item '%s'"
+msgstr "BY CONTENT је усвојено за националну ставку „%s“"
+
+#: cobc/parser.y:11349
+msgid "RETURNING item must have level 01 or 77"
+msgstr "RETURNING ставка мора имати ниво 01 или 77"
+
+#: cobc/parser.y:11353
+msgid "RETURNING item must be a LINKAGE SECTION item or have BASED clause"
+msgstr "RETURNING ставка мора бити LINKAGE SECTION ставка или да има BASED клаузулу"
+
+#: cobc/parser.y:11387 cobc/parser.y:15967 cobc/parser.y:16022
+#: cobc/parser.y:16066 cobc/parser.y:16110
+msgid "NOT EXCEPTION before EXCEPTION"
+msgstr "NOT EXCEPTION пре EXCEPTION"
+
+#: cobc/parser.y:12088
+#, c-format
+msgid "HANDLE must be a %s HANDLE"
+msgstr "HANDLE мора бити %s HANDLE"
+
+#: cobc/parser.y:12100
+msgid "HANDLE must be a generic HANDLE"
+msgstr "HANDLE мора бити општа HANDLE"
+
+#: cobc/parser.y:12177
+#, c-format
+msgid "HANDLE clause invalid for %s"
+msgstr "HANDLE клаузула је неисправна за %s"
+
+#: cobc/parser.y:12408 cobc/parser.y:15490
+#, c-format
+msgid "%s is invalid in nested program"
+msgstr "%s је неисправно у угнежденом програму"
+
+#: cobc/parser.y:12446 cobc/parser.y:12487 cobc/parser.y:12498
+#: cobc/parser.y:12509
+#, c-format
+msgid "maximum evaluate depth exceeded (%d)"
+msgstr "највећа дубина процене је премашена (%d)"
+
+#: cobc/parser.y:12550 cobc/parser.y:12560
+msgid "WHEN without imperative statement"
+msgstr "WHEN без императивне тврдње"
+
+#: cobc/parser.y:12578 cobc/parser.y:12588
+msgid "WHEN OTHER without imperative statement"
+msgstr "WHEN OTHER без императивне тврдње"
+
+#: cobc/parser.y:12668
+msgid "invalid THROUGH usage"
+msgstr "неисправан THROUGH корисник"
+
+#: cobc/parser.y:12747
+msgid "EXIT PROGRAM is not allowed within a USE GLOBAL procedure"
+msgstr "EXIT PROGRAM није дозвољено унутар USE GLOBAL процедуре"
+
+#: cobc/parser.y:12751
+msgid "EXIT PROGRAM not allowed within a FUNCTION"
+msgstr "EXIT PROGRAM није дозвољено унутар FUNCTION"
+
+#: cobc/parser.y:12760 cobc/parser.y:12973
+msgid "RETURNING/GIVING not allowed for non-returning runtime elements"
+msgstr "RETURNING/GIVING није дозвољено за невраћајуће елеемнте времена извршења"
+
+#: cobc/parser.y:12772
+msgid "EXIT FUNCTION is not allowed within a USE GLOBAL procedure"
+msgstr "EXIT FUNCTION није дозвољено унутар USE GLOBAL процедуре"
+
+#: cobc/parser.y:12776
+msgid "EXIT FUNCTION only allowed within a FUNCTION"
+msgstr "EXIT FUNCTION је дозвољено само унутар FUNCTION"
+
+#: cobc/parser.y:12790 cobc/parser.y:12813
+msgid "EXIT PERFORM is only valid with inline PERFORM"
+msgstr "EXIT PERFORM је исправно само са унутарњим PERFORM"
+
+#: cobc/parser.y:12835
+msgid "EXIT SECTION is only valid with an active SECTION"
+msgstr "EXIT SECTION је исправно само са радном SECTION"
+
+#: cobc/parser.y:12856
+msgid "EXIT PARAGRAPH is only valid with an active PARAGRAPH"
+msgstr "EXIT PARAGRAPH је исправно само са радним PARAGRAPH"
+
+#: cobc/parser.y:13003
+msgid "IF without imperative statement"
+msgstr "IF без императивне тврдње"
+
+#: cobc/parser.y:13220
+msgid "TALLYING clause is incomplete"
+msgstr "TALLYING клаузула је непотпуна"
+
+#: cobc/parser.y:13336
+msgid "INSPECT missing ALL/FIRST/LEADING/TRAILING"
+msgstr "INSPECT-у недостаје ALL/FIRST/LEADING/TRAILING"
+
+#: cobc/parser.y:13454
+msgid "JSON PARSE"
+msgstr "JSON PARSE"
+
+#: cobc/parser.y:13597
+msgid "LOCK clauses"
+msgstr "LOCK клаузула"
+
+#: cobc/parser.y:13754
+msgid "inline PERFORM without imperative statement"
+msgstr "унутарње PERFORM без императивне тврдње"
+
+#: cobc/parser.y:13875 cobc/parser.y:13883 cobc/parser.y:13891
+#, c-format
+msgid "PERFORM VARYING '%s' (line %d of %s) is not a numeric field"
+msgstr "PERFORM VARYING „%s“ (%d. ред од %s) није бројно поље"
+
+#: cobc/parser.y:13907
+msgid "PERFORM VARYING without BY phrase"
+msgstr "PERFORM VARYING је без BY речи"
+
+#: cobc/parser.y:13947
+#, c-format
+msgid "'%s' is not an object-reference"
+msgstr "„%s“ није упута објекта"
+
+#: cobc/parser.y:13988 cobc/typeck.c:10531 cobc/typeck.c:11536
+msgid "LOCK clause invalid with file LOCK AUTOMATIC"
+msgstr "LOCK клаузула је неисправна са датотеком LOCK AUTOMATIC"
+
+#: cobc/parser.y:13993
+msgid "KEY clause invalid with this file type"
+msgstr "KEY клаузула је неисправна са овом врстом датотеке"
+
+#: cobc/parser.y:13998 cobc/typeck.c:10527 cobc/typeck.c:11532
+msgid "INVALID KEY clause invalid with this file type"
+msgstr "INVALID KEY клаузула је неисправна са овом врстом датотеке"
+
+#: cobc/parser.y:14604
+msgid "file sort requires KEY phrase"
+msgstr "ређање датотеке захтева KEY реч"
+
+#: cobc/parser.y:14628
+msgid "table SORT requires KEY phrase"
+msgstr "SORT табеле захтева KEY реч"
+
+#: cobc/parser.y:14690
+msgid "file sort requires USING or INPUT PROCEDURE"
+msgstr "ређање датотеке захтева USING или INPUT PROCEDURE"
+
+#: cobc/parser.y:14697
+msgid "USING invalid with table SORT"
+msgstr "USING је неисправно са табелом SORT"
+
+#: cobc/parser.y:14707
+msgid "INPUT PROCEDURE invalid with table SORT"
+msgstr "INPUT PROCEDURE је неисправно са табелом SORT"
+
+#: cobc/parser.y:14709
+msgid "INPUT PROCEDURE invalid with MERGE"
+msgstr "INPUT PROCEDURE је неисправно са MERGE"
+
+#: cobc/parser.y:14722
+msgid "file sort requires GIVING or OUTPUT PROCEDURE"
+msgstr "ређање датотеке захтева GIVING или OUTPUT PROCEDURE"
+
+#: cobc/parser.y:14729
+msgid "GIVING invalid with table SORT"
+msgstr "GIVING је неисправно са табелом SORT"
+
+#: cobc/parser.y:14739
+msgid "OUTPUT PROCEDURE invalid with table SORT"
+msgstr "OUTPUT PROCEDURE је неисправно са табелом SORT"
+
+#: cobc/parser.y:14766
+msgid "SIZE/LENGTH invalid here"
+msgstr "SIZE/LENGTH је неисправно овде"
+
+#: cobc/parser.y:14819
+msgid "NOT EQUAL condition not allowed on START statement"
+msgstr "NOT EQUAL услов није дозвољен на START тврдњи"
+
+#: cobc/parser.y:14867
+#, c-format
+msgid "%s is replaced by %s"
+msgstr "%s је замењено са %s"
+
+#: cobc/parser.y:14920
+msgid "STOP literal"
+msgstr "STOP словност"
+
+#: cobc/parser.y:14924
+msgid "STOP identifier"
+msgstr "STOP одредник"
+
+#: cobc/parser.y:15061
+msgid "SUPPRESS statement must be within DECLARATIVES"
+msgstr "SUPPRESS тврдња мора бит унутар DECLARATIVES"
+
+#: cobc/parser.y:15135
+msgid "UNLOCK invalid for SORT files"
+msgstr "UNLOCK је неисправно за SORT датотеке"
+
+#: cobc/parser.y:15271 cobc/parser.y:15350
+msgid "USE statement must be within DECLARATIVES"
+msgstr "USE тврдња мора бит унутар DECLARATIVES"
+
+#: cobc/parser.y:15273
+msgid "SECTION header missing before USE statement"
+msgstr "SECTION заглавље недостаје пре USE тврдње"
+
+#: cobc/parser.y:15352
+msgid "USE DEBUGGING not supported in contained program"
+msgstr "USE DEBUGGING није подржано у садржаном програму"
+
+#: cobc/parser.y:15400 cobc/parser.y:15409 cobc/parser.y:15427
+#: cobc/parser.y:15463 cobc/typeck.c:3472
+#, c-format
+msgid "duplicate DEBUGGING target: '%s'"
+msgstr "удвостручена DEBUGGING мета: „%s“"
+
+#: cobc/parser.y:15425
+msgid "constant item cannot be used here"
+msgstr "ставка константе се не може користити овде"
+
+#: cobc/parser.y:15451
+msgid "duplicate USE DEBUGGING ON ALL PROCEDURES"
+msgstr "двоструко USE DEBUGGING ON ALL PROCEDURES"
+
+#: cobc/parser.y:15523
+#, c-format
+msgid "'%s' is not a report group"
+msgstr "„%s“ није група извештаја"
+
+#: cobc/parser.y:15705
+msgid "ENCODING clause must come before XML-DECLARATION"
+msgstr "ENCODING клаузула мора бити пре XML-DECLARATION"
+
+#: cobc/parser.y:15707
+msgid "ENCODING clause must come before ATTRIBUTES"
+msgstr "ENCODING клаузула мора бити пре ATTRIBUTES"
+
+#: cobc/parser.y:15710
+msgid "XML GENERATE ENCODING clause"
+msgstr "XML GENERATE ENCODING клаузула"
+
+#: cobc/parser.y:15717
+msgid "XML-DECLARATION clause must come before ATTRIBUTES"
+msgstr "XML-DECLARATION клаузула мора бити пре ATTRIBUTES"
+
+#: cobc/parser.y:15720
+msgid "XML GENERATE XML-DECLARATION clause"
+msgstr "XML GENERATE XML-DECLARATION клаузула"
+
+#: cobc/parser.y:15726
+msgid "XML GENERATE WITH ATTRIBUTES clause"
+msgstr "XML GENERATE WITH ATTRIBUTES клаузула"
+
+#: cobc/parser.y:15739
+msgid "XML GENERATE NAMESPACE clause"
+msgstr "XML GENERATE NAMESPACE клаузула"
+
+#: cobc/parser.y:15763
+msgid "XML GENERATE NAME OF clause"
+msgstr "XML GENERATE NAME OF клаузула"
+
+#: cobc/parser.y:15794
+msgid "XML GENERATE TYPE OF clause"
+msgstr "XML GENERATE TYPE OF клаузула"
+
+#: cobc/parser.y:15835
+msgid "XML GENERATE SUPPRESS clause"
+msgstr "XML GENERATE SUPPRESS клаузула"
+
+#: cobc/parser.y:15909
+msgid "XML PARSE"
+msgstr "XML PARSE"
+
+#: cobc/parser.y:15950 cobc/parser.y:16628 cobc/parser.y:16724
+#: cobc/parser.y:16810
+#, c-format
+msgid "'%s' is not a file name"
+msgstr "„%s“ није назив датотеке"
+
+#: cobc/parser.y:16156
+msgid "NOT SIZE ERROR before SIZE ERROR"
+msgstr "NOT SIZE ERROR пре SIZE ERROR"
+
+#: cobc/parser.y:16202
+msgid "NOT OVERFLOW before OVERFLOW"
+msgstr "NOT OVERFLOW пре OVERFLOW"
+
+#: cobc/parser.y:16301
+msgid "NOT AT END-OF-PAGE before AT END-OF-PAGE"
+msgstr "NOT AT END-OF-PAGE пре AT END-OF-PAGE"
+
+#: cobc/parser.y:16351
+msgid "NOT INVALID KEY before INVALID KEY"
+msgstr "NOT INVALID KEY пре INVALID KEY"
+
+#: cobc/parser.y:16614
+msgid "LINAGE-COUNTER must be qualified here"
+msgstr "LINAGE-COUNTER мора бити квалификовано овде"
+
+#: cobc/parser.y:16617
+msgid "invalid LINAGE-COUNTER usage"
+msgstr "неисправно LINAGE-COUNTER коришћење"
+
+#: cobc/parser.y:16638
+msgid "LINE-COUNTER must be qualified here"
+msgstr "LINE-COUNTER мора бити квалификовано овде"
+
+#: cobc/parser.y:16642
+msgid "invalid LINE-COUNTER usage"
+msgstr "неисправно LINE-COUNTER коришћење"
+
+#: cobc/parser.y:16653 cobc/parser.y:16678
+#, c-format
+msgid "'%s' is not a report name"
+msgstr "„%s“ није назив извештаја"
+
+#: cobc/parser.y:16663
+msgid "PAGE-COUNTER must be qualified here"
+msgstr "PAGE-COUNTER мора бити квалификовано овде"
+
+#: cobc/parser.y:16667
+msgid "invalid PAGE-COUNTER usage"
+msgstr "неисправно PAGE-COUNTER коришћење"
+
+#: cobc/parser.y:16714 cobc/typeck.c:10488 cobc/typeck.c:10575
+#: cobc/typeck.c:11500
+#, c-format
+msgid "%s requires a record name as subject"
+msgstr "%s захтева назив записа као субјекат"
+
+#: cobc/parser.y:16741
+#, c-format
+msgid "'%s' not indexed"
+msgstr "„%s“ није индексирано"
+
+#: cobc/parser.y:16767 cobc/parser.y:16792
+#, c-format
+msgid "multiple reference to '%s' "
+msgstr "вишеструка упута на „%s“ "
+
+#: cobc/parser.y:16822
+#, c-format
+msgid "'%s' is not a CD name"
+msgstr "„%s“ није CD назив"
+
+#: cobc/parser.y:16836
+#, c-format
+msgid "'%s' is not a valid report name"
+msgstr "„%s“ није исправан назив извештаја"
+
+#: cobc/parser.y:17095
+msgid "invalid mnemonic identifier"
+msgstr "неисправан одредник мнемоника"
+
+#: cobc/parser.y:17175
+msgid "a numeric literal is expected here"
+msgstr "бројевна словност је очекивана овде"
+
+#: cobc/parser.y:17187 cobc/parser.y:17908
+msgid "a non-numeric literal is expected here"
+msgstr "не бројевна словност је очекивана овде"
+
+#: cobc/parser.y:17360 cobc/typeck.c:5739 cobc/typeck.c:5746
+#, c-format
+msgid "'%s' is not numeric"
+msgstr "„%s“ није број"
+
+#: cobc/parser.y:17376
+#, c-format
+msgid "'%s' is not a field or file"
+msgstr "„%s“ није поље или датотека"
+
+#: cobc/parser.y:17396 cobc/parser.y:17435
+#, c-format
+msgid "'%s' is not a field"
+msgstr "„%s“ није поље"
+
+#: cobc/parser.y:17417
+#, c-format
+msgid "'%s' is not a type-name"
+msgstr "„%s“ није назив врсте"
+
+#: cobc/parser.y:17557
+#, c-format
+msgid "'%s' is not a field or alphabet"
+msgstr "„%s“ није поље или алфабет"
+
+#: cobc/parser.y:17583
+msgid "a subscripted data-item cannot be used here"
+msgstr "подскриптована ставка података се не може користити овде"
+
+#: cobc/parser.y:17631
+msgid "unsigned integer value expected"
+msgstr "очекивана је вредност целог броја без знака"
+
+#: cobc/parser.y:17643 cobc/parser.y:17647 cobc/parser.y:17697
+msgid "integer value expected"
+msgstr "очекивана је вредност целог броја"
+
+#: cobc/parser.y:17652
+msgid "invalid symbolic integer"
+msgstr "неисправан симболички цео број"
+
+#: cobc/parser.y:17668 cobc/parser.y:17672
+msgid "unsigned positive integer value expected"
+msgstr "очекивана је вредност позитивног целог броја без знака"
+
+#: cobc/parser.y:17701
+msgid "invalid CLASS value"
+msgstr "неисправна CLASS вредност"
+
+#: cobc/parser.y:17789
+msgid "PHYSICAL argument for LENGTH functions"
+msgstr "PHYSICAL аргумент за LENGTH функције"
+
+#: cobc/parser.y:17960 cobc/parser.y:17977
+msgid "cannot specify offset and SYSTEM-OFFSET at the same time"
+msgstr "не можете навести померај и SYSTEM-OFFSET у исто време"
+
+#: cobc/pplex.l:220 cobc/pplex.l:1685
+msgid "debugging indicator"
+msgstr "указивач прочишћавања"
+
+#: cobc/pplex.l:297
+msgid "ignoring empty directive"
+msgstr "занемарујем празну смерницу"
+
+#: cobc/pplex.l:307 cobc/pplex.l:366
+#, c-format
+msgid "ignoring invalid directive: '%s'"
+msgstr "занемарујем неисправну смерницу: „%s“"
+
+#: cobc/pplex.l:314
+msgid "ignoring invalid directive"
+msgstr "занемарујем неисправну смерницу"
+
+#: cobc/pplex.l:321
+msgid "VCS directive"
+msgstr "VCS смерница"
+
+#: cobc/pplex.l:374 cobc/pplex.l:389
+msgid "spurious '$' detected - ignored"
+msgstr "лажно „$“ је откривено – занемарујем"
+
+#: cobc/pplex.l:383
+#, c-format
+msgid "ignoring unknown directive: '%s'"
+msgstr "занемарујем непознату смерницу: „%s“"
+
+#: cobc/pplex.l:395
+msgid "PROCESS statement ignored"
+msgstr "PROCESS тврдња је занемарена"
+
+#: cobc/pplex.l:855
+msgid "IF/ELIF/ELSE directive without matching END-IF"
+msgstr "IF/ELIF/ELSE смерница без одговарајућег END-IF"
+
+#: cobc/pplex.l:972
+msgid "file was included here"
+msgstr "датотека беше укључена овде"
+
+#: cobc/pplex.l:1177
+#, c-format
+msgid "directive nest depth exceeded: %d"
+msgstr "премашена је дубина гнезда смернице: %d"
+
+#: cobc/pplex.l:1195
+msgid "ELSE directive without matching IF/ELIF"
+msgstr "ELSE смерница без одговарајућег IF/ELIF"
+
+#: cobc/pplex.l:1211
+msgid "END-IF directive without matching IF/ELIF/ELSE"
+msgstr "END-IF смерница без одговарајућег IF/ELIF/ELSE"
+
+#: cobc/pplex.l:1227
+msgid "ELIF directive without matching IF/ELIF"
+msgstr "ELIF смерница без одговарајућег IF/ELIF"
+
+#: cobc/pplex.l:1249
+#, c-format
+msgid "invalid internal case: %u"
+msgstr "неисправно унутрашње слово: %u"
+
+#: cobc/pplex.l:1386
+msgid "buffer overrun - too many continuation lines"
+msgstr "прекорачење међумеморије – превише редова настављања"
+
+#: cobc/pplex.l:1476 cobc/pplex.l:1485
+msgid "line not terminated by a newline"
+msgstr "ред није окончан новим редом"
+
+#: cobc/pplex.l:1479 cobc/pplex.l:1488
+#, c-format
+msgid "source text exceeds %d bytes, will be truncated"
+msgstr "изворни текст премашује %d бајта, биће скраћен"
+
+#: cobc/pplex.l:1507
+msgid "version control conflict marker in file"
+msgstr "контрола издања се сукобљава са маркером у датотеци"
+
+#: cobc/pplex.l:1673
+msgid "invalid continuation in comment entry"
+msgstr "неисправно настављање у уносу напомене"
+
+#: cobc/pplex.l:1698
+#, c-format
+msgid "invalid indicator '%c' at column 7"
+msgstr "неисправан указивач '%c' у 7. ступцу"
+
+#: cobc/pplex.l:1746 cobc/pplex.l:1757
+msgid "invalid line continuation"
+msgstr "неисправно настављање реда"
+
+#: cobc/pplex.l:1765
+msgid "continuation character expected"
+msgstr "знак настављања је очекиван"
+
+#: cobc/pplex.l:1831
+#, c-format
+msgid "source text after program-text area (column %d)"
+msgstr "текст извора након области програмског текста (%d. стубац)"
+
+#: cobc/ppparse.y:230
+msgid "directive comparison on different types"
+msgstr "поређење смернице на различитим врстама"
+
+#: cobc/ppparse.y:298
+#, c-format
+msgid "duplicate DEFINE directive '%s'"
+msgstr "удвостручена DEFINE смерница „%s“"
+
+#: cobc/ppparse.y:305 cobc/ppparse.y:315
+msgid "invalid constant in DEFINE directive"
+msgstr "неисправна константа у DEFINE смерници"
+
+#: cobc/ppparse.y:413
+#, c-format
+msgid "compiler flag '%s' unknown"
+msgstr "заставица преводиоца „%s“ није позната"
+
+#: cobc/ppparse.y:459
+#, c-format
+msgid "invalid %s directive option '%s'"
+msgstr "неисправна %s смернице опција „%s“"
+
+#: cobc/ppparse.y:670
+msgid "*CONTROL statement"
+msgstr "*CONTROL тврдња"
+
+#: cobc/ppparse.y:911 cobc/ppparse.y:982 cobc/ppparse.y:1119
+#, c-format
+msgid "invalid %s directive"
+msgstr "неисправна %s смерница"
+
+#: cobc/ppparse.y:1021
+msgid "LEAP-SECOND ON directive"
+msgstr "LEAP-SECOND ON смерница"
+
+#: cobc/ppparse.y:1029
+msgid "TURN directive"
+msgstr "TURN смерница"
+
+#: cobc/ppparse.y:1111 cobc/ppparse.y:1136
+msgid "invalid constant"
+msgstr "неисправна константа"
+
+#: cobc/reserved.c:3781
+msgid "device name"
+msgstr "назив уређаја"
+
+#: cobc/reserved.c:3784
+msgid "switch name"
+msgstr "назив прекидача"
+
+#: cobc/reserved.c:3787
+msgid "feature name"
+msgstr "назив склопа"
+
+#: cobc/reserved.c:3886
+#, c-format
+msgid "reserved word must have less than %d characters"
+msgstr "резервисана реч мора имати мање од %d знака"
+
+#: cobc/reserved.c:3905
+msgid "ignored asterisk at end of alias target"
+msgstr "занемарена звездица на крају мете алијаса"
+
+#: cobc/reserved.c:3968
+#, c-format
+msgid "alias target '%s' is not a default reserved word"
+msgstr "мета алијаса „%s“ није основна резервисана реч"
+
+#: cobc/reserved.c:4431
+#, c-format
+msgid "invalid system-name '%s'"
+msgstr "неисправан назив система „%s“"
+
+#: cobc/reserved.c:4568
+#, c-format
+msgid "'%s' is a reserved word, but isn't supported"
+msgstr "„%s“ је резервисана реч, али није подржана"
+
+#: cobc/reserved.c:4673
+#, c-format
+msgid "intrinsic function %s is unknown"
+msgstr "суштинска функција %s је непозната"
+
+#: cobc/reserved.c:4701
+msgid "Intrinsic Function"
+msgstr "Суштинска функција"
+
+#: cobc/reserved.c:4701 cobc/reserved.c:4881 cobc/reserved.c:5018
+msgid "Implemented"
+msgstr "Примењено"
+
+#: cobc/reserved.c:4701 cobc/typeck.c:845
+msgid "Parameters"
+msgstr "Параметри"
+
+#: cobc/reserved.c:4705 cobc/reserved.c:4885 cobc/reserved.c:5032
+msgid "Yes"
+msgstr "Да"
+
+#: cobc/reserved.c:4708 cobc/reserved.c:4888 cobc/reserved.c:5038
+msgid "No"
+msgstr "Не"
+
+#: cobc/reserved.c:4714
+msgid "Unlimited"
+msgstr "Неограничено"
+
+#: cobc/reserved.c:4788
+#, c-format
+msgid "special register %s is unknown, needs a definition"
+msgstr "издвојени регистар %s је непознат, треба му дефиниција"
+
+#: cobc/reserved.c:4794
+#, c-format
+msgid "special register %s is unknown"
+msgstr "издвојени регистар %s је непознат"
+
+#: cobc/reserved.c:4881
+msgid "Internal registers"
+msgstr "Унутрашњи регистри"
+
+#: cobc/reserved.c:4881
+msgid "Definition"
+msgstr "Одредница"
+
+#: cobc/reserved.c:4969
+#, c-format
+msgid "unknown system-name '%s'"
+msgstr "непознат назив система „%s“"
+
+#: cobc/reserved.c:4995
+msgid "System names"
+msgstr "Називи система"
+
+#: cobc/reserved.c:5018
+msgid "Reserved Words"
+msgstr "Резервисане речи"
+
+#: cobc/reserved.c:5030
+msgid "Yes (Context sensitive)"
+msgstr "Да (Осетљиво на контекст)"
+
+#: cobc/reserved.c:5036
+msgid "No (Context sensitive)"
+msgstr "Не (Осетљиво на контекст)"
+
+#: cobc/reserved.c:5065
+msgid "Extra (obsolete) context sensitive words"
+msgstr "Нарочито (застарело) на контекст осетљиве речи"
+
+#: cobc/scanner.l:250 cobc/scanner.l:2268
+#, c-format
+msgid "'%s' is not a default reserved word, so cannot be aliased"
+msgstr "„%s“ није основна резервисана реч, тако да не може имати алијас"
+
+#: cobc/scanner.l:253
+#, c-format
+msgid "'%s' is not a reserved word; you may want ADDSYN or OVERRIDE instead"
+msgstr "„%s“ није резервисана реч; можете желети ADDSYN или OVERRIDE уместо тога"
+
+#: cobc/scanner.l:968
+#, c-format
+msgid "a constant may not be used here - '%s'"
+msgstr "константа се не може користити овде – „%s“"
+
+#: cobc/scanner.l:1023
+msgid "ignoring redundant ."
+msgstr "занемарујем поновљиву ."
+
+#: cobc/scanner.l:1081
+#, c-format
+msgid "invalid symbol '%s' - skipping word"
+msgstr "неисправан симбол „%s“ – прескачем реч"
+
+#: cobc/scanner.l:1171
+msgid "invalid national literal"
+msgstr "неисправна национална словност"
+
+#: cobc/scanner.l:1182 cobc/tree.c:2452
+#, c-format
+msgid "invalid literal: '%s'"
+msgstr "неисправна словност: „%s“"
+
+#: cobc/scanner.l:1184
+#, c-format
+msgid "invalid hexadecimal literal: '%s'"
+msgstr "неисправна хексадецимална словност: „%s“"
+
+#: cobc/scanner.l:1186 cobc/tree.c:1558
+#, c-format
+msgid "invalid numeric literal: '%s'"
+msgstr "неисправна бројевна словност: „%s“"
+
+#: cobc/scanner.l:1188
+#, c-format
+msgid "invalid floating-point literal: '%s'"
+msgstr "неисправна словност покретног зареза: „%s“"
+
+#: cobc/scanner.l:1190
+#, c-format
+msgid "invalid %s literal: '%s'"
+msgstr "неисправна %s словност: „%s“"
+
+#: cobc/scanner.l:1241
+#, c-format
+msgid "literal length exceeds %d characters"
+msgstr "дужина словности премашује %d знака"
+
+#: cobc/scanner.l:1257 cobc/scanner.l:1306 cobc/scanner.l:1600
+msgid "zero-length literal"
+msgstr "словност нулте дужине"
+
+#: cobc/scanner.l:1260
+msgid "national literal has zero length; a SPACE will be assumed"
+msgstr "национална словност има нулту дужину; SPACE ће се подразумети"
+
+#: cobc/scanner.l:1261
+msgid "alphanumeric literal has zero length; a SPACE will be assumed"
+msgstr "алфанумеричка словност има нулту дужину; SPACE ће се подразумети"
+
+#: cobc/scanner.l:1273 cobc/scanner.l:1274 cobc/scanner.l:1278
+#: cobc/scanner.l:1345
+msgid "national literal"
+msgstr "национална словност"
+
+#: cobc/scanner.l:1277
+msgid "national-character literal"
+msgstr "словност националног знака"
+
+#: cobc/scanner.l:1310
+msgid "hexadecimal literal has zero length; X'00' will be assumed"
+msgstr "хексадецимална словност има нулту дужину; X„00“ ће се подразумети"
+
+#: cobc/scanner.l:1329
+msgid "hexadecimal-boolean literal"
+msgstr "хексадецимална-логичка словност"
+
+#: cobc/scanner.l:1336 cobc/scanner.l:1350 cobc/scanner.l:1465
+#: cobc/scanner.l:1524 cobc/scanner.l:1622 cobc/scanner.l:1691
+#: cobc/tree.c:2453
+#, c-format
+msgid "literal length %d exceeds %d characters"
+msgstr "дужина словности %d премашује %d знака"
+
+#: cobc/scanner.l:1342
+msgid "hexadecimal-national literal"
+msgstr "хексадецимална-национална словност"
+
+#: cobc/scanner.l:1373 cobc/scanner.l:1405 cobc/scanner.l:1540
+#: cobc/scanner.l:1636 cobc/scanner.l:1701
+#, c-format
+msgid "literal contains invalid character '%c'"
+msgstr "словност садржи неисправан знак '%c'"
+
+#
+# This error message is issued when a command which requires an even
+# number of file names is not given one.
+#
+# For consistent translation, here is the English text:
+#  msgstr "you must give an even number of files to this command"
+# Please translate the English msgstr, not the msgid.
+#: cobc/scanner.l:1429
+#, c-format
+msgid "literal does not have an even number of digits"
+msgstr "словност нема паран број цифара"
+
+#: cobc/scanner.l:1472
+#, c-format
+msgid "%s literals must contain at least one character"
+msgstr "%s словности морају садржати барем један знак"
+
+#: cobc/scanner.l:1507 cobc/scanner.l:1608 cobc/scanner.l:1682
+msgid "ACUCOBOL numeric literal"
+msgstr "ACUCOBOL бројевна словност"
+
+#: cobc/scanner.l:1517
+msgid "H literals must contain at least one character"
+msgstr "Н словности морају садржати барем један знак"
+
+#: cobc/scanner.l:1555 cobc/scanner.l:1647 cobc/scanner.l:1712
+#, c-format
+msgid "literal exceeds limit %u"
+msgstr "словност премашује ограничење од %u"
+
+#: cobc/scanner.l:1596
+msgid "numeric boolean literal"
+msgstr "бројевна логичка словност"
+
+#: cobc/scanner.l:1602
+msgid "Boolean literal has zero length; B'0' will be assumed"
+msgstr "Логичка словност има нулту дужину; В„0“ ће се подразумети"
+
+#: cobc/scanner.l:1678
+msgid "HP COBOL octal literal"
+msgstr "HP COBOL октална словност"
+
+#: cobc/scanner.l:1790 cobc/tree.c:1569
+#, c-format
+msgid "literal length %d exceeds maximum of %d digits"
+msgstr "дужина словности од %d премашује максимум од %d цифре"
+
+#: cobc/scanner.l:1796 cobc/tree.c:1574
+#, c-format
+msgid "literal length %d exceeds %d digits"
+msgstr "дужина словности од %d премашује %d цифре"
+
+#: cobc/scanner.l:1908 cobc/tree.c:3435
+#, c-format
+msgid "significand has more than %d digits"
+msgstr "значајник има више од %d цифре"
+
+#: cobc/scanner.l:1913
+#, c-format
+msgid "exponent has decimal point"
+msgstr "изложилац има децимални зарез"
+
+#: cobc/scanner.l:1919 cobc/tree.c:3443
+#, c-format
+msgid "exponent has more than 4 digits"
+msgstr "изложилац има више од 4 цифре"
+
+#: cobc/scanner.l:1949
+#, c-format
+msgid "exponent not between -6143 and 6144"
+msgstr "изложилац није између -6143 и 6144"
+
+#
+# This error message is issued when an environment variable is meant to
+# be a positive integer, and it is not.
+#
+#       $Name           The name of the environment variable.
+#
+# For consistent translation, here is the English text:
+#  msgstr "the $name environment variable must be a positive decimal number"
+# Please translate the English msgstr, not the msgid.
+#: cobc/scanner.l:1958
+#, c-format
+msgid "significand of 0 must be positive"
+msgstr "значајник 0 мора бити позитиван"
+
+#: cobc/scanner.l:1963
+#, c-format
+msgid "exponent of 0 must be 0"
+msgstr "изложилац 0 мора бити 0"
+
+#
+# This error message is issued when an environment variable is meant to
+# be a positive integer, and it is not.
+#
+#       $Name           The name of the environment variable.
+#
+# For consistent translation, here is the English text:
+#  msgstr "the $name environment variable must be a positive decimal number"
+# Please translate the English msgstr, not the msgid.
+#: cobc/scanner.l:1968
+#, c-format
+msgid "exponent of 0 must be positive"
+msgstr "изложилац 0 мора бити позитиван"
+
+#: cobc/scanner.l:2150
+#, c-format
+msgid "invalid CONSTANT: %s"
+msgstr "неисправна CONSTANT: %s"
+
+#: cobc/scanner.l:2160
+#, c-format
+msgid "invalid alphanumeric CONSTANT: %s"
+msgstr "неисправна алфанумеричка CONSTANT: %s"
+
+#: cobc/scanner.l:2164
+#, c-format
+msgid "empty alphanumeric CONSTANT: %s"
+msgstr "празна алфанумеричка CONSTANT: %s"
+
+#: cobc/scanner.l:2181 cobc/scanner.l:2189 cobc/scanner.l:2194
+#, c-format
+msgid "invalid numeric CONSTANT: %s"
+msgstr "неисправна нумеричка CONSTANT: %s"
+
+#: cobc/scanner.l:2271
+#, c-format
+msgid "'%s' is already reserved; you may want MAKESYN instead"
+msgstr "„%s“ је већ резервисано; можете желети MAKESYN уместо тога"
+
+#: cobc/tree.c:345
+#, c-format
+msgid "%s clause is required for file '%s'"
+msgstr "%s клаузула се захтева за датотеку „%s“"
+
+#: cobc/tree.c:349
+#, c-format
+msgid "%s clause is invalid for file '%s' (file type)"
+msgstr "%s клаузула је неисправна за датотеку „%s“ (врста датотеке)"
+
+#: cobc/tree.c:353
+#, c-format
+msgid "%s clause is invalid for file '%s'"
+msgstr "%s клаузула је неисправна за датотеку „%s“"
+
+#: cobc/tree.c:380
+#, c-format
+msgid "FOR item '%s' is a record"
+msgstr "FOR ставка „%s“ је запис"
+
+#: cobc/tree.c:389
+#, c-format
+msgid "FOR item '%s' is in different record to '%s'"
+msgstr "FOR ставка „%s“ је у другачијем запису од „%s“"
+
+#: cobc/tree.c:398
+#, c-format
+msgid "FOR item '%s' is not in a record associated with '%s'"
+msgstr "FOR ставка „%s“ није у запису удруженом са „%s“"
+
+#: cobc/tree.c:481
+msgid "internal error node"
+msgstr "унутрашња грешка чвора"
+
+#: cobc/tree.c:483
+msgid "unknown constant"
+msgstr "непозната константа"
+
+#: cobc/tree.c:645
+#, c-format
+msgid "FUNCTION %s has invalid/not supported arguments - tag %d"
+msgstr "FUNCTION %s има неисправне/неподржане аргументе – ознака %d"
+
+#: cobc/tree.c:766
+#, c-format
+msgid "invalid date/time function: '%d'"
+msgstr "неисправна функција датума/времена: %d"
+
+#: cobc/tree.c:798
+#, c-format
+msgid "FUNCTION '%s' has invalid date/time format"
+msgstr "FUNCTION „%s“ има неисправан запис датума/времена"
+
+#: cobc/tree.c:805
+#, c-format
+msgid "FUNCTION '%s' has format in variable"
+msgstr "FUNCTION „%s“ има запис у променљивој"
+
+#: cobc/tree.c:1263
+#, c-format
+msgid "unknown tree tag: %d, category: %d"
+msgstr "непозната ознака стабла: %d, категорија: %d"
+
+#: cobc/tree.c:1350
+#, c-format
+msgid "unexpected numeric USAGE: %d"
+msgstr "неочекивано бројевно USAGE: %d"
+
+#: cobc/tree.c:1364
+#, c-format
+msgid "unexpected category: %d"
+msgstr "неочекивана категорија: %d"
+
+#: cobc/tree.c:1623 cobc/tree.c:1635 cobc/tree.c:1692 cobc/tree.c:1742
+#, c-format
+msgid "numeric literal '%s' exceeds limit '%s'"
+msgstr "бројевна словност „%s“ премашује ограничење „%s“"
+
+#: cobc/tree.c:2305
+msgid "invalid LOCALE literal"
+msgstr "неисправна LOCALE словност"
+
+#: cobc/tree.c:2433
+msgid "only literals with the same category can be concatenated"
+msgstr "само словности са истом категоријом могу бити надовезане"
+
+#: cobc/tree.c:2440
+msgid "only alphanumeric, national or boolean literals may be concatenated"
+msgstr "само алфанумеричка, национална или логичка словност се могу надовезати"
+
+#: cobc/tree.c:2713
+msgid "B, 0 or /"
+msgstr "B, 0 или /"
+
+#: cobc/tree.c:2727
+msgid "the sign of the floating-point exponent"
+msgstr "знак изложиоца покретног зареза"
+
+#: cobc/tree.c:2729
+msgid "a leading +/- sign"
+msgstr "водећи +/- знак"
+
+#: cobc/tree.c:2731
+msgid "a trailing +/- sign"
+msgstr "пратећи +/- знак"
+
+#: cobc/tree.c:2733
+msgid "CR or DB"
+msgstr "CR или DB"
+
+#: cobc/tree.c:2735
+msgid "a leading currency symbol"
+msgstr "водећи симбол валуте"
+
+#: cobc/tree.c:2737
+msgid "a trailing currency symbol"
+msgstr "пратећи симбол валуте"
+
+#: cobc/tree.c:2739
+msgid "a Z or * which is before the decimal point"
+msgstr "Z или * које је пре децималног зареза"
+
+#: cobc/tree.c:2741
+msgid "a Z or * which is after the decimal point"
+msgstr "Z или * које је после децималног зареза"
+
+#: cobc/tree.c:2743
+msgid "a floating +/- string which is before the decimal point"
+msgstr "покретна +/- ниска која је пре децималног зареза"
+
+#: cobc/tree.c:2745
+msgid "a floating +/- string which is after the decimal point"
+msgstr "покретна +/- ниска која је после децималног зареза"
+
+#: cobc/tree.c:2747
+msgid "a floating currency symbol string which is before the decimal point"
+msgstr "покретна ниска симбола валуте која је пре децималног зареза"
+
+#: cobc/tree.c:2749
+msgid "a floating currency symbol string which is after the decimal point"
+msgstr "покретни симбол валуте која је после децималног зареза"
+
+#: cobc/tree.c:2753
+msgid "A or X"
+msgstr "A или X"
+
+#: cobc/tree.c:2759
+msgid "a P which is before the decimal point"
+msgstr "„P“ које је пре децималног зареза"
+
+#: cobc/tree.c:2761
+msgid "a P which is after the decimal point"
+msgstr "„P“ које је после децималног зареза"
+
+#: cobc/tree.c:2782 cobc/tree.c:3189
+#, c-format
+msgid "%s may only occur once in a PICTURE string"
+msgstr "%s се може појавити само једном у PICTURE нисци"
+
+#: cobc/tree.c:2784 cobc/tree.c:3141
+#, c-format
+msgid "%s cannot follow %s"
+msgstr "%s не може да иде за %s"
+
+#: cobc/tree.c:2787
+msgid "invalid PICTURE string detected"
+msgstr "откривена је неисправна PICTURE ниска"
+
+#: cobc/tree.c:2898
+msgid "number or constant in parentheses is not an unsigned integer"
+msgstr "број или константа у загради није цео број без знака"
+
+#: cobc/tree.c:2907
+msgid "only up to 9 significant digits are permitted within parentheses"
+msgstr "само до 9 значајних цифара је допуштено унутар заграде"
+
+#: cobc/tree.c:2913
+msgid "number or constant in parentheses must be greater than zero"
+msgstr "број или константа у загради мора бити веће од нуле"
+
+#: cobc/tree.c:2924
+msgid "parentheses must be preceded by a picture symbol"
+msgstr "загради мора претходити симбол слике"
+
+#: cobc/tree.c:2954
+msgid "unbalanced parentheses"
+msgstr "неуравнотежене заграде"
+
+#: cobc/tree.c:2962
+msgid "parentheses must contain an unsigned integer"
+msgstr "заграда мора да садржи цео број без знака"
+
+#: cobc/tree.c:3000
+#, c-format
+msgid "'%s' is not a constant-name"
+msgstr "„%s“ није назив константе"
+
+#: cobc/tree.c:3007
+#, c-format
+msgid "'%s' is not a numeric literal"
+msgstr "„%s“ није бројевна словност"
+
+#: cobc/tree.c:3011
+#, c-format
+msgid "'%s' is not an integer"
+msgstr "„%s“ није цео број"
+
+#: cobc/tree.c:3015
+#, c-format
+msgid "'%s' is not unsigned"
+msgstr "„%s“ није без знака"
+
+#: cobc/tree.c:3071
+msgid "missing PICTURE string"
+msgstr "недостаје ниска PICTURE"
+
+#: cobc/tree.c:3100
+msgid "C must be followed by R"
+msgstr "након C мора да следи R"
+
+#: cobc/tree.c:3103
+msgid "D must be followed by B"
+msgstr "након D мора да следи B"
+
+#: cobc/tree.c:3117 cobc/tree.c:3186 cobc/tree.c:3212 cobc/tree.c:3323
+msgid "uncommon parentheses"
+msgstr "неуобичајене мале заграде"
+
+#: cobc/tree.c:3141
+msgid "exponent"
+msgstr "изложилац"
+
+#: cobc/tree.c:3194
+msgid "S must be at start of PICTURE string"
+msgstr "S мора бити на почетку ниске PICTURE"
+
+#: cobc/tree.c:3250
+msgid "P must be at start or end of PICTURE string"
+msgstr "P мора бити на почетку или крају ниске PICTURE"
+
+#: cobc/tree.c:3280
+msgid "cannot have both Z and * in PICTURE string"
+msgstr "не можете имати и Z и * у нисци PICTURE"
+
+#: cobc/tree.c:3358
+#, c-format
+msgid "invalid PICTURE character '%c'"
+msgstr "неисправан PICTURE знак '%c'"
+
+#: cobc/tree.c:3388
+#, c-format
+msgid "PICTURE string may not contain more than %d characters; contains %d characters"
+msgstr "PICTURE ниска не може садржати више од %d знака; садржи %d знака"
+
+#: cobc/tree.c:3393
+msgid "PICTURE string must contain at least one of the set A, N, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol"
+msgstr "PICTURE ниска мора да садржи барем један из скупа A, N, X, Z, 1, 9 и *; или барем два из скупа +, - и симбол валуте"
+
+#: cobc/tree.c:3420
+#, c-format
+msgid "numeric field cannot be larger than %d digits"
+msgstr "бријно поље не може бити веће од %d цифара"
+
+#: cobc/tree.c:3869 cobc/tree.c:3882
+#, c-format
+msgid "no DETAIL line defined in report %s"
+msgstr "ниједан DETAIL ред није дефинисан у извештају „%s“"
+
+#: cobc/tree.c:3884
+msgid "PAGE LIMIT FIRST DETAIL should be >= HEADING"
+msgstr "PAGE LIMIT FIRST DETAIL треба бити >= HEADING"
+
+#: cobc/tree.c:3887
+msgid "PAGE LIMIT FOOTING should be >= HEADING"
+msgstr "PAGE LIMIT FOOTING треба бити >= HEADING"
+
+#: cobc/tree.c:3889
+msgid "PAGE LIMIT LAST DETAIL should be >= FIRST DETAIL"
+msgstr "PAGE LIMIT LAST DETAIL треба бити >= FIRST DETAIL"
+
+#: cobc/tree.c:3891
+msgid "PAGE LIMIT FOOTING should be >= LAST DETAIL"
+msgstr "PAGE LIMIT FOOTING треба бити >= LAST DETAIL"
+
+#: cobc/tree.c:3893
+msgid "PAGE LIMIT LINES should be >= FOOTING"
+msgstr "PAGE LIMIT LINES треба бити >= FOOTING"
+
+#: cobc/tree.c:4058 libcob/fileio.c:7417
+#, c-format
+msgid "maximum keys (%d/%d) exceeded for file '%s'"
+msgstr "максимум кључева (%d/%d) је премашен за датотеку „%s“"
+
+#: cobc/tree.c:4122 cobc/tree.c:4145
+#, c-format
+msgid "invalid KEY item '%s', not in file '%s'"
+msgstr "неисправна KEY ставка „%s“, није у датотеци „%s“"
+
+#: cobc/tree.c:4156
+#, c-format
+msgid "minimal record length %d can not hold the key item '%s'; needs to be at least %d"
+msgstr "најмања дужина записа %d не може да држи ставку кључа „%s“; треба да буде барем %d"
+
+#: cobc/tree.c:4192
+#, c-format
+msgid "missing file description for %s"
+msgstr "недостаје опис датотеке за „%s“"
+
+#: cobc/tree.c:4224
+#, c-format
+msgid "size of record '%s' (%d) smaller than minimum of file '%s' (%d)"
+msgstr "величина записа „%s“ (%d) је мања од минимума датотеке „%s“ (%d)"
+
+#: cobc/tree.c:4227 cobc/tree.c:4244
+msgid "file size adjusted"
+msgstr "величина датотеке је поправљена"
+
+#: cobc/tree.c:4239
+#, c-format
+msgid "size of record '%s' (%d) larger than maximum of file '%s' (%d)"
+msgstr "величина записа „%s“ (%d) је већа од миксимума датотеке „%s“ (%d)"
+
+#: cobc/tree.c:4282
+#, c-format
+msgid "file '%s': RECORD VARYING specified without limits, but implied limits are equal"
+msgstr "датотека „%s“: RECORD VARYING је наведено без ограничења, али су подразумевана ограничења једнака"
+
+#: cobc/tree.c:4289
+#, c-format
+msgid "file '%s': record size (IDX) %d exceeds maximum allowed (%d)"
+msgstr "датотека „%s“: величина записа (IDX) %d премашује допуштени максимум (%d)"
+
+#: cobc/tree.c:4293
+#, c-format
+msgid "file '%s': record size %d exceeds maximum allowed (%d)"
+msgstr "датотека „%s“: величина записа %d премашује допуштени максимум (%d)"
+
+#: cobc/tree.c:4863
+#, c-format
+msgid "literal '%.38s' is longer than '%s'"
+msgstr "словност „%.38s“ је дужа од „%s“"
+
+#: cobc/tree.c:4867
+#, c-format
+msgid "literal '%.38s' is longer than reference-modification of '%s'"
+msgstr "словност „%.38s“ је дужа од измена упуте од „%s“"
+
+#: cobc/tree.c:4892
+#, c-format
+msgid "literal '%s' is alphanumeric but '%s' is numeric"
+msgstr "словност „%s“ је алфанумеричка али „%s“ је бројевна"
+
+#: cobc/tree.c:4934
+#, c-format
+msgid "literal '%s' has more decimals than '%s'"
+msgstr "словност „%s“ има више децимала од „%s“"
+
+#: cobc/tree.c:4976
+#, c-format
+msgid "literal '%s' has more digits than '%s'"
+msgstr "словност „%s“ има више цифара од „%s“"
+
+#: cobc/tree.c:5016 cobc/tree.c:5040
+#, c-format
+msgid "unsigned '%s' may not be %s %s"
+msgstr "неозначено „%s“ не може бити „%s %s“"
+
+#: cobc/tree.c:5026 cobc/tree.c:5049
+#, c-format
+msgid "unsigned '%s' may always be %s %s"
+msgstr "неозначено „%s“ може увек бити „%s %s“"
+
+#: cobc/tree.c:5082 cobc/tree.c:5107
+#, c-format
+msgid "'%s' may not be %s %s"
+msgstr "„%s“ не може бити „%s %s“"
+
+#: cobc/tree.c:5093 cobc/tree.c:5118
+#, c-format
+msgid "'%s' may always be %s %s"
+msgstr "„%s“ може увек бити „%s %s“"
+
+#: cobc/tree.c:5244
+msgid "divide by constant ZERO"
+msgstr "дели константом ZERO"
+
+#: cobc/tree.c:5293 cobc/tree.c:5298 cobc/tree.c:5516 cobc/tree.c:5556
+#: cobc/typeck.c:4157 cobc/typeck.c:4166 cobc/typeck.c:4173 cobc/typeck.c:5225
+#: cobc/typeck.c:5350
+msgid "invalid expression"
+msgstr "неисправан израз"
+
+#: cobc/tree.c:5513
+#, c-format
+msgid "invalid expression: %s %s %s"
+msgstr "неисправан израз; %s %s %s"
+
+#: cobc/tree.c:5561
+#, c-format
+msgid "unexpected operator: %d"
+msgstr "неочекиван операнд: %d"
+
+#: cobc/tree.c:5571
+#, c-format
+msgid "expression '%.38s' %s '%.38s' is always TRUE"
+msgstr "израз „%.38s“ %s „%.38s“ је увек ТАЧНО"
+
+#: cobc/tree.c:5577
+msgid "expression is always TRUE"
+msgstr "израз је увек ТАЧНО"
+
+#: cobc/tree.c:5589
+#, c-format
+msgid "expression '%.38s' %s '%.38s' is always FALSE"
+msgstr "израз „%.38s“ %s „%.38s“ је увек НЕТАЧНО"
+
+#: cobc/tree.c:5595
+msgid "expression is always FALSE"
+msgstr "израз је увек НЕТАЧНО"
+
+#: cobc/tree.c:5911
+msgid "PERFORM FOREVER since UNTIL is always FALSE"
+msgstr "PERFORM FOREVER док UNTIL је увек НЕТАЧНО"
+
+#: cobc/tree.c:5915
+msgid "PERFORM ONCE since UNTIL is always TRUE"
+msgstr "PERFORM ONCE док UNTIL је увек ТАЧНО"
+
+#: cobc/tree.c:5918
+msgid "PERFORM NEVER since UNTIL is always TRUE"
+msgstr "PERFORM NEVER док UNTIL је увек ТАЧНО"
+
+#: cobc/tree.c:6019
+#, c-format
+msgid "no definition/prototype seen for FUNCTION '%s'"
+msgstr "није виђена дефиниција/прототип за FUNCTION „%s“"
+
+#: cobc/tree.c:6021
+#, c-format
+msgid "no definition/prototype seen for PROGRAM '%s'"
+msgstr "није виђена дефиниција/прототип за PROGRAM „%s“"
+
+#: cobc/tree.c:6030
+#, c-format
+msgid "no definition/prototype seen for FUNCTION with external name '%s'"
+msgstr "није виђена дефиниција/прототип за FUNCTION са спољним називом „%s“"
+
+#: cobc/tree.c:6032
+#, c-format
+msgid "no definition/prototype seen for PROGRAM with external name '%s'"
+msgstr "није виђена дефиниција/прототип за PROGRAM са спољним називом „%s“"
+
+#: cobc/tree.c:6124
+#, c-format
+msgid "FUNCTION %s has invalid argument"
+msgstr "FUNCTION %s има неисправан аргумент"
+
+#: cobc/tree.c:6126
+#, c-format
+msgid "either all arguments or none should be if type %s"
+msgstr "или сви аргументи или ниједан требају бити „if“ врсте %s"
+
+#: cobc/tree.c:6151 cobc/tree.c:6157 cobc/tree.c:6199 cobc/tree.c:6204
+#, c-format
+msgid "FUNCTION '%s' has invalid reference modification"
+msgstr "FUNCTION „%s“ има неисправну измену упуте"
+
+#: cobc/tree.c:6168 cobc/tree.c:6436
+#, c-format
+msgid "FUNCTION '%s' unknown"
+msgstr "FUNCTION „%s“ није позната"
+
+#: cobc/tree.c:6172
+#, c-format
+msgid "FUNCTION '%s' is not implemented"
+msgstr "FUNCTION „%s“ није примењена"
+
+#: cobc/tree.c:6179 cobc/tree.c:6186 cobc/tree.c:6420
+#, c-format
+msgid "FUNCTION '%s' has wrong number of arguments"
+msgstr "FUNCTION „%s“ има погрешан број аргумената"
+
+#: cobc/tree.c:6193
+#, c-format
+msgid "FUNCTION '%s' cannot have reference modification"
+msgstr "FUNCTION „%s“ не може имати измену упуте"
+
+#: cobc/tree.c:6278 cobc/tree.c:6352 cobc/tree.c:6358 cobc/tree.c:6366
+#: cobc/tree.c:6374
+#, c-format
+msgid "FUNCTION '%s' has invalid argument"
+msgstr "FUNCTION „%s“ има неисправан аргумент"
+
+#: cobc/tree.c:6426
+#, c-format
+msgid "FUNCTION '%s' has invalid first argument"
+msgstr "FUNCTION „%s“ има неисправан први аргумент"
+
+#: cobc/typeck.c:534
+#, c-format
+msgid "%s item not allowed here: '%s'"
+msgstr "%s ставка није дозвољена овде: „%s“"
+
+#: cobc/typeck.c:576
+#, c-format
+msgid "'%s' is not a group name"
+msgstr "„%s“ није назив групе"
+
+#: cobc/typeck.c:595
+#, c-format
+msgid "'%s' is not a numeric name"
+msgstr "„%s“ није бројевни назив"
+
+#: cobc/typeck.c:618
+#, c-format
+msgid "'%s' is not a numeric or numeric-edited name"
+msgstr "„%s“ није бројевни или бројевно уређен назив"
+
+#: cobc/typeck.c:658
+#, c-format
+msgid "'%s' is Alpha, instead of a numeric value"
+msgstr "„%s“ је Алфа, уместо бројне вредности"
+
+#: cobc/typeck.c:661
+#, c-format
+msgid "'%s' is Alpha Edited, instead of a numeric value"
+msgstr "„%s“ је Алфа Уређено, уместо бројне вредности"
+
+#: cobc/typeck.c:674
+#, c-format
+msgid "'%s' is not a numeric value"
+msgstr "„%s“ није бројевна вредност"
+
+#: cobc/typeck.c:724
+#, c-format
+msgid "'%s' is not an integer value"
+msgstr "„%s“ није вредност целог броја"
+
+#: cobc/typeck.c:728
+msgid "positive numeric integer is required here"
+msgstr "позитивни цео број се захтева овде"
+
+#: cobc/typeck.c:845
+msgid "System routine"
+msgstr "Рутина система"
+
+#: cobc/typeck.c:1473 libcob/call.c:1045
+#, c-format
+msgid "'%s' literal includes leading spaces which are omitted"
+msgstr "„%s“ словност укључује водеће размке који су изостављени"
+
+#: cobc/typeck.c:1477
+#, c-format
+msgid "'%s' literal includes trailing spaces which are omitted"
+msgstr "„%s“ словност укључује пратеће размке који су изостављени"
+
+#: cobc/typeck.c:1544
+msgid "ON/OFF usage requires a SWITCH name"
+msgstr "ON/OFF коришћење захтева SWITCH назив"
+
+#: cobc/typeck.c:1562
+#, c-format
+msgid "word length exceeds maximum of %d characters: '%s'"
+msgstr "дужина речи премашује максимум од %d знака: „%s“"
+
+#: cobc/typeck.c:1565 cobc/typeck.c:1568
+#, c-format
+msgid "word length exceeds %d characters: '%s'"
+msgstr "дужина речи премашује %d знака: „%s“"
+
+#: cobc/typeck.c:1685
+#, c-format
+msgid "ASSIGN %s interpreted as '%s'"
+msgstr "ASSIGN %s је протумачено као „%s“"
+
+#: cobc/typeck.c:1744 cobc/typeck.c:1911
+#, c-format
+msgid "subscript missing for '%s' - defaulting to 1"
+msgstr "подскрипта недостаје за „%s“ – подразумевам 1"
+
+#: cobc/typeck.c:1757 cobc/typeck.c:1836
+#, c-format
+msgid "'%s' cannot be reference modified"
+msgstr "„%s“ не може бити измењена упута"
+
+#: cobc/typeck.c:1767 cobc/typeck.c:1832 cobc/typeck.c:2055
+#, c-format
+msgid "'%s' cannot be subscripted"
+msgstr "„%s“ не може бити подскриптовано"
+
+#: cobc/typeck.c:1771 cobc/typeck.c:2059
+#, c-format
+msgid "'%s' requires one subscript"
+msgstr "„%s“ захтева једну подскрипту"
+
+#: cobc/typeck.c:1774 cobc/typeck.c:2062
+#, c-format
+msgid "'%s' requires %d subscripts"
+msgstr "„%s“ захтева %d подскрипте"
+
+#: cobc/typeck.c:1792
+#, c-format
+msgid "'%s' (accessed by '%s')"
+msgstr "„%s“ (приступио му је „%s“)"
+
+#: cobc/typeck.c:1895
+#, c-format
+msgid "'%s' has no OCCURS clause"
+msgstr "„%s“ нема OCCURS клаузулу"
+
+#: cobc/typeck.c:1952 libcob/common.c:3212 libcob/common.c:3223
+#, c-format
+msgid "subscript of '%s' out of bounds: %d"
+msgstr "подскрипта „%s“ је изван граница: %d"
+
+#: cobc/typeck.c:1998 cobc/typeck.c:2009 libcob/common.c:3245
+#, c-format
+msgid "offset of '%s' out of bounds: %d"
+msgstr "померај „%s“ је изван граница: %d"
+
+#: cobc/typeck.c:2003 cobc/typeck.c:2014 cobc/typeck.c:2023
+#: libcob/common.c:3258
+#, c-format
+msgid "length of '%s' out of bounds: %d"
+msgstr "дужина „%s“ је изван граница: %d"
+
+#: cobc/typeck.c:2123 cobc/typeck.c:2202
+msgid "reference modification not allowed here"
+msgstr "измена упуте није дозвољена овде"
+
+#: cobc/typeck.c:2137 cobc/typeck.c:2228
+msgid "88 level item not allowed here"
+msgstr "ставка 88 нивоа није дозвољена овде"
+
+#: cobc/typeck.c:2141 cobc/typeck.c:2232 cobc/typeck.c:2240 cobc/typeck.c:2307
+msgid "variable length item not allowed here"
+msgstr "ставка променљиве дужине није дозвољена овде"
+
+#: cobc/typeck.c:2170
+#, c-format
+msgid "'%s' has not been DEFINEd"
+msgstr "„%s“ није DEFINED"
+
+#: cobc/typeck.c:2206
+msgid "only field names allowed here"
+msgstr "само називи поља су дозвољени овде"
+
+#: cobc/typeck.c:2217
+#, c-format
+msgid "VALUE of '%s': %s target '%s' is invalid"
+msgstr "VALUE од „%s“: %s мета „%s“ је неисправна"
+
+#: cobc/typeck.c:2219 cobc/typeck.c:2289
+msgid "target must be in FILE SECTION or LINKAGE SECTION or have the EXTERNAL clause"
+msgstr "мета мора бити у FILE SECTION или LINKAGE SECTION или да има EXTERNAL клаузулу"
+
+#: cobc/typeck.c:2275 cobc/typeck.c:2288
+#, c-format
+msgid "VALUE of '%s': %s target is invalid"
+msgstr "VALUE од „%s“: %s мета је неисправна"
+
+#: cobc/typeck.c:2277
+msgid "no previous data-item found"
+msgstr "нисам нашао претходну ставку података"
+
+#: cobc/typeck.c:2432
+#, c-format
+msgid "'%s' is not an alphabet name"
+msgstr "„%s“ није назив алфабета"
+
+#: cobc/typeck.c:2696
+#, c-format
+msgid "duplicate character values in alphabet '%s': %s"
+msgstr "двострука вредност знака у алфабету „%s“: %s"
+
+#: cobc/typeck.c:2701
+#, c-format
+msgid "invalid character values in alphabet '%s', starting at position %d"
+msgstr "неисправна вредност знака у алфабету „%s“, са почетком на месту %d"
+
+#: cobc/typeck.c:2755
+msgid "invalid ALPHABET name"
+msgstr "неисправан ALPHABET назив"
+
+#: cobc/typeck.c:2819
+#, c-format
+msgid "duplicate character values in class '%s'"
+msgstr "двострука вредност знака у класи „%s“"
+
+#: cobc/typeck.c:2837
+#, c-format
+msgid "'%s' is not a locale name"
+msgstr "„%s“ није назив језика"
+
+#: cobc/typeck.c:2971
+msgid "invalid RECORD DEPENDING item"
+msgstr "неисправна RECORD DEPENDING ставка"
+
+#: cobc/typeck.c:2976
+msgid "RECORD DEPENDING must reference a data-item"
+msgstr "RECORD DEPENDING мора да упућује на ставку података"
+
+#: cobc/typeck.c:2999
+#, c-format
+msgid "RECORD DEPENDING item '%s' should be defined in WORKING-STORAGE, LOCAL-STORAGE or LINKAGE SECTION"
+msgstr "RECORD DEPENDING ставка „%s“ треба бити дефинисана у WORKING-STORAGE, LOCAL-STORAGE или LINKAGE SECTION"
+
+#: cobc/typeck.c:3012
+#, c-format
+msgid "file %s: RELATIVE KEY %s is not numeric"
+msgstr "датотека „%s“: RELATIVE KEY %s није број"
+
+#: cobc/typeck.c:3021
+#, c-format
+msgid "file %s: RELATIVE KEY %s must be integer"
+msgstr "датотека „%s“: RELATIVE KEY %s мора бити цео број"
+
+#: cobc/typeck.c:3026
+#, c-format
+msgid "file %s: RELATIVE KEY %s must be unsigned"
+msgstr "датотека „%s“: RELATIVE KEY %s мора бити без знака"
+
+#: cobc/typeck.c:3033
+#, c-format
+msgid "file %s: RELATIVE KEY %s cannot have OCCURS"
+msgstr "датотека „%s“: RELATIVE KEY %s не може имати OCCURS"
+
+#: cobc/typeck.c:3039
+#, c-format
+msgid "RELATIVE KEY %s cannot be in file record belonging to %s"
+msgstr "RELATIVE KEY %s не може бити у запису датотеке која припада „%s“"
+
+#: cobc/typeck.c:3048
+#, c-format
+msgid "file %s: RELATIVE KEY %s declared outside WORKING-STORAGE"
+msgstr "датотека „%s“: RELATIVE KEY %s је објављен изван WORKING-STORAGE"
+
+#: cobc/typeck.c:3070 cobc/typeck.c:6798
+#, c-format
+msgid "'%s' is not a valid data name"
+msgstr "„%s“ није исправан назив података"
+
+#: cobc/typeck.c:3077
+#, c-format
+msgid "CRT STATUS item '%s' should be defined in WORKING-STORAGE or LOCAL-STORAGE"
+msgstr "CRT STATUS ставка „%s“ треба бити дефинисана у WORKING-STORAGE или LOCAL-STORAGE"
+
+#: cobc/typeck.c:3083
+#, c-format
+msgid "'%s' CRT STATUS must have at least 4 digits"
+msgstr "„%s“ CRT STATUS мора имати најмање 4 цифре"
+
+#: cobc/typeck.c:3089
+#, c-format
+msgid "'%s' CRT STATUS must be 4 characters long"
+msgstr "„%s“ CRT STATUS мора бити дужине 4 знака"
+
+#: cobc/typeck.c:3170
+#, c-format
+msgid "'%s' will be implicitly defined"
+msgstr "„%s“ биће изричито дефинисано"
+
+#: cobc/typeck.c:3188
+#, c-format
+msgid "ASSIGN data item '%s' is invalid"
+msgstr "ставка ASSIGN података „%s“ је неисправна"
+
+#: cobc/typeck.c:3200
+#, c-format
+msgid "'%s' CURSOR must be 4 or 6 characters long"
+msgstr "„%s“ CURSOR мора бити дужине 4 или 6 знака"
+
+#: cobc/typeck.c:3256
+#, c-format
+msgid "'%s' cannot have nested OCCURS DEPENDING"
+msgstr "„%s“ не може имати угнеждено OCCURS DEPENDING"
+
+#: cobc/typeck.c:3270
+#, c-format
+msgid "'%s' OCCURS DEPENDING ON field item invalid here"
+msgstr "„%s“ ставка поља OCCURS DEPENDING ОД је неисправно овде"
+
+#: cobc/typeck.c:3278
+#, c-format
+msgid "'%s' cannot have OCCURS DEPENDING because of '%s'"
+msgstr "„%s“ не може имати OCCURS DEPENDING услед „%s“"
+
+#: cobc/typeck.c:3290
+#, c-format
+msgid "'%s' OCCURS DEPENDING ON item must have GLOBAL attribute"
+msgstr "„%s“ ставка OCCURS DEPENDING ON мора имати GLOBAL атрибут"
+
+#: cobc/typeck.c:3304
+#, c-format
+msgid "PASSWORD '%s' for EXTERNAL file '%s' must have EXTERNAL attribute"
+msgstr "PASSWORD „%s“ за EXTERNAL датотеку „%s“ мора имати EXTERNAL атрибут"
+
+#: cobc/typeck.c:3325
+#, c-format
+msgid "file %s: ASSIGN %s declared outside WORKING-STORAGE"
+msgstr "датотека „%s“: ASSIGN %s је објављено изван WORKING-STORAGE"
+
+#: cobc/typeck.c:3354
+#, c-format
+msgid "duplicate APPLY COMMIT target: '%s'"
+msgstr "двострука APPLY COMMIT мета: „%s“"
+
+#: cobc/typeck.c:3368
+msgid "APPLY COMMIT statement invalid for SORT file"
+msgstr "APPLY COMMIT изјава није исправна за SORT датотеку"
+
+#: cobc/typeck.c:3371
+msgid "APPLY COMMIT statement invalid for REPORT file"
+msgstr "APPLY COMMIT изјава није исправна за REPORT датотеку"
+
+#: cobc/typeck.c:3378
+#, c-format
+msgid "APPLY COMMIT item '%s' should be defined in WORKING-STORAGE or LOCAL-STORAGE"
+msgstr "APPLY COMMIT ставка „%s“ треба бити дефинисана у WORKING-STORAGE или LOCAL-STORAGE"
+
+#: cobc/typeck.c:3392
+#, c-format
+msgid "item not allowed here: '%s'"
+msgstr "ставка није дозвољена овде: „%s“"
+
+#: cobc/typeck.c:3405
+#, c-format
+msgid "%s may not be subscripted"
+msgstr "„%s“ не може бити подскриптовано"
+
+#: cobc/typeck.c:3409
+#, c-format
+msgid "%s may not be reference modified"
+msgstr "„%s“ не може бити измењена упута"
+
+#: cobc/typeck.c:3469
+#, c-format
+msgid "DEBUGGING target invalid: '%s'"
+msgstr "DEBUGGING мета је неисправна: „%s“"
+
+#: cobc/typeck.c:3475
+#, c-format
+msgid "DEBUGGING target already specified with ALL PROCEDURES: '%s'"
+msgstr "DEBUGGING мета је већ наведена са ALL PROCEDURES: „%s“"
+
+#: cobc/typeck.c:3495
+msgid "DEBUGGING target"
+msgstr "DEBUGGING мета"
+
+#: cobc/typeck.c:3502
+#, c-format
+msgid "'%s' is not a valid DEBUGGING target"
+msgstr "„%s“ није исправна DEBUGGING мета"
+
+#: cobc/typeck.c:3540 cobc/typeck.c:3545
+#, c-format
+msgid "'%s' is not in DECLARATIVES"
+msgstr "„%s“ није у DECLARATIVES"
+
+#: cobc/typeck.c:3557
+#, c-format
+msgid "invalid reference to '%s' (in DECLARATIVES)"
+msgstr "неисправна упута ка „%s“ (у DECLARATIVES)"
+
+#: cobc/typeck.c:3566
+#, c-format
+msgid "'%s' is not a procedure name"
+msgstr "„%s“ није назив поступка"
+
+#: cobc/typeck.c:3628
+#, c-format
+msgid "LINKAGE item '%s' is not a PROCEDURE USING parameter"
+msgstr "LINKAGE ставка „%s“ није PROCEDURE USING параметар"
+
+#: cobc/typeck.c:3681
+#, c-format
+msgid "'%s' is not an alterable paragraph"
+msgstr "„%s“ није измењиви пасус"
+
+#: cobc/typeck.c:4287 cobc/typeck.c:4291
+#, c-format
+msgid "suggest parentheses around %s within %s"
+msgstr "саветује заграде око %s унутар %s"
+
+#: cobc/typeck.c:4299
+msgid "invalid conditional expression"
+msgstr "неисправан условни израз"
+
+#: cobc/typeck.c:4409
+#, c-format
+msgid "internal decimal structure size exceeded: %d"
+msgstr "величина унутрашње децималне структуре је премашена: %d"
+
+#: cobc/typeck.c:4412
+msgid "Try to minimize the number of parentheses or split into multiple computations."
+msgstr "Покушава да минимизује број малих заграда или да подели на више прорачуна."
+
+#: cobc/typeck.c:4436
+#, c-format
+msgid "more than %d nested expressions"
+msgstr "више од %d угнеждена израза"
+
+#: cobc/typeck.c:4478
+msgid "precision of result may change with arithmetic-osvs"
+msgstr "тачност резултата се може променити са „arithmetic-osvs“"
+
+#: cobc/typeck.c:4534
+#, c-format
+msgid "unexpected operation: %c (%d)"
+msgstr "неочекивана радња: %c (%d)"
+
+#: cobc/typeck.c:4539
+#, c-format
+msgid "%s operator may be misplaced"
+msgstr "%s оператер може бити лоше постављен"
+
+#: cobc/typeck.c:4608
+msgid "unexpected constant expansion"
+msgstr "неочекиван израз константе"
+
+#: cobc/typeck.c:5391
+#, c-format
+msgid "more than %d nested conditions"
+msgstr "више од %d угнеждена услова"
+
+#: cobc/typeck.c:5727 cobc/typeck.c:5803
+msgid "no CORRESPONDING items found"
+msgstr "нисам нашао CORRESPONDING ставке"
+
+#: cobc/typeck.c:5875
+msgid "no items to ACCEPT found"
+msgstr "нисам нашао ставке за ACCEPT"
+
+#: cobc/typeck.c:5925
+msgid "no items to DISPLAY found"
+msgstr "нисам нашао ставке за DISPLAY"
+
+#: cobc/typeck.c:6044
+msgid "cannot specify figurative constant ZERO in AT clause"
+msgstr "не можете навести фигуративну константу ZERO у AT клаузули"
+
+#: cobc/typeck.c:6048
+msgid "value in AT clause is not numeric"
+msgstr "вредност у AT клаузули није бројевна"
+
+#: cobc/typeck.c:6054
+msgid "value in AT clause must have 4 or 6 digits"
+msgstr "вредност у AT клаузули мора имати 4 или 6 цифре"
+
+#: cobc/typeck.c:6167
+msgid "invalid PROMPT literal"
+msgstr "неисправна PROMPT словност"
+
+#: cobc/typeck.c:6172
+msgid "invalid PROMPT identifier"
+msgstr "неисправан PROMPT одредник"
+
+#: cobc/typeck.c:6462
+#, c-format
+msgid "'%s' is not an input device"
+msgstr "„%s“ није улазни уређај"
+
+#: cobc/typeck.c:6492 cobc/typeck.c:7645
+#, c-format
+msgid "'%s' is not defined in SPECIAL-NAMES"
+msgstr "„%s“ није дефинисано у SPECIAL-NAMES"
+
+#: cobc/typeck.c:6497
+#, c-format
+msgid "invalid input device '%s'"
+msgstr "неисправан улазни уређај „%s“"
+
+#: cobc/typeck.c:6502 cobc/typeck.c:7649
+#, c-format
+msgid "unknown device '%s'; it may exist in another dialect"
+msgstr "непознат уређај „%s“; може постојати у другом дијалекту"
+
+#: cobc/typeck.c:6505 cobc/typeck.c:7652
+#, c-format
+msgid "unknown device '%s'; not defined in SPECIAL-NAMES"
+msgstr "непознат уређај „%s“; није дефинисано у SPECIAL-NAMES"
+
+#: cobc/typeck.c:6529
+msgid "target of ALLOCATE is not a BASED item"
+msgstr "мета ALLOCATE није BASED ставка"
+
+#: cobc/typeck.c:6540
+msgid "target of RETURNING is not a data pointer"
+msgstr "мета RETURNING није показивач података"
+
+#: cobc/typeck.c:6550 cobc/typeck.c:6975
+msgid "amount must be specified as a numeric expression"
+msgstr "износ мора бити наведен као бројевни израз"
+
+#: cobc/typeck.c:6563
+msgid "INITIALIZED TO item is not alphanumeric"
+msgstr "INITIALIZED TO ставка није алфанумеричка"
+
+#: cobc/typeck.c:6634
+msgid "only alphanumeric FUNCTION types are allowed here"
+msgstr "само алфанумеричке FUNCTION врсте су дозвољене овде"
+
+#: cobc/typeck.c:6642
+msgid "invalid RETURNING field"
+msgstr "неисправно RETURNING поље"
+
+#: cobc/typeck.c:6661
+msgid "STDCALL not available on this platform"
+msgstr "STDCALL није доступно на овој платформи"
+
+#: cobc/typeck.c:6665
+msgid "STDCALL used on 64-bit Windows platform"
+msgstr "STDCALL се користи на 64-битној Виндоуз платформи"
+
+#: cobc/typeck.c:6670
+msgid "STATIC CALL convention requires a literal program name"
+msgstr "STATIC CALL договор захтева словни назив програма"
+
+#: cobc/typeck.c:6675 cobc/typeck.c:10207 cobc/typeck.c:10975
+#: cobc/typeck.c:11339
+msgid "HANDLE must be either a generic or a THREAD HANDLE"
+msgstr "HANDLE мора бити или општа или THREAD HANDLE"
+
+#: cobc/typeck.c:6693
+msgid "numeric literal is negative"
+msgstr "бројевнс словност је негативна"
+
+#: cobc/typeck.c:6772
+msgid "numeric literal exceeds size limits"
+msgstr "бројевна словност премашује ограничење величине"
+
+#: cobc/typeck.c:6787
+#, c-format
+msgid "figurative constant %s invalid here"
+msgstr "фигуративна константа %s је неисправна овде"
+
+#: cobc/typeck.c:6806
+#, c-format
+msgid "'%s' is not a 01 or 77 level item"
+msgstr "„%s“ није ставка нивоа 01 или 77"
+
+#: cobc/typeck.c:6811
+#, c-format
+msgid "'%s' ANY LENGTH item not passed BY REFERENCE"
+msgstr "„%s“ ANY LENGTH ставка није прослеђена BY REFERENCE"
+
+#: cobc/typeck.c:6861 cobc/typeck.c:6866
+#, c-format
+msgid "wrong number of CALL parameters for '%s', %d given, %d expected"
+msgstr "погрешан број CALL параметара за „%s“, %d је дато, %d је очекивано"
+
+#: cobc/typeck.c:6933 cobc/typeck.c:7007 cobc/typeck.c:7011 cobc/typeck.c:7041
+#: cobc/typeck.c:10161 cobc/typeck.c:10166 cobc/typeck.c:10324
+#: cobc/typeck.c:10513 cobc/typeck.c:10517 cobc/typeck.c:10521
+#: cobc/typeck.c:11280 cobc/typeck.c:11523 cobc/typeck.c:11526
+#, c-format
+msgid "%s not allowed on %s files"
+msgstr "„%s“ није дозвољено на „%s“ датотекама"
+
+#: cobc/typeck.c:7107
+msgid "positions cannot be specified for main windows"
+msgstr "положаји не могу бити наведени за главне прозоре"
+
+#: cobc/typeck.c:7117 cobc/typeck.c:7120 cobc/typeck.c:7137
+msgid "HANDLE must be either a generic or a WINDOW HANDLE or X(10)"
+msgstr "HANDLE мора бити или општа или WINDOW HANDLE или X(10)"
+
+#: cobc/typeck.c:7246
+#, c-format
+msgid "'%s' is an invalid type for DISPLAY operand"
+msgstr "„%s“ је неисправна врста за DISPLAY операнд"
+
+#: cobc/typeck.c:7251
+msgid "invalid type for DISPLAY operand"
+msgstr "неисправна врста за DISPLAY операнд"
+
+#: cobc/typeck.c:7602 cobc/typeck.c:7635
+#, c-format
+msgid "'%s' is not an output device"
+msgstr "„%s“ није излазни уређај"
+
+#: cobc/typeck.c:7738
+msgid "invalid use of 88 level in WHEN expression"
+msgstr "неисправно коришћење 88 нивоа у WHEN изразу"
+
+#: cobc/typeck.c:7794
+msgid "wrong number of WHEN parameters"
+msgstr "погрешан број WHEN параметара"
+
+#: cobc/typeck.c:7873 cobc/typeck.c:7885
+#, c-format
+msgid "target %d of FREE is not a BASED data item"
+msgstr "мета %d од FREE није ставка BASED података"
+
+#: cobc/typeck.c:7891
+#, c-format
+msgid "target %d of FREE must be a data pointer"
+msgstr "мета %d одof FREE мора бити показивач података"
+
+#: cobc/typeck.c:7905
+msgid "GO TO without procedure-name"
+msgstr "GO TO без назива поступка"
+
+#: cobc/typeck.c:7915
+msgid "GO TO with multiple procedure-names"
+msgstr "GO TO са више назива поступка"
+
+#: cobc/typeck.c:7937
+msgid "GO TO ENTRY with multiple entry-names"
+msgstr "GO TO ENTRY са више назива уноса"
+
+#: cobc/typeck.c:7996
+msgid "invalid INITIALIZE statement"
+msgstr "неисправна INITIALIZE тврдња"
+
+#: cobc/typeck.c:8072 cobc/typeck.c:8075
+#, c-format
+msgid "%s operands differ in size"
+msgstr "%s операнди се разликују у величини"
+
+#: cobc/typeck.c:8105
+#, c-format
+msgid "unexpected clause %d"
+msgstr "неочекивана клаузула %d"
+
+#: cobc/typeck.c:8174 cobc/typeck.c:8185 cobc/typeck.c:8196 cobc/typeck.c:8207
+#, c-format
+msgid "data name expected before %s"
+msgstr "назив података је очекиван пре „%s“"
+
+#: cobc/typeck.c:8217
+#, c-format
+msgid "ALL, LEADING or TRAILING expected before '%s'"
+msgstr "ALL, LEADING или TRAILING је очекивано пре „%s“"
+
+#: cobc/typeck.c:8227
+msgid "operand has wrong size"
+msgstr "операнд је погрешне величине"
+
+#: cobc/typeck.c:8322
+#, c-format
+msgid "'%s' defined here as PIC %s"
+msgstr "„%s“ је дефинисано овде као PIC %s"
+
+#: cobc/typeck.c:8326
+#, c-format
+msgid "'%s' defined here as a group of length %d"
+msgstr "„%s“ је дефинисано овде као група дужине %d"
+
+#: cobc/typeck.c:8332
+#, c-format
+msgid "internal register '%s' defined as USAGE %s"
+msgstr "унутрашњи регистар „%s“ је дефинисан као USAGE %s"
+
+#: cobc/typeck.c:8335
+#, c-format
+msgid "'%s' defined here as USAGE %s"
+msgstr "„%s“ је дефинисано овде као USAGE %s"
+
+#: cobc/typeck.c:8374
+#, c-format
+msgid "value is %s"
+msgstr "вредност је „%s“"
+
+#: cobc/typeck.c:8378
+#, c-format
+msgid "value size is %d"
+msgstr "величина вредности је %d"
+
+#: cobc/typeck.c:8656
+msgid "invalid destination for MOVE"
+msgstr "неисправно одредиште за MOVE"
+
+#: cobc/typeck.c:8695
+msgid "MOVE of figurative constant SPACE to numeric item"
+msgstr "MOVE фигуративне константе SPACE у бројевну ставку"
+
+#: cobc/typeck.c:8710
+msgid "MOVE of figurative constant QUOTE to numeric item"
+msgstr "MOVE фигуративне константе QUOTE у бројевну ставку"
+
+#: cobc/typeck.c:8715 cobc/typeck.c:8726
+msgid "MOVE of figurative constant to numeric item"
+msgstr "MOVE фигуративне константе у бројевну ставку"
+
+#: cobc/typeck.c:8784
+msgid "numeric literal in VALUE clause of numeric-edited item"
+msgstr "бројевна словност у VALUE клаузули бројевно уређеном ставком"
+
+#: cobc/typeck.c:8809
+msgid "numeric move to ALPHABETIC"
+msgstr "бројевно премештање у ALPHABETIC"
+
+#: cobc/typeck.c:8821
+msgid "data item not signed"
+msgstr "ставка података није означена"
+
+#: cobc/typeck.c:8824
+msgid "ignoring sign"
+msgstr "занемарујем знак"
+
+#: cobc/typeck.c:9140
+msgid "overlapping MOVE may occur and produce unpredictable results"
+msgstr "преклапајуће MOVE се може појавити и дати непредвидиве резултате"
+
+#: cobc/typeck.c:9147
+msgid "overlapping MOVE may produce unpredictable results"
+msgstr "преклапајуће MOVE може дати непредвидиве резултате"
+
+#: cobc/typeck.c:9259
+msgid "invalid source for MOVE"
+msgstr "неисправан извор за MOVE"
+
+#: cobc/typeck.c:9282
+msgid "source is non-numeric - substituting zero"
+msgstr "извор је не-бројевни – замењујућа нула"
+
+#: cobc/typeck.c:9288 cobc/typeck.c:9299
+msgid "invalid VALUE clause"
+msgstr "неисправна VALUE клаузула"
+
+#: cobc/typeck.c:9291 cobc/typeck.c:10916 cobc/typeck.c:10921
+#: cobc/typeck.c:10948 cobc/typeck.c:10953
+msgid "invalid SET statement"
+msgstr "неисправна SET тврдња"
+
+#: cobc/typeck.c:9293
+msgid "invalid MOVE statement"
+msgstr "неисправна MOVE тврдња"
+
+#: cobc/typeck.c:9300
+msgid "literal exceeds data size"
+msgstr "словност премашује величину података"
+
+#: cobc/typeck.c:9304
+msgid "numeric literal exceeds data size"
+msgstr "бројевна словност премашује величину података"
+
+#: cobc/typeck.c:9313
+msgid "MOVE of non-integer to alphanumeric"
+msgstr "MOVE не-цео број у алфанумерички"
+
+#: cobc/typeck.c:9319
+msgid "numeric value is expected"
+msgstr "бројна вредност је очекивана"
+
+#: cobc/typeck.c:9324
+msgid "alphanumeric value is expected"
+msgstr "алфанумеричка вредност је очекивана"
+
+#: cobc/typeck.c:9329
+msgid "value does not fit the picture string"
+msgstr "вредност не стаје у ниску слике"
+
+#: cobc/typeck.c:9335
+msgid "value size exceeds data size"
+msgstr "величина вредности премашује величину података"
+
+#: cobc/typeck.c:9340
+msgid "sending field larger than receiving field"
+msgstr "поље слања је веће од поља пријема"
+
+#: cobc/typeck.c:9345
+msgid "some digits may be truncated"
+msgstr "неке цифре могу бити скраћене"
+
+#: cobc/typeck.c:10125
+#, c-format
+msgid "invalid MOVE target: %s"
+msgstr "неисправна MOVE мета: %s"
+
+#: cobc/typeck.c:10337
+msgid "READ PREVIOUS not allowed for this file type"
+msgstr "READ PREVIOUS није дозвољено за ову врсту датотеке"
+
+#: cobc/typeck.c:10345
+msgid "KEY ignored with sequential READ"
+msgstr "KEY је занемарено са следним READ"
+
+#: cobc/typeck.c:10441
+msgid "figurative constants not allowed in FROM clause"
+msgstr "фигуративне константе нису дозвољене у FROM клаузули"
+
+#: cobc/typeck.c:10448
+msgid "literal in FROM clause must be alphanumeric, national or boolean"
+msgstr "словност у FROM клаузули мора бити алфанумеричка, национална или логичка"
+
+#: cobc/typeck.c:10471 cobc/typeck.c:11483
+#, c-format
+msgid "%s FILE requires a FROM clause"
+msgstr "%s FILE захтева FROM клаузулу"
+
+#: cobc/typeck.c:10493 cobc/typeck.c:10581 cobc/typeck.c:11505
+#, c-format
+msgid "%s subject does not refer to a record name"
+msgstr "„%s“ субјект не упућује на назив записа"
+
+#: cobc/typeck.c:10587
+msgid "RELEASE not allowed on this record item"
+msgstr "RELEASE није дозвољено на овој ставки записа"
+
+#: cobc/typeck.c:10668 cobc/typeck.c:10689 cobc/typeck.c:10696
+msgid "invalid SEARCH ALL condition"
+msgstr "неисправан SEARCH ALL услов"
+
+#: cobc/typeck.c:10808 cobc/typeck.c:10812
+msgid "SET targets must be PROGRAM-POINTER"
+msgstr "SET мете морају бити PROGRAM-POINTER"
+
+#: cobc/typeck.c:10839
+#, c-format
+msgid "cannot change address of '%s', which is not level 1 or 77"
+msgstr "не могу изменити адресу „%s“, која није нивоа 1 или 77"
+
+#: cobc/typeck.c:10843
+#, c-format
+msgid "cannot change address of '%s', which is not BASED or a LINKAGE item"
+msgstr "не могу изменити адресу „%s“, која није BASED или LINKAGE ставка"
+
+#: cobc/typeck.c:10862
+#, c-format
+msgid "SET target '%s' is not numeric, an INDEX or a POINTER"
+msgstr "SET мета „%s“ није број, INDEX или POINTER"
+
+#: cobc/typeck.c:10957
+msgid "field does not have a FALSE clause"
+msgstr "поље нема FALSE клаузулу"
+
+#: cobc/typeck.c:10988
+msgid "THREAD-priority must be between 1 and 32767"
+msgstr "THREAD-хитност мора бити између 1 и 32767"
+
+#: cobc/typeck.c:11008
+msgid "SET ATTRIBUTE requires a screen item as subject"
+msgstr "SET ATTRIBUTE захтева ставку екрана као субјекат"
+
+#: cobc/typeck.c:11014
+msgid "SET ATTRIBUTE subject does not refer to a screen item"
+msgstr "SET ATTRIBUTE субјекат не упућује на ставку екрана"
+
+#: cobc/typeck.c:11065
+msgid "invalid SORT filename"
+msgstr "неисправан SORT назив датотеке"
+
+#: cobc/typeck.c:11125
+msgid "invalid SORT USING parameter"
+msgstr "неисправан SORT USING параметар"
+
+#: cobc/typeck.c:11154
+msgid "invalid SORT GIVING parameter"
+msgstr "неисправан SORT GIVING параметар"
+
+#: cobc/typeck.c:11208 cobc/typeck.c:11235 cobc/typeck.c:11255
+msgid "invalid key item"
+msgstr "неисправна ставка кључа"
+
+#: cobc/typeck.c:11285
+msgid "LENGTH/SIZE clause only allowed on INDEXED files"
+msgstr "LENGTH/SIZE клаузула је дозвољена само над INDEXED датотекама"
+
+#: cobc/typeck.c:11290
+msgid "START not allowed with ACCESS MODE RANDOM"
+msgstr "START није дозвољено са ACCESS MODE RANDOM"
+
+#: cobc/typeck.c:11539
+msgid "LOCK clause invalid here"
+msgstr "LOCK клаузула је неисправна овде"
+
+#: cobc/typeck.c:11784
+msgid "data item is not part of a report"
+msgstr "ставка података није део извештаја"
+
+#: cobc/typeck.c:11804
+msgid "improper use of SUPPRESS PRINTING"
+msgstr "неодговарајуће коришћење SUPPRESS PRINTING"
+
+#: cobc/typeck.c:11819
+#, c-format
+msgid "%s must be alphanumeric or national"
+msgstr "„%s“ мора бити алфанумеричко или национално"
+
+#: cobc/typeck.c:11830
+#, c-format
+msgid "%s may not be a figurative constant"
+msgstr "„%s“ не може бити фигуративна константа"
+
+#: cobc/typeck.c:11857
+#, c-format
+msgid "%s must be a child of the input record"
+msgstr "„%s“ мора проистећи из записа улаза"
+
+#: cobc/typeck.c:11883
+#, c-format
+msgid "%s may not be an ignored item in JSON/XML GENERATE"
+msgstr "„%s“ не може бити занемарена ставка у JSON/XML GENERATE"
+
+#
+# This error message is issued when an option which must be a relative
+# directory is specified as an absolute directory.
+#
+# For consistent translation, here is the English text:
+#  msgstr "directory must be relative (must not start with /)"
+# Please translate the English msgstr, not the msgid.
+#: cobc/typeck.c:11894
+#, c-format
+msgid "%s must be elementary"
+msgstr "„%s“ мора бти елементарно"
+
+#: cobc/typeck.c:11906
+#, c-format
+msgid "%s must be USAGE DISPLAY or NATIONAL"
+msgstr "„%s“ мора бити USAGE DISPLAY или NATIONAL"
+
+#: cobc/typeck.c:11920
+#, c-format
+msgid "%s must be an integer"
+msgstr "„%s“ мора бити цео број"
+
+#: cobc/typeck.c:11936 cobc/typeck.c:11942
+msgid "JSON/XML GENERATE receiving item"
+msgstr "JSON/XML GENERATE примајућу ставку"
+
+#: cobc/typeck.c:11939
+msgid "JSON/XML GENERATE receiving item may not have JUSTIFIED clause"
+msgstr "JSON/XML GENERATE пријемна ставка не може имати JUSTIFIED клаузулу"
+
+#: cobc/typeck.c:12027
+msgid "JSON/XML GENERATE input record may not be reference modified"
+msgstr "JSON/XML GENERATE запис уноса не може бити упутом измењен"
+
+#: cobc/typeck.c:12033
+msgid "JSON/XML GENERATE input record may not have RENAMES clause"
+msgstr "JSON/XML GENERATE запис уноса не може имати RENAMES клаузула"
+
+#: cobc/typeck.c:12038
+#, c-format
+msgid "all the children of '%s' are ignored in JSON/XML GENERATE"
+msgstr "сав пород „%s“ је занемарен у JSON/XML GENERATE"
+
+#: cobc/typeck.c:12045
+msgid "JSON/XML GENERATE input record has subrecords with non-unique names"
+msgstr "JSON/XML GENERATE запис уноса има садржане записе са нејединственим називима"
+
+#: cobc/typeck.c:12050
+msgid "floating-point items in JSON/XML GENERATE"
+msgstr "ставке покретног зареза у JSON/XML GENERATE"
+
+#: cobc/typeck.c:12054
+msgid "OCCURS items in JSON/XML GENERATE"
+msgstr "OCCURS ставке у JSON/XML GENERATE"
+
+#: cobc/typeck.c:12079
+msgid "COUNT IN item must be numeric and an integer"
+msgstr "COUNT IN ставка мора бити број и цео број"
+
+#: cobc/typeck.c:12084
+msgid "COUNT IN item must be an integer"
+msgstr "COUNT IN ставка мора бити цео број"
+
+#: cobc/typeck.c:12087
+msgid "COUNT IN item may not have PICTURE with P in it"
+msgstr "COUNT IN ставка не може имати PICTURE са P у њој"
+
+#: cobc/typeck.c:12130
+msgid "NAMESPACE must be a valid URI"
+msgstr "NAMESPACE мора бити исправна URI"
+
+#: cobc/typeck.c:12174
+msgid "NAMESPACE-PREFIX must be a valid XML name"
+msgstr "NAMESPACE-PREFIX мора бити исправан XML назив"
+
+#: cobc/typeck.c:12199 cobc/typeck.c:12206
+msgid "NAME OF item"
+msgstr "NAME OF ставка"
+
+#: cobc/typeck.c:12203
+msgid "NAME OF item must be the input record or a child of it"
+msgstr "NAME OF ставка мора бити запис улаза или његов пород"
+
+#: cobc/typeck.c:12210
+msgid "NAME OF name must be a valid XML name"
+msgstr "NAME OF мора бити исправан XML назив"
+
+#: cobc/typeck.c:12236 cobc/typeck.c:12237 cobc/typeck.c:12240
+#: cobc/typeck.c:12244
+msgid "TYPE OF item"
+msgstr "TYPE OF ставка"
+
+#: cobc/typeck.c:12262
+msgid "SUPPRESS WHEN SPACE item"
+msgstr "SUPPRESS WHEN SPACE ставка"
+
+#: cobc/typeck.c:12265
+msgid "SUPPRESS WHEN LOW-VALUE item"
+msgstr "SUPPRESS WHEN LOW-VALUE ставка"
+
+#: cobc/typeck.c:12267
+msgid "SUPPRESS WHEN HIGH-VALUE item"
+msgstr "SUPPRESS WHEN HIGH-VALUE ставка"
+
+#: cobc/typeck.c:12296 cobc/typeck.c:12304 cobc/typeck.c:12308
+msgid "SUPPRESS item"
+msgstr "SUPPRESS ставка"
+
+#: cobc/typeck.c:12300
+msgid "SUPPRESS item with WHEN clause"
+msgstr "SUPPRESS ставка са WHEN клаузулом"
+
+#: cobc/typeck.c:12370
+msgid "WITH ATTRIBUTES specified, but no attributes can be generated"
+msgstr "WITH ATTRIBUTES је наведено, али ниједан атрибут не може бити створен"
+
+#: cobc/warning.def:31
+msgid "  -Wextra               additional warnings only raised with -W or -Wall"
+msgstr "  -Wextra               додатна упозорења уздигнута само са „-W“ или „-Wall“"
+
+#: cobc/warning.def:34
+msgid "  -Wno-unfinished       do not warn if unfinished features are used"
+msgstr "  -Wno-unfinished       не упозорава ако се користе недовршене функције"
+
+#: cobc/warning.def:37
+msgid "  -Wno-pending          do not warn if pending features are mentioned"
+msgstr "  -Wno-pending          не упозорава ако су поменуте чекајуће функције"
+
+#: cobc/warning.def:40
+msgid "  -Wobsolete            warn if obsolete features are used"
+msgstr "  -Wobsolete            упозорава ако се користе превазиђене функције"
+
+#: cobc/warning.def:43
+msgid "  -Warchaic             warn if archaic features are used"
+msgstr "  -Wobsolete            упозорава ако се користе застареле функције"
+
+#: cobc/warning.def:46
+msgid "  -Wredefinition        warn about incompatible redefinition of data items"
+msgstr "  -Wredefinition        упозорава о несагласном поновном дефинисању ставки података"
+
+#: cobc/warning.def:49
+msgid "  -Wtruncate            warn about field truncation from constant assignments"
+msgstr "  -Wtruncate            упозорава о скраћењу поља из додељивања константе"
+
+#: cobc/warning.def:52
+msgid "  -Wpossible-truncate   warn about possible field truncation"
+msgstr "  -Wpossible-truncate   упозорава о могућем скраћењу поља"
+
+#: cobc/warning.def:55
+msgid "  -Woverlap             warn about overlapping MOVE of items"
+msgstr "  -Woverlap             упозорава о преклапању MOVE ставке"
+
+#: cobc/warning.def:58
+msgid "  -Wpossible-overlap    warn about MOVE of items that may overlap depending on variables"
+msgstr "  -Wpossible-overlap    упозорава о MOVE ставки које могу да се преклопе зависно од променљивих"
+
+#: cobc/warning.def:61
+msgid "  -Wparentheses         warn about lack of parentheses around AND within OR"
+msgstr "  -Wparentheses         упозорава о недостатку заграда око AND унутар OR"
+
+#: cobc/warning.def:64
+msgid "  -Wstrict-typing       warn strictly about type mismatch"
+msgstr "  -Wstrict-typing       упозорава изричито о неподударању врсте"
+
+#: cobc/warning.def:67
+msgid "  -Wimplicit-define     warn about implicitly defined data items"
+msgstr "  -Wimplicit-define     упозорава о изричито дефинисаним ставкама података"
+
+#: cobc/warning.def:70
+msgid "  -Wcorresponding       warn about CORRESPONDING with no matching items"
+msgstr "  -Wcorresponding       упозорава о CORRESPONDING са непоклапајућим ставкама"
+
+#: cobc/warning.def:73
+msgid "  -Winitial-value       warn if initial VALUE clause is ignored"
+msgstr "  -Winitial-value       упозорава ако почетна VALUE клаузула је занемарена"
+
+#: cobc/warning.def:76
+msgid "  -Wprototypes          warn about missing FUNCTION prototypes/definitions"
+msgstr "  -Wprototypes          упозорава о недостајућим FUNCTION прототиповима/дефиницијама"
+
+#: cobc/warning.def:79
+msgid "  -Warithmetic-osvs     warn if arithmetic expression precision has changed"
+msgstr "  -Warithmetic-osvs     упозорава ако је измењена тачност аритметичког израза"
+
+#: cobc/warning.def:82
+msgid "  -Wcall-params         warn about non 01/77 items for CALL parameters"
+msgstr "  -Wcall-params         упозорава о не 01/77 ставкама за CALL параметре"
+
+#: cobc/warning.def:85
+msgid "  -Wconstant-expression  warn about expressions that always resolve to true/false"
+msgstr "  -Wconstant-expression упозорава о изразима који увек решавају на тачно/нетачно"
+
+#: cobc/warning.def:88
+msgid "  -Wcolumn-overflow     warn about text after program-text area, FIXED format"
+msgstr "  -Wcolumn-overflow     упозорава о тексту након области програма-текста, FIXED запис"
+
+#: cobc/warning.def:91
+msgid "  -Wterminator          warn about lack of scope terminator END-XXX"
+msgstr "  -Wterminator          упозорава о недостатку окончавача досега END-XXX"
+
+#: cobc/warning.def:94
+msgid "  -Wlinkage             warn about dangling LINKAGE items"
+msgstr "  -Wlinkage             упозорава о сувишним LINKAGE ставкама"
+
+#: cobc/warning.def:97
+msgid "  -Wunreachable         warn about likely unreachable statements"
+msgstr "  -Wunreachable         упозорава о вероватно недостижним тврдњама"
+
+#: cobc/warning.def:100
+msgid "  -Wno-dialect          do not warn about dialect specific issues"
+msgstr "  -Wno-dialect          не упозорава о проблемима специфичним дијалекту"
+
+#: cobc/warning.def:103
+msgid "  -Wothers              do not warn about different issues"
+msgstr "  -Wothers              не упозорава о различитим проблемима"
+
+#: libcob/call.c:85
+#, c-format
+msgid "LoadLibrary/GetProcAddress error %d"
+msgstr "LoadLibrary/GetProcAddress грешка %d"
+
+#: libcob/call.c:933
+msgid "indeterminable error in resolve of COBOL CALL"
+msgstr "неодредива грешка у решењу COBOL CALL"
+
+#: libcob/call.c:1014
+#, c-format
+msgid "user-defined FUNCTION '%s' not found"
+msgstr "нисам нашао кориснички дефинисану FUNCTION „%s“"
+
+#: libcob/call.c:1104 libcob/call.c:1183 libcob/call.c:1299 libcob/call.c:1327
+#, c-format
+msgid "NULL parameter passed to '%s'"
+msgstr "NULL параметар је прослеђен за „%s“"
+
+#: libcob/call.c:1179
+#, c-format
+msgid "invalid number of arguments passed to '%s'"
+msgstr "неисправан број аргумената је прослеђен за „%s“"
+
+#: libcob/call.c:1303
+msgid "multiple call to 'cob_setjmp'"
+msgstr "више позива за 'cob_setjmp'"
+
+#: libcob/call.c:1331
+msgid "call to 'cob_longjmp' with no prior 'cob_setjmp'"
+msgstr "позив за „cob_longjmp“ без претходног „cob_setjmp“"
+
+#: libcob/call.c:1565 libcob/call.c:1592 libcob/common.c:7100
+msgid "cob_init() has not been called"
+msgstr "„cob_init()“ није позвано"
+
+#: libcob/call.c:1571
+#, c-format
+msgid "parameter %d is not within range of %d"
+msgstr "параметар %d није унутар опсега %d"
+
+#: libcob/call.c:1577
+#, c-format
+msgid "parameter %d is NULL"
+msgstr "параметар %d је NULL"
+
+#: libcob/call.c:1808 libcob/call.c:1865
+#, c-format
+msgid "attempt to over-write constant parameter %d with "
+msgstr "покушава да пише преко параметра константе %d са "
+
+#: libcob/call.c:1914
+#, c-format
+msgid "attempt to over-write constant parameter %d with '%s'"
+msgstr "покушава да пише преко параметра константе %d са „%s“"
+
+#: libcob/cobgetopt.c:497
+#, c-format
+msgid "%s: option '%s' is ambiguous; possibilities:"
+msgstr "%s: опција „%s“ је нејасна; могућности:"
+
+#: libcob/cobgetopt.c:538
+#, c-format
+msgid "%s: option '--%s' doesn't allow an argument"
+msgstr "%s: опција „--%s“ не дозвољава аргумент"
+
+#: libcob/cobgetopt.c:545
+#, c-format
+msgid "%s: option '%c%s' doesn't allow an argument"
+msgstr "%s: опција „%c%s“ не дозвољава аргумент"
+
+#: libcob/cobgetopt.c:565
+#, c-format
+msgid "%s: option '--%s' requires an argument"
+msgstr "%s: опција „--%s“ не захтева аргумент"
+
+#: libcob/cobgetopt.c:597
+#, c-format
+msgid "%s: unrecognized option '--%s'"
+msgstr "%s: непозната опција „--%s“"
+
+#: libcob/cobgetopt.c:604
+#, c-format
+msgid "%s: unrecognized option '%c%s'"
+msgstr "%s: непозната опција „%c%s“"
+
+#: libcob/cobgetopt.c:633
+#, c-format
+msgid "%s: invalid option -- %c"
+msgstr "%s: неисправна опција -- %c"
+
+#: libcob/cobgetopt.c:664 libcob/cobgetopt.c:805
+#, c-format
+msgid "%s: option requires an argument -- %c"
+msgstr "%s: опција захтева аргумент -- %c"
+
+#: libcob/cobgetopt.c:714
+#, c-format
+msgid "%s: option '-W %s' is ambiguous"
+msgstr "%s: опција „-W %s“ је нејасна"
+
+#: libcob/cobgetopt.c:736
+#, c-format
+msgid "%s: option '-W %s' doesn't allow an argument"
+msgstr "%s: опција „-W %s“ не дозвољава аргумент"
+
+#: libcob/cobgetopt.c:754
+#, c-format
+msgid "%s: option '%s' requires an argument"
+msgstr "%s: опција „%s“ не захтева аргумент"
+
+#: libcob/common.c:804
+#, c-format
+msgid "attempt to reference unallocated memory"
+msgstr "покушавам да упутим не-додељену меморију"
+
+#: libcob/common.c:809
+#, c-format
+msgid "bus error"
+msgstr "грешка сабирнице"
+
+#: libcob/common.c:814
+#, c-format
+msgid "fatal arithmetic error"
+msgstr "кобна аритметичка грешка"
+
+#: libcob/common.c:818
+#, c-format
+msgid "caught signal"
+msgstr "ухватих сигнал"
+
+#: libcob/common.c:822
+#, c-format
+msgid "signal %s"
+msgstr "сигнал %s"
+
+#: libcob/common.c:828
+#, c-format
+msgid "abnormal termination - file contents may be incorrect"
+msgstr "ненормалан завршетак – садржај датотеке може бити неисправан"
+
+#: libcob/common.c:2136
+msgid "NULL field"
+msgstr "NULL поље"
+
+#: libcob/common.c:2146
+msgid "field with NULL address"
+msgstr "поље са NULL адресом"
+
+#: libcob/common.c:2424
+msgid "version mismatch"
+msgstr "издање не одговара"
+
+#: libcob/common.c:2425 libcob/common.c:2427
+#, c-format
+msgid "%s has version %s.%d"
+msgstr "%s је издања %s.%d"
+
+#: libcob/common.c:2440
+#, c-format
+msgid "CALL to %s requires %d arguments"
+msgstr "CALL за %s захтева %d аргументе"
+
+#: libcob/common.c:3062
+#, c-format
+msgid "BASED/LINKAGE item %s has NULL address"
+msgstr "BASED/LINKAGE ставка %s има NULL адресу"
+
+#: libcob/common.c:3074 libcob/common.c:3077
+#, c-format
+msgid "LINKAGE item %s not passed by caller"
+msgstr "LINKAGE ставка %s није прослеђена позиваром"
+
+#: libcob/common.c:3163
+#, c-format
+msgid "'%s' (Type: %s) not numeric: '%s'"
+msgstr "„%s“ (Врста: %s) није бројвна: „%s“"
+
+#: libcob/common.c:3188
+#, c-format
+msgid "OCCURS DEPENDING ON '%s' out of bounds: %d"
+msgstr "OCCURS DEPENDING ON „%s“ је ван граница: %d"
+
+#: libcob/common.c:3191 libcob/common.c:3229
+#, c-format
+msgid "maximum subscript for '%s': %d"
+msgstr "највише подскрипти за „%s“: %d"
+
+#: libcob/common.c:3193
+#, c-format
+msgid "minimum subscript for '%s': %d"
+msgstr "најмање подскрипти за „%s“: %d"
+
+#: libcob/common.c:3226
+#, c-format
+msgid "current maximum subscript for '%s': %d"
+msgstr "тренутно највише подскрипти за „%s“: %d"
+
+#: libcob/common.c:3248
+#, c-format
+msgid "offset of '%s' out of bounds: %d, maximum: %d"
+msgstr "померај „%s“ је изван граница: %d, највише: %d"
+
+#: libcob/common.c:3261
+#, c-format
+msgid "length of '%s' out of bounds: %d, maximum: %d"
+msgstr "дужина „%s“ је изван граница: %d, највише: %d"
+
+#: libcob/common.c:3270
+#, c-format
+msgid "length of '%s' out of bounds: %d, starting at: %d, maximum: %d"
+msgstr "дужина „%s“ је изван граница: %d, почиње на; %d, највише: %d"
+
+#: libcob/common.c:3285 libcob/common.c:3290
+#, c-format
+msgid "EXTERNAL item '%s' previously allocated with size %d, requested size is %d"
+msgstr "EXTERNAL ставка „%s“ претходно додељена са величином %d, затражена величина је %d"
+
+#: libcob/common.c:3791
+#, c-format
+msgid "COB_CURRENT_DATE '%s' is invalid"
+msgstr "COB_CURRENT_DATE „%s“ је неисправно"
+
+#: libcob/common.c:4699
+#, c-format
+msgid "parameter to SYSTEM call is larger than %d characters"
+msgstr "параметар за SYSTEM позив је веће од %d знака"
+
+#: libcob/common.c:5235
+#, c-format
+msgid "error '%s' during CBL_GC_FORK"
+msgstr "грешка „%s“ за време „CBL_GC_FORK“"
+
+#: libcob/common.c:5240 libcob/common.c:5337
+#, c-format
+msgid "'%s' is not supported on this platform"
+msgstr "„%s“ није подржано на овој платформи"
+
+#: libcob/common.c:5266
+#, c-format
+msgid "error '%s' for P%d during CBL_GC_WAITPID"
+msgstr "грешка „%s“ за P%d за време „CBL_GC_WAITPID“"
+
+#: libcob/common.c:5458
+msgid "Call to CBL_GC_GETOPT with wrong longoption size."
+msgstr "Позив за „CBL_GC_GETOPT“ је са погрешном величином дуге опције."
+
+#: libcob/common.c:5463
+msgid "Call to CBL_GC_GETOPT with missing longind."
+msgstr "Позив за „CBL_GC_GETOPT“ са недостајућим „longind“."
+
+#: libcob/common.c:5879 libcob/common.c:5900 libcob/common.c:5913
+#: libcob/common.c:7892
+#, c-format
+msgid "(default)"
+msgstr "(основно)"
+
+#: libcob/common.c:6159 libcob/common.c:6178
+msgid "should be unsigned"
+msgstr "треба бити неозначено"
+
+#: libcob/common.c:6167 libcob/common.c:6216
+msgid "should be numeric"
+msgstr "треба бити бројно"
+
+#: libcob/common.c:6225
+#, c-format
+msgid "minimum value: %lu"
+msgstr "најмања вредност: %lu"
+
+#: libcob/common.c:6272 libcob/common.c:6806 libcob/common.c:6820
+#, c-format
+msgid "should not contain '%c'"
+msgstr "не треба да садржи '%c'"
+
+#: libcob/common.c:6352 libcob/common.c:6420 libcob/common.c:6429
+#: libcob/common.c:6437 libcob/common.c:6462
+#, c-format
+msgid "not set"
+msgstr "није подешено"
+
+#: libcob/common.c:6412 libcob/common.c:6415 libcob/common.c:6418
+#, c-format
+msgid "set by %s"
+msgstr "подесио је „%s“"
+
+#: libcob/common.c:6535
+#, c-format
+msgid "WARNING - '%s' without a value - ignored!"
+msgstr "УПОЗОРЕЊЕ – „%s“ је без вредности – занемарено!"
+
+#: libcob/common.c:6538
+#, c-format
+msgid "'%s' without a value!"
+msgstr "„%s“ је без вредности!"
+
+#: libcob/common.c:6564
+#, c-format
+msgid "WARNING - '%s %s' without a value - ignored!"
+msgstr "УПОЗОРЕЊЕ – '%s %s' је без вредности – занемарено!"
+
+#: libcob/common.c:7053
+msgid "error"
+msgstr "грешка"
+
+#: libcob/common.c:7083
+msgid "attempt to CANCEL active program"
+msgstr "покушавам да ОТКАЖЕМ програм у раду"
+
+#: libcob/common.c:7110
+msgid "CALL of program with CHAINING clause"
+msgstr "CALL програма са CHAINING клаузулом"
+
+#: libcob/common.c:7114
+msgid "stack overflow, possible PERFORM depth exceeded"
+msgstr "прекорачење спремника, могуће премашење PERFORM дубине"
+
+#: libcob/common.c:7119
+msgid "invalid entry/exit in GLOBAL USE procedure"
+msgstr "неисправан унос/излаз у GLOBAL USE поступку"
+
+#: libcob/common.c:7124
+msgid "unable to allocate memory"
+msgstr "не могу да доделим меморију"
+
+#: libcob/common.c:7129
+msgid "invalid entry into module"
+msgstr "неисправан унос у модул"
+
+#: libcob/common.c:7136
+#, c-format
+msgid "recursive CALL from %s to %s which is NOT RECURSIVE"
+msgstr "дубински CALL од %s ка %s који је NOT RECURSIVE"
+
+#: libcob/common.c:7142
+#, c-format
+msgid "invalid recursive COBOL CALL to '%s'"
+msgstr "неисправан дубински COBOL CALL за „%s“"
+
+#: libcob/common.c:7157
+msgid "end of file"
+msgstr "крај датотеке"
+
+#: libcob/common.c:7160
+msgid "key out of range"
+msgstr "кључ је ван опсега"
+
+#: libcob/common.c:7163
+msgid "key order not ascending"
+msgstr "поредак кључа није растући"
+
+#: libcob/common.c:7166
+msgid "record key already exists"
+msgstr "кључ записа већ постоји"
+
+#: libcob/common.c:7169
+msgid "record key does not exist"
+msgstr "кључ записа не постоји"
+
+#: libcob/common.c:7172
+msgid "permanent file error"
+msgstr "трајна грешка датотеке"
+
+#
+# This error message is issued when a command which requires file names
+# on the command line is not given any.
+#
+# For consistent translation, here is the English text:
+#  msgstr "no file names were specified on the command line"
+# Please translate the English msgstr, not the msgid.
+#: libcob/common.c:7175
+msgid "inconsistant file name"
+msgstr "недоследан назив датотеке"
+
+#: libcob/common.c:7178
+msgid "file does not exist"
+msgstr "датотека не постоји"
+
+#: libcob/common.c:7181
+msgid "permission denied"
+msgstr "приступ је забрањен"
+
+#: libcob/common.c:7184
+msgid "file already open"
+msgstr "датотека је већ отворена"
+
+#: libcob/common.c:7187
+msgid "file not open"
+msgstr "датотека није отворена"
+
+#: libcob/common.c:7190
+msgid "READ must be executed first"
+msgstr "READ мора бити прво извршено"
+
+#: libcob/common.c:7193
+msgid "record overflow"
+msgstr "прекорачење записа"
+
+#: libcob/common.c:7196
+msgid "READ after unsuccessful READ/START"
+msgstr "READ након неуспешног READ/START"
+
+#: libcob/common.c:7199
+msgid "READ/START not allowed, file not open for input"
+msgstr "READ/START није дозвољено, датотека није отворена за улаз"
+
+#: libcob/common.c:7202
+msgid "WRITE not allowed, file not open for output"
+msgstr "WRITE није дозвољено, датотека није отворена за излаз"
+
+#: libcob/common.c:7205
+msgid "DELETE/REWRITE not allowed, file not open for I-O"
+msgstr "DELETE/REWRITE није дозвољено, датотека није отворена за У-И"
+
+#: libcob/common.c:7208
+msgid "record locked by another file connector"
+msgstr "запис је закључан другим саставником датотеке"
+
+#: libcob/common.c:7211
+msgid "LINAGE values invalid"
+msgstr "LINAGE вредност није исправна"
+
+#
+# This error message is issued by aede-policy when it detects that text
+# file merge conflict artifacts remain in a source file.
+#
+#       $File_Name      The offending file name.
+#
+# For consistent translation, here is the English text:
+#  msgstr "$filename: this file contains unresolved merge conflicts"
+# Please translate the English msgstr, not the msgid.
+#: libcob/common.c:7214
+msgid "file sharing conflict"
+msgstr "сукоб дељења датотеке"
+
+#: libcob/common.c:7218
+msgid "runtime library is not configured for this operation"
+msgstr "библиотека времена извршења није подешена за ову радњу"
+
+#: libcob/common.c:7223
+msgid "unknown file error"
+msgstr "непозната грешка датотеке"
+
+#: libcob/common.c:7230
+#, c-format
+msgid "%s (status = %02d) for file %s"
+msgstr "%s (стање = %02d) за датотеку „%s“"
+
+#: libcob/common.c:7233
+#, c-format
+msgid "%s (status = %02d) for file %s on %s"
+msgstr "%s (стање = %02d) за датотеку „%s“ на %s"
+
+#: libcob/common.c:7240
+msgid "attempt to use non-implemented function"
+msgstr "покушавам да користим непримењену функцију"
+
+#: libcob/common.c:7243
+msgid "attempt to use non-implemented XML I/O"
+msgstr "покушавам да користим непримењени XML У/И"
+
+#: libcob/common.c:7246
+msgid "attempt to use non-implemented JSON I/O"
+msgstr "покушавам да користим непримењени JSON У/И"
+
+#: libcob/common.c:7293
+msgid "environment variables"
+msgstr "променљиве окружења"
+
+#: libcob/common.c:7421 libcob/common.c:7496 libcob/common.c:7513
+#: libcob/common.c:7671 libcob/common.c:7705 libcob/common.c:7723
+#, c-format
+msgid "%s, version %d.%d.%d"
+msgstr "%s, издање %d.%d.%d"
+
+#: libcob/common.c:7423 libcob/common.c:7498 libcob/common.c:7517
+#: libcob/common.c:7674 libcob/common.c:7726
+#, c-format
+msgid "%s, version %d.%d.%d (compiled with %d.%d)"
+msgstr "%s, издање %d.%d.%d (преведено са %d.%d)"
+
+#: libcob/common.c:7426
+#, c-format
+msgid "%s, version %s"
+msgstr "%s, издање %s"
+
+#: libcob/common.c:7548
+msgid "License LGPLv3+: GNU LGPL version 3 or later <http://gnu.org/licenses/lgpl.html>"
+msgstr "Дозвола ЛОЈЛи3+: Гнуова ЛОЈЛ издање 3 или касније <http://gnu.org/licenses/lgpl.html>"
+
+#: libcob/common.c:7611 libcob/common.c:7613
+msgid "dynamic loading"
+msgstr "динамичко учитавање"
+
+#: libcob/common.c:7618
+msgid "enabled"
+msgstr "укључено"
+
+#: libcob/common.c:7649
+msgid "mouse support"
+msgstr "подршка за миша"
+
+#: libcob/common.c:7743
+msgid "CALL configuration"
+msgstr "подешавање „CALL“"
+
+#: libcob/common.c:7744
+msgid "File I/O configuration"
+msgstr "подешавање У/И датотеке"
+
+#: libcob/common.c:7745
+msgid "Screen I/O configuration"
+msgstr "подешавање У/И екрана"
+
+#: libcob/common.c:7746
+msgid "Miscellaneous"
+msgstr "Разно"
+
+#: libcob/common.c:7747
+msgid "System configuration"
+msgstr "Подешавање система"
+
+#: libcob/common.c:7751
+msgid "runtime configuration"
+msgstr "подешавање времена извршења"
+
+#: libcob/common.c:7753
+msgid "via"
+msgstr "путем"
+
+#: libcob/common.c:7826 libcob/common.c:7854
+msgid "... removed from environment"
+msgstr "... уклоњено из окружења"
+
+#: libcob/common.c:7880 libcob/common.c:7882
+#, c-format
+msgid "(set by %s)"
+msgstr "(подесио је %s)"
+
+#: libcob/common.c:7890
+#, c-format
+msgid "(reset)"
+msgstr "(повраћај)"
+
+#: libcob/common.c:8082
+msgid "compiler was not built with --enable-debug-log; COB_DEBUG_LOG ignored"
+msgstr "преводилац није изграђен са „--enable-debug-log“; „COB_DEBUG_LOG“ је занемарено"
+
+#: libcob/common.c:8255 libcob/common.c:8374
+#, c-format
+msgid "%s called with unknown option: %d"
+msgstr "%s је позвано са непознатом опцијом: %d"
+
+#: libcob/common.c:8327
+#, c-format
+msgid "Module dump due to %s\n"
+msgstr "Избачај модула услед „%s“\n"
+
+#: libcob/common.c:8331
+#, c-format
+msgid " Last statement of %s was Line %d of %s\n"
+msgstr " Последња тврдња %s беше Ред %d од %s\n"
+
+#: libcob/common.c:8337
+#, c-format
+msgid " Last statement of %s unknown\n"
+msgstr " Последња тврдња за %s је непозната\n"
+
+#: libcob/common.c:8347
+#, c-format
+msgid "Dump Program-Id %s from %s compiled %s\n"
+msgstr "Исписује Програм-иб %s из %s преведеног %s\n"
+
+#: libcob/fileio.c:774 libcob/fileio.c:2974 libcob/numeric.c:1602
+#, c-format
+msgid "invalid internal call of %s"
+msgstr "неисправан унутрашњи позив за „%s“"
+
+#: libcob/fileio.c:2573
+#, c-format
+msgid "BDB error: %s"
+msgstr "„BDB“ грешка: %s"
+
+#: libcob/fileio.c:2582
+#, c-format
+msgid "BDB error: %s %s"
+msgstr "„BDB“ грешка: %s %s"
+
+#: libcob/fileio.c:2598 libcob/fileio.c:2618
+#, c-format
+msgid "cannot join BDB environment (%s), error: %d %s"
+msgstr "не могу да придружим „BDB“ окружење (%s), грешка: %d %s"
+
+#: libcob/fileio.c:5096
+#, c-format
+msgid "ERROR FILE %s has ASSIGN field is NULL"
+msgstr "ERROR FILE %s има ASSIGN поље које је NULL"
+
+#: libcob/fileio.c:5638
+#, c-format
+msgid "call to CBL_OPEN_FILE with wrong access mode: %d"
+msgstr "позив за „CBL_OPEN_FILE“ са погрешним режимом приступа: %d"
+
+#: libcob/fileio.c:5713
+#, c-format
+msgid "call to CBL_CREATE_FILE with wrong file_lock: %d"
+msgstr "позив за „CBL_CREATE_FILE“ са погрешним „file_lock“: %d"
+
+#: libcob/fileio.c:5716
+#, c-format
+msgid "call to CBL_CREATE_FILE with wrong file_dev: %d"
+msgstr "позив за „CBL_CREATE_FILE“ са погрешним „file_dev“: %d"
+
+#: libcob/fileio.c:5916 libcob/fileio.c:6170
+#, c-format
+msgid "'%s' - File detail area is too short"
+msgstr "„%s“ – Област појединости датотеке је прекратка"
+
+#: libcob/fileio.c:6392
+msgid "SORT is unable to acquire temporary file"
+msgstr "SORT није у могућности да присвоји привремену датотеку"
+
+#: libcob/fileio.c:7010
+#, c-format
+msgid "implicit CLOSE of %s"
+msgstr "изричито CLOSE од %s"
+
+#: libcob/fileio.c:7865 libcob/fileio.c:7868 libcob/fileio.c:7896
+#: libcob/fileio.c:7899
+#, c-format
+msgid "ERROR: EXTFH called with FCD version %d"
+msgstr "ERROR: EXTFH је позвано са FCD издањем %d"
+
+#: libcob/fileio.c:7985
+#, c-format
+msgid "ERROR: EXTFH called with wrong file organization %d"
+msgstr "ERROR: EXTFH је позвано са погрешном организацијом датотеке %d"
+
+#: libcob/reportio.c:621
+#, c-format
+msgid "INITIATE %s LINE %d exceeds PAGE LIMIT %d"
+msgstr "INITIATE %s LINE %d премашује PAGE LIMIT %d"
+
+#: libcob/reportio.c:628 libcob/reportio.c:643
+#, c-format
+msgid "INITIATE %s NEXT GROUP %d exceeds PAGE LIMIT"
+msgstr "INITIATE %s NEXT GROUP %d премашује PAGE LIMIT"
+
+#: libcob/reportio.c:636
+#, c-format
+msgid "INITIATE %s LINE %d exceeds PAGE LIMIT"
+msgstr "INITIATE %s LINE %d премашује PAGE LIMIT"
+
+#: libcob/reportio.c:1297
+#, c-format
+msgid "INITIATE %s was already done"
+msgstr "INITIATE %s је већ готово"
+
+#: libcob/reportio.c:1313
+#, c-format
+msgid "INITIATE %s PAGE LIMIT problem"
+msgstr "INITIATE %s PAGE LIMIT проблем"
+
+#: libcob/reportio.c:1390
+#, c-format
+msgid "TERMINATE %s but no INITIATE was done"
+msgstr "TERMINATE %s али INITIATE није одрађено"
+
+#: libcob/reportio.c:1535
+#, c-format
+msgid "GENERATE %s but no INITIATE was done"
+msgstr "GENERATE %s али INITIATE није одрађено"
+
+#: libcob/reportio.c:1834
+#, c-format
+msgid "could not find line to SUPPRESS in report %s"
+msgstr "не могу да нађем ред за SUPPRESS у извештају %s"
+
+#: libcob/screenio.c:433
+msgid "failed to initialize curses"
+msgstr "нисам успео да покренем „curses“"
+
+#: libcob/screenio.c:3599
+msgid "end of program, please press a key to exit"
+msgstr "крај програма, притисните тастер за излазак"
+
+#: libcob/termio.c:70 libcob/termio.c:106
+msgid "(Not representable)"
+msgstr "(Није представљиво)"
+
+#: libcob/termio.c:346
+#, c-format
+msgid "cannot open %s (=%s)"
+msgstr "не могу да отворим %s (=%s)"
+
+#: libcob/termio.c:361
+msgid "COB_DISPLAY_PUNCH_FILE is invalid, output to SYSPUNCH skipped"
+msgstr "„COB_DISPLAY_PUNCH_FILE“ је неисправно, излаз за SYSPUNCH је прескочено"
+
+#: bin/cobcrun.c:123
+msgid "GnuCOBOL module loader"
+msgstr "учитавач ГнуКОБОЛ модула"
+
+#: bin/cobcrun.c:125
+#, c-format
+msgid "Usage: %s [options] PROGRAM [parameter ...]"
+msgstr "Коришћење: %s [опције] ПРОГРАМ [параметар ...]"
+
+#: bin/cobcrun.c:127
+#, c-format
+msgid "  or:  %s options"
+msgstr "  или:  %s опције"
+
+#: bin/cobcrun.c:131
+msgid "  -h, -help                      display this help and exit"
+msgstr "  -h, -help                      приказује ову помоћ и излази"
+
+#: bin/cobcrun.c:132
+msgid "  -V, -version                   display cobcrun and runtime version and exit"
+msgstr "  -V, -version                   приказује издање „cobcrun“ и времена извршења и излази"
+
+#: bin/cobcrun.c:133
+msgid "  -i, -info                      display runtime information (build/environment)"
+msgstr "  -i, -info                      приказује податке о времену извршења (изградња/окружење)"
+
+#: bin/cobcrun.c:134
+msgid "  -v, -verbose                   display extended output with --info"
+msgstr "  -v, -verbose                   приказује проширени излаз са „--info“"
+
+#: bin/cobcrun.c:136
+msgid "  -q, -brief                     reduced displays"
+msgstr "  -q, -brief                     умањени прикази"
+
+#: bin/cobcrun.c:138
+msgid "  -c <file>, -config=<file>      set runtime configuration from <file>"
+msgstr "  -c <дттка>, -config=<дттка>    поставља подешавање времена извршења из <датотеке>"
+
+#: bin/cobcrun.c:139
+msgid ""
+"  -r, -runtime-config            display current runtime configuration\n"
+"                                 (value and origin for all settings)"
+msgstr ""
+"  -r, -runtime-config            приказује текуће подешавање времена извршења\n"
+"                                 (вредност и порекло за сва подешавања)"
+
+#: bin/cobcrun.c:141
+msgid ""
+"  -M <module>, -module=<module>  set entry point module name and/or load path\n"
+"                                 where -M module prepends any directory to the\n"
+"                                 dynamic link loader library search path\n"
+"                                 and any basename to the module preload list\n"
+"                                 (COB_LIBRARY_PATH and/or COB_PRELOAD)"
+msgstr ""
+"  -M <модул>, -module=<модул>    поставља назив модула улазне тачке и/или путање\n"
+"                                 утовара где „-M“ модул припрема било који директоријум\n"
+"                                 за путању претраге библиотеке утоварника динамичке везе\n"
+"                                 и било ког назива основе за списак предутовара модула\n"
+"                                 („COB_LIBRARY_PATH“ и/или „COB_PRELOAD“)"
+
+#: bin/cobcrun.c:276
+msgid "invalid configuration file name"
+msgstr "неисправан назив датотеке подешавања"
+
+#: bin/cobcrun.c:334
+#, c-format
+msgid "invalid module argument '%s'"
+msgstr "неисправан аргумент модула „%s“"
+
+#: bin/cobcrun.c:386
+#, c-format
+msgid "%s: missing PROGRAM name"
+msgstr "%s: недостаје назив ПРОГРАМА"
+
+#: bin/cobcrun.c:388
+#, c-format
+msgid "Try '%s --help' for more information."
+msgstr "Покушајте „%s --help“ за више информација."
+
+#: bin/cobcrun.c:396
+#, c-format
+msgid "%s: PROGRAM name exceeds %d characters"
+msgstr "%s: назив ПРОГРАМА премашује %d знака"

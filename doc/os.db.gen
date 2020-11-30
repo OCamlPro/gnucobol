@@ -1,0 +1,71 @@
+#! /bin/sh
+
+db="$1"
+
+if [ -z "$db" ]
+then
+    db=os.db
+fi
+
+sqlite3 -column -header $db <<EOF
+drop table if exists developers;
+
+create table developers (
+    initials text not NULL primary key,
+    name     text not NULL unique
+);
+
+insert into developers values
+    ( 'jkl', 'James K. Lowden' ), 
+    ( 'rjn', 'Ron Norman' ), 
+    ( 'sfm', 'Simon Mensch' )
+;
+
+drop table if exists OSes;
+
+create table OSes (
+    OS text not NULL primary key
+);
+
+insert into OSes values 
+    ( 'Centos' ), 
+    ( 'MACOS' ), 
+    ( 'HPUX Pa-Risc' ), 
+    ( 'HPUX Itanium' ), 
+    ( 'SunOS' ), 
+    ( 'AIX' ), 
+    ( 'Ubuntu' ), 
+    ( 'Windows Server' ), 
+    ( 'Windows' )
+;
+
+drop table if exists platforms;
+
+create table platforms (
+    OS text not NULL,
+    version text not NULL,
+    maintainer text not NULL, 
+    primary key( OS, version ), 
+    foreign key (OS) references OSes (OS), 
+    foreign key (maintainer) references developers (initials)
+    
+);
+
+insert into platforms values
+    ( 'Centos', '5.2', 'rjn' ), 
+    ( 'Centos', '6.8', 'rjn' ), 
+    ( 'Centos', '6.5', 'rjn' ), 
+    ( 'Centos', '7.0', 'rjn' ), 
+    ( 'Centos', '8.0', 'rjn' ), 
+    ( 'MACOS', 'Darwin', 'rjn' ), 
+    ( 'HPUX Pa-Risc', '11.11', 'rjn' ), 
+    ( 'HPUX Itanium', '11.23', 'rjn' ), 
+    ( 'SunOS sparc', '5.8', 'rjn' ), 
+    ( 'AIX powerpc', '7.1', 'rjn' ), 
+    ( 'Ubuntu', '16.04', 'jkl' ),
+    ( 'Windows Server', '2019', 'jkl' )
+;
+
+.width 15
+select * from platforms order by OS, version;
+EOF

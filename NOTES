@@ -1,0 +1,756 @@
+
+FIXME (issues open in both pangaea and trunk):
+* odoslide should very likely be moved from flag.def to config.def
+* runtime checks for out-of-bounds ref-mod and subscript access must be recompared and
+  likely adjusted with -std=ibm, maybe also for =mf, at least with -fodoslide as the use
+  of "invalid" subscripts (less then min, more than max) is actually one of the use-cases
+  of -fodoslide - instead of the hard subscript check check for real_field_founder's
+  bounds
+* locking tests are still skipped because of timing issues
+
+TODO (things to clean):
+COB_MF_FILES (conflicts with other settings), COB_MF_LS_NULLS + COB_MF_LS_SPLIT (can be set
+              globally via non-MF version and always per file)
+-fmf-files
+    * _discussion_: if used then the file attributes should be passed
+      in the generated program [we don't want to break files when extending
+      the handling of the matching file flags)
+    * if used the file can "magically" only be adjusted by IO_filename,
+      while all others are pre-set by "general flags"
+    * if used then should also be available for GC22 (the last place where the flags
+      where adjusted: -ffix-file-format=mf,gc22)
+    --> better: add a dialect flag for each option (varrel,fixrel,...)
+    This would leave the "common runtime settings" to programs compiled with an older version
+    and only be possible to override by manual setting.
+
+---more to come---
+
+tree.c: SET_SOURCE_CB  --> change to inline function
+
+-------------------------------------------------------------
+Merge notes jkl (to be removed later) after file comparisions
+
+r506
+--- Merging r506 into '.':
+U    cobc/codegen.c   (declined)
+
+r521
+--- Merging r521 into '.':
+C    cobc/codeoptim.c (declined)
+
+r525
+--- Merging r525 into '.':
+C    cobc/ChangeLog   merged
+C    cobc/codegen.c   declined
+U    cobc/codeoptim.c accepted
+C    cobc/tree.c      declined
+U    cobc/typeck.c    accepted
+C    libcob/ChangeLog merged
+C    libcob/common.c  merged
+C    libcob/common.h  declined
+C    libcob/fileio.c  declined
+
+r575
+--- Merging r575 into '.':
+   C cobc/parser.c
+   C tests/testsuite
+C    ChangeLog	      merged
+C    cobc/ChangeLog   merged
+U    cobc/codegen.c   ok
+C    cobc/config.c    merged
+C    cobc/flag.def    declined
+C    cobc/parser.y    accepted
+C    cobc/typeck.c    declined
+C    config/runtime.cfg	accepted & re-corrected "preceeds"
+C    libcob/ChangeLog 	merged
+U    libcob/coblocal.h	ok
+C    libcob/common.c	merged
+C    libcob/common.h	conflicts resolved in favor of trunk
+C    libcob/fileio.c	merged
+C    tests/ChangeLog	merged
+C    tests/testsuite.src/run_file.at declined
+C    tests/testsuite.src/run_misc.at declined
+Summary of conflicts:
+  Text conflicts: 14
+  Tree conflicts: 2
+
+r576
+--- Merging r575 into 'tests/testsuite.src/run_file.at':
+C    tests/testsuite.src/run_file.at
+--- Merging r575 into 'tests/testsuite.src/run_misc.at':
+C    tests/testsuite.src/run_misc.at
+Summary of conflicts:
+  Text conflicts: 2
+svn: E155015: One or more conflicts were produced while merging r574:575 into
+'/home/jklowden/projects/3rd/cobol/branches/pangaea' --
+jkl: instead of rejecting the merge, included the text of both versions
+
+r577
+--- Merging r576 through r577 into '.':
+   C tests/testsuite rejected
+U    libcob/fileio.c
+U    tests/testsuite.src/run_file.at
+U    tests/testsuite.src/syn_definition.at
+
+with 577, the compiler builds but does not run: 
+configuration error:
+/home/jklowden/projects/3rd/cobol/branches/pangaea/build.db/../config/default.conf:244: Invalid configuration 'TERMINAL'
+Invalid configuration 'TERMINAL'
+Invalid configuration 'TERMINAL'
+Invalid configuration 'TERMINAL'
+/home/jklowden/projects/3rd/cobol/branches/pangaea/build.db/../config/default.conf:248: Unknown configuration tag 'AUTO-SKIP'
+/home/jklowden/projects/3rd/cobol/branches/pangaea/build.db/../config/default.conf:249: Unknown configuration tag 'AUTOTERMINATE'
+et cetera.  
+
+r585
+--- Merging r585 into '.':
+C    cobc/codegen.c accepted
+
+r587
+--- Merging r587 into '.':
+C    cobc/ChangeLog merged
+U    libcob/common.h
+U    libcob/fileio.c
+
+r614
+--- Merging r614 into '.':
+C    cobc/ChangeLog merged
+U    cobc/codegen.c ok
+C    cobc/field.c   accepted	
+C    cobc/tree.c    merged
+U    cobc/tree.h    ok
+C    cobc/typeck.c  merged
+U    tests/testsuite.src/run_misc.at
+
+r801
+--- Merging r789 through r801 into '.':
+C    config/runtime.cfg combined by hand
+
+r805
+--- Merging r804 through r805 into '.':
+C    cobc/ChangeLog	 merged
+C    config/ChangeLog	 merged
+C    libcob/ChangeLog	 merged
+C    tests/testsuite.src/run_misc.at declined
+
+r810
+--- Merging r810 into '.':
+C    config/runtime.cfg combined
+
+r835
+--- Merging r835 into '.':
+C    libcob/coblocal.h	declined: use new date struct
+U    libcob/fileio.c	declined: environment strings are signed char
+
+r839
+--- Merging r837 through r839 into '.':
+C    libcob/ChangeLog	 merged
+C    libcob/common.c	 merged
+
+r931
+--- Merging r858 into 'tests':
+C    tests/ChangeLog  merged
+C    tests/testsuite.src/configuration.at declined
+U    tests/testsuite.src/run_misc.at
+U    tests/testsuite.src/syn_definition.at
+
+r935
+--- Merging r916 through r931 into '.':
+C    config/runtime.cfg accepted
+
+r936
+--- Merging r935 through r936 into '.':
+C    libcob/common.h	 combined
+C    libcob/ChangeLog	 merged
+U    libcob/fileio.c	 ok
+
+r1253
+--- Merging r1152 into 'cobc/cobc.c':
+C    cobc/cobc.c merged
+
+r1260
+--- Merging r1253 through r1260 into '.':
+   C tests/testsuite reverted
+C    cobc/ChangeLog  merged
+C    cobc/codegen.c  merged
+C    libcob/ChangeLog	merged
+U    libcob/fileio.c	ok
+C    tests/ChangeLog	merged
+C    tests/testsuite.src/run_extensions.at combined
+C    tests/testsuite.src/run_misc.at	   declined
+
+r1276
+--- Merging r1276 into '.':
+   C cobc/parser.c     reverted
+   C cobc/parser.h     reverted
+   C tests/testsuite   reverted
+C    cobc/ChangeLog	merged
+C    cobc/codegen.c	combined
+C    cobc/parser.y	declined: seems dealt with differently
+C    cobc/tree.h	combined
+U    cobc/typeck.c	ok
+C    libcob/ChangeLog	merged
+U    libcob/coblocal.h	ok
+C    libcob/common.c	accepted
+C    libcob/common.h	merged
+C    libcob/fileio.c	merged, mostly declined (trunk uses fcntl)
+U    tests/testsuite.src/run_file.at   		ok
+C    tests/testsuite.src/run_misc.at		declined
+C    tests/testsuite.src/syn_subscripts.at	accepted
+
+r1278
+--- Merging r1278 into '.':
+   C tests/testsuite   reverted
+C    libcob/ChangeLog  merged
+C    libcob/common.h   declined
+U    libcob/fileio.c   ok
+C    tests/testsuite.src/run_file.at		accepted
+
+r1313
+--- Merging r1281 through r1313 into '.':
+   C tests/testsuite	  reverted
+C    cobc/ChangeLog	  merged
+C    cobc/cobc.c	  declined (use "ISAM", not "INDEXED")
+C    libcob/ChangeLog	  merged
+U    libcob/coblocal.h	  ok
+C    libcob/common.c	  merged, messy
+U    libcob/common.h	  ok
+C    libcob/fileio.c	  merged, tentatively
+C    tests/testsuite.src/run_file.at	declined, can't tell
+
+Build succeeds again after Simon repaired r575 merge. 
+
+r1324
+--- Merging r1320 through r1324 into '.':
+   C tests/testsuite	reverted
+C    cobc/ChangeLog	merged
+C    cobc/cobc.c	merged
+C    libcob/ChangeLog	merged
+U    libcob/common.h	ok
+C    libcob/fileio.c	declined
+C    tests/ChangeLog	merged
+C    tests/cobol85/report.pl	declined
+U    tests/testsuite.src/run_file.at	ok
+
+r1395
+--- Merging r1392 through r1395 into '.':
+C    bin/ChangeLog	  merged
+C    bin/Makefile.am	  modified here and again for 1396
+
+r1396
+--- Merging r1396 into '.':
+A    bin/gcdiff.c      ok
+
+r1398
+--- Merging r1398 into '.':
+C    libcob/call.c     declined, already done differently
+
+r1401
+--- Merging r1399 through r1401 into '.':
+U    AUTHORS	  	  ok
+C    bin/ChangeLog	  merged
+U    bin/cobcrun.c
+U    bin/gcdiff.c
+
+r1402
+--- Merging r1402 into '.':
+   C build_windows/vc10		reverted
+   C build_windows/vc11		reverted
+   C build_windows/vc12		reverted
+   C build_windows/vc14		reverted
+   C build_windows/vc8		reverted
+   C build_windows/vc9		reverted
+C    build_windows/ChangeLog.txt	merged
+A    build_windows/version_gcdiff.rc	ok
+
+r1404
+--- Merging r1403 through r1404 into '.':
+C    bin/ChangeLog
+U    bin/gcdiff.c
+dry-run produced above output, but actual merge showed no conflict. 
+
+r1405
+--- Merging r1404 through r1405 into '.':
+C    bin/ChangeLog	  merged
+U    bin/gcdiff.c	  ok
+
+r1410
+--- Merging r1410 into '.':
+C    cobc/ChangeLog    declined, already represented
+C    cobc/codegen.c    combined
+
+r1411
+--- Merging r1411 into '.':
+   C tests/testsuite	reverted
+U    config/runtime.cfg	ok
+C    libcob/ChangeLog	merged
+U    libcob/coblocal.h	ok
+C    libcob/common.c	merged, kept trace_io env var
+C    libcob/common.h	accepted
+C    libcob/fileio.c	accepted except some casts
+U    libcob/termio.c	ok
+C    tests/testsuite.src/run_misc.at	merged but commented out
+
+r1417
+--- Merging r1417 into '.':
+U    config/runtime.cfg	ok
+U    libcob/ChangeLog	ok
+U    libcob/coblocal.h	ok
+U    libcob/common.c	ok
+U    libcob/common.h	ok
+U    libcob/fileio.c	ok
+C    tests/testsuite.src/run_misc.at	declined
+
+r1418
+--- Merging r1418 into '.':
+A    tests/testsuite	ok
+C    tests/testsuite.src/run_misc.at	merged
+
+r1419
+--- Merging r1419 into '.':
+C    libcob/ChangeLog	merged
+U    libcob/common.c	ok
+C    libcob/common.h	accepted but #if 0'd out
+C    libcob/fileio.c	merged
+
+r1491
+--- Merging r1490 through r1491 into '.':
+C    cobc/ChangeLog	merged
+C    cobc/codegen.c	combined
+C    tests/testsuite.src/run_misc.at	declined, don't know what to do
+
+r1497
+--- Merging r1495 through r1497 into '.':
+C    config/ChangeLog	  merged
+C    config/runtime.cfg	  accepted (no actual conflict)
+C    libcob/ChangeLog	  merged
+C    libcob/coblocal.h	  declined: copyright more recent in trunk
+C    libcob/common.c	  merged
+C    libcob/fileio.c	  accepted
+
+r1508
+--- Merging r1505 through r1508 into '.':
+C    libcob/ChangeLog	  merged
+C    libcob/common.c	  merged
+C    libcob/fileio.c	  declined
+
+r1520
+--- Merging r1517 through r1520 into '.':
+C    libcob/ChangeLog	merged
+U    libcob/fileio.c	ok
+C    libcob/move.c	declined: already done differently
+C    libcob/screenio.c	merged
+
+r1547
+--- Merging r1547 into '.':
+C    cobc/ChangeLog	merged
+C    cobc/codegen.c	merged, massive, likely not working 
+U    cobc/tree.h	ok
+C    libcob/ChangeLog	merged
+C    libcob/call.c	declined
+C    libcob/common.c	merged
+C    libcob/common.h	merged
+U    libcob/move.c	ok
+C    tests/testsuite.src/run_misc.at	merged
+
+codegen merge was screwy; try_get_by_value_parameter_type()
+looks incomplete in reportwriter, too.
+
+Hoping for luck later on. 
+
+r1560
+--- Merging r1548 through r1560 into '.':
+C    cobc/ChangeLog	  merged
+U    cobc/codegen.c
+U    cobc/typeck.c
+
+r1565
+--- Merging r1563 through r1565 into '.':
+U    config/runtime.cfg	ok
+C    libcob/ChangeLog	merged
+U    libcob/coblocal.h	ok
+C    libcob/common.c	reverted
+U    libcob/common.h	ok
+C    libcob/fileio.c	accepted
+
+r1566
+--- Merging r1566 into '.':
+U    libcob/fileio.c	ok
+C    tests/testsuite.src/run_file.at accepted
+
+r1605
+--- Merging r1605 into '.':
+C    bin/Makefile.am   accepted copyright
+
+r1623
+--- Merging r1623 into '.':
+C    tests/testsuite.src/run_file.at
+C    tests/testsuite.src/run_misc.at
+
+r1624
+--- Merging r1624 into '.':
+U    tests/testsuite.src/run_file.at
+
+r1685
+--- Merging r1677 through r1685 into '.':
+C    ChangeLog	  	  merged
+Skipped 'config.h.in'
+Skipped 'configure'
+U    configure.ac
+U    libcob/coblocal.h
+
+r1686
+--- Merging r1686 into '.':
+U    cobc/tree.h
+U    libcob/coblocal.h
+
+r1726
+--- Merging r1698 through r1726 into '.':
+C    cobc/ChangeLog	  merged
+U    cobc/codegen.c
+
+r1727
+--- Merging r1727 into '.':
+C    cobc/ChangeLog    merged
+C    cobc/field.c      merged
+C    cobc/tree.h       merged
+C    tests/testsuite.src/run_misc.at	merged
+
+r1728
+--- Merging r1728 into '.':
+U    cobc/ChangeLog	ok
+C    cobc/field.c	ok, whitespace "conflict"
+U    tests/testsuite.src/run_misc.at	ok
+
+r1739
+--- Merging r1737 through r1739 into '.':
+C    cobc/ChangeLog	merged
+C    cobc/field.c	merged, but borked
+U    tests/testsuite.src/run_misc.at
+
+r1870
+--- Merging r1854 through r1870 into '.':
+U    tests/testsuite.src/run_misc.at
+
+r1991
+--- Merging r1981 through r1991 into '.':
+ C   bin resolved: used union of svn:ignore 
+
+r2092
+--- Merging r2004 into 'cobc/cobc.c':
+C    cobc/cobc.c  declined
+Summary of conflicts:
+  Text conflicts: 1
+svn: E155015: One or more conflicts were produced while merging r2003:2004 into
+'/home/jklowden/projects/3rd/cobol/branches/pangaea' --
+resolve all conflicts and rerun the merge to apply the remaining
+unmerged revisions
+
+r2110
+--- Merging r2026 through r2092 into '.':
+C    cobc/ChangeLog	  merged
+C    cobc/flag.def	  merged
+C    cobc/tree.c	  merged
+U    tests/testsuite.src/run_functions.at
+Summary of conflicts:
+  Text conflicts: 3
+svn: E155015: One or more conflicts were produced while merging r2025:2092 into
+'/home/jklowden/projects/3rd/cobol/branches/pangaea' --
+resolve all conflicts and rerun the merge to apply the remaining
+unmerged revisions
+
+2nd try:
+--- Merging r2109 through r2110 into '.':
+C    cobc/ChangeLog	  merged
+C    cobc/codegen.c	  declined, trunk better
+C    cobc/parser.y	  declined	   
+C    cobc/typeck.c	  declined
+C    libcob/ChangeLog	  merged
+C    libcob/common.c	  merged
+U    libcob/common.h	  ok
+C    libcob/numeric.c	  combined
+C    tests/testsuite.src/run_misc.at	merged
+
+r2166
+--- Merging r2162 through r2166 into '.':
+C    cobc/ChangeLog	  merged
+C    cobc/codegen.c	  merged
+C    cobc/flag.def	  declined
+C    libcob/ChangeLog	  merged
+C    libcob/common.h	  merged
+
+r2221
+--- Merging r2200 through r2221 into '.':
+C    cobc/ChangeLog	  merged
+C    cobc/codegen.c	  merged
+C    tests/testsuite.src/run_functions.at	accepted
+
+r2278
+--- Merging r2273 into 'tests':
+C    tests/testsuite.src/run_misc.at
+Summary of conflicts:
+  Text conflicts: 1
+svn: E155015: One or more conflicts were produced while merging r2272:2273 into
+'/home/jklowden/projects/3rd/cobol/branches/pangaea' --
+resolve all conflicts and rerun the merge to apply the remaining
+unmerged revisions
+
+2nd try:
+--- Merging r2274 through r2278 into '.':
+C    cobc/ChangeLog	  merged
+C    cobc/codegen.c	  declined, still messy
+
+Hit big tree conflict on dry run for 2364:
+--- Merging r2320 through r2322 into 'cobc/cobc.c':
+ G   cobc/cobc.c
+--- Merging r2320 through r2322 into 'cobc/field.c':
+ G   cobc/field.c
+--- Merging r2320 through r2322 into 'doc/Makefile.am':
+ G   doc/Makefile.am
+--- Merging r2320 through r2322 into 'tests':
+   C tests/package.m4
+ U   tests/atlocal.in
+ G   tests/testsuite.at
+ G   tests/testsuite.src/run_file.at
+ G   tests/testsuite.src/used_binaries.at
+--- Merging r2320 through r2322 into 'libcob/common.h':
+CG   libcob/common.h	  declined
+--- Merging r2320 through r2322 into 'tests':
+CG   tests/testsuite.src/run_misc.at merged
+ C   tests
+Summary of conflicts:
+  Text conflicts: 2
+  Property conflicts: 1
+  Tree conflicts: 1
+svn: E155015: One or more conflicts were produced while merging r2319:2322 into
+'/home/jklowden/projects/3rd/cobol/branches/pangaea' --
+resolve all conflicts and rerun the merge to apply the remaining
+unmerged revisions
+
+2nd try:
+--- Merging r2358 through r2364 into '.':
+C    cobc/ChangeLog	  merged
+C    cobc/codegen.c	  declined, still a mess
+C    libcob/ChangeLog	  merged
+U    libcob/common.c	ok
+U    libcob/common.h	ok
+--- Recording mergeinfo for merge of r497 through r2364 into '.':
+ G   .
+--- Recording mergeinfo for merge of r497 through r2364 into 'libcob/common.h':
+ G   libcob/common.h
+also added 
+
+#define CB_PROGRAM_TYPE		0
+#define CB_FUNCTION_TYPE	1
+
+to libcob/tree.h
+
+r2379
+--- Merging r2379 into '.':
+C    cobc/ChangeLog		merged
+C    cobc/config.def		declined
+C    cobc/typeck.c		declined, seems handled in trunk
+C    config/ChangeLog		merged
+C    config/acu.conf		accepted
+C    config/bs2000.conf		accepted
+U    config/cobol2002.conf	ok
+U    config/cobol2014.conf	ok
+U    config/cobol85.conf	ok
+U    config/default.conf	ok
+C    config/ibm.conf		accepted
+C    config/mf.conf		accepted
+C    config/mvs.conf		accepted
+C    tests/testsuite.src/configuration.at	merged
+C    tests/testsuite.src/run_misc.at		declined
+
+r2468
+--- Merging r2468 into '.':
+C    cobc/ChangeLog     merged
+C    cobc/codegen.c	declined
+U    cobc/tree.h	ok
+U    cobc/typeck.c	ok
+U    tests/testsuite.src/run_extensions.at	ok
+
+r2504
+--- Merging r2504 into '.':
+C    tests/testsuite.src/run_misc.at declined
+
+r2574
+--- Merging r2527 through r2574 into '.':
+C    cobc/ChangeLog	  merged
+U    cobc/field.c	  ok
+C    tests/testsuite.src/run_misc.at	accepted
+
+r2585
+--- Merging r2583 through r2585 into '.':
+C    cobc/ChangeLog	  merged
+C    cobc/codegen.c	  declined
+
+r2586
+--- Merging r2586 into '.':
+C    cobc/ChangeLog    merged
+C    cobc/tree.c       declined
+
+r2603
+--- Merging r2601 through r2603 into '.':
+C    cobc/ChangeLog	  merged
+C    cobc/codegen.c	  accepted
+C    cobc/typeck.c	  combined
+U    tests/testsuite.src/run_extensions.at	ok
+
+r2606
+--- Merging r2604 through r2606 into '.':
+U    cobc/ChangeLog	ok
+U    cobc/typeck.c	ok
+U    tests/testsuite.src/run_extensions.at	ok
+
+r2612
+--- Merging r2609 through r2612 into '.':
+C    cobc/ChangeLog	merged
+U    cobc/codegen.c	ok
+U    cobc/typeck.c	ok
+U    tests/testsuite.src/run_extensions.at	ok
+
+r2614
+--- Merging r2614 into '.':
+C    libcob/ChangeLog   merged
+U    libcob/common.h	ok
+U    libcob/fileio.c	ok
+C    tests/testsuite.src/run_file.at accepted
+
+r2616
+--- Merging r2616 into '.':
+U    config/runtime.cfg	ok
+C    libcob/ChangeLog	merged
+U    libcob/coblocal.h	ok
+U    libcob/common.c	ok
+U    libcob/fileio.c	ok
+
+r2617
+--- Merging r2617 into '.':
+C    cobc/ChangeLog     merged
+U    cobc/codegen.c	ok
+C    cobc/config.def	merged, see below
+U    cobc/tree.h	ok
+U    cobc/typeck.c	ok
+C    config/ChangeLog	merged
+C    config/acu.conf	declined
+C    config/bs2000.conf	declined
+C    config/cobol2002.conf	combined
+C    config/cobol2014.conf	combined
+C    config/cobol85.conf	combined
+C    config/default.conf	combined
+C    config/ibm.conf		declined
+C    config/mf.conf		declined
+C    config/mvs.conf		declined
+C    tests/testsuite.src/configuration.at	merged
+C    tests/testsuite.src/run_extensions.at	declined
+C    tests/testsuite.src/syn_occurs.at		accepted
+
+Analysis shows 9 new configuration fields in 2617:
+
+[cobc]$ ls config.def*
+config.def  config.def.merge-left.r2616  config.def.merge-right.r2617  config.def.working
+[cobc]$ mkdir t
+[cobc]$ for F in config.def.* ; do awk -F'[(),]+' '/^CB_CONFIG/ {print $1, $2}' $F  | sort > t/$F; done
+[cobc]$ comm -23 t/config.def.merge-right* t/config.def.working > t/f && nl t/f
+     1  CB_CONFIG_BOOLEAN  cb_cobol85_reserved
+     2  CB_CONFIG_BOOLEAN  cb_move_non_numeric_lit_to_numeric_is_zero
+     3  CB_CONFIG_BOOLEAN  cb_relaxed_syntax_check
+     4  CB_CONFIG_INT  cb_text_column
+     5  CB_CONFIG_STRING   cb_config_name
+     6  CB_CONFIG_SUPPORT  cb_debugging_line
+     7  CB_CONFIG_SUPPORT  cb_depending_on_not_fixed
+     8  CB_CONFIG_SUPPORT  cb_eject_statement
+     9  CB_CONFIG_SUPPORT  cb_move_figurative_constant_to_numeric
+
+r2619
+--- Merging r2618 through r2619 into '.':
+C    cobc/ChangeLog	  merged
+C    cobc/codegen.c	  declined but commented
+C    cobc/parser.y	  declined, out of date
+C    libcob/ChangeLog	  merged
+C    libcob/call.c	  accepted
+U    libcob/common.h	  ok
+C    tests/testsuite.src/run_extensions.at	declined
+C    tests/testsuite.src/run_misc.at		combined
+C    tests/testsuite.src/syn_definition.at	declined
+
+r2641
+--- Merging r2620 through r2641 into '.':
+C    cobc/tree.h  declined, copyright
+
+r2644
+--- Merging r2643 through r2644 into '.':
+C    cobc/ChangeLog	  merged
+C    cobc/config.def	  merged
+U    cobc/typeck.c	ok
+C    config/ChangeLog	merged
+U    config/acu.conf	ok
+U    config/bs2000.conf	ok
+C    config/cobol2002.conf	merged
+C    config/cobol2014.conf	merged
+C    config/cobol85.conf	merged
+C    config/default.conf	merged
+U    config/ibm.conf	ok
+U    config/mf.conf	ok
+U    config/mvs.conf	ok
+
+r2645
+--- Merging r2645 into '.':
+C    libcob/ChangeLog   merged
+U    libcob/common.h	ok
+U    libcob/fileio.c	ok
+
+r2646
+--- Merging r2646 into '.':
+C    tests/testsuite.src/configuration.at	added occurs-max-length-without-subscript
+U    tests/testsuite.src/run_misc.at	ok
+
+r2649
+--- Merging r2647 through r2649 into '.':
+C    cobc/ChangeLog	  merged
+C    cobc/config.def	  merged, added length-in-data-division
+C    cobc/typeck.c	  declined, obsolete
+C    config/ChangeLog	  merged
+U    config/acu.conf	ok
+U    config/bs2000.conf	ok
+U    config/cobol2002.conf	ok
+U    config/cobol2014.conf	ok
+U    config/cobol85.conf	ok
+U    config/default.conf	ok
+U    config/ibm.conf	ok
+U    config/mf.conf	ok
+U    config/mvs.conf	ok
+C    libcob/ChangeLog	merged
+U    libcob/common.h	ok
+U    libcob/intrinsic.c	ok
+U    libcob/termio.c	ok
+C    tests/testsuite.src/configuration.at	added length-in-data-division
+U    tests/testsuite.src/run_extensions.at	ok
+U    tests/testsuite.src/run_functions.at	ok
+U    tests/testsuite.src/run_misc.at	ok
+C    tests/testsuite.src/syn_misc.at	combined
+
+r2700
+--- Merging r2651 through r2700 into '.':
+C    tests/ChangeLog	  merged
+U    tests/testsuite.src/run_misc.at	ok
+
+r2827
+--- Merging r2804 into 'tests/testsuite.src/run_misc.at':
+C    tests/testsuite.src/run_misc.at	accepted
+Summary of conflicts:
+  Text conflicts: 1
+svn: E155015: One or more conflicts were produced while merging r2803:2804 into
+'/home/jklowden/projects/3rd/cobol/branches/pangaea' --
+resolve all conflicts and rerun the merge to apply the remaining
+unmerged revisions
+
+2nd try:
+--- Merging r2818 through r2827 into '.':
+C    cobc/ChangeLog	  merged
+U    cobc/codegen.c	  ok
+C    cobc/field.c	  declined (whitespace)
+C    tests/testsuite.src/run_reportwriter.at	declined
+
