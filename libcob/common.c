@@ -2447,19 +2447,19 @@ cob_function_return (cob_field *rtn)
 
 struct ver_t {
 	int major, minor, point;
-	unsigned long version;
+	unsigned int version;
 };
 
 /*
  * Convert version components to an integer value for comparison.
  */
-static COB_INLINE unsigned long
+static COB_INLINE unsigned int
 version_bitstring( const struct ver_t module )
 {
-	unsigned long version =
-		((unsigned long)module.major << 24) |
-		((unsigned long)module.minor << 16) |
-		((unsigned long)module.point <<  8);
+	unsigned int version =
+		((unsigned int)module.major << 24) |
+		((unsigned int)module.minor << 16) |
+		((unsigned int)module.point <<  8);
 	return version;
 }
 
@@ -2469,6 +2469,7 @@ cob_check_version (const char *prog,
 {
 	int nparts;
 	struct ver_t lib, app;
+
 	app.major = -1;
 	app.minor = -1;
 
@@ -2478,30 +2479,19 @@ cob_check_version (const char *prog,
 			 &lib.major, &lib.minor, &lib.point);
 	lib.version = version_bitstring(lib);
 
-	switch( nparts ) {
-	case 2:
-	case 3:
-		nparts = sscanf (packver_prog, "%d.%d.%d",
-				 &app.major, &app.minor, &app.point);
+	if (nparts >= 2) {
+		sscanf (packver_prog, "%d.%d.%d",
+			 &app.major, &app.minor, &app.point);
 
-		if (nparts >= 2
-		 && app.major >= 4) {
-			app.version = version_bitstring(app);
-			break;
+		if (app.version == lib.version && patchlev_prog <= PATCH_LEVEL) {
+			return;
 		}
-		/* fall through */
-	default:
-		goto version_error;
-	}
-
-	if (app.version == lib.version && patchlev_prog <= PATCH_LEVEL) {
-		return;
-	}
-	if (app.version < lib.version) {
-		return;
+		if (app.version < lib.version) {
+			return;
+		}
 	}
 	
- version_error:
+version_error:
 	cob_runtime_error (_("version mismatch"));
 	cob_runtime_hint (_("%s has version %s.%d"), prog,
 			   packver_prog, patchlev_prog);

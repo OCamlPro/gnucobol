@@ -1,4 +1,7 @@
 
+2020-11-30  Ron Norman <rjn@inglenet.com>
+	* common.c: rewrote cob_check_version as it did not work on some platforms
+
 2020-11-26  Ron Norman <rjn@inglenet.com>
 	* termio.c: Catch more table entries as repeated
 
