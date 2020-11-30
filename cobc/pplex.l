@@ -1105,7 +1105,12 @@ ppcopy_try_open (const char *dir, const char *name, int has_ext)
 		plexbuff2[COB_SMALL_MAX] = 0;
 		if (access (plexbuff2, R_OK) == 0
 		 && stat (plexbuff2, &st) == 0) {
-			if ((st.st_mode & S_IFREG)) 	/* Must be a regular file */
+			/* Must be a regular file */
+#ifdef S_ISREG
+			if (S_ISREG(st.st_mode)) 	/* Use POSIX macro */	
+#else
+			if ((st.st_mode & S_IFREG))
+#endif
 				return plexbuff2;
 		}
 #ifdef COB_MULTI_EXTENSION	/* compat to older GC versions */
