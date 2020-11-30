@@ -10736,7 +10736,7 @@ AT_DATA([prog.cob], [
        PROGRAM-ID. prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       01  P2           USAGE POINTER.
+      *01  P2           USAGE POINTER.
 
        01 TAB-ADR-EINTRAEGE        PIC S9(4)      VALUE 8.
 
@@ -10817,8 +10817,8 @@ AT_DATA([prog.cob], [
            MOVE "You" TO GRP-2A (1010:3).
            MOVE "$$" TO FLD-5-4 (5).
            MOVE "Something else!" TO FLD-1-X (5).
-           SET P2 TO NULL.
-           SET ADDRESS OF A-TABLE TO P2.
+      *    SET P2 TO NULL.
+           SET ADDRESS OF A-TABLE TO NULL.
            MOVE ALL ZEROES TO A-TABLE (1: (LENGTH OF A-TABLE)).
            STOP RUN.
 ])
@@ -10847,7 +10847,6 @@ Dump Program-Id prog from prog.cob compiled MMM DD YYYY HH:MM:SS
 
 WORKING-STORAGE
 **********************
-01        P2                              0x0000000000000000
 01        TAB-ADR-EINTRAEGE               +0008
 01        TAB-ADRESSEN.
   05      TAB-ADR-ELEMENT (1).
