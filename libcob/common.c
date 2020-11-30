@@ -2453,8 +2453,9 @@ struct ver_t {
 /*
  * Convert version components to an integer value for comparison.
  */
-static inline unsigned long
-version_bitstring( const struct ver_t module ) {
+static COB_INLINE unsigned long
+version_bitstring( const struct ver_t module )
+{
 	unsigned long version =
 		((unsigned long)module.major << 24) |
 		((unsigned long)module.minor << 16) |
@@ -2467,7 +2468,9 @@ cob_check_version (const char *prog,
 		   const char *packver_prog, const int patchlev_prog)
 {
 	int nparts;
-	struct ver_t lib = {}, app = { -1, -1 };
+	struct ver_t lib, app;
+	app.major = -1;
+	app.minor = -1;
 
 	/* note: to be tested with direct C call */
 

@@ -1208,7 +1208,7 @@ cob_move_ibm (void *dst, void *src, const int len)
 void
 cob_init_table (void *tbl, unsigned long len, long occ)
 {
-	char	*m = tbl + len;
+	char	*m = ((char*)tbl) + len;
 	unsigned long		i = len;
 	int		j = 1;
 	if (occ < 1)
