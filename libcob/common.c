@@ -2470,8 +2470,12 @@ cob_check_version (const char *prog,
 	int nparts;
 	struct ver_t lib, app;
 
-	app.major = -1;
-	app.minor = -1;
+	app.major = 0;
+	app.minor = 0;
+	app.point = 0;
+	lib.major = 9;
+	lib.minor = 9;
+	lib.point = 9;
 
 	/* note: to be tested with direct C call */
 
@@ -2482,16 +2486,15 @@ cob_check_version (const char *prog,
 	if (nparts >= 2) {
 		sscanf (packver_prog, "%d.%d.%d",
 			 &app.major, &app.minor, &app.point);
+		app.version = version_bitstring(app);
 
-		if (app.version == lib.version && patchlev_prog <= PATCH_LEVEL) {
+		if (app.version == lib.version 
+		 && patchlev_prog <= PATCH_LEVEL)
 			return;
-		}
-		if (app.version < lib.version) {
+		if (app.version < lib.version)
 			return;
-		}
 	}
 	
-version_error:
 	cob_runtime_error (_("version mismatch"));
 	cob_runtime_hint (_("%s has version %s.%d"), prog,
 			   packver_prog, patchlev_prog);
