@@ -6844,8 +6844,9 @@ CAPI (void *p1, ...)
 ]])
 
 # externalized instead of static call...
-#AT_CHECK([$COMPILE prog.cob -fstatic-call cmod.c], [0], [],
-AT_CHECK([$COMPILE prog.cob cmod.c], [0], [],
+# -fstatic-call is required on Centos 6.8
+AT_CHECK([$COMPILE prog.cob -fstatic-call cmod.c], [0], [],
+#AT_CHECK([$COMPILE prog.cob cmod.c], [0], [],
 [prog.cob:37: warning: BY CONTENT assumed for alphanumeric item 'NE'
 prog.cob:38: warning: BY CONTENT assumed for alphanumeric item 'NE'
 prog.cob:52: warning: BY CONTENT assumed for alphanumeric item 'CHRX'
@@ -7196,8 +7197,9 @@ CAPI (void *p1, ...)
 ]])
 
 # externalized instead of static call...
-#AT_CHECK([$COMPILE prog.cob -fstatic-call cmod.c], [0], [],
-AT_CHECK([$COMPILE prog.cob cmod.c], [0], [],
+# -fstatic-call is required on Centos 6.8
+AT_CHECK([$COMPILE prog.cob -fstatic-call cmod.c], [0], [],
+#AT_CHECK([$COMPILE prog.cob cmod.c], [0], [],
 [prog.cob:37: warning: BY CONTENT assumed for alphanumeric item 'NE'
 prog.cob:38: warning: BY CONTENT assumed for alphanumeric item 'NE'
 prog.cob:52: warning: BY CONTENT assumed for alphanumeric item 'CHRX'
