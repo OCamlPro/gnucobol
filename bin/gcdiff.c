@@ -106,7 +106,8 @@ static struct template_t {
 		NOT_TIME = 0,
 		MODIFY_TIME  = 1,		/* Compare to 'testfile' modification time */
 		CURRENT_TIME = 2,		/* Compare to current time */
-		VERIFY_TIME  = 3		/* Just verify reasonable value */
+		VERIFY_TIME  = 3,		/* Just verify reasonable value */
+		IS_DAY  = 4				/* 'dd' matches ' #' or '##'  less than 32 */
 	} is_time;					/* Reconstruct and verify date/time */
 	char	*pat;
 } templates[MAX_TEMPLATES] = {
@@ -122,7 +123,9 @@ static struct template_t {
 	{ 4,1,NOT_TIME,		(char*)"YYYY"},
 	{ 3,0,NOT_TIME,		(char*)"MMM"},
 	{ 3,0,NOT_TIME,		(char*)"DDD"},
-	{ 2,1,NOT_TIME,		(char*)"DD"},
+	{ 2,1,IS_DAY,		(char*)"DD"},
+	{ 2,1,IS_DAY,		(char*)"dd"},
+	{ 15,0,NOT_TIME,	(char*)"GnuCOBOL V.R.P "},
 	{-1,0,NOT_TIME,(char*)0}
 };
 
@@ -344,7 +347,7 @@ trim_line(char *buf)
 static int
 compare_file(FILE *ref, FILE *rslt, FILE *rpt)
 {
-	char	rbuf[4096], nbuf[4096];
+	char	rbuf[4096], nbuf[4096], day[3];
 	const char *tagout, *tagin;
 	int		i, j, k, n, t, val, numdiff, linenum;
 	struct tm tval, *ptm;
@@ -391,6 +394,20 @@ compare_file(FILE *ref, FILE *rslt, FILE *rpt)
 					break;
 			}
 			if (templates[t].len > 0) {
+				if (templates[t].is_time == IS_DAY) {
+					memcpy(day,&nbuf[i],2);
+					day[2] = 0;
+					if (atoi(day) <= 31) {
+						i += templates[t].len - 1;
+						j += templates[t].len - 1;
+						continue;
+					}
+				}
+				if (templates[t].is_time == NOT_TIME) {
+					i += templates[t].len - 1;
+					j += templates[t].len - 1;
+					continue;
+				}
 				if (templates[t].is_time) {	/* Valid date/time expected */
 					ptm = localtime(&nowis);
 					memcpy(&tval, (void*)ptm, sizeof(struct tm));
@@ -517,7 +534,8 @@ compare_file(FILE *ref, FILE *rslt, FILE *rpt)
 				} else 
 				if (templates[t].is_num) {	/* Numeric data expected */
 					for (n=0; n < templates[t].len; i++,j++,n++) {
-						if (rbuf[i] == nbuf[j])
+						if (rbuf[i] == nbuf[j]
+						 || nbuf[j] == ' ')
 							continue;
 						if (!isdigit(nbuf[j])) {
 							while (n < templates[t].len-1)
