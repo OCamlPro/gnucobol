@@ -1,0 +1,259 @@
+
+2020-10-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* version_cobc.rc, version_cobcrun.rc, version_libcob.rc:
+	  use new defined constants from libcob/common.h for version numbers
+
+2020-10-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: removed defaults.h from project files
+	* defaults.h.in: integrated into config.h.in
+	* config.h.in: updated
+	* README: updated build and test instructions
+
+2020-09-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* config.h.in: included CJSON_LOCAL option
+	* general: always build static libsupport and link it,
+	  included option to integrate cJSON in it
+
+2020-09-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* config.h.in: included JSON-C option, removed obsolete HAVE_... for
+	  XML and JSON
+
+2020-06-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* config.h.in, defaults.h.in: updated
+	* set_env_vs.bat: added vs2019
+
+2020-04-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* config.h.in: FR #372 allow use of "pure" MPIR (without gmp-compat)
+
+2020-02-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* makedist.cmd: renamed from makedist.bat
+	* makedist.cmd: use include and bin from VCPKG_EXPORT_DIR, if set;
+	  don't include gmp.h as not needed any more
+
+2019-06-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* config.h.in: allow to override library names by define LIB_...
+
+2019-06-16  Simon Sobisch <simonsobisch@gnu.org>
+
+	* vs2019: don't specify an explicit WindowsTargetPlatformVersion any more
+	* maketarstamp.ps1: new script to output tarstamp.h content on STDOUT
+	  as it is normally done on make dist (or now during make all/tarstamp.h)
+	* defaults.h.in: adjust for cJSON header in subfolder
+	* makedist.bat: support for config.h in main dir;
+	  don't halt non-interactive processes on failure of cobc.exe
+
+2019-06-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general (cobc project files): added reference for new help.c
+	* *.vcxproj: always use $(DefaultPlatformToolset) instead of a fixed one,
+	  adjusted AdditionalIncludeDirectories according to Makefiles
+	* config.h.in: adjustments for latest OrangeC version
+	* ocide: changed output files according to VS version;
+	  compile+link cJSON directly
+
+2019-02-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* ocide (OrangeC IDE), vs2019: added
+	* config.h.in [__ORANGEC__]: updated
+	* config.h.in: fixes for BDB, MSC_VER < 1700;
+	  changed linker comments for libxml2 to default to self-build names
+
+2019-01-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* config.h.in: adjustments for CJSON
+
+2018-10-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* config.h.in, defaults.h.in: adjustments for OrangeC
+	* makebisonflex.bat: option to generate a single file only by
+	  giving it as command line option
+
+2018-10-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* makedist.bat: copy compiled msgid catalogs
+	* makedist.bat: copy libint.dll if existing
+	* set_env_vs_dist.bat, set_env_vs_dist_x64.bat, defaults.h.in:
+	  set reasonable standard localedir
+	* set_env_vs.bat: ensure to not add to PATH endlessly
+
+2018-08-19  Edward Hart <edward.dan.hart@gmail.com>
+
+	* config.h.in: added WITH_XML2 and associated library pragma's.
+	* README.txt: updated with my experience trying to make check with
+	  MinGW.
+
+2017-12-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* config.h.in: added COB_DEBUG_LOG (as undefined)
+	* vs2005, vs2008, vs2010, vs2012, vs2013, vs2015, vs2017: added
+	  libcob/reportio.c
+
+2017-10-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* makebisonflex.bat: check ERRORLEVEL instead of using || and &&
+	  as this works on all systems; print separator between tools
+
+2017-09-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* defaults.h.in: changed install folder for DIST builds to
+	  PACKAGE_NAME + _ + PACKAGE_VERSION (GnuCOBOL_2.3_dev)
+	* vs2008: added size check for DEBUG builds
+	* README.txt: updated
+	* set_env_vs.bat, set_env_vs_x64.bat, set_env_vs_dist.bat,
+	  set_env_vs_dist_x64.bat: only try to setup a matching cl.exe if it
+	  isn't present already
+	* makedist.bat: fixed version lookup when directory contains spaces;
+	  use PACKAGE_NAME, PACKAGE_VERSION and suffix "vs_bin" for resulting
+	  7zip file; fallback to directory, when 7zip is not available
+
+2017-09-04  Edward Hart <edward.dan.hart@gmail.com>
+
+	* set_env_vs_dist_x64.bat: replaced reference to "dist/bin" with
+	  "dist/bin_x64".
+	* makedist.bat: the batch now fails if cobc has a negative errorlevel
+	  (e.g. if a DLL is missing).
+	* makedist.bat: replaced setting of errorlevel with cb_errorlevel;
+	  errorlevel is a built-in variable which can be hidden by an
+	  environment variable of the same name.
+
+2017-09-03  Edward Hart <edward.dan.hart@gmail.com>
+
+	* set_env_vs_x64.bat, set_env_vs_dist_x64.bat: fix VCINSTALLDIR being
+	  expanded too soon.
+	* set_env_vs_dist_x64.bat: replaced reference to "dist/lib" with
+	  "dist/lib_x64".
+
+2017-09-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* config.h.in: optional setting and link for use of GetUsername
+	* vs2005, vs2008, vs2010, vs2012, vs2013, vs2015, vs2017: adjusted
+	  solutions to default to start project "cobc"; adjusted project files
+	  to always create usable PDBs with reasonable optimization for release
+	  and maximum debugging abilities for debug configurations
+	* README.txt: updated
+	* set_env_vs.bat, set_env_vs_x64.bat, set_env_vs_dist.bat,
+	  set_env_vs_dist_x64.bat: fix setup for the uncommon VS2017 rules;
+	  show the cl.exe actually used
+	* makedist.bat: only remove dist folder if new binaries to distribute
+	  are found; copy html docs if available; show verbose compilation of
+	  extras if compilation did not work; ensure that changing in/out of
+	  folders always works
+
+2017-08-21  Edward Hart <edward.dan.hart@gmail.com>
+
+	* makedist.bat (copy_exes_and_libs): added DISAM handling.
+
+2017-08-20  Edward Hart <edward.dan.hart@gmail.com>
+
+	* makedist.bat: re-organised code, with subroutines at the end of the
+	  file.
+	* makedist.bat: make identifiers consistently use lowercase_snake_case.
+	* makedist.bat: the batch fails if DLLs are missing or if compiling the
+	  extras fails. (errorlevel is set to that of the failing command.)
+	* makedist.bat: added if exist checks around copy/erase commands which
+	  complain files are missing.
+	* makedist.bat (copy_exes_and_libs): add guess of ISAM-handler DLL name
+	  based on db.h.
+	* makedist.bat (compile_extras): removed -v from cobc when compiling extras.
+
+2017-08-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* makebisonflex.bat: use normal output name like ylwrap does;
+	  added sleep for slow / indexing systems
+
+2017-08-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* makebisonflex.bat: mimic ylwrap (only replace existing generated files
+	  if the newly generated ones are newer);
+	  modularized executable check
+	* general: removed all entries from linker input in project files
+	* common.h.in: linker input via pragma for configured libraries,
+	  added necessary parts for builds without curses
+
+2017-07-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* makedist.bat: optimize during build of extras,
+	  improved displays to command line
+
+2017-04-23  Simon Sobisch <simonsobisch@gnu.org>
+
+	* added subfolder vs2017
+	* renamed subfolder for VisualC++ builds vc8 -> vs2005, vc9 -> vs2008,
+	  vc10 -> vs2010, vc11 -> vs2012, vc12 -> vs2013, vc14 -> vs2015
+	* makedist.bat: only pause when started by double click
+	* makebisonflex.bat: new batch for (re-)generating bison/flex files
+
+2016-12-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* defaults.h.in: added "/incremental:no" to COB_LDFLAGS
+
+2016-11-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* config.h.in, defaults.h.in: renamed from config.h.tmpl, defaults.h.tmpl
+
+2016-11-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* makedist.bat: cater for build with and w/o 32bit/64bit,
+	  rename text files in the win dist package to .TXT
+
+2016-05-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* vc7: removed (GC 2+ will not build with Visual C compiler < 2005)
+	* config.h.tmpl, defaults.h.tmpl, set_env_vs.bat, set_env_vs_dist.bat:
+	  removed pre-VS2005 references
+
+2016-01-31  Simon Sobisch <simonsobisch@gnu.org>
+
+	* config.h.tmpl, defaults.h.tmpl: combined all files config.h/default.h
+	  from subfolders and config.h.bdb.win, config.h.vb.win,
+	  deleted the old files
+	* config.h.tmpl: added CONFIGURED_ISAM for a single configuration option
+	* config.h.tmpl: pretend _MSC has setenv (using the alias to _putenv_s)
+	* changed path in all project files accordingly
+	* README.txt: renamed README and updated it
+
+2015-10-26  Simon Sobisch <simonsobisch@gnu.org>
+
+	* added subfolder vc14 (Visual Studio 2015)
+	* updated all project files
+	* updated all batch files
+	* updated version_cobc.rc, version_libcob.rc, version_cobcrun.rc
+
+2015-02-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* updated all project files
+
+2014-09-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* update for subfolder vc10
+
+2014-07-07  Philipp Böhme <phi.boehme@googlemail.com>
+
+	* minor bugfix (tpyos) for subfolder vc12
+
+2014-06-23  Simon Sobisch <simonsobisch@gnu.org>
+
+	* added README, set_env_vs.bat, set_env_vs_dist.bat, makedist.bat,
+	  set_env_vs_dist_x64.bat, set_env_vs_x64.bat
+	* updated all project files
+	* added subfolder vc11
+
+2014-06-20  Philipp Böhme <phi.boehme@googlemail.com>
+
+	* added project files - subfolders: vc7, vc8, vc9, vc10, vc12 
+	  (original project files and ressource files version_cobc.rc,
+	  version_libcob.rc, version_cobcrun.rc provided by Simon)
+
+
+Copyright 2014-2020 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification, are
+permitted provided the copyright notice and this notice are preserved.

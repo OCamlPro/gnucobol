@@ -1,0 +1,79 @@
+GnuCOBOL TODO						-*- outline -*-
+
+1 Pending requests
+
+1.1 Handling of EBCDIC files
+
+
+2 Other features to be implemented
+
+2.1 New option handling.
+
+A new configuration file, cobc.conf, is described in
+https://sourceforge.net/p/open-cobol/feature-requests/342/
+Integrate that file with existing command-line parsing,
+allowing for overrides and warning-defeats as outlined in
+that document.  
+
+2.2 New preprocessor support.
+
+https://sourceforge.net/p/open-cobol/feature-requests/341/ defines
+configuration for preprocessors.  Add support for preprocessors to cobc.
+Modify the -E option to be
+
+	-E [preprocessor]
+
+meaning that all preprocessors should be run up to and including the
+one named in the -E argument.  If no argument is provided, -E
+continues to work as currently.  
+
+2.3 Embedded SQL - ship as sample configurations for 2.2
+
+esqlOC - preprocessor by Sergey Kashyrin.Sergey Kashryin (ODBC)
+
+ocesql - https://github.com/opensourcecobol/Open-COBOL-ESQL (MySQL/ODBC)
+
+PostgreSQL using epcpg, wrapper for COBOL by Frank Polscheit (ruby based)
+http://lists.gnu.org/archive/html/gnucobol-users/2004-02/msg00053.html
+
+Firebird (firebird.sourceforge.net) has a SQL preprocessor
+for their database.
+
+Oracle Pro*COBOL
+
+
+3 Improvement of compiler internals
+
+3.1 Error checking
+
+3.1.1 Strict error checking depending on the standard
+Partially implemented
+
+3.1.2 Use `error' token in the parser for better error recovery
+
+
+4 Optimization
+
+4.1 More inlining of run-time functions
+
+Done with various binary operands and expressions, open for some
+intrinsic functions (actually using libcob at compile time).
+
+
+5 Debugging support
+
+5.1 Data access method
+
+We should generate all data hierarchy defined in a COBOL program
+with all relevant information, including data names, picture clauses,
+and source locations.  We should also define a debugging function
+that receives a data name and displays its value using the generated
+data hierarchy.  By calling the function from gdb, we can easily
+access the COBOL data at debugging time.
+
+
+6 Better user manual
+
+Yes, we should, for now: refer to the GnuCOBOL Programmer's Guide
+https://sourceforge.net/p/open-cobol/code/HEAD/tree/external-doc/guide/
+

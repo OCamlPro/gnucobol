@@ -1,0 +1,279 @@
+#
+# atlocal_valgrind gnucobol/tests
+#
+# This script is a special variant of the atlocal script for testing
+# with Valgrind.
+#
+# Copyright (C) 2003-2012, 2014-2020 Free Software Foundation, Inc.
+# Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
+#
+# This file is part of GnuCOBOL.
+#
+# The GnuCOBOL compiler is free software: you can redistribute it
+# and/or modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# GnuCOBOL is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+
+
+TEMPLATE="${abs_srcdir}/testsuite.src"
+
+COBC="cobc@COB_EXE_EXT@"
+COBCRUN="cobcrun@COB_EXE_EXT@"
+COBCRUN_DIRECT="" # used for running created executables through tools
+
+LOCAL_ENV="${abs_top_builddir}/pre-inst-env"
+
+# prepend PATH with the actual binaries to let the testsuite find them for
+# general check and version output, otherwise not needed
+#PATH="${abs_top_builddir}/libcob/.libs:${PATH}"
+PATH="${abs_top_builddir}:${abs_top_builddir}/cobc:${abs_top_builddir}/bin:${PATH}"
+export PATH
+ABS_COBC="${abs_top_builddir}/cobc/cobc@COB_EXE_EXT@"
+ABS_COBCRUN="${abs_top_builddir}/bin/cobcrun@COB_EXE_EXT@"
+
+# -- BEGIN OF VALGRIND SPECIFIC PARTS ---
+
+#
+# To check with valgrind:
+# * ideally: reconfigure with `./configure --enable-debug & make`
+# * temporarily rename atlocal.in to atlocal.bak and atlocal_valgrind to atlocal.in,
+*   then go to top_builddir and `config.status tests/atlocal`;
+#   - or as a longer altarnative: diff these parts into your atlocal
+# * set switches you need to the following lines and set the tool accordingly (template has MEMCHECK)
+# * if your system ships with valgrind suppression files (default.supp is always active) you likely
+#   want to activate at least the suppressions below (adjusted to your directory);
+#   some additional common suppressions (bash + BDB) are found in valgrind.supp and added by default
+# * if you stumble over (other) system library errors you likely want to suppress some of them
+#   --> re-run single tests with --gen-suppressions=yes # when it seems to be stuck press [Y]+[RETURN]...
+#   --> inspect and modify the suppression file
+#   --> add to $VG_SUPPR below
+
+#VG_SUPPR_DIR="/usr/lib/valgrind"
+#VG_SUPPR="--suppressions=$VG_SUPPR_DIR/debian.supp --suppressions=$VG_SUPPR_DIR/ncurses.supp"
+VG_SUPPR="--suppressions=${abs_srcdir}/valgrind.supp $VG_SUPPR"
+
+# Note: other issue, not suppressible is that some COBOL storage is local
+#       and can currently not be freed on STOP RUN (or abort).
+#       It applies to the following elements in the local include files (prog.l*.h)
+#       and dynamically allocated LOCAL-STORAGE (cob_loc_ptr), temporary decimals,
+#       frame_stack, cob_procedure_params.
+
+# Variable part in valgrind log file name via %q (must contain something!)
+# Note: at_group contains the testsuite number in automake generated testsuites
+#       and is (to be) also set when this file is used in other tests for more
+#       useful log file name
+if test "x$at_group" = "x"; then
+	at_group="valgrind"   # default:      use "valgrind"
+fi
+export at_group  # export needed as valgrind resolves that variable later
+
+VL_LOG_DIR="${abs_builddir}/valgrind"
+mkdir -p $VL_LOG_DIR
+VG_LOG_PREFIX="$VL_LOG_DIR/%q{at_group}_%p"
+
+VG_COBC_LOG="$VG_LOG_PREFIX-cobc.log"
+VG_COBCRUN_LOG="$VG_LOG_PREFIX-cobcrun.log"
+VG_COBCRUN_DIRECT_LOG="$VG_LOG_PREFIX-cobcrun_direct.log"
+
+# if you stumble over system library errors you may want to suppress some of them
+# re-run with --gen-suppressions=yes and then point to the file (after inspecting and
+# modifying it via --suppressions=${abs_builddir}/local.supp)
+MEMCHECK="valgrind --tool=memcheck --read-var-info=yes --track-origins=yes --leak-check=full --show-leak-kinds=all $VG_SUPPR"
+SGCHECK="valgrind --tool=exp-sgcheck --read-var-info=yes $VG_SUPPR"
+
+COBC="libtool --mode=execute $MEMCHECK --log-file=$VG_COBC_LOG ${COBC}"
+COBCRUN="libtool --mode=execute $MEMCHECK --log-file=$VG_COBCRUN_LOG ${COBCRUN}"
+COBCRUN_DIRECT="$MEMCHECK --log-file=$VG_COBCRUN_DIRECT_LOG ${COBCRUN_DIRECT}"
+
+# -- END OF VALGRIND SPECIFIC PARTS ---
+
+AWK=@AWK@
+GREP=@GREP@
+SED=@SED@
+export AWK GREP SED
+
+# be sure to use the English messages
+LC_ALL=C
+export LC_ALL
+unset LANG
+
+# workaround to adjust the testsuite later:
+# FLAGS="-debug -Wall ${COBOL_FLAGS}"
+FLAGS="-debug -Wall ${COBOL_FLAGS} -fno-diagnostics-show-option"
+COMPILE="${COBC} -x ${FLAGS}"
+COMPILE_ONLY="${COBC} -fsyntax-only ${FLAGS}"
+COMPILE_MODULE="${COBC} -m ${FLAGS}"
+
+# Helper script to unify listings (replace version, date, time)
+UNIFY_LISTING="${abs_srcdir}/listings-sed.sh"
+
+# test runner for manual tests, content may be changed by the user
+RUN_PROG_MANUAL="${abs_builddir}/run_prog_manual.sh"
+
+# unset option if not internally set in this script
+_unset_option () {
+	if test "$1" != "COB_CONFIG_DIR" \
+	     -a "$1" != "COB_COPY_DIR" \
+	     -a "$1" != "COB_RUNTIME_CONFIG" \
+	     -a "$1" != "COB_LIBRARY_PATH" \
+	     -a "$1" != "COB_CFLAGS" \
+	     -a "$1" != "COB_LIBS" \
+	     -a "$1" != "COB_UNIX_LF"; then
+		unset $1
+	fi
+}
+
+# possible path conversion for running the testsuite in an environment
+# that doesn't match the one where the tested binaries were built
+# Note: not needed for running the testsuite with MSYS as this translates the path
+_return_path () {
+	echo "$1"
+}
+
+# Fix for testcases where cobc translates path to win32 equivalents
+if test "x$MSYSTEM" != "x"; then
+	PATHSEP=";"
+else
+	PATHSEP='@PATH_SEPARATOR@';
+fi
+export PATHSEP
+
+# entries likely referenced in the LIBS entries below
+prefix="@prefix@"
+exec_prefix="@exec_prefix@"
+
+COB_CFLAGS="-I${abs_top_srcdir} @COB_CFLAGS@"
+COB_LIBS="-L${abs_top_builddir}/libcob/.libs @COB_LIBS@"
+COB_CONFIG_DIR="${abs_top_srcdir}/config"
+COB_COPY_DIR="${abs_top_srcdir}/copy"
+LD_LIBRARY_PATH="${abs_top_builddir}/libcob/.libs:$LD_LIBRARY_PATH"
+DYLD_LIBRARY_PATH="${abs_top_builddir}/libcob/.libs:$DYLD_LIBRARY_PATH"
+SHLIB_PATH="${abs_top_builddir}/libcob/.libs:$SHLIB_PATH"
+LIBPATH="${abs_top_builddir}/libcob/.libs:$LIBPATH"
+COB_LIBRARY_PATH="${abs_top_builddir}/extras"
+
+export COB_CFLAGS COB_LIBS
+export COB_CONFIG_DIR COB_COPY_DIR
+export LD_LIBRARY_PATH DYLD_LIBRARY_PATH SHLIB_PATH LIBPATH
+export COB_LIBRARY_PATH
+COB_UNIX_LF=1
+export COB_UNIX_LF
+
+# unset all environment variables that are used in libcob
+# for runtime configuration ...
+COB_RUNTIME_CONFIG="${abs_top_srcdir}/config/runtime_empty.cfg"
+export COB_RUNTIME_CONFIG
+for cobenv in $(${LOCAL_ENV} ${ABS_COBCRUN} --runtime-conf \
+                 | grep " env:" | cut -d: -f2 | cut -d= -f1 \
+                 | grep -v "PATH" | grep -v "TERM"); \
+	do _unset_option $cobenv; \
+done
+
+# prevent multiple calls by caching the output
+${LOCAL_ENV} ${ABS_COBC} --info > info.out
+
+# ... and also unset for the compiler
+if test "$GNUCOBOL_TEST_LOCAL" != "1"; then
+	for cobenv in $(grep "env:" info.out | cut -d: -f2 | cut -d= -f1 \
+	              | grep -v "PATH"); \
+		do _unset_option $cobenv; \
+	done
+fi
+
+COB_STACKTRACE=0
+export COB_STACKTRACE
+
+
+# different flags checked in the testsuite
+if test "$GNUCOBOL_TEST_LOCAL" != "1"; then
+	COB_OBJECT_EXT="@COB_OBJECT_EXT@"
+	COB_EXE_EXT="@COB_EXE_EXT@"
+	COB_BIGENDIAN="@COB_BIGENDIAN@"
+	COB_HAS_64_BIT_POINTER="@COB_HAS_64_BIT_POINTER@"
+	COB_HAS_ISAM="@COB_HAS_ISAM@"
+	COB_HAS_XML2="@COB_HAS_XML2@"
+	COB_HAS_JSON="@COB_HAS_JSON@"
+	COB_HAS_CURSES="@COB_HAS_CURSES@"
+else
+
+	COB_OBJECT_EXT="$(grep COB_OBJECT_EXT info.out | cut -d: -f2 | cut -b2-)"
+	COB_EXE_EXT="$(grep COB_EXE_EXT info.out | cut -d: -f2 | cut -b2-)"
+
+	if test $(grep -i -c "little-endian" info.out) = 0; then
+		COB_BIGENDIAN="yes"
+	else
+		COB_BIGENDIAN="no"
+	fi
+	COB_HAS_64_BIT_POINTER=$(grep "64bit-mode" info.out | cut -d: -f2 | cut -b2-)
+
+	cob_indexed=$(grep -i "indexed file" info.out | cut -d: -f2)
+	if test "x$cob_indexed" = "x"; then
+		cob_indexed=$(grep ISAM info.out | cut -d: -f2)
+	fi
+	case "$cob_indexed" in
+	" disabled")	COB_HAS_ISAM="no";;
+	" BDB") 		COB_HAS_ISAM="db";;
+	" VBISAM"*)	COB_HAS_ISAM="vbisam";;
+	" D-ISAM")	COB_HAS_ISAM="disam";;
+	" C-ISAM")	COB_HAS_ISAM="cisam";;
+	" EXTFH")	COB_HAS_ISAM="index_extfh";;
+	*)		echo "unknown entry for indexed handler: '"$cob_indexed"' please report" && exit 1;;
+	esac
+
+	if test $(grep -i -c "XML library.*disabled" info.out) = 0; then
+		COB_HAS_XML2="yes"
+	else
+		COB_HAS_XML2="no"
+	fi
+	if test $(grep -i -c "JSON library.*disabled" info.out) = 0; then
+		COB_HAS_JSON="yes"
+	else
+		COB_HAS_JSON="no"
+	fi
+	if test $(grep -i -c " screen .*disabled" info.out) = 0; then
+		COB_HAS_CURSES="yes"
+	else
+		COB_HAS_CURSES="no"
+	fi
+fi
+if test "x$MSYSTEM" != "x" -o "$OSTYPE" = "cygwin"; then
+	# running MSYS builds as not-visible child processes result in
+	# "Redirection is not supported" (at least old PDcurses)
+	# --> disabling the tests for this feature
+	# ncurses is known to work as long as TERM is appropriate
+	if test $(grep -i -c "ncurses" info.out) != 0; then
+		if test "x$MSYSTEM" != "x"; then
+			TERM=""
+		else
+			TERM="xterm"
+		fi
+		export TERM
+		# no change here... COB_HAS_CURSES="yes"
+	else
+		COB_HAS_CURSES="no"
+	fi
+fi
+
+rm -rf info.out
+
+# NIST tests (tests/cobol85) are executed in a separate perl process with a new environment --> export needed
+export COB_HAS_ISAM COB_HAS_XML2 COB_HAS_JSON COB_HAS_CURSES COB_HAS_64_BIT_POINTER
+export COBC COBCRUN COBCRUN_DIRECT RUN_PROG_MANUAL
+export COB_OBJECT_EXT COB_EXE_EXT
+
+# to ensure that no external DB_HOME is polluted: unset
+DB_HOME="" && export DB_HOME
+
+# For the very rare cases where cobc/libcob may need to know if they're running in test mode:
+case $0 in
+	*/testsuite) COB_IS_RUNNING_IN_TESTMODE=1 && export COB_IS_RUNNING_IN_TESTMODE;;
+	*)	unset COB_IS_RUNNING_IN_TESTMODE;;
+esac

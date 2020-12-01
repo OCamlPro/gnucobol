@@ -1,0 +1,116 @@
+#!/bin/sh
+# bootstrap gnucobol/build_aux
+# Bootstrap gnucobol package from checked-out sources
+# Note:  call as ./bootstrap if you don't have readlink -f
+#
+# Copyright (C) 2017-2020 Free Software Foundation, Inc.
+# Written by Simon Sobisch
+#
+# This file is part of GnuCOBOL.
+#
+# The GnuCOBOL compiler is free software: you can redistribute it
+# and/or modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# GnuCOBOL is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+
+me=bootstrap
+
+echo "start to bootstrap GnuCOBOL"
+# get path to GnuCOBOL main directory, possibly set with GCMAINPATH
+if test -z "$GCMAINPATH"; then
+  if test "$0" = "./$me"; then
+    MAINPATH=..
+  else
+    MAINPATH=$(dirname $(readlink -f "$0"))/..
+  fi
+else
+  MAINPATH=$GCMAINPATH
+fi
+if test ! -f $MAINPATH/build_aux/$me; then
+  echo; echo "ERROR - cannot set main directory [checked $MAINPATH/build_aux/$me] - aborting $me" && exit 1
+fi
+
+echo
+if test ! -f $MAINPATH/tarstamp.h; then
+  echo creating tarstamp.h...
+  echo "#define COB_TAR_DATE    \"`LC_ALL=C date -u +'%b %d %Y %T'` UTC\"" > $MAINPATH/tarstamp.h
+  echo "#define COB_NUM_TAR_DATE ` LC_ALL=C date -u +'%Y%m%d'`"           >> $MAINPATH/tarstamp.h
+  echo "#define COB_NUM_TAR_TIME ` LC_ALL=C date -u +'%H%M%S'`"           >> $MAINPATH/tarstamp.h
+else
+  echo "tarstamp.h exists already, is not touched"
+fi
+
+echo; echo "ensure that we have executable scripts..."
+scripts="compile config.guess config.rpath config.sub depcomp install-sh ltmain.sh mdate-sh missing mkinstalldirs ylwrap"
+for file in $scripts ; do
+  if test -f $MAINPATH/build_aux/$file; then
+    chmod -f u+x $MAINPATH/build_aux/$file
+  else
+    echo "WARNING, file $MAINPATH/build-aux/$file is missing."
+  fi
+done
+
+scripts="autogen.sh doc/cobcinfo.sh po/update_linguas.sh tests/listings-sed.sh create_win_dist.sh"
+for file in $scripts ; do
+  if test -f $MAINPATH/$file; then
+    chmod -f u+x $MAINPATH/$file
+  else
+    if test ! $file = "create_win_dist.sh"; then
+      echo "WARNING, file $MAINPATH/$file is missing."
+    fi
+  fi
+done
+
+echo; echo "running autoreconf..."
+ret=0
+
+# changing build_aux scripts at large:
+#autoreconf --verbose --force --install --include=m4 $MAINPATH; ret=$?
+
+# changing files possibly needed for new systems:
+#config_file_url="https://git.savannah.gnu.org/gitweb/?p=gnulib.git;a=blob_plain;f=build-aux"
+#for file in config.guess config.sub; do
+#  echo "$0: getting $file..."
+#  wget -q --timeout=5 -O $MAINPATH/build_aux/$file.tmp "${config_file_url}/${file};hb=HEAD" \
+#    && mv $MAINPATH/build_aux/$file.tmp $MAINPATH/build_aux/$file \
+#    && chmod a+x $MAINPATH/build_aux/$file
+#  retval=$?
+#  rm -f $MAINPATH/build_aux/$file.tmp
+#  test $retval -eq 0 # || exit $retval
+#done
+
+# ensure the configure and Makefile parts are up-to-date:
+msgs=/tmp/autoreconf
+autoreconf --verbose --force --include=m4 $MAINPATH > $msgs 2>&1; ret=$?
+
+# Filter aminclude_static as those are only used _within_ another
+#        check so reporting as portability problem is only noise.
+# This has the effect of redirecting some error messages to stdout. 
+# to be moved to the Makefile - currently only usable for bootstrap,
+# but should be done on autogen, too
+
+awk '/^aminclude_static[.]am:/ { msg = msg sep $0; sep = "\n"; next } 
+     /Makefile[.]am.+aminclude_static.am.+from here/ { 
+     					       msg = ""; sep = ""; next }
+     msg { print msg > "/dev/stderr"; msg = "" }
+     { print }' $msgs
+rm -rf $msgs
+
+if test $ret -ne 0; then
+  echo; echo "ERROR, autoreconf returned $ret - aborting bootstrap" && exit $ret
+fi
+
+echo; echo "bootstrap is finished"
+echo; echo "now run configure with your desired options, for instance:"
+echo "  ./configure CFLAGS='-g'  # in $MAINPATH"
+echo "or, especially preferred for development:"
+echo "  mkdir build && cd build \ "
+echo "  && $MAINPATH/configure --enable-cobc-internal-checks --enable-debug"

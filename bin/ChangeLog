@@ -1,0 +1,252 @@
+
+2020-10-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobcrun.c: when in verbose mode additionally ask libcob for
+	  version summary, showing library details
+
+2020-10-26  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobcrun.c: defaults.h removed
+	* Makefile.am: removed passing COB_EXPORT_DYN to LD_FLAGS
+
+2020-09-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am: fixed inclusion of libsupport, now libtoolized
+	* cobcrun.c: include gettext without lib prefix
+	* cobcrun.c: use EXIT_SUCCESS and EXIT_FAILURE instead of exit(0/1)
+
+2020-06-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am: include PROGRAMS_LIBS
+
+2020-06-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobcrun.c (process_command_line) [_WIN32]: simplified code;
+	  only convert from /opt to -opt if POSIXLY_CORRECT is not set;
+	  added conversion from /? to --help
+
+2020-06-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	Bug #616 cannot redirect output of cobcrun --info
+	FR #385 more details for screenio in cobcrun --info
+	* cobcrun.c: added verbose option, passed to (print_info_detailed)
+
+2020-05-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cob-config.in: extended with an actual help
+	* cob-config.1: now auto-generated like cobcrun.1
+	* Makefile.am (cob-config.1): target added with use of help2man
+
+2020-03-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am: honor new conditional MAKE_HAS_PREREQ_ONLY
+	* Makefile.am: adjusted invocation of help2man, using new defines
+	  HELPSOURCES and HELP2MAN_OPTS
+
+2019-04-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am (COBCRUN): use pre-inst-env ensuring to use the built version
+
+2019-03-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobcrun.c: use of COB_MAX_NAMELEN
+
+2018-07-16  Brian Tiffin <btiffin@gnu.org>
+
+	* Makefile.am: add cob-config.1 to dist_man
+
+2018-06-16  Ludwin Janvier <lud.janvier@gmail.com>
+
+	* cob-config.1: added minimal manpage for cob-config
+
+2018-06-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am: remove path output when creating manpage
+
+2018-03-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am (maintainer-clean): remove generated manpage
+
+2018-02-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobcrun.c: renamed -runtime-conf to -runtime-config
+
+2018-01-23  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobcrun.c (process_command_line): added missing arg shift for --brief/-q
+
+2018-01-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobcrun.c (main): raise explicit error if called without any PROGRAM
+	  name given
+	* cobcrun.c (cobcrun_initial_module): removed code parts for extending
+	  environment options where not needed
+
+2017-12-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobcrun.c (main): use of cob_resolve_cobol instead of cob_resolve
+	  as we want its error handling in any case
+
+2017-12-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobcrun.c [_WIN32]: added missing headers
+	* cobcrun.c (cobcrun_split_path_file): no trailing slash for pathname
+
+2017-11-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobcrun.c [_WIN32]: allowing tests to result in the expected line
+	  ending for messages returned from cobcrun.c directly
+
+2017-11-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobcrun.c: use (cob_init_nomain) instead of (cob_init) as it includes
+	  no functions intended for COBOL use (speedup + workaround ltdl leak)
+
+2017-11-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobcrun.c: check missing evaluation of command line option;
+	  fixed printing newline to stderr instead of stdout;
+	  code-coverage specific changes
+
+2017-10-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am: moved include of top_srcdir to AM_CPPFLAGS to prevent
+	  user-specified CPPFLAGS to override own includes, see bug #452
+
+2017-08-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobcrun.c: use only memory and environment functions provided by libcob
+	* cobcrun.c (cobcrun_setenv): removed
+
+2017-06-16  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am: added CODE_COVERAGE parts as provided by AX_CODE_COVERAGE
+	* cobcrun.c: don't print runtime env when program name > max length,
+	  surrounded exception ABORTs that cannot be tested by LCOV_EXCP markers
+
+2017-01-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobcrun.c: Copyright year 2017
+
+2016-08-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobcrun.c: fixed missing cob_stop_run() for --print-runtime-conf,
+	  apply possible configuration files given on the command line before
+	  and allow to use it together with starting a program
+
+2016-08-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobcrun.c: added option --brief (-q) to remove the path to cobcrun
+	  in argv[0]
+
+2016-06-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobcrun.c (cobcrun_initial_module) [_WIN32]: fixed setting of
+	  COB_PRE_LOAD and COB_LIBRARY_PATH to use PATHSEP_CHAR
+
+2016-06-21  Brian Tiffin <btiffin@gnu.org>
+
+	* cobcrun.c : replaced cob_strdup. Need to revisit.
+
+2016-05-16  Brian Tiffin <btiffin@gnu.org>
+
+	* cobcrun.c : replaced non-portable strndup, and fixed free with cob_free
+
+2016-05-15  Brian Tiffin <btiffin@gnu.org>
+
+	* cobcrun.c : Added -M path/module command line option
+	  if path/ found, prepend to COB_LIBRARY_PATH
+	  if module (no slash) found, prepend to COB_PRE_LOAD
+	  may set both.
+
+2016-01-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobcrun.c (cobcrun_print_version): changed generation of build stamp
+
+2015-03-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobcrun.c : new option --config=<file> / -c <file> for setting the
+	  runtime configuration file to be loaded during initialisation
+
+2014-08-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobcrun.c : Changed output of --help for help2man
+	* Makefile.am : Added manpage generation + install
+
+2014-05-06  Philipp Böhme <phi.boehme@googlemail.com>
+
+	* cobcrun.c : Added --runtime-env for displaying current runtime variables.;
+	  --version shows both version numbers of cobcrun (new) and libcob.;
+	  moved print_info (along with print_var) to libcob/common.c
+
+2014-02-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobcrun.c : Tweaked --info for showing current settings (environment) along
+	  with settings hard-wired during build (COB_xyz),
+	  removed entries in output that belongs to cobc only
+
+2012-05-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobcrun.c : Added conversion for enabling options in WIN style;
+	  Use getopt for option parsing;
+	  Set LC_ALL "" for native messages
+
+2010-06-28  Roger While <simrw@sim-basis.de>
+
+	* MARK - Version 2.0
+	* Move to GPL/LGPL 3
+
+2010-??-??  Roger While <simrw@sim-basis.de>
+
+	* Added --info
+
+2008-10-20  Roger While <simrw@sim-basis.de>
+
+	* cobcrun.c : Allow help and version options
+
+2007-12-27  Roger While <simrw@sim-basis.de>
+
+	** Mark 1.0 RELEASE
+
+2006-10-23  Roger While <simrw@sim-basis.de>
+
+	* Makefile.am : Remove gcc options
+
+2005-12-31  Roger While <simrw@sim-basis.de>
+
+	* Makefile.am : Only generate version with shared library
+
+2005-08-04  Roger While <simrw@sim-basis.de>
+
+	* Change exit to cob_stop_run
+
+2005-05-27  Roger While <simrw@sim-basis.de>
+
+	* Fix Makefile again
+
+2005-05-03  Roger While <simrw@sim-basis.de>
+
+	* Fix makefile
+
+2005-02-02  Roger While <simrw@sim-basis.de>
+
+	* Forgot the GPL license
+
+2004-11-29  Roger While <simrw@sim-basis.de>
+
+	* Initial checkout
+	* cobcrun.c, Makefile.am, Makefile.in
+	* syntax : cobcrun MYPROG [ arguments to MYPROG]
+	* This allows complete applications to be compiled
+	  as modules and offers similar functionality to
+	  MF's cobrun and ACU's runcbl.
+	  In fact, you can run all three in the same
+	  directory and, if your scripts use an environment
+	  variable for the driver program (e.g. $COBEXEC),
+	  then you can switch easily.
+
+
+Copyright 2004-2008,2010,2012,2014-2020 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification, are
+permitted provided the copyright notice and this notice are preserved.

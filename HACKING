@@ -1,0 +1,70 @@
+
+		                 GnuCOBOL
+		https://www.gnu.org/software/gnucobol/
+		https://sourceforge.net/projects/gnucobol
+		https://savannah.gnu.org/projects/gnucobol
+
+See README for general instructions and DEPENDENCIES for general requirements.
+
+============
+Development
+============
+
+If you wish to hack the GnuCOBOL source code, proceed as follows. The
+following extra packages need to be installed with versions equal or greater.
+
+If you build from VCS the tools in the first 4 lists are always needed.
+
+For running "autogen.sh" (necessary after VCS checkout) / reconfigure:
+  o autoconf 2.64
+  o automake 1.10.1
+  o libtool 2.2.6
+  o m4 1.4.12
+
+If you modify top-level configure.ac or Makefile.am in any directory then
+you will need to run "autoreconf -I m4" to regenerate the necessary files.
+
+If you want to update to a newer automake/libtool version or get errors
+about wrong version numbers in m4 run "autoreconf -vfi -I m4" instead.
+
+For compiling (when changing flex/bison sources):
+  o Bison 2.3     (will be changed to 3.x after release of GnuCOBOL 3.1)
+  o Flex 2.5.35
+
+For generating the testsuite (when changing any .at files):
+  o autoconf 2.64
+
+For generating the translation files (when changing any msgid):
+  o gettext 0.17
+    ** NOTE **
+    If you don't need an up-to-date translation you can do
+    "touch po/*.pot po/*.po po/*.gmo" instead.
+
+For generating the documentation (necessary for preparing a distribution):
+  o help2man 0.17
+    ** NOTE **
+    If you don't need an up-to-date manpage you can do
+    "touch cobc/cobc.1 bin/cobcrun.1" instead.
+  o texinfo 6.1 (with texinfo-tex)
+  o texlive (latest, texlive-collection-latex suffices)
+    ** NOTE **
+    If you don't need an up-to-date info source / manual you can do
+    "touch doc/gnucobol.info doc/gnucobol.pdf" instead.
+
+
+For more information about some of the internals and a coding guideline see
+https://sourceforge.net/p/gnucobol/wiki/Style%20guide/ and
+https://sourceforge.net/p/gnucobol/wiki/For%20Maintainers/
+
+
+For preparing a distribution do the following steps:
+  ./configure           # check that the current environment is ok and
+                        # generate Makefiles for distclean
+  make distclean        # only needed if it isn't a direct VCS checkout
+                        # --> start with a clean directory
+  ./configure && make   # build, needed for re-generating bison/flex sources
+                        # and for generating the texi-includes later
+  po/update_linguas.sh  # get latest translations
+  make distcheck        # generate a distribution tarball and check
+                        # that it will work in a VPATH environment
+                        # including make targets uninstall, distclean and dist

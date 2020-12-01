@@ -1,0 +1,121 @@
+#!/usr/bin/awk -f
+# cbrunt.tex.gen gnucobol/doc
+#
+# Copyright (C) 2015-2020 Free Software Foundation, Inc.
+# Written by James K. Lowden, Simon Sobisch
+#
+# This file is part of GnuCOBOL.
+#
+# The GnuCOBOL compiler is free software: you can redistribute it
+# and/or modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# GnuCOBOL is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+
+# Remove MS-DOS carriage returns
+{
+    gsub(/\r/, "")
+}
+
+# The first section, "General instructions", gets special treatment.
+# The others, starting with "General environment", simply get a section
+# heading and verbatim quotation.
+
+/^## General instructions/,/^## General environment/ {
+    
+    if( debug ) { printf "@c input: %3d: %s\n", NR, $0 }
+    
+    if( sub(/^## /, "@section ") ) {
+	verbatim = ""
+	if( /General environment$/ ) {
+	    section = 1
+	    verbatim = "\n@verbatim"
+	}
+    	$0 = $0 verbatim "\n"
+	print
+	next
+    }
+
+    sub(/^# |^#$/, "")
+    gsub(/[{}]/, "@&")  # escape literal braces as @{ and @}. 
+
+    # mark up plain text references
+    gsub(/runtime.cfg/, "@file{&}")
+    gsub(/\$COB_CONFIG_DIR|COB_RUNTIME_CONFIG/, "@env{&}")
+    gsub(/cobcrun --info/, "@command{&}")
+    gsub(/\$@{envvar:-?default@}/, "@code{&}")
+    gsub(/reset parametername/, "@code{&}")
+    gsub(/prefix +COB_/, "prefix @code{COB_}")
+    gsub(/cobcrun --runtime-config/, "@command{&}")
+    gsub(/[*]slightly[*]/, "@i{slightly}")
+
+    gsub(/ setenv| unsetenv|include |includeif/, "@code{&}")
+    gsub(/{ /, "{")
+
+    if( /to (true|false):/ ) {
+	gsub(/[01YN],/, "@code{&}")
+	gsub(/,}/, "},");
+
+	gsub(/ON|OFF|YES|TRUE/, "@code{&}")
+
+	if( /OFF/ ) { sub(/$/, ".\n") }
+    }
+
+    if( sub(/'size'/, "@code{size}") ) {
+	gsub(/[KMG]/, "@samp{&}")
+	print
+	getline
+	sub(/^# /, "")
+	gsub(/kilo|mega|giga/, "@samp{&}")
+    }
+    
+    if( debug ) { printf "@c marked:%3d: %s\n", NR, $0 }
+
+    # Wrap 1-line examples in "code{...}"
+    if( sub(/^ *Example: */, "") ) {
+	print "@table @asis"
+	print "@item Example"
+	print "@code{" $0 "}"
+	print "@end table"
+	next
+    }
+    
+    if( debug ) { printf "@c output:%3d: %s\n", NR, $0 }
+    print
+    next
+}
+
+section == 0 { next }
+
+/# \?TO-\?DO.*/ { next } # Skip any TODO
+
+#
+# Other sections
+#
+
+/^## / {
+    sub( /^## /, "" )
+    if( section++ > 1 ) {
+	print "@end verbatim\n"
+    }
+    print "@section", $0
+    print "@verbatim"
+    next
+}
+
+{
+    sub(/^# |^#$/, "")
+    print
+}
+
+END {
+    print "@end verbatim"
+}
+
