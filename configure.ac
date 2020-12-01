@@ -1925,6 +1925,7 @@ fi
 unset enable_cflags_setting
 
 # cobc.c assumed -g for all but _MSC_VER
+if test "${COB_DEBUG_FLAGS}x" = "x"; then
 COB_DEBUG_FLAGS="-g"
 
 # For debugging: add most expressive debug level if using GCC (compatible)
@@ -1967,6 +1968,7 @@ if test "$enable_debug" = "yes"; then
 	CFLAGS="$curr_cflags $COB_DEBUG_FLAGS"
 else
 	CFLAGS="$curr_cflags"
+fi
 fi
 
 if test "$enable_hardening" = "yes"; then
