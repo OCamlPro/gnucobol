@@ -10427,6 +10427,7 @@ output_display_fields (struct cb_field *f, int offset, int idx)
 {
 	struct cb_field	*p;
 	int	adjust, i;
+	char	wrk[64];
 
 	for (p = f; p; p = p->sister) {
 		/* skip entries we never want to dump */
@@ -10454,8 +10455,9 @@ output_display_fields (struct cb_field *f, int offset, int idx)
 			output (" == NULL)");
 			output_newline ();
 			output_block_open ();
+			snprintf(wrk,sizeof(wrk),"%s.",p->flag_filler?"FILLER":p->name);
 			output_line ("cob_dump_output(\"%02d        %-30s <NULL> address\");",
-							p->level,p->flag_filler?"FILLER":p->name);
+							p->level,wrk);
 			output_block_close ();
 			output_line ("else");
 			output_block_open ();
@@ -10489,7 +10491,7 @@ output_display_fields (struct cb_field *f, int offset, int idx)
 				output_prefix ();
 				output ("/* ");
 			}
-			output ("const int max_%d = ", idx);
+			output ("int max_%d = ", idx);
 			if (p->depending) {
 				output_integer (p->depending);
 			} else {

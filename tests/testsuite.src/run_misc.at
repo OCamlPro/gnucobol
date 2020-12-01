@@ -10385,7 +10385,9 @@ WORKING-STORAGE
 **********************
 01        ZRO                             000000000
 01        HEXV                            013
+
 01        TEST-BASED.                    <NULL> address
+**********************
 01        TEST-ALLOCED.
   05      TEST-ALLOCED-SUB1              ALL SPACES
   05      TEST-ALLOCED-SUB2               000000
@@ -10436,7 +10438,9 @@ WORKING-STORAGE
 LINKAGE
 **********************
 01        X                               000005441
+
 01        TSPFL-RECORD.                  <NULL> address
+**********************
 
 Dump Program-Id sub2 from prog.cob compiled MMM DD YYYY HH:MM:SS
 
@@ -10491,7 +10495,9 @@ WORKING-STORAGE
      10   B-NUM                           0124
      10   B-DISK                         'marvdisc'
      10   B-NO-TERMINALS                  0000
-77        BASED-NEVER-SET                <NULL> address      
+
+77        BASED-NEVER-SET.               <NULL> address      
+**********************
 
 LINKAGE
 **********************
@@ -10619,7 +10625,9 @@ Dump Program-Id sub1 from prog.cob compiled MMM DD YYYY HH:MM:SS
 LINKAGE
 **********************
 01        X                               000005441
+
 01        TSPFL-RECORD.                  <NULL> address
+**********************
 
 Dump Program-Id sub2 from prog.cob compiled MMM DD YYYY HH:MM:SS
 
@@ -10736,8 +10744,6 @@ AT_DATA([prog.cob], [
        PROGRAM-ID. prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-      *01  P2           USAGE POINTER.
-
        01 TAB-ADR-EINTRAEGE        PIC S9(4)      VALUE 8.
 
        01 TAB-ADRESSEN OCCURS 0 TO 1000 TIMES
@@ -10748,6 +10754,14 @@ AT_DATA([prog.cob], [
               10 TAB-ADR-ID           PIC X(2).
               10 TAB-ADR-ADR-64       PIC S9(16) COMP-5.
               10 TAB-ADR-LAST-ADR-64  PIC S9(16) COMP-5.
+
+       01  GRP-X BASED.
+           05   FILLER  PIC X(3).
+           05   FLD-X   OCCURS 10 TIMES.
+             10 FLD-X-Y   PIC 9999 VALUE 2020.
+             10 FLD-X-M   PIC 99 VALUE 11.
+             10 FLD-X-X   PIC X(128) VALUE "This is something ".
+           05   FILLER  PIC X(3).
 
        01  GRP-1.
            05   FILLER  PIC X(3).
@@ -10817,7 +10831,6 @@ AT_DATA([prog.cob], [
            MOVE "You" TO GRP-2A (1010:3).
            MOVE "$$" TO FLD-5-4 (5).
            MOVE "Something else!" TO FLD-1-X (5).
-      *    SET P2 TO NULL.
            SET ADDRESS OF A-TABLE TO NULL.
            MOVE ALL ZEROES TO A-TABLE (1: (LENGTH OF A-TABLE)).
            STOP RUN.
@@ -10826,22 +10839,17 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE -std=default -debug -fdump=ALL prog.cob ], [0], [], [])
 
 AT_CHECK([export COB_DUMP_FILE=tstdump.txt
-$COBCRUN_DIRECT ./prog], [11], [GRP-2:***ABCD ABCD ABCD ABCD ABCD ABCD ABCD ABCD AB***
+$COBCRUN_DIRECT ./prog], [1], [GRP-2:***ABCD ABCD ABCD ABCD ABCD ABCD ABCD ABCD AB***
 GRP-3:***ABC00XXABC00XXABC00XX***
 GRP-5:***Mon49eyMon49eyMon49eyMon49eyMon49eyMon49eyMon49ey
-], [libcob: prog.cob:89: error: BASED/LINKAGE item 'A-TABLE' has NULL address
-
-prog.cob:89: attempt to reference unallocated memory (signal SIGSEGV)
-
-])
-
+], ignore)
 
 AT_CAPTURE_FILE(./tstdump.txt)
 
 AT_DATA([reference], [
 Module dump due to BASED/LINKAGE item 'A-TABLE' has NULL address
 
- Last statement of prog was at line 89 of prog.cob   
+ Last statement of prog was at line 94 of prog.cob   
 
 Dump Program-Id prog from prog.cob compiled MMM DD YYYY HH:MM:SS
 
@@ -10861,6 +10869,9 @@ WORKING-STORAGE
            ... occurrence (6) same as (1)
            ... occurrence (7) same as (1)
            ... occurrence (8) same as (1)
+
+01        GRP-X.                         <NULL> address
+**********************
 01        GRP-1.
   05      FILLER                         ALL SPACES
   05      FLD-1.
@@ -10944,11 +10955,16 @@ WORKING-STORAGE
 
 LINKAGE
 **********************
+
+01        A-TABLE.                       <NULL> address
+**********************
+
 ])
 
 AT_CHECK([gcdiff reference tstdump.txt], [0], [], [])
 
 AT_CLEANUP
+
 
 AT_SETUP([Test COBOL-C interface])
 AT_KEYWORDS([CALL])
