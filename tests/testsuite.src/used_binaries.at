@@ -292,6 +292,7 @@ AT_CLEANUP
 
 AT_SETUP([compiler outputs (assembler)])
 AT_KEYWORDS([runmisc cobc])
+AT_SKIP_IF([test "$COB_NO_ASM" = "no"]) 
 
 AT_DATA([prog.cob],[
         IDENTIFICATION DIVISION.
