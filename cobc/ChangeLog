@@ -1,4 +1,9 @@
 
+2020-12-01  Ron Norman <rjn@inglenet.com>
+
+	* codegen.c: For -fdump emit code to check if BASED/LINKAGE fields
+	             have a not NULL base address before dumping them
+
 2020-11-30  Ron Norman <rjn@inglenet.com>
 
 	* codegen.c: Only emit the 'i_len' variable if it is used

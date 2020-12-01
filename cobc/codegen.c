@@ -10442,6 +10442,32 @@ output_display_fields (struct cb_field *f, int offset, int idx)
 		   to investigate it, not as executed code,
 		   note: using increment/decrement and
 		         static as we are called recursive */
+		if ((p->level == 77 || p->level == 1)
+		 && !p->redefines
+		 && (p->flag_item_based || p->storage == CB_STORAGE_LINKAGE)) {
+			output_line ("/* Check %s address for %s */",
+						p->flag_item_based?"BASED":"LINKAGE",
+						p->flag_filler?"FILLER":p->name);
+			output_prefix ();
+			output ("if (");
+			output_base (p, 0);
+			output (" == NULL)");
+			output_newline ();
+			output_block_open ();
+			output_line ("cob_dump_output(\"%02d        %-30s <NULL> address\");",
+							p->level,p->flag_filler?"FILLER":p->name);
+			output_block_close ();
+			output_line ("else");
+			output_block_open ();
+			if (p->children) {
+				output_field_display (p, offset, idx);
+				output_display_fields (p->children, offset, idx);
+			} else {
+				output_field_display (p, offset, idx);
+			}
+			output_block_close ();
+			continue;
+		}
 		if (p->redefines
 		 || p->level == 78
 		 || p->level == 66) {
@@ -10475,6 +10501,10 @@ output_display_fields (struct cb_field *f, int offset, int idx)
 				output_newline ();
 			} else {
 				output_newline ();
+				if (!p->flag_unbounded
+				 && p->depending)
+					output_line ("if (max_%d > %d) max_%d = %d;",
+								idx, p->occurs_max, idx,  p->occurs_max);
 				output_line ("for (i_%d=0; i_%d < max_%d; i_%d++)", idx,idx,idx,idx);
 			}
 			output_block_open ();
