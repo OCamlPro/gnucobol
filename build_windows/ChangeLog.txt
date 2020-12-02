@@ -1,4 +1,19 @@
 
+2020-12-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: renamed set_env scripts:
+	  * set_env_vs.bat          -> set_env_vs_x86.cmd
+	  * set_env_vs_x64.bat      -> set_env_vs_x64.cmd
+	  * set_env_vs_dist.bat     -> set_env_vs_x86.dist.tmpl.cmd
+	  * set_env_vs_dist_x64.bat -> set_env_vs_x64.dist.tmpl.cmd
+	  * makebisonflex.bat       -> makebisonflex.cmd
+	* gcvars.cmd: new internal script that does the actual setup and execution
+	  logic, derived from set_env* which now call this
+	* gcvars.cmd: extended with option to double-click and "drop to execute" and
+	  compressed info output
+	* README.txt, makedist.cmd: adjusted for new script/template names
+	* makedist.cmd: now working with json-c and vcexport included libraries
+
 2020-11-01  Simon Sobisch <simonsobisch@gnu.org>
 
 	* config.h.in: cater for libcob-5

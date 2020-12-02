@@ -1,9 +1,12 @@
 #include <windows.h>
-#define COB_WITHOUT_EXCEPTIONS
-#include "libcob/common.h"
-#define VCS_REF 3916
+
 #include <tarstamp.h>
 #include <config.h>
+
+#define COB_WITHOUT_EXCEPTIONS
+#define COB_WITHOUT_JMP
+#include "libcob/common.h"
+#define VCS_REF 4020
 
 #define STRINGIZE_DETAIL_(v) #v
 #define STRINGIZE(v) STRINGIZE_DETAIL_(v)
@@ -54,7 +57,7 @@ VS_VERSION_INFO    VERSIONINFO
       VALUE "SpecialBuild",     ""
 
       /* Non-Standard entries */
-      VALUE "Build",            "Oct 2020"
+      VALUE "Build",            "Dec 2020"
       VALUE "Developer",        "Roger While, Simon Sobisch, Brian Tiffin (see AUTHORS and THANKS)"
       VALUE "Support",          "https://www.gnu.org/software/gnucobol/"
       VALUE "Users",            "Unlimited."

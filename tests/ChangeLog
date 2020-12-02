@@ -1,4 +1,9 @@
 
+2020-11-30  James K. Lowden  <jklowden@symas.com>
+
+	* testsuite.src/run_misc.at: correct for 32-bit in
+	  "Test dump feature (2)"
+
 2020-11-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* valgrind.supp: suppression file for bash + bdb errors (commonly not
