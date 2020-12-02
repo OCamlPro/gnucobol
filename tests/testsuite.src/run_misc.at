@@ -10854,13 +10854,16 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE -std=default -debug -fdump=ALL prog.cob ], [0], [], [])
 
-AT_CHECK([export COB_DUMP_FILE=tstdump.txt
+AT_CHECK([export COB_DUMP_FILE=dumpall.txt
 $COBCRUN_DIRECT ./prog], [1], [GRP-2:***ABCD ABCD ABCD ABCD ABCD ABCD ABCD ABCD AB***
 GRP-3:***ABC00XXABC00XXABC00XX***
 GRP-5:***Mon49eyMon49eyMon49eyMon49eyMon49eyMon49eyMon49ey
-], ignore)
+], [libcob: prog.cob:94: error: BASED/LINKAGE item 'A-TABLE' has NULL address
 
-AT_CAPTURE_FILE(./tstdump.txt)
+dump written to dumpall.txt
+])
+
+AT_CAPTURE_FILE(./dumpall.txt)
 
 AT_DATA([reference], [
 Module dump due to BASED/LINKAGE item 'A-TABLE' has NULL address
@@ -10980,7 +10983,7 @@ END OF DUMP - prog
 
 ])
 
-AT_CHECK([gcdiff reference tstdump.txt], [0], [], [])
+AT_CHECK([gcdiff reference dumpall.txt], [0], [], [])
 
 AT_CLEANUP
 
