@@ -209,7 +209,7 @@ if not [%source_config%] == [] (
   set "COB_LIB_PATHS=/LIBPATH:"%COB_DEV_DIR%""
 ) else (
   set "COB_CFLAGS=/I "%COB_MAIN_DIR%include""
-  set "COB_LIB_PATHS=/LIBPATH:"%COB_MAIN_DIR%lib%source_build%""
+  set "COB_LIB_PATHS=/LIBPATH:"%COB_MAIN_DIR%lib_%arch%""
 )
 
 :: save current PATH and add the bin path of GnuCOBOL to PATH for further references
@@ -219,7 +219,7 @@ if "%COB_OLD_PATH%" == "" (
 if not [%source_config%] == [] (
   call :prefix_path "%COB_DEV_DIR%\%source_config%"
 ) else (
-  call :prefix_path "%COB_MAIN_DIR%bin%source_build%"
+  call :prefix_path "%COB_MAIN_DIR%bin_%arch%"
 )
 
 set "COB_DEV_DIR="

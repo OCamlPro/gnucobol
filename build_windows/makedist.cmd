@@ -71,7 +71,8 @@ if /i "%1%"=="DEBUG" (
    set config=Release
 )
 
-rem TODO: read this from config.h
+rem TODO: read this from
+rem findstr /c:"version-info" ..\libcob\Makefile.am ...
 set "ltversion=-5"
 
 if exist "%cob_build_path%Win32\%config%\cobc.exe" (
@@ -374,7 +375,7 @@ if not [%VCPKG_EXPORT_DIR%]==[] (
    set "extra_include=%VCPKG_EXPORT_DIR%\installed\%2\include"
 ) else (
    set "extra_include=."
- )
+)
 cobc -m -Wall -O2 -I "%extra_include%" ..\extras\CBL_OC_DUMP.cob
 if %errorlevel% neq 0 (
    echo.
