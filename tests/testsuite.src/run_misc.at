@@ -10385,31 +10385,32 @@ WORKING-STORAGE
 **********************
 01        ZRO                             000000000
 01        HEXV                            013
-
 01        TEST-BASED.                    <NULL> address
-**********************
 01        TEST-ALLOCED.
   05      TEST-ALLOCED-SUB1              ALL SPACES
   05      TEST-ALLOCED-SUB2               000000
 01        IDX                             000000000
 01        TSTREC.
   05      TSTDEP                         'XXX'
-  05      TSTX.
+  05      TSTX (1).
        15 TSTG-1 (1)                      01
        15 TSTX-2 (1,1)                   'A'
        15 TSTX-2 (1,2)                   'XX'
        15 TSTX-2 (1,3)                   ALL SPACES
        15 TSTX-2 (1,4)                   'xx'
+  05      TSTX (2).
        15 TSTG-1 (2)                      02
        15 TSTX-2 (2,1)                   'B'
        15 TSTX-2 (2,2)                   'XX'
        15 TSTX-2 (2,3)                   ALL LOW-VALUES
        15 TSTX-2 (2,4)                   'yy'
+  05      TSTX (3).
        15 TSTG-1 (3)                      03
        15 TSTX-2 (3,1)                   'C'
        15 TSTX-2 (3,2)                   'XX'
        15 TSTX-2 (3,3)                   ALL HIGH-VALUES
        15 TSTX-2 (3,4)                   'zz'
+  05      TSTX (4).
        15 TSTG-1 (4)                     ALL HIGH-VALUES
        15 TSTX-2 (4,1)                   ALL HIGH-VALUES
        15 TSTX-2 (4,2)                   ALL HIGH-VALUES
@@ -10438,8 +10439,9 @@ WORKING-STORAGE
 LINKAGE
 **********************
 01        X                               000005441
-
 01        TSPFL-RECORD.                  <NULL> address
+
+END OF DUMP - sub1
 **********************
 
 Dump Program-Id sub2 from prog.cob compiled MMM DD YYYY HH:MM:SS
@@ -10451,22 +10453,25 @@ WORKING-STORAGE
 01        IDX                             000000000
 01        TSTREC.
   05      TSTDEP                         'XXX'
-  05      TSTX.
+  05      TSTX (1).
        15 TSTG-1 (1)                      01
        15 TSTX-2 (1,1)                   'A'
        15 TSTX-2 (1,2)                   'XX'
        15 TSTX-2 (1,3)                   ALL SPACES
        15 TSTX-2 (1,4)                   'xx'
+  05      TSTX (2).
        15 TSTG-1 (2)                      02
        15 TSTX-2 (2,1)                   'B'
        15 TSTX-2 (2,2)                   'XX'
        15 TSTX-2 (2,3)                   ALL LOW-VALUES
        15 TSTX-2 (2,4)                   'yy'
+  05      TSTX (3).
        15 TSTG-1 (3)                      03
        15 TSTX-2 (3,1)                   'C'
        15 TSTX-2 (3,2)                   'XX'
        15 TSTX-2 (3,3)                   ALL HIGH-VALUES
        15 TSTX-2 (3,4)                   'zz'
+  05      TSTX (4).
        15 TSTG-1 (4)                     ALL HIGH-VALUES
        15 TSTX-2 (4,1)                   ALL HIGH-VALUES
        15 TSTX-2 (4,2)                   ALL HIGH-VALUES
@@ -10495,9 +10500,7 @@ WORKING-STORAGE
      10   B-NUM                           0124
      10   B-DISK                         'marvdisc'
      10   B-NO-TERMINALS                  0000
-
-77        BASED-NEVER-SET.               <NULL> address      
-**********************
+77        BASED-NEVER-SET                <NULL> address      
 
 LINKAGE
 **********************
@@ -10508,6 +10511,9 @@ LINKAGE
      10   CM-DISK                        '8417'
      10   CM-NO-TERMINALS                 0010
 77        DYNAMIC-NUM                     0124
+
+END OF DUMP - sub2
+**********************
 
 Dump Program-Id prog from prog.cob compiled MMM DD YYYY HH:MM:SS
 
@@ -10567,6 +10573,9 @@ WORKING-STORAGE
            ... occurrence (7) same as (4)
            ... occurrence (8) same as (4)
 
+END OF DUMP - prog
+**********************
+
 ])
 
 # AT_DATA workaround via sed:
@@ -10625,8 +10634,9 @@ Dump Program-Id sub1 from prog.cob compiled MMM DD YYYY HH:MM:SS
 LINKAGE
 **********************
 01        X                               000005441
-
 01        TSPFL-RECORD.                  <NULL> address
+
+END OF DUMP - sub1
 **********************
 
 Dump Program-Id sub2 from prog.cob compiled MMM DD YYYY HH:MM:SS
@@ -10641,6 +10651,9 @@ LINKAGE
      10   CM-NO-TERMINALS                 0010
 77        DYNAMIC-NUM                     0124
 
+END OF DUMP - sub2
+**********************
+
 Dump Program-Id prog from prog.cob compiled MMM DD YYYY HH:MM:SS
 
 FD FLATFILE
@@ -10652,6 +10665,9 @@ FD FLATFILE
      10   CM-COMPANY                     'ALPHA ELECTRICAL CO. LTD.'
      10   CM-DISK                        '8417'
      10   CM-NO-TERMINALS                 0010
+
+END OF DUMP - prog
+**********************
 
 ])
 
@@ -10744,10 +10760,10 @@ AT_DATA([prog.cob], [
        PROGRAM-ID. prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       01 TAB-ADR-EINTRAEGE        PIC S9(4)      VALUE 8.
+       01 TAB-ADR-COUNT            PIC S9(4)      VALUE 8.
 
-       01 TAB-ADRESSEN OCCURS 0 TO 1000 TIMES
-            DEPENDING ON TAB-ADR-EINTRAEGE
+       01 TAB-ADR OCCURS 0 TO 1000 TIMES
+            DEPENDING ON TAB-ADR-COUNT
             INDEXED BY TAB-ADR-IND.
           05 TAB-ADR-ELEMENT.
               10 TAB-ADR-PRGM         PIC X(8).
@@ -10855,8 +10871,8 @@ Dump Program-Id prog from prog.cob compiled MMM DD YYYY HH:MM:SS
 
 WORKING-STORAGE
 **********************
-01        TAB-ADR-EINTRAEGE               +0008
-01        TAB-ADRESSEN.
+01        TAB-ADR-COUNT                   +0008
+01        TAB-ADR (1).
   05      TAB-ADR-ELEMENT (1).
      10   TAB-ADR-PRGM (1)               ALL SPACES
      10   TAB-ADR-ID (1)                 ALL SPACES
@@ -10869,21 +10885,21 @@ WORKING-STORAGE
            ... occurrence (6) same as (1)
            ... occurrence (7) same as (1)
            ... occurrence (8) same as (1)
-
 01        GRP-X.                         <NULL> address
-**********************
 01        GRP-1.
   05      FILLER                         ALL SPACES
-  05      FLD-1.
+  05      FLD-1 (1).
      10   FLD-1-Y (1)                     2020
      10   FLD-1-M (1)                     11
      10   FLD-1-X (1)                    'This is something'
            ... occurrence (2) same as (1)
            ... occurrence (3) same as (1)
            ... occurrence (4) same as (1)
+  05      FLD-1 (5).
      10   FLD-1-Y (5)                     2020
      10   FLD-1-M (5)                     11
      10   FLD-1-X (5)                    'Something else!'
+  05      FLD-1 (6).
      10   FLD-1-Y (6)                     2020
      10   FLD-1-M (6)                     11
      10   FLD-1-X (6)                    'This is something'
@@ -10927,7 +10943,7 @@ WORKING-STORAGE
                                   1198 x 202020
 01        GRP-3.
   05      FILLER                         '***'
-  05      FLD-3.
+  05      FLD-3 (1).
        15 FLD-3-2 (1)                    'ABC'
        15 FLD-3-3 (1)                     00
        15 FLD-3-4 (1)                    'XX'
@@ -10938,16 +10954,18 @@ WORKING-STORAGE
 01        GRP-5.
   05      FILLER                         '***'
   05      FLD-5.
-     10   FLD-5-1.
+     10   FLD-5-1 (1).
        15 FLD-5-2 (1)                    'Mon'
        15 FLD-5-3 (1)                     49
        15 FLD-5-4 (1)                    'ey'
            ... occurrence (2) same as (1)
            ... occurrence (3) same as (1)
            ... occurrence (4) same as (1)
+     10   FLD-5-1 (5).
        15 FLD-5-2 (5)                    'Mon'
        15 FLD-5-3 (5)                     49
        15 FLD-5-4 (5)                    '$$'
+     10   FLD-5-1 (6).
        15 FLD-5-2 (6)                    'Mon'
        15 FLD-5-3 (6)                     49
        15 FLD-5-4 (6)                    'ey'
@@ -10955,8 +10973,9 @@ WORKING-STORAGE
 
 LINKAGE
 **********************
-
 01        A-TABLE.                       <NULL> address
+
+END OF DUMP - prog
 **********************
 
 ])

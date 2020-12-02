@@ -646,19 +646,9 @@ cob_dump_field (const int level, const char *name,
 	char	lvlwrk[16];
 	int 	adjust, indent;
 	cob_field	f[1];
-
-	if (level < 0) {	/* Special directive, only included for 3.1rc1 - compat */
-		if (level == -1) {
-			cob_dump_output (name);
-		} else
-		if (level == -2) {
-			cob_dump_file (NULL, (cob_file*)name);
-		}
-		return;
-	}
-
-	memcpy (f, f_addr, sizeof (cob_field));
+	
 	memcpy (vname, name, COB_MAX_WORDLEN);
+	memcpy (f, f_addr, sizeof (cob_field));
 	adjust = offset;
 
 	if (indexes > 0) {

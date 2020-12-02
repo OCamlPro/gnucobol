@@ -1,8 +1,22 @@
 
+2020-12-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_display_fields): changed NULL-checked fields to
+	  generate calls to (cob_dump_field) to keep formatting and control there
+	  instead of preformatting with use of message-related (cob_dump_output);
+	  fixed output for based-check'd OCCURS 01 and comment-only output
+
 2020-12-01  Ron Norman <rjn@inglenet.com>
 
-	* codegen.c: For -fdump emit code to check if BASED/LINKAGE fields
-	             have a not NULL base address before dumping them
+	* codegen.c (output_dump_code): emit code to check if BASED/LINKAGE fields
+	  have a not NULL base address before dumping them; handle depending_on
+
+2020-11-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_dump_code): moved out of (output_internal_function)
+	* codegen.c (output_dump_code): generate "end of dump" message
+	* codegen.c (output_display_fields): always output group OCCURS items,
+	  not only the first time; removed duplicated code
 
 2020-11-30  Ron Norman <rjn@inglenet.com>
 

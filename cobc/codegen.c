@@ -10425,63 +10425,63 @@ output_field_display (struct cb_field *f, int offset, int idx)
 static void
 output_display_fields (struct cb_field *f, int offset, int idx)
 {
-	struct cb_field	*p;
-	int	adjust, i;
-	char	wrk[64];
-
-	for (p = f; p; p = p->sister) {
+	for (; f; f = f->sister) {
+		int has_based_check = 0;
 		/* skip entries we never want to dump */
-		if (p->level == 88
-		 || (p->level == 0 && p->file == NULL)) {
+		if (f->level == 88
+		 || (f->level == 0 && f->file == NULL)) {
 			continue;
 		}
 		/* For special registers */
-		if (p->flag_no_init && !p->count) {
+		if (f->flag_no_init && !f->count) {
 			continue;
 		}
 		/* check for dump code we only are interested in
 		   to investigate it, not as executed code,
 		   note: using increment/decrement and
 		         static as we are called recursive */
-		if ((p->level == 77 || p->level == 1)
-		 && !p->redefines
-		 && (p->flag_item_based || p->storage == CB_STORAGE_LINKAGE)) {
-			output_line ("/* Check %s address for %s */",
-						p->flag_item_based?"BASED":"LINKAGE",
-						p->flag_filler?"FILLER":p->name);
-			output_prefix ();
-			output ("if (");
-			output_base (p, 0);
-			output (" == NULL)");
-			output_newline ();
-			output_block_open ();
-			snprintf(wrk,sizeof(wrk),"%s.",p->flag_filler?"FILLER":p->name);
-			output_line ("cob_dump_output(\"%02d        %-30s <NULL> address\");",
-							p->level,wrk);
-			output_block_close ();
-			output_line ("else");
-			output_block_open ();
-			if (p->children) {
-				output_field_display (p, offset, idx);
-				output_display_fields (p->children, offset, idx);
-			} else {
-				output_field_display (p, offset, idx);
-			}
-			output_block_close ();
-			continue;
-		}
-		if (p->redefines
-		 || p->level == 78
-		 || p->level == 66) {
+		if (f->redefines
+		 || f->level == 78
+		 || f->level == 66) {
 			if (!cb_wants_dump_comments) {
 				continue;
 			}
 			output_as_comment++;
 		}
-		if (p->children) {
-			output_field_display (p, offset, idx);
+		/* generated check for NULL address */
+		if (!output_as_comment
+		 && (f->level == 77 || f->level == 1)
+		 && !f->redefines
+		 && (f->flag_item_based || f->storage == CB_STORAGE_LINKAGE)) {
+			const char* name = f->flag_filler ? "FILLER" : f->name;
+			output_line ("/* Check %s address for %s */",
+						f->flag_item_based ? "BASED" : "LINKAGE",
+						name);
+			output_prefix ();
+			output ("if (");
+			output_base (f, 0);
+			output (" == NULL)");
+			output_newline ();
+			output_block_open ();
+			output_prefix ();
+			output ("cob_dump_field (%2d, \"%s\", ", f->level, name);
+			if (f->count != 0
+			 && !f->flag_item_based
+			 && f->storage != CB_STORAGE_LINKAGE) {
+				output ("%s%d",	CB_PREFIX_FIELD, f->id);
+			} else {
+				output ("COB_SET_FLD(%s, %d, NULL, ", "f0", f->size);
+				output_attr (cb_build_field_reference (f, NULL));
+				output (")");
+			}
+			output (", 0, 0);");
+			output_newline ();
+			output_block_close ();
+			output_line ("else");
+			output_block_open ();
+			has_based_check = 1;
 		}
-		if (p->occurs_max > 2) {
+		if (f->occurs_max > 1) {
 			idx++;
 			output_block_open ();
 			if (!output_as_comment) {
@@ -10492,10 +10492,10 @@ output_display_fields (struct cb_field *f, int offset, int idx)
 				output ("/* ");
 			}
 			output ("int max_%d = ", idx);
-			if (p->depending) {
-				output_integer (p->depending);
+			if (f->depending) {
+				output_integer (f->depending);
 			} else {
-				output ("%d", p->occurs_max);
+				output ("%d", f->occurs_max);
 			}
 			output (";");
 			if (output_as_comment) {
@@ -10503,44 +10503,30 @@ output_display_fields (struct cb_field *f, int offset, int idx)
 				output_newline ();
 			} else {
 				output_newline ();
-				if (!p->flag_unbounded
-				 && p->depending)
+				if (!f->flag_unbounded
+				 && f->depending)
 					output_line ("if (max_%d > %d) max_%d = %d;",
-								idx, p->occurs_max, idx,  p->occurs_max);
+								idx, f->occurs_max, idx,  f->occurs_max);
 				output_line ("for (i_%d=0; i_%d < max_%d; i_%d++)", idx,idx,idx,idx);
 			}
 			output_block_open ();
 			field_subscript[idx-1] = -idx;
-			size_subscript[idx-1] = p->size;
-			if (p->children) {
-				output_display_fields (p->children, offset, idx);
-			} else {
-				output_field_display (p, offset, idx);
-			}
+			size_subscript[idx-1] = f->size;
+			output_field_display (f, offset, idx);
+			output_display_fields (f->children, offset, idx);
 			output_block_close ();
 			output_block_close ();
 			idx--;
-		} else if (p->occurs_max > 1) {
-			adjust = 0;
-			for (i=1; i <= p->occurs_max; i++) {
-				field_subscript[idx] = i;
-				if (p->children) {
-					output_display_fields (p->children, offset + adjust, idx + 1);
-				} else {
-					output_field_display (p, offset + adjust, idx + 1);
-				}
-				adjust += p->size;
-			}
 		} else {
-			if (p->children) {
-				output_display_fields (p->children, offset, idx);
-			} else {
-				output_field_display (p, offset, idx);
-			}
+			output_field_display (f, offset, idx);
+			output_display_fields (f->children, offset, idx);
 		}
-		if (p->redefines
-		 || p->level == 78
-		 || p->level == 66) {
+		if (has_based_check) {
+			output_block_close ();
+		}
+		if (f->redefines
+		 || f->level == 78
+		 || f->level == 66) {
 			output_as_comment--;
 		}
 	}
@@ -11067,6 +11053,194 @@ pickup_param (cb_tree l, int i)
 }
 
 static void
+output_dump_code (struct cb_program *prog, cb_tree parameter_list)
+{
+	cb_tree			l;
+	struct cb_field	*f;
+	struct cb_file	*fl;
+	int			nested_dump, has_dump;
+
+	if (num_cob_fields == 0
+	 && cb_flag_dump != COB_DUMP_NONE) {
+		output_block_open ();
+		output_line ("cob_field f0;");
+		output_line ("memset(&f0,0,sizeof(f0));");
+		nested_dump = 1;
+	} else {
+		nested_dump = 0;
+	}
+	has_dump = 0;
+
+	for (l = prog->file_list; l; l = CB_CHAIN (l)) {
+		fl = CB_FILE(CB_VALUE (l));
+		if (!fl->record) continue;
+		if (  (fl->organization != COB_ORG_SORT
+	 	    && (cb_flag_dump & COB_DUMP_FD))
+		 ||   (fl->organization == COB_ORG_SORT
+	 	    && (cb_flag_dump & COB_DUMP_SD))) {
+			has_dump = 1;
+			output_line ("/* Dump %s */", fl->name);
+			output_line ("cob_dump_file (\"%s %s\", %s%s);",
+				fl->organization != COB_ORG_SORT ? "FD" : "SD",
+				fl->name, CB_PREFIX_FILE, fl->cname);
+			if (fl->record->sister
+			 && fl->record->sister->sister == NULL) {	/* Only one record layout */
+				f = fl->record->sister->redefines;
+				fl->record->sister->redefines = NULL;	/* Temp remove of redefines */
+				output_display_fields (fl->record->sister, 0, 0);
+				fl->record->sister->redefines = f;
+			} else if (fl->record->file == NULL) {
+				fl->record->file = fl;
+				output_display_fields (fl->record, 0, 0);
+				fl->record->file = NULL;
+			} else {
+				output_display_fields (fl->record, 0, 0);
+			}
+			output_newline ();
+		} else if (cb_wants_dump_comments) {
+			has_dump = has_dump ? has_dump : -1;
+			output_line ("/* Dump %s (informational) */", fl->name);
+			output_line ("/* cob_dump_file (\"%s %s\", %s%s); */",
+				fl->organization != COB_ORG_SORT ? "FD" : "SD",
+				fl->name, CB_PREFIX_FILE, fl->cname);
+			output_as_comment++;
+			if (fl->record->sister
+			 && fl->record->sister->sister == NULL) {	/* Only one record layout */
+				f = fl->record->sister->redefines;
+				fl->record->sister->redefines = NULL;	/* Temp remove of redefines */
+				output_display_fields (fl->record->sister, 0, 0);
+				fl->record->sister->redefines = f;
+			} else if (fl->record->file == NULL) {
+				fl->record->file = fl;
+				output_display_fields (fl->record, 0, 0);
+				fl->record->file = NULL;
+			} else {
+				output_display_fields (fl->record, 0, 0);
+			}
+			output_as_comment--;
+			output_newline ();
+		}
+	}
+
+	if (prog->working_storage) {
+		if (cb_flag_dump & COB_DUMP_WS) {
+			has_dump = 1;
+			output_line ("/* Dump WORKING-STORAGE */");
+			output_line ("cob_dump_output(\"WORKING-STORAGE\");");
+			output_display_fields (prog->working_storage, 0, 0);
+			output_newline ();
+		} else if (cb_wants_dump_comments) {
+			has_dump = has_dump ? has_dump : -1;
+			output_line ("/* Dump WORKING-STORAGE (informational) */");
+			output_line ("/* cob_dump_output(\"WORKING-STORAGE\"); */");
+			output_as_comment++;
+			output_display_fields (prog->working_storage, 0, 0);
+			output_as_comment--;
+			output_newline ();
+		}
+	}
+	if (prog->screen_storage) {
+		if (cb_flag_dump & COB_DUMP_SC) {
+			has_dump = 1;
+			output_line ("/* Dump SCREEN SECTION */");
+			output_line ("cob_dump_output(\"SCREEN\");");
+			output_display_fields (prog->screen_storage, 0, 0);
+			output_newline ();
+		} else if (cb_wants_dump_comments) {
+			has_dump = has_dump ? has_dump : -1;
+			output_line ("/* Dump SCREEN SECTION (informational) */");
+			output_line ("/* cob_dump_output(\"SCREEN\"); */");
+			output_as_comment++;
+			output_display_fields (prog->screen_storage, 0, 0);
+			output_as_comment--;
+			output_newline ();
+		}
+	}
+	if (prog->report_storage) {
+		if (cb_flag_dump & COB_DUMP_RD) {
+			has_dump = 1;
+			output_line ("/* Dump REPORT SECTION */");
+			output_line ("cob_dump_output(\"REPORT\");");
+			output_display_fields (prog->report_storage, 0, 0);
+			output_newline ();
+		} else if (cb_wants_dump_comments) {
+			has_dump = has_dump ? has_dump : -1;
+			output_line ("/* Dump REPORT SECTION (informational) */");
+			output_line ("/* cob_dump_output(\"REPORT\"); */");
+			output_as_comment++;
+			output_display_fields (prog->report_storage, 0, 0);
+			output_as_comment--;
+			output_newline ();
+		}
+	}
+	if (prog->local_storage) {
+		if (cb_flag_dump & COB_DUMP_LO) {
+			has_dump = 1;
+			output_line ("/* Dump LOCAL-STORAGE SECTION */");
+			output_line ("cob_dump_output(\"LOCAL-STORAGE\");");
+			output_display_fields (prog->local_storage, 0, 0);
+			output_newline ();
+		} else if (cb_wants_dump_comments) {
+			has_dump = has_dump ? has_dump : -1;
+			output_line ("/* Dump LOCAL-STORAGE SECTION (informational) */");
+			output_line ("/* cob_dump_output(\"LOCAL-STORAGE\"); */");
+			output_as_comment++;
+			output_display_fields (prog->local_storage, 0, 0);
+			output_as_comment--;
+			output_newline ();
+		}
+	}
+	if (prog->linkage_storage) {
+		if (cb_flag_dump & COB_DUMP_LS) {
+			has_dump = 1;
+			struct cb_field	*f;
+			output_newline ();
+			output_line ("/* Dump LINKAGE SECTION */");
+			if (prog->num_proc_params) {
+				/* restore data pointer to last known entry */
+				for (l = parameter_list; l; l = CB_CHAIN (l)) {
+					f = cb_code_field (CB_VALUE (l));
+					output_prefix ();
+					output_base (f, 0);
+#if 0 /* CHECKME: works in 3.1 but not in trunk */
+					output (" = last_");
+					output_base (f, 0);
+					output (";");
+#else
+					output (" = last_%s%d;",
+						CB_PREFIX_BASE, f->id);
+#endif
+					output_newline ();
+				}
+			}
+			output_line ("cob_dump_output(\"LINKAGE\");");
+			output_display_fields (prog->linkage_storage, 0, 0);
+			output_newline ();
+		} else if (cb_wants_dump_comments) {
+			has_dump = has_dump ? has_dump : -1;
+			output_line ("/* Dump LINKAGE SECTION (informational) */");
+			output_line ("/* cob_dump_output(\"LINKAGE\"); */");
+			output_as_comment++;
+			output_display_fields (prog->linkage_storage, 0, 0);
+			output_as_comment--;
+			output_newline ();
+		}
+	}
+	if (nested_dump) {
+		output_block_close ();
+	}
+	if (has_dump) {
+		if (has_dump == 1) {
+			output_line ("cob_dump_output(\"END OF DUMP - %s\");",
+				prog->program_name);
+		} else {
+			output_line ("/* cob_dump_output(\"END OF DUMP - %s\"); */",
+				prog->program_name);
+		}
+	}
+}
+
+static void
 output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 {
 	cb_tree			l;
@@ -11086,7 +11260,7 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	int			i, j;
 	cob_u32_t		inc;
 	unsigned int		name_hash;
-	int			parmnum, nested_dump;
+	int			parmnum;
 	int			seen;
 	int			anyseen;
 
@@ -12076,168 +12250,7 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 
 	output_newline ();
 	output_line ("P_dump:");
-	if (num_cob_fields == 0
-	 && cb_flag_dump != 0) {
-		output_line ("{ cob_field f0;");
-		output_indent_level += 2;
-		output_line ("memset(&f0,0,sizeof(f0));");
-		nested_dump = 1;
-	} else {
-		nested_dump = 0;
-	}
-
-	for (l = prog->file_list; l; l = CB_CHAIN (l)) {
-		char			fdname[48];
-		fl = CB_FILE(CB_VALUE (l));
-		if (!fl->record) continue;
-		if (  (fl->organization != COB_ORG_SORT
-	 	    && (cb_flag_dump & COB_DUMP_FD))
-		 ||   (fl->organization == COB_ORG_SORT
-	 	    && (cb_flag_dump & COB_DUMP_SD))) {
-			sprintf (fdname, "%s %s",
-				fl->organization != COB_ORG_SORT ? "FD" : "SD",
-				fl->name);
-			output_line ("/* Dump %s */", fdname);
-			output_line ("cob_dump_file (\"%s\", %s%s);",
-							fdname, CB_PREFIX_FILE, fl->cname);
-			if (fl->record->sister
-			 && fl->record->sister->sister == NULL) {	/* Only one record layout */
-				f = fl->record->sister->redefines;
-				fl->record->sister->redefines = NULL;	/* Temp remove of redefines */
-				output_display_fields (fl->record->sister, 0, 0);
-				fl->record->sister->redefines = f;
-			} else if (fl->record->file == NULL) {
-				fl->record->file = fl;
-				output_display_fields (fl->record, 0, 0);
-				fl->record->file = NULL;
-			} else {
-				output_display_fields (fl->record, 0, 0);
-			}
-			output_newline ();
-		} else if (cb_wants_dump_comments) {
-			sprintf (fdname, "%s %s",
-				fl->organization != COB_ORG_SORT ? "FD" : "SD",
-				fl->name);
-			output_line ("/* Dump %s (informational) */", fdname);
-			output_line ("/* cob_dump_file (\"%s\", %s%s); */",
-							fdname, CB_PREFIX_FILE, fl->cname);
-			output_as_comment++;
-			if (fl->record->sister
-			 && fl->record->sister->sister == NULL) {	/* Only one record layout */
-				f = fl->record->sister->redefines;
-				fl->record->sister->redefines = NULL;	/* Temp remove of redefines */
-				output_display_fields (fl->record->sister, 0, 0);
-				fl->record->sister->redefines = f;
-			} else if (fl->record->file == NULL) {
-				fl->record->file = fl;
-				output_display_fields (fl->record, 0, 0);
-				fl->record->file = NULL;
-			} else {
-				output_display_fields (fl->record, 0, 0);
-			}
-			output_as_comment--;
-			output_newline ();
-		}
-	}
-
-	if (prog->working_storage) {
-		if (cb_flag_dump & COB_DUMP_WS) {
-			output_line ("/* Dump WORKING-STORAGE */");
-			output_line ("cob_dump_output(\"%s\");", "WORKING-STORAGE");
-			output_display_fields (prog->working_storage, 0, 0);
-			output_newline ();
-		} else if (cb_wants_dump_comments) {
-			output_line ("/* Dump WORKING-STORAGE (informational) */");
-			output_line ("/* cob_dump_output(\"%s\"); */", "WORKING-STORAGE");
-			output_as_comment++;
-			output_display_fields (prog->working_storage, 0, 0);
-			output_as_comment--;
-			output_newline ();
-		}
-	}
-	if (prog->screen_storage) {
-		if (cb_flag_dump & COB_DUMP_SC) {
-			output_line ("/* Dump SCREEN SECTION */");
-			output_line ("cob_dump_output(\"%s\");", "SCREEN");
-			output_display_fields (prog->screen_storage, 0, 0);
-			output_newline ();
-		} else if (cb_wants_dump_comments) {
-			output_line ("/* Dump SCREEN SECTION (informational) */");
-			output_line ("/* cob_dump_output(\"%s\"); */", "SCREEN");
-			output_as_comment++;
-			output_display_fields (prog->screen_storage, 0, 0);
-			output_as_comment--;
-			output_newline ();
-		}
-	}
-	if (prog->report_storage) {
-		if (cb_flag_dump & COB_DUMP_RD) {
-			output_line ("/* Dump REPORT SECTION */");
-			output_line ("cob_dump_output(\"%s\");", "REPORT");
-			output_display_fields (prog->report_storage, 0, 0);
-			output_newline ();
-		} else if (cb_wants_dump_comments) {
-			output_line ("/* Dump REPORT SECTION (informational) */");
-			output_line ("/* cob_dump_output(\"%s\"); */", "REPORT");
-			output_as_comment++;
-			output_display_fields (prog->report_storage, 0, 0);
-			output_as_comment--;
-			output_newline ();
-		}
-	}
-	if (prog->local_storage) {
-		if (cb_flag_dump & COB_DUMP_LO) {
-			output_line ("/* Dump LOCAL-STORAGE SECTION */");
-			output_line ("cob_dump_output(\"%s\");", "LOCAL-STORAGE");
-			output_display_fields (prog->local_storage, 0, 0);
-			output_newline ();
-		} else if (cb_wants_dump_comments) {
-			output_line ("/* Dump LOCAL-STORAGE SECTION (informational) */");
-			output_line ("/* cob_dump_output(\"%s\"); */", "LOCAL-STORAGE");
-			output_as_comment++;
-			output_display_fields (prog->local_storage, 0, 0);
-			output_as_comment--;
-			output_newline ();
-		}
-	}
-	if (prog->linkage_storage) {
-		if (cb_flag_dump & COB_DUMP_LS) {
-			struct cb_field	*f;
-			output_newline ();
-			output_line ("/* Dump LINKAGE SECTION */");
-			if (prog->num_proc_params) {
-				/* restore data pointer to last known entry */
-				for (l = parameter_list; l; l = CB_CHAIN (l)) {
-					f = cb_code_field (CB_VALUE (l));
-					output_prefix ();
-					output_base (f, 0);
-#if 0 /* CHECKME: works in 3.1 but not in trunk */
-					output (" = last_");
-					output_base (f, 0);
-					output (";");
-#else
-					output (" = last_%s%d;",
-						CB_PREFIX_BASE, f->id);
-#endif
-					output_newline ();
-				}
-			}
-			output_line ("cob_dump_output(\"%s\");", "LINKAGE");
-			output_display_fields (prog->linkage_storage, 0, 0);
-			output_newline ();
-		} else if (cb_wants_dump_comments) {
-			output_line ("/* Dump LINKAGE SECTION (informational) */");
-			output_line ("/* cob_dump_output(\"%s\"); */", "LINKAGE");
-			output_as_comment++;
-			output_display_fields (prog->linkage_storage, 0, 0);
-			output_as_comment--;
-			output_newline ();
-		}
-	}
-	if (nested_dump) {
-		output_indent_level -= 2;
-		output_line ("}");
-	}
+	output_dump_code (prog, parameter_list);
 	if (prog->prog_type == CB_FUNCTION_TYPE) {
 		output_line ("  return NULL;");
 	} else {
