@@ -262,5 +262,4 @@ if not [%stay_open%] == [] (
 
 :: Compiler and package version output
 :cobcver
-echo hier.
 cobc --version && echo. && echo %COB_INFO1% && echo %COB_INFO2%
