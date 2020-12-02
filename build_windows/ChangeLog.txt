@@ -11,6 +11,7 @@
 	  logic, derived from set_env* which now call this
 	* gcvars.cmd: extended with option to double-click and "drop to execute" and
 	  compressed info output
+	* general: look for variable "CI" in .cmd to not wait for input in that env
 	* README.txt, makedist.cmd: adjusted for new script/template names
 	* makedist.cmd: now working with json-c and vcexport included libraries
 

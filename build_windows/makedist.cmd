@@ -56,8 +56,8 @@ if exist "%cob_build_path%config.h" (
 echo Creating binary distribution for %PACKAGE_DIRECTORY%
 set DIST_PACKAGE=%PACKAGE_DIRECTORY%_vs_bin
 
-
-echo %cmdcmdline% | find /i "%~0" >nul
+rem CI is defined in Appveyor, Travis and other CI-environments
+echo %cmdcmdline% | find /i "%~0%CI%" >nul
 if %errorlevel% equ 0 (
    set "stay_open=x"
 ) else (
@@ -231,12 +231,12 @@ echo Abort^^!
 popd
 
 call :pause_if_interactive
-exit /b %cb_errorlevel%
+endlocal & exit /b %cb_errorlevel%
 
 
 :: pause if not started directly
 :pause_if_interactive
-if [%stay_open%] == [] (
+if [%stay_open%%CI%] == [] (
    echo.
    pause
 )
@@ -360,6 +360,7 @@ goto :eof
 
 
 :compile_extras
+setlocal
 call :set_platform_and_ext %1%
 echo Using created GnuCOBOL distribution -%platform%- to compile extras...
 pushd "%cob_dist_path%bin_%platform_ext%"
@@ -370,7 +371,7 @@ if not [%VCPKG_EXPORT_DIR%]==[] (
    set "extra_include=%VCPKG_EXPORT_DIR%\installed\%2\include"
 ) else (
    set "extra_include=."
- )
+)
 cobc -m -Wall -O2 -I "%extra_include%" ..\extras\CBL_OC_DUMP.cob
 if %errorlevel% neq 0 (
    echo.
@@ -381,6 +382,7 @@ if %errorlevel% neq 0 (
    set cb_errorlevel=!errorlevel!
 )
 popd
+endlocal & set "cb_errorlevel=%cb_errorlevel%"
 goto :eof
 
 

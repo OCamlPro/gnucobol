@@ -209,7 +209,7 @@ if not [%source_config%] == [] (
   set "COB_LIB_PATHS=/LIBPATH:"%COB_DEV_DIR%""
 ) else (
   set "COB_CFLAGS=/I "%COB_MAIN_DIR%include""
-  set "COB_LIB_PATHS=/LIBPATH:"%COB_MAIN_DIR%lib%source_build%""
+  set "COB_LIB_PATHS=/LIBPATH:"%COB_MAIN_DIR%lib_%arch%""
 )
 
 :: save current PATH and add the bin path of GnuCOBOL to PATH for further references
@@ -219,7 +219,7 @@ if "%COB_OLD_PATH%" == "" (
 if not [%source_config%] == [] (
   call :prefix_path "%COB_DEV_DIR%\%source_config%"
 ) else (
-  call :prefix_path "%COB_MAIN_DIR%bin%source_build%"
+  call :prefix_path "%COB_MAIN_DIR%bin_%arch%"
 )
 
 set "COB_DEV_DIR="
@@ -228,7 +228,9 @@ set "COB_DEV_DIR="
 where cobcrun.exe 1>nul 2>nul
 if not "%errorlevel%" == "0" (
    echo cobcrun not found
-   pause
+   if not [%stay_open%] == [] (
+      pause
+   )
    goto :eof
 )
 :: some info to output
@@ -240,7 +242,7 @@ set /p info2a=<"%TEMP%\gcvars.tmp"
 (cobcrun -v --version | findstr MPIR)>"%TEMP%\gcvars.tmp"
 set /p info2b=<"%TEMP%\gcvars.tmp"
 del "%TEMP%\gcvars.tmp"
-endlocal & set "COB_INFO1=%info1%" & set "COB_INFO2=%info2a%%info2b%"
+endlocal & set "COB_INFO1=%info1%"& set "COB_INFO2=%info2a%%info2b%"
 
 :: start executable as requested
 :call_if_needed
@@ -260,5 +262,4 @@ if not [%stay_open%] == [] (
 
 :: Compiler and package version output
 :cobcver
-echo.
 cobc --version && echo. && echo %COB_INFO1% && echo %COB_INFO2%
