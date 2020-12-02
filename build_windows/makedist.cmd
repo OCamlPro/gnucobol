@@ -56,6 +56,14 @@ if exist "%cob_build_path%config.h" (
 echo Creating binary distribution for %PACKAGE_DIRECTORY%
 set DIST_PACKAGE=%PACKAGE_DIRECTORY%_vs_bin
 
+
+echo %cmdcmdline% | find /i "%~0" >nul
+if %errorlevel% equ 0 (
+   set "stay_open=x"
+) else (
+   set "stay_open="
+)
+
 :: check for existing binaries
 if /i "%1%"=="DEBUG" (
    set config=Debug
@@ -216,6 +224,7 @@ echo %cob_build_path%%DIST_PACKAGE%.7z ready for distribution.
 goto :end
 
 :abort
+rem  the following two special characters escape...
 echo Abort^^!
 
 :end
@@ -227,8 +236,7 @@ exit /b %cb_errorlevel%
 
 :: pause if not started directly
 :pause_if_interactive
-echo %cmdcmdline% | find /i "%~0" >nul
-if %errorlevel% equ 0 (
+if [%stay_open%] == [] (
    echo.
    pause
 )
@@ -238,10 +246,11 @@ goto :eof
 :copy_exes_and_libs
 call :set_platform_and_ext %1%
 
-copy "%cob_build_path%set_env_vs_dist%platform_ext%.bat"	set_env_vs%platform_ext%.bat	1>nul
+copy "%cob_build_path%set_env_vs_%platform_ext%.dist.tmpl.cmd"	set_env_vs_%platform_ext%.cmd	1>nul
+copy "%cob_build_path%gcvsvars.cmd"	.	1>nul
 
-set copy_to_bin=bin%platform_ext%
-set copy_to_lib=lib%platform_ext%
+set copy_to_bin=bin_%platform_ext%
+set copy_to_lib=lib_%platform_ext%
 
 set "copy_from=%cob_build_path%%platform%\%config%"
 
@@ -276,6 +285,13 @@ if exist "%copy_from%\mpir.dll" (
    echo No math library found.
    set cb_errorlevel=1
    goto :eof
+)
+
+if exist "%cob_header_path%\gmp.h" (
+   copy "%cob_header_path%gmp.h"		include\	1>nul
+)
+if exist "%cob_header_path%\mpir.h" (
+   copy "%cob_header_path%mpir.h"		include\	1>nul
 )
 
 :: Copy the ISAM-handler library, guessing the name if necessary.
@@ -320,20 +336,22 @@ if exist "%copy_from%\libvbisam.dll" (
    echo No ISAM handler found.
 )
 
-:: Copy the intl library.
-call :copy_lib_if_exists "libintl.dll" %copy_to_bin% "intl"
+:: Copy the intl libraries.
+call :copy_lib_if_exists "intl"    %copy_to_bin% "libintl.dll"
+call :copy_lib_if_exists "intl"    %copy_to_bin% "libiconv.dll"
 
 :: Copy the cJSON library.
-call :copy_lib_if_exists "cjson.dll" %copy_to_bin% "cJSON"
+call :copy_lib_if_exists "cJSON"   %copy_to_bin% "cjson.dll"
+call :copy_lib_if_exists "cJSON"   %copy_to_bin% "json-c.dll"
 
 :: Copy the curses library.
-call :copy_lib_if_exists "pdcurses.dll" %copy_to_bin% "curses"
+call :copy_lib_if_exists "curses"  %copy_to_bin% "pdcurses*.dll"
 
 :: Copy the XML libary (and its dependencies)
-call :copy_lib_if_exists "libxml2.dll" %copy_to_bin% "XML"
-call :copy_lib_if_exists "zlib1.dll" %copy_to_bin% "zlib"
-call :copy_lib_if_exists "libcharset.dll" %copy_to_bin% "charset"
-call :copy_lib_if_exists "lzma.dll" %copy_to_bin% "lzma"
+call :copy_lib_if_exists "XML"     %copy_to_bin% "libxml2.dll"
+call :copy_lib_if_exists "zlib"    %copy_to_bin% "zlib*.dll"
+call :copy_lib_if_exists "charset" %copy_to_bin% "libcharset.dll"
+call :copy_lib_if_exists "lzma"    %copy_to_bin% "lzma*.dll"
 
 :: Copy the iconv library.
 call :copy_lib_if_exists "libiconv.dll" %copy_to_bin% "iconv"
@@ -344,8 +362,8 @@ goto :eof
 :compile_extras
 call :set_platform_and_ext %1%
 echo Using created GnuCOBOL distribution -%platform%- to compile extras...
-pushd "%cob_dist_path%bin%platform_ext%"
-call ..\set_env_vs%platform_ext%.bat
+pushd "%cob_dist_path%bin_%platform_ext%"
+call ..\set_env_vs_%platform_ext%.cmd
 if not [%VCPKG_EXPORT_DIR%]==[] (
    echo using vcpgk binaries...
    set "PATH=%VCPKG_EXPORT_DIR%\installed\%2\bin;%PATH%"
@@ -393,18 +411,19 @@ goto :eof
 :set_platform_and_ext
 if %1%=="Win32" (
    set platform=Win32
-   set platform_ext=
+   set platform_ext=x86
 ) else (
    set platform=x64
-   set platform_ext=_x64
+   set platform_ext=x64
 )
 goto :eof
 
 :copy_lib_if_exists
-if exist "%copy_from%\%~1%" (
-   copy "%copy_from%\%~1"	"%2%\"	1>nul
+if exist "%copy_from%\%~3%" (
+   echo copying %~3..
+   copy "%copy_from%\%~3"	"%2%\"	1>nul
 ) else (
-   echo %~3 library not found.
+   echo no files for %~1 found.
 )
 echo off
 goto :eof

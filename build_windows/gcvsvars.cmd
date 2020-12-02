@@ -1,5 +1,5 @@
-:: Copyright (C) 2014-2019 Free Software Foundation, Inc.
-:: Written by Simon Sobisch
+:: Copyright (C) 2014-2020 Free Software Foundation, Inc.
+:: Written by Simon Sobisch, Edward Hart
 ::
 :: This file is part of GnuCOBOL.
 ::
@@ -25,11 +25,7 @@
 
 @echo off
 
-:: the architecture to set / check
-set arch=x86
-set arch_full=x86
-
-:: restore old PATH to not expand it endlessly
+:: restore old PATH if called multiple times to not expand it endlessly
 if not "%COB_OLD_PATH%" == "" (
    set "PATH=%COB_OLD_PATH%"
    set "COB_OLD_PATH=%PATH%"
@@ -49,7 +45,7 @@ if "%errorlevel%" == "0" (
    echo cl.exe already in PATH
    echo no further initialization is done for the C compiler
    echo.
-   goto :gc
+   goto :setup_gc
 )
 
 :vsvars
@@ -57,56 +53,65 @@ if "%errorlevel%" == "0" (
 :: Check for valid MSC Environment and let it do it's work.
 :: If not found try Windows SDKs in standard installation folders
 
-:: Visual Studio 2017: no VS150COMNTOOLS globally or vsvars any more...
-if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat" (
-   call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat" -arch=%arch_full%
-   goto :gc
+:: Visual Studio 2017 and newer: no VS150COMNTOOLS globally or vsvars any more...
+:: check if available, otherwise check on
+set "found="
+for %%v in (2019 2017) do (
+   if not "%found%" == ""  goto :eof
+   call :vsvars_current %%v
 )
-if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Professional\Common7\Tools\VsDevCmd.bat" (
-   call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Professional\Common7\Tools\VsDevCmd.bat" -arch=%arch_full%
-   goto :gc
-)
-if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat" (
-   call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=%arch_full%
-   goto :gc
-)
-if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat" (
-   call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat" -arch=%arch_full%
-   goto :gc
+if not "%found%" == "" (
+   call "%found%" -arch=%arch_full%
+   goto :setup_gc
 )
 
-:: Visual Studio 2015
-if exist "%VS140COMNTOOLS%vsvars32.bat" (
-   call "%VS140COMNTOOLS%vsvars32.bat"
-   goto :gc
+:: Visual Studio 2015, 2013, 2012, 2010, 2008, 2005
+for %%v in ("%VS140COMNTOOLS%" "%VS120COMNTOOLS%" "%VS110COMNTOOLS%" "%VS100COMNTOOLS%" "%VS90COMNTOOLS%" "%VS80COMNTOOLS%") do (
+   if not "%found%" == ""  goto :eof
+   call :vsvars_old "%%v"
 )
-:: Visual Studio 2013
-if exist "%VS120COMNTOOLS%vsvars32.bat" (
-   call "%VS120COMNTOOLS%vsvars32.bat"
-   goto :gc
-)
-:: Visual Studio 2012
-if exist "%VS110COMNTOOLS%vsvars32.bat" (
-   call "%VS110COMNTOOLS%vsvars32.bat"
-   goto :gc
-)
-:: Visual Studio 2010
-if exist "%VS100COMNTOOLS%vsvars32.bat" (
-   call "%VS100COMNTOOLS%vsvars32.bat"
-   goto :gc
-)
-:: Visual Studio 2008
-if exist "%VS90COMNTOOLS%vsvars32.bat" (
-   call "%VS90COMNTOOLS%vsvars32.bat"
-   goto :gc
-)
-:: Visual Studio 2005
-if exist "%VS80COMNTOOLS%vsvars32.bat" (
-   call "%VS80COMNTOOLS%vsvars32.bat"
-   goto :gc
+if not "%found%" == "" (
+   call "%found%vsvars32.bat"
+   goto :setup_gc
 )
 
+goto :sdk_setup
+
+:vsvars_current
+for %%v in (BuildTools Community Professional Enterprise) do (
+  if not "%found%" == ""  goto :eof
+  if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\%1\%%v\Common7\Tools\VsDevCmd.bat" (
+     set "found=%ProgramFiles(x86)%\Microsoft Visual Studio\%1\%%v\Common7\Tools\VsDevCmd.bat"
+  )
+)
+goto :eof
+
+:vsvars_old
+set param=%1
+set param=%param:"=%
+if exist "%param%vsvars32.bat"  set "found=%1"
+if exist "%param%VCVarsQueryRegistry.bat" (
+   call "%param%VCVarsQueryRegistry.bat"
+)
+set param=""
+if %errorlevel% equ 0 (
+   if exist "%VCINSTALLDIR%vcvarsall.bat" (
+       call "%VCINSTALLDIR%vcvarsall.bat" %arch%
+       goto :setup_gc
+   )
+)
+goto :eof
+
+:prefix_path
+set param=%1
+set param=%param:"=%
+set "PATH=%param%;%PATH%"
+set param=""
+goto :eof
+
+:sdk_setup
 echo Warning: Not possible to set %arch_full% environment for Microsoft Visual Studio!
+
 :: Windows SDK 10 (Windows 10 / VS 2015 compiler) - untested
 if exist "%ProgramFiles(x86)%\Microsoft SDKs\Windows\v10\Bin\SetEnv.Cmd" (
    call "%ProgramFiles(x86)%\Microsoft SDKs\Windows\v10\Bin\SetEnv.Cmd" /%arch% /release
@@ -168,24 +173,27 @@ echo Warning: Not possible to set %arch_full% environment for Microsoft Windows 
 :gcc
 color 07
 
-:gc
+:setup_gc
 
 :: check if cl.exe is already in path
+echo cl.exe now in PATH:
 where cl.exe 2>nul
 if "%errorlevel%" == "0" (
-   echo cl.exe now in PATH:
    cl.exe 1>nul
 ) else (
    echo ERROR: cl.exe not found!
 )
 
 echo.
-echo.
 :: Now the stuff for GnuCOBOL
 echo Setting environment for GnuCOBOL.
 
 :: Get the main dir from the batch's position
-set "COB_MAIN_DIR=%~dp0"
+if not [%source_config%] == [] (
+  set "COB_MAIN_DIR=%~dp0..\"
+) else (
+  set "COB_MAIN_DIR=%~dp0"
+)
 
 :: Set the necessary folders for cobc
 set "COB_CONFIG_DIR=%COB_MAIN_DIR%config"
@@ -193,18 +201,64 @@ set "COB_COPY_DIR=%COB_MAIN_DIR%copy"
 
 set "LOCALEDIR=%COB_MAIN_DIR%locale"
 
+set "COB_DEV_DIR=%~dp0%source_build%"
+
 :: Set the necessary options for MSC compiler
-set "COB_CFLAGS=/I "%COB_MAIN_DIR%include""
-set "COB_LIB_PATHS=/LIBPATH:"%COB_MAIN_DIR%lib""
-::if "%COB_LIBS%"       EQU "" (
-::   if exist "%COB_MAIN_DIR%lib\mpir.lib"	set COB_LIBS=libcob.lib mpir.lib
-::   if exist "%COB_MAIN_DIR%lib\libgmp.lib" 	set COB_LIBS=libcob.lib libgmp.lib
-::)
+if not [%source_config%] == [] (
+  set "COB_CFLAGS=/I "%COB_MAIN_DIR%" -I "%~dp0""
+  set "COB_LIB_PATHS=/LIBPATH:"%COB_DEV_DIR%""
+) else (
+  set "COB_CFLAGS=/I "%COB_MAIN_DIR%include""
+  set "COB_LIB_PATHS=/LIBPATH:"%COB_MAIN_DIR%lib%source_build%""
+)
 
 :: save current PATH and add the bin path of GnuCOBOL to PATH for further references
 if "%COB_OLD_PATH%" == "" (
-   set "COB_OLD_PATH=%PATH%"
+  set "COB_OLD_PATH=%PATH%"
 )
-set "PATH=%COB_MAIN_DIR%bin;%PATH%"
+if not [%source_config%] == [] (
+  call :prefix_path "%COB_DEV_DIR%\%source_config%"
+) else (
+  call :prefix_path "%COB_MAIN_DIR%bin%source_build%"
+)
 
-echo finished.
+set "COB_DEV_DIR="
+
+:: check if we find cobcrun, otherwise abort with message
+where cobcrun.exe 1>nul 2>nul
+if not "%errorlevel%" == "0" (
+   echo cobcrun not found
+   pause
+   goto :eof
+)
+:: some info to output
+setlocal
+(cobcrun -v --version | findstr /b /c:"GnuCOBOL")>"%TEMP%\gcvars.tmp"
+set /p info1=<"%TEMP%\gcvars.tmp"
+(cobcrun -v --version | findstr GMP)>"%TEMP%\gcvars.tmp"
+set /p info2a=<"%TEMP%\gcvars.tmp"
+(cobcrun -v --version | findstr MPIR)>"%TEMP%\gcvars.tmp"
+set /p info2b=<"%TEMP%\gcvars.tmp"
+del "%TEMP%\gcvars.tmp"
+endlocal & set "COB_INFO1=%info1%" & set "COB_INFO2=%info2a%%info2b%"
+
+:: start executable as requested
+:call_if_needed
+if not [%1] == [] (
+  echo environment is prepared:
+  call :cobcver
+  echo now starting the requested %1
+  call %*
+  goto :eof
+)
+
+:: new cmd to stay open if not started directly from cmd.exe window 
+if not [%stay_open%] == [] (
+  cmd /k "cobc --version && echo. && echo %COB_INFO1% && echo %COB_INFO2%"
+  goto :eof
+)
+
+:: Compiler and package version output
+:cobcver
+echo.
+cobc --version && echo. && echo %COB_INFO1% && echo %COB_INFO2%

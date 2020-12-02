@@ -48,8 +48,8 @@ How to create the dist package:
 How to use the dist package:
 
 * unzip wherever you want
-* call "set_env_vs.bat" for use with Visual Studio and Win32 
-* call "set_env_vs64.bat" for use with Visual Studio and x64
+* call "set_env_vs32.cmd" for use with Visual Studio and Win32 
+* call "set_env_vs64.cmd" for use with Visual Studio and x64
 * use cobc/cobcrun
 
 How to test the native builds:
