@@ -200,7 +200,8 @@ goto :eof
 :end
 
 :: pause if not started directly
-echo %cmdcmdline% | find /i "%~0" >nul
+rem CI is defined in Appveyor, Travis and other CI-environments
+echo %cmdcmdline% | find /i "%~0%CI%" >nul
 if %errorlevel% equ 0 (
    echo.
    pause

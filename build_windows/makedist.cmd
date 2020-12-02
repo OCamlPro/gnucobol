@@ -56,8 +56,8 @@ if exist "%cob_build_path%config.h" (
 echo Creating binary distribution for %PACKAGE_DIRECTORY%
 set DIST_PACKAGE=%PACKAGE_DIRECTORY%_vs_bin
 
-
-echo %cmdcmdline% | find /i "%~0" >nul
+rem CI is defined in Appveyor, Travis and other CI-environments
+echo %cmdcmdline% | find /i "%~0%CI%" >nul
 if %errorlevel% equ 0 (
    set "stay_open=x"
 ) else (

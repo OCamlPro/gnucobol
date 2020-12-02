@@ -11,6 +11,7 @@
 	  logic, derived from set_env* which now call this
 	* gcvars.cmd: extended with option to double-click and "drop to execute" and
 	  compressed info output
+	* general: look for variable "CI" in .cmd to not wait for input in that env
 	* README.txt, makedist.cmd: adjusted for new script/template names
 	* makedist.cmd: now working with json-c and vcexport included libraries
 
@@ -268,7 +269,7 @@
 
 	* update for subfolder vc10
 
-2014-07-07  Philipp Bï¿½hme <phi.boehme@googlemail.com>
+2014-07-07  Philipp Böhme <phi.boehme@googlemail.com>
 
 	* minor bugfix (tpyos) for subfolder vc12
 
@@ -279,7 +280,7 @@
 	* updated all project files
 	* added subfolder vc11
 
-2014-06-20  Philipp Bï¿½hme <phi.boehme@googlemail.com>
+2014-06-20  Philipp Böhme <phi.boehme@googlemail.com>
 
 	* added project files - subfolders: vc7, vc8, vc9, vc10, vc12 
 	  (original project files and ressource files version_cobc.rc,

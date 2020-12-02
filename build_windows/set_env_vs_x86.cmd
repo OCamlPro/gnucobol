@@ -34,7 +34,8 @@ set "source_build=Win32"
 set "source_config=Debug"
 
 :: new cmd to stay open if not started directly from cmd.exe window 
-echo %cmdcmdline% | find /i "%~0" >nul
+rem CI is defined in Appveyor, Travis and other CI-environments
+echo %cmdcmdline% | find /i "%~0%CI%" >nul
 if %errorlevel% equ 0 (
   set "stay_open=x"
 ) else (
