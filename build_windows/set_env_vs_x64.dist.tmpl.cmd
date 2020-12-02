@@ -33,12 +33,11 @@ set "arch_full=amd64"
 set "source_build=x64"
 set "source_config="
 
-:: new cmd to stay open if not started directly from cmd.exe window rem CI is defined in Appveyor, Travis and other CI-environments
+:: new cmd to stay open if not started directly from cmd.exe window
+:: Note: CI is defined in Appveyor, Travis and other CI-environments
 echo %cmdcmdline% | find /i "%~0%CI%" >nul
 if %errorlevel% equ 0 (
   set "stay_open=x"
-) else (
-  set "stay_open="
 )
 
 call %~dp0gcvsvars.cmd %*

@@ -228,7 +228,9 @@ set "COB_DEV_DIR="
 where cobcrun.exe 1>nul 2>nul
 if not "%errorlevel%" == "0" (
    echo cobcrun not found
-   pause
+   if not [%stay_open%] == [] (
+      pause
+   )
    goto :eof
 )
 :: some info to output
@@ -240,7 +242,7 @@ set /p info2a=<"%TEMP%\gcvars.tmp"
 (cobcrun -v --version | findstr MPIR)>"%TEMP%\gcvars.tmp"
 set /p info2b=<"%TEMP%\gcvars.tmp"
 del "%TEMP%\gcvars.tmp"
-endlocal & set "COB_INFO1=%info1%" & set "COB_INFO2=%info2a%%info2b%"
+endlocal & set "COB_INFO1=%info1%"& set "COB_INFO2=%info2a%%info2b%"
 
 :: start executable as requested
 :call_if_needed
@@ -260,5 +262,5 @@ if not [%stay_open%] == [] (
 
 :: Compiler and package version output
 :cobcver
-echo.
+echo hier.
 cobc --version && echo. && echo %COB_INFO1% && echo %COB_INFO2%

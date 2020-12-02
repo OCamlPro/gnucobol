@@ -234,12 +234,12 @@ echo Abort^^!
 popd
 
 call :pause_if_interactive
-exit /b %cb_errorlevel%
+endlocal & exit /b %cb_errorlevel%
 
 
 :: pause if not started directly
 :pause_if_interactive
-if [%stay_open%] == [] (
+if [%stay_open%%CI%] == [] (
    echo.
    pause
 )
@@ -363,6 +363,7 @@ goto :eof
 
 
 :compile_extras
+setlocal
 call :set_platform_and_ext %1%
 echo Using created GnuCOBOL distribution -%platform%- to compile extras...
 pushd "%cob_dist_path%bin_%platform_ext%"
@@ -384,6 +385,7 @@ if %errorlevel% neq 0 (
    set cb_errorlevel=!errorlevel!
 )
 popd
+endlocal & set "cb_errorlevel=%cb_errorlevel%"
 goto :eof
 
 
