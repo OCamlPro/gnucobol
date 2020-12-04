@@ -2735,7 +2735,7 @@ cob_fd_file_open (cob_file *f, char *filename, const int mode, const int sharing
 	/* Note filename points to file_open_name */
 	/* cob_chk_file_mapping manipulates file_open_name directly */
 
-	if(!f->flag_file_map) {
+	if (!f->flag_file_map) {
 		cob_chk_file_mapping (f);
 		f->flag_file_map = 1;
 		cob_set_file_format(f, file_open_io_env, 1, NULL);		/* Set file format */
@@ -2822,7 +2822,6 @@ cob_fd_file_open (cob_file *f, char *filename, const int mode, const int sharing
 		break;
 	case ENOENT:
 		if (mode == COB_OPEN_EXTEND || mode == COB_OPEN_OUTPUT) {
-
 			return COB_STATUS_30_PERMANENT_ERROR;
 		}
 		if (f->flag_optional) {
@@ -2854,7 +2853,13 @@ cob_fd_file_open (cob_file *f, char *filename, const int mode, const int sharing
            f->file = (void*)fdopen(f->fd, "a");
 	} else {
        f->file = (void*)fdopen(f->fd, "w");
-	}                   
+	}
+	if (errno != 0) {
+		/* should never happen here... */
+		close (fd);
+		f->fd = -1;
+		return COB_STATUS_30_PERMANENT_ERROR;
+	}
 	if ((mode == COB_OPEN_OUTPUT || (mode == COB_OPEN_I_O && nonexistent))
 	&&  f->file_format == COB_FILE_IS_MF) {	/* Write MF file header */
 		if(f->record_min != f->record_max) {
@@ -2930,7 +2935,12 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename, const int mode, con
 	if (filename[0] == '>') {
 		if (mode != COB_OPEN_OUTPUT) 
 			return COB_STATUS_37_PERMISSION_DENIED;
-		fp = popen (filename+1, "w");
+		if (!file_setptr->cob_unix_lf) {
+			fmode = "w";
+		} else {
+			fmode = "wb";
+		}
+		fp = popen (filename + 1, fmode);
 		if (fp == NULL)
 			return COB_STATUS_30_PERMANENT_ERROR;
 		f->file = fp;
@@ -2948,7 +2958,12 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename, const int mode, con
 	if (filename[0] == '<') {
 		if (mode != COB_OPEN_INPUT) 
 			return COB_STATUS_37_PERMISSION_DENIED;
-		fp = popen (filename+1, "r");
+		if (!file_setptr->cob_unix_lf) {
+			fmode = "r";
+		} else {
+			fmode = "rb";
+		}
+		fp = popen (filename + 1, fmode);
 		if (fp == NULL)
 			return COB_STATUS_30_PERMANENT_ERROR;
 		f->file = fp;
@@ -3248,16 +3263,28 @@ cob_file_close (cob_file_api *a, cob_file *f, const int opt)
 				f->file_pid = 0;
 				return COB_STATUS_00_SUCCESS;
 			}
+#ifdef _MSC_VER /* explicit only stream or fd close with this compiler */
+			if (f->file != NULL) {
+				fclose ((FILE *)f->file);
+				f->file = NULL;
+				f->fd = -1;
+			}
+#endif
 		} else {
 			if (f->fd >= 0) {
 				close (f->fd);
 				f->fd = -1;
+#ifdef _MSC_VER
+				f->file = NULL;
+#endif
 			}
 		}
+#ifndef _MSC_VER /* explicit disallowed there, is that the same for other compilers? */
 		if (f->file != NULL) {
 			fclose ((FILE *)f->file);
 			f->file = NULL;
 		}
+#endif
 		if (opt == COB_CLOSE_NO_REWIND) {
 			f->open_mode = COB_OPEN_CLOSED;
 			return COB_STATUS_07_SUCCESS_NO_UNIT;

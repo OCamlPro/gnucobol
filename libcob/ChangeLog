@@ -1,17 +1,28 @@
 
+2020-12-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (cob_file_open): honor cob_unix_lf (binary mode, especially for WIN32)
+	* fileio.c (cob_file_close)[_MSC_VER]: fixed crash on close - at least for
+	  this compiler a file close also closes the attached file-stream
+
 2020-11-30  Ron Norman <rjn@inglenet.com>
+
 	* common.c: rewrote cob_check_version as it did not work on some platforms
 
 2020-11-26  Ron Norman <rjn@inglenet.com>
+
 	* termio.c: Catch more table entries as repeated
 
 2020-11-24  Ron Norman <rjn@inglenet.com>
+
 	* termio.c: Improve field dump routines to look for duplicated data
 
 2020-11-23  Ron Norman <rjn@inglenet.com>
+
 	* common.h, move.c: Add cob_init_table 
 	
 2020-11-22  Ron Norman <rjn@inglenet.com>
+
 	* common.c: set LIBC_FATAL_STDERR_ more hard coded 
 	* fbdb.c: fix error in use of wrong record area
 	* fextfh.c: use cob_cache_malloc instead of cob_strdup
