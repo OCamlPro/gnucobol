@@ -84,7 +84,9 @@ for %%v in (BuildTools Community Professional Enterprise) do (
   if not "%found%" == ""  goto :eof
   if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\%1\%%v\Common7\Tools\VsDevCmd.bat" (
      set "found=%ProgramFiles(x86)%\Microsoft Visual Studio\%1\%%v\Common7\Tools\VsDevCmd.bat"
-  )
+  ) else if exist "%ProgramFiles%\Microsoft Visual Studio\%1\%%v\Common7\Tools\VsDevCmd.bat" (
+     set "found=%ProgramFiles%\Microsoft Visual Studio\%1\%%v\Common7\Tools\VsDevCmd.bat"
+  ) 
 )
 goto :eof
 
@@ -99,24 +101,19 @@ if exist "%param%vsvars32.bat" (
 if exist "%param%VCVarsQueryRegistry.bat" (
    call "%param%VCVarsQueryRegistry.bat"
 )
-if %errorlevel% equ 0 (
-   if exist "%VCINSTALLDIR%vcvarsall.bat" (
-       set param=""
-       call "%VCINSTALLDIR%vcvarsall.bat" %arch%
-       goto :setup_gc
-   )
+if %errorlevel% equ 0 if exist "%VCINSTALLDIR%vcvarsall.bat" (
+   set param=""
+   call "%VCINSTALLDIR%vcvarsall.bat" %arch%
+   goto :setup_gc
 )
 set param=""
 goto :eof
 
 :sdk_entry
-if exist "%ProgramFiles%\Microsoft SDKs\Windows\%1\Bin\SetEnv.Cmd" (
-   set "found=%ProgramFiles%\Microsoft SDKs\Windows\%1\Bin\SetEnv.Cmd"
-   goto :eof
-)
 if exist "%ProgramFiles(x86)%\Microsoft SDKs\Windows\%1\Bin\SetEnv.Cmd" (
    set "found=%ProgramFiles(x86)%\Microsoft SDKs\Windows\%1\Bin\SetEnv.Cmd"
-   goto :eof
+) else if exist "%ProgramFiles%\Microsoft SDKs\Windows\%1\Bin\SetEnv.Cmd" (
+   set "found=%ProgramFiles%\Microsoft SDKs\Windows\%1\Bin\SetEnv.Cmd"
 )
 goto :eof
 
@@ -143,7 +140,7 @@ for %%v in (v10 v8.1 v8.0 v7.1 v7.0 v6.1) do (
 )
 if not "%found%" == "" (
    call "%found%" /%arch% /%CONFIGURATION%
-   goto :setup_gc
+   goto :gcc
 )
 
 color 0C
