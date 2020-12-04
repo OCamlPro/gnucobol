@@ -1,4 +1,9 @@
 
+2020-12-04   Ron Norman <rjn@inglenet.com>
+
+	* testsuite.src/run_misc.at: corrected for 32/64-bit by removing pointer
+				from dump in "Test dump feature (2)"
+
 2020-11-30  James K. Lowden  <jklowden@symas.com>
 
 	* testsuite.src/run_misc.at: correct for 32-bit in
