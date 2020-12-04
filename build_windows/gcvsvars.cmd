@@ -181,7 +181,7 @@ set "COB_DEV_DIR=%~dp0%source_build%"
 
 :: Set the necessary options for MSC compiler
 if not [%source_config%] == [] (
-  set "COB_CFLAGS=/I "%COB_MAIN_DIR%" -I "%~dp0""
+  set "COB_CFLAGS=/I "%COB_MAIN_DIR%." -I "%~dp0.""
   set "COB_LIB_PATHS=/LIBPATH:"%COB_DEV_DIR%""
 ) else (
   set "COB_CFLAGS=/I "%COB_MAIN_DIR%include""

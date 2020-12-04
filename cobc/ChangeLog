@@ -1,4 +1,9 @@
 
+2020-12-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (remove_trailing_slash) [_MSC_VER]: new function added to resolve
+	  MSVC's issues with trailing slashes
+
 2020-12-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c (output_display_fields): changed NULL-checked fields to

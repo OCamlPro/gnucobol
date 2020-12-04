@@ -1826,14 +1826,14 @@ cobc_deciph_optarg (const char *p, const int allow_quote)
 
 /* exit to OS before processing a COBOL/C source file */
 DECLNORET static void COB_A_NORETURN
-cobc_early_exit (int retcode)
+cobc_early_exit (int ret_code)
 {
 	if (fatal_startup_error) {
 		fatal_startup_error = 0;
 		cobc_err_exit (_("please check environment variables as noted above"));
 	}
 	cobc_free_mem ();
-	exit (retcode);
+	exit (ret_code);
 }
 
 DECLNORET static void COB_A_NORETURN
@@ -2394,6 +2394,10 @@ cobc_var_and_envvar_print (const char* name, const char* defined_val)
 
 }
 
+/* provides info about how cobc was built/configured, some details about
+   how the compiler/linker will be invoked, it should not call into any
+   other library than libcob and through libcob should only access "static"
+   values */
 static void
 cobc_print_info (void)
 {
@@ -2771,6 +2775,19 @@ set_compile_level_from_file_extension (const char *filename)
 	/* note: no setting of CB_LEVEL_EXECUTABLE as this should be explicit requested */
 	}
 }
+
+#ifdef	_MSC_VER
+/* MSC has issues with trailing slashes, which are auto-added in shell/cmd,
+   we're removing them here to provide the same behaviour */
+static void
+remove_trailing_slash (char *data)
+{
+	char *path_end = data + strlen (data) - 1;
+	if (*path_end == '/' || *path_end == '\\') {
+		*path_end = 0;
+	}
+}
+#endif
 
 /* process command line options */
 static int
@@ -3325,6 +3342,7 @@ process_command_line (const int argc, char **argv)
 				}
 			}
 #ifdef	_MSC_VER
+			remove_trailing_slash (cob_optarg);
 			COBC_ADD_STR (cobc_include, " /I \"", cob_optarg, "\"");
 #elif	defined (__WATCOMC__)
 			COBC_ADD_STR (cobc_include, " -i\"", cob_optarg, "\"");
@@ -3347,6 +3365,7 @@ process_command_line (const int argc, char **argv)
 				}
 			}
 #ifdef	_MSC_VER
+			remove_trailing_slash (cob_optarg);
 			COBC_ADD_STR (cobc_lib_paths, " /LIBPATH:\"", cob_optarg, "\"");
 #else
 			COBC_ADD_STR (cobc_lib_paths, " -L\"", cob_optarg, "\"");

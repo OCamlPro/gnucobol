@@ -4830,10 +4830,10 @@ output_initialize_literal (cb_tree x, struct cb_field *f,
 	}
 	i_counters[0] = 1;
 	if (CB_REFERENCE_P(x)) {
-		cb_tree		l;
+		cb_tree		r2;
 		struct cb_reference	*r = CB_REFERENCE (x);
-		for (l = r->check; l; l = CB_CHAIN (l)) {
-			output_stmt (CB_VALUE (l));
+		for (r2 = r->check; r2; r2 = CB_CHAIN (r2)) {
+			output_stmt (CB_VALUE (r2));
 		}
 	}
 	if (!chk_field_variable_size(f)
@@ -11193,22 +11193,22 @@ output_dump_code (struct cb_program *prog, cb_tree parameter_list)
 	if (prog->linkage_storage) {
 		if (cb_flag_dump & COB_DUMP_LS) {
 			has_dump = 1;
-			struct cb_field	*f;
+			struct cb_field	*f2;
 			output_newline ();
 			output_line ("/* Dump LINKAGE SECTION */");
 			if (prog->num_proc_params) {
 				/* restore data pointer to last known entry */
 				for (l = parameter_list; l; l = CB_CHAIN (l)) {
-					f = cb_code_field (CB_VALUE (l));
+					f2 = cb_code_field (CB_VALUE (l));
 					output_prefix ();
-					output_base (f, 0);
+					output_base (f2, 0);
 #if 0 /* CHECKME: works in 3.1 but not in trunk */
 					output (" = last_");
-					output_base (f, 0);
+					output_base (f2, 0);
 					output (";");
 #else
 					output (" = last_%s%d;",
-						CB_PREFIX_BASE, f->id);
+						CB_PREFIX_BASE, f2->id);
 #endif
 					output_newline ();
 				}
@@ -11766,13 +11766,13 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 		 && prog->prog_type != COB_MODULE_TYPE_FUNCTION) {
 			int	basic_param = 1;
 			for (l = parameter_list; l && basic_param; l = CB_CHAIN (l)) {
-				struct cb_field *f;
+				struct cb_field *f2;
 				int	is_value_parm, is_any_numeric;
 
-				f = setup_param (l, &is_value_parm, &is_any_numeric);
+				f2 = setup_param (l, &is_value_parm, &is_any_numeric);
 				if (is_value_parm
 				|| is_any_numeric
-				|| f->flag_any_length) {
+				|| f2->flag_any_length) {
 					basic_param = 0;
 					break;
 				}
@@ -12928,7 +12928,7 @@ output_function_prototypes (struct cb_program *prog)
 			output_newline ();
 #if	(defined(_WIN32) || defined(__CYGWIN__)) && !defined(__clang__)
 			for (l = cp->entry_list; l; l = CB_CHAIN (l)) {
-				const char * entry_name = CB_LABEL (CB_PURPOSE (l))->name;
+				const char *entry_name = CB_LABEL (CB_PURPOSE (l))->name;
 				if (0 == strcmp (entry_name, cp->program_id)) {
 					continue;
 				}
