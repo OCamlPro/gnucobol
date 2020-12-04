@@ -1,3 +1,6 @@
+2020-12-04  James K. Lowden  <jklowden@symas.com>
+
+	* CMakeLists.txt: added, builds on Ubuntu and maybe Windows
 
 2020-10-28  Simon Sobisch <simonsobisch@gnu.org>
 
