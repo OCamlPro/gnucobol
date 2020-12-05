@@ -64,6 +64,8 @@
 
 static	char	ign_char = '~';		/* This 'char' in reference file ignores same byte position in test file */
 static	int		ign_spaces = 0;		/* If '1' then all spaces are ignored */
+/* If '1' then trailing spaces are kept and if last char is 'underscore' it is removed */
+static	int		keep_trailing_spaces = 0;	
 static	int		be_quiet = 0;		/* Be less wordy */
 static	int		unify = 0;			/* Display changes 'unify' style */
 static	int		time_tol = (60*5);	/* Times need to be this close */
@@ -73,7 +75,7 @@ static	time_t	nowis;
 static	char	referencefile[256] = "";
 static	char	testfile[256] = "";
 
-static const char short_options[] = "hqwuVr:t:C:e:I:f:T:x:v:";
+static const char short_options[] = "hqwuUVr:t:C:e:I:f:T:x:v:";
 
 #define	CB_NO_ARG	no_argument
 #define	CB_RQ_ARG	required_argument
@@ -94,6 +96,7 @@ static const struct option long_options[] = {
 	{"tolerance",	CB_RQ_ARG, NULL, 'x'},
 	{"version",     CB_NO_ARG, NULL, 'V'},
 	{"unified",     CB_NO_ARG, NULL, 'u'},
+	{"keep-spaces",	CB_NO_ARG, NULL, 'U'},
 	{NULL, 0, NULL, 0}
 };
 
@@ -113,7 +116,8 @@ static struct template_t {
 } templates[MAX_TEMPLATES] = {
 	{20,1,MODIFY_TIME,	(char*)"MMM DD YYYY HH:MI:SS"},
 	{20,1,CURRENT_TIME,	(char*)"MMM DD YYYY HH-MI-SS"},
-	{14,1,VERIFY_TIME,	(char*)"YYYY/MM/DD HH:MI:SS"},
+	{19,1,VERIFY_TIME,	(char*)"YYYY/MM/DD HH:MI:SS"},
+	{15,0,NOT_TIME,		(char*)"GnuCOBOL V.R.P "},
 	{10,1,NOT_TIME,		(char*)"YYYY/MM/DD"},
 	{ 8,1,NOT_TIME,		(char*)"HH:MM:SS"},
 	{ 8,1,CURRENT_TIME,	(char*)"HH:MI:SS"},
@@ -125,7 +129,6 @@ static struct template_t {
 	{ 3,0,NOT_TIME,		(char*)"DDD"},
 	{ 2,1,IS_DAY,		(char*)"DD"},
 	{ 2,1,IS_DAY,		(char*)"dd"},
-	{ 15,0,NOT_TIME,	(char*)"GnuCOBOL V.R.P "},
 	{-1,0,NOT_TIME,(char*)0}
 };
 
@@ -294,6 +297,7 @@ gcd_usage (char *prog, char * referencefile)
 	printf (_("  -x secs        seconds of difference allowed in time compare; default: %d"),time_tol);
 	putchar ('\n');
 	puts (_("  -w             ignore all spaces"));
+	puts (_("  -U             Keep trailing spaces (remove underscore)"));
 	puts (_("  -h, -help      display this help and exit"));
 	puts (_("  -V, -version   display version and exit"));
 	putchar ('\n');
@@ -332,12 +336,48 @@ gcd_usage (char *prog, char * referencefile)
 }
 
 static int
+get_hex(char *buf, long *val)
+{
+	long	tval = 0;
+	int		i;
+	for (i=0; buf[i] != 0; i++) {
+		if (buf[i] >= '0'
+		 && buf[i] <= '9') {
+			tval = tval << 4 + (buf[i] - '0');
+		} else
+		if (buf[i] >= 'a'
+		 && buf[i] <= 'f') {
+			tval = tval << 4 + (buf[i] - 'a' + 10);
+		} else
+		if (buf[i] >= 'A'
+		 && buf[i] <= 'F') {
+			tval = tval << 4 + (buf[i] - 'A' + 10);
+		} else {
+			break;
+		}
+	}
+	*val = tval;
+	return i;
+}
+
+static int
 trim_line(char *buf)
 {
 	int	k;
-	for (k=strlen(buf); k > 0 
-					 && (buf[k-1] == '\r' || buf[k-1] == '\n' || buf[k-1] == ' '); )
+	k = strlen(buf);
+	while (k > 0
+		&& (buf[k-1] == '\r' || buf[k-1] == '\n')) {
 		buf[--k] = 0;
+	}
+	if (keep_trailing_spaces) {	/* Keep trailing spaces */
+		if (buf[k-1] == '_')	/* But remove any underscore */
+			buf[--k] = 0;
+	} else {
+		while (k > 0
+			&& buf[k-1] == ' ') {
+			buf[--k] = 0;
+		}
+	}
 	return k;
 }
 
@@ -350,6 +390,8 @@ compare_file(FILE *ref, FILE *rslt, FILE *rpt)
 	char	rbuf[4096], nbuf[4096], day[3];
 	const char *tagout, *tagin;
 	int		i, j, k, n, t, val, numdiff, linenum;
+	int		nx, rx;
+	long	nval, rval;
 	struct tm tval, *ptm;
 	time_t	time_sec, time_diff;
 
@@ -550,6 +592,15 @@ compare_file(FILE *ref, FILE *rslt, FILE *rpt)
 				i--; j--;
 				continue;
 			}
+			if (memcmp(&rbuf[i-1]," 0x",3) == 0
+			 && memcmp(&nbuf[j-1]," 0x",3) == 0) {	/* Hex value; collect and compare */
+				rx = get_hex (&rbuf[i+2], &rval);
+				nx = get_hex (&nbuf[j+2], &nval);
+				if (nval == rval) {					/* Hex values match */
+					i = i + rx + 1;
+					j = j + nx + 1;
+				}
+			}
 			if (rbuf[i] == nbuf[j])
 				continue;
 			if (rbuf[i] == ign_char)
@@ -613,6 +664,9 @@ set_option (char *binary, int opt, char *arg)
 		break;
 	case 'u':
 		unify = 1;
+		break;
+	case 'U':
+		keep_trailing_spaces = 1;
 		break;
 	case 'C':
 		ign_char = arg[0];
@@ -713,6 +767,11 @@ main(
 
 	/* Process gcdiff.conf from current directory */
 	ref = fopen("gcdiff.conf","r");
+	if(ref == NULL) {
+		/* Check for gcdiff.conf in config directory */
+		sprintf(testfile,"%s/gcdiff.conf",COB_CONFIG_DIR);
+		ref = fopen("gcdiff.conf","r");
+	}
 	if(ref) {
 		while (fgets(buf,sizeof(buf),ref) != NULL) {
 			k = trim_line (buf);
@@ -724,6 +783,8 @@ main(
 		}
 		fclose(ref);
 	}
+	memset(referencefile,0,sizeof(referencefile));
+	memset(testfile,0,sizeof(testfile));
 
 	idx = 0;
 	cob_optind = 1;

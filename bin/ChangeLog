@@ -1,4 +1,11 @@
 
+2020-12-05  Ron Norman <rjn@inglenet.com>
+
+	* gcdiff.c: Also look for run options $COB_CONFIG_DIR/gcdiff.conf
+	           New -U  option removes trailling underscore and leaves spaces
+			   New feature to compare hex values as long as the start with
+			   ' 0x' and value is the same. Avoids 32/64 bit issues.
+
 2020-10-27  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobcrun.c: when in verbose mode additionally ask libcob for
