@@ -1,7 +1,7 @@
 #
 # Makefile gnucobol/tests
 #
-# Copyright (C) 2003-2012, 2014-2019 Free Software Foundation, Inc.
+# Copyright (C) 2003-2012, 2014-2020 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -23,7 +23,6 @@ SUBDIRS = cobol85
 
 TESTSUITE = $(srcdir)/testsuite
 TESTSUITE_MANUAL = $(srcdir)/testsuite_manual
-dist_check_SCRIPTS = listings-sed.sh
 
 testsuite_sources = \
 	testsuite.src/used_binaries.at \
@@ -68,7 +67,6 @@ testsuite_manual_sources = \
 
 EXTRA_DIST = $(srcdir)/package.m4 $(TESTSUITE) $(TESTSUITE_MANUAL) \
 	$(srcdir)/testsuite.at $(srcdir)/testsuite_manual.at \
-	$(srcdir)/listings-sed.sh \
 	$(testsuite_sources) $(testsuite_manual_sources)
 
 DISTCLEANFILES = atconfig
