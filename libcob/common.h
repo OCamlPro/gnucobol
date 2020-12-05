@@ -375,8 +375,6 @@ only usable with COB_USE_VC2013_OR_GREATER */
 #endif /* __MINGW32__ */
 
 #ifdef __BORLANDC__
-#define _timeb		timeb
-#define _ftime(a)	ftime(a)
 #define strncasecmp	strnicmp
 #define strcasecmp	stricmp
 #define _setmode	setmode
