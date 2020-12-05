@@ -110,25 +110,27 @@ static struct template_t {
 		MODIFY_TIME  = 1,		/* Compare to 'testfile' modification time */
 		CURRENT_TIME = 2,		/* Compare to current time */
 		VERIFY_TIME  = 3,		/* Just verify reasonable value */
-		IS_DAY  = 4				/* 'dd' matches ' #' or '##'  less than 32 */
+		IS_DAY  = 4,			/* 'dd' matches ' #' or '##'  less than 32 */
+		IS_VER  = 5				/* Compiler version pattern */
 	} is_time;					/* Reconstruct and verify date/time */
 	char	*pat;
 } templates[MAX_TEMPLATES] = {
+	{24,1,VERIFY_TIME,	(char*)"DDD MMM dd HH:MM:SS YYYY"},
 	{20,1,MODIFY_TIME,	(char*)"MMM DD YYYY HH:MI:SS"},
 	{20,1,CURRENT_TIME,	(char*)"MMM DD YYYY HH-MI-SS"},
+	{20,1,VERIFY_TIME,	(char*)"MMM DD YYYY HH:MM:SS"},
 	{19,1,VERIFY_TIME,	(char*)"YYYY/MM/DD HH:MI:SS"},
-	{15,0,NOT_TIME,		(char*)"GnuCOBOL V.R.P "},
 	{10,1,NOT_TIME,		(char*)"YYYY/MM/DD"},
 	{ 8,1,NOT_TIME,		(char*)"HH:MM:SS"},
 	{ 8,1,CURRENT_TIME,	(char*)"HH:MI:SS"},
 	{ 8,1,NOT_TIME,		(char*)"YY/MM/DD"},
+	{ 7,0,IS_VER,		(char*)" V.R.P "},
 	{ 5,1,NOT_TIME,		(char*)"HH:MM"},
 	{ 5,1,CURRENT_TIME,	(char*)"HH:MI"},
 	{ 4,1,NOT_TIME,		(char*)"YYYY"},
+	{ 4,1,IS_DAY,		(char*)" dd "},
 	{ 3,0,NOT_TIME,		(char*)"MMM"},
 	{ 3,0,NOT_TIME,		(char*)"DDD"},
-	{ 2,1,IS_DAY,		(char*)"DD"},
-	{ 2,1,IS_DAY,		(char*)"dd"},
 	{-1,0,NOT_TIME,(char*)0}
 };
 
@@ -387,7 +389,7 @@ trim_line(char *buf)
 static int
 compare_file(FILE *ref, FILE *rslt, FILE *rpt)
 {
-	char	rbuf[4096], nbuf[4096], day[3];
+	char	rbuf[4096], nbuf[4096];
 	const char *tagout, *tagin;
 	int		i, j, k, n, t, val, numdiff, linenum;
 	int		nx, rx;
@@ -395,6 +397,7 @@ compare_file(FILE *ref, FILE *rslt, FILE *rpt)
 	struct tm tval, *ptm;
 	time_t	time_sec, time_diff;
 
+	sort_templates();
 	if (ref == NULL
 	 || ferror(ref)
 	 || feof(ref))
@@ -436,21 +439,33 @@ compare_file(FILE *ref, FILE *rslt, FILE *rpt)
 					break;
 			}
 			if (templates[t].len > 0) {
-				if (templates[t].is_time == IS_DAY) {
-					memcpy(day,&nbuf[i],2);
-					day[2] = 0;
-					if (atoi(day) <= 31) {
+				if (templates[t].is_time == IS_DAY) {	/*  " dd " */
+					if (num_val(&nbuf[i+1], 2) <= 31) {
 						i += templates[t].len - 1;
 						j += templates[t].len - 1;
 						continue;
 					}
+					goto mis_match;
 				}
 				if (templates[t].is_time == NOT_TIME) {
 					i += templates[t].len - 1;
 					j += templates[t].len - 1;
 					continue;
 				}
-				if (templates[t].is_time) {	/* Valid date/time expected */
+				if (templates[t].is_time == IS_VER) {	/* Version pattern */
+					i += templates[t].len - 1;
+					if(nbuf[j] == ' ') j++;
+					if(!isdigit(nbuf[j]))
+						goto mis_match;
+					while (nbuf[j] != ' '				/* Skip past version stamp */
+						&& nbuf[j] != ','
+						&& nbuf[j] != 0)
+						j++;
+					continue;
+				}
+				if (templates[t].is_time == MODIFY_TIME
+				 || templates[t].is_time == CURRENT_TIME
+				 || templates[t].is_time == VERIFY_TIME) {	/* Valid date/time expected */
 					ptm = localtime(&nowis);
 					memcpy(&tval, (void*)ptm, sizeof(struct tm));
 
@@ -486,6 +501,9 @@ compare_file(FILE *ref, FILE *rslt, FILE *rpt)
 								}
 							}
 						} else if (memcmp(&rbuf[i],"DD",2) == 0) {
+							tval.tm_mday = num_val (&nbuf[i], 2);
+							i++,j++,n++;
+						} else if (memcmp(&rbuf[i],"dd",2) == 0) {
 							tval.tm_mday = num_val (&nbuf[i], 2);
 							i++,j++,n++;
 						} else if (memcmp(&rbuf[i],"HH",2) == 0) {
@@ -573,6 +591,8 @@ compare_file(FILE *ref, FILE *rslt, FILE *rpt)
 							goto mis_match;
 						}
 					}
+					i += templates[t].len;
+					j += templates[t].len;
 				} else 
 				if (templates[t].is_num) {	/* Numeric data expected */
 					for (n=0; n < templates[t].len; i++,j++,n++) {
