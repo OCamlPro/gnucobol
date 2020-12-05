@@ -54,9 +54,6 @@ COMPILE="${COBC} -x ${FLAGS}"
 COMPILE_ONLY="${COBC} -fsyntax-only ${FLAGS}"
 COMPILE_MODULE="${COBC} -m ${FLAGS}"
 
-# Helper script to unify listings (replace version, date, time)
-UNIFY_LISTING="${abs_srcdir}/listings-sed.sh"
-
 # test runner for manual tests, content may be changed by the user
 RUN_PROG_MANUAL="${abs_builddir}/run_prog_manual.sh"
 

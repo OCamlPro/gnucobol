@@ -58,7 +58,7 @@ for file in $scripts ; do
   fi
 done
 
-scripts="autogen.sh doc/cobcinfo.sh po/update_linguas.sh tests/listings-sed.sh"
+scripts="autogen.sh doc/cobcinfo.sh po/update_linguas.sh"
 for file in $scripts ; do
   if test -f $MAINPATH/$file; then
     chmod -f u+x $MAINPATH/$file
