@@ -51,7 +51,7 @@ CODE_COVERAGE_BRANCH_COVERAGE=1
 
 # files shipped with the package that should be 755'ed:
 FILES_TO_BE_EXECUTABLE = $(dist_noinst_SCRIPTS) \
-	configure tests/testsuite tests/listings-sed.sh \
+	configure tests/testsuite \
 	build_aux/config.guess build_aux/config.sub build_aux/config.rpath \
 	build_aux/depcomp build_aux/install-sh build_aux/ltmain.sh build_aux/mdate-sh \
 	build_aux/missing build_aux/mkinstalldirs build_aux/ylwrap
