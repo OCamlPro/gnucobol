@@ -461,6 +461,10 @@ compare_file(FILE *ref, FILE *rslt, FILE *rpt)
 						&& nbuf[j] != ','
 						&& nbuf[j] != 0)
 						j++;
+					/* Skip past variable spaces to sync up lines */
+					while (rbuf[i] == ' ' && i < k) i++;
+					while (nbuf[j] == ' ' && j < k) j++;
+					i--; j--;
 					continue;
 				}
 				if (templates[t].is_time == MODIFY_TIME
