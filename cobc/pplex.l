@@ -1138,9 +1138,6 @@ ppcopy_try_open (const char *dir, const char *name, int has_ext)
 			printf ("Found!\n");
 			printf ("%s\n", cb_get_strerror ());
 #endif
-#ifndef S_ISREG		/* Use POSIX macro */
-#define S_ISREG(m)	(m & S_IFREG)
-#endif
 		/* Must be an accessible, regular file */
 		if (access (plexbuff2, R_OK) == 0
 		 && stat (plexbuff2, &st) == 0

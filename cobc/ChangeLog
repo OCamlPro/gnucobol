@@ -1,7 +1,17 @@
 
+2020-12-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am (cobc_LDADD): fixed ordering, in-tree libraries
+	  must be specified first
+
+2020-12-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* pplex.l (ppcopy_try_open): removed preprocessor check/define S_ISREG as
+	  done in libcob/common.h
+
 2020-11-30  Ron Norman <rjn@inglenet.com>
 
-	* pplex.l (ppcopy_try_open): When searching for COPY book, use 'stat'
+	* pplex.l (ppcopy_try_open): when searching for COPY book, use 'stat'
 	  to verify its a file
 
 2020-11-29  Simon Sobisch <simonsobisch@gnu.org>

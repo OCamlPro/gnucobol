@@ -146,7 +146,14 @@ Note: also defined together with __clang__ in both frontends:
 #else
 #define COB_USE_VC2013_OR_GREATER 0
 #endif
+
+#if _MSC_VER >= 1900
+#define COB_USE_VC2015_OR_GREATER 1
+#else
+#define COB_USE_VC2015_OR_GREATER 0
 #endif
+
+#endif /* _MSC_VER */
 
 /* Byte swap functions */
 
@@ -349,16 +356,6 @@ only usable with COB_USE_VC2013_OR_GREATER */
 
 #define __attribute__(x)
 
-#ifdef	S_ISDIR
-#undef	S_ISDIR
-#endif
-#define S_ISDIR(x)		(((x) & _S_IFMT) == _S_IFDIR)
-
-#ifdef	S_ISREG
-#undef	S_ISREG
-#endif
-#define S_ISREG(x)		(((x) & _S_IFMT) == _S_IFREG)
-
 #ifndef	_M_IA64
 #ifdef	_WIN64
 #define	__x86_64__
@@ -531,6 +528,15 @@ only usable with COB_USE_VC2013_OR_GREATER */
 
 #endif
 
+/* Posix macros, in case they are not defined */
+#ifndef	S_ISDIR
+#define S_ISDIR(x)		(((x) & _S_IFMT) == _S_IFDIR)
+#endif
+
+#ifndef	S_ISREG
+#define S_ISREG(x)		(((x) & _S_IFMT) == _S_IFREG)
+#endif
+
 /* Prevent unwanted verbosity when using icc */
 #ifdef	__INTEL_COMPILER
 
@@ -563,7 +569,7 @@ only usable with COB_USE_VC2013_OR_GREATER */
 
 #endif
 
-#if	defined(_MSC_VER) || defined(__ORANGEC__) || defined(__WATCOMC__) || \
+#if defined(_MSC_VER) || defined(__ORANGEC__) || defined(__WATCOMC__) || \
     defined(__BORLANDC__) || defined(__MINGW32__) || defined (__DJGPP__)
 #define PATHSEP_CHAR (char) ';'
 #define PATHSEP_STR (char *) ";"
@@ -587,7 +593,7 @@ only usable with COB_USE_VC2013_OR_GREATER */
 
 /* EBCDIC determination */
 
-#if	' ' == 0x40
+#if ' ' == 0x40
 #define	COB_EBCDIC_MACHINE
 #else
 #undef	COB_EBCDIC_MACHINE

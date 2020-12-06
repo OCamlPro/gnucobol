@@ -1,4 +1,9 @@
 
+2020-12-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am (cobcrun_LDADD): fixed ordering, in-tree libraries
+	  must be specified first
+
 2020-10-27  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobcrun.c: when in verbose mode additionally ask libcob for

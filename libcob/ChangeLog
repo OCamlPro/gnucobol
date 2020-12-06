@@ -4,6 +4,11 @@
 	* common.h, fileio.c, intrinsic.c: removed unused include sys/timeb.h and
 	  definitions for timeb and ftime
 
+2020-12-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.h: preprocessor check/define for S_ISDIR and S_ISREG now done
+	  for all compilers
+
 2020-11-30  Ron Norman <rjn@inglenet.com>
 
 	* common.c (cob_check_version): rewrote as it did not work on some platforms
