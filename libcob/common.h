@@ -381,8 +381,6 @@ only usable with COB_USE_VC2013_OR_GREATER */
 
 #ifdef __BORLANDC__
 #include <io.h>
-#define _timeb		timeb
-#define _ftime(a)	ftime(a)
 #define strncasecmp	strnicmp
 #define strcasecmp	stricmp
 #define _setmode	setmode

@@ -1,4 +1,9 @@
 
+2020-11-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am: (newcob.val.Z, newcob.val.tar.gz): raise error message
+	  and download broken output file in case of download errors
+
 2020-11-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* Makefil.module.in: don't pass additional params to atlocal

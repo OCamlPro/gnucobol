@@ -1,13 +1,19 @@
 
+2020-12-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.h, intrinsic.c: removed unused include sys/timeb.h and definitions
+	  for timeb and ftime
+
 2020-12-04  Simon Sobisch <simonsobisch@gnu.org>
 
-	* fileio.c (cob_file_open): honor cob_unix_lf (binary mode, especially for WIN32)
+	* fileio.c (cob_file_open): honor cob_unix_lf for pipes (binary mode,
+	  especially for WIN32)
 	* fileio.c (cob_file_close)[_MSC_VER]: fixed crash on close - at least for
 	  this compiler a file close also closes the attached file-stream
 
 2020-11-30  Ron Norman <rjn@inglenet.com>
 
-	* common.c: rewrote cob_check_version as it did not work on some platforms
+	* common.c (cob_check_version): rewrote as it did not work on some platforms
 
 2020-11-26  Ron Norman <rjn@inglenet.com>
 
@@ -19,14 +25,14 @@
 
 2020-11-23  Ron Norman <rjn@inglenet.com>
 
-	* common.h, move.c: Add cob_init_table 
-	
+	* common.h, move.c: add cob_init_table
+
 2020-11-22  Ron Norman <rjn@inglenet.com>
 
 	* common.c: set LIBC_FATAL_STDERR_ more hard coded 
-	* fbdb.c: fix error in use of wrong record area
-	* fextfh.c: use cob_cache_malloc instead of cob_strdup
-	* fsqlxfd.c: If count_components > 1 then its a composite key
+	* fbdb.c (ix_bdb_delete_internal): fix error in use of wrong record area
+	* fextfh.c (copy_file_to_fcd): use cob_cache_malloc instead of cob_strdup
+	* fsqlxfd.c: if count_components > 1 then its a composite key
 
 2020-11-18  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -106,7 +112,7 @@
 
 2020-10-12  Ron Norman <rjn@inglenet.com>
 
-	* common.c: Add cob_ncase_cmp and cob_str_case_str
+	* common.c: add cob_ncase_cmp and cob_str_case_str
 	* foci.c, fodbc.c: use cob_str_case_str instead of strcasestr
 
 2020-10-12  Ron Norman <rjn@inglenet.com>

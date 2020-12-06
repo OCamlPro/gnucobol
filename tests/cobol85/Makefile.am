@@ -139,13 +139,15 @@ diff-summary:
 
 newcob.val.Z:
 	@echo "Trying to download newcob.val.Z..."
-	@(which curl 1>/dev/null && curl $(CURL_FLAGS) "$(URL_NEWCOB_Z)" -o newcob.val.Z) || \
-	 wget $(WGET_FLAGS) "$(URL_NEWCOB_Z)"
+	@(which curl 1>/dev/null && curl $(CURL_FLAGS) "$(URL_NEWCOB_Z)" -o $@) || \
+	 wget $(WGET_FLAGS) "$(URL_NEWCOB_Z)" || \
+	 (rm -rf $@; echo "Downloading $@ failed"; false)
 
 newcob.val.tar.gz:
 	@echo "Trying to download newcob.val.tar.gz..."
-	@(which curl 1>/dev/null && curl $(CURL_FLAGS) "$(URL_NEWCOB_TAR_GZ)" -o newcob.val.tar.gz) || \
-	 wget $(WGET_FLAGS) -O $@ "$(URL_NEWCOB_TAR_GZ)"
+	@(which curl 1>/dev/null && curl $(CURL_FLAGS) "$(URL_NEWCOB_TAR_GZ)" -o $@) || \
+	 wget $(WGET_FLAGS) -O $@ "$(URL_NEWCOB_TAR_GZ)" || \
+	 (rm -rf $@; echo "Downloading $@ failed"; false)
 
 unpack-Z: newcob.val.Z
 	@echo "Unpacking $<..."

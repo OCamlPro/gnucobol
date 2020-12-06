@@ -42,9 +42,6 @@
 #undef	HAVE_LANGINFO_CODESET
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#ifdef	_WIN32
-#include <sys/timeb.h>
-#endif
 #endif
 
 #ifdef	HAVE_LANGINFO_CODESET
