@@ -345,15 +345,15 @@ get_hex(char *buf, long *val)
 	for (i=0; buf[i] != 0; i++) {
 		if (buf[i] >= '0'
 		 && buf[i] <= '9') {
-			tval = tval << 4 + (buf[i] - '0');
+			tval = (tval << 4) + (buf[i] - '0');
 		} else
 		if (buf[i] >= 'a'
 		 && buf[i] <= 'f') {
-			tval = tval << 4 + (buf[i] - 'a' + 10);
+			tval = (tval << 4) + (buf[i] - 'a' + 10);
 		} else
 		if (buf[i] >= 'A'
 		 && buf[i] <= 'F') {
-			tval = tval << 4 + (buf[i] - 'A' + 10);
+			tval = (tval << 4) + (buf[i] - 'A' + 10);
 		} else {
 			break;
 		}
