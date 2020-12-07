@@ -16,12 +16,11 @@
 :: You should have received a copy of the GNU General Public License
 :: along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 
-:: Batch for preparing windows binary distribution folder
-:: By default, binaries use Release executable. To distribute a debug
-:: distributable (y tho), provide DEBUG as an argument.
-
-:: Batch for setting GnuCOBOL Environment in Windows with MSC compiler
-:: x86/win32 version
+:: General purpose cmd script for setting GnuCOBOL environment in Windows
+:: with MSC compiler; version to setup specified by environment variables
+:: %arch%, %arch_full%, %source_build%, %source_config%
+:: %CONFIGURATION% may be used to setup the defaults for MSVC environment
+:: works "interactive" if either %stay_open% or %CI% is defined
 
 @echo off
 
@@ -29,6 +28,9 @@
 if not "%COB_OLD_PATH%" == "" (
    set "PATH=%COB_OLD_PATH%"
    set "COB_OLD_PATH=%PATH%"
+)
+if "%CONFIGURATION%" == "" (
+   set CONFIGURATION=Release
 )
 
 
@@ -82,23 +84,36 @@ for %%v in (BuildTools Community Professional Enterprise) do (
   if not "%found%" == ""  goto :eof
   if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\%1\%%v\Common7\Tools\VsDevCmd.bat" (
      set "found=%ProgramFiles(x86)%\Microsoft Visual Studio\%1\%%v\Common7\Tools\VsDevCmd.bat"
-  )
+  ) else if exist "%ProgramFiles%\Microsoft Visual Studio\%1\%%v\Common7\Tools\VsDevCmd.bat" (
+     set "found=%ProgramFiles%\Microsoft Visual Studio\%1\%%v\Common7\Tools\VsDevCmd.bat"
+  ) 
 )
 goto :eof
 
 :vsvars_old
 set param=%1
 set param=%param:"=%
-if exist "%param%vsvars32.bat"  set "found=%1"
+if exist "%param%vsvars32.bat" (
+   set "found=%1"
+   set param=""
+   goto :eof
+)
 if exist "%param%VCVarsQueryRegistry.bat" (
    call "%param%VCVarsQueryRegistry.bat"
 )
+if %errorlevel% equ 0 if exist "%VCINSTALLDIR%vcvarsall.bat" (
+   set param=""
+   call "%VCINSTALLDIR%vcvarsall.bat" %arch%
+   goto :setup_gc
+)
 set param=""
-if %errorlevel% equ 0 (
-   if exist "%VCINSTALLDIR%vcvarsall.bat" (
-       call "%VCINSTALLDIR%vcvarsall.bat" %arch%
-       goto :setup_gc
-   )
+goto :eof
+
+:sdk_entry
+if exist "%ProgramFiles(x86)%\Microsoft SDKs\Windows\%1\Bin\SetEnv.Cmd" (
+   set "found=%ProgramFiles(x86)%\Microsoft SDKs\Windows\%1\Bin\SetEnv.Cmd"
+) else if exist "%ProgramFiles%\Microsoft SDKs\Windows\%1\Bin\SetEnv.Cmd" (
+   set "found=%ProgramFiles%\Microsoft SDKs\Windows\%1\Bin\SetEnv.Cmd"
 )
 goto :eof
 
@@ -109,61 +124,22 @@ set "PATH=%param%;%PATH%"
 set param=""
 goto :eof
 
+:: WinSDK variants
 :sdk_setup
 echo Warning: Not possible to set %arch_full% environment for Microsoft Visual Studio!
 
 :: Windows SDK 10 (Windows 10 / VS 2015 compiler) - untested
-if exist "%ProgramFiles(x86)%\Microsoft SDKs\Windows\v10\Bin\SetEnv.Cmd" (
-   call "%ProgramFiles(x86)%\Microsoft SDKs\Windows\v10\Bin\SetEnv.Cmd" /%arch% /release
-   goto :gcc
-)
-if exist "%ProgramFiles%\Microsoft SDKs\Windows\v10\Bin\SetEnv.Cmd" (
-   call "%ProgramFiles%\Microsoft SDKs\Windows\v10\Bin\SetEnv.Cmd" /%arch% /release
-   goto :gcc
-)
 :: Windows SDK 8.1 (Windows 8.1 and .NET 4.5.1 / VS 2013 compiler)
-if exist "%ProgramFiles(x86)%\Microsoft SDKs\Windows\v8.1\Bin\SetEnv.Cmd" (
-   call "%ProgramFiles(x86)%\Microsoft SDKs\Windows\v8.1\Bin\SetEnv.Cmd" /%arch% /release
-   goto :gcc
-)
-if exist "%ProgramFiles%\Microsoft SDKs\Windows\v8.1\Bin\SetEnv.Cmd" (
-   call "%ProgramFiles%\Microsoft SDKs\Windows\v8.1\Bin\SetEnv.Cmd" /%arch% /release
-   goto :gcc
-)
 :: Windows SDK 8.0 (Windows 8 and .NET 4.5 / VS 2012 compiler)
-if exist "%ProgramFiles(x86)%\Microsoft SDKs\Windows\v8.0\Bin\SetEnv.Cmd" (
-   call "%ProgramFiles(x86)%\Microsoft SDKs\Windows\v8.0\Bin\SetEnv.Cmd" /%arch% /release
-   goto :gcc
-)
-if exist "%ProgramFiles%\Microsoft SDKs\Windows\v8.0\Bin\SetEnv.Cmd" (
-   call "%ProgramFiles%\Microsoft SDKs\Windows\v8.0\Bin\SetEnv.Cmd" /%arch% /release
-   goto :gcc
-)
 :: Windows SDK 7.1 (Windows 7 and .NET 4 / VS 2010 SP1 compiler)
-if exist "%ProgramFiles(x86)%\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.Cmd" (
-   call "%ProgramFiles(x86)%\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.Cmd" /%arch% /release
-   goto :gcc
-)
-if exist "%ProgramFiles%\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.Cmd" (
-   call "%ProgramFiles%\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.Cmd" /%arch% /release
-   goto :gcc
-)
 :: Windows SDK 7.0 (Windows 7 and .NET 3.5 SP1 / VS 2008 compiler)
-if exist "%ProgramFiles(x86)%\Microsoft SDKs\Windows\v7.0\Bin\SetEnv.Cmd" (
-   call "%ProgramFiles(x86)%\Microsoft SDKs\Windows\v7.0\Bin\SetEnv.Cmd" /%arch% /release
-   goto :gcc
-)
-if exist "%ProgramFiles%\Microsoft SDKs\Windows\v7.0\Bin\SetEnv.Cmd" (
-   call "%ProgramFiles%\Microsoft SDKs\Windows\v7.0\Bin\SetEnv.Cmd" /%arch% /release
-   goto :gcc
-)
 :: Windows SDK 6.1 (Windows 2008 Server and .NET 3.5 / VS 2008 compiler)
-if exist "%ProgramFiles(x86)%\Microsoft SDKs\Windows\v6.1\Bin\SetEnv.Cmd" (
-   call "%ProgramFiles(x86)%\Microsoft SDKs\Windows\v6.1\Bin\SetEnv.Cmd" /%arch% /release
-   goto :gcc
+for %%v in (v10 v8.1 v8.0 v7.1 v7.0 v6.1) do (
+   if not "%found%" == ""  goto :eof
+   call :sdk_entry %%v
 )
-if exist "%ProgramFiles%\Microsoft SDKs\Windows\v6.1\Bin\SetEnv.Cmd" (
-   call "%ProgramFiles%\Microsoft SDKs\Windows\v6.1\Bin\SetEnv.Cmd" /%arch% /release
+if not "%found%" == "" (
+   call "%found%" /%arch% /%CONFIGURATION%
    goto :gcc
 )
 
@@ -205,7 +181,7 @@ set "COB_DEV_DIR=%~dp0%source_build%"
 
 :: Set the necessary options for MSC compiler
 if not [%source_config%] == [] (
-  set "COB_CFLAGS=/I "%COB_MAIN_DIR%" -I "%~dp0""
+  set "COB_CFLAGS=/I "%COB_MAIN_DIR%." -I "%~dp0.""
   set "COB_LIB_PATHS=/LIBPATH:"%COB_DEV_DIR%""
 ) else (
   set "COB_CFLAGS=/I "%COB_MAIN_DIR%include""

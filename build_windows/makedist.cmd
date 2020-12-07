@@ -65,11 +65,14 @@ if %errorlevel% equ 0 (
 )
 
 :: check for existing binaries
-if /i "%1%"=="DEBUG" (
+if /i "%1"=="DEBUG" (
+   set config=Debug
+) else if /i "%configuration%"=="DEBUG" (
    set config=Debug
 ) else (
    set config=Release
 )
+set configuration=%config%
 
 if exist "%cob_build_path%Win32\%config%\cobc.exe" (
    set have_32=1
@@ -236,7 +239,7 @@ endlocal & exit /b %cb_errorlevel%
 
 :: pause if not started directly
 :pause_if_interactive
-if [%stay_open%%CI%] == [] (
+if not [%stay_open%] == [] (
    echo.
    pause
 )
@@ -362,6 +365,7 @@ goto :eof
 :compile_extras
 setlocal
 call :set_platform_and_ext %1%
+set "stay_open="
 echo Using created GnuCOBOL distribution -%platform%- to compile extras...
 pushd "%cob_dist_path%bin_%platform_ext%"
 call ..\set_env_vs_%platform_ext%.cmd

@@ -9342,27 +9342,28 @@ WORKING-STORAGE
 01        IDX                             000000000
 01        TSTREC.
   05      TSTDEP                         'XXX'
-  05      TSTX.
+  05      TSTX (1).
        15 TSTG-1 (1)                      01
        15 TSTX-2 (1,1)                   'A'
        15 TSTX-2 (1,2)                   'XX'
        15 TSTX-2 (1,3)                   ALL SPACES
        15 TSTX-2 (1,4)                   'xx'
+  05      TSTX (2).
        15 TSTG-1 (2)                      02
        15 TSTX-2 (2,1)                   'B'
        15 TSTX-2 (2,2)                   'XX'
        15 TSTX-2 (2,3)                   ALL LOW-VALUES
        15 TSTX-2 (2,4)                   'yy'
+  05      TSTX (3).
        15 TSTG-1 (3)                      03
        15 TSTX-2 (3,1)                   'C'
        15 TSTX-2 (3,2)                   'XX'
        15 TSTX-2 (3,3)                   ALL HIGH-VALUES
        15 TSTX-2 (3,4)                   'zz'
+  05      TSTX (4).
        15 TSTG-1 (4)                     ALL HIGH-VALUES
        15 TSTX-2 (4,1)                   ALL HIGH-VALUES
-       15 TSTX-2 (4,2)                   ALL HIGH-VALUES
-       15 TSTX-2 (4,3)                   ALL HIGH-VALUES
-       15 TSTX-2 (4,4)                   ALL HIGH-VALUES
+       15 TSTX-2 (4,2..4) same as (1)
   05      TSTTAIL1                        X  _
                                      1 x 5811
   05      TSTCOMP3                        58585
@@ -9388,6 +9389,9 @@ LINKAGE
 01        X                               000005441
 01        TSPFL-RECORD.                  <NULL> address
 
+END OF DUMP - sub1
+**********************
+
 Dump Program-Id sub2 from prog.cob compiled MMM DD YYYY HH:MM:SS
 
 WORKING-STORAGE
@@ -9397,27 +9401,28 @@ WORKING-STORAGE
 01        IDX                             000000000
 01        TSTREC.
   05      TSTDEP                         'XXX'
-  05      TSTX.
+  05      TSTX (1).
        15 TSTG-1 (1)                      01
        15 TSTX-2 (1,1)                   'A'
        15 TSTX-2 (1,2)                   'XX'
        15 TSTX-2 (1,3)                   ALL SPACES
        15 TSTX-2 (1,4)                   'xx'
+  05      TSTX (2).
        15 TSTG-1 (2)                      02
        15 TSTX-2 (2,1)                   'B'
        15 TSTX-2 (2,2)                   'XX'
        15 TSTX-2 (2,3)                   ALL LOW-VALUES
        15 TSTX-2 (2,4)                   'yy'
+  05      TSTX (3).
        15 TSTG-1 (3)                      03
        15 TSTX-2 (3,1)                   'C'
        15 TSTX-2 (3,2)                   'XX'
        15 TSTX-2 (3,3)                   ALL HIGH-VALUES
        15 TSTX-2 (3,4)                   'zz'
+  05      TSTX (4).
        15 TSTG-1 (4)                     ALL HIGH-VALUES
        15 TSTX-2 (4,1)                   ALL HIGH-VALUES
-       15 TSTX-2 (4,2)                   ALL HIGH-VALUES
-       15 TSTX-2 (4,3)                   ALL HIGH-VALUES
-       15 TSTX-2 (4,4)                   ALL HIGH-VALUES
+       15 TSTX-2 (4,2..4) same as (1)
   05      TSTTAIL1                        X  _
                                      1 x 5811
   05      TSTCOMP3                        58585
@@ -9452,6 +9457,9 @@ LINKAGE
      10   CM-DISK                        '8417'
      10   CM-NO-TERMINALS                 0010
 77        DYNAMIC-NUM                     0124
+
+END OF DUMP - sub2
+**********************
 
 Dump Program-Id prog from prog.cob compiled MMM DD YYYY HH:MM:SS
 
@@ -9506,10 +9514,10 @@ WORKING-STORAGE
 01        SUMS-NON-STD-OCCURS (2)         +000000000004096.000
 01        SUMS-NON-STD-OCCURS (3)         +000000000005440.000
 01        SUMS-NON-STD-OCCURS (4)         -000000000000042.345
-           ... occurrence (5) same as (4)
-           ... occurrence (6) same as (4)
-           ... occurrence (7) same as (4)
-           ... occurrence (8) same as (4)
+01        SUMS-NON-STD-OCCURS (5..8) same as (4)
+
+END OF DUMP - prog
+**********************
 
 ])
 
@@ -9571,6 +9579,9 @@ LINKAGE
 01        X                               000005441
 01        TSPFL-RECORD.                  <NULL> address
 
+END OF DUMP - sub1
+**********************
+
 Dump Program-Id sub2 from prog.cob compiled MMM DD YYYY HH:MM:SS
 
 LINKAGE
@@ -9583,6 +9594,9 @@ LINKAGE
      10   CM-NO-TERMINALS                 0010
 77        DYNAMIC-NUM                     0124
 
+END OF DUMP - sub2
+**********************
+
 Dump Program-Id prog from prog.cob compiled MMM DD YYYY HH:MM:SS
 
 FD FLATFILE
@@ -9594,6 +9608,9 @@ FD FLATFILE
      10   CM-COMPANY                     'ALPHA ELECTRICAL CO. LTD.'
      10   CM-DISK                        '8417'
      10   CM-NO-TERMINALS                 0010
+
+END OF DUMP - prog
+**********************
 
 ])
 
@@ -9689,16 +9706,24 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE  SECTION.
        01  P2           USAGE POINTER.
 
-       01 TAB-ADR-EINTRAEGE        PIC S9(4)      VALUE 8.
+       01 TAB-ADR-COUNT            PIC S9(4)      VALUE 8.
 
-       01 TAB-ADRESSEN OCCURS 0 TO 1000 TIMES
-            DEPENDING ON TAB-ADR-EINTRAEGE
+       01 TAB-ADR OCCURS 0 TO 1000 TIMES
+            DEPENDING ON TAB-ADR-COUNT
             INDEXED BY TAB-ADR-IND.
           05 TAB-ADR-ELEMENT.
               10 TAB-ADR-PRGM         PIC X(8).
               10 TAB-ADR-ID           PIC X(2).
               10 TAB-ADR-ADR-64       PIC S9(16) COMP-5.
               10 TAB-ADR-LAST-ADR-64  PIC S9(16) COMP-5.
+
+       01  GRP-X BASED.
+           05   FILLER  PIC X(3).
+           05   FLD-X   OCCURS 10 TIMES.
+             10 FLD-X-Y   PIC 9999 VALUE 2020.
+             10 FLD-X-M   PIC 99 VALUE 11.
+             10 FLD-X-X   PIC X(128) VALUE "This is something ".
+           05   FILLER  PIC X(3).
 
        01  GRP-1.
            05   FILLER  PIC X(3).
@@ -9718,11 +9743,13 @@ AT_DATA([prog.cob], [
            05   FILLER  PIC X(1200) VALUE "X".
        01  GRP-3.
            05   FILLER  PIC X(3).
-           05   FLD-3   OCCURS 3 TIMES 
-                        VALUE ALL "ABC00XX".
-                15   FLD-3-2 PIC XXX.
-                15   FLD-3-3 PIC 99.
-                15   FLD-3-4 PIC XX.
+           05   FLD-3   OCCURS 3 TIMES.
+                15   FLD-3-2 PIC XXX VALUE "ABC".
+                15   FLD-3-3 PIC 99  VALUE ZERO.
+                15           OCCURS 4 VALUE ALL "D99".
+                     25   FLD-3O-1 PIC X.
+                     25   FLD-3O-2 PIC 99.
+                15   FLD-3-4 PIC XX  VALUE ALL "X".
            05   FILLER  PIC X(3).
 
        77  C5    PIC 9(03)  VALUE 6.
@@ -9746,93 +9773,89 @@ AT_DATA([prog.cob], [
                05 col2  PIC X(02).
 
        PROCEDURE DIVISION.
-           MOVE ALL "*" TO GRP-2.
-           INITIALIZE FLD-2 ALL TO VALUE.
+           MOVE ALL "*" TO GRP-2
+           INITIALIZE FLD-2 ALL TO VALUE
            DISPLAY "GRP-2:" GRP-2.
-
-           MOVE ALL "*" TO GRP-3.
-           INITIALIZE FLD-3 (1) ALL TO VALUE.
-           INITIALIZE FLD-3 (2) ALL TO VALUE.
-           INITIALIZE FLD-3 (3) ALL TO VALUE.
+      *
+           MOVE ALL "*" TO GRP-3
+           INITIALIZE GRP-3 NUMERIC TO VALUE
+           INITIALIZE FLD-3 (1) ALL TO VALUE
+           INITIALIZE FLD-3 (2) ALL TO VALUE
+           INITIALIZE FLD-3 (3) ALL TO VALUE
+           INITIALIZE FLD-3O-1 (3,2), FLD-3O-2 (3,2)
            DISPLAY "GRP-3:" GRP-3.
-
-           MOVE 7       TO c5.
-           MOVE ALL "*" TO GRP-5.
-           INITIALIZE FLD-5 ALL TO VALUE.
+      *
+           MOVE 7       TO c5
+           MOVE ALL "*" TO GRP-5
+           INITIALIZE FLD-5 ALL TO VALUE
            DISPLAY "GRP-5:" GRP-5.
-
-           MOVE SPACES TO GRP-2A.
-           MOVE "Peek" TO GRP-2A (510:4).
-           MOVE "Boo" TO GRP-2A (910:3).
-           MOVE X"FE99" TO GRP-2A (910:2).
-           MOVE "You" TO GRP-2A (1010:3).
-           MOVE "$$" TO FLD-5-4 (5).
+      *
+           MOVE SPACES  TO GRP-2A
+           MOVE "Peek"  TO GRP-2A (510:4)
+           MOVE "Boo"   TO GRP-2A (910:3)
+           MOVE X"FE99" TO GRP-2A (910:2)
+           MOVE "You"   TO GRP-2A (1010:3)
+           MOVE "$$"    TO FLD-5-4 (5)
            MOVE "Something else!" TO FLD-1-X (5).
-           SET P2 TO NULL.
-           SET ADDRESS OF A-TABLE TO P2.
+      *
+           SET P2 TO NULL
+           SET ADDRESS OF A-TABLE TO NULL
            MOVE ALL ZEROES TO A-TABLE (1: (LENGTH OF A-TABLE)).
+      *
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -std=default -debug -fdump=ALL prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fdump=ALL prog.cob], [0], [], [])
 
-AT_CHECK([export COB_DUMP_FILE=tstdump.txt
-$COBCRUN_DIRECT ./prog], [11], [GRP-2:***ABCD ABCD ABCD ABCD ABCD ABCD ABCD ABCD AB***
-GRP-3:***ABC00XXABC00XXABC00XX***
+AT_CHECK([export COB_DUMP_FILE=dumpall.txt
+$COBCRUN_DIRECT ./prog], [1],
+[GRP-2:***ABCD ABCD ABCD ABCD ABCD ABCD ABCD ABCD AB***
+GRP-3:***ABC00D99D99D99D99XXABC00D99D99D99D99XXABC00D99 00D99D99XX***
 GRP-5:***Mon49eyMon49eyMon49eyMon49eyMon49eyMon49eyMon49ey
 ],
-[libcob: prog.cob:89: error: BASED/LINKAGE item 'A-TABLE' has NULL address
+[libcob: prog.cob:102: error: BASED/LINKAGE item 'A-TABLE' has NULL address
 
-prog.cob:89: attempt to reference unallocated memory (signal SIGSEGV)
-
+dump written to dumpall.txt
 ])
 
-
-AT_CAPTURE_FILE(./tstdump.txt)
+AT_CAPTURE_FILE(./dumpall.txt)
 
 AT_DATA([reference_tmpl], [
 Module dump due to BASED/LINKAGE item 'A-TABLE' has NULL address
 
- Last statement of prog was at line 89 of prog.cob   
+ Last statement of prog was at line 102 of prog.cob
 
 Dump Program-Id prog from prog.cob compiled MMM DD YYYY HH:MM:SS
 
 WORKING-STORAGE
 **********************
 01        P2                              0x0000000000000000
-01        TAB-ADR-EINTRAEGE               +0008
-01        TAB-ADRESSEN.
+01        TAB-ADR-COUNT                   +0008
+   INDEX  TAB-ADR-IND                     +000000001
+01        TAB-ADR (1).
   05      TAB-ADR-ELEMENT (1).
      10   TAB-ADR-PRGM (1)               ALL SPACES
      10   TAB-ADR-ID (1)                 ALL SPACES
      10   TAB-ADR-ADR-64 (1)              +00000000000000000000
      10   TAB-ADR-LAST-ADR-64 (1)         +00000000000000000000
-           ... occurrence (2) same as (1)
-           ... occurrence (3) same as (1)
-           ... occurrence (4) same as (1)
-           ... occurrence (5) same as (1)
-           ... occurrence (6) same as (1)
-           ... occurrence (7) same as (1)
-           ... occurrence (8) same as (1)
+01        TAB-ADR (2..8) same as (1)
+01        GRP-X.                         <NULL> address
 01        GRP-1.
   05      FILLER                         ALL SPACES
-  05      FLD-1.
+  05      FLD-1 (1).
      10   FLD-1-Y (1)                     2020
      10   FLD-1-M (1)                     11
      10   FLD-1-X (1)                    'This is something'
-           ... occurrence (2) same as (1)
-           ... occurrence (3) same as (1)
-           ... occurrence (4) same as (1)
+  05      FLD-1 (2..4) same as (1)
+  05      FLD-1 (5).
      10   FLD-1-Y (5)                     2020
      10   FLD-1-M (5)                     11
      10   FLD-1-X (5)                    'Something else!'
+  05      FLD-1 (6).
      10   FLD-1-Y (6)                     2020
      10   FLD-1-M (6)                     11
      10   FLD-1-X (6)                    'This is something'
-           ... occurrence (7) same as (6)
-           ... occurrence (8) same as (6)
-           ... occurrence (9) same as (6)
-           ... occurrence (10) same as (6)
+  05      FLD-1 (7..10) same as (6)
   05      FILLER                         ALL SPACES
 01        GRP-2.
   05      FILLER                         '***'
@@ -9842,74 +9865,98 @@ WORKING-STORAGE
   05      FILLER                         ALL SPACES
   05      FLD-2A                         ALL SPACES
   05      FILLER                                                                              _
-                                     1 x 20202020 20202020 20202020 20202020 20202020 20202020_
+                                     1 x 20202020 20202020 20202020 20202020 20202020 20202020
                                          --- 25 thru 492 same as above ---
                                                          P  e e k                             _
-                                   493 x 20202020 20202050 65656B20 20202020 20202020 20202020_
+                                   493 x 20202020 20202050 65656B20 20202020 20202020 20202020
                                                                                               _
-                                   517 x 20202020 20202020 20202020 20202020 20202020 20202020_
+                                   517 x 20202020 20202020 20202020 20202020 20202020 20202020
                                          --- 541 thru 878 same as above ---
                                                                                              _
-                                   879 x 2020 20202020 20202020 20202020 20202020 202020FE 99_
+                                   879 x 2020 20202020 20202020 20202020 20202020 202020FE 99
                                           o                                                  _
                                    902 x 6F2020 20202020 20202020 20202020 20202020 20202020 _
                                                                                               _
                                    925 x 20202020 20202020 20202020 20202020 20202020 20202020_
                                          --- 949 thru 974 same as above ---
                                                                                              _
-                                   975 x 2020 20202020 20202020 20202020 20202020 20202020 20_
+                                   975 x 2020 20202020 20202020 20202020 20202020 20202020 20
                                               Y  o u                                         _
                                    998 x 202059 6F752020 20202020 20202020 20202020 20202020 _
                                                                                               _
-                                  1021 x 20202020 20202020 20202020 20202020 20202020 20202020_
+                                  1021 x 20202020 20202020 20202020 20202020 20202020 20202020
                                          --- 1045 thru 1174 same as above ---
                                                                                              _
-                                  1175 x 2020 20202020 20202020 20202020 20202020 20202020 20_
+                                  1175 x 2020 20202020 20202020 20202020 20202020 20202020 20
                                                _
                                   1198 x 202020
 01        GRP-3.
   05      FILLER                         '***'
-  05      FLD-3.
+  05      FLD-3 (1).
        15 FLD-3-2 (1)                    'ABC'
        15 FLD-3-3 (1)                     00
+       15 FILLER (1,1).
+       25 FLD-3O-1 (1,1)                 'D'
+       25 FLD-3O-2 (1,1)                  99
+       15 FILLER (1,2..4) same as (1)
        15 FLD-3-4 (1)                    'XX'
-           ... occurrence (2) same as (1)
-           ... occurrence (3) same as (1)
+  05      FLD-3 (2) same as (1)
+  05      FLD-3 (3).
+       15 FLD-3-2 (3)                    'ABC'
+       15 FLD-3-3 (3)                     00
+       15 FILLER (3,1).
+       25 FLD-3O-1 (3,1)                 'D'
+       25 FLD-3O-2 (3,1)                  99
+       15 FILLER (3,2).
+       25 FLD-3O-1 (3,2)                 ALL SPACES
+       25 FLD-3O-2 (3,2)                  00
+       15 FILLER (3,3).
+       25 FLD-3O-1 (3,3)                 'D'
+       25 FLD-3O-2 (3,3)                  99
+       15 FILLER (3,4) same as (3)
+       15 FLD-3-4 (3)                    'XX'
   05      FILLER                         '***'
 77        C5                              007
 01        GRP-5.
   05      FILLER                         '***'
   05      FLD-5.
-     10   FLD-5-1.
+     10   FLD-5-1 (1).
        15 FLD-5-2 (1)                    'Mon'
        15 FLD-5-3 (1)                     49
        15 FLD-5-4 (1)                    'ey'
-           ... occurrence (2) same as (1)
-           ... occurrence (3) same as (1)
-           ... occurrence (4) same as (1)
+     10   FLD-5-1 (2..4) same as (1)
+     10   FLD-5-1 (5).
        15 FLD-5-2 (5)                    'Mon'
        15 FLD-5-3 (5)                     49
        15 FLD-5-4 (5)                    '$$'
+     10   FLD-5-1 (6).
        15 FLD-5-2 (6)                    'Mon'
        15 FLD-5-3 (6)                     49
        15 FLD-5-4 (6)                    'ey'
-           ... occurrence (7) same as (6)
+     10   FLD-5-1 (7) same as (6)
 
 LINKAGE
 **********************
+01        A-TABLE.                       <NULL> address
+
+END OF DUMP - prog
+**********************
+
 ])
 
-
 # AT_DATA workaround via sed:
-AT_CHECK([$SED -e 's/_$//' reference_tmpl > reference], [0], [], [])
 AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g' \
-tstdump.txt > tstdump.sed], [0], [], [])
+dumpall.txt > dumpall.sed], [0], [], [])
 
-AT_CHECK([test "$COB_HAS_64_BIT_POINTER" = "yes" ||
-$SED -e 's/_$//; s/0x0000000000000000/0x00000000/' reference_tmpl > reference
-], [0], [], [])
+AT_CHECK([test "$COB_HAS_64_BIT_POINTER" = "yes"], [0], [], [],
+# Previous test "failed" --> 32 bit
+  AT_CHECK([$SED -e 's/_$//; s/0x0000000000000000/0x00000000/' reference_tmpl > reference], [0], [], [])
+,
+# Previous test "passed" --> 64 bit
+  AT_CHECK([$SED -e 's/_$//' reference_tmpl > reference], [0], [], [])
+)
 
-AT_CHECK([diff reference tstdump.sed], [0], [], [])
+AT_CHECK([diff reference dumpall.sed], [0], [], [])
 
 AT_CLEANUP
 

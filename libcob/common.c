@@ -8455,7 +8455,7 @@ cob_init (const int argc, char **argv)
 		 * nonempty string, it writes to stderr instead. See:
 		 *https://code.woboq.org/userspace/glibc/sysdeps/posix/libc_fatal.c.html
 		 */
-		if( getenv ((const char*)"LIBC_FATAL_STDERR_") == NULL ) {
+		if (getenv ((const char*)"LIBC_FATAL_STDERR_") == NULL ) {
 			(void)putenv ((char*)"LIBC_FATAL_STDERR_=keep_off_the_grass");
 		}
 	}

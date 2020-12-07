@@ -1,4 +1,10 @@
 
+2020-12-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* gcvars.cmd: minimized search for SDK option
+	* makedist.cmd: pass debug option to gcvars.cmd,
+	  don't pause within building extras
+
 2020-12-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* general: renamed set_env scripts:

@@ -16,18 +16,17 @@
 :: You should have received a copy of the GNU General Public License
 :: along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 
-:: Batch for preparing windows binary distribution folder
-:: By default, binaries use Release executable. To distribute a debug
-:: distributable (y tho), provide DEBUG as an argument.
-
-:: Batch for setting GnuCOBOL Environment in Windows with MSC compiler
-:: x86/win32 version
+:: cmd script for setting GnuCOBOL environment in Windows with MSC compiler
+:: wrapper that calls gcvars.cmd - x86/win32, in-tree version
 
 @echo off
 
 :: the architecture to set / check
 set "arch=x86"
 set "arch_full=x86"
+
+:: config for vs env
+set "target_config"
 
 :: mode for compiling in the source-tree
 set "source_build=Win32"

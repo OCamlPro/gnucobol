@@ -4,15 +4,42 @@
 	* Makefile.am (cobc_LDADD): fixed ordering, in-tree libraries
 	  must be specified first
 
+2020-12-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_display_fields): codegen to output INDEXED BY variables
+
+2020-12-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (remove_trailing_slash) [_MSC_VER]: new function added to resolve
+	  MSVC's issues with trailing slashes
+
 2020-12-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* pplex.l (ppcopy_try_open): removed preprocessor check/define S_ISREG as
 	  done in libcob/common.h
+	* codegen.c (output_display_fields): changed NULL-checked fields to
+	  generate calls to (cob_dump_field) to keep formatting and control there
+	  instead of preformatting with use of message-related (cob_dump_output);
+	  fixed output for based-check'd OCCURS 01 and comment-only output
+
+2020-12-01  Ron Norman <rjn@inglenet.com>
+
+	* codegen.c (output_dump_code): emit code to check if BASED/LINKAGE fields
+	  have a not NULL base address before dumping them; handle depending_on
+
+2020-11-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_dump_code): moved out of (output_internal_function)
+	* codegen.c (output_dump_code): generate "end of dump" message
+	* codegen.c (output_display_fields): always output group OCCURS items,
+	  not only the first time; removed duplicated code
+	* codegen.c (output_field_display): adjusted variable types to unsigned
 
 2020-11-30  Ron Norman <rjn@inglenet.com>
 
 	* pplex.l (ppcopy_try_open): when searching for COPY book, use 'stat'
 	  to verify its a file
+	* codegen.c: only emit the 'i_len' variable if it is used
 
 2020-11-29  Simon Sobisch <simonsobisch@gnu.org>
 

@@ -45,10 +45,6 @@ static cob_settings		*cobsetptr = NULL;
 
 static char no_syspunch_error_raised = 0;
 #define MAX_PREV 256
-static char dump_prev[MAX_PREV];
-static int	dump_idx = -1;
-static int	dump_skip = -1;
-static int	dump_tbl = -1;
 
 static const unsigned short	bin_digits[] =
 	{ 1, 3, 5, 8, 10, 13, 15, 17, 20 };
@@ -462,12 +458,11 @@ display_alnum_dump (cob_field *f, FILE *fp, unsigned int indent, unsigned int ma
 		return;
 	}
 
-	for (len = f->size; len > 0 && f->data[len-1] == ' '; len--);
-
+	/* remove trailing LOW-VALUES with note */
 	if (lowv > 0
-	 && (lowv+printv) == f->size) {
+	 && ((size_t)lowv+printv) == f->size) {
 		for (len = f->size; len > 0 && f->data[len-1] == 0x00; len--);
-		if ((len+lowv) == f->size) {
+		if (((size_t)len+lowv) == f->size) {
 			for (i=0; len > colsize; i+=colsize,len-=colsize) {
 				fprintf(fp,"'%.*s'\n%*s",colsize,&f->data[i],indent," ");
 			}
@@ -479,16 +474,19 @@ display_alnum_dump (cob_field *f, FILE *fp, unsigned int indent, unsigned int ma
 		}
 	}
 
+	/* always _ignore_ trailing SPACES */
+	for (len = f->size; len > 0 && f->data[len-1] == ' '; len--);
+
 	if (printv == f->size) {
 		duplen = bgn = 0;
 		for (i=0; len > colsize; i+=colsize,len-=colsize) {
 			if (colsize < MAX_PREV) {
 				if (i == 0) {
-					memcpy(prev, f->data, colsize);
-				} else if (memcmp(prev, &f->data[i], colsize) == 0) {
+					memcpy (prev, f->data, colsize);
+				} else if (memcmp (prev, &f->data[i], colsize) == 0) {
 					duplen = 0;
 					bgn = i + 1;
-					while(memcmp(prev, &f->data[i], colsize) == 0
+					while (memcmp (prev, &f->data[i], colsize) == 0
 						&& len > colsize) {
 						duplen += colsize;
 						i += colsize;
@@ -498,24 +496,24 @@ display_alnum_dump (cob_field *f, FILE *fp, unsigned int indent, unsigned int ma
 					len += colsize;
 					fprintf (fp, "%5u thru %u same as above\n%*s", 
 								bgn, bgn+duplen, indent-6, " ");
-					memcpy(prev, &f->data[i], colsize);
+					memcpy (prev, &f->data[i], colsize);
 					continue;
 				}
-				memcpy(prev, &f->data[i], colsize);
+				memcpy (prev, &f->data[i], colsize);
 			}
-			if(i > 0)
-				fprintf(fp,"%5u:",i);
+			if (i != 0)
+				fprintf (fp, "%5u:", i);
 			fprintf (fp, "'%.*s'\n%*s", colsize, &f->data[i], indent-6, " ");
 		}
-		if(i > 0)
-			fprintf(fp,"%5u:",i);
+		if (i != 0)
+			fprintf (fp, "%5u:", i);
 		if (len <= colsize) {
 			fprintf (fp, "'%.*s'", len, &f->data[i]);
 			return;
 		}
 	}
 
-	if ((delv + printv) == f->size) {
+	if (((size_t)delv + printv) == f->size) {
 		for (i = 0; i < f->size; ) {
 			for (j=0; j < colsize && i < f->size; j++,i++) {
 				if (f->data[i] == '\0')
@@ -546,12 +544,10 @@ display_alnum_dump (cob_field *f, FILE *fp, unsigned int indent, unsigned int ma
 		colsize = sizeof (wrk) - 1;
 	}
 	if (colsize > 9) {
-		colsize = colsize / 9;
-		colsize = colsize * 9;
+		colsize = (colsize / 9) * 9;
 	}
 
-	colsize = colsize / 4;
-	colsize = colsize * 4;
+	colsize = (colsize / 4) * 4;
 	for (i = 0; i < f->size; ) {
 		if (colsize < MAX_PREV
 		 && i < (f->size - colsize)) {
@@ -598,13 +594,18 @@ display_alnum_dump (cob_field *f, FILE *fp, unsigned int indent, unsigned int ma
 	}
 }
 
-static int	dump_null_adrs = 0;
 
 /* Output for DUMP purposes */
+static int	dump_null_adrs = 0;
+static void dump_pending_output (FILE*);
+
 void
 cob_dump_output (const char *str)
 {
 	FILE	*fp = cob_get_dump_file ();
+
+	dump_pending_output (fp);
+
 	fprintf (fp, "\n%s\n**********************\n", str);
 }
 
@@ -614,6 +615,8 @@ cob_dump_file (const char *name, cob_file *fl)
 {
 	FILE	*fp = cob_get_dump_file ();
 	const char *mode;
+
+	dump_pending_output (fp);
 
 	switch (fl->open_mode) {
 	case COB_OPEN_CLOSED:
@@ -634,123 +637,226 @@ cob_dump_file (const char *name, cob_file *fl)
 	fprintf (fp, "   FILE STATUS  '%.2s'\n", fl->file_status);
 }
 
-#define VNAME_MAX	COB_MAX_WORDLEN + 1 + 3 + COB_MAX_SUBSCRIPTS * (7 + 1)
-/* Output field for DUMP purposes */
-void
-cob_dump_field (const int level, const char *name, 
-		cob_field *f_addr, const int offset, const int indexes, ...)
+#define IDX_HINT_MAX	3 + COB_MAX_SUBSCRIPTS * (7 + 1)
+#define VNAME_MAX	COB_MAX_WORDLEN + IDX_HINT_MAX + 1
+#define LVL_SIZE	16
+
+
+/* storing dump name into provided buffer (minimal size: VNAME_MAX),
+   returns written length */
+static size_t
+setup_varname_with_indices (char *buffer, cob_u32_t	*subscript,
+	const cob_u32_t indexes, const char* name, const int closing_paren)
 {
-	FILE	*fp = cob_get_dump_file ();
-
-	/* fieldname and additional for subscripts: " ()" + indexes (max-size 7 + ",") */
-	char	vname[VNAME_MAX];
-	char	lvlwrk[16];
-	int 	adjust, indent;
-	cob_field	f[1];
-
-	if (level < 0) {	/* Special directive, only included for 3.1rc1 - compat */
-		if (level == -1) {
-			cob_dump_output (name);
-		} else
-		if (level == -2) {
-			cob_dump_file (NULL, (cob_file*)name);
+	if (indexes != 0) {
+		cob_u32_t c_idx;
+		int pos = 0;
+		pos = sprintf (&buffer[0], "%s (%u", name, subscript[0]);
+		for (c_idx = 1; c_idx < indexes; c_idx++) {
+			pos += sprintf (&buffer[pos], ",%u", subscript[c_idx]);
 		}
-		return;
-	}
-
-	memcpy (f, f_addr, sizeof (cob_field));
-	memcpy (vname, name, strlen (name) + 1);
-	adjust = offset;
-
-	if (indexes > 0) {
-		va_list	ap;
-		int	idx, subscript;
-		size_t size;
-		strcat (vname, " (");
-		va_start (ap, indexes);
-		for (idx = 1; idx <= indexes; idx++) {
-			subscript = va_arg (ap, int);
-			size = va_arg (ap, int);
-			adjust = adjust + (subscript * size);
-			if (idx > 1) {
-				strcat (vname,",");
-			}
-			sprintf (&vname[strlen(vname)], "%d", subscript + 1);
+		if (closing_paren) {
+			buffer[pos++] = ')';
 		}
-		va_end (ap);
-		strcat (vname,")");
-		vname[VNAME_MAX - 1] = 0;
-		if (indexes == 1
-		 && size >= f->size
-		 && size < MAX_PREV) {
-			if (subscript == 0) {
-				dump_idx = subscript;
-				dump_skip = subscript;
-				if (dump_tbl < 0) {
-					memcpy (dump_prev, f->data + adjust, size);
-					dump_tbl = 1;
-				} else {
-					dump_tbl++;
-				}
-			} else if (subscript == dump_skip) {
-				return;
-			} else if (subscript != dump_idx) {
-				if (memcmp(dump_prev, f->data + adjust, size) == 0) {
-					fprintf (fp, "%-10s ... occurrence (%d) same as (%d)\n", 
-									" ", subscript+1, dump_idx+1);
-					dump_skip = subscript;
-					return;
-				}
-				memcpy(dump_prev, f->data + adjust, size);
-				dump_idx = subscript;
-				dump_skip = -1;
-				dump_tbl = -1;
-			}
-		}
+		buffer[pos] = 0;
+		return pos - 1;
 	} else {
-		dump_idx = dump_tbl = dump_skip = -1;
-		vname[VNAME_MAX - 1] = 0;
+		size_t len = strlen (name);
+		memcpy (buffer, name, len + 1);
+		return len;
 	}
-	if (f->data) {
-		f->data += adjust;
-	}
+}
+
+static void
+setup_lvlwrk_and_dump_null_adrs (char *lvlwrk, const int level,
+		const void *data_ptr)
+{
 	if (level == 77
 	 || level == 1) {
-		indent = 0;
-		sprintf(lvlwrk,"%02d",level);
-		if (f->data != NULL) {
+		sprintf(lvlwrk, "%02d", level);
+		if (data_ptr != NULL) {
 			dump_null_adrs = 0;
 		} else {
 			dump_null_adrs = 1;
-			if (COB_FIELD_TYPE (f) == COB_TYPE_GROUP) {
-				strcat (vname, ".");
-			}
-			fprintf (fp, "%-10s%-30s <NULL> address\n", lvlwrk, vname);
-			return;
 		}
 	} else if (dump_null_adrs) {
-		/* Skip printing as previous Group had no address */
 		return;
+	} else if (level == 0) {
+		sprintf (lvlwrk, "   INDEX");
 	} else {
 		/* TODO: try to find a better algorithm for indent
 			(with level 1, 10, 15 + ... we have one at 5 and all others on 7),
 			maybe use a configuration here?	*/
-		indent = level / 2;
+		int 	indent = level / 2;
 		if (indent > 7)
 			indent = 7;
 		sprintf (lvlwrk, "%*s%02d", indent, " ", level);
 	}
-	if (f->data == NULL) {
-		fprintf (fp, "%-10s%-30s <CODEGEN ERROR, PLEASE REPORT THIS!>\n", lvlwrk, vname);
+}
+
+static const unsigned char *dump_prev_data[COB_MAX_SUBSCRIPTS + 1];
+static unsigned int	dump_index = 0;
+
+static unsigned int	dump_idx[COB_MAX_SUBSCRIPTS + 1];
+static unsigned int	dump_idx_first[COB_MAX_SUBSCRIPTS + 1];
+static unsigned int	dump_idx_last[COB_MAX_SUBSCRIPTS + 1];
+static unsigned int	dump_skip[COB_MAX_SUBSCRIPTS + 1];
+
+static char	pending_dump_name[VNAME_MAX + LVL_SIZE + 1] = "";
+static int	dump_compat = 0;
+
+static void
+dump_pending_output (FILE* fp)
+{
+	if (pending_dump_name[0] == 0) {
+		return;
+	}
+	fprintf (fp, "%s", pending_dump_name);
+	if (dump_idx_last[dump_index] != dump_idx_first[dump_index]) {
+		fprintf (fp, "..%u", dump_idx_last[dump_index]);
+	}
+	fprintf (fp, ") same as (%u)\n", dump_idx[dump_index]);
+	pending_dump_name[0] = 0;
+}
+
+/* Output field for DUMP purposes */
+static void
+dump_field_internal (const int level, const char *name,
+		cob_field *f_addr, const size_t field_offset,
+		const unsigned int indexes, va_list	ap)
+{
+	FILE	*fp = cob_get_dump_file ();
+
+	size_t 	adjust = field_offset;
+	size_t	name_length;
+	char	lvlwrk[LVL_SIZE];
+	/* fieldname and additional for subscripts: " ()"
+	    + indexes (max-size 7 + ",") */
+	char	vname[VNAME_MAX + 1];
+
+	cob_u32_t	subscript[COB_MAX_SUBSCRIPTS + 1] = { 0 };
+
+	/* copy over indexes to local array and calculate size offset */
+	if (indexes != 0) {
+		cob_uli_t size;
+		cob_u32_t cob_idx;
+		for (cob_idx = 1; cob_idx <= indexes; cob_idx++) {
+			cob_u32_t c_subscript = va_arg (ap, cob_u32_t);
+			cob_u32_t cob_subscript = c_subscript + 1;
+			/* skip complete processing if we already know that the current
+			   index is to be skipped as because of identical data to the
+			   last one (would have been resolved on the parent field here) */
+			if (!dump_compat
+			 && dump_skip[cob_idx] == 0
+			 && dump_skip[cob_idx - 1] == cob_subscript) {
+				return;
+			}
+			size = va_arg (ap, cob_uli_t);
+			adjust += (size_t)size * c_subscript;
+			subscript[cob_idx - 1] = cob_subscript;
+		}
+	}
+
+	/* copy field pointer to allow access to its data pointer and size
+	   and for the actual dump also its attributes */
+	cob_field	f[1];
+	memcpy (f, f_addr, sizeof (cob_field));
+	
+	if (!dump_compat) {
+		unsigned int calc_dump_index = indexes;
+		if (calc_dump_index != 0) {
+			calc_dump_index--;
+		}
+		/* reset comparision fields if new amount of indexes or the index itself
+		   is less than in the last run */
+		if (calc_dump_index < dump_index
+		 || dump_idx[calc_dump_index] > subscript[calc_dump_index]) {
+			dump_pending_output (fp);
+			for (;;) {
+				dump_idx[dump_index] = 0;
+				dump_prev_data[dump_index] = NULL;
+				dump_skip[dump_index] = 0;
+#ifdef _DEBUG
+				/* reset only for clarity, not necessary */
+				dump_idx_first[dump_index] = 0;
+				dump_idx_last[dump_index] = 0;
+#endif
+				if (dump_index <= indexes) {
+					break;
+				}
+				dump_prev_data[dump_index] = NULL;
+				dump_index--;
+			}
+		}
+		dump_index = calc_dump_index;
+		dump_idx_last[dump_index] = subscript[dump_index];
+
+		if (indexes != 0) {
+			/* if we see new indexed data then compare against last one ... */
+			if (dump_idx[dump_index] != subscript[dump_index]) {
+				const unsigned char *data = f->data + adjust;
+
+				if (dump_prev_data[dump_index] != NULL
+				 && memcmp (dump_prev_data[dump_index], data, f->size) == 0) {
+					/* ... either skipping identical content */
+					unsigned int subs;
+					size_t pos;
+					dump_skip[dump_index] = subscript[dump_index];
+					if (pending_dump_name[0]) {
+						return;
+					}
+
+					setup_lvlwrk_and_dump_null_adrs (lvlwrk, level, data);
+					pos = sprintf (pending_dump_name, "%-10s", lvlwrk);
+					setup_varname_with_indices (pending_dump_name + pos,
+						subscript, indexes, name, 0);
+					for (subs = 0; subs <= dump_index; subs++) {
+						dump_idx_first[subs] = subscript[subs];
+					}
+					return;
+				}
+				/* ... or handle possibly last output (special case with off by one)...*/
+				if (pending_dump_name[0]) {
+					dump_idx_last[dump_index]--;
+					dump_pending_output (fp);
+					dump_idx_last[dump_index]++;
+				}
+				/* ... and reset data for next comparision */
+				dump_idx[dump_index] = subscript[dump_index];
+				dump_skip[dump_index] = 0;
+				dump_prev_data[dump_index] = data;
+			}
+		}
+	}
+
+	setup_lvlwrk_and_dump_null_adrs (lvlwrk, level, f->data);
+	name_length =setup_varname_with_indices (vname, subscript, indexes, name, 1);
+
+	if (dump_null_adrs) {
+		if (level == 1 || level == 77) {
+			if (COB_FIELD_TYPE (f) == COB_TYPE_GROUP) {
+				vname[name_length++] = '.';
+				vname[name_length] = 0;
+			}
+			fprintf (fp, "%-10s%-30s <NULL> address\n", lvlwrk, vname);
+		}
+		/* skip printing as (previous) group had no address */
 		return;
 	}
 	if (f->attr->type == COB_TYPE_GROUP) {
-		strcat(vname,".");
-		fprintf (fp, "%-10s%s\n", lvlwrk, vname);
+		fprintf (fp, "%-10s%s.\n", lvlwrk, vname);
 	} else {
+		unsigned char *sav_data = f->data;
 		fprintf (fp, "%-10s%-30s ", lvlwrk, vname);
-		if (strlen (vname) > 30) {
+		if (name_length > 30) {
 			fprintf (fp, "\n%-*s", 41, " ");
+		}
+		if (f->data == NULL) {
+			fprintf (fp, "<CODEGEN ERROR, PLEASE REPORT THIS!>\n");
+			return;
+		}
+		if (f->data) {
+			f->data += adjust;
 		}
 		if (  (COB_FIELD_TYPE (f) == COB_TYPE_NUMERIC_EDITED
 			|| COB_FIELD_TYPE (f) == COB_TYPE_NUMERIC_DISPLAY)
@@ -766,7 +872,44 @@ cob_dump_field (const int level, const char *name,
 			cob_display_common (f, fp);
 		}
 		fprintf (fp, "\n");
+		f->data = sav_data;
 	}
+}
+
+/* 3.1 - compat function */
+void
+cob_dump_field (const int level, const char *name, cob_field *f_addr,
+		const int offset_ext, const int indexes_ext, ...)
+{
+	size_t	field_offset = offset_ext;
+	unsigned int indexes = indexes_ext;
+	va_list	ap;
+
+	if (level < 0) {	/* Special directive, only included for 3.1rc1 - compat */
+		if (level == -1) {
+			cob_dump_output (name);
+		} else
+		if (level == -2) {
+			cob_dump_file (NULL, (cob_file*)name);
+		}
+		return;
+	}
+
+	dump_compat = 1;
+	va_start (ap, indexes_ext);
+	dump_field_internal (level, name, f_addr, field_offset, indexes, ap);
+	dump_compat = 0;
+	va_end (ap);
+}
+
+void
+cob_dump_field_ext (const int level, const char *name, cob_field *f_addr,
+		const cob_uli_t field_offset, const cob_u32_t indexes, ...)
+{
+	va_list	ap;
+	va_start (ap, indexes);
+	dump_field_internal (level, name, f_addr, field_offset, indexes, ap);
+	va_end (ap);
 }
 
 /* ACCEPT */
