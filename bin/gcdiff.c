@@ -494,7 +494,11 @@ compare_file(FILE *ref, FILE *rslt, FILE *rpt)
 							}
 							i+=2,j+=2,n+=2;
 						} else if (memcmp(&rbuf[i],"MM",2) == 0) {
-							tval.tm_mon  = num_val (&nbuf[i], 2) - 1;
+							/* Did they use HH:MM instead of HH:MI */
+							if(memcmp(&rbuf[i-3],"HH",2) == 0)	
+								tval.tm_min  = num_val (&nbuf[i], 2);
+							else
+								tval.tm_mon  = num_val (&nbuf[i], 2) - 1;
 							i++,j++,n++;
 						} else if (memcmp(&rbuf[i],"DDD",3) == 0) {
 							tval.tm_wday = -1;
