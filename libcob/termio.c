@@ -629,10 +629,7 @@ cob_dump_file (const char *name, cob_file *fl)
 		mode = "OPEN";
 		break;
 	}
-	/* check only included for 3.1rc1 - compat */
-	if (name) {
-		fprintf (fp, "\n%s\n**********************\n", name);
-	}
+	fprintf (fp, "\n%s\n**********************\n", name);
 	fprintf (fp, "   File is %s\n", mode);
 	fprintf (fp, "   FILE STATUS  '%.2s'\n", fl->file_status);
 }
@@ -703,7 +700,6 @@ static unsigned int	dump_idx_last[COB_MAX_SUBSCRIPTS + 1];
 static unsigned int	dump_skip[COB_MAX_SUBSCRIPTS + 1];
 
 static char	pending_dump_name[VNAME_MAX + LVL_SIZE + 1] = "";
-static int	dump_compat = 0;
 
 static void
 dump_pending_output (FILE* fp)
@@ -736,6 +732,7 @@ cob_dump_field (const int level, const char *name,
 	char	vname[VNAME_MAX + 1];
 
 	cob_u32_t	subscript[COB_MAX_SUBSCRIPTS + 1] = { 0 };
+	unsigned int calc_dump_index = indexes;
 
 	/* copy over indexes to local array and calculate size offset */
 	if (indexes != 0) {
@@ -748,8 +745,7 @@ cob_dump_field (const int level, const char *name,
 			/* skip complete processing if we already know that the current
 			   index is to be skipped as because of identical data to the
 			   last one (would have been resolved on the parent field here) */
-			if (!dump_compat
-			 && dump_skip[cob_idx] == 0
+			if (dump_skip[cob_idx] == 0
 			 && dump_skip[cob_idx - 1] == cob_subscript) {
 				return;
 			}
@@ -765,70 +761,67 @@ cob_dump_field (const int level, const char *name,
 	cob_field	f[1];
 	memcpy (f, f_addr, sizeof (cob_field));
 	
-	if (!dump_compat) {
-		unsigned int calc_dump_index = indexes;
-		if (calc_dump_index != 0) {
-			calc_dump_index--;
-		}
-		/* reset comparision fields if new amount of indexes or the index itself
-		   is less than in the last run */
-		if (calc_dump_index < dump_index
-		 || dump_idx[calc_dump_index] > subscript[calc_dump_index]) {
-			dump_pending_output (fp);
-			for (;;) {
-				dump_idx[dump_index] = 0;
-				dump_prev_data[dump_index] = NULL;
-				dump_skip[dump_index] = 0;
+	if (calc_dump_index != 0) {
+		calc_dump_index--;
+	}
+	/* reset comparision fields if new amount of indexes or the index itself
+	   is less than in the last run */
+	if (calc_dump_index < dump_index
+	 || dump_idx[calc_dump_index] > subscript[calc_dump_index]) {
+		dump_pending_output (fp);
+		for (;;) {
+			dump_idx[dump_index] = 0;
+			dump_prev_data[dump_index] = NULL;
+			dump_skip[dump_index] = 0;
 #ifdef _DEBUG
-				/* reset only for clarity, not necessary */
-				dump_idx_first[dump_index] = 0;
-				dump_idx_last[dump_index] = 0;
+			/* reset only for clarity, not necessary */
+			dump_idx_first[dump_index] = 0;
+			dump_idx_last[dump_index] = 0;
 #endif
-				if (dump_index <= indexes) {
-					break;
-				}
-				dump_prev_data[dump_index] = NULL;
-				dump_index--;
+			if (dump_index <= indexes) {
+				break;
 			}
+			dump_prev_data[dump_index] = NULL;
+			dump_index--;
 		}
-		dump_index = calc_dump_index;
-		dump_idx_last[dump_index] = subscript[dump_index];
+	}
+	dump_index = calc_dump_index;
+	dump_idx_last[dump_index] = subscript[dump_index];
 
-		if (indexes != 0) {
-			/* if we see new indexed data then compare against last one ... */
-			if (dump_idx[dump_index] != subscript[dump_index]) {
-				const unsigned char *data = f->data + adjust;
+	if (indexes != 0) {
+		/* if we see new indexed data then compare against last one ... */
+		if (dump_idx[dump_index] != subscript[dump_index]) {
+			const unsigned char *data = f->data + adjust;
 
-				if (dump_prev_data[dump_index] != NULL
-				 && memcmp (dump_prev_data[dump_index], data, f->size) == 0) {
-					/* ... either skipping identical content */
-					unsigned int subs;
-					size_t pos;
-					dump_skip[dump_index] = subscript[dump_index];
-					if (pending_dump_name[0]) {
-						return;
-					}
-
-					setup_lvlwrk_and_dump_null_adrs (lvlwrk, level, data);
-					pos = sprintf (pending_dump_name, "%-10s", lvlwrk);
-					setup_varname_with_indices (pending_dump_name + pos,
-						subscript, indexes, name, 0);
-					for (subs = 0; subs <= dump_index; subs++) {
-						dump_idx_first[subs] = subscript[subs];
-					}
+			if (dump_prev_data[dump_index] != NULL
+			 && memcmp (dump_prev_data[dump_index], data, f->size) == 0) {
+				/* ... either skipping identical content */
+				unsigned int subs;
+				size_t pos;
+				dump_skip[dump_index] = subscript[dump_index];
+				if (pending_dump_name[0]) {
 					return;
 				}
-				/* ... or handle possibly last output (special case with off by one)...*/
-				if (pending_dump_name[0]) {
-					dump_idx_last[dump_index]--;
-					dump_pending_output (fp);
-					dump_idx_last[dump_index]++;
+
+				setup_lvlwrk_and_dump_null_adrs (lvlwrk, level, data);
+				pos = sprintf (pending_dump_name, "%-10s", lvlwrk);
+				setup_varname_with_indices (pending_dump_name + pos,
+					subscript, indexes, name, 0);
+				for (subs = 0; subs <= dump_index; subs++) {
+					dump_idx_first[subs] = subscript[subs];
 				}
-				/* ... and reset data for next comparision */
-				dump_idx[dump_index] = subscript[dump_index];
-				dump_skip[dump_index] = 0;
-				dump_prev_data[dump_index] = data;
+				return;
 			}
+			/* ... or handle possibly last output (special case with off by one)...*/
+			if (pending_dump_name[0]) {
+				dump_idx_last[dump_index]--;
+				dump_pending_output (fp);
+				dump_idx_last[dump_index]++;
+			}
+			/* ... and reset data for next comparision */
+			dump_idx[dump_index] = subscript[dump_index];
+			dump_skip[dump_index] = 0;
+			dump_prev_data[dump_index] = data;
 		}
 	}
 
