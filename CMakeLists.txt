@@ -52,20 +52,17 @@ set(VARSEQ
 # AC_C_INLINE for CMake
 #
 foreach(KEYWORD "inline" "__inline__" "__inline" "")
-   if(NOT DEFINED COB_KEYWORD_INLINE)
-     try_compile(C_INLINE
-       ${PROJECT_BINARY_DIR}
-       ${PROJECT_SOURCE_DIR}/build_aux/cmake/inline.c
-       COMPILE_DEFINITIONS "-DCOB_KEYWORD_INLINE=${KEYWORD}")
-     if(C_INLINE)
-       set(COB_KEYWORD_INLINE ${KEYWORD})
-       #add_definitions("-Dinline=${KEYWORD}")
-     endif()
-   endif()
+  if(NOT DEFINED COB_KEYWORD_INLINE)
+    try_compile(C_INLINE
+      ${PROJECT_BINARY_DIR}
+      ${PROJECT_SOURCE_DIR}/build_aux/cmake/inline.c
+      COMPILE_DEFINITIONS "-DCOB_KEYWORD_INLINE=${KEYWORD}")
+    if(C_INLINE)
+      message("inline is spelled '${KEYWORD}' ")
+      set(COB_KEYWORD_INLINE ${KEYWORD})
+    endif()
+  endif()
 endforeach()
-# if(NOT DEFINED COB_KEYWORD_INLINE)
-#    add_definitions("-Dinline=")
-# endif()
 
 set(COB_CONFIG_DIR ${CMAKE_INSTALL_PREFIX}/share/${PACKAGE}/config)
 set(COB_COPY_DIR ${CMAKE_INSTALL_PREFIX}/share/${PACKAGE}/copy)
