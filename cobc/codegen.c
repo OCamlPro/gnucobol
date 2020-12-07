@@ -9993,12 +9993,14 @@ output_field_display (struct cb_field *f, size_t offset,
 				output (", i_%u, ", (cob_u32_t)-field_subscript[i]);
 				if (cb_flag_odoslide
 				 && p && p->depending) {
+					output ("(cob_uli_t)(");
 					output_size (cb_build_field_reference (p, NULL));
+					output (")");
 				} else {
-					output ("%lu", (cob_uli_t) size_subscript[i]);
+					output ("%luUL", (cob_uli_t) size_subscript[i]);
 				}
 			} else {
-				output (", %u, 0", (cob_u32_t)field_subscript[i]);
+				output (", %u, 0UL", (cob_u32_t)field_subscript[i]);
 			}
 			/* non-standard level 01 occurs */
 			if (!p) {
@@ -10569,8 +10571,8 @@ output_dump_code (struct cb_program *prog, cb_tree parameter_list)
 	}
 	if (prog->linkage_storage) {
 		if (cb_flag_dump & COB_DUMP_LS) {
-			has_dump = 1;
 			struct cb_field	*f2;
+			has_dump = 1;
 			output_newline ();
 			output_line ("/* Dump LINKAGE SECTION */");
 			if (prog->num_proc_params) {

@@ -725,16 +725,16 @@ dump_field_internal (const int level, const char *name,
 		cob_field *f_addr, const size_t field_offset,
 		const unsigned int indexes, va_list	ap)
 {
-	FILE	*fp = cob_get_dump_file ();
-
 	size_t 	adjust = field_offset;
 	size_t	name_length;
 	char	lvlwrk[LVL_SIZE];
 	/* fieldname and additional for subscripts: " ()"
 	    + indexes (max-size 7 + ",") */
 	char	vname[VNAME_MAX + 1];
+	cob_field	f[1];
+	FILE	*fp = cob_get_dump_file ();
 
-	cob_u32_t	subscript[COB_MAX_SUBSCRIPTS + 1] = { 0 };
+	cob_u32_t	subscript[COB_MAX_SUBSCRIPTS + 1];
 
 	/* copy over indexes to local array and calculate size offset */
 	if (indexes != 0) {
@@ -755,11 +755,15 @@ dump_field_internal (const int level, const char *name,
 			adjust += (size_t)size * c_subscript;
 			subscript[cob_idx - 1] = cob_subscript;
 		}
+		while (cob_idx < COB_MAX_SUBSCRIPTS) {
+			subscript[cob_idx++] = 0;
+		}
+	} else {
+		subscript[0] = 0;
 	}
 
 	/* copy field pointer to allow access to its data pointer and size
 	   and for the actual dump also its attributes */
-	cob_field	f[1];
 	memcpy (f, f_addr, sizeof (cob_field));
 	
 	if (!dump_compat) {

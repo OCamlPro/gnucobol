@@ -1190,7 +1190,6 @@ cb_build_generic_register (const char *name, const char *external_definition)
 {
 	cb_tree field_tree;
 	char	definition[COB_MINI_BUFF];
-	char	temp[COB_MINI_BUFF] = { 0 };
 	char *p, *r;
 	struct cb_field *field;
 	enum cb_usage	usage;
@@ -1231,9 +1230,10 @@ cb_build_generic_register (const char *name, const char *external_definition)
 		if (strncmp (p, "DISPLAY", (size_t)7) == 0) {
 			memset (p, ' ', 7);
 		} else {
+			char	temp[COB_MINI_BUFF];
 			r = p;
 			while (*r != 0 && *r != ' ') r++;
-			strncpy (temp, p, r - p);
+			memcpy (temp, p, r - p);
 			temp [r - p] = 0;
 			memset (p, ' ', r - p);
 			COB_UNUSED (temp);	/* FIXME: parse actual USAGE from temp */
@@ -1255,10 +1255,11 @@ cb_build_generic_register (const char *name, const char *external_definition)
 		}
 	}
 	if (p) {
+		char	temp[COB_MINI_BUFF];
 		while (*p == ' ') p++;
 		r = p;
 		while (*r != 0 && *r != ' ') r++;
-		strncpy (temp, p, r - p);
+		memcpy (temp, p, r - p);
 		temp [r - p] = 0;
 		memset (p, ' ', r - p);
 		picture = CB_PICTURE (cb_build_picture (temp));

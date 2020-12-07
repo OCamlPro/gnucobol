@@ -1,4 +1,11 @@
 
+2020-12-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_display_fields): prevent bad integer promotion in
+	  libcob (typeck within va_arg) by forcing the unsigned long type for
+	  the varargs argument
+	* typeck.c (cb_build_generic_register): favor memcpy over strncpy
+
 2020-12-06  Simon Sobisch <simonsobisch@gnu.org>
 
 	* Makefile.am (cobc_LDADD): fixed ordering, in-tree libraries
