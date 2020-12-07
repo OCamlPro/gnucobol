@@ -10516,7 +10516,7 @@ output_display_fields (struct cb_field *f, size_t offset, unsigned int idx)
 			output_line ("else");
 			output_block_open ();
 #if defined(HAVE_SIGNAL_H)
-			output_line ("cob_set_dump_signal ((void(*)(int))catch_sig_jmp);");
+			output_line ("cob_set_dump_signal ((void *)catch_sig_jmp);");
 			output_line ("if (setjmp (save_sig_env) != 0)");
 			output_block_open ();
 			output_line ("cob_dump_output(\" >>>> Dump of %s aborted! <<<<\");",name);
@@ -11240,8 +11240,8 @@ output_dump_code (struct cb_program *prog, cb_tree parameter_list)
 	}
 	if (prog->linkage_storage) {
 		if (cb_flag_dump & COB_DUMP_LS) {
-			has_dump = 1;
 			struct cb_field	*f2;
+			has_dump = 1;
 			output_newline ();
 			output_line ("/* Dump LINKAGE SECTION */");
 			if (prog->num_proc_params) {
