@@ -1,4 +1,10 @@
 
+2020-12-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* m4/ax_ac_define_resolved.m4: fixed resolving datarootdir
+	* configure.ac: only try GCC-compatible debug flag if used compiler
+	  claims GCC-compatibility
+
 2020-11-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac, NEWS: explicit note about obsolete OpenCOBOL-EXTFH
@@ -6,7 +12,7 @@
 
 2020-11-12  Simon Sobisch <simonsobisch@gnu.org>
 
-	* mf/ax_ac_define_resolved.m4: fixed resolving passed --prefix
+	* m4/ax_ac_define_resolved.m4: fixed resolving passed --prefix
 
 2020-11-11  Simon Sobisch <simonsobisch@gnu.org>
 

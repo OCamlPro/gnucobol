@@ -1173,7 +1173,7 @@ cob_mpf_atan (mpf_t dst_val, const mpf_t src_val)
 
 	do {
 		mpf_mul (vf1, vf1, vf2);
-		mpf_div_ui (vf3, vf1, 2UL * n + 1UL);
+		mpf_div_ui (vf3, vf1, 2ULL * n + 1);
 		mpf_set (vf4, dst_temp);
 		mpf_add (dst_temp, dst_temp, vf3);
 		++n;

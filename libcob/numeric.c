@@ -1037,7 +1037,7 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 		}
 		if (*p) {
 			mpz_add_ui (d->value, d->value,
-				    ((cob_uli_t)(*p >> 4U) * 10U) + (*p & 0x0FU));
+				    ((cob_uli_t)(*p >> 4U) * 10) + (*p & 0x0FU));
 			nonzero = 1;
 		}
 	}

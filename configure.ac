@@ -1707,10 +1707,11 @@ COB_DEBUG_FLAGS="-g"
 
 # For debugging: add most expressive debug level if using GCC (compatible)
 curr_cflags="$CFLAGS"
-cob_temp_flags="-ggdb3"
-CFLAGS="$curr_cflags $cob_temp_flags"
-AC_MSG_CHECKING([for debug option $cob_temp_flags])
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[int testint;]])],
+if test "$COB_USES_GCC" = "yes"; then
+  cob_temp_flags="-ggdb3"
+  CFLAGS="$curr_cflags $cob_temp_flags"
+  AC_MSG_CHECKING([for debug option $cob_temp_flags])
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[int testint;]])],
 	[AC_MSG_RESULT([yes])
 	 COB_DEBUG_FLAGS="$cob_temp_flags"],
 	[AC_MSG_RESULT([no])
@@ -1724,10 +1725,10 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[int testint;]])],
 	]
 )
 
-cob_temp_flags="-fasynchronous-unwind-tables"
-CFLAGS="$curr_cflags $cob_temp_flags"
-AC_MSG_CHECKING([for debug option $cob_temp_flags])
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[int testint;]])],
+  cob_temp_flags="-fasynchronous-unwind-tables"
+  CFLAGS="$curr_cflags $cob_temp_flags"
+  AC_MSG_CHECKING([for debug option $cob_temp_flags])
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[int testint;]])],
 	[AC_MSG_RESULT([yes])
 	 COB_DEBUG_FLAGS="$COB_DEBUG_FLAGS $cob_temp_flags"],
 	[AC_MSG_RESULT([no])
@@ -1739,7 +1740,8 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[int testint;]])],
 		 COB_DEBUG_FLAGS="$COB_DEBUG_FLAGS $cob_temp_flags"],
 		[AC_MSG_RESULT([no])])
 	]
-)
+  )
+fi
 
 if test "$enable_debug" = "yes"; then
 	CFLAGS="$curr_cflags $COB_DEBUG_FLAGS"
