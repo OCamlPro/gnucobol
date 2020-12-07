@@ -7195,7 +7195,7 @@ Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not pa
  Last statement of sub2 was at line 251 of prog.cob
  Last statement of prog was at line 118 of prog.cob
 
-Dump Program-Id sub1 from prog.cob compiled MMM DD YYYY HH:MM:SS
+Dump Program-Id sub1 from prog.cob compiled MMM DD YYYY HH:MI:SS
 
 WORKING-STORAGE
 **********************
@@ -7258,7 +7258,7 @@ LINKAGE
 END OF DUMP - sub1
 **********************
 
-Dump Program-Id sub2 from prog.cob compiled MMM DD YYYY HH:MM:SS
+Dump Program-Id sub2 from prog.cob compiled MMM DD YYYY HH:MI:SS
 
 WORKING-STORAGE
 **********************
@@ -7327,7 +7327,7 @@ LINKAGE
 END OF DUMP - sub2
 **********************
 
-Dump Program-Id prog from prog.cob compiled MMM DD YYYY HH:MM:SS
+Dump Program-Id prog from prog.cob compiled MMM DD YYYY HH:MI:SS
 
 FD FLATFILE
 **********************
@@ -7430,7 +7430,7 @@ Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not pa
  Last statement of sub2 was at line 251 of prog.cob
  Last statement of prog was at line 118 of prog.cob
 
-Dump Program-Id sub1 from prog.cob compiled MMM DD YYYY HH:MM:SS
+Dump Program-Id sub1 from prog.cob compiled MMM DD YYYY HH:MI:SS
 
 LINKAGE
 **********************
@@ -7440,7 +7440,7 @@ LINKAGE
 END OF DUMP - sub1
 **********************
 
-Dump Program-Id sub2 from prog.cob compiled MMM DD YYYY HH:MM:SS
+Dump Program-Id sub2 from prog.cob compiled MMM DD YYYY HH:MI:SS
 
 LINKAGE
 **********************
@@ -7455,7 +7455,7 @@ LINKAGE
 END OF DUMP - sub2
 **********************
 
-Dump Program-Id prog from prog.cob compiled MMM DD YYYY HH:MM:SS
+Dump Program-Id prog from prog.cob compiled MMM DD YYYY HH:MI:SS
 
 FD FLATFILE
 **********************
@@ -7670,7 +7670,7 @@ Module dump due to BASED/LINKAGE item 'A-TABLE' has NULL address
 
  Last statement of prog was at line 102 of prog.cob
 
-Dump Program-Id prog from prog.cob compiled MMM DD YYYY HH:MM:SS
+Dump Program-Id prog from prog.cob compiled MMM DD YYYY HH:MI:SS
 
 WORKING-STORAGE
 **********************
@@ -7790,6 +7790,115 @@ END OF DUMP - prog
 ])
 
 AT_CHECK([gcdiff -U reference dumpall.txt], [0], [], [])
+
+AT_CLEANUP
+
+AT_SETUP([Test dump feature (3)])
+AT_KEYWORDS([Dump])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  GOODY.
+           05 GOOD-ALLOC      PIC XXX VALUE "088".
+           05 GOOD-OCC OCCURS 3 TIMES INDEXED BY GIDX.
+             10 GOOD-BUG1   PIC X(10).
+             10 GOOD-BUG2   PIC X(6) OCCURS 5 TIMES 
+                                     INDEXED BY GIDX2, GIDX3.
+       01  V-BEFORE              PIC 99 VALUE 4.
+       01  BUGGY BASED.
+           05 BUGGY-ALLOCATED    PIC XXX VALUE "040".
+           05 BUGGY-BUG1         PIC X(16000).
+           05 BUGGY-BUG2         PIC X(16000).
+       77  V-MID                 PIC X  VALUE '!'.
+       77  BUGGY-POINTER         USAGE POINTER.
+       01  BADBASE BASED.
+           05 BADBASE-ALLOC      PIC XXX VALUE "099".
+           05 BADBASE-OCC OCCURS 5 TIMES INDEXED BY BIDX.
+             10 BADBASE-BUG1     PIC X(100).
+             10 BADBASE-BUG2     PIC X(160).
+       77  V-AFTER               PIC X  VALUE '$'.
+       PROCEDURE DIVISION.
+           DISPLAY "Ready".
+           SET GIDX     TO 2.
+           MOVE "Where" TO GOOD-BUG1 (GIDX).
+           SET GIDX2    TO 3.
+           MOVE "is"    TO GOOD-BUG2 (GIDX, GIDX2).
+           MOVE "Waldo" TO GOOD-BUG2 (GIDX, GIDX2 + 1).
+           SET BUGGY-POINTER TO NULL
+           SET BUGGY-POINTER UP BY 538976289
+           SET ADDRESS OF BUGGY TO BUGGY-POINTER
+           SET BUGGY-POINTER UP BY 538976290
+           SET ADDRESS OF BADBASE TO BUGGY-POINTER
+           MOVE V-BEFORE (2:1) TO BUGGY (3:).
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -std=default -debug -fdump=ALL prog.cob ], [0], [], [])
+
+AT_CHECK([export COB_DUMP_FILE=dumpall.txt
+$COBCRUN_DIRECT ./prog], [11], [Ready
+], [
+prog.cob:37: attempt to reference unallocated memory (signal SIGSEGV)
+
+
+dump written to dumpall.txt
+])
+
+
+AT_CAPTURE_FILE(./dumpall.txt)
+
+AT_DATA([reference], [
+Module dump due to signal SIGSEGV
+
+ Last statement of prog was at line 37 of prog.cob  
+
+Dump Program-Id prog from prog.cob compiled MMM DD YYYY HH:MI:SS
+
+WORKING-STORAGE
+**********************
+   INDEX  GIDX                            +000000002
+   INDEX  GIDX2                           +000000003
+   INDEX  GIDX3                           +000000001
+01        GOODY.
+  05      GOOD-ALLOC                     '088'
+  05      GOOD-OCC (1).
+     10   GOOD-BUG1 (1)                  ALL SPACES
+     10   GOOD-BUG2 (1,1)                ALL SPACES
+     10   GOOD-BUG2 (1,2..5) same as (1)
+  05      GOOD-OCC (2).
+     10   GOOD-BUG1 (2)                  'Where'
+     10   GOOD-BUG2 (2,1)                ALL SPACES
+     10   GOOD-BUG2 (2,2) same as (1)
+     10   GOOD-BUG2 (2,3)                'is'
+     10   GOOD-BUG2 (2,4)                'Waldo'
+     10   GOOD-BUG2 (2,5)                ALL SPACES
+  05      GOOD-OCC (3).
+     10   GOOD-BUG1 (3)                  ALL SPACES
+     10   GOOD-BUG2 (3,1)                ALL SPACES
+     10   GOOD-BUG2 (3,2..5) same as (1)
+01        V-BEFORE                        04
+01        BUGGY.
+  05      BUGGY-ALLOCATED                
+ >>>> Dump of BUGGY aborted! <<<<
+**********************
+77        V-MID                          '!'
+77        BUGGY-POINTER                   0x0000000040404043
+   INDEX  BIDX                            +000000001
+01        BADBASE.
+  05      BADBASE-ALLOC                  
+ >>>> Dump of BADBASE aborted! <<<<
+**********************
+77        V-AFTER                        '$'
+
+END OF DUMP - prog  
+**********************
+
+])
+
+AT_CHECK([gcdiff reference dumpall.txt], [0], [], [])
 
 AT_CLEANUP
 
