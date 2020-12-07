@@ -159,7 +159,7 @@ endif()
 message("WITH_JSON defined as '${WITH_JSON}' ")
 
 configure_file (
-  "${PROJECT_SOURCE_DIR}/config.cmake.h"
+  "${PROJECT_SOURCE_DIR}/build_aux/cmake/config.cmake.h"
   "${PROJECT_BINARY_DIR}/config.h"
   )
 
