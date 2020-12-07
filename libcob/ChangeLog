@@ -1,8 +1,14 @@
 
+2020-12-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* termio.c (cob_dump_field): complete rewrite to allow any size of OCCURS
+	  to be checked for "same as" and to allow that also with nested OCCURS
+
 2020-12-05  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.h, intrinsic.c: removed unused include sys/timeb.h and definitions
 	  for timeb and ftime
+	* termio.c (setup_lvlwrk_and_dump_null_adrs): handle level 0 as INDEX
 
 2020-12-04  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -14,6 +20,16 @@
 2020-11-30  Ron Norman <rjn@inglenet.com>
 
 	* common.c (cob_check_version): rewrote as it did not work on some platforms
+
+2020-11-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* termio.c, common.h (cob_dump_field): adjusted variable types to unsigned
+	* termio.c (cob_dump_field): extracted setup_lvlwrk_and_dump_null_adrs and
+	  setup_varname_with_indices into separate functions and call them only
+	  if not skipped because of same data
+	* termio.c (cob_dump_field): fixes for non-standard 01 OCCURS for "same as"
+	* termio.c (cob_dump_field): postpone output of "same as" to gather multiple
+	  identical entries into the same line as "XYZ (1,2..20) same as (1)"
 
 2020-11-26  Ron Norman <rjn@inglenet.com>
 

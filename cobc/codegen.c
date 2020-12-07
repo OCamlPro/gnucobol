@@ -10319,10 +10319,11 @@ output_initial_values (struct cb_field *f)
 
 /* Code for displaying hex dumps */
 static int field_subscript[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
-static int size_subscript[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
+static size_t size_subscript[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
 
 static void
-output_field_display (struct cb_field *f, int offset, int idx)
+output_field_display (struct cb_field *f, size_t offset,
+		unsigned int idx)
 {
 	struct cb_field *p;
 	cb_tree x;
@@ -10358,21 +10359,21 @@ output_field_display (struct cb_field *f, int offset, int idx)
 		output_attr (x);
 		output (")");
 	}
-	output (", %d, %d", offset, idx);
+	output (", %lu, %u", (cob_uli_t)offset, idx);
 	if (idx > 0) {
-		int	i;
+		size_t	i;
 		p = f->parent;
 		for (i = 0; i < idx; i++) {
 			if (field_subscript[i] < 0) {
-				output (", i_%d, ",-field_subscript[i]);
+				output (", i_%u, ", (cob_u32_t)-field_subscript[i]);
 				if (cb_flag_odoslide
-				 && p->depending) {
+				 && p && p->depending) {
 					output_size (cb_build_field_reference (p, NULL));
 				} else {
-					output ("%d",size_subscript[i]);
+					output ("%lu", (cob_uli_t) size_subscript[i]);
 				}
 			} else {
-				output (", %d, 0",field_subscript[i]);
+				output (", %u, 0", (cob_u32_t)field_subscript[i]);
 			}
 			/* non-standard level 01 occurs */
 			if (!p) {
@@ -10423,7 +10424,7 @@ output_field_display (struct cb_field *f, int offset, int idx)
 }
 
 static void
-output_display_fields (struct cb_field *f, int offset, int idx)
+output_display_fields (struct cb_field *f, size_t offset, unsigned int idx)
 {
 	for (; f; f = f->sister) {
 		int has_based_check = 0;
@@ -10480,6 +10481,14 @@ output_display_fields (struct cb_field *f, int offset, int idx)
 			output_line ("else");
 			output_block_open ();
 			has_based_check = 1;
+		}
+		if (f->index_list && idx == 0) {
+			cb_tree l;
+			struct cb_field *f_idx;
+			for (l = f->index_list; l; l = CB_CHAIN (l)) {
+				f_idx = CB_FIELD_PTR (CB_VALUE (l));
+				output_field_display (f_idx, 0, idx);
+			}
 		}
 		if (f->occurs_max > 1) {
 			idx++;
