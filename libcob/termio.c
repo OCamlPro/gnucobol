@@ -720,28 +720,30 @@ void
 cob_dump_field (const int level, const char *name, 
 		cob_field *f_addr, const cob_uli_t field_offset, const cob_u32_t indexes, ...)
 {
-	FILE	*fp = cob_get_dump_file ();
-	
-	va_list	ap;
-
 	size_t 	adjust = field_offset;
 	size_t	name_length;
+	int		cob_idx;
 	char	lvlwrk[LVL_SIZE];
 	/* fieldname and additional for subscripts: " ()"
 	    + indexes (max-size 7 + ",") */
 	char	vname[VNAME_MAX + 1];
 
-	cob_u32_t	subscript[COB_MAX_SUBSCRIPTS + 1] = { 0 };
+	cob_u32_t	subscript[COB_MAX_SUBSCRIPTS + 1];
+	cob_field	f[1];
+	va_list	ap;
+	FILE	*fp = cob_get_dump_file ();
 	unsigned int calc_dump_index = indexes;
+
+	for(cob_idx = 0; cob_idx < COB_MAX_SUBSCRIPTS; cob_idx++)
+		subscript [cob_idx] = 0;
 
 	/* copy over indexes to local array and calculate size offset */
 	if (indexes != 0) {
-		cob_uli_t size;
-		cob_u32_t cob_idx;
+		unsigned int size;
 		va_start (ap, indexes);
 		for (cob_idx = 1; cob_idx <= indexes; cob_idx++) {
-			cob_u32_t c_subscript = va_arg (ap, cob_u32_t);
-			cob_u32_t cob_subscript = c_subscript + 1;
+			int c_subscript = va_arg (ap, int);
+			int cob_subscript = c_subscript + 1;
 			/* skip complete processing if we already know that the current
 			   index is to be skipped as because of identical data to the
 			   last one (would have been resolved on the parent field here) */
@@ -749,8 +751,8 @@ cob_dump_field (const int level, const char *name,
 			 && dump_skip[cob_idx - 1] == cob_subscript) {
 				return;
 			}
-			size = va_arg (ap, cob_uli_t);
-			adjust += (size_t)size * c_subscript;
+			size = va_arg (ap, unsigned int);
+			adjust += (size * c_subscript);
 			subscript[cob_idx - 1] = cob_subscript;
 		}
 		va_end (ap);
@@ -758,7 +760,6 @@ cob_dump_field (const int level, const char *name,
 
 	/* copy field pointer to allow access to its data pointer and size
 	   and for the actual dump also its attributes */
-	cob_field	f[1];
 	memcpy (f, f_addr, sizeof (cob_field));
 	
 	if (calc_dump_index != 0) {
@@ -826,7 +827,7 @@ cob_dump_field (const int level, const char *name,
 	}
 
 	setup_lvlwrk_and_dump_null_adrs (lvlwrk, level, f->data);
-	name_length =setup_varname_with_indices (vname, subscript, indexes, name, 1);
+	name_length = setup_varname_with_indices (vname, subscript, indexes, name, 1);
 
 	if (dump_null_adrs) {
 		if (level == 1 || level == 77) {
