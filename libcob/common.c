@@ -1044,6 +1044,93 @@ cob_set_signal (void)
 #endif
 }
 
+/* Used by code generated for -fdump= to catch abort while dumping */
+void
+cob_set_dump_signal (void *hndlr)
+{
+#ifdef	HAVE_SIGNAL_H
+	sigset_t sigs;
+
+#ifdef	HAVE_SIGACTION
+	struct sigaction	sa;
+	struct sigaction	osa;
+
+	if (hndlr == NULL)
+		hndlr = SIG_DFL;
+
+	sigemptyset(&sigs);
+	/* Unblock signals to allow catch of another abort during dump */
+#ifdef	SIGSEGV
+	sigaddset(&sigs, SIGSEGV);
+#endif
+#ifdef	SIGBUS
+	sigaddset(&sigs, SIGBUS);
+#endif
+#ifdef	SIGFPE
+	sigaddset(&sigs, SIGFPE);
+#endif
+	sigprocmask(SIG_UNBLOCK, &sigs, NULL);
+
+	memset (&sa, 0, sizeof (sa));
+	sa.sa_handler = hndlr;
+#ifdef	SA_NOCLDSTOP
+	sa.sa_flags |= SA_NOCLDSTOP;
+#endif
+
+#ifdef	SIGSEGV
+	/* Take direct control of segmentation violation */
+	(void)sigemptyset (&sa.sa_mask);
+	(void)sigaction (SIGSEGV, &sa, NULL);
+#endif
+#ifdef	SIGBUS
+	/* Take direct control of bus error */
+	(void)sigemptyset (&sa.sa_mask);
+	(void)sigaction (SIGBUS, &sa, NULL);
+#endif
+#ifdef	SIGFPE
+	/* fatal arithmetic errors including non-floating-point division by zero */
+	(void)sigaction (SIGFPE, NULL, &osa);
+	if (osa.sa_handler != SIG_IGN) {
+		(void)sigemptyset (&sa.sa_mask);
+		(void)sigaction (SIGFPE, &sa, NULL);
+	}
+#endif
+
+#else
+	sigemptyset(&sigs);
+	/* Unblock signals to allow catch of another abort during dump */
+#ifdef	SIGSEGV
+	sigaddset(&sigs, SIGSEGV);
+#endif
+#ifdef	SIGBUS
+	sigaddset(&sigs, SIGBUS);
+#endif
+#ifdef	SIGFPE
+	sigaddset(&sigs, SIGFPE);
+#endif
+	sigprocmask(SIG_UNBLOCK, &sigs, NULL);
+
+	if (hndlr == NULL)
+		hndlr = SIG_DFL;
+
+#ifdef	SIGSEGV
+	/* Take direct control of segmentation violation */
+	(void)signal (SIGSEGV, hndlr);
+#endif
+#ifdef	SIGBUS
+	/* Take direct control of bus error */
+	(void)signal (SIGBUS, hndlr);
+#endif
+#ifdef	SIGFPE
+	if (signal (SIGFPE, SIG_IGN) != SIG_IGN) {
+		(void)signal (SIGFPE, hndlr);
+	}
+#endif
+
+#endif
+#endif
+}
+
 /* ASCII Sign
  * positive: 0123456789
  * negative: pqrstuvwxy

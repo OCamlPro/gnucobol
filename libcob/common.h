@@ -1780,6 +1780,7 @@ struct cobjmp_buf {
 
 /*******************************/
 /* Functions in common.c */
+COB_EXPIMP void		cob_set_dump_signal (void *);
 COB_EXPIMP const char*	libcob_version (void);
 COB_EXPIMP int		set_libcob_version (int *, int *, int *);
 COB_EXPIMP void		print_info	(void);
