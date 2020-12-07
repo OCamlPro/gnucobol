@@ -10424,6 +10424,35 @@ output_field_display (struct cb_field *f, size_t offset,
 }
 
 static void
+output_field_indexes (struct cb_field *f)
+{
+	cb_tree l;
+	struct cb_field *f_idx;
+
+	for (l = f->index_list; l; l = CB_CHAIN (l)) {
+		f_idx = CB_FIELD_PTR (CB_VALUE (l));
+		output_field_display (f_idx, 0, 0);
+	}
+}
+
+static void
+output_record_indexes (struct cb_field *f)
+{
+	cb_tree l;
+	struct cb_field *f_idx;
+
+	while ( f != NULL ) {
+		if (f->index_list != NULL)
+			output_field_indexes (f);
+		if (f->children != NULL) {
+			output_record_indexes (f->children);
+		}
+		f = f->sister;
+	}
+	return;
+}
+
+static void
 output_display_fields (struct cb_field *f, size_t offset, unsigned int idx)
 {
 	for (; f; f = f->sister) {
@@ -10449,6 +10478,12 @@ output_display_fields (struct cb_field *f, size_t offset, unsigned int idx)
 			}
 			output_as_comment++;
 		}
+		if (idx == 0
+		 && (f->level == 77 || f->level == 1)) {	/* Dump all INDEXED BY values */
+			output_field_indexes (f);
+			output_record_indexes (f->children);
+		}
+
 		/* generated check for NULL address */
 		if (!output_as_comment
 		 && (f->level == 77 || f->level == 1)
@@ -10490,14 +10525,6 @@ output_display_fields (struct cb_field *f, size_t offset, unsigned int idx)
 			output_block_open ();
 #endif
 			has_based_check = 1;
-		}
-		if (f->index_list && idx == 0) {
-			cb_tree l;
-			struct cb_field *f_idx;
-			for (l = f->index_list; l; l = CB_CHAIN (l)) {
-				f_idx = CB_FIELD_PTR (CB_VALUE (l));
-				output_field_display (f_idx, 0, idx);
-			}
 		}
 		if (f->occurs_max > 1) {
 			idx++;
