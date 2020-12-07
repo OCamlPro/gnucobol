@@ -1,6 +1,11 @@
 
 2020-12-07  Ron Norman <rjn@inglenet.com>
 
+	* codegen.c (output_dump_code): Change to dump INDEXED BY variables
+	  used in a record before the record is dumped
+
+2020-12-07  Ron Norman <rjn@inglenet.com>
+
 	* codegen.c (output_dump_code): emit code for BASED/LINKAGE fields
 	  to catch SIGSEGV/SIGBUS/SIGFPE and then skip the dump of that record
 
