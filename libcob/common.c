@@ -1056,7 +1056,7 @@ cob_set_dump_signal (void *hndlr)
 	struct sigaction	osa;
 
 	if (hndlr == NULL)
-		hndlr = SIG_DFL;
+		hndlr = (void*)SIG_DFL;
 
 	sigemptyset(&sigs);
 	/* Unblock signals to allow catch of another abort during dump */
@@ -1072,7 +1072,7 @@ cob_set_dump_signal (void *hndlr)
 	sigprocmask(SIG_UNBLOCK, &sigs, NULL);
 
 	memset (&sa, 0, sizeof (sa));
-	sa.sa_handler = hndlr;
+	sa.sa_handler = (void(*)(int))hndlr;
 #ifdef	SA_NOCLDSTOP
 	sa.sa_flags |= SA_NOCLDSTOP;
 #endif
