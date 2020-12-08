@@ -7794,7 +7794,7 @@ AT_CHECK([gcdiff -U reference dumpall.txt], [0], [], [])
 AT_CLEANUP
 
 AT_SETUP([Test dump feature (3)])
-XSKIP_IF(true)  # not reproducible everywhere
+AT_SKIP_IF(true)  # not reproducible everywhere
 AT_KEYWORDS([Dump])
 
 AT_DATA([prog.cob], [
