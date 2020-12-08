@@ -1,4 +1,9 @@
 
+2020-12-08  Ron Norman <rjn@inglenet.com>
+
+	* codegen.c: emit 01/77 USAGE POINTER as 'unsigned char * xxx[1]'
+	  so that it is properly aligned for the hardware
+
 2020-12-07  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c (output_display_fields): prevent bad integer promotion in
