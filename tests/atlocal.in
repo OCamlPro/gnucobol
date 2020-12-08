@@ -211,7 +211,7 @@ else
 fi
 if test "x$MSYSTEM" != "x" -o "$OSTYPE" = "cygwin"; then
 	# running MSYS builds as not-visible child processes result in
-	# "Redirection is not supported" (at least old PDcurses)
+	# "Redirection is not supported" (at least old PDCurses)
 	# --> disabling the tests for this feature
 	# ncurses is known to work as long as TERM is appropriate
 	if test $(grep -i -c "ncurses" info.out) != 0; then

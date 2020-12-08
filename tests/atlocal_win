@@ -110,14 +110,14 @@ export COB_UNIX_LF
 # for runtime configuration ...
 COB_RUNTIME_CONFIG="$(_return_path "${abs_top_srcdir}/config/runtime_empty.cfg")"
 export COB_RUNTIME_CONFIG
-for cobenv in $(${LOCAL_ENV} ${ABS_COBCRUN} --runtime-conf \
+for cobenv in $(${LOCAL_ENV} ${COBCRUN} --runtime-conf \
                  | grep " env:" | cut -d: -f2 | cut -d= -f1 \
                  | grep -v "PATH" | grep -v "TERM"); \
 	do _unset_option $cobenv; \
 done
 
 # prevent multiple calls by caching the output
-${LOCAL_ENV} ${ABS_COBC} --info > info.out
+${LOCAL_ENV} ${COBC} --info > info.out
 
 # ... and also unset for the compiler
 if test "$GNUCOBOL_TEST_LOCAL" != "1"; then
@@ -179,7 +179,7 @@ export COB_MSG_FORMAT
 fi
 if test "x$MSYSTEM" != "x" -o "$OSTYPE" = "cygwin"; then
 	# running MSYS builds as not-visible child processes result in
-	# "Redirection is not supported" (at least old PDcurses)
+	# "Redirection is not supported" (at least old PDCurses)
 	# --> disabling the tests for this feature
 	# ncurses is known to work as long as TERM is appropriate
 	if test $(grep -i -c "ncurses" info.out) != 0; then
@@ -193,7 +193,7 @@ if test "x$MSYSTEM" != "x" -o "$OSTYPE" = "cygwin"; then
 	else
 		COB_HAS_CURSES="no"
 	fi
-fi
+
 
 rm -rf info.out
 

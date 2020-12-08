@@ -1,8 +1,7 @@
 NEWS - user visible changes				-*- outline -*-
 
- GnuCOBOL 3.1.1 to be released (November 2020)
-
- GnuCOBOL 3.1 released (20201111)
+ GnuCOBOL 3.1.1 released (20201208)
+ GnuCOBOL 3.1 released (20201111) had issues that were fixed
 
 * New GnuCOBOL features
 
@@ -52,6 +51,10 @@ NEWS - user visible changes				-*- outline -*-
 
 ** on abort a stack trace will be genereated, this can be suppressed by
    runtime configuration option COB_STRACK_TRACE
+
+** the dump that is generated on abort (depending on -fdump at compile-time)
+   was heavily improved and combines consecutive identical OCCURS items,
+   leading to smaller dump files
 
 ** changes in handling COPY statement:
    * copybook names that contain an extension aren't searched with additional
@@ -110,6 +113,10 @@ NEWS - user visible changes				-*- outline -*-
 ** cobc -g (and configure --enable-debug) use the most expressive
    debugging options available on the system
 
+** cobc -g now auto-includes references to the COBOL source file and to
+   all ENTRY and SECTION elements to ease source level debugging
+   
+
 
 * Changes in the COBOL runtime (libcob)
 
@@ -156,7 +163,7 @@ NEWS - user visible changes				-*- outline -*-
    Note: As a special case you may built-in cJSON by placing its source in
    the folder "libcob". If it is included there, this version will be compiled
    into libcob. It may be enforced with --with-json=local,
-   like --with-json==cjson and --with-json==json-c enforce the given library.
+   like --with-json=cjson and --with-json=json-c enforce the given library.
 
 ** To adjust the build system for GMP/MPIR you may use the new variables
    GMP_CFLAGS / MPIR_CFLAGS and GMP_LIBS / MPIR_LIBS.
@@ -205,11 +212,17 @@ NEWS - user visible changes				-*- outline -*-
   * possibly failing tests (false positives):
     * temporary path invalid
     * compiler outputs (assembler)
-    * function with variable-length RETURNING item
     * compile from stdin
+  * NIST: OBNC1M.CBL false positive (the test runner uses a nonportable way of
+    emulating a program kill)
 
 ** the recent additions of ">> TURN" and "variable LIKE variable" may not work
    as expected in all cases
+
+** features that are known to not be portable to every environment yet
+   (especially when using a different compiler than GCC)
+    * function with variable-length RETURNING item
+    * USAGE POINTER, which may need to be manually aligned
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

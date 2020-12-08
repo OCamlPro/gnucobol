@@ -1,5 +1,5 @@
 GnuCOBOL uses other software packages, some of these are necessary,
-some optional. You find a detailed list of software below. 
+some optional. You find a detailed list of software below.
 
 These packages provide **compile-time** and **run-time** support. That is,
 they include C header files that are used during GnuCOBOL's C
@@ -48,15 +48,17 @@ GNU Libtool is distributed under GNU Lesser General Public License.
 Not Required
 ============
             (but helpful)
-			
+
 All dependencies discussed from this point forward support optional
 features of GnuCOBOL.
 
 ISAM Support
 ------------
 
-Indexed-Sequential file I/O (ISAM) is used.  By default, absent other
-`configure` options, ISAM support comes from Berkeley DB, but that's only one alternative. Choose *one* of the following: 
+Support for Indexed-Sequential file I/O (ISAM):  By default, absent other
+`configure` options, ISAM support comes from Berkeley DB,
+but that's only one alternative.  
+Choose *one* of the following: 
 
 *   [Berkeley DB](https://www.oracle.com/) (libdb) 4.1 or later
     https://www.oracle.com/technology/products/berkeley-db/db/index.html
@@ -67,11 +69,11 @@ Indexed-Sequential file I/O (ISAM) is used.  By default, absent other
     software, or you have to pay royalty to Oracle.
 
 *   [VBISAM](https://sourceforge.net/projects/vbisam/) (libvbisam) 2.0 or later
-    
+
     VBISAM is distributed under GNU Lesser General Public License.
 
 *   [DISAM](http://www.isamcentral.com) (libdisam)
-    
+
     DISAM is distributed under the proprietary License
     "Byte Designs Ltd. DISAM Software License".
 
@@ -87,8 +89,9 @@ by *one* of the following:
     
     Ncurses is distributed under a BSD style license.
 
-*   [PDCurses](https://pdcurses.org/ or https://github.com/Bill-Gray/PDCurses/)
-	(pdcurses) for MinGW and native windows ports
+*   [PDCurses](https://pdcurses.org/) or
+    [PDCursesMod](https://github.com/Bill-Gray/PDCursesMod/),
+    especially for MinGW and native windows ports
 	
     PDCurses is distributed as Public Domain.
 
@@ -97,6 +100,8 @@ by *one* of the following:
 XML Support
 -----------
 
+Support for GENERATE XML is provided by:
+
 *   [libxml2](http://xmlsoft.org)
 
     libxml2 is distributed under MIT License.
@@ -104,7 +109,13 @@ XML Support
 JSON support
 ------------
 
+Support for GENERATE JSON is provided by *one* of the following:
+
 *   [cJSON](https://github.com/DaveGamble/cJSON) >= 1.3.0 - 
 
     cJSON is distributed under MIT License.
+
+*   [JSON-C](https://github.com/json-c/json-c) >= 1.12 - 
+
+    JSON-C is distributed under Expat License.
 

@@ -1,4 +1,8 @@
 
+2020-12-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am [EXTRA_DIST]: added README.md and DEPENDENCIES.md
+
 2020-12-07  Simon Sobisch <simonsobisch@gnu.org>
 
 	* m4/ax_ac_define_resolved.m4: fixed resolving datarootdir

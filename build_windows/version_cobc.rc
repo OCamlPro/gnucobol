@@ -6,7 +6,7 @@
 #define COB_WITHOUT_EXCEPTIONS
 #define COB_WITHOUT_JMP
 #include "libcob/common.h"
-#define VCS_REF 4019
+#define VCS_REF 4070
 
 #define STRINGIZE_DETAIL_(v) #v
 #define STRINGIZE(v) STRINGIZE_DETAIL_(v)
@@ -43,7 +43,7 @@ VS_VERSION_INFO    VERSIONINFO
     {
       // VALUE "Comments",         "Free for general use, including commercial (distribution bound to GPL).\0"
       // VALUE "CompanyName",      "No Company\0"
-      VALUE "FileDescription",  PACKAGE_NAME " compiler for most COBOL dialects with lots of extensions"
+      VALUE "FileDescription",  PACKAGE_NAME " compiler, supporting most COBOL dialects with lots of extensions"
       VALUE "FileVersion",      STRINGIZE(__LIBCOB_VERSION)"."STRINGIZE(__LIBCOB_VERSION_MINOR)"."STRINGIZE(__LIBCOB_VERSION_PATCHLEVEL)"."STRINGIZE(VCS_REF)
       VALUE "InternalName",     "cobc"
       VALUE "LegalCopyright",   "Copyright (C) 2001-2020 Free Software Foundation, Inc."

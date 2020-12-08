@@ -362,6 +362,8 @@ only usable with COB_USE_VC2013_OR_GREATER */
 #else
 #define	__i386__
 #endif
+#else
+#define __ia64__
 #endif
 
 #endif /* _MSC_VER */
@@ -2394,7 +2396,7 @@ typedef struct {
 COB_EXPIMP void cob_display	(const int, const int, const int, ...);
 COB_EXPIMP void cob_dump_output (const char *);
 COB_EXPIMP void cob_dump_file (const char *, cob_file *);
-COB_EXPIMP void cob_dump_field	(const int, const char *, cob_field *, const int, const int, ...);	/* 3.1 compat */
+COB_EXPIMP void cob_dump_field	(const int, const char *, cob_field *, const int, const int, ...);
 COB_EXPIMP void cob_dump_field_ext	(const int, const char *, cob_field *, const cob_uli_t, const cob_u32_t, ...);
 COB_EXPIMP void cob_accept	(cob_field *);
 

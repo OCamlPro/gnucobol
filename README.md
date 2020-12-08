@@ -1,5 +1,6 @@
-GnuCOBOL is a free COBOL compiler licensed under the GNU Public
-License (GPL).  It implements a substantial part of the COBOL 85,
+[GnuCOBOL}(https://www.gnu.org/software/gnucobol/) is a free
+COBOL compiler licensed under the GNU Public License (GPL).  
+It implements a substantial part of the COBOL 85,
 COBOL 2002 and COBOL 2014 standards, as well as many extensions
 included in other COBOL compilers.
 
@@ -30,7 +31,7 @@ Requirements
 ============
 
 GnuCOBOL uses other software packages, some of these are necessary,
-some optional.  See DEPENDENCIES for a complete list.
+some optional.  See DEPENDENCIES.md for a complete list.
 
 If building GnuCOBOL from source, you can choose which optional
 functionality to include via the configure script.  When using
@@ -72,19 +73,19 @@ Tests
 =====
 
 To verify GnuCOBOL works before installing it, run the internal
-testsuite, simply do
+testsuite. Simply do
 
 *  `make check > log`
 
 This MUST succeed.  Please report any failures.
 
-Also included are standard tests provided by the NIST.  They are run
-with
+Also included are COBOL85 standard tests provided by the NIST.  
+They are run with
 
 * `make test > log`
 
-If for some reason the the COBOL85 testsuite is missing, `make test`
- will download it.  For details see tests/cobol85/README.
+If the the COBOL85 testsuite is not already in the build- or source-tree,
+`make test` will download it.  For details see tests/cobol85/README.
 
 ** NOTE **
    The language interpreter "perl" is required to run COBOL85 tests.
@@ -98,7 +99,7 @@ Installation
 ============
 
 To install GnuCOBOL, including the compiler, run-time library, and
- documentation, 
+documentation, 
  
  * `make install > log`
 
@@ -136,7 +137,6 @@ following options,
 *  `--with-cisam` to use CISAM
 *  `--with-disam` to use DISAM
 *  `--with-vbisam` to use VBISAM
-*  `--with-index-extfh` to use an external ISAM file handler
 
 Development
 ===========
@@ -144,7 +144,8 @@ Development
 If you wish to hack the GnuCOBOL source or build from version control,
 see HACKING.
 
-Further information about the project, including the source code repository, history, and frequently asked questions, may be found at 
+Further information about the project, including the source code repository,
+history, and frequently asked questions, may be found at 
 
 *		https://www.gnu.org/software/gnucobol/
 *		https://sourceforge.net/projects/gnucobol

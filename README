@@ -124,9 +124,10 @@ Tests
 ============
 
 
- To run the internal testsuite, simply do
+ To verify GnuCOBOL works before installing it, run the internal
+ testsuite. Simply do
     make check
- This MUST succeed - If not, please report.
+ This MUST succeed.  Please report any failures.
 
  You may optionally perform a series of COBOL85 tests.
     make test
@@ -137,7 +138,7 @@ Tests
 
 ** NOTE **
    Running "make test" will try to download the COBOL85
-   testsuite if it is missing.
+   testsuite if it is neither in the build-tree nor source-tree.
    For details see tests/cobol85/README.
 
  If you want to run both testsuites you can run
