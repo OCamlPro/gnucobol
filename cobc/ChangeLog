@@ -1,4 +1,8 @@
 
+2020-12-08  Ron Norman <rjn@inglenet.com>
+
+	* error.c: Improve the check for being in a new section/paragraph
+
 2020-12-07  Ron Norman <rjn@inglenet.com>
 
 	* codegen.c (output_dump_code): Change to dump INDEXED BY variables

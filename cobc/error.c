@@ -35,6 +35,7 @@
 static char		*errnamebuff = NULL;
 static struct cb_label	*last_section = NULL;
 static struct cb_label	*last_paragraph = NULL;
+static char		last_file[48] = "";
 
 static int conf_error_displayed = 0;
 static int last_error_line = 0;
@@ -78,6 +79,12 @@ print_error (const char *file, int line, const char *prefix,
 		line = cb_source_line;
 	}
 
+	if (strcmp(file,last_file) != 0) {
+		snprintf(last_file,sizeof(last_file)-1,"%s",file);
+		last_section = NULL;
+		last_paragraph = NULL;
+	}
+
 	/* Print section and/or paragraph name */
 	if (current_section != last_section) {
 		if (current_section && !current_section->flag_dummy_section) {
@@ -89,6 +96,7 @@ print_error (const char *file, int line, const char *prefix,
 			fputs ("\n", stderr);
 		}
 		last_section = current_section;
+		last_paragraph = NULL;
 	}
 	if (current_paragraph != last_paragraph) {
 		if (current_paragraph && !current_paragraph->flag_dummy_paragraph) {
