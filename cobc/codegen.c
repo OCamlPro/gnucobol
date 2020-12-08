@@ -2007,10 +2007,6 @@ output_local_base_cache (void)
 		} else if (blp->f->index_type == CB_STATIC_INT_INDEX) {
 			output_local ("static int	%s%d;",
 				      CB_PREFIX_BASE, blp->f->id);
-		} else if (blp->f->flag_is_pointer
-				&& (blp->f->level == 1 || blp->f->level == 77)) {
-			output_local ("static unsigned char *%s%d[1];",
-				      CB_PREFIX_BASE, blp->f->id);
 		} else if( !(blp->f->report_flag & COB_REPORT_REF_EMITTED)) {
 #ifdef  HAVE_ATTRIBUTE_ALIGNED
 			output_local ("static cob_u8_t	%s%d[%d]%s;",
