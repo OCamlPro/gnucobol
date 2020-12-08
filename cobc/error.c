@@ -79,7 +79,8 @@ print_error (const char *file, int line, const char *prefix,
 		line = cb_source_line;
 	}
 
-	if (strcmp(file,last_file) != 0) {
+	if (file != NULL
+	 && strcmp(file,last_file) != 0) {
 		snprintf(last_file,sizeof(last_file)-1,"%s",file);
 		last_section = NULL;
 		last_paragraph = NULL;
