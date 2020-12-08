@@ -1,4 +1,8 @@
 
+2020-12-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am (libcob_la_LDFLAGS): updated version-info
+
 2020-12-07  Simon Sobisch <simonsobisch@gnu.org>
 
 	* termio.c (cob_dump_field): complete rewrite to allow any size of OCCURS
