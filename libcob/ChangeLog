@@ -2,10 +2,10 @@
 2020-12-09  Ron Norman <rjn@inglenet.com>
 
 	* common.c: If the system supports sigaction then codegen.c emits
-	            code to catch an abort while dumping and recover
-				the routine cob_set_dump_signal sets up the signal processing
-				Added cob_get_sig_name and cob_get_sig_description
-				Rewrote cob_set_signal to be table driven
+	  code to catch an abort while dumping and recover
+	  the routine cob_set_dump_signal sets up the signal processing;
+	  Added cob_get_sig_name and cob_get_sig_description;
+	  Rewrote cob_set_signal to be table driven
 
 2020-12-07  Simon Sobisch <simonsobisch@gnu.org>
 

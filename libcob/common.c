@@ -969,6 +969,7 @@ cob_set_signal (void)
 	}
 
 #elif	defined(HAVE_SIGNAL_H)
+	int		k;
 	for (k = 0; k < NUM_SIGNALS; k++) {
 		if (signals[k].for_set) {
 			if (signals[k].for_set == 2) {
