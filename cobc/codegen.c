@@ -10515,7 +10515,7 @@ output_display_fields (struct cb_field *f, size_t offset, unsigned int idx)
 			output_block_close ();
 			output_line ("else");
 			output_block_open ();
-#if defined(HAVE_SIGNAL_H)
+#if defined(HAVE_SIGACTION) && !defined(_WIN32)
 			output_line ("cob_set_dump_signal ((void *)catch_sig_jmp);");
 			output_line ("if (setjmp (save_sig_env) != 0)");
 			output_block_open ();
@@ -10567,7 +10567,7 @@ output_display_fields (struct cb_field *f, size_t offset, unsigned int idx)
 			output_display_fields (f->children, offset, idx);
 		}
 		if (has_based_check) {
-#if defined(HAVE_SIGNAL_H)
+#if defined(HAVE_SIGACTION) && !defined(_WIN32)
 			output_block_close ();
 #endif
 			output_block_close ();
@@ -13218,11 +13218,10 @@ codegen (struct cb_program *prog, const char *translate_name, const int subseque
 		output_gnucobol_defines (string_buffer, loctime);
 
 		output_newline ();
-#if defined(HAVE_SIGNAL_H)
+#if defined(HAVE_SIGACTION) && !defined(_WIN32)
 		if (cb_flag_dump) {
 			output_line ("/* Variables to catch abort during DUMP */");
 			output_line ("#include <signal.h>");
-			output_line ("#include <setjmp.h>");
 			output_line ("static jmp_buf save_sig_env;");
 			output_line ("static void catch_sig_jmp (int sig)");
 			output_line ("{ longjmp(save_sig_env, sig); }");

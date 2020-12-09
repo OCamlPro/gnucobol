@@ -4157,50 +4157,6 @@ resolve_name_from_cobc (const char *cobc_path)
 	return cobcrun_path_malloced;
 }
 
-
-/* LCOV_EXCL_START */
-static const char *
-get_signal_name (int signal_value)
-{
-	switch (signal_value) {
-#ifdef	SIGINT
-	case SIGINT:
-		return "SIGINT";
-#endif
-#ifdef	SIGHUP
-	case SIGHUP:
-		return "SIGHUP";
-#endif
-#ifdef	SIGQUIT
-	case SIGQUIT:
-		return "SIGQUIT";
-#endif
-#ifdef	SIGTERM
-	case SIGTERM:
-		return "SIGTERM";
-#endif
-#ifdef	SIGPIPE
-	case SIGPIPE:
-		return "SIGPIPE";
-#endif
-#ifdef	SIGSEGV
-	case SIGSEGV:
-		return "SIGSEGV";
-#endif
-#ifdef	SIGBUS
-	case SIGBUS:
-		return "SIGBUS";
-#endif
-#ifdef	SIGFPE
-	case SIGFPE:
-		return "SIGFPE";
-#endif
-	default:
-		return _("unknown");
-	}
-}
-/* LCOV_EXCL_STOP */
-
 static COB_INLINE COB_A_INLINE void
 output_return (const int status)
 {
@@ -4242,7 +4198,7 @@ call_system (const char* command)
 		}
 #endif
 		cobc_err_msg (_("external process \"%s\" ended with signal %s (%d)"),
-			command, get_signal_name (signal_value), signal_value);
+			command, cob_get_sig_name (signal_value), signal_value);
 	}
 #endif
 #ifdef WEXITSTATUS

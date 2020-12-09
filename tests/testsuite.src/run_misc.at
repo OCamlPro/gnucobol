@@ -7842,7 +7842,7 @@ AT_CHECK([$COMPILE -std=default -debug -fdump=ALL prog.cob ], [0], [], [])
 AT_CHECK([export COB_DUMP_FILE=dumpall.txt
 $COBCRUN_DIRECT ./prog], [11], [Ready
 ], [
-prog.cob:37: attempt to reference unallocated memory (signal SIGSEGV)
+prog.cob:37: attempt to reference invalid memory address (signal SIGSEGV)
 
 
 dump written to dumpall.txt

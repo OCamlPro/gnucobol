@@ -449,6 +449,72 @@ static struct config_tbl gc_conf[] = {
 #define NUM_CONFIG (sizeof (gc_conf) /sizeof (struct config_tbl) - 1)
 #define FUNC_NAME_IN_DEFAULT NUM_CONFIG + 1
 
+/* 
+ * Table of 'signal' supported by this system 
+ */
+static struct signal_table {
+	short		signum;			/* Signal number */
+	short		for_set;		/* Set via 'cob_set_signal' 1=set if not SIG_IGN */
+	short		for_dump;		/* set via 'cob_set_dump_signal' */
+	short		unused;
+	const char	*shortname;		/* Short signal name */
+	const char	*description;	/* Longer desciption message */
+} signals[] = {
+#ifdef	SIGINT
+	{SIGINT,1,0,0,"SIGINT","interrupt from keyboard"},
+#endif
+#ifdef	SIGHUP
+	{SIGHUP,1,0,0,"SIGHUP","hangup"},
+#endif
+#ifdef	SIGQUIT
+	{SIGQUIT,1,0,0,"SIGQUIT","quit"},
+#endif
+#ifdef	SIGTERM
+	{SIGTERM,1,0,0,"SIGTERM","termination"},
+#endif
+#ifdef	SIGEMT
+	{SIGEMT,1,0,0,"SIGEMT","emt termination"},
+#endif
+#ifdef	SIGPIPE
+	{SIGPIPE,1,0,0,"SIGPIPE","broken pipe"},
+#endif
+#ifdef	SIGIO
+	{SIGIO,1,0,0,"SIGIO","I/O signal"},
+#endif
+#ifdef	SIGSEGV
+	{SIGSEGV,2,1,0,"SIGSEGV","attempt to reference invalid memory address"},
+#endif
+#ifdef	SIGBUS
+	{SIGBUS,2,1,0,"SIGBUS","bus error"},
+#endif
+#ifdef	SIGFPE
+	{SIGFPE,1,1,0,"SIGFPE","fatal arithmetic error"},
+#endif
+#ifdef	SIGILL
+	{SIGILL,0,0,0,"SIGILL","illegal instruction"},
+#endif
+#ifdef	SIGABRT
+	{SIGABRT,0,0,0,"SIGABRT","abort"},
+#endif
+#ifdef	SIGKILL
+	{SIGKILL,0,0,0,"SIGKILL","process killed"},
+#endif
+#ifdef	SIGALRM
+	{SIGALRM,0,0,0,"SIGALRM","alarm signal"},
+#endif
+#ifdef	SIGSTOP
+	{SIGSTOP,0,0,0,"SIGSTOP","stop process"},
+#endif
+#ifdef	SIGCHLD
+	{SIGCHLD,0,0,0,"SIGCHLD","child process stopped"},
+#endif
+#ifdef	SIGCLD
+	{SIGCLD,0,0,0,"SIGCLD","child process stopped"},
+#endif
+	{-1,0,0,0,"unknown","unknown"}
+};
+#define NUM_SIGNALS (int)((sizeof (signals) / sizeof (struct signal_table)) - 1)
+
 /* Local functions */
 static int		translate_boolean_to_int	(const char* ptr);
 static cob_s64_t	get_sleep_nanoseconds	(cob_field *nano_seconds);
@@ -714,53 +780,6 @@ cob_get_strerror (void)
 	return msg;
 }
 
-/* LCOV_EXCL_START */
-static const char *
-get_signal_name (int signal_value)
-{
-	switch (signal_value) {
-#ifdef	SIGINT
-	case SIGINT:
-		return "SIGINT";
-#endif
-#ifdef	SIGHUP
-	case SIGHUP:
-		return "SIGHUP";
-#endif
-#ifdef	SIGQUIT
-	case SIGQUIT:
-		return "SIGQUIT";
-#endif
-#ifdef	SIGTERM
-	case SIGTERM:
-		return "SIGTERM";
-#endif
-#ifdef	SIGEMT
-	case SIGEMT:
-		return "SIGEMT";
-#endif
-#ifdef	SIGPIPE
-	case SIGPIPE:
-		return "SIGPIPE";
-#endif
-#ifdef	SIGSEGV
-	case SIGSEGV:
-		return "SIGSEGV";
-#endif
-#ifdef	SIGBUS
-	case SIGBUS:
-		return "SIGBUS";
-#endif
-#ifdef	SIGFPE
-	case SIGFPE:
-		return "SIGFPE";
-#endif
-	default:
-		return NULL;
-	}
-}
-/* LCOV_EXCL_STOP */
-
 #ifdef	HAVE_SIGNAL_H
 DECLNORET static void COB_A_NORETURN
 cob_sig_handler_ex (int sig)
@@ -806,7 +825,7 @@ cob_sig_handler (int signal_value)
 	sig_is_handled = 1;
 #endif
 
-	signal_name = get_signal_name (signal_value);
+	signal_name = cob_get_sig_name (signal_value);
 	/* LCOV_EXCL_START */
 	if (!signal_name) {
 		/* not translated as it is a very unlikely error case */
@@ -849,26 +868,7 @@ cob_sig_handler (int signal_value)
 	}
 
 	/* LCOV_EXCL_START */
-	switch (signal_value) {
-#ifdef	SIGSEGV
-	case SIGSEGV:
-		fprintf (stderr, _("attempt to reference unallocated memory"));
-		break;
-#endif
-#ifdef	SIGBUS
-	case SIGBUS:
-		fprintf (stderr, _("bus error"));
-		break;
-#endif
-#ifdef	SIGFPE
-	case SIGFPE:
-		fprintf (stderr, _("fatal arithmetic error"));
-		break;
-#endif
-	default:
-		fprintf (stderr, _("caught signal"));
-		break;
-	}
+	fprintf (stderr, cob_get_sig_description (signal_value));
 	/* LCOV_EXCL_STOP */
 	snprintf (signal_text, COB_MINI_MAX, _("signal %s"), signal_name);
 	fprintf (stderr, " (%s)\n", signal_text);
@@ -913,134 +913,74 @@ cob_raise (int sig)
 #endif
 }
 
+const char *
+cob_get_sig_name (int sig)
+{
+	int	k;
+	for (k = 0; k < NUM_SIGNALS; k++) {
+		if (signals[k].signum == sig)
+			break;
+	}
+	return signals[k].shortname;
+}
+
+const char *
+cob_get_sig_description (int sig)
+{
+	int	k;
+	for (k = 0; k < NUM_SIGNALS; k++) {
+		if (signals[k].signum == sig)
+			break;
+	}
+	return signals[k].description;
+}
+
 static void
 cob_set_signal (void)
 {
-#ifdef	HAVE_SIGNAL_H
-
-#ifdef	HAVE_SIGACTION
+#if	defined(HAVE_SIGACTION)
+	int		k;
 	struct sigaction	sa;
 	struct sigaction	osa;
 
 	memset (&sa, 0, sizeof (sa));
+	memset (&osa, 0, sizeof (osa));
 	sa.sa_handler = cob_sig_handler;
 #ifdef	SA_RESETHAND
 	sa.sa_flags = SA_RESETHAND;
-#else
-	sa.sa_flags = 0;
 #endif
 #ifdef	SA_NOCLDSTOP
 	sa.sa_flags |= SA_NOCLDSTOP;
 #endif
 
-#ifdef	SIGINT
-	(void)sigaction (SIGINT, NULL, &osa);
-	if (osa.sa_handler != SIG_IGN) {
-		(void)sigemptyset (&sa.sa_mask);
-		(void)sigaction (SIGINT, &sa, NULL);
+	for (k = 0; k < NUM_SIGNALS; k++) {
+		if (signals[k].for_set) {
+			if (signals[k].for_set == 2) {
+				(void)sigemptyset (&sa.sa_mask);
+				(void)sigaction (signals[k].signum, &sa, NULL);
+			} else {
+				(void)sigaction (signals[k].signum, NULL, &osa);
+				if (osa.sa_handler != SIG_IGN) {
+					(void)sigemptyset (&sa.sa_mask);
+					(void)sigaction (signals[k].signum, &sa, NULL);
+				}
+			}
+		}
 	}
-#endif
-#ifdef	SIGHUP
-	(void)sigaction (SIGHUP, NULL, &osa);
-	if (osa.sa_handler != SIG_IGN) {
-		(void)sigemptyset (&sa.sa_mask);
-		(void)sigaction (SIGHUP, &sa, NULL);
-	}
-#endif
-#ifdef	SIGQUIT
-	(void)sigaction (SIGQUIT, NULL, &osa);
-	if (osa.sa_handler != SIG_IGN) {
-		(void)sigemptyset (&sa.sa_mask);
-		(void)sigaction (SIGQUIT, &sa, NULL);
-	}
-#endif
-#ifdef	SIGTERM
-	(void)sigaction (SIGTERM, NULL, &osa);
-	if (osa.sa_handler != SIG_IGN) {
-		(void)sigemptyset (&sa.sa_mask);
-		(void)sigaction (SIGTERM, &sa, NULL);
-	}
-#endif
-#ifdef	SIGEMT
-	(void)sigaction (SIGEMT, NULL, &osa);
-	if (osa.sa_handler != SIG_IGN) {
-		(void)sigemptyset (&sa.sa_mask);
-		(void)sigaction (SIGEMT, &sa, NULL);
-	}
-#endif
-#ifdef	SIGPIPE
-	(void)sigaction (SIGPIPE, NULL, &osa);
-	if (osa.sa_handler != SIG_IGN) {
-		(void)sigemptyset (&sa.sa_mask);
-		(void)sigaction (SIGPIPE, &sa, NULL);
-	}
-#endif
-#ifdef	SIGSEGV
-	/* Take direct control of segmentation violation */
-	(void)sigemptyset (&sa.sa_mask);
-	(void)sigaction (SIGSEGV, &sa, NULL);
-#endif
-#ifdef	SIGBUS
-	/* Take direct control of bus error */
-	(void)sigemptyset (&sa.sa_mask);
-	(void)sigaction (SIGBUS, &sa, NULL);
-#endif
-#ifdef	SIGFPE
-	/* fatal arithmetic errors including non-floating-point division by zero */
-	(void)sigaction (SIGFPE, NULL, &osa);
-	if (osa.sa_handler != SIG_IGN) {
-		(void)sigemptyset (&sa.sa_mask);
-		(void)sigaction (SIGFPE, &sa, NULL);
-	}
-#endif
 
-#else
+#elif	defined(HAVE_SIGNAL_H)
+	for (k = 0; k < NUM_SIGNALS; k++) {
+		if (signals[k].for_set) {
+			if (signals[k].for_set == 2) {
+				(void)signal (signals[k].signum, cob_sig_handler);
+			} else {
+				if (signal (signals[k].signum, SIG_IGN) != SIG_IGN) {
+					(void)signal (signals[k].signum, cob_sig_handler);
+				}
+			}
+		}
+	}
 
-#ifdef	SIGINT
-	if (signal (SIGINT, SIG_IGN) != SIG_IGN) {
-		(void)signal (SIGINT, cob_sig_handler);
-	}
-#endif
-#ifdef	SIGHUP
-	if (signal (SIGHUP, SIG_IGN) != SIG_IGN) {
-		(void)signal (SIGHUP, cob_sig_handler);
-	}
-#endif
-#ifdef	SIGQUIT
-	if (signal (SIGQUIT, SIG_IGN) != SIG_IGN) {
-		(void)signal (SIGQUIT, cob_sig_handler);
-	}
-#endif
-#ifdef	SIGTERM
-	if (signal (SIGTERM, SIG_IGN) != SIG_IGN) {
-		(void)signal (SIGTERM, cob_sig_handler);
-	}
-#endif
-#ifdef	SIGEMT
-	if (signal (SIGEMT, SIG_IGN) != SIG_IGN) {
-		(void)signal (SIGEMT, cob_sig_handler);
-	}
-#endif
-#ifdef	SIGPIPE
-	if (signal (SIGPIPE, SIG_IGN) != SIG_IGN) {
-		(void)signal (SIGPIPE, cob_sig_handler);
-	}
-#endif
-#ifdef	SIGSEGV
-	/* Take direct control of segmentation violation */
-	(void)signal (SIGSEGV, cob_sig_handler);
-#endif
-#ifdef	SIGBUS
-	/* Take direct control of bus error */
-	(void)signal (SIGBUS, cob_sig_handler);
-#endif
-#ifdef	SIGFPE
-	if (signal (SIGFPE, SIG_IGN) != SIG_IGN) {
-		(void)signal (SIGFPE, cob_sig_handler);
-	}
-#endif
-
-#endif
 #endif
 }
 
@@ -1048,86 +988,35 @@ cob_set_signal (void)
 void
 cob_set_dump_signal (void *hndlr)
 {
-#ifdef	HAVE_SIGNAL_H
+#if defined(HAVE_SIGACTION) && !defined(_WIN32)
+	int		k;
 	sigset_t sigs;
-
-#ifdef	HAVE_SIGACTION
 	struct sigaction	sa;
 	struct sigaction	osa;
 
 	if (hndlr == NULL)
 		hndlr = (void*)SIG_DFL;
 
-	sigemptyset(&sigs);
+	(void)sigemptyset(&sigs);
 	/* Unblock signals to allow catch of another abort during dump */
-#ifdef	SIGSEGV
-	sigaddset(&sigs, SIGSEGV);
-#endif
-#ifdef	SIGBUS
-	sigaddset(&sigs, SIGBUS);
-#endif
-#ifdef	SIGFPE
-	sigaddset(&sigs, SIGFPE);
-#endif
-	sigprocmask(SIG_UNBLOCK, &sigs, NULL);
+	for (k = 0; k < NUM_SIGNALS; k++) {
+		if (signals[k].for_dump) {
+			(void)sigaddset(&sigs, signals[k].signum);
+		}
+	}
+	(void)sigprocmask(SIG_UNBLOCK, &sigs, NULL);
 
-	memset (&sa, 0, sizeof (sa));
+	memset (&sa,  0, sizeof (sa));
+	memset (&osa, 0, sizeof (osa));
 	sa.sa_handler = (void(*)(int))hndlr;
-#ifdef	SA_NOCLDSTOP
-	sa.sa_flags |= SA_NOCLDSTOP;
-#endif
 
-#ifdef	SIGSEGV
-	/* Take direct control of segmentation violation */
-	(void)sigemptyset (&sa.sa_mask);
-	(void)sigaction (SIGSEGV, &sa, NULL);
-#endif
-#ifdef	SIGBUS
-	/* Take direct control of bus error */
-	(void)sigemptyset (&sa.sa_mask);
-	(void)sigaction (SIGBUS, &sa, NULL);
-#endif
-#ifdef	SIGFPE
-	/* fatal arithmetic errors including non-floating-point division by zero */
-	(void)sigaction (SIGFPE, NULL, &osa);
-	if (osa.sa_handler != SIG_IGN) {
-		(void)sigemptyset (&sa.sa_mask);
-		(void)sigaction (SIGFPE, &sa, NULL);
+	/* Establish signals to catch and continue */
+	for (k = 0; k < NUM_SIGNALS; k++) {
+		if (signals[k].for_dump) {
+			(void)sigemptyset (&sa.sa_mask);
+			(void)sigaction (signals[k].signum, &sa, NULL);
+		}
 	}
-#endif
-
-#else
-	sigemptyset(&sigs);
-	/* Unblock signals to allow catch of another abort during dump */
-#ifdef	SIGSEGV
-	sigaddset(&sigs, SIGSEGV);
-#endif
-#ifdef	SIGBUS
-	sigaddset(&sigs, SIGBUS);
-#endif
-#ifdef	SIGFPE
-	sigaddset(&sigs, SIGFPE);
-#endif
-	sigprocmask(SIG_UNBLOCK, &sigs, NULL);
-
-	if (hndlr == NULL)
-		hndlr = SIG_DFL;
-
-#ifdef	SIGSEGV
-	/* Take direct control of segmentation violation */
-	(void)signal (SIGSEGV, hndlr);
-#endif
-#ifdef	SIGBUS
-	/* Take direct control of bus error */
-	(void)signal (SIGBUS, hndlr);
-#endif
-#ifdef	SIGFPE
-	if (signal (SIGFPE, SIG_IGN) != SIG_IGN) {
-		(void)signal (SIGFPE, hndlr);
-	}
-#endif
-
-#endif
 #endif
 }
 
@@ -4876,7 +4765,7 @@ cob_sys_system (const void *cmdline)
 #ifdef	WIFSIGNALED
 				if (WIFSIGNALED (status)) {
 					int signal_value = WTERMSIG (status);
-					const char * signal_name = get_signal_name (signal_value);
+					const char * signal_name = cob_get_sig_name (signal_value);
 					/* LCOV_EXCL_START */
 					if (!signal_name) {
 						signal_name = _("unknown");

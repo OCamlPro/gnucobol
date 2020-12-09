@@ -1,4 +1,9 @@
 
+2020-12-09  Ron Norman <rjn@inglenet.com>
+	* cobc.c: Now calls cob_get_sig_name {in common.c} to get signal name
+	* codegen.c (output_dump_code): Only emits code to catch abort 
+	      when HAVE_SIGACTION is defined 
+
 2020-12-08  Ron Norman <rjn@inglenet.com>
 
 	* error.c: Improve the check for being in a new section/paragraph
