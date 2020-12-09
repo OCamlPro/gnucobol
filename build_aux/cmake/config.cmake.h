@@ -203,7 +203,7 @@
 #cmakedefine HAVE_GETTIMEOFDAY
 
 /* Define to 1 if you have the <gmp.h> header file. */
-#cmakedefine HAVE_GMP_H
+#cmakedefine HAVE_GMP_H @HAVE_GMP_H@
 
 /* curses has has_mouse function */
 #cmakedefine HAVE_HAS_MOUSE
@@ -314,7 +314,7 @@
 #cmakedefine HAVE_SIGACTION
 
 /* Define to 1 if you have the <signal.h> header file. */
-#cmakedefine HAVE_SIGNAL_H
+#cmakedefine HAVE_SIGNAL_H @HAVE_SIGNAL_H@
 
 /* Define to 1 if the system has the type `sig_atomic_t'. */
 #cmakedefine HAVE_SIG_ATOMIC_T

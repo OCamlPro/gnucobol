@@ -1,0 +1,1 @@
+cl /E /I. /I.\libcob /I.\build_windows /I.\cobc /Zi /nologo /W1 /WX- /diagnostics:column /Od /Ob0 /D WIN32 /D _WINDOWS /D MSC_USE_DLL /D _POSIX_C_SOURCE=200809L /D _XOPEN_SOURCE=500 /D _BSD_SOURCE /D "CMAKE_INTDIR=\"Debug\"" /D cob_EXPORTS /D _WINDLL /D _MBCS %*

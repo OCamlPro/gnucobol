@@ -134,13 +134,18 @@ check_include_file(unistd.h HAVE_UNISTD_H)
 check_include_file(vbisam.h HAVE_VBISAM_H)
 check_include_file(wchar.h HAVE_WCHAR_H)
 
+include(CheckTypeSize)
+check_type_size(sigset_t, HAVE_SIGNAL_H)
+
 include(CheckSymbolExists)
 
 check_symbol_exists(isfinite math.h  HAVE_ISFINITE)
 
 if( ${HAVE_GMP_H} )
+  message("HAVE_GMP_H is '${HAVE_GMP_H}'")
   find_library (GMP_LIBRARIES  gmp)
 else()
+  message("HAVE_MPIR_H is '${HAVE_MPIR_H}'")
   find_library (GMP_LIBRARIES  mpir)
 endif()
 
@@ -158,10 +163,17 @@ endif()
 
 message("WITH_JSON defined as '${WITH_JSON}' ")
 
-configure_file (
-  "${PROJECT_SOURCE_DIR}/build_aux/cmake/config.cmake.h"
-  "${PROJECT_BINARY_DIR}/config.h"
-  )
+if( ${CMAKE_SYSTEM_NAME} STREQUAL Windows )
+  configure_file (
+    "${PROJECT_SOURCE_DIR}/build_windows/config.h"
+    "${PROJECT_BINARY_DIR}/config.h"
+    )
+else()
+  configure_file (
+    "${PROJECT_SOURCE_DIR}/build_aux/cmake/config.cmake.h"
+    "${PROJECT_BINARY_DIR}/config.h"
+    )
+endif()
 
 add_library( cob SHARED
              libcob/call.c libcob/cobgetopt.c
