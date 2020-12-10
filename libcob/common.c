@@ -935,6 +935,19 @@ cob_get_sig_description (int sig)
 	return signals[k].description;
 }
 
+const char *
+cob_set_sig_description (int sig, const char *msg)
+{
+	int	k;
+	for (k = 0; k < NUM_SIGNALS; k++) {
+		if (signals[k].signum == sig) {
+			signals[k].description = msg;
+			break;
+		}
+	}
+	return signals[k].description;
+}
+
 static void
 cob_set_signal (void)
 {
