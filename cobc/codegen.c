@@ -4700,12 +4700,11 @@ propagate_table ( cb_tree x )
 		/* Table size is known at compile time */
 		/* Generate inline 'memcpy' to propagate the array data */
 
-		if (occ > 5
+		if (occ > 2
 		 && has_sub) {
 			output_block_open ();
-			output_line ("cob_u8_ptr b_ptr;");
 			output_prefix ();
-			output ("b_ptr = ");
+			output ("cob_u8_ptr b_ptr = ");
 			output_data(x);
 			output (";");
 			output_newline ();
