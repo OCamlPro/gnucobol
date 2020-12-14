@@ -1,5 +1,8 @@
 2020-12-14  James K. Lowden  <jklowden@symas.com>
 
+        * cobc.c codegen.c config.c field.c pplex.l
+	reserved.c scanner.l sqlxfdgen.c tree.c typeck.c: remove unlikely
+
 	* cobc.c codegen.c pplex.l scanner.l tree.c typeck.c: remove
 	  use of likely
 

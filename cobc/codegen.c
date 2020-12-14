@@ -282,7 +282,7 @@ cb_code_field (cb_tree x)
 {
 	if (CB_REFERENCE_P (x)) {
 		cb_tree f = CB_REFERENCE (x)->value;
-		if (unlikely(!f)) {
+		if (!f) {
 			f = cb_ref (x);
 		}
 		return CB_FIELD (f);
@@ -985,7 +985,7 @@ output_base (struct cb_field *f, const cob_u32_t no_output)
 	struct base_list	*bl;
 
 	/* LCOV_EXCL_START */
-	if (unlikely(f->flag_item_78)) {
+	if (f->flag_item_78) {
 		cobc_err_msg (_("unexpected CONSTANT item"));
 		COBC_ABORT ();
 	}
@@ -1183,7 +1183,7 @@ output_data (cb_tree x)
 						output (" * ");
 					} else {
 						/* recalculate size for nested ODO ... */
-						if (unlikely(o_slide)) {
+						if (o_slide) {
 							for (o = o_slide; o; o = o->children) {
 								if (o->depending) {
 									output (" + (%d * ", o->size);
@@ -3986,7 +3986,7 @@ output_param (cb_tree x, int id)
 			if (l == cb_error_node) {
 				cobc_err_msg (_("call to '%s' with invalid parameter '%s'"),
 					"output_param", "x");
-				/* not translated as it is a highly unlikely internal abort */
+				/* not translated as it is a highly unlikely interna abort */
 				cobc_err_msg ("%s is no valid reference", cb_name (ip->name));
 				COBC_ABORT ();
 			}
@@ -6649,7 +6649,7 @@ output_call (struct cb_call *p)
 
 	/* ensure that we don't have a program exception set already
 	   as this will be checked directly when returning from CALL */
-	output_line ("if (unlikely((cob_global_exception & 0x%04x) == 0x%04x)) "
+	output_line ("if ((cob_global_exception & 0x%04x) == 0x%04x) "
 			"cob_global_exception = 0;",
 		CB_EXCEPTION_CODE(COB_EC_PROGRAM), CB_EXCEPTION_CODE(COB_EC_PROGRAM));
 
@@ -6743,7 +6743,7 @@ output_call (struct cb_call *p)
 			lookup_call (name_str);
 			callname = s;
 
-			output_line ("if (unlikely(call_%s.funcvoid == NULL || cob_glob_ptr->cob_physical_cancel))", name_str);
+			output_line ("if (call_%s.funcvoid == NULL || cob_glob_ptr->cob_physical_cancel)", name_str);
 			output_block_open ();
 			output_prefix ();
 
@@ -6778,9 +6778,9 @@ output_call (struct cb_call *p)
 		}
 		if (p->stmt1) {
 			if (name_str) {
-				output_line ("if (unlikely(call_%s.funcvoid == NULL))", name_str);
+				output_line ("if (call_%s.funcvoid == NULL)", name_str);
 			} else {
-				output_line ("if (unlikely(cob_unifunc.funcvoid == NULL))");
+				output_line ("if (cob_unifunc.funcvoid == NULL)");
 			}
 			output_block_open ();
 			except_id = cb_id++;
@@ -6917,7 +6917,7 @@ output_call (struct cb_call *p)
 	output_newline ();
 
 	if (except_id > 0) {
-		output_line ("if (unlikely((cob_glob_ptr->cob_exception_code & 0x%04x) == 0x%04x))",
+		output_line ("if ((cob_glob_ptr->cob_exception_code & 0x%04x) == 0x%04x)",
 			CB_EXCEPTION_CODE(COB_EC_PROGRAM), CB_EXCEPTION_CODE(COB_EC_PROGRAM));
 		output_line ("\tgoto %s%d;", CB_PREFIX_LABEL, except_id);
 	}
@@ -6945,7 +6945,7 @@ output_call (struct cb_call *p)
 	}
 	if (gen_exit_program) {
 		needs_exit_prog = 1;
-		output_line ("if (unlikely(module->flag_exit_program))");
+		output_line ("if (module->flag_exit_program)");
 		output_block_open ();
 		output_line ("module->flag_exit_program = 0;");
 		if (current_prog->prog_type == COB_MODULE_TYPE_FUNCTION) {
@@ -7094,7 +7094,7 @@ output_perform_call (struct cb_label *lb, struct cb_label *le)
 	skip_line_num = 0;
 	output_line ("frame_ptr++;");
 	if (cb_flag_stack_check) {
-		output_line ("if (unlikely(frame_ptr == frame_overflow))");
+		output_line ("if (frame_ptr == frame_overflow)");
 		output_line ("\tcob_fatal_error (COB_FERROR_STACK);");
 	}
 	output_line ("frame_ptr->perform_through = %d;", le->id);
@@ -7785,7 +7785,7 @@ get_ec_code_for_handler (const enum cb_handler_type handler_type)
 static void
 output_ferror_stmt (struct cb_statement *stmt)
 {
-	output_line ("if (unlikely(cob_glob_ptr->cob_exception_code != 0))");
+	output_line ("if (cob_glob_ptr->cob_exception_code != 0)");
 	output_block_open ();
 	if (stmt->ex_handler) {
 		output_line ("if (cob_glob_ptr->cob_exception_code == 0x%04x)",
@@ -7974,7 +7974,7 @@ output_alter_check (struct cb_label *lp)
 static void
 output_level_2_ex_condition (const int level_2_ec)
 {
-	output_line ("if (unlikely ((cob_glob_ptr->cob_exception_code & 0xff00) == 0x%04x))",
+	output_line ("if ( (cob_glob_ptr->cob_exception_code & 0xff00) == 0x%04x)",
 		     CB_EXCEPTION_CODE (level_2_ec));
 }
 
@@ -7983,7 +7983,7 @@ output_display_accept_ex_condition (const enum cb_handler_type handler_type)
 {
 	int	imp_ec;
 
-	output_line ("if (unlikely ((cob_glob_ptr->cob_exception_code & 0xff00) == 0x%04x",
+	output_line ("if ((cob_glob_ptr->cob_exception_code & 0xff00) == 0x%04x",
 		     CB_EXCEPTION_CODE (COB_EC_SCREEN));
 
 	if (handler_type == DISPLAY_HANDLER) {
@@ -7991,7 +7991,7 @@ output_display_accept_ex_condition (const enum cb_handler_type handler_type)
 	} else { /* ACCEPT_HANDLER */
 		imp_ec = COB_EC_IMP_ACCEPT;
 	}
-	output_line ("               || cob_glob_ptr->cob_exception_code == 0x%04x))",
+	output_line ("               || cob_glob_ptr->cob_exception_code == 0x%04x)",
 		     CB_EXCEPTION_CODE (imp_ec));
 }
 
@@ -8136,7 +8136,7 @@ output_stmt (cb_tree x)
 		return;
 	}
 	/* LCOV_EXCL_START */
-	if (unlikely(x == cb_error_node)) {
+	if (x == cb_error_node) {
 		cobc_err_msg (_("unexpected error_node parameter"));
 		COBC_ABORT ();
 	}
@@ -11600,7 +11600,7 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	/* CANCEL callback */
 	if (prog->prog_type == COB_MODULE_TYPE_PROGRAM) {
 		output_line ("/* CANCEL callback */");
-		output_line ("if (unlikely(entry < 0)) {");
+		output_line ("if (entry < 0) {");
 		output_line ("\tif (entry == -10)");
 		output_line ("\t\tgoto P_dump;");
 		output_line ("\tif (entry == -20)");
@@ -11722,7 +11722,7 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	}
 
 	output_line ("/* Initialize rest of program */");
-	output_line ("if (unlikely(initialized == 0)) {");
+	output_line ("if (initialized == 0) {");
 	output_line ("\tgoto P_initialize;");
 	output_line ("}");
 	output_line ("P_ret_initialize:");
@@ -11749,7 +11749,7 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 		output_line ("/* Global entry dispatch */");
 		output_newline ();
 		for (l = prog->global_list; l; l = CB_CHAIN (l)) {
-			output_line ("if (unlikely(entry == %d)) {",
+			output_line ("if (entry == %d) {",
 					CB_LABEL (CB_VALUE (l))->id);
 			if (local_mem) {
 				output_line ("\tcob_local_ptr = cob_local_save;");

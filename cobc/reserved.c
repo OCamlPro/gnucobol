@@ -4587,7 +4587,7 @@ lookup_reserved_word (const char *name)
 	}
 
 	/* Check word is implemented */
-	if (unlikely(p->token <= 0)) {
+	if (p->token <= 0) {
 		/* Not implemented - If context sensitive, no error */
 		if (!p->context_sens) {
 			cb_error (_("'%s' is a reserved word, but isn't supported"), name);
@@ -4597,7 +4597,7 @@ lookup_reserved_word (const char *name)
 
 	/* Special actions / Context sensitive */
 	if (p->context_set) {
-		if (unlikely(p->context_test)) {
+		if (p->context_test) {
 			/* Dependent words */
 			if (!(cobc_cs_check & p->context_test)) {
 				return NULL;

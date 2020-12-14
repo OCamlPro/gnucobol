@@ -911,7 +911,7 @@ H#[0-9A-Za-z]+ {
 	}
 
 	/* Bail early for (END) PROGRAM-ID when not a literal */
-	if (unlikely (cobc_force_literal)) {
+	if (cobc_force_literal) {
 		/* Force PROGRAM-ID / END PROGRAM */
 		cobc_force_literal = 0;
 		if (cb_fold_call) {
@@ -983,7 +983,7 @@ H#[0-9A-Za-z]+ {
 
 	for (p78 = top_78_ptr; p78; p78 = p78->glob_next) {
 		if (strcasecmp (yytext, p78->fld_78->name) == 0) {
-			if (unlikely (non_const_word)) {
+			if (non_const_word) {
 				if (p78->prog == current_program) {
 					cb_error (_("a constant may not be used here - '%s'"), yytext);
 					yylval = cb_error_node;
@@ -1231,12 +1231,12 @@ read_literal (const char mark, const char *type)
 	/* NO early exit possible as the literal has to be consumed */
 	while ((c = input ()) != EOF) {
 #if EOF != 0
-		if (unlikely (c == 0)) break;	/* fixes unexpected error case */
+		if (c == 0) break;	/* fixes unexpected error case */
 #endif
 		if (!literal_error) {
-			if (unlikely (i + 1 == plex_size)) {
+			if (i + 1 == plex_size) {
 				plex_size *= 2;
-				if (unlikely (plex_size > (cb_lit_length + 1))) {
+				if (plex_size > (cb_lit_length + 1)) {
 					plex_size = (size_t)cb_lit_length + 1;
 				}
 				plex_buff = cobc_realloc (plex_buff, plex_size);
@@ -1256,7 +1256,7 @@ read_literal (const char mark, const char *type)
 		}
 		/* check literal size here as we have to adjust and check
 		   for (escaped) mark before checking the max length */
-		if (unlikely (i++ == cb_lit_length)) {
+		if (i++ == cb_lit_length) {
 			snprintf (err_msg, COB_MINI_MAX,
 				_("literal length exceeds %d characters"),
 				cb_lit_length);
@@ -1338,7 +1338,7 @@ scan_x (const char *text, const char *type)
 		RETURN_TOK (LITERAL);
 	}
 
-	if (unlikely (curr_len + 1 > plex_size)) {
+	if (curr_len + 1 > plex_size) {
 		plex_size = curr_len + 1;
 		plex_buff = cobc_realloc (plex_buff, plex_size);
 	}
@@ -1351,7 +1351,7 @@ scan_x (const char *text, const char *type)
 		}
 		result_len = curr_len * 4; /* boolean characters B -> 1110 */
 		/* GnuCOBOL currently only support 64 bit booleans */
-		if (unlikely (result_len > 64)) {
+		if (result_len > 64) {
 			snprintf (err_msg, COB_MINI_MAX,
 				_("literal length %d exceeds %d characters"),
 				  (int) result_len, 64);
@@ -1365,7 +1365,7 @@ scan_x (const char *text, const char *type)
 		CB_UNFINISHED (_("national literal"));
 		result_len = curr_len / (2 * COB_NATIONAL_SIZE); /* national characters */
 	}
-	if (unlikely (result_len > cb_lit_length)) {
+	if (result_len > cb_lit_length) {
 		snprintf (err_msg, COB_MINI_MAX,
 			_("literal length %d exceeds %d characters"),
 			  (int) result_len, cb_lit_length);
@@ -1377,7 +1377,7 @@ scan_x (const char *text, const char *type)
 	e = (char *)p + curr_len;
 	dst = plex_buff;
 
-	if (unlikely(type[0] == 'B')) {
+	if (type[0] == 'B') {
 		/* hexadecimal-boolean */
 		cob_u64_t	val = 0;
 		for (; *p != *e; p++) {
@@ -1402,7 +1402,7 @@ scan_x (const char *text, const char *type)
 				continue;
 			}
 		}
-		if (unlikely (literal_error != 0)) {
+		if (literal_error != 0) {
 			goto error;
 		}
 		sprintf ((char *)plex_buff, CB_FMT_LLU, val);
@@ -1453,7 +1453,7 @@ scan_x (const char *text, const char *type)
 			}
 			error_literal (type, plex_buff);
 		}
-		if (unlikely (literal_error != 0)) {
+		if (literal_error != 0) {
 			goto error;
 		}
 		if (type[0] != 'N') {
@@ -1479,14 +1479,14 @@ scan_z (const char *text, const char *type)
 
 	/* currlen includes the terminating quote */
 	currlen = strlen (text);
-	if (unlikely ((currlen - 1) > cb_lit_length)) {
+	if ((currlen - 1) > cb_lit_length) {
 		currlen--;
 		snprintf (err_msg, COB_MINI_MAX,
 			_("literal length %d exceeds %d characters"),
 			  (int) currlen, cb_lit_length);
 		error_literal (type, text);
 		goto error;
-	} else if (unlikely (currlen == 1)) {
+	} else if (currlen == 1) {
 		currlen--;
 	        snprintf (err_msg, COB_MINI_MAX,
 			  _("%s literals must contain at least one character"),
@@ -1494,7 +1494,7 @@ scan_z (const char *text, const char *type)
 		error_literal (type, "");
 		goto error;
 	}
-	if (unlikely (currlen > plex_size)) {
+	if (currlen > plex_size) {
 		plex_size = currlen;
 		plex_buff = cobc_realloc (plex_buff, plex_size);
 	}
@@ -1539,7 +1539,7 @@ scan_h (const char *text, const char *type)
 		}
 		plex_buff[currlen] = 0;
 	}
-	if (unlikely (currlen > 16)) {
+	if (currlen > 16) {
 		snprintf (err_msg, COB_MINI_MAX,
 			_("literal length %d exceeds %d characters"),
 			  (int) currlen,  16);
@@ -1629,7 +1629,7 @@ scan_b (const char *text, const char *type)
 			goto error; /* early exit possible as complete literal is consumed */
 		}
 	};
-	if (unlikely (currlen >= plex_size)) {
+	if (currlen >= plex_size) {
 		currlen = plex_size - 1;
 	}
 	memcpy (plex_buff, text, currlen + 1);
@@ -1637,7 +1637,7 @@ scan_b (const char *text, const char *type)
 		currlen--;
 	}
 	plex_buff[currlen] = 0;
-	if (unlikely (currlen > 64)) {
+	if (currlen > 64) {
 		snprintf (err_msg, COB_MINI_MAX,
 			_("literal length %d exceeds %d characters"),
 			  (int) currlen, 64);
@@ -1706,7 +1706,7 @@ scan_o (const char *text, const char *type)
 
 	currlen = strlen (text);
 	memcpy (plex_buff, text, currlen + 1);
-	if (unlikely (currlen > 22)) {
+	if (currlen > 22) {
 		snprintf (err_msg, COB_MINI_MAX,
 			  _("literal length %d exceeds %d characters"),
 			  (int) currlen, 22);
@@ -1804,14 +1804,14 @@ scan_numeric (const char *text)
 
 	/* Note that leading zeroes are not removed from the literal. */
 
-	if (unlikely (strlen (p) > COB_MAX_DIGITS)) {
+	if (strlen (p) > COB_MAX_DIGITS) {
 		/* Absolute limit */
 		snprintf (err_msg, COB_MINI_MAX,
 			  _("literal length %d exceeds maximum of %d digits"),
 			  (int) strlen (p), COB_MAX_DIGITS);
 		error_literal ("num", text);
 		yylval = cb_error_node;
-	} else if (unlikely (strlen (p) > cb_numlit_length)) {
+	} else if (strlen (p) > cb_numlit_length) {
 		snprintf (err_msg, COB_MINI_MAX,
 			  _("literal length %d exceeds %d digits"),
 			  (int) strlen (p), cb_numlit_length);
