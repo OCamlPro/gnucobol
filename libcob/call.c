@@ -701,7 +701,7 @@ cob_encode_invalid_chars (const unsigned char* const name,
 			name_buff[pos] = 0;
 			return -pos;
 		}
-		if (likely (valid_char[*s])) {
+		if (valid_char[*s]) {
 			name_buff[pos++] = *s;
 		} else {
 			name_buff[pos++] = (unsigned char)'_';

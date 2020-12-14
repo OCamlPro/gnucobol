@@ -326,7 +326,7 @@ lookup_word (struct cb_reference *p, const char *name)
 	val = word_hash (word);
 
 	/* Find an existing word */
-	if (likely(current_program)) {
+	if (current_program) {
 		/* checking only "very similar" words that share the same hash */
 		for (w = current_program->word_table[val]; w; w = w->next) {
 #if 1	/* TODO we currently use words "as written first" use an all-upper
@@ -353,7 +353,7 @@ lookup_word (struct cb_reference *p, const char *name)
 #endif
 
 	/* Insert it into the table */
-	if (likely(current_program)) {
+	if (current_program) {
 		w->next = current_program->word_table[val];
 		current_program->word_table[val] = w;
 	}
@@ -4803,7 +4803,7 @@ cb_ref_internal (cb_tree x, const int emit_error)
 
 	/* There is no candidate */
 	if (candidate == NULL) {
-		if (likely(current_program->nested_level <= 0)) {
+		if (current_program->nested_level <= 0) {
 			goto raise_error;
 		}
 		/* Nested program - check parents for GLOBAL candidate */

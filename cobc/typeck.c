@@ -489,7 +489,7 @@ static struct cb_field	*check_sub = NULL;
 static struct cb_field *
 cb_code_field (cb_tree x)
 {
-	if (likely(CB_REFERENCE_P (x))) {
+	if (CB_REFERENCE_P (x)) {
 		cb_tree f = CB_REFERENCE (x)->value;
 		if (unlikely(!f)) {
 			f = cb_ref (x);
@@ -2245,7 +2245,7 @@ cb_build_identifier (cb_tree x, const int subchk)
 	} else {
 		numsubs = f->indexes;
 	}
-	if (likely(!r->flag_all)) {
+	if (!r->flag_all) {
 		if (refsubs != numsubs) {
 			if (refsubs > numsubs) {
 				goto refsubserr;

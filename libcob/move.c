@@ -1145,8 +1145,8 @@ cob_move_all (cob_field *src, cob_field *dst)
 	size_t			digcount;
 	cob_field		temp;
 
-	if (likely(COB_FIELD_IS_ALNUM(dst))) {
-		if (likely(src->size == 1)) {
+	if (COB_FIELD_IS_ALNUM(dst)) {
+		if (src->size == 1) {
 			memset (dst->data, src->data[0], dst->size);
 		} else {
 			size_t			i;
@@ -1160,7 +1160,7 @@ cob_move_all (cob_field *src, cob_field *dst)
 	if (!COB_FIELD_IS_NUMERIC(dst)) {
 		temp.attr = &all_display_attr;
 		digcount = dst->size;
-	} else if (likely(src->size == 1)) {
+	} else if (src->size == 1) {
 		memset (all_numeric_data, src->data[0], COB_MAX_DIGITS);
 		cob_move ((cob_field *)&all_numeric_field, dst);
 		return;
@@ -1171,7 +1171,7 @@ cob_move_all (cob_field *src, cob_field *dst)
 	p = cob_malloc (digcount);
 	temp.size = digcount;
 	temp.data = p;
-	if (likely(src->size == 1)) {
+	if (src->size == 1) {
 		memset (p, src->data[0], digcount);
 	} else {
 		size_t			i;

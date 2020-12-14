@@ -444,7 +444,7 @@ cb_parse_xfd (struct cb_file *fn, struct cb_field *f)
 static struct cb_field *
 cb_code_field (cb_tree x)
 {
-	if (likely(CB_REFERENCE_P (x))) {
+	if (CB_REFERENCE_P (x)) {
 		if (unlikely(!CB_REFERENCE (x)->value)) {
 			return CB_FIELD (cb_ref (x));
 		}

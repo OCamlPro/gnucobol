@@ -880,7 +880,7 @@ cob_chk_file_mapping (cob_file *f)
 	src = file_open_name;
 
 	/* Simple case - No separators */
-	if (likely(dollar == 0)) {
+	if (dollar == 0) {
 		/* Ignore leading dollar */
 		if (*src == '$') {
 			src++;
@@ -2160,7 +2160,7 @@ cob_file_save_status (cob_file *f, cob_field *fnstatus, const int status)
 	struct cob_time tod;
 
 	file_globptr->cob_error_file = f;
-	if (likely(status == 0)) {
+	if (status == 0) {
 		memset (f->file_status, '0', (size_t)2);
 		if (fnstatus) {
 			memset (fnstatus->data, '0', (size_t)2);
@@ -3620,7 +3620,7 @@ lineseq_read (cob_file_api *a, cob_file *f, const int read_opts)
 				break;
 			}
 		}
-		if (likely(i < f->record_max)) {
+		if (i < f->record_max) {
 			*dataptr++ = (unsigned char)n;
 			i++;
 			if (i >= f->record_max
@@ -6797,7 +6797,7 @@ cob_file_sort_process (struct cobsort *hp)
 	}
 	/* LCOV_EXCL_STOP */
 #endif
-	if (likely(!hp->files_used)) {
+	if (!hp->files_used) {
 		hp->retrieval_queue = n;
 		return 0;
 	}
@@ -7147,7 +7147,7 @@ cob_file_sort_close (cob_file *f)
 
 	fnstatus = NULL;
 	hp = f->file;
-	if (likely(hp)) {
+	if (hp) {
 		fnstatus = hp->fnstatus;
 		cob_free_list (hp);
 		for (i = 0; i < 4; ++i) {
@@ -7173,7 +7173,7 @@ cob_file_release (cob_file *f)
 
 	fnstatus = NULL;
 	hp = f->file;
-	if (likely(hp)) {
+	if (hp) {
 		fnstatus = hp->fnstatus;
 	}
 	ret = cob_file_sort_submit (f, f->record->data);
@@ -7181,7 +7181,7 @@ cob_file_release (cob_file *f)
 		cob_file_save_status (f, fnstatus, COB_STATUS_00_SUCCESS);
 		return;
 	}
-	if (likely(hp && hp->sort_return)) {
+	if (hp && hp->sort_return) {
 		*(int *)(hp->sort_return) = 16;
 	}
 	cob_file_save_status (f, fnstatus, COB_STATUS_30_PERMANENT_ERROR);
@@ -7196,7 +7196,7 @@ cob_file_return (cob_file *f)
 
 	fnstatus = NULL;
 	hp = f->file;
-	if (likely(hp)) {
+	if (hp) {
 		fnstatus = hp->fnstatus;
 	}
 	ret = cob_file_sort_retrieve (f, f->record->data);
@@ -7208,7 +7208,7 @@ cob_file_return (cob_file *f)
 		cob_file_save_status (f, fnstatus, COB_STATUS_10_END_OF_FILE);
 		return;
 	}
-	if (likely(hp && hp->sort_return)) {
+	if (hp && hp->sort_return) {
 		*(int *)(hp->sort_return) = 16;
 	}
 	cob_file_save_status (f, fnstatus, COB_STATUS_30_PERMANENT_ERROR);

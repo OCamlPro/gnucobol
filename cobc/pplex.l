@@ -1237,11 +1237,11 @@ ppcopy (const char *name, const char *lib, struct cb_replace_list *replace_list)
 	}
 	
 	/* expected case: filename found */
-	if (likely (filename)) {
+	if (filename) {
 		int ret;
 		ret = ppopen (filename, replace_list);
 		/* expected case: copybook could be processed */
-		if (likely (ret == 0)) {
+		if (ret == 0) {
 			return 0;
 		}
 		/* otherwise fall-trough to error handling */
@@ -1574,7 +1574,7 @@ start:
 		if (unlikely (gotcr)) {
 			gotcr = 0;
 			if (ipchar != '\n') {
-				if (likely (line_overflow == 0)) {
+				if (line_overflow == 0) {
 					buff[n++] = '\r';
 				} else {
 					line_overflow = 2;
@@ -1586,7 +1586,7 @@ start:
 			continue;
 		}
 		if (unlikely (ipchar == '\t')) {
-			if (likely (line_overflow == 0)) {
+			if (line_overflow == 0) {
 				buff[n++] = ' ';
 				while (n % cb_tab_width != 0) {
 					buff[n++] = ' ';
@@ -1597,7 +1597,7 @@ start:
 			}
 			continue;
 		}
-		if (likely (line_overflow == 0)) {
+		if (line_overflow == 0) {
 			buff[n++] = (char)ipchar;
 		} else if ((char)ipchar != ' ' && (char)ipchar != '\n') {
 			line_overflow = 2;

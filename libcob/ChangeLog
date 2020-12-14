@@ -6,6 +6,8 @@
 
 2020-12-14  James K. Lowden  <jklowden@symas.com>
 
+	* call.c fileio.c move.c: remove use of likely
+
 	* common.h (likely, unlikely): never use __builtin_expect
 
 2020-12-09  Ron Norman <rjn@inglenet.com>

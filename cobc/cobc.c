@@ -4665,7 +4665,7 @@ process (const char *cmd)
 	size_t	clen;
 	int	ret;
 
-	if (likely(strchr (cmd, '$') == NULL)) {
+	if (strchr (cmd, '$') == NULL) {
 		buffptr = (char *)cmd;
 	} else {
 		clen = strlen (cmd) + 64U;

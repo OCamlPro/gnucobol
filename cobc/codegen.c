@@ -280,7 +280,7 @@ static void output_report_summed_field (struct cb_field *);
 static struct cb_field *
 cb_code_field (cb_tree x)
 {
-	if (likely(CB_REFERENCE_P (x))) {
+	if (CB_REFERENCE_P (x)) {
 		cb_tree f = CB_REFERENCE (x)->value;
 		if (unlikely(!f)) {
 			f = cb_ref (x);
@@ -13032,7 +13032,7 @@ output_function_prototypes (struct cb_program *prog)
 #endif
 		} else {
 			/* Output implementation of other program wrapper. */
-			if (likely(cp->prog_type == COB_MODULE_TYPE_PROGRAM)) {
+			if (cp->prog_type == COB_MODULE_TYPE_PROGRAM) {
 				for (l = cp->entry_list; l; l = CB_CHAIN (l)) {
 					output_entry_function (cp, l, cp->parameter_list, 0);
 				}

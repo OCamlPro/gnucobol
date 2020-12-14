@@ -179,7 +179,7 @@ static void *	copy_literal (cb_tree l);
 %%
 
 %{
-	if (likely (current_program)) {
+	if (current_program) {
 		if (current_program->decimal_point == '.') {
 			BEGIN DECIMAL_IS_PERIOD;
 		} else {
@@ -1343,7 +1343,7 @@ scan_x (const char *text, const char *type)
 		plex_buff = cobc_realloc (plex_buff, plex_size);
 	}
 	memcpy (plex_buff, text, curr_len);
-	if (likely(type[0] == 'X')) {
+	if (type[0] == 'X') {
 		result_len = curr_len / 2; /* characters, two half-bytes (hex) = 1 byte */
 	} else if (type[0] == 'B') {
 		if (!cb_verify (cb_hexadecimal_boolean, _("hexadecimal-boolean literal"))) {
@@ -1391,7 +1391,7 @@ scan_x (const char *text, const char *type)
 			} else {
 				snprintf (err_msg, COB_MINI_MAX,
 					_("literal contains invalid character '%c'"), c);
-				if (likely (literal_error == 0)) {
+				if (literal_error == 0) {
 					memcpy (plex_buff, text, curr_len + 1);
 					plex_buff[curr_len] = 0;
 				}
@@ -1423,7 +1423,7 @@ scan_x (const char *text, const char *type)
 			} else {
 				snprintf (err_msg, COB_MINI_MAX,
 					_("literal contains invalid character '%c'"), c);
-				if (likely (literal_error == 0)) {
+				if (literal_error == 0) {
 					memcpy (plex_buff, text, curr_len + 1);
 					plex_buff[curr_len] = 0;
 				}
@@ -1433,7 +1433,7 @@ scan_x (const char *text, const char *type)
 				*/
 				continue;
 			}
-			if (likely (literal_error == 0)) {
+			if (literal_error == 0) {
 				if (high) {
 					*dst = (cob_u8_t)(c << 4);
 				} else {
@@ -1447,7 +1447,7 @@ scan_x (const char *text, const char *type)
 			/* This is non-standard behaviour */
 			snprintf (err_msg, COB_MINI_MAX,
 				_("literal does not have an even number of digits"));
-			if (likely (literal_error == 0)) {
+			if (literal_error == 0) {
 				memcpy (plex_buff, text, curr_len + 1);
 				plex_buff[curr_len] = 0;
 			}
