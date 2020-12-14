@@ -1,3 +1,9 @@
+
+2020-12-14  Ron Norman <rjn@inglenet.com>
+
+	* fodbc.c: Fixed problem with 'commit' not being done
+	* fsqlxfd.c: Speed up copy of PIC X fields instead of using cob_move
+
 2020-12-14  James K. Lowden  <jklowden@symas.com>
 
 	* common.h (likely, unlikely): never use __builtin_expect
