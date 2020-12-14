@@ -1295,7 +1295,7 @@ common_cmpc (const unsigned char *s1, const unsigned int c,
 	size_t			i;
 	int			ret;
 
-	if (unlikely (col)) {
+	if (col) {
 		for (i = 0; i < size; ++i) {
 			if ((ret = col[s1[i]] - col[c]) != 0) {
 				return ret;
@@ -1318,7 +1318,7 @@ common_cmps (const unsigned char *s1, const unsigned char *s2,
 	size_t			i;
 	int			ret;
 
-	if (unlikely (col)) {
+	if (col) {
 		for (i = 0; i < size; ++i) {
 			if ((ret = col[s1[i]] - col[s2[i]]) != 0) {
 				return ret;
@@ -1737,7 +1737,7 @@ cob_malloc (const size_t size)
 
 	mptr = calloc ((size_t)1, size);
 	/* LCOV_EXCL_START */
-	if (unlikely (!mptr)) {
+	if (!mptr) {
 		cob_fatal_error (COB_FERROR_MEMORY);
 	}
 	/* LCOV_EXCL_STOP */
@@ -1750,21 +1750,21 @@ cob_realloc (void * optr, const size_t osize, const size_t nsize)
 	void	*mptr;
 
 	/* LCOV_EXCL_START */
-	if (unlikely (!optr)) {
+	if (!optr) {
 		cob_fatal_error (COB_FERROR_FREE);
 	}
 	/* LCOV_EXCL_STOP */
 
-	if (unlikely (osize == nsize)) {	/* No size change */
+	if (osize == nsize) {	/* No size change */
 		return optr;
 	} 
-	if (unlikely (osize > nsize)) {		/* Reducing size */
+	if (osize > nsize) {		/* Reducing size */
 		return realloc (optr, nsize);
 	}
 
 	mptr = calloc ((size_t)1, nsize);	/* New memory, past old is cleared */
 	/* LCOV_EXCL_START */
-	if (unlikely (!mptr)) {
+	if (!mptr) {
 		cob_fatal_error (COB_FERROR_MEMORY);
 	}
 	/* LCOV_EXCL_STOP */
@@ -1778,7 +1778,7 @@ cob_free (void * mptr)
 {
 #ifdef _DEBUG
 	/* LCOV_EXCL_START */
-	if (unlikely (!mptr)) {
+	if (!mptr) {
 		cob_fatal_error (COB_FERROR_FREE);
 	}
 	/* LCOV_EXCL_STOP */
@@ -1794,7 +1794,7 @@ cob_fast_malloc (const size_t size)
 
 	mptr = malloc (size);
 	/* LCOV_EXCL_START */
-	if (unlikely (!mptr)) {
+	if (!mptr) {
 		cob_fatal_error (COB_FERROR_MEMORY);
 	}
 	/* LCOV_EXCL_STOP */
@@ -2156,17 +2156,17 @@ cob_field_to_string (const cob_field *f, void *str, const size_t maxsize)
 	size_t		count;
 	size_t		i;
 
-	if (unlikely (f == NULL)) {
+	if (f == NULL) {
 		strncpy (str, _("NULL field"), maxsize);
 		return;
 	}
 
 	count = 0;
-	if (unlikely (f->size == 0)) {
+	if (f->size == 0) {
 		return;
 	}
 	/* check if field has data assigned (may be a BASED / LINKAGE item) */
-	if (unlikely (f->data == NULL)) {
+	if (f->data == NULL) {
 		strncpy (str, _("field with NULL address"), maxsize);
 		return;
 	}
@@ -2221,7 +2221,7 @@ cob_global *
 cob_get_global_ptr (void)
 {
 	/* LCOV_EXCL_START */
-	if (unlikely (!cob_initialized)) {
+	if (!cob_initialized) {
 		cob_fatal_error (COB_FERROR_INITIALIZED);
 	}
 	/* LCOV_EXCL_STOP */
@@ -2239,7 +2239,7 @@ cob_module_global_enter (cob_module **module, cob_global **mglobal,
 
 
 	/* Check initialized */
-	if (unlikely (!cob_initialized)) {
+	if (!cob_initialized) {
 		if (auto_init) {
 			cob_init (0, NULL);
 		} else {
@@ -2372,7 +2372,7 @@ cob_save_func (cob_field **savefld, const int params,
 	int			numparams;
 	int			n;
 
-	if (unlikely (params > eparams)) {
+	if (params > eparams) {
 		numparams = eparams;
 	} else {
 		numparams = params;
@@ -2519,17 +2519,17 @@ cob_correct_numeric (cob_field *f)
 	if (COB_FIELD_HAVE_SIGN (f)) {
 		/* Adjust for sign byte */
 		size--;
-		if (unlikely (COB_FIELD_SIGN_LEADING (f))) {
+		if (COB_FIELD_SIGN_LEADING (f)) {
 			p = f->data;
 			data = p + 1;
 		} else {
 			p = f->data + f->size - 1;
 		}
-		if (unlikely (COB_FIELD_SIGN_SEPARATE (f))) {
+		if (COB_FIELD_SIGN_SEPARATE (f)) {
 			if (*p != '+' && *p != '-') {
 				*p = '+';
 			}
-		} else if (unlikely (COB_MODULE_PTR->ebcdic_sign)) {
+		} else if (COB_MODULE_PTR->ebcdic_sign) {
 			switch (*p) {
 			case '{':
 			case 'A':
@@ -2596,7 +2596,7 @@ cob_correct_numeric (cob_field *f)
 		}
 	} else {
 		p = f->data + f->size - 1;
-		if (unlikely (COB_MODULE_PTR->ebcdic_sign)) {
+		if (COB_MODULE_PTR->ebcdic_sign) {
 			switch (*p) {
 			case 0:
 			case ' ':
@@ -2707,17 +2707,17 @@ cob_check_numdisp (const cob_field *f)
 	if (COB_FIELD_HAVE_SIGN (f)) {
 		/* Adjust for sign byte */
 		size--;
-		if (unlikely (COB_FIELD_SIGN_LEADING (f))) {
+		if (COB_FIELD_SIGN_LEADING (f)) {
 			p = f->data;
 			data = p + 1;
 		} else {
 			p = f->data + f->size - 1;
 		}
-		if (unlikely (COB_FIELD_SIGN_SEPARATE (f))) {
+		if (COB_FIELD_SIGN_SEPARATE (f)) {
 			if (*p != '+' && *p != '-') {
 				return 0;
 			}
-		} else if (unlikely (COB_MODULE_PTR->ebcdic_sign)) {
+		} else if (COB_MODULE_PTR->ebcdic_sign) {
 			switch (*p) {
 			case '0':
 			case '1':
@@ -2799,14 +2799,14 @@ cob_real_get_sign (cob_field *f)
 	switch (COB_FIELD_TYPE (f)) {
 	case COB_TYPE_NUMERIC_DISPLAY:
 		/* Locate sign */
-		if (unlikely (COB_FIELD_SIGN_LEADING (f))) {
+		if (COB_FIELD_SIGN_LEADING (f)) {
 			p = f->data;
 		} else {
 			p = f->data + f->size - 1;
 		}
 
 		/* Get sign */
-		if (unlikely (COB_FIELD_SIGN_SEPARATE (f))) {
+		if (COB_FIELD_SIGN_SEPARATE (f)) {
 			return (*p == '-') ? -1 : 1;
 		}
 		if (*p >= (unsigned char)'0' && *p <= (unsigned char)'9') {
@@ -2818,7 +2818,7 @@ cob_real_get_sign (cob_field *f)
 #endif
 			return 1;
 		}
-		if (unlikely (COB_MODULE_PTR->ebcdic_sign)) {
+		if (COB_MODULE_PTR->ebcdic_sign) {
 			return cob_get_sign_ebcdic (p);
 		}
 		return cob_get_sign_ascii (p);
@@ -2841,19 +2841,19 @@ cob_real_put_sign (cob_field *f, const int sign)
 	switch (COB_FIELD_TYPE (f)) {
 	case COB_TYPE_NUMERIC_DISPLAY:
 		/* Locate sign */
-		if (unlikely (COB_FIELD_SIGN_LEADING (f))) {
+		if (COB_FIELD_SIGN_LEADING (f)) {
 			p = f->data;
 		} else {
 			p = f->data + f->size - 1;
 		}
 
 		/* Put sign */
-		if (unlikely (COB_FIELD_SIGN_SEPARATE (f))) {
+		if (COB_FIELD_SIGN_SEPARATE (f)) {
 			c = (sign < 0) ? (cob_u8_t)'-' : (cob_u8_t)'+';
 			if (*p != c) {
 				*p = c;
 			}
-		} else if (unlikely (COB_MODULE_PTR->ebcdic_sign)) {
+		} else if (COB_MODULE_PTR->ebcdic_sign) {
 			cob_put_sign_ebcdic (p, sign);
 		} else if (sign < 0) {
 			cob_put_sign_ascii (p);
@@ -4198,7 +4198,7 @@ cob_display_environment (const cob_field *f)
 		cob_local_env = cob_malloc (cob_local_env_size + 1U);
 	}
 	cob_field_to_string (f, cob_local_env, cob_local_env_size);
-	if (unlikely (cobsetptr->cob_env_mangle)) {
+	if (cobsetptr->cob_env_mangle) {
 		for (i = 0; i < strlen (cob_local_env); ++i) {
 			if (!isalnum ((int)cob_local_env[i])) {
 				cob_local_env[i] = '_';
@@ -4254,7 +4254,7 @@ cob_get_environment (const cob_field *envname, cob_field *envval)
 
 	buff = cob_malloc (envname->size + 1U);
 	cob_field_to_string (envname, buff, envname->size);
-	if (unlikely (cobsetptr->cob_env_mangle)) {
+	if (cobsetptr->cob_env_mangle) {
 		for (size = 0; size < strlen (buff); ++size) {
 			if (!isalnum ((int)buff[size])) {
 				buff[size] = '_';
@@ -4739,7 +4739,7 @@ cob_sys_system (const void *cmdline)
 		if (i > 0) {
 			char	*command;
 			/* LCOV_EXCL_START */
-			if (unlikely (i > COB_MEDIUM_MAX)) {
+			if (i > COB_MEDIUM_MAX) {
 				cob_runtime_warning (_("parameter to SYSTEM call is larger than %d characters"), COB_MEDIUM_MAX);
 				return 1;
 			}
@@ -8440,7 +8440,7 @@ cob_init (const int argc, char **argv)
 	cob_common_init (cobsetptr);
 
 	/* Load runtime configuration file */
-	if (unlikely (cob_load_config () < 0)) {
+	if (cob_load_config () < 0) {
 		cob_stop_run (1);
 	}
 

@@ -1166,7 +1166,7 @@ isam_read (cob_file_api *a, cob_file *f, cob_field *key, const int read_opts)
 	if (isread_retry (f, (void *)f->record->data, ISEQUAL | lmode)) {
 		ret = fisretsts (COB_STATUS_21_KEY_INVALID);
 	}
-	if (unlikely (ret != 0)) {
+	if (ret != 0) {
 		memset (fh->savekey, 0, fh->lenkey);
 		fh->recnum = 0;
 		fh->readdone = 0;
@@ -1430,7 +1430,7 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 			ret = fisretsts (COB_STATUS_10_END_OF_FILE);
 		}
 	}
-	if (unlikely(ret != 0)) {
+	if (ret != 0) {
 		memset (fh->savekey, 0, fh->lenkey);
 		fh->recnum = 0;
 		fh->readdone = 0;
@@ -1533,7 +1533,7 @@ isam_write (cob_file_api *a, cob_file *f, const int opt)
 	 && !(f->lock_mode & COB_LOCK_AUTOMATIC) 
 	 && !f->flag_file_lock) {
 		/* WRITE and make it 'current' */
-		if (unlikely(iswrcurr (fh->isfd, (void *)f->record->data))) {
+		if (iswrcurr (fh->isfd, (void *)f->record->data)) {
 			return fisretsts (COB_STATUS_49_I_O_DENIED);
 		}
 		ret = COB_CHECK_DUP (ret);
@@ -1542,7 +1542,7 @@ isam_write (cob_file_api *a, cob_file *f, const int opt)
 			return fisretsts (COB_STATUS_49_I_O_DENIED);
 		}
 	} else {
-		if (unlikely(iswrite (fh->isfd, (void *)f->record->data))) {
+		if (iswrite (fh->isfd, (void *)f->record->data)) {
 			if (f->access_mode == COB_ACCESS_SEQUENTIAL
 			 && f->open_mode == COB_OPEN_OUTPUT
 			 && f->flag_set_isam
