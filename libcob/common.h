@@ -458,14 +458,6 @@ only usable with COB_USE_VC2013_OR_GREATER */
 #endif
 #endif
 
-/*
- * Define likely and unlikely as no-ops everywhere, for testing. 
- * Remove after removing them from the code. 
- */
-#define likely(x)	(x)
-#define unlikely(x)	(x)
-
-
 #if	defined(__GNUC__)
 #define	optim_memcpy(x,y,z)	__builtin_memcpy (x, y, z)
 #else

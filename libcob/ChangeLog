@@ -1,5 +1,6 @@
 2020-12-14  James K. Lowden  <jklowden@symas.com>
 
+	* common.h: (likely, unlikely): removed
 	* termio.c (cob_accept): call.c common.c fbdb.c fextfh.c fileio.c
 	fisam.c flmdb.c intrinsic.c move.c numeric.c screenio.c strings.c
 	termio.c: remove use of unlikely
@@ -12,7 +13,6 @@
 2020-12-14  James K. Lowden  <jklowden@symas.com>
 
 	* call.c fileio.c move.c: remove use of likely
-
 	* common.h (likely, unlikely): never use __builtin_expect
 
 2020-12-09  Ron Norman <rjn@inglenet.com>
