@@ -1,4 +1,9 @@
 
+2020-12-11  Ron Norman <rjn@inglenet.com>
+
+	* codegen.c: Fix INITIALIZE logic to correcly handle subscripts
+	* parser.y: Add check for valid ->pic pointer
+
 2020-12-09  Ron Norman <rjn@inglenet.com>
 	* cobc.c: Now calls cob_get_sig_name {in common.c} to get signal name
 	* codegen.c (output_dump_code): Only emits code to catch abort 

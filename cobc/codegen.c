@@ -4666,7 +4666,10 @@ propagate_table ( cb_tree x )
 {
 	struct cb_field *f;
 	long len;
+	int		has_sub = 0;
 	unsigned int occ, j = 1;
+	struct cb_reference *r;
+
 	f = cb_code_field (x);
 	len = (long)f->size;
 	occ = f->occurs_max;
@@ -4675,16 +4678,58 @@ propagate_table ( cb_tree x )
 	 || (!chk_field_variable_size(f)
 	  && !f->flag_unbounded
 	  && !f->depending)) {
+		if (CB_REFERENCE_P (x)) {
+			r = CB_REFERENCE (x);
+			/* Are there any Subscripts to deal with? */
+			if (r->subs) {
+				struct cb_field	*p = f;
+				cb_tree		lsub = r->subs;
+				for (; p && lsub; p = p->parent) {
+					if (p->flag_occurs) {
+						/* 1 - 1 is 0 so skip it */
+						if (is_index_1 (CB_VALUE (lsub)) ) {
+							lsub = CB_CHAIN (lsub);
+							continue;
+						}
+						has_sub = 1;
+						break;
+					}
+				}
+			}
+		}
 		/* Table size is known at compile time */
 		/* Generate inline 'memcpy' to propagate the array data */
 
-		if (occ > 1) {
+		if (occ > 2
+		 && has_sub) {
+			output_block_open ();
+			output_prefix ();
+			output ("cob_u8_ptr b_ptr = ");
+			output_data(x);
+			output (";");
+			output_newline ();
+			do {
+				output_prefix ();
+				output ("memcpy (b_ptr + %6ld, b_ptr, %6ld);",len,len);
+				output ("\t/* %s: %5d thru %d */",f->name,j+1,j*2);
+				output_newline ();
+				j = j * 2;
+				len = len * 2;
+			} while ((j * 2) < occ);
+			if (j < occ) {
+				output_prefix ();
+				output ("memcpy (b_ptr + %6ld, b_ptr, %6ld);",len,(long)(f->size * (occ - j)));
+				output ("\t/* %s: %5d thru %d */",f->name,j+1,occ);
+				output_newline ();
+			}
+			output_block_close ();
+		} else if (occ > 1) {
 			do {
 				output_prefix ();
 				output ("memcpy (");
-				output_base (f, 0);
+				output_data (x);
 				output (" + %5ld, ",len);
-				output_base (f, 0);
+				output_data (x);
 				output (", %5ld);\t/* %s: %5d thru %d */",len,f->name,j+1,j*2);
 				output_newline ();
 				j = j * 2;
@@ -4693,9 +4738,9 @@ propagate_table ( cb_tree x )
 			if (j < occ) {
 				output_prefix ();
 				output ("memcpy (");
-				output_base (f, 0);
+				output_data (x);
 				output (" + %5ld, ",len);
-				output_base (f, 0);
+				output_data (x);
 				output (", %5ld);\t/* %s: %5d thru %d */",
 							(long)(f->size * (occ - j)),f->name,j+1,occ);
 				output_newline ();
@@ -4705,7 +4750,7 @@ propagate_table ( cb_tree x )
 		/* Table size is only known at run time */
 		output_prefix ();
 		output ("cob_init_table (");
-		output_base (f, 0);
+		output_data (x);
 		output (", ");
 		output_size (x);
 		output (", ");
@@ -5311,11 +5356,16 @@ output_initialize_compound (struct cb_initialize *p, cb_tree x)
 				}
 			} else {
 				struct cb_reference *ref = CB_REFERENCE (c);
-				cb_tree			save_check, save_length;
+				cb_tree			save_check, save_length, r2;
 
 				/* Output initialization for the first record */
 				save_length = ref->length;
 				save_check = ref->check;
+				/* Output all 'check' first */
+				for (r2 = ref->check; r2; r2 = CB_CHAIN (r2)) {
+					output_stmt (CB_VALUE (r2));
+				}
+				ref->check = NULL;
 				ref->subs = CB_BUILD_CHAIN (cb_int1, ref->subs);
 				if (type == INITIALIZE_ONE) {
 					output_initialize_one (p, c);
@@ -10438,9 +10488,6 @@ output_field_indexes (struct cb_field *f)
 static void
 output_record_indexes (struct cb_field *f)
 {
-	cb_tree l;
-	struct cb_field *f_idx;
-
 	while ( f != NULL ) {
 		if (f->index_list != NULL)
 			output_field_indexes (f);

@@ -1,4 +1,9 @@
 
+2020-12-14  Ron Norman <rjn@inglenet.com>
+
+	* fodbc.c: fixed problem with 'commit' not being done
+	* fsqlxfd.c: speed up copy of PIC X fields instead of using cob_move
+
 2020-12-09  Ron Norman <rjn@inglenet.com>
 
 	* common.c: If the system supports sigaction then codegen.c emits
