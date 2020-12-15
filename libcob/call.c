@@ -701,7 +701,7 @@ cob_encode_invalid_chars (const unsigned char* const name,
 			name_buff[pos] = 0;
 			return -pos;
 		}
-		if (valid_char[*s]) {
+		if (likely (valid_char[*s])) {
 			name_buff[pos++] = *s;
 		} else {
 			name_buff[pos++] = (unsigned char)'_';
@@ -732,7 +732,7 @@ cob_encode_program_id (const unsigned char *const name,
 {
 	int pos = 0;
 	/* Encode the initial digit */
-	if (*name <= (unsigned char)'9' && *name >= (unsigned char)'0') {
+	if (unlikely (*name <= (unsigned char)'9' && *name >= (unsigned char)'0')) {
 		name_buff[pos++] = (unsigned char)'_';
 	}
 	/* Encode invalid letters */
@@ -785,7 +785,7 @@ cob_resolve_internal (const char *name, const char *dirent,
 	char call_entry2_buff[COB_MINI_BUFF];
 
 	/* LCOV_EXCL_START */
-	if (!cobglobptr) {
+	if (unlikely(!cobglobptr)) {
 		cob_fatal_error (COB_FERROR_INITIALIZED);
 	}
 	/* LCOV_EXCL_STOP */
@@ -853,7 +853,7 @@ cob_resolve_internal (const char *name, const char *dirent,
 	s = (const unsigned char *)name;
 
 	/* Check if name needs conversion */
-	if (cobsetptr->name_convert != 0) {
+	if (unlikely(cobsetptr->name_convert != 0)) {
 		p = (unsigned char *)call_entry2_buff;
 		for (; *s; ++s, ++p) {
 			if (cobsetptr->name_convert == 1 && isupper (*s)) {
@@ -1080,7 +1080,7 @@ cob_resolve_cobol (const char *name, const int fold_case, const int errind)
 	if (dirent) {
 		cob_free (dirent);
 	}
-	if (!p) {
+	if (unlikely(!p)) {
 		if (errind) {
 			cob_call_error ();
 		}
@@ -1096,7 +1096,7 @@ cob_resolve_func (const char *name)
 	void	*p;
 
 	p = cob_resolve_internal (name, NULL, 0);
-	if (!p) {
+	if (unlikely(!p)) {
 		cob_runtime_error (_("user-defined FUNCTION '%s' not found"), name);
 		cob_stop_run (EXIT_FAILURE);
 	}
@@ -1132,7 +1132,7 @@ cob_call_field (const cob_field *f, const struct cob_call_struct *cs,
 	size_t				len;
 
 	/* LCOV_EXCL_START */
-	if (!cobglobptr) {
+	if (unlikely(!cobglobptr)) {
 		cob_fatal_error (COB_FERROR_INITIALIZED);
 	}
 	/* LCOV_EXCL_STOP */
@@ -1180,7 +1180,7 @@ cob_call_field (const cob_field *f, const struct cob_call_struct *cs,
 	if (dirent) {
 		cob_free (dirent);
 	}
-	if (!p) {
+	if (unlikely(!p)) {
 		if (errind) {
 			cob_call_error ();
 		} else {
@@ -1223,10 +1223,10 @@ cob_cancel (const char *name)
 	struct call_hash	*r;
 
 	/* LCOV_EXCL_START */
-	if (!cobglobptr) {
+	if (unlikely(!cobglobptr)) {
 		cob_fatal_error (COB_FERROR_INITIALIZED);
 	}
-	if (!name) {
+	if (unlikely(!name)) {
 		cob_runtime_error (_("NULL parameter passed to '%s'"), "cob_cancel");
 		cob_stop_run (EXIT_FAILURE);
 	}
@@ -1260,7 +1260,7 @@ cob_cancel_field (const cob_field *f, const struct cob_call_struct *cs)
 	int	(*cancel_func)(const int, void *, void *, void *, void *);
 
 	/* LCOV_EXCL_START */
-	if (!cobglobptr) {
+	if (unlikely(!cobglobptr)) {
 		cob_fatal_error (COB_FERROR_INITIALIZED);
 	}
 	/* LCOV_EXCL_STOP */
@@ -1298,14 +1298,14 @@ cob_call (const char *name, const int argc, void **argv)
 	int			i;
 
 	/* LCOV_EXCL_START */
-	if (!cobglobptr) {
+	if (unlikely(!cobglobptr)) {
 		cob_fatal_error (COB_FERROR_INITIALIZED);
 	}
 	if (argc < 0 || argc > MAX_CALL_FIELD_PARAMS) {
 		cob_runtime_error (_("invalid number of arguments passed to '%s'"), "cob_call");
 		cob_stop_run (EXIT_FAILURE);
 	}
-	if (!name) {
+	if (unlikely(!name)) {
 		cob_runtime_error (_("NULL parameter passed to '%s'"), "cob_call");
 		cob_stop_run (EXIT_FAILURE);
 	}
@@ -1425,14 +1425,14 @@ cob_call_cobol (const char *name, const int argc, ...)
 	int			i;
 
 	/* LCOV_EXCL_START */
-	if (!cobglobptr) {
+	if (unlikely(!cobglobptr)) {
 		cob_fatal_error (COB_FERROR_INITIALIZED);
 	}
 	if (argc < 0 || argc > MAX_CALL_FIELD_PARAMS) {
 		cob_runtime_error (_("invalid number of arguments passed to '%s'"), "cob_call_cobol");
 		cob_stop_run (1);
 	}
-	if (!name) {
+	if (unlikely(!name)) {
 		cob_runtime_error (_("NULL parameter passed to '%s'"), "cob_call_cobol");
 		cob_stop_run (1);
 	}
@@ -1534,14 +1534,14 @@ cob_call_entry (void *entry, const int argc, ...)
 	int			i;
 
 	/* LCOV_EXCL_START */
-	if (!cobglobptr) {
+	if (unlikely(!cobglobptr)) {
 		cob_fatal_error (COB_FERROR_INITIALIZED);
 	}
 	if (argc < 0 || argc > MAX_CALL_FIELD_PARAMS) {
 		cob_runtime_error (_("invalid number of arguments passed to '%s'"), "cob_call_entry");
 		cob_stop_run (1);
 	}
-	if (!entry) {
+	if (unlikely(!entry)) {
 		cob_runtime_error (_("NULL parameter passed to '%s'"), "cob_call_entry");
 		cob_stop_run (1);
 	}
@@ -1638,10 +1638,10 @@ void *
 cob_savenv (struct cobjmp_buf *jbuf)
 {
 	/* LCOV_EXCL_START */
-	if (!cobglobptr) {
+	if (unlikely(!cobglobptr)) {
 		cob_fatal_error (COB_FERROR_INITIALIZED);
 	}
-	if (!jbuf) {
+	if (unlikely(!jbuf)) {
 		cob_runtime_error (_("NULL parameter passed to '%s'"), "cob_savenv");
 		cob_stop_run (EXIT_FAILURE);
 	}
@@ -1666,10 +1666,10 @@ void
 cob_longjmp (struct cobjmp_buf *jbuf)
 {
 	/* LCOV_EXCL_START */
-	if (!cobglobptr) {
+	if (unlikely(!cobglobptr)) {
 		cob_fatal_error (COB_FERROR_INITIALIZED);
 	}
-	if (!jbuf) {
+	if (unlikely(!jbuf)) {
 		cob_runtime_error (_("NULL parameter passed to '%s'"), "cob_longjmp");
 		cob_stop_run (EXIT_FAILURE);
 	}
@@ -2265,15 +2265,15 @@ cob_get_field_constant (const cob_field *f)
 const char *
 cob_get_field_str (const cob_field *f, char *buffer, size_t size)
 {
-	if (f == NULL) {
+	if (unlikely (f == NULL)) {
 		return _("NULL field");
 	}
 	/* variable field's and empty literals may be of zero size */
-	if (f->size == 0) {
+	if (unlikely (f->size == 0)) {
 		return "";
 	}
 	/* check if field has data assigned (may be a BASED / LINKAGE item) */
-	if (f->data == NULL) {
+	if (unlikely (f->data == NULL)) {
 		return _("field not allocated");
 	}
 	if (!buffer || !size) {

@@ -465,6 +465,8 @@ only usable with COB_USE_VC2013_OR_GREATER */
 #endif
 
 #if	defined(__GNUC__) && (__GNUC__ >= 3)
+#define likely(x)	__builtin_expect((long int)!!(x), 1L)
+#define unlikely(x)	__builtin_expect((long int)!!(x), 0L)
 #define	COB_A_MALLOC	__attribute__((malloc))
 #define	COB_HAVE_STEXPR	1
 
@@ -484,6 +486,13 @@ only usable with COB_USE_VC2013_OR_GREATER */
 
 #elif	defined(__xlc__) && __IBMC__ >= 700
 
+#if	__IBMC__ >= 900
+#define likely(x)	__builtin_expect((long int)!!(x), 1L)
+#define unlikely(x)	__builtin_expect((long int)!!(x), 0L)
+#else
+#define likely(x)	(x)
+#define unlikely(x)	(x)
+#endif
 #define	COB_NOINLINE	__attribute__((noinline))
 #define	COB_A_INLINE	__attribute__((always_inline))
 #define	COB_A_MALLOC
@@ -496,6 +505,8 @@ only usable with COB_USE_VC2013_OR_GREATER */
 
 #elif	defined(__SUNPRO_C) && __SUNPRO_C >= 0x590
 
+#define likely(x)	(x)
+#define unlikely(x)	(x)
 #define	COB_A_MALLOC	__attribute__((malloc))
 #define	COB_NOINLINE	__attribute__((noinline))
 #define	COB_A_INLINE	__attribute__((always_inline))
@@ -504,6 +515,8 @@ only usable with COB_USE_VC2013_OR_GREATER */
 
 #elif	defined(_MSC_VER)
 
+#define likely(x)	(x)
+#define unlikely(x)	(x)
 #define	COB_A_MALLOC
 #define	COB_NOINLINE	__declspec(noinline)
 #define	COB_A_INLINE	__forceinline
@@ -512,6 +525,8 @@ only usable with COB_USE_VC2013_OR_GREATER */
 
 #else
 
+#define likely(x)	(x)
+#define unlikely(x)	(x)
 #define	COB_A_MALLOC
 #define	COB_NOINLINE
 #define	COB_A_INLINE

@@ -2011,7 +2011,7 @@ validate_field_1 (struct cb_field *f)
 
 #if 0
 	/* LCOV_EXCL_START */
-	if (!f) {	/* checked to keep the analyzer happy */
+	if (unlikely (!f)) {	/* checked to keep the analyzer happy */
 		cobc_err_msg (_("call to %s with NULL pointer"), "validate_field_1");
 		COBC_ABORT();
 	}

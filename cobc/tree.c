@@ -326,7 +326,7 @@ lookup_word (struct cb_reference *p, const char *name)
 	val = word_hash (word);
 
 	/* Find an existing word */
-	if (current_program) {
+	if (likely(current_program)) {
 		/* checking only "very similar" words that share the same hash */
 		for (w = current_program->word_table[val]; w; w = w->next) {
 #if 1	/* TODO we currently use words "as written first" use an all-upper
@@ -353,7 +353,7 @@ lookup_word (struct cb_reference *p, const char *name)
 #endif
 
 	/* Insert it into the table */
-	if (current_program) {
+	if (likely(current_program)) {
 		w->next = current_program->word_table[val];
 		current_program->word_table[val] = w;
 	}
@@ -1651,13 +1651,13 @@ error_numeric_literal (const char *literal)
 static void
 check_lit_length (const int unsigned size, const char *lit)
 {
-	if (size > COB_MAX_DIGITS) {
+	if (unlikely(size > COB_MAX_DIGITS)) {
 		/* Absolute limit */
 		snprintf (err_msg, COB_MINI_MAX,
 			_("literal length %d exceeds maximum of %d digits"),
 			size, COB_MAX_DIGITS);
 		error_numeric_literal (lit);
-	} else if (size > cb_numlit_length) {
+	} else if (unlikely(size > cb_numlit_length)) {
 		snprintf (err_msg, COB_MINI_MAX,
 			_("literal length %d exceeds %d digits"),
 			size, cb_numlit_length);
@@ -1701,7 +1701,7 @@ cb_get_int (const cb_tree x)
 
 	/* Check numeric literal length matching requested output type */
 #if INT_MAX >= 9223372036854775807
-	if (size >= 19U) {
+	if (unlikely(size >= 19U)) {
 		if (l->sign < 0) {
 			s = "9223372036854775808";
 		} else {
@@ -1713,7 +1713,7 @@ cb_get_int (const cb_tree x)
 		}
 	}
 #elif INT_MAX >= 2147483647
-	if (size >= 10U) {
+	if (unlikely(size >= 10U)) {
 		if (l->sign < 0) {
 			s = "2147483648";
 		} else {
@@ -1775,7 +1775,7 @@ cb_get_long_long (const cb_tree x)
 	check_lit_length(size, (const char *)l->data + i);
 
 	/* Check numeric literal length matching requested output type */
-	if ( size >= 19U) {
+	if (unlikely (size >= 19U)) {
 		if (l->sign < 0) {
 			s = "9223372036854775808";
 		} else {
@@ -1829,7 +1829,7 @@ cb_get_u_long_long (const cb_tree x)
 	check_lit_length(size, (const char *)l->data + i);
 
 	/* Check numeric literal length matching requested output type */
-	if (size >= 20U) {
+	if (unlikely(size >= 20U)) {
 		s = "18446744073709551615";
 		if (size > 20U || memcmp (&(l->data[i]), s, (size_t)20) > 0) {
 			cb_error_x (x,_("numeric literal '%s' exceeds limit '%s'"), &l->data[i], s);
@@ -3514,7 +3514,7 @@ repeat:
 		second_last_char = first_last_char;
 		first_last_char = c;
 		++buff_cnt;
-		if (idx == COB_MINI_MAX) {
+		if (unlikely(idx == COB_MINI_MAX)) {
 			break;
 		}
 	}
@@ -4803,7 +4803,7 @@ cb_ref_internal (cb_tree x, const int emit_error)
 
 	/* There is no candidate */
 	if (candidate == NULL) {
-		if (current_program->nested_level <= 0) {
+		if (likely(current_program->nested_level <= 0)) {
 			goto raise_error;
 		}
 		/* Nested program - check parents for GLOBAL candidate */
@@ -6321,7 +6321,7 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 
 	numargs = (int)cb_list_length (args);
 
-	if (isuser) {
+	if (unlikely (isuser)) {
 		if (refmod && CB_LITERAL_P(CB_PAIR_X(refmod)) &&
 		    cb_get_int (CB_PAIR_X(refmod)) < 1) {
 			cb_error_x (func, _("FUNCTION '%s' has invalid reference modification"), CB_NAME(func));

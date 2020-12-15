@@ -2173,14 +2173,6 @@ cob_index_to_xfd (struct db_state *db, struct file_xfd *fx, cob_file *fl, int id
 							fx->map[k].dtfrm->format,fx->map[k].colname,
 							fx->map[k].sqlDecimals, fx->map[k].sqlColSize, nx?"Ok":"Bad Date"));
 				DEBUG_DUMP("db",fx->map[k].sqlfld.data,dl);
-			} else if (fx->map[k].type == COB_XFDT_PICX
-			 		|| fx->map[k].type == COB_XFDT_PICA
-			 		|| fx->map[k].type == COB_XFDT_VARX) {
-				memcpy (fx->map[k].sdata,fx->map[k].recfld.data,fx->map[k].size);
-				fx->map[k].sdata[fx->map[k].size] = 0;
-				DEBUG_LOG("db",("%3d: Index %d %s type:PIC X(%d) \n",
-								k,idx,fx->map[k].colname,(int)fx->map[k].size));
-				DEBUG_DUMP("db",fx->map[k].sqlfld.data,fx->map[k].sqlfld.size);
 			} else if (fx->map[k].type == COB_XFDT_FLOAT) {
 				memcpy (fx->map[k].sdata,fx->map[k].recfld.data,fx->map[k].size);
 			} else if (fx->map[k].type == COB_XFDT_BIN) {
@@ -2264,17 +2256,6 @@ cob_file_to_xfd (struct db_state *db, struct file_xfd *fx, cob_file *fl)
 									sqlwrk.size,sqlbuf,
 									fx->map[k].sqlsize,fx->map[k].sqlfld.data));
 #endif
-			} else if (fx->map[k].type == COB_XFDT_PICX
-			 		|| fx->map[k].type == COB_XFDT_PICA
-			 		|| fx->map[k].type == COB_XFDT_VARX) {
-				memcpy (fx->map[k].sdata,fx->map[k].recfld.data,fx->map[k].size);
-				fx->map[k].sdata[fx->map[k].size] = 0;
-				DEBUG_LOG("db",("%3d: Copy %s PIC X(%d)  ht:%d st:%d z:%d\n",k,
-							fx->map[k].colname, fx->map[k].size,
-							fx->map[k].hostType, fx->map[k].sqlType,
-							fx->map[k].sqlColSize));
-				DEBUG_LOG ("db",("   '%.*s'\n",(int)fx->map[k].recfld.size,
-										fx->map[k].recfld.data));
 			} else if (fx->map[k].type == COB_XFDT_FLOAT) {
 				memcpy (fx->map[k].sdata,fx->map[k].recfld.data,fx->map[k].size);
 			} else if (fx->map[k].type == COB_XFDT_BIN) {
@@ -2289,7 +2270,10 @@ cob_file_to_xfd (struct db_state *db, struct file_xfd *fx, cob_file *fl)
 							fx->map[k].digits,fx->map[k].scale,
 							fx->map[k].hostType, fx->map[k].sqlType,
 							fx->map[k].sqlDecimals, fx->map[k].sqlColSize));
-				if (fx->map[k].type == COB_XFDT_PIC9L
+				if (fx->map[k].type == COB_XFDT_PICA
+				 || fx->map[k].type == COB_XFDT_PICX
+				 || fx->map[k].type == COB_XFDT_VARX
+				 || fx->map[k].type == COB_XFDT_PIC9L
 				 || fx->map[k].type == COB_XFDT_PIC9LS
 				 || fx->map[k].type == COB_XFDT_PIC9T
 				 || fx->map[k].type == COB_XFDT_PIC9TS
@@ -2330,8 +2314,7 @@ cob_file_to_xfd (struct db_state *db, struct file_xfd *fx, cob_file *fl)
 void 
 cob_xfd_to_file (struct db_state *db, struct file_xfd *fx, cob_file *fl)
 {
-	int	k,nx,i,j,slen,flen;
-	unsigned char	*sptr,*fptr;
+	int	k,nx;
 	char		sqlbuf[48];
 	cob_field	sqlwrk;
 #ifdef COB_DEBUG_LOG
@@ -2363,30 +2346,6 @@ cob_xfd_to_file (struct db_state *db, struct file_xfd *fx, cob_file *fl)
 									fx->map[k].sqlsize,fx->map[k].sqlfld.data,
 									sqlwrk.size,sqlbuf,hexwrk));
 #endif
-			} else if (fx->map[k].type == COB_XFDT_PICX
-			 		|| fx->map[k].type == COB_XFDT_PICA
-			 		|| fx->map[k].type == COB_XFDT_VARX) {
-				if (fx->map[k].setnull) {
-					memset(fx->map[k].recfld.data,0,fx->map[k].recfld.size);
-					DEBUG_LOG("db",("%3d: Read %s PIC X(%d) Null -> LOW-VALUES\n",k,
-								fx->map[k].colname,fx->map[k].sqlinlen));
-				} else {
-					slen = fx->map[k].sqlfld.size = fx->map[k].sqlinlen;
-					sptr = fx->map[k].sqlfld.data;
-					flen = (int)fx->map[k].recfld.size;
-					fptr = fx->map[k].recfld.data;
-					/* Copy to first NUL and then space fill COBOL field */
-					for(i=j=0; i < flen && j < slen && *sptr != 0; i++,j++) 
-						*fptr++ = *sptr++;
-					while(i < flen) {
-						*fptr++ = ' ';
-						i++;
-					}
-					DEBUG_LOG("db",("%3d: Read %s PIC X(%d)\n",k,
-								fx->map[k].colname,fx->map[k].sqlinlen));
-					DEBUG_LOG ("db",("   '%.*s'\n",(int)fx->map[k].recfld.size,
-											fx->map[k].recfld.data));
-				}
 			} else if (fx->map[k].type == COB_XFDT_FLOAT) {
 				memcpy (fx->map[k].recfld.data,fx->map[k].sdata,fx->map[k].size);
 			} else if (fx->map[k].type == COB_XFDT_BIN) {
@@ -2420,8 +2379,15 @@ cob_xfd_to_file (struct db_state *db, struct file_xfd *fx, cob_file *fl)
 				DEBUG_LOG("db",("%3d: Read %s type: %02d len:%d\n",k,
 							fx->map[k].colname,fx->map[k].type,
 							fx->map[k].sqlinlen));
-				DEBUG_DUMP("db",fx->map[k].sqlfld.data,fx->map[k].sqlfld.size);
-				DEBUG_DUMP("db",fx->map[k].recfld.data,fx->map[k].recfld.size);
+				if (fx->map[k].type == COB_XFDT_PICA
+				 || fx->map[k].type == COB_XFDT_PICX
+				 || fx->map[k].type == COB_XFDT_VARX) {
+					DEBUG_LOG ("db",("   '%.*s'\n",(int)fx->map[k].recfld.size,
+										fx->map[k].recfld.data));
+				} else {
+					DEBUG_DUMP("db",fx->map[k].sqlfld.data,fx->map[k].sqlfld.size);
+					DEBUG_DUMP("db",fx->map[k].recfld.data,fx->map[k].recfld.size);
+				}
 #endif
 			}
 			k++;

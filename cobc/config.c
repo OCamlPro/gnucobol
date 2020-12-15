@@ -413,7 +413,7 @@ cb_load_conf (const char *fname, const int prefix_dir)
 	char		buff[COB_NORMAL_BUFF];
 
 	/* Warn if we drop the configuration read already */
-	if (cb_config_name != NULL) {
+	if (unlikely(cb_config_name != NULL)) {
 		configuration_warning (fname, 0,
 			_("The previous loaded configuration '%s' will be discarded."),
 			cb_config_name);

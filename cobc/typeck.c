@@ -489,9 +489,9 @@ static struct cb_field	*check_sub = NULL;
 static struct cb_field *
 cb_code_field (cb_tree x)
 {
-	if (CB_REFERENCE_P (x)) {
+	if (likely(CB_REFERENCE_P (x))) {
 		cb_tree f = CB_REFERENCE (x)->value;
-		if (!f) {
+		if (unlikely(!f)) {
 			f = cb_ref (x);
 		}
 		return CB_FIELD (f);
@@ -1915,7 +1915,7 @@ cb_define_switch_name (cb_tree name, cb_tree sname, const int flag)
 void
 cb_check_word_length (unsigned int length, const char *word)
 {
-	if (length > cb_word_length) {
+	if (unlikely (length > cb_word_length)) {
 		if (length > COB_MAX_WORDLEN) {
 			/* Absolute limit */
 			cb_error (_("word length exceeds maximum of %d characters: '%s'"),
@@ -2245,7 +2245,7 @@ cb_build_identifier (cb_tree x, const int subchk)
 	} else {
 		numsubs = f->indexes;
 	}
-	if (!r->flag_all) {
+	if (likely(!r->flag_all)) {
 		if (refsubs != numsubs) {
 			if (refsubs > numsubs) {
 				goto refsubserr;

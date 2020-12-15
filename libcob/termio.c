@@ -369,7 +369,7 @@ cob_display (const int to_device, const int newline, const int varcnt, ...)
 	va_start (args, varcnt);
 	for (i = 0; i < varcnt; ++i) {
 		f = va_arg (args, cob_field *);
-		if (disp_redirect) {
+		if (unlikely (disp_redirect)) {
 			cob_field_display (f, NULL, NULL, NULL, NULL,
 					   NULL, NULL, nlattr);
 		} else {
@@ -918,7 +918,7 @@ cob_accept (cob_field *f)
 		}
 	}
 	/* extension: ACCEPT OMITTED */
-	if (!f) {
+	if (unlikely (!f)) {
 		for (; ; ) {
 			ipchr = getchar ();
 			if (ipchr == '\n' || ipchr == EOF) {
@@ -936,7 +936,7 @@ cob_accept (cob_field *f)
 	/* Read a line */
 	for (; size < COB_MEDIUM_MAX; ) {
 		ipchr = getchar ();
-		if (ipchr == EOF) {
+		if (unlikely (ipchr == EOF)) {
 			cob_set_exception (COB_EC_IMP_ACCEPT);
 			if (!size) {
 				size = 1;

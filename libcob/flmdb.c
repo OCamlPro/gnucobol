@@ -1200,7 +1200,7 @@ lmdb_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 	}
 #endif
 
-	if (read_opts & COB_READ_PREVIOUS) {
+	if (unlikely (read_opts & COB_READ_PREVIOUS)) {
 		if (f->flag_end_of_file) {
 			nextprev = MDB_LAST;
 		} else {

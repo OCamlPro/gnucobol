@@ -741,11 +741,11 @@ odbc_commit (cob_file_api *a, cob_file *f)
 		}
 		db->autocommit = FALSE;
 		db->updatesDone = 0;
-	} else 
-	if (db->updatesDone < db->commitInterval
-	 && f->last_operation != COB_LAST_CLOSE) {
 		return 0;
-	}
+	} 
+	if (db->updatesDone < db->commitInterval
+	 && f->last_operation != COB_LAST_CLOSE)
+		return 0;
 	if (db->mysql) {
 		odbcStmt (db, (char*)"COMMIT");
 		if (db->autocommit) {

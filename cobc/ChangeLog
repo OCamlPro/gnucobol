@@ -1,15 +1,3 @@
-2020-12-14  James K. Lowden  <jklowden@symas.com>
-
-	* cobc.c codegen.c pplex.l scanner.l tree.c typeck.c: remove
-	  use of likely
-        * cobc.c codegen.c config.c field.c pplex.l
-	  reserved.c scanner.l sqlxfdgen.c tree.c typeck.c: remove unlikely
-	* codeoptim.c (cob_gen_optim): remove generated "unlikely" uses
-
-2020-12-11  Ron Norman <rjn@inglenet.com>
-
-	* codegen.c: Fix INITIALIZE logic to correcly handle subscripts
-	* parser.y: Add check for valid ->pic pointer
 
 2020-12-09  Ron Norman <rjn@inglenet.com>
 	* cobc.c: Now calls cob_get_sig_name {in common.c} to get signal name

@@ -408,9 +408,8 @@ validate_main_using_param (cb_tree using_list)
 	/* Containing a signed 16-bit integer */
 	size_field = f->children;
 	if (!(size_field->size == 2
-	 && size_field->pic != NULL
-	 && size_field->pic->have_sign
-	 && size_field->usage == CB_USAGE_BINARY)) {
+	      && size_field->pic->have_sign
+	      && size_field->usage == CB_USAGE_BINARY)) {
 		cb_error_x (CB_TREE (size_field), _("item '%s' is not a signed 16-bit COMP integer"),
 			    size_field->name);
 	}
@@ -516,7 +515,7 @@ emit_entry (const char *name, const int encode, cb_tree using_list, cb_tree conv
 
 	validate_using (using_list);
 	if (current_program->flag_main
-	 && !current_program->flag_chained) {
+	    && !current_program->flag_chained) {
 		validate_main_using_param (using_list);
 	}
 

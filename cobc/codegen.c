@@ -280,9 +280,9 @@ static void output_report_summed_field (struct cb_field *);
 static struct cb_field *
 cb_code_field (cb_tree x)
 {
-	if (CB_REFERENCE_P (x)) {
+	if (likely(CB_REFERENCE_P (x))) {
 		cb_tree f = CB_REFERENCE (x)->value;
-		if (!f) {
+		if (unlikely(!f)) {
 			f = cb_ref (x);
 		}
 		return CB_FIELD (f);
@@ -985,7 +985,7 @@ output_base (struct cb_field *f, const cob_u32_t no_output)
 	struct base_list	*bl;
 
 	/* LCOV_EXCL_START */
-	if (f->flag_item_78) {
+	if (unlikely(f->flag_item_78)) {
 		cobc_err_msg (_("unexpected CONSTANT item"));
 		COBC_ABORT ();
 	}
@@ -1183,7 +1183,7 @@ output_data (cb_tree x)
 						output (" * ");
 					} else {
 						/* recalculate size for nested ODO ... */
-						if (o_slide) {
+						if (unlikely(o_slide)) {
 							for (o = o_slide; o; o = o->children) {
 								if (o->depending) {
 									output (" + (%d * ", o->size);
@@ -3986,7 +3986,7 @@ output_param (cb_tree x, int id)
 			if (l == cb_error_node) {
 				cobc_err_msg (_("call to '%s' with invalid parameter '%s'"),
 					"output_param", "x");
-				/* not translated as it is a highly unlikely interna abort */
+				/* not translated as it is a highly unlikely internal abort */
 				cobc_err_msg ("%s is no valid reference", cb_name (ip->name));
 				COBC_ABORT ();
 			}
@@ -4666,10 +4666,7 @@ propagate_table ( cb_tree x )
 {
 	struct cb_field *f;
 	long len;
-	int		has_sub = 0;
 	unsigned int occ, j = 1;
-	struct cb_reference *r;
-
 	f = cb_code_field (x);
 	len = (long)f->size;
 	occ = f->occurs_max;
@@ -4678,58 +4675,16 @@ propagate_table ( cb_tree x )
 	 || (!chk_field_variable_size(f)
 	  && !f->flag_unbounded
 	  && !f->depending)) {
-		if (CB_REFERENCE_P (x)) {
-			r = CB_REFERENCE (x);
-			/* Are there any Subscripts to deal with? */
-			if (r->subs) {
-				struct cb_field	*p = f;
-				cb_tree		lsub = r->subs;
-				for (; p && lsub; p = p->parent) {
-					if (p->flag_occurs) {
-						/* 1 - 1 is 0 so skip it */
-						if (is_index_1 (CB_VALUE (lsub)) ) {
-							lsub = CB_CHAIN (lsub);
-							continue;
-						}
-						has_sub = 1;
-						break;
-					}
-				}
-			}
-		}
 		/* Table size is known at compile time */
 		/* Generate inline 'memcpy' to propagate the array data */
 
-		if (occ > 2
-		 && has_sub) {
-			output_block_open ();
-			output_prefix ();
-			output ("cob_u8_ptr b_ptr = ");
-			output_data(x);
-			output (";");
-			output_newline ();
-			do {
-				output_prefix ();
-				output ("memcpy (b_ptr + %6ld, b_ptr, %6ld);",len,len);
-				output ("\t/* %s: %5d thru %d */",f->name,j+1,j*2);
-				output_newline ();
-				j = j * 2;
-				len = len * 2;
-			} while ((j * 2) < occ);
-			if (j < occ) {
-				output_prefix ();
-				output ("memcpy (b_ptr + %6ld, b_ptr, %6ld);",len,(long)(f->size * (occ - j)));
-				output ("\t/* %s: %5d thru %d */",f->name,j+1,occ);
-				output_newline ();
-			}
-			output_block_close ();
-		} else if (occ > 1) {
+		if (occ > 1) {
 			do {
 				output_prefix ();
 				output ("memcpy (");
-				output_data (x);
+				output_base (f, 0);
 				output (" + %5ld, ",len);
-				output_data (x);
+				output_base (f, 0);
 				output (", %5ld);\t/* %s: %5d thru %d */",len,f->name,j+1,j*2);
 				output_newline ();
 				j = j * 2;
@@ -4738,9 +4693,9 @@ propagate_table ( cb_tree x )
 			if (j < occ) {
 				output_prefix ();
 				output ("memcpy (");
-				output_data (x);
+				output_base (f, 0);
 				output (" + %5ld, ",len);
-				output_data (x);
+				output_base (f, 0);
 				output (", %5ld);\t/* %s: %5d thru %d */",
 							(long)(f->size * (occ - j)),f->name,j+1,occ);
 				output_newline ();
@@ -4750,7 +4705,7 @@ propagate_table ( cb_tree x )
 		/* Table size is only known at run time */
 		output_prefix ();
 		output ("cob_init_table (");
-		output_data (x);
+		output_base (f, 0);
 		output (", ");
 		output_size (x);
 		output (", ");
@@ -5356,16 +5311,11 @@ output_initialize_compound (struct cb_initialize *p, cb_tree x)
 				}
 			} else {
 				struct cb_reference *ref = CB_REFERENCE (c);
-				cb_tree			save_check, save_length, r2;
+				cb_tree			save_check, save_length;
 
 				/* Output initialization for the first record */
 				save_length = ref->length;
 				save_check = ref->check;
-				/* Output all 'check' first */
-				for (r2 = ref->check; r2; r2 = CB_CHAIN (r2)) {
-					output_stmt (CB_VALUE (r2));
-				}
-				ref->check = NULL;
 				ref->subs = CB_BUILD_CHAIN (cb_int1, ref->subs);
 				if (type == INITIALIZE_ONE) {
 					output_initialize_one (p, c);
@@ -6649,7 +6599,7 @@ output_call (struct cb_call *p)
 
 	/* ensure that we don't have a program exception set already
 	   as this will be checked directly when returning from CALL */
-	output_line ("if ((cob_global_exception & 0x%04x) == 0x%04x) "
+	output_line ("if (unlikely((cob_global_exception & 0x%04x) == 0x%04x)) "
 			"cob_global_exception = 0;",
 		CB_EXCEPTION_CODE(COB_EC_PROGRAM), CB_EXCEPTION_CODE(COB_EC_PROGRAM));
 
@@ -6743,7 +6693,7 @@ output_call (struct cb_call *p)
 			lookup_call (name_str);
 			callname = s;
 
-			output_line ("if (call_%s.funcvoid == NULL || cob_glob_ptr->cob_physical_cancel)", name_str);
+			output_line ("if (unlikely(call_%s.funcvoid == NULL || cob_glob_ptr->cob_physical_cancel))", name_str);
 			output_block_open ();
 			output_prefix ();
 
@@ -6778,9 +6728,9 @@ output_call (struct cb_call *p)
 		}
 		if (p->stmt1) {
 			if (name_str) {
-				output_line ("if (call_%s.funcvoid == NULL)", name_str);
+				output_line ("if (unlikely(call_%s.funcvoid == NULL))", name_str);
 			} else {
-				output_line ("if (cob_unifunc.funcvoid == NULL)");
+				output_line ("if (unlikely(cob_unifunc.funcvoid == NULL))");
 			}
 			output_block_open ();
 			except_id = cb_id++;
@@ -6917,7 +6867,7 @@ output_call (struct cb_call *p)
 	output_newline ();
 
 	if (except_id > 0) {
-		output_line ("if ((cob_glob_ptr->cob_exception_code & 0x%04x) == 0x%04x)",
+		output_line ("if (unlikely((cob_glob_ptr->cob_exception_code & 0x%04x) == 0x%04x))",
 			CB_EXCEPTION_CODE(COB_EC_PROGRAM), CB_EXCEPTION_CODE(COB_EC_PROGRAM));
 		output_line ("\tgoto %s%d;", CB_PREFIX_LABEL, except_id);
 	}
@@ -6945,7 +6895,7 @@ output_call (struct cb_call *p)
 	}
 	if (gen_exit_program) {
 		needs_exit_prog = 1;
-		output_line ("if (module->flag_exit_program)");
+		output_line ("if (unlikely(module->flag_exit_program))");
 		output_block_open ();
 		output_line ("module->flag_exit_program = 0;");
 		if (current_prog->prog_type == COB_MODULE_TYPE_FUNCTION) {
@@ -7094,7 +7044,7 @@ output_perform_call (struct cb_label *lb, struct cb_label *le)
 	skip_line_num = 0;
 	output_line ("frame_ptr++;");
 	if (cb_flag_stack_check) {
-		output_line ("if (frame_ptr == frame_overflow)");
+		output_line ("if (unlikely(frame_ptr == frame_overflow))");
 		output_line ("\tcob_fatal_error (COB_FERROR_STACK);");
 	}
 	output_line ("frame_ptr->perform_through = %d;", le->id);
@@ -7785,7 +7735,7 @@ get_ec_code_for_handler (const enum cb_handler_type handler_type)
 static void
 output_ferror_stmt (struct cb_statement *stmt)
 {
-	output_line ("if (cob_glob_ptr->cob_exception_code != 0)");
+	output_line ("if (unlikely(cob_glob_ptr->cob_exception_code != 0))");
 	output_block_open ();
 	if (stmt->ex_handler) {
 		output_line ("if (cob_glob_ptr->cob_exception_code == 0x%04x)",
@@ -7974,7 +7924,7 @@ output_alter_check (struct cb_label *lp)
 static void
 output_level_2_ex_condition (const int level_2_ec)
 {
-	output_line ("if ( (cob_glob_ptr->cob_exception_code & 0xff00) == 0x%04x)",
+	output_line ("if (unlikely ((cob_glob_ptr->cob_exception_code & 0xff00) == 0x%04x))",
 		     CB_EXCEPTION_CODE (level_2_ec));
 }
 
@@ -7983,7 +7933,7 @@ output_display_accept_ex_condition (const enum cb_handler_type handler_type)
 {
 	int	imp_ec;
 
-	output_line ("if ((cob_glob_ptr->cob_exception_code & 0xff00) == 0x%04x",
+	output_line ("if (unlikely ((cob_glob_ptr->cob_exception_code & 0xff00) == 0x%04x",
 		     CB_EXCEPTION_CODE (COB_EC_SCREEN));
 
 	if (handler_type == DISPLAY_HANDLER) {
@@ -7991,7 +7941,7 @@ output_display_accept_ex_condition (const enum cb_handler_type handler_type)
 	} else { /* ACCEPT_HANDLER */
 		imp_ec = COB_EC_IMP_ACCEPT;
 	}
-	output_line ("               || cob_glob_ptr->cob_exception_code == 0x%04x)",
+	output_line ("               || cob_glob_ptr->cob_exception_code == 0x%04x))",
 		     CB_EXCEPTION_CODE (imp_ec));
 }
 
@@ -8136,7 +8086,7 @@ output_stmt (cb_tree x)
 		return;
 	}
 	/* LCOV_EXCL_START */
-	if (x == cb_error_node) {
+	if (unlikely(x == cb_error_node)) {
 		cobc_err_msg (_("unexpected error_node parameter"));
 		COBC_ABORT ();
 	}
@@ -10488,6 +10438,9 @@ output_field_indexes (struct cb_field *f)
 static void
 output_record_indexes (struct cb_field *f)
 {
+	cb_tree l;
+	struct cb_field *f_idx;
+
 	while ( f != NULL ) {
 		if (f->index_list != NULL)
 			output_field_indexes (f);
@@ -11600,7 +11553,7 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	/* CANCEL callback */
 	if (prog->prog_type == COB_MODULE_TYPE_PROGRAM) {
 		output_line ("/* CANCEL callback */");
-		output_line ("if (entry < 0) {");
+		output_line ("if (unlikely(entry < 0)) {");
 		output_line ("\tif (entry == -10)");
 		output_line ("\t\tgoto P_dump;");
 		output_line ("\tif (entry == -20)");
@@ -11722,7 +11675,7 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	}
 
 	output_line ("/* Initialize rest of program */");
-	output_line ("if (initialized == 0) {");
+	output_line ("if (unlikely(initialized == 0)) {");
 	output_line ("\tgoto P_initialize;");
 	output_line ("}");
 	output_line ("P_ret_initialize:");
@@ -11749,7 +11702,7 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 		output_line ("/* Global entry dispatch */");
 		output_newline ();
 		for (l = prog->global_list; l; l = CB_CHAIN (l)) {
-			output_line ("if (entry == %d) {",
+			output_line ("if (unlikely(entry == %d)) {",
 					CB_LABEL (CB_VALUE (l))->id);
 			if (local_mem) {
 				output_line ("\tcob_local_ptr = cob_local_save;");
@@ -13032,7 +12985,7 @@ output_function_prototypes (struct cb_program *prog)
 #endif
 		} else {
 			/* Output implementation of other program wrapper. */
-			if (cp->prog_type == COB_MODULE_TYPE_PROGRAM) {
+			if (likely(cp->prog_type == COB_MODULE_TYPE_PROGRAM)) {
 				for (l = cp->entry_list; l; l = CB_CHAIN (l)) {
 					output_entry_function (cp, l, cp->parameter_list, 0);
 				}

@@ -757,13 +757,13 @@ get_line_and_col_from_field (cob_field* pos, int* line, int* column)
 		char	buff[23]; /* 7: make the compiler happy as "int" *could*
 							 have more digits than we "assume" */
 		/* LCOV_EXCL_START */
-		if (max_line_column == 1) {
+		if (unlikely (max_line_column == 1)) {
 			cob_fatal_error (COB_FERROR_CODEGEN);
 		}
 		/* LCOV_EXCL_STOP */
 		memcpy (buff, pos->data, maxsize);
 		buff[maxsize + 1] = 0;
-		if (!sscanf (buff, "%d", &pos_val)) {
+		if (unlikely (!sscanf (buff, "%d", &pos_val))) {
 			cob_fatal_error (COB_FERROR_CODEGEN);
 		}
 	}
@@ -783,7 +783,7 @@ get_cursor_from_program (int *line, int *column)
 		int ret = get_line_and_col_from_field
 			(COB_MODULE_PTR->cursor_pos, line, column);
 		/* LCOV_EXCL_START */
-		if (ret == 1) {
+		if (unlikely (ret == 1)) {
 			cob_fatal_error (COB_FERROR_CODEGEN);
 		}
 		/* LCOV_EXCL_STOP */
@@ -2307,7 +2307,7 @@ extract_line_and_col_vals (cob_field *line, cob_field *column,
 				int ret = get_line_and_col_from_field
 					(line, &cobol_line, &cobol_col);
 				/* LCOV_EXCL_START */
-				if (ret == 1) {
+				if (unlikely (ret == 1)) {
 #if 0				/* Throw an exception? EC-SCREEN-IMP-LINE-VAR-LENGTH? */
 					cob_set_exception (COB_EC_SCREEN_IMP);
 #else
@@ -2491,7 +2491,7 @@ field_display (cob_field *f, const int line, const int column, cob_field *fgc,
 	char	fig_const;	/* figurative constant character */
 
 	/* LCOV_EXCL_START */
-	if (!f) {
+	if (unlikely (!f)) {
 		cob_fatal_error(COB_FERROR_CODEGEN);
 	}
 	/* LCOV_EXCL_STOP */
@@ -2852,7 +2852,7 @@ field_accept (cob_field *f, const int sline, const int scolumn, cob_field *fgc,
 		}
 
 		/* extension: ACCEPT OMITTED */
-		if (!f) {
+		if (unlikely (!f)) {
 			/* special keys for ACCEPT OMITTED */
 			switch (keyp) {
 			case KEY_LEFT:

@@ -1584,7 +1584,7 @@ ix_bdb_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 		bdb_opts &= ~COB_READ_LOCK;
 	}
 
-	if (bdb_opts & COB_READ_PREVIOUS) {
+	if (unlikely (bdb_opts & COB_READ_PREVIOUS)) {
 		if (f->flag_end_of_file) {
 			nextprev = DB_LAST;
 		} else {

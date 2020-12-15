@@ -151,10 +151,10 @@ inspect_common (cob_field *f1, cob_field *f2, const enum inspect_type type)
 	size_t		len;
 	size_t		init_pos;
 
-	if (!f1) {
+	if (unlikely (!f1)) {
 		f1 = &str_cob_low;
 	}
-	if (!f2) {
+	if (unlikely (!f2)) {
 		f2 = &str_cob_low;
 	}
 
@@ -265,7 +265,7 @@ cob_inspect_init (cob_field *var, const cob_u32_t replacing)
 {
 	size_t		digcount;
 
-	if (COB_FIELD_IS_NUMDISP (var)) {
+	if (unlikely (COB_FIELD_IS_NUMDISP (var))) {
 		inspect_var_copy = *var;
 		inspect_var = &inspect_var_copy;
 		inspect_sign = COB_GET_SIGN (var);
@@ -403,10 +403,10 @@ cob_inspect_converting (const cob_field *f1, const cob_field *f2)
 	size_t	j;
 	size_t	len;
 
-	if (!f1) {
+	if (unlikely (!f1)) {
 		f1 = &str_cob_low;
 	}
-	if (!f2) {
+	if (unlikely (!f2)) {
 		f2 = &str_cob_low;
 	}
 	if (f1->size != f2->size) {
@@ -444,7 +444,7 @@ cob_inspect_finish (void)
 		}
 	}
 
-	if (inspect_var) {
+	if (unlikely (inspect_var)) {
 		COB_PUT_SIGN (inspect_var, inspect_sign);
 	}
 }
