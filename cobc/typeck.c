@@ -11638,14 +11638,12 @@ cb_search_ready (cb_tree table)
 void
 cb_emit_search (cb_tree table, cb_tree varying, cb_tree at_end, cb_tree whens)
 {
-	struct cb_field	*f;
 	if (cb_validate_one (table)
 	 || cb_validate_one (varying)
 	 || whens == cb_error_node) {
 		return;
 	}
 
-	f = cb_code_field (table);
 	whens = cb_list_reverse (whens);
 	cb_emit (cb_build_search (0, table, varying,
 				  cb_check_needs_break (at_end), whens));
