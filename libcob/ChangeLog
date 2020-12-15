@@ -1,4 +1,9 @@
 
+2020-12-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	Bug #692 missing output for DISPLAY WITH NO ADVANCING
+	* termio.c (cob_accept): always flush to ensure buffered output is seen
+
 2020-12-14  Ron Norman <rjn@inglenet.com>
 
 	* fodbc.c: fixed problem with 'commit' not being done

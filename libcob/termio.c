@@ -917,6 +917,9 @@ cob_accept (cob_field *f)
 			memset (COB_MODULE_PTR->crt_status->data, '0', (size_t)4);
 		}
 	}
+	/* always flush to ensure buffered output is seen */
+	fflush (stdout);
+
 	/* extension: ACCEPT OMITTED */
 	if (unlikely (!f)) {
 		for (; ; ) {
