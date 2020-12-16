@@ -25,7 +25,7 @@
  *
  * fileio.h    is a header for inclusion in all fileio modules
  * fileio.c    is this module and is the primary driver
- * fisam.c     has the C/D/VB-ISAM interface code for INDEXED files
+ * fisam.c     has the C/D/VB-ISAM/VBCISAM interface code for INDEXED files
  * fbdb.c      has the BDB code for INDEXED files
  * flmdb.c     has the LMDB code for INDEXED files
  * fodbc.c     has the ODBC code for INDEXED files
@@ -42,7 +42,7 @@
 
 #include "fileio.h"
 #ifdef HAVE_DLFCN_H
-#if defined(WITH_CISAM) || defined(WITH_DISAM) || defined(WITH_VBISAM)
+#if defined(WITH_CISAM) || defined(WITH_DISAM) || defined(WITH_VBISAM) || defined(WITH_VBCISAM)
 #include <dlfcn.h>
 #endif
 #endif
@@ -231,10 +231,8 @@ static struct cob_fileio_funcs relative_funcs = {
 };
 
 static struct cob_fileio_funcs	*fileio_funcs[COB_IO_MAX] = {
-	&sequential_funcs,
-	&lineseq_funcs,
-	&relative_funcs,
-	NULL, NULL, NULL, NULL, NULL, NULL, NULL
+	&sequential_funcs, &lineseq_funcs, &relative_funcs,
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 };
 
 static const char *io_rtn_name[COB_IO_MAX+1] = {
@@ -245,12 +243,13 @@ static const char *io_rtn_name[COB_IO_MAX+1] = {
 	"DISAM",
 	"VBISAM",
 	"BDB",
-	"LMDB",
+	"VBCISAM",
 	"IXEXT",
 	"SQEXT",
 	"RLEXT",
 	"ODBC",
 	"OCI",
+	"LMDB",
 	""
 };
 
@@ -301,6 +300,8 @@ static const char ix_routine = WITH_INDEXED;
 static const char ix_routine = COB_IO_CISAM;
 #elif defined(WITH_DISAM)
 static const char ix_routine = COB_IO_DISAM;
+#elif defined(WITH_VBCISAM)
+static const char ix_routine = COB_IO_VBCISAM;
 #elif defined(WITH_VBISAM)
 static const char ix_routine = COB_IO_VBISAM;
 #elif	WITH_DB
@@ -376,6 +377,8 @@ indexed_file_type(char *filename)
 			return COB_IO_DISAM;
 #elif defined(WITH_CISAM)
 			return COB_IO_CISAM;
+#elif defined(WITH_VBCISAM)
+			return COB_IO_VBCISAM;
 #else
 			return -1;
 #endif
@@ -384,6 +387,8 @@ indexed_file_type(char *filename)
 			return COB_IO_CISAM;
 #elif defined(WITH_DISAM)
 			return COB_IO_DISAM;
+#elif defined(WITH_VBCISAM)
+			return COB_IO_VBCISAM;
 #else
 			return -1;
 #endif
@@ -897,7 +902,7 @@ cob_chk_file_mapping (cob_file *f)
 				if (access (file_open_buff, F_OK) == 0) {
 					break;
 				}
-#if defined(WITH_CISAM) || defined(WITH_DISAM) || defined(WITH_VBISAM)
+#if defined(WITH_CISAM) || defined(WITH_DISAM) || defined(WITH_VBISAM) || defined(WITH_VBCISAM)
 				/* ISAM may append '.dat' to file name */
 				snprintf (file_open_buff, (size_t)COB_FILE_MAX, "%s%c%s.dat",
 					  file_paths[k], SLASH_CHAR, file_open_name);
@@ -1069,6 +1074,10 @@ cob_set_file_defaults (cob_file *f)
 			else if (f->fcd->fileFormat == MF_FF_VBISAM)
 				f->io_routine = COB_IO_VBISAM;
 #endif
+#ifdef WITH_VBCISAM
+			else if (f->fcd->fileFormat == MF_FF_VBCISAM)
+				f->io_routine = COB_IO_VBCISAM;
+#endif
 #ifdef WITH_ODBC
 			else if (f->fcd->fileFormat == MF_FF_ODBC)
 				f->io_routine = COB_IO_ODBC;
@@ -1195,7 +1204,7 @@ cob_set_file_defaults (cob_file *f)
 static void
 cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 {
-	int		i,j,settrue,ivalue,nkeys,keyn,xret,idx;
+	int		i,j,k,settrue,ivalue,nkeys,keyn,xret,idx;
 	unsigned int	maxrecsz;
 	char	qt,option[64],value[COB_FILE_BUFF];
 
@@ -1381,6 +1390,12 @@ cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 				continue;
 			}
 			if(strcasecmp(option,"format") == 0) {
+				for (j=k=0; value[k] != 0; k++) {	/* remove embedded '-' or '_' */
+					if (value[k] != '-'
+					 && value[k] != '_')
+						value[j++] = value[k];
+				}
+				value[j] = 0;
 				for(j=0; j < COB_IO_MAX; j++) {
 					if(strcasecmp(value,io_rtn_name[j]) == 0) {
 						if(fileio_funcs[j] == NULL) {
@@ -7367,7 +7382,7 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 			file_setptr->cob_fixrel_type = COB_FILE_IS_GC;
 	}
 
-#if defined(WITH_CISAM) || defined(WITH_DISAM) || defined(WITH_VBISAM)
+#if defined(WITH_CISAM) || defined(WITH_DISAM) || defined(WITH_VBISAM) || defined(WITH_VBCISAM)
 #if defined(WITH_MULTI_ISAM)
 	{
 		void (*ioinit)(cob_file_api *);
@@ -7391,6 +7406,14 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 		ioinit = cob_load_lib ("libcobvb.so", "cob_isam_init_fileio");
 		if(ioinit == NULL) {
 			cob_runtime_error (_("VB-ISAM library %s is not present"),"libcobvb.so");
+			exit(-1);
+		}
+		ioinit(&file_api);
+#endif
+#if defined(WITH_VBCISAM)
+		ioinit = cob_load_lib ("libcobvc.so", "cob_isam_init_fileio");
+		if(ioinit == NULL) {
+			cob_runtime_error (_("VB-ISAM (C-ISAM) library %s is not present"),"libcobvc.so");
 			exit(-1);
 		}
 		ioinit(&file_api);

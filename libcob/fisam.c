@@ -28,6 +28,9 @@
 #ifdef WITH_VBISAM
 #undef WITH_VBISAM
 #endif
+#ifdef WITH_VBCISAM
+#undef WITH_VBCISAM
+#endif
 
 #ifdef FOR_CISAM
 #define WITH_CISAM
@@ -47,13 +50,17 @@
 #define ISAM_TYPE "VB-ISAM"
 #define WITH_VBISAM
 #endif
+#ifdef FOR_VBCISAM
+#define ISAM_TYPE "VBC-ISAM"
+#define WITH_VBCISAM
+#endif
 #endif
 
 #include "fileio.h"
 
 #if !defined(WITH_MULTI_ISAM) || defined(IS_ISAM_LIB)
 
-#if	defined(WITH_CISAM) || defined(WITH_DISAM) || defined(WITH_VBISAM)
+#if	defined(WITH_CISAM) || defined(WITH_DISAM) || defined(WITH_VBISAM) || defined(WITH_VBCISAM)
 #ifdef cobglobptr
 #undef cobglobptr
 #endif
@@ -111,11 +118,22 @@ static	vb_rtd_t *vbisam_rtd = NULL;
 #define ISRECNUM vbisam_rtd->isrecnum
 #define ISERRNO  vbisam_rtd->iserrno
 #define ISRECLEN vbisam_rtd->isreclen
-#else
+#endif
+
+#elif	defined(WITH_VBCISAM)
+#include <vbisam.h>
+#ifdef VB_MAX_KEYLEN
+#ifndef MAXKEYLEN
+#define MAXKEYLEN VB_MAX_KEYLEN
+#endif
+#endif
+#if defined(VB_RTD)
+#undef VB_RTD
+#endif
+/* VBISAM 2.2: access to isrecnum iserrno etc is global */
 #define ISRECNUM isrecnum
 #define ISERRNO  iserrno
 #define ISRECLEN isreclen
-#endif
 
 #else
 #error ISAM type undefined
@@ -329,7 +347,7 @@ indexed_keydesc (cob_file *f, struct keydesc *kd, cob_file_key *key)
 	}
 	kd->k_nparts = part;
 
-#if defined(WITH_DISAM) || defined(WITH_VBISAM)
+#if defined(WITH_DISAM) || defined(WITH_VBISAM) || defined(WITH_VBCISAM)
 	kd->k_len = keylen;		/* Total length of this key */
 #endif
 	return keylen;
@@ -712,6 +730,8 @@ isam_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 	f->io_routine = COB_IO_DISAM;
 #elif defined(WITH_VBISAM)
 	f->io_routine = COB_IO_VBISAM;
+#elif defined(WITH_VBCISAM)
+	f->io_routine = COB_IO_VBCISAM;
 #endif
 	if (mode == COB_OPEN_INPUT) {
 		checkvalue = R_OK;
@@ -1777,6 +1797,8 @@ cob_isam_init_fileio (cob_file_api *a)
 	a->io_funcs[COB_IO_DISAM] = (void*) &ext_indexed_funcs;
 #elif defined(WITH_CISAM)
 	a->io_funcs[COB_IO_CISAM] = (void*) &ext_indexed_funcs;
+#elif defined(WITH_VBCISAM)
+	a->io_funcs[COB_IO_VBCISAM] = (void*) &ext_indexed_funcs;
 #elif defined(WITH_VBISAM)
 	a->io_funcs[COB_IO_VBISAM] = (void*) &ext_indexed_funcs;
 #ifdef VB_RTD

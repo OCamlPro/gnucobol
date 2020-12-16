@@ -1,4 +1,7 @@
 
+2020-12-15  Ron Norman <rjn@inglenet.com>
+	* cobc.c: --info output includes VB-ISAM in C-ISAM mode
+
 2020-12-11  Ron Norman <rjn@inglenet.com>
 
 	* codegen.c: Fix INITIALIZE logic to correcly handle subscripts

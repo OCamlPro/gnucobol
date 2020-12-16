@@ -7809,10 +7809,6 @@ print_version_summary (void)
 		NCURSES_VERSION_MAJOR, NCURSES_VERSION_MINOR, NCURSES_VERSION_PATCH);
 #endif
 
-#if defined	(WITH_DB)
-	printf (", BDB %d.%d.%d",
-		DB_VERSION_MAJOR, DB_VERSION_MINOR, DB_VERSION_PATCH);
-#endif
 #if defined	(WITH_CISAM)
 	printf (", C-ISAM");
 #endif
@@ -7821,6 +7817,13 @@ print_version_summary (void)
 #endif
 #if defined	(WITH_VBISAM)
 	printf (", VB-ISAM");
+#endif
+#if defined	(WITH_VBCISAM)
+	printf (", VB-ISAM (C-ISAM)");
+#endif
+#if defined	(WITH_DB)
+	printf (", BDB %d.%d.%d",
+		DB_VERSION_MAJOR, DB_VERSION_MINOR, DB_VERSION_PATCH);
 #endif
 	putchar ('\n');
 
@@ -7946,6 +7949,30 @@ print_info_detailed (const int verbose)
 	var_print (_("sequential file handler"),	_("built-in"), "", 0);
 #endif
 
+#if defined	(WITH_CISAM)
+	var_print (_("indexed file handler"), 		"C-ISAM", "", 0);
+#endif
+#if defined	(WITH_DISAM)
+	var_print (_("indexed file handler"), 		"D-ISAM", "", 0);
+#endif
+#if defined	(WITH_VBCISAM)
+#if defined(VBISAM_VERSION)
+	snprintf (buff, sizeof (buff), "VB-ISAM %s (C-ISAM)", VBISAM_VERSION);
+	var_print (_("indexed file handler"), 		buff, "", 0);
+#else
+	var_print (_("indexed file handler"), 		"VB-ISAM (C-ISAM)", "", 0);
+#endif
+#endif
+#if defined	(WITH_VBISAM)
+#if defined(VBISAM_VERSION)
+	snprintf (buff, sizeof (buff), "VB-ISAM %s", VBISAM_VERSION);
+	var_print (_("indexed file handler"), 		buff, "", 0);
+#elif defined	(VB_RTD)
+	var_print (_("indexed file handler"), 		"VB-ISAM 2.1.1 (RTD)", "", 0);
+#else
+	var_print (_("indexed file handler"), 		"VB-ISAM", "", 0);
+#endif
+#endif
 #if defined(WITH_INDEX_EXTFH) || defined(WITH_CISAM) || defined(WITH_DISAM) \
 	|| defined(WITH_VBISAM) || defined(WITH_DB) || defined(WITH_LMDB)
 #if defined	(WITH_INDEX_EXTFH)
@@ -7975,19 +8002,6 @@ print_info_detailed (const int verbose)
 	}
 #else
 	var_print (_("indexed file handler"), 		"LMDB", "", 0);
-#endif
-#endif
-#if defined	(WITH_CISAM)
-	var_print (_("indexed file handler"), 		"C-ISAM", "", 0);
-#endif
-#if defined	(WITH_DISAM)
-	var_print (_("indexed file handler"), 		"D-ISAM", "", 0);
-#endif
-#if defined	(WITH_VBISAM)
-#if defined	(VB_RTD)
-	var_print (_("indexed file handler"), 		"VB-ISAM (RTD)", "", 0);
-#else
-	var_print (_("indexed file handler"), 		"VB-ISAM", "", 0);
 #endif
 #endif
 #if defined	(WITH_ODBC)

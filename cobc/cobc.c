@@ -49,7 +49,7 @@
 #include <io.h>
 #endif
 
-#if defined(WITH_VBISAM)
+#if defined(WITH_VBISAM) || defined(WITH_VBCISAM)
 /* included to check for VB_RTD definition */
 #include <vbisam.h>
 #endif
@@ -2401,7 +2401,7 @@ cobc_var_and_envvar_print (const char* name, const char* defined_val)
 static void
 cobc_print_info (void)
 {
-	char	buff[16];
+	char	buff[64];
 	char	*s;
 
 	cobc_print_version ();
@@ -2483,28 +2483,11 @@ cobc_print_info (void)
 
 
 #if defined(WITH_INDEX_EXTFH) || defined(WITH_CISAM) || defined(WITH_DISAM) \
-	|| defined(WITH_VBISAM) || defined(WITH_DB) || defined(WITH_LMDB) \
+	|| defined(WITH_VBISAM) || defined(WITH_VBCISAM) \
+	|| defined(WITH_DB) || defined(WITH_LMDB) \
 	|| defined(WITH_ODBC) || defined(WITH_OCI)
 #if defined	(WITH_INDEX_EXTFH)
 	cobc_var_print (_("indexed file handler"),		"EXTFH (obsolete)", 0);
-#endif
-#if defined	(WITH_DB)
-#if defined(DB_VERSION_MAJOR) && defined(DB_VERSION_MINOR) && defined(DB_VERSION_PATCH)
-	snprintf (versbuff, 55, "%s version %d.%d.%d",
-			"BDB", DB_VERSION_MAJOR, DB_VERSION_MINOR,DB_VERSION_PATCH);
-	cobc_var_print (_("indexed file handler"), 		versbuff, 0);
-#else
-	cobc_var_print (_("indexed file handler"), 		"BDB", 0);
-#endif
-#endif
-#if defined	(WITH_LMDB)
-#if defined(MDB_VERSION_MAJOR) && defined(MDB_VERSION_MINOR) && defined(MDB_VERSION_PATCH)
-	snprintf (versbuff, 55, "%s version %d.%d.%d",
-			"LMDB", MDB_VERSION_MAJOR, MDB_VERSION_MINOR,MDB_VERSION_PATCH);
-	cobc_var_print (_("indexed file handler"), 		versbuff, 0);
-#else
-	cobc_var_print (_("indexed file handler"), 		"LMDB", 0);
-#endif
 #endif
 #if defined	(WITH_CISAM)
 	cobc_var_print (_("indexed file handler"),		"C-ISAM", 0);
@@ -2512,8 +2495,19 @@ cobc_print_info (void)
 #if defined	(WITH_DISAM)
 	cobc_var_print (_("indexed file handler"),		"D-ISAM", 0);
 #endif
+#if defined	(WITH_VBCISAM)
+#if defined(VBISAM_VERSION)
+	snprintf (buff, sizeof(buff), "VB-ISAM %s (C-ISAM)", VBISAM_VERSION);
+	cobc_var_print (_("indexed file handler"),		buff, 0);
+#else
+	cobc_var_print (_("indexed file handler"),		"VB-ISAM in C-ISAM", 0);
+#endif
+#endif
 #if defined	(WITH_VBISAM)
-# if defined	(VB_RTD)
+# if defined(VBISAM_VERSION)
+	snprintf (buff, sizeof(buff), "VB-ISAM %s", VBISAM_VERSION);
+	cobc_var_print (_("indexed file handler"),		buff, 0);
+# elif defined	(VB_RTD)
 	cobc_var_print (_("indexed file handler"),		"VBISAM (RTD)", 0);
 # else
 	cobc_var_print (_("indexed file handler"),		"VBISAM", 0);
@@ -2533,6 +2527,24 @@ cobc_print_info (void)
 	cobc_var_print (_("indexed file handler"), 		versbuff, 0);
 #else
 	cobc_var_print (_("indexed file handler"),		"OCI (Oracle)", 0);
+#endif
+#endif
+#if defined	(WITH_DB)
+#if defined(DB_VERSION_MAJOR) && defined(DB_VERSION_MINOR) && defined(DB_VERSION_PATCH)
+	snprintf (versbuff, 55, "%s version %d.%d.%d",
+			"BDB", DB_VERSION_MAJOR, DB_VERSION_MINOR,DB_VERSION_PATCH);
+	cobc_var_print (_("indexed file handler"), 		versbuff, 0);
+#else
+	cobc_var_print (_("indexed file handler"), 		"BDB", 0);
+#endif
+#endif
+#if defined	(WITH_LMDB)
+#if defined(MDB_VERSION_MAJOR) && defined(MDB_VERSION_MINOR) && defined(MDB_VERSION_PATCH)
+	snprintf (versbuff, 55, "%s version %d.%d.%d",
+			"LMDB", MDB_VERSION_MAJOR, MDB_VERSION_MINOR,MDB_VERSION_PATCH);
+	cobc_var_print (_("indexed file handler"), 		versbuff, 0);
+#else
+	cobc_var_print (_("indexed file handler"), 		"LMDB", 0);
 #endif
 #endif
 #if defined(WITH_IXDFLT) && defined(WITH_MULTI_ISAM)

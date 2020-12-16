@@ -1,4 +1,12 @@
 
+2020-12-16  Ron Norman <rjn@inglenet.com>
+	* common.h: Changes to handle VBISAM in CISAM mode
+	* common.c: Changes to report using VBISAM in CISAM mode
+	* fileio.c: Changes to handle "format=vbcisam"
+			    and to load libcobvc.so at startup
+	* fisam.c: Changes for building with VBISAM in CISAM mode
+	* Makefile.am: Changes for configure/build of VBISAM in CISAM mode
+				
 2020-12-15  Simon Sobisch <simonsobisch@gnu.org>
 
 	Bug #692 missing output for DISPLAY WITH NO ADVANCING

@@ -926,16 +926,17 @@ enum cob_file_access {
 #define COB_IO_DISAM		4	/* INDEXED via D-ISAM */
 #define COB_IO_VBISAM		5	/* INDEXED via VB-ISAM */
 #define COB_IO_BDB			6	/* INDEXED via BDB */
-#define COB_IO_LMDB			7	/* INDEXED via LMDB */
+#define COB_IO_VBCISAM		7	/* INDEXED via VB-ISAM in C-ISAM mode */
 #define COB_IO_IXEXT 		8	/* INDEXED via Local old style WITH_INDEX_EXTFH */
 #define COB_IO_SQEXT 		9	/* SEQUENTIAL via old style WITH_SEQRA_EXTFH */
 #define COB_IO_RLEXT 		10	/* RELATIVE via old style WITH_SEQRA_EXTFH */
 #define COB_IO_ODBC			11	/* INDEXED via ODBC */
 #define COB_IO_OCI			12	/* INDEXED via OCI */
-#define COB_IO_MAX			13 
+#define COB_IO_LMDB			13	/* INDEXED via LMDB */
+#define COB_IO_MAX			14 
 /* Not yet implemented */
-#define COB_IO_MFIDX4		13	/* Micro Focus IDX4 format */
-#define COB_IO_MFIDX8		14	/* Micro Focus IDX8 format */
+#define COB_IO_MFIDX4		14	/* Micro Focus IDX4 format */
+#define COB_IO_MFIDX8		15	/* Micro Focus IDX8 format */
 
 /* SELECT features */
 
@@ -2388,10 +2389,11 @@ typedef struct __fcd3 {
 #define MF_FF_IDX8			8		/* IDXFORMAT"8" format (BIG) */
 #define MF_FF_DISAM			16		/* D-ISAM format */
 #define MF_FF_VBISAM		17		/* VB-ISAM format */
-#define MF_FF_BDB			18		/* BDB format for INDEXED file */
-#define MF_FF_LMDB			19		/* LMDB format for INDEXED file */
-#define MF_FF_ODBC			20		/* ODBC format for INDEXED file */
-#define MF_FF_OCI			21		/* OCI format for INDEXED file */
+#define MF_FF_VBCISAM		18		/* VB-ISAM format */
+#define MF_FF_BDB			19		/* BDB format for INDEXED file */
+#define MF_FF_LMDB			20		/* LMDB format for INDEXED file */
+#define MF_FF_ODBC			21		/* ODBC format for INDEXED file */
+#define MF_FF_OCI			22		/* OCI format for INDEXED file */
 	unsigned char	deviceFlag;		
 	unsigned char	lockAction;		
 	unsigned char	compType;			/* data compression type */

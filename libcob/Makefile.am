@@ -40,7 +40,14 @@ else
 lib_vb =
 endif
 
-lib_LTLIBRARIES = libcob.la $(lib_ci) $(lib_di) $(lib_vb)
+if COB_MAKE_VBCISAM_LIB
+lib_vc = libcobvc.la
+libcobvc_la_LIBADD = $(LIBCOB_VBCISAM)
+else
+lib_vc =
+endif
+
+lib_LTLIBRARIES = libcob.la $(lib_ci) $(lib_di) $(lib_vb) $(lib_vc)
 libcob_la_SOURCES = common.c move.c numeric.c strings.c \
 	fileio.c fextfh.c fisam.c fbdb.c focextfh.c flmdb.c fodbc.c foci.c fsqlxfd.c \
 	call.c intrinsic.c termio.c screenio.c reportio.c cobgetopt.c \

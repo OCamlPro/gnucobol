@@ -1,3 +1,9 @@
+
+2020-12-16  Ron Norman <rjn@inglenet.com> 
+
+	* configure.ac: Updates to accept --with-vbcisam
+		which is for VB-ISAM 2.2 build in C-ISAM mode
+
 2020-12-04  James K. Lowden  <jklowden@symas.com>
 
 	* CMakeLists.txt: added, builds on Ubuntu and maybe Windows
