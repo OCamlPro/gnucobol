@@ -539,21 +539,28 @@ AT_DATA([prog.cob], [
            IF out <> '{"rec":{"alpha":"A","b":"BBB"}}'
                DISPLAY 'Test 1 failed: ' FUNCTION TRIM (out)
            END-IF
+           JSON GENERATE out
+               FROM rec
+               NAME OF a IS 'alpha', rec IS OMITTED
+               SUPPRESS c
+           IF out <> '{"alpha":"A","b":"BBB"}'
+               DISPLAY 'Test 2 failed: ' FUNCTION TRIM (out)
+           END-IF
 
            JSON GENERATE out FROM d
            IF out <> '{"d":" "}'
-               DISPLAY 'Test 2 failed: ' FUNCTION TRIM (out)
+               DISPLAY 'Test 3 failed: ' FUNCTION TRIM (out)
            END-IF
 
            JSON GENERATE out FROM c
            IF out <> '{"c":{"d":" "}}'
-               DISPLAY 'Test 3 failed: ' FUNCTION TRIM (out)
+               DISPLAY 'Test 4 failed: ' FUNCTION TRIM (out)
            END-IF
 
            MOVE ALL QUOTES TO d
            JSON GENERATE out FROM d
            IF out <> '{"d":"\"\"\""}'
-               DISPLAY 'Test 4 failed: ' FUNCTION TRIM (out)
+               DISPLAY 'Test 5 failed: ' FUNCTION TRIM (out)
            END-IF
            .
 ])

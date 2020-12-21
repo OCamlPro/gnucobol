@@ -1,4 +1,9 @@
 
+2020-12-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	FR #397: add support for JSON GENERATE anonymous JSON objects
+	* mlio.c (generate_json_from_tree): handle OMITTED NAME attribute
+
 2020-12-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* Makefile.am (libcob_la_LDFLAGS): updated version-info
@@ -68,7 +73,7 @@
 
 2020-11-22  Ron Norman <rjn@inglenet.com>
 
-	* common.c: set LIBC_FATAL_STDERR_ more hard coded 
+	* common.c: set LIBC_FATAL_STDERR_ more hard coded
 	* fbdb.c (ix_bdb_delete_internal)->fileio.c(indexed_delete_internal):
 	  fix error in use of wrong record area
 	* fextfh.c->fileio.c (copy_file_to_fcd): use cob_cache_malloc instead
@@ -120,11 +125,12 @@
 
 2020-10-27  Simon Sobisch <simonsobisch@gnu.org>
 
-	* common.h, common.c: external version defintion via new defines
-	  __LIBCOB_VERSION, __LIBCOB_VERSION_MINOR, __LIBCOB_VERSION_PATCHLEVEL,
-	  __LIBCOB_RELEASE and functions libcob_version, set_libcob_version to
-	  query and/or compare these;
-	  note: __LIBCOB_VERSION_PATCHLEVEL is _not_ the package's PATCHLEVEL 
+	* common.h, common.c: FR #323 - external visible version number
+	  external version defintion via new defines __LIBCOB_VERSION,
+	  __LIBCOB_VERSION_MINOR, __LIBCOB_VERSION_PATCHLEVEL, __LIBCOB_RELEASE
+	  and functions libcob_version, set_libcob_version to query and/or compare
+	  these;
+	  note: __LIBCOB_VERSION_PATCHLEVEL is _not_ the package's PATCHLEVEL
 	* common.c: extracted set_cob_build_stamp from print_version
 	* common.c, common.h: new function print_version_summary providing a two line
 	  output for GnuCOBOL + C compiler and used libraries
@@ -416,7 +422,7 @@
 	* coblocal.h: adjusted GCC-version for definition of visibility attribute
 	  COB_HIDDEN and option to disable via COB_NO_VISIBILITY_ATTRIBUTE;
 	  not a solution (-> move to configure) but a workaround...
-	
+
 	Work on signal and call SYSTEM handling
 	* common.c (get_signal_name): extracted from (cob_sig_handler)
 	* common.c (cob_sys_system): don't abort if the command is too long
@@ -711,7 +717,7 @@
 
 	* screenio.c (cob_screen_init): fix background=foreground from terminal
 	* screenio.c (cob_screen_init, cob_screen_attr): explicit define and use
-	  color_pair 1 as "black on black" 
+	  color_pair 1 as "black on black"
 	* screenio.c (cob_screen_attr): fix long standing bug in use of
 	  color_set (takes color_pair_number, not a COLOR_PAIR)
 	* screenio.c (cob_screen_attr): extracted (cob_to_curses_color,
@@ -894,10 +900,10 @@
 
 2018-06-18  Ron Norman <rjn@inglenet.com>
 
-	* fileio.c: Updates to the EXTFH logic 
+	* fileio.c: Updates to the EXTFH logic
 	   You can now actually compile using MF Visual COBOL and include the
 	   GnuCOBOL libcob as follows:
-	     cob -L/usr/local/lib -lcob -C "CALLFH=EXTFH" 
+	     cob -L/usr/local/lib -lcob -C "CALLFH=EXTFH"
 
 2018-06-10  Simon Sobisch <simonsobisch@gnu.org>
 

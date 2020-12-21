@@ -4,6 +4,13 @@
 	* field.c, pplex.l, tree.c, typeck.c: fixed warning option querying enum
 	  instead of actual value via cb_warn_opt_val
 	
+2020-12-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	FR #397: add support for JSON GENERATE anonymous JSON objects
+	* parser.y: split _name_of to _xml_name_of and _json_name_of, the later
+	  one with additional possible NAME ... IS OMITTED and
+	  without GENERATE XML checks
+
 2020-12-15  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c [!COB_ALLOW_UNALIGNED]: fixed unused variable warning

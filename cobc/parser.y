@@ -13586,7 +13586,7 @@ json_generate_body:
   {
 	ml_suppress_list = NULL;
   }
-  _name_of
+  _json_name_of
   _json_suppress
   {
 	cobc_in_json_generate_body = 0;
@@ -13648,7 +13648,7 @@ json_parse_statement:
 json_parse_body:
   identifier INTO identifier
   _with_detail
-  _name_of
+  _json_name_of
   _json_suppress
   _json_exception_phrases
 ;
@@ -15858,7 +15858,7 @@ xml_generate_body:
   }
   _with_encoding_xml_dec_and_attrs
   _xml_gen_namespace
-  _name_of
+  _xml_name_of
   _type_of
   _xml_gen_suppress
   {
@@ -15940,7 +15940,7 @@ _xml_gen_namespace_prefix:
   }
 ;
 
-_name_of:
+_xml_name_of:
   /* empty */
   {
 	$$ = NULL;
@@ -15968,6 +15968,39 @@ identifier_is_name:
   identifier _is literal
   {
 	$$ = CB_BUILD_PAIR ($1, $3);
+  }
+;
+
+_json_name_of:
+  /* empty */
+  {
+	$$ = NULL;
+  }
+| NAME _of json_identifier_name_list
+  {
+	$$ = $3;
+  }
+;
+
+json_identifier_name_list:
+  json_identifier_is_name
+  {
+	$$ = CB_LIST_INIT ($1);
+  }
+| json_identifier_name_list json_identifier_is_name
+  {
+	$$ = cb_list_add ($1, $2);
+  }
+;
+
+json_identifier_is_name:
+  identifier _is literal
+  {
+	$$ = CB_BUILD_PAIR ($1, $3);
+  }
+| identifier _is OMITTED
+  {
+	$$ = CB_BUILD_PAIR ($1, cb_null);
   }
 ;
 
@@ -16095,7 +16128,7 @@ xml_parse_statement:
   {
 	begin_statement ("XML PARSE", TERM_XML);
 	/* TO-DO: Add xml-parse and xml-parse-extra-phrases config options. */
-	CB_PENDING (_("XML PARSE"));
+	CB_PENDING ("XML PARSE");
 	cobc_cs_check = CB_CS_XML_PARSE;
   }
   xml_parse_body
