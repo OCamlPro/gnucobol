@@ -6768,7 +6768,7 @@ prog.cob:105: error: NAME OF item may not be reference modified
 prog.cob:110: warning: OCCURS items in JSON/XML GENERATE is not implemented
 prog.cob:108: error: NAME OF item may not be an ignored item in JSON/XML GENERATE
 prog.cob:114: warning: OCCURS items in JSON/XML GENERATE is not implemented
-prog.cob:111: error: NAME OF literal must be a valid XML name
+prog.cob:111: error: NAME OF literal must be a valid XML identifier
 prog.cob:118: warning: OCCURS items in JSON/XML GENERATE is not implemented
 prog.cob:115: error: TYPE OF item must be elementary
 prog.cob:115: error: TYPE OF item must be a child of the input record
