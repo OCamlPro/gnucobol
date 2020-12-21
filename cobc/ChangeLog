@@ -1,4 +1,13 @@
 
+2020-12-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* field.c, pplex.l, tree.c, typeck.c: fixed warning option querying enum
+	  instead of actual value via cb_warn_opt_val
+	
+2020-12-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c [!COB_ALLOW_UNALIGNED]: fixed unused variable warning
+
 2020-12-07  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c (output_display_fields): prevent bad integer promotion in

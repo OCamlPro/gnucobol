@@ -1712,7 +1712,7 @@ start:
 			    line_overflow to first column that leads to
 				"source text too long")
 			*/
-			if (cb_warn_column_overflow && line_overflow == 0) {
+			if (cb_warn_opt_val[cb_warn_column_overflow] && line_overflow == 0) {
 				for (coln = cb_text_column; coln < n; ++coln) {
 					if (buff[coln] != ' ' && buff[coln] != '\n') {
 						line_overflow = coln;

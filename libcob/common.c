@@ -2510,7 +2510,7 @@ cob_check_version (const char *prog,
 	if (nparts >= 2) {
 		lib.version = version_bitstring(lib);
 
-		sscanf (packver_prog, "%d.%d.%d",
+		(void)sscanf (packver_prog, "%d.%d.%d",
 			 &app.major, &app.minor, &app.point);
 		app.version = version_bitstring(app);
 

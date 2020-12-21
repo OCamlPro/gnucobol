@@ -458,7 +458,8 @@ cb_build_field_tree (cb_tree level, cb_tree name, struct cb_field *last_field,
 	}
 
 	/* Checks for redefinition */
-	if (cb_warn_redefinition && r->word->count > 1 && !r->flag_filler_ref) {
+	if (cb_warn_opt_val[cb_warn_redefinition]
+	 && r->word->count > 1 && !r->flag_filler_ref) {
 		if (f->level == 01 || f->level == 77) {
 			redefinition_warning (name, NULL);
 		} else {

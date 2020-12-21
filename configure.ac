@@ -24,7 +24,7 @@
 AC_PREREQ([2.64])
 
 AC_INIT([GnuCOBOL],
-	[3.1.1],
+	[3.1.2-dev],
 	[bug-gnucobol@gnu.org],
 	[gnucobol],
 	[https://www.gnu.org/software/gnucobol/])
@@ -627,7 +627,7 @@ AS_IF([test "$USE_MATH" = "mpir" -o "$USE_MATH" = "check"], [
 	  CPPFLAGS="$CPPFLAGS $MPIR_CFLAGS"
 	fi
 	if test -z "${MPIR_LIBS+x}"; then
-	  GMP_LIBS="-lmpir"
+	  MPIR_LIBS="-lmpir"
 	fi
 	LIBS="$LIBS $MPIR_LIBS"
 	AC_CHECK_HEADERS([mpir.h], [
@@ -640,12 +640,12 @@ AS_IF([test "$USE_MATH" = "mpir" -o "$USE_MATH" = "check"], [
 		   USE_MATH=mpir],
 		  [AC_MSG_RESULT([no])
 		   if test "$USE_MATH" = "mpir"; then
-		     AC_MSG_ERROR([[MPIR is required for --with-math=mpir, you may adjust GMP_LIBS]])
+		     AC_MSG_ERROR([[MPIR is required for --with-math=mpir, you may adjust MPIR_LIBS]])
 		   fi
 		   LIBS="$curr_libs"; CPPFLAGS="$curr_cppflags"]
 		)
 	], [if test "$USE_MATH" = "mpir"; then
-		    AC_MSG_ERROR([mpir.h is required for --with-math=mpir, you may adjust GMP_CFLAGS])
+		    AC_MSG_ERROR([mpir.h is required for --with-math=mpir, you may adjust MPIR_CFLAGS])
 		 fi
 		 LIBS="$curr_libs"; CPPFLAGS="$curr_cppflags"
 	])

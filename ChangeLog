@@ -1,4 +1,8 @@
 
+2020-12-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: fixed use of MPIR_LIBS
+
 2020-12-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: version 3.1.1
