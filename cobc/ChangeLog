@@ -10,6 +10,11 @@
 	* parser.y: split _name_of to _xml_name_of and _json_name_of, the later
 	  one with additional possible NAME ... IS OMITTED and
 	  without GENERATE XML checks
+	* typeck.c (is_subordinate_to_fields): cob_field based
+	  variant of is_subordinate_to
+	* typeck.c (syntax_check_ml_gen_name_list): additional parameter is_xml
+	  to distinguish between XML and JSON generation (messages, possible rules)
+	* typeck.c (syntax_check_ml_gen_name_list): check of NAME ... IS OMITTED
 
 2020-12-15  Simon Sobisch <simonsobisch@gnu.org>
 
