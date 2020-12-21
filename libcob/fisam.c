@@ -51,7 +51,7 @@
 #define WITH_VBISAM
 #endif
 #ifdef FOR_VBCISAM
-#define ISAM_TYPE "VBC-ISAM"
+#define ISAM_TYPE "VB-CISAM"
 #define WITH_VBCISAM
 #endif
 #endif
@@ -61,6 +61,11 @@
 #if !defined(WITH_MULTI_ISAM) || defined(IS_ISAM_LIB)
 
 #if	defined(WITH_CISAM) || defined(WITH_DISAM) || defined(WITH_VBISAM) || defined(WITH_VBCISAM)
+#define ISRECNUM isrecnum
+#define ISERRNO  iserrno
+#define ISRECLEN isreclen
+#define ISSTAT1 isstat1
+#define ISSTAT2 isstat2
 #ifdef cobglobptr
 #undef cobglobptr
 #endif
@@ -79,9 +84,6 @@ static	cob_settings	*isam_setptr;
 #if	defined(WITH_CISAM)
 #include <isam.h>
 #define	isfullclose(x)	isclose (x)
-#define ISRECNUM isrecnum
-#define ISERRNO  iserrno
-#define ISRECLEN isreclen
 
 #elif	defined(WITH_DISAM)
 #ifndef DISAM_NO_ISCONFIG
@@ -97,13 +99,11 @@ static	cob_settings	*isam_setptr;
 #endif
 #endif
 #define	isfullclose(x)	isclose (x)
-#define ISRECNUM isrecnum
-#define ISERRNO  iserrno
-#define ISRECLEN isreclen
 
 #elif	defined(WITH_VBISAM)
 #include <vbisam.h>
-#ifdef COB_WITH_STATUS_02 
+#if defined(COB_WITH_STATUS_02) && !defined(VBISAM_VERSION)
+/* Old VBISAM! (2.2 supports the 02 status) */
 #undef	COB_WITH_STATUS_02
 #endif
 #ifdef VB_MAX_KEYLEN
@@ -115,13 +115,26 @@ static	cob_settings	*isam_setptr;
 /* Since VBISAM 2.1.1: access to isrecnum iserrno etc is no longer global */
 static	vb_rtd_t *vbisam_rtd = NULL;
 
+#undef ISRECNUM 
+#undef ISERRNO 
+#undef ISRECLEN
+#undef ISSTAT1
+#undef ISSTAT2
 #define ISRECNUM vbisam_rtd->isrecnum
 #define ISERRNO  vbisam_rtd->iserrno
 #define ISRECLEN vbisam_rtd->isreclen
+#if defined(VBISAM_VERSION)
+#ifndef COB_WITH_STATUS_02 
+#define	COB_WITH_STATUS_02
+#endif
+#define ISSTAT1 vbisam_rtd->isstat1
+#define ISSTAT2 vbisam_rtd->isstat2
+#endif
 #endif
 
 #elif	defined(WITH_VBCISAM)
 #include <vbisam.h>
+/* VBISAM 2.2: access to isrecnum iserrno etc is global */
 #ifdef VB_MAX_KEYLEN
 #ifndef MAXKEYLEN
 #define MAXKEYLEN VB_MAX_KEYLEN
@@ -130,10 +143,12 @@ static	vb_rtd_t *vbisam_rtd = NULL;
 #if defined(VB_RTD)
 #undef VB_RTD
 #endif
-/* VBISAM 2.2: access to isrecnum iserrno etc is global */
-#define ISRECNUM isrecnum
-#define ISERRNO  iserrno
-#define ISRECLEN isreclen
+#if defined(ISVARLEN)
+#undef ISVARLEN
+#endif
+#if defined(VBISAM_VERSION) && !defined(COB_WITH_STATUS_02)
+#define	COB_WITH_STATUS_02
+#endif
 
 #else
 #error ISAM type undefined
@@ -144,7 +159,7 @@ static	vb_rtd_t *vbisam_rtd = NULL;
 #endif
 
 #ifndef ISVARLEN
-/* ISAM code configured to not support variable length records */
+/* ISAM handler does not support variable length records */
 #define ISVARLEN 0
 #endif
 
@@ -154,7 +169,7 @@ static	vb_rtd_t *vbisam_rtd = NULL;
 
 #ifdef COB_WITH_STATUS_02
 #define COB_CHECK_DUP(s) s ? s : \
-		(isstat1 == '0' && isstat2 == '2' && !f->flag_read_no_02) ? \
+		(ISSTAT1 == '0' && ISSTAT2 == '2' && !f->flag_read_no_02) ? \
 		COB_STATUS_02_SUCCESS_DUPLICATE : 0
 #else
 #define COB_CHECK_DUP(s) s ? s : s 
@@ -347,9 +362,7 @@ indexed_keydesc (cob_file *f, struct keydesc *kd, cob_file_key *key)
 	}
 	kd->k_nparts = part;
 
-#if defined(WITH_DISAM) || defined(WITH_VBISAM) || defined(WITH_VBCISAM)
 	kd->k_len = keylen;		/* Total length of this key */
-#endif
 	return keylen;
 }
 
@@ -520,15 +533,14 @@ restorefileposition (cob_file *f)
 	fh = f->file;
 	memset ((void *)&k0, 0, sizeof (k0));
 	if (fh->saverecnum >= 0) {
-		/* Switch back to index */
+		/* Record# of 'next' record in the index */
 		ISRECNUM = fh->saverecnum;
-		/* Switch to recnum mode */
+		/* Switch to record number mode */
 		isstart (fh->isfd, &k0, 0, (void *)fh->recwrk, ISEQUAL);
 		/* Read by record number */
 		isread (fh->isfd, (void *)fh->recwrk, ISEQUAL);
-		/* Read by current key value */
-		isstart (fh->isfd, &fh->key[f->curkey], 0,
-			 (void *)fh->recwrk, ISGTEQ);
+		/* Read by active key value */
+		isstart (fh->isfd, &fh->key[f->curkey], 0, (void *)fh->recwrk, ISGTEQ);
 		isread (fh->isfd, (void *)fh->recwrk, ISGTEQ);
 		while (ISRECNUM != fh->saverecnum) {
 			/* Read back into position */
@@ -546,8 +558,7 @@ restorefileposition (cob_file *f)
 		}
 	} else if (fh->readdone && f->curkey == 0) {
 		indexed_restorekey(fh, NULL, 0);
-		isstart (fh->isfd, &fh->key[f->curkey], 0,
-			 (void *)fh->recwrk, ISGTEQ);
+		isstart (fh->isfd, &fh->key[f->curkey], 0, (void *)fh->recwrk, ISGTEQ);
 	}
 }
 
@@ -568,8 +579,8 @@ savefileposition (cob_file *f)
 			if (isread (fh->isfd, (void *)fh->recwrk, fh->readdir)) {
 				fh->saverecnum = -1;
 				fh->saveerrno = ISERRNO;
-				if (fh->saveerrno == EENDFILE ||
-				    fh->saveerrno == ENOREC)  {
+				if (fh->saveerrno == EENDFILE 
+				 || fh->saveerrno == ENOREC)  {
 					fh->eofpending = fh->readdir;
 				}
 			} else {
@@ -581,6 +592,43 @@ savefileposition (cob_file *f)
 		}
 	} else {
 		fh->saverecnum = -1;
+	}
+}
+
+/* Get length of variable length record */
+static COB_INLINE COB_A_INLINE void
+get_isreclen (cob_file *f)
+{
+	if (f->record_min != f->record_max) {
+#if !defined(ISVARLEN) || (ISVARLEN == 0)
+		/* This ISAM is not supporting Variable length so simulate using trailling NULs */
+		int k;
+		if (f->variable_record) {
+			for (k = f->record_max; k > f->record_min && f->record->data[k-1] == 0; k--);
+			f->record->size = k;
+			cob_set_int (f->variable_record, (int) k);
+		}
+#else
+		f->record->size = ISRECLEN;
+		if (f->record->size < f->record_max)
+			memset(&f->record->data[f->record->size], 0, f->record_max - f->record->size);
+		if (f->variable_record)
+			cob_set_int (f->variable_record, (int) f->record->size);
+#endif
+	}
+}
+
+/* Set isreclen for ISAM handler of variable length record */
+static COB_INLINE COB_A_INLINE void
+set_isreclen (cob_file *f)
+{
+	if (f->record_min != f->record_max) {
+		ISRECLEN = f->record->size;
+#if !defined(ISVARLEN) || (ISVARLEN == 0)
+		/* This ISAM is not supporting Variable length so simulate using trailling NULs */
+		if (f->record->size < f->record_max)
+			memset(&f->record->data[f->record->size], 0, f->record_max - f->record->size);
+#endif
 	}
 }
 
@@ -843,17 +891,23 @@ isam_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 	fh->lmode = 0;
 	if (dobld) {
 dobuild:
+		if (f->record_min != f->record_max) {
+			ISRECLEN = f->record_min;
+		}
 		isfd = isbuild ((void *)filename, (int)f->record_max, &fh->key[0],
-				vmode | ISINOUT | ISEXCLLOCK);
+								vmode | ISINOUT | ISEXCLLOCK);
 		for(k=0; k < MAXNUMKEYS; k++)
 			fh->idxmap[k] = k;
 		f->flag_file_lock = 1;
-		if (ISERRNO == EEXIST
-		 && isfd < 0) {
+		if (isfd < 0
+		 && (ISERRNO == EEXIST || ISERRNO == EBADARG)) {
 			/* Erase file and redo the 'isbuild' */
 			iserase ((void *)filename);
+			if (f->record_min != f->record_max) {
+				ISRECLEN = f->record_min;
+			}
 			isfd = isbuild ((void *)filename, (int)f->record_max, &fh->key[0],
-					vmode | ISINOUT | ISEXCLLOCK);
+								vmode | ISINOUT | ISEXCLLOCK);
 			f->flag_file_lock = 1;
 		}
 	} else {
@@ -1186,7 +1240,7 @@ isam_read (cob_file_api *a, cob_file *f, cob_field *key, const int read_opts)
 	if (isread_retry (f, (void *)f->record->data, ISEQUAL | lmode)) {
 		ret = fisretsts (COB_STATUS_21_KEY_INVALID);
 	}
-	if (unlikely (ret != 0)) {
+	if ((ret != 0)) {
 		memset (fh->savekey, 0, fh->lenkey);
 		fh->recnum = 0;
 		fh->readdone = 0;
@@ -1199,11 +1253,7 @@ isam_read (cob_file_api *a, cob_file *f, cob_field *key, const int read_opts)
 	f->flag_begin_of_file = 0;
 	indexed_savekey(fh, f->record->data, 0);
 	fh->recnum = ISRECNUM;
-	if (f->record_min != f->record_max) {
-		f->record->size = ISRECLEN;
-	}
-	if (f->variable_record)
-		cob_set_int (f->variable_record, (int) f->record->size);
+	get_isreclen (f);
 	return 0;
 }
 
@@ -1450,7 +1500,7 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 			ret = fisretsts (COB_STATUS_10_END_OF_FILE);
 		}
 	}
-	if (unlikely(ret != 0)) {
+	if ((ret != 0)) {
 		memset (fh->savekey, 0, fh->lenkey);
 		fh->recnum = 0;
 		fh->readdone = 0;
@@ -1465,11 +1515,7 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 	f->flag_begin_of_file = 0;
 	indexed_savekey(fh, f->record->data, 0);
 	fh->recnum = ISRECNUM;
-	if (f->record_min != f->record_max) {
-		f->record->size = ISRECLEN;
-	}
-	if (f->variable_record)
-		cob_set_int (f->variable_record, (int) f->record->size);
+	get_isreclen (f);
 
 #ifdef COB_WITH_STATUS_02
 	return COB_CHECK_DUP (ret);
@@ -1528,9 +1574,6 @@ isam_write (cob_file_api *a, cob_file *f, const int opt)
 	}
 	retdup = ret = COB_STATUS_00_SUCCESS;
 
-	if (f->record_min != f->record_max) {
-		ISRECLEN = f->record->size;
-	}
 #ifndef COB_WITH_STATUS_02
 	if (f->flag_read_chk_dups) {
 		int k;
@@ -1549,11 +1592,12 @@ isam_write (cob_file_api *a, cob_file *f, const int opt)
 		restorefileposition (f);
 	}
 #endif
+	set_isreclen (f);
 	if ((opt & COB_WRITE_LOCK)
 	 && !(f->lock_mode & COB_LOCK_AUTOMATIC) 
 	 && !f->flag_file_lock) {
 		/* WRITE and make it 'current' */
-		if (unlikely(iswrcurr (fh->isfd, (void *)f->record->data))) {
+		if ((iswrcurr (fh->isfd, (void *)f->record->data))) {
 			return fisretsts (COB_STATUS_49_I_O_DENIED);
 		}
 		ret = COB_CHECK_DUP (ret);
@@ -1562,7 +1606,7 @@ isam_write (cob_file_api *a, cob_file *f, const int opt)
 			return fisretsts (COB_STATUS_49_I_O_DENIED);
 		}
 	} else {
-		if (unlikely(iswrite (fh->isfd, (void *)f->record->data))) {
+		if ((iswrite (fh->isfd, (void *)f->record->data))) {
 			if (f->access_mode == COB_ACCESS_SEQUENTIAL
 			 && f->open_mode == COB_OPEN_OUTPUT
 			 && f->flag_set_isam
@@ -1645,6 +1689,9 @@ isam_rewrite (cob_file_api *a, cob_file *f, const int opt)
 	&&  indexed_cmpkey(fh, f->record->data, 0, 0) != 0) {
 		return COB_STATUS_21_KEY_INVALID;
 	}
+	if (fh->recorg == NULL) {
+		fh->recorg = cob_malloc ((size_t)(f->record_max + 1));
+	}
 #ifndef COB_WITH_STATUS_02
 	svky = f->curkey;
 	if (f->flag_read_chk_dups
@@ -1654,7 +1701,7 @@ isam_rewrite (cob_file_api *a, cob_file *f, const int opt)
 			f->curkey = 0;
 		}
 #else
-	if (f->curkey >= 0) { 	
+	if (f->curkey >= 0) {
 #endif
 		/* Index is active */
 		/* Save record data */
@@ -1679,10 +1726,6 @@ isam_rewrite (cob_file_api *a, cob_file *f, const int opt)
 #ifndef COB_WITH_STATUS_02
 				if (f->flag_read_chk_dups
 				 && retdup == COB_STATUS_00_SUCCESS) {
-					if (fh->recorg == NULL) {
-						fh->recorg = cob_malloc ((size_t)(f->record_max + 1));
-						memcpy (fh->recorg, fh->recwrk, f->record_max);
-					}
 					/* If new record did not change this key then skip check */
 					indexed_savekey(fh, (void*)fh->recorg, k);
 					if (indexed_cmpkey(fh, (void *)f->record->data, k, 0) == 0) {
@@ -1710,9 +1753,10 @@ isam_rewrite (cob_file_api *a, cob_file *f, const int opt)
 				continue;
 			}
 			memcpy (fh->recwrk, f->record->data, f->record_max);
-			isstart (fh->isfd, &fh->key[k], fh->key[k].k_len, 
-					(void *)fh->recwrk, ISEQUAL);
-			if (!isread (fh->isfd, (void *)fh->recwrk, ISEQUAL)
+			ISERRNO = 0;
+			isstart (fh->isfd, &fh->key[k], fh->key[k].k_len, (void *)fh->recwrk, ISEQUAL);
+			if (ISERRNO == 0
+			 && isread (fh->isfd, (void *)fh->recwrk, ISEQUAL) == 0
 			 && ISRECNUM != fh->recnum) {
 				ret = COB_STATUS_22_KEY_EXISTS;
 				break;
@@ -1724,9 +1768,7 @@ isam_rewrite (cob_file_api *a, cob_file *f, const int opt)
 			if (isread_retry (f, (void *)fh->recwrk, ISEQUAL | ISLOCK)) {
 				ret = fisretsts (COB_STATUS_49_I_O_DENIED);
 			} else {
-				if (f->record_min != f->record_max) {
-					ISRECLEN = f->record->size;
-				}
+				set_isreclen (f);
 				if (isrewcurr (fh->isfd, (void *)f->record->data)) {
 					ret = fisretsts (COB_STATUS_49_I_O_DENIED);
 				}
@@ -1746,9 +1788,7 @@ isam_rewrite (cob_file_api *a, cob_file *f, const int opt)
 		if (isread_retry (f, (void *)fh->recwrk, ISEQUAL | ISLOCK)) {
 			ret = fisretsts (COB_STATUS_49_I_O_DENIED);
 		} else {
-			if (f->record_min != f->record_max) {
-				ISRECLEN = f->record->size;
-			}
+			set_isreclen (f);
 			if (isrewrite (fh->isfd, (void *)f->record->data)) {
 				ret = fisretsts (COB_STATUS_49_I_O_DENIED);
 			}

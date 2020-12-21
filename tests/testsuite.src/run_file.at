@@ -6570,8 +6570,8 @@ AT_DATA([prog2.cob], [
            open i-o file1.
            if fs not = "61"
               display "FAILED: " fs
-              close file1
            end-if.
+           close file1.
            open input file1.
            if fs not = "00"
               display "FAILED: " fs

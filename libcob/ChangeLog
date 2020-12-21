@@ -1,4 +1,8 @@
 
+2020-12-21  Ron Norman <rjn@inglenet.com>
+	* fisam.c: If isbuild returns EBADARG, then iserase and retry
+	* fileio.c: More changes for "format=vbcisam"
+
 2020-12-16  Ron Norman <rjn@inglenet.com>
 	* common.h: Changes to handle VBISAM in CISAM mode
 	* common.c: Changes to report using VBISAM in CISAM mode

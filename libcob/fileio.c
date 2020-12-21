@@ -7390,6 +7390,9 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 		ioinit = cob_load_lib ("libcobci.so", "cob_isam_init_fileio");
 		if(ioinit == NULL) {
 			cob_runtime_error (_("C-ISAM library %s is not present"),"libcobci.so");
+#ifdef HAVE_DLFCN_H
+			cob_runtime_error (_("C-ISAM error %s "),dlerror());
+#endif
 			exit(-1);
 		}
 		ioinit(&file_api);
@@ -7398,6 +7401,9 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 		ioinit = cob_load_lib ("libcobdi.so", "cob_isam_init_fileio");
 		if(ioinit == NULL) {
 			cob_runtime_error (_("D-ISAM library %s is not present"),"libcobdi.so");
+#ifdef HAVE_DLFCN_H
+			cob_runtime_error (_("D-ISAM error %s "),dlerror());
+#endif
 			exit(-1);
 		}
 		ioinit(&file_api);
@@ -7406,6 +7412,9 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 		ioinit = cob_load_lib ("libcobvb.so", "cob_isam_init_fileio");
 		if(ioinit == NULL) {
 			cob_runtime_error (_("VB-ISAM library %s is not present"),"libcobvb.so");
+#ifdef HAVE_DLFCN_H
+			cob_runtime_error (_("VB-ISAM error %s "),dlerror());
+#endif
 			exit(-1);
 		}
 		ioinit(&file_api);
@@ -7414,6 +7423,9 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 		ioinit = cob_load_lib ("libcobvc.so", "cob_isam_init_fileio");
 		if(ioinit == NULL) {
 			cob_runtime_error (_("VB-ISAM (C-ISAM) library %s is not present"),"libcobvc.so");
+#ifdef HAVE_DLFCN_H
+			cob_runtime_error (_("VB-ISAM (C-ISAM) error %s "),dlerror());
+#endif
 			exit(-1);
 		}
 		ioinit(&file_api);
