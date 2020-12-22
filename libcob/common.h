@@ -2624,6 +2624,8 @@ COB_EXPIMP void cob_file_complete (cob_file * fl);
 
 /******************************************/
 /* Functions in fileio.c  API for codegen */
+/******************************************/
+COB_EXPIMP const char * cob_io_version	(const int);
 COB_EXPIMP void cob_open	(cob_file *, const int, const int, cob_field *);
 COB_EXPIMP void cob_close	(cob_file *, cob_field *, const int, const int);
 COB_EXPIMP void cob_read	(cob_file *, cob_field *, cob_field *, const int);

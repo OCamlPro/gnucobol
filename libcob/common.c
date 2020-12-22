@@ -79,23 +79,6 @@
 #error either HAVE_GMP_H or HAVE_MPIR_H needs to be defined
 #endif
 
-#ifdef	WITH_DB
-#include <db.h>
-#endif
-#ifdef	WITH_OCI
-#include <oci.h>
-#endif
-#if defined	(WITH_ODBC)
-#include <sql.h>
-#include <sqlext.h>
-#endif
-#ifdef	WITH_LMDB
-#include <lmdb.h>
-#endif
-#ifdef	WITH_VBISAM
-#include <vbisam.h>
-#endif
-
 #if defined (HAVE_NCURSESW_NCURSES_H)
 #include <ncursesw/ncurses.h>
 #define COB_GEN_SCREENIO
@@ -7756,6 +7739,8 @@ print_version_summary (void)
 {
 	char	cob_build_stamp[COB_MINI_BUFF];
 
+	if(!cob_initialized)
+		cob_init_nomain (0, NULL);
 	set_cob_build_stamp (cob_build_stamp);
 	
 	printf ("%s %s (%s), ",
@@ -7822,8 +7807,7 @@ print_version_summary (void)
 	printf (", VB-ISAM (C-ISAM)");
 #endif
 #if defined	(WITH_DB)
-	printf (", BDB %d.%d.%d",
-		DB_VERSION_MAJOR, DB_VERSION_MINOR, DB_VERSION_PATCH);
+	printf (", %s",cob_io_version (COB_IO_BDB));
 #endif
 	putchar ('\n');
 
@@ -7867,6 +7851,8 @@ print_info_detailed (const int verbose)
 	char	buff[56] = { '\0' };
 	char	*s;
 
+	if(!cob_initialized)
+		cob_init_nomain (0, NULL);
 	/* resolving screenio related information before anything else as this
 	   function will possibly run initscr + endwin and therefore
 	   may interfer with other output */
@@ -7949,81 +7935,39 @@ print_info_detailed (const int verbose)
 	var_print (_("sequential file handler"),	_("built-in"), "", 0);
 #endif
 
-#if defined	(WITH_CISAM)
-	var_print (_("indexed file handler"), 		"C-ISAM", "", 0);
-#endif
-#if defined	(WITH_DISAM)
-	var_print (_("indexed file handler"), 		"D-ISAM", "", 0);
-#endif
-#if defined	(WITH_VBCISAM)
-#if defined(VBISAM_VERSION)
-	snprintf (buff, sizeof (buff), "VB-ISAM %s (C-ISAM)", VBISAM_VERSION);
-	var_print (_("indexed file handler"), 		buff, "", 0);
-#else
-	var_print (_("indexed file handler"), 		"VB-ISAM (C-ISAM)", "", 0);
-#endif
-#endif
-#if defined	(WITH_VBISAM)
-#if defined(VBISAM_VERSION)
-	snprintf (buff, sizeof (buff), "VB-ISAM %s", VBISAM_VERSION);
-	var_print (_("indexed file handler"), 		buff, "", 0);
-#elif defined	(VB_RTD)
-	var_print (_("indexed file handler"), 		"VB-ISAM 2.1.1 (RTD)", "", 0);
-#else
-	var_print (_("indexed file handler"), 		"VB-ISAM", "", 0);
-#endif
-#endif
-#if defined(WITH_INDEX_EXTFH) || defined(WITH_CISAM) || defined(WITH_DISAM) \
-	|| defined(WITH_VBISAM) || defined(WITH_DB) || defined(WITH_LMDB)
 #if defined	(WITH_INDEX_EXTFH)
 	var_print (_("indexed file handler"), 		"EXTFH (obsolete)", "", 0);
 #endif
+#if defined(WITH_CISAM) 	|| defined(WITH_DISAM) \
+	|| defined(WITH_VBISAM) || defined(WITH_VBCISAM) \
+	|| defined(WITH_ODBC)	|| defined(WITH_OCI) \
+	|| defined(WITH_INDEX_EXTFH) || defined(WITH_DB) || defined(WITH_LMDB)
+#if defined	(WITH_CISAM)
+	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_CISAM), "", 0);
+#endif
+#if defined	(WITH_DISAM)
+	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_DISAM), "", 0);
+#endif
+#if defined	(WITH_VBCISAM)
+	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_VBCISAM), "", 0);
+#endif
+#if defined	(WITH_VBISAM)
+	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_VBISAM), "", 0);
+#endif
 #if defined	(WITH_DB)
-	{
-		int	major, minor, patch;
-		major = 0, minor = 0, patch = 0;
-		db_version (&major, &minor, &patch);
-		if (major == DB_VERSION_MAJOR && minor == DB_VERSION_MINOR) {
-			snprintf (buff, 55, _("%s, version %d.%d.%d"),
-				"BDB", major, minor, patch);
-		} else {
-			snprintf (buff, 55, _("%s, version %d.%d.%d (compiled with %d.%d)"),
-				"BDB", major, minor, patch, DB_VERSION_MAJOR, DB_VERSION_MINOR);
-		}
-	}
-	var_print (_("indexed file handler"), 		buff, "", 0);
+	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_BDB), "", 0);
 #endif
 #if defined	(WITH_LMDB)
-#if defined(MDB_VERSION_MAJOR) && defined(MDB_VERSION_MINOR) && defined(MDB_VERSION_PATCH)
-	{ char versbuff[60];
-	snprintf (versbuff, 55, "%s, compiled %d.%d.%d",
-			"LMDB", MDB_VERSION_MAJOR, MDB_VERSION_MINOR, MDB_VERSION_PATCH);
-	var_print (_("indexed file handler"), 		versbuff, "", 0);
-	}
-#else
-	var_print (_("indexed file handler"), 		"LMDB", "", 0);
-#endif
+	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_LMDB), "", 0);
 #endif
 #if defined	(WITH_ODBC)
-#if defined (SQL_SPEC_STRING)
-	var_print (_("indexed file handler"), 		"ODBC " SQL_SPEC_STRING, "", 0);
-#else
-	var_print (_("indexed file handler"), 		"ODBC", "", 0);
-#endif
+	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_ODBC), "", 0);
 #endif
 #if defined	(WITH_OCI)
-#if defined(OCI_MAJOR_VERSION) && defined(OCI_MINOR_VERSION)
-	{ char versbuff[60];
-	snprintf (versbuff, 55, "%s - %d.%d",
-			"OCI (Oracle)", OCI_MAJOR_VERSION, OCI_MINOR_VERSION);
-	var_print (_("indexed file handler"), 		versbuff, "", 0);
-	}
-#else
-	var_print (_("indexed file handler"),		"OCI (Oracle)", "", 0);
+	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_OCI), "", 0);
 #endif
-#endif
-#if defined(WITH_IXDFLT) && defined(WITH_MULTI_ISAM)
-	var_print (_("default indexed handler"), 	WITH_IXDFLT, "", 0);
+#if defined(WITH_INDEXED)
+	var_print (_("default indexed handler"), 	cob_io_version (WITH_INDEXED), "", 0);
 #endif
 #else
 	var_print (_("indexed file handler"), 		_("disabled"), "", 0);

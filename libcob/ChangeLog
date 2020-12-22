@@ -1,4 +1,14 @@
 
+2020-12-22  Ron Norman <rjn@inglenet.com>
+	* fisam.c:	Added isam_version to return the ISAM handler version
+	* fbdb.c:	Added bdb_version to return the Berkley Database version
+	* foci.c:	Added oci_version to return the Oracle version
+	* fodbc.c:	Added odbc_version to return the ODBC version
+	* fileio.h:	New io_version function pointer
+	* fileio.c: added cob_io_version to load if needed and return 
+				module version string
+	* common.c:	Now calls each I/O module to get its version information
+
 2020-12-21  Ron Norman <rjn@inglenet.com>
 	* fisam.c: If isbuild returns EBADARG, then iserase and retry
 	* fileio.c: More changes for "format=vbcisam"

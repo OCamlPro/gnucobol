@@ -1415,57 +1415,6 @@ cob_gen_vbcisam=no
 cob_gen_disam=no
 cob_gen_cisam=no
 
-  AC_ARG_WITH([vbisam],
-  [AS_HELP_STRING([--with-vbisam],
-    [(GnuCOBOL) Use VBISAM for INDEXED I/O])],
-  [ if test "$with_vbisam" = "yes"; then
-	AC_CHECK_HEADERS([vbisam.h], [],
-		AC_MSG_ERROR([vbisam.h is required for VBISAM]))
-	# note: isfullclose is available since 2.0, isopen since 1.0
-	AC_CHECK_LIB([vbisam], [isfullclose],
-		[AC_DEFINE([WITH_VBISAM], [1])
-		LIBCOB_ISAM="$LIBCOB_ISAM -lvbisam"
-		LIBCOB_VBISAM="-lvbisam"],
-		AC_MSG_ERROR([libvbisam >= 2.0 is required for VBISAM]), [])
-	if test "$with_cisam" = "yes" -o "$with_disam" = "yes"; then
-		cob_multi_isam=yes
-	fi
-	cob_gen_vbisam=yes
-    fi ],
-  [])
-
-AS_IF([test "$with_cisam" != "yes"], [
-  AC_ARG_WITH([vbcisam],
-  [AS_HELP_STRING([--with-vbcisam],
-    [(GnuCOBOL) Use VBISAM in C-ISAM mode for INDEXED I/O])],
-  [ if test "$with_vbcisam" = "yes"; then
-	AC_CHECK_HEADERS([vbisam.h], [],
-		AC_MSG_ERROR([vbisam.h is required for VBISAM in C-ISAM mode]))
-
-	for cobisamlib in vbcisam 
-	do
-		AC_CHECK_LIB([$cobisamlib], [isopen],
-			[AC_DEFINE([WITH_VBCISAM], [1])
-			LIBCOB_ISAM="$LIBCOB_ISAM -l$cobisamlib"
-			LIBCOB_VBCISAM="-l$cobisamlib"]
-			cob_got_vbcisam=yes
-			break,
-			[], [])
-	done
-	if test "$cob_got_vbcisam" = "yes"; then
-		AC_MSG_NOTICE([VB-ISAM in C-ISAM mode library found as -l$cobisamlib])
-	else
-		AC_MSG_ERROR([VB-ISAM in C-ISAM mode library -l$cobisamlib not found])
-	fi
-	if test "$with_vbcisam" = "yes"; then
-		cob_multi_isam=yes
-	fi
-	cob_gen_vbcisam=yes
-	unset cobisamlib
-	unset cob_got_vbcisam
-    fi ],
-  [])
-
   AC_ARG_WITH([cisam],
   [AS_HELP_STRING([--with-cisam],
     [(GnuCOBOL) Use CISAM for ISAM I/O])],
@@ -1480,9 +1429,7 @@ AS_IF([test "$with_cisam" != "yes"], [
 		AC_MSG_ERROR([libifisam is required for CISAM]), [-lifisamx])
     fi ],
   [])
-])
 
-AS_IF([test "$with_cisam" != "yes"], [
   AC_ARG_WITH([disam],
   [AS_HELP_STRING([--with-disam],
     [(GnuCOBOL) Use DISAM for INDEXED I/O])],
@@ -1505,7 +1452,7 @@ AS_IF([test "$with_cisam" != "yes"], [
 	else
 		AC_MSG_ERROR([DISAM library not found])
 	fi
-	if test "$with_cisam" = "yes"; then
+	if test "$with_vbisam" = "yes" -o "$with_disam" = "yes" -o "$with_vbcisam" = "yes"; then
 		cob_multi_isam=yes
 	fi
 	cob_gen_disam=yes
@@ -1514,21 +1461,51 @@ AS_IF([test "$with_cisam" != "yes"], [
     fi ],
   [])
 
-  AC_ARG_WITH([cisam],
-  [AS_HELP_STRING([--with-cisam],
-    [(GnuCOBOL) Use CISAM for ISAM I/O])],
-  [ if test "$with_cisam" = "yes"; then
-	cob_gen_cisam=yes
-	AC_CHECK_HEADERS([isam.h], [],
-		AC_MSG_ERROR([isam.h is required for CISAM]))
-	AC_CHECK_LIB([ifisam], [isopen],
-		[AC_DEFINE([WITH_CISAM], [1])
-		LIBCOB_ISAM="$LIBCOB_ISAM -lifisam -lifisamx"
-		LIBCOB_CISAM="-lifisam -lifisamx"],
-		AC_MSG_ERROR([libifisam is required for CISAM]), [-lifisamx])
+  AC_ARG_WITH([vbisam],
+  [AS_HELP_STRING([--with-vbisam],
+    [(GnuCOBOL) Use VBISAM for INDEXED I/O])],
+  [ if test "$with_vbisam" = "yes"; then
+	AC_CHECK_HEADERS([vbisam.h], [],
+		AC_MSG_ERROR([vbisam.h is required for VBISAM]))
+	# note: isfullclose is available since 2.0, isopen since 1.0
+	AC_CHECK_LIB([vbisam], [isfullclose],
+		[AC_DEFINE([WITH_VBISAM], [1])
+		LIBCOB_ISAM="$LIBCOB_ISAM -lvbisam"
+		LIBCOB_VBISAM="-lvbisam"],
+		AC_MSG_ERROR([libvbisam >= 2.0 is required for VBISAM]), [])
+	if test "$with_cisam" = "yes" -o "$with_disam" = "yes" -o "$with_vbcisam" = "yes"; then
+		cob_multi_isam=yes
+	fi
+	cob_gen_vbisam=yes
     fi ],
   [])
-])
+
+  AC_ARG_WITH([vbcisam],
+  [AS_HELP_STRING([--with-vbcisam],
+    [(GnuCOBOL) Use VBISAM in C-ISAM mode for INDEXED I/O])],
+  [ if test "$with_vbcisam" = "yes"; then
+	AC_CHECK_HEADERS([vbisam.h], [],
+		AC_MSG_ERROR([vbisam.h is required for VBISAM in C-ISAM mode]))
+
+	AC_CHECK_LIB([vbcisam], [isopen],
+		[AC_DEFINE([WITH_VBCISAM], [1])
+		LIBCOB_ISAM="$LIBCOB_ISAM -lvbcisam"
+		LIBCOB_VBCISAM="-lvbcisam"]
+		cob_got_vbcisam=yes
+		break,
+		[], [])
+	if test "$cob_got_vbcisam" = "yes"; then
+		AC_MSG_NOTICE([VB-ISAM in C-ISAM mode library found as -l$cobisamlib])
+	else
+		AC_MSG_ERROR([VB-ISAM in C-ISAM mode library -l$cobisamlib not found])
+	fi
+	if test "$with_cisam" = "yes" -o "$with_disam" = "yes" -o "$with_vbisam" = "yes"; then
+		cob_multi_isam=yes
+	fi
+	cob_gen_vbcisam=yes
+	unset cob_got_vbcisam
+    fi ],
+  [])
 
 if test "$cob_multi_isam" = "no"; then
 	LIBCOB_LIBS="$LIBCOB_LIBS $LIBCOB_ISAM"

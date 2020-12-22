@@ -42,6 +42,7 @@ static int lmdb_file_delete  (cob_file_api *, cob_file *, char *filename);
 static void cob_lmdb_exit_fileio (cob_file_api *a);
 static int cob_lmdb_fork (cob_file_api *a);
 static int ix_lmdb_file_unlock(cob_file_api *, cob_file *);
+static char * lmdb_version (void);
 void cob_lmdb_init_fileio (cob_file_api *a);
 
 static int ix_lmdb_dummy () { return 0; }
@@ -62,7 +63,8 @@ static const struct cob_fileio_funcs lmdb_funcs = {
 	ix_lmdb_dummy,
 	ix_lmdb_dummy,
 	ix_lmdb_dummy,
-	ix_lmdb_file_unlock
+	ix_lmdb_file_unlock,
+	lmdb_version
 };
 
 static char		*db_buff = NULL;
@@ -81,6 +83,19 @@ static const char	**db_data_dir = NULL;
 #define WARN(format, ...)  {						\
    cob_runtime_warning("%s:%d: " format "\n",				\
 		       __FILE__, __LINE__, ## __VA_ARGS__);		\
+}
+
+static const char *
+lmdb_version (void)
+{
+#if defined(MDB_VERSION_MAJOR) && defined(MDB_VERSION_MINOR) && defined(MDB_VERSION_PATCH)
+	static char versbuff[60];
+	snprintf (versbuff, 55, "LMDB, compiled %d.%d.%d",
+				MDB_VERSION_MAJOR, MDB_VERSION_MINOR, MDB_VERSION_PATCH);
+	return 	versbuff;
+#else
+	return 	"LMDB";
+#endif
 }
 
 /* Create a cursor handle. */

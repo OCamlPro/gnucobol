@@ -44,6 +44,7 @@ static int ix_bdb_rewrite	(cob_file_api *,cob_file *, const int);
 static int ix_bdb_file_unlock (cob_file_api *a, cob_file *f);
 static void ix_bdb_exit_fileio (cob_file_api *a);
 static int ix_bdb_fork (cob_file_api *a);
+static char * ix_bdb_version (void);
 
 static int ix_bdb_dummy () { return 0; }
 
@@ -63,7 +64,8 @@ static const struct cob_fileio_funcs ext_indexed_funcs = {
 	ix_bdb_sync,
 	(void*)ix_bdb_dummy,	/* commit */
 	(void*)ix_bdb_dummy,	/* rollback */
-	ix_bdb_file_unlock
+	ix_bdb_file_unlock,
+	ix_bdb_version
 };
 
 static DB_ENV	*bdb_env = NULL;
@@ -258,6 +260,25 @@ ix_bdb_sync (cob_file_api *a, cob_file *f)
 		}
 	}
 	return 0;
+}
+
+static char *
+ix_bdb_version (void)
+{
+	int	major, minor, patch;
+	static char buff[64];
+	major = 0, minor = 0, patch = 0;
+	db_version (&major, &minor, &patch);
+	if (major == DB_VERSION_MAJOR 
+	 && minor == DB_VERSION_MINOR) {
+		snprintf (buff, 55, _("BDB, version %d.%d.%d"),
+							major, minor, patch);
+	} else {
+		snprintf (buff, 55, _("BDB, version %d.%d.%d (compiled with %d.%d)"),
+							major, minor, patch, 
+							DB_VERSION_MAJOR, DB_VERSION_MINOR);
+	}
+	return buff;
 }
 
 /* INDEXED */

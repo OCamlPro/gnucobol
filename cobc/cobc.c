@@ -49,11 +49,6 @@
 #include <io.h>
 #endif
 
-#if defined(WITH_VBISAM) || defined(WITH_VBCISAM)
-/* included to check for VB_RTD definition */
-#include <vbisam.h>
-#endif
-
 #ifdef	HAVE_LOCALE_H
 #include <locale.h>
 #endif
@@ -68,22 +63,6 @@
 #include "lib/gettext.h"
 
 #include "libcob/cobgetopt.h"
-
-#if 0 /* CHECKME: cobc should not need those */
-#ifdef	WITH_DB
-#include <db.h>
-#endif
-#ifdef	WITH_LMDB
-#include <lmdb.h>
-#endif
-#ifdef	WITH_OCI
-#include <oci.h>
-#endif
-#if defined	(WITH_ODBC)
-#include <sql.h>
-#include <sqlext.h>
-#endif
-#endif
 
 #ifdef COB_INTERNAL_XREF
 enum xref_type {
@@ -2482,73 +2461,40 @@ cobc_print_info (void)
 #endif
 
 
-#if defined(WITH_INDEX_EXTFH) || defined(WITH_CISAM) || defined(WITH_DISAM) \
+#if defined(WITH_CISAM) 	|| defined(WITH_DISAM) \
 	|| defined(WITH_VBISAM) || defined(WITH_VBCISAM) \
-	|| defined(WITH_DB) || defined(WITH_LMDB) \
-	|| defined(WITH_ODBC) || defined(WITH_OCI)
+	|| defined(WITH_ODBC)	|| defined(WITH_OCI) \
+	|| defined(WITH_INDEX_EXTFH) || defined(WITH_DB) || defined(WITH_LMDB)
+	cob_init_nomain (0, NULL);
 #if defined	(WITH_INDEX_EXTFH)
 	cobc_var_print (_("indexed file handler"),		"EXTFH (obsolete)", 0);
 #endif
 #if defined	(WITH_CISAM)
-	cobc_var_print (_("indexed file handler"),		"C-ISAM", 0);
+	cobc_var_print (_("indexed file handler"),		cob_io_version (COB_IO_CISAM), 0);
 #endif
 #if defined	(WITH_DISAM)
-	cobc_var_print (_("indexed file handler"),		"D-ISAM", 0);
+	cobc_var_print (_("indexed file handler"),		cob_io_version (COB_IO_DISAM), 0);
 #endif
 #if defined	(WITH_VBCISAM)
-#if defined(VBISAM_VERSION)
-	snprintf (buff, sizeof(buff), "VB-ISAM %s (C-ISAM)", VBISAM_VERSION);
-	cobc_var_print (_("indexed file handler"),		buff, 0);
-#else
-	cobc_var_print (_("indexed file handler"),		"VB-ISAM in C-ISAM", 0);
-#endif
+	cobc_var_print (_("indexed file handler"),		cob_io_version (COB_IO_VBCISAM), 0);
 #endif
 #if defined	(WITH_VBISAM)
-# if defined(VBISAM_VERSION)
-	snprintf (buff, sizeof(buff), "VB-ISAM %s", VBISAM_VERSION);
-	cobc_var_print (_("indexed file handler"),		buff, 0);
-# elif defined	(VB_RTD)
-	cobc_var_print (_("indexed file handler"),		"VBISAM (RTD)", 0);
-# else
-	cobc_var_print (_("indexed file handler"),		"VBISAM", 0);
-# endif
+	cobc_var_print (_("indexed file handler"),		cob_io_version (COB_IO_VBISAM), 0);
 #endif
 #if defined	(WITH_ODBC)
-#if defined (SQL_SPEC_STRING)
-	cobc_var_print (_("indexed file handler"),		"ODBC " SQL_SPEC_STRING, 0);
-#else
-	cobc_var_print (_("indexed file handler"),		"ODBC", 0);
-#endif
+	cobc_var_print (_("indexed file handler"),		cob_io_version (COB_IO_ODBC), 0);
 #endif
 #if defined	(WITH_OCI)
-#if defined(OCI_MAJOR_VERSION) && defined(OCI_MINOR_VERSION)
-	snprintf (versbuff, 55, "%s - %d.%d",
-			"OCI (Oracle)", OCI_MAJOR_VERSION, OCI_MINOR_VERSION);
-	cobc_var_print (_("indexed file handler"), 		versbuff, 0);
-#else
-	cobc_var_print (_("indexed file handler"),		"OCI (Oracle)", 0);
-#endif
+	cobc_var_print (_("indexed file handler"),		cob_io_version (COB_IO_OCI), 0);
 #endif
 #if defined	(WITH_DB)
-#if defined(DB_VERSION_MAJOR) && defined(DB_VERSION_MINOR) && defined(DB_VERSION_PATCH)
-	snprintf (versbuff, 55, "%s version %d.%d.%d",
-			"BDB", DB_VERSION_MAJOR, DB_VERSION_MINOR,DB_VERSION_PATCH);
-	cobc_var_print (_("indexed file handler"), 		versbuff, 0);
-#else
-	cobc_var_print (_("indexed file handler"), 		"BDB", 0);
-#endif
+	cobc_var_print (_("indexed file handler"),		cob_io_version (COB_IO_BDB), 0);
 #endif
 #if defined	(WITH_LMDB)
-#if defined(MDB_VERSION_MAJOR) && defined(MDB_VERSION_MINOR) && defined(MDB_VERSION_PATCH)
-	snprintf (versbuff, 55, "%s version %d.%d.%d",
-			"LMDB", MDB_VERSION_MAJOR, MDB_VERSION_MINOR,MDB_VERSION_PATCH);
-	cobc_var_print (_("indexed file handler"), 		versbuff, 0);
-#else
-	cobc_var_print (_("indexed file handler"), 		"LMDB", 0);
+	cobc_var_print (_("indexed file handler"),		cob_io_version (COB_IO_LMDB), 0);
 #endif
-#endif
-#if defined(WITH_IXDFLT) && defined(WITH_MULTI_ISAM)
-	cobc_var_print (_("default indexed handler"),    WITH_IXDFLT, 0);
+#if defined(WITH_INDEXED) 
+	cobc_var_print (_("default indexed handler"),    cob_io_version (WITH_INDEXED), 0);
 #endif
 #else
 	cobc_var_print (_("indexed file handler"),		_("disabled"), 0);
@@ -2889,6 +2835,7 @@ process_command_line (const int argc, char **argv)
 			cobc_print_version ();
 			if (verbose_output) {
 				puts ("\n");
+				cob_init_nomain (0, NULL);
 				fflush (stdout);
 #ifdef _MSC_VER
 				process ("cl.exe");

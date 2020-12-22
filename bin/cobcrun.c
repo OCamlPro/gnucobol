@@ -299,6 +299,7 @@ process_command_line (int argc, char *argv[])
 
 		case 'i':
 			/* --info */
+			cob_init_nomain (0, &argv[0]);
 			print_info_detailed (verbose_output);
 			exit (EXIT_SUCCESS);
 
@@ -325,6 +326,7 @@ process_command_line (int argc, char *argv[])
 
 		case 'V':
 			/* --version */
+			cob_init_nomain (0, &argv[0]);
 			cobcrun_print_version ();
 			putchar ('\n');
 			print_version ();

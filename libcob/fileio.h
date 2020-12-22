@@ -167,6 +167,7 @@ struct cob_fileio_funcs {
 	int	(*commit)		(cob_file_api *, cob_file *);
 	int	(*rollback)		(cob_file_api *, cob_file *);
 	int	(*iounlock)		(cob_file_api *, cob_file *);
+	char * (*ioversion)	(void);
 };
 
 extern	cob_global		*file_globptr;
@@ -448,7 +449,7 @@ COB_HIDDEN void	cob_odbc_init_fileio (cob_file_api *);
 COB_HIDDEN void	cob_oci_init_fileio (cob_file_api *);
 #endif
 
-#if defined(WITH_CISAM) || defined(WITH_DISAM) || defined(WITH_VBISAM)
+#if defined(WITH_CISAM) || defined(WITH_DISAM) || defined(WITH_VBISAM) || defined(WITH_VBCISAM)
 void	cob_isam_init_fileio (cob_file_api *);
 #endif
 

@@ -213,6 +213,7 @@ static int isam_delete	(cob_file_api *a, cob_file *);
 static int isam_rewrite	(cob_file_api *a, cob_file *, const int);
 static int isam_file_delete (cob_file_api *a, cob_file *f, char *name);
 static int isam_sync (cob_file_api *a, cob_file *f);
+static char *isam_version (void);
 static void cob_isam_exit_fileio (cob_file_api *a);
 void cob_isam_init_fileio (cob_file_api *a);
 
@@ -234,11 +235,12 @@ static const struct cob_fileio_funcs ext_indexed_funcs = {
 	isam_file_delete,
 	cob_isam_init_fileio,
 	cob_isam_exit_fileio,
-	isam_dummy,
+	isam_dummy,			/* forking */
 	isam_sync,			/* sync */
 	isam_sync,			/* commit */
 	isam_dummy,			/* rollback */
-	isam_dummy
+	isam_dummy,			/* unlock */
+	isam_version
 };
 
 /* Local functions */
@@ -750,6 +752,38 @@ isam_file_delete (cob_file_api *a, cob_file *f, char *filename)
 #endif
 	unlink (file_name_buf);
 	return 0;
+}
+
+/* Return ISAM handler version */
+
+static char *
+isam_version (void)
+{
+#if defined(WITH_CISAM)
+	return (char*)"C-ISAM";
+#elif defined(WITH_DISAM)
+	static char	msg[64];
+	sprintf(msg,"D-ISAM %s",isversnumber);
+	return msg;
+#elif defined(WITH_VBISAM)
+	static char	msg[64];
+#ifdef VBISAM_VERSION
+	sprintf(msg,"VB-ISAM %s",VBISAM_VERSION);
+#elif defined  (VB_RTD)
+	strcpy(msg,"VB-ISAM (RTD)");
+#else
+	strcpy(msg,"VB-ISAM");
+#endif
+	return msg;
+#elif defined(WITH_VBCISAM)
+	static char	msg[64];
+#ifdef VBISAM_VERSION
+	sprintf(msg,"VB-ISAM %s (C-ISAM mode)",VBISAM_VERSION);
+#else
+	strcpy(msg,"VB-CISAM (May not work!)");
+#endif
+	return msg;
+#endif
 }
 
 /* OPEN INDEXED file */

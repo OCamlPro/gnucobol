@@ -57,6 +57,7 @@ static int odbc_rewrite		(cob_file_api *, cob_file *, const int);
 static int odbc_file_unlock (cob_file_api *, cob_file *);
 static void odbc_exit_fileio(cob_file_api *);
 static int odbc_fork 		(cob_file_api *);
+static char * odbc_version (void);
 
 static const struct cob_fileio_funcs odbc_indexed_funcs = {
 	odbc_open,
@@ -74,7 +75,8 @@ static const struct cob_fileio_funcs odbc_indexed_funcs = {
 	odbc_sync,
 	odbc_commit,
 	odbc_rollback,
-	odbc_file_unlock
+	odbc_file_unlock,
+	odbc_version
 };
 
 static int		db_join = 1;
@@ -100,6 +102,16 @@ struct indexed_file {
 };
 
 /* Local functions */
+
+static char *
+odbc_version (void)
+{
+#if defined (SQL_SPEC_STRING)
+	return 	"ODBC " SQL_SPEC_STRING;
+#else
+	return 	"ODBC ";
+#endif
+}
 
 /*
 	Check if ODBC status is a fatal error of some kind

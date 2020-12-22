@@ -49,6 +49,7 @@ static int oci_rewrite		(cob_file_api *, cob_file *, const int);
 static int oci_file_unlock	(cob_file_api *, cob_file *);
 static void oci_exit_fileio	(cob_file_api *);
 static int oci_fork 		(cob_file_api *);
+static char * oci_version (void);
 
 static const struct cob_fileio_funcs oci_indexed_funcs = {
 	oci_open,
@@ -66,7 +67,8 @@ static const struct cob_fileio_funcs oci_indexed_funcs = {
 	oci_sync,
 	oci_commit,
 	oci_rollback,
-	oci_file_unlock
+	oci_file_unlock,
+	oci_version
 };
 
 static int		db_join = 1;
@@ -89,6 +91,19 @@ struct indexed_file {
 };
 
 /* Local functions */
+
+static char *
+oci_version (void)
+{
+#if defined(OCI_MAJOR_VERSION) && defined(OCI_MINOR_VERSION)
+	static char versbuff[60];
+	snprintf (versbuff, 55, "OCI (Oracle) - %d.%d",
+				OCI_MAJOR_VERSION, OCI_MINOR_VERSION);
+	return versbuff;
+#else
+	return "OCI (Oracle)";
+#endif
+}
 
 /**************************************************
 	Check Status from an Oracle call

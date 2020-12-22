@@ -235,24 +235,39 @@ static struct cob_fileio_funcs	*fileio_funcs[COB_IO_MAX] = {
 	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 };
 
-static const char *io_rtn_name[COB_IO_MAX+1] = {
-	"SEQUENTIAL",
-	"LINE",
-	"RELATIVE",
-	"CISAM",
-	"DISAM",
-	"VBISAM",
-	"BDB",
-	"VBCISAM",
-	"IXEXT",
-	"SQEXT",
-	"RLEXT",
-	"ODBC",
-	"OCI",
-	"LMDB",
-	""
+static struct {
+	int		loaded;
+	const char * name;
+	const char * module;
+	const char * entry;
+	const char * desc;
+} io_rtns [COB_IO_MAX+1] = {
+	{1,"SEQUENTIAL",NULL,NULL,NULL},
+	{1,"LINE",NULL,NULL,NULL},
+	{1,"RELATIVE",NULL,NULL,NULL},
+	{0,"CISAM","libcobci.so", "cob_isam_init_fileio","C-ISAM"},
+	{0,"DISAM","libcobdi.so", "cob_isam_init_fileio","D-ISAM"},
+	{0,"VBISAM","libcobvb.so", "cob_isam_init_fileio","VB-ISAM"},
+#if 0 /* DBG */
+	{0,"BDB","libcobdb.so", "cob_bdb_init_fileio",NULL},
+#else
+	{0,"BDB",NULL,NULL,NULL},
+#endif
+	{0,"VBCISAM","libcobvc.so", "cob_isam_init_fileio","VB-ISAM (C-ISAM mode)"},
+	{0,"IXEXT",NULL,NULL,NULL},
+	{0,"SQEXT",NULL,NULL,NULL},
+	{0,"RLEXT",NULL,NULL,NULL},
+#if 0 /* DBG */
+	{0,"ODBC","libcobod.so", "cob_odbc_init_fileio",NULL},
+	{0,"OCI","libcoboc.so", "cob_oci_init_fileio",NULL},
+	{0,"LMDB","libcoblm.so", "cob_lmdb_init_fileio",NULL},
+#else
+	{0,"ODBC",NULL,NULL},
+	{0,"OCI",NULL,NULL},
+	{0,"LMDB",NULL,NULL},
+#endif
+	{0,NULL,NULL,NULL,NULL}
 };
-
 #ifdef	WITH_INDEX_EXTFH
 void cob_index_init_fileio (cob_file_api *);
 #endif
@@ -284,7 +299,7 @@ get_io_ptr (cob_file *f)
 {
 	if (fileio_funcs[f->io_routine] == NULL) {
 		cob_runtime_error (_("ERROR I/O routine %s is not present"),
-							io_rtn_name[f->io_routine]);
+							io_rtns[f->io_routine].name);
 	}
 	return f->io_routine;
 }
@@ -430,7 +445,7 @@ write_file_def (cob_file *f, char *out)
 
 	out[k] = 0;
 	if(f->organization == COB_ORG_INDEXED) {
-		k += sprintf(&out[k],"type=IX format=%s",io_rtn_name[f->io_routine]);
+		k += sprintf(&out[k],"type=IX format=%s",io_rtns[f->io_routine].name);
 	} else if(f->organization == COB_ORG_RELATIVE) {
 		k += sprintf(&out[k],"type=RL");
 		if(f->file_format < 12)
@@ -683,6 +698,55 @@ cob_key_def (cob_file *f, int keyn, char *p, int *ret, int keycheck)
 	if (idx == (int)f->nkeys-1)
 		cob_order_keys (f);
 	return;
+}
+
+/*
+ * Dynamically Load the given I/O routine
+ */
+static int
+cob_load_module ( int iortn )
+{
+	void (*ioinit)(cob_file_api *);
+	if (io_rtns[iortn].loaded
+	 || io_rtns[iortn].module == NULL) {
+		return 0;
+	}
+	ioinit = cob_load_lib (io_rtns[iortn].module, io_rtns[iortn].entry);
+	if(ioinit == NULL) {
+		if (io_rtns[iortn].desc != NULL)
+			cob_runtime_error (_("%s library %s is not present"),
+						io_rtns[iortn].desc,io_rtns[iortn].module);
+		else
+			cob_runtime_error (_("%s library %s is not present"),
+						io_rtns[iortn].name,io_rtns[iortn].module);
+#ifdef HAVE_DLFCN_H
+		cob_runtime_error (_("%s load error '%s'"),io_rtns[iortn].name,dlerror());
+#endif
+		exit(-1);
+	}
+	ioinit(&file_api);
+	io_rtns[iortn].loaded = 1;
+	return 0;
+}
+
+/*
+ * Return a string with I/O module version information
+ */
+const char *
+cob_io_version ( const int iortn )
+{
+	cob_load_module (iortn);
+	if (fileio_funcs[iortn] == NULL) {
+		cob_runtime_error (_("ERROR I/O routine %s is not present"),
+							io_rtns[iortn].name);
+		return "Unknown";
+	}
+	if (fileio_funcs[iortn]->ioversion == NULL) {
+		cob_runtime_error (_("ERROR I/O routine %s has no version"),
+							io_rtns[iortn].name);
+		return "Unknown";
+	}
+	return fileio_funcs[iortn]->ioversion ();
 }
 
 int
@@ -1397,10 +1461,10 @@ cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 				}
 				value[j] = 0;
 				for(j=0; j < COB_IO_MAX; j++) {
-					if(strcasecmp(value,io_rtn_name[j]) == 0) {
+					if(strcasecmp(value,io_rtns[j].name) == 0) {
 						if(fileio_funcs[j] == NULL) {
 							cob_runtime_error (_("I/O routine %s is not present for %s"),
-												io_rtn_name[j],file_open_env);
+												io_rtns[j].name,file_open_env);
 						} else {
 							f->flag_set_isam = 1;
 							f->io_routine = (unsigned char)j;
@@ -1600,6 +1664,11 @@ cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 			if(strcasecmp(option,"gc") == 0) {
 				if(settrue) {
 					f->file_format = COB_FILE_IS_GC;
+#ifdef WITH_VARSEQ 
+					if (f->organization == COB_ORG_SEQUENTIAL
+					 && f->record_min != f->record_max)	/* Variable length Sequential */
+						f->file_format = WITH_VARSEQ;
+#endif
 					f->flag_set_type = 1;
 					continue;
 				}
@@ -1607,6 +1676,9 @@ cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 			}
 			if (f->organization == COB_ORG_SEQUENTIAL
 			 && f->record_min != f->record_max) {		/* Variable length Sequential */
+#ifdef WITH_VARSEQ 
+				f->file_format = WITH_VARSEQ;
+#endif
 				if(strcasecmp(option,"0") == 0) {
 					f->file_format = COB_FILE_IS_GCVS0;
 				} else
@@ -5221,6 +5293,8 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 		return;
 	}
 
+	if (!io_rtns[f->io_routine].loaded)
+		cob_load_module (f->io_routine);
 	cob_cache_file (f);
 
 	/* Open the file */
@@ -5783,6 +5857,8 @@ cob_delete_file (cob_file *f, cob_field *fnstatus, const int override)
 		return;
 	}
 
+	if (!io_rtns[f->io_routine].loaded)
+		cob_load_module (f->io_routine);
 	/* Obtain the file name */
 	cob_field_to_string (f->assign, file_open_name, (size_t)COB_FILE_MAX);
 	cob_chk_file_mapping (f);
@@ -7382,59 +7458,13 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 			file_setptr->cob_fixrel_type = COB_FILE_IS_GC;
 	}
 
-#if defined(WITH_CISAM) || defined(WITH_DISAM) || defined(WITH_VBISAM) || defined(WITH_VBCISAM)
 #if defined(WITH_MULTI_ISAM)
-	{
-		void (*ioinit)(cob_file_api *);
-#if defined(WITH_CISAM)
-		ioinit = cob_load_lib ("libcobci.so", "cob_isam_init_fileio");
-		if(ioinit == NULL) {
-			cob_runtime_error (_("C-ISAM library %s is not present"),"libcobci.so");
-#ifdef HAVE_DLFCN_H
-			cob_runtime_error (_("C-ISAM error %s "),dlerror());
+#if defined(WITH_INDEXED)
+	cob_load_module (WITH_INDEXED);	/* Preload default INDEXED handler */
 #endif
-			exit(-1);
-		}
-		ioinit(&file_api);
-#endif
-#if defined(WITH_DISAM)
-		ioinit = cob_load_lib ("libcobdi.so", "cob_isam_init_fileio");
-		if(ioinit == NULL) {
-			cob_runtime_error (_("D-ISAM library %s is not present"),"libcobdi.so");
-#ifdef HAVE_DLFCN_H
-			cob_runtime_error (_("D-ISAM error %s "),dlerror());
-#endif
-			exit(-1);
-		}
-		ioinit(&file_api);
-#endif
-#if defined(WITH_VBISAM)
-		ioinit = cob_load_lib ("libcobvb.so", "cob_isam_init_fileio");
-		if(ioinit == NULL) {
-			cob_runtime_error (_("VB-ISAM library %s is not present"),"libcobvb.so");
-#ifdef HAVE_DLFCN_H
-			cob_runtime_error (_("VB-ISAM error %s "),dlerror());
-#endif
-			exit(-1);
-		}
-		ioinit(&file_api);
-#endif
-#if defined(WITH_VBCISAM)
-		ioinit = cob_load_lib ("libcobvc.so", "cob_isam_init_fileio");
-		if(ioinit == NULL) {
-			cob_runtime_error (_("VB-ISAM (C-ISAM) library %s is not present"),"libcobvc.so");
-#ifdef HAVE_DLFCN_H
-			cob_runtime_error (_("VB-ISAM (C-ISAM) error %s "),dlerror());
-#endif
-			exit(-1);
-		}
-		ioinit(&file_api);
-#endif
-	}
 #else
 	/* Single type of ISAM is used */
 	cob_isam_init_fileio (&file_api);
-#endif
 #endif
 
 #ifdef	WITH_DB
@@ -7468,7 +7498,8 @@ cob_fork_fileio (cob_global *lptr, cob_settings *sptr)
 	COB_UNUSED (lptr);
 	COB_UNUSED (sptr);
 	for(k=0; k < COB_IO_MAX; k++) {
-		if(fileio_funcs[k] != NULL) {
+		if (fileio_funcs[k] != NULL
+		 && fileio_funcs[k]->iofork != NULL) {
 			fileio_funcs[k]->iofork (&file_api);
 		}
 	}

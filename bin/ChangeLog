@@ -1,4 +1,8 @@
 
+2020-12-22  Ron Norman <rjn@inglenet.com>
+	* cobcrun.c: call  cob_init_nomain  as all version info is now coming 
+			from the I/O modules themselves
+
 2020-12-05  Ron Norman <rjn@inglenet.com>
 
 	* gcdiff.c: Also look for run options $COB_CONFIG_DIR/gcdiff.conf
