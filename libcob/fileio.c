@@ -42,9 +42,7 @@
 
 #include "fileio.h"
 #ifdef HAVE_DLFCN_H
-#if defined(WITH_CISAM) || defined(WITH_DISAM) || defined(WITH_VBISAM) || defined(WITH_VBCISAM)
 #include <dlfcn.h>
-#endif
 #endif
 
 #ifdef	HAVE_SIGNAL_H
@@ -719,7 +717,7 @@ cob_load_module ( int iortn )
 		else
 			cob_runtime_error (_("%s library %s is not present"),
 						io_rtns[iortn].name,io_rtns[iortn].module);
-#ifdef HAVE_DLFCN_H
+#if defined(HAVE_DLFCN_H) && defined(__GLIBC__)
 		cob_runtime_error (_("%s load error '%s'"),io_rtns[iortn].name,dlerror());
 #endif
 		exit(-1);
@@ -7462,7 +7460,7 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 #if defined(WITH_INDEXED)
 	cob_load_module (WITH_INDEXED);	/* Preload default INDEXED handler */
 #endif
-#else
+#elif (WITH_INDEXED != COB_IO_BDB)
 	/* Single type of ISAM is used */
 	cob_isam_init_fileio (&file_api);
 #endif
