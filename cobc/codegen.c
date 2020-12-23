@@ -4662,11 +4662,10 @@ deduce_initialize_type (struct cb_initialize *p, struct cb_field *f,
  * Emit code to propagate table initialize
  */
 static void
-propagate_table ( cb_tree x )
+propagate_table (cb_tree x)
 {
 	struct cb_field *f;
 	long len;
-	int		has_sub = 0;
 	unsigned int occ, j = 1;
 	struct cb_reference *r;
 
@@ -4678,74 +4677,31 @@ propagate_table ( cb_tree x )
 	 || (!chk_field_variable_size(f)
 	  && !f->flag_unbounded
 	  && !f->depending)) {
-		if (CB_REFERENCE_P (x)) {
-			r = CB_REFERENCE (x);
-			/* Are there any Subscripts to deal with? */
-			if (r->subs) {
-				struct cb_field	*p = f;
-				cb_tree		lsub = r->subs;
-				for (; p && lsub; p = p->parent) {
-					if (p->flag_occurs) {
-						/* 1 - 1 is 0 so skip it */
-						if (is_index_1 (CB_VALUE (lsub)) ) {
-							lsub = CB_CHAIN (lsub);
-							continue;
-						}
-						has_sub = 1;
-						break;
-					}
-				}
-			}
-		}
 		/* Table size is known at compile time */
 		/* Generate inline 'memcpy' to propagate the array data */
-
-		if (occ > 2
-		 && has_sub) {
-			output_block_open ();
+		output_block_open ();
+		output_prefix ();
+		output ("cob_u8_ptr b_ptr = ");
+		output_data(x);
+		output (";");
+		output_newline ();
+		do {
 			output_prefix ();
-			output ("cob_u8_ptr b_ptr = ");
-			output_data(x);
-			output (";");
+			output ("memcpy (b_ptr + %6ld, b_ptr, %6ld);", len, len);
+			output ("\t/* %s: %5d thru %d */", f->name, j + 1, j * 2);
 			output_newline ();
-			do {
-				output_prefix ();
-				output ("memcpy (b_ptr + %6ld, b_ptr, %6ld);",len,len);
-				output ("\t/* %s: %5d thru %d */",f->name,j+1,j*2);
-				output_newline ();
-				j = j * 2;
-				len = len * 2;
-			} while ((j * 2) < occ);
-			if (j < occ) {
-				output_prefix ();
-				output ("memcpy (b_ptr + %6ld, b_ptr, %6ld);",len,(long)(f->size * (occ - j)));
-				output ("\t/* %s: %5d thru %d */",f->name,j+1,occ);
-				output_newline ();
-			}
-			output_block_close ();
-		} else if (occ > 1) {
-			do {
-				output_prefix ();
-				output ("memcpy (");
-				output_data (x);
-				output (" + %5ld, ",len);
-				output_data (x);
-				output (", %5ld);\t/* %s: %5d thru %d */",len,f->name,j+1,j*2);
-				output_newline ();
-				j = j * 2;
-				len = len * 2;
-			} while ((j * 2) < occ);
-			if (j < occ) {
-				output_prefix ();
-				output ("memcpy (");
-				output_data (x);
-				output (" + %5ld, ",len);
-				output_data (x);
-				output (", %5ld);\t/* %s: %5d thru %d */",
-							(long)(f->size * (occ - j)),f->name,j+1,occ);
-				output_newline ();
-			}
+			j = j * 2;
+			len = len * 2;
+		} while ((j * 2) < occ);
+		if (j < occ) {
+			output_prefix ();
+			output ("memcpy (b_ptr + %6ld, b_ptr, %6ld);",
+				len, (long)f->size * (occ - j));
+			output ("\t/* %s: %5d thru %d */",
+				f->name, j + 1, occ);
+			output_newline ();
 		}
+		output_block_close ();
 	} else {
 		/* Table size is only known at run time */
 		output_prefix ();
@@ -5379,7 +5335,7 @@ output_initialize_compound (struct cb_initialize *p, cb_tree x)
 				ref->check = NULL;
 				ref->length = NULL;
 
-				propagate_table ( c );
+				propagate_table (c);
 
 				/* restore previous exception-checks for the reference */
 				ref->check = save_check;

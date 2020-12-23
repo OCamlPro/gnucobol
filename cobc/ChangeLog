@@ -4,14 +4,22 @@
 			I/O module's own version routine via cob_io_version ( n )
 
 2020-12-15  Ron Norman <rjn@inglenet.com>
+
 	* cobc.c: --info output includes VB-ISAM in C-ISAM mode
+
+2020-12-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (propagate_table): reduced codegen for INITIALIZE to a single
+	  variant for tables with compile-time known size, removing extra logic
 
 2020-12-11  Ron Norman <rjn@inglenet.com>
 
-	* codegen.c: Fix INITIALIZE logic to correcly handle subscripts
-	* parser.y: Add check for valid ->pic pointer
+	* codegen.c (output_initialize_compound, propagate_table):
+	  fix INITIALIZE logic to correctly handle subscripts (bug #694)
+	* parser.y: add check for valid ->pic pointer
 
 2020-12-09  Ron Norman <rjn@inglenet.com>
+
 	* cobc.c: Now calls cob_get_sig_name {in common.c} to get signal name
 	* codegen.c (output_dump_code): Only emits code to catch abort 
 	      when HAVE_SIGACTION is defined 
