@@ -28,6 +28,10 @@
 2020-12-15  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c [!COB_ALLOW_UNALIGNED]: fixed unused variable warning
+	* parser.y (evaluate_body): don't call cb_emit_evaluate if contained
+	  statements are skipped (not active USE FOR DEBUGGING), fixing bug #693
+	* parser.y: dropped "main_statement" and deactivated unnecessary calls to
+	  begin_implicit_statement
 
 2020-12-07  Simon Sobisch <simonsobisch@gnu.org>
 
