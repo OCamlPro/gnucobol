@@ -704,22 +704,21 @@ cob_key_def (cob_file *f, int keyn, char *p, int *ret, int keycheck)
 static int
 cob_load_module ( int iortn )
 {
+	char	errmsg[256];
 	void (*ioinit)(cob_file_api *);
 	if (io_rtns[iortn].loaded
 	 || io_rtns[iortn].module == NULL) {
 		return 0;
 	}
-	ioinit = cob_load_lib (io_rtns[iortn].module, io_rtns[iortn].entry);
+	errmsg[0] = 0;
+	ioinit = cob_load_lib (io_rtns[iortn].module, io_rtns[iortn].entry, errmsg);
 	if(ioinit == NULL) {
 		if (io_rtns[iortn].desc != NULL)
-			cob_runtime_error (_("%s library %s is not present"),
-						io_rtns[iortn].desc,io_rtns[iortn].module);
+			cob_runtime_error (_("%s library %s is not present\n%s"),
+						io_rtns[iortn].desc,io_rtns[iortn].module,errmsg);
 		else
-			cob_runtime_error (_("%s library %s is not present"),
-						io_rtns[iortn].name,io_rtns[iortn].module);
-#if defined(HAVE_DLFCN_H) && defined(__GLIBC__)
-		cob_runtime_error (_("%s load error '%s'"),io_rtns[iortn].name,dlerror());
-#endif
+			cob_runtime_error (_("%s library %s is not present\n%s"),
+						io_rtns[iortn].name,io_rtns[iortn].module,errmsg);
 		exit(-1);
 	}
 	ioinit(&file_api);

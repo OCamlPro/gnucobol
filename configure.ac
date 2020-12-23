@@ -1322,7 +1322,7 @@ AC_ARG_WITH([indexed],
     vbcisam)
 	    with_vbcisam=yes
 	    AC_DEFINE([WITH_INDEXED], [COB_IO_VBCISAM])
-	    AC_DEFINE([WITH_IXDFLT], ["VBC-ISAM"]);;
+	    AC_DEFINE([WITH_IXDFLT], ["VB-CISAM"]);;
     disam)
 	    with_disam=yes
 	    AC_DEFINE([WITH_INDEXED], [COB_IO_DISAM])
@@ -1350,7 +1350,7 @@ AC_ARG_WITH([indexed],
 	*)
   	  if test "$with_vbcisam" = "yes"; then
 	    AC_DEFINE([WITH_INDEXED], [COB_IO_VBCISAM])
-	    AC_DEFINE([WITH_IXDFLT], ["VBC-ISAM"])
+	    AC_DEFINE([WITH_IXDFLT], ["VB-CISAM"])
   	  elif test "$with_vbisam" = "yes"; then
 	    AC_DEFINE([WITH_INDEXED], [COB_IO_VBISAM])
 	    AC_DEFINE([WITH_IXDFLT], ["VB-ISAM"])
@@ -1379,7 +1379,7 @@ AC_ARG_WITH([indexed],
   ], [
   	  if test "$with_vbcisam" = "yes"; then
 	    AC_DEFINE([WITH_INDEXED], [COB_IO_VBCISAM])
-	    AC_DEFINE([WITH_IXDFLT], ["VBC-ISAM"])
+	    AC_DEFINE([WITH_IXDFLT], ["VB-CISAM"])
   	  elif test "$with_vbisam" = "yes"; then
 	    AC_DEFINE([WITH_INDEXED], [COB_IO_VBISAM])
 	    AC_DEFINE([WITH_IXDFLT], ["VB-ISAM"])

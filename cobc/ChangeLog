@@ -1,7 +1,7 @@
 
-2020-12-22  Ron Norman <rjn@inglenet.com>
-	* cobc.c: --info now calls cob_init_nomain and then calls each
-			I/O module's own version routine via cob_io_version ( n )
+2020-12-23  Ron Norman <rjn@inglenet.com>
+	* cobc.c: --info Displays short (concatenated) list of available
+			INDEXED file handlers
 
 2020-12-15  Ron Norman <rjn@inglenet.com>
 

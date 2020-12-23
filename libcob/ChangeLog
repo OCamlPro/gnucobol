@@ -1,4 +1,8 @@
 
+2020-12-23  Ron Norman <rjn@inglenet.com>
+	* call.c: added 'reason' parameter to cob_load_lib
+	* fileio.c: Uses 'reason' if available when problem loading module
+
 2020-12-22  Ron Norman <rjn@inglenet.com>
 	* fisam.c:	Added isam_version to return the ISAM handler version
 	* fbdb.c:	Added bdb_version to return the Berkley Database version

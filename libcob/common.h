@@ -2148,7 +2148,7 @@ COB_EXPIMP void		cob_field_content (cob_field *f, cob_field *t, cob_field_attr *
 COB_EXPIMP unsigned int	cob_get_name_hash (const char *name);
 
 COB_EXPIMP void		cob_set_cancel		(cob_module *);
-COB_EXPIMP void *	cob_load_lib (const char *library, const char *entry);
+COB_EXPIMP void *	cob_load_lib (const char *library, const char *entry, char *reason);
 COB_EXPIMP int		cob_encode_program_id (const unsigned char * const, unsigned char * const,
 						 const int, const int);
 COB_EXPIMP void		*cob_resolve		(const char *);

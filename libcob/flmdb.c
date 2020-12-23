@@ -85,7 +85,7 @@ static const char	**db_data_dir = NULL;
 		       __FILE__, __LINE__, ## __VA_ARGS__);		\
 }
 
-static const char *
+static char *
 lmdb_version (void)
 {
 #if defined(MDB_VERSION_MAJOR) && defined(MDB_VERSION_MINOR) && defined(MDB_VERSION_PATCH)

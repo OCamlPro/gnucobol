@@ -1107,7 +1107,7 @@ cob_resolve_func (const char *name)
  * Load library and return address of entry point
  */
 void *
-cob_load_lib (const char *library, const char *entry)
+cob_load_lib (const char *library, const char *entry, char *reason)
 {
 	void	*p;
 
@@ -1115,7 +1115,23 @@ cob_load_lib (const char *library, const char *entry)
 	p = lt_dlopenlcl (library);
 	if (p) {
 		p = lt_dlsym (p, entry);
+		if (p == NULL
+		 && reason != NULL) {
+#if	defined(USE_LIBDL)
+			sprintf(reason,"no entry: %s",lt_dlerror());
+#else
+			strcpy(reason,"entry not found");
+#endif
+		}
+	} else if (reason != NULL) {
+#if	defined(USE_LIBDL)
+		strcpy(reason,lt_dlerror());
+#else
+		strcpy(reason,"Unknown");
+#endif
 	}
+
+
 	return p;
 }
 

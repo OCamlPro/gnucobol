@@ -7850,6 +7850,7 @@ print_info_detailed (const int verbose)
 
 	char	buff[56] = { '\0' };
 	char	*s;
+	int		num;
 
 	if(!cob_initialized)
 		cob_init_nomain (0, NULL);
@@ -7938,38 +7939,50 @@ print_info_detailed (const int verbose)
 #if defined	(WITH_INDEX_EXTFH)
 	var_print (_("indexed file handler"), 		"EXTFH (obsolete)", "", 0);
 #endif
+	num = 0;
 #if defined(WITH_CISAM) 	|| defined(WITH_DISAM) \
 	|| defined(WITH_VBISAM) || defined(WITH_VBCISAM) \
 	|| defined(WITH_ODBC)	|| defined(WITH_OCI) \
 	|| defined(WITH_INDEX_EXTFH) || defined(WITH_DB) || defined(WITH_LMDB)
 #if defined	(WITH_CISAM)
 	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_CISAM), "", 0);
+	num++;
 #endif
 #if defined	(WITH_DISAM)
 	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_DISAM), "", 0);
+	num++;
 #endif
 #if defined	(WITH_VBCISAM)
 	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_VBCISAM), "", 0);
+	num++;
 #endif
 #if defined	(WITH_VBISAM)
 	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_VBISAM), "", 0);
+	num++;
 #endif
 #if defined	(WITH_DB)
 	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_BDB), "", 0);
+	num++;
 #endif
 #if defined	(WITH_LMDB)
 	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_LMDB), "", 0);
+	num++;
 #endif
 #if defined	(WITH_ODBC)
 	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_ODBC), "", 0);
+	num++;
 #endif
 #if defined	(WITH_OCI)
 	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_OCI), "", 0);
+	num++;
 #endif
 #if defined(WITH_INDEXED)
+	if (num > 1)
 	var_print (_("default indexed handler"), 	cob_io_version (WITH_INDEXED), "", 0);
 #endif
 #else
+	num++;
+	if (num > 1)
 	var_print (_("indexed file handler"), 		_("disabled"), "", 0);
 #endif
 

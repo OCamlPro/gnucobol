@@ -2380,8 +2380,9 @@ cobc_var_and_envvar_print (const char* name, const char* defined_val)
 static void
 cobc_print_info (void)
 {
-	char	buff[64];
+	char	buff[64], iomods[80];
 	char	*s;
+	int		num;
 
 	cobc_print_version ();
 	putchar ('\n');
@@ -2461,40 +2462,54 @@ cobc_print_info (void)
 #endif
 
 
+	num = 0;
+	strcpy(iomods,"");
 #if defined(WITH_CISAM) 	|| defined(WITH_DISAM) \
 	|| defined(WITH_VBISAM) || defined(WITH_VBCISAM) \
 	|| defined(WITH_ODBC)	|| defined(WITH_OCI) \
 	|| defined(WITH_INDEX_EXTFH) || defined(WITH_DB) || defined(WITH_LMDB)
-	cob_init_nomain (0, NULL);
 #if defined	(WITH_INDEX_EXTFH)
 	cobc_var_print (_("indexed file handler"),		"EXTFH (obsolete)", 0);
 #endif
 #if defined	(WITH_CISAM)
-	cobc_var_print (_("indexed file handler"),		cob_io_version (COB_IO_CISAM), 0);
+	strcat(iomods,"C-ISAM");
+	num++;
 #endif
 #if defined	(WITH_DISAM)
-	cobc_var_print (_("indexed file handler"),		cob_io_version (COB_IO_DISAM), 0);
+	if (num++ > 0) strcat(iomods,", ");
+	strcat(iomods,"D-ISAM");
 #endif
 #if defined	(WITH_VBCISAM)
-	cobc_var_print (_("indexed file handler"),		cob_io_version (COB_IO_VBCISAM), 0);
+	if (num++ > 0) strcat(iomods,", ");
+	strcat(iomods,"VB-CISAM");
 #endif
 #if defined	(WITH_VBISAM)
-	cobc_var_print (_("indexed file handler"),		cob_io_version (COB_IO_VBISAM), 0);
+	if (num++ > 0) strcat(iomods,", ");
+	strcat(iomods,"VB-ISAM");
 #endif
 #if defined	(WITH_ODBC)
-	cobc_var_print (_("indexed file handler"),		cob_io_version (COB_IO_ODBC), 0);
+	if (num++ > 0) strcat(iomods,", ");
+	strcat(iomods,"ODBC");
 #endif
 #if defined	(WITH_OCI)
-	cobc_var_print (_("indexed file handler"),		cob_io_version (COB_IO_OCI), 0);
+	if (num++ > 0) strcat(iomods,", ");
+	strcat(iomods,"OCI");
 #endif
 #if defined	(WITH_DB)
-	cobc_var_print (_("indexed file handler"),		cob_io_version (COB_IO_BDB), 0);
+	if (num++ > 0) strcat(iomods,", ");
+	strcat(iomods,"BDB");
 #endif
 #if defined	(WITH_LMDB)
-	cobc_var_print (_("indexed file handler"),		cob_io_version (COB_IO_LMDB), 0);
+	if (num++ > 0) strcat(iomods,", ");
+	strcat(iomods,"LMDB");
 #endif
-#if defined(WITH_INDEXED) 
-	cobc_var_print (_("default indexed handler"),    cob_io_version (WITH_INDEXED), 0);
+	if (num > 1)
+		cobc_var_print (_("indexed file handlers"),		iomods, 0);
+	else
+		cobc_var_print (_("indexed file handler"),		iomods, 0);
+#if defined(WITH_IXDFLT) 
+	if (num > 1)
+	cobc_var_print (_("default indexed handler"),    WITH_IXDFLT, 0);
 #endif
 #else
 	cobc_var_print (_("indexed file handler"),		_("disabled"), 0);
@@ -2835,7 +2850,6 @@ process_command_line (const int argc, char **argv)
 			cobc_print_version ();
 			if (verbose_output) {
 				puts ("\n");
-				cob_init_nomain (0, NULL);
 				fflush (stdout);
 #ifdef _MSC_VER
 				process ("cl.exe");

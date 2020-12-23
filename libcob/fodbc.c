@@ -107,9 +107,9 @@ static char *
 odbc_version (void)
 {
 #if defined (SQL_SPEC_STRING)
-	return 	"ODBC " SQL_SPEC_STRING;
+	return 	(char*)"ODBC " SQL_SPEC_STRING;
 #else
-	return 	"ODBC ";
+	return 	(char*)"ODBC ";
 #endif
 }
 
