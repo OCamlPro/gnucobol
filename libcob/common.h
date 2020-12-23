@@ -1597,7 +1597,7 @@ struct cobjmp_buf {
 
 #define __LIBCOB_VERSION	3
 #define __LIBCOB_VERSION_MINOR		1
-#define __LIBCOB_VERSION_PATCHLEVEL	1	/* Note: possibly differs from patchelvel shown with cobc --version! */
+#define __LIBCOB_VERSION_PATCHLEVEL	2	/* Note: possibly differs from patchelvel shown with cobc --version! */
 
 #define __LIBCOB_RELEASE (__LIBCOB_VERSION * 10000 + __LIBCOB_VERSION_MINOR * 100 + __LIBCOB_VERSION_PATCHLEVEL)
 

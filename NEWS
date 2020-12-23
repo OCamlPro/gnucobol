@@ -1,7 +1,8 @@
 NEWS - user visible changes				-*- outline -*-
 
- GnuCOBOL 3.1.1 released (20201208)
- GnuCOBOL 3.1 released (20201111) had issues that were fixed
+ GnuCOBOL 3.1.2 released (20201223)
+ GnuCOBOL 3.1.1 released (20201208) containing INITIALIZE bug #694
+ GnuCOBOL 3.1 released   (20201111) had build issues that were fixed
 
 * New GnuCOBOL features
 
@@ -97,7 +98,7 @@ NEWS - user visible changes				-*- outline -*-
        not included in -Wall any more
    -Wno-ignored-error allows to suppress messages that normally would be an
        error and are only allowed because they are never executed
-   -Wimplicit-define and -Wcorresponding are now enabled by default
+   -Wcorresponding is now enabled by default
 
    -f[no]-diagnostics-show-option, enabled by default, shows the
     command line option responsible for the diagnostic message
