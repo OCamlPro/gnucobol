@@ -1062,7 +1062,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY -t prog.lst prog.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY -Wimplicit-define -t prog.lst prog.cob], [1], [],
 [copy.inc:8: error: syntax error, unexpected Identifier, expecting DYNAMIC or RANDOM or SEQUENTIAL
 copy.inc:5: error: missing file description for FILE testfile
 prog.cob:7: warning: variable 'filename' will be implicitly defined
@@ -1116,7 +1116,7 @@ prog.cob:8: error: 'FIRST-MATCH' is not defined
 AT_CHECK([$UNIFY_LISTING prog.lst prog.lis], [0], [], [])
 AT_CHECK([diff prog12.lst prog.lis], [0], [], [])
 
-AT_CHECK([$COMPILE_ONLY -T prog.lst prog.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY -Wimplicit-define -T prog.lst prog.cob], [1], [],
 [copy.inc:8: error: syntax error, unexpected Identifier, expecting DYNAMIC or RANDOM or SEQUENTIAL
 copy.inc:5: error: missing file description for FILE testfile
 prog.cob:7: warning: variable 'filename' will be implicitly defined

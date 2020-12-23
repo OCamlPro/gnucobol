@@ -66,8 +66,8 @@ CB_WARNDEF (cb_warn_parentheses, "parentheses",
 CB_WARNDEF (cb_warn_strict_typing, "strict-typing",
 	_("  -Wstrict-typing       warn strictly about type mismatch"))
 
-CB_ONWARNDEF (cb_warn_implicit_define, "implicit-define",
-	_("  -Wno-implicit-define  do not warn about implicitly defined data items"))
+CB_NOWARNDEF (cb_warn_implicit_define, "implicit-define",
+	_("  -Wimplicit-define     warn about implicitly defined data items"))
 
 CB_ONWARNDEF (cb_warn_corresponding, "corresponding",
 	_("  -Wno-corresponding    do not warn about CORRESPONDING with no matching items"))

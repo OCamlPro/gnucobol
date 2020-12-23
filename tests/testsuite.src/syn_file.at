@@ -1215,7 +1215,6 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:11: error: syntax error, unexpected Identifier, expecting DYNAMIC or RANDOM or SEQUENTIAL
 prog.cob:8: error: missing file description for FILE testfile
-prog.cob:13: warning: variable 'filename' will be implicitly defined
 ])
 AT_CLEANUP
 
@@ -1802,6 +1801,7 @@ prog.cob:8: error: missing file description for FILE SELECT on line 8
 ])
 AT_CLEANUP
 
+
 AT_SETUP([Undeclared FILE-ID variable])
 AT_KEYWORDS([file])
 
@@ -1820,10 +1820,89 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
+AT_CHECK([$COMPILE_ONLY -Wimplicit-define prog.cob], [0], [],
 [prog.cob:10: warning: VALUE OF is obsolete in GnuCOBOL
 prog.cob:12: warning: variable 'fid-file1' will be implicitly defined
 ])
+AT_CLEANUP
+
+
+AT_SETUP([Undeclared ASSIGN variable])
+AT_KEYWORDS([file global])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       ENVIRONMENT      DIVISION.
+       INPUT-OUTPUT     SECTION.
+       FILE-CONTROL.
+       SELECT TEST-FILE
+              ASSIGN    GLOB-PATH
+       .
+       DATA             DIVISION.
+       FILE             SECTION.
+       FD  TEST-FILE    GLOBAL.
+       01  TEST-REC     PIC X(4).
+       WORKING-STORAGE  SECTION.
+       78  GLOB-PATH           GLOBAL VALUE "GLOBP1".
+       01  GLOB-PATH2 CONSTANT GLOBAL       "GLOBP2".
+      * Test global vars because of implicitly defined ASSIGN var, too.
+       78  GLOB-VAR            GLOBAL VALUE "GLOBV1".
+       01  GLOB-VAR2  CONSTANT GLOBAL       "GLOBV2".
+       PROCEDURE        DIVISION.
+           DISPLAY GLOB-PATH GLOB-VAR
+           END-DISPLAY.
+           CALL "prog2"
+           END-CALL.
+           CALL "prog3"
+           END-CALL.
+           STOP RUN.
+        IDENTIFICATION   DIVISION.
+        PROGRAM-ID.      prog2.
+        ENVIRONMENT      DIVISION.
+        INPUT-OUTPUT     SECTION.
+        FILE-CONTROL.
+        SELECT TEST2-FILE
+               ASSIGN    GLOB-PATH2
+        .
+        DATA             DIVISION.
+        FILE             SECTION.
+        FD  TEST2-FILE   GLOBAL.
+        01  TEST2-REC    PIC X(4).
+        WORKING-STORAGE  SECTION.
+        PROCEDURE        DIVISION.
+            DISPLAY GLOB-PATH2 GLOB-VAR2
+            END-DISPLAY.
+            EXIT PROGRAM.
+        END PROGRAM prog2.
+       END PROGRAM prog.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog3.
+       ENVIRONMENT      DIVISION.
+       INPUT-OUTPUT     SECTION.
+       FILE-CONTROL.
+       SELECT TEST3-FILE
+              ASSIGN    GLOB-PATH
+       .
+       DATA             DIVISION.
+       FILE             SECTION.
+       FD  TEST3-FILE   GLOBAL.
+       01  TEST3-REC    PIC X(4).
+       WORKING-STORAGE  SECTION.
+       PROCEDURE        DIVISION.
+           DISPLAY 'in prog3'
+           END-DISPLAY
+           IF GLOB-PATH NOT = SPACES
+              DISPLAY GLOB-PATH
+              END-DISPLAY
+           END-IF
+           EXIT PROGRAM.
+       END PROGRAM prog3.
+])
+
+AT_CHECK([$COMPILE_ONLY -Wimplicit-define prog.cob], [0], [],
+[[prog.cob:60: warning: variable 'GLOB-PATH' will be implicitly defined
+]])
 AT_CLEANUP
 
 

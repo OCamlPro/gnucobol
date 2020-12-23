@@ -3201,23 +3201,22 @@ create_implicit_assign_dynamic_var (struct cb_program * const prog,
 {
 	cb_tree	x;
 	struct cb_field	*p;
+	const char	*assign_name = CB_NAME (assign);
 
 	cb_warning (cb_warn_implicit_define,
 		    _("variable '%s' will be implicitly defined"), CB_NAME (assign));
 	x = cb_build_implicit_field (assign, COB_FILE_MAX);
+	p = CB_FIELD (x);
 #if 0
-	CB_FIELD (x)->count++;
+	p->count++;
 #endif
-	p = prog->working_storage;
-	if (p) {
-		while (p->sister) {
-			p = p->sister;
-		}
-		p->sister = CB_FIELD (x);
+	x = CB_TREE (build_literal (CB_CATEGORY_ALPHANUMERIC, assign_name, strlen (assign_name)));
+	p->values = CB_LIST_INIT (x);
+	if (prog->working_storage) {
+		CB_FIELD_ADD (prog->working_storage, p);
 	} else {
-		prog->working_storage = CB_FIELD (x);
+		prog->working_storage = p;
 	}
-
 }
 
 static void
