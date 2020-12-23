@@ -4667,7 +4667,6 @@ propagate_table (cb_tree x)
 	struct cb_field *f;
 	long len;
 	unsigned int occ, j = 1;
-	struct cb_reference *r;
 
 	f = cb_code_field (x);
 	len = (long)f->size;
