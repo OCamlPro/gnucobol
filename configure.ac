@@ -1414,6 +1414,10 @@ cob_gen_vbisam=no
 cob_gen_vbcisam=no
 cob_gen_disam=no
 cob_gen_cisam=no
+cob_gen_odbc=no
+cob_gen_oci=no
+cob_gen_bdb=no
+cob_gen_lmdb=no
 
   AC_ARG_WITH([cisam],
   [AS_HELP_STRING([--with-cisam],
@@ -1544,10 +1548,10 @@ AC_ARG_WITH([odbc],
 		LIBS="$LIBS $ODBC_LIBS"
 	fi
 	AC_CHECK_LIB([odbc], [SQLConnect],
-		[AC_DEFINE([WITH_ODBC], [1])
-		 LIBCOB_LIBS="$LIBCOB_LIBS $ODBC_LIBS -lodbc"
-		],
+		[AC_DEFINE([WITH_ODBC], [1])],
 		AC_MSG_ERROR([libodbc is required for ODBC]), [])
+	cob_gen_odbc=yes 
+	LIBCOB_ODBC="-lodbc"
   fi ],
 [])
 
@@ -1570,10 +1574,10 @@ AC_ARG_WITH([oci],
 		LIBS="$LIBS $OCI_LIBS"
 	fi
 	AC_CHECK_LIB([clntsh], [OCIEnvCreate],
-		[AC_DEFINE([WITH_OCI], [1])
-		 LIBCOB_LIBS="$LIBCOB_LIBS $OCI_LIBS -lclntsh"
-		],
+		[AC_DEFINE([WITH_OCI], [1])],
 		AC_MSG_ERROR([libclnt is required for Oracle OCI]), [])
+	cob_gen_oci=yes 
+	LIBCOB_OCI="-L${ORACLE_HOME}/lib -lclntsh"
   fi ],
 [])
 
@@ -1660,7 +1664,8 @@ if test "$with_db" = "yes"; then
 			return 1;]])],
 			[AC_DEFINE([WITH_DB], [1])
 			cob_got_db=yes
-			LIBCOB_LIBS="$LIBCOB_LIBS -l$cobdb"
+			cob_gen_bdb=yes 
+			LIBCOB_BDB="-l$cobdb"
 			break],
 			[],
 			[])
@@ -1720,8 +1725,7 @@ if test "$with_lmdb" = "yes"; then
 		AC_MSG_NOTICE([lmdb.h reports version "$COB_MDB_HEADER_STR"])
 	fi
 	AC_CHECK_LIB([lmdb], [mdb_version],
-		[AC_DEFINE([WITH_LMDB], [1])
-		LIBCOB_LIBS="$LIBCOB_LIBS -llmdb"],
+		[AC_DEFINE([WITH_LMDB], [1])],
 		AC_MSG_ERROR([liblmdb is required for LMDB]), [])
 
 	AC_MSG_CHECKING([for Symas LMDB version >= 0.9.19])
@@ -1739,6 +1743,8 @@ if test "$with_lmdb" = "yes"; then
 			fi
 		fi
 	fi
+	cob_gen_lmdb=yes 
+	LIBCOB_LMDB="-llmdb"
 fi
 
 # Checks for dl/ltdl.
@@ -2323,6 +2329,10 @@ AM_CONDITIONAL([COB_MAKE_CISAM_LIB], [test "$cob_multi_isam" = "yes" -a "$cob_ge
 AM_CONDITIONAL([COB_MAKE_DISAM_LIB], [test "$cob_multi_isam" = "yes" -a "$cob_gen_disam" = "yes"])
 AM_CONDITIONAL([COB_MAKE_VBISAM_LIB], [test "$cob_multi_isam" = "yes" -a "$cob_gen_vbisam" = "yes"])
 AM_CONDITIONAL([COB_MAKE_VBCISAM_LIB], [test "$cob_multi_isam" = "yes" -a "$cob_gen_vbcisam" = "yes"])
+AM_CONDITIONAL([COB_MAKE_BDB_LIB], [test "$cob_gen_bdb" = "yes"])
+AM_CONDITIONAL([COB_MAKE_ODBC_LIB], [test "$cob_gen_odbc" = "yes"])
+AM_CONDITIONAL([COB_MAKE_OCI_LIB], [test "$cob_gen_oci" = "yes"])
+AM_CONDITIONAL([COB_MAKE_LMDB_LIB], [test "$cob_gen_lmdb" = "yes"])
 
 AM_CONDITIONAL([LOCAL_CJSON],[test "$USE_JSON" = "local"])
 
@@ -2392,6 +2402,10 @@ AC_SUBST([LIBCOB_CISAM])
 AC_SUBST([LIBCOB_DISAM])
 AC_SUBST([LIBCOB_VBISAM])
 AC_SUBST([LIBCOB_VBCISAM])
+AC_SUBST([LIBCOB_ODBC])
+AC_SUBST([LIBCOB_OCI])
+AC_SUBST([LIBCOB_BDB])
+AC_SUBST([LIBCOB_LMDB])
 AC_SUBST([LIBCOB_CPPFLAGS])
 
 # was used in bin/Makefile.am - seems not to be needed

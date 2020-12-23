@@ -246,24 +246,14 @@ static struct {
 	{0,"CISAM","libcobci.so", "cob_isam_init_fileio","C-ISAM"},
 	{0,"DISAM","libcobdi.so", "cob_isam_init_fileio","D-ISAM"},
 	{0,"VBISAM","libcobvb.so", "cob_isam_init_fileio","VB-ISAM"},
-#if 0 /* DBG */
 	{0,"BDB","libcobdb.so", "cob_bdb_init_fileio",NULL},
-#else
-	{0,"BDB",NULL,NULL,NULL},
-#endif
 	{0,"VBCISAM","libcobvc.so", "cob_isam_init_fileio","VB-ISAM (C-ISAM mode)"},
 	{0,"IXEXT",NULL,NULL,NULL},
 	{0,"SQEXT",NULL,NULL,NULL},
 	{0,"RLEXT",NULL,NULL,NULL},
-#if 0 /* DBG */
 	{0,"ODBC","libcobod.so", "cob_odbc_init_fileio",NULL},
 	{0,"OCI","libcoboc.so", "cob_oci_init_fileio",NULL},
 	{0,"LMDB","libcoblm.so", "cob_lmdb_init_fileio",NULL},
-#else
-	{0,"ODBC",NULL,NULL},
-	{0,"OCI",NULL,NULL},
-	{0,"LMDB",NULL,NULL},
-#endif
 	{0,NULL,NULL,NULL,NULL}
 };
 #ifdef	WITH_INDEX_EXTFH
@@ -1459,6 +1449,8 @@ cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 				value[j] = 0;
 				for(j=0; j < COB_IO_MAX; j++) {
 					if(strcasecmp(value,io_rtns[j].name) == 0) {
+						if (!io_rtns[j].loaded)
+							cob_load_module (j);
 						if(fileio_funcs[j] == NULL) {
 							cob_runtime_error (_("I/O routine %s is not present for %s"),
 												io_rtns[j].name,file_open_env);
@@ -7459,22 +7451,11 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 #if defined(WITH_INDEXED)
 	cob_load_module (WITH_INDEXED);	/* Preload default INDEXED handler */
 #endif
-#elif (WITH_INDEXED != COB_IO_BDB)
+#elif (WITH_INDEXED != COB_IO_BDB) && (WITH_INDEXED != COB_IO_LMDB) \
+		&& (WITH_INDEXED != COB_IO_OCI) && (WITH_INDEXED != COB_IO_ODBC)
 	/* Single type of ISAM is used */
 	cob_isam_init_fileio (&file_api);
-#endif
-
-#ifdef	WITH_DB
-	cob_bdb_init_fileio (&file_api);
-#endif
-#ifdef	WITH_LMDB
-	cob_lmdb_init_fileio (&file_api);
-#endif
-#ifdef	WITH_ODBC
-	cob_odbc_init_fileio (&file_api);
-#endif
-#ifdef	WITH_OCI
-	cob_oci_init_fileio (&file_api);
+	io_rtns[WITH_INDEXED].loaded = 1;
 #endif
 
 #if defined(WITH_INDEX_EXTFH)

@@ -360,7 +360,7 @@ struct config_tbl {
 
 
 /* Local function prototypes */
-COB_HIDDEN const char * cob_io_version	(const int);
+COB_EXPIMP const char * cob_io_version	(const int);
 COB_HIDDEN void		cob_init_numeric	(cob_global *);
 COB_HIDDEN void		cob_init_termio		(cob_global *, cob_settings *);
 COB_HIDDEN void		cob_init_fileio		(cob_global *, cob_settings *);
@@ -414,7 +414,7 @@ COB_HIDDEN int		cob_get_last_exception_code	(void);
 COB_HIDDEN int		cob_check_env_true	(char*);
 COB_HIDDEN int		cob_check_env_false	(char*);
 COB_HIDDEN const char	*cob_get_last_exception_name	(void);
-COB_HIDDEN void		cob_field_to_string	(const cob_field *, void *,
+COB_EXPIMP void		cob_field_to_string	(const cob_field *, void *,
 						 const size_t);
 COB_HIDDEN void		cob_parameter_check	(const char *, const int);
 
@@ -426,8 +426,8 @@ COB_HIDDEN char		*cob_strcat		(char*, char*, int);
 COB_HIDDEN char		*cob_strjoin		(char**, int, char*);
 
 COB_HIDDEN void	cob_set_field_to_uint	(cob_field *, const cob_u32_t);
-COB_HIDDEN int cob_ncase_cmp (char *, const char *, unsigned );
-COB_HIDDEN char * cob_str_case_str (char *, const char *);
+COB_EXPIMP int cob_ncase_cmp (char *, const char *, unsigned );
+COB_EXPIMP char * cob_str_case_str (char *, const char *);
 
 /* static inline of smaller helpers */
 

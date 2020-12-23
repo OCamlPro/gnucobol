@@ -1,4 +1,12 @@
 
+2020-12-23  Ron Norman <rjn@inglenet.com> 
+
+	* Makefile.am: Updates to build most INDEXED file handlers
+					as shared code library
+	* coblocal.h: Updates to build INDEXED file handlers as shared library
+	* fileio.h: Updates to build INDEXED file handlers as shared library
+	* fileio.c: Updates to build INDEXED file handlers as shared library
+
 2020-12-23  Ron Norman <rjn@inglenet.com>
 	* call.c: added 'reason' parameter to cob_load_lib
 	* fileio.c: Uses 'reason' if available when problem loading module

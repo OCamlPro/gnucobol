@@ -1,4 +1,9 @@
 
+2020-12-23  Ron Norman <rjn@inglenet.com> 
+
+	* configure.ac: Updates to build most INDEXED file handlers
+		as shared code library
+		
 2020-12-16  Ron Norman <rjn@inglenet.com> 
 
 	* configure.ac: Updates to accept --with-vbcisam

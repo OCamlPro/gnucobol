@@ -193,10 +193,10 @@ COB_HIDDEN void cob_file_save_status (cob_file *f, cob_field *fnstatus, const in
 COB_HIDDEN void cob_file_sync (cob_file *f);
 
 #ifdef	WITH_DB
-COB_HIDDEN void	cob_bdb_init_fileio (cob_file_api *);
+void	cob_bdb_init_fileio (cob_file_api *);
 #endif
 #ifdef	WITH_LMDB
-COB_HIDDEN void	cob_lmdb_init_fileio (cob_file_api *);
+void	cob_lmdb_init_fileio (cob_file_api *);
 #endif
 
 #if defined(WITH_ODBC) || defined(WITH_OCI) || defined(WITH_DB) || defined(WITH_LMDB)
@@ -443,10 +443,10 @@ COB_HIDDEN void 	cob_sql_dump_index (struct db_state *db, struct file_xfd *fx, i
 #endif
 
 #ifdef	WITH_ODBC
-COB_HIDDEN void	cob_odbc_init_fileio (cob_file_api *);
+void	cob_odbc_init_fileio (cob_file_api *);
 #endif
 #ifdef	WITH_OCI
-COB_HIDDEN void	cob_oci_init_fileio (cob_file_api *);
+void	cob_oci_init_fileio (cob_file_api *);
 #endif
 
 #if defined(WITH_CISAM) || defined(WITH_DISAM) || defined(WITH_VBISAM) || defined(WITH_VBCISAM)

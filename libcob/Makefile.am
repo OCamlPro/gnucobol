@@ -47,9 +47,43 @@ else
 lib_vc =
 endif
 
-lib_LTLIBRARIES = libcob.la $(lib_ci) $(lib_di) $(lib_vb) $(lib_vc)
+if COB_MAKE_ODBC_LIB
+lib_od = libcobod.la
+libcobod_la_LIBADD = $(LIBCOB_ODBC)
+libcobod_la_SOURCES = fodbc.c fsqlxfd.c
+else
+lib_od =
+endif
+
+if COB_MAKE_OCI_LIB
+lib_oc = libcoboc.la
+libcoboc_la_LIBADD = $(LIBCOB_OCI) 
+libcoboc_la_SOURCES = foci.c fsqlxfd.c
+else
+lib_oc =
+endif
+
+if COB_MAKE_BDB_LIB
+lib_db = libcobdb.la
+libcobdb_la_LIBADD = $(LIBCOB_BDB) 
+libcobdb_la_SOURCES = fbdb.c fsqlxfd.c
+else
+lib_db =
+endif
+
+if COB_MAKE_LMDB_LIB
+lib_lm = libcoblm.la
+libcoblm_la_LIBADD = $(LIBCOB_LMDB) 
+libcoblm_la_SOURCES = flmdb.c fsqlxfd.c
+else
+lib_lm =
+endif
+
+lib_LTLIBRARIES = libcob.la $(lib_ci) $(lib_di) $(lib_vb) $(lib_vc) \
+	$(lib_od) $(lib_oc) $(lib_db) $(lib_lm)
+
 libcob_la_SOURCES = common.c move.c numeric.c strings.c \
-	fileio.c fextfh.c fisam.c fbdb.c focextfh.c flmdb.c fodbc.c foci.c fsqlxfd.c \
+	fileio.c fextfh.c fisam.c focextfh.c \
 	call.c intrinsic.c termio.c screenio.c reportio.c cobgetopt.c \
 	mlio.c
 
