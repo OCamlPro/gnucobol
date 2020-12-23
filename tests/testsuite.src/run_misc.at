@@ -10306,8 +10306,8 @@ libcob: prog.cob:16: warning: ' S U B' literal includes leading spaces which are
 AT_CLEANUP
 
 
-AT_SETUP([C API Test (param based)])
-AT_KEYWORDS([CALL])
+AT_SETUP([C-API Test (param based)])
+AT_KEYWORDS([CALL api])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -10403,7 +10403,8 @@ CAPI (void *p1, ...)
 {
    int      k,nargs,type,digits,scale,size,sign,byvalue;
    cob_s64_t   val;
-   char     *str, wrk[80],pic[24];
+   char     *str;
+   char     wrk[80],pic[30];	/* note: maxium _theoretical_ size */
 
    nargs = cob_get_num_params();
    printf ("CAPI called with %d parameters\n",nargs);
@@ -10540,8 +10541,8 @@ libcob: prog.cob:35: warning: cob_put_picx_param: attempt to over-write constant
 AT_CLEANUP
 
 
-AT_SETUP([C API Test (field based)])
-AT_KEYWORDS([CALL])
+AT_SETUP([C-API Test (field based)])
+AT_KEYWORDS([CALL api])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -10637,7 +10638,8 @@ CAPI (void *p1, ...)
 {
    int      k,nargs,type,digits,scale,size,sign,byvalue;
    cob_s64_t   val;
-   char     *str, wrk[80],pic[24];
+   char     *str;
+   char     wrk[80],pic[30];	/* note: maxium _theoretical_ size */
 
    nargs = cob_get_num_params();
    printf ("CAPI called with %d parameters\n",nargs);
