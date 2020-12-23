@@ -212,6 +212,116 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([INITIALIZE group item])
+AT_KEYWORDS([initialize])
+
+# see bug #694
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 G.
+         02 G2          OCCURS 3.
+           03 X         PIC 9.
+           03 Y.
+             04 Y-REC   OCCURS 5.
+              05  Y1    PIC 9 VALUE 9.
+              05  Y2    PIC X VALUE 'Y'.
+           03 Z         PIC X VALUE 'Z'.
+       PROCEDURE        DIVISION.
+           MOVE ALL "A" TO G2(1)
+           MOVE ALL "B" TO G2(2)
+           MOVE ALL "C" TO G2(3)
+           INITIALIZE Y (2).
+           IF G NOT = "AAAAAAAAAAAAB0 0 0 0 0 BCCCCCCCCCCCC"
+              DISPLAY "Test 1 failed: " G ".".
+           MOVE ALL "A" TO G2(1)
+           MOVE ALL "B" TO G2(2)
+           MOVE ALL "C" TO G2(3)
+           MOVE 2       TO X(1)
+           INITIALIZE Y (X(1)).
+           IF G NOT = "2AAAAAAAAAAAB0 0 0 0 0 BCCCCCCCCCCCC"
+              DISPLAY "Test 2 failed: " G ".".
+           STOP RUN.
+])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog2.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       77 NUM           PIC 9 COMP-5 VALUE 3.
+       01 G.
+         02 G2          OCCURS 0 TO 3 DEPENDING ON NUM.
+           03 X         PIC 9.
+           03 Y.
+             04 Y-REC   OCCURS 5.
+              05  Y1    PIC 9 VALUE 9.
+              05  Y2    PIC X VALUE 'Y'.
+           03 Z         PIC X VALUE 'Z'.
+       PROCEDURE        DIVISION.
+           MOVE ALL "A" TO G2(1)
+           MOVE ALL "B" TO G2(2)
+           MOVE ALL "C" TO G2(3)
+           INITIALIZE Y (2).
+           IF G NOT = "AAAAAAAAAAAAB0 0 0 0 0 BCCCCCCCCCCCC"
+              DISPLAY "Test 1 failed: " G ".".
+           MOVE ALL "A" TO G2(1)
+           MOVE ALL "B" TO G2(2)
+           MOVE ALL "C" TO G2(3)
+           MOVE 2       TO X(1)
+           INITIALIZE Y (X(1)).
+           IF G NOT = "2AAAAAAAAAAAB0 0 0 0 0 BCCCCCCCCCCCC"
+              DISPLAY "Test 2 failed: " G ".".
+           STOP RUN.
+])
+
+# CHECK later...
+#AT_DATA([prog3.cob], [
+#       IDENTIFICATION   DIVISION.
+#       PROGRAM-ID.      prog3.
+#       DATA             DIVISION.
+#       WORKING-STORAGE  SECTION.
+#       77 NUM           PIC 9 COMP-5 VALUE 3.
+#       77 NUM2          PIC 9 COMP-5 VALUE 5.
+#       01 G.
+#         02 G2          OCCURS 0 TO 3 DEPENDING ON NUM.
+#           03 X         PIC 9.
+#           03 Y         PIC X VALUE 'Z'.
+#           03 Z         OCCURS 1 TO 6 DEPENDING ON NUM2.
+#              05  Z1    PIC 9 VALUE 9.
+#              05  Z2    PIC X.
+#       PROCEDURE        DIVISION.
+#           MOVE ALL "A" TO G2(1)
+#           MOVE ALL "B" TO G2(2)
+#           MOVE ALL "C" TO G2(3)
+#           INITIALIZE Y (2).
+#           IF G NOT = "AAAAAAAAAAAAB0 0 0 0 0 BCCCCCCCCCCCC"
+#              DISPLAY "Test 1 failed: " G ".".
+#           MOVE ALL "A" TO G2(1)
+#           MOVE ALL "B" TO G2(2)
+#           MOVE ALL "C" TO G2(3)
+#           MOVE 2       TO X(1)
+#           INITIALIZE Y (X(1)).
+#           IF G NOT = "2AAAAAAAAAAAB0 0 0 0 0 BCCCCCCCCCCCC"
+#              DISPLAY "Test 2 failed: " G ".".
+#           STOP RUN.
+#])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CHECK([$COMPILE prog2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [], [])
+# CHECKME: that should likely be implied with -std=ibm
+#AT_CHECK([$COMPILE -std=ibm prog3.cob], [0], [], [])
+#AT_CHECK([$COMPILE -fodoslide prog3.cob], [0], [], [])
+#AT_CHECK([$COBCRUN_DIRECT ./prog3], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([INITIALIZE with REDEFINES])
 AT_KEYWORDS([initialize])
 

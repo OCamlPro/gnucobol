@@ -33,6 +33,17 @@
 	* parser.y: dropped "main_statement" and deactivated unnecessary calls to
 	  begin_implicit_statement
 
+2020-12-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (propagate_table): reduced codegen for INITIALIZE to a single
+	  variant for tables with compile-time known size, removing extra logic
+
+2020-12-11  Ron Norman <rjn@inglenet.com>
+
+	* codegen.c (output_initialize_compound, propagate_table):
+	  fix INITIALIZE logic to correctly handle subscripts (bug #694)
+	* parser.y: add check for valid ->pic pointer
+
 2020-12-07  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c (output_display_fields): prevent bad integer promotion in

@@ -4484,35 +4484,33 @@ propagate_table (cb_tree x)
 	  && !f->depending)) {
 		/* Table size is known at compile time */
 		/* Generate inline 'memcpy' to propagate the array data */
+		output_block_open ();
+		output_prefix ();
+		output ("cob_u8_ptr b_ptr = ");
+		output_data(x);
+		output (";");
+		output_newline ();
 
-		if (occ > 1) {
-			/* double the chunks each time */
-			do {
-				output_prefix ();
-				output ("memcpy (");
-				output_base (f, 0);
-				output (" + %5lu, ", len);
-				output_base (f, 0);
-				output (", %5lu);\t/* %s: %5d thru %d */",
-						len, f->name, j + 1, j * 2);
-				output_newline ();
-				j = j * 2;
-				len = len * 2;
-			} while ((j * 2) < occ);
+		/* double the chunks each time */
+		do {
+			output_prefix ();
+			output ("memcpy (b_ptr + %6lu, b_ptr, %6lu);", len, len);
+			output ("\t/* %s: %6u thru %u */", f->name, j + 1, j * 2);
+			output_newline ();
+			j = j * 2;
+			len = len * 2;
+		} while ((j * 2) < occ);
 
-			/* missing piece after last chunk */
-			if (j < occ) {
-				output_prefix ();
-				output ("memcpy (");
-				output_base (f, 0);
-				output (" + %5lu, ", len);
-				output_base (f, 0);
-				len = (size_t)f->size * (occ - j);
-				output (", %5lu);\t/* %s: %5d thru %d */",
-						len, f->name, j + 1, occ);
-				output_newline ();
-			}
+		/* missing piece after last chunk */
+		if (j < occ) {
+			output_prefix ();
+			output ("memcpy (b_ptr + %6lu, b_ptr, %6lu);",
+				len, (long)f->size * (occ - j));
+			output ("\t/* %s: %6u thru %u */",
+				f->name, j + 1, occ);
+			output_newline ();
 		}
+		output_block_close ();
 	} else {
 		/* Table size is only known at run time */
 		output_prefix ();
@@ -5121,11 +5119,17 @@ output_initialize_compound (struct cb_initialize *p, cb_tree x)
 				}
 			} else {
 				struct cb_reference *ref = CB_REFERENCE (c);
-				cb_tree			save_length;
+				cb_tree			save_check, save_length, r2;
 
 				/* Output initialization for the first record */
 				output_line ("/* initialize first record for %s */", f->name);
 				save_length = ref->length;
+				save_check = ref->check;
+				/* Output all 'check' first */
+				for (r2 = ref->check; r2; r2 = CB_CHAIN (r2)) {
+					output_stmt (CB_VALUE (r2));
+				}
+				ref->check = NULL;
 				ref->subs = CB_BUILD_CHAIN (cb_int1, ref->subs);
 				if (type == INITIALIZE_ONE) {
 					output_initialize_one (p, c);
@@ -5133,6 +5137,10 @@ output_initialize_compound (struct cb_initialize *p, cb_tree x)
 					ref->length = NULL;
 					output_initialize_compound (p, c);
 				}
+
+				/* all exceptions should have been raised above,
+				   so temporarily detach from the reference */
+				ref->check = NULL;
 				ref->length = NULL;
 
 				output_line ("/* copy initialized record for %s to later occurrences */",
@@ -5140,6 +5148,7 @@ output_initialize_compound (struct cb_initialize *p, cb_tree x)
 				propagate_table (c);
 
 				/* restore previous exception-checks for the reference */
+				ref->check = save_check;
 				ref->length = save_length;
 			}
 		}
