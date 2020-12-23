@@ -2512,6 +2512,7 @@ cobc_print_info (void)
 	cobc_var_print (_("default indexed handler"),    WITH_IXDFLT, 0);
 #endif
 #else
+	if (num == 0)
 	cobc_var_print (_("indexed file handler"),		_("disabled"), 0);
 #endif
 

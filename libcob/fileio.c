@@ -7447,6 +7447,7 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 			file_setptr->cob_fixrel_type = COB_FILE_IS_GC;
 	}
 
+#ifdef WITH_INDEXED
 #if defined(WITH_MULTI_ISAM)
 #if defined(WITH_INDEXED)
 	cob_load_module (WITH_INDEXED);	/* Preload default INDEXED handler */
@@ -7456,6 +7457,7 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 	/* Single type of ISAM is used */
 	cob_isam_init_fileio (&file_api);
 	io_rtns[WITH_INDEXED].loaded = 1;
+#endif
 #endif
 
 #if defined(WITH_INDEX_EXTFH)

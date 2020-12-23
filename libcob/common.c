@@ -7981,8 +7981,7 @@ print_info_detailed (const int verbose)
 	var_print (_("default indexed handler"), 	cob_io_version (WITH_INDEXED), "", 0);
 #endif
 #else
-	num++;
-	if (num > 1)
+	if (num == 0)
 	var_print (_("indexed file handler"), 		_("disabled"), "", 0);
 #endif
 
