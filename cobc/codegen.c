@@ -5122,13 +5122,18 @@ output_initialize_compound (struct cb_initialize *p, cb_tree x)
 				cb_tree			save_check, save_length, r2;
 
 				/* Output initialization for the first record */
-				output_line ("/* initialize first record for %s */", f->name);
+				if (f->occurs_max > 1) {
+					output_line ("/* initialize first record for %s */", f->name);
+				}
+
 				save_length = ref->length;
 				save_check = ref->check;
 				/* Output all 'check' first */
 				for (r2 = ref->check; r2; r2 = CB_CHAIN (r2)) {
 					output_stmt (CB_VALUE (r2));
 				}
+				/* all exceptions would have been raised above,
+				   so temporarily detach from the reference */
 				ref->check = NULL;
 				ref->subs = CB_BUILD_CHAIN (cb_int1, ref->subs);
 				if (type == INITIALIZE_ONE) {
@@ -5138,14 +5143,12 @@ output_initialize_compound (struct cb_initialize *p, cb_tree x)
 					output_initialize_compound (p, c);
 				}
 
-				/* all exceptions should have been raised above,
-				   so temporarily detach from the reference */
-				ref->check = NULL;
-				ref->length = NULL;
-
-				output_line ("/* copy initialized record for %s to later occurrences */",
-					f->name);
-				propagate_table (c);
+				if (f->occurs_max > 1) {
+					ref->length = NULL;
+					output_line ("/* copy initialized record for %s to later occurrences */",
+						f->name);
+					propagate_table (c);
+				}
 
 				/* restore previous exception-checks for the reference */
 				ref->check = save_check;

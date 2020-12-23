@@ -6,7 +6,7 @@
 #define COB_WITHOUT_EXCEPTIONS
 #define COB_WITHOUT_JMP
 #include "libcob/common.h"
-#define VCS_REF 4106
+#define VCS_REF 4109
 
 #define STRINGIZE_DETAIL_(v) #v
 #define STRINGIZE(v) STRINGIZE_DETAIL_(v)
