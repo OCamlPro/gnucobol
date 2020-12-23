@@ -1,4 +1,8 @@
 
+2020-12-23  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_initialize_compound): special handling for OCCURS 1
+	
 2020-12-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* field.c, pplex.l, tree.c, typeck.c: fixed warning option querying enum
