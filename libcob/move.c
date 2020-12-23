@@ -1211,13 +1211,13 @@ cob_init_table (void *tbl, unsigned long len, long occ)
 	char	*m = ((char*)tbl) + len;
 	unsigned long		i = len;
 	int		j = 1;
-	if (occ < 1)
+	if (occ < 2)
 		return;
 	do {
-		j = j * 2;
 		memcpy((void*)m, tbl, i);
 		m = m + i;
 		i = i * 2;
+		j = j * 2;
 	} while ((j * 2) < occ);
 	if (j < occ) {
 		memcpy((void*)m, tbl, len * (occ - j));

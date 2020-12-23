@@ -4679,29 +4679,31 @@ propagate_table (cb_tree x)
 	  && !f->depending)) {
 		/* Table size is known at compile time */
 		/* Generate inline 'memcpy' to propagate the array data */
-		output_block_open ();
-		output_prefix ();
-		output ("cob_u8_ptr b_ptr = ");
-		output_data(x);
-		output (";");
-		output_newline ();
-		do {
+		if (occ > 1) {
+			output_block_open ();
 			output_prefix ();
-			output ("memcpy (b_ptr + %6ld, b_ptr, %6ld);", len, len);
-			output ("\t/* %s: %5d thru %d */", f->name, j + 1, j * 2);
+			output ("cob_u8_ptr b_ptr = ");
+			output_data(x);
+			output (";");
 			output_newline ();
-			j = j * 2;
-			len = len * 2;
-		} while ((j * 2) < occ);
-		if (j < occ) {
-			output_prefix ();
-			output ("memcpy (b_ptr + %6ld, b_ptr, %6ld);",
-				len, (long)f->size * (occ - j));
-			output ("\t/* %s: %5d thru %d */",
-				f->name, j + 1, occ);
-			output_newline ();
+			do {
+				output_prefix ();
+				output ("memcpy (b_ptr + %6ld, b_ptr, %6ld);", len, len);
+				output ("\t/* %s: %5d thru %d */", f->name, j + 1, j * 2);
+				output_newline ();
+				j = j * 2;
+				len = len * 2;
+			} while ((j * 2) < occ);
+			if (j < occ) {
+				output_prefix ();
+				output ("memcpy (b_ptr + %6ld, b_ptr, %6ld);",
+					len, (long)f->size * (occ - j));
+				output ("\t/* %s: %5d thru %d */",
+					f->name, j + 1, occ);
+				output_newline ();
+			}
+			output_block_close ();
 		}
-		output_block_close ();
 	} else {
 		/* Table size is only known at run time */
 		output_prefix ();
