@@ -19,9 +19,12 @@
 # You should have received a copy of the GNU General Public License
 # along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 
+lib_vers = 5:0:0
+
 if COB_MAKE_CISAM_LIB
 lib_ci = libcobci.la
 libcobci_la_LIBADD = $(LIBCOB_CISAM)
+libcobci_la_LDFLAGS = $(COB_FIX_LIBTOOL) -version-info $(lib_vers)
 else
 lib_ci =
 endif
@@ -29,6 +32,7 @@ endif
 if COB_MAKE_DISAM_LIB
 lib_di = libcobdi.la
 libcobdi_la_LIBADD = $(LIBCOB_DISAM)
+libcobdi_la_LDFLAGS = $(COB_FIX_LIBTOOL) -version-info $(lib_vers)
 else
 lib_di =
 endif
@@ -36,6 +40,7 @@ endif
 if COB_MAKE_VBISAM_LIB
 lib_vb = libcobvb.la
 libcobvb_la_LIBADD = $(LIBCOB_VBISAM)
+libcobvb_la_LDFLAGS = $(COB_FIX_LIBTOOL) -version-info $(lib_vers)
 else
 lib_vb =
 endif
@@ -43,6 +48,7 @@ endif
 if COB_MAKE_VBCISAM_LIB
 lib_vc = libcobvc.la
 libcobvc_la_LIBADD = $(LIBCOB_VBCISAM)
+libcobvc_la_LDFLAGS = $(COB_FIX_LIBTOOL) -version-info $(lib_vers)
 else
 lib_vc =
 endif
@@ -51,6 +57,7 @@ if COB_MAKE_ODBC_LIB
 lib_od = libcobod.la
 libcobod_la_LIBADD = $(LIBCOB_ODBC)
 libcobod_la_SOURCES = fodbc.c fsqlxfd.c
+libcobod_la_LDFLAGS = $(COB_FIX_LIBTOOL) -version-info $(lib_vers)
 else
 lib_od =
 endif
@@ -59,6 +66,7 @@ if COB_MAKE_OCI_LIB
 lib_oc = libcoboc.la
 libcoboc_la_LIBADD = $(LIBCOB_OCI) 
 libcoboc_la_SOURCES = foci.c fsqlxfd.c
+libcoboc_la_LDFLAGS = $(COB_FIX_LIBTOOL) -version-info $(lib_vers)
 else
 lib_oc =
 endif
@@ -67,6 +75,7 @@ if COB_MAKE_BDB_LIB
 lib_db = libcobdb.la
 libcobdb_la_LIBADD = $(LIBCOB_BDB) 
 libcobdb_la_SOURCES = fbdb.c fsqlxfd.c
+libcobdb_la_LDFLAGS = $(COB_FIX_LIBTOOL) -version-info $(lib_vers)
 else
 lib_db =
 endif
@@ -75,6 +84,7 @@ if COB_MAKE_LMDB_LIB
 lib_lm = libcoblm.la
 libcoblm_la_LIBADD = $(LIBCOB_LMDB) 
 libcoblm_la_SOURCES = flmdb.c fsqlxfd.c
+libcoblm_la_LDFLAGS = $(COB_FIX_LIBTOOL) -version-info $(lib_vers)
 else
 lib_lm =
 endif
@@ -83,10 +93,8 @@ lib_LTLIBRARIES = libcob.la $(lib_ci) $(lib_di) $(lib_vb) $(lib_vc) \
 	$(lib_od) $(lib_oc) $(lib_db) $(lib_lm)
 
 libcob_la_SOURCES = common.c move.c numeric.c strings.c \
-	fileio.c fextfh.c fisam.c focextfh.c \
-	call.c intrinsic.c termio.c screenio.c reportio.c cobgetopt.c \
-	mlio.c
-
+	fileio.c fextfh.c focextfh.c  mlio.c \
+	call.c intrinsic.c termio.c screenio.c reportio.c cobgetopt.c 
 
 #ToDo Man Page
 #dist_man_MANS = libcob.3
@@ -97,10 +105,10 @@ AM_CPPFLAGS = -I$(top_srcdir) -I$(top_builddir)/lib -I$(top_srcdir)/lib \
 AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
 libcob_la_LIBADD = $(LIBCOB_LIBS) $(top_builddir)/lib/libsupport.a \
 	$(CODE_COVERAGE_LIBS)
-libcob_la_LDFLAGS = $(COB_FIX_LIBTOOL) -version-info 5:0:0 -no-undefined
+libcob_la_LDFLAGS = $(COB_FIX_LIBTOOL) -version-info $(lib_vers) -no-undefined
 AM_LDFLAGS = $(COB_FIX_LIB)
 
-EXTRA_DIST = coblocal.h cobinternal.h system.def sysdefines.h fileio.h
+EXTRA_DIST = coblocal.h cobinternal.h system.def sysdefines.h fileio.h fisam.c
 pkgincludedir = $(includedir)/libcob
 pkginclude_HEADERS = common.h cobgetopt.h exception.def
 

@@ -88,7 +88,6 @@ AH_TEMPLATE([WITH_DB], [Use Berkeley DB library as INDEXED handler])
 AH_TEMPLATE([WITH_LMDB], [Use Lightning Memory-Mapped Database as INDEXED handler])
 AH_TEMPLATE([WITH_ODBC], [Use ODBC for INDEXED file handler])
 AH_TEMPLATE([WITH_OCI], [Use OCI for INDEXED file handler])
-AH_TEMPLATE([WITH_MULTI_ISAM], [Using more than 1 of C/D/VB/VBC-ISAM])
 
 AH_TEMPLATE([WITH_XML2], [Use libxml2 as XML handler])
 AH_TEMPLATE([WITH_JSON], [JSON handler])
@@ -1354,24 +1353,24 @@ AC_ARG_WITH([indexed],
   	  elif test "$with_vbisam" = "yes"; then
 	    AC_DEFINE([WITH_INDEXED], [COB_IO_VBISAM])
 	    AC_DEFINE([WITH_IXDFLT], ["VB-ISAM"])
-  	  elif test "$with_disam" = "yes"; then
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_DISAM])
-	    AC_DEFINE([WITH_IXDFLT], ["D-ISAM"])
   	  elif test "$with_cisam" = "yes"; then
 	    AC_DEFINE([WITH_INDEXED], [COB_IO_CISAM])
 	    AC_DEFINE([WITH_IXDFLT], ["C-ISAM"])
+  	  elif test "$with_disam" = "yes"; then
+	    AC_DEFINE([WITH_INDEXED], [COB_IO_DISAM])
+	    AC_DEFINE([WITH_IXDFLT], ["D-ISAM"])
   	  elif test "$with_db" = "yes"; then
 	    AC_DEFINE([WITH_INDEXED], [COB_IO_BDB])
 	    AC_DEFINE([WITH_IXDFLT], ["BDB"])
-  	  elif test "$with_lmdb" = "yes"; then
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_LMDB])
-	    AC_DEFINE([WITH_IXDFLT], ["LMDB"])
   	  elif test "$with_odbc" = "yes"; then
 	    AC_DEFINE([WITH_ODBC], [COB_IO_ODBC])
 	    AC_DEFINE([WITH_IXDFLT], ["ODBC"])
   	  elif test "$with_oci" = "yes"; then
 	    AC_DEFINE([WITH_OCI], [COB_IO_OCI])
 	    AC_DEFINE([WITH_IXDFLT], ["OCI"])
+  	  elif test "$with_lmdb" = "yes"; then
+	    AC_DEFINE([WITH_INDEXED], [COB_IO_LMDB])
+	    AC_DEFINE([WITH_IXDFLT], ["LMDB"])
 	  else
 		AC_MSG_ERROR([--with-indexed=<HANDLER>, must be one of vbcisam|vbisam|disam|cisam|db|lmdb|odbc|oci])
 	  fi ;;
@@ -1392,15 +1391,15 @@ AC_ARG_WITH([indexed],
   	  elif test "$with_db" = "yes"; then
 	    AC_DEFINE([WITH_INDEXED], [COB_IO_BDB])
 	    AC_DEFINE([WITH_IXDFLT], ["BDB"])
-  	  elif test "$with_lmdb" = "yes"; then
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_LMDB])
-	    AC_DEFINE([WITH_IXDFLT], ["LMDB"])
   	  elif test "$with_odbc" = "yes"; then
 	    AC_DEFINE([WITH_INDEXED], [COB_IO_ODBC])
 	    AC_DEFINE([WITH_IXDFLT], ["ODBC"])
   	  elif test "$with_oci" = "yes"; then
 	    AC_DEFINE([WITH_INDEXED], [COB_IO_OCI])
 	    AC_DEFINE([WITH_IXDFLT], ["OCI"])
+  	  elif test "$with_lmdb" = "yes"; then
+	    AC_DEFINE([WITH_INDEXED], [COB_IO_LMDB])
+	    AC_DEFINE([WITH_IXDFLT], ["LMDB"])
 	  fi
   ])
 
@@ -1409,7 +1408,6 @@ LIBCOB_VBISAM=""
 LIBCOB_VBCISAM=""
 LIBCOB_DISAM=""
 LIBCOB_CISAM=""
-cob_multi_isam=no
 cob_gen_vbisam=no
 cob_gen_vbcisam=no
 cob_gen_disam=no
@@ -1456,9 +1454,6 @@ cob_gen_lmdb=no
 	else
 		AC_MSG_ERROR([DISAM library not found])
 	fi
-	if test "$with_vbisam" = "yes" -o "$with_disam" = "yes" -o "$with_vbcisam" = "yes"; then
-		cob_multi_isam=yes
-	fi
 	cob_gen_disam=yes
 	unset cobdisam
 	unset cob_got_disam
@@ -1477,9 +1472,6 @@ cob_gen_lmdb=no
 		LIBCOB_ISAM="$LIBCOB_ISAM -lvbisam"
 		LIBCOB_VBISAM="-lvbisam"],
 		AC_MSG_ERROR([libvbisam >= 2.0 is required for VBISAM]), [])
-	if test "$with_cisam" = "yes" -o "$with_disam" = "yes" -o "$with_vbcisam" = "yes"; then
-		cob_multi_isam=yes
-	fi
 	cob_gen_vbisam=yes
     fi ],
   [])
@@ -1503,23 +1495,10 @@ cob_gen_lmdb=no
 	else
 		AC_MSG_ERROR([VB-ISAM in C-ISAM mode library -l$cobisamlib not found])
 	fi
-	if test "$with_cisam" = "yes" -o "$with_disam" = "yes" -o "$with_vbisam" = "yes"; then
-		cob_multi_isam=yes
-	fi
 	cob_gen_vbcisam=yes
 	unset cob_got_vbcisam
     fi ],
   [])
-
-if test "$cob_multi_isam" = "no"; then
-	LIBCOB_LIBS="$LIBCOB_LIBS $LIBCOB_ISAM"
-	LIBCOB_VBISAM=""
-	LIBCOB_VBCISAM=""
-	LIBCOB_DISAM=""
-	LIBCOB_CISAM=""
-else
-	AC_DEFINE([WITH_MULTI_ISAM], [1])
-fi
 
 AC_ARG_WITH([index-extfh],
 [AS_HELP_STRING([--with-index-extfh],
@@ -1682,7 +1661,7 @@ if test "$with_db" = "yes"; then
 	else
 		AC_MSG_WARN([Matching BDB version (>=4.1) assumed])
 		AC_CHECK_LIB([db], [db_version],
-		[LIBCOB_LIBS="$LIBCOB_LIBS -ldb"],
+		[LIBCOB_LIBS="$LIBCOB_LIBS"],
 		AC_MSG_ERROR([BDB library is required as -ldb]), [])
 	fi
 	unset cobdb
@@ -2325,10 +2304,10 @@ else
 	COB_HAS_JSON=$USE_JSON
 fi
 
-AM_CONDITIONAL([COB_MAKE_CISAM_LIB], [test "$cob_multi_isam" = "yes" -a "$cob_gen_cisam" = "yes"])
-AM_CONDITIONAL([COB_MAKE_DISAM_LIB], [test "$cob_multi_isam" = "yes" -a "$cob_gen_disam" = "yes"])
-AM_CONDITIONAL([COB_MAKE_VBISAM_LIB], [test "$cob_multi_isam" = "yes" -a "$cob_gen_vbisam" = "yes"])
-AM_CONDITIONAL([COB_MAKE_VBCISAM_LIB], [test "$cob_multi_isam" = "yes" -a "$cob_gen_vbcisam" = "yes"])
+AM_CONDITIONAL([COB_MAKE_CISAM_LIB], [test "$cob_gen_cisam" = "yes"])
+AM_CONDITIONAL([COB_MAKE_DISAM_LIB], [test "$cob_gen_disam" = "yes"])
+AM_CONDITIONAL([COB_MAKE_VBISAM_LIB], [test "$cob_gen_vbisam" = "yes"])
+AM_CONDITIONAL([COB_MAKE_VBCISAM_LIB], [test "$cob_gen_vbcisam" = "yes"])
 AM_CONDITIONAL([COB_MAKE_BDB_LIB], [test "$cob_gen_bdb" = "yes"])
 AM_CONDITIONAL([COB_MAKE_ODBC_LIB], [test "$cob_gen_odbc" = "yes"])
 AM_CONDITIONAL([COB_MAKE_OCI_LIB], [test "$cob_gen_oci" = "yes"])

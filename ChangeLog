@@ -1,4 +1,9 @@
 
+2020-12-24  Ron Norman <rjn@inglenet.com> 
+
+	* configure.ac: Updated to build all INDEXED file handlers
+		as shared code library
+		
 2020-12-23  Ron Norman <rjn@inglenet.com> 
 
 	* configure.ac: Updates to build most INDEXED file handlers

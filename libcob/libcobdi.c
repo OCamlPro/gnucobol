@@ -21,10 +21,8 @@
 #include <config.h>
 #define _CONFIG_H
 #endif
-#if defined(WITH_MULTI_ISAM)
+
 #define IS_ISAM_LIB 1
 #define FOR_DISAM 1
 
 #include "fisam.c"
-
-#endif

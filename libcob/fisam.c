@@ -58,7 +58,7 @@
 
 #include "fileio.h"
 
-#if !defined(WITH_MULTI_ISAM) || defined(IS_ISAM_LIB)
+#if defined(IS_ISAM_LIB)
 
 #if	defined(WITH_CISAM) || defined(WITH_DISAM) || defined(WITH_VBISAM) || defined(WITH_VBCISAM)
 #define ISRECNUM isrecnum
@@ -1886,4 +1886,4 @@ cob_isam_init_fileio (cob_file_api *a)
 }
 
 #endif
-#endif /* WITH_MULTI_ISAM */
+#endif
