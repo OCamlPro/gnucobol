@@ -7447,6 +7447,13 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 			file_setptr->cob_fixrel_type = COB_FILE_IS_GC;
 	}
 
+#if defined(WITH_STATIC_ISAM)
+	cob_isam_init_fileio (&file_api);
+#if defined(WITH_INDEXED)
+	io_rtns [WITH_INDEXED].loaded = 1;
+#endif
+#endif
+
 #if defined(WITH_INDEX_EXTFH)
 	cob_index_init_fileio (&file_api);
 #endif

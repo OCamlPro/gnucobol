@@ -58,7 +58,7 @@
 
 #include "fileio.h"
 
-#if defined(IS_ISAM_LIB)
+#if defined(IS_ISAM_LIB) || defined(WITH_STATIC_ISAM)
 
 #if	defined(WITH_CISAM) || defined(WITH_DISAM) || defined(WITH_VBISAM) || defined(WITH_VBCISAM)
 #define ISRECNUM isrecnum

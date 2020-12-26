@@ -1,4 +1,10 @@
 
+2020-12-26  Ron Norman <rjn@inglenet.com> 
+
+	* Makefile.am,fisam.c,fileio.c: Added option to configure
+			--with-static-isam which will comppile and link the ISAM handler 
+			into libcob instead of shared library
+
 2020-12-24  Ron Norman <rjn@inglenet.com> 
 
 	* Makefile.am,fisam.c,fileio.c,libcobxx.c: 

@@ -93,7 +93,7 @@ lib_LTLIBRARIES = libcob.la $(lib_ci) $(lib_di) $(lib_vb) $(lib_vc) \
 	$(lib_od) $(lib_oc) $(lib_db) $(lib_lm)
 
 libcob_la_SOURCES = common.c move.c numeric.c strings.c \
-	fileio.c fextfh.c focextfh.c  mlio.c \
+	fileio.c fextfh.c focextfh.c  mlio.c fisam.c \
 	call.c intrinsic.c termio.c screenio.c reportio.c cobgetopt.c 
 
 #ToDo Man Page
@@ -108,7 +108,7 @@ libcob_la_LIBADD = $(LIBCOB_LIBS) $(top_builddir)/lib/libsupport.a \
 libcob_la_LDFLAGS = $(COB_FIX_LIBTOOL) -version-info $(lib_vers) -no-undefined
 AM_LDFLAGS = $(COB_FIX_LIB)
 
-EXTRA_DIST = coblocal.h cobinternal.h system.def sysdefines.h fileio.h fisam.c
+EXTRA_DIST = coblocal.h cobinternal.h system.def sysdefines.h fileio.h
 pkgincludedir = $(includedir)/libcob
 pkginclude_HEADERS = common.h cobgetopt.h exception.def
 

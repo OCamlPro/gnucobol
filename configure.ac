@@ -88,6 +88,7 @@ AH_TEMPLATE([WITH_DB], [Use Berkeley DB library as INDEXED handler])
 AH_TEMPLATE([WITH_LMDB], [Use Lightning Memory-Mapped Database as INDEXED handler])
 AH_TEMPLATE([WITH_ODBC], [Use ODBC for INDEXED file handler])
 AH_TEMPLATE([WITH_OCI], [Use OCI for INDEXED file handler])
+AH_TEMPLATE([WITH_STATIC_ISAM], [Link ISAM into libcob])
 
 AH_TEMPLATE([WITH_XML2], [Use libxml2 as XML handler])
 AH_TEMPLATE([WITH_JSON], [JSON handler])
@@ -1491,13 +1492,40 @@ cob_gen_lmdb=no
 		break,
 		[], [])
 	if test "$cob_got_vbcisam" = "yes"; then
-		AC_MSG_NOTICE([VB-ISAM in C-ISAM mode library found as -l$cobisamlib])
+		AC_MSG_NOTICE([VB-ISAM in C-ISAM mode library found as $LIBCOB_VBCISAM])
 	else
-		AC_MSG_ERROR([VB-ISAM in C-ISAM mode library -l$cobisamlib not found])
+		AC_MSG_ERROR([VB-ISAM in C-ISAM mode library -lvbcisam not found])
 	fi
 	cob_gen_vbcisam=yes
 	unset cob_got_vbcisam
     fi ],
+  [])
+
+num_isam=0
+if  test "$cob_gen_vbcisam" = "yes"; then
+	num_isam=`expr $num_isam + 1`
+fi
+if  test "$cob_gen_vbisam" = "yes"; then
+	num_isam=`expr $num_isam + 1`
+fi
+if  test "$cob_gen_disam" = "yes"; then
+	num_isam=`expr $num_isam + 1`
+fi
+if  test "$cob_gen_cisam" = "yes"; then
+	num_isam=`expr $num_isam + 1`
+fi
+
+static_isam=no
+AC_ARG_WITH([static-isam],
+  [AS_HELP_STRING([--with-static-isam],
+    [(GnuCOBOL) static link ISAM file handler to libcob])],
+  [ if test $num_isam = 1; then
+		AC_DEFINE([WITH_STATIC_ISAM], [1])
+		LIBCOB_LIBS="$LIBCOB_LIBS $LIBCOB_ISAM"
+		static_isam=yes
+	else
+		AC_MSG_ERROR([static-isam requires exactly 1 ISAM library])
+	fi ],
   [])
 
 AC_ARG_WITH([index-extfh],
@@ -2304,14 +2332,15 @@ else
 	COB_HAS_JSON=$USE_JSON
 fi
 
-AM_CONDITIONAL([COB_MAKE_CISAM_LIB], [test "$cob_gen_cisam" = "yes"])
-AM_CONDITIONAL([COB_MAKE_DISAM_LIB], [test "$cob_gen_disam" = "yes"])
-AM_CONDITIONAL([COB_MAKE_VBISAM_LIB], [test "$cob_gen_vbisam" = "yes"])
-AM_CONDITIONAL([COB_MAKE_VBCISAM_LIB], [test "$cob_gen_vbcisam" = "yes"])
+AM_CONDITIONAL([COB_MAKE_CISAM_LIB], [test "$cob_gen_cisam" = "yes" -a "$static_isam" = "no"])
+AM_CONDITIONAL([COB_MAKE_DISAM_LIB], [test "$cob_gen_disam" = "yes" -a "$static_isam" = "no"])
+AM_CONDITIONAL([COB_MAKE_VBISAM_LIB], [test "$cob_gen_vbisam" = "yes" -a "$static_isam" = "no"])
+AM_CONDITIONAL([COB_MAKE_VBCISAM_LIB], [test "$cob_gen_vbcisam" = "yes" -a "$static_isam" = "no"])
 AM_CONDITIONAL([COB_MAKE_BDB_LIB], [test "$cob_gen_bdb" = "yes"])
 AM_CONDITIONAL([COB_MAKE_ODBC_LIB], [test "$cob_gen_odbc" = "yes"])
 AM_CONDITIONAL([COB_MAKE_OCI_LIB], [test "$cob_gen_oci" = "yes"])
 AM_CONDITIONAL([COB_MAKE_LMDB_LIB], [test "$cob_gen_lmdb" = "yes"])
+AM_CONDITIONAL([COB_MAKE_STATIC_ISAM], [test "$static_isam" = "yes"])
 
 AM_CONDITIONAL([LOCAL_CJSON],[test "$USE_JSON" = "local"])
 
@@ -2504,6 +2533,8 @@ fi
 
 if test "$COB_HAS_ISAM" = no; then
   AC_MSG_NOTICE([ INDEXED I/O (no handler configured):         NO])
+elif test "$static_indexed" = yes; then
+  AC_MSG_NOTICE([ INDEXED handler linked with libcob             ])
 fi
 
 case "$with_xml2" in
