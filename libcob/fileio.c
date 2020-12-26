@@ -701,7 +701,7 @@ cob_load_module ( int iortn )
 		return 0;
 	}
 	errmsg[0] = 0;
-	ioinit = cob_load_lib (io_rtns[iortn].module, io_rtns[iortn].entry, errmsg);
+	ioinit = (void (*)(cob_file_api *))cob_load_lib (io_rtns[iortn].module, io_rtns[iortn].entry, errmsg);
 	if(ioinit == NULL) {
 		if (io_rtns[iortn].desc != NULL)
 			cob_runtime_error (_("%s library %s is not present\n%s"),
