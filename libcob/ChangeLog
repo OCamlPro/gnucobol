@@ -1,8 +1,12 @@
 
+2021-01-04  Ron Norman <rjn@inglenet.com> 
+
+	* fileio.c: If old style OpenCobol EXTFH is used then mark it as present
+
 2020-12-26  Ron Norman <rjn@inglenet.com> 
 
 	* Makefile.am,fisam.c,fileio.c: Added option to configure
-			--with-static-isam which will comppile and link the ISAM handler 
+			--with-static-isam which will compile and link the ISAM handler 
 			into libcob instead of shared library
 
 2020-12-24  Ron Norman <rjn@inglenet.com> 

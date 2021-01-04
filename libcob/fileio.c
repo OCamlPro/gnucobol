@@ -7456,10 +7456,13 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 
 #if defined(WITH_INDEX_EXTFH)
 	cob_index_init_fileio (&file_api);
+	io_rtns [COB_IO_IXEXT].loaded = 1;
 #endif
 
 #if defined(WITH_SEQRA_EXTFH)
 	cob_seqra_init_fileio (&file_api);
+	io_rtns [COB_IO_SQEXT].loaded = 1;
+	io_rtns [COB_IO_RAEXT].loaded = 1;
 #endif
 
 }
