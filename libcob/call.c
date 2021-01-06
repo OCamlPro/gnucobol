@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2012, 2014-2020 Free Software Foundation, Inc.
+   Copyright (C) 2003-2012, 2014-2021 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -1107,9 +1107,12 @@ cob_resolve_func (const char *name)
  * Load library and return address of entry point
  */
 void *
-cob_load_lib (const char *library, const char *entry, char *reason)
+cob_load_lib (const char *library_basename, const char *entry, char *reason)
 {
 	void	*p;
+	char		library[COB_MINI_BUFF];
+
+	sprintf (library, "%s.%s", library_basename, COB_MODULE_EXT);
 
 	errno = 0;
 	p = lt_dlopenlcl (library);
@@ -1118,19 +1121,18 @@ cob_load_lib (const char *library, const char *entry, char *reason)
 		if (p == NULL
 		 && reason != NULL) {
 #if	defined(USE_LIBDL)
-			sprintf(reason,"no entry: %s",lt_dlerror());
+			sprintf (reason, "no entry: %s", lt_dlerror());
 #else
-			strcpy(reason,"entry not found");
+			strcpy (reason, "entry not found");
 #endif
 		}
 	} else if (reason != NULL) {
 #if	defined(USE_LIBDL)
-		strcpy(reason,lt_dlerror());
+		strcpy (reason, lt_dlerror());
 #else
-		strcpy(reason,"Unknown");
+		strcpy (reason, "Unknown");
 #endif
 	}
-
 
 	return p;
 }

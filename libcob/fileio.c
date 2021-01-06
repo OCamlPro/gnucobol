@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2020 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2021 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -243,17 +243,17 @@ static struct {
 	{1,"SEQUENTIAL",NULL,NULL,NULL},
 	{1,"LINE",NULL,NULL,NULL},
 	{1,"RELATIVE",NULL,NULL,NULL},
-	{0,"CISAM","libcobci.so", "cob_isam_init_fileio","C-ISAM"},
-	{0,"DISAM","libcobdi.so", "cob_isam_init_fileio","D-ISAM"},
-	{0,"VBISAM","libcobvb.so", "cob_isam_init_fileio","VB-ISAM"},
-	{0,"BDB","libcobdb.so", "cob_bdb_init_fileio",NULL},
-	{0,"VBCISAM","libcobvc.so", "cob_isam_init_fileio","VB-ISAM (C-ISAM mode)"},
+	{0,"CISAM","libcobci", "cob_isam_init_fileio","C-ISAM"},
+	{0,"DISAM","libcobdi", "cob_isam_init_fileio","D-ISAM"},
+	{0,"VBISAM","libcobvb", "cob_isam_init_fileio","VB-ISAM"},
+	{0,"BDB","libcobdb", "cob_bdb_init_fileio",NULL},
+	{0,"VBCISAM","libcobvc", "cob_isam_init_fileio","VB-ISAM (C-ISAM mode)"},
 	{0,"IXEXT",NULL,NULL,NULL},
 	{0,"SQEXT",NULL,NULL,NULL},
 	{0,"RLEXT",NULL,NULL,NULL},
-	{0,"ODBC","libcobod.so", "cob_odbc_init_fileio",NULL},
-	{0,"OCI","libcoboc.so", "cob_oci_init_fileio",NULL},
-	{0,"LMDB","libcoblm.so", "cob_lmdb_init_fileio",NULL},
+	{0,"ODBC","libcobod", "cob_odbc_init_fileio",NULL},
+	{0,"OCI","libcoboc", "cob_oci_init_fileio",NULL},
+	{0,"LMDB","libcoblm", "cob_lmdb_init_fileio",NULL},
 	{0,NULL,NULL,NULL,NULL}
 };
 #ifdef	WITH_INDEX_EXTFH
@@ -692,7 +692,7 @@ cob_key_def (cob_file *f, int keyn, char *p, int *ret, int keycheck)
  * Dynamically Load the given I/O routine
  */
 static int
-cob_load_module ( int iortn )
+cob_load_module (int iortn)
 {
 	char	errmsg[256];
 	void (*ioinit)(cob_file_api *);
@@ -702,7 +702,7 @@ cob_load_module ( int iortn )
 	}
 	errmsg[0] = 0;
 	ioinit = (void (*)(cob_file_api *))cob_load_lib (io_rtns[iortn].module, io_rtns[iortn].entry, errmsg);
-	if(ioinit == NULL) {
+	if (ioinit == NULL) {
 		if (io_rtns[iortn].desc != NULL)
 			cob_runtime_error (_("%s library %s is not present\n%s"),
 						io_rtns[iortn].desc,io_rtns[iortn].module,errmsg);
@@ -720,7 +720,7 @@ cob_load_module ( int iortn )
  * Return a string with I/O module version information
  */
 const char *
-cob_io_version ( const int iortn )
+cob_io_version (const int iortn)
 {
 	cob_load_module (iortn);
 	if (fileio_funcs[iortn] == NULL) {

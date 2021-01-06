@@ -1,46 +1,54 @@
 
+2021-01-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (io_rtns): module name without file extension
+	* call.c (cob_load_lib): concat COB_MODULE_EXT to library_name
+	* common.c (print_version): welcome 2021
+
 2021-01-04  Ron Norman <rjn@inglenet.com> 
 
 	* fileio.c: If old style OpenCobol EXTFH is used then mark it as present
 
 2020-12-26  Ron Norman <rjn@inglenet.com> 
 
-	* Makefile.am,fisam.c,fileio.c: Added option to configure
-			--with-static-isam which will compile and link the ISAM handler 
-			into libcob instead of shared library
+	* Makefile.am, fisam.c, fileio.c: Added option to configure
+	  --with-static-isam which will compile and link the ISAM handler 
+	  into libcob instead of shared library
 
 2020-12-24  Ron Norman <rjn@inglenet.com> 
 
-	* Makefile.am,fisam.c,fileio.c,libcobxx.c: 
-			Updates to build all INDEXED file handlers as shared code library
+	* Makefile.am, fisam.c, fileio.c, libcobxx.c: 
+	  Updates to build all INDEXED file handlers as shared code library
 
 2020-12-23  Ron Norman <rjn@inglenet.com> 
 
 	* Makefile.am: Updates to build most INDEXED file handlers
-					as shared code library
+	  as shared code library
 	* coblocal.h: Updates to build INDEXED file handlers as shared library
 	* fileio.h: Updates to build INDEXED file handlers as shared library
 	* fileio.c: Updates to build INDEXED file handlers as shared library
 
 2020-12-23  Ron Norman <rjn@inglenet.com>
+
 	* call.c: added 'reason' parameter to cob_load_lib
 	* fileio.c: Uses 'reason' if available when problem loading module
 
 2020-12-22  Ron Norman <rjn@inglenet.com>
-	* fisam.c:	Added isam_version to return the ISAM handler version
-	* fbdb.c:	Added bdb_version to return the Berkley Database version
-	* foci.c:	Added oci_version to return the Oracle version
-	* fodbc.c:	Added odbc_version to return the ODBC version
+
+	* fisam.c (isam_version), fbdb.c (bdb_version), foci.c (oci_version),
+	  fodbc.c (odbc_version): added to return the the underlying handler version
 	* fileio.h:	New io_version function pointer
 	* fileio.c: added cob_io_version to load if needed and return 
-				module version string
+	  module version string
 	* common.c:	Now calls each I/O module to get its version information
 
 2020-12-21  Ron Norman <rjn@inglenet.com>
+
 	* fisam.c: If isbuild returns EBADARG, then iserase and retry
 	* fileio.c: More changes for "format=vbcisam"
 
 2020-12-16  Ron Norman <rjn@inglenet.com>
+
 	* common.h: Changes to handle VBISAM in CISAM mode
 	* common.c: Changes to report using VBISAM in CISAM mode
 	* fileio.c: Changes to handle "format=vbcisam"
@@ -5054,7 +5062,7 @@
 	  (cob_init_call): Initialize 'dynamic_reloading'.
 
 
-Copyright 2002-2020 Free Software Foundation, Inc.
+Copyright 2002-2021 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.
