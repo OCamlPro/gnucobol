@@ -1,4 +1,12 @@
 
+2021-01-09  Ron Norman <rjn@inglenet.com> 
+
+	* fileio.c: Updated to track if file was modified or not
+				and then skip commit/rollback if no modification
+	* fisam.c: Code added for use of ISAM logging/transaction ability
+	* foci.c, fodbc.c: Set on flag_log_support always
+
+
 2021-01-06  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fileio.c (io_rtns): module name without file extension

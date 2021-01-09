@@ -1468,6 +1468,8 @@ odbc_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 	f->flag_nonexistent = 0;
 	f->flag_end_of_file = 0;
 	f->flag_begin_of_file = 0;
+	f->flag_log_support = 1;
+	f->flag_do_log = 1;
 	p->savekey = cob_malloc ((size_t)(p->maxkeylen + 1));
 	p->suppkey = cob_malloc ((size_t)(p->maxkeylen + 1));
 	p->saverec = cob_malloc ((size_t)(f->record_max + 1));

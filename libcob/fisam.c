@@ -106,6 +106,11 @@ static	cob_settings	*isam_setptr;
 /* Old VBISAM! (2.2 supports the 02 status) */
 #undef	COB_WITH_STATUS_02
 #endif
+#if !defined(VBISAM_VERSION)
+/* Using an old version of VBISAM */
+/* If LOG_UNUSABLE is defined then do not use iscommit/isrollback etc... */
+#define	LOG_UNUSABLE 1
+#endif
 #ifdef VB_MAX_KEYLEN
 #ifndef MAXKEYLEN
 #define MAXKEYLEN VB_MAX_KEYLEN
@@ -146,6 +151,11 @@ static	vb_rtd_t *vbisam_rtd = NULL;
 #if defined(ISVARLEN)
 #undef ISVARLEN
 #endif
+#if !defined(VBISAM_VERSION)
+/* Using an old version of VBISAM */
+/* If LOG_UNUSABLE is defined then do not use iscommit/isrollback etc... */
+#define	LOG_UNUSABLE 1
+#endif
 #if defined(VBISAM_VERSION) && !defined(COB_WITH_STATUS_02)
 #define	COB_WITH_STATUS_02
 #endif
@@ -182,6 +192,7 @@ struct indexfile {
 	char	*savekey;	/* Area to save last primary key read */
 	char	*recwrk;	/* Record work/save area */
 	char	*recorg;	/* Original Record save area */
+	int		isopenmode;	/* Options used for isopen */
 	int		nkeys;		/* Actual keys in file */
 	int		isfd;		/* ISAM file number */
 	long	recnum;		/* Last record number read */
@@ -213,6 +224,8 @@ static int isam_delete	(cob_file_api *a, cob_file *);
 static int isam_rewrite	(cob_file_api *a, cob_file *, const int);
 static int isam_file_delete (cob_file_api *a, cob_file *f, char *name);
 static int isam_sync (cob_file_api *a, cob_file *f);
+static int isam_commit (cob_file_api *a, cob_file *f);
+static int isam_rollback (cob_file_api *a, cob_file *f);
 static char *isam_version (void);
 static void cob_isam_exit_fileio (cob_file_api *a);
 void cob_isam_init_fileio (cob_file_api *a);
@@ -223,6 +236,14 @@ isam_dummy ()
 	return 0;
 }
 
+static int	logActive = 0;
+#if defined(LOG_UNUSABLE) && (LOG_UNUSABLE == 1)
+static int	logUnusable = 1;
+#else
+static int	logUnusable = 0;
+#endif
+static int	logUpdated = 0;
+static char logFileName[256] = "";
 static const struct cob_fileio_funcs ext_indexed_funcs = {
 	isam_open,
 	isam_close,
@@ -237,13 +258,78 @@ static const struct cob_fileio_funcs ext_indexed_funcs = {
 	cob_isam_exit_fileio,
 	isam_dummy,			/* forking */
 	isam_sync,			/* sync */
-	isam_sync,			/* commit */
-	isam_dummy,			/* rollback */
+	isam_commit,		/* commit */
+	isam_rollback,		/* rollback */
 	isam_dummy,			/* unlock */
 	isam_version
 };
 
 /* Local functions */
+
+static void
+openLogFile()
+{
+	if (logActive
+	 || logUnusable
+	 || logFileName[0] <= ' ')
+		return;
+#if defined(LOG_UNUSABLE) && (LOG_UNUSABLE == 1)
+	logActive = 0;
+#else
+	creat ((void*)logFileName, 0666);
+	if (islogopen ((void*)logFileName) != 0) {
+		cob_runtime_error("Error opening log file %s\n",logFileName);
+		unlink (logFileName);
+	} else {
+		logActive = 1;
+	}
+	isbegin ();
+#endif
+}
+
+static void
+closeLogFile()
+{
+	if (!logActive
+	 || logFileName[0] <= ' ')
+		return;
+	logActive = 0;
+#if defined(LOG_UNUSABLE) && (LOG_UNUSABLE == 1)
+	return;
+#else
+	islogclose();
+	if(logFileName[0] > ' ')
+		unlink(logFileName);
+	memset(logFileName,0,sizeof(logFileName));
+#endif
+}
+
+static void
+clearLogFile()
+{
+	if (logFileName[0] <= ' '
+	 || logUnusable) {
+		logActive = 0;
+		return;
+	}
+#if 0 /* REMIND: more testing of this is needed; RJN */
+#if defined(LOG_UNUSABLE) && (LOG_UNUSABLE == 1)
+	logActive = 0;
+#else
+	islogclose();
+	if(logFileName[0] > ' ')
+		unlink(logFileName);
+	creat ((void*)logFileName, 0666);
+	if (islogopen ((void*)logFileName) != 0) {
+		cob_runtime_error("Error opening log file %s\n",logFileName);
+		unlink (logFileName);
+		logActive = 0;
+	} else {
+		logActive = 1;
+	}
+#endif
+#endif
+}
 
 /* Return total length of the key */
 static int
@@ -443,7 +529,13 @@ isam_sync (cob_file_api *a, cob_file *f)
 	struct indexfile	*fh;
 
 	COB_UNUSED (a);
+#ifdef ISSYNCWR
+	COB_UNUSED (f);
+	COB_UNUSED (fh);
+#else
 	if (f->organization == COB_ORG_INDEXED
+	 && (f->file_features & COB_FILE_SYNC)
+	 && f->open_mode != COB_OPEN_INPUT
 	 && f->open_mode != COB_OPEN_CLOSED) {
 		fh = f->file;
 		if (fh
@@ -451,12 +543,73 @@ isam_sync (cob_file_api *a, cob_file *f)
 			isflush (fh->isfd);
 		}
 	}
+#endif
 	return 0;
 }
 
+static int
+isam_commit (cob_file_api *a, cob_file *f)
+{
+	COB_UNUSED (a);
+	if (logActive
+	 && logUpdated) {
+#if defined(LOG_UNUSABLE) && (LOG_UNUSABLE == 1)
+		logActive = 0;
+#else
+		if (iscommit () != 0) {
+			logActive = 0;
+		}
+		clearLogFile();
+		if (isbegin () != 0) {
+			logActive = 0;
+			cob_runtime_error("Error %d on begin: %s",ISERRNO,logFileName);
+		}
+#endif
+#ifndef ISSYNCWR
+	} else
+	if (f->organization == COB_ORG_INDEXED
+	 && (f->file_features & COB_FILE_SYNC)
+	 && f->open_mode != COB_OPEN_INPUT
+	 && f->open_mode != COB_OPEN_CLOSED) {
+		struct indexfile	*fh;
+		fh = f->file;
+		if (fh
+		 && fh->isfd > 0) {
+			isflush (fh->isfd);
+		}
+#endif
+	}
+	logUpdated = 0;
+	return 0;
+}
+
+static int
+isam_rollback (cob_file_api *a, cob_file *f)
+{
+	COB_UNUSED (a);
+	COB_UNUSED (f);
+
+	if (logActive
+	 && logUpdated) {
+#if defined(LOG_UNUSABLE) && (LOG_UNUSABLE == 1)
+		logActive = 0;
+#else
+		if (isrollback () != 0) {
+			logActive = 0;
+			cob_runtime_error("Error %d on rollback: %s\n",ISERRNO,logFileName);
+		}
+		clearLogFile();
+		if (isbegin () != 0) {
+			logActive = 0;
+			cob_runtime_error("Error %d on begin: %s\n",ISERRNO,logFileName);
+		}
+#endif
+	}
+	logUpdated = 0;
+	return 0;
+}
 
 /* INDEXED */
-
 
 /* Translate ISAM status to COBOL status */
 static int
@@ -496,6 +649,8 @@ fisretsts (const int default_status)
 			return COB_STATUS_21_KEY_INVALID;
 		}
 		break;
+	case ENOTOPEN:
+		return COB_STATUS_49_I_O_DENIED;
 	default:
 		break;
 	}
@@ -868,6 +1023,30 @@ isam_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 		vmode = ISVARLEN;
 		ISRECLEN = f->record_min;
 	}
+	if (logUnusable) {
+		f->flag_do_log = 0;
+		f->flag_log_support = 0;
+	}
+	if (mode != COB_OPEN_INPUT
+	 && f->flag_do_log
+	 && !logActive)
+		openLogFile();
+	if (!f->flag_do_log) {
+#ifdef ISNOLOG
+		vmode |= ISNOLOG;
+#endif
+	} else {
+#ifdef ISTRANS
+		if (logActive) {
+			vmode |= ISTRANS;
+		}
+#endif
+	}
+#ifdef ISSYNCWR
+	if ((f->file_features & COB_FILE_SYNC)) {
+		vmode |= ISSYNCWR;
+	}
+#endif
 	if ((f->share_mode & COB_SHARE_NO_OTHER)
 	 || (f->lock_mode & COB_FILE_EXCLUSIVE) ) {
 		lmode = ISEXCLLOCK;
@@ -928,8 +1107,8 @@ dobuild:
 		if (f->record_min != f->record_max) {
 			ISRECLEN = f->record_min;
 		}
-		isfd = isbuild ((void *)filename, (int)f->record_max, &fh->key[0],
-								vmode | ISINOUT | ISEXCLLOCK);
+		vmode |= (ISINOUT | ISEXCLLOCK);
+		isfd = isbuild ((void *)filename, (int)f->record_max, &fh->key[0], vmode);
 		for(k=0; k < MAXNUMKEYS; k++)
 			fh->idxmap[k] = k;
 		f->flag_file_lock = 1;
@@ -940,8 +1119,7 @@ dobuild:
 			if (f->record_min != f->record_max) {
 				ISRECLEN = f->record_min;
 			}
-			isfd = isbuild ((void *)filename, (int)f->record_max, &fh->key[0],
-								vmode | ISINOUT | ISEXCLLOCK);
+			isfd = isbuild ((void *)filename, (int)f->record_max, &fh->key[0], vmode);
 			f->flag_file_lock = 1;
 		}
 	} else {
@@ -1078,6 +1256,7 @@ dobuild:
 	f->open_mode = mode;
 	fh->isfd = isfd;
 	fh->filename = cob_strdup (filename);
+	fh->isopenmode = omode | lmode | vmode;
 	fh->savekey = cob_malloc ((size_t)(fh->lenkey + 1));
 	fh->recwrk = cob_malloc ((size_t)(f->record_max + 1));
 	/* Active index is unknown at this time */
@@ -1274,7 +1453,7 @@ isam_read (cob_file_api *a, cob_file *f, cob_field *key, const int read_opts)
 	if (isread_retry (f, (void *)f->record->data, ISEQUAL | lmode)) {
 		ret = fisretsts (COB_STATUS_21_KEY_INVALID);
 	}
-	if ((ret != 0)) {
+	if ((ret != COB_STATUS_00_SUCCESS)) {
 		memset (fh->savekey, 0, fh->lenkey);
 		fh->recnum = 0;
 		fh->readdone = 0;
@@ -1608,6 +1787,12 @@ isam_write (cob_file_api *a, cob_file *f, const int opt)
 	}
 	retdup = ret = COB_STATUS_00_SUCCESS;
 
+	if (f->flag_do_log
+	 && logActive)
+		f->flag_log_support = 1;
+	else
+		f->flag_do_log = 0;
+
 #ifndef COB_WITH_STATUS_02
 	if (f->flag_read_chk_dups) {
 		int k;
@@ -1656,6 +1841,8 @@ isam_write (cob_file_api *a, cob_file *f, const int opt)
 	if (ret == COB_STATUS_00_SUCCESS
 	 && retdup != COB_STATUS_00_SUCCESS)
 		ret = retdup;
+	if (ret < 10)
+		logUpdated = 1;
 	return ret;
 }
 
@@ -1674,6 +1861,12 @@ isam_delete (cob_file_api *a, cob_file *f)
 	if (f->flag_nonexistent) {
 		return COB_STATUS_49_I_O_DENIED;
 	}
+	if (f->flag_do_log
+	 && logActive)
+		f->flag_log_support = 1;
+	else
+		f->flag_do_log = 0;
+
 	if (f->curkey == -1) {
 		/* Switch to primary index */
 		isstart (fh->isfd, &fh->key[0], 0,
@@ -1690,13 +1883,15 @@ isam_delete (cob_file_api *a, cob_file *f)
 	}
 	if (isread_retry (f, (void *)f->record->data, ISEQUAL | ISLOCK)) {
 		ret = fisretsts (COB_STATUS_21_KEY_INVALID);
-	} else if (isdelete (fh->isfd, (void *)f->record->data)) {
+	} else if (isdelcurr (fh->isfd)) {
 		ret = fisretsts (COB_STATUS_49_I_O_DENIED);
 	}
 	restorefileposition (f);
 	if ( !(f->lock_mode & COB_LOCK_MULTIPLE)) {
 		isrelease (fh->isfd);
 	}
+	if (ret < 10)
+		logUpdated = 1;
 	return ret;
 }
 
@@ -1726,6 +1921,12 @@ isam_rewrite (cob_file_api *a, cob_file *f, const int opt)
 	if (fh->recorg == NULL) {
 		fh->recorg = cob_malloc ((size_t)(f->record_max + 1));
 	}
+	if (f->flag_do_log
+	 && logActive)
+		f->flag_log_support = 1;
+	else
+		f->flag_do_log = 0;
+
 #ifndef COB_WITH_STATUS_02
 	svky = f->curkey;
 	if (f->flag_read_chk_dups
@@ -1849,6 +2050,8 @@ isam_rewrite (cob_file_api *a, cob_file *f, const int opt)
 	} else if (ret) {
 		isrelease (fh->isfd);
 	}
+	if (ret < 10)
+		logUpdated = 1;
 	return ret;
 }
 
@@ -1856,6 +2059,7 @@ static void
 cob_isam_exit_fileio (cob_file_api *a)
 {
 	COB_UNUSED (a);
+	closeLogFile();
 #ifndef	WITH_DISAM
 	(void)iscleanup ();
 #endif
@@ -1869,12 +2073,25 @@ cob_isam_init_fileio (cob_file_api *a)
 #endif
 #if defined(WITH_DISAM)
 	a->io_funcs[COB_IO_DISAM] = (void*) &ext_indexed_funcs;
+	if (strcmp(isversnumber,"7.0") <= 0) {
+		logActive = 0;
+		logUnusable = 1;
+	} else {
+		sprintf(logFileName,"/tmp/disam%d.log",getpid());
+	}
 #elif defined(WITH_CISAM)
 	a->io_funcs[COB_IO_CISAM] = (void*) &ext_indexed_funcs;
 #elif defined(WITH_VBCISAM)
 	a->io_funcs[COB_IO_VBCISAM] = (void*) &ext_indexed_funcs;
+	sprintf(logFileName,"/tmp/vcisam%d.log",getpid());
+#ifdef VB_RTD
+	if (vbisam_rtd == NULL) {	/* VB-ISAM 2.2 run-time pointer */
+		vbisam_rtd = VB_GET_RTD;
+	}
+#endif
 #elif defined(WITH_VBISAM)
 	a->io_funcs[COB_IO_VBISAM] = (void*) &ext_indexed_funcs;
+	sprintf(logFileName,"/tmp/vbisam%d.log",getpid());
 #ifdef VB_RTD
 	if (vbisam_rtd == NULL) {	/* VB-ISAM 2.1.1 run-time pointer */
 		vbisam_rtd = VB_GET_RTD;

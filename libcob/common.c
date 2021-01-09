@@ -677,6 +677,7 @@ cob_terminate_routines (void)
 			if (!(dump_trace_started & (DUMP_TRACE_DONE_TRACE | DUMP_TRACE_ACTIVE_TRACE))) {
 				dump_trace_started |= DUMP_TRACE_DONE_TRACE;
 				dump_trace_started |= DUMP_TRACE_ACTIVE_TRACE;
+				fprintf (stderr, "\n%s\n",abort_reason);
 				cob_stack_trace_internal (stderr);
 				dump_trace_started ^= DUMP_TRACE_ACTIVE_TRACE;
 			}

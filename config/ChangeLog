@@ -1,4 +1,8 @@
 
+2021-01-08  Ron Norman <rjn@inglenet.com>
+
+	* fileio: added option file_log for ISAM files
+
 2020-10-19  Ron Norman <rjn@inglenet.com>
 
 	* fileio: added option dups_ahead for INDEXED files

@@ -1043,7 +1043,7 @@ void
 cob_file_sync (cob_file *f)
 {
 	if (f->organization == COB_ORG_INDEXED) {
-		     fileio_funcs[get_io_ptr (f)]->iosync (&file_api, f);
+		fileio_funcs[get_io_ptr (f)]->iosync (&file_api, f);
 		return;
 	}
 	if (f->organization != COB_ORG_SORT) {
@@ -1157,6 +1157,7 @@ cob_set_file_defaults (cob_file *f)
 	f->trace_io = file_setptr->cob_trace_io ? 1 : 0;
 	f->io_stats = file_setptr->cob_stats_record ? 1 : 0;
 	f->flag_keycheck = file_setptr->cob_keycheck ? 1 : 0;
+	f->flag_do_log = file_setptr->cob_file_log ? 1 : 0;
 	if(file_setptr->cob_do_sync)
 		f->file_features |= COB_FILE_SYNC;
 	else
@@ -1378,6 +1379,10 @@ cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 			if(keycmp(option,"retry_seconds") == 0) {
 				f->dflt_seconds = atoi(value);
 				f->dflt_retry |= COB_RETRY_SECONDS;
+				continue;
+			}
+			if(strcasecmp(option,"file_log") == 0) {
+				f->flag_do_log = settrue;
 				continue;
 			}
 			if (strcasecmp(option,"type") == 0) {
@@ -2262,6 +2267,9 @@ cob_file_save_status (cob_file *f, cob_field *fnstatus, const int status)
 		f->file_status[1] = (unsigned char)COB_I2D (status % 10);
 		if (fnstatus) {
 			memcpy (fnstatus->data, f->file_status, (size_t)2);
+		}
+		if (status == COB_STATUS_49_I_O_DENIED) {
+			f->open_mode = COB_OPEN_CLOSED;
 		}
 	}
 
@@ -5625,6 +5633,9 @@ Again:
 			f->flag_end_of_file = 1;
 		}
 		break;
+	case COB_STATUS_49_I_O_DENIED:
+		f->open_mode = COB_OPEN_CLOSED;
+		break;
 	}
 
 	cob_file_save_status (f, fnstatus, ret);
@@ -5697,6 +5708,7 @@ cob_write (cob_file *f, cob_field *rec, const int opt, cob_field *fnstatus,
 		}
 	}
 	check_eop_status = check_eop;
+	f->flag_was_updated = 1;
 	cob_file_save_status (f, fnstatus,
 		     fileio_funcs[get_io_ptr (f)]->write (&file_api, f, opt));
 	if (f->cur_rec_num > f->max_rec_num
@@ -5758,6 +5770,7 @@ cob_rewrite (cob_file *f, cob_field *rec, const int opt, cob_field *fnstatus)
 			return;
 		}
 	}
+	f->flag_was_updated = 1;
 	cob_file_save_status (f, fnstatus,
 		     fileio_funcs[get_io_ptr (f)]->rewrite (&file_api, f, opt));
 }
@@ -5781,6 +5794,7 @@ cob_delete (cob_file *f, cob_field *fnstatus)
 		return;
 	}
 
+	f->flag_was_updated = 1;
 	cob_file_save_status (f, fnstatus,
 		     fileio_funcs[get_io_ptr (f)]->recdelete (&file_api, f));
 }
@@ -5791,14 +5805,17 @@ cob_commit (void)
 	struct file_list	*l;
 
 	for (l = file_cache; l; l = l->next) {
-		if (l->file) {
-#if 0		/* This should not really call file_unlock */
-			l->file->last_operation = COB_LAST_COMMIT;
-			cob_file_unlock (l->file);
-#endif
+		if (l->file == NULL)
+			continue;
+		if (l->file->flag_do_log
+		 && l->file->flag_was_updated) {
 			l->file->last_operation = COB_LAST_COMMIT;
 			fileio_funcs[get_io_ptr (l->file)]->commit (&file_api, l->file);
+		} else if (l->file->flag_was_updated) {
+			l->file->last_operation = COB_LAST_COMMIT;
+			fileio_funcs[get_io_ptr (l->file)]->iosync (&file_api, l->file);
 		}
+		l->file->flag_was_updated = 0;
 	}
 }
 
@@ -5808,14 +5825,14 @@ cob_rollback (void)
 	struct file_list	*l;
 
 	for (l = file_cache; l; l = l->next) {
-		if (l->file) {
-#if 0		/* This should not really call file_unlock */
-			l->file->last_operation = COB_LAST_ROLLBACK;
-			cob_file_unlock (l->file);
-#endif
+		if (l->file == NULL)
+			continue;
+		if (l->file->flag_do_log
+		 && l->file->flag_was_updated) {
 			l->file->last_operation = COB_LAST_ROLLBACK;
 			fileio_funcs[get_io_ptr (l->file)]->rollback (&file_api, l->file);
 		}
+		l->file->flag_was_updated = 0;
 	}
 }
 

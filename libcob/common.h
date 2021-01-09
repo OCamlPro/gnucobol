@@ -1542,7 +1542,10 @@ typedef struct __cob_file {
 	unsigned int		flag_ls_instab:1;	/* LINE SEQUENTIAL replace spaces by TAB (INSERTTAB) */
 	unsigned int		flag_read_chk_dups:1;/* Always check DUPLICATE key on READ NEXT */
 	unsigned int		flag_read_no_02:1;	/* Never return 02 for DUPLICATE on READ NEXT */
-	unsigned int		unused_bits:15;
+	unsigned int		flag_was_updated:1;	/* File had an update since last open/commit */
+	unsigned int		flag_log_support:1;	/* Logging/transactions is supported for file */
+	unsigned int		flag_do_log:1;		/* 1: enable logging/transactions for this file */
+	unsigned int		unused_bits:12;
 
 	cob_field		*last_key;		/* Last field used as 'key' for I/O */
 	unsigned char		last_operation;		/* Most recent I/O operation */
