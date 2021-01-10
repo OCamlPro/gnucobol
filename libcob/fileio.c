@@ -2268,9 +2268,6 @@ cob_file_save_status (cob_file *f, cob_field *fnstatus, const int status)
 		if (fnstatus) {
 			memcpy (fnstatus->data, f->file_status, (size_t)2);
 		}
-		if (status == COB_STATUS_49_I_O_DENIED) {
-			f->open_mode = COB_OPEN_CLOSED;
-		}
 	}
 
 	if (file_setptr->cob_line_trace
@@ -3591,7 +3588,7 @@ sequential_rewrite (cob_file_api *a, cob_file *f, const int opt)
 	rcsz = f->record->size;
 	padlen = 0;
 	if (f->record_min != f->record_max
-	&& f->record_prefix > 0) {
+	 && f->record_prefix > 0) {
 		bytesread = read (f->fd, recsize.sbuff, f->record_prefix);
 		if (unlikely (bytesread != (int)f->record_prefix)) {
 			if (bytesread == 0) {
