@@ -1,11 +1,17 @@
 
+2021-01-10  Ron Norman <rjn@inglenet.com> 
+
+	* fisam.c: Additional work for ISAM logging/transaction ability
+	           VB-ISAM 2.2 in default and CISAM mode works fine
+			   D-ISAM 7.0 is not working in transaction mode
+			   and it may be that D-ISAM 7.2 or better is required
+
 2021-01-09  Ron Norman <rjn@inglenet.com> 
 
 	* fileio.c: Updated to track if file was modified or not
 				and then skip commit/rollback if no modification
 	* fisam.c: Code added for use of ISAM logging/transaction ability
 	* foci.c, fodbc.c: Set on flag_log_support always
-
 
 2021-01-06  Simon Sobisch <simonsobisch@gnu.org>
 
