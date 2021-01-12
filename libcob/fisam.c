@@ -91,13 +91,20 @@ static	cob_settings	*isam_setptr;
 #ifndef ISCOBOL_STATS
 #undef	COB_WITH_STATUS_02
 #endif
-#endif
-#include <disam.h>
-#if defined(ISCOBOL) && defined(ISCOBOL_STATS)
+#include <iswrap.h>
+#if ( ISCOBOL & ISCOBOL_STATS )
 #ifndef COB_WITH_STATUS_02 
 #define	COB_WITH_STATUS_02
 #endif
+#endif
+
+#if defined(ISLOGGING) && (ISLOGGING == 0)
+#define	LOG_UNUSABLE 1
+#endif
+
 #else
+/* Old version of DISAM */
+#include <disam.h>
 #ifdef COB_WITH_STATUS_02 
 #undef	COB_WITH_STATUS_02
 #endif
@@ -283,7 +290,7 @@ openLogFile()
 #else
 	creat ((void*)logFileName, 0666);
 	if (islogopen ((void*)logFileName) != 0) {
-		cob_runtime_error("Error opening log file %s\n",logFileName);
+		fprintf(stderr,"Error opening log file %s\n",logFileName);
 		unlink (logFileName);
 	} else {
 		logActive = 1;
@@ -322,6 +329,7 @@ beginLogFile (cob_file *f)
 				logActive = 0;
 			} else {
 				logActive = 2;
+				f->flag_was_updated = 1;	/* Need this for callback on commit/rollback */
 			}
 		}
 	} else {
@@ -566,8 +574,7 @@ isam_commit (cob_file_api *a, cob_file *f)
 	 && (f->file_features & COB_FILE_SYNC)
 	 && f->open_mode != COB_OPEN_INPUT
 	 && f->open_mode != COB_OPEN_CLOSED) {
-		struct indexfile	*fh;
-		fh = f->file;
+		struct indexfile	*fh = f->file;
 		if (fh
 		 && fh->isfd > 0) {
 			isflush (fh->isfd);
@@ -576,6 +583,7 @@ isam_commit (cob_file_api *a, cob_file *f)
 	}
 	logUpdated = 0;
 	openLogFile();
+	f->flag_was_updated = 0;
 	return 0;
 }
 
@@ -592,13 +600,14 @@ isam_rollback (cob_file_api *a, cob_file *f)
 #else
 		if (isrollback () != 0) {
 			logActive = 0;
-			cob_runtime_error("Error %d on rollback: %s\n",ISERRNO,logFileName);
+			fprintf(stderr,"Error %d on rollback: %s\n",ISERRNO,logFileName);
 		} else {
 			logActive = 1;
 		}
 #endif
 	}
 	logUpdated = 0;
+	f->flag_was_updated = 0;
 	return 0;
 }
 
@@ -679,16 +688,19 @@ restorefileposition (cob_file *f)
 {
 	struct indexfile	*fh;
 	struct keydesc		k0;
+	int		sverrno = ISERRNO;
 
 	fh = f->file;
 	memset ((void *)&k0, 0, sizeof (k0));
+	ISERRNO = 0;
 	if (fh->saverecnum >= 0) {
 		/* Record# of 'next' record in the index */
 		ISRECNUM = fh->saverecnum;
 		/* Switch to record number mode */
 		isstart (fh->isfd, &k0, 0, (void *)fh->recwrk, ISEQUAL);
 		/* Read by record number */
-		isread (fh->isfd, (void *)fh->recwrk, ISEQUAL);
+		ISERRNO = 0;
+		isread (fh->isfd, (void *)fh->recwrk, ISCURR);
 		/* Read by active key value */
 		isstart (fh->isfd, &fh->key[f->curkey], 0, (void *)fh->recwrk, ISGTEQ);
 		isread (fh->isfd, (void *)fh->recwrk, ISGTEQ);
@@ -710,6 +722,7 @@ restorefileposition (cob_file *f)
 		indexed_restorekey(fh, NULL, 0);
 		isstart (fh->isfd, &fh->key[f->curkey], 0, (void *)fh->recwrk, ISGTEQ);
 	}
+	ISERRNO = sverrno;
 }
 
 /* Save ISAM file positioning information for later 'restorefileposition' */
@@ -720,8 +733,10 @@ savefileposition (cob_file *f)
 	struct indexfile	*fh;
 
 	fh = f->file;
+	fh->saverecnum = -1;
 	if (f->curkey >= 0 && fh->readdir != -1) {
 		/* Switch back to index */
+		memcpy (fh->recwrk, f->record->data, f->record_max);
 		if (fh->wrkhasrec != fh->readdir) {
 			fh->eofpending = 0;
 			fh->wrkhasrec = 0;
@@ -740,8 +755,6 @@ savefileposition (cob_file *f)
 			/* Restore saved record data */
 			memcpy (fh->recwrk, f->record->data, f->record_max);
 		}
-	} else {
-		fh->saverecnum = -1;
 	}
 }
 
@@ -890,15 +903,25 @@ isam_file_delete (cob_file_api *a, cob_file *f, char *filename)
 	COB_UNUSED (a);
 	COB_UNUSED (f);
 
-	snprintf (file_name_buf, (size_t)COB_FILE_MAX, "%s.idx", filename);
-	unlink (file_name_buf);
-	snprintf (file_name_buf, (size_t)COB_FILE_MAX, "%s.dat", filename);
+	if (logActive) {
+		iserase ((void *)filename);
+		if (iscommit () != 0) {
+			logActive = 0;
+		} else {
+			logActive = 1;
+		}
+		logUpdated = 0;
+	} else {
+		snprintf (file_name_buf, (size_t)COB_FILE_MAX, "%s.idx", filename);
+		unlink (file_name_buf);
+		snprintf (file_name_buf, (size_t)COB_FILE_MAX, "%s.dat", filename);
 #if defined(WITH_DISAM)
-	if (stat(file_name_buf, &st) != 0) {	/* Micro Focus naming style has no .dat */
-		snprintf (file_name_buf, (size_t)COB_FILE_MAX, "%s", filename);
-	}
+		if (stat(file_name_buf, &st) != 0) {	/* Micro Focus naming style has no .dat */
+			snprintf (file_name_buf, (size_t)COB_FILE_MAX, "%s", filename);
+		}
 #endif
-	unlink (file_name_buf);
+		unlink (file_name_buf);
+	}
 	return 0;
 }
 
@@ -1012,6 +1035,9 @@ isam_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 	vmode = 0;
 	dobld = 0;
 	isfd = -1;
+	if (mode == COB_OPEN_INPUT) {	/* Input only, nothing to log */
+		f->flag_do_log = 0;
+	}
 	if (f->record_min != f->record_max) {
 		vmode = ISVARLEN;
 		ISRECLEN = f->record_min;
@@ -1020,30 +1046,20 @@ isam_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 		f->flag_do_log = 0;
 		f->flag_log_support = 0;
 	}
-	if (mode != COB_OPEN_INPUT
-	 && f->flag_do_log
+	if (f->flag_do_log
 	 && !logActive)
 		openLogFile();
 
-	if (f->flag_do_log) {
-		if (mode != COB_OPEN_INPUT)
-			beginLogFile (f);
-#ifdef ISTRANS
-		if (logActive) {
-			beginLogFile (f);
-			vmode |= ISTRANS;
-		}
-#endif
-	} else {
 #ifdef ISNOLOG
-		vmode |= ISNOLOG;
+	if (logActive) 
+		vmode |= ISNOLOG;			/* No logging during file creation */
 #endif
-	}
 #ifdef ISSYNCWR
 	if ((f->file_features & COB_FILE_SYNC)) {
-		vmode |= ISSYNCWR;
+		vmode |= ISSYNCWR;			/* Sync I/O to disk */
 	}
 #endif
+
 	if ((f->share_mode & COB_SHARE_NO_OTHER)
 	 || (f->lock_mode & COB_FILE_EXCLUSIVE) ) {
 		lmode = ISEXCLLOCK;
@@ -1053,7 +1069,8 @@ isam_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 		} else {
 			lmode = ISMANULOCK;
 		}
-	} else if ((f->lock_mode & COB_LOCK_AUTOMATIC) && mode != COB_OPEN_INPUT) {
+	} else if ((f->lock_mode & COB_LOCK_AUTOMATIC) 
+			&& mode != COB_OPEN_INPUT) {
 		lmode = ISAUTOLOCK;
 	} else {
 		lmode = ISMANULOCK;
@@ -1064,7 +1081,7 @@ isam_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 		break;
 	case COB_OPEN_OUTPUT:
 		lmode = ISEXCLLOCK;
-		omode = ISOUTPUT;
+		omode = ISINOUT;
 		ISERRNO = 0;
 		isfd = isopen ((void *)filename, ISINPUT | lmode | vmode);
 		if (ISERRNO == EFLOCKED) {
@@ -1097,6 +1114,8 @@ isam_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 			fh->lenkey = len;
 		}
 	}
+	for(k=0; k < MAXNUMKEYS; k++)
+		fh->idxmap[k] = k;
 	ISERRNO = 0;
 	fh->lmode = 0;
 	if (dobld) {
@@ -1104,19 +1123,22 @@ dobuild:
 		if (f->record_min != f->record_max) {
 			ISRECLEN = f->record_min;
 		}
-		vmode |= (ISINOUT | lmode);
+		vmode |= (omode | lmode);
 		isfd = isbuild ((void *)filename, (int)f->record_max, &fh->key[0], vmode);
-		for(k=0; k < MAXNUMKEYS; k++)
-			fh->idxmap[k] = k;
-		f->flag_file_lock = 1;
-		if (isfd < 0
-		 && (ISERRNO == EEXIST || ISERRNO == EBADARG)) {
-			/* Erase file and redo the 'isbuild' */
-			iserase ((void *)filename);
-			if (f->record_min != f->record_max) {
-				ISRECLEN = f->record_min;
+		if (isfd < 0) {
+			if (ISERRNO == EFLOCKED)
+				return COB_STATUS_61_FILE_SHARING;
+			if ((ISERRNO == EEXIST || ISERRNO == EBADARG)) {
+				/* Erase file and redo the 'isbuild' */
+				isam_file_delete (a, f, filename);
+				if (f->record_min != f->record_max) {
+					ISRECLEN = f->record_min;
+				}
+				ISERRNO = 0;
+				isfd = isbuild ((void *)filename, (int)f->record_max, &fh->key[0], vmode);
+				f->flag_file_lock = 1;
 			}
-			isfd = isbuild ((void *)filename, (int)f->record_max, &fh->key[0], vmode);
+		} else {
 			f->flag_file_lock = 1;
 		}
 	} else {
@@ -1177,8 +1199,6 @@ dobuild:
 					ret = COB_STATUS_39_CONFLICT_ATTRIBUTE;
 				}
 			}
-			for(k=0; k < MAXNUMKEYS; k++)
-				fh->idxmap[k] = k;
 			if (!f->flag_keycheck) {
 				/* Copy real ISAM file key information */
 				for (k = 0; k < fh->nkeys && !ret; ++k) {
@@ -1236,6 +1256,7 @@ dobuild:
 		return ret;
 	}
 	if (dobld) {
+		f->flag_was_updated = 1;
 		for (k = 1; k < f->nkeys; ++k) {
 			ISERRNO = 0;
 			if (isaddindex (isfd, &fh->key[k])) {
@@ -1270,6 +1291,25 @@ dobuild:
 		}
 		if (k >= f->nkeys)			/* No duplicate keys */
 			f->flag_read_chk_dups = 0;
+	}
+#endif
+	logUpdated = 1;
+
+#ifdef ISTRANS
+	/* Close the file so it can reopened in 'transaction mode' 
+	 * This is done so that the file creation is not rolled back */
+	if (f->flag_do_log
+	 && logActive) {
+		isclose (isfd);
+#ifdef ISNOLOG
+		fh->isopenmode &= ~ISNOLOG;
+#endif
+		fh->isopenmode |= ISTRANS;
+		isfd = isopen_retry (f, (char *)filename, fh->isopenmode);
+		if (isfd < 0) {
+			return COB_STATUS_49_I_O_DENIED;
+		}
+		beginLogFile (f);	/* Start tranaction after file open */
 	}
 #endif
 	return ret;
@@ -1418,7 +1458,7 @@ isam_read (cob_file_api *a, cob_file *f, cob_field *key, const int read_opts)
 	if (f->curkey != (int)k) {
 		/* Switch to this index */
 		isstart (fh->isfd, &fh->key[k], 0,
-			 (void *)f->record->data, ISEQUAL);
+			 	(void *)f->record->data, ISEQUAL);
 		f->curkey = k;
 		fh->wrkhasrec = 0;
 	}
@@ -1443,7 +1483,9 @@ isam_read (cob_file_api *a, cob_file *f, cob_field *key, const int read_opts)
 	}
 	if ((lmode & ISLOCK))
 		beginLogFile (f);
-	if ((fh->lmode & ISLOCK) && !(f->lock_mode & COB_LOCK_MULTIPLE)) {
+	if (!logActive
+	 && (fh->lmode & ISLOCK) 
+	 && !(f->lock_mode & COB_LOCK_MULTIPLE)) {
 		isrelease (fh->isfd);
 	}
 	ISERRNO = 0;
@@ -1513,9 +1555,12 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 		lmode &= ~ISLOCK;
 	}
 
-	if ((lmode & ISLOCK))
+	if ((lmode & ISLOCK)
+	 && f->open_mode != COB_OPEN_INPUT)
 		beginLogFile (f);
-	if ((fh->lmode & ISLOCK) && !(f->lock_mode & COB_LOCK_MULTIPLE)) {
+	if (!logActive
+	 && (fh->lmode & ISLOCK) 
+	 && !(f->lock_mode & COB_LOCK_MULTIPLE)) {
 		isrelease (fh->isfd);
 	}
 	skip_read = ISNEXT;
@@ -1863,32 +1908,27 @@ isam_delete (cob_file_api *a, cob_file *f)
 	if (f->curkey == -1) {
 		/* Switch to primary index */
 		isstart (fh->isfd, &fh->key[0], 0,
-			 (void *)f->record->data, ISEQUAL);
+			 	(void *)f->record->data, ISEQUAL);
 		f->curkey = 0;
 		fh->readdir = ISNEXT;
+		fh->saverecnum = -1;
 	} else {
 		savefileposition (f);
 		if (f->curkey != 0) {
 			/* Switch to primary index */
 			isstart (fh->isfd, &fh->key[0], 0,
-				 (void *)f->record->data, ISEQUAL);
+				 	(void *)f->record->data, ISEQUAL);
 		}
 	}
-#ifdef	WITH_DISAM
-	if (f->flag_do_log
-	 && logActive) {
-		int nmode = (fh->isopenmode & ~ISEXCLLOCK) | ISOUTPUT;
-		/* D-ISAM needs the ISOUTPUT mode re-established */
-		issetmode (fh->isfd, nmode);
-	}
-#endif
+	ISERRNO = 0;
 	if (isread_retry (f, (void *)f->record->data, ISEQUAL | ISLOCK)) {
 		ret = fisretsts (COB_STATUS_21_KEY_INVALID);
 	} else if (isdelcurr (fh->isfd)) {
 		ret = fisretsts (COB_STATUS_49_I_O_DENIED);
 	}
 	restorefileposition (f);
-	if ( !(f->lock_mode & COB_LOCK_MULTIPLE)) {
+	if (!(f->lock_mode & COB_LOCK_MULTIPLE)
+	 && !logActive) {
 		isrelease (fh->isfd);
 	}
 	if (ret < 10)
@@ -2030,7 +2070,9 @@ isam_rewrite (cob_file_api *a, cob_file *f, const int opt)
 	}
 	if (!ret) {
 		ret = COB_CHECK_DUP (ret);
-		if ((f->lock_mode & COB_LOCK_AUTOMATIC)) {
+		if (logActive) {
+			/* Do not release locks */
+		} else if ((f->lock_mode & COB_LOCK_AUTOMATIC)) {
 			if (!(f->lock_mode & COB_LOCK_MULTIPLE)) {
 				isrelease (fh->isfd);
 			}
@@ -2044,7 +2086,7 @@ isam_rewrite (cob_file_api *a, cob_file *f, const int opt)
 				isrelease (fh->isfd);
 			}
 		}
-	} else if (ret) {
+	} else if (ret && !logActive) {
 		isrelease (fh->isfd);
 	}
 	if (ret < 10)
@@ -2065,9 +2107,6 @@ cob_isam_exit_fileio (cob_file_api *a)
 void
 cob_isam_init_fileio (cob_file_api *a)
 {
-#if defined(WITH_VBISAM) && defined(WITH_DISAM)
-#undef WITH_DISAM
-#endif
 #if defined(WITH_DISAM)
 	a->io_funcs[COB_IO_DISAM] = (void*) &ext_indexed_funcs;
 	if (strcmp(isversnumber,"7.0") <= 0) {

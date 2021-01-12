@@ -234,27 +234,28 @@ static struct cob_fileio_funcs	*fileio_funcs[COB_IO_MAX] = {
 };
 
 static struct {
-	int		loaded;
+	int		loaded;			/* Module is loaded and ready */
+	int		config;			/* Module was configured into compiler */
 	const char * name;
 	const char * module;
 	const char * entry;
 	const char * desc;
 } io_rtns [COB_IO_MAX+1] = {
-	{1,"SEQUENTIAL",NULL,NULL,NULL},
-	{1,"LINE",NULL,NULL,NULL},
-	{1,"RELATIVE",NULL,NULL,NULL},
-	{0,"CISAM","libcobci", "cob_isam_init_fileio","C-ISAM"},
-	{0,"DISAM","libcobdi", "cob_isam_init_fileio","D-ISAM"},
-	{0,"VBISAM","libcobvb", "cob_isam_init_fileio","VB-ISAM"},
-	{0,"BDB","libcobdb", "cob_bdb_init_fileio",NULL},
-	{0,"VBCISAM","libcobvc", "cob_isam_init_fileio","VB-ISAM (C-ISAM mode)"},
-	{0,"IXEXT",NULL,NULL,NULL},
-	{0,"SQEXT",NULL,NULL,NULL},
-	{0,"RLEXT",NULL,NULL,NULL},
-	{0,"ODBC","libcobod", "cob_odbc_init_fileio",NULL},
-	{0,"OCI","libcoboc", "cob_oci_init_fileio",NULL},
-	{0,"LMDB","libcoblm", "cob_lmdb_init_fileio",NULL},
-	{0,NULL,NULL,NULL,NULL}
+	{1,1,"SEQUENTIAL",NULL,NULL,NULL},
+	{1,1,"LINE",NULL,NULL,NULL},
+	{1,1,"RELATIVE",NULL,NULL,NULL},
+	{0,0,"CISAM","libcobci", "cob_isam_init_fileio","C-ISAM"},
+	{0,0,"DISAM","libcobdi", "cob_isam_init_fileio","D-ISAM"},
+	{0,0,"VBISAM","libcobvb", "cob_isam_init_fileio","VB-ISAM"},
+	{0,0,"BDB","libcobdb", "cob_bdb_init_fileio",NULL},
+	{0,0,"VBCISAM","libcobvc", "cob_isam_init_fileio","VB-ISAM (C-ISAM mode)"},
+	{0,0,"IXEXT",NULL,NULL,NULL},
+	{0,0,"SQEXT",NULL,NULL,NULL},
+	{0,0,"RLEXT",NULL,NULL,NULL},
+	{0,0,"ODBC","libcobod", "cob_odbc_init_fileio",NULL},
+	{0,0,"OCI","libcoboc", "cob_oci_init_fileio",NULL},
+	{0,0,"LMDB","libcoblm", "cob_lmdb_init_fileio",NULL},
+	{0,0,NULL,NULL,NULL,NULL}
 };
 #ifdef	WITH_INDEX_EXTFH
 void cob_index_init_fileio (cob_file_api *);
@@ -307,13 +308,13 @@ static const char ix_routine = COB_IO_DISAM;
 static const char ix_routine = COB_IO_VBCISAM;
 #elif defined(WITH_VBISAM)
 static const char ix_routine = COB_IO_VBISAM;
-#elif	WITH_DB
+#elif defined(WITH_DB)
 static const char ix_routine = COB_IO_BDB;
-#elif	WITH_LMDB
+#elif	defined(WITH_LMDB)
 static const char ix_routine = COB_IO_LMDB;
-#elif	WITH_ODBC
+#elif	defined(WITH_ODBC)
 static const char ix_routine = COB_IO_ODBC;
-#elif	WITH_OCI
+#elif	defined(WITH_OCI)
 static const char ix_routine = COB_IO_OCI;
 #elif	WITH_INDEX_EXTFH
 static const char ix_routine = COB_IO_IXEXT;
@@ -1454,7 +1455,10 @@ cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 				value[j] = 0;
 				for(j=0; j < COB_IO_MAX; j++) {
 					if(strcasecmp(value,io_rtns[j].name) == 0) {
-						if (!io_rtns[j].loaded)
+						if (!io_rtns[j].config)
+							cob_runtime_error (_("I/O routine %s is not configured for %s"),
+												io_rtns[j].name,file_open_env);
+						else if (!io_rtns[j].loaded)
 							cob_load_module (j);
 						if(fileio_funcs[j] == NULL) {
 							cob_runtime_error (_("I/O routine %s is not present for %s"),
@@ -7465,18 +7469,46 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 	cob_isam_init_fileio (&file_api);
 #if defined(WITH_INDEXED)
 	io_rtns [WITH_INDEXED].loaded = 1;
+	io_rtns [WITH_INDEXED].config = 1;
 #endif
 #endif
 
 #if defined(WITH_INDEX_EXTFH)
 	cob_index_init_fileio (&file_api);
 	io_rtns [COB_IO_IXEXT].loaded = 1;
+	io_rtns [COB_IO_IXEXT].config = 1;
 #endif
 
 #if defined(WITH_SEQRA_EXTFH)
 	cob_seqra_init_fileio (&file_api);
 	io_rtns [COB_IO_SQEXT].loaded = 1;
+	io_rtns [COB_IO_SQEXT].config = 1;
 	io_rtns [COB_IO_RAEXT].loaded = 1;
+	io_rtns [COB_IO_RAEXT].config = 1;
+#endif
+#if defined(WITH_CISAM)
+	io_rtns [COB_IO_CISAM].config = 1;
+#endif
+#if defined(WITH_DISAM)
+	io_rtns [COB_IO_DISAM].config = 1;
+#endif
+#if defined(WITH_VBCISAM)
+	io_rtns [COB_IO_VBCISAM].config = 1;
+#endif
+#if defined(WITH_VBISAM)
+	io_rtns [COB_IO_VBISAM].config = 1;
+#endif
+#if defined(WITH_DB)
+	io_rtns [COB_IO_BDB].config = 1;
+#endif
+#if	defined(WITH_LMDB)
+	io_rtns [COB_IO_LMDB].config = 1;
+#endif
+#if	defined(WITH_ODBC)
+	io_rtns [COB_IO_ODBC].config = 1;
+#endif
+#if	defined(WITH_OCI)
+	io_rtns [COB_IO_OCI].config = 1;
 #endif
 
 }
