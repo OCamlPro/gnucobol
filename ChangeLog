@@ -1,4 +1,8 @@
 
+2021-01-14  Ron Norman <rjn@inglenet.com> 
+
+	* configure.ac: Updated toearch D-ISAM library/header in different order
+		
 2020-12-24  Ron Norman <rjn@inglenet.com> 
 
 	* configure.ac: Updated to build all INDEXED file handlers

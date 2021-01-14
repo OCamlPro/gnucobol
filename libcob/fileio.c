@@ -375,8 +375,11 @@ indexed_file_type(char *filename)
 
 	if(hbuf[0] == 0xFE 
 	&& hbuf[1] == 0x53) {		/* C|D-ISAM marker */
+		int idxlen;
+		idxlen = (((hbuf[6] << 8) & 0xFF00) | hbuf[7]) + 1;
 		/* D-ISAM and C-ISAM are interchangable */
-		if(memcmp(hbuf+1020,"dism",4) == 0)
+		if (memcmp(hbuf+idxlen-4,"dism",4) == 0
+		 || memcmp(hbuf+idxlen-4,"DISa",4) == 0)	/* DISa is 7.2 D-ISAM */
 #if defined(WITH_DISAM)
 			return COB_IO_DISAM;
 #elif defined(WITH_CISAM)

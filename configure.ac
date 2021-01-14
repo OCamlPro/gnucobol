@@ -2,7 +2,7 @@
 # Configure template for GnuCOBOL
 # Process this file with autoconf to produce a configure script.
 #
-# Copyright (C) 2001-2012, 2014-2020 Free Software Foundation, Inc.
+# Copyright (C) 2001-2012, 2014-2021 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
 # Edward Hart
 #
@@ -1437,10 +1437,7 @@ cob_gen_lmdb=no
   [AS_HELP_STRING([--with-disam],
     [(GnuCOBOL) Use DISAM for INDEXED I/O])],
   [ if test "$with_disam" = "yes"; then
-	AC_CHECK_HEADERS([disam.h], [],
-		AC_MSG_ERROR([disam.h is required for DISAM]))
-
-	for cobdisam in disam disam8 disam72 disam71 disam7
+	for cobdisam in disam8 disam72 disam71 disam7 
 	do
 		AC_CHECK_LIB([$cobdisam], [isopen],
 			[AC_DEFINE([WITH_DISAM], [1])
@@ -1450,6 +1447,23 @@ cob_gen_lmdb=no
 			break,
 			[], [])
 	done
+	if test "$cob_got_disam" = "yes"; then 
+		AC_CHECK_HEADERS([iswrap.h], [],
+			AC_MSG_ERROR([iswrap.h is required for $cobdisam]))
+	else
+		AC_CHECK_LIB([disam], [isopen],
+			[AC_DEFINE([WITH_DISAM], [1])
+			LIBCOB_ISAM="$LIBCOB_ISAM -ldisam"
+			LIBCOB_DISAM="-ldisam"]
+			cob_got_disam=yes
+			cob_got_oldisam=yes
+			break,
+			[], [])
+	fi
+	if test "$cob_got_oldisam" = "yes"; then 
+		AC_CHECK_HEADERS([disam.h], [],
+			AC_MSG_ERROR([disam.h is required for DISAM]))
+	fi
 	if test "$cob_got_disam" = "yes"; then
 		AC_MSG_NOTICE([DISAM library found as -l$cobdisam])
 	else
