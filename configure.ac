@@ -1448,8 +1448,8 @@ cob_gen_lmdb=no
 			[], [])
 	done
 	if test "$cob_got_disam" = "yes"; then 
-		AC_CHECK_HEADERS([iswrap.h], [],
-			AC_MSG_ERROR([iswrap.h is required for $cobdisam]))
+		AC_CHECK_HEADERS([iswrap.h isconfig.h isintstd.h], [],
+			AC_MSG_ERROR([iswrap.h isconfig.h isintstd.h are required for $cobdisam]))
 	else
 		AC_CHECK_LIB([disam], [isopen],
 			[AC_DEFINE([WITH_DISAM], [1])

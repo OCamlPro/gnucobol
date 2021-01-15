@@ -1,7 +1,11 @@
 
+2021-01-15  Ron Norman <rjn@inglenet.com> 
+
+	* configure.ac: Updated check for D-ISAM isconfig.h and isintstd.h
+
 2021-01-14  Ron Norman <rjn@inglenet.com> 
 
-	* configure.ac: Updated toearch D-ISAM library/header in different order
+	* configure.ac: Updated to search D-ISAM library/header in different order
 		
 2020-12-24  Ron Norman <rjn@inglenet.com> 
 

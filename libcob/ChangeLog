@@ -1,4 +1,8 @@
 
+2021-01-15  Ron Norman <rjn@inglenet.com> 
+
+	* fileio.c: Include isconfig/iswrap if HAVE_ISCONFIG_H and HAVE_ISWRAP_H
+				
 2021-01-14  Ron Norman <rjn@inglenet.com> 
 
 	* fileio.c: Improved check for D-ISAM file for 7.2

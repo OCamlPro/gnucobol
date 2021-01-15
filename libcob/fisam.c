@@ -86,12 +86,14 @@ static	cob_settings	*isam_setptr;
 #define	isfullclose(x)	isclose (x)
 
 #elif	defined(WITH_DISAM)
-#ifndef DISAM_NO_ISCONFIG
+#if defined(HAVE_ISCONFIG_H) && defined(HAVE_ISINTSTD_H)
 #include <isconfig.h>
 #ifndef ISCOBOL_STATS
 #undef	COB_WITH_STATUS_02
 #endif
+#if defined(HAVE_ISWRAP_H)
 #include <iswrap.h>
+#endif
 #if ( ISCOBOL & ISCOBOL_STATS )
 #ifndef COB_WITH_STATUS_02 
 #define	COB_WITH_STATUS_02
