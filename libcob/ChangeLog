@@ -1,12 +1,14 @@
 
+	* 24-files: (likely, unlikely): never use __builtin_expect
+
 2021-01-15  Ron Norman <rjn@inglenet.com> 
 
 	* fileio.c: Include isconfig/iswrap if HAVE_ISCONFIG_H and HAVE_ISWRAP_H
-				
+
 2021-01-14  Ron Norman <rjn@inglenet.com> 
 
 	* fileio.c: Improved check for D-ISAM file for 7.2
-				
+
 2021-01-12  Ron Norman <rjn@inglenet.com> 
 
 	* fileio.c: Added a flag 'config' to the table of I/O modules

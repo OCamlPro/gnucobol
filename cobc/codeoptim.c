@@ -323,7 +323,7 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("{");
 		output_storage ("	unsigned short	val;");
 
-		output_storage ("	if (unlikely(n < 0)) {");
+		output_storage ("	if (n < 0) {");
 		output_storage ("		return 1;");
 		output_storage ("	}");
 
@@ -357,7 +357,7 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("{");
 		output_storage ("	unsigned int	val;");
 
-		output_storage ("	if (unlikely(n < 0)) {");
+		output_storage ("	if (n < 0) {");
 		output_storage ("		return 1;");
 		output_storage ("	}");
 
@@ -521,7 +521,7 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("{");
 		output_storage ("	unsigned short	val;");
 
-		output_storage ("	if (unlikely(n < 0)) {");
+		output_storage ("	if (n < 0) {");
 		output_storage ("		return 1;");
 		output_storage ("	}");
 		output_storage ("	val = COB_BSWAP_16 (*(unsigned short " UNALIGNED_ATTRIBUTE "*)p);");
@@ -546,7 +546,7 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("{");
 		output_storage ("	unsigned int	val;");
 
-		output_storage ("	if (unlikely(n < 0)) {");
+		output_storage ("	if (n < 0) {");
 		output_storage ("		return 1;");
 		output_storage ("	}");
 		output_storage ("	val = COB_BSWAP_32 (*(unsigned int " UNALIGNED_ATTRIBUTE "*)p);");
@@ -571,7 +571,7 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("{");
 		output_storage ("	cob_u64_t	val;");
 
-		output_storage ("	if (unlikely(n < 0)) {");
+		output_storage ("	if (n < 0) {");
 		output_storage ("		return 1;");
 		output_storage ("	}");
 		output_storage ("	val = COB_BSWAP_64 (*(cob_u64_t " UNALIGNED_ATTRIBUTE "*)p);");
@@ -596,7 +596,7 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("static COB_INLINE COB_A_INLINE int");
 		output_storage ("cob_cmp_u8 (const void *p, const cob_s64_t n)");
 		output_storage ("{");
-		output_storage ("	if (unlikely(n < 0)) {");
+		output_storage ("	if (n < 0) {");
 		output_storage ("		return 1;");
 		output_storage ("	}");
 		output_storage ("	return (*(const unsigned char *)p < n) ? -1 : (*(const unsigned char *)p > n);");
@@ -620,7 +620,7 @@ cob_gen_optim (const enum cb_optim val)
 #endif
 		output_storage ("	unsigned short	val;");
 
-		output_storage ("	if (unlikely(n < 0)) {");
+		output_storage ("	if (n < 0) {");
 		output_storage ("		return 1;");
 		output_storage ("	}");
 #ifdef	COB_ALLOW_UNALIGNED
@@ -658,7 +658,7 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("	unsigned char	*x;");
 		output_storage ("	unsigned int	val = 0;");
 
-		output_storage ("	if (unlikely(n < 0)) {");
+		output_storage ("	if (n < 0) {");
 		output_storage ("		return 1;");
 		output_storage ("	}");
 #ifdef	WORDS_BIGENDIAN
@@ -698,7 +698,7 @@ cob_gen_optim (const enum cb_optim val)
 #endif
 		output_storage ("	unsigned int	val;");
 
-		output_storage ("	if (unlikely(n < 0)) {");
+		output_storage ("	if (n < 0) {");
 		output_storage ("		return 1;");
 		output_storage ("	}");
 #ifdef	COB_ALLOW_UNALIGNED
@@ -736,7 +736,7 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("	cob_u64_t		val = 0;");
 		output_storage ("	unsigned char		*x;");
 
-		output_storage ("	if (unlikely(n < 0)) {");
+		output_storage ("	if (n < 0) {");
 		output_storage ("		return 1;");
 		output_storage ("	}");
 #ifdef	WORDS_BIGENDIAN
@@ -774,7 +774,7 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("	cob_u64_t		val = 0;");
 		output_storage ("	unsigned char		*x;");
 
-		output_storage ("	if (unlikely(n < 0)) {");
+		output_storage ("	if (n < 0) {");
 		output_storage ("		return 1;");
 		output_storage ("	}");
 #ifdef	WORDS_BIGENDIAN
@@ -812,7 +812,7 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("	cob_u64_t		val = 0;");
 		output_storage ("	unsigned char		*x;");
 
-		output_storage ("	if (unlikely(n < 0)) {");
+		output_storage ("	if (n < 0) {");
 		output_storage ("		return 1;");
 		output_storage ("	}");
 #ifdef	WORDS_BIGENDIAN
@@ -1477,7 +1477,7 @@ cob_gen_optim (const enum cb_optim val)
 #endif
 		output_storage ("	unsigned short	val;");
 
-		output_storage ("	if (unlikely(n < 0)) {");
+		output_storage ("	if (n < 0) {");
 		output_storage ("		return 1;");
 		output_storage ("	}");
 #ifdef	COB_ALLOW_UNALIGNED
@@ -1517,7 +1517,7 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("	unsigned char	*x;");
 		output_storage ("	unsigned int	val = 0;");
 
-		output_storage ("	if (unlikely(n < 0)) {");
+		output_storage ("	if (n < 0) {");
 		output_storage ("		return 1;");
 		output_storage ("	}");
 		output_storage ("	x = ((unsigned char *)&val) + 1;");
@@ -1551,7 +1551,7 @@ cob_gen_optim (const enum cb_optim val)
 #endif
 		output_storage ("	unsigned int	val;");
 
-		output_storage ("	if (unlikely(n < 0)) {");
+		output_storage ("	if (n < 0) {");
 		output_storage ("		return 1;");
 		output_storage ("	}");
 #ifdef	COB_ALLOW_UNALIGNED
@@ -1591,7 +1591,7 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("	cob_u64_t	val = 0;");
 		output_storage ("	unsigned char	*x;");
 
-		output_storage ("	if (unlikely(n < 0)) {");
+		output_storage ("	if (n < 0) {");
 		output_storage ("		return 1;");
 		output_storage ("	}");
 		output_storage ("	x = ((unsigned char *)&val) + 3;");
@@ -1623,7 +1623,7 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("	cob_u64_t	val = 0;");
 		output_storage ("	unsigned char	*x;");
 
-		output_storage ("	if (unlikely(n < 0)) {");
+		output_storage ("	if (n < 0) {");
 		output_storage ("		return 1;");
 		output_storage ("	}");
 		output_storage ("	x = ((unsigned char *)&val) + 2;");
@@ -1655,7 +1655,7 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("	cob_u64_t	val = 0;");
 		output_storage ("	unsigned char	*x;");
 
-		output_storage ("	if (unlikely(n < 0)) {");
+		output_storage ("	if (n < 0) {");
 		output_storage ("		return 1;");
 		output_storage ("	}");
 		output_storage ("	x = ((unsigned char *)&val) + 1;");
@@ -1689,7 +1689,7 @@ cob_gen_optim (const enum cb_optim val)
 #endif
 		output_storage ("	cob_u64_t	val;");
 
-		output_storage ("	if (unlikely(n < 0)) {");
+		output_storage ("	if (n < 0) {");
 		output_storage ("		return 1;");
 		output_storage ("	}");
 #ifdef	COB_ALLOW_UNALIGNED

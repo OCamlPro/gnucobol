@@ -1237,11 +1237,11 @@ ppcopy (const char *name, const char *lib, struct cb_replace_list *replace_list)
 	}
 	
 	/* expected case: filename found */
-	if (likely (filename)) {
+	if (filename) {
 		int ret;
 		ret = ppopen (filename, replace_list);
 		/* expected case: copybook could be processed */
-		if (likely (ret == 0)) {
+		if (ret == 0) {
 			return 0;
 		}
 		/* otherwise fall-trough to error handling */
@@ -1509,7 +1509,7 @@ ppinput (char *buff, const size_t max_size)
 	/* check that we actually have input to process
 	   (isn't the case if something went wrong beforehand) */
 	/* LCOV_EXCL_START */
-	if (unlikely (ppin == NULL)) {
+	if (ppin == NULL) {
 		return YY_NULL; /* fake eof (no further processing of the not available file) */
 	}
 	/* LCOV_EXCL_STOP */
@@ -1518,8 +1518,8 @@ ppinput (char *buff, const size_t max_size)
 
 	continuation = 0;
 start:
-	if (unlikely (buffer_overflow ||
-		     (newline_count + PPLEX_BUFF_LEN) >= max_size)) {
+	if (buffer_overflow ||
+		     (newline_count + PPLEX_BUFF_LEN) >= max_size) {
 		if (need_continuation || continuation) {
 			cb_plex_error (newline_count,
 					_("buffer overrun - too many continuation lines"));
@@ -1546,13 +1546,13 @@ start:
 	line_overflow = 0;
 	ipchar = 0;
 	for (n = 0; ipchar != '\n';) {
-		if (unlikely (n == PPLEX_BUFF_LEN)) {
+		if (n == PPLEX_BUFF_LEN) {
 			if (line_overflow != 2) {
 				line_overflow = 1;
 			}
 		}
 		ipchar = getc (ppin);
-		if (unlikely (ipchar == EOF)) {
+		if (ipchar == EOF) {
 			if (n > 0) {
 				/* No end of line at end of file */
 				break;
@@ -1567,37 +1567,37 @@ start:
 			return ipchar;
 		}
 #ifndef	COB_EBCDIC_MACHINE
-		if (unlikely (ipchar == 0x1A && !n)) {
+		if (ipchar == 0x1A && !n) {
 			continue;
 		}
 #endif
-		if (unlikely (gotcr)) {
+		if (gotcr) {
 			gotcr = 0;
 			if (ipchar != '\n') {
-				if (likely (line_overflow == 0)) {
+				if (line_overflow == 0) {
 					buff[n++] = '\r';
 				} else {
 					line_overflow = 2;
 				}
 			}
 		}
-		if (unlikely (ipchar == '\r')) {
+		if (ipchar == '\r') {
 			gotcr = 1;
 			continue;
 		}
-		if (unlikely (ipchar == '\t')) {
-			if (likely (line_overflow == 0)) {
+		if (ipchar == '\t') {
+			if (line_overflow == 0) {
 				buff[n++] = ' ';
 				while (n % cb_tab_width != 0) {
 					buff[n++] = ' ';
 				}
-				if (unlikely (n > PPLEX_BUFF_LEN)) {
+				if (n > PPLEX_BUFF_LEN) {
 					n = PPLEX_BUFF_LEN;
 				}
 			}
 			continue;
 		}
-		if (likely (line_overflow == 0)) {
+		if (line_overflow == 0) {
 			buff[n++] = (char)ipchar;
 		} else if ((char)ipchar != ' ' && (char)ipchar != '\n') {
 			line_overflow = 2;
@@ -1852,7 +1852,7 @@ start:
 	case ' ':
 		break;
 	case '-':
-		if (unlikely (within_comment)) {
+		if (within_comment) {
 			cb_plex_error (newline_count,
 					_("invalid continuation in comment entry"));
 			newline_count++;
@@ -1887,7 +1887,7 @@ start:
 	}
 
 	/* Skip comments that follow after AUTHORS, etc. */
-	if (unlikely (within_comment)) {
+	if (within_comment) {
 		/* Check all of "Area A" */
 		for (ipchar = 7; ipchar < (n - 1) && ipchar < 11; ++ipchar) {
 			if (buff[ipchar] != ' ') {
@@ -1915,7 +1915,7 @@ start:
 	buff[6] = ' ';
 	bp = buff + 7;
 
-	if (unlikely (continuation)) {
+	if (continuation) {
 		/* Line continuation */
 		need_continuation = 0;
 		for (; *bp == ' '; ++bp) {
@@ -1983,7 +1983,7 @@ start:
 		}
 	}
 
-	if (unlikely (quotation_mark)) {
+	if (quotation_mark) {
 		/* Expecting continuation */
 		if (!consecutive_quotation) {
 			need_continuation = 1;
@@ -2016,7 +2016,7 @@ start:
 				cb_text_column);
 	}
 
-	if (unlikely (continuation)) {
+	if (continuation) {
 		gotcr = strlen (bp);
 		memmove (buff, bp, gotcr + 1);
 		newline_count++;

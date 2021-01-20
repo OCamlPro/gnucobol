@@ -785,7 +785,7 @@ cob_extfh_write (
 	STCOMPX4(opt, fcd->opt);
 	if (f->variable_record) {
 		f->record->size = (size_t)cob_get_int (f->variable_record);
-		if (unlikely(f->record->size > rec->size)) {
+		if (f->record->size > rec->size) {
 			f->record->size = rec->size;
 		}
 	} else {

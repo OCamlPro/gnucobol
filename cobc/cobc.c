@@ -894,7 +894,7 @@ cobc_malloc (const size_t size)
 
 	mptr = calloc ((size_t)1, size);
 	/* LCOV_EXCL_START */
-	if (unlikely (!mptr)) {
+	if (!mptr) {
 		cobc_err_msg (_("cannot allocate %d bytes of memory"),
 				(int)size);
 		cobc_abort_terminate (0);
@@ -907,7 +907,7 @@ void
 cobc_free (void * mptr)
 {
 	/* LCOV_EXCL_START */
-	if (unlikely (!mptr)) {
+	if (!mptr) {
 		cobc_err_msg (_("call to %s with NULL pointer"), "cobc_free");
 		cobc_abort_terminate (1);
 	}
@@ -923,7 +923,7 @@ cobc_strdup (const char *dupstr)
 
 #ifdef	COB_TREE_DEBUG
 	/* LCOV_EXCL_START */
-	if (unlikely (!dupstr)) {
+	if (!dupstr) {
 		cobc_err_msg (_("call to %s with NULL pointer"), "cobc_strdup");
 		cobc_abort_terminate (1);
 	}
@@ -943,7 +943,7 @@ cobc_stradd_dup (const char *str1, const char *str2)
 	size_t	m, n;
 
 	/* LCOV_EXCL_START */
-	if (unlikely (!str1 || !str2)) {
+	if (!str1 || !str2) {
 		cobc_err_msg (_("call to %s with NULL pointer"), "cobc_stradd_dup");
 		cobc_abort_terminate (1);
 	}
@@ -964,7 +964,7 @@ cobc_realloc (void *prevptr, const size_t size)
 
 	mptr = realloc (prevptr, size);
 	/* LCOV_EXCL_START */
-	if (unlikely (!mptr)) {
+	if (!mptr) {
 		cobc_err_msg (_("cannot reallocate %d bytes of memory"),
 				(int)size);
 		cobc_abort_terminate (0);
@@ -981,7 +981,7 @@ cobc_main_malloc (const size_t size)
 
 	m = calloc ((size_t)1, COBC_MEM_SIZE + size);
 	/* LCOV_EXCL_START */
-	if (unlikely (!m)) {
+	if (!m) {
 		cobc_err_msg (_("cannot allocate %d bytes of memory"),
 				(int)size);
 		cobc_abort_terminate (0);
@@ -1001,7 +1001,7 @@ cobc_main_strdup (const char *dupstr)
 	size_t	n;
 
 	/* LCOV_EXCL_START */
-	if (unlikely (!dupstr)) {
+	if (!dupstr) {
 		cobc_err_msg (_("call to %s with NULL pointer"), "cobc_main_strdup");
 		cobc_abort_terminate (1);
 	}
@@ -1019,7 +1019,7 @@ cobc_main_stradd_dup (const char *str1, const char *str2)
 	size_t	m, n;
 
 	/* LCOV_EXCL_START */
-	if (unlikely (!str1 || !str2)) {
+	if (!str1 || !str2) {
 		cobc_err_msg (_("call to %s with NULL pointer"), "cobc_main_stradd_dup");
 		cobc_abort_terminate (1);
 	}
@@ -1041,7 +1041,7 @@ cobc_main_realloc (void *prevptr, const size_t size)
 
 	m = calloc ((size_t)1, COBC_MEM_SIZE + size);
 	/* LCOV_EXCL_START */
-	if (unlikely (!m)) {
+	if (!m) {
 		cobc_err_msg (_("cannot allocate %d bytes of memory"),
 				(int)size);
 		cobc_abort_terminate (0);
@@ -1058,7 +1058,7 @@ cobc_main_realloc (void *prevptr, const size_t size)
 		prev = curr;
 	}
 	/* LCOV_EXCL_START */
-	if (unlikely (!curr)) {
+	if (!curr) {
 		cobc_err_msg (_("attempt to reallocate non-allocated memory"));
 		cobc_abort_terminate (0);
 	}
@@ -1090,7 +1090,7 @@ cobc_main_free (void *prevptr)
 		prev = curr;
 	}
 	/* LCOV_EXCL_START */
-	if (unlikely (!curr)) {
+	if (!curr) {
 #ifdef	COB_TREE_DEBUG
 		cobc_err_msg (_("call to %s with invalid pointer, as it is missing in list"),
 			"cobc_main_free");
@@ -1117,7 +1117,7 @@ cobc_parse_malloc (const size_t size)
 
 	m = calloc ((size_t)1, COBC_MEM_SIZE + size);
 	/* LCOV_EXCL_START */
-	if (unlikely (!m)) {
+	if (!m) {
 		cobc_err_msg (_("cannot allocate %d bytes of memory"),
 				(int)size);
 		cobc_abort_terminate (0);
@@ -1137,7 +1137,7 @@ cobc_parse_strdup (const char *dupstr)
 	size_t	n;
 
 	/* LCOV_EXCL_START */
-	if (unlikely (!dupstr)) {
+	if (!dupstr) {
 		cobc_err_msg (_("call to %s with NULL pointer"), "cobc_parse_strdup");
 		cobc_abort_terminate (1);
 	}
@@ -1157,7 +1157,7 @@ cobc_parse_realloc (void *prevptr, const size_t size)
 
 	m = calloc ((size_t)1, COBC_MEM_SIZE + size);
 	/* LCOV_EXCL_START */
-	if (unlikely (!m)) {
+	if (!m) {
 		cobc_err_msg (_("cannot allocate %d bytes of memory"),
 				(int)size);
 		cobc_abort_terminate (0);
@@ -1174,7 +1174,7 @@ cobc_parse_realloc (void *prevptr, const size_t size)
 		prev = curr;
 	}
 	/* LCOV_EXCL_START */
-	if (unlikely (!curr)) {
+	if (!curr) {
 		cobc_err_msg (_("attempt to reallocate non-allocated memory"));
 		cobc_abort_terminate (0);
 	}
@@ -1206,7 +1206,7 @@ cobc_parse_free (void *prevptr)
 		prev = curr;
 	}
 	/* LCOV_EXCL_START */
-	if (unlikely (!curr)) {
+	if (!curr) {
 #ifdef	COB_TREE_DEBUG
 		cobc_err_msg (_("call to %s with invalid pointer, as it is missing in list"),
 			"cobc_parse_free");
@@ -1233,7 +1233,7 @@ cobc_plex_malloc (const size_t size)
 
 	m = calloc ((size_t)1, COBC_MEM_SIZE + size);
 	/* LCOV_EXCL_START */
-	if (unlikely (!m)) {
+	if (!m) {
 		cobc_err_msg (_("cannot allocate %d bytes of memory"),
 				(int)size);
 		cobc_abort_terminate (0);
@@ -1252,7 +1252,7 @@ cobc_plex_strdup (const char *dupstr)
 	size_t	n;
 
 	/* LCOV_EXCL_START */
-	if (unlikely (!dupstr)) {
+	if (!dupstr) {
 		cobc_err_msg (_("call to %s with NULL pointer"), "cobc_plex_strdup");
 		cobc_abort_terminate (1);
 	}
@@ -1269,7 +1269,7 @@ cobc_check_string (const char *dupstr)
 	struct strcache	*s;
 
 	/* LCOV_EXCL_START */
-	if (unlikely (!dupstr)) {
+	if (!dupstr) {
 		cobc_err_msg (_("call to %s with NULL pointer"), "cobc_check_string");
 		cobc_abort_terminate (1);
 	}
@@ -1981,7 +1981,7 @@ clean_up_intermediates (struct filename *fn, const int status)
 	char	*buffer;
 #endif
 	for (lf = fn->localfile; lf; lf = lf->next) {
-		if (unlikely(lf->local_fp)) {
+		if (lf->local_fp) {
 			fclose (lf->local_fp);
 			lf->local_fp = NULL;
 		}
@@ -4639,7 +4639,7 @@ process (const char *cmd)
 	size_t	clen;
 	int	ret;
 
-	if (likely(strchr (cmd, '$') == NULL)) {
+	if (strchr (cmd, '$') == NULL) {
 		buffptr = (char *)cmd;
 	} else {
 		clen = strlen (cmd) + 64U;
@@ -4659,7 +4659,7 @@ process (const char *cmd)
 
 	ret = call_system (buffptr);
 
-	if (unlikely(buffptr != cmd)) {
+	if (buffptr != cmd) {
 		cobc_free (buffptr);
 	}
 
@@ -4754,7 +4754,7 @@ preprocess (struct filename *fn)
 	}
 
 	if (ppout) {
-		if (unlikely (fclose (ppout) != 0)) {
+		if (fclose (ppout) != 0) {
 			cobc_terminate (fn->preprocess);
 		}
 		ppout = NULL;
@@ -4764,7 +4764,7 @@ preprocess (struct filename *fn)
 	plex_call_destroy ();
 
 	if (cobc_gen_listing && !cobc_list_file) {
-		if (unlikely (fclose (cb_listing_file) != 0)) {
+		if (fclose (cb_listing_file) != 0) {
 			cobc_terminate (fn->listing_file);
 		}
 #ifndef COB_INTERNAL_XREF
@@ -7498,19 +7498,19 @@ process_translate (struct filename *fn)
 	}
 
 	/* Close files */
-	if (unlikely(fclose (cb_storage_file) != 0)) {
+	if (fclose (cb_storage_file) != 0) {
 		cobc_terminate (fn->trstorage);
 	}
 	cb_storage_file = NULL;
-	if (unlikely (fclose (yyout) != 0)) {
+	if (fclose (yyout) != 0) {
 		cobc_terminate (fn->translate);
 	}
 	yyout = NULL;
 	for (p = current_program; p; p = p->next_program) {
-		if (unlikely(!p->local_include->local_fp)) {
+		if (!p->local_include->local_fp) {
 			continue;
 		}
-		if (unlikely(fclose (p->local_include->local_fp) != 0)) {
+		if (fclose (p->local_include->local_fp) != 0) {
 			cobc_terminate(lf->local_name);
 		}
 		p->local_include->local_fp = NULL;
