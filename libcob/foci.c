@@ -164,7 +164,7 @@ chkSts(
 	i = strlen(errMsg);
 	if (errMsg[i-1] == '\n')
 		errMsg[--i] = 0;
-	snprintf(db->lastErrMsg,sizeof(db->lastErrMsg),"%s",errMsg);
+	strncpy(db->lastErrMsg,errMsg,sizeof(db->lastErrMsg)-1);
 	for(i=0; i < sizeof(db->lastErrMsg) && db->lastErrMsg[i] != '\n'; i++);
 	while(i < sizeof(db->lastErrMsg))
 		db->lastErrMsg[i++] = 0;
@@ -257,17 +257,17 @@ splitConnectString(struct db_state *db, char *env)
 			temp[j] = 0;
 			if(stp == 2) {
 				bSidSet = TRUE;
-				snprintf(db->dbName,sizeof(db->dbName),"%s",temp);
+				strncpy(db->dbName,temp,sizeof(db->dbName)-1);
 				db->attachDbName = TRUE;
 			} else {
-				snprintf(db->dbUser,sizeof(db->dbUser),"%s",temp);
+				strncpy(db->dbUser,temp,sizeof(db->dbUser)-1);
 				bUserSet = TRUE;
 			}
 			temp[j=0] = 0;
 			stp = 1;
 		} else if(env[k] == '@') {
 			temp[j] = 0;
-			snprintf(db->dbUser,sizeof(db->dbUser),"%s",temp);
+			strncpy(db->dbUser,temp,sizeof(db->dbUser)-1);
 			bUserSet = TRUE;
 			temp[j=0] = 0;
 			stp = 2;
@@ -279,11 +279,11 @@ splitConnectString(struct db_state *db, char *env)
 	if(temp[0] > ' ') {
 		if(stp == 0		/* No / or @ so use as SID value */
 		|| stp == 2) {
-			snprintf(db->dbName,sizeof(db->dbName),"%s",temp);
+			strncpy(db->dbName,temp,sizeof(db->dbName)-1);
 			db->attachDbName = TRUE;
 			bSidSet = TRUE;
 		} else {
-			snprintf(db->dbPwd,sizeof(db->dbPwd),"%s",temp);
+			strncpy(db->dbPwd,temp,sizeof(db->dbPwd)-1);
 			bPwdSet = TRUE;
 		}
 	}
