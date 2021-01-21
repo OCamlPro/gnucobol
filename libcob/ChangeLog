@@ -1,4 +1,9 @@
 
+2021-01-21  Ron Norman <rjn@inglenet.com>
+
+	* fodbc.c: Add some code to check for using SQLite
+
+2021-01-16  Simon Sobisch <simonsobisch@gnu.org>
 	* 24-files: (likely, unlikely): never use __builtin_expect
 
 2021-01-15  Ron Norman <rjn@inglenet.com> 

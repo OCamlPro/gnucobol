@@ -59,10 +59,9 @@
 
 /* COB_DEBUG_LOG Macros and routines found in common.c */
 #ifdef COB_DEBUG_LOG
-#define COB_HIDDEN_X extern
-COB_HIDDEN_X int	cob_debug_logit		(int level, char *module);
-COB_HIDDEN_X int	cob_debug_logger	(const char *fmt, ... );
-COB_HIDDEN_X int	cob_debug_dump		(void *mem, int len);
+COB_EXPIMP int	cob_debug_logit		(int level, char *module);
+COB_EXPIMP int	cob_debug_logger	(const char *fmt, ... );
+COB_EXPIMP int	cob_debug_dump		(void *mem, int len);
 #define DEBUG_TRACE(module, arglist)		cob_debug_logit(3, (char*)module) ? 0 : cob_debug_logger arglist
 #define DEBUG_WARN(module, arglist)			cob_debug_logit(2, (char*)module) ? 0 : cob_debug_logger arglist
 #define DEBUG_LOG(module, arglist)			cob_debug_logit(0, (char*)module) ? 0 : cob_debug_logger arglist

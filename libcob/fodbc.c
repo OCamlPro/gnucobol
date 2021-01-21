@@ -1245,6 +1245,17 @@ join_environment (cob_file_api *a)
 	if (sts) {
 		/* Try PostgeSQL version() */
 		sts = odbcStmt(db,(char*)"SELECT version()");
+		if (sts) {
+			/* Try SQLite version() */
+			sts = odbcStmt(db,(char*)"SELECT sqlite_version()");
+			if(sts == 0) {
+				db->mssql = FALSE;
+				db->db2 = FALSE;
+				db->sqlite = TRUE;
+				db->dbStsNoTable = 1098;
+				return;
+			}
+		}
 	}
 	if (sts) {
 		return;
@@ -1410,10 +1421,14 @@ odbc_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 
 	switch (mode) {
 	case COB_OPEN_OUTPUT:
-		snprintf(buff,sizeof(buff),"TRUNCATE TABLE %s",fx->tablename);
+		if (db->sqlite)
+			snprintf(buff,sizeof(buff),"DELETE FROM %s",fx->tablename);
+		else
+			snprintf(buff,sizeof(buff),"TRUNCATE TABLE %s",fx->tablename);
 		if (odbcStmt(db,buff)
 		 && (db->dbStatus == db->dbStsNoTable
-		 ||  db->dbStatus == 1042)) {
+		 ||  db->dbStatus == 1042
+		 ||  memcmp(db->odbcState,"HY000",4) == 0)) {
 			odbc_create_table (db, fx);
 		} 
 		if (db->dbStatus != db->dbStsOk) {
