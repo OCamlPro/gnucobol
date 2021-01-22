@@ -170,8 +170,8 @@ struct cob_fileio_funcs {
 	char * (*ioversion)	(void);
 };
 
-extern	cob_global		*file_globptr;
-extern	cob_settings	*file_setptr;
+COB_EXPIMP	cob_global		*file_globptr;
+COB_EXPIMP	cob_settings	*file_setptr;
 
 static const int	status_exception[] = {
 	0,				/* 0x */

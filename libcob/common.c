@@ -1014,6 +1014,8 @@ cob_set_dump_signal (void *hndlr)
 			(void)sigaction (signals[k].signum, &sa, NULL);
 		}
 	}
+#else
+	COB_UNUSED (hndlr);
 #endif
 }
 
@@ -7795,20 +7797,31 @@ print_version_summary (void)
 #endif
 
 #if defined	(WITH_CISAM)
-	printf (", C-ISAM");
+	printf (", %s", cob_io_version (COB_IO_CISAM, 0));
 #endif
 #if defined	(WITH_DISAM)
-	printf (", D-ISAM");
-#endif
-#if defined	(WITH_VBISAM)
-	printf (", VB-ISAM");
+	printf (", %s", cob_io_version (COB_IO_DISAM, 0));
 #endif
 #if defined	(WITH_VBCISAM)
-	printf (", VB-ISAM (C-ISAM)");
+	printf (", %s", cob_io_version (COB_IO_VBCISAM, 0));
+#endif
+#if defined	(WITH_VBISAM)
+	printf (", %s", cob_io_version (COB_IO_VBISAM, 0));
+#endif
+#if defined	(WITH_ODBC)
+	printf (", %s", cob_io_version (COB_IO_ODBC, 0));
+#endif
+#if defined	(WITH_OCI)
+	printf (", %s", cob_io_version (COB_IO_OCI, 0));
 #endif
 #if defined	(WITH_DB)
-	printf (", %s",cob_io_version (COB_IO_BDB));
+	printf (", %s", cob_io_version (COB_IO_BDB, 0));
 #endif
+#if defined	(WITH_LMDB)
+	printf (", %s", cob_io_version (COB_IO_LMDB, 0));
+#endif
+
+
 	putchar ('\n');
 
 }
@@ -7941,40 +7954,40 @@ print_info_detailed (const int verbose)
 #endif
 	num = 0;
 #if defined	(WITH_CISAM)
-	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_CISAM), "", 0);
+	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_CISAM, verbose), "", 0);
 	num++;
 #endif
 #if defined	(WITH_DISAM)
-	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_DISAM), "", 0);
+	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_DISAM, verbose), "", 0);
 	num++;
 #endif
 #if defined	(WITH_VBCISAM)
-	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_VBCISAM), "", 0);
+	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_VBCISAM, verbose), "", 0);
 	num++;
 #endif
 #if defined	(WITH_VBISAM)
-	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_VBISAM), "", 0);
+	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_VBISAM, verbose), "", 0);
 	num++;
 #endif
 #if defined	(WITH_ODBC)
-	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_ODBC), "", 0);
+	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_ODBC, verbose), "", 0);
 	num++;
 #endif
 #if defined	(WITH_OCI)
-	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_OCI), "", 0);
+	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_OCI, verbose), "", 0);
 	num++;
 #endif
 #if defined	(WITH_DB)
-	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_BDB), "", 0);
+	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_BDB, verbose), "", 0);
 	num++;
 #endif
 #if defined	(WITH_LMDB)
-	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_LMDB), "", 0);
+	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_LMDB, verbose), "", 0);
 	num++;
 #endif
 #if defined(WITH_INDEXED)
 	if (num > 1)
-	var_print (_("default indexed handler"), 	cob_io_version (WITH_INDEXED), "", 0);
+	var_print (_("default indexed handler"),	cob_io_name (WITH_INDEXED), "", 0);
 #endif
 
 	if (num == 0)

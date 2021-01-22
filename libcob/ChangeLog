@@ -4,6 +4,22 @@
 	* common.c: Add check for COB_DEBUG_LOG not defined
 	* fodbc.c,fsqlxfd.c: set db->no_for_update for SQLite
 
+2021-01-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am: changes for delay-load libraries (INDEXED)
+	  pass specific CFLAGS and LDFLAGS, link against libcob, lt-version 1
+	* fileio.c (io_rtns): module name with environment specific prefix
+	  and suffix
+	* fileio.h externalized file_globptr, file_setptr
+	* fisam.c: externalized cob_isam_init_fileio
+	* call.c (cob_load_lib): nicer error output
+	* fileio.c: adjusted error handling for module load: don't exit on errors
+	  in cob_load_module but handle error after calling it
+	* fileio.c, coblocal.h: added cob_io_name, extend cob_io_version to
+	  output a verbose error upon request
+	* common.c: get name and version for file handlers from fileio,
+	  pass verbose option to fileio on use --info
+
 2021-01-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fodbc.c (join_environment): set db->postgres when PostgreSQL
@@ -48,8 +64,6 @@
 
 2021-01-06  Simon Sobisch <simonsobisch@gnu.org>
 
-	* fileio.c (io_rtns): module name without file extension
-	* call.c (cob_load_lib): concat COB_MODULE_EXT to library_name
 	* common.c (print_version): welcome 2021
 
 2021-01-04  Ron Norman <rjn@inglenet.com> 

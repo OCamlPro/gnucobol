@@ -82,6 +82,7 @@ static	cob_settings	*isam_setptr;
 #define	isfullclose(x)	isclose (x)
 
 #elif	defined(WITH_DISAM)
+#define	isfullclose(x)	isclose (x)
 #if defined(HAVE_ISCONFIG_H) && defined(HAVE_ISINTSTD_H)
 #include <isconfig.h>
 #ifndef ISCOBOL_STATS
@@ -107,7 +108,6 @@ static	cob_settings	*isam_setptr;
 #undef	COB_WITH_STATUS_02
 #endif
 #endif
-#define	isfullclose(x)	isclose (x)
 
 #elif	defined(WITH_VBISAM)
 #include <vbisam.h>
@@ -237,7 +237,8 @@ static int isam_commit (cob_file_api *a, cob_file *f);
 static int isam_rollback (cob_file_api *a, cob_file *f);
 static char *isam_version (void);
 static void cob_isam_exit_fileio (cob_file_api *a);
-void cob_isam_init_fileio (cob_file_api *a);
+
+COB_EXT_EXPORT void cob_isam_init_fileio (cob_file_api *a);
 
 static int 
 isam_dummy ()

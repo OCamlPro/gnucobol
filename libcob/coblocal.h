@@ -361,7 +361,8 @@ struct config_tbl {
 
 
 /* Local function prototypes */
-COB_EXPIMP const char * cob_io_version	(const int);
+COB_EXPIMP const char * cob_io_version	(const int, const int);
+COB_EXPIMP const char * cob_io_name		(const int);
 COB_HIDDEN void		cob_init_numeric	(cob_global *);
 COB_HIDDEN void		cob_init_termio		(cob_global *, cob_settings *);
 COB_HIDDEN void		cob_init_fileio		(cob_global *, cob_settings *);

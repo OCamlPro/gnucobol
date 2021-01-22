@@ -233,6 +233,18 @@ static struct cob_fileio_funcs	*fileio_funcs[COB_IO_MAX] = {
 	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 };
 
+#if defined (__CYGWIN__)
+#define LIB_PRF		"cyg"
+#else
+#define LIB_PRF		"lib"
+#endif
+
+#if defined(_WIN32) || defined(__CYGWIN__)
+#define LIB_SUF		"-1." COB_MODULE_EXT
+#else
+#define LIB_SUF		"." COB_MODULE_EXT
+#endif
+
 static struct {
 	int		loaded;			/* Module is loaded and ready */
 	int		config;			/* Module was configured into compiler */
@@ -244,17 +256,17 @@ static struct {
 	{1,1,"SEQUENTIAL",NULL,NULL,NULL},
 	{1,1,"LINE",NULL,NULL,NULL},
 	{1,1,"RELATIVE",NULL,NULL,NULL},
-	{0,0,"CISAM","libcobci", "cob_isam_init_fileio","C-ISAM"},
-	{0,0,"DISAM","libcobdi", "cob_isam_init_fileio","D-ISAM"},
-	{0,0,"VBISAM","libcobvb", "cob_isam_init_fileio","VB-ISAM"},
-	{0,0,"BDB","libcobdb", "cob_bdb_init_fileio",NULL},
-	{0,0,"VBCISAM","libcobvc", "cob_isam_init_fileio","VB-ISAM (C-ISAM mode)"},
+	{0,0,"CISAM",LIB_PRF "cobci" LIB_SUF, "cob_isam_init_fileio","C-ISAM"},
+	{0,0,"DISAM",LIB_PRF "cobdi" LIB_SUF, "cob_isam_init_fileio","DISAM"},
+	{0,0,"VBISAM",LIB_PRF "cobvb" LIB_SUF, "cob_isam_init_fileio","VBISAM"},
+	{0,0,"BDB",LIB_PRF "cobdb" LIB_SUF, "cob_bdb_init_fileio",NULL},
+	{0,0,"VBCISAM",LIB_PRF "cobvc" LIB_SUF, "cob_isam_init_fileio","VBISAM (C-ISAM mode)"},
 	{0,0,"IXEXT",NULL,NULL,NULL},
 	{0,0,"SQEXT",NULL,NULL,NULL},
 	{0,0,"RLEXT",NULL,NULL,NULL},
-	{0,0,"ODBC","libcobod", "cob_odbc_init_fileio",NULL},
-	{0,0,"OCI","libcoboc", "cob_oci_init_fileio",NULL},
-	{0,0,"LMDB","libcoblm", "cob_lmdb_init_fileio",NULL},
+	{0,0,"ODBC",LIB_PRF "cobod" LIB_SUF, "cob_odbc_init_fileio",NULL},
+	{0,0,"OCI",LIB_PRF "coboc" LIB_SUF, "cob_oci_init_fileio",NULL},
+	{0,0,"LMDB",LIB_PRF "coblm" LIB_SUF, "cob_lmdb_init_fileio",NULL},
 	{0,0,NULL,NULL,NULL,NULL}
 };
 #ifdef	WITH_INDEX_EXTFH
@@ -310,11 +322,11 @@ static const char ix_routine = COB_IO_VBCISAM;
 static const char ix_routine = COB_IO_VBISAM;
 #elif defined(WITH_DB)
 static const char ix_routine = COB_IO_BDB;
-#elif	defined(WITH_LMDB)
+#elif defined(WITH_LMDB)
 static const char ix_routine = COB_IO_LMDB;
-#elif	defined(WITH_ODBC)
+#elif defined(WITH_ODBC)
 static const char ix_routine = COB_IO_ODBC;
-#elif	defined(WITH_OCI)
+#elif defined(WITH_OCI)
 static const char ix_routine = COB_IO_OCI;
 #elif	WITH_INDEX_EXTFH
 static const char ix_routine = COB_IO_IXEXT;
@@ -692,28 +704,29 @@ cob_key_def (cob_file *f, int keyn, char *p, int *ret, int keycheck)
 	return;
 }
 
+static char	module_errmsg[256];
+static char	module_msg[256];
 /*
  * Dynamically Load the given I/O routine
  */
 static int
 cob_load_module (int iortn)
 {
-	char	errmsg[256];
 	void (*ioinit)(cob_file_api *);
+
+	if (iortn > COB_IO_MAX) {
+		/* possibly cob_runtime_error here */
+		return -1;
+	}
 	if (io_rtns[iortn].loaded
 	 || io_rtns[iortn].module == NULL) {
 		return 0;
 	}
-	errmsg[0] = 0;
-	ioinit = (void (*)(cob_file_api *))cob_load_lib (io_rtns[iortn].module, io_rtns[iortn].entry, errmsg);
+
+	module_errmsg[0] = 0;
+	ioinit = (void (*)(cob_file_api *))cob_load_lib (io_rtns[iortn].module, io_rtns[iortn].entry, module_errmsg);
 	if (ioinit == NULL) {
-		if (io_rtns[iortn].desc != NULL)
-			cob_runtime_error (_("%s library %s is not present\n%s"),
-						io_rtns[iortn].desc,io_rtns[iortn].module,errmsg);
-		else
-			cob_runtime_error (_("%s library %s is not present\n%s"),
-						io_rtns[iortn].name,io_rtns[iortn].module,errmsg);
-		exit(-1);
+		return 1;
 	}
 	ioinit(&file_api);
 	io_rtns[iortn].loaded = 1;
@@ -724,20 +737,38 @@ cob_load_module (int iortn)
  * Return a string with I/O module version information
  */
 const char *
-cob_io_version (const int iortn)
+cob_io_version (const int iortn, const int verbose)
 {
+	if (iortn > COB_IO_MAX) return _("unsupported");
+
 	cob_load_module (iortn);
 	if (fileio_funcs[iortn] == NULL) {
-		cob_runtime_error (_("ERROR I/O routine %s is not present"),
-							io_rtns[iortn].name);
-		return "Unknown";
+		if (verbose) {
+			/* note: module_errmsg includes both the module name and error */
+			cob_runtime_error (_("I/O routine %s cannot be loaded: %s"),
+				io_rtns[iortn].name, module_errmsg);
+		}
+		sprintf (module_msg, "%s %s (%s)", io_rtns[iortn].name,
+			_("unknown"), "missing");
+		return module_msg;
 	}
 	if (fileio_funcs[iortn]->ioversion == NULL) {
-		cob_runtime_error (_("ERROR I/O routine %s has no version"),
-							io_rtns[iortn].name);
-		return "Unknown";
+		sprintf (module_msg, "%s %s (%s)", io_rtns[iortn].name,
+			_("unknown"), "no version");
+		return module_msg;
 	}
 	return fileio_funcs[iortn]->ioversion ();
+}
+
+/*
+ * Return a string with I/O module name
+ */
+const char *
+cob_io_name (const int iortn)
+{
+	if (iortn > COB_IO_MAX) return _("unsupported");
+
+	return io_rtns[iortn].name;
 }
 
 int
@@ -1047,7 +1078,7 @@ void
 cob_file_sync (cob_file *f)
 {
 	if (f->organization == COB_ORG_INDEXED) {
-		fileio_funcs[get_io_ptr (f)]->iosync (&file_api, f);
+		     fileio_funcs[get_io_ptr (f)]->iosync (&file_api, f);
 		return;
 	}
 	if (f->organization != COB_ORG_SORT) {
@@ -1463,9 +1494,13 @@ cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 												io_rtns[j].name,file_open_env);
 						else if (!io_rtns[j].loaded)
 							cob_load_module (j);
-						if(fileio_funcs[j] == NULL) {
+						if (fileio_funcs[j] == NULL) {
+							const char* desc = io_rtns[j].desc ? io_rtns[j].desc : io_rtns[j].name;
 							cob_runtime_error (_("I/O routine %s is not present for %s"),
 												io_rtns[j].name,file_open_env);
+							cob_runtime_error (_("%s library %s is not present\n%s"),
+								desc, io_rtns[j].module, module_errmsg);
+							exit (-1);
 						} else {
 							f->flag_set_isam = 1;
 							f->io_routine = (unsigned char)j;
@@ -2455,7 +2490,7 @@ cob_file_save_status (cob_file *f, cob_field *fnstatus, const int status)
 				 && COB_MODULE_PTR->module_source)
 					fprintf(fo,"%s",COB_MODULE_PTR->module_source);
 				else
-					fprintf(fo,"%s","Unknown");
+					fprintf(fo,"%s","unknown");
 				fprintf(fo,",%s, ",f->select_name);
 				strcpy(prcoma,"");
 				for (k=0; k <= 5; k++) {
@@ -3595,7 +3630,7 @@ sequential_rewrite (cob_file_api *a, cob_file *f, const int opt)
 	rcsz = f->record->size;
 	padlen = 0;
 	if (f->record_min != f->record_max
-	 && f->record_prefix > 0) {
+	&& f->record_prefix > 0) {
 		bytesread = read (f->fd, recsize.sbuff, f->record_prefix);
 		if (bytesread != (int)f->record_prefix) {
 			if (bytesread == 0) {
@@ -5294,8 +5329,17 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 		return;
 	}
 
-	if (!io_rtns[f->io_routine].loaded)
-		cob_load_module (f->io_routine);
+	if (!io_rtns[f->io_routine].loaded) {
+		const unsigned char r = f->io_routine;
+		int ret = cob_load_module (r);
+		if (ret) {
+			const char* desc = io_rtns[r].desc ? io_rtns[r].desc : io_rtns[r].name;
+			/* note: module_errmsg includes both the module name and error */
+			cob_runtime_error (_("I/O routine %s cannot be loaded: %s"),
+				desc, module_errmsg);
+			cob_file_save_status (f, fnstatus, COB_STATUS_91_NOT_AVAILABLE);
+		}
+	}
 	cob_cache_file (f);
 
 	/* Open the file */
@@ -5867,8 +5911,17 @@ cob_delete_file (cob_file *f, cob_field *fnstatus, const int override)
 		return;
 	}
 
-	if (!io_rtns[f->io_routine].loaded)
-		cob_load_module (f->io_routine);
+	if (!io_rtns[f->io_routine].loaded) {
+		const unsigned char r = f->io_routine;
+		int ret = cob_load_module (r);
+		if (ret) {
+			const char* desc = io_rtns[r].desc ? io_rtns[r].desc : io_rtns[r].name;
+			/* note: module_errmsg includes both the module name and error */
+			cob_runtime_error (_("I/O routine %s cannot be loaded: %s"),
+				desc, module_errmsg);
+			cob_file_save_status (f, fnstatus, COB_STATUS_91_NOT_AVAILABLE);
+		}
+	}
 	/* Obtain the file name */
 	cob_field_to_string (f->assign, file_open_name, (size_t)COB_FILE_MAX);
 	cob_chk_file_mapping (f);
@@ -6256,7 +6309,8 @@ cob_sys_check_file_exist (unsigned char *file_name, unsigned char *file_info)
 		return -1;
 	}
 	if (cob_get_param_size(2) < 16) {
-		cob_runtime_error (_("'%s' - File detail area is too short"), "CBL_CHECK_FILE_EXIST");
+		cob_runtime_error (_("'%s' - File detail area is too short"),
+			"CBL_CHECK_FILE_EXIST");
 		cob_stop_run (1);
 	}
 

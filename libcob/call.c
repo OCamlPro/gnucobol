@@ -1107,12 +1107,9 @@ cob_resolve_func (const char *name)
  * Load library and return address of entry point
  */
 void *
-cob_load_lib (const char *library_basename, const char *entry, char *reason)
+cob_load_lib (const char *library, const char *entry, char *reason)
 {
 	void	*p;
-	char		library[COB_MINI_BUFF];
-
-	sprintf (library, "%s.%s", library_basename, COB_MODULE_EXT);
 
 	errno = 0;
 	p = lt_dlopenlcl (library);
@@ -1121,16 +1118,20 @@ cob_load_lib (const char *library_basename, const char *entry, char *reason)
 		if (p == NULL
 		 && reason != NULL) {
 #if	defined(USE_LIBDL)
+#if 0 /* lt_dlerror already mentions if and what entry is the issue */
 			sprintf (reason, "no entry: %s", lt_dlerror());
 #else
-			strcpy (reason, "entry not found");
+			strcpy (reason, lt_dlerror());
+#endif
+#else
+			sprintf (reason, _("entry %s not found in module %s"), entry, library);
 #endif
 		}
 	} else if (reason != NULL) {
 #if	defined(USE_LIBDL)
 		strcpy (reason, lt_dlerror());
 #else
-		strcpy (reason, "Unknown");
+		sprintf (reason, _("module %s not found"), library);
 #endif
 	}
 

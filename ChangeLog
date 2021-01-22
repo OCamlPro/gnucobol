@@ -1,4 +1,10 @@
 
+2021-01-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: rewritten checks for indexed handlers and
+	  allow to pass specific flags via xyz_CFLAGS and xyz_LIBS,
+	  AC_SUBST those for libcob/Makefile.am
+
 2021-01-15  Ron Norman <rjn@inglenet.com> 
 
 	* configure.ac: Updated check for D-ISAM isconfig.h and isintstd.h
@@ -1347,7 +1353,7 @@
 	* Version 0.9 released.
 
 
-Copyright 2002-2020 Free Software Foundation, Inc.
+Copyright 2002-2021 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

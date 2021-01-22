@@ -28,7 +28,7 @@ AC_INIT([GnuCOBOL],
 	[bug-gnucobol@gnu.org],
 	[gnucobol],
 	[https://www.gnu.org/software/gnucobol/])
-AC_REVISION([GnuCOBOL snapshot $Revision: 2248 $])
+AC_REVISION([GnuCOBOL snapshot $Revision: 4131 $])
 AC_CONFIG_SRCDIR([libcob.h])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_TESTDIR([tests])
@@ -1311,6 +1311,10 @@ AC_ARG_WITH([seqra-extfh],
     fi ],
   [])
 
+#
+## Checks for indexed handlers
+#
+
 AC_ARG_WITH([indexed],
   [AS_HELP_STRING([--with-indexed],
     [Define default INDEXED file handler])],
@@ -1404,11 +1408,6 @@ AC_ARG_WITH([indexed],
 	  fi
   ])
 
-LIBCOB_ISAM=""
-LIBCOB_VBISAM=""
-LIBCOB_VBCISAM=""
-LIBCOB_DISAM=""
-LIBCOB_CISAM=""
 cob_gen_vbisam=no
 cob_gen_vbcisam=no
 cob_gen_disam=no
@@ -1418,124 +1417,148 @@ cob_gen_oci=no
 cob_gen_bdb=no
 cob_gen_lmdb=no
 
+curr_cppflags="$CPPFLAGS"
+curr_libs="$LIBS"
+
   AC_ARG_WITH([cisam],
   [AS_HELP_STRING([--with-cisam],
-    [(GnuCOBOL) Use CISAM for ISAM I/O])],
-  [ if test "$with_cisam" = "yes"; then
+    [(GnuCOBOL) Use C-ISAM for ISAM I/O])],
+  [if test "$with_cisam" = "yes"; then
 	cob_gen_cisam=yes
+	PKG_CHECK_MODULES([CISAM], [cisam], [], [#])
+	if test -n "$CISAM_CFLAGS"; then
+		CPPFLAGS="$CPPFLAGS $CISAM_CFLAGS"
+	fi
 	AC_CHECK_HEADERS([isam.h], [],
-		AC_MSG_ERROR([isam.h is required for CISAM]))
+		AC_MSG_ERROR([isam.h is required for C-ISAM]))
 	AC_CHECK_LIB([ifisam], [isopen],
 		[AC_DEFINE([WITH_CISAM], [1])
-		LIBCOB_ISAM="$LIBCOB_ISAM -lifisam -lifisamx"
-		LIBCOB_CISAM="-lifisam -lifisamx"],
-		AC_MSG_ERROR([libifisam is required for CISAM]), [-lifisamx])
-    fi ],
-  [])
+		CISAM_LIBS="-lifisam -lifisamx"],
+		AC_MSG_ERROR([libifisam is required for C-ISAM]), [-lifisamx])
+	CPPFLAGS="$curr_cppflags"
+	LIBS="$curr_libs"
+   fi ],
+  [CISAM_LIBS=""])
 
   AC_ARG_WITH([disam],
   [AS_HELP_STRING([--with-disam],
     [(GnuCOBOL) Use DISAM for INDEXED I/O])],
-  [ if test "$with_disam" = "yes"; then
-	for cobdisam in disam8 disam72 disam71 disam7 
-	do
-		AC_CHECK_LIB([$cobdisam], [isopen],
-			[AC_DEFINE([WITH_DISAM], [1])
-			LIBCOB_ISAM="$LIBCOB_ISAM -l$cobdisam"
-			LIBCOB_DISAM="-l$cobdisam"]
-			cob_got_disam=yes
-			break,
-			[], [])
-	done
-	if test "$cob_got_disam" = "yes"; then 
-		AC_CHECK_HEADERS([iswrap.h isconfig.h isintstd.h], [],
-			AC_MSG_ERROR([iswrap.h isconfig.h isintstd.h are required for $cobdisam]))
-	else
-		AC_CHECK_LIB([disam], [isopen],
-			[AC_DEFINE([WITH_DISAM], [1])
-			LIBCOB_ISAM="$LIBCOB_ISAM -ldisam"
-			LIBCOB_DISAM="-ldisam"]
-			cob_got_disam=yes
-			cob_got_oldisam=yes
-			break,
-			[], [])
+  [if test "$with_disam" = "yes"; then
+	PKG_CHECK_MODULES([DISAM], [disam], [], [#])
+	if test -n "$DISAM_CFLAGS"; then
+		CPPFLAGS="$CPPFLAGS $DISAM_CFLAGS"
 	fi
-	if test "$cob_got_oldisam" = "yes"; then 
-		AC_CHECK_HEADERS([disam.h], [],
-			AC_MSG_ERROR([disam.h is required for DISAM]))
-	fi
-	if test "$cob_got_disam" = "yes"; then
-		AC_MSG_NOTICE([DISAM library found as -l$cobdisam])
-	else
+	AC_SEARCH_LIBS([isopen], [disam8 disam72 disam71 disam7 disam],
+		[AC_DEFINE([WITH_DISAM], [1])
+		 cob_gen_disam=yes
+		], [], [$DISAM_LIBS])
+	if test "$ac_cv_search_isopen" = "no"; then
 		AC_MSG_ERROR([DISAM library not found])
+	elif test "$ac_cv_search_isopen" != "none required"; then
+		AC_MSG_NOTICE([DISAM library found as $ac_cv_search_isopen])
+		DISAM_LIBS="$DISAM_LIBS $ac_cv_search_isopen"
+	elif test "x$DISAM_LIBS" != "x"; then
+		AC_MSG_NOTICE([DISAM library found in $DISAM_LIBS])
+	else
+		AC_MSG_NOTICE([DISAM library found])
 	fi
-	cob_gen_disam=yes
-	unset cobdisam
-	unset cob_got_disam
-    fi ],
-  [])
+	if test "$ac_cv_search_isopen" = "no"; then
+	 # note: old DISAM versions only ship disam.h, newer _may_ provide it as convenience
+	 #       to not break an environment which has both old and new we explicit only check
+	 #       what we want to use, matching to the library found (and assume that "none needed"
+	 #       means we're using one of the newer ones)
+	 if test "$ac_cv_search_isopen" = "disam"; then
+	  AC_CHECK_HEADERS([disam.h], [],
+		AC_MSG_ERROR([disam.h is required for DISAM]))
+	 elif test "$ac_cv_search_isopen" != "no"; then
+	  AC_CHECK_HEADERS([iswrap.h isconfig.h isintstd.h], [],
+		AC_MSG_ERROR([iswrap.h isconfig.h isintstd.h are required for $ac_cv_search_isopen]))
+	 fi
+	fi
+	CPPFLAGS="$curr_cppflags"
+	LIBS="$curr_libs"
+   fi ],
+  [DISAM_LIBS=""])
 
   AC_ARG_WITH([vbisam],
   [AS_HELP_STRING([--with-vbisam],
     [(GnuCOBOL) Use VBISAM for INDEXED I/O])],
-  [ if test "$with_vbisam" = "yes"; then
+  [if test "$with_vbisam" = "yes"; then
+	PKG_CHECK_MODULES([VBISAM], [vbisam], [], [#])
+	if test -n "$VBISAM_CFLAGS"; then
+		CPPFLAGS="$CPPFLAGS $VBISAM_CFLAGS"
+	fi
 	AC_CHECK_HEADERS([vbisam.h], [],
 		AC_MSG_ERROR([vbisam.h is required for VBISAM]))
 	# note: isfullclose is available since 2.0, isopen since 1.0
-	AC_CHECK_LIB([vbisam], [isfullclose],
+	AC_SEARCH_LIBS([isfullclose], [vbisam],
 		[AC_DEFINE([WITH_VBISAM], [1])
-		LIBCOB_ISAM="$LIBCOB_ISAM -lvbisam"
-		LIBCOB_VBISAM="-lvbisam"],
-		AC_MSG_ERROR([libvbisam >= 2.0 is required for VBISAM]), [])
-	cob_gen_vbisam=yes
-    fi ],
-  [])
+		 cob_gen_vbisam=yes
+		], [], [$VBISAM_LIBS])
+	if test "$ac_cv_search_isopen" = "no"; then
+		AC_MSG_ERROR([libvbisam >= 2.0 is required for VBISAM])
+	elif test "$ac_cv_search_isopen" != "none required"; then
+		AC_MSG_NOTICE([VBISAM library found as $ac_cv_search_isopen])
+		VBISAM_LIBS=$ac_cv_search_isopen $VBISAM_LIBS
+	elif test "x$VBISAM_LIBS" != "x"; then
+		AC_MSG_NOTICE([VBISAM library found in $VBISAM_LIBS])
+	else
+		AC_MSG_NOTICE([VBISAM library found])
+	fi
+	CPPFLAGS="$curr_cppflags"
+	LIBS="$curr_libs"
+   fi ],
+  [VBISAM_LIBS=""])
 
   AC_ARG_WITH([vbcisam],
   [AS_HELP_STRING([--with-vbcisam],
     [(GnuCOBOL) Use VBISAM in C-ISAM mode for INDEXED I/O])],
-  [ if test "$with_vbcisam" = "yes"; then
+  [if test "$with_vbcisam" = "yes"; then
+	PKG_CHECK_MODULES([VBCISAM], [vbcisam], [], [#])
+	if test -n "$VBCISAM_CFLAGS"; then
+		CPPFLAGS="$CPPFLAGS $VBCISAM_CFLAGS"
+	fi
 	AC_CHECK_HEADERS([vbisam.h], [],
 		AC_MSG_ERROR([vbisam.h is required for VBISAM in C-ISAM mode]))
-
-	AC_CHECK_LIB([vbcisam], [isopen],
+	AC_SEARCH_LIBS([isopen], [vbcisam vbisam],
 		[AC_DEFINE([WITH_VBCISAM], [1])
-		LIBCOB_ISAM="$LIBCOB_ISAM -lvbcisam"
-		LIBCOB_VBCISAM="-lvbcisam"]
-		cob_got_vbcisam=yes
-		break,
-		[], [])
-	if test "$cob_got_vbcisam" = "yes"; then
-		AC_MSG_NOTICE([VB-ISAM in C-ISAM mode library found as $LIBCOB_VBCISAM])
+		 cob_gen_vbcisam=yes
+		], [], [$VBISAM_LIBS])
+	if test "$ac_cv_search_isopen" = "no"; then
+		AC_MSG_ERROR([VBISAM in C-ISAM mode library not found])
+	elif test "$ac_cv_search_isopen" != "none required"; then
+		AC_MSG_NOTICE([VBISAM in C-ISAM mode library found as $ac_cv_search_isopen])
+		VBCISAM_LIBS=$ac_cv_search_isopen $VBCISAM_LIBS
+	elif test "x$VBCISAM_LIBS" != "x"; then
+		AC_MSG_NOTICE([VBISAM in C-ISAM mode library found in $VBCISAM_LIBS])
 	else
-		AC_MSG_ERROR([VB-ISAM in C-ISAM mode library -lvbcisam not found])
+		AC_MSG_NOTICE([VBISAM in C-ISAM mode library found])
 	fi
-	cob_gen_vbcisam=yes
-	unset cob_got_vbcisam
-    fi ],
-  [])
-
-num_isam=0
-if  test "$cob_gen_vbcisam" = "yes"; then
-	num_isam=`expr $num_isam + 1`
-fi
-if  test "$cob_gen_vbisam" = "yes"; then
-	num_isam=`expr $num_isam + 1`
-fi
-if  test "$cob_gen_disam" = "yes"; then
-	num_isam=`expr $num_isam + 1`
-fi
-if  test "$cob_gen_cisam" = "yes"; then
-	num_isam=`expr $num_isam + 1`
-fi
+	CPPFLAGS="$curr_cppflags"
+	LIBS="$curr_libs"
+   fi ],
+  [VBCISAM_LIBS=""])
 
 static_isam=no
 AC_ARG_WITH([static-isam],
   [AS_HELP_STRING([--with-static-isam],
     [(GnuCOBOL) static link ISAM file handler to libcob])],
-  [ if test $num_isam = 1; then
+  [	num_isam=0
+	if  test "$cob_gen_vbcisam" = "yes"; then
+		num_isam=`expr $num_isam + 1`
+	fi
+	if  test "$cob_gen_vbisam" = "yes"; then
+		num_isam=`expr $num_isam + 1`
+	fi
+	if  test "$cob_gen_disam" = "yes"; then
+		num_isam=`expr $num_isam + 1`
+	fi
+	if  test "$cob_gen_cisam" = "yes"; then
+		num_isam=`expr $num_isam + 1`
+	fi
+	if test $num_isam = 1; then
 		AC_DEFINE([WITH_STATIC_ISAM], [1])
-		LIBCOB_LIBS="$LIBCOB_LIBS $LIBCOB_ISAM"
+		LIBCOB_LIBS="$LIBCOB_LIBS $CISAM_LIBS$DISAM_LIBS$VBISAM_LIBS$VBCISAM_LIBS"
 		static_isam=yes
 	else
 		AC_MSG_ERROR([static-isam requires exactly 1 ISAM library])
@@ -1555,7 +1578,6 @@ AC_ARG_WITH([odbc],
   [(GnuCOBOL) Use ODBC for INDEXED I/O])],
 [ if test "$with_odbc" = "yes"; then
 	PKG_CHECK_MODULES([ODBC], [odbc], [], [#])
-
 	if test -n "$ODBC_CFLAGS"; then
 		CPPFLAGS="$CPPFLAGS $ODBC_CFLAGS"
 	fi
@@ -1565,14 +1587,16 @@ AC_ARG_WITH([odbc],
 #	AC_CHECK_HEADERS([sqlcli1.h sqlca.h sqludf.h], [],
 #		AC_MSG_ERROR([sqlcli1.h, sqlca.h, and sqludf.h are required for ODBC (DB2)]))
 
-	if test -n "$ODBC_LIBS"; then
-		LIBS="$LIBS $ODBC_LIBS"
+	if test "x$ODBC_LIBS" = "x"; then
+		ODBC_LIBS="-lodbc"
 	fi
+	LIBS="$LIBS $ODBC_LIBS"
 	AC_CHECK_LIB([odbc], [SQLConnect],
 		[AC_DEFINE([WITH_ODBC], [1])],
 		AC_MSG_ERROR([libodbc is required for ODBC]), [])
 	cob_gen_odbc=yes 
-	LIBCOB_ODBC="-lodbc"
+	CPPFLAGS="$curr_cppflags"
+	LIBS="$curr_libs"
   fi ],
 [])
 
@@ -1598,7 +1622,9 @@ AC_ARG_WITH([oci],
 		[AC_DEFINE([WITH_OCI], [1])],
 		AC_MSG_ERROR([libclnt is required for Oracle OCI]), [])
 	cob_gen_oci=yes 
-	LIBCOB_OCI="-L${ORACLE_HOME}/lib -lclntsh"
+	OCI_LIBS="-L${ORACLE_HOME}/lib -lclntsh"
+	CPPFLAGS="$curr_cppflags"
+	LIBS="$curr_libs"
   fi ],
 [])
 
@@ -1607,18 +1633,6 @@ AC_ARG_WITH([db],
   [(GnuCOBOL) Use Berkeley DB >= 4.1 for ISAM I/O (default)])],
 [],
 [])
-
-AC_ARG_WITH([lmdb],
-[AS_HELP_STRING([--with-lmdb],
-  [(GnuCOBOL) Use Lightning Memory-Mapped Database (LMDB) for ISAM I/O (experimental, no locking or shared storage, write is extremely slow)])],
-[ if test "$with_lmdb" = "yes"; then
-  AC_DEFINE([WITH_LMDB], [1])
-  fi ],
-[])
-
-#
-## Checks for indexed handlers
-#
 
 if test "$with_db" = "yes"; then
 	AC_MSG_NOTICE([Checks for Berkeley DB ...])
@@ -1686,7 +1700,7 @@ if test "$with_db" = "yes"; then
 			[AC_DEFINE([WITH_DB], [1])
 			cob_got_db=yes
 			cob_gen_bdb=yes 
-			LIBCOB_BDB="-l$cobdb"
+			BDB_LIBS="-l$cobdb"
 			break],
 			[],
 			[])
@@ -1700,18 +1714,26 @@ if test "$with_db" = "yes"; then
 			AC_MSG_RESULT([no])
 			AC_MSG_ERROR([BDB library version $COB_BDB_HEADER not found])
 		fi
+		unset cobdb
+		unset cob_got_db
 	else
 		AC_MSG_WARN([Matching BDB version (>=4.1) assumed])
 		AC_CHECK_LIB([db], [db_version],
 		[LIBCOB_LIBS="$LIBCOB_LIBS"],
 		AC_MSG_ERROR([BDB library is required as -ldb]), [])
 	fi
-	unset cobdb
-	unset cob_got_db
 	unset COB_BDB_HEADER
+	LIBS="$curr_libs"
 fi
-LIBS="$curr_libs"	# removing INDEXED libraries
 
+
+AC_ARG_WITH([lmdb],
+[AS_HELP_STRING([--with-lmdb],
+  [(GnuCOBOL) Use Lightning Memory-Mapped Database (LMDB) for ISAM I/O (experimental, no locking or shared storage, write is extremely slow)])],
+[ if test "$with_lmdb" = "yes"; then
+  AC_DEFINE([WITH_LMDB], [1])
+  fi ],
+[])
 
 if test "$with_lmdb" = "yes"; then
 	AC_MSG_NOTICE([Checks for Lightning Memory-Mapped Database (LMDB) ...])
@@ -1748,6 +1770,7 @@ if test "$with_lmdb" = "yes"; then
 	AC_CHECK_LIB([lmdb], [mdb_version],
 		[AC_DEFINE([WITH_LMDB], [1])],
 		AC_MSG_ERROR([liblmdb is required for LMDB]), [])
+	LMDB_LIBS="-llmdb"
 
 	AC_MSG_CHECKING([for Symas LMDB version >= 0.9.19])
 	COB_MDB_HEADER_MAJOR=$(echo "$COB_MDB_HEADER" | cut -d. -f1)
@@ -1764,8 +1787,8 @@ if test "$with_lmdb" = "yes"; then
 			fi
 		fi
 	fi
-	cob_gen_lmdb=yes 
-	LIBCOB_LMDB="-llmdb"
+	cob_gen_lmdb=yes
+	LIBS="$curr_libs"
 fi
 
 # Checks for dl/ltdl.
@@ -2420,15 +2443,23 @@ AC_SUBST([COB_MODULE_EXT])
 AC_SUBST([COB_EXE_EXT])
 AC_SUBST([PROGRAMS_LIBS])
 AC_SUBST([LIBCOB_LIBS])
-AC_SUBST([LIBCOB_CISAM])
-AC_SUBST([LIBCOB_DISAM])
-AC_SUBST([LIBCOB_VBISAM])
-AC_SUBST([LIBCOB_VBCISAM])
-AC_SUBST([LIBCOB_ODBC])
-AC_SUBST([LIBCOB_OCI])
-AC_SUBST([LIBCOB_BDB])
-AC_SUBST([LIBCOB_LMDB])
 AC_SUBST([LIBCOB_CPPFLAGS])
+AC_SUBST([CISAM_LIBS])
+AC_SUBST([DISAM_LIBS])
+AC_SUBST([VBISAM_LIBS])
+AC_SUBST([VBCISAM_LIBS])
+AC_SUBST([ODBC_LIBS])
+AC_SUBST([OCI_LIBS])
+AC_SUBST([BDB_LIBS])
+AC_SUBST([LMDB_LIBS])
+AC_SUBST([CISAM_CFLAGS])
+AC_SUBST([DISAM_CFLAGS])
+AC_SUBST([VBISAM_CFLAGS])
+AC_SUBST([VBCISAM_CFLAGS])
+AC_SUBST([ODBC_CFLAGS])
+AC_SUBST([OCI_CFLAGS])
+AC_SUBST([BDB_CFLAGS])
+AC_SUBST([LMDB_CFLAGS])
 
 # was used in bin/Makefile.am - seems not to be needed
 #AC_SUBST([COB_EXPORT_DYN])
