@@ -8881,6 +8881,8 @@ cob_debug_open (void)
 
 	cob_debug_check_open = 0;
 	logfile[0] = 0;
+	if (debug_env == NULL)
+		return;
 
 	for (i=0; debug_env[i] != 0; i++) {
 		/* skip separator */

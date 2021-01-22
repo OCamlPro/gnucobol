@@ -1,4 +1,8 @@
 
+2021-01-22  Ron Norman <rjn@inglenet.com>
+
+	* common.c: Add check for COB_DEBUG_LOG not defined
+
 2021-01-21  Ron Norman <rjn@inglenet.com>
 
 	* fodbc.c: Add some code to check for using SQLite
