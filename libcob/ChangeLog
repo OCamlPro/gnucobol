@@ -3,12 +3,17 @@
 
 	* common.c: Add check for COB_DEBUG_LOG not defined
 
+2021-01-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fodbc.c (join_environment): set db->postgres when PostgreSQL
+
 2021-01-21  Ron Norman <rjn@inglenet.com>
 
 	* fodbc.c: Add some code to check for using SQLite
 
-2021-01-16  Simon Sobisch <simonsobisch@gnu.org>
-	* 24-files: (likely, unlikely): never use __builtin_expect
+2021-01-16  James K. Lowden  <jklowden@symas.com>
+
+	* general: removed likely and unlikely, never use __builtin_expect
 
 2021-01-15  Ron Norman <rjn@inglenet.com> 
 
@@ -21,22 +26,22 @@
 2021-01-12  Ron Norman <rjn@inglenet.com> 
 
 	* fileio.c: Added a flag 'config' to the table of I/O modules
-				so that it is now which ones had been configured 
+	            so that it is now which ones had been configured 
 	* fisam.c: Additional work for ISAM logging/transaction ability
 	           VB-ISAM 2.2 in default and CISAM mode works fine
-			   D-ISAM 7.2 is also working in transaction mode
+	           D-ISAM 7.2 is also working in transaction mode
 
 2021-01-10  Ron Norman <rjn@inglenet.com> 
 
 	* fisam.c: Additional work for ISAM logging/transaction ability
 	           VB-ISAM 2.2 in default and CISAM mode works fine
-			   D-ISAM 7.0 is not working in transaction mode
-			   and it may be that D-ISAM 7.2 or better is required
+	           D-ISAM 7.0 is not working in transaction mode
+	           and it may be that D-ISAM 7.2 or better is required
 
 2021-01-09  Ron Norman <rjn@inglenet.com> 
 
 	* fileio.c: Updated to track if file was modified or not
-				and then skip commit/rollback if no modification
+	            and then skip commit/rollback if no modification
 	* fisam.c: Code added for use of ISAM logging/transaction ability
 	* foci.c, fodbc.c: Set on flag_log_support always
 

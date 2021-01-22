@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2020 Free Software Foundation, Inc.
+   Copyright (C) 2001-2021 Free Software Foundation, Inc.
 
    Authors:
    Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch, Brian Tiffin,
@@ -2258,7 +2258,7 @@ cobc_print_version (void)
 {
 	printf ("cobc (%s) %s.%d\n",
 		PACKAGE_NAME, PACKAGE_VERSION, PATCH_LEVEL);
-	puts ("Copyright (C) 2020 Free Software Foundation, Inc.");
+	puts ("Copyright (C) 2021 Free Software Foundation, Inc.");
 	puts (_("License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>"));
 	puts (_("This is free software; see the source for copying conditions.  There is NO\n"
 	        "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."));

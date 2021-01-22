@@ -41,17 +41,17 @@
 #endif
 #ifdef FOR_DISAM
 #define WITH_DISAM
-#define ISAM_TYPE "D-ISAM"
+#define ISAM_TYPE "DISAM"
 #ifdef VB_RTD
 #undef VB_RTD
 #endif
 #endif
 #ifdef FOR_VBISAM
-#define ISAM_TYPE "VB-ISAM"
+#define ISAM_TYPE "VBISAM"
 #define WITH_VBISAM
 #endif
 #ifdef FOR_VBCISAM
-#define ISAM_TYPE "VB-CISAM"
+#define ISAM_TYPE "VBCISAM"
 #define WITH_VBCISAM
 #endif
 #endif

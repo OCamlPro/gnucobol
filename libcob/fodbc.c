@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2020 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2021 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -1253,6 +1253,7 @@ join_environment (cob_file_api *a)
 				db->db2 = FALSE;
 				db->sqlite = TRUE;
 				db->dbStsNoTable = 1098;
+				/* TODO: set (and handle) no FOR UPDATE flag */
 				return;
 			}
 		}
@@ -1297,7 +1298,7 @@ join_environment (cob_file_api *a)
 			db->db2 = FALSE;
 			db->mysql = FALSE;
 			db->mariadb = FALSE;
-			db->postgres = FALSE;
+			db->postgres = TRUE;
 			strcpy(db->dbType,"ODBC PostgreSQL");
 		} else if (cob_str_case_str (varFetch,"DB2")) {
 			db->mssql = FALSE;

@@ -1,7 +1,14 @@
 
+2021-01-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* sqlxfdgen.c (get_col_name): prevent internal "spaced" variable
+	  names like "FILLER 15" to generate invalid sql names
+	* cobc.c (cobc_print_version): welcome 2021
+
 2020-12-23  Ron Norman <rjn@inglenet.com>
+
 	* cobc.c: --info Displays short (concatenated) list of available
-			INDEXED file handlers
+	  INDEXED file handlers
 
 2020-12-15  Ron Norman <rjn@inglenet.com>
 
@@ -7929,7 +7936,7 @@
 	* cobc.h (cobc_verbose_flag): Declared.
 
 
-Copyright 2002-2020 Free Software Foundation, Inc.
+Copyright 2002-2021 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

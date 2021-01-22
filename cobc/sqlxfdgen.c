@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2019-2020 Free Software Foundation, Inc.
+   Copyright (C) 2019-2021 Free Software Foundation, Inc.
    Written by Ron Norman, Simon Sobisch
 
    This file is part of GnuCOBOL.
@@ -523,7 +523,8 @@ get_col_name (struct cb_file *fl, struct cb_field *f, int sub, int idx[])
 		 && strncasecmp(f->name, prefix, prefixlen) == 0)
 			i = prefixlen;
 		for(j=0; f->name[i] != 0; i++) {
-			if(f->name[i] == '-') {
+			if (f->name[i] == '-'
+			 || f->name[i] == ' ') {
 				if (!fl->flag_sql_trim_dash)
 					name[j++] = '_';
 			} else {
