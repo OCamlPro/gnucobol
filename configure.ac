@@ -1448,6 +1448,7 @@ curr_libs="$LIBS"
 	if test -n "$DISAM_CFLAGS"; then
 		CPPFLAGS="$CPPFLAGS $DISAM_CFLAGS"
 	fi
+	unset ac_cv_search_isopen
 	AC_SEARCH_LIBS([isopen], [disam8 disam72 disam71 disam7 disam],
 		[AC_DEFINE([WITH_DISAM], [1])
 		 cob_gen_disam=yes
@@ -1475,6 +1476,7 @@ curr_libs="$LIBS"
 		AC_MSG_ERROR([iswrap.h isconfig.h isintstd.h are required for $ac_cv_search_isopen]))
 	 fi
 	fi
+	unset ac_cv_search_isopen
 	CPPFLAGS="$curr_cppflags"
 	LIBS="$curr_libs"
    fi ],
@@ -1490,6 +1492,7 @@ curr_libs="$LIBS"
 	fi
 	AC_CHECK_HEADERS([vbisam.h], [],
 		AC_MSG_ERROR([vbisam.h is required for VBISAM]))
+	unset ac_cv_search_isopen
 	# note: isfullclose is available since 2.0, isopen since 1.0
 	AC_SEARCH_LIBS([isfullclose], [vbisam],
 		[AC_DEFINE([WITH_VBISAM], [1])
@@ -1499,12 +1502,13 @@ curr_libs="$LIBS"
 		AC_MSG_ERROR([libvbisam >= 2.0 is required for VBISAM])
 	elif test "$ac_cv_search_isopen" != "none required"; then
 		AC_MSG_NOTICE([VBISAM library found as $ac_cv_search_isopen])
-		VBISAM_LIBS=$ac_cv_search_isopen $VBISAM_LIBS
+		VBISAM_LIBS="$VBISAM_LIBS $ac_cv_search_isopen"
 	elif test "x$VBISAM_LIBS" != "x"; then
 		AC_MSG_NOTICE([VBISAM library found in $VBISAM_LIBS])
 	else
 		AC_MSG_NOTICE([VBISAM library found])
 	fi
+	unset ac_cv_search_isopen
 	CPPFLAGS="$curr_cppflags"
 	LIBS="$curr_libs"
    fi ],
@@ -1520,6 +1524,7 @@ curr_libs="$LIBS"
 	fi
 	AC_CHECK_HEADERS([vbisam.h], [],
 		AC_MSG_ERROR([vbisam.h is required for VBISAM in C-ISAM mode]))
+	unset ac_cv_search_isopen
 	AC_SEARCH_LIBS([isopen], [vbcisam vbisam],
 		[AC_DEFINE([WITH_VBCISAM], [1])
 		 cob_gen_vbcisam=yes
@@ -1528,12 +1533,13 @@ curr_libs="$LIBS"
 		AC_MSG_ERROR([VBISAM in C-ISAM mode library not found])
 	elif test "$ac_cv_search_isopen" != "none required"; then
 		AC_MSG_NOTICE([VBISAM in C-ISAM mode library found as $ac_cv_search_isopen])
-		VBCISAM_LIBS=$ac_cv_search_isopen $VBCISAM_LIBS
+		VBCISAM_LIBS="$VBCISAM_LIBS $ac_cv_search_isopen"
 	elif test "x$VBCISAM_LIBS" != "x"; then
 		AC_MSG_NOTICE([VBISAM in C-ISAM mode library found in $VBCISAM_LIBS])
 	else
 		AC_MSG_NOTICE([VBISAM in C-ISAM mode library found])
 	fi
+	unset ac_cv_search_isopen
 	CPPFLAGS="$curr_cppflags"
 	LIBS="$curr_libs"
    fi ],
