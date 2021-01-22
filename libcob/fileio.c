@@ -726,6 +726,7 @@ cob_load_module (int iortn)
 	module_errmsg[0] = 0;
 	ioinit = (void (*)(cob_file_api *))cob_load_lib (io_rtns[iortn].module, io_rtns[iortn].entry, module_errmsg);
 	if (ioinit == NULL) {
+		printf("*** Problem: %s ***\n",module_errmsg);
 		return 1;
 	}
 	ioinit(&file_api);
