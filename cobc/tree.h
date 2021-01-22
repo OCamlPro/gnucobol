@@ -863,6 +863,7 @@ struct cb_field {
 	char	*	sql_name;			/* Defined SQL field name */
 	char	*	sql_date_format;	/* Date field format string */
 	char	*	sql_when;			/* WHEN condition */
+	int			sql_filler_id;		/* Used to make a unique name for a FILLER */
 
 	/* Flags */
 	unsigned char flag_base;		/* Has memory allocation */
@@ -930,6 +931,7 @@ struct cb_field {
 
 	unsigned int flag_sync_left : 1;	/* SYNCHRONIZED LEFT */
 	unsigned int flag_sync_right : 1;	/* SYNCHRONIZED RIGHT */
+	unsigned int flag_sql_filler : 1;	/* Warned about FILLER for SQL */
 
 };
 
@@ -1075,6 +1077,7 @@ struct cb_file {
 	int			special;		/* Special file */
 	int			same_clause;		/* SAME clause */
 	int			max_sql_name_len;		/* Max length of SQL column name */
+	int			sql_filler_id;		/* Use to make a unique name for a FILLER */
 	enum cb_assign_type	assign_type;		/* How to interpret ASSIGN clause */
 	unsigned int		flag_finalized	: 1;	/* Is finalized */
 	unsigned int		flag_external	: 1;	/* Is EXTERNAL */

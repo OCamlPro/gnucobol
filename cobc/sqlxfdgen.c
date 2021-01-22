@@ -517,6 +517,19 @@ get_col_name (struct cb_file *fl, struct cb_field *f, int sub, int idx[])
 	int		i,j;
 	if (f->sql_name) {
 		strcpy(name,f->sql_name);
+	} else if (f->flag_filler) {
+		strcpy(name,"");
+		if (!f->flag_sql_filler) {
+			f->flag_sql_filler = 1;
+			j = cb_source_line;
+			cb_source_line = f->common.source_line;
+			cb_warning (cb_warn_additional, 
+						_("Use '$XFD NAME xxxx' to assign name to FILLER"));
+			cb_source_line = j;
+		}
+		if (f->sql_filler_id == 0)
+			f->sql_filler_id = ++fl->sql_filler_id;
+		sprintf(name,"filler_%d_x",f->sql_filler_id);
 	} else {
 		i = 0;
 		if (prefixlen > 0

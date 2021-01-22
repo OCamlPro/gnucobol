@@ -1,4 +1,9 @@
 
+2021-01-22  Ron Norman <rjn@inglenet.com>
+
+	* sqlxfdgen.c (get_col_name): Gives Warning when FILLER used
+			and maps the to a unique name within the record
+
 2021-01-22  Simon Sobisch <simonsobisch@gnu.org>
 
 	* sqlxfdgen.c (get_col_name): prevent internal "spaced" variable
