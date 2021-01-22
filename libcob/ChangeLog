@@ -2,6 +2,7 @@
 2021-01-22  Ron Norman <rjn@inglenet.com>
 
 	* common.c: Add check for COB_DEBUG_LOG not defined
+	* fodbc.c,fsqlxfd.c: set db->no_for_update for SQLite
 
 2021-01-21  Simon Sobisch <simonsobisch@gnu.org>
 

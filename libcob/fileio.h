@@ -247,10 +247,11 @@ struct db_state {
 	cob_u32_t	mariadb:1;		/* DB is MySQL (MariaDB) */
 	cob_u32_t	db2:1;			/* Using IBM DB2 (Untested) */
 	cob_u32_t	postgres:1;		/* Using PostgreSQL */
-	cob_u32_t	sqlite:1;		/* Using SQLite (Untested) */
+	cob_u32_t	sqlite:1;		/* Using SQLite (limited testing) */
 	cob_u32_t	autocommit:1;	/* Running in AUTO COMMIT mode */
 	cob_u32_t	scanForNulls:1;	/* Check for NULL columns returned */
 	cob_u32_t	attachDbName:1;	/* Attach to specific Oracle instance name */
+	cob_u32_t	no_for_update:1;/* DB does not accept FOR UPDATE */
 	 
 	int		dbStatus;			/* Status of last DB call */
 	int		dbFatalStatus;		/* Fatal Status from last DB call */

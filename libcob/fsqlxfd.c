@@ -1934,7 +1934,7 @@ cob_sql_stmt (
 			}
 		}
 		if (lmode) {
-			if (!db->mssqlnfu) 
+			if (!db->no_for_update) 
 				pos += sprintf(&sbuf[pos]," FOR UPDATE");
 		}
 		if (db->mysql) {

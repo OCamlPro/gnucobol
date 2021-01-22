@@ -1252,6 +1252,7 @@ join_environment (cob_file_api *a)
 				db->mssql = FALSE;
 				db->db2 = FALSE;
 				db->sqlite = TRUE;
+				db->no_for_update = TRUE;
 				db->dbStsNoTable = 1098;
 				/* TODO: set (and handle) no FOR UPDATE flag */
 				return;
@@ -1261,6 +1262,7 @@ join_environment (cob_file_api *a)
 	if (sts) {
 		return;
 	} else {
+		db->no_for_update = FALSE;
 		if (cob_str_case_str (varFetch,"MariaDB")) {
 			db->mssql = FALSE;
 			db->db2 = FALSE;
@@ -1289,9 +1291,11 @@ join_environment (cob_file_api *a)
 			if (db->dbVer == 2012) {
 				if ((env = cob_str_case_str (varFetch,"SQL Server 2012 (SP1)")) != NULL) {
 					db->mssqlnfu = TRUE;
+					db->no_for_update = TRUE;
 				}
 			} else if (db->dbVer < 2012) {
 				db->mssqlnfu = TRUE;
+				db->no_for_update = TRUE;
 			}
 		} else if (cob_str_case_str (varFetch,"PostgreSQL")) {
 			db->mssql = FALSE;
