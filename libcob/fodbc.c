@@ -742,6 +742,14 @@ odbc_commit (cob_file_api *a, cob_file *f)
 				odbcStmt (db, (char*)"COMMIT");
 				odbcStmt (db, (char*)"SET autocommit=0");
 				odbcStmt (db, (char*)"BEGIN");
+			} else if (db->sqlite) {
+				odbcStmt (db, (char*)"COMMIT");
+				if ((f->share_mode & COB_SHARE_NO_OTHER)
+				 || (f->lock_mode & COB_FILE_EXCLUSIVE) ) {
+					odbcStmt (db, (char*)"BEGIN EXCLUSIVE");
+				} else {
+					odbcStmt (db, (char*)"BEGIN DEFERRED");
+				}
 			} else
 		 	if (chkSts(db,(char*)"AUTO COMMIT OFF",db->dbDbcH,
 				SQLSetConnectAttr(db->dbDbcH,SQL_ATTR_AUTOCOMMIT,
@@ -766,6 +774,14 @@ odbc_commit (cob_file_api *a, cob_file *f)
 			odbcStmt (db, (char*)"SET autocommit=0");
 		}
 		odbcStmt (db, (char*)"BEGIN");
+	} else if (db->sqlite) {
+		odbcStmt (db, (char*)"COMMIT");
+		if ((f->share_mode & COB_SHARE_NO_OTHER)
+		 || (f->lock_mode & COB_FILE_EXCLUSIVE) ) {
+			odbcStmt (db, (char*)"BEGIN EXCLUSIVE");
+		} else {
+			odbcStmt (db, (char*)"BEGIN DEFERRED");
+		}
 	} else {
 		if (chkSts(db,(char*) "Commit EndTran ENV",db->dbEnvH,
 					SQLEndTran(SQL_HANDLE_ENV,db->dbEnvH,SQL_COMMIT))) {
@@ -797,6 +813,14 @@ odbc_rollback (cob_file_api *a, cob_file *f)
 			odbcStmt (db, (char*)"ROLLBACK");
 			odbcStmt (db, (char*)"SET autocommit=0");
 			odbcStmt (db, (char*)"BEGIN");
+		} else if (db->sqlite) {
+			odbcStmt (db, (char*)"ROLLBACK");
+			if ((f->share_mode & COB_SHARE_NO_OTHER)
+			 || (f->lock_mode & COB_FILE_EXCLUSIVE) ) {
+				odbcStmt (db, (char*)"BEGIN EXCLUSIVE");
+			} else {
+				odbcStmt (db, (char*)"BEGIN DEFERRED");
+			}
 		} else
 		if (db->autocommit) {
 		 	if (chkSts(db,(char*)"AUTO COMMIT OFF",db->dbDbcH,
@@ -817,6 +841,14 @@ odbc_rollback (cob_file_api *a, cob_file *f)
 		odbcStmt (db, (char*)"ROLLBACK");
 		odbcStmt (db, (char*)"SET autocommit=0");
 		odbcStmt (db, (char*)"BEGIN");
+	} else if (db->sqlite) {
+		odbcStmt (db, (char*)"ROLLBACK");
+		if ((f->share_mode & COB_SHARE_NO_OTHER)
+		 || (f->lock_mode & COB_FILE_EXCLUSIVE) ) {
+			odbcStmt (db, (char*)"BEGIN EXCLUSIVE");
+		} else {
+			odbcStmt (db, (char*)"BEGIN DEFERRED");
+		}
 	} else {
 		if (chkSts(db,(char*) "Rollback EndTran ENV",db->dbEnvH,
 					SQLEndTran(SQL_HANDLE_ENV,db->dbEnvH,SQL_ROLLBACK))) {
@@ -1254,8 +1286,7 @@ join_environment (cob_file_api *a)
 				db->sqlite = TRUE;
 				db->no_for_update = TRUE;
 				db->dbStsNoTable = 1098;
-				/* TODO: set (and handle) no FOR UPDATE flag */
-				return;
+				goto db_is_ready;
 			}
 		}
 	}
@@ -1312,6 +1343,8 @@ join_environment (cob_file_api *a)
 			strcpy(db->dbType,"DB2");
 		}
 	}
+
+db_is_ready:
 	db->isopen = TRUE;
 
 	/* Default to AUTO COMMIT ON */

@@ -1362,6 +1362,12 @@ cob_load_ddl (struct db_state  *db, struct file_xfd *fx)
 				if ((p = cob_str_case_str (xfdbuf," BINARY ")) != NULL) {
 					memcpy (p,"    RAW ",8);
 				}
+			} else if (db->sqlite) {
+				if ((p = cob_str_case_str (xfdbuf," BIGINT ")) != NULL) {
+					k = strlen (xfdbuf);
+					memmove (p+9, p+8, k - (p - xfdbuf) + 1);
+					memcpy (p," INTEGER ",9);
+				}
 			}
 			strcpy(&fx->create_table[fx->lncreate], xfdbuf);
 			fx->lncreate += j;
@@ -2503,7 +2509,8 @@ cob_xfd_to_ddl (struct db_state *db, struct file_xfd *fx, FILE *fo)
 	}
 	if (fx->fl
 	 && fx->fl->organization == COB_ORG_RELATIVE) {
-		fprintf(fo,"%srid_%s %s PRIMARY KEY",comma,fx->tablename,db->isoci?"INT":"BIGINT");
+		fprintf(fo,"%srid_%s %s PRIMARY KEY",comma,fx->tablename,
+					db->isoci?"INT":(db->sqlite?"INTEGER":"BIGINT"));
 	}
 	fprintf(fo,"\n);\n");
 

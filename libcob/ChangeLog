@@ -1,5 +1,13 @@
 
+2021-01-23  Ron Norman <rjn@inglenet.com>
+
+	* common.c: If not using --enable-debuglog then compile
+			the cob_debug routines are basically empty
+	* fodbc.c,fsqlxfd.c: Additional update for SQLite and now includes
+			support for COMMIT/ROLLBACK
+
 2021-01-22  Ron Norman <rjn@inglenet.com>
+
 	* Makefile.am: corrections to changes previously made
 	* fileio.c: report any error from loading a module that should be present
 
