@@ -1,0 +1,70 @@
+
+2017-06-16  Simon 'sf-mensch/human' Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am: added CODE_COVERAGE parts as provided by AX_CODE_COVERAGE
+	* cobcrun.cpp: surrounded exception ABORTs that cannot be tested
+	  by LCOV_EXCP markers
+
+2017-01-10  Simon 'sf-mensch/human' Sobisch <simonsobisch@gnu.org>
+
+	* cobcrun.cpp: Copyright year 2017
+
+2013-06-12  Sergey Kashyrin <ska@kiska.net>
+
+	* Switch to C++
+
+2012-05-09  Simon 'sf-mensch/human' Sobisch <simonsobisch@gnu.org>
+
+	* cobcrun.c : Added conversion for enabling options in WIN style;
+	  Use getopt for option parsing;
+	  Set LC_ALL "" for native messages
+
+2010-06-28  Roger While <simrw@sim-basis.de>
+
+	* MARK - Version 2.0
+	* Move to GPL/LGPL 3
+
+2008-10-20  Roger While <simrw@sim-basis.de>
+
+	* cobcrun.c : Allow help and version options
+
+2007-12-27  Roger While <simrw@sim-basis.de>
+
+	** Mark 1.0 RELEASE
+
+2006-10-23  Roger While <simrw@sim-basis.de>
+
+	* Makefile.am : Remove gcc options
+
+2005-12-31  Roger While <simrw@sim-basis.de>
+
+	* Makefile.am : Only generate version with shared library
+
+2005-08-04  Roger While <simrw@sim-basis.de>
+
+	* Change exit to cob_stop_run
+
+2005-05-27  Roger While <simrw@sim-basis.de>
+
+	* Fix Makefile again
+
+2005-05-03  Roger While <simrw@sim-basis.de>
+
+	* Fix makefile
+
+2005-02-02  Roger While <simrw@sim-basis.de>
+
+	* Forgot the GPL license
+
+2004-11-29  Roger While <simrw@sim-basis.de>
+
+	* Initial checkout
+	* cobcrun.c, Makefile.am, Makefile.in
+	* syntax : cobcrun MYPROG [ arguments to MYPROG]
+	* This allows complete applications to be compiled
+	  as modules and offers similar functionality to
+	  MF's cobrun and ACU's runcbl.
+	  In fact, you can run all three in the same
+	  directory and, if your scripts use an environment
+	  variable for the driver program (eg. $COBEXEC),
+	  then you can switch easily.

@@ -1,0 +1,5193 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR Keisuke Nishida / Roger While
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: gnu-cobol 2.0\n"
+"Report-Msgid-Bugs-To: gnucobol-messages@gnu.org\n"
+"POT-Creation-Date: 2017-06-17 13:22+0200\n"
+"PO-Revision-Date: 2011-06-09 15:37-0700\n"
+"Last-Translator: randy <rcoman@curreyadkins.com>\n"
+"Language-Team: JCurrey <jcurrey@myorsa.com>\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Spanish\n"
+"X-Poedit-Country: \n"
+"X-Poedit-Bookmarks: -1,-1,-1,-1,-1,-1,-1,-1,22,-1\n"
+
+#: cobc/cobc.cpp:97
+#, fuzzy, c-format
+msgid "invalid parameter: %s"
+msgstr "Parámetro inválido %s"
+
+#: cobc/cobc.cpp:123 cobc/cobc.cpp:1544 cobc/cobc.cpp:1547
+#: cobc/reserved.cpp:3302 libcob/common.cpp:295 libcob/common.cpp:545
+#, fuzzy
+msgid "unknown"
+msgstr "Desconocido"
+
+#: cobc/cobc.cpp:730
+msgid "too many errors"
+msgstr ""
+
+#: cobc/cobc.cpp:738
+#, fuzzy, c-format
+msgid "%s: %d: internal compiler error"
+msgstr "%s:%d Error interno de compilador"
+
+#: cobc/cobc.cpp:739 cobc/cobc.cpp:1606 cobc/codegen.cpp:2150
+#: cobc/codegen.cpp:7875
+#, fuzzy
+msgid "Please report this!"
+msgstr "Error en codegen - Por favor reporte esto"
+
+#: cobc/cobc.cpp:748
+#, fuzzy, c-format
+msgid "%s: %d: invalid cast from '%s' type %s to type %s"
+msgstr "Molde inválido para '%s' tipo %s para teclear %s"
+
+#: cobc/cobc.cpp:773 cobc/cobc.cpp:947 cobc/cobc.cpp:962 cobc/cobc.cpp:1289
+#, fuzzy, c-format
+msgid "call to %s with NULL pointer"
+msgstr "Llamada a cobc_strdup con puntero NULL"
+
+#: cobc/cobc.cpp:801
+msgid "Call to cobc_main_strdup with NULL pointer"
+msgstr "Llamada a cobc_main_strdup con indicador NULL"
+
+#: cobc/cobc.cpp:828
+#, fuzzy
+msgid "attempt to reallocate non-allocated memory"
+msgstr "Intento de referencia a memoria sin asignar - Abortar"
+
+#: cobc/cobc.cpp:857 cobc/cobc.cpp:914
+#, c-format
+msgid "call to %s with invalid pointer, as it is missing in list"
+msgstr ""
+
+#: cobc/cobc.cpp:891
+msgid "Call to cobc_parse_strdup with NULL pointer"
+msgstr "Llamada a cobc_parse_strdup con indicador NULL"
+
+#: cobc/cobc.cpp:1060
+#, c-format
+msgid "assuming literal for unquoted '%s'"
+msgstr ""
+
+#: cobc/cobc.cpp:1104
+msgid " - length is < 1 or > 31"
+msgstr ""
+
+#: cobc/cobc.cpp:1107
+msgid " - name cannot begin with space or underscore"
+msgstr ""
+
+#: cobc/cobc.cpp:1110
+msgid " - name cannot begin with 'cob_' or 'COB_'"
+msgstr ""
+
+#: cobc/cobc.cpp:1113
+msgid " - name duplicates a 'C' keyword"
+msgstr ""
+
+#: cobc/cobc.cpp:1116
+msgid " - name cannot contain a directory separator"
+msgstr ""
+
+#: cobc/cobc.cpp:1124
+#, fuzzy, c-format
+msgid "invalid file base name '%s'%s"
+msgstr "Nombre de base de archivo inválido '%s'%s"
+
+#: cobc/cobc.cpp:1128
+#, fuzzy, c-format
+msgid "invalid ENTRY '%s'%s"
+msgstr "ENTRY inválido '%s'%s "
+
+#: cobc/cobc.cpp:1131
+#, fuzzy, c-format
+msgid "invalid PROGRAM-ID '%s'%s"
+msgstr "PROGRAM-ID inválido '%s'%s "
+
+#: cobc/cobc.cpp:1134
+#, fuzzy, c-format
+msgid "unknown name error '%s'%s"
+msgstr "Error desconocido de archivo"
+
+#: cobc/cobc.cpp:1238 cobc/error.cpp:209 cobc/error.cpp:273 cobc/error.cpp:433
+#, fuzzy
+msgid "error: "
+msgstr "Error: "
+
+#: cobc/cobc.cpp:1257
+#, fuzzy, c-format
+msgid "duplicate define '%s' - ignored"
+msgstr "Definición duplicada '%s' - Ignorando"
+
+#: cobc/cobc.cpp:1324
+#, c-format
+msgid "environment variable '%s' is '%s'; should not contain '%c'"
+msgstr ""
+
+#: cobc/cobc.cpp:1348
+#, fuzzy
+msgid "parameter buffer size exceeded"
+msgstr "Tamaño de búfer del parámetro excedido"
+
+#: cobc/cobc.cpp:1384
+#, fuzzy, c-format
+msgid "warning: could not move temporary file to %s"
+msgstr "Alerta - No se pudo mover el archivo temporal a %s"
+
+#: cobc/cobc.cpp:1550
+#, c-format
+msgid "aborting codegen for %s (%s: %s)"
+msgstr ""
+
+#: cobc/cobc.cpp:1553
+#, fuzzy, c-format
+msgid "aborting compile of %s at line %d (%s: %s)"
+msgstr "Abortando compilación de %s en el renglón %d"
+
+#: cobc/cobc.cpp:1557
+msgid "aborting"
+msgstr ""
+
+#: cobc/cobc.cpp:1572
+#, fuzzy
+msgid "cannot allocate memory"
+msgstr "Asignación de memoria sin exito"
+
+#: cobc/cobc.cpp:1623 bin/cobcrun.cpp:97
+msgid "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>"
+msgstr ""
+
+#: cobc/cobc.cpp:1624 libcob/common.cpp:5213 bin/cobcrun.cpp:98
+msgid ""
+"This is free software; see the source for copying conditions.  There is NO\n"
+"warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
+msgstr ""
+"Este es un software gratis; vea el orígen para condiciones de copiado.  NO\n"
+" existe garantía; ni siquiera para COMERCIALIZACIÓN o AJUSTES PARA UN PROPÓSITO PARTICULAR."
+
+#: cobc/cobc.cpp:1626 libcob/common.cpp:5215 bin/cobcrun.cpp:100
+#, c-format
+msgid "Written by %s\n"
+msgstr ""
+
+#: cobc/cobc.cpp:1627 cobc/cobc.cpp:1640 libcob/common.cpp:5216
+#: bin/cobcrun.cpp:101
+#, c-format
+msgid "Built     %s"
+msgstr "Construido  %s"
+
+#: cobc/cobc.cpp:1629 cobc/cobc.cpp:1642 libcob/common.cpp:5218
+#: bin/cobcrun.cpp:103
+#, c-format
+msgid "Packaged  %s"
+msgstr "Empaquetado  %s"
+
+#: cobc/cobc.cpp:1631 cobc/cobc.cpp:1644
+#, fuzzy, c-format
+msgid "C++ version %s%s"
+msgstr "Version C %s%s"
+
+#: cobc/cobc.cpp:1652
+#, fuzzy
+msgid "executing:"
+msgstr "Ejecutando:"
+
+#: cobc/cobc.cpp:1654
+#, fuzzy
+msgid "to be executed:"
+msgstr "READ debe ser executada primero"
+
+#: cobc/cobc.cpp:1685 cobc/cobc.cpp:1686 libcob/common.cpp:4053
+#: libcob/common.cpp:4054
+msgid "env"
+msgstr ""
+
+#: cobc/cobc.cpp:1720 libcob/common.cpp:5236
+#, fuzzy
+msgid "build information"
+msgstr "Información de generación"
+
+#: cobc/cobc.cpp:1721 libcob/common.cpp:5237
+#, fuzzy
+msgid "build environment"
+msgstr "Ambiente de generación"
+
+#: cobc/cobc.cpp:1729
+#, fuzzy
+msgid "GnuCOBOL C++ information"
+msgstr "Información de GNU Cobol"
+
+#: cobc/cobc.cpp:1770 libcob/common.cpp:5269
+#, fuzzy
+msgid "yes"
+msgstr "8 bytes"
+
+#: cobc/cobc.cpp:1772 libcob/common.cpp:5271
+msgid "no"
+msgstr ""
+
+#: cobc/cobc.cpp:1776 libcob/common.cpp:5275
+msgid "8 bytes"
+msgstr "8 bytes"
+
+#: cobc/cobc.cpp:1778 libcob/common.cpp:5277
+msgid "4 bytes"
+msgstr "4 bytes"
+
+#: cobc/cobc.cpp:1781 libcob/common.cpp:5282 libcob/common.cpp:5284
+msgid "extended screen I/O"
+msgstr ""
+
+#: cobc/cobc.cpp:1784 libcob/common.cpp:5288
+#, fuzzy
+msgid "variable format"
+msgstr "Formato de variable"
+
+#: cobc/cobc.cpp:1790 cobc/cobc.cpp:1792 libcob/common.cpp:5294
+#: libcob/common.cpp:5296
+#, fuzzy
+msgid "sequential handler"
+msgstr "Controlador secuencial"
+
+#: cobc/cobc.cpp:1792 libcob/common.cpp:5296
+msgid "built-in"
+msgstr ""
+
+#: cobc/cobc.cpp:1796 cobc/cobc.cpp:1798 cobc/cobc.cpp:1800 cobc/cobc.cpp:1802
+#: cobc/cobc.cpp:1804 cobc/cobc.cpp:1806 libcob/common.cpp:5300
+#: libcob/common.cpp:5310 libcob/common.cpp:5312 libcob/common.cpp:5314
+#: libcob/common.cpp:5316 libcob/common.cpp:5318
+msgid "ISAM handler"
+msgstr "Controlador ISAM"
+
+#: cobc/cobc.cpp:1806 libcob/common.cpp:5264 libcob/common.cpp:5318
+#, fuzzy
+msgid "disabled"
+msgstr "Desactivado"
+
+#: cobc/cobc.cpp:1810 cobc/cobc.cpp:1812 libcob/common.cpp:5341
+#: libcob/common.cpp:5343
+msgid "mathematical library"
+msgstr ""
+
+#: cobc/cobc.cpp:1823
+msgid "- NOT set with -Wall"
+msgstr "- NO esta definido con -Wall"
+
+#: cobc/cobc.cpp:1832
+msgid "- ALWAYS active"
+msgstr ""
+
+#: cobc/cobc.cpp:1836 cobc/cobc.cpp:2846 cobc/cobc.cpp:6334 cobc/cobc.cpp:6441
+#: cobc/codegen.cpp:2147 cobc/codegen.cpp:3237 cobc/typeck.cpp:5282
+#: cobc/typeck.cpp:5311
+#, fuzzy, c-format
+msgid "call to '%s' with invalid parameter '%s'"
+msgstr "FUNCTION '%s' tiene parámetro inválido"
+
+#: cobc/cobc.cpp:1861
+msgid "default"
+msgstr ""
+
+#: cobc/cobc.cpp:1868
+msgid "GnuCOBOL compiler for most COBOL dialects with lots of extensions"
+msgstr ""
+
+#: cobc/cobc.cpp:1870
+#, fuzzy, c-format
+msgid "Usage: %s [options]... file..."
+msgstr "Uso: cobc [options] file ..."
+
+#: cobc/cobc.cpp:1873 bin/cobcrun.cpp:120
+msgid "Options:"
+msgstr "Opciones:"
+
+#: cobc/cobc.cpp:1874
+#, fuzzy
+msgid "  -h, -help             display this help and exit"
+msgstr "  -help                 Muestra este mensaje"
+
+#: cobc/cobc.cpp:1875
+#, fuzzy
+msgid "  -V, -version          display compiler version and exit"
+msgstr " -version, -V           Muestra version del compilador"
+
+#: cobc/cobc.cpp:1876
+#, fuzzy
+msgid "  -i, -info             display compiler information (build/environment)"
+msgstr "  -info, -i             Muestra la información de generación del compilador"
+
+#: cobc/cobc.cpp:1877
+#, fuzzy
+msgid ""
+"  -v, -verbose          display compiler version and the commands\n"
+"                        invoked by the compiler"
+msgstr "-v                     Muestra los comandos invocados por el compilador"
+
+#: cobc/cobc.cpp:1879
+msgid ""
+"  -vv, -verbose=2       like -v but additional pass verbose option\n"
+"                        to assembler/compiler"
+msgstr ""
+
+#: cobc/cobc.cpp:1881
+msgid ""
+"  -vvv, -verbose=3      like -vv but additional pass verbose option\n"
+"                        to linker"
+msgstr ""
+
+#: cobc/cobc.cpp:1883
+#, fuzzy
+msgid "  -q, -brief            reduced displays, commands invoked not shown"
+msgstr "-v                     Muestra los comandos invocados por el compilador"
+
+#: cobc/cobc.cpp:1884
+#, fuzzy
+msgid "  -###                 like -v but commands not executed"
+msgstr "-x                     Genera un programa ejecutable    "
+
+#: cobc/cobc.cpp:1885
+#, fuzzy
+msgid "  -x                    build an executable program"
+msgstr "-x                     Genera un programa ejecutable    "
+
+#: cobc/cobc.cpp:1886
+#, fuzzy
+msgid "  -m                    build a dynamically loadable module (default)"
+msgstr " -m                   Generar un módulo de carga dinámica (por defecto)"
+
+#: cobc/cobc.cpp:1887
+msgid "  -j [<args>], -job[=<args>]\trun program after build, passing <args>"
+msgstr ""
+
+#: cobc/cobc.cpp:1888
+msgid ""
+"  -std=<dialect>        warnings/features for a specific dialect\n"
+"                        <dialect> can be one of:\n"
+"                        cobol2014, cobol2002, cobol85, default,\n"
+"                        ibm, mvs, bs2000, mf, acu;\n"
+"                        see configuration files in directory config"
+msgstr ""
+
+#: cobc/cobc.cpp:1893
+#, fuzzy
+msgid "  -F, -free             use free source format"
+msgstr "  -free                 Utilizar formato de liberar origen"
+
+#: cobc/cobc.cpp:1894
+#, fuzzy
+msgid "  -fixed                use fixed source format (default)"
+msgstr "  -fixed                Utilizar formato de origen fijo (por defecto)"
+
+#: cobc/cobc.cpp:1895
+#, fuzzy
+msgid "  -O, -O2, -Os          enable optimization"
+msgstr "  -O,  -O2, -Os         Optimización activado"
+
+#: cobc/cobc.cpp:1896
+#, fuzzy
+msgid "  -g                    enable C compiler debug / stack check / trace"
+msgstr "  -g                    Permite depuración de compilador C / verificación de montón / rastrear"
+
+#: cobc/cobc.cpp:1897
+#, fuzzy
+msgid "  -d, -debug            enable all run-time error checking"
+msgstr "  -debug                Permite verificación de errores en tiempo de ejecución"
+
+#: cobc/cobc.cpp:1898
+#, fuzzy
+msgid "  -o <file>             place the output into <file>"
+msgstr "  -o <file>      Coloque el resultado en <file>"
+
+#: cobc/cobc.cpp:1899
+#, fuzzy
+msgid ""
+"  -b                    combine all input files into a single\n"
+"                        dynamically loadable module"
+msgstr "  -b                    Combinar todos los archivos de entrada en un solo"
+
+#: cobc/cobc.cpp:1901
+#, fuzzy
+msgid "  -E                    preprocess only; do not compile or link"
+msgstr "  -E                    Preprocesar solamente; no compilar o enlazar"
+
+#: cobc/cobc.cpp:1902
+#, fuzzy
+msgid "  -C                    translation only; convert COBOL to C"
+msgstr "  -C                    Traducción solamente; convertir COBOL a C"
+
+#: cobc/cobc.cpp:1903
+#, fuzzy
+msgid "  -S                    compile only; output assembly file"
+msgstr "  -S                     Compilar solamente; salida de archivo de ensamblado"
+
+#: cobc/cobc.cpp:1904
+#, fuzzy
+msgid "  -c                    compile and assemble, but do not link"
+msgstr "  -c                    Compilar y ensamblar, pero no enlanzar"
+
+#: cobc/cobc.cpp:1905
+#, fuzzy
+msgid "  -T <file>             generate and place a wide program listing into <file>"
+msgstr "  -o <file>      Coloque el resultado en <file>"
+
+#: cobc/cobc.cpp:1906
+#, fuzzy
+msgid "  -t <file>             generate and place a program listing into <file>"
+msgstr "  -o <file>      Coloque el resultado en <file>"
+
+#: cobc/cobc.cpp:1907
+msgid "  --tlines=<lines>      specify lines per page in listing, default = 55"
+msgstr ""
+
+#: cobc/cobc.cpp:1908
+msgid "  --no-symbols          specify no symbols in listing"
+msgstr ""
+
+#: cobc/cobc.cpp:1909
+#, fuzzy
+msgid "  -P[=<dir or file>]    generate preprocessed program listing (.lst)"
+msgstr "  -P(=<dir o file>)    Genera listado de programa preprocesado (.lst)"
+
+#: cobc/cobc.cpp:1911
+#, fuzzy
+msgid ""
+"  -Xref                 generate cross reference through 'cobxref'\n"
+"                        (V. Coen's 'cobxref' must be in path)"
+msgstr "  -Xref                 Genera referencia cruzada mediante 'cobxref'"
+
+#: cobc/cobc.cpp:1914
+#, fuzzy
+msgid "  -Xref                 specify cross reference in listing"
+msgstr "  -Xref                 Genera referencia cruzada mediante 'cobxref'"
+
+#: cobc/cobc.cpp:1916
+#, fuzzy
+msgid "  -I <directory>        add <directory> to copy/include search path"
+msgstr "  -I <directory>        Añadir <directory> para copiar/incluir ruta de búsqueda"
+
+#: cobc/cobc.cpp:1917
+#, fuzzy
+msgid "  -L <directory>        add <directory> to library search path"
+msgstr "  -L <directory>       Añadir <directory> a la ruta de búsqueda de bibloteca"
+
+#: cobc/cobc.cpp:1918
+#, fuzzy
+msgid "  -l <lib>              link the library <lib>"
+msgstr "  -l <lib>              Enlace a bibloteca <lib>"
+
+#: cobc/cobc.cpp:1919
+#, fuzzy
+msgid "  -A <options>          add <options> to the C compile phase"
+msgstr "  -A  <options>      Añadir <options> a la fase de compilador C"
+
+#: cobc/cobc.cpp:1920
+#, fuzzy
+msgid "  -Q <options>          add <options> to the C link phase"
+msgstr "  -Q <options>          Agregar <options> a la frase de enlace C "
+
+#: cobc/cobc.cpp:1921
+#, fuzzy
+msgid "  -D <define>           define <define> for COBOL compilation"
+msgstr "  -D  <define>          DEFINE <define> a el compilador COBOL"
+
+#: cobc/cobc.cpp:1922
+#, fuzzy
+msgid "  -K <entry>            generate CALL to <entry> as static"
+msgstr "  -K <entry>        Generar CALL a <entry> como estática "
+
+#: cobc/cobc.cpp:1923
+#, fuzzy
+msgid "  -conf=<file>          user-defined dialect configuration; see -std"
+msgstr "  -conf=<file>          Configuración de dialecto definido por usuario - Ver -std="
+
+#: cobc/cobc.cpp:1924
+#, fuzzy
+msgid "  -list-reserved        display reserved words"
+msgstr "  -list-reserved        Mostrar palabras reservadas"
+
+#: cobc/cobc.cpp:1925
+#, fuzzy
+msgid "  -list-intrinsics      display intrinsic functions"
+msgstr "  -list-intrinsics      Mostrar funciones intrínsica"
+
+#: cobc/cobc.cpp:1926
+#, fuzzy
+msgid "  -list-mnemonics       display mnemonic names"
+msgstr "  -list-mnemonics    Muestra nombres mnemotécnico"
+
+#: cobc/cobc.cpp:1927
+#, fuzzy
+msgid "  -list-system          display system routines"
+msgstr "  -list-system         Muestra rutinas del sistema"
+
+#: cobc/cobc.cpp:1928
+#, fuzzy
+msgid ""
+"  -save-temps[=<dir>]   save intermediate files\n"
+"                        - default: current directory"
+msgstr "                       - (por efecto el directorio actual)"
+
+#: cobc/cobc.cpp:1930
+#, fuzzy
+msgid "  -ext <extension>      add file extension for resolving COPY"
+msgstr "  -ext <extension>      Añadir por defecto extensión de archivo"
+
+#: cobc/cobc.cpp:1934
+#, fuzzy
+msgid "  -W                    enable all warnings"
+msgstr "  -W                    Activar ALL las alertas"
+
+#: cobc/cobc.cpp:1935
+#, fuzzy
+msgid "  -Wall                 enable most warnings (all except as noted below)"
+msgstr "  -Wall                 Activar todas las alertas excepto lo señalado abajo"
+
+#: cobc/cobc.cpp:1936
+msgid "  -Wno-<warning>        disable warning enabled by -W or -Wall"
+msgstr ""
+
+#: cobc/cobc.cpp:1947
+#, fuzzy
+msgid "  -Werror               treat all warnings as errors"
+msgstr "  -Wall                 Activar todas las alertas excepto lo señalado abajo"
+
+#: cobc/cobc.cpp:1948
+msgid "  -Werror=<warning>     treat specified <warning> as error"
+msgstr ""
+
+#: cobc/cobc.cpp:1969 cobc/cobc.cpp:1973
+msgid "<value>"
+msgstr ""
+
+#: cobc/cobc.cpp:1977
+msgid "<support>"
+msgstr ""
+
+#: cobc/cobc.cpp:1985
+msgid "where <support> is one of the following:"
+msgstr ""
+
+#: cobc/cobc.cpp:1987
+msgid "word to be taken out of the reserved words list"
+msgstr ""
+
+#: cobc/cobc.cpp:1987 cobc/cobc.cpp:1988
+msgid "<word>"
+msgstr ""
+
+#: cobc/cobc.cpp:1988
+msgid "word to be added to reserved words list"
+msgstr ""
+
+#: cobc/cobc.cpp:1989
+msgid "word to be added to reserved words list as alias"
+msgstr ""
+
+#: cobc/cobc.cpp:1989
+msgid "<word>:<alias>"
+msgstr ""
+
+#: cobc/cobc.cpp:1994 bin/cobcrun.cpp:136
+#, c-format
+msgid ""
+"Report bugs to: %s\n"
+"or (preferably) use the issue tracker via the home page."
+msgstr ""
+
+#: cobc/cobc.cpp:1997 bin/cobcrun.cpp:139
+msgid "GnuCOBOL home page: <http://www.gnu.org/software/gnucobol/>"
+msgstr ""
+
+#: cobc/cobc.cpp:1998 bin/cobcrun.cpp:140
+msgid "General help using GNU software: <http://www.gnu.org/gethelp/>"
+msgstr ""
+
+#: cobc/cobc.cpp:2004
+#, fuzzy
+msgid "only one of options 'E', 'S', 'C', 'c' may be specified"
+msgstr "Solamente una de las opciones 'E', 'S', 'C', 'c' se puede especificar"
+
+#: cobc/cobc.cpp:2010
+#, fuzzy
+msgid "only one of options 'm', 'x', 'b' may be specified"
+msgstr "Solo una opción 'm', 'x', 'b' puede ser especificada"
+
+#: cobc/cobc.cpp:2025
+#, c-format
+msgid "'%s' is not an intrinsic function"
+msgstr "'%s' no es una función intrínseca"
+
+#: cobc/cobc.cpp:2180
+#, fuzzy, c-format
+msgid "invalid parameter -std=%s"
+msgstr "Parámetro inválido %s"
+
+#: cobc/cobc.cpp:2210
+msgid "loading standard configuration file 'default.conf'"
+msgstr ""
+
+#: cobc/cobc.cpp:2339
+#, fuzzy
+msgid "invalid output file name"
+msgstr "Nombre de archivo de salida inválido"
+
+#: cobc/cobc.cpp:2412
+#, fuzzy, c-format
+msgid "warning: '%s' is not a directory, defaulting to current directory"
+msgstr "Alerta - '%s' no es un directorio, por defectuo en el directorio actual"
+
+#: cobc/cobc.cpp:2479
+#, fuzzy, c-format
+msgid "warning: assuming '%s' is a DEFINE - did you intend to use -debug?"
+msgstr "Alerta - asumiendo '%s' es un DEFINE - querias depurar?"
+
+#: cobc/cobc.cpp:2683
+#, fuzzy, c-format
+msgid "unknown warning option '%s'"
+msgstr "Declaración desconocida '%s'"
+
+#: cobc/cobc.cpp:2704
+#, fuzzy
+msgid "invalid option detected"
+msgstr "Opción inválida detectada"
+
+#: cobc/cobc.cpp:2767
+msgid "all runtime checks are enabled"
+msgstr ""
+
+#: cobc/cobc.cpp:2903
+msgid "only one stdin input allowed"
+msgstr ""
+
+#: cobc/cobc.cpp:2912
+#, fuzzy, c-format
+msgid "invalid file name parameter (length > %d)"
+msgstr "Parámetro nombre de archivo inválido"
+
+#: cobc/cobc.cpp:3102
+msgid "nothing for -j to run"
+msgstr ""
+
+#: cobc/cobc.cpp:3143 cobc/cobc.cpp:3328 cobc/cobc.cpp:3387 cobc/cobc.cpp:3414
+#: cobc/cobc.cpp:3500 cobc/cobc.cpp:3555 cobc/cobc.cpp:3682 cobc/cobc.cpp:5833
+#, fuzzy
+msgid "return status:"
+msgstr "Estado de resultado:"
+
+#: cobc/cobc.cpp:3269
+#, fuzzy, c-format
+msgid "unknown option ignored:\t%s"
+msgstr "Opción desconosida ignorada:\t%s"
+
+#: cobc/cobc.cpp:3608
+#, fuzzy
+msgid "preprocessing:"
+msgstr "Preprocesamiento:"
+
+#: cobc/cobc.cpp:3687
+msgid "'cobxref' execution unsuccessful"
+msgstr "'cobxref' execución sin éxito"
+
+#: cobc/cobc.cpp:3690
+#, fuzzy, c-format
+msgid "check that 'cobxref' is in %s"
+msgstr "Comprobar que 'cobxref' este dentro de $PATH"
+
+#: cobc/cobc.cpp:3692
+#, fuzzy
+msgid "no listing produced"
+msgstr "No produció listado"
+
+#: cobc/cobc.cpp:3716
+msgid "Return status:"
+msgstr "Estado de resultado:"
+
+#: cobc/cobc.cpp:4466 cobc/cobc.cpp:4504
+msgid "No fields defined."
+msgstr ""
+
+#: cobc/cobc.cpp:4523
+msgid "No labels defined."
+msgstr ""
+
+#: cobc/cobc.cpp:4541
+msgid "Error/Warning summary:"
+msgstr ""
+
+#: cobc/cobc.cpp:4561
+msgid "0 warnings in compilation group"
+msgstr ""
+
+#: cobc/cobc.cpp:4565
+msgid "1 warning in compilation group"
+msgstr ""
+
+#: cobc/cobc.cpp:4568
+#, c-format
+msgid "%d warnings in compilation group"
+msgstr ""
+
+#: cobc/cobc.cpp:4574
+#, fuzzy
+msgid "0 errors in compilation group"
+msgstr "Demasiados errores - Abortando compilación"
+
+#: cobc/cobc.cpp:4578
+#, fuzzy
+msgid "1 error in compilation group"
+msgstr "Demasiados errores - Abortando compilación"
+
+#: cobc/cobc.cpp:4581
+#, fuzzy, c-format
+msgid "%d errors in compilation group"
+msgstr "Demasiados errores - Abortando compilación"
+
+#: cobc/cobc.cpp:5008
+#, c-format
+msgid "%s: %d: Too many continuation lines"
+msgstr ""
+
+#: cobc/cobc.cpp:5815
+#, fuzzy
+msgid "parsing:"
+msgstr "Analizando:"
+
+#: cobc/cobc.cpp:5872
+#, fuzzy
+msgid "translating:"
+msgstr "Traduciendo:"
+
+#: cobc/cobc.cpp:6742
+#, fuzzy
+msgid "no input files"
+msgstr "No archivo de entrada"
+
+#: cobc/cobc.cpp:6825
+msgid "-o option invalid in this combination"
+msgstr "-o opción inválida con esta combinación"
+
+#: cobc/cobc.cpp:6852
+#, fuzzy, c-format
+msgid "%s option requires a listing file"
+msgstr "CALL para %s requiere parámetros %d"
+
+#: cobc/cobc.cpp:6868
+#, fuzzy
+msgid "command line:"
+msgstr "Línea de comandos:\t"
+
+#: cobc/codegen.cpp:597 cobc/codegen.cpp:2567 cobc/codegen.cpp:6962
+#: cobc/codegen.cpp:7403
+#, fuzzy
+msgid "unexpected CONSTANT item"
+msgstr "Elemento CONSTANT inesperado"
+
+#: cobc/codegen.cpp:853 cobc/codegen.cpp:926 cobc/codegen.cpp:1136
+#: cobc/codegen.cpp:1647 cobc/codegen.cpp:1885 cobc/codegen.cpp:2329
+#: cobc/codegen.cpp:2538 cobc/codegen.cpp:5834 cobc/typeck.cpp:706
+#: cobc/typeck.cpp:3178 cobc/typeck.cpp:6752
+#, fuzzy, c-format
+msgid "unexpected tree tag: %d"
+msgstr "Inesperada etiqueta de árbol %d"
+
+#: cobc/codegen.cpp:1467 cobc/codegen.cpp:1724 cobc/codegen.cpp:5620
+#: cobc/tree.cpp:795
+#, fuzzy, c-format
+msgid "unexpected cast type: %d"
+msgstr "Tipo de molde inesperado %d"
+
+#: cobc/codegen.cpp:2078 cobc/codegen.cpp:2521
+#, fuzzy, c-format
+msgid "internal statement stack depth exceeded: %d"
+msgstr "Profundidad excedida en montón interno de declaración -> %d"
+
+#: cobc/codegen.cpp:2149
+#, fuzzy, c-format
+msgid "%s is not a field"
+msgstr "%s no esta definido"
+
+#: cobc/codegen.cpp:2381
+#, fuzzy, c-format
+msgid "unexpected function: %s"
+msgstr "Función inesperada %s"
+
+#: cobc/codegen.cpp:2443
+#, fuzzy
+msgid "unexpected constant"
+msgstr "Constante inesperada "
+
+#: cobc/codegen.cpp:3059
+#, fuzzy, c-format
+msgid "unexpected tree category: %d"
+msgstr "Categoría de árbol inesperada %d"
+
+#: cobc/codegen.cpp:3420 cobc/codegen.cpp:3440 cobc/codegen.cpp:3623
+#: cobc/codegen.cpp:3653
+#, fuzzy, c-format
+msgid "unexpected size: %d"
+msgstr "Uso inesperado - %d"
+
+#: cobc/codegen.cpp:5188 cobc/codegen.cpp:5396
+#, fuzzy, c-format
+msgid "unexpected handler type: %d"
+msgstr "Tipo de molde inesperado %d"
+
+#: cobc/codegen.cpp:5452
+#, fuzzy
+msgid "unexpected error_node parameter"
+msgstr "Parámetro error_node inesperado "
+
+#: cobc/codegen.cpp:5638
+#, fuzzy, c-format
+msgid "unexpected tree type: %d"
+msgstr "Tipo de árbol inesperado %d"
+
+#: cobc/codeoptim.cpp:2626
+#, fuzzy, c-format
+msgid "unexpected optimization value: %d"
+msgstr "Operación %d inesperada"
+
+#: cobc/config.cpp:124 libcob/common.cpp:4847 libcob/common.cpp:4861
+#: libcob/common.cpp:5141
+#, fuzzy, c-format
+msgid "invalid value '%s' for configuration tag '%s'"
+msgstr "Valor inválido para '%s'"
+
+#: cobc/config.cpp:127 libcob/common.cpp:4259 libcob/common.cpp:4340
+#, c-format
+msgid "should be one of the following values: %s"
+msgstr ""
+
+#: cobc/config.cpp:129
+msgid "must be numeric"
+msgstr ""
+
+#: cobc/config.cpp:131 libcob/common.cpp:4314
+#, c-format
+msgid "maximum value: %lu"
+msgstr ""
+
+#: cobc/config.cpp:133
+#, c-format
+msgid "minimum value: %d"
+msgstr ""
+
+#: cobc/config.cpp:164
+#, c-format
+msgid "unsupported value '%s' for configuration tag '%s'"
+msgstr ""
+
+#: cobc/config.cpp:234
+#, fuzzy, c-format
+msgid "invalid configuration tag '%s'"
+msgstr "Inválida cadena de picture - '%s'"
+
+#: cobc/config.cpp:247 libcob/common.cpp:4653 libcob/common.cpp:4679
+#, fuzzy, c-format
+msgid "unknown configuration tag '%s'"
+msgstr "Declaración desconocida '%s'"
+
+#: cobc/config.cpp:254
+#, fuzzy, c-format
+msgid "'%s' cannot be set via command line"
+msgstr "'%s' no puede ser de longitud variable"
+
+#: cobc/config.cpp:313
+#, c-format
+msgid "Invalid type for '%s'"
+msgstr "Tipo inválido para '%s'"
+
+#: cobc/config.cpp:393
+#, fuzzy, c-format
+msgid "invalid type for '%s'"
+msgstr "Tipo inválido para '%s'"
+
+#: cobc/config.cpp:451 libcob/common.cpp:4759
+msgid "recursive inclusion"
+msgstr ""
+
+#: cobc/config.cpp:507 libcob/common.cpp:4813
+msgid "configuration file was included here"
+msgstr ""
+
+#: cobc/config.cpp:539
+#, c-format
+msgid "The previous loaded configuration '%s' will be discarded."
+msgstr ""
+
+#: cobc/config.cpp:565
+msgid "missing definitions:"
+msgstr ""
+
+#: cobc/config.cpp:567
+#, fuzzy, c-format
+msgid "\tno definition of '%s'"
+msgstr "Redefinición de '%s'"
+
+#: cobc/error.cpp:65
+#, fuzzy
+msgid "in section"
+msgstr "En sección"
+
+#: cobc/error.cpp:76
+#, fuzzy
+msgid "in paragraph"
+msgstr "En párrafo"
+
+#: cobc/error.cpp:154 libcob/common.cpp:5151
+msgid "configuration error:"
+msgstr ""
+
+#: cobc/error.cpp:167 libcob/common.cpp:470
+#, c-format
+msgid "system error %d"
+msgstr ""
+
+#: cobc/error.cpp:183 cobc/error.cpp:251 cobc/error.cpp:411
+msgid "error [-Werror]: "
+msgstr ""
+
+#: cobc/error.cpp:183 cobc/error.cpp:251 cobc/error.cpp:411
+#, fuzzy
+msgid "warning: "
+msgstr "Alerta:"
+
+#: cobc/error.cpp:292 cobc/error.cpp:308 cobc/error.cpp:455 cobc/error.cpp:471
+#, c-format
+msgid "%s used"
+msgstr ""
+
+#: cobc/error.cpp:295 cobc/error.cpp:458
+#, c-format
+msgid "%s is archaic in %s"
+msgstr "%s es arcaico en %s"
+
+#: cobc/error.cpp:299 cobc/error.cpp:462
+#, c-format
+msgid "%s is obsolete in %s"
+msgstr "%s es obsoleto en %s"
+
+#: cobc/error.cpp:305 cobc/error.cpp:468
+#, c-format
+msgid "%s ignored"
+msgstr "%s ignorado"
+
+#: cobc/error.cpp:311 cobc/error.cpp:474
+#, c-format
+msgid "%s does not conform to %s"
+msgstr "%s no se ajusta a %s "
+
+#: cobc/error.cpp:327
+msgid "configuration warning:"
+msgstr ""
+
+#: cobc/error.cpp:492 cobc/error.cpp:505
+#, fuzzy, c-format
+msgid "redefinition of '%s'"
+msgstr "Redefinición de '%s'"
+
+#: cobc/error.cpp:496 cobc/error.cpp:515
+#, c-format
+msgid "'%s' previously defined here"
+msgstr "'%s' previamente definidos aquí"
+
+#: cobc/error.cpp:536
+#, fuzzy, c-format
+msgid "'%s' cannot be used here"
+msgstr "'%s' no puede ser subíndice aquí"
+
+#: cobc/error.cpp:538
+#, c-format
+msgid "'%s' is not defined, but is a reserved word in another dialect"
+msgstr ""
+
+#: cobc/error.cpp:540
+#, fuzzy, c-format
+msgid "'%s' is not defined"
+msgstr "%s no esta definido"
+
+#: cobc/error.cpp:564
+#, fuzzy, c-format
+msgid "'%s' is ambiguous; needs qualification"
+msgstr "%s ambiguo; necesita cualificación"
+
+#: cobc/error.cpp:591 cobc/parser.y:11722
+#, c-format
+msgid "'%s' defined here"
+msgstr "'%s' definido aquí"
+
+#: cobc/error.cpp:601
+#, fuzzy, c-format
+msgid "fatal error: %s"
+msgstr "Error BDB: %s"
+
+#: cobc/error.cpp:608
+#, fuzzy, c-format
+msgid "group item '%s' cannot have %s clause"
+msgstr "Elemento de grupo '%s' no puede tener cláusula %s"
+
+#: cobc/error.cpp:618
+#, fuzzy, c-format
+msgid "constant item '%s' cannot have a %s clause"
+msgstr "Elemento constante '%s' no puede tener una cláusula %s"
+
+#: cobc/error.cpp:620
+#, fuzzy, c-format
+msgid "level %02d item '%s' cannot have a %s clause"
+msgstr "Elemento de nivel %02d '%s' no puede tener cláusula %s"
+
+#: cobc/error.cpp:630
+#, fuzzy, c-format
+msgid "constant item '%s' requires a %s clause"
+msgstr "Constante elemento '%s' requiere clausula %s"
+
+#: cobc/error.cpp:632
+#, fuzzy, c-format
+msgid "level %02d item '%s' requires a %s clause"
+msgstr "Nivel %02d elemento '%s' requiere una %s cláusula"
+
+#: cobc/error.cpp:642
+#, fuzzy, c-format
+msgid "constant item '%s' can only have a %s clause"
+msgstr "Elemento constante '%s' solo puede tener cláusula %s"
+
+#: cobc/error.cpp:644
+#, fuzzy, c-format
+msgid "level %02d item '%s' can only have a %s clause"
+msgstr "Nivel %02d elemento '%s' solo puede tener una %s cláusula"
+
+#: cobc/field.cpp:89
+#, fuzzy, c-format
+msgid "invalid level number '%s'"
+msgstr "Inválido numero de nivel '%s'"
+
+#: cobc/field.cpp:137
+#, fuzzy
+msgid "Level number must begin with 01 or 77"
+msgstr "Nivel de numero debe de comenzar con 01 o 77"
+
+#: cobc/field.cpp:174
+#, fuzzy
+msgid "level number must begin with 01 or 77"
+msgstr "Nivel de numero debe de comenzar con 01 o 77"
+
+#: cobc/field.cpp:221 cobc/field.cpp:237
+#, fuzzy, c-format
+msgid "no previous data item of level %02d"
+msgstr "No elementos de datos previamente de nivel %02d "
+
+#: cobc/field.cpp:263
+#, c-format
+msgid "'%s' cannot be qualified here"
+msgstr "'%s' no se puede calificar aquí"
+
+#: cobc/field.cpp:269
+#, c-format
+msgid "'%s' cannot be subscripted here"
+msgstr "'%s' no puede ser subíndice aquí"
+
+#: cobc/field.cpp:282
+#, c-format
+msgid "'%s' is not defined in '%s'"
+msgstr "'%s' no esta definido en '%s'"
+
+#: cobc/field.cpp:302
+#, fuzzy
+msgid "level number of REDEFINES entries must be identical"
+msgstr "Numero de nivel de entradas REDEFINES deben ser identicas"
+
+#: cobc/field.cpp:307
+#, fuzzy, c-format
+msgid "'%s' is not the original definition"
+msgstr "'%s' no la definición original"
+
+#: cobc/field.cpp:321
+#, fuzzy, c-format
+msgid "PICTURE clause not compatible with USAGE %s"
+msgstr "'%s' cláusula de PICTURE no es compatible con USAGE"
+
+#: cobc/field.cpp:381 cobc/field.cpp:386
+#, c-format
+msgid "PICTURE clause required for '%s'"
+msgstr "Cláusula de PICTURE requerida para '%s'"
+
+#: cobc/field.cpp:391
+#, fuzzy, c-format
+msgid "a non-numeric literal is expected for '%s'"
+msgstr "Un literal no-numérico es esperado para '%s'"
+
+#: cobc/field.cpp:397
+#, fuzzy, c-format
+msgid "defining implicit picture size %d for '%s'"
+msgstr "Definiendo tamaño implicito de picture %d para '%s'"
+
+#: cobc/field.cpp:415
+#, c-format
+msgid "'%s' ANY LENGTH only allowed in LINKAGE"
+msgstr "'%s' ANY LENGTH solamente permitido en LINKAGE"
+
+#: cobc/field.cpp:419
+#, c-format
+msgid "'%s' ANY LENGTH must be 01 level"
+msgstr "'%s' ANY LENGTH debe ser nivel 01"
+
+#: cobc/field.cpp:423
+#, c-format
+msgid "'%s' ANY LENGTH can not be BASED/EXTERNAL"
+msgstr "'%s' ANY LENGTH no puede ser BASED/EXTERNAL"
+
+#: cobc/field.cpp:428 cobc/field.cpp:443
+#, c-format
+msgid "'%s' ANY LENGTH has invalid definition"
+msgstr "'%s' ANY LENGTH tiene definición inválida"
+
+#: cobc/field.cpp:438
+#, c-format
+msgid "'%s' ANY LENGTH must have a PICTURE"
+msgstr "'%s' ANY LENGTH debe tener un PICTURE"
+
+#: cobc/field.cpp:454
+#, c-format
+msgid "'%s' 77 level not allowed here"
+msgstr "'%s' nivel 77 no se permite aquí"
+
+#: cobc/field.cpp:459
+#, c-format
+msgid "'%s' EXTERNAL must be specified at 01/77 level"
+msgstr "'%s' EXTERNAL se debe que especificar a nivel 01/77"
+
+#: cobc/field.cpp:463
+#, c-format
+msgid "'%s' EXTERNAL can only be specified in WORKING-STORAGE section"
+msgstr "'%s' EXTERNAL solo puede ser especificado en sección WORKING-STORAGE"
+
+#: cobc/field.cpp:467
+#, c-format
+msgid "'%s' EXTERNAL and BASED are mutually exclusive"
+msgstr "'%s' EXTERNAL y BASED son mutualmente excluyentes"
+
+#: cobc/field.cpp:470
+#, c-format
+msgid "'%s' EXTERNAL not allowed with REDEFINES"
+msgstr "'%s' EXTERNAL no permitida para REDEFINES"
+
+#: cobc/field.cpp:477
+#, c-format
+msgid "'%s' BASED not allowed here"
+msgstr "'%s' BASED no se permite aquí"
+
+#: cobc/field.cpp:480
+#, c-format
+msgid "'%s' BASED not allowed with REDEFINES"
+msgstr "'%s' BASED no permitido con REDEFINES"
+
+#: cobc/field.cpp:483
+#, c-format
+msgid "'%s' BASED only allowed at the 01 and 77 levels"
+msgstr "'%s' BASED solamente se permite a los niveles 01 y 77"
+
+#: cobc/field.cpp:509
+#, c-format
+msgid "'%s' cannot have the OCCURS clause due to '%s'"
+msgstr "'%s' no puede tener la cláusula OCURRS debido a '%s'"
+
+#: cobc/field.cpp:523
+#, fuzzy, c-format
+msgid "the original definition '%s' should not have OCCURS clause"
+msgstr "La definición original '%s' no debe tener OCURRS"
+
+#: cobc/field.cpp:530
+msgid "REDEFINES must follow the original definition"
+msgstr "REDEFINES debe seguir la definición original"
+
+#: cobc/field.cpp:537
+#, c-format
+msgid "'%s' cannot be variable length"
+msgstr "'%s' no puede ser de longitud variable"
+
+#: cobc/field.cpp:540
+#, fuzzy, c-format
+msgid "the original definition '%s' cannot be variable length"
+msgstr "La definición original '%s' no puede ser de longitud variable"
+
+#: cobc/field.cpp:565
+#, c-format
+msgid "SCREEN group item '%s' has invalid clause"
+msgstr "Elemento de grupo '%s' tiene clausula invalida"
+
+#: cobc/field.cpp:615
+#, c-format
+msgid "'%s' cannot have PICTURE clause"
+msgstr "'%s' no puede tener cláusula de PICTURE"
+
+#: cobc/field.cpp:681
+#, fuzzy, c-format
+msgid "'%s' COMP-6 with sign - changing to COMP-3"
+msgstr "'%s' COMP-6 con signo - Cambiando a COMP-3"
+
+#: cobc/field.cpp:702
+msgid "elementary items with SIGN clause must have S in PICTURE"
+msgstr ""
+
+#: cobc/field.cpp:705
+msgid "elementary items with SIGN clause must be USAGE DISPLAY or NATIONAL"
+msgstr ""
+
+#: cobc/field.cpp:716
+#, c-format
+msgid "'%s' cannot have JUSTIFIED RIGHT"
+msgstr "'%s' no se puede tener JUSTIFIED RIGHT"
+
+#: cobc/field.cpp:727
+#, fuzzy, c-format
+msgid "'%s' cannot have S in PICTURE string and BLANK WHEN ZERO"
+msgstr "'%s' no se puede tener BLANK WHEN ZERO"
+
+#: cobc/field.cpp:732
+#, fuzzy, c-format
+msgid "'%s' cannot have BLANK WHEN ZERO without being USAGE DISPLAY or NATIONAL"
+msgstr "'%s' no se puede tener BLANK WHEN ZERO"
+
+#: cobc/field.cpp:790
+#, fuzzy, c-format
+msgid "'%s' cannot have * in PICTURE string and BLANK WHEN ZERO"
+msgstr "'%s' no se puede tener BLANK WHEN ZERO"
+
+#: cobc/field.cpp:797
+#, fuzzy, c-format
+msgid "'%s' is not numeric, so cannot have BLANK WHEN ZERO"
+msgstr "'%s' no se puede tener BLANK WHEN ZERO"
+
+#: cobc/field.cpp:805
+#, fuzzy
+msgid "only level 88 items may have multiple values"
+msgstr "Solamente elemento de nivel 88 puede tener valores multiples"
+
+#: cobc/field.cpp:812 cobc/field.cpp:815
+#, fuzzy, c-format
+msgid "initial VALUE clause ignored for %s item"
+msgstr "Cláusula inicial de VALUE ignorada para elemento EXTERNAL"
+
+#: cobc/field.cpp:1104
+#, fuzzy, c-format
+msgid "ignoring SYNCHRONIZED for group item '%s'"
+msgstr "ignorando SYNCHRONIZIED para la partida del grupo '%s'"
+
+#: cobc/field.cpp:1121 cobc/field.cpp:1134 cobc/field.cpp:1368
+#: cobc/field.cpp:1371
+#, fuzzy, c-format
+msgid "size of '%s' larger than size of '%s'"
+msgstr "Tamaño de '%s' más grande que el tamaño de '%s'"
+
+#: cobc/field.cpp:1264 cobc/field.cpp:1313
+#, fuzzy, c-format
+msgid "'%s' cannot be larger than %d bytes"
+msgstr "'%s' campo binario no puede ser mayor de %d dígitos"
+
+#: cobc/field.cpp:1294 cobc/field.cpp:1302
+#, c-format
+msgid "'%s' binary field cannot be larger than %d digits"
+msgstr "'%s' campo binario no puede ser mayor de %d dígitos"
+
+#: cobc/field.cpp:1356
+#, fuzzy, c-format
+msgid "unexpected USAGE: %d"
+msgstr "Uso inesperado - %d"
+
+#: cobc/field.cpp:1449
+#, fuzzy
+msgid "literal type does not match numeric data type"
+msgstr "Tipo literal no coincide con el tipo de datos"
+
+#: cobc/field.cpp:1501
+#, c-format
+msgid "THRU item '%s' may not come before '%s'"
+msgstr ""
+
+#: cobc/field.cpp:1523
+#, c-format
+msgid "RENAMES cannot start/end at the OCCURS item '%s'"
+msgstr ""
+
+#: cobc/field.cpp:1530
+#, c-format
+msgid "cannot use RENAMES on part of the table '%s'"
+msgstr ""
+
+#: cobc/field.cpp:1564
+#, c-format
+msgid "RENAMES may not contain '%s' as it is a pointer or object reference"
+msgstr ""
+
+#: cobc/field.cpp:1568
+#, c-format
+msgid "RENAMES may not contain '%s' as it is an OCCURS DEPENDING table"
+msgstr ""
+
+#: cobc/field.cpp:1592
+#, c-format
+msgid "'%s' must immediately follow the record '%s'"
+msgstr ""
+
+#: cobc/field.cpp:1600
+#, c-format
+msgid "'%s' and '%s' must be in the same record"
+msgstr ""
+
+#: cobc/field.cpp:1606
+#, c-format
+msgid "THRU item must be different to '%s'"
+msgstr ""
+
+#: cobc/field.cpp:1615
+#, c-format
+msgid "THRU item '%s' may not be subordinate to '%s'"
+msgstr ""
+
+#: cobc/field.cpp:1706
+#, fuzzy, c-format
+msgid "unexpected usage %d"
+msgstr "Uso inesperado - %d"
+
+#: cobc/flag.def:40
+#, fuzzy
+msgid "define PERFORM stack size"
+msgstr ""
+"Definir tamaño de montón PERFORM\n"
+"\t\t\t- Por defecto -: 255"
+
+#: cobc/flag.def:40 cobc/flag.def:43
+msgid "<number>"
+msgstr ""
+
+#: cobc/flag.def:43
+#, fuzzy
+msgid "define cutoff depth for IF statements"
+msgstr ""
+"Definir límite de profundidad para declaraciones IF\n"
+"\t\t\t- Por defecto : 3"
+
+#: cobc/flag.def:46
+msgid "define display sign representation"
+msgstr ""
+
+#: cobc/flag.def:46
+msgid "machine native"
+msgstr ""
+
+#: cobc/flag.def:49
+msgid "fold COPY subject to value"
+msgstr ""
+
+#: cobc/flag.def:49 cobc/flag.def:52
+#, fuzzy
+msgid "no transformation"
+msgstr "Información de generación"
+
+#: cobc/flag.def:52
+#, fuzzy
+msgid "fold PROGRAM-ID, CALL, CANCEL subject to value"
+msgstr ""
+"Fold PROGRAM-ID, CALL, CANCEL sujeto a valor\n"
+"\t\t\t- UPPER o LOWER (Por defecto : no transformacion)"
+
+#: cobc/flag.def:55
+#, fuzzy
+msgid "initialize fields without VALUE to decimal value"
+msgstr ""
+"Inicializar campos sin VALUE a valores decimales\n"
+"\t\t\t- 0 a 255 (Por Defecto : initialize a picture)"
+
+#: cobc/flag.def:55
+#, fuzzy
+msgid "initialize to picture"
+msgstr "Fracaso en inicializar cursores"
+
+#: cobc/flag.def:60
+#, fuzzy
+msgid "intrinsics to be used without FUNCTION keyword"
+msgstr ""
+"Intrinsicas a ser usadas sin palabre clave de FUNCTION\n"
+"\t\t\t- ALL o nombres de funciones intrinsicas"
+
+#: cobc/flag.def:60
+msgid "[ALL|intrinsic function name(,name,...)]"
+msgstr ""
+
+#: cobc/flag.def:66
+#, fuzzy
+msgid "output static function calls for the CALL statement"
+msgstr "Función estática de salida llama la declaración de CALL "
+
+#: cobc/flag.def:69
+msgid "disable generation of C function declations for subroutines with static CALL"
+msgstr ""
+
+#: cobc/flag.def:72
+msgid "generate WinMain instead of main when compiling as executable"
+msgstr ""
+
+#: cobc/flag.def:75
+#, fuzzy
+msgid "generate computed goto C statements"
+msgstr "Generar declaraciones computadas en C de ir "
+
+#: cobc/flag.def:78
+#, fuzzy
+msgid "use restricted ASCII to EBCDIC translate"
+msgstr "Use ASCII restringido al traducir EBCDIC"
+
+#: cobc/flag.def:81
+#, fuzzy
+msgid "generate extra braces in generated C code"
+msgstr "Generar corchetes adicionales en el código C generado "
+
+#: cobc/flag.def:84
+#, fuzzy
+msgid "attempt correction of invalid numeric display items"
+msgstr "Intentar corrección de los elementos numéricos mostrados inválidos"
+
+#: cobc/flag.def:87
+msgid "PERFORM stack allocated on heap"
+msgstr "Montón de PERFORM asignado en pila"
+
+#: cobc/flag.def:91
+#, fuzzy
+msgid ""
+"generate trace code\n"
+"\t\t\t- executed SECTION/PARAGRAPH"
+msgstr ""
+"Generar código de rastreo\n"
+"\t\t\t- Ejecutado SECTION/PARAGRAPH"
+
+#: cobc/flag.def:94
+#, fuzzy
+msgid ""
+"generate trace code\n"
+"\t\t\t- executed SECTION/PARAGRAPH/STATEMENTS\n"
+"\t\t\t- turned on by -debug"
+msgstr ""
+"Generar código de rastreo\n"
+"\t\t\t- Ejecutado SECTION/PARAGRAPH/STATEMENTS\n"
+"\t\t\t- Activado por -debug"
+
+#: cobc/flag.def:97
+#, fuzzy
+msgid "syntax error checking only; don't emit any output"
+msgstr "Solamente revisando error de sintaxis, no emitir ningún resultado"
+
+#: cobc/flag.def:100
+#, fuzzy
+msgid ""
+"enable debugging lines\n"
+"\t\t\t- 'D' in indicator column or floating >>D"
+msgstr ""
+"Habilitar la depuración de lineas\n"
+"\t\t\t- ‘D’ en la columna de indicador o flotando >>D"
+
+#: cobc/flag.def:103
+#, fuzzy
+msgid ""
+"generate source location code\n"
+"\t\t\t- turned on by -debug/-g/-ftraceall"
+msgstr ""
+"Generar la ubicación del código de fuente\n"
+"\t\t\t- Activado por -debug/-g/-ftraceall"
+
+#: cobc/flag.def:106
+#, fuzzy
+msgid "automatic initialization of the COBOL runtime system"
+msgstr "Inicialización automática del sistema de ejecución COBOL"
+
+#: cobc/flag.def:109
+#, fuzzy
+msgid ""
+"PERFORM stack checking\n"
+"\t\t\t- turned on by -debug or -g"
+msgstr ""
+"PERFORM revisión de montón\n"
+" \t\t\t- Activado por -debug o -g"
+
+#: cobc/flag.def:112
+#, fuzzy
+msgid ""
+"allow syntax extensions\n"
+"\t\t\t- e.g. switch name SW1, etc."
+msgstr ""
+"Perimite extension de sintaxis\n"
+"\t\t\t- (e.g. Nombre de interruptor SW1, etc.)"
+
+#: cobc/flag.def:115
+#, fuzzy
+msgid ""
+"use AFTER 1 for WRITE of LINE SEQUENTIAL\n"
+"\t\t\t- default: BEFORE 1"
+msgstr ""
+"Utilizar AFTER 1 para WRITE de LINE SEQUENTIAL\n"
+"\t\t\t- Por Defecto : BEFORE 1"
+
+#: cobc/flag.def:118
+msgid ""
+"'*' or '/' in column 1 treated as comment\n"
+"\t\t\t- FIXED format only"
+msgstr ""
+"‘*’ o ‘/’  en columna 1 tratado como comentario\n"
+"\t\t\t- unicamente en formato FIXED"
+
+#: cobc/flag.def:121
+msgid ""
+"'$' in indicator area treated as '*',\n"
+"\t\t\t'|' treated as floating comment"
+msgstr ""
+
+#: cobc/flag.def:124
+msgid ""
+"allow numeric field overflow\n"
+"\t\t\t- non-ANSI behaviour"
+msgstr ""
+"Permitir desbordamiento del campo numérico\n"
+"\t\t\t- comportamiento Non-ANSI"
+
+#: cobc/flag.def:127
+#, fuzzy
+msgid ""
+"adjust items following OCCURS DEPENDING\n"
+"\t\t\t- requires implicit/explicit relaxed syntax"
+msgstr ""
+"Ajuste los elementos después de OCCURS DEPENDING\n"
+" \t\t\t- Requiere sintaxis relajado implicito/explicito"
+
+#: cobc/flag.def:130
+#, fuzzy
+msgid ""
+"use a single quote (apostrophe) for QUOTE\n"
+"\t\t\t- default: double quote"
+msgstr ""
+"Usa una comilla (apóstrofe) para QUOTE\n"
+"\t\t\t- Por defecto : doble apóstrofe"
+
+#: cobc/flag.def:133
+#, fuzzy
+msgid "check recursive program call"
+msgstr "Revise llamada recursiva del programa"
+
+#: cobc/flag.def:137
+#, fuzzy
+msgid ""
+"relax syntax checking\n"
+"\t\t\t- e.g. REDEFINES position"
+msgstr ""
+"Comprobación de sintaxis relajado\n"
+"\t\t\t- eg. Posicion REDEFINES"
+
+#: cobc/flag.def:141
+msgid ""
+"treat all files as OPTIONAL\n"
+"\t\t\t- unless NOT OPTIONAL specified"
+msgstr ""
+"Tratar todos los archivos como OPTIONAL\n"
+"\t\t\t- a menos que se especifique NOT OPTIONAL"
+
+#: cobc/parser.y:65
+#, c-format
+msgid "'%s' not implemented"
+msgstr "'%s' aun no implementado"
+
+#: cobc/parser.y:271
+#, fuzzy, c-format
+msgid "unreachable statement '%s'"
+msgstr "Declaración inalcanzable '%s'"
+
+#: cobc/parser.y:335 cobc/parser.y:561
+#, c-format
+msgid "'%s' is not in LINKAGE SECTION"
+msgstr "‘%s’ no esta en LINKAGE SECTION"
+
+#: cobc/parser.y:338
+#, c-format
+msgid "'%s' can not be BASED/EXTERNAL"
+msgstr "‘%s’ no puede ser BASED/EXTERNAL"
+
+#: cobc/parser.y:343
+#, c-format
+msgid "'%s' is not in WORKING-STORAGE SECTION"
+msgstr "‘%s’ no esta en la WORKING-STORAGE SECTION"
+
+#: cobc/parser.y:350
+#, c-format
+msgid "'%s' not level 01 or 77"
+msgstr "'%s' no nivel 01 ó 77"
+
+#: cobc/parser.y:353
+#, c-format
+msgid "'%s' REDEFINES field not allowed here"
+msgstr "‘%s’  Campo de REDEFINES no se permite aquí"
+
+#: cobc/parser.y:380
+#, c-format
+msgid "LINKAGE item '%s' is not a PROCEDURE USING parameter"
+msgstr "Elemento '%s' LINKAGE no es un parámetro PROCEDURE USING"
+
+#: cobc/parser.y:391
+#, c-format
+msgid "'%s' USING item duplicates RETURNING item"
+msgstr ""
+
+#: cobc/parser.y:400
+#, c-format
+msgid "ENTRY '%s' duplicated"
+msgstr "ENTRY '%s' duplicado"
+
+#: cobc/parser.y:414
+#, fuzzy, c-format
+msgid "maximum nested program depth exceeded(%d)"
+msgstr "Profundidad máxima excedida para programa anidados (%d)"
+
+#: cobc/parser.y:434 cobc/parser.y:455
+#, c-format
+msgid "%s statement not terminated by END-%s"
+msgstr "Declaracion %s no terminado por END-%s"
+
+#: cobc/parser.y:507
+msgid "USE statement invalid for SORT file"
+msgstr "Declaracion USE inválida con archivo SORT"
+
+#: cobc/parser.y:532 cobc/parser.y:534
+#, fuzzy, c-format
+msgid "duplicate %s clause"
+msgstr "Duplicar %s cláusula"
+
+#: cobc/parser.y:553
+#, fuzzy, c-format
+msgid "maximum OCCURS depth exceeded(%d)"
+msgstr "Profundidad máxima excedida para OCURRS (%d)"
+
+#: cobc/parser.y:567 cobc/parser.y:569 cobc/parser.y:5100 cobc/parser.y:5103
+#: cobc/parser.y:5105 cobc/parser.y:5107 cobc/parser.y:5142 cobc/parser.y:5598
+#: cobc/parser.y:5600 cobc/parser.y:5602 cobc/parser.y:5604 cobc/parser.y:5651
+#: cobc/parser.y:5660 cobc/parser.y:9355
+#, fuzzy, c-format
+msgid "%s and %s are mutually exclusive"
+msgstr "BASED y OCCURS son mutuamente excluyentes"
+
+#: cobc/parser.y:583 cobc/parser.y:587
+msgid "TO phrase without DEPENDING phrase"
+msgstr ""
+
+#: cobc/parser.y:584
+msgid "maximum number of occurences assumed to be exact number"
+msgstr ""
+
+#: cobc/parser.y:591 cobc/parser.y:5418
+msgid "OCCURS TO must be greater than OCCURS FROM"
+msgstr ""
+
+#: cobc/parser.y:600
+msgid "ODO without TO phrase"
+msgstr ""
+
+#: cobc/parser.y:664
+#, c-format
+msgid "%s header missing - assumed"
+msgstr "%s encabezado falta - supone"
+
+#: cobc/parser.y:666
+#, c-format
+msgid "%s header missing"
+msgstr "%s encabezado falta"
+
+#: cobc/parser.y:792
+#, fuzzy, c-format
+msgid "redefinition of program name '%s'"
+msgstr "Redefinición de '%s'"
+
+#: cobc/parser.y:796
+#, fuzzy, c-format
+msgid "redefinition of program ID '%s'"
+msgstr "Redefinición de '%s'"
+
+#: cobc/parser.y:826
+#, c-format
+msgid "function '%s' has no PROCEDURE DIVISION"
+msgstr ""
+
+#: cobc/parser.y:918
+msgid "functions may not be defined within a program/function"
+msgstr ""
+
+#: cobc/parser.y:960
+#, fuzzy, c-format
+msgid "END FUNCTION '%s' is different from FUNCTION-ID '%s'"
+msgstr "END PROGRAM '%s' es diferente a PROGRAMA-ID '%s'"
+
+#: cobc/parser.y:974
+#, fuzzy, c-format
+msgid "END PROGRAM '%s' is different from PROGRAM-ID '%s'"
+msgstr "END PROGRAM '%s' es diferente a PROGRAMA-ID '%s'"
+
+#: cobc/parser.y:1021
+msgid "PICTURE SYMBOL for CURRENCY must be one character long"
+msgstr ""
+
+#: cobc/parser.y:1072
+#, c-format
+msgid "invalid character '%c' in PICTURE SYMBOL for CURRENCY"
+msgstr ""
+
+#: cobc/parser.y:1088
+msgid "prototype has same name as current function and will be ignored"
+msgstr ""
+
+#: cobc/parser.y:1115
+#, c-format
+msgid "duplicate REPOSITORY entries for '%s' do not match"
+msgstr ""
+
+#: cobc/parser.y:1119
+#, c-format
+msgid "duplicate REPOSITORY entry for '%s'"
+msgstr ""
+
+#: cobc/parser.y:1173
+msgid "RENAMES of 01-, 66- and 77-level items"
+msgstr ""
+
+#: cobc/parser.y:1175
+#, fuzzy
+msgid "RENAMES may not reference a level 88"
+msgstr "RENAMES no puede hacer referencia un nivel 01 o > 50"
+
+#: cobc/parser.y:1202 cobc/parser.y:1205 cobc/parser.y:1236
+#, c-format
+msgid "cannot specify both %s and %s"
+msgstr ""
+
+#: cobc/parser.y:1233
+#, c-format
+msgid "cannot specify both %s and %s; %s is ignored"
+msgstr ""
+
+#: cobc/parser.y:1403
+msgid "FOR phrase cannot immediately follow ALL/LEADING/TRAILING"
+msgstr ""
+
+#: cobc/parser.y:1405
+msgid "missing CHARACTERS/ALL/LEADING/TRAILING phrase after FOR phrase"
+msgstr ""
+
+#: cobc/parser.y:1412
+msgid "missing FOR phrase before CHARACTERS/ALL/LEADING/TRAILING phrase"
+msgstr ""
+
+#: cobc/parser.y:1415
+msgid "missing value between CHARACTERS/ALL/LEADING/TRAILING words"
+msgstr ""
+
+#: cobc/parser.y:1422
+#, fuzzy
+msgid "missing ALL/LEADING/TRAILING before value"
+msgstr "ALL, LEADING o TRAILING esperado antes de '%s'"
+
+#: cobc/parser.y:1428
+#, fuzzy
+msgid "unexpected tallying phrase"
+msgstr "Función inesperada %s"
+
+#: cobc/parser.y:1470
+#, fuzzy
+msgid "88-level cannot be used here"
+msgstr "'%s' no puede ser subíndice aquí"
+
+#: cobc/parser.y:1490
+msgid "cannot specify NO ADVANCING in screen DISPLAY"
+msgstr ""
+
+#: cobc/parser.y:1561 cobc/parser.y:1578
+msgid "non-standard DISPLAY"
+msgstr ""
+
+#: cobc/parser.y:1565
+msgid "screens may only be displayed on CRT"
+msgstr ""
+
+#: cobc/parser.y:1570 cobc/parser.y:1613
+msgid "cannot mix screens and fields in the same DISPLAY statement"
+msgstr ""
+
+#: cobc/parser.y:1574
+msgid "screen clauses may only be used for DISPLAY on CRT"
+msgstr ""
+
+#: cobc/parser.y:1619
+msgid "ambiguous DISPLAY; put items to display on device in separate DISPLAY"
+msgstr ""
+
+#: cobc/parser.y:1635
+#, fuzzy, c-format
+msgid "%s is not an alphanumeric literal"
+msgstr "'%s' no es un valor numérico"
+
+#: cobc/parser.y:1637
+#, fuzzy, c-format
+msgid "'%s' is not USAGE DISPLAY"
+msgstr "‘%s’ no esta en LINKAGE SECTION"
+
+#: cobc/parser.y:2339
+#, fuzzy
+msgid "multiple PROGRAM-ID's without matching END PROGRAM"
+msgstr "Multiples PROGRAM-ID sin pareo de END PROGRAM"
+
+#: cobc/parser.y:2342
+#, fuzzy
+msgid "executable requested but no program found"
+msgstr "Ejecutables solicitado, pero no encontró el programa"
+
+#: cobc/parser.y:2544 cobc/parser.y:2553
+msgid "COMMON may only be used in a contained program"
+msgstr "COMMON solamente puede ser utilizado en un programa contenido"
+
+#: cobc/parser.y:2562
+msgid "CALL prototypes"
+msgstr ""
+
+#: cobc/parser.y:2696 cobc/parser.y:2902 cobc/parser.y:2947 cobc/parser.y:3059
+#: cobc/parser.y:3181 cobc/parser.y:3275 cobc/parser.y:3324 cobc/parser.y:3349
+#: cobc/parser.y:3432 cobc/parser.y:3451 cobc/parser.y:3467 cobc/parser.y:3485
+#: cobc/parser.y:3503 cobc/parser.y:3520 cobc/parser.y:5677
+#, fuzzy, c-format
+msgid "%s not allowed in nested programs"
+msgstr "SPECIAL-NAMES no esta permitido en programas anidados"
+
+#: cobc/parser.y:2708
+#, fuzzy
+msgid "phrases in non-standard order"
+msgstr "Frases no en order estándar"
+
+#: cobc/parser.y:2799
+#, fuzzy
+msgid "duplicate CLASSIFICATION clause"
+msgstr "Cláusula CLASSIFICATION duplicado"
+
+#: cobc/parser.y:2872
+msgid "PROGRAM phrase"
+msgstr ""
+
+#: cobc/parser.y:2961
+#, fuzzy, c-format
+msgid "invalid system-name '%s'"
+msgstr "Inválido nombre de sistema '%s'"
+
+#: cobc/parser.y:2973 cobc/parser.y:2984 cobc/parser.y:3229 cobc/parser.y:5812
+#, fuzzy, c-format
+msgid "invalid %s clause"
+msgstr "Inválida cláusula CRT"
+
+#: cobc/parser.y:3301 cobc/parser.y:3305
+msgid "CLASS literal with THRU must have size 1"
+msgstr "CLASS literal con THRU debe tener un tamaño de 1"
+
+#: cobc/parser.y:3354
+msgid "CURRENCY SIGN longer than one character"
+msgstr ""
+
+#: cobc/parser.y:3389
+msgid "CURRENCY SIGN other than '$'"
+msgstr ""
+
+#: cobc/parser.y:3399
+#, fuzzy, c-format
+msgid "invalid CURRENCY SIGN '%s'"
+msgstr "ENTRY inválido '%s'%s "
+
+#: cobc/parser.y:3841
+#, fuzzy, c-format
+msgid "'%s' is not an alphabet-name"
+msgstr "'%s' no es un nombre de alfabeto"
+
+#: cobc/parser.y:4151
+msgid "RECORD description invalid with REPORT"
+msgstr "Descripción RECORD inválida con REPORT"
+
+#: cobc/parser.y:4156
+msgid "RECORD description missing or invalid"
+msgstr "Descripción de RECORD faltando o inválida"
+
+#: cobc/parser.y:4209 cobc/parser.y:4219
+#, fuzzy
+msgid "file cannot have both EXTERNAL and GLOBAL clauses"
+msgstr "Archivo no puede tener ambas clausulas EXTERNAL y GLOBAL"
+
+#: cobc/parser.y:4223 cobc/parser.y:4839 cobc/parser.y:5145 cobc/parser.y:8473
+#: cobc/parser.y:10798
+#, fuzzy, c-format
+msgid "%s is invalid in a user FUNCTION"
+msgstr "CHAINING inválido en FUNCTION"
+
+#: cobc/parser.y:4262 cobc/parser.y:4284
+msgid "RECORD clause ignored for LINE SEQUENTIAL"
+msgstr "Clausula RECORD ignorado para LINE SEQUENTIAL"
+
+#: cobc/parser.y:4268 cobc/parser.y:4307 cobc/parser.y:4337
+msgid "RECORD clause invalid"
+msgstr "Cláusula de RECORD inválido"
+
+#: cobc/parser.y:4272 cobc/parser.y:4299 cobc/parser.y:4329
+#, fuzzy, c-format
+msgid "RECORD size exceeds maximum allowed(%d)"
+msgstr "Tamaño de RECORD excede el maximo permitido (%d)"
+
+#: cobc/parser.y:4419
+msgid "LINAGE clause with wrong file type"
+msgstr "Cláusula LINAGE con tipo de archivo equivocado"
+
+#: cobc/parser.y:4481
+msgid "RECORDING MODE U or S can only be used with RECORD SEQUENTIAL files"
+msgstr ""
+
+#: cobc/parser.y:4510
+#, fuzzy, c-format
+msgid "ignoring CODE-SET '%s'"
+msgstr "Ignorando CODE-SET '%s'"
+
+#: cobc/parser.y:4518
+msgid "CODE-SET clause invalid for file type"
+msgstr "Cláusula CODE-SET inválida para tipo de archivo"
+
+#: cobc/parser.y:4547
+msgid "REPORT clause with wrong file type"
+msgstr "Cláusula de REPORT con el tipo de archivo equivocado"
+
+#: cobc/parser.y:4592 cobc/parser.y:4593
+msgid "COMMUNICATION SECTION"
+msgstr ""
+
+#: cobc/parser.y:4612
+#, fuzzy
+msgid "CD record missing"
+msgstr "%s encabezado falta"
+
+#: cobc/parser.y:4993
+msgid "CONSTANT item not at 01 level"
+msgstr "Elemento CONSTANTE no en el nivel 01"
+
+#: cobc/parser.y:5070
+msgid "REDEFINES clause should follow entry-name"
+msgstr "Clausula de REDEFINES debería seguir nombre de entrada"
+
+#: cobc/parser.y:5072
+msgid "REDEFINES clause must follow entry-name"
+msgstr "Clausula de REDEFINES debe seguir nombre de entrada"
+
+#: cobc/parser.y:5093 cobc/parser.y:5147 cobc/parser.y:5592
+#, fuzzy, c-format
+msgid "%s not allowed here"
+msgstr "BASED no se permite aquí"
+
+#: cobc/parser.y:5095 cobc/parser.y:5137 cobc/parser.y:5594
+#, fuzzy, c-format
+msgid "%s only allowed at 01/77 level"
+msgstr "BASED solamente permitido a nivel 01/77"
+
+#: cobc/parser.y:5097 cobc/parser.y:5139 cobc/parser.y:5596
+#, fuzzy, c-format
+msgid "%s requires a data name"
+msgstr "Elemento requiere nombre de datos"
+
+#: cobc/parser.y:5469 cobc/parser.y:5471
+msgid "INDEXED should follow ASCENDING/DESCENDING"
+msgstr ""
+
+#: cobc/parser.y:5637
+msgid "FALSE clause only allowed for 88 level"
+msgstr "Cláusula FALSE sólo se permite para nivel 88"
+
+#: cobc/parser.y:5750
+msgid "GLOBAL is not allowed with RD"
+msgstr "GLOBAL no se permite con RD"
+
+#: cobc/parser.y:6114
+msgid "INITIAL specified on non-input field"
+msgstr "INITIAL especificado en campo no de entrada"
+
+#: cobc/parser.y:6127
+msgid "relative LINE/COLUMN clause required with OCCURS"
+msgstr ""
+
+#: cobc/parser.y:6394
+#, fuzzy
+msgid "GLOBAL screen items"
+msgstr "GLOBAL no se permite con elemento de pantalla"
+
+#: cobc/parser.y:6421
+msgid "overriding convention specified in ENTRY-CONVENTION"
+msgstr ""
+
+#: cobc/parser.y:6432
+#, fuzzy
+msgid "executable program requested but PROCEDURE/ENTRY has USING clause"
+msgstr "Programa executable requerido pero PROCEDURE/ENTRY tiene cláusula USING"
+
+#: cobc/parser.y:6505 cobc/parser.y:6522 cobc/parser.y:7740
+#, fuzzy, c-format
+msgid "number of parameters exceeds maximum %d"
+msgstr "Numero de parametros excede el maximo %d"
+
+#: cobc/parser.y:6514
+#, fuzzy
+msgid "CHAINING invalid in user FUNCTION"
+msgstr "CHAINING inválido en FUNCTION"
+
+#: cobc/parser.y:6548
+#, fuzzy
+msgid "ANY LENGTH items may only be BY REFERENCE formal parameters"
+msgstr "'%s' Elemento de ANY LENGTH no pasó BY REFERENCE"
+
+#: cobc/parser.y:6565 cobc/parser.y:7794 cobc/parser.y:7803
+#, fuzzy, c-format
+msgid "%s not allowed in CHAINED programs"
+msgstr "BY VALUE no es permitido en programa CHAINED"
+
+#: cobc/parser.y:6567
+msgid "parameters passed BY VALUE"
+msgstr ""
+
+#: cobc/parser.y:6578 cobc/parser.y:6586 cobc/parser.y:6594 cobc/parser.y:6615
+msgid "SIZE only allowed for BY VALUE items"
+msgstr "SIZE solamente permitido para elementos BY VALUE"
+
+#: cobc/parser.y:6617
+#, fuzzy
+msgid "invalid value for SIZE"
+msgstr "Valor inválido para SIZE"
+
+#: cobc/parser.y:6633
+msgid "Invalid value for SIZE"
+msgstr "Valor inválido para SIZE"
+
+#: cobc/parser.y:6648
+msgid "OPTIONAL only allowed for BY REFERENCE items"
+msgstr "OPTIONAL solo permitido para elementos BY REFERENCE"
+
+#: cobc/parser.y:6660
+msgid "RETURNING clause is required for a FUNCTION"
+msgstr "Cláusula RETURNING es requerida para una FUNCTION"
+
+#: cobc/parser.y:6666
+#, fuzzy
+msgid "RETURNING clause cannot be OMITTED for main program"
+msgstr "Cláusula RETURNING es requerida para una FUNCTION"
+
+#: cobc/parser.y:6669
+#, fuzzy
+msgid "RETURNING clause cannot be OMITTED for a FUNCTION"
+msgstr "Cláusula RETURNING es requerida para una FUNCTION"
+
+#: cobc/parser.y:6680
+#, fuzzy
+msgid "RETURNING item is not defined in LINKAGE SECTION"
+msgstr "Elemento RETURNING no se encuentra en LINKAGE SECTION ni es BASED"
+
+#: cobc/parser.y:6682
+#, fuzzy
+msgid "RETURNING item must have level 01"
+msgstr "Elemento RETURNING debe de tener un nivel 01 o 77"
+
+#: cobc/parser.y:6684
+#, fuzzy
+msgid "RETURNING item should not have OCCURS"
+msgstr "Elemento RETURNING debe de tener un nivel 01 o 77"
+
+#: cobc/parser.y:6686
+#, fuzzy
+msgid "RETURNING item should not be in LOCAL-STORAGE"
+msgstr "Elemento RETURNING no esta definido en LINKAGE SECTION"
+
+#: cobc/parser.y:6690
+msgid "function RETURNING item may not be ANY LENGTH"
+msgstr ""
+
+#: cobc/parser.y:6880
+#, fuzzy, c-format
+msgid "'%s' is not a statement"
+msgstr "'%s' no es nombre de reporte"
+
+#: cobc/parser.y:6882
+#, c-format
+msgid "unknown statement '%s'; it may exist in another dialect"
+msgstr ""
+
+#: cobc/parser.y:6885
+#, fuzzy, c-format
+msgid "unknown statement '%s'"
+msgstr "Declaración desconocida '%s'"
+
+#: cobc/parser.y:6900
+msgid "SECTION segment invalid within DECLARATIVE"
+msgstr "Segmento SECTION inválido dentro DECLARATIVE"
+
+#: cobc/parser.y:7075
+msgid "non-standard ACCEPT"
+msgstr ""
+
+#: cobc/parser.y:7087
+msgid "PROMPT clause"
+msgstr ""
+
+#: cobc/parser.y:7091
+msgid "SIZE IS clause"
+msgstr ""
+
+#: cobc/parser.y:7211 cobc/parser.y:7440
+msgid "TIME-OUT or BEFORE TIME clauses"
+msgstr ""
+
+#: cobc/parser.y:7226 cobc/parser.y:7242 cobc/parser.y:7257
+msgid "AT screen-location"
+msgstr ""
+
+#: cobc/parser.y:7258
+msgid "LINE or COLUMN"
+msgstr ""
+
+#: cobc/parser.y:7545
+msgid "ALLOCATE CHARACTERS requires RETURNING clause"
+msgstr "ALLOCATE CHARACTERS requiere cláusula RETURNING"
+
+#: cobc/parser.y:7610
+#, fuzzy
+msgid "recursive program call - assuming RECURSIVE attribute"
+msgstr "Recursiva programa, llame al - asumiendo atributo RECURSIVO"
+
+#: cobc/parser.y:7665 cobc/typeck.cpp:8755
+#, fuzzy
+msgid "invalid mnemonic name"
+msgstr "Nombre mnemotécnico inválido"
+
+#: cobc/parser.y:7686 cobc/parser.y:7959
+msgid "CALL/CANCEL with program-prototype-name"
+msgstr ""
+
+#: cobc/parser.y:7690
+msgid "id/literal ignored, using prototype name"
+msgstr ""
+
+#: cobc/parser.y:7696
+#, fuzzy
+msgid "NESTED phrase is only valid with literal"
+msgstr "EXIT PERFORM es solamente válido con PERFORM en línea"
+
+#: cobc/parser.y:7758
+#, fuzzy
+msgid "OMITTED only allowed when parameters are passed BY REFERENCE"
+msgstr "OMITTED solo permitido con BY REFERENCE"
+
+#: cobc/parser.y:7769
+#, fuzzy
+msgid "invalid file name reference"
+msgstr "Referencia inválida a nombre de archivo"
+
+#: cobc/parser.y:7773
+msgid "BY CONTENT assumed for alphanumeric item"
+msgstr "BY CONTENT asumido para elementos alfanuméricos"
+
+#: cobc/parser.y:7833
+msgid "RETURNING item must have level 01 or 77"
+msgstr "Elemento RETURNING debe de tener un nivel 01 o 77"
+
+#: cobc/parser.y:7837
+#, fuzzy
+msgid "RETURNING item must be a LINKAGE SECTION item or have BASED clause"
+msgstr "Elemento RETURNING no se encuentra en LINKAGE SECTION ni es BASED"
+
+#: cobc/parser.y:7871 cobc/parser.y:11088 cobc/parser.y:11143
+msgid "NOT EXCEPTION before EXCEPTION"
+msgstr ""
+
+#: cobc/parser.y:8315
+#, fuzzy
+msgid "ignoring CONVERSION"
+msgstr "Ignorando CONVERSION"
+
+#: cobc/parser.y:8471 cobc/parser.y:10962
+#, fuzzy, c-format
+msgid "%s is invalid in nested program"
+msgstr "ENTRY es inválido en programas anidados"
+
+#: cobc/parser.y:8491 cobc/parser.y:8529 cobc/parser.y:8540 cobc/parser.y:8551
+#, fuzzy, c-format
+msgid "maximum evaluate depth exceeded(%d)"
+msgstr "Máxima profundidad para evaluar excedida (%d)"
+
+#: cobc/parser.y:8651
+msgid "Invalid THROUGH usage"
+msgstr "Uso inválido de THROUGH"
+
+#: cobc/parser.y:8714
+msgid "EXIT PROGRAM is not allowed within a USE GLOBAL procedure"
+msgstr "EXIT PROGRAM no es permitido dentro de procedimiento de USE GLOBAL"
+
+#: cobc/parser.y:8718
+#, fuzzy
+msgid "EXIT PROGRAM not allowed within a FUNCTION"
+msgstr "EXIT FUNCTION es solamente permitido dentro de tipo de FUNCTION"
+
+#: cobc/parser.y:8735
+msgid "EXIT FUNCTION is not allowed within a USE GLOBAL procedure"
+msgstr "EXIT FUNCTION no es permitido dentro de procedimiento de USE GLOBAL"
+
+#: cobc/parser.y:8739
+#, fuzzy
+msgid "EXIT FUNCTION only allowed within a FUNCTION"
+msgstr "EXIT FUNCTION es solamente permitido dentro de tipo de FUNCTION"
+
+#: cobc/parser.y:8749 cobc/parser.y:8768
+msgid "EXIT PERFORM is only valid with inline PERFORM"
+msgstr "EXIT PERFORM es solamente válido con PERFORM en línea"
+
+#: cobc/parser.y:8787
+msgid "EXIT SECTION is only valid with an active SECTION"
+msgstr "EXIT SECTION es solamente válido dentro de SECTION activo"
+
+#: cobc/parser.y:8805
+msgid "EXIT PARAGRAPH is only valid with an active PARAGRAPH"
+msgstr "EXIT PARAGRAPH es solamente válido dentro de PARAGRAPH activo"
+
+#: cobc/parser.y:9105
+#, fuzzy
+msgid "TALLYING clause is incomplete"
+msgstr "Cláusula LINAGE con tipo de archivo equivocado"
+
+#: cobc/parser.y:9221
+msgid "INSPECT missing ALL/FIRST/LEADING/TRAILING"
+msgstr ""
+
+#: cobc/parser.y:9355
+#, fuzzy
+msgid "LOCK clauses"
+msgstr "Cláusula LOCK inválida aquí"
+
+#: cobc/parser.y:9572 cobc/typeck.cpp:7836 cobc/typeck.cpp:8673
+msgid "LOCK clause invalid with file LOCK AUTOMATIC"
+msgstr "Cláusula de LOCK inválida con archivo LOCK AUTOMATIC"
+
+#: cobc/parser.y:9577
+msgid "KEY clause invalid with this file type"
+msgstr "Cláusula de KEY inválida con este tipo de archivo"
+
+#: cobc/parser.y:9582 cobc/typeck.cpp:7832 cobc/typeck.cpp:8669
+msgid "INVALID KEY clause invalid with this file type"
+msgstr "Cláusula de INVALID KEY inválida con este tipo de archivo"
+
+#: cobc/parser.y:10171
+#, fuzzy
+msgid "file sort requires KEY phrase"
+msgstr "Archivo de ordenar requiere frase KEY "
+
+#: cobc/parser.y:10174 cobc/typeck.cpp:8306
+#, fuzzy, c-format
+msgid "%s is not implemented"
+msgstr "'%s' aun no implementado"
+
+#: cobc/parser.y:10174 cobc/typeck.cpp:8306
+msgid "table SORT without keys"
+msgstr ""
+
+#: cobc/parser.y:10237
+#, fuzzy
+msgid "file sort requires USING or INPUT PROCEDURE"
+msgstr "Archivo de ordenar requiere USING o INPUT PROCEDURE"
+
+#: cobc/parser.y:10244
+msgid "USING invalid with table SORT"
+msgstr "USING inválido con tabla de SORT"
+
+#: cobc/parser.y:10254
+msgid "INPUT PROCEDURE invalid with table SORT"
+msgstr "INPUT PROCEDURE inválido con tabla de SORT"
+
+#: cobc/parser.y:10256
+#, fuzzy
+msgid "INPUT PROCEDURE invalid with MERGE"
+msgstr "INPUT PROCEDURE inválido con tabla de SORT"
+
+#: cobc/parser.y:10269
+#, fuzzy
+msgid "file sort requires GIVING or OUTPUT PROCEDURE"
+msgstr "Archivo de ordenar requiere GIVING o OUTPUT PROCEDURE"
+
+#: cobc/parser.y:10276
+msgid "GIVING invalid with table SORT"
+msgstr "Procedimiento de GIVING inválido con tabla de SORT"
+
+#: cobc/parser.y:10286
+msgid "OUTPUT PROCEDURE invalid with table SORT"
+msgstr "OUTPUT PROCEDURE inválido con tabla de SORT"
+
+#: cobc/parser.y:10313
+msgid "SIZE/LENGTH invalid here"
+msgstr "SIZE/LENGTH inválido aquí"
+
+#: cobc/parser.y:10366
+#, fuzzy
+msgid "NOT EQUAL condition not allowed on START statement"
+msgstr "Operación no permitida en archivos de SORT"
+
+#: cobc/parser.y:10455
+msgid "STOP literal"
+msgstr ""
+
+#: cobc/parser.y:10459
+#, fuzzy
+msgid "STOP identifier"
+msgstr "Identificador PROMPT inválido"
+
+#: cobc/parser.y:10587
+msgid "SUPPRESS statement must be within DECLARATIVES"
+msgstr "Declaración de SUPPRESS debe de ser dentro de DECLARATIVES"
+
+#: cobc/parser.y:10658
+msgid "UNLOCK invalid for SORT files"
+msgstr "UNLOCK inválido en archivos SORT"
+
+#: cobc/parser.y:10769 cobc/parser.y:10843
+msgid "USE statement must be within DECLARATIVES"
+msgstr "Declaraciób de USE debe de ser dentro de DECLARATIVES"
+
+#: cobc/parser.y:10771
+msgid "SECTION header missing before USE statement"
+msgstr "Título de SECTION ausente antes de declaración de USE"
+
+#: cobc/parser.y:10845
+msgid "USE DEBUGGING not supported in contained program"
+msgstr "USE DEBUGGING no apoyado en contenidos del programa"
+
+#: cobc/parser.y:10925
+#, fuzzy
+msgid "duplicate USE DEBUGGING ON ALL PROCEDURES"
+msgstr "USE DEBUGGING ON ALL PROCEDURES duplicado"
+
+#: cobc/parser.y:10937
+#, fuzzy
+msgid "invalid target for DEBUGGING ALL"
+msgstr "Objectivo inválido para DEBUGGING ALL"
+
+#: cobc/parser.y:11189
+msgid "NOT SIZE ERROR before SIZE ERROR"
+msgstr ""
+
+#: cobc/parser.y:11236
+msgid "NOT OVERFLOW before OVERFLOW"
+msgstr ""
+
+#: cobc/parser.y:11336
+msgid "NOT AT END-OF-PAGE before AT END-OF-PAGE"
+msgstr ""
+
+#: cobc/parser.y:11387
+msgid "NOT INVALID KEY before INVALID KEY"
+msgstr ""
+
+#: cobc/parser.y:11603
+msgid "LINAGE-COUNTER must be qualified here"
+msgstr "LINAGE-COUNTER debe ser calificado aquí "
+
+#: cobc/parser.y:11606
+#, fuzzy
+msgid "invalid LINAGE-COUNTER usage"
+msgstr "Uso inválido de LINAGE-COUNTER"
+
+#: cobc/parser.y:11617 cobc/parser.y:11705 cobc/parser.y:11763
+#, c-format
+msgid "'%s' is not a file name"
+msgstr "'%s' no es nombre de archivo"
+
+#: cobc/parser.y:11624
+msgid "LINE-COUNTER must be qualified here"
+msgstr "LINE-COUNTER debe ser calificado aquí"
+
+#: cobc/parser.y:11627
+#, fuzzy
+msgid "invalid LINE-COUNTER usage"
+msgstr "Uso inválido de LINE-COUNTER"
+
+#: cobc/parser.y:11638 cobc/parser.y:11659 cobc/parser.y:11815
+#, c-format
+msgid "'%s' is not a report name"
+msgstr "'%s' no es nombre de reporte"
+
+#: cobc/parser.y:11645
+msgid "PAGE-COUNTER must be qualified here"
+msgstr "PAGE-COUNTER debe ser calificado aquí"
+
+#: cobc/parser.y:11648
+#, fuzzy
+msgid "invalid PAGE-COUNTER usage"
+msgstr "Uso inválido de PAGE-COUNTER"
+
+#: cobc/parser.y:11695 cobc/typeck.cpp:7799 cobc/typeck.cpp:7872
+#: cobc/typeck.cpp:8643
+#, fuzzy, c-format
+msgid "%s requires a record name as subject"
+msgstr "WRITE requiere un nombre de récord como sujeto"
+
+#: cobc/parser.y:11720
+#, c-format
+msgid "'%s' not indexed"
+msgstr "'%s' no indexado"
+
+#: cobc/parser.y:11745
+#, fuzzy, c-format
+msgid "multiple reference to '%s' "
+msgstr "Referencias multiples a '%s' "
+
+#: cobc/parser.y:11775
+#, fuzzy, c-format
+msgid "'%s' is not a CD name"
+msgstr "'%s' no es nombre de archivo"
+
+#: cobc/parser.y:12033
+#, fuzzy
+msgid "invalid mnemonic identifier"
+msgstr "Identificador mnemónico inválido"
+
+#: cobc/parser.y:12206 cobc/typeck.cpp:3938 cobc/typeck.cpp:3945
+#, fuzzy, c-format
+msgid "'%s' is not numeric"
+msgstr "'%s' no es un nombre numérico"
+
+#: cobc/parser.y:12223
+#, fuzzy, c-format
+msgid "'%s' is not a field or file"
+msgstr "'%s' no es nombre de archivo"
+
+#: cobc/parser.y:12239
+#, fuzzy, c-format
+msgid "'%s' is not a field"
+msgstr "%s no esta definido"
+
+#: cobc/parser.y:12367
+#, fuzzy
+msgid "non-negative integer value expected"
+msgstr "Esperando valor de número entero"
+
+#: cobc/parser.y:12379 cobc/parser.y:12382 cobc/parser.y:12421
+#, fuzzy
+msgid "integer value expected"
+msgstr "Esperando valor de número entero"
+
+#: cobc/parser.y:12387
+#, fuzzy
+msgid "invalid symbolic integer"
+msgstr "Número entero inválido"
+
+#: cobc/parser.y:12402 cobc/parser.y:12407
+#, fuzzy
+msgid "unsigned positive integer value expected"
+msgstr "Esperando valor de número entero"
+
+#: cobc/parser.y:12425
+#, fuzzy
+msgid "invalid CLASS value"
+msgstr "Inválido valor de CLASS"
+
+#: cobc/parser.y:12663 cobc/parser.y:12680
+msgid "cannot specify offset and SYSTEM-OFFSET at the same time"
+msgstr ""
+
+#: cobc/pplex.l:274
+#, fuzzy
+msgid "ignoring LEAP-SECOND directive"
+msgstr "Ignorando directiva LEAP-SECOND"
+
+#: cobc/pplex.l:285
+#, fuzzy
+msgid "ignoring empty directive"
+msgstr "Ignorando directiva vacía"
+
+#: cobc/pplex.l:293 cobc/pplex.l:336
+#, fuzzy, c-format
+msgid "ignoring invalid directive - '%s'"
+msgstr "Ignorando directiva inválida - '%s'"
+
+#: cobc/pplex.l:298
+#, fuzzy
+msgid "ignoring invalid directive"
+msgstr "Ignorando directiva inválida"
+
+#: cobc/pplex.l:343 cobc/pplex.l:349
+#, fuzzy
+msgid "spurious '$' detected - ignored"
+msgstr "Detectados '$' falsos - ignorando"
+
+#: cobc/pplex.l:354
+msgid "PROCESS statement ignored"
+msgstr "Declaración de PROCESS ignorado"
+
+#: cobc/pplex.l:735
+#, fuzzy
+msgid "IF/ELIF/ELSE directive without matching END-IF"
+msgstr "Directiva ELSE sin IF/ELIF acompañados"
+
+#: cobc/pplex.l:991
+#, fuzzy, c-format
+msgid "directive nest depth exceeded: %d"
+msgstr "Profundidad excedida en el nido directivo -% d"
+
+#: cobc/pplex.l:1009
+msgid "ELSE directive without matching IF/ELIF"
+msgstr "Directiva ELSE sin IF/ELIF acompañados"
+
+#: cobc/pplex.l:1025
+msgid "END-IF directive without matching IF/ELIF/ELSE"
+msgstr "Directiva END-IF sin IF/ELIF/ELSE acompañados"
+
+#: cobc/pplex.l:1041
+msgid "ELIF directive without matching IF/ELIF"
+msgstr "Directiva ELIF sin IF/ELIF acompañados"
+
+#: cobc/pplex.l:1063
+#, fuzzy, c-format
+msgid "invalid internal case: %u"
+msgstr "Literal numérico excede el límite - Abortando"
+
+#: cobc/pplex.l:1177
+msgid "buffer overrun - too many continuation lines"
+msgstr ""
+
+#: cobc/pplex.l:1267 cobc/pplex.l:1275
+#, fuzzy
+msgid "line not terminated by a newline"
+msgstr "Linea no terminada por una nueva linea"
+
+#: cobc/pplex.l:1270 cobc/pplex.l:1278
+#, c-format
+msgid "source text exceeds %d bytes, will be truncated"
+msgstr ""
+
+#: cobc/pplex.l:1441
+#, fuzzy
+msgid "invalid continuation in comment entry"
+msgstr "Inválida continuacion de comentario de entrada."
+
+#: cobc/pplex.l:1447
+msgid "continuation of COBOL words"
+msgstr ""
+
+#: cobc/pplex.l:1467
+#, fuzzy, c-format
+msgid "invalid indicator '%c' at column 7"
+msgstr "Inválida indicador '%c' en columna 7"
+
+#: cobc/pplex.l:1514 cobc/pplex.l:1525
+#, fuzzy
+msgid "invalid line continuation"
+msgstr "Continuación de linea inválida"
+
+#: cobc/pplex.l:1533
+#, fuzzy
+msgid "continuation character expected"
+msgstr "Continuación de carácter esperado"
+
+#: cobc/pplex.l:1601
+#, fuzzy, c-format
+msgid "source text after program-text area (column %d)"
+msgstr "Origen de texto despues de columna %d"
+
+#: cobc/ppparse.y:240
+msgid "directive comparison on different types"
+msgstr ""
+
+#: cobc/ppparse.y:305
+#, fuzzy
+msgid "duplicate define"
+msgstr "Definir duplicado"
+
+#: cobc/ppparse.y:312 cobc/ppparse.y:322 cobc/ppparse.y:917
+#, fuzzy
+msgid "invalid constant"
+msgstr "Constante inválida"
+
+#: cobc/ppparse.y:664 cobc/ppparse.y:678 cobc/ppparse.y:696 cobc/ppparse.y:705
+#: cobc/ppparse.y:747 cobc/ppparse.y:803 cobc/ppparse.y:902
+#, fuzzy, c-format
+msgid "invalid %s directive"
+msgstr "Directiva SOURCE inválida"
+
+#: cobc/ppparse.y:810
+msgid "PAGE directive"
+msgstr ""
+
+#: cobc/ppparse.y:822
+#, fuzzy
+msgid "TURN directive"
+msgstr "Directiva SOURCE inválida"
+
+#: cobc/ppparse.y:894
+msgid "Invalid constant"
+msgstr "Constante inválida"
+
+#: cobc/reserved.cpp:3294
+#, fuzzy
+msgid "device name"
+msgstr "Nombre de dispositivo"
+
+#: cobc/reserved.cpp:3296
+#, fuzzy
+msgid "switch name"
+msgstr "Nombre de interruptor"
+
+#: cobc/reserved.cpp:3298
+#, fuzzy
+msgid "feature name"
+msgstr "Nombre de prestación"
+
+#: cobc/reserved.cpp:3367
+#, c-format
+msgid "reserved word must have less than %d characters"
+msgstr ""
+
+#: cobc/reserved.cpp:3386
+msgid "ignored asterisk at end of alias target"
+msgstr ""
+
+#: cobc/reserved.cpp:3442
+#, c-format
+msgid "alias target '%s' is not a default reserved word"
+msgstr ""
+
+#: cobc/reserved.cpp:3741
+#, fuzzy, c-format
+msgid "'%s' is a reserved word, but isn't supported"
+msgstr "'%s' palabra reservada, pero no apoyada"
+
+#: cobc/reserved.cpp:3810
+msgid "Reserved Words"
+msgstr ""
+
+#: cobc/reserved.cpp:3810 cobc/reserved.cpp:3852
+#, fuzzy
+msgid "Implemented"
+msgstr "'%s' aun no implementado"
+
+#: cobc/reserved.cpp:3815
+#, fuzzy
+msgid "Yes (Context sensitive)"
+msgstr "Y (Contenido sensible)"
+
+#: cobc/reserved.cpp:3817 cobc/reserved.cpp:3856
+msgid "Yes"
+msgstr ""
+
+#: cobc/reserved.cpp:3821
+#, fuzzy
+msgid "No (Context sensitive)"
+msgstr "Y (Contenido sensible)"
+
+#: cobc/reserved.cpp:3823 cobc/reserved.cpp:3858
+#, fuzzy
+msgid "No"
+msgstr "N"
+
+#: cobc/reserved.cpp:3829
+#, fuzzy
+msgid "Extra(obsolete) context sensitive words"
+msgstr "Contenido extra (obsoleto) a palabras sensible"
+
+#: cobc/reserved.cpp:3838
+#, fuzzy
+msgid "Extra internal registers"
+msgstr "Registros internos extras\tDefinición"
+
+#: cobc/reserved.cpp:3838
+#, fuzzy
+msgid "Definition"
+msgstr "Redefinición de '%s'"
+
+#: cobc/reserved.cpp:3844
+msgid "'LENGTH OF' phrase"
+msgstr ""
+
+#: cobc/reserved.cpp:3852
+#, fuzzy
+msgid "Intrinsic Function"
+msgstr "'%s' no es una función intrínseca"
+
+#: cobc/reserved.cpp:3852 cobc/typeck.cpp:721
+msgid "Parameters"
+msgstr ""
+
+#: cobc/reserved.cpp:3862
+msgid "Unlimited"
+msgstr ""
+
+#: cobc/reserved.cpp:3877
+msgid "Mnemonic names"
+msgstr "Nombres Mnemotécnico"
+
+#: cobc/reserved.cpp:3883
+#, fuzzy
+msgid "Extended mnemonic names(with -fsyntax-extension)"
+msgstr "Nombres mnemotécnico extendidos (con -fsyntax-extension)"
+
+#: cobc/scanner.l:733
+#, fuzzy, c-format
+msgid "word length exceeds maximum of %d characters: '%s'"
+msgstr "Tamaño de palabra excede los 31 caractéres - '%s'"
+
+#: cobc/scanner.l:736 cobc/scanner.l:739
+#, fuzzy, c-format
+msgid "word length exceeds %d characters: '%s'"
+msgstr "Tamaño de palabra excede los 31 caractéres - '%s'"
+
+#: cobc/scanner.l:851
+#, fuzzy, c-format
+msgid "a constant may not be used here - '%s'"
+msgstr "Una constante no puede ser utilizada aquí - '%s'"
+
+#: cobc/scanner.l:905
+msgid "ignoring redundant ."
+msgstr ""
+
+#: cobc/scanner.l:963
+#, fuzzy, c-format
+msgid "invalid symbol '%s' - skipping word"
+msgstr "símbolo inválido: %s - Omisión de la palabra"
+
+#: cobc/scanner.l:1046
+#, fuzzy
+msgid "invalid national literal"
+msgstr "Literal de punto flotante inválida"
+
+#: cobc/scanner.l:1057 cobc/tree.cpp:1736
+#, fuzzy, c-format
+msgid "invalid literal: '%s'"
+msgstr "Literal X inválida: %s"
+
+#: cobc/scanner.l:1059
+#, fuzzy, c-format
+msgid "invalid hexadecimal literal: '%s'"
+msgstr "Literal X inválida: %s"
+
+#: cobc/scanner.l:1061 cobc/tree.cpp:1103
+#, fuzzy, c-format
+msgid "invalid numeric literal: '%s'"
+msgstr "Literal numérica invalida"
+
+#: cobc/scanner.l:1063
+#, fuzzy, c-format
+msgid "invalid floating-point literal: '%s'"
+msgstr "Literal de punto flotante inválida"
+
+#: cobc/scanner.l:1065
+#, fuzzy, c-format
+msgid "invalid %s literal: '%s'"
+msgstr "Literal X inválida: %s"
+
+#: cobc/scanner.l:1109
+#, fuzzy, c-format
+msgid "literal length exceeds %d characters"
+msgstr "Tamaño de palabra excede los 31 caractéres - '%s'"
+
+#: cobc/scanner.l:1125
+#, fuzzy
+msgid "alphanumeric literal has zero length; a SPACE will be assumed"
+msgstr "Literal afanumérica tiene longitud de cero"
+
+#: cobc/scanner.l:1136 cobc/scanner.l:1137 cobc/scanner.l:1190
+#, fuzzy
+msgid "national literal"
+msgstr "Literal numérica invalida"
+
+#: cobc/scanner.l:1174
+msgid "hexadecimal-boolean literal"
+msgstr ""
+
+#: cobc/scanner.l:1181 cobc/scanner.l:1195 cobc/scanner.l:1306
+#: cobc/scanner.l:1350 cobc/scanner.l:1438 cobc/scanner.l:1498
+#: cobc/tree.cpp:1737
+#, fuzzy, c-format
+msgid "literal length %d exceeds %d characters"
+msgstr "Tamaño de palabra excede los 31 caractéres - '%s'"
+
+#: cobc/scanner.l:1187
+msgid "hexadecimal-national literal"
+msgstr ""
+
+#: cobc/scanner.l:1217 cobc/scanner.l:1248 cobc/scanner.l:1366
+#: cobc/scanner.l:1452 cobc/scanner.l:1508
+#, fuzzy, c-format
+msgid "literal contains invalid character '%c'"
+msgstr "Constante figurativa inválida aquí"
+
+#: cobc/scanner.l:1272
+#, c-format
+msgid "literal does not have an even number of digits"
+msgstr ""
+
+#: cobc/scanner.l:1339 cobc/scanner.l:1424 cobc/scanner.l:1491
+#, fuzzy
+msgid "ACUCOBOL numeric literal"
+msgstr "Literal numérica invalida"
+
+#: cobc/scanner.l:1381 cobc/scanner.l:1463 cobc/scanner.l:1519
+#, fuzzy, c-format
+msgid "literal exceeds limit %u"
+msgstr "Literal numérico excede tamaño de dato "
+
+#: cobc/scanner.l:1420
+#, fuzzy
+msgid "numeric boolean literal"
+msgstr "Literal numérica invalida"
+
+#: cobc/scanner.l:1585 cobc/tree.cpp:1114
+#, fuzzy, c-format
+msgid "literal length %d exceeds maximum of %d digits"
+msgstr "Tamaño de palabra excede lo máximo permitido - '%s'"
+
+#: cobc/scanner.l:1591 cobc/tree.cpp:1119
+#, fuzzy, c-format
+msgid "literal length %d exceeds %d digits"
+msgstr "Literal numérico excede tamaño de dato "
+
+#: cobc/scanner.l:1679
+#, c-format
+msgid "significand has more than 34 digits"
+msgstr ""
+
+#: cobc/scanner.l:1684
+#, c-format
+msgid "exponent has decimal point"
+msgstr ""
+
+#: cobc/scanner.l:1690
+#, c-format
+msgid "exponent has more than 4 digits"
+msgstr ""
+
+#: cobc/scanner.l:1707
+#, c-format
+msgid "exponent not between -78 and 76"
+msgstr ""
+
+#: cobc/scanner.l:1715
+#, c-format
+msgid "significand of 0 must be positive"
+msgstr ""
+
+#: cobc/scanner.l:1720
+#, c-format
+msgid "exponent of 0 must be 0"
+msgstr ""
+
+#: cobc/scanner.l:1725
+#, c-format
+msgid "exponent of 0 must be positive"
+msgstr ""
+
+#: cobc/scanner.l:1878
+#, fuzzy, c-format
+msgid "invalid CONSTANT - %s"
+msgstr "Invalida CONSTANT - %s"
+
+#: cobc/scanner.l:1888
+#, fuzzy, c-format
+msgid "invalid alphanumeric CONSTANT: %s"
+msgstr "CONSTANT alfanumérica inválida - %s"
+
+#: cobc/scanner.l:1892
+#, fuzzy, c-format
+msgid "empty alphanumeric CONSTANT - %s"
+msgstr "CONSTANT alfanumérica vacía - %s"
+
+#: cobc/scanner.l:1909 cobc/scanner.l:1917 cobc/scanner.l:1922
+#, fuzzy, c-format
+msgid "invalid numeric CONSTANT - %s"
+msgstr "CONSTANT numérica inválida - %s"
+
+#: cobc/tree.cpp:210
+#, c-format
+msgid "%s clause is required for file '%s'"
+msgstr "Cláusula %s es requerida para el archivo '%s'"
+
+#: cobc/tree.cpp:214
+#, fuzzy, c-format
+msgid "%s clause is invalid for file '%s' (file type)"
+msgstr "Cláusula RECORD inválida para este tipo de archivo"
+
+#: cobc/tree.cpp:218
+#, fuzzy, c-format
+msgid "%s clause is invalid for file '%s'"
+msgstr "Cláusula %s es requerida para el archivo '%s'"
+
+#: cobc/tree.cpp:241
+#, c-format
+msgid "FOR item '%s' is a record"
+msgstr ""
+
+#: cobc/tree.cpp:251
+#, fuzzy, c-format
+msgid "FOR item '%s' is in different record to '%s'"
+msgstr "END PROGRAM '%s' es diferente a PROGRAMA-ID '%s'"
+
+#: cobc/tree.cpp:260
+#, c-format
+msgid "FOR item '%s' is not in a record associated with '%s'"
+msgstr ""
+
+#: cobc/tree.cpp:327
+#, fuzzy
+msgid "internal error node"
+msgstr "Nodo de error interno"
+
+#: cobc/tree.cpp:329
+#, fuzzy
+msgid "unknown constant"
+msgstr "#<constante desconocido>"
+
+#: cobc/tree.cpp:445
+#, fuzzy, c-format
+msgid "unexpected tree tag %d"
+msgstr "Inesperada etiqueta de árbol %d"
+
+#: cobc/tree.cpp:468
+#, c-format
+msgid "FUNCTION %s has invalid/not supported arguments - Tag %d"
+msgstr "FUNCTION %s tiene argumentos inválidos/no apoyados - Tag %d"
+
+#: cobc/tree.cpp:578
+#, fuzzy, c-format
+msgid "invalid date/time function: '%d'"
+msgstr "Tipo inválido para '%s'"
+
+#: cobc/tree.cpp:611
+#, fuzzy, c-format
+msgid "FUNCTION '%s' has invalid date/time format"
+msgstr "FUNCTION '%s' tiene parámetro inválido"
+
+#: cobc/tree.cpp:616
+#, fuzzy, c-format
+msgid "FUNCTION '%s' has format in variable"
+msgstr "FUNCTION '%s' tiene parámetro inválido"
+
+#: cobc/tree.cpp:659
+msgid "cannot find the UTC offset on this system"
+msgstr ""
+
+#: cobc/tree.cpp:853
+#, fuzzy, c-format
+msgid "unknown tree tag: %d, category: %d"
+msgstr "Desconocida etiqueta de árbol %d Categoria %d"
+
+#: cobc/tree.cpp:918
+#, fuzzy, c-format
+msgid "unexpected numeric USAGE: %d"
+msgstr "Uso numérico inesperado -> %d"
+
+#: cobc/tree.cpp:929
+#, fuzzy, c-format
+msgid "unexpected category: %d"
+msgstr "Categoría inesperada -> %d"
+
+#: cobc/tree.cpp:1129 cobc/tree.cpp:1199
+#, fuzzy
+msgid "invalid literal cast"
+msgstr "Literal X inválida: %s"
+
+#: cobc/tree.cpp:1155 cobc/tree.cpp:1167 cobc/tree.cpp:1179 cobc/tree.cpp:1223
+#: cobc/tree.cpp:1257
+#, fuzzy, c-format
+msgid "numeric literal '%s' exceeds limit '%s'"
+msgstr "Literal numérico excede tamaño de dato "
+
+#: cobc/tree.cpp:1646
+#, fuzzy
+msgid "invalid LOCALE literal"
+msgstr "Inválido literal LOCAL"
+
+#: cobc/tree.cpp:1716
+msgid "only literals with the same category can be concatenated"
+msgstr ""
+
+#: cobc/tree.cpp:1723
+msgid "only alpanumeric, national or boolean literals may be concatenated"
+msgstr ""
+
+#: cobc/tree.cpp:1973
+msgid "B, 0 or /"
+msgstr ""
+
+#: cobc/tree.cpp:1987
+msgid "the sign of the floating-point exponent"
+msgstr ""
+
+#: cobc/tree.cpp:1989
+msgid "a leading +/- sign"
+msgstr ""
+
+#: cobc/tree.cpp:1991
+msgid "a trailing +/- sign"
+msgstr ""
+
+#: cobc/tree.cpp:1993
+msgid "CR or DB"
+msgstr ""
+
+#: cobc/tree.cpp:1995
+msgid "a leading currency symbol"
+msgstr ""
+
+#: cobc/tree.cpp:1997
+msgid "a trailing currency symbol"
+msgstr ""
+
+#: cobc/tree.cpp:1999
+msgid "a Z or * which is before the decimal point"
+msgstr ""
+
+#: cobc/tree.cpp:2001
+msgid "a Z or * which is after the decimal point"
+msgstr ""
+
+#: cobc/tree.cpp:2003
+msgid "a floating +/- string which is before the decimal point"
+msgstr ""
+
+#: cobc/tree.cpp:2005
+msgid "a floating +/- string which is after the decimal point"
+msgstr ""
+
+#: cobc/tree.cpp:2007
+msgid "a floating currency symbol string which is before the decimal point"
+msgstr ""
+
+#: cobc/tree.cpp:2009
+msgid "a floating currency symbol string which is after the decimal point"
+msgstr ""
+
+#: cobc/tree.cpp:2013
+msgid "A or X"
+msgstr ""
+
+#: cobc/tree.cpp:2019
+msgid "a P which is before the decimal point"
+msgstr ""
+
+#: cobc/tree.cpp:2021
+msgid "a P which is after the decimal point"
+msgstr ""
+
+#: cobc/tree.cpp:2042 cobc/tree.cpp:2380
+#, c-format
+msgid "%s may only occur once in a PICTURE string"
+msgstr ""
+
+#: cobc/tree.cpp:2044
+#, c-format
+msgid "%s cannot follow %s"
+msgstr ""
+
+#: cobc/tree.cpp:2047
+#, fuzzy
+msgid "invalid PICTURE string detected"
+msgstr "Opción inválida detectada"
+
+#: cobc/tree.cpp:2158
+msgid "number or constant in parentheses is not an unsigned integer"
+msgstr ""
+
+#: cobc/tree.cpp:2167
+msgid "only up to 9 significant digits are permitted within parentheses"
+msgstr ""
+
+#: cobc/tree.cpp:2173
+msgid "number or constant in parentheses must be greater than zero"
+msgstr ""
+
+#: cobc/tree.cpp:2203
+msgid "unbalanced parentheses"
+msgstr ""
+
+#: cobc/tree.cpp:2222
+msgid "parentheses must contain (a constant-name defined as) a positive integer"
+msgstr ""
+
+#: cobc/tree.cpp:2242
+#, fuzzy, c-format
+msgid "'%s' is not a constant-name"
+msgstr "'%s' no es nombre de reporte"
+
+#: cobc/tree.cpp:2249
+#, fuzzy, c-format
+msgid "'%s' is not a numeric literal"
+msgstr "'%s' no es un valor numérico"
+
+#: cobc/tree.cpp:2253
+#, fuzzy, c-format
+msgid "'%s' is not an integer"
+msgstr "'%s' no es un valor entero"
+
+#: cobc/tree.cpp:2257
+#, fuzzy, c-format
+msgid "'%s' is not unsigned"
+msgstr "%s no esta definido"
+
+#: cobc/tree.cpp:2300
+msgid "missing PICTURE string"
+msgstr ""
+
+#: cobc/tree.cpp:2318
+msgid "only one set of parentheses is permitted"
+msgstr ""
+
+#: cobc/tree.cpp:2385
+msgid "S must be at start of PICTURE string"
+msgstr ""
+
+#: cobc/tree.cpp:2438
+msgid "P must be at start or end of PICTURE string"
+msgstr ""
+
+#: cobc/tree.cpp:2468
+msgid "cannot have both Z and * in PICTURE string"
+msgstr ""
+
+#: cobc/tree.cpp:2495
+msgid "C must be followed by R"
+msgstr ""
+
+#: cobc/tree.cpp:2509
+msgid "D must be followed by B"
+msgstr ""
+
+#: cobc/tree.cpp:2531
+#, fuzzy, c-format
+msgid "invalid PICTURE character '%c'"
+msgstr "Parámetro inválido %s"
+
+#: cobc/tree.cpp:2560
+#, c-format
+msgid "PICTURE string may not contain more than %d characters; contains %d characters"
+msgstr ""
+
+#: cobc/tree.cpp:2565
+msgid "PICTURE string must contain at least one of the set A, N, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol"
+msgstr ""
+
+#: cobc/tree.cpp:2593
+#, fuzzy, c-format
+msgid "numeric field cannot be larger than %d digits"
+msgstr "Campo numérico no puede exceder %d digitos"
+
+#: cobc/tree.cpp:2876
+#, fuzzy, c-format
+msgid "invalid KEY item '%s', not in file '%s'"
+msgstr "Inválida cadena de picture - '%s'"
+
+#: cobc/tree.cpp:2886
+#, c-format
+msgid "minimal record length %d can not hold the key item '%s'; needs to be at least %d"
+msgstr ""
+
+#: cobc/tree.cpp:2919
+#, fuzzy, c-format
+msgid "size of record '%s' (%d) smaller than minimum of file '%s' (%d)"
+msgstr "Tamaño de '%s' más grande que el tamaño de '%s'"
+
+#: cobc/tree.cpp:2926
+#, fuzzy, c-format
+msgid "size of record '%s' (%d) larger than maximum of file '%s' (%d)"
+msgstr "Tamaño de '%s' más grande que el tamaño de '%s'"
+
+#: cobc/tree.cpp:2954
+#, fuzzy, c-format
+msgid "file '%s': record size %d exceeds maximum allowed (%d)"
+msgstr "Tamaño de récord excede el máximo permitido (%d) - Archivo '%s'"
+
+#: cobc/tree.cpp:3359 cobc/tree.cpp:3364 cobc/tree.cpp:3376
+#: cobc/typeck.cpp:2942 cobc/typeck.cpp:2950 cobc/typeck.cpp:2956
+#: cobc/typeck.cpp:3543 cobc/typeck.cpp:3661
+#, fuzzy
+msgid "invalid expression"
+msgstr "Expresión inválida"
+
+#: cobc/tree.cpp:3388
+#, fuzzy, c-format
+msgid "unexpected operator: %d"
+msgstr "Operador inesperado -> %d"
+
+#: cobc/tree.cpp:3701
+#, c-format
+msgid "no definition/prototype seen for function '%s'"
+msgstr ""
+
+#: cobc/tree.cpp:3703
+#, c-format
+msgid "no definition/prototype seen for program '%s'"
+msgstr ""
+
+#: cobc/tree.cpp:3712
+#, c-format
+msgid "no definition/prototype seen for function with external name '%s'"
+msgstr ""
+
+#: cobc/tree.cpp:3714
+#, c-format
+msgid "no definition/prototype seen for program with external name '%s'"
+msgstr ""
+
+#: cobc/tree.cpp:3772 cobc/tree.cpp:3778 cobc/tree.cpp:3820 cobc/tree.cpp:3825
+#, c-format
+msgid "FUNCTION '%s' has invalid reference modification"
+msgstr "FUNCTION '%s' tiene modificación por referencia inválida"
+
+#: cobc/tree.cpp:3789 cobc/tree.cpp:3994
+#, c-format
+msgid "FUNCTION '%s' unknown"
+msgstr "FUNCTION '%s' desconocida"
+
+#: cobc/tree.cpp:3793
+#, fuzzy, c-format
+msgid "FUNCTION '%s' is not implemented"
+msgstr "FUNCTION '%s' no implementada"
+
+#: cobc/tree.cpp:3800 cobc/tree.cpp:3807 cobc/tree.cpp:3981
+#, c-format
+msgid "FUNCTION '%s' has wrong number of arguments"
+msgstr "FUNCTION '%s' tiene el número incorrecto de argumentos"
+
+#: cobc/tree.cpp:3814
+#, c-format
+msgid "FUNCTION '%s' can not have reference modification"
+msgstr "FUNCTION '%s' no puede tener la modificación por referencia"
+
+#: cobc/tree.cpp:3879 cobc/tree.cpp:3940 cobc/tree.cpp:3946
+#, c-format
+msgid "FUNCTION '%s' has invalid parameter"
+msgstr "FUNCTION '%s' tiene parámetro inválido"
+
+#: cobc/tree.cpp:3987
+#, c-format
+msgid "FUNCTION '%s' has invalid first parameter"
+msgstr "FUNCTION '%s' tiene primer parámetro inválido"
+
+#: cobc/typeck.cpp:470
+#, fuzzy
+msgid "invalid use of 88 level item"
+msgstr "Uso inválido de elemento de nivel 88"
+
+#: cobc/typeck.cpp:510
+#, fuzzy, c-format
+msgid "'%s' is not a group name"
+msgstr "'%s' no es nombre de grupo"
+
+#: cobc/typeck.cpp:527
+#, c-format
+msgid "'%s' is not a numeric name"
+msgstr "'%s' no es un nombre numérico"
+
+#: cobc/typeck.cpp:545
+#, fuzzy, c-format
+msgid "'%s' is not a numeric or numeric-edited name"
+msgstr "'%s' no es nombre numérico o editado-numérico"
+
+#: cobc/typeck.cpp:560
+#, c-format
+msgid "'%s' is not a numeric value"
+msgstr "'%s' no es un valor numérico"
+
+#: cobc/typeck.cpp:607
+#, c-format
+msgid "'%s' is not an integer value"
+msgstr "'%s' no es un valor entero"
+
+#: cobc/typeck.cpp:611
+#, fuzzy
+msgid "positive numeric integer is required here"
+msgstr "Un número entero positivo es requerido aquí"
+
+#: cobc/typeck.cpp:721
+#, fuzzy
+msgid "System routine"
+msgstr "Rutina de sistema\t\t\tParámetros"
+
+#: cobc/typeck.cpp:976 libcob/call.cpp:872
+#, c-format
+msgid "'%s' literal includes leading spaces which are omitted"
+msgstr ""
+
+#: cobc/typeck.cpp:980
+#, c-format
+msgid "'%s' literal includes trailing spaces which are omitted"
+msgstr ""
+
+#: cobc/typeck.cpp:1091
+msgid "ON/OFF usage requires a SWITCH name"
+msgstr "Uso de ON/OFF requiere el nombre de un SWITCH"
+
+#: cobc/typeck.cpp:1172
+#, c-format
+msgid "ASSIGN interpreted as %s"
+msgstr "ASSIGN interpretarse en el %s"
+
+#: cobc/typeck.cpp:1229 cobc/typeck.cpp:1361
+#, c-format
+msgid "subscript missing for '%s' - defaulting to 1"
+msgstr ""
+
+#: cobc/typeck.cpp:1242 cobc/typeck.cpp:1289
+#, c-format
+msgid "'%s' cannot be reference modified"
+msgstr "'%s' no puede ser modificado por referencia"
+
+#: cobc/typeck.cpp:1252 cobc/typeck.cpp:1285 cobc/typeck.cpp:1496
+#, c-format
+msgid "'%s' cannot be subscripted"
+msgstr "'%s' no puede ser subíndice"
+
+#: cobc/typeck.cpp:1256 cobc/typeck.cpp:1500
+#, fuzzy, c-format
+msgid "'%s' requires one subscript"
+msgstr "'%s' requiere 1 subíndice"
+
+#: cobc/typeck.cpp:1259 cobc/typeck.cpp:1503
+#, c-format
+msgid "'%s' requires %d subscripts"
+msgstr "'%s; requiere %d subíndices"
+
+#: cobc/typeck.cpp:1308
+#, c-format
+msgid "'%s' (accessed by '%s')"
+msgstr ""
+
+#: cobc/typeck.cpp:1345
+#, c-format
+msgid "'%s' has no OCCURS clause"
+msgstr "'%s' no tiene cláusula de OCCURS"
+
+#: cobc/typeck.cpp:1405 libcob/common.cpp:2320
+#, fuzzy, c-format
+msgid "subscript of '%s' out of bounds: %d"
+msgstr "Subíndice de '%s' fuera de límites: %d"
+
+#: cobc/typeck.cpp:1452 cobc/typeck.cpp:1462 libcob/common.cpp:2346
+#, fuzzy, c-format
+msgid "offset of '%s' out of bounds: %d"
+msgstr "Compensación de '%s' fuera de límites: %d"
+
+#: cobc/typeck.cpp:1457 cobc/typeck.cpp:1467 libcob/common.cpp:2353
+#, fuzzy, c-format
+msgid "length of '%s' out of bounds: %d"
+msgstr "Longitud de '%s' fuera de límites: %d"
+
+#: cobc/typeck.cpp:1555
+#, fuzzy
+msgid "reference modification not allowed here"
+msgstr "Modificado por referencia no se permite aquí"
+
+#: cobc/typeck.cpp:1563
+msgid "ANY LENGTH item not allowed here"
+msgstr "Elemento de ANY LENGTH no se permite aquí"
+
+#: cobc/typeck.cpp:1567
+msgid "88 level item not allowed here"
+msgstr "Elemento del nivel 88 no es permitido aquí"
+
+#: cobc/typeck.cpp:1571
+#, fuzzy
+msgid "variable length item not allowed here"
+msgstr "Elemento de longitud variable no es permitido aquí"
+
+#: cobc/typeck.cpp:1670
+#, c-format
+msgid "'%s' is not an alphabet name"
+msgstr "'%s' no es un nombre de alfabeto"
+
+#: cobc/typeck.cpp:1916
+#, fuzzy, c-format
+msgid "duplicate character values in alphabet '%s': %s"
+msgstr "Valores de carácter duplicados en alfabeto '%s'"
+
+#: cobc/typeck.cpp:1921
+#, fuzzy, c-format
+msgid "invalid character values in alphabet '%s', starting at position %d"
+msgstr "Valores de carácter inválidos en alfabeto '%s'"
+
+#: cobc/typeck.cpp:1976
+#, fuzzy
+msgid "invalid ALPHABET name"
+msgstr "Nombre de ALPHABET inválido"
+
+#: cobc/typeck.cpp:2032 cobc/typeck.cpp:2036
+#, fuzzy, c-format
+msgid "duplicate values in class '%s'"
+msgstr "Valores duplicados en clase '%s'"
+
+#: cobc/typeck.cpp:2052
+#, c-format
+msgid "'%s' is not a locale name"
+msgstr "'%s' no es un nombre local"
+
+#: cobc/typeck.cpp:2170
+#, fuzzy
+msgid "invalid RECORD DEPENDING item"
+msgstr "Elemento RECORD DEPENDING inválido"
+
+#: cobc/typeck.cpp:2175
+msgid "RECORD DEPENDING must reference a data-item"
+msgstr ""
+
+#: cobc/typeck.cpp:2189 cobc/typeck.cpp:2192
+#, fuzzy, c-format
+msgid "RECORD DEPENDING item '%s' should be defined in WORKING-STORAGE, LOCAL-STORAGE or LINKAGE section"
+msgstr "Elemento RECORD DEPENDING debe de estar en sección WORKING/LOCAL/LINKAGE"
+
+#: cobc/typeck.cpp:2259
+#, c-format
+msgid "'%s' will be implicitly defined"
+msgstr "'%s' será definido de forma implícita"
+
+#: cobc/typeck.cpp:2276
+#, c-format
+msgid "ASSIGN data item '%s' invalid"
+msgstr "ASSIGN elementos de datos '%s' inválido"
+
+#: cobc/typeck.cpp:2287
+#, fuzzy, c-format
+msgid "'%s' CURSOR must be 4 or 6 characters long"
+msgstr "'%s' CURSOR no es de 4 o 6 caractéres de longitud"
+
+#: cobc/typeck.cpp:2297
+#, fuzzy, c-format
+msgid "'%s' CRT STATUS must be 4 characters long"
+msgstr "'%s' CRT STATUS no es de 4 caractéres de longitud"
+
+#: cobc/typeck.cpp:2343 cobc/typeck.cpp:2361
+#, c-format
+msgid "'%s' cannot have OCCURS DEPENDING"
+msgstr "'%s' no puede tener OCURRS DEPENDING"
+
+#: cobc/typeck.cpp:2355
+#, c-format
+msgid "'%s' ODO field item invalid here"
+msgstr "'%s' elemento de campo ODO inválido aquí"
+
+#: cobc/typeck.cpp:2372
+#, c-format
+msgid "'%s' ODO item must have GLOBAL attribute"
+msgstr "'%s' elemento ODO debe tener atributo GLOBAL"
+
+#: cobc/typeck.cpp:2409 cobc/typeck.cpp:2413
+#, c-format
+msgid "'%s' is not in DECLARATIVES"
+msgstr "'%s' no se encuentra en DECLARATIVES"
+
+#: cobc/typeck.cpp:2425
+#, fuzzy, c-format
+msgid "invalid reference to '%s' (in DECLARATIVES)"
+msgstr "Referencia a '%s' inválida (En DECLARATIVES)"
+
+#: cobc/typeck.cpp:2432
+#, fuzzy, c-format
+msgid "'%s' is not a procedure name"
+msgstr "'%s' no es el nombre de un procedimiento"
+
+#: cobc/typeck.cpp:2451
+#, fuzzy, c-format
+msgid "DEBUGGING target invalid with ALL PROCEDURES: '%s'"
+msgstr "'%s' - objectivo de DEBUGGING inválido con ALL PROCEDURES"
+
+#: cobc/typeck.cpp:2455
+#, fuzzy, c-format
+msgid "DEBUGGING target invalid: '%s'"
+msgstr "'%s' - objetivo de DEBUGGING inválido"
+
+#: cobc/typeck.cpp:2471
+#, c-format
+msgid "'%s' is not a valid DEBUGGING target"
+msgstr "'%s' no es un objetivo válido de DEBUGGING"
+
+#: cobc/typeck.cpp:2511
+#, c-format
+msgid "'%s' is not an alterable paragraph"
+msgstr "'%s' no es un párrafo modificable"
+
+#: cobc/typeck.cpp:2685
+#, fuzzy
+msgid "suggest parentheses around AND within OR"
+msgstr "Parentesis sugeridos alrededor de AND dentro de OR"
+
+#: cobc/typeck.cpp:3055
+#, fuzzy, c-format
+msgid "internal decimal structure size exceeded: %d"
+msgstr "Tamaño de estructura decimal interna excedido - %d"
+
+#: cobc/typeck.cpp:3058
+msgid "Try to minimize the number of parentheses or split into multiple computations."
+msgstr ""
+
+#: cobc/typeck.cpp:3097
+#, fuzzy, c-format
+msgid "unexpected operation: %c (%d)"
+msgstr "Operación %d inesperada"
+
+#: cobc/typeck.cpp:3112
+#, fuzzy
+msgid "unexpected constant expansion"
+msgstr "Expansión inesperada de constante "
+
+#: cobc/typeck.cpp:3926 cobc/typeck.cpp:3994
+#, fuzzy
+msgid "no CORRESPONDING items found"
+msgstr "No se encontraron elementos CORRESPONDING"
+
+#: cobc/typeck.cpp:4123
+msgid "cannot specify figurative constant ZERO in AT clause"
+msgstr ""
+
+#: cobc/typeck.cpp:4126
+msgid "value in AT clause is not numeric"
+msgstr ""
+
+#: cobc/typeck.cpp:4132
+msgid "value in AT clause must have 4 or 6 digits"
+msgstr ""
+
+#: cobc/typeck.cpp:4232
+#, fuzzy
+msgid "invalid PROMPT literal"
+msgstr "Literal PROMPT inválido"
+
+#: cobc/typeck.cpp:4237
+#, fuzzy
+msgid "invalid PROMPT identifier"
+msgstr "Identificador PROMPT inválido"
+
+#: cobc/typeck.cpp:4509
+#, fuzzy, c-format
+msgid "'%s' is not an input device"
+msgstr "'%s' no es un dispositivo de salida"
+
+#: cobc/typeck.cpp:4533 cobc/typeck.cpp:5419 cobc/typeck.cpp:5425
+#, fuzzy, c-format
+msgid "'%s' is not defined in SPECIAL-NAMES"
+msgstr "'%s' no esta definido en SPECIAL-NAMES"
+
+#: cobc/typeck.cpp:4538
+#, fuzzy, c-format
+msgid "invalid input device '%s'"
+msgstr "Dispositivo de entrada '%s' inválido"
+
+#: cobc/typeck.cpp:4543 cobc/typeck.cpp:5432
+#, c-format
+msgid "unknown device '%s'; it may exist in another dialect"
+msgstr ""
+
+#: cobc/typeck.cpp:4546 cobc/typeck.cpp:5435
+#, fuzzy, c-format
+msgid "unknown device '%s'; not defined in SPECIAL-NAMES"
+msgstr "'%s' no esta definido en SPECIAL-NAMES"
+
+#: cobc/typeck.cpp:4573
+#, fuzzy
+msgid "target of ALLOCATE is not a BASED item"
+msgstr "Destino de ALLOCATE no es un elemento BASED"
+
+#: cobc/typeck.cpp:4584
+#, fuzzy
+msgid "target of RETURNING is not a data pointer"
+msgstr "Destino de RETURNING no es un puntero de datos"
+
+#: cobc/typeck.cpp:4594
+#, fuzzy
+msgid "the CHARACTERS field of ALLOCATE must be numeric"
+msgstr "El campo CHARACTERS de ALLOCATE debe ser numérico"
+
+#: cobc/typeck.cpp:4608
+msgid "INITIALIZED TO item is not alphanumeric"
+msgstr "Elemento INITIALIZED TO no es alfanumérico"
+
+#: cobc/typeck.cpp:4648
+#, fuzzy
+msgid "only alphanumeric FUNCTION types are allowed here"
+msgstr "Solamente tipos alfanuméricos FUNCTION son permitidos aquí"
+
+#: cobc/typeck.cpp:4656
+#, fuzzy
+msgid "invalid RETURNING field"
+msgstr "Campo RETURNING inválido"
+
+#: cobc/typeck.cpp:4677
+msgid "STDCALL not available on this platform"
+msgstr "STDCALL no disponible en esta plataforma"
+
+#: cobc/typeck.cpp:4681
+msgid "STDCALL used on 64-bit Windows platform"
+msgstr "STDCALL utilizado en plataforma Windows de 64 bits"
+
+#: cobc/typeck.cpp:4687
+msgid "STATIC CALL convention requires a literal program name"
+msgstr "Convención STATIC CALL requiere un nombre literal de programa"
+
+#: cobc/typeck.cpp:4703
+#, fuzzy
+msgid "numeric literal is negative"
+msgstr "Literal numérico excede tamaño de dato "
+
+#: cobc/typeck.cpp:4782
+#, fuzzy
+msgid "numeric literal exceeds size limits"
+msgstr "Literal numérico excede tamaño de dato "
+
+#: cobc/typeck.cpp:4788
+#, fuzzy
+msgid "figurative constant invalid here"
+msgstr "Constante figurativa inválida aquí"
+
+#: cobc/typeck.cpp:4795
+#, c-format
+msgid "'%s' is not a valid data name"
+msgstr "'%s' no es un nombre valido de datos"
+
+#: cobc/typeck.cpp:4801
+#, c-format
+msgid "'%s' ANY LENGTH item not passed BY REFERENCE"
+msgstr "'%s' Elemento de ANY LENGTH no pasó BY REFERENCE"
+
+#: cobc/typeck.cpp:4809
+#, c-format
+msgid "'%s' is not a 01 or 77 level item"
+msgstr "'%s' no es un elemento de nivel 01 ó 77"
+
+#: cobc/typeck.cpp:4837
+#, fuzzy, c-format
+msgid "wrong number of CALL parameters for '%s'"
+msgstr "Número incorrecto de parámetros en CALL para '%s'"
+
+#: cobc/typeck.cpp:4886 cobc/typeck.cpp:4938 cobc/typeck.cpp:4942
+#: cobc/typeck.cpp:4970 cobc/typeck.cpp:7558 cobc/typeck.cpp:7563
+#: cobc/typeck.cpp:7684 cobc/typeck.cpp:7822 cobc/typeck.cpp:7826
+#: cobc/typeck.cpp:8460 cobc/typeck.cpp:8664
+#, fuzzy, c-format
+msgid "%s not allowed on %s files"
+msgstr "Operación no permitida en archivos de SORT"
+
+#: cobc/typeck.cpp:5049
+#, c-format
+msgid "'%s' is an invalid type for DISPLAY operand"
+msgstr "'%s' es un tipo inválido de operando de DISPLAY"
+
+#: cobc/typeck.cpp:5054
+#, fuzzy
+msgid "invalid type for DISPLAY operand"
+msgstr "Tipo inválido para operando de DISPLAY"
+
+#: cobc/typeck.cpp:5399 cobc/typeck.cpp:5429
+#, c-format
+msgid "'%s' is not an output device"
+msgstr "'%s' no es un dispositivo de salida"
+
+#: cobc/typeck.cpp:5514
+#, fuzzy
+msgid "invalid use of 88 level in WHEN expression"
+msgstr "Uso inválido de nivel 88 en expresion WHEN"
+
+#: cobc/typeck.cpp:5568
+#, fuzzy
+msgid "wrong number of WHEN parameters"
+msgstr "Número equivocado de parámetros para WHEN"
+
+#: cobc/typeck.cpp:5633 cobc/typeck.cpp:5645
+#, fuzzy, c-format
+msgid "target %d of FREE is not a BASED data item"
+msgstr "Objectivo %d de FREE no es un elemento de datos BASED"
+
+#: cobc/typeck.cpp:5651
+#, fuzzy, c-format
+msgid "target %d of FREE must be a data pointer"
+msgstr "Objetivo %d de FREE debe ser un puntero de datos"
+
+#: cobc/typeck.cpp:5675
+msgid "GO TO with multiple procedure-names"
+msgstr "GO TO con multiples nombres-procedimiento"
+
+#: cobc/typeck.cpp:5724
+#, fuzzy
+msgid "invalid INITIALIZE statement"
+msgstr "Declaración inválida de SET"
+
+#: cobc/typeck.cpp:5814 cobc/typeck.cpp:5817
+#, fuzzy, c-format
+msgid "%s operands differ in size"
+msgstr "Operandos de REPLACING difieren en tamaño"
+
+#: cobc/typeck.cpp:5845
+#, fuzzy, c-format
+msgid "unexpected clause %d"
+msgstr "Tipo de molde inesperado %d"
+
+#: cobc/typeck.cpp:5849
+#, fuzzy, c-format
+msgid "invalid target for %s"
+msgstr "Destino inválido para INSPECT"
+
+#: cobc/typeck.cpp:5912 cobc/typeck.cpp:5923 cobc/typeck.cpp:5934
+#: cobc/typeck.cpp:5945
+#, fuzzy, c-format
+msgid "data name expected before %s"
+msgstr "Nombre de datos esperado antes que ALL"
+
+#: cobc/typeck.cpp:5955
+#, c-format
+msgid "ALL, LEADING or TRAILING expected before '%s'"
+msgstr "ALL, LEADING o TRAILING esperado antes de '%s'"
+
+#: cobc/typeck.cpp:5965
+#, fuzzy
+msgid "operand has wrong size"
+msgstr "Operando tiene el tamaño equivocado"
+
+#: cobc/typeck.cpp:6026
+#, fuzzy, c-format
+msgid "internal register '%s' defined as BINARY-LONG"
+msgstr "Registros internos '%s' definidos como BINARY-LONG"
+
+#: cobc/typeck.cpp:6029
+#, c-format
+msgid "'%s' defined here as USAGE %s"
+msgstr "'%s' definido aquí como USAGE %s"
+
+#: cobc/typeck.cpp:6032
+#, c-format
+msgid "'%s' defined here as USAGE FLOAT"
+msgstr "'%s' definido aquí como USAGE FLOAT"
+
+#: cobc/typeck.cpp:6035
+#, c-format
+msgid "'%s' defined here as USAGE DOUBLE"
+msgstr "'%s' definido aquí como USAGE DOUBLE"
+
+#: cobc/typeck.cpp:6038
+#, c-format
+msgid "'%s' defined here as USAGE FLOAT EXTENDED"
+msgstr "'%s' definido aquí como USAGE FLOAT EXTENDED"
+
+#: cobc/typeck.cpp:6041
+#, c-format
+msgid "'%s' defined here as USAGE FLOAT-BINARY-7"
+msgstr "'%s' definido aquí como USAGE FLOAT-BINARY-7"
+
+#: cobc/typeck.cpp:6044
+#, c-format
+msgid "'%s' defined here as USAGE FLOAT-BINARY-16"
+msgstr "'%s' definido aquí como USAGE FLOAT-BINARY-16"
+
+#: cobc/typeck.cpp:6047
+#, c-format
+msgid "'%s' defined here as USAGE FLOAT-BINARY-34"
+msgstr "'%s' definido aquí como USAGE FLOAT-BINARY-34"
+
+#: cobc/typeck.cpp:6050
+#, c-format
+msgid "'%s' defined here as USAGE FLOAT-DECIMAL-16"
+msgstr "'%s' definido aquí como USAGE FLOAT-DECIMAL-16"
+
+#: cobc/typeck.cpp:6053
+#, c-format
+msgid "'%s' defined here as USAGE FLOAT-DECIMAL-34"
+msgstr "'%s' definido aquí como USAGE FLOAT-DECIMAL-34"
+
+#: cobc/typeck.cpp:6056
+#, c-format
+msgid "'%s' defined here as PIC %s"
+msgstr "'%s' definido aquí como PIC %s"
+
+#: cobc/typeck.cpp:6059
+#, c-format
+msgid "'%s' defined here as a group of length %d"
+msgstr "'%s' definido aquí como un grupo de longitud %d"
+
+#: cobc/typeck.cpp:6114
+#, fuzzy
+msgid "overlapping MOVE may occur and produce unpredictable results"
+msgstr "Superposición de MOVE puede producir resultados impredecibles"
+
+#: cobc/typeck.cpp:6123
+#, fuzzy
+msgid "overlapping MOVE may produce unpredictable results"
+msgstr "Superposición de MOVE puede producir resultados impredecibles"
+
+#: cobc/typeck.cpp:6283
+#, fuzzy
+msgid "invalid destination for MOVE"
+msgstr "Destinación inválida para MOVE"
+
+#: cobc/typeck.cpp:6304 cobc/typeck.cpp:6316
+#, fuzzy
+msgid "source is non-numeric - substituting zero"
+msgstr "Origen es no-numérico - substituyendo cero"
+
+#: cobc/typeck.cpp:6402
+#, fuzzy
+msgid "numeric move to ALPHABETIC"
+msgstr "Movimiento numérico a ALPHABETIC"
+
+#: cobc/typeck.cpp:6416
+#, fuzzy
+msgid "data item not signed"
+msgstr "Elemento de datos no tiene signo"
+
+#: cobc/typeck.cpp:6420
+#, fuzzy
+msgid "ignoring sign"
+msgstr "Ignorando signo"
+
+#: cobc/typeck.cpp:6741
+#, fuzzy
+msgid "invalid source for MOVE"
+msgstr "Origen inválido para MOVE"
+
+#: cobc/typeck.cpp:6760 cobc/typeck.cpp:6768
+#, fuzzy
+msgid "invalid VALUE clause"
+msgstr "Cláusula VALUE inválida"
+
+#: cobc/typeck.cpp:6762
+#, fuzzy
+msgid "invalid MOVE statement"
+msgstr "Declaración MOVE inválida"
+
+#: cobc/typeck.cpp:6769
+#, fuzzy
+msgid "literal exceeds data size"
+msgstr "Literal numérico excede tamaño de dato "
+
+#: cobc/typeck.cpp:6773
+#, fuzzy
+msgid "numeric literal exceeds data size"
+msgstr "Literal numérico excede tamaño de dato "
+
+#: cobc/typeck.cpp:6782
+#, fuzzy
+msgid "MOVE of non-integer to alphanumeric"
+msgstr "Mover no-números enteros a alfanumérico"
+
+#: cobc/typeck.cpp:6788
+#, fuzzy
+msgid "numeric value is expected"
+msgstr "Valor numérico es esperado"
+
+#: cobc/typeck.cpp:6793
+#, fuzzy
+msgid "alphanumeric value is expected"
+msgstr "Valor alfanumerico es esperado "
+
+#: cobc/typeck.cpp:6798
+#, fuzzy
+msgid "value does not fit the picture string"
+msgstr "Valor no se ajusta a la cadena de picture"
+
+#: cobc/typeck.cpp:6803
+#, fuzzy
+msgid "value size exceeds data size"
+msgstr "Tamaño de valor excede tamaño de datos"
+
+#: cobc/typeck.cpp:6808
+#, fuzzy
+msgid "sending field larger than receiving field"
+msgstr "Campo a enviar más grande que el campo a recibir"
+
+#: cobc/typeck.cpp:6813
+#, fuzzy
+msgid "some digits may be truncated"
+msgstr "Algunos digitos pueden ser truncado"
+
+#: cobc/typeck.cpp:7522
+#, fuzzy, c-format
+msgid "invalid MOVE target: %s"
+msgstr "Destino inválido al MOVE - %s"
+
+#: cobc/typeck.cpp:7697
+#, fuzzy
+msgid "READ PREVIOUS not allowed for this file type"
+msgstr "RELEASE no permitido en este elemento de récord"
+
+#: cobc/typeck.cpp:7705
+msgid "KEY ignored with sequential READ"
+msgstr "KEY ignorado con READ sequencial"
+
+#: cobc/typeck.cpp:7786 cobc/typeck.cpp:8630
+#, fuzzy, c-format
+msgid "%s FILE requires a FROM clause"
+msgstr "Constante elemento '%s' requiere clausula %s"
+
+#: cobc/typeck.cpp:7804 cobc/typeck.cpp:7878 cobc/typeck.cpp:8648
+#, fuzzy, c-format
+msgid "%s subject does not refer to a record name"
+msgstr "Sujeto a WRITE no hace referencia a un nombre de récord"
+
+#: cobc/typeck.cpp:7884
+msgid "RELEASE not allowed on this record item"
+msgstr "RELEASE no permitido en este elemento de récord"
+
+#: cobc/typeck.cpp:7959 cobc/typeck.cpp:7980 cobc/typeck.cpp:7988
+#, fuzzy
+msgid "invalid SEARCH ALL condition"
+msgstr "Condición inválida de SEARCH ALL"
+
+#: cobc/typeck.cpp:8101 cobc/typeck.cpp:8105
+msgid "SET targets must be PROGRAM-POINTER"
+msgstr "Destinos de SET deben ser PROGRAM-POINTER"
+
+#: cobc/typeck.cpp:8124
+#, c-format
+msgid "cannot change address of '%s', which is not level 1 or 77"
+msgstr ""
+
+#: cobc/typeck.cpp:8128
+#, c-format
+msgid "cannot change address of '%s', which is not BASED or a linkage item"
+msgstr ""
+
+#: cobc/typeck.cpp:8147
+#, fuzzy, c-format
+msgid "SET target '%s' is not numeric, an index or a pointer"
+msgstr "Los destinos del SET deben ser índices o indicadores"
+
+#: cobc/typeck.cpp:8195 cobc/typeck.cpp:8200 cobc/typeck.cpp:8222
+#: cobc/typeck.cpp:8227
+#, fuzzy
+msgid "invalid SET statement"
+msgstr "Declaración inválida de SET"
+
+#: cobc/typeck.cpp:8231
+#, fuzzy
+msgid "field does not have a FALSE clause"
+msgstr "Campo no tiene cláusula FALSE"
+
+#: cobc/typeck.cpp:8251
+msgid "SET ATTRIBUTE requires a screen item as subject"
+msgstr "SET ATTRIBUTE requiere un nombre de registro como sujeto"
+
+#: cobc/typeck.cpp:8257
+msgid "SET ATTRIBUTE subject does not refer to a screen item"
+msgstr "SET ATTRIBUTE sujeto no hace referencia a un punto en la pantalla"
+
+#: cobc/typeck.cpp:8289
+#, fuzzy
+msgid "invalid SORT filename"
+msgstr "Nombre de archivo para SORT inválido"
+
+#: cobc/typeck.cpp:8334
+#, fuzzy
+msgid "invalid SORT USING parameter"
+msgstr "Parámetro inválido en SORT USING"
+
+#: cobc/typeck.cpp:8360
+#, fuzzy
+msgid "invalid SORT GIVING parameter"
+msgstr "Parámetro inválido en SORT GIVING"
+
+#: cobc/typeck.cpp:8401 cobc/typeck.cpp:8415 cobc/typeck.cpp:8435
+#, fuzzy
+msgid "invalid key item"
+msgstr "Elemento clave inválido"
+
+#: cobc/typeck.cpp:8465
+msgid "LENGTH/SIZE clause only allowed on INDEXED files"
+msgstr "Clásula LENGTH/SIZE solamente permitida en archivos INDEXED"
+
+#: cobc/typeck.cpp:8470
+#, fuzzy
+msgid "START not allowed with ACCESS MODE RANDOM"
+msgstr "GLOBAL no se permite con RD"
+
+#: cobc/typeck.cpp:8676
+msgid "LOCK clause invalid here"
+msgstr "Cláusula LOCK inválida aquí"
+
+#: cobc/warning.def:31
+#, fuzzy
+msgid "do not warn if unfinished features are used"
+msgstr "Alerte si prestaciones obsoletas son utilizadas"
+
+#: cobc/warning.def:34
+#, fuzzy
+msgid "do not warn if pending features are mentioned"
+msgstr "Alerte si prestaciones obsoletas son utilizadas"
+
+#: cobc/warning.def:37
+#, fuzzy
+msgid "warn if obsolete features are used"
+msgstr "Alerte si prestaciones obsoletas son utilizadas"
+
+#: cobc/warning.def:40
+#, fuzzy
+msgid "warn if archaic features are used"
+msgstr "Alerte si prestaciones arcaicas son utilizadas"
+
+#: cobc/warning.def:43
+#, fuzzy
+msgid "warn incompatible redefinition of data items"
+msgstr "Alerta incompatible redefinicion de elementos de datos"
+
+#: cobc/warning.def:46
+#, fuzzy
+msgid "warn inconsistent constant"
+msgstr "Advertencia constante inconsistente "
+
+#: cobc/warning.def:49
+#, fuzzy
+msgid "warn overlapping MOVE items"
+msgstr "Alerta elementos MOVE soberpuestos"
+
+#: cobc/warning.def:52
+msgid "warn MOVE items that may overlap depending on variables"
+msgstr ""
+
+#: cobc/warning.def:55
+#, fuzzy
+msgid "warn lack of parentheses around AND within OR"
+msgstr "Alerta falta de paréntesis alrededor de AND dentro de OR"
+
+#: cobc/warning.def:58
+#, fuzzy
+msgid "warn type mismatch strictly"
+msgstr "Alerta no coincide el tipo estritamente"
+
+#: cobc/warning.def:61
+#, fuzzy
+msgid "warn implicitly defined data items"
+msgstr "Alerta implicitamente define los elementos de datos"
+
+#: cobc/warning.def:64
+#, fuzzy
+msgid "warn CORRESPONDING with no matching items"
+msgstr "Alerta CORRESPONDING con elementos no igualados"
+
+#: cobc/warning.def:67
+#, fuzzy
+msgid "warn Initial VALUE clause ignored"
+msgstr "Cláusula inicial de VALUE ignorada para elemento EXTERNAL"
+
+#: cobc/warning.def:70
+msgid "warn missing FUNCTION prototypes/definitions"
+msgstr ""
+
+#: cobc/warning.def:73
+#, fuzzy
+msgid "warn non 01/77 items for CALL params"
+msgstr "Alerta elementos no 01/77 para params de CALL "
+
+#: cobc/warning.def:76
+#, fuzzy
+msgid "warn text after program-text area, FIXED format"
+msgstr "Advertencia texto después de columna 72, formato FIXED"
+
+#: cobc/warning.def:79
+#, fuzzy
+msgid "warn lack of scope terminator END-XXX"
+msgstr "Alerta falta de alcance de terminación END-XXX"
+
+#: cobc/warning.def:82
+#, fuzzy
+msgid "warn possible field truncation"
+msgstr "Advertencia posible truncamiento de campo"
+
+#: cobc/warning.def:85
+#, fuzzy
+msgid "warn dangling LINKAGE items"
+msgstr "Alerta elemento de LINKAGE colgado"
+
+#: cobc/warning.def:88
+#, fuzzy
+msgid "warn unreachable statements"
+msgstr "Advertencia declaraciones inalcanzables"
+
+#: libcob/call.cpp:90
+#, c-format
+msgid "LoadLibrary/GetProcAddress error %d"
+msgstr "LoadLibrary/GetProcAddress error %d"
+
+#: libcob/call.cpp:663 libcob/call.cpp:712
+#, fuzzy
+msgid "cannot find module"
+msgstr "No puede encontrar módulo"
+
+#: libcob/call.cpp:678 libcob/call.cpp:705
+#, fuzzy
+msgid "cannot find entry point"
+msgstr "No puede encontrar punto de entrada"
+
+#: libcob/call.cpp:775
+msgid "indeterminable error in resolve of COBOL CALL"
+msgstr ""
+
+#: libcob/call.cpp:848
+#, fuzzy, c-format
+msgid "user-defined FUNCTION '%s' not found"
+msgstr "Compensación de '%s' fuera de límites: %d"
+
+#: libcob/call.cpp:923
+msgid "NULL parameter passed to 'cob_cancel'"
+msgstr "Parámetro NULL pasado a ‘cob_cancel’"
+
+#: libcob/call.cpp:978
+#, fuzzy, c-format
+msgid "invalid number of arguments passed to '%s'"
+msgstr "Número inválido de argumentos a ‘cob_call’"
+
+#: libcob/call.cpp:982 libcob/call.cpp:1123
+#, fuzzy, c-format
+msgid "NULL parameter passed to '%s'"
+msgstr "Parámetro NULL pasado a ‘cob_savenv’"
+
+#: libcob/call.cpp:1097
+msgid "NULL parameter passed to 'cob_savenv'"
+msgstr "Parámetro NULL pasado a ‘cob_savenv’"
+
+#: libcob/call.cpp:1101
+msgid "Multiple call to 'cob_setjmp'"
+msgstr "Llamado multiple a 'cob_setjmp'"
+
+#: libcob/call.cpp:1127
+#, fuzzy
+msgid "call to 'cob_longjmp' with no prior 'cob_setjmp'"
+msgstr "Llamada a ‘cob_longjmp’ con no previo ‘cob_setjmp’"
+
+#: libcob/call.cpp:1339
+#, c-format
+msgid "%s: COBOL runtime is not initialized"
+msgstr ""
+
+#: libcob/call.cpp:1344
+#, c-format
+msgid "%s: param %d is not within range of %d"
+msgstr ""
+
+#: libcob/call.cpp:1349
+#, c-format
+msgid "%s: param %d is NULL"
+msgstr ""
+
+#: libcob/call.cpp:1361
+#, fuzzy, c-format
+msgid "%s COBOL runtime is not initialized"
+msgstr "‘cobcommandline’ - Ejecución no se ha inicializado"
+
+#: libcob/call.cpp:1567 libcob/call.cpp:1626
+#, c-format
+msgid "%s: attempt to over-write constant param %d with "
+msgstr ""
+
+#: libcob/call.cpp:1679
+#, c-format
+msgid "%s: attempt to over-write constant param %d with '%s'"
+msgstr ""
+
+#: libcob/call.cpp:1720
+#, c-format
+msgid "%s: attempt to over-write constant param %d"
+msgstr ""
+
+#: libcob/cobgetopt.cpp:484
+#, c-format
+msgid "%s: option '%s' is ambiguous; possibilities:"
+msgstr ""
+
+#: libcob/cobgetopt.cpp:520
+#, fuzzy, c-format
+msgid "%s: option '--%s' doesn't allow an argument"
+msgstr "CALL para %s requiere parámetros %d"
+
+#: libcob/cobgetopt.cpp:525
+#, fuzzy, c-format
+msgid "%s: option '%c%s' doesn't allow an argument"
+msgstr "CALL para %s requiere parámetros %d"
+
+#: libcob/cobgetopt.cpp:541
+#, fuzzy, c-format
+msgid "%s: option '--%s' requires an argument"
+msgstr "CALL para %s requiere parámetros %d"
+
+#: libcob/cobgetopt.cpp:570
+#, fuzzy, c-format
+msgid "%s: unrecognized option '--%s'"
+msgstr "Inválida opción -std=%s"
+
+#: libcob/cobgetopt.cpp:575
+#, fuzzy, c-format
+msgid "%s: unrecognized option '%c%s'"
+msgstr "Inválida opción -std=%s"
+
+#: libcob/cobgetopt.cpp:601
+#, fuzzy, c-format
+msgid "%s: invalid option -- %c"
+msgstr "Inválida opción -std=%s"
+
+#: libcob/cobgetopt.cpp:627 libcob/cobgetopt.cpp:750
+#, fuzzy, c-format
+msgid "%s: option requires an argument -- %c"
+msgstr "CALL para %s requiere parámetros %d"
+
+#: libcob/cobgetopt.cpp:676
+#, fuzzy, c-format
+msgid "%s: option '-W %s' is ambiguous"
+msgstr "CALL para %s requiere parámetros %d"
+
+#: libcob/cobgetopt.cpp:694
+#, fuzzy, c-format
+msgid "%s: option '-W %s' doesn't allow an argument"
+msgstr "CALL para %s requiere parámetros %d"
+
+#: libcob/cobgetopt.cpp:708
+#, fuzzy, c-format
+msgid "%s: option '%s' requires an argument"
+msgstr "CALL para %s requiere parámetros %d"
+
+#: libcob/common.cpp:253
+msgid "CALL configuration"
+msgstr ""
+
+#: libcob/common.cpp:254
+msgid "File I/O configuration"
+msgstr ""
+
+#: libcob/common.cpp:254
+msgid "Screen I/O configuration"
+msgstr ""
+
+#: libcob/common.cpp:254
+msgid "Miscellaneous"
+msgstr ""
+
+#: libcob/common.cpp:255
+msgid "System configuration"
+msgstr ""
+
+#: libcob/common.cpp:321
+msgid "end of program, please press a key to exit"
+msgstr ""
+
+#: libcob/common.cpp:546
+#, c-format
+msgid "cob_sig_handler caught not handled signal: %d"
+msgstr ""
+
+#: libcob/common.cpp:572
+#, fuzzy, c-format
+msgid "attempt to reference unallocated memory"
+msgstr "Intento de referencia a memoria sin asignar (Signal SIGSEGV)"
+
+#: libcob/common.cpp:574 libcob/common.cpp:577
+#, c-format
+msgid "caught signal"
+msgstr ""
+
+#: libcob/common.cpp:580
+#, c-format
+msgid "signal %s"
+msgstr ""
+
+#: libcob/common.cpp:585
+#, fuzzy, c-format
+msgid "abnormal termination - file contents may be incorrect"
+msgstr "Terminación anormal - Contenidos de archivo pueden estar incorrectos"
+
+#: libcob/common.cpp:1633
+#, fuzzy
+msgid "error - version mismatch"
+msgstr "Error - Conflicto de versión"
+
+#: libcob/common.cpp:1634
+#, c-format
+msgid "%s has version/patch level %s/%d"
+msgstr "%s tiene versión/nivel de parche %s/%d"
+
+#: libcob/common.cpp:1636
+#, fuzzy, c-format
+msgid "libcob has version/patch level %s/%d"
+msgstr "%s tiene versión/nivel de parche %s/%d"
+
+#: libcob/common.cpp:1646
+#, c-format
+msgid "CALL to %s requires %d parameters"
+msgstr "CALL para %s requiere parámetros %d"
+
+#: libcob/common.cpp:2246
+#, fuzzy, c-format
+msgid "BASED/LINKAGE item %s has NULL address"
+msgstr "Elemento BASED/LINKAGE ‘%s’ tiene dirección NULL"
+
+#: libcob/common.cpp:2258 libcob/common.cpp:2261
+#, c-format
+msgid "LINKAGE item %s not passed by caller"
+msgstr ""
+
+#: libcob/common.cpp:2283
+#, c-format
+msgid "'%s' not numeric: '%s'"
+msgstr "'%s' no es numerico: '%s'"
+
+#: libcob/common.cpp:2296
+#, c-format
+msgid "OCCURS DEPENDING ON '%s' out of bounds: %d"
+msgstr "OCCURS DEPENDING ON ‘%s’  fuera de limite: %d"
+
+#: libcob/common.cpp:2298 libcob/common.cpp:2325
+#, c-format
+msgid "maximum subscript for '%s': %d"
+msgstr ""
+
+#: libcob/common.cpp:2300
+#, c-format
+msgid "minimum subscript for '%s': %d"
+msgstr ""
+
+#: libcob/common.cpp:2323
+#, c-format
+msgid "current maximum subscript for '%s': %d"
+msgstr ""
+
+#: libcob/common.cpp:2365
+#, c-format
+msgid "EXTERNAL item '%s' previously allocated with size %d, requested size is %d"
+msgstr " Elemento EXTERNAL ‘%s’ previamente asignado con tamaño %d, tamaño pedido es %d"
+
+#: libcob/common.cpp:3119
+#, fuzzy, c-format
+msgid "parameter to SYSTEM call is larger than %d characters"
+msgstr "Parámetro para llamada de SYSTEM es mayor de 8192 caractéres"
+
+#: libcob/common.cpp:3475
+#, c-format
+msgid "Error '%s' during CBL_GC_FORK"
+msgstr ""
+
+#: libcob/common.cpp:3480 libcob/common.cpp:3577
+#, fuzzy, c-format
+msgid "'%s' is not supported on this platform"
+msgstr "'%s' no es apoyado"
+
+#: libcob/common.cpp:3506
+#, c-format
+msgid "error '%s' for P%d during CBL_GC_WAITPID"
+msgstr ""
+
+#: libcob/common.cpp:3676
+msgid "Call to CBL_GC_GETOPT with wrong longoption size."
+msgstr ""
+
+#: libcob/common.cpp:3683
+msgid "Call to CBL_GC_GETOPT with missing longind."
+msgstr ""
+
+#: libcob/common.cpp:4073
+msgid " (default)"
+msgstr ""
+
+#: libcob/common.cpp:4308
+#, c-format
+msgid "minimum value: %lu"
+msgstr ""
+
+#: libcob/common.cpp:4360 libcob/common.cpp:4848 libcob/common.cpp:4862
+#, c-format
+msgid "should not contain '%c'"
+msgstr ""
+
+#: libcob/common.cpp:4586
+#, c-format
+msgid "WARNING - '%s %s' without a value - ignored!"
+msgstr ""
+
+#: libcob/common.cpp:4611 libcob/common.cpp:4683
+#, c-format
+msgid "WARNING - '%s' without a value - ignored!"
+msgstr ""
+
+#: libcob/common.cpp:4637
+#, fuzzy, c-format
+msgid "'%s' without a value!"
+msgstr "'%s' no es un valor numérico"
+
+#: libcob/common.cpp:4957
+#, fuzzy
+msgid "malloc error"
+msgstr "Error en malloc"
+
+#: libcob/common.cpp:5000 libcob/common.cpp:5020
+msgid "cob_init() has not been called"
+msgstr "cob_init() no ha sido llamado"
+
+#: libcob/common.cpp:5003
+#, fuzzy
+msgid "attempt to CANCEL active program"
+msgstr "Intento de CANCEL programa activo"
+
+#: libcob/common.cpp:5023
+#, fuzzy
+msgid "codegen error - Please report this"
+msgstr "Error en codegen - Por favor reporte esto"
+
+#: libcob/common.cpp:5026
+msgid "CALL of program with CHAINING clause"
+msgstr ""
+
+#: libcob/common.cpp:5029
+#, fuzzy
+msgid "stack overflow, possible PERFORM depth exceeded"
+msgstr "Desbordamiento de montón, posible profundidad excedida de PERFORM"
+
+#: libcob/common.cpp:5032
+#, fuzzy
+msgid "invalid entry/exit in GLOBAL USE procedure"
+msgstr "Inválida entrada/salida en procedimiento USO GLOBAL"
+
+#: libcob/common.cpp:5035
+#, fuzzy
+msgid "unable to allocate memory"
+msgstr "Asignación de memoria sin exito"
+
+#: libcob/common.cpp:5038
+#, fuzzy
+msgid "invalid entry into module"
+msgstr "Entrada a módulo inválida"
+
+#: libcob/common.cpp:5041
+#, fuzzy, c-format
+msgid "invalid recursive COBOL CALL to '%s'"
+msgstr "Inválido COBOL CALL recursivo"
+
+#: libcob/common.cpp:5050
+#, fuzzy
+msgid "end of file"
+msgstr "Fin del archivo"
+
+#: libcob/common.cpp:5053
+#, fuzzy
+msgid "key out of range"
+msgstr "Clave fuera de rango"
+
+#: libcob/common.cpp:5056
+#, fuzzy
+msgid "key order not ascending"
+msgstr "Orden de clave no es ascendente"
+
+#: libcob/common.cpp:5059
+#, fuzzy
+msgid "record key already exists"
+msgstr "Clave de registro ya existe"
+
+#: libcob/common.cpp:5062
+#, fuzzy
+msgid "record key does not exist"
+msgstr "Clave de registro no existe"
+
+#: libcob/common.cpp:5065
+#, fuzzy
+msgid "permanent file error"
+msgstr "Error permanente de archivo"
+
+#: libcob/common.cpp:5068
+#, fuzzy
+msgid "file does not exist"
+msgstr "No existe archivo"
+
+#: libcob/common.cpp:5071
+#, fuzzy
+msgid "permission denied"
+msgstr "Permiso negado"
+
+#: libcob/common.cpp:5074
+#, fuzzy
+msgid "file already open"
+msgstr "Archivo ya abierto"
+
+#: libcob/common.cpp:5077
+#, fuzzy
+msgid "file not open"
+msgstr "Archivo no abierto"
+
+#: libcob/common.cpp:5080
+msgid "READ must be executed first"
+msgstr "READ debe ser executada primero"
+
+#: libcob/common.cpp:5083
+#, fuzzy
+msgid "record overflow"
+msgstr "Desbordamiento de registro"
+
+#: libcob/common.cpp:5086
+msgid "READ after uncessful READ/START"
+msgstr ""
+
+#: libcob/common.cpp:5089
+#, fuzzy
+msgid "READ/START not allowed, file not open for input"
+msgstr "READ/START no son permitidos"
+
+#: libcob/common.cpp:5092
+msgid "WRITE not allowed, file not open for output"
+msgstr ""
+
+#: libcob/common.cpp:5095
+#, fuzzy
+msgid "DELETE/REWRITE not allowed, file not open for I-O"
+msgstr "DELETE/REWRITE no son permitidos"
+
+#: libcob/common.cpp:5098
+#, fuzzy
+msgid "record locked by another file connector"
+msgstr "Registro bloqueado por otro conector de archivo"
+
+#: libcob/common.cpp:5101
+msgid "LINAGE values invalid"
+msgstr "Valores de LINAGE inválido"
+
+#: libcob/common.cpp:5104
+#, fuzzy
+msgid "file sharing conflict"
+msgstr "Conflicto al compartir archivo"
+
+#: libcob/common.cpp:5107
+#, fuzzy
+msgid "runtime library is not configured for this operation"
+msgstr "Bibloteca de ejecución no está configurado para esta operación"
+
+#: libcob/common.cpp:5110
+#, fuzzy
+msgid "unknown file error"
+msgstr "Error desconocido de archivo"
+
+#: libcob/common.cpp:5116
+#, fuzzy, c-format
+msgid "%s (status = %02d) file : '%s'"
+msgstr "%s (Estado = %02d) Archivo : ‘%s’"
+
+#: libcob/common.cpp:5122
+#, fuzzy
+msgid "attempt to use non-implemented function"
+msgstr "Intento de usar función no implementada"
+
+#: libcob/common.cpp:5125
+#, fuzzy, c-format
+msgid "unknown failure : %d"
+msgstr "Fracaso desconocido : %d"
+
+#: libcob/common.cpp:5163
+msgid "environment variables"
+msgstr ""
+
+#: libcob/common.cpp:5212
+msgid "License LGPLv3+: GNU LGPL version 3 or later <http://gnu.org/licenses/lgpl.html>"
+msgstr ""
+
+#: libcob/common.cpp:5246
+#, fuzzy
+msgid "GnuCOBOL information"
+msgstr "Información de generación"
+
+#: libcob/common.cpp:5255 libcob/common.cpp:5257
+#, fuzzy
+msgid "dynamic loading"
+msgstr "Carga dinámica"
+
+#: libcob/common.cpp:5262
+#, fuzzy
+msgid "enabled"
+msgstr "Activado"
+
+#: libcob/common.cpp:5294 libcob/common.cpp:5300
+msgid "EXTFH"
+msgstr ""
+
+#: libcob/common.cpp:5355
+#, fuzzy
+msgid "runtime configuration"
+msgstr "Continuación de linea inválida"
+
+#: libcob/common.cpp:5357
+msgid "via"
+msgstr ""
+
+#: libcob/common.cpp:5453 libcob/common.cpp:5455
+#, c-format
+msgid "(set by %s)"
+msgstr ""
+
+#: libcob/common.cpp:5463
+#, c-format
+msgid "(reset)"
+msgstr ""
+
+#: libcob/common.cpp:5465
+#, c-format
+msgid "(default)"
+msgstr ""
+
+#: libcob/common.cpp:5471
+msgid "... removed from environment"
+msgstr ""
+
+#: libcob/common.cpp:5754
+msgid "Unknown"
+msgstr "Desconocido"
+
+#: libcob/fileio.cpp:2017
+#, c-format
+msgid "BDB error: %s"
+msgstr "Error BDB: %s"
+
+#: libcob/fileio.cpp:2026
+#, c-format
+msgid "BDB error: %s %s"
+msgstr "Error BDB: %s %s"
+
+#: libcob/fileio.cpp:2039 libcob/fileio.cpp:2059
+#, fuzzy, c-format
+msgid "cannot join BDB environment (%s), error: %d %s"
+msgstr "No se puede unir a ambiente BDB, error: %d %s"
+
+#: libcob/fileio.cpp:4837
+#, c-format
+msgid "call to CBL_OPEN_FILE with wrong access mode: %d"
+msgstr ""
+
+#: libcob/fileio.cpp:4900
+#, c-format
+msgid "call to CBL_CREATE_FILE with wrong file_lock: %d"
+msgstr ""
+
+#: libcob/fileio.cpp:4903
+#, c-format
+msgid "call to CBL_CREATE_FILE with wrong file_dev: %d"
+msgstr ""
+
+#: libcob/fileio.cpp:5079
+msgid "'CBL_CHECK_FILE_EXIST' - File detail area is too short"
+msgstr "'CBL_CHECK_FILE_EXIST' - Área de detalle de archivo es demasiada pequeña"
+
+#: libcob/fileio.cpp:5302
+msgid "'C$FILEINFO' - File detail area is too short"
+msgstr "'C$FILEINFO' - Área de detalle de archivo es demasiada pequeña"
+
+#: libcob/fileio.cpp:5504
+msgid "SORT is unable to acquire temporary file"
+msgstr "SORT no puede obtener archivo temporal"
+
+#: libcob/fileio.cpp:6007
+#, fuzzy, c-format
+msgid "implicit CLOSE of %s ('%s')"
+msgstr "WARNING - CLOSE implícito de %s ('%s')"
+
+#: libcob/screenio.cpp:545
+#, fuzzy
+msgid "failed to initialize curses"
+msgstr "Fracaso en inicializar cursores"
+
+#: libcob/termio.cpp:61 libcob/termio.cpp:89
+msgid "(Not representable)"
+msgstr "(No representable)"
+
+#: bin/cobcrun.cpp:113
+msgid "COBOL driver program for GnuCOBOL modules"
+msgstr ""
+
+#: bin/cobcrun.cpp:115
+#, fuzzy, c-format
+msgid "Usage: %s [options] PROGRAM [parameter ...]"
+msgstr "Uso:     cobcrun PROGRAM [param …]"
+
+#: bin/cobcrun.cpp:117
+#, c-format
+msgid "  or:  %s options"
+msgstr ""
+
+#: bin/cobcrun.cpp:121
+#, fuzzy
+msgid "  -h, -help                      display this help and exit"
+msgstr "  -help                 Muestra este mensaje"
+
+#: bin/cobcrun.cpp:122
+#, fuzzy
+msgid "  -V, -version                   display cobcrun and runtime version and exit"
+msgstr " -version, -V           Muestra version del compilador"
+
+#: bin/cobcrun.cpp:123
+#, fuzzy
+msgid "  -i, -info                      display runtime information (build/environment)"
+msgstr "  -info, -i             Muestra la información de generación del compilador"
+
+#: bin/cobcrun.cpp:125
+#, fuzzy
+msgid "  -q, -brief                     reduced displays"
+msgstr "  -free                 Utilizar formato de liberar origen"
+
+#: bin/cobcrun.cpp:127
+#, fuzzy
+msgid "  -c <file>, -config=<file>      set runtime configuration from <file>"
+msgstr "  -conf=<file>          Configuración de dialecto definido por usuario - Ver -std="
+
+#: bin/cobcrun.cpp:128
+msgid ""
+"  -r, -runtime-conf              display current runtime configuration\n"
+"                                 (value and origin for all settings)"
+msgstr ""
+
+#: bin/cobcrun.cpp:130
+msgid ""
+"  -M <module>, -module=<module>  set entry point module name and/or load path\n"
+"                                 where -M module prepends any directory to the\n"
+"                                 dynamic link loader library search path\n"
+"                                 and any basename to the module preload list\n"
+"                                 (COB_LIBRARY_PATH and/or COB_PRELOAD)"
+msgstr ""
+
+#: bin/cobcrun.cpp:215 bin/cobcrun.cpp:244
+#, c-format
+msgid "problem with setenv %s: %d"
+msgstr ""
+
+#: bin/cobcrun.cpp:294
+#, fuzzy
+msgid "invalid configuration file name"
+msgstr "Nombre de archivo de salida inválido"
+
+#: bin/cobcrun.cpp:342
+#, fuzzy
+msgid "invalid module argument"
+msgstr "Nombre de archivo de salida inválido"
+
+#: bin/cobcrun.cpp:382
+msgid "PROGRAM name exceeds 31 characters"
+msgstr "Nombre de PROGRAM excede 31 caractéres"
+
+#~ msgid "Call to cobc_plex_strdup with NULL pointer"
+#~ msgstr "Llamada a cobc_plex_strdup con indicador NULL"
+
+#~ msgid "Call to cobc_check_string with NULL pointer"
+#~ msgstr "Llamada a cobc_check_string con puntero NULL"
+
+#~ msgid "Call to cobc_stradd_dup with NULL pointer"
+#~ msgstr "Llamada a cobc_stradd_dup con puntero NULL"
+
+#, fuzzy
+#~ msgid "Cannot allocate memory - Aborting"
+#~ msgstr "No se puede asignar %d bytes de memoria - Abortando"
+
+#~ msgid "System"
+#~ msgstr "Sistema"
+
+#~ msgid "Libtool"
+#~ msgstr "Libtool"
+
+#~ msgid "External"
+#~ msgstr "Externo"
+
+#~ msgid "Internal"
+#~ msgstr "Interno"
+
+#~ msgid "BDB"
+#~ msgstr "BDB"
+
+#, fuzzy
+#~ msgid "C-ISAM(Experimental)"
+#~ msgstr "C-ISAM (Experimental)"
+
+#, fuzzy
+#~ msgid "D-ISAM(Experimental)"
+#~ msgstr "D-ISAM (Experimental)"
+
+#, fuzzy
+#~ msgid "VBISAM(Experimental)"
+#~ msgstr "VBISAM (Experimental)"
+
+#~ msgid "  -std=<dialect>        Warnings/features for a specific dialect :"
+#~ msgstr "  -std=<dialect>        Alertas/prestaciones para dialecto específico :"
+
+#~ msgid "                          cobol2002   Cobol 2002"
+#~ msgstr "                          cobol2002   Cobol 2002"
+
+#~ msgid "                          cobol85     Cobol 85"
+#~ msgstr "                          cobol85     Cobol 85"
+
+#~ msgid "                          ibm         IBM Compatible"
+#~ msgstr "                          ibm         Compatible con IBM"
+
+#~ msgid "                          mvs         MVS Compatible"
+#~ msgstr "                          mvs         Compatible con MVS"
+
+#~ msgid "                          bs2000      BS2000 Compatible"
+#~ msgstr "                          bs2000      Compatible con BS2000"
+
+#~ msgid "                          mf          Micro Focus Compatible"
+#~ msgstr "                          mf          Compatible con Micro Focus"
+
+#~ msgid "                          default     When not specified"
+#~ msgstr "                          por defecto     Cuando no ha sido especificado"
+
+#~ msgid "                        See config/default.conf and config/*.conf"
+#~ msgstr "                        Ver config/default.conf y config/*.conf"
+
+#~ msgid "                        dynamically loadable module"
+#~ msgstr "                       módulo de carga dinámica"
+
+#, fuzzy
+#~ msgid "                       (V. Coen's 'cobxref' must be in path)"
+#~ msgstr "                        ('cobxref' de V.Coen debe de estar en la ruta)"
+
+#~ msgid "  -save-temps(=<dir>)   Save intermediate files"
+#~ msgstr " -save-temps(=<dir>)   Guardar archivos intermediate "
+
+#~ msgid "Invalid output file name"
+#~ msgstr "Nombre de archivo de salida inválido"
+
+#~ msgid "Invalid option -std=%s"
+#~ msgstr "Inválida opción -std=%s"
+
+#~ msgid "Failed to load the initial config file"
+#~ msgstr "No se pudo cargar el archivo config inicial"
+
+#~ msgid "Invalid tab-width value - %d"
+#~ msgstr "Valor inválido a etiqueta-anchura- %d"
+
+#~ msgid "Invalid text-column value - %d"
+#~ msgstr "Valór inválido a columna-texto - %d"
+
+#~ msgid "Check that 'cobxref' is in %%PATH%%"
+#~ msgstr "Comprobar que 'cobxref' este dentro de %%PATH%%"
+
+#~ msgid "Invalid line"
+#~ msgstr "Linea inválida"
+
+#~ msgid "Unknown tag '%s'"
+#~ msgstr "Etiquetas desconocida '%s'"
+
+#~ msgid "%s: No definition of '%s'"
+#~ msgstr "%s: No hay definición de '%s' "
+
+#~ msgid "defined here"
+#~ msgstr "definido aquí"
+
+#~ msgid "Level number of REDEFINES entry cannot be 66 or 88"
+#~ msgstr "Numero de nivel de entrada REDEFINES no pueden ser 66 ó 88"
+
+#~ msgid "BLANK ZERO not compatible with USAGE"
+#~ msgstr "BLANK ZERO no es compatible con USAGE"
+
+#~ msgid "SIGN clause not compatible with USAGE"
+#~ msgstr "Cláusula de SIGN no compatible con USAGE"
+
+#~ msgid "Entries under REDEFINES cannot have a VALUE clause"
+#~ msgstr "Entradas bajo REDEFINES no pueden tener una clásula de VALUE"
+
+#~ msgid "FUNCTION-ID is not yet implemented"
+#~ msgstr "FUNCTION-ID aún no está implementado"
+
+#~ msgid "CONFIGURATION SECTION not allowed in nested programs"
+#~ msgstr "CONFIGURATION SECTION no es permitido en programas anidados"
+
+#~ msgid "Invalid special names clause"
+#~ msgstr "Inválida la cláusula de nombres especiales"
+
+#~ msgid "Invalid SYMBOLIC clause"
+#~ msgstr "Inválida cláusula SYMBOLIC"
+
+#~ msgid "Invalid currency sign '%s'"
+#~ msgstr "Inválido signo de moneda '%s'"
+
+#, fuzzy
+#~ msgid "GLOBAL is invalid in a user FUNCTION"
+#~ msgstr "CHAINING inválido en FUNCTION"
+
+#~ msgid "Alphabet-name is expected '%s'"
+#~ msgstr "Nombre de alfabeta es esperado '%s'"
+
+#~ msgid "REPORT WRITER not implemented"
+#~ msgstr "REPORT WRITER no esta implementado"
+
+#~ msgid "EXTERNAL not allowed here"
+#~ msgstr "EXTERNO no permitido aquí"
+
+#~ msgid "EXTERNAL only allowed at 01/77 level"
+#~ msgstr "EXTERNO solamente se permite a nivel 01/77"
+
+#~ msgid "EXTERNAL requires a data name"
+#~ msgstr "EXTERNAL requiere nombre de datos"
+
+#~ msgid "GLOBAL and EXTERNAL are mutually exclusive"
+#~ msgstr "GLOBAL y EXTERNAL son mutuamente excluyentes"
+
+#~ msgid "BASED and EXTERNAL are mutually exclusive"
+#~ msgstr "BASED y EXTERNAL son mutuamente excluyentes"
+
+#~ msgid "EXTERNAL and REDEFINES are mutually exclusive"
+#~ msgstr "EXTERNAL y REDEFINES son mutuamente excluyentes"
+
+#~ msgid "EXTERNAL and OCCURS are mutually exclusive"
+#~ msgstr "EXTERNAL y OCCURS son mutuamente excluyentes"
+
+#~ msgid "GLOBAL only allowed at 01/77 level"
+#~ msgstr "GLOBAL solamente se permite a nivel 01/77"
+
+#~ msgid "GLOBAL requires a data name"
+#~ msgstr "GLOBAL requiere nombre de datos"
+
+#~ msgid "GLOBAL not allowed here"
+#~ msgstr "GLOBAL no permitido aquí"
+
+#~ msgid "BASED requires a data name"
+#~ msgstr "BASED requiere nombre de datos"
+
+#~ msgid "BASED and REDEFINES are mutually exclusive"
+#~ msgstr "BASED y REDEFINES son mutuamente excluyentes"
+
+#~ msgid "BASED and ANY LENGTH are mutually exclusive"
+#~ msgstr "BASED y ANY LENGTH son mutuamente excluyentes"
+
+#, fuzzy
+#~ msgid "BASED and ANY clause are mutually exclusive"
+#~ msgstr "BASED y ANY LENGTH son mutuamente excluyentes"
+
+#~ msgid "LOCAL-STORAGE not allowed in nested programs"
+#~ msgstr "LOCAL-STORAGE no permitido en programas anidados"
+
+#~ msgid "REPORT SECTION not implemented"
+#~ msgstr "REPORT SECTION no implementada"
+
+#~ msgid "Invalid PAGE clause"
+#~ msgstr "Inválida cláusula de PAGE"
+
+#~ msgid "BY CONTENT not allowed in CHAINED program"
+#~ msgstr "BY CONTENT no es permitido en programa CHAINED"
+
+#~ msgid "EXIT PROGRAM only allowed within a PROGRAM type"
+#~ msgstr "EXIT PROGRAM solamente permitido dentro de un tipo de PROGRAM"
+
+#~ msgid "INSPECT missing a keyword"
+#~ msgstr "INSPECT le falta una palabra clave"
+
+#~ msgid "SHARING and LOCK clauses are mutually exclusive"
+#~ msgstr "Cláusulas SHARING y LOCK son mutuamente excluyentes"
+
+#~ msgid "Table sort without keys not implemented yet"
+#~ msgstr "Ordenar tabla sin claves no ha sido implementado aún"
+
+#~ msgid "Invalid SYMBOLIC integer"
+#~ msgstr "Número entero SYMBOLIC inválido"
+
+#~ msgid "Dangling IF/ELSE directive"
+#~ msgstr "Directiva de IF/ELSE colgando"
+
+#~ msgid "Buffer overrun - Literal too long - Aborting"
+#~ msgstr "desbordamiento de búfer - Literal demasiado tiempo - Abortar"
+
+#~ msgid "Invalid SOURCEFORMAT directive"
+#~ msgstr "Directiva SOURCEFORMAT inválida"
+
+#~ msgid "Invalid FOLD-COPY-NAME directive"
+#~ msgstr "Directiva FOLD-COPY-NAME inválida"
+
+#~ msgid "Invalid DEFINE/SET directive"
+#~ msgstr "Directiva EFINE/SET inválida"
+
+#~ msgid "TURN directive not yet implemented"
+#~ msgstr "TURN directiva no se a implementado aun   "
+
+#~ msgid "Invalid IF/ELIF directive"
+#~ msgstr "Directiva IF/ELIF inválida"
+
+#, fuzzy
+#~ msgid "Reserved Words\t\t\tImplemented(Y/N)"
+#~ msgstr "Palabras Reservadas\t\t\tImplementadas (S/N)"
+
+#, fuzzy
+#~ msgid "N(85 obsolete)"
+#~ msgstr "N (85 obsoleto)"
+
+#~ msgid "Y"
+#~ msgstr "Y"
+
+#~ msgid "Intrinsic Function\t\tImplemented\tParameters"
+#~ msgstr "Función Intrínseca\t\tImplementada\tParámetros"
+
+#~ msgid "A SPACE will be assumed"
+#~ msgstr "Un SPACE será asumido"
+
+#~ msgid "Invalid H literal: %s"
+#~ msgstr "Literal H inváida: %s"
+
+#, fuzzy
+#~ msgid "<Unexpected tree tag %d>"
+#~ msgstr "Inesperada etiqueta de árbol %d"
+
+#~ msgid "Unexpected cast type -> %d"
+#~ msgstr "Tipo de molde inesperado -> %d"
+
+#, fuzzy
+#~ msgid "Invalid literal cast - Aborting"
+#~ msgstr "Literal numérico excede el límite - Abortando"
+
+#~ msgid "Numeric literal exceeds limit - Aborting"
+#~ msgstr "Literal numérico excede el límite - Abortando"
+
+#~ msgid "ALTERNATE clause invalid for this file type"
+#~ msgstr "Cláusula ALTERNATE inválida para este tipo de archivo"
+
+#~ msgid "ORGANIZATION clause invalid"
+#~ msgstr "Inválida cláusula ORGANIZATION "
+
+#~ msgid "Record size too small '%s'"
+#~ msgstr "Tamaño de récord demasiado pequeño '%s'"
+
+#~ msgid "Operation not allowed on LINE SEQUENTIAL files"
+#~ msgstr "Operación no permitida en archivos de LINE SEQUENTIAL"
+
+#~ msgid "Invalid output device"
+#~ msgstr "Dispositivo de salida inválido"
+
+#~ msgid "Invalid target for REPLACING/CONVERTING"
+#~ msgstr "Destino inválido para REPLACING/CONVERTING"
+
+#~ msgid "Data name expected before CHARACTERS"
+#~ msgstr "Nombre de datos esperado antes que CHARACTERS"
+
+#~ msgid "Data name expected before LEADING"
+#~ msgstr "Nombre de datos esperado antes de LEADING"
+
+#~ msgid "Data name expected before TRAILING"
+#~ msgstr "Nombre de datos esperado antes de TRAILING"
+
+#~ msgid "Invalid VALUE clause - literal exceeds data size"
+#~ msgstr "Cláusula VALUE inválida - literal excede tamaño de dato"
+
+#~ msgid "OPEN I-O not allowed on LINE SEQUENTIAL files"
+#~ msgstr "OPEN I-O no se permite en archivos de LINE SEQUENTIAL"
+
+#~ msgid "REWRITE requires a record name as subject"
+#~ msgstr "REWRITE requiere un nombre de registro como sujeto"
+
+#~ msgid "REWRITE subject does not refer to a record name"
+#~ msgstr "Sujeto a REWRITE no hace referencia a un nombre de récord"
+
+#~ msgid "RELEASE requires a record name as subject"
+#~ msgstr "RELEASE require un nombre de un récord como sujeto"
+
+#~ msgid "RELEASE subject does not refer to a record name"
+#~ msgstr "Sujeto de RELEASE no hace referencia a nombre de un récord"
+
+#~ msgid "The address of '%s' cannot be changed"
+#~ msgstr "La dirección de '%s' no puede ser cambiada"
+
+#~ msgid "SET target is invalid - '%s'"
+#~ msgstr "SET objetivo no es válido - '%s'"
+
+#~ msgid "START not allowed on SEQUENTIAL files"
+#~ msgstr "START no permitido en archivos SEQUENTIAL"
+
+#, fuzzy
+#~ msgid "warn EXTERNAL item with VALUE clause"
+#~ msgstr "Alerta elemento EXTERNAL con cláusula de VALUE"
+
+#~ msgid "Indeterminable error"
+#~ msgstr "Error indeterminable"
+
+#~ msgid "NULL name parameter passed to 'cob_call'"
+#~ msgstr "Parámetro de nombre NULL pasado a ‘cob_call’"
+
+#~ msgid "NULL parameter passed to 'cob_longjmp'"
+#~ msgstr "Parámetro NULL pasado a ‘cob_longjmp’"
+
+#~ msgid "Recursive call of chained program"
+#~ msgstr "Llamada recursiva de programa encadenado"
+
+#~ msgid "Failed to read"
+#~ msgstr "No ha podido leer"
+
+#~ msgid "WRITE not allowed"
+#~ msgstr "WRITE no es permitido"
+
+#~ msgid "Library has version/patch level %s/%d"
+#~ msgstr "Biblioteca tiene versión/nivel de parche %s/%d"
+
+#~ msgid "Cannot join BDB environment, env_open: %d %s"
+#~ msgstr "No se puede unir a ambiente BDB, env_open: %d %s"
+
+#~ msgid "or   : cobcrun --help (-h)"
+#~ msgstr "or   : cobcrun --help (-h)"
+
+#~ msgid "       Print this help"
+#~ msgstr "      Imprimir esta ayuda"
+
+#~ msgid "or   : cobcrun --version (-V)"
+#~ msgstr "o    : cobcrun --version (-V)"
+
+#~ msgid "       Print version information"
+#~ msgstr "       Imprimir la información de versión "
+
+#~ msgid "or   : cobcrun --info (-i)"
+#~ msgstr "o    : cobcrun --info (-i)"
+
+#~ msgid "       Print build information"
+#~ msgstr "        Imprimir la información de la generación  -conf=<file>          Configuración de dialecto definido por usuario - Ver -std="
+
+#~ msgid "Memory allocation failure"
+#~ msgstr "Fracaso en asignación de memoria"
+
+#~ msgid "C-ISAM (Experimental)"
+#~ msgstr "C-ISAM (Experimental)"
+
+#~ msgid "D-ISAM (Experimental)"
+#~ msgstr "D-ISAM (Experimental)"
+
+#~ msgid "VBISAM (Experimental)"
+#~ msgstr "VBISAM (Experimental)"
+
+#~ msgid "Invalid option"
+#~ msgstr "Opción inválida"
+
+#~ msgid "Cannot reallocate %d bytes of memory - Aborting"
+#~ msgstr "No se puede reasignar %d bytes de memoria - Abortando"
+
+#~ msgid "READ PREVIOUS only allowed for INDEXED SEQUENTIAL files"
+#~ msgstr "READ PREVIOUS solamented permitido en archivos de INDEXED SEQUENTIAL"
+
+#~ msgid "Invalid directive comparison"
+#~ msgstr "Comparación de directiva inválida"
+
+#~ msgid "#<unknown %d %p>"
+#~ msgstr "#<deconosido %d %p>"
+
+#~ msgid "Numeric literal exceeds maximum"
+#~ msgstr "Literal numérico excede el máximo"
+
+#~ msgid ""
+#~ "Built     %s\n"
+#~ "Packaged  %s\n"
+#~ "C version %s%s\n"
+#~ msgstr ""
+#~ "Generado     %s\n"
+#~ "Empaquetado  %s\n"
+#~ "C versión %s%s\n"
+
+#~ msgid "  -stack-size=n         Set perform stack size"
+#~ msgstr "  -stack-size=n         Establecer tamaño del montón de ejecución"
+
+#~ msgid "                        - (>= 64, <= 512, default 255)"
+#~ msgstr "                        -(>= 64,  <= 512, por defecto 255)"
+
+#~ msgid "Too many parameters specified in USING clause"
+#~ msgstr "Demasiados parametros especificados en clausula de USING"
+
+#~ msgid "Too many parameters specified on CALL"
+#~ msgstr "Demasiados parámetros especificados en CALL"

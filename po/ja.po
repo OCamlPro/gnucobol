@@ -1,0 +1,3747 @@
+# Japanese translations for GNU Cobol package
+# Copyright (C) 2002-2009 Keisuke Nishida
+# This file is distributed under the same license as the GNU Cobol package.
+# Keisuke Nishida <knishida@coboler.com>, 2002.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: GNU Cobol 0.13\n"
+"Report-Msgid-Bugs-To: open-cobol-list@lists.sourceforge.net\n"
+"POT-Creation-Date: 2014-06-25 12:26+0200\n"
+"PO-Revision-Date: 2004-08-01 23:55+0900\n"
+"Last-Translator: Keisuke Nishida <knishida@coboler.com>\n"
+"Language-Team: Japanese <translation-team-ja@lists.sourceforge.net>\n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=EUC-JP\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: cobc/cobc.cpp:83
+#, fuzzy, c-format
+msgid "invalid parameter: %s"
+msgstr "不当な MOVE 文です"
+
+#: cobc/cobc.cpp:606
+msgid "Too many errors - Aborting compilation"
+msgstr ""
+
+#: cobc/cobc.cpp:613
+#, fuzzy, c-format
+msgid "%s: %d: internal compiler error"
+msgstr "永続ファイルエラーです"
+
+#: cobc/cobc.cpp:627
+#, fuzzy, c-format
+msgid "%s: %d: invalid cast from '%s' type %s to type %s"
+msgstr "%s: 節 `%s':\n"
+
+#: cobc/cobc.cpp:652
+msgid "Call to cobc_strdup with NULL pointer"
+msgstr ""
+
+#: cobc/cobc.cpp:680
+msgid "Call to cobc_main_strdup with NULL pointer"
+msgstr ""
+
+#: cobc/cobc.cpp:707
+msgid "Attempt to reallocate non-allocated memory - Aborting"
+msgstr ""
+
+#: cobc/cobc.cpp:764
+msgid "Call to cobc_parse_strdup with NULL pointer"
+msgstr ""
+
+#: cobc/cobc.cpp:814
+msgid "Call to cobc_plex_strdup with NULL pointer"
+msgstr ""
+
+#: cobc/cobc.cpp:829
+msgid "Call to cobc_check_string with NULL pointer"
+msgstr ""
+
+#: cobc/cobc.cpp:927
+#, c-format
+msgid "call to %s with invalid pointer, as it is missing in list"
+msgstr ""
+
+#: cobc/cobc.cpp:962
+msgid " - Length is < 1 or > 31"
+msgstr ""
+
+#: cobc/cobc.cpp:965
+msgid " - Name cannot begin with space or underscore"
+msgstr ""
+
+#: cobc/cobc.cpp:968
+msgid " - Name cannot begin with 'cob_' or 'COB_'"
+msgstr ""
+
+#: cobc/cobc.cpp:971
+msgid " - Name duplicates a 'C' keyword"
+msgstr ""
+
+#: cobc/cobc.cpp:974
+msgid " - Name cannot contain a directory separator"
+msgstr ""
+
+#: cobc/cobc.cpp:982
+#, fuzzy, c-format
+msgid "invalid file base name '%s'%s"
+msgstr "不当なレベル番号です `%s'"
+
+#: cobc/cobc.cpp:987
+#, fuzzy, c-format
+msgid "invalid ENTRY '%s'%s"
+msgstr "不当な X 定数です: %s"
+
+#: cobc/cobc.cpp:991
+#, fuzzy, c-format
+msgid "invalid PROGRAM-ID '%s'%s"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/cobc.cpp:994
+#, fuzzy, c-format
+msgid "unknown name error '%s'%s"
+msgstr "原因不明のファイルエラーです"
+
+#: cobc/cobc.cpp:1086 cobc/error.cpp:97 cobc/error.cpp:125 cobc/error.cpp:149
+msgid "Error: "
+msgstr ""
+
+#: cobc/cobc.cpp:1105
+#, fuzzy, c-format
+msgid "duplicate define '%s' - ignored"
+msgstr "不当なレベル番号です `%s'"
+
+#: cobc/cobc.cpp:1137
+msgid "Call to cobc_stradd_dup with NULL pointer"
+msgstr ""
+
+#: cobc/cobc.cpp:1177
+msgid "Parameter buffer size exceeded"
+msgstr ""
+
+#: cobc/cobc.cpp:1212
+#, c-format
+msgid "warning: could not move temporary file to %s"
+msgstr ""
+
+#: cobc/cobc.cpp:1319
+#, c-format
+msgid "aborting compile of %s at line %d"
+msgstr ""
+
+#: cobc/cobc.cpp:1329
+msgid "Cannot allocate memory - Aborting"
+msgstr ""
+
+#: cobc/cobc.cpp:1385 bin/cobcrun.cpp:81
+msgid ""
+"License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>"
+msgstr ""
+
+#: cobc/cobc.c:1611 libcob/common.c:5250 bin/cobcrun.c:93
+msgid ""
+"This is free software; see the source for copying conditions.  There is NO\n"
+"warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
+msgstr ""
+
+#: cobc/cobc.cpp:1387 bin/cobcrun.cpp:83
+#, c-format
+msgid "Written by %s\n"
+msgstr ""
+
+#: cobc/cobc.c:1614 libcob/common.c:5253 bin/cobcrun.c:96
+#, c-format
+msgid "Built     %s"
+msgstr ""
+
+#: cobc/cobc.cpp:1389 bin/cobcrun.cpp:85
+#, c-format
+msgid "Packaged  %s"
+msgstr ""
+
+#: cobc/cobc.cpp:1391
+#, c-format
+msgid "C version %s%s"
+msgstr ""
+
+#: cobc/cobc.cpp:1398
+msgid "Executing:"
+msgstr ""
+
+#: cobc/cobc.cpp:1454 bin/cobcrun.cpp:136
+msgid "Build information"
+msgstr ""
+
+#: cobc/cobc.cpp:1455
+msgid "Build environment"
+msgstr ""
+
+#: cobc/cobc.cpp:1461 bin/cobcrun.cpp:143
+msgid "GNU Cobol C++ information"
+msgstr ""
+
+#: cobc/cobc.cpp:1473 cobc/cobc.cpp:1475 bin/cobcrun.cpp:155
+#: bin/cobcrun.cpp:157
+msgid "Dynamic loading"
+msgstr ""
+
+#: cobc/cobc.cpp:1473 bin/cobcrun.cpp:155
+msgid "System"
+msgstr ""
+
+#: cobc/cobc.cpp:1475 bin/cobcrun.cpp:157
+msgid "Libtool"
+msgstr ""
+
+#: cobc/cobc.cpp:1479 bin/cobcrun.cpp:161
+msgid "Enabled"
+msgstr ""
+
+#: cobc/cobc.cpp:1481 bin/cobcrun.cpp:163
+msgid "Disabled"
+msgstr ""
+
+#: cobc/cobc.cpp:1485 bin/cobcrun.cpp:168
+msgid "Variable format"
+msgstr ""
+
+#: cobc/cobc.cpp:1488 bin/cobcrun.cpp:171
+msgid "8 bytes"
+msgstr ""
+
+#: cobc/cobc.cpp:1490 bin/cobcrun.cpp:173
+msgid "4 bytes"
+msgstr ""
+
+#: cobc/cobc.cpp:1494 cobc/cobc.cpp:1496 bin/cobcrun.cpp:177
+#: bin/cobcrun.cpp:179
+msgid "Sequential handler"
+msgstr ""
+
+#: cobc/cobc.cpp:1494 cobc/cobc.cpp:1499 bin/cobcrun.cpp:177
+#: bin/cobcrun.cpp:182
+msgid "External"
+msgstr ""
+
+#: cobc/cobc.cpp:1496 bin/cobcrun.cpp:179
+msgid "Internal"
+msgstr ""
+
+#: cobc/cobc.cpp:1499 cobc/cobc.cpp:1502 cobc/cobc.cpp:1505 cobc/cobc.cpp:1508
+#: cobc/cobc.cpp:1511 bin/cobcrun.cpp:182 bin/cobcrun.cpp:185
+#: bin/cobcrun.cpp:188 bin/cobcrun.cpp:191 bin/cobcrun.cpp:194
+msgid "ISAM handler"
+msgstr ""
+
+#: cobc/cobc.cpp:1502 bin/cobcrun.cpp:185
+msgid "BDB"
+msgstr ""
+
+#: cobc/cobc.cpp:1505
+msgid "C-ISAM(Experimental)"
+msgstr ""
+
+#: cobc/cobc.cpp:1508
+msgid "D-ISAM(Experimental)"
+msgstr ""
+
+#: cobc/cobc.cpp:1511
+msgid "VBISAM(Experimental)"
+msgstr ""
+
+#: cobc/cobc.cpp:1521
+msgid "- NOT set with -Wall"
+msgstr ""
+
+#: cobc/cobc.cpp:1548
+msgid "Usage: cobc [options] file ..."
+msgstr ""
+
+#: cobc/cobc.cpp:1550
+msgid "Options:"
+msgstr ""
+
+#: cobc/cobc.cpp:1551
+msgid "  -help                 Display this message"
+msgstr ""
+
+#: cobc/cobc.cpp:1552
+msgid "  -version, -V          Display compiler version"
+msgstr ""
+
+#: cobc/cobc.cpp:1553
+msgid "  -info, -i             Display compiler build information"
+msgstr ""
+
+#: cobc/cobc.cpp:1554
+msgid "  -v                    Display the commands invoked by the compiler"
+msgstr ""
+
+#: cobc/cobc.cpp:1555
+msgid "  -x                    Build an executable program"
+msgstr ""
+
+#: cobc/cobc.cpp:1556
+msgid "  -m                    Build a dynamically loadable module(default)"
+msgstr ""
+
+#: cobc/cobc.cpp:1557
+msgid "  -std=<dialect>        Warnings/features for a specific dialect :"
+msgstr ""
+
+#: cobc/cobc.cpp:1558
+msgid "                          cobol2002   Cobol 2002"
+msgstr ""
+
+#: cobc/cobc.cpp:1559
+msgid "                          cobol85     Cobol 85"
+msgstr ""
+
+#: cobc/cobc.cpp:1560
+msgid "                          ibm         IBM Compatible"
+msgstr ""
+
+#: cobc/cobc.cpp:1561
+msgid "                          mvs         MVS Compatible"
+msgstr ""
+
+#: cobc/cobc.cpp:1562
+msgid "                          bs2000      BS2000 Compatible"
+msgstr ""
+
+#: cobc/cobc.cpp:1563
+msgid "                          mf          Micro Focus Compatible"
+msgstr ""
+
+#: cobc/cobc.cpp:1564
+msgid "                          default     When not specified"
+msgstr ""
+
+#: cobc/cobc.cpp:1565
+msgid "                        See config/default.conf and config/*.conf"
+msgstr ""
+
+#: cobc/cobc.cpp:1566
+msgid "  -free                 Use free source format"
+msgstr ""
+
+#: cobc/cobc.cpp:1567
+msgid "  -fixed                Use fixed source format(default)"
+msgstr ""
+
+#: cobc/cobc.cpp:1568
+msgid "  -O, -O2, -Os          Enable optimization"
+msgstr ""
+
+#: cobc/cobc.cpp:1569
+msgid "  -g                    Enable C compiler debug / stack check / trace"
+msgstr ""
+
+#: cobc/cobc.cpp:1570
+msgid "  -debug                Enable all run-time error checking"
+msgstr ""
+
+#: cobc/cobc.cpp:1571
+msgid "  -o <file>             Place the output into <file>"
+msgstr ""
+
+#: cobc/cobc.cpp:1572
+msgid "  -b                    Combine all input files into a single"
+msgstr ""
+
+#: cobc/cobc.cpp:1573
+msgid "                        dynamically loadable module"
+msgstr ""
+
+#: cobc/cobc.cpp:1574
+msgid "  -E                    Preprocess only; do not compile or link"
+msgstr ""
+
+#: cobc/cobc.cpp:1575
+msgid "  -C                    Translation only; convert COBOL to C"
+msgstr ""
+
+#: cobc/cobc.cpp:1576
+msgid "  -S                    Compile only; output assembly file"
+msgstr ""
+
+#: cobc/cobc.cpp:1577
+msgid "  -c                    Compile and assemble, but do not link"
+msgstr ""
+
+#: cobc/cobc.cpp:1578
+msgid "  -P(=<dir or file>)    Generate preprocessed program listing(.lst)"
+msgstr ""
+
+#: cobc/cobc.cpp:1579
+msgid "  -Xref                 Generate cross reference through 'cobxref'"
+msgstr ""
+
+#: cobc/cobc.cpp:1580
+msgid "                       (V. Coen's 'cobxref' must be in path)"
+msgstr ""
+
+#: cobc/cobc.cpp:1581
+msgid "  -I <directory>        Add <directory> to copy/include search path"
+msgstr ""
+
+#: cobc/cobc.cpp:1582
+msgid "  -L <directory>        Add <directory> to library search path"
+msgstr ""
+
+#: cobc/cobc.cpp:1583
+msgid "  -l <lib>              Link the library <lib>"
+msgstr ""
+
+#: cobc/cobc.cpp:1584
+msgid "  -A <options>          Add <options> to the C compile phase"
+msgstr ""
+
+#: cobc/cobc.cpp:1585
+msgid "  -Q <options>          Add <options> to the C link phase"
+msgstr ""
+
+#: cobc/cobc.cpp:1586
+msgid "  -D <define>           DEFINE <define> to the COBOL compiler"
+msgstr ""
+
+#: cobc/cobc.cpp:1587
+msgid "  -K <entry>            Generate CALL to <entry> as static"
+msgstr ""
+
+#: cobc/cobc.cpp:1588
+msgid "  -conf=<file>          User defined dialect configuration - See -std="
+msgstr ""
+
+#: cobc/cobc.cpp:1589
+msgid "  -list-reserved        Display reserved words"
+msgstr ""
+
+#: cobc/cobc.cpp:1590
+msgid "  -list-intrinsics      Display intrinsic functions"
+msgstr ""
+
+#: cobc/cobc.cpp:1591
+msgid "  -list-mnemonics       Display mnemonic names"
+msgstr ""
+
+#: cobc/cobc.cpp:1592
+msgid "  -list-system          Display system routines"
+msgstr ""
+
+#: cobc/cobc.cpp:1593
+msgid "  -save-temps(=<dir>)   Save intermediate files"
+msgstr ""
+
+#: cobc/cobc.cpp:1594
+msgid "                        - Default : current directory"
+msgstr ""
+
+#: cobc/cobc.cpp:1595
+msgid "  -ext <extension>      Add default file extension"
+msgstr ""
+
+#: cobc/cobc.cpp:1599
+msgid "  -W                    Enable ALL warnings"
+msgstr ""
+
+#: cobc/cobc.cpp:1600
+msgid "  -Wall                 Enable all warnings except as noted below"
+msgstr ""
+
+#: cobc/cobc.cpp:1633
+msgid "Only one of options 'E', 'S', 'C', 'c' may be specified"
+msgstr ""
+
+#: cobc/cobc.cpp:1639
+msgid "Only one of options 'm', 'x', 'b' may be specified"
+msgstr ""
+
+#: cobc/cobc.cpp:1654
+#, fuzzy, c-format
+msgid "'%s' is not an intrinsic function"
+msgstr "`%s' は整数ではありません"
+
+#: cobc/cobc.cpp:1808
+#, fuzzy
+msgid "loading standard configuration file 'default.conf'"
+msgstr "不当な行連結です"
+
+#: cobc/cobc.c:2272
+#, fuzzy
+msgid "invalid output file name"
+msgstr "不当な入力ストリームです"
+
+#: cobc/cobc.cpp:1850
+#, fuzzy, c-format
+msgid "Invalid option -std=%s"
+msgstr "不当なオプションです -std=%s\n"
+
+#: cobc/cobc.cpp:1884
+#, c-format
+msgid "warning: '%s' is not a directory, defaulting to current directory"
+msgstr ""
+
+#: cobc/cobc.cpp:1916
+#, c-format
+msgid "warning: assuming '%s' is a DEFINE - did you intend to use -debug?"
+msgstr ""
+
+#: cobc/cobc.cpp:2115
+#, fuzzy
+msgid "invalid option detected"
+msgstr "不当なオプションです -std=%s\n"
+
+#: cobc/cobc.cpp:2128
+msgid "Failed to load the initial config file"
+msgstr ""
+
+#: cobc/cobc.cpp:2134
+#, fuzzy, c-format
+msgid "call to '%s' with invalid parameter '%s'"
+msgstr "`%s' は部分参照できません"
+
+#: cobc/cobc.cpp:2140
+#, c-format
+msgid "Invalid text-column value - %d"
+msgstr ""
+
+#: cobc/cobc.cpp:2293
+#, fuzzy
+msgid "Invalid file name parameter"
+msgstr "不当な VALUE 句です"
+
+#: cobc/cobc.cpp:2559
+#, c-format
+msgid "Unknown option ignored:\t%s"
+msgstr ""
+
+#: cobc/cobc.cpp:2617 cobc/cobc.cpp:2672 cobc/cobc.cpp:2729 cobc/cobc.cpp:2819
+#: cobc/cobc.cpp:2846 cobc/cobc.cpp:2888
+msgid "Return status:"
+msgstr ""
+
+#: cobc/cobc.cpp:2760
+msgid "Preprocessing:"
+msgstr ""
+
+#: cobc/cobc.cpp:2824
+msgid "'cobxref' execution unsuccessful"
+msgstr ""
+
+#: cobc/cobc.cpp:2828
+#, c-format
+msgid "Check that 'cobxref' is in %%PATH%%"
+msgstr ""
+
+#: cobc/cobc.cpp:2831
+msgid "Check that 'cobxref' is in $PATH"
+msgstr ""
+
+#: cobc/cobc.cpp:2835
+msgid "No listing produced"
+msgstr ""
+
+#: cobc/cobc.cpp:2870
+msgid "Parsing:"
+msgstr ""
+
+#: cobc/cobc.cpp:2927
+msgid "Translating:"
+msgstr ""
+
+#: cobc/cobc.cpp:3779
+msgid "No input files"
+msgstr ""
+
+#: cobc/cobc.cpp:3869
+#, fuzzy
+msgid "-o option invalid in this combination"
+msgstr "不当な行連結です"
+
+#: cobc/cobc.cpp:3891
+msgid "Command line:\t"
+msgstr ""
+
+#: cobc/codegen.cpp:612 cobc/codegen.cpp:2471 cobc/codegen.cpp:6432
+#: cobc/codegen.cpp:6853
+msgid "Unexpected CONSTANT item"
+msgstr ""
+
+#: cobc/codegen.cpp:852 cobc/codegen.cpp:927 cobc/codegen.cpp:1085
+#: cobc/codegen.cpp:1562 cobc/codegen.cpp:1808 cobc/codegen.cpp:2233
+#: cobc/codegen.cpp:2442 cobc/codegen.cpp:5299 cobc/typeck.cpp:710
+#: cobc/typeck.cpp:3045 cobc/typeck.cpp:6043
+#, fuzzy, c-format
+msgid "unexpected tree tag: %d"
+msgstr "不当な数字定数です"
+
+#: cobc/codegen.cpp:1371 cobc/codegen.cpp:1641 cobc/codegen.cpp:5085
+#, fuzzy, c-format
+msgid "unexpected cast type: %d"
+msgstr "不当な数字定数です"
+
+#: cobc/codegen.cpp:1990 cobc/codegen.cpp:2425
+#, c-format
+msgid "internal statement stack depth exceeded: %d"
+msgstr ""
+
+#: cobc/codegen.cpp:2285
+#, fuzzy, c-format
+msgid "unexpected function: %s"
+msgstr "不当な数字定数です"
+
+#: cobc/codegen.cpp:2347
+#, fuzzy
+msgid "unexpected constant"
+msgstr "不当な数字定数です"
+
+#: cobc/codegen.cpp:2949
+#, c-format
+msgid "Unexpected tree category %d"
+msgstr ""
+
+#: cobc/codegen.cpp:3304 cobc/codegen.cpp:3334
+#, fuzzy
+msgid "Unexpected size"
+msgstr "不当な数字定数です"
+
+#: cobc/codegen.cpp:4887
+msgid "Unexpected error_node parameter"
+msgstr ""
+
+#: cobc/codegen.cpp:5103
+#, fuzzy, c-format
+msgid "unexpected handler type: %d"
+msgstr "不当な数字定数です"
+
+#: cobc/codeoptim.cpp:2629
+#, fuzzy
+msgid "Unexpected optimization value"
+msgstr "不当な数字定数です"
+
+#: cobc/config.cpp:113
+#, fuzzy, c-format
+msgid "Invalid value for '%s'"
+msgstr "%s: 節 `%s':\n"
+
+#: cobc/config.cpp:122
+#, fuzzy, c-format
+msgid "'%s' not supported"
+msgstr "`%s' は実装されていません"
+
+#: cobc/config.cpp:158 cobc/pplex.l:755 cobc/pplex.l:759 cobc/pplex.l:847
+msgid "No such file or directory"
+msgstr ""
+
+#: cobc/config.cpp:189
+#, fuzzy
+msgid "Invalid line"
+msgstr "不当な VALUE 句です"
+
+#: cobc/config.cpp:206
+#, fuzzy, c-format
+msgid "Unknown tag '%s'"
+msgstr "そのような文はありません `%s'"
+
+#: cobc/config.cpp:330
+#, fuzzy, c-format
+msgid "Invalid type for '%s'"
+msgstr "%s: 節 `%s':\n"
+
+#: cobc/config.cpp:343
+#, fuzzy, c-format
+msgid "%s: No definition of '%s'"
+msgstr "`%s' が再定義されています"
+
+#: cobc/error.cpp:54
+#, fuzzy
+msgid "in section"
+msgstr "%s: 節 `%s':\n"
+
+#: cobc/error.cpp:63
+#, fuzzy
+msgid "in paragraph"
+msgstr "%s: 段落 `%s':\n"
+
+#: cobc/error.cpp:82 cobc/error.cpp:114 cobc/error.cpp:138
+msgid "Warning: "
+msgstr ""
+
+#: cobc/error.cpp:166
+#, c-format
+msgid "%s used"
+msgstr ""
+
+#: cobc/error.c:355
+#, c-format
+msgid "%s is archaic in %s"
+msgstr "%s は %s では古い仕様です"
+
+#: cobc/error.cpp:171
+#, c-format
+msgid "%s is obsolete in %s"
+msgstr "%s は %s では廃要素です"
+
+#: cobc/error.cpp:178
+#, c-format
+msgid "%s ignored"
+msgstr "%s を無視します"
+
+#: cobc/error.cpp:184
+#, fuzzy, c-format
+msgid "%s does not conform to %s"
+msgstr "%s は %s に準拠していません"
+
+#: cobc/error.cpp:196 cobc/error.cpp:207
+#, fuzzy, c-format
+msgid "redefinition of '%s'"
+msgstr "`%s' が再定義されています"
+
+#: cobc/error.cpp:199 cobc/error.cpp:216
+#, fuzzy, c-format
+msgid "'%s' previously defined here"
+msgstr "`%s' はここで定義されました"
+
+#: cobc/error.cpp:234 cobc/error.cpp:236
+#, fuzzy, c-format
+msgid "'%s' cannot be used here"
+msgstr "`%s' は添字付け出来ません"
+
+#: cobc/error.c:445
+#, c-format
+msgid "'%s' is not defined, but is a reserved word in another dialect"
+msgstr ""
+
+#: cobc/error.c:447
+#, fuzzy, c-format
+msgid "'%s' is not defined"
+msgstr "%s は未定義です"
+
+#: cobc/error.cpp:255
+#, c-format
+msgid "%s ambiguous; need qualification"
+msgstr "%s は多重定義されています。一意に修飾して下さい"
+
+#: cobc/error.cpp:284
+msgid "defined here"
+msgstr "はここで定義されました"
+
+#: cobc/error.cpp:293
+#, fuzzy, c-format
+msgid "group item '%s' cannot have %s clause"
+msgstr "グループ項目 `%s' は %s 句を持つことが出来ません"
+
+#: cobc/error.cpp:303
+#, fuzzy, c-format
+msgid "constant item '%s' cannot have a %s clause"
+msgstr "グループ項目 `%s' は %s 句を持つことが出来ません"
+
+#: cobc/error.cpp:305
+#, fuzzy, c-format
+msgid "level %02d item '%s' cannot have a %s clause"
+msgstr "レベル %02d 項目 `%s' は %s 句を持つことが出来ません"
+
+#: cobc/error.cpp:315
+#, fuzzy, c-format
+msgid "constant item '%s' requires a %s clause"
+msgstr "レベル %02d 項目 `%s' には %s 句が必要です"
+
+#: cobc/error.cpp:317
+#, fuzzy, c-format
+msgid "level %02d item '%s' requires a %s clause"
+msgstr "レベル %02d 項目 `%s' には %s 句が必要です"
+
+#: cobc/error.cpp:327
+#, fuzzy, c-format
+msgid "constant item '%s' can only have a %s clause"
+msgstr "レベル %02d 項目 `%s' は %s 句を持つことが出来ません"
+
+#: cobc/error.cpp:329
+#, fuzzy, c-format
+msgid "level %02d item '%s' can only have a %s clause"
+msgstr "レベル %02d 項目 `%s' は %s 句を持つことが出来ません"
+
+#: cobc/field.cpp:81
+#, fuzzy, c-format
+msgid "invalid level number '%s'"
+msgstr "不当なレベル番号です `%s'"
+
+#: cobc/field.cpp:129 cobc/field.cpp:167
+#, fuzzy
+msgid "level number must begin with 01 or 77"
+msgstr "レベル番号は 01 か 77 で始まらなければなりません"
+
+#: cobc/field.cpp:205 cobc/field.cpp:221
+#, fuzzy, c-format
+msgid "no previous data item of level %02d"
+msgstr "レベル %02d のデータ項目が前にありません"
+
+#: cobc/field.cpp:247
+#, fuzzy, c-format
+msgid "'%s' cannot be qualified here"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/field.cpp:253
+#, fuzzy, c-format
+msgid "'%s' cannot be subscripted here"
+msgstr "`%s' は添字付け出来ません"
+
+#: cobc/field.cpp:266
+#, fuzzy, c-format
+msgid "'%s' is not defined in '%s'"
+msgstr "`%s' は `%s' の中で定義されていません"
+
+#: cobc/field.cpp:286
+#, fuzzy
+msgid "level number of REDEFINES entries must be identical"
+msgstr "REDEFINES 句の項目は同じレベル番号でなければなりません"
+
+#: cobc/field.cpp:290
+#, fuzzy
+msgid "Level number of REDEFINES entry cannot be 66 or 88"
+msgstr "REDEFINES 句の項目はレベル番号 66 または 88 であってはなりません"
+
+#: cobc/field.cpp:295
+#, fuzzy, c-format
+msgid "'%s' is not the original definition"
+msgstr "`%s' は最初の定義ではありません"
+
+#: cobc/field.cpp:310
+msgid "BLANK ZERO not compatible with USAGE"
+msgstr ""
+
+#: cobc/field.cpp:313
+msgid "SIGN clause not compatible with USAGE"
+msgstr ""
+
+#: cobc/field.cpp:373 cobc/field.cpp:378
+#, fuzzy, c-format
+msgid "PICTURE clause required for '%s'"
+msgstr "`%s' には PICTURE 句が必要です"
+
+#: cobc/field.cpp:383
+#, fuzzy, c-format
+msgid "a non-numeric literal is expected for '%s'"
+msgstr "文字列が必要です"
+
+#: cobc/field.cpp:389
+#, c-format
+msgid "defining implicit picture size %d for '%s'"
+msgstr ""
+
+#: cobc/field.cpp:407
+#, c-format
+msgid "'%s' ANY LENGTH only allowed in LINKAGE"
+msgstr ""
+
+#: cobc/field.cpp:411
+#, c-format
+msgid "'%s' ANY LENGTH must be 01 level"
+msgstr ""
+
+#: cobc/field.cpp:415
+#, fuzzy, c-format
+msgid "'%s' ANY LENGTH can not be BASED/EXTERNAL"
+msgstr "`%s' は BLANK WHEN ZERO を持つことが出来ません"
+
+#: cobc/field.cpp:420 cobc/field.cpp:435
+#, fuzzy, c-format
+msgid "'%s' ANY LENGTH has invalid definition"
+msgstr "`%s' は最初の定義ではありません"
+
+#: cobc/field.cpp:430
+#, fuzzy, c-format
+msgid "'%s' ANY LENGTH must have a PICTURE"
+msgstr "`%s' は OCCURS DEPENDING を持つことが出来ません"
+
+#: cobc/field.cpp:446
+#, fuzzy, c-format
+msgid "'%s' 77 level not allowed here"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/field.cpp:451
+#, c-format
+msgid "'%s' EXTERNAL must be specified at 01/77 level"
+msgstr ""
+
+#: cobc/field.cpp:455
+#, c-format
+msgid "'%s' EXTERNAL can only be specified in WORKING-STORAGE section"
+msgstr ""
+
+#: cobc/field.cpp:459
+#, c-format
+msgid "'%s' EXTERNAL and BASED are mutually exclusive"
+msgstr ""
+
+#: cobc/field.cpp:462
+#, c-format
+msgid "'%s' EXTERNAL not allowed with REDEFINES"
+msgstr ""
+
+#: cobc/field.cpp:469
+#, fuzzy, c-format
+msgid "'%s' BASED not allowed here"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/field.cpp:472
+#, c-format
+msgid "'%s' BASED not allowed with REDEFINES"
+msgstr ""
+
+#: cobc/field.cpp:475
+#, fuzzy, c-format
+msgid "'%s' BASED only allowed at the 01 and 77 levels"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/field.cpp:508
+#, fuzzy, c-format
+msgid "'%s' cannot have the OCCURS clause due to '%s'"
+msgstr "`%s' は `%s' のため OCCURS 句を持つことが出来ません"
+
+#: cobc/field.cpp:523
+#, fuzzy, c-format
+msgid "the original definition '%s' should not have OCCURS clause"
+msgstr "`%s' の元の定義には OCCURS を付けてはなりません"
+
+#: cobc/field.cpp:530
+msgid "REDEFINES must follow the original definition"
+msgstr "REDEFINES 句は参照元の項目の直後になければなりません"
+
+#: cobc/field.cpp:537
+#, fuzzy, c-format
+msgid "'%s' cannot be variable length"
+msgstr "`%s' は可変長に出来ません"
+
+#: cobc/field.cpp:541
+#, fuzzy, c-format
+msgid "the original definition '%s' cannot be variable length"
+msgstr "`%s' の元の定義は可変長であってはなりません"
+
+#: cobc/field.cpp:562
+#, fuzzy, c-format
+msgid "SCREEN group item '%s' has invalid clause"
+msgstr "グループ項目 `%s' は %s 句を持つことが出来ません"
+
+#: cobc/field.cpp:613
+#, fuzzy, c-format
+msgid "'%s' cannot have PICTURE clause"
+msgstr "`%s' は PICTURE 句を持つことが出来ません"
+
+#: cobc/field.cpp:679 cobc/field.cpp:685 cobc/field.cpp:698
+#, c-format
+msgid "'%s' COMP-6 with sign - changing to COMP-3"
+msgstr ""
+
+#: cobc/field.cpp:730
+#, fuzzy, c-format
+msgid "'%s' cannot have JUSTIFIED RIGHT"
+msgstr "`%s' は JUSTIFIED RIGHT を持つことが出来ません"
+
+#: cobc/field.cpp:789
+#, fuzzy, c-format
+msgid "'%s' cannot have S in PICTURE string and BLANK WHEN ZERO"
+msgstr "`%s' は BLANK WHEN ZERO を持つことが出来ません"
+
+#: cobc/field.cpp:797
+#, fuzzy
+msgid "only level 88 items may have multiple values"
+msgstr "複数の値はレベル 88 項目のみに許されます"
+
+#: cobc/field.cpp:803
+#, fuzzy
+msgid "entries under REDEFINES cannot have a VALUE clause"
+msgstr "REDEFINES に含まれる項目は VALUE 句を持つことが出来ません"
+
+#: cobc/field.cpp:806
+msgid "Initial VALUE clause ignored for EXTERNAL item"
+msgstr ""
+
+#: cobc/field.cpp:1075
+#, c-format
+msgid "ignoring SYNCHRONIZED for group item '%s'"
+msgstr ""
+
+#: cobc/field.cpp:1090 cobc/field.cpp:1098 cobc/field.cpp:1254
+#: cobc/field.cpp:1257
+#, fuzzy, c-format
+msgid "size of '%s' larger than size of '%s'"
+msgstr "`%s' のサイズが `%s' のサイズを越えています"
+
+#: cobc/field.cpp:1185 cobc/field.cpp:1193
+#, fuzzy, c-format
+msgid "'%s' binary field cannot be larger than %d digits"
+msgstr "18 桁を越える数字項目は許されません"
+
+#: cobc/field.cpp:1242
+#, fuzzy, c-format
+msgid "Unexpected usage - %d"
+msgstr "不当な数字定数です"
+
+#: cobc/field.cpp:1343
+msgid "literal type does not match numeric data type"
+msgstr ""
+
+#: cobc/flag.def:38
+msgid "define PERFORM stack size"
+msgstr ""
+
+#: cobc/flag.def:41
+msgid "define cutoff depth for IF statements"
+msgstr ""
+
+#: cobc/flag.def:44
+msgid ""
+"Define display sign representation\n"
+"\t\t\t- ASCII or EBCDIC(Default : machine native)"
+msgstr ""
+
+#: cobc/flag.def:47
+msgid ""
+"Fold COPY subject to value\n"
+"\t\t\t- UPPER or LOWER(Default : no transformation)"
+msgstr ""
+
+#: cobc/flag.def:50
+msgid ""
+"Fold PROGRAM-ID, CALL, CANCEL subject to value\n"
+"\t\t\t- UPPER or LOWER(Default : no transformation)"
+msgstr ""
+
+#: cobc/flag.def:53
+msgid ""
+"Initialize fields without VALUE to decimal value\n"
+"\t\t\t- 0 to 255(Default : initialize to picture)"
+msgstr ""
+
+#: cobc/flag.def:58
+msgid ""
+"Intrinsics to be used without FUNCTION keyword\n"
+"\t\t\t- ALL or intrinsic function name(,name,...)"
+msgstr ""
+
+#: cobc/flag.def:64
+#, fuzzy
+msgid "output static function calls for the CALL statement"
+msgstr "CALL 文で静的関数呼び出しを行なう"
+
+#: cobc/flag.def:67
+msgid "generate computed goto C statements"
+msgstr ""
+
+#: cobc/flag.def:70
+msgid "use restricted ASCII to EBCDIC translate"
+msgstr ""
+
+#: cobc/flag.def:73
+msgid "generate extra braces in generated C code"
+msgstr ""
+
+#: cobc/flag.def:76
+msgid "attempt correction of invalid numeric display items"
+msgstr ""
+
+#: cobc/flag.def:79
+msgid "PERFORM stack allocated on heap"
+msgstr ""
+
+#: cobc/flag.def:83
+msgid ""
+"generate trace code\n"
+"\t\t\t- executed SECTION/PARAGRAPH"
+msgstr ""
+
+#: cobc/flag.def:86
+msgid ""
+"generate trace code\n"
+"\t\t\t- executed SECTION/PARAGRAPH/STATEMENTS\n"
+"\t\t\t- turned on by -debug"
+msgstr ""
+
+#: cobc/flag.def:89
+#, fuzzy
+msgid "syntax error checking only; don't emit any output"
+msgstr "文法チェックのみ。何も出力しない"
+
+#: cobc/flag.def:92
+#, fuzzy
+msgid ""
+"enable debugging lines\n"
+"\t\t\t- 'D' in indicator column or floating >>D"
+msgstr "デバッグ行を有効にする"
+
+#: cobc/flag.def:95
+msgid ""
+"generate source location code\n"
+"\t\t\t- turned on by -debug/-g/-ftraceall"
+msgstr ""
+
+#: cobc/flag.def:98
+msgid "automatic initialization of the COBOL runtime system"
+msgstr ""
+
+#: cobc/flag.def:101
+msgid ""
+"PERFORM stack checking\n"
+"\t\t\t- turned on by -debug or -g"
+msgstr ""
+
+#: cobc/flag.def:104
+msgid ""
+"allow syntax extensions\n"
+"\t\t\t- eg. switch name SW1, etc."
+msgstr ""
+
+#: cobc/flag.def:107
+msgid ""
+"use AFTER 1 for WRITE of LINE SEQUENTIAL\n"
+"\t\t\t- default: BEFORE 1"
+msgstr ""
+
+#: cobc/flag.def:110
+msgid ""
+"'*' or '/' in column 1 treated as comment\n"
+"\t\t\t- FIXED format only"
+msgstr ""
+
+#: cobc/flag.def:113
+msgid ""
+"allow numeric field overflow\n"
+"\t\t\t- non-ANSI behaviour"
+msgstr ""
+
+#: cobc/flag.def:116
+msgid ""
+"adjust items following OCCURS DEPENDING\n"
+"\t\t\t- requires implicit/explicit relaxed syntax"
+msgstr ""
+
+#: cobc/flag.def:119
+msgid ""
+"Use a single quote(apostrophe) for QUOTE\n"
+"\t\t\t- Default : double quote"
+msgstr ""
+
+#: cobc/flag.def:122
+msgid "check recursive program call"
+msgstr ""
+
+#: cobc/flag.def:125
+msgid ""
+"relax syntax checking\n"
+"\t\t\t- eg. REDEFINES position"
+msgstr ""
+
+#: cobc/flag.def:128
+msgid ""
+"treat all files as OPTIONAL\n"
+"\t\t\t- unless NOT OPTIONAL specified"
+msgstr ""
+
+#: cobc/parser.y:65
+#, fuzzy, c-format
+msgid "'%s' not implemented"
+msgstr "`%s' は実装されていません"
+
+#: cobc/parser.y:243
+#, fuzzy, c-format
+msgid "Unreachable statement '%s'"
+msgstr "不当な MOVE 文です"
+
+#: cobc/parser.y:298
+#, fuzzy, c-format
+msgid "'%s' not level 01 or 77"
+msgstr "`%s' はレベル 01 か 77 でなければなりません"
+
+#: cobc/parser.y:302
+#, c-format
+msgid "'%s' is not in LINKAGE SECTION"
+msgstr ""
+
+#: cobc/parser.y:305
+#, fuzzy, c-format
+msgid "'%s' can not be BASED/EXTERNAL"
+msgstr "`%s' は BLANK WHEN ZERO を持つことが出来ません"
+
+#: cobc/parser.y:310
+#, c-format
+msgid "'%s' is not in WORKING-STORAGE SECTION"
+msgstr ""
+
+#: cobc/parser.y:317
+#, c-format
+msgid "'%s' REDEFINES field not allowed here"
+msgstr ""
+
+#: parser.y:365
+#, c-format
+msgid "LINKAGE item '%s' is not a PROCEDURE USING parameter"
+msgstr ""
+
+#: parser.y:376
+#, c-format
+msgid "'%s' USING item duplicates RETURNING item"
+msgstr ""
+
+#: parser.y:385
+#, c-format
+msgid "ENTRY '%s' duplicated"
+msgstr ""
+
+#: parser.y:398
+#, c-format
+msgid "Maximum nested program depth exceeded(%d)"
+msgstr ""
+
+#: parser.y:414 parser.y:427
+#, c-format
+msgid "%s statement not terminated by END-%s"
+msgstr "%s 文が END-%s で終わっていません"
+
+#: cobc/parser.y:450
+msgid "USE statement invalid for SORT file"
+msgstr ""
+
+#: cobc/parser.y:543 cobc/parser.y:545 cobc/parser.y:557 cobc/parser.y:559
+#: cobc/parser.y:571 cobc/parser.y:573 cobc/parser.y:585 cobc/parser.y:587
+#, fuzzy, c-format
+msgid "Duplicate %s clause"
+msgstr "不当なレベル番号です `%s'"
+
+#: cobc/parser.y:697
+#, c-format
+msgid "maximum OCCURS depth exceeded (%d)"
+msgstr ""
+
+#: parser.y:527 parser.y:529 parser.y:4807 parser.y:4810 parser.y:4812
+#: parser.y:4814 parser.y:4849 parser.y:5271 parser.y:5273 parser.y:5275
+#: parser.y:5277 parser.y:5322 parser.y:5331 parser.y:8922
+#, c-format
+msgid "%s and %s are mutually exclusive"
+msgstr ""
+
+#: parser.y:542 parser.y:546
+msgid "TO phrase without DEPENDING phrase"
+msgstr ""
+
+#: parser.y:543
+msgid "maximum number of occurences assumed to be exact number"
+msgstr ""
+
+#: parser.y:551 parser.y:5113
+msgid "OCCURS TO must be greater than OCCURS FROM"
+msgstr ""
+
+#: parser.y:557
+#, fuzzy
+msgid "ODO without TO phrase"
+msgstr "GO TO に複数の手続き名が指定されています"
+
+#: parser.y:624
+#, c-format
+msgid "%s header missing - assumed"
+msgstr ""
+
+#: cobc/parser.y:699
+#, c-format
+msgid "%s header missing"
+msgstr ""
+
+#: cobc/parser.y:1369
+msgid "Multiple PROGRAM-ID's without matching END PROGRAM"
+msgstr ""
+
+#: cobc/parser.y:1372
+msgid "Executable requested but no program found"
+msgstr ""
+
+#: cobc/parser.y:1464
+#, c-format
+msgid "duplicate REPOSITORY entries for '%s' do not match"
+msgstr ""
+
+#: cobc/parser.y:1493
+#, c-format
+msgid "duplicate REPOSITORY entry for '%s'"
+msgstr ""
+
+#: cobc/parser.y:1582
+#, fuzzy
+msgid "FUNCTION-ID is not yet implemented"
+msgstr "`%s' は実装されていません"
+
+#: cobc/parser.y:1631 cobc/parser.y:1640
+msgid "COMMON may only be used in a contained program"
+msgstr ""
+
+#: cobc/parser.y:1679
+msgid "CONFIGURATION SECTION not allowed in nested programs"
+msgstr ""
+
+#: cobc/parser.y:1705
+msgid "Phrases in non-standard order"
+msgstr ""
+
+#: cobc/parser.y:1783
+#, fuzzy
+msgid "duplicate CLASSIFICATION clause"
+msgstr "不当なレベル番号です `%s'"
+
+#: cobc/parser.y:1901 cobc/parser.y:1945 cobc/parser.y:2024 cobc/parser.y:2141
+#: cobc/parser.y:2235 cobc/parser.y:2284 cobc/parser.y:2308 cobc/parser.y:2399
+#: cobc/parser.y:2418 cobc/parser.y:2434 cobc/parser.y:2452 cobc/parser.y:2470
+#: cobc/parser.y:2487
+#, fuzzy
+msgid "SPECIAL-NAMES not allowed in nested programs"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/parser.y:1950
+#, fuzzy, c-format
+msgid "invalid system-name '%s'"
+msgstr "不当なシステム名です `%s'"
+
+#: cobc/parser.y:1962
+#, fuzzy
+msgid "Invalid CRT clause"
+msgstr "不当な VALUE 句です"
+
+#: cobc/parser.y:1972
+#, fuzzy
+msgid "Invalid special names clause"
+msgstr "不当な VALUE 句です"
+
+#: cobc/parser.y:2189
+#, fuzzy
+msgid "Invalid SYMBOLIC clause"
+msgstr "不当な VALUE 句です"
+
+#: cobc/parser.y:2261 cobc/parser.y:2265
+msgid "CLASS literal with THRU must have size 1"
+msgstr ""
+
+#: cobc/parser.y:2316 cobc/parser.y:2367
+#, fuzzy, c-format
+msgid "invalid CURRENCY SIGN '%s'"
+msgstr "不当な X 定数です: %s"
+
+#: cobc/parser.y:3016
+msgid "RECORD description invalid with REPORT"
+msgstr ""
+
+#: cobc/parser.y:3021
+msgid "RECORD description missing or invalid"
+msgstr ""
+
+#: cobc/parser.y:3074 cobc/parser.y:3084
+msgid "File cannot have both EXTERNAL and GLOBAL clauses"
+msgstr ""
+
+#: cobc/parser.y:3088 cobc/parser.y:3593 cobc/parser.y:3834 cobc/parser.y:8677
+msgid "GLOBAL is invalid in a user FUNCTION"
+msgstr ""
+
+#: cobc/parser.y:3127 cobc/parser.y:3149
+msgid "RECORD clause ignored for LINE SEQUENTIAL"
+msgstr ""
+
+#: cobc/parser.y:3133 cobc/parser.y:3172 cobc/parser.y:3202
+#, fuzzy
+msgid "RECORD clause invalid"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/parser.y:3137 cobc/parser.y:3164 cobc/parser.y:3194
+#, fuzzy, c-format
+msgid "RECORD size exceeds maximum allowed(%d)"
+msgstr "レコード長が短か過ぎます `%s'"
+
+#: cobc/parser.y:3284
+msgid "LINAGE clause with wrong file type"
+msgstr ""
+
+#: cobc/parser.y:3349
+#, fuzzy
+msgid "CODE-SET clause invalid for file type"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/parser.y:3352
+#, fuzzy, c-format
+msgid "Alphabet-name is expected '%s'"
+msgstr "アルファベット名が必要です `%s'"
+
+#: cobc/parser.y:3363 cobc/parser.y:3374
+#, c-format
+msgid "ignoring CODE-SET '%s'"
+msgstr ""
+
+#: cobc/parser.y:3394
+#, fuzzy
+msgid "REPORT WRITER not implemented"
+msgstr "`%s' は実装されていません"
+
+#: cobc/parser.y:3397
+#, fuzzy
+msgid "REPORT clause with wrong file type"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/parser.y:3520 cobc/parser.y:4776
+msgid "Item requires a data name"
+msgstr ""
+
+#: cobc/parser.y:3696
+msgid "CONSTANT item not at 01 level"
+msgstr ""
+
+#: cobc/parser.y:3763
+#, fuzzy
+msgid "REDEFINES clause should follow entry-name"
+msgstr "REDEFINES 句は項目名の直後になければなりません"
+
+#: cobc/parser.y:3765
+msgid "REDEFINES clause must follow entry-name"
+msgstr "REDEFINES 句は項目名の直後になければなりません"
+
+#: cobc/parser.y:3786
+#, fuzzy
+msgid "EXTERNAL not allowed here"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/parser.y:3788
+#, fuzzy
+msgid "EXTERNAL only allowed at 01/77 level"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/parser.y:3790
+msgid "EXTERNAL requires a data name"
+msgstr ""
+
+#: cobc/parser.y:3793 cobc/parser.y:3831
+msgid "GLOBAL and EXTERNAL are mutually exclusive"
+msgstr ""
+
+#: cobc/parser.y:3796 cobc/parser.y:4232
+msgid "BASED and EXTERNAL are mutually exclusive"
+msgstr ""
+
+#: cobc/parser.y:3798
+msgid "EXTERNAL and REDEFINES are mutually exclusive"
+msgstr ""
+
+#: cobc/parser.y:3800 cobc/parser.y:4104
+msgid "EXTERNAL and OCCURS are mutually exclusive"
+msgstr ""
+
+#: cobc/parser.y:3826
+#, fuzzy
+msgid "GLOBAL only allowed at 01/77 level"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/parser.y:3828
+msgid "GLOBAL requires a data name"
+msgstr ""
+
+#: cobc/parser.y:3836
+#, fuzzy
+msgid "GLOBAL not allowed here"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/parser.y:4070 cobc/parser.y:4098
+#, c-format
+msgid "Maximum OCCURS depth exceeded(%d)"
+msgstr ""
+
+#: cobc/parser.y:4102 cobc/parser.y:4238
+msgid "BASED and OCCURS are mutually exclusive"
+msgstr ""
+
+#: cobc/parser.y:4226
+#, fuzzy
+msgid "BASED not allowed here"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/parser.y:4228
+#, fuzzy
+msgid "BASED only allowed at 01/77 level"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/parser.y:4230
+msgid "BASED requires a data name"
+msgstr ""
+
+#: cobc/parser.y:4234
+msgid "BASED and REDEFINES are mutually exclusive"
+msgstr ""
+
+#: cobc/parser.y:4236
+msgid "BASED and ANY LENGTH are mutually exclusive"
+msgstr ""
+
+#: cobc/parser.y:4270
+msgid "FALSE clause only allowed for 88 level"
+msgstr ""
+
+#: cobc/parser.y:4286 cobc/parser.y:4299 cobc/parser.y:4302
+msgid "RENAMES may not reference a level 01 or > 50"
+msgstr ""
+
+#: cobc/parser.y:4318 cobc/parser.y:4327
+msgid "BASED and ANY clause are mutually exclusive"
+msgstr ""
+
+#: cobc/parser.y:4344
+msgid "LOCAL-STORAGE not allowed in nested programs"
+msgstr ""
+
+#: cobc/parser.y:4378
+#, fuzzy
+msgid "REPORT SECTION not implemented"
+msgstr "`%s' は実装されていません"
+
+#: cobc/parser.y:4417
+#, fuzzy
+msgid "GLOBAL is not allowed with RD"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/parser.y:4479
+#, fuzzy
+msgid "Invalid PAGE clause"
+msgstr "不当な VALUE 句です"
+
+#: cobc/parser.y:4780
+msgid "INITIAL specified on non-input field"
+msgstr ""
+
+#: cobc/parser.y:5000
+#, fuzzy
+msgid "GLOBAL is not allowed with screen items"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/parser.y:5020
+msgid "Executable program requested but PROCEDURE/ENTRY has USING clause"
+msgstr ""
+
+#: cobc/parser.y:5088 cobc/parser.y:5105 cobc/parser.y:6044
+#, fuzzy, c-format
+msgid "number of parameters exceeds maximum %d"
+msgstr "値の大きさが項目の大きさを越えています"
+
+#: cobc/parser.y:5097
+msgid "CHAINING invalid in user FUNCTION"
+msgstr ""
+
+#: cobc/parser.y:5135 cobc/parser.y:6107
+msgid "BY VALUE not allowed in CHAINED program"
+msgstr ""
+
+#: cobc/parser.y:5147 cobc/parser.y:5155 cobc/parser.y:5163 cobc/parser.y:5173
+#: cobc/parser.y:5202
+msgid "SIZE only allowed for BY VALUE items"
+msgstr ""
+
+#: cobc/parser.y:5175 cobc/parser.y:5192 cobc/parser.y:5204 cobc/parser.y:5221
+#, fuzzy
+msgid "invalid value for SIZE"
+msgstr "不当な行連結です"
+
+#: cobc/parser.y:5233
+msgid "OPTIONAL only allowed for BY REFERENCE items"
+msgstr ""
+
+#: cobc/parser.y:5242
+#, fuzzy
+msgid "RETURNING clause is required for a FUNCTION"
+msgstr "%s 句がファイル `%s' に必要です"
+
+#: cobc/parser.y:5250
+msgid "RETURNING item must have level 01"
+msgstr ""
+
+#: cobc/parser.y:5252
+#, fuzzy
+msgid "RETURNING item should not have OCCURS"
+msgstr "`%s' の元の定義には OCCURS を付けてはなりません"
+
+#: cobc/parser.y:5254
+msgid "RETURNING item should not be in LOCAL-STORAGE"
+msgstr ""
+
+#: cobc/parser.y:5446
+#, fuzzy, c-format
+msgid "'%s' is not a statement"
+msgstr "`%s' はファイル名ではありません"
+
+#: parser.y:6547
+#, c-format
+msgid "unknown statement '%s'; it may exist in another dialect"
+msgstr ""
+
+#: parser.y:6550
+#, fuzzy, c-format
+msgid "unknown statement '%s'"
+msgstr "そのような文はありません `%s'"
+
+#: cobc/parser.y:5460
+msgid "SECTION segment invalid within DECLARATIVE"
+msgstr ""
+
+#: cobc/parser.y:5765 cobc/parser.y:6487
+msgid "Ignoring CONVERSION"
+msgstr ""
+
+#: cobc/parser.y:5926
+msgid "ALLOCATE CHARACTERS requires RETURNING clause"
+msgstr ""
+
+#: cobc/parser.y:5989
+msgid "Recursive program call - assuming RECURSIVE attribute"
+msgstr ""
+
+#: cobc/parser.y:6017 cobc/typeck.cpp:7996
+#, fuzzy
+msgid "invalid mnemonic name"
+msgstr "不当なニーモニックです"
+
+#: cobc/parser.y:6062
+msgid "OMITTED only allowed with BY REFERENCE"
+msgstr ""
+
+#: cobc/parser.y:6073
+#, fuzzy
+msgid "invalid file name reference"
+msgstr "不当な VALUE 句です"
+
+#: cobc/parser.y:6077
+msgid "BY CONTENT assumed for alphanumeric item"
+msgstr ""
+
+#: cobc/parser.y:6098
+msgid "BY CONTENT not allowed in CHAINED program"
+msgstr ""
+
+#: cobc/parser.y:6132
+msgid "RETURNING item must have level 01 or 77"
+msgstr ""
+
+#: cobc/parser.y:6136
+msgid "RETURNING item is neither in LINKAGE SECTION nor is it BASED"
+msgstr ""
+
+#: cobc/parser.y:6607
+msgid "ENTRY is invalid in nested program"
+msgstr ""
+
+#: cobc/parser.y:6609
+msgid "ENTRY is invalid in a user FUNCTION"
+msgstr ""
+
+#: cobc/parser.y:6628 cobc/parser.y:6666 cobc/parser.y:6677 cobc/parser.y:6688
+#, c-format
+msgid "Maximum evaluate depth exceeded(%d)"
+msgstr ""
+
+#: cobc/parser.y:6787
+#, fuzzy
+msgid "invalid THROUGH usage"
+msgstr "不当な VALUE 句です"
+
+#: cobc/parser.y:6850
+msgid "EXIT PROGRAM is not allowed within a USE GLOBAL procedure"
+msgstr ""
+
+#: cobc/parser.y:6854
+msgid "EXIT PROGRAM only allowed within a PROGRAM type"
+msgstr ""
+
+#: cobc/parser.y:6868
+msgid "EXIT FUNCTION is not allowed within a USE GLOBAL procedure"
+msgstr ""
+
+#: cobc/parser.y:6872
+msgid "EXIT FUNCTION only allowed within a FUNCTION type"
+msgstr ""
+
+#: cobc/parser.y:6882 cobc/parser.y:6901
+msgid "EXIT PERFORM is only valid with inline PERFORM"
+msgstr ""
+
+#: cobc/parser.y:6920
+msgid "EXIT SECTION is only valid with an active SECTION"
+msgstr ""
+
+#: cobc/parser.y:6938
+msgid "EXIT PARAGRAPH is only valid with an active PARAGRAPH"
+msgstr ""
+
+#: cobc/parser.y:7309
+msgid "INSPECT missing a keyword"
+msgstr ""
+
+#: cobc/parser.y:7423 cobc/parser.y:7442
+msgid "SHARING and LOCK clauses are mutually exclusive"
+msgstr ""
+
+#: cobc/parser.y:7642 cobc/typeck.cpp:7089 cobc/typeck.cpp:7913
+msgid "LOCK clause invalid with file LOCK AUTOMATIC"
+msgstr ""
+
+#: cobc/parser.y:7647
+#, fuzzy
+msgid "KEY clause invalid with this file type"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/parser.y:7652 cobc/typeck.cpp:7085 cobc/typeck.cpp:7909
+msgid "INVALID KEY clause invalid with this file type"
+msgstr ""
+
+#: cobc/parser.y:8083
+msgid "File sort requires KEY phrase"
+msgstr ""
+
+#: cobc/parser.y:8085 cobc/typeck.cpp:7565
+msgid "Table sort without keys not implemented yet"
+msgstr ""
+
+#: cobc/parser.y:8148
+msgid "File sort requires USING or INPUT PROCEDURE"
+msgstr ""
+
+#: cobc/parser.y:8155
+msgid "USING invalid with table SORT"
+msgstr ""
+
+#: cobc/parser.y:8165
+msgid "INPUT PROCEDURE invalid with table SORT"
+msgstr ""
+
+#: cobc/parser.y:8167
+msgid "INPUT PROCEDURE invalid with MERGE"
+msgstr ""
+
+#: cobc/parser.y:8179
+msgid "File sort requires GIVING or OUTPUT PROCEDURE"
+msgstr ""
+
+#: cobc/parser.y:8186
+msgid "GIVING invalid with table SORT"
+msgstr ""
+
+#: cobc/parser.y:8196
+msgid "OUTPUT PROCEDURE invalid with table SORT"
+msgstr ""
+
+#: cobc/parser.y:8222
+#, fuzzy
+msgid "SIZE/LENGTH invalid here"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/parser.y:8275
+msgid "NOT EQUAL condition disallowed on START statement"
+msgstr ""
+
+#: cobc/parser.y:8461
+msgid "SUPPRESS statement must be within DECLARATIVES"
+msgstr ""
+
+#: cobc/parser.y:8532
+#, fuzzy
+msgid "UNLOCK invalid for SORT files"
+msgstr "不当な VALUE 句です"
+
+#: cobc/parser.y:8648 cobc/parser.y:8720
+msgid "USE statement must be within DECLARATIVES"
+msgstr ""
+
+#: cobc/parser.y:8650
+msgid "SECTION header missing before USE statement"
+msgstr ""
+
+#: cobc/parser.y:8722
+msgid "USE DEBUGGING not supported in contained program"
+msgstr ""
+
+#: cobc/parser.y:8798
+msgid "Duplicate USE DEBUGGING ON ALL PROCEDURES"
+msgstr ""
+
+#: cobc/parser.y:8810
+#, fuzzy
+msgid "invalid target for DEBUGGING ALL"
+msgstr "不当な行連結です"
+
+#: cobc/parser.y:9280
+#, fuzzy
+msgid "LINAGE-COUNTER must be qualified here"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/parser.y:9283
+#, fuzzy
+msgid "invalid LINAGE-COUNTER usage"
+msgstr "不当な VALUE 句です"
+
+#: cobc/parser.y:9294 cobc/parser.y:9414
+#, fuzzy, c-format
+msgid "'%s' is not a file name"
+msgstr "`%s' はファイル名ではありません"
+
+#: cobc/parser.y:9301
+#, fuzzy
+msgid "LINE-COUNTER must be qualified here"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/parser.y:9304
+#, fuzzy
+msgid "invalid LINE-COUNTER usage"
+msgstr "不当な VALUE 句です"
+
+#: cobc/parser.y:9315 cobc/parser.y:9336 cobc/parser.y:9454
+#, fuzzy, c-format
+msgid "'%s' is not a report name"
+msgstr "`%s' はファイル名ではありません"
+
+#: cobc/parser.y:9322
+#, fuzzy
+msgid "PAGE-COUNTER must be qualified here"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/parser.y:9325
+#, fuzzy
+msgid "invalid PAGE-COUNTER usage"
+msgstr "不当な VALUE 句です"
+
+#: cobc/parser.y:9373
+#, fuzzy, c-format
+msgid "'%s' not indexed"
+msgstr "`%s' には INDEXED BY が必要です"
+
+#: cobc/parser.y:9374
+#, fuzzy, c-format
+msgid "'%s' defined here"
+msgstr "`%s' はここで定義されました"
+
+#: cobc/parser.y:9396
+#, c-format
+msgid "multiple reference to '%s' "
+msgstr ""
+
+#: cobc/parser.y:9652
+#, fuzzy
+msgid "invalid mnemonic identifier"
+msgstr "不当なニーモニックです"
+
+#: cobc/parser.y:9901 cobc/parser.y:9904 cobc/parser.y:9916 cobc/parser.y:9919
+#: cobc/parser.y:9937 cobc/parser.y:9940 cobc/parser.y:9959
+#, fuzzy
+msgid "integer value expected"
+msgstr "数値が必要です"
+
+#: cobc/parser.y:9924
+#, fuzzy
+msgid "invalid symbolic integer"
+msgstr "不当な VALUE 句です"
+
+#: cobc/parser.y:9945
+#, fuzzy
+msgid "Invalid integer"
+msgstr "不当な VALUE 句です"
+
+#: cobc/parser.y:9963
+#, fuzzy
+msgid "invalid CLASS value"
+msgstr "不当な VALUE 句です"
+
+#: cobc/pplex.l:246
+#, fuzzy
+msgid "ignoring LEAP-SECOND directive"
+msgstr "マイナス符号は無視されます"
+
+#: cobc/pplex.l:252
+msgid "Ignoring empty directive"
+msgstr ""
+
+#: cobc/pplex.l:260 cobc/pplex.l:303
+#, fuzzy, c-format
+msgid "ignoring invalid directive: '%s'"
+msgstr "マイナス符号は無視されます"
+
+#: cobc/pplex.l:265
+#, fuzzy
+msgid "ignoring invalid directive"
+msgstr "マイナス符号は無視されます"
+
+#: cobc/pplex.l:308
+msgid "Spurious '$' detected - ignoring"
+msgstr ""
+
+#: cobc/pplex.l:313
+#, fuzzy
+msgid "PROCESS statement ignored"
+msgstr "PROCESS 文は無視されます"
+
+#: cobc/pplex.l:667
+msgid "Dangling IF/ELSE directive"
+msgstr ""
+
+#: cobc/pplex.l:897
+#, c-format
+msgid "Directive nest depth exceeded - %d"
+msgstr ""
+
+#: cobc/pplex.l:914
+msgid "ELSE directive without matching IF/ELIF"
+msgstr ""
+
+#: cobc/pplex.l:930
+msgid "END-IF directive without matching IF/ELIF/ELSE"
+msgstr ""
+
+#: cobc/pplex.l:946
+msgid "ELIF directive without matching IF/ELIF"
+msgstr ""
+
+#: cobc/pplex.l:967
+#, fuzzy, c-format
+msgid "invalid internal case: %u"
+msgstr "値の大きさが項目の大きさを越えています"
+
+#: cobc/pplex.l:1001
+msgid "Buffer overrun - Literal too long - Aborting"
+msgstr ""
+
+#: cobc/pplex.l:1068
+#, fuzzy
+msgid "line not terminated by a newline"
+msgstr "ファイルが改行で終わっていません"
+
+#: cobc/pplex.l:1094
+#, fuzzy, c-format
+msgid "Source text after column %d"
+msgstr "ソース行が %d 桁を越えています"
+
+#: cobc/pplex.l:1173
+#, fuzzy
+msgid "invalid continuation in comment entry"
+msgstr "不当な行連結です"
+
+#: cobc/pplex.l:1195
+#, fuzzy, c-format
+msgid "invalid indicator '%c' at column 7"
+msgstr "7 桁目が不当な指示子です `%c'"
+
+#: cobc/pplex.l:1241 cobc/pplex.l:1252
+#, fuzzy
+msgid "invalid line continuation"
+msgstr "不当な行連結です"
+
+#: cobc/pplex.l:1260
+msgid "Continuation character expected"
+msgstr ""
+
+#: cobc/ppparse.y:234
+msgid "Directive comparison on different types"
+msgstr ""
+
+#: cobc/ppparse.y:299
+#, fuzzy
+msgid "duplicate define"
+msgstr "不当なレベル番号です `%s'"
+
+#: cobc/ppparse.y:306 cobc/ppparse.y:316 cobc/ppparse.y:807 cobc/ppparse.y:830
+#, fuzzy
+msgid "invalid constant"
+msgstr "不当な数字定数です"
+
+#: cobc/ppparse.y:634 cobc/ppparse.y:643
+#, fuzzy
+msgid "Invalid SOURCEFORMAT directive"
+msgstr "不当な VALUE 句です"
+
+#: cobc/ppparse.y:658 cobc/ppparse.y:667
+msgid "Invalid FOLD-COPY-NAME directive"
+msgstr ""
+
+#: cobc/ppparse.y:698
+#, fuzzy
+msgid "Invalid SOURCE directive"
+msgstr "不当な VALUE 句です"
+
+#: cobc/ppparse.y:754
+#, fuzzy
+msgid "Invalid DEFINE/SET directive"
+msgstr "不当な VALUE 句です"
+
+#: cobc/ppparse.y:762
+#, fuzzy
+msgid "TURN directive not yet implemented"
+msgstr "`%s' は実装されていません"
+
+#: cobc/ppparse.y:815
+#, fuzzy
+msgid "Invalid IF/ELIF directive"
+msgstr "不当な VALUE 句です"
+
+#: cobc/reserved.cpp:2473
+msgid "Device name"
+msgstr ""
+
+#: cobc/reserved.cpp:2475
+msgid "Switch name"
+msgstr ""
+
+#: cobc/reserved.cpp:2477
+msgid "Feature name"
+msgstr ""
+
+#: cobc/reserved.cpp:2481 libcob/common.cpp:3595 libcob/common.cpp:3667
+msgid "Unknown"
+msgstr ""
+
+#: cobc/reserved.cpp:2531
+#, c-format
+msgid "reserved word must have less than %d characters"
+msgstr ""
+
+#: cobc/reserved.cpp:2597
+#, c-format
+msgid "Reserved Words\t\t\tImplemented(Y/N)"
+msgstr ""
+
+#: cobc/reserved.cpp:2618
+msgid "N(85 obsolete)"
+msgstr ""
+
+#: cobc/reserved.cpp:2621
+msgid "Y(Context sensitive)"
+msgstr ""
+
+#: cobc/reserved.cpp:2623 cobc/reserved.cpp:2676
+msgid "Y"
+msgstr ""
+
+#: cobc/reserved.cpp:2627
+msgid "N(Context sensitive)"
+msgstr ""
+
+#: cobc/reserved.cpp:2629 cobc/reserved.cpp:2678
+msgid "N"
+msgstr ""
+
+#: cobc/reserved.cpp:2635
+msgid "Extra(obsolete) context sensitive words"
+msgstr ""
+
+#: cobc/reserved.cpp:2644
+msgid "Extra internal registers\tDefinition"
+msgstr ""
+
+#: cobc/reserved.cpp:2656
+msgid "Intrinsic Function\t\tImplemented\tParameters"
+msgstr ""
+
+#: cobc/reserved.cpp:2694
+#, fuzzy
+msgid "Mnemonic names"
+msgstr "不当なニーモニックです"
+
+#: cobc/reserved.cpp:2706
+msgid "Extended mnemonic names(with -fsyntax-extension)"
+msgstr ""
+
+#: cobc/scanner.l:685 cobc/scanner.l:692
+#, c-format
+msgid "Word length exceeds 31 characters - '%s'"
+msgstr ""
+
+#: cobc/scanner.l:689
+#, fuzzy, c-format
+msgid "Word length exceeds maximum allowed - '%s'"
+msgstr "レコード長が短か過ぎます `%s'"
+
+#: cobc/scanner.l:787
+#, c-format
+msgid "A constant may not be used here - '%s'"
+msgstr ""
+
+#: cobc/scanner.l:892
+#, c-format
+msgid "invalid symbol '%s' - skipping word"
+msgstr ""
+
+#: cobc/scanner.l:994
+#, fuzzy
+msgid "alphanumeric literal has zero length; a SPACE will be assumed"
+msgstr "文字列が必要です"
+
+#: cobc/scanner.l:995
+msgid "A SPACE will be assumed"
+msgstr ""
+
+#: cobc/scanner.l:1044
+#, fuzzy, c-format
+msgid "Invalid X literal: %s"
+msgstr "不当な X 定数です: %s"
+
+#: cobc/scanner.l:1104
+#, fuzzy, c-format
+msgid "Invalid H literal: %s"
+msgstr "不当な H 定数です: %s"
+
+#: cobc/scanner.l:1128 cobc/scanner.l:1132 cobc/scanner.l:1136
+#, fuzzy
+msgid "numeric boolean literal"
+msgstr "不当な数字定数です"
+
+#: cobc/scanner.l:1181 cobc/scanner.l:1187 cobc/scanner.l:1190
+#: cobc/scanner.l:1194 cobc/scanner.l:1198
+#, fuzzy
+msgid "Invalid floating-point literal"
+msgstr "不当な数字定数です"
+
+#: cobc/scanner.l:1428
+#, fuzzy, c-format
+msgid "Invalid CONSTANT - %s"
+msgstr "不当な数字定数です"
+
+#: cobc/scanner.l:1438
+#, c-format
+msgid "exponent of 0 must be 0"
+msgstr ""
+
+#: cobc/scanner.l:1442
+#, c-format
+msgid "exponent of 0 must be positive"
+msgstr ""
+
+#: cobc/scanner.l:1461 cobc/scanner.l:1469 cobc/scanner.l:1474
+#, fuzzy, c-format
+msgid "invalid CONSTANT: %s"
+msgstr "不当な数字定数です"
+
+#: cobc/tree.cpp:198
+#, fuzzy, c-format
+msgid "%s clause is required for file '%s'"
+msgstr "%s 句がファイル `%s' に必要です"
+
+#: cobc/tree.cpp:258
+msgid "Internal error node"
+msgstr ""
+
+#: cobc/tree.cpp:260
+#, fuzzy
+msgid "unknown constant"
+msgstr "そのような文はありません `%s'"
+
+#: cobc/tree.cpp:378
+#, fuzzy, c-format
+msgid "<Unexpected tree tag %d>"
+msgstr "不当な数字定数です"
+
+#: cobc/tree.cpp:401
+#, fuzzy, c-format
+msgid "FUNCTION %s has invalid/not supported arguments - Tag %d"
+msgstr "`%s' は部分参照できません"
+
+#: cobc/tree.cpp:530
+#, fuzzy, c-format
+msgid "Unexpected cast type -> %d"
+msgstr "不当な数字定数です"
+
+#: cobc/tree.cpp:590
+#, c-format
+msgid "Unknown tree tag %d Category %d"
+msgstr ""
+
+#: cobc/tree.cpp:655
+#, c-format
+msgid "unknown tree tag: %d, category: %d"
+msgstr ""
+
+#: cobc/tree.cpp:666
+#, fuzzy, c-format
+msgid "unexpected numeric USAGE: %d"
+msgstr "不当な数字定数です"
+
+#: cobc/tree.cpp:840 cobc/tree.cpp:878
+#, fuzzy
+msgid "invalid literal cast"
+msgstr "不当な H 定数です: %s"
+
+#: cobc/tree.cpp:859 cobc/tree.cpp:891 cobc/tree.cpp:902 cobc/tree.cpp:930
+#: cobc/tree.cpp:935
+#, fuzzy
+msgid "Numeric literal exceeds limit - Aborting"
+msgstr "値の大きさが項目の大きさを越えています"
+
+#: cobc/tree.cpp:1298
+#, fuzzy
+msgid "invalid LOCALE literal"
+msgstr "不当な X 定数です: %s"
+
+#: cobc/tree.cpp:1446
+#, fuzzy, c-format
+msgid "Invalid picture string - '%s'"
+msgstr "不当な PICTURE 定義です"
+
+#: cobc/tree.cpp:1758
+#, fuzzy, c-format
+msgid "Numeric field cannot be larger than %d digits"
+msgstr "18 桁を越える数字項目は許されません"
+
+#: cobc/tree.cpp:1980 cobc/tree.cpp:1990
+#, fuzzy
+msgid "ALTERNATE clause invalid for this file type"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/tree.cpp:1986
+#, fuzzy
+msgid "RECORD clause invalid for this file type"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/tree.cpp:1995
+#, fuzzy
+msgid "ORGANIZATION clause invalid"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/tree.cpp:2024 cobc/tree.cpp:2043
+#, fuzzy, c-format
+msgid "invalid PICTURE character '%c'"
+msgstr "%s 句がファイル `%s' に必要です"
+
+#: cobc/tree.cpp:2053
+#, fuzzy, c-format
+msgid "Record size too small '%s'"
+msgstr "レコード長が短か過ぎます `%s'"
+
+#: cobc/tree.cpp:2059
+#, fuzzy, c-format
+msgid "invalid KEY item '%s', not in file '%s'"
+msgstr "不当な X 定数です: %s"
+
+#: cobc/tree.cpp:2087
+#, fuzzy, c-format
+msgid "Record size exceeds maximum allowed(%d) - File '%s'"
+msgstr "レコード長が短か過ぎます `%s'"
+
+#: cobc/tree.cpp:2420 cobc/tree.cpp:2425 cobc/tree.cpp:2437
+#: cobc/typeck.cpp:2820 cobc/typeck.cpp:2825 cobc/typeck.cpp:2830
+#: cobc/typeck.cpp:3411 cobc/typeck.cpp:3431 cobc/typeck.cpp:3531
+#, fuzzy
+msgid "invalid expression"
+msgstr "不当な式です"
+
+#: cobc/tree.cpp:2449
+#, fuzzy, c-format
+msgid "unexpected operator: %d"
+msgstr "不当な数字定数です"
+
+#: cobc/tree.cpp:2758 cobc/tree.cpp:2764 cobc/tree.cpp:2797 cobc/tree.cpp:2802
+#, fuzzy, c-format
+msgid "FUNCTION '%s' has invalid reference modification"
+msgstr "`%s' は部分参照できません"
+
+#: cobc/tree.cpp:2775 cobc/tree.cpp:2965
+#, fuzzy, c-format
+msgid "FUNCTION '%s' unknown"
+msgstr "`%s' は実装されていません"
+
+#: cobc/tree.cpp:2779
+#, fuzzy, c-format
+msgid "FUNCTION '%s' is not implemented"
+msgstr "`%s' は実装されていません"
+
+#: cobc/tree.cpp:2786 cobc/tree.cpp:2952
+#, fuzzy, c-format
+msgid "FUNCTION '%s' has wrong number of arguments"
+msgstr "WHEN 句の引数の数が不当です"
+
+#: cobc/tree.cpp:2792
+#, fuzzy, c-format
+msgid "FUNCTION '%s' can not have reference modification"
+msgstr "`%s' は部分参照できません"
+
+#: cobc/tree.cpp:2849 cobc/tree.cpp:2911 cobc/tree.cpp:2917
+#, fuzzy, c-format
+msgid "FUNCTION '%s' has invalid parameter"
+msgstr "`%s' は部分参照できません"
+
+#: cobc/tree.cpp:2958
+#, fuzzy, c-format
+msgid "FUNCTION '%s' has invalid first parameter"
+msgstr "`%s' は部分参照できません"
+
+#: cobc/typeck.cpp:471
+#, fuzzy
+msgid "invalid use of 88 level item"
+msgstr "不当な式です"
+
+#: cobc/typeck.cpp:511
+#, fuzzy, c-format
+msgid "%s not implemented"
+msgstr "`%s' は実装されていません"
+
+#: cobc/typeck.c:573
+msgid "reference to item containing nested ODO"
+msgstr ""
+
+#: cobc/typeck.c:613
+#, fuzzy, c-format
+msgid "'%s' is not a group name"
+msgstr "`%s' は集団項目ではありません"
+
+#: cobc/typeck.cpp:528
+#, fuzzy, c-format
+msgid "'%s' is not a numeric name"
+msgstr "`%s' は数字項目ではありません"
+
+#: cobc/typeck.cpp:546
+#, fuzzy, c-format
+msgid "'%s' is not a numeric or numeric-edited name"
+msgstr "`%s' は数字項目、もしくは数字編集項目ではありません"
+
+#: cobc/typeck.cpp:561
+#, fuzzy, c-format
+msgid "'%s' is not a numeric value"
+msgstr "`%s' は数値ではありません"
+
+#: cobc/typeck.cpp:610
+#, fuzzy, c-format
+msgid "'%s' is not an integer value"
+msgstr "`%s' は整数ではありません"
+
+#: cobc/typeck.cpp:614
+msgid "A positive numeric integer is required here"
+msgstr ""
+
+#: cobc/typeck.cpp:724
+#, c-format
+msgid "System routine\t\t\tParameters"
+msgstr ""
+
+#: cobc/typeck.cpp:1082
+msgid "ON/OFF usage requires a SWITCH name"
+msgstr ""
+
+#: cobc/typeck.cpp:1166
+#, c-format
+msgid "ASSIGN interpreted as %s"
+msgstr ""
+
+#: cobc/typeck.cpp:1224 cobc/typeck.cpp:1337
+#, c-format
+msgid "subscript missing for '%s' - defaulting to 1"
+msgstr ""
+
+#: cobc/typeck.cpp:1237 cobc/typeck.cpp:1283
+#, fuzzy, c-format
+msgid "'%s' cannot be reference modified"
+msgstr "`%s' は部分参照できません"
+
+#: cobc/typeck.cpp:1247 cobc/typeck.cpp:1279 cobc/typeck.cpp:1464
+#, fuzzy, c-format
+msgid "'%s' cannot be subscripted"
+msgstr "`%s' は添字付け出来ません"
+
+#: cobc/typeck.cpp:1250 cobc/typeck.cpp:1467
+#, fuzzy, c-format
+msgid "'%s' requires one subscript"
+msgstr "`%s' は 1 つの添字を必要とします"
+
+#: cobc/typeck.cpp:1253 cobc/typeck.cpp:1470
+#, fuzzy, c-format
+msgid "'%s' requires %d subscripts"
+msgstr "`%s' は %d つの添字を必要とします"
+
+#: cobc/typeck.cpp:1321
+#, fuzzy, c-format
+msgid "'%s' has no OCCURS clause"
+msgstr "`%s' は PICTURE 句を持つことが出来ません"
+
+#: cobc/typeck.cpp:1369 libcob/common.cpp:2168
+#, fuzzy, c-format
+msgid "subscript of '%s' out of bounds: %d"
+msgstr "'%s' の添字が範囲を超えています: %d"
+
+#: cobc/typeck.cpp:1421 cobc/typeck.cpp:1430 libcob/common.cpp:2180
+#, fuzzy, c-format
+msgid "offset of '%s' out of bounds: %d"
+msgstr "'%s' の開始位置が範囲を超えています: %d"
+
+#: cobc/typeck.cpp:1425 cobc/typeck.cpp:1434 libcob/common.cpp:2187
+#, fuzzy, c-format
+msgid "length of '%s' out of bounds: %d"
+msgstr "'%s' の長さが範囲を超えています: %d"
+
+#: cobc/typeck.cpp:1522
+#, fuzzy
+msgid "reference modification not allowed here"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/typeck.cpp:1530
+#, fuzzy
+msgid "ANY LENGTH item not allowed here"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/typeck.cpp:1534
+#, fuzzy
+msgid "88 level item not allowed here"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/typeck.cpp:1538
+#, fuzzy
+msgid "variable length item not allowed here"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/typeck.cpp:1637
+#, fuzzy, c-format
+msgid "'%s' is not an alphabet name"
+msgstr "`%s' はアルファベット名ではありません"
+
+#: cobc/typeck.cpp:1850
+#, c-format
+msgid "Duplicate character values in alphabet '%s'"
+msgstr ""
+
+#: cobc/typeck.cpp:1854
+#, fuzzy, c-format
+msgid "invalid character values in alphabet '%s', starting at position %d"
+msgstr "不当なレベル番号です `%s'"
+
+#: cobc/typeck.cpp:1909
+#, fuzzy
+msgid "invalid ALPHABET name"
+msgstr "不当な VALUE 句です"
+
+#: cobc/typeck.cpp:1965 cobc/typeck.cpp:1969
+#, fuzzy, c-format
+msgid "duplicate values in class '%s'"
+msgstr "不当なレベル番号です `%s'"
+
+#: cobc/typeck.cpp:1985
+#, fuzzy, c-format
+msgid "'%s' is not a locale name"
+msgstr "`%s' はファイル名ではありません"
+
+#: cobc/typeck.cpp:2146
+#, c-format
+msgid "RECORD DEPENDING item '%s' should be defined in WORKING-STORAGE, LOCAL-STORAGE or LINKAGE section"
+msgstr ""
+
+#: cobc/typeck.c:2461
+#, c-format
+msgid "'%s' will be implicitly defined"
+msgstr ""
+
+#: cobc/typeck.cpp:2163
+#, c-format
+msgid "ASSIGN data item '%s' invalid"
+msgstr ""
+
+#: cobc/typeck.cpp:2174
+#, c-format
+msgid "'%s' CURSOR must be 4 or 6 characters long"
+msgstr ""
+
+#: cobc/typeck.cpp:2184
+#, c-format
+msgid "'%s' CRT STATUS must be 4 characters long"
+msgstr ""
+
+#: cobc/typeck.cpp:2227
+#, fuzzy, c-format
+msgid "'%s' ODO field item invalid here"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/typeck.cpp:2233
+#, fuzzy, c-format
+msgid "'%s' cannot have OCCURS DEPENDING"
+msgstr "`%s' は OCCURS DEPENDING を持つことが出来ません"
+
+#: cobc/typeck.cpp:2244
+#, c-format
+msgid "'%s' ODO item must have GLOBAL attribute"
+msgstr ""
+
+#: cobc/typeck.cpp:2266
+msgid "RECORD DEPENDING item must be in WORKING/LOCAL/LINKAGE section"
+msgstr ""
+
+#: cobc/typeck.cpp:2271
+msgid "Invalid RECORD DEPENDING item"
+msgstr ""
+
+#: cobc/typeck.cpp:2294 cobc/typeck.cpp:2297
+#, fuzzy, c-format
+msgid "'%s' is not in DECLARATIVES"
+msgstr "`%s' は SPECIAL-NAMES で定義されていません"
+
+#: cobc/typeck.cpp:2304
+#, c-format
+msgid "invalid reference to '%s' (in DECLARATIVES)"
+msgstr ""
+
+#: cobc/typeck.cpp:2311
+#, fuzzy, c-format
+msgid "'%s' is not a procedure name"
+msgstr "`%s' は手続き名ではありません"
+
+#: cobc/typeck.cpp:2330
+#, c-format
+msgid "DEBUGGING target invalid with ALL PROCEDURES: '%s'"
+msgstr ""
+
+#: cobc/typeck.cpp:2334
+#, fuzzy, c-format
+msgid "DEBUGGING target invalid: '%s'"
+msgstr "`%s' はアルファベット名ではありません"
+
+#: cobc/typeck.cpp:2349
+#, fuzzy, c-format
+msgid "'%s' is not a valid DEBUGGING target"
+msgstr "`%s' はアルファベット名ではありません"
+
+#: cobc/typeck.cpp:2389
+#, fuzzy, c-format
+msgid "'%s' is not an alterable paragraph"
+msgstr "`%s' は整数ではありません"
+
+#: cobc/typeck.cpp:2564
+#, fuzzy
+msgid "suggest parentheses around AND within OR"
+msgstr "OR に隣接する AND には括弧が推奨されます"
+
+#: cobc/typeck.cpp:2929
+#, c-format
+msgid "internal decimal structure size exceeded: %d"
+msgstr ""
+
+#: cobc/typeck.cpp:2967
+#, fuzzy, c-format
+msgid "unexpected operation: %c (%d)"
+msgstr "不当な数字定数です"
+
+#: cobc/typeck.cpp:2982
+#, fuzzy
+msgid "unexpected constant expansion"
+msgstr "不当な数字定数です"
+
+#: cobc/typeck.cpp:3784 cobc/typeck.cpp:3829
+msgid "No CORRESPONDING items found"
+msgstr ""
+
+#: cobc/typeck.cpp:3945
+#, fuzzy
+msgid "value in AT clause must have 4 or 6 digits"
+msgstr "18 桁を越える数字項目は許されません"
+
+#: cobc/typeck.c:4490
+#, fuzzy
+msgid "invalid PROMPT literal"
+msgstr "不当な X 定数です: %s"
+
+#: cobc/typeck.cpp:3950
+#, fuzzy
+msgid "invalid PROMPT identifier"
+msgstr "不当な VALUE 句です"
+
+#: cobc/typeck.cpp:4173 cobc/typeck.cpp:4198
+#, fuzzy, c-format
+msgid "'%s' is not an input device"
+msgstr "`%s' は数字項目ではありません"
+
+#: cobc/typeck.c:4735 cobc/typeck.c:5658 cobc/typeck.c:5663
+#, fuzzy, c-format
+msgid "'%s' is not defined in SPECIAL-NAMES"
+msgstr "`%s' は SPECIAL-NAMES で定義されていません"
+
+#: cobc/typeck.c:4740
+#, fuzzy, c-format
+msgid "invalid input device '%s'"
+msgstr "`%s' は不当な入力ストリームです"
+
+#: cobc/typeck.cpp:4193 cobc/typeck.cpp:4204 cobc/typeck.cpp:4836
+#: cobc/typeck.cpp:4841 cobc/typeck.cpp:4850
+#, fuzzy, c-format
+msgid "unknown device '%s'; not defined in SPECIAL-NAMES"
+msgstr "`%s' は SPECIAL-NAMES で定義されていません"
+
+#: cobc/typeck.cpp:4230
+msgid "Target of ALLOCATE is not a BASED item"
+msgstr ""
+
+#: cobc/typeck.cpp:4238
+msgid "Target of RETURNING is not a data pointer"
+msgstr ""
+
+#: cobc/typeck.cpp:4245
+msgid "The CHARACTERS field of ALLOCATE must be numeric"
+msgstr ""
+
+#: cobc/typeck.cpp:4259
+msgid "INITIALIZED TO item is not alphanumeric"
+msgstr ""
+
+#: cobc/typeck.cpp:4296
+msgid "Only alphanumeric FUNCTION types are allowed here"
+msgstr ""
+
+#: cobc/typeck.cpp:4304
+#, fuzzy
+msgid "invalid RETURNING field"
+msgstr "不当な VALUE 句です"
+
+#: cobc/typeck.cpp:4326
+msgid "STDCALL not available on this platform"
+msgstr ""
+
+#: cobc/typeck.cpp:4332
+msgid "STDCALL used on 64-bit Windows platform"
+msgstr ""
+
+#: cobc/typeck.cpp:4338
+msgid "STATIC CALL convention requires a literal program name"
+msgstr ""
+
+#: cobc/typeck.cpp:4354
+#, fuzzy
+msgid "numeric literal is negative"
+msgstr "値の大きさが項目の大きさを越えています"
+
+#: cobc/typeck.cpp:4431
+#, fuzzy
+msgid "numeric literal exceeds size limits"
+msgstr "値の大きさが項目の大きさを越えています"
+
+#: cobc/typeck.cpp:4437
+msgid "Figurative constant invalid here"
+msgstr ""
+
+#: cobc/typeck.cpp:4444
+#, fuzzy, c-format
+msgid "'%s' is not a valid data name"
+msgstr "`%s' はアルファベット名ではありません"
+
+#: cobc/typeck.cpp:4450
+#, fuzzy, c-format
+msgid "'%s' ANY LENGTH item not passed BY REFERENCE"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/typeck.cpp:4457
+#, fuzzy, c-format
+msgid "'%s' is not a 01 or 77 level item"
+msgstr "`%s' はレベル 01 か 77 でなければなりません"
+
+#: cobc/typeck.cpp:4480
+#, fuzzy, c-format
+msgid "wrong number of CALL parameters for '%s'"
+msgstr "WHEN 句の引数の数が不当です"
+
+#: cobc/typeck.cpp:4528 cobc/typeck.cpp:4577 cobc/typeck.cpp:4609
+#: cobc/typeck.cpp:6831 cobc/typeck.cpp:6955 cobc/typeck.cpp:7075
+#: cobc/typeck.cpp:7903
+msgid "Operation not allowed on SORT files"
+msgstr ""
+
+#: cobc/typeck.cpp:4581 cobc/typeck.cpp:7079
+msgid "Operation not allowed on LINE SEQUENTIAL files"
+msgstr ""
+
+#: cobc/typeck.cpp:4709
+#, c-format
+msgid "'%s' is an invalid type for DISPLAY operand"
+msgstr ""
+
+#: cobc/typeck.cpp:4714
+msgid "Invalid type for DISPLAY operand"
+msgstr ""
+
+#: cobc/typeck.cpp:4817
+#, fuzzy
+msgid "invalid output device"
+msgstr "不当な入力ストリームです"
+
+#: cobc/typeck.cpp:4845
+#, fuzzy, c-format
+msgid "'%s' is not an output device"
+msgstr "`%s' は数字項目ではありません"
+
+#: cobc/typeck.cpp:4927
+#, fuzzy
+msgid "invalid use of 88 level in WHEN expression"
+msgstr "不当な式です"
+
+#: cobc/typeck.cpp:4982
+#, fuzzy
+msgid "wrong number of WHEN parameters"
+msgstr "WHEN 句の引数の数が不当です"
+
+#: cobc/typeck.cpp:5047 cobc/typeck.cpp:5059
+#, fuzzy, c-format
+msgid "target %d of FREE is not a BASED data item"
+msgstr "SET 出来るのは INDEXED か POINTER だけです"
+
+#: cobc/typeck.cpp:5065
+#, fuzzy, c-format
+msgid "target %d of FREE must be a data pointer"
+msgstr "SET 出来るのは INDEXED か POINTER だけです"
+
+#: cobc/typeck.cpp:5089
+#, fuzzy
+msgid "GO TO without procedure-name"
+msgstr "GO TO に複数の手続き名が指定されています"
+
+#: cobc/typeck.c:5900
+#, fuzzy
+msgid "GO TO with multiple procedure-names"
+msgstr "GO TO に複数の手続き名が指定されています"
+
+#: cobc/typeck.cpp:5223
+msgid "REPLACING operands differ in size"
+msgstr ""
+
+#: cobc/typeck.cpp:5245
+#, fuzzy
+msgid "Invalid target for INSPECT"
+msgstr "不当な行連結です"
+
+#: cobc/typeck.cpp:5263
+msgid "Invalid target for REPLACING/CONVERTING"
+msgstr ""
+
+#: cobc/typeck.cpp:5285
+#, fuzzy
+msgid "Data name expected before CHARACTERS"
+msgstr "CHARACTERS の前にデータ名が必要です"
+
+#: cobc/typeck.cpp:5296
+#, fuzzy
+msgid "Data name expected before ALL"
+msgstr "ALL の前にデータ名が必要です<"
+
+#: cobc/typeck.cpp:5307
+#, fuzzy
+msgid "Data name expected before LEADING"
+msgstr "LEADING の前にデータ名が必要です<"
+
+#: cobc/typeck.cpp:5318
+#, fuzzy
+msgid "Data name expected before TRAILING"
+msgstr "LEADING の前にデータ名が必要です<"
+
+#: cobc/typeck.cpp:5328
+#, fuzzy, c-format
+msgid "ALL, LEADING or TRAILING expected before '%s'"
+msgstr "`%s' の前に ALL または LEADINGが必要です"
+
+#: cobc/typeck.cpp:5338
+msgid "Operand has wrong size"
+msgstr ""
+
+#: cobc/typeck.cpp:5399
+#, c-format
+msgid "internal register '%s' defined as BINARY-LONG"
+msgstr ""
+
+#: cobc/typeck.cpp:5402
+#, fuzzy, c-format
+msgid "'%s' defined here as USAGE %s"
+msgstr "`%s' はここで PIC %s として定義されました"
+
+#: cobc/typeck.cpp:5405
+#, fuzzy, c-format
+msgid "'%s' defined here as USAGE FLOAT"
+msgstr "`%s' はここで PIC %s として定義されました"
+
+#: cobc/typeck.cpp:5408
+#, fuzzy, c-format
+msgid "'%s' defined here as USAGE DOUBLE"
+msgstr "`%s' はここで PIC %s として定義されました"
+
+#: cobc/typeck.cpp:5411
+#, fuzzy, c-format
+msgid "'%s' defined here as USAGE FLOAT EXTENDED"
+msgstr "`%s' はここで PIC %s として定義されました"
+
+#: cobc/typeck.cpp:5414
+#, fuzzy, c-format
+msgid "'%s' defined here as USAGE FLOAT-BINARY-7"
+msgstr "`%s' はここで PIC %s として定義されました"
+
+#: cobc/typeck.cpp:5417
+#, fuzzy, c-format
+msgid "'%s' defined here as USAGE FLOAT-BINARY-16"
+msgstr "`%s' はここで PIC %s として定義されました"
+
+#: cobc/typeck.cpp:5420
+#, fuzzy, c-format
+msgid "'%s' defined here as USAGE FLOAT-BINARY-34"
+msgstr "`%s' はここで PIC %s として定義されました"
+
+#: cobc/typeck.cpp:5423
+#, fuzzy, c-format
+msgid "'%s' defined here as USAGE FLOAT-DECIMAL-16"
+msgstr "`%s' はここで PIC %s として定義されました"
+
+#: cobc/typeck.cpp:5426
+#, fuzzy, c-format
+msgid "'%s' defined here as USAGE FLOAT-DECIMAL-34"
+msgstr "`%s' はここで PIC %s として定義されました"
+
+#: cobc/typeck.cpp:5429
+#, fuzzy, c-format
+msgid "'%s' defined here as PIC %s"
+msgstr "`%s' はここで PIC %s として定義されました"
+
+#: cobc/typeck.cpp:5432
+#, fuzzy, c-format
+msgid "'%s' defined here as a group of length %d"
+msgstr "`%s' はここで大きさ %d のグループとして定義されています"
+
+#: cobc/typeck.cpp:5487
+msgid "Overlapping MOVE may produce unpredictable results"
+msgstr ""
+
+#: cobc/typeck.cpp:5569
+#, fuzzy
+msgid "invalid destination for MOVE"
+msgstr "不当な行連結です"
+
+#: cobc/typeck.cpp:5590 cobc/typeck.cpp:5602
+msgid "Source is non-numeric - substituting zero"
+msgstr ""
+
+#: cobc/typeck.cpp:5688
+msgid "Numeric move to ALPHABETIC"
+msgstr ""
+
+#: cobc/typeck.cpp:5702
+#, fuzzy
+msgid "data item not signed"
+msgstr "データ項目に符号がありません"
+
+#: cobc/typeck.cpp:5706
+#, fuzzy
+msgid "ignoring sign"
+msgstr "マイナス符号は無視されます"
+
+#: cobc/typeck.cpp:6030
+msgid "Invalid source for MOVE"
+msgstr ""
+
+#: cobc/typeck.cpp:6051
+#, fuzzy
+msgid "invalid VALUE clause"
+msgstr "不当な VALUE 句です"
+
+#: cobc/typeck.cpp:6053
+#, fuzzy
+msgid "invalid MOVE statement"
+msgstr "不当な MOVE 文です"
+
+#: cobc/typeck.cpp:6059
+#, fuzzy
+msgid "literal exceeds data size"
+msgstr "値の大きさが項目の大きさを越えています"
+
+#: cobc/typeck.cpp:6063
+#, fuzzy
+msgid "numeric literal exceeds data size"
+msgstr "値の大きさが項目の大きさを越えています"
+
+#: cobc/typeck.cpp:6072
+#, fuzzy
+msgid "MOVE of non-integer to alphanumeric"
+msgstr "非整数から英数字項目への MOVE は出来ません"
+
+#: cobc/typeck.cpp:6078
+#, fuzzy
+msgid "numeric value is expected"
+msgstr "数値が必要です"
+
+#: cobc/typeck.cpp:6083
+#, fuzzy
+msgid "alphanumeric value is expected"
+msgstr "文字列が必要です"
+
+#: cobc/typeck.cpp:6088
+#, fuzzy
+msgid "value does not fit the picture string"
+msgstr "値が PICTURE に合致しません"
+
+#: cobc/typeck.cpp:6093
+#, fuzzy
+msgid "value size exceeds data size"
+msgstr "値の大きさが項目の大きさを越えています"
+
+#: cobc/typeck.cpp:6098
+msgid "Sending field larger than receiving field"
+msgstr ""
+
+#: cobc/typeck.cpp:6103
+msgid "Some digits may be truncated"
+msgstr ""
+
+#: cobc/typeck.cpp:6801
+#, fuzzy, c-format
+msgid "invalid MOVE target: %s"
+msgstr "不当な MOVE 文です"
+
+#: cobc/typeck.cpp:6836
+msgid "OPEN I-O not allowed on LINE SEQUENTIAL files"
+msgstr ""
+
+#: cobc/typeck.cpp:6968
+#, fuzzy
+msgid "READ PREVIOUS not allowed for this file type"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/typeck.cpp:6976
+msgid "KEY ignored with sequential READ"
+msgstr "順読み込みの READ であるため KEY は無視されます"
+
+#: cobc/typeck.cpp:7056
+msgid "REWRITE requires a record name as subject"
+msgstr ""
+
+#: cobc/typeck.cpp:7061
+msgid "REWRITE subject does not refer to a record name"
+msgstr ""
+
+#: cobc/typeck.cpp:7125
+msgid "RELEASE requires a record name as subject"
+msgstr ""
+
+#: cobc/typeck.cpp:7131
+msgid "RELEASE subject does not refer to a record name"
+msgstr ""
+
+#: cobc/typeck.cpp:7137
+#, fuzzy
+msgid "RELEASE not allowed on this record item"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/typeck.cpp:7213 cobc/typeck.cpp:7234 cobc/typeck.cpp:7242
+#, fuzzy
+msgid "invalid SEARCH ALL condition"
+msgstr "SEARCH ALL の条件式が不当です"
+
+#: cobc/typeck.cpp:7362
+#, fuzzy
+msgid "the targets of SET must be either indexes or pointers"
+msgstr "SET 出来るのは INDEXED か POINTER だけです"
+
+#: cobc/typeck.cpp:7374 cobc/typeck.cpp:7378
+msgid "SET targets must be PROGRAM-POINTER"
+msgstr ""
+
+#: cobc/typeck.cpp:7394
+#, fuzzy, c-format
+msgid "the address of '%s' cannot be changed"
+msgstr "`%s' のアドレスは変更できません"
+
+#: cobc/typeck.cpp:7414
+#, c-format
+msgid "SET target is invalid - '%s'"
+msgstr ""
+
+#: cobc/typeck.cpp:7461 cobc/typeck.cpp:7466 cobc/typeck.cpp:7488
+#: cobc/typeck.cpp:7493
+#, fuzzy
+msgid "invalid SET statement"
+msgstr "不当な MOVE 文です"
+
+#: cobc/typeck.cpp:7497
+#, fuzzy
+msgid "field does not have a FALSE clause"
+msgstr "REDEFINES に含まれる項目は VALUE 句を持つことが出来ません"
+
+#: cobc/typeck.cpp:7517
+msgid "SET ATTRIBUTE requires a screen item as subject"
+msgstr ""
+
+#: cobc/typeck.cpp:7523
+msgid "SET ATTRIBUTE subject does not refer to a screen item"
+msgstr ""
+
+#: cobc/typeck.cpp:7549
+#, fuzzy
+msgid "invalid SORT filename"
+msgstr "不当な VALUE 句です"
+
+#: cobc/typeck.cpp:7592
+#, fuzzy
+msgid "invalid SORT USING parameter"
+msgstr "不当な MOVE 文です"
+
+#: cobc/typeck.cpp:7618
+#, fuzzy
+msgid "invalid SORT GIVING parameter"
+msgstr "不当な MOVE 文です"
+
+#: cobc/typeck.cpp:7659 cobc/typeck.cpp:7673 cobc/typeck.cpp:7693
+#, fuzzy
+msgid "invalid key item"
+msgstr "不当な VALUE 句です"
+
+#: cobc/typeck.cpp:7718
+msgid "START not allowed on SEQUENTIAL files"
+msgstr ""
+
+#: cobc/typeck.cpp:7723
+msgid "LENGTH/SIZE clause only allowed on INDEXED files"
+msgstr ""
+
+#: cobc/typeck.cpp:7728
+#, fuzzy
+msgid "START not allowed with ACCESS MODE RANDOM"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/typeck.cpp:7886
+msgid "WRITE requires a record name as subject"
+msgstr ""
+
+#: cobc/typeck.cpp:7891
+msgid "WRITE subject does not refer to a record name"
+msgstr ""
+
+#: cobc/typeck.cpp:7916
+#, fuzzy
+msgid "LOCK clause invalid here"
+msgstr "`%s' は修飾出来ません"
+
+#: cobc/warning.def:29
+#, fuzzy
+msgid "don't warn if unfinished features are used"
+msgstr "廃要素が使われていれば警告する"
+
+#: cobc/warning.def:34
+#, fuzzy
+msgid "warn if obsolete features are used"
+msgstr "廃要素が使われていれば警告する"
+
+#: cobc/warning.def:32
+#, fuzzy
+msgid "warn if archaic features are used"
+msgstr "古い仕様が使われていれば警告する"
+
+#: cobc/warning.def:35
+#, fuzzy
+msgid "warn incompatible redefinition of data items"
+msgstr "データ項目の再定義を警告する"
+
+#: cobc/warning.def:38
+#, fuzzy
+msgid "warn inconsistent constant"
+msgstr "不適切な定数を警告する"
+
+#: cobc/warning.def:41
+msgid "warn overlapping MOVE items"
+msgstr ""
+
+#: cobc/warning.def:44
+#, fuzzy
+msgid "warn lack of parentheses around AND within OR"
+msgstr "OR と AND が括弧なしで並んでいれば警告する"
+
+#: cobc/warning.def:47
+#, fuzzy
+msgid "warn type mismatch strictly"
+msgstr "タイプの不適合を厳密に警告する"
+
+#: cobc/warning.def:50
+#, fuzzy
+msgid "warn implicitly defined data items"
+msgstr "データ項目の再定義を警告する"
+
+#: cobc/warning.def:53
+msgid "warn CORRESPONDING with no matching items"
+msgstr ""
+
+#: cobc/warning.def:56
+msgid "warn EXTERNAL item with VALUE clause"
+msgstr ""
+
+#: cobc/warning.def:59
+msgid "warn missing FUNCTION prototypes/definitions"
+msgstr ""
+
+#: cobc/warning.def:62
+msgid "warn non 01/77 items for CALL params"
+msgstr ""
+
+#: cobc/warning.def:73
+#, fuzzy
+msgid "warn text after program-text area, FIXED format"
+msgstr "72 桁を越えるテキストを警告する"
+
+#: cobc/warning.def:65
+#, fuzzy
+msgid "warn lack of scope terminator END-XXX"
+msgstr "終止符(END-XXX)がなければ警告する"
+
+#: cobc/warning.def:68
+msgid "Warn possible field truncation"
+msgstr ""
+
+#: cobc/warning.def:71
+msgid "warn possible field truncation"
+msgstr ""
+
+#: cobc/warning.def:74
+msgid "warn dangling LINKAGE items"
+msgstr ""
+
+#: libcob/call.cpp:90
+#, c-format
+msgid "LoadLibrary/GetProcAddress error %d"
+msgstr ""
+
+#: libcob/call.cpp:626 libcob/call.cpp:677
+#, fuzzy
+msgid "cannot find module"
+msgstr "モジュールが見付かりません `%s'"
+
+#: libcob/call.cpp:641 libcob/call.cpp:670
+#, fuzzy
+msgid "cannot find entry point"
+msgstr "モジュールが見付かりません `%s'"
+
+#: libcob/call.cpp:740
+#, fuzzy
+msgid "Indeterminable error"
+msgstr "永続ファイルエラーです"
+
+#: libcob/call.cpp:813
+#, fuzzy, c-format
+msgid "User function '%s' not found"
+msgstr "'%s' の開始位置が範囲を超えています: %d"
+
+#: libcob/call.cpp:876
+msgid "NULL parameter passed to 'cob_cancel'"
+msgstr ""
+
+#: libcob/call.cpp:931
+msgid "Invalid number of arguments to 'cob_call'"
+msgstr ""
+
+#: libcob/call.cpp:935
+msgid "NULL name parameter passed to 'cob_call'"
+msgstr ""
+
+#: libcob/call.cpp:980
+msgid "NULL parameter passed to 'cob_savenv'"
+msgstr ""
+
+#: libcob/call.cpp:984
+msgid "Multiple call to 'cob_setjmp'"
+msgstr ""
+
+#: libcob/call.cpp:1006
+msgid "NULL parameter passed to 'cob_longjmp'"
+msgstr ""
+
+#: libcob/call.cpp:1010
+msgid "Call to 'cob_longjmp' with no prior 'cob_setjmp'"
+msgstr ""
+
+#: libcob/cobgetopt.cpp:473
+#, c-format
+msgid "%s: option `%s' is ambiguous\n"
+msgstr ""
+
+#: libcob/cobgetopt.cpp:495
+#, c-format
+msgid "%s: option `--%s' doesn't allow an argument\n"
+msgstr ""
+
+#: libcob/cobgetopt.cpp:500
+#, c-format
+msgid "%s: option `%c%s' doesn't allow an argument\n"
+msgstr ""
+
+#: libcob/cobgetopt.cpp:516 libcob/cobgetopt.cpp:675
+#, fuzzy, c-format
+msgid "%s: option `%s' requires an argument\n"
+msgstr "`%s' は %d つの添字を必要とします"
+
+#: libcob/cobgetopt.cpp:544
+#, c-format
+msgid "%s: unrecognized option `--%s'\n"
+msgstr ""
+
+#: libcob/cobgetopt.cpp:548
+#, c-format
+msgid "%s: unrecognized option `%c%s'\n"
+msgstr ""
+
+#: libcob/cobgetopt.cpp:573
+#, fuzzy, c-format
+msgid "%s: invalid option -- %c\n"
+msgstr "不当なオプションです -std=%s\n"
+
+#: libcob/cobgetopt.cpp:598 libcob/cobgetopt.cpp:717
+#, c-format
+msgid "%s: option requires an argument -- %c\n"
+msgstr ""
+
+#: libcob/cobgetopt.cpp:643
+#, c-format
+msgid "%s: option `-W %s' is ambiguous\n"
+msgstr ""
+
+#: libcob/cobgetopt.cpp:661
+#, c-format
+msgid "%s: option `-W %s' doesn't allow an argument\n"
+msgstr ""
+
+#: libcob/common.cpp:374
+#, c-format
+msgid "cob_sig_handler caught not handled signal: %d"
+msgstr ""
+
+#: libcob/common.cpp:376 libcob/common.cpp:379
+#, c-format
+msgid "attempt to reference unallocated memory"
+msgstr ""
+
+#: libcob/common.cpp:382
+#, c-format
+msgid "(Signal %s)"
+msgstr ""
+
+#: libcob/common.cpp:387
+#, c-format
+msgid "signal %s"
+msgstr ""
+
+#: libcob/common.cpp:1261
+msgid "Malloc error"
+msgstr ""
+
+#: libcob/common.cpp:1291 libcob/common.cpp:1297
+#, fuzzy
+msgid "cob_init() has not been called"
+msgstr "cob_resolve() の前に cob_init() を呼ばなければなりません"
+
+#: libcob/common.cpp:1294
+msgid "Attempt to CANCEL active program"
+msgstr ""
+
+#: libcob/common.cpp:1300
+msgid "Codegen error - Please report this"
+msgstr ""
+
+#: libcob/common.cpp:1303
+msgid "Recursive call of chained program"
+msgstr ""
+
+#: libcob/common.cpp:1306
+msgid "Stack overflow, possible PERFORM depth exceeded"
+msgstr ""
+
+#: libcob/common.cpp:1309
+msgid "Invalid entry/exit in GLOBAL USE procedure"
+msgstr ""
+
+#: libcob/common.cpp:1312
+msgid "Unable to allocate memory"
+msgstr ""
+
+#: libcob/common.cpp:1315
+#, fuzzy
+msgid "invalid entry into module"
+msgstr "不当な VALUE 句です"
+
+#: libcob/common.cpp:1318
+msgid "Invalid recursive COBOL CALL"
+msgstr ""
+
+#: libcob/common.cpp:1327
+#, fuzzy
+msgid "end of file"
+msgstr "ファイルの終わりです"
+
+#: libcob/common.cpp:1330
+#, fuzzy
+msgid "key out of range"
+msgstr "キーの範囲が不当です"
+
+#: libcob/common.cpp:1333
+#, fuzzy
+msgid "key order not ascending"
+msgstr "キーが昇順ではありません"
+
+#: libcob/common.cpp:1336
+#, fuzzy
+msgid "record key already exists"
+msgstr "レコードキーが既に存在します"
+
+#: libcob/common.cpp:1339
+#, fuzzy
+msgid "record key does not exist"
+msgstr "レコードキーが存在しません"
+
+#: libcob/common.cpp:1342
+#, fuzzy
+msgid "permanent file error"
+msgstr "永続ファイルエラーです"
+
+#: libcob/common.cpp:1345
+#, fuzzy
+msgid "file does not exist"
+msgstr "ファイルが存在しません"
+
+#: libcob/common.cpp:1348
+#, fuzzy
+msgid "permission denied"
+msgstr "利用許可がありません"
+
+#: libcob/common.cpp:1351
+#, fuzzy
+msgid "file already open"
+msgstr "ファイルは既に開いています"
+
+#: libcob/common.cpp:1354
+#, fuzzy
+msgid "file not open"
+msgstr "ファイルが開いていません"
+
+#: libcob/common.cpp:1357
+msgid "READ must be executed first"
+msgstr "READ を先に実行しなければなりません"
+
+#: libcob/common.cpp:1360
+#, fuzzy
+msgid "record overflow"
+msgstr "レコードの領域を超えています"
+
+#: libcob/common.cpp:1363
+#, fuzzy
+msgid "Failed to read"
+msgstr "読み込みに失敗しました"
+
+#: libcob/common.cpp:1366
+#, fuzzy
+msgid "READ/START not allowed, file not open for input"
+msgstr "READ、START は許可されません"
+
+#: libcob/common.cpp:1369
+msgid "WRITE not allowed"
+msgstr "WRITE は許可されません"
+
+#: libcob/common.cpp:1372
+#, fuzzy
+msgid "DELETE/REWRITE not allowed, file not open for I-O"
+msgstr "DELETE、REWRITE は許可されません"
+
+#: libcob/common.cpp:1375
+msgid "Record locked by another file connector"
+msgstr ""
+
+#: libcob/common.cpp:1378
+#, fuzzy
+msgid "LINAGE values invalid"
+msgstr "`%s' は修飾出来ません"
+
+#: libcob/common.cpp:1381
+msgid "File sharing conflict"
+msgstr ""
+
+#: libcob/common.cpp:1384
+msgid "Runtime library is not configured for this operation"
+msgstr ""
+
+#: libcob/common.cpp:1387
+#, fuzzy
+msgid "unknown file error"
+msgstr "原因不明のファイルエラーです"
+
+#: libcob/common.cpp:1393
+#, c-format
+msgid "%s (Status = %02d) File : '%s'"
+msgstr ""
+
+#: libcob/common.cpp:1399
+msgid "Attempt to use non-implemented function"
+msgstr ""
+
+#: libcob/common.cpp:1402
+#, fuzzy, c-format
+msgid "unknown failure: %d"
+msgstr "原因不明のファイルエラーです"
+
+#: libcob/common.cpp:1511
+msgid "Error - Version mismatch"
+msgstr ""
+
+#: libcob/common.cpp:1512
+#, c-format
+msgid "%s has version/patch level %s/%d"
+msgstr ""
+
+#: libcob/common.cpp:1514
+#, c-format
+msgid "libcob has version/patch level %s/%d"
+msgstr ""
+
+#: libcob/common.cpp:1524
+#, fuzzy, c-format
+msgid "CALL to %s requires %d parameters"
+msgstr "`%s' は %d つの添字を必要とします"
+
+#: libcob/common.cpp:2123
+#, c-format
+msgid "BASED/LINKAGE item '%s' has NULL address"
+msgstr ""
+
+#: libcob/common.cpp:2143
+#, fuzzy, c-format
+msgid "'%s' not numeric: '%s'"
+msgstr "`%s' は数字ではありません: `%s'"
+
+#: libcob/common.cpp:2156
+#, fuzzy, c-format
+msgid "OCCURS DEPENDING ON '%s' out of bounds: %d"
+msgstr "OCCURS DEPENDING ON `%s' が範囲を越えています: %d"
+
+#: libcob/common.cpp:2199
+#, c-format
+msgid ""
+"EXTERNAL item '%s' previously allocated with size %d, requested size is %d"
+msgstr ""
+
+#: libcob/common.cpp:2630
+msgid "'cobcommandline' - Runtime has not been initialized"
+msgstr ""
+
+#: libcob/common.cpp:2758
+msgid "Parameter to SYSTEM call is larger than 8192 characters"
+msgstr ""
+
+#: libcob/common.cpp:3124
+msgid "Call to CBL_OC_GETOPT with wrong longoption size."
+msgstr ""
+
+#: libcob/fileio.cpp:2050
+#, c-format
+msgid "BDB error: %s"
+msgstr ""
+
+#: libcob/fileio.cpp:2059
+#, c-format
+msgid "BDB error: %s %s"
+msgstr ""
+
+#: libcob/fileio.cpp:2072
+#, c-format
+msgid "Cannot join BDB environment, error: %d %s"
+msgstr ""
+
+#: libcob/fileio.cpp:2092
+#, c-format
+msgid "Cannot join BDB environment, env_open: %d %s"
+msgstr ""
+
+#: libcob/fileio.cpp:5002
+msgid "'CBL_CHECK_FILE_EXIST' - File detail area is too short"
+msgstr ""
+
+#: libcob/fileio.cpp:5225
+msgid "'C$FILEINFO' - File detail area is too short"
+msgstr ""
+
+#: libcob/fileio.cpp:5451
+msgid "SORT is unable to acquire temporary file"
+msgstr ""
+
+#: libcob/fileio.cpp:5960
+#, c-format
+msgid "WARNING - Implicit CLOSE of %s ('%s')"
+msgstr ""
+
+#: libcob/screenio.cpp:484
+msgid "Failed to initialize curses"
+msgstr ""
+
+#: libcob/termio.cpp:60 libcob/termio.cpp:88
+msgid "(Not representable)"
+msgstr ""
+
+#: bin/cobcrun.cpp:92
+msgid "Usage: cobcrun PROGRAM [param ...]"
+msgstr ""
+
+#: bin/cobcrun.cpp:93
+msgid "or   : cobcrun --help (-h)"
+msgstr ""
+
+#: bin/cobcrun.cpp:94
+msgid "       Print this help"
+msgstr ""
+
+#: bin/cobcrun.cpp:95
+msgid "or   : cobcrun --version (-V)"
+msgstr ""
+
+#: bin/cobcrun.cpp:96
+msgid "       Print version information"
+msgstr ""
+
+#: bin/cobcrun.cpp:97
+msgid "or   : cobcrun --info (-i)"
+msgstr ""
+
+#: bin/cobcrun.cpp:98
+msgid "       Print build information"
+msgstr ""
+
+#: bin/cobcrun.cpp:111
+msgid "Memory allocation failure"
+msgstr ""
+
+#: bin/cobcrun.cpp:188
+msgid "C-ISAM (Experimental)"
+msgstr ""
+
+#: bin/cobcrun.cpp:191
+msgid "D-ISAM (Experimental)"
+msgstr ""
+
+#: bin/cobcrun.cpp:194
+msgid "VBISAM (Experimental)"
+msgstr ""
+
+#: bin/cobcrun.cpp:260
+msgid "PROGRAM name exceeds 31 characters"
+msgstr ""
+
+#, fuzzy
+#~ msgid "Invalid option"
+#~ msgstr "不当なオプションです -std=%s\n"
+
+#, fuzzy
+#~ msgid "Invalid directive comparison"
+#~ msgstr "不当な PICTURE 定義です"
+
+#, fuzzy
+#~ msgid "Numeric literal exceeds maximum"
+#~ msgstr "値の大きさが項目の大きさを越えています"
+
+#, fuzzy
+#~ msgid "'%s' defined here as USAGE FLOAT-DECIMAL-7"
+#~ msgstr "`%s' はここで PIC %s として定義されました"
+
+#, fuzzy
+#~ msgid "Invalid -MT parameter\n"
+#~ msgstr "不当な MOVE 文です"
+
+#, fuzzy
+#~ msgid "Invalid -MF parameter\n"
+#~ msgstr "不当な MOVE 文です"
+
+#~ msgid "-MT must be given to specify target file\n"
+#~ msgstr "ターゲットファイルを -MT で指定して下さい\n"
+
+#, fuzzy
+#~ msgid "Unexepected tree tag %d"
+#~ msgstr "不当な数字定数です"
+
+#, fuzzy
+#~ msgid "Invalid -conf parameter\n"
+#~ msgstr "不当な MOVE 文です"
+
+#, fuzzy
+#~ msgid "Invalid -I parameter\n"
+#~ msgstr "不当な MOVE 文です"
+
+#, fuzzy
+#~ msgid "Invalid -L parameter\n"
+#~ msgstr "不当な MOVE 文です"
+
+#, fuzzy
+#~ msgid "Invalid -l parameter\n"
+#~ msgstr "不当な MOVE 文です"
+
+#, fuzzy
+#~ msgid "Invalid --ext parameter\n"
+#~ msgstr "不当な MOVE 文です"
+
+#, fuzzy
+#~ msgid "Invalid -K parameter\n"
+#~ msgstr "不当な MOVE 文です"
+
+#, fuzzy
+#~ msgid "Invalid -k parameter\n"
+#~ msgstr "不当な MOVE 文です"
+
+#, fuzzy
+#~ msgid "Invalid -fstack-size parameter\n"
+#~ msgstr "不当な MOVE 文です"
+
+#, fuzzy
+#~ msgid "Invalid -fif-cutoff parameter\n"
+#~ msgstr "不当な MOVE 文です"
+
+#, fuzzy
+#~ msgid "Invalid -fsign parameter\n"
+#~ msgstr "不当な MOVE 文です"
+
+#, fuzzy
+#~ msgid "Invalid -ffold-copy parameter\n"
+#~ msgstr "不当な MOVE 文です"
+
+#, fuzzy
+#~ msgid "Invalid -ffold-call parameter\n"
+#~ msgstr "不当な MOVE 文です"
+
+#, fuzzy
+#~ msgid "Invalid -fdefaultbyte parameter\n"
+#~ msgstr "不当な MOVE 文です"
+
+#, fuzzy
+#~ msgid "%s:%d: Invalid line\n"
+#~ msgstr "不当な VALUE 句です"
+
+#, fuzzy
+#~ msgid "ENTRY '%s' invalid"
+#~ msgstr "`%s' は修飾出来ません"
+
+#, fuzzy
+#~ msgid "Invalid WHEN expression"
+#~ msgstr "不当な式です"
+
+#, fuzzy
+#~ msgid "Error: Invalid fold-copy combination\n"
+#~ msgstr "不当な行連結です"
+
+#, fuzzy
+#~ msgid "Value required for constant item '%s'"
+#~ msgstr "%s 句がファイル `%s' に必要です"
+
+#, fuzzy
+#~ msgid "Undeclared key '%s'"
+#~ msgstr "`%s' はキー宣言されていません"
+
+#, fuzzy
+#~ msgid "Switch-name is expected '%s'"
+#~ msgstr "スイッチ名が必要です `%s'"
+
+#, fuzzy
+#~ msgid "Level %02d item '%s' cannot have other than %s clause"
+#~ msgstr "レベル %02d 項目 `%s' は %s 句以外を持つことが出来ません"
+
+#, fuzzy
+#~ msgid ""
+#~ "Options:\n"
+#~ "  --help                Display this message\n"
+#~ "  --version, -V         Display compiler version\n"
+#~ "  -v                    Display the programs invoked by the compiler\n"
+#~ "  -x                    Build an executable program\n"
+#~ "  -m                    Build a dynamically loadable module (default)\n"
+#~ "  -std=<dialect>        Compile for a specific dialect :\n"
+#~ "                          cobol2002   Cobol 2002\n"
+#~ "                          cobol85     Cobol 85\n"
+#~ "                          ibm         IBM Compatible\n"
+#~ "                          mvs         MVS Compatible\n"
+#~ "                          bs2000      BS2000 Compatible\n"
+#~ "                          mf          Micro Focus Compatible\n"
+#~ "                          default     When not specified\n"
+#~ "                        See config/default.conf and config/*.conf\n"
+#~ "  -free                 Use free source format\n"
+#~ "  -fixed                Use fixed source format (default)\n"
+#~ "  -O, -O2, -Os          Enable optimization\n"
+#~ "  -g                    Produce debugging information in the output\n"
+#~ "  -debug                Enable all run-time error checking\n"
+#~ "  -o <file>             Place the output into <file>\n"
+#~ "  -b                    Combine all input files into a single\n"
+#~ "                        dynamically loadable module\n"
+#~ "  -E                    Preprocess only; do not compile, assemble or "
+#~ "link\n"
+#~ "  -C                    Translation only; convert COBOL to C\n"
+#~ "  -S                    Compile only; output assembly file\n"
+#~ "  -c                    Compile and assemble, but do not link\n"
+#~ "  -t <file>             Generate and place a program listing into <file>\n"
+#~ "  -I <directory>        Add <directory> to copy/include search path\n"
+#~ "  -L <directory>        Add <directory> to library search path\n"
+#~ "  -l <lib>              Link the library <lib>\n"
+#~ "  -D <define>           Pass <define> to the C compiler\n"
+#~ "  -conf=<file>          User defined dialect configuration - See -std=\n"
+#~ "  --list-reserved       Display all reserved words\n"
+#~ "  --list-intrinsics     Display intrinsic functions\n"
+#~ "  -save-temps(=<dir>)   Save intermediate files (default current "
+#~ "directory)\n"
+#~ "  -MT <target>          Set target file used in dependency list\n"
+#~ "  -MF <file>            Place dependency list into <file>\n"
+#~ "  -ext <extension>      Add default file extension\n"
+#~ "\n"
+#~ "  -Wall                 Enable all warnings"
+#~ msgstr ""
+#~ "一般的なオプション:\n"
+#~ "  --help                このメッセージを表示\n"
+#~ "  --version             コンパイラのバージョンを表示\n"
+#~ "  --verbose, -v         コンパイラから呼ばれるプログラムを表示する\n"
+#~ "  --list-reserved       予約語の一覧を表示する\n"
+#~ "  -save-temps           中間ファイルを削除しない\n"
+#~ "  -E                    前処理のみ。コンパイル、アセンブル、リンクをしな"
+#~ "い\n"
+#~ "  -C                    翻訳のみ。COBOL を C に変換する\n"
+#~ "  -S                    コンパイルのみ。アセンブリファイルを出力する\n"
+#~ "  -c                    コンパイルとアセンブル。リンクをしない\n"
+#~ "  -m                    動的リンク可能なモジュールを生成する\n"
+#~ "  -O, -O2               最適化を有効にする\n"
+#~ "  -g                    デバッグ情報を出力に含める\n"
+#~ "  -debug                実行時のエラーチェックを全て有効にする\n"
+#~ "  -o <file>             出力を <file> に保存する\n"
+#~ "  -t <file>             リスティングファイルを出力する\n"
+#~ "  -I <directory>        コピーファイルを <directory> から探す\n"
+#~ "  -L <directory>        リンクファイルを <directory> から探す\n"
+#~ "  -l <lib>              ライブラリ <lib> をリンクする\n"
+#~ "  -MT <target>          依存リストの対象ファイルを指定する\n"
+#~ "  -MF <file>            依存リストを <file> に保存する\n"
+#~ "  -free                 ソースコードの書式を自由形式にする\n"
+#~ "  -fixed                ソースコードの書式を固定形式にする\n"
+#~ "  -ext <extension>      ファイルのデフォルト拡張子を追加する\n"
+#~ "\n"
+#~ "  -Wall                 全てのワーニングを有効にする"
+
+#, fuzzy
+#~ msgid "Wrong number of data items"
+#~ msgstr "データ項目の数が不当です"
+
+#, fuzzy
+#~ msgid "'%s' not numeric item"
+#~ msgstr "`%s' は数字項目ではありません"
+
+#, fuzzy
+#~ msgid "Invalid color '%d'"
+#~ msgstr "不当な色です `%d'"
+
+#~ msgid "Include trace code in the output"
+#~ msgstr "トレースを出力に含める"
+
+#~ msgid "Include source location in the output"
+#~ msgstr "ソースの位置を出力に含める"
+
+#~ msgid "Include line directive in the output"
+#~ msgstr "行情報を出力に含める"
+
+#, fuzzy
+#~ msgid "Warning: cob_init expected in the main program\n"
+#~ msgstr "warning: メインプログラムで cob_init 呼ばれていません\n"
+
+#, fuzzy
+#~ msgid "Invalid display sign '%d'"
+#~ msgstr "不当な通貨記号です `%s'"
+
+#, fuzzy
+#~ msgid "78 level can not have a PICTURE clause - '%s'"
+#~ msgstr "`%s' は PICTURE 句を持つことが出来ません"
+
+#, fuzzy
+#~ msgid "Include the main function in the output (deprecated, use -x)"
+#~ msgstr "main 関数を出力に含める"
+
+#, fuzzy
+#~ msgid "Inline runtime functions (deprecated)"
+#~ msgstr "一般的な処理で関数のインライン化を行なう"

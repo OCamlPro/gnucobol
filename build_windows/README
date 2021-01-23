@@ -1,0 +1,25 @@
+How to build in native Windows environments:
+
+* get necessary headers, place them in build_windows
+* copy libcob.h.in to libcob.h, if you use the plain mpir[xx].h headers
+  change libcob.h accordingly
+* copy build_windows\config.h.[bdb|vb].win to build_windows\config.h
+  depending on your use of vbisam or bdb 
+* get/build necessary libraries, place them in build_windows\Win32
+  and/or build_windows\x64
+* get/build necessary dlls, place them in Release/Debug subfolders
+  of build_windows\Win32 and/or build_windows\x64
+* open the defaults.h within your environment folder
+  (for example vc12\defaults.h) and change the line
+  	COB_MAIN_DIR     "C:\\GnuCobolCPP"
+  according to your source folder
+* compile with your environment, for example via IDE by opening the solution
+  and click "build" or starting the VS/WinSDK command prompt and calling
+  	msbuild "GNU Cobol.sln" /p:Platform=x64 /Configuration=Release
+
+How to use the dist package:
+
+* unzip wherever you want
+* call "set_env_vs.bat" for use with Visual Studio and Win32 
+* call "set_env_vs64.bat" for use with Visual Studio and x64
+* use cobc/cobcrun

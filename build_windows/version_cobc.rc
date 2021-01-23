@@ -1,0 +1,65 @@
+#include <windows.h>
+#include "..\tarstamp.h"
+#include "config.h"
+
+#define STRINGIZE_DETAIL_(v) #v
+#define STRINGIZE(v) STRINGIZE_DETAIL_(v)
+
+//
+// Version Information resources
+//
+
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+//LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+
+#ifndef DEBUG
+#define VER_DEBUG                   0
+#else
+#define VER_DEBUG                   VS_FF_DEBUG
+#endif
+
+VS_VERSION_INFO    VERSIONINFO
+  FILEVERSION      2,2,PATCH_LEVEL,0
+  PRODUCTVERSION   2,2,PATCH_LEVEL,0
+
+  FILEOS           VOS_NT_WINDOWS32
+
+  FILETYPE         VFT_APP
+  FILESUBTYPE      VFT2_UNKNOWN // not used for VTF_APP
+
+  FILEFLAGSMASK    VS_FFI_FILEFLAGSMASK
+  FILEFLAGS        (VS_FF_PRIVATEBUILD|VS_FF_PRERELEASE|VS_FF_PATCHED|VER_DEBUG)
+
+{
+  BLOCK "StringFileInfo"
+  {
+    BLOCK "040904E4" // Lang=US English, CharSet=Windows Multilingual
+    {
+      // VALUE "Comments",         "Free for personal use only.\0"
+      // VALUE "CompanyName",      "Fake Company\0"
+      VALUE "FileDescription",  PACKAGE_NAME " compiler for most COBOL dialects with lots of extensions"
+      VALUE "FileVersion",      "2.0.207"
+      VALUE "InternalName",     "cobc"
+      VALUE "LegalCopyright",   "Copyright (C) 2001,2002,2003,2004,2005,2006,2007 Keisuke Nishida\x0ACopyright (C) 2006-2012 Roger While\x0ACopyright (C) 2013 Sergey Kashyrin"
+      VALUE "LegalTrademarks",  "Compiler: GNU General Public License v3 - see COPYING,\x0ADocumentation: GNU Free Documentation License."
+      VALUE "OriginalFilename", "cobc.exe"
+      VALUE "ProductName",      PACKAGE_NAME " Compiler"
+      VALUE "ProductVersion",   PACKAGE_VERSION "." STRINGIZE(COB_NUM_TAR_DATE) " - r300"
+      // Should be set if VS_FF_PRIVATEBUILD is set:
+      VALUE "PrivateBuild",     "Built by someone"
+      // Should be set if VS_FF_SPECIALBUILD is set (including description what it was build for):
+      VALUE "SpecialBuild",     ""
+
+	  /* Non-Standard entries */
+      VALUE "Build",            "Jun 2014"
+      VALUE "Developer",        "Keisuke Nishida, Roger While, many others (see AUTHORS and THANKS)"
+      VALUE "Support",          "https://sourceforge.net/p/open-cobol"
+      VALUE "Users",            "Unlimited."
+    } // BLOCK "040904E4"
+  } // BLOCK "StringFileInfo"
+  BLOCK "VarFileInfo"
+  {
+    VALUE "Translation", 0x409, 1252 // 1252 = 0x04E4
+  } // BLOCK "VarFileInfo"
+}
+

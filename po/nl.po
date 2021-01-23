@@ -1,0 +1,4873 @@
+# Dutch translations for GNU Cobol package
+# Copyright (C) 2012 Keisuke Nishida / Roger While
+# This file is distributed under the same license as the GNU Cobol package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2013.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: gnu-cobol 2.0\n"
+"Report-Msgid-Bugs-To: gnucobol-messages@gnu.org\n"
+"POT-Creation-Date: 2016-08-13 23:25+0200\n"
+"PO-Revision-Date: 2016-08-13 23:32+0100\n"
+"Last-Translator: Simon Sobisch <simonsobisch@gnu.org>\n"
+"Language-Team: Ed Borchert, Ronald Heirbaut\n"
+"Language: nl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Dutch\n"
+"X-Poedit-Country: NETHERLANDS\n"
+"X-Poedit-Basepath: ..\n"
+
+#: cobc/cobc.c:84
+#, fuzzy, c-format
+msgid "invalid parameter: %s"
+msgstr "Ongeldige %s parameter"
+
+#: cobc/cobc.c:107 cobc/reserved.c:2592 libcob/common.c:256 libcob/common.c:500
+#: libcob/common.c:5753
+#, fuzzy
+msgid "unknown"
+msgstr "Onbekend"
+
+#: cobc/cobc.c:652
+msgid "too many errors"
+msgstr ""
+
+#: cobc/cobc.c:660
+#, fuzzy, c-format
+msgid "%s: %d: internal compiler error"
+msgstr "%s:%d Interne compiler fout"
+
+#: cobc/cobc.c:669
+#, fuzzy, c-format
+msgid "%s: %d: invalid cast from '%s' type %s to type %s"
+msgstr "%s:%d Ongeldige wijziging van '%s' type %s naar type %s"
+
+#: cobc/cobc.c:696 cobc/cobc.c:755 cobc/cobc.c:793 cobc/cobc.c:863
+#: cobc/cobc.c:901 cobc/cobc.c:971
+#, fuzzy, c-format
+msgid "cannot allocate %d bytes of memory"
+msgstr "Kan geen %d bytes geheugen verkrijgen - Afbreken"
+
+#: cobc/cobc.c:708 cobc/cobc.c:723 cobc/cobc.c:774 cobc/cobc.c:882
+#: cobc/cobc.c:989 cobc/cobc.c:1006 cobc/cobc.c:1358 libcob/common.c:5078
+#, fuzzy, c-format
+msgid "call to %s with NULL pointer"
+msgstr "Aanroep van %s met NULL pointer"
+
+#: cobc/cobc.c:740
+#, fuzzy, c-format
+msgid "cannot reallocate %d bytes of memory"
+msgstr "Kan geen %d bytes geheugen verkrijgen - Afbreken"
+
+#: cobc/cobc.c:808 cobc/cobc.c:916
+#, fuzzy
+msgid "attempt to reallocate non-allocated memory"
+msgstr "Poging om niet geïnitialiseerd geheugen te verkrijgen - Afbreken"
+
+#: cobc/cobc.c:839 cobc/cobc.c:947
+#, c-format
+msgid "call to %s with invalid pointer, as it is missing in list"
+msgstr ""
+
+#: cobc/cobc.c:1113
+#, fuzzy, c-format
+msgid "assuming literal for unquoted '%s'"
+msgstr "Waarschuwing - Aanname constante voor '%s' zonder aanhalingstekens"
+
+#: cobc/cobc.c:1159
+#, fuzzy
+msgid " - length is < 1 or > 31"
+msgstr " - Lengte is < 1 of > 31"
+
+#: cobc/cobc.c:1162
+#, fuzzy
+msgid " - name cannot begin with space or underscore"
+msgstr " - Naam mag niet beginnen met spatie of underscore"
+
+#: cobc/cobc.c:1165
+#, fuzzy
+msgid " - name cannot begin with 'cob_' or 'COB_'"
+msgstr " - Naam mag niet beginnen met 'cob_' of 'COB_'"
+
+#: cobc/cobc.c:1168
+#, fuzzy
+msgid " - name duplicates a 'C' keyword"
+msgstr " - Naam is een 'C' gereserveerd woord"
+
+#: cobc/cobc.c:1171
+#, fuzzy
+msgid " - name cannot contain a directory separator"
+msgstr " - Naam mag geen map scheidingsteken bevatten"
+
+#: cobc/cobc.c:1180
+#, fuzzy, c-format
+msgid "invalid file base name '%s'%s"
+msgstr "Ongeldige bestandsnaam '%s'%s"
+
+#: cobc/cobc.c:1184
+#, fuzzy, c-format
+msgid "invalid ENTRY '%s'%s"
+msgstr "Ongeldige ENTRY '%s'%s"
+
+#: cobc/cobc.c:1187
+#, fuzzy, c-format
+msgid "invalid PROGRAM-ID '%s'%s"
+msgstr "Ongeldige PROGRAM-ID '%s'%s"
+
+#: cobc/cobc.c:1190
+#, fuzzy, c-format
+msgid "unknown name error '%s'%s"
+msgstr "Onbekende naam fout '%s'%s"
+
+#: cobc/cobc.c:1280 cobc/error.c:189 cobc/error.c:331
+#, fuzzy
+msgid "error: "
+msgstr "Fout: "
+
+#: cobc/cobc.c:1323
+#, fuzzy, c-format
+msgid "duplicate define '%s' - ignored"
+msgstr "Dubbele definitie '%s' - Negeren"
+
+#: cobc/cobc.c:1395
+#, c-format
+msgid "environment variable '%s' is '%s'; should not contain '%c'"
+msgstr ""
+
+#: cobc/cobc.c:1421
+#, fuzzy
+msgid "parameter buffer size exceeded"
+msgstr "Parameter buffer grootte overschreden"
+
+#: cobc/cobc.c:1457
+#, fuzzy, c-format
+msgid "warning: could not move temporary file to %s"
+msgstr "Waarschuwing - Kon tijdelijk bestand niet verplaatsen naar %s"
+
+#: cobc/cobc.c:1578
+#, fuzzy, c-format
+msgid "aborting compile of %s at line %d"
+msgstr "Afbreken compilatie van %s bij regel %d"
+
+#: cobc/cobc.c:1581
+msgid "aborting"
+msgstr ""
+
+#: cobc/cobc.c:1610 bin/cobcrun.c:92
+msgid ""
+"License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>"
+msgstr ""
+
+#: cobc/cobc.c:1611 libcob/common.c:5250 bin/cobcrun.c:93
+msgid ""
+"This is free software; see the source for copying conditions.  There is NO\n"
+"warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
+msgstr ""
+"Dit is vrij beschikbare software; zie de bron code voor de kopieer "
+"condities. Er is GEEN\n"
+"garantie en geen toestemming voor verkoop. Ook niet voor een bepaalde "
+"toepassing."
+
+#: cobc/cobc.c:1613 libcob/common.c:5252 bin/cobcrun.c:95
+#, c-format
+msgid "Written by %s\n"
+msgstr ""
+
+#: cobc/cobc.c:1614 libcob/common.c:5253 bin/cobcrun.c:96
+#, c-format
+msgid "Built     %s"
+msgstr "Gebouwd   %s"
+
+#: cobc/cobc.c:1616 libcob/common.c:5255 bin/cobcrun.c:98
+#, c-format
+msgid "Packaged  %s"
+msgstr "Verpakt   %s"
+
+#: cobc/cobc.c:1618 libcob/common.c:5276
+#, c-format
+msgid "C version %s%s"
+msgstr "C versie %s%s"
+
+#: cobc/cobc.c:1630
+#, fuzzy
+msgid "executing:"
+msgstr "Uitvoeren:"
+
+#: cobc/cobc.c:1667 cobc/cobc.c:1668 libcob/common.c:4147 libcob/common.c:4148
+msgid "env"
+msgstr ""
+
+#: cobc/cobc.c:1675
+#, fuzzy
+msgid "build information"
+msgstr "Bouw informatie"
+
+#: cobc/cobc.c:1676
+#, fuzzy
+msgid "build environment"
+msgstr "Bouw omgeving"
+
+#: cobc/cobc.c:1710 libcob/common.c:5279
+msgid "GnuCOBOL information"
+msgstr "GnuCOBOL informatie"
+
+#: cobc/cobc.c:1750 libcob/common.c:5302
+msgid "yes"
+msgstr ""
+
+#: cobc/cobc.c:1752 libcob/common.c:5304
+msgid "no"
+msgstr ""
+
+#: cobc/cobc.c:1756 libcob/common.c:5308
+msgid "8 bytes"
+msgstr "8 bytes"
+
+#: cobc/cobc.c:1758 libcob/common.c:5310
+msgid "4 bytes"
+msgstr "4 bytes"
+
+#: cobc/cobc.c:1761
+msgid "extended screen I/O"
+msgstr ""
+
+#: cobc/cobc.c:1764
+#, fuzzy
+msgid "variable format"
+msgstr "Variabel formaat"
+
+#: cobc/cobc.c:1770 cobc/cobc.c:1772
+#, fuzzy
+msgid "sequential handler"
+msgstr "Sequentiële handler"
+
+#: cobc/cobc.c:1772 libcob/common.c:5324
+msgid "built-in"
+msgstr ""
+
+#: cobc/cobc.c:1776 cobc/cobc.c:1778 cobc/cobc.c:1780 cobc/cobc.c:1782
+#: cobc/cobc.c:1784 cobc/cobc.c:1786 libcob/common.c:5328 libcob/common.c:5330
+#: libcob/common.c:5332 libcob/common.c:5334 libcob/common.c:5336
+#: libcob/common.c:5338
+msgid "ISAM handler"
+msgstr "ISAM handler"
+
+#: cobc/cobc.c:1786 libcob/common.c:5297 libcob/common.c:5338
+#, fuzzy
+msgid "disabled"
+msgstr "Uitgeschakeld"
+
+#: cobc/cobc.c:1797
+msgid "- NOT set with -Wall"
+msgstr "- NIET gezet met -Wall"
+
+#: cobc/cobc.c:1806
+msgid "- ALWAYS active"
+msgstr ""
+
+#: cobc/cobc.c:1810 cobc/cobc.c:2731 cobc/cobc.c:5587 cobc/cobc.c:5703
+#: cobc/codegen.c:3838 cobc/typeck.c:5500 cobc/typeck.c:5529
+#, fuzzy, c-format
+msgid "call to '%s' with invalid parameter '%s'"
+msgstr "FUNCTION '%s' heeft een ongeldige parameter"
+
+#: cobc/cobc.c:1835
+msgid "default"
+msgstr ""
+
+#: cobc/cobc.c:1842
+msgid "GnuCOBOL compiler for most COBOL dialects with lots of extensions"
+msgstr ""
+
+#: cobc/cobc.c:1844
+#, fuzzy, c-format
+msgid "Usage: %s [options]... file..."
+msgstr "Gebruik: cobc [opties] bestand ..."
+
+#: cobc/cobc.c:1847 bin/cobcrun.c:112
+msgid "Options:"
+msgstr "Opties:"
+
+#: cobc/cobc.c:1848
+#, fuzzy
+msgid "  -h, -help             display this help and exit"
+msgstr "  -h, -help             Toont deze boodschap"
+
+#: cobc/cobc.c:1849
+#, fuzzy
+msgid "  -V, -version          display compiler version and exit"
+msgstr "  -V, -version          Toont compiler verse"
+
+#: cobc/cobc.c:1850
+#, fuzzy
+msgid ""
+"  -i, -info             display compiler information (build/environment)"
+msgstr "  -i, -info             Toont compiler bouw informatie"
+
+#: cobc/cobc.c:1851
+#, fuzzy
+msgid "  -v, -verbose          display the commands invoked by the compiler"
+msgstr ""
+"  -v                    Toont de opdrachten uitgevoerd door de compiler"
+
+#: cobc/cobc.c:1852
+#, fuzzy
+msgid ""
+"  -vv                   display compiler version and the commands\n"
+"                        invoked by the compiler"
+msgstr ""
+"  -v                    Toont de opdrachten uitgevoerd door de compiler"
+
+#: cobc/cobc.c:1854
+#, fuzzy
+msgid "  -q, -brief            reduced displays, commands invoked not shown"
+msgstr ""
+"  -v                    Toont de opdrachten uitgevoerd door de compiler"
+
+#: cobc/cobc.c:1855
+#, fuzzy
+msgid "  -x                    build an executable program"
+msgstr "  -x                    Bouw een uitvoerbaar programma"
+
+#: cobc/cobc.c:1856
+#, fuzzy
+msgid "  -m                    build a dynamically loadable module (default)"
+msgstr "  -m                    Bouw een dynamisch laadbare module (standaard)"
+
+#: cobc/cobc.c:1857
+msgid "  -j [<args>], -job[=<args>]\trun program after build, passing <args>"
+msgstr ""
+
+#: cobc/cobc.c:1858
+msgid ""
+"  -std=<dialect>        warnings/features for a specific dialect\n"
+"                        <dialect> can be one of:\n"
+"                        cobol2014, cobol2002, cobol85, default,\n"
+"                        ibm, mvs, bs2000, mf, acu;\n"
+"                        see configuration files in directory config"
+msgstr ""
+
+#: cobc/cobc.c:1863
+#, fuzzy
+msgid "  -F, -free             use free source format"
+msgstr "  -free                 Gebruik vrij bron formaat"
+
+#: cobc/cobc.c:1864
+#, fuzzy
+msgid "  -fixed                use fixed source format (default)"
+msgstr "  -fixed                Gebruik vast bron formaat (standaard)"
+
+#: cobc/cobc.c:1865
+#, fuzzy
+msgid "  -O, -O2, -Os          enable optimization"
+msgstr "  -O, -O2, -Os          Inschakelen optimalisatie"
+
+#: cobc/cobc.c:1866
+#, fuzzy
+msgid "  -g                    enable C compiler debug / stack check / trace"
+msgstr ""
+"  -g                    Inschakelen C compiler debug / stack check / trace"
+
+#: cobc/cobc.c:1867
+#, fuzzy
+msgid "  -d, -debug            enable all run-time error checking"
+msgstr "  -debug                Inschakelen alle run-time fout controles"
+
+#: cobc/cobc.c:1868
+#, fuzzy
+msgid "  -o <file>             place the output into <file>"
+msgstr "  -o <bestand>          Plaats de uitvoer in <file>"
+
+#: cobc/cobc.c:1869
+#, fuzzy
+msgid ""
+"  -b                    combine all input files into a single\n"
+"                        dynamically loadable module"
+msgstr ""
+"  -b                    Combineer alle invoer bestanden in één bestand\n"
+"                        dynamisch laadbare module"
+
+#: cobc/cobc.c:1871
+#, fuzzy
+msgid "  -E                    preprocess only; do not compile or link"
+msgstr "  -E                    Alleen voorbewerken; niet compileren of linken"
+
+#: cobc/cobc.c:1872
+#, fuzzy
+msgid "  -C                    translation only; convert COBOL to C"
+msgstr "  -C                    Alleen vertalen; converteer COBOL naar C"
+
+#: cobc/cobc.c:1873
+#, fuzzy
+msgid "  -S                    compile only; output assembly file"
+msgstr "  -S                    Alleen compileren; uitvoer assembler bestand"
+
+#: cobc/cobc.c:1874
+#, fuzzy
+msgid "  -c                    compile and assemble, but do not link"
+msgstr "  -c                    Compileer en assembleer, maar niet linken"
+
+#: cobc/cobc.c:1875
+#, fuzzy
+msgid ""
+"  -T <file>             generate and place a wide program listing into <file>"
+msgstr "  -o <bestand>          Plaats de uitvoer in <file>"
+
+#: cobc/cobc.c:1876
+#, fuzzy
+msgid ""
+"  -t <file>             generate and place a program listing into <file>"
+msgstr "  -o <bestand>          Plaats de uitvoer in <file>"
+
+#: cobc/cobc.c:1877
+msgid "  --tlines=<lines>      specify lines per page in listing, default = 55"
+msgstr ""
+
+#: cobc/cobc.c:1878
+msgid "  --no-symbols          specify no symbols in listing"
+msgstr ""
+
+#: cobc/cobc.c:1879
+#, fuzzy
+msgid "  -P[=<dir or file>]    generate preprocessed program listing (.lst)"
+msgstr "  -P(=<map of bestand>) Genereer voorbewerkte programma lijst (.lst)"
+
+#: cobc/cobc.c:1880
+#, fuzzy
+msgid ""
+"  -Xref                 generate cross reference through 'cobxref'\n"
+"                        (V. Coen's 'cobxref' must be in path)"
+msgstr ""
+"  -Xref                 Genereer kruisverwijzing door 'cobxref'\n"
+"                        (V. Coen's 'cobxref' moet in het pad staan"
+
+#: cobc/cobc.c:1882
+#, fuzzy
+msgid "  -I <directory>        add <directory> to copy/include search path"
+msgstr "  -I <map>              Voeg <map> toe aan copy/include zoek pad"
+
+#: cobc/cobc.c:1883
+#, fuzzy
+msgid "  -L <directory>        add <directory> to library search path"
+msgstr "  -L <map>              Voeg <map> toe aan library zoek pad"
+
+#: cobc/cobc.c:1884
+#, fuzzy
+msgid "  -l <lib>              link the library <lib>"
+msgstr "  -l <bibliotheek>      Link de bibliotheek <lib>"
+
+#: cobc/cobc.c:1885
+#, fuzzy
+msgid "  -A <options>          add <options> to the C compile phase"
+msgstr "  -A <opties>           Voeg <opties> toe aan de C compileer fase"
+
+#: cobc/cobc.c:1886
+#, fuzzy
+msgid "  -Q <options>          add <options> to the C link phase"
+msgstr "  -Q <opties>           Voeg <opties> toe aan de C link fase"
+
+#: cobc/cobc.c:1887
+#, fuzzy
+msgid "  -D <define>           define <define> for COBOL compilation"
+msgstr "  -D <woord>            Maak <woord> bekend bij de COBOL compiler"
+
+#: cobc/cobc.c:1888
+#, fuzzy
+msgid "  -K <entry>            generate CALL to <entry> as static"
+msgstr "  -K <ingang>           Genereer aanroep van <ingang> als statisch"
+
+#: cobc/cobc.c:1889
+#, fuzzy
+msgid "  -conf=<file>          user-defined dialect configuration; see -std"
+msgstr ""
+"  -conf=<bestand>       Gebruiker gedefinieerde dialect configuratie - Zie -"
+"std="
+
+#: cobc/cobc.c:1890
+#, fuzzy
+msgid "  -list-reserved        display reserved words"
+msgstr "  -list-reserved        Toon gereserveerde woorden"
+
+#: cobc/cobc.c:1891
+#, fuzzy
+msgid "  -list-intrinsics      display intrinsic functions"
+msgstr "  -list-intrinsics      Toon intrinsieke functies"
+
+#: cobc/cobc.c:1892
+#, fuzzy
+msgid "  -list-mnemonics       display mnemonic names"
+msgstr "  -list-mnemonics       Toon mnemonic namen"
+
+#: cobc/cobc.c:1893
+#, fuzzy
+msgid "  -list-system          display system routines"
+msgstr "  -list-system          Toon systeem routines"
+
+#: cobc/cobc.c:1894
+msgid ""
+"  -save-temps[=<dir>]   save intermediate files\n"
+"                        - default: current directory"
+msgstr ""
+
+#: cobc/cobc.c:1896
+#, fuzzy
+msgid "  -ext <extension>      add file extension for resolving COPY"
+msgstr "  -ext <suffix>         Voeg standaard bestands suffix toe"
+
+#: cobc/cobc.c:1900
+#, fuzzy
+msgid "  -W                    enable all warnings"
+msgstr "  -W                    Inschakelen alle waarschuwingen"
+
+#: cobc/cobc.c:1901
+#, fuzzy
+msgid ""
+"  -Wall                 enable most warnings (all except as noted below)"
+msgstr ""
+"  -Wall                 Inschakelen alle waarschuwingen behalve zoals "
+"vermeld hieronder"
+
+#: cobc/cobc.c:1902
+msgid "  -Wno-<warning>        disable warning enabled by -W or -Wall"
+msgstr ""
+
+#: cobc/cobc.c:1933 cobc/cobc.c:1937
+msgid "<value>"
+msgstr ""
+
+#: cobc/cobc.c:1941
+msgid "<support>"
+msgstr ""
+
+#: cobc/cobc.c:1949
+msgid "where <support> is one of the following:"
+msgstr ""
+
+#: cobc/cobc.c:1951
+msgid "word to be taken out of the reserved words list"
+msgstr ""
+
+#: cobc/cobc.c:1951 cobc/cobc.c:1952
+msgid "<word>"
+msgstr ""
+
+#: cobc/cobc.c:1952
+msgid "word to be added to reserved words list"
+msgstr ""
+
+#: cobc/cobc.c:1953
+msgid "word to be added to reserved words list as alias"
+msgstr ""
+
+#: cobc/cobc.c:1953
+msgid "<word>:<alias>"
+msgstr ""
+
+#: cobc/cobc.c:1958 bin/cobcrun.c:128
+#, c-format
+msgid ""
+"Report bugs to: %s\n"
+"or (preferably) use the issue tracker via the home page."
+msgstr ""
+
+#: cobc/cobc.c:1961 bin/cobcrun.c:131
+msgid "GnuCOBOL home page: <http://www.gnu.org/software/gnucobol/>"
+msgstr ""
+
+#: cobc/cobc.c:1962 bin/cobcrun.c:132
+msgid "General help using GNU software: <http://www.gnu.org/gethelp/>"
+msgstr ""
+
+#: cobc/cobc.c:1969
+#, fuzzy
+msgid "only one of options 'E', 'S', 'C', 'c' may be specified"
+msgstr "Alleen één van de opties 'E', 'S', 'C', 'c' mag worden opgegeven"
+
+#: cobc/cobc.c:1975
+#, fuzzy
+msgid "only one of options 'm', 'x', 'b' may be specified"
+msgstr "Alleen één van de opties 'E', 'S', 'C', 'c' mag worden opgegeven"
+
+#: cobc/cobc.c:1993
+#, c-format
+msgid "'%s' is not an intrinsic function"
+msgstr "'%s' is geen interne compiler functie"
+
+#: cobc/cobc.c:2114
+#, fuzzy, c-format
+msgid "invalid option -std=%s"
+msgstr "Ongeldige optie -std=%s"
+
+#: cobc/cobc.c:2145
+#, fuzzy
+msgid "loading standard configuration file 'default.conf'"
+msgstr "Ongeldige regel voortzetting"
+
+#: cobc/cobc.c:2272
+#, fuzzy
+msgid "invalid output file name"
+msgstr "Ongeldige uitvoer bestandsnaam"
+
+#: cobc/cobc.c:2343
+#, fuzzy, c-format
+msgid "warning: '%s' is not a directory, defaulting to current directory"
+msgstr "Waarschuwing - '%s' is geen map, huidige map wordt gebruikt"
+
+#: cobc/cobc.c:2400
+#, fuzzy, c-format
+msgid "warning: assuming '%s' is a DEFINE - did you intend to use -debug?"
+msgstr ""
+"Waarschuwing - aangenomen wordt dat '%s' een DEFINE is - bedoelt u -debug?"
+
+#: cobc/cobc.c:2598
+#, fuzzy
+msgid "invalid option detected"
+msgstr "Ongeldige optie gevonden"
+
+#: cobc/cobc.c:2642
+msgid "all runtime checks are enabled"
+msgstr ""
+
+#: cobc/cobc.c:2753
+msgid "only one stdin input allowed"
+msgstr ""
+
+#: cobc/cobc.c:2805
+#, fuzzy, c-format
+msgid "invalid file name parameter (length > %d)"
+msgstr "Ongeldige bestandsnaam parameter"
+
+#: cobc/cobc.c:2989
+msgid "nothing for -j to run"
+msgstr ""
+
+#: cobc/cobc.c:2985 cobc/cobc.c:3170 cobc/cobc.c:3225 cobc/cobc.c:3248
+#: cobc/cobc.c:3377 cobc/cobc.c:3488 cobc/cobc.c:3515 cobc/cobc.c:4963
+#, fuzzy
+msgid "return status:"
+msgstr "Retour status:"
+
+#: cobc/cobc.c:3154
+#, fuzzy, c-format
+msgid "unknown option ignored:\t%s"
+msgstr "Onbekende optie genegeerd:\t%s"
+
+#: cobc/cobc.c:3469
+#, fuzzy
+msgid "preprocessing:"
+msgstr "Voorverwerking:"
+
+#: cobc/cobc.c:3543
+msgid "'cobxref' execution unsuccessful"
+msgstr "Uitvoering 'xcobref' mislukt"
+
+#: cobc/cobc.c:3547 cobc/cobc.c:3550
+#, fuzzy, c-format
+msgid "check that 'cobxref' is in %s"
+msgstr "Controleer of 'xcobref' voorkomt in %s"
+
+#: cobc/cobc.c:3554
+#, fuzzy
+msgid "no listing produced"
+msgstr "Geen lijst gemaakt"
+
+#: cobc/cobc.c:4945
+#, fuzzy
+msgid "parsing:"
+msgstr "Ontleden:"
+
+#: cobc/cobc.c:5017
+#, fuzzy
+msgid "translating:"
+msgstr "Vertalen:"
+
+#: cobc/cobc.c:5904
+#, fuzzy
+msgid "no input files"
+msgstr "Geen invoer bestanden"
+
+#: cobc/cobc.c:5990
+#, fuzzy, c-format
+msgid "%s option invalid in this combination"
+msgstr "-o optie ongeldig bij deze combinatie"
+
+#: cobc/cobc.c:6020
+#, fuzzy
+msgid "command line:"
+msgstr "Opdracht regel:"
+
+#: cobc/codegen.c:628 cobc/codegen.c:3172 cobc/codegen.c:7468
+#: cobc/codegen.c:7902
+#, fuzzy
+msgid "unexpected CONSTANT item"
+msgstr "Onverwacht CONSTANT item"
+
+#: cobc/codegen.c:770 cobc/codegen.c:857 cobc/codegen.c:1079
+#: cobc/codegen.c:1973 cobc/codegen.c:2219 cobc/codegen.c:2637
+#: cobc/codegen.c:2844 cobc/codegen.c:6054 cobc/tree.c:449 cobc/typeck.c:820
+#: cobc/typeck.c:3402 cobc/typeck.c:6915
+#, fuzzy, c-format
+msgid "unexpected tree tag: %d"
+msgstr "Onverwacht boom label %d"
+
+#: cobc/codegen.c:2084 cobc/codegen.c:2350 cobc/codegen.c:6144 cobc/tree.c:812
+#, fuzzy, c-format
+msgid "unexpected cast type: %d"
+msgstr "Onverwacht wijzigings type %d"
+
+#: cobc/codegen.c:2692 cobc/codegen.c:3124
+#, fuzzy, c-format
+msgid "internal statement stack depth exceeded: %d"
+msgstr "Interne statement stapel diepte overschreden -> %d"
+
+#: cobc/codegen.c:2987
+#, fuzzy, c-format
+msgid "unexpected function: %s"
+msgstr "Onverwachte functie %s"
+
+#: cobc/codegen.c:3046
+#, fuzzy
+msgid "unexpected constant"
+msgstr "Onverwachte constante"
+
+#: cobc/codegen.c:3668
+#, fuzzy, c-format
+msgid "unexpected tree category: %d"
+msgstr "Onverwachte boom categorie %d"
+
+#: cobc/codegen.c:4033 cobc/codegen.c:4058 cobc/codegen.c:4252
+#: cobc/codegen.c:4282
+#, fuzzy, c-format
+msgid "unexpected size: %d"
+msgstr "Onverwachte grootte"
+
+#: cobc/codegen.c:5705 cobc/codegen.c:5923
+#, fuzzy, c-format
+msgid "unexpected handler type: %d"
+msgstr "Onverwacht wijzigings type %d"
+
+#: cobc/codegen.c:5977
+#, fuzzy
+msgid "unexpected error_node parameter"
+msgstr "Onverwachte error_node parameter"
+
+#: cobc/codegen.c:6162
+#, fuzzy, c-format
+msgid "unexpected tree type: %d"
+msgstr "Onverwacht boom type %d"
+
+#: cobc/codeoptim.c:2624
+#, fuzzy, c-format
+msgid "unexpected optimization value: %d"
+msgstr "Onverwachte optimalisatie waarde"
+
+#: cobc/config.c:131 libcob/common.c:4908 libcob/common.c:4922
+#: libcob/common.c:5176
+#, fuzzy, c-format
+msgid "invalid value '%s' for configuration tag '%s'"
+msgstr "Ongeldige waarde voor '%s'"
+
+#: cobc/config.c:134 libcob/common.c:4346 libcob/common.c:4429
+#, c-format
+msgid "should be one of the following values: %s"
+msgstr ""
+
+#: cobc/config.c:136
+msgid "must be numeric"
+msgstr ""
+
+#: cobc/config.c:138 libcob/common.c:4401
+#, c-format
+msgid "maximum value: %lu"
+msgstr ""
+
+#: cobc/config.c:140
+#, c-format
+msgid "minimum value: %d"
+msgstr ""
+
+#: cobc/config.c:171
+#, fuzzy, c-format
+msgid "unsupported value '%s' for configuration tag '%s'"
+msgstr "Ongeldige waarde voor '%s'"
+
+#: cobc/config.c:241
+#, fuzzy, c-format
+msgid "invalid configuration tag '%s'"
+msgstr "Ongeldige regel voortzetting"
+
+#: cobc/config.c:254 libcob/common.c:4719 libcob/common.c:4745
+#, fuzzy, c-format
+msgid "unknown configuration tag '%s'"
+msgstr "Onbekend label '%s'"
+
+#: cobc/config.c:261
+#, fuzzy, c-format
+msgid "'%s' cannot be set via command line"
+msgstr "'%s' kan hier niet worden geïndexeerd"
+
+#: cobc/config.c:320
+#, fuzzy, c-format
+msgid "Invalid type for '%s'"
+msgstr "Ongeldig type voor '%s'"
+
+#: cobc/config.c:400
+#, fuzzy, c-format
+msgid "invalid type for '%s'"
+msgstr "Ongeldig type voor '%s'"
+
+#: cobc/config.c:459 libcob/common.c:4825
+msgid "recursive inclusion"
+msgstr ""
+
+#: cobc/config.c:514 libcob/common.c:4876
+#, fuzzy
+msgid "configuration file was included here"
+msgstr "Ongeldige regel voortzetting"
+
+#: cobc/config.c:544
+#, c-format
+msgid "The previous loaded configuration '%s' will be discarded."
+msgstr ""
+
+#: cobc/config.c:570
+msgid "missing definitions:"
+msgstr ""
+
+#: cobc/config.c:572
+#, fuzzy, c-format
+msgid "\tno definition of '%s'"
+msgstr "%s: Geen definitie voor '%s'"
+
+#: cobc/error.c:67
+msgid "in section"
+msgstr "in sectie"
+
+#: cobc/error.c:77
+msgid "in paragraph"
+msgstr "in paragraaf"
+
+#: cobc/error.c:150 libcob/common.c:1772
+msgid "configuration error:"
+msgstr ""
+
+#: cobc/error.c:163 libcob/common.c:4357
+#, c-format
+msgid "system error %d"
+msgstr ""
+
+#: cobc/error.c:174 cobc/error.c:222 cobc/error.c:320
+msgid "warning: "
+msgstr "waarschuwing: "
+
+#: cobc/error.c:247
+msgid "configuration warning:"
+msgstr ""
+
+#: cobc/error.c:351 cobc/error.c:371
+#, c-format
+msgid "%s used"
+msgstr ""
+
+#: cobc/error.c:355
+#, c-format
+msgid "%s is archaic in %s"
+msgstr "%s is verouderd in %s"
+
+#: cobc/error.c:360
+#, c-format
+msgid "%s is obsolete in %s"
+msgstr "%s is overbodig in %s"
+
+#: cobc/error.c:367
+#, c-format
+msgid "%s ignored"
+msgstr "%s genegeerd"
+
+#: cobc/error.c:374
+#, c-format
+msgid "%s does not conform to %s"
+msgstr "%s is niet in overeenstemming met %s"
+
+#: cobc/error.c:394 cobc/error.c:408
+#, c-format
+msgid "redefinition of '%s'"
+msgstr "herdefinitie van '%s'"
+
+#: cobc/error.c:397 cobc/error.c:417
+#, c-format
+msgid "'%s' previously defined here"
+msgstr "'%s' eerder gedefinieerd hier"
+
+#: cobc/error.c:443
+#, fuzzy, c-format
+msgid "'%s' cannot be used here"
+msgstr "'%s' kan hier niet worden geïndexeerd"
+
+#: cobc/error.c:445
+#, c-format
+msgid "'%s' is not defined, but is a reserved word in another dialect"
+msgstr ""
+
+#: cobc/error.c:447
+#, c-format
+msgid "'%s' is not defined"
+msgstr "'%s' is niet gedefinieerd"
+
+#: cobc/error.c:474
+#, fuzzy, c-format
+msgid "'%s' is ambiguous; needs qualification"
+msgstr "%s onduidelijk; specificeer nader"
+
+#: cobc/error.c:500 parser.y:10830
+#, c-format
+msgid "'%s' defined here"
+msgstr "'%s' hier gedefinieerd"
+
+#: cobc/error.c:508
+#, fuzzy, c-format
+msgid "fatal error: %s"
+msgstr "BDB fout: %s"
+
+#: cobc/error.c:592
+#, fuzzy, c-format
+msgid "group item '%s' cannot have %s clause"
+msgstr "Groeps item '%s' kan geen %s clausule hebben"
+
+#: cobc/error.c:521
+#, fuzzy, c-format
+msgid "constant item '%s' cannot have a %s clause"
+msgstr "Constante item '%s' kan geen %s clausule hebben"
+
+#: cobc/error.c:524
+#, fuzzy, c-format
+msgid "level %02d item '%s' cannot have a %s clause"
+msgstr "Nivo %02d item '%s' kan geen a %s clausule hebben"
+
+#: cobc/error.c:539
+#, c-format
+msgid "constant item '%s' requires a %s clause"
+msgstr "constante item '%s' verwacht een %s clausule"
+
+#: cobc/error.c:542
+#, c-format
+msgid "level %02d item '%s' requires a %s clause"
+msgstr "level %02d item '%s' verwacht een %s clausule"
+
+#: cobc/error.c:557
+#, c-format
+msgid "constant item '%s' can only have a %s clause"
+msgstr "constante item '%s' kan alleen een %s clausule hebben"
+
+#: cobc/error.c:560
+#, c-format
+msgid "level %02d item '%s' can only have a %s clause"
+msgstr "nivo %02d item '%s' kan alleen een %s clausule hebben"
+
+#: cobc/field.c:85
+#, c-format
+msgid "invalid level number '%s'"
+msgstr "ongeldig nivo nummer '%s'"
+
+#: cobc/field.c:139 cobc/field.c:176
+msgid "level number must begin with 01 or 77"
+msgstr "nivo nummer moet beginnen met 01 of 77"
+
+#: cobc/field.c:214 cobc/field.c:230
+#, c-format
+msgid "no previous data item of level %02d"
+msgstr "geen eerder data item met nivo %02d"
+
+#: cobc/field.c:263
+#, c-format
+msgid "'%s' cannot be qualified here"
+msgstr "'%s' kan hier niet worden gespecificeerd"
+
+#: cobc/field.c:269
+#, c-format
+msgid "'%s' cannot be subscripted here"
+msgstr "'%s' kan hier niet worden geïndexeerd"
+
+#: cobc/field.c:281
+#, c-format
+msgid "'%s' is not defined in '%s'"
+msgstr "'%s' is niet gedefinieerd in '%s'"
+
+#: cobc/field.c:302
+#, fuzzy
+msgid "level number of REDEFINES entries must be identical"
+msgstr "Nivo nummer van REDEFINES beschrijvingen moet gelijk zijn"
+
+#: cobc/field.c:307
+#, fuzzy, c-format
+msgid "'%s' is not the original definition"
+msgstr "'%s' niet de originele definitie"
+
+#: cobc/field.c:321
+#, fuzzy, c-format
+msgid "PICTURE clause not compatible with USAGE %s"
+msgstr "'%s' PICTURE clausule niet compatibel met USAGE"
+
+#: cobc/field.c:384 cobc/field.c:389
+#, c-format
+msgid "PICTURE clause required for '%s'"
+msgstr "PICTURE clausule verplicht voor '%s'"
+
+#: cobc/field.c:394
+#, fuzzy, c-format
+msgid "a non-numeric literal is expected for '%s'"
+msgstr "Een niet numerieke constante is verwacht voor '%s'"
+
+#: cobc/field.c:401
+#, fuzzy, c-format
+msgid "defining implicit picture size %d for '%s'"
+msgstr "Aannemen impliciete opmaak grootte %d voor '%s'"
+
+#: cobc/field.c:429
+#, c-format
+msgid "'%s' ANY LENGTH only allowed in LINKAGE"
+msgstr "'%s' ANY LENGTH alleen toegestaan in LINKAGE"
+
+#: cobc/field.c:433
+#, c-format
+msgid "'%s' ANY LENGTH must be 01 level"
+msgstr "'%s' ANY LENGTH moet 01 nivo zijn"
+
+#: cobc/field.c:437
+#, c-format
+msgid "'%s' ANY LENGTH can not be BASED/EXTERNAL"
+msgstr "'%s' ANY LENGTH kan niet in BASED/EXTERNAL"
+
+#: cobc/field.c:442 cobc/field.c:457
+#, c-format
+msgid "'%s' ANY LENGTH has invalid definition"
+msgstr "'%s' ANY LENGTH heeft ongeldige definitie"
+
+#: cobc/field.c:452
+#, c-format
+msgid "'%s' ANY LENGTH must have a PICTURE"
+msgstr "'%s' ANY LENGTH moet een PICTURE hebben"
+
+#: cobc/field.c:468
+#, c-format
+msgid "'%s' 77 level not allowed here"
+msgstr "'%s' 77 nivo hier niet toegestaan"
+
+#: cobc/field.c:473
+#, c-format
+msgid "'%s' EXTERNAL must be specified at 01/77 level"
+msgstr "'%s' EXTERNAL moet op 01/77 nivo worden gespecificeerd"
+
+#: cobc/field.c:477
+#, c-format
+msgid "'%s' EXTERNAL can only be specified in WORKING-STORAGE section"
+msgstr ""
+"'%s' EXTERNAL kan alleen in WORKING-STORAGE sectie worden gespecificeerd"
+
+#: cobc/field.c:481
+#, c-format
+msgid "'%s' EXTERNAL and BASED are mutually exclusive"
+msgstr "'%s' EXTERNAL en BASED sluiten elkaar uit"
+
+#: cobc/field.c:484
+#, c-format
+msgid "'%s' EXTERNAL not allowed with REDEFINES"
+msgstr "'%s' EXTERNAL niet toegestaan met REDEFINES"
+
+#: cobc/field.c:491
+#, c-format
+msgid "'%s' BASED not allowed here"
+msgstr "'%s' BASED niet toegestaan hier"
+
+#: cobc/field.c:494
+#, c-format
+msgid "'%s' BASED not allowed with REDEFINES"
+msgstr "'%s' BASED niet toegestaan met REDEFINES"
+
+#: cobc/field.c:497
+#, c-format
+msgid "'%s' BASED only allowed at the 01 and 77 levels"
+msgstr "'%s' BASED alleen toegestaan op 01 en 77 nivo's"
+
+#: cobc/field.c:523
+#, c-format
+msgid "'%s' cannot have the OCCURS clause due to '%s'"
+msgstr "'%s' OCCURS clausule kan niet vanwege '%s'"
+
+#: cobc/field.c:536
+#, c-format
+msgid "the original definition '%s' should not have OCCURS clause"
+msgstr "de originele definitie '%s' mag geen OCCURS hebben"
+
+#: cobc/field.c:543
+msgid "REDEFINES must follow the original definition"
+msgstr "REDEFINES moet na de originele definitie"
+
+#: cobc/field.c:550
+#, c-format
+msgid "'%s' cannot be variable length"
+msgstr "'%s' kan geen variabele lengte zijn"
+
+#: cobc/field.c:554
+#, c-format
+msgid "the original definition '%s' cannot be variable length"
+msgstr "de originele definitie '%s' kan geen variabele lengte zijn"
+
+#: cobc/field.c:579
+#, c-format
+msgid "SCREEN group item '%s' has invalid clause"
+msgstr "SCREEN groeps item '%s' heeft ongeldige clausule"
+
+#: cobc/field.c:628
+#, c-format
+msgid "'%s' cannot have PICTURE clause"
+msgstr "'%s' kan geen PICTURE clausule hebben"
+
+#: cobc/field.c:694
+#, fuzzy, c-format
+msgid "'%s' COMP-6 with sign - changing to COMP-3"
+msgstr "'%s' COMP-6 met teken - Gewijzigd naar COMP-3"
+
+#: cobc/field.c:714
+msgid "elementary items with SIGN clause must have S in PICTURE"
+msgstr ""
+
+#: cobc/field.c:717
+msgid "elementary items with SIGN clause must be USAGE DISPLAY or NATIONAL"
+msgstr ""
+
+#: cobc/field.c:728
+#, c-format
+msgid "'%s' cannot have JUSTIFIED RIGHT"
+msgstr "'%s' kan geen JUSTIFIED RIGHT zijn"
+
+#: cobc/field.c:739
+#, fuzzy, c-format
+msgid "'%s' cannot have S in PICTURE string and BLANK WHEN ZERO"
+msgstr "'%s' kan geen BLANK WHEN ZERO zijn"
+
+#: cobc/field.c:744
+#, c-format
+msgid "'%s' cannot have BLANK WHEN ZERO without being USAGE DISPLAY or NATIONAL"
+msgstr ""
+
+#: cobc/field.c:796
+#, fuzzy, c-format
+msgid "'%s' cannot have * in PICTURE string and BLANK WHEN ZERO"
+msgstr "'%s' kan geen BLANK WHEN ZERO zijn"
+
+#: cobc/field.c:803
+#, fuzzy, c-format
+msgid "'%s' is not numeric, so cannot have BLANK WHEN ZERO"
+msgstr "'%s' kan geen BLANK WHEN ZERO zijn"
+
+#: cobc/field.c:811
+#, fuzzy
+msgid "only level 88 items may have multiple values"
+msgstr "Alleen nivo 88 item mag meerdere waarden hebben"
+
+#: cobc/field.c:817
+#, fuzzy
+msgid "entries under REDEFINES cannot have a VALUE clause"
+msgstr "Beschrijvingen onder REDEFINES kunnen geen VALUE clausule hebben"
+
+#: cobc/field.c:820
+#, fuzzy
+msgid "initial VALUE clause ignored for EXTERNAL item"
+msgstr "Eerste VALUE clausule genegeerd voor EXTERNAL item"
+
+#: cobc/field.c:1100
+#, fuzzy, c-format
+msgid "ignoring SYNCHRONIZED for group item '%s'"
+msgstr "SYNCHRONIZED genegeerd voor groep item '%s'"
+
+#: cobc/field.c:1115 cobc/field.c:1128 cobc/field.c:1293 cobc/field.c:1296
+#, fuzzy, c-format
+msgid "size of '%s' larger than size of '%s'"
+msgstr "Lengte van '%s' groter dan lengte van '%s'"
+
+#: cobc/field.c:1190 cobc/field.c:1238
+#, fuzzy, c-format
+msgid "'%s' cannot be larger than %d bytes"
+msgstr "'%s' kan niet groter zijn dan %d bytes"
+
+#: cobc/field.c:1219 cobc/field.c:1227
+#, c-format
+msgid "'%s' binary field cannot be larger than %d digits"
+msgstr "'%s' binair veld kan niet groter zijn dan %d cijfers"
+
+#: cobc/field.c:1281
+#, c-format
+msgid "unexpected USAGE: %d"
+msgstr "onbekende USAGE: %d"
+
+#: cobc/field.c:1381
+#, fuzzy
+msgid "literal type does not match numeric data type"
+msgstr "Constante type komt niet overeen met data type"
+
+#: cobc/field.c:1450
+#, c-format
+msgid "THRU item '%s' may not come before '%s'"
+msgstr ""
+
+#: cobc/field.c:1472
+#, c-format
+msgid "RENAMES cannot start/end at the OCCURS item '%s'"
+msgstr ""
+
+#: cobc/field.c:1479
+#, c-format
+msgid "cannot use RENAMES on part of the table '%s'"
+msgstr ""
+
+#: cobc/field.c:1513
+#, c-format
+msgid "RENAMES may not contain '%s' as it is a pointer or object reference"
+msgstr ""
+
+#: cobc/field.c:1517
+#, c-format
+msgid "RENAMES may not contain '%s' as it is an OCCURS DEPENDING table"
+msgstr ""
+
+#: cobc/field.c:1542
+#, c-format
+msgid "'%s' must immediately follow the record '%s'"
+msgstr ""
+
+#: cobc/field.c:1550
+#, c-format
+msgid "'%s' and '%s' must be in the same record"
+msgstr ""
+
+#: cobc/field.c:1556
+#, c-format
+msgid "THRU item must be different to '%s'"
+msgstr ""
+
+#: cobc/field.c:1565
+#, c-format
+msgid "THRU item '%s' may not be subordinate to '%s'"
+msgstr ""
+
+#: cobc/field.c:1656
+#, fuzzy, c-format
+msgid "unexpected usage %d"
+msgstr "Onverwachte grootte"
+
+#: cobc/flag.def:40
+msgid "define PERFORM stack size"
+msgstr "definieer PERFORM stapel grootte"
+
+#: cobc/flag.def:40 cobc/flag.def:43
+msgid "<number>"
+msgstr ""
+
+#: cobc/flag.def:43
+msgid "define cutoff depth for IF statements"
+msgstr "definieer afbreek diepte voor IF statements"
+
+#: cobc/flag.def:46
+msgid "define display sign representation"
+msgstr ""
+
+#: cobc/flag.def:46
+msgid "machine native"
+msgstr ""
+
+#: cobc/flag.def:49
+msgid "fold COPY subject to value"
+msgstr ""
+
+#: cobc/flag.def:49 cobc/flag.def:52
+msgid "no transformation"
+msgstr "geen transformatie"
+
+#: cobc/flag.def:52
+msgid "fold PROGRAM-ID, CALL, CANCEL subject to value"
+msgstr "transformeer PROGRAM-ID, CALL, CANCEL naar waarde"
+
+#: cobc/flag.def:55
+#, fuzzy
+msgid "initialize fields without VALUE to decimal value"
+msgstr ""
+"Initialiseer velden zonder VALUE naar numerieke waarde\n"
+"\t\t\t- 0 to 255 (Standaard : initialiseer naar opmaak)"
+
+#: cobc/flag.def:55
+msgid "initialize to picture"
+msgstr ""
+
+#: cobc/flag.def:60
+#, fuzzy
+msgid "intrinsics to be used without FUNCTION keyword"
+msgstr ""
+"Ingebouwde functie moet gebruikt worden zonder FUNCTION sleutelwoord\n"
+"\t\t\t- ALL of ingebouwde functienaam (,naam,...)"
+
+#: cobc/flag.def:60
+msgid "[ALL|intrinsic function name(,name,...)]"
+msgstr ""
+
+#: cobc/flag.def:66
+#, fuzzy
+msgid "output static function calls for the CALL statement"
+msgstr "Uitvoer statische functie roept een CALL statement aan"
+
+#: cobc/flag.def:69
+msgid "disable generation of C function declations for subroutines with static CALL"
+msgstr ""
+
+#: cobc/flag.def:72
+#, fuzzy
+msgid "generate computed goto C statements"
+msgstr "Genereer berekende goto C statements"
+
+#: cobc/flag.def:75
+#, fuzzy
+msgid "use restricted ASCII to EBCDIC translate"
+msgstr "Gebruik beperkte ASCII naar EBCDIC vertaling"
+
+#: cobc/flag.def:78
+#, fuzzy
+msgid "generate extra braces in generated C code"
+msgstr "Genereer extra accolades in gegenereerde C code"
+
+#: cobc/flag.def:81
+#, fuzzy
+msgid "attempt correction of invalid numeric display items"
+msgstr "Probeer fouten in numerieke display items te corrigeren"
+
+#: cobc/flag.def:84
+msgid "PERFORM stack allocated on heap"
+msgstr "PERFORM stapel gealloceerd in dynamisch geheugen"
+
+#: cobc/flag.def:88
+#, fuzzy
+msgid ""
+"generate trace code\n"
+"\t\t\t- executed SECTION/PARAGRAPH"
+msgstr ""
+"Genereer trace code\n"
+"\t\t\t- SECTIE/PARAGRAAF uitgevoerd"
+
+#: cobc/flag.def:91
+#, fuzzy
+msgid ""
+"generate trace code\n"
+"\t\t\t- executed SECTION/PARAGRAPH/STATEMENTS\n"
+"\t\t\t- turned on by -debug"
+msgstr ""
+"Genereer trace code\n"
+"\t\t\t- SECTIE/PARAGRAAF/STATEMENTS uitgevoerd\t\t\t- Ingeschakeld door -"
+"debug"
+
+#: cobc/flag.def:94
+#, fuzzy
+msgid "syntax error checking only; don't emit any output"
+msgstr "Alleen syntaxis fout controle; maak geen uitvoer"
+
+#: cobc/flag.def:97
+#, fuzzy
+msgid ""
+"enable debugging lines\n"
+"\t\t\t- 'D' in indicator column or floating >>D"
+msgstr ""
+"Inschakelen debugging regels\n"
+"\t\t\t- 'D' in indicator kolom of zwervende >>D"
+
+#: cobc/flag.def:100
+#, fuzzy
+msgid ""
+"generate source location code\n"
+"\t\t\t- turned on by -debug/-g/-ftraceall"
+msgstr ""
+"Genereer bron locatie code\n"
+"\t\t\t- Ingeschakeld door -debug/-g/-ftraceall"
+
+#: cobc/flag.def:103
+#, fuzzy
+msgid "automatic initialization of the COBOL runtime system"
+msgstr "Automatische initialisatie van het Cobol runtime systeem"
+
+#: cobc/flag.def:106
+#, fuzzy
+msgid ""
+"PERFORM stack checking\n"
+"\t\t\t- turned on by -debug or -g"
+msgstr ""
+"Doe stapel controle\n"
+"\t\t\t- Ingeschakeld door -debug of -g"
+
+#: cobc/flag.def:109
+#, fuzzy
+msgid ""
+"allow syntax extensions\n"
+"\t\t\t- eg. switch name SW1, etc."
+msgstr ""
+"Sta syntaxis extensies toe\n"
+"\t\t\t- bv. Switch naam SW1, etc."
+
+#: cobc/flag.def:112
+#, fuzzy
+msgid ""
+"use AFTER 1 for WRITE of LINE SEQUENTIAL\n"
+"\t\t\t- default: BEFORE 1"
+msgstr ""
+"Gebruik AFTER 1 voor WRITE bij LINE SEQUENTIAL\n"
+"\t\t\t- Standaard : BEFORE 1"
+
+#: cobc/flag.def:115
+msgid ""
+"'*' or '/' in column 1 treated as comment\n"
+"\t\t\t- FIXED format only"
+msgstr ""
+"Zie '*' of '/' in kolom 1 als commentaar\n"
+"\t\t\t- Alleen bij vast formaat"
+
+#: cobc/flag.def:118
+msgid ""
+"'$' in indicator area treated as '*',\n"
+"\t\t\t'|' treated as floating comment"
+msgstr ""
+
+#: cobc/flag.def:121
+#, fuzzy
+msgid ""
+"allow numeric field overflow\n"
+"\t\t\t- non-ANSI behaviour"
+msgstr ""
+"Sta overloop toe in numerieke velden\n"
+"\t\t\t- Non-ANSI gedrag"
+
+#: cobc/flag.def:124
+#, fuzzy
+msgid ""
+"adjust items following OCCURS DEPENDING\n"
+"\t\t\t- requires implicit/explicit relaxed syntax"
+msgstr ""
+"Wijzig items na OCCURS DEPENDING\n"
+"\t\t\t- Vereist impliciete/expliciete versoepelde syntaxis"
+
+#: cobc/flag.def:127
+#, fuzzy
+msgid ""
+"use a single quote (apostrophe) for QUOTE\n"
+"\t\t\t- default: double quote"
+msgstr ""
+"Gebruik een enkel aanhalingsteken (apostrof) voor QUOTE\n"
+"\t\t\t- Standaard : dubbel aanhalingsteken"
+
+#: cobc/flag.def:130
+#, fuzzy
+msgid "check recursive program call"
+msgstr "Controleer recursieve programma aanroep"
+
+#: cobc/flag.def:134
+#, fuzzy
+msgid ""
+"relax syntax checking\n"
+"\t\t\t- eg. REDEFINES position"
+msgstr ""
+"Versoepel syntaxis controle\n"
+"\t\t\t- bv. REDEFINES positie"
+
+#: cobc/flag.def:138
+#, fuzzy
+msgid ""
+"treat all files as OPTIONAL\n"
+"\t\t\t- unless NOT OPTIONAL specified"
+msgstr ""
+"Behandel alle bestanden als OPTIONAL\n"
+"\t\t\t- tenzij NOT OPTIONAL is gespecificeerd"
+
+#: parser.y:245
+#, fuzzy, c-format
+msgid "unreachable statement '%s'"
+msgstr "Statement wordt niet bereikt '%s'"
+
+#: parser.y:322
+#, c-format
+msgid "'%s' not level 01 or 77"
+msgstr "'%s' niet nivo 01 of 77"
+
+#: parser.y:326
+#, c-format
+msgid "'%s' is not in LINKAGE SECTION"
+msgstr "'%s' is niet in LINKAGE SECTION"
+
+#: parser.y:329
+#, c-format
+msgid "'%s' can not be BASED/EXTERNAL"
+msgstr "'%s' mag niet BASED/EXTERNAL zijn"
+
+#: parser.y:334
+#, c-format
+msgid "'%s' is not in WORKING-STORAGE SECTION"
+msgstr "'%s' is niet in WORKING-STORAGE SECTION"
+
+#: parser.y:341
+#, c-format
+msgid "'%s' REDEFINES field not allowed here"
+msgstr "'%s' REDEFINES veld hier niet toegestaan"
+
+#: parser.y:365
+#, c-format
+msgid "LINKAGE item '%s' is not a PROCEDURE USING parameter"
+msgstr "LINKAGE item '%s' is niet een PROCEDURE USING parameter"
+
+#: parser.y:376
+#, c-format
+msgid "'%s' USING item duplicates RETURNING item"
+msgstr "'%s' USING item multipliceert RETURNING item"
+
+#: parser.y:385
+#, c-format
+msgid "ENTRY '%s' duplicated"
+msgstr "ENTRY '%s' dubbel"
+
+#: parser.y:398
+#, fuzzy, c-format
+msgid "maximum nested program depth exceeded (%d)"
+msgstr "Maximum aantal insluitende programma's overschreden (%d)"
+
+#: parser.y:414 parser.y:427
+#, c-format
+msgid "%s statement not terminated by END-%s"
+msgstr "%s statement niet afgesloten met END-%s"
+
+#: parser.y:475
+msgid "USE statement invalid for SORT file"
+msgstr "USE statement ongeldig voor SORT bestand"
+
+#: parser.y:500 parser.y:502
+#, fuzzy, c-format
+msgid "duplicate %s clause"
+msgstr "Dubbele %s clausule"
+
+#: parser.y:521
+#, c-format
+msgid "maximum OCCURS depth exceeded (%d)"
+msgstr "maximum OCCURS diepte overschreden (%d)"
+
+#: parser.y:527 parser.y:529 parser.y:4807 parser.y:4810 parser.y:4812
+#: parser.y:4814 parser.y:4849 parser.y:5271 parser.y:5273 parser.y:5275
+#: parser.y:5277 parser.y:5322 parser.y:5331 parser.y:8922
+#, c-format
+msgid "%s and %s are mutually exclusive"
+msgstr "%s and %s sluiten elkaar uit"
+
+#: parser.y:542 parser.y:546
+msgid "TO phrase without DEPENDING phrase"
+msgstr ""
+
+#: parser.y:543
+msgid "maximum number of occurences assumed to be exact number"
+msgstr ""
+
+#: parser.y:551 parser.y:5113
+msgid "OCCURS TO must be greater than OCCURS FROM"
+msgstr ""
+
+#: parser.y:557
+#, fuzzy
+msgid "ODO without TO phrase"
+msgstr "GO TO met meerdere procedure-namen"
+
+#: parser.y:624
+#, c-format
+msgid "%s header missing - assumed"
+msgstr "%s kop ontbreekt - veronderstelt"
+
+#: parser.y:626
+#, c-format
+msgid "%s header missing"
+msgstr "%s kop ontbreekt"
+
+#: parser.y:751
+#, fuzzy, c-format
+msgid "redefinition of program name '%s'"
+msgstr "Herdefinitie van '%s'"
+
+#: parser.y:755
+#, fuzzy, c-format
+msgid "redefinition of program ID '%s'"
+msgstr "Herdefinitie van '%s'"
+
+#: parser.y:893
+#, fuzzy, c-format
+msgid "END FUNCTION '%s' is different from FUNCTION-ID '%s'"
+msgstr "END FUNCTION '%s' verschilt met FUNCTION-ID '%s'"
+
+#: parser.y:907
+#, fuzzy, c-format
+msgid "END PROGRAM '%s' is different from PROGRAM-ID '%s'"
+msgstr "END PROGRAM '%s' verschilt met PROGRAM-ID '%s'"
+
+#: parser.y:952
+#, fuzzy
+msgid "PICTURE SYMBOL for CURRENCY must be one character long"
+msgstr "'%s' CURSOR is niet 4 of 6 karakters lang"
+
+#: parser.y:1003
+#, c-format
+msgid "invalid character '%c' in PICTURE SYMBOL for CURRENCY"
+msgstr ""
+
+#: parser.y:1019
+msgid "prototype has same name as current function and will be ignored"
+msgstr ""
+
+#: parser.y:1046
+#, c-format
+msgid "duplicate REPOSITORY entries for '%s' do not match"
+msgstr ""
+
+#: parser.y:1050
+#, c-format
+msgid "duplicate REPOSITORY entry for '%s'"
+msgstr ""
+
+#: parser.y:1104
+msgid "RENAMES of 01-, 66- and 77-level items"
+msgstr ""
+
+#: parser.y:1106
+#, fuzzy
+msgid "RENAMES may not reference a level 88"
+msgstr "RENAMES mag niet verwijzen naar een 01 of > 50 nivo"
+
+#: parser.y:1133 parser.y:1136 parser.y:1167
+#, c-format
+msgid "cannot specify both %s and %s"
+msgstr ""
+
+#: parser.y:1164
+#, c-format
+msgid "cannot specify both %s and %s; %s is ignored"
+msgstr ""
+
+#: parser.y:1335
+msgid "FOR phrase cannot immediately follow ALL/LEADING/TRAILING"
+msgstr ""
+
+#: parser.y:1337
+msgid "missing CHARACTERS/ALL/LEADING/TRAILING phrase after FOR phrase"
+msgstr ""
+
+#: parser.y:1344
+msgid "missing FOR phrase before CHARACTERS/ALL/LEADING/TRAILING phrase"
+msgstr ""
+
+#: parser.y:1347
+msgid "missing value between CHARACTERS/ALL/LEADING/TRAILING words"
+msgstr ""
+
+#: parser.y:1354
+#, fuzzy
+msgid "missing ALL/LEADING/TRAILING before value"
+msgstr "ALL, LEADING of TRAILING verwacht voor '%s'"
+
+#: parser.y:1360
+#, fuzzy
+msgid "unexpected tallying phrase"
+msgstr "Onverwachte functie %s"
+
+#: parser.y:1402
+#, fuzzy
+msgid "88-level cannot be used here"
+msgstr "'%s' kan hier niet worden geïndexeerd"
+
+#: parser.y:1422
+msgid "cannot specify NO ADVANCING in screen DISPLAY"
+msgstr ""
+
+#: parser.y:1493 parser.y:1510
+msgid "non-standard DISPLAY"
+msgstr ""
+
+#: parser.y:1497
+msgid "screens may only be displayed on CRT"
+msgstr ""
+
+#: parser.y:1502 parser.y:1545
+msgid "cannot mix screens and fields in the same DISPLAY statement"
+msgstr ""
+
+#: parser.y:1506
+msgid "screen clauses may only be used for DISPLAY on CRT"
+msgstr ""
+
+#: parser.y:1551
+msgid "ambiguous DISPLAY; put items to display on device in separate DISPLAY"
+msgstr ""
+
+#: parser.y:1567
+#, fuzzy, c-format
+msgid "%s is not an alphanumeric literal"
+msgstr "'%s' is geen numerieke waarde"
+
+#: parser.y:1569
+#, fuzzy, c-format
+msgid "'%s' is not USAGE DISPLAY"
+msgstr "'%s' is niet in LINKAGE SECTION"
+
+#: parser.y:2233
+#, fuzzy
+msgid "multiple PROGRAM-ID's without matching END PROGRAM"
+msgstr "Meerdere PROGRAM-ID's zonder bijbehorend END PROGRAM"
+
+#: parser.y:2236
+#, fuzzy
+msgid "executable requested but no program found"
+msgstr "Uitvoerbaar programma gevraagd maar geen programma gevonden"
+
+#: parser.y:2412 parser.y:2421
+msgid "COMMON may only be used in a contained program"
+msgstr "COMMON mag alleen worden gebruikt in een bijgesloten programma"
+
+#: parser.y:2430
+msgid "CALL prototypes"
+msgstr ""
+
+#: parser.y:2482 parser.y:2688 parser.y:2734 parser.y:2843 parser.y:2965
+#: parser.y:3061 parser.y:3112 parser.y:3137 parser.y:3220 parser.y:3239
+#: parser.y:3255 parser.y:3273 parser.y:3291 parser.y:3308 parser.y:5348
+#, c-format
+msgid "%s not allowed in nested programs"
+msgstr "%s niet toegestaan in ingesloten programma's"
+
+#: parser.y:2494
+#, fuzzy
+msgid "phrases in non-standard order"
+msgstr "Frases in niet-standard volgorde"
+
+#: parser.y:2585
+#, fuzzy
+msgid "duplicate CLASSIFICATION clause"
+msgstr "Dubbele CLASSIFICATION clausule"
+
+#: parser.y:2658
+msgid "PROGRAM phrase"
+msgstr ""
+
+#: parser.y:2747
+#, fuzzy, c-format
+msgid "invalid system-name '%s'"
+msgstr "Ongeldige systeem-naam '%s'"
+
+#: parser.y:2759 parser.y:2770 parser.y:3013 parser.y:5483
+#, fuzzy, c-format
+msgid "invalid %s clause"
+msgstr "Ongeldige CRT clausule"
+
+#: parser.y:3087 parser.y:3091
+msgid "CLASS literal with THRU must have size 1"
+msgstr "CLASS constante met THRU moet een grootte van 1 zijn"
+
+#: parser.y:3142
+msgid "CURRENCY SIGN longer than one character"
+msgstr ""
+
+#: parser.y:3177
+msgid "CURRENCY SIGN other than '$'"
+msgstr ""
+
+#: parser.y:3187
+#, fuzzy, c-format
+msgid "invalid CURRENCY SIGN '%s'"
+msgstr "Ongeldige ENTRY '%s'%s"
+
+#: parser.y:3601
+#, fuzzy, c-format
+msgid "'%s' is not an alphabet-name"
+msgstr "'%s' is geen alfabet naam"
+
+#: parser.y:3913
+msgid "RECORD description invalid with REPORT"
+msgstr "RECORD beschijving ongeldig bij REPORT"
+
+#: parser.y:3918 parser.y:4376
+msgid "RECORD description missing or invalid"
+msgstr "RECORD beschrijving ontbreekt of ongeldig"
+
+#: parser.y:3971 parser.y:3981
+#, fuzzy
+msgid "file cannot have both EXTERNAL and GLOBAL clauses"
+msgstr "Bestand kan niet zowel EXTERNAL als GLOBAL clausules hebben"
+
+#: parser.y:3985 parser.y:4546 parser.y:4852 parser.y:8028 parser.y:10243
+#, fuzzy, c-format
+msgid "%s is invalid in a user FUNCTION"
+msgstr "%s is ongeldig in FUNCTION"
+
+#: parser.y:4024 parser.y:4046
+msgid "RECORD clause ignored for LINE SEQUENTIAL"
+msgstr "RECORD clausule genegeerd voor LINE SEQUENTIAL"
+
+#: parser.y:4030 parser.y:4069 parser.y:4099
+msgid "RECORD clause invalid"
+msgstr "RECORD clausule ongeldig"
+
+#: parser.y:4034 parser.y:4061 parser.y:4091
+#, c-format
+msgid "RECORD size exceeds maximum allowed (%d)"
+msgstr "RECORD grootte overschrijdt het toegestane maximum (%d)"
+
+#: parser.y:4181
+msgid "LINAGE clause with wrong file type"
+msgstr "LINAGE clausule met incorrect bestandstype"
+
+#: parser.y:4243
+msgid "RECORDING MODE U or S can only be used with RECORD SEQUENTIAL files"
+msgstr ""
+
+#: parser.y:4274
+#, c-format
+msgid "ignoring CODE-SET '%s'"
+msgstr "CODE-SET '%s' genegeerd"
+
+#: parser.y:4282
+msgid "CODE-SET clause invalid for file type"
+msgstr "CODE-SET clausule ongeldig voor bestandstype"
+
+#: parser.y:4311
+msgid "REPORT clause with wrong file type"
+msgstr "REPORT clausule met incorrect bestandstype"
+
+#: parser.y:4356 parser.y:4357
+msgid "COMMUNICATION SECTION"
+msgstr ""
+
+#: parser.y:4700
+msgid "CONSTANT item not at 01 level"
+msgstr "CONSTANT item niet op 01 nivo"
+
+#: parser.y:4777
+msgid "REDEFINES clause should follow entry-name"
+msgstr "REDEFINES clausule hoort na ENTRY naam te komen"
+
+#: parser.y:4779
+msgid "REDEFINES clause must follow entry-name"
+msgstr "REDEFINES clausule moet na ENTRY naam komen"
+
+#: parser.y:4800 parser.y:4854 parser.y:5265
+#, c-format
+msgid "%s not allowed here"
+msgstr "%s niet toegestaan hier"
+
+#: parser.y:4802 parser.y:4844 parser.y:5267
+#, c-format
+msgid "%s only allowed at 01/77 level"
+msgstr "%s alleen toegestaan op 01/77 nivo"
+
+#: parser.y:4804 parser.y:4846 parser.y:5269
+#, c-format
+msgid "%s requires a data name"
+msgstr "Item %s vereist een veld naam"
+
+#: parser.y:5309
+msgid "FALSE clause only allowed for 88 level"
+msgstr "FALSE clausule alleen voor 88 nivo"
+
+#: parser.y:5421
+msgid "GLOBAL is not allowed with RD"
+msgstr "GLOBAL is niet toegestaan met RD"
+
+#: parser.y:5791
+msgid "INITIAL specified on non-input field"
+msgstr "INITIAL gespecificeerd op een niet-invoer veld"
+
+#: parser.y:5804
+msgid "relative LINE/COLUMN clause required with OCCURS"
+msgstr ""
+
+#: parser.y:6054
+msgid "GLOBAL is not allowed with screen items"
+msgstr "GLOBAL is niet toegestaan met scherm items"
+
+#: parser.y:6074
+#, fuzzy
+msgid "executable program requested but PROCEDURE/ENTRY has USING clause"
+msgstr ""
+"Uitvoerbaar programma gevraagd maar PROCEDURE/ENTRY heeft USING clausule"
+
+#: parser.y:6143 parser.y:6160 parser.y:7334
+#, fuzzy, c-format
+msgid "number of parameters exceeds maximum %d"
+msgstr "Aantal parameters overschrijdt maximum %d"
+
+#: parser.y:6152
+msgid "CHAINING invalid in user FUNCTION"
+msgstr "CHAINING ongeldig in een FUNCTION"
+
+#: parser.y:6188
+#, fuzzy
+msgid "ANY LENGTH items may only be BY REFERENCE formal parameters"
+msgstr "'%s' ANY LENGTH item niet doorgegeven BY REFERENCE"
+
+#: parser.y:6205 parser.y:7390 parser.y:7399
+#, c-format
+msgid "%s not allowed in CHAINED programs"
+msgstr "%s niet toegestaan in CHAINED programma"
+
+#: parser.y:6207
+#, fuzzy
+msgid "parameters passed BY VALUE"
+msgstr "NULL parameter doorgegeven aan '%s'"
+
+#: parser.y:6218 parser.y:6226 parser.y:6234 parser.y:6244 parser.y:6273
+msgid "SIZE only allowed for BY VALUE items"
+msgstr "SIZE alleen toegestaan voor BY VALUE items"
+
+#: parser.y:6246 parser.y:6263 parser.y:6275 parser.y:6292
+#, fuzzy
+msgid "invalid value for SIZE"
+msgstr "Ongeldige waarde voor SIZE"
+
+#: parser.y:6307
+msgid "OPTIONAL only allowed for BY REFERENCE items"
+msgstr "OPTIONAL alleen toegestaan voor BY REFERENCE items"
+
+#: parser.y:6319
+msgid "RETURNING clause is required for a FUNCTION"
+msgstr "RETURNING clausule is verplicht voor FUNCTION"
+
+#: parser.y:6325
+msgid "RETURNING clause cannot be OMITTED for main program"
+msgstr ""
+
+#: parser.y:6328
+#, fuzzy
+msgid "RETURNING clause cannot be OMITTED for a FUNCTION"
+msgstr "RETURNING clausule is verplicht voor FUNCTION"
+
+#: parser.y:6344
+msgid "RETURNING item must have level 01"
+msgstr "RETURNING item moet nivo 01"
+
+#: parser.y:6346
+#, fuzzy
+msgid "RETURNING item should not have OCCURS"
+msgstr "RETURNING item moet nivo 01"
+
+#: parser.y:6348
+msgid "RETURNING item should not be in LOCAL-STORAGE"
+msgstr ""
+
+#: parser.y:6352
+msgid "function RETURNING item may not be ANY LENGTH"
+msgstr ""
+
+#: parser.y:6545
+#, fuzzy, c-format
+msgid "'%s' is not a statement"
+msgstr "'%s' is geen report naam"
+
+#: parser.y:6547
+#, c-format
+msgid "unknown statement '%s'; it may exist in another dialect"
+msgstr ""
+
+#: parser.y:6550
+#, fuzzy, c-format
+msgid "unknown statement '%s'"
+msgstr "Onbekend statement '%s'"
+
+#: parser.y:6565
+msgid "SECTION segment invalid within DECLARATIVE"
+msgstr "SECTION segment ongeldig binnen DECLARATIVE"
+
+#: parser.y:6567
+msgid "SECTION segment"
+msgstr ""
+
+#: parser.y:6732
+msgid "non-standard ACCEPT"
+msgstr ""
+
+#: parser.y:6855 parser.y:7084
+msgid "TIME-OUT or BEFORE TIME clauses"
+msgstr ""
+
+#: parser.y:6870 parser.y:6886 parser.y:6901
+msgid "AT screen-location"
+msgstr ""
+
+#: parser.y:6902
+msgid "LINE or COLUMN"
+msgstr ""
+
+#: parser.y:7191
+msgid "ALLOCATE CHARACTERS requires RETURNING clause"
+msgstr "ALLOCATE CHARACTERS vereist RETURNING clausule"
+
+#: parser.y:7258
+#, fuzzy
+msgid "recursive program call - assuming RECURSIVE attribute"
+msgstr "Recursieve programma aanroep - RECURSIVE attribute aangenomen"
+
+#: parser.y:7035 cobc/typeck.c:8988
+#, fuzzy
+msgid "invalid mnemonic name"
+msgstr "Ongeldige mnemonic naam"
+
+#: parser.y:7316 parser.y:7557
+msgid "CALL/CANCEL with program-prototype-name"
+msgstr ""
+
+#: parser.y:7352
+#, fuzzy
+msgid "OMITTED only allowed when parameters are passed BY REFERENCE"
+msgstr "OMITTED alleen toegestaan met BY REFERENCE"
+
+#: parser.y:7365
+#, fuzzy
+msgid "invalid file name reference"
+msgstr "Ongeldige bestandsnaam verwijzing"
+
+#: parser.y:7369
+msgid "BY CONTENT assumed for alphanumeric item"
+msgstr "BY CONTENT aangenomen voor alfanumeriek item"
+
+#: parser.y:7431
+msgid "RETURNING item must have level 01 or 77"
+msgstr "RETURNING item moet nivo 01 of 77 zijn"
+
+#: parser.y:7435
+#, fuzzy
+msgid "RETURNING item must be a LINKAGE SECTION item or have BASED clause"
+msgstr "RETURNING item is niet in LINKAGE SECTION en niet BASED"
+
+#: parser.y:7469 parser.y:10537 parser.y:10592
+msgid "NOT EXCEPTION before EXCEPTION"
+msgstr ""
+
+#: parser.y:7881
+#, fuzzy
+msgid "ignoring CONVERSION"
+msgstr "CONVERSION genegeerd"
+
+#: parser.y:8026 parser.y:10411
+#, fuzzy, c-format
+msgid "%s is invalid in nested program"
+msgstr "%s is ongeldig in ingesloten programma"
+
+#: parser.y:8046 parser.y:8084 parser.y:8095 parser.y:8106
+#, fuzzy, c-format
+msgid "maximum evaluate depth exceeded (%d)"
+msgstr "Maximum evaluate diepte overschreden (%d)"
+
+#: parser.y:8211
+#, fuzzy
+msgid "invalid THROUGH usage"
+msgstr "Ongeldig THROUGH gebruik"
+
+#: parser.y:8274
+msgid "EXIT PROGRAM is not allowed within a USE GLOBAL procedure"
+msgstr "EXIT PROGRAM is niet toegestaan in een USE GLOBAL procedure"
+
+#: parser.y:8278
+#, fuzzy
+msgid "EXIT PROGRAM not allowed within a FUNCTION"
+msgstr "EXIT FUNCTION is alleen toegestaan in FUNCTION type"
+
+#: parser.y:8295
+msgid "EXIT FUNCTION is not allowed within a USE GLOBAL procedure"
+msgstr "EXIT FUNCTION is niet toegestaan in een USE GLOBAL procedure"
+
+#: parser.y:8299
+#, fuzzy
+msgid "EXIT FUNCTION only allowed within a FUNCTION"
+msgstr "EXIT FUNCTION is alleen toegestaan in FUNCTION type"
+
+#: parser.y:8313 parser.y:8335
+msgid "EXIT PERFORM is only valid with inline PERFORM"
+msgstr "EXIT PERFORM is alleen geldig in een ingesloten PERFORM"
+
+#: parser.y:8356
+msgid "EXIT SECTION is only valid with an active SECTION"
+msgstr "EXIT SECTION is alleen geldig in een SECTION"
+
+#: parser.y:8376
+msgid "EXIT PARAGRAPH is only valid with an active PARAGRAPH"
+msgstr "EXIT PARAGRAPH is alleen geldig in een PARAGRAPH"
+
+#: parser.y:8668
+#, fuzzy
+msgid "TALLYING clause is incomplete"
+msgstr "LINAGE clausule met incorrect bestandstype"
+
+#: parser.y:8785
+msgid "INSPECT missing ALL/FIRST/LEADING/TRAILING"
+msgstr ""
+
+#: parser.y:8922
+#, fuzzy
+msgid "LOCK clauses"
+msgstr "LOCK clausule ongeldig hier"
+
+#: parser.y:8868 cobc/typeck.c:8009 cobc/typeck.c:8900
+msgid "LOCK clause invalid with file LOCK AUTOMATIC"
+msgstr "LOCK clausule ongeldig met LOCK AUTOMATIC bestand"
+
+#: parser.y:9135
+msgid "KEY clause invalid with this file type"
+msgstr "KEY clausule ongeldig met dit bestandstype"
+
+#: parser.y:8878 cobc/typeck.c:8005 cobc/typeck.c:8896
+msgid "INVALID KEY clause invalid with this file type"
+msgstr "INVALID KEY clausule ongeldig met dit bestandstype"
+
+#: parser.y:9629
+#, fuzzy
+msgid "file sort requires KEY phrase"
+msgstr "Bestands sort vereist KEY beschrijving"
+
+#: parser.y:9327 cobc/typeck.c:8529
+#, fuzzy
+msgid "table sort without keys not implemented yet"
+msgstr "Tabel sort zonder keys nog niet geïmplemented"
+
+#: parser.y:9632 cobc/typeck.c:8623
+msgid "table SORT without keys"
+msgstr ""
+
+#: parser.y:9697
+#, fuzzy
+msgid "file sort requires USING or INPUT PROCEDURE"
+msgstr "Bestands sort vereist USING of INPUT PROCEDURE"
+
+#: parser.y:9704
+msgid "USING invalid with table SORT"
+msgstr "USING ongeldig met tabel SORT"
+
+#: parser.y:9714
+msgid "INPUT PROCEDURE invalid with table SORT"
+msgstr "INPUT PROCEDURE ongeldig met tabel SORT"
+
+#: parser.y:9716
+msgid "INPUT PROCEDURE invalid with MERGE"
+msgstr "INPUT PROCEDURE ongeldig met MERGE"
+
+#: parser.y:9728
+#, fuzzy
+msgid "file sort requires GIVING or OUTPUT PROCEDURE"
+msgstr "Bestands sort vereist GIVING of OUTPUT PROCEDURE"
+
+#: parser.y:9735
+msgid "GIVING invalid with table SORT"
+msgstr "GIVING ongeldig met tabel SORT"
+
+#: parser.y:9745
+msgid "OUTPUT PROCEDURE invalid with table SORT"
+msgstr "OUTPUT PROCEDURE ongeldig met tabel SORT"
+
+#: parser.y:9771
+msgid "SIZE/LENGTH invalid here"
+msgstr "SIZE/LENGTH ongeldig hier"
+
+#: parser.y:9824
+#, fuzzy
+msgid "NOT EQUAL condition not allowed on START statement"
+msgstr "NOT EQUAL conditie niet toegestaan bij START statement"
+
+#: parser.y:10031
+msgid "SUPPRESS statement must be within DECLARATIVES"
+msgstr "SUPPRESS statement moet binnen DECLARATIVES"
+
+#: parser.y:10104
+msgid "UNLOCK invalid for SORT files"
+msgstr "UNLOCK ongeldig voor SORT bestanden"
+
+#: parser.y:10214 parser.y:10291
+msgid "USE statement must be within DECLARATIVES"
+msgstr "USE statement moet binnen DECLARATIVES"
+
+#: parser.y:10216
+msgid "SECTION header missing before USE statement"
+msgstr "SECTION kop ontbreekt voorafgaand aan USE statement"
+
+#: parser.y:10293
+msgid "USE DEBUGGING not supported in contained program"
+msgstr "USE DEBUGGING niet ondersteund in bijgesloten programma"
+
+#: parser.y:10372
+#, fuzzy
+msgid "duplicate USE DEBUGGING ON ALL PROCEDURES"
+msgstr "Dubbele USE DEBUGGING ON ALL PROCEDURES"
+
+#: parser.y:10386
+#, fuzzy
+msgid "invalid target for DEBUGGING ALL"
+msgstr "Ongeldig doel voor DEBUGGING ALL"
+
+#: parser.y:10638
+msgid "NOT SIZE ERROR before SIZE ERROR"
+msgstr ""
+
+#: parser.y:10684
+msgid "NOT OVERFLOW before OVERFLOW"
+msgstr ""
+
+#: parser.y:10783
+msgid "NOT AT END-OF-PAGE before AT END-OF-PAGE"
+msgstr ""
+
+#: parser.y:10833
+msgid "NOT INVALID KEY before INVALID KEY"
+msgstr ""
+
+#: parser.y:11033
+msgid "LINAGE-COUNTER must be qualified here"
+msgstr "LINAGE-COUNTER moet hier gespecificeerd worden"
+
+#: parser.y:11036
+#, fuzzy
+msgid "invalid LINAGE-COUNTER usage"
+msgstr "Ongeldig LINAGE-COUNTER gebruik"
+
+#: parser.y:10748 parser.y:10871
+#, c-format
+msgid "'%s' is not a file name"
+msgstr "'%s' is geen bestandsnaam"
+
+#: parser.y:11054
+msgid "LINE-COUNTER must be qualified here"
+msgstr "LINE-COUNTER moet hier gespecificeerd worden"
+
+#: parser.y:11057
+#, fuzzy
+msgid "invalid LINE-COUNTER usage"
+msgstr "Ongeldig LINE-COUNTER gebruik"
+
+#: parser.y:10769 parser.y:10790 parser.y:10912
+#, c-format
+msgid "'%s' is not a report name"
+msgstr "'%s' is geen report naam"
+
+#: parser.y:11075
+msgid "PAGE-COUNTER must be qualified here"
+msgstr "PAGE-COUNTER moet hier gespecificeerd worden"
+
+#: parser.y:11078
+#, fuzzy
+msgid "invalid PAGE-COUNTER usage"
+msgstr "Ongeldig PAGE-COUNTER gebruik"
+
+#: parser.y:11128
+#, c-format
+msgid "'%s' not indexed"
+msgstr "'%s' niet geïndexeerd"
+
+#: parser.y:10853
+#, fuzzy, c-format
+msgid "multiple reference to '%s' "
+msgstr "Meerdere verwijzingen naar '%s' "
+
+#: parser.y:11124
+#, fuzzy
+msgid "invalid mnemonic identifier"
+msgstr "Ongeldige mnemonic identifier"
+
+#: parser.y:11393
+#, fuzzy
+msgid "non-negative integer value expected"
+msgstr "Geheel getal waarde"
+
+#: parser.y:11407 parser.y:11410 parser.y:11453
+#, fuzzy
+msgid "integer value expected"
+msgstr "Geheel getal waarde"
+
+#: parser.y:11415
+#, fuzzy
+msgid "invalid symbolic integer"
+msgstr "Ongeldig geheel getal"
+
+#: parser.y:11432 parser.y:11437
+#, fuzzy
+msgid "unsigned positive integer value expected"
+msgstr "Geheel getal waarde"
+
+#: parser.y:11457
+#, fuzzy
+msgid "invalid CLASS value"
+msgstr "Ongeldige CLASS waarde"
+
+#: parser.y:11682 parser.y:11699
+msgid "cannot specify offset and SYSTEM-OFFSET at the same time"
+msgstr ""
+
+#: pplex.l:266
+#, fuzzy
+msgid "ignoring LEAP-SECOND directive"
+msgstr "LEAP-SECOND statement genegeerd"
+
+#: pplex.l:272
+#, fuzzy
+msgid "ignoring empty directive"
+msgstr "Leeg statement genegeerd"
+
+#: pplex.l:280 pplex.l:323
+#, fuzzy, c-format
+msgid "ignoring invalid directive: '%s'"
+msgstr "Ongeldig statement genegeerd - '%s'"
+
+#: pplex.l:285
+#, fuzzy
+msgid "ignoring invalid directive"
+msgstr "Ongeldig statement genegeerd"
+
+#: pplex.l:330 pplex.l:336
+#, fuzzy
+msgid "spurious '$' detected - ignored"
+msgstr "Valse '$' ontdekt - genegeerd"
+
+#: pplex.l:341
+msgid "PROCESS statement ignored"
+msgstr "PROCESS statement genegeerd"
+
+#: pplex.l:711
+#, fuzzy
+msgid "IF/ELIF/ELSE directive without matching END-IF"
+msgstr "ELSE statement zonder bijbehorende IF/ELIF"
+
+#: pplex.l:981
+#, fuzzy, c-format
+msgid "directive nest depth exceeded: %d"
+msgstr "Ingesloten richtlijn diepte overschreden - %d"
+
+#: pplex.l:998
+msgid "ELSE directive without matching IF/ELIF"
+msgstr "ELSE statement zonder bijbehorende IF/ELIF"
+
+#: pplex.l:1014
+msgid "END-IF directive without matching IF/ELIF/ELSE"
+msgstr "END-IF statement zonder bijbehorende IF/ELIF/ELSE"
+
+#: pplex.l:1030
+msgid "ELIF directive without matching IF/ELIF"
+msgstr "ELIF statement zonder bijbehorende IF/ELIF"
+
+#: pplex.l:1051
+#, fuzzy, c-format
+msgid "invalid internal case: %u"
+msgstr "Ongeldige interne case - %u"
+
+#: pplex.l:1176
+msgid "buffer overrun - too many continuation lines"
+msgstr ""
+
+#: pplex.l:1266 pplex.l:1274
+#, fuzzy
+msgid "line not terminated by a newline"
+msgstr "Regel niet afgesloten met een newline"
+
+#: pplex.l:1269 pplex.l:1277
+#, c-format
+msgid "source text exceeds %d bytes, will be truncated"
+msgstr ""
+
+#: pplex.l:1439
+#, fuzzy
+msgid "invalid continuation in comment entry"
+msgstr "Ongeldige voortzetting in commentaar gebied"
+
+#: pplex.l:1444
+msgid "continuation of COBOL words"
+msgstr ""
+
+#: pplex.l:1464
+#, fuzzy, c-format
+msgid "invalid indicator '%c' at column 7"
+msgstr "Ongeldige indicator '%c' in kolom 7"
+
+#: pplex.l:1511 pplex.l:1522
+#, fuzzy
+msgid "invalid line continuation"
+msgstr "Ongeldige regel voortzetting"
+
+#: pplex.l:1530
+#, fuzzy
+msgid "continuation character expected"
+msgstr "Voortzettings teken verwacht"
+
+#: pplex.l:1596
+#, fuzzy, c-format
+msgid "source text after program-text area (column %d)"
+msgstr "Bron tekst na kolom %d"
+
+#: ppparse.y:245
+#, fuzzy
+msgid "directive comparison on different types"
+msgstr "Statement vergelijking met verschillende types"
+
+#: ppparse.y:313
+#, fuzzy
+msgid "duplicate define"
+msgstr "Dubbele definitie"
+
+#: ppparse.y:320 ppparse.y:330 ppparse.y:896 ppparse.y:921
+#, fuzzy
+msgid "invalid constant"
+msgstr "Ongeldige constante"
+
+#: ppparse.y:675 ppparse.y:689 ppparse.y:711 ppparse.y:720 ppparse.y:757
+#: ppparse.y:822 ppparse.y:904
+#, fuzzy, c-format
+msgid "invalid %s directive"
+msgstr "Ongeldig SOURCE statement"
+
+#: ppparse.y:829
+msgid "PAGE directive"
+msgstr ""
+
+#: ppparse.y:841
+msgid "TURN directive"
+msgstr ""
+
+#: cobc/reserved.c:2583
+#, fuzzy
+msgid "device name"
+msgstr "Apparaat naam"
+
+#: cobc/reserved.c:2586
+#, fuzzy
+msgid "switch name"
+msgstr "Switch naam"
+
+#: cobc/reserved.c:2589
+#, fuzzy
+msgid "feature name"
+msgstr "Kenmerk naam"
+
+#: cobc/reserved.c:2660
+#, fuzzy, c-format
+msgid "reserved word must have less than %d characters"
+msgstr "Parameter voor SYSTEM call is groter dan 8192 karakters"
+
+#: cobc/reserved.c:2679
+msgid "ignored asterisk at end of alias target"
+msgstr ""
+
+#: cobc/reserved.c:2735
+#, c-format
+msgid "alias target '%s' is not a default reserved word"
+msgstr ""
+
+#: cobc/reserved.c:3031
+#, fuzzy, c-format
+msgid "'%s' is a reserved word, but isn't supported"
+msgstr "'%s' gereserveerd woord, maar niet ondersteund"
+
+#: cobc/reserved.c:3097
+msgid "Reserved Words"
+msgstr ""
+
+#: cobc/reserved.c:3097 cobc/reserved.c:3142
+#, fuzzy
+msgid "Implemented"
+msgstr "'%s' niet geïmplementeerd"
+
+#: cobc/reserved.c:3101
+#, fuzzy
+msgid "Yes (Context sensitive)"
+msgstr "Y (Context gevoelig)"
+
+#: cobc/reserved.c:3103 cobc/reserved.c:3145
+msgid "Yes"
+msgstr ""
+
+#: cobc/reserved.c:3107
+#, fuzzy
+msgid "No (Context sensitive)"
+msgstr "N (Context gevoelig)"
+
+#: cobc/reserved.c:3109 cobc/reserved.c:3147
+#, fuzzy
+msgid "No"
+msgstr "N"
+
+#: cobc/reserved.c:3115
+msgid "Extra (obsolete) context sensitive words"
+msgstr "Extra (niet meer in gebruik) context gevoelige woorden"
+
+#: cobc/reserved.c:3124
+#, fuzzy
+msgid "Extra internal registers"
+msgstr "Extra interne registers\tDefinitie"
+
+#: cobc/reserved.c:3124
+#, fuzzy
+msgid "Definition"
+msgstr "Herdefinitie van '%s'"
+
+#: cobc/reserved.c:3130
+msgid "'LENGTH OF' phrase"
+msgstr ""
+
+#: cobc/reserved.c:3142
+#, fuzzy
+msgid "Intrinsic Function"
+msgstr "'%s' is geen interne compiler functie"
+
+#: cobc/reserved.c:3077
+msgid "Parameters"
+msgstr ""
+
+#: cobc/reserved.c:3150
+msgid "Unlimited"
+msgstr ""
+
+#: cobc/reserved.c:3168
+msgid "Mnemonic names"
+msgstr "Mnemonic namen"
+
+#: cobc/reserved.c:3174
+msgid "Extended mnemonic names (with -fsyntax-extension)"
+msgstr "Uitgebreide mnemonic namen (met -fsyntax-extension)"
+
+#: scanner.l:727
+#, fuzzy, c-format
+msgid "word length exceeds maximum of %d characters: '%s'"
+msgstr "Woord lengte overschrijdt 31 karakters - '%s'"
+
+#: scanner.l:730 scanner.l:733
+#, fuzzy, c-format
+msgid "word length exceeds %d characters: '%s'"
+msgstr "Woord lengte overschrijdt 31 karakters - '%s'"
+
+#: scanner.l:844
+#, fuzzy, c-format
+msgid "a constant may not be used here - '%s'"
+msgstr "Hier mag geen constante worden gebruikt - '%s'"
+
+#: scanner.l:898
+msgid "ignoring redundant ."
+msgstr ""
+
+#: scanner.l:956
+#, fuzzy, c-format
+msgid "invalid symbol '%s' - skipping word"
+msgstr "Ongeldig symbool: %s - Woord overgeslagen"
+
+#: scanner.l:1046
+#, fuzzy
+msgid "invalid national literal"
+msgstr "Ongeldige X constante: %s"
+
+#: scanner.l:1057 cobc/tree.c:1841
+#, fuzzy, c-format
+msgid "invalid literal: '%s'"
+msgstr "Ongeldige H constante: %s"
+
+#: scanner.l:1059
+#, fuzzy, c-format
+msgid "invalid hexadecimal literal: '%s'"
+msgstr "Ongeldige X constante: %s"
+
+#: scanner.l:1061 cobc/tree.c:1119
+#, fuzzy, c-format
+msgid "invalid numeric literal: '%s'"
+msgstr "Ongeldige numerieke constante"
+
+#: scanner.l:1063
+#, fuzzy, c-format
+msgid "invalid floating-point literal: '%s'"
+msgstr "Ongeldige drijvende komma constante"
+
+#: scanner.l:1065
+#, fuzzy, c-format
+msgid "invalid %s literal: '%s'"
+msgstr "Ongeldige X constante: %s"
+
+#: scanner.l:1112
+#, fuzzy, c-format
+msgid "literal length exceeds %d characters"
+msgstr "Woord lengte overschrijdt 31 karakters - '%s'"
+
+#: scanner.l:1127
+#, fuzzy
+msgid "alphanumeric literal has zero length; a SPACE will be assumed"
+msgstr "Alfanumerieke constante heeft lengte nul"
+
+#: scanner.l:1138 scanner.l:1139 scanner.l:1191
+#, fuzzy
+msgid "national literal"
+msgstr "Ongeldige H constante: %s"
+
+#: scanner.l:1175
+#, fuzzy
+msgid "hexadecimal-boolean literal"
+msgstr "Ongeldige numerieke constante"
+
+#: scanner.l:1182 scanner.l:1196 scanner.l:1309 scanner.l:1355 scanner.l:1433
+#: scanner.l:1488 cobc/tree.c:1842
+#, fuzzy, c-format
+msgid "literal length %d exceeds %d characters"
+msgstr "Woord lengte overschrijdt 31 karakters - '%s'"
+
+#: scanner.l:1188
+#, fuzzy
+msgid "hexadecimal-national literal"
+msgstr "Ongeldige X constante: %s"
+
+#: scanner.l:1218 scanner.l:1249 scanner.l:1371 scanner.l:1447 scanner.l:1498
+#, fuzzy, c-format
+msgid "literal contains invalid character '%c'"
+msgstr "Figuratieve constante ongeldig hier"
+
+#: scanner.l:1273
+#, fuzzy, c-format
+msgid "literal does not have an even number of digits"
+msgstr "Woord lengte overschrijdt 31 karakters - '%s'"
+
+#: scanner.l:1341 scanner.l:1419 scanner.l:1480
+#, fuzzy
+msgid "ACUCOBOL numeric literal"
+msgstr "Ongeldige numerieke constante"
+
+#: scanner.l:1415
+#, fuzzy
+msgid "numeric boolean literal"
+msgstr "Ongeldige numerieke constante"
+
+#: scanner.l:1568 cobc/tree.c:1130
+#, fuzzy, c-format
+msgid "literal length %d exceeds maximum of %d digits"
+msgstr "Woord lengte overschrijdt 31 karakters - '%s'"
+
+#: scanner.l:1574 cobc/tree.c:1135
+#, fuzzy, c-format
+msgid "literal length %d exceeds %d digits"
+msgstr "Woord lengte overschrijdt 31 karakters - '%s'"
+
+#: scanner.l:1662
+#, c-format
+msgid "significand has more than 34 digits"
+msgstr ""
+
+#: scanner.l:1667
+#, c-format
+msgid "exponent has decimal point"
+msgstr ""
+
+#: scanner.l:1673
+#, c-format
+msgid "exponent has more than 4 digits"
+msgstr ""
+
+#: scanner.l:1690
+#, c-format
+msgid "exponent not between -78 and 76"
+msgstr ""
+
+#: scanner.l:1698
+#, c-format
+msgid "significand of 0 must be positive"
+msgstr ""
+
+#: scanner.l:1703
+#, c-format
+msgid "exponent of 0 must be 0"
+msgstr ""
+
+#: scanner.l:1708
+#, c-format
+msgid "exponent of 0 must be positive"
+msgstr ""
+
+#: scanner.l:1879
+#, fuzzy, c-format
+msgid "invalid CONSTANT: %s"
+msgstr "Ongeldige CONSTANT - %s"
+
+#: scanner.l:1889
+#, fuzzy, c-format
+msgid "invalid alphanumeric CONSTANT: %s"
+msgstr "Ongeldige alfanumerieke CONSTANT - %s"
+
+#: scanner.l:1893
+#, fuzzy, c-format
+msgid "empty alphanumeric CONSTANT: %s"
+msgstr "Lege alfanumerieke CONSTANT - %s"
+
+#: scanner.l:1910 scanner.l:1918 scanner.l:1923
+#, fuzzy, c-format
+msgid "invalid numeric CONSTANT: %s"
+msgstr "Ongeldige numerieke CONSTANT - %s"
+
+#: cobc/tree.c:209
+#, c-format
+msgid "%s clause is required for file '%s'"
+msgstr "%s clausule is verplicht voor bestand '%s'"
+
+#: cobc/tree.c:213
+#, fuzzy, c-format
+msgid "%s clause is invalid for file '%s' (file type)"
+msgstr "RECORD clausule ongeldig voor dit bestandstype"
+
+#: cobc/tree.c:217
+#, fuzzy, c-format
+msgid "%s clause is invalid for file '%s'"
+msgstr "%s clausule is verplicht voor bestand '%s'"
+
+#: cobc/tree.c:243
+#, c-format
+msgid "FOR item '%s' is a record"
+msgstr ""
+
+#: cobc/tree.c:252
+#, fuzzy, c-format
+msgid "FOR item '%s' is in different record to '%s'"
+msgstr "END PROGRAM '%s' verschilt met PROGRAM-ID '%s'"
+
+#: cobc/tree.c:261
+#, c-format
+msgid "FOR item '%s' is not in a record associated with '%s'"
+msgstr ""
+
+#: cobc/tree.c:339
+#, fuzzy
+msgid "internal error node"
+msgstr "Interne fout knooppunt"
+
+#: cobc/tree.c:341
+#, fuzzy
+msgid "unknown constant"
+msgstr "Onbekende constante"
+
+#: cobc/tree.c:474
+#, c-format
+msgid "FUNCTION %s has invalid/not supported arguments - Tag %d"
+msgstr "FUNCTION %s heeft ongeldige/niet ondersteunde argumenten - Label %d"
+
+#: cobc/tree.c:588
+#, fuzzy, c-format
+msgid "invalid date/time function: '%d'"
+msgstr "Ongeldige opmaak string - '%s'"
+
+#: cobc/tree.c:621
+#, fuzzy, c-format
+msgid "FUNCTION '%s' has invalid date/time format"
+msgstr "FUNCTION '%s' heeft een ongeldige parameter"
+
+#: cobc/tree.c:626
+#, fuzzy, c-format
+msgid "FUNCTION '%s' has format in variable"
+msgstr "FUNCTION '%s' heeft een ongeldige parameter"
+
+#: cobc/tree.c:667 cobc/tree.c:669
+msgid "cannot find the UTC offset on this system"
+msgstr ""
+
+#: cobc/tree.c:867
+#, fuzzy, c-format
+msgid "unknown tree tag: %d, category: %d"
+msgstr "Onbekende boom label %d Categorie %d"
+
+#: cobc/tree.c:933
+#, fuzzy, c-format
+msgid "unexpected numeric USAGE: %d"
+msgstr "Onbekende USAGE - %d"
+
+#: cobc/tree.c:944
+#, fuzzy, c-format
+msgid "unexpected category: %d"
+msgstr "Onverwachte categorie -> %d"
+
+#: cobc/tree.c:1151 cobc/tree.c:1225
+#, fuzzy
+msgid "invalid literal cast"
+msgstr "Ongeldige H constante: %s"
+
+#: cobc/tree.c:1175 cobc/tree.c:1187 cobc/tree.c:1199 cobc/tree.c:1248
+#: cobc/tree.c:1288
+#, fuzzy, c-format
+msgid "numeric literal '%s' exceeds limit '%s'"
+msgstr "Numerieke constante overschrijdt de maximum grootte"
+
+#: cobc/tree.c:1722
+#, fuzzy
+msgid "invalid LOCALE literal"
+msgstr "Ongeldige LOCALE constante"
+
+#: cobc/tree.c:1822
+#, fuzzy
+msgid "only literals with the same category can be concatenated"
+msgstr "Alfanumerieke constante heeft lengte nul"
+
+#: cobc/tree.c:1829
+#, fuzzy
+msgid "only alpanumeric, national or boolean literals may be concatenated"
+msgstr "Alfanumerieke constante heeft lengte nul"
+
+#: cobc/tree.c:2087
+msgid "B, 0 or /"
+msgstr ""
+
+#: cobc/tree.c:2101
+msgid "the sign of the floating-point exponent"
+msgstr ""
+
+#: cobc/tree.c:2103
+msgid "a leading +/- sign"
+msgstr ""
+
+#: cobc/tree.c:2105
+msgid "a trailing +/- sign"
+msgstr ""
+
+#: cobc/tree.c:2107
+msgid "CR or DB"
+msgstr ""
+
+#: cobc/tree.c:2109
+msgid "a leading currency symbol"
+msgstr ""
+
+#: cobc/tree.c:2111
+msgid "a trailing currency symbol"
+msgstr ""
+
+#: cobc/tree.c:2113
+msgid "a Z or * which is before the decimal point"
+msgstr ""
+
+#: cobc/tree.c:2115
+msgid "a Z or * which is after the decimal point"
+msgstr ""
+
+#: cobc/tree.c:2117
+msgid "a floating +/- string which is before the decimal point"
+msgstr ""
+
+#: cobc/tree.c:2119
+msgid "a floating +/- string which is after the decimal point"
+msgstr ""
+
+#: cobc/tree.c:2121
+msgid "a floating currency symbol string which is before the decimal point"
+msgstr ""
+
+#: cobc/tree.c:2123
+msgid "a floating currency symbol string which is after the decimal point"
+msgstr ""
+
+#: cobc/tree.c:2127
+msgid "A or X"
+msgstr ""
+
+#: cobc/tree.c:2133
+msgid "a P which is before the decimal point"
+msgstr ""
+
+#: cobc/tree.c:2135
+msgid "a P which is after the decimal point"
+msgstr ""
+
+#: cobc/tree.c:2156 cobc/tree.c:2500
+#, c-format
+msgid "%s may only occur once in a PICTURE string"
+msgstr ""
+
+#: cobc/tree.c:2158
+#, fuzzy, c-format
+msgid "%s cannot follow %s"
+msgstr "%s niet toegestaan hier"
+
+#: cobc/tree.c:2161
+#, fuzzy
+msgid "invalid PICTURE string detected"
+msgstr "Ongeldige optie gevonden"
+
+#: cobc/tree.c:2272
+msgid "number or constant in parentheses is not an unsigned integer"
+msgstr ""
+
+#: cobc/tree.c:2281
+msgid "only up to 9 significant digits are permitted within parentheses"
+msgstr ""
+
+#: cobc/tree.c:2287
+msgid "number or constant in parentheses must be greater than zero"
+msgstr ""
+
+#: cobc/tree.c:2317
+msgid "unbalanced parentheses"
+msgstr ""
+
+#: cobc/tree.c:2336
+msgid "parentheses must contain (a constant-name defined as) a positive integer"
+msgstr ""
+
+#: cobc/tree.c:2304
+msgid "unbalanced parenthesis"
+msgstr ""
+
+#: cobc/tree.c:2438
+msgid "only one set of parentheses is permitted"
+msgstr ""
+
+#: cobc/tree.c:2505
+msgid "S must be at start of PICTURE string"
+msgstr ""
+
+#: cobc/tree.c:2558
+msgid "P must be at start or end of PICTURE string"
+msgstr ""
+
+#: cobc/tree.c:2588
+msgid "cannot have both Z and * in PICTURE string"
+msgstr ""
+
+#: cobc/tree.c:2612
+msgid "C must be followed by R"
+msgstr ""
+
+#: cobc/tree.c:2626
+msgid "D must be followed by B"
+msgstr ""
+
+#: cobc/tree.c:2643
+#, fuzzy, c-format
+msgid "invalid PICTURE character '%c'"
+msgstr "Figuratieve constante ongeldig hier"
+
+#: cobc/tree.c:2672
+#, c-format
+msgid "PICTURE string may not contain more than %d characters; contains %d characters"
+msgstr ""
+
+#: cobc/tree.c:2677
+msgid ""
+"PICTURE string must contain at least one of the set A, N, X, Z, 1, 9 and *; "
+"or at least two of the set +, - and the currency symbol"
+msgstr ""
+
+#: cobc/tree.c:2705
+#, fuzzy, c-format
+msgid "numeric field cannot be larger than %d digits"
+msgstr "Numeriek veld mag niet groter zijn dan %d cijfers"
+
+#: cobc/tree.c:3013
+#, fuzzy, c-format
+msgid "invalid KEY item '%s', not in file '%s'"
+msgstr "Ongeldig KEY item '%s'"
+
+#: cobc/tree.c:3023
+#, c-format
+msgid "minimal record length %d can not hold the key item '%s'; needs to be at least %d"
+msgstr ""
+
+#: cobc/tree.c:3062
+#, fuzzy, c-format
+msgid "size of record '%s' (%d) smaller than minimum of file '%s' (%d)"
+msgstr "Lengte van '%s' groter dan lengte van '%s'"
+
+#: cobc/tree.c:3069
+#, fuzzy, c-format
+msgid "size of record '%s' (%d) larger than maximum of file '%s' (%d)"
+msgstr "Lengte van '%s' groter dan lengte van '%s'"
+
+#: cobc/tree.c:3097
+#, fuzzy, c-format
+msgid "file '%s': record size %d exceeds maximum allowed (%d)"
+msgstr "Record grootte overschrijdt maximum toegestaan (%d) - Bestand '%s'"
+
+#: cobc/tree.c:3282 cobc/tree.c:3287 cobc/tree.c:3299 cobc/typeck.c:3155
+#: cobc/typeck.c:3163 cobc/typeck.c:3169 cobc/typeck.c:3800 cobc/typeck.c:3916
+#, fuzzy
+msgid "invalid expression"
+msgstr "Ongeldige expressie"
+
+#: cobc/tree.c:3497
+#, fuzzy, c-format
+msgid "unexpected operator: %d"
+msgstr "Onverwachte operator -> %d"
+
+#: cobc/tree.c:3866
+#, fuzzy, c-format
+msgid "no definition/prototype seen for function '%s'"
+msgstr "%s: Geen definitie voor '%s'"
+
+#: cobc/tree.c:3868
+#, fuzzy, c-format
+msgid "no definition/prototype seen for program '%s'"
+msgstr "%s: Geen definitie voor '%s'"
+
+#: cobc/tree.c:3877
+#, fuzzy, c-format
+msgid "no definition/prototype seen for function with external name '%s'"
+msgstr "%s: Geen definitie voor '%s'"
+
+#: cobc/tree.c:3879
+#, fuzzy, c-format
+msgid "no definition/prototype seen for program with external name '%s'"
+msgstr "%s: Geen definitie voor '%s'"
+
+#: cobc/tree.c:3947 cobc/tree.c:3953 cobc/tree.c:3995 cobc/tree.c:4000
+#, c-format
+msgid "FUNCTION '%s' has invalid reference modification"
+msgstr "FUNCTION '%s' heeft ongeldige verwijzingsmodificatie"
+
+#: cobc/tree.c:3964 cobc/tree.c:4172
+#, c-format
+msgid "FUNCTION '%s' unknown"
+msgstr "FUNCTION '%s' onbekend"
+
+#: cobc/tree.c:3968
+#, fuzzy, c-format
+msgid "FUNCTION '%s' is not implemented"
+msgstr "FUNCTION '%s' niet geïmplementeerd"
+
+#: cobc/tree.c:3975 cobc/tree.c:3982 cobc/tree.c:4159
+#, c-format
+msgid "FUNCTION '%s' has wrong number of arguments"
+msgstr "FUNCTION '%s' aantal argumenten incorrect"
+
+#: cobc/tree.c:3989
+#, c-format
+msgid "FUNCTION '%s' can not have reference modification"
+msgstr "FUNCTION '%s' kan geen verwijzingsmodificatie hebben"
+
+#: cobc/tree.c:4057 cobc/tree.c:4118 cobc/tree.c:4124
+#, c-format
+msgid "FUNCTION '%s' has invalid parameter"
+msgstr "FUNCTION '%s' heeft een ongeldige parameter"
+
+#: cobc/tree.c:4165
+#, c-format
+msgid "FUNCTION '%s' has invalid first parameter"
+msgstr "FUNCTION '%s' heeft een ongeldige eerste parameter"
+
+#: cobc/typeck.c:566
+#, fuzzy
+msgid "invalid use of 88 level item"
+msgstr "Ongeldige gebruik van 88 nivo item"
+
+#: cobc/typeck.c:575
+msgid "reference to item containing nested ODO"
+msgstr ""
+
+#: cobc/typeck.c:613
+#, fuzzy, c-format
+msgid "'%s' is not a group name"
+msgstr "'%s' is geen groep naam"
+
+#: cobc/typeck.c:630
+#, c-format
+msgid "'%s' is not a numeric name"
+msgstr "'%s' is geen numerieke naam"
+
+#: cobc/typeck.c:648
+#, fuzzy, c-format
+msgid "'%s' is not a numeric or numeric-edited name"
+msgstr "'%s' is niet numeriek of numeriek-opmaak naam"
+
+#: cobc/typeck.c:663
+#, c-format
+msgid "'%s' is not a numeric value"
+msgstr "'%s' is geen numerieke waarde"
+
+#: cobc/typeck.c:712
+#, c-format
+msgid "'%s' is not an integer value"
+msgstr "'%s' is geen heel getal"
+
+#: cobc/typeck.c:716
+#, fuzzy
+msgid "positive numeric integer is required here"
+msgstr "Een positief numeriek heel getal is hier verplicht"
+
+#: cobc/typeck.c:839
+#, c-format
+msgid "System routine\t\t\tParameters"
+msgstr "Systeem routine\t\t\tParameters"
+
+#: cobc/typeck.c:1237
+msgid "ON/OFF usage requires a SWITCH name"
+msgstr "ON/OFF gebruik vereist een SWITCH naam"
+
+#: cobc/typeck.c:1326
+#, c-format
+msgid "ASSIGN interpreted as %s"
+msgstr "ASSIGN geïnterpreteerd als %s"
+
+#: cobc/typeck.c:1390 cobc/typeck.c:1537
+#, fuzzy, c-format
+msgid "subscript missing for '%s' - defaulting to 1"
+msgstr "Index ontbreekt voor '%s' - Standaard 1"
+
+#: cobc/typeck.c:1403 cobc/typeck.c:1467
+#, c-format
+msgid "'%s' cannot be reference modified"
+msgstr "'%s' accepteert geen verwijzingsmodificatie"
+
+#: cobc/typeck.c:1413 cobc/typeck.c:1463 cobc/typeck.c:1686
+#, c-format
+msgid "'%s' cannot be subscripted"
+msgstr "'%s' accepteert geen index"
+
+#: cobc/typeck.c:1417 cobc/typeck.c:1690
+#, fuzzy, c-format
+msgid "'%s' requires one subscript"
+msgstr "'%s' vereist 1 index"
+
+#: cobc/typeck.c:1420 cobc/typeck.c:1693
+#, c-format
+msgid "'%s' requires %d subscripts"
+msgstr "'%s' vereist %d indices"
+
+#: cobc/typeck.c:1485
+#, c-format
+msgid "'%s' (accessed by '%s')"
+msgstr ""
+
+#: cobc/typeck.c:1521
+#, c-format
+msgid "'%s' has no OCCURS clause"
+msgstr "'%s' heeft geen OCCURS clausule"
+
+#: cobc/typeck.c:1584 libcob/common.c:2621
+#, fuzzy, c-format
+msgid "subscript of '%s' out of bounds: %d"
+msgstr "Index van '%s' buiten grens: %d"
+
+#: cobc/typeck.c:1636 cobc/typeck.c:1647 libcob/common.c:2633
+#, fuzzy, c-format
+msgid "offset of '%s' out of bounds: %d"
+msgstr "Start positie van '%s' buiten grens: %d"
+
+#: cobc/typeck.c:1641 cobc/typeck.c:1652 libcob/common.c:2640
+#, fuzzy, c-format
+msgid "length of '%s' out of bounds: %d"
+msgstr "Lengte van '%s' buiten grens: %d"
+
+#: cobc/typeck.c:1752
+#, fuzzy
+msgid "reference modification not allowed here"
+msgstr "Verwijzingsmodificatie hier niet toegestaan"
+
+#: cobc/typeck.c:1760
+msgid "ANY LENGTH item not allowed here"
+msgstr "ANY LENGTH item hier niet toegestaan"
+
+#: cobc/typeck.c:1764
+msgid "88 level item not allowed here"
+msgstr "88 nivo item hier niet toegestaan"
+
+#: cobc/typeck.c:1768
+#, fuzzy
+msgid "variable length item not allowed here"
+msgstr "Variabele lengte hier niet toegestaan here"
+
+#: cobc/typeck.c:1875
+#, c-format
+msgid "'%s' is not an alphabet name"
+msgstr "'%s' is geen alfabet naam"
+
+#: cobc/typeck.c:2139
+#, fuzzy, c-format
+msgid "duplicate character values in alphabet '%s': %s"
+msgstr "Dubbele karakter waarde in alfabet '%s'"
+
+#: cobc/typeck.c:2144
+#, fuzzy, c-format
+msgid "invalid character values in alphabet '%s', starting at position %d"
+msgstr "Ongeldige karakter waarde in alfabet '%s'"
+
+#: cobc/typeck.c:2198
+#, fuzzy
+msgid "invalid ALPHABET name"
+msgstr "Ongeldige ALPHABET naam"
+
+#: cobc/typeck.c:2253 cobc/typeck.c:2257
+#, fuzzy, c-format
+msgid "duplicate values in class '%s'"
+msgstr "Dubbele waarden in class '%s'"
+
+#: cobc/typeck.c:2273
+#, c-format
+msgid "'%s' is not a locale name"
+msgstr "'%s' is niet een LOCALE naam"
+
+#: cobc/typeck.c:2451
+#, c-format
+msgid "'%s' will be implicitly defined"
+msgstr "'%s' wordt impliciet gedefinieerd"
+
+#: cobc/typeck.c:2468
+#, c-format
+msgid "ASSIGN data item '%s' invalid"
+msgstr "ASSIGN data item '%s' ongeldig"
+
+#: cobc/typeck.c:2479
+#, fuzzy, c-format
+msgid "'%s' CURSOR must be 4 or 6 characters long"
+msgstr "'%s' CURSOR is niet 4 of 6 karakters lang"
+
+#: cobc/typeck.c:2489
+#, fuzzy, c-format
+msgid "'%s' CRT STATUS must be 4 characters long"
+msgstr "'%s' CRT STATUS is niet 4 karakters lang"
+
+#: cobc/typeck.c:2537
+#, c-format
+msgid "'%s' ODO field item invalid here"
+msgstr "'%s' ODO veld item is hier ongeldig"
+
+#: cobc/typeck.c:2543
+#, c-format
+msgid "'%s' cannot have OCCURS DEPENDING"
+msgstr "'%s' kan geen OCCURS DEPENDING hebben"
+
+#: cobc/typeck.c:2555
+#, c-format
+msgid "'%s' ODO item must have GLOBAL attribute"
+msgstr "'%s' ODO item moet GLOBAL attribute hebben"
+
+#: cobc/typeck.c:2579
+#, fuzzy
+msgid ""
+"RECORD DEPENDING item must be in WORKING-STORAGE, LOCAL-STORAGE or LINKAGE "
+"section"
+msgstr "RECORD DEPENDING item moet in WORKING/LOCAL/LINKAGE sectie"
+
+#: cobc/typeck.c:2584
+#, fuzzy
+msgid "invalid RECORD DEPENDING item"
+msgstr "Ongeldig RECORD DEPENDING item"
+
+#: cobc/typeck.c:2621 cobc/typeck.c:2624
+#, c-format
+msgid "'%s' is not in DECLARATIVES"
+msgstr "'%s' is niet in DECLARATIVES"
+
+#: cobc/typeck.c:2631
+#, fuzzy, c-format
+msgid "invalid reference to '%s' (in DECLARATIVES)"
+msgstr "Ongeldige verwijzing naar '%s' (In DECLARATIVES)"
+
+#: cobc/typeck.c:2638
+#, fuzzy, c-format
+msgid "'%s' is not a procedure name"
+msgstr "'%s' geen procedure naam"
+
+#: cobc/typeck.c:2657
+#, fuzzy, c-format
+msgid "DEBUGGING target invalid with ALL PROCEDURES: '%s'"
+msgstr "'%s' - DEBUGGING doel ongeldig met ALL PROCEDURES"
+
+#: cobc/typeck.c:2661
+#, fuzzy, c-format
+msgid "DEBUGGING target invalid: '%s'"
+msgstr "'%s' - DEBUGGING doel ongeldig"
+
+#: cobc/typeck.c:2676
+#, c-format
+msgid "'%s' is not a valid DEBUGGING target"
+msgstr "'%s' is geen geldig DEBUGGING doel"
+
+#: cobc/typeck.c:2716
+#, c-format
+msgid "'%s' is not an alterable paragraph"
+msgstr "'%s' is te wijzigen paragraaf"
+
+#: cobc/typeck.c:2897
+#, fuzzy
+msgid "suggest parentheses around AND within OR"
+msgstr "Suggestie haken om AND binnen OR"
+
+#: cobc/typeck.c:3277
+#, fuzzy, c-format
+msgid "internal decimal structure size exceeded: %d"
+msgstr "Interne decimal structuur grootte overschrijdt - %d"
+
+#: cobc/typeck.c:3280
+msgid ""
+"Try to minimize the number of parenthesis or split into multiple "
+"computations."
+msgstr ""
+
+#: cobc/typeck.c:3319
+#, fuzzy, c-format
+msgid "unexpected operation: %c (%d)"
+msgstr "Onverwachte operatie %d"
+
+#: cobc/typeck.c:3339
+#, fuzzy
+msgid "unexpected constant expansion"
+msgstr "Onverwachte constante expansie"
+
+#: cobc/typeck.c:4189 cobc/typeck.c:4242
+#, fuzzy
+msgid "no CORRESPONDING items found"
+msgstr "Geen CORRESPONDING items gevonden"
+
+#: cobc/typeck.c:4380
+msgid "cannot specify figurative constant ZERO in AT clause"
+msgstr ""
+
+#: cobc/typeck.c:4383
+#, fuzzy
+msgid "value in AT clause is not numeric"
+msgstr "Numeriek veld mag niet groter zijn dan %d cijfers"
+
+#: cobc/typeck.c:4389
+#, fuzzy
+msgid "value in AT clause must have 4 or 6 digits"
+msgstr "Numeriek veld mag niet groter zijn dan %d cijfers"
+
+#: cobc/typeck.c:4490
+#, fuzzy
+msgid "invalid PROMPT literal"
+msgstr "Ongeldige PROMPT constante"
+
+#: cobc/typeck.c:4495
+#, fuzzy
+msgid "invalid PROMPT identifier"
+msgstr "Ongeldige PROMPT identifier"
+
+#: cobc/typeck.c:4721 cobc/typeck.c:4748
+#, fuzzy, c-format
+msgid "'%s' is not an input device"
+msgstr "'%s' is geen uitvoer apparaat"
+
+#: cobc/typeck.c:4735 cobc/typeck.c:5658 cobc/typeck.c:5663
+#, c-format
+msgid "'%s' is not defined in SPECIAL-NAMES"
+msgstr "'%s' is niet definieerd in SPECIAL-NAMES"
+
+#: cobc/typeck.c:4740
+#, fuzzy, c-format
+msgid "invalid input device '%s'"
+msgstr "Ongeldige invoer apparaat '%s'"
+
+#: cobc/typeck.c:4743 cobc/typeck.c:4754 cobc/typeck.c:5633 cobc/typeck.c:5638
+#: cobc/typeck.c:5647
+#, c-format
+msgid "unknown device '%s'; it may exist in another dialect"
+msgstr ""
+
+#: cobc/typeck.c:4748 cobc/typeck.c:5673
+#, fuzzy, c-format
+msgid "unknown device '%s'; not defined in SPECIAL-NAMES"
+msgstr "'%s' is niet definieerd in SPECIAL-NAMES"
+
+#: cobc/typeck.c:4783
+#, fuzzy
+msgid "target of ALLOCATE is not a BASED item"
+msgstr "Doel van ALLOCATE is geen BASED item"
+
+#: cobc/typeck.c:4791
+#, fuzzy
+msgid "target of RETURNING is not a data pointer"
+msgstr "Doel van RETURNING is geen data pointer"
+
+#: cobc/typeck.c:4798
+#, fuzzy
+msgid "the CHARACTERS field of ALLOCATE must be numeric"
+msgstr "Het CHARACTERS veld van ALLOCATE moet numeriek zijn"
+
+#: cobc/typeck.c:4811
+msgid "INITIALIZED TO item is not alphanumeric"
+msgstr "INITIALIZED TO item is niet alfanumeriek"
+
+#: cobc/typeck.c:4867
+#, fuzzy
+msgid "only alphanumeric FUNCTION types are allowed here"
+msgstr "Alleen alphanumerieke FUNCTION types zijn hier toegestaan"
+
+#: cobc/typeck.c:4875
+#, fuzzy
+msgid "invalid RETURNING field"
+msgstr "Ongeldig RETURNING veld"
+
+#: cobc/typeck.c:4896
+msgid "STDCALL not available on this platform"
+msgstr "STDCALL niet beschikbaar op dit platform"
+
+#: cobc/typeck.c:4902
+msgid "STDCALL used on 64-bit Windows platform"
+msgstr "STDCALL gebruikt op 64-bit Windows platform"
+
+#: cobc/typeck.c:4909
+msgid "STATIC CALL convention requires a literal program name"
+msgstr "STATIC CALL conventie vereist een constante als programma naam"
+
+#: cobc/typeck.c:4925
+#, fuzzy
+msgid "numeric literal is negative"
+msgstr "Numerieke constante is negatief"
+
+#: cobc/typeck.c:5004
+#, fuzzy
+msgid "numeric literal exceeds size limits"
+msgstr "Numerieke constante overschrijdt de maximum grootte"
+
+#: cobc/typeck.c:5010
+#, fuzzy
+msgid "figurative constant invalid here"
+msgstr "Figuratieve constante ongeldig hier"
+
+#: cobc/typeck.c:5018
+#, c-format
+msgid "'%s' is not a valid data name"
+msgstr "'%s' is geen geldige data naam"
+
+#: cobc/typeck.c:5024
+#, c-format
+msgid "'%s' ANY LENGTH item not passed BY REFERENCE"
+msgstr "'%s' ANY LENGTH item niet doorgegeven BY REFERENCE"
+
+#: cobc/typeck.c:5031
+#, c-format
+msgid "'%s' is not a 01 or 77 level item"
+msgstr "'%s' is geen 01 of 77 nivo item"
+
+#: cobc/typeck.c:5058
+#, fuzzy, c-format
+msgid "wrong number of CALL parameters for '%s'"
+msgstr "Verkeerd aantal CALL parameters voor '%s'"
+
+#: cobc/typeck.c:5110 cobc/typeck.c:5161 cobc/typeck.c:5165 cobc/typeck.c:5193
+#: cobc/typeck.c:7732 cobc/typeck.c:7737 cobc/typeck.c:7872 cobc/typeck.c:7995
+#: cobc/typeck.c:7999 cobc/typeck.c:8695 cobc/typeck.c:8891
+#, fuzzy, c-format
+msgid "%s not allowed on %s files"
+msgstr "%s niet toegestaan bij %s bestanden"
+
+#: cobc/typeck.c:5272
+#, c-format
+msgid "'%s' is an invalid type for DISPLAY operand"
+msgstr "'%s' is een ongeldig type voor DISPLAY operand"
+
+#: cobc/typeck.c:5277
+#, fuzzy
+msgid "invalid type for DISPLAY operand"
+msgstr "Ongeldig type voor DISPLAY operand"
+
+#: cobc/typeck.c:5611
+#, fuzzy
+msgid "invalid output device"
+msgstr "Ongeldig uitvoer apparaat"
+
+#: cobc/typeck.c:5642
+#, c-format
+msgid "'%s' is not an output device"
+msgstr "'%s' is geen uitvoer apparaat"
+
+#: cobc/typeck.c:5729
+#, fuzzy
+msgid "invalid use of 88 level in WHEN expression"
+msgstr "Ongeldig gebruik van 88 nivo in WHEN expressie"
+
+#: cobc/typeck.c:5789
+#, fuzzy
+msgid "wrong number of WHEN parameters"
+msgstr "Verkeerd aantal WHEN parameters"
+
+#: cobc/typeck.c:5858 cobc/typeck.c:5870
+#, fuzzy, c-format
+msgid "target %d of FREE is not a BASED data item"
+msgstr "Doel %d van FREE is geen BASED data item"
+
+#: cobc/typeck.c:5876
+#, fuzzy, c-format
+msgid "target %d of FREE must be a data pointer"
+msgstr "Doel %d van FREE moet een data pointer zijn"
+
+#: cobc/typeck.c:5890
+#, fuzzy
+msgid "GO TO without procedure-name"
+msgstr "GO TO met meerdere procedure-namen"
+
+#: cobc/typeck.c:5900
+msgid "GO TO with multiple procedure-names"
+msgstr "GO TO met meerdere procedure-namen"
+
+#: cobc/typeck.c:5957
+#, fuzzy
+msgid "invalid INITIALIZE statement"
+msgstr "Ongeldig SET statement"
+
+#: cobc/typeck.c:6051 cobc/typeck.c:6054
+#, fuzzy, c-format
+msgid "%s operands differ in size"
+msgstr "%s operands verschillen in grootte"
+
+#: cobc/typeck.c:6077 cobc/typeck.c:6096 cobc/typeck.c:6099
+#, fuzzy, c-format
+msgid "unexpected clause %d"
+msgstr "Onverwachte grootte"
+
+#: cobc/typeck.c:6113
+#, fuzzy, c-format
+msgid "invalid target for %s"
+msgstr "Ongeldig type voor '%s'"
+
+#: cobc/typeck.c:6122 cobc/typeck.c:6133 cobc/typeck.c:6144 cobc/typeck.c:6155
+#, fuzzy, c-format
+msgid "data name expected before %s"
+msgstr "Data naam verwacht voor %s"
+
+#: cobc/typeck.c:6165
+#, c-format
+msgid "ALL, LEADING or TRAILING expected before '%s'"
+msgstr "ALL, LEADING of TRAILING verwacht voor '%s'"
+
+#: cobc/typeck.c:6175
+#, fuzzy
+msgid "operand has wrong size"
+msgstr "Operand heeft verkeerde grootte"
+
+#: cobc/typeck.c:6241
+#, fuzzy, c-format
+msgid "internal register '%s' defined as BINARY-LONG"
+msgstr "Intern register '%s' gedefinieerd als BINARY-LONG"
+
+#: cobc/typeck.c:6244 cobc/typeck.c:6247 cobc/typeck.c:6250 cobc/typeck.c:6253
+#: cobc/typeck.c:6256 cobc/typeck.c:6259 cobc/typeck.c:6262 cobc/typeck.c:6265
+#: cobc/typeck.c:6268
+#, c-format
+msgid "'%s' defined here as USAGE %s"
+msgstr "'%s' hier gedefinieerd als USAGE %s"
+
+#: cobc/typeck.c:6271
+#, c-format
+msgid "'%s' defined here as PIC %s"
+msgstr "'%s' hier gedefinieerd als PIC %s"
+
+#: cobc/typeck.c:6274
+#, c-format
+msgid "'%s' defined here as a group of length %d"
+msgstr "'%s' hier gedefinieerd als een groep met lengte %d"
+
+#: cobc/typeck.c:6413
+#, fuzzy
+msgid "overlapping MOVE may occur and produce unpredictable results"
+msgstr "Overlappende MOVE kan onvoorspelbare resultaten geven"
+
+#: cobc/typeck.c:6505
+#, fuzzy
+msgid "overlapping MOVE may produce unpredictable results"
+msgstr "Overlappende MOVE kan onvoorspelbare resultaten geven"
+
+#: cobc/typeck.c:6448
+#, fuzzy
+msgid "invalid destination for MOVE"
+msgstr "Ongeldige bestemming voor MOVE"
+
+#: cobc/typeck.c:6469 cobc/typeck.c:6481
+#, fuzzy
+msgid "source is non-numeric - substituting zero"
+msgstr "Bron is niet-numeriek - vervangen door nul"
+
+#: cobc/typeck.c:6566
+#, fuzzy
+msgid "numeric move to ALPHABETIC"
+msgstr "Numerieke move naar ALPHABETIC"
+
+#: cobc/typeck.c:6580
+#, fuzzy
+msgid "data item not signed"
+msgstr "Data item kent geen teken"
+
+#: cobc/typeck.c:6584
+#, fuzzy
+msgid "ignoring sign"
+msgstr "Teken genegeerd"
+
+#: cobc/typeck.c:6904
+#, fuzzy
+msgid "invalid source for MOVE"
+msgstr "Ongeldige bron voor MOVE"
+
+#: cobc/typeck.c:6923 cobc/typeck.c:6931
+#, fuzzy
+msgid "invalid VALUE clause"
+msgstr "Ongeldige VALUE clausule"
+
+#: cobc/typeck.c:6925
+#, fuzzy
+msgid "invalid MOVE statement"
+msgstr "Ongeldig MOVE statement"
+
+#: cobc/typeck.c:6932
+#, fuzzy
+msgid "literal exceeds data size"
+msgstr "Numerieke constante overschrijdt data grootte"
+
+#: cobc/typeck.c:6936
+#, fuzzy
+msgid "numeric literal exceeds data size"
+msgstr "Numerieke constante overschrijdt data grootte"
+
+#: cobc/typeck.c:6945
+#, fuzzy
+msgid "MOVE of non-integer to alphanumeric"
+msgstr "Move geen heel getal naar alfanumeriek"
+
+#: cobc/typeck.c:6951
+#, fuzzy
+msgid "numeric value is expected"
+msgstr "Numerieke waarde verwacht"
+
+#: cobc/typeck.c:6956
+#, fuzzy
+msgid "alphanumeric value is expected"
+msgstr "Alanumerieke waarde verwacht"
+
+#: cobc/typeck.c:6961
+#, fuzzy
+msgid "value does not fit the picture string"
+msgstr "Waarde past niet in de opmaak string"
+
+#: cobc/typeck.c:6966
+#, fuzzy
+msgid "value size exceeds data size"
+msgstr "Grootte van de waarde overschrijdt de data grootte"
+
+#: cobc/typeck.c:6971
+#, fuzzy
+msgid "sending field larger than receiving field"
+msgstr "Zendende veld groter dan ontvangende veld"
+
+#: cobc/typeck.c:6976
+#, fuzzy
+msgid "some digits may be truncated"
+msgstr "Some cijfers worden mogelijk afgekapt"
+
+#: cobc/typeck.c:7701
+#, fuzzy, c-format
+msgid "invalid MOVE target: %s"
+msgstr "Ongeldig MOVE doel - %s"
+
+#: cobc/typeck.c:7885
+msgid "READ PREVIOUS not allowed for this file type"
+msgstr "READ PREVIOUS niet toegestaan bij dit bestands type"
+
+#: cobc/typeck.c:7893
+msgid "KEY ignored with sequential READ"
+msgstr "KEY genegeerd bij sequentiële READ"
+
+#: cobc/typeck.c:7976 cobc/typeck.c:8048 cobc/typeck.c:8874
+#, fuzzy, c-format
+msgid "%s requires a record name as subject"
+msgstr "%s vereist een record naam"
+
+#: cobc/typeck.c:7981 cobc/typeck.c:8054 cobc/typeck.c:8879
+#, fuzzy, c-format
+msgid "%s subject does not refer to a record name"
+msgstr "%s onderwerp verwijst niet naar een record naam"
+
+#: cobc/typeck.c:8060
+msgid "RELEASE not allowed on this record item"
+msgstr "RELEASE niet toegestaan bij this record item"
+
+#: cobc/typeck.c:8143 cobc/typeck.c:8164 cobc/typeck.c:8171
+#, fuzzy
+msgid "invalid SEARCH ALL condition"
+msgstr "Ongeldige SEARCH ALL conditie"
+
+#: cobc/typeck.c:8301
+#, fuzzy
+msgid "the targets of SET must be either indexes or pointers"
+msgstr "De doelen van SET moeten indices of pointers zijn"
+
+#: cobc/typeck.c:8313 cobc/typeck.c:8317
+msgid "SET targets must be PROGRAM-POINTER"
+msgstr "SET doelen moeten PROGRAM-POINTER zijn"
+
+#: cobc/typeck.c:8333
+#, fuzzy, c-format
+msgid "the address of '%s' cannot be changed"
+msgstr "Het adres van '%s' mag niet gewijzigd worden"
+
+#: cobc/typeck.c:8353
+#, fuzzy, c-format
+msgid "SET target is invalid: '%s'"
+msgstr "SET doel is omgeldig - '%s'"
+
+#: cobc/typeck.c:8408 cobc/typeck.c:8413 cobc/typeck.c:8440 cobc/typeck.c:8445
+#, fuzzy
+msgid "invalid SET statement"
+msgstr "Ongeldig SET statement"
+
+#: cobc/typeck.c:8449
+#, fuzzy
+msgid "field does not have a FALSE clause"
+msgstr "Veld heeft geen FALSE clausule"
+
+#: cobc/typeck.c:8471
+msgid "SET ATTRIBUTE requires a screen item as subject"
+msgstr "SET ATTRIBUTE vereist een screen item als onderwerp"
+
+#: cobc/typeck.c:8477
+msgid "SET ATTRIBUTE subject does not refer to a screen item"
+msgstr "SET ATTRIBUTE onderwerp verwijst niet naar een screen item"
+
+#: cobc/typeck.c:8512
+#, fuzzy
+msgid "invalid SORT filename"
+msgstr "Ongeldige SORT bestandsnaam"
+
+#: cobc/typeck.c:8557
+#, fuzzy
+msgid "invalid SORT USING parameter"
+msgstr "Ongeldige SORT USING parameter"
+
+#: cobc/typeck.c:8586
+#, fuzzy
+msgid "invalid SORT GIVING parameter"
+msgstr "Ongeldige SORT GIVING parameter"
+
+#: cobc/typeck.c:8632 cobc/typeck.c:8645 cobc/typeck.c:8665
+#, fuzzy
+msgid "invalid key item"
+msgstr "Ongeldig key item"
+
+#: cobc/typeck.c:8700
+msgid "LENGTH/SIZE clause only allowed on INDEXED files"
+msgstr "LENGTH/SIZE clausule alleen mogelijk bij INDEXED bestanden"
+
+#: cobc/typeck.c:8705
+msgid "START not allowed with ACCESS MODE RANDOM"
+msgstr "START niet toegestaan bij ACCESS MODE RANDOM"
+
+#: cobc/typeck.c:8903
+msgid "LOCK clause invalid here"
+msgstr "LOCK clausule ongeldig hier"
+
+#: cobc/warning.def:31
+#, fuzzy
+msgid "don't warn if unfinished features are used"
+msgstr "Waarschuw indien verouderde opties worden gebruikt"
+
+#: cobc/warning.def:34
+#, fuzzy
+msgid "warn if obsolete features are used"
+msgstr "Waarschuw indien verouderde opties worden gebruikt"
+
+#: cobc/warning.def:37
+#, fuzzy
+msgid "warn if archaic features are used"
+msgstr "Waarschuw indien verouderde opties worden gebruikt"
+
+#: cobc/warning.def:40
+#, fuzzy
+msgid "warn incompatible redefinition of data items"
+msgstr "Waarschuw bij incompatibele herdefinitie van data items"
+
+#: cobc/warning.def:43
+#, fuzzy
+msgid "warn inconsistent constant"
+msgstr "Waarschuw bij inconsistente constanten"
+
+#: cobc/warning.def:46
+#, fuzzy
+msgid "warn overlapping MOVE items"
+msgstr "Waarschuw bij overlappende MOVE items"
+
+#: cobc/warning.def:49
+msgid "warn MOVE items that may overlap depending on variables"
+msgstr ""
+
+#: cobc/warning.def:52
+#, fuzzy
+msgid "warn lack of parentheses around AND within OR"
+msgstr "Waarschuw bij ontbrekende haken rond AND binnen OR"
+
+#: cobc/warning.def:55
+#, fuzzy
+msgid "warn type mismatch strictly"
+msgstr "Waarschuw bij type conflicten"
+
+#: cobc/warning.def:58
+#, fuzzy
+msgid "warn implicitly defined data items"
+msgstr "Waarschuw bij impliciet gedefinieerde data items"
+
+#: cobc/warning.def:61
+#, fuzzy
+msgid "warn CORRESPONDING with no matching items"
+msgstr "Waarschuw bij CORRESPONDING met geen bijbehorende items"
+
+#: cobc/warning.def:64
+#, fuzzy
+msgid "warn EXTERNAL item with VALUE clause"
+msgstr "Waarschuw bij EXTERNAL item met VALUE clausule"
+
+#: cobc/warning.def:67
+msgid "warn missing FUNCTION prototypes/definitions"
+msgstr ""
+
+#: cobc/warning.def:70
+#, fuzzy
+msgid "warn non 01/77 items for CALL params"
+msgstr "Waarschuw bij niet 01/77 items als CALL parameter"
+
+#: cobc/warning.def:73
+#, fuzzy
+msgid "warn text after program-text area, FIXED format"
+msgstr "Waarschuw bij text na kolom 72, FIXED formaat"
+
+#: cobc/warning.def:76
+#, fuzzy
+msgid "warn lack of scope terminator END-XXX"
+msgstr "Waarschuw bij ontbreken van scope terminator END-XXX"
+
+#: cobc/warning.def:79
+#, fuzzy
+msgid "warn possible field truncation"
+msgstr "Waarschuw bij mogelijke veld truncatie"
+
+#: cobc/warning.def:82
+#, fuzzy
+msgid "warn dangling LINKAGE items"
+msgstr "Waarschuw bij zwevende LINKAGE items"
+
+#: cobc/warning.def:85
+#, fuzzy
+msgid "warn unreachable statements"
+msgstr "Waarschuw bij onbereikbare statements"
+
+#: libcob/call.c:89
+#, c-format
+msgid "LoadLibrary/GetProcAddress error %d"
+msgstr "LoadLibrary/GetProcAddress fout %d"
+
+#: libcob/call.c:750 libcob/call.c:802
+#, fuzzy
+msgid "cannot find module"
+msgstr "Onvindbare module"
+
+#: libcob/call.c:765 libcob/call.c:795
+#, fuzzy
+msgid "cannot find entry point"
+msgstr "Onvindbaar ingangspunt"
+
+#: libcob/call.c:869
+#, fuzzy
+msgid "indeterminable error in resolve of COBOL CALL"
+msgstr "Onbepaalbare fout"
+
+#: libcob/call.c:950
+#, fuzzy, c-format
+msgid "user-defined FUNCTION '%s' not found"
+msgstr "User FUNCTION '%s' niet gevonden"
+
+#: libcob/call.c:1024 libcob/call.c:1094 libcob/call.c:1208 libcob/call.c:1234
+#, c-format
+msgid "NULL parameter passed to '%s'"
+msgstr "NULL parameter doorgegeven aan '%s'"
+
+#: libcob/call.c:1090
+#, fuzzy, c-format
+msgid "invalid number of arguments passed to '%s'"
+msgstr "Ongeldig aantal argumenten voor %s'"
+
+#: libcob/call.c:1212
+#, fuzzy
+msgid "multiple call to 'cob_setjmp'"
+msgstr "Meerdere aanroepen van 'cob_setjmp'"
+
+#: libcob/call.c:1238
+#, fuzzy
+msgid "call to 'cob_longjmp' with no prior 'cob_setjmp'"
+msgstr "Aanroep van 'cob_longjmp' zonder voorafgaande 'cob_setjmp'"
+
+#: libcob/cobgetopt.c:491
+#, fuzzy, c-format
+msgid "%s: option '%s' is ambiguous; possibilities:"
+msgstr "%s: optie `%s' is onduidelijk\n"
+
+#: libcob/cobgetopt.c:532
+#, fuzzy, c-format
+msgid "%s: option '--%s' doesn't allow an argument"
+msgstr "%s: optie `--%s' verwacht geen argument\n"
+
+#: libcob/cobgetopt.c:539
+#, fuzzy, c-format
+msgid "%s: option '%c%s' doesn't allow an argument"
+msgstr "%s: optie `%c%s' verwacht geen argument\n"
+
+#: libcob/cobgetopt.c:559
+#, fuzzy, c-format
+msgid "%s: option '--%s' requires an argument"
+msgstr "%s: optie `%s' verwacht een argument\n"
+
+#: libcob/cobgetopt.c:591
+#, fuzzy, c-format
+msgid "%s: unrecognized option '--%s'"
+msgstr "%s: onbekende optie `--%s'\n"
+
+#: libcob/cobgetopt.c:598
+#, fuzzy, c-format
+msgid "%s: unrecognized option '%c%s'"
+msgstr "%s: onbekende optie `%c%s'\n"
+
+#: libcob/cobgetopt.c:627
+#, fuzzy, c-format
+msgid "%s: invalid option -- %c"
+msgstr "%s: ongeldige optie -- %c\n"
+
+#: libcob/cobgetopt.c:658 libcob/cobgetopt.c:799
+#, fuzzy, c-format
+msgid "%s: option requires an argument -- %c"
+msgstr "%s: optie verwacht een argument -- %c\n"
+
+#: libcob/cobgetopt.c:708
+#, fuzzy, c-format
+msgid "%s: option '-W %s' is ambiguous"
+msgstr "%s: optie `-W %s' is onduidelijk\n"
+
+#: libcob/cobgetopt.c:730
+#, fuzzy, c-format
+msgid "%s: option '-W %s' doesn't allow an argument"
+msgstr "%s: optie `-W %s' verwacht geen argument\n"
+
+#: libcob/cobgetopt.c:748
+#, fuzzy, c-format
+msgid "%s: option '%s' requires an argument"
+msgstr "%s: optie `%s' verwacht een argument\n"
+
+#: libcob/common.c:215
+#, fuzzy
+msgid "CALL configuration"
+msgstr "GNU Cobol Bouw omgeving"
+
+#: libcob/common.c:216
+#, fuzzy
+msgid "File I/O configuration"
+msgstr "GNU Cobol Bouw omgeving"
+
+#: libcob/common.c:216
+#, fuzzy
+msgid "Screen I/O configuration"
+msgstr "GNU Cobol Bouw omgeving"
+
+#: libcob/common.c:216
+msgid "Miscellaneous"
+msgstr ""
+
+#: libcob/common.c:217
+#, fuzzy
+msgid "System configuration"
+msgstr "GNU Cobol Bouw omgeving"
+
+#: libcob/common.c:501
+#, c-format
+msgid "cob_sig_handler caught not handled signal: %d"
+msgstr ""
+
+#: libcob/common.c:527
+#, fuzzy, c-format
+msgid "attempt to reference unallocated memory"
+msgstr "Poging om te verwijzen naar niet toegewezen geheugen"
+
+#: libcob/common.c:529 libcob/common.c:532
+#, c-format
+msgid "caught signal"
+msgstr ""
+
+#: libcob/common.c:535
+#, c-format
+msgid "signal %s"
+msgstr ""
+
+#: libcob/common.c:540
+#, fuzzy, c-format
+msgid "abnormal termination - file contents may be incorrect"
+msgstr "Abnormaal einde - Bestandsinhoud kan incorrect zijn"
+
+#: libcob/common.c:1677
+#, fuzzy
+msgid "error: version mismatch"
+msgstr "Fout - Versie conflict"
+
+#: libcob/common.c:1678
+#, c-format
+msgid "%s has version/patch level %s/%d"
+msgstr "%s heeft versie/patch nivo %s/%d"
+
+#: libcob/common.c:1680
+#, fuzzy, c-format
+msgid "libcob has version/patch level %s/%d"
+msgstr "%s heeft versie/patch nivo %s/%d"
+
+#: libcob/common.c:1690
+#, c-format
+msgid "CALL to %s requires %d parameters"
+msgstr "CALL naar %s vereist %d parameters"
+
+#: libcob/common.c:2312
+#, fuzzy, c-format
+msgid "BASED/LINKAGE item %s has NULL address"
+msgstr "BASED/LINKAGE item '%s' heeft een NULL adres"
+
+#: libcob/common.c:2324 libcob/common.c:2327
+#, c-format
+msgid "LINKAGE item %s not passed by caller"
+msgstr ""
+
+#: libcob/common.c:2354
+#, c-format
+msgid "'%s' not numeric: '%s'"
+msgstr "'%s' niet numeriek: '%s'"
+
+#: libcob/common.c:2367
+#, c-format
+msgid "OCCURS DEPENDING ON '%s' out of bounds: %d"
+msgstr "OCCURS DEPENDING ON '%s' buiten grens: %d"
+
+#: libcob/common.c:2412
+#, c-format
+msgid "EXTERNAL item '%s' previously allocated with size %d, requested size is %d"
+msgstr "EXTERNAL item '%s' eerder gemaakt met grootte %d, gevraagde grootte is %d"
+
+#: libcob/common.c:3223
+#, fuzzy, c-format
+msgid "parameter to SYSTEM call is larger than %d characters"
+msgstr "Parameter voor SYSTEM call is groter dan 8192 karakters"
+
+#: libcob/common.c:3728
+msgid "Call to CBL_OC_GETOPT with wrong longoption size."
+msgstr ""
+
+#: libcob/common.c:3733
+msgid "Call to CBL_OC_GETOPT with missing longind."
+msgstr ""
+
+#: libcob/common.c:4167
+msgid " (default)"
+msgstr ""
+
+#: libcob/common.c:4395
+#, c-format
+msgid "minimum value: %lu"
+msgstr ""
+
+#: libcob/common.c:4449 libcob/common.c:4909 libcob/common.c:4923
+#, c-format
+msgid "should not contain '%c'"
+msgstr ""
+
+#: libcob/common.c:4656
+#, c-format
+msgid "WARNING - '%s %s' without a value - ignored!"
+msgstr ""
+
+#: libcob/common.c:4677 libcob/common.c:4749
+#, c-format
+msgid "WARNING - '%s' without a value - ignored!"
+msgstr ""
+
+#: libcob/common.c:4703
+#, fuzzy, c-format
+msgid "'%s' without a value!"
+msgstr "'%s' is geen numerieke waarde"
+
+#: libcob/common.c:4992
+#, fuzzy
+msgid "malloc error"
+msgstr "Malloc fout"
+
+#: libcob/common.c:5034 libcob/common.c:5038
+#, fuzzy
+msgid "attempt to CANCEL active program"
+msgstr "CANCEL poging op een actief programma"
+
+#: libcob/common.c:5053
+msgid "cob_init() has not been called"
+msgstr "cob_init() is niet aangeroepen"
+
+#: libcob/common.c:5056
+#, fuzzy
+msgid "codegen error - Please report this!"
+msgstr "Codegen fout - Doorgeven s.v.p."
+
+#: libcob/common.c:5059
+#, fuzzy
+msgid "recursive call of chained program"
+msgstr "Recursieve aanroep van chained programma"
+
+#: libcob/common.c:5062
+#, fuzzy
+msgid "stack overflow, possible PERFORM depth exceeded"
+msgstr "Stack overloop, mogelijke PERFORM diepte overschrijding"
+
+#: libcob/common.c:5065
+#, fuzzy
+msgid "invalid entry/exit in GLOBAL USE procedure"
+msgstr "Ongeldige entry/exit in GLOBAL USE procedure"
+
+#: libcob/common.c:5068
+#, fuzzy
+msgid "unable to allocate memory"
+msgstr "Onmogelijk om geheugen te verkrijgen"
+
+#: libcob/common.c:5071
+#, fuzzy
+msgid "invalid entry into module"
+msgstr "ongeldige ingang in module"
+
+#: libcob/common.c:5074
+#, fuzzy, c-format
+msgid "invalid recursive COBOL CALL to '%s'"
+msgstr "Ongeldige recursieve COBOL CALL"
+
+#: libcob/common.c:5085
+#, fuzzy
+msgid "end of file"
+msgstr "Einde bestand"
+
+#: libcob/common.c:5088
+#, fuzzy
+msgid "key out of range"
+msgstr "Key buiten bereik"
+
+#: libcob/common.c:5091
+#, fuzzy
+msgid "key order not ascending"
+msgstr "Key volgorde niet oplopend"
+
+#: libcob/common.c:5094
+#, fuzzy
+msgid "record key already exists"
+msgstr "Record key bestaat al"
+
+#: libcob/common.c:5097
+#, fuzzy
+msgid "record key does not exist"
+msgstr "Record key niet aanwezig"
+
+#: libcob/common.c:5100
+#, fuzzy
+msgid "permanent file error"
+msgstr "Permanente bestands fout"
+
+#: libcob/common.c:5103
+#, fuzzy
+msgid "file does not exist"
+msgstr "Bestand niet aanwezig"
+
+#: libcob/common.c:5106
+#, fuzzy
+msgid "permission denied"
+msgstr "Toestemming geweigerd"
+
+#: libcob/common.c:5109
+#, fuzzy
+msgid "file already open"
+msgstr "Bestand is al geopend"
+
+#: libcob/common.c:5112
+#, fuzzy
+msgid "file not open"
+msgstr "Bestand nog niet geopend"
+
+#: libcob/common.c:5115
+msgid "READ must be executed first"
+msgstr "READ moet eerst worden uitgevoerd"
+
+#: libcob/common.c:5118
+#, fuzzy
+msgid "record overflow"
+msgstr "Record overflow"
+
+#: libcob/common.c:5121
+msgid "READ after uncessful READ/START"
+msgstr ""
+
+#: libcob/common.c:5124
+#, fuzzy
+msgid "READ/START not allowed, file not open for input"
+msgstr "READ/START niet toegestaan"
+
+#: libcob/common.c:5127
+msgid "WRITE not allowed, file not open for output"
+msgstr ""
+
+#: libcob/common.c:5130
+#, fuzzy
+msgid "DELETE/REWRITE not allowed, file not open for I-O"
+msgstr "DELETE/REWRITE niet toegestaan"
+
+#: libcob/common.c:5133
+#, fuzzy
+msgid "record locked by another file connector"
+msgstr "Record geblokkeerd door een andere bestands connector"
+
+#: libcob/common.c:5136
+msgid "LINAGE values invalid"
+msgstr "LINAGE waarden ongeldig"
+
+#: libcob/common.c:5139
+#, fuzzy
+msgid "file sharing conflict"
+msgstr "Bestands deling conflict"
+
+#: libcob/common.c:5142
+#, fuzzy
+msgid "runtime library is not configured for this operation"
+msgstr "Runtime library is niet geconfigureerd voor deze operatie"
+
+#: libcob/common.c:5145
+#, fuzzy
+msgid "unknown file error"
+msgstr "Onbekende bestands fout"
+
+#: libcob/common.c:5151
+#, fuzzy, c-format
+msgid "%s (status = %02d) file: '%s'"
+msgstr "%s (Status = %02d) Bestand : '%s'"
+
+#: libcob/common.c:5156
+#, fuzzy
+msgid "attempt to use non-implemented function"
+msgstr "Poging om een niet geïmplementeerde functie te gebruiken"
+
+#: libcob/common.c:5159
+#, fuzzy, c-format
+msgid "unknown failure: %d"
+msgstr "Onbekende storing : %d"
+
+#: libcob/common.c:5199
+msgid "environment variables"
+msgstr ""
+
+#: libcob/common.c:5249
+msgid "Build information"
+msgstr "Bouw informatie"
+
+#: libcob/common.c:5250
+msgid "Build environment"
+msgstr "Bouw omgeving"
+
+#: libcob/common.c:5269 libcob/common.c:5271
+msgid "Dynamic loading"
+msgstr "Dynamisch laden"
+
+#: libcob/common.c:5295
+#, fuzzy
+msgid "enabled"
+msgstr "Ingeschakeld"
+
+#: libcob/common.c:5313
+msgid "Extended screen I/O"
+msgstr ""
+
+#: libcob/common.c:5316
+msgid "Variable format"
+msgstr "Variabel formaat"
+
+#: libcob/common.c:5322 libcob/common.c:5324
+msgid "Sequential handler"
+msgstr "Sequentiële handler"
+
+#: libcob/common.c:5322 libcob/common.c:5328
+msgid "EXTFH"
+msgstr ""
+
+#: libcob/common.c:5350
+#, fuzzy
+msgid "runtime configuration"
+msgstr "GNU Cobol Bouw omgeving"
+
+#: libcob/common.c:5352
+msgid "via"
+msgstr ""
+
+#: libcob/common.c:5446 libcob/common.c:5448
+#, c-format
+msgid "(set by %s)"
+msgstr ""
+
+#: libcob/common.c:5456
+#, c-format
+msgid "(reset)"
+msgstr ""
+
+#: libcob/common.c:5458
+#, c-format
+msgid "(default)"
+msgstr ""
+
+#: libcob/common.c:5464
+msgid "... removed from environment"
+msgstr ""
+
+#: libcob/fileio.c:2110
+#, c-format
+msgid "BDB error: %s"
+msgstr "BDB fout: %s"
+
+#: libcob/fileio.c:2119
+#, c-format
+msgid "BDB error: %s %s"
+msgstr "BDB fout: %s %s"
+
+#: libcob/fileio.c:2135 libcob/fileio.c:2155
+#, fuzzy, c-format
+msgid "cannot join BDB environment (%s), error: %d %s"
+msgstr "Kan niet verbinden met BDB omgeving, fout: %d %s"
+
+#: libcob/fileio.c:5035
+#, c-format
+msgid "WARNING - Call to CBL_OPEN_FILE with wrong access mode: %d"
+msgstr ""
+
+#: libcob/fileio.c:5079
+#, c-format
+msgid "WARNING - Call to CBL_CREATE_FILE with wrong file_lock: %d"
+msgstr ""
+
+#: libcob/fileio.c:5084
+#, c-format
+msgid "WARNING - Call to CBL_CREATE_FILE with wrong file_dev: %d"
+msgstr ""
+
+#: libcob/fileio.c:5288 libcob/fileio.c:5542
+#, fuzzy, c-format
+msgid "'%s' - File detail area is too short"
+msgstr "'C$FILEINFO' - Bestandsadministratie geheugen is te klein"
+
+#: libcob/fileio.c:5764
+msgid "SORT is unable to acquire temporary file"
+msgstr "SORT kan geen tijdelijk bestand maken"
+
+#: libcob/fileio.c:6328
+#, c-format
+msgid "WARNING - Implicit CLOSE of %s ('%s')"
+msgstr "WAARSCHUWING - Impliciete CLOSE van %s ('%s')"
+
+#: libcob/screenio.c:536
+#, fuzzy
+msgid "failed to initialize curses"
+msgstr "Kan curses niet initialiseren"
+
+#: libcob/termio.c:68 libcob/termio.c:104
+msgid "(Not representable)"
+msgstr "(Niet representeerbaar)"
+
+#: bin/cobcrun.c:105
+msgid "COBOL driver program for GnuCOBOL modules"
+msgstr ""
+
+#: bin/cobcrun.c:107
+#, fuzzy, c-format
+msgid "Usage: %s [options] PROGRAM [parameter ...]"
+msgstr "Gebruik: %s PROGRAM [param ...]"
+
+#: bin/cobcrun.c:109
+#, c-format
+msgid "  or:  %s options"
+msgstr "  of:  %s opties"
+
+#: bin/cobcrun.c:113
+#, fuzzy
+msgid "  -h, -help                      display this help and exit"
+msgstr "  -h, -help             Toont deze boodschap"
+
+#: bin/cobcrun.c:114
+#, fuzzy
+msgid ""
+"  -V, -version                   display cobcrun and runtime version and exit"
+msgstr "  -V, -version          Toont compiler verse"
+
+#: bin/cobcrun.c:115
+#, fuzzy
+msgid ""
+"  -i, -info                      display runtime information (build/"
+"environment)"
+msgstr "  -i, -info             Toont compiler bouw informatie"
+
+#: bin/cobcrun.c:117
+#, fuzzy
+msgid "  -q, -brief                     reduced displays"
+msgstr "  -h, -help             Toont deze boodschap"
+
+#: bin/cobcrun.c:119
+#, fuzzy
+msgid "  -c <file>, -config=<file>      set runtime configuration from <file>"
+msgstr ""
+"  -conf=<bestand>       Gebruiker gedefinieerde dialect configuratie - Zie -"
+"std="
+
+#: bin/cobcrun.c:120
+#, fuzzy
+msgid ""
+"  -r, -runtime-conf              display current runtime configuration\n"
+"                                 (value and origin for all settings)"
+msgstr "  -r, -runtime-env             Toont compiler bouw informatie"
+
+#: bin/cobcrun.c:122
+msgid ""
+"  -M <module>, -module=<module>  set entry point module name and/or load path"
+msgstr ""
+
+#: bin/cobcrun.c:122
+#, fuzzy
+msgid ""
+"                                 where -M module prepends any directory to "
+"the"
+msgstr "                        Zie config/default.conf en config/*.conf"
+
+#: bin/cobcrun.c:123
+#, fuzzy
+msgid ""
+"                                 dynamic link loader library search path"
+msgstr "  -m                    Bouw een dynamisch laadbare module (standaard)"
+
+#: bin/cobcrun.c:124
+#, fuzzy
+msgid ""
+"                                 and any basename to the module preload list"
+msgstr "  -m                    Bouw een dynamisch laadbare module (standaard)"
+
+#: bin/cobcrun.c:125
+msgid "                                 (COB_LIBRARY_PATH and/or COB_PRELOAD)"
+msgstr ""
+
+#: bin/cobcrun.c:206 bin/cobcrun.c:231
+#, c-format
+msgid "problem with setenv %s: %d"
+msgstr ""
+
+#: bin/cobcrun.c:283
+#, fuzzy
+msgid "invalid configuration file name"
+msgstr "Ongeldige regel voortzetting"
+
+#: bin/cobcrun.c:330
+#, fuzzy
+msgid "invalid module argument"
+msgstr "Ongeldige uitvoer bestandsnaam"
+
+#: bin/cobcrun.c:375
+msgid "PROGRAM name exceeds 31 characters"
+msgstr "PROGRAM naam overschrijdt 31 karakters"
+
+#, fuzzy
+#~ msgid "  -cb_conf=<tag:value>  override configuration entry"
+#~ msgstr ""
+#~ "  -conf=<bestand>       Gebruiker gedefinieerde dialect configuratie - "
+#~ "Zie -std="
+
+#, fuzzy
+#~ msgid "'%s' not supported with -cb_conf"
+#~ msgstr "'%s' niet ondersteund"
+
+#, fuzzy
+#~ msgid ""
+#~ "define display sign representation\n"
+#~ "\t\t\t- ASCII or EBCDIC (default: machine native)"
+#~ msgstr ""
+#~ "Definieer display teken representatie\n"
+#~ "\t\t\t- ASCII of EBCDIC (Standaard : machine native)"
+
+#, fuzzy
+#~ msgid ""
+#~ "fold COPY subject to value\n"
+#~ "\t\t\t- UPPER or LOWER (default: no transformation)"
+#~ msgstr ""
+#~ "Transformeer COPY naar waarde\n"
+#~ "\t\t\t- UPPER of LOWER (Standaard : geen transformatie)"
+
+#~ msgid "Reserved Words\t\t\tImplemented (Y/N)"
+#~ msgstr "Gereserveerde woorden\t\t\tGeïmplementeerd (J/N)"
+
+#~ msgid "Y"
+#~ msgstr "Y"
+
+#~ msgid "N"
+#~ msgstr "N"
+
+#~ msgid "Intrinsic Function\t\tImplemented\tParameters"
+#~ msgstr "Intrinsieke Functie\t\tGeïmplementeerd\tParameters"
+
+#~ msgid "Too many errors - Aborting compilation"
+#~ msgstr "Teveel fouten - Compilatie wordt afgebroken"
+
+#~ msgid "Error: "
+#~ msgstr "Fout: "
+
+#, fuzzy
+#~ msgid "options:"
+#~ msgstr "Opties:"
+
+#, fuzzy
+#~ msgid "  -j                    run job after build"
+#~ msgstr "  -W                    Inschakelen alle waarschuwingen"
+
+#~ msgid "No such file or directory"
+#~ msgstr "Onbekend bestand of map"
+
+#~ msgid "Warning: "
+#~ msgstr "Waarschuwing: "
+
+#~ msgid "Level number of REDEFINES entry cannot be 66 or 88"
+#~ msgstr "Nivo nummer van REDEFINES beschrijving mag geen 66 of 88 zijn"
+
+#~ msgid "BLANK ZERO not compatible with USAGE"
+#~ msgstr "BLANK ZERO niet compatibel met USAGE"
+
+#~ msgid "Invalid special names clause"
+#~ msgstr "Ongeldige SPECIAL NAMES clausule"
+
+#~ msgid "Invalid SYMBOLIC clause"
+#~ msgstr "Ongeldige SYMBOLIC clausule"
+
+#~ msgid "Item requires a data name"
+#~ msgstr "Item vereist een veld naam"
+
+#~ msgid "Invalid PAGE clause"
+#~ msgstr "Ongeldige PAGE clausule"
+
+#, fuzzy
+#~ msgid "Screen DISPLAY does not have a LINE or COL clause"
+#~ msgstr "Veld heeft geen FALSE clausule"
+
+#~ msgid "EXIT PROGRAM only allowed within a PROGRAM type"
+#~ msgstr "EXIT PROGRAM is alleen toegestaan in een PROGRAM type"
+
+#~ msgid "INSPECT missing a keyword"
+#~ msgstr "INSPECT mist een sleutelwoord"
+
+#~ msgid "Invalid SYMBOLIC integer"
+#~ msgstr "Ongeldig SYMBOLIC geheel getal"
+
+#~ msgid "Dangling IF/ELSE directive"
+#~ msgstr "Zwevend IF/ELSE statement"
+
+#, fuzzy
+#~ msgid "%s directive not yet implemented"
+#~ msgstr "TURN statement nog niet geïmplementeerd"
+
+#~ msgid "A SPACE will be assumed"
+#~ msgstr "Een SPATIE wordt aangenomen"
+
+#~ msgid "<Unexpected tree tag %d>"
+#~ msgstr "<Onverwacht boom label %d>"
+
+#~ msgid "Unexpected cast type -> %d"
+#~ msgstr "Onverwacht wijziging type -> %d"
+
+#~ msgid "Unexpected numeric usage -> %d"
+#~ msgstr "Onverwacht numeriek gebruik -> %d"
+
+#~ msgid "Invalid literal cast - Aborting"
+#~ msgstr "Ongeldige constante wijziging - Afbreken"
+
+#~ msgid "Invalid picture string - '%s'"
+#~ msgstr "Ongeldige opmaak string - '%s'"
+
+#, fuzzy
+#~ msgid "Record size too small '%s' (%d)"
+#~ msgstr "Record te klein '%s'"
+
+#~ msgid "Record size too large '%s' (%d)"
+#~ msgstr "Record te groot '%s' (%d)"
+
+#, fuzzy
+#~ msgid "Invalid value in AT clause"
+#~ msgstr "Ongeldige CRT clausule"
+
+#~ msgid "Invalid VALUE clause - literal exceeds data size"
+#~ msgstr "Ongeldige VALUE clausule - constante overschrijdt data grootte"
+
+#, fuzzy
+#~ msgid "Failed to READ"
+#~ msgstr "Lezen niet gelukt"
+
+#~ msgid "WRITE not allowed"
+#~ msgstr "WRITE niet toegestaan"
+
+#~ msgid "'cobcommandline' - Runtime has not been initialized"
+#~ msgstr "'cobcommandline' - Runtime is niet geïnitialiseerd"
+
+#, fuzzy
+#~ msgid "System"
+#~ msgstr "Systeem"
+
+#, fuzzy
+#~ msgid "Libtool"
+#~ msgstr "Libtool"
+
+#~ msgid "External"
+#~ msgstr "Extern"
+
+#~ msgid "Internal"
+#~ msgstr "Intern"
+
+#, fuzzy
+#~ msgid "  -free                 use free source format"
+#~ msgstr "  -free                 Gebruik vrij bron formaat"
+
+#~ msgid "defined here"
+#~ msgstr "hier gedefinieerd"
+
+#~ msgid "Alphabet-name is expected '%s'"
+#~ msgstr "Alphabet-name is verwacht '%s'"
+
+#, fuzzy
+#~ msgid "SECTION segment-number in DECLARATIVE must be less than 50"
+#~ msgstr "SECTION segment ongeldig binnen DECLARATIVE"
+
+#~ msgid "N (85 obsolete)"
+#~ msgstr "N (85 niet meer in gebruik)"
+
+#, fuzzy
+#~ msgid "Data name expected before CHARACTERS"
+#~ msgstr "Data naam verwacht voor %s"
+
+#, fuzzy
+#~ msgid "Data name expected before LEADING"
+#~ msgstr "Data naam verwacht voor %s"
+
+#, fuzzy
+#~ msgid "Data name expected before TRAILING"
+#~ msgstr "Data naam verwacht voor %s"
+
+#~ msgid "Library has version/patch level %s/%d"
+#~ msgstr "Library heeft versie/patch nivo %s/%d"
+
+#, fuzzy
+#~ msgid "GNU Cobol information"
+#~ msgstr "Bouw informatie"
+
+#~ msgid "BDB"
+#~ msgstr "BDB"
+
+#, fuzzy
+#~ msgid "C-ISAM (experimental)"
+#~ msgstr "C-ISAM (Experimenteel)"
+
+#, fuzzy
+#~ msgid "D-ISAM (experimental)"
+#~ msgstr "D-ISAM (Experimenteel)"
+
+#, fuzzy
+#~ msgid "VBISAM (experimental)"
+#~ msgstr "VBISAM (Experimenteel)"
+
+#~ msgid "Failed to load the initial config file"
+#~ msgstr "Laden eerste configuratie bestand mislukt"
+
+#~ msgid "Invalid tab-width value - %d"
+#~ msgstr "Ongeldige waarde voor tab-breedte - %d"
+
+#~ msgid "Invalid text-column value - %d"
+#~ msgstr "Ongeldige tekst-kolom waarde - %d"
+
+#, fuzzy
+#~ msgid "FUNCTION '%s' does not have an offset time"
+#~ msgstr "FUNCTION '%s' kan geen verwijzingsmodificatie hebben"
+
+#~ msgid "Numeric literal exceeds limit - Aborting"
+#~ msgstr "Numerieke constante overschrijdt limiet - Afbreken"
+
+#~ msgid "Memory allocation failure"
+#~ msgstr "Geheugen allocatie storing"
+
+#, fuzzy
+#~ msgid "  -std=<dialect>        Warnings/features for a specific dialect:"
+#~ msgstr ""
+#~ "  -std=<dialect>        Waarschuwingen/kenmerken van een specifiek "
+#~ "dialect :"
+
+#, fuzzy
+#~ msgid "BASED and OCCURS are mutually exclusive"
+#~ msgstr "EXTERNAL en OCCURS sluiten elkaar uit"
+
+#~ msgid "EXTERNAL and OCCURS are mutually exclusive"
+#~ msgstr "EXTERNAL en OCCURS sluiten elkaar uit"
+
+#, fuzzy
+#~ msgid "Call environment"
+#~ msgstr "Bouw omgeving"
+
+#~ msgid "Invalid SOURCEFORMAT directive"
+#~ msgstr "Ongeldig SOURCEFORMAT statement"
+
+#~ msgid "Invalid FOLD-COPY-NAME directive"
+#~ msgstr "Ongeldig FOLD-COPY-NAME statement"
+
+#~ msgid "Invalid DEFINE/SET directive"
+#~ msgstr "Ongeldig DEFINE/SET statement"
+
+#~ msgid "Invalid IF/ELIF directive"
+#~ msgstr "Ongeldig IF/ELIF statement"
+
+#, fuzzy
+#~ msgid "Call to cobc_free with NULL pointer"
+#~ msgstr "Aanroep van cobc_parse_strdup met NULL pointer"
+
+#~ msgid "Word length exceeds maximum allowed - '%s'"
+#~ msgstr "Woord lengte overschrijdt maximum toegestaan - '%s'"
+
+#~ msgid "Buffer overrun - Literal too long - Aborting"
+#~ msgstr "Buffer overloop - Constante te lang - Afbreken"
+
+#~ msgid "Invalid line"
+#~ msgstr "Ongeldig regelnummer"
+
+#~ msgid "ALTERNATE clause invalid for this file type"
+#~ msgstr "ALTERNATE clausule ongeldig voor dit bestandstype"
+
+#~ msgid "ORGANIZATION clause invalid"
+#~ msgstr "ORGANIZATION clausule ongeldig"
+
+#~ msgid "Cannot join BDB environment, env_open: %d %s"
+#~ msgstr "Kan niet verbinden met BDB omgeving, env_open: %d %s"
+
+#~ msgid "'CBL_CHECK_FILE_EXIST' - File detail area is too short"
+#~ msgstr "'CBL_CHECK_FILE_EXIST' - Bestandsadministratie geheugen is te klein"
+
+#~ msgid "NULL name parameter passed to '%s'"
+#~ msgstr "NULL naam parameter doorgegeven aan '%s'"
+
+#~ msgid "Operation not allowed on LINE SEQUENTIAL files"
+#~ msgstr "Operatie niet toegestaan bij LINE SEQUENTIAL bestanden"
+
+#~ msgid "Invalid target for INSPECT"
+#~ msgstr "Ongeldig doel voor INSPECT"
+
+#~ msgid "OPEN I-O not allowed on LINE SEQUENTIAL files"
+#~ msgstr "OPEN I-O niet toegestaan bij LINE SEQUENTIAL bestanden"
+
+#~ msgid "REWRITE requires a record name as subject"
+#~ msgstr "REWRITE vereist een record naam"
+
+#~ msgid "REWRITE subject does not refer to a record name"
+#~ msgstr "REWRITE verwijst niet naar een record naam"
+
+#~ msgid "RELEASE requires a record name as subject"
+#~ msgstr "RELEASE vereist een record naam"
+
+#~ msgid "RELEASE subject does not refer to a record name"
+#~ msgstr "RELEASE verwijst niet naar een record naam"
+
+#~ msgid "START not allowed on SEQUENTIAL files"
+#~ msgstr "START niet toegestaan bij SEQUENTIAL bestanden"
+
+#~ msgid "GLOBAL is invalid in a user FUNCTION"
+#~ msgstr "GLOBAL is ongeldig in een FUNCTION"
+
+#, fuzzy
+#~ msgid "USE AT is invalid in nested program"
+#~ msgstr "%s is ongeldig in ingesloten programma"
+
+#~ msgid "FUNCTION-ID is not yet implemented"
+#~ msgstr "FUNCTION-ID is nog niet geïmplementeerd"
+
+#~ msgid "CONFIGURATION SECTION not allowed in nested programs"
+#~ msgstr "CONFIGURATION SECTION niet toegestaan in ingesloten programma's"
+
+#~ msgid "REPORT WRITER not implemented"
+#~ msgstr "REPORT WRITER niet gemplementeerd"
+
+#~ msgid "EXTERNAL not allowed here"
+#~ msgstr "EXTERNAL niet toegestaan hier"
+
+#~ msgid "EXTERNAL only allowed at 01/77 level"
+#~ msgstr "EXTERNAL alleen toegestaan op 01/77 nivo"
+
+#~ msgid "EXTERNAL requires a data name"
+#~ msgstr "EXTERNAL vereist een veld naam"
+
+#~ msgid "GLOBAL and EXTERNAL are mutually exclusive"
+#~ msgstr "GLOBAL en EXTERNAL sluiten elkaar uit"
+
+#~ msgid "BASED and EXTERNAL are mutually exclusive"
+#~ msgstr "BASED en EXTERNAL sluiten elkaar uit"
+
+#~ msgid "EXTERNAL and REDEFINES are mutually exclusive"
+#~ msgstr "EXTERNAL en REDEFINES sluiten elkaar uit"
+
+#~ msgid "GLOBAL only allowed at 01/77 level"
+#~ msgstr "GLOBAL alleen toegestaan op 01/77 nivo"
+
+#~ msgid "GLOBAL requires a data name"
+#~ msgstr "GLOBAL vereist een veld name"
+
+#~ msgid "GLOBAL not allowed here"
+#~ msgstr "GLOBAL niet toegestaan hier"
+
+#~ msgid "BASED requires a data name"
+#~ msgstr "BASED vereist een veld naam"
+
+#~ msgid "BASED and REDEFINES are mutually exclusive"
+#~ msgstr "BASED en REDEFINES sluiten elkaar uit"
+
+#~ msgid "BASED and ANY LENGTH are mutually exclusive"
+#~ msgstr "BASED en ANY LENGTH sluiten elkaar uit"
+
+#~ msgid "BASED and ANY clause are mutually exclusive"
+#~ msgstr "BASED en ANY clausule sluiten elkaar uit"
+
+#~ msgid "LOCAL-STORAGE not allowed in nested programs"
+#~ msgstr "LOCAL-STORAGE niet toegestaan in ingesloten programma's"
+
+#~ msgid "REPORT SECTION not implemented"
+#~ msgstr "REPORT SECTION niet geïmplementeerd"
+
+#~ msgid "BY CONTENT not allowed in CHAINED program"
+#~ msgstr "BY CONTENT niet toegestaan in CHAINED programma"
+
+#~ msgid "SHARING and LOCK clauses are mutually exclusive"
+#~ msgstr "SHARING en LOCK clausules sluiten elkaar uit"
+
+#~ msgid "%s (Experimental)"
+#~ msgstr "%s (Experimenteel)"
+
+#~ msgid "Invalid target for REPLACING/CONVERTING"
+#~ msgstr "Ongeldig doel voor REPLACING/CONVERTING"
+
+#~ msgid "or   : cobcrun --help (-h)"
+#~ msgstr "of   : cobcrun --help (-h)"
+
+#~ msgid "       Print this help"
+#~ msgstr "       Toon deze help"
+
+#~ msgid "or   : cobcrun --version (-V)"
+#~ msgstr "of   : cobcrun --version (-V)"
+
+#~ msgid "       Print version information"
+#~ msgstr "       Toon versie informatie"
+
+#~ msgid "       Print build information"
+#~ msgstr "       Toon Bouw informatie"
+
+#~ msgid "Invalid option"
+#~ msgstr "Ongeldige optie"
+
+#~ msgid "NULL parameter passed to 'cob_cancel'"
+#~ msgstr "NULL parameter doorgegeven aan 'cob_cancel'"
+
+#~ msgid "NULL parameter passed to 'cob_longjmp'"
+#~ msgstr "NULL parameter doorgegeven aan 'cob_longjmp'"
+
+#~ msgid "Check that 'cobxref' is in %%PATH%%"
+#~ msgstr "Controleer of 'xcobref' voorkomt in %%PATH%%"
+
+#~ msgid "Call to cobc_main_strdup with NULL pointer"
+#~ msgstr "Aanroep van cobc_main_strdup met NULL pointer"
+
+#~ msgid "Call to cobc_plex_strdup with NULL pointer"
+#~ msgstr "Aanroep van cobc_plex_strdup met NULL pointer"
+
+#~ msgid "Call to cobc_check_string with NULL pointer"
+#~ msgstr "Aanroep van cobc_check_string met NULL pointer"
+
+#~ msgid "Call to cobc_stradd_dup with NULL pointer"
+#~ msgstr "Aanroep van cobc_stradd_dup met NULL pointer"
+
+#~ msgid "RETURNING item moet nivo 01 zijn"
+#~ msgstr "RETURNING item moet nivo 01 zijn"
