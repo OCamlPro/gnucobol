@@ -1186,7 +1186,8 @@ write_field (struct cb_file *fl, struct cb_field *f, FILE *fs, FILE *fx, int sub
 			continue;
 		}
 		if (f->flag_filler
-		&& !fl->flag_sql_keep_filler) {	/* Skip FILLER fields */
+		 && f->sql_name == NULL
+		 && !fl->flag_sql_keep_filler) {	/* Skip FILLER fields */
 			f = f->sister;
 			continue;
 		}
