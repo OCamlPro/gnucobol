@@ -1094,6 +1094,7 @@ struct cb_file {
 	unsigned int		flag_sql_xfd : 1;		/* Emit the XFD/ddl for this file */
 	unsigned int		flag_sql_trim_prefix : 1;	/* Trim common prefix for SQL column name */
 	unsigned int		flag_sql_trim_dash : 1;		/* Remove dash/underscore from SQL column name */
+	unsigned int		flag_sql_keep_filler : 1;	/* Keep FILLER and morph the name */
 	/* Whether the file's ASSIGN is like "ASSIGN word", not "ASSIGN
            EXTERNAL/DYNAMIC/USING/... word" */
 	unsigned int		flag_assign_no_keyword : 1;

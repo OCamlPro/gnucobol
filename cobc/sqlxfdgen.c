@@ -49,6 +49,34 @@ static char prefix[8] = "";
 static int	prefixlen = 0;
 static int	next_lbl = 1;
 static short COMPtoDig[10]   = {3,8,11,13,16,18,21,23,27};	/* SQL storage size for Binary field */
+static const char *sqlnames[] = {
+	"BIGINT",
+	"CHAR", 
+	"CONSTRAINT",
+	"CREATE",
+	"DATE",
+	"DATETIME",
+	"DECIMAL",
+	"DOUBLE",
+	"FLOAT",
+	"IDENTITY",
+	"INDEX",
+	"INTEGER",
+	"KEY",
+	"NOT",
+	"NULL",
+	"NUMBER",
+	"PRIMARY",
+	"SEQUENCE",
+	"SMALLINT",
+	"TABLE",
+	"TIME",
+	"TIMESTAMP",
+	"UNIQUE",
+	"VARCHAR", 
+	"VARCHAR2", 
+	NULL};
+
 
 void
 cb_save_xfd (char *str)
@@ -307,14 +335,23 @@ compstr(char *tst, const char *val)
 void
 cb_parse_xfd (struct cb_file *fn, struct cb_field *f)
 {
-	int		k, skipeq;
-	char	*p, p1[64], p2[64], p3[64], p4[64], *pw, expr[COB_NORMAL_BUFF];
+	int		i, k, skipeq;
+	char	*p, *pw, expr[COB_NORMAL_BUFF];
+	char	p1[64], p2[64], p3[64], p4[64], p5[64], p6[64];
+	char	*prm[6];
 	if (hasxfd <= 0)
 		return;
+	prm[0] = p1;
+	prm[1] = p2;
+	prm[2] = p3;
+	prm[3] = p4;
+	prm[4] = p5;
+	prm[5] = p6;
 	if (!fn->flag_sql_xfd) {
 		fn->max_sql_name_len = 24;
 		fn->flag_sql_trim_prefix = 1;
 		fn->flag_sql_xfd = 1;
+		fn->flag_sql_keep_filler = 0;
 	}
 	for(k=0; k < hasxfd; k++) {
 		pw = cb_get_param (xfd[k], p1, 1);
@@ -328,19 +365,44 @@ cb_parse_xfd (struct cb_file *fn, struct cb_field *f)
 		p = cb_get_param (pw, p2, skipeq);
 		p = cb_get_param (p, p3, skipeq);
 		p = cb_get_param (p, p4, skipeq);
+		p = cb_get_param (p, p5, skipeq);
+		p = cb_get_param (p, p6, skipeq);
 		if (compstr(p1,"USE") == 0) {
 			strcpy(p1,p2);
 			strcpy(p2,p3);
 			strcpy(p3,p4);
-			strcpy(p4,"");
+			strcpy(p4,p5);
+			strcpy(p5,p6);
+			strcpy(p6,"");
 		}
 		if (compstr(p1,"NAME") == 0 
 		 && p2[0] > ' ') {
 			if (f->level == 1
 			 && fn->sql_name == NULL) {
-				fn->sql_name = cobc_parse_strdup (p2);
+				strcpy (expr,p2);
+				for(i=0; expr[i] != 0; i++) {
+					if(isupper(expr[i]))
+						expr[i] = (char)tolower(expr[i]);
+				}
+				for (i=0; sqlnames[i] != NULL; i++) {
+					if (strcasecmp(sqlnames[i],expr) == 0) {
+						strcat(expr,"_x");
+						break;
+					}
+				}
+				fn->sql_name = cobc_parse_strdup (expr);
 			} else {
 				cb_use_name (f, p2);
+			}
+			for (i=2; i < 5; i++) {
+				if (compstr(prm[i],"KEEP") == 0
+				 && compstr(prm[i+1],"FILLER") == 0) {
+					fn->flag_sql_keep_filler = 1;
+				}
+				if (compstr(prm[i],"KEEP") == 0
+				 && compstr(prm[i+1],"PREFIX") == 0) {
+					fn->flag_sql_trim_prefix = 0;
+				}
 			}
 		} else if (compstr(p1,"GROUP") == 0) {
 			f->flag_sql_group = 1;
@@ -482,34 +544,6 @@ is_all_display (struct cb_field *f)
 	return 1;
 }
 
-static const char *sqlnames[] = {
-	"BIGINT",
-	"CHAR", 
-	"CONSTRAINT",
-	"CREATE",
-	"DATE",
-	"DATETIME",
-	"DECIMAL",
-	"DOUBLE",
-	"FLOAT",
-	"IDENTITY",
-	"INDEX",
-	"INTEGER",
-	"KEY",
-	"NOT",
-	"NULL",
-	"NUMBER",
-	"PRIMARY",
-	"SEQUENCE",
-	"SMALLINT",
-	"TABLE",
-	"TIME",
-	"TIMESTAMP",
-	"UNIQUE",
-	"VARCHAR", 
-	"VARCHAR2", 
-	NULL};
-
 /* Return the SQL column name */
 static char *
 get_col_name (struct cb_file *fl, struct cb_field *f, int sub, int idx[])
@@ -599,7 +633,6 @@ get_col_type (struct cb_field *f)
 		case CB_USAGE_COMP_X:
 		case CB_USAGE_COMP_N:
 		case CB_USAGE_PACKED:
-		case CB_USAGE_COMP_6:
 			if (f->pic) {
 				if (f->pic->scale > 0)
 					sprintf(datatype,"DECIMAL(%d,%d)",f->pic->digits,f->pic->scale);
@@ -607,6 +640,16 @@ get_col_type (struct cb_field *f)
 					sprintf(datatype,"DECIMAL(%d)",f->pic->digits);
 			} else {
 				sprintf(datatype,"DECIMAL(%d)",f->size);
+			}
+			return datatype;
+		case CB_USAGE_COMP_6:
+			if (f->pic) {
+				if (f->pic->scale > 0)
+					sprintf(datatype,"DECIMAL(%d,%d)",f->pic->digits,f->pic->scale);
+				else
+					sprintf(datatype,"DECIMAL(%d)",f->pic->digits);
+			} else {
+				sprintf(datatype,"DECIMAL(%d)",f->size*2);
 			}
 			return datatype;
 		case CB_USAGE_DISPLAY:
@@ -710,6 +753,10 @@ get_xfd_type (struct cb_field *f)
 			break;
 		case CB_USAGE_COMP_6:
 			sqltype = COB_XFDT_COMP6;
+			if (f->pic)
+				sqlsz = f->pic->digits + 1;
+			else
+				sqlsz = f->size * 2 + 1;
 			break;
 		case CB_USAGE_DISPLAY:
 			if (f->pic
@@ -1136,6 +1183,11 @@ write_field (struct cb_file *fl, struct cb_field *f, FILE *fs, FILE *fx, int sub
 			f = f->sister;
 			if (f == NULL)
 				return;
+			continue;
+		}
+		if (f->flag_filler
+		&& !fl->flag_sql_keep_filler) {	/* Skip FILLER fields */
+			f = f->sister;
 			continue;
 		}
 		if (f->redefines == NULL

@@ -143,6 +143,20 @@ db_cmpkey (cob_file *f, unsigned char *keyarea, unsigned char *record, int idx, 
 /* Routines common to both ODBC and OCI interfaces */
 #if defined(WITH_ODBC) || defined(WITH_OCI)
 
+/* Is fld all the given character */
+static int
+isAllChar (void *data, int len, char c)
+{
+	char	*fld = (char*)data;
+	while (len > 0 && *fld == c) {
+		len--;
+		fld++;
+	}
+	if (len == 0)
+		return 1;
+	return 0;
+}
+
 #ifdef COB_DEBUG_LOG
 static char *
 hex_dump (unsigned char *in, int len, char *out)
@@ -422,6 +436,12 @@ bld_fields (struct map_xfd *mx, cob_file *fl)
 	case COB_XFDT_PACKU:
 		mx->recattr.type = COB_TYPE_NUMERIC_PACKED;
 		mx->recattr.flags = COB_FLAG_REAL_BINARY;
+		mx->sqlattr.type = mx->scale == 0 ? COB_TYPE_NUMERIC_DISPLAY : COB_TYPE_NUMERIC_EDITED;
+		mx->sqlattr.pic = bld_picture (mx->sqlpic, 0, mx->digits, mx->scale);
+		break;
+	case COB_XFDT_COMP6:
+		mx->recattr.type = COB_TYPE_NUMERIC_PACKED;
+		mx->recattr.flags = COB_FLAG_NO_SIGN_NIBBLE;
 		mx->sqlattr.type = mx->scale == 0 ? COB_TYPE_NUMERIC_DISPLAY : COB_TYPE_NUMERIC_EDITED;
 		mx->sqlattr.pic = bld_picture (mx->sqlpic, 0, mx->digits, mx->scale);
 		break;
@@ -896,16 +916,16 @@ convert_from_date(
 	&& date.month == 1
 	&& date.day == 1
 	&& date.hour == 0) {
-		memset(dataout,'0',outlen-1);
+		memset(dataout,'0',outlen);
 		dataout[outlen] = 0;
-		return outlen-1;
+		return outlen;
 	}
 	if(date.year == 9999
 	&& date.month == 12
 	&& date.day == 31) {
-		memset(dataout,'9',outlen-1);
+		memset(dataout,'9',outlen);
 		dataout[outlen] = 0;
-		return outlen-1;
+		return outlen;
 	}
 	if(df->yyRule == '+') {
 		date.year -= df->yyAdj;
@@ -2247,66 +2267,102 @@ cob_file_to_xfd (struct db_state *db, struct file_xfd *fx, cob_file *fl)
 				sqlwrk.size = fx->map[k].dtfrm->digits;
 				cob_move (&fx->map[k].recfld, &sqlwrk);
 				sqlbuf[sqlwrk.size] = 0;
-				dl = convert_to_date (db, fx->map[k].dtfrm, (char*)sqlbuf, (int)sqlwrk.size, 
-								(char*)fx->map[k].sqlfld.data, (int)fx->map[k].sqlfld.size, &nx);
-				fx->map[k].sqlfld.data[dl] = 0;
-#ifdef COB_DEBUG_LOG
-				if (fx->map[k].type == COB_XFDT_PIC9L
-				 || fx->map[k].type == COB_XFDT_PIC9LS
-				 || fx->map[k].type == COB_XFDT_PIC9T
-				 || fx->map[k].type == COB_XFDT_PIC9TS
-				 || fx->map[k].type == COB_XFDT_PIC9S
-				 || fx->map[k].type == COB_XFDT_PIC9U) {
-					sprintf(hexwrk,"'%.*s'",(int)fx->map[k].recfld.size,fx->map[k].recfld.data);
+				if (!fx->map[k].notnull
+				 &&	isAllChar (sqlwrk.data, (int)sqlwrk.size, 0x00)) {
+					fx->map[k].setnull = 1;
+					fx->map[k].sqlfld.data[0] = 0;
 				} else {
-					hex_dump( fx->map[k].recfld.data,(int)fx->map[k].recfld.size, hexwrk);
+					dl = convert_to_date (db, fx->map[k].dtfrm, (char*)sqlbuf, (int)sqlwrk.size, 
+									(char*)fx->map[k].sqlfld.data, (int)fx->map[k].sqlfld.size, &nx);
+					fx->map[k].sqlfld.data[dl] = 0;
 				}
-				DEBUG_LOG("db",("%3d: Copy date '%s' %s ct:%02d ht:%d st:%d d:%d z:%d :%s\n",k,
-							fx->map[k].dtfrm->format,fx->map[k].colname,
-							fx->map[k].type, fx->map[k].hostType, fx->map[k].sqlType,
-							fx->map[k].sqlDecimals, fx->map[k].sqlColSize, 
-							nx?"Ok":"Bad Date"));
-				DEBUG_LOG ("db",(" %s ->  Temp:%.*s -> SQL:%.*s\n",hexwrk,
-									sqlwrk.size,sqlbuf,
-									fx->map[k].sqlsize,fx->map[k].sqlfld.data));
+#ifdef COB_DEBUG_LOG
+				if (fx->map[k].setnull) {
+					hex_dump( fx->map[k].recfld.data,(int)fx->map[k].recfld.size, hexwrk);
+					DEBUG_LOG("db",("%3d: Copy date '%s' had %s; set NULL\n",k,
+								fx->map[k].colname,hexwrk));
+				} else {
+					if (fx->map[k].type == COB_XFDT_PIC9L
+					 || fx->map[k].type == COB_XFDT_PIC9LS
+					 || fx->map[k].type == COB_XFDT_PIC9T
+					 || fx->map[k].type == COB_XFDT_PIC9TS
+					 || fx->map[k].type == COB_XFDT_PIC9S
+					 || fx->map[k].type == COB_XFDT_PIC9U) {
+						sprintf(hexwrk,"'%.*s'",(int)fx->map[k].recfld.size,fx->map[k].recfld.data);
+					} else {
+						hex_dump( fx->map[k].recfld.data,(int)fx->map[k].recfld.size, hexwrk);
+					}
+					DEBUG_LOG("db",("%3d: Copy date '%s' %s ct:%02d ht:%d st:%d d:%d z:%d :%s\n",k,
+								fx->map[k].dtfrm->format,fx->map[k].colname,
+								fx->map[k].type, fx->map[k].hostType, fx->map[k].sqlType,
+								fx->map[k].sqlDecimals, fx->map[k].sqlColSize, 
+								nx?"Ok":"Bad Date"));
+					DEBUG_LOG ("db",(" %s ->  Temp:%.*s -> SQL:%.*s\n",hexwrk,
+										sqlwrk.size,sqlbuf,
+										fx->map[k].sqlsize,fx->map[k].sqlfld.data));
+				}
 #endif
 			} else if (fx->map[k].type == COB_XFDT_PICX
 			 		|| fx->map[k].type == COB_XFDT_PICA
 			 		|| fx->map[k].type == COB_XFDT_VARX) {
-				memcpy (fx->map[k].sdata,fx->map[k].recfld.data,fx->map[k].size);
-				fx->map[k].sdata[fx->map[k].size] = 0;
-				DEBUG_LOG("db",("%3d: Copy %s PIC X(%d)  ht:%d st:%d z:%d\n",k,
-							fx->map[k].colname, fx->map[k].size,
-							fx->map[k].hostType, fx->map[k].sqlType,
-							fx->map[k].sqlColSize));
-				DEBUG_LOG ("db",("   '%.*s'\n",(int)fx->map[k].recfld.size,
-										fx->map[k].recfld.data));
+				if (!fx->map[k].notnull
+				 &&	isAllChar (fx->map[k].recfld.data, (int)fx->map[k].recfld.size, 0x00)) {
+					fx->map[k].setnull = 1;
+					fx->map[k].sqlfld.data[0] = 0;
+					DEBUG_LOG("db",("%3d: Copy '%s' LOW-VALUES; set NULL\n",k,fx->map[k].colname));
+				} else {
+					memcpy (fx->map[k].sdata,fx->map[k].recfld.data,fx->map[k].size);
+					fx->map[k].sdata[fx->map[k].size] = 0;
+					DEBUG_LOG("db",("%3d: Copy %s PIC X(%d)  ht:%d st:%d z:%d\n",k,
+								fx->map[k].colname, fx->map[k].size,
+								fx->map[k].hostType, fx->map[k].sqlType,
+								fx->map[k].sqlColSize));
+					DEBUG_LOG ("db",("   '%.*s'\n",(int)fx->map[k].recfld.size,
+											fx->map[k].recfld.data));
+				}
 			} else if (fx->map[k].type == COB_XFDT_FLOAT) {
 				memcpy (fx->map[k].sdata,fx->map[k].recfld.data,fx->map[k].size);
 			} else if (fx->map[k].type == COB_XFDT_BIN) {
 				memcpy (fx->map[k].sdata,fx->map[k].recfld.data,fx->map[k].size);
 				fx->map[k].sdata[fx->map[k].size] = 0;
 			} else {
-				cob_move (&fx->map[k].recfld, &fx->map[k].sqlfld);
-				fx->map[k].sqlfld.data[fx->map[k].sqlfld.size] = 0;
-#ifdef COB_DEBUG_LOG
-				DEBUG_LOG("db",("%3d: Copy %s type:%02d %dv%d ht:%d st:%d d:%d z:%d\n",k,
-							fx->map[k].colname,fx->map[k].type,
-							fx->map[k].digits,fx->map[k].scale,
-							fx->map[k].hostType, fx->map[k].sqlType,
-							fx->map[k].sqlDecimals, fx->map[k].sqlColSize));
-				if (fx->map[k].type == COB_XFDT_PIC9L
+				if (fx->map[k].type == COB_XFDT_PIC9S
+				 || fx->map[k].type == COB_XFDT_PIC9L
 				 || fx->map[k].type == COB_XFDT_PIC9LS
 				 || fx->map[k].type == COB_XFDT_PIC9T
 				 || fx->map[k].type == COB_XFDT_PIC9TS
 				 || fx->map[k].type == COB_XFDT_PIC9U) {
-					DEBUG_LOG ("db",("   '%.*s'\n",(int)fx->map[k].recfld.size,
-										fx->map[k].recfld.data));
+					if (!fx->map[k].notnull
+					 &&	isAllChar (fx->map[k].recfld.data, (int)fx->map[k].recfld.size, 0x00)) {
+						fx->map[k].setnull = 1;
+						fx->map[k].sqlfld.data[0] = 0;
+						DEBUG_LOG("db",("%3d: Copy '%s' LOW-VALUES; set NULL\n",k,fx->map[k].colname));
+					} else
+					if (isAllChar (fx->map[k].recfld.data, (int)fx->map[k].recfld.size, ' ')) {
+						strcpy((char*)fx->map[k].sqlfld.data, "0");
+						DEBUG_LOG("db",("%3d: Copy '%s' SPACES; set ZERO\n",k,fx->map[k].colname));
+					} else {
+						cob_move (&fx->map[k].recfld, &fx->map[k].sqlfld);
+						fx->map[k].sqlfld.data[fx->map[k].sqlfld.size] = 0;
+						DEBUG_LOG("db",("%3d: Copy %s type:%02d %dv%d ht:%d st:%d d:%d z:%d\n",k,
+									fx->map[k].colname,fx->map[k].type,
+									fx->map[k].digits,fx->map[k].scale,
+									fx->map[k].hostType, fx->map[k].sqlType,
+									fx->map[k].sqlDecimals, fx->map[k].sqlColSize));
+						DEBUG_LOG ("db",("   '%.*s'\n",(int)fx->map[k].recfld.size,
+											fx->map[k].recfld.data));
+					}
 				} else {
+					cob_move (&fx->map[k].recfld, &fx->map[k].sqlfld);
+					fx->map[k].sqlfld.data[fx->map[k].sqlfld.size] = 0;
+					DEBUG_LOG("db",("%3d: Copy %s type:%02d %dv%d ht:%d st:%d d:%d z:%d\n",k,
+								fx->map[k].colname,fx->map[k].type,
+								fx->map[k].digits,fx->map[k].scale,
+								fx->map[k].hostType, fx->map[k].sqlType,
+								fx->map[k].sqlDecimals, fx->map[k].sqlColSize));
 					DEBUG_DUMP("db",fx->map[k].recfld.data,fx->map[k].recfld.size);
 					DEBUG_DUMP("db",fx->map[k].sqlfld.data,fx->map[k].sqlfld.size);
 				}
-#endif
 			}
 			k++;
 
@@ -2344,13 +2400,15 @@ cob_xfd_to_file (struct db_state *db, struct file_xfd *fx, cob_file *fl)
 	char		hexwrk[80];
 #endif
 	for (k=0; k < fx->nmap; ) {
-		if (fx->map[k].setnull) {
-			memset (fx->map[k].sqlfld.data, 0, fx->map[k].sqlfld.size);
-			k++;
-			continue;
-		}
 		if (fx->map[k].cmd == XC_DATA
 		 && fx->map[k].colname) {
+			if (fx->map[k].setnull) {
+				memset (fx->map[k].recfld.data, 0, fx->map[k].recfld.size);
+				memset (fx->map[k].sqlfld.data, 0, fx->map[k].sqlfld.size);
+				DEBUG_LOG("db",("%3d: Read %s  Null -> LOW-VALUES\n",k,fx->map[k].colname));
+				k++;
+				continue;
+			}
 			if (fx->map[k].dtfrm) {
 				memcpy(&sqlwrk,&fx->map[k].sqlfld,sizeof(cob_field));
 				sqlwrk.data = (unsigned char *)sqlbuf;
@@ -2365,34 +2423,28 @@ cob_xfd_to_file (struct db_state *db, struct file_xfd *fx, cob_file *fl)
 				DEBUG_LOG("db",("%3d: Read date '%s' %s type: %02d \n",k,
 							fx->map[k].dtfrm->format,fx->map[k].colname,fx->map[k].type));
 				hex_dump( fx->map[k].recfld.data,fx->map[k].recfld.size, hexwrk);
-				DEBUG_LOG ("db",("   SQL:%.*s -> Temp:%.*s -> 0x%s\n",
+				DEBUG_LOG ("db",("   SQL:%.*s -> Temp:%.*s -> %s\n",
 									fx->map[k].sqlsize,fx->map[k].sqlfld.data,
 									sqlwrk.size,sqlbuf,hexwrk));
 #endif
 			} else if (fx->map[k].type == COB_XFDT_PICX
 			 		|| fx->map[k].type == COB_XFDT_PICA
 			 		|| fx->map[k].type == COB_XFDT_VARX) {
-				if (fx->map[k].setnull) {
-					memset(fx->map[k].recfld.data,0,fx->map[k].recfld.size);
-					DEBUG_LOG("db",("%3d: Read %s PIC X(%d) Null -> LOW-VALUES\n",k,
-								fx->map[k].colname,fx->map[k].sqlinlen));
-				} else {
-					slen = fx->map[k].sqlfld.size = fx->map[k].sqlinlen;
-					sptr = fx->map[k].sqlfld.data;
-					flen = (int)fx->map[k].recfld.size;
-					fptr = fx->map[k].recfld.data;
-					/* Copy to first NUL and then space fill COBOL field */
-					for(i=j=0; i < flen && j < slen && *sptr != 0; i++,j++) 
-						*fptr++ = *sptr++;
-					while(i < flen) {
-						*fptr++ = ' ';
-						i++;
-					}
-					DEBUG_LOG("db",("%3d: Read %s PIC X(%d)\n",k,
-								fx->map[k].colname,fx->map[k].sqlinlen));
-					DEBUG_LOG ("db",("   '%.*s'\n",(int)fx->map[k].recfld.size,
-											fx->map[k].recfld.data));
+				slen = fx->map[k].sqlfld.size = fx->map[k].sqlinlen;
+				sptr = fx->map[k].sqlfld.data;
+				flen = (int)fx->map[k].recfld.size;
+				fptr = fx->map[k].recfld.data;
+				/* Copy to first NUL and then space fill COBOL field */
+				for(i=j=0; i < flen && j < slen && *sptr != 0; i++,j++) 
+					*fptr++ = *sptr++;
+				while(i < flen) {
+					*fptr++ = ' ';
+					i++;
 				}
+				DEBUG_LOG("db",("%3d: Read %s PIC X(%d)\n",k,
+							fx->map[k].colname,fx->map[k].sqlinlen));
+				DEBUG_LOG ("db",("   '%.*s'\n",(int)fx->map[k].recfld.size,
+										fx->map[k].recfld.data));
 			} else if (fx->map[k].type == COB_XFDT_FLOAT) {
 				memcpy (fx->map[k].recfld.data,fx->map[k].sdata,fx->map[k].size);
 			} else if (fx->map[k].type == COB_XFDT_BIN) {
