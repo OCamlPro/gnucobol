@@ -1,4 +1,8 @@
 
+2021-01-28  Ron Norman <rjn@inglenet.com>
+
+	* fsqlxfd.c: Fixes to handle hundreds of seconds and TIME only fields
+
 2021-01-26  Ron Norman <rjn@inglenet.com>
 
 	* fsqlxfd.c: Fixes to handle COMP-6

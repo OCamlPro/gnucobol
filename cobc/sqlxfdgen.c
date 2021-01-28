@@ -207,10 +207,37 @@ static struct sql_date lcl[1];	/* Make static as it may be returned */
 				}
 				sdf->mmLen = (unsigned char)len;
 			}
+		} else if(*dp == 'N') {		/* Minutes of hour */
+			sdf->hasTime = 1;
+			sdf->miPos = (unsigned char)pos;
+			while(*dp == 'N') {
+				len++;
+				dp++;
+				pos++;
+			}
+			sdf->miLen = len;
 		} else if(*dp == 'D') {		/* Day of Month */
 			sdf->hasDate = 1;
 			sdf->ddPos = (unsigned char)pos;
 			while(*dp == 'D') {
+				len++;
+				dp++;
+				pos++;
+			}
+			sdf->ddLen = len;
+		} else if(*dp == 'J') {		/* Julian Day of year */
+			sdf->hasDate = 1;
+			sdf->ddPos = (unsigned char)pos;
+			while(*dp == 'J') {
+				len++;
+				dp++;
+				pos++;
+			}
+			sdf->ddLen = len;
+		} else if(*dp == 'E') {		/* Julian Day of year */
+			sdf->hasDate = 1;
+			sdf->ddPos = (unsigned char)pos;
+			while(*dp == 'E') {
 				len++;
 				dp++;
 				pos++;
@@ -247,6 +274,15 @@ static struct sql_date lcl[1];	/* Make static as it may be returned */
 				pos++;
 			}
 			sdf->ssLen = len;
+		} else if(*dp == 'T') {		/* Hundredths of Second */
+			sdf->hasTime = 1;
+			sdf->huPos = pos;
+			while(*dp == 'T') {
+				len++;
+				dp++;
+				pos++;
+			}
+			sdf->huLen = (unsigned char)len;
 		} else if(*dp == 'U') {		/* Hundredths of Second */
 			sdf->hasTime = 1;
 			sdf->huPos = pos;
@@ -260,6 +296,7 @@ static struct sql_date lcl[1];	/* Make static as it may be returned */
 				|| *dp == '-' 
 				|| *dp == ' ' 
 				|| *dp == '.' 
+				|| *dp == ',' 
 				|| *dp == ':') {	/* Noise/editing characters */
 			dp++;
 			pos++;
@@ -339,6 +376,7 @@ cb_parse_xfd (struct cb_file *fn, struct cb_field *f)
 	char	*p, *pw, expr[COB_NORMAL_BUFF];
 	char	p1[64], p2[64], p3[64], p4[64], p5[64], p6[64];
 	char	*prm[6];
+	struct sql_date sdf[1];
 	if (hasxfd <= 0)
 		return;
 	prm[0] = p1;
@@ -468,14 +506,17 @@ cb_parse_xfd (struct cb_file *fn, struct cb_field *f)
 			} else {
 				f->sql_date_format = cobc_parse_strdup ("YYYYMMDD");
 			}
-			if ((err = cb_date_str (NULL, f->sql_date_format)) != NULL) {
+			if ((err = cb_date_str (sdf, f->sql_date_format)) != NULL) {
 				cb_source_line--;
 				cb_error (_("DATE %s incorrect at '%c'"), f->sql_date_format, *err);
 				cb_source_line++;
 				cobc_parse_free (f->sql_date_format);
 				f->sql_date_format = NULL;
 			} else {
-				f->flag_sql_date = 1;
+				if (sdf->hasDate)
+					f->flag_sql_date = 1;
+				else if (sdf->hasTime)
+					f->flag_sql_time = 1;
 			}
 			cb_use_name (f, p3);
 		} else if (compstr(p1,"WHEN") == 0) {
@@ -626,6 +667,8 @@ get_col_type (struct cb_field *f)
 	} else
 	if (f->flag_sql_date) {
 		sprintf(datatype,"DATE");
+	} else if (f->flag_sql_time) {
+		sprintf(datatype,"TIME");
 	} else {
 		switch (f->usage) {
 		case CB_USAGE_BINARY:
@@ -1431,6 +1474,7 @@ output_xfd_file (struct cb_file *fl)
 		fprintf(fx,",%d:%d",sdf->miPos,sdf->miLen);
 		fprintf(fx,",%d:%d",sdf->ssPos,sdf->ssLen);
 		fprintf(fx,",%d:%d",sdf->ccPos,sdf->ccLen);
+		fprintf(fx,",%d:%d",sdf->huPos,sdf->huLen);
 		fprintf(fx,"\n");
 	}
 	fprintf(fs,"DROP TABLE %s;\n",tblname);

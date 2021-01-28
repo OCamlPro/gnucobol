@@ -1,4 +1,9 @@
 
+2021-01-28  Ron Norman <rjn@inglenet.com>
+
+	* sqlxfdgen.c: Added checks for NN - Minutes, JJJ - day of year
+				EEE - day of year, TT - hundreds of second
+
 2021-01-27  Ron Norman <rjn@inglenet.com>
 
 	* sqlxfdgen.c: Verify supplied SQL column name has no conflicts

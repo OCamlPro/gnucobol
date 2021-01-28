@@ -924,7 +924,8 @@ struct cb_field {
 	unsigned int flag_sql_char	: 1;		/* Store field as CHAR */
 	unsigned int flag_sql_varchar : 1;		/* Store field as VARCHAR */
 	unsigned int flag_sql_numeric : 1;		/* Store field as DECIMAL */
-	unsigned int flag_sql_date : 1;			/* Store field as DATE */
+	unsigned int flag_sql_date : 1;			/* Store field as DATE (includes TIME) */
+	unsigned int flag_sql_time : 1;			/* Store field as TIME (no DATE) */
 	unsigned int flag_sql_group : 1;		/* Keep group as a field */
 	unsigned int flag_validated : 1;	/* 'usage' was validated */
 	unsigned int flag_usage_defined : 1;	/* 'usage' was specifically coded */

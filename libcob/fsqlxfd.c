@@ -757,6 +757,8 @@ convert_to_date(
 		date.hour	= getInt(datain,df->hhPos,df->hhLen);
 		date.minute	= getInt(datain,df->miPos,df->miLen);
 		date.second	= getInt(datain,df->ssPos,df->ssLen);
+		if (df->huLen > 0)
+			date.hund	= getInt(datain,df->huPos,df->huLen);
 		if(date.hour > 23
 		|| date.minute > 59
 		|| date.second > 59)
@@ -768,10 +770,12 @@ convert_to_date(
 		date.minute	= secsaftmid / 60;
 		date.second	= secsaftmid - (date.minute * 60);
 	}
-	if(date.month < 1 || date.month > 12)
-		bDateBad = TRUE;
-	if(date.day < 1 || date.day > days[date.month-1])
-		bDateBad = TRUE;
+	if (df->hasDate) {
+		if(date.month < 1 || date.month > 12)
+			bDateBad = TRUE;
+		if(date.day < 1 || date.day > days[date.month-1])
+			bDateBad = TRUE;
+	}
 	if(bDateZero) {
 		if(db->mssql)
 			date.year = 1753;
@@ -835,8 +839,12 @@ convert_to_date(
 		}
 	} else {
 		if (df->hasTime && !df->hasDate) {
-			k = sprintf(dataout,"%02d:%02d:%02d.%03d",
+			if(df->huLen > 0)
+				k = sprintf(dataout,"%02d:%02d:%02d.%03d",
 								date.hour,date.minute,date.second,date.hund);
+			else
+				k = sprintf(dataout,"%02d:%02d:%02d",
+								date.hour,date.minute,date.second);
 		} else
 		if(outlen > 11 && df->hasTime) {
 			k = sprintf(dataout,"%04d-%02d-%02d %02d:%02d:%02d.%03d",
@@ -961,6 +969,8 @@ convert_from_date(
 		putNum(dataout,df->hhPos,df->hhLen,date.hour);
 		putNum(dataout,df->miPos,df->miLen,date.minute);
 		putNum(dataout,df->ssPos,df->ssLen,date.second);
+		if(df->huLen > 0)
+			putNum(dataout,df->huPos,df->huLen,date.hund);
 	} else if(df->ssLen > 4) {		/* Seconds past midnight */
 		secsaftmid = date.hour * (60*60) + date.minute * 60 + date.second;
 		putNum(dataout,df->ssPos,df->ssLen,secsaftmid);
@@ -1244,6 +1254,7 @@ cob_load_xfd (cob_file *fl, char *alt_name, int indsize)
 				p = getPosLen (p, &df->miPos,&df->miLen);
 				p = getPosLen (p, &df->ssPos,&df->ssLen);
 				p = getPosLen (p, &df->ccPos,&df->ccLen);
+				p = getPosLen (p, &df->huPos,&df->huLen);
 			}
 			continue;
 		}
@@ -2267,6 +2278,7 @@ cob_file_to_xfd (struct db_state *db, struct file_xfd *fx, cob_file *fl)
 				sqlwrk.size = fx->map[k].dtfrm->digits;
 				cob_move (&fx->map[k].recfld, &sqlwrk);
 				sqlbuf[sqlwrk.size] = 0;
+				nx = 0;
 				if (!fx->map[k].notnull
 				 &&	isAllChar (sqlwrk.data, (int)sqlwrk.size, 0x00)) {
 					fx->map[k].setnull = 1;
