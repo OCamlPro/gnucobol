@@ -1424,12 +1424,12 @@ static void
 cobc_error_name (const char *name, const enum cobc_name_type type,
 		 const enum name_error_reason reason)
 {
-	const char	*s;
+	const char *s, *dots = "";
 
 	switch (reason) {
 	case INVALID_LENGTH:	/* > COB_MAX_NAMELEN ("normal mode ") || > COB_MAX_WORDLEN */
 		s = _(" - length exceeds maximum");
-		strcpy ((char *)(name + 32), "...");
+		dots = "...";
 		break;
 	case EMPTY_NAME:
 		s = _(" - name cannot be empty");
@@ -1465,7 +1465,7 @@ cobc_error_name (const char *name, const enum cobc_name_type type,
 	default:
 		/* internal rare error (should be raised for 'a-[150 times]-b'),
 		   no need for translation */
-		cobc_err_msg ("unknown name error '%s'%s", name, s);
+		cobc_err_msg ("unknown name error '%.32s%s'%s", name, dots, s);
 		break;
 	}
 }
