@@ -95,7 +95,7 @@
 
 #else
 #define GC_C_VERSION_PRF	""
-#define GC_C_VERSION	_("unknown")
+#define GC_C_VERSION	        "unknown"
 #endif
 
 
