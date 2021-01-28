@@ -394,7 +394,6 @@ cb_parse_xfd (struct cb_file *fn, struct cb_field *f)
 	for(k=0; k < hasxfd; k++) {
 		pw = cb_get_param (xfd[k], p1, 1);
 		if (compstr(p1,"WHEN") == 0
-		 || compstr(p1,"DATE") == 0
 		 || compstr(p1,"AND") == 0
 		 || compstr(p1,"OR") == 0)
 			skipeq = 0;
