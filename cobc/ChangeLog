@@ -2,6 +2,10 @@
 
 	* cobc.c: apply spatch/cast.spatch
 
+2021-01-28  James K. Lowden  <jklowden@symas.com>
+
+	* cobc.c (cobc_error_name): do not write to const parameter
+
 2021-01-28  Ron Norman <rjn@inglenet.com>
 
 	* sqlxfdgen.c: Added checks for NN - Minutes, JJJ - day of year
