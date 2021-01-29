@@ -103,7 +103,7 @@ struct strcache {
 const char		*cb_source_file = NULL;
 const char		*cb_cobc_build_stamp = NULL;
 const char		*demangle_name = NULL;
-const char		*cb_storage_file_name = NULL;
+      char		*cb_storage_file_name = NULL;
 const char		*cb_call_extfh = NULL;
 const char		*cb_sqldb_name = NULL;
 const char		*cb_sqldb_schema = NULL;
@@ -562,6 +562,20 @@ static int	process			(const char *);
 
 /* cobc functions */
 
+void
+cobc_free (void * mptr)
+{
+	/* LCOV_EXCL_START */
+	if (!mptr) {
+		cobc_err_msg (_("call to %s with NULL pointer"), "cobc_free");
+		cobc_abort_terminate (1);
+	}
+	/* LCOV_EXCL_STOP */
+	free (mptr);
+}
+// defeat -Wdiscarded-qualifiers
+#define cobc_free(A) cobc_free( (void*)(A) )
+
 static void
 cobc_free_mem (void)
 {
@@ -903,18 +917,6 @@ cobc_malloc (const size_t size)
 	return mptr;
 }
 
-void
-cobc_free (void * mptr)
-{
-	/* LCOV_EXCL_START */
-	if (!mptr) {
-		cobc_err_msg (_("call to %s with NULL pointer"), "cobc_free");
-		cobc_abort_terminate (1);
-	}
-	/* LCOV_EXCL_STOP */
-	free (mptr);
-}
-
 void *
 cobc_strdup (const char *dupstr)
 {
@@ -1108,6 +1110,8 @@ cobc_main_free (void *prevptr)
 	}
 	cobc_free (curr);
 }
+#define cobc_main_free(A) cobc_main_free ((void *)(A))
+
 
 /* Memory allocate/strdup/reallocate/free for parser */
 void *
@@ -2555,8 +2559,9 @@ cobc_options_error_build (void)
 static void
 cobc_def_dump_opts (const char *opt, const int on)
 {
-	char	*p, *q;
-	int 	dump_to_set;
+	char *p;
+	const char *q;
+	int dump_to_set;
 
 	if (!strcasecmp (opt, "ALL")) {
 		if (on) {
@@ -4635,13 +4640,11 @@ static int
 process (const char *cmd)
 {
 	char	*p;
-	char	*buffptr;
+	char	*buffptr = cobc_strdup(cmd);
 	size_t	clen;
 	int	ret;
 
-	if (strchr (cmd, '$') == NULL) {
-		buffptr = cmd;
-	} else {
+	if (strchr (cmd, '$') != NULL) {
 		clen = strlen (cmd) + 64U;
 		clen = clen + 6U;
 		buffptr = cobc_malloc(clen);
@@ -4659,9 +4662,7 @@ process (const char *cmd)
 
 	ret = call_system (buffptr);
 
-	if (buffptr != cmd) {
-		cobc_free (buffptr);
-	}
+	cobc_free (buffptr);
 
 	return !!ret;
 }
@@ -4986,8 +4987,8 @@ print_program_data (const char *data)
 	fprintf (cb_src_list_file, "%s\n", data);
 }
 
-static char *
-check_filler_name (char *name)
+static const char *
+check_filler_name (const char *name)
 {
 	if (strlen (name) >= 6 && memcmp (name, "FILLER", 6) == 0) {
 		name = "FILLER";

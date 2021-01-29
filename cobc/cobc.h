@@ -475,7 +475,7 @@ extern unsigned int		cobc_gen_listing;
 
 extern const char		*demangle_name;
 extern FILE			*cb_storage_file;
-extern const char		*cb_storage_file_name;
+extern char		        *cb_storage_file_name;
 
 extern char			**cb_saveargv;
 extern int			cb_saveargc;

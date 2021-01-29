@@ -9144,6 +9144,10 @@ cob_debug_dump (void *pMem, int len)
 #else
 /* Dummy logging routines when --enable-debuglog not chosen */
 /* This will avoid possible runtime issues of a missing symbol */
+int cob_debug_logit (int level, char *module);
+int cob_debug_dump (void *pMem, int len);
+int cob_debug_logger (const char *fmt, ...);
+
 int cob_debug_logit (int level, char *module) { return 1; }
 int cob_debug_dump (void *pMem, int len) { return 0; }
 int cob_debug_logger (const char *fmt, ...) { return 0; }
