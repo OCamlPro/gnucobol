@@ -1,3 +1,6 @@
+2021-01-28  James K. Lowden  <jklowden@symas.com>
+
+	* sysdefines.h (GC_C_VERSION): let "unknown" be token-pasted, too
 
 2021-01-28  Ron Norman <rjn@inglenet.com>
 
@@ -6,9 +9,9 @@
 2021-01-26  Ron Norman <rjn@inglenet.com>
 
 	* fsqlxfd.c: Fixes to handle COMP-6
-				If PIC 9 field is all SPACES, then store in SQL as ZERO.
-				Fix field defined as a DATE that had all zeros or nines.
-				If PIC X field is LOW-VALUES then column is set to NULL
+			If PIC 9 field is all SPACES, then store in SQL as ZERO.
+			Fix field defined as a DATE that had all zeros or nines.
+			If PIC X field is LOW-VALUES then column is set to NULL
 
 2021-01-23  Ron Norman <rjn@inglenet.com>
 

@@ -1,3 +1,6 @@
+2021-01-29  James K. Lowden  <jklowden@symas.com>
+
+	* cobc.c: apply spatch/cast.spatch
 
 2021-01-28  Ron Norman <rjn@inglenet.com>
 
@@ -7,13 +10,14 @@
 2021-01-27  Ron Norman <rjn@inglenet.com>
 
 	* sqlxfdgen.c: Verify supplied SQL column name has no conflicts
-				Fixes for COMP-6 fields
-				New options for the first XFD of a record.
-				KEEP FILLER - indicates to keep and morph the name 
-					of FILLER fields, otherwise FILLER does not
-					go into the SQL table.
-				KEEP PREFIX - indicates to keep the common prefix
-					of fields in the record. The default is to remove it.
+			Fixes for COMP-6 fields
+			New options for the first XFD of a record.
+			KEEP FILLER - indicates to keep and morph the name
+				of FILLER fields, otherwise FILLER does not
+				go into the SQL table.
+			KEEP PREFIX - indicates to keep the common prefix
+				of fields in the record. The default is to
+				remove it.
 
 2021-01-22  Ron Norman <rjn@inglenet.com>
 

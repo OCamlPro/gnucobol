@@ -784,7 +784,7 @@ free_list_file (struct list_files *list_files_struct)
 			free_list_skip (list_files_struct->skip_head);
 		}
 		if (list_files_struct->name) {
-			cobc_free ((char *) list_files_struct->name);
+			cobc_free(list_files_struct->name);
 		}
 
 		/* Delete the struct itself */
@@ -892,7 +892,7 @@ cobc_malloc (const size_t size)
 {
 	void	*mptr;
 
-	mptr = calloc ((size_t)1, size);
+	mptr = calloc(1, size);
 	/* LCOV_EXCL_START */
 	if (!mptr) {
 		cobc_err_msg (_("cannot allocate %d bytes of memory"),
@@ -979,7 +979,7 @@ cobc_main_malloc (const size_t size)
 {
 	struct cobc_mem_struct	*m;
 
-	m = calloc ((size_t)1, COBC_MEM_SIZE + size);
+	m = calloc(1, COBC_MEM_SIZE + size);
 	/* LCOV_EXCL_START */
 	if (!m) {
 		cobc_err_msg (_("cannot allocate %d bytes of memory"),
@@ -1039,7 +1039,7 @@ cobc_main_realloc (void *prevptr, const size_t size)
 	struct cobc_mem_struct	*curr;
 	struct cobc_mem_struct	*prev;
 
-	m = calloc ((size_t)1, COBC_MEM_SIZE + size);
+	m = calloc(1, COBC_MEM_SIZE + size);
 	/* LCOV_EXCL_START */
 	if (!m) {
 		cobc_err_msg (_("cannot allocate %d bytes of memory"),
@@ -1115,7 +1115,7 @@ cobc_parse_malloc (const size_t size)
 {
 	struct cobc_mem_struct	*m;
 
-	m = calloc ((size_t)1, COBC_MEM_SIZE + size);
+	m = calloc(1, COBC_MEM_SIZE + size);
 	/* LCOV_EXCL_START */
 	if (!m) {
 		cobc_err_msg (_("cannot allocate %d bytes of memory"),
@@ -1155,7 +1155,7 @@ cobc_parse_realloc (void *prevptr, const size_t size)
 	struct cobc_mem_struct	*curr;
 	struct cobc_mem_struct	*prev;
 
-	m = calloc ((size_t)1, COBC_MEM_SIZE + size);
+	m = calloc(1, COBC_MEM_SIZE + size);
 	/* LCOV_EXCL_START */
 	if (!m) {
 		cobc_err_msg (_("cannot allocate %d bytes of memory"),
@@ -1231,7 +1231,7 @@ cobc_plex_malloc (const size_t size)
 {
 	struct cobc_mem_struct	*m;
 
-	m = calloc ((size_t)1, COBC_MEM_SIZE + size);
+	m = calloc(1, COBC_MEM_SIZE + size);
 	/* LCOV_EXCL_START */
 	if (!m) {
 		cobc_err_msg (_("cannot allocate %d bytes of memory"),
@@ -1279,7 +1279,7 @@ cobc_check_string (const char *dupstr)
 	   this loop is extensively used for comparision of picture strings,
 	   it consumes ~6% of the compilation time with ~3% in strcmp */
 	for (s = base_string; s; s = s->next) {
-		if (!strcmp (dupstr, (const char *)s->val)) {
+		if (!strcmp(dupstr, s->val)) {
 			return s->val;
 		}
 	}
@@ -1512,8 +1512,8 @@ cobc_check_valid_name (const char *name, const enum cobc_name_type prechk)
 
 	/* Check name does not begin with the libcob prefixes cob_ and COB_. */
 	if (prechk && len > 3 &&
-	    (!memcmp (name, "cob_", (size_t)4) ||
-	     !memcmp (name, "COB_", (size_t)4))) {
+	    (!memcmp(name, "cob_", 4) ||
+	     !memcmp(name, "COB_", 4))) {
 		cobc_error_name (name, prechk, GNUCOBOL_PREFIX);
 		return 1;
 	}
@@ -1779,16 +1779,16 @@ cobc_deciph_optarg (const char *p, const int allow_quote)
 	s = (const unsigned char *)p;
 	if (allow_quote) {
 		if (*s == '"' || *s == '\'') {
-			if (len != 3 || *(s + 2) != *s) {
+			if (len != 3 || s[2] != *s) {
 				return -1;
 			}
-			return (int)(*(s + 1));
+			return s[1];
 		}
 		if (*s < '0' || *s > '9') {
 			if (len != 1) {
 				return -1;
 			}
-			return (int)*s;
+			return *s;
 		}
 	}
 	n = 0;
@@ -1800,7 +1800,7 @@ cobc_deciph_optarg (const char *p, const int allow_quote)
 		n += (s[i] & 0x0F);
 		if (n > INT_MAX) return INT_MAX;
 	}
-	return (int)n;
+	return n;
 }
 
 /* exit to OS before processing a COBOL/C source file */
@@ -2168,12 +2168,12 @@ cobc_abort_msg (void)
 				prog_type = "PROGRAM-ID";
 			}
 			if (current_program->orig_program_id) {
-				prog_id = (char *)current_program->orig_program_id;
+				prog_id = current_program->orig_program_id;
 			} else {
-				prog_id = (char *)_("unknown");
+				prog_id = _("unknown");
 			}
 		} else {
-			prog_type = prog_id = (char *)_("unknown");
+			prog_type = prog_id = _("unknown");
 		}
 		if (!cb_source_line) {
 			cobc_err_msg (_("aborting codegen for %s (%s: %s)"),
@@ -2570,7 +2570,7 @@ cobc_def_dump_opts (const char *opt, const int on)
 	p = cobc_strdup (opt);
 	q = strtok (p, ",");
 	if (!q) {
-		q = (char *) "";
+		q = "";
 	}
 	dump_to_set = 0;
 	while (q) {
@@ -2788,7 +2788,7 @@ process_command_line (const int argc, char **argv)
 	int			error_all_warnings = 0;
 
 	cb_mf_ibm_comp = -1;
-	cb_warn_opt_val[(int)cb_warn_unsupported] = COBC_WARN_AS_ERROR;
+	cb_warn_opt_val[cb_warn_unsupported] = COBC_WARN_AS_ERROR;
 
 #if defined (_WIN32) || defined (__DJGPP__)
 	if (!getenv ("POSIXLY_CORRECT")) {
@@ -3486,7 +3486,7 @@ process_command_line (const int argc, char **argv)
 			if (cob_schema_dir != NULL) {
 				char	temp_buff[COB_MEDIUM_BUFF];
 				strcpy(temp_buff,cob_schema_dir);
-				cobc_main_free ((void*)cob_schema_dir);
+				cobc_main_free(cob_schema_dir);
 				cob_schema_dir = cobc_main_malloc (strlen(temp_buff) + strlen(cb_sqldb_schema) + 8);
 				sprintf((void*)cob_schema_dir,"%s%s%s",temp_buff,SLASH_STR,cb_sqldb_schema);
 			} else {
@@ -3684,7 +3684,7 @@ process_command_line (const int argc, char **argv)
 			cb_missing_statement = CB_WARNING;
 		}
 		/* FIXME - the warning was only raised if not relaxed */
-		cb_warn_opt_val[(int)cb_warn_ignored_initial_val] = 0;
+		cb_warn_opt_val[cb_warn_ignored_initial_val] = 0;
 	}
 #if 0 /* deactivated as -frelaxed-syntax-checks and other compiler configurations
 		 are available at command line - maybe re-add with another name */
@@ -4113,7 +4113,7 @@ resolve_name_from_cobc (const char *cobc_path)
 
 	cobc_real_name = file_basename (cobc_path, NULL);
 	cobc_name_length = strlen (cobc_real_name);
-	cobc_path_length = (int)strlen (cobc_path);
+	cobc_path_length = strlen(cobc_path);
 	/* note, we cannot subtract strlen (COB_EXE_EXT)
 	   as we may be called with/without it */
 	for (i = cobc_path_length - cobc_name_length; i >= 0; i--) {
@@ -4589,16 +4589,16 @@ process_filtered (const char *cmd, struct filename *fn)
 		if (fn->translate[i - 1] == '\\' || fn->translate[i - 1] == '/') break;
 	}
 
-	search_pattern = (char*)cobc_malloc ((fn->translate_len - i + 2) + 1);
+	search_pattern = cobc_malloc((fn->translate_len - i + 2) + 1);
 	sprintf (search_pattern, "%s\n%c", fn->translate + i, PATTERN_DELIM);
 	if (cb_compile_level > CB_LEVEL_ASSEMBLE) {
-		search_pattern2 = (char*)cobc_malloc (2 * (strlen (output_name_temp) + 5) + 1);
+		search_pattern2 = cobc_malloc(2 * (strlen(output_name_temp) + 5) + 1);
 		sprintf (search_pattern2, "%s.lib%c%s.exp%c", output_name_temp, PATTERN_DELIM,
 			output_name_temp, PATTERN_DELIM);
 	}
 
 	/* prepare buffer and read from pipe */
-	read_buffer = (char*) cobc_malloc (COB_FILE_BUFF);
+	read_buffer = cobc_malloc(COB_FILE_BUFF);
 	line_start = fgets (read_buffer, COB_FILE_BUFF - 1, pipe);
 
 	while (line_start != NULL) {
@@ -4640,11 +4640,11 @@ process (const char *cmd)
 	int	ret;
 
 	if (strchr (cmd, '$') == NULL) {
-		buffptr = (char *)cmd;
+		buffptr = cmd;
 	} else {
 		clen = strlen (cmd) + 64U;
 		clen = clen + 6U;
-		buffptr = (char *)cobc_malloc (clen);
+		buffptr = cobc_malloc(clen);
 		p = buffptr;
 		/* Quote '$' */
 		for (; *cmd; ++cmd) {
@@ -4990,7 +4990,7 @@ static char *
 check_filler_name (char *name)
 {
 	if (strlen (name) >= 6 && memcmp (name, "FILLER", 6) == 0) {
-		name = (char *)"FILLER";
+		name = "FILLER";
 	}
 	return name;
 }
@@ -5163,7 +5163,7 @@ print_88_values (struct cb_field *field)
 	char lcl_name[LCL_NAME_LEN] = { '\0' };
 
 	for (f = field->validation; f; f = f->sister) {
-		strncpy (lcl_name, (char *)f->name, LCL_NAME_MAX);
+		strncpy(lcl_name, f->name, LCL_NAME_MAX);
 		snprintf (print_data, CB_PRINT_LEN,
 			"      %-14.14s %02d   %s",
 			"CONDITIONAL", f->level, lcl_name);
@@ -5493,7 +5493,7 @@ xref_88_values (struct cb_field *field)
 	char lcl_name[LCL_NAME_LEN] = { '\0' };
 
 	for (f = field->validation; f; f = f->sister) {
-		strncpy (lcl_name, (char *)f->name, LCL_NAME_MAX);
+		strncpy(lcl_name, f->name, LCL_NAME_MAX);
 		pd_off = sprintf (print_data,
 			"%-30.30s %-6u ",
 			lcl_name, f->common.source_line);
@@ -5898,7 +5898,7 @@ get_next_token (char *bp, char *token, char *term)
 				*token++ = *bp++;
 				continue;
 			}
-			if (*bp == '.' && isdigit((unsigned char)*(bp + 1))) {
+			if (*bp == '.' && isdigit((unsigned char)bp[1])) {
 				;
 			} else if (isspace ((unsigned char)*bp) || *bp == ',' || *bp == '.' || *bp == ';') {
 				term[0] = *bp++;
@@ -6077,7 +6077,7 @@ line_has_listing_statement (char *line, const enum cb_format source_format)
 	for (size = 1; size < 6 && curr_pos != 0; size++, curr_pos++) {
 		if ((*curr_pos == ' ' )
 			||  (*curr_pos == '.' )
-			||  (*curr_pos == '*' && (*(curr_pos + 1) == '>' ) )) {
+			||  (*curr_pos == '*' && (curr_pos[1] == '>' ) )) {
 			break;
 		}
 	}
@@ -6112,7 +6112,7 @@ line_has_listing_statement (char *line, const enum cb_format source_format)
 		statement_start = curr_pos;
 		for (size = 1; size < 80 && curr_pos != 0; size++, curr_pos++) {
 			if ((*curr_pos == '.' )
-				||  (*curr_pos == '*' && (*(curr_pos + 1) == '>' ) )) {
+				||  (*curr_pos == '*' && (curr_pos[1] == '>' ) )) {
 				break;
 			}
 		}
@@ -6965,7 +6965,7 @@ static void
 cleanup_copybook_reference (struct list_files *cur)
 {
 	if (cur->name) {
-		cobc_free ((void *)cur->name);
+		cobc_free(cur->name);
 	}
 	cobc_free (cur);
 }
@@ -7303,7 +7303,7 @@ print_program_listing (void)
 	print_program_trailer ();
 
 	/* TO-DO: Should this be here? */
-	cobc_free ((void *)cb_listing_file_struct->name);
+	cobc_free(cb_listing_file_struct->name);
 	cb_listing_file_struct->name = NULL;
 }
 
@@ -7425,7 +7425,7 @@ process_translate (struct filename *fn)
 	if (strrchr (cb_storage_file_name, '/')
 	 || strrchr (cb_storage_file_name, '\\')) {
 		buffer = file_basename (cb_storage_file_name, COB_BASENAME_KEEP_EXT);
-		memcpy ((void *) cb_storage_file_name, (void *) buffer, strlen (buffer) + 1);
+		memcpy(cb_storage_file_name, buffer, strlen(buffer) + 1);
 	}
 
 	/* Process programs in original order */
@@ -7722,7 +7722,7 @@ process_module_direct (struct filename *fn)
 		sprintf (cobc_buffer, "%s.manifest", exe_name);
 		cobc_check_action (cobc_buffer);
 	}
-	cobc_free ((void *) exe_name);
+	cobc_free(exe_name);
 	sprintf (cobc_buffer, "%s.exp", name);
 	cobc_check_action (cobc_buffer);
 	sprintf (cobc_buffer, "%s.lib", name);
@@ -7834,7 +7834,7 @@ process_module (struct filename *fn)
 		sprintf (cobc_buffer, "%s.manifest", exe_name);
 		cobc_check_action (cobc_buffer);
 	}
-	cobc_free ((void *) exe_name);
+	cobc_free(exe_name);
 	sprintf (cobc_buffer, "%s.exp", name);
 	cobc_check_action (cobc_buffer);
 	sprintf (cobc_buffer, "%s.lib", name);
@@ -7947,7 +7947,7 @@ process_library (struct filename *l)
 		sprintf (cobc_buffer, "%s.manifest", exe_name);
 		cobc_check_action (cobc_buffer);
 	}
-	cobc_free ((void *) exe_name);
+	cobc_free(exe_name);
 	sprintf (cobc_buffer, "%s.exp", name);
 	cobc_check_action (cobc_buffer);
 	sprintf (cobc_buffer, "%s.lib", name);
@@ -8069,7 +8069,7 @@ process_link (struct filename *l)
 		sprintf (cobc_buffer, "%s.manifest", exe_name);
 		cobc_check_action (cobc_buffer);
 	}
-	cobc_free ((void *) exe_name);
+	cobc_free(exe_name);
 #else	/* _MSC_VER */
 #ifdef	__WATCOMC__
 	sprintf (cobc_buffer, "%s %s -fe=\"%s\" %s %s %s %s",
@@ -8127,13 +8127,13 @@ set_const_cobc_build_stamp (void)
 	day = 0;
 	year = 0;
 	if (sscanf (__DATE__, "%s %d %d", month, &day, &year) == 3) {
-		snprintf (cobc_buffer, (size_t)COB_MINI_MAX,
+		snprintf (cobc_buffer, COB_MINI_MAX,
 			"%s %2.2d %4.4d %s", month, day, year, __TIME__);
 	} else {
-		snprintf (cobc_buffer, (size_t)COB_MINI_MAX,
+		snprintf (cobc_buffer, COB_MINI_MAX,
 			"%s %s", __DATE__, __TIME__);
 	}
-	cb_cobc_build_stamp = (const char *)cobc_main_strdup (cobc_buffer);
+	cb_cobc_build_stamp = cobc_main_strdup(cobc_buffer);
 }
 
 /* Set up compiler defaults from environment/builtin */
@@ -8173,7 +8173,7 @@ set_cobc_defaults (void)
 #ifdef COB_DEBUG_FLAGS
 	p = cobc_getenv ("COB_DEBUG_FLAGS");
 	if (p && *p) {
-		cobc_debug_flags = (const char *)p;
+		cobc_debug_flags = p;
 	} else {
 		cobc_debug_flags = COB_DEBUG_FLAGS;
 	}
@@ -8227,11 +8227,11 @@ set_cobc_defaults (void)
 static void
 begin_setup_compiler_env (void)
 {
-	cobc_libs = cobc_main_malloc ((size_t)COB_SMALL_BUFF);
-	cobc_lib_paths = cobc_main_malloc ((size_t)COB_SMALL_BUFF);
-	cobc_cflags = cobc_main_malloc ((size_t)COB_MINI_BUFF);
-	cobc_ldflags = cobc_main_malloc ((size_t)COB_MINI_BUFF);
-	cobc_include = cobc_main_malloc ((size_t)COB_MINI_BUFF);
+	cobc_libs = cobc_main_malloc(COB_SMALL_BUFF);
+	cobc_lib_paths = cobc_main_malloc(COB_SMALL_BUFF);
+	cobc_cflags = cobc_main_malloc(COB_MINI_BUFF);
+	cobc_ldflags = cobc_main_malloc(COB_MINI_BUFF);
+	cobc_include = cobc_main_malloc(COB_MINI_BUFF);
 
 	cobc_libs_size = COB_SMALL_MAX;
 	cobc_lib_paths_size = COB_SMALL_MAX;
@@ -8329,9 +8329,9 @@ begin_setup_internal_and_compiler_env (void)
 	yyout = NULL;
 
 	/* General buffers */
-	cobc_buffer = cobc_main_malloc ((size_t)COB_LARGE_BUFF);
+	cobc_buffer = cobc_main_malloc(COB_LARGE_BUFF);
 	cobc_buffer_size = COB_LARGE_MAX;
-	basename_buffer = cobc_main_malloc ((size_t)COB_MINI_BUFF);
+	basename_buffer = cobc_main_malloc(COB_MINI_BUFF);
 	basename_len = COB_MINI_MAX - 16;
 
 	cb_source_file = NULL;
@@ -8703,7 +8703,7 @@ main (int argc, char **argv)
 		if (status == 0) {
 			status = process_run (run_name);
 		}
-		cobc_free ((void *)run_name);
+		cobc_free(run_name);
 	}
 	
 	if (cb_compile_level < CB_LEVEL_LIBRARY
@@ -8736,7 +8736,7 @@ main (int argc, char **argv)
 		if ((statuses == 0) && cobc_flag_run) {
 			status = process_run (run_name);
 		}
-		cobc_free ((void *)run_name);
+		cobc_free(run_name);
 	}
 
 	/* We have completed */

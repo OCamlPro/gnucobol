@@ -1,0 +1,222 @@
+
+@ calloc_size_t @
+expression N; 
+expression size;
+@@
+
+- calloc ((size_t)N, size)
++ calloc (N, size)
+
+@ alloc_size_t @
+identifier F =~ "malloc$";
+expression N; 
+@@
+
+- F((size_t)N)
++ F(N)
+
+@ memcmp_size_t @
+expression A; 
+expression B; 
+int I;
+@@
+
+- memcmp (A, B, (size_t)I)
++ memcmp (A, B, I)
+
+@ cobc_free_char_pointer @
+expression name;
+@@
+
+- cobc_free ((char *) name);
++ cobc_free (name);
+
+@ use_array_operator @
+type T;
+T *s;
+int N;
+@@
+
+- *(s + N)
++ s[N]
+
+@ uchar_returns_int @
+identifier f;
+const unsigned char * s;
+int N;
+@@
+
+int f(...) {
+<...
+- return (int)(s[N]);
++ return s[N];
+...>
+}
+
+@ uchar_ptr_returns_int @
+identifier f;
+const unsigned char * s;
+@@
+
+int f(...) {
+<...
+- return (int)(*s);
++ return *s;
+...>
+}
+
+@ size_t_returns_int @
+identifier f;
+size_t N;
+@@
+
+int f(...) {
+<...
+- return (int)(N);
++ return N;
+...>
+}
+
+@ char_star_to_const_char_star @
+const char * tgt;
+char * src;
+@@
+
+- tgt = (char *)src
++ tgt = src
+
+@ const_star_to_const_star @
+type T;
+const T * tgt, src;
+@@
+
+- tgt = (const T *)src
++ tgt = src
+
+@ gettext_to_char_star @
+char * tgt;
+expression E;
+@@
+
+- tgt = (char *)_(E)
++ tgt = _(E)
+
+@ enum_subscript @
+identifier A =~ "^cb_warn_opt";
+identifier N =~ "^cb_warn";
+@@
+
+- A[(int)N]
++ A[N]
+
+@ void_star_func @
+identifier F =~ "alloc|strdup";
+type T, C;
+T * p;
+expression E;
+@@
+
+- p = (C*) F(E)
++ p =  F(E)
+
+@ void_star_ternary @
+identifier F;
+type T;
+T* X;
+expression A, B, E;
+@@
+
+- X = A ? B : (T*) F(E)
++ X = A ? B :      F(E)
+
+@ free_func @
+type T, D;
+D * ptr;
+identifier F =~ "cobc.+free";
+@@
+
+- F( (T*)ptr )
++ F(ptr)
+
+@ char_to_char @
+char * tgt, src;
+@@
+
+- tgt = (char*) src
++ tgt = src
+
+@ string_literal @
+constant src =~ "FILLER";
+char * tgt;
+@@
+
+- tgt = (char*) src
++ tgt = src
+
+@ size_t_int_size_t @
+identifier F =~ "strlen";
+size_t tgt;
+type T;
+T *s;
+@@
+
+- tgt = (int) F(s)
++ tgt = strlen(s)
+
+@ strcpy @
+identifier to, len;
+const char * from;
+@@
+
+- strncpy( to, (char*)from, len )
++ strncpy( to, from, len )
+
+@ void_args @
+identifier F =~ "(mem|strn)(cpy|cmp)";
+identifier A, B;
+expression C;
+type T;
+@@
+
+- F( (T*) A, (T*) B, C )
++ F(      A,      B, C )
+
+@ void_args2 @
+identifier F =~ "(mem|strn)(cpy|cmp)";
+identifier A, B;
+expression C;
+type T;
+@@
+
+- F( A, (T*) B, C )
++ F( A,      B, C )
+
+@ strcpy2 @
+identifier F =~ "str(cpy|cmp)";
+identifier A;
+expression B;
+type T;
+@@
+
+- F( A, (T*) B )
++ F( A,      B )
+
+@ void_string_literal @
+char * C;
+@@
+
+- C = (char *) ""
++ C = ""
+
+@ snprintf_size @
+identifier F =~ "^snprintf$";
+identifier B;
+expression N;
+@@
+
+...
+F( B,
+- (size_t)
+  N,
+...
+  )

@@ -426,6 +426,10 @@ only usable with COB_USE_VC2013_OR_GREATER */
 #endif
 #endif
 
+// This undef is just a workaround for tools that get tripped up by "inline"
+#ifdef COB_NEVER_INLINE
+# undef COB_KEYWORD_INLINE
+#endif
 #if	defined(COB_KEYWORD_INLINE)
 	#define COB_INLINE	COB_KEYWORD_INLINE
 #else
