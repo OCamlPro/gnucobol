@@ -5905,12 +5905,12 @@ AT_DATA([prog2.cob], [
        procedure division.
            open i-o file1.
            if fs not = "61"
-              display "FAILED: " fs
+              display "I-O FAILED: " fs
               close file1
            end-if.
            open input file1.
            if fs not = "00"
-              display "FAILED: " fs
+              display "IN FAILED: " fs
            else
               close file1
            end-if.
@@ -5919,7 +5919,7 @@ AT_DATA([prog2.cob], [
 
 AT_CHECK([$COMPILE prog1.cob], [0], [], [])
 AT_CHECK([$COMPILE prog2.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog1], [0])
+AT_CHECK([$COBCRUN_DIRECT ./prog1], [0], [], [])
 
 AT_CLEANUP
 
@@ -6569,12 +6569,12 @@ AT_DATA([prog2.cob], [
        procedure division.
            open i-o file1.
            if fs not = "61"
-              display "FAILED: " fs
+              display "I-O FAILED: " fs
            end-if.
            close file1.
            open input file1.
            if fs not = "00"
-              display "FAILED: " fs
+              display "IN FAILED: " fs
            else
               close file1
            end-if.
@@ -6583,7 +6583,7 @@ AT_DATA([prog2.cob], [
 
 AT_CHECK([$COMPILE prog1.cob], [0], [], [])
 AT_CHECK([$COMPILE prog2.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog1], [0])
+AT_CHECK([$COBCRUN_DIRECT ./prog1], [0], [], [])
 
 AT_CLEANUP
 
@@ -7132,7 +7132,7 @@ AT_DATA([prog.cob], [
            MOVE "XX-" TO f-key3-1
            START f KEY > f-key3-1
            READ f NEXT
-           IF (f-status <> "00")
+           IF (f-status <> "00" AND f-status <> "02")
            OR (file1-serial <> 3)
                DISPLAY "FAILED 7: status " f-status
                        " serial: " file1-serial

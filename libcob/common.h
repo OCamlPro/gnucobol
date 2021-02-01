@@ -1502,6 +1502,9 @@ typedef struct __cob_file {
 	unsigned char		share_mode;		/* Active SHARING MODE */
 	unsigned char		dflt_share;		/* Default SHARING MODE */
 
+	unsigned char		pre_share_mode;	/* Pre-open SHARING MODE */
+	unsigned char		pre_lock_mode;	/* Pre-open LOCK MODE */
+
 	unsigned short		retry_mode;		/* RETRY mode */
 	unsigned short		dflt_retry;		/* Default RETRY mode */
 	int			retry_times;		/* TIMES to RETRY I/O */

@@ -5294,6 +5294,8 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 	f->flag_read_done = 0;
 	f->curkey = -1;
 	f->mapkey = -1;
+	f->pre_share_mode = f->share_mode;
+	f->pre_lock_mode = f->lock_mode;
 
 	/* File was previously closed with lock */
 	if (f->open_mode == COB_OPEN_LOCKED) {
@@ -5368,6 +5370,10 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 	cob_file_save_status (f, fnstatus,
 		     fileio_funcs[get_io_ptr (f)]->open (&file_api, f, file_open_name,
 								mode, sharing));
+	if (f->file_status[0] != '0') {
+		f->share_mode = f->pre_share_mode;
+		f->lock_mode = f->pre_lock_mode;
+	}
 }
 
 void
@@ -5379,6 +5385,8 @@ cob_close (cob_file *f, cob_field *fnstatus, const int opt, const int remfil)
 	f->flag_read_done = 0;
 	f->record_off = 0;
 
+	f->share_mode = f->pre_share_mode;
+	f->lock_mode = f->pre_lock_mode;
 	f->lock_mode &= ~COB_LOCK_OPEN_EXCLUSIVE;
 
 	if (COB_FILE_SPECIAL (f)) {
