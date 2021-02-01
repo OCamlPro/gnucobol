@@ -1771,13 +1771,13 @@ odbc_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 		if (fx->start
 		 && !fx->start->isdesc) {
 			if(chkSts(db,(char*)"Read Next",fx->start->handle, SQLFetch(fx->start->handle))) {
-				DEBUG_LOG("db",("Read Next: %.50s; Sts %d\n",fx->start->text,db->dbStatus));
+				DEBUG_LOG("db",("~Read Next: %.50s; Sts %d\n",fx->start->text,db->dbStatus));
 				if (db->dbStatus == db->dbStsNotFound)
 					ret = COB_STATUS_10_END_OF_FILE;
 				else
 					ret = COB_STATUS_30_PERMANENT_ERROR;
 			} else {
-				DEBUG_LOG("db",("Read Next: %s; OK\n",f->select_name));
+				DEBUG_LOG("db",("~Read Next: %s; OK\n",f->select_name));
 				odbc_any_nulls (db, fx);
 				cob_xfd_to_file (db, fx, f);
 			}
@@ -1799,13 +1799,13 @@ odbc_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 		if (fx->start
 		 && fx->start->isdesc) {
 			if(chkSts(db,(char*)"Read Prev",fx->start->handle, SQLFetch(fx->start->handle))) {
-				DEBUG_LOG("db",("Read Prev: %.50s; Sts %d\n",fx->start->text,db->dbStatus));
+				DEBUG_LOG("db",("~Read Prev: %.50s; Sts %d\n",fx->start->text,db->dbStatus));
 				if (db->dbStatus == db->dbStsNotFound)
 					ret = COB_STATUS_10_END_OF_FILE;
 				else
 					ret = COB_STATUS_30_PERMANENT_ERROR;
 			} else {
-				DEBUG_LOG("db",("Read Prev: %s; OK\n",f->select_name));
+				DEBUG_LOG("db",("~Read Prev: %s; OK\n",f->select_name));
 				odbc_any_nulls (db, fx);
 				cob_xfd_to_file (db, fx, f);
 			}
@@ -1828,13 +1828,13 @@ odbc_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 			return COB_STATUS_30_PERMANENT_ERROR;
 		}
 		if(chkSts(db,(char*)"Read First",fx->start->handle, SQLFetch(fx->start->handle))) {
-			DEBUG_LOG("db",("Read First: %.50s; Sts %d\n",fx->start->text,db->dbStatus));
+			DEBUG_LOG("db",("~Read First: %.50s; Sts %d\n",fx->start->text,db->dbStatus));
 			if (db->dbStatus == db->dbStsNotFound)
 				ret = COB_STATUS_10_END_OF_FILE;
 			else
 				ret = COB_STATUS_30_PERMANENT_ERROR;
 		} else {
-			DEBUG_LOG("db",("Read First: %s; OK\n",f->select_name));
+			DEBUG_LOG("db",("~Read First: %s; OK\n",f->select_name));
 			odbc_any_nulls (db, fx);
 			cob_xfd_to_file (db, fx, f);
 		}
@@ -1854,13 +1854,13 @@ odbc_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 		}
 		p->startcond = COB_LT;
 		if(chkSts(db,(char*)"Read Last",fx->start->handle, SQLFetch(fx->start->handle))) {
-			DEBUG_LOG("db",("Read Last: %.50s; Sts %d\n",fx->start->text,db->dbStatus));
+			DEBUG_LOG("db",("~Read Last: %.50s; Sts %d\n",fx->start->text,db->dbStatus));
 			if (db->dbStatus == db->dbStsNotFound)
 				ret = COB_STATUS_10_END_OF_FILE;
 			else
 				ret = COB_STATUS_30_PERMANENT_ERROR;
 		} else {
-			DEBUG_LOG("db",("Read Last: %s; OK\n",f->select_name));
+			DEBUG_LOG("db",("~Read Last: %s; OK\n",f->select_name));
 			odbc_any_nulls (db, fx);
 			cob_xfd_to_file (db, fx, f);
 		}

@@ -1,3 +1,8 @@
+
+2021-02-01  Ron Norman <rjn@inglenet.com>
+	* parser.y: Removed PENDING for COMMIT/ROLLBACK options
+	* typeck.c: Set on COB_LOCK_ROLLBACK as requested
+
 2021-01-28  James K. Lowden  <jklowden@symas.com>
 
 	* cobc.c (cobc_error_name): do not write to const parameter
