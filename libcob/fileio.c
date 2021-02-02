@@ -5118,7 +5118,7 @@ cob_file_set_lock (
 	cob_file *	fl,
 	const int	mode)
 {
-	fl->lock_mode = mode;
+	fl->lock_mode = (unsigned char)mode;
 }
 
 /*
@@ -5235,7 +5235,6 @@ cob_pre_open (cob_file *f)
 	f->flag_begin_of_file = 0;
 	f->flag_first_read = 2;
 	f->flag_operation = 0;
-	f->lock_mode &= ~COB_LOCK_OPEN_EXCLUSIVE;
 	f->record_off = 0;
 	f->max_rec_num = 0;
 	f->cur_rec_num = 0;
@@ -5272,8 +5271,7 @@ cob_pre_open (cob_file *f)
 			else
 				f->share_mode = COB_SHARE_READ_ONLY;
 		} else {
-			f->share_mode |= COB_LOCK_OPEN_EXCLUSIVE|COB_SHARE_NO_OTHER;
-			f->lock_mode |= COB_FILE_EXCLUSIVE;
+			f->share_mode = COB_LOCK_OPEN_EXCLUSIVE|COB_SHARE_NO_OTHER;
 		}
 	}
 }
@@ -5294,8 +5292,6 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 	f->flag_read_done = 0;
 	f->curkey = -1;
 	f->mapkey = -1;
-	f->pre_share_mode = f->share_mode;
-	f->pre_lock_mode = f->lock_mode;
 
 	/* File was previously closed with lock */
 	if (f->open_mode == COB_OPEN_LOCKED) {
@@ -5311,6 +5307,8 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 
 	f->last_open_mode = (unsigned char)mode;
 	f->share_mode = (unsigned char)sharing;
+	if ((f->share_mode & COB_LOCK_OPEN_EXCLUSIVE))
+		f->share_mode |= COB_SHARE_NO_OTHER;
 	if (mode == COB_OPEN_OUTPUT)
 		f->cur_rec_num = f->max_rec_num = 0;
 
@@ -5370,10 +5368,6 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 	cob_file_save_status (f, fnstatus,
 		     fileio_funcs[get_io_ptr (f)]->open (&file_api, f, file_open_name,
 								mode, sharing));
-	if (f->file_status[0] != '0') {
-		f->share_mode = f->pre_share_mode;
-		f->lock_mode = f->pre_lock_mode;
-	}
 }
 
 void
@@ -5384,10 +5378,6 @@ cob_close (cob_file *f, cob_field *fnstatus, const int opt, const int remfil)
 	f->last_operation = COB_LAST_CLOSE;
 	f->flag_read_done = 0;
 	f->record_off = 0;
-
-	f->share_mode = f->pre_share_mode;
-	f->lock_mode = f->pre_lock_mode;
-	f->lock_mode &= ~COB_LOCK_OPEN_EXCLUSIVE;
 
 	if (COB_FILE_SPECIAL (f)) {
 		f->open_mode = COB_OPEN_CLOSED;

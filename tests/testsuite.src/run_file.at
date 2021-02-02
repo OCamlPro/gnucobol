@@ -6280,7 +6280,6 @@ AT_KEYWORDS([runfile])
 
 ## TO-DO: Support INDEXED file sharing/locking.
 AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
-AT_XFAIL_IF([false])
 
 AT_DATA([prog1.cob], [
        identification division.
@@ -6355,9 +6354,7 @@ AT_CLEANUP
 AT_SETUP([INDEXED file with OPEN WITH LOCK])
 AT_KEYWORDS([runfile])
 
-## TO-DO: Support INDEXED file sharing/locking.
 AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
-AT_XFAIL_IF([true])
 
 AT_DATA([prog1.cob], [
        identification division.
@@ -6592,9 +6589,7 @@ AT_CLEANUP
 AT_SETUP([INDEXED file with blocked lock])
 AT_KEYWORDS([runfile])
 
-## TO-DO: Support INDEXED file sharing/locking.
 AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
-AT_XFAIL_IF([true])
 
 AT_DATA([prog1.cob], [
        identification division.

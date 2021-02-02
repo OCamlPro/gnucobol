@@ -1,7 +1,6 @@
 
-2021-02-01  Ron Norman <rjn@inglenet.com>
+2021-02-02  Ron Norman <rjn@inglenet.com>
 
-	* common.h: Save copy of share_mode and lock_mode to restore on CLOSE
 	* fileio.c: Fixed to set default file sharing as the COBOL standard
 				Set flag to request commit/rollback if COB_LOCK_ROLLBACK is set
 	* fodbc.c: Report line number in debuglog file a bit more often
