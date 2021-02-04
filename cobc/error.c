@@ -228,11 +228,11 @@ cb_add_error_to_listing (const char *file, int line,
 
 		/* set correct listing entry for this file */
 		cfile = cb_current_file;
-		if (!cfile->name
+		if (!cfile->name[0]
 		 || (file && strcmp (cfile->name, file))) {
 			cfile = cfile->copy_head;
 			while (cfile) {
-				if (file && cfile->name
+				if (file && cfile->name[0]
 				 && !strcmp (cfile->name, file)) {
 					break;
 				}

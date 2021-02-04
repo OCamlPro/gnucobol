@@ -1,0 +1,6 @@
+@ test_list_files_name @
+struct list_files *p;
+@@
+
+- p->name
++ list_files_name(p)

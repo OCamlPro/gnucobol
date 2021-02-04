@@ -1031,8 +1031,9 @@ ppopen (const char *name, struct cb_replace_list *replacing_list)
 	}
 
 	/* Save name for listing */
-	if (cb_current_file && !cb_current_file->name) {
-		cb_current_file->name = cobc_strdup (name);
+	if (cb_current_file && !cb_current_file->name[0]) {
+	    snprintf(cb_current_file->name,
+		     sizeof(cb_current_file->name), "%s", name );
 	}
 
 	/* Preserve the current buffer */

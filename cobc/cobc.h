@@ -44,6 +44,8 @@
 
 #include "../libcob/sysdefines.h"
 
+#include <linux/limits.h>
+
 /* Defines for access() */
 #ifndef	F_OK
 #define	F_OK		0
@@ -331,8 +333,13 @@ struct list_files {
 	int 			copy_line;	/* Line start for copy book */
 	int 			listing_on;	/* Listing flag for this file */
 	enum cb_format		source_format;	/* source format for file */
-	const char		*name;		/* Name of this file */
+	char		        name[PATH_MAX];	/* Name of this file */
 };
+
+static COB_INLINE const char *
+list_files_name (const struct list_files *p) {
+	return p->name[0]? p->name : NULL;
+}
 
 extern struct list_files	*cb_listing_files;
 extern struct list_files	*cb_current_file;

@@ -114,7 +114,7 @@ struct cb_text_list	*cb_static_call_list = NULL;
 struct cb_text_list	*cb_early_exit_list = NULL;
 char			**cb_saveargv = NULL;
 const char		*cob_config_dir = NULL;
-const char		*cob_schema_dir = NULL;
+const char		*cob_schema_dir = COB_SCHEMA_DIR;
 FILE			*cb_storage_file = NULL;
 FILE			*cb_listing_file = NULL;
 
@@ -307,7 +307,7 @@ static char		cb_listing_filename[FILENAME_MAX];
 static char		*cb_listing_outputfile = NULL;
 static char		cb_listing_title[81];	/* Listing title (defaults to PACKAGE_NAME + Version */
 static char		cb_listing_header[133];	/* Listing header */
-static struct list_files	*cb_listing_file_struct = NULL;
+static struct list_files	 cb_listing_file_struct;
 static struct list_error	*cb_listing_error_head = NULL;
 static struct list_error	*cb_listing_error_tail = NULL;
 
@@ -561,10 +561,14 @@ static void	print_program_listing	(void);
 static int	process			(const char *);
 
 /* cobc functions */
-
+#include <assert.h>
 void
 cobc_free (void * mptr)
 {
+	if( mptr == &cb_listing_file_struct ) {
+		assert(mptr != &cb_listing_file_struct);
+	}
+
 	/* LCOV_EXCL_START */
 	if (!mptr) {
 		cobc_err_msg (_("call to %s with NULL pointer"), "cobc_free");
@@ -573,8 +577,6 @@ cobc_free (void * mptr)
 	/* LCOV_EXCL_STOP */
 	free (mptr);
 }
-// defeat -Wdiscarded-qualifiers
-#define cobc_free(A) cobc_free( (void*)(A) )
 
 static void
 cobc_free_mem (void)
@@ -594,10 +596,9 @@ cobc_free_mem (void)
 		cobc_free (cobc_list_file);
 		cobc_list_file = NULL;
 	}
-	if (cb_listing_file_struct) {
-		free_list_file (cb_listing_file_struct);
-		cb_listing_file_struct = NULL;
-	}
+
+	free_list_file (&cb_listing_file_struct);
+
 	if (cobc_run_args) {
 		cobc_free (cobc_run_args);
 		cobc_run_args = NULL;
@@ -797,13 +798,15 @@ free_list_file (struct list_files *list_files_struct)
 		if (list_files_struct->skip_head) {
 			free_list_skip (list_files_struct->skip_head);
 		}
-		if (list_files_struct->name) {
-			cobc_free(list_files_struct->name);
-		}
+
+		memset(list_files_struct->name, 0,
+		       sizeof(list_files_struct->name));
 
 		/* Delete the struct itself */
 		next = list_files_struct->next;
-		cobc_free (list_files_struct);
+		if( list_files_struct != &cb_listing_file_struct ) {
+			cobc_free (list_files_struct);
+		}
 		list_files_struct = next;
 	} while (list_files_struct);
 }
@@ -811,27 +814,26 @@ free_list_file (struct list_files *list_files_struct)
 /* Global functions */
 
 /* Output a formatted message to stderr */
+__attribute__((stack_protect))
 void
-cobc_err_msg (const char *fmt, ...)
+cobc_err_msg (const char *fmt, ...) 
 {
+	static char     errmsg[BUFSIZ];
 	va_list		ap;
 
-	fprintf (stderr, "cobc: ");
 	va_start (ap, fmt);
-	vfprintf (stderr, fmt, ap);
+	vsprintf (errmsg, fmt, ap);
+	va_end (ap);
+
+	fprintf (stderr, "cobc: %s\n", errmsg);
 
 	if (cb_src_list_file
-		&& cb_listing_file_struct
-		&& cb_listing_file_struct->name) {
-
-		char			errmsg[BUFSIZ];
-		vsprintf (errmsg, fmt, ap);
+	    && list_files_name(&cb_listing_file_struct) ) {
 
 		cb_add_error_to_listing (NULL, 0,
 			"cobc: ", errmsg);
 	}
-	va_end (ap);
-	putc ('\n', stderr);
+
 	fflush (stderr);
 }
 
@@ -1110,8 +1112,6 @@ cobc_main_free (void *prevptr)
 	}
 	cobc_free (curr);
 }
-#define cobc_main_free(A) cobc_main_free ((void *)(A))
-
 
 /* Memory allocate/strdup/reallocate/free for parser */
 void *
@@ -2202,8 +2202,7 @@ cobc_abort_terminate (int should_be_reported)
 
 	if (!should_be_reported
 	 &&	cb_src_list_file
-	 && cb_listing_file_struct
-	 && cb_listing_file_struct->name) {
+	    && list_files_name(&cb_listing_file_struct)) {
 		print_program_listing ();
 	}
 	putc ('\n', stderr);
@@ -2212,8 +2211,7 @@ cobc_abort_terminate (int should_be_reported)
 	if (should_be_reported) {
 		cobc_err_msg (_("Please report this!"));
 		if (cb_src_list_file
-		 && cb_listing_file_struct
-		 && cb_listing_file_struct->name) {
+		    && list_files_name(&cb_listing_file_struct)) {
 			print_program_listing ();
 		}
 	}
@@ -3488,16 +3486,14 @@ process_command_line (const int argc, char **argv)
 		case 12:
 			/* -fsqlschema=<name> : Database schema name for XFD */
 			cb_sqldb_schema = cobc_main_strdup (cob_optarg);
-			if (cob_schema_dir != NULL) {
-				char	temp_buff[COB_MEDIUM_BUFF];
-				strcpy(temp_buff,cob_schema_dir);
-				cobc_main_free(cob_schema_dir);
-				cob_schema_dir = cobc_main_malloc (strlen(temp_buff) + strlen(cb_sqldb_schema) + 8);
-				sprintf((void*)cob_schema_dir,"%s%s%s",temp_buff,SLASH_STR,cb_sqldb_schema);
-			} else {
-				cob_schema_dir = cobc_main_malloc (strlen(COB_SCHEMA_DIR) + strlen(cb_sqldb_schema) + 8);
-				sprintf((void*)cob_schema_dir,"%s%s%s",COB_SCHEMA_DIR,SLASH_STR,cb_sqldb_schema);
+			{
+			  char *p = cobc_main_malloc (strlen(COB_SCHEMA_DIR) +
+						      strlen(cb_sqldb_schema) + 8);
+			  sprintf(p, "%s%s%s",
+				  COB_SCHEMA_DIR,SLASH_STR, cb_sqldb_schema);
+			  cob_schema_dir = p;
 			}
+			
 #ifdef _WIN32	/* simon: come back to this later... */
 			_mkdir (cob_schema_dir);
 			_chmod (cob_schema_dir, _S_IREAD | _S_IWRITE);
@@ -4825,12 +4821,12 @@ static void
 set_listing_header_code (void)
 {
 	strcpy (cb_listing_header, "LINE    ");
-	if (cb_listing_file_struct->source_format != CB_FORMAT_FREE) {
+	if (cb_listing_file_struct.source_format != CB_FORMAT_FREE) {
 		strcat (cb_listing_header,
 			"PG/LN  A...B..............................."
 			".............................");
 		if (cb_listing_wide) {
-			if (cb_listing_file_struct->source_format == CB_FORMAT_FIXED
+			if (cb_listing_file_struct.source_format == CB_FORMAT_FIXED
 			    && cb_text_column == 72 && cb_indicator_column == 7) {
 				strcat (cb_listing_header, "SEQUENCE");
 			} else {
@@ -6965,9 +6961,6 @@ deep_copy_list_replace (struct list_replace *src, struct list_files *dst_file)
 static void
 cleanup_copybook_reference (struct list_files *cur)
 {
-	if (cur->name) {
-		cobc_free(cur->name);
-	}
 	cobc_free (cur);
 }
 
@@ -7211,7 +7204,7 @@ print_program_code (struct list_files *cfile, int in_copy)
 
 					/* Delete the copybook reference when done */
 					cfile->copy_head = cur->next;
-					cleanup_copybook_reference (cur);
+					//// cleanup_copybook_reference (cur);
 				}
 
 				/* Delete all but the last line. */
@@ -7299,13 +7292,9 @@ print_program (struct list_files *cfile, int in_copy)
 static void
 print_program_listing (void)
 {
-	print_program (cb_listing_file_struct, 0);
+	print_program (&cb_listing_file_struct, 0);
 
 	print_program_trailer ();
-
-	/* TO-DO: Should this be here? */
-	cobc_free(cb_listing_file_struct->name);
-	cb_listing_file_struct->name = NULL;
 }
 
 /* Create single-element C source */
@@ -8152,9 +8141,8 @@ set_cobc_defaults (void)
 	if (cob_config_dir == NULL) {
 		cob_config_dir = COB_CONFIG_DIR;
 	}
-	cob_schema_dir = cobc_getenv_path ("COB_SCHEMA_DIR");
-	if (cob_schema_dir == NULL) {
-		cob_schema_dir = COB_SCHEMA_DIR;
+	if( (p = cobc_getenv_path ("COB_SCHEMA_DIR")) != NULL ) {
+		cob_schema_dir = p;
 	}
 
 	p = cobc_getenv ("COB_CFLAGS");
@@ -8429,9 +8417,14 @@ process_file (struct filename *fn, int status)
 		set_listing_date ();
 		set_standard_title ();
 
-		cb_current_file = cb_listing_file_struct;
+		cb_current_file = &cb_listing_file_struct;
 		cb_current_file->copy_tail = NULL;	/* may include an old reference */
-		cb_current_file->name = cobc_strdup (fn->source);
+		if( sizeof(cb_current_file->name) <
+		    snprintf(cb_current_file->name,
+			    sizeof(cb_current_file->name), "%s", fn->source) ) {
+			cobc_err_msg("%s exceeds %lu characters",
+				     fn->source, sizeof(cb_current_file->name));
+		}
 		cb_current_file->source_format = cb_source_format;
 		force_new_page_for_next_line ();
 	}
@@ -8546,7 +8539,7 @@ main (int argc, char **argv)
 	int			status;
 	int			statuses = 0;
 	int			i;
-	const char		*run_name = NULL;
+	char    		*run_name = NULL;
 
 	/* Setup routines I */
 	begin_setup_internal_and_compiler_env ();
@@ -8631,7 +8624,7 @@ main (int argc, char **argv)
 				cobc_terminate (cb_listing_outputfile);
 			}
 		}
-		cb_listing_file_struct = cobc_malloc (sizeof (struct list_files));
+		memset(&cb_listing_file_struct, 0, sizeof(cb_listing_file_struct));
 	}
 
 	if (verbose_output) {
@@ -8663,13 +8656,13 @@ main (int argc, char **argv)
 	for (fn = file_list; fn; fn = fn->next) {
 		iparams++;
 		if (iparams == 1 && cobc_flag_run) {
+			const char *name = file_basename (fn->source, NULL);
+			
 			if (fn->file_is_stdin
 			 && cb_compile_level == CB_LEVEL_EXECUTABLE) {
-				run_name = COB_DASH_OUT;
-			} else {
-				run_name = file_basename (fn->source, NULL);
-			}
-			run_name = cobc_strdup (run_name);
+				name = COB_DASH_OUT;
+			} 
+			run_name = cobc_strdup (name);
 		}
 		if (iparams > 1 && cb_compile_level == CB_LEVEL_EXECUTABLE) {
 			/* only the first source has the compile_level and main flag set */
