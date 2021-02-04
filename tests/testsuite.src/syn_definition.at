@@ -2087,12 +2087,15 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:29: warning: APPLY COMMIT is not implemented
-prog.cob:27: error: 'not-there' is not defined
+[prog.cob:27: error: 'not-there' is not defined
 prog.cob:28: error: 'not-there-again' is not defined
 prog.cob:27: error: duplicate APPLY COMMIT target: 'STCK-FILE'
 prog.cob:28: error: APPLY COMMIT statement invalid for SORT file
+prog.cob:56: warning: APPLY COMMIT UPDATE-COUNT; not implemented
+prog.cob:57: warning: APPLY COMMIT BASED-STUFF; not implemented
+prog.cob:60: warning: APPLY COMMIT RED-DATA; not implemented   
 prog.cob:29: error: 'RED-DATA' REDEFINES field not allowed here
+prog.cob:59: warning: APPLY COMMIT SOME-DATA; not implemented
 prog.cob:29: error: 'SOME-DATA' not level 01 or 77
 ])
 

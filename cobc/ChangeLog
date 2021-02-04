@@ -1,3 +1,4 @@
+
 2021-02-04  James K. Lowden  <jklowden@symas.com>
 
 	* cobc.h cobc.c error.c pplex.l:
@@ -10,6 +11,10 @@
 2021-01-29  James K. Lowden  <jklowden@symas.com>
 
 	* cobc.c: apply spatch/cast.spatch
+
+2021-02-01  Ron Norman <rjn@inglenet.com>
+	* parser.y: Removed PENDING for COMMIT/ROLLBACK options
+	* typeck.c: Set on COB_LOCK_ROLLBACK as requested
 
 2021-01-28  James K. Lowden  <jklowden@symas.com>
 

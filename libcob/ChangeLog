@@ -1,3 +1,10 @@
+
+2021-02-02  Ron Norman <rjn@inglenet.com>
+
+	* fileio.c: Fixed to set default file sharing as the COBOL standard
+				Set flag to request commit/rollback if COB_LOCK_ROLLBACK is set
+	* fodbc.c: Report line number in debuglog file a bit more often
+
 2021-01-28  James K. Lowden  <jklowden@symas.com>
 
 	* sysdefines.h (GC_C_VERSION): let "unknown" be token-pasted, too

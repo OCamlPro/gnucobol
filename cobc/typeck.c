@@ -3918,6 +3918,8 @@ cb_validate_program_data (struct cb_program *prog)
 				} else if (file->flag_report) {
 					cb_error_x (l,
 						_("APPLY COMMIT statement invalid for REPORT file"));
+				} else {
+					file->lock_mode |= (COB_LOCK_ROLLBACK|COB_LOCK_MULTIPLE);
 				}
 			} else if (CB_FIELD_P (x)) {
 				field = CB_FIELD (x);
@@ -3927,6 +3929,8 @@ cb_validate_program_data (struct cb_program *prog)
 						_("APPLY COMMIT item '%s' should be defined in "
 							"WORKING-STORAGE or LOCAL-STORAGE"), field->name);
 				}
+				cb_warning_x (COBC_WARN_FILLER, x, 
+							_("APPLY COMMIT %s; not implemented"),field->name);
 				if (field->level != 01 && field->level != 77) {
 					cb_error_x (l, _("'%s' not level 01 or 77"), field->name);
 #if 0 /* currently not part of the rules */

@@ -2280,7 +2280,7 @@ cob_file_to_xfd (struct db_state *db, struct file_xfd *fx, cob_file *fl)
 				sqlbuf[sqlwrk.size] = 0;
 				nx = 0;
 				if (!fx->map[k].notnull
-				 &&	isAllChar (sqlwrk.data, (int)sqlwrk.size, 0x00)) {
+				 &&	isAllChar (fx->map[k].recfld.data, (int)fx->map[k].recfld.size, 0x00)) {
 					fx->map[k].setnull = 1;
 					fx->map[k].sqlfld.data[0] = 0;
 				} else {
@@ -2417,7 +2417,7 @@ cob_xfd_to_file (struct db_state *db, struct file_xfd *fx, cob_file *fl)
 			if (fx->map[k].setnull) {
 				memset (fx->map[k].recfld.data, 0, fx->map[k].recfld.size);
 				memset (fx->map[k].sqlfld.data, 0, fx->map[k].sqlfld.size);
-				DEBUG_LOG("db",("%3d: Read %s  Null -> LOW-VALUES\n",k,fx->map[k].colname));
+				DEBUG_LOG("db",("%3d: Read %s  was NULL -> LOW-VALUES\n",k,fx->map[k].colname));
 				k++;
 				continue;
 			}

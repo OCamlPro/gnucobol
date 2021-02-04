@@ -1193,7 +1193,13 @@ cob_set_file_defaults (cob_file *f)
 	f->trace_io = file_setptr->cob_trace_io ? 1 : 0;
 	f->io_stats = file_setptr->cob_stats_record ? 1 : 0;
 	f->flag_keycheck = file_setptr->cob_keycheck ? 1 : 0;
-	f->flag_do_log = file_setptr->cob_file_log ? 1 : 0;
+	f->flag_do_log = 0;
+	if (f->organization == COB_ORG_RELATIVE
+	 || f->organization == COB_ORG_INDEXED) {
+		f->flag_do_log = file_setptr->cob_file_log ? 1 : 0;
+		if ((f->lock_mode & COB_LOCK_ROLLBACK))		/* Had APPLY COMMIT */
+			f->flag_do_log = 1;
+	}
 	if(file_setptr->cob_do_sync)
 		f->file_features |= COB_FILE_SYNC;
 	else
@@ -1599,14 +1605,17 @@ cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 			}
 			if(keycmp(option,"share_all") == 0) {
 				f->dflt_share = COB_SHARE_ALL_OTHER;
+				f->share_mode = f->dflt_share;
 				continue;
 			}
 			if(keycmp(option,"share_read") == 0) {
 				f->dflt_share = COB_SHARE_READ_ONLY;
+				f->share_mode = f->dflt_share;
 				continue;
 			}
 			if(keycmp(option,"share_no") == 0) {
 				f->dflt_share = COB_SHARE_NO_OTHER;
+				f->share_mode = f->dflt_share;
 				continue;
 			}
 			if (f->organization == COB_ORG_LINE_SEQUENTIAL) {
@@ -1851,8 +1860,6 @@ cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 		}
 
 		/* If SHARE or RETRY given, then override application choices */
-		if(f->dflt_share != 0)
-			f->share_mode = f->dflt_share;
 		if(f->dflt_retry != 0) {
 			f->retry_mode = f->dflt_retry;
 			f->retry_times = f->dflt_times;
@@ -5111,7 +5118,7 @@ cob_file_set_lock (
 	cob_file *	fl,
 	const int	mode)
 {
-	fl->lock_mode = mode;
+	fl->lock_mode = (unsigned char)mode;
 }
 
 /*
@@ -5228,7 +5235,6 @@ cob_pre_open (cob_file *f)
 	f->flag_begin_of_file = 0;
 	f->flag_first_read = 2;
 	f->flag_operation = 0;
-	f->lock_mode &= ~COB_LOCK_OPEN_EXCLUSIVE;
 	f->record_off = 0;
 	f->max_rec_num = 0;
 	f->cur_rec_num = 0;
@@ -5253,6 +5259,19 @@ cob_pre_open (cob_file *f)
 		if(ftype >= 0) {
 			f->record_min = f->record_max;
 			f->io_routine = (unsigned char)ftype;
+		}
+	}
+
+	if (f->share_mode == 0
+	 && f->lock_mode == 0) {
+		/* Set default file sharing */
+		if (f->last_open_mode == COB_OPEN_INPUT) {
+			if (f->dflt_share != 0)
+				f->share_mode = f->dflt_share;
+			else
+				f->share_mode = COB_SHARE_READ_ONLY;
+		} else {
+			f->share_mode = COB_LOCK_OPEN_EXCLUSIVE|COB_SHARE_NO_OTHER;
 		}
 	}
 }
@@ -5288,6 +5307,8 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 
 	f->last_open_mode = (unsigned char)mode;
 	f->share_mode = (unsigned char)sharing;
+	if ((f->share_mode & COB_LOCK_OPEN_EXCLUSIVE))
+		f->share_mode |= COB_SHARE_NO_OTHER;
 	if (mode == COB_OPEN_OUTPUT)
 		f->cur_rec_num = f->max_rec_num = 0;
 
@@ -5357,8 +5378,6 @@ cob_close (cob_file *f, cob_field *fnstatus, const int opt, const int remfil)
 	f->last_operation = COB_LAST_CLOSE;
 	f->flag_read_done = 0;
 	f->record_off = 0;
-
-	f->lock_mode &= ~COB_LOCK_OPEN_EXCLUSIVE;
 
 	if (COB_FILE_SPECIAL (f)) {
 		f->open_mode = COB_OPEN_CLOSED;

@@ -5355,7 +5355,7 @@ _with_rollback:
 with_rollback:
 _with ROLLBACK
   {
-	CB_PENDING ("WITH ROLLBACK");
+	current_file->lock_mode |= (COB_LOCK_ROLLBACK|COB_LOCK_MULTIPLE);
   }
 ;
 
@@ -5741,7 +5741,6 @@ apply_clause:
   APPLY COMMIT _on reference_list
   {
 	current_program->apply_commit = $4;
-	CB_PENDING("APPLY COMMIT");
   }
 | APPLY LOCK_HOLDING _on file_name_list
   {
