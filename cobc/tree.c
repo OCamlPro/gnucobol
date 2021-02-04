@@ -1492,7 +1492,7 @@ cb_fits_int (const cb_tree x)
 		} else {
 			s = "2147483647";
 		}
-		if (memcmp (p, s, (size_t)10) > 0) {
+		if (memcmp(p, s, 10) > 0) {
 			return 0;
 		}
 		return 1;
@@ -1578,7 +1578,7 @@ cb_fits_long_long (const cb_tree x)
 		} else {
 			s = "9223372036854775807";
 		}
-		if (memcmp (p, s, (size_t)19) > 0) {
+		if (memcmp(p, s, 19) > 0) {
 			return 0;
 		}
 		return 1;
@@ -1707,7 +1707,7 @@ cb_get_int (const cb_tree x)
 		} else {
 			s = "9223372036854775807";
 		}
-		if (size > 19U || memcmp (&l->data[i], s, (size_t)19) > 0) {
+		if (size > 19U || memcmp(&l->data[i], s, 19) > 0) {
 			cb_error_x (x,_("numeric literal '%s' exceeds limit '%s'"), &l->data[i], s);
 			return INT_MAX;
 		}
@@ -1719,7 +1719,7 @@ cb_get_int (const cb_tree x)
 		} else {
 			s = "2147483647";
 		}
-		if (size > 10U || memcmp (&l->data[i], s, (size_t)10) > 0) {
+		if (size > 10U || memcmp(&l->data[i], s, 10) > 0) {
 			cb_error_x (x,_("numeric literal '%s' exceeds limit '%s'"), &l->data[i], s);
 			return INT_MAX;
 		}
@@ -1781,7 +1781,7 @@ cb_get_long_long (const cb_tree x)
 		} else {
 			s = "9223372036854775807";
 		}
-		if (size > 19U || memcmp (&(l->data[i]), s, (size_t)19) > 0) {
+		if (size > 19U || memcmp(&(l->data[i]), s, 19) > 0) {
 			cb_error_x (x,_("numeric literal '%s' exceeds limit '%s'"), &l->data[i], s);
 			return LLONG_MAX;
 		}
@@ -1831,7 +1831,7 @@ cb_get_u_long_long (const cb_tree x)
 	/* Check numeric literal length matching requested output type */
 	if (size >= 20U) {
 		s = "18446744073709551615";
-		if (size > 20U || memcmp (&(l->data[i]), s, (size_t)20) > 0) {
+		if (size > 20U || memcmp(&(l->data[i]), s, 20) > 0) {
 			cb_error_x (x,_("numeric literal '%s' exceeds limit '%s'"), &l->data[i], s);
 			return ULLONG_MAX;
 		}
@@ -2422,9 +2422,9 @@ cb_build_class_name (cb_tree name, cb_tree list)
 		       sizeof (struct cb_class_name));
 	p->name = cb_define (name, CB_TREE (p));
 	if (!scratch_buff) {
-		scratch_buff = cobc_main_malloc ((size_t)COB_MINI_BUFF);
+		scratch_buff = cobc_main_malloc(COB_MINI_BUFF);
 	}
-	snprintf (scratch_buff, (size_t)COB_MINI_MAX, "cob_is_%s_%d",
+	snprintf (scratch_buff, COB_MINI_MAX, "cob_is_%s_%d",
 		  cb_to_cname (p->name), class_id++);
 	p->cname = cobc_parse_strdup (scratch_buff);
 	p->list = list;
@@ -3672,7 +3672,7 @@ cb_field_dup (struct cb_field *f, struct cb_reference *ref)
 	char		buff[COB_MINI_BUFF], pic[30];
 	int		dec, dig;
 
-	snprintf (buff, (size_t)COB_MINI_MAX, "COPY OF %s", f->name);
+	snprintf (buff, COB_MINI_MAX, "COPY OF %s", f->name);
 	x = cb_build_field (cb_build_reference (buff));
 	if(ref
 	&& ref->length
@@ -3903,7 +3903,7 @@ build_report (cb_tree name)
 	p->cname = cb_to_cname (p->name);
 
 	/* Set up LINE-COUNTER / PAGE-COUNTER */
-	snprintf (buff, (size_t)COB_MINI_MAX,
+	snprintf (buff, COB_MINI_MAX,
 		  "LINE-COUNTER of %s", p->name);
 	x = cb_build_field (cb_build_reference (buff));
 	CB_FIELD (x)->usage	= CB_USAGE_UNSIGNED_INT;
@@ -3941,10 +3941,10 @@ build_sum_counter (struct cb_report *r, struct cb_field *f)
 
 	/* Set up SUM COUNTER */
 	if (f->flag_filler) {
-		snprintf (buff, (size_t)COB_MINI_MAX, "SUM OF %s",
+		snprintf (buff, COB_MINI_MAX, "SUM OF %s",
 					CB_FIELD(CB_VALUE(f->report_sum_list))->name);
 	} else {
-		snprintf (buff, (size_t)COB_MINI_MAX, "SUM %s", f->name);
+		snprintf (buff, COB_MINI_MAX, "SUM %s", f->name);
 	}
 	x = cb_build_field (cb_build_reference (buff));
 	if (f->pic->digits == 0) {
@@ -4494,11 +4494,11 @@ finalize_file (struct cb_file *f, struct cb_field *records)
 		f->record_min = 0;
 	}
 	if (!scratch_buff) {
-		scratch_buff = cobc_main_malloc ((size_t)COB_MINI_BUFF);
+		scratch_buff = cobc_main_malloc(COB_MINI_BUFF);
 	}
 	/* FIXME: when this text is changed test DEPENDING ON with ODOSLIDE fails
 	          --> describe the issue here and use at least a define */
-	snprintf (scratch_buff, (size_t)COB_MINI_MAX, "%s Record", f->name);
+	snprintf (scratch_buff, COB_MINI_MAX, "%s Record", f->name);
 	f->record = CB_FIELD (cb_build_implicit_field (cb_build_reference (scratch_buff),
 				f->record_max));
 	f->record->sister = records;

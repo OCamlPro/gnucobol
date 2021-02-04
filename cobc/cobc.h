@@ -336,11 +336,6 @@ struct list_files {
 	char		        name[PATH_MAX];	/* Name of this file */
 };
 
-static COB_INLINE const char *
-list_files_name (const struct list_files *p) {
-	return p->name[0]? p->name : NULL;
-}
-
 extern struct list_files	*cb_listing_files;
 extern struct list_files	*cb_current_file;
 

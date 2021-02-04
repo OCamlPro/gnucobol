@@ -582,7 +582,7 @@ cb_config_entry (char *buff, const char *fname, const int line)
 		||  strcmp (name, "includeif") == 0) {
 			/* Include another conf file */
 			s = cob_expand_env_string ((char *)val);
-			cobc_main_free ((void *) val);
+			cobc_main_free(val);
 			strncpy (buff, s, COB_SMALL_MAX);
 			/* special case: use cob_free (libcob) here as the memory
 			   was allocated in cob_expand_env_string -> libcob */
@@ -594,7 +594,7 @@ cb_config_entry (char *buff, const char *fname, const int line)
 			}
 		} else if (strcmp (name, "reserved-words") == 0) {
 			/* store translated to lower case */
-			for (e = (char *)val; *e; e++) {
+			for (e = val; *e; e++) {
 				if (isupper (*e)) {
 					*e = (cob_u8_t)tolower (*e);
 				}
@@ -650,7 +650,7 @@ cb_config_entry (char *buff, const char *fname, const int line)
 
 	case CB_SUPPORT:
 		/* check if we are in "minimal mode" */
-		s = (char *)val;
+		s = val;
 		if (*s == '+') s++;
 		if (strcmp (s, "ok") == 0) {
 			support_val = CB_OK;

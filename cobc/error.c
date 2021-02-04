@@ -859,11 +859,11 @@ undefined_error (cb_tree x)
 	const char		*error_message;
 
 	if (!errnamebuff) {
-		errnamebuff = cobc_main_malloc ((size_t)COB_NORMAL_BUFF);
+		errnamebuff = cobc_main_malloc(COB_NORMAL_BUFF);
 	}
 
 	/* Get complete variable name */
-	snprintf (errnamebuff, (size_t)COB_NORMAL_MAX, "%s", CB_NAME (x));
+	snprintf (errnamebuff, COB_NORMAL_MAX, "%s", CB_NAME (x));
 	errnamebuff[COB_NORMAL_MAX] = 0;
 	if (r->chain) {
 		for (c = r->chain; c; c = CB_REFERENCE (c)->chain) {
@@ -900,7 +900,7 @@ ambiguous_error (cb_tree x)
 	w = CB_REFERENCE (x)->word;
 	if (w->error == 0) {
 		if (!errnamebuff) {
-			errnamebuff = cobc_main_malloc ((size_t)COB_NORMAL_BUFF);
+			errnamebuff = cobc_main_malloc(COB_NORMAL_BUFF);
 		}
 		/* Display error the first time */
 		snprintf (errnamebuff, (size_t)COB_NORMAL_MAX, "%s", CB_NAME (x));

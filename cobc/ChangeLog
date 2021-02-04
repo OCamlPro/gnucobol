@@ -1,8 +1,12 @@
+2021-02-04  James K. Lowden  <jklowden@symas.com>
+
+	* cobc.c cobc.h codegen.c config.c error.c orig tree.c:
+		apply spatch/cast.spatch
 
 2021-02-04  James K. Lowden  <jklowden@symas.com>
 
 	* cobc.h cobc.c error.c pplex.l:
-	allocate cb_listing_file_struct statically.  All tests pass, some leaks.
+	  allocate cb_listing_file_struct statically.  All tests pass, some leaks.
 
 2021-02-01  James K. Lowden  <jklowden@symas.com>
 

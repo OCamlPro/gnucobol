@@ -166,7 +166,7 @@ static struct ml_tree_list	*ml_tree_cache = NULL;
 
 
 static FILE			*output_target = NULL;
-static char			*output_name = NULL;
+static const char		*output_name = NULL;
 static unsigned int		output_line_number = 0;
 static FILE			*cb_local_file = NULL;
 static const char		*excp_current_program_id = NULL;
@@ -5126,7 +5126,7 @@ output_initialize_one (struct cb_initialize *p, cb_tree x)
 			if (litbuff) {
 				litbuff = cobc_main_realloc (litbuff, (size_t)litsize);
 			} else {
-				litbuff = cobc_main_malloc ((size_t)litsize);
+				litbuff = cobc_main_malloc(litsize);
 			}
 		}
 
@@ -5140,7 +5140,7 @@ output_initialize_one (struct cb_initialize *p, cb_tree x)
 		buffchar = *(litbuff + size - 1);
 		n = 0;
 		for (i = size - 1; i >= 0; i--, n++) {
-			if (*(litbuff + i) != buffchar) {
+			if (litbuff[i] != buffchar) {
 				break;
 			}
 		}
@@ -6231,7 +6231,8 @@ output_call (struct cb_call *p)
 	const struct system_table	*psyst = NULL;
 	const char			*convention;
 	struct cb_text_list		*ctl;
-	char				*s, *callname, *system_call;
+	char				*s, *callname;
+	const char			*system_call;
 	cob_u32_t			n;
 	size_t				ret_ptr = 0;
 	size_t				gen_exit_program = 0;
@@ -6263,7 +6264,7 @@ output_call (struct cb_call *p)
 	if (p->is_system) {
 		psyst = &system_tab[p->is_system - 1];
 		dynamic_link = 0;
-		system_call = (char *)psyst->syst_call;
+		system_call = psyst->syst_call;
 	}
 
 	if (dynamic_link && name_is_literal_or_prototype) {
@@ -7885,7 +7886,7 @@ output_label_info (cb_tree x, struct cb_label *lp)
 	}
 	if (lp->flag_section) {
 		output ("Section   %-24s", (const char *)lp->name);
-		excp_current_section = (const char *)lp->name;
+		excp_current_section = lp->name;
 		excp_current_paragraph = NULL;
 	} else if (lp->flag_entry) {
 		output ("Entry     %-24s", lp->orig_name);
@@ -7893,7 +7894,7 @@ output_label_info (cb_tree x, struct cb_label *lp)
 		excp_current_paragraph = NULL;
 	} else {
 		output ("Paragraph %-24s", (const char *)lp->name);
-		excp_current_paragraph = (const char *)lp->name;
+		excp_current_paragraph = lp->name;
 	}
 	if (x->source_file) {
 		output (": %s */", x->source_file);
@@ -9687,7 +9688,7 @@ output_report_def_fields (int bgn, int id, struct cb_field *f, struct cb_report 
 				ref_size = lit->size;
 			}
 			if (lit->all) {
-				val = (char *)cobc_malloc (ref_size * 2 + 2);
+				val = cobc_malloc(ref_size * 2 + 2);
 				if (lit->data[0] == '"'
 				 || lit->data[0] == '\\') {	/* Fix string for C code */
 					for (i = j = 0; j < (unsigned int)f->size; j++) {
@@ -9699,7 +9700,7 @@ output_report_def_fields (int bgn, int id, struct cb_field *f, struct cb_report 
 					i = f->size;
 				}
 			} else {
-				val = (char *)cobc_malloc (lit->size * 2 + 2);
+				val = cobc_malloc(lit->size * 2 + 2);
 				for (i = j = 0; j < lit->size; j++) {
 					if (lit->data[j] == '"'
 					 || lit->data[j] == '\\')	/* Fix string for C code */
@@ -9709,7 +9710,7 @@ output_report_def_fields (int bgn, int id, struct cb_field *f, struct cb_report 
 			}
 			val[i] = 0;
 			output_local("\"%s\",%d,", val, (int)ref_size);
-			cobc_free((void*) val);
+			cobc_free(val);
 		} else {
 			output_local("NULL,0,");
 		}
@@ -10333,12 +10334,12 @@ output_field_display (struct cb_field *f, size_t offset,
 		unsigned int idx)
 {
 	struct cb_field *p;
-	cb_tree x;
-	int 	svlocal;
-	char	*fname = (char*)f->name;
+	cb_tree     x;
+	int 	    svlocal;
+	const char *fname = f->name;
 
 	if (f->flag_filler) {
-		fname = (char*)"FILLER";
+		fname = "FILLER";
 	}
 	svlocal = f->flag_local;
 	f->flag_local = 0;
@@ -13162,7 +13163,7 @@ codegen (struct cb_program *prog, const char *translate_name, const int subseque
 	memset ((void *)i_counters, 0, sizeof (i_counters));
 
 	output_target = yyout;
-	output_name = (char *)translate_name;
+	output_name = translate_name;
 	cb_local_file = current_prog->local_include->local_fp;
 
 	if (!subsequent_call) {
@@ -13171,7 +13172,7 @@ codegen (struct cb_program *prog, const char *translate_name, const int subseque
 		if (strchr (output_name, '\\')) {
 			char buff[COB_MEDIUM_BUFF];
 			int pos = 0;
-			char *s;
+			const char *s;
 			for (s = output_name; *s; s++) {
 				if (*s == '\\') {
 					buff[pos++] = '\\';
@@ -13193,7 +13194,7 @@ codegen (struct cb_program *prog, const char *translate_name, const int subseque
 		globext_cache = NULL;
 		field_cache = NULL;
 		if (!string_buffer) {
-			string_buffer = cobc_main_malloc ((size_t)COB_MINI_BUFF);
+			string_buffer = cobc_main_malloc(COB_MINI_BUFF);
 		}
 
 		sectime = time (NULL);

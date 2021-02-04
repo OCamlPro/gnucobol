@@ -814,7 +814,6 @@ free_list_file (struct list_files *list_files_struct)
 /* Global functions */
 
 /* Output a formatted message to stderr */
-__attribute__((stack_protect))
 void
 cobc_err_msg (const char *fmt, ...) 
 {
@@ -828,10 +827,10 @@ cobc_err_msg (const char *fmt, ...)
 	fprintf (stderr, "cobc: %s\n", errmsg);
 
 	if (cb_src_list_file
-	    && list_files_name(&cb_listing_file_struct) ) {
+	    && cb_listing_file_struct.name[0]) {
 
 		cb_add_error_to_listing (NULL, 0,
-			"cobc: ", errmsg);
+					 "cobc: ", errmsg);
 	}
 
 	fflush (stderr);
@@ -2202,7 +2201,7 @@ cobc_abort_terminate (int should_be_reported)
 
 	if (!should_be_reported
 	 &&	cb_src_list_file
-	    && list_files_name(&cb_listing_file_struct)) {
+	    && cb_listing_file_struct.name[0]) {
 		print_program_listing ();
 	}
 	putc ('\n', stderr);
@@ -2211,7 +2210,7 @@ cobc_abort_terminate (int should_be_reported)
 	if (should_be_reported) {
 		cobc_err_msg (_("Please report this!"));
 		if (cb_src_list_file
-		    && list_files_name(&cb_listing_file_struct)) {
+		    && cb_listing_file_struct.name[0]) {
 			print_program_listing ();
 		}
 	}
