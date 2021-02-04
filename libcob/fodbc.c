@@ -490,7 +490,13 @@ bindColumn(
 	 && col->colname) {
 		col->hostType = SQL_C_CHAR;
 		if (col->dtfrm) {
-			col->sqlType = SQL_DATE;
+			if (col->dtfrm->hasDate
+			 && col->dtfrm->hasTime)
+				col->sqlType = SQL_TIMESTAMP;
+			else if (col->dtfrm->hasTime)
+				col->sqlType = SQL_TIME;
+			else 
+				col->sqlType = SQL_DATE;
 		} else if (col->type == COB_XFDT_FLOAT) {
 			if (col->size == sizeof(double))
 				col->hostType = SQL_C_DOUBLE;
@@ -1531,7 +1537,13 @@ odbc_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 		 && fx->map[k].colname) {
 			fx->map[k].hostType = SQL_C_CHAR;
 			if (fx->map[k].dtfrm) {
-				fx->map[k].sqlType = SQL_DATE;
+				if (fx->map[k].dtfrm->hasDate
+				 && fx->map[k].dtfrm->hasTime)
+					fx->map[k].sqlType = SQL_TIMESTAMP;
+				else if (fx->map[k].dtfrm->hasTime)
+					fx->map[k].sqlType = SQL_TIME;
+				else 
+					fx->map[k].sqlType = SQL_DATE;
 			} else if (fx->map[k].type == COB_XFDT_FLOAT) {
 				if (fx->map[k].size == sizeof(double))
 					fx->map[k].hostType = SQL_C_DOUBLE;
