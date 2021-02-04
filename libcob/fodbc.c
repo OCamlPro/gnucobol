@@ -630,6 +630,8 @@ odbc_setup_stmt (
 				chkSts(db,(char*)"Set CURSOR SCROLLABLE",s->handle,
 					SQLSetStmtAttr(s->handle, SQL_ATTR_CURSOR_SCROLLABLE, 
 										(SQLPOINTER)SQL_SCROLLABLE, SQL_IS_UINTEGER));
+			} else if (db->postgres) {
+				fx->fl->flag_read_chk_dups = 0; /* Not possible here */
 			} else {
 				chkSts(db,(char*)"Set CURSOR DYNAMIC",s->handle,
 					SQLSetStmtAttr(s->handle, SQL_ATTR_CURSOR_TYPE, 
@@ -702,12 +704,25 @@ odbc_row_count (
 }
 
 static void
+odbc_close_free ( SQL_STMT *s)
+{
+	if (s == NULL
+	 || s->handle == NULL)
+		return;
+	SQLCloseCursor (s->handle);
+	SQLFreeStmt (s->handle,SQL_CLOSE);
+	s->iscursor = FALSE;
+	s->status = 0;
+	return;
+}
+
+static void
 odbc_close_stmt ( SQL_STMT *s)
 {
 	if (s == NULL
 	 || s->handle == NULL)
 		return;
-	SQLFreeStmt(s->handle,SQL_CLOSE);
+	SQLFreeStmt (s->handle,SQL_CLOSE);
 	s->iscursor = FALSE;
 	s->status = 0;
 	return;
@@ -1639,7 +1654,7 @@ odbc_start (cob_file_api *a, cob_file *f, const int cond, cob_field *key)
 	f->curkey = ky;
 	paramtype = SQL_BIND_NO;
 
-	odbc_close_stmt (fx->start);
+	odbc_close_free (fx->start);
 	fx->start = NULL;
 	switch (cond) {
 	case COB_EQ:
