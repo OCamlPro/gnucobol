@@ -3755,8 +3755,8 @@ cb_strcasecmp (const void *s1, const void *s2)
 	unsigned char		c1;
 	unsigned char		c2;
 
-	p1 = (const unsigned char *)s1;
-	p2 = (const unsigned char *)s2;
+	p1 = s1;
+	p2 = s2;
 
 	for (;;) {
 		if (cob_lower_tab[*p1]) {

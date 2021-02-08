@@ -1,5 +1,7 @@
 2021-02-08  James K. Lowden  <jklowden@symas.com>
 
+	* typeck.c : apply cast.spatch
+
 	* cobc.c remove casts manually after applying spatch
 
 2021-02-04  James K. Lowden  <jklowden@symas.com>

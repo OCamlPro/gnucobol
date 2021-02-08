@@ -3914,7 +3914,7 @@ build_report (cb_tree name)
 	p->line_counter = cb_build_field_reference (CB_FIELD (x), NULL);
 	CB_FIELD_ADD (current_program->working_storage, CB_FIELD (x));
 
-	snprintf (buff, (size_t)COB_MINI_MAX,
+	snprintf (buff, COB_MINI_MAX,
 		  "PAGE-COUNTER of %s", p->name);
 	y = cb_build_field (cb_build_reference (buff));
 	CB_FIELD (y)->usage	= CB_USAGE_UNSIGNED_INT;

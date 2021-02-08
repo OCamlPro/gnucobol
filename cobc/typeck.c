@@ -1885,7 +1885,7 @@ cb_build_program_id (const char *name, const cob_u32_t is_func)
 	(void)cobc_check_valid_name (name, PROGRAM_ID_NAME);
 
 	/* Set and encode the PROGRAM-ID */
-	current_program->orig_program_id = (char *) name;
+	current_program->orig_program_id = name;
 	return cb_encode_program_id (name, 0, folding);
 }
 
@@ -7394,9 +7394,9 @@ cb_emit_call (cb_tree prog, cb_tree par_using, cb_tree returning,
 						valmin = 1;
 						break;
 					}
-					if (memcmp (CB_LITERAL (x)->data,
-						    "18446744073709551615",
-						    (size_t)20) > 0) {
+					if (memcmp(CB_LITERAL(x)->data,
+						   "18446744073709551615",
+						   20) > 0) {
 						valmin = 1;
 						break;
 					}
@@ -7408,11 +7408,10 @@ cb_emit_call (cb_tree prog, cb_tree par_using, cb_tree returning,
 						valmin = 1;
 						break;
 					}
-					if (memcmp (CB_LITERAL (x)->data,
-						    CB_LITERAL (x)->sign ?
-								"9223372036854775808" :
-								"9223372036854775807",
-						    (size_t)19) > 0) {
+					if (memcmp(CB_LITERAL(x)->data,
+						   CB_LITERAL(x)->sign ?
+						   "9223372036854775808" :
+						   "9223372036854775807", 19) > 0) {
 						valmin = 1;
 						break;
 					}
@@ -7506,11 +7505,11 @@ cb_emit_call (cb_tree prog, cb_tree par_using, cb_tree returning,
 
 		is_sys_idx = 1;
 		for (psyst = system_tab; psyst->syst_name; psyst++, is_sys_idx++) {
-			if (!strcmp(entry, (const char *)psyst->syst_name)) {
+			if (!strcmp(entry, psyst->syst_name)) {
 				char *name;
 				char xname[7];
 				if (psyst->syst_name[1]) {
-					name = (char *)psyst->syst_name;
+					name = psyst->syst_name;
 				} else {
 					sprintf (xname, "X\"%2X\"", (unsigned char)psyst->syst_name[0]);
 					name = (char *)&xname;
@@ -9641,9 +9640,9 @@ validate_move_from_num_lit (cb_tree src, cb_tree dst, const unsigned int is_valu
 				if (i > 19) {
 					return MOVE_NUMERIC_LIT_OVERFLOW;
 				}
-				if (memcmp (p, l->sign ? "9223372036854775808" :
-					    "9223372036854775807",
-					    (size_t)19) > 0) {
+				if (memcmp(p, l->sign ?
+					   "9223372036854775808" :
+					   "9223372036854775807", 19) > 0) {
 					return MOVE_NUMERIC_LIT_OVERFLOW;
 				}
 			} else {
@@ -9653,7 +9652,7 @@ validate_move_from_num_lit (cb_tree src, cb_tree dst, const unsigned int is_valu
 				if (i > 20) {
 					return MOVE_NUMERIC_LIT_OVERFLOW;
 				}
-				if (memcmp (p, "18446744073709551615", (size_t)20) > 0) {
+				if (memcmp(p, "18446744073709551615", 20) > 0) {
 					return MOVE_NUMERIC_LIT_OVERFLOW;
 				}
 			}
@@ -10547,7 +10546,7 @@ cb_build_move_literal (cb_tree src, cb_tree dst)
 		if (f->size > 128) {
 			return CB_BUILD_FUNCALL_2 ("cob_move", src, dst);
 		}
-		buff = cobc_parse_malloc ((size_t)f->size);
+		buff = cobc_parse_malloc(f->size);
 		for (i = 0; i < f->size; i++) {
 			buff[i] = l->data[i % l->size];
 		}
@@ -10568,13 +10567,13 @@ cb_build_move_literal (cb_tree src, cb_tree dst)
 	    || ((cat == CB_CATEGORY_ALPHABETIC || cat == CB_CATEGORY_ALPHANUMERIC)
 		&& f->size < (int) (l->size + 16)
 		&& !cb_field_variable_size (f))) {
-		buff = cobc_parse_malloc ((size_t)f->size);
+		buff = cobc_parse_malloc(f->size);
 		diff = (int) (f->size - l->size);
 		if (cat == CB_CATEGORY_NUMERIC) {
 			if (diff <= 0) {
 				memcpy (buff, l->data - diff, (size_t)f->size);
 			} else {
-				memset (buff, '0', (size_t)diff);
+				memset(buff, '0', diff);
 				memcpy (buff + diff, l->data, (size_t)l->size);
 			}
 			/* Check all zeros */
@@ -10608,7 +10607,7 @@ cb_build_move_literal (cb_tree src, cb_tree dst)
 				if (diff <= 0) {
 					memcpy (buff, l->data - diff, (size_t)f->size);
 				} else {
-					memset (buff, ' ', (size_t)diff);
+					memset(buff, ' ', diff);
 					memcpy (buff + diff, l->data, (size_t)l->size);
 				}
 			} else {
@@ -10616,7 +10615,7 @@ cb_build_move_literal (cb_tree src, cb_tree dst)
 					memcpy (buff, l->data, (size_t)f->size);
 				} else {
 					memcpy (buff, l->data, (size_t)l->size);
-					memset (buff + l->size, ' ', (size_t)diff);
+					memset(buff + l->size, ' ', diff);
 				}
 			}
 		}
