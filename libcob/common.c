@@ -4520,7 +4520,7 @@ cob_gettmpdir (void)
 }
 
 /* Set temporary file name */
-void
+char *
 cob_temp_name (char *filename, const char *ext)
 {
 	int pid = cob_sys_getpid ();
@@ -4542,6 +4542,7 @@ cob_temp_name (char *filename, const char *ext)
 	}
 #undef TEMP_EXT_SCHEMA
 #undef TEMP_SORT_SCHEMA
+	return filename;
 }
 
 void

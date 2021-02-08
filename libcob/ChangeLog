@@ -1,3 +1,6 @@
+2021-02-08  James K. Lowden  <jklowden@symas.com>
+
+	* common.c common.h (cob_temp_name): return passed pointer for convenience
 
 2021-02-02  Ron Norman <rjn@inglenet.com>
 

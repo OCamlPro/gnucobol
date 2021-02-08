@@ -1,3 +1,6 @@
+2021-02-08  James K. Lowden  <jklowden@symas.com>
+
+	* gettext.h (dcnpgettext_expr): do not cast malloc
 
 2020-09-30  Simon Sobisch <simonsobisch@gnu.org>
 

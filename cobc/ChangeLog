@@ -1,3 +1,7 @@
+2021-02-08  James K. Lowden  <jklowden@symas.com>
+
+	* cobc.c remove casts manually after applying spatch
+
 2021-02-04  James K. Lowden  <jklowden@symas.com>
 
 	* cobc.c cobc.h codegen.c config.c error.c orig tree.c:

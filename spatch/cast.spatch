@@ -15,14 +15,15 @@ expression N;
 - F((size_t)N)
 + F(N)
 
-@ memcmp_size_t @
+@ mem_size_t @
+identifier F =~ "mem(cmp|set)";
 expression A; 
 expression B; 
 int I;
 @@
 
-- memcmp (A, B, (size_t)I)
-+ memcmp (A, B, I)
+- F (A, B, (size_t)I)
++ F (A, B, I)
 
 @ cobc_free_char_pointer @
 expression name;
@@ -118,6 +119,15 @@ expression E;
 
 - p = (C*) F(E)
 + p =  F(E)
+
+@ const_void_star_assign @
+type T, C;
+const void * cv;
+const T * p;
+@@
+
+- p = (C*) cv
++ p =      cv
 
 @ void_star_ternary @
 identifier F;

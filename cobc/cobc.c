@@ -2300,7 +2300,7 @@ cobc_cmd_print (const char *cmd)
 	}
 	/* Check if it fits in 80 characters */
 	if (strlen (cmd) < 64) {
-		fprintf (stderr, "\t%s\n", (char *)cmd);
+		fprintf (stderr, "\t%s\n", cmd);
 		fflush (stderr);
 		return;
 	}
@@ -3973,8 +3973,8 @@ process_filename (const char *filename)
 		   cb_compile_level == CB_LEVEL_PREPROCESS) {
 		fn->preprocess = cobc_main_stradd_dup (fbasename, ".i");
 	} else {
-		fn->preprocess = cobc_main_malloc (COB_FILE_MAX);
-		cob_temp_name ((char *)fn->preprocess, ".cob");
+		char *p = cobc_main_malloc (COB_FILE_MAX);
+		fn->preprocess = cob_temp_name (p, ".cob");
 	}
 
 	/* Set translate filename */
@@ -3986,8 +3986,8 @@ process_filename (const char *filename)
 		   cb_compile_level == CB_LEVEL_TRANSLATE) {
 		fn->translate = cobc_main_stradd_dup (fbasename, ".c");
 	} else {
-		fn->translate = cobc_main_malloc (COB_FILE_MAX);
-		cob_temp_name ((char *)fn->translate, ".c");
+		char *p = cobc_main_malloc (COB_FILE_MAX);
+		fn->translate = cob_temp_name (p, ".c");
 	}
 #ifdef	__OS400__
 	/* adjustment of fn->translate, seems to need a full path
@@ -4025,8 +4025,8 @@ process_filename (const char *filename)
 		fn->object = cobc_main_stradd_dup (fbasename, "." COB_OBJECT_EXT);
 	} else if (cb_compile_level != CB_LEVEL_MODULE) {
 		/* note: CB_LEVEL_MODULE is compiled without an intermediate object file */
-		fn->object = cobc_main_malloc (COB_FILE_MAX);
-		cob_temp_name ((char *)fn->object, "." COB_OBJECT_EXT);
+		char *p = cobc_main_malloc (COB_FILE_MAX);
+		fn->object = cob_temp_name (p, "." COB_OBJECT_EXT);
 	}
 	if (fn->object) {
 		fn->object_len = strlen (fn->object);
@@ -5193,8 +5193,7 @@ print_fields (struct cb_field *top, int *found)
 			print_program_data ("");
 		}
 
-		strncpy (lcl_name, check_filler_name ((char *)top->name),
-			 LCL_NAME_MAX);
+		strncpy (lcl_name, check_filler_name (top->name), LCL_NAME_MAX);
 		get_cat = 1;
 		got_picture = 1;
 
@@ -5512,7 +5511,7 @@ xref_fields (struct cb_field *top)
 			continue;
 		}
 
-		strncpy (lcl_name, check_filler_name ((char *)top->name), LCL_NAME_MAX);
+		strncpy (lcl_name, check_filler_name (top->name), LCL_NAME_MAX);
 		lcl_name[LCL_NAME_MAX] = 0;	/* make sure we always have the trailing NULL */
 		if (!strcmp (lcl_name, "FILLER") && !top->validation) {
 			if (top->children) {
@@ -5961,7 +5960,7 @@ get_next_listing_line (FILE *fd, char **pline, int fixed)
 #if 1 /* Simon: that should be portable enough */
 		int size = (unsigned int)CB_ENDLINE - i;
 		if (size > 0) {
-			memset (&out_line[i], ' ', (size_t)size);
+			memset (&out_line[i], ' ', size);
 			i = (unsigned int)CB_ENDLINE;
 		}
 #else
