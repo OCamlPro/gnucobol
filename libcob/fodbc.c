@@ -1402,7 +1402,6 @@ odbc_file_delete (cob_file_api *a, cob_file *f, char *filename)
 		if (fx == NULL) {
 			return COB_STATUS_30_PERMANENT_ERROR;
 		}
-		fx->gentable = a->setptr->cob_create_table;
 		p = cob_malloc (sizeof (struct indexed_file));
 		f->file = p;
 		f->flag_file_lock = 0;	
@@ -1433,7 +1432,7 @@ static int
 odbc_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const int sharing)
 {
 	struct indexed_file	*p;
-	int				i, k, ln;
+	int				i, k, ln, joined = 0;
 	char		buff[COB_FILE_MAX+1];
 #ifdef COB_DEBUG_LOG
 	const char	*optyp = "?";
@@ -1444,8 +1443,8 @@ odbc_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 	if (fx == NULL) {
 		return COB_STATUS_30_PERMANENT_ERROR;
 	}
-	fx->gentable = a->setptr->cob_create_table;
 	if (db_join) {			/* Join DataBase, on first OPEN of INDEXED file */
+		joined = 1;
 		join_environment (a);
 		if (db_join < 0) {
 			return COB_STATUS_30_PERMANENT_ERROR;
@@ -1542,8 +1541,40 @@ odbc_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 	f->flag_nonexistent = 0;
 	f->flag_end_of_file = 0;
 	f->flag_begin_of_file = 0;
-	f->flag_log_support = 1;
-	f->flag_do_log = 1;
+	f->flag_io_tran = TRUE;
+	if ((f->lock_mode & COB_LOCK_ROLLBACK)) {	/* Had APPLY COMMIT */ 
+		if (db->autocommit)				/* Tell database of change */
+			joined = 1;
+		db->autocommit = FALSE;
+		f->flag_do_qbl = FALSE;			/* fileio should not do QBL processing */
+	} else {
+		db->autocommit = TRUE;
+	}
+	if (joined) {
+		if (db->mysql) {
+			odbcStmt (db, (char*)"COMMIT");
+			if (db->autocommit) {
+				odbcStmt (db, (char*)"SET autocommit=1");
+			} else {
+				odbcStmt (db, (char*)"SET autocommit=0");
+			}
+			odbcStmt (db, (char*)"BEGIN");
+		} else if (db->postgres) {
+			if (db->autocommit) {
+				odbcStmt (db, (char*)"SET AUTOCOMMIT TO ON");
+			} else {
+				odbcStmt (db, (char*)"SET AUTOCOMMIT TO OFF");
+			}
+		} else if (db->sqlite) {
+			odbcStmt (db, (char*)"COMMIT");
+			if ((f->share_mode & COB_SHARE_NO_OTHER)
+			 || (f->lock_mode & COB_FILE_EXCLUSIVE) ) {
+				odbcStmt (db, (char*)"BEGIN EXCLUSIVE");
+			} else {
+				odbcStmt (db, (char*)"BEGIN DEFERRED");
+			}
+		}
+	}
 	p->savekey = cob_malloc ((size_t)(p->maxkeylen + 1));
 	p->suppkey = cob_malloc ((size_t)(p->maxkeylen + 1));
 	p->saverec = cob_malloc ((size_t)(f->record_max + 1));

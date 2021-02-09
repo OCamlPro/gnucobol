@@ -414,7 +414,6 @@ struct file_xfd {
 	int		ncols;			/* Number of columns */
 	int		maxcolnmln;		/* Length of longest column name */
 	int		lncols;			/* Length of all Column names */
-	int		gentable;		/* Generate CREATE TABLE if needed */
 	int		fileorg;		/* cob_file.organization */
 	int		*xlbl;			/* Label to map[subscript] table */
 	struct sql_date	**date;	/* Date formats used */

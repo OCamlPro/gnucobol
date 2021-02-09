@@ -1,4 +1,7 @@
 
+2021-02-09  Ron Norman <rjn@inglenet.com>
+	* cobc.c,flag.def,codegen.c,field.c: changed -fsqldb= to flag -fsql
+
 2021-02-01  Ron Norman <rjn@inglenet.com>
 	* parser.y: Removed PENDING for COMMIT/ROLLBACK options
 	* typeck.c: Set on COB_LOCK_ROLLBACK as requested

@@ -81,7 +81,7 @@ static const char *sqlnames[] = {
 void
 cb_save_xfd (char *str)
 {
-	if (cb_sqldb_name == NULL) {
+	if (cb_flag_sql_xfd == 0) {
 		hasxfd = 0;
 		return;
 	}

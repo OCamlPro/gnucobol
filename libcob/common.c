@@ -413,7 +413,7 @@ static struct config_tbl gc_conf[] = {
     {"COB_KEYCHECK","keycheck",     "on",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_keycheck)},
     {"COB_FILE_DICTIONARY","file_dictionary",     "min",dict_opts,GRP_FILE,ENV_UINT|ENV_ENUMVAL,SETPOS(cob_file_dict),0,3},
 	{"COB_FILE_DICTIONARY_PATH","file_dictionary_path",		NULL,	NULL,GRP_FILE,ENV_FILE,SETPOS(cob_dictionary_path)},
-    {"COB_CREATE_TABLE","create_table",  "false",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_create_table)},
+	{"COB_FILE_ROLLBACK", "rollback", 	"0", 	NULL, GRP_FILE, ENV_BOOL, SETPOS (cob_file_rollback)},
     {"COB_DUPS_AHEAD","dups_ahead",     "default",dups_opts,GRP_FILE,ENV_UINT|ENV_ENUMVAL,SETPOS(cob_file_dups),0,3},
 #ifdef  WITH_DB
 	{"DB_HOME", "db_home", 			NULL, 	NULL, GRP_FILE, ENV_FILE, SETPOS (bdb_home)},

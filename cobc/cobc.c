@@ -105,7 +105,6 @@ const char		*cb_cobc_build_stamp = NULL;
 const char		*demangle_name = NULL;
 const char		*cb_storage_file_name = NULL;
 const char		*cb_call_extfh = NULL;
-const char		*cb_sqldb_name = NULL;
 const char		*cb_sqldb_schema = NULL;
 struct cb_text_list	*cb_include_list = NULL;
 struct cb_text_list	*cb_intrinsic_list = NULL;
@@ -3476,13 +3475,9 @@ process_command_line (const int argc, char **argv)
 			break;
 
 		case 11:
-			/* -fsqldb=<dbname> : Database type for XFD */
-			cb_sqldb_name = cobc_main_strdup (cob_optarg);
-			break;
-
-		case 12:
 			/* -fsqlschema=<name> : Database schema name for XFD */
 			cb_sqldb_schema = cobc_main_strdup (cob_optarg);
+			cb_flag_sql_xfd = 1;
 			if (cob_schema_dir != NULL) {
 				char	temp_buff[COB_MEDIUM_BUFF];
 				strcpy(temp_buff,cob_schema_dir);

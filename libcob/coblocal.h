@@ -254,9 +254,8 @@ typedef struct __cob_settings {
 	unsigned int	cob_keycheck;		/* Default KEYCHECK mode */
 	unsigned int	cob_file_dict;		/* When to use filename.dd (File definition) */
 	unsigned int	cob_bdb_byteorder;	/* Byte order to use for BDB files */
-	unsigned int	cob_create_table;	/* Generate CREATE TABLE at runtime if needed */
 	unsigned int	cob_file_dups;		/* When to check for duplicate key in INDEXED file*/
-	unsigned int	cob_file_log;		/* Should logging/transactions be enabled */
+	unsigned int	cob_file_rollback;	/* Should transactions be enabled */
 	char		*cob_dictionary_path;	/* Place to write filename.dd stats */
 	char		*cob_stats_filename;	/* Place to write I/O stats */
 	char 		*cob_file_path;

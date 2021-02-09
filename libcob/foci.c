@@ -385,7 +385,13 @@ bindColumn(
 	 && col->colname) {
 		col->hostType = SQLT_STR;
 		if (col->dtfrm) {
-			col->sqlType = SQLT_DAT;
+			if (col->dtfrm->hasDate
+			 && col->dtfrm->hasTime)
+				col->sqlType = SQLT_TIMESTAMP;
+			else if (col->dtfrm->hasTime)
+				col->sqlType = SQLT_TIME;
+			else 
+				col->sqlType = SQLT_DAT;
 		} else if (col->type == COB_XFDT_FLOAT) {
 			if (col->size == sizeof(double))
 				col->hostType = SQLT_FLT;
@@ -1063,7 +1069,6 @@ oci_file_delete (cob_file_api *a, cob_file *f, char *filename)
 		if (fx == NULL) {
 			return COB_STATUS_30_PERMANENT_ERROR;
 		}
-		fx->gentable = a->setptr->cob_create_table;
 		p = cob_malloc (sizeof (struct indexed_file));
 		f->file = p;
 		f->flag_file_lock = 0;	
@@ -1104,7 +1109,6 @@ oci_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const in
 	if (fx == NULL) {
 		return COB_STATUS_30_PERMANENT_ERROR;
 	}
-	fx->gentable = a->setptr->cob_create_table;
 #ifdef COB_DEBUG_LOG
 	if (mode == COB_OPEN_INPUT)
 		optyp = "INPUT";
@@ -1181,12 +1185,10 @@ oci_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const in
 	}
 
 	if (p->lmode == LEXCLLOCK) {
-		if (db->mysql) {
-			snprintf(buff,sizeof(buff),"LOCK TABLES %s %s",fx->tablename,
-						mode == COB_OPEN_INPUT?"READ":"WRITE");
-			if (ociStmt(db,buff))
-				return COB_STATUS_30_PERMANENT_ERROR;
-		}
+		snprintf(buff,sizeof(buff),"LOCK TABLES %s %s",fx->tablename,
+					mode == COB_OPEN_INPUT?"READ":"WRITE");
+		if (ociStmt(db,buff))
+			return COB_STATUS_30_PERMANENT_ERROR;
 	}
 
 	f->open_mode = mode;
@@ -1194,8 +1196,13 @@ oci_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const in
 	f->flag_nonexistent = 0;
 	f->flag_end_of_file = 0;
 	f->flag_begin_of_file = 0;
-	f->flag_log_support = 1;
-	f->flag_do_log = 1;
+	f->flag_io_tran = TRUE;
+	if ((f->lock_mode & COB_LOCK_ROLLBACK)) {	/* Had APPLY COMMIT */ 
+		db->autocommit = FALSE;
+		f->flag_do_qbl = FALSE;					/* fileio should not do QBL work */
+	} else {
+		db->autocommit = TRUE;
+	}
 	p->savekey = cob_malloc ((size_t)(p->maxkeylen + 1));
 	p->suppkey = cob_malloc ((size_t)(p->maxkeylen + 1));
 	p->saverec = cob_malloc ((size_t)(f->record_max + 1));
@@ -1204,7 +1211,13 @@ oci_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const in
 		 && fx->map[k].colname) {
 			fx->map[k].hostType = SQLT_STR;
 			if (fx->map[k].dtfrm) {
-				fx->map[k].sqlType = SQLT_DAT;
+				if (fx->map[k].dtfrm->hasDate
+				 && fx->map[k].dtfrm->hasTime)
+					fx->map[k].sqlType = SQLT_TIMESTAMP;
+				else if (fx->map[k].dtfrm->hasTime)
+					fx->map[k].sqlType = SQLT_TIME;
+				else 
+					fx->map[k].sqlType = SQLT_DAT;
 			} else if (fx->map[k].type == COB_XFDT_FLOAT) {
 				if (fx->map[k].size == sizeof(double))
 					fx->map[k].hostType = SQLT_FLT;

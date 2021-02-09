@@ -468,7 +468,6 @@ extern struct tm			current_compile_tm;
 
 extern const char		*cob_config_dir;
 extern const char		*cob_schema_dir;
-extern const char		*cb_sqldb_name;
 extern const char		*cb_sqldb_schema;
 
 extern unsigned int		cobc_gen_listing;

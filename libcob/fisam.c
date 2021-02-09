@@ -322,7 +322,7 @@ beginLogFile (cob_file *f)
 {
 	if (f->flag_do_log
 	 && logActive) {
-		f->flag_log_support = 1;
+		f->flag_io_tran = 1;
 		if (logActive == 1) {
 			if (isbegin () != 0) {
 				logActive = 0;
@@ -1043,7 +1043,7 @@ isam_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 	}
 	if (logUnusable) {
 		f->flag_do_log = 0;
-		f->flag_log_support = 0;
+		f->flag_io_tran = 0;
 	}
 	if (f->flag_do_log
 	 && !logActive)
@@ -1922,8 +1922,10 @@ isam_delete (cob_file_api *a, cob_file *f)
 	ISERRNO = 0;
 	if (isread_retry (f, (void *)f->record->data, ISEQUAL | ISLOCK)) {
 		ret = fisretsts (COB_STATUS_21_KEY_INVALID);
-	} else if (isdelcurr (fh->isfd)) {
-		ret = fisretsts (COB_STATUS_49_I_O_DENIED);
+	} else {
+		if (isdelete (fh->isfd, (void *)f->record->data)) {
+			ret = fisretsts (COB_STATUS_49_I_O_DENIED);
+		}
 	}
 	restorefileposition (f);
 	if (!(f->lock_mode & COB_LOCK_MULTIPLE)

@@ -1,4 +1,8 @@
 
+2021-02-08   Ron Norman <rjn@inglenet.com>
+
+	* testsuite.src/run_file.at: Added test cases for COMMIT/ROLLBACK
+
 2020-12-04   Ron Norman <rjn@inglenet.com>
 
 	* testsuite.src/run_misc.at: corrected for 32/64-bit by removing pointer

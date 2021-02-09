@@ -9095,7 +9095,7 @@ output_file_initialization (struct cb_file *f)
 	if (f->organization == COB_ORG_RELATIVE
 	 || f->organization == COB_ORG_INDEXED) {
 		if ((f->flag_sql_xfd || cb_all_files_xfd)
-		 && cb_sqldb_name) {
+		 && cb_flag_sql_xfd) {
 			if (f->sql_name) {
 				output_line ("cob_file_xfdname (%s%s, \"%s\");", 
 								CB_PREFIX_FILE, f->cname, f->sql_name);

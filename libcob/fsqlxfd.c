@@ -1321,8 +1321,7 @@ cob_load_ddl (struct db_state  *db, struct file_xfd *fx)
 		sdir = (char*)COB_SCHEMA_DIR;
 	k = sprintf (xfdbuf, "%s%s%s.ddl",sdir,SLASH_STR,fx->tablename);
 	fi = fopen (xfdbuf,"r");
-	if (fi == NULL
-	 && fx->gentable) {
+	if (fi == NULL) {
 		fi = fopen (xfdbuf,"w");
 		cob_xfd_to_ddl (db, fx, fi) ;
 		fclose(fi);

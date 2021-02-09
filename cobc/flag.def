@@ -71,15 +71,6 @@ CB_FLAG_NQ (1, "intrinsics", 10,		/* added to cb_intrinsic_list */
 	_("  -fintrinsics=[ALL|intrinsic function name(,name,...)]\n"
 	  "                        intrinsics to be used without FUNCTION keyword"))
 
-# if 0 /* not yet merged */
-/* note: suppressed help to have it local to --debug */
-CB_FLAG_NQ (0, "ec", 11,
-	_("  -fec=<exception-name>\tenable code generation for <exception-name>,\n"
-      "                        sets -fsource-location"))
-CB_FLAG_NQ (0, "no-ec", 12,
-	_("  -fno-ec=<exception-name>\tdisable code generation for <exception-name>"))
-#endif
-
 CB_FLAG_NQ (1, "dump", 8,
 	_("  -fdump=<scope>        dump data fields on abort, <scope> may be\n"
 	  "                        a combination of: ALL, WS, LS, RD, FD, SC, LO"))
@@ -92,14 +83,22 @@ CB_FLAG_NQ (1, "callfh", 9,
 	_("  -fcallfh=<name>       specifies <name> to be used for I/O\n"
 	  "                        as external provided EXTFH interface module"))
 
-CB_FLAG_NQ (1, "sqldb", 11,		/* stored in cb_sqldb_name */
-	_("  -fsqldb=<dbtype>      which Database is used, <dbtype> may be\n"
-	  "                        MySQL, MSSQL, Oracle10, Oracle11, Oracle12"))
-
-CB_FLAG_NQ (1, "sqlschema", 12,		/* stored in cb_sqldb_schema */
+CB_FLAG_NQ (1, "sqlschema", 11,		/* stored in cb_sqldb_schema */
 	_("  -fsqlschema=<name>    define database schema name"))
 
+# if 0 /* not yet merged */
+/* note: suppressed help to have it local to --debug */
+CB_FLAG_NQ (0, "ec", 14,
+	_("  -fec=<exception-name>\tenable code generation for <exception-name>,\n"
+      "                        sets -fsource-location"))
+CB_FLAG_NQ (0, "no-ec", 15,
+	_("  -fno-ec=<exception-name>\tdisable code generation for <exception-name>"))
+#endif
+
 /* Binary flags */
+
+CB_FLAG (cb_flag_sql_xfd, 1, "sql", 
+	_("  -fsql                 process the XFD directives"))
 
 /* Flags with suppressed help */
 

@@ -1527,10 +1527,13 @@ typedef struct __cob_file {
 	unsigned int		flag_ls_instab:1;	/* LINE SEQUENTIAL replace spaces by TAB (INSERTTAB) */
 	unsigned int		flag_read_chk_dups:1;/* Always check DUPLICATE key on READ NEXT */
 	unsigned int		flag_read_no_02:1;	/* Never return 02 for DUPLICATE on READ NEXT */
-	unsigned int		flag_was_updated:1;	/* File had an update since last open/commit */
-	unsigned int		flag_log_support:1;	/* Logging/transactions is supported for file */
-	unsigned int		flag_do_log:1;		/* 1: enable logging/transactions for this file */
-	unsigned int		unused_bits:12;
+	unsigned int		flag_was_updated:1;	/* File had an update since last commit/rollback */
+	unsigned int		flag_close_pend:1;	/* File close is pending commit/rollback */
+	unsigned int		flag_io_tran:1;		/* IO Handler: able to handle commit/rollback */
+	unsigned int		flag_do_log:1;		/* IO Handler: enable commit/rollback (ISAM/database) */
+	unsigned int		flag_do_qbl:1;		/* fileio: enable commit/rollback */
+	unsigned int		flag_do_jrn:1;		/* fileio: record updates to journal/audit trail */
+	unsigned int		unused_bits:10;
 
 	cob_field		*last_key;		/* Last field used as 'key' for I/O */
 	unsigned char		last_operation;		/* Most recent I/O operation */
@@ -1548,7 +1551,9 @@ typedef struct __cob_file {
 #define COB_LAST_ROLLBACK	11
 
 	unsigned char		io_routine;		/* Index to I/O routine function pointers */
+	unsigned char		tran_open_mode;	/* initial OPEN mode for commit/rollback */
 	short 				curkey;			/* Current file index read sequentially */
+	short 				mapkey;			/* Remapped index number, when FD does note match file */
 
 	cob_io_stats		stats[6];		/* I/O Counts by 'operation' type */
 
@@ -1558,7 +1563,6 @@ typedef struct __cob_file {
 	long				file_pid;		/* Process id of other end of pipe */
 	void				*fileout;		/* output side of bi-directional pipe 'FILE*' */
 	int					fdout;			/* output side of bi-directional pipe 'fd' */
-	short 				mapkey;			/* Remapped index number, when FD does note match file */
 } cob_file;
 
 

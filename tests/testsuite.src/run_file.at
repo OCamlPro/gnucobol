@@ -18401,3 +18401,1382 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [1)  Good Delete File
 
 AT_CLEANUP
 
+AT_SETUP([INDEXED COMMIT/ROLLBACK])
+AT_KEYWORDS([ROLLBACK])
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+      
+       PROGRAM-ID. prog.
+      
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+      
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT OPTIONAL TSPFILE 
+           ASSIGN TO "testsql"
+           ORGANIZATION INDEXED ACCESS DYNAMIC
+           LOCK MODE IS MANUAL WITH ROLLBACK
+           RECORD KEY IS PRIME-KEY
+           SOURCE IS CM-CUST-NUM
+           FILE STATUS IS CUST-STAT .
+
+       I-O-CONTROL.
+           APPLY COMMIT ON TSPFILE.
+
+       DATA  DIVISION.
+       FILE SECTION.
+       FD  TSPFILE
+           BLOCK CONTAINS 5 RECORDS.
+      
+       01  TSPFL-RECORD.
+           05  TSPFL-REC. 
+           10  CM-CUST-NUM.
+             15  CM-CUST-PRE                   PICTURE X(3). 
+             15  CM-CUST-NNN                   PICTURE X(5). 
+           10  CM-STATUS                       PICTURE X. 
+           10  CM-COMPANY                      PICTURE X(25). 
+           10  CM-ADDRESS.
+             15  CM-ADDRESS-1                  PICTURE X(25). 
+             15  CM-ADDRESS-2                  PICTURE X(25). 
+             15  CM-ADDRESS-3                  PICTURE X(25). 
+           10  CM-TELEPHONE                    PICTURE 9(10). 
+           10  CM-DP-MGR                       PICTURE X(25). 
+           10  CM-MACHINE                      PICTURE X(8). 
+           10  CM-MEMORY                       PICTURE X(4). 
+           10  CM-MEMORYX REDEFINES CM-MEMORY.
+             15  CM-MEMSZ                      PICTURE 9(2). 
+             15  CM-MEMUNIT                    PICTURE X(2). 
+           10  CM-DISK                         PICTURE X(8). 
+           10  CM-TAPE                         PICTURE X(8). 
+           10  CM-NO-TERMINALS                 PICTURE 9(5) BINARY. 
+
+       WORKING-STORAGE SECTION.
+      
+       01  CUST-STAT.
+           05  STAT-1 PICTURE 9(4) COMP SYNC.
+           05  FILLER REDEFINES STAT-1.
+               10  STAT-X1 PIC X COMP-X.
+               10  STAT-X2 PIC X COMP-X.
+       77  BYTE-1  PICTURE 9(3).
+       77  BYTE-2  PICTURE 9(3).
+       77  MAX-SUB           VALUE  16   PICTURE 9(3).
+       77  DO-REWRITE   PICTURE X VALUE 'N'.
+       77  ENVVAR-IN    PICTURE X(30).
+       77  SAV-KEY      PICTURE X(8).
+       77  ENVVAR-OUT   PICTURE X(60).
+      
+       01  TEST-DATA.
+      
+         02  DATA-CUST-NUM-TBL.
+           05  FILLER PIC X(8) VALUE "ALP00000".
+           05  FILLER PIC X(8) VALUE "BET00000".
+           05  FILLER PIC X(8) VALUE "GAM00000".
+           05  FILLER PIC X(8) VALUE "DEL00000".
+           05  FILLER PIC X(8) VALUE "EPS00000".
+           05  FILLER PIC X(8) VALUE "FOR00000".
+           05  FILLER PIC X(8) VALUE "GIB00000".
+           05  FILLER PIC X(8) VALUE "H&J00000".
+           05  FILLER PIC X(8) VALUE "INC00000".
+           05  FILLER PIC X(8) VALUE "JOH00000".
+           05  FILLER PIC X(8) VALUE "KON00000".
+           05  FILLER PIC X(8) VALUE "LEW00000".
+           05  FILLER PIC X(8) VALUE "MOR00000".
+           05  FILLER PIC X(8) VALUE "NEW00000".
+           05  FILLER PIC X(8) VALUE "OLD00000".
+           05  FILLER PIC X(8) VALUE "PRE00000".
+      
+         02  DATA-CUST-NUM REDEFINES DATA-CUST-NUM-TBL
+                                       PIC X(8) OCCURS 16.
+         02  DATA-COMPANY-TBL.
+           05  FILLER PIC X(25) VALUE "ALPHA ELECTRICAL CO. LTD.".
+           05  FILLER PIC X(25) VALUE "BETA SHOE MFG. INC.      ".
+           05  FILLER PIC X(25) VALUE "GAMMA X-RAY TECHNOLOGY   ".
+           05  FILLER PIC X(25) VALUE "DELTA LUGGAGE REPAIRS    ".
+           05  FILLER PIC X(25) VALUE "EPSILON EQUIPMENT SUPPLY ".
+           05  FILLER PIC X(25) VALUE "FORTUNE COOKIE COMPANY   ".
+           05  FILLER PIC X(25) VALUE "GIBRALTER LIFE INSURANCE ".
+           05  FILLER PIC X(25) VALUE "H & J PLUMBING SUPPLIES  ".
+           05  FILLER PIC X(25) VALUE "INCREMENTAL BACKUP CORP. ".
+           05  FILLER PIC X(25) VALUE "JOHNSON BOATING SUPPLIES ".
+           05  FILLER PIC X(25) VALUE "KONFLAB PLASTIC PRODUCTS.".
+           05  FILLER PIC X(25) VALUE "LEWISTON GRAPHICS LTD.   ".
+           05  FILLER PIC X(25) VALUE "MORNINGSIDE CARPENTRY.   ".
+           05  FILLER PIC X(25) VALUE "NEW WAVE SURF SHOPS INC. ".
+           05  FILLER PIC X(25) VALUE "OLD TYME PIZZA MFG. CO.  ".
+           05  FILLER PIC X(25) VALUE "PRESTIGE OFFICE FURNITURE".
+      
+         02  DATA-COMPANY  REDEFINES DATA-COMPANY-TBL
+                                       PIC X(25) OCCURS 16.
+         02  DATA-ADDRESS-1-TBL.
+           05  FILLER PIC X(25) VALUE "123 MAIN STREET          ".
+           05  FILLER PIC X(25) VALUE "1090 2ND AVE. WEST       ".
+           05  FILLER PIC X(25) VALUE "1401 JEFFERSON BLVD.     ".
+           05  FILLER PIC X(25) VALUE "1620 ARIZONA WAY         ".
+           05  FILLER PIC X(25) VALUE "1184 EAST FIRST STREET   ".
+           05  FILLER PIC X(25) VALUE "114 JOHN F. KENNEDY AVE. ".
+           05  FILLER PIC X(25) VALUE "650 LIBERTY CRESCENT     ".
+           05  FILLER PIC X(25) VALUE "77 SUNSET BLVD.          ".
+           05  FILLER PIC X(25) VALUE "10908 SANTA MONICA BLVD. ".
+           05  FILLER PIC X(25) VALUE "1134 PARIS ROAD          ".
+           05  FILLER PIC X(25) VALUE "808 NORTHWEST MAIN ST.   ".
+           05  FILLER PIC X(25) VALUE "9904 QUEEN STREET        ".
+           05  FILLER PIC X(25) VALUE "1709 DUNDAS CRESCENT W.  ".
+           05  FILLER PIC X(25) VALUE "3240 MARIS AVENUE        ".
+           05  FILLER PIC X(25) VALUE "1705 WISCONSIN ROAD      ".
+           05  FILLER PIC X(25) VALUE "114A MAPLE GROVE         ".
+      
+         02  DATA-ADDRESS-1 REDEFINES DATA-ADDRESS-1-TBL
+                                       PIC X(25) OCCURS 16.
+         02  DATA-ADDRESS-2-TBL.
+           05  FILLER PIC X(10) VALUE "NEW YORK  ".
+           05  FILLER PIC X(10) VALUE "ATLANTA   ".
+           05  FILLER PIC X(10) VALUE "WASHINGTON".
+           05  FILLER PIC X(10) VALUE "TORONTO   ".
+           05  FILLER PIC X(10) VALUE "CALGARY   ".
+           05  FILLER PIC X(10) VALUE "SAN DIEGO ".
+           05  FILLER PIC X(10) VALUE "LOS RIOS  ".
+           05  FILLER PIC X(10) VALUE "MADISON   ".
+           05  FILLER PIC X(10) VALUE "WILBUR    ".
+           05  FILLER PIC X(10) VALUE "TOPEKA    ".
+           05  FILLER PIC X(10) VALUE "SEATTLE   ".
+           05  FILLER PIC X(10) VALUE "NEW JERSEY".
+           05  FILLER PIC X(10) VALUE "FORT WAYNE".
+           05  FILLER PIC X(10) VALUE "COLUMBUS  ".
+           05  FILLER PIC X(10) VALUE "RICHMOND  ".
+           05  FILLER PIC X(10) VALUE "WHITEPLAIN".
+      
+         02  DATA-ADDRESS-2 REDEFINES DATA-ADDRESS-2-TBL
+                                       PIC X(10) OCCURS 16.
+         02  DATA-ADDRESS-3-TBL.
+           05  FILLER PIC X(10) VALUE "N.Y.      ".
+           05  FILLER PIC X(10) VALUE "GEORGIA   ".
+           05  FILLER PIC X(10) VALUE "D.C.      ".
+           05  FILLER PIC X(10) VALUE "CANADA    ".
+           05  FILLER PIC X(10) VALUE "CANADA    ".
+           05  FILLER PIC X(10) VALUE "CALIFORNIA".
+           05  FILLER PIC X(10) VALUE "NEW MEXICO".
+           05  FILLER PIC X(10) VALUE "WISCONSIN ".
+           05  FILLER PIC X(10) VALUE "DELAWARE  ".
+           05  FILLER PIC X(10) VALUE "KANSAS    ".
+           05  FILLER PIC X(10) VALUE "WASHINGTON".
+           05  FILLER PIC X(10) VALUE "N.J.      ".
+           05  FILLER PIC X(10) VALUE "COLORADO  ".
+           05  FILLER PIC X(10) VALUE "OHIO      ".
+           05  FILLER PIC X(10) VALUE "VIRGINIA  ".
+           05  FILLER PIC X(10) VALUE "N.Y.      ".
+      
+         02  DATA-ADDRESS-3 REDEFINES DATA-ADDRESS-3-TBL
+                                       PIC X(10) OCCURS 16.
+         02  DATA-TELEPHONE-TBL.
+           05  FILLER PIC 9(10) VALUE 3131234432.
+           05  FILLER PIC 9(10) VALUE 4082938498.
+           05  FILLER PIC 9(10) VALUE 8372487274.
+           05  FILLER PIC 9(10) VALUE 4169898509.
+           05  FILLER PIC 9(10) VALUE 5292398745.
+           05  FILLER PIC 9(10) VALUE 8009329492.
+           05  FILLER PIC 9(10) VALUE 6456445643.
+           05  FILLER PIC 9(10) VALUE 6546456333.
+           05  FILLER PIC 9(10) VALUE 3455445444.
+           05  FILLER PIC 9(10) VALUE 9006445643.
+           05  FILLER PIC 9(10) VALUE 7456434355.
+           05  FILLER PIC 9(10) VALUE 6554456433.
+           05  FILLER PIC 9(10) VALUE 4169898509.
+           05  FILLER PIC 9(10) VALUE 9004587453.
+           05  FILLER PIC 9(10) VALUE 8787458374.
+           05  FILLER PIC 9(10) VALUE 4169898509.
+      
+         02  DATA-TELEPHONE REDEFINES DATA-TELEPHONE-TBL
+                                       PIC 9(10) OCCURS 16.
+         02  DATA-DP-MGR-TBL.
+           05  FILLER PIC X(20) VALUE "MR. KAMALA HARRIS   ".
+           05  FILLER PIC X(20) VALUE "MS. JANICE SILCOX   ".
+           05  FILLER PIC X(20) VALUE "MR. DAVID JONES     ".
+           05  FILLER PIC X(20) VALUE "MR. PETER RABBIT    ".
+           05  FILLER PIC X(20) VALUE "MRS. DONALD KNUTH   ".
+           05  FILLER PIC X(20) VALUE "MR. MICHAEL SMYTHE  ".
+           05  FILLER PIC X(20) VALUE "MR. JIM MORRISON    ".
+           05  FILLER PIC X(20) VALUE "MR. JIMI PATTERSON  ".
+           05  FILLER PIC X(20) VALUE "MR. STEVE MILLER    ".
+           05  FILLER PIC X(20) VALUE "MR. PETE TOWNSEND   ".
+           05  FILLER PIC X(20) VALUE "MR. STEVE MILLER    ".
+           05  FILLER PIC X(20) VALUE "MR. BOBBY FISCHER   ".
+           05  FILLER PIC X(20) VALUE "MR. EDWARD YOURDIN  ".
+           05  FILLER PIC X(20) VALUE "MS. GOLDIE HAWN     ".
+           05  FILLER PIC X(20) VALUE "MS. ALICE WONDERLAND".
+           05  FILLER PIC X(20) VALUE "MR. THOMAS JEFFERSON".
+      
+         02  DATA-DP-MGR    REDEFINES DATA-DP-MGR-TBL
+                                       PIC X(20) OCCURS 16.
+         02  DATA-MACHINE-TBL.
+           05  FILLER PIC X(8) VALUE "UNI-9030".
+           05  FILLER PIC X(8) VALUE "UNI-9040".
+           05  FILLER PIC X(8) VALUE "UNI-80/3".
+           05  FILLER PIC X(8) VALUE "UNI-80/5".
+           05  FILLER PIC X(8) VALUE "UNI-80/6".
+           05  FILLER PIC X(8) VALUE "UNI-80/6".
+           05  FILLER PIC X(8) VALUE "UNI-80/6".
+           05  FILLER PIC X(8) VALUE "UNI-80/8".
+           05  FILLER PIC X(8) VALUE "UNI-80/8".
+           05  FILLER PIC X(8) VALUE "UNI-80/8".
+           05  FILLER PIC X(8) VALUE "UNI-80/8".
+           05  FILLER PIC X(8) VALUE "UNI-80/8".
+           05  FILLER PIC X(8) VALUE "UNI-80/8".
+           05  FILLER PIC X(8) VALUE "UNI-80/8".
+           05  FILLER PIC X(8) VALUE "UNI-9040".
+           05  FILLER PIC X(8) VALUE "UNI-80/8".
+      
+         02  DATA-MACHINE   REDEFINES DATA-MACHINE-TBL
+                                       PIC X(8) OCCURS 16.
+         02  DATA-NO-TERMINALS-TBL.
+           05  FILLER PIC 9(3) COMP-3 VALUE 85.
+           05  FILLER PIC 9(3) COMP-3 VALUE 34.
+           05  FILLER PIC 9(3) COMP-3 VALUE 75.
+           05  FILLER PIC 9(3) COMP-3 VALUE 45.
+           05  FILLER PIC 9(3) COMP-3 VALUE 90.
+           05  FILLER PIC 9(3) COMP-3 VALUE 107.
+           05  FILLER PIC 9(3) COMP-3 VALUE 67.
+           05  FILLER PIC 9(3) COMP-3 VALUE 32.
+           05  FILLER PIC 9(3) COMP-3 VALUE 16.
+           05  FILLER PIC 9(3) COMP-3 VALUE 34.
+           05  FILLER PIC 9(3) COMP-3 VALUE 128.
+           05  FILLER PIC 9(3) COMP-3 VALUE 64.
+           05  FILLER PIC 9(3) COMP-3 VALUE 110.
+           05  FILLER PIC 9(3) COMP-3 VALUE 324.
+           05  FILLER PIC 9(3) COMP-3 VALUE 124.
+           05  FILLER PIC 9(3) COMP-3 VALUE 86.
+      
+         02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
+                                       PIC 9(3) COMP-3 OCCURS 16.
+
+       01  WORK-AREA.
+           05  REC-NUM                         PICTURE 9(4) VALUE 0.
+           05  REC-MAX                         PICTURE 9(4) VALUE 16.
+           05  SUB                             PICTURE 9(3) .
+               88  ODD-RECORD                  VALUE 1 3 5 7 9 10 11.
+               88  NULL-KEY                    VALUE 4 5 8 12 14.
+      
+           05  TSPFL-KEY                       PICTURE X(8).
+       01  START-TIME                          PICTURE 9(8).
+       01  CMD-LINE.
+           05  CMD                             PICTURE X(3).
+           05  FILLER                          PICTURE X.
+           05  CMD-KEY                         PICTURE X(8).
+      
+       PROCEDURE DIVISION.
+      
+       MAINFILE.
+           ACCEPT START-TIME FROM TIME.
+           ACCEPT CMD-LINE FROM COMMAND-LINE.
+           IF CMD (1:2) = "NO"
+              GO TO MAINTEST.
+           DISPLAY "IX_OPTIONS"   UPON ENVIRONMENT-NAME
+           IF CMD = 'OCI'
+           OR CMD = 'OLK'
+             DISPLAY "format=oci,dups_ahead=always"
+                         UPON ENVIRONMENT-VALUE
+             DISPLAY "Using OCI"
+             DISPLAY "RL_OPTIONS"  UPON ENVIRONMENT-NAME
+             DISPLAY "format=oci" UPON ENVIRONMENT-VALUE
+           ELSE IF CMD = "DI"
+             DISPLAY "format=disam,file_log=yes"   
+                         UPON ENVIRONMENT-VALUE
+             DISPLAY "Using DISAM"
+           ELSE IF CMD = "VB"
+             DISPLAY "format=vbisam,file_log=yes"  
+                         UPON ENVIRONMENT-VALUE
+             DISPLAY "Using VBISAM"
+           ELSE IF CMD = "VC"
+             DISPLAY "format=vbcisam,file_log=yes"  
+                         UPON ENVIRONMENT-VALUE
+             DISPLAY "Using VBCISAM"
+           ELSE IF CMD = "BDB"
+             DISPLAY "Using BDB"
+             DISPLAY "format=bdb,dups_ahead=always"  
+                     UPON ENVIRONMENT-VALUE
+           ELSE IF CMD = "ODB"
+             DISPLAY "Using ODBC"
+             DISPLAY "format=odbc,dups_ahead=always"
+                     UPON ENVIRONMENT-VALUE
+           ELSE
+             DISPLAY "Using Built-in INDEXED handler"
+           END-IF.
+
+       MAINTEST.
+           PERFORM LOADFILE.
+           PERFORM REWRFILE.
+           PERFORM READFILE.
+           STOP RUN.
+           
+       LOADFILE.
+           DISPLAY "Loading Indexed data file."
+                            UPON CONSOLE.
+      
+           OPEN OUTPUT TSPFILE
+           IF  CUST-STAT NOT = "00"
+           AND CUST-STAT NOT = "05"
+               DIVIDE STAT-1 BY 256 GIVING BYTE-1 REMAINDER BYTE-2
+               DISPLAY "Error " CUST-STAT " " BYTE-1 " " BYTE-2
+                       " opening 'testsql' file" UPON CONSOLE
+               STOP RUN
+           END-IF.
+      
+           PERFORM 1000-LOAD-RECORD
+                        VARYING SUB FROM 1 BY 1 
+                          UNTIL SUB > MAX-SUB.
+      
+           DISPLAY "Sample data file load complete."
+                            UPON CONSOLE.
+           CLOSE TSPFILE.
+      
+       REWRFILE.
+           DELETE FILE TSPFILE.
+           DISPLAY "Deleted file: " CUST-STAT.
+           IF  CUST-STAT NOT = "00"
+               COMMIT
+               DELETE FILE TSPFILE
+               DISPLAY "2nd delete file: " CUST-STAT
+           END-IF.
+           COMMIT.
+      
+           OPEN OUTPUT TSPFILE
+           DISPLAY "Now Rewrite file: " CUST-STAT.
+           IF  CUST-STAT NOT = "00"
+           AND CUST-STAT NOT = "05"
+               DISPLAY "Error " CUST-STAT " :" STAT-X2
+                       ": opening 'testsql' file" UPON CONSOLE
+               STOP RUN
+           END-IF.
+      
+           MOVE 'N' TO DO-REWRITE.
+           PERFORM 1000-LOAD-RECORD
+                        VARYING SUB FROM 1 BY 1 
+                          UNTIL SUB > MAX-SUB.
+           CLOSE TSPFILE.
+           DISPLAY "Closed indexed file: " CUST-STAT.
+           OPEN I-O TSPFILE
+           DISPLAY "Reopen I-O indexed file: " CUST-STAT.
+           MOVE 'Y' TO DO-REWRITE.
+           PERFORM 1000-LOAD-RECORD
+                        VARYING SUB FROM 1 BY 2 
+                          UNTIL SUB > MAX-SUB.
+           MOVE 'N' TO DO-REWRITE.
+      
+           DISPLAY "Sample data file rewrite complete."
+                            UPON CONSOLE.
+           CLOSE TSPFILE.
+           DISPLAY "rewrite Commit.".
+           COMMIT.
+           DISPLAY "done Commit.".
+      
+      *---------------------------------------------------------------*
+      *         LOAD A RECORD FROM DATA TABLES                        *
+      *---------------------------------------------------------------*
+      
+       1000-LOAD-RECORD.
+      
+           MOVE SPACES                       TO TSPFL-RECORD.
+           MOVE DATA-CUST-NUM      (SUB)     TO CM-CUST-NUM.
+           MOVE CM-CUST-NUM                  TO TSPFL-KEY.
+           MOVE DATA-COMPANY       (SUB)     TO CM-COMPANY.
+           MOVE DATA-ADDRESS-1     (SUB)     TO CM-ADDRESS-1.
+           MOVE DATA-ADDRESS-2     (SUB)     TO CM-ADDRESS-2.
+           MOVE DATA-ADDRESS-3     (SUB)     TO CM-ADDRESS-3.
+           MOVE DATA-TELEPHONE     (SUB)     TO CM-TELEPHONE.
+           MOVE DATA-DP-MGR        (SUB)     TO CM-DP-MGR.
+           MOVE DATA-MACHINE       (SUB)     TO CM-MACHINE.
+           MOVE DATA-NO-TERMINALS  (SUB)     TO CM-NO-TERMINALS.
+      
+           IF  ODD-RECORD
+               MOVE "8417"                   TO CM-DISK 
+               MOVE "1600 BPI"               TO CM-TAPE
+               MOVE "01MB"                   TO CM-MEMORY
+           ELSE
+               MOVE "8470"                   TO CM-DISK
+               MOVE "6250 BPI"               TO CM-TAPE
+               MOVE "03GB"                   TO CM-MEMORY.
+           IF  SUB = 1 OR 6
+               MOVE "2417"                   TO CM-DISK 
+               MOVE "549  mmm"               TO CM-TAPE.
+      
+           IF DO-REWRITE = 'Y'
+               IF  SUB NOT = 1 AND SUB NOT = 6
+                 MOVE "REWRITE"            TO CM-DISK
+               END-IF
+               REWRITE TSPFL-RECORD
+               IF  CUST-STAT NOT = "00"
+               AND CUST-STAT NOT = "02"
+                   DISPLAY "REWRITE: " SUB ", " TSPFL-KEY 
+                           ", Disk=" CM-DISK
+                           ", Phone=" DATA-TELEPHONE (SUB)  
+                           ", Machine=" DATA-MACHINE (SUB)  
+                           ", Status: " CUST-STAT UPON CONSOLE
+               END-IF
+           ELSE 
+               WRITE TSPFL-RECORD
+               IF  CUST-STAT NOT = "00"
+               AND CUST-STAT NOT = "02"
+                   DISPLAY "WRITE: " TSPFL-KEY ", Status: " 
+                           CUST-STAT UPON CONSOLE
+               END-IF
+           END-IF. 
+      
+       READFILE.
+           MOVE ZERO TO REC-NUM
+           DISPLAY "Another Commit."
+           COMMIT.
+           DISPLAY "READ indexed file" UPON CONSOLE.
+           OPEN I-O TSPFILE.
+           IF  CUST-STAT = "41"
+               DISPLAY "Note got " CUST-STAT " open I-O "
+               CLOSE TSPFILE
+               OPEN I-O TSPFILE
+           END-IF.
+           IF  CUST-STAT NOT = "00"
+               DISPLAY "ERROR " CUST-STAT " Opening indexed file"
+                                             UPON CONSOLE
+               STOP RUN
+           END-IF.
+           MOVE SPACES                       TO TSPFL-RECORD.
+           MOVE DATA-CUST-NUM (4)            TO CM-CUST-NUM.
+           MOVE DATA-COMPANY  (4)            TO CM-COMPANY.
+           READ  TSPFILE WITH NO LOCK
+           IF CUST-STAT NOT = "00"
+               DISPLAY "Error " CUST-STAT " on direct read of "
+                                CM-CUST-NUM UPON CONSOLE
+               CLOSE TSPFILE
+               STOP RUN
+           END-IF.
+           DISPLAY "Key:   " CM-CUST-NUM " is " CM-COMPANY '.'
+           READ  TSPFILE NEXT RECORD WITH NO LOCK
+           IF CUST-STAT NOT = "00"
+               DISPLAY "Error " CUST-STAT " on read next of file"
+                                UPON CONSOLE
+               CLOSE TSPFILE
+               STOP RUN
+           END-IF.
+           DISPLAY "Key:N  " CM-CUST-NUM " is " CM-COMPANY '.'.
+           READ  TSPFILE PREVIOUS RECORD WITH NO LOCK
+           IF CUST-STAT NOT = "00"
+               DISPLAY "Error " CUST-STAT " on read previous of file"
+                                UPON CONSOLE
+               CLOSE TSPFILE
+               STOP RUN
+           END-IF.
+           DISPLAY "Key:P  " CM-CUST-NUM " is " CM-COMPANY '.'.
+           MOVE DATA-CUST-NUM (8)            TO CM-CUST-NUM.
+           MOVE DATA-COMPANY  (8)            TO CM-COMPANY.
+           READ  TSPFILE WITH LOCK
+           DISPLAY "Key: L " CM-CUST-NUM " is " CM-COMPANY '.'.
+           MOVE "Boo" TO CM-COMPANY 
+           REWRITE TSPFL-RECORD
+           DISPLAY "Rewrote " CM-CUST-NUM 
+                    " as " CM-COMPANY " Sts:" CUST-STAT 
+           READ  TSPFILE NEXT RECORD WITH LOCK
+           IF CUST-STAT NOT = "00"
+               DISPLAY "Error " CUST-STAT " on read next lock of file"
+                                UPON CONSOLE
+               CLOSE TSPFILE
+               STOP RUN
+           END-IF.
+           DISPLAY "Key:NL " CM-CUST-NUM " is " CM-COMPANY '.'.
+           MOVE CM-CUST-NUM TO SAV-KEY.
+           DELETE  TSPFILE
+           IF CUST-STAT NOT = "00"
+               DISPLAY "Error " CUST-STAT " on DELETE " CM-CUST-NUM
+                                UPON CONSOLE
+               CLOSE TSPFILE
+               STOP RUN
+           END-IF.
+           DISPLAY "Key:   " CM-CUST-NUM " was deleted.".
+           DELETE  TSPFILE
+           DISPLAY "Error " CUST-STAT " on DUP DELETE." 
+                                UPON CONSOLE.
+           READ  TSPFILE 
+           IF CUST-STAT NOT = "00"
+               DISPLAY "Error " CUST-STAT " on reread of file"
+                                UPON CONSOLE
+           ELSE
+               DISPLAY "Read:" CM-CUST-NUM " unexpected."
+           END-IF.
+           REWRITE TSPFL-RECORD
+           DISPLAY "Error " CUST-STAT " on Bad REWRITE" 
+                                UPON CONSOLE.
+           DISPLAY "Started   ROLLBACK"
+           ROLLBACK.
+           DISPLAY "Completed ROLLBACK"
+           MOVE SAV-KEY                      TO CM-CUST-NUM.
+           READ  TSPFILE WITH LOCK
+           IF CUST-STAT NOT = "00"
+               DISPLAY "Error " CUST-STAT " not present "
+                       CM-CUST-NUM " after Rollback" UPON CONSOLE
+           ELSE
+               DISPLAY "Read Key: " CM-CUST-NUM " " CM-COMPANY 
+                       " present after Rollback"
+           END-IF.
+           MOVE SAV-KEY                      TO CM-CUST-NUM.
+           READ  TSPFILE WITH NO LOCK
+           IF CUST-STAT NOT = "00"
+               DISPLAY "Error " CUST-STAT " on reread "
+                        CM-CUST-NUM " after Rollback" UPON CONSOLE
+           END-IF.
+           MOVE DATA-CUST-NUM (8)            TO CM-CUST-NUM.
+           READ  TSPFILE WITH LOCK
+           DISPLAY "Read Key: " CM-CUST-NUM " is " CM-COMPANY '.'.
+           CLOSE TSPFILE.
+           COMMIT.
+
+])
+
+AT_CHECK([$COBC -x -std=mf -w -fmf-files prog.cob ], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [Using Built-in INDEXED handler
+Loading Indexed data file.
+Sample data file load complete.
+Deleted file: 37
+2nd delete file: 00
+Now Rewrite file: 00
+Closed indexed file: 00
+Reopen I-O indexed file: 00
+Sample data file rewrite complete.
+rewrite Commit.
+done Commit.
+Another Commit.
+READ indexed file
+Key:   DEL00000 is DELTA LUGGAGE REPAIRS    .
+Key:N  EPS00000 is EPSILON EQUIPMENT SUPPLY .
+Key:P  DEL00000 is DELTA LUGGAGE REPAIRS    .
+Key: L H&J00000 is H & J PLUMBING SUPPLIES  .
+Rewrote H&J00000 as Boo                       Sts:00
+Key:NL INC00000 is INCREMENTAL BACKUP CORP. .
+Key:   INC00000 was deleted.
+Error 23 on DUP DELETE.
+Error 23 on reread of file
+Error 21 on Bad REWRITE
+Started   ROLLBACK
+Completed ROLLBACK
+Read Key: INC00000 INCREMENTAL BACKUP CORP.  present after Rollback
+Read Key: H&J00000 is H & J PLUMBING SUPPLIES  .
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([SEQUENTIAL/RELATIVE COMMIT/ROLLBACK])
+AT_KEYWORDS([ROLLBACK])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+      
+       PROGRAM-ID. prog.
+      
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+      
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT FLATFILE ASSIGN "relfile"
+           ORGANIZATION RELATIVE
+           ACCESS IS RANDOM RELATIVE KEY IS REC-NUM
+           FILE STATUS IS CUST-STAT.
+
+           SELECT SEQFILE ASSIGN "seqfile"
+           ORGANIZATION SEQUENTIAL
+           FILE STATUS IS CUST-STAT .
+
+       I-O-CONTROL.
+           APPLY COMMIT ON FLATFILE, SEQFILE.
+
+       DATA  DIVISION.
+       FILE SECTION.
+       FD  FLATFILE
+           BLOCK CONTAINS 5 RECORDS.
+      
+       01  FLAT-RECORD.
+           10  RL-CUST-NUM                     PICTURE X(8). 
+           10  FILLER REDEFINES RL-CUST-NUM.
+               15  FILLER       PIC X(3).
+               15  RL-NUM       PIC 9(5).
+           10  RL-COMPANY                      PICTURE X(25). 
+           10  RL-TRAILER                      PICTURE X(16). 
+
+       FD  SEQFILE
+           BLOCK CONTAINS 5 RECORDS.
+      
+       01  SEQ-RECORD.
+           10  SQ-CUST-NUM                     PICTURE X(8). 
+           10  FILLER REDEFINES SQ-CUST-NUM.
+               15  FILLER       PIC X(3).
+               15  SQ-NUM       PIC 9(5).
+           10  SQ-COMPANY                      PICTURE X(25). 
+           10  SQ-TRAILER                      PICTURE X(20). 
+
+       WORKING-STORAGE SECTION.
+      
+       01  CUST-STAT.
+           05  STAT-1 PICTURE 9(4) COMP SYNC.
+           05  FILLER REDEFINES STAT-1.
+               10  STAT-X1 PIC X COMP-X.
+               10  STAT-X2 PIC X COMP-X.
+       77  BYTE-1  PICTURE 9(3).
+       77  BYTE-2  PICTURE 9(3).
+       77  MAX-SUB           VALUE  16   PICTURE 9(3).
+       77  DO-REWRITE   PICTURE X VALUE 'N'.
+       77  ENVVAR-IN    PICTURE X(30).
+       77  SAV-KEY      PICTURE X(8).
+       77  ENVVAR-OUT   PICTURE X(60).
+      
+       01  TEST-DATA.
+      
+         02  DATA-CUST-NUM-TBL.
+           05  FILLER PIC X(8) VALUE "ALP00000".
+           05  FILLER PIC X(8) VALUE "BET00000".
+           05  FILLER PIC X(8) VALUE "GAM00000".
+           05  FILLER PIC X(8) VALUE "DEL00000".
+           05  FILLER PIC X(8) VALUE "EPS00000".
+           05  FILLER PIC X(8) VALUE "FOR00000".
+           05  FILLER PIC X(8) VALUE "GIB00000".
+           05  FILLER PIC X(8) VALUE "H&J00000".
+           05  FILLER PIC X(8) VALUE "INC00000".
+           05  FILLER PIC X(8) VALUE "JOH00000".
+           05  FILLER PIC X(8) VALUE "KON00000".
+           05  FILLER PIC X(8) VALUE "LEW00000".
+           05  FILLER PIC X(8) VALUE "MOR00000".
+           05  FILLER PIC X(8) VALUE "NEW00000".
+           05  FILLER PIC X(8) VALUE "OLD00000".
+           05  FILLER PIC X(8) VALUE "PRE00000".
+      
+         02  DATA-CUST-NUM REDEFINES DATA-CUST-NUM-TBL
+                                       PIC X(8) OCCURS 16.
+         02  DATA-COMPANY-TBL.
+           05  FILLER PIC X(25) VALUE "ALPHA ELECTRICAL CO. LTD.".
+           05  FILLER PIC X(25) VALUE "BETA SHOE MFG. INC.      ".
+           05  FILLER PIC X(25) VALUE "GAMMA X-RAY TECHNOLOGY   ".
+           05  FILLER PIC X(25) VALUE "DELTA LUGGAGE REPAIRS    ".
+           05  FILLER PIC X(25) VALUE "EPSILON EQUIPMENT SUPPLY ".
+           05  FILLER PIC X(25) VALUE "FORTUNE COOKIE COMPANY   ".
+           05  FILLER PIC X(25) VALUE "GIBRALTER LIFE INSURANCE ".
+           05  FILLER PIC X(25) VALUE "H & J PLUMBING SUPPLIES  ".
+           05  FILLER PIC X(25) VALUE "INCREMENTAL BACKUP CORP. ".
+           05  FILLER PIC X(25) VALUE "JOHNSON BOATING SUPPLIES ".
+           05  FILLER PIC X(25) VALUE "KONFLAB PLASTIC PRODUCTS.".
+           05  FILLER PIC X(25) VALUE "LEWISTON GRAPHICS LTD.   ".
+           05  FILLER PIC X(25) VALUE "MORNINGSIDE CARPENTRY.   ".
+           05  FILLER PIC X(25) VALUE "NEW WAVE SURF SHOPS INC. ".
+           05  FILLER PIC X(25) VALUE "OLD TYME PIZZA MFG. CO.  ".
+           05  FILLER PIC X(25) VALUE "PRESTIGE OFFICE FURNITURE".
+      
+         02  DATA-COMPANY  REDEFINES DATA-COMPANY-TBL
+                                       PIC X(25) OCCURS 16.
+         02  DATA-ADDRESS-1-TBL.
+           05  FILLER PIC X(25) VALUE "123 MAIN STREET          ".
+           05  FILLER PIC X(25) VALUE "1090 2ND AVE. WEST       ".
+           05  FILLER PIC X(25) VALUE "1401 JEFFERSON BLVD.     ".
+           05  FILLER PIC X(25) VALUE "1620 ARIZONA WAY         ".
+           05  FILLER PIC X(25) VALUE "1184 EAST FIRST STREET   ".
+           05  FILLER PIC X(25) VALUE "114 JOHN F. KENNEDY AVE. ".
+           05  FILLER PIC X(25) VALUE "650 LIBERTY CRESCENT     ".
+           05  FILLER PIC X(25) VALUE "77 SUNSET BLVD.          ".
+           05  FILLER PIC X(25) VALUE "10908 SANTA MONICA BLVD. ".
+           05  FILLER PIC X(25) VALUE "1134 PARIS ROAD          ".
+           05  FILLER PIC X(25) VALUE "808 NORTHWEST MAIN ST.   ".
+           05  FILLER PIC X(25) VALUE "9904 QUEEN STREET        ".
+           05  FILLER PIC X(25) VALUE "1709 DUNDAS CRESCENT W.  ".
+           05  FILLER PIC X(25) VALUE "3240 MARIS AVENUE        ".
+           05  FILLER PIC X(25) VALUE "1705 WISCONSIN ROAD      ".
+           05  FILLER PIC X(25) VALUE "114A MAPLE GROVE         ".
+      
+         02  DATA-ADDRESS-1 REDEFINES DATA-ADDRESS-1-TBL
+                                       PIC X(25) OCCURS 16.
+         02  DATA-ADDRESS-2-TBL.
+           05  FILLER PIC X(10) VALUE "NEW YORK  ".
+           05  FILLER PIC X(10) VALUE "ATLANTA   ".
+           05  FILLER PIC X(10) VALUE "WASHINGTON".
+           05  FILLER PIC X(10) VALUE "TORONTO   ".
+           05  FILLER PIC X(10) VALUE "CALGARY   ".
+           05  FILLER PIC X(10) VALUE "SAN DIEGO ".
+           05  FILLER PIC X(10) VALUE "LOS RIOS  ".
+           05  FILLER PIC X(10) VALUE "MADISON   ".
+           05  FILLER PIC X(10) VALUE "WILBUR    ".
+           05  FILLER PIC X(10) VALUE "TOPEKA    ".
+           05  FILLER PIC X(10) VALUE "SEATTLE   ".
+           05  FILLER PIC X(10) VALUE "NEW JERSEY".
+           05  FILLER PIC X(10) VALUE "FORT WAYNE".
+           05  FILLER PIC X(10) VALUE "COLUMBUS  ".
+           05  FILLER PIC X(10) VALUE "RICHMOND  ".
+           05  FILLER PIC X(10) VALUE "WHITEPLAIN".
+      
+         02  DATA-ADDRESS-2 REDEFINES DATA-ADDRESS-2-TBL
+                                       PIC X(10) OCCURS 16.
+         02  DATA-ADDRESS-3-TBL.
+           05  FILLER PIC X(10) VALUE "N.Y.      ".
+           05  FILLER PIC X(10) VALUE "GEORGIA   ".
+           05  FILLER PIC X(10) VALUE "D.C.      ".
+           05  FILLER PIC X(10) VALUE "CANADA    ".
+           05  FILLER PIC X(10) VALUE "CANADA    ".
+           05  FILLER PIC X(10) VALUE "CALIFORNIA".
+           05  FILLER PIC X(10) VALUE "NEW MEXICO".
+           05  FILLER PIC X(10) VALUE "WISCONSIN ".
+           05  FILLER PIC X(10) VALUE "DELAWARE  ".
+           05  FILLER PIC X(10) VALUE "KANSAS    ".
+           05  FILLER PIC X(10) VALUE "WASHINGTON".
+           05  FILLER PIC X(10) VALUE "N.J.      ".
+           05  FILLER PIC X(10) VALUE "COLORADO  ".
+           05  FILLER PIC X(10) VALUE "OHIO      ".
+           05  FILLER PIC X(10) VALUE "VIRGINIA  ".
+           05  FILLER PIC X(10) VALUE "N.Y.      ".
+      
+         02  DATA-ADDRESS-3 REDEFINES DATA-ADDRESS-3-TBL
+                                       PIC X(10) OCCURS 16.
+         02  DATA-TELEPHONE-TBL.
+           05  FILLER PIC 9(10) VALUE 3131234432.
+           05  FILLER PIC 9(10) VALUE 4082938498.
+           05  FILLER PIC 9(10) VALUE 8372487274.
+           05  FILLER PIC 9(10) VALUE 4169898509.
+           05  FILLER PIC 9(10) VALUE 5292398745.
+           05  FILLER PIC 9(10) VALUE 8009329492.
+           05  FILLER PIC 9(10) VALUE 6456445643.
+           05  FILLER PIC 9(10) VALUE 6546456333.
+           05  FILLER PIC 9(10) VALUE 3455445444.
+           05  FILLER PIC 9(10) VALUE 9006445643.
+           05  FILLER PIC 9(10) VALUE 7456434355.
+           05  FILLER PIC 9(10) VALUE 6554456433.
+           05  FILLER PIC 9(10) VALUE 4169898509.
+           05  FILLER PIC 9(10) VALUE 9004587453.
+           05  FILLER PIC 9(10) VALUE 8787458374.
+           05  FILLER PIC 9(10) VALUE 4169898509.
+      
+         02  DATA-TELEPHONE REDEFINES DATA-TELEPHONE-TBL
+                                       PIC 9(10) OCCURS 16.
+         02  DATA-DP-MGR-TBL.
+           05  FILLER PIC X(20) VALUE "MR. KAMALA HARRIS   ".
+           05  FILLER PIC X(20) VALUE "MS. JANICE SILCOX   ".
+           05  FILLER PIC X(20) VALUE "MR. DAVID JONES     ".
+           05  FILLER PIC X(20) VALUE "MR. PETER RABBIT    ".
+           05  FILLER PIC X(20) VALUE "MRS. DONALD KNUTH   ".
+           05  FILLER PIC X(20) VALUE "MR. MICHAEL SMYTHE  ".
+           05  FILLER PIC X(20) VALUE "MR. JIM MORRISON    ".
+           05  FILLER PIC X(20) VALUE "MR. JIMI PATTERSON  ".
+           05  FILLER PIC X(20) VALUE "MR. STEVE MILLER    ".
+           05  FILLER PIC X(20) VALUE "MR. PETE TOWNSEND   ".
+           05  FILLER PIC X(20) VALUE "MR. STEVE MILLER    ".
+           05  FILLER PIC X(20) VALUE "MR. BOBBY FISCHER   ".
+           05  FILLER PIC X(20) VALUE "MR. EDWARD YOURDIN  ".
+           05  FILLER PIC X(20) VALUE "MS. GOLDIE HAWN     ".
+           05  FILLER PIC X(20) VALUE "MS. ALICE WONDERLAND".
+           05  FILLER PIC X(20) VALUE "MR. THOMAS JEFFERSON".
+      
+         02  DATA-DP-MGR    REDEFINES DATA-DP-MGR-TBL
+                                       PIC X(20) OCCURS 16.
+         02  DATA-MACHINE-TBL.
+           05  FILLER PIC X(8) VALUE "UNI-9030".
+           05  FILLER PIC X(8) VALUE "UNI-9040".
+           05  FILLER PIC X(8) VALUE "UNI-80/3".
+           05  FILLER PIC X(8) VALUE "UNI-80/5".
+           05  FILLER PIC X(8) VALUE "UNI-80/6".
+           05  FILLER PIC X(8) VALUE "UNI-80/6".
+           05  FILLER PIC X(8) VALUE "UNI-80/6".
+           05  FILLER PIC X(8) VALUE "UNI-80/8".
+           05  FILLER PIC X(8) VALUE "UNI-80/8".
+           05  FILLER PIC X(8) VALUE "UNI-80/8".
+           05  FILLER PIC X(8) VALUE "UNI-80/8".
+           05  FILLER PIC X(8) VALUE "UNI-80/8".
+           05  FILLER PIC X(8) VALUE "UNI-80/8".
+           05  FILLER PIC X(8) VALUE "UNI-80/8".
+           05  FILLER PIC X(8) VALUE "UNI-9040".
+           05  FILLER PIC X(8) VALUE "UNI-80/8".
+      
+         02  DATA-MACHINE   REDEFINES DATA-MACHINE-TBL
+                                       PIC X(8) OCCURS 16.
+         02  DATA-NO-TERMINALS-TBL.
+           05  FILLER PIC 9(3) COMP-3 VALUE 85.
+           05  FILLER PIC 9(3) COMP-3 VALUE 34.
+           05  FILLER PIC 9(3) COMP-3 VALUE 75.
+           05  FILLER PIC 9(3) COMP-3 VALUE 45.
+           05  FILLER PIC 9(3) COMP-3 VALUE 90.
+           05  FILLER PIC 9(3) COMP-3 VALUE 107.
+           05  FILLER PIC 9(3) COMP-3 VALUE 67.
+           05  FILLER PIC 9(3) COMP-3 VALUE 32.
+           05  FILLER PIC 9(3) COMP-3 VALUE 16.
+           05  FILLER PIC 9(3) COMP-3 VALUE 34.
+           05  FILLER PIC 9(3) COMP-3 VALUE 128.
+           05  FILLER PIC 9(3) COMP-3 VALUE 64.
+           05  FILLER PIC 9(3) COMP-3 VALUE 110.
+           05  FILLER PIC 9(3) COMP-3 VALUE 324.
+           05  FILLER PIC 9(3) COMP-3 VALUE 124.
+           05  FILLER PIC 9(3) COMP-3 VALUE 86.
+      
+         02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
+                                       PIC 9(3) COMP-3 OCCURS 16.
+
+       01  WORK-AREA.
+           05  REC-NUM                         PICTURE 9(4) VALUE 0.
+           05  REC-MAX                         PICTURE 9(4) VALUE 16.
+           05  SUB                             PICTURE 9(3) .
+               88  ODD-RECORD                  VALUE 1 3 5 7 9 10 11.
+               88  NULL-KEY                    VALUE 4 5 8 12 14.
+      
+           05  TSPFL-KEY                       PICTURE X(8).
+       PROCEDURE DIVISION.
+       MAINTEST.
+           PERFORM TESTREL.
+           PERFORM TESTSEQ.
+           STOP RUN.
+           
+       TESTREL.
+           DISPLAY "--- +++ *** +++ ---"
+           DISPLAY "Loading Relative File"
+           OPEN OUTPUT FLATFILE.
+           PERFORM VARYING SUB FROM 1 BY 1 
+                          UNTIL SUB > MAX-SUB
+                          OR CUST-STAT NOT = '00'
+               MOVE SPACES              TO FLAT-RECORD
+               MOVE SUB                 TO REC-NUM
+               MOVE DATA-CUST-NUM (SUB) TO RL-CUST-NUM
+               MOVE DATA-COMPANY  (SUB) TO RL-COMPANY
+               WRITE FLAT-RECORD
+           END-PERFORM.
+           CLOSE FLATFILE.
+
+           DISPLAY "Reopen Relative File: " CUST-STAT
+           OPEN I-O SHARING NO OTHER FLATFILE.
+           DISPLAY "Commit Relative: " CUST-STAT
+           COMMIT.
+           DISPLAY "Commit done"
+           MOVE 5 TO REC-NUM
+           READ FLATFILE
+           DISPLAY RL-CUST-NUM ' read    rec# ' REC-NUM 
+                    ' Company:' RL-COMPANY 
+                    ' Stat:' CUST-STAT
+           MOVE 'Frog Town' TO RL-COMPANY
+           WRITE FLAT-RECORD
+           DISPLAY RL-CUST-NUM ' write   rec# ' REC-NUM 
+                    ' Stat:' CUST-STAT
+           MOVE 10 TO REC-NUM
+           READ FLATFILE
+           DELETE FLATFILE
+           DISPLAY RL-CUST-NUM ' delete  rec# ' REC-NUM 
+                    ' Company:' RL-COMPANY 
+                    ' Stat:' CUST-STAT
+           MOVE 5 TO REC-NUM
+           READ FLATFILE
+           DISPLAY RL-CUST-NUM ' read    rec# ' REC-NUM 
+                    ' Company:' RL-COMPANY 
+                    ' Stat:' CUST-STAT
+           MOVE 'Frog Town' TO RL-COMPANY
+           REWRITE FLAT-RECORD
+           DISPLAY RL-CUST-NUM ' rewrite rec# ' REC-NUM 
+                    ' Company:' RL-COMPANY 
+                    ' Stat:' CUST-STAT
+           MOVE 5 TO REC-NUM
+           READ FLATFILE
+           DISPLAY RL-CUST-NUM ' reread  rec# ' REC-NUM 
+                    ' Company:' RL-COMPANY
+                    ' Stat:' CUST-STAT
+           MOVE SPACES              TO FLAT-RECORD
+           COMPUTE REC-NUM = MAX-SUB + 1
+           MOVE DATA-CUST-NUM (14) TO RL-CUST-NUM
+           MOVE DATA-COMPANY  (14) TO RL-COMPANY
+           MOVE REC-NUM            TO RL-NUM
+           WRITE FLAT-RECORD
+           DISPLAY RL-CUST-NUM '  is     rec# ' REC-NUM 
+                    ' Stat:' CUST-STAT
+           COMPUTE REC-NUM = REC-NUM + 1
+           MOVE REC-NUM            TO RL-NUM
+           WRITE FLAT-RECORD
+           DISPLAY RL-CUST-NUM '  is     rec# ' REC-NUM 
+                    ' Stat:' CUST-STAT
+           MOVE 10 TO REC-NUM
+           READ FLATFILE
+           DISPLAY '        read deleted# ' REC-NUM 
+                   ' Stat:' CUST-STAT.
+
+           DISPLAY "Started   Relative ROLLBACK"
+           ROLLBACK.
+           DISPLAY "Completed Relative ROLLBACK"
+           MOVE 5 TO REC-NUM
+           READ FLATFILE
+           DISPLAY RL-CUST-NUM ' reread  rec# ' REC-NUM 
+                    ' Company:' RL-COMPANY 
+                    ' Stat:' CUST-STAT
+           MOVE 10 TO REC-NUM
+           READ FLATFILE
+           DISPLAY RL-CUST-NUM ' return  rec# ' REC-NUM 
+                    ' Company:' RL-COMPANY 
+                    ' Stat:' CUST-STAT
+           CLOSE FLATFILE.
+      
+       TESTSEQ.
+           DISPLAY "--- +++ *** +++ ---"
+           DISPLAY "Loading Sequential File"
+           OPEN OUTPUT SEQFILE.
+           PERFORM VARYING SUB FROM 1 BY 1 
+                          UNTIL SUB > MAX-SUB
+                          OR CUST-STAT NOT = '00'
+               MOVE SPACES              TO SEQ-RECORD
+               MOVE DATA-CUST-NUM (SUB) TO SQ-CUST-NUM
+               MOVE DATA-COMPANY  (SUB) TO SQ-COMPANY
+               WRITE SEQ-RECORD
+           END-PERFORM.
+           CLOSE SEQFILE.
+           COMMIT.
+
+           OPEN I-O SHARING NO OTHER SEQFILE.
+           COMMIT.
+           DISPLAY "Commit Sequential File"
+           READ SEQFILE
+           DISPLAY SQ-CUST-NUM 
+                    ' Company:' SQ-COMPANY 
+                    ' Stat:' CUST-STAT
+           MOVE 'Frog Town' TO SQ-COMPANY
+           REWRITE SEQ-RECORD
+           DISPLAY SQ-CUST-NUM ' rewrite ' SQ-COMPANY 
+                    ' Stat:' CUST-STAT
+           READ SEQFILE
+           DISPLAY SQ-CUST-NUM
+                    ' Company:' SQ-COMPANY 
+                    ' Stat:' CUST-STAT
+           READ SEQFILE
+           DISPLAY SQ-CUST-NUM
+                    ' Company:' SQ-COMPANY 
+                    ' Stat:' CUST-STAT
+           MOVE 'Dog Town' TO SQ-COMPANY
+           REWRITE SEQ-RECORD
+           DISPLAY SQ-CUST-NUM ' rewrite ' SQ-COMPANY 
+                    ' Stat:' CUST-STAT
+           DISPLAY "Started   Sequential ROLLBACK"
+           ROLLBACK.
+           DISPLAY "Completed Sequential ROLLBACK"
+           CLOSE SEQFILE.
+           OPEN INPUT SEQFILE.
+           PERFORM VARYING SUB FROM 1 BY 1 
+                          UNTIL SUB > 5
+                          OR CUST-STAT NOT = '00'
+               MOVE SPACES              TO SEQ-RECORD
+               READ SEQFILE
+               DISPLAY SQ-CUST-NUM 
+                    ' Company:' SQ-COMPANY 
+                    ' Stat:' CUST-STAT
+           END-PERFORM.
+           CLOSE SEQFILE.
+           DISPLAY "Extending Sequential File"
+           OPEN EXTEND SEQFILE.
+           PERFORM VARYING SUB FROM 1 BY 1 
+                          UNTIL SUB > 3
+                          OR CUST-STAT NOT = '00'
+               MOVE SPACES              TO SEQ-RECORD
+               MOVE DATA-CUST-NUM (SUB) TO SQ-CUST-NUM
+               ADD  SUB                 TO SQ-NUM
+               MOVE DATA-COMPANY  (SUB) TO SQ-COMPANY
+               WRITE SEQ-RECORD
+               DISPLAY 'Wrote: ' SQ-CUST-NUM 
+                    ' Company:' SQ-COMPANY 
+                    ' Stat:' CUST-STAT
+           END-PERFORM.
+           CLOSE SEQFILE.
+           OPEN INPUT SEQFILE.
+           DISPLAY "List Sequential File"
+                    ' Stat:' CUST-STAT
+           PERFORM UNTIL CUST-STAT NOT = '00'
+               MOVE SPACES              TO SEQ-RECORD
+               READ SEQFILE
+			   IF CUST-STAT = '00'
+                 DISPLAY SQ-CUST-NUM 
+                        ' Company:' SQ-COMPANY 
+                        ' Stat:' CUST-STAT
+               END-IF
+           END-PERFORM.
+           DISPLAY "Started   Sequential Extend ROLLBACK"
+           ROLLBACK.
+           DISPLAY "Completed Sequential Extend ROLLBACK"
+           CLOSE SEQFILE.
+           OPEN INPUT SEQFILE.
+           PERFORM VARYING SUB FROM 1 BY 1 
+                          UNTIL SUB >= MAX-SUB - 2
+                          OR CUST-STAT NOT = '00'
+               READ SEQFILE
+           END-PERFORM.
+           DISPLAY "Last records in Sequential File"
+           PERFORM UNTIL CUST-STAT NOT = '00'
+               READ SEQFILE
+               IF CUST-STAT = '00' 
+                  DISPLAY SQ-CUST-NUM 
+                    ' Company:' SQ-COMPANY 
+                    ' Stat:' CUST-STAT
+               END-IF
+           END-PERFORM.
+           CLOSE SEQFILE.
+
+])
+
+AT_CHECK([$COBC -x -std=mf -w -fmf-files prog.cob ], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [--- +++ *** +++ ---
+Loading Relative File
+Reopen Relative File: 00
+Commit Relative: 00
+Commit done
+EPS00000 read    rec# 0005 Company:EPSILON EQUIPMENT SUPPLY  Stat:00
+EPS00000 write   rec# 0005 Stat:22
+JOH00000 delete  rec# 0010 Company:JOHNSON BOATING SUPPLIES  Stat:00
+EPS00000 read    rec# 0005 Company:EPSILON EQUIPMENT SUPPLY  Stat:00
+EPS00000 rewrite rec# 0005 Company:Frog Town                 Stat:00
+EPS00000 reread  rec# 0005 Company:Frog Town                 Stat:00
+NEW00017  is     rec# 0017 Stat:00
+NEW00018  is     rec# 0018 Stat:00
+        read deleted# 0010 Stat:23
+Started   Relative ROLLBACK
+Completed Relative ROLLBACK
+EPS00000 reread  rec# 0005 Company:EPSILON EQUIPMENT SUPPLY  Stat:00
+JOH00000 return  rec# 0010 Company:JOHNSON BOATING SUPPLIES  Stat:00
+--- +++ *** +++ ---
+Loading Sequential File
+Commit Sequential File
+ALP00000 Company:ALPHA ELECTRICAL CO. LTD. Stat:00
+ALP00000 rewrite Frog Town                 Stat:00
+BET00000 Company:BETA SHOE MFG. INC.       Stat:00
+GAM00000 Company:GAMMA X-RAY TECHNOLOGY    Stat:00
+GAM00000 rewrite Dog Town                  Stat:00
+Started   Sequential ROLLBACK
+Completed Sequential ROLLBACK
+ALP00000 Company:ALPHA ELECTRICAL CO. LTD. Stat:00
+BET00000 Company:BETA SHOE MFG. INC.       Stat:00
+GAM00000 Company:GAMMA X-RAY TECHNOLOGY    Stat:00
+DEL00000 Company:DELTA LUGGAGE REPAIRS     Stat:00
+EPS00000 Company:EPSILON EQUIPMENT SUPPLY  Stat:00
+Extending Sequential File
+Wrote: ALP00001 Company:ALPHA ELECTRICAL CO. LTD. Stat:00
+Wrote: BET00002 Company:BETA SHOE MFG. INC.       Stat:00
+Wrote: GAM00003 Company:GAMMA X-RAY TECHNOLOGY    Stat:00
+List Sequential File Stat:00
+ALP00000 Company:ALPHA ELECTRICAL CO. LTD. Stat:00
+BET00000 Company:BETA SHOE MFG. INC.       Stat:00
+GAM00000 Company:GAMMA X-RAY TECHNOLOGY    Stat:00
+DEL00000 Company:DELTA LUGGAGE REPAIRS     Stat:00
+EPS00000 Company:EPSILON EQUIPMENT SUPPLY  Stat:00
+FOR00000 Company:FORTUNE COOKIE COMPANY    Stat:00
+GIB00000 Company:GIBRALTER LIFE INSURANCE  Stat:00
+H&J00000 Company:H & J PLUMBING SUPPLIES   Stat:00
+INC00000 Company:INCREMENTAL BACKUP CORP.  Stat:00
+JOH00000 Company:JOHNSON BOATING SUPPLIES  Stat:00
+KON00000 Company:KONFLAB PLASTIC PRODUCTS. Stat:00
+LEW00000 Company:LEWISTON GRAPHICS LTD.    Stat:00
+MOR00000 Company:MORNINGSIDE CARPENTRY.    Stat:00
+NEW00000 Company:NEW WAVE SURF SHOPS INC.  Stat:00
+OLD00000 Company:OLD TYME PIZZA MFG. CO.   Stat:00
+PRE00000 Company:PRESTIGE OFFICE FURNITURE Stat:00
+ALP00001 Company:ALPHA ELECTRICAL CO. LTD. Stat:00
+BET00002 Company:BETA SHOE MFG. INC.       Stat:00
+GAM00003 Company:GAMMA X-RAY TECHNOLOGY    Stat:00
+Started   Sequential Extend ROLLBACK
+Completed Sequential Extend ROLLBACK
+Last records in Sequential File
+NEW00000 Company:NEW WAVE SURF SHOPS INC.  Stat:00
+OLD00000 Company:OLD TYME PIZZA MFG. CO.   Stat:00
+PRE00000 Company:PRESTIGE OFFICE FURNITURE Stat:00
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([LINE SEQUENTIAL COMMIT/ROLLBACK])
+AT_KEYWORDS([ROLLBACK])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+      
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+      
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT FLATFILE ASSIGN "lsfile"
+           ORGANIZATION LINE SEQUENTIAL
+           FILE STATUS IS CUST-STAT .
+
+       I-O-CONTROL.
+           APPLY COMMIT ON FLATFILE.
+
+       DATA  DIVISION.
+       FILE SECTION.
+       FD  FLATFILE
+           BLOCK CONTAINS 5 RECORDS.
+      
+       01  TSPFL-RECORD.
+           10  CM-CUST-NUM                     PICTURE X(8). 
+           10  CM-COMPANY                      PICTURE X(25). 
+           10  CM-DISK                         PICTURE X(8). 
+           10  CM-NO-TERMINALS                 PICTURE 9(5)  COMP-4. 
+           10  CM-PK-DATE                      PICTURE S9(8) COMP-3.
+           10  CM-TRAILER                      PICTURE X(52). 
+      
+       WORKING-STORAGE SECTION.
+      
+       77  MAX-SUB           VALUE  6          PICTURE 9(4) COMP SYNC.
+       77  CUST-STAT                           PICTURE X(2).
+       77  REC-NUM           VALUE  1          PICTURE 9(8) COMP SYNC.
+       77  ADD-TERMS                           PICTURE 9(8) VALUE 0.
+      
+       01  TEST-DATA.
+      
+         02  DATA-CUST-NUM-TBL.
+      
+           05  FILLER PIC X(8) VALUE "ALP00000".
+           05  FILLER PIC X(8) VALUE "BET00000".
+           05  FILLER PIC X(8) VALUE "GAM00000".
+           05  FILLER PIC X(8) VALUE "DEL00000".
+           05  FILLER PIC X(8) VALUE "EPS00000".
+           05  FILLER PIC X(8) VALUE "FOR00000".
+      
+         02  DATA-CUST-NUM REDEFINES DATA-CUST-NUM-TBL
+                                       PIC X(8) OCCURS 6.
+         02  DATA-COMPANY-TBL.
+      
+           05  FILLER PIC X(25) VALUE "ALPHA ELECTRICAL CO. LTD.".
+           05  FILLER PIC X(25) VALUE "BETA SHOE MFG. INC.      ".
+           05  FILLER PIC X(25) VALUE "GAMMA X-RAY TECHNOLOGY   ".
+           05  FILLER PIC X(25) VALUE "DELTA LUGGAGE REPAIRS    ".
+           05  FILLER PIC X(25) VALUE "EPSILON EQUIPMENT SUPPLY ".
+           05  FILLER PIC X(25) VALUE "FORTUNE COOKIE COMPANY   ".
+         02  DATA-COMPANY  REDEFINES DATA-COMPANY-TBL
+                                       PIC X(25) OCCURS 6.
+         02  DATA-ADDRESS-2-TBL.
+      
+           05  FILLER PIC X(10) VALUE "NEW YORK  ".
+           05  FILLER PIC X(10) VALUE "ATLANTA   ".
+           05  FILLER PIC X(10) VALUE "WASHINGTON".
+           05  FILLER PIC X(10) VALUE "TORONTO   ".
+           05  FILLER PIC X(10) VALUE "CALGARY   ".
+           05  FILLER PIC X(10) VALUE "WHITEPLAIN".
+      
+         02  DATA-ADDRESS   REDEFINES DATA-ADDRESS-2-TBL
+                                       PIC X(10) OCCURS 6.
+
+         02  DATA-NO-TERMINALS-TBL.
+      
+           05  FILLER PIC 9(5) COMP-3 VALUE 8240.
+           05  FILLER PIC 9(5) COMP-3 VALUE 10.
+           05  FILLER PIC 9(5) COMP-3 VALUE 13.
+           05  FILLER PIC 9(5) COMP-3 VALUE 65535.
+           05  FILLER PIC 9(5) COMP-3 VALUE 10.
+           05  FILLER PIC 9(5) COMP-3 VALUE 254.
+      
+         02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
+                                       PIC 9(5) COMP-3 OCCURS 6.
+       01  WORK-AREA.
+           05  SUB                             PICTURE 9(4) COMP SYNC.
+               88  ODD-RECORD                  VALUE 1 3 5.
+      
+      
+       PROCEDURE DIVISION.
+
+           PERFORM LOADFILE.
+           COMMIT.
+
+           OPEN INPUT FLATFILE.
+           DISPLAY "List: Open after COMMIT Sts:" CUST-STAT 
+           PERFORM READ-RECORD UNTIL CUST-STAT NOT = "00".
+           CLOSE FLATFILE.
+
+           OPEN I-O FLATFILE.
+           PERFORM READ-RECORD
+           MOVE 10 TO CM-NO-TERMINALS
+           REWRITE TSPFL-RECORD
+           DISPLAY "REWRITE " CM-CUST-NUM " Sts " CUST-STAT 
+                   " Trms:" CM-NO-TERMINALS.
+           CLOSE FLATFILE.
+
+           OPEN I-O FLATFILE.
+           PERFORM READ-RECORD
+           PERFORM READ-RECORD
+           MOVE 32 TO CM-NO-TERMINALS
+           REWRITE TSPFL-RECORD
+           DISPLAY "REWRITE " CM-CUST-NUM " Sts " CUST-STAT 
+                   " Trms:" CM-NO-TERMINALS.
+           PERFORM READ-RECORD
+           CLOSE FLATFILE.
+
+           OPEN I-O FLATFILE.
+           READ FLATFILE
+           READ FLATFILE
+           READ FLATFILE
+           READ FLATFILE
+           PERFORM READ-RECORD
+           MOVE 8240 TO CM-NO-TERMINALS
+           REWRITE TSPFL-RECORD
+           DISPLAY "REWRITE " CM-CUST-NUM " Sts " CUST-STAT 
+                   " Trms:" CM-NO-TERMINALS.
+           CLOSE FLATFILE.
+
+           OPEN INPUT FLATFILE.
+           DISPLAY "List back Open Sts:" CUST-STAT 
+           PERFORM READ-RECORD UNTIL CUST-STAT NOT = "00".
+           CLOSE FLATFILE.
+
+           DISPLAY "Doing rollback A"
+           ROLLBACK.
+           DISPLAY "Re-Close file"
+           CLOSE FLATFILE.
+
+           OPEN INPUT FLATFILE.
+           IF CUST-STAT NOT = "41"
+               DISPLAY "Reopen after rollback Sts:" CUST-STAT 
+           ELSE
+               CLOSE FLATFILE
+               OPEN INPUT FLATFILE
+               DISPLAY "List after rollback Sts:" CUST-STAT
+               MOVE "00"      TO CUST-STAT
+           END-IF.
+           PERFORM UNTIL CUST-STAT NOT = "00"
+             PERFORM READ-RECORD
+           END-PERFORM.
+           CLOSE FLATFILE.
+           COMMIT.
+
+           MOVE 500 TO ADD-TERMS.
+           DISPLAY "Now Open Extend" 
+           OPEN EXTEND FLATFILE.
+           DISPLAY "Extend file, Sts:" CUST-STAT
+           IF CUST-STAT = "41"
+               CLOSE FLATFILE
+               COMMIT
+               OPEN EXTEND FLATFILE
+               DISPLAY "Extend file, Sts:" CUST-STAT
+           END-IF.
+           PERFORM LOAD-RECORD VARYING SUB FROM 1 BY 1 
+                                 UNTIL SUB > 2
+           CLOSE FLATFILE.
+
+           OPEN INPUT FLATFILE.
+           DISPLAY "List after extend Open Sts:" CUST-STAT 
+           PERFORM UNTIL CUST-STAT NOT = "00"
+             PERFORM READ-RECORD
+           END-PERFORM.
+           CLOSE FLATFILE.
+           DISPLAY "Doing rollback B"
+           ROLLBACK.
+           OPEN INPUT FLATFILE.
+           IF CUST-STAT NOT = "41"
+               DISPLAY "Reopen after rollback Sts:" CUST-STAT 
+           ELSE
+               CLOSE FLATFILE
+               OPEN INPUT FLATFILE
+               DISPLAY "List again after rollback Sts:" CUST-STAT
+               MOVE "00"      TO CUST-STAT
+           END-IF.
+           PERFORM READ-RECORD UNTIL CUST-STAT NOT = "00".
+           CLOSE FLATFILE.
+           STOP RUN RETURNING 0.
+      
+       READ-RECORD.
+           MOVE SPACES                       TO TSPFL-RECORD.
+           MOVE "XXX99999"                   TO CM-CUST-NUM.
+           READ FLATFILE
+           IF CUST-STAT NOT = "00"
+             DISPLAY "Read Status: " CUST-STAT
+           ELSE
+             DISPLAY "Read  " CM-CUST-NUM 
+                     " Trms:" CM-NO-TERMINALS
+                     " Date:" CM-PK-DATE
+           END-IF.
+
+       LOADFILE.
+           DISPLAY "Loading sample program data file."
+                            UPON CONSOLE.
+      
+           OPEN OUTPUT FLATFILE.
+      
+           PERFORM LOAD-RECORD VARYING SUB FROM 1 BY 1 
+                                 UNTIL SUB > MAX-SUB.
+      
+           DISPLAY "Sample program data file load complete."
+                            UPON CONSOLE.
+           CLOSE FLATFILE.
+      
+       LOAD-RECORD.
+      
+           MOVE SPACES                       TO TSPFL-RECORD.
+           MOVE DATA-CUST-NUM      (SUB)     TO CM-CUST-NUM.
+           MOVE DATA-COMPANY       (SUB)     TO CM-COMPANY.
+           MOVE DATA-NO-TERMINALS  (SUB)     TO CM-NO-TERMINALS.
+           ADD  ADD-TERMS                    TO CM-NO-TERMINALS.
+           MOVE 20070319                     TO CM-PK-DATE.
+           IF SUB = 5
+              MOVE "Freddy Kruger"  TO CM-TRAILER.
+           IF SUB = 1 OR 4 OR 6
+               MOVE -20070319                 TO CM-PK-DATE.
+      
+           IF  ODD-RECORD
+               MOVE "8417"                   TO CM-DISK 
+           ELSE
+               MOVE "8470"                   TO CM-DISK.
+           WRITE TSPFL-RECORD.
+           IF CUST-STAT NOT = "00"
+               DISPLAY "Write Error " CUST-STAT.
+])
+
+AT_CHECK([$COBC -x -std=mf -w -fmf-files prog.cob ], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [Loading sample program data file.
+Sample program data file load complete.
+List: Open after COMMIT Sts:00
+Read  ALP00000 Trms:08240 Date:-20070319
+Read  BET00000 Trms:00010 Date:+20070319
+Read  GAM00000 Trms:00013 Date:+20070319
+Read  DEL00000 Trms:65535 Date:-20070319
+Read  EPS00000 Trms:00010 Date:+20070319
+Read  FOR00000 Trms:00254 Date:-20070319
+Read Status: 10
+Read  ALP00000 Trms:08240 Date:-20070319
+REWRITE ALP00000 Sts 44 Trms:00010
+Read  ALP00000 Trms:08240 Date:-20070319
+Read  BET00000 Trms:00010 Date:+20070319
+REWRITE BET00000 Sts 00 Trms:00032
+Read  GAM00000 Trms:00013 Date:+20070319
+Read  EPS00000 Trms:00010 Date:+20070319
+REWRITE EPS00000 Sts 00 Trms:08240
+List back Open Sts:00
+Read  ALP00000 Trms:08240 Date:-20070319
+Read  BET00000 Trms:00032 Date:+20070319
+Read  GAM00000 Trms:00013 Date:+20070319
+Read  DEL00000 Trms:65535 Date:-20070319
+Read  EPS00000 Trms:08240 Date:+20070319
+Read  FOR00000 Trms:00254 Date:-20070319
+Read Status: 10
+Doing rollback A
+Re-Close file
+Reopen after rollback Sts:00
+Read  ALP00000 Trms:08240 Date:-20070319
+Read  BET00000 Trms:00010 Date:+20070319
+Read  GAM00000 Trms:00013 Date:+20070319
+Read  DEL00000 Trms:65535 Date:-20070319
+Read  EPS00000 Trms:00010 Date:+20070319
+Read  FOR00000 Trms:00254 Date:-20070319
+Read Status: 10
+Now Open Extend
+Extend file, Sts:00
+List after extend Open Sts:00
+Read  ALP00000 Trms:08240 Date:-20070319
+Read  BET00000 Trms:00010 Date:+20070319
+Read  GAM00000 Trms:00013 Date:+20070319
+Read  DEL00000 Trms:65535 Date:-20070319
+Read  EPS00000 Trms:00010 Date:+20070319
+Read  FOR00000 Trms:00254 Date:-20070319
+Read  ALP00000 Trms:08740 Date:-20070319
+Read  BET00000 Trms:00510 Date:+20070319
+Read Status: 10
+Doing rollback B
+List again after rollback Sts:00
+Read  ALP00000 Trms:08240 Date:-20070319
+Read  BET00000 Trms:00010 Date:+20070319
+Read  GAM00000 Trms:00013 Date:+20070319
+Read  DEL00000 Trms:65535 Date:-20070319
+Read  EPS00000 Trms:00010 Date:+20070319
+Read  FOR00000 Trms:00254 Date:-20070319
+Read Status: 10
+], [])
+
+AT_CLEANUP
+

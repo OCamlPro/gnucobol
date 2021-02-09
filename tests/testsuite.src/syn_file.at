@@ -2895,7 +2895,7 @@ AT_DATA([prog.cob], [
 ])
 
 # FIXME: currently the .ddl is always created, should be only upon request
-AT_CHECK([$COMPILE -Wno-unsupported -fsqldb=mysql prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -Wno-unsupported -fsql prog.cob], [0], [], [])
 
 
 AT_CAPTURE_FILE(./tspfilex.ddl)

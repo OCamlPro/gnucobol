@@ -1,4 +1,13 @@
 
+2021-02-08  Ron Norman <rjn@inglenet.com>
+
+	* common.h: Additional flags added to cob_file for commit/rollback
+	* fileio.c: Numerous changes to support commit/rollback for all files
+	* fileio.h: 'gentable' removed as table is created if not present
+	* foci.c: Fix to set TIME and TIMESTAMP column types
+	* fodbc.c: Fix to set TIME and TIMESTAMP column types
+	* fsqlxfd.c: Removed heck for 'gentable'
+
 2021-02-02  Ron Norman <rjn@inglenet.com>
 
 	* fileio.c: Fixed to set default file sharing as the COBOL standard
