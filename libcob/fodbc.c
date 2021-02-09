@@ -704,19 +704,6 @@ odbc_row_count (
 }
 
 static void
-odbc_close_free ( SQL_STMT *s)
-{
-	if (s == NULL
-	 || s->handle == NULL)
-		return;
-	SQLCloseCursor (s->handle);
-	SQLFreeStmt (s->handle,SQL_CLOSE);
-	s->iscursor = FALSE;
-	s->status = 0;
-	return;
-}
-
-static void
 odbc_close_stmt ( SQL_STMT *s)
 {
 	if (s == NULL
@@ -1555,15 +1542,23 @@ odbc_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 			odbcStmt (db, (char*)"COMMIT");
 			if (db->autocommit) {
 				odbcStmt (db, (char*)"SET autocommit=1");
+				DEBUG_LOG("db",("%s: AutoCommit is ON!\n",db->dbType));
 			} else {
 				odbcStmt (db, (char*)"SET autocommit=0");
+				DEBUG_LOG("db",("%s: AutoCommit is OFF!\n",db->dbType));
 			}
 			odbcStmt (db, (char*)"BEGIN");
 		} else if (db->postgres) {
 			if (db->autocommit) {
-				odbcStmt (db, (char*)"SET AUTOCOMMIT TO ON");
+		 		chkSts(db,(char*)"AUTO COMMIT OFF",db->dbDbcH,
+						SQLSetConnectAttr(db->dbDbcH,SQL_ATTR_AUTOCOMMIT,
+										(SQLPOINTER)SQL_AUTOCOMMIT_ON,SQL_IS_UINTEGER));
+				DEBUG_LOG("db",("%s: AutoCommit is ON!\n",db->dbType));
 			} else {
-				odbcStmt (db, (char*)"SET AUTOCOMMIT TO OFF");
+		 		chkSts(db,(char*)"AUTO COMMIT OFF",db->dbDbcH,
+						SQLSetConnectAttr(db->dbDbcH,SQL_ATTR_AUTOCOMMIT,
+										(SQLPOINTER)SQL_AUTOCOMMIT_OFF,SQL_IS_UINTEGER));
+				DEBUG_LOG("db",("%s: AutoCommit is OFF!\n",db->dbType));
 			}
 		} else if (db->sqlite) {
 			odbcStmt (db, (char*)"COMMIT");
@@ -1685,7 +1680,7 @@ odbc_start (cob_file_api *a, cob_file *f, const int cond, cob_field *key)
 	f->curkey = ky;
 	paramtype = SQL_BIND_NO;
 
-	odbc_close_free (fx->start);
+	odbc_close_stmt (fx->start);
 	fx->start = NULL;
 	switch (cond) {
 	case COB_EQ:
@@ -1706,8 +1701,14 @@ odbc_start (cob_file_api *a, cob_file *f, const int cond, cob_field *key)
 		paramtype = SQL_BIND_NO;
 		break;
 	}
-	DEBUG_LOG("db",("Start %s index %d  Bind %02X\n",f->select_name,ky,paramtype));
+	DEBUG_LOG("db",("~START %s index %d, cond %d, Bind %02X\n",
+						f->select_name,ky,cond,paramtype));
 	cob_index_to_xfd (db, fx, f, ky);
+	if (fx->start && fx->start->iscursor) {
+		chkSts(db,(char*)"Pre-Close cursor",fx->start->handle,
+				SQLCloseCursor (fx->start->handle));
+		fx->start->iscursor = FALSE;
+	}
 	odbc_setup_stmt (db, fx, fx->start, SQL_BIND_COLS|paramtype, ky);
 	if (fx->start->status) {
 		fx->start = NULL;
@@ -1715,10 +1716,11 @@ odbc_start (cob_file_api *a, cob_file *f, const int cond, cob_field *key)
 		return COB_STATUS_30_PERMANENT_ERROR;
 	}
 	cob_sql_dump_stmt (db, fx->start->text, FALSE);
-	if(chkSts(db,(char*)"Start",fx->start->handle,
+	if (chkSts(db,(char*)"START",fx->start->handle,
 			SQLExecute(fx->start->handle))){
 		return COB_STATUS_30_PERMANENT_ERROR;
 	}
+	fx->start->iscursor = TRUE;
 
 	return COB_STATUS_00_SUCCESS;
 }
@@ -1835,7 +1837,7 @@ odbc_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 				else
 					ret = COB_STATUS_30_PERMANENT_ERROR;
 			} else {
-				DEBUG_LOG("db",("~Read Next: %s; OK\n",f->select_name));
+				DEBUG_LOG("db",("~READ NEXT: %s; OK\n",f->select_name));
 				odbc_any_nulls (db, fx);
 				cob_xfd_to_file (db, fx, f);
 			}
@@ -1863,7 +1865,7 @@ odbc_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 				else
 					ret = COB_STATUS_30_PERMANENT_ERROR;
 			} else {
-				DEBUG_LOG("db",("~Read Prev: %s; OK\n",f->select_name));
+				DEBUG_LOG("db",("~READ PREV: %s; OK\n",f->select_name));
 				odbc_any_nulls (db, fx);
 				cob_xfd_to_file (db, fx, f);
 			}
@@ -1892,7 +1894,7 @@ odbc_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 			else
 				ret = COB_STATUS_30_PERMANENT_ERROR;
 		} else {
-			DEBUG_LOG("db",("~Read First: %s; OK\n",f->select_name));
+			DEBUG_LOG("db",("~READ FIRST: %s; OK\n",f->select_name));
 			odbc_any_nulls (db, fx);
 			cob_xfd_to_file (db, fx, f);
 		}
@@ -1918,7 +1920,7 @@ odbc_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 			else
 				ret = COB_STATUS_30_PERMANENT_ERROR;
 		} else {
-			DEBUG_LOG("db",("~Read Last: %s; OK\n",f->select_name));
+			DEBUG_LOG("db",("~READ LAST: %s; OK\n",f->select_name));
 			odbc_any_nulls (db, fx);
 			cob_xfd_to_file (db, fx, f);
 		}

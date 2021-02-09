@@ -1,4 +1,8 @@
 
+2021-02-09  Ron Norman <rjn@inglenet.com>
+	* fodbc.c: PostgreSQL requires a SQLCloseCursor just before SQLExecute
+				if the statement had been used before.
+
 2021-02-08  Ron Norman <rjn@inglenet.com>
 
 	* common.h: Additional flags added to cob_file for commit/rollback
