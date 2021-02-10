@@ -574,7 +574,7 @@ same_level:
 
 	if (storage == CB_STORAGE_FILE 
 	 && fn
-	 && cb_flag_sql_xfd)
+	 && cb_flag_sql_xfd) {
 		cb_parse_xfd (fn, f);
 	}
 	return CB_TREE (f);
