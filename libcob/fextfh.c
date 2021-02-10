@@ -326,7 +326,7 @@ update_fcd_to_file (FCD3* fcd, cob_file *f, cob_field *fnstatus, int wasOpen)
 static void
 copy_keys_fcd_to_file (FCD3 *fcd, cob_file *f)
 {
-	int		k, p, parts, off;
+	int		k, p, parts, off, klen;
 	EXTKEY	*key;
 	for (k=0; k < (int)f->nkeys; k++) {
 		parts = LDCOMPX2(fcd->kdbPtr->key[k].count);
@@ -355,12 +355,19 @@ copy_keys_fcd_to_file (FCD3 *fcd, cob_file *f)
 			f->keys[k].field->size = LDCOMPX4(key->len);
 			f->keys[k].offset = LDCOMPX4(key->pos);
 		}
+		klen = 0;
 		for (p=0; p < parts; p++) {
 			f->keys[k].component[p] = cob_cache_malloc(sizeof(cob_field));
 			f->keys[k].component[p]->data = f->record->data + LDCOMPX4(key->pos);
 			f->keys[k].component[p]->attr = &alnum_attr;
 			f->keys[k].component[p]->size = LDCOMPX4(key->len);
+			klen += LDCOMPX4(key->len);
 			key   = (EXTKEY*) ((char*)(key) + sizeof(EXTKEY));
+		}
+		if (parts > 1
+		 && f->keys[k].field != NULL) {
+			f->keys[k].field->data = cob_cache_malloc ((size_t)klen);
+			f->keys[k].field->size = klen;
 		}
 	}
 }
