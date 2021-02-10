@@ -1,4 +1,9 @@
 
+2021-02-10  Ron Norman <rjn@inglenet.com>
+
+	* fileio.c: Changed to use lseek with SEEK_SET as lseek using SEEK_CUR and
+			a negative 'offset' was failing on Centos 6 and Solaris
+
 2021-02-09  Ron Norman <rjn@inglenet.com>
 	* fodbc.c: PostgreSQL requires a SQLCloseCursor just before SQLExecute
 				if the statement had been used before.

@@ -983,7 +983,8 @@ cob_read_qbl ( int fd, int *reclen, off_t pos, int dir )
 		}
 		len = (mark[2] << 24) | (mark[3] << 16) | (mark[4] << 8) | mark[5];
 		*reclen = len - SZ_QBLHDR;
-		readBlock (fd, qbl_hdr, len);
+		if (readBlock (fd, qbl_hdr, len) == (off_t)-1)
+			return (off_t)-1;
 		return newpos + len + 12;
 	} else {
 		if (pos == (off_t)-1) {
@@ -1009,8 +1010,9 @@ cob_read_qbl ( int fd, int *reclen, off_t pos, int dir )
 		}
 		len = (mark[3] << 24) | (mark[2] << 16) | (mark[1] << 8) | mark[0];
 		*reclen = len - SZ_QBLHDR;
-		lseek (fd, -(len+6+SZ_QBLHDR), SEEK_CUR);
-		readBlock (fd, qbl_hdr, len);
+		lseek (fd, newpos - len - SZ_QBLHDR, SEEK_SET);
+		if (readBlock (fd, qbl_hdr, len) == (off_t)-1)
+			return (off_t)-1;
 		return newpos - len - 6 - SZ_QBLHDR;
 	}
 }
@@ -3993,12 +3995,12 @@ sequential_rewrite (cob_file_api *a, cob_file *f, const int opt)
 			return COB_STATUS_30_PERMANENT_ERROR;
 		}
 	} else {
-		if (lseek (f->fd, -(off_t) f->record->size, SEEK_CUR) == (off_t)-1) {	/* Not used! */
+		f->record_off = lseek (f->fd, (off_t)0, SEEK_CUR);	/* Get current file position */
+		if (lseek (f->fd, (off_t)(f->record_off - f->record->size), SEEK_SET) == (off_t)-1) {
 			return COB_STATUS_30_PERMANENT_ERROR;
 		}
-		f->record_off = lseek (f->fd, (off_t)0, SEEK_CUR);	/* Save current file position */
-		set_file_pos (f, (off_t)f->record_off);
 	}
+	set_file_pos (f, (off_t)f->record_off);
 	rcsz = f->record->size;
 	padlen = 0;
 	if (f->record_min != f->record_max
