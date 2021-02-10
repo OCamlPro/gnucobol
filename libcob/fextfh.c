@@ -1041,9 +1041,9 @@ org_handling:
 				key->attr = f->keys[k].field->attr;
 				key->data = f->record->data + f->keys[k].offset;
 			} else {
-				key->size = f->keys[k].component[0]->size;
-				key->attr = f->keys[k].component[0]->attr;
-				key->data = f->keys[k].component[0]->data;
+				key->size = f->keys[k].field->size;
+				key->attr = f->keys[k].field->attr;
+				key->data = f->keys[k].field->data;
 			}
 		} else {
 			memset(keywrk,0,sizeof(keywrk));
