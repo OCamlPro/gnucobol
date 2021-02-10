@@ -44,11 +44,11 @@
 
 	* Makefile.am: corrections to changes previously made
 	* fileio.c: report any error from loading a module that should be present
-
 2021-01-22  Ron Norman <rjn@inglenet.com>
 
 	* common.c: Add check for COB_DEBUG_LOG not defined
-	* fodbc.c,fsqlxfd.c: set db->no_for_update for SQLite
+	* fodbc.c, fsqlxfd.c: set db->no_for_update for SQLite
+	* fileio.c: report any error from loading a module that should be present
 
 2021-01-22  Simon Sobisch <simonsobisch@gnu.org>
 

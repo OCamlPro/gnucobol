@@ -1,6 +1,6 @@
 /*
-   Copyright (C) 2006-2012, 2013, 2017-2018 Free Software Foundation, Inc.
-   Written by Roger While, Ron Norman
+   Copyright (C) 2006-2012, 2013, 2017-2021 Free Software Foundation, Inc.
+   Written by Roger While, Ron Norman, Simon Sobisch
 
    This file is part of GnuCOBOL.
 
@@ -155,22 +155,23 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("{");
 		output_storage ("	register const unsigned char	*p;");
 		output_storage ("	register int	n;");
-		output_storage ("	register int 	retval = 0;");
+		output_storage ("	register int 	val = size - 1;");
 		output_storage ("	p = (const unsigned char *)data;");
-		output_storage ("	for (n = 0; n < size-1; ++n, ++p) {");
+		output_storage ("	for (n = 0; n < val; ++n, ++p) {");
 		output_storage ("		if (*p > '0' && *p <= '9')");
 		output_storage ("	       break;");
 		output_storage ("	}");
+		output_storage ("	val = 0;");
 		output_storage ("	for (; n < size; ++n, ++p) {");
-		output_storage ("		retval *= 10;");
+		output_storage ("		val *= 10;");
 		output_storage ("		if (*p > '0' && *p <= '9') {");
-		output_storage ("		    retval += (*p - '0');");
+		output_storage ("		    val += (*p - '0');");
 		output_storage ("		} else if ((*p & 0x40) && (n + 1) == size) {");
-		output_storage ("		    retval += (*p & 0x0F);");
-		output_storage ("		    retval = -retval;");
+		output_storage ("		    val += (*p & 0x0F);");
+		output_storage ("		    val = -val;");
 		output_storage ("	    }");
 		output_storage ("	}");
-		output_storage ("	return retval;");
+		output_storage ("	return val;");
 		output_storage ("}");
 		return;
 
@@ -200,22 +201,23 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("{");
 		output_storage ("	register const unsigned char	*p;");
 		output_storage ("	register cob_s64_t	n;");
-		output_storage ("	register cob_s64_t 	retval = 0;");
+		output_storage ("	register cob_s64_t 	val = size - 1;");
 		output_storage ("	p = (const unsigned char *)data;");
-		output_storage ("	for (n = 0; n < size-1; ++n, ++p) {");
+		output_storage ("	for (n = 0; n < val; ++n, ++p) {");
 		output_storage ("		if (*p > '0' && *p <= '9')");
 		output_storage ("	       break;");
 		output_storage ("	}");
+		output_storage ("	val = 0;");
 		output_storage ("	for (; n < size; ++n, ++p) {");
-		output_storage ("		retval *= 10;");
+		output_storage ("		val *= 10;");
 		output_storage ("		if (*p > '0' && *p <= '9') {");
-		output_storage ("		    retval += (*p - '0');");
+		output_storage ("		    val += (*p - '0');");
 		output_storage ("		} else if ((*p & 0x40) && (n + 1) == size) {");
-		output_storage ("		    retval += (*p & 0x0F);");
-		output_storage ("		    retval = -retval;");
+		output_storage ("		    val += (*p & 0x0F);");
+		output_storage ("		    val = -val;");
 		output_storage ("	    }");
 		output_storage ("	}");
-		output_storage ("	return retval;");
+		output_storage ("	return val;");
 		output_storage ("}");
 		return;
 

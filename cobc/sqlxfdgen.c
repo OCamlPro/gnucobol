@@ -143,14 +143,15 @@ save_date (struct cb_field *f)
  * Returns NULL if all good, else address of bad character in 'format'
  */
 static char *
-cb_date_str ( struct sql_date *sdf, char *format)
+cb_date_str (struct sql_date *sdf, char *format)
 {
-static struct sql_date lcl[1];	/* Make static as it may be returned */
 	int	len, pos, extra;
 	char	*dp;
 
-	if (sdf == NULL)
+	if (sdf == NULL) {
+		static struct sql_date lcl[1];	/* static as part of it may be returned */
 		sdf = lcl;
+	}
 
 	memset((void*)sdf,0,sizeof(struct sql_date));
 	strcpy(sdf->format,format);

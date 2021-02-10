@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2020 Free Software Foundation, Inc.
+   Copyright (C) 2001-2021 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -573,9 +573,9 @@ same_level:
 	}
 
 	if (storage == CB_STORAGE_FILE 
-	 && fn) {
-		if (cb_flag_sql_xfd)
-			cb_parse_xfd (fn, f);
+	 && fn
+	 && cb_flag_sql_xfd)
+		cb_parse_xfd (fn, f);
 	}
 	return CB_TREE (f);
 }

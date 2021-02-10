@@ -4032,7 +4032,7 @@ sequential_rewrite (cob_file_api *a, cob_file *f, const int opt)
 			rcsz = LDBINLE4(recsize.sbuff);
 			break;
 		case COB_FILE_IS_MF:
-			if(f->record_prefix == 2) {
+			if (f->record_prefix == 2) {
 				rcsz = ((recsize.sbuff[0] & 0x0F) << 8) + recsize.sbuff[1];
 			} else {
 				rcsz = ((recsize.sbuff[0] & 0x0F) << 24) + (recsize.sbuff[1] << 16) 
@@ -4044,10 +4044,10 @@ sequential_rewrite (cob_file_api *a, cob_file *f, const int opt)
 			rcsz = COB_MAYSWAP_16 (recsize.sshort[0]);
 			break;
 		}
-		if((rcsz + padlen) < f->record->size)
+		if ((rcsz + padlen) < f->record->size)
 			return COB_STATUS_30_PERMANENT_ERROR;
 	}
-	if(rcsz > f->record_max)
+	if (rcsz > f->record_max)
 		return COB_STATUS_30_PERMANENT_ERROR;
 	if (f->flag_do_qbl
 	 && qblfd != -1) {
@@ -4078,7 +4078,7 @@ lineseq_read (cob_file_api *a, cob_file *f, const int read_opts)
 {
 	unsigned char	*dataptr;
 	size_t		i = 0;
-	int		n, k;
+	int		n;
 
 	COB_UNUSED (a);
 	COB_UNUSED (read_opts);
@@ -4131,12 +4131,12 @@ lineseq_read (cob_file_api *a, cob_file *f, const int read_opts)
 		if (i < f->record_max) {
 			*dataptr++ = (unsigned char)n;
 			i++;
-			if (i >= f->record_max
+			if (i == f->record_max
 			 && (f->file_features & COB_FILE_LS_SPLIT)) {
 				/* If record is too long, then simulate end
 				 * so balance becomes the next record read */
+				int	k = 1;
 				n = getc ((FILE *)f->file);
-				k = 1;
 				if (n == '\r') {
 					n = getc ((FILE *)f->file);
 					k++;

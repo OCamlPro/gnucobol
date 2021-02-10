@@ -264,6 +264,9 @@ export COB_HAS_ISAM COB_HAS_XML2 COB_HAS_JSON COB_HAS_CURSES COB_HAS_64_BIT_POIN
 export COBC COBCRUN COBCRUN_DIRECT RUN_PROG_MANUAL
 export COB_OBJECT_EXT COB_EXE_EXT
 
+# to ensure that no external COB_SCHEMA_DIR is polluted: set to local
+COB_SCHEMA_DIR="." && export COB_SCHEMA_DIR
+
 # to ensure that no external DB_HOME is polluted: unset
 DB_HOME="" && export DB_HOME
 
