@@ -1,4 +1,10 @@
 
+2021-02-11  Ron Norman <rjn@inglenet.com>
+
+	* fileio.c: Added a few more checks with possible error message during
+			ROLLBACK processing if the QBL file has a problem being read
+	* termio.c: Added bounds check to avoid core dump on Centos 6.8
+
 2021-02-10  Ron Norman <rjn@inglenet.com>
 
 	* fileio.c: Changed to use lseek with SEEK_SET as lseek using SEEK_CUR and

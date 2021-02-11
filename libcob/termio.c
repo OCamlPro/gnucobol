@@ -565,7 +565,10 @@ display_alnum_dump (cob_field *f, FILE *fp, unsigned int indent, unsigned int ma
 					fprintf (fp, "\n%*s", indent, " ");
 				}
 			}
-			memcpy(prev, &f->data[i], colsize);
+			if (colsize < (f->size - i))
+				memcpy(prev, &f->data[i], colsize);
+			else
+				memcpy(prev, &f->data[i], f->size - i);
 		}
 		wrk[0] = 0;
 		pos = i + 1;

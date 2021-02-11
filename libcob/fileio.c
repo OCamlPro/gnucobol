@@ -967,29 +967,35 @@ cob_read_qbl ( int fd, int *reclen, off_t pos, int dir )
 		if (errno == EINVAL)
 			return (off_t)-1;
 		if (errno != 0) {
-			printf("Read error %s: at %ld\n",strerror(errno),pos);
+			cob_runtime_warning ("QBL: Read error %s: at %ld\n",strerror(errno),(long)pos);
 			return (off_t)-1;
 		}
-		if (readBlock (fd, mark, 6) == (off_t)-1)
+		if (readBlock (fd, mark, 6) == (off_t)-1) {
+			cob_runtime_warning ("QBL: Bad read header at %ld of %s",(long)newpos,qblfilename);
 			return (off_t)-1;
+		}
 		chk = CHKSEED ^ mark[2];
 		chk = chk ^ mark[3];
 		chk = chk ^ mark[4];
 		chk = chk ^ mark[5];
 		if (mark[0] != CHKMARK
 		 || mark[1] != chk) {
-			cob_runtime_warning ("Bad QBL check sum %02X at %ld of %s",chk,pos,qblfilename);
+			cob_runtime_warning ("QBL: Bad check sum %02X at %ld of %s",chk,(long)pos,qblfilename);
 			return (off_t)-1;
 		}
 		len = (mark[2] << 24) | (mark[3] << 16) | (mark[4] << 8) | mark[5];
 		*reclen = len - SZ_QBLHDR;
-		if (readBlock (fd, qbl_hdr, len) == (off_t)-1)
+		if (readBlock (fd, qbl_hdr, len) == (off_t)-1) {
+			cob_runtime_warning ("QBL: Bad read record at %ld of %s",(long)newpos,qblfilename);
 			return (off_t)-1;
+		}
 		return newpos + len + 12;
 	} else {
+		errno = 0;
 		if (pos == (off_t)-1) {
 			pos = 0;
-			newpos = lseek (fd, pos-6, SEEK_END);
+			newpos = lseek (fd, 0, SEEK_END);
+			newpos = lseek (fd, newpos-6, SEEK_SET);
 		} else if (pos == (off_t)0) {
 			return (off_t)-1;
 		} else {
@@ -997,22 +1003,26 @@ cob_read_qbl ( int fd, int *reclen, off_t pos, int dir )
 		}
 		if (errno == EINVAL)
 			return (off_t)-1;
-		if (readBlock (fd, mark, 6) == (off_t)-1)
+		if (readBlock (fd, mark, 6) == (off_t)-1) {
+			cob_runtime_warning ("QBL: Bad read header at %ld of %s",(long)newpos,qblfilename);
 			return (off_t)-1;
+		}
 		chk = CHKSEED ^ mark[3];
 		chk = chk ^ mark[2];
 		chk = chk ^ mark[1];
 		chk = chk ^ mark[0];
 		if (mark[5] != CHKMARK
 		 || mark[4] != chk) {
-			cob_runtime_warning ("Bad QBL check sum %02X at %ld of %s",chk,pos,qblfilename);
+			cob_runtime_warning ("QBL: Bad check sum %02X at %ld of %s",chk,(long)pos,qblfilename);
 			return (off_t)-1;
 		}
 		len = (mark[3] << 24) | (mark[2] << 16) | (mark[1] << 8) | mark[0];
 		*reclen = len - SZ_QBLHDR;
 		lseek (fd, newpos - len - SZ_QBLHDR, SEEK_SET);
-		if (readBlock (fd, qbl_hdr, len) == (off_t)-1)
+		if (readBlock (fd, qbl_hdr, len) == (off_t)-1) {
+			cob_runtime_warning ("QBL: Bad read record at %ld of %s",(long)newpos,qblfilename);
 			return (off_t)-1;
+		}
 		return newpos - len - 6 - SZ_QBLHDR;
 	}
 }
@@ -1069,7 +1079,7 @@ cob_load_module (int iortn)
 	module_errmsg[0] = 0;
 	ioinit = (void (*)(cob_file_api *))cob_load_lib (io_rtns[iortn].module, io_rtns[iortn].entry, module_errmsg);
 	if (ioinit == NULL) {
-		printf("*** Problem: %s ***\n",module_errmsg);
+		cob_runtime_warning ("*** Problem: %s ***\n",module_errmsg);
 		return 1;
 	}
 	ioinit(&file_api);
@@ -5818,7 +5828,7 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 		set_qbl_buf (f->record_max);
 		if (qblfd == -1) {
 			cob_temp_name (qblfilename, ".qbl");
-			qblfd = cob_open_qbl (qblfilename,1,1);
+			qblfd = cob_open_qbl (qblfilename,1,0);
 		}
 	}
 }
