@@ -26,6 +26,9 @@
 #if defined(WITH_ODBC) || defined(WITH_OCI) || defined(WITH_DB) || defined(WITH_LMDB)
 /* Routines in fsqlxfd.c common to all Database interfaces */                        
 
+static char	high_value[6];	/* value to replace HIGH-VALUES in index */
+static int	len_high_value = 0;
+
 int
 db_findkey (cob_file *f, cob_field *kf, int *fullkeylen, int *partlen)
 {
@@ -1392,6 +1395,9 @@ cob_load_ddl (struct db_state  *db, struct file_xfd *fx)
 				if ((p = cob_str_case_str (xfdbuf," BINARY ")) != NULL) {
 					memcpy (p,"    RAW ",8);
 				}
+				if ((p = cob_str_case_str (xfdbuf," TIME,")) != NULL) {
+					memcpy (p," DATE",5);
+				}
 			} else if (db->sqlite) {
 				if ((p = cob_str_case_str (xfdbuf," BIGINT ")) != NULL) {
 					k = strlen (xfdbuf);
@@ -1674,6 +1680,15 @@ cob_drop_xfd (struct file_xfd *fx)
 	cob_free (fx);
 }
 
+static int
+chrtohex ( char x )
+{
+	if (x >= '0' && x <= '9') return (int)(x - '0');
+	if (x >= 'a' && x <= 'f') return (int)(x - 'a' + 10);
+	if (x >= 'A' && x <= 'F') return (int)(x - 'A' + 10);
+	return 0;
+}
+
 /*************************************************************************
 	Try various combinations of schema name and suffix or ORACLE + SUFFIX
 	as an environment variable. Return the correct one
@@ -1688,6 +1703,23 @@ getSchemaEnvName(
 	char	*env;
 	int		k;
 	char	sch[48];
+
+	if (len_high_value == 0) {
+		if( (env = getenv("COB_SQL_HIGH_VALUE")) != NULL) {
+			for (k=0; *env != 0x00 && k < 6; env++) {
+				if (isxdigit (*env)) {
+					high_value[k] = (chrtohex ((char)env[0]) << 4)
+									| chrtohex ((char)env[1]);
+					env++;
+					k++;
+				}
+			}
+			len_high_value = k;
+		} else {
+			len_high_value = -1;
+		}
+	}
+
 	if (db->dbSchema[0] <= ' ') {
 		if( (env = getenv("COB_SCHEMA_NAME")) != NULL)
 			snprintf(db->dbSchema,sizeof(db->dbSchema),"%s",env);
@@ -2209,6 +2241,26 @@ cob_index_to_xfd (struct db_state *db, struct file_xfd *fx, cob_file *fl, int id
 							fx->map[k].dtfrm->format,fx->map[k].colname,
 							fx->map[k].sqlDecimals, fx->map[k].sqlColSize, nx?"Ok":"Bad Date"));
 				DEBUG_DUMP("db",fx->map[k].sqlfld.data,dl);
+			} else if (fx->map[k].type == COB_XFDT_FLOAT) {
+				memcpy (fx->map[k].sdata,fx->map[k].recfld.data,fx->map[k].size);
+			} else if (fx->map[k].type == COB_XFDT_BIN) {
+				memcpy (fx->map[k].sdata,fx->map[k].recfld.data,fx->map[k].size);
+				fx->map[k].sdata[fx->map[k].size] = 0;
+			} else if (isAllChar (fx->map[k].recfld.data, (int)fx->map[k].recfld.size, 0xFF)) {
+				/* COBOL field is all HIGH-VALUES so pick highest usable characters */
+				DEBUG_LOG("db",("%3d: Index %d %s size(%d) is HIGH-VALUES \n",
+								k,idx,fx->map[k].colname,(int)fx->map[k].size));
+				if (len_high_value <= 0
+				 || fx->map[k].size < len_high_value) {
+					memset (fx->map[k].sdata, '~', fx->map[k].size);
+				} else {
+					memcpy (fx->map[k].sdata, high_value, len_high_value);
+					memset (&fx->map[k].sdata[len_high_value], '~', 
+							fx->map[k].size - len_high_value);
+				}
+				fx->map[k].sdata[fx->map[k].size] = 0;
+				DEBUG_DUMP("db",fx->map[k].sqlfld.data,fx->map[k].sqlfld.size);
+
 			} else if (fx->map[k].type == COB_XFDT_PICX
 			 		|| fx->map[k].type == COB_XFDT_PICA
 			 		|| fx->map[k].type == COB_XFDT_VARX) {
@@ -2217,11 +2269,6 @@ cob_index_to_xfd (struct db_state *db, struct file_xfd *fx, cob_file *fl, int id
 				DEBUG_LOG("db",("%3d: Index %d %s type:PIC X(%d) \n",
 								k,idx,fx->map[k].colname,(int)fx->map[k].size));
 				DEBUG_DUMP("db",fx->map[k].sqlfld.data,fx->map[k].sqlfld.size);
-			} else if (fx->map[k].type == COB_XFDT_FLOAT) {
-				memcpy (fx->map[k].sdata,fx->map[k].recfld.data,fx->map[k].size);
-			} else if (fx->map[k].type == COB_XFDT_BIN) {
-				memcpy (fx->map[k].sdata,fx->map[k].recfld.data,fx->map[k].size);
-				fx->map[k].sdata[fx->map[k].size] = 0;
 			} else {
 				cob_move (&fx->map[k].recfld, &fx->map[k].sqlfld);
 				fx->map[k].sqlfld.data[fx->map[k].sqlfld.size] = 0;
@@ -2533,7 +2580,18 @@ cob_xfd_to_ddl (struct db_state *db, struct file_xfd *fx, FILE *fo)
 			fprintf(fo,"%s%s ",comma,fx->map[k].colname);
 			strcpy(comma,",\n");
 			if (fx->map[k].dtfrm) {
-				fprintf(fo,"DATE");
+				if (fx->map[k].dtfrm->hasTime 
+				 && fx->map[k].dtfrm->hasDate) 
+					fprintf(fo,"TIMESTAMP");
+				else
+				if (fx->map[k].dtfrm->hasTime 
+				 && db->isoci)
+					fprintf(fo,"DATE");
+				else
+				if (fx->map[k].dtfrm->hasTime)
+					fprintf(fo,"TIME");
+				else
+					fprintf(fo,"DATE");
 			} else if (fx->map[k].type == COB_XFDT_FLOAT) {
 				if (fx->map[k].size > 4)
 					fprintf(fo,"FLOAT(53)");
