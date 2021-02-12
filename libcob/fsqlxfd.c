@@ -2246,12 +2246,12 @@ cob_index_to_xfd (struct db_state *db, struct file_xfd *fx, cob_file *fl, int id
 			} else if (fx->map[k].type == COB_XFDT_BIN) {
 				memcpy (fx->map[k].sdata,fx->map[k].recfld.data,fx->map[k].size);
 				fx->map[k].sdata[fx->map[k].size] = 0;
-			} else if (isAllChar (fx->map[k].recfld.data, (int)fx->map[k].recfld.size, 0xFF)) {
+			} else if (len_high_value > 0
+				&& isAllChar (fx->map[k].recfld.data, (int)fx->map[k].recfld.size, 0xFF)) {
 				/* COBOL field is all HIGH-VALUES so pick highest usable characters */
 				DEBUG_LOG("db",("%3d: Index %d %s size(%d) is HIGH-VALUES \n",
 								k,idx,fx->map[k].colname,(int)fx->map[k].size));
-				if (len_high_value <= 0
-				 || fx->map[k].size < len_high_value) {
+				if (fx->map[k].size < len_high_value) {
 					memset (fx->map[k].sdata, '~', fx->map[k].size);
 				} else {
 					memcpy (fx->map[k].sdata, high_value, len_high_value);
