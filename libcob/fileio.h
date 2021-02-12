@@ -264,7 +264,7 @@ struct db_state {
 	char	dbUser[32];			/* DB UserId to connect with */
 	char	dbPwd[32];			/* DB Password to connect with */
 	char	dbDsn[32];			/* DB DSN to connect with */
-	char	dbCon[128];			/* Full connect string */
+	char	dbCon[256];			/* Full connect string */
 
 	int		dbVer;				/* Data Base version */
 	int		updatesDone;		/* # Updates done since last COMMIT */

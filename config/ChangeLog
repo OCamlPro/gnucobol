@@ -1,4 +1,9 @@
 
+2021-02-12  Ron Norman <rjn@inglenet.com>
+
+	* fileio database: added comments about some possible environment
+			variables that could be set to define database connection
+
 2021-02-08  Ron Norman <rjn@inglenet.com>
 
 	* fileio: Change 'file_log' name to 'rollback'
