@@ -1254,29 +1254,6 @@ join_environment (cob_file_api *a)
 		if(odbcStmt(db,(char*)"ALTER SESSION SET SQL_TRACE = TRUE"))
 			return;
 	}
-	if(db->oracle) {
-		/* The DMS Emulation code uses DECIMAL POINT internally */
-		if(odbcStmt(db,(char*)"ALTER SESSION SET NLS_NUMERIC_CHARACTERS = '.,'")) {
-			return;
-		}
-
-		/* Set The default format for handling DATE fields */
-		if(db->dateFormat != NULL
-		&& strlen(db->dateFormat) > 0) {
-			DEBUG_LOG("db",("NOTE: Default DATE field format is '%s'\n",db->dateFormat));
-			sprintf(tmp,"ALTER SESSION SET NLS_DATE_FORMAT = '%s'",db->dateFormat);
-			if(odbcStmt(db,tmp)) {
-				return;
-			}
-		}
-
-	}
-
-	if(db->oracle) {
-		if(odbcStmt(db,(char*)"ALTER SESSION SET OPTIMIZER_MODE = FIRST_ROWS")) {
-			return;
-		}
-	}
 
 	db->autocommit = FALSE;
 	db_join = 0;			/* All connect steps completed */
@@ -1385,7 +1362,7 @@ odbc_file_delete (cob_file_api *a, cob_file *f, char *filename)
 		}
 	}
 	if (f->file == NULL) {
-		fx = cob_load_xfd (f, NULL, sizeof(SQLLEN));
+		fx = cob_load_xfd (db, f, NULL, sizeof(SQLLEN));
 		if (fx == NULL) {
 			return COB_STATUS_30_PERMANENT_ERROR;
 		}
@@ -1426,7 +1403,7 @@ odbc_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 #endif
 	struct file_xfd	*fx;
 
-	fx = cob_load_xfd (f, NULL, sizeof(SQLLEN));
+	fx = cob_load_xfd (db, f, NULL, sizeof(SQLLEN));
 	if (fx == NULL) {
 		return COB_STATUS_30_PERMANENT_ERROR;
 	}

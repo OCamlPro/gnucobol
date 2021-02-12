@@ -1016,32 +1016,26 @@ join_environment (cob_file_api *a)
 		if (ociStmt(db,(char*)"ALTER SESSION SET SQL_TRACE = TRUE"))
 			return;
 	}
-	if (db->oracle) {
-		/* The runtime code uses DECIMAL POINT internally */
-		if (ociStmt(db,(char*)"ALTER SESSION SET NLS_NUMERIC_CHARACTERS = '.,'")) {
-			return;
-		}
-
-		/* Set The default format for handling DATE fields */
-		if (db->dateFormat != NULL
-		&& strlen(db->dateFormat) > 0) {
-			DEBUG_LOG("db",("NOTE: Default DATE field format is '%s'\n",db->dateFormat));
-			sprintf(tmp,"ALTER SESSION SET NLS_DATE_FORMAT = '%s'",db->dateFormat);
-			if (ociStmt(db,tmp)) {
-				return;
-			}
-		} else {
-			db->dateFormat = (char*)"YYYYMMDD";
-			DEBUG_LOG("db",("NOTE: Set DATE format to '%s'\n",db->dateFormat));
-			sprintf(tmp,"ALTER SESSION SET NLS_DATE_FORMAT = '%s'",db->dateFormat);
-			if (ociStmt(db,tmp)) {
-				return;
-			}
-		}
-		strcpy(tmp,"ALTER SESSION SET OPTIMIZER_MODE = FIRST_ROWS");
-		DEBUG_LOG("db",("NOTE: %s\n",tmp));
-		ociStmt(db,tmp);
+	/* The runtime code uses DECIMAL POINT internally */
+	if (ociStmt(db,(char*)"ALTER SESSION SET NLS_NUMERIC_CHARACTERS = '.,'")) {
+		return;
 	}
+
+	/* Set The default format for handling DATE/TIME fields */
+	sprintf(tmp,"ALTER SESSION SET NLS_DATE_FORMAT = '%s'","YYYYMMDDHH24MISS");
+	DEBUG_LOG("db",("NOTE: %s\n",tmp));
+	if (ociStmt(db,tmp)) {
+		return;
+	}
+	/* Set The default format for handling TIMESTAMP fields */
+	sprintf(tmp,"ALTER SESSION SET NLS_TIMESTAMP_FORMAT = '%s'","YYYY-MM-DD HH24:MI:SS.FF6");
+	DEBUG_LOG("db",("NOTE: %s\n",tmp));
+	if (ociStmt(db,tmp)) {
+		return;
+	}
+	strcpy(tmp,"ALTER SESSION SET OPTIMIZER_MODE = FIRST_ROWS");
+	DEBUG_LOG("db",("NOTE: %s\n",tmp));
+	ociStmt(db,tmp);
 
 	db_join = 0;			/* All connect steps completed */
 	DEBUG_LOG("db",("%s successful connection\n",db->dbType));
@@ -1065,7 +1059,7 @@ oci_file_delete (cob_file_api *a, cob_file *f, char *filename)
 		}
 	}
 	if (f->file == NULL) {
-		fx = cob_load_xfd (f, NULL, sizeof(ub2));
+		fx = cob_load_xfd (db, f, NULL, sizeof(ub2));
 		if (fx == NULL) {
 			return COB_STATUS_30_PERMANENT_ERROR;
 		}
@@ -1105,7 +1099,7 @@ oci_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const in
 #endif
 	struct file_xfd	*fx;
 
-	fx = cob_load_xfd (f, NULL, sizeof(ub2));
+	fx = cob_load_xfd (db, f, NULL, sizeof(ub2));
 	if (fx == NULL) {
 		return COB_STATUS_30_PERMANENT_ERROR;
 	}

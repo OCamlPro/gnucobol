@@ -503,7 +503,11 @@ bld_fields (struct map_xfd *mx, cob_file *fl)
 		break;
 	}
 	if (mx->dtfrm) {
-		mx->sqlfld.size = mx->dtfrm->digits;
+		if (mx->dtfrm->hasTime && mx->dtfrm->hasDate)
+			mx->sqlColSize = mx->sqlsize = 26;
+		else
+			mx->sqlColSize = mx->sqlsize = 16;
+		mx->sqlfld.size = mx->sqlsize;
 	} else if (mx->digits > 0) {		/* Set size of SQL numeric field exact */
 		numsz = mx->digits;
 		if (mx->sqlattr.flags & COB_FLAG_HAVE_SIGN)
@@ -741,10 +745,14 @@ convert_to_date(
 	&& date.month == 0
 	&& date.day == 0)		/* YYMMDD is all ZERO so assume date is ZERO */
 		bDateZero = TRUE;
-	if(df->yyRule == '+')
-		date.year += df->yyAdj;
-	else if(df->yyRule == '%')
-		date.year += ((date.year < df->yyAdj) ? 2000 : 1900);
+	if (df->ccLen == 0) {
+		if(df->yyRule == '+')
+			date.year += df->yyAdj;
+		else if(df->yyRule == '%')
+			date.year += ((date.year < df->yyAdj) ? 2000 : 1900);
+		else if (df->yyLen < 4)
+			date.year += 2000;
+	}
 	getDays(days,date.year);
 	if(df->ddLen > 2
 	&& !bDateZero
@@ -827,18 +835,17 @@ convert_to_date(
 	}
 	*dateOk = !bDateBad;
 	if(db->oracle) {
-		if (df->hasTime && !df->hasDate) {
-			k = sprintf(dataout,"%02d%02d%02d",
-								date.hour,date.minute,date.second);
-		} else
-		if(outlen < 8) {
-			k = sprintf(dataout,"%02d%02d%02d",date.year%100,date.month,date.day);
-		} else if(outlen > 13 && df->hasTime) {
+		if(df->hasDate && df->hasTime) {
+			k = sprintf(dataout,"%04d-%02d-%02d %02d:%02d:%02d.%06d",
+								date.year,date.month,date.day,
+								date.hour,date.minute,date.second,date.hund);
+		} else {
+			if (date.year == 0) date.year = 2000;
+			if (date.month == 0) date.month = 1;
+			if (date.day == 0)	date.day = 1;
 			k = sprintf(dataout,"%04d%02d%02d%02d%02d%02d",
 								date.year,date.month,date.day,
 								date.hour,date.minute,date.second);
-		} else {
-			k = sprintf(dataout,"%04d%02d%02d",date.year,date.month,date.day);
 		}
 	} else {
 		if (df->hasTime && !df->hasDate) {
@@ -849,7 +856,10 @@ convert_to_date(
 				k = sprintf(dataout,"%02d:%02d:%02d",
 								date.hour,date.minute,date.second);
 		} else
-		if(outlen > 11 && df->hasTime) {
+		if(df->hasTime && df->hasDate) {
+			if (date.year == 0) date.year = 2000;
+			if (date.month == 0) date.month = 1;
+			if (date.day == 0)	date.day = 1;
 			k = sprintf(dataout,"%04d-%02d-%02d %02d:%02d:%02d.%03d",
 								date.year,date.month,date.day,
 								date.hour,date.minute,date.second,date.hund);
@@ -899,18 +909,17 @@ convert_from_date(
 		if(isdigit(pd[k]))
 			pdata[dlen++] = pd[k];
 	}
-	while(dlen < 8)
+	while(dlen < 20)
 		pdata[dlen++] = '0';
 	pdata[dlen] = 0;
 	if(db->oracle) {
 		date.year	= getInt(pdata,0,4);
 		date.month	= getInt(pdata,4,2);
 		date.day	= getInt(pdata,6,2);
-		if(dlen > 7) {
-			date.hour	= getInt(pdata,8,2);
-			date.minute	= getInt(pdata,10,2);
-			date.second	= getInt(pdata,12,2);
-		}
+		date.hour	= getInt(pdata,8,2);
+		date.minute	= getInt(pdata,10,2);
+		date.second	= getInt(pdata,12,2);
+		date.hund	= getInt(pdata,14,6);
 	} else {
 		date.year	= getInt(sqldate,0,4);
 		date.month	= getInt(sqldate,5,2);
@@ -942,7 +951,7 @@ convert_from_date(
 		date.year -= df->yyAdj;
 	} else if(df->yyRule == '#') {	/* ER TDATE$ format */
 		date.year -= df->yyAdj;
-	} else if(df->yyRule == '%') {
+	} else if(df->yyRule == '%' || df->yyLen < 4) {
 		if(date.year >= 2000)
 			date.year -= 2000;
 		else if(date.year >= 1900)
@@ -986,7 +995,7 @@ convert_from_date(
  * 'indsize' is the size of the SQL Indicator field
  */
 struct file_xfd *
-cob_load_xfd (cob_file *fl, char *alt_name, int indsize)
+cob_load_xfd (struct db_state *db, cob_file *fl, char *alt_name, int indsize)
 {
 	char	xfdbuf[COB_NORMAL_BUFF],*sdir,*fname,*p,*mp;
 	char	colname[80], tblname[80], asgname[256];
@@ -1096,6 +1105,12 @@ cob_load_xfd (cob_file *fl, char *alt_name, int indsize)
 			mx->lncolname = strlen(colname);
 			if (mx->lncolname > fx->maxcolnmln)
 				fx->maxcolnmln = mx->lncolname;
+			if (mx->dtfrm) {
+				if (mx->dtfrm->hasTime && mx->dtfrm->hasDate)
+					mx->sqlColSize = mx->sqlsize = 26;
+				else
+					mx->sqlColSize = mx->sqlsize = 16;
+			}
 			ncols++;
 			lncols += mx->lncolname;
 			fx->lncols = lncols;
@@ -1716,7 +1731,7 @@ getSchemaEnvName(
 			}
 			len_high_value = k;
 		} else {
-			len_high_value = -1;
+			len_high_value = -2;
 		}
 	}
 
@@ -2221,6 +2236,18 @@ cob_index_to_xfd (struct db_state *db, struct file_xfd *fx, cob_file *fl, int id
 	char		sqlbuf[48];
 	cob_field	sqlwrk;
 	COB_UNUSED(db);
+	if (len_high_value == -2) {
+		/* Note that MySQL and PostgreSQL object to passing HIGH-VALUES for a column
+		 * in a WHERE clause
+		 */
+		if (db->mysql
+		 || db->postgres) {
+			high_value[0] = '~';
+			len_high_value = 1;
+		} else {
+			len_high_value = -1;
+		}
+	}
 	for (i=0; i < fx->key[idx]->ncols; i++) {
 		k = fx->key[idx]->col[i];
 		if (fx->map[k].cmd == XC_DATA

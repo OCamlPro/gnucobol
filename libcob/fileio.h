@@ -290,7 +290,6 @@ struct db_state {
 	int		dbStsNoTable;		/* 1146: Table does not exist */
 
 	char	lastErrMsg[80];		/* Recent DB Error msg */
-	char	*dateFormat;		/* Default DATE format */
 	void	*dbHome;			/* ORACLE_HOME value */
 
 	void	*dbEnvH;			/* DB Environment handle */
@@ -422,9 +421,9 @@ struct file_xfd {
 };
 
 /* Routines in fsqlxfd.c common to ODBC/OCI interfaces */
-COB_HIDDEN struct file_xfd* cob_load_xfd (cob_file *fl, char *alt_name, int indsize);
+COB_HIDDEN struct file_xfd* cob_load_xfd (struct db_state *db, cob_file *fl, char *alt_name, int indsize);
 COB_HIDDEN void 	cob_dump_xfd (struct file_xfd *fx, FILE *fo);
-COB_HIDDEN void 	cob_load_ddl (struct db_state  *db, struct file_xfd *fx);
+COB_HIDDEN void 	cob_load_ddl (struct db_state *db, struct file_xfd *fx);
 COB_HIDDEN char *	getSchemaEnvName (struct db_state *db, char *envnm, const char *suf, char *out);
 COB_HIDDEN void 	logSchemaEnvName (struct db_state *db, const char *suffix);
 COB_HIDDEN char *	cob_sql_stmt (struct db_state *, struct file_xfd *, char *, int, int, int);

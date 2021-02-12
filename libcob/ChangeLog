@@ -1,4 +1,10 @@
 
+2021-02-12  Ron Norman <rjn@inglenet.com>
+
+	* fodbc.c, fileio.h: Removed 'dateFormat' as it was unused
+	* foci.c: Fix to set NLS_DATE_FORMAT and NLS_TIMESTAMP_FORMAT
+	* fsqlxfd.c: Improved conversion of DATE/TIME data
+
 2021-02-11  Ron Norman <rjn@inglenet.com>
 
 	* fileio.c: Added a few more checks with possible error message during
@@ -24,7 +30,7 @@
 	* fileio.h: 'gentable' removed as table is created if not present
 	* foci.c: Fix to set TIME and TIMESTAMP column types
 	* fodbc.c: Fix to set TIME and TIMESTAMP column types
-	* fsqlxfd.c: Removed heck for 'gentable'
+	* fsqlxfd.c: Removed check for 'gentable'
 
 2021-02-02  Ron Norman <rjn@inglenet.com>
 
