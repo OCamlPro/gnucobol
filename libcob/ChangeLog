@@ -1,4 +1,9 @@
 
+2021-02-13  Ron Norman <rjn@inglenet.com>
+
+	* coblocal.h: Add 'cob_stop_run_commit' 
+	* common.c: On STOP RUN either commit or rollback pending updates
+
 2021-02-12  Ron Norman <rjn@inglenet.com>
 
 	* fodbc.c, fileio.h: Removed 'dateFormat' as it was unused

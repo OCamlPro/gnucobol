@@ -192,6 +192,7 @@ static cob_settings		*cobsetptr = NULL;
 
 static int			last_exception_code;	/* Last exception: code */
 static int			active_error_handler = 0;
+static int			in_stop_run = 0;
 static char			*runtime_err_str = NULL;
 
 static const cob_field_attr	const_alpha_attr =
@@ -414,6 +415,7 @@ static struct config_tbl gc_conf[] = {
     {"COB_FILE_DICTIONARY","file_dictionary",     "min",dict_opts,GRP_FILE,ENV_UINT|ENV_ENUMVAL,SETPOS(cob_file_dict),0,3},
 	{"COB_FILE_DICTIONARY_PATH","file_dictionary_path",		NULL,	NULL,GRP_FILE,ENV_FILE,SETPOS(cob_dictionary_path)},
 	{"COB_FILE_ROLLBACK", "rollback", 	"0", 	NULL, GRP_FILE, ENV_BOOL, SETPOS (cob_file_rollback)},
+	{"COB_STOP_RUN_COMMIT", "stop_run_commit", 	"0", 	NULL, GRP_FILE, ENV_BOOL, SETPOS (cob_stop_run_commit)},
     {"COB_DUPS_AHEAD","dups_ahead",     "default",dups_opts,GRP_FILE,ENV_UINT|ENV_ENUMVAL,SETPOS(cob_file_dups),0,3},
 #ifdef  WITH_DB
 	{"DB_HOME", "db_home", 			NULL, 	NULL, GRP_FILE, ENV_FILE, SETPOS (bdb_home)},
@@ -817,6 +819,11 @@ cob_sig_handler (int signal_value)
 		signal_name = _("unknown");
 	}
 	/* LCOV_EXCL_STOP */
+
+	if (cobsetptr
+	&& !in_stop_run)
+		cob_rollback ();
+	in_stop_run = 1;
 
 	/* Skip dumping for SIGTERM and SIGINT */
 #ifdef	SIGTERM
@@ -2185,6 +2192,14 @@ cob_stop_run (const int status)
 		exit (EXIT_FAILURE);
 	}
 
+	if (cobsetptr
+	 && !in_stop_run) {
+		if (cobsetptr->cob_stop_run_commit > 0) 
+			cob_commit ();
+		else
+			cob_rollback ();
+	}
+	in_stop_run = 1;
 	if (exit_hdlrs != NULL) {
 		h = exit_hdlrs;
 		while (h != NULL) {
