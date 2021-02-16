@@ -423,6 +423,13 @@ bld_fields (struct map_xfd *mx, cob_file *fl)
 		mx->sqlattr.type = mx->scale == 0 ? COB_TYPE_NUMERIC_DISPLAY : COB_TYPE_NUMERIC_EDITED;
 		mx->sqlattr.pic = bld_picture (mx->sqlpic, 0, mx->digits, mx->scale);
 		break;
+	case COB_XFDT_COMP5IDX:
+	case COB_XFDT_COMP5REL:
+		mx->recattr.type = COB_TYPE_NUMERIC_BINARY;
+		mx->recattr.flags = COB_FLAG_REAL_BINARY;
+		mx->sqlattr.type = COB_TYPE_NUMERIC_DISPLAY;
+		mx->sqlattr.pic = bld_picture (mx->sqlpic, 0, mx->digits, mx->scale);
+		break;
 	case COB_XFDT_FLOAT:
 		mx->recattr.type = mx->size < 7 ? COB_TYPE_NUMERIC_FLOAT : COB_TYPE_NUMERIC_DOUBLE;
 		mx->sqlattr.type = COB_TYPE_NUMERIC_EDITED;
@@ -860,7 +867,12 @@ convert_to_date(
 			if (date.year == 0) date.year = 2000;
 			if (date.month == 0) date.month = 1;
 			if (date.day == 0)	date.day = 1;
-			k = sprintf(dataout,"%04d-%02d-%02d %02d:%02d:%02d.%03d",
+			if (db->mysql)
+				k = sprintf(dataout,"%04d-%02d-%02d %02d:%02d:%02d",
+								date.year,date.month,date.day,
+								date.hour,date.minute,date.second);
+			else
+				k = sprintf(dataout,"%04d-%02d-%02d %02d:%02d:%02d.%03d",
 								date.year,date.month,date.day,
 								date.hour,date.minute,date.second,date.hund);
 		} else {
@@ -921,15 +933,35 @@ convert_from_date(
 		date.second	= getInt(pdata,12,2);
 		date.hund	= getInt(pdata,14,6);
 	} else {
-		date.year	= getInt(sqldate,0,4);
-		date.month	= getInt(sqldate,5,2);
-		date.day	= getInt(sqldate,8,2);
-		if(dlen > 10) {
-			date.hour	= getInt(sqldate,11,2);
-			date.minute	= getInt(sqldate,14,2);
-			date.second	= getInt(sqldate,17,2);
-			if(((char*)sqldate)[19] == '.')
-				date.hund	= getInt(sqldate,20,3);
+		if (sqldate[2] == ':'
+		 && sqldate[5] == ':') {
+			date.hour	= getInt(sqldate,0,2);
+			date.minute	= getInt(sqldate,3,2);
+			date.second	= getInt(sqldate,6,2);
+			if(((char*)sqldate)[8] == '.') {
+				if (db->mssql)
+					date.hund	= getInt(sqldate,9,6);
+				else
+					date.hund	= getInt(sqldate,9,3);
+			}
+		} else 
+		if (sqldate[4] == '-'
+		 && sqldate[7] == '-'
+		 && sqldate[10] < ' ') {
+			date.year	= getInt(sqldate,0,4);
+			date.month	= getInt(sqldate,5,2);
+			date.day	= getInt(sqldate,8,2);
+		} else {
+			date.year	= getInt(sqldate,0,4);
+			date.month	= getInt(sqldate,5,2);
+			date.day	= getInt(sqldate,8,2);
+			if(dlen > 10) {
+				date.hour	= getInt(sqldate,11,2);
+				date.minute	= getInt(sqldate,14,2);
+				date.second	= getInt(sqldate,17,2);
+				if(((char*)sqldate)[19] == '.')
+					date.hund	= getInt(sqldate,20,3);
+			}
 		}
 	}
 	if(date.year == minyear
@@ -951,7 +983,8 @@ convert_from_date(
 		date.year -= df->yyAdj;
 	} else if(df->yyRule == '#') {	/* ER TDATE$ format */
 		date.year -= df->yyAdj;
-	} else if(df->yyRule == '%' || df->yyLen < 4) {
+	} else if(df->yyRule == '%' 
+		|| (df->yyLen < 4 && df->ccLen == 0)) {
 		if(date.year >= 2000)
 			date.year -= 2000;
 		else if(date.year >= 1900)
@@ -995,11 +1028,11 @@ convert_from_date(
  * 'indsize' is the size of the SQL Indicator field
  */
 struct file_xfd *
-cob_load_xfd (struct db_state *db, cob_file *fl, char *alt_name, int indsize)
+cob_load_xfd (struct db_state *db, cob_file *fl, char *alt_name, int indsize, int skiprid)
 {
 	char	xfdbuf[COB_NORMAL_BUFF],*sdir,*fname,*p,*mp;
 	char	colname[80], tblname[80], asgname[256];
-	char	dups[4], sup[4], supchar[80];
+	char	dups[4], sup[4], supchar[80], rowcol[90];
 	char	opcode[16],tstval[48], commachr[8], decchr[8];
 	int		signopt;
 	int		i,j,k,lbl,keyn,xfdver;
@@ -1061,6 +1094,7 @@ cob_load_xfd (struct db_state *db, cob_file *fl, char *alt_name, int indsize)
 		cob_runtime_warning (_("Error '%s' opening '%s'"),cob_get_strerror (),xfdbuf);
 		return NULL;
 	}
+	sprintf(rowcol,"rid_%s",tblname);
 	fx = cob_malloc (sizeof (struct file_xfd));
 	while(fgets (xfdbuf,sizeof(xfdbuf),fi) != NULL) {
 		if (xfdbuf[0] == '#'
@@ -1068,7 +1102,7 @@ cob_load_xfd (struct db_state *db, cob_file *fl, char *alt_name, int indsize)
 			continue;
 		xfdbuf[sizeof(xfdbuf)-1] = 0;
 		for(k=strlen (xfdbuf); k > 0 
-					&& (xfdbuf[k-1] == '\r' 
+					&& (xfdbuf[k-1] == '\n' 
 					 || xfdbuf[k-1] == '\r' 
 					 || isspace (xfdbuf[k-1])); )
 			xfdbuf[--k] = 0;
@@ -1101,6 +1135,11 @@ cob_load_xfd (struct db_state *db, cob_file *fl, char *alt_name, int indsize)
 			}
 			p = getNum (p, &mx->level);
 			p = getStr (p, colname);
+			if (skiprid
+			 && strcmp (colname,rowcol) == 0) {
+				fx->nmap--;
+				continue;
+			}
 			mx->colname = cob_strdup (colname);
 			mx->lncolname = strlen(colname);
 			if (mx->lncolname > fx->maxcolnmln)
@@ -1196,10 +1235,14 @@ cob_load_xfd (struct db_state *db, cob_file *fl, char *alt_name, int indsize)
 								fl->select_name,MAXNUMKEYS-1);
 				cob_stop_run (1);
 			}
+			p = getPrm (p, dups);
+			if (dups[0] == 'R') {		/* Used for unique record number */
+				fx->hasrid = 1;
+				continue;
+			}
+			p = getPrm (p, sup);
 			if (keyn+1 > fx->nkeys)
 				fx->nkeys = keyn+1;
-			p = getPrm (p, dups);
-			p = getPrm (p, sup);
 			qt = *p;
 			p = getPrm (p, supchar);
 			if (memcmp(supchar,"0x",2) == 0) {
@@ -1228,6 +1271,9 @@ cob_load_xfd (struct db_state *db, cob_file *fl, char *alt_name, int indsize)
 			}
 			do {
 				p = getPrm (p, colname);
+				if (skiprid
+				 && strcmp (colname,rowcol) == 0)
+					continue;
 				if ((k = cob_find_xfd_col (fx, colname)) < 0) {
 					cob_runtime_error (_("%s XFD index %d has %s undefined!"),
 									fl->select_name,keyn,colname);
@@ -1302,6 +1348,9 @@ cob_load_xfd (struct db_state *db, cob_file *fl, char *alt_name, int indsize)
 			k = (fx->map[i].sqlsize + sizeof(long) + 4) / sizeof(long);
 			k = (k * sizeof(long));
 			fx->map[i].sdata = &fx->sqlbf[j];
+			if (fx->map[i].type == COB_XFDT_COMP5IDX
+			 || fx->map[i].type == COB_XFDT_COMP5REL)
+				fx->precnum = &fx->sqlbf[j];
 			j += k;
 			memset(mp,0,indsize);
 			fx->map[i].ind = (void*)mp;
@@ -1330,7 +1379,7 @@ cob_load_ddl (struct db_state  *db, struct file_xfd *fx)
 {
 	char	xfdbuf[COB_NORMAL_BUFF],*sdir,*p;
 	int		j,k, idx, ctsz, cisz;
-	FILE	*fi;
+	FILE	*fi,*fo;
 
 	if (fx->create_table)
 		cob_free (fx->create_table);
@@ -1349,6 +1398,21 @@ cob_load_ddl (struct db_state  *db, struct file_xfd *fx)
 		cob_runtime_warning (_("Error '%s' opening '%s'"),cob_get_strerror (),xfdbuf);
 		return;
 	}
+	sprintf (xfdbuf, "%s%s%s.",sdir,SLASH_STR,fx->tablename);
+	if (db->sqlite) {
+		strcat(xfdbuf,"sql");
+	} else if (db->mssql) {
+		strcat(xfdbuf,"mssql");
+	} else if (db->postgres) {
+		strcat(xfdbuf,"psql");
+	} else if (db->mysql) {
+		strcat(xfdbuf,"mysql");
+	} else if (db->isoci) {
+		strcat(xfdbuf,"isoci");
+	} else {
+		strcat(xfdbuf,"odbc");
+	}
+	fo = fopen (xfdbuf,"w");
 	cisz = 128;
 	ctsz = 128;
 	idx = -1;
@@ -1363,10 +1427,10 @@ cob_load_ddl (struct db_state  *db, struct file_xfd *fx)
 	while(fgets (xfdbuf,sizeof(xfdbuf),fi) != NULL) {
 		if (xfdbuf[0] == '#'
 		 || xfdbuf[0] == '-')
-			continue;
+			goto getnext;
 		xfdbuf[sizeof(xfdbuf)-1] = 0;
 		for(k=strlen (xfdbuf); k > 0 
-					&& (xfdbuf[k-1] == '\r' 
+					&& (xfdbuf[k-1] == '\n' 
 					 || xfdbuf[k-1] == '\r' 
 					 || isspace (xfdbuf[k-1])); )
 			xfdbuf[--k] = 0;
@@ -1381,9 +1445,17 @@ cob_load_ddl (struct db_state  *db, struct file_xfd *fx)
 		}
 		xfdbuf[j] = 0;
 		if (strncasecmp(xfdbuf,"DROP ",5) == 0)
-			continue;
+			goto getnext;
 		if (strncasecmp(xfdbuf,"CREATE TABLE ",13) == 0) {
 			idx = -1;
+		} else if (strncasecmp(xfdbuf,"CREATE SEQUENCE ",16) == 0) {
+			if (db->mssql)
+				continue;
+			if (xfdbuf[j-1] == ';')
+				xfdbuf[--j] = 0;
+			fx->create_sequence = cob_strdup (xfdbuf);
+			strcat(xfdbuf,";");
+			goto getnext;
 		} else if (strncasecmp(xfdbuf,"CREATE UNIQUE INDEX ",20) == 0) {
 			p = &xfdbuf[20];
 			if (strncasecmp (p, "pk_",3) == 0)
@@ -1413,11 +1485,34 @@ cob_load_ddl (struct db_state  *db, struct file_xfd *fx)
 				if ((p = cob_str_case_str (xfdbuf," TIME,")) != NULL) {
 					memcpy (p," DATE",5);
 				}
+			} else if (db->mssql) {
+				if ((p = cob_str_case_str (xfdbuf," INTEGER DEFAULT seq_")) != NULL) {
+					fx->create_table = cob_realloc (fx->create_table, ctsz, ctsz + 256);
+					ctsz += 256;
+					strcpy (p," INT IDENTITY");
+					j = strlen (xfdbuf);
+				}
 			} else if (db->sqlite) {
 				if ((p = cob_str_case_str (xfdbuf," BIGINT ")) != NULL) {
 					k = strlen (xfdbuf);
 					memmove (p+9, p+8, k - (p - xfdbuf) + 1);
 					memcpy (p," INTEGER ",9);
+				}
+				if ((p = cob_str_case_str (xfdbuf," INTEGER DEFAULT seq_")) != NULL) {
+					strcpy (p," INTEGER PRIMARY KEY ");
+					j = strlen (xfdbuf);
+				}
+			} else if (db->mysql) {
+				if ((p = cob_str_case_str (xfdbuf," INTEGER DEFAULT seq_")) != NULL) {
+					fx->create_table = cob_realloc (fx->create_table, ctsz, ctsz + 256);
+					ctsz += 256;
+					strcpy (p," INT NOT NULL AUTO_INCREMENT PRIMARY KEY");
+					j = strlen (xfdbuf);
+				}
+			} else if (db->postgres) {
+				if ((p = cob_str_case_str (xfdbuf," INTEGER DEFAULT seq_")) != NULL) {
+					sprintf (p," BIGINT DEFAULT NEXTVAL('seq_%s')",fx->tablename);
+					j = strlen (xfdbuf);
 				}
 			}
 			strcpy(&fx->create_table[fx->lncreate], xfdbuf);
@@ -1439,8 +1534,11 @@ cob_load_ddl (struct db_state  *db, struct file_xfd *fx)
 				fx->key[idx]->lncreate--;
 			}
 		}
+getnext:
+		if (fo) fprintf(fo,"%s\n",xfdbuf);
 	}
-	fclose(fi);
+	fclose (fi);
+	if (fo) fclose (fo);
 	return;
 }
 
@@ -1675,6 +1773,8 @@ cob_drop_xfd (struct file_xfd *fx)
 		cob_free (fx->delete.text);
 	if (fx->create_table)
 		cob_free (fx->create_table);
+	if (fx->create_sequence)
+		cob_free (fx->create_sequence);
 	for(k=0; k < fx->nkeys; k++) {
 		if (fx->key[k]->create_index)
 			cob_free (fx->key[k]->create_index);
@@ -1690,6 +1790,10 @@ cob_drop_xfd (struct file_xfd *fx)
 			cob_free (fx->key[k]->where_le.text);
 		if (fx->key[k]->where_lt.text)
 			cob_free (fx->key[k]->where_lt.text);
+		if (fx->key[k]->where_ndup.text)
+			cob_free (fx->key[k]->where_ndup.text);
+		if (fx->key[k]->where_pdup.text)
+			cob_free (fx->key[k]->where_pdup.text);
 		cob_free (fx->key[k]);
 	}
 	cob_free (fx);
@@ -1869,10 +1973,10 @@ cob_sql_stmt (
 	int 	cond,
 	int		read_opts)
 {
-	char	*sbuf,comma[8],rowcol[48], *op;
+	char	*sbuf,comma[8],rowcol[48],wrk[48],*op;
 	const char *fmt;
 	cob_file	*f = fx->fl;
-	int		bufsz,j,k,pos;
+	int		bufsz,j,k,pos,ncols;
 	int		lmode = FALSE;
 	int		waitsecs = 0;
 
@@ -1934,10 +2038,10 @@ cob_sql_stmt (
 		}
 
 		if (fx->fileorg == COB_ORG_RELATIVE) {
-			bufsz = 16 + strlen(stmt) + fx->lnselect;
+			bufsz = 128 + strlen(stmt) + fx->lnselect;
 			bufsz += strlen(rowcol) + 64;
 		} else {
-			bufsz = 16 + strlen(stmt) + fx->lnselect + (fx->key[idx]->lncols * 3);
+			bufsz = 128 + strlen(stmt) + fx->lnselect + (fx->key[idx]->lncols * 3);
 			bufsz += (fx->key[idx]->ncols * 20);
 		}
 		if (lmode)
@@ -1948,8 +2052,14 @@ cob_sql_stmt (
 		 || cond == COB_LE)
 			bufsz += (fx->key[idx]->ncols * 12);
 		sbuf = cob_malloc (bufsz + 1);
+		if (fx->fl
+		 && fx->fl->limitreads > 0
+		 && db->mssql) 
+			sprintf(wrk," TOP %d ",fx->fl->limitreads);
+		else
+			strcpy(wrk," ");
 		strcpy(comma,"");
-		pos = sprintf(sbuf,"%s %s FROM %s",stmt,fx->select,fx->tablename);
+		pos = sprintf(sbuf,"%s%s%s FROM %s",stmt,wrk,fx->select,fx->tablename);
 		if (db->mssql) {
 			if (lmode
 			 && db->mssqlnfu) 
@@ -2016,6 +2126,11 @@ cob_sql_stmt (
 				strcpy(comma,",");
 			}
 		}
+		if (fx->fl
+		 && fx->fl->limitreads > 0) {
+			if (db->mysql || db->postgres || db->sqlite)
+				pos += sprintf(&sbuf[pos]," LIMIT %d",fx->fl->limitreads);
+		}
 		if (lmode) {
 			if (!db->no_for_update) 
 				pos += sprintf(&sbuf[pos]," FOR UPDATE");
@@ -2044,7 +2159,7 @@ cob_sql_stmt (
 
 	} else if (strcasecmp(stmt,"INSERT") == 0) {
 		idx = 0;
-		bufsz = 32 + fx->lncols + fx->ncols * 4 + strlen(fx->tablename);
+		bufsz = 64 + fx->lncols + fx->ncols * 4 + strlen(fx->tablename);
 		bufsz += fx->key[0]->lncols + fx->key[0]->ncols * 12;
 		sbuf = cob_malloc (bufsz + 1);
 		strcpy(comma,"");
@@ -2053,23 +2168,26 @@ cob_sql_stmt (
 		else
 			fmt = "%s:%d";
 		pos = sprintf(sbuf,"INSERT INTO %s (",fx->tablename);
+		ncols = 0;
 		for (k=0; k < fx->nmap; k++) {
 			if (fx->map[k].cmd == XC_DATA
+			 && fx->map[k].type != COB_XFDT_COMP5IDX
 			 && fx->map[k].colname) {
 				pos += sprintf(&sbuf[pos],"%s%s",comma,fx->map[k].colname);
 				strcpy(comma,",");
+				ncols++;
 			}
 		}
 		pos += sprintf(&sbuf[pos],") VALUES (");
 		strcpy(comma,"");
-		for (j=0; j < fx->ncols; j++) {
+		for (j=0; j < ncols; j++) {
 			pos += sprintf(&sbuf[pos],fmt,comma,j+1);
 			strcpy(comma,",");
 		}
 		pos += sprintf(&sbuf[pos],")");
 
 	} else if (strcasecmp(stmt,"UPDATE") == 0) {
-		bufsz = 48 + fx->lncols + fx->ncols * 8 + strlen(fx->tablename);
+		bufsz = 64 + fx->lncols + fx->ncols * 8 + strlen(fx->tablename);
 		sbuf = cob_malloc (bufsz + 1);
 		strcpy(comma,"");
 		pos = sprintf(sbuf,"UPDATE %s SET ",fx->tablename);
@@ -2080,6 +2198,7 @@ cob_sql_stmt (
 		j = 0;
 		for (k=0; k < fx->nmap; k++) {
 			if (fx->map[k].cmd == XC_DATA
+			 && fx->map[k].type != COB_XFDT_COMP5IDX
 			 && fx->map[k].colname) {
 				pos += sprintf(&sbuf[pos],fmt,comma,fx->map[k].colname,"=",++j);
 				strcpy(comma,",");
@@ -2098,7 +2217,7 @@ cob_sql_stmt (
 		}
 
 	} else if (strcasecmp(stmt,"DELETE") == 0) {
-		bufsz = 32 + fx->lncols + fx->ncols * 4 + strlen(fx->tablename);
+		bufsz = 64 + fx->lncols + fx->ncols * 4 + strlen(fx->tablename);
 		sbuf = cob_malloc (bufsz + 1);
 		strcpy(comma,"");
 		pos = sprintf(sbuf,"DELETE FROM %s ",fx->tablename);
@@ -2117,13 +2236,49 @@ cob_sql_stmt (
 				strcpy(comma," AND ");
 			}
 		}
+
+	} else if (strncasecmp(stmt,"DUPAHEAD",8) == 0) {
+		db->dbStatus = 0;
+		bufsz = 512 + (fx->key[idx]->ncols * 12);
+		sbuf = cob_malloc (bufsz + 1);
+		pos = sprintf(sbuf,"SELECT");
+		if (db->mssql) 
+			pos += sprintf(&sbuf[pos]," TOP 1");
+		pos += sprintf(&sbuf[pos]," %s FROM %s WHERE ",rowcol,fx->tablename);
+		op = (char*)"=";
+		strcpy(comma,"");
+		for (j=0; j < fx->key[idx]->ncols-1; j++) {
+			k = fx->key[idx]->col[j];
+			pos += sprintf(&sbuf[pos],fmt,comma,fx->map[k].colname,"=",j+1);
+			strcpy(comma," AND ");
+		}
+		if (cond == COB_PDUP)
+			pos += sprintf(&sbuf[pos],fmt,comma,rowcol,"<",j+1);
+		else
+			pos += sprintf(&sbuf[pos],fmt,comma,rowcol,">",j+1);
+		if (db->isoci) 
+			pos += sprintf(&sbuf[pos]," AND ROWNUM <= 1");
+		pos += sprintf(&sbuf[pos]," ORDER BY ");
+		if (cond == COB_PDUP)
+			fmt = " DESC";
+		else 
+			fmt = "";
+		strcpy(comma,"");
+		for (j=0; j < fx->key[idx]->ncols; j++) {
+			k = fx->key[idx]->col[j];
+			pos += sprintf(&sbuf[pos],"%s%s%s",comma,fx->map[k].colname,fmt);
+			strcpy(comma,", ");
+		}
+		if (db->mysql || db->postgres || db->sqlite)
+			pos += sprintf(&sbuf[pos]," LIMIT 1");
+		DEBUG_TRACE("db",("Build %s %d Index %d\n",stmt,cond,idx));
+
 	} else if (strcasecmp(stmt,"COUNT") == 0
 			&& fx->fileorg == COB_ORG_INDEXED) {
-		bufsz = 32 + fx->lncols + fx->ncols * 4 + strlen(fx->tablename);
+		bufsz = 64 + fx->lncols + fx->ncols * 4 + strlen(fx->tablename);
 		sbuf = cob_malloc (bufsz + 1);
 		strcpy(comma,"");
-		pos = sprintf(sbuf,"SELECT COUNT(*) FROM %s ",fx->tablename);
-		pos += sprintf(&sbuf[pos],"WHERE ");
+		pos = sprintf(sbuf,"SELECT COUNT(*) FROM %s WHERE ",fx->tablename);
 		if (db->isodbc)
 			fmt = "%s%s %s ?";
 		else
@@ -2131,27 +2286,21 @@ cob_sql_stmt (
 		strcpy(comma,"");
 		for (j=0; j < fx->key[idx]->ncols; j++) {
 			k = fx->key[idx]->col[j];
+			if (fx->map[k].type == COB_XFDT_COMP5IDX)
+				continue;
 			pos += sprintf(&sbuf[pos],fmt,comma,fx->map[k].colname,"=",j+1);
 			strcpy(comma," AND ");
 		}
-		if(db->oracle) {
-			pos += sprintf(&sbuf[pos]," ORDER BY ");
-			strcpy(comma,"");
-			for (j=0; j < fx->key[idx]->ncols; j++) {
-				k = fx->key[idx]->col[j];
-				pos += sprintf(&sbuf[pos],"%s%s",comma,fx->map[k].colname);
-				strcpy(comma,",");
-			}
-		}
+
 	} else {
 		cob_runtime_error (_("Unknown SQL statement: %.20s!"),stmt);
 		return NULL;
 	}
 	if (strncasecmp(stmt,"SELECT",6) == 0) {
 		/* Leave space for adding ' FOR UPDATE'; 11 bytes */
-		sbuf = cob_realloc (sbuf, (size_t)bufsz, (size_t)pos+12);
-	} else if (bufsz > (pos+1)) {
-		sbuf = cob_realloc (sbuf, (size_t)bufsz, (size_t)pos+1);
+		sbuf = cob_realloc (sbuf, (size_t)bufsz, (size_t)pos+16);
+	} else if (bufsz > (pos+2)) {
+		sbuf = cob_realloc (sbuf, (size_t)bufsz, (size_t)pos+2);
 	}
 	sbuf[pos] = 0;
 	cob_sql_dump_stmt (db, sbuf, TRUE);
@@ -2187,6 +2336,10 @@ cob_sql_select (
 		s = &fx->key[ky]->where_ne;
 	else if (cond == COB_COUNT)
 		s = &fx->key[ky]->count_eq;
+	else if (cond == COB_NDUP)
+		s = &fx->key[ky]->where_ndup;
+	else if (cond == COB_PDUP)
+		s = &fx->key[ky]->where_pdup;
 	else
 		return NULL;
 
@@ -2195,6 +2348,16 @@ cob_sql_select (
 			s->text = cob_sql_stmt (db, fx, (char*)"COUNT", ky, cond, read_opts);
 		else
 			s->text = cob_sql_stmt (db, fx, (char*)"SELECT", ky, cond, read_opts);
+		if (fx->fl
+		 && (fx->fl->flag_read_chk_dups || fx->fl->limitreads > 0)
+		 && fx->key[ky]->dups) {
+			if (fx->key[ky]->where_ndup.text == NULL)
+				fx->key[ky]->where_ndup.text = cob_sql_stmt (db, fx, 
+											(char*)"DUPAHEAD", ky, COB_NDUP, 0);
+			if (fx->key[ky]->where_pdup.text == NULL)
+				fx->key[ky]->where_pdup.text = cob_sql_stmt (db, fx, 
+											(char*)"DUPAHEAD", ky, COB_PDUP, 0);
+		}
 	} else if (s->readopts != read_opts) {
 		DEBUG_LOG ("db",("Free %d Statement\n",cond));
 		freeit (s);
@@ -2240,10 +2403,13 @@ cob_index_to_xfd (struct db_state *db, struct file_xfd *fx, cob_file *fl, int id
 		/* Note that MySQL and PostgreSQL object to passing HIGH-VALUES for a column
 		 * in a WHERE clause
 		 */
-		if (db->mysql
-		 || db->postgres) {
+		if (db->mysql) {
 			high_value[0] = '~';
 			len_high_value = 1;
+		} else 
+		if (db->postgres) {
+			memcpy(high_value,"\xC3\xBF",2);
+			len_high_value = 2;
 		} else {
 			len_high_value = -1;
 		}
@@ -2254,6 +2420,13 @@ cob_index_to_xfd (struct db_state *db, struct file_xfd *fx, cob_file *fl, int id
 		 && fx->map[k].colname) {
 			fx->map[k].setnull = 0;
 			fx->map[k].sqlfld.size = fx->map[k].sqloutlen;
+			if (fx->map[k].type == COB_XFDT_COMP5IDX) {
+				if (fx->map[k].sqlfld.data[0] < ' ')
+					strcpy((char*)fx->map[k].sqlfld.data,"0");
+				DEBUG_LOG("db",("%3d: Index %d %s ROWID: '%s'\n",k,idx,
+							fx->map[k].colname,fx->map[k].sqlfld.data));
+				continue;
+			}
 			memset (fx->map[k].sqlfld.data, 0, fx->map[k].sqlfld.size);
 			if (fx->map[k].dtfrm) {
 				memcpy(&sqlwrk,&fx->map[k].sqlfld,sizeof(cob_field));
@@ -2322,7 +2495,9 @@ cob_index_clear (struct db_state *db, struct file_xfd *fx, cob_file *fl, int idx
 		 && fx->map[k].colname) {
 			fx->map[k].setnull = 0;
 			fx->map[k].sqlfld.size = fx->map[k].sqloutlen;
-			memset (fx->map[k].sqlfld.data, 0, fx->map[k].sqlfld.size);
+			if (fx->map[k].type != COB_XFDT_COMP5IDX) {
+				memset (fx->map[k].sqlfld.data, 0, fx->map[k].sqlfld.size);
+			}
 		}
 	}
 }
@@ -2410,6 +2585,10 @@ cob_file_to_xfd (struct db_state *db, struct file_xfd *fx, cob_file *fl)
 			} else if (fx->map[k].type == COB_XFDT_BIN) {
 				memcpy (fx->map[k].sdata,fx->map[k].recfld.data,fx->map[k].size);
 				fx->map[k].sdata[fx->map[k].size] = 0;
+			} else 
+			if (fx->map[k].type == COB_XFDT_COMP5IDX) {
+				k++;
+				continue;
 			} else {
 				if (fx->map[k].type == COB_XFDT_PIC9S
 				 || fx->map[k].type == COB_XFDT_PIC9L
@@ -2534,6 +2713,13 @@ cob_xfd_to_file (struct db_state *db, struct file_xfd *fx, cob_file *fl)
 				memcpy (fx->map[k].recfld.data,fx->map[k].sdata,fx->map[k].size);
 			} else if (fx->map[k].type == COB_XFDT_BIN) {
 				memcpy (fx->map[k].recfld.data,fx->map[k].sdata,fx->map[k].size);
+			} else 
+			if (fx->map[k].type == COB_XFDT_COMP5IDX) {
+				fx->recnum = atol ((void*)fx->map[k].sqlfld.data);
+				DEBUG_LOG("db",("%3d: Read %s ROWID %ld\n",k,
+									fx->map[k].colname,fx->recnum));
+				k++;
+				continue;
 			} else if (fx->map[k].digits > 0) {
 				fx->map[k].sqlfld.size = fx->map[k].sqlinlen;
 				cob_move (&fx->map[k].sqlfld, &fx->map[k].recfld);
@@ -2624,6 +2810,9 @@ cob_xfd_to_ddl (struct db_state *db, struct file_xfd *fx, FILE *fo)
 					fprintf(fo,"FLOAT(53)");
 				else
 					fprintf(fo,"FLOAT(23)");
+			} else if ( fx->map[k].type == COB_XFDT_COMP5IDX
+					 || fx->map[k].type == COB_XFDT_COMP5REL) {
+					fprintf(fo,"INTEGER");
 			} else if ( fx->map[k].type == COB_XFDT_PIC9L
 					 || fx->map[k].type == COB_XFDT_PIC9LS
 					 || fx->map[k].type == COB_XFDT_PIC9T

@@ -2066,13 +2066,13 @@ output_local_ws_group (void)
 	 && cb_align_record) {
 #ifdef  HAVE_ATTRIBUTE_ALIGNED
 		output_local ("static cob_u8_t	%s%d[%ld]%s;",
-				  CB_PREFIX_WS_GROUP, ws_id, ws_used, COB_ALIGN);
+				  CB_PREFIX_WS_GROUP, ws_id, (long)ws_used, COB_ALIGN);
 #else
 #if defined(COB_ALIGN_PRAGMA_8)
 		output_local ("#pragma align 8 (%s%d)\n", CB_PREFIX_WS_GROUP, ws_id);
 #endif
 		output_local ("static %scob_u8_t%s	%s%d[%ld];",
-				  COB_ALIGN_DECL_8, COB_ALIGN_ATTR_8, CB_PREFIX_WS_GROUP, ws_id, ws_used);
+				  COB_ALIGN_DECL_8, COB_ALIGN_ATTR_8, CB_PREFIX_WS_GROUP, ws_id, (long)ws_used);
 #endif
 	}
 }
@@ -2126,7 +2126,7 @@ output_local_base_cache (void)
 				}
 
 				output_local ("#define %s%d\t(%s%d + %ld)",
-							CB_PREFIX_BASE, blp->f->id, CB_PREFIX_WS_GROUP, ws_id, ws_used);
+							CB_PREFIX_BASE, blp->f->id, CB_PREFIX_WS_GROUP, ws_id, (long)ws_used);
 				ws_used += fs;
 			}
 		}

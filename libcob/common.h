@@ -880,6 +880,8 @@ enum xfd_data_type {
 	COB_XFDT_PICW,			/* PIC X Wide characters */
 	COB_XFDT_PICX,			/* PIC X */
 	COB_XFDT_VARX,			/* PIC X : VARCHAR */
+	COB_XFDT_COMP5IDX,		/* COMP-5  indexed file ROWID value*/
+	COB_XFDT_COMP5REL,		/* COMP-5  relative file ROWID value*/
 	COB_XFDT_MAX 			/* Max possible value for this enum */
 };
 
@@ -1563,6 +1565,7 @@ typedef struct __cob_file {
 	long				file_pid;		/* Process id of other end of pipe */
 	void				*fileout;		/* output side of bi-directional pipe 'FILE*' */
 	int					fdout;			/* output side of bi-directional pipe 'fd' */
+	int					limitreads;		/* Database should LIMIT rows read */
 } cob_file;
 
 

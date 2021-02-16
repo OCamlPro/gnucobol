@@ -235,6 +235,8 @@ cb_date_str (struct sql_date *sdf, char *format)
 				pos++;
 			}
 			sdf->ddLen = len;
+			if (sdf->ddLen != 3)
+				cb_warning (cb_warn_additional, _("XFD DATE JJJ not 3"));
 		} else if(*dp == 'E') {		/* Julian Day of year */
 			sdf->hasDate = 1;
 			sdf->ddPos = (unsigned char)pos;
@@ -244,6 +246,8 @@ cb_date_str (struct sql_date *sdf, char *format)
 				pos++;
 			}
 			sdf->ddLen = len;
+			if (sdf->ddLen != 3)
+				cb_warning (cb_warn_additional, _("XFD DATE EEE not 3"));
 		} else if(*dp == 'C') {		/* Century */
 			sdf->hasDate = 1;
 			sdf->ccPos = (unsigned char)pos;
@@ -1326,6 +1330,7 @@ void
 output_xfd_file (struct cb_file *fl)
 {
 	char	outname[COB_FILE_BUFF], tblname[64], time_stamp[32];
+	char	ridname[64];
 	FILE	*fx, *fs;
 	struct tm	*loctime;
 	time_t		sectime;
@@ -1333,6 +1338,7 @@ output_xfd_file (struct cb_file *fl)
 	struct cb_alt_key	*l;
 	struct cb_key_component *c;
 	struct sql_date sdf[1];
+	int		hasdups;
 	int		i,j,k,sub,idx[MAX_OCC_NEST];
 
 	if (fl->record_min != fl->record_max) {
@@ -1477,6 +1483,20 @@ output_xfd_file (struct cb_file *fl)
 		fprintf(fx,",%d:%d",sdf->huPos,sdf->huLen);
 		fprintf(fx,"\n");
 	}
+	hasdups = 0;
+	sprintf(ridname,"rid_%s",tblname);
+	if (fl->organization == COB_ORG_INDEXED) {
+		for (l = fl->alt_key_list; l; l = l->next) {
+			if (l->duplicates) {
+				hasdups = 1;
+				break;
+			}
+		}
+	}
+	if (hasdups) {
+		fprintf(fs,"DROP SEQUENCE   seq_%s;\n",tblname);
+		fprintf(fs,"CREATE SEQUENCE seq_%s START WITH 1;\n",tblname);
+	}
 	fprintf(fs,"DROP TABLE %s;\n",tblname);
 	fprintf(fs,"CREATE TABLE %s (\n",tblname);
 	sub = 0;
@@ -1484,12 +1504,22 @@ output_xfd_file (struct cb_file *fl)
 	for (f=fl->record->sister; f; f = f->sister) {
 		write_field (fl, f, fs, fx, sub, idx);
 	}
+	sprintf(ridname,"rid_%s",tblname);
+	if (fl->organization == COB_ORG_INDEXED
+	 && hasdups) {
+		fprintf(fs,"%s   %-30s  INTEGER DEFAULT seq_%s.NEXTVAL",
+								eol,ridname,tblname);
+		strcpy(eol,",\n");
+		fprintf(fx,"F,%04d,%04d,",(int)fl->record->size,(int)sizeof(long));
+		fprintf(fx,"%02d,0016,",COB_XFDT_COMP5IDX);
+		fprintf(fx,"15,0,,00,%s\n",ridname);
+	} else
 	if (fl->organization == COB_ORG_RELATIVE) {
-		fprintf(fs,"%s   rid_%-30s       BIGINT PRIMARY KEY",eol,tblname);
-		fprintf(fx,"F,%04d,%04d,",(int)fl->record->size,4);
-		fprintf(fx,"%02d,0015,",COB_XFDT_COMP5U);
-		fprintf(fx,"12,0,,00,rid_%s\n",tblname);
-		fprintf(fx,"K,0,N,N,,rid_%s\n",tblname);
+		fprintf(fs,"%s   %-30s       BIGINT PRIMARY KEY",eol,ridname);
+		fprintf(fx,"F,%04d,%04d,",(int)fl->record->size,(int)sizeof(long));
+		fprintf(fx,"%02d,0016,",COB_XFDT_COMP5REL);
+		fprintf(fx,"15,0,,00,%s\n",ridname);
+		fprintf(fx,"K,0,N,N,,%s\n",ridname);
 	}
 	fprintf(fs,"\n);\n");
 	if (fl->organization == COB_ORG_INDEXED) {
@@ -1535,14 +1565,21 @@ output_xfd_file (struct cb_file *fl)
 					fprintf(fx,"%s%s",eol,get_col_name(fl,f,0,idx));
 					strcpy(eol,",");
 				}
-				fprintf(fs,");\n");
-				fprintf(fx,"\n");
 			} else {
 				f = cb_code_field (l->key);
-				fprintf(fs,"(%s);\n",get_col_name(fl,f,0,idx));
-				fprintf(fx,"%s\n",get_col_name(fl,f,0,idx));
+				fprintf(fs,"(%s\n",get_col_name(fl,f,0,idx));
+				fprintf(fx,"%s",get_col_name(fl,f,0,idx));
 			}
+			if (l->duplicates) {
+				fprintf(fs,",%s",ridname);
+				fprintf(fx,",%s",ridname);
+			}
+			fprintf(fs,");\n");
+			fprintf(fx,"\n");
 			k++;
+		}
+		if (hasdups) {
+			fprintf(fx,"K,0,R,N,,%s\n",ridname);
 		}
 	}
 	fclose(fs);

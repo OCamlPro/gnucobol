@@ -269,26 +269,27 @@ static struct cob_fileio_funcs	*fileio_funcs[COB_IO_MAX] = {
 static struct {
 	int		loaded;			/* Module is loaded and ready */
 	int		config;			/* Module was configured into compiler */
+	int		dbase;			/* Handled by database */
 	const char * name;
 	const char * module;
 	const char * entry;
 	const char * desc;
 } io_rtns [COB_IO_MAX+1] = {
-	{1,1,"SEQUENTIAL",NULL,NULL,NULL},
-	{1,1,"LINE",NULL,NULL,NULL},
-	{1,1,"RELATIVE",NULL,NULL,NULL},
-	{0,0,"CISAM",LIB_PRF "cobci" LIB_SUF, "cob_isam_init_fileio","C-ISAM"},
-	{0,0,"DISAM",LIB_PRF "cobdi" LIB_SUF, "cob_isam_init_fileio","DISAM"},
-	{0,0,"VBISAM",LIB_PRF "cobvb" LIB_SUF, "cob_isam_init_fileio","VBISAM"},
-	{0,0,"BDB",LIB_PRF "cobdb" LIB_SUF, "cob_bdb_init_fileio",NULL},
-	{0,0,"VBCISAM",LIB_PRF "cobvc" LIB_SUF, "cob_isam_init_fileio","VBISAM (C-ISAM mode)"},
-	{0,0,"IXEXT",NULL,NULL,NULL},
-	{0,0,"SQEXT",NULL,NULL,NULL},
-	{0,0,"RLEXT",NULL,NULL,NULL},
-	{0,0,"ODBC",LIB_PRF "cobod" LIB_SUF, "cob_odbc_init_fileio",NULL},
-	{0,0,"OCI",LIB_PRF "coboc" LIB_SUF, "cob_oci_init_fileio",NULL},
-	{0,0,"LMDB",LIB_PRF "coblm" LIB_SUF, "cob_lmdb_init_fileio",NULL},
-	{0,0,NULL,NULL,NULL,NULL}
+	{1,1,0,"SEQUENTIAL",NULL,NULL,NULL},
+	{1,1,0,"LINE",NULL,NULL,NULL},
+	{1,1,0,"RELATIVE",NULL,NULL,NULL},
+	{0,0,0,"CISAM",LIB_PRF "cobci" LIB_SUF, "cob_isam_init_fileio","C-ISAM"},
+	{0,0,0,"DISAM",LIB_PRF "cobdi" LIB_SUF, "cob_isam_init_fileio","DISAM"},
+	{0,0,0,"VBISAM",LIB_PRF "cobvb" LIB_SUF, "cob_isam_init_fileio","VBISAM"},
+	{0,0,1,"BDB",LIB_PRF "cobdb" LIB_SUF, "cob_bdb_init_fileio",NULL},
+	{0,0,0,"VBCISAM",LIB_PRF "cobvc" LIB_SUF, "cob_isam_init_fileio","VBISAM (C-ISAM mode)"},
+	{0,0,0,"IXEXT",NULL,NULL,NULL},
+	{0,0,0,"SQEXT",NULL,NULL,NULL},
+	{0,0,0,"RLEXT",NULL,NULL,NULL},
+	{0,0,1,"ODBC",LIB_PRF "cobod" LIB_SUF, "cob_odbc_init_fileio",NULL},
+	{0,0,1,"OCI",LIB_PRF "coboc" LIB_SUF, "cob_oci_init_fileio",NULL},
+	{0,0,1,"LMDB",LIB_PRF "coblm" LIB_SUF, "cob_lmdb_init_fileio",NULL},
+	{0,0,0,NULL,NULL,NULL,NULL}
 };
 #ifdef	WITH_INDEX_EXTFH
 void cob_index_init_fileio (cob_file_api *);
@@ -335,6 +336,8 @@ static off_t
 set_file_pos (cob_file *f, off_t pos)
 {
 	off_t  newpos = -1;
+	if (io_rtns[f->io_routine].dbase)
+		return 0;
 	if(f->organization == COB_ORG_LINE_SEQUENTIAL) {	/* Uses 'f->file' */
 		if (pos == -1) {	/* Seek to end of file */
 			if (f->fd > 0) {
@@ -1780,6 +1783,8 @@ cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 			}
 			if(strcasecmp(option,"rollback") == 0) {
 				f->flag_do_qbl = settrue;
+				if (settrue)
+					f->lock_mode |= COB_LOCK_ROLLBACK|COB_LOCK_MULTIPLE;
 				continue;
 			}
 			if (strcasecmp(option,"type") == 0) {
@@ -1840,6 +1845,12 @@ cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 					continue;
 				f->record_min = ivalue;
 				f->flag_redef = 1;
+				continue;
+			}
+			if (strcasecmp(option,"limit") == 0) {	/* LIMIT rows read by database */
+				f->limitreads = ivalue;
+				if (f->limitreads < 0)
+					f->limitreads = 0;
 				continue;
 			}
 			if(strcasecmp(option,"format") == 0) {
@@ -5700,8 +5711,7 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 	}
 
 	f->last_operation = COB_LAST_OPEN;
-	if (f->flag_do_qbl
-	 && !f->flag_io_tran
+	if ((f->lock_mode & COB_LOCK_ROLLBACK)
 	 && f->flag_close_pend) {
 		f->flag_end_of_file = 0;
 		f->flag_begin_of_file = 0;
@@ -5859,7 +5869,7 @@ cob_close (cob_file *f, cob_field *fnstatus, const int opt, const int remfil)
 		return;
 	}
 
-	if (f->flag_do_qbl
+	if ((f->lock_mode & COB_LOCK_ROLLBACK)
 	 && f->flag_was_updated) {
 		if (f->tran_open_mode == COB_OPEN_CLOSED)
 			f->tran_open_mode = f->last_open_mode;
@@ -6572,7 +6582,7 @@ cob_delete_file (cob_file *f, cob_field *fnstatus, const int override)
 		}
 	}
 
-	if (f->flag_do_qbl
+	if ((f->lock_mode & COB_LOCK_ROLLBACK)
 	 && f->flag_was_updated) {	/* FIXME: Should have done a COMMIT before this */
 		cob_file_save_status (f, fnstatus, COB_STATUS_37_PERMISSION_DENIED);
 		return;

@@ -1,4 +1,16 @@
 
+2021-02-19  Ron Norman <rjn@inglenet.com>
+
+	* common.h: Added COB_XFDT_COMP5IDX and COB_XFDT_COMP5REL
+	* file.h: Added fields for the rid_tablename processing
+	* fileio.c: Add 'dbase' flag for modules to indicate which are database
+	           Added for IO_ or IX_ 'limit=num' where 'num' is the number of
+			   rows to be read from the table with one SELECT
+	* foci.c: Limit rows read at once by a SELECT and continue after
+	* fodbc.c: Limit rows read at once by a SELECT and continue after
+	* fsqlxfd.c: Changes for limit on rows read, handle sequence usage
+			and some date conversion fixes
+
 2021-02-13  Ron Norman <rjn@inglenet.com>
 
 	* coblocal.h: Add 'cob_stop_run_commit' 

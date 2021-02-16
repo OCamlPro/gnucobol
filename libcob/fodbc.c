@@ -342,6 +342,8 @@ chkSts(
 		memset(db->odbcState, 0, sizeof(db->odbcState));
 		i = 1;
 		getOdbcMsg(db,hndl,&i,(char*)szState,&odbcStatus,errMsg,(int)(sizeof(errMsg)-1),&errLen);
+		if (memcmp(szState,"01004",5) == 0)
+			return 0;
 		memcpy(db->odbcState, szState, 5);
 		DEBUG_LOG("db",("%.40s Status of %d '%.5s'\n", msg, db->dbStatus, szState));
 		if(errMsg[0] >= ' ')
@@ -606,7 +608,7 @@ odbc_setup_stmt (
 	int				bindtype,
 	int				idx)
 {
-	int		k,pos;
+	int		k,pos,skiptype;
 	if (!s->handle) {
 		if(chkSts(db,(char*)"Alloc Stmt Handle",db->dbDbcH,
 				SQLAllocHandle(SQL_HANDLE_STMT,db->dbDbcH,&s->handle))){
@@ -650,11 +652,16 @@ odbc_setup_stmt (
 		}
 		s->preped = TRUE;
 	}
+	if ((bindtype & SQL_BIND_NORID))
+		skiptype = COB_XFDT_COMP5IDX;
+	else
+		skiptype = 999;
 	if (!s->params 
 	 && (bindtype & SQL_BIND_PRMS)) {
 		pos = 0;
 		for (k=0; k < fx->nmap; k++) {
 			if (fx->map[k].cmd == XC_DATA
+			 && fx->map[k].type != skiptype
 			 && fx->map[k].colname) {
 				bindParam (db, fx, s, &fx->map[k], ++pos);
 			}
@@ -901,13 +908,13 @@ odbcCountIndex(
 	struct file_xfd *fx,
 	int		idx)
 {
-	int		rtn, pos, i, j, notsup;
+	int		rtn, pos, i, j, k, notsup;
 	unsigned char	supchr;
 	struct map_xfd *col;
 
 	if (fx->key[idx]->count_eq.handle == NULL) {
 		if(chkSts(db,(char*)"Alloc count hndl",db->dbDbcH,
-					SQLAllocHandle( SQL_HANDLE_STMT, db->dbDbcH, &fx->key[idx]->count_eq.handle ))) {
+			SQLAllocHandle( SQL_HANDLE_STMT, db->dbDbcH, &fx->key[idx]->count_eq.handle ))) {
 			return db->dbStatus;
 		}
 	}
@@ -922,7 +929,8 @@ odbcCountIndex(
 			for (j=0; j < fx->key[idx]->ncols && !notsup; j++) {
 				col = &fx->map[fx->key[idx]->col[j]];
 				if (col->sdata[0] == supchr) {
-					for (i=0; i < col->sqlColSize && col->sdata[i] == f->keys[idx].char_suppress; i++);
+					for (i=0; i < col->sqlColSize 
+							&& col->sdata[i] == f->keys[idx].char_suppress; i++);
 					if (i < col->sqlColSize)
 						notsup = 1;
 				}
@@ -937,34 +945,98 @@ odbcCountIndex(
 	}
 
 	if (!fx->key[idx]->count_eq.preped) {
-		if(chkSts(db,(char*)"Peek prepare", fx->key[idx]->count_eq.handle,
+		if(chkSts(db,(char*)"Count prepare", fx->key[idx]->count_eq.handle,
 					SQLPrepare(fx->key[idx]->count_eq.handle,
 									(SQLCHAR*)fx->key[idx]->count_eq.text,
 									strlen(fx->key[idx]->count_eq.text)))) {
-			return 0;
+			return -1;
 		} else {
-			pos = 0;
-			for (j=0; j < fx->key[idx]->ncols; j++) {
-				bindParam (db, fx, &fx->key[idx]->count_eq, &fx->map[fx->key[idx]->col[j]], ++pos);
-			}
 			fx->key[idx]->count_eq.preped = 1;
 		}
 	}
+	pos = 0;
+	for (j=0; j < fx->key[idx]->ncols; j++) {
+		k = fx->key[idx]->col[j];
+		if (fx->map[k].type == COB_XFDT_COMP5IDX)
+			continue;
+		bindParam (db, fx, &fx->key[idx]->count_eq, &fx->map[k], ++pos);
+	}
 	db->dbStatus = 0;
-	if(chkSts(db,(char*)"Peek BindCol",fx->key[idx]->count_eq.handle,
+	if(chkSts(db,(char*)"Count BindCol",fx->key[idx]->count_eq.handle,
 			SQLBindCol(fx->key[idx]->count_eq.handle, 1, SQL_C_CHAR,
 						varFetch, sizeof(varFetch), (SQLPOINTER)NULL))) {
-		return 0;
+		return -1;
 	}
-	chkSts(db,(char*)"Peek Exec",fx->key[idx]->count_eq.handle,
+	chkSts(db,(char*)"Count Exec",fx->key[idx]->count_eq.handle,
 			SQLExecute(fx->key[idx]->count_eq.handle));
-	if(chkSts(db,(char*)"Peek Fetch",fx->key[idx]->count_eq.handle, 
+	if(chkSts(db,(char*)"Count Fetch",fx->key[idx]->count_eq.handle, 
 				SQLFetch(fx->key[idx]->count_eq.handle))) {
-		return 0;
+		return -1;
 	}
 	rtn = atoi(varFetch);
-	chkSts(db,(char*)"Peek Close cursor",fx->key[idx]->count_eq.handle,
+	chkSts(db,(char*)"Count Close",fx->key[idx]->count_eq.handle,
 		SQLCloseCursor (fx->key[idx]->count_eq.handle));
+	return rtn;
+}
+
+/****************************************************
+	Issue one statment to check for records with matching key value
+*****************************************************/
+static int
+odbcCheckDups(
+	cob_file *f,
+	SQL_STMT *s)
+{
+	struct indexed_file	*p;
+	struct file_xfd	*fx;
+	int		rtn, pos, j, k, idx;
+
+	p = f->file;
+	fx = p->fx;
+	idx = f->curkey;
+	if (s->handle == NULL) {
+		if (chkSts(db,(char*)"Alloc Dups hndl",db->dbDbcH,
+			SQLAllocHandle( SQL_HANDLE_STMT, db->dbDbcH, &s->handle ))) {
+			return db->dbStatus;
+		}
+		s->preped = FALSE;
+		s->bound = FALSE;
+		s->params = FALSE;
+		s->iscursor = FALSE;
+	}
+
+	varFetch[0] = 0;
+
+	if (!s->preped) {
+		if(chkSts(db,(char*)"Dups prepare", s->handle,
+				SQLPrepare(s->handle, (SQLCHAR*)s->text, strlen(s->text)))) {
+			return -1;
+		} else {
+			s->preped = 1;
+		}
+	}
+	pos = 0;
+	for (j=0; j < fx->key[idx]->ncols; j++) {
+		k = fx->key[idx]->col[j];
+		bindParam (db, fx, s, &fx->map[k], ++pos);
+	}
+	db->dbStatus = 0;
+	if (chkSts(db,(char*)"Dups BindCol",s->handle,
+			SQLBindCol(s->handle, 1, SQL_C_CHAR,
+						varFetch, sizeof(varFetch), (SQLPOINTER)NULL))) {
+		return -1;
+	}
+	if (chkSts(db,(char*)"Dups Exec",s->handle,
+				SQLExecute(s->handle))) {
+		return -1;
+	}
+	if (chkSts(db,(char*)"Dups Fetch",s->handle, 
+				SQLFetch(s->handle))) {
+		return -1;
+	}
+	rtn = atoi(varFetch);
+	chkSts(db,(char*)"Dups Close",s->handle,
+				SQLCloseCursor (s->handle));
 	return rtn;
 }
 
@@ -1027,16 +1099,68 @@ odbcStmt(
 }
 
 static void
+odbc_recreate_sequence (
+	struct db_state	*db,
+	struct file_xfd *fx)
+{
+	int	j, k;
+	char	wrk[80];
+	if (fx->create_sequence != NULL) {
+		j = sprintf(wrk,"DROP SEQUENCE ");
+		for (k=16; fx->create_sequence[k] != ' ' && fx->create_sequence[k] != 0; )
+			wrk[j++] = fx->create_sequence[k++];
+		wrk[j] = 0;
+		odbcStmt (db, wrk);
+		DEBUG_LOG("db",("%s\n",fx->create_sequence));
+		if (odbcStmt (db, fx->create_sequence)) {
+			db->dbStatus = db->dbStsNoTable;
+			return;
+		}
+	}
+}
+
+static void
+odbc_recreate_index (
+	struct db_state	*db,
+	struct file_xfd *fx)
+{
+	int		i,j,k;
+	char	wrk[80];
+
+	for (k=0; k < fx->nkeys && fx->key[k]->create_index; k++) {
+		if (fx->key[k]->create_index == NULL
+		 || strlen(fx->key[k]->create_index) < 10)
+			continue;
+		if (memcmp(fx->key[k]->create_index,"CREATE INDEX ",13) == 0) {
+			/* Skip UNIQUE INDEX */
+			j = sprintf(wrk,"DROP INDEX ");
+			for (i=13; fx->key[k]->create_index[i] > ' '; )
+				wrk[j++] = fx->key[k]->create_index[i++];
+			wrk[j] = 0;
+			odbcStmt (db, wrk);	/* Drop Index */
+
+			if (odbcStmt (db, fx->key[k]->create_index)) {
+				DEBUG_LOG ("db",("%s\n",fx->key[k]->create_index));
+				db->dbStatus = db->dbStsNoTable;
+				return;
+			}
+		}
+	}
+}
+
+static void
 odbc_create_table (
 	struct db_state	*db,
 	struct file_xfd *fx)
 {
-	int	k;
 	cob_load_ddl (db, fx);
 	if (fx->create_table == NULL) {
 		db->dbStatus = db->dbStsNoTable;
 		return;
 	}
+
+	odbc_recreate_sequence (db, fx);
+
 	if (odbcStmt (db, fx->create_table)) {
 		DEBUG_LOG ("db",("%s\n",fx->create_table));
 		db->dbStatus = db->dbStsNoTable;
@@ -1044,13 +1168,8 @@ odbc_create_table (
 	}
 	if (fx->fileorg == COB_ORG_RELATIVE) 
 		return;
-	for (k=0; k < fx->nkeys && fx->key[k]->create_index; k++) {
-		if (odbcStmt (db, fx->key[k]->create_index)) {
-			DEBUG_LOG ("db",("%s\n",fx->key[k]->create_index));
-			db->dbStatus = db->dbStsNoTable;
-			return;
-		}
-	}
+
+	odbc_recreate_index (db, fx);
 }
 
 /* INDEXED */
@@ -1362,7 +1481,7 @@ odbc_file_delete (cob_file_api *a, cob_file *f, char *filename)
 		}
 	}
 	if (f->file == NULL) {
-		fx = cob_load_xfd (db, f, NULL, sizeof(SQLLEN));
+		fx = cob_load_xfd (db, f, NULL, sizeof(SQLLEN), 0);
 		if (fx == NULL) {
 			return COB_STATUS_30_PERMANENT_ERROR;
 		}
@@ -1403,7 +1522,7 @@ odbc_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 #endif
 	struct file_xfd	*fx;
 
-	fx = cob_load_xfd (db, f, NULL, sizeof(SQLLEN));
+	fx = cob_load_xfd (db, f, NULL, sizeof(SQLLEN), 0);
 	if (fx == NULL) {
 		return COB_STATUS_30_PERMANENT_ERROR;
 	}
@@ -1443,7 +1562,9 @@ odbc_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 
 	switch (mode) {
 	case COB_OPEN_OUTPUT:
-		if (db->sqlite)
+		if (db->sqlite 
+		 || db->mssql
+		 || db->postgres)
 			snprintf(buff,sizeof(buff),"DELETE FROM %s",fx->tablename);
 		else
 			snprintf(buff,sizeof(buff),"TRUNCATE TABLE %s",fx->tablename);
@@ -1453,7 +1574,8 @@ odbc_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 		 ||  memcmp(db->odbcState,"HY000",4) == 0)) {
 			odbc_create_table (db, fx);
 		} 
-		if (db->dbStatus != db->dbStsOk) {
+		if (db->dbStatus != db->dbStsOk
+		 && db->dbStatus != db->dbStsNotFound) {
 			return COB_STATUS_30_PERMANENT_ERROR;
 		}
 		break;
@@ -1473,12 +1595,69 @@ odbc_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 		break;
 	}
 
+	if (db->mssql) {
+		snprintf(buff,sizeof(buff),"SELECT TOP 1 rid_%s FROM %s ORDER BY rid_%s DESC",
+					fx->tablename,fx->tablename,fx->tablename);
+	} else if (db->postgres) {
+		snprintf(buff,sizeof(buff),"SELECT rid_%s FROM %s ORDER BY rid_%s DESC LIMIT 1",
+					fx->tablename,fx->tablename,fx->tablename);
+	} else {
+		snprintf(buff,sizeof(buff),"SELECT MAX(rid_%s) FROM %s",
+					fx->tablename,fx->tablename);
+	}
+	strcpy(varFetch,"0");
 	if (fx->fileorg == COB_ORG_RELATIVE) {
-		snprintf(buff,sizeof(buff),"SELECT MAX(rid_%s) FROM %s",fx->tablename,fx->tablename);
-		strcpy(varFetch,"0");
+		db->dbStatus = db->dbStsOk;
 		if (mode != COB_OPEN_OUTPUT
 		 && !odbcStmt(db,(char*)buff)) {
 			f->max_rec_num = atol (varFetch);
+		}
+	} else if (fx->hasrid) {
+		db->dbStatus = db->dbStsOk;
+		if (odbcStmt(db,(char*)buff)
+		 && db->dbStatus != db->dbStsNotFound) {
+			int		ln;
+			int		clearit = 0;
+			cob_load_ddl (db, fx);
+			odbc_recreate_sequence (db, fx);
+			ln = snprintf(buff,sizeof(buff),"ALTER TABLE %s ADD rid_%s ",fx->tablename,fx->tablename);
+			if (db->mysql) {
+				strcat(buff,"INT NOT NULL AUTO_INCREMENT PRIMARY KEY");
+			} else if (db->mssql) {
+				strcat(buff,"INT IDENTITY");
+			} else if (db->postgres) {
+				sprintf(&buff[ln],"BIGINT DEFAULT NEXTVAL('seq_%s')",fx->tablename);
+			} else {
+				clearit = 1;
+			}
+			if (clearit
+			 || odbcStmt(db,(char*)buff)) {
+				DEBUG_LOG("db",("OPEN %s missing rid_%s column!\n",f->select_name,fx->tablename));
+				for (k=1; k < fx->nkeys; k++) {
+					if (f->keys[k].tf_duplicates == 1) {
+						f->keys[k].tf_duplicates = 2;
+					}
+				}
+				f->flag_read_chk_dups = 0;
+				f->flag_read_no_02 = 1;
+				if (f->limitreads > 0) {
+					DEBUG_LOG("db",("OPEN %s limit=%d is ignored!\n",f->select_name,f->limitreads));
+					f->limitreads = 0;
+				}
+				cob_drop_xfd (fx);
+				fx = cob_load_xfd (db, f, NULL, sizeof(SQLLEN), 1);
+				p->fx = fx;
+				if (fx == NULL) {
+					return COB_STATUS_30_PERMANENT_ERROR;
+				}
+				fx->hasrid = 0;
+			} else {
+				DEBUG_LOG("db",("OPEN %s added rid_%s column!\n",f->select_name,fx->tablename));
+				odbc_recreate_index (db, fx);
+			}
+		} else {
+			f->max_rec_num = atol (varFetch);
+			db->dbStatus = db->dbStsOk;
 		}
 	}
 
@@ -1620,6 +1799,8 @@ odbc_close (cob_file_api *a, cob_file *f, const int opt)
 				odbc_free_stmt  (&fx->key[k]->where_ne);
 				odbc_free_stmt  (&fx->key[k]->where_fi);
 				odbc_free_stmt  (&fx->key[k]->where_la);
+				odbc_free_stmt  (&fx->key[k]->where_pdup);
+				odbc_free_stmt  (&fx->key[k]->where_ndup);
 			}
 			cob_drop_xfd (fx);
 		}
@@ -1667,19 +1848,34 @@ odbc_start (cob_file_api *a, cob_file *f, const int cond, cob_field *key)
 		break;
 	case COB_GE:
 	case COB_GT:
+		fx->start = cob_sql_select (db, fx, ky, cond, 0, odbc_free_stmt);
+		paramtype = SQL_BIND_WHERE;
+		if (fx->precnum) strcpy(fx->precnum,"0");
+		break;
 	case COB_LE:
 	case COB_LT:
 		fx->start = cob_sql_select (db, fx, ky, cond, 0, odbc_free_stmt);
 		paramtype = SQL_BIND_WHERE;
+		if (fx->precnum) strcpy(fx->precnum,"99999999999999");
 		break;
 	case COB_FI:
+		fx->start = cob_sql_select (db, fx, ky, cond, 0, odbc_free_stmt);
+		if (fx->precnum) strcpy(fx->precnum,"0");
+		paramtype = SQL_BIND_NO;
+		break;
 	case COB_LA:
 		fx->start = cob_sql_select (db, fx, ky, cond, 0, odbc_free_stmt);
+		if (fx->precnum) strcpy(fx->precnum,"99999999999999");
 		paramtype = SQL_BIND_NO;
 		break;
 	}
-	DEBUG_LOG("db",("~START %s index %d, cond %d, Bind %02X\n",
+	if (fx->precnum) {
+		DEBUG_LOG("db",("~START %s index %d, cond %d, Bind %02X rec# %s\n",
+						f->select_name,ky,cond,paramtype,fx->precnum));
+	} else {
+		DEBUG_LOG("db",("~START %s index %d, cond %d, Bind %02X\n",
 						f->select_name,ky,cond,paramtype));
+	}
 	cob_index_to_xfd (db, fx, f, ky);
 	if (fx->start && fx->start->iscursor) {
 		chkSts(db,(char*)"Pre-Close cursor",fx->start->handle,
@@ -1770,8 +1966,53 @@ odbc_read (cob_file_api *a, cob_file *f, cob_field *key, const int read_opts)
 	return ret;
 }
 
-/* Sequential READ of the INDEXED file */
+/* READ of the INDEXED file, continue as required */
+static int
+odbc_read_cont (cob_file *f)
+{
+	struct indexed_file	*p;
+	struct file_xfd	*fx;
+	int			ret = COB_STATUS_00_SUCCESS;
+	int			retry = 0;
+	char		readmsg[18];
 
+	p = f->file;
+	fx = p->fx;
+	if (p->startcond == COB_GT) {
+		strcpy(readmsg,"READ Next");
+	} else {
+		strcpy(readmsg,"READ Prev");
+	}
+
+TryAgain:
+	if(chkSts(db,readmsg,fx->start->handle, SQLFetch(fx->start->handle))) {
+		if (f->limitreads > 0
+		 && db->dbStatus == db->dbStsNotFound
+		 && retry == 0) {
+			odbc_close_stmt (fx->start);
+			odbc_setup_stmt (db, fx, fx->start, SQL_BIND_COLS|SQL_BIND_WHERE, f->curkey);
+			if(chkSts(db,(char*)"Read Restart",fx->start->handle,
+					SQLExecute(fx->start->handle))){
+				return COB_STATUS_30_PERMANENT_ERROR;
+			}
+			strcat(readmsg," Again");
+			retry = 1;
+			goto TryAgain;
+		}
+		DEBUG_LOG("db",("~%s: %.40s; Sts %d\n",readmsg,fx->start->text,db->dbStatus));
+		if (db->dbStatus == db->dbStsNotFound)
+			ret = COB_STATUS_10_END_OF_FILE;
+		else
+			ret = COB_STATUS_30_PERMANENT_ERROR;
+	} else {
+		DEBUG_LOG("db",("~%s: %s; OK\n",readmsg,f->select_name));
+		odbc_any_nulls (db, fx);
+		cob_xfd_to_file (db, fx, f);
+	}
+	return ret;
+}
+
+/* Sequential READ of the INDEXED file */
 static int
 odbc_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 {
@@ -1807,17 +2048,7 @@ odbc_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 		}
 		if (fx->start
 		 && !fx->start->isdesc) {
-			if(chkSts(db,(char*)"Read Next",fx->start->handle, SQLFetch(fx->start->handle))) {
-				DEBUG_LOG("db",("~Read Next: %.50s; Sts %d\n",fx->start->text,db->dbStatus));
-				if (db->dbStatus == db->dbStsNotFound)
-					ret = COB_STATUS_10_END_OF_FILE;
-				else
-					ret = COB_STATUS_30_PERMANENT_ERROR;
-			} else {
-				DEBUG_LOG("db",("~READ NEXT: %s; OK\n",f->select_name));
-				odbc_any_nulls (db, fx);
-				cob_xfd_to_file (db, fx, f);
-			}
+			ret = odbc_read_cont (f);
 		} else {
 			ret = COB_STATUS_10_END_OF_FILE;
 		}
@@ -1835,23 +2066,14 @@ odbc_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 		}
 		if (fx->start
 		 && fx->start->isdesc) {
-			if(chkSts(db,(char*)"Read Prev",fx->start->handle, SQLFetch(fx->start->handle))) {
-				DEBUG_LOG("db",("~Read Prev: %.50s; Sts %d\n",fx->start->text,db->dbStatus));
-				if (db->dbStatus == db->dbStsNotFound)
-					ret = COB_STATUS_10_END_OF_FILE;
-				else
-					ret = COB_STATUS_30_PERMANENT_ERROR;
-			} else {
-				DEBUG_LOG("db",("~READ PREV: %s; OK\n",f->select_name));
-				odbc_any_nulls (db, fx);
-				cob_xfd_to_file (db, fx, f);
-			}
+			ret = odbc_read_cont (f);
 		} else {
 			ret = COB_STATUS_10_END_OF_FILE;
 		}
 		break;
 	case COB_READ_FIRST:
 		fx->start = cob_sql_select (db, fx, ky, COB_FI, read_opts, odbc_free_stmt);
+		if (fx->precnum) strcpy(fx->precnum,"0");
 		odbc_close_stmt (fx->start);
 		odbc_setup_stmt (db, fx, fx->start, SQL_BIND_COLS, 0);
 		if (fx->start->status) {
@@ -1878,6 +2100,7 @@ odbc_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 		break;
 	case COB_READ_LAST:
 		fx->start = cob_sql_select (db, fx, ky, COB_LA, read_opts, odbc_free_stmt);
+		if (fx->precnum) strcpy(fx->precnum,"99999999999999");
 		odbc_close_stmt (fx->start);
 		odbc_setup_stmt (db, fx, fx->start, SQL_BIND_COLS, 0);
 		if (fx->start->status) {
@@ -1908,20 +2131,15 @@ odbc_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 	 && f->flag_read_chk_dups
 	 && f->curkey > 0
 	 && f->keys[f->curkey].tf_duplicates == 1) {
-		int	klen;
-		memcpy (p->saverec, f->record->data, f->record_max);
-		klen = db_savekey (f, p->savekey, f->record->data, f->curkey);
-		if (! SQLFetchScroll(fx->start->handle,SQL_FETCH_NEXT, 0)) {
-			cob_xfd_to_file (db, fx, f);
-			db_savekey (f, p->suppkey, f->record->data, f->curkey);
-			if (memcmp(p->suppkey, p->savekey, klen) == 0) {
-				ret = COB_STATUS_02_SUCCESS_DUPLICATE;
-				DEBUG_TRACE("db",("Read: %s; index %d DUPS ahead\n",f->select_name,f->curkey+1));
-			}
-			chkSts(db,(char*)"Peek reset",fx->start->handle,
-					SQLFetchScroll(fx->start->handle,SQL_FETCH_PRIOR, 0));
+		SQL_STMT	*s;
+
+		if (p->startcond == COB_GT) {
+			s = &fx->key[f->curkey]->where_ndup;
+		} else {
+			s = &fx->key[f->curkey]->where_pdup;
 		}
-		memcpy (f->record->data, p->saverec, f->record_max);
+		if (odbcCheckDups (f, s) > 0)
+			ret = COB_STATUS_02_SUCCESS_DUPLICATE;
 	}
 
 	return ret;
@@ -1958,7 +2176,7 @@ odbc_write (cob_file_api *a, cob_file *f, const int opt)
 		}
 	}
 	if (!fx->insert.preped) {
-		odbc_setup_stmt (db, fx, &fx->insert, SQL_BIND_PRMS, 0);
+		odbc_setup_stmt (db, fx, &fx->insert, SQL_BIND_PRMS|SQL_BIND_NORID, 0);
 	}
 	if(chkSts(db,(char*)"Exec INSERT",fx->insert.handle,
 			SQLExecute(fx->insert.handle))){
@@ -1974,11 +2192,13 @@ odbc_write (cob_file_api *a, cob_file *f, const int opt)
 	}
 	db->updatesDone++;
 	if (db->dbStatus != 0) {
-		DEBUG_LOG("db",("WRITE: %.40s... status %d; Not Good!\n",fx->insert.text,db->dbStatus));
+		DEBUG_LOG("db",("WRITE: %.40s... status %d; Not Good! return %02d\n",
+							fx->insert.text,db->dbStatus,ret));
 	} else if (fx->fileorg == COB_ORG_RELATIVE) {
-		DEBUG_LOG("db",("WRITE: %.40s... Rec# %d; Good!\n",fx->insert.text,(int)f->cur_rec_num));
+		DEBUG_LOG("db",("WRITE: %.40s... Rec# %d; Good! return %02d\n",
+							fx->insert.text,(int)f->cur_rec_num,ret));
 	} else {
-		DEBUG_LOG("db",("WRITE: %.40s...  Good!\n",fx->insert.text));
+		DEBUG_LOG("db",("WRITE: %.40s...  Good! return %02d\n",fx->insert.text,ret));
 	}
 	if (!db->autocommit)
 		odbc_commit (a, f);
@@ -2061,22 +2281,27 @@ odbc_rewrite (cob_file_api *a, cob_file *f, const int opt)
 	}
 
 	if (f->flag_read_chk_dups) {
-		DEBUG_LOG("db",("REWRITE: %s, begin check dups\n",f->select_name));
 		memcpy (p->saverec, f->record->data, f->record_max);
+		DEBUG_LOG("db",("~REWRITE: %s, begin check dups\n",f->select_name));
 		if(!odbc_read (a, f, f->keys[0].field, 0)) {
 			for (k=1; k < fx->nkeys && ret == COB_STATUS_00_SUCCESS; k++) {
 				if (f->keys[k].tf_duplicates == 1) {
 					klen = db_savekey (f, p->suppkey, f->record->data, k);
 					db_savekey (f, p->savekey, p->saverec, k);
 					if (memcmp(p->suppkey, p->savekey, klen) != 0) {
+						DEBUG_LOG("db",("REWRITE: %s, index %d dups\n",f->select_name,k));
 						cob_xfd_swap_data ((char*)p->saverec, (char*)f->record->data, f->record_max);
 						cob_index_to_xfd (db, fx, f, k);	/* Put new data into Index */
 						num = odbcCountIndex (db, f, fx, k);
 						if (num > 0) {
 							ret = COB_STATUS_02_SUCCESS_DUPLICATE;
 						}
+						DEBUG_LOG("db",("REWRITE: %s, found %d ret %02d, restore data\n",
+												f->select_name,num,ret));
 						cob_xfd_swap_data ((char*)p->saverec, (char*)f->record->data, f->record_max);
 						cob_index_to_xfd (db, fx, f, k);	/* Put old data back into Index */
+					} else {
+						DEBUG_LOG("db",("REWRITE: %s, index %d no change\n",f->select_name,k));
 					}
 				}
 			}
@@ -2087,8 +2312,9 @@ odbc_rewrite (cob_file_api *a, cob_file *f, const int opt)
 	cob_file_to_xfd (db, fx, f);
 
 	odbc_set_nulls (db, fx);
+	db->dbStatus = 0;
 	if (!fx->update.preped) {
-		odbc_setup_stmt (db, fx, &fx->update, SQL_BIND_PRMS, 0);
+		odbc_setup_stmt (db, fx, &fx->update, SQL_BIND_PRMS|SQL_BIND_NORID, 0);
 		pos = fx->update.bindpos;
 		for (k=0; k < fx->key[0]->ncols; k++) {
 			bindParam (db, fx, &fx->update, &fx->map[fx->key[0]->col[k]], ++pos);
@@ -2100,7 +2326,9 @@ odbc_rewrite (cob_file_api *a, cob_file *f, const int opt)
 			DEBUG_LOG("db",("%.60s Duplicate; Failed!\n",fx->update.text));
 			ret = COB_STATUS_22_KEY_EXISTS;
 		} else if (db->dbStatus == db->dbStsNotFound) {
-			return COB_STATUS_21_KEY_INVALID;
+			ret = COB_STATUS_21_KEY_INVALID;
+			DEBUG_LOG("db",("REWRITE: %s, Not found status %d; return %02d!\n",
+								f->select_name,db->dbStatus,ret));
 		} else {
 			DEBUG_LOG("db",("SQLExecute %.40s status %d; Failed!\n",fx->update.text,db->dbStatus));
 			ret = COB_STATUS_30_PERMANENT_ERROR;

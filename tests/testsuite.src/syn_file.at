@@ -2900,7 +2900,9 @@ AT_CHECK([$COMPILE -Wno-unsupported -fsql prog.cob], [0], [], [])
 
 AT_CAPTURE_FILE(./tspfilex.ddl)
 
-AT_DATA([reference], [DROP TABLE tspfilex;
+AT_DATA([reference], [DROP SEQUENCE   seq_tspfilex;
+CREATE SEQUENCE seq_tspfilex START WITH 1;
+DROP TABLE tspfilex;
 CREATE TABLE tspfilex (
    custnum                                  CHAR(8) NOT NULL,
    status                                   CHAR(1),
@@ -2924,11 +2926,12 @@ CREATE TABLE tspfilex (
    price                                    DECIMAL(5,2),
    prices                                   DECIMAL(7,2),
    date_x                                   DATE,
-   date2                                    DATE
+   date2                                    DATE,
+   rid_tspfilex                    INTEGER DEFAULT seq_tspfilex.NEXTVAL
 );
 CREATE UNIQUE INDEX pk_tspfilex ON tspfilex (custnum);
-CREATE INDEX k1_tspfilex ON tspfilex (telephone,machine);
-CREATE INDEX k2_tspfilex ON tspfilex (disk,dp_mgr,machine);
+CREATE INDEX k1_tspfilex ON tspfilex (telephone,machine,rid_tspfilex);
+CREATE INDEX k2_tspfilex ON tspfilex (disk,dp_mgr,machine,rid_tspfilex);
 ])
 
 AT_CHECK([diff reference tspfilex.ddl], [0], [], [])
@@ -2981,9 +2984,11 @@ F,0195,0003,10,0008,5,2,,10,price
 F,0198,0007,13,0010,7,2,,10,prices
 F,0205,0005,10,0032,8,0,1,10,date_x
 F,0210,0005,10,0032,8,0,2,10,date2
+F,0215,0008,22,0016,15,0,,00,rid_tspfilex
 K,0,N,N,,custnum
-K,1,Y,Y,"900",telephone,machine
-K,2,Y,Y,0x2A,disk,dp_mgr,machine
+K,1,Y,Y,"900",telephone,machine,rid_tspfilex
+K,2,Y,Y,0x2A,disk,dp_mgr,machine,rid_tspfilex
+K,0,R,N,,rid_tspfilex
 ])
 
 AT_CHECK([gcdiff -I# reference tspfilex.xd], [0], [], [])

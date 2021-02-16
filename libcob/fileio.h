@@ -219,6 +219,7 @@ COB_HIDDEN int db_cmpkey (cob_file *f, unsigned char *keyarea, unsigned char *re
 #define SQL_BIND_PRMS	4
 #define SQL_BIND_EQ		8
 #define SQL_BIND_WHERE	16
+#define SQL_BIND_NORID	32
 
 typedef struct sql_stmt {
 	void    	*handle;		/* Database 'handle' */
@@ -387,8 +388,12 @@ struct key_xfd {
 	SQL_STMT		where_gt;	/* SELECT WHERE index GT */
 	SQL_STMT		where_fi;	/* SELECT index first */
 	SQL_STMT		where_la;	/* SELECT index last */
+	SQL_STMT		where_ndup;	/* SELECT WHERE index EQ next duplicate */
+	SQL_STMT		where_pdup;	/* SELECT WHERE index EQ previous duplicate */
 };
-#define COB_COUNT 16			/* Build SELECT COUNT(*) for given index */
+#define COB_COUNT	16			/* Build SELECT COUNT(*) for given index */
+#define COB_NDUP	17			/* Build SELECT COUNT(*) WHERE next duplicate */
+#define COB_PDUP	18			/* Build SELECT COUNT(*) WHERE previous duplicate */
 
 /*
  * Primary table for in memory XFD
@@ -404,6 +409,7 @@ struct file_xfd {
 	SQL_STMT	delete;		/* Delete statement */
 	char	*select;		/* List of columns for a select statement */
 	char	*create_table;	/* SQL CREATE TABLE */
+	char	*create_sequence;/* SQL CREATE SEQUENCE */
 	int		lncreate;
 	int		lnselect;		/* Length of all column for SELECT */
 	int		lnind;			/* Length of one 'SQL Indicator' */
@@ -415,13 +421,17 @@ struct file_xfd {
 	int		lncols;			/* Length of all Column names */
 	int		fileorg;		/* cob_file.organization */
 	int		*xlbl;			/* Label to map[subscript] table */
+	int		hasrid;			/* A rid_tablename column is used */
+	long	 recnum;		/* Current rowid value */
+	void	*precnum;		/* Recnum SQL data area */
 	struct sql_date	**date;	/* Date formats used */
 	SQL_STMT	*start;		/* Active SELECT statement */
 	struct key_xfd	*key[MAXNUMKEYS];
 };
 
 /* Routines in fsqlxfd.c common to ODBC/OCI interfaces */
-COB_HIDDEN struct file_xfd* cob_load_xfd (struct db_state *db, cob_file *fl, char *alt_name, int indsize);
+COB_HIDDEN struct file_xfd* cob_load_xfd (struct db_state *db, cob_file *fl, char *alt_name, 
+											int indsize, int skiprid);
 COB_HIDDEN void 	cob_dump_xfd (struct file_xfd *fx, FILE *fo);
 COB_HIDDEN void 	cob_load_ddl (struct db_state *db, struct file_xfd *fx);
 COB_HIDDEN char *	getSchemaEnvName (struct db_state *db, char *envnm, const char *suf, char *out);
