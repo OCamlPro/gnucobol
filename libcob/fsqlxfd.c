@@ -2448,18 +2448,28 @@ cob_index_to_xfd (struct db_state *db, struct file_xfd *fx, cob_file *fl, int id
 				fx->map[k].sdata[fx->map[k].size] = 0;
 			} else if (len_high_value > 0
 				&& isAllChar (fx->map[k].recfld.data, (int)fx->map[k].recfld.size, 0xFF)) {
-				/* COBOL field is all HIGH-VALUES so pick highest usable characters */
-				DEBUG_LOG("db",("%3d: Index %d %s size(%d) is HIGH-VALUES \n",
-								k,idx,fx->map[k].colname,(int)fx->map[k].size));
-				if (fx->map[k].size < len_high_value) {
-					memset (fx->map[k].sdata, '~', fx->map[k].size);
+				/* COBOL field is all HIGH-VALUES so set to highest usable value */
+				if (fx->map[k].type == COB_XFDT_PICX
+			 	 || fx->map[k].type == COB_XFDT_PICA
+			 	 || fx->map[k].type == COB_XFDT_VARX) {
+					DEBUG_LOG("db",("%3d: Index %d %s PIC X(%d) is HIGH-VALUES \n",
+									k,idx,fx->map[k].colname,(int)fx->map[k].size));
+					if (fx->map[k].size < len_high_value) {
+						memset (fx->map[k].sdata, '~', fx->map[k].size);
+					} else {
+						memcpy (fx->map[k].sdata, high_value, len_high_value);
+						memset (&fx->map[k].sdata[len_high_value], '~', 
+								fx->map[k].size - len_high_value);
+					}
+					fx->map[k].sdata[fx->map[k].size] = 0;
+					DEBUG_DUMP("db",fx->map[k].sqlfld.data,fx->map[k].sqlfld.size);
 				} else {
-					memcpy (fx->map[k].sdata, high_value, len_high_value);
-					memset (&fx->map[k].sdata[len_high_value], '~', 
-							fx->map[k].size - len_high_value);
+					DEBUG_LOG("db",("%3d: Index %d %s PIC 9(%d) is HIGH-VALUES \n",
+									k,idx,fx->map[k].colname,(int)fx->map[k].size));
+					memset (fx->map[k].sdata, '9', fx->map[k].digits);
+					fx->map[k].sdata[fx->map[k].digits] = 0;
+					DEBUG_DUMP("db",fx->map[k].sqlfld.data,fx->map[k].digits);
 				}
-				fx->map[k].sdata[fx->map[k].size] = 0;
-				DEBUG_DUMP("db",fx->map[k].sqlfld.data,fx->map[k].sqlfld.size);
 
 			} else if (fx->map[k].type == COB_XFDT_PICX
 			 		|| fx->map[k].type == COB_XFDT_PICA

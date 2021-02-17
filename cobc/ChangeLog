@@ -1,5 +1,10 @@
 
+2021-02-17  Ron Norman <rjn@inglenet.com>
+
+	* sqlxfdgen.c: Always set size of rid_tablename to 8 
+
 2021-02-16  Ron Norman <rjn@inglenet.com>
+
 	* codegen.c: fixed some compile warnings
 	* sqlxfdgen.c: Changes to use rid_tablename as unique row number
 				This is used for better performance reading thru duplicate

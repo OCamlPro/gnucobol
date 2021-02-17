@@ -1510,13 +1510,13 @@ output_xfd_file (struct cb_file *fl)
 		fprintf(fs,"%s   %-30s  INTEGER DEFAULT seq_%s.NEXTVAL",
 								eol,ridname,tblname);
 		strcpy(eol,",\n");
-		fprintf(fx,"F,%04d,%04d,",(int)fl->record->size,(int)sizeof(long));
+		fprintf(fx,"F,%04d,%04d,",(int)fl->record->size,8);
 		fprintf(fx,"%02d,0016,",COB_XFDT_COMP5IDX);
 		fprintf(fx,"15,0,,00,%s\n",ridname);
 	} else
 	if (fl->organization == COB_ORG_RELATIVE) {
 		fprintf(fs,"%s   %-30s       BIGINT PRIMARY KEY",eol,ridname);
-		fprintf(fx,"F,%04d,%04d,",(int)fl->record->size,(int)sizeof(long));
+		fprintf(fx,"F,%04d,%04d,",(int)fl->record->size,8);
 		fprintf(fx,"%02d,0016,",COB_XFDT_COMP5REL);
 		fprintf(fx,"15,0,,00,%s\n",ridname);
 		fprintf(fx,"K,0,N,N,,%s\n",ridname);
