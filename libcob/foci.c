@@ -1476,7 +1476,7 @@ oci_start (cob_file_api *a, cob_file *f, const int cond, cob_field *key)
 		DEBUG_LOG("db",("~START %s index %d, cond %d, Bind %02X\n",
 						f->select_name,ky,cond,paramtype));
 	}
-	cob_index_to_xfd (db, fx, f, ky);
+	cob_index_to_xfd (db, fx, f, ky, cond);
 	oci_setup_stmt (db, fx, fx->start, SQL_BIND_COLS|paramtype, ky);
 	if (fx->start->status) {
 		fx->start = NULL;
@@ -1521,7 +1521,7 @@ oci_read (cob_file_api *a, cob_file *f, cob_field *key, const int read_opts)
 		oci_close_stmt (fx->start);
 	fx->start = cob_sql_select (db, fx, ky, COB_EQ, read_opts, oci_free_stmt);
 	oci_close_stmt (fx->start);
-	cob_index_to_xfd (db, fx, f, ky);
+	cob_index_to_xfd (db, fx, f, ky, COB_EQ);
 	oci_set_nulls (db, fx);
 	oci_setup_stmt (db, fx, fx->start, SQL_BIND_COLS, 0);
 	if (fx->start->status) {
@@ -1573,6 +1573,7 @@ oci_read_cont (cob_file *f)
 	struct file_xfd	*fx;
 	int			ret = COB_STATUS_00_SUCCESS;
 	int			retry = 0;
+	int			read_opts = 0;
 	ub4			excmode = OCI_DEFAULT;
 	char		readmsg[18];
 
@@ -1585,8 +1586,10 @@ oci_read_cont (cob_file *f)
 	}
 	if (p->startcond == COB_GT) {
 		strcpy(readmsg,"READ Next");
+		read_opts = fx->key[f->curkey]->where_gt.readopts;
 	} else {
 		strcpy(readmsg,"READ Prev");
+		read_opts = fx->key[f->curkey]->where_lt.readopts;
 	}
 
 TryAgain:
@@ -1596,6 +1599,7 @@ TryAgain:
 		 && db->dbStatus == db->dbStsNotFound
 		 && retry == 0) {
 			oci_close_stmt (fx->start);
+			fx->start = cob_sql_select (db,fx,f->curkey,p->startcond,read_opts,oci_free_stmt);
 			oci_setup_stmt (db, fx, fx->start, SQL_BIND_COLS|SQL_BIND_WHERE, f->curkey);
 			if (chkSts(db,(char*)"Read Restart",
 					OCIStmtExecute(db->dbSvcH,fx->start->handle,db->dbErrH,
@@ -1848,7 +1852,7 @@ oci_delete (cob_file_api *a, cob_file *f)
 		fx->delete.text = cob_sql_stmt (db, fx, (char*)"DELETE", 0, 0, 0);
 	}
 
-	cob_index_to_xfd (db, fx, f, 0);
+	cob_index_to_xfd (db, fx, f, 0, COB_EQ);
 
 	if (!fx->delete.preped) {
 		oci_setup_stmt (db, fx, &fx->delete, SQL_BIND_NO, 0);
@@ -1912,13 +1916,13 @@ oci_rewrite (cob_file_api *a, cob_file *f, const int opt)
 					db_savekey (f, p->savekey, p->saverec, k);
 					if (memcmp(p->suppkey, p->savekey, klen) != 0) {
 						cob_xfd_swap_data ((char*)p->saverec, (char*)f->record->data, f->record_max);
-						cob_index_to_xfd (db, fx, f, k);	/* Put new data into Index */
+						cob_index_to_xfd (db, fx, f, k, COB_EQ);/* Put new data into Index */
 						num = ociCountIndex (db, f, fx, k);
 						if (num > 0) {
 							ret = COB_STATUS_02_SUCCESS_DUPLICATE;
 						}
 						cob_xfd_swap_data ((char*)p->saverec, (char*)f->record->data, f->record_max);
-						cob_index_to_xfd (db, fx, f, k);	/* Put old data back into Index */
+						cob_index_to_xfd (db, fx, f, k, COB_EQ);/* Put old data back into Index */
 					}
 				}
 			}

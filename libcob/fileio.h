@@ -441,7 +441,8 @@ COB_HIDDEN SQL_STMT *	cob_sql_select (struct db_state *, struct file_xfd *, int,
 COB_HIDDEN void 	cob_xfd_to_file (struct db_state *db, struct file_xfd *fx, cob_file *fl);
 COB_HIDDEN void 	cob_xfd_to_ddl (struct db_state *db, struct file_xfd *fx, FILE *fo);
 COB_HIDDEN void 	cob_file_to_xfd (struct db_state *db, struct file_xfd *fx, cob_file *fl);
-COB_HIDDEN void		cob_index_to_xfd (struct db_state *db, struct file_xfd *fx, cob_file *fl, int idx);
+COB_HIDDEN void		cob_index_to_xfd (struct db_state *db, struct file_xfd *fx, cob_file *fl, 
+					int idx, int cond);
 COB_HIDDEN void		cob_index_clear (struct db_state *db, struct file_xfd *fx, cob_file *fl, int idx);
 COB_HIDDEN void		cob_xfd_swap_data (char *p1, char *p2, int len);
 COB_HIDDEN void		cob_drop_xfd (struct file_xfd *fx);

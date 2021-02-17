@@ -8915,7 +8915,10 @@ cob_get_env (const char *envname, char *envused)
 	strcpy(envused, envname);
 	if ((env = getenv (envused)) != NULL)
 		return env;
-	sprintf(envused, "COB_%s", envname);
+	if (memcmp(envname,"COB_",4) == 0)
+		strcpy(envused, envname + 4);
+	else
+		sprintf(envused, "COB_%s", envname);
 	if ((env = getenv (envused)) != NULL)
 		return env;
 	uenvname = (unsigned char *)envname;

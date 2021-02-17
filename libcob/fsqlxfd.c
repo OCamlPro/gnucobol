@@ -1096,6 +1096,12 @@ cob_load_xfd (struct db_state *db, cob_file *fl, char *alt_name, int indsize, in
 	}
 	sprintf(rowcol,"rid_%s",tblname);
 	fx = cob_malloc (sizeof (struct file_xfd));
+	/* Is there any need for the rid column */
+	if (fl->flag_read_no_02 == 1
+	 && fl->limitreads == 0) {
+		fx->hasrid = 0;
+		skiprid = 1;
+	}
 	while(fgets (xfdbuf,sizeof(xfdbuf),fi) != NULL) {
 		if (xfdbuf[0] == '#'
 		 || xfdbuf[0] == '*')
@@ -1237,6 +1243,8 @@ cob_load_xfd (struct db_state *db, cob_file *fl, char *alt_name, int indsize, in
 			}
 			p = getPrm (p, dups);
 			if (dups[0] == 'R') {		/* Used for unique record number */
+				if (skiprid)
+					continue;
 				fx->hasrid = 1;
 				continue;
 			}
@@ -1926,6 +1934,10 @@ logSchemaEnvName(
 	return;
 }
 
+#ifdef COB_DEBUG_LOG
+static const char *condname[20] = {"0","EQ","LT","LE","GT","GE","NE","FI","LA",
+				"9","10","11","12","13","14","15","COUNT","NDUP","PDUP","19"};
+#endif
 static const char *condstr[9] = {"?","=","<","<=",">",">=","<>",">","<"};
 
 static int
@@ -2157,7 +2169,7 @@ cob_sql_stmt (
 				pos += sprintf(&sbuf[pos]," NOWAIT");
 			} 
 		}
-		DEBUG_TRACE("db",("Build %s %d Index %d\n",stmt,cond,idx));
+		DEBUG_TRACE("db",("Build %s %s Index %d\n",stmt,condname[cond],idx));
 
 	} else if (strcasecmp(stmt,"INSERT") == 0) {
 		idx = 0;
@@ -2273,7 +2285,7 @@ cob_sql_stmt (
 		}
 		if (db->mysql || db->postgres || db->sqlite)
 			pos += sprintf(&sbuf[pos]," LIMIT 1");
-		DEBUG_TRACE("db",("Build %s %d Index %d\n",stmt,cond,idx));
+		DEBUG_TRACE("db",("Build %s %s Index %d\n",stmt,condname[cond],idx));
 
 	} else if (strcasecmp(stmt,"COUNT") == 0
 			&& fx->fileorg == COB_ORG_INDEXED) {
@@ -2361,7 +2373,7 @@ cob_sql_select (
 											(char*)"DUPAHEAD", ky, COB_PDUP, 0);
 		}
 	} else if (s->readopts != read_opts) {
-		DEBUG_LOG ("db",("Free %d Statement\n",cond));
+		DEBUG_LOG ("db",("Free %s Statement\n",condname[cond]));
 		freeit (s);
 		if (cond == COB_COUNT)
 			s->text = cob_sql_stmt (db, fx, (char*)"COUNT", ky, cond, read_opts);
@@ -2395,7 +2407,7 @@ cob_xfd_swap_data (char *p1, char *p2, int len)
  * Copy data from File index fields to SQL data field(s)
  */
 void 
-cob_index_to_xfd (struct db_state *db, struct file_xfd *fx, cob_file *fl, int idx)
+cob_index_to_xfd (struct db_state *db, struct file_xfd *fx, cob_file *fl, int idx, int cond)
 {
 	int	i,k,nx,dl;
 	char		sqlbuf[48];
@@ -2448,13 +2460,53 @@ cob_index_to_xfd (struct db_state *db, struct file_xfd *fx, cob_file *fl, int id
 			} else if (fx->map[k].type == COB_XFDT_BIN) {
 				memcpy (fx->map[k].sdata,fx->map[k].recfld.data,fx->map[k].size);
 				fx->map[k].sdata[fx->map[k].size] = 0;
+
+			} else if (cond == COB_LA) {	/* LAST of index */
+				if (fx->map[k].type == COB_XFDT_PICX
+			 	 || fx->map[k].type == COB_XFDT_PICA
+			 	 || fx->map[k].type == COB_XFDT_VARX) {
+					DEBUG_LOG("db",("%3d: Index %d %s PIC X(%d) LAST set HIGH\n",
+									k,idx,fx->map[k].colname,(int)fx->map[k].size));
+					if (len_high_value <= 0
+					 || fx->map[k].size < len_high_value) {
+						memset (fx->map[k].sdata, '~', fx->map[k].size);
+					} else {
+						memcpy (fx->map[k].sdata, high_value, len_high_value);
+						memset (&fx->map[k].sdata[len_high_value], '~', 
+								fx->map[k].size - len_high_value);
+					}
+					fx->map[k].sdata[fx->map[k].size] = 0;
+					DEBUG_DUMP("db",fx->map[k].sqlfld.data,fx->map[k].sqlfld.size);
+				} else {
+					DEBUG_LOG("db",("%3d: Index %d %s PIC 9(%d) LAST set 9s\n",
+									k,idx,fx->map[k].colname,(int)fx->map[k].size));
+					memset (fx->map[k].sdata, '9', fx->map[k].digits);
+					fx->map[k].sdata[fx->map[k].digits] = 0;
+					DEBUG_DUMP("db",fx->map[k].sqlfld.data,fx->map[k].digits);
+				}
+
+			} else if (cond == COB_FI) {		/* FIRST of index */
+				if (fx->map[k].type == COB_XFDT_PICX
+			 	 || fx->map[k].type == COB_XFDT_PICA
+			 	 || fx->map[k].type == COB_XFDT_VARX) {
+					DEBUG_LOG("db",("%3d: Index %d %s PIC X(%d) FIRST set SPACES\n",
+									k,idx,fx->map[k].colname,(int)fx->map[k].size));
+					memset (fx->map[k].sdata, ' ', fx->map[k].size);
+					fx->map[k].sdata[fx->map[k].size] = 0;
+				} else {
+					DEBUG_LOG("db",("%3d: Index %d %s PIC 9(%d) FIRST set ZERO\n",
+									k,idx,fx->map[k].colname,(int)fx->map[k].size));
+					memset (fx->map[k].sdata, '0', fx->map[k].digits);
+					fx->map[k].sdata[fx->map[k].digits] = 0;
+				}
+
 			} else if (len_high_value > 0
 				&& isAllChar (fx->map[k].recfld.data, (int)fx->map[k].recfld.size, 0xFF)) {
 				/* COBOL field is all HIGH-VALUES so set to highest usable value */
 				if (fx->map[k].type == COB_XFDT_PICX
 			 	 || fx->map[k].type == COB_XFDT_PICA
 			 	 || fx->map[k].type == COB_XFDT_VARX) {
-					DEBUG_LOG("db",("%3d: Index %d %s PIC X(%d) is HIGH-VALUES \n",
+					DEBUG_LOG("db",("%3d: Index %d %s PIC X(%d) HIGH-VALUES\n",
 									k,idx,fx->map[k].colname,(int)fx->map[k].size));
 					if (fx->map[k].size < len_high_value) {
 						memset (fx->map[k].sdata, '~', fx->map[k].size);
@@ -2466,7 +2518,7 @@ cob_index_to_xfd (struct db_state *db, struct file_xfd *fx, cob_file *fl, int id
 					fx->map[k].sdata[fx->map[k].size] = 0;
 					DEBUG_DUMP("db",fx->map[k].sqlfld.data,fx->map[k].sqlfld.size);
 				} else {
-					DEBUG_LOG("db",("%3d: Index %d %s PIC 9(%d) is HIGH-VALUES \n",
+					DEBUG_LOG("db",("%3d: Index %d %s PIC 9(%d) HIGH-VALUE\n",
 									k,idx,fx->map[k].colname,(int)fx->map[k].size));
 					memset (fx->map[k].sdata, '9', fx->map[k].digits);
 					fx->map[k].sdata[fx->map[k].digits] = 0;
