@@ -1824,7 +1824,9 @@ getSchemaEnvName(
 	char	sch[48];
 
 	if (len_high_value == 0) {
-		if( (env = getenv("COB_SQL_HIGH_VALUE")) != NULL) {
+		if( (env = cob_get_env ("SQL_HIGH_VALUE", NULL)) == NULL) 
+			env = cob_get_env ("SQL_HIGH_VALUES", NULL);
+		if( env != NULL) {
 			for (k=0; *env != 0x00 && k < 6; env++) {
 				if (isxdigit (*env)) {
 					high_value[k] = (chrtohex ((char)env[0]) << 4)

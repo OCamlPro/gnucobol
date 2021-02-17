@@ -1213,6 +1213,9 @@ cob_chk_file_env (cob_file *f, const char *src)
 		s = (char *)src;
 	}
 
+	if ((file_open_io_env = cob_get_env ("IO_OPTIONS", NULL)) != NULL) {
+		cob_set_file_format (f, file_open_io_env, 1, NULL);	/* Set initial defaults */
+	}
 	if (f->organization == COB_ORG_INDEXED) {
 		t = "IX";
 	} else if (f->organization == COB_ORG_SEQUENTIAL) {
@@ -1228,43 +1231,40 @@ cob_chk_file_env (cob_file *f, const char *src)
 		t = "IO";
 	}
 	snprintf (file_open_env, (size_t)COB_FILE_MAX, "%s_OPTIONS", t);
-	if ((file_open_io_env = getenv (file_open_env)) == NULL) {
+	if ((file_open_io_env = cob_get_env (file_open_env, NULL)) == NULL) {
 		snprintf (file_open_env, (size_t)COB_FILE_MAX, "%s_options", t);
 		file_open_env[0] = (char)tolower(file_open_env[0]);
 		file_open_env[1] = (char)tolower(file_open_env[1]);
-		file_open_io_env = getenv (file_open_env);
-	}
-	if (file_open_io_env == NULL) {
-		file_open_io_env = getenv("IO_OPTIONS");
+		file_open_io_env = cob_get_env (file_open_env, NULL);
 	}
 	if (file_open_io_env != NULL) {
-		cob_set_file_format(f, file_open_io_env, 1, NULL);	/* Set defaults for file type */
+		cob_set_file_format (f, file_open_io_env, 1, NULL);	/* Defaults for file type */
 	}
 
 	/* Check for IO_filename with file specific options */
 	file_open_io_env = NULL;
 	snprintf (file_open_env, (size_t)COB_FILE_MAX, "%s%s", "IO_", s);
-	if ((file_open_io_env = getenv (file_open_env)) == NULL) {
+	if ((file_open_io_env = cob_get_env (file_open_env, NULL)) == NULL) {
 		snprintf (file_open_env, (size_t)COB_FILE_MAX, "%s%s", "io_", s);
-		if ((file_open_io_env = getenv (file_open_env)) == NULL) {
+		if ((file_open_io_env = cob_get_env (file_open_env, NULL)) == NULL) {
 			for (i = 0; file_open_env[i] != 0; ++i) {	/* Try all Upper Case */
 				if(islower((unsigned char)file_open_env[i]))
 					file_open_env[i] = (char)toupper((unsigned char)file_open_env[i]);
 			}
-			file_open_io_env = getenv (file_open_env);
+			file_open_io_env = cob_get_env (file_open_env, NULL);
 		}
 	}
 	if (file_open_io_env == NULL) {
 		/* Re-check for IO_fdname */
 		snprintf (file_open_env, (size_t)COB_FILE_MAX, "%s%s", "IO_", f->select_name);
-		if ((file_open_io_env = getenv (file_open_env)) == NULL) {
+		if ((file_open_io_env = cob_get_env (file_open_env, NULL)) == NULL) {
 			snprintf (file_open_env, (size_t)COB_FILE_MAX, "%s%s", "io_", f->select_name);
-			if ((file_open_io_env = getenv (file_open_env)) == NULL) {
+			if ((file_open_io_env = cob_get_env (file_open_env, NULL)) == NULL) {
 				for (i = 0; file_open_env[i] != 0; ++i) {	/* Try all Upper Case */
 					if(islower((unsigned char)file_open_env[i]))
 						file_open_env[i] = (unsigned char)toupper((int)file_open_env[i]);
 				}
-				file_open_io_env = getenv (file_open_env);
+				file_open_io_env = cob_get_env (file_open_env, NULL);
 			}
 		}
 	}
@@ -1274,7 +1274,7 @@ cob_chk_file_env (cob_file *f, const char *src)
 	for (i = 0; i < NUM_PREFIX; ++i) {
 		snprintf (file_open_env, (size_t)COB_FILE_MAX, "%s%s", prefix[i], s);
 		file_open_env[COB_FILE_MAX] = 0;
-		if ((p = getenv (file_open_env)) != NULL) {
+		if ((p = cob_get_env (file_open_env, NULL)) != NULL) {
 			break;
 		}
 	}
@@ -1287,7 +1287,7 @@ cob_chk_file_env (cob_file *f, const char *src)
 					file_open_env[i] = (char)toupper((unsigned char)file_open_env[i]);
 				}
 			}
-			if ((p = getenv (file_open_env)) != NULL) {
+			if ((p = cob_get_env (file_open_env, NULL)) != NULL) {
 				break;
 			}
 		}

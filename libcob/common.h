@@ -1859,6 +1859,7 @@ COB_EXPIMP void	cob_display_command_line	(cob_field *);
 COB_EXPIMP void	cob_display_environment		(const cob_field *);
 COB_EXPIMP void	cob_display_env_value		(const cob_field *);
 COB_EXPIMP void	cob_display_arg_number		(cob_field *);
+COB_EXPIMP char *cob_get_env (const char *envname, char *envused);
 COB_EXPIMP void	cob_get_environment		(const cob_field *, cob_field *);
 COB_EXPIMP void	cob_set_environment		(const cob_field *,
 						 const cob_field *);

@@ -1051,7 +1051,7 @@ odbcStmt(
 	char	*stmt)
 {
 	SQLHSTMT	stmtHndl;
-	int			k, len, rtn = 0;
+	int			k, len, rtn = 0, ind = 0;
 	char		msg[80];
 
 	if(chkSts(db,(char*)"Alloc stmtHndl",db->dbDbcH,
@@ -1067,13 +1067,14 @@ odbcStmt(
 				SQLExecDirect(stmtHndl,(SQLCHAR*)stmt, len))) {
 		rtn = db->dbStatus;
 		DEBUG_LOG("db",("Stmt: %.50s; Sts %d\n",stmt,db->dbStatus));
-	} else if(strncasecmp(stmt,"SELECT ",7) != 0) {
+	} else if(memcmp(stmt,"SELECT ",7) != 0) {
 		DEBUG_LOG("db",("Exec: %.50s; OK\n",stmt));
 	}
 	if (rtn == 0
-	 && strncasecmp(stmt,"SELECT ",7) == 0) {
+	 && memcmp(stmt,"SELECT ",7) == 0) {
 		chkSts(db,(char*)"Bind Var",stmtHndl,
-				SQLBindCol(stmtHndl, 1, SQL_C_CHAR, varFetch, sizeof(varFetch)-1, NULL));
+				SQLBindCol(stmtHndl, 1, SQL_C_CHAR, 
+						varFetch, sizeof(varFetch)-1, (SQLPOINTER)&ind));
 		memset(varFetch,0,sizeof(varFetch));
 		if(chkSts(db,(char*)"Fetch Stmt",stmtHndl, SQLFetch(stmtHndl))) {
 			DEBUG_LOG("db",("Fetch: %.50s; Sts %d\n",stmt,db->dbStatus));

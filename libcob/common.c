@@ -8076,7 +8076,7 @@ void
 print_runtime_conf ()
 {
 	unsigned int 	i, j, k, vl, dohdg, hdlen, plen, plen2;
-	char	value[COB_MEDIUM_BUFF], orgvalue[COB_MINI_BUFF];
+	char	value[COB_MEDIUM_BUFF], orgvalue[COB_MINI_BUFF], *env;
 
 #ifdef ENABLE_NLS	/* note: translated version of definition values */
 #ifdef	HAVE_SETLOCALE
@@ -8236,6 +8236,22 @@ print_runtime_conf ()
 				}
 				putchar ('\n');
 			}
+		}
+		if (j == GRP_FILE) {
+			if ((env = cob_get_env ("SQL_HIGH_VALUES",orgvalue)) != NULL)
+				printf ("    : %-*s : %s\n", hdlen, orgvalue, env);
+			else if ((env = cob_get_env ("SQL_HIGH_VALUE",orgvalue)) != NULL)
+				printf ("    : %-*s : %s\n", hdlen, orgvalue, env);
+			if ((env = cob_get_env ("IO_OPTIONS",orgvalue)) != NULL)
+				printf ("    : %-*s : %s\n", hdlen, orgvalue, env);
+			if ((env = cob_get_env ("IX_OPTIONS",orgvalue)) != NULL)
+				printf ("    : %-*s : %s\n", hdlen, orgvalue, env);
+			if ((env = cob_get_env ("RL_OPTIONS",orgvalue)) != NULL)
+				printf ("    : %-*s : %s\n", hdlen, orgvalue, env);
+			if ((env = cob_get_env ("SQ_OPTIONS",orgvalue)) != NULL)
+				printf ("    : %-*s : %s\n", hdlen, orgvalue, env);
+			if ((env = cob_get_env ("LS_OPTIONS",orgvalue)) != NULL)
+				printf ("    : %-*s : %s\n", hdlen, orgvalue, env);
 		}
 	}
 
@@ -8881,6 +8897,77 @@ cob_alloc_attr(int type, int digits, int scale, int flags)
 	da->attr.scale  = (short)scale;
 	da->attr.flags  = (unsigned short)flags;
 	return &da->attr;
+}
+
+/*
+ * Check for "envname" and if not present try "COB_envname"
+ */
+char *
+cob_get_env (const char *envname, char *envused)
+{
+	static char wrk[64];
+	char	*env;
+	unsigned char *uenvname;
+	int		i,j;
+	int		haslwr = 0;
+	if (envused == NULL)
+		envused = (void*)wrk;
+	strcpy(envused, envname);
+	if ((env = getenv (envused)) != NULL)
+		return env;
+	sprintf(envused, "COB_%s", envname);
+	if ((env = getenv (envused)) != NULL)
+		return env;
+	uenvname = (unsigned char *)envname;
+	for (i=0; uenvname[i] != 0; i++) {
+		if (islower (uenvname[i])) {
+			haslwr = 1;
+			break;
+		}
+	}
+	if (!haslwr) {	/* Try all lower case */
+		for (i=j=0; uenvname[j] != 0; i++,j++) {
+			if (isupper (uenvname[j]))
+				envused[i] = tolower(uenvname[j]);
+			else
+				envused[i] = uenvname[j];
+		}
+		envused[i] = 0;
+		if ((env = getenv (envused)) != NULL)
+			return env;
+		strcpy(envused,"cob_");
+		for (i=4,j=0; uenvname[j] != 0; i++,j++) {
+			if (isupper (uenvname[j]))
+				envused[i] = tolower(uenvname[j]);
+			else
+				envused[i] = uenvname[j];
+		}
+		envused[i] = 0;
+		if ((env = getenv (envused)) != NULL)
+			return env;
+	}
+	if (haslwr) {	/* Try all upper case */
+		for (i=j=0; uenvname[j] != 0; i++,j++) {
+			if (islower (uenvname[j]))
+				envused[i] = toupper(uenvname[j]);
+			else
+				envused[i] = uenvname[j];
+		}
+		envused[i] = 0;
+		if ((env = getenv (envused)) != NULL)
+			return env;
+		strcpy(envused,"COB_");
+		for (i=4,j=0; uenvname[j] != 0; i++,j++) {
+			if (islower (uenvname[j]))
+				envused[i] = toupper(uenvname[j]);
+			else
+				envused[i] = uenvname[j];
+		}
+		envused[i] = 0;
+		if ((env = getenv (envused)) != NULL)
+			return env;
+	}
+	return NULL;
 }
 
 #ifdef COB_DEBUG_LOG

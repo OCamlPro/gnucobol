@@ -2,6 +2,11 @@
 2021-02-17  Ron Norman <rjn@inglenet.com>
 
 	* fsqlxfd.c: If PIC 9 field in index had HIGH-VALUES set to all 9s
+	* common.c: Add  'cob_get_env' to check for 'envname' then 'COB_envname'
+	* fileio.c: Changed to use cob_get_env
+				Changed to process IO_OPTIONS then IX/RL/SQ/LS_OPTIONS
+				then IO_filename 
+	* fodbc.c: Use indicator variable for adhoc SQL statements
 
 2021-02-16  Ron Norman <rjn@inglenet.com>
 
