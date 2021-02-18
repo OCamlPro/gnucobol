@@ -1,4 +1,15 @@
 
+2021-02-18  Ron Norman <rjn@inglenet.com>
+
+	* V-ISAM is a reworked VB-ISAM that dynamically supports
+		the old VB-ISAM file format as well as C-ISAM at runtime
+	* common.h,common.c: Changes to replace VB-CISAM with V-ISAM
+	* fileio.h,fileio.c: Changes to replace VB-CISAM with V-ISAM
+	* Makefile.am,libcobvc.c: Changes to replace VB-CISAM with V-ISAM
+	* fisam.c: Changes to replace VB-CISAM with V-ISAM
+	         For OPEN OUTPUT and the file does exist, it checks on the file
+			 format and retains that for the 'isbuild'
+
 2021-02-17  Ron Norman <rjn@inglenet.com>
 
 	* fsqlxfd.c: If PIC 9 field in index had HIGH-VALUES set to all 9s

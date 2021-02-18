@@ -16825,7 +16825,7 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [Other Flags 000.
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [Other Flags 032.
 File has 0003 keys.
 Key def  0320 bytes.
 File assigned is 'mytstisam'

@@ -71,12 +71,12 @@ else
 lib_vb =
 endif
 
-if COB_MAKE_VBCISAM_LIB
+if COB_MAKE_VISAM_LIB
 lib_vc = libcobvc.la
 libcobvc_la_SOURCES = libcobvc.c
-libcobvc_la_LIBADD = libcob.la $(VBCISAM_LIBS)
+libcobvc_la_LIBADD = libcob.la $(VISAM_LIBS)
 libcobvc_la_LDFLAGS = $(AM_LDFLAGS) $(INDEXED_LD_FLAGS)
-libcobvc_la_CFLAGS = $(AM_CFLAGS) $(VBCISAM_CFLAGS)
+libcobvc_la_CFLAGS = $(AM_CFLAGS) $(VISAM_CFLAGS)
 else
 lib_vc =
 endif

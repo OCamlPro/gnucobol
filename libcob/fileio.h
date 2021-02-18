@@ -459,7 +459,7 @@ void	cob_odbc_init_fileio (cob_file_api *);
 void	cob_oci_init_fileio (cob_file_api *);
 #endif
 
-#if defined(WITH_CISAM) || defined(WITH_DISAM) || defined(WITH_VBISAM) || defined(WITH_VBCISAM)
+#if defined(WITH_CISAM) || defined(WITH_DISAM) || defined(WITH_VBISAM) || defined(WITH_VISAM)
 void	cob_isam_init_fileio (cob_file_api *);
 #endif
 

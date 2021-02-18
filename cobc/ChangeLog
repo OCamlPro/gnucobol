@@ -1,4 +1,8 @@
 
+2021-02-18  Ron Norman <rjn@inglenet.com>
+
+	* cobc.c: Changes to replace VB-CISAM with V-ISAM
+
 2021-02-17  Ron Norman <rjn@inglenet.com>
 
 	* sqlxfdgen.c: Always set size of rid_tablename to 8 

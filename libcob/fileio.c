@@ -25,7 +25,7 @@
  *
  * fileio.h    is a header for inclusion in all fileio modules
  * fileio.c    is this module and is the primary driver
- * fisam.c     has the C/D/VB-ISAM/VBCISAM interface code for INDEXED files
+ * fisam.c     has the C/D/V/VB-ISAM interface code for INDEXED files
  * fbdb.c      has the BDB code for INDEXED files
  * flmdb.c     has the LMDB code for INDEXED files
  * fodbc.c     has the ODBC code for INDEXED files
@@ -279,10 +279,10 @@ static struct {
 	{1,1,0,"LINE",NULL,NULL,NULL},
 	{1,1,0,"RELATIVE",NULL,NULL,NULL},
 	{0,0,0,"CISAM",LIB_PRF "cobci" LIB_SUF, "cob_isam_init_fileio","C-ISAM"},
-	{0,0,0,"DISAM",LIB_PRF "cobdi" LIB_SUF, "cob_isam_init_fileio","DISAM"},
-	{0,0,0,"VBISAM",LIB_PRF "cobvb" LIB_SUF, "cob_isam_init_fileio","VBISAM"},
+	{0,0,0,"DISAM",LIB_PRF "cobdi" LIB_SUF, "cob_isam_init_fileio","D-ISAM"},
+	{0,0,0,"VBISAM",LIB_PRF "cobvb" LIB_SUF, "cob_isam_init_fileio","VB-ISAM"},
 	{0,0,1,"BDB",LIB_PRF "cobdb" LIB_SUF, "cob_bdb_init_fileio",NULL},
-	{0,0,0,"VBCISAM",LIB_PRF "cobvc" LIB_SUF, "cob_isam_init_fileio","VBISAM (C-ISAM mode)"},
+	{0,0,0,"VISAM",LIB_PRF "cobvc" LIB_SUF, "cob_isam_init_fileio","V-ISAM"},
 	{0,0,0,"IXEXT",NULL,NULL,NULL},
 	{0,0,0,"SQEXT",NULL,NULL,NULL},
 	{0,0,0,"RLEXT",NULL,NULL,NULL},
@@ -389,8 +389,8 @@ static const char ix_routine = WITH_INDEXED;
 static const char ix_routine = COB_IO_CISAM;
 #elif defined(WITH_DISAM)
 static const char ix_routine = COB_IO_DISAM;
-#elif defined(WITH_VBCISAM)
-static const char ix_routine = COB_IO_VBCISAM;
+#elif defined(WITH_VISAM)
+static const char ix_routine = COB_IO_VISAM;
 #elif defined(WITH_VBISAM)
 static const char ix_routine = COB_IO_VBISAM;
 #elif defined(WITH_DB)
@@ -469,8 +469,8 @@ indexed_file_type(char *filename)
 			return COB_IO_DISAM;
 #elif defined(WITH_CISAM)
 			return COB_IO_CISAM;
-#elif defined(WITH_VBCISAM)
-			return COB_IO_VBCISAM;
+#elif defined(WITH_VISAM)
+			return COB_IO_VISAM;
 #else
 			return -1;
 #endif
@@ -479,8 +479,8 @@ indexed_file_type(char *filename)
 			return COB_IO_CISAM;
 #elif defined(WITH_DISAM)
 			return COB_IO_DISAM;
-#elif defined(WITH_VBCISAM)
-			return COB_IO_VBCISAM;
+#elif defined(WITH_VISAM)
+			return COB_IO_VISAM;
 #else
 			return -1;
 #endif
@@ -1345,7 +1345,7 @@ cob_chk_file_mapping (cob_file *f)
 				if (access (file_open_buff, F_OK) == 0) {
 					break;
 				}
-#if defined(WITH_CISAM) || defined(WITH_DISAM) || defined(WITH_VBISAM) || defined(WITH_VBCISAM)
+#if defined(WITH_CISAM) || defined(WITH_DISAM) || defined(WITH_VBISAM) || defined(WITH_VISAM)
 				/* ISAM may append '.dat' to file name */
 				snprintf (file_open_buff, (size_t)COB_FILE_MAX, "%s%c%s.dat",
 					  file_paths[k], SLASH_CHAR, file_open_name);
@@ -1517,9 +1517,9 @@ cob_set_file_defaults (cob_file *f)
 			else if (f->fcd->fileFormat == MF_FF_VBISAM)
 				f->io_routine = COB_IO_VBISAM;
 #endif
-#ifdef WITH_VBCISAM
-			else if (f->fcd->fileFormat == MF_FF_VBCISAM)
-				f->io_routine = COB_IO_VBCISAM;
+#ifdef WITH_VISAM
+			else if (f->fcd->fileFormat == MF_FF_VISAM)
+				f->io_routine = COB_IO_VISAM;
 #endif
 #ifdef WITH_ODBC
 			else if (f->fcd->fileFormat == MF_FF_ODBC)
@@ -8228,8 +8228,8 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 #if defined(WITH_DISAM)
 	io_rtns [COB_IO_DISAM].config = 1;
 #endif
-#if defined(WITH_VBCISAM)
-	io_rtns [COB_IO_VBCISAM].config = 1;
+#if defined(WITH_VISAM)
+	io_rtns [COB_IO_VISAM].config = 1;
 #endif
 #if defined(WITH_VBISAM)
 	io_rtns [COB_IO_VBISAM].config = 1;

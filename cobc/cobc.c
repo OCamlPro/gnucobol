@@ -2464,7 +2464,7 @@ cobc_print_info (void)
 	num = 0;
 	strcpy(iomods,"");
 #if defined(WITH_CISAM) 	|| defined(WITH_DISAM) \
-	|| defined(WITH_VBISAM) || defined(WITH_VBCISAM) \
+	|| defined(WITH_VBISAM) || defined(WITH_VISAM) \
 	|| defined(WITH_ODBC)	|| defined(WITH_OCI) \
 	|| defined(WITH_INDEX_EXTFH) || defined(WITH_DB) || defined(WITH_LMDB)
 #if defined	(WITH_INDEX_EXTFH)
@@ -2478,9 +2478,9 @@ cobc_print_info (void)
 	if (num++ > 0) strcat(iomods,", ");
 	strcat(iomods,"D-ISAM");
 #endif
-#if defined	(WITH_VBCISAM)
+#if defined	(WITH_VISAM)
 	if (num++ > 0) strcat(iomods,", ");
-	strcat(iomods,"VB-CISAM");
+	strcat(iomods,"V-ISAM");
 #endif
 #if defined	(WITH_VBISAM)
 	if (num++ > 0) strcat(iomods,", ");

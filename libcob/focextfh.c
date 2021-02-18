@@ -35,7 +35,7 @@ static const char *io_rtn_name[COB_IO_MAX+1] = {
 	"DISAM",
 	"VBISAM",
 	"BDB",
-	"VBCISAM",
+	"VISAM",
 	"IXEXT",
 	"SQEXT",
 	"RLEXT",

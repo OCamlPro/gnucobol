@@ -913,7 +913,7 @@ enum cob_file_access {
 #define COB_IO_DISAM		4	/* INDEXED via D-ISAM */
 #define COB_IO_VBISAM		5	/* INDEXED via VB-ISAM */
 #define COB_IO_BDB			6	/* INDEXED via BDB */
-#define COB_IO_VBCISAM		7	/* INDEXED via VB-ISAM in C-ISAM mode */
+#define COB_IO_VISAM		7	/* INDEXED via V-ISAM */
 #define COB_IO_IXEXT 		8	/* INDEXED via Local old style WITH_INDEX_EXTFH */
 #define COB_IO_SQEXT 		9	/* SEQUENTIAL via old style WITH_SEQRA_EXTFH */
 #define COB_IO_RLEXT 		10	/* RELATIVE via old style WITH_SEQRA_EXTFH */
@@ -2385,7 +2385,7 @@ typedef struct __fcd3 {
 #define MF_FF_IDX8			8		/* IDXFORMAT"8" format (BIG) */
 #define MF_FF_DISAM			16		/* D-ISAM format */
 #define MF_FF_VBISAM		17		/* VB-ISAM format */
-#define MF_FF_VBCISAM		18		/* VB-ISAM format */
+#define MF_FF_VISAM			18		/* V-ISAM format */
 #define MF_FF_BDB			19		/* BDB format for INDEXED file */
 #define MF_FF_LMDB			20		/* LMDB format for INDEXED file */
 #define MF_FF_ODBC			21		/* ODBC format for INDEXED file */

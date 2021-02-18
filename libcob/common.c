@@ -7817,8 +7817,8 @@ print_version_summary (void)
 #if defined	(WITH_DISAM)
 	printf (", %s", cob_io_version (COB_IO_DISAM, 0));
 #endif
-#if defined	(WITH_VBCISAM)
-	printf (", %s", cob_io_version (COB_IO_VBCISAM, 0));
+#if defined	(WITH_VISAM)
+	printf (", %s", cob_io_version (COB_IO_VISAM, 0));
 #endif
 #if defined	(WITH_VBISAM)
 	printf (", %s", cob_io_version (COB_IO_VBISAM, 0));
@@ -7976,8 +7976,8 @@ print_info_detailed (const int verbose)
 	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_DISAM, verbose), "", 0);
 	num++;
 #endif
-#if defined	(WITH_VBCISAM)
-	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_VBCISAM, verbose), "", 0);
+#if defined	(WITH_VISAM)
+	var_print (_("indexed file handler"), 		cob_io_version (COB_IO_VISAM, verbose), "", 0);
 	num++;
 #endif
 #if defined	(WITH_VBISAM)
@@ -8002,7 +8002,7 @@ print_info_detailed (const int verbose)
 #endif
 #if defined(WITH_INDEXED)
 	if (num > 1)
-	var_print (_("default indexed handler"),	cob_io_name (WITH_INDEXED), "", 0);
+	var_print (_("default indexed handler"),	cob_io_version (WITH_INDEXED, verbose), "", 0);
 #endif
 
 	if (num == 0)

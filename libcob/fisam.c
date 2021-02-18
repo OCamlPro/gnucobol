@@ -28,8 +28,8 @@
 #ifdef WITH_VBISAM
 #undef WITH_VBISAM
 #endif
-#ifdef WITH_VBCISAM
-#undef WITH_VBCISAM
+#ifdef WITH_VISAM
+#undef WITH_VISAM
 #endif
 
 #ifdef FOR_CISAM
@@ -47,8 +47,8 @@
 #ifdef FOR_VBISAM
 #define WITH_VBISAM
 #endif
-#ifdef FOR_VBCISAM
-#define WITH_VBCISAM
+#ifdef FOR_VISAM
+#define WITH_VISAM
 #endif
 #endif
 
@@ -56,7 +56,7 @@
 
 #if defined(IS_ISAM_LIB) || defined(WITH_STATIC_ISAM)
 
-#if	defined(WITH_CISAM) || defined(WITH_DISAM) || defined(WITH_VBISAM) || defined(WITH_VBCISAM)
+#if	defined(WITH_CISAM) || defined(WITH_DISAM) || defined(WITH_VBISAM) || defined(WITH_VISAM)
 #define ISRECNUM isrecnum
 #define ISERRNO  iserrno
 #define ISRECLEN isreclen
@@ -146,8 +146,8 @@ static	vb_rtd_t *vbisam_rtd = NULL;
 #endif
 #endif
 
-#elif	defined(WITH_VBCISAM)
-#include <vbisam.h>
+#elif	defined(WITH_VISAM)
+#include <visam.h>
 /* VBISAM 2.2: access to isrecnum iserrno etc is global */
 #ifdef VB_MAX_KEYLEN
 #ifndef MAXKEYLEN
@@ -945,10 +945,10 @@ isam_version (void)
 	strcpy(msg,"VB-ISAM");
 #endif
 	return msg;
-#elif defined(WITH_VBCISAM)
+#elif defined(WITH_VISAM)
 	static char	msg[64];
-#ifdef VBISAM_VERSION
-	sprintf(msg,"VB-ISAM %s (C-ISAM mode)",VBISAM_VERSION);
+#ifdef VISAM_VERSION
+	sprintf(msg,"V-ISAM %s ",VISAM_VERSION);
 #else
 	strcpy(msg,"VB-CISAM (May not work!)");
 #endif
@@ -967,9 +967,7 @@ isam_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 	struct indexfile	*fh, *fh2;
 	int			k;
 	int			ret,len,j;
-	int			omode;
-	int			lmode;
-	int			vmode;
+	int			omode, fmode, lmode, vmode;
 	int			dobld;
 	int			isfd;
 	int			checkvalue;
@@ -982,14 +980,15 @@ isam_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 	f->io_routine = COB_IO_DISAM;
 #elif defined(WITH_VBISAM)
 	f->io_routine = COB_IO_VBISAM;
-#elif defined(WITH_VBCISAM)
-	f->io_routine = COB_IO_VBCISAM;
+#elif defined(WITH_VISAM)
+	f->io_routine = COB_IO_VISAM;
 #endif
 	if (mode == COB_OPEN_INPUT) {
 		checkvalue = R_OK;
 	} else {
 		checkvalue = R_OK | W_OK;
 	}
+	fmode = 0;
 
 	snprintf (a->file_open_buff, (size_t)COB_FILE_MAX, "%s.idx", filename);
 	errno = 0;
@@ -1004,13 +1003,44 @@ isam_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 				return COB_STATUS_30_PERMANENT_ERROR;
 			}
 		}
+#if defined(WITH_VISAM)
+	} else {
+		unsigned char	idxhdr[32];
+		int		idxsz;
+		/* The file already exists and if it is VB-ISAM format then retain that */
+		isfd = open (a->file_open_buff, 0);
+		if (isfd >= 0
+		 && read (isfd, (void*)idxhdr, 32) == 32) {
+			if (idxhdr[0] == 'V'
+			 && idxhdr[1] == 'B'
+			 && idxhdr[2] == 0x02
+			 && idxhdr[3] == 0x02) {	/* VB-ISAM signature */
+				fmode = ISMVBISAM;
+				/* Also retain the index block size */
+				idxsz = ((idxhdr[6] << 8) + idxhdr[7]) + 1;
+				fmode |= (idxsz / 512) << ISMIDXSHIFT;
+			} else
+			if (idxhdr[0] == 0xFE
+			 && idxhdr[1] == 0x53
+			 && idxhdr[2] == 0x02
+			 && idxhdr[3] == 0x02) {	/* C-ISAM signature */
+				fmode = ISMCISAM;
+				if (idxhdr[10] == 0x07)	/* Retain DUPLEN value */
+					fmode |= idxhdr[11] << ISMDUPSHIFT;
+				/* Also retain the index block size */
+				idxsz = ((idxhdr[6] << 8) + idxhdr[7]) + 1;
+				fmode |= (idxsz / 512) << ISMIDXSHIFT;
+			}
+			close (isfd);
+		}
+#endif
 	}
 
 	snprintf (a->file_open_buff, (size_t)COB_FILE_MAX, "%s.dat", filename);
 	errno = 0;
-#if defined(WITH_DISAM)
+#if defined(WITH_DISAM) || defined(WITH_VISAM)
 	if (access (a->file_open_buff, checkvalue)
-	&& (errno == ENOENT) ) {	/* D-ISAM will handle files with Micro Focus naming style */
+	&& (errno == ENOENT) ) {	/* D-ISAM/V-ISAM will handle files with MF naming style */
 		errno = 0;
 		snprintf (a->file_open_buff, (size_t)COB_FILE_MAX, "%s", filename);
 	}
@@ -1122,7 +1152,7 @@ dobuild:
 		if (f->record_min != f->record_max) {
 			ISRECLEN = f->record_min;
 		}
-		vmode |= (omode | lmode);
+		vmode |= (omode | lmode | fmode);
 		isfd = isbuild ((void *)filename, (int)f->record_max, &fh->key[0], vmode);
 		if (isfd < 0) {
 			if (ISERRNO == EFLOCKED)
@@ -2118,8 +2148,8 @@ cob_isam_init_fileio (cob_file_api *a)
 	}
 #elif defined(WITH_CISAM)
 	a->io_funcs[COB_IO_CISAM] = (void*) &ext_indexed_funcs;
-#elif defined(WITH_VBCISAM)
-	a->io_funcs[COB_IO_VBCISAM] = (void*) &ext_indexed_funcs;
+#elif defined(WITH_VISAM)
+	a->io_funcs[COB_IO_VISAM] = (void*) &ext_indexed_funcs;
 	sprintf(logFileName,"/tmp/vcisam%d.log",getpid());
 #ifdef VB_RTD
 	if (vbisam_rtd == NULL) {	/* VB-ISAM 2.2 run-time pointer */

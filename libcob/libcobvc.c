@@ -24,6 +24,6 @@
 #endif
 
 #define IS_ISAM_LIB 1
-#define FOR_VBCISAM 1
+#define FOR_VISAM 1
 
 #include "fisam.c"

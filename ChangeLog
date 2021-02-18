@@ -1,4 +1,8 @@
 
+2021-02-18  Ron Norman <rjn@inglenet.com> 
+
+	* configure.ac: Changes removing VB-CISAM and adding V-ISAM
+
 2021-01-22  Ron Norman <rjn@inglenet.com> 
 
 	* configure.ac: Some fixes to the previous changes
