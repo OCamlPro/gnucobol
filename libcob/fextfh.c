@@ -127,10 +127,15 @@ copy_file_to_fcd (cob_file *f, FCD3 *fcd)
 		fcd->accessFlags = ACCESS_RANDOM;
 	else if (f->access_mode == COB_ACCESS_DYNAMIC)
 		fcd->accessFlags = ACCESS_DYNAMIC;
+	if (f->flag_optional) {
+		fcd->otherFlags &= ~OTH_NOT_OPTIONAL;
+		fcd->otherFlags |= OTH_OPTIONAL;
+	} else {
+		fcd->otherFlags &= ~OTH_OPTIONAL;
+		fcd->otherFlags |= OTH_NOT_OPTIONAL;
+	}
 	if (f->flag_select_features & COB_SELECT_EXTERNAL)
 		fcd->otherFlags |= OTH_EXTERNAL;
-	if (f->flag_optional)
-		fcd->otherFlags |= OTH_OPTIONAL;
 	if (f->flag_line_adv)
 		fcd->otherFlags |= OTH_LINE_ADVANCE;
 
@@ -387,9 +392,10 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f)
 		f->access_mode = COB_ACCESS_DYNAMIC;
 	if((fcd->otherFlags & OTH_EXTERNAL))
 		f->flag_select_features |= COB_SELECT_EXTERNAL;
+	f->flag_optional = 0;
 	if((fcd->otherFlags & OTH_OPTIONAL))
 		f->flag_optional = 1;
-	else
+	if((fcd->otherFlags & OTH_NOT_OPTIONAL))
 		f->flag_optional = 0;
 	if((fcd->otherFlags & OTH_LINE_ADVANCE))
 		f->flag_line_adv = 1;
