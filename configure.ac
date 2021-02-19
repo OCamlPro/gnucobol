@@ -1564,7 +1564,9 @@ AS_IF([test "$with_disam" = "yes" -o "$with_disam" = "check"], [
 			fi
 		], [], [$DISAM_LIBS])
 	if test "$ac_cv_search_isopen" = "no"; then
-		AC_MSG_ERROR([DISAM library not found])
+		 if test "$with_disam" != "check"; then
+			AC_MSG_ERROR([DISAM library not found])
+		fi
 	elif test "$ac_cv_search_isopen" != "none required"; then
 		AC_MSG_NOTICE([DISAM library found as $ac_cv_search_isopen])
 		DISAM_LIBS="$DISAM_LIBS $ac_cv_search_isopen"
@@ -1596,8 +1598,16 @@ AS_IF([test "$with_cisam" = "yes" -o "$with_cisam" = "check"], [
 		CPPFLAGS="$CPPFLAGS $CISAM_CFLAGS"
 	fi
 	AC_CHECK_HEADERS([isam.h], [],
-		AC_MSG_ERROR([isam.h is required for C-ISAM]))
-	AC_CHECK_LIB([ifisam], [isopen],
+			[if test "$with_vbisam" = "yes"; then
+				AC_MSG_ERROR([isam.h is required for C-ISAM])
+			else
+			   with_vbisam=not_found
+			   break
+			fi])
+	if test "$with_vbisam" = "not_found"; then
+		 with_vbisam=no
+	else
+	  AC_CHECK_LIB([ifisam], [isopen],
 		[AC_DEFINE([WITH_CISAM], [1])
 			 if test "$with_cisam" = "check"; then
 				 AC_DEFINE([WITH_INDEXED], [COB_IO_CISAM])
@@ -1616,9 +1626,9 @@ AS_IF([test "$with_cisam" = "yes" -o "$with_cisam" = "check"], [
 			fi
 		CISAM_LIBS="-lifisam -lifisamx"],
 		AC_MSG_ERROR([libifisam is required for C-ISAM]), [-lifisamx])
-	CPPFLAGS="$curr_cppflags"
-	LIBS="$curr_libs"
-   ],
+	  CPPFLAGS="$curr_cppflags"
+	  LIBS="$curr_libs"
+   fi ],
   [CISAM_LIBS=""])
 
 static_isam=no
