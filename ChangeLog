@@ -1,4 +1,9 @@
 
+2021-02-19  Ron Norman <rjn@inglenet.com> 
+
+	* configure.ac: If no ISAM is requested, check if any are present
+			If any ISAM is requested, do not check the others
+
 2021-02-18  Ron Norman <rjn@inglenet.com> 
 
 	* configure.ac: Changes removing VB-CISAM and adding V-ISAM

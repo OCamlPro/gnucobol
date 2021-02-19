@@ -1436,6 +1436,52 @@ AC_ARG_WITH([vbisam],
   [],
   [with_vbisam=check])
 
+# If any ISAM is requested, dont check for the others
+if test "$with_visam" = "yes"; then
+	 if test "$with_vbisam" = "check"; then
+		 with_vbisam=no
+	 fi
+	 if test "$with_disam" = "check"; then
+		 with_disam=no
+	 fi
+	 if test "$with_cisam" = "check"; then
+		 with_cisam=no
+	 fi
+fi
+if test "$with_vbisam" = "yes"; then
+	 if test "$with_visam" = "check"; then
+		 with_visam=no
+	 fi
+	 if test "$with_disam" = "check"; then
+		 with_disam=no
+	 fi
+	 if test "$with_cisam" = "check"; then
+		 with_cisam=no
+	 fi
+fi
+if test "$with_disam" = "yes"; then
+	 if test "$with_vbisam" = "check"; then
+		 with_vbisam=no
+	 fi
+	 if test "$with_visam" = "check"; then
+		 with_visam=no
+	 fi
+	 if test "$with_cisam" = "check"; then
+		 with_cisam=no
+	 fi
+fi
+if test "$with_cisam" = "yes"; then
+	 if test "$with_vbisam" = "check"; then
+		 with_vbisam=no
+	 fi
+	 if test "$with_visam" = "check"; then
+		 with_visam=no
+	 fi
+	 if test "$with_disam" = "check"; then
+		 with_disam=no
+	 fi
+fi
+
 AS_IF([test "$with_visam" = "yes" -o "$with_visam" = "check"], [
 	PKG_CHECK_MODULES([VISAM], [visam], [], [#])
 	if test -n "$VISAM_CFLAGS"; then
