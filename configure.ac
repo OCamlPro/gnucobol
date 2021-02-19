@@ -88,7 +88,7 @@ AH_TEMPLATE([WITH_DB], [Use Berkeley DB library as INDEXED handler])
 AH_TEMPLATE([WITH_LMDB], [Use Lightning Memory-Mapped Database as INDEXED handler])
 AH_TEMPLATE([WITH_ODBC], [Use ODBC for INDEXED file handler])
 AH_TEMPLATE([WITH_OCI], [Use OCI for INDEXED file handler])
-AH_TEMPLATE([WITH_STATIC_ISAM], [Link ISAM into libcob])
+AH_TEMPLATE([WITH_STATIC_ISAM], [Build ISAM into libcob])
 
 AH_TEMPLATE([WITH_XML2], [Use libxml2 as XML handler])
 AH_TEMPLATE([WITH_JSON], [JSON handler])
@@ -1303,14 +1303,6 @@ if test "$USE_CURSES" != "no" -a "$USE_CURSES" != "not_found"; then
 fi
 LIBS="$curr_libs" # removing curses
 
-AC_ARG_WITH([seqra-extfh],
-  [AS_HELP_STRING([--with-seqra-extfh],
-    [(GnuCOBOL) Use external SEQ/RAN handler (obsolete)])],
-  [ if test "$with_seqra_extfh" = "yes"; then
-	AC_DEFINE([WITH_SEQRA_EXTFH], [1])
-    fi ],
-  [])
-
 #
 ## Checks for indexed handlers
 #
@@ -1420,69 +1412,156 @@ cob_gen_lmdb=no
 curr_cppflags="$CPPFLAGS"
 curr_libs="$LIBS"
 
-  AC_ARG_WITH([visam],
+AC_ARG_WITH([visam],
   [AS_HELP_STRING([--with-visam],
     [(GnuCOBOL) Use V-ISAM for INDEXED I/O])],
-  [if test "$with_visam" = "yes"; then
+  [],
+  [with_visam=check])
+
+AC_ARG_WITH([cisam],
+  [AS_HELP_STRING([--with-cisam],
+    [(GnuCOBOL) Use C-ISAM for ISAM I/O])],
+  [],
+  [with_cisam=check])
+
+AC_ARG_WITH([disam],
+  [AS_HELP_STRING([--with-disam],
+    [(GnuCOBOL) Use D-ISAM for INDEXED I/O])],
+  [],
+  [with_disam=check])
+
+AC_ARG_WITH([vbisam],
+  [AS_HELP_STRING([--with-vbisam],
+    [(GnuCOBOL) Use VB-ISAM for INDEXED I/O])],
+  [],
+  [with_vbisam=check])
+
+AS_IF([test "$with_visam" = "yes" -o "$with_visam" = "check"], [
 	PKG_CHECK_MODULES([VISAM], [visam], [], [#])
 	if test -n "$VISAM_CFLAGS"; then
 		CPPFLAGS="$CPPFLAGS $VISAM_CFLAGS"
 	fi
 	AC_CHECK_HEADERS([visam.h], [],
-		AC_MSG_ERROR([visam.h is required for V-ISAM]))
+			[if test "$with_visam" = "yes"; then
+				AC_MSG_ERROR([visam.h is required for V-ISAM])
+			else
+			   with_visam=not_found
+			   break
+			fi])
 	unset ac_cv_search_isopen
-	AC_SEARCH_LIBS([isopen], [visam],
-		[AC_DEFINE([WITH_VISAM], [1])
-		 cob_gen_visam=yes
-		], [], [$VISAM_LIBS])
-	if test "$ac_cv_search_isopen" = "no"; then
-		AC_MSG_ERROR([VISAM library not found])
-	elif test "$ac_cv_search_isopen" != "none required"; then
-		AC_MSG_NOTICE([VISAM library found as $ac_cv_search_isopen])
-		VISAM_LIBS="$VISAM_LIBS $ac_cv_search_isopen"
-	elif test "x$VISAM_LIBS" != "x"; then
-		AC_MSG_NOTICE([VISAM library found in $VISAM_LIBS])
+	if test "$with_visam" = "not_found"; then
+		 with_visam=no
 	else
-		AC_MSG_NOTICE([VISAM library found])
+		AC_SEARCH_LIBS([isopen], [visam],
+			[AC_DEFINE([WITH_VISAM], [1])
+			 if test "$with_visam" = "check"; then
+				 AC_DEFINE([WITH_INDEXED], [COB_IO_VISAM])
+				 AC_DEFINE([WITH_IXDFLT], ["V-ISAM"])
+			 fi
+			 cob_gen_visam=yes
+		 	 with_visam=yes
+			 if test "$with_vbisam" = "check"; then
+				 with_vbisam=no
+			 fi
+			 if test "$with_disam" = "check"; then
+				 with_disam=no
+			 fi
+			 if test "$with_cisam" = "check"; then
+				 with_cisam=no
+			 fi
+			], [], [$VISAM_LIBS])
+		if test "$ac_cv_search_isopen" = "no"; then
+			AC_MSG_ERROR([VISAM library not found])
+		elif test "$ac_cv_search_isopen" != "none required"; then
+			AC_MSG_NOTICE([VISAM library found as $ac_cv_search_isopen])
+			VISAM_LIBS="$VISAM_LIBS $ac_cv_search_isopen"
+		elif test "x$VISAM_LIBS" != "x"; then
+			AC_MSG_NOTICE([VISAM library found in $VISAM_LIBS])
+		else
+			AC_MSG_NOTICE([VISAM library found])
+		fi
+		unset ac_cv_search_isopen
+		CPPFLAGS="$curr_cppflags"
+		LIBS="$curr_libs"
 	fi
-	unset ac_cv_search_isopen
-	CPPFLAGS="$curr_cppflags"
-	LIBS="$curr_libs"
-   fi ],
+   ],
   [VISAM_LIBS=""])
 
-  AC_ARG_WITH([cisam],
-  [AS_HELP_STRING([--with-cisam],
-    [(GnuCOBOL) Use C-ISAM for ISAM I/O])],
-  [if test "$with_cisam" = "yes"; then
-	cob_gen_cisam=yes
-	PKG_CHECK_MODULES([CISAM], [cisam], [], [#])
-	if test -n "$CISAM_CFLAGS"; then
-		CPPFLAGS="$CPPFLAGS $CISAM_CFLAGS"
+AS_IF([test "$with_vbisam" = "yes" -o "$with_vbisam" = "check"], [
+	PKG_CHECK_MODULES([VBISAM], [vbisam], [], [#])
+	if test -n "$VBISAM_CFLAGS"; then
+		CPPFLAGS="$CPPFLAGS $VBISAM_CFLAGS"
 	fi
-	AC_CHECK_HEADERS([isam.h], [],
-		AC_MSG_ERROR([isam.h is required for C-ISAM]))
-	AC_CHECK_LIB([ifisam], [isopen],
-		[AC_DEFINE([WITH_CISAM], [1])
-		CISAM_LIBS="-lifisam -lifisamx"],
-		AC_MSG_ERROR([libifisam is required for C-ISAM]), [-lifisamx])
-	CPPFLAGS="$curr_cppflags"
-	LIBS="$curr_libs"
+	AC_CHECK_HEADERS([vbisam.h], [],
+			[if test "$with_vbisam" = "yes"; then
+				AC_MSG_ERROR([vbisam.h is required for VB-ISAM])
+			else
+			   with_vbisam=not_found
+			   break
+			fi])
+	unset ac_cv_search_isopen
+	unset ac_cv_search_isfullclose
+	if test "$with_vbisam" = "not_found"; then
+		 with_vbisam=no
+	else
+		# note: isfullclose is available since 2.0, isopen since 1.0
+		AC_SEARCH_LIBS([isfullclose], [vbisam],
+			[AC_DEFINE([WITH_VBISAM], [1])
+			 if test "$with_vbisam" = "check"; then
+				 AC_DEFINE([WITH_INDEXED], [COB_IO_VBISAM])
+				 AC_DEFINE([WITH_IXDFLT], ["VB-ISAM"])
+			 fi
+			 cob_gen_vbisam=yes
+		 	 with_vbisam=yes
+			 if test "$with_visam" = "check"; then
+				 with_visam=no
+			 fi
+			 if test "$with_disam" = "check"; then
+				 with_disam=no
+			 fi
+			 if test "$with_cisam" = "check"; then
+				 with_cisam=no
+			 fi
+			], [], [$VBISAM_LIBS])
+		if test "$ac_cv_search_isopen" = "no"; then
+			AC_MSG_ERROR([libvbisam >= 2.0 is required for VBISAM])
+		elif test "$ac_cv_search_isopen" != "none required"; then
+			AC_MSG_NOTICE([VBISAM library found as $ac_cv_search_isfullclose])
+			VBISAM_LIBS="$VBISAM_LIBS $ac_cv_search_isfullclose"
+		elif test "x$VBISAM_LIBS" != "x"; then
+			AC_MSG_NOTICE([VBISAM library found in $VBISAM_LIBS])
+		else
+			AC_MSG_NOTICE([VBISAM library found])
+		fi
+		unset ac_cv_search_isfullclose
+		CPPFLAGS="$curr_cppflags"
+		LIBS="$curr_libs"
    fi ],
-  [CISAM_LIBS=""])
+  [VBISAM_LIBS=""])
 
-  AC_ARG_WITH([disam],
-  [AS_HELP_STRING([--with-disam],
-    [(GnuCOBOL) Use D-ISAM for INDEXED I/O])],
-  [if test "$with_disam" = "yes"; then
+AS_IF([test "$with_disam" = "yes" -o "$with_disam" = "check"], [
 	PKG_CHECK_MODULES([DISAM], [disam], [], [#])
 	if test -n "$DISAM_CFLAGS"; then
 		CPPFLAGS="$CPPFLAGS $DISAM_CFLAGS"
 	fi
 	unset ac_cv_search_isopen
 	AC_SEARCH_LIBS([isopen], [disam8 disam72 disam71 disam7 disam],
-		[AC_DEFINE([WITH_DISAM], [1])
-		 cob_gen_disam=yes
+			[AC_DEFINE([WITH_DISAM], [1])
+			 if test "$with_disam" = "check"; then
+				 AC_DEFINE([WITH_INDEXED], [COB_IO_DISAM])
+				 AC_DEFINE([WITH_IXDFLT], ["D-ISAM"])
+			 fi
+		 	cob_gen_disam=yes
+		 	with_disam=yes
+			if test "$with_visam" = "check"; then
+				with_visam=no
+			fi
+			if test "$with_vbisam" = "check"; then
+				with_vbisam=no
+			fi
+			if test "$with_cisam" = "check"; then
+				with_cisam=no
+			fi
 		], [], [$DISAM_LIBS])
 	if test "$ac_cv_search_isopen" = "no"; then
 		AC_MSG_ERROR([DISAM library not found])
@@ -1508,75 +1587,63 @@ curr_libs="$LIBS"
 	unset ac_cv_search_isopen
 	CPPFLAGS="$curr_cppflags"
 	LIBS="$curr_libs"
-   fi ],
+  ],
   [DISAM_LIBS=""])
 
-  AC_ARG_WITH([vbisam],
-  [AS_HELP_STRING([--with-vbisam],
-    [(GnuCOBOL) Use VB-ISAM for INDEXED I/O])],
-  [if test "$with_vbisam" = "yes"; then
-	PKG_CHECK_MODULES([VBISAM], [vbisam], [], [#])
-	if test -n "$VBISAM_CFLAGS"; then
-		CPPFLAGS="$CPPFLAGS $VBISAM_CFLAGS"
+AS_IF([test "$with_cisam" = "yes" -o "$with_cisam" = "check"], [
+	PKG_CHECK_MODULES([CISAM], [cisam], [], [#])
+	if test -n "$CISAM_CFLAGS"; then
+		CPPFLAGS="$CPPFLAGS $CISAM_CFLAGS"
 	fi
-	AC_CHECK_HEADERS([vbisam.h], [],
-		AC_MSG_ERROR([vbisam.h is required for VBISAM]))
-	unset ac_cv_search_isopen
-	unset ac_cv_search_isfullclose
-	# note: isfullclose is available since 2.0, isopen since 1.0
-	AC_SEARCH_LIBS([isfullclose], [vbisam],
-		[AC_DEFINE([WITH_VBISAM], [1])
-		 cob_gen_vbisam=yes
-		], [], [$VBISAM_LIBS])
-	if test "$ac_cv_search_isopen" = "no"; then
-		AC_MSG_ERROR([libvbisam >= 2.0 is required for VBISAM])
-	elif test "$ac_cv_search_isopen" != "none required"; then
-		AC_MSG_NOTICE([VBISAM library found as $ac_cv_search_isfullclose])
-		VBISAM_LIBS="$VBISAM_LIBS $ac_cv_search_isfullclose"
-	elif test "x$VBISAM_LIBS" != "x"; then
-		AC_MSG_NOTICE([VBISAM library found in $VBISAM_LIBS])
-	else
-		AC_MSG_NOTICE([VBISAM library found])
-	fi
-	unset ac_cv_search_isfullclose
+	AC_CHECK_HEADERS([isam.h], [],
+		AC_MSG_ERROR([isam.h is required for C-ISAM]))
+	AC_CHECK_LIB([ifisam], [isopen],
+		[AC_DEFINE([WITH_CISAM], [1])
+			 if test "$with_cisam" = "check"; then
+				 AC_DEFINE([WITH_INDEXED], [COB_IO_CISAM])
+				 AC_DEFINE([WITH_IXDFLT], ["C-ISAM"])
+			 fi
+	    	cob_gen_cisam=yes
+		 	with_cisam=yes
+			if test "$with_visam" = "check"; then
+				with_visam=no
+			fi
+			if test "$with_vbisam" = "check"; then
+				with_vbisam=no
+			fi
+			if test "$with_disam" = "check"; then
+				with_disam=no
+			fi
+		CISAM_LIBS="-lifisam -lifisamx"],
+		AC_MSG_ERROR([libifisam is required for C-ISAM]), [-lifisamx])
 	CPPFLAGS="$curr_cppflags"
 	LIBS="$curr_libs"
-   fi ],
-  [VBISAM_LIBS=""])
+   ],
+  [CISAM_LIBS=""])
 
 static_isam=no
-AC_ARG_WITH([static-isam],
-  [AS_HELP_STRING([--with-static-isam],
-    [(GnuCOBOL) static link ISAM file handler to libcob])],
-  [	num_isam=0
-	if  test "$cob_gen_visam" = "yes"; then
-		num_isam=`expr $num_isam + 1`
-	fi
-	if  test "$cob_gen_vbisam" = "yes"; then
-		num_isam=`expr $num_isam + 1`
-	fi
-	if  test "$cob_gen_disam" = "yes"; then
-		num_isam=`expr $num_isam + 1`
-	fi
-	if  test "$cob_gen_cisam" = "yes"; then
-		num_isam=`expr $num_isam + 1`
-	fi
-	if test $num_isam = 1; then
-		AC_DEFINE([WITH_STATIC_ISAM], [1])
-		LIBCOB_LIBS="$LIBCOB_LIBS $CISAM_LIBS$DISAM_LIBS$VBISAM_LIBS$VISAM_LIBS"
-		static_isam=yes
-	else
-		AC_MSG_ERROR([static-isam requires exactly 1 ISAM library])
-	fi ],
-  [])
-
-AC_ARG_WITH([index-extfh],
-[AS_HELP_STRING([--with-index-extfh],
-  [(GnuCOBOL) Use external INDEXED handler (obsolete)])],
-[ if test "$with_index_extfh" = "yes"; then
-  AC_DEFINE([WITH_INDEX_EXTFH], [1])
-  fi ],
-[])
+num_isam=0
+if  test "$cob_gen_visam" = "yes"; then
+	num_isam=`expr $num_isam + 1`
+fi
+if  test "$cob_gen_vbisam" = "yes"; then
+	num_isam=`expr $num_isam + 1`
+fi
+if  test "$cob_gen_disam" = "yes"; then
+	num_isam=`expr $num_isam + 1`
+fi
+if  test "$cob_gen_cisam" = "yes"; then
+	num_isam=`expr $num_isam + 1`
+fi
+#
+# If just one ISAM handler, then build as part of libcob otherwise
+# each ISAM handler needs to be a separate shared code library
+#
+if test $num_isam = 1; then
+	AC_DEFINE([WITH_STATIC_ISAM], [1])
+	LIBCOB_LIBS="$LIBCOB_LIBS $CISAM_LIBS$DISAM_LIBS$VBISAM_LIBS$VISAM_LIBS"
+	static_isam=yes
+fi
 
 AC_ARG_WITH([odbc],
 [AS_HELP_STRING([--with-odbc],
@@ -1635,7 +1702,7 @@ AC_ARG_WITH([oci],
 
 AC_ARG_WITH([db],
 [AS_HELP_STRING([--with-db],
-  [(GnuCOBOL) Use Berkeley DB >= 4.1 for INDEXED I/O (default)])],
+  [(GnuCOBOL) Use Berkeley DB >= 4.1 for INDEXED I/O])],
 [],
 [])
 
@@ -1731,15 +1798,6 @@ if test "$with_db" = "yes"; then
 	LIBS="$curr_libs"
 fi
 
-
-AC_ARG_WITH([lmdb],
-[AS_HELP_STRING([--with-lmdb],
-  [(GnuCOBOL) Use Lightning Memory-Mapped Database (LMDB) for INDEXED I/O (experimental, no locking or shared storage, write is extremely slow)])],
-[ if test "$with_lmdb" = "yes"; then
-  AC_DEFINE([WITH_LMDB], [1])
-  fi ],
-[])
-
 if test "$with_lmdb" = "yes"; then
 	AC_MSG_NOTICE([Checks for Lightning Memory-Mapped Database (LMDB) ...])
 	AC_CHECK_HEADER([lmdb.h], [],	AC_MSG_ERROR([LMDB lmdb.h is missing]),[])
@@ -1795,6 +1853,30 @@ if test "$with_lmdb" = "yes"; then
 	cob_gen_lmdb=yes
 	LIBS="$curr_libs"
 fi
+
+AC_ARG_WITH([lmdb],
+[AS_HELP_STRING([--with-lmdb],
+  [(GnuCOBOL) Use Lightning Memory-Mapped Database (LMDB) for INDEXED I/O (experimental, no locking or shared storage, write is extremely slow)])],
+[ if test "$with_lmdb" = "yes"; then
+  AC_DEFINE([WITH_LMDB], [1])
+  fi ],
+[])
+
+AC_ARG_WITH([index-extfh],
+[AS_HELP_STRING([--with-index-extfh],
+  [(GnuCOBOL) Use external INDEXED handler (obsolete)])],
+[ if test "$with_index_extfh" = "yes"; then
+  AC_DEFINE([WITH_INDEX_EXTFH], [1])
+  fi ],
+[])
+
+AC_ARG_WITH([seqra-extfh],
+  [AS_HELP_STRING([--with-seqra-extfh],
+    [(GnuCOBOL) Use external SEQ/RAN handler (obsolete)])],
+  [ if test "$with_seqra_extfh" = "yes"; then
+	AC_DEFINE([WITH_SEQRA_EXTFH], [1])
+    fi ],
+  [])
 
 # Checks for dl/ltdl.
 DEFINE_DL="no"
@@ -2328,12 +2410,12 @@ fi
 
 if test "$with_cisam" = "yes"; then
 	COB_HAS_ISAM=cisam
+elif test "$with_visam" = "yes"; then
+	COB_HAS_ISAM=visam
 elif test "$with_disam" = "yes"; then
 	COB_HAS_ISAM=disam
 elif test "$with_vbisam" = "yes"; then
 	COB_HAS_ISAM=vbisam
-elif test "$with_visam" = "yes"; then
-	COB_HAS_ISAM=visam
 elif test "$with_db" = "yes"; then
 	COB_HAS_ISAM=db
 elif test "$with_lmdb" = "yes"; then
