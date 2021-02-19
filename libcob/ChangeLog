@@ -1,4 +1,9 @@
 
+2021-02-19  Ron Norman <rjn@inglenet.com>
+
+	* fileio.h: When checking INDEXED file format, if VB-ISAM
+				and V-ISAM configured then use V-ISAM
+
 2021-02-18  Ron Norman <rjn@inglenet.com>
 
 	* V-ISAM is a reworked VB-ISAM that dynamically supports

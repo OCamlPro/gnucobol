@@ -410,12 +410,13 @@ static const char ix_routine = COB_IO_IXEXT;
 
 /* 
  * Determine which of C|D|VB-ISAM the file is
+ * by checking for certain signatures in the filename.idx
  */
 static int
 indexed_file_type(char *filename)
 {
 	char temp[COB_FILE_MAX];
-	unsigned char hbuf[1024];
+	unsigned char hbuf[2048];
 	struct stat st;
 	int		idx;
 	FILE *fdin;
@@ -444,6 +445,7 @@ indexed_file_type(char *filename)
 			if (stat(temp, &st) == -1) 
 				break;
 		}
+		/* Check for BDB signature: may be big or little endian */
 		if(memcmp(&hbuf[12],"\x62\x31\x05\x00",4) == 0)
 			return COB_IO_BDB;
 		if(memcmp(&hbuf[12],"\x00\x05\x31\x62",4) == 0)
@@ -459,39 +461,46 @@ indexed_file_type(char *filename)
 	fclose(fdin);
 
 	if(hbuf[0] == 0xFE 
-	&& hbuf[1] == 0x53) {		/* C|D-ISAM marker */
+	&& hbuf[1] == 0x53				/* C|D-ISAM marker */
+	&& hbuf[2] == 0x02) {
 		int idxlen;
 		idxlen = (((hbuf[6] << 8) & 0xFF00) | hbuf[7]) + 1;
 		/* D-ISAM and C-ISAM are interchangable */
-		if (memcmp(hbuf+idxlen-4,"dism",4) == 0
-		 || memcmp(hbuf+idxlen-4,"DISa",4) == 0)	/* DISa is 7.2 D-ISAM */
+		if (idxlen <= sizeof(hbuf)
+		 && (memcmp(hbuf+idxlen-4,"dism",4) == 0
+		  || memcmp(hbuf+idxlen-4,"DISa",4) == 0))	/* DISa is D-ISAM 7.2 */
 #if defined(WITH_DISAM)
 			return COB_IO_DISAM;
+#elif defined(WITH_VISAM)
+			return COB_IO_VISAM;	/* Use V-ISAM if present */
 #elif defined(WITH_CISAM)
 			return COB_IO_CISAM;
-#elif defined(WITH_VISAM)
-			return COB_IO_VISAM;
 #else
 			return -1;
 #endif
 		else
-#if defined(WITH_CISAM)
+#if defined(WITH_VISAM)
+			return COB_IO_VISAM;
+#elif defined(WITH_CISAM)
 			return COB_IO_CISAM;
 #elif defined(WITH_DISAM)
 			return COB_IO_DISAM;
-#elif defined(WITH_VISAM)
-			return COB_IO_VISAM;
 #else
 			return -1;
 #endif
 	} else
 	if(hbuf[0] == 'V' 
-	&& hbuf[1] == 'B') {		/* VB-ISAM file marker */
+	&& hbuf[1] == 'B'			/* VB-ISAM file marker */
+	&& hbuf[2] == 0x02) {
+#if defined(WITH_VISAM)
+		return COB_IO_VISAM;	/* Use V-ISAM if present */
+#else
 		return COB_IO_VBISAM;
+#endif
 	} else
 	if(hbuf[0] == 0x33
 	&& hbuf[1] == 0xFE) {		/* Micro Focus format */
-		return COB_IO_MFIDX4;
+		return COB_IO_MFIDX4;	/* Currently not supported!! */
 	}
 	return -1;
 }
