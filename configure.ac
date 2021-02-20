@@ -1408,6 +1408,7 @@ cob_gen_odbc=no
 cob_gen_oci=no
 cob_gen_bdb=no
 cob_gen_lmdb=no
+cob_has_isam=no
 
 curr_cppflags="$CPPFLAGS"
 curr_libs="$LIBS"
@@ -1415,32 +1416,51 @@ curr_libs="$LIBS"
 AC_ARG_WITH([visam],
   [AS_HELP_STRING([--with-visam],
     [(GnuCOBOL) Use V-ISAM for INDEXED I/O])],
-  [],
+  [cob_has_isam=yes],
   [with_visam=check])
 
 AC_ARG_WITH([cisam],
   [AS_HELP_STRING([--with-cisam],
     [(GnuCOBOL) Use C-ISAM for ISAM I/O])],
-  [],
+  [cob_has_isam=yes],
   [with_cisam=check])
 
 AC_ARG_WITH([disam],
   [AS_HELP_STRING([--with-disam],
     [(GnuCOBOL) Use D-ISAM for INDEXED I/O])],
-  [],
+  [cob_has_isam=yes],
   [with_disam=check])
 
 AC_ARG_WITH([vbisam],
   [AS_HELP_STRING([--with-vbisam],
     [(GnuCOBOL) Use VB-ISAM for INDEXED I/O])],
-  [],
+  [cob_has_isam=yes],
   [with_vbisam=check])
 
 AC_ARG_WITH([db],
 [AS_HELP_STRING([--with-db],
   [(GnuCOBOL) Use Berkeley DB >= 4.1 for INDEXED I/O])],
-[],
+[cob_has_isam=yes],
 [with_db=check])
+
+if test "$cob_has_isam" = "yes"; then
+# Some INDEXED handler was selected so do not check for others
+	if test "$with_visam" = "check"; then
+		with_visam=no
+	fi
+	if test "$with_vbisam" = "check"; then
+		with_vbisam=no
+	fi
+	if test "$with_disam" = "check"; then
+		with_disam=no
+	fi
+	if test "$with_cisam" = "check"; then
+		with_cisam=no
+	fi
+	if test "$with_db" = "check"; then
+		with_db=no
+	fi
+fi
 
 AS_IF([test "$with_visam" = "yes" -o "$with_visam" = "check"], [
 	PKG_CHECK_MODULES([VISAM], [visam], [], [#])
