@@ -1436,51 +1436,11 @@ AC_ARG_WITH([vbisam],
   [],
   [with_vbisam=check])
 
-# If any ISAM is requested, dont check for the others
-if test "$with_visam" = "yes"; then
-	 if test "$with_vbisam" = "check"; then
-		 with_vbisam=no
-	 fi
-	 if test "$with_disam" = "check"; then
-		 with_disam=no
-	 fi
-	 if test "$with_cisam" = "check"; then
-		 with_cisam=no
-	 fi
-fi
-if test "$with_vbisam" = "yes"; then
-	 if test "$with_visam" = "check"; then
-		 with_visam=no
-	 fi
-	 if test "$with_disam" = "check"; then
-		 with_disam=no
-	 fi
-	 if test "$with_cisam" = "check"; then
-		 with_cisam=no
-	 fi
-fi
-if test "$with_disam" = "yes"; then
-	 if test "$with_vbisam" = "check"; then
-		 with_vbisam=no
-	 fi
-	 if test "$with_visam" = "check"; then
-		 with_visam=no
-	 fi
-	 if test "$with_cisam" = "check"; then
-		 with_cisam=no
-	 fi
-fi
-if test "$with_cisam" = "yes"; then
-	 if test "$with_vbisam" = "check"; then
-		 with_vbisam=no
-	 fi
-	 if test "$with_visam" = "check"; then
-		 with_visam=no
-	 fi
-	 if test "$with_disam" = "check"; then
-		 with_disam=no
-	 fi
-fi
+AC_ARG_WITH([db],
+[AS_HELP_STRING([--with-db],
+  [(GnuCOBOL) Use Berkeley DB >= 4.1 for INDEXED I/O])],
+[],
+[with_db=check])
 
 AS_IF([test "$with_visam" = "yes" -o "$with_visam" = "check"], [
 	PKG_CHECK_MODULES([VISAM], [visam], [], [#])
@@ -1514,6 +1474,9 @@ AS_IF([test "$with_visam" = "yes" -o "$with_visam" = "check"], [
 			 fi
 			 if test "$with_cisam" = "check"; then
 				 with_cisam=no
+			 fi
+			 if test "$with_db" = "check"; then
+				 with_db=no
 			 fi
 			], [], [$VISAM_LIBS])
 		if test "$ac_cv_search_isopen" = "no"; then
@@ -1568,6 +1531,9 @@ AS_IF([test "$with_vbisam" = "yes" -o "$with_vbisam" = "check"], [
 			 if test "$with_cisam" = "check"; then
 				 with_cisam=no
 			 fi
+			 if test "$with_db" = "check"; then
+				 with_db=no
+			 fi
 			], [], [$VBISAM_LIBS])
 		if test "$ac_cv_search_isopen" = "no"; then
 			AC_MSG_ERROR([libvbisam >= 2.0 is required for VBISAM])
@@ -1608,6 +1574,9 @@ AS_IF([test "$with_disam" = "yes" -o "$with_disam" = "check"], [
 			if test "$with_cisam" = "check"; then
 				with_cisam=no
 			fi
+			 if test "$with_db" = "check"; then
+				 with_db=no
+			 fi
 		], [], [$DISAM_LIBS])
 	if test "$ac_cv_search_isopen" = "no"; then
 		 if test "$with_disam" != "check"; then
@@ -1670,6 +1639,9 @@ AS_IF([test "$with_cisam" = "yes" -o "$with_cisam" = "check"], [
 			if test "$with_disam" = "check"; then
 				with_disam=no
 			fi
+			 if test "$with_db" = "check"; then
+				 with_db=no
+			 fi
 		CISAM_LIBS="-lifisam -lifisamx"],
 		AC_MSG_ERROR([libifisam is required for C-ISAM]), [-lifisamx])
 	  CPPFLAGS="$curr_cppflags"
@@ -1756,13 +1728,7 @@ AC_ARG_WITH([oci],
   fi ],
 [])
 
-AC_ARG_WITH([db],
-[AS_HELP_STRING([--with-db],
-  [(GnuCOBOL) Use Berkeley DB >= 4.1 for INDEXED I/O])],
-[],
-[])
-
-if test "$with_db" = "yes"; then
+if test "$with_db" = "yes" -o "$with_db" = "check"; then
 	AC_MSG_NOTICE([Checks for Berkeley DB ...])
 
 	AC_CHECK_HEADERS([db.h], [], AC_MSG_ERROR([Berkeley DB db.h is missing]), [])
@@ -1838,6 +1804,10 @@ if test "$with_db" = "yes"; then
 		if test "$cob_got_db" = "yes"; then
 			AC_MSG_RESULT([yes])
 			AC_MSG_NOTICE([BDB library version $COB_BDB_HEADER found as -l$cobdb])
+			with_db=yes
+		elif test "$with_db" = "check"; then
+			AC_MSG_RESULT([no])
+			with_db=no
 		else
 			AC_MSG_RESULT([no])
 			AC_MSG_ERROR([BDB library version $COB_BDB_HEADER not found])
