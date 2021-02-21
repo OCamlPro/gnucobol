@@ -24,7 +24,7 @@
 AC_PREREQ([2.64])
 
 AC_INIT([GnuCOBOL],
-	[4.0-early-dev],
+	[4.0],
 	[bug-gnucobol@gnu.org],
 	[gnucobol],
 	[https://www.gnu.org/software/gnucobol/])
@@ -137,7 +137,7 @@ AC_ARG_PROGRAM
 
 AC_ARG_ENABLE([debug],
   [AS_HELP_STRING([--enable-debug],
-    [(GnuCOBOL) Enable -g C compiler debug option for cobc + libcob])],
+    [Enable -g C compiler debug option for cobc + libcob])],
   [],
   [enable_debug=no])
 
@@ -150,7 +150,7 @@ AC_ARG_ENABLE([hardening],
 
 AC_ARG_ENABLE([experimental],
   [AS_HELP_STRING([--enable-experimental],
-    [(GnuCOBOL) Enable experimental code (Developers only!)])],
+    [Enable experimental code (Developers only!)])],
   [if test "$enable_experimental" = "yes"; then
 	AC_DEFINE([COB_EXPERIMENTAL], [1])
    fi],
@@ -158,7 +158,7 @@ AC_ARG_ENABLE([experimental],
 
 AC_ARG_ENABLE([cobc-internal-checks],
   [AS_HELP_STRING([--enable-cobc-internal-checks],
-    [(GnuCOBOL) Enable extra checks within the compiler (Developers only!)])],
+    [Enable extra checks within the compiler (Developers only!)])],
   [if test "$enable_cobc_internal_checks" = "yes"; then
 	AC_DEFINE([COB_TREE_DEBUG], [1])
    fi],
@@ -166,7 +166,7 @@ AC_ARG_ENABLE([cobc-internal-checks],
 
 AC_ARG_ENABLE([debuglog],
   [AS_HELP_STRING([--enable-debuglog],
-    [(GnuCOBOL) Enable internal logging code (Developers only!)])],
+    [Enable internal logging code (Developers only!)])],
   [if test "$enable_debuglog" = "yes"; then
 	AC_DEFINE([COB_DEBUG_LOG], [1])
    fi],
@@ -174,7 +174,7 @@ AC_ARG_ENABLE([debuglog],
 
 AC_ARG_ENABLE([param-check],
   [AS_HELP_STRING([--enable-param-check],
-    [(GnuCOBOL) Enable minimum parameter check for system libraries (default no)])],
+    [Enable minimum parameter check for system libraries (default no)])],
   [if test "$enable_param_check" = "yes"; then
 	AC_DEFINE([COB_PARAM_CHECK], [1])
    fi],
@@ -182,7 +182,7 @@ AC_ARG_ENABLE([param-check],
 
 AC_ARG_WITH([patch-level],
   [AS_HELP_STRING([--with-patch-level],
-    [(GnuCOBOL) Define a patch level (default 0), numeric, max. 8 digits])],
+    [Define a patch level (default 0), numeric, max. 8 digits])],
   [case $with_patch_level in
     yes)	AC_MSG_ERROR([[You must give --with-patch-level an argument.]])
 		;;
@@ -202,7 +202,7 @@ AC_DEFINE_UNQUOTED([PATCH_LEVEL], [$with_patch_level])
 
 AC_ARG_WITH([max-call-params],
   [AS_HELP_STRING([--with-max-call-params],
-    [(GnuCOBOL) Define maximum number of parameters for CALL (default 192)])],
+    [Define maximum number of parameters for CALL (default 192)])],
   [case $with_max_call_params in
     yes)	AC_MSG_ERROR([[You must give --with-max-call-params an argument.]])
 		;;
@@ -994,7 +994,7 @@ AC_ARG_WITH([dl],
 
 AC_ARG_WITH([varseq],
   [AS_HELP_STRING([--with-varseq],
-    [(GnuCOBOL) Define variable sequential format (default 0)])],
+    [Define variable sequential format (default 0)])],
   [case $with_varseq in
     yes)	AC_MSG_ERROR([[You must give --with-varseq an argument.]])
 		;;
@@ -1401,7 +1401,7 @@ AC_ARG_WITH([visam],
 
 AC_ARG_WITH([cisam],
   [AS_HELP_STRING([--with-cisam],
-    [Use C-ISAM for ISAM I/O])],
+    [Use C-ISAM for INDEXED I/O])],
   [cob_has_isam=yes],
   [with_cisam=check])
 
