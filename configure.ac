@@ -1309,7 +1309,7 @@ LIBS="$curr_libs" # removing curses
 
 AC_ARG_WITH([indexed],
   [AS_HELP_STRING([--with-indexed],
-    [Define default INDEXED file handler])],
+    [Define default INDEXED file handler (visam,vbisam,disam,cisam,db)])],
   [ case "$with_indexed" in
     vbisam)
 	    with_vbisam=yes
@@ -1335,14 +1335,6 @@ AC_ARG_WITH([indexed],
 	    with_lmdb=yes
 	    AC_DEFINE([WITH_INDEXED], [COB_IO_LMDB])
 	    AC_DEFINE([WITH_IXDFLT], ["LMDB"]);;
-    odbc)
-	    with_odbc=yes
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_ODBC])
-	    AC_DEFINE([WITH_IXDFLT], ["ODBC"]);;
-    oci)
-	    with_oci=yes
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_OCI])
-	    AC_DEFINE([WITH_IXDFLT], ["OCI"]);;
 	*)
   	  if test "$with_visam" = "yes"; then
 	    AC_DEFINE([WITH_INDEXED], [COB_IO_VISAM])
@@ -1359,17 +1351,11 @@ AC_ARG_WITH([indexed],
   	  elif test "$with_db" = "yes"; then
 	    AC_DEFINE([WITH_INDEXED], [COB_IO_BDB])
 	    AC_DEFINE([WITH_IXDFLT], ["BDB"])
-  	  elif test "$with_odbc" = "yes"; then
-	    AC_DEFINE([WITH_ODBC], [COB_IO_ODBC])
-	    AC_DEFINE([WITH_IXDFLT], ["ODBC"])
-  	  elif test "$with_oci" = "yes"; then
-	    AC_DEFINE([WITH_OCI], [COB_IO_OCI])
-	    AC_DEFINE([WITH_IXDFLT], ["OCI"])
   	  elif test "$with_lmdb" = "yes"; then
 	    AC_DEFINE([WITH_INDEXED], [COB_IO_LMDB])
 	    AC_DEFINE([WITH_IXDFLT], ["LMDB"])
 	  else
-		AC_MSG_ERROR([--with-indexed=<HANDLER>, must be one of visam|vbisam|disam|cisam|db|lmdb|odbc|oci])
+		AC_MSG_ERROR([--with-indexed=<HANDLER>, must be one of visam|vbisam|disam|cisam|db|lmdb])
 	  fi ;;
     esac
   ], [
@@ -1388,12 +1374,6 @@ AC_ARG_WITH([indexed],
   	  elif test "$with_db" = "yes"; then
 	    AC_DEFINE([WITH_INDEXED], [COB_IO_BDB])
 	    AC_DEFINE([WITH_IXDFLT], ["BDB"])
-  	  elif test "$with_odbc" = "yes"; then
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_ODBC])
-	    AC_DEFINE([WITH_IXDFLT], ["ODBC"])
-  	  elif test "$with_oci" = "yes"; then
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_OCI])
-	    AC_DEFINE([WITH_IXDFLT], ["OCI"])
   	  elif test "$with_lmdb" = "yes"; then
 	    AC_DEFINE([WITH_INDEXED], [COB_IO_LMDB])
 	    AC_DEFINE([WITH_IXDFLT], ["LMDB"])
@@ -1443,8 +1423,7 @@ AC_ARG_WITH([db],
 [cob_has_isam=yes],
 [with_db=check])
 
-if test "$cob_has_isam" = "yes"; then
-# Some INDEXED handler was selected so do not check for others
+reset_isam_check() {
 	if test "$with_visam" = "check"; then
 		with_visam=no
 	fi
@@ -1460,6 +1439,11 @@ if test "$cob_has_isam" = "yes"; then
 	if test "$with_db" = "check"; then
 		with_db=no
 	fi
+}
+
+if test "$cob_has_isam" = "yes"; then
+# Some INDEXED handler was selected so do not check for others
+	reset_isam_check
 fi
 
 AS_IF([test "$with_visam" = "yes" -o "$with_visam" = "check"], [
@@ -1486,18 +1470,7 @@ AS_IF([test "$with_visam" = "yes" -o "$with_visam" = "check"], [
 			 fi
 			 cob_gen_visam=yes
 		 	 with_visam=yes
-			 if test "$with_vbisam" = "check"; then
-				 with_vbisam=no
-			 fi
-			 if test "$with_disam" = "check"; then
-				 with_disam=no
-			 fi
-			 if test "$with_cisam" = "check"; then
-				 with_cisam=no
-			 fi
-			 if test "$with_db" = "check"; then
-				 with_db=no
-			 fi
+			 reset_isam_check
 			], [], [$VISAM_LIBS])
 		if test "$ac_cv_search_isopen" = "no"; then
 			AC_MSG_ERROR([VISAM library not found])
@@ -1542,18 +1515,7 @@ AS_IF([test "$with_vbisam" = "yes" -o "$with_vbisam" = "check"], [
 			 fi
 			 cob_gen_vbisam=yes
 		 	 with_vbisam=yes
-			 if test "$with_visam" = "check"; then
-				 with_visam=no
-			 fi
-			 if test "$with_disam" = "check"; then
-				 with_disam=no
-			 fi
-			 if test "$with_cisam" = "check"; then
-				 with_cisam=no
-			 fi
-			 if test "$with_db" = "check"; then
-				 with_db=no
-			 fi
+			 reset_isam_check
 			], [], [$VBISAM_LIBS])
 		if test "$ac_cv_search_isopen" = "no"; then
 			AC_MSG_ERROR([libvbisam >= 2.0 is required for VBISAM])
@@ -1585,18 +1547,7 @@ AS_IF([test "$with_disam" = "yes" -o "$with_disam" = "check"], [
 			 fi
 		 	cob_gen_disam=yes
 		 	with_disam=yes
-			if test "$with_visam" = "check"; then
-				with_visam=no
-			fi
-			if test "$with_vbisam" = "check"; then
-				with_vbisam=no
-			fi
-			if test "$with_cisam" = "check"; then
-				with_cisam=no
-			fi
-			 if test "$with_db" = "check"; then
-				 with_db=no
-			 fi
+			reset_isam_check
 		], [], [$DISAM_LIBS])
 	if test "$ac_cv_search_isopen" = "no"; then
 		 if test "$with_disam" != "check"; then
@@ -1633,14 +1584,14 @@ AS_IF([test "$with_cisam" = "yes" -o "$with_cisam" = "check"], [
 		CPPFLAGS="$CPPFLAGS $CISAM_CFLAGS"
 	fi
 	AC_CHECK_HEADERS([isam.h], [],
-			[if test "$with_vbisam" = "yes"; then
+			[if test "$with_cisam" = "yes"; then
 				AC_MSG_ERROR([isam.h is required for C-ISAM])
 			else
-			   with_vbisam=not_found
+			   with_cisam=not_found
 			   break
 			fi])
-	if test "$with_vbisam" = "not_found"; then
-		 with_vbisam=no
+	if test "$with_cisam" = "not_found"; then
+		 with_cisam=no
 	else
 	  AC_CHECK_LIB([ifisam], [isopen],
 		[AC_DEFINE([WITH_CISAM], [1])
@@ -1650,18 +1601,7 @@ AS_IF([test "$with_cisam" = "yes" -o "$with_cisam" = "check"], [
 			 fi
 	    	cob_gen_cisam=yes
 		 	with_cisam=yes
-			if test "$with_visam" = "check"; then
-				with_visam=no
-			fi
-			if test "$with_vbisam" = "check"; then
-				with_vbisam=no
-			fi
-			if test "$with_disam" = "check"; then
-				with_disam=no
-			fi
-			 if test "$with_db" = "check"; then
-				 with_db=no
-			 fi
+			reset_isam_check
 		CISAM_LIBS="-lifisam -lifisamx"],
 		AC_MSG_ERROR([libifisam is required for C-ISAM]), [-lifisamx])
 	  CPPFLAGS="$curr_cppflags"
@@ -1695,7 +1635,7 @@ fi
 
 AC_ARG_WITH([odbc],
 [AS_HELP_STRING([--with-odbc],
-  [(GnuCOBOL) Use ODBC for INDEXED I/O])],
+  [(GnuCOBOL) Use ODBC for INDEXED/RELATIVE I/O])],
 [ if test "$with_odbc" = "yes"; then
 	PKG_CHECK_MODULES([ODBC], [odbc], [], [#])
 	if test -n "$ODBC_CFLAGS"; then
@@ -1722,7 +1662,7 @@ AC_ARG_WITH([odbc],
 
 AC_ARG_WITH([oci],
 [AS_HELP_STRING([--with-oci],
-  [(GnuCOBOL) Use Oracle OCI for INDEXED I/O])],
+  [(GnuCOBOL) Use Oracle OCI for INDEXED/RELATIVE I/O])],
 [ if test "$with_oci" = "yes"; then
 	if test -n "$OCI_CFLAGS"; then
 		CPPFLAGS="$CPPFLAGS $OCI_CFLAGS"
