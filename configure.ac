@@ -557,7 +557,7 @@ AC_MSG_NOTICE([Checks for GMP/MPIR ...])
 
 AC_ARG_WITH([math],
   [AS_HELP_STRING([[--with-math[=ARG]]],
-    [(GnuCOBOL) Use math multiple precision library, where ARG may be:
+    [Use math multiple precision library, where ARG may be:
      check (default), gmp, mpir])],
   [case "$with_math" in
     gmp | mpir | check)
@@ -727,7 +727,7 @@ AC_CHECK_LIB([$USE_MATH], [__gmp_get_memory_functions],
 # Configure options part II (needing compilation)
 AC_ARG_WITH([xml2],
   [AS_HELP_STRING([--with-xml2],
-    [(GnuCOBOL) Use libxml2 as XML handler (default)])],
+    [Use libxml2 as XML handler (default)])],
   [],
   [with_xml2=check])
 
@@ -802,7 +802,7 @@ AC_MSG_NOTICE([Checks for JSON handler])
 
 AC_ARG_WITH([json],
   [AS_HELP_STRING([[--with-json[=ARG]]],
-    [(GnuCOBOL) Use json library/source as JSON handler, where ARG may be:
+    [Use json library/source as JSON handler, where ARG may be:
      check (default), cjson, local, json-c, no])],
   [case "$with_json" in
 	cjson | local | "json-c" | check | no )
@@ -981,7 +981,7 @@ esac
 
 AC_ARG_WITH([dl],
   [AS_HELP_STRING([--with-dl],
-    [(GnuCOBOL) Use system dynamic loader (default)])],
+    [Use system dynamic loader (default)])],
   [case $with_dl in
     yes)
 		;;
@@ -1077,7 +1077,7 @@ AC_MSG_NOTICE([Checks for curses ...])
 
 AC_ARG_WITH([curses],
   [AS_HELP_STRING([[--with-curses[=ARG]]],
-    [(GnuCOBOL) Use curses library for extended SCREEN I/O, where ARG may be:
+    [Use curses library for extended SCREEN I/O, where ARG may be:
      check (default), ncursesw, ncurses, pdcurses, curses, no])],
   [case "$with_curses" in
     ncursesw | ncurses | pdcurses | curses | check | no)
@@ -1395,31 +1395,31 @@ curr_libs="$LIBS"
 
 AC_ARG_WITH([visam],
   [AS_HELP_STRING([--with-visam],
-    [(GnuCOBOL) Use V-ISAM for INDEXED I/O])],
+    [Use V-ISAM for INDEXED I/O])],
   [cob_has_isam=yes],
   [with_visam=check])
 
 AC_ARG_WITH([cisam],
   [AS_HELP_STRING([--with-cisam],
-    [(GnuCOBOL) Use C-ISAM for ISAM I/O])],
+    [Use C-ISAM for ISAM I/O])],
   [cob_has_isam=yes],
   [with_cisam=check])
 
 AC_ARG_WITH([disam],
   [AS_HELP_STRING([--with-disam],
-    [(GnuCOBOL) Use D-ISAM for INDEXED I/O])],
+    [Use D-ISAM for INDEXED I/O])],
   [cob_has_isam=yes],
   [with_disam=check])
 
 AC_ARG_WITH([vbisam],
   [AS_HELP_STRING([--with-vbisam],
-    [(GnuCOBOL) Use VB-ISAM for INDEXED I/O])],
+    [Use VB-ISAM for INDEXED I/O])],
   [cob_has_isam=yes],
   [with_vbisam=check])
 
 AC_ARG_WITH([db],
 [AS_HELP_STRING([--with-db],
-  [(GnuCOBOL) Use Berkeley DB >= 4.1 for INDEXED I/O])],
+  [Use Berkeley DB >= 4.1 for INDEXED I/O])],
 [cob_has_isam=yes],
 [with_db=check])
 
@@ -1635,7 +1635,7 @@ fi
 
 AC_ARG_WITH([odbc],
 [AS_HELP_STRING([--with-odbc],
-  [(GnuCOBOL) Use ODBC for INDEXED/RELATIVE I/O])],
+  [Optionally use ODBC for INDEXED/RELATIVE I/O])],
 [ if test "$with_odbc" = "yes"; then
 	PKG_CHECK_MODULES([ODBC], [odbc], [], [#])
 	if test -n "$ODBC_CFLAGS"; then
@@ -1662,7 +1662,7 @@ AC_ARG_WITH([odbc],
 
 AC_ARG_WITH([oci],
 [AS_HELP_STRING([--with-oci],
-  [(GnuCOBOL) Use Oracle OCI for INDEXED/RELATIVE I/O])],
+  [Optionally use Oracle OCI for INDEXED/RELATIVE I/O])],
 [ if test "$with_oci" = "yes"; then
 	if test -n "$OCI_CFLAGS"; then
 		CPPFLAGS="$CPPFLAGS $OCI_CFLAGS"
@@ -1842,7 +1842,7 @@ fi
 
 AC_ARG_WITH([lmdb],
 [AS_HELP_STRING([--with-lmdb],
-  [(GnuCOBOL) Use Lightning Memory-Mapped Database (LMDB) for INDEXED I/O (experimental, no locking or shared storage, write is extremely slow)])],
+  [Use Lightning Memory-Mapped Database (LMDB) for INDEXED I/O (experimental, no locking or shared storage, write is extremely slow)])],
 [ if test "$with_lmdb" = "yes"; then
   AC_DEFINE([WITH_LMDB], [1])
   fi ],
@@ -1850,7 +1850,7 @@ AC_ARG_WITH([lmdb],
 
 AC_ARG_WITH([index-extfh],
 [AS_HELP_STRING([--with-index-extfh],
-  [(GnuCOBOL) Use external INDEXED handler (obsolete)])],
+  [Use external INDEXED handler (obsolete)])],
 [ if test "$with_index_extfh" = "yes"; then
   AC_DEFINE([WITH_INDEX_EXTFH], [1])
   fi ],
@@ -1858,7 +1858,7 @@ AC_ARG_WITH([index-extfh],
 
 AC_ARG_WITH([seqra-extfh],
   [AS_HELP_STRING([--with-seqra-extfh],
-    [(GnuCOBOL) Use external SEQ/RAN handler (obsolete)])],
+    [Use external SEQ/RAN handler (obsolete)])],
   [ if test "$with_seqra_extfh" = "yes"; then
 	AC_DEFINE([WITH_SEQRA_EXTFH], [1])
     fi ],
