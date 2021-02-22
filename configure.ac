@@ -24,7 +24,7 @@
 AC_PREREQ([2.64])
 
 AC_INIT([GnuCOBOL],
-	[4.0],
+	[4.0-early-dev],
 	[bug-gnucobol@gnu.org],
 	[gnucobol],
 	[https://www.gnu.org/software/gnucobol/])
@@ -77,8 +77,8 @@ AH_TEMPLATE([PATCH_LEVEL], [Define a patch level (numeric, max. 8 digits)])
 AH_TEMPLATE([MAX_CALL_FIELD_PARAMS], [Define maximum parameters for CALL])
 AH_TEMPLATE([WITH_MATH], [Math multiple precision library])
 AH_TEMPLATE([WITH_INDEX_EXTFH], [Compile with obsolete external INDEXED handler])
-AH_TEMPLATE([WITH_INDEXED], [Default INDEXED file handler])
-AH_TEMPLATE([WITH_IXDFLT], [Default INDEXED file handler])
+AH_TEMPLATE([WITH_INDEXED], [Default INDEXED file handler define])
+AH_TEMPLATE([WITH_IXDFLT], [Default INDEXED file handler name])
 AH_TEMPLATE([WITH_SEQRA_EXTFH], [Compile with obsolete external SEQ/RAN handler])
 AH_TEMPLATE([WITH_VISAM], [Use V-ISAM as INDEXED handler])
 AH_TEMPLATE([WITH_DISAM], [Use D-ISAM as INDEXED handler])
@@ -1306,80 +1306,6 @@ LIBS="$curr_libs" # removing curses
 #
 ## Checks for indexed handlers
 #
-
-AC_ARG_WITH([indexed],
-  [AS_HELP_STRING([--with-indexed],
-    [Define default INDEXED file handler (visam,vbisam,disam,cisam,db)])],
-  [ case "$with_indexed" in
-    vbisam)
-	    with_vbisam=yes
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_VBISAM])
-	    AC_DEFINE([WITH_IXDFLT], ["VB-ISAM"]);;
-    visam)
-	    with_visam=yes
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_VISAM])
-	    AC_DEFINE([WITH_IXDFLT], ["V-ISAM"]);;
-    disam)
-	    with_disam=yes
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_DISAM])
-	    AC_DEFINE([WITH_IXDFLT], ["D-ISAM"]);;
-    cisam)
-	    with_cisam=yes
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_CISAM])
-	    AC_DEFINE([WITH_IXDFLT], ["C-ISAM"]);;
-    db)
-	    with_db=yes
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_BDB])
-	    AC_DEFINE([WITH_IXDFLT], ["BDB"]);;
-    lmdb)
-	    with_lmdb=yes
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_LMDB])
-	    AC_DEFINE([WITH_IXDFLT], ["LMDB"]);;
-	*)
-  	  if test "$with_visam" = "yes"; then
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_VISAM])
-	    AC_DEFINE([WITH_IXDFLT], ["V-ISAM"])
-  	  elif test "$with_cisam" = "yes"; then
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_CISAM])
-	    AC_DEFINE([WITH_IXDFLT], ["C-ISAM"])
-  	  elif test "$with_disam" = "yes"; then
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_DISAM])
-	    AC_DEFINE([WITH_IXDFLT], ["D-ISAM"])
-  	  elif test "$with_vbisam" = "yes"; then
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_VBISAM])
-	    AC_DEFINE([WITH_IXDFLT], ["VB-ISAM"])
-  	  elif test "$with_db" = "yes"; then
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_BDB])
-	    AC_DEFINE([WITH_IXDFLT], ["BDB"])
-  	  elif test "$with_lmdb" = "yes"; then
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_LMDB])
-	    AC_DEFINE([WITH_IXDFLT], ["LMDB"])
-	  else
-		AC_MSG_ERROR([--with-indexed=<HANDLER>, must be one of visam|vbisam|disam|cisam|db|lmdb])
-	  fi ;;
-    esac
-  ], [
-  	  if test "$with_visam" = "yes"; then
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_VISAM])
-	    AC_DEFINE([WITH_IXDFLT], ["V-ISAM"])
-  	  elif test "$with_cisam" = "yes"; then
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_CISAM])
-	    AC_DEFINE([WITH_IXDFLT], ["C-ISAM"])
-  	  elif test "$with_disam" = "yes"; then
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_DISAM])
-	    AC_DEFINE([WITH_IXDFLT], ["D-ISAM"])
-  	  elif test "$with_vbisam" = "yes"; then
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_VBISAM])
-	    AC_DEFINE([WITH_IXDFLT], ["VB-ISAM"])
-  	  elif test "$with_db" = "yes"; then
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_BDB])
-	    AC_DEFINE([WITH_IXDFLT], ["BDB"])
-  	  elif test "$with_lmdb" = "yes"; then
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_LMDB])
-	    AC_DEFINE([WITH_IXDFLT], ["LMDB"])
-	  fi
-  ])
-
 cob_gen_vbisam=no
 cob_gen_visam=no
 cob_gen_disam=no
@@ -1440,6 +1366,83 @@ reset_isam_check() {
 		with_db=no
 	fi
 }
+
+
+AC_ARG_WITH([indexed],
+  [AS_HELP_STRING([--with-indexed],
+    [Define default INDEXED file handler (visam,vbisam,disam,cisam,db)])],
+  [ case "$with_indexed" in
+    vbisam)
+	    with_vbisam=yes
+	    AC_DEFINE([WITH_INDEXED], [COB_IO_VBISAM])
+	    AC_DEFINE([WITH_IXDFLT], ["VB-ISAM"]);;
+    visam)
+	    with_visam=yes
+	    AC_DEFINE([WITH_INDEXED], [COB_IO_VISAM])
+	    AC_DEFINE([WITH_IXDFLT], ["V-ISAM"]);;
+    disam)
+	    with_disam=yes
+	    AC_DEFINE([WITH_INDEXED], [COB_IO_DISAM])
+	    AC_DEFINE([WITH_IXDFLT], ["D-ISAM"]);;
+    cisam)
+	    with_cisam=yes
+	    AC_DEFINE([WITH_INDEXED], [COB_IO_CISAM])
+	    AC_DEFINE([WITH_IXDFLT], ["C-ISAM"]);;
+    db)
+	    with_db=yes
+	    AC_DEFINE([WITH_INDEXED], [COB_IO_BDB])
+	    AC_DEFINE([WITH_IXDFLT], ["BDB"]);;
+    lmdb)
+	    with_lmdb=yes
+	    AC_DEFINE([WITH_INDEXED], [COB_IO_LMDB])
+	    AC_DEFINE([WITH_IXDFLT], ["LMDB"]);;
+    no)
+		reset_isam_check
+	    AC_DEFINE([WITH_IXDFLT], ["NONE"]);;
+	*)
+  	  if test "$with_visam" = "yes"; then
+	    AC_DEFINE([WITH_INDEXED], [COB_IO_VISAM])
+	    AC_DEFINE([WITH_IXDFLT], ["V-ISAM"])
+  	  elif test "$with_cisam" = "yes"; then
+	    AC_DEFINE([WITH_INDEXED], [COB_IO_CISAM])
+	    AC_DEFINE([WITH_IXDFLT], ["C-ISAM"])
+  	  elif test "$with_disam" = "yes"; then
+	    AC_DEFINE([WITH_INDEXED], [COB_IO_DISAM])
+	    AC_DEFINE([WITH_IXDFLT], ["D-ISAM"])
+  	  elif test "$with_vbisam" = "yes"; then
+	    AC_DEFINE([WITH_INDEXED], [COB_IO_VBISAM])
+	    AC_DEFINE([WITH_IXDFLT], ["VB-ISAM"])
+  	  elif test "$with_db" = "yes"; then
+	    AC_DEFINE([WITH_INDEXED], [COB_IO_BDB])
+	    AC_DEFINE([WITH_IXDFLT], ["BDB"])
+  	  elif test "$with_lmdb" = "yes"; then
+	    AC_DEFINE([WITH_INDEXED], [COB_IO_LMDB])
+	    AC_DEFINE([WITH_IXDFLT], ["LMDB"])
+	  else
+		AC_MSG_ERROR([--with-indexed=<HANDLER>, must be one of visam|vbisam|disam|cisam|db|lmdb])
+	  fi ;;
+    esac
+  ], [
+  	  if test "$with_visam" = "yes"; then
+	    AC_DEFINE([WITH_INDEXED], [COB_IO_VISAM])
+	    AC_DEFINE([WITH_IXDFLT], ["V-ISAM"])
+  	  elif test "$with_cisam" = "yes"; then
+	    AC_DEFINE([WITH_INDEXED], [COB_IO_CISAM])
+	    AC_DEFINE([WITH_IXDFLT], ["C-ISAM"])
+  	  elif test "$with_disam" = "yes"; then
+	    AC_DEFINE([WITH_INDEXED], [COB_IO_DISAM])
+	    AC_DEFINE([WITH_IXDFLT], ["D-ISAM"])
+  	  elif test "$with_vbisam" = "yes"; then
+	    AC_DEFINE([WITH_INDEXED], [COB_IO_VBISAM])
+	    AC_DEFINE([WITH_IXDFLT], ["VB-ISAM"])
+  	  elif test "$with_db" = "yes"; then
+	    AC_DEFINE([WITH_INDEXED], [COB_IO_BDB])
+	    AC_DEFINE([WITH_IXDFLT], ["BDB"])
+  	  elif test "$with_lmdb" = "yes"; then
+	    AC_DEFINE([WITH_INDEXED], [COB_IO_LMDB])
+	    AC_DEFINE([WITH_IXDFLT], ["LMDB"])
+	  fi
+  ])
 
 if test "$cob_has_isam" = "yes"; then
 # Some INDEXED handler was selected so do not check for others
@@ -1784,6 +1787,14 @@ if test "$with_db" = "yes" -o "$with_db" = "check"; then
 	LIBS="$curr_libs"
 fi
 
+AC_ARG_WITH([lmdb],
+[AS_HELP_STRING([--with-lmdb],
+  [Use Lightning Memory-Mapped Database (LMDB) for INDEXED I/O (experimental, no locking or shared storage, write is extremely slow)])],
+[ if test "$with_lmdb" = "yes"; then
+  AC_DEFINE([WITH_LMDB], [1])
+  fi ],
+[])
+
 if test "$with_lmdb" = "yes"; then
 	AC_MSG_NOTICE([Checks for Lightning Memory-Mapped Database (LMDB) ...])
 	AC_CHECK_HEADER([lmdb.h], [],	AC_MSG_ERROR([LMDB lmdb.h is missing]),[])
@@ -1839,14 +1850,6 @@ if test "$with_lmdb" = "yes"; then
 	cob_gen_lmdb=yes
 	LIBS="$curr_libs"
 fi
-
-AC_ARG_WITH([lmdb],
-[AS_HELP_STRING([--with-lmdb],
-  [Use Lightning Memory-Mapped Database (LMDB) for INDEXED I/O (experimental, no locking or shared storage, write is extremely slow)])],
-[ if test "$with_lmdb" = "yes"; then
-  AC_DEFINE([WITH_LMDB], [1])
-  fi ],
-[])
 
 AC_ARG_WITH([index-extfh],
 [AS_HELP_STRING([--with-index-extfh],
@@ -2643,10 +2646,10 @@ if test "$with_lmdb" = "yes"; then
   AC_MSG_NOTICE([ Use LMDB for INDEXED I/O:                    yes])
 fi
 if test "$with_odbc" = "yes"; then
-  AC_MSG_NOTICE([ Use ODBC for INDEXED I/O:                    yes])
+  AC_MSG_NOTICE([ Use ODBC for INDEXED/RELATIVE I/O:           yes])
 fi
 if test "$with_oci" = "yes"; then
-  AC_MSG_NOTICE([ Use Oracle DB (OCI) for INDEXED I/O:         yes])
+  AC_MSG_NOTICE([ Use Oracle (OCI) for INDEXED/RELATIVE I/O:   yes])
 fi
 
 if test "$COB_HAS_ISAM" = no; then
