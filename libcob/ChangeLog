@@ -1,4 +1,8 @@
 
+2021-02-22  Ron Norman <rjn@inglenet.com>
+
+	* fodbc.c: When testing for database type, peek at the error message
+
 2021-02-19  Ron Norman <rjn@inglenet.com>
 
 	* fileio.h: When checking INDEXED file format, if VB-ISAM

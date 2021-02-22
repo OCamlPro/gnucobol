@@ -334,6 +334,7 @@ chkSts(
 	} else {
 		htype = SQL_HANDLE_STMT;
 	}
+	memset(db->lastErrMsg,0,sizeof(db->lastErrMsg));
 
 	if(msg == NULL)
 		msg = (void*)"?";
@@ -349,6 +350,13 @@ chkSts(
 		if (memcmp(szState,"01004",5) == 0)
 			return 0;
 		memcpy(db->odbcState, szState, 5);
+		i = strlen(errMsg);
+		if (i > errLen)
+			i = errLen;
+		if (i < sizeof(db->lastErrMsg)-1) 
+			strcpy(db->lastErrMsg,errMsg);
+		else
+			memcpy(db->lastErrMsg,errMsg,sizeof(db->lastErrMsg)-1);
 		DEBUG_LOG("db",("%.40s Status of %d '%.5s'\n", msg, db->dbStatus, szState));
 		if(errMsg[0] >= ' ')
 			DEBUG_LOG("db",("    : %s\n",errMsg));
@@ -414,6 +422,10 @@ chkSts(
 		i = errLen;
 	if(errMsg[i-1] == '\n')
 		errMsg[--i] = 0;
+	if (i < sizeof(db->lastErrMsg)-1) 
+		strcpy(db->lastErrMsg,errMsg);
+	else
+		memcpy(db->lastErrMsg,errMsg,sizeof(db->lastErrMsg)-1);
 
 	if(db->dbStatus == db->dbStsNotFound2)		/* MODE=ANSI 'Not found' */
 		db->dbStatus = db->dbStsNotFound;		/* Set internal 'Not found' status */
@@ -1058,6 +1070,7 @@ odbcStmt(
 	int			k, len, rtn = 0, ind = 0;
 	char		msg[80];
 
+	stmtHndl = NULL;
 	if(chkSts(db,(char*)"Alloc stmtHndl",db->dbDbcH,
 				SQLAllocHandle( SQL_HANDLE_STMT, db->dbDbcH, &stmtHndl ))) {
 		DEBUG_LOG("db",("SQLAllocHandle %s status %d; Failed!\n",stmt,db->dbStatus));
@@ -1080,8 +1093,9 @@ odbcStmt(
 				SQLBindCol(stmtHndl, 1, SQL_C_CHAR, 
 						varFetch, sizeof(varFetch)-1, (SQLPOINTER)&ind));
 		memset(varFetch,0,sizeof(varFetch));
-		if(chkSts(db,(char*)"Fetch Stmt",stmtHndl, SQLFetch(stmtHndl))) {
-			DEBUG_LOG("db",("Fetch: %.50s; Sts %d\n",stmt,db->dbStatus));
+		if (chkSts(db,(char*)"Fetch Stmt",stmtHndl, SQLFetch(stmtHndl))
+		 && varFetch[0] == 0x00) {
+			DEBUG_LOG("db",("Fetch: %.40s; Sts %d; '%.16s'\n",stmt,db->dbStatus,varFetch));
 			rtn = db->dbStatus;
 		} else {
 			varFetch[sizeof(varFetch)-1] = 0;
@@ -1180,7 +1194,7 @@ odbc_create_table (
 /* INDEXED */
 
 static void
-join_environment (cob_file_api *a)
+join_environment (cob_file_api *a, cob_file *f)
 {
 	char	*env, tmp[256];
 	SQLSMALLINT		len;
@@ -1384,18 +1398,34 @@ join_environment (cob_file_api *a)
 	DEBUG_LOG("db",("%s successful connection\n",db->dbType));
 	sts = odbcStmt(db,(char*)"SELECT @@version");
 	if (sts) {
+		if (strstr(db->lastErrMsg,"[SQLite]") != NULL)
+			goto is_sqlite;
 		/* Try PostgeSQL version() */
 		sts = odbcStmt(db,(char*)"SELECT version()");
 		if (sts) {
 			/* Try SQLite version() */
 			sts = odbcStmt(db,(char*)"SELECT sqlite_version()");
-			if(sts == 0) {
+			if(sts == 0 || sts == -1) {
+	is_sqlite:
 				db->mssql = FALSE;
 				db->db2 = FALSE;
 				db->sqlite = TRUE;
 				db->no_for_update = TRUE;
 				db->dbStsNoTable = 1098;
-				goto db_is_ready;
+				strcpy(db->dbType,"SQLite");
+				if ((f->lock_mode & COB_LOCK_ROLLBACK)) {	/* Had APPLY COMMIT */ 
+					db->autocommit = FALSE;
+					if ((f->share_mode & COB_SHARE_NO_OTHER)
+					 || (f->lock_mode & COB_FILE_EXCLUSIVE) ) {
+						odbcStmt (db, (char*)"BEGIN EXCLUSIVE");
+					} else {
+						odbcStmt (db, (char*)"BEGIN DEFERRED");
+					}
+				} else {
+					db->autocommit = TRUE;
+				}
+				db->isopen = TRUE;
+				return;
 			}
 		}
 	}
@@ -1453,21 +1483,35 @@ join_environment (cob_file_api *a)
 		}
 	}
 
-db_is_ready:
 	db->isopen = TRUE;
-
-	/* Default to AUTO COMMIT ON */
-	if (db->mysql) {
-		odbcStmt (db, (char*)"SET autocommit=1");
-	} else {
-		if(chkSts(db,(char*)"AUTO COMMIT ON",db->dbDbcH,
-			SQLSetConnectAttr(db->dbDbcH,SQL_ATTR_AUTOCOMMIT,
-										(SQLPOINTER)SQL_AUTOCOMMIT_ON,SQL_IS_UINTEGER))) {
-			return;
+	if ((f->lock_mode & COB_LOCK_ROLLBACK)) {	/* Had APPLY COMMIT */ 
+		db->autocommit = FALSE;
+		/* Default to AUTO COMMIT OFF */
+		if (db->mysql) {
+			odbcStmt (db, (char*)"SET autocommit=0");
+		} else {
+			if(chkSts(db,(char*)"AUTO COMMIT OFF",db->dbDbcH,
+				SQLSetConnectAttr(db->dbDbcH,SQL_ATTR_AUTOCOMMIT,
+											(SQLPOINTER)SQL_AUTOCOMMIT_OFF,SQL_IS_UINTEGER))) {
+				return;
+			}
 		}
+		DEBUG_LOG("db",("%s: AutoCommit is OFF!\n",db->dbType));
+	} else {
+
+		/* Default to AUTO COMMIT ON */
+		if (db->mysql) {
+			odbcStmt (db, (char*)"SET autocommit=1");
+		} else {
+			if(chkSts(db,(char*)"AUTO COMMIT ON",db->dbDbcH,
+				SQLSetConnectAttr(db->dbDbcH,SQL_ATTR_AUTOCOMMIT,
+											(SQLPOINTER)SQL_AUTOCOMMIT_ON,SQL_IS_UINTEGER))) {
+				return;
+			}
+		}
+		DEBUG_LOG("db",("%s: AutoCommit is ON!\n",db->dbType));
+		db->autocommit = TRUE;
 	}
-	DEBUG_LOG("db",("%s: AutoCommit is ON!\n",db->dbType));
-	db->autocommit = TRUE;
 }
 
 /* Delete file */
@@ -1480,7 +1524,7 @@ odbc_file_delete (cob_file_api *a, cob_file *f, char *filename)
 
 	DEBUG_LOG("db",("DELETE FILE %s\n",f->select_name));
 	if (db_join) {			/* Join DataBase, on first OPEN of INDEXED file */
-		join_environment (a);
+		join_environment (a, f);
 		if (db_join < 0) {
 			return COB_STATUS_30_PERMANENT_ERROR;
 		}
@@ -1533,7 +1577,7 @@ odbc_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 	}
 	if (db_join) {			/* Join DataBase, on first OPEN of INDEXED file */
 		joined = 1;
-		join_environment (a);
+		join_environment (a, f);
 		if (db_join < 0) {
 			return COB_STATUS_30_PERMANENT_ERROR;
 		}
