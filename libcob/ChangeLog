@@ -1,4 +1,15 @@
 
+2021-02-25  Ron Norman <rjn@inglenet.com>
+
+	* coblocal.h: Add 'cob_file_vbisam' 
+	* common.c: Added COB_FILE_VBISAM as runtime option
+	* common.h: Add to cob_file, isam_duplen, isam_idxsz, flag_vb_isam
+	* fileio.c: If using V-ISAM and format is one of cisam, disam, vbisam
+			then use the V-ISAM handler but set flag_vb_isam accordingly
+			Also use the V-ISAM handler for any of the other missing ISAMs
+	* fisam.c: Removed the code for first attempt at commit/rollback
+			This has been superseded by the logic in fileio.c
+
 2021-02-22  Ron Norman <rjn@inglenet.com>
 
 	* fodbc.c: When testing for database type, peek at the error message

@@ -415,6 +415,7 @@ static struct config_tbl gc_conf[] = {
     {"COB_FILE_DICTIONARY","file_dictionary",     "min",dict_opts,GRP_FILE,ENV_UINT|ENV_ENUMVAL,SETPOS(cob_file_dict),0,3},
 	{"COB_FILE_DICTIONARY_PATH","file_dictionary_path",		NULL,	NULL,GRP_FILE,ENV_FILE,SETPOS(cob_dictionary_path)},
 	{"COB_FILE_ROLLBACK", "rollback", 	"0", 	NULL, GRP_FILE, ENV_BOOL, SETPOS (cob_file_rollback)},
+	{"COB_FILE_VBISAM", "file_vbisam", 	"0", 	NULL, GRP_FILE, ENV_BOOL, SETPOS (cob_file_vbisam)},
 	{"COB_STOP_RUN_COMMIT", "stop_run_commit", 	"0", 	NULL, GRP_FILE, ENV_BOOL, SETPOS (cob_stop_run_commit)},
     {"COB_DUPS_AHEAD","dups_ahead",     "default",dups_opts,GRP_FILE,ENV_UINT|ENV_ENUMVAL,SETPOS(cob_file_dups),0,3},
 #ifdef  WITH_DB

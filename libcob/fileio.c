@@ -531,7 +531,10 @@ write_file_def (cob_file *f, char *out)
 
 	out[k] = 0;
 	if(f->organization == COB_ORG_INDEXED) {
-		k += sprintf(&out[k],"type=IX format=%s",io_rtns[f->io_routine].name);
+		if (f->flag_vb_isam)
+			k += sprintf(&out[k],"type=IX format=%s","vbisam");
+		else
+			k += sprintf(&out[k],"type=IX format=%s",io_rtns[f->io_routine].name);
 	} else if(f->organization == COB_ORG_RELATIVE) {
 		k += sprintf(&out[k],"type=RL");
 		if(f->file_format < 12)
@@ -1504,6 +1507,10 @@ cob_set_file_defaults (cob_file *f)
 	 */
 	if (f->organization == COB_ORG_INDEXED) {
 		f->io_routine = ix_routine;
+		if (file_setptr->cob_file_vbisam)
+			f->flag_vb_isam = 1;
+		else
+			f->flag_vb_isam = 0;
 		f->flag_read_chk_dups = 0;
 		f->flag_read_no_02 = 0;
 		if (file_setptr->cob_file_dups == COB_DUPS_ALWAYS) {
@@ -1871,6 +1878,26 @@ cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 				value[j] = 0;
 				for(j=0; j < COB_IO_MAX; j++) {
 					if(strcasecmp(value,io_rtns[j].name) == 0) {
+#if defined(WITH_VISAM)
+#if !defined(WITH_CISAM)
+						if (j == COB_IO_CISAM) {	/* C-ISAM not present but V-ISAM is */
+							j = COB_IO_VISAM;
+							f->flag_vb_isam = 0;
+						}
+#endif
+#if !defined(WITH_DISAM)
+						if (j == COB_IO_DISAM) {	/* D-ISAM not present but V-ISAM is */
+							j = COB_IO_VISAM;
+							f->flag_vb_isam = 0;
+						}
+#endif
+#if !defined(WITH_VBISAM)
+						if (j == COB_IO_VBISAM) {	/* VB-ISAM not present but V-ISAM is */
+							j = COB_IO_VISAM;
+							f->flag_vb_isam = 1;	/* Build in VB-ISAM format */
+						}
+#endif
+#endif
 						if (!io_rtns[j].config)
 							cob_runtime_error (_("I/O routine %s is not configured for %s"),
 												io_rtns[j].name,file_open_env);
@@ -2185,6 +2212,14 @@ cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 					if(ret) *ret = xret;
 					if(xret != 0) break;
 					
+				} else if (strcasecmp(option,"duplen") == 0) {
+					f->isam_duplen = ivalue;
+				} else if (strcasecmp(option,"indexsz") == 0) {
+					if (ivalue > (16*1024))
+						ivalue = (16*1024);
+					if (ivalue < 0)
+						ivalue = 0;
+					f->isam_idxsz = (ivalue + 511) / 512;
 				} else if (strncasecmp(option,"dup",3) == 0) {
 					keyn = atoi (&option[3]);
 					idx = keyn - 1;
@@ -8215,6 +8250,24 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 #if defined(WITH_INDEXED)
 	io_rtns [WITH_INDEXED].loaded = 1;
 	io_rtns [WITH_INDEXED].config = 1;
+	/* V-ISAM can handle all of C|D|VB-ISAM format files */
+#if (WITH_INDEXED == COB_IO_VISAM) 
+#if !defined(WITH_CISAM)
+	io_rtns [COB_IO_CISAM].config = 1;
+	io_rtns [COB_IO_CISAM].loaded = 1;
+	file_api.io_funcs[COB_IO_CISAM] = file_api.io_funcs[COB_IO_VISAM];
+#endif
+#if !defined(WITH_DISAM)
+	io_rtns [COB_IO_DISAM].config = 1;
+	io_rtns [COB_IO_DISAM].loaded = 1;
+	file_api.io_funcs[COB_IO_DISAM] = file_api.io_funcs[COB_IO_VISAM];
+#endif
+#if !defined(WITH_VBISAM)
+	io_rtns [COB_IO_VBISAM].config = 1;
+	io_rtns [COB_IO_VBISAM].loaded = 1;
+	file_api.io_funcs[COB_IO_VBISAM] = file_api.io_funcs[COB_IO_VISAM];
+#endif
+#endif
 #endif
 #endif
 
