@@ -844,6 +844,7 @@ static int
 isam_set_mode (cob_file *f)
 {
 	int	fmode = 0;
+#if defined(WITH_VISAM)
 	if (f->flag_vb_isam) 		/* Set default ISAM format */
 		fmode = ISMVBISAM;
 	else
@@ -855,6 +856,7 @@ isam_set_mode (cob_file *f)
 	if (f->isam_idxsz > 0) {	/* Size of index blocks */
 		fmode |= f->isam_idxsz << ISMIDXSHIFT;
 	}
+#endif
 	return fmode;
 }
 
