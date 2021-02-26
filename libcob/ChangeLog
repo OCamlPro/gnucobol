@@ -1,6 +1,11 @@
 
 2021-02-25  Ron Norman <rjn@inglenet.com>
 
+	* fileio.c: Some additional checks to select appropriate I/O routine
+			if the ISAM files are to be VB-ISAM format instead of C-ISAM
+
+2021-02-25  Ron Norman <rjn@inglenet.com>
+
 	* coblocal.h: Add 'cob_file_vbisam' 
 	* common.c: Added COB_FILE_VBISAM as runtime option
 	* common.h: Add to cob_file, isam_duplen, isam_idxsz, flag_vb_isam

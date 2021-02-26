@@ -1507,10 +1507,15 @@ cob_set_file_defaults (cob_file *f)
 	 */
 	if (f->organization == COB_ORG_INDEXED) {
 		f->io_routine = ix_routine;
-		if (file_setptr->cob_file_vbisam)
-			f->flag_vb_isam = 1;
-		else
-			f->flag_vb_isam = 0;
+		f->flag_vb_isam = 0;
+		if (file_setptr->cob_file_vbisam) {
+			f->flag_vb_isam = 1;			/* Old VB-ISAM format wanted */
+#if defined(WITH_VBISAM)
+			f->io_routine = COB_IO_VBISAM;
+#elif defined(WITH_VISAM)
+			f->io_routine = COB_IO_VISAM;
+#endif
+		}
 		f->flag_read_chk_dups = 0;
 		f->flag_read_no_02 = 0;
 		if (file_setptr->cob_file_dups == COB_DUPS_ALWAYS) {
@@ -1897,6 +1902,11 @@ cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 							f->flag_vb_isam = 1;	/* Build in VB-ISAM format */
 						}
 #endif
+#elif defined(WITH_DISAM)
+						if (j == COB_IO_CISAM) {	/* C-ISAM not present but D-ISAM is */
+							j = COB_IO_DISAM;
+							f->flag_vb_isam = 0;
+						}
 #endif
 						if (!io_rtns[j].config)
 							cob_runtime_error (_("I/O routine %s is not configured for %s"),
