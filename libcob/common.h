@@ -2491,16 +2491,16 @@ typedef struct __fcd3 {
 
 #define LSUCHAR(f)	((unsigned char*)(f))
 /* xxCOMPXn : Big Endian Binary data */
-#define LDCOMPX2(f)	(((f[0] << 8 ) & 0xFF00) | (f[1] & 0xFF))
-#define LDCOMPX4(f)	(((f[0] << 24 ) & 0xFF000000) | ((f[1] << 16 ) & 0xFF0000) | ((f[2] << 8 ) & 0xFF00) | (f[3] & 0xFF))
-#define STCOMPX2(v,f)	(f[1] = (v) & 0xFF, f[0] = ((v) >> 8) & 0xFF)
-#define STCOMPX4(v,f)	(f[3] = (v) & 0xFF, f[2] = ((v) >> 8) & 0xFF, f[1] = ((v) >> 16) & 0xFF, f[0] = ((v) >> 24) & 0xFF)
+#define LDCOMPX2(f)	((((f)[0] << 8 ) & 0xFF00) | ((f)[1] & 0xFF))
+#define LDCOMPX4(f)	((((f)[0] << 24 ) & 0xFF000000) | (((f)[1] << 16 ) & 0xFF0000) | (((f)[2] << 8 ) & 0xFF00) | ((f)[3] & 0xFF))
+#define STCOMPX2(v,f)	((f)[1] = (v) & 0xFF, (f)[0] = ((v) >> 8) & 0xFF)
+#define STCOMPX4(v,f)	((f)[3] = (v) & 0xFF, (f)[2] = ((v) >> 8) & 0xFF, (f)[1] = ((v) >> 16) & 0xFF, (f)[0] = ((v) >> 24) & 0xFF)
 
 /* xxBINLEn : Little Endian Binary data */
-#define LDBINLE2(f)	(((f[1] << 8 ) & 0xFF00) | (f[0] & 0xFF))
-#define LDBINLE4(f)	(((f[3] << 24 ) & 0xFF000000) | ((f[2] << 16 ) & 0xFF0000) | ((f[1] << 8 ) & 0xFF00) | (f[0] & 0xFF))
-#define STBINLE2(v,f)	(f[0] = (v) & 0xFF, f[1] = ((v) >> 8) & 0xFF)
-#define STBINLE4(v,f)	(f[0] = (v) & 0xFF, f[1] = ((v) >> 8) & 0xFF, f[2] = ((v) >> 16) & 0xFF, f[3] = ((v) >> 24) & 0xFF)
+#define LDBINLE2(f)	((((f)[1] << 8 ) & 0xFF00) | ((f)[0] & 0xFF))
+#define LDBINLE4(f)	((((f)[3] << 24 ) & 0xFF000000) | (((f)[2] << 16 ) & 0xFF0000) | (((f)[1] << 8 ) & 0xFF00) | ((f)[0] & 0xFF))
+#define STBINLE2(v,f)	((f)[0] = (v) & 0xFF, (f)[1] = ((v) >> 8) & 0xFF)
+#define STBINLE4(v,f)	((f)[0] = (v) & 0xFF, (f)[1] = ((v) >> 8) & 0xFF, (f)[2] = ((v) >> 16) & 0xFF, (f)[3] = ((v) >> 24) & 0xFF)
 
 /*************************/
 /* EXTFH operation codes */

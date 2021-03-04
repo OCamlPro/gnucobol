@@ -74,8 +74,9 @@ update_file_to_fcd (cob_file *f, FCD3 *fcd, unsigned char *fnstatus)
 	else if (f->open_mode == COB_OPEN_EXTEND)
 		fcd->openMode = OPEN_EXTEND;
 	STCOMPX4(f->record_min,fcd->minRecLen);
-	STCOMPX4(f->record->size,fcd->curRecLen);
 	STCOMPX4(f->record_max,fcd->maxRecLen);
+	if (f->record)
+		STCOMPX4(f->record->size,fcd->curRecLen);
 	if (f->record_min == f->record_max)
 		fcd->recordMode = REC_MODE_FIXED;
 	else
@@ -141,9 +142,11 @@ copy_file_to_fcd (cob_file *f, FCD3 *fcd)
 
 	if (f->assign) {
 		cob_field_to_string (f->assign, assignto, sizeof(assignto)-1);
-	} else {
+	} else if (f->select_name) {
 		strncpy (assignto, f->select_name, sizeof(assignto)-1);
 		assignto[sizeof(assignto)-1] = 0;
+	} else {
+		assignto[0] = 0;
 	}
 	STCOMPX2(sizeof(FCD3),fcd->fcdLen);
 	fcd->fcdVer = FCD_VER_64Bit;
@@ -186,6 +189,17 @@ copy_file_to_fcd (cob_file *f, FCD3 *fcd)
 		STCOMPX2(0, fcd->refKey);
 		fcd->fileOrg = ORG_INDEXED;
 		fcd->fileFormat = MF_FF_CISAM;
+		if (f->flag_vb_isam) {
+			fcd->fileFormat = MF_FF_VBISAM;
+		} else if (f->io_routine == COB_IO_ODBC) {
+			fcd->fileFormat = MF_FF_ODBC;
+		} else if (f->io_routine == COB_IO_OCI) {
+			fcd->fileFormat = MF_FF_OCI;
+		} else if (f->io_routine == COB_IO_BDB) {
+			fcd->fileFormat = MF_FF_BDB;
+		} else if (f->io_routine == COB_IO_LMDB) {
+			fcd->fileFormat = MF_FF_LMDB;
+		}
 		/* Copy Key information from cob_file to FCD */
 		for (idx=keycomp=0; idx < f->nkeys; idx++) {
 			if (f->keys[idx].count_components <= 1) {
@@ -196,7 +210,7 @@ copy_file_to_fcd (cob_file *f, FCD3 *fcd)
 		}
 		if (fcd->kdbPtr == NULL
 		 && f->nkeys > 0) {
-			nkeys = f->nkeys < 16 ? 16 : f->nkeys;
+			nkeys = f->nkeys < 16 ? f->nkeys : 16;
 			kdblen = sizeof(KDB) - sizeof(kdb->key) + (sizeof(KDB_KEY) * nkeys) + (sizeof(EXTKEY) * keycomp);
 			nkeys = f->nkeys;
 			fcd->kdbPtr = kdb = cob_cache_malloc(kdblen + sizeof(EXTKEY));
@@ -212,15 +226,20 @@ copy_file_to_fcd (cob_file *f, FCD3 *fcd)
 		} else {
 			kdb = fcd->kdbPtr;
 			nkeys = LDCOMPX2(kdb->nkeys);
-			if (nkeys > f->nkeys) {
+			if (nkeys <= 1 && f->nkeys > 0)
 				nkeys = f->nkeys;
-			}
+			else if (nkeys > f->nkeys)
+				nkeys = f->nkeys;
+			else
+				nkeys = 1;
 		}
 		keypos = (sizeof(KDB_KEY) * nkeys) + sizeof(KDB) - sizeof(kdb->key);
+		STCOMPX2(nkeys, kdb->nkeys);
 		for(idx=0; idx < nkeys; idx++) {
 			key = (EXTKEY*)((char*)((char*)kdb) + keypos);
 			STCOMPX2(keypos, kdb->key[idx].offset);
 			kdb->key[idx].keyFlags = 0;
+			kdb->key[idx].sparse = 0;
 			if(f->keys[idx].tf_duplicates)
 				kdb->key[idx].keyFlags |= KEY_DUPS;
 			if(f->keys[idx].tf_suppress) {
@@ -228,6 +247,8 @@ copy_file_to_fcd (cob_file *f, FCD3 *fcd)
 				kdb->key[idx].sparse = (unsigned char)f->keys[idx].char_suppress;
 			}
 			if(f->keys[idx].count_components <= 1) {
+				if (f->keys[idx].field == NULL)
+					continue;
 				STCOMPX2(1,kdb->key[idx].count);
 				STCOMPX4(f->keys[idx].offset, key->pos);
 				STCOMPX4(f->keys[idx].field->size, key->len);
@@ -236,6 +257,10 @@ copy_file_to_fcd (cob_file *f, FCD3 *fcd)
 				STCOMPX2(f->keys[idx].count_components, kdb->key[idx].count);
 				for(k=0; k < (int)f->keys[idx].count_components; k++) {
 					key = (EXTKEY*)((char*)((char*)kdb) + keypos);
+					key->desc = 0;
+					key->type = 0;
+					if (f->keys[idx].component[k] == NULL)
+						continue;
 					STCOMPX4(f->keys[idx].component[k]->data - f->record->data, key->pos);
 					STCOMPX4(f->keys[idx].component[k]->size, key->len);
 					keypos = keypos + sizeof(EXTKEY);
@@ -296,7 +321,8 @@ update_fcd_to_file (FCD3* fcd, cob_file *f, cob_field *fnstatus, int wasOpen)
 	}
 	f->record_min = LDCOMPX4(fcd->minRecLen);
 	f->record_max = LDCOMPX4(fcd->maxRecLen);
-	f->record->size = LDCOMPX4(fcd->curRecLen);
+	if (f->record)
+		f->record->size = LDCOMPX4(fcd->curRecLen);
 
 	if (fcd->gcFlags & MF_CALLFH_TRACE)
 		f->trace_io = 1;
@@ -333,6 +359,7 @@ copy_keys_fcd_to_file (FCD3 *fcd, cob_file *f)
 {
 	int		k, p, parts, off, klen;
 	EXTKEY	*key;
+	f->flag_keycheck = 0;
 	for (k=0; k < (int)f->nkeys; k++) {
 		parts = LDCOMPX2(fcd->kdbPtr->key[k].count);
 		off   = LDCOMPX2(fcd->kdbPtr->key[k].offset);
@@ -382,7 +409,7 @@ copy_keys_fcd_to_file (FCD3 *fcd, cob_file *f)
 static void
 copy_fcd_to_file (FCD3* fcd, cob_file *f)
 {
-	int	k;
+	int	k, min, max;
 
 	if(fcd->accessFlags == ACCESS_SEQ)
 		f->access_mode = COB_ACCESS_SEQUENTIAL;
@@ -411,6 +438,8 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f)
 			f->io_routine = COB_IO_CISAM;
 #elif WITH_DISAM
 			f->io_routine = COB_IO_DISAM;
+#elif WITH_VISAM
+			f->io_routine = COB_IO_VISAM;
 #elif WITH_VBISAM
 			f->io_routine = COB_IO_VBISAM;
 #elif WITH_DB
@@ -418,10 +447,14 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f)
 #elif WITH_LMDB
 			f->io_routine = COB_IO_LMDB;
 #endif
+			f->flag_auto_type = 1;
+			f->flag_keycheck = 0;
 		} else if (fcd->fileFormat == MF_FF_CISAM)
 			f->io_routine = COB_IO_CISAM;
 		else if (fcd->fileFormat == MF_FF_DISAM)
 			f->io_routine = COB_IO_DISAM;
+		else if (fcd->fileFormat == MF_FF_VISAM)
+			f->io_routine = COB_IO_VISAM;
 		else if (fcd->fileFormat == MF_FF_VBISAM)
 			f->io_routine = COB_IO_VBISAM;
 		else if (fcd->fileFormat == MF_FF_BDB)
@@ -456,8 +489,24 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f)
 		f->organization = COB_ORG_MAX;
 	}
 
+	/* Try for some record size */
+	min = LDCOMPX4(fcd->minRecLen);
+	max = LDCOMPX4(fcd->maxRecLen);
+	k   = LDCOMPX4(fcd->curRecLen);
+	if (k <= 0) {
+		if (max > 0)
+			STCOMPX4 (max, fcd->curRecLen);
+		else if (min > 0)
+			STCOMPX4 (min, fcd->curRecLen);
+	}
+	if (k < min)
+		STCOMPX4 (min, fcd->curRecLen);
+	if (k > max)
+		STCOMPX4 (max, fcd->curRecLen);
 	/* Allocate cob_file fields as needed and copy from FCD */
-	if (f->record == NULL) {
+	if (f->record == NULL
+	 && fcd->recPtr != NULL
+	 && LDCOMPX4(fcd->curRecLen) > 0) {
 		f->record = cob_cache_malloc(sizeof(cob_field));
 		f->record->data = fcd->recPtr;
 		f->record->size = LDCOMPX4(fcd->curRecLen);
@@ -548,6 +597,7 @@ find_file (FCD3 *fcd)
 	}
 	f = cob_cache_malloc (sizeof(cob_file));
 	f->file_version = COB_FILE_VERSION;
+	f->open_mode = COB_OPEN_CLOSED;
 	copy_fcd_to_file (fcd, f);
 	ff = cob_cache_malloc (sizeof(struct fcd_file));
 	ff->next = fcd_file_list;
@@ -1000,6 +1050,7 @@ EXTFH (unsigned char *opcode, FCD3 *fcd)
 {
 	int	opcd,sts,opts,eop,k;
 	unsigned char	fnstatus[2],keywrk[80];
+	char fname[COB_FILE_MAX];
 	cob_field fs[1];
 	cob_field key[1];
 	cob_field rec[1];
@@ -1031,7 +1082,7 @@ EXTFH (unsigned char *opcode, FCD3 *fcd)
 		COB_MODULE_PTR = cob_malloc( sizeof(cob_module) );
 		COB_MODULE_PTR->module_name = "GnuCOBOL-fileio";
 		COB_MODULE_PTR->module_source = "GnuCOBOL-fileio";
-		COB_MODULE_PTR->module_formatted_date = "2020/01/02 12:01:20";
+		COB_MODULE_PTR->module_formatted_date = "2021/01/02 12:01:20";
 	}
 
 	if (*opcode == 0xFA) {
@@ -1073,27 +1124,54 @@ org_handling:
 	case ORG_LINE_SEQ:
 		break;
 	case ORG_DETERMINE:
-		if (opcd != OP_GETINFO) {
-			/* if we already registered this FCD to a file we can copy the old type */
-			if (f->organization == COB_ORG_INDEXED) {
-				fcd->fileOrg = ORG_INDEXED;
-			} else if (f->organization == COB_ORG_SEQUENTIAL) {
-				fcd->fileOrg = ORG_SEQ;
-			} else if (f->organization == COB_ORG_LINE_SEQUENTIAL) {
-				fcd->fileOrg = ORG_LINE_SEQ;
-			} else if (f->organization == COB_ORG_RELATIVE) {
-				fcd->fileOrg = ORG_RELATIVE;
+		if (opcd == OP_GETINFO) {
+			if (fcd->fnamePtr) {
+				k = strlen(fcd->fnamePtr);
+				if (k > LDCOMPX2(fcd->fnameLen))
+					k = LDCOMPX2(fcd->fnameLen);
+				while (k > 0 && fcd->fnamePtr[k-1] == ' ')
+					--k;
+				STCOMPX2(k,fcd->fnameLen);
+				memcpy (fname,fcd->fnamePtr,k);
+				fname[k] = 0;
+				f->flag_auto_type = 1;
+				f->flag_keycheck = 0;
+				f->organization = COB_ORG_MAX;	/* To Force file.dd to be processed */
+				if (f->record == NULL
+				 && fcd->recPtr != NULL
+				 && LDCOMPX4(fcd->curRecLen) > 0) {
+					f->record = cob_cache_malloc(sizeof(cob_field));
+					f->record->data = fcd->recPtr;
+					f->record->attr = &alnum_attr;
+					f->record->size = LDCOMPX4(fcd->maxRecLen);
+					f->record_min = LDCOMPX4(fcd->minRecLen);
+					f->record_max = LDCOMPX4(fcd->maxRecLen);
+				}
+				cob_chk_file_mapping (f, fname);
+				cob_read_dict (f, fname, 1, &sts);
+				copy_file_to_fcd (f,fcd);
 			}
+			return sts;
+		}
+		/* if we already registered this FCD to a file we can copy the old type */
+		if (f->organization == COB_ORG_INDEXED) {
+			fcd->fileOrg = ORG_INDEXED;
+		} else if (f->organization == COB_ORG_SEQUENTIAL) {
+			fcd->fileOrg = ORG_SEQ;
+		} else if (f->organization == COB_ORG_LINE_SEQUENTIAL) {
+			fcd->fileOrg = ORG_LINE_SEQ;
+		} else if (f->organization == COB_ORG_RELATIVE) {
+			fcd->fileOrg = ORG_RELATIVE;
+		}
+		if (fcd->fileOrg != ORG_DETERMINE) {
+			goto org_handling;
+#if 0
+		} else {
+			/* TODO: magic to get file type, for example try to idx-open the file */
 			if (fcd->fileOrg != ORG_DETERMINE) {
 				goto org_handling;
-#if 0
-			} else {
-				/* TODO: magic to get file type, for example try to idx-open the file */
-				if (fcd->fileOrg != ORG_DETERMINE) {
-					goto org_handling;
-				}
-#endif
 			}
+#endif
 		}
 		/* Fall through */
 	default:
@@ -1106,6 +1184,14 @@ org_handling:
 	rec->data = fcd->recPtr;
 	rec->size = LDCOMPX4(fcd->curRecLen);
 	rec->attr = &alnum_attr;
+	if (f->record == NULL) {
+		f->record = cob_cache_malloc(sizeof(cob_field));
+		f->record->data = fcd->recPtr;
+		f->record->size = LDCOMPX4(fcd->curRecLen);
+		f->record->attr = &alnum_attr;
+		f->record_min = LDCOMPX4(fcd->minRecLen);
+		f->record_max = LDCOMPX4(fcd->maxRecLen);
+	}
 
 	switch (opcd) {
 	case OP_OPEN_INPUT:

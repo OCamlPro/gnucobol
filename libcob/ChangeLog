@@ -1,4 +1,19 @@
 
+2021-03-04  Ron Norman <rjn@inglenet.com>
+
+	* common.h: Fixes to the LDCOMPX/STCOMPX set of defines
+	* fileio.h: Prototype for cob_chk_file_mapping was changed
+	* fextfh.c: Fixes to handle the OP_GETINO function code
+	            to collect information about an unopened file
+				Basically only works for INDEXED files
+	* fileio.c: Additonal code to inspect the index control blocks
+				of an ISAM file and save the details
+				cob_read_dict will check for dictionary in current
+				directory, then COB_SCHEMA_DIR.
+	* flmdb.c: Changes for cob_chk_file_mapping
+	* foci.c: When table is created, write dictionary filename.dd
+	* fodbc.c: When table is created, write dictionary filename.dd
+			
 2021-02-25  Ron Norman <rjn@inglenet.com>
 
 	* fileio.c: Some additional checks to select appropriate I/O routine

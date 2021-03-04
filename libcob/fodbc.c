@@ -1152,7 +1152,10 @@ odbc_recreate_index (
 			continue;
 		if (memcmp(fx->key[k]->create_index,"CREATE INDEX ",13) == 0) {
 			/* Skip UNIQUE INDEX */
-			j = sprintf(wrk,"DROP INDEX ");
+			if (db->mysql)
+				j = sprintf(wrk,"ALTER TABLE %s DROP INDEX IF EXISTS ",fx->tablename);
+			else 
+				j = sprintf(wrk,"DROP INDEX IF EXISTS ");
 			for (i=13; fx->key[k]->create_index[i] > ' '; )
 				wrk[j++] = fx->key[k]->create_index[i++];
 			wrk[j] = 0;
@@ -1172,6 +1175,13 @@ odbc_create_table (
 	struct db_state	*db,
 	struct file_xfd *fx)
 {
+	char	filedd[COB_FILE_MAX],*sdir;
+	if ((sdir = getenv("COB_SCHEMA_DIR")) == NULL)
+		sdir = (char*)COB_SCHEMA_DIR;
+	sprintf (filedd, "%s%s%s",sdir,SLASH_STR,fx->tablename);
+	if (db->a)
+		db->a->cob_write_dict (fx->fl, filedd);
+
 	cob_load_ddl (db, fx);
 	if (fx->create_table == NULL) {
 		db->dbStatus = db->dbStsNoTable;
@@ -1202,6 +1212,7 @@ join_environment (cob_file_api *a, cob_file *f)
 
 	db_join = -1;
 	memset(db,0,sizeof(struct db_state));
+	db->a = a;
 	db->dbStsOk			= 0;
 	db->dbStsDupKey		= 2601;
 	db->dbStsNotFound	= SQL_NO_DATA;

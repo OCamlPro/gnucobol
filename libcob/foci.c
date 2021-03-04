@@ -908,6 +908,13 @@ oci_create_table (
 	struct file_xfd *fx)
 {
 	int	k;
+	char	filedd[COB_FILE_MAX],*sdir;
+	if ((sdir = getenv("COB_SCHEMA_DIR")) == NULL)
+		sdir = (char*)COB_SCHEMA_DIR;
+	sprintf (filedd, "%s%s%s",sdir,SLASH_STR,fx->tablename);
+	if (db->a)
+		db->a->cob_write_dict (fx->fl, filedd);
+
 	cob_load_ddl (db, fx);
 	if (fx->create_table == NULL) {
 		db->dbStatus = db->dbStsNoTable;
@@ -938,8 +945,9 @@ join_environment (cob_file_api *a)
 	char	*env, *p, tmp[256];
 
 	db_join = -1;
-	db->isopen = FALSE;
 	memset(db,0,sizeof(struct db_state));
+	db->isopen = FALSE;
+	db->a = a;
 	db->dbStsOk			= 0;
 	db->dbStsDupKey		= 1;
 	db->dbStsNotFound	= 1403;

@@ -1,4 +1,8 @@
 
+2021-03-04  Ron Norman <rjn@inglenet.com>
+
+	* gcdiff.c: Fix bug in matching date/time pattern
+
 2020-12-22  Ron Norman <rjn@inglenet.com>
 	* cobcrun.c: call  cob_init_nomain  as all version info is now coming 
 			from the I/O modules themselves

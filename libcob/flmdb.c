@@ -882,7 +882,7 @@ lmdb_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 	int nonexistent = 0;
 	int lock_mode;
 
-	a->chk_file_mapping (f);
+	a->chk_file_mapping (f, NULL);
 
 	/* TODO: this variable should be moved to common.c as binary config */
 	if (getenv("MDB_NO_SHARED_FS_CHK") == NULL) {

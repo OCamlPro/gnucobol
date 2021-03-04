@@ -142,7 +142,7 @@ typedef struct _cob_file_api {
 	char			*file_open_buff;
 	void	(*add_file_cache)	(cob_file *);
 	void	(*del_file_cache)	(cob_file *);
-	void	(*chk_file_mapping)	(cob_file *f);
+	void	(*chk_file_mapping)	(cob_file *f, char *filename);
 	int		(*cob_write_dict)	(cob_file *f, char *filename);
 	int		(*cob_read_dict)	(cob_file *f, char *filename, int updt, int *retsts);
 	int		(*cob_file_write_opt) (cob_file *f, const int opt);
@@ -188,7 +188,7 @@ static const int	status_exception[] = {
 
 COB_HIDDEN int cob_write_dict (cob_file *f, char *filename);
 COB_HIDDEN int cob_read_dict (cob_file *f, char *filename, int updt, int *retsts);
-COB_HIDDEN void cob_chk_file_mapping (cob_file *f);
+COB_HIDDEN void cob_chk_file_mapping (cob_file *f, char *filename);
 COB_HIDDEN void cob_file_save_status (cob_file *f, cob_field *fnstatus, const int status);
 COB_HIDDEN void cob_file_sync (cob_file *f);
 
@@ -291,6 +291,7 @@ struct db_state {
 	int		dbStsNoTable;		/* 1146: Table does not exist */
 
 	char	lastErrMsg[80];		/* Recent DB Error msg */
+	cob_file_api	*a;	
 	void	*dbHome;			/* ORACLE_HOME value */
 
 	void	*dbEnvH;			/* DB Environment handle */

@@ -474,7 +474,13 @@ compare_file(FILE *ref, FILE *rslt, FILE *rpt)
 					memcpy(&tval, (void*)ptm, sizeof(struct tm));
 
 					for (n=0; n < templates[t].len; i++,j++,n++) {
-						if (rbuf[i] == nbuf[j])
+						if (rbuf[i] != 'Y'
+						 && rbuf[i] != 'M'
+						 && rbuf[i] != 'D'
+						 && rbuf[i] != 'd'
+						 && rbuf[i] != 'H'
+						 && rbuf[i] != 'S'
+						 && rbuf[i] == nbuf[j])
 							continue;
 						if (memcmp(&rbuf[i],"YYYY",4) == 0) {
 							tval.tm_year = num_val (&nbuf[i], 4) - 1900;
@@ -844,6 +850,12 @@ main(
 
 	sort_templates();
 	time(&nowis);
+	st_test.st_atime = nowis;
+	st_test.st_ctime = nowis;
+	st_test.st_mtime = nowis;
+	st_ref.st_atime = nowis;
+	st_ref.st_ctime = nowis;
+	st_ref.st_mtime = nowis;
 
 	if (strcmp(referencefile, GCD_DASH) == 0) {
 		ref = stdin;

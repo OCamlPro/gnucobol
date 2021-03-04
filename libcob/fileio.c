@@ -407,19 +407,96 @@ static const char ix_routine = COB_IO_IXEXT;
 static const char ix_routine = COB_IO_IXEXT;
 #endif
 #endif
+static const cob_field_attr alnum_attr = {COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL};
+
+/*
+ * Copy ISAM file info as documented in C-ISAM manual
+ */
+static void
+isam_to_file (FILE *fdin, cob_file *f, unsigned char *hbuf)
+{
+	unsigned char ibuf[4096], *p, *pp, cmprs;
+	int		idxblksz, idxblk, k, part, adj;
+	int		ttlen, klen, kpos, bgn, kdln, supchr;
+	idxblksz = LDCOMPX2 (hbuf+6) + 1;
+	f->nkeys = LDCOMPX2 (hbuf+8);
+	f->record_max = LDCOMPX2 (hbuf+13);
+	f->record_min = LDCOMPX2 (hbuf+13);
+	if (!f->flag_vb_isam)
+		idxblk = LDCOMPX4 (hbuf+15);
+	else
+		idxblk = LDCOMPX4 (hbuf+19);
+	memset(ibuf,0,sizeof(ibuf));
+	if (idxblksz > sizeof(ibuf))
+		idxblksz = sizeof(ibuf);
+	errno = 0;
+	if (fseek (fdin, (idxblk-1)*idxblksz, SEEK_SET) == 0
+	 && fread (ibuf, 1, (size_t)idxblksz, fdin) == (size_t)idxblksz) {
+		f->keys = cob_cache_realloc (f->keys, sizeof (cob_file_key) * f->nkeys);
+		if (!f->flag_vb_isam) {
+			bgn = 7;
+			supchr = 4;
+			p = &ibuf[6];
+		} else {
+			bgn = 11;
+			supchr = 5;
+			p = &ibuf[10];
+		}
+		for(k=0; k < f->nkeys; k++) {
+			kdln = LDCOMPX2 (p);
+			cmprs = p[bgn-1] << 1;
+			if (cmprs)
+				adj = 1;
+			else
+				adj = 0;
+			pp = &p[bgn];
+			p = &p[kdln];
+			f->keys[k].keyn = k;
+			if ((*pp & 0x80) == 0x80)
+				f->keys[k].tf_duplicates = 1;
+			else
+				f->keys[k].tf_duplicates = 0;
+			f->keys[k].tf_suppress = 0;
+			ttlen = 0;
+			for (part = 0; pp < p && part < COB_MAX_KEYCOMP; part++, pp+=(adj+5)) {
+				klen = LDCOMPX2 (pp) & 0x7FF;
+				kpos = LDCOMPX2 (pp+2);
+				if ((cmprs & 0x20) == 0x20) {
+					f->keys[k].tf_suppress = 1;
+					f->keys[k].char_suppress = pp[supchr];
+				}
+				ttlen += klen;
+				if (f->record->data) {
+					if (part == 0) {
+						f->keys[k].field = cob_cache_malloc(sizeof(cob_field));
+						f->keys[k].field->data = f->record->data + kpos;
+						f->keys[k].field->attr = &alnum_attr;
+						f->keys[k].field->size = klen;
+						f->keys[k].offset = kpos;
+					}
+					f->keys[k].component[part] = cob_cache_malloc(sizeof(cob_field));
+					f->keys[k].component[part]->data = f->record->data + kpos;
+					f->keys[k].component[part]->attr = &alnum_attr;
+					f->keys[k].component[part]->size = klen;
+				}
+			}
+			f->keys[k].count_components = part;
+		}
+	}
+}
 
 /* 
  * Determine which of C|D|VB-ISAM the file is
  * by checking for certain signatures in the filename.idx
  */
 static int
-indexed_file_type(char *filename)
+indexed_file_type (cob_file *f, char *filename)
 {
 	char temp[COB_FILE_MAX];
-	unsigned char hbuf[2048];
+	unsigned char hbuf[4096];
 	struct stat st;
 	int		idx;
-	FILE *fdin;
+	FILE	*fdin;
 
 	if (stat(filename, &st) != -1) {
 		if (S_ISDIR(st.st_mode)) {	/* Filename is a directory */
@@ -458,13 +535,18 @@ indexed_file_type(char *filename)
 	}
 	memset(hbuf,0,sizeof(hbuf));
 	fread(hbuf, 1, sizeof(hbuf), fdin);
-	fclose(fdin);
 
 	if(hbuf[0] == 0xFE 
 	&& hbuf[1] == 0x53				/* C|D-ISAM marker */
 	&& hbuf[2] == 0x02) {
 		int idxlen;
 		idxlen = (((hbuf[6] << 8) & 0xFF00) | hbuf[7]) + 1;
+		f->organization = COB_ORG_INDEXED;
+		if (f->flag_keycheck == 0) {	/* Update cob_file with ISAM details */
+			f->flag_vb_isam = 0;
+			isam_to_file (fdin, f, hbuf);
+		}
+		fclose(fdin);
 		/* D-ISAM and C-ISAM are interchangable */
 		if (idxlen <= sizeof(hbuf)
 		 && (memcmp(hbuf+idxlen-4,"dism",4) == 0
@@ -492,6 +574,12 @@ indexed_file_type(char *filename)
 	if(hbuf[0] == 'V' 
 	&& hbuf[1] == 'B'			/* VB-ISAM file marker */
 	&& hbuf[2] == 0x02) {
+		f->organization = COB_ORG_INDEXED;
+		if (f->flag_keycheck == 0) {	/* Update cob_file with ISAM details */
+			f->flag_vb_isam = 1;
+			isam_to_file (fdin, f, hbuf);
+		}
+		fclose(fdin);
 #if defined(WITH_VISAM)
 		return COB_IO_VISAM;	/* Use V-ISAM if present */
 #else
@@ -500,8 +588,10 @@ indexed_file_type(char *filename)
 	} else
 	if(hbuf[0] == 0x33
 	&& hbuf[1] == 0xFE) {		/* Micro Focus format */
+		fclose(fdin);
 		return COB_IO_MFIDX4;	/* Currently not supported!! */
 	}
+	fclose(fdin);
 	return -1;
 }
 
@@ -532,9 +622,9 @@ write_file_def (cob_file *f, char *out)
 	out[k] = 0;
 	if(f->organization == COB_ORG_INDEXED) {
 		if (f->flag_vb_isam)
-			k += sprintf(&out[k],"type=IX format=%s","vbisam");
+			k += sprintf(&out[k],"type=IX format=%s ","vbisam");
 		else
-			k += sprintf(&out[k],"type=IX format=%s",io_rtns[f->io_routine].name);
+			k += sprintf(&out[k],"type=IX format=%s ",io_rtns[f->io_routine].name);
 	} else if(f->organization == COB_ORG_RELATIVE) {
 		k += sprintf(&out[k],"type=RL");
 		if(f->file_format < 12)
@@ -567,15 +657,17 @@ write_file_def (cob_file *f, char *out)
 		if((f->file_features & COB_FILE_LS_SPLIT))
 			k += sprintf(&out[k],",ls_split");
 	}
-	if (f->xfdschema)
-		k += sprintf(&out[k],"schema='%s'",f->xfdschema);
-	if (f->xfdname)
-		k += sprintf(&out[k],"table='%s'",f->xfdname);
 	if (f->flag_big_endian)
 		k += sprintf(&out[k],",big-endian");
 	else if (f->flag_little_endian)
 		k += sprintf(&out[k],",little-endian");
 
+	if(f->organization == COB_ORG_RELATIVE) {
+		if (f->io_routine == COB_IO_ODBC)
+			k += sprintf(&out[k]," format=ODBC ");
+		else if (f->io_routine == COB_IO_OCI)
+			k += sprintf(&out[k]," format=OCI ");
+	}
 	if(f->organization == COB_ORG_LINE_SEQUENTIAL) {
 		k += sprintf(&out[k]," recsz=%d ",(int)(f->record_max));
 	} else if(f->record_min != f->record_max) {
@@ -584,6 +676,11 @@ write_file_def (cob_file *f, char *out)
 	} else {
 		k += sprintf(&out[k]," recsz=%d ",(int)(f->record_max));
 	}
+
+	if (f->xfdschema)
+		k += sprintf(&out[k],"schema='%s' ",f->xfdschema);
+	if (f->xfdname)
+		k += sprintf(&out[k],"table='%s' ",f->xfdname);
 
 	if (f->organization == COB_ORG_INDEXED
 	 && f->nkeys > 0) {
@@ -1148,7 +1245,10 @@ cob_write_dict (cob_file *f, char *filename)
 
 	if (file_setptr->cob_file_dict == COB_DICTIONARY_NO)
 		return 0;
-	if (file_setptr->cob_dictionary_path != NULL)
+	if (*filename == '.'
+	 || *filename == SLASH_CHAR)
+		sprintf(outdd,"%s.%s",filename,dict_ext);
+	else if (file_setptr->cob_dictionary_path != NULL)
 		sprintf(outdd,"%s%c%s.%s",file_setptr->cob_dictionary_path,
 					SLASH_CHAR,filename,dict_ext);
 	else
@@ -1169,20 +1269,35 @@ cob_write_dict (cob_file *f, char *filename)
 int				/* Return 1 on mistmatch, else 0 */
 cob_read_dict (cob_file *f, char *filename, int updt, int *retsts)
 {
-	char	inpdd[COB_FILE_MAX], ddbuf[2048];
+	char	inpdd[COB_FILE_MAX], ddbuf[2048], *sdir;
 	FILE	*fi;
-	int		line, ret;
+	int		line, ret, ftype;
 
 	if (file_setptr->cob_file_dict == COB_DICTIONARY_NO)
 		return 0;
-	if (file_setptr->cob_dictionary_path != NULL)
+	if (*filename == '.'
+	 || *filename == SLASH_CHAR)
+		sprintf(inpdd,"%s.%s",filename,dict_ext);
+	else if (file_setptr->cob_dictionary_path != NULL)
 		sprintf(inpdd,"%s%c%s.%s",file_setptr->cob_dictionary_path,
 					SLASH_CHAR,filename,dict_ext);
 	else
 		sprintf(inpdd,"%s.%s",filename,dict_ext);
 	fi = fopen(inpdd,"r");
-	if (fi == NULL) {		/* Not present so nothing can be done */
-		return 0;
+	if (fi == NULL) {		/* Not present; Check if is is INDEXED */
+		ftype = indexed_file_type (f, file_open_name);
+		if(ftype >= 0) {
+			f->io_routine = (unsigned char)ftype;
+			f->organization = COB_ORG_INDEXED;
+			return 0;
+		}
+		/* Not INDEXED file so check for OCI/ODBC */
+		if ((sdir = getenv("COB_SCHEMA_DIR")) == NULL)
+			sdir = (char*)COB_SCHEMA_DIR;
+		sprintf(inpdd,"%s%c%s.%s",sdir,SLASH_CHAR,filename,dict_ext);
+		fi = fopen(inpdd,"r");
+		if (fi == NULL)
+			return 1;
 	}
 	line = 0;
 	ret = 0;
@@ -1314,7 +1429,7 @@ cob_chk_file_env (cob_file *f, const char *src)
 }
 
 void
-cob_chk_file_mapping (cob_file *f)
+cob_chk_file_mapping (cob_file *f, char *filename)
 {
 	char		*p;
 	char		*src;
@@ -1328,6 +1443,8 @@ cob_chk_file_mapping (cob_file *f)
 		return;
 	}
 
+	if (filename)
+		strcpy(file_open_name, filename);
 	/* Misuse "dollar" here to indicate a separator */
 	dollar = 0;
 	for (p = file_open_name; *p; p++) {
@@ -1678,12 +1795,13 @@ static void
 cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 {
 	int		i,j,k,settrue,ivalue,nkeys,keyn,xret,idx;
-	unsigned int	maxrecsz;
+	unsigned int	maxrecsz = 0;
 	char	qt,option[64],value[COB_FILE_BUFF];
 
 	if (ret)
 		*ret = 0;
-	maxrecsz = (unsigned int)f->record->size;
+	if (f->record)
+		maxrecsz = (unsigned int)f->record->size;
 	if (f->record_max > maxrecsz)
 		maxrecsz = f->record_max;
 	nkeys = f->nkeys;
@@ -1810,8 +1928,10 @@ cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 			}
 			if (strcasecmp(option,"type") == 0) {
 				if (updt
-				 && (f->organization == COB_ORG_SEQUENTIAL || f->organization == COB_ORG_RELATIVE)
-				 &&	f->access_mode == COB_ACCESS_SEQUENTIAL) {
+				 && (((f->organization == COB_ORG_SEQUENTIAL 
+				   || f->organization == COB_ORG_RELATIVE)
+				  && (f->access_mode == COB_ACCESS_SEQUENTIAL))
+				 || (f->organization >= COB_ORG_MAX))) {
 					if(strcasecmp(value,"IX") == 0) {
 						f->organization = COB_ORG_INDEXED;
 						f->flag_set_isam = 1;
@@ -3287,7 +3407,7 @@ cob_fd_file_open (cob_file *f, char *filename, const int mode, const int sharing
 	/* cob_chk_file_mapping manipulates file_open_name directly */
 
 	if (!f->flag_file_map) {
-		cob_chk_file_mapping (f);
+		cob_chk_file_mapping (f, NULL);
 		f->flag_file_map = 1;
 		cob_set_file_format(f, file_open_io_env, 1, NULL);		/* Set file format */
 	}
@@ -3469,7 +3589,7 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename, const int mode, con
 
 	f->share_mode = (unsigned char)sharing;
 	if(!f->flag_file_map) {
-		cob_chk_file_mapping (f);
+		cob_chk_file_mapping (f, NULL);
 		f->flag_file_map = 1;
 	}
 	f->flag_is_pipe = 0;
@@ -5723,7 +5843,7 @@ cob_pre_open (cob_file *f)
 		cob_field_to_string (f->assign, file_open_name, (size_t)COB_FILE_MAX);
 
 		f->flag_file_map = 1;
-		cob_chk_file_mapping (f);
+		cob_chk_file_mapping (f, NULL);
 
 		cob_set_file_format (f, file_open_io_env, 1, NULL);
 	}
@@ -5731,7 +5851,7 @@ cob_pre_open (cob_file *f)
 	if (f->organization == COB_ORG_INDEXED
 	 && f->flag_auto_type) {
 		int		ftype;
-		ftype = indexed_file_type (file_open_name);
+		ftype = indexed_file_type (f, file_open_name);
 		if(ftype >= 0) {
 			f->record_min = f->record_max;
 			f->io_routine = (unsigned char)ftype;
@@ -6644,7 +6764,7 @@ cob_delete_file (cob_file *f, cob_field *fnstatus, const int override)
 
 	/* Obtain the file name */
 	cob_field_to_string (f->assign, file_open_name, (size_t)COB_FILE_MAX);
-	cob_chk_file_mapping (f);
+	cob_chk_file_mapping (f, NULL);
 
 	errno = 0;
 	delete_file_status = 1;
@@ -8098,7 +8218,7 @@ cob_get_filename_print (cob_file* file, const int show_resolved_name)
 	if (show_resolved_name) {
 		strncpy (file_open_name, file_open_env, (size_t)COB_FILE_MAX);
 		file_open_name[COB_FILE_MAX] = 0;
-		cob_chk_file_mapping (file);
+		cob_chk_file_mapping (file, NULL);
 	}
 
 	if (show_resolved_name
