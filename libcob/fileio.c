@@ -1633,6 +1633,10 @@ cob_set_file_defaults (cob_file *f)
 			f->io_routine = COB_IO_VISAM;
 #endif
 		}
+		if (file_setptr->cob_file_isnodat)
+			f->flag_isnodat = 1;			/* No '.dat' extension */
+		else
+			f->flag_isnodat = 0;
 		f->flag_read_chk_dups = 0;
 		f->flag_read_no_02 = 0;
 		if (file_setptr->cob_file_dups == COB_DUPS_ALWAYS) {
@@ -2117,6 +2121,10 @@ cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 			if(keycmp(option,"little_endian") == 0) {
 				f->flag_big_endian = 0;
 				f->flag_little_endian = 1;
+				continue;
+			}
+			if(keycmp(option,"isnodat") == 0) {
+				f->flag_isnodat = settrue;
 				continue;
 			}
 			if(keycmp(option,"retry_forever") == 0) {

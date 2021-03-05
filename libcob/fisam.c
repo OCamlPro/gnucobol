@@ -787,9 +787,7 @@ isread_retry(cob_file *f, void *data, int mode)
 static int
 isam_file_delete (cob_file_api *a, cob_file *f, char *filename)
 {
-#if defined(WITH_DISAM)
 	struct stat	st;
-#endif
 	char	file_name_buf [COB_FILE_MAX];
 
 	COB_UNUSED (a);
@@ -798,11 +796,9 @@ isam_file_delete (cob_file_api *a, cob_file *f, char *filename)
 	snprintf (file_name_buf, (size_t)COB_FILE_MAX, "%s.idx", filename);
 	unlink (file_name_buf);
 	snprintf (file_name_buf, (size_t)COB_FILE_MAX, "%s.dat", filename);
-#if defined(WITH_DISAM)
 	if (stat(file_name_buf, &st) != 0) {	/* Micro Focus naming style has no .dat */
 		snprintf (file_name_buf, (size_t)COB_FILE_MAX, "%s", filename);
 	}
-#endif
 	unlink (file_name_buf);
 	return 0;
 }
@@ -849,6 +845,8 @@ isam_set_mode (cob_file *f)
 		fmode = ISMVBISAM;
 	else
 		fmode = ISMCISAM;
+	if (f->flag_isnodat) 		/* Do not use '.dat' */
+		fmode |= ISMNODAT;
 	if (f->isam_duplen == 2
 	 || f->isam_duplen == 4) {	/* Size of dups counter */
 		fmode |= f->isam_duplen << ISMDUPSHIFT;
@@ -906,7 +904,7 @@ isam_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 				return COB_STATUS_30_PERMANENT_ERROR;
 			}
 		}
-#if defined(WITH_VISAM)
+#if defined(WITH_DISAM) || defined(WITH_VISAM)
 	} else {
 		unsigned char	idxhdr[32];
 		int		idxsz;
@@ -953,13 +951,24 @@ isam_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 #endif
 	}
 
-	snprintf (a->file_open_buff, (size_t)COB_FILE_MAX, "%s.dat", filename);
+	if (f->flag_isnodat) { 		/* Do not use '.dat' */
+		snprintf (a->file_open_buff, (size_t)COB_FILE_MAX, "%s", filename);
+#ifdef ISMNODAT
+		fmode |= ISMNODAT;
+#endif
+	} else {
+		snprintf (a->file_open_buff, (size_t)COB_FILE_MAX, "%s.dat", filename);
+	}
 	errno = 0;
 #if defined(WITH_DISAM) || defined(WITH_VISAM)
 	if (access (a->file_open_buff, checkvalue)
 	&& (errno == ENOENT) ) {	/* D-ISAM/V-ISAM will handle files with MF naming style */
 		errno = 0;
 		snprintf (a->file_open_buff, (size_t)COB_FILE_MAX, "%s", filename);
+#ifdef ISMNODAT
+		if (f->flag_isnodat) 		/* Do not use '.dat' */
+			fmode |= ISMNODAT;
+#endif
 	}
 #endif
 	if (access (a->file_open_buff, checkvalue)) {

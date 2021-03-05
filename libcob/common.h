@@ -1532,12 +1532,13 @@ typedef struct __cob_file {
 	unsigned int		flag_read_chk_dups:1;/* Always check DUPLICATE key on READ NEXT */
 	unsigned int		flag_read_no_02:1;	/* Never return 02 for DUPLICATE on READ NEXT */
 	unsigned int		flag_vb_isam:1;		/* fisam: V-ISAM create VB-ISAM format (Dflt: C-ISAM) */
+	unsigned int		flag_isnodat:1;		/* fisam: create ISAM data file without '.dat' extension */
 	unsigned int		flag_was_updated:1;	/* File had an update since last commit/rollback */
 	unsigned int		flag_close_pend:1;	/* File close is pending commit/rollback */
 	unsigned int		flag_io_tran:1;		/* IO Handler: able to handle commit/rollback */
 	unsigned int		flag_do_qbl:1;		/* fileio: enable commit/rollback */
 	unsigned int		flag_do_jrn:1;		/* fileio: record updates to journal/audit trail */
-	unsigned int		unused_bits:10;
+	unsigned int		unused_bits:9;
 
 	cob_field		*last_key;		/* Last field used as 'key' for I/O */
 	unsigned char		last_operation;		/* Most recent I/O operation */

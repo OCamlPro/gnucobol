@@ -1,4 +1,12 @@
 
+2021-03-05  Ron Norman <rjn@inglenet.com>
+
+	* common.h: Add flag_isnodat
+	* coblocal.h: Add cob_file_isnodat
+	* fileio.c: Add check for option 'isnodat'
+	* fisam.c: If flag_isnodat, then pass option to V-ISAM
+	           so the .dat extension is not added to datafile name
+
 2021-03-04  Ron Norman <rjn@inglenet.com>
 
 	* common.h: Fixes to the LDCOMPX/STCOMPX set of defines

@@ -1,4 +1,8 @@
 
+2021-03-05  Ron Norman <rjn@inglenet.com>
+
+	* fileio: added COB_FILE_ISNODAT to disable ISAM datafile.dat
+
 2021-02-25  Ron Norman <rjn@inglenet.com>
 
 	* fileio: added COB_FILE_VBISAM to set default ISAM format

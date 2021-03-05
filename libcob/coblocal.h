@@ -257,6 +257,7 @@ typedef struct __cob_settings {
 	unsigned int	cob_file_dups;		/* When to check for duplicate key in INDEXED file*/
 	unsigned int	cob_file_rollback;	/* Should transactions be enabled */
 	unsigned int	cob_file_vbisam;	/* Create ISAM files in old VB-ISAM format if possible */
+	unsigned int	cob_file_isnodat;	/* Create ISAM 'data file' without '.dat' if possible */
 	unsigned int	cob_stop_run_commit;/* On STOP RUN, should it COMMIT, Default is ROLLBACK */
 	char		*cob_dictionary_path;	/* Place to write filename.dd stats */
 	char		*cob_stats_filename;	/* Place to write I/O stats */
