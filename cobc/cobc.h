@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2020 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2021 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch,
    Edward Hart, Ron Norman, Dave Pitts
 
@@ -301,7 +301,6 @@ struct cb_exception {
 	const char	*name;			/* Exception name */
 	const int	code;			/* Exception code */
 	int		enable;			/* If turned on */
-	int		explicit_enable_val;	/* enable has been set explicitly */
 };
 
 /* >>TURN directive list */
@@ -377,7 +376,6 @@ extern const size_t		cb_io_exception_table_len;
 #define CB_EXCEPTION_NAME(id)	cb_exception_table[id].name
 #define CB_EXCEPTION_CODE(id)	cb_exception_table[id].code
 #define CB_EXCEPTION_ENABLE(id)	cb_exception_table[id].enable
-#define CB_EXCEPTION_EXPLICIT(id)	cb_exception_table[id].explicit_enable_val
 
 extern struct cb_turn_list	*cb_turn_list;
 

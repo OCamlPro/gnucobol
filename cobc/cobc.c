@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2020 Free Software Foundation, Inc.
+   Copyright (C) 2001-2021 Free Software Foundation, Inc.
 
    Authors:
    Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch, Brian Tiffin,
@@ -302,17 +302,17 @@ const size_t COBC_MEM_SIZE =
 	((sizeof(struct cobc_mem_struct) + sizeof(long long) - 1)
 	/ sizeof(long long)) * sizeof(long long);
 
-#define	COB_EXCEPTION(code,tag,name,critical) {name, 0x##code, 0, 0},
+#define	COB_EXCEPTION(code,tag,name,critical) {name, 0x##code, 0},
 struct cb_exception cb_exception_table[] = {
-	{NULL, 0, 0, 0},		/* CB_EC_ZERO */
+	{NULL, 0, 0},		/* CB_EC_ZERO */
 #include "libcob/exception.def"
-	{NULL, 0, 0, 0}		/* CB_EC_MAX */
+	{NULL, 0, 0}		/* CB_EC_MAX */
 };
 
 const struct cb_exception cb_io_exception_table[] = {
-	{NULL, 0, 0, 0},
+	{NULL, 0, 0},
 #include "libcob/exception-io.def"
-	{NULL, 0, 0, 0}		/* CB_EC_MAX */
+	{NULL, 0, 0}		/* CB_EC_MAX */
 };
 #undef	COB_EXCEPTION
 const size_t	cb_io_exception_table_len = sizeof (cb_io_exception_table) / sizeof (struct cb_exception);
@@ -2366,7 +2366,7 @@ cobc_print_version (void)
 {
 	printf ("cobc (%s) %s.%d\n",
 		PACKAGE_NAME, PACKAGE_VERSION, PATCH_LEVEL);
-	puts ("Copyright (C) 2020 Free Software Foundation, Inc.");
+	puts ("Copyright (C) 2021 Free Software Foundation, Inc.");
 	puts (_("License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>"));
 	puts (_("This is free software; see the source for copying conditions.  There is NO\n"
 	        "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."));

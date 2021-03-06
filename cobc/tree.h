@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2020 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2021 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -2302,7 +2302,7 @@ extern void			cobc_xref_call (const char *, const int, const int, const int);
 #define cobc_xref_link(x,l,r)
 #define cobc_xref_link_parent(f)
 #define cobc_xref_set_receiving(t)
-#define cobc_xref_call (n l,i,s)
+#define cobc_xref_call (n,l,i,s)
 #endif
 extern unsigned int		cb_correct_program_order;
 

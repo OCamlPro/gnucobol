@@ -1,8 +1,16 @@
 
+2021-03-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.h [COB_EXTERNAL_XREF]: fixed define of no-op cobc_xref_call
+
+2021-01-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.h, cobc.c: removed unused cb_exception->explicit_enable_val
+
 2020-12-23  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c (output_initialize_compound): special handling for OCCURS 1
-	
+
 2020-12-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* field.c, pplex.l, tree.c, typeck.c: fixed warning option querying enum
@@ -512,7 +520,7 @@
 
 	FR #53 TURN directive
 	* cobc.c, cobc.h: completed initial implementation on disabling ECs
-	  on command line with -fdisable-ec=NAME -fenable-ec=NAME
+	  with -fdisable-ec=NAME -fenable-ec=NAME
 	* cobc.c, cobc.h, parser.y, ppparse.y, scanner.l: completed initial
 	  implementation of >>TURN
 
@@ -3914,8 +3922,8 @@
 2016-08-11  Simon Sobisch <simonsobisch@gnu.org>
 
 	* config.def: renamed compiler configuration relaxed-syntax-check to
-	  relax-syntax-checks for supporting the removed -frelax-syntax when set
-	  on command line
+	  relax-syntax-checks for supporting the use of the removed command line
+	  flag -frelax-syntax
 	* general: renamed cb_relaxed_syntax_check to cb_relaxed_syntax_checks
 
 2016-08-10  Simon Sobisch <simonsobisch@gnu.org>
@@ -7641,7 +7649,7 @@
 	* cobc.h (cobc_verbose_flag): Declared.
 
 
-Copyright 2002-2020 Free Software Foundation, Inc.
+Copyright 2002-2021 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.
