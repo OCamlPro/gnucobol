@@ -2302,7 +2302,7 @@ extern void			cobc_xref_call (const char *, const int, const int, const int);
 #define cobc_xref_link(x,l,r)
 #define cobc_xref_link_parent(f)
 #define cobc_xref_set_receiving(t)
-#define cobc_xref_call (n,l,i,s)
+#define cobc_xref_call(n,l,i,s)
 #endif
 extern unsigned int		cb_correct_program_order;
 
