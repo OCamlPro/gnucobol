@@ -538,8 +538,10 @@ indexed_file_type (cob_file *f, char *filename)
 		return -1;
 	}
 	memset(hbuf,0,sizeof(hbuf));
-	if (fread(hbuf, 1, sizeof(hbuf), fdin) < 256)
+	if (fread(hbuf, 1, sizeof(hbuf), fdin) < 256) {
+		fclose(fdin);
 		return -1;
+	}
 
 	if(hbuf[0] == 0xFE 
 	&& hbuf[1] == 0x53				/* C|D-ISAM marker */
