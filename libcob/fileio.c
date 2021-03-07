@@ -1297,7 +1297,7 @@ cob_read_dict (cob_file *f, char *filename, int updt, int *retsts)
 		sprintf(inpdd,"%s%c%s.%s",sdir,SLASH_CHAR,filename,dict_ext);
 		fi = fopen(inpdd,"r");
 		if (fi == NULL)
-			return 1;
+			return 0;
 	}
 	line = 0;
 	ret = 0;
