@@ -516,6 +516,10 @@ indexed_file_type (cob_file *f, char *filename)
 		}
 		memset(hbuf,0,sizeof(hbuf));
 		fread(hbuf, 1, sizeof(hbuf), fdin);
+		if (fread(hbuf, 1, sizeof(hbuf), fdin) < 256) {
+			fclose(fdin);
+			return -1;
+		}
 		fclose(fdin);
 		for(idx=1; idx < 32; idx++) {
 			sprintf(temp,"%s.%d",filename,idx);
@@ -534,7 +538,8 @@ indexed_file_type (cob_file *f, char *filename)
 		return -1;
 	}
 	memset(hbuf,0,sizeof(hbuf));
-	fread(hbuf, 1, sizeof(hbuf), fdin);
+	if (fread(hbuf, 1, sizeof(hbuf), fdin) < 256)
+		return -1;
 
 	if(hbuf[0] == 0xFE 
 	&& hbuf[1] == 0x53				/* C|D-ISAM marker */
@@ -5341,7 +5346,8 @@ relative_delete (cob_file_api *a, cob_file *f)
 	}
 	fstat (f->fd, &st);
 	if ((off + f->record_slot) >= st.st_size) {	/* Last of file so truncate */
-		ftruncate (f->fd, off);
+		if (ftruncate (f->fd, off))
+			return COB_STATUS_30_PERMANENT_ERROR;
 		f->max_rec_num = (st.st_size - f->file_header) / f->record_slot;
 		return COB_STATUS_00_SUCCESS;
 	}
@@ -6591,8 +6597,13 @@ cob_commit (void)
 		}
 		f->tran_open_mode = COB_OPEN_CLOSED;
 	}
-	if (qblfd != -1)
-		ftruncate (qblfd, 0);
+	if (qblfd != -1) {
+		if (ftruncate (qblfd, 0)) {
+			cob_runtime_error (_("I/O error doing COMMIT"));
+			cob_close_qbl ( qblfd, qblfilename, 1);
+			qblfd = -1;
+		}
+	}
 }
 
 void
@@ -6678,7 +6689,10 @@ cob_rollback (void)
 					f->record_off = filepos;
 					f->flag_read_done = 1;
 					if (memcmp(qbl_hdr->type, QBL_NEW, 2) == 0) {
-						ftruncate (f->fd, (off_t)filepos);
+						if (ftruncate (f->fd, (off_t)filepos)) {
+							cob_runtime_error (_("I/O error doing ROLLBACK of %s"),
+													f->select_name);
+						}
 					} else if (memcmp(qbl_hdr->type, QBL_BEFORE, 2) == 0) {
 						cob_rewrite (f, f->record, 0, NULL);
 					}
@@ -6688,7 +6702,10 @@ cob_rollback (void)
 					f->record_off = filepos;
 					f->flag_read_done = 1;
 					if (memcmp(qbl_hdr->type, QBL_NEW, 2) == 0) {
-						ftruncate (f->fd, (off_t)filepos);
+						if (ftruncate (f->fd, (off_t)filepos)) {
+							cob_runtime_error (_("I/O error doing ROLLBACK of %s"),
+													f->select_name);
+						}
 					} else if (memcmp(qbl_hdr->type, QBL_BEFORE, 2) == 0) {
 						set_file_pos (f, filepos);
 						lineseq_read (NULL, f, COB_READ_NEXT);
@@ -6721,7 +6738,11 @@ cob_rollback (void)
 
 	if (dorollback
 	 && qblfd != -1) {
-		ftruncate (qblfd, 0);
+		if (ftruncate (qblfd, 0)) {
+			cob_runtime_error (_("I/O error doing ROLLBACK"));
+			cob_close_qbl ( qblfd, qblfilename, 1);
+			qblfd = -1;
+		}
 	}
 }
 

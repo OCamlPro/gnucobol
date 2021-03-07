@@ -1330,7 +1330,7 @@ void
 output_xfd_file (struct cb_file *fl)
 {
 	char	outname[COB_FILE_BUFF], tblname[64], time_stamp[32];
-	char	ridname[64];
+	char	ridname[72];
 	FILE	*fx, *fs;
 	struct tm	*loctime;
 	time_t		sectime;
