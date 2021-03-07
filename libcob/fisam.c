@@ -904,7 +904,7 @@ isam_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 				return COB_STATUS_30_PERMANENT_ERROR;
 			}
 		}
-#if defined(WITH_DISAM) || defined(WITH_VISAM)
+#if defined(WITH_VISAM)
 	} else {
 		unsigned char	idxhdr[32];
 		int		idxsz;
