@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2020 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2021 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 ## Ron Norman
 ##
@@ -12682,13 +12682,13 @@ note: TooSmall2 has version 2.0.0
 ], [])
 
 AT_DATA([testdata.h], [[
-  { "TooHigh1", "3.2",    0 },
+  { "TooHigh1", "3.3",    0 },
 ]])
 AT_CHECK([$COMPILE -o high1 prog.c], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./high1 2>high1.log], [1], [], [])
 AT_CHECK([$GREP -v "libcob has" high1.log], [0],
 [libcob: error: version mismatch
-note: TooHigh1 has version 3.2.0
+note: TooHigh1 has version 3.3.0
 ], [])
 
 AT_DATA([testdata.h], [[
