@@ -1,7 +1,16 @@
 
+2021-03-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am: honor COBC_CPPFLAGS passed to configure
+
 2021-03-06  Simon Sobisch <simonsobisch@gnu.org>
 
 	* tree.h [COB_EXTERNAL_XREF]: fixed define of no-op cobc_xref_call
+
+2021-01-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (cobc_print_version): msgid change moving URLs to parameter per
+	  gettext-guidelines
 
 2021-01-02  Simon Sobisch <simonsobisch@gnu.org>
 

@@ -1,4 +1,10 @@
 
+2021-01-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobcrun.c (cobcrun_print_version, cobcrun_print_usage): msgid change
+	  moving URLs to parameter per gettext-guidelines
+	* cobcrun.c: removed unused includes
+
 2020-12-06  Simon Sobisch <simonsobisch@gnu.org>
 
 	* Makefile.am (cobcrun_LDADD): fixed ordering, in-tree libraries
@@ -251,7 +257,7 @@
 	  then you can switch easily.
 
 
-Copyright 2004-2008,2010,2012,2014-2020 Free Software Foundation, Inc.
+Copyright 2004-2008,2010,2012,2014-2021 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

@@ -2,7 +2,7 @@
 # Configure template for GnuCOBOL
 # Process this file with autoconf to produce a configure script.
 #
-# Copyright (C) 2001-2012, 2014-2020 Free Software Foundation, Inc.
+# Copyright (C) 2001-2012, 2014-2021 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
 # Edward Hart
 #
@@ -24,7 +24,7 @@
 AC_PREREQ([2.64])
 
 AC_INIT([GnuCOBOL],
-	[3.1.2],
+	[3.2-dev],
 	[bug-gnucobol@gnu.org],
 	[gnucobol],
 	[https://www.gnu.org/software/gnucobol/])
@@ -287,6 +287,18 @@ AC_PROG_CPP
 AC_USE_SYSTEM_EXTENSIONS
 
 # general flags for compiler and linker and tests for those
+AC_ARG_VAR([COBC_CPPFLAGS], [see CPPFLAGS, but only applied during generation of cobc])
+AS_IF([test "x$COBC_CPPFLAGS" != "x"], [
+	AC_MSG_CHECKING([if compilation with COBC_CPPFLAGS works])
+	curr_cppflags="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $COBC_CPPFLAGS"
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],
+		[[static int i = 1;]])],
+		[AC_MSG_RESULT([yes])],
+		[AC_MSG_RESULT([no])
+		AC_MSG_ERROR([not possible to compile with COBC_CPPFLAGS="$COBC_CPPFLAGS"])])
+	CPPFLAGS="$curr_cppflags"
+])
 AC_ARG_VAR([LIBCOB_CPPFLAGS], [see CPPFLAGS, but only applied during generation of libcob])
 AS_IF([test "x$LIBCOB_CPPFLAGS" != "x"], [
 	AC_MSG_CHECKING([if compilation with LIBCOB_CPPFLAGS works])
@@ -395,8 +407,14 @@ AC_LIB_RPATH
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([stdint.h sys/types.h signal.h fcntl.h malloc.h locale.h \
-	stddef.h wchar.h dlfcn.h sys/time.h sys/wait.h])
+
+# entries only used from external includes -> likely no need to check here
+# AC_CHECK_HEADERS([stdint.h whcar.h malloc.h])
+# mandatory:
+AC_CHECK_HEADERS([sys/types.h signal.h stddef.h sys/time.h], [],
+	[AC_MSG_ERROR([mandatory header could not be found or included])])
+# optional:
+AC_CHECK_HEADERS([locale.h fcntl.h dlfcn.h])
 
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -2119,6 +2137,7 @@ AC_SUBST([COB_LIBRARY_PATH])
 AC_SUBST([COB_OBJECT_EXT])
 AC_SUBST([COB_MODULE_EXT])
 AC_SUBST([COB_EXE_EXT])
+AC_SUBST([COBC_CPPFLAGS])
 AC_SUBST([PROGRAMS_LIBS])
 AC_SUBST([LIBCOB_LIBS])
 AC_SUBST([LIBCOB_CPPFLAGS])

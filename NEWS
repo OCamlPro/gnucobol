@@ -1,5 +1,9 @@
 NEWS - user visible changes				-*- outline -*-
 
+ GnuCOBOL 3.2 to be released end of March 2021
+
+ 
+
  GnuCOBOL 3.1.2 released (20201223)
  GnuCOBOL 3.1.1 released (20201208) containing INITIALIZE bug #694
  GnuCOBOL 3.1 released   (20201111) had build issues that were fixed
@@ -546,7 +550,7 @@ NEWS - user visible changes				-*- outline -*-
  GnuCOBOL 1.1 released (20140118)
 
 * Change unix package name to gnu-cobol, and project to GnuCOBOL
-* list of changes see
+* for a full list of changes see
   https://gnucobol.sourceforge.io/faq/
   #what-are-the-differences-between-opencobol-1-1-and-gnucobol-1-1
 

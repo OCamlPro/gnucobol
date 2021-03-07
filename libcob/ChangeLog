@@ -1,4 +1,10 @@
 
+2021-01-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (print_version): msgid change moving URLs to parameter
+	  per gettext-guidelines
+	* common.h: version defines to 3.2.0
+
 2020-12-18  Simon Sobisch <simonsobisch@gnu.org>
 
 	FR #397: add support for JSON GENERATE anonymous JSON objects
@@ -4480,7 +4486,7 @@
 	  (cob_init_call): Initialize 'dynamic_reloading'.
 
 
-Copyright 2002-2020 Free Software Foundation, Inc.
+Copyright 2002-2021 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

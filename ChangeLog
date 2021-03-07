@@ -1,4 +1,9 @@
 
+2021-03-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: new COBC_CPPFLAGS will be used in cobc generation
+	* configure.ac: version 3.2-dev
+
 2020-12-23  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: version 3.1.2
@@ -1323,7 +1328,7 @@
 	* Version 0.9 released.
 
 
-Copyright 2002-2020 Free Software Foundation, Inc.
+Copyright 2002-2021 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.
