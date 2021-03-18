@@ -6630,14 +6630,6 @@ output_screen_to (struct cb_field *p, const unsigned int sisters)
 
 /* ACCEPT statement */
 
-static COB_INLINE COB_A_INLINE int
-is_reference_with_value (cb_tree pos)
-{
-	return CB_REFERENCE_P (pos)
-		&& (CB_REFERENCE (pos))->value != NULL;
-
-}
-
 static int
 numeric_screen_pos_type (struct cb_field *pos)
 {

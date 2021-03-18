@@ -8813,8 +8813,8 @@ static void cob_dump_table ( cob_symbol *sym, int k);
 static void
 cob_dump_sub ( cob_symbol *sym, int k, int sub)
 {
-	cob_field	d0, f0;
-	int		j, occmax;
+	cob_field	f0;
+	int		j;
 
 	sym_sub  [sym_idx-1] = sub;
 	cob_sym_get_field (&f0, sym, k);
@@ -8845,7 +8845,6 @@ cob_dump_sub ( cob_symbol *sym, int k, int sub)
 static void
 cob_dump_table ( cob_symbol *sym, int k)
 {
-	cob_field	d0;
 	int		j, occmax;
 
 	occmax = cob_sym_get_occurs (sym, k);
@@ -8861,7 +8860,6 @@ cob_dump_symbols (cob_module *mod)
 	int			j, k, sect, skipgrp;
 	cob_symbol *sym;
 	cob_field	f0;
-	cob_field	d0;
 	char		msg[80];
 	FILE		*fp;
 	cob_file	*fl;

@@ -2116,9 +2116,6 @@ static char *sectname[] = {
 static void
 emit_symtab (struct cb_field *f)
 {
-	struct cb_field *fp;
-	cb_tree		l;
-
 	if (!f->flag_sym_emitted
 	 && f->level >= 1
 	 && f->level != 66
@@ -2762,6 +2759,8 @@ output_local_fields (struct cb_program *prog)
 		output_line ("/* Symbol table for %s */",prog->orig_program_id);
 		output_line ("static cob_symbol %s_sym_tab [] = {",prog->program_id);
 		emit_mod_symtab (prog);
+		if (max == 0)
+			output ("        {0,0}");
 		output_newline ();
 		output_line ("};");
 		output_line ("static unsigned int %s_num_sym = %d;",prog->program_id,max);
@@ -10779,7 +10778,6 @@ output_module_register_init (cb_tree reg, const char *name)
 static void
 output_module_init_function (struct cb_program *prog)
 {
-	struct cb_field *f;
 	output_indent_level = 0;
 	if (!prog->nested_level) {
 		output_line ("/* Initialize module structure for %s */", 
