@@ -152,6 +152,9 @@ CB_FLAG (cb_flag_traceall, 1, "traceall",
 	  "                        * scope: executed SECTION/PARAGRAPH/STATEMENTS\n"
 	  "                        * turned on by -debug"))
 
+CB_FLAG (cb_flag_symbols, 1, "symtab",
+	_("  -fsymtab              build symbol table for dump/trace/debug"))
+
 CB_FLAG (cb_flag_syntax_only, 1, "syntax-only",
 	_("  -fsyntax-only         syntax error checking only; don't emit any output"))
 

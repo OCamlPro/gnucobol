@@ -753,6 +753,34 @@ cob_terminate_routines (void)
 	cob_exit_common ();
 }
 
+static void
+cob_get_source_line ()
+{
+	cob_module	*mod;
+	if (cobglobptr
+	 && COB_MODULE_PTR) {
+		mod = COB_MODULE_PTR;
+		if (mod->module_stmt == 0
+		 && mod->next != NULL
+		 && mod->next->module_stmt != 0)
+			mod = mod->next;
+		if (mod->module_name)
+			cob_current_program_id = mod->module_name;
+		if (mod->stmt_name)
+			cob_source_statement = mod->stmt_name;
+		if (mod->section_name)
+			cob_current_section = mod->section_name;
+		if (mod->paragraph_name)
+			cob_current_paragraph = mod->paragraph_name;
+		if (mod->module_stmt != 0
+		 && mod->module_sources) {
+			cob_source_file =
+				mod->module_sources[COB_GET_FILE_NUM (mod->module_stmt)];
+			cob_source_line = COB_GET_LINE_NUM (mod->module_stmt);
+		}
+	}
+}
+
 /* reentrant version of strerror */
 static char *
 cob_get_strerror (void)
@@ -851,6 +879,7 @@ cob_sig_handler (int signal_value)
 #endif
 	cob_exit_screen ();
 	putc ('\n', stderr);
+	cob_get_source_line ();
 	if (cob_source_file) {
 		fprintf (stderr, "%s:", cob_source_file);
 		if (cob_source_line) {
@@ -1685,6 +1714,7 @@ cob_last_exception_is (const int exception_to_check)
 void
 cob_set_exception (const int id)
 {
+	cob_get_source_line ();
 	cobglobptr->cob_exception_code = cob_exception_tab_code[id];
 	last_exception_code = cobglobptr->cob_exception_code;
 	if (id) {
@@ -1885,12 +1915,7 @@ cob_trace_prep (void)
 {
 	const char	*s;
 	cob_current_program_id = COB_MODULE_PTR->module_name;
-	if (COB_MODULE_PTR->module_stmt != 0
-	 && COB_MODULE_PTR->module_sources) {
-		cob_source_file =
-			COB_MODULE_PTR->module_sources[COB_GET_FILE_NUM(COB_MODULE_PTR->module_stmt)];
-		cob_source_line = COB_GET_LINE_NUM(COB_MODULE_PTR->module_stmt);
-	}
+	cob_get_source_line ();
 	if (!cobsetptr->cob_trace_file) {
 		cob_check_trace_file ();
 		if (!cobsetptr->cob_trace_file)
@@ -1927,11 +1952,13 @@ cob_trace_print (char *val)
 	int	i;
 	int last_pos = (int)(strlen (cobsetptr->cob_trace_format) - 1);
 
+	cob_get_source_line ();
 	for (i=0; cobsetptr->cob_trace_format[i] != 0; i++) {
 		if (cobsetptr->cob_trace_format[i] == '%') {
 			i++;
 			if (toupper(cobsetptr->cob_trace_format[i]) == 'P') {
-				if (COB_MODULE_PTR && COB_MODULE_PTR->module_type == COB_MODULE_TYPE_FUNCTION) {
+				if (COB_MODULE_PTR 
+				 && COB_MODULE_PTR->module_type == COB_MODULE_TYPE_FUNCTION) {
 					if (i != last_pos) {
 						fprintf (cobsetptr->cob_trace_file, "Function-Id: %-16s", cob_last_progid);
 					} else {
@@ -1991,16 +2018,6 @@ cob_trace_sect (const char *name)
 		}
 		snprintf (val, sizeof (val), "  Section: %s", name);
 		cob_trace_print (val);
-		return;
-	}
-
-	/* store for CHECKME */
-	if (COB_MODULE_PTR->module_stmt != 0
-	 && COB_MODULE_PTR->module_sources) {
-		cob_current_program_id = COB_MODULE_PTR->module_name;
-		cob_source_file =
-			COB_MODULE_PTR->module_sources[COB_GET_FILE_NUM(COB_MODULE_PTR->module_stmt)];
-		cob_source_line = COB_GET_LINE_NUM(COB_MODULE_PTR->module_stmt);
 	}
 }
 
@@ -2021,16 +2038,6 @@ cob_trace_para (const char *name)
 		}
 		snprintf (val, sizeof (val), "Paragraph: %s", name);
 		cob_trace_print (val);
-		return;
-	}
-
-	/* store for CHECKME */
-	if (COB_MODULE_PTR->module_stmt != 0
-	 && COB_MODULE_PTR->module_sources) {
-		cob_current_program_id = COB_MODULE_PTR->module_name;
-		cob_source_file =
-			COB_MODULE_PTR->module_sources[COB_GET_FILE_NUM(COB_MODULE_PTR->module_stmt)];
-		cob_source_line = COB_GET_LINE_NUM(COB_MODULE_PTR->module_stmt);
 	}
 }
 
@@ -2048,16 +2055,6 @@ cob_trace_entry (const char *name)
 		}
 		snprintf (val, sizeof (val), "    Entry: %s", name);
 		cob_trace_print (val);
-		return;
-	}
-
-	/* store for CHECKME */
-	if (COB_MODULE_PTR->module_stmt != 0
-	 && COB_MODULE_PTR->module_sources) {
-		cob_current_program_id = COB_MODULE_PTR->module_name;
-		cob_source_file =
-			COB_MODULE_PTR->module_sources[COB_GET_FILE_NUM(COB_MODULE_PTR->module_stmt)];
-		cob_source_line = COB_GET_LINE_NUM(COB_MODULE_PTR->module_stmt);
 	}
 }
 
@@ -2075,16 +2072,6 @@ cob_trace_exit (const char *name)
 		}
 		snprintf (val, sizeof (val), "     Exit: %s", name);
 		cob_trace_print (val);
-		return;
-	}
-
-	/* store for CHECKME */
-	if (COB_MODULE_PTR->module_stmt != 0
-	 && COB_MODULE_PTR->module_sources) {
-		cob_current_program_id = COB_MODULE_PTR->module_name;
-		cob_source_file =
-			COB_MODULE_PTR->module_sources[COB_GET_FILE_NUM(COB_MODULE_PTR->module_stmt)];
-		cob_source_line = COB_GET_LINE_NUM(COB_MODULE_PTR->module_stmt);
 	}
 }
 
@@ -2096,6 +2083,7 @@ cob_trace_stmt (const char *stmt)
 	/* store for CHECKME */
 	if (stmt) {
 		cob_source_statement = stmt;
+		COB_MODULE_PTR->stmt_name = stmt;
 	}
 
 	/* actual tracing, if activated */
@@ -2106,32 +2094,36 @@ cob_trace_stmt (const char *stmt)
 		}
 		snprintf (val, sizeof (val), "           %s", stmt ? (char *)stmt : _("unknown"));
 		cob_trace_print (val);
-		return;
-	}
-
-	/* store for CHECKME */
-	if (COB_MODULE_PTR->module_stmt != 0
-	 && COB_MODULE_PTR->module_sources) {
-		cob_current_program_id = COB_MODULE_PTR->module_name;
-		cob_source_file =
-			COB_MODULE_PTR->module_sources[COB_GET_FILE_NUM(COB_MODULE_PTR->module_stmt)];
-		cob_source_line = COB_GET_LINE_NUM(COB_MODULE_PTR->module_stmt);
 	}
 }
 
 void
 cob_ready_trace (void)
 {
+	cob_module	*mod;
+	int		k;
+	const int	MAX_ITERS = 10240;
+
 	cobsetptr->cob_line_trace = 1;
 	if (!cobsetptr->cob_trace_file) {
 		cob_check_trace_file ();
+	}
+	for (k = 0, mod = COB_MODULE_PTR; mod && k < MAX_ITERS; mod = mod->next, k++) {
+		mod->flag_debug_trace |= COB_MODULE_READYTRACE;
 	}
 }
 
 void
 cob_reset_trace (void)
 {
+	cob_module	*mod;
+	int		k;
+	const int	MAX_ITERS = 10240;
+
 	cobsetptr->cob_line_trace = 0;
+	for (k = 0, mod = COB_MODULE_PTR; mod && k < MAX_ITERS; mod = mod->next, k++) {
+		mod->flag_debug_trace &= ~COB_MODULE_READYTRACE;
+	}
 }
 
 unsigned char *
@@ -2304,8 +2296,13 @@ cob_module_global_enter (cob_module **module, cob_global **mglobal,
 	(*module)->next = COB_MODULE_PTR;
 	COB_MODULE_PTR = *module;
 	COB_MODULE_PTR->module_stmt = 0;
-
 	cobglobptr->cob_stmt_exception = 0;
+
+	if (cobsetptr->cob_line_trace)
+		cob_ready_trace ();
+	else
+		cob_reset_trace ();
+
 	return 0;
 }
 
@@ -2320,6 +2317,7 @@ void
 cob_module_leave (cob_module *module)
 {
 	COB_UNUSED (module);
+	cob_get_source_line ();
 	if(cobglobptr->cob_exception_code == -1)
 		cobglobptr->cob_exception_code = 0;
 	/* Pop module pointer */
@@ -6988,9 +6986,10 @@ cob_load_config (void)
 static void
 output_source_location (void)
 {
-	if (cobglobptr && COB_MODULE_PTR
-		&& COB_MODULE_PTR->module_stmt != 0
-		&& COB_MODULE_PTR->module_sources) {
+	if (cobglobptr 
+	 && COB_MODULE_PTR
+	 && COB_MODULE_PTR->module_stmt != 0
+	 && COB_MODULE_PTR->module_sources) {
 		fprintf (stderr, "%s:%u: ",
 			COB_MODULE_PTR->module_sources
 			[COB_GET_FILE_NUM(COB_MODULE_PTR->module_stmt)],
@@ -7000,7 +6999,7 @@ output_source_location (void)
 			fprintf (stderr, "%s:", cob_source_file);
 			if (!cob_source_line) {
 				fputc (' ', stderr);
-		}
+			}
 		}
 		if (cob_source_line) {
 			fprintf (stderr, "%u:", cob_source_line);
@@ -7020,6 +7019,7 @@ cob_runtime_warning_external (const char *caller_name, const int cob_reference, 
 	}
 	if (!(caller_name && *caller_name)) caller_name = "unknown caller";
 
+	cob_get_source_line ();
 	/* Prefix */
 	fprintf (stderr, "libcob: ");
 	if (cob_reference) {
@@ -7047,6 +7047,7 @@ cob_runtime_warning (const char *fmt, ...)
 		return;
 	}
 
+	cob_get_source_line ();
 	/* Prefix */
 	fprintf (stderr, "libcob: ");
 	output_source_location ();
@@ -7094,6 +7095,7 @@ cob_runtime_error (const char *fmt, ...)
 	cob_exit_screen ();
 #endif
 
+	cob_get_source_line ();
 	if (hdlrs != NULL && !active_error_handler && cobglobptr) {
 
 		const char		*err_source_file;
@@ -8738,7 +8740,6 @@ cob_stack_trace_internal (FILE *target)
 FILE *
 cob_get_dump_file (void)
 {
-#if 1 /* new version as currently only COB_DUMP_TO_FILE is used */
 	if (cobsetptr->cob_dump_file != NULL) {	/* If DUMP active, use that */
 		return cobsetptr->cob_dump_file;
 	} else if (cobsetptr->cob_dump_filename != NULL) {	/* DUMP file defined */
@@ -8757,36 +8758,192 @@ cob_get_dump_file (void)
 	} else {
 		return stderr;
 	}
-#else /* currently only COB_DUMP_TO_FILE used */
-	FILE    *fp;
-	if (where == COB_DUMP_TO_FILE) {
-		fp = cobsetptr->cob_dump_file;
-		if (fp == NULL) {
-			if(cobsetptr->cob_trace_file != NULL) {	/* If TRACE active, use that */
-				fp = cobsetptr->cob_trace_file;
-			} else if(cobsetptr->cob_dump_filename != NULL) {	/* Dump file defined */
-				fp = fopen(cobsetptr->cob_dump_filename, "a");
-				if(fp == NULL)
-					fp = stderr;
-				cobsetptr->cob_dump_file = fp;
-			} else {
-				fp = stderr;
-			}
-		}
-	} else if (where == COB_DUMP_TO_PRINT) {
-		fp = cobsetptr->cob_display_print_file;
-		if (fp == NULL) {
-			if(cobsetptr->cob_trace_file != NULL) {	/* If TRACE active, use that */
-				fp = cobsetptr->cob_trace_file;
-			} else {
-				fp = stdout;
-			}
-		}
+}
+
+static char *sectname[] = {
+			"CONSTANT","FILE","WORKING-STORAGE",
+			"LOCAL","LINKAGE","SCREEN",
+			"REPORT","COMMUNICATION"};
+static unsigned char sectdump[] = {
+	0, COB_DUMP_FD, COB_DUMP_WS, COB_DUMP_LO, COB_DUMP_LS,
+	COB_DUMP_SC, COB_DUMP_RD, COB_DUMP_RD};
+#define SYM_MAX_IDX 8
+static int	sym_idx = 0;
+static int	sym_sub [SYM_MAX_IDX];
+static int	sym_size[SYM_MAX_IDX];
+
+static jmp_buf save_sig_env;
+static void 
+catch_sig_jmp (int sig)
+{ 
+	longjmp(save_sig_env, sig);
+}
+
+static void
+cob_sym_get_field (cob_field *f, cob_symbol *sym, int k)
+{
+	f->size = sym[k].size;
+	f->attr = sym[k].attr;
+	if (sym[k].is_indirect) {
+		memcpy (&f->data, sym[k].data, sizeof(void*));
 	} else {
-		fp = stderr;
+		f->data = sym[k].data;
 	}
-	return fp;
-#endif
+	if (f->data != NULL)
+		f->data += sym[k].offset;
+}
+
+static int
+cob_sym_get_occurs (cob_symbol *sym, int k)
+{
+	cob_field	d0;
+	int			occmax;
+	if (sym[k].has_depend) {
+		cob_sym_get_field (&d0, sym, sym[k].depending);
+		occmax = cob_get_int (&d0);
+		if (occmax > sym[k].occurs)
+			occmax = sym[k].occurs;
+	} else {
+		occmax = sym[k].occurs;
+	}
+	return occmax;
+}
+
+static void cob_dump_table ( cob_symbol *sym, int k);
+static void
+cob_dump_sub ( cob_symbol *sym, int k, int sub)
+{
+	cob_field	d0, f0;
+	int		j, occmax;
+
+	sym_sub  [sym_idx-1] = sub;
+	cob_sym_get_field (&f0, sym, k);
+	cob_dump_field ( sym[k].level, sym[k].name?sym[k].name:"FILLER", 
+					&f0, 0, sym_idx, 
+					sym_sub [0], sym_size [0], 
+					sym_sub [1], sym_size [1], 
+					sym_sub [2], sym_size [2],
+					sym_sub [3], sym_size [3], 
+					sym_sub [4], sym_size [4], 
+					sym_sub [5], sym_size [5],
+					sym_sub [6], sym_size [6], 
+					sym_sub [7], sym_size [7]);
+	if (sym[k].is_group) {
+		for (j = k+1; sym[j].parent == k; j++) {
+			if (sym[j].occurs > 1) {
+				cob_dump_table (sym, j);
+				if ((j = sym[j].sister) == 0)
+					break;
+				j--;
+			} else {
+				cob_dump_sub (sym, j, sub);
+			}
+		}
+	}
+}
+
+static void
+cob_dump_table ( cob_symbol *sym, int k)
+{
+	cob_field	d0;
+	int		j, occmax;
+
+	occmax = cob_sym_get_occurs (sym, k);
+	sym_size [sym_idx++] = sym[k].size;
+	for (j=0; j < occmax; j++)
+		cob_dump_sub (sym, k, j);
+	sym_size [--sym_idx] = 0;
+}
+
+static void
+cob_dump_symbols (cob_module *mod)
+{
+	int			j, k, sect, skipgrp;
+	cob_symbol *sym;
+	cob_field	f0;
+	cob_field	d0;
+	char		msg[80];
+	FILE		*fp;
+	cob_file	*fl;
+
+	fp = cob_get_dump_file ();
+	sect = 255;
+	sym = mod->module_symbols;
+	mod->flag_debug_trace |= COB_MODULE_DUMPED;
+
+	fprintf (fp, _("Dump Program-Id %s from %s compiled %s"),
+					mod->module_name, mod->module_source, mod->module_formatted_date);
+	fputc ('\n', fp);
+	for (k = 0; k < mod->num_symbols; k++) {
+		if (sym[k].is_redef) {
+			j = k;
+			while (j < mod->num_symbols 
+				&& sym[j].is_redef
+				&& sym[j].sister ) {
+				k = j;
+				j = sym[j].sister;
+			}
+			continue;
+		}
+		if (sym[k].section == 0
+		|| !(mod->flag_dump_sect & sectdump[sym[k].section]))
+			continue;
+		if (sect != sym[k].section) {
+			sect = sym[k].section;
+			if (!sym[k].is_file)
+				cob_dump_output (sectname[sect]);
+		}
+		if (sym[k].is_file) {
+			memcpy (&fl, sym[k].data, sizeof(void*));
+			cob_dump_file (sym[k].name, fl);
+			continue;
+		}
+		skipgrp = 0;
+		cob_sym_get_field (&f0, sym, k);
+		cob_set_dump_signal ((void *)catch_sig_jmp);
+		if (setjmp (save_sig_env) != 0) {
+			while (sym[k].parent > 0)
+				k = sym[k].parent;
+			sprintf (msg," >>>> Dump of %s aborted! <<<< !!",
+						sym[k].name?sym[k].name:"FILLER");
+			cob_dump_output (msg);
+			skipgrp = 1;
+		} else if (sym[k].occurs > 1) {
+			for (sym_idx = 0; sym_idx < SYM_MAX_IDX; sym_idx++)
+				sym_sub [sym_idx] = sym_size [sym_idx] = 0;
+			sym_idx = 0;
+			cob_dump_table ( sym, k);
+			if (sym[k].is_group)
+				skipgrp = 1;
+		} else {
+			cob_dump_field ( sym[k].level, sym[k].name?sym[k].name:"FILLER", &f0, 0, 0);
+		}
+		if (skipgrp) {
+			if (sym[k].sister) {
+				k = sym[k].sister;
+			} else {
+				while (++k < mod->num_symbols
+					&& sym[k].level > 1
+					&& sym[k].level != 77);
+			}
+			k--;
+		} else if (f0.data == NULL) {
+			if (sym[k].sister) {
+				k = sym[k].sister - 1;
+				continue;
+			} else if (k+1 < mod->num_symbols
+					&& sym[k].section != sym[k+1].section) {
+				continue;
+			} else if (sym[k].level == 1 
+					|| sym[k].level == 77) {
+				break;
+			}
+		}
+	}
+	sprintf(msg,"END OF DUMP - %s",mod->module_name);
+	cob_dump_output (msg);
+	fputc ('\n', fp);
+	fflush (fp);
 }
 
 static void
@@ -8809,11 +8966,7 @@ cob_dump_module (char *reason)
 
 	if (wants_dump) {
 		FILE		*fp;
-#if 1 /* new version as currently only COB_DUMP_TO_FILE is used */
 		fp = cob_get_dump_file ();
-#else
-		fp = cob_get_dump_file (COB_DUMP_TO_FILE);
-#endif
 		if (fp != stderr) {
 			if (reason) {
 				if (reason[0] == 0) {
@@ -8839,20 +8992,12 @@ cob_dump_module (char *reason)
 
 		fputc ('\n', fp);
 		for (mod = COB_MODULE_PTR; mod; mod = mod->next) {
-			if (mod->module_cancel.funcint) {
-				int (*cancel_func)(const int);
-				cancel_func = mod->module_cancel.funcint;
-
-				fprintf (fp, _("Dump Program-Id %s from %s compiled %s"),
-					mod->module_name, mod->module_source, mod->module_formatted_date);
-				fputc ('\n', fp);
-				(void)cancel_func (-10);
-				fputc ('\n', fp);
+			if (mod->module_symbols
+			 && mod->num_symbols > 0
+			 && !(mod->flag_debug_trace & COB_MODULE_DUMPED)) {
+					cob_dump_symbols (mod);
 			}
 			if (mod->next == mod) {
-#if 0			/* already output above */
-				fputs ("FIXME: recursive mod (module dump)\n", stderr);
-#endif
 				break;
 			}
 		}
@@ -9155,6 +9300,7 @@ cob_debug_logger (const char *fmt, ...)
 		cob_debug_hdr = 1;
 	}
 	if (cob_debug_hdr) {
+		cob_get_source_line ();
 		if (cob_debug_log_time) {
 			time = cob_get_current_date_and_time ();
 			fprintf (cob_debug_file, "%02d:%02d:%02d.%02d ", time.hour, time.minute,

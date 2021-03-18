@@ -1,4 +1,11 @@
 
+2021-03-18  Ron Norman <rjn@inglenet.com>
+
+	* common.h: New cob_symbol defined for a table of all module symbols
+				Field added to cob_module for section/paragraph/verb names
+	* common.c: New routines added to dump a module using the symbol table
+				instead of a bunch in generated code to do it
+
 2021-03-05  Ron Norman <rjn@inglenet.com>
 
 	* common.h: Add flag_isnodat

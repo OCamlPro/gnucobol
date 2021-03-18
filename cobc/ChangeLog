@@ -1,4 +1,18 @@
 
+2021-03-18  Ron Norman <rjn@inglenet.com>
+
+	* cobc.c,flag.def: Changes for compile option  -fsymtab
+				to generate a symbol table in the module for 'dump'
+				The flag cb_flag_symbols is also enabled with -dump, -ftrace
+	* tree.h: added flags to cb_field for symbol table processing
+	* codegen.c: A table of 'cob_symbol' is emitted defining all symbols in 
+				the module and this is now used for 'dump' instead of
+				emitting a bunch of code to do the dump
+				For TRACE, a bit is now set in module->flag_debug_trace 
+				which is tested before calling the 'trace' routines
+				Also, section/paragraph/verb names are now set via pointers 
+				in cob_module
+
 2021-02-18  Ron Norman <rjn@inglenet.com>
 
 	* cobc.c: Changes to replace VB-CISAM with V-ISAM

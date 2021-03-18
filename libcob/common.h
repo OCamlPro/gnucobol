@@ -1216,23 +1216,28 @@ typedef struct __cob_field {
 	const cob_field_attr	*attr;		/* Pointer to attribute */
 } cob_field;
 
-#if	0	/* RXWRXW - Constant field */
-/* Field structure for constants */
+/* Symbol table structure; Used for dump & debugging */
 
-typedef struct __cob_const_field {
-	const size_t		size;		/* Field size */
-	const unsigned char	*data;		/* Pointer to field data */
-	const cob_field_attr	*attr;		/* Pointer to attribute */
-} cob_const_field;
+typedef struct __cob_symbol {
+	unsigned int	parent;		/* Index to parent cob_symbol */
+	unsigned int	sister;		/* Index to sister cob_symbol */
+	char			*name;		/* Field name, NULL means FILLER */
+	void			*data;		/* Pointer to data pointer */
+	const cob_field_attr *attr;	/* Pointer to attribute */
 
+	unsigned int	is_file:1;	/* 'data' points to FILE pointer */
+	unsigned int	level:7;	/* Level number */
+	unsigned int	section:3;	/* SECTION of program */
+	unsigned int	is_indirect:1;/* 'data' points to the field's pointer */
+	unsigned int	is_group:1;	/* Field was Group item */
+	unsigned int	is_redef:1;	/* Field has REDEFINES */
+	unsigned int	has_depend:1;/* Field has DEPENDING ON */
 
-/* Union for field constants */
-
-typedef union __cob_fld_union {
-	const cob_const_field	cf;
-	cob_field		vf;
-} cob_fld_union;
-#endif
+	unsigned int	offset;		/* Offset within record */
+	unsigned int	size;		/* Field size */
+	unsigned int	depending;	/* Index to DEPENDING ON  field */
+	unsigned int	occurs;		/* Max number of OCCURS */
+} cob_symbol;
 
 /* Representation of 128 bit FP */
 
@@ -1356,7 +1361,18 @@ typedef struct __cob_module {
 	unsigned char		flag_debug_trace;	/* Module debug/trace compile option */
 #define COB_MODULE_TRACE	2
 #define COB_MODULE_TRACEALL	4
-	unsigned char		unused[1];		/* Use these flags up later, added for alignment */
+#define COB_MODULE_READYTRACE	8
+#define COB_MODULE_DUMPED	16
+	unsigned char		flag_dump_sect;		/* Which SECTIONS to dump */
+#define COB_DUMP_NONE	0x00		/* No dump */
+#define COB_DUMP_FD		0x01		/* FILE SECTION -> FILE DESCRIPTION */
+#define COB_DUMP_WS		0x02  		/* WORKING-STORAGE SECTION */
+#define COB_DUMP_RD		0x04		/* REPORT SECTION */
+#define COB_DUMP_SD		0x08		/* FILE SECTION -> SORT DESCRIPTION */
+#define COB_DUMP_SC		0x10		/* SCREEN SECTION */
+#define COB_DUMP_LS		0x20  		/* LINKAGE SECTION */
+#define COB_DUMP_LO		0x40  		/* LOCAL-STORAGE SECTION */
+#define COB_DUMP_ALL	(COB_DUMP_FD|COB_DUMP_WS|COB_DUMP_RD|COB_DUMP_SD|COB_DUMP_SC|COB_DUMP_LS|COB_DUMP_LO)
 
 	unsigned int		module_stmt;		/* Last statement executed */
 	const char		**module_sources;	/* Source module names compiled */
@@ -1381,6 +1397,11 @@ typedef struct __cob_module {
 	cob_field		*json_code;		/* JSON-CODE */
 	cob_field		*json_status;		/* JSON-STATUS */
 	cob_field		function_return;	/* Copy of RETURNING field */
+	unsigned int	num_symbols;		/* Number of symbols in table */
+	cob_symbol		*module_symbols;	/* Array of module symbols */
+	const char		*stmt_name;			/* Statment VERB name */
+	const char		*section_name;
+	const char		*paragraph_name;
 } cob_module;
 
 /* For 'module_type'
@@ -1718,7 +1739,7 @@ typedef struct __cob_ml_tree {
 typedef struct __cob_global {
 	cob_file		*cob_error_file;	/* Last error file */
 	cob_module		*cob_current_module;	/* Current module */
-	const char		*last_exception_statement;	/* SLast exception: tatement */
+	const char		*last_exception_statement;	/* Last exception: Statement */
 	const char		*last_exception_id;	/* Last exception: PROGRAMM-ID / FUNCTION-ID*/
 	const char		*last_exception_section;	/* Last exception: Section */
 	const char		*last_exception_paragraph;	/* Last exception: Paragraph */

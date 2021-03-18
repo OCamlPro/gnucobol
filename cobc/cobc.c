@@ -3164,6 +3164,7 @@ process_command_line (const int argc, char **argv)
 			gflag_set = 1;
 			cb_flag_stack_check = 1;
 			cb_flag_source_location = 1;
+			cb_flag_symbols = 1;
 			cb_flag_remove_unreachable = 0;
 #ifdef COB_DEBUG_FLAGS
 			COBC_ADD_STR (cobc_cflags, " ", cobc_debug_flags, NULL);
@@ -3201,6 +3202,7 @@ process_command_line (const int argc, char **argv)
 			/* -debug : Turn on all runtime checks */
 			cb_flag_source_location = 1;
 			cb_flag_stack_check = 1;
+			cb_flag_symbols = 1;
 			cobc_wants_debug = 1;
 			break;
 
@@ -3735,6 +3737,7 @@ process_command_line (const int argc, char **argv)
 	if (cb_flag_traceall) {
 		cb_flag_trace = 1;
 		cb_flag_source_location = 1;
+		cb_flag_symbols = 1;
 	}
 	if (cb_flag_c_line_directives) {
 		save_all_src = 1;
@@ -8302,10 +8305,6 @@ finish_setup_compiler_env (void)
 	cobc_ldflags_len = strlen (cobc_ldflags);
 	cobc_lib_paths_len = strlen (cobc_lib_paths);
 	cobc_libs_len = strlen (cobc_libs);
-
-	if (getenv ("COBC_GEN_DUMP_COMMENTS")) {
-		cb_wants_dump_comments = 1;
-	}
 }
 
 

@@ -864,6 +864,7 @@ struct cb_field {
 	char	*	sql_date_format;	/* Date field format string */
 	char	*	sql_when;			/* WHEN condition */
 	int			sql_filler_id;		/* Used to make a unique name for a FILLER */
+	unsigned int  symtab;			/* Position in cob_symbol table */
 
 	/* Flags */
 	unsigned char flag_base;		/* Has memory allocation */
@@ -933,6 +934,8 @@ struct cb_field {
 	unsigned int flag_sync_left : 1;	/* SYNCHRONIZED LEFT */
 	unsigned int flag_sync_right : 1;	/* SYNCHRONIZED RIGHT */
 	unsigned int flag_sql_filler : 1;	/* Warned about FILLER for SQL */
+	unsigned int flag_sym_emitted: 1;	/* cob_symbol was emitted */
+	unsigned int flag_cob_field	: 1;	/* Had cob_field emitted */
 
 };
 
