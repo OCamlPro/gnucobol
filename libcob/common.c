@@ -213,11 +213,7 @@ static size_t			sort_nkeys = 0;
 static cob_file_key		*sort_keys = NULL;
 static const unsigned char	*sort_collate = NULL;
 
-static const char		*cob_current_program_id = NULL;
-static const char		*cob_current_section = NULL;
-static const char		*cob_current_paragraph = NULL;
 static const char		*cob_source_file = NULL;
-static const char		*cob_source_statement = NULL;
 static unsigned int		cob_source_line = 0;
 
 #ifdef COB_DEBUG_LOG
@@ -764,14 +760,6 @@ cob_get_source_line ()
 		 && mod->next != NULL
 		 && mod->next->module_stmt != 0)
 			mod = mod->next;
-		if (mod->module_name)
-			cob_current_program_id = mod->module_name;
-		if (mod->stmt_name)
-			cob_source_statement = mod->stmt_name;
-		if (mod->section_name)
-			cob_current_section = mod->section_name;
-		if (mod->paragraph_name)
-			cob_current_paragraph = mod->paragraph_name;
 		if (mod->module_stmt != 0
 		 && mod->module_sources) {
 			cob_source_file =
@@ -1717,13 +1705,14 @@ cob_set_exception (const int id)
 	cob_get_source_line ();
 	cobglobptr->cob_exception_code = cob_exception_tab_code[id];
 	last_exception_code = cobglobptr->cob_exception_code;
-	if (id) {
+	if (id
+	 && COB_MODULE_PTR) {
 		cobglobptr->cob_got_exception = 1;
-		cobglobptr->last_exception_statement = cob_source_statement;
 		cobglobptr->last_exception_line = cob_source_line;
-		cobglobptr->last_exception_id = cob_current_program_id;
-		cobglobptr->last_exception_section = cob_current_section;
-		cobglobptr->last_exception_paragraph = cob_current_paragraph;
+		cobglobptr->last_exception_id = COB_MODULE_PTR->module_name;
+		cobglobptr->last_exception_statement = COB_MODULE_PTR->stmt_name;
+		cobglobptr->last_exception_section = COB_MODULE_PTR->section_name;
+		cobglobptr->last_exception_paragraph = COB_MODULE_PTR->paragraph_name;
 	} else {
 		cobglobptr->cob_got_exception = 0;
 		cobglobptr->last_exception_statement = NULL;
@@ -1914,7 +1903,6 @@ static int
 cob_trace_prep (void)
 {
 	const char	*s;
-	cob_current_program_id = COB_MODULE_PTR->module_name;
 	cob_get_source_line ();
 	if (!cobsetptr->cob_trace_file) {
 		cob_check_trace_file ();
@@ -2006,8 +1994,7 @@ cob_trace_sect (const char *name)
 {
 	char	val[60];
 
-	/* store for CHECKME */
-	cob_current_section = name;
+	COB_MODULE_PTR->section_name = name;
 
 	/* actual tracing, if activated */
 	if (cobsetptr->cob_line_trace
@@ -2027,7 +2014,7 @@ cob_trace_para (const char *name)
 	char	val[60];
 
 	/* store for CHECKME */
-	cob_current_paragraph = name;
+	COB_MODULE_PTR->paragraph_name = name;
 
 	/* actual tracing, if activated */
 	if (cobsetptr->cob_line_trace
@@ -2082,7 +2069,6 @@ cob_trace_stmt (const char *stmt)
 
 	/* store for CHECKME */
 	if (stmt) {
-		cob_source_statement = stmt;
 		COB_MODULE_PTR->stmt_name = stmt;
 	}
 
@@ -2299,9 +2285,9 @@ cob_module_global_enter (cob_module **module, cob_global **mglobal,
 	cobglobptr->cob_stmt_exception = 0;
 
 	if (cobsetptr->cob_line_trace)
-		cob_ready_trace ();
+		COB_MODULE_PTR->flag_debug_trace |= COB_MODULE_READYTRACE;
 	else
-		cob_reset_trace ();
+		COB_MODULE_PTR->flag_debug_trace &= ~COB_MODULE_READYTRACE;
 
 	return 0;
 }
@@ -8378,11 +8364,7 @@ cob_init (const int argc, char **argv)
 	basext = NULL;
 	sort_keys = NULL;
 	sort_collate = NULL;
-	cob_current_program_id = NULL;
-	cob_current_section = NULL;
-	cob_current_paragraph = NULL;
 	cob_source_file = NULL;
-	cob_source_statement = NULL;
 	exit_hdlrs = NULL;
 	hdlrs = NULL;
 	commlncnt = 0;
