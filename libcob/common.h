@@ -1226,12 +1226,13 @@ typedef struct __cob_symbol {
 	const cob_field_attr *attr;	/* Pointer to attribute */
 
 	unsigned int	is_file:1;	/* 'data' points to FILE pointer */
+	unsigned int	is_indirect:1;/* 'data' points to the field's pointer */
 	unsigned int	level:7;	/* Level number */
 	unsigned int	section:3;	/* SECTION of program */
-	unsigned int	is_indirect:1;/* 'data' points to the field's pointer */
 	unsigned int	is_group:1;	/* Field was Group item */
 	unsigned int	is_redef:1;	/* Field has REDEFINES */
 	unsigned int	has_depend:1;/* Field has DEPENDING ON */
+	unsigned int	indexes:5;	/* Field has N subscripts/indexes */
 
 	unsigned int	offset;		/* Offset within record */
 	unsigned int	size;		/* Field size */

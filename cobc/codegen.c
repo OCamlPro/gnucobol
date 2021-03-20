@@ -1986,7 +1986,7 @@ static void
 emit_one_sym (struct cb_field *f)
 {
 	struct cb_field *fp;
-	int		is_indirect;
+	int		is_indirect,idx;
 	unsigned int offset;
 
 	if (f->flag_is_returning)	/* Non static so cannot be in symbol table */
@@ -2052,13 +2052,13 @@ emit_one_sym (struct cb_field *f)
 	}
 	output (",");
 	output_attr (cb_build_field_reference (f, NULL));
-	output(",0");	/* is_file */
-	if (f->level < 8)
-		output (",%02d",f->level);
-	else
-		output (",%2d",f->level);
-	output (",%d ",f->storage);
+	output (",0");	/* NOT is_file */
 	output (",%d",is_indirect);
+	if (f->level < 8)
+		output (",\t\t%02d",f->level);
+	else
+		output (",\t\t%2d",f->level);
+	output (",%d",f->storage);
 	output (",%d",f->children?1:0);
 	if (sym_1st_file) {
 		sym_1st_file = 0;
@@ -2066,8 +2066,13 @@ emit_one_sym (struct cb_field *f)
 	} else {
 		output (",%d",f->redefines?1:0);
 	}
-	output (",%d ",f->depending?1:0);
-	output (",%d",offset);
+	output (",%d",f->depending?1:0);
+	for (idx=0, fp = f; fp; fp = fp->parent) {
+		if (fp->occurs_max > 1)
+			idx++;
+	}
+	output (",%d",idx);
+	output (",  %d",offset);
 	output (",%d",f->size);
 	if (f->depending) {
 		fp = cb_code_field (f->depending);
@@ -2166,7 +2171,7 @@ emit_mod_symtab (struct cb_program *prog)
 		output (",%4d",fl->record->sister?fl->record->sister->symtab:0);
 		output (",\"%s\"",wrk);
 		output (",&%s%s",CB_PREFIX_FILE, fl->cname);
-		output (",NULL,1,0,%d,1,0,0,0,0,0,0",CB_STORAGE_FILE);
+		output (",NULL,1,1,\t\t00,%d,0,0,0,0,0,0,0,0",CB_STORAGE_FILE);
 		output ("}");
 		sym_comma = 1;
 		sym_1st_file = 1;
@@ -2759,9 +2764,8 @@ output_local_fields (struct cb_program *prog)
 		output_line ("/* Symbol table for %s */",prog->orig_program_id);
 		output_line ("static cob_symbol %s_sym_tab [] = {",prog->program_id);
 		emit_mod_symtab (prog);
-		if (max == 0)
-			output ("        {0,0}");
-		output_newline ();
+		emit_comma ();
+		output_line ("         {%4d,%4d,NULL,NULL,NULL,0,0,0,0}",0,0);
 		output_line ("};");
 		output_line ("static unsigned int %s_num_sym = %d;",prog->program_id,max);
 		output_newline ();

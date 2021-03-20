@@ -1,4 +1,8 @@
 
+2021-03-20  Ron Norman <rjn@inglenet.com>
+
+	* common.h: Add 'indexes' to cob_symbol 
+				
 2021-03-18  Ron Norman <rjn@inglenet.com>
 
 	* common.h: New cob_symbol defined for a table of all module symbols

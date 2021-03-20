@@ -1,4 +1,9 @@
 
+2021-03-20  Ron Norman <rjn@inglenet.com>
+
+	* cobc.c: Set flag for symbol table for -fdump & -G as well
+	* codegen.c: Add to cob_symbol how many indexes a variable requires
+
 2021-03-18  Ron Norman <rjn@inglenet.com>
 
 	* cobc.c,flag.def: Changes for compile option  -fsymtab
