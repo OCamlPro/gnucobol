@@ -2007,12 +2007,18 @@ emit_one_sym (struct cb_field *f)
 	else
 		output (",\"%s\"", f->name);
 	fp = real_field_founder (f);
-	is_indirect = 1;
+	is_indirect = SYM_ADRS_PTR;
 	offset = f->offset;
 	if (fp->flag_item_based) {
 		output (",&%s%d", CB_PREFIX_BASE, fp->id);
 	} else
 	if (fp->storage == CB_STORAGE_LINKAGE) {
+		if (f->flag_any_numeric
+		 || f->flag_any_length) {
+			output (",&%s%d", CB_PREFIX_FIELD, f->id);
+			offset = 0;
+			is_indirect = SYM_ADRS_FIELD;
+		} else
 		if (f->flag_cob_field) {
 			output (",&%s%d.data", CB_PREFIX_FIELD, f->id);
 			offset = 0;
@@ -2040,14 +2046,14 @@ emit_one_sym (struct cb_field *f)
 	 || f->flag_local) {
 		output (",&%s%d", CB_PREFIX_BASE, f->id);
 		offset = 0;
-		is_indirect = 0;
+		is_indirect = SYM_ADRS_DATA;
 	} else
 	if (f->children
 	 && f->children->flag_cob_field
 	 && f->children->offset == 0) {
 		output (",&%s%d.data", CB_PREFIX_FIELD, f->children->id);
 	} else {
-		is_indirect = 0;
+		is_indirect = SYM_ADRS_DATA;
 		output (",%s%d", CB_PREFIX_BASE, fp->id);
 	}
 	output (",");

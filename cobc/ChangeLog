@@ -1,4 +1,8 @@
 
+2021-03-26  Ron Norman <rjn@inglenet.com>
+
+	* codegen.c: Emit cob_symbol for ANY NUMERIC and ANY LENGTH
+
 2021-03-20  Ron Norman <rjn@inglenet.com>
 
 	* cobc.c: Set flag for symbol table for -fdump & -G as well

@@ -8766,13 +8766,17 @@ cob_sym_get_field (cob_field *f, cob_symbol *sym, int k)
 {
 	f->size = sym[k].size;
 	f->attr = sym[k].attr;
-	if (sym[k].is_indirect) {
-		memcpy (&f->data, sym[k].data, sizeof(void*));
+	if (sym[k].is_indirect == SYM_ADRS_PTR) {
+		memcpy (&f->data, sym[k].adrs, sizeof(void*));
+		if (f->data != NULL)
+			f->data += sym[k].offset;
+	} else if (sym[k].is_indirect == SYM_ADRS_FIELD) {
+		memcpy (f, sym[k].adrs, sizeof(cob_field));
 	} else {
-		f->data = sym[k].data;
+		f->data = sym[k].adrs;
+		if (f->data != NULL)
+			f->data += sym[k].offset;
 	}
-	if (f->data != NULL)
-		f->data += sym[k].offset;
 }
 
 static int
@@ -8874,7 +8878,7 @@ cob_dump_symbols (cob_module *mod)
 				cob_dump_output (sectname[sect]);
 		}
 		if (sym[k].is_file) {
-			memcpy (&fl, sym[k].data, sizeof(void*));
+			memcpy (&fl, sym[k].adrs, sizeof(void*));
 			cob_dump_file (sym[k].name, fl);
 			continue;
 		}

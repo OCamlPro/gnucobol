@@ -1,4 +1,10 @@
 
+2021-03-26  Ron Norman <rjn@inglenet.com>
+
+	* common.h: Add to cob_symbol values for 'is_indirect'
+				Changed 'data' to 'adrs', 'indexes' to 'subscripts'
+	* common.c: Adjusted for new field names, handle ANY LENGTH/NUMERIC
+				
 2021-03-20  Ron Norman <rjn@inglenet.com>
 
 	* common.h: Add 'indexes' to cob_symbol 
