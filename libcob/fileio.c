@@ -515,7 +515,6 @@ indexed_file_type (cob_file *f, char *filename)
 			return -1;
 		}
 		memset(hbuf,0,sizeof(hbuf));
-		fread(hbuf, 1, sizeof(hbuf), fdin);
 		if (fread(hbuf, 1, sizeof(hbuf), fdin) < 256) {
 			fclose(fdin);
 			return -1;
@@ -1153,7 +1152,7 @@ cob_put_qbl (cob_file *f, const char *type)
 	cob_u64_t	recnum = 0;
 	if (qblfd == -1)
 		return;
-	strncpy(qbl_hdr->type, type, 2);
+	memcpy(qbl_hdr->type, type, 2);
 	strncpy(qbl_hdr->name, f->select_name, sizeof(qbl_hdr->name)-1);
 	if(f->organization == COB_ORG_RELATIVE) {
 		recnum = (cob_u64_t)cob_get_int (f->keys[0].field);
