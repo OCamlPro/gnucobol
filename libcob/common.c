@@ -135,6 +135,7 @@
 #include "coblocal.h"
 
 #include "libcob/cobgetopt.h"
+#include "cobcapi.h"
 
 /* sanity checks */
 #if COB_MAX_WORDLEN > 255
@@ -746,6 +747,7 @@ cob_terminate_routines (void)
 
 	cob_exit_common_modules ();
 	cob_exit_call ();
+	cob_exit_cobcapi ();
 	cob_exit_common ();
 }
 
@@ -8458,6 +8460,7 @@ cob_init (const int argc, char **argv)
 	cob_init_intrinsic (cobglobptr);
 	cob_init_fileio (cobglobptr, cobsetptr);
 	cob_init_call (cobglobptr, cobsetptr, check_mainhandle);
+	cob_init_cobcapi (cobglobptr, cobsetptr);
 	cob_init_termio (cobglobptr, cobsetptr);
 	cob_init_reportio (cobglobptr, cobsetptr);
 	cob_init_mlio (cobglobptr);

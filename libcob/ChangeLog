@@ -1,4 +1,11 @@
 
+2021-03-29  Ron Norman <rjn@inglenet.com>
+
+	* common.h: Split into cobcapi.c
+	* call.c: C API functions split out into cobcapi.c
+	* cobcapi.h: new module as header for the COBOL - C API
+	* cobcapi.c: new module to hold the COBOL - C API
+
 2021-03-26  Ron Norman <rjn@inglenet.com>
 
 	* common.h: Add to cob_symbol values for 'is_indirect'

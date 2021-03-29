@@ -33,7 +33,7 @@ AM_LDFLAGS = $(COB_FIX_LIB) $(COB_FIX_LIBTOOL) -no-undefined
 
 libcob_la_SOURCES = common.c move.c numeric.c strings.c \
 	fileio.c fextfh.c focextfh.c  mlio.c fisam.c \
-	call.c intrinsic.c termio.c screenio.c reportio.c cobgetopt.c 
+	call.c cobcapi.c intrinsic.c termio.c screenio.c reportio.c cobgetopt.c 
 
 libcob_la_LIBADD = $(LIBCOB_LIBS) $(top_builddir)/lib/libsupport.a \
 	$(CODE_COVERAGE_LIBS)
@@ -126,7 +126,7 @@ lib_LTLIBRARIES = libcob.la $(lib_ci) $(lib_di) $(lib_vb) $(lib_vc) \
 
 EXTRA_DIST = coblocal.h cobinternal.h system.def sysdefines.h fileio.h fisam.c
 pkgincludedir = $(includedir)/libcob
-pkginclude_HEADERS = common.h cobgetopt.h exception.def
+pkginclude_HEADERS = common.h cobgetopt.h exception.def cobcapi.h
 
 # Add rules for code-coverage testing, as provided by AX_CODE_COVERAGE
 include $(top_srcdir)/aminclude_static.am

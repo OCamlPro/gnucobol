@@ -27,6 +27,7 @@ extern "C" {
 #endif
 
 #include <libcob/common.h>
+#include <libcob/cobcapi.h>
 
 #ifdef __cplusplus
 }

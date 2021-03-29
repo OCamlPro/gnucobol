@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2007-2012, 2014-2020 Free Software Foundation, Inc.
+   Copyright (C) 2007-2012, 2014-2021 Free Software Foundation, Inc.
    Written by Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -55,6 +55,7 @@
 
 
 #include <../libcob/cobinternal.h>
+#include "cobcapi.h"
 
 #ifndef	F_OK
 #define	F_OK		0
@@ -370,6 +371,7 @@ COB_HIDDEN void		cob_init_termio		(cob_global *, cob_settings *);
 COB_HIDDEN void		cob_init_fileio		(cob_global *, cob_settings *);
 COB_HIDDEN void		cob_init_reportio	(cob_global *, cob_settings *);
 COB_HIDDEN void		cob_init_call		(cob_global *, cob_settings *, const int);
+COB_HIDDEN void		cob_init_cobcapi	(cob_global *, cob_settings *);
 COB_HIDDEN void		cob_init_intrinsic	(cob_global *);
 COB_HIDDEN void		cob_init_strings	(cob_global *);
 COB_HIDDEN void		cob_init_move		(cob_global *, cob_settings *);
@@ -389,6 +391,7 @@ COB_HIDDEN void		cob_exit_fileio_msg_only	(void);
 COB_HIDDEN void		cob_exit_fileio		(void);
 COB_HIDDEN void		cob_exit_reportio	(void);
 COB_HIDDEN void		cob_exit_call		(void);
+COB_HIDDEN void		cob_exit_cobcapi	(void);
 COB_HIDDEN void		cob_exit_intrinsic	(void);
 COB_HIDDEN void		cob_exit_strings	(void);
 COB_HIDDEN void		cob_exit_mlio		(void);
