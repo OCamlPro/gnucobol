@@ -1956,6 +1956,8 @@ COB_EXPIMP void	cob_trace_para		(const char *name);
 COB_EXPIMP void	cob_trace_entry		(const char *name);
 COB_EXPIMP void	cob_trace_exit		(const char *name);
 COB_EXPIMP void	cob_trace_stmt		(const char *stmt);
+COB_EXPIMP void	cob_trace_stmt_num	(const int);
+COB_EXPIMP int	cob_trace_get_stmt	(const char *stmt);
 
 COB_EXPIMP void			*cob_external_addr	(const char *, const int);
 COB_EXPIMP unsigned char	*cob_get_pointer	(const void *);

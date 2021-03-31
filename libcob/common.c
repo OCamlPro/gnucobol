@@ -216,6 +216,81 @@ static const unsigned char	*sort_collate = NULL;
 
 static const char		*cob_source_file = NULL;
 static unsigned int		cob_source_line = 0;
+static const char *cob_verbs[] = {
+		"ACCEPT",
+		"ADD",
+		"ALTER",
+		"CALL",
+		"CANCEL",
+		"CHAIN",
+		"CLOSE",
+		"COMMIT",
+		"COMPUTE",
+		"CONTINUE",
+		"DELETE",
+		"DISABLE",
+		"DISPLAY",
+		"DIVIDE",
+		"ELSE",
+		"ENABLE",
+		"END",
+		"END-EVALUATE",
+		"END-IF",
+		"END-INVOKE",
+		"END-PERFORM",
+		"END-SET",
+		"ENTER",
+		"ENTRY",
+		"EVALUATE",
+		"EXAMINE",
+		"EXEC",
+		"EXECUTE",
+		"EXHIBIT",
+		"EXIT",
+		"GENERATE",
+		"GO",
+		"GOBACK",
+		"IF",
+		"INITIALIZE",
+		"INITIATE",
+		"INSPECT",
+		"INVOKE",
+		"MERGE",
+		"MOVE",
+		"MULTIPLY",
+		"NEXT",
+		"NOTE",
+		"ON",
+		"OPEN",
+		"OTHERWISE",
+		"PERFORM",
+		"READ",
+		"READY TRACE",
+		"RECEIVE",
+		"RECOVER",
+		"RELEASE",
+		"RESET",
+		"RETURN",
+		"REWRITE",
+		"ROLLBACK",
+		"SEARCH",
+		"SEND",
+		"SERVICE",
+		"SET",
+		"SORT",
+		"START",
+		"STOP RUN",
+		"STRING",
+		"SUBTRACT",
+		"SUPPRESS",
+		"TERMINATE",
+		"TRANSFORM",
+		"UNLOCK",
+		"UNSTRING",
+		"WHEN",
+		"WRITE"
+	};
+#define MAX_VERBS (sizeof(cob_verbs) / sizeof(void*))
 
 #ifdef COB_DEBUG_LOG
 static int			cob_debug_check_open = 1;
@@ -2069,7 +2144,6 @@ cob_trace_stmt (const char *stmt)
 {
 	char	val[60];
 
-	/* store for CHECKME */
 	if (stmt) {
 		COB_MODULE_PTR->stmt_name = stmt;
 	}
@@ -2083,6 +2157,28 @@ cob_trace_stmt (const char *stmt)
 		snprintf (val, sizeof (val), "           %s", stmt ? (char *)stmt : _("unknown"));
 		cob_trace_print (val);
 	}
+}
+
+void
+cob_trace_stmt_num (const int n)
+{
+	cob_trace_stmt (cob_verbs[n]);
+}
+
+int
+cob_trace_get_stmt (const char *stmt)
+{
+	int k,n;
+	for (k=10; k < MAX_VERBS && strcmp(stmt, cob_verbs[k]) > 0; k += 9);
+	n = k + 1;
+	k -= 10;
+	for (; k < n; k++) {
+		if (cob_verbs[k] == NULL)
+			break;
+		if (strcmp(stmt, cob_verbs[k]) == 0)
+			return k;
+	}
+	return -1;
 }
 
 void

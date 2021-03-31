@@ -8199,9 +8199,13 @@ output_line_and_trace_info (cb_tree x, const char *name)
 		if (cb_flag_source_location 
 		 && cb_flag_trace
 		 && name) {
+			int	num = cob_trace_get_stmt (name);
 			output_line ("if ((module->flag_debug_trace & COB_MODULE_READYTRACE))");
-			output_line ("   cob_trace_stmt (%s%d);",
-				CB_PREFIX_STRING, lookup_string (name));
+			if (num >= 0)
+				output_line ("   cob_trace_stmt_num (%d);",num);
+			else
+				output_line ("   cob_trace_stmt (%s%d);",
+							CB_PREFIX_STRING, lookup_string (name));
 		} else if (cb_flag_c_line_directives) {
 			output_line (";");
 			output_c_info ();
@@ -8215,9 +8219,13 @@ output_line_and_trace_info (cb_tree x, const char *name)
 		if (cb_flag_source_location 
 		 && cb_flag_trace
 		 && name) {
+			int	num = cob_trace_get_stmt (name);
 			output_line ("if ((module->flag_debug_trace & COB_MODULE_READYTRACE))");
-			output_line ("   cob_trace_stmt (%s%d);",
-				CB_PREFIX_STRING, lookup_string (name));
+			if (num >= 0)
+				output_line ("   cob_trace_stmt_num (%d);",num);
+			else
+				output_line ("   cob_trace_stmt (%s%d);",
+							CB_PREFIX_STRING, lookup_string (name));
 		}
 	}
 }

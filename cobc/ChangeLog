@@ -1,4 +1,10 @@
 
+2021-03-31  Ron Norman <rjn@inglenet.com>
+
+	* codegen.c: Use cob_trace_get_stmt to get a number for the statement
+				to be emitted with cob_trace_stmt_num instead of
+				cob_trace_stmt
+
 2021-03-26  Ron Norman <rjn@inglenet.com>
 
 	* codegen.c: Emit cob_symbol for ANY NUMERIC and ANY LENGTH

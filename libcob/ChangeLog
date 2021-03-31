@@ -1,4 +1,9 @@
 
+2021-03-31  Ron Norman <rjn@inglenet.com>
+
+	* common.h: Add cob_trace_stmt_num  && cob_trace_get_stmt
+	* common.c: Add cob_trace_stmt_num  && cob_trace_get_stmt
+
 2021-03-29  Ron Norman <rjn@inglenet.com>
 
 	* common.h: Split into cobcapi.c
