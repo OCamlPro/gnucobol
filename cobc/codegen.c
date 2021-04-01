@@ -8186,6 +8186,11 @@ output_section_info (struct cb_label *lp)
 static void
 output_line_and_trace_info (cb_tree x, const char *name)
 {
+	int	num = -1;
+	if (cb_flag_source_location 
+	 && name) {
+		num = cob_trace_get_stmt (name);
+	}
 	if (  (cb_flag_c_line_directives 
 		|| cb_flag_source_location 
 		|| cb_cob_line_num)
@@ -8193,16 +8198,18 @@ output_line_and_trace_info (cb_tree x, const char *name)
 		output_cobol_info (x);
 		if (cb_flag_source_location 
 		 && name) {
-			output_line ("module->stmt_name = %s%d;",
-				CB_PREFIX_STRING, lookup_string (name));
+			if (num >= 0)
+				output_line ("module->stmt_num = %d;",num);
+			else
+				output_line ("module->stmt_name = %s%d;",
+							CB_PREFIX_STRING, lookup_string (name));
 		}
 		if (cb_flag_source_location 
 		 && cb_flag_trace
 		 && name) {
-			int	num = cob_trace_get_stmt (name);
 			output_line ("if ((module->flag_debug_trace & COB_MODULE_READYTRACE))");
 			if (num >= 0)
-				output_line ("   cob_trace_stmt_num (%d);",num);
+				output_line ("   cob_trace_stmt_num ();");
 			else
 				output_line ("   cob_trace_stmt (%s%d);",
 							CB_PREFIX_STRING, lookup_string (name));
@@ -8213,16 +8220,18 @@ output_line_and_trace_info (cb_tree x, const char *name)
 	} else {
 		if (cb_flag_source_location 
 		 && name) {
-			output_line ("module->stmt_name = %s%d;",
-				CB_PREFIX_STRING, lookup_string (name));
+			if (num >= 0)
+				output_line ("module->stmt_num = %d;",num);
+			else
+				output_line ("module->stmt_name = %s%d;",
+							CB_PREFIX_STRING, lookup_string (name));
 		}
 		if (cb_flag_source_location 
 		 && cb_flag_trace
 		 && name) {
-			int	num = cob_trace_get_stmt (name);
 			output_line ("if ((module->flag_debug_trace & COB_MODULE_READYTRACE))");
 			if (num >= 0)
-				output_line ("   cob_trace_stmt_num (%d);",num);
+				output_line ("   cob_trace_stmt_num ();");
 			else
 				output_line ("   cob_trace_stmt (%s%d);",
 							CB_PREFIX_STRING, lookup_string (name));

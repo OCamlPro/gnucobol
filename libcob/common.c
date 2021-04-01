@@ -219,6 +219,7 @@ static unsigned int		cob_source_line = 0;
 static const char *cob_verbs[] = {
 		"ACCEPT",
 		"ADD",
+		"ALLOCATE",
 		"ALTER",
 		"CALL",
 		"CANCEL",
@@ -241,14 +242,22 @@ static const char *cob_verbs[] = {
 		"END-SET",
 		"ENTER",
 		"ENTRY",
+		"ENTRY FOR GO TO",
 		"EVALUATE",
 		"EXAMINE",
 		"EXEC",
 		"EXECUTE",
 		"EXHIBIT",
 		"EXIT",
+		"EXIT PARAGRAPH",
+		"EXIT PERFORM",
+		"EXIT PERFORM CYCLE",
+		"EXIT PROGRAM",
+		"EXIT SECTION",
+		"FREE",
 		"GENERATE",
 		"GO",
+		"GO TO",
 		"GOBACK",
 		"IF",
 		"INITIALIZE",
@@ -269,11 +278,12 @@ static const char *cob_verbs[] = {
 		"RECEIVE",
 		"RECOVER",
 		"RELEASE",
-		"RESET",
+		"RESET TRACE",
 		"RETURN",
 		"REWRITE",
 		"ROLLBACK",
 		"SEARCH",
+		"SEARCH ALL",
 		"SEND",
 		"SERVICE",
 		"SET",
@@ -1787,6 +1797,8 @@ cob_set_exception (const int id)
 		cobglobptr->cob_got_exception = 1;
 		cobglobptr->last_exception_line = cob_source_line;
 		cobglobptr->last_exception_id = COB_MODULE_PTR->module_name;
+		if (COB_MODULE_PTR->stmt_num >= 0)
+			COB_MODULE_PTR->stmt_name = cob_verbs [COB_MODULE_PTR->stmt_num];
 		cobglobptr->last_exception_statement = COB_MODULE_PTR->stmt_name;
 		cobglobptr->last_exception_section = COB_MODULE_PTR->section_name;
 		cobglobptr->last_exception_paragraph = COB_MODULE_PTR->paragraph_name;
@@ -2144,9 +2156,7 @@ cob_trace_stmt (const char *stmt)
 {
 	char	val[60];
 
-	if (stmt) {
-		COB_MODULE_PTR->stmt_name = stmt;
-	}
+	COB_MODULE_PTR->stmt_name = stmt;
 
 	/* actual tracing, if activated */
 	if (cobsetptr->cob_line_trace
@@ -2160,18 +2170,28 @@ cob_trace_stmt (const char *stmt)
 }
 
 void
-cob_trace_stmt_num (const int n)
+cob_trace_stmt_num (void)
 {
-	cob_trace_stmt (cob_verbs[n]);
+	cob_trace_stmt (cob_verbs[COB_MODULE_PTR->stmt_num]);
 }
 
 int
 cob_trace_get_stmt (const char *stmt)
 {
 	int k,n;
-	for (k=10; k < MAX_VERBS && strcmp(stmt, cob_verbs[k]) > 0; k += 9);
+	if (stmt == NULL)
+		return -1;
+	for (k=10; k < MAX_VERBS && strcmp(stmt, cob_verbs[k]) > 0; k += 9) {
+		if (strcmp(stmt, cob_verbs[k]) == 0)
+			return k;
+	}
+	for (k=k-10; k < MAX_VERBS && strcmp(stmt, cob_verbs[k]) > 0; k += 3) {
+		if (strcmp(stmt, cob_verbs[k]) == 0)
+			return k;
+	}
 	n = k + 1;
-	k -= 10;
+	k -= 4;
+	if (k < 0) k = 0;
 	for (; k < n; k++) {
 		if (cob_verbs[k] == NULL)
 			break;
@@ -2380,6 +2400,8 @@ cob_module_global_enter (cob_module **module, cob_global **mglobal,
 	(*module)->next = COB_MODULE_PTR;
 	COB_MODULE_PTR = *module;
 	COB_MODULE_PTR->module_stmt = 0;
+	COB_MODULE_PTR->stmt_num = -1;
+	COB_MODULE_PTR->stmt_name = NULL;
 	cobglobptr->cob_stmt_exception = 0;
 
 	if (cobsetptr->cob_line_trace)

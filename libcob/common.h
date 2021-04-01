@@ -1403,7 +1403,8 @@ typedef struct __cob_module {
 	cob_field		function_return;	/* Copy of RETURNING field */
 	unsigned int	num_symbols;		/* Number of symbols in table */
 	cob_symbol		*module_symbols;	/* Array of module symbols */
-	const char		*stmt_name;			/* Statment VERB name */
+	int				stmt_num;			/* Position of VERB in cob_verbs table */
+	const char		*stmt_name;			/* Statement VERB name */
 	const char		*section_name;
 	const char		*paragraph_name;
 } cob_module;
@@ -1956,7 +1957,7 @@ COB_EXPIMP void	cob_trace_para		(const char *name);
 COB_EXPIMP void	cob_trace_entry		(const char *name);
 COB_EXPIMP void	cob_trace_exit		(const char *name);
 COB_EXPIMP void	cob_trace_stmt		(const char *stmt);
-COB_EXPIMP void	cob_trace_stmt_num	(const int);
+COB_EXPIMP void	cob_trace_stmt_num	(void);
 COB_EXPIMP int	cob_trace_get_stmt	(const char *stmt);
 
 COB_EXPIMP void			*cob_external_addr	(const char *, const int);
