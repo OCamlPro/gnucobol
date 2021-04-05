@@ -1818,6 +1818,8 @@ COB_EXPIMP void		print_version_summary (void);
 COB_EXPIMP int		cob_load_config	(void);
 COB_EXPIMP void		print_runtime_conf	(void);
 COB_EXPIMP cob_field_attr *cob_alloc_attr(int type, int digits, int scale, int flags);
+COB_EXPIMP void		cob_sym_get_field (cob_field *f, cob_symbol *sym, int k);
+COB_EXPIMP int		cob_sym_get_occurs (cob_symbol *sym, int k);
 
 COB_EXPIMP void		cob_set_exception	(const int);
 COB_EXPIMP int		cob_last_exception_is	(const int);

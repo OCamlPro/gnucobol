@@ -65,6 +65,11 @@ COB_EXPIMP const char	*cob_get_field_str (const cob_field *, char *buff, size_t 
 COB_EXPIMP const char	*cob_get_field_str_buffered (const cob_field *);
 /* set the field's data using the appropriate internal type, returns EINVAL if data is invalid */
 COB_EXPIMP int		cob_put_field_str (const cob_field *, const char *);
+COB_EXPIMP int		cob_get_field_value (char *mod_name, char *field_ref, int len, char *buf);
+COB_EXPIMP int		cob_put_field_value (char *mod_name, char *field_ref, int len, char *buf);
+COB_EXPIMP int		cob_watch_field_value (char *mod_name, char *field_ref);
+COB_EXPIMP int		cob_watch_field_free (char *mod_name, char *field_ref);
+COB_EXPIMP int		cob_watch_check (char *mod_name, char *field_ref);
 
 /*****************************************/
 /* defines for MicroFocus C -> COBOL API */

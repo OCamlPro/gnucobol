@@ -1,4 +1,11 @@
 
+2021-04-03  Ron Norman <rjn@inglenet.com>
+
+	* common.h: extern cob_sym_get_field and cob_sym_get_occurs
+	* common.c: extern cob_sym_get_field and cob_sym_get_occurs
+	* cobcapi.h: Add cob_get_field_value
+	* cobcapi.c: Add cob_get_field_value
+
 2021-04-01  Ron Norman <rjn@inglenet.com>
 
 	* common.h: Add cob_trace_stmt_num  && cob_trace_get_stmt

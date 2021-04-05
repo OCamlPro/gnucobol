@@ -54,21 +54,28 @@ static cob_field_attr	const_binll_attr =
 static cob_field_attr	const_binull_attr =
 			{COB_TYPE_NUMERIC_BINARY, 18, 0, 0, NULL};
 
-static size_t		call_lastsize = 0;
-static void			*call_buffer = NULL;
+static size_t		capi_lastsize = 0;
+static void			*capi_buffer = NULL;
 static cob_global	*cobglobptr = NULL;
 static cob_settings	*cobsetptr = NULL;
+static struct watch_list {
+		struct watch_list	*next;
+		char				*field_ref;
+		cob_module			*mod;
+		cob_field			f;
+		void				*saved;
+}	*head_watch	= NULL;
 
 /* Local functions */
 static void *
 cob_get_buff (const size_t buffsize)
 {
-	if (buffsize > call_lastsize) {
-		call_lastsize = buffsize;
-		cob_free (call_buffer);
-		call_buffer = cob_fast_malloc (buffsize);
+	if (buffsize > capi_lastsize) {
+		capi_lastsize = buffsize;
+		cob_free (capi_buffer);
+		capi_buffer = cob_fast_malloc (buffsize);
 	}
-	return call_buffer;
+	return capi_buffer;
 }
 
 
@@ -82,10 +89,17 @@ cob_init_cobcapi (cob_global *lptr, cob_settings* sptr)
 void
 cob_exit_cobcapi (void)
 {
-	if (call_buffer) {
-		cob_free (call_buffer);
-		call_buffer = NULL;
-		call_lastsize = 0;
+	struct watch_list *wl,*wp;
+	if (capi_buffer) {
+		cob_free (capi_buffer);
+		capi_buffer = NULL;
+		capi_lastsize = 0;
+	}
+	for (wl = head_watch; wl; wl = wp) {
+		cob_free (wl->field_ref);
+		cob_free (wl->saved);
+		wp = wl->next;
+		cob_free (wl);
 	}
 }
 
@@ -781,4 +795,354 @@ cob_field_content (cob_field *f, cob_field *t, cob_field_attr *a, void *d)
 	t->attr = a;
 	a->flags |= COB_FLAG_CONTENT;
 	memmove((void*)t->data, (void*)f->data, f->size);
+}
+
+static int
+get_name (int pos, char *field_ref, char *fld)
+{
+	int i;
+	while (field_ref[pos] == ' ') pos++;
+	for (i=0; field_ref[pos] != 0 
+		&& (isalnum (field_ref[pos]) || field_ref[pos] == '-'); ) {
+		fld[i++] = field_ref[pos++];
+	}
+	fld[i] = 0;
+	if (field_ref[pos] == ',') pos++;
+	while (field_ref[pos] == ' ') pos++;
+	if (field_ref[pos] == ',') pos++;
+	return pos;
+}
+
+static int
+find_field (cob_module  *mod, char *name)
+{
+	cob_symbol  *sym = mod->module_symbols;
+	int	k;
+	for (k=0; k < mod->num_symbols; k++) {
+		if (sym[k].name == NULL)
+			continue;
+		if (strcasecmp (sym[k].name, name) == 0) {
+			return k;
+		}
+	}
+	return -1;
+}
+
+static int
+get_value (int pos, cob_module  *mod, char *field_ref, char *fld)
+{
+	int		i;
+	cob_field	s;
+	char	fld2[48], numval[48];
+	cob_symbol  *sym = mod->module_symbols;
+
+	strcpy(fld,"-1");
+	pos = get_name (pos, field_ref, fld2);
+	for (i=0; fld2[i] != 0 && isdigit(fld2[i]); i++);
+	if (fld2[i] != 0) {
+		i = find_field (mod, fld2);
+		if (i < 0) {
+			return pos;
+		}
+		cob_sym_get_field (&s, sym, i);
+		cob_get_field_str (&s, numval, sizeof(numval));
+		strcpy(fld,numval);
+	} else {
+		strcpy(fld, fld2);
+	}
+	return pos;
+}
+
+static int
+cob_parse_field (cob_module  *mod, cob_field *f, char *field_ref)
+{
+	int		i, j, k, of, subs;
+	cob_field	s;
+	int		subval[12], refbgn,reflen;
+	char	fld1[8][48], fld2[48], numval[48];
+	cob_symbol  *sym = mod->module_symbols;
+
+	j = get_name (0, field_ref, fld1[of=0]);
+	while (field_ref[j] != 0) {
+		if (field_ref[j] == '(') 
+			break;
+		j = get_name (j, field_ref, fld2);
+		if (strcasecmp (fld2,"OF") == 0)
+			continue;
+		strcpy (fld1[++of], fld2);
+	}
+	k = find_field (mod, fld1[of]);
+	if (k < 0) {
+		return 1;
+	}
+	while (of > 0) {
+		of--;
+		while (k < mod->num_symbols) {
+			if (sym[k].name == NULL)
+				continue;
+			if (strcasecmp (sym[k].name, fld1[of]) == 0) {
+				break;
+			}
+			k++;
+		}
+	}
+	if (sym[k].name == NULL
+	 || strcasecmp (sym[k].name, fld1[0]) != 0) {
+		return 1;
+	}
+	cob_sym_get_field (f, sym, k);
+	if (f->data == NULL)
+		return 1;
+	refbgn = reflen = 0;
+	if (field_ref[j] == '(') {			/* Subscripts */
+		for (subs = 0; subs < 12; subs++)
+			subval[subs] = 1;
+		j++;
+		for (subs = 0; subs < 12; subs++) {
+			if (field_ref[j] == ')'
+			 || field_ref[j] == 0)
+				break;
+			j = get_value (j, mod, field_ref, fld2);
+			if (field_ref[j] == ':') {	/* Must be ref mod and not subscript */
+				refbgn = atoi (fld2);
+				j = get_value (j+1, mod, field_ref, fld2);
+				if (field_ref[j] == ')') j++;
+				reflen = atoi (fld2);
+				break;
+			}
+			subval[subs] = atoi (fld2);
+			if (subval[subs] == -1)
+				return 1;
+		}
+		if (sym[k].subscripts < subs) {
+			subs = sym[k].subscripts;
+		}
+		i = 0;
+		for (j = k; subs > 0; j = sym[j].parent) {
+			if (sym[j].occurs > 1) {
+				subs--;
+				if (subval[subs] < 1) subval[subs] = 1;
+				if (subval[subs] > sym[j].occurs) subval[subs] = sym[j].occurs;
+				i = i + ((subval[subs] - 1) * sym[j].size);
+			}
+		}
+		f->data = f->data + i;
+	}
+	if (field_ref[j] == ')') j++;
+	while (field_ref[j] == ' ') j++;
+
+	if (field_ref[j] == '(') {	/* Reference modification */
+		j = get_value (j+1, mod, field_ref, fld2);
+		if (field_ref[j] != ':')
+			return 1;
+		refbgn = atoi (fld2);
+		j = get_value (j+1, mod, field_ref, fld2);
+		if (field_ref[j] == ')') j++;
+		reflen = atoi (fld2);
+	}
+	if (refbgn > 0) {
+		refbgn--;
+		if (reflen == 0) {
+			reflen = f->size - refbgn;
+		}
+		f->size = reflen;
+		f->data = f->data + refbgn;
+	}
+	return 0;
+}
+
+/* 
+ * Using cob_symbols table, parse and evaluation the field reference
+ * and return the value
+ * 'mod_name' is the module name, if NULL, then current module
+ * 'field_ref' is the field reference, name, name of grp, subscripts etc
+ * 'buflen' is length of buf
+ * 'buf' receives the contents of the field
+ *
+ * return is ZERO, if all ok, else an error status
+ */
+static int
+cob_setup_field (char *mod_name, int buflen, char *buf, cob_module **xmod)
+{
+	cob_module	*mod;
+	int			sts;
+
+	if (cobglobptr == NULL
+	 || COB_MODULE_PTR == NULL) {
+		snprintf(buf,(size_t)buflen,"Not initialized");
+		return 1;
+	}
+	if (mod_name == NULL) {
+		mod = COB_MODULE_PTR;
+	} else {
+		for (mod = COB_MODULE_PTR; mod; mod = mod->next) {
+			if (strcasecmp (mod_name, mod->module_name) == 0)
+				break;
+		}
+		if (mod == NULL) {
+			snprintf(buf,(size_t)buflen,"Module %s not found",mod_name);
+			return 1;
+		}
+	}
+	if (mod->module_symbols == NULL
+	 || mod->num_symbols < 1) { 		/* No cob_symbol table present */
+		snprintf (buf,(size_t)buflen,"Error: %s not compiled with -debug",mod->module_name);
+		return 1;
+	}
+	*xmod = mod;
+	return 0;
+}
+
+/* 
+ * Using cob_symbols table, parse and evaluation the field reference
+ * and return the value
+ * 'mod_name' is the module name, if NULL, then current module
+ * 'field_ref' is the field reference, name, name of grp, subscripts etc
+ * 'buflen' is length of buf
+ * 'buf' receives the contents of the field
+ *
+ * return is ZERO, if all ok, else an error status
+ */
+int
+cob_get_field_value (char *mod_name, char *field_ref, int buflen, char *buf)
+{
+	cob_module	*mod;
+	int			sts;
+	cob_field	f;
+	*buf = 0;
+	if ( (sts=cob_setup_field (mod_name, buflen, buf, &mod)) != 0)
+		return sts;
+
+	sts = cob_parse_field (mod, &f, field_ref);
+	if (sts) {
+		snprintf (buf,(size_t)buflen,"%s is undefined",field_ref);
+		return sts;
+	}
+	cob_get_field_str (&f, buf, (size_t)buflen);
+	return 0;
+}
+
+/* 
+ * Using cob_symbols table, parse and set the field value
+ * 'mod_name' is the module name, if NULL, then current module
+ * 'field_ref' is the field reference, name, name of grp, subscripts etc
+ * 'buflen' is maximum length of 'buf'
+ * 'buf' holds the new value as character data 
+ *
+ * return is ZERO, if all ok, else an error status
+ */
+int
+cob_put_field_value (char *mod_name, char *field_ref, int buflen, char *buf)
+{
+	cob_module	*mod;
+	int			sts;
+	cob_field	f;
+	if ( (sts = cob_setup_field (mod_name, buflen, buf, &mod)) != 0)
+		return sts;
+
+	sts = cob_parse_field (mod, &f, field_ref);
+	if (sts) {
+		snprintf(buf,(size_t)buflen,"%s is undefined",field_ref);
+		return sts;
+	}
+	cob_put_field_str (&f, buf);
+	return 0;
+}
+
+/* 
+ * Using cob_symbols table, parse and set the field value to watch for changes
+ * 'mod_name' is the module name, if NULL, then current module
+ * 'field_ref' is the field reference, name, name of grp, subscripts etc
+ *
+ * return is ZERO, if all ok, else an error status
+ */
+int
+cob_watch_field_value (char *mod_name, char *field_ref)
+{
+	cob_module	*mod;
+	int			sts;
+	char		buf[256];
+	cob_field	f;
+	struct watch_list	*wl;
+	if ( (sts = cob_setup_field (mod_name, (int)sizeof(buf), buf, &mod)) != 0)
+		return sts;
+
+	sts = cob_parse_field (mod, &f, field_ref);
+	if (sts) {
+		snprintf(buf,sizeof(buf),"%s is undefined",field_ref);
+		return sts;
+	}
+	for (wl = head_watch; wl; wl = wl->next) {
+		if (strcasecmp (field_ref, wl->field_ref) == 0
+		 && wl->mod == mod) {	/* Already in list */
+			memcpy (wl->saved, wl->f.data, wl->f.size);
+			return 0;
+		}
+	}
+	wl = cob_malloc (sizeof(struct watch_list));
+	wl->field_ref = cob_strdup (field_ref);
+	memcpy (&wl->f, &f, sizeof(cob_field));
+	wl->saved = cob_malloc (f.size);
+	memcpy (wl->saved, f.data, f.size);
+	wl->next = head_watch;
+	wl->mod = mod;
+	head_watch = wl;
+}
+
+/* 
+ * Using cob_symbols table, parse and remove the field from watch list
+ * 'mod_name' is the module name, if NULL, then current module
+ * 'field_ref' is the field reference, name, name of grp, subscripts etc
+ *
+ * return is ZERO, if all ok, else an error status
+ */
+int
+cob_watch_field_free (char *mod_name, char *field_ref)
+{
+	cob_module	*mod;
+	char		buf[256];
+	cob_field	f;
+	struct watch_list	*wl, *wp;
+	if ( cob_setup_field (mod_name, (int)sizeof(buf), buf, &mod))
+		return 1;
+
+	if (cob_parse_field (mod, &f, field_ref)) 
+		return 1;
+	for (wl = head_watch; wl; wl = wl->next) {
+		if (strcasecmp (field_ref, wl->field_ref) == 0
+		 && wl->mod == mod) {	/* In list, remove and free it */
+			if (wl == head_watch)
+				head_watch = wl->next;
+			else
+				wp->next = wl->next;
+			cob_free (wl->field_ref);
+			cob_free (wl->saved);
+			cob_free (wl);
+			return 0;
+		}
+		wp = wl;
+	}
+	return 0;
+}
+
+/* 
+ * Scan the watch list looking for a field that has changed
+ * 'mod_name' gets the module name
+ * 'field_ref' gets the field reference
+ *
+ * return is ZERO, if nothing changed, else return 1 and update mod_name & field_ref
+ */
+int
+cob_watch_check (char *mod_name, char *field_ref)
+{
+	struct watch_list	*wl;
+	for (wl = head_watch; wl; wl = wl->next) {
+		if (memcmp (wl->saved, wl->f.data, wl->f.size) != 0) {
+			memcpy (wl->saved, wl->f.data, wl->f.size);
+			strcpy(mod_name, wl->mod->module_name);
+			strcpy(field_ref, wl->field_ref);
+			return 1;
+		}
+	}
+	return 0;
 }

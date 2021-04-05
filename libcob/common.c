@@ -8882,7 +8882,7 @@ catch_sig_jmp (int sig)
 	longjmp(save_sig_env, sig);
 }
 
-static void
+void
 cob_sym_get_field (cob_field *f, cob_symbol *sym, int k)
 {
 	f->size = sym[k].size;
@@ -8900,7 +8900,7 @@ cob_sym_get_field (cob_field *f, cob_symbol *sym, int k)
 	}
 }
 
-static int
+int
 cob_sym_get_occurs (cob_symbol *sym, int k)
 {
 	cob_field	d0;

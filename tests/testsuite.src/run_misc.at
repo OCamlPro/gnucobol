@@ -9081,6 +9081,338 @@ libcob: prog.cob:84: warning: cob_put_field_str: attempt to over-write constant 
 
 AT_CLEANUP
 
+AT_SETUP([C API Test (2)])
+AT_KEYWORDS([CALL])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+      
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT FLATFILE ASSIGN EXTERNAL RELFIX
+           ORGANIZATION RELATIVE
+           ACCESS IS SEQUENTIAL RELATIVE KEY IS REC-NUM
+           FILE STATUS IS CUST-STAT.
+
+       DATA  DIVISION.
+       FILE SECTION.
+       FD  FLATFILE
+           BLOCK CONTAINS 5 RECORDS.
+      
+       01  TSPFL-RECORD.
+           10  CM-CUST-NUM                     PICTURE X(8). 
+           10  CM-COMPANY                      PICTURE X(25). 
+           10  CM-DISK                         PICTURE X(8). 
+           10  CM-NO-TERMINALS                 PICTURE 9(4).
+      
+       01  XX-RECORD.
+           10  XX-CUST-NUM                     PICTURE X(8). 
+           10  XX-COMPANY                      PICTURE X(25). 
+           10  XX-DISK                         PICTURE X(8). 
+           10  XX-NO-TERMINALS                 PICTURE 9(4).
+      
+       WORKING-STORAGE SECTION.
+       77  MAX-SUB           VALUE  6  PICTURE 9(4) COMP.
+       77  CUST-STAT                   PICTURE X(2).
+       77  REC-NUM                     PICTURE 9(4) VALUE 1.
+       77  UNUSED-VAR                  PICTURE 9(4) COMP-3 VALUE 7.
+       01  BIN-FLD                     PIC 9(9) BINARY VALUE 0.
+      
+       01  TEST-DATA.
+         02  DATA-CUST-NUM-TBL.
+           05  FILLER PIC X(8) VALUE "ALP00000".
+           05  FILLER PIC X(8) VALUE "BET00000".
+           05  FILLER PIC X(8) VALUE "DEL00000".
+           05  FILLER PIC X(8) VALUE "EPS00000".
+           05  FILLER PIC X(8) VALUE "FOR00000".
+           05  FILLER PIC X(8) VALUE "GAM00000".
+      
+         02  DATA-CUST-NUM REDEFINES DATA-CUST-NUM-TBL
+                                       PIC X(8) OCCURS 6.
+         02  DATA-COMPANY-TBL.
+           05  FILLER PIC X(25) VALUE "ALPHA ELECTRICAL CO. LTD.".
+           05  FILLER PIC X(25) VALUE "BETA SHOE MFG. INC.      ".
+           05  FILLER PIC X(25) VALUE "DELTA LUGGAGE REPAIRS    ".
+           05  FILLER PIC X(25) VALUE "EPSILON EQUIPMENT SUPPLY ".
+           05  FILLER PIC X(25) VALUE "FORTUNE COOKIE COMPANY   ".
+           05  FILLER PIC X(25) VALUE "GAMMA X-RAY TECHNOLOGY   ".
+         02  DATA-COMPANY  REDEFINES DATA-COMPANY-TBL
+                                       PIC X(25) OCCURS 6.
+         02  DATA-ADDRESS-2-TBL.
+           05  FILLER PIC X(15) VALUE "ATLANTA   ".
+           05  FILLER PIC X(15) VALUE "CALGARY   ".
+           05  FILLER PIC X(15) VALUE "NEW YORK  ".
+           05  FILLER PIC X(15) VALUE "TORONTO   ".
+           05  FILLER PIC X(15) VALUE "WASHINGTON".
+           05  FILLER PIC X(15) VALUE "WHITEPLAIN".
+         02  DATA-ADDRESS   REDEFINES DATA-ADDRESS-2-TBL
+                                       PIC X(15) OCCURS 6
+                                       INDEXED BY I-ADDR.
+
+         02  DATA-NO-TERMINALS-TBL.
+           05  FILLER PIC 9(3) COMP-3 VALUE 10.
+           05  FILLER PIC 9(3) COMP-3 VALUE 13.
+           05  FILLER PIC 9(3) COMP-3 VALUE 75.
+           05  FILLER PIC 9(3) COMP-3 VALUE 10.
+           05  FILLER PIC 9(3) COMP-3 VALUE 90.
+           05  FILLER PIC 9(3) COMP-3 VALUE 254.
+         02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
+                                       PIC 9(3) COMP-3 OCCURS 6.
+       01  TSTREC.
+         05  TSTDEP  PIC XXX.
+         05  TSTWHO REDEFINES TSTDEP PIC XXX.
+         05  TSTDEP2.
+           10  TSTHOW   PIC XX.
+         05  TSTDEP3.
+           10  TSTHOW   PIC XX.
+         05  TSTX OCCURS 4 TIMES.
+           15  TSTG-1 PIC 99.
+           15  TSTX-2 PIC XX OCCURS 4 TIMES.
+      
+       01  WORK-AREA IS EXTERNAL.
+           05  SUB                             PICTURE 9(4) COMP.
+               88  ODD-RECORD                  VALUE 1 3 5.
+      
+       PROCEDURE DIVISION.
+
+           MOVE ALL "X" TO TSTREC.
+           MOVE 1 TO TSTG-1 (1).
+           MOVE 2 TO TSTG-1 (2).
+           MOVE 3 TO TSTG-1 (3).
+           MOVE 'YY' TO TSTHOW OF TSTDEP3.
+           MOVE 'ZZ' TO TSTHOW OF TSTDEP3.
+           PERFORM LOADFILE.
+
+           OPEN INPUT FLATFILE.
+           READ FLATFILE.
+
+       MAIN-100.
+           MOVE 5 TO SUB.
+           CALL  "CSYMDMP".
+           CALL  "tstsub" USING UNUSED-VAR TSPFL-RECORD.
+           DISPLAY "Try again".
+           MOVE 3 TO SUB.
+           CALL  "tstsub" USING REC-NUM "How did I get here?".
+           ADD  5 TO BIN-FLD.
+           CALL  "CSYMDMP".
+           DISPLAY "Ending now".
+           CLOSE FLATFILE.
+           STOP RUN.
+
+       LOADFILE.
+           OPEN OUTPUT FLATFILE.
+      
+           PERFORM LOAD-RECORD
+                        VARYING SUB FROM 1 BY 1 
+                          UNTIL SUB > MAX-SUB.
+      
+           CLOSE FLATFILE.
+      
+       LISTFILE.
+           OPEN INPUT FLATFILE.
+           READ FLATFILE.
+           CLOSE FLATFILE.
+      
+       LOAD-RECORD.
+      
+           MOVE SPACES                       TO TSPFL-RECORD.
+           MOVE DATA-CUST-NUM      (SUB)     TO CM-CUST-NUM.
+           MOVE DATA-COMPANY       (SUB)     TO CM-COMPANY.
+           MOVE DATA-NO-TERMINALS  (SUB)     TO CM-NO-TERMINALS.
+           IF  ODD-RECORD
+               MOVE "8417"                   TO CM-DISK 
+           ELSE
+               MOVE "8470"                   TO CM-DISK.
+           WRITE TSPFL-RECORD.
+
+           END PROGRAM prog.
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. tstsub.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       77  UNUSED-VAR            PICTURE 9(4)V99 COMP-4 VALUE 7.59.
+       01  TSTREC.
+         05  TSTDEP  PIC XXX.
+         05  TSTX OCCURS 4 TIMES.
+           15  TSTG-1 PIC 99.
+           15  TSTX-2 PIC XX OCCURS 4 TIMES.
+         05  TSTTAILX  PIC X(8).
+
+       01  WORK-AREA IS EXTERNAL.
+           05  SUB                             PICTURE 9(4) COMP.
+               88  ODD-RECORD                  VALUE 1 3 5.
+       LINKAGE SECTION.
+       01  X          PIC 9 ANY NUMERIC.
+       01  THE-RECORD PIC X ANY LENGTH.
+       
+       PROCEDURE DIVISION USING X, THE-RECORD.
+           MOVE ALL "Z" TO TSTREC.
+           MOVE 7 TO TSTG-1 (1).
+           MOVE 8 TO TSTG-1 (2).
+           MOVE 9 TO TSTG-1 (3).
+           MOVE 'A' TO TSTX-2 (1,1).
+           MOVE 'B' TO TSTX-2 (2,1).
+           MOVE 'C' TO TSTX-2 (3,1).
+           MOVE 'xx' TO TSTX-2 (1,4).
+           MOVE 'yy' TO TSTX-2 (2,4).
+           MOVE 'zz' TO TSTX-2 (3,4).
+           DISPLAY "In the subroutine now".
+           DISPLAY "THE-RECORD: '" THE-RECORD "'".
+           CALL  "CSYMDMP" USING THE-RECORD.
+           DISPLAY "THE-RECORD: '" THE-RECORD "'".
+           DISPLAY TSTREC.
+           DISPLAY X.
+           DISPLAY "Back to main".
+           EXIT PROGRAM.
+       END PROGRAM tstsub.
+])
+
+AT_DATA([cmod.c], [[
+#include <stdio.h>
+#include <string.h>
+#include <libcob.h>
+
+static int doWatch = 1;
+int
+CSYMDMP(void *p1, ...)
+{
+   int      nargs,sts;
+   char     modname[32],fld[128],buf[2048],*exp, *mod;
+
+   nargs = cob_get_num_params();
+   if (nargs < 1)
+      mod = "prog";
+   else
+      mod = NULL;
+   printf("CSYMDMP with %d parameters\n",nargs);
+   memset(buf,0,sizeof(buf));
+   sts = cob_get_field_value (mod, exp="MAX-SUB", sizeof(buf), buf);
+   printf(" %30s is %s%s.\n",exp,sts?"Error: ":"",buf);
+   memset(buf,0,sizeof(buf));
+   sts = cob_get_field_value (mod, exp="SUB", sizeof(buf), buf);
+   printf(" %30s is %s%s.\n",exp,sts?"Error: ":"",buf);
+   memset(buf,0,sizeof(buf));
+   sts = cob_get_field_value (mod, exp="UNUSED-VAR", sizeof(buf), buf);
+   printf(" %30s is %s%s.\n",exp,sts?"Error: ":"",buf);
+   if (memcmp(buf,"0099",4) != 0) {
+      strcpy(buf,"0099");
+      sts = cob_put_field_value (mod, exp, sizeof(buf), buf);
+   }
+   memset(buf,0,sizeof(buf));
+   sts = cob_get_field_value (mod, exp="DATA-COMPANY (SUB)", sizeof(buf), buf);
+   printf(" %30s is %s%s.\n",exp,sts?"Error: ":"",buf);
+   memset(buf,0,sizeof(buf));
+   if (sts == 0) {
+      sts = cob_get_field_value (mod, exp="DATA-ADDRESS (SUB) (5:)", sizeof(buf), buf);
+      printf(" %30s is %s%s.\n",exp,sts?"Error: ":"",buf);
+      memset(buf,0,sizeof(buf));
+      sts = cob_get_field_value (mod, exp="DATA-ADDRESS (4)", sizeof(buf), buf);
+      printf(" %30s is %s%s.\n",exp,sts?"Error: ":"",buf);
+      if (memcmp(buf,"Frankfurt",9) != 0) {
+        strcpy(buf,"Frankfurt");
+        sts = cob_put_field_value (mod, exp, sizeof(buf), buf);
+      }
+      memset(buf,0,sizeof(buf));
+      sts = cob_get_field_value (mod, exp="TSTHOW OF TSTDEP2", sizeof(buf), buf);
+      printf(" %30s is %s%s.\n",exp,sts?"Error: ":"",buf);
+      memset(buf,0,sizeof(buf));
+      sts = cob_get_field_value (mod, exp="TSTHOW OF TSTDEP3 (2:5)", sizeof(buf), buf);
+      printf(" %30s is %s%s.\n",exp,sts?"Error: ":"",buf);
+      memset(buf,0,sizeof(buf));
+   }
+   sts = cob_get_field_value (mod, exp="TSTG-1 (2)", sizeof(buf), buf);
+   printf(" %30s is %s%s.\n",exp,sts?"Error: ":"",buf);
+   memset(buf,0,sizeof(buf));
+   sts = cob_get_field_value (mod, exp="TSTX-2 (2,3)", sizeof(buf), buf);
+   printf(" %30s is %s%s.\n",exp,sts?"Error: ":"",buf);
+   if (memcmp(buf,"ME",2) != 0) {
+      strcpy(buf,"ME");
+      sts = cob_put_field_value (mod, exp, sizeof(buf), buf);
+   }
+   memset(buf,0,sizeof(buf));
+   sts = cob_get_field_value (mod, exp="THE-RECORD", sizeof(buf), buf);
+   printf(" %30s is %s%s.\n",exp,sts?"Error: ":"",buf);
+   memset(buf,0,sizeof(buf));
+   if (doWatch) {
+      cob_watch_field_value (mod, exp="BIN-FLD");
+      doWatch = 0;
+      sts = cob_get_field_value (mod, exp, sizeof(buf), buf);
+      printf(" %30s is %s%s. Being watched\n",exp,sts?"Error: ":"",buf);
+   }
+   if (cob_watch_check (modname, fld)) {
+      sts = cob_get_field_value (modname, fld, sizeof(buf), buf);
+      printf(" %30s is %s%s. Was changed\n",fld,sts?"Error: ":"",buf);
+   }
+   return 0;
+}
+]])
+
+AT_CHECK([$COMPILE -x -std=mf -debug -Wall -debug prog.cob cmod.c], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [CSYMDMP with 0 parameters
+                        MAX-SUB is 0006.
+                            SUB is 0005.
+                     UNUSED-VAR is 0007.
+             DATA-COMPANY (SUB) is FORTUNE COOKIE COMPANY   .
+        DATA-ADDRESS (SUB) (5:) is INGTON     .
+               DATA-ADDRESS (4) is TORONTO        .
+              TSTHOW OF TSTDEP2 is XX.
+        TSTHOW OF TSTDEP3 (2:5) is Z01XX.
+                     TSTG-1 (2) is 02.
+                   TSTX-2 (2,3) is XX.
+                     THE-RECORD is Error: THE-RECORD is undefined.
+                        BIN-FLD is 000000000. Being watched
+In the subroutine now
+THE-RECORD: 'ALP00000ALPHA ELECTRICAL CO. LTD.8417    0010'
+CSYMDMP with 1 parameters
+                        MAX-SUB is Error: MAX-SUB is undefined.
+                            SUB is 0005.
+                     UNUSED-VAR is 0007.59.
+             DATA-COMPANY (SUB) is Error: DATA-COMPANY (SUB) is undefined.
+                     TSTG-1 (2) is 08.
+                   TSTX-2 (2,3) is ZZ.
+                     THE-RECORD is ALP00000ALPHA ELECTRICAL CO. LTD.8417    0010.
+THE-RECORD: 'ALP00000ALPHA ELECTRICAL CO. LTD.8417    0010'
+ZZZ07A ZZZZxx08B ZZMEyy09C ZZZZzzZZZZZZZZZZZZZZZZZZ
+0099
+Back to main
+Try again
+In the subroutine now
+THE-RECORD: 'How did I get here?'
+CSYMDMP with 1 parameters
+                        MAX-SUB is Error: MAX-SUB is undefined.
+                            SUB is 0003.
+                     UNUSED-VAR is 0099.00.
+             DATA-COMPANY (SUB) is Error: DATA-COMPANY (SUB) is undefined.
+                     TSTG-1 (2) is 08.
+                   TSTX-2 (2,3) is ZZ.
+                     THE-RECORD is How did I get here?.
+THE-RECORD: 'How did I get here?'
+ZZZ07A ZZZZxx08B ZZMEyy09C ZZZZzzZZZZZZZZZZZZZZZZZZ
+0001
+Back to main
+CSYMDMP with 0 parameters
+                        MAX-SUB is 0006.
+                            SUB is 0003.
+                     UNUSED-VAR is 0099.
+             DATA-COMPANY (SUB) is DELTA LUGGAGE REPAIRS    .
+        DATA-ADDRESS (SUB) (5:) is YORK       .
+               DATA-ADDRESS (4) is Frankfurt      .
+              TSTHOW OF TSTDEP2 is XX.
+        TSTHOW OF TSTDEP3 (2:5) is Z01XX.
+                     TSTG-1 (2) is 02.
+                   TSTX-2 (2,3) is ME.
+                     THE-RECORD is Error: THE-RECORD is undefined.
+                        BIN-FLD is 000000005. Was changed
+Ending now
+], [])
+
+AT_CLEANUP
+
 
 AT_SETUP([CALL with program prototypes])
 AT_KEYWORDS([runmisc])
