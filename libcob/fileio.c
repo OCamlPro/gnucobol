@@ -1445,7 +1445,8 @@ cob_chk_file_mapping (cob_file *f, char *filename)
 	unsigned int	dollar;
 	int		k;
 
-	if (!COB_MODULE_PTR->flag_filename_mapping) {
+	if (COB_MODULE_PTR
+	&& !COB_MODULE_PTR->flag_filename_mapping) {
 		return;
 	}
 
@@ -8147,7 +8148,7 @@ cob_file_sort_init (cob_file *f, const unsigned int nkeys,
 	f->nkeys = 0;
 	if (collating_sequence) {
 		f->sort_collating = collating_sequence;
-	} else {
+	} else if (COB_MODULE_PTR) {
 		f->sort_collating = COB_MODULE_PTR->collating_sequence;
 	}
 	cob_file_save_status (f, fnstatus, COB_STATUS_00_SUCCESS);

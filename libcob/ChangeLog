@@ -1,4 +1,8 @@
 
+2021-04-25  Ron Norman <rjn@inglenet.com>
+
+	* fileio.c: Check COB_MODULE_PTR before using
+
 2021-04-03  Ron Norman <rjn@inglenet.com>
 
 	* common.h: extern cob_sym_get_field and cob_sym_get_occurs
