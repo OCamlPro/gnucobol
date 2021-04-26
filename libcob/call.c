@@ -185,12 +185,6 @@ static lt_dlhandle		mainhandle;
 static size_t			call_lastsize;
 static size_t			resolve_size = 0;
 static unsigned int		cob_jmp_primed;
-static cob_field_attr	const_float_attr =
-			{COB_TYPE_NUMERIC_DOUBLE, 8, 0, COB_FLAG_HAVE_SIGN, NULL};
-static cob_field_attr	const_binll_attr =
-			{COB_TYPE_NUMERIC_BINARY, 18, 0, COB_FLAG_HAVE_SIGN, NULL};
-static cob_field_attr	const_binull_attr =
-			{COB_TYPE_NUMERIC_BINARY, 18, 0, 0, NULL};
 
 #undef	COB_SYSTEM_GEN
 #define	COB_SYSTEM_GEN(cob_name, pmin, pmax, c_name)	\

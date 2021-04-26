@@ -8863,7 +8863,7 @@ cob_get_dump_file (void)
 	}
 }
 
-static char *sectname[] = {
+static const char *sectname[] = {
 			"CONSTANT","FILE","WORKING-STORAGE",
 			"LOCAL","LINKAGE","SCREEN",
 			"REPORT","COMMUNICATION"};

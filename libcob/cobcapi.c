@@ -857,9 +857,8 @@ static int
 cob_parse_field (cob_module  *mod, cob_field *f, char *field_ref)
 {
 	int		i, j, k, of, subs;
-	cob_field	s;
 	int		subval[12], refbgn,reflen;
-	char	fld1[8][48], fld2[48], numval[48];
+	char	fld1[8][48], fld2[48];
 	cob_symbol  *sym = mod->module_symbols;
 
 	j = get_name (0, field_ref, fld1[of=0]);
@@ -965,7 +964,6 @@ static int
 cob_setup_field (char *mod_name, int buflen, char *buf, cob_module **xmod)
 {
 	cob_module	*mod;
-	int			sts;
 
 	if (cobglobptr == NULL
 	 || COB_MODULE_PTR == NULL) {
@@ -1087,6 +1085,7 @@ cob_watch_field_value (char *mod_name, char *field_ref)
 	wl->next = head_watch;
 	wl->mod = mod;
 	head_watch = wl;
+	return 0;
 }
 
 /* 
@@ -1108,7 +1107,7 @@ cob_watch_field_free (char *mod_name, char *field_ref)
 
 	if (cob_parse_field (mod, &f, field_ref)) 
 		return 1;
-	for (wl = head_watch; wl; wl = wl->next) {
+	for (wp = wl = head_watch; wl; wl = wl->next) {
 		if (strcasecmp (field_ref, wl->field_ref) == 0
 		 && wl->mod == mod) {	/* In list, remove and free it */
 			if (wl == head_watch)
