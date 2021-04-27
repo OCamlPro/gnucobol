@@ -2442,6 +2442,22 @@ cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 						break;
 					f->keys[idx].str_suppress = (unsigned char *)cob_strdup (value);
 					f->keys[idx].len_suppress = (short)strlen (value);
+				} else if (strncasecmp(option,"drop",4) == 0) {
+					keyn = atoi (&option[4]);
+					if(keyn > f->nkeys)
+						continue;
+					if (keyn == f->nkeys) {
+						f->nkeys--;
+						nkeys = f->nkeys;
+						continue;
+					}
+					while (keyn < f->nkeys) {
+						memcpy (&f->keys[keyn-1], &f->keys[keyn], sizeof (f->keys[keyn]));
+						keyn++;
+					}
+					f->nkeys--;
+					nkeys = f->nkeys;
+					continue;
 				}
 			}
 		}

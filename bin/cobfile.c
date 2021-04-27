@@ -177,10 +177,10 @@ getnext:
 	if (fgets (ibuf, sizeof(ibuf)-1, stdin) == NULL)
 		return NULL;
 #endif
+	trim_line (ibuf);
 	if (ibuf[0] == '*' 
 	 || ibuf[0] == '#')
 		goto getnext;
-	trim_line (ibuf);
 	for (k=0; memcmp(&ibuf[k],"  ",2)==0; k++);
 	strcpy (buf, &ibuf[k]);
 	return buf;
@@ -227,16 +227,23 @@ dropField (cob_field *f)
 static int
 matchWord (const char *word, char *defs, char *str, int *pos )
 {
-	int	j, k;
+	int	j, k, doeq;
 	int	ln = strlen (word);
 	char	*newstr;
+	if (word[ln-1] == '=') {
+		doeq = 1;
+		ln--;
+	} else {
+		doeq = 0;
+	}
 	if (strncasecmp (defs + *pos, word, ln) != 0)
 		return 0;
 	k = *pos + ln;
 	while (defs[k] == ' ') k++;
-	if (defs[k] != '=')
+	if (doeq && defs[k] != '=')
 		return 0;
-	k++;
+	if (doeq && defs[k] == '=')
+		k++;
 	while (defs[k] == ' ') k++;
 	for (j = 0; defs[k] > ' ' 
 			&& defs[k] != ',' 
@@ -329,17 +336,16 @@ parseFile (cob_file *fl, const char *select, int rcsz, char *defs, char *copy)
 	for (k=0; defs[k] != 0; k++) {
 		if (k==0 
 		|| defs[k-1] == ' ') {
-			if (matchWord ("FILE", defs, val, &k)) {
+			if (matchWord ("FILE=", defs, val, &k)) {
 				ln = strlen (val);
 				dropField (fl->assign);
 				fl->assign = makeField (ln + 2);
 				memcpy(fl->assign->data, val, ln);
 				fl->assign->data[ln] = 0;
 			} else
-			if (matchWord ("COPY", defs, val, &k)) {
+			if (matchWord ("COPY=", defs, val, &k)) {
 				if (findCopy (val)) {
 					strcpy (copy, val);
-				} else {
 				}
 			}
 		}
@@ -731,10 +737,10 @@ main(
 				for (k=0; cmd[k] != 0; k++) {
 					if (k==0 
 					|| cmd[k-1] == ' ') {
-						if (matchWord ("SKIP", cmd, val, &k)) {
+						if (matchWord ("SKIP=", cmd, val, &k)) {
 							skip = atoi (val);
 						} else
-						if (matchWord ("COPY", cmd, val, &k)) {
+						if (matchWord ("COPY=", cmd, val, &k)) {
 							ncopy = atoi (val);
 						}
 					}
@@ -751,8 +757,10 @@ main(
 			} else {
 				if (strncasecmp (cmd,"HELP ",5) != 0)
 					printf("Unknown command [%s]\n",cmd);
-				gcd_usage((char*)"cobfile");
-				printf("To exit enter:  quit;\n");
+				if (!batchin) {
+					gcd_usage((char*)"cobfile");
+					printf("To exit enter:  quit;\n");
+				}
 			}
 			k = 0;
 		} 

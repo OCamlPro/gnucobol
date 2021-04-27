@@ -1,6 +1,10 @@
 
 2021-04-27  Ron Norman <rjn@inglenet.com>
 
+	* fileio.c: Add feature to drop index from file being created
+
+2021-04-27  Ron Norman <rjn@inglenet.com>
+
 	* common.c: Check COB_MODULE_PTR before using
 	* common.h: Add cob_file . flag_updt_file for cobfile
 	* fileio.c: Add cob_pre_open_def routine used by cobfile
