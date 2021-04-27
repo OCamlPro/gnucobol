@@ -1564,7 +1564,8 @@ typedef struct __cob_file {
 	unsigned int		flag_io_tran:1;		/* IO Handler: able to handle commit/rollback */
 	unsigned int		flag_do_qbl:1;		/* fileio: enable commit/rollback */
 	unsigned int		flag_do_jrn:1;		/* fileio: record updates to journal/audit trail */
-	unsigned int		unused_bits:9;
+	unsigned int		flag_updt_file:1;	/* Allow this 'cob_file' to be updated */
+	unsigned int		unused_bits:7;
 
 	cob_field		*last_key;		/* Last field used as 'key' for I/O */
 	unsigned char		last_operation;		/* Most recent I/O operation */
@@ -2591,6 +2592,7 @@ COB_EXPIMP void	cob_file_free   (cob_file **, cob_file_key **);
 COB_EXPIMP void cob_commit		(void);
 COB_EXPIMP void cob_rollback	(void);
 COB_EXPIMP void cob_pre_open	(cob_file *f);
+COB_EXPIMP void cob_pre_open_def (cob_file *f, char *setdef, char *isdef, int checkit);
 COB_EXPIMP int	cob_findkey (cob_file *, cob_field *, int *, int *);
 COB_EXPIMP void cob_file_create (cob_file ** pfl, const char *exname, const char *select_name,
 					const int fileorg, const int accessmode, const int optional,

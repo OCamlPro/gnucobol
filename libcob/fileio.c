@@ -627,8 +627,13 @@ write_file_def (cob_file *f, char *out)
 
 	out[k] = 0;
 	if(f->organization == COB_ORG_INDEXED) {
-		if (f->flag_vb_isam)
+		if (f->flag_vb_isam
+		 || f->io_routine == COB_IO_VBISAM)
 			k += sprintf(&out[k],"type=IX format=%s ","vbisam");
+		else if (f->io_routine == COB_IO_VISAM)
+			k += sprintf(&out[k],"type=IX format=%s ","cisam");
+		else if (f->io_routine == COB_IO_DISAM)
+			k += sprintf(&out[k],"type=IX format=%s ","disam");
 		else
 			k += sprintf(&out[k],"type=IX format=%s ",io_rtns[f->io_routine].name);
 	} else if(f->organization == COB_ORG_RELATIVE) {
@@ -908,7 +913,7 @@ cob_key_def (cob_file *f, int keyn, char *p, int *ret, int keycheck)
 			f->keys[k].field->data = f->record->data + loc;
 		}
 		f->keys[k].component[0] = f->keys[k].field;
-		f->keys[k].count_components = 0;
+		f->keys[k].count_components = 1;
 
 	} else {
 
@@ -1631,7 +1636,6 @@ cob_set_file_defaults (cob_file *f)
 	 */
 	if (f->organization == COB_ORG_INDEXED) {
 		f->io_routine = ix_routine;
-		f->flag_vb_isam = 0;
 		if (file_setptr->cob_file_vbisam) {
 			f->flag_vb_isam = 1;			/* Old VB-ISAM format wanted */
 #if defined(WITH_VBISAM)
@@ -1689,11 +1693,16 @@ cob_set_file_defaults (cob_file *f)
 		}
 	} else if (f->organization == COB_ORG_SEQUENTIAL) {
 		f->io_routine = COB_IO_SEQUENTIAL;
+		f->nkeys = 0;
 	} else if (f->organization == COB_ORG_RELATIVE) {
 		f->io_routine = COB_IO_RELATIVE;
+		f->nkeys = 0;
 	} else if (f->organization == COB_ORG_LINE_SEQUENTIAL) {
 		f->io_routine = COB_IO_LINE_SEQUENTIAL;
+		f->nkeys = 0;
 	}
+	if (f->flag_updt_file)
+		return;
 
 	f->trace_io = file_setptr->cob_trace_io ? 1 : 0;
 	f->io_stats = file_setptr->cob_stats_record ? 1 : 0;
@@ -1942,30 +1951,46 @@ cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 				 && (((f->organization == COB_ORG_SEQUENTIAL 
 				   || f->organization == COB_ORG_RELATIVE)
 				  && (f->access_mode == COB_ACCESS_SEQUENTIAL))
-				 || (f->organization >= COB_ORG_MAX))) {
+				 || f->organization >= COB_ORG_MAX
+				 || f->flag_updt_file)) {
 					if(strcasecmp(value,"IX") == 0) {
 						f->organization = COB_ORG_INDEXED;
 						f->flag_set_isam = 1;
 					} else if(strcasecmp(value,"RL") == 0) {
 						f->organization = COB_ORG_RELATIVE;
+						f->flag_set_isam = 0;
+					} else if(strcasecmp(value,"DA") == 0) {
+						f->organization = COB_ORG_RELATIVE;
+						f->flag_set_isam = 0;
 					} else if(strcasecmp(value,"SQ") == 0) {
 						f->organization = COB_ORG_SEQUENTIAL;
+						f->flag_set_isam = 0;
 					} else if(strcasecmp(value,"LS") == 0) {
 						f->organization = COB_ORG_LINE_SEQUENTIAL;
 						f->flag_line_adv = 0;
+						f->flag_set_isam = 0;
 					} else if(strcasecmp(value,"LA") == 0) {
 						f->organization = COB_ORG_LINE_SEQUENTIAL;
 						f->flag_line_adv = 1;
+						f->flag_set_isam = 0;
 					}
 					cob_set_file_defaults (f);
+					if(strcasecmp(value,"DA") == 0) {
+						f->file_format = COB_FILE_IS_MF;
+						f->flag_set_type = 1;
+					}
 				}
 				continue;
 			}
 			if (strcasecmp(option,"recsz") == 0) {
-				if (ivalue <= 0 || ivalue > (int)maxrecsz)
-					continue;
-				if (ivalue == f->record_max && ivalue == f->record_min)
-					continue;
+				if (!f->flag_updt_file) {
+					if (ivalue <= 0)
+						continue;
+					if (maxrecsz > 0 && ivalue > (int)maxrecsz)
+						continue;
+					if (ivalue == f->record_max && ivalue == f->record_min)
+						continue;
+				}
 				f->flag_redef = 1;
 				f->record_min = f->record_max = ivalue;
 				f->record->size = ivalue;
@@ -1979,10 +2004,14 @@ cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 				continue;
 			}
 			if (strcasecmp(option,"maxsz") == 0) {
-				if(ivalue <= 0 || ivalue > (int)maxrecsz)
-					continue;
-				if(ivalue == f->record_max)
-					continue;
+				if (!f->flag_updt_file) {
+					if (ivalue <= 0)
+						continue;
+					if (maxrecsz > 0 && ivalue > (int)maxrecsz)
+						continue;
+					if (ivalue == f->record_max && ivalue == f->record_min)
+						continue;
+				}
 				if(f->record_min == f->record_max)
 					f->record_min = f->record_max = ivalue;
 				else
@@ -1991,10 +2020,12 @@ cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 				continue;
 			}
 			if (strcasecmp(option,"minsz") == 0) {
-				if(ivalue <= 0 || ivalue > (int)maxrecsz)
-					continue;
-				if(ivalue == (int)f->record_max)
-					continue;
+				if (!f->flag_updt_file) {
+					if(ivalue <= 0 || ivalue > (int)maxrecsz)
+						continue;
+					if(ivalue == (int)f->record_max)
+						continue;
+				}
 				f->record_min = ivalue;
 				f->flag_redef = 1;
 				continue;
@@ -2014,29 +2045,30 @@ cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 				value[j] = 0;
 				for(j=0; j < COB_IO_MAX; j++) {
 					if(strcasecmp(value,io_rtns[j].name) == 0) {
+						if (j == COB_IO_VBISAM) {
+							f->flag_vb_isam = 1;	/* Build in VB-ISAM format */
+						} else {
+							f->flag_vb_isam = 0;
+						}
 #if defined(WITH_VISAM)
 #if !defined(WITH_CISAM)
 						if (j == COB_IO_CISAM) {	/* C-ISAM not present but V-ISAM is */
 							j = COB_IO_VISAM;
-							f->flag_vb_isam = 0;
 						}
 #endif
 #if !defined(WITH_DISAM)
 						if (j == COB_IO_DISAM) {	/* D-ISAM not present but V-ISAM is */
 							j = COB_IO_VISAM;
-							f->flag_vb_isam = 0;
 						}
 #endif
 #if !defined(WITH_VBISAM)
 						if (j == COB_IO_VBISAM) {	/* VB-ISAM not present but V-ISAM is */
 							j = COB_IO_VISAM;
-							f->flag_vb_isam = 1;	/* Build in VB-ISAM format */
 						}
 #endif
 #elif defined(WITH_DISAM)
 						if (j == COB_IO_CISAM) {	/* C-ISAM not present but D-ISAM is */
 							j = COB_IO_DISAM;
-							f->flag_vb_isam = 0;
 						}
 #endif
 						if (!io_rtns[j].config)
@@ -5525,6 +5557,7 @@ cob_file_create (
 		fl->open_mode = COB_OPEN_CLOSED;
 		fl->tran_open_mode = COB_OPEN_CLOSED;
 		fl->fd = -1;
+		fl->flag_vb_isam = 0;
 	}
 	*pfl = fl;
 }
@@ -5889,6 +5922,47 @@ cob_pre_open (cob_file *f)
 }
 
 /*
+ * Prepare for Open of data file; Used by cobfile.c
+ */
+void
+cob_pre_open_def (cob_file *f, char *setdef, char *isdef, int checkfile)
+{
+	f->flag_file_map = 1;
+	f->flag_nonexistent = 0;
+	f->flag_end_of_file = 0;
+	f->flag_begin_of_file = 0;
+	f->flag_first_read = 2;
+	f->flag_operation = 0;
+	f->flag_updt_file = 0;
+	f->record_off = 0;
+	f->max_rec_num = 0;
+	f->cur_rec_num = 0;
+	if (f->assign != NULL
+	 && f->assign->data != NULL) {
+		cob_field_to_string (f->assign, file_open_name, (size_t)COB_FILE_MAX);
+	}
+
+	cob_set_file_defaults (f);
+	f->flag_updt_file = 1;
+	f->flag_keycheck = 0;
+
+	cob_set_file_format (f, setdef, 1, NULL);
+
+	if (f->organization == COB_ORG_INDEXED
+	 && checkfile) {
+		int		ftype;
+		f->flag_keycheck = 0;
+		ftype = indexed_file_type (f, file_open_name);
+		if(ftype >= 0) {
+			f->record_min = f->record_max;
+			f->io_routine = (unsigned char)ftype;
+		}
+	}
+	if (isdef)
+		write_file_def (f, isdef);
+}
+
+/*
  * Open the data file
  */
 void
@@ -5901,6 +5975,8 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 	}
 
 	f->last_operation = COB_LAST_OPEN;
+	if (f->flag_auto_type)
+		f->flag_keycheck = 0;
 	if ((f->lock_mode & COB_LOCK_ROLLBACK)
 	 && f->flag_close_pend) {
 		f->flag_end_of_file = 0;

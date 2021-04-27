@@ -1,4 +1,8 @@
 
+2021-04-27  Ron Norman <rjn@inglenet.com>
+
+	* cobfile.c: Initial version of file copy program
+
 2021-03-04  Ron Norman <rjn@inglenet.com>
 
 	* gcdiff.c: Fix bug in matching date/time pattern

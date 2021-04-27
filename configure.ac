@@ -125,6 +125,7 @@ AH_TEMPLATE([HAVE_DESIGNATED_INITS], [Has designated initializers])
 AH_TEMPLATE([HAVE_NANO_SLEEP], [Has nanosleep function])
 AH_TEMPLATE([HAVE_CLOCK_GETTIME], [Has clock_gettime function and CLOCK_REALTIME])
 AH_TEMPLATE([HAVE_ISFINITE], [Has isfinite function])
+AH_TEMPLATE([HAVE_READLINE], [Has readline function])
 AH_TEMPLATE([HAVE_MP_GET_MEMORY_FUNCTIONS], [Do we have mp_get_memory_functions in GMP/MPIR])
 #AH_TEMPLATE([HAVE_RAISE], [Has raise function])
 AH_TEMPLATE([HAVE_FINITE_IEEEFP_H],
@@ -723,6 +724,8 @@ CPPFLAGS="$curr_cppflags"
 AC_CHECK_LIB([$USE_MATH], [__gmp_get_memory_functions],
  [AC_DEFINE([HAVE_MP_GET_MEMORY_FUNCTIONS], [1])], [], [])
 
+AC_CHECK_LIB([readline], [readline],
+ [AC_DEFINE([HAVE_READLINE], [1])], [], [])
 
 # Configure options part II (needing compilation)
 AC_ARG_WITH([xml2],

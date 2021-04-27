@@ -264,6 +264,7 @@ static const char *cob_verbs[] = {
 		"INITIATE",
 		"INSPECT",
 		"INVOKE",
+		"JSON GENERATE",
 		"MERGE",
 		"MOVE",
 		"MULTIPLY",
@@ -298,7 +299,8 @@ static const char *cob_verbs[] = {
 		"UNLOCK",
 		"UNSTRING",
 		"WHEN",
-		"WRITE"
+		"WRITE",
+		"XML GENERATE"
 	};
 #define MAX_VERBS (sizeof(cob_verbs) / sizeof(void*))
 
@@ -2192,7 +2194,7 @@ cob_trace_get_stmt (const char *stmt)
 	n = k + 1;
 	k -= 4;
 	if (k < 0) k = 0;
-	for (; k < n; k++) {
+	for (; k < n && k < MAX_VERBS; k++) {
 		if (cob_verbs[k] == NULL)
 			break;
 		if (strcmp(stmt, cob_verbs[k]) == 0)
@@ -2959,7 +2961,8 @@ cob_real_put_sign (cob_field *f, const int sign)
 			if (*p != c) {
 				*p = c;
 			}
-		} else if (COB_MODULE_PTR->ebcdic_sign) {
+		} else if (COB_MODULE_PTR
+				&& COB_MODULE_PTR->ebcdic_sign) {
 			cob_put_sign_ebcdic (p, sign);
 		} else if (sign < 0) {
 			cob_put_sign_ascii (p);

@@ -1,4 +1,8 @@
 
+2021-04-27  Ron Norman <rjn@inglenet.com> 
+
+	* configure.ac: Add check for  'readline'
+
 2021-02-21  Ron Norman <rjn@inglenet.com> 
 
 	* configure.ac: Fix error with C-ISAM checks and 
