@@ -725,7 +725,8 @@ AC_CHECK_LIB([$USE_MATH], [__gmp_get_memory_functions],
  [AC_DEFINE([HAVE_MP_GET_MEMORY_FUNCTIONS], [1])], [], [])
 
 AC_CHECK_LIB([readline], [readline],
- [AC_DEFINE([HAVE_READLINE], [1])], [], [])
+ [AC_DEFINE([HAVE_READLINE], [1])
+  LIBCOB_LIBS="$LIBCOB_LIBS -lreadline" ], [], [])
 
 # Configure options part II (needing compilation)
 AC_ARG_WITH([xml2],

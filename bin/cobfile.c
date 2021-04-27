@@ -158,18 +158,14 @@ getnext:
 		if (batchin) {
 			if (fgets (ibuf, sizeof(ibuf)-1, stdin) == NULL)
 				return NULL;
-			if (ibuf[0] == '*' 
-			 || ibuf[0] == '#')
-				goto getnext;
 		} else {
 			if ((p = readline (prompt)) == NULL)
 				return NULL;
 			strcpy (ibuf,p);
 			free (p);
-			if (ibuf[0] == '*' 
-			 || ibuf[0] == '#')
-				goto getnext;
-			if (ibuf[0] >= ' ')
+			if (ibuf[0] >= ' '
+			 && ibuf[0] != '*' 
+			 && ibuf[0] != '#')
 				add_history (ibuf);
 		}
 	}
@@ -180,10 +176,10 @@ getnext:
 	}
 	if (fgets (ibuf, sizeof(ibuf)-1, stdin) == NULL)
 		return NULL;
+#endif
 	if (ibuf[0] == '*' 
 	 || ibuf[0] == '#')
 		goto getnext;
-#endif
 	trim_line (ibuf);
 	for (k=0; memcmp(&ibuf[k],"  ",2)==0; k++);
 	strcpy (buf, &ibuf[k]);
@@ -753,7 +749,8 @@ main(
 			} else if (strncasecmp (cmd,"EXIT ",5) == 0) {
 				break;
 			} else {
-				printf("Unknown command [%s]\n",cmd);
+				if (strncasecmp (cmd,"HELP ",5) != 0)
+					printf("Unknown command [%s]\n",cmd);
 				gcd_usage((char*)"cobfile");
 				printf("To exit enter:  quit;\n");
 			}
