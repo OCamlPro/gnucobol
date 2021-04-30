@@ -102,6 +102,7 @@ static char	*outkeys[16] = {NULL,NULL,NULL};
 static char outkeydesc[1024];
 static int	outNl = 1;
 static FILE	*fo = NULL;
+static FILE	*fcmd = NULL;
 /********************************/
 /**  Source code for emission  **/
 /********************************/
@@ -269,6 +270,13 @@ getLine (char *buf)
 	int		k;
 	char	ibuf[1024];
 getnext:
+	if (fcmd != NULL) {
+		if (fgets (ibuf, sizeof(ibuf)-1, fcmd) == NULL) {
+			fclose (fcmd);
+			fcmd = NULL;
+			return NULL;
+		}
+	} else {
 #if defined(HAVE_READLINE) || defined(__linux__)
 	{
 		char	*p;
@@ -294,6 +302,7 @@ getnext:
 	if (fgets (ibuf, sizeof(ibuf)-1, stdin) == NULL)
 		return NULL;
 #endif
+	}
 	trim_line (ibuf);
 	if (ibuf[0] == '*' 
 	 || ibuf[0] == '#')
@@ -696,6 +705,10 @@ set_option (char *binary, int opt, char *arg)
 
 	case 'i':
 		strcpy(cmdfile,arg);
+		fcmd = fopen (cmdfile, "r");
+		if (fcmd == NULL) {
+			printf("Error %s opening '%s' input\n",strerror(errno),cmdfile);
+		}
 		break;
 
 	case 'p':
@@ -957,7 +970,7 @@ main(
 
 	if(!isatty(0)) {
 		batchin = 1;
-	} else {
+	} else if (fcmd == NULL) {
 		printf("Commands end with a semicolon;\n");
 		printf("To exit enter:   quit;\n");
 	}
@@ -1098,6 +1111,13 @@ main(
 				}
 				cmd[0] = fileindef[0] = indef[0] = outdef[0] = 0;
 				inkeys[0] = outkeys[0] = 0;
+				if (runit && !keep_code) {
+					sprintf(cblout,"%s.cbl",proglwr);
+					unlink (cblout);
+					sprintf(cblout,"%s.sh",proglwr);
+					unlink (cblout);
+					unlink (proglwr);
+				}
 			} else if (strncasecmp (cmd,"QUIT ",5) == 0) {
 				break;
 			} else if (strncasecmp (cmd,"EXIT ",5) == 0) {
