@@ -42,6 +42,7 @@
 #include	<libcob.h>
 #include	"tarstamp.h"
 #include	"libcob/cobgetopt.h"
+#include	"libcob/sysdefines.h"
 
 /* needed for time checks */
 #ifdef	HAVE_LOCALE_H
@@ -776,7 +777,7 @@ main(
 {
 	int		opt,idx,i,k;
 	FILE	*ref,*rslt;
-	char	buf[1024];
+	char	buf[1024], conffile[512];
 
 #ifdef	HAVE_SETLOCALE
 	setlocale (LC_ALL, "");
@@ -800,11 +801,17 @@ main(
 	memset(testfile,0,sizeof(testfile));
 
 	/* Process gcdiff.conf from current directory */
-	ref = fopen("gcdiff.conf","r");
+	strcpy(conffile,"gcdiff.conf");
+	ref = fopen(conffile,"r");
 	if(ref == NULL) {
+		char *env;
 		/* Check for gcdiff.conf in config directory */
-		sprintf(testfile,"%s/gcdiff.conf",COB_CONFIG_DIR);
-		ref = fopen("gcdiff.conf","r");
+		if ((env = getenv("COB_CONFIG_DIR")) != NULL) {
+			sprintf(conffile,"%s%cgcdiff.conf",env,PATHSEP_CHAR);
+		} else {
+			sprintf(conffile,"%s%cgcdiff.conf",COB_CONFIG_DIR,PATHSEP_CHAR);
+		}
+		ref = fopen(conffile,"r");
 	}
 	if(ref) {
 		while (fgets(buf,sizeof(buf),ref) != NULL) {
@@ -812,13 +819,11 @@ main(
 			if (buf[0] == '-') {	/* Option for gcdiff ?*/
 				opt = buf[1];
 				for (i=2; isspace(buf[i]); i++);
-				set_option((char*)"gcdiff.conf",opt,&buf[i]);
+				set_option(conffile,opt,&buf[i]);
 			}
 		}
 		fclose(ref);
 	}
-	memset(referencefile,0,sizeof(referencefile));
-	memset(testfile,0,sizeof(testfile));
 
 	idx = 0;
 	cob_optind = 1;

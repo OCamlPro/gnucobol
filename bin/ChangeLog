@@ -2,6 +2,7 @@
 2021-04-30  Ron Norman <rjn@inglenet.com>
 
 	* cobfile.c: Now able to generate COBOL program to copy file
+	* gcdiff.c: Fixed search for  gcdiff.conf
 
 2021-04-27  Ron Norman <rjn@inglenet.com>
 
