@@ -2356,7 +2356,7 @@ cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 			if (f->organization == COB_ORG_INDEXED) {
 				if (strcasecmp(option,"nkeys") == 0) {
 					nkeys = ivalue;
-					if ((int)f->nkeys != nkeys
+					if (f->nkeys != nkeys
 					 && !updt
 					 && f->flag_keycheck) {
 						if(ret)
@@ -2364,26 +2364,32 @@ cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 						break;
 					}
 					if (updt
-					&& (int)f->nkeys != nkeys) {
-						if(nkeys > (int)f->nkeys) {
+					 && f->nkeys != nkeys) {
+						if(nkeys > f->nkeys) {
 							f->keys = cob_cache_realloc (f->keys, sizeof (cob_file_key) * nkeys);
 							f->flag_redo_keydef = 1;
 						}
 						f->nkeys = nkeys;
 					} else {
-						nkeys = (int)f->nkeys;
+						nkeys = f->nkeys;
 					}
 					continue;
 				}
 				if (strncasecmp(option,"key",3) == 0) {
 					keyn = atoi (&option[3]);
-					if (keyn > (int)f->nkeys
+					if (keyn > f->nkeys
 					 && !f->flag_keycheck
+					 && !f->flag_updt_file
 					 && !updt) {			/* Skip this key def */
 						continue;
 					}
-					if(keyn > nkeys)
-						continue;
+					if (keyn > nkeys) {
+						if (!f->flag_updt_file)
+							continue;
+						f->nkeys = nkeys = keyn;
+						f->keys = cob_cache_realloc (f->keys, sizeof (cob_file_key) * nkeys);
+						f->flag_redo_keydef = 1;
+					}
 					xret = 0;
 					cob_key_def (f, keyn, value, &xret, updt?0:f->flag_keycheck);
 					if(ret) *ret = xret;
@@ -2400,8 +2406,13 @@ cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 				} else if (strncasecmp(option,"dup",3) == 0) {
 					keyn = atoi (&option[3]);
 					idx = keyn - 1;
-					if (keyn > nkeys)		/* Skip this */
-						continue;
+					if (keyn > nkeys) {
+						if (!f->flag_updt_file)
+							continue;
+						f->nkeys = nkeys = keyn;
+						f->keys = cob_cache_realloc (f->keys, sizeof (cob_file_key) * nkeys);
+						f->flag_redo_keydef = 1;
+					}
 
 					if (toupper(value[0]) == 'Y'
 					 && f->flag_keycheck
@@ -2415,8 +2426,13 @@ cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 				} else if (strncasecmp(option,"sup",3) == 0) {
 					unsigned char subchr;
 					keyn = atoi (&option[3]);
-					if(keyn > nkeys)
-						continue;
+					if (keyn > nkeys) {
+						if (!f->flag_updt_file)
+							continue;
+						f->nkeys = nkeys = keyn;
+						f->keys = cob_cache_realloc (f->keys, sizeof (cob_file_key) * nkeys);
+						f->flag_redo_keydef = 1;
+					}
 					idx = keyn - 1;
 					if (qt != 0) {
 						subchr = value[0];
@@ -2433,8 +2449,13 @@ cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 					f->keys[idx].tf_suppress = 1;
 				} else if (strncasecmp(option,"skip",4) == 0) {
 					keyn = atoi (&option[4]);
-					if(keyn > nkeys)
-						continue;
+					if (keyn > nkeys) {
+						if (!f->flag_updt_file)
+							continue;
+						f->nkeys = nkeys = keyn;
+						f->keys = cob_cache_realloc (f->keys, sizeof (cob_file_key) * nkeys);
+						f->flag_redo_keydef = 1;
+					}
 					idx = keyn - 1;
 					if (f->flag_keycheck
 					 && !updt
