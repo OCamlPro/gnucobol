@@ -8186,7 +8186,7 @@ AT_DATA([prog.cob], [
             IF TSP-RECORD OMITTED
                DISPLAY "sub2: X is " X " RECORD: Omitted."
                SET PTR TO NULL
-               SET PTR UP BY 54545
+               SET PTR UP BY 54545777
                SET ADDRESS OF TSP-RECORD TO PTR
             ELSE
                DISPLAY "sub2: X is " X " RECORD:" TSP-RECORD "."
@@ -8223,7 +8223,7 @@ Dump Program-Id sub2 from prog.cob compiled MMM DD YYYY HH:MI:SS
 WORKING-STORAGE
 **********************
 01        ZRO                             000000000
-01        PTR                             0x000000000000d511
+01        PTR                             0x0000000003404d71
 01        HEXV                            013
 01        IDX                             000000000
 01        TSTREC.
