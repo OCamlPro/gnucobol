@@ -9275,11 +9275,10 @@ AT_DATA([cmod.c], [[
 #include <stdio.h>
 #include <string.h>
 #include <libcob.h>
-#include <stdarg.h>
 
 static int doWatch = 1;
 int
-CSYMDMP (void *p1, ...)
+CSYMDMP ()
 {
    int      nargs,sts;
    char     modname[32],fld[128],buf[2048],*exp, *mod;
