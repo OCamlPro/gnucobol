@@ -1,7 +1,7 @@
 
 2021-05-04  Ron Norman <rjn@inglenet.com>
 
-	* tree.h: Add CB_NAME check for 'word' being a NULL pointer
+	* parser.y: Add check for CB_WORD being a NULL pointer
 
 2021-04-01  Ron Norman <rjn@inglenet.com>
 

@@ -1165,8 +1165,7 @@ struct cb_reference {
 #define CB_REFERENCE_P(x)	(CB_TREE_TAG (x) == CB_TAG_REFERENCE)
 
 #define CB_WORD(x)		(CB_REFERENCE (x)->word)
-#define CB_NAME(x)		\
-	(CB_WORD(x) ? CB_REFERENCE (x)->word->name : "(null)")
+#define CB_NAME(x)		(CB_REFERENCE (x)->word->name)
 #define CB_WORD_COUNT(x)	(CB_REFERENCE (x)->word->count)
 #define CB_WORD_ITEMS(x)	(CB_REFERENCE (x)->word->items)
 
