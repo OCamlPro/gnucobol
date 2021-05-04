@@ -1,4 +1,8 @@
 
+2021-05-04  Ron Norman <rjn@inglenet.com>
+
+	* cobfile.c: Only use 'readline' if defined in config.h
+
 2021-04-30  Ron Norman <rjn@inglenet.com>
 
 	* cobfile.c: Now able to generate COBOL program to copy file

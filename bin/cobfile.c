@@ -45,7 +45,7 @@
 #include	"tarstamp.h"
 #include	"libcob/cobgetopt.h"
 #include	"libcob/sysdefines.h"
-#if defined(HAVE_READLINE) || defined(__linux__)
+#if defined(HAVE_READLINE)
 #include <readline/readline.h>
 #include <readline/history.h>
 #endif
@@ -277,7 +277,7 @@ getnext:
 			return NULL;
 		}
 	} else {
-#if defined(HAVE_READLINE) || defined(__linux__)
+#if defined(HAVE_READLINE)
 	{
 		char	*p;
 		if (batchin) {
