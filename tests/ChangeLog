@@ -1,4 +1,8 @@
 
+2021-05-04   Ron Norman <rjn@inglenet.com>
+
+	* testsuite.src/run_misc.at: stdarg.h is required on Centos 6 64bit
+
 2021-05-03   Ron Norman <rjn@inglenet.com>
 
 	* testsuite.src/run_misc.at: Change PTR value to get abort on AIX
