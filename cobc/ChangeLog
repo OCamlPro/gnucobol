@@ -1,4 +1,8 @@
 
+2021-05-04  Ron Norman <rjn@inglenet.com>
+
+	* tree.h: Add CB_NAME check for 'word' being a NULL pointer
+
 2021-04-01  Ron Norman <rjn@inglenet.com>
 
 	* codegen.c: Use cob_trace_get_stmt to get a number for the statement
