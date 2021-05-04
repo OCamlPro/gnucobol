@@ -1,4 +1,9 @@
 
+2021-05-04  Ron Norman <rjn@inglenet.com>
+
+	* common.c: Make a few variables 'static' to better 
+			handle when there is an abort during dumping
+
 2021-04-30  Ron Norman <rjn@inglenet.com>
 
 	* fileio.c: Handle adding indexes for 'cobfile' utility

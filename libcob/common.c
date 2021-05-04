@@ -8967,7 +8967,9 @@ cob_dump_table ( cob_symbol *sym, int k)
 static void
 cob_dump_symbols (cob_module *mod)
 {
-	int			j, k, sect, skipgrp;
+	static int skipgrp;
+	static cob_symbol *skpsym; 
+	int			j, k, sect;
 	cob_symbol *sym;
 	cob_field	f0;
 	char		msg[80];
@@ -9010,12 +9012,15 @@ cob_dump_symbols (cob_module *mod)
 		cob_sym_get_field (&f0, sym, k);
 		cob_set_dump_signal ((void *)catch_sig_jmp);
 		if (setjmp (save_sig_env) != 0) {
+			skipgrp = 1;
 			while (sym[k].parent > 0)
 				k = sym[k].parent;
+			if (skpsym == &sym[k])
+				goto skipsym;
+			skpsym = &sym[k];
 			sprintf (msg," >>>> Dump of %s aborted! <<<< !!",
 						sym[k].name?sym[k].name:"FILLER");
 			cob_dump_output (msg);
-			skipgrp = 1;
 		} else if (sym[k].occurs > 1) {
 			for (sym_idx = 0; sym_idx < SYM_MAX_IDX; sym_idx++)
 				sym_sub [sym_idx] = sym_size [sym_idx] = 0;
@@ -9027,6 +9032,7 @@ cob_dump_symbols (cob_module *mod)
 			cob_dump_field ( sym[k].level, sym[k].name?sym[k].name:"FILLER", &f0, 0, 0);
 		}
 		if (skipgrp) {
+skipsym:
 			if (sym[k].sister) {
 				k = sym[k].sister;
 			} else {
