@@ -2100,3 +2100,22 @@ prog.cob:29: error: 'SOME-DATA' not level 01 or 77
 ])
 
 AT_CLEANUP
+
+AT_SETUP([Invalid USE BEFORE])
+AT_KEYWORDS([USE])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+       DEPTHDRUSE SECTION.
+       USE BEFORE REPORTING DEPTHDR.
+])
+
+AT_CHECK([$COMPILE_ONLY -std=default prog.cob ], [1], [],
+[prog.cob: in section 'DEPTHDRUSE':
+prog.cob:6: error: 'DEPTHDR' is not defined
+])
+
+AT_CLEANUP
+
