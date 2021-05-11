@@ -1,7 +1,8 @@
 
-2021-05-04  Ron Norman <rjn@inglenet.com>
+2021-05-11  Simon Sobisch <simonsobisch@gnu.org>
 
-	* parser.y: Add check for CB_WORD being a NULL pointer
+	* parser.y (use_reporting): check for valid identifier before use,
+	  use common malloc for generated common
 
 2021-04-01  Ron Norman <rjn@inglenet.com>
 

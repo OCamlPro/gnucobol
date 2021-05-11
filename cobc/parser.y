@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2020 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2021 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
    Edward Hart
 
@@ -15738,26 +15738,6 @@ program_start_end:
 use_reporting:
   use_global BEFORE REPORTING identifier
   {
-	char *wrk;
-	cb_tree x;
-	struct cb_field		*f;
-	struct cb_report	*r;
-
-	x = cb_ref ($4);
-	if (!CB_FIELD_P (x)) {
-		if (CB_WORD ($4))
-			cb_error_x ($4, _("'%s' is not a report group"), CB_NAME ($4));
-		$$ = cb_error_node;
-	} else {
-		control_field = f = CB_FIELD (x);
-		f->report_decl_id = current_section->id;
-		if ((r = f->report) != NULL) {
-			r->has_declarative = 1;
-		}
-	}
-	wrk = cobc_main_malloc (COB_MINI_BUFF);
-	snprintf (wrk, COB_MINI_MAX, "USE BEFORE REPORTING %s is %s%d",
-		cb_name ($4), CB_PREFIX_LABEL, current_section->id);
 	current_section->flag_real_label = 1;
 	current_section->flag_declaratives = 1;
 	current_section->flag_begin = 1;
@@ -15765,7 +15745,19 @@ use_reporting:
 	current_section->flag_declarative_exit = 1;
 	current_section->flag_real_label = 1;
 	current_section->flag_skip_label = 0;
-	emit_statement (cb_build_comment (wrk));
+
+	if ($4 != cb_error_node) {
+		char	wrk[COB_MINI_BUFF];
+		struct cb_field		*f = CB_FIELD_PTR($4);
+		control_field = f;
+		f->report_decl_id = current_section->id;
+		if (f->report != NULL) {
+			f->report->has_declarative = 1;
+		}
+		snprintf (wrk, COB_MINI_MAX, "USE BEFORE REPORTING %s is %s%d",
+			f->name, CB_PREFIX_LABEL, current_section->id);
+		emit_statement (cb_build_comment (cobc_parse_strdup(wrk)));
+	}
   }
 ;
 
@@ -16824,8 +16816,7 @@ line_linage_page_counter:
 	if (CB_REF_OR_REPORT_P ($3)) {
 		$$ = CB_REPORT_PTR ($3)->line_counter;
 	} else {
-		if (CB_WORD ($3))
-			cb_error_x ($3, _("'%s' is not a report name"), CB_NAME ($3));
+		cb_error_x ($3, _("'%s' is not a report name"), CB_NAME ($3));
 		$$ = cb_error_node;
 	}
   }
@@ -16850,8 +16841,7 @@ line_linage_page_counter:
 	if (CB_REF_OR_REPORT_P ($3)) {
 		$$ = CB_REPORT_PTR ($3)->page_counter;
 	} else {
-		if (CB_WORD ($3))
-			cb_error_x ($3, _("'%s' is not a report name"), CB_NAME ($3));
+		cb_error_x ($3, _("'%s' is not a report name"), CB_NAME ($3));
 		$$ = cb_error_node;
 	}
   }
