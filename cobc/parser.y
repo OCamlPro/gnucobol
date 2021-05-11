@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2020 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2021 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
    Edward Hart
 
@@ -15720,7 +15720,8 @@ use_reporting:
 
 	x = cb_ref ($4);
 	if (!CB_FIELD_P (x)) {
-		cb_error_x ($4, _("'%s' is not a report group"), CB_NAME ($4));
+		if (CB_WORD ($4))
+			cb_error_x ($4, _("'%s' is not a report group"), CB_NAME ($4));
 		$$ = cb_error_node;
 	} else {
 		control_field = f = CB_FIELD (x);
@@ -16883,7 +16884,8 @@ line_linage_page_counter:
 	if (CB_REF_OR_REPORT_P ($3)) {
 		$$ = CB_REPORT_PTR ($3)->line_counter;
 	} else {
-		cb_error_x ($3, _("'%s' is not a report name"), CB_NAME ($3));
+		if (CB_WORD ($3))
+			cb_error_x ($3, _("'%s' is not a report name"), CB_NAME ($3));
 		$$ = cb_error_node;
 	}
   }
@@ -16908,7 +16910,8 @@ line_linage_page_counter:
 	if (CB_REF_OR_REPORT_P ($3)) {
 		$$ = CB_REPORT_PTR ($3)->page_counter;
 	} else {
-		cb_error_x ($3, _("'%s' is not a report name"), CB_NAME ($3));
+		if (CB_WORD ($3))
+			cb_error_x ($3, _("'%s' is not a report name"), CB_NAME ($3));
 		$$ = cb_error_node;
 	}
   }

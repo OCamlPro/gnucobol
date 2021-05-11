@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2016-2020 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2016-2021 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Edward Hart, Simon Sobisch
 ##
 ## This file is part of GnuCOBOL.
@@ -2372,3 +2372,23 @@ prog.cob:29: error: 'SOME-DATA' not level 01 or 77
 ])
 
 AT_CLEANUP
+
+
+AT_SETUP([Invalid USE BEFORE])
+AT_KEYWORDS([USE])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+       DEPTHDRUSE SECTION.
+       USE BEFORE REPORTING DEPTHDR.
+])
+
+AT_CHECK([$COMPILE_ONLY -std=default prog.cob ], [1], [],
+[prog.cob: in section 'DEPTHDRUSE':
+prog.cob:6: error: 'DEPTHDR' is not defined
+])
+
+AT_CLEANUP
+

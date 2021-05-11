@@ -1,4 +1,8 @@
 
+2021-05-04  Ron Norman <rjn@inglenet.com>
+
+	* parser.y: add check for CB_WORD being a NULL pointer
+
 2021-03-07  Simon Sobisch <simonsobisch@gnu.org>
 
 	* Makefile.am: honor COBC_CPPFLAGS passed to configure
