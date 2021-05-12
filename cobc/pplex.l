@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2020 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2021 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Dave Pitts
 
    This file is part of GnuCOBOL.
@@ -342,6 +342,7 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 
 ^[ ]*"$SET"		{
 	/* MF extension: SET directive */
+	/* TODO: check possition of the $SET directive */
 	BEGIN SET_DIRECTIVE_STATE;
 	return SET_DIRECTIVE;
 }
@@ -391,21 +392,25 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 
 ^......."@OPTIONS"	{
 	/* Fujitsu COBOL extension for specifying command line options */
-	char * s = strchr (yytext, '@');
-	cb_plex_warning (COBC_WARN_FILLER, newline_count,
+	/* TODO: check possition of the @OPTIONS directive */
+	char *s = strchr (yytext, '@');
+	cb_plex_warning (COBC_WARN_FILLER, newline_count - 1,
 		_("ignoring unknown directive: '%s'"), s);
+	skip_to_eol ();
+}
+
+^[ ]*"PROCESS"/[ ,;\n] |
+^[ ]*"CBL"/[ ,;\n] {
+	/* IBM COBOL extension for specifying compiler options */
+	/* TODO: The CBL (PROCESS) statement must be placed before any comment lines or other compiler-directing statements. */
+	cb_plex_warning (COBC_WARN_FILLER, newline_count - 1,
+		_("PROCESS statement ignored"));
 	skip_to_eol ();
 }
 
 ^[ ]*"$"		{
 	cb_plex_warning (COBC_WARN_FILLER, newline_count,
 		_("spurious '$' detected - ignored"));
-	skip_to_eol ();
-}
-
-"PROCESS"		{
-	cb_plex_warning (COBC_WARN_FILLER, newline_count,
-		_("PROCESS statement ignored"));
 	skip_to_eol ();
 }
 

@@ -1,4 +1,4 @@
-## Copyright (C) 2007-2012, 2014-2020 Free Software Foundation, Inc.
+## Copyright (C) 2007-2012, 2014-2021 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 ## Ron Norman
 ##
@@ -6504,7 +6504,7 @@ AT_DATA([valid.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY valid.cob], [0], [],
-[valid.cob:3: warning: ignoring unknown directive: '@OPTIONS'
+[valid.cob:2: warning: ignoring unknown directive: '@OPTIONS'
 ])
 
 #AT_DATA([invalid.cob], [

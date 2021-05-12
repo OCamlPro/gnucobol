@@ -1,4 +1,9 @@
 
+2021-05-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* pplex.l: fixed #716 by including necessary context for PROCESS statement
+	  handling and added the CBL variant to not match the word everywhere
+
 2021-05-11  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y (use_reporting): check for valid identifier before use,
