@@ -683,6 +683,7 @@ cob_move_display_to_edited (cob_field *f1, cob_field *f2)
 	int		count = 0;
 	int		count_sign = 1;
 	int		count_curr = 1;
+	int		num_curr = 0;
 	int		trailing_sign = 0;
 	int		trailing_curr = 0;
 	int		is_zero = 1;
@@ -872,6 +873,9 @@ cob_move_display_to_edited (cob_field *f1, cob_field *f2)
 					if (x != '0') {
 						is_zero = suppress_zero = 0;
 					}
+					num_curr++;
+					if (num_curr > 1)
+						trailing_sign = 1;
 					if (trailing_curr) {
 						*dst = currency;
 						--end;

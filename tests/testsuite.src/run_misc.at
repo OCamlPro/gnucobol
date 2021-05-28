@@ -11726,6 +11726,72 @@ COST IS $18,536.23
 
 AT_CLEANUP
 
+AT_SETUP([Test PICTURE Edit mask (2)])
+AT_KEYWORDS([Numeric])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA  DIVISION.
+       WORKING-STORAGE SECTION.
+       77  BINVAL  PIC S99999V99 COMP VALUE -18536.23.
+       01  TST.
+           05  DEPOSIT-AMT     PIC -,---,--Z.ZZ.
+           05  DEPOSIT-AMT9    PIC -,---,--9.99.
+           05  DYYZR           PIC $$,$$$,$$$.$$-.
+           05  WFLT            PIC $$$,$$9.99.
+
+       PROCEDURE DIVISION.
+           DISPLAY "  DEPOSIT-AMT9 PIC -,---,--9.99 *".
+           MOVE 08536.23 TO DEPOSIT-AMT9.
+           DISPLAY "+ DEPOSIT-AMT9 IS  " DEPOSIT-AMT9 " *".
+           MOVE 0 TO DEPOSIT-AMT9.
+           DISPLAY "0 DEPOSIT-AMT9 IS  " DEPOSIT-AMT9 " *".
+           DISPLAY "+ DEPOSIT-AMT  PIC -,---,--Z.ZZ *".
+           MOVE 18536.20 TO DEPOSIT-AMT.
+           DISPLAY "+ DEPOSIT-AMT  IS  " DEPOSIT-AMT " *".
+           MOVE -18536.23 TO DEPOSIT-AMT.
+           DISPLAY "- DEPOSIT-AMT  IS  " DEPOSIT-AMT " *".
+           MOVE 0 TO DEPOSIT-AMT.
+           DISPLAY "0 DEPOSIT-AMT  IS  " DEPOSIT-AMT " *".
+           DISPLAY "  DYYZR        PIC $$,$$$,$$$.$$- *".
+           MOVE 18536 TO DYYZR.
+           DISPLAY "+ DYYZR        IS  " DYYZR " *".
+           MOVE 18536.23 TO DYYZR.
+           DISPLAY "+ DYYZR        IS  " DYYZR " *".
+           MOVE BINVAL    TO DYYZR.
+           DISPLAY "- DYYZR        IS  " DYYZR " *".
+           MOVE -0.05 TO DYYZR.
+           DISPLAY "- DYYZR        IS  " DYYZR " *".
+           MOVE 0 TO DYYZR.
+           DISPLAY "0 DYYZR        IS  " DYYZR " *".
+           DISPLAY "  WFLT         PIC $$$,$$9.99 *".
+           MOVE  8536.23 TO WFLT.
+           DISPLAY "  WFLT         IS  " WFLT " *".
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -std=default prog.cob ], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [  DEPOSIT-AMT9 PIC -,---,--9.99 *
++ DEPOSIT-AMT9 IS      8,536.23 *
+0 DEPOSIT-AMT9 IS          0.00 *
++ DEPOSIT-AMT  PIC -,---,--Z.ZZ *
++ DEPOSIT-AMT  IS     18,536.20 *
+- DEPOSIT-AMT  IS    -18,536.23 *
+0 DEPOSIT-AMT  IS               *
+  DYYZR        PIC $$,$$$,$$$.$$- *
++ DYYZR        IS     $18,536.00  *
++ DYYZR        IS     $18,536.23  *
+- DYYZR        IS     $18,536.23- *
+- DYYZR        IS           $.05- *
+0 DYYZR        IS                 *
+  WFLT         PIC $$$,$$9.99 *
+  WFLT         IS   $8,536.23 *
+], [])
+
+AT_CLEANUP
+
 
 AT_SETUP([COMP-3 Index])
 AT_KEYWORDS([numeric])

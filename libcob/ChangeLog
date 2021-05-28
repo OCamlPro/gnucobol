@@ -1,4 +1,8 @@
 
+2021-05-28  Ron Norman <rjn@inglenet.com>
+
+	* move.c: Handle trailing sign with floating currency
+
 2021-05-04  Ron Norman <rjn@inglenet.com>
 
 	* common.c: Make a few variables 'static' to better 
