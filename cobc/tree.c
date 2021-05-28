@@ -3004,11 +3004,11 @@ valid_char_order (const cob_pic_symbol *str, const int s_char_seen)
 				 && !precedence_table[idx][j]
 				 && !error_emitted[idx][j]) {
 					/* Accept some exceptions to the precedence table */
-					if (chars_seen[j] == current_program->currency_symbol
-					 && s->symbol == current_program->currency_symbol)
+					if (j == 11					/* + - before decimal */
+					 && (idx == 9 || idx == 10))/* Z */
 						continue;
-					if (chars_seen[j] == '-'
-					 && s->symbol == 'Z')
+					if (idx == 8				/* currency */
+					 && (j == 8 || j == 13))	/* currency or floating currency */
 						continue;
 
 					emit_precedence_error (j, idx);
