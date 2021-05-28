@@ -1,4 +1,9 @@
 
+2021-05-28  Ron Norman <rjn@inglenet.com>
+	* tree.c: Allow PIC clause not handled by precendence table
+	          Count decimals in $.$$ style PICTURE
+	* typeck.c: Format numeric value for display in error message
+
 2021-05-11  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y (use_reporting): check for valid identifier before use,
