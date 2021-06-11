@@ -3677,6 +3677,7 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename, const int mode, con
 		f->flag_file_map = 1;
 	}
 	f->flag_is_pipe = 0;
+	f->flag_is_std = 0;
 
 	if (file_setptr->cob_file_dict == COB_DICTIONARY_ALL
 	 && mode == COB_OPEN_OUTPUT)
@@ -3736,6 +3737,64 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename, const int mode, con
 		f->open_mode = (unsigned char)mode;
 		return 0;
 	}
+	if (strcmp (filename,":CI:") == 0
+	 || strcmp (filename,"/dev/stdin") == 0
+	 || strcmp (filename,"/proc/self/fd/0") == 0) {
+#if defined (HAVE_UNISTD_H) && !(defined (_WIN32))
+		if (mode != COB_OPEN_INPUT) 
+			return COB_STATUS_37_PERMISSION_DENIED;
+		f->flag_select_features |= COB_SELECT_STDIN;
+		f->flag_select_features &= ~COB_SELECT_STDOUT;
+		f->file = stdin;
+		f->fileout = NULL;
+		f->fdout = -1;
+		f->fd = STDIN_FILENO;
+		f->open_mode = (unsigned char)mode;
+		f->flag_is_std = 1;
+		return 0;
+#else
+		return COB_STATUS_47_INPUT_DENIED;
+#endif
+	}
+	if (strcmp (filename,":CO:") == 0
+	 || strcmp (filename,"/dev/stdout") == 0
+	 || strcmp (filename,"/proc/self/fd/1") == 0) {
+#if defined (HAVE_UNISTD_H) && !(defined (_WIN32))
+		if (mode != COB_OPEN_OUTPUT) 
+			return COB_STATUS_37_PERMISSION_DENIED;
+		f->flag_select_features &= ~COB_SELECT_STDIN;
+		f->flag_select_features |= COB_SELECT_STDOUT;
+		f->file = stdout;
+		f->fileout = stdout;
+		f->fdout = STDOUT_FILENO;
+		f->fd = STDOUT_FILENO;
+		f->open_mode = (unsigned char)mode;
+		f->flag_is_std = 1;
+		return 0;
+#else
+		return COB_STATUS_48_OUTPUT_DENIED;
+#endif
+	}
+	if (strcmp (filename,":CE:") == 0
+	 || strcmp (filename,"/dev/stderr") == 0
+	 || strcmp (filename,"/proc/self/fd/2") == 0) {
+#if defined (HAVE_UNISTD_H) && !(defined (_WIN32))
+		if (mode != COB_OPEN_OUTPUT) 
+			return COB_STATUS_37_PERMISSION_DENIED;
+		f->flag_select_features &= ~COB_SELECT_STDIN;
+		f->flag_select_features |= COB_SELECT_STDOUT;
+		f->file = stderr;
+		f->fileout = stderr;
+		f->fdout = STDERR_FILENO;
+		f->fd = STDERR_FILENO;
+		f->open_mode = (unsigned char)mode;
+		f->flag_is_std = 1;
+		return 0;
+#else
+		return COB_STATUS_48_OUTPUT_DENIED;
+#endif
+	}
+
 	if (filename[0] == '|') {
 #if defined (HAVE_UNISTD_H) && !(defined (_WIN32))
 		pid_t	s_pid;
@@ -6159,6 +6218,15 @@ cob_close (cob_file *f, cob_field *fnstatus, const int opt, const int remfil)
 		f->open_mode = COB_OPEN_CLOSED;
 		f->file = NULL;
 		f->fd = -1;
+		if (f->flag_is_std) {
+			f->flag_is_pipe = 0;
+			f->flag_is_std = 0;
+			f->file = f->fileout = NULL;
+			f->fd = f->fdout = -1;
+			f->file_pid = 0;
+			f->flag_select_features &= ~COB_SELECT_STDIN;
+			f->flag_select_features &= ~COB_SELECT_STDOUT;
+		}
 		cob_file_save_status (f, fnstatus, COB_STATUS_00_SUCCESS);
 		return;
 	}

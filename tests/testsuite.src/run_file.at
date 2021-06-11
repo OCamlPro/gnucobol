@@ -17281,6 +17281,195 @@ Bad Read status:10
 AT_CLEANUP
 
 
+AT_SETUP([STDOUT STDERR I/O])
+AT_KEYWORDS([PIPE :CI: :CO: :CE:])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+      
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT PIPEIO 
+           ASSIGN TO PIPE-CMD
+           ORGANIZATION LINE SEQUENTIAL
+           FILE STATUS IS CUST-STAT .
+
+       DATA  DIVISION.
+       FILE SECTION.
+       FD  PIPEIO
+           BLOCK CONTAINS 5 RECORDS.
+       01  INP-RECORD                          PIC X(16).
+
+       WORKING-STORAGE SECTION.
+       01  PIPE-CMD                            PIC X(40).
+       01  CUST-STAT                           PIC XX.
+       01  SUB                                 PIC 9(2).
+       01  OPRN1                               PIC 9(3).
+       01  OPRN2                               PIC 9(3).
+       01  RSLT                                PIC 9(4).
+       01  CMD-LINE.
+           05  CMD                             PICTURE X(8).
+           05  FILLER                          PICTURE X.
+           05  CMD-KEY                         PICTURE X(8).
+       01  ADD-LINE.
+           05  NUM                             PICTURE 9(3).
+           05  FILLER                          PICTURE X(8).
+      
+       PROCEDURE DIVISION.
+      
+       MAINFILE.
+           ACCEPT CMD-LINE FROM COMMAND-LINE.
+           IF CMD = 'HELLO'
+               DISPLAY "Bye Bye"
+               DISPLAY "Birdie"
+               STOP RUN
+           END-IF.
+           IF CMD = 'ECHO'
+               ACCEPT CMD-LINE FROM CONSOLE
+               DISPLAY "Echo: " CMD-LINE ":"
+               ACCEPT CMD-LINE FROM CONSOLE
+               DISPLAY "Echo: " CMD-LINE ":"
+               STOP RUN
+           END-IF.
+           IF CMD = 'STDIN'
+               PERFORM READ-STDIN
+               STOP RUN
+           END-IF.
+           IF CMD = 'ADD'
+               ACCEPT ADD-LINE FROM CONSOLE
+               MOVE NUM TO OPRN1
+               ACCEPT ADD-LINE FROM CONSOLE
+               MOVE NUM TO OPRN2
+               COMPUTE RSLT = OPRN1 + OPRN2
+               DISPLAY "Result: " OPRN1 " + " OPRN2 " is " RSLT
+               STOP RUN
+           END-IF.
+      
+           PERFORM WRITETEST.
+           PERFORM WRITE-STDOUT.
+           PERFORM WRITE-STDERR.
+           PERFORM READPIPE.
+           PERFORM WRITEPIPE.
+           PERFORM ADD-PIPE.
+           STOP RUN.
+
+       READPIPE.
+           MOVE "<./prog     HELLO" TO PIPE-CMD
+           DISPLAY "Show input from pipe".
+           OPEN INPUT PIPEIO.
+           PERFORM VARYING SUB FROM 1 BY 1
+                    UNTIL SUB > 50
+                      OR CUST-STAT NOT = "00"
+             READ PIPEIO
+             IF CUST-STAT = '00'
+                 DISPLAY SUB ": " INP-RECORD ":"
+             END-IF
+           END-PERFORM.
+           CLOSE PIPEIO.
+      
+       WRITEPIPE.
+           MOVE ">./prog     ECHO " TO PIPE-CMD
+           DISPLAY "Send data out pipe".
+           OPEN OUTPUT PIPEIO.
+           MOVE "Having" TO INP-RECORD
+           WRITE INP-RECORD.
+           MOVE "Fun Yet?" TO INP-RECORD
+           WRITE INP-RECORD.
+           CLOSE PIPEIO.
+
+       ADD-PIPE.
+           MOVE "|./prog     ADD " TO PIPE-CMD
+           DISPLAY "Exchange data via pipe".
+           OPEN I-O PIPEIO.
+           MOVE "001" TO INP-RECORD
+           WRITE INP-RECORD.
+           MOVE "003" TO INP-RECORD
+           WRITE INP-RECORD.
+           READ PIPEIO.
+           DISPLAY "Answer :" INP-RECORD ":"
+           CLOSE PIPEIO.
+
+       WRITETEST.
+           MOVE ">./prog     STDIN " TO PIPE-CMD
+           DISPLAY "Have data read via stdin".
+           OPEN OUTPUT PIPEIO.
+           MOVE "Happy days!" TO INP-RECORD
+           WRITE INP-RECORD.
+           CLOSE PIPEIO.
+
+       READ-STDIN.
+           MOVE ":CI:" TO PIPE-CMD
+           OPEN INPUT PIPEIO.
+           IF CUST-STAT NOT = '00'
+               DISPLAY "Open STDIN error " CUST-STAT
+           END-IF.
+           READ PIPEIO.
+           DISPLAY "Stdin: " INP-RECORD ":"
+           CLOSE PIPEIO.
+           IF CUST-STAT NOT = '00'
+               DISPLAY "Close STDIN error " CUST-STAT
+           END-IF.
+
+       WRITE-STDOUT.
+           MOVE ":CO:" TO PIPE-CMD
+           DISPLAY "Send data to stdout***".
+           OPEN OUTPUT PIPEIO.
+           IF CUST-STAT NOT = '00'
+               DISPLAY "Open STDOUT error " CUST-STAT
+           END-IF.
+           MOVE "Is stdout having" TO INP-RECORD
+           WRITE INP-RECORD.
+           MOVE "any Fun Yet?" TO INP-RECORD
+           WRITE INP-RECORD.
+           CLOSE PIPEIO.
+           IF CUST-STAT NOT = '00'
+               DISPLAY "Close STDOUT error " CUST-STAT
+           END-IF.
+
+       WRITE-STDERR.
+           MOVE ":CE:" TO PIPE-CMD
+           DISPLAY "Send data to stderr***".
+           OPEN OUTPUT PIPEIO.
+           IF CUST-STAT NOT = '00'
+               DISPLAY "Open STDERR error " CUST-STAT
+           END-IF.
+           MOVE "Is stderr having" TO INP-RECORD
+           WRITE INP-RECORD.
+           MOVE "any Fun Yet?" TO INP-RECORD
+           WRITE INP-RECORD.
+           CLOSE PIPEIO.
+           IF CUST-STAT NOT = '00'
+               DISPLAY "Close STDERR error " CUST-STAT
+           END-IF.
+
+])
+
+AT_CHECK([$COBC -x -std=default -w prog.cob ], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [Have data read via stdin
+Stdin: Happy days!     :
+Send data to stdout***
+Is stdout having
+any Fun Yet?
+Send data to stderr***
+Show input from pipe
+01: Bye Bye         :
+02: Birdie          :
+Send data out pipe
+Echo: Having           :
+Echo: Fun Yet?         :
+Exchange data via pipe
+Answer :Result: 001 + 00:
+], [Is stderr having
+any Fun Yet?
+])
+
+AT_CLEANUP
+
+
 AT_SETUP([LINE SEQUENTIAL one Record])
 AT_KEYWORDS([runfile])
 

@@ -1,4 +1,9 @@
 
+2021-06-11  Ron Norman <rjn@inglenet.com> and Christian Lademann
+
+	* common.h: Add flag_is_std for LINE SEQUENTIAL :CI:, :CO:, :CE:
+	* fileio.c: Add code for LINE SEQUENTIAL use of :CI:, :CO:, :CE:
+
 2021-05-28  Ron Norman <rjn@inglenet.com>
 
 	* move.c: Handle trailing sign with floating currency
