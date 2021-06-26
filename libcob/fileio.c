@@ -2917,9 +2917,6 @@ cob_file_save_status (cob_file *f, cob_field *fnstatus, const int status)
 	file_globptr->cob_error_file = f;
 	if (status == 0) {
 		memset (f->file_status, '0', (size_t)2);
-		if (fnstatus) {
-			memset (fnstatus->data, '0', (size_t)2);
-		}
 		/* EOP is non-fatal therefore 00 status but needs exception */
 		if (eop_status) {
 			eop_status = 0;
@@ -2930,6 +2927,12 @@ cob_file_save_status (cob_file *f, cob_field *fnstatus, const int status)
 		if ((f->file_features & COB_FILE_SYNC)) {
 			cob_file_sync (f);
 		}
+	} else if (status > COB_STATUS_BASE) {
+		if (delete_file_status) {
+			delete_file_status = 0;
+			cob_set_exception (COB_EC_DELETE_FILE);
+		}
+		memset (f->file_status, '9', (size_t)2);
 	} else {
 		if (delete_file_status) {
 			delete_file_status = 0;
@@ -2939,9 +2942,9 @@ cob_file_save_status (cob_file *f, cob_field *fnstatus, const int status)
 		}
 		f->file_status[0] = (unsigned char)COB_I2D (status / 10);
 		f->file_status[1] = (unsigned char)COB_I2D (status % 10);
-		if (fnstatus) {
-			memcpy (fnstatus->data, f->file_status, (size_t)2);
-		}
+	}
+	if (fnstatus) {
+		memcpy (fnstatus->data, f->file_status, (size_t)2);
 	}
 
 	if (file_setptr->cob_line_trace

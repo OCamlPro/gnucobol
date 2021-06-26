@@ -101,6 +101,7 @@ struct strcache {
 /* Global variables */
 
 const char		*cb_source_file = NULL;
+const char		*cb_dialect = NULL;
 const char		*cb_cobc_build_stamp = NULL;
 const char		*demangle_name = NULL;
 const char		*cb_storage_file_name = NULL;
@@ -2790,6 +2791,7 @@ process_command_line (const int argc, char **argv)
 	int			conf_ret = 0;
 	int			error_all_warnings = 0;
 
+	cb_dialect = "DEFAULT";
 	cb_mf_ibm_comp = -1;
 	cb_warn_opt_val[(int)cb_warn_unsupported] = COBC_WARN_AS_ERROR;
 
@@ -2961,6 +2963,10 @@ process_command_line (const int argc, char **argv)
 			if (strlen (cob_optarg) > COB_MINI_MAX) {
 				cobc_err_exit (COBC_INV_PAR, "-std");
 			}
+			for (n=0; cob_optarg[n] != 0 && cob_optarg[n] != '-'; n++)
+				ext[n] = toupper(cob_optarg[n]);
+			ext[n] = 0;
+			cb_dialect = cobc_strdup (ext); 
 			snprintf (ext, (size_t)COB_MINI_MAX, "%s.conf", cob_optarg);
 			conf_ret |= cb_load_std (ext);
 			break;

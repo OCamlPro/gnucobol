@@ -10879,6 +10879,7 @@ output_module_init_function (struct cb_program *prog)
 	output_line ("module->flag_no_phys_canc = %d;", no_physical_cancel);
 	output_line ("module->flag_main = %d;", cobc_flag_main);
 	output_line ("module->flag_fold_call = %d;", cb_fold_call);
+	output_line ("module->flag_dialect = COB_DIALECT_%s;", cb_dialect);
 	output_line ("module->flag_exit_program = 0;");
 	{
 		int	opt = 0;

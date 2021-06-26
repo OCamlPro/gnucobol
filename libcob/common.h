@@ -1064,6 +1064,15 @@ enum cob_file_access {
 #define COB_STATUS_71_BAD_CHAR			71
 #define COB_STATUS_91_NOT_AVAILABLE		91
 
+#define COB_STATUS_BASE					100
+/* Extended Status values */
+enum cob_status_extended {
+	COB_XSTATUS = COB_STATUS_BASE,
+	COB_XSTATUS_BAD_DIR,
+	COB_XSTATUS_NOT_FILE,
+	COB_XSTATUS_MAX
+};
+
 /* Special status */
 /* Used by extfh handler */
 #define	COB_NOT_CONFIGURED			32768
@@ -1407,6 +1416,11 @@ typedef struct __cob_module {
 	const char		*stmt_name;			/* Statement VERB name */
 	const char		*section_name;
 	const char		*paragraph_name;
+
+	unsigned char		flag_dialect;			/* Module -std=  for status code choices */
+	unsigned char		flag_unused[7];			/* For future, use for new flags etc */
+
+	unsigned char		unused[32];				/* For future use */
 } cob_module;
 
 /* For 'module_type'
@@ -1415,6 +1429,20 @@ typedef struct __cob_module {
 #define COB_MODULE_PROGRAM	0
 #define COB_MODULE_FUNCTION	1
 #define COB_MODULE_C		2
+
+/* For  'flag_dialect' */
+#define COB_DIALECT_DEFAULT	0
+#define COB_DIALECT_COBOL2002	1
+#define COB_DIALECT_COBOL2014	2
+#define COB_DIALECT_COBOL85		3
+#define COB_DIALECT_ACU		4
+#define COB_DIALECT_BS2000	5
+#define COB_DIALECT_IBM		6	
+#define COB_DIALECT_MF		7
+#define COB_DIALECT_MVS		8	
+#define COB_DIALECT_RELIA	9	
+#define COB_DIALECT_RM		10	
+#define COB_DIALECT_XOPEN	11	
 
 /* User function structure */
 

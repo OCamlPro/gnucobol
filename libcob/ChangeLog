@@ -1,4 +1,9 @@
 
+2021-06-26  Ron Norman <rjn@inglenet.com> and Christian Lademann
+
+	* common.h: Add COB_DIALECT_xxx 
+	* fileio.c: Preparing for dialect specific status codes
+
 2021-06-11  Ron Norman <rjn@inglenet.com> and Christian Lademann
 
 	* common.h: Add flag_is_std for LINE SEQUENTIAL :CI:, :CO:, :CE:

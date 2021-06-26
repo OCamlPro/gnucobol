@@ -450,6 +450,7 @@ extern cob_u32_t		optimize_defs[];
 
 extern const char		*cb_cobc_build_stamp;
 extern const char		*cb_source_file;
+extern const char      *cb_dialect;
 extern int			cb_source_line;
 extern const char		*cb_call_extfh;
 
