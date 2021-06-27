@@ -303,6 +303,41 @@ void cob_seqra_init_fileio (cob_file_api *);
 /* Local functions */
 
 static int
+isdirvalid (char *filename)
+{
+	struct stat st;
+	char	tmp[COB_NORMAL_BUFF];
+	int		ln = strlen (filename);
+
+	if (*filename == ':'
+	 || *filename == '<'
+	 || *filename == '>'
+	 || *filename == '|')
+		return 1;
+	if (memcmp (filename, "/dev/", (size_t)5) == 0)  
+		return 1;
+
+	strcpy (tmp, filename);
+	while (--ln > 0) {
+		if (tmp[ln] == SLASH_CHAR) {
+			tmp[ln] = 0;
+			errno = 0;
+			if (stat(tmp, &st) == -1) {
+				errno = ENOENT;
+				return 0;
+			}
+			if (!S_ISDIR(st.st_mode)) {
+				errno = ENOTDIR;
+				return 0;
+			}
+		}
+	}
+	errno = 0;
+	return 1;
+}
+
+
+static int
 isdirname (char *value)
 {
 #ifdef	_WIN32
@@ -2933,6 +2968,38 @@ cob_file_save_status (cob_file *f, cob_field *fnstatus, const int status)
 			cob_set_exception (COB_EC_DELETE_FILE);
 		}
 		memset (f->file_status, '9', (size_t)2);
+		switch (status) {
+		case COB_XSTATUS_IS_DIR:
+			memcpy (f->file_status, "37", 2);	/* Default to old GnuCOBOL status */
+			cob_set_exception (status_exception[3]);
+			if (COB_MODULE_PTR) {
+				if (COB_MODULE_PTR->flag_dialect == COB_DIALECT_MF) {
+					f->file_status[0] = '9';
+					f->file_status[1] = 21;
+				}
+			}
+			break;
+		case COB_XSTATUS_NOT_DIR:
+			memcpy (f->file_status, "30", 2);	/* Default to old GnuCOBOL status */
+			cob_set_exception (status_exception[3]);
+			if (COB_MODULE_PTR) {
+				if (COB_MODULE_PTR->flag_dialect == COB_DIALECT_MF) {
+					f->file_status[0] = '9';
+					f->file_status[1] = 9;
+				}
+			}
+			break;
+		case COB_XSTATUS_NOT_FILE:
+			memcpy (f->file_status, "35", 2);	/* Default to old GnuCOBOL status */
+			cob_set_exception (status_exception[3]);
+			if (COB_MODULE_PTR) {
+				if (COB_MODULE_PTR->flag_dialect == COB_DIALECT_MF) {
+					f->file_status[0] = '9';
+					f->file_status[1] = 9;
+				}
+			}
+			break;
+		}
 	} else {
 		if (delete_file_status) {
 			delete_file_status = 0;
@@ -3170,8 +3237,11 @@ errno_cob_sts (const int default_status)
 		return COB_STATUS_34_BOUNDARY_VIOLATION;
 	case EPERM:
 	case EACCES:
-	case EISDIR:
 		return COB_STATUS_37_PERMISSION_DENIED;
+	case EISDIR:
+		return COB_XSTATUS_IS_DIR;
+	case ENOTDIR:
+		return COB_XSTATUS_NOT_DIR;
 	case ENOENT:
 		return COB_STATUS_35_NOT_EXISTS;
 	default:
@@ -3500,6 +3570,12 @@ cob_fd_file_open (cob_file *f, char *filename, const int mode, const int sharing
 	}
 
 	nonexistent = 0;
+	if (mode != COB_OPEN_EXTEND 
+	 && mode != COB_OPEN_OUTPUT
+	 && !f->flag_optional
+	 && !isdirvalid (filename)) {
+		return COB_XSTATUS_NOT_DIR;
+	}
 	errno = 0;
 	if (access (filename, F_OK) && errno == ENOENT) {
 		if (mode != COB_OPEN_OUTPUT && f->flag_optional == 0) {
@@ -3577,6 +3653,8 @@ cob_fd_file_open (cob_file *f, char *filename, const int mode, const int sharing
 		break;
 	case ENOENT:
 		if (mode == COB_OPEN_EXTEND || mode == COB_OPEN_OUTPUT) {
+	 		if (!isdirvalid (filename))
+				return COB_XSTATUS_NOT_DIR;
 			return COB_STATUS_30_PERMANENT_ERROR;
 		}
 		if (f->flag_optional) {
@@ -3588,9 +3666,12 @@ cob_fd_file_open (cob_file *f, char *filename, const int mode, const int sharing
 		}
 		return COB_STATUS_35_NOT_EXISTS;
 	case EACCES:
-	case EISDIR:
 	case EROFS:
 		return COB_STATUS_37_PERMISSION_DENIED;
+	case EISDIR:
+		return COB_XSTATUS_IS_DIR;
+	case ENOTDIR:
+		return COB_XSTATUS_NOT_DIR;
 	case EAGAIN:
 		return COB_STATUS_61_FILE_SHARING;
 	default:
@@ -3669,10 +3750,11 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename, const int mode, con
 	/* cob_chk_file_mapping manipulates file_open_name directly */
 
 	int		ret;
+	struct stat st;
 	FILE			*fp;
 	const char		*fmode;
 	cob_linage		*lingptr;
-	unsigned int		nonexistent;
+	unsigned int	nonexistent;
 
 	f->share_mode = (unsigned char)sharing;
 	if(!f->flag_file_map) {
@@ -3871,6 +3953,14 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename, const int mode, con
 #endif
 	}
 
+
+	if (stat(filename, &st) != -1
+	 && S_ISDIR(st.st_mode)) {	/* Filename is a directory */
+		return COB_XSTATUS_IS_DIR;
+	}
+	if (!isdirvalid (filename))
+		return COB_XSTATUS_NOT_DIR;
+	errno = 0;
 	if (access (filename, F_OK) && errno == ENOENT) {
 		nonexistent = 1;
 		if (mode != COB_OPEN_OUTPUT && f->flag_optional == 0) {
@@ -3943,8 +4033,10 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename, const int mode, con
 		}
 		break;
 	case ENOENT:
+		if (!isdirvalid (filename))
+			return COB_XSTATUS_NOT_DIR;
 		if (mode == COB_OPEN_EXTEND || mode == COB_OPEN_OUTPUT) {
-			return COB_STATUS_30_PERMANENT_ERROR;
+			return COB_XSTATUS_NOT_DIR;
 		}
 		if (f->flag_optional) {
 			f->open_mode = (unsigned char)mode;
@@ -3955,11 +4047,14 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename, const int mode, con
 		}
 		return COB_STATUS_35_NOT_EXISTS;
 	case EACCES:
-	case EISDIR:
 	case EROFS:
 		return COB_STATUS_37_PERMISSION_DENIED;
 	case EAGAIN:
 		return COB_STATUS_61_FILE_SHARING;
+	case EISDIR:
+		return COB_XSTATUS_IS_DIR;
+	case ENOTDIR:
+		return COB_XSTATUS_NOT_DIR;
 	default:
 		return COB_STATUS_30_PERMANENT_ERROR;
 	}
@@ -6192,6 +6287,22 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 		}
 	}
 	cob_cache_file (f);
+
+	if (!f->flag_optional
+	 && !isdirvalid(file_open_name)) {
+		if (errno == ENOTDIR) {
+			cob_file_save_status (f, fnstatus, COB_XSTATUS_NOT_DIR);
+			return;
+		}
+		if (errno == ENOENT) {
+			if ((mode != COB_OPEN_OUTPUT && mode != COB_OPEN_EXTEND) 
+			 || f->organization == COB_ORG_INDEXED) 
+				cob_file_save_status (f, fnstatus, COB_XSTATUS_NOT_FILE);
+			else
+				cob_file_save_status (f, fnstatus, COB_XSTATUS_NOT_DIR);
+			return;
+		}
+	}
 
 	/* Open the file */
 	cob_file_save_status (f, fnstatus,

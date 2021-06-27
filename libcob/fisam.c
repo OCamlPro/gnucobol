@@ -871,6 +871,7 @@ isam_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 	int			dobld;
 	int			isfd;
 	int			checkvalue;
+	struct stat st;
 	struct keydesc		kd;
 	struct dictinfo		di;		/* Defined in (c|d|vb)isam.h */
 
@@ -889,6 +890,11 @@ isam_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 		checkvalue = R_OK | W_OK;
 	}
 	fmode = 0;
+
+	if (stat(filename, &st) != -1
+	 && S_ISDIR(st.st_mode)) {	/* Filename is a directory */
+		return COB_XSTATUS_IS_DIR;
+	}
 
 	snprintf (a->file_open_buff, (size_t)COB_FILE_MAX, "%s.idx", filename);
 	errno = 0;

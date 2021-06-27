@@ -186,6 +186,16 @@ static const int	status_exception[] = {
 	COB_EC_I_O_IMP			/* 9x */
 };
 
+#define COB_STATUS_BASE					100
+/* Extended Status values */
+enum cob_status_extended {
+	COB_XSTATUS = COB_STATUS_BASE,
+	COB_XSTATUS_IS_DIR,
+	COB_XSTATUS_NOT_DIR,
+	COB_XSTATUS_NOT_FILE,
+	COB_XSTATUS_MAX
+};
+
 COB_HIDDEN int cob_write_dict (cob_file *f, char *filename);
 COB_HIDDEN int cob_read_dict (cob_file *f, char *filename, int updt, int *retsts);
 COB_HIDDEN void cob_chk_file_mapping (cob_file *f, char *filename);

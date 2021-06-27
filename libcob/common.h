@@ -1064,15 +1064,6 @@ enum cob_file_access {
 #define COB_STATUS_71_BAD_CHAR			71
 #define COB_STATUS_91_NOT_AVAILABLE		91
 
-#define COB_STATUS_BASE					100
-/* Extended Status values */
-enum cob_status_extended {
-	COB_XSTATUS = COB_STATUS_BASE,
-	COB_XSTATUS_BAD_DIR,
-	COB_XSTATUS_NOT_FILE,
-	COB_XSTATUS_MAX
-};
-
 /* Special status */
 /* Used by extfh handler */
 #define	COB_NOT_CONFIGURED			32768
@@ -1407,7 +1398,7 @@ typedef struct __cob_module {
 	cob_field		*xml_ntext;		/* XML-NTEXT */
 	cob_field		*xml_text;		/* XML-TEXT */
 
-	cob_field		*json_code;		/* JSON-CODE */
+	cob_field		*json_code;			/* JSON-CODE */
 	cob_field		*json_status;		/* JSON-STATUS */
 	cob_field		function_return;	/* Copy of RETURNING field */
 	unsigned int	num_symbols;		/* Number of symbols in table */
@@ -1417,10 +1408,10 @@ typedef struct __cob_module {
 	const char		*section_name;
 	const char		*paragraph_name;
 
-	unsigned char		flag_dialect;			/* Module -std=  for status code choices */
-	unsigned char		flag_unused[7];			/* For future, use for new flags etc */
+	unsigned char		flag_dialect;	/* Module -std=  for status code choices */
+	unsigned char		flag_unused[7];	/* For future, use for new flags etc */
 
-	unsigned char		unused[32];				/* For future use */
+	unsigned char		unused[32];		/* For future use */
 } cob_module;
 
 /* For 'module_type'

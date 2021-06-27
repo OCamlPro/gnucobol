@@ -20146,3 +20146,473 @@ Read Status: 10
 
 AT_CLEANUP
 
+AT_SETUP([Test MF Status (IS)])
+AT_KEYWORDS([Status])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+      
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+      
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT ISAMFILE 
+           ASSIGN TO DATAFILE
+           ORGANIZATION INDEXED ACCESS DYNAMIC
+           RECORD KEY IS CM-CUST-NUM
+           FILE STATUS IS CUST-STAT.
+
+       DATA  DIVISION.
+       FILE SECTION.
+       FD  ISAMFILE
+           BLOCK CONTAINS 5 RECORDS.
+      
+       01  TSPFL-RECORD.
+           10  CM-CUST-NUM                     PICTURE X(8). 
+           10  CM-TYPE                         PICTURE X. 
+           10  CM-COMPANY                      PICTURE X(25). 
+           10  CM-DISK                         PICTURE X(8). 
+           10  CM-NO-TERMINALS                 PICTURE 9(4) COMP-4. 
+           10  CM-PK-DATE                      PICTURE S9(14) COMP-3.
+           10  CM-TRAILER                      PICTURE X(32). 
+       
+       WORKING-STORAGE SECTION.
+      
+       77  MAX-SUB           VALUE  4          PICTURE 9(4) COMP .
+       77  ZRO               VALUE  1          PICTURE 9(4) COMP .
+       01  CUST-STAT                           PICTURE X(2).
+       01  FILLER REDEFINES CUST-STAT.
+           05  CUST-STAT1                      PICTURE X.
+           05  CUST-STAT2                      PICTURE X COMP-X.
+       77  REC-NUM           VALUE  1          PICTURE 9(8) COMP .
+      
+       01  TEST-DATA.
+      
+         02  DATA-CUST-NUM-TBL.
+      
+           05  FILLER PIC X(8) VALUE "ALP00000".
+           05  FILLER PIC X(8) VALUE "BET00000".
+           05  FILLER PIC X(8) VALUE "GAM00000".
+           05  FILLER PIC X(8) VALUE "DEL00000".
+           05  FILLER PIC X(8) VALUE "EPS00000".
+           05  FILLER PIC X(8) VALUE "FOR00000".
+      
+         02  DATA-CUST-NUM REDEFINES DATA-CUST-NUM-TBL
+                                       PIC X(8) OCCURS 6.
+         02  DATA-COMPANY-TBL.
+      
+           05  FILLER PIC X(25) VALUE "ALPHA ELECTRICAL CO. LTD.".
+           05  FILLER PIC X(25) VALUE "BETA SHOE MFG. INC.      ".
+           05  FILLER PIC X(25) VALUE "GAMMA X-RAY TECHNOLOGY   ".
+           05  FILLER PIC X(25) VALUE "DELTA LUGGAGE REPAIRS    ".
+           05  FILLER PIC X(25) VALUE "EPSILON EQUIPMENT SUPPLY ".
+           05  FILLER PIC X(25) VALUE "FORTUNE COOKIE COMPANY   ".
+         02  DATA-COMPANY  REDEFINES DATA-COMPANY-TBL
+                                       PIC X(25) OCCURS 6.
+         02  DATA-ADDRESS-2-TBL.
+      
+           05  FILLER PIC X(10) VALUE "NEW YORK  ".
+           05  FILLER PIC X(10) VALUE "ATLANTA   ".
+           05  FILLER PIC X(10) VALUE "WASHINGTON".
+           05  FILLER PIC X(10) VALUE "TORONTO   ".
+           05  FILLER PIC X(10) VALUE "CALGARY   ".
+           05  FILLER PIC X(10) VALUE "WHITEPLAIN".
+      
+         02  DATA-ADDRESS   REDEFINES DATA-ADDRESS-2-TBL
+                                       PIC X(10) OCCURS 6.
+
+         02  DATA-NO-TERMINALS-TBL.
+      
+           05  FILLER PIC 9(3) COMP-3 VALUE 10.
+           05  FILLER PIC 9(3) COMP-3 VALUE 13.
+           05  FILLER PIC 9(3) COMP-3 VALUE 75.
+           05  FILLER PIC 9(3) COMP-3 VALUE 10.
+           05  FILLER PIC 9(3) COMP-3 VALUE 90.
+           05  FILLER PIC 9(3) COMP-3 VALUE 254.
+      
+         02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
+                                       PIC 9(3) COMP-3 OCCURS 6.
+       01  WORK-AREA.
+           05  DATAFILE                        PICTURE X(128).
+           05  LIST-TEST                       PICTURE X(20).
+           05  TST-READ                        PICTURE X VALUE 'Y'.
+           05  TST-WRITE                       PICTURE X VALUE 'Y'.
+           05  SUB                             PICTURE 9(4) COMP.
+               88  ODD-RECORD                  VALUE 1 3 5.
+      
+      
+       PROCEDURE DIVISION.
+
+           DISPLAY "Testing INDEXED Status Codes".
+           READ ISAMFILE
+           DISPLAY "READ  NOT OPEN Status: " CUST-STAT
+           WRITE TSPFL-RECORD
+           DISPLAY "WRITE NOT OPEN Status: " CUST-STAT
+           MOVE "./junkit/chkdatx" TO DATAFILE.
+           DISPLAY "Load bad directory"
+           PERFORM LOADFILE.
+           MOVE "bad directory" TO LIST-TEST
+           PERFORM LISTFILE.
+           MOVE "chkdatax" TO DATAFILE.
+           MOVE "bad filename" TO LIST-TEST
+           PERFORM LISTFILE.
+
+           MOVE "chkdata" TO DATAFILE.
+           PERFORM LOADFILE.
+           PERFORM LISTFILE.
+
+           MOVE "chkdatax" TO DATAFILE.
+           MOVE "bad filename" TO LIST-TEST
+           PERFORM LISTFILE.
+           MOVE "./junkit/chkdatx" TO DATAFILE.
+           MOVE "bad directory" TO LIST-TEST
+           PERFORM LISTFILE.
+           MOVE "./chkdata/chkdatax" TO DATAFILE.
+           MOVE "directory is file" TO LIST-TEST
+           PERFORM LISTFILE.
+           MOVE "./junky/chkdatax" TO DATAFILE.
+           MOVE "invalid directory" TO LIST-TEST
+           PERFORM LISTFILE.
+           MOVE "/tmp" TO DATAFILE.
+           MOVE "tmp directory" TO LIST-TEST
+           PERFORM LISTFILE.
+           STOP RUN RETURNING 0.
+      
+       LISTFILE.
+           OPEN INPUT ISAMFILE.
+           IF CUST-STAT1 = '9'
+              DISPLAY "List " LIST-TEST "Open Sts: 9/" CUST-STAT2
+           ELSE
+              DISPLAY "List " LIST-TEST "Open Sts: " CUST-STAT
+           END-IF
+           PERFORM UNTIL CUST-STAT NOT = "00"
+               PERFORM READ-RECORD
+           END-PERFORM.
+		   IF TST-WRITE = 'Y'
+               MOVE 'N' TO TST-WRITE
+               WRITE TSPFL-RECORD
+               DISPLAY "Write INPUT file status " CUST-STAT
+		   END-IF.
+           CLOSE ISAMFILE.
+
+       READ-RECORD.
+           MOVE SPACES                       TO TSPFL-RECORD.
+           READ ISAMFILE
+           IF  CUST-STAT NOT = "00"
+           AND CUST-STAT NOT = "10"
+             DISPLAY "Read Status: " CUST-STAT
+           END-IF.
+
+       LOADFILE.
+           OPEN OUTPUT ISAMFILE.
+           IF CUST-STAT NOT = '00'
+             IF CUST-STAT1 = '9'
+                DISPLAY "Output Open Sts: 9/" CUST-STAT2
+             ELSE
+                DISPLAY "Output Open Sts: " CUST-STAT
+             END-IF
+
+           ELSE
+		     IF TST-READ = 'Y'
+               MOVE 'N' TO TST-READ
+               READ ISAMFILE
+               DISPLAY "Read OUTPUT file Status: " CUST-STAT
+		     END-IF
+      
+             PERFORM LOAD-RECORD
+                        VARYING SUB FROM 1 BY 1 
+                          UNTIL SUB > MAX-SUB
+                              OR CUST-STAT NOT = "00"
+      
+             CLOSE ISAMFILE
+           END-IF.
+      
+       LOAD-RECORD.
+      
+           MOVE SPACES                       TO TSPFL-RECORD.
+           MOVE DATA-CUST-NUM      (SUB)     TO CM-CUST-NUM.
+           MOVE DATA-COMPANY       (SUB)     TO CM-COMPANY.
+           MOVE DATA-NO-TERMINALS  (SUB)     TO CM-NO-TERMINALS.
+           MOVE 20070319                     TO CM-PK-DATE.
+           IF SUB = 1 OR 4 OR 6
+               MOVE -20070319                 TO CM-PK-DATE.
+      
+           IF  ODD-RECORD
+               MOVE "8417"                   TO CM-DISK 
+           ELSE
+               MOVE "8470"                   TO CM-DISK.
+           WRITE TSPFL-RECORD.
+           IF CUST-STAT NOT = "00"
+               DISPLAY "Error status " CUST-STAT " writing record "
+                       DATA-CUST-NUM (SUB).
+])
+
+AT_CHECK([$COMPILE -x -std=mf -debug -Wall prog.cob ], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [Testing INDEXED Status Codes
+READ  NOT OPEN Status: 47
+WRITE NOT OPEN Status: 48
+Load bad directory
+Output Open Sts: 9/009
+List bad directory       Open Sts: 9/009
+Write INPUT file status 48
+List bad filename        Open Sts: 35
+Read OUTPUT file Status: 47
+List bad filename        Open Sts: 00
+Read Status: 23
+List bad filename        Open Sts: 35
+List bad directory       Open Sts: 9/009
+List directory is file   Open Sts: 9/009
+List invalid directory   Open Sts: 9/009
+List tmp directory       Open Sts: 9/021
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([Test MF Status (SQ)])
+AT_KEYWORDS([Status])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+      
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+      
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT 
+           NOT OPTIONAL 
+           FLATFILE 
+           ASSIGN TO DATAFILE
+           ORGANIZATION LINE SEQUENTIAL
+           FILE STATUS IS CUST-STAT .
+
+       DATA  DIVISION.
+       FILE SECTION.
+       FD  FLATFILE
+           BLOCK CONTAINS 5 RECORDS.
+      
+       01  TSPFL-RECORD.
+           10  CM-CUST-NUM                     PICTURE X(8). 
+           10  CM-TYPE                         PICTURE X. 
+           10  CM-COMPANY                      PICTURE X(25). 
+           10  CM-DISK                         PICTURE X(8). 
+           10  CM-NO-TERMINALS                 PICTURE 9(4) COMP-4. 
+           10  CM-PK-DATE                      PICTURE S9(14) COMP-3.
+           10  CM-TRAILER                      PICTURE X(32). 
+       
+       WORKING-STORAGE SECTION.
+      
+       77  MAX-SUB           VALUE  4          PICTURE 9(4) COMP.
+       77  ZRO               VALUE  1          PICTURE 9(4) COMP.
+       01  CUST-STAT                           PICTURE X(2).
+       01  FILLER REDEFINES CUST-STAT.
+           05  CUST-STAT1                      PICTURE X.
+           05  CUST-STAT2                      PICTURE X COMP-X.
+       77  REC-NUM           VALUE  1          PICTURE 9(8) COMP.
+      
+       01  TEST-DATA.
+      
+         02  DATA-CUST-NUM-TBL.
+      
+           05  FILLER PIC X(8) VALUE "ALP00000".
+           05  FILLER PIC X(8) VALUE "BET00000".
+           05  FILLER PIC X(8) VALUE "GAM00000".
+           05  FILLER PIC X(8) VALUE "DEL00000".
+           05  FILLER PIC X(8) VALUE "EPS00000".
+           05  FILLER PIC X(8) VALUE "FOR00000".
+      
+         02  DATA-CUST-NUM REDEFINES DATA-CUST-NUM-TBL
+                                       PIC X(8) OCCURS 6.
+         02  DATA-COMPANY-TBL.
+      
+           05  FILLER PIC X(25) VALUE "ALPHA ELECTRICAL CO. LTD.".
+           05  FILLER PIC X(25) VALUE "BETA SHOE MFG. INC.      ".
+           05  FILLER PIC X(25) VALUE "GAMMA X-RAY TECHNOLOGY   ".
+           05  FILLER PIC X(25) VALUE "DELTA LUGGAGE REPAIRS    ".
+           05  FILLER PIC X(25) VALUE "EPSILON EQUIPMENT SUPPLY ".
+           05  FILLER PIC X(25) VALUE "FORTUNE COOKIE COMPANY   ".
+         02  DATA-COMPANY  REDEFINES DATA-COMPANY-TBL
+                                       PIC X(25) OCCURS 6.
+         02  DATA-ADDRESS-2-TBL.
+      
+           05  FILLER PIC X(10) VALUE "NEW YORK  ".
+           05  FILLER PIC X(10) VALUE "ATLANTA   ".
+           05  FILLER PIC X(10) VALUE "WASHINGTON".
+           05  FILLER PIC X(10) VALUE "TORONTO   ".
+           05  FILLER PIC X(10) VALUE "CALGARY   ".
+           05  FILLER PIC X(10) VALUE "WHITEPLAIN".
+      
+         02  DATA-ADDRESS   REDEFINES DATA-ADDRESS-2-TBL
+                                       PIC X(10) OCCURS 6.
+
+         02  DATA-NO-TERMINALS-TBL.
+      
+           05  FILLER PIC 9(3) COMP-3 VALUE 10.
+           05  FILLER PIC 9(3) COMP-3 VALUE 13.
+           05  FILLER PIC 9(3) COMP-3 VALUE 75.
+           05  FILLER PIC 9(3) COMP-3 VALUE 10.
+           05  FILLER PIC 9(3) COMP-3 VALUE 90.
+           05  FILLER PIC 9(3) COMP-3 VALUE 254.
+      
+         02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
+                                       PIC 9(3) COMP-3 OCCURS 6.
+       01  WORK-AREA.
+           05  DATAFILE                        PICTURE X(128).
+           05  LIST-TEST                       PICTURE X(20).
+           05  TST-READ                        PICTURE X VALUE 'Y'.
+           05  TST-WRITE                       PICTURE X VALUE 'Y'.
+           05  SUB                             PICTURE 9(4) COMP.
+               88  ODD-RECORD                  VALUE 1 3 5.
+      
+      
+       PROCEDURE DIVISION.
+
+           DISPLAY "Testing LINE SEQUENTIAL Status Codes".
+           READ FLATFILE
+           DISPLAY "READ  NOT OPEN Status: " CUST-STAT
+           WRITE TSPFL-RECORD
+           DISPLAY "WRITE NOT OPEN Status: " CUST-STAT
+           MOVE "./junkit/chkdatx" TO DATAFILE.
+           DISPLAY "Load bad directory"
+           PERFORM LOADFILE.
+           MOVE "bad directory" TO LIST-TEST
+           PERFORM LISTFILE.
+           MOVE "chkdatax" TO DATAFILE.
+           MOVE "bad filename" TO LIST-TEST
+           PERFORM LISTFILE.
+
+           MOVE "chkdata" TO DATAFILE.
+           PERFORM LOADFILE.
+           PERFORM LISTFILE.
+
+           MOVE "junk_data" TO DATAFILE.
+           OPEN EXTEND FLATFILE.
+           IF CUST-STAT NOT = '00'
+             IF CUST-STAT1 = '9'
+                DISPLAY "Extend Open Sts: 9/" CUST-STAT2
+             ELSE
+                DISPLAY "Extend Open Sts: " CUST-STAT
+             END-IF
+           END-IF.
+           PERFORM LOAD-RECORD
+                        VARYING SUB FROM 1 BY 1 
+                          UNTIL SUB > 2
+                              OR CUST-STAT NOT = "00"
+           CLOSE FLATFILE.
+
+           MOVE "after extend" TO LIST-TEST
+           PERFORM LISTFILE.
+
+           MOVE "chkdatax" TO DATAFILE.
+           MOVE "bad filename" TO LIST-TEST
+           PERFORM LISTFILE.
+           MOVE "./junkit/chkdatx" TO DATAFILE.
+           MOVE "bad directory" TO LIST-TEST
+           PERFORM LISTFILE.
+           MOVE "./chkdata/chkdatax" TO DATAFILE.
+           MOVE "directory is file" TO LIST-TEST
+           PERFORM LISTFILE.
+           MOVE "./junky/chkdatax" TO DATAFILE.
+           MOVE "invalid directory" TO LIST-TEST
+           PERFORM LISTFILE.
+           MOVE "/tmp" TO DATAFILE.
+           MOVE "tmp directory" TO LIST-TEST
+           PERFORM LISTFILE.
+           STOP RUN RETURNING 0.
+      
+       LISTFILE.
+           OPEN INPUT FLATFILE.
+           IF CUST-STAT1 = '9'
+              DISPLAY "List " LIST-TEST "Open Sts: 9/" CUST-STAT2
+           ELSE
+              DISPLAY "List " LIST-TEST "Open Sts: " CUST-STAT
+           END-IF
+           PERFORM UNTIL CUST-STAT NOT = "00"
+               PERFORM READ-RECORD
+           END-PERFORM.
+           IF TST-WRITE = 'Y'
+               MOVE 'N' TO TST-WRITE
+               WRITE TSPFL-RECORD
+               DISPLAY "Write INPUT file status " CUST-STAT
+           END-IF.
+           CLOSE FLATFILE.
+
+       READ-RECORD.
+           MOVE SPACES                       TO TSPFL-RECORD.
+           READ FLATFILE
+           IF  CUST-STAT NOT = "00"
+           AND CUST-STAT NOT = "10"
+             DISPLAY "Read Status: " CUST-STAT
+           END-IF.
+
+       LOADFILE.
+           OPEN OUTPUT FLATFILE.
+           IF CUST-STAT NOT = '00'
+             IF CUST-STAT1 = '9'
+                DISPLAY "Output Open Sts: 9/" CUST-STAT2
+             ELSE
+                DISPLAY "Output Open Sts: " CUST-STAT
+             END-IF
+
+           ELSE
+             IF TST-READ = 'Y'
+               MOVE 'N' TO TST-READ
+               READ FLATFILE
+               DISPLAY "Read OUTPUT file Status: " CUST-STAT
+             END-IF
+      
+             PERFORM LOAD-RECORD
+                        VARYING SUB FROM 1 BY 1 
+                          UNTIL SUB > MAX-SUB
+                              OR CUST-STAT NOT = "00"
+      
+             CLOSE FLATFILE
+           END-IF.
+      
+       LOAD-RECORD.
+      
+           MOVE SPACES                       TO TSPFL-RECORD.
+           MOVE DATA-CUST-NUM      (SUB)     TO CM-CUST-NUM.
+           MOVE DATA-COMPANY       (SUB)     TO CM-COMPANY.
+           MOVE DATA-NO-TERMINALS  (SUB)     TO CM-NO-TERMINALS.
+           MOVE 20070319                     TO CM-PK-DATE.
+           IF SUB = 1 OR 4 OR 6
+               MOVE -20070319                 TO CM-PK-DATE.
+      
+           IF  ODD-RECORD
+               MOVE "8417"                   TO CM-DISK 
+           ELSE
+               MOVE "8470"                   TO CM-DISK.
+           WRITE TSPFL-RECORD.
+           IF CUST-STAT NOT = "00"
+               DISPLAY "Error status " CUST-STAT " writing record "
+                       DATA-CUST-NUM (SUB).
+])
+
+AT_CHECK([$COMPILE -x -std=mf -debug -Wall prog.cob ], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [Testing LINE SEQUENTIAL Status Codes
+READ  NOT OPEN Status: 47
+WRITE NOT OPEN Status: 48
+Load bad directory
+Output Open Sts: 9/009
+List bad directory       Open Sts: 9/009
+Write INPUT file status 48
+List bad filename        Open Sts: 35
+Read OUTPUT file Status: 47
+List bad filename        Open Sts: 00
+Extend Open Sts: 35
+List after extend        Open Sts: 35
+List bad filename        Open Sts: 35
+List bad directory       Open Sts: 9/009
+List directory is file   Open Sts: 9/009
+List invalid directory   Open Sts: 9/009
+List tmp directory       Open Sts: 9/021
+], [])
+
+AT_CLEANUP
+

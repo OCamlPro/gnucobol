@@ -1,4 +1,10 @@
 
+2021-06-27  Ron Norman <rjn@inglenet.com> and Christian Lademann
+
+	* common.h,fileio.h: Moved cob_status_extended to fileio.h
+	* fileio.c: Added code to set some Microfocus specific status
+	* fisam.c: Added code to set some Microfocus specific status
+
 2021-06-26  Ron Norman <rjn@inglenet.com> and Christian Lademann
 
 	* common.h: Add COB_DIALECT_xxx 
