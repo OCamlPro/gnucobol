@@ -1,5 +1,8 @@
 
-2021-06-27  Ron Norman <rjn@inglenet.com> and Christian Lademann
+2021-06-28  Ron Norman <rjn@inglenet.com> and Christian Lademann
+	* fileio.c: Remove checks for /dev/stdin, etc... leave :CI:, :CO:, :CE:
+
+2021-06-27  Ron Norman <rjn@inglenet.com>
 
 	* common.h,fileio.h: Moved cob_status_extended to fileio.h
 	* fileio.c: Added code to set some Microfocus specific status

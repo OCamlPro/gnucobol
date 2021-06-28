@@ -3822,9 +3822,7 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename, const int mode, con
 		f->open_mode = (unsigned char)mode;
 		return 0;
 	}
-	if (strcmp (filename,":CI:") == 0
-	 || strcmp (filename,"/dev/stdin") == 0
-	 || strcmp (filename,"/proc/self/fd/0") == 0) {
+	if (strcmp (filename,":CI:") == 0) {
 #if defined (HAVE_UNISTD_H) && !(defined (_WIN32))
 		if (mode != COB_OPEN_INPUT) 
 			return COB_STATUS_37_PERMISSION_DENIED;
@@ -3841,9 +3839,7 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename, const int mode, con
 		return COB_STATUS_47_INPUT_DENIED;
 #endif
 	}
-	if (strcmp (filename,":CO:") == 0
-	 || strcmp (filename,"/dev/stdout") == 0
-	 || strcmp (filename,"/proc/self/fd/1") == 0) {
+	if (strcmp (filename,":CO:") == 0) {
 #if defined (HAVE_UNISTD_H) && !(defined (_WIN32))
 		if (mode != COB_OPEN_OUTPUT) 
 			return COB_STATUS_37_PERMISSION_DENIED;
@@ -3860,9 +3856,7 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename, const int mode, con
 		return COB_STATUS_48_OUTPUT_DENIED;
 #endif
 	}
-	if (strcmp (filename,":CE:") == 0
-	 || strcmp (filename,"/dev/stderr") == 0
-	 || strcmp (filename,"/proc/self/fd/2") == 0) {
+	if (strcmp (filename,":CE:") == 0) {
 #if defined (HAVE_UNISTD_H) && !(defined (_WIN32))
 		if (mode != COB_OPEN_OUTPUT) 
 			return COB_STATUS_37_PERMISSION_DENIED;
