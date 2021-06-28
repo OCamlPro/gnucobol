@@ -1,4 +1,8 @@
 
+2021-06-28  Ron Norman <rjn@inglenet.com>
+	* cobc.c: Accept -fdatamap and then report field 'offset' 
+	          instead of 'TYPE'
+
 2021-06-26  Ron Norman <rjn@inglenet.com>
 	* cobc.h: Add extern cb_dialect
 	* cobc.c: Set cb_dialect to -std= value

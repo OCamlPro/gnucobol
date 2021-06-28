@@ -146,6 +146,7 @@ size_t	pd_off;
 FILE			*cb_src_list_file = NULL;
 int			cb_listing_page = 0;
 int			cb_listing_wide = 0;
+int			cb_list_datamap = 0;
 unsigned int		cb_lines_per_page = CB_MAX_LINES;
 int			cb_listing_xref = 0;
 #define			CB_LISTING_DATE_BUFF 26
@@ -491,6 +492,7 @@ static const struct option long_options[] = {
 #undef	CB_FLAG_OP
 	{"fibmcomp",		CB_NO_ARG, &cb_mf_ibm_comp, 1},
 	{"fno-ibmcomp",		CB_NO_ARG, &cb_mf_ibm_comp, 0},
+	{"fdatamap",		CB_NO_ARG, &cb_list_datamap, 1},
 
 #define	CB_CONFIG_ANY(type,var,name,doc)	\
 	{"f" name,		CB_RQ_ARG, NULL, '%'},
@@ -3248,6 +3250,8 @@ process_command_line (const int argc, char **argv)
 			/* FIXME: add option to place each source in a single listing
 			          by specifying a directory (similar to -P) */
 			cb_listing_outputfile = cobc_main_strdup (cob_optarg);
+			if (cb_list_datamap)
+				cb_listing_symbols = 1;
 			break;
 
 		case '*':
@@ -4865,8 +4869,12 @@ set_listing_header_code (void)
 static void
 set_listing_header_symbols (void)
 {
-	strcpy (cb_listing_header,
-		"SIZE  TYPE           LVL  NAME                           PICTURE");
+	if (cb_list_datamap)
+		strcpy (cb_listing_header,
+			"OFFSET  SIZE  LVL  NAME                           PICTURE");
+	else
+		strcpy (cb_listing_header,
+			"SIZE  TYPE           LVL  NAME                           PICTURE");
 }
 
 #ifdef COB_INTERNAL_XREF
@@ -5019,8 +5027,6 @@ set_picture (struct cb_field *field, char *picture, size_t picture_len)
 	case CB_USAGE_INDEX:
 	case CB_USAGE_LENGTH:
 	case CB_USAGE_OBJECT:
-	case CB_USAGE_POINTER:
-	case CB_USAGE_PROGRAM_POINTER:
 	case CB_USAGE_LONG_DOUBLE:
 	case CB_USAGE_FP_BIN32:
 	case CB_USAGE_FP_BIN64:
@@ -5036,6 +5042,13 @@ set_picture (struct cb_field *field, char *picture, size_t picture_len)
 	case CB_USAGE_UNSIGNED_INT:
 	case CB_USAGE_UNSIGNED_LONG:
 	case CB_USAGE_CONTROL:
+		return 0;
+	case CB_USAGE_POINTER:
+	case CB_USAGE_PROGRAM_POINTER:
+		if (cb_list_datamap) {
+			strcpy (picture, "POINTER");
+			return 1;
+		}
 		return 0;
 	default:
 		break;
@@ -5064,6 +5077,14 @@ set_picture (struct cb_field *field, char *picture, size_t picture_len)
 			strncpy (picture, field->pic->orig, picture_len - 1 - usage_len);
 			picture[CB_LIST_PICSIZE - 1] = 0;
 			strcat (picture, " ");
+		}
+		if (cb_list_datamap
+		 && field->usage == CB_USAGE_COMP_X) {
+			if (field->size == 1)
+				strcpy(picture,"X    COMP-X");
+			else
+				sprintf(picture,"X(%d) COMP-X",field->size);
+			return 1;
 		}
 	} else if (field->flag_any_numeric) {
 		strncpy (picture, "9 ANY NUMERIC", 14);
@@ -5237,14 +5258,30 @@ print_fields (struct cb_field *top, int *found)
 			got_picture = set_picture (top, picture, picture_len);
 		}
 
-		if (top->flag_any_length || top->flag_unbounded) {
-			pd_off = sprintf (print_data, "????? ");
-		} else if (top->flag_occurs && !got_picture) {
-			pd_off = sprintf (print_data, "%05d ", top->size * top->occurs_max);
+		pd_off = 0;
+		if (cb_list_datamap) {
+			if (top->level == 1 || top->level == 77)
+				pd_off += sprintf (print_data + pd_off, "       ");
+			else
+				pd_off += sprintf (print_data + pd_off, "%06d ", top->offset);
+			if (top->flag_any_length || top->flag_unbounded) {
+				pd_off += sprintf (print_data + pd_off, "????? ");
+			} else if (top->flag_occurs && !got_picture) {
+				pd_off += sprintf (print_data + pd_off, "%05d ", top->size * top->occurs_max);
+			} else {
+				pd_off += sprintf (print_data + pd_off, "%05d ", top->size);
+			}
+			pd_off += sprintf (print_data + pd_off, "  %02d  ", top->level);
 		} else {
-			pd_off = sprintf (print_data, "%05d ", top->size);
+			if (top->flag_any_length || top->flag_unbounded) {
+				pd_off = sprintf (print_data, "????? ");
+			} else if (top->flag_occurs && !got_picture) {
+				pd_off = sprintf (print_data, "%05d ", top->size * top->occurs_max);
+			} else {
+				pd_off = sprintf (print_data, "%05d ", top->size);
+			}
+			pd_off += sprintf (print_data + pd_off, "%-14.14s %02d   ", type, top->level);
 		}
-		pd_off += sprintf (print_data + pd_off, "%-14.14s %02d   ", type, top->level);
 		if (top->flag_occurs && got_picture) {
 			pd_off += sprintf (print_data + pd_off, "%-30.30s %s, ", lcl_name, picture);
 		} else if (got_picture) {
@@ -5292,7 +5329,8 @@ print_files_and_their_records (cb_tree file_list_p)
 
 	for (l = file_list_p; l; l = CB_CHAIN (l)) {
 		snprintf (print_data, CB_PRINT_LEN,
-			"%05d %-14.14s      %s",
+			"%s%05d %-14.14s      %s",
+			cb_list_datamap ? "       " : "",
 			 CB_FILE (CB_VALUE (l))->record_max,
 			 "FILE",
 			 CB_FILE (CB_VALUE (l))->name);
