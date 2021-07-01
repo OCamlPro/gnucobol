@@ -1,23 +1,23 @@
 <CC386PROJECT>
 	<VERSION ID="5"/>
-	<WORKAREA NAME=".\GnuCOBOL.cwa"/>
+	<WORKAREA NAME="D:\Programme\Entwicklung\GnuCOBOL\code_repo_fix\trunk\build_windows\ocide\GnuCOBOL.cwa"/>
 	<TARGET TITLE="libcob">
 		<PROPERTIES>
 			<PROFILE NAME="WIN32" TYPE="DEBUG">
-				<PROP ID="OUTPUTEXE">$(PROJECTDIR)\..\$(CURRENTPROFILE)\$(CURRENTRELEASETYPE)\$(OUTPUTNAME)$(OUTPUTEXT)</PROP>
-				<PROP ID="__PROJECTTYPE">2</PROP>
-				<PROP ID="__INCLUDE">$(PROJECTDIR)\..\..;$(PROJECTDIR)\..</PROP>
-				<PROP ID="__LLIBS">gmp.l pdcurses.l vbisam.l</PROP>
-				<PROP ID="__RCINCLUDE">$(PROJECTDIR)\..\..;$(PROJECTDIR)\..</PROP>
 				<PROP ID="DETAILBUILD">1</PROP>
+				<PROP ID="__RCINCLUDE">$(PROJECTDIR)\..\..;$(PROJECTDIR)\..</PROP>
+				<PROP ID="__LLIBS">gmp.l pdcurses.l vbisam.l</PROP>
+				<PROP ID="__INCLUDE">$(PROJECTDIR)\..\..;$(PROJECTDIR)\..</PROP>
+				<PROP ID="__PROJECTTYPE">2</PROP>
+				<PROP ID="OUTPUTEXE">$(PROJECTDIR)\..\$(CURRENTPROFILE)\$(CURRENTRELEASETYPE)\$(OUTPUTNAME)$(OUTPUTEXT)</PROP>
 			</PROFILE>
 			<PROFILE NAME="WIN32" TYPE="RELEASE">
-				<PROP ID="OUTPUTEXE">$(PROJECTDIR)\..\$(CURRENTPROFILE)\$(CURRENTRELEASETYPE)\$(OUTPUTNAME)$(OUTPUTEXT)</PROP>
-				<PROP ID="DETAILBUILD">1</PROP>
-				<PROP ID="__PROJECTTYPE">2</PROP>
-				<PROP ID="__INCLUDE">$(PROJECTDIR)\..\..;$(PROJECTDIR)\..</PROP>
-				<PROP ID="__LLIBS">gmp.l pdcurses.l vbisam.l</PROP>
 				<PROP ID="__RCINCLUDE">$(PROJECTDIR)\..\..;$(PROJECTDIR)\..</PROP>
+				<PROP ID="__LLIBS">gmp.l pdcurses.l vbisam.l</PROP>
+				<PROP ID="__INCLUDE">$(PROJECTDIR)\..\..;$(PROJECTDIR)\..</PROP>
+				<PROP ID="__PROJECTTYPE">2</PROP>
+				<PROP ID="DETAILBUILD">1</PROP>
+				<PROP ID="OUTPUTEXE">$(PROJECTDIR)\..\$(CURRENTPROFILE)\$(CURRENTRELEASETYPE)\$(OUTPUTNAME)$(OUTPUTEXT)</PROP>
 			</PROFILE>
 		</PROPERTIES>
 		<FILES>
@@ -26,6 +26,7 @@
 				<FILE NAME="..\..\libcob\cJSON.h" TITLE="cJSON.h" CLEAN="0"/>
 			</FOLDER>
 			<FOLDER TITLE="Include Files">
+				<FILE NAME="..\..\libcob\cobcapi.h" TITLE="cobcapi.h" CLEAN="0"/>
 				<FILE NAME="..\..\libcob\cobgetopt.h" TITLE="cobgetopt.h" CLEAN="0"/>
 				<FILE NAME="..\..\libcob\coblocal.h" TITLE="coblocal.h" CLEAN="0"/>
 				<FILE NAME="..\..\libcob\common.h" TITLE="common.h" CLEAN="0"/>
@@ -39,6 +40,7 @@
 			</FOLDER>
 			<FOLDER TITLE="Source Files">
 				<FILE NAME="..\..\libcob\call.c" TITLE="call.c" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\cobcapi.c" TITLE="cobcapi.c" CLEAN="0"/>
 				<FILE NAME="..\..\libcob\cobgetopt.c" TITLE="cobgetopt.c" CLEAN="0"/>
 				<FILE NAME="..\..\libcob\common.c" TITLE="common.c" CLEAN="0"/>
 				<FILE NAME="..\..\libcob\fbdb.c" TITLE="fbdb.c" CLEAN="0"/>

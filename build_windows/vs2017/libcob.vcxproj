@@ -169,6 +169,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\libcob\call.c" />
+    <ClCompile Include="..\..\libcob\cobcapi.c" />
     <ClCompile Include="..\..\libcob\cobgetopt.c" />
     <ClCompile Include="..\..\libcob\common.c" />
     <ClCompile Include="..\..\libcob\fbdb.c" />
@@ -196,6 +197,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\libcob.h" />
+    <ClInclude Include="..\..\libcob\cobcapi.h" />
     <ClInclude Include="..\..\libcob\fileio.h" />
     <ClInclude Include="..\..\libcob\sysdefines.h" />
     <ClInclude Include="..\config.h" />
