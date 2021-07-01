@@ -1182,6 +1182,7 @@ ix_bdb_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const
 	cob_u32_t		flags = 0;
 	int			ret = 0;
 	int			nonexistent;
+	struct stat	st;
 	char		runtime_buffer[COB_FILE_MAX+1];
 	COB_UNUSED (sharing);
 
@@ -1191,6 +1192,10 @@ ix_bdb_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const
 	}
 
 	nonexistent = 0;
+	if (stat(filename, &st) != -1
+	 && S_ISDIR(st.st_mode)) {	/* Filename is a directory */
+		return COB_XSTATUS_IS_DIR;
+	}
 	if (bdb_nofile (filename)) {
 		nonexistent = 1;
 		if (mode != COB_OPEN_OUTPUT && f->flag_optional == 0) {

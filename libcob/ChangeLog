@@ -1,4 +1,7 @@
 
+2021-07-01  Ron Norman <rjn@inglenet.com> and Christian Lademann
+	* fbdb.c: Checks if filename is actually a directory
+
 2021-06-28  Ron Norman <rjn@inglenet.com> and Christian Lademann
 	* fileio.c: Remove checks for /dev/stdin, etc... leave :CI:, :CO:, :CE:
 
