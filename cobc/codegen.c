@@ -2120,7 +2120,7 @@ emit_record_indexes (struct cb_field *f)
 	return;
 }
 
-static char *sectname[] = {
+static const char *sectname[] = {
 			"CONSTANT","FILE","WORKING-STORAGE",
 			"LOCAL","LINKAGE","SCREEN",
 			"REPORT","COMMUNICATION"};

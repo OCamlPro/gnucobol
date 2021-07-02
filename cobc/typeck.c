@@ -9064,11 +9064,11 @@ move_warning (cb_tree src, cb_tree dst, const unsigned int value_flag,
 							int  p, k = 0;
 							if (CB_LITERAL (src)->sign == -1)
 								numval[k++] = '-';
-							strcpy(&numval[k],CB_LITERAL (src)->data);
+							strcpy(&numval[k],(void*)(CB_LITERAL (src)->data));
 							if (CB_LITERAL (src)->scale > 0) {
 								p = CB_LITERAL (src)->size - CB_LITERAL (src)->scale;
 								numval[k + p] = '.';
-								strcpy(&numval[k+p+1],CB_LITERAL (src)->data+p);
+								strcpy(&numval[k+p+1],(void*)(CB_LITERAL (src)->data+p));
 							}
 							cb_note_x (warning_opt, dst, 
 									_("value is %s"), numval);
