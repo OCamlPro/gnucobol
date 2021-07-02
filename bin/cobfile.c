@@ -549,7 +549,7 @@ parseFile (cob_file *fl, const char *select, int rcsz, char *defs, char *copy, c
 /* "output" a formated string to the output file                 */
 /*****************************************************************/
 static void
-output(char *fmt, ...)
+output(const char *fmt, ...)
 {
 	va_list ap;
 	char buf[ 4096 ];
@@ -752,7 +752,7 @@ getOrg (int org)
 }
 
 static char *
-addOfRec (char *str, char *rec)
+addOfRec (char *str, const char *rec)
 {
 	int	j,k,dolast;
 	dolast = 1;
@@ -774,13 +774,12 @@ addOfRec (char *str, char *rec)
 }
 
 /* Generate Copy program */
-static int
+static void
 genCopy (cob_file *fli, cob_file *flo)
 {
 	FILE	*fin;
 	char	buf[256];
 	int		k;
-
 
 	strcpy(inorg, getOrg (fli->organization));
 	strcpy(inkeydesc,"");
