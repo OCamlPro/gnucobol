@@ -380,7 +380,7 @@ set_file_pos (cob_file *f, off_t pos)
 			}
 			if (f->file) {
 				fseek((FILE*)f->file, 0, SEEK_END);
-				newpos = (off_t)ftell ((FILE*)f->file);
+				newpos = ftell ((FILE*)f->file);
 			}
 		} else {
 			if (f->fd > 0) {
@@ -388,14 +388,14 @@ set_file_pos (cob_file *f, off_t pos)
 			}
 			if (f->file) {
 				fseek((FILE*)f->file, pos, SEEK_SET);
-				newpos = (off_t)ftell ((FILE*)f->file);
+				newpos = ftell ((FILE*)f->file);
 			}
 		}
 	} else {			/* Uses 'f->fd' */
 		if (pos == -1) {	/* Seek to end of file */
 			if (f->file) {
 				fseek((FILE*)f->file, 0, SEEK_END);
-				newpos = (off_t)ftell ((FILE*)f->file);
+				newpos = ftell ((FILE*)f->file);
 			}
 			if (f->fd > 0) {
 				newpos = lseek(f->fd, 0, SEEK_END);
@@ -403,7 +403,7 @@ set_file_pos (cob_file *f, off_t pos)
 		} else {
 			if (f->file) {
 				fseek((FILE*)f->file, pos, SEEK_SET);
-				newpos = (off_t)ftell ((FILE*)f->file);
+				newpos = ftell ((FILE*)f->file);
 			}
 			if (f->fd > 0) {
 				newpos = lseek(f->fd, pos, SEEK_SET);
@@ -973,7 +973,7 @@ cob_key_def (cob_file *f, int keyn, char *p, int *ret, int keycheck)
 
 /* Make sure the QBL record buffer is large enough */
 static void
-set_qbl_buf (int  recsize)
+set_qbl_buf (int recsize)
 {
 	recsize = (recsize + 512) / 512;
 	recsize = recsize * 512;
@@ -992,7 +992,7 @@ set_qbl_buf (int  recsize)
  * Open temp file used for Commit/Rollback or audit/journal
  */
 static int
-cob_open_qbl ( char *filename, int makeit, int append )
+cob_open_qbl (char *filename, int makeit, int append)
 {
 	int fd, mode;
 	errno = 0;
@@ -1004,13 +1004,13 @@ cob_open_qbl ( char *filename, int makeit, int append )
 	fd = open (filename, mode, 0666);
 	if (errno) {
 		cob_runtime_warning (_("Error opening %s; %s"),
-									filename,strerror(errno));
+			filename, strerror(errno));
 	}
 	return fd;
 }
 
 static void
-cob_close_qbl ( int fd, char *filename, int remove )
+cob_close_qbl (int fd, char *filename, int remove)
 {
 	errno = 0;
 	close (fd);
@@ -1018,30 +1018,30 @@ cob_close_qbl ( int fd, char *filename, int remove )
 		unlink (filename);
 	if (errno) {
 		cob_runtime_warning (_("Error closing %s; %s"),
-									filename,strerror(errno));
+			filename, strerror(errno));
 	}
 	return;
 }
 
-static ssize_t
+static off_t
 writeBlock (int fd, void *data, int len)
 {
-	ssize_t numwrite, ttlwrite;
+	off_t numwrite, ttlwrite;
 	char	*buf = (char*)data;
 	numwrite = ttlwrite = 0;
 	while (ttlwrite < len) {
 		numwrite = write (fd, (void*)(&buf [ttlwrite]), (size_t)(len - ttlwrite));
 		if (numwrite < 0)
-			return (off_t)-1;
+			return -1;
 		ttlwrite += numwrite;
 	}
 	return ttlwrite;
 }
 
-static ssize_t
+static off_t
 readBlock (int fd, void *data, int len)
 {
-	ssize_t numread, ttlread;
+	off_t numread, ttlread;
 	char	*buf = (char*)data;
 	numread = ttlread = 0;
 	while (ttlread < len) {
@@ -1049,7 +1049,7 @@ readBlock (int fd, void *data, int len)
 		numread = read (fd, (void*)(&buf [ttlread]), (size_t)(len - ttlread));
 		if (numread <= 0
 		 || errno != 0)
-			return (off_t)-1;
+			return -1;
 		ttlread += numread;
 	}
 	return ttlread;
@@ -1063,13 +1063,14 @@ readBlock (int fd, void *data, int len)
 #define CHKSEED 0xE7
 #define CHKMARK '@'
 static off_t
-cob_write_qbl ( int fd, int len, void *data )
+cob_write_qbl (int fd, int len, void *data)
 {
 	unsigned char head[6], tail[6], chk;
 	off_t	pos;
 
-	if (len < 0)
+	if (len < 0) {
 		len = 0;
+	}
 	len += SZ_QBLHDR;
 	head[0] = tail[5] = CHKMARK;
 	head[5] = tail[0] = len & 0xFF;
@@ -1082,17 +1083,17 @@ cob_write_qbl ( int fd, int len, void *data )
 	chk = chk ^ head[5];
 	head[1] = tail[4] = chk;
 	pos = lseek (fd, 0, SEEK_END);
-	if (pos == (off_t)-1)
-		return (off_t) -1;
-	if (writeBlock (fd, head, 6) != (ssize_t)6)
-		return (off_t) -1;
+	if (pos == -1)
+		return -1;
+	if (writeBlock (fd, head, 6) != 6)
+		return -1;
 	if (writeBlock (fd, qbl_hdr, SZ_QBLHDR) != SZ_QBLHDR)
-		return (off_t) -1;
+		return -1;
 	if (len > 0
-	 && writeBlock (fd, data, len) != (ssize_t)len)
-		return (off_t) -1;
-	if (writeBlock (fd, tail, 6) != (ssize_t)6)
-		return (off_t) -1;
+	 && writeBlock (fd, data, len) != (off_t)len)
+		return -1;
+	if (writeBlock (fd, tail, 6) != 6)
+		return -1;
 	return pos;
 }
 
@@ -1110,27 +1111,29 @@ cob_write_qbl ( int fd, int len, void *data )
  *       if -1 the end/beginning of the file was reached
  */
 static off_t
-cob_read_qbl ( int fd, int *reclen, off_t pos, int dir )
+cob_read_qbl (int fd, int *reclen, off_t pos, int dir)
 {
 	off_t newpos;
-	ssize_t len;
+	off_t len;
 	unsigned char mark[6], chk;
 	if (fd == -1)
-		return (off_t)-1;
+		return -1;
 	if (dir >= 0) {
-		if (pos == (off_t)-1)
+		if (pos == -1)
 			pos = 0;
 		errno = 0;
 		newpos = lseek (fd, pos, SEEK_SET);
 		if (errno == EINVAL)
-			return (off_t)-1;
+			return -1;
 		if (errno != 0) {
-			cob_runtime_warning ("QBL: Read error %s: at %ld\n",strerror(errno),(long)pos);
-			return (off_t)-1;
+			cob_runtime_warning ("QBL: Read error %s: at %ld\n",
+				strerror(errno), (long)pos);
+			return -1;
 		}
-		if (readBlock (fd, mark, 6) == (off_t)-1) {
-			cob_runtime_warning ("QBL: Bad read header at %ld of %s",(long)newpos,qblfilename);
-			return (off_t)-1;
+		if (readBlock (fd, mark, 6) == -1) {
+			cob_runtime_warning ("QBL: Bad read header at %ld of %s",
+				(long)newpos, qblfilename);
+			return -1;
 		}
 		chk = CHKSEED ^ mark[2];
 		chk = chk ^ mark[3];
@@ -1138,32 +1141,35 @@ cob_read_qbl ( int fd, int *reclen, off_t pos, int dir )
 		chk = chk ^ mark[5];
 		if (mark[0] != CHKMARK
 		 || mark[1] != chk) {
-			cob_runtime_warning ("QBL: Bad check sum %02X at %ld of %s",chk,(long)pos,qblfilename);
-			return (off_t)-1;
+			cob_runtime_warning ("QBL: Bad check sum %02X at %ld of %s",
+				chk, (long)pos, qblfilename);
+			return -1;
 		}
 		len = (mark[2] << 24) | (mark[3] << 16) | (mark[4] << 8) | mark[5];
 		*reclen = len - SZ_QBLHDR;
-		if (readBlock (fd, qbl_hdr, len) == (off_t)-1) {
-			cob_runtime_warning ("QBL: Bad read record at %ld of %s",(long)newpos,qblfilename);
-			return (off_t)-1;
+		if (readBlock (fd, qbl_hdr, len) == -1) {
+			cob_runtime_warning ("QBL: Bad read record at %ld of %s",
+				(long)newpos, qblfilename);
+			return -1;
 		}
 		return newpos + len + 12;
 	} else {
 		errno = 0;
-		if (pos == (off_t)-1) {
+		if (pos == -1) {
 			pos = 0;
 			newpos = lseek (fd, 0, SEEK_END);
 			newpos = lseek (fd, newpos-6, SEEK_SET);
-		} else if (pos == (off_t)0) {
-			return (off_t)-1;
+		} else if (pos == 0) {
+			return -1;
 		} else {
 			newpos = lseek (fd, pos-6, SEEK_SET);
 		}
 		if (errno == EINVAL)
-			return (off_t)-1;
-		if (readBlock (fd, mark, 6) == (off_t)-1) {
-			cob_runtime_warning ("QBL: Bad read header at %ld of %s",(long)newpos,qblfilename);
-			return (off_t)-1;
+			return -1;
+		if (readBlock (fd, mark, 6) == -1) {
+			cob_runtime_warning ("QBL: Bad read header at %ld of %s",
+				(long)newpos, qblfilename);
+			return -1;
 		}
 		chk = CHKSEED ^ mark[3];
 		chk = chk ^ mark[2];
@@ -1171,15 +1177,17 @@ cob_read_qbl ( int fd, int *reclen, off_t pos, int dir )
 		chk = chk ^ mark[0];
 		if (mark[5] != CHKMARK
 		 || mark[4] != chk) {
-			cob_runtime_warning ("QBL: Bad check sum %02X at %ld of %s",chk,(long)pos,qblfilename);
-			return (off_t)-1;
+			cob_runtime_warning ("QBL: Bad check sum %02X at %ld of %s",
+				chk, (long)pos, qblfilename);
+			return -1;
 		}
 		len = (mark[3] << 24) | (mark[2] << 16) | (mark[1] << 8) | mark[0];
 		*reclen = len - SZ_QBLHDR;
 		lseek (fd, newpos - len - SZ_QBLHDR, SEEK_SET);
-		if (readBlock (fd, qbl_hdr, len) == (off_t)-1) {
-			cob_runtime_warning ("QBL: Bad read record at %ld of %s",(long)newpos,qblfilename);
-			return (off_t)-1;
+		if (readBlock (fd, qbl_hdr, len) == -1) {
+			cob_runtime_warning ("QBL: Bad read record at %ld of %s",
+				(long)newpos, qblfilename);
+			return -1;
 		}
 		return newpos - len - 6 - SZ_QBLHDR;
 	}
@@ -1190,8 +1198,9 @@ cob_put_qbl (cob_file *f, const char *type)
 {
 	off_t	pos = 0;
 	cob_u64_t	recnum = 0;
-	if (qblfd == -1)
+	if (qblfd == -1) {
 		return;
+	}
 	memcpy(qbl_hdr->type, type, 2);
 	strncpy(qbl_hdr->name, f->select_name, sizeof(qbl_hdr->name)-1);
 	if(f->organization == COB_ORG_RELATIVE) {
@@ -1210,7 +1219,7 @@ cob_put_qbl (cob_file *f, const char *type)
 	}
 
 	if (pos == -1) {	/* Unable to write; Must do a ROLLBACK */
-		cob_runtime_error (_("I/O error writing QBL: %s"),qblfilename);
+		cob_runtime_error (_("I/O error writing QBL: %s"), qblfilename);
 		cob_rollback ();
 	}
 }
@@ -4240,7 +4249,7 @@ sequential_read (cob_file_api *a, cob_file *f, const int read_opts)
 	if(f->record_off == -1) {
 		f->record_off = set_file_pos (f, (off_t)f->file_header); /* Set current file position */
 	} else {
-		f->record_off = lseek (f->fd, (off_t)0, SEEK_CUR);	/* Get current file position */
+		f->record_off = lseek (f->fd, 0, SEEK_CUR);	/* Get current file position */
 		set_file_pos (f, (off_t)f->record_off);
 	}
 
@@ -4341,7 +4350,7 @@ sequential_write (cob_file_api *a, cob_file *f, const int opt)
 	} else if(f->record_off == -1) {
 		f->record_off = set_file_pos (f, (off_t)f->file_header);
 	} else {
-		f->record_off = lseek (f->fd, (off_t)0, SEEK_CUR);	/* Get current file position */
+		f->record_off = lseek (f->fd, 0, SEEK_CUR);	/* Get current file position */
 		set_file_pos (f, (off_t)f->record_off);
 	}
 	if (f->record_min != f->record_max) { /* Write record size */
@@ -4421,12 +4430,12 @@ sequential_rewrite (cob_file_api *a, cob_file *f, const int opt)
 
 	f->flag_operation = 1;
 	if (f->record_off != -1) {
-		if (lseek (f->fd, f->record_off, SEEK_SET) == (off_t)-1) {
+		if (lseek (f->fd, f->record_off, SEEK_SET) == -1) {
 			return COB_STATUS_30_PERMANENT_ERROR;
 		}
 	} else {
-		f->record_off = lseek (f->fd, (off_t)0, SEEK_CUR);	/* Get current file position */
-		if (lseek (f->fd, (off_t)(f->record_off - f->record->size), SEEK_SET) == (off_t)-1) {
+		f->record_off = lseek (f->fd, 0, SEEK_CUR);	/* Get current file position */
+		if (lseek (f->fd, (off_t)(f->record_off - f->record->size), SEEK_SET) == -1) {
 			return COB_STATUS_30_PERMANENT_ERROR;
 		}
 	}
@@ -4969,7 +4978,7 @@ relative_read_size (cob_file *f, off_t off, int *isdeleted)
 		return (int)relsize;
 	} else
 	if (f->file_format == COB_FILE_IS_MF) {
-		if (lseek (f->fd, (off_t)(off + (off_t)f->record_slot - 1), SEEK_SET) == (off_t)-1 ) {
+		if (lseek (f->fd, (off + (off_t)f->record_slot - 1), SEEK_SET) == -1 ) {
 			return -1;
 		}
 		rechdr[0] = 0;
@@ -5140,7 +5149,7 @@ relative_read_off (cob_file *f, off_t off)
 	}
 	if (f->file_format == COB_FILE_IS_MF) {
 		if(f->record_min != f->record_max) {
-			lseek (f->fd, (off_t)(off + (off_t)f->record_slot - 1), SEEK_SET);
+			lseek (f->fd, (off + (off_t)f->record_slot - 1), SEEK_SET);
 		}
 		if (read (f->fd, recmark, 1) != 1)	/* Active Record marker */
 			return COB_STATUS_30_PERMANENT_ERROR;
@@ -5228,7 +5237,7 @@ relative_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 	if(f->record_off == -1) {
 		curroff = lseek (f->fd, (off_t)f->file_header, SEEK_SET);	/* Set current file position */
 	} else {
-		curroff = lseek (f->fd, (off_t)0, SEEK_CUR);	/* Get current file position */
+		curroff = lseek (f->fd, 0, SEEK_CUR);	/* Get current file position */
 	}
 	if (f->flag_operation != 0) {
 		f->flag_operation = 0;
@@ -5288,7 +5297,7 @@ relative_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 		sts = relative_read_off (f, curroff);
 
 		if (sts == COB_STATUS_00_SUCCESS) {
-			set_file_pos (f, (off_t)(curroff + f->record_slot));
+			set_file_pos (f, curroff + f->record_slot);
 			return COB_STATUS_00_SUCCESS;
 		}
 		if (sts == COB_STATUS_30_PERMANENT_ERROR
@@ -5319,7 +5328,7 @@ relative_write_size (cob_file *f, off_t off, int recsize)
 	size_t	relsize = 0;
 	unsigned char rechdr[8];
 
-	if (lseek (f->fd, off, SEEK_SET) == (off_t)-1 ) {
+	if (lseek (f->fd, off, SEEK_SET) == -1 ) {
 		return -1;
 	}
 	f->record_off = off;
@@ -5415,7 +5424,7 @@ relative_write (cob_file_api *a, cob_file *f, const int opt)
 		if(f->record_off == -1) {
 			off = (off_t)lseek (f->fd, (off_t)f->file_header, SEEK_SET);	/* Set current file position */
 		} else {
-			off = (off_t)lseek (f->fd, (off_t)0, SEEK_CUR);	/* Get current file position */
+			off = (off_t)lseek (f->fd, 0, SEEK_CUR);	/* Get current file position */
 		}
 	}
 
@@ -5523,11 +5532,11 @@ relative_rewrite (cob_file_api *a, cob_file *f, const int opt)
 			if (write (f->fd, "\n", 1) != 1)
 				return COB_STATUS_30_PERMANENT_ERROR;
 		} else {
-			lseek (f->fd, (off_t)((off_t)off + (off_t)f->record_slot), SEEK_SET);
+			lseek (f->fd, (off + (off_t)f->record_slot), SEEK_SET);
 		}
 	}
 	if (f->access_mode == COB_ACCESS_SEQUENTIAL) {
-		f->record_off = lseek (f->fd, (off_t)0, SEEK_CUR);	/* Save current file position */
+		f->record_off = lseek (f->fd, 0, SEEK_CUR);	/* Save current file position */
 		set_file_pos (f, f->record_off);
 	}
 	if (f->flag_record_lock) {
@@ -5575,7 +5584,7 @@ relative_delete (cob_file_api *a, cob_file *f)
 	}
 
 	set_lock_opts (f, 0);
-	if ( (f->record_off = set_file_pos (f, off)) == (off_t)-1 )
+	if ( (f->record_off = set_file_pos (f, off)) == -1 )
 		return -1;
 	if (f->flag_record_lock) {
 		lock_record (f, relnum+1, 1, &errsts);
@@ -5625,7 +5634,7 @@ relative_delete (cob_file_api *a, cob_file *f)
 			return -1;
 		}
 		if (f->file_format == COB_FILE_IS_MF) {
-			if (lseek (f->fd, (off_t)(off + (off_t)f->record_slot - (off_t)1), SEEK_SET) == (off_t)-1 ) {
+			if (lseek (f->fd, (off + (off_t)(f->record_slot - 1)), SEEK_SET) == -1 ) {
 				return COB_STATUS_30_PERMANENT_ERROR;
 			}
 			rechdr[0] = 0;
@@ -5634,7 +5643,7 @@ relative_delete (cob_file_api *a, cob_file *f)
 		}
 	} else
 	if (f->file_format == COB_FILE_IS_MF) {
-		if (lseek (f->fd, (off_t)(off + (off_t)f->record_max), SEEK_SET) == (off_t)-1 ) {
+		if (lseek (f->fd, (off + (off_t)f->record_max), SEEK_SET) == -1 ) {
 			return COB_STATUS_30_PERMANENT_ERROR;
 		}
 		rechdr[0] = 0;
@@ -7299,7 +7308,7 @@ cob_sys_read_file (unsigned char *file_handle, unsigned char *file_offset,
 	len = (size_t)cob_get_s64_param (3);
 	p_flags = cob_get_param_data (4);
 
-	if (lseek (fd, (off_t)off, SEEK_SET) == (off_t)-1) {
+	if (lseek (fd, (off_t)off, SEEK_SET) == -1) {
 		return -1;
 	}
 	if (len > 0) {
@@ -7342,7 +7351,7 @@ cob_sys_write_file (unsigned char *file_handle, unsigned char *file_offset,
 	memcpy (&fd, file_handle, (size_t)4);
 	off = cob_get_s64_param (2);
 	len = (size_t)cob_get_s64_param (3);
-	if (lseek (fd, (off_t)off, SEEK_SET) == (off_t)-1) {
+	if (lseek (fd, (off_t)off, SEEK_SET) == -1) {
 		return -1;
 	}
 	rc = (int) write (fd, buf, (size_t)len);

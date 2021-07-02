@@ -1,8 +1,14 @@
 
+2021-07-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c: replaced use of ssize_t by off_t, removed some casting
+
 2021-07-01  Ron Norman <rjn@inglenet.com> and Christian Lademann
+
 	* fbdb.c: Checks if filename is actually a directory
 
 2021-06-28  Ron Norman <rjn@inglenet.com> and Christian Lademann
+
 	* fileio.c: Remove checks for /dev/stdin, etc... leave :CI:, :CO:, :CE:
 
 2021-06-27  Ron Norman <rjn@inglenet.com>
@@ -28,7 +34,7 @@
 2021-05-04  Ron Norman <rjn@inglenet.com>
 
 	* common.c: Make a few variables 'static' to better 
-			handle when there is an abort during dumping
+	 handle when there is an abort during dumping
 
 2021-04-30  Ron Norman <rjn@inglenet.com>
 
@@ -44,7 +50,7 @@
 	* common.h: Add cob_file . flag_updt_file for cobfile
 	* fileio.c: Add cob_pre_open_def routine used by cobfile
 	            Other changes so cobfile can copy attributes of
-				one file into another before copying.
+	            one file into another before copying.
 
 2021-04-25  Ron Norman <rjn@inglenet.com>
 
@@ -100,15 +106,15 @@
 	* fileio.h: Prototype for cob_chk_file_mapping was changed
 	* fextfh.c: Fixes to handle the OP_GETINO function code
 	            to collect information about an unopened file
-				Basically only works for INDEXED files
+	            Basically only works for INDEXED files
 	* fileio.c: Additonal code to inspect the index control blocks
-				of an ISAM file and save the details
-				cob_read_dict will check for dictionary in current
-				directory, then COB_SCHEMA_DIR.
+	            of an ISAM file and save the details
+	            cob_read_dict will check for dictionary in current
+	            directory, then COB_SCHEMA_DIR.
 	* flmdb.c: Changes for cob_chk_file_mapping
 	* foci.c: When table is created, write dictionary filename.dd
 	* fodbc.c: When table is created, write dictionary filename.dd
-			
+
 2021-02-25  Ron Norman <rjn@inglenet.com>
 
 	* fileio.c: Some additional checks to select appropriate I/O routine
@@ -137,13 +143,13 @@
 2021-02-18  Ron Norman <rjn@inglenet.com>
 
 	* V-ISAM is a reworked VB-ISAM that dynamically supports
-		the old VB-ISAM file format as well as C-ISAM at runtime
+	  the old VB-ISAM file format as well as C-ISAM at runtime
 	* common.h,common.c: Changes to replace VB-CISAM with V-ISAM
 	* fileio.h,fileio.c: Changes to replace VB-CISAM with V-ISAM
 	* Makefile.am,libcobvc.c: Changes to replace VB-CISAM with V-ISAM
 	* fisam.c: Changes to replace VB-CISAM with V-ISAM
 	         For OPEN OUTPUT and the file does exist, it checks on the file
-			 format and retains that for the 'isbuild'
+	         format and retains that for the 'isbuild'
 
 2021-02-17  Ron Norman <rjn@inglenet.com>
 
@@ -241,6 +247,7 @@
 
 	* Makefile.am: corrections to changes previously made
 	* fileio.c: report any error from loading a module that should be present
+
 2021-01-22  Ron Norman <rjn@inglenet.com>
 
 	* common.c: Add check for COB_DEBUG_LOG not defined
