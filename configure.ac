@@ -28,7 +28,7 @@ AC_INIT([GnuCOBOL],
 	[bug-gnucobol@gnu.org],
 	[gnucobol],
 	[https://www.gnu.org/software/gnucobol/])
-AC_REVISION([GnuCOBOL snapshot $Revision: 4131 $])
+AC_REVISION([GnuCOBOL snapshot $Revision: 4258 $])
 AC_CONFIG_SRCDIR([libcob.h])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_TESTDIR([tests])
@@ -1376,76 +1376,18 @@ AC_ARG_WITH([indexed],
   [AS_HELP_STRING([--with-indexed],
     [Define default INDEXED file handler (visam,vbisam,disam,cisam,db)])],
   [ case "$with_indexed" in
-    vbisam)
-	    with_vbisam=yes
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_VBISAM])
-	    AC_DEFINE([WITH_IXDFLT], ["VB-ISAM"]);;
-    visam)
-	    with_visam=yes
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_VISAM])
-	    AC_DEFINE([WITH_IXDFLT], ["V-ISAM"]);;
-    disam)
-	    with_disam=yes
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_DISAM])
-	    AC_DEFINE([WITH_IXDFLT], ["D-ISAM"]);;
-    cisam)
-	    with_cisam=yes
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_CISAM])
-	    AC_DEFINE([WITH_IXDFLT], ["C-ISAM"]);;
-    db)
-	    with_db=yes
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_BDB])
-	    AC_DEFINE([WITH_IXDFLT], ["BDB"]);;
-    lmdb)
-	    with_lmdb=yes
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_LMDB])
-	    AC_DEFINE([WITH_IXDFLT], ["LMDB"]);;
-    no)
-		reset_isam_check
-	    AC_DEFINE([WITH_IXDFLT], ["NONE"]);;
+    visam)   with_visam=yes;;
+    vbisam)  with_vbisam=yes;;
+    disam)   with_disam=yes;;
+    cisam)   with_cisam=yes;;
+    db)      with_db=yes;;
+    lmdb)    with_lmdb=yes;;
+    odbc)    with_odbc=yes;;
+    oci)     with_oci=yes;;
+    no)      reset_isam_check;;
 	*)
-  	  if test "$with_visam" = "yes"; then
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_VISAM])
-	    AC_DEFINE([WITH_IXDFLT], ["V-ISAM"])
-  	  elif test "$with_cisam" = "yes"; then
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_CISAM])
-	    AC_DEFINE([WITH_IXDFLT], ["C-ISAM"])
-  	  elif test "$with_disam" = "yes"; then
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_DISAM])
-	    AC_DEFINE([WITH_IXDFLT], ["D-ISAM"])
-  	  elif test "$with_vbisam" = "yes"; then
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_VBISAM])
-	    AC_DEFINE([WITH_IXDFLT], ["VB-ISAM"])
-  	  elif test "$with_db" = "yes"; then
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_BDB])
-	    AC_DEFINE([WITH_IXDFLT], ["BDB"])
-  	  elif test "$with_lmdb" = "yes"; then
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_LMDB])
-	    AC_DEFINE([WITH_IXDFLT], ["LMDB"])
-	  else
-		AC_MSG_ERROR([--with-indexed=<HANDLER>, must be one of visam|vbisam|disam|cisam|db|lmdb])
-	  fi ;;
+		AC_MSG_ERROR([--with-indexed=<HANDLER>, must be one of visam|vbisam|disam|cisam|db|lmdb]);;
     esac
-  ], [
-  	  if test "$with_visam" = "yes"; then
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_VISAM])
-	    AC_DEFINE([WITH_IXDFLT], ["V-ISAM"])
-  	  elif test "$with_cisam" = "yes"; then
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_CISAM])
-	    AC_DEFINE([WITH_IXDFLT], ["C-ISAM"])
-  	  elif test "$with_disam" = "yes"; then
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_DISAM])
-	    AC_DEFINE([WITH_IXDFLT], ["D-ISAM"])
-  	  elif test "$with_vbisam" = "yes"; then
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_VBISAM])
-	    AC_DEFINE([WITH_IXDFLT], ["VB-ISAM"])
-  	  elif test "$with_db" = "yes"; then
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_BDB])
-	    AC_DEFINE([WITH_IXDFLT], ["BDB"])
-  	  elif test "$with_lmdb" = "yes"; then
-	    AC_DEFINE([WITH_INDEXED], [COB_IO_LMDB])
-	    AC_DEFINE([WITH_IXDFLT], ["LMDB"])
-	  fi
   ])
 
 if test "$cob_has_isam" = "yes"; then
@@ -1471,10 +1413,6 @@ AS_IF([test "$with_visam" = "yes" -o "$with_visam" = "check"], [
 	else
 		AC_SEARCH_LIBS([isopen], [visam],
 			[AC_DEFINE([WITH_VISAM], [1])
-			 if test "$with_visam" = "check"; then
-				 AC_DEFINE([WITH_INDEXED], [COB_IO_VISAM])
-				 AC_DEFINE([WITH_IXDFLT], ["V-ISAM"])
-			 fi
 			 cob_gen_visam=yes
 		 	 with_visam=yes
 			 reset_isam_check
@@ -1516,10 +1454,6 @@ AS_IF([test "$with_vbisam" = "yes" -o "$with_vbisam" = "check"], [
 		# note: isfullclose is available since 2.0, isopen since 1.0
 		AC_SEARCH_LIBS([isfullclose], [vbisam],
 			[AC_DEFINE([WITH_VBISAM], [1])
-			 if test "$with_vbisam" = "check"; then
-				 AC_DEFINE([WITH_INDEXED], [COB_IO_VBISAM])
-				 AC_DEFINE([WITH_IXDFLT], ["VB-ISAM"])
-			 fi
 			 cob_gen_vbisam=yes
 		 	 with_vbisam=yes
 			 reset_isam_check
@@ -1548,10 +1482,6 @@ AS_IF([test "$with_disam" = "yes" -o "$with_disam" = "check"], [
 	unset ac_cv_search_isopen
 	AC_SEARCH_LIBS([isopen], [disam8 disam72 disam71 disam7 disam],
 			[AC_DEFINE([WITH_DISAM], [1])
-			 if test "$with_disam" = "check"; then
-				 AC_DEFINE([WITH_INDEXED], [COB_IO_DISAM])
-				 AC_DEFINE([WITH_IXDFLT], ["D-ISAM"])
-			 fi
 		 	cob_gen_disam=yes
 		 	with_disam=yes
 			reset_isam_check
@@ -1602,10 +1532,6 @@ AS_IF([test "$with_cisam" = "yes" -o "$with_cisam" = "check"], [
 	else
 	  AC_CHECK_LIB([ifisam], [isopen],
 		[AC_DEFINE([WITH_CISAM], [1])
-			 if test "$with_cisam" = "check"; then
-				 AC_DEFINE([WITH_INDEXED], [COB_IO_CISAM])
-				 AC_DEFINE([WITH_IXDFLT], ["C-ISAM"])
-			 fi
 	    	cob_gen_cisam=yes
 		 	with_cisam=yes
 			reset_isam_check
@@ -2401,18 +2327,24 @@ if test "x$lt_cv_dlopen_self" != "xyes"; then
 	AC_DEFINE([COB_NO_SELFOPEN], [1])
 fi
 
-if test "$with_cisam" = "yes"; then
-	COB_HAS_ISAM=cisam
-elif test "$with_visam" = "yes"; then
+if test "$with_visam" = "yes"; then
 	COB_HAS_ISAM=visam
-elif test "$with_disam" = "yes"; then
-	COB_HAS_ISAM=disam
 elif test "$with_vbisam" = "yes"; then
 	COB_HAS_ISAM=vbisam
+elif test "$with_disam" = "yes"; then
+	COB_HAS_ISAM=disam
+elif test "$with_cisam" = "yes"; then
+	COB_HAS_ISAM=cisam
 elif test "$with_db" = "yes"; then
 	COB_HAS_ISAM=db
 elif test "$with_lmdb" = "yes"; then
 	COB_HAS_ISAM=lmdb
+elif test "$with_odbc" = "yes"; then
+	#COB_HAS_ISAM=odbc	needs manual adjustments for testsuite, not automatically set
+	true
+elif test "$with_oci" = "yes"; then
+	#COB_HAS_ISAM=oci	needs manual adjustments for testsuite, not automatically set
+	true
 elif test "$with_index_extfh" = "yes"; then
 	COB_HAS_ISAM=index_extfh
 else
@@ -2427,6 +2359,55 @@ COB_HAS_LMDB=$with_lmdb
 COB_HAS_ODBC=$with_odbc
 COB_HAS_OCI=$with_oci
 COB_HAS_OCEXTFH=$with_index_extfh
+
+if test "x$with_indexed" = "x"; then
+   with_indexed=$COB_HAS_ISAM
+fi
+
+case "$with_indexed" in
+	visam)
+		AC_DEFINE([WITH_INDEXED], [COB_IO_VISAM])
+		AC_DEFINE([WITH_IXDFLT], ["V-ISAM"])
+		;;
+	vbisam)
+		AC_DEFINE([WITH_INDEXED], [COB_IO_VBISAM])
+		AC_DEFINE([WITH_IXDFLT], ["VB-ISAM"])
+		;;
+	disam)
+		AC_DEFINE([WITH_INDEXED], [COB_IO_DISAM])
+		AC_DEFINE([WITH_IXDFLT], ["D-ISAM"])
+		;;
+	cisam)
+		AC_DEFINE([WITH_INDEXED], [COB_IO_CISAM])
+		AC_DEFINE([WITH_IXDFLT], ["C-ISAM"])
+		;;
+	db)
+		AC_DEFINE([WITH_INDEXED], [COB_IO_BDB])
+		AC_DEFINE([WITH_IXDFLT], ["BDB"])
+		;;
+	lmdb)
+		AC_DEFINE([WITH_INDEXED], [COB_IO_LMDB])
+		AC_DEFINE([WITH_IXDFLT], ["LMDB"])
+		;;
+	odbc)
+		AC_DEFINE([WITH_INDEXED], [COB_IO_ODBC])
+		AC_DEFINE([WITH_IXDFLT], ["ODBC"])
+		;;
+	oci)
+		AC_DEFINE([WITH_INDEXED], [COB_IO_OCI])
+		AC_DEFINE([WITH_IXDFLT], ["OCI"])
+		;;
+	index_extfh)
+		AC_DEFINE([WITH_INDEXED], [COB_IO_IXEXT])
+		AC_DEFINE([WITH_IXDFLT], ["OC-EXTFH"])
+		;;
+	no)
+		AC_DEFINE([WITH_IXDFLT], ["NONE"])
+		;;
+	*)
+		AC_MSG_ERROR([internal error, with_indexed=$with_indexed])
+		;;
+esac
 
 if test "$USE_CURSES" = "not_found" -o "$USE_CURSES" = "no"; then
 	COB_HAS_CURSES=no

@@ -16,10 +16,20 @@ NEWS - user visible changes				-*- outline -*-
    necessary internal schema files to match the file definition to the
    database table
 
+** build-system: it is now possible to build GnuCOBOL with multiple handlers
+   for ORGANIZATION INDEXED, for example --with-visam --with-db --with-odbc
+   and then define at runtime which handler to use, the default is set with
+   --with-indexed=<handler>; if no handler is requested the system checks for
+   available handlers and use the first applicable - or none, which removes
+   the need to specify --without-db
+
+** new experimental file handler LMDB
+
 ** delay-load of libraries (so far for ORGANIZATION INDEXED, planned: XML,
    JSON, SCREENIO)
 
-** option for guaranteed storage of level01/77 items in memory and their alignment (defaults to "fast C")
+** option for guaranteed storage of level 01/77 items in memory and
+   their alignment (defaults to "fast C")
 
 * runtime checks: previously conditions missed the generation of runtime checks,
   leading to possible out-of-bounds or null-access there, this was fixed

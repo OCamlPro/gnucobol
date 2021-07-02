@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2020 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2021 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -87,6 +87,7 @@
 #define	open		_open
 #define	close		_close
 #define	unlink		_unlink
+#define ftruncate	_chsize
 #define	fdopen		_fdopen
 #ifndef lseek
 #define lseek		_lseeki64

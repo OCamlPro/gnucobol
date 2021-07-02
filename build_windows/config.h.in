@@ -3,13 +3,14 @@
    and OrangeC 6.0.45.1 (which ignores the lib comments) */
 
 #define NOISAM       0
-#define BDB          1
-#define LMDB         2
-#define VBISAM       3
-#define DISAM        4
-#define CISAM        5
-#define ODBC         6
-#define OCI          7
+#define VISAM        1
+#define VBISAM       2
+#define BDB          3
+#define LMDB         4
+#define DISAM        5
+#define CISAM        6
+#define ODBC         7
+#define OCI          8
 
 #define NOCURSES     0
 #define PDCURSES     1
@@ -91,7 +92,9 @@
 #ifdef LIB_ISAM
 #pragma comment(lib, LIB_ISAM)
 #else
-#if CONFIGURED_ISAM == VBISAM
+#if CONFIGURED_ISAM == VISAM
+#pragma comment(lib, "libvisam")
+#elif CONFIGURED_ISAM == VBISAM
 #pragma comment(lib, "libvbisam")
 #elif CONFIGURED_ISAM == DISAM
 #pragma comment(lib, "libdisam72")
@@ -681,6 +684,9 @@
 /* Define to 1 if you have the `raise' function. */
 #define HAVE_RAISE 1
 
+/* Has readline function */
+/* #undef HAVE_READLINE */
+
 /* Define to 1 if you have the `readlink' function. */
 /* #undef HAVE_READLINK */
 
@@ -821,6 +827,13 @@
 /* #undef HAVE_VBISAM_H */
 #endif
 
+/* Define to 1 if you have the <visam.h> header file. */
+#if CONFIGURED_ISAM == VISAM
+#define HAVE_VISAM_H 1
+#else
+/* #undef HAVE_VISAM_H */
+#endif
+
 /* Define to 1 if you have the `vprintf' function. */
 #define HAVE_VPRINTF 1
 
@@ -891,7 +904,7 @@
 /* Version number of package */
 #define VERSION "4.0-early-dev"
 
-/* Use CISAM as INDEXED handler */
+/* Use C-ISAM as INDEXED handler */
 #if CONFIGURED_ISAM == CISAM
 #define WITH_CISAM 1
 #else
@@ -921,7 +934,7 @@
 /* #undef WITH_DB */
 #endif
 
-/* Use DISAM as INDEXED handler */
+/* Use D-ISAM as INDEXED handler */
 #if CONFIGURED_ISAM == DISAM
 #define WITH_DISAM 1
 #else
@@ -931,9 +944,12 @@
 /* Compile with obsolete external INDEXED handler */
 /* #undef WITH_INDEX_EXTFH */
 
-/* Default INDEXED file handler */
-#if CONFIGURED_ISAM == VBISAM
-#define WITH_IXDFLT  "VB-ISAM"
+/* Default INDEXED file handler name */
+#if CONFIGURED_ISAM == VISAM
+#define WITH_IXDFLT  "V-ISAM"
+#define WITH_INDEXED COB_IO_VISAM
+#elif CONFIGURED_ISAM == VBISAM
+#define WITH_IXDFLT  "VBISAM"
 #define WITH_INDEXED COB_IO_VBISAM
 #elif CONFIGURED_ISAM == DISAM
 #define WITH_IXDFLT  "D-ISAM"
@@ -951,7 +967,7 @@
 #define WITH_IXDFLT  "OCI"
 #define WITH_INDEXED COB_IO_OCI
 #else
-/* #undef WITH_IXDFLT */
+#define WITH_IXDFLT  "NONE"
 /* #undef WITH_INDEXED */
 #endif /* CONFIGURED_ISAM */
 
@@ -987,9 +1003,6 @@
 #define WITH_MATH "gmp"
 #endif
 
-/* Using more than 1 of C/D/VB-ISAM */
-/* #undef WITH_MULTI_ISAM */
-
 /* Use OCI for INDEXED file handler */
 #if CONFIGURED_ISAM == OCI
 #define WITH_OCI 1
@@ -1007,6 +1020,9 @@
 /* Compile with obsolete external SEQ/RAN handler */
 /* #undef WITH_SEQRA_EXTFH */
 
+/* Build ISAM into libcob */
+/* #undef WITH_STATIC_ISAM */
+
 /* Define variable sequential file format */
 #define WITH_VARSEQ 0
 
@@ -1015,6 +1031,13 @@
 #define WITH_VBISAM 1
 #else
 /* #undef WITH_VBISAM */
+#endif
+
+/* Use V-ISAM as INDEXED handler */
+#if CONFIGURED_ISAM == VISAM
+#define WITH_VISAM 1
+#else
+/* #undef WITH_VISAM */
 #endif
 
 /* Use libxml2 as XML handler */
@@ -1066,11 +1089,12 @@
 #endif
 
 #undef NOISAM
-#undef BDB
-#undef LMDB
+#undef VISAM
 #undef VBISAM
 #undef DISAM
 #undef CISAM
+#undef BDB
+#undef LMDB
 #undef ODBC
 #undef OCI
 #undef CONFIGURED_ISAM

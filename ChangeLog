@@ -1,18 +1,22 @@
 
+2021-07-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: moved definitions of INDEXED related variables for the
+	  build / test system to a single place, added missing variants
+
 2021-04-27  Ron Norman <rjn@inglenet.com> 
 
 	* configure.ac: Add check for  'readline'
 
 2021-02-21  Ron Norman <rjn@inglenet.com> 
 
-	* configure.ac: Fix error with C-ISAM checks and 
-				changes to use subroutine reset_isam_check
-				--with-indexed should not select OCI or ODBC
+	* configure.ac: Fix error with C-ISAM checks and  changes to use
+	  subroutine reset_isam_check --with-indexed should not select OCI or ODBC
 
 2021-02-19  Ron Norman <rjn@inglenet.com> 
 
 	* configure.ac: If no ISAM is requested, check if any are present
-			If any ISAM is requested, do not check the others
+	  If any ISAM is requested, do not check the others
 
 2021-02-18  Ron Norman <rjn@inglenet.com> 
 

@@ -2,6 +2,7 @@
 2021-07-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fileio.c: replaced use of ssize_t by off_t, removed some casting
+	* fileio.h [WIN32]: definition of ftruncate
 
 2021-07-01  Ron Norman <rjn@inglenet.com> and Christian Lademann
 
