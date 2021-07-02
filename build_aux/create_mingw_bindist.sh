@@ -1,7 +1,7 @@
 #!/bin/bash
 # create_mingw_bindist.sh gnucobol
 #
-# Copyright (C) 2016-2020 Free Software Foundation, Inc.
+# Copyright (C) 2016-2021 Free Software Foundation, Inc.
 # Written by Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -106,8 +106,9 @@ cp -p $EXTBUILDDIR/libcob/.libs/libcob*.dll  "$target_dir/bin/"
 cp -p $EXTBUILDDIR/libcob/.libs/libcob.*  "$target_dir/lib/"
 mkdir "$target_dir/include/libcob"
 cp -p $EXTSRCDIR/libcob.h    "$target_dir/include/"
-cp -p $EXTSRCDIR/libcob/*.h  "$target_dir/include/libcob"
-cp -p $EXTSRCDIR/libcob/*.def  "$target_dir/include/libcob"
+cp -p $EXTSRCDIR/libcob/common.h  "$target_dir/include/libcob"
+cp -p $EXTSRCDIR/libcob/cobcapi.h  "$target_dir/include/libcob"
+cp -p $EXTSRCDIR/libcob/exception*.def  "$target_dir/include/libcob"
 
 echo && echo copying docs...
 
