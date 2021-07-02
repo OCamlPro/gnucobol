@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2020 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2021 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -27,6 +27,7 @@
 static struct fcd_file {
 	struct fcd_file	*next;
 	FCD3		*fcd;
+	FCD2		*fcd2;
 	cob_file	*f;
 	int			sts;
 	int			free_fcd;
@@ -583,6 +584,54 @@ find_fcd (cob_file *f)
 }
 
 /*
+ * Construct FCD based on information from 'FCD2'
+ */
+static FCD3 *
+find_fcd2 (FCD2 *fcd2)
+{
+	FCD3	*fcd;
+	struct fcd_file	*ff;
+	for(ff = fcd_file_list; ff; ff=ff->next) {
+		if(ff->fcd2 == fcd2)
+			return ff->fcd;
+	}
+	fcd = cob_cache_malloc(sizeof(FCD3));
+	ff = cob_cache_malloc(sizeof(struct fcd_file));
+	ff->next = fcd_file_list;
+	ff->fcd = fcd;
+	ff->fcd2 = fcd2;
+	ff->free_fcd = 2;
+	fcd_file_list = ff;
+	return fcd;
+}
+
+/*
+ * Free FCD from 'FCD2'
+ */
+static void
+free_fcd2 (FCD2 *fcd2)
+{
+	struct fcd_file	*ff, *pff;
+	pff = NULL;
+	for(ff = fcd_file_list; ff; ff=ff->next) {
+		if(ff->fcd2 == fcd2) {
+			if (pff)
+				pff->next = ff->next;
+			else
+				fcd_file_list = ff->next;
+			if (ff->fcd)
+				cob_cache_free((void*)ff->fcd);
+			if (ff->f)
+				cob_cache_free((void*)ff->f);
+			cob_cache_free((void*)ff);
+			return;
+		}
+		pff = ff;
+	}
+	return;
+}
+
+/*
  * Construct cob_file based on information from 'FCD'
  */
 static cob_file *
@@ -592,6 +641,13 @@ find_file (FCD3 *fcd)
 	struct fcd_file	*ff;
 	for (ff = fcd_file_list; ff; ff=ff->next) {
 		if (ff->fcd == fcd) {
+			if (ff->f == NULL) {
+				f = cob_cache_malloc (sizeof(cob_file));
+				f->file_version = COB_FILE_VERSION;
+				f->open_mode = COB_OPEN_CLOSED;
+				ff->f = f;
+				copy_fcd_to_file (fcd, f);
+			}
 			return ff->f;
 		}
 	}
@@ -947,6 +1003,8 @@ cob_sys_extfh (const void *opcode_ptr, void *fcd_ptr)
 		cob_set_exception (COB_EC_PROGRAM_ARG_MISMATCH);
 		return 1;	/* correct? */
 	}
+#if COB_64_BIT_POINTER
+	/* Only FCD3 is accepted */
 	if (COB_MODULE_PTR->cob_procedure_params[1]->size < sizeof(FCD3)) {
 		fcd->fileStatus[0] = '9';
 		fcd->fileStatus[1] = 161;
@@ -963,6 +1021,107 @@ cob_sys_extfh (const void *opcode_ptr, void *fcd_ptr)
 	}
 
 	return EXTFH ((unsigned char *)opcode_ptr, fcd);
+#else
+	if (COB_MODULE_PTR->cob_procedure_params[1]->size < sizeof(FCD3)) {
+		if (fcd->fcdVer == FCD2_VER
+		 && COB_MODULE_PTR->cob_procedure_params[1]->size >= sizeof(FCD2)) {
+			int		rtnsts;
+			FCD2 *fcd2 = (FCD2 *) fcd_ptr;
+			if (fcd2->recPtr2 == NULL) {
+				fcd2->fileStatus[0] = '9';
+				fcd2->fileStatus[1] = 141;
+				cob_runtime_warning (_("ERROR: EXTFH called with no %s pointer"),"record");
+				return 0;
+			}
+			if (fcd2->fnamePtr2 == NULL) {
+				fcd2->fileStatus[0] = '9';
+				fcd2->fileStatus[1] = 141;
+				cob_runtime_warning (_("ERROR: EXTFH called with no %s pointer"),"filename");
+				return 0;
+			}
+
+			/* Convert FCD2 into FCD3 format */
+			fcd = find_fcd2 (fcd2);
+			memcpy (fcd->fileStatus, "00", 2);
+			fcd->fcdVer = FCD_VER_64Bit;
+			STCOMPX2 (sizeof(FCD3), fcd->fcdLen);
+			fcd->fileOrg = fcd2->fileOrg;
+			fcd->accessFlags = fcd2->accessFlags;
+			fcd->openMode = fcd2->openMode;
+			fcd->recordMode = fcd2->recordMode;
+			fcd->fileFormat = fcd2->fileFormat;
+			fcd->lockMode = fcd2->lockMode;
+			fcd->otherFlags = fcd2->otherFlags;
+			fcd->fstatusType = fcd2->fstatusType;
+			fcd->compType = fcd2->compType;
+			fcd->gcFlags = fcd2->gcFlags;
+			fcd->gcFlags |= MF_CALLFH_GNUCOBOL;
+			fcd->lockMode = fcd2->lockMode;
+			fcd->fsv2Flags = fcd2->fsv2Flags;
+			fcd->confFlags = fcd2->confFlags;
+			fcd->idxCacheSz = fcd2->idxCacheSz;
+			fcd->idxCacheArea = fcd2->idxCacheArea;
+			STCOMPX4 (LDCOMPX2 (fcd2->curRecLen), fcd->curRecLen);
+			STCOMPX4 (LDCOMPX2 (fcd2->minRecLen), fcd->minRecLen);
+			STCOMPX4 (LDCOMPX2 (fcd2->maxRecLen), fcd->maxRecLen);
+			memcpy (fcd->refKey, fcd2->refKey, 2);
+			memcpy (fcd->effKeyLen, fcd2->effKeyLen, 2);
+			memcpy (fcd->fnameLen, fcd2->fnameLen, 2);
+			memcpy (fcd->relByteAdrs, fcd2->relByteAdrs64, 8);
+			fcd->fileHandle = fcd2->fileHandle2;
+			fcd->recPtr = fcd2->recPtr2;
+			fcd->fnamePtr = fcd2->fnamePtr2;
+			fcd->kdbPtr = fcd2->kdbPtr2;
+
+			rtnsts = EXTFH ((unsigned char *)opcode_ptr, fcd);
+
+			/* Convert FCD3 back to FCD2 format */
+			STCOMPX2 (sizeof(FCD2), fcd2->fcdLen);
+			memcpy (fcd2->fileStatus, fcd->fileStatus, 2);
+			fcd2->fcdVer = FCD2_VER;
+			fcd2->fileOrg = fcd->fileOrg;
+			fcd2->accessFlags = fcd->accessFlags;
+			fcd2->openMode = fcd->openMode;
+			fcd2->recordMode = fcd->recordMode;
+			fcd2->fileFormat = fcd->fileFormat;
+			fcd2->lockMode = fcd->lockMode;
+			fcd2->otherFlags = fcd->otherFlags;
+			fcd2->fstatusType = fcd->fstatusType;
+			fcd2->compType = fcd->compType;
+			fcd2->gcFlags = fcd->gcFlags;
+			fcd2->fsv2Flags = fcd->fsv2Flags;
+			fcd2->confFlags = fcd->confFlags;
+			fcd2->idxCacheSz = fcd->idxCacheSz;
+			fcd2->idxCacheArea = fcd->idxCacheArea;
+			STCOMPX2 (LDCOMPX4 (fcd->curRecLen), fcd2->curRecLen);
+			STCOMPX2 (LDCOMPX4 (fcd->minRecLen), fcd2->minRecLen);
+			STCOMPX2 (LDCOMPX4 (fcd->maxRecLen), fcd2->maxRecLen);
+			memcpy (fcd2->refKey, fcd->refKey, 2);
+			memcpy (fcd2->effKeyLen, fcd->effKeyLen, 2);
+			memcpy (fcd2->fnameLen, fcd->fnameLen, 2);
+			memcpy (fcd2->relByteAdrs64, fcd->relByteAdrs, 8);
+			fcd2->fileHandle2 = fcd->fileHandle;
+			fcd2->recPtr2 = fcd->recPtr;
+			fcd2->fnamePtr2 = fcd->fnamePtr;
+			fcd2->kdbPtr2 = fcd->kdbPtr;
+
+			if ((((unsigned char*)opcode_ptr)[1]) == OP_CLOSE) {
+				free_fcd2 (fcd2);
+			}
+
+			return rtnsts;
+		}
+
+		fcd->fileStatus[0] = '9';
+		fcd->fileStatus[1] = 161;
+		if (fcd->fcdVer != FCD_VER_64Bit) {
+			cob_runtime_warning (_("ERROR: EXTFH called with FCD version %d"), fcd->fcdVer);
+		}
+		return 1;	/* correct? */
+	}
+
+	return EXTFH ((unsigned char *)opcode_ptr, fcd);
+#endif
 }
 
 /* 
@@ -1001,7 +1160,7 @@ cob_file_fcd_sync (cob_file *f)
 }
 /* 
  * Return address of FH--FCD for the given file
- * Create the FCD3 is needed
+ * Create the FCD3 as needed
  */
 void
 cob_file_fcd_adrs (cob_file *f, void *pfcd)
@@ -1082,7 +1241,7 @@ EXTFH (unsigned char *opcode, FCD3 *fcd)
 		COB_MODULE_PTR = cob_malloc( sizeof(cob_module) );
 		COB_MODULE_PTR->module_name = "GnuCOBOL-fileio";
 		COB_MODULE_PTR->module_source = "GnuCOBOL-fileio";
-		COB_MODULE_PTR->module_formatted_date = "2021/01/02 12:01:20";
+		COB_MODULE_PTR->module_formatted_date = "2021/07/02 12:01:20";
 	}
 
 	if (*opcode == 0xFA) {
@@ -1178,6 +1337,19 @@ org_handling:
 		fcd->fileStatus[0] = '9';
 		fcd->fileStatus[1] = 161;
 		cob_runtime_warning (_("ERROR: EXTFH called with wrong file organization %d"), fcd->fileOrg);
+		return 0;
+	}
+
+	if (fcd->recPtr == NULL) {
+		fcd->fileStatus[0] = '9';
+		fcd->fileStatus[1] = 141;
+		cob_runtime_warning (_("ERROR: EXTFH called with no %s pointer"),"record");
+		return 0;
+	}
+	if (fcd->fnamePtr == NULL) {
+		fcd->fileStatus[0] = '9';
+		fcd->fileStatus[1] = 141;
+		cob_runtime_warning (_("ERROR: EXTFH called with no %s pointer"),"filename");
 		return 0;
 	}
 

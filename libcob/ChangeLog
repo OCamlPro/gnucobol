@@ -1,10 +1,15 @@
 
+2021-07-02  Ron Norman <rjn@inglenet.com>
+
+	* common.h: Added  FCD2 structure
+	* fextfh.c: Added checks for FCD2 being used
+
 2021-07-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fileio.c: replaced use of ssize_t by off_t, removed some casting
 	* fileio.h [WIN32]: definition of ftruncate
 
-2021-07-01  Ron Norman <rjn@inglenet.com> and Christian Lademann
+2021-07-01  Ron Norman <rjn@inglenet.com>
 
 	* fbdb.c: Checks if filename is actually a directory
 
@@ -18,7 +23,7 @@
 	* fileio.c: Added code to set some Microfocus specific status
 	* fisam.c: Added code to set some Microfocus specific status
 
-2021-06-26  Ron Norman <rjn@inglenet.com> and Christian Lademann
+2021-06-26  Ron Norman <rjn@inglenet.com>
 
 	* common.h: Add COB_DIALECT_xxx 
 	* fileio.c: Preparing for dialect specific status codes
