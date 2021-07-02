@@ -1031,13 +1031,13 @@ cob_sys_extfh (const void *opcode_ptr, void *fcd_ptr)
 				fcd2->fileStatus[0] = '9';
 				fcd2->fileStatus[1] = 141;
 				cob_runtime_warning (_("ERROR: EXTFH called with no %s pointer"),"record");
-				return 0;
+				return -1;
 			}
 			if (fcd2->fnamePtr2 == NULL) {
 				fcd2->fileStatus[0] = '9';
 				fcd2->fileStatus[1] = 141;
 				cob_runtime_warning (_("ERROR: EXTFH called with no %s pointer"),"filename");
-				return 0;
+				return -1;
 			}
 
 			/* Convert FCD2 into FCD3 format */
@@ -1337,20 +1337,20 @@ org_handling:
 		fcd->fileStatus[0] = '9';
 		fcd->fileStatus[1] = 161;
 		cob_runtime_warning (_("ERROR: EXTFH called with wrong file organization %d"), fcd->fileOrg);
-		return 0;
+		return -1;
 	}
 
 	if (fcd->recPtr == NULL) {
 		fcd->fileStatus[0] = '9';
 		fcd->fileStatus[1] = 141;
 		cob_runtime_warning (_("ERROR: EXTFH called with no %s pointer"),"record");
-		return 0;
+		return -1;
 	}
 	if (fcd->fnamePtr == NULL) {
 		fcd->fileStatus[0] = '9';
 		fcd->fileStatus[1] = 141;
 		cob_runtime_warning (_("ERROR: EXTFH called with no %s pointer"),"filename");
-		return 0;
+		return -1;
 	}
 
 	rec->data = fcd->recPtr;
