@@ -4228,6 +4228,47 @@ cob_file_close (cob_file_api *a, cob_file *f, const int opt)
 	}
 }
 
+static int
+open_next (cob_file *f)
+{
+	if (f->flag_is_concat
+	 && *f->nxt_filename != 0) {
+		char	*nx = strchr(f->nxt_filename,file_setptr->cob_concat_sep[0]);
+		close (f->fd);
+		if (f->file)
+			fclose (f->file);
+		f->fd = -1;
+		f->file = NULL;
+		if (nx) {
+			*nx = 0;
+			if (f->open_mode == COB_OPEN_I_O)	
+				f->fd = open (f->nxt_filename, O_RDWR);
+			else
+				f->fd = open (f->nxt_filename, O_RDONLY);
+			f->nxt_filename = nx + 1;
+		} else {
+			if (f->open_mode == COB_OPEN_I_O)	
+				f->fd = open (f->nxt_filename, O_RDWR);
+			else
+				f->fd = open (f->nxt_filename, O_RDONLY);
+			f->flag_is_concat = 0;
+			if (f->org_filename) {
+				cob_cache_free (f->org_filename);
+				f->org_filename = NULL;
+			}
+		}
+		if (f->fd != -1) {
+			if (f->open_mode == COB_OPEN_INPUT) {
+			   f->file = (void*)fdopen(f->fd, "r");
+			} else { 
+				   f->file = (void*)fdopen(f->fd, "r+");
+			}
+			return 1;
+		}
+	}
+	return 0;
+}
+
 /* SEQUENTIAL */
 
 static int
@@ -4243,6 +4284,7 @@ sequential_read (cob_file_api *a, cob_file *f, const int read_opts)
 	COB_UNUSED (a);
 	COB_UNUSED (read_opts);
 
+again:
 	if (f->flag_operation != 0) {
 		f->flag_operation = 0;
 	}
@@ -4257,6 +4299,9 @@ sequential_read (cob_file_api *a, cob_file *f, const int read_opts)
 		/* Read record size */
 
 		bytesread = read (f->fd, recsize.sbuff, f->record_prefix);
+		if (bytesread == 0
+		 && open_next (f))
+			goto again;
 		if (bytesread != (int)f->record_prefix) {
 			if (bytesread == 0) {
 				return COB_STATUS_10_END_OF_FILE;
@@ -4300,6 +4345,10 @@ sequential_read (cob_file_api *a, cob_file *f, const int read_opts)
 
 	/* Read record */
 	bytesread = read (f->fd, f->record->data, f->record->size);
+	if (bytesread == 0
+	 && open_next (f))
+		goto again;
+
 	if (f->record_min != f->record_max
 	&&  f->file_format == COB_FILE_IS_MF) {
 		padlen = ((f->record->size + f->record_prefix + 3) / 4 * 4) - (f->record->size + f->record_prefix);
@@ -4527,12 +4576,15 @@ lineseq_read (cob_file_api *a, cob_file *f, const int read_opts)
 	dataptr = f->record->data;
 	if (f->file == NULL)
 		return COB_STATUS_30_PERMANENT_ERROR;
+again:
 	if (!f->flag_is_pipe)
 		f->record_off = ftell ((FILE *)f->file);	/* Save position at start of line */
 	for (; ;) {
 		n = getc ((FILE *)f->file);
 		if (n == EOF) {
 			if (!i) {
+				if (open_next (f))
+					goto again;
 				return COB_STATUS_10_END_OF_FILE;
 			} else {
 				break;
@@ -4602,6 +4654,34 @@ lineseq_read (cob_file_api *a, cob_file *f, const int read_opts)
 
 #define IS_BAD_CHAR(x) (x < ' ' && x != COB_CHAR_BS && x != COB_CHAR_ESC \
 					 && x != COB_CHAR_FF && x != COB_CHAR_SI && x != COB_CHAR_TAB)
+/* Determine the size to be written */
+static size_t
+lineseq_size (cob_file *f)
+{
+	size_t size,i;
+	if ((f->file_features & COB_FILE_LS_FIXED))
+		return f->record->size;
+	if (f->variable_record) {
+		f->record->size = (size_t)cob_get_int (f->variable_record);
+		if (f->record->size > f->record_max) {
+			f->record->size = f->record_max;
+		}
+	}
+	if (f->record->size < f->record_min)
+		f->record->size = f->record_min;
+	if (f->record->size == 0)
+		return 0;
+	for (i = f->record->size - 1; ; --i) {
+		if (f->record->data[i] != ' ') {
+			i++;
+			break;
+		}
+		if (i == 0) break;
+	}
+	size = i;
+	return size;
+}
+
 static int
 lineseq_write (cob_file_api *a, cob_file *f, const int opt)
 {
@@ -4613,21 +4693,7 @@ lineseq_write (cob_file_api *a, cob_file *f, const int opt)
 	COB_UNUSED (a);
 
 	/* Determine the size to be written */
-	if (f->file_features & COB_FILE_LS_FIXED) {
-		size = f->record->size;
-	} else if (f->record->size == 0) {
-		size = 0;
-	} else {
-		size_t i;
-		for (i = f->record->size - 1; ; --i) {
-			if (f->record->data[i] != ' ') {
-				i++;
-				break;
-			}
-			if (i == 0) break;
-		}
-		size = i;
-	}
+	size = lineseq_size (f);
 
 	fo = (FILE*)f->file;
 	if (f->flag_is_pipe) {
@@ -4775,22 +4841,7 @@ lineseq_rewrite (cob_file_api *a, cob_file *f, const int opt)
 		return COB_STATUS_30_PERMANENT_ERROR;
 
 	curroff = ftell ((FILE *)f->file);	/* Current file position */
-	/* Determine the size to be written */
-	if ((f->file_features & COB_FILE_LS_FIXED)) {
-		size = f->record->size;
-	} else if (f->record->size == 0) {
-		size = 0;
-	} else {
-		size_t i;
-		for (i = f->record->size - 1; ; --i) {
-			if (f->record->data[i] != ' ') {
-				i++;
-				break;
-			}
-			if (i == 0) break;
-		}
-		size = i;
-	}
+	size = lineseq_size (f);
 
 	p = f->record->data;
 	psize = size;
@@ -5777,6 +5828,10 @@ cob_file_destroy (cob_file **pfl)
 			cob_cache_free (fl->keys);
 			fl->keys = NULL;
 		}
+		if (fl->org_filename) {
+			cob_cache_free (fl->org_filename);
+			fl->org_filename = NULL;
+		}
 		cob_cache_free (fl);
 		*pfl = NULL;
 	}
@@ -6165,6 +6220,7 @@ cob_pre_open_def (cob_file *f, char *setdef, char *isdef, int checkfile)
 void
 cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 {
+	char	*cp;
 	if (f->file_version != COB_FILE_VERSION) {
 		cob_runtime_error (_("ERROR FILE %s does not match current version; Recompile the program"),
 							f->select_name);
@@ -6290,6 +6346,23 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 		}
 	}
 	cob_cache_file (f);
+
+	f->flag_is_concat = 0;
+	if (file_setptr->cob_concat_name
+	 && (f->organization == COB_ORG_SEQUENTIAL
+	  || f->organization == COB_ORG_LINE_SEQUENTIAL) 
+	 && (mode == COB_OPEN_INPUT 
+	  || mode == COB_OPEN_I_O)
+	 && (cp = strchr(file_open_name,file_setptr->cob_concat_sep[0])) != NULL
+	 && file_open_name[0] != '>'
+	 && file_open_name[0] != '<'
+	 && file_open_name[0] != '|') {
+		f->flag_is_concat = 1;
+		f->org_filename = cob_strdup (file_open_name);
+		f->nxt_filename = strchr(f->org_filename,file_setptr->cob_concat_sep[0]);
+		*f->nxt_filename++ = 0;
+		file_open_name = f->org_filename;
+	}
 
 	if (!f->flag_optional
 	 && !isdirvalid(file_open_name)) {
@@ -6803,6 +6876,8 @@ cob_rewrite (cob_file *f, cob_field *rec, const int opt, cob_field *fnstatus)
 		}
 	} else if (f->flag_redef) {
 		f->record->size = f->record_max;
+	} else {
+		f->record->size = rec->size;
 	}
 
 	if (f->flag_write_chk_dups) {

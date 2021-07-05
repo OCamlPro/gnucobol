@@ -503,6 +503,8 @@ static struct config_tbl gc_conf[] = {
 	{"COB_FILE_ISNODAT", "file_isnodat","0", 	NULL, GRP_FILE, ENV_BOOL, SETPOS (cob_file_isnodat)},
 	{"COB_STOP_RUN_COMMIT", "stop_run_commit", 	"0", 	NULL, GRP_FILE, ENV_BOOL, SETPOS (cob_stop_run_commit)},
     {"COB_DUPS_AHEAD","dups_ahead",     "default",dups_opts,GRP_FILE,ENV_UINT|ENV_ENUMVAL,SETPOS(cob_file_dups),0,3},
+    {"COB_SEQ_CONCAT_NAME","seq_concat_name","0",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_concat_name)},
+    {"COB_SEQ_CONCAT_SEP","seq_concat_sep","+",NULL,GRP_FILE,ENV_CHAR,SETPOS(cob_concat_sep),1},
 #ifdef  WITH_DB
 	{"DB_HOME", "db_home", 			NULL, 	NULL, GRP_FILE, ENV_FILE, SETPOS (bdb_home)},
 #endif

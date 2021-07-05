@@ -1,4 +1,13 @@
 
+2021-07-05  Ron Norman <rjn@inglenet.com>
+
+	* common.h: Added  cob_file   flag_is_concat, org_filename and nxt_filename
+	* common.c: Handle runtime options COB_SEQ_CONCAT_NAME and
+				COB_SEQ_CONCAT_SEP used for 'concatenated input files'
+	* coblocal.h: Added  fields for concatenated files
+	* fileio.c: Add code to handle SEQUENTIAL and LINE SEQUENTIAL
+				concatenated input files for OPEN INPUT and I-O
+
 2021-07-02  Ron Norman <rjn@inglenet.com>
 
 	* common.h: Added  FCD2 structure

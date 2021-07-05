@@ -1585,7 +1585,8 @@ typedef struct __cob_file {
 	unsigned int		flag_do_jrn:1;		/* fileio: record updates to journal/audit trail */
 	unsigned int		flag_updt_file:1;	/* Allow this 'cob_file' to be updated */
 	unsigned int		flag_is_std:1;		/* LINE SEQUENTIAL as 'stdin/stdout/stderr' */
-	unsigned int		unused_bits:6;
+	unsigned int		flag_is_concat:1;	/* SEQUENTIAL concatenated file names */
+	unsigned int		unused_bits:5;
 
 	cob_field		*last_key;		/* Last field used as 'key' for I/O */
 	unsigned char		last_operation;		/* Most recent I/O operation */
@@ -1616,6 +1617,8 @@ typedef struct __cob_file {
 	void				*fileout;		/* output side of bi-directional pipe 'FILE*' */
 	int					fdout;			/* output side of bi-directional pipe 'fd' */
 	int					limitreads;		/* Database should LIMIT rows read */
+	char				*org_filename;	/* Full concatenated file name */
+	char				*nxt_filename;	/* Next position in org_filename */
 } cob_file;
 
 

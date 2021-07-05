@@ -20994,3 +20994,141 @@ List tmp directory       Open Sts: 9/021
 
 AT_CLEANUP
 
+AT_SETUP([Test Concatenated Files])
+AT_KEYWORDS([Status])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT FLATFILE 
+           ASSIGN TO THE-FILE-NAME
+           ORGANIZATION LINE SEQUENTIAL
+           FILE STATUS IS FLAT-STAT.
+
+       DATA  DIVISION.
+       FILE SECTION.
+       FD  FLATFILE
+           BLOCK CONTAINS 5 RECORDS.
+      
+       01  FLAT-RECORD.
+           10  FILE-NAME                       PICTURE X(8). 
+           10  FLAT-MARK                       PICTURE X(6).
+           10  FLAT-RECNUM                     PICTURE X(6). 
+           10  FLAT-NUM                        PICTURE Z9.
+           10  FLAT-FILLER                     PICTURE X(2).
+       
+       WORKING-STORAGE SECTION.
+       77  REC-NUM           VALUE  0          PICTURE 9(2).
+       77  MAX-REC           VALUE  3          PICTURE 9(2).
+       77  FLAT-STAT                           PICTURE X(2).
+       77  THE-FILE-NAME                       PICTURE X(48).
+      
+       PROCEDURE DIVISION.
+           MOVE "file1" TO THE-FILE-NAME
+           PERFORM LOADFILE.
+
+           MOVE "file2" TO THE-FILE-NAME
+           PERFORM LOADFILE.
+
+           MOVE "file3" TO THE-FILE-NAME
+           PERFORM LOADFILE.
+
+           DISPLAY "COB_SEQ_CONCAT_NAME" UPON ENVIRONMENT-NAME.
+           DISPLAY "TRUE"                UPON ENVIRONMENT-VALUE.
+           MOVE "file1+file2+file3" TO THE-FILE-NAME
+           PERFORM UPDTFILE.
+
+           DISPLAY "COB_SEQ_CONCAT_SEP" UPON ENVIRONMENT-NAME.
+           DISPLAY "&"                  UPON ENVIRONMENT-VALUE.
+           MOVE "file1&file2&file3" TO THE-FILE-NAME
+           PERFORM LISTFILE.
+           STOP RUN RETURNING 0.
+      
+       LISTFILE.
+           OPEN INPUT FLATFILE.
+           IF FLAT-STAT NOT = "00"
+               DISPLAY "OPEN INPUT: " THE-FILE-NAME " Sts:" FLAT-STAT
+           END-IF.
+           PERFORM UNTIL FLAT-STAT NOT = "00"
+               PERFORM READ-RECORD
+           END-PERFORM.
+           CLOSE FLATFILE.
+
+       UPDTFILE.
+           OPEN I-O FLATFILE.
+           IF FLAT-STAT NOT = "00"
+               DISPLAY "OPEN I-O: " THE-FILE-NAME " Sts:" FLAT-STAT
+           END-IF.
+           PERFORM VARYING REC-NUM FROM 1 BY 1
+                     UNTIL FLAT-STAT NOT = "00"
+               MOVE SPACES          TO FLAT-RECORD
+               READ FLATFILE
+               IF REC-NUM = 5
+                  MOVE "Hello" TO FLAT-MARK
+                  REWRITE FLAT-RECORD
+                  IF FLAT-STAT NOT = "00"
+                     DISPLAY "REWRITE5: " THE-FILE-NAME "Sts:" FLAT-STAT
+                  END-IF
+               END-IF
+               IF REC-NUM = 7
+                  MOVE "$$" TO FLAT-FILLER
+                  REWRITE FLAT-RECORD
+                  IF FLAT-STAT NOT = "44"
+      *  Cannot change size of LINE SEQ record
+                     DISPLAY "REWRITE7: " THE-FILE-NAME "Sts:" FLAT-STAT
+                  END-IF
+               END-IF
+           END-PERFORM.
+           CLOSE FLATFILE.
+
+       READ-RECORD.
+           MOVE SPACES                       TO FLAT-RECORD.
+           READ FLATFILE
+           IF FLAT-STAT NOT = "00"
+               IF FLAT-STAT NOT = "10"
+                   DISPLAY "Read Status: " FLAT-STAT
+               END-IF
+           ELSE
+               DISPLAY FLAT-RECORD "."
+           END-IF.
+
+       LOADFILE.
+           OPEN OUTPUT FLATFILE.
+           IF FLAT-STAT NOT = "00"
+               DISPLAY "OPEN OUTPUT: " THE-FILE-NAME " Sts:" FLAT-STAT
+           END-IF.
+           PERFORM LOAD-RECORD VARYING REC-NUM FROM 1 BY 1 
+                                 UNTIL REC-NUM > MAX-REC.
+           CLOSE FLATFILE.
+      
+       LOAD-RECORD.
+           MOVE SPACES                       TO FLAT-RECORD.
+           MOVE "Record"                     TO FLAT-RECNUM.
+           MOVE THE-FILE-NAME                TO FILE-NAME.
+           MOVE REC-NUM                      TO FLAT-NUM.
+           WRITE FLAT-RECORD.
+           IF FLAT-STAT NOT = "00"
+               DISPLAY "Write: " FILE-NAME " Rec#" REC-NUM 
+                       " Sts:" FLAT-STAT
+           END-IF.
+])
+
+AT_CHECK([$COMPILE -x -std=mf -debug -Wall prog.cob ], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [file1         Record 1  .
+file1         Record 2  .
+file1         Record 3  .
+file2         Record 1  .
+file2   Hello Record 2  .
+file2         Record 3  .
+file3         Record 1  .
+file3         Record 2  .
+file3         Record 3  .
+], [])
+
+AT_CLEANUP
+
