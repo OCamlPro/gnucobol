@@ -44,6 +44,10 @@
 static	cob_global	*cobglobptr= NULL;
 static	cob_settings	*cobsetptr= NULL;
 static	int		bDidReportInit = 0;
+static	int		inDetailDecl = 0;
+static 	cob_report_control	*xrc, *xrp;
+static 	cob_report_control_ref	*xrr;
+static 	cob_report_line		*xpl;
 
 #ifndef TRUE
 #define TRUE 1
@@ -283,6 +287,7 @@ reportInitialize()
 	if(bDidReportInit)
 		return;
 	bDidReportInit = 1;
+	inDetailDecl = 0;
 }
 
 /*
@@ -1544,6 +1549,9 @@ cob_report_generate (cob_report *r, cob_report_line *l, int ctl)
 	r->foot_next_page = FALSE;
 	DEBUG_LOG("rw",("~  Enter %sGENERATE with ctl == %d\n",r->first_generate?"first ":"",ctl));
 	if (ctl > 0) {	 /* Continue Processing Footings from last point */
+		if (ctl == inDetailDecl) {
+			goto do_detail;
+		}
 		for (rc = r->controls; rc; rc = rc->next) {
 			for (rr = rc->control_ref; rr; rr = rr->next) {
 				if (rr->ref_line->flags & COB_REPORT_CONTROL_FOOTING) {
@@ -1788,6 +1796,23 @@ PrintHeading:
 			l = get_print_line(pl);		/* Find line with data fields */
 			if(!l->suppress) {
 				r->next_just_set = FALSE;
+				if (l->use_decl > 0) {
+					xrc = rc;
+					xrp = rp;
+					xrr = rr;
+					xpl = pl;
+					inDetailDecl = l->use_decl;
+					DEBUG_LOG("rw",("  Return to Detail Declaratives %d\n",l->use_decl));
+					return l->use_decl;
+do_detail:
+					inDetailDecl = 0;
+					DEBUG_LOG("rw",("  Continue after Detail Declaratives %d\n",ctl));
+					rc = xrc;
+					rp = xrp;
+					rr = xrr;
+					pl = xpl;
+					xpl = NULL;
+				}
 				report_line(r,l);	/* Generate this DETAIL line */
 			}
 			l->suppress = FALSE;
