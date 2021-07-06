@@ -936,6 +936,7 @@ struct cb_field {
 	unsigned int flag_sql_filler : 1;	/* Warned about FILLER for SQL */
 	unsigned int flag_sym_emitted: 1;	/* cob_symbol was emitted */
 	unsigned int flag_cob_field	: 1;	/* Had cob_field emitted */
+	unsigned int flag_binary_assign: 1;	/* BINARY field for simple assignment */
 
 };
 

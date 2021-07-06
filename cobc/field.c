@@ -2787,10 +2787,10 @@ unbounded_again:
 	 || f->usage == CB_USAGE_INDEX) {
 		if (f->size == sizeof(int)) {
 #ifdef COB_ALLOW_UNALIGNED
-			f->flag_real_binary = 1;	/* Alignment not required */
+			f->flag_binary_assign = 1;	/* Alignment not required */
 #else
 			if ((f->offset % sizeof(int)) == 0) {
-				f->flag_real_binary = 1;/* Field is aligned */
+				f->flag_binary_assign = 1;/* Field is aligned */
 			}
 #endif
 		}

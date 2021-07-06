@@ -8721,6 +8721,7 @@ output_stmt (cb_tree x)
 		 || CB_TREE_CLASS (ap->var) == CB_CLASS_ALPHABETIC) {
 			f1 = cb_code_field(ap->var);
 			if (!f1->flag_real_binary
+			 && !f1->flag_binary_assign
 			 && f1->pic
 			 && f1->usage != CB_USAGE_LENGTH) {
 				output_prefix ();

@@ -1,7 +1,9 @@
 
 2021-07-06  Ron Norman <rjn@inglenet.com>
 
-	* field.c: If field is effectively a machine 'int' set flag__real_binary
+	* tree.h: Add cb_field  flag_binary_assign  indicates simple assign 
+	* field.c: If field is effectively a machine 'int' set flag_binary_assign
+	* codegen.c: Only use cob_set_llcon is not flag_binary_assign
 	* typeck.c: If assigning a value to an 'int' field and value fits
 	          then try to emit simple assignment statement
 
