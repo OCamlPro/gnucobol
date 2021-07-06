@@ -10657,7 +10657,11 @@ cb_build_move_literal (cb_tree src, cb_tree dst)
 	 && cb_fits_int (src)
 	 && f->size <= 8) {
 		if (cb_binary_truncate) {
-			return CB_BUILD_FUNCALL_2 ("cob_move", src, dst);
+			if (!CB_NUMERIC_LITERAL_P (src)
+			 || CB_LITERAL (src)->scale != 0
+			 || f->size != sizeof(int)
+			 || !f->flag_real_binary)
+				return CB_BUILD_FUNCALL_2 ("cob_move", src, dst);
 		}
 
 		val = cb_get_int (src);

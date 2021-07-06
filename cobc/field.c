@@ -2775,11 +2775,33 @@ unbounded_again:
 		}
 	}
 
+	if (f->storage == CB_STORAGE_LOCAL 
+	 || f->storage == CB_STORAGE_LINKAGE 
+	 || f->flag_item_based) {
+			/* Can not depend on the data being aligned */
+	} else
+	if (f->usage == CB_USAGE_COMP_5
+#ifdef WORDS_BIGENDIAN
+	 || f->usage == CB_USAGE_BINARY
+#endif
+	 || f->usage == CB_USAGE_INDEX) {
+		if (f->size == sizeof(int)) {
+#ifdef COB_ALLOW_UNALIGNED
+			f->flag_real_binary = 1;	/* Alignment not required */
+#else
+			if ((f->offset % sizeof(int)) == 0) {
+				f->flag_real_binary = 1;/* Field is aligned */
+			}
+#endif
+		}
+	}
+
 	/* The size of redefining field should not be larger than
 	   the size of redefined field unless the redefined field
 	   is level 01 and non-external */
-	if (f->redefines && f->redefines->flag_external &&
-	    (f->size * f->occurs_max > f->redefines->size * f->redefines->occurs_max)) {
+	if (f->redefines 
+	 && f->redefines->flag_external 
+	 && (f->size * f->occurs_max > f->redefines->size * f->redefines->occurs_max)) {
 		if (cb_larger_redefines_ok) {
 			cb_warning_x (cb_warn_additional, CB_TREE (f),
 				_("size of '%s' larger than size of '%s'"),
@@ -2829,9 +2851,9 @@ cb_validate_field (struct cb_field *f)
 	}
 
 	/* Set up parameters */
-	if (f->storage == CB_STORAGE_LOCAL ||
-	    f->storage == CB_STORAGE_LINKAGE ||
-	    f->flag_item_based) {
+	if (f->storage == CB_STORAGE_LOCAL 
+	 || f->storage == CB_STORAGE_LINKAGE 
+	 || f->flag_item_based) {
 		f->flag_local = 1;
 	}
 	if (f->storage == CB_STORAGE_LINKAGE || f->flag_item_based) {

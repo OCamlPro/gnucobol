@@ -1,9 +1,17 @@
 
+2021-07-06  Ron Norman <rjn@inglenet.com>
+
+	* field.c: If field is effectively a machine 'int' set flag__real_binary
+	* typeck.c: If assigning a value to an 'int' field and value fits
+	          then try to emit simple assignment statement
+
 2021-06-28  Ron Norman <rjn@inglenet.com>
+
 	* cobc.c: Accept -fdatamap and then report field 'offset' 
 	          instead of 'TYPE'
 
 2021-06-26  Ron Norman <rjn@inglenet.com>
+
 	* cobc.h: Add extern cb_dialect
 	* cobc.c: Set cb_dialect to -std= value
 	* codegen.c: Emit setting of module compile dialect
