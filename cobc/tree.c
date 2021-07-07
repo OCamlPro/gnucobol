@@ -44,9 +44,6 @@
 #include "tree.h"
 #define _PARSER_H	/* work around bad Windows SDK header */
 #include "parser.h"
-#ifndef THREEDIMENSIONAL
-#error wrong "parser.h" used, fix include paths
-#endif
 
 #define PIC_ALPHABETIC		0x01
 #define PIC_NUMERIC		0x02
