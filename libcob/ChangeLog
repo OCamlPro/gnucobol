@@ -1,11 +1,15 @@
 
+2021-07-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* reportio.c: move hard line/col limit to REPORT_MAX_LINES REPORT_MAX_COLS
+	* reportio.c (write_rec): changed to completely use cob_write
+	  for CODE IS to handle all file attributes; backup and restore
+	  original record definition
+
 2021-07-07  Ron Norman <rjn@inglenet.com>
 
-	* reportio.c: Fix for invoke DECLARATIVES for DETAIL line
-
-2021-07-05  Ron Norman <rjn@inglenet.com>
-
-	* reportio.c: Fix to invoke DECLARATIVES for DETAIL line
+	* reportio.c (cob_report_generate): Fix bug #745 - missing invoke of
+	  DECLARATIVES for DETAIL line
 
 2021-07-05  Ron Norman <rjn@inglenet.com>
 
