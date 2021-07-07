@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2013-2019 Free Software Foundation, Inc.
+   Copyright (C) 2013-2021 Free Software Foundation, Inc.
    Written by Ron Norman, Simon Sobisch
 
    This file is part of GnuCOBOL.
@@ -33,6 +33,10 @@
 #include "libcob.h"
 #include "coblocal.h"
 
+/* hard limit: */
+#define REPORT_MAX_LINES 9999
+#define REPORT_MAX_COLS 999
+
 #ifdef	WORDS_BIGENDIAN
 #define	COB_MAYSWAP_16(x)	((unsigned short)(x))
 #define	COB_MAYSWAP_32(x)	((unsigned int)(x))
@@ -44,6 +48,10 @@
 static	cob_global	*cobglobptr= NULL;
 static	cob_settings	*cobsetptr= NULL;
 static	int		bDidReportInit = 0;
+static	int		inDetailDecl = 0;
+static 	cob_report_control	*xrc, *xrp;
+static 	cob_report_control_ref	*xrr;
+static 	cob_report_line		*xpl;
 
 #ifndef TRUE
 #define TRUE 1
@@ -283,6 +291,7 @@ reportInitialize()
 	if(bDidReportInit)
 		return;
 	bDidReportInit = 1;
+	inDetailDecl = 0;
 }
 
 /*
@@ -750,34 +759,55 @@ line_control_chg(cob_report *r, cob_report_line *l, cob_field *f)
  * Write one line of report 
  */
 static void
-write_rec(cob_report *r, int opt)
+write_rec (cob_report *r, int opt)
 {
 	cob_file	*f = r->report_file;
+	const size_t	record_size = f->record->size;
 	int		num = opt & COB_WRITE_MASK;
-		
-	if (f->record->size > (unsigned int)r->def_cols)	/* Truncate line if needed */
+
+	/* TODO: check in general how to work with report-files and EXTFH :-| */
+
+	/* temporary truncate line if needed, max is REPORT_MAX_COLS */
+	if (f->record->size > (unsigned int)r->def_cols)
 		f->record->size = r->def_cols;
 
 	if (r->code_is_present
 	 && r->code_len > 0) {			/* Insert CODE IS value */
-		 if (f->file) {
-			 if (num > 1
-			 && (opt & COB_WRITE_LINES)) {
-				opt = (opt & ~COB_WRITE_MASK) | 1;
-				while (num > 0) {
-			 		fwrite(r->code_is, r->code_len, 1, (FILE*)f->file);
-					cob_write(f, f->record, opt, NULL, 0);
-					memset(f->record->data,' ',f->record->size);
-					num--;
-				}
-			 } else {
-			 	fwrite(r->code_is, r->code_len, 1, (FILE*)f->file);
-				cob_write(f, f->record, opt, NULL, 0);
-			 }
-		 }
+
+		/* temporarily adjust the internal record to be written later,
+		   because otherwise that would not be handled with the file attributes
+		   as we don't want to adjust the original definition: backup and restore */
+
+		unsigned char data[REPORT_MAX_COLS + 2];
+		unsigned char *orig_data = f->record->data;
+		size_t record_size_left = f->record->size;
+
+		f->record->data = data;
+		f->record->size += r->code_len;
+		if (f->record->size > REPORT_MAX_COLS) {
+			f->record->size = REPORT_MAX_COLS;
+			record_size_left = f->record->size - r->code_len;
+		}
+		memcpy (data, r->code_is, r->code_len);
+		memcpy (data + r->code_len, orig_data, record_size_left);
+		data[f->record->size + 1] = 0;
+
+		if (num > 1
+		 && (opt & COB_WRITE_LINES)) {
+			opt = (opt & ~COB_WRITE_MASK) | 1;
+			while (num > 0) {
+		 		cob_write (f, f->record, opt, NULL, 0);
+				memset (data + r->code_len, ' ', record_size_left);
+				num--;
+			}
+		} else {
+			cob_write (f, f->record, opt, NULL, 0);
+		}
+		f->record->data = orig_data;
 	} else {
-		cob_write(f, f->record, opt, NULL, 0);
+		cob_write (f, f->record, opt, NULL, 0);
 	}
+	f->record->size = record_size;
 }
 
 /*
@@ -1299,11 +1329,11 @@ cob_report_initiate(cob_report *r)
 		cob_set_exception (COB_EC_REPORT_ACTIVE);
 		return;
 	}
-	if (r->def_lines > 9999)
-		r->def_lines = 9999;
-	if (r->def_cols > 999
+	if (r->def_lines > REPORT_MAX_LINES)
+		r->def_lines = REPORT_MAX_LINES;
+	if (r->def_cols > REPORT_MAX_COLS
 	 || r->def_cols < 1)
-		r->def_cols = 999;
+		r->def_cols = REPORT_MAX_COLS;
 	if((r->def_first_detail > 0 && !(r->def_first_detail >= r->def_heading))
 	|| (r->def_last_detail > 0 && !(r->def_last_detail >= r->def_first_detail))
 	|| (r->def_footing > 0 && !(r->def_footing >= r->def_heading))
@@ -1525,7 +1555,7 @@ cob_report_generate (cob_report *r, cob_report_line *l, int ctl)
 	cob_report_control	*rc, *rp;
 	cob_report_control_ref	*rr;
 	cob_report_line		*pl;
-	int			maxctl,ln,num,gengrp;
+	static	int		maxctl,ln,num,gengrp;
 #if defined(COB_DEBUG_LOG) 
 	char			wrk[256];
 #endif
@@ -1544,6 +1574,9 @@ cob_report_generate (cob_report *r, cob_report_line *l, int ctl)
 	r->foot_next_page = FALSE;
 	DEBUG_LOG("rw",("~  Enter %sGENERATE with ctl == %d\n",r->first_generate?"first ":"",ctl));
 	if (ctl > 0) {	 /* Continue Processing Footings from last point */
+		if (ctl == inDetailDecl) {
+			goto do_detail;
+		}
 		for (rc = r->controls; rc; rc = rc->next) {
 			for (rr = rc->control_ref; rr; rr = rr->next) {
 				if (rr->ref_line->flags & COB_REPORT_CONTROL_FOOTING) {
@@ -1788,6 +1821,23 @@ PrintHeading:
 			l = get_print_line(pl);		/* Find line with data fields */
 			if(!l->suppress) {
 				r->next_just_set = FALSE;
+				if (l->use_decl > 0) {
+					xrc = rc;
+					xrp = rp;
+					xrr = rr;
+					xpl = pl;
+					inDetailDecl = l->use_decl;
+					DEBUG_LOG("rw",("  Return to Detail Declaratives %d\n",l->use_decl));
+					return l->use_decl;
+do_detail:
+					inDetailDecl = 0;
+					DEBUG_LOG("rw",("  Continue after Detail Declaratives %d\n",ctl));
+					rc = xrc;
+					rp = xrp;
+					rr = xrr;
+					pl = xpl;
+					xpl = NULL;
+				}
 				report_line(r,l);	/* Generate this DETAIL line */
 			}
 			l->suppress = FALSE;
