@@ -4883,7 +4883,7 @@ select_clause:
 | collating_sequence_clause
 | collating_sequence_clause_key
 | record_key_clause
-| alternative_record_key_clause
+| alternate_record_key_clause
 | file_status_clause
 | lock_mode_clause
 | sharing_clause
@@ -5106,9 +5106,9 @@ access_mode:
 ;
 
 
-/* ALTERNATIVE RECORD KEY clause */
+/* ALTERNATE RECORD KEY clause */
 
-alternative_record_key_clause:
+alternate_record_key_clause:
   ALTERNATE _record _key _is reference _split_keys flag_duplicates _password_clause _suppress_clause
   {
 	struct cb_alt_key *p;
