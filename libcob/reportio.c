@@ -1530,7 +1530,7 @@ cob_report_generate (cob_report *r, cob_report_line *l, int ctl)
 	cob_report_control	*rc, *rp;
 	cob_report_control_ref	*rr;
 	cob_report_line		*pl;
-	int			maxctl,ln,num,gengrp;
+static	int			maxctl,ln,num,gengrp;
 #if defined(COB_DEBUG_LOG) 
 	char			wrk[256];
 #endif

@@ -1,4 +1,8 @@
 
+2021-07-07  Ron Norman <rjn@inglenet.com>
+
+	* reportio.c: Fix for invoke DECLARATIVES for DETAIL line
+
 2021-07-05  Ron Norman <rjn@inglenet.com>
 
 	* reportio.c: Fix to invoke DECLARATIVES for DETAIL line

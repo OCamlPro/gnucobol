@@ -4218,9 +4218,7 @@ AT_CHECK([diff reference report.txt], [0])
 
 AT_CLEANUP
 
-
-
-AT_SETUP([Test Report with DECLARATIVES])
+AT_SETUP([Test Report dump DECLARATIVES])
 AT_KEYWORDS([Dump])
 
 AT_DATA([prog.cob], [
@@ -4257,22 +4255,22 @@ AT_DATA([prog.cob], [
           05 flt        usage float-short     value 3.40282e+038.
 
        REPORT SECTION.
-       RD  RP 
-           CODE IS "Hi-Q: " *> literal
-           PAGE LIMIT 10 LINES 
-                      50 COLUMNS *> literal
+       RD  RP
+           CODE IS "Hi-Q: "
+           PAGE LIMIT 10 LINES
+                      50 COLUMNS
            HEADING 1
            FIRST DETAIL 4.
        01 HEADING-LINE.
           02 TYPE PAGE HEADING LINE PLUS 1.
-            05  COLUMN 1      PIC X(50) VALUE 
+            05  COLUMN 1      PIC X(50) VALUE
                 "         1         2         3         4         5".
           02 TYPE PAGE HEADING LINE PLUS 1.
-      *     05  COLUMN 1      PIC X(50) VALUE 
-      *         "12345678901234567890123456789012345678901234567890".123
-            05  COLUMN 1      OCCURS 5 TIMES
-                  VARYING IDX1 FROM 1 BY 1. 
-                10  FILLER    PIC X(10) SOURCE DIGS (IDX1).
+            05  COLUMN 1      PIC X(50) VALUE
+                "12345678901234567890123456789012345678901234567890".
+      *     05  COLUMN 1      OCCURS 5 TIMES
+      *           VARYING IDX1 FROM 1 BY 1.
+      *         10  FILLER    PIC X(10) SOURCE DIGS (IDX1).
 
        01  RP-DTL1 TYPE DETAIL, LINE + 1.
             03  NUMS  COLUMN 1   PIC 999 OCCURS 3 TIMES STEP 10.
@@ -4284,6 +4282,8 @@ AT_DATA([prog.cob], [
                05  DTL2      PIC X.
                05  TAG2      PIC X(5).
                05  FILLER    PIC XX.
+      *     03  MRK2  COLUMN + 2    PIC X(4).
+            03  MRK2  COLUMN  42    PIC X(4).
 
        01  RP-DTL3 TYPE DETAIL, LINE + 1.
             03  NNNS  COLUMN 1, 11, 21, 27 PIC 999.
@@ -4306,6 +4306,10 @@ AT_DATA([prog.cob], [
            OPEN OUTPUT RP-FILE
            INITIATE RP
 
+           MOVE 169 TO NNNS (1), NNNS (2), NNNS (3) NNNS (4)
+           MOVE "NOT" TO TAGP.
+           MOVE "NOW" TO MRK4.
+
            MOVE 100 TO NUMS (1), NUMS (2), NUMS (3)
            MOVE "<1>" TO MARK.
            GENERATE rp-dtl1
@@ -4313,6 +4317,7 @@ AT_DATA([prog.cob], [
            MOVE ALL '*' TO GRPS(1), GRPS(2), GRPS(3)
            MOVE "Tag1" TO TAG1 (1), TAG1 (2), TAG1 (3)
            MOVE "Tag2" TO TAG2 (1), TAG2 (2), TAG2 (3)
+           MOVE "<2>" TO MRK2.
            GENERATE RP-DTL2
 
            MOVE 200 TO NNNS (1), NNNS (2), NNNS (3) NNNS (4)
@@ -4332,7 +4337,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -std=default -w prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE -std=default -debug -fdump=ALL prog.cob ], [0], [], [])
 
 AT_CHECK([export PRINTOUT=tstdmrp.txt
 $COBCRUN_DIRECT ./prog], [0], [Hello World
@@ -4342,20 +4347,21 @@ $COBCRUN_DIRECT ./prog], [0], [Hello World
 AT_CAPTURE_FILE(./tstdmrp.txt)
 
 AT_DATA([reference], [Hi-Q:          1         2         3         4         5
-Hi-Q:          1         2         3         4         5
+Hi-Q: 12345678901234567890123456789012345678901234567890
 Hi-Q: 
 Hi-Q: 100       100       100        <1>
-Hi-Q: Tag1 *Tag2 **Tag1 _Tag2 **Tag1 *Tag2 **
-Hi-Q: 000       000       000   000
-Hi-Q: 000      000000000
+Hi-Q: Tag1 *Tag2 **Tag1 _Tag2 **Tag1 *Tag2 **  <2>
 Hi-Q: 200       200       200   200  <3>
 Hi-Q: 400      401402403 <4>
+Hi-Q: 
+Hi-Q: 
 Hi-Q: 
 ])
 
 AT_CHECK([gcdiff reference tstdmrp.txt], [0], [], [])
 
 AT_CLEANUP
+
 
 AT_SETUP([Report CODE and LIMIT COLUMNS])
 AT_KEYWORDS([report runfile])
