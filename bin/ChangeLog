@@ -1,4 +1,8 @@
 
+2021-05-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobcrun.c: use double-dash for long options
+
 2021-01-07  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobcrun.c (cobcrun_print_version, cobcrun_print_usage): msgid change

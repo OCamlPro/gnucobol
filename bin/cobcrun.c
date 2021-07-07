@@ -123,21 +123,21 @@ cobcrun_print_usage (char * prog)
 	putchar ('\n');
 	putchar ('\n');
 	puts (_("Options:"));
-	puts (_("  -h, -help                      display this help and exit"));
-	puts (_("  -V, -version                   display cobcrun and runtime version and exit"));
-	puts (_("  -i, -info                      display runtime information (build/environment)"));
-	puts (_("  -v, -verbose                   display extended output with --info"));
+	puts (_("  -h, --help                      display this help and exit"));
+	puts (_("  -V, --version                   display cobcrun and runtime version and exit"));
+	puts (_("  -i, --info                      display runtime information (build/environment)"));
+	puts (_("  -v, --verbose                   display extended output with --info"));
 #if 0 /* Simon: currently only removing the path from cobcrun in output --> don't show */
-	puts (_("  -q, -brief                     reduced displays"));
+	puts (_("  -q, --brief                     reduced displays"));
 #endif
-	puts (_("  -c <file>, -config=<file>      set runtime configuration from <file>"));
-	puts (_("  -r, -runtime-config            display current runtime configuration\n"
-	        "                                 (value and origin for all settings)"));
-	puts (_("  -M <module>, -module=<module>  set entry point module name and/or load path\n"
-			"                                 where -M module prepends any directory to the\n"
-			"                                 dynamic link loader library search path\n"
-			"                                 and any basename to the module preload list\n"
-			"                                 (COB_LIBRARY_PATH and/or COB_PRELOAD)"));
+	puts (_("  -c <file>, --config=<file>      set runtime configuration from <file>"));
+	puts (_("  -r, --runtime-config            display current runtime configuration\n"
+	        "                                  (value and origin for all settings)"));
+	puts (_("  -M <module>, --module=<module>  set entry point module name and/or load path\n"
+			"                                  where -M module prepends any directory to the\n"
+			"                                  dynamic link loader library search path\n"
+			"                                  and any basename to the module preload list\n"
+			"                                  (COB_LIBRARY_PATH and/or COB_PRELOAD)"));
 	putchar ('\n');
 	printf (_("Report bugs to: %s\n" 
 			  "or (preferably) use the issue tracker via the home page."), "bug-gnucobol@gnu.org");

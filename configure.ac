@@ -48,16 +48,17 @@ AC_CONFIG_FILES([tests/run_prog_manual.sh],
   [chmod +x tests/run_prog_manual.sh])
 
 # Note for SUN Solaris (gcc)
-# export/setenv CFLAGS "-m64 -mptr64"
-# export/setenv LDFLAGS "-m64 -mptr64 -L/usr/local/lib/sparcv9"
-# ./configure --libdir=/usr/local/lib/sparcv9
+#  option to configure/export/setenv: CC=gcc -m64 --libdir=/usr/local/lib/sparcv9
+# or:
+#  option to configure/export/setenv: CFLAGS=-m64 and LDFLAGS="-m64 -L/usr/local/lib/sparcv9"
 #
 # Hack for AIX 64 bit (gcc)
 # Required -
-# export/setenv CFLAGS=-maix64
-# export/setenv LDFLAGS=-maix64
+#  option to configure/export/setenv: CC=gcc -maix
+# or:
+#  option to configure/export/setenv: CFLAGS=-maix64 and LDFLAGS=-maix64
 
-if echo $CFLAGS | grep 'aix64' 1>/dev/null 2>&1; then
+if echo "$CC$CFLAGS" | grep 'aix64' 1>/dev/null 2>&1; then
 	if test -f /usr/ccs/bin/ar; then
 		AR="/usr/ccs/bin/ar -X64"
 	else
@@ -1139,12 +1140,11 @@ fi
 if test "$USE_CURSES" = "ncurses" -o "$USE_CURSES" = "check"; then
   AC_CHECK_LIB([ncurses], [initscr], [], [], [])
   if test "x$ac_cv_lib_ncurses_initscr" = "xyes"; then
-    AC_CHECK_HEADERS([ncurses.h], [USE_CURSES="ncurses"],
-      [AC_CHECK_HEADERS([ncurses/ncurses.h], [USE_CURSES="ncurses"],
-         [AC_CHECK_HEADERS([curses.h], [USE_CURSES="ncurses"],
-           [if test "$USE_CURSES" = "ncurses"; then
+    AC_CHECK_HEADERS([ncurses/ncurses.h], [USE_CURSES="ncurses"],
+      [AC_CHECK_HEADERS([ncurses.h], [USE_CURSES="ncurses"],
+         [if test "$USE_CURSES" = "ncurses"; then
               USE_CURSES="missing_header"
-            fi], [])], [])], [])
+          fi], [])], , [])
     if test "$USE_CURSES" = "ncurses"; then
       LIBCOB_LIBS="$LIBCOB_LIBS -lncurses"
     fi
@@ -2137,6 +2137,7 @@ AC_SUBST([COB_LIBRARY_PATH])
 AC_SUBST([COB_OBJECT_EXT])
 AC_SUBST([COB_MODULE_EXT])
 AC_SUBST([COB_EXE_EXT])
+AC_SUBST([QUOTE_INCLUDE_FLAG])
 AC_SUBST([COBC_CPPFLAGS])
 AC_SUBST([PROGRAMS_LIBS])
 AC_SUBST([LIBCOB_LIBS])

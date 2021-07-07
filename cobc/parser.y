@@ -35,6 +35,8 @@
 #include "cobc.h"
 #include "tree.h"
 
+#define _PARSER_H	/* work around bad Windows SDK header */
+
 #ifndef	_STDLIB_H
 #define	_STDLIB_H 1
 #endif

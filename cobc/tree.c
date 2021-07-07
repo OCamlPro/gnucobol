@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2020 Free Software Foundation, Inc.
+   Copyright (C) 2001-2021 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -42,7 +42,11 @@
 
 #include "cobc.h"
 #include "tree.h"
-#include <parser.h>
+#define _PARSER_H	/* work around bad Windows SDK header */
+#include "parser.h"
+#ifndef THREEDIMENSIONAL
+#error wrong "parser.h" used, fix include paths
+#endif
 
 #define PIC_ALPHABETIC		0x01
 #define PIC_NUMERIC		0x02
@@ -4313,11 +4317,11 @@ finalize_file (struct cb_file *f, struct cb_field *records)
 				f->key, f->component_list);
 		}
 		if (f->alt_key_list) {
-			for (cbak = f->alt_key_list; cbak; cbak = cbak->next) {
-				validate_indexed_key_field (f, records,
-					cbak->key, cbak->component_list);
-			}
+		for (cbak = f->alt_key_list; cbak; cbak = cbak->next) {
+			validate_indexed_key_field (f, records,
+				cbak->key, cbak->component_list);
 		}
+	}
 	}
 
 	/* Check the record size if it is limited */

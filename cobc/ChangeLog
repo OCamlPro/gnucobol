@@ -1,4 +1,15 @@
 
+2021-07-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* reserved.c, scanner.l, tree.c. pplex.l: use quotes again for including bison
+	  generated headers, fixing bug #721
+	* parser.y, reserved.c, scanner.l, tree.c: work around bad Windows SDK header
+	* pplex.l: fixed rule that could prevent PROCESS/CBL to work as intended
+
+2021-05-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* help.c: use double-dash for long options
+
 2021-05-12  Simon Sobisch <simonsobisch@gnu.org>
 
 	* pplex.l: fixed #716 by including necessary context for PROCESS statement
@@ -6855,7 +6866,7 @@
 
 2005-06-11  Roger While <simrw@sim-basis.de>
 
-	* Some cleanups
+	* some cleanups
 
 2005-06-09  Roger While <simrw@sim-basis.de>
 
@@ -6916,28 +6927,28 @@
 2005-05-03  Roger While <simrw@sim-basis.de>
 
 	* tree.h :  bit fields are unsigned. Round to boundaries.
-	  typeck.c :Internal register NUMBER-OF-CALL-PARAMETERS.
-	  tree.c :  Fix ambiguous paragraph errors.
-	  scanner.l :  Move some syntax from the parser to here in the lexxer.
-	  pplex.l : Initialize variables.
-	  parser.y Move some syntax to the lexer.
-	     Initialize variables.
-	     Allow MF relaxed syntax.
-	     SORT DUPLICATES is default. No need for warning.
-	  field.c : Allow larger redefines than original field for
-	     -std=cobol2002 and -std=mf.
-	  config.def : New variables - larger-redefines-ok and
-	     relaxed-syntax-check.
-	  codegen.c :  Do not generate unnecessary code e.g. switch
-	     statement for only one entry point, loop counters.
-	     Cater for NUMBER-OF-CALL-PARAMETERS.
-	     Initialize variables.
-	     Restructure generated C code.
-	     Use builtin_expect.
-	  cobc.c :  Initialize variables.
-	     Pass -fsigned-char to the compiler.
-	     Fix dangling file with multiple compile.
-	  cobc.h :  Extern definitions.
+	* typeck.c :Internal register NUMBER-OF-CALL-PARAMETERS.
+	* tree.c :  Fix ambiguous paragraph errors.
+	* scanner.l :  Move some syntax from the parser to here in the lexxer.
+	* pplex.l : Initialize variables.
+	* parser.y Move some syntax to the lexer.
+	  Initialize variables.
+	  Allow MF relaxed syntax.
+	  SORT DUPLICATES is default. No need for warning.
+	* field.c : Allow larger redefines than original field for
+	  -std=cobol2002 and -std=mf.
+	* config.def : New variables - larger-redefines-ok and
+	  relaxed-syntax-check.
+	* codegen.c :  Do not generate unnecessary code e.g. switch
+	  statement for only one entry point, loop counters.
+	  Cater for NUMBER-OF-CALL-PARAMETERS.
+	  Initialize variables.
+	  Restructure generated C code.
+	  Use builtin_expect.
+	* cobc.c :  Initialize variables.
+	  Pass -fsigned-char to the compiler.
+	  Fix dangling file with multiple compile.
+	* cobc.h :  Extern definitions.
 
 2005-04-15  Keisuke Nishida  <knishida@opencobol.org>
 
@@ -6953,16 +6964,15 @@
 
 2005-03-03  Roger While <simrw@sim-basis.de>
 
-	* cobc.h, tree.h, parser.y, reserved.c, cobc.c, tree.c, codegen.c,
-	  typeck.c :
-	  Implement LINAGE
-	  Implement -Os
-	  Implement stripping of main/modules with O2 or Os
-	  Fix dangling preprocess file after non-existent file
+	* tree.h, parser.y, reserved.c, tree.c, codegen.c, typeck.c :
+	  Implement LINAGE;
 	  Fix ASSIGN implicit data-item when not referenced
-	  Implement some options for gcc >= 3
 	  Change an incorrect long to int
 	  Change bit fields from long to int
+	* cobc.h, cobc.c: Implement -Os;
+	  Implement stripping of main/modules with O2 or Os;
+	* cobc.c: Fix dangling preprocess file after non-existent file;
+	  Implement some options for gcc >= 3
 
 2005-02-22  Roger While <simrw@sim-basis.de>
 
@@ -6990,14 +7000,12 @@
 
 2005-02-09  Roger While <simrw@sim-basis.de>
 
-	* codegen.c : Change order of generating variable
-	  assignment. In the generated C header, we now
-	  have firstly the item definitions, then the
-	  attributes and finally the cob_field items.
-	  EXTERNAL variable pointers are generated local
-	  to the static prog function.
-	  We are fairly close to acieving Keisuke's
-	  wish for generating just one source file.
+	* codegen.c : Change order of generating variable assignment. In the
+	  generated C header, we now have the item definitions first, then the
+	  attributes and finally the cob_field items; EXTERNAL variable pointers
+	  are generated local to the static prog function.
+	  We are fairly close to achieving Keisuke's wish for generating only
+	  a single source file.
 
 2005-02-08  Roger While <simrw@sim-basis.de>
 
@@ -7006,11 +7014,10 @@
 
 2005-02-08  Roger While <simrw@sim-basis.de>
 
-	* codegen.c : Rearrange generated code slightly
-	  Do not gen stack values we do not need
-	  Generate static function prototype so that we
-	  can gen code in order : main (if appropriate),
-	  entry points, static function
+	* codegen.c : Rearrange generated code slightly;
+	  Do not gen stack values we do not need;
+	  Generate static function prototype so that we can gen code in order:
+	  main (if appropriate), entry points, static function
 
 2005-02-07  Roger While <simrw@sim-basis.de>
 

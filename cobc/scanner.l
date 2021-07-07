@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2020 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2021 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Edwart Hart,
    Ron Norman
 
@@ -103,7 +103,11 @@ static int yywrap (void) {
 #endif
 
 #define YYSTYPE			cb_tree
-#include <parser.h>
+#define _PARSER_H	/* work around bad Windows SDK header */
+#include "parser.h"
+#ifndef THREEDIMENSIONAL
+#error wrong "parser.h" used, fix include paths
+#endif
 
 #define RETURN_TOK(expr)			\
 	do {					\
