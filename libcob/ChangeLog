@@ -331,6 +331,11 @@
 	* fisam.c: Code added for use of ISAM logging/transaction ability
 	* foci.c, fodbc.c: Set on flag_log_support always
 
+2021-01-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (print_version): msgid change moving URLs to parameter
+	  per gettext-guidelines
+
 2021-01-06  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (print_version): welcome 2021

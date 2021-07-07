@@ -28,7 +28,7 @@ AC_INIT([GnuCOBOL],
 	[bug-gnucobol@gnu.org],
 	[gnucobol],
 	[https://www.gnu.org/software/gnucobol/])
-AC_REVISION([GnuCOBOL snapshot $Revision: 4258 $])
+AC_REVISION([GnuCOBOL snapshot $Revision: 4272 $])
 AC_CONFIG_SRCDIR([libcob.h])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_TESTDIR([tests])
@@ -48,16 +48,17 @@ AC_CONFIG_FILES([tests/run_prog_manual.sh],
   [chmod +x tests/run_prog_manual.sh])
 
 # Note for SUN Solaris (gcc)
-# export/setenv CFLAGS "-m64 -mptr64"
-# export/setenv LDFLAGS "-m64 -mptr64 -L/usr/local/lib/sparcv9"
-# ./configure --libdir=/usr/local/lib/sparcv9
+#  option to configure/export/setenv: CC=gcc -m64 --libdir=/usr/local/lib/sparcv9
+# or:
+#  option to configure/export/setenv: CFLAGS=-m64 and LDFLAGS="-m64 -L/usr/local/lib/sparcv9"
 #
 # Hack for AIX 64 bit (gcc)
 # Required -
-# export/setenv CFLAGS=-maix64
-# export/setenv LDFLAGS=-maix64
+#  option to configure/export/setenv: CC=gcc -maix
+# or:
+#  option to configure/export/setenv: CFLAGS=-maix64 and LDFLAGS=-maix64
 
-if echo $CFLAGS | grep 'aix64' 1>/dev/null 2>&1; then
+if echo "$CC$CFLAGS" | grep 'aix64' 1>/dev/null 2>&1; then
 	if test -f /usr/ccs/bin/ar; then
 		AR="/usr/ccs/bin/ar -X64"
 	else
@@ -284,6 +285,18 @@ AC_PROG_CPP
 AC_USE_SYSTEM_EXTENSIONS
 
 # general flags for compiler and linker and tests for those
+AC_ARG_VAR([COBC_CPPFLAGS], [see CPPFLAGS, but only applied during generation of cobc])
+AS_IF([test "x$COBC_CPPFLAGS" != "x"], [
+	AC_MSG_CHECKING([if compilation with COBC_CPPFLAGS works])
+	curr_cppflags="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $COBC_CPPFLAGS"
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],
+		[[static int i = 1;]])],
+		[AC_MSG_RESULT([yes])],
+		[AC_MSG_RESULT([no])
+		AC_MSG_ERROR([not possible to compile with COBC_CPPFLAGS="$COBC_CPPFLAGS"])])
+	CPPFLAGS="$curr_cppflags"
+])
 AC_ARG_VAR([LIBCOB_CPPFLAGS], [see CPPFLAGS, but only applied during generation of libcob])
 AS_IF([test "x$LIBCOB_CPPFLAGS" != "x"], [
 	AC_MSG_CHECKING([if compilation with LIBCOB_CPPFLAGS works])
@@ -393,8 +406,13 @@ AC_LIB_RPATH
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([stdint.h sys/types.h signal.h fcntl.h malloc.h locale.h \
-	stddef.h wchar.h dlfcn.h sys/time.h sys/wait.h sys/sysmacros.h])
+# entries only used from external includes -> likely no need to check here
+# AC_CHECK_HEADERS([stdint.h whcar.h malloc.h])
+# mandatory:
+AC_CHECK_HEADERS([sys/types.h signal.h stddef.h sys/time.h], [],
+	[AC_MSG_ERROR([mandatory header could not be found or included])])
+# optional:
+AC_CHECK_HEADERS([locale.h fcntl.h dlfcn.h sys/wait.h sys/sysmacros.h])
 
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -1122,12 +1140,11 @@ fi
 if test "$USE_CURSES" = "ncurses" -o "$USE_CURSES" = "check"; then
   AC_CHECK_LIB([ncurses], [initscr], [], [], [])
   if test "x$ac_cv_lib_ncurses_initscr" = "xyes"; then
-    AC_CHECK_HEADERS([ncurses.h], [USE_CURSES="ncurses"],
-      [AC_CHECK_HEADERS([ncurses/ncurses.h], [USE_CURSES="ncurses"],
-         [AC_CHECK_HEADERS([curses.h], [USE_CURSES="ncurses"],
-           [if test "$USE_CURSES" = "ncurses"; then
+    AC_CHECK_HEADERS([ncurses/ncurses.h], [USE_CURSES="ncurses"],
+      [AC_CHECK_HEADERS([ncurses.h], [USE_CURSES="ncurses"],
+         [if test "$USE_CURSES" = "ncurses"; then
               USE_CURSES="missing_header"
-            fi], [])], [])], [])
+          fi], [])], , [])
     if test "$USE_CURSES" = "ncurses"; then
       LIBCOB_LIBS="$LIBCOB_LIBS -lncurses"
     fi
@@ -2502,6 +2519,8 @@ AC_SUBST([COB_LIBRARY_PATH])
 AC_SUBST([COB_OBJECT_EXT])
 AC_SUBST([COB_MODULE_EXT])
 AC_SUBST([COB_EXE_EXT])
+AC_SUBST([QUOTE_INCLUDE_FLAG])
+AC_SUBST([COBC_CPPFLAGS])
 AC_SUBST([PROGRAMS_LIBS])
 AC_SUBST([LIBCOB_LIBS])
 AC_SUBST([LIBCOB_CPPFLAGS])

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2020 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2021 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 
    This file is part of GnuCOBOL.
@@ -29,7 +29,9 @@
 
 #include "cobc.h"
 #include "tree.h"
-#include <parser.h>
+
+#define _PARSER_H	/* work around bad Windows SDK header */
+#include "parser.h"
 
 /* Local variables */
 

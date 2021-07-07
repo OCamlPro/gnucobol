@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2019 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2021 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Dave Pitts
 
    This file is part of GnuCOBOL.
@@ -90,7 +90,7 @@ static int ppwrap (void) {
 #define	COB_IN_PPLEX	1
 #include "cobc.h"
 #include "tree.h"
-#include <ppparse.h>
+#include "ppparse.h"
 
 #ifdef	_WIN32
 #include <io.h>	/* for access */
@@ -338,6 +338,7 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 
 ^[ ]*"$SET"		{
 	/* MF extension: SET directive */
+	/* TODO: check position of the $SET directive */
 	BEGIN SET_DIRECTIVE_STATE;
 	return SET_DIRECTIVE;
 }
@@ -386,21 +387,24 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 
 ^......."@OPTIONS"	{
 	/* Fujitsu COBOL extension for specifying command line options */
-	char * s = strchr (yytext, '@');
-	cb_plex_warning (COBC_WARN_FILLER, newline_count,
+	/* TODO: check position of the @OPTIONS directive */
+	char *s = strchr (yytext, '@');
+	cb_plex_warning (COBC_WARN_FILLER, newline_count - 1,
 		_("ignoring unknown directive: '%s'"), s);
+	skip_to_eol ();
+}
+
+^[ ]*("PROCESS"|"CBL")/[ ,;\n] {
+	/* IBM COBOL extension for specifying compiler options */
+	/* TODO: The CBL (PROCESS) statement must be placed before any comment lines or other compiler-directing statements. */
+	cb_plex_warning (COBC_WARN_FILLER, newline_count - 1,
+		_("PROCESS statement ignored"));
 	skip_to_eol ();
 }
 
 ^[ ]*"$"		{
 	cb_plex_warning (COBC_WARN_FILLER, newline_count,
 		_("spurious '$' detected - ignored"));
-	skip_to_eol ();
-}
-
-"PROCESS"		{
-	cb_plex_warning (COBC_WARN_FILLER, newline_count,
-		_("PROCESS statement ignored"));
 	skip_to_eol ();
 }
 
@@ -2085,6 +2089,9 @@ ppecho (const char *text, const cob_u32_t alt_space, const int textlen)
 	if (text_queue == NULL && (text[0] == ' ' || text[0] == '\n')) {
 		/* No replacement */
 		fwrite (text, (size_t)textlen, (size_t)1, ppout);
+		/* TODO: instead of \n (empty line: set "needs source-loc" flag and
+		   before first non-empty line output a #line directive, saving
+		   quite some file io [keep 1 empty line]) */
 		if (cb_listing_file) {
 			check_listing (s, 0);
 		}

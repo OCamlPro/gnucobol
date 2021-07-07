@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2004-2012, 2014-2020 Free Software Foundation, Inc.
+   Copyright (C) 2004-2012, 2014-2021 Free Software Foundation, Inc.
    Written by Roger While, Simon Sobisch, Brian Tiffin
 
    This file is part of GnuCOBOL.
@@ -24,17 +24,12 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
-#include <errno.h>
 
 #ifdef	HAVE_LOCALE_H
 #include <locale.h>
 #endif
 #ifdef	HAVE_UNISTD_H
 #include <unistd.h>
-#endif
-#ifdef	_WIN32
-#include <io.h>
-#include <fcntl.h>
 #endif
 
 #include "../libcob/sysdefines.h"
@@ -101,13 +96,14 @@ cobcrun_print_version (void)
 			  "%s %2.2d %4.4d %s", month, day, year, __TIME__);
 	}
 
-	printf ("cobcrun (%s) %s.%d\n",
-		PACKAGE_NAME, PACKAGE_VERSION, PATCH_LEVEL);
-	puts ("Copyright (C) 2020 Free Software Foundation, Inc.");
-	puts (_("License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>"));
+	printf ("cobcrun (%s) %s.%d\n", PACKAGE_NAME, PACKAGE_VERSION, PATCH_LEVEL);
+	puts ("Copyright (C) 2021 Free Software Foundation, Inc.");
+	printf (_("License GPLv3+: GNU GPL version 3 or later <%s>"), "https://gnu.org/licenses/gpl.html");
+	putchar ('\n');
 	puts (_("This is free software; see the source for copying conditions.  There is NO\n"
 	        "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."));
-	printf (_("Written by %s\n"), "Roger While, Simon Sobisch, Brian Tiffin");
+	printf (_("Written by %s"), "Roger While, Simon Sobisch, Brian Tiffin");
+	putchar ('\n');
 	printf (_("Built     %s"), cob_build_stamp);
 	putchar ('\n');
 	printf (_("Packaged  %s"), COB_TAR_DATE);
@@ -128,27 +124,29 @@ cobcrun_print_usage (char * prog)
 	putchar ('\n');
 	putchar ('\n');
 	puts (_("Options:"));
-	puts (_("  -h, -help                      display this help and exit"));
-	puts (_("  -V, -version                   display cobcrun and runtime version and exit"));
-	puts (_("  -i, -info                      display runtime information (build/environment)"));
-	puts (_("  -v, -verbose                   display extended output with --info"));
+	puts (_("  -h, --help                      display this help and exit"));
+	puts (_("  -V, --version                   display cobcrun and runtime version and exit"));
+	puts (_("  -i, --info                      display runtime information (build/environment)"));
+	puts (_("  -v, --verbose                   display extended output with --info"));
 #if 0 /* Simon: currently only removing the path from cobcrun in output --> don't show */
-	puts (_("  -q, -brief                     reduced displays"));
+	puts (_("  -q, --brief                     reduced displays"));
 #endif
-	puts (_("  -c <file>, -config=<file>      set runtime configuration from <file>"));
-	puts (_("  -r, -runtime-config            display current runtime configuration\n"
-	        "                                 (value and origin for all settings)"));
-	puts (_("  -M <module>, -module=<module>  set entry point module name and/or load path\n"
-			"                                 where -M module prepends any directory to the\n"
-			"                                 dynamic link loader library search path\n"
-			"                                 and any basename to the module preload list\n"
-			"                                 (COB_LIBRARY_PATH and/or COB_PRELOAD)"));
+	puts (_("  -c <file>, --config=<file>      set runtime configuration from <file>"));
+	puts (_("  -r, --runtime-config            display current runtime configuration\n"
+	        "                                  (value and origin for all settings)"));
+	puts (_("  -M <module>, --module=<module>  set entry point module name and/or load path\n"
+			"                                  where -M module prepends any directory to the\n"
+			"                                  dynamic link loader library search path\n"
+			"                                  and any basename to the module preload list\n"
+			"                                  (COB_LIBRARY_PATH and/or COB_PRELOAD)"));
 	putchar ('\n');
 	printf (_("Report bugs to: %s\n" 
 			  "or (preferably) use the issue tracker via the home page."), "bug-gnucobol@gnu.org");
 	putchar ('\n');
-	puts (_("GnuCOBOL home page: <https://www.gnu.org/software/gnucobol/>"));
-	puts (_("General help using GNU software: <https://www.gnu.org/gethelp/>"));
+	printf (_("GnuCOBOL home page: <%s>"), "https://www.gnu.org/software/gnucobol/");
+	putchar ('\n');
+	printf (_("General help using GNU software: <%s>"), "https://www.gnu.org/gethelp/");
+	putchar ('\n');
 }
 
 /**

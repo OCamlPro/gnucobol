@@ -8,6 +8,16 @@
 
 	* configure.ac: Add check for  'readline'
 
+2021-04-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: check for CC when applying aix hack additional to CFLAGS
+	* configure.ac: ncurses test: check for ncurses.h, not curses.h
+
+2021-03-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: new COBC_CPPFLAGS will be used in cobc generation
+	* configure.ac: version 3.2-dev
+
 2021-02-21  Ron Norman <rjn@inglenet.com> 
 
 	* configure.ac: Fix error with C-ISAM checks and  changes to use

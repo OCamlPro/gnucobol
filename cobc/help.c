@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2019 Free Software Foundation, Inc.
+   Copyright (C) 2001-2021 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
    Brian Tiffin, Edward Hart, Dave Pitts
 
@@ -56,22 +56,22 @@ void
 cobc_print_usage_common_options (void)
 {
 	puts (_("Options:"));
-	puts (_("  -h, -help             display this help and exit"));
-	puts (_("  -V, -version          display compiler version and exit"));
-	puts (_("  -i, -info             display compiler information (build/environment)\n" 
+	puts (_("  -h, --help            display this help and exit"));
+	puts (_("  -V, --version         display compiler version and exit"));
+	puts (_("  -i, --info            display compiler information (build/environment)\n" 
 	        "                        and exit"));
-	puts (_("  -v, -verbose          verbose mode, display additional information;\n"
+	puts (_("  -v, --verbose         verbose mode, display additional information;\n"
 		    "                        multiple -v options increase the verbosity,\n"   
 		    "                        the maximum is 3 as follows:\n"                  
 		    "                        (1) display compiler version and the commands\n" 
 	        "                        invoked by the compiler,\n"                      
 		    "                        (2) pass verbose option to assembler/compiler\n" 
 		    "                        (3) pass verbose option to linker"));
-	puts (_("  -q, -brief            reduced displays, commands invoked not shown"));
+	puts (_("  -q, --brief           reduced displays, commands invoked not shown"));
 	puts (_("  -###                  like -v but commands not executed"));
 	puts (_("  -x                    build an executable program"));
 	puts (_("  -m                    build a dynamically loadable module (default)"));
-	puts (_("  -j [<args>], -job[=<args>]\trun program after build, passing <args>"));
+	puts (_("  -j [<args>], --job[=<args>]\trun program after build, passing <args>"));
 	puts (_("  -std=<dialect>        warnings/features for a specific dialect\n"
 	        "                        <dialect> can be one of:\n"
 	        "                        default, cobol2014, cobol2002, cobol85, xopen,\n"
@@ -79,12 +79,12 @@ cobc_print_usage_common_options (void)
 	        "                        mf-strict, mf, bs2000-strict, bs2000,\n"
 	        "                        acu-strict, acu, rm-strict, rm;\n"
 	        "                        see configuration files in directory config"));
-	puts (_("  -F, -free             use free source format"));
-	puts (_("  -fixed                use fixed source format (default)"));
+	puts (_("  -F, --free            use free source format"));
+	puts (_("  --fixed               use fixed source format (default)"));
 	puts (_("  -O, -O2, -O3, -Os     enable optimization"));
 	puts (_("  -O0                   disable optimization"));
 	puts (_("  -g                    enable C compiler debug and stack check"));
-	puts (_("  -d, -debug            enable all run-time error checking,\n"
+	puts (_("  -d, --debug           enable all run-time error checking,\n"
 	        "                        equal to -fstack-check -fec=EC-ALL"));
 # if 0 /* not yet merged */
 	/* duplicated here from flags.def to place it next to -debug */
@@ -107,10 +107,10 @@ cobc_print_usage_common_options (void)
 #endif
 	puts (_("  -P[=<dir or file>]    generate preprocessed program listing (.lst)"));
 #ifndef COB_INTERNAL_XREF
-	puts (_("  -Xref                 generate cross reference through 'cobxref'\n"
+	puts (_("  -X, --Xref            generate cross reference through 'cobxref'\n"
 	        "                        (V. Coen's 'cobxref' must be in path)"));
 #else
-	puts (_("  -Xref                 specify cross reference in listing"));
+	puts (_("  -X, --Xref            specify cross reference in listing"));
 #endif
 	puts (_("  -I <directory>        add <directory> to copy/include search path"));
 	puts (_("  -L <directory>        add <directory> to library search path"));
@@ -119,12 +119,12 @@ cobc_print_usage_common_options (void)
 	puts (_("  -Q <options>          add <options> to the C link phase"));
 	puts (_("  -D <define>           define <define> for COBOL compilation"));
 	puts (_("  -K <entry>            generate CALL to <entry> as static"));
-	puts (_("  -conf=<file>          user-defined dialect configuration; see -std"));
-	puts (_("  -list-reserved        display reserved words"));
-	puts (_("  -list-intrinsics      display intrinsic functions"));
-	puts (_("  -list-mnemonics       display mnemonic names"));
-	puts (_("  -list-system          display system routines"));
-	puts (_("  -save-temps[=<dir>]   save intermediate files\n"
+	puts (_("  --conf=<file>         user-defined dialect configuration; see -std"));
+	puts (_("  --list-reserved       display reserved words"));
+	puts (_("  --list-intrinsics     display intrinsic functions"));
+	puts (_("  --list-mnemonics      display mnemonic names"));
+	puts (_("  --list-system         display system routines"));
+	puts (_("  --save-temps[=<dir>]  save intermediate files\n"
 	        "                        * default: current directory"));
 	puts (_("  -ext <extension>      add file extension for resolving COPY"));
 	putchar ('\n');
@@ -149,9 +149,7 @@ cobc_print_usage_warnings (void)
 	/* TRANSLATORS: This msgid is appended to msgid for -Wpossible-truncate and others */ \
 	puts (_("                        * NOT set with -Wall"));
 #define	CB_ERRWARNDEF(var,name,doc)		\
-	puts (doc);							\
-	/* TRANSLATORS: This msgid is appended to msgid for -Wpossible-truncate and others */ \
-	puts (_("                        * NOT set with -Wall"));
+	puts (doc);
 #include "warning.def"
 #undef	CB_WARNDEF
 #undef	CB_ONWARNDEF

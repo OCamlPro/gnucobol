@@ -1,4 +1,4 @@
-:: Copyright (C) 2014-2017,2019 Free Software Foundation, Inc.
+:: Copyright (C) 2014-2017,2019,2021 Free Software Foundation, Inc.
 :: Written by Simon Sobisch
 ::
 :: This file is part of GnuCOBOL.
@@ -128,7 +128,7 @@ if not "%single_file%"=="%1.y" (
 echo generating %1.c, %1.h ...
 call :store_old %1.c
 call :store_old %1.h
-%BISON% -o "%1.c"   "%1.y"
+%BISON% -o "%1.c" %BISONOPTS% "%1.y"
 if %ERRORLEVEL% equ 0 (
   call :waiter
   call :compare_generated %1.c

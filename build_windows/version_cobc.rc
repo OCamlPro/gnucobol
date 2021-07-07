@@ -6,7 +6,7 @@
 #define COB_WITHOUT_EXCEPTIONS
 #define COB_WITHOUT_JMP
 #include "libcob/common.h"
-#define VCS_REF 4020
+#define VCS_REF 4272
 
 #define STRINGIZE_DETAIL_(v) #v
 #define STRINGIZE(v) STRINGIZE_DETAIL_(v)
@@ -43,10 +43,10 @@ VS_VERSION_INFO    VERSIONINFO
     {
       // VALUE "Comments",         "Free for general use, including commercial (distribution bound to GPL).\0"
       // VALUE "CompanyName",      "No Company\0"
-      VALUE "FileDescription",  PACKAGE_NAME " compiler for most COBOL dialects with lots of extensions"
+      VALUE "FileDescription",  PACKAGE_NAME " compiler, supporting most COBOL dialects with lots of extensions"
       VALUE "FileVersion",      STRINGIZE(__LIBCOB_VERSION)"."STRINGIZE(__LIBCOB_VERSION_MINOR)"."STRINGIZE(__LIBCOB_VERSION_PATCHLEVEL)"."STRINGIZE(VCS_REF)
       VALUE "InternalName",     "cobc"
-      VALUE "LegalCopyright",   "Copyright (C) 2001-2020 Free Software Foundation, Inc."
+      VALUE "LegalCopyright",   "Copyright (C) 2001-2021 Free Software Foundation, Inc."
       VALUE "LegalTrademarks",  "Compiler: GNU General Public License v3 - see COPYING,\x0ADocumentation: GNU Free Documentation License."
       VALUE "OriginalFilename", "cobc.exe"
       VALUE "ProductName",      PACKAGE_NAME " compiler"
@@ -57,7 +57,7 @@ VS_VERSION_INFO    VERSIONINFO
       VALUE "SpecialBuild",     ""
 
       /* Non-Standard entries */
-      VALUE "Build",            "Dec 2020"
+      VALUE "Build",            "Jul 2021"
       VALUE "Developer",        "Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch, Edward Hart and many others (see AUTHORS and THANKS)"
       VALUE "Support",          "https://www.gnu.org/software/gnucobol/"
       VALUE "Users",            "Unlimited."

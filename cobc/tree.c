@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2020 Free Software Foundation, Inc.
+   Copyright (C) 2001-2021 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -42,7 +42,8 @@
 
 #include "cobc.h"
 #include "tree.h"
-#include <parser.h>
+#define _PARSER_H	/* work around bad Windows SDK header */
+#include "parser.h"
 #include "../libcob/cobinternal.h"
 
 #define PIC_ALPHABETIC		0x01
@@ -4338,7 +4339,6 @@ finalize_file (struct cb_file *f, struct cb_field *records)
 {
 	struct cb_field		*p;
 	struct cb_field		*v;
-	struct cb_alt_key	*cbak;
 	cb_tree			l;
 	cb_tree			x;
 
@@ -4368,17 +4368,22 @@ finalize_file (struct cb_file *f, struct cb_field *records)
 	}
 
 	/* Validate INDEXED key fields (RELATIVE keys can only be validated when
-	   the whole DATA DIVISION has been processed). */
+	   the whole DATA DIVISION has been processed) and apply GLOBAL. */
 	if (f->organization == COB_ORG_INDEXED) {
+		struct cb_alt_key	*cbak;
 		if (f->key) {
 			validate_indexed_key_field (f, records,
 				f->key, f->component_list);
 		}
-		if (f->alt_key_list) {
-			for (cbak = f->alt_key_list; cbak; cbak = cbak->next) {
-				validate_indexed_key_field (f, records,
-					cbak->key, cbak->component_list);
+		for (cbak = f->alt_key_list; cbak; cbak = cbak->next) {
+			if (f->flag_global) {
+				cb_tree key_tree = cb_ref (cbak->key);
+				if (CB_FIELD_P(key_tree)) {
+					CB_FIELD(key_tree)->flag_is_global = f->flag_global;
+				}
 			}
+			validate_indexed_key_field (f, records,
+				cbak->key, cbak->component_list);
 		}
 	}
 

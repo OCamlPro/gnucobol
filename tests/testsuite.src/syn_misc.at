@@ -6420,7 +6420,7 @@ AT_DATA([valid.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY valid.cob], [0], [],
-[valid.cob:3: warning: ignoring unknown directive: '@OPTIONS'
+[valid.cob:2: warning: ignoring unknown directive: '@OPTIONS'
 ])
 
 #AT_DATA([invalid.cob], [
