@@ -1521,6 +1521,11 @@ org_handling:
 		break;
 
 	case OP_WRITE:
+		if (f->record
+		 && LDCOMPX4(fcd->curRecLen) >= LDCOMPX4(fcd->minRecLen)
+		 && LDCOMPX4(fcd->curRecLen) <= LDCOMPX4(fcd->maxRecLen)) {
+			f->record->size = LDCOMPX4(fcd->curRecLen);
+		}
 		eop = LDCOMPX2(fcd->eop);
 		opts = LDCOMPX4(fcd->opt);
 		cob_write(f, rec, opts, fs, eop);
@@ -1528,6 +1533,11 @@ org_handling:
 		break;
 
 	case OP_REWRITE:
+		if (f->record
+		 && LDCOMPX4(fcd->curRecLen) >= LDCOMPX4(fcd->minRecLen)
+		 && LDCOMPX4(fcd->curRecLen) <= LDCOMPX4(fcd->maxRecLen)) {
+			f->record->size = LDCOMPX4(fcd->curRecLen);
+		}
 		opts = LDCOMPX4(fcd->opt);
 		cob_rewrite(f, rec, opts, fs);
 		update_file_to_fcd(f,fcd,fnstatus);

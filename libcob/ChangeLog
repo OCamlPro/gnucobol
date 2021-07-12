@@ -1,4 +1,8 @@
 
+2021-07-12  Ron Norman <rjn@inglenet.com>
+
+	* fextfh.c: Check FCD-CURRENT-REC-LEN being changed on WRITE/REWRITE
+
 2021-07-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* reportio.c: move hard line/col limit to REPORT_MAX_LINES REPORT_MAX_COLS
