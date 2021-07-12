@@ -1998,15 +1998,17 @@ cobc_getenv (const char *env)
 static char *
 cobc_getenv_path (const char *env)
 {
-	char	*p;
+	char	*p, *pos;
 
 	p = getenv (env);
 	if (!p || *p == 0) {
 		return NULL;
 	}
-	if (strchr (p, PATHSEP_CHAR) != NULL) {
+	pos = strchr (p, PATHSEP_CHAR);
+	if (pos != NULL) {
 		cobc_err_msg (_("environment variable '%s' is '%s'; should not contain '%c'"), env, p, PATHSEP_CHAR);
 		fatal_startup_error = 1;
+		*pos = 0;	/* strip PATHSEP_CHAR and following */
 	}
 	return cobc_main_strdup (p);
 }
