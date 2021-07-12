@@ -3632,9 +3632,9 @@ process_command_line (const int argc, char **argv)
 
 		case 'Y':
 			/* -Wextra : Turn on every warning that is not dialect related */
-#define	CB_WARNDEF(opt,name,doc)	cb_warn_opt_val[opt] = 1;
+#define	CB_WARNDEF(opt,name,doc)	cb_warn_opt_val[opt] = COBC_WARN_ENABLED;
 #define	CB_ONWARNDEF(opt,name,doc)
-#define	CB_NOWARNDEF(opt,name,doc)	cb_warn_opt_val[opt] = 1;
+#define	CB_NOWARNDEF(opt,name,doc)	cb_warn_opt_val[opt] = COBC_WARN_ENABLED;
 #include "warning.def"
 #undef	CB_WARNDEF
 #undef	CB_ONWARNDEF
