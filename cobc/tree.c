@@ -5250,6 +5250,18 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 
 /* Expression */
 
+static enum cb_warn_opt
+get_warnopt_for_constant (cb_tree x, cb_tree y)
+{
+	if (!CB_LITERAL_P (x)
+	 || !CB_LITERAL_P (y)
+	 || !CB_NUMERIC_LITERAL_P (x)
+	 || !CB_NUMERIC_LITERAL_P (y)) {
+		return cb_warn_constant_expr;
+	}
+	return cb_warn_constant_numlit_expr;
+}
+
 cb_tree
 cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 {
@@ -5683,16 +5695,17 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 	}
 
 	if (relop == cb_true) {
-		if (cb_warn_opt_val[cb_warn_constant_expr] && warn_ok) {
+		enum cb_warn_opt warn_opt = get_warnopt_for_constant (x, y);
+		if (cb_warn_opt_val[warn_opt] && warn_ok) {
 			if (rlit && llit) {
 				if (!was_prev_warn (e->source_line, warn_type)) {
-					cb_warning_x (cb_warn_constant_expr, e,
+					cb_warning_x (warn_opt, e,
 						_("expression '%.38s' %s '%.38s' is always TRUE"),
 						llit, explain_operator (op), rlit);
 				}
 			} else {
 				if (!was_prev_warn (e->source_line, -warn_type)) {
-					cb_warning_x (cb_warn_constant_expr, e,
+					cb_warning_x (warn_opt, e,
 						_("expression is always TRUE"));
 				}
 			}
@@ -5701,16 +5714,17 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 		return cb_true;
 	}
 	if (relop == cb_false) {
-		if (cb_warn_opt_val[cb_warn_constant_expr] && warn_ok) {
+		enum cb_warn_opt warn_opt = get_warnopt_for_constant (x, y);
+		if (cb_warn_opt_val[warn_opt] && warn_ok) {
 			if (rlit && llit) {
 				if (!was_prev_warn (e->source_line, 9 + warn_type)) {
-					cb_warning_x (cb_warn_constant_expr, e,
+					cb_warning_x (warn_opt, e,
 						_("expression '%.38s' %s '%.38s' is always FALSE"),
 						llit, explain_operator (op), rlit);
 				}
 			} else {
 				if (!was_prev_warn (e->source_line, -(9 + warn_type))) {
-					cb_warning_x (cb_warn_constant_expr, e,
+					cb_warning_x (warn_opt, e,
 						_("expression is always FALSE"));
 				}
 			}

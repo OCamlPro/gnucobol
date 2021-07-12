@@ -10,6 +10,11 @@
 
 	* help.c: use double-dash for long options
 
+2021-05-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.c (finalize_file): allow use of GLOBAL record-key-names
+	  in nested programs
+
 2021-05-12  Simon Sobisch <simonsobisch@gnu.org>
 
 	* pplex.l: fixed #716 by including necessary context for PROCESS statement
@@ -19,6 +24,11 @@
 
 	* parser.y (use_reporting): check for valid identifier before use,
 	  use common malloc for generated common
+
+2021-03-23  Simon Sobisch <simonsobisch@gnu.org>
+
+	* warning.def, tree.c, cobc.c, cobc.h: split -Wconstant-numlit-expression
+	  from -Wconstant-expression
 
 2021-03-07  Simon Sobisch <simonsobisch@gnu.org>
 

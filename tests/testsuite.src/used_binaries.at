@@ -1,4 +1,4 @@
-## Copyright (C) 2014-2020 Free Software Foundation, Inc.
+## Copyright (C) 2014-2021 Free Software Foundation, Inc.
 ## Written by Simon Sobisch, Brian Tiffin
 ##
 ## This file is part of GnuCOBOL.
@@ -75,12 +75,12 @@ AT_CHECK([$COBC -fsyntax-only -fno-diagnostics-show-option -Wadditional prog.cob
 ])
 # which in this case is also included in -Wall
 AT_CHECK([$COBC -fsyntax-only -Wall prog.cob], [0], [],
-[prog.cob:9: warning: expression '0' EQUALS '1' is always FALSE [[-Wconstant-expression]]
+[prog.cob:9: warning: expression '0' EQUALS '1' is always FALSE [[-Wconstant-numlit-expression]]
 prog.cob:9: warning: PERFORM FOREVER since UNTIL is always FALSE [[-Wadditional]]
 ])
 # -Wextra is more descriptive ...
 AT_CHECK([$COBC -fsyntax-only -Wextra prog.cob], [0], [],
-[prog.cob:9: warning: expression '0' EQUALS '1' is always FALSE [[-Wconstant-expression]]
+[prog.cob:9: warning: expression '0' EQUALS '1' is always FALSE [[-Wconstant-numlit-expression]]
 prog.cob:9: warning: PERFORM FOREVER since UNTIL is always FALSE [[-Wadditional]]
 prog.cob:10: warning: DISPLAY statement not terminated by END-DISPLAY [[-Wterminator]]
 prog.cob:13: warning: some digits may be truncated [[-Wpossible-truncate]]
@@ -89,7 +89,7 @@ prog.cob:6: note: 'var1' defined here as PIC 9 [[-Wpossible-truncate]]
 ])
 # ... the old -W is in for backwards portability
 AT_CHECK([$COBC -fsyntax-only -W prog.cob], [0], [],
-[prog.cob:9: warning: expression '0' EQUALS '1' is always FALSE [[-Wconstant-expression]]
+[prog.cob:9: warning: expression '0' EQUALS '1' is always FALSE [[-Wconstant-numlit-expression]]
 prog.cob:9: warning: PERFORM FOREVER since UNTIL is always FALSE [[-Wadditional]]
 prog.cob:10: warning: DISPLAY statement not terminated by END-DISPLAY [[-Wterminator]]
 prog.cob:13: warning: some digits may be truncated [[-Wpossible-truncate]]
