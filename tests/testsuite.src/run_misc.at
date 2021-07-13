@@ -6629,6 +6629,10 @@ AT_DATA([preload.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      callee2b.
        PROCEDURE        DIVISION.
+       DECLARATIVES.
+       DEC SECTION. USE EXCEPTION CONDITION EC-BOUNDS.
+           DISPLAY "BADDY".
+       END DECLARATIVES.
        SOME-SEC SECTION.
        SOME-PAR.
            PERFORM OTHER-SEC
@@ -6678,7 +6682,7 @@ $COBC -ftraceall callee1.cob], [0], [], [])
 AT_CHECK([COB_OLD_TRACE=y \
 $COBC callee2.cob], [0], [], [])
 AT_CHECK([COB_OLD_TRACE=y \
-$COBC -ftrace preload.cob], [0], [], [])
+$COBC -ftrace -w preload.cob], [0], [], [])
 AT_CHECK([COB_OLD_TRACE=y \
 $COBC -ftraceall preload2.cob], [0], [], [])
 AT_CHECK([COB_OLD_TRACE=y \
@@ -6692,7 +6696,7 @@ Program-Id: caller           Statement: RESET TRACE            Line: 8
 Program-Id: caller           Statement: MOVE                   Line: 12
 Program-Id: caller           Statement: CALL                   Line: 13
 Source:     'callee1.cob'
-Program-Id: callee1          Entry:     callee1                Line: 4
+Program-Id: callee1          Entry:     callee1                Line: 5
 Program-Id: callee1          Section:   (None)                 Line: 5
 Program-Id: callee1          Paragraph: (None)                 Line: 5
 Program-Id: callee1          Statement: ADD                    Line: 5
@@ -6717,14 +6721,14 @@ Source :    'callee1.cob'
 Program-Id: callee1          Statement: CANCEL                 Line: 33
 Program-Id: callee1          Statement: CALL                   Line: 33
 Source:     'preload.cob'
-Program-Id: callee2b         Entry:     callee2b               Line: 4
-Program-Id: callee2b         Section:   SOME-SEC               Line: 5
-Program-Id: callee2b         Paragraph: SOME-PAR               Line: 6
-Program-Id: callee2b         Section:   OTHER-SEC              Line: 12
-Program-Id: callee2b         Paragraph: (None)                 Line: 12
-Program-Id: callee2b         Paragraph: EX                     Line: 14
-Program-Id: callee2b         Entry:     LEAVE-ME               Line: 9
-Program-Id: callee2b         Paragraph: END-PAR                Line: 10
+Program-Id: callee2b         Entry:     callee2b               Line: 8
+Program-Id: callee2b         Section:   SOME-SEC               Line: 9
+Program-Id: callee2b         Paragraph: SOME-PAR               Line: 10
+Program-Id: callee2b         Section:   OTHER-SEC              Line: 16
+Program-Id: callee2b         Paragraph: (None)                 Line: 16
+Program-Id: callee2b         Paragraph: EX                     Line: 18
+Program-Id: callee2b         Entry:     LEAVE-ME               Line: 13
+Program-Id: callee2b         Paragraph: END-PAR                Line: 14
 Program-Id: callee2b         Exit:      callee2b
 Source :    'callee1.cob'
 Program-Id: callee1          Statement: CANCEL                 Line: 33
@@ -6734,7 +6738,7 @@ Program-Id: callee1          Exit:      callee1
 Source :    'caller.cob'
 Program-Id: caller           Statement: CALL                   Line: 15
 Source:     'callee1.cob'
-Program-Id: callee1          Entry:     callee1                Line: 4
+Program-Id: callee1          Entry:     callee1                Line: 5
 Program-Id: callee1          Section:   (None)                 Line: 5
 Program-Id: callee1          Paragraph: (None)                 Line: 5
 Program-Id: callee1          Statement: ADD                    Line: 5
@@ -6759,14 +6763,14 @@ Source :    'callee1.cob'
 Program-Id: callee1          Statement: CANCEL                 Line: 33
 Program-Id: callee1          Statement: CALL                   Line: 33
 Source:     'preload.cob'
-Program-Id: callee2b         Entry:     callee2b               Line: 4
-Program-Id: callee2b         Section:   SOME-SEC               Line: 5
-Program-Id: callee2b         Paragraph: SOME-PAR               Line: 6
-Program-Id: callee2b         Section:   OTHER-SEC              Line: 12
-Program-Id: callee2b         Paragraph: (None)                 Line: 12
-Program-Id: callee2b         Paragraph: EX                     Line: 14
-Program-Id: callee2b         Entry:     LEAVE-ME               Line: 9
-Program-Id: callee2b         Paragraph: END-PAR                Line: 10
+Program-Id: callee2b         Entry:     callee2b               Line: 8
+Program-Id: callee2b         Section:   SOME-SEC               Line: 9
+Program-Id: callee2b         Paragraph: SOME-PAR               Line: 10
+Program-Id: callee2b         Section:   OTHER-SEC              Line: 16
+Program-Id: callee2b         Paragraph: (None)                 Line: 16
+Program-Id: callee2b         Paragraph: EX                     Line: 18
+Program-Id: callee2b         Entry:     LEAVE-ME               Line: 13
+Program-Id: callee2b         Paragraph: END-PAR                Line: 14
 Program-Id: callee2b         Exit:      callee2b
 Source :    'callee1.cob'
 Program-Id: callee1          Statement: CANCEL                 Line: 33
@@ -6777,13 +6781,13 @@ Source :    'caller.cob'
 Program-Id: caller           Statement: CANCEL                 Line: 16
 Program-Id: caller           Statement: CALL                   Line: 17
 Source:     'preload2.cob'
-Program-Id: callrec          Entry:     callrec                Line: 9
+Program-Id: callrec          Entry:     callrec                Line: 10
 Program-Id: callrec          Section:   SOME-SEC               Line: 10
 Program-Id: callrec          Paragraph: (None)                 Line: 10
 Program-Id: callrec          Statement: IF                     Line: 11
 Program-Id: callrec          Statement: SET                    Line: 12
 Program-Id: callrec          Statement: CALL                   Line: 13
-Program-Id: callrec          Entry:     callrec                Line: 9
+Program-Id: callrec          Entry:     callrec                Line: 10
 Program-Id: callrec          Section:   SOME-SEC               Line: 10
 Program-Id: callrec          Paragraph: (None)                 Line: 10
 Program-Id: callrec          Statement: IF                     Line: 11
@@ -6798,9 +6802,9 @@ Program-Id: caller           Statement: STOP RUN               Line: 19
 
 AT_CHECK([$COBC -ftraceall callee1.cob], [0], [], [])
 AT_CHECK([$COBC callee2.cob], [0], [], [])
-AT_CHECK([$COBC -ftrace preload.cob], [0], [], [])
+AT_CHECK([$COBC -ftrace -w preload.cob], [0], [], [])
 AT_CHECK([$COBC -ftraceall preload2.cob], [0], [], [])
-AT_CHECK([$COBC -fsource-location callee2c.cob], [0], [], [])
+AT_CHECK([$COBC -fsource-location -w callee2c.cob], [0], [], [])
 AT_CHECK([$COBC -x -o prog -ftraceall caller.cob], [0], [], [])
 AT_CHECK([COB_PHYSICAL_CANCEL=1 COB_PRE_LOAD="preload"$PATHSEP"preload2" $COBCRUN_DIRECT ./prog], [0], [],
 [Source: 'caller.cob'
@@ -6811,7 +6815,7 @@ Program-Id:  caller                      MOVE                            Line:  
 Program-Id:  caller                      CALL                            Line:     13
 Source: 'callee1.cob'
 Program-Id:  callee1
-Program-Id:  callee1              Entry: callee1                         Line:      4
+Program-Id:  callee1              Entry: callee1                         Line:      5
 Program-Id:  callee1                     ADD                             Line:      5
 Program-Id:  callee1                     IF                              Line:      7
 Program-Id:  callee1                     IF                              Line:      9
@@ -6828,14 +6832,14 @@ Program-Id:  callee1                     CANCEL                          Line:  
 Program-Id:  callee1                     CALL                            Line:     33
 Source: 'preload.cob'
 Program-Id:  callee2b
-Program-Id:  callee2b             Entry: callee2b                        Line:      4
-Program-Id:  callee2b           Section: SOME-SEC                        Line:      5
-Program-Id:  callee2b         Paragraph: SOME-PAR                        Line:      6
-Program-Id:  callee2b           Section: OTHER-SEC                       Line:     12
-Program-Id:  callee2b         Paragraph: EX                              Line:     14
-Program-Id:  callee2b             Entry: LEAVE-ME                        Line:     14
-Program-Id:  callee2b         Paragraph: END-PAR                         Line:     10
-Program-Id:  callee2b              Exit: callee2b                        Line:     10
+Program-Id:  callee2b             Entry: callee2b                        Line:      8
+Program-Id:  callee2b           Section: SOME-SEC                        Line:      9
+Program-Id:  callee2b         Paragraph: SOME-PAR                        Line:     10
+Program-Id:  callee2b           Section: OTHER-SEC                       Line:     16
+Program-Id:  callee2b         Paragraph: EX                              Line:     18
+Program-Id:  callee2b             Entry: LEAVE-ME                        Line:     18
+Program-Id:  callee2b         Paragraph: END-PAR                         Line:     14
+Program-Id:  callee2b              Exit: callee2b                        Line:     14
 Source: 'callee1.cob'
 Program-Id:  callee1
 Program-Id:  callee1                     CANCEL                          Line:     33
@@ -6847,7 +6851,7 @@ Program-Id:  caller
 Program-Id:  caller                      CALL                            Line:     15
 Source: 'callee1.cob'
 Program-Id:  callee1
-Program-Id:  callee1              Entry: callee1                         Line:      4
+Program-Id:  callee1              Entry: callee1                         Line:      5
 Program-Id:  callee1                     ADD                             Line:      5
 Program-Id:  callee1                     IF                              Line:      7
 Program-Id:  callee1                     IF                              Line:      9
@@ -6864,14 +6868,14 @@ Program-Id:  callee1                     CANCEL                          Line:  
 Program-Id:  callee1                     CALL                            Line:     33
 Source: 'preload.cob'
 Program-Id:  callee2b
-Program-Id:  callee2b             Entry: callee2b                        Line:      4
-Program-Id:  callee2b           Section: SOME-SEC                        Line:      5
-Program-Id:  callee2b         Paragraph: SOME-PAR                        Line:      6
-Program-Id:  callee2b           Section: OTHER-SEC                       Line:     12
-Program-Id:  callee2b         Paragraph: EX                              Line:     14
-Program-Id:  callee2b             Entry: LEAVE-ME                        Line:     14
-Program-Id:  callee2b         Paragraph: END-PAR                         Line:     10
-Program-Id:  callee2b              Exit: callee2b                        Line:     10
+Program-Id:  callee2b             Entry: callee2b                        Line:      8
+Program-Id:  callee2b           Section: SOME-SEC                        Line:      9
+Program-Id:  callee2b         Paragraph: SOME-PAR                        Line:     10
+Program-Id:  callee2b           Section: OTHER-SEC                       Line:     16
+Program-Id:  callee2b         Paragraph: EX                              Line:     18
+Program-Id:  callee2b             Entry: LEAVE-ME                        Line:     18
+Program-Id:  callee2b         Paragraph: END-PAR                         Line:     14
+Program-Id:  callee2b              Exit: callee2b                        Line:     14
 Source: 'callee1.cob'
 Program-Id:  callee1
 Program-Id:  callee1                     CANCEL                          Line:     33
@@ -6884,12 +6888,12 @@ Program-Id:  caller                      CANCEL                          Line:  
 Program-Id:  caller                      CALL                            Line:     17
 Source: 'preload2.cob'
 Program-Id:  callrec
-Program-Id:  callrec              Entry: callrec                         Line:      9
+Program-Id:  callrec              Entry: callrec                         Line:     10
 Program-Id:  callrec            Section: SOME-SEC                        Line:     10
 Program-Id:  callrec                     IF                              Line:     11
 Program-Id:  callrec                     SET                             Line:     12
 Program-Id:  callrec                     CALL                            Line:     13
-Program-Id:  callrec              Entry: callrec                         Line:      9
+Program-Id:  callrec              Entry: callrec                         Line:     10
 Program-Id:  callrec            Section: SOME-SEC                        Line:     10
 Program-Id:  callrec                     IF                              Line:     11
 Program-Id:  callrec                     GOBACK                          Line:     15
@@ -8354,7 +8358,7 @@ AT_CAPTURE_FILE(./trace.txt)
 AT_DATA([reference],
 [Source: 'prog.cob'
 Program-Id:  prog
-Line:    290     Entry: prog
+Line:    292     Entry: prog
 Line:    292 Paragraph: MAINFILE
 Line:    293            OPEN
 Line:    294            CLOSE
@@ -8923,7 +8927,7 @@ ReWrite: FOR00000 got 00/02 as expected
 AT_DATA([reference_append],
 [Source: 'prog.cob'
 Program-Id:  prog
-    Entry: prog                            and now ...    290
+    Entry: prog                            and now ...    292
 Paragraph: MAINFILE                        and now ...    292
 Paragraph: LOADFILE                        and now ...    335
 Paragraph: 1000-LOAD-RECORD                and now ...    358
@@ -8945,7 +8949,7 @@ Paragraph: 1000-LOAD-RECORD                and now ...    358
 Paragraph: LISTFILE                        and now ...    387
 Source: 'prog.cob'
 Program-Id:  prog
-    Entry: prog                            -    290
+    Entry: prog                            -    292
 Paragraph: MAINFILE                        -    292
 Paragraph: LOADFILE                        -    335
 Paragraph: 1000-LOAD-RECORD                -    358

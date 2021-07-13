@@ -373,7 +373,7 @@ void set_pos_from_backup (cb_tree x)
 #endif
 
 static void
-emit_entry (const char *name, const int encode, cb_tree using_list, cb_tree convention)
+emit_entry (const char *name, const int encode, cb_tree using_list, cb_tree convention, int override_source_line)
 {
 	cb_tree		l;
 	cb_tree		check_list;
@@ -395,7 +395,9 @@ emit_entry (const char *name, const int encode, cb_tree using_list, cb_tree conv
 	}
 	CB_LABEL (label)->flag_begin = 1;
 	CB_LABEL (label)->flag_entry = 1;
-	label->source_line = backup_source_line;
+	if (override_source_line) {
+		label->source_line = override_source_line;
+	}
 	emit_statement (label);
 
 	if (current_program->flag_debugging) {
@@ -502,6 +504,20 @@ emit_entry (const char *name, const int encode, cb_tree using_list, cb_tree conv
 				CB_BUILD_PAIR (label, CB_BUILD_PAIR(entry_conv, using_list)));
 }
 
+/* Main entry point and the number of its main parameters */
+static void
+emit_main_entry (struct cb_program *program, cb_tree using_list)
+{
+	if (using_list) {
+		program->num_proc_params = cb_list_length (using_list);
+	}
+
+	emit_entry (program->program_id, 0, using_list, NULL, 0);
+	if (program->source_name) {
+		emit_entry (program->source_name, 1, using_list, NULL, 0);
+	}
+}
+
 static void
 emit_entry_goto (const char *name)
 {
@@ -516,7 +532,7 @@ emit_entry_goto (const char *name)
 	CB_LABEL (label)->flag_begin = 1;
 	CB_LABEL (label)->flag_entry = 1;
 	CB_LABEL (label)->flag_entry_for_goto = 1;
-	label->source_line = backup_source_line;
+	label->source_line = backup_source_line;	/* CHECKME: is that correct? */
 	emit_statement (label);
 
 	for (l = current_program->entry_list_goto; l; l = CB_CHAIN (l)) {
@@ -1121,7 +1137,7 @@ end_scope_of_program_name (struct cb_program *program, const unsigned char type)
 		if (type == COB_MODULE_TYPE_FUNCTION) {
 			cb_error (_("FUNCTION '%s' has no PROCEDURE DIVISION"), program->program_name);
 		} else {
-			emit_entry (program->program_id, 0, NULL, NULL);
+			emit_main_entry (program, NULL);
 		}
 	}
 	program->last_source_line = backup_source_line;
@@ -3337,8 +3353,7 @@ start:
 		YYABORT;
 	}
 	if (!current_program->entry_list) {
-		backup_current_pos ();
-		emit_entry (current_program->program_id, 0, NULL, NULL);
+		emit_main_entry (current_program, NULL);
 	}
   }
 ;
@@ -9693,12 +9708,8 @@ procedure_division:
 	 && !current_program->flag_chained && $6) {
 		cb_error (_("executable program requested but PROCEDURE/ENTRY has USING clause"));
 	}
-	/* Main entry point */
-	emit_entry (current_program->program_id, 0, $6, NULL);
-	current_program->num_proc_params = cb_list_length ($6);
-	if (current_program->source_name) {
-		emit_entry (current_program->source_name, 1, $6, NULL);
-	}
+
+	emit_main_entry (current_program, $6);
   }
   _procedure_list
   {
@@ -10252,8 +10263,7 @@ statements:
 	}
 	if (check_headers_present (COBC_HD_PROCEDURE_DIVISION, 0, 0, 0) == 1) {
 		if (current_program->prog_type == COB_MODULE_TYPE_PROGRAM) {
-			backup_current_pos ();
-			emit_entry (current_program->program_id, 0, NULL, NULL);
+			emit_main_entry (current_program, NULL);
 		}
 	}
 
@@ -12527,7 +12537,7 @@ entry_body:
 			}
 		}
 		if (!cobc_check_valid_name ((char *)(CB_LITERAL ($2)->data), ENTRY_NAME)) {
-			emit_entry ((char *)(CB_LITERAL ($2)->data), 1, $4, call_conv);
+			emit_entry ((char *)(CB_LITERAL ($2)->data), 1, $4, call_conv, 0);
 		}
 	}
   }
@@ -15458,14 +15468,14 @@ use_statement:
 
 use_phrase:
   use_file_exception
-| use_debugging
-| use_start_end
-| use_reporting
-| use_exception_list
+| use_for_debugging
+| use_at_start_end
+| use_before_reporting
+| use_after_exception
 ;
 
 use_file_exception:
-  use_global _after _standard exception_or_error _procedure
+  _use_global _after _standard exception_or_error _procedure
   _on use_file_exception_target
   {
 	if (!in_declaratives) {
@@ -15491,7 +15501,7 @@ use_file_exception:
   }
 ;
 
-use_global:
+_use_global:
   /* empty */
   {
 	use_global_ind = 0;
@@ -15540,7 +15550,7 @@ use_file_exception_target:
   }
 ;
 
-use_debugging:
+use_for_debugging:
   _for DEBUGGING _on debugging_list
   {
 	cb_tree		plabel;
@@ -15685,7 +15695,7 @@ _all_refs:
 | OF
 ;
 
-use_start_end:
+use_at_start_end:
   _at PROGRAM program_start_end
   {
 	if (current_program->nested_level) {
@@ -15698,22 +15708,20 @@ program_start_end:
   START
   {
 	emit_statement (cb_build_comment ("USE AT PROGRAM START"));
-	backup_current_pos ();
 	CB_PENDING ("USE AT PROGRAM START");
-	/* emit_entry ("_AT_START", 0, NULL, NULL); */
+	/* emit_entry ("_AT_START", 0, NULL, NULL, 0); */
   }
 | END
   {
 	emit_statement (cb_build_comment ("USE AT PROGRAM END"));
-	backup_current_pos ();
 	CB_PENDING ("USE AT PROGRAM END");
-	/* emit_entry ("_AT_END", 0, NULL, NULL); */
+	/* emit_entry ("_AT_END", 0, NULL, NULL, 0); */
   }
 ;
 
 
-use_reporting:
-  use_global BEFORE REPORTING identifier
+use_before_reporting:
+  _use_global BEFORE REPORTING identifier
   {
 	current_section->flag_real_label = 1;
 	current_section->flag_declaratives = 1;
@@ -15738,23 +15746,28 @@ use_reporting:
   }
 ;
 
+use_after_exception:
+  /* FIXME: should get optional _after */
+  use_ex_keyw use_exception_list
+;
+
 use_exception_list:
   use_exception
 | use_exception_list use_exception
 ;
 
 use_exception:
-  use_ex_keyw exception_name
+  exception_name
   {
 	current_section->flag_real_label = 1;
 	emit_statement (cb_build_comment ("USE AFTER EXCEPTION CONDITION"));
 	CB_PENDING ("USE AFTER EXCEPTION CONDITION");
   }
-| use_ex_keyw exception_name file_file_name_list
+| exception_name file_file_name_list
   {
 	cb_tree		l;
 
-	for (l = $3; l; l = CB_CHAIN (l)) {
+	for (l = $2; l; l = CB_CHAIN (l)) {
 		if (CB_VALID_TREE (CB_VALUE (l))) {
 			setup_use_file (CB_FILE (cb_ref (CB_VALUE (l))));
 		}

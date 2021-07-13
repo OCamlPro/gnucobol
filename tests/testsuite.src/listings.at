@@ -1,4 +1,4 @@
-## Copyright (C) 2015-2020 Free Software Foundation, Inc.
+## Copyright (C) 2015-2021 Free Software Foundation, Inc.
 ## Written by Dave Pitts, Simon Sobisch, Edward Hart
 ##
 ## This file is part of GnuCOBOL.
@@ -1795,7 +1795,7 @@ blah                           7       *10      11      14             x3
 
 LABEL                          DEFINED                REFERENCES
 
-E prog__1                      9
+E prog__1                      10
 P EX                           16       12                             x1
 GnuCOBOL V.R.P          prog-1.cob           DDD MMM dd HH:MM:SS YYYY  Page 0005
 
@@ -1859,7 +1859,7 @@ stuff                          9       *10      12     *16             x3
 
 LABEL                          DEFINED                REFERENCES
 
-E prog__2                      10
+E prog__2                      11
 P MAIN                         11     not referenced
 P EX                           18       14                             x1
 
@@ -4929,7 +4929,7 @@ NEXT-JOB-SELECT                148    not referenced
 
 LABEL                          DEFINED                REFERENCES
 
-E EDITOR                       150
+E EDITOR                       152
 P START-SECTION                152    not referenced
 P TOP-OF-PAGE-ROUTINE          167      242     262     290     308     316
                                                                        x5
@@ -5519,7 +5519,7 @@ NEXT-JOB-SELECT                148    not referenced
 
 LABEL                          DEFINED                                    REFERENCES
 
-E EDITOR                       150
+E EDITOR                       152
 P START-SECTION                152    not referenced
 P TOP-OF-PAGE-ROUTINE          167      242     262     290     308     316                                    x5
 P READ-A-COMMAND               173      195     205     251     271                                            x4
@@ -5860,7 +5860,7 @@ CHARGE-DETAIL                  65       99                             x1
 
 LABEL                          DEFINED                REFERENCES
 
-E prog                         73
+E prog                         75
 P 000-INITIATE                 75     not referenced
 P 000-TERMINATE                90     not referenced
 P 100-PROCESS-TRANSACTION-DATA 98       87                             x1

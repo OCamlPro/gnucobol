@@ -30,6 +30,14 @@
 	* parser.y (use_reporting): check for valid identifier before use,
 	  use common malloc for generated common
 
+2021-05-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (emit_main_entry): extracted for re-use
+	* parser.y (emit_entry): override source location only upon
+	  explicit request, we need entry points to be where the first
+	  section/paragraph/statement comes to not confuse tools like GDB
+	  with the wrong line reference (especially if we have DECLARATIVES)
+
 2021-03-23  Simon Sobisch <simonsobisch@gnu.org>
 
 	* warning.def, tree.c, cobc.c, cobc.h: split -Wconstant-numlit-expression
