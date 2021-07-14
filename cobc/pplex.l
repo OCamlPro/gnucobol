@@ -381,15 +381,6 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 	skip_to_eol ();
 }
 
-^......"$"		{
-	/* Allow $ in column 7 for acucomment in fixed format */
-	if (cb_source_format == CB_FORMAT_FREE) {
-		cb_plex_warning (COBC_WARN_FILLER, newline_count,
-			_("spurious '$' detected - ignored"));
-		skip_to_eol ();
-	}
-}
-
 ^......."@OPTIONS"	{
 	/* Fujitsu COBOL extension for specifying command line options */
 	/* TODO: check position of the @OPTIONS directive */

@@ -3,6 +3,8 @@
 
 	* cobc.c (cobc_getenv_path): drop invalid list from path
 	* config.c (cb_load_std): fixed old error passing enum instead of int
+	* parser.y: minor adjustments to USE handling
+	* pplex.l: drop "spurious $" in col 7 rule, fixing bug #577
 
 2021-07-07  Simon Sobisch <simonsobisch@gnu.org>
 
