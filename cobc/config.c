@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2012, 2014-2017, 2019-2020 Free Software Foundation, Inc.
+   Copyright (C) 2003-2012, 2014-2017, 2019-2021 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch
 
    This file is part of GnuCOBOL.
@@ -401,7 +401,7 @@ cb_read_conf (const char *conf_file, FILE *fp)
 int
 cb_load_std (const char *name)
 {
-	return cb_load_conf (name, CB_INCLUDE_MANDATORY);
+	return cb_load_conf (name, 1);
 }
 
 int

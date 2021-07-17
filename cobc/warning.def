@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2012, 2016-2018, 2020 Free Software Foundation, Inc.
+   Copyright (C) 2003-2012, 2016-2018, 2020-2021 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch
 
    This file is part of GnuCOBOL.
@@ -64,13 +64,13 @@ CB_NOWARNDEF (cb_warn_pos_overlap, "possible-overlap",
 	_("  -Wpossible-overlap    warn about MOVE of items that may overlap depending on variables"))
 
 CB_WARNDEF (cb_warn_parentheses, "parentheses",
-	_("  -Wparentheses         warn about lack of parentheses around AND within OR"))
+	_("  -Wparentheses         warn if parentheses are omitted around AND within OR"))
 
 CB_WARNDEF (cb_warn_strict_typing, "strict-typing",
 	_("  -Wstrict-typing       warn strictly about type mismatch"))
 
 CB_ONWARNDEF (cb_warn_implicit_define, "implicit-define",
-	_("  -Wno-implicit-define  do not warn about implicitly defined data items"))
+	_("  -Wno-implicit-define  do not warn when data items are implicitly defined"))
 
 CB_ONWARNDEF (cb_warn_corresponding, "corresponding",
 	_("  -Wno-corresponding    do not warn about CORRESPONDING with no matching items"))
@@ -90,6 +90,9 @@ CB_NOWARNDEF (cb_warn_call_params, "call-params",
 CB_WARNDEF (cb_warn_constant_expr, "constant-expression",
 	_("  -Wconstant-expression  warn about expressions that always resolve to true/false"))
 
+CB_WARNDEF (cb_warn_constant_numlit_expr, "constant-numlit-expression",
+	_("  -Wconstant-numlit-expression\twarn about numeric expressions that always resolve to true/false"))
+
 CB_NOWARNDEF (cb_warn_column_overflow, "column-overflow",
 	_("  -Wcolumn-overflow     warn about text after program-text area, FIXED format"))
 
@@ -106,7 +109,7 @@ CB_ONWARNDEF (cb_warn_dialect, "dialect",
 	_("  -Wno-dialect          do not warn about dialect specific issues"))
 
 CB_NOWARNDEF (cb_warn_source_after_code, "dangling-text",
-	_("  -Wdangling-text       warn source text after program-area"))
+	_("  -Wdangling-text       warn about source text after program-area"))
 
 CB_ONWARNDEF (cb_warn_filler, "others",
 	_("  -Wno-others           do not warn about different issues"))

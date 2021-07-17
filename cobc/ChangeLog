@@ -1,4 +1,11 @@
 
+2021-07-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (cobc_getenv_path): drop invalid list from path
+	* config.c (cb_load_std): fixed old error passing enum instead of int
+	* parser.y: minor adjustments to USE handling
+	* pplex.l: drop "spurious $" in col 7 rule, fixing bug #577
+
 2021-07-07  Simon Sobisch <simonsobisch@gnu.org>
 
 	* reserved.c, scanner.l, tree.c. pplex.l: use quotes again for including bison
@@ -18,6 +25,10 @@
 
 	* cobc.c: Accept -fdatamap and then report field 'offset' 
 	          instead of 'TYPE'
+	* parser.y (evaluate_body): don't call cb_emit_evaluate if contained
+	  statements are skipped (not active USE FOR DEBUGGING), fixing bug #693
+	* parser.y: dropped "main_statement" and deactivated unnecessary calls to
+	  begin_implicit_statement
 
 2021-06-26  Ron Norman <rjn@inglenet.com>
 
@@ -58,6 +69,11 @@
 2021-03-26  Ron Norman <rjn@inglenet.com>
 
 	* codegen.c: Emit cob_symbol for ANY NUMERIC and ANY LENGTH
+
+2021-03-23  Simon Sobisch <simonsobisch@gnu.org>
+
+	* warning.def, tree.c, cobc.c, cobc.h: split -Wconstant-numlit-expression
+	  from -Wconstant-expression
 
 2021-03-20  Ron Norman <rjn@inglenet.com>
 

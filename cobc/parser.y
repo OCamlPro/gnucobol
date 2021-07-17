@@ -168,8 +168,6 @@ enum key_clause_type {
 	RELATIVE_KEY
 };
 
-static struct cb_statement	*main_statement;
-
 static cb_tree			current_expr;
 static struct cb_field		*current_field;
 static struct cb_field		*control_field;
@@ -301,7 +299,6 @@ begin_statement (const char *name, const unsigned int term)
 	if (term) {
 		term_array[term]++;
 	}
-	main_statement = current_statement;
 }
 
 static void
@@ -322,7 +319,6 @@ begin_statement_from_backup_pos (const char *name, const unsigned int term)
 	if (term) {
 		term_array[term]++;
 	}
-	main_statement = current_statement;
 	if (check_unreached) {
 		cb_warning_x (cb_warn_unreachable, CB_TREE (current_statement), _("unreachable statement '%s'"), name);
 	}
@@ -339,9 +335,9 @@ begin_implicit_statement (void)
 	new_statement->name = current_statement->name;
 	new_statement->flag_in_debug = !!in_debugging;
 	new_statement->flag_implicit = 1;
+	current_statement->body = cb_list_add (current_statement->body,
+					    CB_TREE (new_statement));
 	current_statement = new_statement;
-	main_statement->body = cb_list_add (main_statement->body,
-					    CB_TREE (current_statement));
 }
 
 # if 0 /* activate only for debugging purposes for attribs
@@ -1088,7 +1084,6 @@ clear_initial_values (void)
 {
 	perform_stack = NULL;
 	current_statement = NULL;
-	main_statement = NULL;
 	qualifier = NULL;
 	in_declaratives = 0;
 	in_debugging = 0;
@@ -10186,16 +10181,20 @@ _segment:
 statement_list:
   %prec SHIFT_PREFER
   {
+	/* push exec_list on the stack ($1), then unset */
 	$$ = current_program->exec_list;
 	current_program->exec_list = NULL;
 	check_unreached = 0;
   }
   {
+	/* push statement on the stack ($2), then unset */
 	$$ = CB_TREE (current_statement);
 	current_statement = NULL;
   }
   statements
   {
+	/* reorder exec_list which was filled in "statements" and push to stack ($$),
+	   then backup exec_list and statement from the stack ($1, $2) */
 	$$ = cb_list_reverse (current_program->exec_list);
 	current_program->exec_list = $1;
 	current_statement = CB_STATEMENT ($2);
@@ -11576,7 +11575,9 @@ close_body:
 close_files:
   file_name _close_option
   {
+#if 0 /* CHECKME: likely not needed */
 	begin_implicit_statement ();
+#endif
 	cb_emit_close ($1, $2);
   }
 | close_files file_name _close_option
@@ -11737,7 +11738,9 @@ delete_body:
 delete_file_list:
   file_name
   {
+#if 0 /* CHECKME: likely not needed */
 	begin_implicit_statement ();
+#endif
 	cb_emit_delete_file ($1);
   }
 | delete_file_list file_name
@@ -12557,7 +12560,9 @@ evaluate_statement:
 evaluate_body:
   evaluate_subject_list evaluate_condition_list
   {
-	cb_emit_evaluate ($1, $2);
+	if (!skip_statements) {
+		cb_emit_evaluate ($1, $2);
+	}
 	eval_level--;
   }
 ;
@@ -13085,7 +13090,9 @@ generate_statement:
 generate_body:
   qualified_word
   {
+#if 0 /* CHECKME: likely not needed */
 	begin_implicit_statement ();
+#endif
 	if ($1 != cb_error_node) {
 		cb_emit_generate ($1);
 	}
@@ -13319,7 +13326,9 @@ initiate_statement:
 initiate_body:
   report_name
   {
+#if 0 /* CHECKME: likely not needed */
 	begin_implicit_statement ();
+#endif
 	if ($1 != cb_error_node) {
 		cb_emit_initiate ($1);
 	}
@@ -15308,7 +15317,9 @@ terminate_statement:
 terminate_body:
   report_name
   {
+#if 0 /* CHECKME: likely not needed */
 	begin_implicit_statement ();
+#endif
 	if ($1 != cb_error_node) {
 	    cb_emit_terminate ($1);
 	}

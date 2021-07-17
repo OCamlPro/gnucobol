@@ -525,17 +525,17 @@ static const struct option long_options[] = {
 	{"fnot-register",	CB_RQ_ARG, NULL, '%'},
 
 #define	CB_WARNDEF(opt,name,doc)			\
-	{"W" name,		CB_NO_ARG, &cb_warn_opt_val[opt], COBC_WARN_ENABLED},	\
-	{"Wno-" name,		CB_NO_ARG, &cb_warn_opt_val[opt], COBC_WARN_DISABLED},
+	{"W" name,		CB_NO_ARG, &cb_warn_opt_val[opt], COBC_WARN_ENABLED_EXPL},	\
+	{"Wno-" name,		CB_NO_ARG, &cb_warn_opt_val[opt], COBC_WARN_DISABLED_EXPL},
 #define	CB_ONWARNDEF(opt,name,doc)			\
-	{"W" name,		CB_NO_ARG, &cb_warn_opt_val[opt], COBC_WARN_ENABLED},	\
-	{"Wno-" name,		CB_NO_ARG, &cb_warn_opt_val[opt], COBC_WARN_DISABLED},
+	{"W" name,		CB_NO_ARG, &cb_warn_opt_val[opt], COBC_WARN_ENABLED_EXPL},	\
+	{"Wno-" name,		CB_NO_ARG, &cb_warn_opt_val[opt], COBC_WARN_DISABLED_EXPL},
 #define	CB_NOWARNDEF(opt,name,doc)			\
-	{"W" name,		CB_NO_ARG, &cb_warn_opt_val[opt], COBC_WARN_ENABLED},	\
-	{"Wno-" name,		CB_NO_ARG, &cb_warn_opt_val[opt], COBC_WARN_DISABLED},
+	{"W" name,		CB_NO_ARG, &cb_warn_opt_val[opt], COBC_WARN_ENABLED_EXPL},	\
+	{"Wno-" name,		CB_NO_ARG, &cb_warn_opt_val[opt], COBC_WARN_DISABLED_EXPL},
 #define	CB_ERRWARNDEF(opt,name,doc)			\
-	{"W" name,		CB_NO_ARG, &cb_warn_opt_val[opt], COBC_WARN_ENABLED},	\
-	{"Wno-" name,		CB_NO_ARG, &cb_warn_opt_val[opt], COBC_WARN_DISABLED},
+	{"W" name,		CB_NO_ARG, &cb_warn_opt_val[opt], COBC_WARN_ENABLED_EXPL},	\
+	{"Wno-" name,		CB_NO_ARG, &cb_warn_opt_val[opt], COBC_WARN_DISABLED_EXPL},
 #include "warning.def"
 #undef	CB_WARNDEF
 #undef	CB_ONWARNDEF
@@ -1892,15 +1892,17 @@ cobc_getenv (const char *env)
 static char *
 cobc_getenv_path (const char *env)
 {
-	char	*p;
+	char	*p, *pos;
 
 	p = getenv (env);
 	if (!p || *p == 0) {
 		return NULL;
 	}
-	if (strchr (p, PATHSEP_CHAR) != NULL) {
+	pos = strchr (p, PATHSEP_CHAR);
+	if (pos != NULL) {
 		cobc_err_msg (_("environment variable '%s' is '%s'; should not contain '%c'"), env, p, PATHSEP_CHAR);
 		fatal_startup_error = 1;
+		*pos = 0;	/* strip PATHSEP_CHAR and following */
 	}
 	return cobc_main_strdup (p);
 }
@@ -2983,6 +2985,14 @@ process_command_line (const int argc, char **argv)
 			conf_ret |= cb_load_conf (cob_optarg, 0);
 			break;
 
+		case 'd':
+			/* --debug : Turn on all runtime checks */
+			cb_flag_source_location = 1;
+			cb_flag_stack_check = 1;
+			cb_flag_symbols = 1;
+			cobc_wants_debug = 1;
+			break;
+
 		default:
 			/* as we postpone most options simply skip everything other here */
 			break;
@@ -2998,7 +3008,7 @@ process_command_line (const int argc, char **argv)
 		conf_ret |= cb_load_std ("default.conf");
 	}
 
-	/* Exit for configuration errors resulting from -std/-conf/default.conf */
+	/* Exit for configuration errors resulting from -std/--conf/default.conf */
 	if (conf_ret != 0) {
 		cobc_early_exit (EXIT_FAILURE);
 	}
@@ -3214,11 +3224,8 @@ process_command_line (const int argc, char **argv)
 			break;
 
 		case 'd':
-			/* -debug : Turn on all runtime checks */
-			cb_flag_source_location = 1;
-			cb_flag_stack_check = 1;
-			cb_flag_symbols = 1;
-			cobc_wants_debug = 1;
+			/* --debug : Turn on all runtime checks */
+			/* This options was processed in the first getopt-run */
 			break;
 
 		case '_':
@@ -3698,7 +3705,9 @@ process_command_line (const int argc, char **argv)
 			cb_missing_statement = CB_WARNING;
 		}
 		/* FIXME - the warning was only raised if not relaxed */
-		cb_warn_opt_val[(int)cb_warn_ignored_initial_val] = 0;
+		if (cb_warn_opt_val[(int)cb_warn_ignored_initial_val] != COBC_WARN_ENABLED_EXPL) {
+			cb_warn_opt_val[(int)cb_warn_ignored_initial_val] = COBC_WARN_DISABLED;
+		}
 	}
 #if 0 /* deactivated as -frelaxed-syntax-checks and other compiler configurations
 		 are available at command line - maybe re-add with another name */
@@ -3711,6 +3720,33 @@ process_command_line (const int argc, char **argv)
 	}
 #endif
 
+	{
+		/* 3.x compat -Wconstant-expression also sets -Wconstant-numlit-expression */
+		/* TODO: handle group warnings */
+		const enum cb_warn_val detail_warn = cb_warn_opt_val[(int)cb_warn_constant_numlit_expr];
+		if (detail_warn != COBC_WARN_DISABLED_EXPL
+		 && detail_warn != COBC_WARN_ENABLED_EXPL) {
+			const enum cb_warn_val group_warn = cb_warn_opt_val[(int)cb_warn_constant_expr];
+			cb_warn_opt_val[(int)cb_warn_constant_numlit_expr] = group_warn;
+		}
+		/* set all explicit warning options to their later checked variants */
+#define CB_CHECK_WARNING(opt)  \
+		if (cb_warn_opt_val[opt] == COBC_WARN_ENABLED_EXPL) {	\
+			cb_warn_opt_val[opt] = COBC_WARN_ENABLED;		\
+		} else if (cb_warn_opt_val[opt] == COBC_WARN_DISABLED_EXPL) {	\
+			cb_warn_opt_val[opt] = COBC_WARN_DISABLED;		\
+		}
+#define	CB_WARNDEF(opt,name,doc)	CB_CHECK_WARNING(opt)
+#define	CB_ONWARNDEF(opt,name,doc)	CB_CHECK_WARNING(opt)
+#define	CB_NOWARNDEF(opt,name,doc)	CB_CHECK_WARNING(opt)
+#define	CB_ERRWARNDEF(opt,name,doc)	CB_CHECK_WARNING(opt)
+#include "warning.def"
+#undef	CB_CHECK_WARNING
+#undef	CB_WARNDEF
+#undef	CB_ONWARNDEF
+#undef	CB_NOWARNDEF
+#undef	CB_ERRWARNDEF
+	}
 	/* Set active warnings to errors, if requested */
 	if (error_all_warnings) {
 #define CB_CHECK_WARNING(opt)  \

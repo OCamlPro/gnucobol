@@ -408,8 +408,10 @@ enum cb_warn_opt
 
 enum cb_warn_val {
 	COBC_WARN_DISABLED = 0,
-	COBC_WARN_ENABLED  = 1,
-	COBC_WARN_AS_ERROR = 2
+	COBC_WARN_DISABLED_EXPL = 1,	/* only active during command line parsing */
+	COBC_WARN_ENABLED_EXPL = 2,	/* only active during command line parsing */
+	COBC_WARN_ENABLED  = 3,
+	COBC_WARN_AS_ERROR = 4
 };
 
 extern int cb_warn_opt_val[COB_WARNOPT_MAX];

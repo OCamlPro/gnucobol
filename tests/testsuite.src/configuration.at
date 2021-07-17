@@ -1,4 +1,4 @@
-## Copyright (C) 2014-2020 Free Software Foundation, Inc.
+## Copyright (C) 2014-2021 Free Software Foundation, Inc.
 ## Written by Simon Sobisch
 ##
 ## This file is part of GnuCOBOL.
@@ -783,11 +783,11 @@ AT_CHECK([echo "$PATHSEP"], [0], [;
 
 # Previous test "failed" --> PATHSEP isn't ;
 
-AT_CHECK([COB_CONFIG_DIR="/temp:/tmp" \
+AT_CHECK([COB_CONFIG_DIR=".:/temp:/tmp" \
 $COMPILE prog.cob], [1], [],
-[cobc: environment variable 'COB_CONFIG_DIR' is '/temp:/tmp'; should not contain ':'
+[cobc: environment variable 'COB_CONFIG_DIR' is '.:/temp:/tmp'; should not contain ':'
 configuration error:
-default.conf: No such file or directory
+./default.conf: No such file or directory
 cobc: error: please check environment variables as noted above
 ])
 
@@ -795,11 +795,11 @@ cobc: error: please check environment variables as noted above
 
 # Previous test "passed" --> PATHSEP is ;
 
-AT_CHECK([COB_CONFIG_DIR="C:\temp;C:\tmp" \
+AT_CHECK([COB_CONFIG_DIR=".;C:\temp;C:\tmp" \
 $COMPILE prog.cob], [1], [],
-[cobc: environment variable 'COB_CONFIG_DIR' is 'C:\temp;C:\tmp'; should not contain ';'
+[cobc: environment variable 'COB_CONFIG_DIR' is '.;C:\temp;C:\tmp'; should not contain ';'
 configuration error:
-default.conf: No such file or directory
+.\default.conf: No such file or directory
 cobc: error: please check environment variables as noted above
 ])
 
