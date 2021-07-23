@@ -5473,6 +5473,25 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 					break;
 				}
 			}
+		} else
+		if (cb_constant_folding
+		&&  CB_NUMERIC_LITERAL_P(y)) {
+			yl = CB_LITERAL(y);
+			if (yl->scale == 0) {
+				yval = atoll((const char*)yl->data);
+				if ((op == '+' || op == '-') 
+				 && yval == 0) {		/* + or - ZERO does nothing */
+					return x;
+				}
+				if ((op == '*' || op == '/') 
+				 && yval == 1) {		/* * or / by ONE does nothing */
+					return x;
+				}
+				if (op == '*'
+				 && yval == 0) {		/* * ZERO is ZERO */
+					return cb_build_numeric_literal (0, "0", 0);
+				}
+			}
 		}
 		category = CB_CATEGORY_NUMERIC;
 		break;

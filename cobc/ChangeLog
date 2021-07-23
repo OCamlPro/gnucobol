@@ -1,4 +1,9 @@
 
+2021-07-23  Ron Norman <rjn@inglenet.com>
+
+	* tree.c: A few more checks for folding constant expressions
+			Check for + 0, * 1, / 1, * 0
+
 2021-07-12  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (cobc_getenv_path): drop invalid list from path
