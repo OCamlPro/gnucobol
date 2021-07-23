@@ -2478,23 +2478,6 @@ cb_build_numeric_literal (int sign, const void *data, const int scale)
 	/* using an intermediate char pointer for pointer arithmetic */
 	const char	*data_chr_ptr = data;
 
-#if 0 /* CHECKME - shouldn't this be what we want? */
-	if (*data_chr_ptr == '-') {
-		if (sign < 1) {
-			sign = 1;
-		} else {
-			sign = -1;
-		}
-		data_chr_ptr++;
-	} else if (*data_chr_ptr == '+') {
-		if (sign < 1) {
-			sign = -1;
-		} else {
-			sign = 1;
-		}
-		data_chr_ptr++;
-	}
-#else
 	if (*data_chr_ptr == '-') {
 		sign = -1;
 		data_chr_ptr++;
@@ -2502,7 +2485,6 @@ cb_build_numeric_literal (int sign, const void *data, const int scale)
 		sign = 1;
 		data_chr_ptr++;
 	}
-#endif
 	data = data_chr_ptr;
 	p = build_literal (CB_CATEGORY_NUMERIC, data, strlen (data));
 	p->sign = (short)sign;
@@ -5318,6 +5300,7 @@ get_warnopt_for_constant (cb_tree x, cb_tree y)
 	return cb_warn_constant_numlit_expr;
 }
 
+static int rel_bin_op = 0;
 cb_tree
 cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 {
@@ -5475,6 +5458,7 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 			}
 		} else
 		if (cb_constant_folding
+		&&  !rel_bin_op 					/* RJN: This needs more testing */
 		&&  CB_NUMERIC_LITERAL_P(y)) {
 			yl = CB_LITERAL(y);
 			if (yl->scale == 0) {
@@ -5484,15 +5468,16 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 					return x;
 				}
 				if ((op == '*' || op == '/') 
-				 && yval == 1) {		/* * or / by ONE does nothing */
+				 && yval == 1) {		/* multiply or divide by ONE does nothing */
 					return x;
 				}
 				if (op == '*'
-				 && yval == 0) {		/* * ZERO is ZERO */
-					return cb_build_numeric_literal (0, "0", 0);
+				 && yval == 0) {		/* multiply by ZERO is ZERO */
+					return cb_zero_lit;
 				}
 			}
-		}
+		}	
+		rel_bin_op = 0;
 		category = CB_CATEGORY_NUMERIC;
 		break;
 
@@ -5502,6 +5487,7 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 	case '>':
 	case '[':
 	case ']':
+		rel_bin_op = 1;
 		/* Relational operators */
 		if ((CB_REF_OR_FIELD_P (x)) &&
 		    CB_FIELD_PTR (x)->level == 88) {
@@ -5717,6 +5703,7 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 	case '!':
 	case '&':
 	case '|':
+		rel_bin_op = 1;
 		/* Logical operators */
 		if (CB_TREE_CLASS (x) != CB_CLASS_BOOLEAN
 		 || (y && CB_TREE_CLASS (y) != CB_CLASS_BOOLEAN)) {
