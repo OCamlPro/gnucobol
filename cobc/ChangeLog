@@ -1,4 +1,8 @@
 
+2021-07-29  Ron Norman <rjn@inglenet.com>
+
+	* flag.def, cobc.c: Add -fdatamap to usage report
+	          
 2021-07-23  Ron Norman <rjn@inglenet.com>
 
 	* tree.c: A few more checks for folding constant expressions

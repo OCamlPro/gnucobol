@@ -146,7 +146,6 @@ size_t	pd_off;
 FILE			*cb_src_list_file = NULL;
 int			cb_listing_page = 0;
 int			cb_listing_wide = 0;
-int			cb_list_datamap = 0;
 unsigned int		cb_lines_per_page = CB_MAX_LINES;
 int			cb_listing_xref = 0;
 #define			CB_LISTING_DATE_BUFF 26
