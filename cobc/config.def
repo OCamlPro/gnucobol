@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2020 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2021 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 
    This file is part of GnuCOBOL.
@@ -374,3 +374,7 @@ CB_CONFIG_SUPPORT (cb_assign_disk_from, "assign-disk-from",
 
 CB_CONFIG_SUPPORT (cb_vsam_status, "vsam-status",
 	_("VSAM status in FILE STATUS"))
+		
+CB_CONFIG_SUPPORT (cb_self_call_recursive, "self-call-recursive",
+	_("CALL to own PROGRAM-ID implies RECURSIVE attribute"))
+

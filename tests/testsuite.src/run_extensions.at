@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2020 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2021 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 ## Ron Norman
 ##
@@ -4526,14 +4526,14 @@ AT_DATA([prog.cob], [
            STOP RUN
            .
        ENTRY 'ErrProc-internal' USING Err-Message-From-Runtime.
-           DISPLAY 'Error (interal): ' FUNCTION EXCEPTION-LOCATION  '-'
-           DISPLAY '                 ' FUNCTION EXCEPTION-STATEMENT '-'
-           DISPLAY '                 ' FUNCTION EXCEPTION-STATUS    '-'
+           DISPLAY 'Error (internal): ' FUNCTION EXCEPTION-LOCATION  '-'
+           DISPLAY '                  ' FUNCTION EXCEPTION-STATEMENT '-'
+           DISPLAY '                  ' FUNCTION EXCEPTION-STATUS    '-'
            *> NOTE: the error message is *EXPLICIT* specified to end with x'00'
            MOVE 0 TO Err-Message-Len
            INSPECT Err-Message-From-Runtime
               TALLYING Err-Message-Len FOR CHARACTERS BEFORE x'00'
-           DISPLAY 'Error-Message:   ' Err-Message-From-Runtime
+           DISPLAY 'Error-Message:    ' Err-Message-From-Runtime
                                        (1:Err-Message-Len)
            DISPLAY '-*- Returning to Next Error Routine -*-'
            MOVE    1         TO RETURN-CODE
@@ -4557,10 +4557,10 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [1],
 [Program is starting
-Error (interal): DemoErrProc; S1; 25-
-                 CALL                           -
-                 EC-PROGRAM-NOT-FOUND           -
-Error-Message:   prog.cob:25: module 'Tilt' not found
+Error (internal): DemoErrProc; S1; 25-
+                  CALL                           -
+                  EC-PROGRAM-NOT-FOUND           -
+Error-Message:    prog.cob:25: module 'Tilt' not found
 -*- Returning to Next Error Routine -*-
 Error: DemoErrProc; S1; 25-
        CALL                           -
@@ -4573,10 +4573,10 @@ Error: DemoErrProc; S1; 25-
 AT_CHECK([$COBC -x -o prog_noloc prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog_noloc], [1],
 [Program is starting
-Error (interal):  -
-                                                -
-                 EC-PROGRAM-NOT-FOUND           -
-Error-Message:   module 'Tilt' not found
+Error (internal):  -
+                                                 -
+                  EC-PROGRAM-NOT-FOUND           -
+Error-Message:    module 'Tilt' not found
 -*- Returning to Next Error Routine -*-
 Error:  -
                                       -
@@ -4590,7 +4590,7 @@ AT_CLEANUP
 
 
 AT_SETUP([System routine CBL_ERROR_PROC (2)])
-AT_KEYWORDS([extensions exceptions error LOCAL-STORAGE
+AT_KEYWORDS([extensions exceptions error LOCAL-STORAGE RECURSIVE
 EXCEPTION-LOCATION EXCEPTION-STATEMENT EXCEPTION-FILE EXCEPTION-STATUS])
 
 # tests that error handlers can stop the processing,
@@ -4666,6 +4666,71 @@ Error-Message:   prog.cob:20: module 'Tilt' not found
 #],
 #[libcob: error: recursive CALL from 'DemoErrProc' to 'DemoErrProc' which is NOT RECURSIVE
 #])
+
+AT_CLEANUP
+
+
+AT_SETUP([CALL own PROGRAM-ID and RECURSIVE attribute])
+AT_KEYWORDS([extensions exceptions])
+
+# mixed syntax and runtime test, may be split later
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       78  own-prog                VALUE 'prog'.
+       77  first-call        PIC X VALUE ' '.
+       PROCEDURE DIVISION.
+       T1.
+           IF first-call = SPACE
+              MOVE 'X' TO first-call
+              CALL own-prog.
+           GOBACK.
+])
+AT_CHECK([$COMPILE prog.cob], [0], [],
+[prog.cob: in paragraph 'T1':
+prog.cob:12: warning: CALL to own PROGRAM-ID used
+prog.cob:12: note: assuming RECURSIVE attribute
+])
+
+AT_CHECK([$COMPILE -fself-call-recursive=error prog.cob], [1], [],
+[prog.cob: in paragraph 'T1':
+prog.cob:12: error: CALL to own PROGRAM-ID used
+])
+
+AT_CHECK([$COMPILE -o prog_std -std=mf prog.cob], [0], [], [])
+
+AT_DATA([progc.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       77  first-call        PIC X VALUE ' '.
+       PROCEDURE DIVISION.
+       T2.
+           IF first-call NOT = SPACE
+              GOBACK.
+           MOVE 'X' TO first-call
+       COPY cllprg.
+           GOBACK.
+])
+AT_DATA([cllprg.cpy], [
+           CALL 'prog'.
+])
+AT_CHECK([$COMPILE progc.cob], [0], [],
+[cllprg.cpy: in paragraph 'T2':
+cllprg.cpy:2: warning: CALL to own PROGRAM-ID used
+cllprg.cpy:2: note: assuming RECURSIVE attribute
+])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./progc], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog_std], [1], [],
+[libcob: prog.cob:12: error: recursive CALL from 'prog' to 'prog' which is NOT RECURSIVE
+])
 
 AT_CLEANUP
 

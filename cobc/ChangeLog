@@ -1,4 +1,11 @@
 
+2021-07-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y, config.def: changed the auto-setting of the RECURSIVE attribute
+	  in programs that CALL their own PROGRAM-ID (possibly deep in never called
+	  copybooks) to depend on the dialect option "self-call-recursive", with the
+	  option to skip that or warn/error, fixing bug 686
+
 2021-07-12  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (cobc_getenv_path): drop invalid list from path
@@ -362,8 +369,9 @@
 
 2020-09-10  Simon Sobisch <simonsobisch@gnu.org>
 
-	update for compiler diagnostivs including FR 386: show warning flag in use
-	
+	update for compiler diagnostics including FR 263 (diagnostics as "note")
+	and FR 386 (show warning flag in use)
+
 	* cobc.c, cobc.h, error.c, tree.h, typeck.c: change internal representation
 	  of warning options from integers to new enum cb_warn_opt which can have
 	  a warning value of new enum cb_warn_val instead of defines

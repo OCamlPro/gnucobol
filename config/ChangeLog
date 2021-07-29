@@ -1,4 +1,14 @@
 
+2021-07-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: added self-call-recursive, only active (as "warning") for
+	  default.conf, in all other cases no change to RECURSIVE attribute
+	  is happening any more, fixing bug 686
+
+2021-02-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* acu-strict.conf: fix settings indirect-redefines + assign-variable
+
 2020-11-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* general: added ref-mod-zero-length, only active for default.conf
@@ -549,7 +559,7 @@
 	* default.inc, Makefile.am: New files.
 
 
-Copyright 2003,2005-2007-2010,2014-2020 Free Software Foundation, Inc.
+Copyright 2003,2005-2007-2010,2014-2021 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

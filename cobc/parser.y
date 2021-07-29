@@ -7622,7 +7622,7 @@ occurs_key_field:
 	cb_tree rchain = NULL;
 	cb_tree l;
 
-	/* create reference chaing all the way up
+	/* create reference chain all the way up
 	   as later fields may have same name */
 	if (!within_typedef_definition) {
 		rchain = cb_build_full_field_reference (current_field->parent);
@@ -11142,9 +11142,10 @@ call_body:
 	if (current_program->prog_type == COB_MODULE_TYPE_PROGRAM
 	 && !current_program->flag_recursive
 	 && is_recursive_call ($3)) {
-		cb_warning_x (COBC_WARN_FILLER, $3,
-			_("recursive program call - assuming RECURSIVE attribute"));
-		current_program->flag_recursive = 1;
+	 	if (cb_verify_x ($3, cb_self_call_recursive, _("CALL to own PROGRAM-ID"))) {
+			cb_note_x (cb_warn_dialect, $3, _("assuming RECURSIVE attribute"));
+			current_program->flag_recursive = 1;
+		}
 	}
 	call_conv = current_call_convention;
 	if ($6) {

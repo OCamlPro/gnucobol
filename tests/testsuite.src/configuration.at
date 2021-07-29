@@ -516,6 +516,7 @@ test.conf: missing definitions:
 	no definition of 'assign-ext-dyn'
 	no definition of 'assign-disk-from'
 	no definition of 'vsam-status'
+	no definition of 'self-call-recursive'
 ])
 
 AT_CLEANUP
