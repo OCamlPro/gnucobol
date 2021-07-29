@@ -17321,10 +17321,12 @@ x_common:
 | ADDRESS _of FH__FCD _of file_name
   {
 	CB_PENDING ("EXTFH address");
+	$$ = cb_error_node;
   }
 | ADDRESS _of FH__KEYDEF _of file_name
   {
 	CB_PENDING ("EXTFH address");
+	$$ = cb_error_node;
   }
 | MNEMONIC_NAME
   {

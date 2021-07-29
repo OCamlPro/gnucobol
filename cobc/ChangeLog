@@ -5,6 +5,7 @@
 	  in programs that CALL their own PROGRAM-ID (possibly deep in never called
 	  copybooks) to depend on the dialect option "self-call-recursive", with the
 	  option to skip that or warn/error, fixing bug 686
+	* parser.y: fix bug 748 SIGSEGV after warning: EXTFH address is not impl.
 
 2021-07-12  Simon Sobisch <simonsobisch@gnu.org>
 
