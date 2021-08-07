@@ -206,6 +206,7 @@ static	int	prev_expr_pos = 0;
 static	int	prev_expr_warn[EXPR_WARN_PER_LINE] = {0,0,0,0,0,0,0,0};
 static	int	prev_expr_tf[EXPR_WARN_PER_LINE] = {0,0,0,0,0,0,0,0};
 
+static int	do_set_column = 1;
 static struct cb_report *report_checked = NULL;
 
 /* Local functions */
@@ -626,10 +627,10 @@ cb_name_1 (char *s, cb_tree x, const int size)
 		break;
 
 	case CB_TAG_REPORT_LINE:
-#if 1	/* FIXME: Why do we need the unchecked cast here? */
+#if 0	/* FIXME: Why do we need the unchecked cast here? */
 		p = (struct cb_reference *)x;
 #else
-		p = CB_REFERENCE (x);
+		p = CB_REFERENCE_P (x);
 #endif
 		f = CB_FIELD (p->value);
 		snprintf (s, size, "REPORT LINE %s", f->name);
@@ -2478,6 +2479,23 @@ cb_build_numeric_literal (int sign, const void *data, const int scale)
 	/* using an intermediate char pointer for pointer arithmetic */
 	const char	*data_chr_ptr = data;
 
+#if 0 /* CHECKME - shouldn't this be what we want? */
+	if (*data_chr_ptr == '-') {
+		if (sign < 1) {
+			sign = 1;
+		} else {
+			sign = -1;
+		}
+		data_chr_ptr++;
+	} else if (*data_chr_ptr == '+') {
+		if (sign < 1) {
+			sign = -1;
+		} else {
+			sign = 1;
+		}
+		data_chr_ptr++;
+	}
+#else
 	if (*data_chr_ptr == '-') {
 		sign = -1;
 		data_chr_ptr++;
@@ -2485,6 +2503,7 @@ cb_build_numeric_literal (int sign, const void *data, const int scale)
 		sign = 1;
 		data_chr_ptr++;
 	}
+#endif
 	data = data_chr_ptr;
 	p = build_literal (CB_CATEGORY_NUMERIC, data, strlen (data));
 	p->sign = (short)sign;
@@ -2521,7 +2540,7 @@ cb_build_alphanumeric_literal (const void *data, const size_t size)
 
 	l = CB_TREE (build_literal (CB_CATEGORY_ALPHANUMERIC, data, size));
 
-        SET_SOURCE_CB( l );
+	SET_SOURCE_CB( l );
 
 	return l;
 }
@@ -2533,7 +2552,7 @@ cb_build_national_literal (const void *data, const size_t size)
 
 	l = CB_TREE (build_literal (CB_CATEGORY_NATIONAL, data, size));
 
-        SET_SOURCE_CB( l );
+	SET_SOURCE_CB( l );
 
 	return l;
 }
@@ -3708,16 +3727,139 @@ cb_field_dup (struct cb_field *f, struct cb_reference *ref)
 	return  cb_build_field_reference (s, NULL);
 }
 
-#if	0	/* RXWRXW - Field */
+/* Creat new field resolving constant subscripting */
 struct cb_field *
-CB_FIELD_PTR (cb_tree x)
+cb_field_direct (struct cb_field *frm, struct cb_reference *ref, char *report, 
+				int *pos, int *len)
 {
-	if (CB_REFERENCE_P (x)) {
-		return CB_FIELD (cb_ref (x));
+	cb_tree		x;
+	cb_tree		l;
+	struct cb_field *s, *f, *p;
+	char		buff[COB_MINI_BUFF], pic[30], comma[6];
+	char		tmp[COB_SMALL_BUFF] = { 0 };
+	char		wrk[COB_SMALL_BUFF] = { 0 };
+	int			rl, offset, sub, dec, dig, allok, simple, tlen;
+
+	allok = 1;
+	simple = 1;
+	if (ref
+	&& (ref->length || ref->offset || ref->subs))
+		simple = 0;
+	if (report == NULL)
+		report = tmp;
+	if (ref
+	 && ref->length
+	 && !CB_NUMERIC_LITERAL_P(ref->length)) {
+		allok = 0;
 	}
-	return CB_FIELD (x);
-}
+	if (ref
+	 && ref->offset
+	 && !CB_NUMERIC_LITERAL_P(ref->offset)) {
+		allok = 0;
+	}
+	if (ref
+	 && ref->subs
+	 && allok) {
+		for (l = ref->subs; l; l = CB_CHAIN (l)) {
+			if (!CB_NUMERIC_LITERAL_P (CB_VALUE(l))) {
+				allok = 0;
+				break;
+			}
+		}
+	}
+	*pos = *len = 0;
+	offset = 0;
+	if (ref)
+		f = cb_code_field (ref);
+	else 
+		f = frm;
+
+	offset = f->offset;
+	rl = sprintf (report,"%s",f->name);
+	if (ref->subs) {
+		strcpy(comma,"");
+		s = f;
+		rl += sprintf (&report[rl]," %c",allok?'[':'(');
+		for (l = ref->subs; l; l = CB_CHAIN (l)) {
+			if (CB_NUMERIC_LITERAL_P (CB_VALUE(l))) {
+				sub = cb_get_int (CB_VALUE(l));
+				rl += sprintf (&report[rl], "%s%d",comma,sub);
+				while (!s->flag_occurs && s->parent)
+					s = s->parent;
+				offset += (sub - 1) * s->size;
+				if (s->parent)
+					s = s->parent;
+			} else {
+				tlen = cb_name_1 (wrk, CB_VALUE(l), COB_SMALL_MAX);
+				rl += sprintf (&report[rl], "%s%s",comma,wrk);
+			}
+			strcpy(comma,", ");
+		}
+		rl += sprintf (&report[rl],"%c ",allok?']':')');
+	}
+	if (ref
+	 && ref->offset) {
+	 	if (CB_NUMERIC_LITERAL_P (ref->offset)) {
+			offset += cb_get_int (ref->offset) - 1;
+			rl += sprintf (&report[rl], " (%d",cb_get_int (ref->offset));
+		} else {
+			tlen = cb_name_1 (wrk, ref->offset, COB_SMALL_MAX);
+			rl += sprintf (&report[rl], " (%s",wrk);
+		}
+	}
+	if (ref
+	 && ref->length) {
+	 	if (CB_NUMERIC_LITERAL_P(ref->length)) {
+			rl += sprintf (&report[rl], ":%d) ",cb_get_int (ref->length));
+		} else {
+			tlen = cb_name_1 (wrk, ref->length, COB_SMALL_MAX);
+			rl += sprintf (&report[rl], ":%s) ",wrk);
+		}
+	}
+	if (report[rl-1] == ' ')
+		report[--rl] = 0;
+
+	if (simple) {			/* No subscripts or refence mod */
+		*pos = f->offset;
+		*len = f->size;
+		return frm;		/* Very simple SOURCE field */
+	}
+
+	if (!allok)			/* Has variables for subscripts or ref mod */
+		return NULL;	/* Must be resovled using generated code */
+
+	*pos = offset;
+	if (ref
+	 && ref->length
+ 	 && CB_NUMERIC_LITERAL_P(ref->length)) {
+		*len = cb_get_int (ref->length);
+	} else {
+		*len = f->size;
+	}
+#if 0
+	/* Make new field, setting position and size */
+	p = cb_field_founder (f);
+	if (p->redefines) {
+		p = p->redefines;
+	}
+	x = cb_field_dup (frm, ref);
+	f = cb_code_field (x);
+	f->offset = offset;
+	f->parent = p;
+	f->flag_vaddr_done = 1;
+	f->flag_no_init = 1;
+	f->level = 99;
+	if (f->count == 0) {
+		f->count = 1;
+	}
+	if (ref
+	 && ref->length
+ 	 && CB_NUMERIC_LITERAL_P(ref->length)) {
+		f->size = cb_get_int (ref->length);
+	}
 #endif
+	return  f;
+}
 
 struct cb_field *
 cb_field_add (struct cb_field *f, struct cb_field *p)
@@ -3893,6 +4035,7 @@ build_report (cb_tree name)
 	cb_tree		x, y;
 	char		buff[COB_MINI_BUFF];
 
+	do_set_column = 1;
 	p = make_tree (CB_TAG_REPORT, CB_CATEGORY_UNKNOWN, sizeof (struct cb_report));
 	p->name = cb_define (name, CB_TREE (p));
 	p->cname = cb_to_cname (p->name);
@@ -3923,6 +4066,27 @@ build_report (cb_tree name)
 	return p;
 }
 
+/* Compute REPORT line length, adjust offset as per report_column */
+static int
+record_len (struct cb_field *f, int len, int bgn)
+{
+	int		pos = f->offset;
+	if (!(f->report_flag & COB_REPORT_COLUMN_PLUS)
+	 && !(f->report_flag & COB_REPORT_COLUMN_RIGHT)
+	 && !(f->report_flag & COB_REPORT_COLUMN_CENTER)
+	 && f->report_column > 0) {
+		if (f->report_column > (pos + 1))
+			pos = f->report_column - 1;
+	}
+	if ((pos + f->size) > len)
+		len = pos + f->size;
+	if (f->children)
+		len = record_len (f->children, len, 0);
+	if (f->sister && bgn == 0)
+		len = record_len (f->sister, len, 0);
+	return len;
+}
+
 /* Add SUM counter to program */
 void
 build_sum_counter (struct cb_report *r, struct cb_field *f)
@@ -3934,10 +4098,15 @@ build_sum_counter (struct cb_report *r, struct cb_field *f)
 	size_t	num_sums_size = ((size_t)r->num_sums + 2) * sizeof (struct cb_field *) * 2;
 	size_t	num_sums_square = (size_t)r->num_sums * 2;
 
+	if (f->count == 0) {
+		f->count = 1;
+	}
 	/* Set up SUM COUNTER */
 	if (f->flag_filler) {
-		snprintf (buff, (size_t)COB_MINI_MAX, "SUM OF %s",
-					CB_FIELD(CB_VALUE(f->report_sum_list))->name);
+		s = CB_FIELD(CB_VALUE(f->report_sum_list));
+		if (s->count == 0)
+			s->count = 1;
+		snprintf (buff, (size_t)COB_MINI_MAX, "SUM OF %s", s->name);
 	} else {
 		snprintf (buff, (size_t)COB_MINI_MAX, "SUM %s", f->name);
 	}
@@ -3967,6 +4136,8 @@ build_sum_counter (struct cb_report *r, struct cb_field *f)
 	s->usage	= CB_USAGE_DISPLAY;
 	s->count++;
 	cb_validate_field (s);
+	if (f->count == 0)
+		f->count = 1;
 	f->report_sum_counter = cb_build_field_reference (s, NULL);
 	CB_FIELD_ADD (current_program->working_storage, s);
 
@@ -3982,14 +4153,177 @@ build_sum_counter (struct cb_report *r, struct cb_field *f)
 	r->num_sums++;
 }
 
+static int report_col_pos = 1;
+
+static struct cb_field *
+get_last_child (struct cb_field *f)
+{
+	while (f->children) {
+		f = f->children;
+		while (f->sister) {
+			f = f->sister;
+		}
+	}
+	return f;
+}
+/*
+* Recompute 'offset' and 'report_column' for a REPORT data item
+* so that each field is assigned to the correct line position
+*/
+static void
+set_report_column (struct cb_field *f)
+{
+	int	prev_col_pos, col;
+	struct cb_field *pp, *c;
+	cb_tree	x, l;
+
+	if (f->storage != CB_STORAGE_REPORT)
+		return;
+
+	if (f->level == 1
+	|| (f->report_flag & COB_REPORT_LINE)
+	|| (f->report_flag & COB_REPORT_DETAIL)
+	|| (f->report_flag & COB_REPORT_HEADING)
+	|| (f->report_flag & COB_REPORT_FOOTING)
+	|| (f->report_flag & COB_REPORT_PAGE_HEADING)
+	|| (f->report_flag & COB_REPORT_PAGE_FOOTING)) {
+		prev_col_pos = report_col_pos = 1;
+		f->offset = 0;
+		if (!(f->report_flag & COB_REPORT_LINE)
+		 && f->children
+		 && (f->children->report_flag & COB_REPORT_LINE)) {
+			for (c = f->children; c; c = c->sister) {
+				if ((c->report_flag & COB_REPORT_LINE))
+					prev_col_pos = report_col_pos = 1;
+				set_report_column (c);
+				c->size = c->memory_size = report_col_pos - 1;
+			}
+		}
+	} else 
+	if (!f->flag_set_col_offset) {
+		f->flag_set_col_offset = 1;
+		if (f->step_count < f->size)
+			f->step_count = f->size;
+		if (f->report_column > 0) {
+			if((f->report_flag & COB_REPORT_COLUMN_RIGHT)) {
+				report_col_pos = f->report_column + 1;
+				f->report_column =  report_col_pos - f->size;
+			} else
+			if((f->report_flag & COB_REPORT_COLUMN_CENTER)) {
+				if(f->size & 1) {
+					f->report_column = f->report_column - ((f->size - 1) / 2);
+				} else {
+					f->report_column = f->report_column - (f->size / 2) + 1;
+				}
+				report_col_pos = f->report_column + (f->size / 2) + 1;
+			} else
+			if(f->report_flag & COB_REPORT_COLUMN_PLUS) {
+				f->report_column = report_col_pos + f->report_column - 1;
+				report_col_pos = f->report_column;
+			} else {
+				report_col_pos = f->report_column;
+			}
+		} else {	/* No COLUMN was given */
+			f->report_column = report_col_pos;
+		}
+		f->offset = f->report_column - 1;	/* offset based on COLUMN value */
+	}
+
+	if (f->report_num_col > 1) {	/* Multiple COLUMN positions */
+		col = f->report_column;
+		for (l = f->report_column_list; l; l = CB_CHAIN (l)) {
+			x = CB_VALUE (l);
+			if (cb_get_int(x) > col)
+				col = cb_get_int(x);
+		}
+		/* Last COLUMN position plus field size */
+		report_col_pos = col + f->step_count - f->size;
+	}
+
+	if (f->children) {
+		prev_col_pos = report_col_pos;
+		set_report_column (f->children);
+		if (f->flag_occurs 
+	 	 && f->report_num_col <= 1
+		 && f->occurs_max > 1) {
+			report_col_pos = prev_col_pos 
+							+ (report_col_pos - prev_col_pos) * f->occurs_max;
+		}
+	} else
+	if (f->flag_occurs 
+	 && f->report_num_col <= 1
+	 && f->occurs_max > 1) {
+		report_col_pos += f->step_count * f->occurs_max;
+	} else {
+		report_col_pos += f->size;
+	}
+	if (!(f->report_flag & COB_REPORT_LINE)
+	 && f->level > 1
+	 && f->sister) {
+		set_report_column (f->sister);
+	}
+}
+
+static void
+set_report_line (struct cb_field *f)
+{
+	struct cb_field	*c, *s, *lc;
+	int		maxsz;
+	if (f->storage == CB_STORAGE_REPORT
+	 && !f->flag_set_col_offset
+	 && (f->level == 1
+	  || (f->report_flag 
+		& (COB_REPORT_LINE|COB_REPORT_HEADING|COB_REPORT_FOOTING
+			|COB_REPORT_PAGE_HEADING|COB_REPORT_PAGE_FOOTING)))) {
+		/* Each LINE needs to be a separate data area */
+		report_col_pos = 1;
+		f->flag_set_col_offset = 1;
+		f->offset = 0;
+		set_report_column (f);
+		f->size = f->memory_size = report_col_pos - 1;
+		if (f->children) {
+			for (c = f; c && c->children; c = c->children) {
+				if (c->report_flag & COB_REPORT_LINE)
+					break;
+			}
+			maxsz = 0;
+			for (s = c; s; s = s->sister) {
+				if (s->size > maxsz)
+					maxsz = s->size;
+				if (s->children) {
+					lc = get_last_child (s->children);
+					if ((lc->offset + lc->size) > maxsz)
+						maxsz = lc->offset + lc->size;
+				}
+			}
+			lc = get_last_child (f->children);
+			if ((lc->offset + lc->size) > maxsz)
+				maxsz = lc->offset + lc->size;
+			f->memory_size = f->size = maxsz;
+			if (f->level == 1
+			 && f->children->sister == NULL) {
+				c = f->children;
+				if (c->report_flag & COB_REPORT_LINE)
+					c->memory_size = c->size = maxsz;
+			}
+		}
+		if (f->level > 1 
+		 && f->sister)
+			set_report_line (f->sister);
+	} else if (f->children) {
+		set_report_line (f->children);
+	}
+}
+
 void
 finalize_report (struct cb_report *r, struct cb_field *records)
 {
 	struct cb_field		*p, *ff, *fld;
 	struct cb_file		*f;
 	struct cb_reference	*ref;
-	int		k;
+	int		k, maxsz;
 
+	maxsz = 0;
 	if (report_checked != r) {
 		report_checked = r;
 		if (r->lines > 9999) {
@@ -4036,26 +4370,32 @@ finalize_report (struct cb_report *r, struct cb_field *records)
 		}
 	}
 
+	if (do_set_column) {
+		maxsz = 0;
+		for (p = records; p; p = p->sister) {
+			if (p->storage != CB_STORAGE_REPORT)
+				continue;
+			if (p->flag_set_col_offset)
+				continue;
+			set_report_line (p);
+			if (report_col_pos > maxsz)
+				maxsz = report_col_pos - 1;
+		}
+		do_set_column = 0;
+		if (maxsz > r->rcsz)
+			r->rcsz = maxsz;
+	}
+
 	/* Insure report record size is set large enough */
 	for (k=0; k < 2; k++) {
 		for (p = records; p; p = p->sister) {
 			if (p->storage != CB_STORAGE_REPORT)
 				continue;
-			if ((p->report_flag &  COB_REPORT_LINE) || p->level == 1) {
-				if (r->rcsz < p->size + p->offset) {
+			if ((p->report_flag & COB_REPORT_LINE) 
+			 || (p->report_flag & COB_REPORT_LINE_PLUS) 
+			 || p->level == 1) {
+				if (r->rcsz < (p->size + p->offset)) {
 					r->rcsz = p->size + p->offset;
-				}
-				if (k == 1
-				 && p->level == 1) {
-					if (p->size < r->rcsz)
-						p->size = r->rcsz;
-					if (p->memory_size < r->rcsz)
-						p->memory_size = r->rcsz;
-				}
-			} 
-			if (p->report_column > 0) {
-				if(p->report_column - 1 + p->size > r->rcsz) {
-					r->rcsz = p->report_column - 1 + p->size;
 				}
 			}
 		}
@@ -4077,20 +4417,26 @@ finalize_report (struct cb_report *r, struct cb_field *records)
 			r->line_ids[r->num_lines++] = p;
 			r->line_ids[r->num_lines] = NULL;	/* Clear next entry */
 		}
+		p->report_field_from = NULL;
 		/* report source field */
 		if (p->report_source
 		 && CB_REF_OR_FIELD_P (p->report_source)) {
+			char	tmp[COB_MINI_BUFF];
+			struct cb_field *s;
+			int		pos, len;
 			/* force generation of report source field */
 			fld = CB_FIELD_PTR (p->report_source);
 			if (fld->count == 0) {
 				fld->count = 1;
 			}
-			if (CB_TREE_TAG (p->report_source) == CB_TAG_REFERENCE) {
-				ref = CB_REFERENCE (p->report_source);
-				if (ref->offset || ref->length || ref->subs || fld->flag_local) {
-					p->report_from = p->report_source;
-					p->report_source = cb_field_dup (fld, ref);
-				}
+			for (ff = p; !ff->flag_occurs && ff->parent; ff = ff->parent);
+			s = cb_field_direct (fld, CB_REFERENCE (p->report_source), tmp, &pos, &len);
+			p->report_source_txt = cobc_parse_strdup (tmp);
+			if (s != NULL
+			 && !ff->flag_occurs) {
+				p->report_field_from = fld;
+				p->report_field_offset = pos;
+				p->report_field_size = len;
 			}
 		}
 		/* force generation of report sum counter */
@@ -4116,15 +4462,6 @@ finalize_report (struct cb_report *r, struct cb_field *records)
 	for (p = records; p; p = p->sister) {
 		if (p->report != r) {
 			continue;
-		}
-		if (p->storage == CB_STORAGE_REPORT
-		 && ((p->report_flag & COB_REPORT_LINE) || p->level == 1)) {
-			if (p->size + p->offset > r->rcsz) {
-				p->size = r->rcsz - p->offset ;
-			}
-			if (p->memory_size + p->offset > r->rcsz) {
-				p->memory_size = r->rcsz - p->offset;
-			}
 		}
 		if (p->level == 1
 		 && p->report != NULL
@@ -4156,9 +4493,18 @@ finalize_report (struct cb_report *r, struct cb_field *records)
 		COBC_ABORT ();
 	}
 	/* LCOV_EXCL_STOP */
-	if (r->file->record_max < r->rcsz) {
-		r->file->record_max = r->rcsz;
+	k = 0;
+	if (r->code_clause
+	 && CB_LITERAL_P(r->code_clause)) {
+		k = CB_LITERAL(r->code_clause)->size;
+	} else
+	if (r->code_clause
+	 && CB_REF_OR_FIELD_P (r->code_clause)) {
+		k = CB_FIELD_PTR (r->code_clause)->size;
 	}
+	if (r->file->record_max < (r->rcsz + k)) {
+		r->file->record_max = r->rcsz + k;
+	} else
 	if (r->rcsz < r->file->record_max) {
 		r->rcsz = r->file->record_max;
 	}
@@ -4588,7 +4934,7 @@ cb_build_reference (const char *name)
 	x = CB_TREE (r);
 
 	/* position of tree */
-        SET_SOURCE_CB( x );
+	SET_SOURCE_CB( x );
 
 	return x;
 }
@@ -5287,6 +5633,7 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 }
 
 /* Expression */
+static int rel_bin_op = 0;
 
 static enum cb_warn_opt
 get_warnopt_for_constant (cb_tree x, cb_tree y)
@@ -5300,7 +5647,6 @@ get_warnopt_for_constant (cb_tree x, cb_tree y)
 	return cb_warn_constant_numlit_expr;
 }
 
-static int rel_bin_op = 0;
 cb_tree
 cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 {
@@ -5458,25 +5804,25 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 			}
 		} else
 		if (cb_constant_folding
-		&&  !rel_bin_op 					/* RJN: This needs more testing */
-		&&  CB_NUMERIC_LITERAL_P(y)) {
+		 && CB_NUMERIC_LITERAL_P(y)) {
 			yl = CB_LITERAL(y);
 			if (yl->scale == 0) {
 				yval = atoll((const char*)yl->data);
 				if ((op == '+' || op == '-') 
+		 		 && !rel_bin_op 
 				 && yval == 0) {		/* + or - ZERO does nothing */
 					return x;
 				}
 				if ((op == '*' || op == '/') 
-				 && yval == 1) {		/* multiply or divide by ONE does nothing */
+				 && yval == 1) {		/* * or / by ONE does nothing */
 					return x;
 				}
 				if (op == '*'
-				 && yval == 0) {		/* multiply by ZERO is ZERO */
+				 && yval == 0) {		/* * ZERO is ZERO */
 					return cb_zero_lit;
 				}
 			}
-		}	
+		}
 		rel_bin_op = 0;
 		category = CB_CATEGORY_NUMERIC;
 		break;
@@ -5703,8 +6049,8 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 	case '!':
 	case '&':
 	case '|':
-		rel_bin_op = 1;
 		/* Logical operators */
+		rel_bin_op = 1;
 		if (CB_TREE_CLASS (x) != CB_CLASS_BOOLEAN
 		 || (y && CB_TREE_CLASS (y) != CB_CLASS_BOOLEAN)) {
 			copy_file_line (e, y, x);

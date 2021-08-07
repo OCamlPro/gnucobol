@@ -8385,10 +8385,47 @@ page_or_ids:
 ;
 
 report_varying_clause:
-  VARYING identifier FROM arith_x BY arith_x
+  VARYING WORD var_from var_by 
   {
-	CB_PENDING ("RW VARYING clause");
+	cb_tree x;
+
+	if (CB_WORD_COUNT ($2) == 0) {
+		x = cb_build_field (cb_build_reference (CB_NAME($2)));
+		CB_FIELD (x)->usage = CB_USAGE_INDEX;
+		CB_FIELD (x)->index_type = CB_STATIC_INT_INDEX;
+		CB_FIELD (x)->values = CB_LIST_INIT (cb_zero);
+		CB_FIELD (x)->size = sizeof(int);
+		CB_FIELD (x)->count++;
+		CB_FIELD (x)->flag_real_binary = 1;
+		CB_FIELD (x)->flag_internal_register = 1;
+		CB_TREE (x)->category = CB_CATEGORY_NUMERIC;
+		cb_validate_field (CB_FIELD (x));
+		current_field->report_vary_var = cb_build_field_reference (CB_FIELD (x), NULL);
+		CB_FIELD_ADD (current_program->working_storage, CB_FIELD (x));
+	} else {
+		struct cb_field *f = CB_FIELD (cb_ref ($2));
+		current_field->report_vary_var = $2;
+		if (f->usage != CB_USAGE_INDEX
+		 || !f->flag_internal_register)
+			cb_error_x ($2, _("%s is not valid for VARYING"),f->name);
+	}
   }
+;
+
+var_from:
+|
+FROM arith_x 
+{
+	current_field->report_vary_from = $2;
+}
+;
+
+var_by:
+|
+BY arith_x 
+{
+	current_field->report_vary_by = $2;
+}
 ;
 
 line_clause:
@@ -8475,7 +8512,8 @@ col_or_plus:
 	int colnum = cb_get_int ($2);
 	if (colnum != 0) {
 		if (current_field->parent
-		 && current_field->parent->children == current_field) {
+		 && current_field->parent->children == current_field
+		 && (current_field->parent->report_flag & COB_REPORT_LINE)) {
 			cb_warning (COBC_WARN_FILLER, _("PLUS is ignored on first field of line"));
 			if (current_field->step_count == 0)
 				current_field->step_count = colnum;
@@ -8504,8 +8542,9 @@ column_integer:
 	int colnum;
 	colnum = cb_get_int ($1);
 	if (CB_LITERAL_P($1) && CB_LITERAL ($1)->sign > 0) {
-		if(current_field->parent
-		&& current_field->parent->children == current_field) {
+		if (current_field->parent
+		 && current_field->parent->children == current_field
+		 && (current_field->parent->report_flag & COB_REPORT_LINE)) {
 			cb_warning (COBC_WARN_FILLER,_("PLUS is ignored on first field of line"));
 		} else {
 			current_field->report_flag |= COB_REPORT_COLUMN_PLUS;

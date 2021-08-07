@@ -5765,7 +5765,7 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 00005 ALPHANUMERIC   03   TR-ITEM-COST                   9(03)V99
 00047 ALPHANUMERIC   03   FILLER                         X(47)
 
-00126 FILE                REPORT-FILE
+00067 FILE                REPORT-FILE
 
       WORKING-STORAGE SECTION
 
@@ -5774,7 +5774,7 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 
       REPORT SECTION
 
-00126 GROUP          01   PAGE-HEAD-GROUP
+00067 GROUP          01   PAGE-HEAD-GROUP
 00067 GROUP          02   FILLER
 00041 ALPHANUMERIC   03   FILLER                         X(41)
 00059 GROUP          02   FILLER
@@ -5784,7 +5784,7 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 00008 ALPHANUMERIC   03   FILLER                         X(08)
 00009 ALPHANUMERIC   03   FILLER                         X(09)
 
-00126 GROUP          01   CHARGE-DETAIL
+00057 GROUP          01   CHARGE-DETAIL
 00057 GROUP          02   FILLER
 00004 ALPHANUMERIC   03   FILLER                         Z(04)
 00016 ALPHANUMERIC   03   FILLER                         X(16)

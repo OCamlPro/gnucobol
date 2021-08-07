@@ -486,21 +486,6 @@ static struct cb_field	*check_odo_p = NULL;
 static struct cb_field	*check_subscript_p = NULL;
 static struct cb_field	*check_sub = NULL;
 
-static struct cb_field *
-cb_code_field (cb_tree x)
-{
-	if (CB_REFERENCE_P (x)) {
-		cb_tree f = CB_REFERENCE (x)->value;
-		if (!f) {
-			f = cb_ref (x);
-		}
-		return CB_FIELD (f);
-	}
-	if (CB_LIST_P (x)) {
-		return cb_code_field (CB_VALUE (x));
-	}
-	return CB_FIELD (x);
-}
 
 /*
  * Force reset of all check optimization
@@ -12825,6 +12810,7 @@ cb_emit_report_moves (struct cb_report *r, struct cb_field *f, int forterminate)
 		if(p->report_flag & (COB_REPORT_FOOTING|COB_REPORT_CONTROL_FOOTING|COB_REPORT_CONTROL_FOOTING_FINAL)) {
 			report_in_footing = 1;
 		}
+#if 0 /* DBG RJN Check this later */
 		if(p->report_from) {
 			if(forterminate
 			&& report_in_footing) {
@@ -12835,6 +12821,7 @@ cb_emit_report_moves (struct cb_report *r, struct cb_field *f, int forterminate)
 				cb_emit_move (p->report_from, CB_LIST_INIT (p->report_source));
 			}
 		}
+#endif
 		if(p->report_when) {
 			int  ifwhen = 2;
 			if(p->children)
@@ -12935,7 +12922,7 @@ cb_emit_generate (cb_tree x)
 		CB_REFERENCE (z)->value = CB_TREE (f->report);
 		x->tag = CB_TAG_REPORT_LINE;
 		cb_emit_report_move_id(z);
-		cb_emit (CB_BUILD_FUNCALL_2 ("$R", z, x));
+		cb_emit (CB_BUILD_FUNCALL_3 ("$R", z, x, f));
 	}
 }
 

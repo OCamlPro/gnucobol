@@ -1,4 +1,12 @@
 
+2021-08-07  Ron Norman <rjn@inglenet.com>
+
+	* common.h: Added new fields for REPORT structures
+	* reportio.c: Rework callback to application to use "goto *pointer"
+	          Additional changes as each LINE now has its own data area
+			  The cob_report now has a version which is checked at runtime
+			  The format of cob_report I/O routines changed
+
 2021-07-12  Ron Norman <rjn@inglenet.com>
 
 	* fextfh.c: Check FCD-CURRENT-REC-LEN being changed on WRITE/REWRITE

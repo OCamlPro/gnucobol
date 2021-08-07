@@ -2792,11 +2792,7 @@ AT_DATA([prog.cob], [
       
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [],
-[prog.cob:266: warning: PLUS is ignored on first field of line
-prog.cob:288: warning: PLUS is ignored on first field of line
-prog.cob:310: warning: PLUS is ignored on first field of line
-])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
 AT_CHECK([DD_DATAIN="./inp_data" DD_SYSPRINT="./report.txt" $COBCRUN_DIRECT ./prog], [0], [], [])
 
@@ -2853,11 +2849,11 @@ DEPARTMENT NUMBER:  20 HOUSEKEEPING
 DEPARTMENT NUMBER:  25 MAINTENANCE
 
      2003    BALDWIN SIMONSEN          $670.00       $39.22      $113.46        $4.75        $512.57
+     6491    LEO TILLEY                $606.00       $35.46       $46.56        $3.50        $520.48
 
              DEPARTMENT TOTALS       $1,744.00 *    $102.04 *    $210.54 *     $13.25 *    $1,418.17 *
 
              COMPANY TOTALS         $17,208.00 ** $1,006.78 ** $2,456.42 **    $80.00 **  $13,843.92 **
-
 
 
 
@@ -2877,11 +2873,11 @@ DEPARTMENT NUMBER:  25 MAINTENANCE
 
     * * * DEPARTMENT TOTALS * * *
 
-    01 MANAGEMENT            High    $5,140.00  30%     $300.71  30%     $520.25  21%      $15.00  19%     $4,304.07  31%
+    01 MANAGEMENT            High    $5,140.00  30%     $300.71  30%     $520.25  21%      $15.00  19%     $4,304.07  31%Lo
 
-Lo  05 ADMINISTRATIVE                $1,915.00  11%     $112.03  11%     $485.83  20%      $14.75  18%     $1,482.42  11%
+    05 ADMINISTRATIVE                $1,915.00  11%     $112.03  11%     $485.83  20%      $14.75  18%     $1,482.42  11%Lo
 
-    10 SKILLED NURSING       High    $5,165.00  30%     $302.18  30%     $798.24  33%      $12.00  15%     $4,052.58  29%
+    10 SKILLED NURSING       High    $5,165.00  30%     $302.18  30%     $798.24  33%      $12.00  15%     $4,052.58  29%Lo
 
     15 PATIENT SUPPORT               $1,726.00  10%     $100.96  10%     $239.12  10%      $12.00  15%     $1,373.92  10%
 
@@ -4237,7 +4233,7 @@ AT_DATA([progv.cob], [
        FD  RP-FILE REPORT RP.
 
        WORKING-STORAGE SECTION.
-       01  IDX1      PIC 99 VALUE 1.
+      *01  IDX1      PIC 99 VALUE 1.
        01  MAXCOL    PIC 99 VALUE 50.
        01  MYCODE    PIC X(6) VALUE "Hi-Q:".
        01  DIGX      PIC X(50) VALUE
@@ -4313,9 +4309,7 @@ AT_DATA([progv.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -std=cobol2002 -fassign-ext-dyn=ok progv.cob], [0], [],
-[progv.cob:39: warning: RW VARYING clause is not implemented
-])
+AT_CHECK([$COMPILE -std=cobol2002 -fassign-ext-dyn=ok progv.cob], [0], [], [])
 
 AT_CHECK([DD_PRINTOUT=./report_var.txt \
 $COBCRUN_DIRECT ./progv], [0], [], [])
@@ -4335,7 +4329,7 @@ AT_DATA([progl.cob], [
        FD  RP-FILE REPORT RP.
 
        WORKING-STORAGE SECTION.
-       01  IDX1      PIC 99 VALUE 1.
+      *01  IDX1      PIC 99 VALUE 1.
        01  DIGX      PIC X(50) VALUE
                 "123456789b123456789c123456789d123456789e123456789f".
        01  FILLER REDEFINES DIGX.
@@ -4409,9 +4403,7 @@ AT_DATA([progl.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -std=cobol2002 -fdump=all -fassign-ext-dyn=ok progl.cob], [0], [],
-[progl.cob:37: warning: RW VARYING clause is not implemented
-])
+AT_CHECK([$COMPILE -std=cobol2002 -fdump=all -fassign-ext-dyn=ok progl.cob], [0], [], [])
 
 AT_CHECK([DD_PRINTOUT=./report_lit.txt \
 $COBCRUN_DIRECT ./progl], [0], [], [])
@@ -4422,7 +4414,7 @@ AT_CAPTURE_FILE(./report_lit.txt)
 
 AT_DATA([reference],
 [Hi-Q:          1         2         3         4         5
-Hi-Q:          1         2         3         4         5
+Hi-Q: 123456789b123456789c123456789d123456789e123456789f
 Hi-Q:
 Hi-Q: 100       100       100         <1>
 Hi-Q: Tag1 *Tag2 **Tag1 *Tag2 **Tag1 *Tag2 **
@@ -9346,6 +9338,175 @@ AT_DATA([reference], [                           STARK TECHNOLOGIES MONTHLY REPO
 ])
 
 AT_CHECK([diff reference report.txt], [0])
+
+AT_CLEANUP
+
+AT_SETUP([Test Varying and Nested OCCURS])
+AT_KEYWORDS([REPORT])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+            SELECT RP-FILE 
+            ASSIGN TO "PRINTOUT"
+            ORGANIZATION LINE SEQUENTIAL.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD  RP-FILE REPORT RP.
+
+       WORKING-STORAGE SECTION.
+       77  RPT       PIC 99 VALUE 1.
+       77  NUM       PIC 9 VALUE 0.
+       77  TAG1V     PIC X(5) VALUE "Tag1".
+       77  TAG2V     PIC X(5) VALUE "Tag2".
+       01  MARKX     PIC X(16) VALUE
+                "<1> <2> <3> <4> ".
+       01  FILLER REDEFINES MARKX.
+           05  MARKIT  PIC X(4) OCCURS 4 TIMES.
+       01  DIGX      PIC X(50) VALUE
+                "123456789b123456789c123456789d123456789e123456789f".
+       01  FILLER REDEFINES DIGX.
+           05  DIGS  PIC X(10) OCCURS 5 TIMES.
+
+       REPORT SECTION.
+       RD  RP
+           CODE IS "VarQ: "
+           PAGE LIMIT 10 LINES
+                      60 COLUMNS
+           HEADING 1
+           FIRST DETAIL 4.
+       01 HEADING-LINE.
+          02  TYPE PAGE HEADING LINE PLUS 1.
+            05  COLUMN 1      PIC X(50) VALUE
+                "H        1         2         3         4         5".
+            05                PIC X(7) VALUE "  Page".
+            05                PIC ZZ9  SOURCE PAGE-COUNTER.
+          02  TYPE PAGE HEADING LINE PLUS 1.
+      *     05  COLUMN 1      PIC X(50) VALUE
+      *         "12345678901234567890123456789012345678901234567890".
+            05  COLUMN 1      OCCURS 5 TIMES
+                  VARYING IX1 FROM 1 BY 1.
+                10  H2-DIGS   PIC X(10) SOURCE DIGS (IX1).
+
+       01  RP-DTL1 TYPE DETAIL, LINE + 2.
+            03  NUMS  COLUMN 1   PIC 999 OCCURS 3 TIMES STEP 10.
+            03  MARK  COLUMN + 2 PIC X(4) SOURCE MARKIT(1).
+
+       01  RP-DTL2 TYPE DETAIL, LINE + 1.
+            03  GRPS  COLUMN 1 OCCURS 3 TIMES VARYING IX1 FROM 1.
+               05  TAG1        PIC X(5) SOURCE TAG1V.
+               05  FILLER      PIC X.
+               05  DTL2        OCCURS 3 TIMES VARYING IX2.
+                  10  DTL2X    PIC X SOURCE DIGX (IX1:1).
+               05  FILLER      PIC X.
+               05  TAG2        PIC X(5) SOURCE TAG2V.
+               05  FILLER      PIC X.
+            03  MRK2  COLUMN + 3    PIC X(4) SOURCE MARKIT(2).
+
+       01  RP-DTL3 TYPE DETAIL, LINE + 1.
+            03  NNNS  COLUMN 1, 11, 21, 27 PIC 999.
+            03  MRK3  COLUMN PLUS 3 PIC X(4) SOURCE MARKIT(3).
+
+       01  RP-DTL4 TYPE DETAIL, LINE + 1.
+            03  NUM4A               PIC 999.
+            03  FILLER              PIC X.
+            03  NUM4B COLUMN PLUS 7 PIC 999 OCCURS 3 STEP 6.
+            03  MRK4  COLUMN + 4    PIC X(4) SOURCE MARKIT(4).
+
+       PROCEDURE DIVISION.
+       DECLARATIVES.
+       BEFORE-DETAIL SECTION.
+           USE BEFORE REPORTING RP-DTL2.
+       DOIT-1.
+           ADD 1 TO NUM
+           DISPLAY "Hello World " NUM
+           MOVE '$' TO DTL2 (2, 2).
+       END DECLARATIVES.
+
+           OPEN OUTPUT RP-FILE
+           INITIATE RP
+
+           MOVE 149 TO NNNS (1), NNNS (2), NNNS (3) NNNS (4)
+           MOVE 100 TO NUMS (1), NUMS (2), NUMS (3)
+
+           PERFORM VARYING RPT FROM 1 BY 1
+                     UNTIL RPT > 4
+               GENERATE RP-DTL1
+    
+               PERFORM DOIT-NOW
+               GENERATE RP-DTL2
+    
+               MOVE 200 TO NNNS (1), NNNS (2), NNNS (3) NNNS (4)
+               GENERATE RP-DTL3
+    
+               MOVE 400 TO NUM4A
+               MOVE 401 TO NUM4B (1)
+               MOVE 402 TO NUM4B (2)
+               MOVE 403 TO NUM4B (3)
+               GENERATE RP-DTL4
+           END-PERFORM.
+
+           TERMINATE rp.
+           CLOSE RP-FILE.
+
+           STOP RUN.
+
+       DOIT-NOW.
+           MOVE ALL '*' TO GRPS(1), GRPS(2), GRPS(3)
+           MOVE "WAG1" TO TAG1 (1), TAG1 (2), TAG1 (3)
+           MOVE "WAG2" TO TAG2 (1), TAG2 (2), TAG2 (3).
+])
+
+AT_CHECK([$COMPILE -std=cobol2002 -debug prog.cob ], [0], [], [])
+
+AT_CHECK([export PRINTOUT=tstdmrp.txt
+$COBCRUN_DIRECT ./prog], [0], [Hello World 1
+Hello World 2
+Hello World 3
+Hello World 4
+], [])
+
+
+AT_CAPTURE_FILE(./tstdmrp.txt)
+
+AT_DATA([reference], [VarQ: H        1         2         3         4         5  Page   1
+VarQ: 123456789b123456789c123456789d123456789e123456789f
+VarQ:
+VarQ: 100       100       100        <1>
+VarQ: Tag1 *123*Tag2 *Tag1 *123*Tag2 *Tag1 *123*Tag2 *  <2>
+VarQ: 200       200       200   200  <3>
+VarQ: 400       401   402   403      <4>
+VarQ:
+VarQ:                                <1>
+VarQ: Tag1 *123*Tag2 *Tag1 *123*Tag2 *Tag1 *123*Tag2 *  <2>
+VarQ: H        1         2         3         4         5  Page   2
+VarQ: 123456789b123456789c123456789d123456789e123456789f
+VarQ:
+VarQ: 200       200       200   200  <3>
+VarQ: 400       401   402   403      <4>
+VarQ:
+VarQ:                                <1>
+VarQ: Tag1 *123*Tag2 *Tag1 *123*Tag2 *Tag1 *123*Tag2 *  <2>
+VarQ: 200       200       200   200  <3>
+VarQ: 400       401   402   403      <4>
+VarQ: H        1         2         3         4         5  Page   3
+VarQ: 123456789b123456789c123456789d123456789e123456789f
+VarQ:
+VarQ:                                <1>
+VarQ: Tag1 *123*Tag2 *Tag1 *123*Tag2 *Tag1 *123*Tag2 *  <2>
+VarQ: 200       200       200   200  <3>
+VarQ: 400       401   402   403      <4>
+VarQ:
+VarQ:
+VarQ:
+])
+
+AT_CHECK([gcdiff reference tstdmrp.txt], [0], [], [])
 
 AT_CLEANUP
 

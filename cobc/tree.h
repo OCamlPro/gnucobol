@@ -485,7 +485,8 @@ enum cb_perform_type {
 enum cb_index_type {
 	CB_NORMAL_INDEX = 0,
 	CB_INT_INDEX,
-	CB_STATIC_INT_INDEX
+	CB_STATIC_INT_INDEX,
+	CB_STATIC_INT_VARYING
 };
 
 /* Reserved word list structure */
@@ -827,7 +828,15 @@ struct cb_field {
 	cb_tree			report_control;	/* CONTROL identifier */
 	cb_tree			report_when;	/* PRESENT WHEN condition */
 	cb_tree			report_column_list;/* List of Column Numbers */
+	cb_tree			report_vary_var;/* VARYING identifier */
+	cb_tree			report_vary_from;/* VARYING FROM arith */
+	cb_tree			report_vary_by;	/* VARYING BY arith */
 	cb_tree			same_as;	/* SAME AS data-name (points to field) */
+	const char		*report_source_txt;	/* SOURCE as text string */
+	const char		*report_field_name;	/* Name used for this REPORT field */
+	struct cb_field	*report_field_from;	/* 'field' used as SOURCE */
+	int				report_field_offset;
+	int				report_field_size;
 
 	int			id;		/* Field id */
 	int			size;		/* Field size */
@@ -849,6 +858,7 @@ struct cb_field {
 	int			report_column;	/* COLUMN (first value) */
 	int			report_num_col;	/* Number of COLUMNs defined */
 	int			report_decl_id;	/* Label id of USE FOR REPORTING */
+	int			report_source_id;/* Label id of MOVE SOURCE values */
 	int			step_count;	/* STEP in REPORT */
 	int			next_group_line;/* NEXT GROUP [PLUS] line */
 	unsigned int		vaddr;		/* Variable address cache */
@@ -937,6 +947,8 @@ struct cb_field {
 	unsigned int flag_sym_emitted: 1;	/* cob_symbol was emitted */
 	unsigned int flag_cob_field	: 1;	/* Had cob_field emitted */
 	unsigned int flag_binary_assign: 1;	/* BINARY field for simple assignment */
+	unsigned int flag_occurs_multi_col: 1;	/* OCCURS and multi COLUMNs reported */
+	unsigned int flag_set_col_offset: 1;	/* offset was set based on COLUMN */
 
 };
 
@@ -1537,6 +1549,7 @@ struct cb_report {
 	unsigned int		global:1;	/* IS GLOBAL declared */
 	unsigned int		has_declarative:1;/* Has Declaratives Code to be executed */
 	unsigned int		has_detail:1;	/* Has DETAIL line */
+	unsigned int		has_source_move:1;/* Has Code to MOVE SOURCE values */
 };
 
 #define CB_REPORT(x)	(CB_TREE_CAST (CB_TAG_REPORT, struct cb_report, x))
@@ -2004,7 +2017,9 @@ extern cb_tree	cb_build_system_name (const enum cb_system_name_category,
 
 extern const char	*cb_get_usage_string (const enum cb_usage);
 
-extern cb_tree		cb_field_dup (struct cb_field *f, struct cb_reference *ref);
+extern cb_tree	cb_field_dup (struct cb_field *f, struct cb_reference *ref);
+extern struct cb_field *cb_field_direct (struct cb_field *f, struct cb_reference *ref,
+								 char *report, int *pos, int *len);
 
 extern cb_tree		cb_build_ml_suppress_clause (void);
 extern cb_tree		cb_build_ml_tree (struct cb_field *, const int,
@@ -2338,6 +2353,7 @@ extern cb_tree		cobc_tree_cast_check (const cb_tree, const char *,
 extern void		codegen (struct cb_program *, const char *, const int);
 extern struct cb_field *chk_field_variable_size (struct cb_field *f);
 extern unsigned int	chk_field_variable_address (struct cb_field *fld);
+extern struct cb_field * cb_code_field (cb_tree x);
 extern int		cb_wants_dump_comments;	/* likely to be removed later */
 
 /* scanner.l */

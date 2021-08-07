@@ -42,6 +42,7 @@
 
 /* Function prototypes */
 static unsigned int	validate_field_1 (struct cb_field *f);
+static int compute_size (struct cb_field *f);
 
 /* Global variables */
 
@@ -2008,15 +2009,7 @@ static unsigned int
 validate_field_1 (struct cb_field *f)
 {
 	cb_tree		x;
-
-#if 0
-	/* LCOV_EXCL_START */
-	if (!f) {	/* checked to keep the analyzer happy */
-		cobc_err_msg (_("call to %s with NULL pointer"), "validate_field_1");
-		COBC_ABORT();
-	}
-	/* LCOV_EXCL_STOP */
-#endif
+	int			sts = 0;
 
 	if (f->flag_invalid) {
 		return 1;
@@ -2028,9 +2021,9 @@ validate_field_1 (struct cb_field *f)
 
 	x = CB_TREE (f);
 	if (f->level == 77) {
-		if (f->storage != CB_STORAGE_WORKING &&
-		    f->storage != CB_STORAGE_LOCAL &&
-		    f->storage != CB_STORAGE_LINKAGE) {
+		if (f->storage != CB_STORAGE_WORKING 
+		 && f->storage != CB_STORAGE_LOCAL 
+		 && f->storage != CB_STORAGE_LINKAGE) {
 			cb_error_x (x, _("'%s' 77 level is not allowed here"), cb_name (x));
 		}
 	}
@@ -2063,10 +2056,11 @@ validate_field_1 (struct cb_field *f)
 	}
 
 	if (f->children) {
-		return validate_group (f);
+		sts = validate_group (f);
 	} else {
-		return validate_elementary_item (f);
+		sts = validate_elementary_item (f);
 	}
+	return sts;
 }
 
 static void
@@ -2365,49 +2359,13 @@ compute_binary_size (struct cb_field *f, const int size)
 static struct cb_field *
 get_last_child (struct cb_field *f)
 {
-	do {
+	while (f->children) {
 		f = f->children;
 		while (f->sister) {
 			f = f->sister;
 		}
-	} while (f->children);
-
+	}
 	return f;
-}
-
-static void
-set_report_field_offset (struct cb_field *f)
-{
-	struct cb_field *pp;
-
-#if 0 /* That would be a bad error as this function is only called for report_column > 0 */
-	if (f->storage != CB_STORAGE_REPORT) {
-		return;
-	}
-#endif
-	if (!(f->report_flag & COB_REPORT_COLUMN_PLUS)) {
-		f->offset = f->report_column - 1;		/* offset based on COLUMN value */
-		return;
-	}
-	pp = f->parent;
-	if (pp) {
-		if (pp->children == f) {
-			f->offset = f->report_column - 1;	/* First in line */
-		} else {
-			struct cb_field *c;
-			for (c = pp->children; c; c = c->sister) {	/* Find previous field */
-				if (c->sister == f) {
-					if (c->occurs_max > 1) {
-						f->offset = c->offset + c->size * c->occurs_max + f->report_column;
-					}
-					else {
-						f->offset = c->offset + c->size + f->report_column;
-					}
-					break;
-				}
-			}
-		}
-	}
 }
 
 static int
@@ -2427,13 +2385,14 @@ compute_size (struct cb_field *f)
 	if (f->storage == CB_STORAGE_REPORT) {
 		if (f->report_num_col > 1) {
 			if (f->flag_occurs) {
-				/* FIXME: this is no size calculation and likely not reachable (if it is: move) */
-				cb_error_x (CB_TREE (f), _("OCCURS and multi COLUMNs is not allowed"));
+				if (!f->flag_occurs_multi_col)
+					cb_error_x (CB_TREE (f), _("OCCURS and multi COLUMNs is not allowed"));
 			} else {
 				f->occurs_max = f->occurs_min = f->report_num_col;
 				f->flag_occurs = 1;
 				f->indexes = 1;
 			}
+			f->flag_occurs_multi_col = 1;
 		}
 	}
 	if (f->level == 66) {
@@ -2464,11 +2423,6 @@ compute_size (struct cb_field *f)
 	}
 
 	if (f->children) {
-		if (f->storage == CB_STORAGE_REPORT
-		 && (f->report_flag & COB_REPORT_LINE) ) {
-			f->offset = 0;
-		}
-
 		/* Groups */
 		if (f->flag_synchronized) {
 			/* TODO: handle this "per dialect", some disallow this (per ANSI85) or ignore it */
@@ -2484,8 +2438,8 @@ unbounded_again:
 				c->offset = c->redefines->offset;
 				compute_size (c);
 				/* Increase the size if redefinition is larger */
-				if (c->level != 66 &&
-				    c->size * c->occurs_max >
+				if (c->level != 66 
+				 && c->size * c->occurs_max >
 				    c->redefines->size * c->redefines->occurs_max) {
 					if (cb_larger_redefines_ok) {
 						cb_warning_x (cb_warn_additional, CB_TREE (c),
@@ -2507,17 +2461,14 @@ unbounded_again:
 					}
 				}
 			} else {
-				c->offset = f->offset + (int) size_check;
+				if (c->storage != CB_STORAGE_REPORT)
+					c->offset = f->offset + (int) size_check;
 				compute_size (c);
 				if (c->flag_unbounded) {
 					unbounded_items++;
 					c->occurs_max = (COB_MAX_UNBOUNDED_SIZE / c->size / unbounded_parts) - 1;
 				}
 				size_check += c->size * c->occurs_max;
-
-				if (c->report_column > 0) { 		/* offset based on COLUMN value */
-					set_report_field_offset(c);
-				}
 
 				/* Word alignment */
 				if (c->flag_synchronized) {
@@ -2594,7 +2545,8 @@ unbounded_again:
 					}
 					if ((c->offset % align_size) != 0) {
 						pad = align_size - (c->offset % align_size);
-						c->offset += pad;
+						if (c->storage != CB_STORAGE_REPORT)
+							c->offset += pad;
 						size_check += pad;
 					}
 					if (align_size > occur_align_size) {
@@ -2602,15 +2554,12 @@ unbounded_again:
 					}
 				}
 			}
-
-			if (c->sister == NULL
-			 && c->storage == CB_STORAGE_REPORT) {	/* To set parent size */
-				if((c->offset + c->size) > size_check)
-					size_check = (c->offset + c->size);
-			}
 		}
+
 		/* Ensure items within OCCURS are aligned correctly. */
-		if (f->occurs_max > 1 && (size_check % occur_align_size) != 0) {
+		if (f->occurs_max > 1 
+		 && occur_align_size > 1
+		 && (size_check % occur_align_size) != 0) {
 			pad = occur_align_size - (size_check % occur_align_size);
 			size_check += pad;
 			/*
@@ -2623,7 +2572,8 @@ unbounded_again:
 			  padding will not break its alignment.
 			*/
 			if (f->children) {
-				get_last_child (f)->offset += pad;
+				if (f->storage != CB_STORAGE_REPORT)
+					get_last_child (f)->offset += pad;
 			} else {
 				/* ToDo: add appropriate message (untranslated) */
 				COBC_ABORT ();	/* LCOV_EXCL_LINE */
@@ -2648,9 +2598,6 @@ unbounded_again:
 		f->size = (int) size_check;
 	} else if (!f->flag_is_external_form) {
 		/* Elementary item */
-		if (f->report_column > 0) { 		/* offset based on COLUMN value */
-			set_report_field_offset (f);
-		}
 
 		switch (f->usage) {
 		case CB_USAGE_COMP_X:
@@ -2695,6 +2642,8 @@ unbounded_again:
 			compute_binary_size (f, size);
 			break;
 		case CB_USAGE_DISPLAY:
+			if (f->pic == NULL)
+				break;
 			/* boolean items without USAGE BIT */
 			if (f->pic->category == CB_CATEGORY_BOOLEAN) {
 				f->size = f->pic->size / 8;
@@ -2715,9 +2664,13 @@ unbounded_again:
 			}
 			break;
 		case CB_USAGE_PACKED:
+			if (f->pic == NULL)
+				break;
 			f->size = f->pic->size / 2 + 1;
 			break;
 		case CB_USAGE_COMP_6:
+			if (f->pic == NULL)
+				break;
 			f->size = (f->pic->size + 1) / 2;
 			break;
 		case CB_USAGE_INDEX:
@@ -2760,6 +2713,8 @@ unbounded_again:
 		case CB_USAGE_CONTROL:
 			break;
 		case CB_USAGE_BIT:
+			if (f->pic == NULL)
+				break;
 			/* note: similar is found in DISPLAY */
 			f->size = f->pic->size / 8;
 			if (f->pic->size % 8 != 0) {
@@ -2873,17 +2828,13 @@ cb_validate_field (struct cb_field *f)
 	validate_field_value (f);
 	if (f->flag_is_global) {
 		struct cb_field		*c;
-#if 0 /* CHECKME: Why should we adjust the field count here? */
-		f->count++;
+		if (f->count == 0)
+			f->count++;
 		for (c = f->children; c; c = c->sister) {
 			c->flag_is_global = 1;
-			c->count++;
+			if (c->count == 0)
+				c->count++;
 		}
-#else
-		for (c = f->children; c; c = c->sister) {
-			c->flag_is_global = 1;
-		}
-#endif
 	}
 
 	f->flag_is_verified = 1;

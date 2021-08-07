@@ -1635,35 +1635,39 @@ typedef struct __cob_report_sum {
 /* for each field of each line in the report */
 typedef struct __cob_report_field {
 	struct __cob_report_field *next;			/* Next field */
-	cob_field		*f;			/* Field definition */
-	cob_field		*source;		/* Field SOURCE */
+	cob_field		*f;				/* Field definition */
+	cob_field		from;			/* Move data 'from' into field */
+	cob_field		*sum;			/* Field SUM COUNTER */
 	cob_field		*control;		/* CONTROL Field */
 	char			*litval;		/* Literal value */
-	int			litlen;			/* Length of literal string */
-	unsigned int		flags;
-	int			line;
-	int			column;
-	int			step_count;
-	int			next_group_line;	/* NEXT GROUP line or PLUS line; see flags */
-	unsigned int		level:8;		/* Data item level number */
-	unsigned int		group_indicate:1;	/* field had GROUP INDICATE */
-	unsigned int		suppress:1;		/* SUPPRESS display of this field */
-	unsigned int		present_now:1;		/* PRESENT BEFORE|AFTER to be processed */
+	int				litlen;			/* Length of literal string */
+	unsigned int	flags;
+	int				line;
+	int				column;
+	int				step_count;
+	int				next_group_line;/* NEXT GROUP line or PLUS line; see flags */
+	unsigned int	level:8;		/* Data item level number */
+	unsigned int	group_indicate:1;/* field had GROUP INDICATE */
+	unsigned int	suppress:1;		/* SUPPRESS display of this field */
+	unsigned int	present_now:1;	/* PRESENT BEFORE|AFTER to be processed */
 } cob_report_field;
 
 /* for each line of a report */
 typedef struct __cob_report_line {
-	struct __cob_report_line	*sister;		/* Next line */
-	struct __cob_report_line	*child;			/* Child line */
-	cob_report_field	*fields;		/* List of fields on this line */
+	struct __cob_report_line	*sister;	/* Next line */
+	struct __cob_report_line	*child;		/* Child line */
+	cob_report_field	*fields;	/* List of fields on this line */
 	cob_field		*control;		/* CONTROL Field */
-	int			use_decl;		/* Label# of Declaratives code */
-	unsigned int		flags;			/* flags defined with line */
-	int			line;			/* 'LINE' value */
+	cob_field		*f;				/* Field definition for complete line */
+	int			use_decl;			/* Label# of Declaratives code */
+	unsigned int		flags;		/* flags defined with line */
+	int			line;				/* 'LINE' value */
 	int			step_count;
 	int			next_group_line;
-	unsigned int		report_flags;		/* flags ORed with upper level flags */
-	unsigned int		suppress:1;		/* SUPPRESS printing this line */
+	unsigned int	report_flags;	/* flags ORed with upper level flags */
+	unsigned int	suppress:1;		/* SUPPRESS printing this line */
+	int			use_source;			/* Label# of code  for MOVE SOURCE */
+	int			lineid;				/* For debbugging reportio */
 } cob_report_line;
 
 /* for each 'line referencing a control field' of the report */
@@ -1703,8 +1707,11 @@ typedef struct __cob_report_sumctr {
 
 /* main report table for each RD */
 typedef struct __cob_report {
+	unsigned int	report_ver;			/* To identify version of these tables */
+#define COB_REPORT_VERSION	0x20210801
 	const char		*report_name;		/* Report name */
 	struct __cob_report	*next;			/* Next report */
+	void			*resume;			/* goto 'label' on reentry */
 	cob_file		*report_file;		/* Report file */
 	cob_field		*page_counter;		/* PAGE-COUNTER */
 	cob_field		*line_counter;		/* LINE-COUNTER */
@@ -1742,7 +1749,8 @@ typedef struct __cob_report {
 	unsigned int		unused:17;		/* Use these bits up next */
 
 	int			code_len;		/* Length to use for holding 'CODE IS' value */
-	char			*code_is;		/* Value of CODE IS for this report */
+	char		*code_is;		/* Value of CODE IS for this report */
+	int			exec_source;	/* Goto Label#  for MOVE SOURCE */
 } cob_report;
 
 /* ML tree structure */
@@ -2778,10 +2786,10 @@ COB_EXPIMP void	cob_file_return		(cob_file *);
 /***************************/
 /* Functions in reportio.c */
 /***************************/
-COB_EXPIMP void cob_report_initiate	(cob_report *);
-COB_EXPIMP int  cob_report_terminate	(cob_report *, int);
-COB_EXPIMP int  cob_report_generate	(cob_report *, cob_report_line *, int);
-COB_EXPIMP void cob_report_suppress	(cob_report *r, cob_report_line *l);
+COB_EXPIMP int  cob_report_initiate	(cob_report *);
+COB_EXPIMP int  cob_report_terminate(cob_report *);
+COB_EXPIMP int  cob_report_generate	(cob_report *, cob_report_line *);
+COB_EXPIMP void cob_report_suppress	(cob_report *, cob_report_line *);
 
 /**********************/
 /* Functions in mlio.c */

@@ -5303,8 +5303,6 @@ print_fields (struct cb_field *top, int *found)
 				pd_off += sprintf (print_data + pd_off, "%06d ", top->offset);
 			if (top->flag_any_length || top->flag_unbounded) {
 				pd_off += sprintf (print_data + pd_off, "????? ");
-			} else if (top->flag_occurs && !got_picture) {
-				pd_off += sprintf (print_data + pd_off, "%05d ", top->size * top->occurs_max);
 			} else {
 				pd_off += sprintf (print_data + pd_off, "%05d ", top->size);
 			}
@@ -5335,6 +5333,10 @@ print_fields (struct cb_field *top, int *found)
 				pd_off += sprintf (print_data + pd_off, "OCCURS %d TO %d", top->occurs_min, top->occurs_max);
 			} else {
 				pd_off += sprintf (print_data + pd_off, "OCCURS %d", top->occurs_max);
+			}
+			if (top->step_count
+			 && top->step_count > top->size) {
+				pd_off += sprintf (print_data + pd_off, ", STEP %d", top->step_count);
 			}
 		}
 		if (top->flag_external) {

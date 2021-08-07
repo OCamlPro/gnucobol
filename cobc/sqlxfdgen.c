@@ -549,21 +549,6 @@ cb_parse_xfd (struct cb_file *fn, struct cb_field *f)
 	hasxfd = 0;
 }
 
-static struct cb_field *
-cb_code_field (cb_tree x)
-{
-	if (CB_REFERENCE_P (x)) {
-		if (!CB_REFERENCE (x)->value) {
-			return CB_FIELD (cb_ref (x));
-		}
-		return CB_FIELD (CB_REFERENCE (x)->value);
-	}
-	if (CB_LIST_P (x)) {
-		return cb_code_field (CB_VALUE (x));
-	}
-	return CB_FIELD (x);
-}
-
 static int
 is_all_dispx (struct cb_field *f)
 {
