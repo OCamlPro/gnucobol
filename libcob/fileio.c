@@ -309,6 +309,7 @@ isdirvalid (char *filename)
 	char	tmp[COB_NORMAL_BUFF];
 	int		ln = strlen (filename);
 
+	errno = 0;
 	if (*filename == ':'
 	 || *filename == '<'
 	 || *filename == '>'
@@ -319,6 +320,9 @@ isdirvalid (char *filename)
 
 	strcpy (tmp, filename);
 	while (--ln > 0) {
+#ifndef	_WIN32
+	/* TODO: This code needs to be tested on Windows and adjusted as needed */
+	/* For now it is effectively disabled on Windows */
 		if (tmp[ln] == SLASH_CHAR) {
 			tmp[ln] = 0;
 			errno = 0;
@@ -331,6 +335,7 @@ isdirvalid (char *filename)
 				return 0;
 			}
 		}
+#endif
 	}
 	errno = 0;
 	return 1;
