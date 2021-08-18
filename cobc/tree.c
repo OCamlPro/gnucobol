@@ -627,7 +627,7 @@ cb_name_1 (char *s, cb_tree x, const int size)
 		break;
 
 	case CB_TAG_REPORT_LINE:
-#if 0	/* FIXME: Why do we need the unchecked cast here? */
+#if 1	/* FIXME: Why do we need the unchecked cast here? */
 		p = (struct cb_reference *)x;
 #else
 		p = CB_REFERENCE_P (x);
@@ -3770,7 +3770,7 @@ cb_field_direct (struct cb_field *frm, struct cb_reference *ref, char *report,
 	*pos = *len = 0;
 	offset = 0;
 	if (ref)
-		f = cb_code_field (ref);
+		f = CB_FIELD (ref->value);
 	else 
 		f = frm;
 

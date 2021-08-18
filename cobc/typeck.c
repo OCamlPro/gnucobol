@@ -12922,7 +12922,7 @@ cb_emit_generate (cb_tree x)
 		CB_REFERENCE (z)->value = CB_TREE (f->report);
 		x->tag = CB_TAG_REPORT_LINE;
 		cb_emit_report_move_id(z);
-		cb_emit (CB_BUILD_FUNCALL_3 ("$R", z, x, f));
+		cb_emit (CB_BUILD_FUNCALL_3 ("$R", z, x, y));
 	}
 }
 

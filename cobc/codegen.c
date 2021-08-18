@@ -10084,7 +10084,7 @@ output_report_def_fields (int bgn, int id, struct cb_field *f, struct cb_report 
 		if (f->report_field_size > 1)
 			output_local("%d,",f->report_field_size);
 		else
-			output_local("%ld,",f->report_field_from->size);
+			output_local("%d,",(int)f->report_field_from->size);
 		output_local("%s%d",CB_PREFIX_BASE,p->id);
 		if (f->report_field_offset >= 0)
 			output_local(" + %d",f->report_field_offset);
@@ -10650,7 +10650,7 @@ build_field_sub (struct cb_field *f)
 	return x;
 }
 
-static int
+static void
 output_report_move_source (struct cb_field *f, int first)
 {
 	struct cb_field *v, *b;
