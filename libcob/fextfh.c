@@ -1258,7 +1258,9 @@ org_handling:
 	switch (fcd->fileOrg) {
 	case ORG_INDEXED:
 		k = LDCOMPX2(fcd->refKey);
-		if (k >= 0 && k <= (int)f->nkeys) {
+		if (k >= 0 
+		 && k <= (int)f->nkeys
+		 && f->keys[k].field) {
 			if (f->keys[k].count_components <= 1) {
 				key->size = f->keys[k].field->size;
 				key->attr = f->keys[k].field->attr;

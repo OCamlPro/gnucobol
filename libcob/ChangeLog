@@ -1,4 +1,10 @@
 
+2021-08-18  Ron Norman <rjn@inglenet.com>
+
+	* fileio.c: If 'record' is not allocated when reading filename.dd
+	         then allocate one
+	* fextfh.c: Check for key field defined before using it
+
 2021-08-07  Ron Norman <rjn@inglenet.com>
 
 	* common.h: Added new fields for REPORT structures

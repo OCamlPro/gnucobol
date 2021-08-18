@@ -2042,6 +2042,11 @@ cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 				}
 				f->flag_redef = 1;
 				f->record_min = f->record_max = ivalue;
+				if (f->record == NULL) {
+					f->record = cob_cache_malloc(sizeof(cob_field));
+					f->record->data = cob_cache_malloc (ivalue + 1);
+					f->record->attr = &alnum_attr;
+				}
 				f->record->size = ivalue;
 				if (f->variable_record) {
 					cob_set_int (f->variable_record, (int) f->record->size);
