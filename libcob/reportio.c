@@ -32,6 +32,7 @@
 #define	COB_LIB_EXPIMP
 #include "libcob.h"
 #include "coblocal.h"
+#include "fileio.h"
 
 /* hard limit: */
 #define REPORT_MAX_LINES 9999
@@ -45,8 +46,8 @@
 #define	COB_MAYSWAP_32(x)	(COB_BSWAP_32((unsigned int)(x)))
 #endif
 
-static	cob_global	*cobglobptr= NULL;
-static	cob_settings	*cobsetptr= NULL;
+static	cob_global	*cobrpglobptr = NULL;
+static	cob_settings	*cobrpsetptr = NULL;
 static	int		bDidReportInit = 0;
 
 #ifndef TRUE
@@ -912,8 +913,8 @@ print_field(cob_report_field *rf, char *rec)
 	ln = strlen(wrk);
 	if (rf->step_count > 0)
 		memset (&rec[dest_pos], ' ', rf->step_count);
-	if(cobsetptr
-	&& !cobsetptr->cob_col_just_lrc) {
+	if(cobrpsetptr
+	&& !cobrpsetptr->cob_col_just_lrc) {
 		/* Data justify is turned off, no adjustment */
 	} else
 	if((rf->flags & COB_REPORT_COLUMN_RIGHT)
@@ -1333,8 +1334,8 @@ void
 cob_init_reportio (cob_global *gptr, cob_settings *sptr)
 {
 	int		k;
-	cobglobptr = gptr;
-	cobsetptr  = sptr;
+	cobrpglobptr = gptr;
+	cobrpsetptr  = sptr;
 	for(k=0; k < MAX_ACTIVE_REPORTS; k++)
 		active_reports[k] = NULL;
 }
