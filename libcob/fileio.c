@@ -923,11 +923,8 @@ cob_key_def (cob_file *f, int keyn, char *p, int *ret, int keycheck)
 			}
 		}
 	}
-	if (k >= (int)f->nkeys) {
-		*ret = COB_STATUS_39_CONFLICT_ATTRIBUTE;
-		return;
-	}
-	if (f->keys[k].field != NULL) {
+	if (keycheck
+	 && (k >= (int)f->nkeys || f->keys[k].field != NULL)) {
 		*ret = COB_STATUS_39_CONFLICT_ATTRIBUTE;
 		return;
 	}

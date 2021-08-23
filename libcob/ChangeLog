@@ -1,4 +1,9 @@
 
+2021-08-23  Ron Norman <rjn@inglenet.com>
+
+	* fileio.c: cob_key_def only set 39 if 'keycheck' was requested
+	* fextfh.c: If FCD record address changes, make required updates
+
 2021-08-18  Ron Norman <rjn@inglenet.com>
 
 	* fileio.c: If 'record' is not allocated when reading filename.dd

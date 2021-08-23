@@ -34,6 +34,8 @@ static struct fcd_file {
 } *fcd_file_list = NULL;
 static const cob_field_attr alnum_attr = {COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL};
 
+static void copy_keys_fcd_to_file (FCD3 *fcd, cob_file *f);
+
 /*
  * Free up allocated memory
  */
@@ -322,8 +324,25 @@ update_fcd_to_file (FCD3* fcd, cob_file *f, cob_field *fnstatus, int wasOpen)
 	}
 	f->record_min = LDCOMPX4(fcd->minRecLen);
 	f->record_max = LDCOMPX4(fcd->maxRecLen);
+	if (f->record == NULL) {
+		f->record = cob_cache_malloc(sizeof(cob_field));
+		f->record->data = fcd->recPtr;
+		f->record->attr = &alnum_attr;
+	}
 	if (f->record)
 		f->record->size = LDCOMPX4(fcd->curRecLen);
+	if (f->record->size < f->record_min)
+		f->record->size = f->record_min;
+	if (f->record->size > f->record_max)
+		f->record->size = f->record_max;
+
+	if (f->record->data != fcd->recPtr
+	 && fcd->recPtr != NULL) {
+		f->record->data = fcd->recPtr;
+		if (fcd->fileOrg == ORG_INDEXED) {
+			copy_keys_fcd_to_file (fcd, f);
+		}
+	}
 
 	if (fcd->gcFlags & MF_CALLFH_TRACE)
 		f->trace_io = 1;
@@ -379,10 +398,11 @@ copy_keys_fcd_to_file (FCD3 *fcd, cob_file *f)
 		f->keys[k].count_components = (short)parts;
 		if (f->keys[k].offset == 0)
 			f->keys[k].offset = LDCOMPX4(key->pos);
-		if(f->keys[k].field == NULL
-		|| f->keys[k].offset != LDCOMPX4(key->pos)
-		|| (parts == 1 && f->keys[k].field->size != LDCOMPX4(key->len))) {
-			f->keys[k].field = cob_cache_malloc(sizeof(cob_field));
+		if (f->keys[k].field == NULL
+		 || f->keys[k].offset != LDCOMPX4(key->pos)
+		 || (parts == 1 && f->keys[k].field->size != LDCOMPX4(key->len))) {
+			if (f->keys[k].field == NULL)
+				f->keys[k].field = cob_cache_malloc(sizeof(cob_field));
 			f->keys[k].field->data = f->record->data + LDCOMPX4(key->pos);
 			f->keys[k].field->attr = &alnum_attr;
 			f->keys[k].field->size = LDCOMPX4(key->len);
@@ -390,17 +410,23 @@ copy_keys_fcd_to_file (FCD3 *fcd, cob_file *f)
 		}
 		klen = 0;
 		for (p=0; p < parts; p++) {
-			f->keys[k].component[p] = cob_cache_malloc(sizeof(cob_field));
+			if (f->keys[k].component[p] == NULL)
+				f->keys[k].component[p] = cob_cache_malloc(sizeof(cob_field));
 			f->keys[k].component[p]->data = f->record->data + LDCOMPX4(key->pos);
 			f->keys[k].component[p]->attr = &alnum_attr;
 			f->keys[k].component[p]->size = LDCOMPX4(key->len);
 			klen += LDCOMPX4(key->len);
 			key   = (EXTKEY*) ((char*)(key) + sizeof(EXTKEY));
 		}
+		if (f->keys[k].field == NULL)
+			f->keys[k].field = cob_cache_malloc(sizeof(cob_field));
 		if (parts > 1
 		 && f->keys[k].field != NULL) {
-			f->keys[k].field->data = cob_cache_malloc ((size_t)klen);
-			f->keys[k].field->size = klen;
+			if (f->keys[k].field->data == NULL
+			 || f->keys[k].field->size != klen) {
+				f->keys[k].field->data = cob_cache_malloc ((size_t)klen);
+				f->keys[k].field->size = klen;
+			}
 		}
 	}
 }
@@ -553,8 +579,8 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f)
 			f->keys = cob_cache_malloc(sizeof(cob_file_key));
 		}
 	} else if (f->nkeys > 0
-			 && fcd->kdbPtr != NULL
-			 && LDCOMPX2(fcd->kdbPtr->nkeys) >= (int)f->nkeys) {
+			&& fcd->kdbPtr != NULL
+			&& LDCOMPX2(fcd->kdbPtr->nkeys) >= (int)f->nkeys) {
 		copy_keys_fcd_to_file (fcd, f);
 	}
 	update_fcd_to_file (fcd, f, NULL, 0);
@@ -648,7 +674,8 @@ find_file (FCD3 *fcd)
 				ff->f = f;
 				copy_fcd_to_file (fcd, f);
 			}
-			return ff->f;
+			f = ff->f;
+			goto returnit;
 		}
 	}
 	f = cob_cache_malloc (sizeof(cob_file));
@@ -661,6 +688,32 @@ find_file (FCD3 *fcd)
 	ff->f = f;
 	ff->free_fcd = 0;
 	fcd_file_list = ff;
+
+returnit:
+	/* If record area not allocated then allocate it
+	 * If record address has changed then adjust accordingly
+	 *                   including the INDEXED keys
+	 */
+	if (f->record != NULL
+	 && (f->record->data != fcd->recPtr
+	  || f->record->data == NULL)) {
+		 if (fcd->recPtr != NULL)
+			f->record->data = fcd->recPtr;
+		else
+			f->record->data = cob_cache_malloc (f->record_max + 1);
+		f->record->size = LDCOMPX4(fcd->curRecLen);
+		f->record->attr = &alnum_attr;
+		f->record_min = LDCOMPX4(fcd->minRecLen);
+		f->record_max = LDCOMPX4(fcd->maxRecLen);
+		if (f->record->size < f->record_min)
+			f->record->size = f->record_min;
+		if (f->record->size > f->record_max)
+			f->record->size = f->record_max;
+		if (fcd->fileOrg == ORG_INDEXED) {
+			copy_keys_fcd_to_file (fcd, f);
+		}
+	}
+
 	return f;
 }
 
@@ -1358,14 +1411,6 @@ org_handling:
 	rec->data = fcd->recPtr;
 	rec->size = LDCOMPX4(fcd->curRecLen);
 	rec->attr = &alnum_attr;
-	if (f->record == NULL) {
-		f->record = cob_cache_malloc(sizeof(cob_field));
-		f->record->data = fcd->recPtr;
-		f->record->size = LDCOMPX4(fcd->curRecLen);
-		f->record->attr = &alnum_attr;
-		f->record_min = LDCOMPX4(fcd->minRecLen);
-		f->record_max = LDCOMPX4(fcd->maxRecLen);
-	}
 
 	switch (opcd) {
 	case OP_OPEN_INPUT:
