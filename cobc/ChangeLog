@@ -1,4 +1,8 @@
 
+2021-08-24  Ron Norman <rjn@inglenet.com>
+
+	* tree.c: Fix bug in new code for folding constant expressions
+
 2021-08-01  Ron Norman <rjn@inglenet.com>
 
 	* cobc.c: For listing of REPORT show STEP value

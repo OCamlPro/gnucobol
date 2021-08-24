@@ -5814,7 +5814,8 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 					return x;
 				}
 				if ((op == '*' || op == '/') 
-				 && yval == 1) {		/* * or / by ONE does nothing */
+				 && yval == 1
+				 && yl->sign != -1) {	/* * or / by ONE does nothing */
 					return x;
 				}
 				if (op == '*'
