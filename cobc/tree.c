@@ -627,11 +627,7 @@ cb_name_1 (char *s, cb_tree x, const int size)
 		break;
 
 	case CB_TAG_REPORT_LINE:
-#if 1	/* FIXME: Why do we need the unchecked cast here? */
-		p = (struct cb_reference *)x;
-#else
-		p = CB_REFERENCE_P (x);
-#endif
+		p = CB_REFERENCE (x);
 		f = CB_FIELD (p->value);
 		snprintf (s, size, "REPORT LINE %s", f->name);
 		break;
