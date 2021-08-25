@@ -1708,10 +1708,10 @@ typedef struct __cob_report_sumctr {
 /* main report table for each RD */
 typedef struct __cob_report {
 	unsigned int	report_ver;			/* To identify version of these tables */
-#define COB_REPORT_VERSION	0x20210801
+#define COB_REPORT_VERSION	0x20210901
 	const char		*report_name;		/* Report name */
 	struct __cob_report	*next;			/* Next report */
-	void			*resume;			/* goto 'label' on reentry */
+	int				go_label;			/* goto 'label' on reentry */
 	cob_file		*report_file;		/* Report file */
 	cob_field		*page_counter;		/* PAGE-COUNTER */
 	cob_field		*line_counter;		/* LINE-COUNTER */

@@ -1,4 +1,10 @@
 
+2021-08-25  Ron Norman <rjn@inglenet.com>
+
+	* common.h: Replaced report.resume with report.go_label
+	* reportio.c: Rework callback to application to use 
+	             "switch (go_label) case  goto xxx"
+
 2021-08-23  Ron Norman <rjn@inglenet.com>
 
 	* fileio.c: cob_key_def only set 39 if 'keycheck' was requested

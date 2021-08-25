@@ -1378,7 +1378,7 @@ static	int		k;
 		cob_set_exception (COB_EC_REPORT_ACTIVE);
 		return 0;
 	}
-	r->resume = NULL;
+	r->go_label = 0;
 	if (r->def_lines > REPORT_MAX_LINES)
 		r->def_lines = REPORT_MAX_LINES;
 	if (r->def_cols > REPORT_MAX_COLS
@@ -1486,12 +1486,17 @@ static	cob_report_line		*pl;
 		DEBUG_LOG("rw",("No GENERATE was ever done!\n"));
 		return 0;
 	}
-	if (r->resume) {
-		void *backto = r->resume;
-		r->resume = NULL;
-		DEBUG_LOG("rw",("  Resume %s TERMINATE from case%d\n",r->report_name,r->exec_source));
+	if (r->go_label > 0) {
+		int backto = r->go_label;
+		DEBUG_LOG("rw",("  Resume %s TERMINATE case%d to %d\n",r->report_name,r->exec_source,r->go_label));
 		r->exec_source = 0;
-		goto *backto;
+		r->go_label = 0;
+		switch (backto) {
+		case 1:		goto PrintFooting;
+		case 2:		goto PrintFootingFinal;
+		case 3:		goto PrintReportFooting;
+		default:	r->go_label = 0;
+		}
 	}
 	reportInitialize();
 #if defined(COB_DEBUG_LOG) 
@@ -1505,7 +1510,7 @@ static	cob_report_line		*pl;
 					DEBUG_LOG("rw",("  Return for %s Footing Declaratives %d; case %d\n",
 							rc->name,rr->ref_line->use_decl,rr->ref_line->use_source));
 					r->exec_source = rr->ref_line->use_source;
-					r->resume = &&PrintFooting;
+					r->go_label = 1;
 					return 1;
 				}
 				pl = get_print_line(rr->ref_line);
@@ -1514,7 +1519,7 @@ static	cob_report_line		*pl;
 					DEBUG_LOG("rw",("  Return for %s Footing Declaratives %d; case %d\n",
 							rc->name,pl->use_decl,pl->use_source));
 					r->exec_source = pl->use_source;
-					r->resume = &&PrintFooting;
+					r->go_label = 1;
 					return 1;	/* Back for DECLARATIVES */
 				}
 PrintFooting:
@@ -1533,7 +1538,7 @@ PrintFooting:
 			DEBUG_LOG("rw",("  Return for Footing Final Declaratives %d; case %d\n", 
 								pl->use_decl,pl->use_source));
 			r->exec_source = pl->use_source;
-			r->resume = &&PrintFootingFinal;
+			r->go_label = 2;
 			return 1;	/* Back for DECLARATIVES */
 		}
 PrintFootingFinal:
@@ -1549,7 +1554,7 @@ PrintFootingFinal:
 			DEBUG_LOG("rw",("  Return for Report Footing Declaratives %d; case %d\n", 
 							pl->use_decl,pl->use_source));
 			r->exec_source = pl->use_source;
-			r->resume = &&PrintReportFooting;
+			r->go_label = 3;
 			return 1;	/* Back for DECLARATIVES */
 		}
 PrintReportFooting:
@@ -1560,7 +1565,7 @@ PrintReportFooting:
 
 	free_control_fields (r);
 	r->initiate_done = FALSE;
-	r->resume = NULL;
+	r->go_label = 0;
 	cob_file_sync (r->report_file);
 	DEBUG_LOG("rw",("TERMINATE has synced data\n"));
 	return 0;
@@ -1598,13 +1603,20 @@ static	int		maxctl,ln,num,gengrp;
 	}
 
 	r->foot_next_page = FALSE;
-	if (r->resume) {
-		void *backto = r->resume;
-		r->resume = NULL;
-		DEBUG_LOG("rw",("  Resume %s GENERATE from case%d\n",r->report_name,r->exec_source));
+	if (r->go_label > 0) {
+		int backto = r->go_label;
+		DEBUG_LOG("rw",("  Resume %s GENERATE case%d to %d\n",r->report_name,r->exec_source,r->go_label));
 		r->exec_source = 0;
+		r->go_label = 0;
 		l = sl;
-		goto *backto;
+		switch (backto) {
+		case 1:		goto PrintFirstHeadingLine;
+		case 2:		goto PrintFirstHeading;
+		case 3:		goto PrintFooting;
+		case 4:		goto PrintHeading;
+		case 5:		goto PrintDetail;
+		default:	r->go_label = 0;
+		}
 	}
 	DEBUG_LOG("rw",("~  Enter %sGENERATE\n",r->first_generate?"first ":""));
 
@@ -1624,7 +1636,7 @@ static	int		maxctl,ln,num,gengrp;
 					r->report_name,pl->use_source));
 			sl = l;
 			r->exec_source = pl->use_source;
-			r->resume = &&PrintFirstHeadingLine;
+			r->go_label = 1;
 			return 1;	/* Back for DECLARATIVES */
 		}
 PrintFirstHeadingLine:
@@ -1639,7 +1651,7 @@ PrintFirstHeadingLine:
 								rc->name,rr->ref_line->use_decl,rr->ref_line->use_source));
 						sl = l;
 						r->exec_source = rr->ref_line->use_source;
-						r->resume = &&PrintFirstHeading;
+						r->go_label = 2;
 						return 1;
 					}
 					pl = get_print_line(rr->ref_line);
@@ -1649,7 +1661,7 @@ PrintFirstHeadingLine:
 								rc->name,pl->use_decl,pl->use_source));
 						sl = l;
 						r->exec_source = pl->use_source;
-						r->resume = &&PrintFirstHeading;
+						r->go_label = 2;
 						return 1;	/* Back for DECLARATIVES */
 					}
 PrintFirstHeading:
@@ -1727,8 +1739,8 @@ PrintFirstHeading:
 							DEBUG_LOG("rw",("  Return for %s Footing Declaratives %d; case %d\n",
 									rc->name,rr->ref_line->use_decl,rr->ref_line->use_source));
 							r->exec_source = rr->ref_line->use_source;
-							r->resume = &&PrintFooting;
-							return rr->ref_line->use_source;
+							r->go_label = 3;
+							return 1;	/* Back for DECLARATIVES */
 						}
 						pl = get_print_line(rr->ref_line);
 						if(pl != rr->ref_line
@@ -1737,7 +1749,7 @@ PrintFirstHeading:
 									rc->name,pl->use_decl,pl->use_source));
 							sl = l;
 							r->exec_source = pl->use_source;
-							r->resume = &&PrintFooting;
+							r->go_label = 3;
 							return 1;	/* Back for DECLARATIVES */
 						}
 PrintFooting:
@@ -1778,8 +1790,8 @@ PrintFooting:
 									rc->name,rr->ref_line->use_decl,rr->ref_line->use_source));
 							sl = l;
 							r->exec_source = rr->ref_line->use_source;
-							r->resume = &&PrintHeading;
-							return rr->ref_line->use_source;
+							r->go_label = 4;
+							return 1;
 						}
 						pl = get_print_line(rr->ref_line);
 						if(pl != rr->ref_line
@@ -1788,8 +1800,8 @@ PrintFooting:
 									rc->name,pl->use_decl,pl->use_source));
 							sl = l;
 							r->exec_source = pl->use_source;
-							r->resume = &&PrintHeading;
-							return pl->use_source;	/* Back for DECLARATIVES */
+							r->go_label = 4;
+							return 1;	/* Back for DECLARATIVES */
 						}
 PrintHeading:
 						if(!rr->ref_line->suppress)
@@ -1851,11 +1863,11 @@ PrintHeading:
 				if (l->use_decl > 0 || l->use_source) {
 					sl = l;
 					r->exec_source = l->use_source;
-					r->resume = &&do_detail;
+					r->go_label = 5;
 					DEBUG_LOG("rw",("  Return to Detail Declaratives %d; case %d, lineid %d\n",
 								l->use_decl,l->use_source,l->lineid));
 					return 1;
-do_detail:	;
+PrintDetail:	;
 				}
 				report_line(r,l);	/* Generate this DETAIL line */
 			}
