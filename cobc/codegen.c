@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2020 Free Software Foundation, Inc.
+   Copyright (C) 2003-2021 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
    Edward Hart
 
@@ -10521,7 +10521,7 @@ output_report_definition (struct cb_report *p, struct cb_report *n)
 	} else {
 		output_local ("NULL,");
 	}
-	output_local ("NULL,");	/* 'resume' address for call backs */
+	output_local ("0,");	/* 'resume' label number for call backs */
 	output_local ("NULL,");	/* report file (address set at run-time) */
 	if (p->page_counter) {
 		output_param (p->page_counter, 0);
