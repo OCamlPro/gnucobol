@@ -5192,13 +5192,13 @@ fexists_signed (char *fid, char *signature, int signature_size)
 
     f = fopen (fid, "r");
     if (f != NULL) {
-         bfr = (char *) malloc (signature_size);
+         bfr = (char *) cob_malloc (signature_size);
          if (1 == fread (bfr, signature_size, 1, f)) {
                 if (!memcmp (signature, bfr, signature_size)) {
                      res = 0;
                 }
          }
-         free (bfr);
+         cob_free (bfr);
     }
     return res;
 }
@@ -8602,8 +8602,8 @@ AT_DATA([prog.cob], [
           DISPLAY "FCD SIZE " WS-FCD-SIZE.
 
           IF WS-FCD-PTR EQUAL NULL
-             ALLOCATE ws-fcd-size characters
-                                  returning WS-FCD-PTR
+             ALLOCATE ws-fcd-size CHARACTERS
+                           returning WS-FCD-PTR
 
              SET  ADDRESS OF FCD-MAP  TO WS-FCD-PTR
              MOVE LOW-VALUES          TO FCD-MAP
@@ -8923,7 +8923,7 @@ AT_DATA([prog.cob], [
           DISPLAY "Writing " WS-FCD-DDNAME '.'.
 
           IF WS-FCD-PTR EQUAL NULL
-             CALL "malloc" using by value ws-fcd-size,
+             ALLOCATE ws-fcd-size CHARACTERS
                            returning WS-FCD-PTR
 
              SET  ADDRESS OF FCD-MAP  TO WS-FCD-PTR
@@ -14951,11 +14951,12 @@ AT_DATA([prog.cob], [
            PERFORM 1100-CALL-EXTFH.
 ])
 
-AT_CHECK([$COMPILE -x -std=mf -debug -Wall progl.cob ], [0], [], [])
+# CHECKME is -std=mf needed?
+AT_CHECK([$COMPILE -std=mf progl.cob], [0], [], [])
+AT_CHECK([$COMPILE -std=mf prog.cob], [0], [], [])
 
-AT_CHECK([$COMPILE -x -std=mf -debug -Wall prog.cob ], [0], [], [])
-
-AT_CHECK([$COBCRUN_DIRECT ./progl], [0], [5 records written
+AT_CHECK([$COBCRUN_DIRECT ./progl], [0],
+[5 records written
 ], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [AFTER READ ------> RECORD-3                           .
@@ -14964,6 +14965,7 @@ AFTER READ PREV -> RECORD-5                           .
 ], [])
 
 AT_CLEANUP
+
 
 AT_SETUP([RELATIVE File Locking])
 AT_KEYWORDS([runfile])
@@ -20778,6 +20780,7 @@ AT_DATA([prog.cob], [
                DISPLAY "Write Error " CUST-STAT.
 ])
 
+# CHECKME are -std=mf and -w needed?
 AT_CHECK([$COMPILE -std=mf -w -fmf-files prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
@@ -21048,7 +21051,8 @@ AT_DATA([prog.cob], [
                        DATA-CUST-NUM (SUB).
 ])
 
-AT_CHECK([$COMPILE -x -std=mf prog.cob], [0], [], [])
+# CHECKME is -std=mf needed?
+AT_CHECK([$COMPILE -std=mf prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [Testing INDEXED Status Codes
@@ -21294,6 +21298,7 @@ AT_DATA([prog.cob], [
                        DATA-CUST-NUM (SUB).
 ])
 
+# CHECKME is -std=mf needed?
 AT_CHECK([$COMPILE -std=mf prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
@@ -21317,6 +21322,7 @@ List tmp directory       Open Sts: 9/021
 ], [])
 
 AT_CLEANUP
+
 
 AT_SETUP([Test Concatenated Files])
 AT_KEYWORDS([Status])
@@ -21441,9 +21447,11 @@ AT_DATA([prog.cob], [
            END-IF.
 ])
 
-AT_CHECK([$COMPILE -x -std=mf -debug -Wall prog.cob ], [0], [], [])
+# CHECKME is -std=mf needed?
+AT_CHECK([$COMPILE -std=mf prog.cob ], [0], [], [])
 
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [file1         Record 1  .
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[file1         Record 1  .
 file1         Record 2  .
 file1         Record 3  .
 file2         Record 1  .
