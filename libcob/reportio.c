@@ -808,15 +808,6 @@ write_rec (cob_report *r, int opt)
 	memset (f->record->data, ' ', f->record->size);
 }
 
-static void
-write_line (cob_report *r, int opt, int line)
-{
-	cob_file	*f = r->report_file;
-	DEBUG_LOG("rw",("DBG %d: #%d '%.80s'\n",line,r->curr_line,f->record->data));
-	write_rec (r, opt);
-}
-#define write_recX(r,o) write_line(r,o,__LINE__)
-
 /*
  * Write the Page Footing
  */
@@ -950,7 +941,7 @@ report_line(cob_report *r, cob_report_line *l)
 	cob_file	*f = r->report_file;
 	char		*rec,wrk[COB_SMALL_BUFF];
 	int		bChkLinePlus = FALSE;
-	int		opt,ln;
+	int		opt;
 
 	opt = COB_WRITE_BEFORE | COB_WRITE_LINES | 1;
 	rec = (char *)f->record->data;

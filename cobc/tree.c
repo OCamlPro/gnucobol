@@ -4062,27 +4062,6 @@ build_report (cb_tree name)
 	return p;
 }
 
-/* Compute REPORT line length, adjust offset as per report_column */
-static int
-record_len (struct cb_field *f, int len, int bgn)
-{
-	int		pos = f->offset;
-	if (!(f->report_flag & COB_REPORT_COLUMN_PLUS)
-	 && !(f->report_flag & COB_REPORT_COLUMN_RIGHT)
-	 && !(f->report_flag & COB_REPORT_COLUMN_CENTER)
-	 && f->report_column > 0) {
-		if (f->report_column > (pos + 1))
-			pos = f->report_column - 1;
-	}
-	if ((pos + f->size) > len)
-		len = pos + f->size;
-	if (f->children)
-		len = record_len (f->children, len, 0);
-	if (f->sister && bgn == 0)
-		len = record_len (f->sister, len, 0);
-	return len;
-}
-
 /* Add SUM counter to program */
 void
 build_sum_counter (struct cb_report *r, struct cb_field *f)
@@ -4170,7 +4149,7 @@ static void
 set_report_column (struct cb_field *f)
 {
 	int	prev_col_pos, col;
-	struct cb_field *pp, *c;
+	struct cb_field *c;
 	cb_tree	x, l;
 
 	if (f->storage != CB_STORAGE_REPORT)
@@ -4316,7 +4295,6 @@ finalize_report (struct cb_report *r, struct cb_field *records)
 {
 	struct cb_field		*p, *ff, *fld;
 	struct cb_file		*f;
-	struct cb_reference	*ref;
 	int		k, maxsz;
 
 	maxsz = 0;

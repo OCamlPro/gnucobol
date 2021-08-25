@@ -183,8 +183,6 @@ static char			last_line_num[80] = "";
 static int			skip_line_num = 0;
 static int			report_field_id = 0;
 static char			report_field_name[24] = "";
-static int			generate_id = 0;
-static int			generate_bgn_lbl = -1;
 
 static int			param_id = 0;
 static int			stack_id = 0;
@@ -1469,6 +1467,8 @@ perform_label (const char *to_prefix, int to_lbl, int call_num)
 	cb_id++;
 }
 
+#if 0
+/* This code is pending additional work on REPORT */
 static int
 add_new_label ()
 {
@@ -1506,7 +1506,7 @@ cb_emit_decl_case (struct cb_report *r, struct cb_field *f)
 			output_line ("frame_ptr++;");
 			output_line ("frame_ptr->perform_through = %d;", p->report_decl_id);
 			output_indent_level -= indent_adjust_level;
-			perform_label (CB_PREFIX_LABEL, p->report_decl_id, generate_bgn_lbl);
+			perform_label (CB_PREFIX_LABEL, p->report_decl_id, -1);
 			output_indent_level += indent_adjust_level;
 			output_line ("break;");
 			output_indent_level -= indent_adjust_level;
@@ -1516,6 +1516,8 @@ cb_emit_decl_case (struct cb_report *r, struct cb_field *f)
 		}
 	}
 }
+#endif
+
 /* Picture strings */
 
 static int
@@ -4501,7 +4503,6 @@ static void
 output_funcall_typed_report (struct cb_funcall *p, const char type)
 {
 	struct cb_report	*r;
-	struct cb_field		*f;
 
 	/* initialization for report */
 	r = CB_REPORT_PTR (p->argv[0]);
@@ -9981,7 +9982,6 @@ static void
 output_report_field_cmt (struct cb_field *f)
 {
 	struct cb_field *s;
-	char buff[COB_MINI_BUFF];
 
 	if (f->report_source 
 	 || f->report_control 
@@ -10023,8 +10023,6 @@ output_report_field_cmt (struct cb_field *f)
 static void
 output_report_def_fields (int bgn, int id, struct cb_field *f, struct cb_report *r)
 {
-	int		idx, colnum;
-	cb_tree	l, x;
 	cb_tree	value;
 	struct cb_field *p;
 	char	field_name[16];
@@ -10167,18 +10165,6 @@ output_report_def_fields (int bgn, int id, struct cb_field *f, struct cb_report 
 	output_local(",%d",f->level);
 	output_local(",0,0"); /* reportio flags: group_indicate & suppress */
 	output_local ("};\n");
-}
-
-static int
-any_named_field (struct cb_field *f)
-{
-	if (memcmp (f->name, "FILLER ",7) != 0)
-		return 1;
-	if (f->sister)
-		return any_named_field (f->sister);
-	if (f->children) 
-		return any_named_field (f->children);
-	return 0;
 }
 
 static void
@@ -10521,7 +10507,7 @@ output_report_definition (struct cb_report *p, struct cb_report *n)
 	} else {
 		output_local ("NULL,");
 	}
-	output_local ("0,");	/* 'resume' label number for call backs */
+	output_local ("0,");	/* 'go_label' number for call backs */
 	output_local ("NULL,");	/* report file (address set at run-time) */
 	if (p->page_counter) {
 		output_param (p->page_counter, 0);
@@ -10653,7 +10639,7 @@ build_field_sub (struct cb_field *f)
 static void
 output_report_move_source (struct cb_field *f, int first)
 {
-	struct cb_field *v, *b;
+	struct cb_field *v;
 	int		nested;
 	if (f->report_vary_var) {
 		v = cb_code_field (f->report_vary_var);
