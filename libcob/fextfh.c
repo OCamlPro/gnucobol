@@ -34,7 +34,7 @@ static struct fcd_file {
 } *fcd_file_list = NULL;
 static const cob_field_attr alnum_attr = {COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL};
 
-static void copy_keys_fcd_to_file (FCD3 *fcd, cob_file *f);
+static void copy_keys_fcd_to_file (FCD3 *fcd, cob_file *f, int doall);
 
 /*
  * Free up allocated memory
@@ -340,7 +340,7 @@ update_fcd_to_file (FCD3* fcd, cob_file *f, cob_field *fnstatus, int wasOpen)
 	 && fcd->recPtr != NULL) {
 		f->record->data = fcd->recPtr;
 		if (fcd->fileOrg == ORG_INDEXED) {
-			copy_keys_fcd_to_file (fcd, f);
+			copy_keys_fcd_to_file (fcd, f, 1);
 		}
 	}
 
@@ -375,7 +375,7 @@ update_fcd_to_file (FCD3* fcd, cob_file *f, cob_field *fnstatus, int wasOpen)
 }
 
 static void
-copy_keys_fcd_to_file (FCD3 *fcd, cob_file *f)
+copy_keys_fcd_to_file (FCD3 *fcd, cob_file *f, int doall)
 {
 	int		k, p, parts, off, klen;
 	EXTKEY	*key;
@@ -399,6 +399,7 @@ copy_keys_fcd_to_file (FCD3 *fcd, cob_file *f)
 		if (f->keys[k].offset == 0)
 			f->keys[k].offset = LDCOMPX4(key->pos);
 		if (f->keys[k].field == NULL
+		 || doall
 		 || f->keys[k].offset != LDCOMPX4(key->pos)
 		 || (parts == 1 && f->keys[k].field->size != LDCOMPX4(key->len))) {
 			if (f->keys[k].field == NULL)
@@ -574,14 +575,14 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f)
 				f->nkeys = MAX_FILE_KEYS;
 			}
 			f->keys = cob_cache_malloc (sizeof(cob_file_key) * f->nkeys);
-			copy_keys_fcd_to_file (fcd, f);
+			copy_keys_fcd_to_file (fcd, f, 0);
 		} else {
 			f->keys = cob_cache_malloc(sizeof(cob_file_key));
 		}
 	} else if (f->nkeys > 0
 			&& fcd->kdbPtr != NULL
 			&& LDCOMPX2(fcd->kdbPtr->nkeys) >= (int)f->nkeys) {
-		copy_keys_fcd_to_file (fcd, f);
+		copy_keys_fcd_to_file (fcd, f, 0);
 	}
 	update_fcd_to_file (fcd, f, NULL, 0);
 }
@@ -710,7 +711,7 @@ returnit:
 		if (f->record->size > f->record_max)
 			f->record->size = f->record_max;
 		if (fcd->fileOrg == ORG_INDEXED) {
-			copy_keys_fcd_to_file (fcd, f);
+			copy_keys_fcd_to_file (fcd, f, 1);
 		}
 	}
 

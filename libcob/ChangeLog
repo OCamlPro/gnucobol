@@ -4,6 +4,7 @@
 	* common.h: Replaced report.resume with report.go_label
 	* reportio.c: Rework callback to application to use 
 	             "switch (go_label) case  goto xxx"
+	* fextfh.c: If record address changes, force rebuild of key info 
 
 2021-08-23  Ron Norman <rjn@inglenet.com>
 
