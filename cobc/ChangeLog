@@ -1,4 +1,7 @@
 
+2021-08-26  Ron Norman <rjn@inglenet.com>
+	* codegen.c: Fix to use P_switch when computed-goto is not supported
+
 2021-08-24  Ron Norman <rjn@inglenet.com>
 
 	* tree.c: Fix bug in new code for folding constant expressions

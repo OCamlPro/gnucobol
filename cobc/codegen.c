@@ -10745,9 +10745,6 @@ output_report_source_move (struct cb_report *rep)
 		output_indent_level = 0;
 		output_line ("    /* No SOURCE to handle for %s */",rep->cname);
 		output_line ("rw_src_%d: ",rep->id);
-		output_indent_level = 4;
-		output_line ("goto *frame_ptr->return_address_ptr;");
-		output_indent_level = 2;
 	} else {
 		/* Finish off switch */
 		output_line ("default:");
@@ -10756,9 +10753,14 @@ output_report_source_move (struct cb_report *rep)
 		output_line ("%s%s.exec_source = -%s%s.exec_source;",
 						CB_PREFIX_REPORT,rep->cname,
 						CB_PREFIX_REPORT,rep->cname);
-		output_line ("goto *frame_ptr->return_address_ptr;");
-		output_indent_level = 2;
 	}
+	output_indent_level = 4;
+	if (!cb_flag_computed_goto) {
+		output_line ("goto P_switch;");
+	} else {
+		output_line ("goto *frame_ptr->return_address_ptr;");
+	}
+	output_indent_level = 2;
 }
 
 /* Alphabet-name */
