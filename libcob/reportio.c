@@ -791,7 +791,7 @@ write_rec (cob_report *r, int opt)
 			opt = (opt & ~COB_WRITE_MASK) | 1;
 			while (num > 0) {
 		 		cob_write (f, f->record, opt, NULL, 0);
-				memset (&data + r->code_len, ' ', record_size_left);
+				memset (data + r->code_len, ' ', record_size_left);
 				num--;
 			}
 		} else {

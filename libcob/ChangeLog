@@ -35,6 +35,7 @@
 	* reportio.c (write_rec): changed to completely use cob_write
 	  for CODE IS to handle all file attributes; backup and restore
 	  original record definition
+	* reportio.c (write_rec): fixed bad dereference for memset in above changes
 
 2021-07-07  Ron Norman <rjn@inglenet.com>
 
@@ -227,12 +228,12 @@
 	* common.h: Added COB_XFDT_COMP5IDX and COB_XFDT_COMP5REL
 	* file.h: Added fields for the rid_tablename processing
 	* fileio.c: Add 'dbase' flag for modules to indicate which are database
-	           Added for IO_ or IX_ 'limit=num' where 'num' is the number of
-			   rows to be read from the table with one SELECT
+	          Added for IO_ or IX_ 'limit=num' where 'num' is the number of
+	          rows to be read from the table with one SELECT
 	* foci.c: Limit rows read at once by a SELECT and continue after
 	* fodbc.c: Limit rows read at once by a SELECT and continue after
 	* fsqlxfd.c: Changes for limit on rows read, handle sequence usage
-			and some date conversion fixes
+	  and some date conversion fixes
 
 2021-02-13  Ron Norman <rjn@inglenet.com>
 
@@ -248,20 +249,21 @@
 2021-02-11  Ron Norman <rjn@inglenet.com>
 
 	* fileio.c: Added a few more checks with possible error message during
-			ROLLBACK processing if the QBL file has a problem being read
+	  ROLLBACK processing if the QBL file has a problem being read
 	* termio.c: Added bounds check to avoid core dump on Centos 6.8
 	* fsqlxfd.c: Check for COB_SQL_HIGH_VALUE to hold some hex characters
-			that should be used to replace HIGH-VALUES for fields used are 
-			part of a WHERE clause (i.e. START statement)
+	  that should be used to replace HIGH-VALUES for fields used are
+	  part of a WHERE clause (i.e. START statement)
 
 2021-02-10  Ron Norman <rjn@inglenet.com>
 
 	* fileio.c: Changed to use lseek with SEEK_SET as lseek using SEEK_CUR and
-			a negative 'offset' was failing on Centos 6 and Solaris
+	  a negative 'offset' was failing on Centos 6 and Solaris
 
 2021-02-09  Ron Norman <rjn@inglenet.com>
+
 	* fodbc.c: PostgreSQL requires a SQLCloseCursor just before SQLExecute
-				if the statement had been used before.
+	  if the statement had been used before.
 
 2021-02-08  Ron Norman <rjn@inglenet.com>
 
