@@ -52,6 +52,16 @@
 #include <sys/wait.h>
 #endif
 
+#ifndef STDIN_FILENO
+#define STDIN_FILENO  fileno(stdin)
+#endif
+#ifndef STDOUT_FILENO
+#define STDOUT_FILENO fileno(stdout)
+#endif
+#ifndef STDERR_FILENO
+#define STDERR_FILENO fileno(stderr)
+#endif
+
 struct file_list {
 	struct file_list	*next;
 	cob_file		*file;
@@ -3839,7 +3849,6 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename, const int mode, con
 		return 0;
 	}
 	if (strcmp (filename,":CI:") == 0) {
-#if defined (HAVE_UNISTD_H) && !(defined (_WIN32))
 		if (mode != COB_OPEN_INPUT) 
 			return COB_STATUS_37_PERMISSION_DENIED;
 		f->flag_select_features |= COB_SELECT_STDIN;
@@ -3851,12 +3860,8 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename, const int mode, con
 		f->open_mode = (unsigned char)mode;
 		f->flag_is_std = 1;
 		return 0;
-#else
-		return COB_STATUS_47_INPUT_DENIED;
-#endif
 	}
 	if (strcmp (filename,":CO:") == 0) {
-#if defined (HAVE_UNISTD_H) && !(defined (_WIN32))
 		if (mode != COB_OPEN_OUTPUT) 
 			return COB_STATUS_37_PERMISSION_DENIED;
 		f->flag_select_features &= ~COB_SELECT_STDIN;
@@ -3868,12 +3873,8 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename, const int mode, con
 		f->open_mode = (unsigned char)mode;
 		f->flag_is_std = 1;
 		return 0;
-#else
-		return COB_STATUS_48_OUTPUT_DENIED;
-#endif
 	}
 	if (strcmp (filename,":CE:") == 0) {
-#if defined (HAVE_UNISTD_H) && !(defined (_WIN32))
 		if (mode != COB_OPEN_OUTPUT) 
 			return COB_STATUS_37_PERMISSION_DENIED;
 		f->flag_select_features &= ~COB_SELECT_STDIN;
@@ -3885,9 +3886,6 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename, const int mode, con
 		f->open_mode = (unsigned char)mode;
 		f->flag_is_std = 1;
 		return 0;
-#else
-		return COB_STATUS_48_OUTPUT_DENIED;
-#endif
 	}
 
 	if (filename[0] == '|') {

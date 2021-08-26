@@ -1,4 +1,9 @@
 
+2021-08-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (cob_file_open) [!HAVE_UNISTD_H || _WIN32]: also support
+	  ASSIGN to :CI:, :CO:, :CE: in these cases
+
 2021-08-25  Ron Norman <rjn@inglenet.com>
 
 	* common.h: Replaced report.resume with report.go_label
