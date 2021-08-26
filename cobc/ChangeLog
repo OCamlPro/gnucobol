@@ -1,6 +1,7 @@
 
 2021-08-26  Ron Norman <rjn@inglenet.com>
 	* codegen.c: Fix to use P_switch when computed-goto is not supported
+	             move emitting P_switch after REPORT code
 
 2021-08-24  Ron Norman <rjn@inglenet.com>
 

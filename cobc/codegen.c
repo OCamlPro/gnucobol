@@ -12308,24 +12308,6 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 		output_error_handler (prog);
 	}
 
-	/* Frame stack jump table for compiler without computed goto */
-	if (!cb_flag_computed_goto) {
-		output_newline ();
-		output_line ("/* Frame stack jump table */");
-		output_line ("P_switch:");
-		if (label_cache) {
-			output_line (" switch (frame_ptr->return_address_num) {");
-			for (pl = label_cache; pl; pl = pl->next) {
-				output_line (" case %d:", pl->call_num);
-				output_line ("   goto %s%d;", CB_PREFIX_LABEL, pl->id);
-			}
-			output_line (" }");
-		}
-	}
-	output_line ("P_cgerror:");
-	output_line ("\tcob_fatal_error (COB_FERROR_CODEGEN);");
-	output_newline ();
-
 	/* Program initialization */
 
 	output_newline ();
@@ -12495,6 +12477,24 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 		}
 		output_newline ();
 	}
+
+	/* Frame stack jump table for compiler without computed goto */
+	if (!cb_flag_computed_goto) {
+		output_newline ();
+		output_line ("/* Frame stack jump table */");
+		output_line ("P_switch:");
+		if (label_cache) {
+			output_line (" switch (frame_ptr->return_address_num) {");
+			for (pl = label_cache; pl; pl = pl->next) {
+				output_line (" case %d:", pl->call_num);
+				output_line ("   goto %s%d;", CB_PREFIX_LABEL, pl->id);
+			}
+			output_line (" }");
+		}
+	}
+	output_line ("P_cgerror:");
+	output_line ("\tcob_fatal_error (COB_FERROR_CODEGEN);");
+	output_newline ();
 
 	/* Set up CANCEL callback code */
 
