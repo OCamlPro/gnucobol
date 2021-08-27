@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2020 Free Software Foundation, Inc.
+   Copyright (C) 2001-2021 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -1702,6 +1702,11 @@ cb_build_assignment_name (struct cb_file *cfile, cb_tree name)
 	if (cfile->assign_type == CB_ASSIGN_EXT_FILE_NAME_REQUIRED) {
 		return build_external_assignment_name (name);
 	} else {
+		const char	*name_ptr = CB_NAME (name);
+		/* handle name as literal if it matches the file name */
+		if (strcmp (name_ptr, cfile->name) == 0) {
+			return cb_build_alphanumeric_literal (name_ptr, strlen (name_ptr));
+		}
 		current_program->reference_list =
 			cb_list_add (current_program->reference_list, name);
 		return name;
@@ -3359,7 +3364,7 @@ cb_validate_program_data (struct cb_program *prog)
 
 	/* Build undeclared assignment names now */
 	for (l = prog->file_list; l; l = CB_CHAIN (l)) {
-	        validate_assign_name (CB_FILE (CB_VALUE (l)), prog);
+		validate_assign_name (CB_FILE (CB_VALUE (l)), prog);
 	}
 
 	if (prog->cursor_pos) {
@@ -3479,7 +3484,7 @@ cb_validate_program_data (struct cb_program *prog)
 			validate_record_depending (file->record_depending);
 		}
 		if (file->organization == COB_ORG_RELATIVE && file->key
-		    && cb_ref (file->key) != cb_error_node) {
+		 && cb_ref (file->key) != cb_error_node) {
 			validate_relative_key_field (file);
 		}
 		if (file->file_status) {
@@ -7686,9 +7691,9 @@ cb_emit_display (cb_tree values, cb_tree upon, cb_tree no_adv,
 	/* Validate upon and values */
 	if (values != cb_null) /* DISPLAY OMITTED */ {
 		if (upon == cb_error_node
-			|| !values
-			|| cb_validate_list (values)
-			|| validate_types_of_display_values (values)) {
+		 || !values
+		 || cb_validate_list (values)
+		 || validate_types_of_display_values (values)) {
 			return;
 		}
 	}

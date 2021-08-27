@@ -1,4 +1,12 @@
 
+2021-08-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_assignment_name): fix SELECT filename ASSIGN filename
+	  to lead to "redefinition of filename" when (the default) dialect option
+	  assign-clause=dynamic is active; identical names are now always seen
+	  as literal (similar to assign-clause=external, but without label
+	  handling), see bug 669
+
 2021-07-29  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y, config.def: changed the auto-setting of the RECURSIVE attribute
