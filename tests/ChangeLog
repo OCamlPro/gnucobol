@@ -1,4 +1,8 @@
 
+2021-08-29   Ron Norman <rjn@inglenet.com>
+
+	* testsuite.src/run_file.at: Add more EXTFH test cases
+
 2021-05-04   Ron Norman <rjn@inglenet.com>
 
 	* testsuite.src/run_misc.at: stdarg.h is required on Centos 6 64bit

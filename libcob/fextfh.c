@@ -718,7 +718,6 @@ returnit:
 	return f;
 }
 
-
 static void
 save_fcd_status (FCD3 *fcd, int sts)
 {
@@ -1081,12 +1080,6 @@ cob_sys_extfh (const void *opcode_ptr, void *fcd_ptr)
 		 && COB_MODULE_PTR->cob_procedure_params[1]->size >= sizeof(FCD2)) {
 			int		rtnsts;
 			FCD2 *fcd2 = (FCD2 *) fcd_ptr;
-			if (fcd2->recPtr2 == NULL) {
-				fcd2->fileStatus[0] = '9';
-				fcd2->fileStatus[1] = 141;
-				cob_runtime_warning (_("ERROR: EXTFH called with no %s pointer"),"record");
-				return -1;
-			}
 			if (fcd2->fnamePtr2 == NULL) {
 				fcd2->fileStatus[0] = '9';
 				fcd2->fileStatus[1] = 141;
@@ -1396,22 +1389,12 @@ org_handling:
 		return -1;
 	}
 
-	if (fcd->recPtr == NULL) {
-		fcd->fileStatus[0] = '9';
-		fcd->fileStatus[1] = 141;
-		cob_runtime_warning (_("ERROR: EXTFH called with no %s pointer"),"record");
-		return -1;
-	}
 	if (fcd->fnamePtr == NULL) {
 		fcd->fileStatus[0] = '9';
 		fcd->fileStatus[1] = 141;
 		cob_runtime_warning (_("ERROR: EXTFH called with no %s pointer"),"filename");
 		return -1;
 	}
-
-	rec->data = fcd->recPtr;
-	rec->size = LDCOMPX4(fcd->curRecLen);
-	rec->attr = &alnum_attr;
 
 	switch (opcd) {
 	case OP_OPEN_INPUT:
@@ -1422,12 +1405,15 @@ org_handling:
 		 && memcmp(f->file_status,"0",1) == 0) {	/* 00 or 05 are both ok */
 			f->open_mode = COB_OPEN_INPUT;
 		}
+		f->record_min = LDCOMPX4(fcd->minRecLen);
+		f->record_max = LDCOMPX4(fcd->maxRecLen);
+		STCOMPX4(f->record_max,fcd->curRecLen);
 		update_file_to_fcd(f,fcd,fnstatus);
 		if (f->organization == COB_ORG_INDEXED
 		 && memcmp(f->file_status,"61",1) == 0) {/* 61 --> 9A for MF */
 			memcpy(fcd->fileStatus,"9A",2);
 		}
-		break;
+		return sts;
 
 	case OP_OPEN_OUTPUT:
 	case OP_OPEN_OUTPUT_NOREWIND:
@@ -1441,7 +1427,7 @@ org_handling:
 		 && memcmp(f->file_status,"61",1) == 0) {/* 61 --> 9A for MF */
 			memcpy(fcd->fileStatus,"9A",2);
 		}
-		break;
+		return sts;
 
 	case OP_OPEN_IO:
 		cob_open(f, COB_OPEN_I_O, 0, fs);
@@ -1456,7 +1442,7 @@ org_handling:
 		 && memcmp(f->file_status,"61",1) == 0) {/* 61 --> 9A for MF */
 			memcpy(fcd->fileStatus,"9A",2);
 		}
-		break;
+		return sts;
 
 	case OP_OPEN_EXTEND:
 		cob_open(f, COB_OPEN_EXTEND, 0, fs);
@@ -1469,30 +1455,47 @@ org_handling:
 		 && memcmp(f->file_status,"61",1) == 0) {/* 61 --> 9A for MF */
 			memcpy(fcd->fileStatus,"9A",2);
 		}
-		break;
+		return sts;
 
 	case OP_CLOSE:
 	case OP_CLOSE_REEL:
 		cob_close(f, fs, COB_CLOSE_NORMAL, 0);
 		update_file_to_fcd(f,fcd,fnstatus);
-		break;
+		return sts;
 
 	case OP_CLOSE_LOCK:
 		cob_close(f, fs, COB_CLOSE_LOCK, 0);
 		update_file_to_fcd(f,fcd,fnstatus);
-		break;
+		return sts;
 
 	case OP_CLOSE_REMOVE:
 		cob_close(f, fs, COB_CLOSE_UNIT_REMOVAL, 0);
 		update_file_to_fcd(f,fcd,fnstatus);
-		break;
+		return sts;
 
 	case OP_CLOSE_NO_REWIND:
 	case OP_CLOSE_NOREWIND:
 		cob_close(f, fs, COB_CLOSE_NO_REWIND, 0);
 		update_file_to_fcd(f,fcd,fnstatus);
-		break;
+		return sts;
 
+	case OP_GETINFO:			/* Nothing needed here */
+		return sts;
+	}
+
+	rec->data = fcd->recPtr;
+	rec->size = LDCOMPX4(fcd->curRecLen);
+	rec->attr = &alnum_attr;
+
+	if (fcd->recPtr == NULL) {
+		fcd->fileStatus[0] = '9';
+		fcd->fileStatus[1] = 141;
+		cob_runtime_warning (_("ERROR: EXTFH called with no %s pointer; Function %d"),
+						"record",opcd&0xFF);
+		return -1;
+	}
+
+	switch (opcd) {
 	case OP_READ_PREV:
 	case OP_READ_PREV_LOCK:
 	case OP_READ_PREV_NO_LOCK:
@@ -1652,10 +1655,6 @@ org_handling:
 		cob_unlock_file(f, fs);
 		update_file_to_fcd(f,fcd,fnstatus);
 		break;
-
-	case OP_GETINFO:			/* Nothing needed here */
-		break;
-
 
 	/* Similar for other possible 'opcode' values */
 	default:

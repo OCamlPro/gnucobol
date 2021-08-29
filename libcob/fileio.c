@@ -6796,6 +6796,8 @@ cob_write (cob_file *f, cob_field *rec, const int opt, cob_field *fnstatus,
 	} else {
 		f->record->size = rec->size;
 	}
+	if (f->record->size < f->record_min)
+		f->record->size = f->record_min; 
 
 	if (f->record->size < f->record_min || f->record_max < f->record->size) {
 		cob_file_save_status (f, fnstatus, COB_STATUS_44_RECORD_OVERFLOW);

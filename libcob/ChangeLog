@@ -1,4 +1,10 @@
 
+2021-08-29  Ron Norman <rjn@inglenet.com>
+
+	* fileio.c: Adjust record size up to minimum for the file
+	* fextfh.c: Only check for missing record address if an I/O request
+	           Do not check for OPEN/CLOSE operations
+
 2021-08-27  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fileio.c (cob_file_open) [!HAVE_UNISTD_H || _WIN32]: also support
