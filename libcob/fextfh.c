@@ -1396,6 +1396,9 @@ org_handling:
 		return -1;
 	}
 
+	if (f->record
+	 && f->record->size < f->record_min)
+		f->record->size = f->record_min; 
 	switch (opcd) {
 	case OP_OPEN_INPUT:
 	case OP_OPEN_INPUT_NOREWIND:
@@ -1577,8 +1580,9 @@ org_handling:
 		 && LDCOMPX4(fcd->curRecLen) <= LDCOMPX4(fcd->maxRecLen)) {
 			f->record->size = LDCOMPX4(fcd->curRecLen);
 		}
-		if (f->record->size < f->record_min)
-			f->record->size = f->record_min; 
+		if (rec->size < f->record_min) {
+			rec->size = f->record_min; 
+		}
 		eop = LDCOMPX2(fcd->eop);
 		opts = LDCOMPX4(fcd->opt);
 		cob_write(f, rec, opts, fs, eop);
@@ -1590,6 +1594,9 @@ org_handling:
 		 && LDCOMPX4(fcd->curRecLen) >= LDCOMPX4(fcd->minRecLen)
 		 && LDCOMPX4(fcd->curRecLen) <= LDCOMPX4(fcd->maxRecLen)) {
 			f->record->size = LDCOMPX4(fcd->curRecLen);
+		}
+		if (rec->size < f->record_min) {
+			rec->size = f->record_min; 
 		}
 		opts = LDCOMPX4(fcd->opt);
 		cob_rewrite(f, rec, opts, fs);
