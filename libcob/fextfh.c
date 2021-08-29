@@ -1577,6 +1577,8 @@ org_handling:
 		 && LDCOMPX4(fcd->curRecLen) <= LDCOMPX4(fcd->maxRecLen)) {
 			f->record->size = LDCOMPX4(fcd->curRecLen);
 		}
+		if (f->record->size < f->record_min)
+			f->record->size = f->record_min; 
 		eop = LDCOMPX2(fcd->eop);
 		opts = LDCOMPX4(fcd->opt);
 		cob_write(f, rec, opts, fs, eop);
