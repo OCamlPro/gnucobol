@@ -4,6 +4,7 @@
 	* general: fix local includes to use "local" instead of <system>
 	* reportio.c: remove unused variables/code,
 	  remove duplicated includes coming from fileio.h
+	* fextfh.c (copy_fcd_to_file): only access key structure for INDEXED files
 
 2021-08-29  Ron Norman <rjn@inglenet.com>
 

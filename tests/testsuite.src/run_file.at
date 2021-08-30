@@ -8699,9 +8699,899 @@ AT_CHECK([diff reference TEST-OUT], [0], [], [])
 
 AT_CLEANUP
 
-AT_SETUP([EXTFH: FCD2 LINE SEQUENTIAL])
+
+AT_SETUP([EXTFH: LINE SEQUENTIAL files (2)])
+AT_KEYWORDS([runfile EXTFH])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       78  PROGRAM-NAME  VALUE 'SEQEXTFH'.
+       01  FCDOPCODE.
+           02  FILLER             PIC X               VALUE X'FA'.
+           02  EXTFH-OPCODE       PIC X.
+      *    STANDARD OPERATION CODES
+           88  EXTFH-OPCODE-ISOPENINPUT               VALUE X'00'.
+           88  EXTFH-OPCODE-ISOPENOUTPUT              VALUE X'01'.
+           88  EXTFH-OPCODE-ISREADSEQUENTIAL          VALUE X'8D'.
+           88  EXTFH-OPCODE-ISCLOSE                   VALUE X'80'.
+           88  EXTFH-OPCODE-ISWRITE                   VALUE X'F3'.
+       01  FCD-PARAMETER-BLOCK.
+           copy xfhfcd3.
+       01  LSEQ-FILENAME PIC X(44)
+            VALUE 'FCDLS'.
+       01  LSEQ-RECORDAREA PIC X(255).
+       01  LSEQ-RECORDS.
+           02  LSEQ-COUNT             PIC X    COMP-X  VALUE 3.
+           02  LSEQ-RECORD1.
+               03  LSEQ-1LENGTH       PIC X    COMP-X  VALUE 22.
+               03  LSEQ-1DATA         PIC X(80)
+               VALUE 'THERE IS LITTLE LAMB'.
+           02  LSEQ-RECORD2.
+               03  LSEQ-2LENGTH       PIC X    COMP-X  VALUE 33.
+               03  LSEQ-2DATA         PIC X(80)
+               VALUE 'THE LAMB WAS GRAND AND A GRANDMA'.
+           02  LSEQ-RECORD3.
+               03  LSEQ-3LENGTH       PIC X    COMP-X  VALUE 22.
+               03  LSEQ-3DATA         PIC X(80)
+               VALUE 'THE OLD EWE CHORTLED'.
+       01  LSEQ-RECORDTABLE
+               REDEFINES LSEQ-RECORDS.
+           02  LSEQ-TCOUNT            PIC X    COMP-X.
+           02  LSEQ-TENTRY            OCCURS 3 TIMES
+                                      INDEXED BY LSEQ-TX.
+               03  LSEQ-TEST-LEN      PIC X    COMP-X.
+               03  LSEQ-TESTDATA      PIC X(80).
+       PROCEDURE DIVISION.
+           DISPLAY PROGRAM-NAME ': STARTING.'
+           DISPLAY PROGRAM-NAME ': CREATING LINE SEQUENTIAL FILE.'
+           SET EXTFH-OPCODE-ISOPENOUTPUT      TO TRUE
+           MOVE LENGTH OF FCD-PARAMETER-BLOCK TO FCD-LENGTH
+           MOVE fcd--version-number           TO FCD-VERSION
+           MOVE fcd--open-closed              TO FCD-OPEN-MODE
+           MOVE LENGTH OF LSEQ-FILENAME       TO FCD-NAME-LENGTH
+           MOVE fcd--exclusive-bit            TO FCD-LOCK-MODE
+           MOVE fcd--format-cobol2            TO FCD-FILE-FORMAT
+           MOVE LENGTH OF LSEQ-RECORDAREA TO FCD-MAX-REC-LENGTH
+           MOVE fcd--recmode-variable TO FCD-RECORDING-MODE
+           MOVE 0 TO FCD-MIN-REC-LENGTH
+           SET FCD-FILENAME-ADDRESS TO ADDRESS OF LSEQ-FILENAME
+           PERFORM CALL-EXTFH
+           PERFORM FCD-CHECK-STAT
+           IF FCD-FILE-STATUS = '00'
+             DISPLAY PROGRAM-NAME
+                 ': LINE SEQUENTIAL FILE IS OPEN OUTPUT.'
+             PERFORM WITH TEST AFTER VARYING LSEQ-TX FROM 1 BY 1
+                 UNTIL LSEQ-TX = LSEQ-TCOUNT OR FCD-FILE-STATUS <> '00'
+               SET EXTFH-OPCODE-ISWRITE       TO TRUE
+               MOVE LSEQ-TEST-LEN (LSEQ-TX) TO FCD-CURRENT-REC-LEN
+               MOVE 1 TO FCD-LINE-COUNT
+               SET FCD-RECORD-ADDRESS TO
+                ADDRESS OF LSEQ-TESTDATA (LSEQ-TX)
+               PERFORM CALL-EXTFH
+               PERFORM FCD-CHECK-STAT
+             END-PERFORM
+             IF FCD-FILE-STATUS = '00'
+               DISPLAY PROGRAM-NAME ': LINE SEQUENTIAL WRITES COMPLETE.'
+               SET EXTFH-OPCODE-ISCLOSE       TO TRUE
+               PERFORM CALL-EXTFH
+               PERFORM FCD-CHECK-STAT
+               IF FCD-FILE-STATUS = '00'
+                DISPLAY PROGRAM-NAME ': LINE SEQUENTIAL FILE IS CLOSED.'
+               ELSE
+                DISPLAY PROGRAM-NAME
+                    ': UNABLE TO CLOSE LINE SEQUENTIAL FILE.'
+               END-IF
+             ELSE
+               DISPLAY PROGRAM-NAME
+                   ': UNABLE TO CREATE LINE SEQUENTIAL FILE.'
+             END-IF
+           ELSE
+             DISPLAY PROGRAM-NAME
+                 ': UNABLE TO OPEN LINE SEQUENTIAL FILE AS OUTPUT.'
+             STOP RUN
+           END-IF
+           DISPLAY PROGRAM-NAME ': READING LINE SEQUENTIAL FILE.'
+           SET EXTFH-OPCODE-ISOPENINPUT       TO TRUE
+           MOVE fcd--open-closed              TO FCD-OPEN-MODE
+           MOVE LENGTH OF LSEQ-FILENAME       TO FCD-NAME-LENGTH
+           MOVE fcd--exclusive-bit            TO FCD-LOCK-MODE
+           MOVE LENGTH OF LSEQ-RECORDAREA     TO FCD-MAX-REC-LENGTH
+           MOVE 0 TO FCD-MIN-REC-LENGTH
+           SET FCD-FILENAME-ADDRESS TO ADDRESS OF LSEQ-FILENAME
+           PERFORM CALL-EXTFH
+           PERFORM FCD-CHECK-STAT
+           IF FCD-FILE-STATUS = '00'
+             SET FCD-RECORD-ADDRESS
+              TO ADDRESS OF LSEQ-RECORDAREA
+             DISPLAY PROGRAM-NAME
+                 ': LINE SEQUENTIAL FILE IS OPEN INPUT.'
+             PERFORM WITH TEST AFTER UNTIL FCD-FILE-STATUS <> '00'
+               SET EXTFH-OPCODE-ISREADSEQUENTIAL  TO TRUE
+               PERFORM CALL-EXTFH
+               PERFORM FCD-CHECK-STAT
+               IF FCD-FILE-STATUS = '00'
+                 DISPLAY PROGRAM-NAME
+                     ': RECORD = ' LSEQ-RECORDAREA
+                                   (1:FCD-CURRENT-REC-LEN)
+               END-IF
+             END-PERFORM
+             IF FCD-FILE-STATUS = '00' OR '10'
+               DISPLAY PROGRAM-NAME ': LINE SEQUENTIAL READS COMPLETE.'
+               SET EXTFH-OPCODE-ISCLOSE       TO TRUE
+               PERFORM CALL-EXTFH
+               PERFORM FCD-CHECK-STAT
+               IF FCD-FILE-STATUS = '00'
+                 DISPLAY PROGRAM-NAME ': LSEQ FILE IS CLOSED.'
+               ELSE
+                 DISPLAY PROGRAM-NAME
+                     ': UNABLE TO CLOSE LINE SEQUENTIAL FILE.'
+               END-IF
+             ELSE
+               DISPLAY PROGRAM-NAME
+                   ': UNABLE TO READ LINE SEQUENTIAL FILE.'
+             END-IF
+           ELSE
+             DISPLAY PROGRAM-NAME
+                 ': UNABLE TO OPEN LINE SEQUENTIAL FILE AS INPUT.'
+             STOP RUN
+           END-IF
+           DISPLAY PROGRAM-NAME ': ENDING.'
+           STOP RUN.
+       CALL-EXTFH.
+           CALL 'EXTFH' USING
+                        FCDOPCODE
+                        FCD-PARAMETER-BLOCK.
+       FCD-CHECK-STAT.
+           IF FCD-STATUS-KEY-1 = '9'
+             DISPLAY PROGRAM-NAME ': RUN-TIME ERROR 9/' FCD-BINARY
+           ELSE
+             IF FCD-FILE-STATUS <> '00'
+               DISPLAY PROGRAM-NAME ': FILE STATUS = ' FCD-FILE-STATUS
+             ELSE
+               CONTINUE
+             END-IF
+           END-IF.
+       SEQEXTFH-TERM.
+           EXIT.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+
+AT_CHECK([DD_FCDLS=./report.txt \
+$COBCRUN_DIRECT ./prog], [0],
+[SEQEXTFH: STARTING.
+SEQEXTFH: CREATING LINE SEQUENTIAL FILE.
+SEQEXTFH: LINE SEQUENTIAL FILE IS OPEN OUTPUT.
+SEQEXTFH: LINE SEQUENTIAL WRITES COMPLETE.
+SEQEXTFH: LINE SEQUENTIAL FILE IS CLOSED.
+SEQEXTFH: READING LINE SEQUENTIAL FILE.
+SEQEXTFH: LINE SEQUENTIAL FILE IS OPEN INPUT.
+SEQEXTFH: RECORD = THERE IS LITTLE LAMB
+SEQEXTFH: RECORD = THE LAMB WAS GRAND AND A GRANDMA
+SEQEXTFH: RECORD = THE OLD EWE CHORTLED
+SEQEXTFH: FILE STATUS = 10
+SEQEXTFH: LINE SEQUENTIAL READS COMPLETE.
+SEQEXTFH: LSEQ FILE IS CLOSED.
+SEQEXTFH: ENDING.
+], [])
+
+
+AT_CAPTURE_FILE(./report.txt)
+
+AT_DATA([reference],
+[THERE IS LITTLE LAMB
+THE LAMB WAS GRAND AND A GRANDMA
+THE OLD EWE CHORTLED
+])
+
+AT_CHECK([gcdiff reference report.txt], [0])
+
+AT_CLEANUP
+
+
+AT_SETUP([EXTFH: FIXED SEQUENTIAL])
+AT_KEYWORDS([runfile EXTFH])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+      ** TEST FIXED (BLOCK) LENGTH SEQUENTIAL RECORD EXTFH
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       78  PROGRAM-NAME  VALUE 'FBSEXTFH'.
+       01  FCDOPCODE.
+           02  FILLER              PIC X               VALUE X'FA'.
+           02  EXTFH-OPCODE        PIC X.
+      *    STANDARD OPERATION CODES
+           88  EXTFH-OPCODE-ISOPENINPUT               VALUE X'00'.
+           88  EXTFH-OPCODE-ISOPENOUTPUT              VALUE X'01'.
+           88  EXTFH-OPCODE-ISREADSEQUENTIAL          VALUE X'8D'.
+           88  EXTFH-OPCODE-ISCLOSE                   VALUE X'80'.
+           88  EXTFH-OPCODE-ISWRITE                   VALUE X'F3'.
+      *
+       01  FCD-PARAMETER-BLOCK.
+           copy xfhfcd3.
+       01  FIX-FILENAME PIC X(44)
+            VALUE 'FCDFB'.
+       01  FIX-RECORDAREA PIC X(255).
+       01  FIX-RECORDS.
+           02  FIX-COUNT              PIC X    COMP-X  VALUE 3.
+           02  FIX-RECORD1.
+               03  FIX-1LENGTH        PIC X    COMP-X  VALUE 22.
+               03  FIX-1DATA          PIC X(80)
+               VALUE 'THERE IS LITTLE LAMB'.
+           02  FIX-RECORD2.
+               03  FIX-2LENGTH        PIC X    COMP-X  VALUE 33.
+               03  FIX-2DATA          PIC X(80)
+               VALUE 'THE LAMB WAS GRAND AND A GRANDMA'.
+           02  FIX-RECORD3.
+               03  FIX-3LENGTH        PIC X    COMP-X  VALUE 22.
+               03  FIX-3DATA          PIC X(80)
+               VALUE 'THE OLD EWE CHORTLED'.
+       01  FIX-RECORDTABLE
+               REDEFINES FIX-RECORDS.
+           02  FIX-TCOUNT             PIC X    COMP-X.
+           02  FIX-TENTRY             OCCURS 3 TIMES
+                                      INDEXED BY FIX-TX.
+               03  FIX-TEST-LEN       PIC X    COMP-X.
+               03  FIX-TESTDATA       PIC X(80).
+       PROCEDURE DIVISION.
+           DISPLAY PROGRAM-NAME ': STARTING.'
+           DISPLAY PROGRAM-NAME ': CREATING FIXED  SEQ FILE.'
+           SET EXTFH-OPCODE-ISOPENOUTPUT      TO TRUE
+           MOVE LENGTH OF FCD-PARAMETER-BLOCK TO FCD-LENGTH
+           move fcd--version-number TO FCD-VERSION
+           MOVE fcd--sequential-org TO FCD-ORGANIZATION
+           MOVE fcd--open-closed TO FCD-OPEN-MODE
+           MOVE LENGTH OF FIX-FILENAME TO FCD-NAME-LENGTH
+           MOVE fcd--exclusive-bit TO FCD-LOCK-MODE
+           move fcd--format-cobol2 to FCD-FILE-FORMAT
+           MOVE LENGTH OF FIX-RECORDAREA TO FCD-MAX-REC-LENGTH
+           MOVE 0 TO FCD-MIN-REC-LENGTH
+           SET FCD-FILENAME-ADDRESS TO ADDRESS OF FIX-FILENAME
+           MOVE 80 TO FCD-CURRENT-REC-LEN
+           MOVE 80 TO FCD-MAX-REC-LENGTH
+           MOVE 80 TO FCD-MIN-REC-LENGTH
+           PERFORM CALL-EXTFH
+           PERFORM FCD-CHECK-STAT
+           IF FCD-FILE-STATUS = '00'
+             DISPLAY PROGRAM-NAME
+                 ': FIXED  SEQ FILE IS OPEN OUTPUT.'
+             PERFORM WITH TEST AFTER VARYING FIX-TX FROM 1 BY 1
+                 UNTIL FIX-TX = FIX-TCOUNT OR FCD-FILE-STATUS <> '00'
+               SET EXTFH-OPCODE-ISWRITE       TO TRUE
+               MOVE FIX-TEST-LEN (FIX-TX) TO FCD-CURRENT-REC-LEN
+               MOVE 1 TO FCD-LINE-COUNT
+               SET FCD-RECORD-ADDRESS TO
+                ADDRESS OF FIX-TESTDATA (FIX-TX)
+               PERFORM CALL-EXTFH
+               PERFORM FCD-CHECK-STAT
+             END-PERFORM
+             IF FCD-FILE-STATUS = '00'
+               DISPLAY PROGRAM-NAME ': FIXED  SEQ WRITES COMPLETE.'
+               SET EXTFH-OPCODE-ISCLOSE       TO TRUE
+               PERFORM CALL-EXTFH
+               PERFORM FCD-CHECK-STAT
+               IF FCD-FILE-STATUS = '00'
+                DISPLAY PROGRAM-NAME ': FIXED  SEQ FILE IS CLOSED.'
+               ELSE
+                DISPLAY PROGRAM-NAME
+                    ': UNABLE TO CLOSE FIXED  SEQ FILE.'
+               END-IF
+             ELSE
+               DISPLAY PROGRAM-NAME
+                   ': UNABLE TO CREATE FIXED  SEQ FILE.'
+             END-IF
+           ELSE
+             DISPLAY PROGRAM-NAME
+                 ': UNABLE TO OPEN FIXED  SEQ FILE AS OUTPUT.'
+             STOP RUN
+           END-IF
+           DISPLAY PROGRAM-NAME ': READING FIXED  SEQ FILE.'
+           SET EXTFH-OPCODE-ISOPENINPUT       TO TRUE
+           MOVE fcd--sequential-org TO FCD-ORGANIZATION
+           MOVE fcd--open-closed TO FCD-OPEN-MODE
+           MOVE LENGTH OF FIX-FILENAME TO FCD-NAME-LENGTH
+           MOVE fcd--exclusive-bit TO FCD-LOCK-MODE
+           move fcd--format-cobol2 to FCD-FILE-FORMAT
+           MOVE LENGTH OF FIX-RECORDAREA TO FCD-MAX-REC-LENGTH
+           MOVE 0 TO FCD-MIN-REC-LENGTH
+           SET FCD-FILENAME-ADDRESS TO ADDRESS OF FIX-FILENAME
+           MOVE 80 TO FCD-CURRENT-REC-LEN
+           MOVE 80 TO FCD-MAX-REC-LENGTH
+           MOVE 80 TO FCD-MIN-REC-LENGTH
+           PERFORM CALL-EXTFH
+           PERFORM FCD-CHECK-STAT
+           IF FCD-FILE-STATUS = '00'
+             DISPLAY PROGRAM-NAME
+                 ': FIXED  SEQ FILE IS OPEN INPUT.'
+             PERFORM WITH TEST AFTER UNTIL FCD-FILE-STATUS <> '00'
+               SET EXTFH-OPCODE-ISREADSEQUENTIAL  TO TRUE
+               SET FCD-RECORD-ADDRESS
+                TO ADDRESS OF FIX-RECORDAREA
+               PERFORM CALL-EXTFH
+               PERFORM FCD-CHECK-STAT
+               IF FCD-FILE-STATUS = '00'
+                 DISPLAY PROGRAM-NAME
+                     ': RECORD = ' FIX-RECORDAREA (1:40) '. ' 
+                     'Size:' FCD-CURRENT-REC-LEN
+               END-IF
+             END-PERFORM
+             IF FCD-FILE-STATUS = '00' OR '10'
+               DISPLAY PROGRAM-NAME ': FIXED  SEQ READS COMPLETE.'
+               SET EXTFH-OPCODE-ISCLOSE       TO TRUE
+               PERFORM CALL-EXTFH
+               PERFORM FCD-CHECK-STAT
+               IF FCD-FILE-STATUS = '00'
+                 DISPLAY PROGRAM-NAME ': LSEQ FILE IS CLOSED.'
+               ELSE
+                 DISPLAY PROGRAM-NAME
+                     ': UNABLE TO CLOSE FIXED  SEQ FILE.'
+               END-IF
+             ELSE
+               DISPLAY PROGRAM-NAME
+                   ': UNABLE TO READ FIXED  SEQ FILE.'
+             END-IF
+           ELSE
+             DISPLAY PROGRAM-NAME
+                 ': UNABLE TO OPEN FIXED  SEQ FILE AS INPUT.'
+             STOP RUN
+           END-IF
+           DISPLAY PROGRAM-NAME ': ENDING.'
+           STOP RUN.
+       CALL-EXTFH.
+           CALL 'EXTFH' USING
+                        FCDOPCODE
+                        FCD-PARAMETER-BLOCK.
+       FCD-CHECK-STAT.
+           IF FCD-STATUS-KEY-1 = '9'
+             DISPLAY PROGRAM-NAME ': RUN-TIME ERROR 9/' FCD-BINARY
+           ELSE
+             IF FCD-FILE-STATUS <> '00'
+               DISPLAY PROGRAM-NAME ': FILE STATUS = ' FCD-FILE-STATUS
+             ELSE
+               CONTINUE
+             END-IF
+           END-IF.
+       SEQEXTFH-TERM.
+           EXIT.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[FBSEXTFH: STARTING.
+FBSEXTFH: CREATING FIXED  SEQ FILE.
+FBSEXTFH: FIXED  SEQ FILE IS OPEN OUTPUT.
+FBSEXTFH: FIXED  SEQ WRITES COMPLETE.
+FBSEXTFH: FIXED  SEQ FILE IS CLOSED.
+FBSEXTFH: READING FIXED  SEQ FILE.
+FBSEXTFH: FIXED  SEQ FILE IS OPEN INPUT.
+FBSEXTFH: RECORD = THERE IS LITTLE LAMB                    . Size:0000000080
+FBSEXTFH: RECORD = THE LAMB WAS GRAND AND A GRANDMA        . Size:0000000080
+FBSEXTFH: RECORD = THE OLD EWE CHORTLED                    . Size:0000000080
+FBSEXTFH: FILE STATUS = 10
+FBSEXTFH: FIXED  SEQ READS COMPLETE.
+FBSEXTFH: LSEQ FILE IS CLOSED.
+FBSEXTFH: ENDING.
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([Test OP_GETINFO])
+AT_KEYWORDS([EXTFH])
+
+# TODO: duplicate with line sequential 
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT OPTIONAL TSPFILE
+           ASSIGN TO FCD-FILENAME
+           ORGANIZATION INDEXED ACCESS DYNAMIC
+           RECORD KEY IS CM-CUST-NUM
+           ALTERNATE RECORD KEY IS CM-TELEPHONE WITH DUPLICATES
+           ALTERNATE RECORD KEY IS SPLIT-KEY3
+           SOURCE IS CM-DISK,CM-DP-MGR,CM-MACHINE WITH DUPLICATES
+                SUPPRESS WHEN ALL "*"
+           FILE STATUS IS CUST-STAT .
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD  TSPFILE
+           BLOCK CONTAINS 5 RECORDS.
+
+       01  TSPFL-RECORD.
+           05  TSPFL-REC.
+           10  CM-CUST-NUM.
+             15  CM-CUST-PRE                   PICTURE X(3).
+             15  CM-CUST-NNN                   PICTURE X(5).
+           10  CM-STATUS                       PICTURE X.
+           10  CM-COMPANY                      PICTURE X(25).
+           10  CM-ADDRESS-1                    PICTURE X(25).
+           10  CM-ADDRESS-2                    PICTURE X(25).
+           10  CM-ADDRESS-3                    PICTURE X(25).
+           10  CM-TELEPHONE                    PICTURE 9(10).
+           10  CM-DP-MGR                       PICTURE X(25).
+           10  CM-MACHINE                      PICTURE X(8).
+           10  CM-MEMORY                       PICTURE X(4).
+           10  CM-DISK                         PICTURE X(8).
+           10  CM-TAPE                         PICTURE X(8).
+           10  CM-NO-TERMINALS                 PICTURE 9(5).
+
+       WORKING-STORAGE SECTION.
+
+       01  I                       PIC 99.
+       01  K                       PIC 99.
+
+       01  CUST-STAT               PIC X(2) VALUE SPACES.
+       01  WS-FCD-DDNAME           PIC X(8) VALUE SPACES.
+       01  WS-FCD-PTR              POINTER   VALUE NULL.
+
+       01  ACTION-CODE                PIC X(2).
+          78  OP-OPEN-INPUT           VALUE x"fa00".
+          78  OP-OPEN-OUTPUT          VALUE x"fa01".
+          78  OP-OPEN-I-O             VALUE x"fa02".
+          78  OP-WRITE                VALUE x"faf3".
+          78  OP-RELEASE              VALUE x"faf3".
+          78  OP-REWRITE              VALUE x"faf4".
+          78  OP-READ-NEXT            VALUE x"faf5".
+          78  OP-START-EQUAL          VALUE x"fae9".
+          78  OP-CLOSE                VALUE x"fa80".
+          78  OP-QUERY-FILE           VALUE x"0006".
+
+       01  ACTION-CODE-WORK            REDEFINES ACTION-CODE.
+          05  ACTION-CODE-1           PIC x(01)                 COMP-X.
+          05  ACTION-CODE-2           PIC x(01)                 COMP-X.
+
+
+       01  FCD-FILENAME               PIC X(80) value "testisam".
+       01  FCD-RECORD                 PIC X(512) VALUE SPACES.
+
+       01  FCD-MAP.
+           COPY 'xfhfcd3.cpy'.
+
+       01  KEY-DEF.
+           03 KDB-LEN             PIC 9(4) COMP-X.
+           03 FILLER              PIC X(4).
+           03 KEY-NKEYS           PIC 9(4) COMP-X.
+           03 FILLER              PIC X(6).
+           03 KEY-DEFS OCCURS 16 TIMES.
+               05 KEY-COUNT       PIC XX   COMP-X.
+               05 KEY-OFFSET      PIC XX   COMP-X.
+               05 KEY-FLAGS       PIC X    COMP-X.
+               05 KEY-COMPRESSION PIC X    COMP-X.
+               05 KEY-SPARSE      PIC X    COMP-X.
+               05 FILLER          PIC X(9).
+           03 FILLER              PIC X(128).
+
+       LINKAGE SECTION.
+       01  KEY-INF.
+           03 KEY-DESC            PIC X COMP-X.
+           03 KEY-TYPE            PIC X COMP-X.
+           03 KEY-POS             PIC X(4) COMP-X.
+           03 KEY-LEN             PIC X(4) COMP-X.
+      *================================================================*
+       PROCEDURE DIVISION.
+      *----------------------------------------------------------------*
+       000-MAIN.
+
+          DELETE FILE TSPFILE.
+          OPEN OUTPUT TSPFILE.
+          WRITE TSPFL-RECORD.
+          CLOSE TSPFILE.
+
+          SET FCD-KEY-DEF-ADDRESS  TO ADDRESS OF KEY-DEF.
+          SET FCD-FILENAME-ADDRESS TO ADDRESS OF FCD-FILENAME.
+          MOVE 64 TO FCD-NAME-LENGTH
+          MOVE LENGTH OF KEY-DEF TO KDB-LEN.
+          SET FCD-RECORD-ADDRESS   TO ADDRESS OF FCD-RECORD.
+          MOVE 512 TO FCD-CURRENT-REC-LEN
+          MOVE 512 TO FCD-MIN-REC-LENGTH
+          MOVE 512 TO FCD-MAX-REC-LENGTH
+          MOVE 1 TO FCD-VERSION
+          MOVE 255 TO FCD-ORGANIZATION
+          MOVE 0 TO ACTION-CODE-1
+          MOVE 6 TO ACTION-CODE-2
+          PERFORM 800-CALL-EXTFH.
+          DISPLAY "Status: " FCD-FILE-STATUS
+                  " File: " FCD-FILENAME (1:20) "."
+          DISPLAY " Nkeys: " key-nkeys
+                  " Recsz: " FCD-MAX-REC-LENGTH.
+          DISPLAY "kdblen: " kdb-len.
+          PERFORM VARYING I FROM 1 UNTIL I > KEY-NKEYS
+             DISPLAY " Index: " i
+                     " Parts: " key-count (i)
+                     " Offset: " key-offset (i)
+                     " Flags: " key-flags (i)
+                     " Comp: " key-compression (i)
+                     " Sparse: " key-sparse (i)
+             SET WS-FCD-PTR TO ADDRESS OF key-def
+             SET WS-FCD-PTR UP BY key-offset (i)
+             SET ADDRESS OF key-inf TO WS-FCD-PTR
+             PERFORM VARYING K FROM 1 UNTIL K > KEY-count (i)
+                DISPLAY "   Pos: " key-pos
+                        "   Len: " key-len
+                        "   Desc: " key-desc
+                        " Type: " key-type
+                SET WS-FCD-PTR UP BY LENGTH OF key-inf
+                SET ADDRESS OF key-inf TO WS-FCD-PTR
+             END-PERFORM
+          END-PERFORM.
+
+          STOP RUN.
+
+      *----------------------------------------------------------------*
+      *    External file handler interface -- all I/O goes through here
+      *
+        800-CALL-EXTFH.
+
+            CALL "EXTFH" USING ACTION-CODE, FCD-MAP
+
+            IF FCD-STATUS-KEY-1 = "9" AND FCD-BINARY = 199
+               MOVE "10" TO FCD-FILE-STATUS
+            END-IF
+            .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[Status: 00 File: testisam            .
+ Nkeys: 0003 Recsz: 0000000177
+kdblen: 0398
+ Index: 01 Parts: 00001 Offset: 00062 Flags: 000 Comp: 000 Sparse: 000
+   Pos: 0000000000   Len: 0000000008   Desc: 000 Type: 000
+ Index: 02 Parts: 00001 Offset: 00072 Flags: 064 Comp: 000 Sparse: 000
+   Pos: 0000000109   Len: 0000000010   Desc: 032 Type: 032
+ Index: 03 Parts: 00003 Offset: 00082 Flags: 066 Comp: 000 Sparse: 042
+   Pos: 0000000156   Len: 0000000008   Desc: 000 Type: 000
+   Pos: 0000000119   Len: 0000000025   Desc: 000 Type: 000
+   Pos: 0000000144   Len: 0000000008   Desc: 000 Type: 000
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([EXTFH: changing record address])
+AT_KEYWORDS([runfile EXTFH])
+
+# TODO: replace INDEXED with line sequential (or duplicate)
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+AT_DATA([progl.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       INPUT-OUTPUT  SECTION.
+       FILE-CONTROL.
+           SELECT OUTFILE
+           ASSIGN "TEST1EXTFH"
+           ORGANIZATION INDEXED
+           RECORD KEY IS PRIME-KEY
+           ACCESS IS SEQUENTIAL
+           FILE STATUS IS OUT-STAT.
+       
+       DATA DIVISION.
+       FILE SECTION.
+       FD OUTFILE
+           BLOCK CONTAINS 5 RECORDS.
+
+       01  OUT-REC.
+           05  PRIME-KEY PIC X(25).
+           05  IN-DATA   PIC X(10).
+       
+       WORKING-STORAGE SECTION.
+       01  OUT-STAT             PIC XX    VALUE '00'.
+       01  OUT-RECNUM           PIC 9 VALUE 0.
+       
+       PROCEDURE DIVISION.
+       MAIN-100.
+           OPEN OUTPUT OUTFILE.
+           IF OUT-STAT NOT = '00'
+               DISPLAY 'ERROR ' OUT-STAT ' OPENING OUTPUT FILE'
+               STOP RUN
+           END-IF.
+           INITIALIZE OUT-REC.
+       
+       GET-NEXT-100.
+           ADD 1  TO OUT-RECNUM.
+           MOVE "RECORD-X" TO PRIME-KEY.
+           MOVE OUT-RECNUM TO PRIME-KEY (8:1).
+           WRITE OUT-REC.
+           IF  OUT-STAT NOT = '00'
+           AND OUT-STAT NOT = '02'
+               DISPLAY 'ERROR ' OUT-STAT ' WRITING OUTPUT'
+               GO TO END-PROG-100
+           END-IF.
+           IF OUT-RECNUM < 5
+               GO TO GET-NEXT-100.
+       
+       END-PROG-100.
+           DISPLAY OUT-RECNUM ' records written'.
+           CLOSE OUTFILE.
+           STOP RUN.
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+      *
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+
+       WORKING-STORAGE SECTION.
+
+       77  I                               PIC 9(04) COMP-5.
+       77  J                               PIC 9(04) COMP-5.
+       77  K                               PIC 9(04) COMP-5.
+       77  L                               PIC 9(04) COMP-5.
+       77  M                               PIC 9(04) COMP-5.
+       01  OP-N                            PIC X COMP-X.
+       01  OP-X REDEFINES OP-N             PIC X.
+
+       01  ACTION-CODE.
+           05  ACTION-TYPE    PIC X(01).
+               78  COBOL-TYPE                  VALUE X'FA'.
+               78  SPECIAL-TYPE                VALUE X'00'.
+           05  COBOL-OP       PIC X(01).
+               78  OPEN-INPUT                  VALUE X'00'.
+               78  OPEN-OUTPUT                 VALUE X'01'.
+               78  OPEN-I-O                    VALUE X'02'.
+               78  OPEN-EXTEND                 VALUE X'03'.
+               78  OPEN-INPUT-NO-REWIND        VALUE X'04'.
+               78  OPEN-OUTPUT-NO-REWIND       VALUE X'05'.
+               78  OPEN-INPUT-REVERSED         VALUE X'08'.
+               78  CLOSE-FILE                  VALUE X'80'.
+               78  CLOSE-LOCK                  VALUE X'81'.
+               78  CLOSE-NO-REWIND             VALUE X'82'.
+               78  CLOSE-REEL-UNIT             VALUE X'84'.
+               78  CLOSE-REEL-UNIT-FOR-REMOVAL VALUE X'85'.
+               78  CLOSE-REEL-UNIT-NO-REWIND   VALUE X'86'.
+               78  READ-SEQ-NO-LOCK            VALUE X'8D'.
+               78  READ-SEQ-LOCK               VALUE X'D8'.
+               78  READ-SEQ-KEPT-LOCK          VALUE X'D9'.
+               78  READ-SEQ                    VALUE X'F5'.
+               78  READ-PREVIOUS-NO-LOCK       VALUE X'8C'.
+               78  READ-PREVIOUS-LOCK          VALUE X'DE'.
+               78  READ-PREVIOUS-KEPT-LOCK     VALUE X'DF'.
+               78  READ-PREVIOUS               VALUE X'F9'.
+               78  READ-RANDOM-NO-LOCK         VALUE X'8E'.
+               78  READ-RANDOM-LOCK            VALUE X'DA'.
+               78  READ-RANDOM-KEPT-LOCK       VALUE X'DB'.
+               78  READ-RANDOM                 VALUE X'F6'.
+               78  READ-DIRECT-NO-LOCK         VALUE X'8F'.
+               78  READ-DIRECT-LOCK            VALUE X'D6'.
+               78  READ-DIRECT-KEPT-LOCK       VALUE X'D7'.
+               78  READ-DIRECT                 VALUE X'C9'.
+               78  READ-POSITION               VALUE X'F1'.
+               78  WRITE-BEFORE                VALUE X'E1'.
+               78  WRITE-AFTER                 VALUE X'E2'.
+               78  WRITE-BEFORE-TAB            VALUE X'E3'.
+               78  WRITE-AFTER-TAB             VALUE X'E4'.
+               78  WRITE-BEFORE-PAGE           VALUE X'E5'.
+               78  WRITE-AFTER-PAGE            VALUE X'E6'.
+               78  WRITE-RECORD                VALUE X'F3'.
+               78  REWRITE-RECORD              VALUE X'F4'.
+               78  START-EQUAL-PRIME-KEY       VALUE X'E8'.
+               78  START-EQUAL-KEY             VALUE X'E9'.
+               78  START-GREATER               VALUE X'EA'.
+               78  START-NOT-LESS              VALUE X'EB'.
+               78  START-LESS                  VALUE X'FE'.
+               78  START-LESS-OR-EQUAL         VALUE X'FF'.
+               78  STEP-NEXT-NO-LOCK           VALUE X'90'.
+               78  STEP-NEXT-LOCK              VALUE X'D4'.
+               78  STEP-NEXT-KEPT-LOCK         VALUE X'D5'.
+               78  STEP-NEXT                   VALUE X'CA'.
+               78  STEP-FIRST-NO-LOCK          VALUE X'92'.
+               78  STEP-FIRST-LOCK             VALUE X'D0'.
+               78  STEP-FIRST-KEPT-LOCK        VALUE X'D1'.
+               78  STEP-FIRST                  VALUE X'CC'.
+               78  DELETE-RECORD               VALUE X'F7'.
+               78  DELETE-FILE                 VALUE X'F8'.
+               78  UNLOCK-CURRENT              VALUE X'0E'.
+               78  COMMIT-ALL                  VALUE X'DC'.
+               78  ROLLBACK-ALL                VALUE X'DD'.
+               78  GET-FILE-INFO               VALUE X'06'.
+               78  OPEN-NEW-INDEX              VALUE X'07'.
+               78  GET-NEXT-RECORD             VALUE X'08'.
+               78  ADD-KEY-VALUE               VALUE X'09'.
+               78  UNLOCK-RECORD               VALUE X'0F'.
+
+       01  FCD-AREA.
+           COPY xfhfcd.
+
+       01  FILE-NAME                       PIC X(64).
+       01  FILE-NAME-LEN                   PIC 9(04) COMP-X.
+
+       01  RECORD-AREA.
+           05  PRIME-KEY                   PIC X(25).
+           05  DATA-AREA                   PIC X(10).
+
+       01  RECORD-AREA2.
+           05  PRIME-KEY2                  PIC X(25).
+           05  DATA-AREA2                  PIC X(10).
+
+       01  KEY-DEF-AREA.
+           05  GLOBAL-INFORMATION-AREA.
+               10  LENGTH-OF-KEY-DEF-AREA  PIC 9(04) COMP-X.
+               10  FILLER                  PIC X(04).
+               10  NUMBER-OF-KEYS          PIC 9(04) COMP-X.
+               10  FILLER                  PIC X(06).
+           05  KEY-DEF-AREA-PARAM-BLOCK.
+               10  COMPONENT-COUNT         PIC 9(04) COMP-X.
+               10  OFFSET-TO-COMPONENT     PIC 9(04) COMP-X.
+               10  KEY-FLAGS               PIC 9(02) COMP-X.
+               10  KEY-COMPRESSION         PIC 9(02) COMP-X.
+               10  SPARSE-CHARACTER        PIC X(01).
+               10  FILLER                  PIC X(09).
+           05  COMPONENT-DEF-AREA.
+               10  FILLER                  PIC X(02).
+               10  OFFSET-TO-COMPONENT-DEF PIC 9(09) COMP-X.
+               10  COMPONENT-LENGTH        PIC 9(09) COMP-X.
+
+
+      **************************************************************
+       PROCEDURE DIVISION.
+      **************************************************************
+       0000-MAIN.
+           PERFORM 1000-OPEN-FILE.
+           PERFORM 2000-READ-RECORD.
+           DISPLAY 'AFTER READ ------> ' RECORD-AREA '.'.
+           MOVE '1234567890' TO DATA-AREA.
+           PERFORM 3000-REWRITE-RECORD.
+           PERFORM 2000-READ-RECORD.
+           DISPLAY 'AFTER WRITE -----> ' RECORD-AREA '.'.
+           MOVE SPACES TO DATA-AREA.
+           PERFORM 3000-REWRITE-RECORD.
+           PERFORM 5000-CLOSE-FILE.
+           PERFORM 1000-OPEN-FILE.
+           PERFORM 6000-START.
+           PERFORM 7000-READ-PREVIOUS.
+           DISPLAY 'AFTER READ PREV -> ' RECORD-AREA2 '.'.
+           PERFORM 5000-CLOSE-FILE.
+
+           STOP RUN.
+      *
+      *--------------------------------*
+       1000-Open-File.
+      *--------------------------------*
+      *
+           MOVE 'TEST1EXTFH' TO FILE-NAME.
+           MOVE 10           TO FILE-NAME-LEN.
+
+           MOVE LOW-VALUES             TO FCD-AREA.
+           MOVE LOW-VALUES             TO ACTION-CODE.
+
+           MOVE 255                    TO FCD-ORGANIZATION.
+           MOVE FILE-NAME-LEN          TO FCD-NAME-LENGTH.
+           SET FCD-FILENAME-ADDRESS    TO ADDRESS OF FILE-NAME.
+           SET FCD-KEY-DEF-ADDRESS     TO ADDRESS OF KEY-DEF-AREA.
+           MOVE 16                     TO FCD-FS-FLAGS.
+
+           MOVE SPECIAL-TYPE           TO ACTION-TYPE.
+           MOVE GET-FILE-INFO          TO COBOL-OP.
+
+           PERFORM 1100-CALL-EXTFH.
+           MOVE 8                      TO FCD-ACCESS-MODE.
+           MOVE 0                      TO FCD-LOCK-MODE.
+           MOVE 128                    TO FCD-OPEN-MODE.
+
+           MOVE COBOL-TYPE             TO ACTION-TYPE.
+           MOVE OPEN-I-O               TO COBOL-OP.
+           PERFORM 1100-CALL-EXTFH.
+
+      *
+      *--------------------------------*
+       1100-Call-Extfh.
+      *--------------------------------*
+      *
+           MOVE 1 TO FCD-VERSION.
+           MOVE 1 TO FCD-FILE-FORMAT
+           MOVE 2 TO FCD-ORGANIZATION
+           IF COBOL-OP = GET-FILE-INFO
+              MOVE 255 TO FCD-ORGANIZATION.
+           CALL 'EXTFH' USING ACTION-CODE
+                              FCD-AREA
+           IF FCD-FILE-STATUS NOT = '00'
+               MOVE COBOL-OP TO OP-X
+               IF FCD-STATUS-KEY-1 = '9'
+                   DISPLAY "FILE ERROR, STATUS: 9/" FCD-BINARY
+                           " OPCODE: " OP-N
+               ELSE
+                   DISPLAY "FILE ERROR, STATUS: " FCD-FILE-STATUS
+                           " OPCODE: " OP-N
+               END-IF
+               IF FCD-FILE-STATUS = '23'
+                   DISPLAY "Record: " RECORD-AREA "."
+               END-IF
+               STOP RUN
+           END-IF.
+      *
+      *--------------------------------*
+       2000-Read-Record.
+      *--------------------------------*
+      *
+           INITIALIZE RECORD-AREA.
+
+           MOVE 'RECORD-3'           TO PRIME-KEY.
+
+           MOVE READ-RANDOM-LOCK     TO COBOL-OP.
+           SET FCD-RECORD-ADDRESS    TO ADDRESS OF RECORD-AREA.
+           PERFORM 1100-CALL-EXTFH.
+      *
+      *--------------------------------*
+       3000-Rewrite-Record.
+      *--------------------------------*
+      *
+           MOVE COBOL-TYPE     TO ACTION-TYPE.
+           MOVE REWRITE-RECORD TO COBOL-OP.
+
+           PERFORM 1100-CALL-EXTFH.
+      *
+      *--------------------------------*
+       5000-Close-File.
+      *--------------------------------*
+      *
+           MOVE COBOL-TYPE     TO ACTION-TYPE.
+           MOVE CLOSE-FILE     TO COBOL-OP.
+
+           PERFORM 1100-CALL-EXTFH.
+      *
+      *--------------------------------*
+       6000-Start.
+      *--------------------------------*
+      *
+           SET FCD-RECORD-ADDRESS     TO ADDRESS OF RECORD-AREA.
+           MOVE 25                    TO FCD-KEY-LENGTH.
+           MOVE HIGH-VALUES           TO PRIME-KEY.
+
+           MOVE COBOL-TYPE            TO ACTION-TYPE.
+           MOVE START-LESS            TO COBOL-OP.
+
+           PERFORM 1100-CALL-EXTFH.
+      *
+      *--------------------------------*
+       7000-Read-Previous.
+      *--------------------------------*
+      *
+           MOVE COBOL-TYPE     TO ACTION-TYPE.
+           MOVE READ-PREVIOUS  TO COBOL-OP.
+           INITIALIZE RECORD-AREA2.
+           SET FCD-RECORD-ADDRESS     TO ADDRESS OF RECORD-AREA2.
+
+           PERFORM 1100-CALL-EXTFH.
+])
+
+AT_CHECK([$COMPILE progl.cob], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./progl], [0],
+[5 records written
+], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[AFTER READ ------> RECORD-3                           .
+AFTER WRITE -----> RECORD-3                 1234567890.
+AFTER READ PREV -> RECORD-5                           .
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([EXTFH: auto-conversion FCD2 <-> FCD3 on 32bit])
 AT_SKIP_IF([test "$COB_HAS_64_BIT_POINTER" = "yes"])
-AT_KEYWORDS([EXTFH FCD2])
+AT_KEYWORDS([runfile EXTFH])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -9022,7 +9912,7 @@ AT_DATA([prog.cob], [
             .
 ])
 
-AT_CHECK([$COBC -x -std=mf -w -debug prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE -w prog.cob ], [0], [], [])
 
 AT_CHECK([export TESTOUT=TEST-OUT
 $COBCRUN_DIRECT ./prog], [0], [FCD SIZE 00100.
@@ -14460,1031 +15350,6 @@ AT_CHECK([gcdiff references traces.txt], [0], [], [])
 
 AT_CLEANUP
 
-AT_SETUP([Test OP_GETINFO])
-AT_KEYWORDS([EXTFH])
-
-AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. prog.
-       ENVIRONMENT DIVISION.
-       CONFIGURATION SECTION.
-       INPUT-OUTPUT SECTION.
-       FILE-CONTROL.
-           SELECT OPTIONAL TSPFILE
-           ASSIGN TO FCD-FILENAME
-           ORGANIZATION INDEXED ACCESS DYNAMIC
-           RECORD KEY IS CM-CUST-NUM
-           ALTERNATE RECORD KEY IS CM-TELEPHONE WITH DUPLICATES
-           ALTERNATE RECORD KEY IS SPLIT-KEY3
-           SOURCE IS CM-DISK,CM-DP-MGR,CM-MACHINE WITH DUPLICATES
-                SUPPRESS WHEN ALL "*"
-           FILE STATUS IS CUST-STAT .
-
-       DATA DIVISION.
-       FILE SECTION.
-       FD  TSPFILE
-           BLOCK CONTAINS 5 RECORDS.
-
-       01  TSPFL-RECORD.
-           05  TSPFL-REC.
-           10  CM-CUST-NUM.
-             15  CM-CUST-PRE                   PICTURE X(3).
-             15  CM-CUST-NNN                   PICTURE X(5).
-           10  CM-STATUS                       PICTURE X.
-           10  CM-COMPANY                      PICTURE X(25).
-           10  CM-ADDRESS-1                    PICTURE X(25).
-           10  CM-ADDRESS-2                    PICTURE X(25).
-           10  CM-ADDRESS-3                    PICTURE X(25).
-           10  CM-TELEPHONE                    PICTURE 9(10).
-           10  CM-DP-MGR                       PICTURE X(25).
-           10  CM-MACHINE                      PICTURE X(8).
-           10  CM-MEMORY                       PICTURE X(4).
-           10  CM-DISK                         PICTURE X(8).
-           10  CM-TAPE                         PICTURE X(8).
-           10  CM-NO-TERMINALS                 PICTURE 9(5).
-
-       WORKING-STORAGE SECTION.
-
-       01  I                       PIC 99.
-       01  K                       PIC 99.
-
-       01  CUST-STAT               PIC X(2) VALUE SPACES.
-       01  WS-FCD-DDNAME           PIC X(8) VALUE SPACES.
-       01  WS-FCD-PTR              POINTER   VALUE NULL.
-
-       01  ACTION-CODE                PIC X(2).
-          78  OP-OPEN-INPUT           VALUE x"fa00".
-          78  OP-OPEN-OUTPUT          VALUE x"fa01".
-          78  OP-OPEN-I-O             VALUE x"fa02".
-          78  OP-WRITE                VALUE x"faf3".
-          78  OP-RELEASE              VALUE x"faf3".
-          78  OP-REWRITE              VALUE x"faf4".
-          78  OP-READ-NEXT            VALUE x"faf5".
-          78  OP-START-EQUAL          VALUE x"fae9".
-          78  OP-CLOSE                VALUE x"fa80".
-          78  OP-QUERY-FILE           VALUE x"0006".
-
-       01  ACTION-CODE-WORK            REDEFINES ACTION-CODE.
-          05  ACTION-CODE-1           PIC x(01)                 COMP-X.
-          05  ACTION-CODE-2           PIC x(01)                 COMP-X.
-
-
-       01  FCD-FILENAME               PIC X(80) value "testisam".
-       01  FCD-RECORD                 PIC X(512) VALUE SPACES.
-
-       01  FCD-MAP.
-           COPY 'xfhfcd3.cpy'.
-
-       01  KEY-DEF.
-           03 KDB-LEN             PIC 9(4) COMP-X.
-           03 FILLER              PIC X(4).
-           03 KEY-NKEYS           PIC 9(4) COMP-X.
-           03 FILLER              PIC X(6).
-           03 KEY-DEFS OCCURS 16 TIMES.
-               05 KEY-COUNT       PIC XX   COMP-X.
-               05 KEY-OFFSET      PIC XX   COMP-X.
-               05 KEY-FLAGS       PIC X    COMP-X.
-               05 KEY-COMPRESSION PIC X    COMP-X.
-               05 KEY-SPARSE      PIC X    COMP-X.
-               05 FILLER          PIC X(9).
-           03 FILLER              PIC X(128).
-
-       LINKAGE SECTION.
-       01  KEY-INF.
-           03 KEY-DESC            PIC X COMP-X.
-           03 KEY-TYPE            PIC X COMP-X.
-           03 KEY-POS             PIC X(4) COMP-X.
-           03 KEY-LEN             PIC X(4) COMP-X.
-      *================================================================*
-       PROCEDURE DIVISION.
-      *----------------------------------------------------------------*
-       000-MAIN.
-
-          DELETE FILE TSPFILE.
-          OPEN OUTPUT TSPFILE.
-          WRITE TSPFL-RECORD.
-          CLOSE TSPFILE.
-
-          SET FCD-KEY-DEF-ADDRESS  TO ADDRESS OF KEY-DEF.
-          SET FCD-FILENAME-ADDRESS TO ADDRESS OF FCD-FILENAME.
-          MOVE 64 TO FCD-NAME-LENGTH
-          MOVE LENGTH OF KEY-DEF TO KDB-LEN.
-          SET FCD-RECORD-ADDRESS   TO ADDRESS OF FCD-RECORD.
-          MOVE 512 TO FCD-CURRENT-REC-LEN
-          MOVE 512 TO FCD-MIN-REC-LENGTH
-          MOVE 512 TO FCD-MAX-REC-LENGTH
-          MOVE 1 TO FCD-VERSION
-          MOVE 255 TO FCD-ORGANIZATION
-          MOVE 0 TO ACTION-CODE-1
-          MOVE 6 TO ACTION-CODE-2
-          PERFORM 800-CALL-EXTFH.
-          DISPLAY "Status: " FCD-FILE-STATUS
-                  " File: " FCD-FILENAME (1:20) "."
-          DISPLAY " Nkeys: " key-nkeys
-                  " Recsz: " FCD-MAX-REC-LENGTH.
-          DISPLAY "kdblen: " kdb-len.
-          PERFORM VARYING I FROM 1 UNTIL I > KEY-NKEYS
-             DISPLAY " Index: " i
-                     " Parts: " key-count (i)
-                     " Offset: " key-offset (i)
-                     " Flags: " key-flags (i)
-                     " Comp: " key-compression (i)
-                     " Sparse: " key-sparse (i)
-             SET WS-FCD-PTR TO ADDRESS OF key-def
-             SET WS-FCD-PTR UP BY key-offset (i)
-             SET ADDRESS OF key-inf TO WS-FCD-PTR
-             PERFORM VARYING K FROM 1 UNTIL K > KEY-count (i)
-                DISPLAY "   Pos: " key-pos
-                        "   Len: " key-len
-                        "   Desc: " key-desc
-                        " Type: " key-type
-                SET WS-FCD-PTR UP BY LENGTH OF key-inf
-                SET ADDRESS OF key-inf TO WS-FCD-PTR
-             END-PERFORM
-          END-PERFORM.
-
-          STOP RUN.
-
-      *----------------------------------------------------------------*
-      *    External file handler interface -- all I/O goes through here
-      *
-        800-CALL-EXTFH.
-
-            CALL "EXTFH" USING ACTION-CODE, FCD-MAP
-
-            IF FCD-STATUS-KEY-1 = "9" AND FCD-BINARY = 199
-               MOVE "10" TO FCD-FILE-STATUS
-            END-IF
-            .
-])
-
-AT_CHECK([$COBC -x -std=mf -w prog.cob ], [0], [], [])
-
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [Status: 00 File: testisam            .
- Nkeys: 0003 Recsz: 0000000177
-kdblen: 0398
- Index: 01 Parts: 00001 Offset: 00062 Flags: 000 Comp: 000 Sparse: 000
-   Pos: 0000000000   Len: 0000000008   Desc: 000 Type: 000
- Index: 02 Parts: 00001 Offset: 00072 Flags: 064 Comp: 000 Sparse: 000
-   Pos: 0000000109   Len: 0000000010   Desc: 032 Type: 032
- Index: 03 Parts: 00003 Offset: 00082 Flags: 066 Comp: 000 Sparse: 042
-   Pos: 0000000156   Len: 0000000008   Desc: 000 Type: 000
-   Pos: 0000000119   Len: 0000000025   Desc: 000 Type: 000
-   Pos: 0000000144   Len: 0000000008   Desc: 000 Type: 000
-], [])
-
-AT_CLEANUP
-
-
-AT_SETUP([Test EXTFH record adrs chg])
-AT_KEYWORDS([EXTFH])
-
-AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
-
-AT_DATA([progl.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. prog.
-
-       ENVIRONMENT DIVISION.
-       CONFIGURATION SECTION.
-       INPUT-OUTPUT  SECTION.
-       FILE-CONTROL.
-           SELECT OUTFILE
-           ASSIGN "TEST1EXTFH"
-           ORGANIZATION INDEXED
-           RECORD KEY IS PRIME-KEY
-           ACCESS IS SEQUENTIAL
-           FILE STATUS IS OUT-STAT.
-       
-       DATA DIVISION.
-       FILE SECTION.
-       FD OUTFILE
-           BLOCK CONTAINS 5 RECORDS.
-
-       01  OUT-REC.
-           05  PRIME-KEY PIC X(25).
-           05  IN-DATA   PIC X(10).
-       
-       WORKING-STORAGE SECTION.
-       01  OUT-STAT             PIC XX    VALUE '00'.
-       01  OUT-RECNUM           PIC 9 VALUE 0.
-       
-       PROCEDURE DIVISION.
-       MAIN-100.
-           OPEN OUTPUT OUTFILE.
-           IF OUT-STAT NOT = '00'
-               DISPLAY 'ERROR ' OUT-STAT ' OPENING OUTPUT FILE'
-               STOP RUN
-           END-IF.
-           INITIALIZE OUT-REC.
-       
-       GET-NEXT-100.
-           ADD 1  TO OUT-RECNUM.
-           MOVE "RECORD-X" TO PRIME-KEY.
-           MOVE OUT-RECNUM TO PRIME-KEY (8:1).
-           WRITE OUT-REC.
-           IF  OUT-STAT NOT = '00'
-           AND OUT-STAT NOT = '02'
-               DISPLAY 'ERROR ' OUT-STAT ' WRITING OUTPUT'
-               GO TO END-PROG-100
-           END-IF.
-           IF OUT-RECNUM < 5
-               GO TO GET-NEXT-100.
-       
-       END-PROG-100.
-           DISPLAY OUT-RECNUM ' records written'.
-           CLOSE OUTFILE.
-           STOP RUN.
-])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION.
-      *
-       PROGRAM-ID. prog.
-       DATA DIVISION.
-
-       WORKING-STORAGE SECTION.
-
-       77  I                               PIC 9(04) COMP-5.
-       77  J                               PIC 9(04) COMP-5.
-       77  K                               PIC 9(04) COMP-5.
-       77  L                               PIC 9(04) COMP-5.
-       77  M                               PIC 9(04) COMP-5.
-       01  OP-N                            PIC X COMP-X.
-       01  OP-X REDEFINES OP-N             PIC X.
-
-       01  ACTION-CODE.
-           05  ACTION-TYPE    PIC X(01).
-               78  COBOL-TYPE                  VALUE X'FA'.
-               78  SPECIAL-TYPE                VALUE X'00'.
-           05  COBOL-OP       PIC X(01).
-               78  OPEN-INPUT                  VALUE X'00'.
-               78  OPEN-OUTPUT                 VALUE X'01'.
-               78  OPEN-I-O                    VALUE X'02'.
-               78  OPEN-EXTEND                 VALUE X'03'.
-               78  OPEN-INPUT-NO-REWIND        VALUE X'04'.
-               78  OPEN-OUTPUT-NO-REWIND       VALUE X'05'.
-               78  OPEN-INPUT-REVERSED         VALUE X'08'.
-               78  CLOSE-FILE                  VALUE X'80'.
-               78  CLOSE-LOCK                  VALUE X'81'.
-               78  CLOSE-NO-REWIND             VALUE X'82'.
-               78  CLOSE-REEL-UNIT             VALUE X'84'.
-               78  CLOSE-REEL-UNIT-FOR-REMOVAL VALUE X'85'.
-               78  CLOSE-REEL-UNIT-NO-REWIND   VALUE X'86'.
-               78  READ-SEQ-NO-LOCK            VALUE X'8D'.
-               78  READ-SEQ-LOCK               VALUE X'D8'.
-               78  READ-SEQ-KEPT-LOCK          VALUE X'D9'.
-               78  READ-SEQ                    VALUE X'F5'.
-               78  READ-PREVIOUS-NO-LOCK       VALUE X'8C'.
-               78  READ-PREVIOUS-LOCK          VALUE X'DE'.
-               78  READ-PREVIOUS-KEPT-LOCK     VALUE X'DF'.
-               78  READ-PREVIOUS               VALUE X'F9'.
-               78  READ-RANDOM-NO-LOCK         VALUE X'8E'.
-               78  READ-RANDOM-LOCK            VALUE X'DA'.
-               78  READ-RANDOM-KEPT-LOCK       VALUE X'DB'.
-               78  READ-RANDOM                 VALUE X'F6'.
-               78  READ-DIRECT-NO-LOCK         VALUE X'8F'.
-               78  READ-DIRECT-LOCK            VALUE X'D6'.
-               78  READ-DIRECT-KEPT-LOCK       VALUE X'D7'.
-               78  READ-DIRECT                 VALUE X'C9'.
-               78  READ-POSITION               VALUE X'F1'.
-               78  WRITE-BEFORE                VALUE X'E1'.
-               78  WRITE-AFTER                 VALUE X'E2'.
-               78  WRITE-BEFORE-TAB            VALUE X'E3'.
-               78  WRITE-AFTER-TAB             VALUE X'E4'.
-               78  WRITE-BEFORE-PAGE           VALUE X'E5'.
-               78  WRITE-AFTER-PAGE            VALUE X'E6'.
-               78  WRITE-RECORD                VALUE X'F3'.
-               78  REWRITE-RECORD              VALUE X'F4'.
-               78  START-EQUAL-PRIME-KEY       VALUE X'E8'.
-               78  START-EQUAL-KEY             VALUE X'E9'.
-               78  START-GREATER               VALUE X'EA'.
-               78  START-NOT-LESS              VALUE X'EB'.
-               78  START-LESS                  VALUE X'FE'.
-               78  START-LESS-OR-EQUAL         VALUE X'FF'.
-               78  STEP-NEXT-NO-LOCK           VALUE X'90'.
-               78  STEP-NEXT-LOCK              VALUE X'D4'.
-               78  STEP-NEXT-KEPT-LOCK         VALUE X'D5'.
-               78  STEP-NEXT                   VALUE X'CA'.
-               78  STEP-FIRST-NO-LOCK          VALUE X'92'.
-               78  STEP-FIRST-LOCK             VALUE X'D0'.
-               78  STEP-FIRST-KEPT-LOCK        VALUE X'D1'.
-               78  STEP-FIRST                  VALUE X'CC'.
-               78  DELETE-RECORD               VALUE X'F7'.
-               78  DELETE-FILE                 VALUE X'F8'.
-               78  UNLOCK-CURRENT              VALUE X'0E'.
-               78  COMMIT-ALL                  VALUE X'DC'.
-               78  ROLLBACK-ALL                VALUE X'DD'.
-               78  GET-FILE-INFO               VALUE X'06'.
-               78  OPEN-NEW-INDEX              VALUE X'07'.
-               78  GET-NEXT-RECORD             VALUE X'08'.
-               78  ADD-KEY-VALUE               VALUE X'09'.
-               78  UNLOCK-RECORD               VALUE X'0F'.
-
-       01  FCD-AREA.
-           COPY xfhfcd.
-
-       01  FILE-NAME                       PIC X(64).
-       01  FILE-NAME-LEN                   PIC 9(04) COMP-X.
-
-       01  RECORD-AREA.
-           05  PRIME-KEY                   PIC X(25).
-           05  DATA-AREA                   PIC X(10).
-
-       01  RECORD-AREA2.
-           05  PRIME-KEY2                  PIC X(25).
-           05  DATA-AREA2                  PIC X(10).
-
-       01  KEY-DEF-AREA.
-           05  GLOBAL-INFORMATION-AREA.
-               10  LENGTH-OF-KEY-DEF-AREA  PIC 9(04) COMP-X.
-               10  FILLER                  PIC X(04).
-               10  NUMBER-OF-KEYS          PIC 9(04) COMP-X.
-               10  FILLER                  PIC X(06).
-           05  KEY-DEF-AREA-PARAM-BLOCK.
-               10  COMPONENT-COUNT         PIC 9(04) COMP-X.
-               10  OFFSET-TO-COMPONENT     PIC 9(04) COMP-X.
-               10  KEY-FLAGS               PIC 9(02) COMP-X.
-               10  KEY-COMPRESSION         PIC 9(02) COMP-X.
-               10  SPARSE-CHARACTER        PIC X(01).
-               10  FILLER                  PIC X(09).
-           05  COMPONENT-DEF-AREA.
-               10  FILLER                  PIC X(02).
-               10  OFFSET-TO-COMPONENT-DEF PIC 9(09) COMP-X.
-               10  COMPONENT-LENGTH        PIC 9(09) COMP-X.
-
-
-      **************************************************************
-       PROCEDURE DIVISION.
-      **************************************************************
-       0000-MAIN.
-           PERFORM 1000-OPEN-FILE.
-           PERFORM 2000-READ-RECORD.
-           DISPLAY 'AFTER READ ------> ' RECORD-AREA '.'.
-           MOVE '1234567890' TO DATA-AREA.
-           PERFORM 3000-REWRITE-RECORD.
-           PERFORM 2000-READ-RECORD.
-           DISPLAY 'AFTER WRITE -----> ' RECORD-AREA '.'.
-           MOVE SPACES TO DATA-AREA.
-           PERFORM 3000-REWRITE-RECORD.
-           PERFORM 5000-CLOSE-FILE.
-           PERFORM 1000-OPEN-FILE.
-           PERFORM 6000-START.
-           PERFORM 7000-READ-PREVIOUS.
-           DISPLAY 'AFTER READ PREV -> ' RECORD-AREA2 '.'.
-           PERFORM 5000-CLOSE-FILE.
-
-           STOP RUN.
-      *
-      *--------------------------------*
-       1000-Open-File.
-      *--------------------------------*
-      *
-           MOVE 'TEST1EXTFH' TO FILE-NAME.
-           MOVE 10           TO FILE-NAME-LEN.
-
-           MOVE LOW-VALUES             TO FCD-AREA.
-           MOVE LOW-VALUES             TO ACTION-CODE.
-
-           MOVE 255                    TO FCD-ORGANIZATION.
-           MOVE FILE-NAME-LEN          TO FCD-NAME-LENGTH.
-           SET FCD-FILENAME-ADDRESS    TO ADDRESS OF FILE-NAME.
-           SET FCD-KEY-DEF-ADDRESS     TO ADDRESS OF KEY-DEF-AREA.
-           MOVE 16                     TO FCD-FS-FLAGS.
-
-           MOVE SPECIAL-TYPE           TO ACTION-TYPE.
-           MOVE GET-FILE-INFO          TO COBOL-OP.
-
-           PERFORM 1100-CALL-EXTFH.
-           MOVE 8                      TO FCD-ACCESS-MODE.
-           MOVE 0                      TO FCD-LOCK-MODE.
-           MOVE 128                    TO FCD-OPEN-MODE.
-
-           MOVE COBOL-TYPE             TO ACTION-TYPE.
-           MOVE OPEN-I-O               TO COBOL-OP.
-           PERFORM 1100-CALL-EXTFH.
-
-      *
-      *--------------------------------*
-       1100-Call-Extfh.
-      *--------------------------------*
-      *
-           MOVE 1 TO FCD-VERSION.
-           MOVE 1 TO FCD-FILE-FORMAT
-           MOVE 2 TO FCD-ORGANIZATION
-           IF COBOL-OP = GET-FILE-INFO
-              MOVE 255 TO FCD-ORGANIZATION.
-           CALL 'EXTFH' USING ACTION-CODE
-                              FCD-AREA
-           IF FCD-FILE-STATUS NOT = '00'
-               MOVE COBOL-OP TO OP-X
-               IF FCD-STATUS-KEY-1 = '9'
-                   DISPLAY "FILE ERROR, STATUS: 9/" FCD-BINARY
-                           " OPCODE: " OP-N
-               ELSE
-                   DISPLAY "FILE ERROR, STATUS: " FCD-FILE-STATUS
-                           " OPCODE: " OP-N
-               END-IF
-               IF FCD-FILE-STATUS = '23'
-                   DISPLAY "Record: " RECORD-AREA "."
-               END-IF
-               STOP RUN
-           END-IF.
-      *
-      *--------------------------------*
-       2000-Read-Record.
-      *--------------------------------*
-      *
-           INITIALIZE RECORD-AREA.
-
-           MOVE 'RECORD-3'           TO PRIME-KEY.
-
-           MOVE READ-RANDOM-LOCK     TO COBOL-OP.
-           SET FCD-RECORD-ADDRESS    TO ADDRESS OF RECORD-AREA.
-           PERFORM 1100-CALL-EXTFH.
-      *
-      *--------------------------------*
-       3000-Rewrite-Record.
-      *--------------------------------*
-      *
-           MOVE COBOL-TYPE     TO ACTION-TYPE.
-           MOVE REWRITE-RECORD TO COBOL-OP.
-
-           PERFORM 1100-CALL-EXTFH.
-      *
-      *--------------------------------*
-       5000-Close-File.
-      *--------------------------------*
-      *
-           MOVE COBOL-TYPE     TO ACTION-TYPE.
-           MOVE CLOSE-FILE     TO COBOL-OP.
-
-           PERFORM 1100-CALL-EXTFH.
-      *
-      *--------------------------------*
-       6000-Start.
-      *--------------------------------*
-      *
-           SET FCD-RECORD-ADDRESS     TO ADDRESS OF RECORD-AREA.
-           MOVE 25                    TO FCD-KEY-LENGTH.
-           MOVE HIGH-VALUES           TO PRIME-KEY.
-
-           MOVE COBOL-TYPE            TO ACTION-TYPE.
-           MOVE START-LESS            TO COBOL-OP.
-
-           PERFORM 1100-CALL-EXTFH.
-      *
-      *--------------------------------*
-       7000-Read-Previous.
-      *--------------------------------*
-      *
-           MOVE COBOL-TYPE     TO ACTION-TYPE.
-           MOVE READ-PREVIOUS  TO COBOL-OP.
-           INITIALIZE RECORD-AREA2.
-           SET FCD-RECORD-ADDRESS     TO ADDRESS OF RECORD-AREA2.
-
-           PERFORM 1100-CALL-EXTFH.
-])
-
-# CHECKME is -std=mf needed?
-AT_CHECK([$COMPILE -std=mf progl.cob], [0], [], [])
-AT_CHECK([$COMPILE -std=mf prog.cob], [0], [], [])
-
-AT_CHECK([$COBCRUN_DIRECT ./progl], [0],
-[5 records written
-], [])
-
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [AFTER READ ------> RECORD-3                           .
-AFTER WRITE -----> RECORD-3                 1234567890.
-AFTER READ PREV -> RECORD-5                           .
-], [])
-
-AT_CLEANUP
-
-
-AT_SETUP([LINE SEQUENTIAL with EXTFH 2])
-AT_SKIP_IF([test "$COB_HAS_64_BIT_POINTER" = "yes"])
-AT_KEYWORDS([EXTFH])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. prog.
-       DATA DIVISION.
-       WORKING-STORAGE SECTION.
-       78  PROGRAM-NAME  VALUE 'SEQEXTFH'.
-       01  FCDOPCODE.
-           02  FILLER              PIC X               VALUE X'FA'.
-           02  FCDEXTFHOPCODE      PIC X.
-      *    STANDARD OPERATION CODES
-           88  FCDEXTFHOPCODEISOPENINPUT               VALUE X'00'.
-           88  FCDEXTFHOPCODEISOPENOUTPUT              VALUE X'01'.
-           88  FCDEXTFHOPCODEISREADSEQUENTIAL          VALUE X'8D'.
-           88  FCDEXTFHOPCODEISCLOSE                   VALUE X'80'.
-           88  FCDEXTFHOPCODEISWRITE                   VALUE X'F3'.
-      *    SPECIAL OPERATION CODES
-       01  FCDPARAMETERBLOCK.                       *> OFFSET LENGTH
-           02  FCDFS.                                   *>  0 2
-               03  FCDFS1          PIC X.               *>  0 1
-               03  FCDFS2          PIC X.               *>  1 1
-               03  FCDRTE          REDEFINES   FCDFS2
-                                   PIC X       COMP-X.  *>  1 1
-           02  FILLER              PIC XXX.             *>  2 3
-           02  FCDORGANIZATION     PIC X       COMP-X.  *>  5 1
-           88  FCDORGANIZATIONLINESEQUENTIAL           VALUE 0.
-           02  FCDACCESSMODE       PIC X       COMP-X.  *>  6 1
-           88  FCDACCESSSEQUENTIAL                     VALUE 0.
-           02  FCDOPENMODE         PIC X       COMP-X.  *>  7 1
-           88  FCDFILEISCLOSED                         VALUE 128.
-           02  FILLER              PIC XXX.             *>  8 3
-           02  FCDNAMELENGTH       PIC XX      COMP-X.  *> 11 2
-           02  FILLER              PIC X(9).            *> 13 9
-           02  FCDTRANSLOG         PIC X       COMP-X.  *> 22 1
-           02  FILLER              PIC X.               *> 23 1
-           02  FCDLOCKMODE         PIC X       COMP-X.  *> 24 1
-           88  FCDLOCKMODEISEXCLUSIVE                  VALUE 1.
-           02  FCDOTHERFLAGS       PIC X       COMP-X.  *> 25 1
-           88  FCDOTHERFLAGSISNONE                     VALUE 0.
-           02  FILLER              PIC XX.              *> 26 2
-           02  FCDHANDLE                       POINTER. *> 28 4
-           02  FILLER              PIC X.               *> 32 1
-           02  FCDSTATUSTYPE       PIC X       COMP-X.  *> 33 1
-           02  FCDFILEFORMAT       PIC X       COMP-X.  *> 34 1
-           88  FCDFILEFORMATISTHISSYSTEM               VALUE 3.
-           02  FILLER              PIC XXX.             *> 35 3
-           02  FCDMAXRECLENGTH     PIC XX      COMP-X.  *> 38 2
-           02  FILLER              PIC XXX.             *> 40 3
-           02  FCDRELATIVEKEY      PIC XXXX    COMP-X.  *> 43 4
-           02  FCDRECORDINGMODE    PIC X       COMP-X.  *> 47 1
-           88  FCDRECORDINGMODEISVARIABLE              VALUE 1.
-           02  FCDCURRENTRECLENGTH PIC XX      COMP-X.  *> 48 2
-           02  FCDMINRECLENGTH     PIC XX      COMP-X.  *> 50 2
-           02  FCDKEYID            PIC XX      COMP-X.  *> 52 2
-           02  FCDLINECOUNT        REDEFINES   FCDKEYID
-                                   PIC XX      COMP-X.  *> 52 2
-           02  FCDKEYLENGTH        PIC XX      COMP-X.  *> 54 2
-           02  FCDRECORDADDRESS                POINTER. *> 56 4
-           02  FCDFILENAMEADDRESS              POINTER. *> 60 4
-           02  FCDKEYDEFADDRESS                POINTER. *> 64 4
-           02  FILLER              PIC X(4).            *> 68 4
-           02  FCDRELADDROFFSET    PIC XXXX    COMP-X.  *> 72 4
-           02  FILLER              PIC XX.              *> 76 2
-           02  FCDDATACOMPRESS     PIC X       COMP-X.  *> 78 1
-           88  FCDDATACOMPRESSISNONE                   VALUE 0.
-           02  FCDSESSIONID        PIC XXXX    COMP-X.  *> 79 4
-           02  FCDFSFILEID         PIC XX      COMP-X.  *> 83 2
-           02  FCDMAXRELKEY        PIC XXXX    COMP-X.  *> 85 4
-           02  FCDFLAGS1           PIC X       COMP-X.  *> 89 1
-           02  FCDBLOCKING         PIC X       COMP-X.  *> 90 1
-           02  FCDLOCKTYPES        PIC X       COMP-X.  *> 91 1
-           88  FCDLOCKTYPESISNONE                      VALUE 0.
-           02  FCDFSFLAGS          PIC X       COMP-X.  *> 92 1
-           02  FCDCONFIGFLAGS      PIC X       COMP-X.  *> 93 1
-           02  FILLER              PIC X.               *> 94 1
-           02  FCDCONFIGFLAGS2     PIC X       COMP-X.  *> 95 1
-           02  FCDIDXCACHESIZE     PIC X       COMP-X.  *> 96 1
-           02  FCDIDXCACHEBUFS     PIC X       COMP-X.  *> 97 1
-           02  FILLER              PIC XX.              *> 98 2
-       01  LSEQ-FILENAME PIC X(44)
-            VALUE 'FCDLS'.
-       01  LSEQ-RECORDAREA PIC X(255).
-       01  LSEQ-RECORDS.
-           02  LSEQ-COUNT             PIC X    COMP-X  VALUE 3.
-           02  LSEQ-RECORD1.
-               03  LSEQ-1LENGTH       PIC X    COMP-X  VALUE 22.
-               03  LSEQ-1DATA         PIC X(80)
-               VALUE 'THERE IS LITTLE LAMB'.
-           02  LSEQ-RECORD2.
-               03  LSEQ-2LENGTH       PIC X    COMP-X  VALUE 33.
-               03  LSEQ-2DATA         PIC X(80)
-               VALUE 'THE LAMB WAS GRAND AND A GRANDMA'.
-           02  LSEQ-RECORD3.
-               03  LSEQ-3LENGTH       PIC X    COMP-X  VALUE 22.
-               03  LSEQ-3DATA         PIC X(80)
-               VALUE 'THE OLD EWE CHORTLED'.
-       01  LSEQ-RECORDTABLE
-               REDEFINES LSEQ-RECORDS.
-           02  LSEQ-TCOUNT            PIC X    COMP-X.
-           02  LSEQ-TENTRY            OCCURS 3 TIMES
-                                      INDEXED BY LSEQ-TX.
-               03  LSEQ-TEST-LEN      PIC X    COMP-X.
-               03  LSEQ-TESTDATA      PIC X(80).
-       PROCEDURE DIVISION.
-           DISPLAY PROGRAM-NAME ': STARTING.'
-           DISPLAY PROGRAM-NAME ': CREATING LINE SEQUENTIAL FILE.'
-           MOVE LOW-VALUES TO FCDPARAMETERBLOCK.
-           SET FCDEXTFHOPCODEISOPENOUTPUT      TO TRUE
-           SET FCDORGANIZATIONLINESEQUENTIAL   TO TRUE
-           SET FCDACCESSSEQUENTIAL             TO TRUE
-           SET FCDFILEISCLOSED                 TO TRUE
-           MOVE LENGTH OF LSEQ-FILENAME TO FCDNAMELENGTH
-           SET FCDLOCKMODEISEXCLUSIVE          TO TRUE
-           SET FCDOTHERFLAGSISNONE             TO TRUE
-           SET FCDFILEFORMATISTHISSYSTEM       TO TRUE
-           MOVE LENGTH OF LSEQ-RECORDAREA TO FCDMAXRECLENGTH
-           SET FCDRECORDINGMODEISVARIABLE      TO TRUE
-           MOVE 0 TO FCDMINRECLENGTH
-           SET FCDFILENAMEADDRESS TO ADDRESS OF LSEQ-FILENAME
-           SET FCDDATACOMPRESSISNONE           TO TRUE
-           SET FCDLOCKTYPESISNONE              TO TRUE
-           PERFORM CALL-EXTFH
-           PERFORM FCD-CHECK-STAT
-           IF FCDFS = '00'
-             DISPLAY PROGRAM-NAME
-                 ': LINE SEQUENTIAL FILE IS OPEN OUTPUT.'
-             PERFORM WITH TEST AFTER VARYING LSEQ-TX FROM 1 BY 1
-                 UNTIL LSEQ-TX = LSEQ-TCOUNT OR FCDFS <> '00'
-               SET FCDEXTFHOPCODEISWRITE       TO TRUE
-               MOVE LSEQ-TEST-LEN (LSEQ-TX) TO FCDCURRENTRECLENGTH
-               MOVE 1 TO FCDLINECOUNT
-               SET FCDRECORDADDRESS TO
-                ADDRESS OF LSEQ-TESTDATA (LSEQ-TX)
-               PERFORM CALL-EXTFH
-               PERFORM FCD-CHECK-STAT
-             END-PERFORM
-             IF FCDFS = '00'
-               DISPLAY PROGRAM-NAME ': LINE SEQUENTIAL WRITES COMPLETE.'
-               SET FCDEXTFHOPCODEISCLOSE       TO TRUE
-               PERFORM CALL-EXTFH
-               PERFORM FCD-CHECK-STAT
-               IF FCDFS = '00'
-                DISPLAY PROGRAM-NAME ': LINE SEQUENTIAL FILE IS CLOSED.'
-               ELSE
-                DISPLAY PROGRAM-NAME
-                    ': UNABLE TO CLOSE LINE SEQUENTIAL FILE.'
-               END-IF
-             ELSE
-               DISPLAY PROGRAM-NAME
-                   ': UNABLE TO CREATE LINE SEQUENTIAL FILE.'
-             END-IF
-           ELSE
-             DISPLAY PROGRAM-NAME
-                 ': UNABLE TO OPEN LINE SEQUENTIAL FILE AS OUTPUT.'
-             STOP RUN
-           END-IF
-           DISPLAY PROGRAM-NAME ': READING LINE SEQUENTIAL FILE.'
-           SET FCDEXTFHOPCODEISOPENINPUT       TO TRUE
-           SET FCDORGANIZATIONLINESEQUENTIAL   TO TRUE
-           SET FCDACCESSSEQUENTIAL             TO TRUE
-           SET FCDFILEISCLOSED                 TO TRUE
-           MOVE LENGTH OF LSEQ-FILENAME TO FCDNAMELENGTH
-           SET FCDLOCKMODEISEXCLUSIVE          TO TRUE
-           SET FCDOTHERFLAGSISNONE             TO TRUE
-           SET FCDFILEFORMATISTHISSYSTEM       TO TRUE
-           MOVE LENGTH OF LSEQ-RECORDAREA TO FCDMAXRECLENGTH
-           SET FCDRECORDINGMODEISVARIABLE      TO TRUE
-           MOVE 0 TO FCDMINRECLENGTH
-           SET FCDFILENAMEADDRESS TO ADDRESS OF LSEQ-FILENAME
-           SET FCDDATACOMPRESSISNONE           TO TRUE
-           SET FCDLOCKTYPESISNONE              TO TRUE
-           PERFORM CALL-EXTFH
-           PERFORM FCD-CHECK-STAT
-           IF FCDFS = '00'
-             DISPLAY PROGRAM-NAME
-                 ': LINE SEQUENTIAL FILE IS OPEN INPUT.'
-             PERFORM WITH TEST AFTER UNTIL FCDFS <> '00'
-               SET FCDEXTFHOPCODEISREADSEQUENTIAL  TO TRUE
-               SET FCDRECORDADDRESS
-                TO ADDRESS OF LSEQ-RECORDAREA
-               PERFORM CALL-EXTFH
-               PERFORM FCD-CHECK-STAT
-               IF FCDFS = '00'
-                 DISPLAY PROGRAM-NAME
-                     ': RECORD = ' LSEQ-RECORDAREA
-                                   (1:FCDCURRENTRECLENGTH)
-               END-IF
-             END-PERFORM
-             IF FCDFS = '00' OR '10'
-               DISPLAY PROGRAM-NAME ': LINE SEQUENTIAL READS COMPLETE.'
-               SET FCDEXTFHOPCODEISCLOSE       TO TRUE
-               PERFORM CALL-EXTFH
-               PERFORM FCD-CHECK-STAT
-               IF FCDFS = '00'
-                 DISPLAY PROGRAM-NAME ': LSEQ FILE IS CLOSED.'
-               ELSE
-                 DISPLAY PROGRAM-NAME
-                     ': UNABLE TO CLOSE LINE SEQUENTIAL FILE.'
-               END-IF
-             ELSE
-               DISPLAY PROGRAM-NAME
-                   ': UNABLE TO READ LINE SEQUENTIAL FILE.'
-             END-IF
-           ELSE
-             DISPLAY PROGRAM-NAME
-                 ': UNABLE TO OPEN LINE SEQUENTIAL FILE AS INPUT.'
-             STOP RUN
-           END-IF
-           DISPLAY PROGRAM-NAME ': ENDING.'
-           STOP RUN.
-       CALL-EXTFH.
-           CALL 'EXTFH' USING
-                        FCDOPCODE
-                        FCDPARAMETERBLOCK.
-       FCD-CHECK-STAT.
-           IF FCDFS1 = '9'
-             DISPLAY PROGRAM-NAME ': RUN-TIME ERROR 9/' FCDRTE
-           ELSE
-             IF FCDFS <> '00'
-               DISPLAY PROGRAM-NAME ': FILE STATUS = ' FCDFS
-             ELSE
-               CONTINUE
-             END-IF
-           END-IF.
-       SEQEXTFH-TERM.
-           EXIT.
-])
-
-AT_CHECK([$COBC -x -std=mf -w prog.cob ], [0], [], [])
-
-AT_CHECK([export DD_FCDLS=./report.txt
-$COBCRUN_DIRECT ./prog], [0], [SEQEXTFH: STARTING.
-SEQEXTFH: CREATING LINE SEQUENTIAL FILE.
-SEQEXTFH: LINE SEQUENTIAL FILE IS OPEN OUTPUT.
-SEQEXTFH: LINE SEQUENTIAL WRITES COMPLETE.
-SEQEXTFH: LINE SEQUENTIAL FILE IS CLOSED.
-SEQEXTFH: READING LINE SEQUENTIAL FILE.
-SEQEXTFH: LINE SEQUENTIAL FILE IS OPEN INPUT.
-SEQEXTFH: RECORD = THERE IS LITTLE LAMB
-SEQEXTFH: RECORD = THE LAMB WAS GRAND AND A GRANDMA
-SEQEXTFH: RECORD = THE OLD EWE CHORTLED
-SEQEXTFH: FILE STATUS = 10
-SEQEXTFH: LINE SEQUENTIAL READS COMPLETE.
-SEQEXTFH: LSEQ FILE IS CLOSED.
-SEQEXTFH: ENDING.
-], [])
-
-
-AT_CAPTURE_FILE(./report.txt)
-
-AT_DATA([reference], [THERE IS LITTLE LAMB
-THE LAMB WAS GRAND AND A GRANDMA
-THE OLD EWE CHORTLED
-])
-
-AT_CHECK([gcdiff reference report.txt], [0])
-
-AT_CLEANUP
-
-AT_SETUP([FIXED SEQUENTIAL with EXTFH])
-AT_SKIP_IF([test "$COB_HAS_64_BIT_POINTER" = "yes"])
-AT_KEYWORDS([EXTFH])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. prog.
-      ** TEST FIXED (BLOCK) LENGTH SEQUENTIAL RECORD EXTFH
-       DATA DIVISION.
-       WORKING-STORAGE SECTION.
-       78  PROGRAM-NAME  VALUE 'FBSEXTFH'.
-       01  FCDOPCODE.
-           02  FILLER              PIC X               VALUE X'FA'.
-           02  FCDEXTFHOPCODE      PIC X.
-      *    STANDARD OPERATION CODES
-           88  FCDEXTFHOPCODEISOPENINPUT               VALUE X'00'.
-           88  FCDEXTFHOPCODEISOPENOUTPUT              VALUE X'01'.
-           88  FCDEXTFHOPCODEISREADSEQUENTIAL          VALUE X'8D'.
-           88  FCDEXTFHOPCODEISCLOSE                   VALUE X'80'.
-           88  FCDEXTFHOPCODEISWRITE                   VALUE X'F3'.
-      *    SPECIAL OPERATION CODES
-       01  FCDPARAMETERBLOCK.                       *> OFFSET LENGTH
-           02  FCDFS.                                   *>  0 2
-               03  FCDFS1          PIC X.               *>  0 1
-               03  FCDFS2          PIC X.               *>  1 1
-               03  FCDRTE          REDEFINES   FCDFS2
-                                   PIC X       COMP-X.  *>  1 1
-           02  FILLER              PIC XXX.             *>  2 3
-           02  FCDORGANIZATION     PIC X       COMP-X.  *>  5 1
-           88  FCDORGANIZATIONLINESEQUENTIAL           VALUE 0.
-           88  FCDORGANIZATIONSEQUENTIAL               VALUE 1.
-           02  FCDACCESSMODE       PIC X       COMP-X.  *>  6 1
-           88  FCDACCESSSEQUENTIAL                     VALUE 0.
-           02  FCDOPENMODE         PIC X       COMP-X.  *>  7 1
-           88  FCDFILEISCLOSED                         VALUE 128.
-           02  FILLER              PIC XXX.             *>  8 3
-           02  FCDNAMELENGTH       PIC XX      COMP-X.  *> 11 2
-           02  FILLER              PIC X(9).            *> 13 9
-           02  FCDTRANSLOG         PIC X       COMP-X.  *> 22 1
-           02  FILLER              PIC X.               *> 23 1
-           02  FCDLOCKMODE         PIC X       COMP-X.  *> 24 1
-           88  FCDLOCKMODEISEXCLUSIVE                  VALUE 1.
-           02  FCDOTHERFLAGS       PIC X       COMP-X.  *> 25 1
-           88  FCDOTHERFLAGSISNONE                     VALUE 0.
-           02  FILLER              PIC XX.              *> 26 2
-           02  FCDHANDLE                       POINTER. *> 28 4
-           02  FILLER              PIC X.               *> 32 1
-           02  FCDSTATUSTYPE       PIC X       COMP-X.  *> 33 1
-           02  FCDFILEFORMAT       PIC X       COMP-X.  *> 34 1
-           88  FCDFILEFORMATISTHISSYSTEM               VALUE 3.
-           02  FILLER              PIC XXX.             *> 35 3
-           02  FCDMAXRECLENGTH     PIC XX      COMP-X.  *> 38 2
-           02  FILLER              PIC XXX.             *> 40 3
-           02  FCDRELATIVEKEY      PIC XXXX    COMP-X.  *> 43 4
-           02  FCDRECORDINGMODE    PIC X       COMP-X.  *> 47 1
-           88  FCDRECORDINGMODEISVARIABLE              VALUE 1.
-           88  FCDRECORDINGMODEISFIXED                 VALUE 0.
-           02  FCDCURRENTRECLENGTH PIC XX      COMP-X.  *> 48 2
-           02  FCDMINRECLENGTH     PIC XX      COMP-X.  *> 50 2
-           02  FCDKEYID            PIC XX      COMP-X.  *> 52 2
-           02  FCDLINECOUNT        REDEFINES   FCDKEYID
-                                   PIC XX      COMP-X.  *> 52 2
-           02  FCDKEYLENGTH        PIC XX      COMP-X.  *> 54 2
-           02  FCDRECORDADDRESS                POINTER. *> 56 4
-           02  FCDFILENAMEADDRESS              POINTER. *> 60 4
-           02  FCDKEYDEFADDRESS                POINTER. *> 64 4
-           02  FILLER              PIC X(4).            *> 68 4
-           02  FCDRELADDROFFSET    PIC XXXX    COMP-X.  *> 72 4
-           02  FILLER              PIC XX.              *> 76 2
-           02  FCDDATACOMPRESS     PIC X       COMP-X.  *> 78 1
-           88  FCDDATACOMPRESSISNONE                   VALUE 0.
-           02  FCDSESSIONID        PIC XXXX    COMP-X.  *> 79 4
-           02  FCDFSFILEID         PIC XX      COMP-X.  *> 83 2
-           02  FCDMAXRELKEY        PIC XXXX    COMP-X.  *> 85 4
-           02  FCDFLAGS1           PIC X       COMP-X.  *> 89 1
-           02  FCDBLOCKING         PIC X       COMP-X.  *> 90 1
-           02  FCDLOCKTYPES        PIC X       COMP-X.  *> 91 1
-           88  FCDLOCKTYPESISNONE                      VALUE 0.
-           02  FCDFSFLAGS          PIC X       COMP-X.  *> 92 1
-           02  FCDCONFIGFLAGS      PIC X       COMP-X.  *> 93 1
-           02  FILLER              PIC X.               *> 94 1
-           02  FCDCONFIGFLAGS2     PIC X       COMP-X.  *> 95 1
-           02  FCDIDXCACHESIZE     PIC X       COMP-X.  *> 96 1
-           02  FCDIDXCACHEBUFS     PIC X       COMP-X.  *> 97 1
-           02  FILLER              PIC XX.              *> 98 2
-       01  FIX-FILENAME PIC X(44)
-            VALUE 'FCDFB'.
-       01  FIX-RECORDAREA PIC X(255).
-       01  FIX-RECORDS.
-           02  FIX-COUNT              PIC X    COMP-X  VALUE 3.
-           02  FIX-RECORD1.
-               03  FIX-1LENGTH        PIC X    COMP-X  VALUE 22.
-               03  FIX-1DATA          PIC X(80)
-               VALUE 'THERE IS LITTLE LAMB'.
-           02  FIX-RECORD2.
-               03  FIX-2LENGTH        PIC X    COMP-X  VALUE 33.
-               03  FIX-2DATA          PIC X(80)
-               VALUE 'THE LAMB WAS GRAND AND A GRANDMA'.
-           02  FIX-RECORD3.
-               03  FIX-3LENGTH        PIC X    COMP-X  VALUE 22.
-               03  FIX-3DATA          PIC X(80)
-               VALUE 'THE OLD EWE CHORTLED'.
-       01  FIX-RECORDTABLE
-               REDEFINES FIX-RECORDS.
-           02  FIX-TCOUNT             PIC X    COMP-X.
-           02  FIX-TENTRY             OCCURS 3 TIMES
-                                      INDEXED BY FIX-TX.
-               03  FIX-TEST-LEN       PIC X    COMP-X.
-               03  FIX-TESTDATA       PIC X(80).
-       PROCEDURE DIVISION.
-           DISPLAY PROGRAM-NAME ': STARTING.'
-           DISPLAY PROGRAM-NAME ': CREATING FIXED  SEQ FILE.'
-           MOVE LOW-VALUES TO FCDPARAMETERBLOCK.
-           SET FCDEXTFHOPCODEISOPENOUTPUT      TO TRUE
-           SET FCDORGANIZATIONSEQUENTIAL   TO TRUE
-           SET FCDACCESSSEQUENTIAL             TO TRUE
-           SET FCDFILEISCLOSED                 TO TRUE
-           MOVE LENGTH OF FIX-FILENAME TO FCDNAMELENGTH
-           SET FCDLOCKMODEISEXCLUSIVE          TO TRUE
-           SET FCDOTHERFLAGSISNONE             TO TRUE
-           SET FCDFILEFORMATISTHISSYSTEM       TO TRUE
-           MOVE LENGTH OF FIX-RECORDAREA TO FCDMAXRECLENGTH
-           SET FCDRECORDINGMODEISFIXED         TO TRUE
-           MOVE 0 TO FCDMINRECLENGTH
-           SET FCDFILENAMEADDRESS TO ADDRESS OF FIX-FILENAME
-           SET FCDDATACOMPRESSISNONE           TO TRUE
-           SET FCDLOCKTYPESISNONE              TO TRUE
-           MOVE 80 TO FCDCURRENTRECLENGTH
-           MOVE 80 TO FCDMAXRECLENGTH
-           MOVE 80 TO FCDMINRECLENGTH
-           PERFORM CALL-EXTFH
-           PERFORM FCD-CHECK-STAT
-           IF FCDFS = '00'
-             DISPLAY PROGRAM-NAME
-                 ': FIXED  SEQ FILE IS OPEN OUTPUT.'
-             PERFORM WITH TEST AFTER VARYING FIX-TX FROM 1 BY 1
-                 UNTIL FIX-TX = FIX-TCOUNT OR FCDFS <> '00'
-               SET FCDEXTFHOPCODEISWRITE       TO TRUE
-               MOVE FIX-TEST-LEN (FIX-TX) TO FCDCURRENTRECLENGTH
-               MOVE 1 TO FCDLINECOUNT
-               SET FCDRECORDADDRESS TO
-                ADDRESS OF FIX-TESTDATA (FIX-TX)
-               PERFORM CALL-EXTFH
-               PERFORM FCD-CHECK-STAT
-             END-PERFORM
-             IF FCDFS = '00'
-               DISPLAY PROGRAM-NAME ': FIXED  SEQ WRITES COMPLETE.'
-               SET FCDEXTFHOPCODEISCLOSE       TO TRUE
-               PERFORM CALL-EXTFH
-               PERFORM FCD-CHECK-STAT
-               IF FCDFS = '00'
-                DISPLAY PROGRAM-NAME ': FIXED  SEQ FILE IS CLOSED.'
-               ELSE
-                DISPLAY PROGRAM-NAME
-                    ': UNABLE TO CLOSE FIXED  SEQ FILE.'
-               END-IF
-             ELSE
-               DISPLAY PROGRAM-NAME
-                   ': UNABLE TO CREATE FIXED  SEQ FILE.'
-             END-IF
-           ELSE
-             DISPLAY PROGRAM-NAME
-                 ': UNABLE TO OPEN FIXED  SEQ FILE AS OUTPUT.'
-             STOP RUN
-           END-IF
-           DISPLAY PROGRAM-NAME ': READING FIXED  SEQ FILE.'
-           SET FCDEXTFHOPCODEISOPENINPUT       TO TRUE
-           SET FCDORGANIZATIONSEQUENTIAL       TO TRUE
-           SET FCDACCESSSEQUENTIAL             TO TRUE
-           SET FCDFILEISCLOSED                 TO TRUE
-           MOVE LENGTH OF FIX-FILENAME TO FCDNAMELENGTH
-           SET FCDLOCKMODEISEXCLUSIVE          TO TRUE
-           SET FCDOTHERFLAGSISNONE             TO TRUE
-           SET FCDFILEFORMATISTHISSYSTEM       TO TRUE
-           MOVE LENGTH OF FIX-RECORDAREA TO FCDMAXRECLENGTH
-           SET FCDRECORDINGMODEISFIXED TO TRUE
-           MOVE 0 TO FCDMINRECLENGTH
-           SET FCDFILENAMEADDRESS TO ADDRESS OF FIX-FILENAME
-           SET FCDDATACOMPRESSISNONE           TO TRUE
-           SET FCDLOCKTYPESISNONE              TO TRUE
-           MOVE 80 TO FCDCURRENTRECLENGTH
-           MOVE 80 TO FCDMAXRECLENGTH
-           MOVE 80 TO FCDMINRECLENGTH
-           PERFORM CALL-EXTFH
-           PERFORM FCD-CHECK-STAT
-           IF FCDFS = '00'
-             DISPLAY PROGRAM-NAME
-                 ': FIXED  SEQ FILE IS OPEN INPUT.'
-             PERFORM WITH TEST AFTER UNTIL FCDFS <> '00'
-               SET FCDEXTFHOPCODEISREADSEQUENTIAL  TO TRUE
-               SET FCDRECORDADDRESS
-                TO ADDRESS OF FIX-RECORDAREA
-               PERFORM CALL-EXTFH
-               PERFORM FCD-CHECK-STAT
-               IF FCDFS = '00'
-                 DISPLAY PROGRAM-NAME
-                     ': RECORD = ' FIX-RECORDAREA (1:40) '. ' 
-                     'Size:' FCDCURRENTRECLENGTH
-               END-IF
-             END-PERFORM
-             IF FCDFS = '00' OR '10'
-               DISPLAY PROGRAM-NAME ': FIXED  SEQ READS COMPLETE.'
-               SET FCDEXTFHOPCODEISCLOSE       TO TRUE
-               PERFORM CALL-EXTFH
-               PERFORM FCD-CHECK-STAT
-               IF FCDFS = '00'
-                 DISPLAY PROGRAM-NAME ': LSEQ FILE IS CLOSED.'
-               ELSE
-                 DISPLAY PROGRAM-NAME
-                     ': UNABLE TO CLOSE FIXED  SEQ FILE.'
-               END-IF
-             ELSE
-               DISPLAY PROGRAM-NAME
-                   ': UNABLE TO READ FIXED  SEQ FILE.'
-             END-IF
-           ELSE
-             DISPLAY PROGRAM-NAME
-                 ': UNABLE TO OPEN FIXED  SEQ FILE AS INPUT.'
-             STOP RUN
-           END-IF
-           DISPLAY PROGRAM-NAME ': ENDING.'
-           STOP RUN.
-       CALL-EXTFH.
-           CALL 'EXTFH' USING
-                        FCDOPCODE
-                        FCDPARAMETERBLOCK.
-       FCD-CHECK-STAT.
-           IF FCDFS1 = '9'
-             DISPLAY PROGRAM-NAME ': RUN-TIME ERROR 9/' FCDRTE
-           ELSE
-             IF FCDFS <> '00'
-               DISPLAY PROGRAM-NAME ': FILE STATUS = ' FCDFS
-             ELSE
-               CONTINUE
-             END-IF
-           END-IF.
-       SEQEXTFH-TERM.
-           EXIT.
-])
-
-AT_CHECK([$COBC -x -std=mf -w prog.cob ], [0], [], [])
-
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [FBSEXTFH: STARTING.
-FBSEXTFH: CREATING FIXED  SEQ FILE.
-FBSEXTFH: FIXED  SEQ FILE IS OPEN OUTPUT.
-FBSEXTFH: FIXED  SEQ WRITES COMPLETE.
-FBSEXTFH: FIXED  SEQ FILE IS CLOSED.
-FBSEXTFH: READING FIXED  SEQ FILE.
-FBSEXTFH: FIXED  SEQ FILE IS OPEN INPUT.
-FBSEXTFH: RECORD = THERE IS LITTLE LAMB                    . Size:00080
-FBSEXTFH: RECORD = THE LAMB WAS GRAND AND A GRANDMA        . Size:00080
-FBSEXTFH: RECORD = THE OLD EWE CHORTLED                    . Size:00080
-FBSEXTFH: FILE STATUS = 10
-FBSEXTFH: FIXED  SEQ READS COMPLETE.
-FBSEXTFH: LSEQ FILE IS CLOSED.
-FBSEXTFH: ENDING.
-], [])
-
-AT_CLEANUP
 
 AT_SETUP([RELATIVE File Locking])
 AT_KEYWORDS([runfile])
@@ -21299,8 +21164,7 @@ AT_DATA([prog.cob], [
                DISPLAY "Write Error " CUST-STAT.
 ])
 
-# CHECKME are -std=mf and -w needed?
-AT_CHECK([$COMPILE -std=mf -w -fmf-files prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fmf-files prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [Loading sample program data file.
@@ -21570,7 +21434,7 @@ AT_DATA([prog.cob], [
                        DATA-CUST-NUM (SUB).
 ])
 
-# CHECKME is -std=mf needed?
+# TODO: have a single dialect option to change io stats (also for ohter dialects)
 AT_CHECK([$COMPILE -std=mf prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
@@ -21817,7 +21681,7 @@ AT_DATA([prog.cob], [
                        DATA-CUST-NUM (SUB).
 ])
 
-# CHECKME is -std=mf needed?
+# TODO: have a single dialect option to change io stats (also for ohter dialects)
 AT_CHECK([$COMPILE -std=mf prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
@@ -21966,8 +21830,7 @@ AT_DATA([prog.cob], [
            END-IF.
 ])
 
-# CHECKME is -std=mf needed?
-AT_CHECK([$COMPILE -std=mf prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [file1         Record 1  .

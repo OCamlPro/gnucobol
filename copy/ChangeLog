@@ -1,5 +1,11 @@
 
+2021-08-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* xfhfcd3.cpy: adjusted filler definitions for fixed-size 64bit
+	  pointers to be COMP-X, ensuring NULL initialized pointers
+
 2019-11-20  Ron Norman <rjn@inglenet.com>
+
 	* xfhfcd3.cpy: Added file format values for DISAM, VBISAM, BDB, LMDB
 
 2019-04-17  Simon Sobisch <simonsobisch@gnu.org>
@@ -55,7 +61,7 @@
 	* Add Makefile*, ChangeLog, sqlca.cpy, sqlda.cpy
 
 
-Copyright 2008-2010,2015,2016,2018-2019 Free Software Foundation, Inc.
+Copyright 2008-2010,2015,2016,2018-2019,2021 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

@@ -563,26 +563,28 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f)
 		fdname[k] = 0;
 		f->select_name = cob_strdup (fdname);
 	}
-	if (f->keys == NULL) {
-		if (fcd->kdbPtr != NULL
-		 && LDCOMPX2(fcd->kdbPtr->nkeys) > 0) {
-			/* Copy Key information from FCD to cob_file */
-			f->nkeys = LDCOMPX2(fcd->kdbPtr->nkeys);
-			if (f->nkeys > MAX_FILE_KEYS) {
-				/* CHECKME - Should this result in any error handling? */
-				cob_runtime_warning (_("maximum keys (%d/%d) exceeded for file '%s'"),
-					(int)f->nkeys, MAX_FILE_KEYS, cob_get_filename_print (f->file, 0));
-				f->nkeys = MAX_FILE_KEYS;
+	if (f->organization == COB_ORG_INDEXED) {
+		if (f->keys == NULL) {
+			if (fcd->kdbPtr != NULL
+			 && LDCOMPX2(fcd->kdbPtr->nkeys) > 0) {
+				/* Copy Key information from FCD to cob_file */
+				f->nkeys = LDCOMPX2(fcd->kdbPtr->nkeys);
+				if (f->nkeys > MAX_FILE_KEYS) {
+					/* CHECKME - Should this result in any error handling? */
+					cob_runtime_warning (_("maximum keys (%d/%d) exceeded for file '%s'"),
+						(int)f->nkeys, MAX_FILE_KEYS, cob_get_filename_print (f->file, 0));
+					f->nkeys = MAX_FILE_KEYS;
+				}
+				f->keys = cob_cache_malloc (sizeof(cob_file_key) * f->nkeys);
+				copy_keys_fcd_to_file (fcd, f, 0);
+			} else {
+				f->keys = cob_cache_malloc(sizeof(cob_file_key));
 			}
-			f->keys = cob_cache_malloc (sizeof(cob_file_key) * f->nkeys);
+		} else if (f->nkeys > 0
+				&& fcd->kdbPtr != NULL
+				&& LDCOMPX2(fcd->kdbPtr->nkeys) >= (int)f->nkeys) {
 			copy_keys_fcd_to_file (fcd, f, 0);
-		} else {
-			f->keys = cob_cache_malloc(sizeof(cob_file_key));
 		}
-	} else if (f->nkeys > 0
-			&& fcd->kdbPtr != NULL
-			&& LDCOMPX2(fcd->kdbPtr->nkeys) >= (int)f->nkeys) {
-		copy_keys_fcd_to_file (fcd, f, 0);
 	}
 	update_fcd_to_file (fcd, f, NULL, 0);
 }
@@ -595,13 +597,14 @@ find_fcd (cob_file *f)
 {
 	FCD3	*fcd;
 	struct fcd_file	*ff;
-	for(ff = fcd_file_list; ff; ff=ff->next) {
-		if(ff->f == f)
+	for (ff = fcd_file_list; ff; ff=ff->next) {
+		if (ff->f == f) {
 			return ff->fcd;
+		}
 	}
-	fcd = cob_cache_malloc(sizeof(FCD3));
-	copy_file_to_fcd(f, fcd);
-	ff = cob_cache_malloc(sizeof(struct fcd_file));
+	fcd = cob_cache_malloc (sizeof(FCD3));
+	copy_file_to_fcd (f, fcd);
+	ff = cob_cache_malloc (sizeof(struct fcd_file));
 	ff->next = fcd_file_list;
 	ff->fcd = fcd;
 	ff->f = f;
@@ -620,12 +623,13 @@ find_fcd2 (FCD2 *fcd2)
 {
 	FCD3	*fcd;
 	struct fcd_file	*ff;
-	for(ff = fcd_file_list; ff; ff=ff->next) {
-		if(ff->fcd2 == fcd2)
+	for (ff = fcd_file_list; ff; ff=ff->next) {
+		if (ff->fcd2 == fcd2 {
 			return ff->fcd;
+		}
 	}
-	fcd = cob_cache_malloc(sizeof(FCD3));
-	ff = cob_cache_malloc(sizeof(struct fcd_file));
+	fcd = cob_cache_malloc (sizeof(FCD3));
+	ff = cob_cache_malloc (sizeof(struct fcd_file));
 	ff->next = fcd_file_list;
 	ff->fcd = fcd;
 	ff->fcd2 = fcd2;
@@ -1200,12 +1204,14 @@ void
 cob_file_fcd_sync (cob_file *f)
 {
 	if (f == NULL
-	 || f->fcd == NULL) 
+	 || f->fcd == NULL)  {
 		return;
-	if (f->last_operation == COB_LAST_OPEN)
+	}
+	if (f->last_operation == COB_LAST_OPEN) {
 		copy_file_to_fcd (f, f->fcd);
-	else
-		update_file_to_fcd(f, f->fcd, NULL);
+	} else {
+		update_file_to_fcd (f, f->fcd, NULL);
+	}
 	return;
 }
 /* 
@@ -1217,18 +1223,19 @@ cob_file_fcd_adrs (cob_file *f, void *pfcd)
 {
 	FCD3	*fcd = NULL;
 	if (f == NULL) {
-		cob_runtime_error (_("SET ... TO ADDRESS OF FH--FCD filename; Null"));
+		cob_runtime_error ("SET ... TO ADDRESS OF FH--FCD filename; Null");
 		exit(-1);
 	}
 	if (f->fcd == NULL) {
 		f->fcd = find_fcd (f);
 	}
 	fcd = f->fcd;
-	if(fcd->openMode == OPEN_NOT_OPEN) {
+	if (fcd->openMode == OPEN_NOT_OPEN) {
 		cob_pre_open (f);
 	}
-	if (fcd->kdbPtr == NULL)
+	if (fcd->kdbPtr == NULL) {
 		copy_file_to_fcd (f, fcd);
+	}
 	memcpy (pfcd, &f->fcd, sizeof(void *));
 	return;
 }

@@ -284,38 +284,38 @@
 
            40  FCD-RELATIVE-KEY      pic x(8) comp-x.
 
-           40  FCD-PTR-FILLER1       pic x(8).
+           40  FCD-PTR-FILLER1       pic x(8) comp-x.
            40  FCD-HANDLE            redefines FCD-PTR-FILLER1
                                      usage pointer.
            40  FCD-HANDLE-NUM        redefines FCD-PTR-FILLER1
                                      pic x(4) comp-x.
       *> Pointer to record area
-           40  FCD-PTR-FILLER2       pic x(8).
+           40  FCD-PTR-FILLER2       pic x(8) comp-x.
            40  FCD-RECORD-ADDRESS    redefines FCD-PTR-FILLER2
                                      usage pointer.
       *> Pointer to file name
-           40  FCD-PTR-FILLER3       pic x(8).
+           40  FCD-PTR-FILLER3       pic x(8) comp-x.
            40  FCD-FILENAME-ADDRESS  redefines FCD-PTR-FILLER3
                                      usage pointer.
       *> Pointer to index name (applies only if separate index file exists)
-           40  FCD-PTR-FILLER4       pic x(8).
+           40  FCD-PTR-FILLER4       pic x(8) comp-x.
            40  FCD-IDXNAME-ADDRESS   redefines FCD-PTR-FILLER4
                                      usage pointer.
            40  FCD-INDEX-NAME        redefines FCD-PTR-FILLER4
                                      usage pointer.
       *> Pointer to key def block
-           40  FCD-PTR-FILLER5       pic x(8).
+           40  FCD-PTR-FILLER5       pic x(8) comp-x.
            40  FCD-KEY-DEF-ADDRESS   redefines FCD-PTR-FILLER5
                                      usage pointer.
       *> Pointer to collating seq
-           40  FCD-PTR-FILLER6       pic x(8).
+           40  FCD-PTR-FILLER6       pic x(8) comp-x.
            40  FCD-COL-SEQ-ADDRESS   redefines FCD-PTR-FILLER6
                                      usage pointer.
       *> Pointer to using list
-           40  FCD-PTR-FILLER7       pic x(8).
+           40  FCD-PTR-FILLER7       pic x(8) comp-x.
            40  FCD-FILDEF-ADDRESS    redefines FCD-PTR-FILLER7
                                      usage pointer.
 
-           40  FCD-PTR-FILLER8       pic x(8).
+           40  FCD-PTR-FILLER8       pic x(8) comp-x.
            40  FCD-DFSORT-ADDRESS    redefines FCD-PTR-FILLER8
                                      usage pointer.
