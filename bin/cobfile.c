@@ -464,8 +464,8 @@ getRecsz (cob_file *fl, char *def)
 static void
 parseFile (cob_file *fl, const char *select, int rcsz, char *defs, char *copy, char *keys[])
 {
-	char	val[1024], both[1024], filename[1024];
-	int		j,k,ln,idx;
+	char	val[1024], both[1024+18], filename[1024];
+	int		j, k, ln, idx;
 	cob_field *flsts;
 
 	strcpy (copy, "");
@@ -553,7 +553,7 @@ output(const char *fmt, ...)
 {
 	va_list ap;
 	char buf[ 4096 ];
-	int	i,j,ln,col,hang;
+	int	i, ln, col, hang;
 
 	va_start( ap, fmt );
 	vsprintf( buf, fmt, ap );
@@ -777,8 +777,6 @@ addOfRec (char *str, const char *rec)
 static void
 genCopy (cob_file *fli, cob_file *flo)
 {
-	FILE	*fin;
-	char	buf[256];
 	int		k;
 
 	strcpy(inorg, getOrg (fli->organization));

@@ -18,7 +18,7 @@
    along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <config.h>
+#include "config.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,7 +32,7 @@
 #include <unistd.h>
 #endif
 
-#include "../libcob/sysdefines.h"
+#include "libcob/sysdefines.h"
 #include "libcob.h"
 #include "tarstamp.h"
 

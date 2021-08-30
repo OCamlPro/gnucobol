@@ -18,20 +18,6 @@
    along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-
-#include <config.h>
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <stddef.h>
-#include <string.h>
-#include <ctype.h>
-#include <errno.h>
-
-/* Force symbol exports */
-#define	COB_LIB_EXPIMP
-#include "libcob.h"
-#include "coblocal.h"
 #include "fileio.h"
 
 /* hard limit: */
@@ -48,7 +34,9 @@
 
 static	cob_global	*cobrpglobptr = NULL;
 static	cob_settings	*cobrpsetptr = NULL;
+#if 0
 static	int		bDidReportInit = 0;
+#endif
 
 #ifndef TRUE
 #define TRUE 1
@@ -70,19 +58,6 @@ static const cob_field_attr	const_num_attr =
 				{COB_TYPE_NUMERIC, 0, 0, 0, NULL};
 #define MAX_ACTIVE_REPORTS 10
 static cob_report *active_reports[MAX_ACTIVE_REPORTS];
-/*
- * Move "String" to 'dst' field
- */
-static void
-cob_str_move (cob_field *dst, unsigned char *src, const int size)
-{
-	cob_field	temp;
-
-	temp.size = size;
-	temp.data = src;
-	temp.attr = &const_alpha_attr;
-	cob_move (&temp, dst);
-}
 
 /*
  * Initialize data field
@@ -92,10 +67,11 @@ cob_field_init (cob_field *f)
 {
 	cob_field	temp;
 
-	if(f == NULL)
+	if (f == NULL) {
 		return NULL;
+	}
 	temp.size = 1;
-	if(COB_FIELD_IS_NUMERIC(f)) {
+	if (COB_FIELD_IS_NUMERIC(f)) {
 		temp.data = (unsigned char*)"0";	/* MOVE ZERO to field */
 		temp.attr = &const_num_attr;
 	} else {
@@ -139,12 +115,14 @@ cob_field_dup (cob_field *f, int incr)
 static void
 cob_field_free (cob_field *f)
 {
-	if(f == NULL)
+	if (f == NULL) {
 		return;
-	if(f->data)
+	}
+	if (f->data) {
 		cob_free((void*)f->data);
+	}
 	cob_free((void*)f);
-	return ;
+	return;
 }
 
 /*
@@ -157,27 +135,29 @@ free_control_fields (cob_report *r)
 	cob_report_control_ref	*rr;
 	int		k;
 
-	for(rc = r->controls; rc; rc = rc->next) {
-		if(rc->val) {
+	for (rc = r->controls; rc; rc = rc->next) {
+		if (rc->val) {
 			cob_field_free(rc->val);
 			rc->val = NULL;
 		}
-		if(rc->sf) {
+		if (rc->sf) {
 			cob_field_free(rc->sf);
 			rc->sf = NULL;
 		}
 		rc->has_heading = FALSE;
 		rc->has_footing = FALSE;
-		for(rr = rc->control_ref; rr; rr = rr->next) {
+		for (rr = rc->control_ref; rr; rr = rr->next) {
 			if (rr->ref_line->flags & COB_REPORT_CONTROL_HEADING
-			 || rr->ref_line->flags & COB_REPORT_CONTROL_HEADING_FINAL)
+			 || rr->ref_line->flags & COB_REPORT_CONTROL_HEADING_FINAL) {
 				rc->has_heading = TRUE;
+			}
 			if (rr->ref_line->flags & COB_REPORT_CONTROL_FOOTING
-			 || rr->ref_line->flags & COB_REPORT_CONTROL_FOOTING_FINAL)
+			 || rr->ref_line->flags & COB_REPORT_CONTROL_FOOTING_FINAL) {
 				rc->has_footing = TRUE;
+			}
 		}
 	}
-	for(k=0; k < MAX_ACTIVE_REPORTS; k++) {
+	for (k=0; k < MAX_ACTIVE_REPORTS; k++) {
 		if (active_reports[k] == r) {
 			active_reports[k] = NULL;
 		}
@@ -191,13 +171,15 @@ static void
 clear_group_indicate(cob_report_line *l)
 {
 	cob_report_field *f;
-	for(f=l->fields; f; f=f->next) {
+	for (f=l->fields; f; f=f->next) {
 		f->group_indicate = FALSE;
 	}
-	if(l->child)
+	if (l->child) {
 		clear_group_indicate(l->child);
-	if(l->sister)
+	}
+	if (l->sister) {
 		clear_group_indicate(l->sister);
+	}
 }
 
 /*
@@ -208,15 +190,18 @@ clear_suppress(cob_report_line *l)
 {
 	cob_report_field *f;
 	l->suppress = FALSE;
-	for(f=l->fields; f; f=f->next) {
-		if((f->flags & COB_REPORT_GROUP_ITEM)) 
+	for (f=l->fields; f; f=f->next) {
+		if ((f->flags & COB_REPORT_GROUP_ITEM)) {
 			continue;
+		}
 		f->suppress = FALSE;
 	}
-	if(l->child)
+	if (l->child) {
 		clear_suppress(l->child);
-	if(l->sister)
+	}
+	if (l->sister) {
 		clear_suppress(l->sister);
+	}
 }
 
 /*
@@ -228,10 +213,10 @@ get_control_sequence(cob_report *r, cob_report_line *l)
 {
 	cob_report_control	*c;
 	cob_report_control_ref	*rr;
-	if(r->controls) {
-		for(c=r->controls; c; c = c->next) {
-			for(rr=c->control_ref; rr; rr=rr->next) {
-				if(rr->ref_line == l) {
+	if (r->controls) {
+		for (c=r->controls; c; c = c->next) {
+			for (rr=c->control_ref; rr; rr=rr->next) {
+				if (rr->ref_line == l) {
 					return c->sequence;
 				}
 			}
@@ -246,21 +231,21 @@ get_control_sequence(cob_report *r, cob_report_line *l)
 static void
 set_next_info(cob_report *r, cob_report_line *l)
 {
-	if(l->flags & COB_REPORT_NEXT_GROUP_LINE) {
+	if (l->flags & COB_REPORT_NEXT_GROUP_LINE) {
 		r->next_value = l->next_group_line;
 		r->next_line = TRUE;
 		r->next_just_set = TRUE;
 		r->next_line_plus = FALSE;
 		DEBUG_LOG("rw",(" Save NEXT GROUP LINE %d\n",r->next_value));
 	}
-	if(l->flags & COB_REPORT_NEXT_GROUP_PLUS) {
+	if (l->flags & COB_REPORT_NEXT_GROUP_PLUS) {
 		r->next_value = l->next_group_line;
 		r->next_line = FALSE;
 		r->next_line_plus = TRUE;
 		r->next_just_set = TRUE;
 		DEBUG_LOG("rw",(" Save NEXT GROUP PLUS %d\n",r->next_value));
 	}
-	if(l->flags & COB_REPORT_NEXT_GROUP_PAGE) {
+	if (l->flags & COB_REPORT_NEXT_GROUP_PAGE) {
 		r->next_value = l->next_group_line;
 		r->next_line = FALSE;
 		r->next_page = TRUE;
@@ -283,13 +268,18 @@ get_print_line(cob_report_line *l)
 /*
  * Do any global initialization needed
  */
+#if 0
 static void
 reportInitialize()
 {
-	if(bDidReportInit)
+	if (bDidReportInit) {
 		return;
+	}
 	bDidReportInit = 1;
 }
+#else
+#define reportInitialize()
+#endif
 
 /*
  * Add Two Fields together giving Result
@@ -659,10 +649,12 @@ static void
 limitCheckLine(cob_report *r, cob_report_line *fl)
 {
 	limitCheckOneLine(r,fl);
-	if(fl->child)
+	if (fl->child) {
 		limitCheckLine(r,fl->child);
-	if(fl->sister)
+	}
+	if (fl->sister) {
 		limitCheckLine(r,fl->sister);
+	}
 }
 
 /*

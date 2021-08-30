@@ -1,4 +1,10 @@
 
+2021-08-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: fix local includes to use "local" instead of <system>
+	* reportio.c: remove unused variables/code,
+	  remove duplicated includes coming from fileio.h
+
 2021-08-29  Ron Norman <rjn@inglenet.com>
 
 	* fileio.c: Adjust record size up to minimum for the file

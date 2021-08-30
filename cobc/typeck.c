@@ -20,7 +20,7 @@
 */
 
 
-#include <config.h>
+#include "config.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -11617,7 +11617,7 @@ cb_build_search_all (cb_tree table, cb_tree cond)
 }
 
 void
-cb_search_ready (cb_tree table)
+cb_search_ready (const cb_tree table)
 {
 	struct cb_field	*f;
 	if (table == NULL) {

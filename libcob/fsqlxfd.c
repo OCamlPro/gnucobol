@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2020 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2021 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -24,10 +24,7 @@
 #include "fileio.h"
 
 #if defined(WITH_ODBC) || defined(WITH_OCI) || defined(WITH_DB) || defined(WITH_LMDB)
-/* Routines in fsqlxfd.c common to all Database interfaces */                        
-
-static char	high_value[6];	/* value to replace HIGH-VALUES in index */
-static int	len_high_value = 0;
+/* Routines in fsqlxfd.c common to all Database interfaces */
 
 int
 db_findkey (cob_file *f, cob_field *kf, int *fullkeylen, int *partlen)
@@ -145,6 +142,9 @@ db_cmpkey (cob_file *f, unsigned char *keyarea, unsigned char *record, int idx, 
 
 /* Routines common to both ODBC and OCI interfaces */
 #if defined(WITH_ODBC) || defined(WITH_OCI)
+
+static char	high_value[6];	/* value to replace HIGH-VALUES in index */
+static int	len_high_value = 0;
 
 /* Is fld all the given character */
 static int

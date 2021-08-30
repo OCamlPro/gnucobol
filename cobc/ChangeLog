@@ -1,5 +1,10 @@
 
+2021-08-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: fix local includes to use "local" instead of <system>
+
 2021-08-26  Ron Norman <rjn@inglenet.com>
+
 	* codegen.c: Fix to use P_switch when computed-goto is not supported
 	             move emitting P_switch after REPORT code
 
@@ -10,19 +15,17 @@
 2021-08-01  Ron Norman <rjn@inglenet.com>
 
 	* cobc.c: For listing of REPORT show STEP value
-	* codegen.c: Changes for REPORT to handle VARYING, nested OCCURS
-	         and each LINE has its own unique data area which allows
-			 the application to make changes via normal COBOL verbs
-			 cb_code_field made public
+	* codegen.c: Changes for REPORT to handle VARYING, nested OCCURS and
+	  each LINE has its own unique data area which allows the application
+	  to make changes via normal COBOL verbs cb_code_field made public
 	* parser.y: Removed warnings about VARYING and nested OCCURS
 	* typeck.c: Use extern cb_code_field
 	* sqlxfdgen.c: Use extern cb_code_field
 	* tree.h: Additional fields for REPORT (varying, etc)
-	* tree.c: Changes so that each field of a REPORT line has 
-	         its own storage area
-			 The REPORT field  offset and report_column as computed
-			 to be exactly where the data should be in the print line
-	          
+	* tree.c: Changes so that each field of a REPORT line has its
+	  own storage area and to have the REPORT field offset and report_column
+	  as computed to be exactly where the data should be in the print line
+
 2021-07-29  Ron Norman <rjn@inglenet.com>
 
 	* flag.def, cobc.c: Add -fdatamap to usage report
@@ -30,7 +33,7 @@
 2021-07-23  Ron Norman <rjn@inglenet.com>
 
 	* tree.c: A few more checks for folding constant expressions
-			Check for + 0, * 1, / 1, * 0
+	  Check for + 0, * 1, / 1, * 0
 
 2021-07-12  Simon Sobisch <simonsobisch@gnu.org>
 

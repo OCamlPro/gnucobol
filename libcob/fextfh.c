@@ -610,6 +610,8 @@ find_fcd (cob_file *f)
 	return fcd;
 }
 
+
+#if !COB_64_BIT_POINTER
 /*
  * Construct FCD based on information from 'FCD2'
  */
@@ -657,6 +659,7 @@ free_fcd2 (FCD2 *fcd2)
 	}
 	return;
 }
+#endif
 
 /*
  * Construct cob_file based on information from 'FCD'

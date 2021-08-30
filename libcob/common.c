@@ -18,8 +18,8 @@
    along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <config.h>
-#include <tarstamp.h>
+#include "config.h"
+#include "tarstamp.h"
 
 #include <stdio.h>
 #include <stdlib.h>

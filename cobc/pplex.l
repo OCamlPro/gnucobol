@@ -73,7 +73,7 @@ static int ppwrap (void) {
 	requires_listing_line = 1;					\
 	comment_allowed = 1;
 
-#include <config.h>
+#include "config.h"
 
 #ifdef HAVE_STRING_H
 #include <string.h>
