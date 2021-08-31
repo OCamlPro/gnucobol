@@ -1,6 +1,6 @@
 # GnuCOBOL compiler - list of reserved words
 #
-# Copyright (C) 2016-2017 Free Software Foundation, Inc.
+# Copyright (C) 2016-2017,2021 Free Software Foundation, Inc.
 # Written by Simon Sobisch, Edward Hart
 #
 # This file is part of GnuCOBOL.
@@ -119,11 +119,11 @@ reserved:	COMP-1
 reserved:	COMP-2
 reserved:	COMP-3
 reserved:	COMP-5
-reserved:	COMPUTATIONAL
-reserved:	COMPUTATIONAL-1
-reserved:	COMPUTATIONAL-2
-reserved:	COMPUTATIONAL-3
-reserved:	COMPUTATIONAL-5
+reserved:	COMPUTATIONAL=COMP
+reserved:	COMPUTATIONAL-1=COMP-1
+reserved:	COMPUTATIONAL-2=COMP-2
+reserved:	COMPUTATIONAL-3=COMP-3
+reserved:	COMPUTATIONAL-5=COMP-5
 reserved:	COMPUTE
 reserved:	CONDITION
 reserved:	CONFIGURATION
@@ -135,7 +135,7 @@ reserved:	CONTROL
 reserved:	CONTROLS
 reserved:	CONVERTING
 reserved:	COPY
-reserved:	CORR
+reserved:	CORR=CORRESPONDING
 reserved:	CORRESPONDING
 reserved:	COUNT
 reserved:	CREATING
@@ -388,7 +388,7 @@ reserved:	PROPERTY
 reserved:	PROTOTYPE
 reserved:	PURGE
 reserved:	QUOTE
-reserved:	QUOTES
+reserved:	QUOTES=QUOTE
 reserved:	RAISE
 reserved:	RAISING
 reserved:	RANDOM
@@ -457,9 +457,9 @@ reserved:	SIGN
 reserved:	SIGNED*
 reserved:	SIZE
 reserved:	SORT
-reserved:	SORT-CCSN # note: this is a register, move as soon as supported
+reserved:	SORT-CCSN      # note: this is a register, move as soon as supported
 reserved:	SORT-CORE-SIZE # note: this is a register, move as soon as supported
-reserved:	SORT-EOW # note: this is a register, move as soon as supported
+reserved:	SORT-EOW       # note: this is a register, move as soon as supported
 reserved:	SORT-FILE-SIZE # note: this is a register, move as soon as supported
 reserved:	SORT-MERGE
 reserved:	SORT-MODE-SIZE # note: this is a register, move as soon as supported
@@ -488,7 +488,7 @@ reserved:	SUPER
 reserved:	SUPPRESS
 reserved:	SYMBOL*
 reserved:	SYMBOLIC
-reserved:	SYNC
+reserved:	SYNC=SYNCHRONIZED
 reserved:	SYNCHRONIZED
 reserved:	SYSTEM-DEFAULT
 reserved:	TABLE
@@ -500,7 +500,7 @@ reserved:	TERMINATE
 reserved:	TEST
 reserved:	THAN
 reserved:	THEN
-reserved:	THROUGH
+reserved:	THROUGH=THRU
 reserved:	THRU
 reserved:	TIME
 reserved:	TIMES

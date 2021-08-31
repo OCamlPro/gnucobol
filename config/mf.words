@@ -1,6 +1,6 @@
 # GnuCOBOL compiler - list of reserved words
 #
-# Copyright (C) 2016-2017 Free Software Foundation, Inc.
+# Copyright (C) 2016-2017,2021 Free Software Foundation, Inc.
 # Written by Simon Sobisch, Edward Hart
 #
 # This file is part of GnuCOBOL.
@@ -19,7 +19,7 @@
 # along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 
 
-# Word list for dialect: Micro Focus COBOL
+# Word list for dialect: Micro Focus COBOL (current: Visual COBOL 6.0, MF21)
 
 # Note: only used for strict dialect and when
 #       requested by compiler directive >> IMP WORDS MF
@@ -56,14 +56,14 @@ reserved:	ANY
 reserved:	ARE
 reserved:	AREA
 reserved:	AREAS
-reserved:	ARGUMENT-NUMBER
-reserved:	ARGUMENT-VALUE
+reserved:	ARGUMENT-NUMBER    # internal system name, currently handled via reserved words in GC
+reserved:	ARGUMENT-VALUE     # internal system name, currently handled via reserved words in GC
 reserved:	AS
 reserved:	ASCENDING
 reserved:	ASSIGN
 reserved:	AT
 reserved:	ATTRIBUTE
-reserved:	ATTRIBUTES
+reserved:	ATTRIBUTES*        # for XML GENERATE
 reserved:	AUTHOR
 reserved:	AUTO*
 reserved:	AUTO-HYPHEN-SKIP
@@ -81,8 +81,7 @@ reserved:	BACKGROUND-COLOUR*=BACKGROUND-COLOR
 reserved:	BACKWARD
 reserved:	BEEP=BELL
 reserved:	BEFORE
-reserved:	BELL
-reserved:	BINARY
+reserved:	BELL*
 reserved:	BINARY
 reserved:	BINARY-CHAR
 reserved:	BINARY-DOUBLE
@@ -91,10 +90,10 @@ reserved:	BINARY-SEQUENTIAL*
 reserved:	BINARY-SHORT
 reserved:	BIT
 reserved:	BLANK
-reserved:	BLINK
-reserved:	BLOB
-reserved:	BLOB-FILE
-reserved:	BLOB-LOCATOR
+reserved:	BLINK*
+reserved:	BLOB*
+reserved:	BLOB-FILE*
+reserved:	BLOB-LOCATOR*
 reserved:	BLOCK
 reserved:	BOOLEAN
 reserved:	BOTTOM
@@ -109,17 +108,18 @@ reserved:	CH
 reserved:	CHAIN
 reserved:	CHAINING
 reserved:	CHANGED
-reserved:	CHAR
+reserved:	CHAR*
 reserved:	CHAR-VARYING
 reserved:	CHARACTER
 reserved:	CHARACTERS
+reserved:	CICS*
 reserved:	CLASS
 reserved:	CLASS-CONTROL
 reserved:	CLASS-ID
 reserved:	CLASS-OBJECT
-reserved:	CLOB
-reserved:	CLOB-FILE
-reserved:	CLOB-LOCATOR
+reserved:	CLOB*
+reserved:	CLOB-FILE*
+reserved:	CLOB-LOCATOR*
 reserved:	CLOCK-UNITS
 reserved:	CLOSE
 reserved:	COBOL
@@ -130,7 +130,7 @@ reserved:	COL
 reserved:	COLLATING
 reserved:	COLUMN
 reserved:	COMMA
-reserved:	COMMAND-LINE
+reserved:	COMMAND-LINE    # internal system name, currently handled via reserved words in GC
 reserved:	COMMIT
 reserved:	COMMITMENT
 reserved:	COMMON
@@ -144,18 +144,18 @@ reserved:	COMP-4
 reserved:	COMP-5
 reserved:	COMP-6
 reserved:	COMP-X
-reserved:	COMPUTATIONAL
-reserved:	COMPUTATIONAL-0
-reserved:	COMPUTATIONAL-1
-reserved:	COMPUTATIONAL-2
-reserved:	COMPUTATIONAL-3
-reserved:	COMPUTATIONAL-4
-reserved:	COMPUTATIONAL-5
-reserved:	COMPUTATIONAL-6
-reserved:	COMPUTATIONAL-X
+reserved:	COMPUTATIONAL=COMP
+reserved:	COMPUTATIONAL-0=COMP-0
+reserved:	COMPUTATIONAL-1=COMP-1
+reserved:	COMPUTATIONAL-2=COMP-2
+reserved:	COMPUTATIONAL-3=COMP-3
+reserved:	COMPUTATIONAL-4=COMP-4
+reserved:	COMPUTATIONAL-5=COMP-5
+reserved:	COMPUTATIONAL-6=COMP-6
+reserved:	COMPUTATIONAL-X=COMP-X
 reserved:	COMPUTE
 reserved:	CONFIGURATION
-# reserved:	CONSOLE*   --> mnemonic device should not be in reserved list
+# reserved:	CONSOLE*   --> mnemonic device in GC, should not be in reserved list
 reserved:	CONTAINS
 reserved:	CONTENT
 reserved:	CONTINUE
@@ -164,7 +164,7 @@ reserved:	CONTROL-AREA
 reserved:	CONTROLS
 reserved:	CONVERTING
 reserved:	COPY
-reserved:	CORR
+reserved:	CORR=CORRESPONDING
 reserved:	CORRESPONDING
 reserved:	COUNT
 reserved:	CRT
@@ -177,19 +177,31 @@ reserved:	DATA-POINTER*
 reserved:	DATE
 reserved:	DATE-AND-TIME
 reserved:	DATE-COMPILED
-reserved:	DATE-RECORD
+reserved:	DATE-RECORD*
 reserved:	DATE-WRITTEN
 reserved:	DAY
 reserved:	DAY-AND-TIME
 reserved:	DAY-OF-WEEK
-reserved:	DBCLOB
-reserved:	DBCLOB-FILE
-reserved:	DBCLOB-LOCATOR
+reserved:	DBCLOB*
+reserved:	DBCLOB-FILE*
+reserved:	DBCLOB-LOCATOR*
 reserved:	DBCS
 reserved:	DE
+# note: the following are part of the register DEBUG-ITEM,
+#       they are automatically unreserved if the register is
+#       created
+reserved:	DEBUG-CONTENTS
+reserved:	DEBUG-ITEM
+reserved:	DEBUG-LINE
+reserved:	DEBUG-NAME
+reserved:	DEBUG-SUB-1
+reserved:	DEBUG-SUB-2
+reserved:	DEBUG-SUB-3
+# debug-item end
 reserved:	DEBUGGING
 reserved:	DECIMAL-POINT
 reserved:	DECLARATIVES
+reserved:	DECLARE
 reserved:	DEFAULT
 reserved:	DEFINITION
 reserved:	DELETE
@@ -205,6 +217,7 @@ reserved:	DISK
 reserved:	DISPLAY
 reserved:	DISPLAY-1
 reserved:	DIVIDE
+reserved:	DIVIDERS*		# seems to be C/S reserved but unused
 reserved:	DIVISION
 reserved:	DOWN
 reserved:	DROP
@@ -217,7 +230,7 @@ reserved:	ELSE
 reserved:	EMI
 reserved:	EMPTY-CHECK=REQUIRED
 reserved:	ENABLE
-reserved:	ENCODING
+reserved:	ENCODING*
 reserved:	END
 reserved:	END-ACCEPT
 reserved:	END-ADD
@@ -274,7 +287,7 @@ reserved:	EXTEND
 reserved:	EXTERNAL
 reserved:	EXTERNAL-FORM
 reserved:	EXTERNALLY-DESCRIBED-KEY
-reserved:	F*
+reserved:	F*                        # missing in the list, but actually reserved, at least C/S
 reserved:	FACTORY
 reserved:	FALSE
 reserved:	FD
@@ -294,6 +307,7 @@ reserved:	FOOTING
 reserved:	FOR
 reserved:	FOREGROUND-COLOR*
 reserved:	FOREGROUND-COLOUR*=FOREGROUND-COLOR
+reserved:	FOREVER*
 reserved:	FREE
 reserved:	FROM
 reserved:	FULL*
@@ -333,6 +347,7 @@ reserved:	INHERITING
 reserved:	INHERITS
 reserved:	INITIAL
 reserved:	INITIALIZE
+reserved:	INITIALIZED*
 reserved:	INITIATE
 reserved:	INPUT
 reserved:	INPUT-OUTPUT
@@ -342,7 +357,7 @@ reserved:	INSTANCE
 reserved:	INTERFACE
 reserved:	INTERFACE-ID
 reserved:	INTO
-reserved:	INTRINSIC
+reserved:	INTRINSIC*       # missing in the list, but actually reserved, at least C/S
 reserved:	INVALID
 reserved:	INVOKE
 reserved:	INVOKED
@@ -350,7 +365,8 @@ reserved:	IS
 reserved:	JAPANESE
 reserved:	JOINING
 reserved:	JSON
-reserved:	JSON-COUNTER # note: this is a register, move as soon as supported
+reserved:	JSON-CODE        # note: this is a register, move as soon as supported
+reserved:	JSON-STATUS      # note: this is a register, move as soon as supported
 reserved:	JUST
 reserved:	JUSTIFIED
 reserved:	KANJI
@@ -373,12 +389,13 @@ reserved:	LINAGE-COUNTER
 reserved:	LINE
 reserved:	LINE-COUNTER
 reserved:	LINES
-reserved:	LINE-SEQUENTIAL*
+reserved:	LINE-SEQUENTIAL*   # missing in the list, but actually reserved, at least C/S
 reserved:	LINKAGE
 reserved:	LOCAL-STORAGE
+reserved:	LOC*
 reserved:	LOCK
-reserved:	LONG-VARBINARY
-reserved:	LONG-VARCHAR
+reserved:	LONG-VARBINARY*
+reserved:	LONG-VARCHAR*
 reserved:	LOW-VALUE
 reserved:	LOW-VALUES=LOW-VALUE
 reserved:	LOWER
@@ -399,12 +416,13 @@ reserved:	MULTIPLY
 reserved:	MUTEX-POINTER
 reserved:	NAME*
 reserved:	NAMED
-reserved:	NAMESPACE
-reserved:	NAMESPACE-PREFIX
+reserved:	NAMESPACE*
+reserved:	NAMESPACE-PREFIX*
 reserved:	NATIONAL
 reserved:	NATIONAL-EDITED
 reserved:	NATIVE
 reserved:	NCHAR
+reserved:	NCLOB*
 reserved:	NEGATIVE
 reserved:	NESTED
 reserved:	NEXT
@@ -445,7 +463,7 @@ reserved:	PADDING
 reserved:	PAGE
 reserved:	PAGE-COUNTER
 reserved:	PARAGRAPH*
-reserved:	PARSE
+reserved:	PARSE*
 reserved:	PERFORM
 reserved:	PF
 reserved:	PH
@@ -479,7 +497,7 @@ reserved:	PUBLIC
 reserved:	PURGE
 reserved:	QUEUE
 reserved:	QUOTE
-reserved:	QUOTES
+reserved:	QUOTES=QUOTE
 reserved:	RANDOM
 reserved:	RANGE
 reserved:	RD
@@ -496,6 +514,7 @@ reserved:	REDEFINITION
 reserved:	REEL
 reserved:	REFERENCE
 reserved:	REFERENCES
+reserved:	REFRESH
 reserved:	RELATIVE
 reserved:	RELEASE
 reserved:	REMAINDER
@@ -512,8 +531,8 @@ reserved:	REQUIRED*
 reserved:	RERUN
 reserved:	RESERVE
 reserved:	RESET
+reserved:	RESET-SET-LOCATOR*
 reserved:	RESTRICTED
-reserved:	RESULT-SET-LOCATOR
 reserved:	RETURN
 reserved:	RETURNING
 reserved:	REVERSE-VIDEO*
@@ -527,9 +546,9 @@ reserved:	RIGHT-JUSTIFY
 reserved:	ROLLBACK
 reserved:	ROLLING
 reserved:	ROUNDED
-reserved:	ROWID
+reserved:	ROWID*
 reserved:	RUN
-reserved:	S*
+reserved:	S*                   # missing in the list, but actually reserved, at least C/S
 reserved:	SAME
 reserved:	SCREEN
 reserved:	SD
@@ -564,7 +583,13 @@ reserved:	SPACE
 reserved:	SPACE-FILL
 reserved:	SPACES=SPACE
 reserved:	SPECIAL-NAMES
-reserved:	SQL
+reserved:	SQL*
+reserved:	SQL-BFILE*
+reserved:	SQL-BLOB*
+reserved:	SQL-CLOB*
+reserved:	SQL-CURSOR*
+reserved:	SQL-NCLOB*
+reserved:	SQL-ROWID*
 reserved:	STANDARD
 reserved:	STANDARD-1
 reserved:	STANDARD-2
@@ -584,7 +609,7 @@ reserved:	SUPER
 reserved:	SUPPRESS
 reserved:	SYMBOL*
 reserved:	SYMBOLIC
-reserved:	SYNC
+reserved:	SYNC=SYNCHRONIZED
 reserved:	SYNCHRONIZED
 reserved:	TABLE
 reserved:	TALLYING
@@ -598,17 +623,17 @@ reserved:	THEN
 reserved:	THREAD-LOCAL
 reserved:	THREAD-LOCAL-STORAGE
 reserved:	THREAD-POINTER
-reserved:	THROUGH
+reserved:	THROUGH=THRU
 reserved:	THRU
 reserved:	TIME
 reserved:	TIME-OUT
-reserved:	TIME-RECORD
+reserved:	TIME-RECORD*
 reserved:	TIMEOUT=TIME-OUT
 reserved:	TIMES
-reserved:	TIMESTAMP
-reserved:	TIMESTAMP-OFFSET
-reserved:	TIMESTAMP-OFFSET-RECORD
-reserved:	TIMESTAMP-RECORD
+reserved:	TIMESTAMP*
+reserved:	TIMESTAMP-OFFSET*
+reserved:	TIMESTAMP-OFFSET-RECORD*
+reserved:	TIMESTAMP-RECORD*
 reserved:	TITLE
 reserved:	TO
 reserved:	TOP
@@ -618,7 +643,7 @@ reserved:	TRAILING-SIGN
 reserved:	TRUE
 reserved:	TYPE
 reserved:	TYPEDEF
-reserved:	U*
+reserved:	U*                   # missing in the list, but actually reserved, at least C/S
 reserved:	UNBOUNDED*
 reserved:	UNDERLINE*
 reserved:	UNEQUAL
@@ -636,11 +661,11 @@ reserved:	USAGE
 reserved:	USE
 reserved:	USER
 reserved:	USING
-reserved:	V*
-reserved:	VALIDATING
+reserved:	V*                   # missing in the list, but actually reserved, at least C/S
+reserved:	VALIDATING*
 reserved:	VALUE
 reserved:	VALUES=VALUE
-reserved:	VARBINARY
+reserved:	VARBINARY*
 reserved:	VARIABLE
 reserved:	VARYING
 reserved:	WAIT
@@ -652,16 +677,16 @@ reserved:	WORKING-STORAGE
 reserved:	WRITE
 reserved:	WRITING
 reserved:	XML
-reserved:	XML-DECLARATION
-reserved:	XML-EVENT # note: this is a register, move as soon as supported
-reserved:	XML-INFORMATION # note: this is a register, move as soon as supported
-reserved:	XML-NAMESPACE # note: this is a register, move as soon as supported
-reserved:	XML-NAMESPACE-PREFIX # note: this is a register, move as soon as supported
-reserved:	XML-NNAMESPACE # note: this is a register, move as soon as supported
-reserved:	XML-NNAMESPACE-PREFIX # note: this is a register, move as soon as supported
-reserved:	XML-NTEXT # note: this is a register, move as soon as supported
+reserved:	XML-DECLARATION*
+reserved:	XML-EVENT             # note: this is a register, move as soon as supported
+#reserved:	XML-INFORMATION       # note: this is a register, move as soon as supported
+#reserved:	XML-NAMESPACE         # note: this is a register, move as soon as supported
+#reserved:	XML-NAMESPACE-PREFIX  # note: this is a register, move as soon as supported
+#reserved:	XML-NNAMESPACE        # note: this is a register, move as soon as supported
+#reserved:	XML-NNAMESPACE-PREFIX # note: this is a register, move as soon as supported
+reserved:	XML-NTEXT             # note: this is a register, move as soon as supported
 reserved:	XML-SCHEMA
-reserved:	XML-TEXT # note: this is a register, move as soon as supported
+reserved:	XML-TEXT              # note: this is a register, move as soon as supported
 reserved:	YYYYDDD*
 reserved:	YYYYMMDD*
 reserved:	ZERO
@@ -677,6 +702,7 @@ register:	"ADDRESS\ OF"
 # register:	CURRENT-DATE		# only available in OS/VS mode
 register:	DEBUG-ITEM
 # register:	JSON-CODE
+# register:	JSON-STATUS
 register:	"LENGTH\ OF"		# only available in OS/VS or VSC2 mode or otherwise in 78-item's value clause.
 # register:	LINAGE-COUNTER
 # register:	LINE-COUNTER
@@ -713,6 +739,8 @@ intrinsic-function:	ACOS
 intrinsic-function:	ANNUITY
 intrinsic-function:	ASIN
 intrinsic-function:	ATAN
+intrinsic-function:	BIT-OF
+intrinsic-function:	BIT-TO-CHAR
 intrinsic-function:	BOOLEAN-OF-INTEGER
 intrinsic-function:	BYTE-LENGTH
 intrinsic-function:	CHAR
@@ -730,7 +758,10 @@ intrinsic-function:	EXP
 intrinsic-function:	EXP10
 intrinsic-function:	FACTORIAL
 intrinsic-function:	FRACTION-PART
+intrinsic-function:	HEX-OF
+intrinsic-function:	HEX-TO-CHAR
 intrinsic-function:	INTEGER
+intrinsic-function:	INTEGER-OF-BOOLEAN
 intrinsic-function:	INTEGER-OF-DATE
 intrinsic-function:	INTEGER-OF-DAY
 intrinsic-function:	INTEGER-OF-FORMATTED-DATE
@@ -740,7 +771,7 @@ intrinsic-function:	LENGTH-AN
 intrinsic-function:	LOG
 intrinsic-function:	LOG10
 intrinsic-function:	LOWER-CASE
-intrinsic-function:	LOWEST-ALGEBRAIC
+# intrinsic-function:	LOWEST-ALGEBRAIC   not included in Visual COBOL 6.0
 intrinsic-function:	MAX
 intrinsic-function:	MEAN
 intrinsic-function:	MEDIAN
@@ -750,6 +781,7 @@ intrinsic-function:	MOD
 intrinsic-function:	NATIONAL-OF
 intrinsic-function:	NUMVAL
 intrinsic-function:	NUMVAL-C
+intrinsic-function:	NUMVAL-F
 intrinsic-function:	ORD
 intrinsic-function:	ORD-MAX
 intrinsic-function:	ORD-MIN
@@ -765,6 +797,10 @@ intrinsic-function:	SQRT
 intrinsic-function:	STANDARD-DEVIATION
 intrinsic-function:	SUM
 intrinsic-function:	TAN
+intrinsic-function:	TEST-NUMVAL
+intrinsic-function:	TEST-NUMVAL-C
+intrinsic-function:	TEST-NUMVAL-F
+intrinsic-function:	TRIM
 #intrinsic-function:	ULENGTH		# IBM extension, not known to GnuCOBOL
 #intrinsic-function:	UPOS		# IBM extension, not known to GnuCOBOL
 intrinsic-function:	UPPER-CASE

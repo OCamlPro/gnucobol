@@ -1,6 +1,6 @@
 # GnuCOBOL compiler - list of reserved words
 #
-# Copyright (C) 2016-2017 Free Software Foundation, Inc.
+# Copyright (C) 2016-2017,2021 Free Software Foundation, Inc.
 # Written by Simon Sobisch, Edward Hart
 #
 # This file is part of GnuCOBOL.
@@ -19,7 +19,9 @@
 # along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 
 
-# Word list for dialect: ACUCOBOL-GT
+# Word list for dialect: ACUCOBOL-GT, 10.4,
+# extended with context-sensitive entries from MF reserved word list
+# and graphical control types + attributes
 
 # Note: only used for strict dialect and when
 #       requested by compiler directive >> IMP WORDS ACU
@@ -170,15 +172,15 @@ reserved:	COMP-6
 reserved:	COMP-N
 reserved:	COMP-X
 reserved:	COMPRESSION
-reserved:	COMPUTATIONAL
-reserved:	COMPUTATIONAL-1
-reserved:	COMPUTATIONAL-2
-reserved:	COMPUTATIONAL-3
-reserved:	COMPUTATIONAL-4
-reserved:	COMPUTATIONAL-5
-reserved:	COMPUTATIONAL-6
-reserved:	COMPUTATIONAL-N
-reserved:	COMPUTATIONAL-X
+reserved:	COMPUTATIONAL=COMP-
+reserved:	COMPUTATIONAL-1=COMP-1
+reserved:	COMPUTATIONAL-2=COMP-2
+reserved:	COMPUTATIONAL-3=COMP-3
+reserved:	COMPUTATIONAL-4=COMP-4
+reserved:	COMPUTATIONAL-5=COMP-5
+reserved:	COMPUTATIONAL-6=COMP-6
+reserved:	COMPUTATIONAL-N=COMP-N
+reserved:	COMPUTATIONAL-X=COMP-X
 reserved:	COMPUTE
 reserved:	CONFIGURATION
 # reserved:	CONSOLE*   --> mnemonic device should not be in reserved list
@@ -194,9 +196,11 @@ reserved:	CONVERT=CONVERSION
 reserved:	CONVERTING
 reserved:	COPY
 reserved:	COPY-SELECTION*
-reserved:	CORR
+reserved:	CORR=CORRESPONDING
 reserved:	CORRESPONDING
 reserved:	COUNT
+reserved:	COUNT-LEADLING	# actually a function not supported in GC
+reserved:	COUNT-TRAILING	# actually a function not supported in GC
 reserved:	CREATE
 reserved:	CRT
 reserved:	CSIZE
@@ -235,6 +239,7 @@ reserved:	DESCENDING
 reserved:	DESCRIPTOR
 reserved:	DESTINATION
 reserved:	DESTROY
+reserved:	DETAIL
 reserved:	DISC*
 reserved:	DISK*
 reserved:	DISPLAY
@@ -271,6 +276,7 @@ reserved:	END-DISPLAY
 reserved:	END-DIVIDE
 reserved:	END-EVALUATE
 reserved:	END-IF
+reserved:	END-JSON
 reserved:	END-MODIFY
 reserved:	END-MOVE
 reserved:	END-MULTIPLY
@@ -288,6 +294,7 @@ reserved:	END-UNSTRING
 reserved:	END-USE
 reserved:	END-WAIT
 reserved:	END-WRITE
+reserved:	END-XML
 reserved:	ENDING
 reserved:	ENGRAVED*
 reserved:	ENSURE-VISIBLE*
@@ -316,8 +323,8 @@ reserved:	EXCLUDE-EVENT-LIST*
 reserved:	EXPAND*
 reserved:	EXTEND
 reserved:	EXTENDED-SEARCH
-reserved:	EXTERNAL-FORM
 reserved:	EXTERNAL
+reserved:	EXTERNAL-FORM
 reserved:	FALSE
 reserved:	FD
 reserved:	FILE
@@ -416,6 +423,10 @@ reserved:	ITEM-TO-ADD*
 reserved:	ITEM-TO-DELETE*
 reserved:	ITEM-TO-EMPTY*
 reserved:	ITEM-VALUE*
+reserved:	INTERVAL-TIMER   # actually a function not supported in GC
+reserved:	JSON
+reserved:	JSON-CODE        # note: this is a register, move as soon as supported
+reserved:	JSON-STATUS      # note: this is a register, move as soon as supported
 reserved:	JUST
 reserved:	JUSTIFIED
 reserved:	KEPT
@@ -474,6 +485,7 @@ reserved:	MENU
 reserved:	MERGE
 reserved:	MESSAGE
 reserved:	MESSAGES
+reserved:	MICROSECOND-TIME
 reserved:	MIN-HEIGHT*
 reserved:	MIN-LINES*
 reserved:	MIN-SIZE*
@@ -596,7 +608,7 @@ reserved:	PROTECTED
 reserved:	PUSH-BUTTON*
 reserved:	QUERY-INDEX*
 reserved:	QUOTE
-reserved:	QUOTES
+reserved:	QUOTES=QUOTE
 reserved:	RADIO-BUTTON*
 reserved:	RAISED*
 reserved:	RANDOM
@@ -718,8 +730,9 @@ reserved:	STRONG-NAME
 reserved:	STYLE
 reserved:	SUBTRACT
 reserved:	SUBWINDOW
+reserved:	SUPPRESS
 reserved:	SYMBOLIC
-reserved:	SYNC
+reserved:	SYNC=SYNCHRONIZED
 reserved:	SYNCHRONIZED
 reserved:	SYSTEM
 reserved:	SYSTEM-INFO
@@ -738,8 +751,8 @@ reserved:	TEXT
 reserved:	THAN
 reserved:	THEN
 reserved:	THREAD
-reserved:	THREADS
-reserved:	THROUGH
+reserved:	THREADS=THREAD
+reserved:	THROUGH=THRU
 reserved:	THRU
 reserved:	THUMB-POSITION*
 reserved:	TILED-HEADINGS*
@@ -766,9 +779,13 @@ reserved:	UNDERLINE
 reserved:	UNDERLINED=UNDERLINE
 reserved:	UNIT
 reserved:	UNLOCK
+reserved:	UNDERLINE*
+reserved:	UNDERLINED=UNDERLINE
+reserved:	UNFRAMED*
 reserved:	UNSIGNED-INT
 reserved:	UNSIGNED-LONG
 reserved:	UNSIGNED-SHORT
+reserved:	UNSORTED*
 reserved:	UNSTRING
 reserved:	UNTIL
 reserved:	UP
@@ -779,10 +796,6 @@ reserved:	UPPER
 reserved:	USAGE
 reserved:	USE
 reserved:	USING
-reserved:	UNDERLINE*
-reserved:	UNDERLINED=UNDERLINE
-reserved:	UNFRAMED*
-reserved:	UNSORTED*
 reserved:	USE-ALT*
 reserved:	USE-RETURN*
 reserved:	USE-TAB*
@@ -817,6 +830,7 @@ reserved:	WORKING-STORAGE
 reserved:	WRAP
 reserved:	WRITE
 reserved:	WRITERS
+reserved:	XML
 reserved:	XML-EVENT # note: this is a register, move as soon as supported
 reserved:	XML-TEXT  # note: this is a register, move as soon as supported
 reserved:	X*
@@ -836,6 +850,8 @@ register:	"ADDRESS\ OF"
 # register:	ENVIRONMENT-NAME
 # register:	FILE-PREFIX
 register:	"LENGTH\ OF"
+# register:	JSON-CODE
+# register:	JSON-STATUS
 register:	RETURN-CODE
 # register:	RETURN-UNSIGNED
 # SORT-RETURN is only available in IBM mode
@@ -915,6 +931,8 @@ intrinsic-function:	ASIN
 intrinsic-function:	ATAN
 intrinsic-function:	CHAR
 intrinsic-function:	COS
+#intrinsic-function:	COUNT-LEADLING	not supported in GC
+#intrinsic-function:	COUNT-TRAILING	not supported in GC
 intrinsic-function:	CURRENT-DATE
 intrinsic-function:	DATE-OF-INTEGER
 intrinsic-function:	DAY-OF-INTEGER
@@ -923,6 +941,7 @@ intrinsic-function:	INTEGER
 intrinsic-function:	INTEGER-OF-DATE
 intrinsic-function:	INTEGER-OF-DAY
 intrinsic-function:	INTEGER-PART
+#intrinsic-function:	INTERVAL-TIMER	not supported in GC
 intrinsic-function:	LENGTH
 intrinsic-function:	LOG
 intrinsic-function:	LOG10
@@ -948,6 +967,7 @@ intrinsic-function:	SQRT
 intrinsic-function:	STANDARD-DEVIATION
 intrinsic-function:	SUM
 intrinsic-function:	TAN
+intrinsic-function:	TRIM       # with support for 2nd argument
 intrinsic-function:	UPPER-CASE
 intrinsic-function:	VARIANCE
 intrinsic-function:	WHEN-COMPILED

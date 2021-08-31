@@ -855,7 +855,7 @@
 
 
 /* Version number of package */
-#define VERSION "3.1-dev"
+#define VERSION "3.2-dev"
 
 /* Use CISAM as ISAM handler */
 #if CONFIGURED_ISAM == CISAM

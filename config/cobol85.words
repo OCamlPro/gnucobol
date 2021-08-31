@@ -1,6 +1,6 @@
 # GnuCOBOL compiler - list of reserved words
 #
-# Copyright (C) 2016-2017 Free Software Foundation, Inc.
+# Copyright (C) 2016-2017,2021 Free Software Foundation, Inc.
 # Written by Simon Sobisch, Edward Hart
 #
 # This file is part of GnuCOBOL.
@@ -81,7 +81,7 @@ reserved:	COMMA
 reserved:	COMMON
 reserved:	COMMUNICATION
 reserved:	COMP
-reserved:	COMPUTATIONAL
+reserved:	COMPUTATIONAL=COMP
 reserved:	COMPUTE
 reserved:	CONFIGURATION
 reserved:	CONTAINS
@@ -91,7 +91,7 @@ reserved:	CONTROL
 reserved:	CONTROLS
 reserved:	CONVERTING
 reserved:	COPY
-reserved:	CORR
+reserved:	CORR=CORRESPONDING
 reserved:	CORRESPONDING
 reserved:	COUNT
 reserved:	CURRENCY
@@ -267,7 +267,7 @@ reserved:	PROGRAM-ID
 reserved:	PURGE
 reserved:	QUEUE
 reserved:	QUOTE
-reserved:	QUOTES
+reserved:	QUOTES=QUOTE
 reserved:	RANDOM
 reserved:	RD
 reserved:	READ
@@ -337,7 +337,7 @@ reserved:	SUBTRACT
 reserved:	SUM
 reserved:	SUPPRESS
 reserved:	SYMBOLIC
-reserved:	SYNC
+reserved:	SYNC=SYNCHRONIZED
 reserved:	SYNCHRONIZED
 reserved:	TABLE
 reserved:	TALLYING
@@ -348,7 +348,7 @@ reserved:	TEST
 reserved:	TEXT
 reserved:	THAN
 reserved:	THEN
-reserved:	THROUGH
+reserved:	THROUGH=THRU
 reserved:	THRU
 reserved:	TIME
 reserved:	TIMES

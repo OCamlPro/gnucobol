@@ -1,6 +1,15 @@
 NEWS - user visible changes				-*- outline -*-
 
- GnuCOBOL 3.2 to be released until September 2021
+ GnuCOBOL 3.2 to be released in September 2021
+
+* New GnuCOBOL features
+
+** TODO
+
+** New intrinsic functions
+
+  TODO
+
 
 * Changes to the COBOL compiler (cobc) options:
 
@@ -15,6 +24,14 @@ NEWS - user visible changes				-*- outline -*-
    -Wconstant-expression was changed to a group warning and includes
     the new, previously integrated, -Wconstant-numlit-expression
 
+
+* Important Bugfixes:
+
+ * for other than the GnuCOBOL dialects different reserved "alias" words were
+   not usable, for example SYNCHRONIZED or COMPUTATIONAL. This was fixed and
+   reserved words updated for the dialects "acu" (ACUCOBOL-GT 10.4),
+   "ibm" (Enterprise COBOL 6.3) and "mf" (Micro Focus Visual COBOL 6.0)
+ 
 
  GnuCOBOL 3.1.2 released (20201223)
  GnuCOBOL 3.1.1 released (20201208) containing INITIALIZE bug #694
