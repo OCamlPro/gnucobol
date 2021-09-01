@@ -376,6 +376,9 @@ static struct cobc_reserved default_reserved_words[] = {
   { "ATTRIBUTES",		0, 1, ATTRIBUTES,		/* IBM extension */
 				0, CB_CS_XML_GENERATE
   },
+  { "AUTHOR",			0, 1, AUTHOR,			/* 85 (later: C/S) */
+				0, CB_CS_DAY /* HACK, we only want it to normally be not usable */
+  },
   { "AUTO",			0, 1, AUTO,			/* 2002 (C/S), extension */
 				0, CB_CS_ACCEPT | CB_CS_SCREEN | CB_CS_CALL
   },
@@ -860,8 +863,17 @@ static struct cobc_reserved default_reserved_words[] = {
   { "DATE",			0, 0, DATE,			/* 2002 */
 				CB_CS_DATE, 0
   },
+  { "DATE-COMPILED",			0, 1, DATE_COMPILED,			/* 85 (later: C/S) */
+				0, CB_CS_DAY /* HACK, we only want it to normally be not usable */
+  },
   { "DATE-ENTRY",		1, 1, DATE_ENTRY,		/* ACU extension */
 				CB_CS_GRAPHICAL_CONTROL, CB_CS_DISPLAY | CB_CS_SCREEN
+  },
+  { "DATE-MODIFIED",			0, 1, DATE_MODIFIED,			/* 85 (later: C/S) */
+				0, CB_CS_DAY /* HACK, we only want it to normally be not usable */
+  },
+  { "DATE-WRITTEN",			0, 1, DATE_WRITTEN,			/* 85 (later: C/S) */
+				0, CB_CS_DAY /* HACK, we only want it to normally be not usable */
   },
   { "DAY",			0, 0, DAY,			/* 2002 */
 				CB_CS_DAY, 0
@@ -1533,6 +1545,9 @@ static struct cobc_reserved default_reserved_words[] = {
   },
   { "INSPECT",			0, 0, INSPECT,			/* 2002 */
 				0, 0
+  },
+  {"INSTALLATION",			0, 1, INSTALLATION,			/* 85 (later: C/S) */
+				0, CB_CS_DAY /* HACK, we only want it to normally be not usable */
   },
   { "INTERFACE",		0, 0, -1,			/* 2002 */
 				0, 0
@@ -2293,6 +2308,9 @@ static struct cobc_reserved default_reserved_words[] = {
   { "REMAINDER",		0, 0, REMAINDER,		/* 2002 */
 				0, 0
   },
+  {"REMARKS",			0, 1, REMARKS,			/* 85 (later: C/S) */
+				0, CB_CS_DAY /* HACK, we only want it to normally be not usable */
+  },
   { "REMOVAL",			0, 0, REMOVAL,			/* 2002 */
 				0, 0
   },
@@ -2460,6 +2478,9 @@ static struct cobc_reserved default_reserved_words[] = {
   },
   { "SECURE",			0, 1, SECURE,			/* 2002 (C/S) */
 				0, CB_CS_ACCEPT | CB_CS_DISPLAY | CB_CS_SCREEN
+  },
+  {"SECURITY",			0, 1, SECURITY,			/* 85 (later: C/S) */
+				0, CB_CS_DAY /* HACK, we only want it to normally be not usable */
   },
   { "SEGMENT",			0, 0, SEGMENT,			/* Communication Section */
 				0, 0
@@ -4108,7 +4129,7 @@ hash_word (const cob_c8_t *word, const cob_u32_t mod)
 
 	/* Perform 32-bit FNV1a hash */
 	for (; *word; ++word) {
-		result ^= toupper (*word);
+		result ^= toupper (*word);	/* CHECKME: all input should be upper-case already */
 		result *= (cob_u32_t) 0x1677619;
 	}
 
@@ -4150,6 +4171,7 @@ hash_word (const cob_c8_t *word, const cob_u32_t mod)
 		unsigned int key;						\
 									\
 		for (key = type##_hash (word);				\
+			/* CHECKME: we should be able to use strcmp here instead of cb_strcasecmp. */ \
 			type##_map[key] && cb_strcasecmp (type##_map[key]->word_member, word); \
 			key = next_##type##_key (key));			\
 									\
@@ -5070,7 +5092,7 @@ cb_list_reserved (void)
 			}
 		} else {
 			/* specify part of DEBUG-ITEM special register as implemented, if the register is there */
-			if (strncmp("DEBUG-", reserved_word_map[j]->name, 6)
+			if (strncmp("DEBUG-", reserved_word_map[j]->name, 6) == 0
 			 && lookup_register ("DEBUG-ITEM", 0)) {
 				p = _("Yes");
 			} else if (reserved_word_map[j]->context_sens) {
@@ -5098,19 +5120,6 @@ cb_list_reserved (void)
 		putchar ('\n');
 	}
 	cobc_free (word_descriptions);
-
-	/* Output other words and registers. */
-	putchar ('\n');
-	/* FIXME: handle these as normal context sensitive words by
-		  checking in scanner.l if these are reserved */
-	puts (_("Extra (obsolete) context sensitive words"));
-	puts ("AUTHOR");
-	puts ("DATE-COMPILED");
-	puts ("DATE-MODIFIED");
-	puts ("DATE-WRITTEN");
-	puts ("INSTALLATION");
-	puts ("REMARKS");
-	puts ("SECURITY");
 
 	/* note: starts with an empty line */
 	cb_list_registers ();

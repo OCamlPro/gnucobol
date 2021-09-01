@@ -504,8 +504,6 @@ cb_check_needs_break (cb_tree stmt)
 static size_t
 cb_validate_one (cb_tree x)
 {
-	cb_tree		y;
-	struct cb_field		*f;
 
 	if (x == cb_error_node) {
 		return 1;
@@ -514,12 +512,12 @@ cb_validate_one (cb_tree x)
 		return 0;
 	}
 	if (CB_REFERENCE_P (x)) {
-		y = cb_ref (x);
+		const cb_tree	y = cb_ref (x);
 		if (y == cb_error_node) {
 			return 1;
 		}
 		if (CB_FIELD_P (y)) {
-			f = CB_FIELD (y);
+			const struct cb_field	*f = CB_FIELD (y);
 			if (f->level == 88) {
 				cb_error_x (x, _("condition-name not allowed here: '%s'"), f->name);
 				return 1;
@@ -2915,6 +2913,10 @@ cb_build_debug_item (void)
 	}
 
 	/* unreserve the DEBUG-ITEM register/reserved words */
+
+	/* FIXME: using remove_reserved_word lead to those words be still available,
+	          using remove_reserved_word_now breaks the reserved word list,
+			  effectively removing other words */
 	remove_reserved_word_now ("DEBUG-ITEM");
 	remove_reserved_word_now ("DEBUG-LINE");
 	remove_reserved_word_now ("DEBUG-NAME");

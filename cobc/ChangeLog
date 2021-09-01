@@ -1,10 +1,15 @@
 
+2021-09-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* reserved.c (default_reserved_words, cb_list_reserved), parser.y:
+	  add COMMENT paragraphs back as context-sensitive words
+	* reserved.c (cb_list_reserved): specify DEBUG-ITEM variables as
+	  implemented if defined as register
+
 2021-08-31  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (cb_build_debug_item): only build DEBUG-ITEM if defined
 	  as register and in this case unreserve overlapping reserved words
-	* reserved.c (cb_list_reserved): specify DEBUG-ITEM variables as
-	  implemented if defined as register
 
 2021-08-28  Simon Sobisch <simonsobisch@gnu.org>
 
