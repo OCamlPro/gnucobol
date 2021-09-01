@@ -131,6 +131,15 @@ reserved:	DATE-COMPILED
 reserved:	DATE-WRITTEN
 reserved:	DAY
 reserved:	DAY-AND-TIME
+# note: the following words are reserved but cannot be used - DEBUGGING module not supported
+reserved:	DEBUG-CONTENTS
+reserved:	DEBUG-ITEM
+reserved:	DEBUG-LINE
+reserved:	DEBUG-NAME
+reserved:	DEBUG-SUB-1
+reserved:	DEBUG-SUB-2
+reserved:	DEBUG-SUB-3
+# end of not included DEBUGGING module
 reserved:	DEBUGGING
 reserved:	DECIMAL-POINT
 reserved:	DECLARATIVES
@@ -433,20 +442,13 @@ reserved:	ZERO
 reserved:	ZEROES=ZERO
 reserved:	ZEROS=ZERO
 
-# registered "unused" words because these are reserved words in
+# registered more "unused" words because these are reserved words in
 # unsupported modules of ANSI 85 or other COBOL dialects:
 
 reserved:	CF
 reserved:	CH
 reserved:	CONTROLS
 reserved:	DE
-reserved:	DEBUG-CONTENTS
-reserved:	DEBUG-ITEM
-reserved:	DEBUG-LINE
-reserved:	DEBUG-NAME
-reserved:	DEBUG-SUB-1
-reserved:	DEBUG-SUB-2
-reserved:	DEBUG-SUB-3
 reserved:	DETAIL
 reserved:	FINAL
 reserved:	FUNCTION

@@ -5282,8 +5282,95 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([USE FOR DEBUGGING syntax-checks])
-AT_KEYWORDS([misc])
+AT_SETUP([USE FOR DEBUGGING syntax-checks (1)])
+AT_KEYWORDS([misc DEBUG-ITEM DEBUG-NAME DEBUG-LINE DEBUG-CONTENTS
+DEBUG-SUB-1 DEBUG-SUB-2 DEBUG-SUB-3])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION  DIVISION.
+       PROGRAM-ID.     prog.
+
+       ENVIRONMENT     DIVISION.
+       CONFIGURATION   SECTION.
+       SOURCE-COMPUTER.
+            whatever   WITH DEBUGGING MODE.
+
+       DATA            DIVISION.
+       WORKING-STORAGE SECTION.
+       01  i           PIC 9.
+
+       PROCEDURE DIVISION.
+       DECLARATIVES.
+       test-DEBUG SECTION.
+           USE FOR DEBUGGING ON ALL REFERENCES OF I
+                                MAIN.
+           DISPLAY DEBUG-ITEM.
+           DISPLAY DEBUG-NAME " AT " DEBUG-LINE " WITH " DEBUG-CONTENTS.
+           DISPLAY DEBUG-SUB-1 DEBUG-SUB-2 DEBUG-SUB-3.
+       END DECLARATIVES.
+
+       MAIN SECTION.
+           MOVE 1 TO i
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -std=cobol85 prog.cob], [0], [],
+[prog.cob: in section 'test-DEBUG':
+prog.cob:18: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+])
+AT_CHECK([$COMPILE_ONLY -std=acu-strict prog.cob], [1], [],
+[prog.cob: in section 'test-DEBUG':
+prog.cob:17: error: 'REFERENCES IN i' is not defined
+prog.cob:18: error: USE FOR DEBUGGING does not conform to ACUCOBOL-GT
+])
+AT_CHECK([$COMPILE_ONLY -std=acu-strict -fuse-for-debugging=ok -freserved=REFERENCES prog.cob], [0], [], [])
+
+# verify that DEBUG-ITEM and friends can only be used when DEBUGGING is actually active
+AT_DATA([prog2.cob], [
+       IDENTIFICATION  DIVISION.
+       PROGRAM-ID.     prog2.
+
+       ENVIRONMENT     DIVISION.
+       CONFIGURATION   SECTION.
+
+       PROCEDURE DIVISION.
+       MAIN.
+           DISPLAY DEBUG-ITEM.
+           DISPLAY DEBUG-NAME " AT " DEBUG-LINE " WITH " DEBUG-CONTENTS.
+           DISPLAY DEBUG-SUB-1 DEBUG-SUB-2 DEBUG-SUB-3.
+           STOP RUN.
+])
+AT_CHECK([$COMPILE_ONLY prog2.cob], [1], [],
+[prog2.cob: in paragraph 'MAIN':
+prog2.cob:10: error: 'DEBUG-ITEM' is not defined
+prog2.cob:11: error: 'DEBUG-NAME' is not defined
+prog2.cob:11: error: 'DEBUG-LINE' is not defined
+prog2.cob:11: error: 'DEBUG-CONTENTS' is not defined
+prog2.cob:12: error: 'DEBUG-SUB-1' is not defined
+prog2.cob:12: error: 'DEBUG-SUB-2' is not defined
+prog2.cob:12: error: 'DEBUG-SUB-3' is not defined
+])
+AT_CHECK([$COMPILE_ONLY -std=cobol85 prog2.cob], [1], [],
+[prog2.cob: in paragraph 'MAIN':
+prog2.cob:11: error: 'DEBUG-NAME' is a reserved word, but isn't supported
+prog2.cob:11: error: 'DEBUG-NAME' cannot be used here
+prog2.cob:11: error: 'DEBUG-LINE' is a reserved word, but isn't supported
+prog2.cob:11: error: 'DEBUG-LINE' cannot be used here
+prog2.cob:11: error: 'DEBUG-CONTENTS' is a reserved word, but isn't supported
+prog2.cob:11: error: 'DEBUG-CONTENTS' cannot be used here
+prog2.cob:12: error: 'DEBUG-SUB-1' is a reserved word, but isn't supported
+prog2.cob:12: error: 'DEBUG-SUB-2' is a reserved word, but isn't supported
+prog2.cob:12: error: 'DEBUG-SUB-1' cannot be used here
+prog2.cob:12: error: 'DEBUG-SUB-3' is a reserved word, but isn't supported
+prog2.cob:12: error: 'DEBUG-SUB-2' cannot be used here
+prog2.cob:12: error: 'DEBUG-SUB-3' cannot be used here
+])
+AT_CLEANUP
+
+
+AT_SETUP([USE FOR DEBUGGING syntax-checks (2)])
+AT_KEYWORDS([misc DEBUG-ITEM DEBUG-LINE])
 
 # TODO: still need tests/checks (3.2.3 Syntax Rules 9+11):
 # 09 Identifier must not reference any data item defined in the Report
@@ -5335,6 +5422,7 @@ prog.cob:22: warning: 'MAIN' is not in DECLARATIVES
 prog.cob:22: error: 'TEST-DEBUG2' may only be referenced with PERFORM
 prog.cob:19: error: DEBUGGING target invalid: 'test-DEBUG'
 prog.cob: in section 'TEST-DEBUG2':
+prog.cob:24: error: duplicate DEBUGGING target: 'i'
 prog.cob:25: error: DEBUGGING target invalid: 'test-DEBUG'
 prog.cob: in section 'MAIN':
 prog.cob:31: warning: 'test-DEBUG' is in DECLARATIVES
@@ -5346,6 +5434,7 @@ prog.cob:22: error: 'MAIN' is not in DECLARATIVES
 prog.cob:22: error: 'TEST-DEBUG2' may only be referenced with PERFORM
 prog.cob:19: error: DEBUGGING target invalid: 'test-DEBUG'
 prog.cob: in section 'TEST-DEBUG2':
+prog.cob:24: error: duplicate DEBUGGING target: 'i'
 prog.cob:25: error: DEBUGGING target invalid: 'test-DEBUG'
 prog.cob: in section 'MAIN':
 prog.cob:31: error: 'test-DEBUG' is in DECLARATIVES

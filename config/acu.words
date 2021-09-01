@@ -157,7 +157,7 @@ reserved:	COLUMN-DIVIDERS*
 reserved:	COLUMN-FONT*
 reserved:	COLUMN-HEADINGS*
 reserved:	COLUMN-PROTECTION*
-reserved:	COM-REG # Note: ACUCOBOL explicitly does not support this register.
+reserved:	COM-REG     # Note: ACUCOBOL explicitly does not support this register.
 reserved:	COMBO-BOX*
 reserved:	COMMA
 reserved:	COMMAND-LINE
@@ -172,7 +172,7 @@ reserved:	COMP-6
 reserved:	COMP-N
 reserved:	COMP-X
 reserved:	COMPRESSION
-reserved:	COMPUTATIONAL=COMP-
+reserved:	COMPUTATIONAL=COMP
 reserved:	COMPUTATIONAL-1=COMP-1
 reserved:	COMPUTATIONAL-2=COMP-2
 reserved:	COMPUTATIONAL-3=COMP-3

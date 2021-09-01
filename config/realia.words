@@ -144,6 +144,7 @@ reserved:	DAY-OF-WEEK
 reserved:	DBCS
 reserved:	DE
 reserved:	DEBUG
+# note: the following words are reserved but cannot be used - DEBUGGING module not supported
 reserved:	DEBUG-CONTENTS
 reserved:	DEBUG-ITEM
 reserved:	DEBUG-LINE
@@ -151,6 +152,7 @@ reserved:	DEBUG-NAME
 reserved:	DEBUG-SUB-1
 reserved:	DEBUG-SUB-2
 reserved:	DEBUG-SUB-3
+# end of not included DEBUGGING module
 reserved:	DEBUGGING
 reserved:	DECIMAL-POINT
 reserved:	DECLARATIVES

@@ -1,4 +1,11 @@
 
+2021-08-31  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_debug_item): only build DEBUG-ITEM if defined
+	  as register and in this case unreserve overlapping reserved words
+	* reserved.c (cb_list_reserved): specify DEBUG-ITEM variables as
+	  implemented if defined as register
+
 2021-08-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (cb_build_assignment_name): fix SELECT filename ASSIGN filename
@@ -21,6 +28,8 @@
 	* config.c (cb_load_std): fixed old error passing enum instead of int
 	* parser.y: minor adjustments to USE handling
 	* pplex.l: drop "spurious $" in col 7 rule, fixing bug #577
+	* reserved.c, tree.h: added functions BIT-OF, BIT-TO-CHAR,
+	  HEX-OF, HEX-TO-CHAR as unimplemented
 
 2021-07-07  Simon Sobisch <simonsobisch@gnu.org>
 

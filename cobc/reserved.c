@@ -3078,7 +3078,7 @@ static size_t current_register = 0;
 static struct register_struct	register_list[] = {
 	{"ADDRESS OF", "USAGE POINTER", CB_FEATURE_ACTIVE},		/* FIXME: currently not handled the "normal" register way */
 	{"COB-CRT-STATUS", "PICTURE 9(4) USAGE DISPLAY VALUE ZERO", CB_FEATURE_ACTIVE},	/* FIXME: currently not handled the "normal" register way */
-	{"DEBUG-ITEM", "PICTURE X(n) USAGE DISPLAY", CB_FEATURE_ACTIVE},	/* FIXME: currently not handled the "normal" register way */
+	{"DEBUG-ITEM", "PICTURE X(n) USAGE DISPLAY", CB_FEATURE_ACTIVE},	/* not to be handled the "normal" register way, dending on use use of DEBUGGING code */
 	{"LENGTH OF", "CONSTANT USAGE BINARY-LONG", CB_FEATURE_ACTIVE},	/* FIXME: currently not handled the "normal" register way */
 	{"NUMBER-OF-CALL-PARAMETERS", "USAGE BINARY-LONG", CB_FEATURE_ACTIVE},	/* OpenCOBOL / GnuCOBOL extension, at least from 1.0+ */
 	{"RETURN-CODE", "GLOBAL USAGE BINARY-LONG VALUE ZERO", CB_FEATURE_ACTIVE},
@@ -3142,6 +3142,18 @@ static struct cb_intrinsic_table function_list[] = {
 					CB_FEATURE_ACTIVE,	1, 1,
 					CB_CATEGORY_NUMERIC, 0
   },
+  /* IBM ENT */
+  { "BIT-OF",		"cob_intr_bit_of",
+					CB_INTR_BIT_OF, FUNCTION_NAME,
+					CB_FEATURE_NOT_IMPLEMENTED,	1, 1,
+					CB_CATEGORY_ALPHANUMERIC, 0
+  },
+  /* IBM ENT */
+  { "BIT-TO-CHAR",		"cob_intr_bit_to_char",
+					CB_INTR_BIT_TO_CHAR, FUNCTION_NAME,
+					CB_FEATURE_NOT_IMPLEMENTED,	1, 1,
+					CB_CATEGORY_ALPHANUMERIC, 0
+  },
   { "BOOLEAN-OF-INTEGER",		"cob_intr_boolean_of_integer",
 					CB_INTR_BOOLEAN_OF_INTEGER, FUNCTION_NAME,
 					CB_FEATURE_NOT_IMPLEMENTED,	2, 2,
@@ -3183,6 +3195,7 @@ static struct cb_intrinsic_table function_list[] = {
 					/* Note: category changed to alphabetic/national
 					   depending on the content, see cb_build_intrinsic */
   },
+  /* GnuCOBOL */
   { "CONTENT-LENGTH",			"cob_intr_content_length",
 					CB_INTR_CONTENT_LENGTH, CONTENT_LENGTH_FUNC,
 					CB_FEATURE_ACTIVE,	1, 1,
@@ -3318,6 +3331,18 @@ static struct cb_intrinsic_table function_list[] = {
 					CB_INTR_FRACTION_PART, FUNCTION_NAME,
 					CB_FEATURE_ACTIVE,	1, 1,
 					CB_CATEGORY_NUMERIC, 0
+  },
+  /* IBM ENT */
+  { "HEX-OF",		"cob_intr_hex_of",
+					CB_INTR_HEX_OF, FUNCTION_NAME,
+					CB_FEATURE_NOT_IMPLEMENTED,	1, 1,
+					CB_CATEGORY_ALPHANUMERIC, 0
+  },
+  /* IBM ENT */
+  { "HEX-TO-CHAR",		"cob_intr_hex_to_char",
+					CB_INTR_HEX_TO_CHAR, FUNCTION_NAME,
+					CB_FEATURE_NOT_IMPLEMENTED,	1, 1,
+					CB_CATEGORY_ALPHANUMERIC, 0
   },
   { "HIGHEST-ALGEBRAIC",		"cob_intr_highest_algebraic",
 					CB_INTR_HIGHEST_ALGEBRAIC, FUNCTION_NAME,
@@ -4751,7 +4776,7 @@ lookup_register (const char *name, const int checkimpl)
 	for (i = 0; i < NUM_REGISTERS; ++i) {
 		/* For efficiency, we use strcmp instead of cb_strcasecmp. */
 		if (strcmp (register_list[i].name, upper_name) == 0) {
-			if (checkimpl || register_list[i].active == CB_FEATURE_MUST_BE_ENABLED) {
+			if (checkimpl || register_list[i].active != CB_FEATURE_MUST_BE_ENABLED) {
 				return &register_list[i];
 			}
 			break;
@@ -5044,7 +5069,11 @@ cb_list_reserved (void)
 				p = _("Yes");
 			}
 		} else {
-			if (reserved_word_map[j]->context_sens) {
+			/* specify part of DEBUG-ITEM special register as implemented, if the register is there */
+			if (strncmp("DEBUG-", reserved_word_map[j]->name, 6)
+			 && lookup_register ("DEBUG-ITEM", 0)) {
+				p = _("Yes");
+			} else if (reserved_word_map[j]->context_sens) {
 				p = _("No (Context sensitive)");
 			} else {
 				p = _("No");

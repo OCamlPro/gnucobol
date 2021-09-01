@@ -2909,6 +2909,20 @@ cb_build_debug_item (void)
 	cb_tree			x;
 	cb_tree			lvl01_tree;
 
+	/* check if it is actually available - for example not the case for ACU */
+	if (!cb_get_register_definition ("DEBUG-ITEM")) {
+		return;
+	}
+
+	/* unreserve the DEBUG-ITEM register/reserved words */
+	remove_reserved_word_now ("DEBUG-ITEM");
+	remove_reserved_word_now ("DEBUG-LINE");
+	remove_reserved_word_now ("DEBUG-NAME");
+	remove_reserved_word_now ("DEBUG-SUB-1");
+	remove_reserved_word_now ("DEBUG-SUB-2");
+	remove_reserved_word_now ("DEBUG-SUB-3");
+	remove_reserved_word_now ("DEBUG-CONTENTS");
+
 	/* Set up DEBUG-ITEM */
 	l = cb_build_reference ("DEBUG-ITEM");
 	lvl01_tree = cb_build_field_tree (NULL, l, NULL, CB_STORAGE_WORKING,
@@ -3217,11 +3231,7 @@ create_implicit_assign_dynamic_var (struct cb_program * const prog,
 #endif
 	x = CB_TREE (build_literal (CB_CATEGORY_ALPHANUMERIC, assign_name, strlen (assign_name)));
 	p->values = CB_LIST_INIT (x);
-	if (prog->working_storage) {
-		CB_FIELD_ADD (prog->working_storage, p);
-	} else {
-		prog->working_storage = p;
-	}
+	CB_FIELD_ADD (prog->working_storage, p);
 }
 
 static void
@@ -5193,8 +5203,9 @@ cb_build_optim_cond (struct cb_binary_op *p)
 			p->x,
 			cb_build_cast_llint (p->y));
 	}
-	if (f->usage == CB_USAGE_DISPLAY &&
-	    !f->flag_sign_leading && !f->flag_sign_separate) {
+	if (f->usage == CB_USAGE_DISPLAY
+	 && !f->flag_sign_leading
+	 && !f->flag_sign_separate) {
 		if (cb_fits_long_long (p->x)) {
 			return CB_BUILD_FUNCALL_4 ("cob_cmp_numdisp",
 				CB_BUILD_CAST_ADDRESS (p->x),
@@ -10477,8 +10488,8 @@ cb_emit_perform (cb_tree perform, cb_tree body, cb_tree newthread, cb_tree handl
 		cb_error_x (handle, _("HANDLE must be either a generic or a THREAD HANDLE"));
 		return;
 	}
-	if (current_program->flag_debugging &&
-	    !current_statement->flag_in_debug && body && CB_PAIR_P (body)) {
+	if (current_program->flag_debugging
+	 && !current_statement->flag_in_debug && body && CB_PAIR_P (body)) {
 		cb_emit (cb_build_debug (cb_debug_contents, "PERFORM LOOP", NULL));
 	}
 
