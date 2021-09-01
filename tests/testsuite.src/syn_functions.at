@@ -1,4 +1,4 @@
-## Copyright (C) 2007-2012, 2014-2018, 2020 Free Software Foundation, Inc.
+## Copyright (C) 2007-2012, 2014-2018, 2020-2021 Free Software Foundation, Inc.
 ## Written by Roger While, Simon Sobisch, Edward Hart
 ##
 ## This file is part of GnuCOBOL.
@@ -263,14 +263,14 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE  SECTION.
        PROCEDURE        DIVISION.
            DISPLAY FUNCTION ABS (1).
-           DISPLAY FUNCTION TRIM (" some text here").
+           DISPLAY FUNCTION STORED-CHAR-LENGTH (" some text here").
            DISPLAY FUNCTION SUBSTITUTE ('some text' 'some' 'nice').
            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
 AT_CHECK([$COMPILE_ONLY -std=acu-strict prog.cob], [1], [],
-[prog.cob:9: error: FUNCTION 'TRIM' unknown
+[prog.cob:9: error: FUNCTION 'STORED-CHAR-LENGTH' unknown
 prog.cob:10: error: FUNCTION 'SUBSTITUTE' unknown
 ])
 
