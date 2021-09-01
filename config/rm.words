@@ -98,7 +98,7 @@ reserved:	COMP-3
 reserved:	COMP-4
 reserved:	COMP-5
 reserved:	COMP-6
-reserved:	COMPUTATIONAL=COM
+reserved:	COMPUTATIONAL=COMP
 reserved:	COMPUTATIONAL-1=COMP-1
 reserved:	COMPUTATIONAL-3=COMP-3
 reserved:	COMPUTATIONAL-4=COMP-4

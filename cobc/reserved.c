@@ -4581,7 +4581,7 @@ add_reserved_word_now (char * const word, char * const alias_for)
 }
 
 void
-remove_reserved_word_now (char * const word)
+remove_reserved_word_now (const char * const word)
 {
 	remove_reserved_word_from_map (word);
 }

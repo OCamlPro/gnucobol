@@ -5353,6 +5353,7 @@ prog2.cob:12: error: 'DEBUG-SUB-3' is not defined
 ])
 AT_CHECK([$COMPILE_ONLY -std=cobol85 prog2.cob], [1], [],
 [prog2.cob: in paragraph 'MAIN':
+prog2.cob:10: error: 'DEBUG-ITEM' is not defined
 prog2.cob:11: error: 'DEBUG-NAME' is a reserved word, but isn't supported
 prog2.cob:11: error: 'DEBUG-NAME' cannot be used here
 prog2.cob:11: error: 'DEBUG-LINE' is a reserved word, but isn't supported

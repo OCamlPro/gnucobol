@@ -106,12 +106,12 @@ reserved:	COMP-2
 reserved:	COMP-3
 reserved:	COMP-4
 reserved:	COMP-5
-reserved:	COMPUTATIONAL=COM
+reserved:	COMPUTATIONAL=COMP
 reserved:	COMPUTATIONAL-1=COMP-1
 reserved:	COMPUTATIONAL-2=COMP-2
 reserved:	COMPUTATIONAL-3=COMP-3
 reserved:	COMPUTATIONAL-4=COMP-4
-reserved:	COMPUTATIONAL-5=COMP-
+reserved:	COMPUTATIONAL-5=COMP-5
 reserved:	COMPUTE
 reserved:	CONFIGURATION
 reserved:	CONTAINS
