@@ -4603,7 +4603,7 @@ AT_DATA([prog.cob], [
 
            *> Valid
            $SET ADDRSV"DOG""CAT"
-
+           $SET ADD-RSV  "doggy" "catty"
            *> Valid
            $SET ADD-SYN "VALUE" = "VA"
            *> Bread is not reserved.
@@ -4615,7 +4615,7 @@ AT_DATA([prog.cob], [
            $SET MAKESYN(PROGRAM) = (FUNCTION)
            *> BREAD is not reserved.
            $SET MAKESYN "BREAD" = "PROGRAM"
-           $SET MAKESYN "PROGRAM" = "BREAD"
+           $SET MAKE-SYN "program" = "bread"
 
            *> Valid
            $SET OVERRIDE "DIVISION" = "DIV" "JUST" = "JS"
@@ -4636,6 +4636,9 @@ AT_DATA([prog.cob], [
        *> Check REMOVE
        01  dog PIC 9 VA 1.
 ])
+
+# TODO: add checks for valid reserved word names,
+#       ideally with implementing COBOL-WORDS directive (COBOL 202x)
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:11: error: 'BREAD' is not a default reserved word, so cannot be aliased

@@ -900,7 +900,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
   },
   { "DEFAULT-FONT",		0, 0, DEFAULT_FONT,		/* ACU extension */
-				0, 0				/* Checkme: likely context sensitive */
+				0, 0				/* CHECKME: likely context sensitive */
   },
   { "DELETE",			1, 0, DELETE,			/* 2002 */
 				0, 0
@@ -1275,7 +1275,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, CB_CS_RECORDING
   },
   { "FIXED-FONT",		0, 0, FIXED_FONT,		/* ACU extension */
-				0, 0				/* Checkme: likely context sensitive */
+				0, 0				/* CHECKME: likely context sensitive */
   },
   { "FIXED-WIDTH",		0, 1, FIXED_WIDTH,		/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
@@ -1330,7 +1330,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, CB_CS_DISPLAY
   },
   { "FONT",			0, 0, FONT,			/* ACU extension */
-				0, 0				/* Checkme: likely context sensitive */
+				0, 0				/* CHECKME: likely context sensitive */
   },
   { "FOOTING",			0, 0, FOOTING,			/* 2002 */
 				0, 0
@@ -1617,7 +1617,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
   },
   { "LARGE-FONT",		0, 0, LARGE_FONT,		/* ACU extension */
-				0, 0				/* Checkme: likely context sensitive */
+				0, 0				/* CHECKME: likely context sensitive */
   },
   { "LARGE-OFFSET",			0, 1, LARGE_OFFSET,			/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
@@ -1719,7 +1719,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				CB_CS_GRAPHICAL_CONTROL, CB_CS_DISPLAY | CB_CS_SCREEN
   },
   { "LM-RESIZE",		0, 0, LM_RESIZE,		/* ACU extension */
-				0, 0				/* Checkme: likely context sensitive */
+				0, 0				/* CHECKME: likely context sensitive */
   },
   { "LOC",		0, 1, LOC,		/* IBM extension (ignored) */
 				0, CB_CS_ALLOCATE
@@ -1780,13 +1780,13 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
   },
   { "MEDIUM-FONT",		0, 0, MEDIUM_FONT,		/* ACU extension */
-				0, 0				/* Checkme: likely context sensitive */
+				0, 0				/* CHECKME: likely context sensitive */
   },
   { "MEMORY",			0, 1, MEMORY,			/* 85 */
 				0, CB_CS_OBJECT_COMPUTER
   },
   { "MENU",			0, 0, MENU,			/* ACU extension */
-				0, 0				/* Checkme: likely context sensitive */
+				0, 0				/* CHECKME: likely context sensitive */
   },
   { "MERGE",			0, 0, MERGE,			/* 2002 */
 				0, 0
@@ -2157,7 +2157,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, 0
   },
   { "PRIORITY",			0, 0, PRIORITY,			/* ACU extension */
-				0, 0				/* Checkme: likely context sensitive */
+				0, 0				/* CHECKME: likely context sensitive */
   },
   { "PROCEDURE",		0, 0, PROCEDURE,		/* 2002 */
 				0, 0
@@ -2574,7 +2574,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, 0
   },
   { "SMALL-FONT",		0, 0, SMALL_FONT,		/* ACU extension */
-				0, 0				/* Checkme: likely context sensitive */
+				0, 0				/* CHECKME: likely context sensitive */
   },
   { "SORT",			0, 0, SORT,			/* 2002 */
 				0, 0
@@ -2686,7 +2686,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, 0
   },
   { "SUBWINDOW",		0, 0, SUBWINDOW,		/* ACU extension */
-				0, 0				/* Checkme: likely context sensitive */
+				0, 0				/* CHECKME: likely context sensitive */
   },
   { "SUM",			0, 0, SUM,			/* 2002 */
 				0, 0
@@ -2822,7 +2822,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, CB_CS_SELECT
   },
   { "TRADITIONAL-FONT",		0, 0, TRADITIONAL_FONT,		/* ACU extension */
-				0, 0					/* Checkme: likely context sensitive */
+				0, 0					/* CHECKME: likely context sensitive */
   },
   { "TRAILING",			0, 0, TRAILING,			/* 2002 */
 				0, 0
@@ -3779,6 +3779,21 @@ struct list_reserved_line {
 
 /* Local functions */
 
+
+/*
+  Upper-casing for reserved words.
+  We use cob_lower_tab instead of toupper for efficiency.
+*/
+static COB_INLINE COB_A_INLINE unsigned char
+cb_toupper (unsigned char c)
+{
+	if (cob_lower_tab[c]) {
+		return cob_lower_tab[c];
+	}
+	return c;
+}
+
+/* comparisions _for reserved words_ */
 static int
 cb_strcasecmp (const void *s1, const void *s2)
 {
@@ -3791,17 +3806,8 @@ cb_strcasecmp (const void *s1, const void *s2)
 	p2 = (const unsigned char *)s2;
 
 	for (;;) {
-		if (cob_lower_tab[*p1]) {
-			c1 = cob_lower_tab[*p1++];
-		} else {
-			c1 = *p1++;
-		}
-
-		if (cob_lower_tab[*p2]) {
-			c2 = cob_lower_tab[*p2++];
-		} else {
-			c2 = *p2++;
-		}
+		c1 = cb_toupper (*p1++);
+		c2 = cb_toupper (*p2++);
 
 		if (c1 != c2) {
 			return c1 < c2 ? -1 : 1;
@@ -3890,39 +3896,47 @@ has_context_sensitive_indicator (const char *word, const size_t size)
 }
 
 /*
-  Copy the first len characters of source, uppercased, to dest. We use
-  cob_lower_tab instead of toupper for efficiency.
+  For reserved words/registers/intrinsics: Copy the first len characters of source,
+  uppercased, to dest. We use cob_lower_tab instead of toupper for efficiency.
 */
-static void
-strncpy_upper (char *dest, const char * const source, const size_t len)
+void
+cb_strncpy_upper (char *dest, const char * source, size_t len)
 {
-	size_t	i;
-
-	for (i = 0; i < len; ++i) {
-		if (cob_lower_tab[(int)source[i]]) {
-			dest[i] = cob_lower_tab[(int)source[i]];
-		} else {
-			dest[i] = source[i];
-		}
+	while (len--) {
+		*dest++ = cb_toupper(*source++);
 	}
+}
+
+#if 0 /* unused */
+/* in-place upper-casing for reserved words/registers/intrinsics */
+static void
+cb_strupr (char *s) {
+	while (*s) {
+		*s = cb_toupper (*s);
+		s++;
+	}
+}
+#endif
+
+static void
+allocate_upper_case_str (const char *word, const size_t size,
+					   char ** const out_str)
+{
+	*out_str = cobc_main_malloc (size + 1U);
+	cb_strncpy_upper (*out_str, word, size);
+	(*out_str)[size] = '\0';
 }
 
 static void
 allocate_upper_case_str_removing_asterisk (const char *word, const size_t size,
 					   char ** const out_str)
 {
-	size_t	chars_to_copy;
-
 	if (has_context_sensitive_indicator (word, size)) {
 		/* Don't copy the trailing asterisk */
-		chars_to_copy = size - 1;
+		allocate_upper_case_str (word, size - 1, out_str);
 	} else {
-		chars_to_copy = size;
+		allocate_upper_case_str (word, size, out_str);
 	}
-
-	*out_str = cobc_main_malloc (chars_to_copy + 1U);
-	strncpy_upper (*out_str, word, chars_to_copy);
-	(*out_str)[chars_to_copy] = '\0';
 }
 
 static COB_INLINE COB_A_INLINE void
@@ -3933,19 +3947,37 @@ initialize_word (const char *word, const size_t size,
 }
 
 static int
-is_invalid_word (const char *word, const int size,
+is_invalid_word (const char *word, const int size, const int space_allowed,
 		 const char *fname, const int line)
 {
 	/* FIXME: Should use the current (dialect specific) maximum word length,
 	          not the absolute maximum, check order of reading and add test case */
 	if (size > COB_MAX_WORDLEN) {
 		configuration_error (fname, line, 1,
-				     _("reserved word must have less than %d characters"),
-				     COB_MAX_WORDLEN);
+				     _("reserved word (%s) must have less than %d characters"),
+				     word, COB_MAX_WORDLEN);
 		return 1;
 	}
-	/* TO-DO: add more checks here */
-	COB_UNUSED(word);
+
+	{
+		size_t i = 0;
+		while (i < size) {
+			const char c = cb_toupper(word[i++]);
+			if ((c >= 'A' && c <= 'Z')
+			 || (c >= '0' && c <= '9')
+			 ||  c == '-' || c == '_' ) {
+				continue;
+			}
+			if (c == ' ' && space_allowed) {
+				if (i == 1 || word[i-2] != ' ') {
+					continue;
+				}
+			}
+			configuration_error (fname, line, 1,
+						 _("reserved word (%s) may not contain '%c'"), word, c);
+			return 1;
+		}
+	}
 	return 0;
 }
 
@@ -3961,7 +3993,7 @@ initialize_alias_for (const char *alias_for,
 		configuration_warning (fname, line,
 			_("ignored asterisk at end of alias target"));
 	}
-	if (is_invalid_word (alias_for, size, fname, line)) {
+	if (is_invalid_word (alias_for, size, 0, fname, line)) {
 		reserved->alias_for = NULL;
 	} else {
 		allocate_upper_case_str_removing_asterisk (alias_for, size, &reserved->alias_for);
@@ -3978,13 +4010,13 @@ search_reserved_list (const char * const word, const int needs_uppercasing,
 	struct cobc_reserved    to_find;
 
 	if (needs_uppercasing) {
-		word_len = strlen (word);
-		if (word_len > sizeof(upper_word) - 1) {
+		word_len = strlen (word) + 1;
+		if (word_len > sizeof(upper_word)) {
 			return NULL;
 		}
 
 		/* copy including terminating byte */
-		strncpy_upper (upper_word, word, word_len + 1);
+		cb_strncpy_upper (upper_word, word, word_len);
 		sought_word = upper_word;
 	} else {
 		sought_word = word;
@@ -4122,6 +4154,7 @@ reduce_amendment_list (struct amendment_list **amendment_list)
 	}
 }
 
+/* hash function for _reserved words/intrinsics/..._ (no extended letters!) */
 static int
 hash_word (const cob_c8_t *word, const cob_u32_t mod)
 {
@@ -4129,7 +4162,8 @@ hash_word (const cob_c8_t *word, const cob_u32_t mod)
 
 	/* Perform 32-bit FNV1a hash */
 	for (; *word; ++word) {
-		result ^= toupper (*word);	/* CHECKME: all input should be upper-case already */
+		/* CHECKME: all input should be upper-case already, but isn't */
+		result ^= cb_toupper (*word);
 		result *= (cob_u32_t) 0x1677619;
 	}
 
@@ -4171,7 +4205,7 @@ hash_word (const cob_c8_t *word, const cob_u32_t mod)
 		unsigned int key;						\
 									\
 		for (key = type##_hash (word);				\
-			/* CHECKME: we should be able to use strcmp here instead of cb_strcasecmp. */ \
+			/* FIXME: we currently cannot use strcmp here instead of cb_strcasecmp. */ \
 			type##_map[key] && cb_strcasecmp (type##_map[key]->word_member, word); \
 			key = next_##type##_key (key));			\
 									\
@@ -4243,28 +4277,23 @@ hash_word (const cob_c8_t *word, const cob_u32_t mod)
 		return entry_already_there;				\
 	}
 
+HASHMAP (reserved_word, cobc_reserved, name)
+HASHMAP (amendment, amendment_list, word)
+
 /* These functions are separate to suppress "unused function" warnings. */
-#define HASHMAP_EXTRA(type, type_struct)			\
-	static void						\
-	remove_##type##_from_map (const char * const word)	\
-	{							\
-		int	key = find_key_for_##type (word);	\
-								\
-		if (type##_map[key]) {				\
-			delete_##type##_with_key (key);		\
-		}						\
-	}							\
-	static struct type_struct *				\
-	find_##type (const char * const word)			\
-	{							\
-		return type##_map[find_key_for_##type (word)];	\
-	}							\
-								\
-
-
-HASHMAP(reserved_word, cobc_reserved, name)
-HASHMAP_EXTRA(reserved_word, cobc_reserved)
-HASHMAP(amendment, amendment_list, word)
+static void
+remove_reserved_word_from_map (const char * const word)
+{
+	int	key = find_key_for_reserved_word (word);
+	if (reserved_word_map[key]) {
+		delete_reserved_word_with_key (key);
+	}
+}
+static struct cobc_reserved *
+find_reserved_word (const char * const word)
+{
+	return reserved_word_map[find_key_for_reserved_word (word)];
+}
 
 static void
 get_reserved_words_with_amendments (void)
@@ -4282,8 +4311,7 @@ get_reserved_words_with_amendments (void)
 		*/
 		for (i = 0; i < NUM_DEFAULT_RESERVED_WORDS; ++i) {
 			amendment = cobc_main_malloc (sizeof (struct amendment_list));
-			amendment->word = cobc_main_malloc (strlen (default_reserved_words[i].name) + 1);
-			strcpy (amendment->word, default_reserved_words[i].name);
+			amendment->word = cobc_main_strdup (default_reserved_words[i].name);
 			amendment->to_add = 1;
 			amendment->is_context_sensitive = default_reserved_words[i].context_sens;
 
@@ -4544,7 +4572,7 @@ add_amendment (const char *word, const char *fname, const int line,
 	  means the entry came from the command line. Line -1 means it came from
 	  the default word list.
 	*/
-	if (line >= 0 && is_invalid_word (word, size, fname, line)) {
+	if (line >= 0 && is_invalid_word (word, size, 0, fname, line)) {
 		return;
 	}
 
@@ -4567,13 +4595,33 @@ add_amendment (const char *word, const char *fname, const int line,
 void
 add_reserved_word (const char *word, const char *fname, const int line)
 {
-	add_amendment (word, fname, line, 1);
+	char upper_word[COB_MAX_WORDLEN + 1];
+	size_t word_len = strlen (word) + 1;
+	if (word_len > sizeof (upper_word)) {
+		return;
+	}
+	cb_strncpy_upper (upper_word, word, word_len);
+	add_amendment (upper_word, fname, line, 1);
+}
+
+static void
+remove_reserved_word_internal (const char *upper_word, const char *fname, const int line)
+{
+	add_amendment (upper_word, fname, -1, 0);	/* "line" -1 as we don't want any check here */
 }
 
 void
 remove_reserved_word (const char *word, const char *fname, const int line)
 {
-	add_amendment (word, fname, line, 0);
+	char upper_word[COB_MAX_WORDLEN + 1];
+	size_t word_len = strlen(word) + 1;
+	if (word_len > sizeof (upper_word)) {
+		return;
+	}
+	cb_strncpy_upper (upper_word, word, word_len);
+	remove_reserved_word_internal(upper_word, fname, word_len);
+
+	add_amendment (upper_word, fname, line, 0);
 }
 
 /* add reserved word to the current list, called as "target" of
@@ -4608,6 +4656,8 @@ remove_reserved_word_now (const char * const word)
 	remove_reserved_word_from_map (word);
 }
 
+/* lookup function for the scanner to get the reserved-word toke
+   for a given word (or NULL) */
 struct cobc_reserved *
 lookup_reserved_word (const char *name)
 {
@@ -4692,7 +4742,7 @@ lookup_intrinsic (const char *name, const int checkimpl)
 	}
 
 	/* copy including terminating byte */
-	strncpy_upper (upper_name, name, name_len + 1);
+	cb_strncpy_upper (upper_name, name, name_len + 1);
 
 	cbp = bsearch (upper_name, function_list, NUM_INTRINSICS,
 		sizeof (struct cb_intrinsic_table), intrinsic_comp);
@@ -4782,18 +4832,9 @@ cb_list_intrinsics (void)
 }
 
 static struct register_struct *
-lookup_register (const char *name, const int checkimpl)
+lookup_register_internal (const char *upper_name, const int checkimpl)
 {
 	size_t		i;
-	static char	upper_name[43];
-	size_t		name_len = strlen (name);
-
-	if (name_len > sizeof (upper_name) - 1) {
-		return NULL;
-	}
-
-	/* copy including terminating byte */
-	strncpy_upper (upper_name, name, name_len + 1);
 
 	for (i = 0; i < NUM_REGISTERS; ++i) {
 		/* For efficiency, we use strcmp instead of cb_strcasecmp. */
@@ -4807,6 +4848,21 @@ lookup_register (const char *name, const int checkimpl)
 	return NULL;
 }
 
+static struct register_struct *
+lookup_register (const char *name, const int checkimpl)
+{
+	static char	upper_name[43];
+	size_t		name_len = strlen (name);
+
+	if (name_len > sizeof (upper_name) - 1) {
+		return NULL;
+	}
+
+	/* copy including terminating byte */
+	cb_strncpy_upper (upper_name, name, name_len + 1);
+	return lookup_register_internal (upper_name, checkimpl);
+}
+
 /* add an entry to the register list, currently the definition is ignored,
    TODO: check definition and add a new special register accordingly */
 
@@ -4817,6 +4873,8 @@ add_register (const char *name_and_definition, const char *fname, const int line
 	int		i;
 	char		*definition;
 	struct register_struct *special_register;
+	char upper_name[COB_MAX_WORDLEN + 1];
+	size_t name_len;
 
 	/* Enable all registers, if requested. */
 	if (cb_strcasecmp (name, "DIALECT-ALL") == 0) {
@@ -4825,7 +4883,7 @@ add_register (const char *name_and_definition, const char *fname, const int line
 				/* TODO: add register here */
 				register_list[i].active = CB_FEATURE_ACTIVE;
 				/* Disable reserved word with same name. */
-				remove_reserved_word (register_list[i].name, fname, line);
+				remove_reserved_word_internal (register_list[i].name, fname, line);
 			}
 		}
 		return;
@@ -4840,7 +4898,14 @@ add_register (const char *name_and_definition, const char *fname, const int line
 		*definition++ = 0;
 	}
 
-	special_register = lookup_register (name, 1);
+	name_len = strlen (name);
+	if (is_invalid_word (name, name_len, 1, fname, line)) {
+		return;
+	}
+	/* copy including terminating byte */
+	cb_strncpy_upper (upper_name, name, name_len + 1);
+
+	special_register = lookup_register_internal (upper_name, 1);
 	if (!special_register) {
 		if (!definition || *definition == 0) {
 			configuration_error (fname, line, 1,
@@ -4857,7 +4922,7 @@ add_register (const char *name_and_definition, const char *fname, const int line
 	special_register->active = CB_FEATURE_ACTIVE;
 
 	/* Disable reserved word with same name. */
-	remove_reserved_word (name, fname, line);
+	remove_reserved_word_internal (name, fname, line);
 }
 
 void
@@ -4876,11 +4941,14 @@ remove_register (const char *name, const char *fname, const int line)
 				   memory cleanup here */
 				register_list[i].active = CB_FEATURE_DISABLED;
 				/* Disable reserved word with same name. */
-				remove_reserved_word (register_list[i].name, fname,
+				remove_reserved_word_internal (register_list[i].name, fname,
 					line);
 			}
 		}
 	} else {
+		if (strlen (name) > COB_MAX_WORDLEN) {
+			return;
+		}
 		special_register = lookup_register (name, 1);
 		if (!special_register) {
 			return;
@@ -4889,7 +4957,7 @@ remove_register (const char *name, const char *fname, const int line)
 		   cleanup here */
 		special_register->active = CB_FEATURE_DISABLED;
 		/* Disable reserved word with same name. */
-		remove_reserved_word (name, fname, line);
+		remove_reserved_word_internal (special_register->name, fname, line);
 	}
 }
 
@@ -5093,7 +5161,7 @@ cb_list_reserved (void)
 		} else {
 			/* specify part of DEBUG-ITEM special register as implemented, if the register is there */
 			if (strncmp("DEBUG-", reserved_word_map[j]->name, 6) == 0
-			 && lookup_register ("DEBUG-ITEM", 0)) {
+			 && lookup_register_internal ("DEBUG-ITEM", 0)) {
 				p = _("Yes");
 			} else if (reserved_word_map[j]->context_sens) {
 				p = _("No (Context sensitive)");

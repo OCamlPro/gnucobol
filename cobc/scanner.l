@@ -2235,21 +2235,23 @@ freevar:
 
 /*
   For yytext of the form '#directive "a-word"' or '#directive
-  (a-word)', copy a-word into word.
+  (a-word)', copy a-word into word, converting it to upper-case.
 */
 static void
 copy_word_in_quotes (char ** const word)
 {
 	char	*text = cobc_strdup (yytext);
 	char	*word_str;
+	size_t	word_len;
 
 	/* Skip directive */
 	word_str = strtok (text, " ");
 
 	/* Get word and remove quotes */
 	word_str = strtok (NULL, "\n");
-	*word = cobc_malloc (strlen (word_str) - 1);
-	strncpy (*word, word_str + 1, strlen (word_str) - 2);
+	word_len = strlen (word_str) - 2;
+	*word = cobc_malloc (word_len + 1);
+	cb_strncpy_upper (*word, word_str + 1, word_len);
 
 	cobc_free (text);
 }
@@ -2257,7 +2259,7 @@ copy_word_in_quotes (char ** const word)
 /*
    For yytext of the form '#directive "first-word" "second-word"' or '#directive
    (first-word) (second-word)', allocate copies of first-word for word1 and
-   second-word for word2.
+   second-word for word2, converting them to upper-case.
 */
 static void
 copy_two_words_in_quotes (char ** const word1, char ** const word2)
@@ -2265,19 +2267,22 @@ copy_two_words_in_quotes (char ** const word1, char ** const word2)
 	char	*text = cobc_strdup (yytext);
 	char	*word1_str;
 	char	*word2_str;
+	size_t	word_len;
 
 	/* Skip directive. */
-        word1_str = strtok (text, " ");
+	word1_str = strtok (text, " ");
 
 	/* Get words and remove surrounding quotes. */
 
 	word1_str = strtok (NULL, " ");
-	*word1 = cobc_malloc (strlen (word1_str) - 1);
-	strncpy (*word1, word1_str + 1, strlen (word1_str) - 2);
+	word_len = strlen (word1_str) - 2;
+	*word1 = cobc_malloc (word_len + 1);
+	cb_strncpy_upper (*word1, word1_str + 1, word_len);
 
 	word2_str = strtok (NULL, "\n");
-	*word2 = cobc_malloc (strlen (word2_str) - 1);
-	strncpy (*word2, word2_str + 1, strlen (word2_str) - 2);
+	word_len = strlen (word2_str) - 2;
+	*word2 = cobc_malloc (word_len + 1);
+	cb_strncpy_upper (*word2, word2_str + 1, word_len);
 
 	cobc_free (text);
 }
