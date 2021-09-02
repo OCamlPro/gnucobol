@@ -105,13 +105,13 @@ reserved:	DE
 # note: the following are part of the register DEBUG-ITEM,
 #       they are automatically unreserved if the register is
 #       created, which happens on USE FOR DEBUGGING
-reserved:	DEBUG-CONTENTS
-reserved:	DEBUG-ITEM
-reserved:	DEBUG-LINE
-reserved:	DEBUG-NAME
-reserved:	DEBUG-SUB-1
-reserved:	DEBUG-SUB-2
-reserved:	DEBUG-SUB-3
+#reserved:	DEBUG-CONTENTS
+#reserved:	DEBUG-ITEM
+#reserved:	DEBUG-LINE
+#reserved:	DEBUG-NAME
+#reserved:	DEBUG-SUB-1
+#reserved:	DEBUG-SUB-2
+#reserved:	DEBUG-SUB-3
 # debug-item end
 reserved:	DEBUGGING
 reserved:	DECIMAL-POINT
