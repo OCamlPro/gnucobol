@@ -8,7 +8,7 @@ NEWS - user visible changes				-*- outline -*-
 
 ** New intrinsic functions
 
-  TODO
+  BIT-OF, BIT-TO-CHAR, HEX-OF, HEX-TO-CHAR
 
 
 * Changes to the COBOL compiler (cobc) options:
@@ -16,7 +16,7 @@ NEWS - user visible changes				-*- outline -*-
 ** the GnuCOBOL extension of auto-adding the RECURSIVE attribute
    if a program potentionally calls its own PROGRAM-ID was moved
    to a dialect option; it is now only active with -std=default
-   (and raises a warning as previously with -Wextra); if you wanto
+   (and raises a warning as previously with -Wextra); if you want
    to use this extension for other dialects use the new
    -fself-call-recursive=warning (or "ok")
 
@@ -27,10 +27,10 @@ NEWS - user visible changes				-*- outline -*-
 
 * Important Bugfixes:
 
- * for other than the GnuCOBOL dialects different reserved "alias" words were
-   not usable, for example SYNCHRONIZED or COMPUTATIONAL. This was fixed and
-   reserved words updated for the dialects "acu" (ACUCOBOL-GT 10.4),
-   "ibm" (Enterprise COBOL 6.3) and "mf" (Micro Focus Visual COBOL 6.0)
+ * for dialects other than the GnuCOBOL default different reserved "alias" words
+   were not usable, for example SYNCHRONIZED or COMPUTATIONAL. This was fixed
+   and reserved words updated for the dialects "acu" (to ACUCOBOL-GT 10.4),
+   "ibm" (to Enterprise COBOL 6.3) and "mf" (to Micro Focus Visual COBOL 6.0)
  
 
  GnuCOBOL 3.1.2 released (20201223)

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2005-2012, 2014-2020 Free Software Foundation, Inc.
+   Copyright (C) 2005-2012, 2014-2021 Free Software Foundation, Inc.
    Written by Roger While, Simon Sobisch, Edward Hart, Brian Tiffin
 
    This file is part of GnuCOBOL.
@@ -3661,6 +3661,135 @@ cob_intr_reverse (const int offset, const int length, cob_field *srcfield)
 }
 
 cob_field *
+cob_intr_bit_of (cob_field *srcfield)
+{
+	cob_field_attr	attr;
+	cob_field	field;
+	/* FIXME later: srcfield may be of category national - or later bit... */
+	const size_t		size = srcfield->size * 8;
+	unsigned char		*byte = srcfield->data;
+	size_t		i, j;
+
+	COB_ATTR_INIT (COB_TYPE_ALPHANUMERIC, size, 0, 0, NULL);
+	COB_FIELD_INIT (size, NULL, &attr);
+	make_field_entry (&field);
+
+	for (i = j = 0; i < srcfield->size; ++i) {
+		curr_field->data[j++] = *byte & 0x80 ? '1' : '0';
+		curr_field->data[j++] = *byte & 0x40 ? '1' : '0';
+		curr_field->data[j++] = *byte & 0x20 ? '1' : '0';
+		curr_field->data[j++] = *byte & 0x10 ? '1' : '0';
+		curr_field->data[j++] = *byte & 0x08 ? '1' : '0';
+		curr_field->data[j++] = *byte & 0x04 ? '1' : '0';
+		curr_field->data[j++] = *byte & 0x02 ? '1' : '0';
+		curr_field->data[j++] = *byte & 0x01 ? '1' : '0';
+		byte++;
+	}
+	return curr_field;
+}
+
+static int
+has_bit_checked (const unsigned char byte) {
+	if (byte == '0') return 0;
+	if (byte != '1') {
+		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
+	}
+	return 1;
+}
+
+cob_field *
+cob_intr_bit_to_char (cob_field *srcfield)
+{
+	cob_field_attr	attr;
+	cob_field	field;
+	const size_t		size = srcfield->size / 8;
+	unsigned char		*byte_val, *char_val;
+	size_t		i;
+
+	COB_ATTR_INIT (COB_TYPE_ALPHANUMERIC, size, 0, 0, NULL);
+	COB_FIELD_INIT (size, NULL, &attr);
+	make_field_entry (&field);
+
+	byte_val = srcfield->data;
+	char_val = curr_field->data;
+	for (i = 0; i < size; i++) {
+		*char_val = 0;
+		if (has_bit_checked(*byte_val++)) *char_val |= 0x80;
+		if (has_bit_checked(*byte_val++)) *char_val |= 0x40;
+		if (has_bit_checked(*byte_val++)) *char_val |= 0x20;
+		if (has_bit_checked(*byte_val++)) *char_val |= 0x10;
+		if (has_bit_checked(*byte_val++)) *char_val |= 0x08;
+		if (has_bit_checked(*byte_val++)) *char_val |= 0x04;
+		if (has_bit_checked(*byte_val++)) *char_val |= 0x02;
+		if (has_bit_checked(*byte_val++)) *char_val |= 0x01;
+		char_val++;
+	}
+	return curr_field;
+}
+
+cob_field *
+cob_intr_hex_of (cob_field *srcfield)
+{
+	cob_field_attr	attr;
+	cob_field	field;
+	/* FIXME later: srcfield may be of category national - or later bit... */
+	const size_t		size = srcfield->size * 2;
+	size_t		i, j;
+
+	COB_ATTR_INIT (COB_TYPE_ALPHANUMERIC, size, 0, 0, NULL);
+	COB_FIELD_INIT (size, NULL, &attr);
+	make_field_entry (&field);
+
+	for (i = j = 0; i < srcfield->size; ++i) {
+		char buff[3];
+		sprintf (buff, "%02X", srcfield->data[i]);
+		curr_field->data[j++] = buff[0];
+		curr_field->data[j++] = buff[1];
+	}
+	return curr_field;
+}
+
+cob_field *
+cob_intr_hex_to_char (cob_field *srcfield)
+{
+	cob_field_attr	attr;
+	cob_field	field;
+	const size_t		size = srcfield->size / 2;
+	size_t		i, j;
+	unsigned char *hex_char;
+
+	COB_ATTR_INIT (COB_TYPE_ALPHANUMERIC, size, 0, 0, NULL);
+	COB_FIELD_INIT (size, NULL, &attr);
+	make_field_entry (&field);
+
+	hex_char = curr_field->data;
+
+	for (i = j = 0; j < srcfield->size; ++i) {
+		unsigned char src, dst;
+		src = (cob_u8_t)toupper (srcfield->data[j++]);
+		if (src >= 'A' && src <= 'F') {
+			dst = src - 'A' + 10;
+		} else if (src >= '0' && src <= '9') {
+			dst = src - '0';
+		} else {
+			dst = 0;
+			cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
+		}
+		dst *= 16;
+		src = (cob_u8_t)toupper (srcfield->data[j++]);
+		if (src >= 'A' && src <= 'F') {
+			dst = dst + src - 'A' + 10;
+		} else if (src >= '0' && src <= '9') {
+			dst = dst + src - '0';
+		} else {
+			cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
+		}
+		*hex_char++ = dst;
+	}
+	return curr_field;
+}
+
+cob_field *
 cob_intr_module_date (void)
 {
 	cob_field_attr	attr;
@@ -6337,7 +6466,6 @@ cob_intr_formatted_datetime (const int offset, const int length,
 	}
 	return curr_field;
 }
-
 
 cob_field *
 cob_intr_test_formatted_datetime (cob_field *format_field,

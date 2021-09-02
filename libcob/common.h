@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2020 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2021 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -1274,7 +1274,8 @@ typedef struct __cob_module {
 #define COB_MODULE_TRACEALL	4
 	unsigned char		unused[1];		/* Use these flags up later, added for alignment */
 
-	unsigned int		module_stmt;		/* Last statement executed */
+	unsigned int		module_stmt;		/* Last statement executed as modulated source line
+											   and index to module_sources for source file */
 	const char		**module_sources;	/* Source module names compiled */
 
 	cob_field		*xml_code;		/* XML-CODE */
@@ -2668,6 +2669,10 @@ COB_EXPIMP cob_field *cob_intr_integer_of_formatted_date	(cob_field *,
 COB_EXPIMP cob_field *cob_intr_content_length		(cob_field *);
 COB_EXPIMP cob_field *cob_intr_content_of		(const int, const int,
 							 const int, ...);
+COB_EXPIMP cob_field *cob_intr_bit_of		(cob_field *);
+COB_EXPIMP cob_field *cob_intr_bit_to_char		(cob_field *);
+COB_EXPIMP cob_field* cob_intr_hex_of (cob_field*);
+COB_EXPIMP cob_field* cob_intr_hex_to_char (cob_field*);
 
 /*******************************/
 

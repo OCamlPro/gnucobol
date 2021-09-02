@@ -1,4 +1,16 @@
 
+2021-09-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* reserved.c (cb_toupper): extracted and used in different places
+	* reserved.c (cb_strncpy_upper), tree.h: renamed + exported function
+	* scanner.l (copy_word_in_quotes, copy_two_words_in_quotes): internally
+	  upper-case when handling reserved word adjustment
+	* reserved.c (is_invalid_word): word checks extended, cobc does not
+	  handle extended characters in reserved words
+	* reserved.c: unpacked HASHMAP_EXTRA as only used for reserved words
+	* reserved.c: work on removing the need to compare reserved words
+	  case-insensitive (not finished yet)
+
 2021-09-01  Simon Sobisch <simonsobisch@gnu.org>
 
 	* reserved.c (default_reserved_words, cb_list_reserved), parser.y:
@@ -10,6 +22,8 @@
 
 	* typeck.c (cb_build_debug_item): only build DEBUG-ITEM if defined
 	  as register and in this case unreserve overlapping reserved words
+	* tree.c (cb_build_intrinsic), tree.h, reserved.c:
+	  implement BIT-OF and BIT-TO-CHAR functions
 
 2021-08-28  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -34,7 +48,9 @@
 	* parser.y: minor adjustments to USE handling
 	* pplex.l: drop "spurious $" in col 7 rule, fixing bug #577
 	* reserved.c, tree.h: added functions BIT-OF, BIT-TO-CHAR,
-	  HEX-OF, HEX-TO-CHAR as unimplemented
+	  as unimplemented
+	* tree.c (cb_build_intrinsic), tree.h, reserved.c:
+	  implement HEX-OF and HEX-TO-CHAR functions
 
 2021-07-07  Simon Sobisch <simonsobisch@gnu.org>
 

@@ -347,6 +347,142 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([FUNCTION BIT-OF and BIT-TO-CHAR])
+AT_KEYWORDS([functions literal ibm])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  PAC    PIC   9(4) VALUE 12 COMP-3.
+       01  TXT    PIC   X(4) VALUE "HI.".
+       01  BITX   PIC   X(34).
+           88 BITX-FILLER VALUE ALL "-".
+       PROCEDURE        DIVISION.
+           SET  BITX-FILLER TO TRUE
+           STRING FUNCTION BIT-OF (PAC) DELIMITED BY SIZE INTO BITX.
+           IF BITX NOT = "000000000000000100101111----------"
+              DISPLAY "UNEXPECTED BIT-VALUE OF PAC 0012: " BITX.
+
+           SET  BITX-FILLER TO TRUE
+           STRING FUNCTION BIT-OF (TXT) DELIMITED BY SIZE INTO BITX.
+      *> Discover if running ASCII or EBCDIC
+       >>IF   CHARSET = 'ASCII'
+           IF BITX NOT = "01001000010010010010111000100000--"
+       >>ELIF CHARSET = 'EBCDIC'
+           IF BITX NOT = "11001000110010010100101101000000--"
+       >>ELSE
+           IF 1 = 1 DISPLAY 'CHARSET UNKNOWN! PLEASE REPORT!'
+       >>END-IF
+              DISPLAY "UNEXPECTED BIT-VALUE OF 'HI. ': " BITX.
+
+           SET  BITX-FILLER TO TRUE
+           STRING FUNCTION BIT-OF (z"01") DELIMITED BY SIZE INTO BITX.
+       >>IF   CHARSET = 'ASCII'
+           IF BITX NOT = "001100000011000100000000----------"
+       >>ELSE
+           IF BITX NOT = "111100001111000100000000----------"
+       >>END-IF
+
+           IF FUNCTION BIT-TO-CHAR (BITX(1:24)) NOT = z"01"
+              DISPLAY "UNEXPECTED CHAR VALUE, does not match z'01': "
+                      BITX (1:24).
+           SET  BITX-FILLER TO TRUE
+           STRING FUNCTION BIT-TO-CHAR ("0011000100110010")
+                  DELIMITED BY SIZE INTO BITX.
+           IF NOT (BITX (1:2) = x"3132" AND 
+                   BITX (3: ) = "--------------------------------")
+              DISPLAY "UNEXPECTED CHAR VALUE, expected 12-* got: " BITX.
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([FUNCTION HEX-OF and HEX-TO-CHAR])
+AT_KEYWORDS([functions literal ibm])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  X      PIC   9(4) VALUE 12.
+       01  Y      PIC   X(4) VALUE "HI.".
+       01  BIN    PIC   9(9) BINARY VALUE 12.
+       01  PAC    PIC   9(5) COMP-3 VALUE 1234.
+       01  HEXX   PIC   X(10).
+           88 HEXX-FILLER VALUE ALL "-".
+       PROCEDURE        DIVISION.
+           SET  HEXX-FILLER TO TRUE
+           STRING FUNCTION HEX-OF (X) DELIMITED BY SIZE INTO HEXX.
+      *> Discover if running ASCII or EBCDIC
+       >>IF   CHARSET = 'ASCII'
+           IF HEXX NOT = "30303132--"
+       >>ELIF CHARSET = 'EBCDIC'
+           IF HEXX NOT = "F0F0F1F2--"
+       >>ELSE
+           IF 1 = 1 DISPLAY 'CHARSET UNKNOWN! PLEASE REPORT!'
+       >>END-IF
+              DISPLAY "UNEXPECTED HEX-VALUE OF '0012': " HEXX.
+
+           SET  HEXX-FILLER TO TRUE
+           STRING FUNCTION HEX-OF (Y) DELIMITED BY SIZE INTO HEXX.
+       >>IF   CHARSET = 'ASCII'
+           IF HEXX NOT = "48492E20--"
+       >> ELSE
+           IF HEXX NOT = "C8C94B40--"
+       >> END-IF
+              DISPLAY "UNEXPECTED HEX-VALUE OF 'HI! ': " HEXX.
+
+           SET  HEXX-FILLER TO TRUE
+           STRING FUNCTION HEX-OF (BIN) DELIMITED BY SIZE INTO HEXX.
+           IF HEXX NOT = "0000000C--"
+              DISPLAY "UNEXPECTED HEX-VALUE OF BIN 12: " HEXX.
+
+           SET  HEXX-FILLER TO TRUE
+           STRING FUNCTION HEX-OF (PAC) DELIMITED BY SIZE INTO HEXX.
+           IF HEXX NOT = "01234F----"
+              DISPLAY "UNEXPECTED HEX-VALUE OF PACKED 1234: " HEXX.
+
+           SET  HEXX-FILLER TO TRUE
+           STRING FUNCTION HEX-OF (z"01") DELIMITED BY SIZE INTO HEXX.
+       >>IF   CHARSET = 'ASCII'
+           IF HEXX NOT = "303100----"
+       >> ELSE
+           IF HEXX NOT = "F0F100----"
+       >> END-IF
+              DISPLAY "UNEXPECTED HEX-VALUE OF z'01': " HEXX.
+
+           IF FUNCTION HEX-TO-CHAR (HEXX(1:6)) NOT = z"01"
+              DISPLAY "UNEXPECTED CHAR VALUE, does not match z'01': "
+                      HEXX (1:6).
+           SET  HEXX-FILLER TO TRUE
+           STRING FUNCTION HEX-TO-CHAR ("3132")
+                  DELIMITED BY SIZE INTO HEXX.
+           IF NOT (HEXX (1:2) = x"3132" AND HEXX (3:) = "--------")
+              DISPLAY "UNEXPECTED CHAR VALUE, expected 12-* got: " HEXX.
+
+           SET  HEXX-FILLER TO TRUE
+           STRING FUNCTION HEX-TO-CHAR ("3132")
+                  DELIMITED BY SIZE INTO HEXX.
+           IF NOT (HEXX (1:2) = x"3132" AND HEXX (3:) = "--------")
+              DISPLAY "UNEXPECTED CHAR VALUE, expected 12-* got: " HEXX.
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([FUNCTION CONTENT-LENGTH])
 AT_KEYWORDS([functions length])
 

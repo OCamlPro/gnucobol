@@ -3166,13 +3166,13 @@ static struct cb_intrinsic_table function_list[] = {
   /* IBM ENT */
   { "BIT-OF",		"cob_intr_bit_of",
 					CB_INTR_BIT_OF, FUNCTION_NAME,
-					CB_FEATURE_NOT_IMPLEMENTED,	1, 1,
+					CB_FEATURE_ACTIVE,	1, 1,
 					CB_CATEGORY_ALPHANUMERIC, 0
   },
   /* IBM ENT */
   { "BIT-TO-CHAR",		"cob_intr_bit_to_char",
 					CB_INTR_BIT_TO_CHAR, FUNCTION_NAME,
-					CB_FEATURE_NOT_IMPLEMENTED,	1, 1,
+					CB_FEATURE_ACTIVE,	1, 1,
 					CB_CATEGORY_ALPHANUMERIC, 0
   },
   { "BOOLEAN-OF-INTEGER",		"cob_intr_boolean_of_integer",
@@ -3356,18 +3356,18 @@ static struct cb_intrinsic_table function_list[] = {
   /* IBM ENT */
   { "HEX-OF",		"cob_intr_hex_of",
 					CB_INTR_HEX_OF, FUNCTION_NAME,
-					CB_FEATURE_NOT_IMPLEMENTED,	1, 1,
+					CB_FEATURE_ACTIVE,	1, 1,
 					CB_CATEGORY_ALPHANUMERIC, 0
   },
   /* IBM ENT */
   { "HEX-TO-CHAR",		"cob_intr_hex_to_char",
 					CB_INTR_HEX_TO_CHAR, FUNCTION_NAME,
-					CB_FEATURE_NOT_IMPLEMENTED,	1, 1,
+					CB_FEATURE_ACTIVE,	1, 1,
 					CB_CATEGORY_ALPHANUMERIC, 0
   },
   { "HIGHEST-ALGEBRAIC",		"cob_intr_highest_algebraic",
 					CB_INTR_HIGHEST_ALGEBRAIC, FUNCTION_NAME,
-						CB_FEATURE_ACTIVE,	1, 1,
+					CB_FEATURE_ACTIVE,	1, 1,
 					CB_CATEGORY_NUMERIC, 0
   },
   { "INTEGER",				"cob_intr_integer",
@@ -3643,6 +3643,7 @@ static struct cb_intrinsic_table function_list[] = {
 					CB_FEATURE_ACTIVE,	-1, 1,
 					CB_CATEGORY_NUMERIC, 0
   },
+  /* GnuCOBOL */
   { "STORED-CHAR-LENGTH",		"cob_intr_stored_char_length",
 					CB_INTR_STORED_CHAR_LENGTH, FUNCTION_NAME,
 					CB_FEATURE_ACTIVE,	1, 1,

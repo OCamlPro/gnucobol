@@ -1,4 +1,14 @@
 
+2021-08-31  Simon Sobisch <simonsobisch@gnu.org>
+
+	* intrinsic.c, common.h: implemented (cob_intr_bit_of),
+	  (cob_intr_bit_to_char)
+
+2021-07-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* intrinsic.c, common.h: implemented (cob_intr_hex_of),
+	  (cob_intr_hex_to_char)
+
 2021-07-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* reportio.c: move hard line/col limit to REPORT_MAX_LINES REPORT_MAX_COLS
