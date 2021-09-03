@@ -624,7 +624,7 @@ find_fcd2 (FCD2 *fcd2)
 	FCD3	*fcd;
 	struct fcd_file	*ff;
 	for (ff = fcd_file_list; ff; ff=ff->next) {
-		if (ff->fcd2 == fcd2 {
+		if (ff->fcd2 == fcd2) {
 			return ff->fcd;
 		}
 	}
@@ -646,17 +646,20 @@ free_fcd2 (FCD2 *fcd2)
 {
 	struct fcd_file	*ff, *pff;
 	pff = NULL;
-	for(ff = fcd_file_list; ff; ff=ff->next) {
-		if(ff->fcd2 == fcd2) {
-			if (pff)
+	for (ff = fcd_file_list; ff; ff=ff->next) {
+		if (ff->fcd2 == fcd2) {
+			if (pff) {
 				pff->next = ff->next;
-			else
+			} else {
 				fcd_file_list = ff->next;
-			if (ff->fcd)
-				cob_cache_free((void*)ff->fcd);
-			if (ff->f)
-				cob_cache_free((void*)ff->f);
-			cob_cache_free((void*)ff);
+			}
+			if (ff->fcd) {
+				cob_cache_free ((void*)ff->fcd);
+			}
+			if (ff->f) {
+				cob_cache_free ((void*)ff->f);
+			}
+			cob_cache_free ((void*)ff);
 			return;
 		}
 		pff = ff;
