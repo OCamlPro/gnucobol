@@ -404,7 +404,9 @@ copy_keys_fcd_to_file (FCD3 *fcd, cob_file *f, int doall)
 		 || (parts == 1 && f->keys[k].field->size != LDCOMPX4(key->len))) {
 			if (f->keys[k].field == NULL)
 				f->keys[k].field = cob_cache_malloc(sizeof(cob_field));
-			f->keys[k].field->data = f->record->data + LDCOMPX4(key->pos);
+			if (f->record
+			 && f->record->data)
+				f->keys[k].field->data = f->record->data + LDCOMPX4(key->pos);
 			f->keys[k].field->attr = &alnum_attr;
 			f->keys[k].field->size = LDCOMPX4(key->len);
 			f->keys[k].offset = LDCOMPX4(key->pos);
@@ -413,7 +415,9 @@ copy_keys_fcd_to_file (FCD3 *fcd, cob_file *f, int doall)
 		for (p=0; p < parts; p++) {
 			if (f->keys[k].component[p] == NULL)
 				f->keys[k].component[p] = cob_cache_malloc(sizeof(cob_field));
-			f->keys[k].component[p]->data = f->record->data + LDCOMPX4(key->pos);
+			if (f->record
+			 && f->record->data)
+				f->keys[k].component[p]->data = f->record->data + LDCOMPX4(key->pos);
 			f->keys[k].component[p]->attr = &alnum_attr;
 			f->keys[k].component[p]->size = LDCOMPX4(key->len);
 			klen += LDCOMPX4(key->len);
@@ -520,6 +524,10 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f)
 	/* Try for some record size */
 	min = LDCOMPX4(fcd->minRecLen);
 	max = LDCOMPX4(fcd->maxRecLen);
+	if (max > 0) {
+		f->record_min = LDCOMPX4(fcd->minRecLen);
+		f->record_max = LDCOMPX4(fcd->maxRecLen);
+	}
 	k   = LDCOMPX4(fcd->curRecLen);
 	if (k <= 0) {
 		if (max > 0)
@@ -539,8 +547,6 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f)
 		f->record->data = fcd->recPtr;
 		f->record->size = LDCOMPX4(fcd->curRecLen);
 		f->record->attr = &alnum_attr;
-		f->record_min = LDCOMPX4(fcd->minRecLen);
-		f->record_max = LDCOMPX4(fcd->maxRecLen);
 	}
 	if (f->assign == NULL
 	|| (f->fcd && fcd->fnamePtr)) {

@@ -1,4 +1,8 @@
 
+2021-09-05  Ron Norman <rjn@inglenet.com>
+
+	* fextfh.c: Add check for record address being available
+
 2021-08-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* general: fix local includes to use "local" instead of <system>
