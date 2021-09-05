@@ -239,7 +239,7 @@
 
            40  FCD-INTERNAL-FLAGS-1  pic x comp-x.
            40  FCD-INTERNAL-FLAGS-2  pic x comp-x.
-           40                        pic x(15).
+           40                        pic x comp-x occurs 15.
 
       *>   NLS id (else 0)
            40  FCD-NLS-ID            pic xx comp-x.
@@ -262,7 +262,7 @@
       *> Effective key length
            40  FCD-KEY-LENGTH        pic xx comp-x.
 
-           40                        pic x(20).
+           40                        pic x comp-x occurs 20.
 
       *> Current record length
            40  FCD-CURRENT-REC-LEN   pic x(4) comp-x.
@@ -273,7 +273,7 @@
 
            40  FCD-SESSION-ID        pic x(4) comp-x.
 
-           40                        pic x(24).
+           40                        pic x comp-x occurs 24.
 
            40  FCD-RELADDR-OFFSET    pic x(8) comp-x.
            40  FCD-RELADDR           redefines FCD-RELADDR-OFFSET
