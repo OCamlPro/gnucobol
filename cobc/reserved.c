@@ -1791,7 +1791,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "MERGE",			0, 0, MERGE,			/* 2002 */
 				0, 0
   },
-  { "MESSAGE",			0, 0, MESSAGE,			/* Communication Section, COBOL 2014 MCS */
+  { "MESSAGE",			0, 0, MESSAGE,			/* Communication Section */
 				0, 0
   },
   { "METHOD",			0, 0, -1,			/* 2002 */
@@ -1799,9 +1799,6 @@ static struct cobc_reserved default_reserved_words[] = {
   },
   { "METHOD-ID",		0, 0, -1,			/* 2002 */
 				0, 0
-  },
-  { "MICROSECOND-TIME",		0, 1, MICROSECOND_TIME,		/* ACU extension */
-				0, CB_CS_ACCEPT
   },
   { "MIN-VAL",		0, 1, MIN_VAL,		/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
@@ -2235,7 +2232,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "RAISED",			0, 1, RAISED,			/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
   },
-  { "RAISING",			0, 0, RAISING,			/* 2002 */
+  { "RAISING",			0, 0, -1,			/* 2002 */
 				0, 0
   },
   { "RANDOM",			0, 0, RANDOM,			/* 2002 */
@@ -2253,10 +2250,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "READERS",			0, 1, READERS,		/* ACU extension */
 				0, CB_CS_OPEN
   },
-  { "RECEIVE",			1, 0, RECEIVE,			/* Communication Section, 2014 MCS */
-				0, 0
-  },
-  { "RECEIVED",			1, 0, RECEIVED,			/* 2014 MCS */
+  { "RECEIVE",			1, 0, RECEIVE,			/* Communication Section */
 				0, 0
   },
   { "RECORD",			0, 0, RECORD,			/* 2002 */
@@ -2512,7 +2506,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "SELF-ACT",			0, 1, SELF_ACT,			/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
   },
-  { "SEND",			0, 0, SEND,			/* Communication Section, 2014 MCS */
+  { "SEND",			0, 0, SEND,			/* Communication Section */
 				0, 0
   },
   { "SENTENCE",			0, 0, SENTENCE,			/* 2002 */
@@ -3972,7 +3966,7 @@ is_invalid_word (const char *word, const int size, const int space_allowed,
 			const char c = cb_toupper(word[i++]);
 			if ((c >= 'A' && c <= 'Z')
 			 || (c >= '0' && c <= '9')
-		     ||  c == '-' || c == '_' ) {
+			 ||  c == '-' || c == '_' ) {
 				continue;
 			}
 			if (c == ' ' && space_allowed) {
@@ -4161,7 +4155,7 @@ reduce_amendment_list (struct amendment_list **amendment_list)
 	}
 }
 
-/* hash function for _reserved words/intrinsics/..._ (no extended letters) */
+/* hash function for _reserved words/intrinsics/..._ (no extended letters!) */
 static int
 hash_word (const cob_c8_t *word, const cob_u32_t mod)
 {
@@ -4169,7 +4163,8 @@ hash_word (const cob_c8_t *word, const cob_u32_t mod)
 
 	/* Perform 32-bit FNV1a hash */
 	for (; *word; ++word) {
-		result ^= cb_toupper (*word);	/* CHECKME: all input should be upper-case already */
+		/* CHECKME: all input should be upper-case already, but isn't */
+		result ^= cb_toupper (*word);
 		result *= (cob_u32_t) 0x1677619;
 	}
 
@@ -4211,7 +4206,7 @@ hash_word (const cob_c8_t *word, const cob_u32_t mod)
 		unsigned int key;						\
 									\
 		for (key = type##_hash (word);				\
-			/* CHECKME: we should be able to use strcmp here instead of cb_strcasecmp. */ \
+			/* FIXME: we currently cannot use strcmp here instead of cb_strcasecmp. */ \
 			type##_map[key] && cb_strcasecmp (type##_map[key]->word_member, word); \
 			key = next_##type##_key (key));			\
 									\
