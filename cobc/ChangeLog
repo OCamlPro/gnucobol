@@ -1,4 +1,10 @@
 
+2021-09-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.h (cb_exception), cobc.c: add fatal attribute
+	* reserved.c, tree.h, cobc.c, help.c: added cb_list_exceptions /
+	  --list-exceptions
+
 2021-09-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* reserved.c (cb_toupper): extracted and used in different places
@@ -85,6 +91,13 @@
 	  explicit request, we need entry points to be where the first
 	  section/paragraph/statement comes to not confuse tools like GDB
 	  with the wrong line reference (especially if we have DECLARATIVES)
+
+2021-04-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (print_with_overflow): extracted from print_errors_for_line,
+	  fixed potential overflow on HPUX and MSVC
+	* flag.def, cobc.c: new -ftcmd (cb_listing_cmd) to include command line in
+	  listing summary
 
 2021-03-23  Simon Sobisch <simonsobisch@gnu.org>
 

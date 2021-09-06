@@ -301,6 +301,7 @@ struct cb_exception {
 	const char	*name;			/* Exception name */
 	const int	code;			/* Exception code */
 	int		enable;			/* If turned on */
+	int		fatal;			/* If recognizing this should abort */
 };
 
 /* >>TURN directive list */
@@ -372,10 +373,12 @@ extern int			cb_text_column;	/* end of area B (in single-byte characters) */
 extern struct cb_exception	cb_exception_table[];
 extern const struct cb_exception	cb_io_exception_table[];
 extern const size_t		cb_io_exception_table_len;
+extern const size_t		cb_exception_table_len;
 
 #define CB_EXCEPTION_NAME(id)	cb_exception_table[id].name
 #define CB_EXCEPTION_CODE(id)	cb_exception_table[id].code
 #define CB_EXCEPTION_ENABLE(id)	cb_exception_table[id].enable
+#define CB_EXCEPTION_FATAL(id)	cb_exception_table[id].fatal
 
 extern struct cb_turn_list	*cb_turn_list;
 

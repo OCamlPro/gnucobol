@@ -1,4 +1,12 @@
 
+2021-09-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* exception.def, exception-io.def: update for COBOL 202x,
+	  also adding some entries from COBOL 2014 and dropping one wrong
+	* fileio.c: handling of COB_EC_I_O_RECORD_CONTENT,
+	  distinguish between COB_EC_I_O_EOP and COB_EC_I_O_EOP_OVERFLOW
+	* fileio.c (update_fcd_to_file): don't set error status at 0x
+
 2021-08-31  Simon Sobisch <simonsobisch@gnu.org>
 
 	* intrinsic.c, common.h: implemented (cob_intr_bit_of),

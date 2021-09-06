@@ -88,6 +88,7 @@ cobc_print_usage_common_options (void)
 	        "                        equal to -fstack-check -fec=EC-ALL"));
 	/* duplicated here from flags.def to place it next to -debug */
 	puts (_("  -fec=<exception-name>\tenable code generation for <exception-name>,\n"
+	        "                        see --list-exceptions for the possible values,\n"
 	        "                        sets -fsource-location"));
 	puts (_("  -fno-ec=<exception-name>\tdisable code generation for <exception-name>"));
 	puts (_("  -o <file>             place the output into <file>"));
@@ -121,6 +122,7 @@ cobc_print_usage_common_options (void)
 	puts (_("  --list-reserved       display reserved words"));
 	puts (_("  --list-intrinsics     display intrinsic functions"));
 	puts (_("  --list-mnemonics      display mnemonic names"));
+	puts (_("  --list-exceptions     display exception names"));
 	puts (_("  --list-system         display system routines"));
 	puts (_("  --save-temps[=<dir>]  save intermediate files\n"
 	        "                        * default: current directory"));

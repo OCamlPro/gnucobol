@@ -302,21 +302,21 @@ const size_t COBC_MEM_SIZE =
 	((sizeof(struct cobc_mem_struct) + sizeof(long long) - 1)
 	/ sizeof(long long)) * sizeof(long long);
 
-#define	COB_EXCEPTION(code,tag,name,critical) {name, 0x##code, 0},
+#define	COB_EXCEPTION(code,tag,name,fatal) {name, 0x##code, 0, fatal},
 struct cb_exception cb_exception_table[] = {
-	{NULL, 0, 0},		/* CB_EC_ZERO */
+	{NULL, 0, 0, 0},		/* CB_EC_ZERO */
 #include "libcob/exception.def"
-	{NULL, 0, 0}		/* CB_EC_MAX */
+	{NULL, 0, 0, 0}		/* CB_EC_MAX */
 };
 
 const struct cb_exception cb_io_exception_table[] = {
-	{NULL, 0, 0},
+	{NULL, 0, 0, 0},
 #include "libcob/exception-io.def"
-	{NULL, 0, 0}		/* CB_EC_MAX */
+	{NULL, 0, 0, 0}		/* CB_EC_MAX */
 };
 #undef	COB_EXCEPTION
 const size_t	cb_io_exception_table_len = sizeof (cb_io_exception_table) / sizeof (struct cb_exception);
-static const size_t	cb_exception_table_len = sizeof (cb_exception_table) / sizeof (struct cb_exception);
+const size_t	cb_exception_table_len = sizeof (cb_exception_table) / sizeof (struct cb_exception);
 
 struct cb_turn_list	*cb_turn_list = NULL;
 
@@ -557,8 +557,9 @@ static const struct option long_options[] = {
 	{"list-reserved",	CB_NO_ARG, NULL, '5'},
 	{"list-intrinsics",	CB_NO_ARG, NULL, '6'},
 	{"list-mnemonics",	CB_NO_ARG, NULL, '7'},
-	{"list-system",		CB_NO_ARG, NULL, '8'},
 	{"list-registers",		CB_NO_ARG, NULL, '9'},
+	{"list-exceptions",		CB_NO_ARG, NULL, 'a'},
+	{"list-system",		CB_NO_ARG, NULL, '8'},
 	{"O0",			CB_NO_ARG, NULL, '0'},
 	{"O2",			CB_NO_ARG, NULL, '2'},
 	{"O3",			CB_NO_ARG, NULL, '3'},
@@ -2851,6 +2852,7 @@ process_command_line (const int argc, char **argv)
 	int			list_registers = 0;
 	int			list_intrinsics = 0;
 	int			list_system_names = 0;
+	int			list_exceptions = 0;
 	int			list_system_routines = 0;
 	enum cob_exception_id	i;
 	char			ext[COB_MINI_BUFF];
@@ -2984,6 +2986,12 @@ process_command_line (const int argc, char **argv)
 		case '9':
 			/* --list-registers */
 			list_registers = 1;
+			exit_option = 1;
+			break;
+
+		case 'a':
+			/* --list-exceptions */
+			list_exceptions = 1;
 			exit_option = 1;
 			break;
 
@@ -3151,6 +3159,8 @@ process_command_line (const int argc, char **argv)
 			/* --list-system */
 		case '9':
 			/* --list-registers */
+		case 'a':
+			/* --list-exceptions */
 			/* These options were all processed in the first getopt-run */
 			break;
 
@@ -3733,6 +3743,9 @@ process_command_line (const int argc, char **argv)
 	}
 	if (list_system_names) {
 		cb_list_system_names ();
+	}
+	if (list_exceptions) {
+		cb_list_exceptions ();
 	}
 	if (list_system_routines) {
 		cb_list_system_routines ();

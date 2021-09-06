@@ -490,7 +490,7 @@ static const int	status_exception[] = {
 	COB_EC_I_O_LOGIC_ERROR,		/* 4x */
 	COB_EC_I_O_RECORD_OPERATION,	/* 5x */
 	COB_EC_I_O_FILE_SHARING,	/* 6x */
-	COB_EC_I_O,			/* Unused */
+	COB_EC_I_O_RECORD_CONTENT,	/* 7x, currently unused */
 	COB_EC_I_O,			/* Unused */
 	COB_EC_I_O_IMP			/* 9x */
 };
@@ -1203,24 +1203,21 @@ save_status (cob_file *f, cob_field *fnstatus, const int status)
 	cobglobptr->cob_error_file = f;
 	if (likely(status == 0)) {
 		memset (f->file_status, '0', (size_t)2);
-		if (fnstatus) {
-			memset (fnstatus->data, '0', (size_t)2);
-		}
 		/* EOP is non-fatal therefore 00 status but needs exception */
-		if (unlikely (eop_status)) {
-			eop_status = 0;
-			cob_set_exception (COB_EC_I_O_EOP);
-		} else {
+		if (eop_status == 0) {
 			cobglobptr->cob_exception_code = 0;
+		} else {
+			cob_set_exception (eop_status);
+			eop_status = 0;
 		}
 		if (unlikely (cobsetptr->cob_do_sync)) {
 			cob_sync (f);
 		}
-		return;
+	} else {
+		cob_set_exception (status_exception[status / 10]);
+		f->file_status[0] = (unsigned char)COB_I2D (status / 10);
+		f->file_status[1] = (unsigned char)COB_I2D (status % 10);
 	}
-	cob_set_exception (status_exception[status / 10]);
-	f->file_status[0] = (unsigned char)COB_I2D (status / 10);
-	f->file_status[1] = (unsigned char)COB_I2D (status % 10);
 	if (fnstatus) {
 		memcpy (fnstatus->data, f->file_status, (size_t)2);
 	}
@@ -1345,13 +1342,13 @@ cob_linage_write_opt (cob_file *f, const int opt)
 		/* Set EOP status if requested */
 		if (check_eop_status && lingptr->lin_foot) {
 			if (i >= lingptr->lin_foot) {
-				eop_status = 1;
+				eop_status = COB_EC_I_O_EOP;
 			}
 		}
 		if (i > lingptr->lin_lines) {
 			/* Set EOP status if requested */
 			if (check_eop_status) {
-				eop_status = 1;
+				eop_status = COB_EC_I_O_EOP_OVERFLOW;
 			}
 			for (; n < lingptr->lin_lines; ++n) {
 				COB_CHECKED_PUTC ('\n', fp);
@@ -7713,7 +7710,7 @@ static void
 update_fcd_to_file (FCD3* fcd, cob_file *f, cob_field *fnstatus, int wasOpen)
 {
 	cobglobptr->cob_error_file = f;
-	if (isdigit(fcd->fileStatus[0])) {
+	if (isdigit(fcd->fileStatus[0]) && fcd->fileStatus[1] != '0') {
 		cob_set_exception (status_exception[(fcd->fileStatus[0] - '0')]);
 	} else {
 		cobglobptr->cob_exception_code = 0;

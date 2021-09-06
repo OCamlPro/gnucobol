@@ -1987,6 +1987,7 @@ extern const char		*cb_get_register_definition (const char *);
 extern void			cb_list_reserved (void);
 extern void			cb_list_intrinsics (void);
 extern void			cb_list_system_names (void);
+extern void			cb_list_exceptions (void);
 extern void			cb_list_registers (void);
 extern void			cb_list_system_routines (void);
 extern int			cb_list_map (cb_tree (*) (cb_tree), cb_tree);
