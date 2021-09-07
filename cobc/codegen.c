@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2020 Free Software Foundation, Inc.
+   Copyright (C) 2003-2021 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
    Edward Hart
 
@@ -692,6 +692,10 @@ static struct cb_field *
 chk_field_variable_size (struct cb_field *f)
 {
 	if (!f->flag_vsize_done) {
+		/* Note: will always return NULL for RENAMES items as those have no children,
+		   which is fine because of the RENAMES syntax rule:
+		   "None of the items within the range [...] shall be [...] a
+		   variable-length data item, or an occurs-depending table. " */
 		struct cb_field		*p;
 		struct cb_field		*fc;
 		f->vsize = NULL;
@@ -4824,8 +4828,8 @@ output_initialize_one (struct cb_initialize *p, cb_tree x)
 	if (p->val && f->values) {
 		value = CB_VALUE (f->values);
 		/* Check for non-standard OCCURS */
-		if ((f->level == 1 || f->level == 77) &&
-		    f->flag_occurs && !p->flag_init_statement) {
+		if ((f->level == 1 || f->level == 77)
+		 && f->flag_occurs && !p->flag_init_statement) {
 			init_occurs = 1;
 		} else {
 			init_occurs = 0;
@@ -7390,6 +7394,7 @@ get_ec_code_for_handler (const enum cb_handler_type handler_type)
 	case AT_END_HANDLER:
 		return CB_EXCEPTION_CODE (COB_EC_I_O_AT_END);
 	case EOP_HANDLER:
+		/* FIXME: handler should actually also check for COB_EC_I_O_EOP_OVERFLOW */
 		return CB_EXCEPTION_CODE (COB_EC_I_O_EOP);
 	case INVALID_KEY_HANDLER:
 		return CB_EXCEPTION_CODE (COB_EC_I_O_INVALID_KEY);
@@ -10162,7 +10167,7 @@ output_display_fields (struct cb_field *f, size_t offset, unsigned int idx)
 				output_line ("for (i_%d=0; i_%d < max_%d; i_%d++)", idx,idx,idx,idx);
 			}
 			output_block_open ();
-			field_subscript[idx-1] = -idx;
+			field_subscript[idx-1] = -(int)idx;
 			size_subscript[idx-1] = f->size;
 			output_field_display (f, offset, idx);
 			output_display_fields (f->children, offset, idx);

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2020 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2021 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -1207,7 +1207,12 @@ save_status (cob_file *f, cob_field *fnstatus, const int status)
 		if (eop_status == 0) {
 			cobglobptr->cob_exception_code = 0;
 		} else {
+#if 0 /* correct thing to do, but then also needs to have codegen adjusted
+         --> module-incompatibility --> 4.x */
 			cob_set_exception (eop_status);
+#else
+			cob_set_exception (COB_EC_I_O_EOP);
+#endif
 			eop_status = 0;
 		}
 		if (unlikely (cobsetptr->cob_do_sync)) {

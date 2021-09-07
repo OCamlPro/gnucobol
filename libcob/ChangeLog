@@ -1,4 +1,10 @@
 
+2021-10-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (save_status): only internally distinguish between
+	  COB_EC_I_O_EOP and COB_EC_I_O_EOP_OVERFLOW for now as otherwise
+	  recompilation of modules would be necessary (-> postponed)
+
 2021-09-06  Simon Sobisch <simonsobisch@gnu.org>
 
 	* exception.def, exception-io.def: update for COBOL 202x,
