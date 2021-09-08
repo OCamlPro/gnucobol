@@ -1007,6 +1007,23 @@ check_conf_section_order (const cob_flags_t part)
 
 #undef MESSAGE_LEN
 
+static enum cb_handler_type
+get_handler_type_from_statement (struct cb_statement *statement)
+{
+	if (!strcmp (statement->name, "DISPLAY")) {
+		return DISPLAY_HANDLER;
+	}
+	if (strlen (statement->name) > 3
+	 && !memcmp (statement->name, "XML", 3)) {
+		return XML_HANDLER;
+	}
+	if (strlen (statement->name) > 4
+	 && !memcmp (statement->name, "JSON", 4)) {
+		return JSON_HANDLER;
+	}
+	return NO_HANDLER;
+}
+
 static void
 build_words_for_nested_programs (void)
 {
@@ -2912,6 +2929,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token RADIO_BUTTON		"RADIO-BUTTON"
 %token RAISE
 %token RAISED
+%token RAISING
 %token RANDOM
 %token RD
 %token READ
@@ -11842,23 +11860,23 @@ display_statement:
 ;
 
 display_body:
-  id_or_lit UPON_ENVIRONMENT_NAME _display_exception_phrases
+  id_or_lit UPON_ENVIRONMENT_NAME _common_exception_phrases
   {
 	cb_emit_env_name ($1);
   }
-| id_or_lit UPON_ENVIRONMENT_VALUE _display_exception_phrases
+| id_or_lit UPON_ENVIRONMENT_VALUE _common_exception_phrases
   {
 	cb_emit_env_value ($1);
   }
-| id_or_lit UPON_ARGUMENT_NUMBER _display_exception_phrases
+| id_or_lit UPON_ARGUMENT_NUMBER _common_exception_phrases
   {
 	cb_emit_arg_number ($1);
   }
-| id_or_lit UPON_COMMAND_LINE _display_exception_phrases
+| id_or_lit UPON_COMMAND_LINE _common_exception_phrases
   {
 	cb_emit_command_line ($1);
   }
-| screen_or_device_display _display_exception_phrases
+| screen_or_device_display _common_exception_phrases
 | display_erase	/* note: may also be part of display_pos_specifier */
 | display_pos_specifier
 | display_message_box
@@ -12953,7 +12971,7 @@ exit_body:
   {
   /* TODO: add warning/error if there's another statement in the paragraph */
   }
-| PROGRAM exit_program_returning
+| PROGRAM goback_exit_body
   {
 	if (in_declaratives && use_global_ind) {
 		cb_error_x (CB_TREE (current_statement),
@@ -12967,13 +12985,6 @@ exit_body:
 		check_unreached = 0;
 	} else {
 		check_unreached = 1;
-	}
-	if ($2) {
-		if (!current_program->cb_return_code) {
-			cb_error_x ($2, _("RETURNING/GIVING not allowed for non-returning runtime elements"));
-		} else {
-			cb_emit_move ($2, CB_LIST_INIT (current_program->cb_return_code));
-		}
 	}
 	current_statement->name = (const char *)"EXIT PROGRAM";
 	cb_emit_exit (0);
@@ -13082,11 +13093,22 @@ exit_body:
   }
 ;
 
-exit_program_returning:
-  /* empty */			{ $$ = NULL; }
-  /* extension supported by MF and ACU
+goback_exit_body:
+  /* empty */
+| /* extension supported by MF and ACU
      (note: ACU supports this with x only, too) */
-| return_give x		{ $$ = $2; }
+  return_give x
+  {
+	if (!current_program->cb_return_code) {
+		cb_error_x ($2, _("RETURNING/GIVING not allowed for non-returning runtime elements"));
+	} else {
+		cb_emit_move ($2, CB_LIST_INIT (current_program->cb_return_code));
+	}
+  }
+| RAISING raise_body
+| RAISING LAST _exception {
+	CB_PENDING ("RAISE statement");
+  }
 ;
 
 
@@ -13179,17 +13201,12 @@ goto_depending:
 /* GOBACK statement */
 
 goback_statement:
-  GOBACK exit_program_returning
-  {
+  GOBACK {
 	begin_statement ("GOBACK", 0);
+  }
+  goback_exit_body	  
+  {
 	check_unreached = 1;
-	if ($2) {
-		if (!current_program->cb_return_code) {
-			cb_error_x ($2, _("RETURNING/GIVING not allowed for non-returning runtime elements"));
-		} else {
-			cb_emit_move ($2, CB_LIST_INIT (current_program->cb_return_code));
-		}
-	}
 	cb_emit_exit (1U);
   }
 ;
@@ -13621,7 +13638,7 @@ json_generate_body:
 	cobc_in_json_generate_body = 0;
 	cobc_cs_check = 0;
   }
-  _json_exception_phrases
+  _common_exception_phrases
   {
 	cb_emit_json_generate ($1, $3, $4, $6, ml_suppress_list);
   }
@@ -13679,7 +13696,7 @@ json_parse_body:
   _with_detail
   _json_name_of
   _json_suppress
-  _json_exception_phrases
+  _common_exception_phrases
 ;
 
 _with_detail:
@@ -14164,7 +14181,6 @@ raise_body:
 	cb_error(_("'%s' is not an object-reference"), cb_name ($1));
   }
 ;
-
 
 
 exception_name:
@@ -15892,7 +15908,7 @@ xml_generate_body:
 	cobc_in_xml_generate_body = 0;
 	cobc_cs_check = 0;
   }
-  _xml_exception_phrases
+  _common_exception_phrases
   {
 	cb_emit_xml_generate ($1, $3, $4, xml_encoding, with_xml_dec,
 			      with_attrs, $7, $8, $9, ml_suppress_list);
@@ -16171,7 +16187,7 @@ xml_parse_body:
   {
 	cobc_cs_check = 0;
   }
-  _xml_exception_phrases
+  _common_exception_phrases
 ;
 
 _with_encoding:
@@ -16261,10 +16277,10 @@ not_escape_or_not_exception:
 ;
 
 
-_display_exception_phrases:
+_common_exception_phrases:
   %prec SHIFT_PREFER
-| disp_on_exception _disp_not_on_exception
-| disp_not_on_exception _disp_on_exception
+| common_on_exception _common_not_on_exception
+| common_not_on_exception _common_on_exception
   {
 	if ($2) {
 		cb_verify (cb_not_exception_before_exception,
@@ -16273,122 +16289,34 @@ _display_exception_phrases:
   }
 ;
 
-_disp_on_exception:
+_common_on_exception:
   %prec SHIFT_PREFER
   {
 	$$ = NULL;
   }
-| disp_on_exception
+| common_on_exception
   {
 	$$ = cb_int1;
   }
 ;
 
-disp_on_exception:
+common_on_exception:
   EXCEPTION statement_list
   {
-	current_statement->handler_type = DISPLAY_HANDLER;
+	current_statement->handler_type = get_handler_type_from_statement(current_statement);
 	current_statement->ex_handler = $2;
   }
 ;
 
-_disp_not_on_exception:
+_common_not_on_exception:
   %prec SHIFT_PREFER
-| disp_not_on_exception
+| common_not_on_exception
 ;
 
-disp_not_on_exception:
+common_not_on_exception:
   NOT_EXCEPTION statement_list
   {
-	current_statement->handler_type = DISPLAY_HANDLER;
-	current_statement->not_ex_handler = $2;
-  }
-;
-
-_xml_exception_phrases:
-  %prec SHIFT_PREFER
-| xml_on_exception _xml_not_on_exception
-| xml_not_on_exception _xml_on_exception
-  {
-	if ($2) {
-		cb_verify (cb_not_exception_before_exception,
-			   _("NOT EXCEPTION before EXCEPTION"));
-	}
-  }
-;
-
-_xml_on_exception:
-  %prec SHIFT_PREFER
-  {
-	$$ = NULL;
-  }
-| xml_on_exception
-  {
-	$$ = cb_int1;
-  }
-;
-
-xml_on_exception:
-  EXCEPTION statement_list
-  {
-	current_statement->handler_type = XML_HANDLER;
-	current_statement->ex_handler = $2;
-  }
-;
-
-_xml_not_on_exception:
-  %prec SHIFT_PREFER
-| xml_not_on_exception
-;
-
-xml_not_on_exception:
-  NOT_EXCEPTION statement_list
-  {
-	current_statement->handler_type = XML_HANDLER;
-	current_statement->not_ex_handler = $2;
-  }
-;
-
-_json_exception_phrases:
-  %prec SHIFT_PREFER
-| json_on_exception _json_not_on_exception
-| json_not_on_exception _json_on_exception
-  {
-	if ($2) {
-		cb_verify (cb_not_exception_before_exception,
-			   _("NOT EXCEPTION before EXCEPTION"));
-	}
-  }
-;
-
-_json_on_exception:
-  %prec SHIFT_PREFER
-  {
-	$$ = NULL;
-  }
-| json_on_exception
-  {
-	$$ = cb_int1;
-  }
-;
-
-json_on_exception:
-  EXCEPTION statement_list
-  {
-	current_statement->handler_type = JSON_HANDLER;
-	current_statement->ex_handler = $2;
-  }
-;
-
-_json_not_on_exception:
-  %prec SHIFT_PREFER
-| json_not_on_exception
-;
-
-json_not_on_exception:
-  NOT_EXCEPTION statement_list
-  {
-	current_statement->handler_type = JSON_HANDLER;
+	current_statement->handler_type = get_handler_type_from_statement (current_statement);
 	current_statement->not_ex_handler = $2;
   }
 ;
@@ -18568,6 +18496,8 @@ _when:		| WHEN ;
 _when_set_to:	| WHEN SET TO ;
 _with:		| WITH ;
 _with_for:	| WITH | FOR ;
+
+_exception:	  %prec SHIFT_PREFER | EXCEPTION ;
 
 /* Mandatory selection */
 

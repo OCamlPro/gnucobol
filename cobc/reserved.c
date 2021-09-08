@@ -2232,7 +2232,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "RAISED",			0, 1, RAISED,			/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
   },
-  { "RAISING",			0, 0, -1,			/* 2002 */
+  { "RAISING",			0, 0, RAISING,			/* 2002 */
 				0, 0
   },
   { "RANDOM",			0, 0, RANDOM,			/* 2002 */

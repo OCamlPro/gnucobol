@@ -1,4 +1,12 @@
 
+2021-09-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y: combined multiple exception_phrases nonterminals moving the
+	  single difference to the new function get_handler_type_from_statement
+	  which is a bit slower but reduces duplications
+	* reserved.c, parser.y: added parsing for RAISING clause, combining
+	  identical code forEXIT and GOBACK to (goback_exit_body)
+
 2021-09-05  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.h (cb_exception), cobc.c: add fatal attribute
