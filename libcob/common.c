@@ -5749,7 +5749,7 @@ cob_sys_getopt_long_long (void *so, void *lo, void *idx, const int long_only, vo
 	longoptions = longoptions_root;
 	for (i = 0; i < lo_amount; i++) {
 		j = sizeof (l->name) - 1;
-		while (j >= 0 && l->name[j] == 0x20) {
+		while (j >= 0 && l->name[j] == ' ') {
 			l->name[j] = 0x00;
 			j--;
 		}

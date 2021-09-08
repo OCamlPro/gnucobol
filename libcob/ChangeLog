@@ -35,47 +35,14 @@
 	* reportio.c (cob_report_generate): Fix bug #745 - missing invoke of
 	  DECLARATIVES for DETAIL line
 
-2021-02-15  Simon Sobisch <simonsobisch@gnu.org>
-
-	* call.c (add_to_preload, cob_try_preload), common.h: extracted from
-	  (cob_init_call handle) to allow calling cob_try_preload from debuggers
-
-2021-02-04  Simon Sobisch <simonsobisch@gnu.org>
-
-	* numeric.c (cob_decimal_set_display): handle common invalid data
-	  (all SPACE/LOW-VALUE) as ZERO and prevent overflow with invalid data
-	  by using only a half-byte) max 16 instead of char-computation
-	* numeric.c (cob_decimal_set_display): use local buffer instead of malloc
-	  for decimal value from string
-	* move.c (store_common_region): minor cleanup
-	* numeric.c, common.c: clear use and separation of "sign" (GMP view) vs.
-	  "flag_sign" (field attribute) vs. "has_negative_sign"
-
 2021-01-28  Simon Sobisch <simonsobisch@gnu.org>
 
-	* termio.c, common.c: allow to explicit disable dump
 	* fileio.c (lineseq_read), common.c, coblocal.h:
 	  backport of COB_LS_SPLIT from 4.x
 
 2021-01-27  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_sys_getopt_long_long): fix for EBCDIC
-
-2021-01-21  Simon Sobisch <simonsobisch@gnu.org>
-
-	* common.c (cob_sig_handler): skip module dump for SIGHUP and SIGPIPE
-	* common.c (cob_stack_trace_internal): dump starting program and
-	  parameters if in "verbose" mode (which is the default)
-
-2021-01-08  Simon Sobisch <simonsobisch@gnu.org>
-
-	* common.c (cob_backtrace), common.h: new variant of cob_stacktrace
-	  with format similar to GDB's backtrace
-
-2021-01-08  Simon Sobisch <simonsobisch@gnu.org>
-
-	* fileio.c () [WITH_DB]: fix Bug #000 SIGSEGV when DB_HOME is set
-	* common.c (): welcome 2021
 
 2021-01-07  Simon Sobisch <simonsobisch@gnu.org>
 
