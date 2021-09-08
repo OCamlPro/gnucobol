@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2007-2012, 2014-2020 Free Software Foundation, Inc.
+   Copyright (C) 2007-2012, 2014-2021 Free Software Foundation, Inc.
    Written by Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -245,6 +245,7 @@ typedef struct __cob_settings {
 	unsigned int	cob_ls_uses_cr;		/* Line Sequential uses CR LF */
 	unsigned int	cob_ls_fixed;		/* Line Sequential is fixed length */
 	unsigned int	cob_ls_nulls;		/* NUL insert to Line Sequential */
+	unsigned int	cob_ls_split;		/* Split 'too long' record into parts (Default is truncate) */
 	unsigned int	cob_varseq_type;
 	char 		*cob_file_path;
 	char		*bdb_home;

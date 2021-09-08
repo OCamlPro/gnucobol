@@ -421,6 +421,7 @@ static struct config_tbl gc_conf[] = {
 	{"COB_LS_FIXED", "ls_fixed", 		"0", 	NULL, GRP_FILE, ENV_BOOL, SETPOS (cob_ls_fixed)},
 	{"STRIP_TRAILING_SPACES", "strip_trailing_spaces", 		NULL, 	NULL, GRP_HIDE, ENV_BOOL | ENV_NOT, SETPOS (cob_ls_fixed)},
 	{"COB_LS_NULLS", "ls_nulls", 		"0", 	NULL, GRP_FILE, ENV_BOOL, SETPOS (cob_ls_nulls)},
+	{"COB_LS_SPLIT", "ls_split", 		"0", 	NULL, GRP_FILE, ENV_BOOL, SETPOS (cob_ls_split)},
 	{"COB_SORT_CHUNK", "sort_chunk", 		"256K", 	NULL, GRP_FILE, ENV_SIZE, SETPOS (cob_sort_chunk), (128 * 1024), (16 * 1024 * 1024)},
 	{"COB_SORT_MEMORY", "sort_memory", 	"128M", 	NULL, GRP_FILE, ENV_SIZE, SETPOS (cob_sort_memory), (1024*1024), 4294967294 /* max. guaranteed - 1 */},
 	{"COB_SYNC", "sync", 			"0", 	syncopts, GRP_FILE, ENV_BOOL, SETPOS (cob_do_sync)},

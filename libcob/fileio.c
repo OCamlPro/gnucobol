@@ -2079,6 +2079,21 @@ lineseq_read (cob_file *f, const int read_opts)
 		if (likely(i < f->record_max)) {
 			*dataptr++ = (unsigned char)n;
 			i++;
+			if (i == f->record_max
+			 && (cobsetptr->cob_ls_split)) {
+				/* If record is too long, then simulate end
+				 * so balance becomes the next record read */
+				int	k = 1;
+				n = getc ((FILE *)f->file);
+				if (n == '\r') {
+					n = getc ((FILE *)f->file);
+					k++;
+				}
+				if (n != '\n') {
+					fseek((FILE*)f->file, -k, SEEK_CUR);
+				}
+				break;
+			}
 		}
 	}
 	if (i < f->record_max) {
