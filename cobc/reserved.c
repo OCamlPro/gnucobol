@@ -1791,7 +1791,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "MERGE",			0, 0, MERGE,			/* 2002 */
 				0, 0
   },
-  { "MESSAGE",			0, 0, MESSAGE,			/* Communication Section */
+  { "MESSAGE",			0, 0, MESSAGE,			/* Communication Section, COBOL 2014 MCS */
 				0, 0
   },
   { "METHOD",			0, 0, -1,			/* 2002 */
@@ -2250,7 +2250,10 @@ static struct cobc_reserved default_reserved_words[] = {
   { "READERS",			0, 1, READERS,		/* ACU extension */
 				0, CB_CS_OPEN
   },
-  { "RECEIVE",			1, 0, RECEIVE,			/* Communication Section */
+  { "RECEIVE",			1, 0, RECEIVE,			/* Communication Section, 2014 MCS */
+				0, 0
+  },
+  { "RECEIVED",			1, 0, RECEIVED,			/* 2014 MCS */
 				0, 0
   },
   { "RECORD",			0, 0, RECORD,			/* 2002 */
@@ -2506,7 +2509,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "SELF-ACT",			0, 1, SELF_ACT,			/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
   },
-  { "SEND",			0, 0, SEND,			/* Communication Section */
+  { "SEND",			0, 0, SEND,			/* Communication Section, 2014 MCS */
 				0, 0
   },
   { "SENTENCE",			0, 0, SENTENCE,			/* 2002 */

@@ -6,6 +6,9 @@
 	  which is a bit slower but reduces duplications
 	* reserved.c, parser.y: added parsing for RAISING clause, combining
 	  identical code forEXIT and GOBACK to (goback_exit_body)
+	* reserved.c, parser.y, scanner.l: initial parsing approach for
+	  COBOL 202x Message Control System (MCS) statements SEND and RECEIVE
+	* scanner.l: return WORD token if SUPPRESS is not reserved
 
 2021-09-05  Simon Sobisch <simonsobisch@gnu.org>
 

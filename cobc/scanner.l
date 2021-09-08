@@ -790,6 +790,9 @@ H#[0-9A-Za-z]+ {
 
 "SUPPRESS"/[ .,;\n] {
 	count_lines (yytext);
+	if (!lookup_reserved_word ("SUPPRESS")) {
+		RETURN_TOK (WORD);
+	}
 	if (cobc_in_xml_generate_body || cobc_in_json_generate_body) {
 		/*
 		  Using the standard SUPPRESS token in JSON/XML GENERATE causes
@@ -803,6 +806,28 @@ H#[0-9A-Za-z]+ {
 	} else {
 		RETURN_TOK (SUPPRESS);
 	}
+}
+
+"SEND"/[ .,;\n] {
+	/* FIXME: seems to wok fine with SUPPRESS, but not here ... */
+	count_lines (yytext);
+	if (!lookup_reserved_word ("SEND")) {
+		RETURN_TOK (WORD);
+	}
+#if 0
+	if (current_program->cd_list) {
+		/*
+		  Using the standard SEND token in causes shift/reduce errors
+		  as it could either be SEND cd-name (COBOL until 85) or
+		  SEND (in MCS context COBOL 202x).
+		*/
+		RETURN_TOK (SEND);
+	} else {
+		RETURN_TOK (SEND_CD);
+	}
+#else
+	RETURN_TOK (SEND);
+#endif
 }
 
 "WHEN"/[ .,;\n] {

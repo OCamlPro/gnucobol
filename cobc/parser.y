@@ -1021,6 +1021,10 @@ get_handler_type_from_statement (struct cb_statement *statement)
 	 && !memcmp (statement->name, "JSON", 4)) {
 		return JSON_HANDLER;
 	}
+	if (!strcmp (statement->name, "SEND")
+	 || !strcmp (statement->name, "RECEIVE")) {
+		return MCS_HANDLER;
+	}
 	return NO_HANDLER;
 }
 
@@ -2937,6 +2941,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token READ_ONLY		"READ-ONLY"
 %token READY_TRACE		"READY TRACE"
 %token RECEIVE
+%token RECEIVED
 %token RECORD
 %token RECORD_DATA		"RECORD-DATA"
 %token RECORD_OVERFLOW		"RECORD-OVERFLOW"
@@ -14606,12 +14611,38 @@ send_statement:
   send_body
 ;
 
-send_body:
-  cd_name from_identifier
+send_body:		send_body_mcs | send_body_cd ;
+
+send_body_mcs:
+/* FIXME: conflict because x may an identifier in both _mcs and _cs
+  _to
+   FIXME - workaround: expeciting TO here */
+  TO
+  x from_identifier 
+/* FIXME: conflict because the RETURNING could belong to the exception phrases
+  _common_exception_phrases
+   FIXME - workaround end */
+  RETURNING message_tag_data_item
   {
+		CB_PENDING ("COBOL 202x MCS");
   }
-| cd_name _from_identifier with_indicator write_option _replacing_line
+/* FIXME later: too many conflicts here
+| _to message_tag_data_item from_identifier _send_raising _common_exception_phrases
   {
+		CB_PENDING ("COBOL 202x MCS");
+  }
+   FIXME - workaround end */
+;
+
+message_tag_data_item:
+  identifier
+  {
+	/* TODO:
+	cb_tree exception = get_exception (CB_NAME($1));
+	if (!exception) {
+		cb_error (_("'%s' is not a message-tag data item"), CB_NAME ($1));
+	}
+	*/
   }
 ;
 
@@ -14623,6 +14654,30 @@ _from_identifier:
 from_identifier:
   FROM identifier
   {
+  }
+;
+  
+/* FIXME later: too many conflicts here
+_send_raising:
+  %prec SHIFT_PREFER
+| send_raising
+;
+
+send_raising:
+  RAISING EXCEPTION exception_name
+| RAISING LAST _exception
+;
+FIXME - workaround end */
+
+
+send_body_cd:
+  cd_name from_identifier
+  {
+	  /* PENDING note in COMMUNICATION SECTION, which defines cd-names */
+  }
+| cd_name _from_identifier with_indicator write_option _replacing_line
+  {
+	  /* PENDING note in COMMUNICATION SECTION, which defines cd-names */
   }
 ;
 
