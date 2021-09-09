@@ -11150,6 +11150,141 @@ cb_emit_set_to (cb_tree vars, cb_tree x)
 	}
 }
 
+/*
+ * SET pointer TO ADDRESS OF FH--FCD OF filename
+ */
+void
+cb_emit_set_to_fcd (cb_tree vars, cb_tree x)
+{
+	cb_tree		l;
+	cb_tree		v;
+	cb_tree		rtree;
+	cb_tree		file;
+	struct cb_cast	*p;
+	enum cb_class	tree_class;
+
+	if (cb_validate_one (x)
+	 || cb_validate_list (vars)) {
+		return;
+	}
+
+	/* Check ADDRESS OF targets can be modified. */
+	for (l = vars; l; l = CB_CHAIN (l)) {
+		v = CB_VALUE (l);
+		if (!CB_CAST_P (v)) {
+			continue;
+		}
+		p = CB_CAST (v);
+		if (p->cast_type != CB_CAST_ADDRESS) {
+			continue;
+		}
+		rtree = cb_ref (p->val);
+		if (rtree == cb_error_node) {
+			cobc_err_msg (_("call to '%s' with invalid parameter '%s'"),
+				"cb_emit_set_to_fcd", "vars");
+			COBC_ABORT ();
+		}
+		if (CB_FIELD (rtree)->level != 1
+		 && CB_FIELD (rtree)->level != 77) {
+			cb_error_x (p->val, _("cannot change address of '%s', which is not level 1 or 77"),
+				    cb_name (p->val));
+			CB_VALUE (l) = cb_error_node;
+		} else if (!CB_FIELD (rtree)->flag_base) {
+			cb_error_x (p->val, _("cannot change address of '%s', which is not BASED or a LINKAGE item"),
+				    cb_name (p->val));
+			CB_VALUE (l) = cb_error_node;
+		}
+	}
+
+	file = cb_ref (x);
+	if (file == cb_error_node) {
+		return;
+	}
+
+	/* Emit statements if targets have the correct class. */
+	for (l = vars; l; l = CB_CHAIN (l)) {
+		tree_class = cb_tree_class (CB_VALUE (l));
+		switch (tree_class) {
+		case CB_CLASS_POINTER:
+			cb_emit (CB_BUILD_FUNCALL_2 ("cob_file_fcd_adrs", file, cb_build_address (CB_VALUE (l))));
+			break;
+		default:
+			if (CB_VALUE (l) != cb_error_node) {
+				cb_error_x (CB_TREE (current_statement),
+					    _("SET target '%s' is not a POINTER for FCD"), cb_name (CB_VALUE(l)));
+			}
+			break;
+		}
+	}
+}
+
+/*
+ * SET pointer TO ADDRESS OF FH--KEYDEF OF filename
+ */
+void
+cb_emit_set_to_fcdkey (cb_tree vars, cb_tree x)
+{
+	cb_tree		l;
+	cb_tree		v;
+	cb_tree		rtree;
+	cb_tree		file;
+	struct cb_cast	*p;
+	enum cb_class	tree_class;
+
+	if (cb_validate_one (x)
+	 || cb_validate_list (vars)) {
+		return;
+	}
+
+	/* Check ADDRESS OF targets can be modified. */
+	for (l = vars; l; l = CB_CHAIN (l)) {
+		v = CB_VALUE (l);
+		if (!CB_CAST_P (v)) {
+			continue;
+		}
+		p = CB_CAST (v);
+		if (p->cast_type != CB_CAST_ADDRESS) {
+			continue;
+		}
+		rtree = cb_ref (p->val);
+		if (rtree == cb_error_node) {
+			cobc_err_msg (_("call to '%s' with invalid parameter '%s'"),
+				"cb_emit_set_to_fcd", "vars");
+			COBC_ABORT ();
+		}
+		if (CB_FIELD (rtree)->level != 1
+		 && CB_FIELD (rtree)->level != 77) {
+			cb_error_x (p->val, _("cannot change address of '%s', which is not level 1 or 77"),
+				    cb_name (p->val));
+			CB_VALUE (l) = cb_error_node;
+		} else if (!CB_FIELD (rtree)->flag_base) {
+			cb_error_x (p->val, _("cannot change address of '%s', which is not BASED or a LINKAGE item"),
+				    cb_name (p->val));
+			CB_VALUE (l) = cb_error_node;
+		}
+	}
+
+	file = cb_ref (x);
+	if (file == cb_error_node) {
+		return;
+	}
+
+	/* Emit statements if targets have the correct class. */
+	for (l = vars; l; l = CB_CHAIN (l)) {
+		tree_class = cb_tree_class (CB_VALUE (l));
+		switch (tree_class) {
+		case CB_CLASS_POINTER:
+			cb_emit (CB_BUILD_FUNCALL_2 ("cob_file_fcdkey_adrs", file, cb_build_address (CB_VALUE (l))));
+			break;
+		default:
+			if (CB_VALUE (l) != cb_error_node) {
+				cb_error_x (CB_TREE (current_statement),
+					    _("SET target '%s' is not a POINTER for FCD-KEYDEF"), cb_name (CB_VALUE(l)));
+			}
+			break;
+		}
+	}
+}
 void
 cb_emit_set_up_down (cb_tree l, cb_tree flag, cb_tree x)
 {

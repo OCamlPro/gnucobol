@@ -2224,6 +2224,8 @@ extern void		cb_emit_search_all (cb_tree, cb_tree,
 
 extern void		cb_emit_setenv (cb_tree, cb_tree);
 extern void		cb_emit_set_to (cb_tree, cb_tree);
+extern void		cb_emit_set_to_fcd (cb_tree, cb_tree);
+extern void		cb_emit_set_to_fcdkey (cb_tree, cb_tree);
 extern void		cb_emit_set_up_down (cb_tree, cb_tree, cb_tree);
 extern void		cb_emit_set_on_off (cb_tree, cb_tree);
 extern void		cb_emit_set_true (cb_tree);

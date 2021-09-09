@@ -537,6 +537,12 @@
 	  a key that has all SUPPRESS character and skip the record.
 	  This will handle old VBISAM which do not support key suppression.
 
+2019-11-18  Ron Norman <rjn@inglenet.com>
+
+	* common.h, fileio.c (fextfh.c, fbdb.c): Updates to support 
+	   SET ... TO ADDRESS OF FH--FCD OF file     and
+	   SET ... TO ADDRESS OF FH--KEYDEF OF file
+
 2019-10-25  Edward Hart <edward.dan.hart@gmail.com>
 
 	* numeric.c (cob_add_int): fixed floating-point case (bug #603)

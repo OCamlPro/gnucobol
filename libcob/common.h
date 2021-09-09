@@ -1372,6 +1372,7 @@ typedef struct __cob_file {
 	short				curkey;			/* Current file index read sequentially */
 	short 				mapkey;			/* Remapped index number, when FD does not match file */
 
+	struct __fcd3		*fcd;			/* FCD created via SET ... TO ADDRESS OF FH--FCD */
 } cob_file;
 
 
@@ -2173,7 +2174,7 @@ typedef struct {
 /*                                                        */
 /* MF says: FCD 1 is obsolete and should never be used    */
 /**********************************************************/
-typedef struct {
+typedef struct __fcd3 {
 	unsigned char	fileStatus[2];			/* I/O completion status */
 	unsigned char	fcdLen[2];			/* contains length of FCD */
 	char		fcdVer;				/* FCD format version */
@@ -2201,11 +2202,11 @@ typedef struct {
 #define REC_MODE_VARIABLE	1
 	unsigned char	fileFormat;			/* File format */
 #define MF_FF_DEFAULT		0		/* Default format */
-#define MF_FF_CISAM		1		/* C-ISAM format */
-#define MF_FF_LEVELII		2	/* LEVEL II COBOL format */
-#define MF_FF_COBOL		3		/* IDXFORMAT"3" format (COBOL2) */
-#define MF_FF_IDX4		4		/* IDXFORMAT"4" format */
-#define MF_FF_IDX8		8		/* IDXFORMAT"8" format (BIG) */
+#define MF_FF_CISAM			1		/* C-ISAM format */
+#define MF_FF_LEVELII		2		/* LEVEL II COBOL format */
+#define MF_FF_COBOL			3		/* IDXFORMAT"3" format (COBOL2) */
+#define MF_FF_IDX4			4		/* IDXFORMAT"4" format */
+#define MF_FF_IDX8			8		/* IDXFORMAT"8" format (BIG) */
 	unsigned char	deviceFlag;		
 	unsigned char	lockAction;		
 	unsigned char	compType;			/* data compression type */
@@ -2451,6 +2452,8 @@ COB_EXPIMP void cob_extfh_start		(int (*callfh)(unsigned char *opcode, FCD3 *fcd
 COB_EXPIMP void cob_extfh_write		(int (*callfh)(unsigned char *opcode, FCD3 *fcd),
 					cob_file *, cob_field *, const int,
 				 	cob_field *, const unsigned int);
+COB_EXPIMP void cob_file_fcd_adrs		(cob_file *, void *);
+COB_EXPIMP void cob_file_fcdkey_adrs	(cob_file *, void *);
 
 /* File system routines */
 COB_EXPIMP int cob_sys_open_file	(unsigned char *, unsigned char *,

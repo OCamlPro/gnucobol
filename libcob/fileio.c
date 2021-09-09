@@ -473,6 +473,7 @@ static cob_settings	*cobsetptr = NULL;
 static unsigned int	eop_status = 0;
 static unsigned int	check_eop_status = 0;
 static int		cob_vsq_len = 0;
+static int		last_operation_open = 0;
 
 static struct file_list	*file_cache = NULL;
 
@@ -618,6 +619,10 @@ extern int extfh_relative_rewrite	(cob_file *, const int);
 extern int extfh_relative_delete	(cob_file *);
 #endif
 
+static void		cob_file_fcd_sync	(cob_file *);
+static void		cob_fcd_file_sync	(cob_file *, char *);
+static void		free_extfh_fcd (void);
+
 #ifdef	WITH_DB
 
 static DB_ENV		*bdb_env = NULL;
@@ -670,7 +675,7 @@ struct indexed_file {
 	DBT		data;
 	DB_LOCK		bdb_file_lock;
 	DB_LOCK		bdb_record_lock;
-	size_t		key_index;
+	int			key_index;
 	unsigned int	bdb_lock_id;
 	int		write_cursor_open;
 	int		record_locked;
@@ -1225,6 +1230,9 @@ save_status (cob_file *f, cob_field *fnstatus, const int status)
 	}
 	if (fnstatus) {
 		memcpy (fnstatus->data, f->file_status, (size_t)2);
+	}
+	if (f->fcd) {
+		cob_file_fcd_sync (f);			/* Copy cob_file to app's FCD */
 	}
 }
 
@@ -3076,7 +3084,7 @@ indexed_start_internal (cob_file *f, const int cond, cob_field *key,
 		f->mapkey = -1;
 		return COB_STATUS_23_KEY_NOT_EXISTS;
 	}
-	p->key_index = (unsigned int)key_index;
+	p->key_index = key_index;
 	f->curkey = (short)key_index;
 
 	/* Search */
@@ -5296,9 +5304,37 @@ cob_unlock_file (cob_file *f, cob_field *fnstatus)
 	save_status (f, fnstatus, COB_STATUS_00_SUCCESS);
 }
 
+/*
+ * Prepare for Open of data file; Used by EXTFH routines)
+ */
+static void
+cob_pre_open (cob_file *f)
+{
+	f->flag_nonexistent = 0;
+	f->flag_end_of_file = 0;
+	f->flag_begin_of_file = 0;
+	f->flag_first_read = 2;
+	f->flag_operation = 0;
+
+	/* Obtain the file name */
+	if (f->fcd && f->fcd->fnamePtr && f->fcd->fnamePtr[0]) {	
+		strncpy(file_open_name, f->fcd->fnamePtr, LDCOMPX2(f->fcd->fnameLen));
+	} else
+	if (f->assign != NULL
+	 && f->assign->data != NULL) {
+		cob_field_to_string (f->assign, file_open_name, (size_t)COB_FILE_MAX);
+	}
+}
+
+/*
+ * Open the data file
+ */
+
 void
 cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 {
+
+	last_operation_open = 1;
 
 	/* File was previously closed with lock */
 	if (f->open_mode == COB_OPEN_LOCKED) {
@@ -5324,6 +5360,10 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 	f->flag_operation = 0;
 	f->lock_mode &= ~COB_LOCK_OPEN_EXCLUSIVE;
 	f->lock_mode |= sharing;
+
+	if (f->fcd) {
+		cob_fcd_file_sync (f, file_open_name);		/* Copy app's FCD to cob_file */
+	}
 
 	if (unlikely (COB_FILE_STDIN (f))) {
 		if (mode != COB_OPEN_INPUT) {
@@ -5364,8 +5404,7 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 		return;
 	}
 
-	/* Obtain the file name */
-	cob_field_to_string (f->assign, file_open_name, (size_t)COB_FILE_MAX);
+	cob_pre_open (f);
 	if (file_open_name[0] == 0) {
 		save_status (f, fnstatus, COB_STATUS_31_INCONSISTENT_FILENAME);
 		return;
@@ -7490,6 +7529,8 @@ cob_exit_fileio (void)
 		runtime_buffer = NULL;
 	}
 
+	free_extfh_fcd ();
+
 	for (l = file_cache; l;) {
 		p = l;
 		l = l->next;
@@ -7555,6 +7596,28 @@ static struct fcd_file {
 static const cob_field_attr alnum_attr = {COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL};
 
 /*
+ * Free up allocated memory
+ */
+static void
+free_extfh_fcd (void)
+{
+	struct fcd_file	*ff,*nff;
+
+	for(ff = fcd_file_list; ff; ff = nff) {
+		nff = ff->next;
+		if (ff->free_fcd) {
+			if (ff->fcd->fnamePtr != NULL) {
+				cob_cache_free ((void*)(ff->fcd->fnamePtr));
+			}
+			cob_cache_free((void*)ff->fcd);
+		} else {
+			cob_cache_free((void*)ff->f);
+		}
+		cob_cache_free((void*)ff);
+	}
+}
+
+/*
  * Update FCD from cob_file
  */
 static void
@@ -7584,6 +7647,29 @@ update_file_to_fcd (cob_file *f, FCD3 *fcd, unsigned char *fnstatus)
 		STCOMPX4(f->record_min, fcd->curRecLen);
 	}
 	STCOMPX4(f->record_max, fcd->maxRecLen);
+	if (f->record_min == f->record_max)
+		fcd->recordMode = REC_MODE_FIXED;
+	else
+		fcd->recordMode = REC_MODE_VARIABLE;
+	if(f->organization == COB_ORG_LINE_SEQUENTIAL) {
+		fcd->fileOrg = ORG_LINE_SEQ;
+		STCOMPX2(0, fcd->refKey);
+#if 0 /* Note: file specific features are 4.x only .... */
+		if((f->file_features & COB_FILE_LS_CRLF))
+			fcd->fstatusType |= MF_FST_CRdelim;
+		if((f->file_features & COB_FILE_LS_NULLS))
+			fcd->fstatusType |= MF_FST_InsertNulls;
+		if((f->file_features & COB_FILE_LS_FIXED))
+			fcd->fstatusType |= MF_FST_NoStripSpaces;
+#else /* ... so we use the current global setting as info only */
+		if((cobsetptr->cob_ls_uses_cr))
+			fcd->fstatusType |= MF_FST_CRdelim;
+		if((cobsetptr->cob_ls_nulls))
+			fcd->fstatusType |= MF_FST_InsertNulls;
+		if((cobsetptr->cob_ls_fixed))
+			fcd->fstatusType |= MF_FST_NoStripSpaces;
+#endif
+	}
 }
 
 /*
@@ -7626,17 +7712,20 @@ copy_file_to_fcd (cob_file *f, FCD3 *fcd)
 	} else {
 		fcd->recordMode = REC_MODE_FIXED;
 	}
-	fnlen = strlen(assignto);
-	if (fcd->fnamePtr != NULL) {
+	if (fcd->fnamePtr == NULL) {
+		fcd->fnamePtr = cob_strdup(assignto);
+		fnlen = strlen(assignto);
+		STCOMPX2(fnlen, fcd->fnameLen);
+	} else if (f->fcd != fcd) {
 		cob_cache_free ((void*)fcd->fnamePtr);
+		fcd->fnamePtr = cob_strdup(assignto);
+		fnlen = strlen(assignto);
+		STCOMPX2(fnlen, fcd->fnameLen);
 	}
-	fcd->fnamePtr = cob_cache_malloc ((size_t)fnlen+1);
-	memcpy(fcd->fnamePtr, assignto, (size_t)fnlen+1);
-	STCOMPX2(fnlen, fcd->fnameLen);
 	fcd->openMode |= OPEN_NOT_OPEN;
 	STCOMPX2(0, fcd->refKey);
-	if(f->lock_mode == COB_LOCK_EXCLUSIVE
-	|| f->lock_mode == COB_LOCK_OPEN_EXCLUSIVE)
+	if (f->lock_mode == COB_LOCK_EXCLUSIVE
+	 || f->lock_mode == COB_LOCK_OPEN_EXCLUSIVE)
 		fcd->lockMode = FCD_LOCK_EXCL_LOCK;
 	else if(f->lock_mode == COB_LOCK_MANUAL)
 		fcd->lockMode = FCD_LOCK_MANU_LOCK;
@@ -7657,15 +7746,17 @@ copy_file_to_fcd (cob_file *f, FCD3 *fcd)
 		}
 		if (fcd->kdbPtr == NULL
 		 && f->nkeys > 0) {
-			nkeys = f->nkeys;
+			nkeys = f->nkeys < 16 ? 16 : f->nkeys;	/* allocate at least 16 keys CHECKME: why? */
 			kdblen = sizeof(KDB) - sizeof(kdb->key) + (sizeof(KDB_KEY) * nkeys) + (sizeof(EXTKEY) * keycomp);
-			fcd->kdbPtr = kdb = cob_malloc(kdblen + sizeof(EXTKEY));
+			nkeys = f->nkeys;
+			fcd->kdbPtr = kdb = cob_cache_malloc (kdblen + sizeof(EXTKEY));
 			STCOMPX2(kdblen, kdb->kdbLen);
 			STCOMPX2(nkeys, kdb->nkeys);
 		} else if (fcd->kdbPtr == NULL) {
-			nkeys = 0;
+			nkeys = 16;
 			kdblen = sizeof(KDB) - sizeof(kdb->key) + (sizeof(KDB_KEY) * nkeys) + (sizeof(EXTKEY) * keycomp);
-			fcd->kdbPtr = kdb = cob_malloc(kdblen + sizeof(EXTKEY));
+			nkeys = 0;
+			fcd->kdbPtr = kdb = cob_cache_malloc (kdblen + sizeof(EXTKEY));
 			STCOMPX2(kdblen, kdb->kdbLen);
 			STCOMPX2(nkeys, kdb->nkeys);
 		} else {
@@ -7708,14 +7799,6 @@ copy_file_to_fcd (cob_file *f, FCD3 *fcd)
 	} else if(f->organization == COB_ORG_LINE_SEQUENTIAL) {
 		fcd->fileOrg = ORG_LINE_SEQ;
 		STCOMPX2(0, fcd->refKey);
-#if 0 /* TODO: activate on merge of file_features from rw-branch */
-		if((f->file_features & COB_FILE_LS_CRLF))
-			fcd->fstatusType |= MF_FST_CRdelim;
-		if((f->file_features & COB_FILE_LS_NULLS))
-			fcd->fstatusType |= MF_FST_InsertNulls;
-		if((f->file_features & COB_FILE_LS_FIXED))
-			fcd->fstatusType |= MF_FST_NoStripSpaces;
-#endif
 	} else if(f->organization == COB_ORG_RELATIVE) {
 		fcd->fileOrg = ORG_RELATIVE;
 		STCOMPX2(0, fcd->refKey);
@@ -7729,19 +7812,21 @@ copy_file_to_fcd (cob_file *f, FCD3 *fcd)
 static void
 update_fcd_to_file (FCD3* fcd, cob_file *f, cob_field *fnstatus, int wasOpen)
 {
-	cobglobptr->cob_error_file = f;
-	if (isdigit(fcd->fileStatus[0]) && fcd->fileStatus[1] != '0') {
-		cob_set_exception (status_exception[(fcd->fileStatus[0] - '0')]);
-	} else {
-		cobglobptr->cob_exception_code = 0;
+	if (wasOpen >= 0) {
+		cobglobptr->cob_error_file = f;
+		if (isdigit(fcd->fileStatus[0]) && fcd->fileStatus[1] != '0') {
+			cob_set_exception (status_exception[(fcd->fileStatus[0] - '0')]);
+		} else {
+			cobglobptr->cob_exception_code = 0;
+		}
+		if (f->file_status) {
+			memcpy(f->file_status, fcd->fileStatus, 2);
+		}
+		if (fnstatus) {
+			memcpy(fnstatus->data, fcd->fileStatus, 2);
+		}
 	}
-	if (f->file_status) {
-		memcpy(f->file_status, fcd->fileStatus, 2);
-	}
-	if (fnstatus) {
-		memcpy(fnstatus->data, fcd->fileStatus, 2);
-	}
-	if (wasOpen) {
+	if (wasOpen > 0) {
 		if((fcd->openMode & OPEN_NOT_OPEN))
 			f->open_mode = 0;
 		else if((fcd->openMode&0x7f) == OPEN_INPUT)
@@ -7755,6 +7840,49 @@ update_fcd_to_file (FCD3* fcd, cob_file *f, cob_field *fnstatus, int wasOpen)
 	}
 	f->record_min = LDCOMPX4(fcd->minRecLen);
 	f->record_max = LDCOMPX4(fcd->maxRecLen);
+ 	f->record->size = LDCOMPX4(fcd->curRecLen);
+}
+
+static void
+copy_keys_fcd_to_file (FCD3 *fcd, cob_file *f)
+{
+	int		k, p, parts, off;
+	EXTKEY	*key;
+	for (k=0; k < (int)f->nkeys; k++) {
+		parts = LDCOMPX2(fcd->kdbPtr->key[k].count);
+		off   = LDCOMPX2(fcd->kdbPtr->key[k].offset);
+		key   = (EXTKEY*) ((char*)(fcd->kdbPtr) + off);
+		if (fcd->kdbPtr->key[k].keyFlags & KEY_SPARSE) {
+			f->keys[k].char_suppress = fcd->kdbPtr->key[k].sparse;
+			f->keys[k].tf_suppress = 1;
+		} else {
+			f->keys[k].tf_suppress = 0;
+		}
+		if (fcd->kdbPtr->key[k].keyFlags & KEY_DUPS) {
+			f->keys[k].tf_duplicates = 1;
+		} else {
+			f->keys[k].tf_duplicates = 0;
+		}
+		f->keys[k].count_components = parts;
+		if (f->keys[k].offset == 0)
+			f->keys[k].offset = LDCOMPX4(key->pos);
+		if (f->keys[k].field == NULL
+		 || f->keys[k].offset != LDCOMPX4(key->pos)
+		 || (parts == 1 && f->keys[k].field->size != LDCOMPX4(key->len))) {
+			f->keys[k].field = cob_cache_malloc(sizeof(cob_field));
+			f->keys[k].field->data = f->record->data + LDCOMPX4(key->pos);
+			f->keys[k].field->attr = &alnum_attr;
+			f->keys[k].field->size = LDCOMPX4(key->len);
+			f->keys[k].offset = LDCOMPX4(key->pos);
+		}
+		for (p=0; p < parts; p++) {
+			f->keys[k].component[p] = cob_cache_malloc(sizeof(cob_field));
+			f->keys[k].component[p]->data = f->record->data + LDCOMPX4(key->pos);
+			f->keys[k].component[p]->attr = &alnum_attr;
+			f->keys[k].component[p]->size = LDCOMPX4(key->len);
+			key = (EXTKEY*) ((char*)(key) + sizeof(EXTKEY));
+		}
+	}
 }
 
 /*
@@ -7763,8 +7891,7 @@ update_fcd_to_file (FCD3* fcd, cob_file *f, cob_field *fnstatus, int wasOpen)
 static void
 copy_fcd_to_file (FCD3* fcd, cob_file *f)
 {
-	int		k, p, parts, off;
-	EXTKEY	*key;
+	int		k;
 
 	if(fcd->accessFlags == ACCESS_SEQ)
 		f->access_mode = COB_ACCESS_SEQUENTIAL;
@@ -7804,7 +7931,7 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f)
 		f->organization = COB_ORG_SEQUENTIAL;
 	} else if(fcd->fileOrg == ORG_LINE_SEQ) {
 		f->organization = COB_ORG_LINE_SEQUENTIAL;
-#if 0 /* TODO: activate on merge of file_features from rw-branch */
+#if 0 /* note file_features are a 4.x-only feature */
 #ifdef	_WIN32
 		f->file_features |= COB_FILE_LS_CRLF;
 #else
@@ -7826,7 +7953,7 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f)
 
 	/* Allocate cob_file fields as needed and copy from FCD */
 	if (f->record == NULL) {
-		f->record = cob_malloc(sizeof(cob_field));
+		f->record = cob_cache_malloc(sizeof(cob_field));
 		f->record->data = fcd->recPtr;
 		f->record->size = LDCOMPX4(fcd->curRecLen);
 		f->record->attr = &alnum_attr;
@@ -7834,10 +7961,11 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f)
 		f->record_max = LDCOMPX4(fcd->maxRecLen);
 	}
 	if (f->file_status == NULL) {
-		f->file_status = cob_malloc( 6 );
+		f->file_status = cob_cache_malloc( 6 );
 	}
-	if (f->assign == NULL) {
-		f->assign = cob_malloc(sizeof(cob_field));
+	if ( f->assign == NULL
+	 || (f->fcd && fcd->fnamePtr)) {
+		f->assign = cob_cache_malloc(sizeof(cob_field));
 		f->assign->data = (unsigned char*)fcd->fnamePtr;
 		f->assign->size = LDCOMPX2(fcd->fnameLen);
 		f->assign->attr = &alnum_attr;
@@ -7868,39 +7996,15 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f)
 					(int)f->nkeys, MAX_FILE_KEYS, cob_get_filename_print (f->file, 0));
 				f->nkeys = MAX_FILE_KEYS;
 			}
-			f->keys = cob_malloc (sizeof(cob_file_key) * f->nkeys);
-			for (k=0; k < f->nkeys; k++) {
-				parts = LDCOMPX2(fcd->kdbPtr->key[k].count);
-				off   = LDCOMPX2(fcd->kdbPtr->key[k].offset);
-				key   = (EXTKEY*) ((char*)(fcd->kdbPtr) + off);
-				if (fcd->kdbPtr->key[k].keyFlags & KEY_SPARSE) {
-					f->keys[k].char_suppress = fcd->kdbPtr->key[k].sparse;
-					f->keys[k].tf_suppress = 1;
-				} else {
-					f->keys[k].tf_suppress = 0;
-				}
-				if (fcd->kdbPtr->key[k].keyFlags & KEY_DUPS) {
-					f->keys[k].tf_duplicates = 1;
-				} else {
-					f->keys[k].tf_duplicates = 0;
-				}
-				f->keys[k].count_components = parts;
-				f->keys[k].field = cob_malloc(sizeof(cob_field));
-				f->keys[k].field->data = f->record->data + LDCOMPX4(key->pos);
-				f->keys[k].field->attr = &alnum_attr;
-				f->keys[k].field->size = LDCOMPX4(key->len);
-				f->keys[k].offset = LDCOMPX4(key->pos);
-				for (p=0; p < parts; p++) {
-					f->keys[k].component[p] = cob_malloc(sizeof(cob_field));
-					f->keys[k].component[p]->data = f->record->data + LDCOMPX4(key->pos);
-					f->keys[k].component[p]->attr = &alnum_attr;
-					f->keys[k].component[p]->size = LDCOMPX4(key->len);
-					key   = (EXTKEY*) ((char*)(key) + sizeof(EXTKEY));
-				}
-			}
+			f->keys = cob_cache_malloc  (sizeof(cob_file_key) * f->nkeys);
+			copy_keys_fcd_to_file (fcd, f);
 		} else {
-			f->keys = cob_malloc(sizeof(cob_file_key));
+			f->keys = cob_cache_malloc(sizeof(cob_file_key));
 		}
+	} else if (f->nkeys > 0
+	        && fcd->kdbPtr != NULL
+	        && LDCOMPX2(fcd->kdbPtr->nkeys) >= f->nkeys) {
+		copy_keys_fcd_to_file (fcd, f);
 	}
 	update_fcd_to_file (fcd, f, NULL, 0);
 }
@@ -7913,13 +8017,13 @@ find_fcd (cob_file *f)
 {
 	FCD3	*fcd;
 	struct fcd_file	*ff;
-	for(ff = fcd_file_list; ff; ff=ff->next) {
-		if(ff->f == f)
+	for (ff = fcd_file_list; ff; ff=ff->next) {
+		if (ff->f == f)
 			return ff->fcd;
 	}
-	fcd = cob_malloc(sizeof(FCD3));
-	copy_file_to_fcd(f, fcd);
-	ff = cob_malloc(sizeof(struct fcd_file));
+	fcd = cob_cache_malloc (sizeof(FCD3));
+	copy_file_to_fcd (f, fcd);
+	ff = cob_cache_malloc (sizeof(struct fcd_file));
 	ff->next = fcd_file_list;
 	ff->fcd = fcd;
 	ff->f = f;
@@ -7936,15 +8040,15 @@ find_file (FCD3 *fcd)
 {
 	cob_file	*f;
 	struct fcd_file	*ff;
-	for(ff = fcd_file_list; ff; ff=ff->next) {
-		if(ff->fcd == fcd) {
+	for (ff = fcd_file_list; ff; ff=ff->next) {
+		if (ff->fcd == fcd) {
 			return ff->f;
 		}
 	}
-	f = cob_malloc(sizeof(cob_file));
+	f = cob_cache_malloc (sizeof(cob_file));
 	f->file_version = COB_FILE_VERSION;
-	copy_fcd_to_file(fcd, f);
-	ff = cob_malloc(sizeof(struct fcd_file));
+	copy_fcd_to_file (fcd, f);
+	ff = cob_cache_malloc (sizeof(struct fcd_file));
 	ff->next = fcd_file_list;
 	ff->fcd = fcd;
 	ff->f = f;
@@ -7957,8 +8061,8 @@ static void
 save_fcd_status (FCD3 *fcd, int sts)
 {
 	struct fcd_file	*ff;
-	for(ff = fcd_file_list; ff; ff=ff->next) {
-		if(ff->fcd == fcd) {
+	for (ff = fcd_file_list; ff; ff=ff->next) {
+		if (ff->fcd == fcd) {
 			ff->sts = sts;
 			return;
 		}
@@ -8033,17 +8137,17 @@ cob_extfh_close (
 	update_fcd_to_file (fcd, f, fnstatus, 0);
 
 	pff = NULL;
-	for(ff = fcd_file_list; ff; ff=ff->next) {
-		if(ff->fcd == fcd) {
-			if(pff)
+	for (ff = fcd_file_list; ff; ff=ff->next) {
+		if (ff->fcd == fcd) {
+			if (pff)
 				pff->next = ff->next;
 			else
 				fcd_file_list = ff->next;
-			if(ff->free_fcd)
-				cob_free((void*)ff->fcd);
+			if (ff->free_fcd)
+				cob_cache_free((void*)ff->fcd);
 			else
-				cob_free((void*)ff->f);
-			cob_free((void*)ff);
+				cob_cache_free((void*)ff->f);
+			cob_cache_free((void*)ff);
 			break;
 		}
 		pff = ff;
@@ -8289,6 +8393,74 @@ cob_sys_extfh (const void *opcode_ptr, void *fcd_ptr)
 
 	return EXTFH ((unsigned char *)opcode_ptr, fcd);
 }
+
+/* 
+ * Sync FCD3 values to cob_file values
+ */
+static void
+cob_fcd_file_sync (cob_file *f, char *file_open_name)
+{
+	copy_fcd_to_file (f->fcd, f);
+}
+
+/* 
+ * Sync cob_file values to FCD3 values
+ */
+static void
+cob_file_fcd_sync (cob_file *f)
+{
+	if (last_operation_open == 1) {
+		last_operation_open = 0;
+		copy_file_to_fcd (f, f->fcd);
+	} else {
+		update_file_to_fcd(f, f->fcd, NULL);
+	}
+	return;
+}
+/* 
+ * Return address of FH--FCD for the given file
+ * Create the FCD3 is needed
+ */
+void
+cob_file_fcd_adrs (cob_file *f, void *pfcd)
+{
+	FCD3	*fcd = NULL;
+	if (f == NULL) {
+		cob_runtime_error (_("invalid internal call of %s"), "cob_file_fcd_adrs");
+		cob_runtime_error (_("Please report this!"));
+		cob_stop_run (1);
+	}
+	if (f->fcd == NULL) {
+		f->fcd = find_fcd (f);
+	}
+	fcd = f->fcd;
+	if (fcd->openMode == OPEN_NOT_OPEN) {
+		cob_pre_open (f);
+	}
+	if (fcd->kdbPtr == NULL) {
+		copy_file_to_fcd (f, fcd);
+	}
+	memcpy (pfcd, &f->fcd, sizeof(void *));
+	return;
+}
+
+/* 
+ * Return address of FH--KEYDEF for the given file
+ * Create the FCD3 is needed
+ */
+void
+cob_file_fcdkey_adrs (cob_file *f, void *pkey)
+{
+	FCD3	*fcd = NULL;
+	if (f == NULL) {
+		cob_runtime_error (_("invalid internal call of %s"), "cob_file_fcdkey_adrs");
+		cob_runtime_error (_("Please report this!"));
+		cob_stop_run (1);
+	}
+	cob_file_fcd_adrs (f, &fcd);
+	memcpy (pkey, &f->fcd->kdbPtr, sizeof(void *));
+	return;
+ }
 
 /*
  * EXTFH: maybe called by user own 'callfh' routine

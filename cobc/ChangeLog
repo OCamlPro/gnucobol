@@ -923,6 +923,12 @@
 	  fixed to be in the header
 	* tree.h, parser.y: added flag_entry_for_goto to cb_field
 
+2019-11-18  Ron Norman <rjn@inglenet.com>
+
+	* tree.h, parser.y, typeck.c: Updates to support
+	  SET ... TO ADDRESS OF FH--FCD OF file   and
+	  SET ... TO ADDRESS OF FH--KEYDEF OF file
+
 2019-11-17  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c (output_header): use current output target instead of

@@ -14799,6 +14799,14 @@ set_to:
   {
 	cb_emit_set_to ($1, cb_build_ppointer ($4));
   }
+| target_x_list TO ADDRESS _of FH__FCD _of file_name
+  {
+	cb_emit_set_to_fcd ($1, $7);
+  }
+| target_x_list TO ADDRESS _of FH__KEYDEF _of file_name
+  {
+	cb_emit_set_to_fcdkey ($1, $7);
+  }
 | target_x_list TO x
   {
 	cb_emit_set_to ($1, $3);
@@ -17307,16 +17315,6 @@ x_common:
 | ADDRESS _of identifier_1
   {
 	$$ = cb_build_address (check_not_88_level ($3));
-  }
-| ADDRESS _of FH__FCD _of file_name
-  {
-	CB_PENDING ("EXTFH address");
-	$$ = cb_error_node;
-  }
-| ADDRESS _of FH__KEYDEF _of file_name
-  {
-	CB_PENDING ("EXTFH address");
-	$$ = cb_error_node;
   }
 | MNEMONIC_NAME
   {
