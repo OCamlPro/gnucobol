@@ -1,4 +1,8 @@
 
+2021-08-29   Ron Norman <rjn@inglenet.com>
+
+	* testsuite.src/run_file.at: Add more EXTFH test cases
+
 2020-12-20  Simon Sobisch <simonsobisch@gnu.org>
 
 	* testsuite.src/run_extensions.at, testsuite.src/run_file.at:

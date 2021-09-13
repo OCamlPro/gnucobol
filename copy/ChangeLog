@@ -1,4 +1,14 @@
 
+2021-09-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* xfhfcd3.cpy: Change PIC X(n) to PIC X COMP-X OCCURS n
+	  so that the entire FCD block would be initialize to LOW-VALUES
+
+2021-08-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* xfhfcd3.cpy: adjusted filler definitions for fixed-size 64bit
+	  pointers to be COMP-X, ensuring NULL initialized pointers
+
 2019-04-17  Simon Sobisch <simonsobisch@gnu.org>
 
 	* screenio.cpy: added exception values for mouse and
@@ -52,7 +62,7 @@
 	* Add Makefile*, ChangeLog, sqlca.cpy, sqlda.cpy
 
 
-Copyright 2008-2010,2015,2016,2018-2019 Free Software Foundation, Inc.
+Copyright 2008-2010,2015,2016,2018-2019,2021 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

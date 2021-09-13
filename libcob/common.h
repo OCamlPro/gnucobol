@@ -2140,6 +2140,13 @@ typedef struct {
 } KDB;
 
 typedef struct {
+	unsigned char	kdbLen[2];
+	char		filler[4];
+	unsigned char	nkeys[2];
+	char		filler2[6];
+} KDB_GLOBAL;
+
+typedef struct {
 	unsigned char	desc;
 	unsigned char	type;
 	unsigned char	pos[4];				/* Position in record */
@@ -2175,19 +2182,19 @@ typedef struct {
 /* MF says: FCD 1 is obsolete and should never be used    */
 /**********************************************************/
 typedef struct __fcd3 {
-	unsigned char	fileStatus[2];			/* I/O completion status */
+	unsigned char	fileStatus[2];		/* I/O completion status */
 	unsigned char	fcdLen[2];			/* contains length of FCD */
-	char		fcdVer;				/* FCD format version */
+	unsigned char	fcdVer;				/* FCD format version */
 #define FCD_VER_64Bit	1
 	unsigned char	fileOrg;			/* file organization */
 #define ORG_LINE_SEQ		0
 #define ORG_SEQ			1
 #define ORG_INDEXED		2
 #define ORG_RELATIVE		3
-#define ORG_DETERMINE		255		/* not really implemented yet */
-	unsigned char	accessFlags;			/* status byte (bit 7) & file access flags (bits 0-6)*/
+#define ORG_DETERMINE		255			/* not really implemented yet */
+	unsigned char	accessFlags;		/* status byte (bit 7) & file access flags (bits 0-6)*/
 #define ACCESS_SEQ			0
-#define ACCESS_DUP_PRIME		1	/* not implemented yet */
+#define ACCESS_DUP_PRIME	1			/* not implemented yet */
 #define ACCESS_RANDOM		4
 #define ACCESS_DYNAMIC		8
 #define ACCESS_USER_STAT	0x80
@@ -2238,8 +2245,8 @@ typedef struct __fcd3 {
 	unsigned char	lockTypes;
 	unsigned char	fsFlags;
 	unsigned char	confFlags;			/* configuration flags */
-#define MF_CF_WRTHRU		0x80			/* Write through to disk */
-#define MF_CF_RELADRS		0x40			/* Use relative byte address */
+#define MF_CF_WRTHRU	0x80			/* Write through to disk */
+#define MF_CF_RELADRS	0x40			/* Use relative byte address */
 #define MF_CF_UPPTR		0x20			/* Update current record pointer */
 #define MF_CF_REC64		0x10			/* Use 64-bit record address */
 	unsigned char	miscFlags;			/* misc flags */
@@ -2254,7 +2261,7 @@ typedef struct __fcd3 {
 #define FCD_LOCK_AUTO_LOCK	0x02
 #define FCD_LOCK_EXCL_LOCK	0x01
 	unsigned char	fsv2Flags;			/* Fileshare V2 flags */
-	unsigned char	idxCacheArea;			/* index cache buffers */
+	unsigned char	idxCacheArea;		/* index cache buffers */
 	unsigned char	fcdInternal1;
 	unsigned char	fcdInternal2;
 	char		res3[14];	
@@ -2266,37 +2273,90 @@ typedef struct __fcd3 {
 	unsigned char	nlsId[2];
 	char		fsv2FileId[2];			/* Fileshare V2 file id */
 	char		retryOpenCount[2];
-	unsigned char	fnameLen[2];			/* file name length */
-	unsigned char	idxNameLen[2];			/* index name length */
+	unsigned char	fnameLen[2];		/* file name length */
+	unsigned char	idxNameLen[2];		/* index name length */
 	char		retryCount[2];
 	unsigned char	refKey[2];			/* key of reference */
 	unsigned char	lineCount[2];	
 	unsigned char	useFiles;	
 	unsigned char	giveFiles;	
-	unsigned char	effKeyLen[2];			/* effective key length */
+	unsigned char	effKeyLen[2];		/* effective key length */
 	char		res5[14];		
 	unsigned char	eop[2];				/* was "res5"; Use for cob_write eop value */
-	char		opt[4];				/* was "res5"; Use for cob_write opts value */
-	unsigned char	curRecLen[4];			/* current record length in bytes */
-	unsigned char	minRecLen[4];			/* min. record length in bytes */
-	unsigned char	maxRecLen[4];			/* max. record length in bytes */
+	char		opt[4];					/* was "res5"; Use for cob_write opts value */
+	unsigned char	curRecLen[4];		/* current record length in bytes */
+	unsigned char	minRecLen[4];		/* min. record length in bytes */
+	unsigned char	maxRecLen[4];		/* max. record length in bytes */
 	char		fsv2SessionId[4];		/* Fileshare V2 session id */
 	char		res6[24];
-	unsigned char	relByteAdrs[8];			/* 64-bit, relative byte address */
-	unsigned char	maxRelKey[8];			/* 64-bit, max relative key/Record num */
+	unsigned char	relByteAdrs[8];		/* 64-bit, relative byte address */
+	unsigned char	maxRelKey[8];		/* 64-bit, max relative key/Record num */
 	unsigned char	relKey[8];			/* 64-bit, (cur) relative key/Record num */
-	pointer_8byte(void,	_fileHandle);			/* file handle */
-	pointer_8byte(unsigned char,	_recPtr);			/* pointer to record area */
+	pointer_8byte(void,	_fileHandle);		/* file handle */
+	pointer_8byte(unsigned char, _recPtr);	/* pointer to record area */
 	pointer_8byte(char,	_fnamePtr);			/* pointer to file name area */
-	pointer_8byte(char,	_idxNamePtr);			/* pointer to index name area */
+	pointer_8byte(char,	_idxNamePtr);		/* pointer to index name area */
 	pointer_8byte(KDB,	_kdbPtr);			/* pointer to key definition block */
 	pointer_8byte(void,	_colPtr);			/* pointer to collating sequence block */
 	pointer_8byte(void,	_fileDef);			/* pointer to filedef */
-	pointer_8byte(void,	_dfSortPtr);			/* pointer to DFSORT */
+	pointer_8byte(void,	_dfSortPtr);		/* pointer to DFSORT */
 } FCD3;
 
+/*******************************************************/
+/* Following is the 32-bit FCD (or also known as FCD2) */
+/**** Newer versions of MF COBOL do not support this ***/
+/*******************************************************/
+typedef struct __fcd2 {
+	unsigned char	fileStatus[2];		/* I/O completion status */
+	unsigned char	fcdLen[2];			/* reserved */
+	unsigned char	fcdVer;				/* reserved */
+#define FCD2_VER	0
+	unsigned char	fileOrg;			/* file organization */
+	unsigned char	accessFlags;		/* status byte & file access flags */
+	unsigned char	openMode;			/* open mode INPUT, I-O, etc. */
+	char			res2[3];			/* reserved */
+	unsigned char	fnameLen[2];		/* file name length */
+	unsigned char	relByteAdrs64[8];	/* 64-bit, relative byte address */
+	char			res3[3];			/* reserved */
+	unsigned char	lockMode;			/* lock mode flags for shareable files*/
+	unsigned char	otherFlags;			/* miscellaneous flags */
+	char			res4[2];			/* reserved */
+	void			*fileHandle2;		/* file handle */
+	unsigned char   gcFlags;			/* Flags used by sttfh.c */
+	unsigned char	fstatusType;		/* file status type */
+	unsigned char	fileFormat;			/* file format */
+	char			res6[3];			/* reserved */
+	unsigned char	maxRecLen[2];		/* max. record length in bytes */
+	char			res7[3];			/* rserved */
+	unsigned char	relRecNum[4];			/* relative record number */
+	unsigned char	recordMode;			/* recording mode */
+	unsigned char	curRecLen[2];		/* current record length in bytes */
+	unsigned char	minRecLen[2];		/* min. record length in bytes */
+	unsigned char	refKey[2];			/* key of reference */
+	unsigned char 	effKeyLen[2];		/* effective key length */
+	unsigned char	*recPtr2;			/* Pointer to record area */
+	char			*fnamePtr2;			/* pointer to file name area */
+	KDB				*kdbPtr2;			/* pointer to key definition block */
+	char			res8[4];			/* reserved */
+	unsigned char	relByteAddr[4];		/* relative byte address */
+	char			res9[2];			/* reserved */
+	unsigned char	compType;			/* data compression type */
+	char			fsv2SessionId[4];	/* Fileshare V2 session id */
+	char			fsv2FileId[2];		/* Fileshare V2 file id */
+	unsigned char	maxRelKeySize[4];	/* Maximum relative Key size */
+	char			res10[2];			/* reserved */
+	unsigned char	lockFlags;			/* locking flags */
+	unsigned char	fsv2Flags;			/* Fileshare V2 flags */
+	unsigned char	confFlags;			/* configuration flags */
+	char			res11;				/* reserved */
+	unsigned char	moreFlags;			/* yet another bunch of flags */
+	unsigned char	idxCacheSz;			/* index cache size */
+	unsigned char	idxCacheArea;		/* index cache area */
+	char			res12[2];			/* reserved */
+} FCD2;
+
 #define fileHandle	_fileHandle.ptr_name	/* EXTFH: file handle */
-#define recPtr		_recPtr.ptr_name	/* EXTFH: pointer to record area */
+#define recPtr		_recPtr.ptr_name		/* EXTFH: pointer to record area */
 #define fnamePtr	_fnamePtr.ptr_name		/* EXTFH: pointer to file name area */
 #define idxNamePtr	_idxNamePtr.ptr_name	/* EXTFH: pointer to index name area */
 #define kdbPtr		_kdbPtr.ptr_name 		/* EXTFH: pointer to key definition block */
@@ -2306,16 +2366,16 @@ typedef struct __fcd3 {
 
 #define LSUCHAR(f)	((unsigned char*)(f))
 /* xxCOMPXn : Big Endian Binary data */
-#define LDCOMPX2(f)	(((f[0] << 8 ) & 0xFF00) | (f[1] & 0xFF))
-#define LDCOMPX4(f)	(((f[0] << 24 ) & 0xFF000000) | ((f[1] << 16 ) & 0xFF0000) | ((f[2] << 8 ) & 0xFF00) | (f[3] & 0xFF))
-#define STCOMPX2(v,f)	(f[1] = (v) & 0xFF, f[0] = ((v) >> 8) & 0xFF)
-#define STCOMPX4(v,f)	(f[3] = (v) & 0xFF, f[2] = ((v) >> 8) & 0xFF, f[1] = ((v) >> 16) & 0xFF, f[0] = ((v) >> 24) & 0xFF)
+#define LDCOMPX2(f)	((((f)[0] << 8 ) & 0xFF00) | ((f)[1] & 0xFF))
+#define LDCOMPX4(f)	((((f)[0] << 24 ) & 0xFF000000) | (((f)[1] << 16 ) & 0xFF0000) | (((f)[2] << 8 ) & 0xFF00) | ((f)[3] & 0xFF))
+#define STCOMPX2(v,f)	((f)[1] = (v) & 0xFF, (f)[0] = ((v) >> 8) & 0xFF)
+#define STCOMPX4(v,f)	((f)[3] = (v) & 0xFF, (f)[2] = ((v) >> 8) & 0xFF, (f)[1] = ((v) >> 16) & 0xFF, (f)[0] = ((v) >> 24) & 0xFF)
 
 /* xxBINLEn : Little Endian Binary data */
-#define LDBINLE2(f)	(((f[1] << 8 ) & 0xFF00) | (f[0] & 0xFF))
-#define LDBINLE4(f)	(((f[3] << 24 ) & 0xFF000000) | ((f[2] << 16 ) & 0xFF0000) | ((f[1] << 8 ) & 0xFF00) | (f[0] & 0xFF))
-#define STBINLE2(v,f)	(f[0] = (v) & 0xFF, f[1] = ((v) >> 8) & 0xFF)
-#define STBINLE4(v,f)	(f[0] = (v) & 0xFF, f[1] = ((v) >> 8) & 0xFF, f[2] = ((v) >> 16) & 0xFF, f[3] = ((v) >> 24) & 0xFF)
+#define LDBINLE2(f)	((((f)[1] << 8 ) & 0xFF00) | ((f)[0] & 0xFF))
+#define LDBINLE4(f)	((((f)[3] << 24 ) & 0xFF000000) | (((f)[2] << 16 ) & 0xFF0000) | (((f)[1] << 8 ) & 0xFF00) | ((f)[0] & 0xFF))
+#define STBINLE2(v,f)	((f)[0] = (v) & 0xFF, (f)[1] = ((v) >> 8) & 0xFF)
+#define STBINLE4(v,f)	((f)[0] = (v) & 0xFF, (f)[1] = ((v) >> 8) & 0xFF, (f)[2] = ((v) >> 16) & 0xFF, (f)[3] = ((v) >> 24) & 0xFF)
 
 /*************************/
 /* EXTFH operation codes */

@@ -233,7 +233,7 @@
 
            40  FCD-INTERNAL-FLAGS-1  pic x comp-x.
            40  FCD-INTERNAL-FLAGS-2  pic x comp-x.
-           40                        pic x(15).
+           40                        pic x comp-x occurs 15.
 
       *>   NLS id (else 0)
            40  FCD-NLS-ID            pic xx comp-x.
@@ -246,17 +246,17 @@
 
            40  fcd-idxname-length    pic xx comp-x.
            40  fcd-retry-count       pic xx comp-x.
-      *> Indexed key identifier
+      *> Indexed key identifier for random READ
            40  FCD-KEY-ID            pic xx comp-x.
       *> Line count (seq files)
            40  FCD-LINE-COUNT        pic xx comp-x.
 
            40  FCD-USE-FILES         pic x comp-x.
            40  FCD-GIVE-FILES        pic x comp-x.
-      *> Effective key length
+      *> Effective key length (START KEY LENGTH IS n)
            40  FCD-KEY-LENGTH        pic xx comp-x.
 
-           40                        pic x(20).
+           40                        pic x comp-x occurs 20.
 
       *> Current record length
            40  FCD-CURRENT-REC-LEN   pic x(4) comp-x.
@@ -267,7 +267,7 @@
 
            40  FCD-SESSION-ID        pic x(4) comp-x.
 
-           40                        pic x(24).
+           40                        pic x comp-x occurs 24.
 
            40  FCD-RELADDR-OFFSET    pic x(8) comp-x.
            40  FCD-RELADDR           redefines FCD-RELADDR-OFFSET
@@ -278,38 +278,38 @@
 
            40  FCD-RELATIVE-KEY      pic x(8) comp-x.
 
-           40  FCD-PTR-FILLER1       pic x(8).
+           40  FCD-PTR-FILLER1       pic x(8) comp-x.
            40  FCD-HANDLE            redefines FCD-PTR-FILLER1
                                      usage pointer.
            40  FCD-HANDLE-NUM        redefines FCD-PTR-FILLER1
                                      pic x(4) comp-x.
       *> Pointer to record area
-           40  FCD-PTR-FILLER2       pic x(8).
+           40  FCD-PTR-FILLER2       pic x(8) comp-x.
            40  FCD-RECORD-ADDRESS    redefines FCD-PTR-FILLER2
                                      usage pointer.
       *> Pointer to file name
-           40  FCD-PTR-FILLER3       pic x(8).
+           40  FCD-PTR-FILLER3       pic x(8) comp-x.
            40  FCD-FILENAME-ADDRESS  redefines FCD-PTR-FILLER3
                                      usage pointer.
       *> Pointer to index name (applies only if separate index file exists)
-           40  FCD-PTR-FILLER4       pic x(8).
+           40  FCD-PTR-FILLER4       pic x(8) comp-x.
            40  FCD-IDXNAME-ADDRESS   redefines FCD-PTR-FILLER4
                                      usage pointer.
            40  FCD-INDEX-NAME        redefines FCD-PTR-FILLER4
                                      usage pointer.
       *> Pointer to key def block
-           40  FCD-PTR-FILLER5       pic x(8).
+           40  FCD-PTR-FILLER5       pic x(8) comp-x.
            40  FCD-KEY-DEF-ADDRESS   redefines FCD-PTR-FILLER5
                                      usage pointer.
       *> Pointer to collating seq
-           40  FCD-PTR-FILLER6       pic x(8).
+           40  FCD-PTR-FILLER6       pic x(8) comp-x.
            40  FCD-COL-SEQ-ADDRESS   redefines FCD-PTR-FILLER6
                                      usage pointer.
       *> Pointer to using list
-           40  FCD-PTR-FILLER7       pic x(8).
+           40  FCD-PTR-FILLER7       pic x(8) comp-x.
            40  FCD-FILDEF-ADDRESS    redefines FCD-PTR-FILLER7
                                      usage pointer.
 
-           40  FCD-PTR-FILLER8       pic x(8).
+           40  FCD-PTR-FILLER8       pic x(8) comp-x.
            40  FCD-DFSORT-ADDRESS    redefines FCD-PTR-FILLER8
                                      usage pointer.
