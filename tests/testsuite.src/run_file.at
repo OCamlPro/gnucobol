@@ -9342,7 +9342,6 @@ AT_DATA([prog.cob], [
        PROCEDURE DIVISION.
            DISPLAY PROGRAM-NAME ': STARTING.'
            DISPLAY PROGRAM-NAME ': CREATING LINE SEQUENTIAL FILE.'
-      *    MOVE LOW-VALUES TO FCD-PARAMETER-BLOCK. 
            SET EXTFH-OPCODE-ISOPENOUTPUT      TO TRUE
            MOVE LENGTH OF FCD-PARAMETER-BLOCK TO FCD-LENGTH
            MOVE fcd--version-number           TO FCD-VERSION
@@ -9483,7 +9482,7 @@ THE LAMB WAS GRAND AND A GRANDMA
 THE OLD EWE CHORTLED
 ])
 
-AT_CHECK([gcdiff reference report.txt], [0])
+AT_CHECK([diff reference report.txt], [0])
 
 AT_CLEANUP
 
@@ -9681,7 +9680,7 @@ AT_CLEANUP
 AT_SETUP([EXTFH: operation OP_GETINFO / QUERY-FILE])
 AT_KEYWORDS([runfile EXTFH GETINFO QUERY])
 
-# TODO: duplicate with line sequential 
+# TODO: duplicate with line sequential, likely needs update to fileio first
 AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
 
 AT_DATA([prog.cob], [
@@ -10057,28 +10056,26 @@ AT_DATA([prog.cob], [
        1000-Open-File.
       *--------------------------------*
       *
-           MOVE 'TEST1EXTFH' TO FILE-NAME.
-           MOVE 10           TO FILE-NAME-LEN.
+           MOVE 'TEST1EXTFH' TO FILE-NAME
+           MOVE 10           TO FILE-NAME-LEN
 
-           MOVE LOW-VALUES             TO FCD-AREA.
-           MOVE LOW-VALUES             TO ACTION-CODE.
+      *    MOVE LOW-VALUES             TO FCD-AREA
+           MOVE FCD--VERSION-NUMBER    TO FCD-VERSION
 
-           MOVE 255                    TO FCD-ORGANIZATION.
-           MOVE FILE-NAME-LEN          TO FCD-NAME-LENGTH.
-           SET FCD-FILENAME-ADDRESS    TO ADDRESS OF FILE-NAME.
-           SET FCD-KEY-DEF-ADDRESS     TO ADDRESS OF KEY-DEF-AREA.
-           MOVE 16                     TO FCD-FS-FLAGS.
+           MOVE FCD--INDEXED-ORG       TO FCD-ORGANIZATION
+           MOVE FILE-NAME-LEN          TO FCD-NAME-LENGTH
+           SET  FCD-FILENAME-ADDRESS   TO ADDRESS OF FILE-NAME
+           SET  FCD-KEY-DEF-ADDRESS    TO ADDRESS OF KEY-DEF-AREA
+           MOVE 16                     TO FCD-FS-FLAGS
+           MOVE LENGTH OF RECORD-AREA  TO FCD-CURRENT-REC-LEN
+           MOVE 1                      TO NUMBER-OF-KEYS
+           MOVE LENGTH OF PRIME-KEY    TO COMPONENT-LENGTH
+           MOVE 8                      TO FCD-ACCESS-MODE
+           MOVE 0                      TO FCD-LOCK-MODE
+           MOVE 128                    TO FCD-OPEN-MODE
 
-           MOVE SPECIAL-TYPE           TO ACTION-TYPE.
-           MOVE GET-FILE-INFO          TO COBOL-OP.
-
-           PERFORM 1100-CALL-EXTFH.
-           MOVE 8                      TO FCD-ACCESS-MODE.
-           MOVE 0                      TO FCD-LOCK-MODE.
-           MOVE 128                    TO FCD-OPEN-MODE.
-
-           MOVE COBOL-TYPE             TO ACTION-TYPE.
-           MOVE OPEN-I-O               TO COBOL-OP.
+           MOVE COBOL-TYPE             TO ACTION-TYPE
+           MOVE OPEN-I-O               TO COBOL-OP
            PERFORM 1100-CALL-EXTFH.
 
       *
@@ -10086,11 +10083,6 @@ AT_DATA([prog.cob], [
        1100-Call-Extfh.
       *--------------------------------*
       *
-           MOVE 1 TO FCD-VERSION.
-           MOVE 1 TO FCD-FILE-FORMAT
-           MOVE 2 TO FCD-ORGANIZATION
-           IF COBOL-OP = GET-FILE-INFO
-              MOVE 255 TO FCD-ORGANIZATION.
            CALL 'EXTFH' USING ACTION-CODE
                               FCD-AREA
            IF FCD-FILE-STATUS NOT = '00'
@@ -10178,8 +10170,9 @@ AFTER READ PREV -> RECORD-5                           .
 
 AT_CLEANUP
 
-AT_SETUP([Multi keys test])
-AT_KEYWORDS([EXTFH])
+
+AT_SETUP([EXTFH: Multi keys test])
+AT_KEYWORDS([runfile EXTFH])
 
 AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
 
@@ -10498,9 +10491,10 @@ AT_DATA([progs.cob], [[
            EXIT.
 ]])
 
-AT_CHECK([$COMPILE -x -std=mf -debug -Wall -fodoslide -fstatic-call prog.cob progs.cob ], [0], [], [])
+AT_CHECK([$COMPILE -fodoslide prog.cob progs.cob], [0], [], [])
 
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [READ ------> RECORD-3            0000000003000000000000003          .
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[READ ------> RECORD-3            0000000003000000000000003          .
 WRITE -----> RECORD-3            00000000030000000000000031234567890.
 READ PREV -> RECORD-7            0000000007000000000000007          .
 ], [])
@@ -10508,7 +10502,7 @@ READ PREV -> RECORD-7            0000000007000000000000007          .
 AT_CLEANUP
 
 
-AT_SETUP([RELATIVE file test])
+AT_SETUP([EXTFH: RELATIVE files])
 AT_KEYWORDS([EXTFH])
 
 AT_DATA([prog.cob], [
@@ -10684,9 +10678,10 @@ AT_DATA([prog.cob], [
            DISPLAY 'REWRITE ' I ': ' RECORD-AREA (1:41) '.'.
 ])
 
-AT_CHECK([$COMPILE -x -std=mf -debug -Wall -fmf-files -fstatic-call prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [READ    00003: RECORD-3            0000000003           .
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[READ    00003: RECORD-3            0000000003           .
 REWRITE 00003: RECORD-3            00000000031234567890 .
 READ    00006: RECORD-6            0000000006           .
 REWRITE 00006: RECORD-6            00000000061234567890 .
@@ -11038,7 +11033,8 @@ Listing TESTOUT   .
 
 AT_CAPTURE_FILE(./TEST-OUT)
 
-AT_DATA([reference], [  1
+AT_DATA([reference],
+[  1
   2
   3 Have a great day
   4
@@ -11050,7 +11046,7 @@ AT_DATA([reference], [  1
  10
 ])
 
-AT_CHECK([gcdiff reference TEST-OUT], [0], [], [])
+AT_CHECK([diff reference TEST-OUT], [0], [], [])
 
 AT_CLEANUP
 

@@ -252,14 +252,14 @@
 
            40  fcd-idxname-length    pic xx comp-x.
            40  fcd-retry-count       pic xx comp-x.
-      *> Indexed key identifier
+      *> Indexed key identifier for random READ
            40  FCD-KEY-ID            pic xx comp-x.
       *> Line count (seq files)
            40  FCD-LINE-COUNT        pic xx comp-x.
 
            40  FCD-USE-FILES         pic x comp-x.
            40  FCD-GIVE-FILES        pic x comp-x.
-      *> Effective key length
+      *> Effective key length (START KEY LENGTH IS n)
            40  FCD-KEY-LENGTH        pic xx comp-x.
 
            40                        pic x comp-x occurs 20.

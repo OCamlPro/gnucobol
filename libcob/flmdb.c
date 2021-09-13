@@ -941,12 +941,15 @@ lmdb_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const i
 
 	snprintf (db_buff, (size_t)COB_SMALL_MAX, "%s%c%s",file_setptr->lmdb_home, SLASH_CHAR, filename);
 	if (mode != COB_OPEN_OUTPUT) {
-		if (db_nofile(filename) == 0) {
-			if (a->cob_read_dict (f, db_buff, 0, &ret)) {
-				return ret ? ret : COB_STATUS_39_CONFLICT_ATTRIBUTE;
-			}
-		} else if (a->cob_read_dict (f, filename, 0, &ret)) {
-			return ret ? ret : COB_STATUS_39_CONFLICT_ATTRIBUTE;
+		if (db_nofile (filename) == 0) {
+			ret = a->cob_read_dict (f, db_buff, !f->flag_keycheck);
+		} else {
+			ret = a->cob_read_dict (f, filename, !f->flag_keycheck);
+		}
+		if (ret == -1) {
+			/* no .dd found - just go on */
+		} else if (ret) {
+			return ret;
 		}
 	}
 

@@ -2334,6 +2334,13 @@ typedef struct {
 } KDB;
 
 typedef struct {
+	unsigned char	kdbLen[2];
+	char		filler[4];
+	unsigned char	nkeys[2];
+	char		filler2[6];
+} KDB_GLOBAL;
+
+typedef struct {
 	unsigned char	desc;
 	unsigned char	type;
 	unsigned char	pos[4];				/* Position in record */

@@ -182,7 +182,7 @@ static const char	* const prefix[] = { "DD_", "dd_", "" };
 static int dummy_stub		() {return 0;};
 static int dummy_91			() {return COB_STATUS_91_NOT_AVAILABLE;};
 
-static void cob_set_file_format(cob_file *, char *, int, int *);
+static int cob_set_file_format(cob_file *, char *, int);
 static void cob_set_file_defaults (cob_file *);
 static int cob_savekey (cob_file *f, int idx, unsigned char *data);
 static int cob_file_open	(cob_file_api *, cob_file *, char *, const int, const int);
@@ -539,7 +539,7 @@ isam_to_file (FILE *fdin, cob_file *f, unsigned char *hbuf)
  * Determine which of C|D|VB-ISAM the file is
  * by checking for certain signatures in the filename.idx
  */
-static int
+int
 indexed_file_type (cob_file *f, char *filename)
 {
 	char temp[COB_FILE_MAX];
@@ -873,15 +873,14 @@ cob_order_keys (cob_file *f)
 /*
  * Parse one key definition and update 'cob_file'
  */
-static void
-cob_key_def (cob_file *f, int keyn, char *p, int *ret, int keycheck)
+static int
+cob_key_def (cob_file *f, const int keyn, char *p, int keycheck)
 {
-	int		k,idx,part,parts,loc,len,ttl;
+	int		k, part, parts, loc, len, ttl;
 	char	p1[32], p2[32];
 	int		cloc[COB_MAX_KEYCOMP],clen[COB_MAX_KEYCOMP];
 	if (f->flag_redo_keydef)
 		keycheck = 0;
-	idx = keyn - 1;
 	cloc[0] = clen[0] = 0;
 	ttl = 0;
 	for (parts = 0; parts < COB_MAX_KEYCOMP; parts++) {
@@ -894,9 +893,8 @@ cob_key_def (cob_file *f, int keyn, char *p, int *ret, int keycheck)
 			break;
 		}
 	}
-	if(parts >= COB_MAX_KEYCOMP) {
-		*ret = COB_STATUS_39_CONFLICT_ATTRIBUTE;
-		return;
+	if (parts >= COB_MAX_KEYCOMP) {
+		return COB_STATUS_39_CONFLICT_ATTRIBUTE;
 	}
 	loc = cloc[0];
 	len = clen[0];
@@ -909,16 +907,12 @@ cob_key_def (cob_file *f, int keyn, char *p, int *ret, int keycheck)
 			 && clen[0] == (int)f->keys[k].component[0]->size)
 			|| (cloc[0] == (int)(f->keys[k].field->data - f->record->data)
 			 && clen[0] == (int)f->keys[k].field->size)) {
-				f->keys[k].keyn = (unsigned char)idx;
-				if (idx == (int)f->nkeys-1)
-					cob_order_keys (f);
-				return;
+				goto valid;	/* index matches */
 			}
 		} else if (parts == f->keys[k].count_components) {
-			for(part = 0; part < parts; part++) {
+			for (part = 0; part < parts; part++) {
 				if(f->keys[k].component[part] == NULL) {
-					*ret = COB_STATUS_39_CONFLICT_ATTRIBUTE;
-					return;
+					return COB_STATUS_39_CONFLICT_ATTRIBUTE;
 				}
 				if ((int)f->keys[k].component[part]->size != clen[part]
 				 || (int)(f->keys[k].component[part]->data - f->record->data) != cloc[part]) {
@@ -926,23 +920,19 @@ cob_key_def (cob_file *f, int keyn, char *p, int *ret, int keycheck)
 				}
 			}
 			if (part == parts) {		/* Found the index */
-				f->keys[k].keyn = (unsigned char)idx;
-				if (idx == (int)f->nkeys-1)
-					cob_order_keys (f);
-				return;
+				goto valid;
 			}
 		}
 	}
 	if (keycheck
 	 && (k >= (int)f->nkeys || f->keys[k].field != NULL)) {
-		*ret = COB_STATUS_39_CONFLICT_ATTRIBUTE;
-		return;
+		return COB_STATUS_39_CONFLICT_ATTRIBUTE;
 	}
 
 	if (f->flag_redo_keydef) {		/* Update index definitions */
 		for (k=0; k < (int)f->nkeys && f->keys[k].field != NULL; k++);
 		if (k >= (int)f->nkeys)
-			return;
+			return 0;	/* CHECKME / add comment */
 	}
 	/* No match so add this index to table */
 	loc = cloc[0];
@@ -967,7 +957,7 @@ cob_key_def (cob_file *f, int keyn, char *p, int *ret, int keycheck)
 		f->keys[k].field->size = ttl;
 		f->keys[k].field->data = cob_cache_malloc ((size_t)ttl+1);
 		f->keys[k].count_components = (short)parts;
-		for(part = 0; part < parts; part++) {
+		for (part = 0; part < parts; part++) {
 			loc = cloc[part];
 			len = clen[part];
 			f->keys[k].component[part] = cob_cache_malloc (sizeof(cob_field));
@@ -977,10 +967,12 @@ cob_key_def (cob_file *f, int keyn, char *p, int *ret, int keycheck)
 		}
 	}
 
-	f->keys[k].keyn = (unsigned char)idx;
-	if (idx == (int)f->nkeys-1)
+valid:
+	f->keys[k].keyn = (unsigned char)(keyn - 1);
+	if (keyn == f->nkeys) {
 		cob_order_keys (f);
-	return;
+	}
+	return 0;
 }
 
 /* Make sure the QBL record buffer is large enough */
@@ -1255,15 +1247,30 @@ cob_load_module (int iortn)
 		return 0;
 	}
 
+	if (!io_rtns[iortn].config) {
+		sprintf (module_errmsg, _("runtime not configured for feature/library"));
+		return 1;
+	}
+
 	module_errmsg[0] = 0;
 	ioinit = (void (*)(cob_file_api *))cob_load_lib (io_rtns[iortn].module, io_rtns[iortn].entry, module_errmsg);
 	if (ioinit == NULL) {
-		cob_runtime_warning ("*** Problem: %s ***\n",module_errmsg);
 		return 1;
 	}
-	ioinit(&file_api);
+
+	ioinit (&file_api);
 	io_rtns[iortn].loaded = 1;
 	return 0;
+}
+
+static void
+output_io_module_error (int iortn)
+{
+	const char* desc = io_rtns[iortn].desc ? io_rtns[iortn].desc : io_rtns[iortn].name;
+
+	/* note: module_errmsg includes both the module name and error */
+	cob_runtime_error (_("I/O routine %s cannot be loaded: %s"),
+		desc, module_errmsg);
 }
 
 /*
@@ -1277,9 +1284,7 @@ cob_io_version (const int iortn, const int verbose)
 	cob_load_module (iortn);
 	if (fileio_funcs[iortn] == NULL) {
 		if (verbose) {
-			/* note: module_errmsg includes both the module name and error */
-			cob_runtime_error (_("I/O routine %s cannot be loaded: %s"),
-				io_rtns[iortn].name, module_errmsg);
+			output_io_module_error (iortn);
 		}
 		sprintf (module_msg, "%s %s (%s)", io_rtns[iortn].name,
 			_("unknown"), "missing");
@@ -1331,14 +1336,15 @@ cob_write_dict (cob_file *f, char *filename)
 }
 
 /*
- * Read description of data file from text file and check it
+ * Read description of data file from text file and check description,
+ * sets file attributes for valid descriptions
  */
-int				/* Return 1 on mistmatch, else 0 */
-cob_read_dict (cob_file *f, char *filename, int updt, int *retsts)
+int				/* Return 1 on broken definition, -1 on "not found" else 0 */
+cob_read_dict (cob_file *f, char *filename, int updt)
 {
 	char	inpdd[COB_FILE_MAX], ddbuf[2048], *sdir;
 	FILE	*fi;
-	int		line, ret, ftype;
+	int		line, ret;
 
 	if (file_setptr->cob_file_dict == COB_DICTIONARY_NO)
 		return 0;
@@ -1351,38 +1357,27 @@ cob_read_dict (cob_file *f, char *filename, int updt, int *retsts)
 	else
 		sprintf(inpdd,"%s.%s",filename,dict_ext);
 	fi = fopen(inpdd,"r");
-	if (fi == NULL) {		/* Not present; Check if is is INDEXED */
-		ftype = indexed_file_type (f, file_open_name);
-		if(ftype >= 0) {
-			f->io_routine = (unsigned char)ftype;
-			f->organization = COB_ORG_INDEXED;
-			return 0;
-		}
-		/* Not INDEXED file so check for OCI/ODBC */
+	if (fi == NULL) {		/* Not present so check for OCI/ODBC */
 		if ((sdir = getenv("COB_SCHEMA_DIR")) == NULL)
 			sdir = (char*)COB_SCHEMA_DIR;
 		sprintf(inpdd,"%s%c%s.%s",sdir,SLASH_CHAR,filename,dict_ext);
 		fi = fopen(inpdd,"r");
 		if (fi == NULL)
-			return 0;
+			return -1;
 	}
 	line = 0;
 	ret = 0;
-	if(retsts)
-		*retsts = 0;
 	while (fgets (ddbuf, sizeof(ddbuf)-1, fi) != NULL) {
 		if (ddbuf[0] == '#')/* Skip Comment lines */
 			continue;
 		line++;
-		cob_set_file_format(f, ddbuf, updt, &ret);	/* Set defaults for file type */
+		ret = cob_set_file_format(f, ddbuf, updt);	/* Set defaults for file type */
+		if (ret) {
+			break;
+		}
 	}
 	fclose(fi);
-
-	if(retsts)
-		*retsts = ret;
-	if(ret >= 10)
-		return 1;
-	return 0;
+	return ret;
 }
 
 static char *
@@ -1408,7 +1403,7 @@ cob_chk_file_env (cob_file *f, const char *src)
 	}
 
 	if ((file_open_io_env = cob_get_env ("IO_OPTIONS", NULL)) != NULL) {
-		cob_set_file_format (f, file_open_io_env, 1, NULL);	/* Set initial defaults */
+		cob_set_file_format (f, file_open_io_env, 1);	/* Set initial defaults */
 	}
 	if (f->organization == COB_ORG_INDEXED) {
 		t = "IX";
@@ -1432,7 +1427,7 @@ cob_chk_file_env (cob_file *f, const char *src)
 		file_open_io_env = cob_get_env (file_open_env, NULL);
 	}
 	if (file_open_io_env != NULL) {
-		cob_set_file_format (f, file_open_io_env, 1, NULL);	/* Defaults for file type */
+		cob_set_file_format (f, file_open_io_env, 1);	/* Defaults for file type */
 	}
 
 	/* Check for IO_filename with file specific options */
@@ -1866,16 +1861,17 @@ cob_set_file_defaults (cob_file *f)
 
 /*
  * Set file format based on IO_filename options
+ * FIXME: _checking_ of file attributes should be not
+ *        part of this function --> split
  */
-static void
-cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
+static int
+cob_set_file_format (cob_file *f, char *defstr, int updt)
 {
-	int		i,j,k,settrue,ivalue,nkeys,keyn,xret,idx;
+	int		i,j,k,settrue,ivalue,nkeys,keyn,idx;
 	unsigned int	maxrecsz = 0;
 	char	qt,option[64],value[COB_FILE_BUFF];
+	int ret = 0;
 
-	if (ret)
-		*ret = 0;
 	if (f->record)
 		maxrecsz = (unsigned int)f->record->size;
 	if (f->record_max > maxrecsz)
@@ -2132,22 +2128,10 @@ cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 							j = COB_IO_DISAM;
 						}
 #endif
-						if (!io_rtns[j].config)
-							cob_runtime_error (_("I/O routine %s is not configured for %s"),
-												io_rtns[j].name,file_open_env);
-						else if (!io_rtns[j].loaded)
-							cob_load_module (j);
-						if (fileio_funcs[j] == NULL) {
-							const char* desc = io_rtns[j].desc ? io_rtns[j].desc : io_rtns[j].name;
-							cob_runtime_error (_("I/O routine %s is not present for %s"),
-												io_rtns[j].name,file_open_env);
-							cob_runtime_error (_("%s library %s is not present\n%s"),
-								desc, io_rtns[j].module, module_errmsg);
-							exit (-1);
-						} else {
+						if (io_rtns[j].module) {	/* all ORGANIZATION INDEXED are handled via external modules */
 							f->flag_set_isam = 1;
-							f->io_routine = (unsigned char)j;
 						}
+						f->io_routine = (unsigned char)j;
 						break;
 					}
 				}
@@ -2420,8 +2404,7 @@ cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 					if (f->nkeys != nkeys
 					 && !updt
 					 && f->flag_keycheck) {
-						if(ret)
-							*ret = COB_STATUS_39_CONFLICT_ATTRIBUTE;
+						ret = COB_STATUS_39_CONFLICT_ATTRIBUTE;
 						break;
 					}
 					if (updt
@@ -2451,10 +2434,8 @@ cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 						f->keys = cob_cache_realloc (f->keys, sizeof (cob_file_key) * nkeys);
 						f->flag_redo_keydef = 1;
 					}
-					xret = 0;
-					cob_key_def (f, keyn, value, &xret, updt?0:f->flag_keycheck);
-					if(ret) *ret = xret;
-					if(xret != 0) break;
+					ret = cob_key_def (f, keyn, value, updt?0:f->flag_keycheck);
+					if (ret != 0) break;
 					
 				} else if (strcasecmp(option,"duplen") == 0) {
 					f->isam_duplen = ivalue;
@@ -2614,6 +2595,7 @@ cob_set_file_format (cob_file *f, char *defstr, int updt, int *ret)
 			}
 		} 
 	}
+	return ret;
 }
 
 #ifdef	HAVE_FCNTL
@@ -3592,7 +3574,10 @@ cob_fd_file_open (cob_file *f, char *filename, const int mode, const int sharing
 	if (!f->flag_file_map) {
 		cob_chk_file_mapping (f, NULL);
 		f->flag_file_map = 1;
-		cob_set_file_format(f, file_open_io_env, 1, NULL);		/* Set file format */
+		ret = cob_set_file_format(f, file_open_io_env, 1);		/* Set file format */
+		if (ret) {
+			return ret;
+		}
 	}
 
 	nonexistent = 0;
@@ -3623,7 +3608,7 @@ cob_fd_file_open (cob_file *f, char *filename, const int mode, const int sharing
 			f->file_format = COB_FILE_IS_GCVS0;	/* Try GNU Cobol format */
 			f->record_prefix = 4;
 			f->file_header = 0;
-			cob_set_file_format(f, file_open_io_env, 1, NULL);	/* Reset file format options */
+			(void)cob_set_file_format(f, file_open_io_env, 1);	/* Reset file format options */
 		} else
 		if (f->file_format != COB_FILE_IS_MF
 		 && check_mf_format(f, filename)) {
@@ -4080,7 +4065,7 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename, const int mode, con
 		lingptr = f->linage;
 		cob_set_int (lingptr->linage_ctr, 1);
 	}
-	cob_set_file_format(f, file_open_io_env, 1, NULL);		/* Set file format */
+	(void)cob_set_file_format(f, file_open_io_env, 1);		/* Set file format */
 
 	if (mode == COB_OPEN_EXTEND) {
 		f->record_off = set_file_pos (f, -1);
@@ -6151,14 +6136,14 @@ cob_pre_open (cob_file *f)
 		f->flag_file_map = 1;
 		cob_chk_file_mapping (f, NULL);
 
-		cob_set_file_format (f, file_open_io_env, 1, NULL);
+		cob_set_file_format (f, file_open_io_env, 1);
 	}
 
 	if (f->organization == COB_ORG_INDEXED
 	 && f->flag_auto_type) {
 		int		ftype;
 		ftype = indexed_file_type (f, file_open_name);
-		if(ftype >= 0) {
+		if (ftype >= 0) {
 			f->record_min = f->record_max;
 			f->io_routine = (unsigned char)ftype;
 		}
@@ -6203,14 +6188,14 @@ cob_pre_open_def (cob_file *f, char *setdef, char *isdef, int checkfile)
 	f->flag_updt_file = 1;
 	f->flag_keycheck = 0;
 
-	cob_set_file_format (f, setdef, 1, NULL);
+	(void)cob_set_file_format (f, setdef, 1);
 
 	if (f->organization == COB_ORG_INDEXED
 	 && checkfile) {
 		int		ftype;
 		f->flag_keycheck = 0;
 		ftype = indexed_file_type (f, file_open_name);
-		if(ftype >= 0) {
+		if (ftype >= 0) {
 			f->record_min = f->record_max;
 			f->io_routine = (unsigned char)ftype;
 		}
@@ -6300,8 +6285,9 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 	if (mode == COB_OPEN_OUTPUT)
 		f->cur_rec_num = f->max_rec_num = 0;
 
-	if (f->fcd)
+	if (f->fcd) {
 		cob_fcd_file_sync (f, file_open_name);		/* Copy app's FCD to cob_file */
+	}
 
 	cob_pre_open (f);
 
@@ -6339,14 +6325,15 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 		return;
 	}
 
+	if (file_open_name[0] == 0) {
+		cob_file_save_status (f, fnstatus, COB_STATUS_31_INCONSISTENT_FILENAME);
+		return;
+	}
+
 	if (!io_rtns[f->io_routine].loaded) {
-		const unsigned char r = f->io_routine;
-		int ret = cob_load_module (r);
+		int ret = cob_load_module (f->io_routine);
 		if (ret) {
-			const char* desc = io_rtns[r].desc ? io_rtns[r].desc : io_rtns[r].name;
-			/* note: module_errmsg includes both the module name and error */
-			cob_runtime_error (_("I/O routine %s cannot be loaded: %s"),
-										desc, module_errmsg);
+			output_io_module_error (f->io_routine);
 			cob_file_save_status (f, fnstatus, COB_STATUS_91_NOT_AVAILABLE);
 		}
 	}
@@ -6757,7 +6744,7 @@ Again:
 
 void
 cob_write (cob_file *f, cob_field *rec, const int opt, cob_field *fnstatus,
-						const unsigned int check_eop)
+	   const unsigned int check_eop)
 {
 	int		ret;
 
@@ -7154,13 +7141,9 @@ cob_delete_file (cob_file *f, cob_field *fnstatus, const int override)
 	}
 
 	if (!io_rtns[f->io_routine].loaded) {
-		const unsigned char r = f->io_routine;
-		int ret = cob_load_module (r);
+		int ret = cob_load_module (f->io_routine);
 		if (ret) {
-			const char* desc = io_rtns[r].desc ? io_rtns[r].desc : io_rtns[r].name;
-			/* note: module_errmsg includes both the module name and error */
-			cob_runtime_error (_("I/O routine %s cannot be loaded: %s"),
-				desc, module_errmsg);
+			output_io_module_error (f->io_routine);
 			cob_file_save_status (f, fnstatus, COB_STATUS_91_NOT_AVAILABLE);
 		}
 	}
@@ -7225,9 +7208,10 @@ cob_findkey (cob_file *f, cob_field *kf, int *fullkeylen, int *partlen)
 			 &&  f->keys[k].field->size == kf->size)
 			 || (f->keys[k].component[0]->data == kf->data)) {
 				f->last_key = f->keys[k].field;
-				for(part=0; part < f->keys[k].count_components; part++)
+				for (part=0; part < f->keys[k].count_components; part++)
 					*fullkeylen += f->keys[k].component[part]->size;
-				if(f->keys[k].field && f->keys[k].field->data == kf->data)
+				if (f->keys[k].field
+				 && f->keys[k].field->data == kf->data)
 					*partlen = kf->size;
 				else
 					*partlen = *fullkeylen;
@@ -7237,8 +7221,6 @@ cob_findkey (cob_file *f, cob_field *kf, int *fullkeylen, int *partlen)
 	}
 	return -1;
 }
-
-/* System routines */
 
 /* Copy key data and return length of data copied */
 static int
@@ -7261,6 +7243,8 @@ cob_savekey (cob_file *f, int idx, unsigned char *data)
 	}
 	return len;
 }
+
+/* System routines */
 
 static void *
 cob_param_no_quotes (int n)

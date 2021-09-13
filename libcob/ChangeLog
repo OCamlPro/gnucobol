@@ -1,4 +1,24 @@
 
+2021-09-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fextfh.c (fcd2_to_fcd3, fcd3_to_fcd2): extracted from (cob_sys_extfh)
+	* fextfh.c: do FCD2<->FCD3 translation for both COBOL calls and C calls
+	  to EXTFH
+	* fextfh.c (copy_file_to_fcd, copy_fcd_to_file, copy_keys_fcd_to_file):
+	  adjustments in conversion of internal/external file definition,
+	  especially for incomplete FCD definitions
+	* fileio.c (cob_read_dict, cob_key_def, cob_set_file_format), fileio.h:
+	  functions do not set a file status directly any more, but return
+	  a possible file status
+	* fileio.c (cob_read_dict): return -1 if dictionary is not found;
+	  don't call indexed_type in this case
+	* fextfh.c (OP_GETINFO): if no dictionary is found for the file,
+	  call indexed_type to get more details
+	* fileio.c (cob_read_dict), fdbd.c (ix_bdb_open),
+	  flmdb.c (lmdb_open): if no dictionary is found for the file,
+	  assume "match" against file definition
+	* fileio.c: minor adjustments for io-module loading
+
 2021-09-12  Ron Norman <rjn@inglenet.com>
 
 	* fextfh.c: Some corrections for RELATIVE files and remove duplicated code

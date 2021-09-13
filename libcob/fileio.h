@@ -142,7 +142,7 @@ typedef struct _cob_file_api {
 	void	(*del_file_cache)	(cob_file *);
 	void	(*chk_file_mapping)	(cob_file *f, char *filename);
 	int		(*cob_write_dict)	(cob_file *f, char *filename);
-	int		(*cob_read_dict)	(cob_file *f, char *filename, int updt, int *retsts);
+	int		(*cob_read_dict)	(cob_file *f, char *filename, int updt);
 	int		(*cob_file_write_opt) (cob_file *f, const int opt);
 } cob_file_api;
 
@@ -194,11 +194,12 @@ enum cob_status_extended {
 	COB_XSTATUS_MAX
 };
 
-COB_HIDDEN int cob_write_dict (cob_file *f, char *filename);
-COB_HIDDEN int cob_read_dict (cob_file *f, char *filename, int updt, int *retsts);
-COB_HIDDEN void cob_chk_file_mapping (cob_file *f, char *filename);
-COB_HIDDEN void cob_file_save_status (cob_file *f, cob_field *fnstatus, const int status);
-COB_HIDDEN void cob_file_sync (cob_file *f);
+COB_HIDDEN int cob_write_dict	(cob_file *f, char *filename);
+COB_HIDDEN int cob_read_dict	(cob_file *f, char *filename, int updt);
+COB_HIDDEN int indexed_file_type	(cob_file *f, char *filename);
+COB_HIDDEN void cob_chk_file_mapping	(cob_file *f, char *filename);
+COB_HIDDEN void cob_file_save_status	(cob_file *f, cob_field *fnstatus, const int status);
+COB_HIDDEN void cob_file_sync	(cob_file *f);
 
 #ifdef	WITH_DB
 void	cob_bdb_init_fileio (cob_file_api *);

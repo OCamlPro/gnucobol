@@ -1244,11 +1244,14 @@ ix_bdb_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const
 
 	if (mode != COB_OPEN_OUTPUT) {
 		if (bdb_nofile(filename) == 0) {
-			if (a->cob_read_dict (f, bdb_buff, !f->flag_keycheck, &ret)) {
-				return ret ? ret : COB_STATUS_39_CONFLICT_ATTRIBUTE;
-			}
-		} else if (a->cob_read_dict (f, filename, !f->flag_keycheck, &ret)) {
-			return ret ? ret : COB_STATUS_39_CONFLICT_ATTRIBUTE;
+			ret = a->cob_read_dict (f, bdb_buff, !f->flag_keycheck);
+		} else {
+			ret = a->cob_read_dict (f, filename, !f->flag_keycheck);
+		}
+		if (ret == -1) {
+			/* no .dd found - just go on */
+		} else if (ret) {
+			return ret;
 		}
 	}
 
