@@ -33,6 +33,7 @@ static struct fcd_file {
 	int			free_fcd;
 } *fcd_file_list = NULL;
 static const cob_field_attr alnum_attr = {COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL};
+static const cob_field_attr compx_attr = {COB_TYPE_NUMERIC_BINARY, 0, 0, 0, NULL};
 
 static void copy_keys_fcd_to_file (FCD3 *fcd, cob_file *f, int doall);
 
@@ -84,7 +85,10 @@ update_file_to_fcd (cob_file *f, FCD3 *fcd, unsigned char *fnstatus)
 		fcd->recordMode = REC_MODE_FIXED;
 	else
 		fcd->recordMode = REC_MODE_VARIABLE;
-	if(f->organization == COB_ORG_LINE_SEQUENTIAL) {
+	if(f->organization == COB_ORG_SEQUENTIAL) {
+		fcd->fileOrg = ORG_SEQ;
+		STCOMPX2(0, fcd->refKey);
+	} else if(f->organization == COB_ORG_LINE_SEQUENTIAL) {
 		fcd->fileOrg = ORG_LINE_SEQ;
 		STCOMPX2(0, fcd->refKey);
 		if((f->file_features & COB_FILE_LS_CRLF))
@@ -93,7 +97,10 @@ update_file_to_fcd (cob_file *f, FCD3 *fcd, unsigned char *fnstatus)
 			fcd->fstatusType |= MF_FST_InsertNulls;
 		if((f->file_features & COB_FILE_LS_FIXED))
 			fcd->fstatusType |= MF_FST_NoStripSpaces;
-	}
+	} else if(f->organization == COB_ORG_RELATIVE) {
+		fcd->fileOrg = ORG_RELATIVE;
+		STCOMPX2(0, fcd->refKey);
+	} else
 	if (f->organization == COB_ORG_INDEXED) {
 		fcd->fileOrg = ORG_INDEXED;
 		fcd->fileFormat = MF_FF_CISAM;
@@ -270,22 +277,6 @@ copy_file_to_fcd (cob_file *f, FCD3 *fcd)
 				}
 			}
 		}
-
-	} else if(f->organization == COB_ORG_SEQUENTIAL) {
-		fcd->fileOrg = ORG_SEQ;
-		STCOMPX2(0, fcd->refKey);
-	} else if(f->organization == COB_ORG_LINE_SEQUENTIAL) {
-		fcd->fileOrg = ORG_LINE_SEQ;
-		STCOMPX2(0, fcd->refKey);
-		if((f->file_features & COB_FILE_LS_CRLF))
-			fcd->fstatusType |= MF_FST_CRdelim;
-		if((f->file_features & COB_FILE_LS_NULLS))
-			fcd->fstatusType |= MF_FST_InsertNulls;
-		if((f->file_features & COB_FILE_LS_FIXED))
-			fcd->fstatusType |= MF_FST_NoStripSpaces;
-	} else if(f->organization == COB_ORG_RELATIVE) {
-		fcd->fileOrg = ORG_RELATIVE;
-		STCOMPX2(0, fcd->refKey);
 	}
 	update_file_to_fcd(f, fcd, NULL);
 }
@@ -517,6 +508,19 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f)
 			f->file_features |= COB_FILE_LS_FIXED;
 	} else if(fcd->fileOrg == ORG_RELATIVE) {
 		f->organization = COB_ORG_RELATIVE;
+		if (f->keys == NULL)
+			f->keys = cob_cache_malloc(sizeof(cob_file_key));
+		if (f->keys[0].field == NULL)
+			f->keys[0].field = cob_cache_malloc(sizeof(cob_field));
+		f->keys[0].field->data = cob_cache_malloc (4);
+		f->keys[0].field->attr = &compx_attr;
+		f->keys[0].field->size = 4;
+		if (!f->flag_set_type
+		 && COB_MODULE_PTR
+		 && COB_MODULE_PTR->flag_file_format == COB_FILE_IS_MF) {
+			f->file_format = COB_FILE_IS_MF;
+			f->flag_set_type = 1;
+		}
 	} else {
 		f->organization = COB_ORG_MAX;
 	}
@@ -1517,6 +1521,12 @@ org_handling:
 		return -1;
 	}
 
+	if (f->organization == COB_ORG_INDEXED
+	&& (f->open_mode == COB_OPEN_I_O
+	 || f->open_mode == COB_OPEN_OUTPUT)) {
+		fcd->accessFlags = ACCESS_DYNAMIC;
+		f->access_mode = COB_ACCESS_DYNAMIC;
+	}
 	switch (opcd) {
 	case OP_READ_PREV:
 	case OP_READ_PREV_LOCK:

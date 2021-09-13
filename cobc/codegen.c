@@ -11115,6 +11115,11 @@ output_module_init_function (struct cb_program *prog)
 	output_line ("module->flag_main = %d;", cobc_flag_main);
 	output_line ("module->flag_fold_call = %d;", cb_fold_call);
 	output_line ("module->flag_dialect = COB_DIALECT_%s;", cb_dialect);
+	if (cb_mf_files) {
+		output_line ("module->flag_file_format = COB_FILE_IS_MF;");
+	} else {
+		output_line ("module->flag_file_format = COB_FILE_IS_DFLT;");
+	}
 	output_line ("module->flag_exit_program = 0;");
 	{
 		int	opt = 0;

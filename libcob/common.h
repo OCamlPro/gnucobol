@@ -1409,7 +1409,8 @@ typedef struct __cob_module {
 	const char		*paragraph_name;
 
 	unsigned char		flag_dialect;	/* Module -std=  for status code choices */
-	unsigned char		flag_unused[7];	/* For future, use for new flags etc */
+	unsigned char		flag_file_format;	/* Default file format: GC or MF */
+	unsigned char		flag_unused[6];	/* For future, use for new flags etc */
 
 	unsigned char		unused[32];		/* For future use */
 } cob_module;

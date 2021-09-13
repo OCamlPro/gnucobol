@@ -1,4 +1,9 @@
 
+2021-09-12  Ron Norman <rjn@inglenet.com>
+
+	* fextfh.c: Some corrections for RELATIVE files and remove duplicated code
+	* common.h: add flag_file_format to cob_module
+
 2021-09-05  Ron Norman <rjn@inglenet.com>
 
 	* fextfh.c: Add check for record address being available
@@ -3134,7 +3139,7 @@
 	* common.c fileio.c common.h
 	  updated to support Micro Focus format files.
 	  fileio.c also check for environment variable
-	  IO_filename that can speficy options for just the one file
+	  IO_filename that can specify options for just the one file
 	  New runtime option (mf_files) to set all files to default
 	  to Micro Focus format
 

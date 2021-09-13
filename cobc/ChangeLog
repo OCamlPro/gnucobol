@@ -1,4 +1,8 @@
 
+2021-09-12  Ron Norman <rjn@inglenet.com>
+
+	* codegen.c: If -fmf-files, then set mod->flag_file_format = COB_FILE_IS_MF
+
 2021-08-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* general: fix local includes to use "local" instead of <system>
