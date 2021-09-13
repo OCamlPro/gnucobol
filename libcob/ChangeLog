@@ -11,6 +11,8 @@
 	  adjustments in conversion of internal/external file definition,
 	  especially for incomplete FCD definitions
 	* fileio.c: minor adjustments for io-module loading
+	* common.h, fileio.c: definition and FCD2<->FCD3 translation for confFlags2
+	  and lineCount (actual handling and tests open)
 
 2021-09-12  Ron Norman <rjn@inglenet.com>
 
