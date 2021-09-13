@@ -726,12 +726,19 @@ fcd2_to_fcd3 (FCD2 *fcd2)
 	fcd->lockMode = fcd2->lockMode;
 	fcd->fsv2Flags = fcd2->fsv2Flags;
 	fcd->confFlags = fcd2->confFlags;
+	fcd->confFlags2 = fcd2->confFlags2;
 	fcd->idxCacheSz = fcd2->idxCacheSz;
 	fcd->idxCacheArea = fcd2->idxCacheArea;
 	STCOMPX4 (LDCOMPX2 (fcd2->curRecLen), fcd->curRecLen);
 	STCOMPX4 (LDCOMPX2 (fcd2->minRecLen), fcd->minRecLen);
 	STCOMPX4 (LDCOMPX2 (fcd2->maxRecLen), fcd->maxRecLen);
-	memcpy (fcd->refKey, fcd2->refKey, 2);
+	if (fcd->fileOrg == ORG_INDEXED) {
+		memset (fcd->lineCount, 0, 2);
+		memcpy (fcd->refKey, fcd2->refKey, 2);
+	} else {
+		memcpy (fcd->lineCount, fcd2->refKey, 2);
+		memset (fcd->refKey, 0, 2);
+	}
 	memcpy (fcd->effKeyLen, fcd2->effKeyLen, 2);
 	memcpy (fcd->fnameLen, fcd2->fnameLen, 2);
 	memcpy (fcd->relByteAdrs, fcd2->relByteAdrs64, 8);
@@ -761,12 +768,17 @@ fcd3_to_fcd2 (FCD3 *fcd, FCD2 *fcd2)
 	fcd2->gcFlags = fcd->gcFlags;
 	fcd2->fsv2Flags = fcd->fsv2Flags;
 	fcd2->confFlags = fcd->confFlags;
+	fcd2->confFlags2 = fcd->confFlags2;
 	fcd2->idxCacheSz = fcd->idxCacheSz;
 	fcd2->idxCacheArea = fcd->idxCacheArea;
 	STCOMPX2 (LDCOMPX4 (fcd->curRecLen), fcd2->curRecLen);
 	STCOMPX2 (LDCOMPX4 (fcd->minRecLen), fcd2->minRecLen);
 	STCOMPX2 (LDCOMPX4 (fcd->maxRecLen), fcd2->maxRecLen);
-	memcpy (fcd2->refKey, fcd->refKey, 2);
+	if (fcd->fileOrg == ORG_INDEXED) {
+		memcpy (fcd2->refKey, fcd->refKey, 2);
+	} else {
+		memcpy (fcd2->refKey, fcd->lineCount, 2);
+	}
 	memcpy (fcd2->effKeyLen, fcd->effKeyLen, 2);
 	memcpy (fcd2->fnameLen, fcd->fnameLen, 2);
 	memcpy (fcd2->relByteAdrs64, fcd->relByteAdrs, 8);
@@ -1446,7 +1458,6 @@ org_handling:
 						f->organization = COB_ORG_INDEXED;
 						return 0;
 					}
-
 				}
 				copy_file_to_fcd (f, fcd);
 			}

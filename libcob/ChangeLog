@@ -18,6 +18,8 @@
 	  flmdb.c (lmdb_open): if no dictionary is found for the file,
 	  assume "match" against file definition
 	* fileio.c: minor adjustments for io-module loading
+	* common.h, fextfh.c: definition and FCD2<->FCD3 translation for confFlags2
+	  and lineCount (actual handling and tests open)
 
 2021-09-12  Ron Norman <rjn@inglenet.com>
 
@@ -51,7 +53,7 @@
 	* common.h: Replaced report.resume with report.go_label
 	* reportio.c: Rework callback to application to use 
 	             "switch (go_label) case  goto xxx"
-	* fextfh.c: If record address changes, force rebuild of key info 
+	* fextfh.c: If record address changes, force rebuild of key info
 
 2021-08-23  Ron Norman <rjn@inglenet.com>
 

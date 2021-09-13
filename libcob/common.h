@@ -2460,6 +2460,11 @@ typedef struct __fcd3 {
 #define MF_CF_REC64		0x10			/* Use 64-bit record address */
 	unsigned char	miscFlags;			/* misc flags */
 	unsigned char	confFlags2;			/* configuration flags */
+#define MF_CF2_EBCDIC		0x80		/* EBCDIC collation*/
+#define MF_CF2_AFTER_ADV	0x40		/* has WRITE AFTER ADVANCING */
+#define MF_CF2_BEFORE_ADV	0x20		/* has WRITE BEFORE ADVANCING */
+#define MF_CF2_ADV		0x10			/* ADV Byte */
+#define MF_CF2_IGN_MIN_LEN	0x08		/* ignore minimal lenght check (auto-fill?) */
 	unsigned char	lockMode;			/* locking flags */
 #define FCD_LOCK_MULTI		0x80
 #define FCD_LOCK_WRITE		0x40
@@ -2558,7 +2563,7 @@ typedef struct __fcd2 {
 	unsigned char	fsv2Flags;			/* Fileshare V2 flags */
 	unsigned char	confFlags;			/* configuration flags */
 	char			res11;				/* reserved */
-	unsigned char	moreFlags;			/* yet another bunch of flags */
+	unsigned char	confFlags2;			/* yet another bunch of flags */
 	unsigned char	idxCacheSz;			/* index cache size */
 	unsigned char	idxCacheArea;		/* index cache area */
 	char			res12[2];			/* reserved */
