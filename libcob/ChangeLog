@@ -1,4 +1,8 @@
 
+2021-09-13  Ron Norman <rjn@inglenet.com>
+
+	* fextfh.c: Some fixes to following changes
+
 2021-09-13  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fextfh.c (fcd2_to_fcd3, fcd3_to_fcd2): extracted from (cob_sys_extfh)

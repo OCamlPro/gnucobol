@@ -84,7 +84,7 @@ update_file_to_fcd (cob_file *f, FCD3 *fcd, unsigned char *fnstatus)
 	STCOMPX4(f->record_max, fcd->maxRecLen);
 	if (f->record) {
 		STCOMPX4(f->record->size, fcd->curRecLen);
-	} else {	/* CHECKME: is this correct? */
+	} else {
 		STCOMPX4(f->record_max, fcd->curRecLen);
 	}
 	if (f->record_min == f->record_max)
@@ -545,30 +545,28 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f)
 
 	/* Try for some record size */
 	min = LDCOMPX4(fcd->minRecLen);
-	max = LDCOMPX4(fcd->maxRecLen);
-	k   = LDCOMPX4(fcd->curRecLen);
-	if (min < 0)	/* Should not happen, but we're unsigned ... */
+	if (min < 0)	
 		min = 0;
-	f->record_min = min;
-	if (max > 0) {
-		f->record_max = max;
-	} else if (k > 0) {
-		max = k;
-		STCOMPX4 (k, fcd->maxRecLen);
-	}
+	max = LDCOMPX4(fcd->maxRecLen);
+	if (max < min)
+		max = min;
+	k   = LDCOMPX4(fcd->curRecLen);
 	if (k < min)
 		k = min;
-		STCOMPX4 (min, fcd->curRecLen);
-	if (k > max)
-		k = max;
-		STCOMPX4 (max, fcd->curRecLen);
+	if (max < k)
+		max = k;
+	f->record_min = min;
+	f->record_max = max;
+	STCOMPX4 (k, fcd->curRecLen);
+	STCOMPX4 (min, fcd->minRecLen);
+	STCOMPX4 (max, fcd->maxRecLen);
 	/* Allocate cob_file fields as needed and copy from FCD */
 	if (f->record == NULL
 	 && fcd->recPtr != NULL
-	 && k > 0	/* CHECKME: should we allocate with 'max' instead? */) {
+	 && k > 0) {
 		f->record = cob_cache_malloc(sizeof(cob_field));
 		f->record->data = fcd->recPtr;
-		f->record->size = k;
+		f->record->size = max;
 		f->record->attr = &alnum_attr;
 	}
 	if (f->assign == NULL
@@ -596,8 +594,7 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f)
 		if (f->keys == NULL) {
 			if (fcd->kdbPtr != NULL
 			 && LDCOMPX2(fcd->kdbPtr->nkeys) > 0) {
-				/* Copy Key information from FCD to cob_file,
-				   CHECKME: possibly only for ORG_DETERMINE ? */
+				/* Copy Key information from FCD to cob_file */
 				f->nkeys = LDCOMPX2(fcd->kdbPtr->nkeys);
 				if (f->nkeys > MAX_FILE_KEYS) {
 					/* CHECKME - Should this result in any error handling? */
@@ -1455,8 +1452,15 @@ org_handling:
 					int ftype = indexed_file_type (f, fname);
 					if (ftype >= 0) {
 						f->io_routine = (unsigned char)ftype;
-						f->organization = COB_ORG_INDEXED;
-						return 0;
+						if (ftype == COB_IO_CISAM
+						 || ftype == COB_IO_DISAM
+						 || ftype == COB_IO_VISAM
+						 || ftype == COB_IO_VBISAM
+						 || ftype == COB_IO_BDB
+						 || ftype == COB_IO_OCI
+						 || ftype == COB_IO_ODBC)
+							f->organization = COB_ORG_INDEXED;
+						sts = 0;	/* Fall to copy_file_to_fcd and return 0 */
 					}
 				}
 				copy_file_to_fcd (f, fcd);
