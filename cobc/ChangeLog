@@ -4,6 +4,8 @@
 	* config.def, flag.def, cobc.c, codegen.c, field.c, typeck.c:
 	  moved and renamed cb_flag_odoslide to dialect option cb_odoslide and
 	  explicit check for it along complex_odo instead of setting it
+	* ppparse.y, pplex.l, scanner.l, cobc.c (process_translate):
+	  add support for ODOSLIDE directive
 
 2021-09-07  Simon Sobisch <simonsobisch@gnu.org>
 
