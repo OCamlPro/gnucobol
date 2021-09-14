@@ -4829,10 +4829,9 @@ preprocess (struct filename *fn)
 {
 	const char		*sourcename;
 	struct cb_exception	save_exception_table[COB_EC_MAX];
-	int			save_source_format;
-	int			save_fold_copy;
-	int			save_fold_call;
-	int			save_ref_mod_zero_length;
+	int			save_source_format, save_fold_copy, save_fold_call,
+		save_ref_mod_zero_length;
+
 #ifndef COB_INTERNAL_XREF
 #ifdef	_WIN32
 	const char *envname = "%PATH%";
@@ -7504,6 +7503,8 @@ process_translate (struct filename *fn)
 	int			ret;
 	int			i;
 
+	int			save_odoslide;
+
 	/* Initialize */
 	cb_source_file = NULL;
 	cb_source_line = 0;
@@ -7524,6 +7525,9 @@ process_translate (struct filename *fn)
 	cb_correct_program_order = 0;
 	cb_source_file = fn->source;
 
+	/* Save default flags in case program directives change them */
+	save_odoslide = cb_odoslide;
+
 	cb_init_constants ();
 
 	/* Parse */
@@ -7536,6 +7540,9 @@ process_translate (struct filename *fn)
 	ylex_call_destroy ();
 
 	output_return (ret);
+
+	/* Restore default flags */	
+	cb_odoslide = save_odoslide;
 
 	if (ret) {
 		/* If processing raised errors set syntax-only flag to not

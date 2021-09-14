@@ -280,6 +280,10 @@ static void *	copy_literal (cb_tree l);
 	cb_ref_mod_zero_length = (yytext[13] - '0');
 }
 
+<*>^[ ]?"#ODOSLIDE "[0-1]\n {
+	cb_odoslide = (yytext[13] - '0');
+}
+
 <*>^[ ]?"#ASSIGN "[0-9]\n {
 	cb_assign_type_default = (enum cb_assign_type)(yytext[8] - '0');
 }

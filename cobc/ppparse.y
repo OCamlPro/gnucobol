@@ -634,9 +634,11 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %token NOCHECKNUM
 %token NODPC_IN_DATA	"NODPC-IN-DATA"
 %token NOFOLDCOPYNAME
+%token NOODOSLIDE
 %token NOSPZERO
 %token NOSSRANGE
 /* OVERRIDE token defined above. */
+%token ODOSLIDE
 %token REMOVE
 %token SOURCEFORMAT
 %token SPZERO
@@ -932,6 +934,10 @@ set_choice:
   {
 	cb_fold_copy = 0;
   }
+| NOODOSLIDE
+  {
+	fprintf (ppout, "#ODOSLIDE 0\n");
+  }
 | NOSPZERO
   {
 	CB_PENDING ("SPZERO");
@@ -944,6 +950,10 @@ set_choice:
 	txt = ppp_list_add (txt, "EC-BOUND-REF-MOD");
 	
 	append_to_turn_list (txt, 0, 0);
+  }
+| ODOSLIDE
+  {
+	fprintf (ppout, "#ODOSLIDE 1\n");
   }
 | OVERRIDE alnum_equality_list
   {

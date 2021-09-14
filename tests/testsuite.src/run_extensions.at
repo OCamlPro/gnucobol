@@ -660,7 +660,8 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -fcomplex-odo -fodoslide prog.cob], [0], [], [])
+# note: -fodoslide implies -fcomplex-ode
+AT_CHECK([$COMPILE -fodoslide prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [0606122333
 1010  3  22111
@@ -792,7 +793,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -fcomplex-odo -fodoslide prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fodoslide prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [0909122333444
 1313  3  22111000
@@ -802,7 +803,7 @@ AT_CLEANUP
 
 
 AT_SETUP([Complex OCCURS DEPENDING ON (6)])
-AT_KEYWORDS([extensions runsubscripts nested subscripts])
+AT_KEYWORDS([extensions runsubscripts nested subscripts odo odoslide])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -836,7 +837,7 @@ AT_DATA([prog.cob], [
            .
 ])
 
-AT_CHECK([$COMPILE -fcomplex-odo -fodoslide prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fodoslide prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
@@ -895,7 +896,8 @@ AT_DATA([prog.cob], [
            .
 ])
 
-AT_CHECK([$COBC -x -std=ibm -w -fodoslide prog.cob ], [0], [], [])
+# note: IBM implies -fodoslide
+AT_CHECK([$COBC -x -std=ibm prog.cob], [0], [], [])
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
@@ -1536,7 +1538,7 @@ AT_DATA([prog.cob], [
 # FIXME: odo-checks (-debug) must be adjusted, either with -fodoslide or with a possibly new
 #        compiler configuration flag as IBM seems to only check against the field-founder's
 #        bounds, not the subscript (which is the reason to use "$COBC -x" instead of "$COMPILE")
-AT_CHECK([$COBC -x -std=ibm -fodoslide prog.cob], [0], [], [])
+AT_CHECK([$COBC -x -std=ibm prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [Length is +0000000222 with 03, 04, 00, 06, 01
@@ -4926,7 +4928,7 @@ AT_CLEANUP
 
 
 AT_SETUP([Binary COMP-1 (2)])
-AT_KEYWORDS([extensions directives])
+AT_KEYWORDS([extensions directive])
 
 AT_DATA([prog.cob], [
        >>IF BINARY-COMP-1 IS DEFINED

@@ -10,6 +10,7 @@ NEWS - user visible changes				-*- outline -*-
 
   BIT-OF, BIT-TO-CHAR, HEX-OF, HEX-TO-CHAR
 
+** Support of additional $SET directives: ODOSLIDE
 
 * Changes to the COBOL compiler (cobc) options:
 

@@ -139,7 +139,7 @@ AT_CLEANUP
 # 1b) with ODO below (allowed with IBM extension)
 
 AT_SETUP([OCCURS with variable-occurrence data item])
-AT_KEYWORDS([nested depending extensions odo])
+AT_KEYWORDS([nested depending extensions odo odoslide directive])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -169,6 +169,18 @@ AT_DATA([prog2.cob], [
 
 ])
 
+AT_DATA([prog3.cob], [
+       $SET ODOSLIDE
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 G-1.
+         02 G-2         OCCURS 10.
+           03 X         PIC X(10) OCCURS 1 TO 4 DEPENDING ON I.
+       77 I             PIC 9.
+])
+
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:7: error: 'G-2' cannot have the OCCURS clause due to 'X'
 ])
@@ -180,6 +192,10 @@ AT_CHECK([$COMPILE_ONLY -fcomplex-odo prog2.cob], [1], [],
 ])
 
 AT_CHECK([$COMPILE_ONLY -fodoslide prog2.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY prog3.cob prog2.cob], [1], [],
+[prog2.cob:7: error: 'G-2' cannot have the OCCURS clause due to 'X'
+prog2.cob:8: error: 'X' cannot have nested OCCURS DEPENDING
+])
 
 AT_CLEANUP
 
