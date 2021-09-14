@@ -1038,7 +1038,7 @@ output_base (struct cb_field *f, const cob_u32_t no_output)
 		 && strstr (f01->name, " Record")) {	/* Skip to First 01 within FD */
 			f01 = f01->sister;
 		}
-		if (cb_flag_odoslide) {
+		if (cb_odoslide) {
 			out_odoslide_offset (f01, f);
 		} else {
 			struct cb_field		*v;
@@ -1155,7 +1155,7 @@ output_data (cb_tree x)
 						continue;
 					}
 
-					if (cb_flag_odoslide
+					if (cb_odoslide
 					 && !gen_init_working
 					 && f != o
 					 && chk_field_variable_size(f)) {
@@ -1180,7 +1180,7 @@ output_data (cb_tree x)
 								output ("%d * ", f->size);
 							}
 						}
-						if (cb_flag_odoslide
+						if (cb_odoslide
 						 && !gen_init_working
 						 && f->depending) {
 							o_slide = f;
@@ -1256,14 +1256,14 @@ output_size (const cb_tree x)
 			output ("%s%d.size - ", CB_PREFIX_FIELD, f->id);
 			output_index (r->offset);
 		} else if (chk_field_variable_size (f)
-			&& cb_flag_odoslide
+			&& cb_odoslide
 			&& !gen_init_working) {
 			out_odoslide_size (f);
 		} else {
 			struct cb_field		*p = chk_field_variable_size (f);
 			struct cb_field		*q = f;
 again:
-			if ((!cb_flag_odoslide || gen_init_working)
+			if ((!cb_odoslide || gen_init_working)
 			 && p
 			 && p->flag_odo_relative) {
 				q = p;
@@ -4773,7 +4773,7 @@ output_initialize_uniform (cb_tree x, const int c, const int size)
 		} else {
 			struct cb_field		*v = NULL;
 			if (!gen_init_working 
-			 && (f->flag_unbounded || !cb_complex_odo)) {
+			 && (f->flag_unbounded || cb_odoslide)) {
 				v = chk_field_variable_size (f);
 			}
 			if (v) {
@@ -10008,7 +10008,7 @@ output_field_display (struct cb_field *f, size_t offset,
 		for (i = 0; i < idx; i++) {
 			if (field_subscript[i] < 0) {
 				output (", i_%u, ", (cob_u32_t)-field_subscript[i]);
-				if (cb_flag_odoslide
+				if (cb_odoslide
 				 && p && p->depending) {
 					output ("(cob_uli_t)(");
 					output_size (cb_build_field_reference (p, NULL));

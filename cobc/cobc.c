@@ -3845,10 +3845,6 @@ process_command_line (const int argc, char **argv)
 #undef	CB_NOWARNDEF
 	}
 
-	if (cb_flag_odoslide) {
-		cb_complex_odo = 1;
-	}
-
 	if (fatal_errors_flag) {
 		cb_max_errors = -1;
 	}

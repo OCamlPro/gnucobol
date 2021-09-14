@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2012, 2014-2020 Free Software Foundation, Inc.
+   Copyright (C) 2003-2012, 2014-2021 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -170,10 +170,6 @@ CB_FLAG (cb_flag_acucomment, 1, "acucomment",
 CB_FLAG (cb_flag_notrunc, 1, "notrunc",
 	_("  -fnotrunc             allow numeric field overflow\n"
 	  "                        * non-ANSI behaviour"))
-
-CB_FLAG (cb_flag_odoslide, 1, "odoslide",
-	_("  -fodoslide            adjust items following OCCURS DEPENDING\n"
-	  "                        * implies -fcomplex-odo"))
 
 CB_FLAG (cb_flag_apostrophe, 1, "single-quote",
 	_("  -fsingle-quote        use a single quote (apostrophe) for QUOTE\n"

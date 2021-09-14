@@ -1,4 +1,10 @@
 
+2021-09-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* config.def, flag.def, cobc.c, codegen.c, field.c, typeck.c:
+	  moved and renamed cb_flag_odoslide to dialect option cb_odoslide and
+	  explicit check for it along complex_odo instead of setting it
+
 2021-09-07  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y: combined multiple exception_phrases nonterminals moving the

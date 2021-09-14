@@ -4713,7 +4713,7 @@ AT_DATA([progc.cob], [
            IF first-call NOT = SPACE
               GOBACK.
            MOVE 'X' TO first-call
-       COPY cllprg.
+       COPY "cllprg.cpy".
            GOBACK.
 ])
 AT_DATA([cllprg.cpy], [

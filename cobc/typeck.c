@@ -2131,7 +2131,7 @@ cb_build_length_1 (cb_tree x)
 	for (f = f->children; f; f = f->sister) {
 		size = cb_build_length_1 (cb_build_field_reference (f, x));
 		if (f->depending) {
-			if (!cb_flag_odoslide && f->flag_odo_relative) {
+			if (!cb_odoslide && f->flag_odo_relative) {
 				size = cb_build_binary_op (size, '*', cb_int (f->occurs_max));
 			} else {
 				size = cb_build_binary_op (size, '*', f->depending);
@@ -3437,7 +3437,7 @@ cb_validate_program_data (struct cb_program *prog)
 		for (p = q; ; p = p->parent) {
 			if (p->depending) {
 				if (odo_level > 0
-				 && !cb_flag_odoslide) {
+				 && !cb_odoslide) {
 					xerr = x;
 					cb_error_x (x,
 						_ ("'%s' cannot have nested OCCURS DEPENDING"),
@@ -3458,7 +3458,8 @@ cb_validate_program_data (struct cb_program *prog)
 						    p->sister->name);
 				}
 				if (!p->sister->redefines) {
-					if (!cb_complex_odo
+					if (!cb_odoslide
+					 && !cb_complex_odo
 					 && x != xerr) {
 						xerr = x;
 						cb_error_x (x,
@@ -10364,7 +10365,7 @@ cb_emit_move (cb_tree src, cb_tree dsts)
 #if 0 /* not yet merged revs 2603+2612 */
 			if (CB_REFERENCE_P (x)
 			 && CB_REFERENCE (x)->length == NULL
-			 && cb_complex_odo) {
+			 && (cb_odoslide || cb_complex_odo)) {
 				p = CB_FIELD_PTR(x);
 				if ((f = chk_field_variable_size (p)) != NULL) {
 					bgnpos = -1;

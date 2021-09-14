@@ -1,4 +1,10 @@
 
+2021-09-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: added odoslide, active in bs200, ibm, mvs (previously a
+	  compile flag only)
+	* bs2000-strict.conf: adjusted complex-odo to "yes"
+
 2021-08-31  Simon Sobisch <simonsobisch@gnu.org>
 
 	* acu.words, bs2000.words, cobol85.words, ibm.words, mf.words, mvs.words,
