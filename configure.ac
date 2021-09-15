@@ -849,7 +849,7 @@ AS_IF([test "$USE_JSON" = "cjson" -o "$USE_JSON" = "local" -o "$USE_JSON" = "che
 	AC_MSG_NOTICE([Checks for local cJSON ...])
 	curr_libs="$LIBS"; curr_cppflags="$CPPFLAGS"
 	with_cjson_local=no
-	AC_CHECK_FILE([./libcob/cJSON.c],
+	AS_IF([test -e ./libcob/cJSON.c],
 	  [AC_MSG_CHECKING([if linking of ./libcob/cJSON.c works])
 	   CPPFLAGS="$curr_cppflags -I./libcob"
 	   LIBS="$LIBS $COMMON_LIBS"
@@ -867,9 +867,9 @@ AS_IF([test "$USE_JSON" = "cjson" -o "$USE_JSON" = "local" -o "$USE_JSON" = "che
 	   LIBS="$curr_libs"]
 	)
 	if test "$with_cjson_local" = "no"; then
-	  AC_CHECK_FILE([$srcdir/libcob/cJSON.c],
-	    [AC_MSG_CHECKING([if linking of $srcdir/libcob/cJSON.c works])
-	     CPPFLAGS="$curr_cppflags -I$srcdir/libcob"
+	  AS_IF([test -e "$srcdir/libcob/cJSON.c"],
+	    [AC_MSG_CHECKING([if linking of "$srcdir/libcob/cJSON.c" works])
+	     CPPFLAGS="$curr_cppflags -I\"$srcdir/libcob\""
 	     LIBS="$LIBS $COMMON_LIBS"
 	     AC_LINK_IFELSE([
 		  AC_LANG_PROGRAM([[#include "cJSON.c"]],
@@ -879,7 +879,7 @@ AS_IF([test "$USE_JSON" = "cjson" -o "$USE_JSON" = "local" -o "$USE_JSON" = "che
 						   cJSON_CreateNull ();]])],
 	     [AC_MSG_RESULT([yes])
 	      AC_DEFINE([WITH_CJSON], [1])
-	      with_cjson_local="yes (in $srcdir/libcob)"],
+	      with_cjson_local="yes (in \"$srcdir/libcob\")"],
 	     [AC_MSG_RESULT([no])]
 	     )
 	     LIBS="$curr_libs"]
@@ -1485,7 +1485,7 @@ if test "$with_db" = "yes"; then
 			AC_MSG_NOTICE([BDB library version $COB_BDB_HEADER found as -l$cobdb])
 		else
 			AC_MSG_RESULT([no])
-			AC_MSG_ERROR([BDB library version $COB_BDB_HEADER not found])
+			AC_MSG_ERROR([BDB library version $COB_BDB_HEADER could not be linked])
 		fi
 	else
 		AC_MSG_WARN([Matching BDB version (>=4.1) assumed])
