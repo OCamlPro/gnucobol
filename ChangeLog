@@ -1,8 +1,8 @@
 
 2021-09-15  Simon Sobisch <simonsobisch@gnu.org>
 
-	* configure.ac: allow local cJSON to be used during cross-compile,
-	  based on a patch of Helmut Grohne
+	* configure.ac: allow local cJSON to be used during cross-compile
+	  and simplified size checks, based on patches of Helmut Grohne
 
 2021-04-07  Simon Sobisch <simonsobisch@gnu.org>
 

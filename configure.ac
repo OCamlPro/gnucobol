@@ -1560,79 +1560,30 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
 	 AC_MSG_RESULT([yes])],
 	[AC_MSG_RESULT([no])])
 
-# Checks for size of long
+
+AC_MSG_NOTICE([Checks for different sizes ...])
+
+AC_CHECK_SIZEOF(long int)
+AC_CHECK_SIZEOF(long long)
+AC_CHECK_SIZEOF(long)
+AC_CHECK_SIZEOF(void *)
+
 AC_MSG_CHECKING([if size of long int = size of long long])
-AC_RUN_IFELSE([AC_LANG_PROGRAM([[]], [[
-	if (sizeof(long int) == sizeof(long long))
-		return 0;
-	return 1;
-	]])],
+AS_IF([test "$ac_cv_sizeof_long_int" = "$ac_cv_sizeof_long_long"],
 	[AC_DEFINE([COB_LI_IS_LL], [1]) AC_MSG_RESULT([yes])],
-	[AC_MSG_RESULT([no])],
-	[if test "$COB_LI_IS_LL" = "0"; then
-		AC_MSG_RESULT([specified "no" on configure line])
-	 else
-		if test "$COB_LI_IS_LL" = "1"; then
-			AC_MSG_RESULT([specified "yes" on configure line])
-		else
-			COB_LI_IS_LL=1
-			AC_MSG_RESULT([assumed - cross-compilation])
-		fi
-	 fi
-	 AC_DEFINE([COB_LI_IS_LL], [$COB_LI_IS_LL])
-	 AC_MSG_WARN([cannot run test program while cross-compiling])])
+	[AC_MSG_RESULT([no])])
 
 AC_MSG_CHECKING([if long is 32 bits])
-AC_RUN_IFELSE([AC_LANG_PROGRAM([[]], [[
-	if (sizeof (long) == 4)
-		return 0;
-	return 1;
-	]])],
+AS_IF([test "$ac_cv_sizeof_long" = 4],
 	[AC_DEFINE([COB_32_BIT_LONG], [1]) AC_MSG_RESULT([yes])],
-	[AC_MSG_RESULT([no])],
-	[if test "$COB_32_BIT_LONG" = "0"; then
-		AC_MSG_RESULT([specified "no" on configure line])
-	 else
-		if test "$COB_32_BIT_LONG" = "1"; then
-			AC_MSG_RESULT([specified "yes" on configure line])
-		else
-			COB_32_BIT_LONG=1
-			AC_MSG_RESULT([assumed - cross-compilation])
-		fi
-	 fi
-	 AC_DEFINE([COB_32_BIT_LONG], [$COB_32_BIT_LONG])
-	 AC_MSG_WARN([cannot run test program while cross-compiling])])
+	[AC_MSG_RESULT([no])])
 
-
-if test "cross_compiling" != "yes"; then
-	COB_HAS_64_BIT_POINTER="no"
-fi
 AC_MSG_CHECKING([if pointer is longer than 32 bits])
-AC_RUN_IFELSE([AC_LANG_PROGRAM([[]], [[
-	if (sizeof (void *) > 4U)
-		return 0;
-	return 1;
-	]])],
+AS_IF([test "$ac_cv_sizeof_void_p" -gt 4],
 	[COB_HAS_64_BIT_POINTER="yes"
 	 AC_DEFINE([COB_64_BIT_POINTER], [1])
 	 AC_MSG_RESULT([yes])],
-	[AC_MSG_RESULT([no])],
-	[if test "$COB_HAS_64_BIT_POINTER" = "0"; then
-		COB_HAS_64_BIT_POINTER="no"
-		AC_DEFINE([COB_64_BIT_POINTER], [0])
-		AC_MSG_RESULT([specified "no" on configure line])
-	 else
-		if test "$COB_HAS_64_BIT_POINTER" = "1"; then
-			COB_HAS_64_BIT_POINTER="yes"
-			AC_DEFINE([COB_64_BIT_POINTER], [1])
-			AC_MSG_RESULT([specified "yes" on configure line])
-		else
-			COB_HAS_64_BIT_POINTER="no"
-			AC_DEFINE([COB_64_BIT_POINTER], [0])
-			AC_MSG_RESULT([assumed "no" - cross-compilation])
-		fi
-	 fi
-	 AC_MSG_WARN([cannot run test program while cross-compiling])])
+	[AC_MSG_RESULT([no])])
 
 # Check gcc wrapv option
 # We likely don't need this and remove it before 3.0 final release
