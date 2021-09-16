@@ -1,4 +1,10 @@
 
+2021-09-16  Edward Hart <edward.dan.hart@gmail.com>
+
+	* reserved.c: fixed bug #764, where deleting a reserved word which
+	  shares the same hash as another word could make the other word
+	  inaccessible in the reserve word table.
+
 2021-09-14  Simon Sobisch <simonsobisch@gnu.org>
 
 	* config.def, flag.def, cobc.c, codegen.c, field.c, typeck.c:

@@ -4238,8 +4238,9 @@ hash_word (const cob_c8_t *word, const cob_u32_t mod)
 		cobc_main_free (old_map);				\
 	}								\
 									\
+									\
 	static void							\
-	delete_##type##_with_key (const int key)			\
+	free_##type##_with_key (const int key)				\
 	{								\
 		cobc_main_free (type##_map[key]);			\
 		type##_map[key] = NULL;					\
@@ -4248,7 +4249,7 @@ hash_word (const cob_c8_t *word, const cob_u32_t mod)
 	static int							\
 	add_##type##_to_map (const struct type_struct val, const int overwrite) \
 	{								\
-		unsigned int	key;						\
+		unsigned int	key;					\
 		int	entry_already_there;				\
 									\
 		if (!type##_map) {					\
@@ -4268,7 +4269,7 @@ hash_word (const cob_c8_t *word, const cob_u32_t mod)
 		entry_already_there = !!type##_map[key];		\
 		if (entry_already_there) {				\
 			if (overwrite) {				\
-				delete_##type##_with_key (key);		\
+				free_##type##_with_key (key);		\
 			} else {					\
 				return 1;				\
 			}						\
@@ -4284,15 +4285,45 @@ hash_word (const cob_c8_t *word, const cob_u32_t mod)
 HASHMAP (reserved_word, cobc_reserved, name)
 HASHMAP (amendment, amendment_list, word)
 
+
 /* These functions are separate to suppress "unused function" warnings. */
 static void
 remove_reserved_word_from_map (const char * const word)
 {
 	int	key = find_key_for_reserved_word (word);
-	if (reserved_word_map[key]) {
-		delete_reserved_word_with_key (key);
+	int	deleted_key;
+	int	following_entry_key;
+
+	if (!reserved_word_map[key]) {
+		return;
+	}
+
+	free_reserved_word_with_key (key);
+
+	/*
+	  Check all subsequent entries do not need to be moved.  We can stop at
+	  the fist NULL entry since if any word after wanted the deleted
+	  entry's key, it would be in the NULL position.
+	*/
+	deleted_key = key;
+	for (key = next_reserved_word_key (key); reserved_word_map[key]; key = next_reserved_word_key (key)) {
+		following_entry_key = find_key_for_reserved_word (reserved_word_map[key]->name);
+		if (following_entry_key == deleted_key) {
+			reserved_word_map[deleted_key] = reserved_word_map[key];
+			reserved_word_map[key] = NULL;
+			deleted_key = key;
+		} else if (following_entry_key == key) {
+			continue;
+		}
+		/* LCOV_EXCL_START */
+		else {
+			/* Should not happen */
+			COBC_ABORT ();
+		}
+		/* LCOV_EXCL_STOP */
 	}
 }
+
 static struct cobc_reserved *
 find_reserved_word (const char * const word)
 {
@@ -4355,7 +4386,7 @@ get_reserved_words_with_amendments (void)
 		add_reserved_word_to_map (reserved, 0);
 
 		free_amendment_content (amendment_map[i]);
-	        delete_amendment_with_key (i);
+	        free_amendment_with_key (i);
 	}
 }
 

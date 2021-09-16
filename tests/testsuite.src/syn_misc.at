@@ -7637,5 +7637,33 @@ correct X > Y
 ])
 AT_CLEANUP
 
-# TODO: add missing tests for syntax errors in >>IF/ELSE/END
 
+AT_SETUP([Missing reserved word with DEBUGGING MODE])
+AT_KEYWORDS([misc COBOL-85])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. my-prog.
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SOURCE-COMPUTER. GNU-Linux WITH DEBUGGING MODE.
+
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT gen-file ASSIGN "f.txt".
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD  gen-file.
+       01  gen-file-rec PIC X.
+
+       PROCEDURE DIVISION.
+           OPEN INPUT gen-file
+	   .
+])
+
+AT_CHECK([$COMPILE_ONLY -std=cobol85 prog.cob], [0], [])
+AT_CLEANUP
+
+# TODO: add missing tests for syntax errors in >>IF/ELSE/END
