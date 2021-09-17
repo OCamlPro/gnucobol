@@ -1,4 +1,9 @@
 
+2021-09-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobol2002.words, cobol2014.words: fixed missing aliases THROUGH=THRU,
+	  CORR=CORRESPONDING, COMPUTATIONAL*=COMP*, QUOTES=QUOTE, SYNC=SYNCHRONIZED
+
 2021-09-14  Simon Sobisch <simonsobisch@gnu.org>
 
 	* general: added odoslide, active in bs200, ibm, mvs (previously a
