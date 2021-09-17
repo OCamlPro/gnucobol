@@ -9115,7 +9115,7 @@ AT_DATA([prog.cob], [
        PROGRAM-ID. sub1.
        DATA DIVISION.
        WORKING-STORAGE SECTION.
-       01  ZRO PIC 9(9) BINARY VALUE 0.
+       01  ZRO  PIC 9(9) BINARY VALUE 0.
        01  HEXV PIC X  COMP-X.
        01  HEXC REDEFINES HEXV PIC X.
 
@@ -9193,7 +9193,9 @@ AT_DATA([prog.cob], [
             END-IF.
             GOBACK.
        END PROGRAM sub1.
+])
 
+AT_DATA([sub2.cob], [
        IDENTIFICATION DIVISION.
        PROGRAM-ID. sub2.
        DATA DIVISION.
@@ -9280,7 +9282,7 @@ AT_DATA([prog.cob], [
        END PROGRAM sub2.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE prog.cob sub2.cob], [0], [], [])
 
 AT_CAPTURE_FILE(./tstdump.dump)
 
@@ -9294,11 +9296,11 @@ X is 000005441
 libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 
  Last statement of sub1 was at line 4 of cpyabrt
- Last statement of sub2 was at line 251 of prog.cob
+ Last statement of sub2 was at line 48 of sub2.cob
  Last statement of prog was at line 118 of prog.cob
 ])
 
-AT_CHECK([$COMPILE -fdump=ALL -fno-dump prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fdump=ALL -fno-dump prog.cob sub2.cob], [0], [], [])
 
 # also checking that a dump file without anything to dump does not do anything
 AT_CHECK([COB_STACKTRACE=1 COB_DUMP_FILE=tstdump.dump \
@@ -9310,11 +9312,11 @@ X is 000005441
 libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 
  Last statement of sub1 was at line 4 of cpyabrt
- Last statement of sub2 was at line 251 of prog.cob
+ Last statement of sub2 was at line 48 of sub2.cob
  Last statement of prog was at line 118 of prog.cob
 ])
 
-AT_CHECK([$COMPILE -fdump=ALL prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fdump=ALL prog.cob sub2.cob], [0], [], [])
 
 AT_CHECK([COB_DUMP_FILE=tstdump.dump \
 $COBCRUN_DIRECT ./prog], [1],
@@ -9331,7 +9333,7 @@ AT_DATA([reference_tmpl], [
 Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 
  Last statement of sub1 was at line 4 of cpyabrt
- Last statement of sub2 was at line 251 of prog.cob
+ Last statement of sub2 was at line 48 of sub2.cob
  Last statement of prog was at line 118 of prog.cob
 
 Dump Program-Id sub1 from prog.cob compiled MMM DD YYYY HH:MM:SS
@@ -9397,7 +9399,7 @@ LINKAGE
 END OF DUMP - sub1
 **********************
 
-Dump Program-Id sub2 from prog.cob compiled MMM DD YYYY HH:MM:SS
+Dump Program-Id sub2 from sub2.cob compiled MMM DD YYYY HH:MM:SS
 
 WORKING-STORAGE
 **********************
@@ -9543,7 +9545,7 @@ X is 000005441
 libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 
  Last statement of sub1 was at line 4 of cpyabrt
- Last statement of sub2 was at line 251 of prog.cob
+ Last statement of sub2 was at line 48 of sub2.cob
  Last statement of prog was at line 118 of prog.cob
  
 dump written to tstdump.dump
@@ -9554,7 +9556,7 @@ tstdump.dump > tstdump.sed], [0], [], [])
 
 AT_CHECK([diff reference tstdump.sed], [0], [], [])
 
-AT_CHECK([$COMPILE -fdump=FD,LS prog.cob -o prog_fdls], [0], [], [])
+AT_CHECK([$COMPILE -fdump=FD,LS prog.cob sub2.cob -o prog_fdls], [0], [], [])
 
 AT_CHECK([COB_DUMP_FILE=tstdump_fdls.dump \
 $COBCRUN_DIRECT ./prog_fdls], [1],
@@ -9574,7 +9576,7 @@ AT_DATA([reference_fdls_tmpl], [
 Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 
  Last statement of sub1 was at line 4 of cpyabrt
- Last statement of sub2 was at line 251 of prog.cob
+ Last statement of sub2 was at line 48 of sub2.cob
  Last statement of prog was at line 118 of prog.cob
 
 Dump Program-Id sub1 from prog.cob compiled MMM DD YYYY HH:MM:SS
@@ -9587,7 +9589,7 @@ LINKAGE
 END OF DUMP - sub1
 **********************
 
-Dump Program-Id sub2 from prog.cob compiled MMM DD YYYY HH:MM:SS
+Dump Program-Id sub2 from sub2.cob compiled MMM DD YYYY HH:MM:SS
 
 LINKAGE
 **********************
@@ -9626,7 +9628,7 @@ tstdump_fdls.dump > tstdump.sed], [0], [], [])
 
 AT_CHECK([diff reference tstdump.sed], [0], [], [])
 
-AT_CHECK([$COMPILE -fdump=ALL -fno-dump=LO,WS,SC prog.cob -o prog_allfdls], [0], [], [])
+AT_CHECK([$COMPILE -fdump=ALL -fno-dump=LO,WS,SC prog.cob sub2.cob -o prog_allfdls], [0], [], [])
 
 AT_CHECK([COB_DUMP_FILE=tstdump_allfdls.dump \
 $COBCRUN_DIRECT ./prog_allfdls], [1],
@@ -9645,7 +9647,7 @@ tstdump_allfdls.dump > tstdump.sed], [0], [], [])
 AT_CHECK([diff reference tstdump.sed], [0], [], [])
 
 # CHECKME @ Ron: The result is likely wrong, please verify later
-#AT_CHECK([$COMPILE -fdump=LS prog.cob -fsticky-linkage -o prog_ls_sticky], [0], [], [])
+#AT_CHECK([$COMPILE -fdump=LS prog.cob sub2.cob -fsticky-linkage -o prog_ls_sticky], [0], [], [])
 #
 #AT_CHECK([COB_DUMP_FILE=tstdump_ls_sticky.dump \
 #$COBCRUN_DIRECT ./prog_ls_sticky], [1],
@@ -9665,7 +9667,7 @@ AT_CHECK([diff reference tstdump.sed], [0], [], [])
 #Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 #
 # Last statement of sub1 was at line 4 of cpyabrt
-# Last statement of sub2 was at line 251 of prog.cob
+# Last statement of sub2 was at line 48 of sub2.cob
 # Last statement of prog was at line 118 of prog.cob
 #
 #Dump Program-Id sub1 from prog.cob compiled MMM DD YYYY HH:MM:SS
@@ -9675,7 +9677,7 @@ AT_CHECK([diff reference tstdump.sed], [0], [], [])
 #01        X                               000005441
 #01        TSPFL-RECORD.                  <NULL> address
 #
-#Dump Program-Id sub2 from prog.cob compiled MMM DD YYYY HH:MM:SS
+#Dump Program-Id sub2 from sub2.cob compiled MMM DD YYYY HH:MM:SS
 #
 #LINKAGE
 #**********************
@@ -9701,7 +9703,7 @@ AT_CHECK([diff reference tstdump.sed], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([Test dump feature (2)])
+AT_SETUP([dump feature with NULL address])
 #AT_KEYWORDS([Dump])
 
 AT_DATA([prog.cob], [
@@ -9812,7 +9814,7 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE -fdump=ALL prog.cob], [0], [], [])
 
-AT_CHECK([export COB_DUMP_FILE=dumpall.txt
+AT_CHECK([COB_DUMP_FILE=dumpall.txt \
 $COBCRUN_DIRECT ./prog], [1],
 [GRP-2:***ABCD ABCD ABCD ABCD ABCD ABCD ABCD ABCD AB***
 GRP-3:***ABC00D99D99D99D99XXABC00D99D99D99D99XXABC00D99 00D99D99XX***

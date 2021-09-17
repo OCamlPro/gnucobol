@@ -3,6 +3,7 @@
 
 	* configure.ac: allow local cJSON to be used during cross-compile
 	  and simplified size checks, based on patches of Helmut Grohne
+	  (Debian 993872) and Johan Anderholm (patch #39)
 
 2021-04-07  Simon Sobisch <simonsobisch@gnu.org>
 

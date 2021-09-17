@@ -1,4 +1,9 @@
 
+2021-09-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y: some minor conflicts "resolved", support of old extension
+	  SCREEN SECTION VALUE without "VALUE", fixed ACU's PROPERTY xyz ARE
+
 2021-09-16  Edward Hart <edward.dan.hart@gmail.com>
 
 	* reserved.c: fixed bug #764, where deleting a reserved word which

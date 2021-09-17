@@ -4937,9 +4937,7 @@ select_clause:
 | nominal_key_clause
 | track_area_clause
 | track_limit_clause
-/* FXIME: disabled because of shift/reduce conflict
 | encryption_clause
-*/
 /* FXIME: disabled because of shift/reduce conflict
   (optional in [alternate] record key, could be moved here
    if the suppress_clause goes here too and both entries verify that
@@ -5226,9 +5224,9 @@ password_clause:
   }
 ;
 
-/* FXIME: disabled because of shift/reduce conflict
 encryption_clause:
-  _with ENCRYPTION
+  /* FIXME: has an optional _with - disabled because of shift/reduce conflict */
+  ENCRYPTION
   {
 	if (current_file->organization == COB_ORG_INDEXED) {
 		cb_error (_("%s only valid with ORGANIZATION %s"), "WITH ENCRYPTION", "INDEXED");
@@ -5238,7 +5236,6 @@ encryption_clause:
 	}
   }
 ;
-*/
 
 _suppress_clause:
   /* empty */
@@ -7195,9 +7192,11 @@ type_to_clause:
 /* USAGE clause */
 
 usage_clause:
-  usage
-| USAGE _is usage
-| USAGE _is WORD
+  _usage_is usage
+| USAGE _is WORD	/* MF extension for referencing types, full support would need
+                	   _usage_is, but this leads to shift/reduce conflicts,
+                	   FIXME: handle conflict by returning TYPEDEF_NAME token,
+                	          then move this to "usage" */
   {
 	{
 		cb_tree x = cb_try_ref ($3);
@@ -7232,6 +7231,10 @@ usage_clause:
   {
 	check_and_set_usage (CB_USAGE_ERROR);
   }
+;
+
+_usage_is:
+| USAGE _is
 ;
 
 usage:
@@ -8966,7 +8969,7 @@ screen_option:
 | screen_global_clause
 | justified_clause
 | sign_clause
-| value_clause
+| screen_value_clause
 | picture_clause
 | screen_occurs_clause
 | USING identifier
@@ -8991,6 +8994,24 @@ screen_option:
 	current_field->screen_to = $$;
 	current_field->screen_flag |= COB_SCREEN_INPUT;
   }
+;
+
+screen_value_clause:
+  _value_is basic_literal
+  {
+	/* omitting VALUE is at least allowed in MS-COBOL, MF-COBOL, ACUCOBOL for SCREEN VALUE,
+	   and not according to XOPEN uses 85-std which has no SCREEN SECTION and newer Standards */
+	if (!$1 && cb_std_define >= CB_STD_85) {
+		cb_error (_("missing %s"), "VALUE");
+	}
+	check_repeated ("VALUE", SYN_CLAUSE_12, &check_pic_duplicate);
+	current_field->values = CB_LIST_INIT ($2);
+  }
+;
+
+_value_is:
+/* empty */	{ $$ = NULL; }
+| VALUE _is	{ $$ = cb_int0; }
 ;
 
 control_definition:
@@ -9050,7 +9071,8 @@ control_attributes:
 
 control_attribute:
   control_style
-| control_property _is_are_equal x_list
+| control_property _is_are_equal x
+| control_property _is_are_equal TOK_OPEN_PAREN x_list TOK_CLOSE_PAREN
 ;
 
 control_style:

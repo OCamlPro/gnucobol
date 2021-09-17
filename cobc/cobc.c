@@ -3687,7 +3687,7 @@ process_command_line (const int argc, char **argv)
 			break;
 
 		case 'z':
-			/* -Wno-error[=warning] : Treat all/single warnings as errors */
+			/* -Wno-error[=warning] : Treat all/single warnings not as errors */
 			if (cob_optarg) {
 #define CB_CHECK_WARNING(opt,name)  \
 				if (strcmp (cob_optarg, name) == 0	\
