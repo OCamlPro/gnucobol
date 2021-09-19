@@ -2608,7 +2608,7 @@ emit_definition_prototype_error (const char *name, const char *error,
 		*prototype_error_header_shown = 1;
 	}
 
-	cb_note (COB_WARNOPT_NONE, 0, error);
+	cb_note (COB_WARNOPT_NONE, 0, "%s", error);
 }
 
 static int
@@ -2697,12 +2697,12 @@ error_if_signatures_differ (struct cb_program *prog1, struct cb_program *prog2)
 	int	parameter_num;
 
 	/* We assume one of the parameters is a prototype */
-	if (CB_PROGRAM (prog1)->flag_prototype) {
-		definition = CB_PROGRAM (prog2);
-		prototype = CB_PROGRAM (prog1);
+	if (prog1->flag_prototype) {
+		definition = prog2;
+		prototype = prog1;
 	} else {
-		definition = CB_PROGRAM (prog1);
-		prototype = CB_PROGRAM (prog2);
+		definition = prog1;
+		prototype = prog2;
 	}
 
 	/* If error detected, output header:

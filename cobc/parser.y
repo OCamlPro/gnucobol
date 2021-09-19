@@ -1982,12 +1982,16 @@ contains_fields_and_screens (struct cb_list *x_list)
 		return 0;
 	}
 
-	for (; x_list; x_list = CB_LIST (x_list->chain)) {
+	for (;;) {
 		if (is_screen_field (x_list->value)) {
 			screen_seen = 1;
 		} else {
 			field_seen = 1;
 		}
+		if (!x_list->chain) {
+			break;
+		}
+		x_list = CB_LIST (x_list->chain);
 	}
 
 	return screen_seen && field_seen;
