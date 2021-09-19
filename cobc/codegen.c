@@ -20,7 +20,7 @@
 */
 
 
-#include <config.h>
+#include "config.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -12705,6 +12705,9 @@ codegen_init (struct cb_program *prog, const char *translate_name)
 	{
 		struct cb_program* cp;
 		for (cp = prog; cp; cp = cp->next_program) {
+			if (cp->flag_prototype) {
+				continue;
+			}
 			output_target = cp->local_include->local_fp;
 			output_header (string_buffer, cp);
 		}
@@ -12733,6 +12736,11 @@ codegen_internal (struct cb_program *prog, const int subsequent_call)
 	int	comment_gen;
 
 	struct cb_report *rep;
+
+	/* skip prototypes */
+	if (prog->flag_prototype) {
+		return;
+	}
 
 	/* Clear local program stuff */
 	current_prog = prog;

@@ -4799,8 +4799,8 @@ prog.cob:31: error: condition-name not allowed here: 'invalid-6'
 AT_CLEANUP
 
 
-AT_SETUP([use of program-prototypes])
-AT_KEYWORDS([misc])
+AT_SETUP([use of program-prototype-names])
+AT_KEYWORDS([misc prototype prototypes])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION  DIVISION.
@@ -4822,6 +4822,156 @@ AT_CHECK([$COMPILE_ONLY -fprogram-prototypes=warning prog.cob], [0], [],
 prog.cob:8: warning: no definition/prototype seen for PROGRAM 'test-prog'
 prog.cob:11: warning: CALL/CANCEL with program-prototype-name used
 prog.cob:12: warning: CALL/CANCEL with program-prototype-name used
+])
+AT_CLEANUP
+
+
+AT_SETUP([checking prototypes and definitions match])
+AT_KEYWORDS([misc prototype])
+
+AT_XFAIL_IF(true)
+# patch #32 was not fully included and the current implementation
+# needs updating
+
+AT_DATA([prog.cob], [
+       *> Prototype and definition have different signatures.
+       IDENTIFICATION DIVISION.
+       FUNCTION-ID. invalid-1 PROTOTYPE.
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SOURCE-COMPUTER. x.
+       SPECIAL-NAMES.
+           DECIMAL-POINT COMMA
+           CURRENCY SIGN "F"
+           .
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01  x.
+           03  x1 PIC X(15).
+           03  x2 PIC X(15) JUST.
+       01  y PIC +9(30) BLANK ZERO.
+
+       PROCEDURE DIVISION USING x returning y.
+       END FUNCTION invalid-1.
+
+       *> Prototype and definition have different signatures.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. invalid-2 PROTOTYPE.
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01  x PIC X.
+       PROCEDURE DIVISION USING x.
+       END PROGRAM invalid-2.
+
+       *> Prototype and definition have matching signatures.
+       IDENTIFICATION DIVISION.
+       FUNCTION-ID. valid-1 PROTOTYPE.
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+           DECIMAL-POINT COMMA
+           .
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01  ret PIC 999V99.
+
+       PROCEDURE DIVISION RETURNING ret.
+       END FUNCTION valid-1.
+
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. blahblah AS "invalid-1".
+
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01  a.
+           03  a-1 PIC X(15) JUST.
+           03  a-2 PIC X(15).
+       01  b PIC S9(10) SIGN LEADING.
+
+       PROCEDURE DIVISION USING a RETURNING b.
+           DISPLAY "yes"
+           .
+       END PROGRAM blahblah.
+
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. invalid-2.
+
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01  ret PIC X.
+
+       PROCEDURE DIVISION RETURNING ret.
+           MOVE "x" TO ret
+           .
+       END PROGRAM invalid-2.
+
+       IDENTIFICATION DIVISION.
+       FUNCTION-ID. valid-1.
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+           DECIMAL-POINT COMMA
+           .
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01  ret PIC 999V99.
+
+       PROCEDURE DIVISION RETURNING ret.
+           MOVE 1,5 TO ret
+           .
+       END FUNCTION valid-1.
+
+       *> Prototypes must be at start of compilation group.
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. invalid-3.
+
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01  x PIC X(10).
+
+       PROCEDURE DIVISION USING x.
+       END PROGRAM invalid-3.
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. invalid-3 IS PROTOTYPE.
+
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01  x PIC X(10).
+
+       PROCEDURE DIVISION USING x.
+       END PROGRAM invalid-3.
+])
+
+# TODO message handling has to be adjusted
+#AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+#[prog.cob:59: error: prototype and definition of 'invalid-1' do not match
+#   definition is a program but the prototype is a function;
+#   DECIMAL-POINT IS COMMA clauses differ;
+#   CURRENCY clauses differ;
+#   parameters #1 ('a-1' in the definition an 'x1' in the prototype) differ;
+#   returning items ('b' in the definition an 'y' in the prototype) differ
+#prog.cob:72: error: prototype and definition of 'invalid-2' do not match
+#   number of parameters differ;
+#   definition has a RETURNING item but protoype does not;
+#prog.cob:106: error: prototypes must be come before any program/function definitions
+#])
+AT_CHECK([$COMPILE_ONLY -Wno-unfinished prog.cob], [1], [],
+[prog.cob:59: error: prototype and definition of 'invalid-1' do not match
+prog.cob:59: note: definition is a program but the prototype is a function
+prog.cob:59: note: DECIMAL-POINT IS COMMA clauses differ
+prog.cob:59: note: CURRENCY clauses differ
+prog.cob:59: note: parameters #1 ('a-1' in the definition an 'x1' in the prototype) differ
+prog.cob:59: note: returning items ('b' in the definition an 'y' in the prototype) differ
+prog.cob:72: error: prototype and definition of 'invalid-2' do not match
+prog.cob:72: note: number of parameters differ
+prog.cob:72: note: definition has a RETURNING item but protoype does not
+prog.cob:106: error: prototypes must be come before any program/function definitions
 ])
 AT_CLEANUP
 

@@ -49,9 +49,12 @@
 #define CB_PREFIX_REPORT_REF	"rr_"	/* Report CONTROL reference (cob_report_control_ref) */
 #define CB_PREFIX_REPORT_SUM_CTR "rsc_"	/* Report SUM COUNTER */
 
-#define CB_CALL_BY_REFERENCE	1
-#define CB_CALL_BY_CONTENT	2
-#define CB_CALL_BY_VALUE	3
+enum cb_call_mode {
+	CB_CALL_BY_REFERENCE = 1,
+	CB_CALL_BY_CONTENT,
+	CB_CALL_BY_VALUE,
+	CB_CALL_DEFAULT_MODE
+};
 
 #define CB_SIZE_AUTO		0
 #define CB_SIZE_1		1
@@ -1654,9 +1657,11 @@ struct cb_program {
 	unsigned int	flag_report		: 1;	/* Have REPORT SECTION */
 	unsigned int	flag_void		: 1;	/* void return for subprogram */
 	unsigned int	flag_decimal_comp	: 1;	/* program group has decimal computations */
+	unsigned int	flag_prototype		: 1;	/* Is a prototype */
 };
 
 #define CB_PROGRAM(x)	(CB_TREE_CAST (CB_TAG_PROGRAM, struct cb_program, x))
+#define CB_PROGRAM_P(x)	(CB_TREE_TAG (x) == CB_TAG_PROGRAM)
 
 /* Function prototype */
 
@@ -1999,6 +2004,7 @@ extern cb_tree			get_cb_error_node (void);
 extern enum cb_warn_val		cb_warning_x (const enum cb_warn_opt, cb_tree, const char *, ...) COB_A_FORMAT34;
 extern enum cb_warn_val		cb_warning_dialect_x (const enum cb_support, cb_tree, const char *, ...) COB_A_FORMAT34;
 extern void		cb_note_x (const enum cb_warn_opt, cb_tree, const char *, ...) COB_A_FORMAT34;
+extern void		cb_note (const enum cb_warn_opt, const int, const char *, ...) COB_A_FORMAT34;
 extern void		cb_inclusion_note (const char *, int);
 extern enum cb_warn_val		cb_error_x (cb_tree, const char *, ...) COB_A_FORMAT23;
 extern unsigned int	cb_verify (const enum cb_support, const char *);
@@ -2266,6 +2272,7 @@ extern cb_tree		cb_build_write_advancing_lines (cb_tree, cb_tree);
 extern cb_tree		cb_build_write_advancing_mnemonic (cb_tree, cb_tree);
 extern cb_tree		cb_build_write_advancing_page (cb_tree);
 extern cb_tree		cb_check_sum_field (cb_tree x);
+extern void		cb_check_conformance (cb_tree, cb_tree, cb_tree);
 extern void		cb_emit_initiate (cb_tree rep);
 extern void		cb_emit_terminate (cb_tree rep);
 extern void		cb_emit_generate (cb_tree rep);
@@ -2296,6 +2303,9 @@ extern struct cb_field	*check_level_78 (const char *);
 
 extern struct cb_program	*cb_find_defined_program_by_name (const char *);
 extern struct cb_program	*cb_find_defined_program_by_id (const char *);
+
+extern void		cb_validate_parameters_and_returning (struct cb_program *, cb_tree);
+extern void		cb_check_definition_matches_prototype (struct cb_program *);
 
 /* cobc.c */
 #ifndef COB_EXTERNAL_XREF

@@ -3,12 +3,22 @@
 
 	* parser.y: some minor conflicts "resolved", support of old extension
 	  SCREEN SECTION VALUE without "VALUE", fixed ACU's PROPERTY xyz ARE
+	* warning.def: new option cb_warn_repository_checks (defaults to on)
+	* typeck.c: depend repository checks on cb_warn_repository_checks
 
 2021-09-16  Edward Hart <edward.dan.hart@gmail.com>
 
 	* reserved.c: fixed bug #764, where deleting a reserved word which
 	  shares the same hash as another word could make the other word
 	  inaccessible in the reserve word table.
+
+2021-09-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (emit entry), typeck.c (cb_validate_parameters_and_returning),
+	  tree.h: extracted function from parser.y
+	* parser.y, reserved.c, codegen.c, tree.h, error.c: work on
+	  partial integration of patch #32 (2017-10-07) for supporting PROTOTYPE,
+	  adjusting checks from numbered LINKAGE items to PROCEDURE DIVISION USING
 
 2021-09-14  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -2503,6 +2513,15 @@
 
 	* typeck.c: refactored and improved variable names in external form
 	  functions.
+
+2017-10-07  Edward Hart <edward.dan.hart@gmail.com>
+
+	* typeck.c: extracted (cb_check_arithmetic) from (cb_emit_arithmetic) and
+	  (cb_check_set_to) from (cb_emit_set_to)
+	* typeck.c (cb_emit_incompat_data_checks): renamed from
+	  (cb_check_data_incompat)
+	* parser.y, reserved.c, codegen.c, tree.h, typeck.c: work on
+	  PROTOTYPE support
 
 2017-10-07  Ron Norman <rjn@inglenet.com>
 
