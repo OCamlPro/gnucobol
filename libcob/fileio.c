@@ -8083,7 +8083,8 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f)
 		f->assign->size = LDCOMPX2(fcd->fnameLen);
 		f->assign->attr = &alnum_attr;
 	}
-	if (f->select_name == NULL) {
+	if (f->select_name == NULL
+	 && f->assign != NULL) {
 		char	fdname[49];
 		f->select_name = (char*)f->assign->data;
 		for (k=0; k < (int)(f->assign->size); k++) {
@@ -8202,17 +8203,12 @@ free_fcd2 (FCD2 *fcd2)
 	return;
 }
 
-/* Convert FCD2 into FCD3 format */
+/* Convert FCD2 into FCD3 format, note: explicit no checks here
+   as those have to be in EXTFH3 / fileio later */
 static FCD3 *
 fcd2_to_fcd3 (FCD2 *fcd2)
 {
 	FCD3 *fcd;
-	if (fcd2->fnamePtr2 == NULL) {
-		fcd2->fileStatus[0] = '9';
-		fcd2->fileStatus[1] = 141;
-		cob_runtime_warning (_("ERROR: EXTFH called with no %s pointer"),"filename");
-		return NULL;
-	}
 	fcd = find_fcd2 (fcd2);
 	memcpy (fcd->fileStatus, "00", 2);
 	fcd->fcdVer = FCD_VER_64Bit;
@@ -8684,36 +8680,32 @@ cob_sys_extfh (const void *opcode_ptr, void *fcd_ptr)
 	if (cobglobptr->cob_call_params < 2
 	 || !COB_MODULE_PTR->cob_procedure_params[0]
 	 || !COB_MODULE_PTR->cob_procedure_params[1]
+	 || COB_MODULE_PTR->cob_procedure_params[1]->size < 2) {
+		cob_set_exception (COB_EC_PROGRAM_ARG_MISMATCH);
+		return 1;	/* correct? */
+	}
+	if (COB_MODULE_PTR->cob_procedure_params[0]->size < 2
 	 || COB_MODULE_PTR->cob_procedure_params[1]->size < 5) {
+		fcd->fileStatus[0] = '9';
+		fcd->fileStatus[1] = 161;
 		cob_set_exception (COB_EC_PROGRAM_ARG_MISMATCH);
 		return 1;	/* correct? */
 	}
-#if COB_64_BIT_POINTER
-	/* Only FCD3 is accepted */
-	if (COB_MODULE_PTR->cob_procedure_params[1]->size < sizeof(FCD3)) {
-		fcd->fileStatus[0] = '9';
-		fcd->fileStatus[1] = 161;
-		if (fcd->fcdVer != FCD_VER_64Bit) {
+
+#if !COB_64_BIT_POINTER	/* Only FCD3 is accepted for 64 bit, otherwise we can convert */
+	if (COB_MODULE_PTR->cob_procedure_params[1]->size >= sizeof(FCD2)
+	 && fcd->fcdVer == FCD2_VER) {
+		/* EXTFH with auto-conversion FCD2<->FCD3*/
+		int retsts = EXTFH ((unsigned char *)opcode_ptr, fcd);
+		if (retsts) {
 			cob_set_exception (COB_EC_PROGRAM_ARG_MISMATCH);
-#if 1
-			cob_runtime_warning (_("ERROR: EXTFH called with FCD version %d"), fcd->fcdVer);
-#else
-			cob_runtime_error (_("ERROR: EXTFH called with FCD version %d"), fcd->fcdVer);
-			exit(-1);
-#endif
 		}
-		return 1;	/* correct? */
+		return retsts;
 	}
+#endif
 
-	return EXTFH3 ((unsigned char *)opcode_ptr, fcd);
-#else
-	if (COB_MODULE_PTR->cob_procedure_params[1]->size < sizeof(FCD3)) {
-		if (fcd->fcdVer == FCD2_VER
-		 && COB_MODULE_PTR->cob_procedure_params[1]->size >= sizeof(FCD2)) {
-			/* EXTFH with auto-conversion FCD2<->FCD3*/
-			return EXTFH ((unsigned char *)opcode_ptr, fcd);
-		}
-
+	if (COB_MODULE_PTR->cob_procedure_params[1]->size < sizeof(FCD3)
+	 || fcd->fcdVer != FCD_VER_64Bit) {
 		fcd->fileStatus[0] = '9';
 		fcd->fileStatus[1] = 161;
 		cob_set_exception (COB_EC_PROGRAM_ARG_MISMATCH);
@@ -8722,9 +8714,7 @@ cob_sys_extfh (const void *opcode_ptr, void *fcd_ptr)
 		}
 		return 1;	/* correct? */
 	}
-
 	return EXTFH3 ((unsigned char *)opcode_ptr, fcd);
-#endif
 }
 
 /* 
@@ -8807,7 +8797,7 @@ EXTFH (unsigned char *opcode, FCD3 *fcd)
 			"EXTFH", opcode == NULL ? "opcode" : "fcd");
 		return -1;
 	}
-#if! COB_64_BIT_POINTER
+#if !COB_64_BIT_POINTER
 	if (fcd->fcdVer == FCD2_VER) {
 		int		rtnsts;
 		FCD2 *fcd2 = (FCD2 *) fcd;
@@ -8830,7 +8820,6 @@ EXTFH (unsigned char *opcode, FCD3 *fcd)
 	}
 #endif
 	return EXTFH3 (opcode, fcd);
-
 }
 
 /*

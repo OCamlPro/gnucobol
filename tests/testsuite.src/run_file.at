@@ -10856,10 +10856,11 @@ AT_DATA([prog.cob], [
             .
 ])
 
-AT_CHECK([$COMPILE -w prog.cob ], [0], [], [])
+# FIXME: by default comp-x should not be truncated (see trunk)
+AT_CHECK([$COMPILE -fnotrunc prog.cob], [0], [], [])
 
-AT_CHECK([export TESTOUT=TEST-OUT
-$COBCRUN_DIRECT ./prog], [0], [FCD SIZE 00100.
+AT_CHECK([TESTOUT=TEST-OUT $COBCRUN_DIRECT ./prog], [0],
+[FCD SIZE 00100.
 Writing TESTOUT   .
 EXTFH Status: 9/141
 FCD2 is missing value(s)!
@@ -10874,7 +10875,7 @@ Listing TESTOUT   .
 00018:   8 Enjoy the show :
 00003:   9 :
 00003:  10 :
-], [libcob: prog.cob:297: warning: ERROR: EXTFH called with no filename pointer
+], [libcob: prog.cob:293: warning: ERROR: EXTFH called with no filename pointer
 ])
 
 

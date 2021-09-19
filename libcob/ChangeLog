@@ -1,4 +1,9 @@
 
+2021-09-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (fcd2_to_fcd3): removed checks as this function only converts
+	* fileio.c (cob_sys_extfh): minor adjustments for bad arguments
+
 2021-09-13  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fileio.c: merged EXTFH changes from trunk (fbdb.c,fisam.c,fextfh.c)
