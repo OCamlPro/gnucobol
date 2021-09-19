@@ -1,4 +1,10 @@
 
+2021-09-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y, typeck.c: let DISPLAY OMITTED be handled identical
+	  to common display sources: as the entry of a list; removing the
+	  need to cast and extra check during the validation
+
 2021-09-17  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y: some minor conflicts "resolved", support of old extension

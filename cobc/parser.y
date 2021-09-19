@@ -26,7 +26,7 @@
 %error-verbose
 
 %{
-#include <config.h>
+#include "config.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -1047,12 +1047,12 @@ begin_scope_of_program_name (struct cb_program *program)
 		}
 
 		if (cb_fold_call && strcasecmp (prog_name, elt_name) == 0) {
-			cb_error_x ((cb_tree) program,
+			cb_error_x (CB_TREE(program),
 				    _("redefinition of program name '%s'"),
 				    elt_name);
 			return;
 		} else if (strcmp (prog_id, elt_id) == 0) {
-			cb_error_x ((cb_tree) program,
+			cb_error_x (CB_TREE(program),
 				    _("redefinition of program ID '%s'"),
 				    elt_id);
 			return;
@@ -1060,8 +1060,7 @@ begin_scope_of_program_name (struct cb_program *program)
 	}
 
 	/* Otherwise, add the program to the list. */
-	defined_prog_list = cb_list_add (defined_prog_list,
-					 (cb_tree) program);
+	defined_prog_list = cb_list_add (defined_prog_list, CB_TREE(program));
 }
 
 static void
@@ -1080,7 +1079,7 @@ static void
 end_scope_of_program_name (struct cb_program *program, const unsigned char type)
 {
 	struct	cb_list	*prev = NULL;
-	struct	cb_list *l = CB_LIST (defined_prog_list);
+	struct	cb_list *l;
 
 	/* create empty entry if the program has no PROCEDURE DIVISION, error for UDF */
 	if (!program->entry_list) {
@@ -1095,12 +1094,13 @@ end_scope_of_program_name (struct cb_program *program, const unsigned char type)
 	}
 	program->last_source_line = backup_source_line;
 
-	if (program->nested_level == 0) {
+	if (program->nested_level == 0
+	 || defined_prog_list == NULL) {
 		return;
 	}
 
 	/* Remove any subprograms */
-	l = CB_LIST (defined_prog_list);	/* CHECKME: removed by Edward - needed? */
+	l = CB_LIST (defined_prog_list);
 	while (l) {
 		if (CB_PROGRAM (l->value)->nested_level > program->nested_level) {
 			remove_program_name (l, prev);
@@ -1941,7 +1941,7 @@ static cb_tree
 get_default_display_device (void)
 {
 	if (current_program->flag_console_is_crt
-	    || cb_console_is_crt) {
+	 || cb_console_is_crt) {
 		return cb_null;
 	} else {
 		return cb_int0;
@@ -1949,22 +1949,17 @@ get_default_display_device (void)
 }
 
 static COB_INLINE COB_A_INLINE int
-contains_one_screen_field (struct cb_list *x_list)
+contains_one_screen_field (struct cb_list *l)
 {
-	return (cb_tree) x_list != cb_null
-		&& cb_list_length ((cb_tree) x_list) == 1
-		&& is_screen_field (x_list->value);
+	return cb_list_length (CB_TREE(l)) == 1
+		&& is_screen_field (l->value);
 }
 
 static int
-contains_only_screen_fields (struct cb_list *x_list)
+contains_only_screen_fields (struct cb_list *l)
 {
-	if ((cb_tree) x_list == cb_null) {
-		return 0;
-	}
-
-	for (; x_list; x_list = CB_LIST (x_list->chain)) {
-		if (!is_screen_field (x_list->value)) {
+	for (; l; l = l->chain ? CB_LIST (l->chain) : NULL) {
+		if (!is_screen_field (l->value)) {
 			return 0;
 		}
 	}
@@ -1973,60 +1968,51 @@ contains_only_screen_fields (struct cb_list *x_list)
 }
 
 static int
-contains_fields_and_screens (struct cb_list *x_list)
+contains_fields_and_screens (struct cb_list *l)
 {
 	int	field_seen = 0;
 	int	screen_seen = 0;
 
-	if ((cb_tree) x_list == cb_null) {
-		return 0;
-	}
-
-	for (;;) {
-		if (is_screen_field (x_list->value)) {
+	for (; l; l = l->chain ? CB_LIST (l->chain) : NULL) {
+		if (is_screen_field (l->value)) {
 			screen_seen = 1;
 		} else {
 			field_seen = 1;
 		}
-		if (!x_list->chain) {
-			break;
-		}
-		x_list = CB_LIST (x_list->chain);
 	}
 
 	return screen_seen && field_seen;
 }
 
 static enum cb_display_type
-deduce_display_type (cb_tree x_list, cb_tree local_upon_value, cb_tree local_line_column,
+deduce_display_type (struct	cb_list *l, cb_tree local_upon_value, cb_tree local_line_column,
 		     struct cb_attr_struct * const attr_ptr)
 {
 	int	using_default_device_which_is_crt =
 		local_upon_value == NULL && get_default_display_device () == cb_null;
-	struct	cb_list *l = CB_LIST (x_list);
 
 	/* TODO: Separate CGI DISPLAYs here */
 	if (contains_only_screen_fields (l)) {
 		if (!contains_one_screen_field (l)
-		    || attr_ptr) {
-			cb_verify_x (x_list, cb_accept_display_extensions,
+		 || attr_ptr) {
+			cb_verify_x (CB_TREE(l), cb_accept_display_extensions,
 				     _("non-standard DISPLAY"));
 		}
 
 		if (local_upon_value != NULL && local_upon_value != cb_null) {
-			cb_error_x (x_list, _("screens may only be displayed on CRT"));
+			cb_error_x (CB_TREE(l), _("screens may only be displayed on CRT"));
 		}
 
 		return SCREEN_DISPLAY;
 	} else if (contains_fields_and_screens (l)) {
-		cb_error_x (x_list, _("cannot mix screens and fields in the same DISPLAY statement"));
+		cb_error_x (CB_TREE(l), _("cannot mix screens and fields in the same DISPLAY statement"));
 		return MIXED_DISPLAY;
 	} else if (local_line_column || attr_ptr) {
 		if (local_upon_value != NULL && local_upon_value != cb_null) {
-			cb_error_x (x_list, _("screen clauses may only be used for DISPLAY on CRT"));
+			cb_error_x (CB_TREE(l), _("screen clauses may only be used for DISPLAY on CRT"));
 		}
 
-		cb_verify_x (x_list, cb_accept_display_extensions,
+		cb_verify_x (CB_TREE(l), cb_accept_display_extensions,
 			     _("non-standard DISPLAY"));
 
 		return FIELD_ON_SCREEN_DISPLAY;
@@ -2042,18 +2028,18 @@ deduce_display_type (cb_tree x_list, cb_tree local_upon_value, cb_tree local_lin
 }
 
 static void
-set_display_type (cb_tree x_list, cb_tree local_upon_value,
+set_display_type (struct cb_list *l, cb_tree local_upon_value,
 		  cb_tree local_line_column, struct cb_attr_struct * const attr_ptr)
 {
-	display_type = deduce_display_type (x_list, local_upon_value, local_line_column, attr_ptr);
+	display_type = deduce_display_type (l, local_upon_value, local_line_column, attr_ptr);
 }
 
 static void
-error_if_different_display_type (cb_tree x_list, cb_tree local_upon_value,
+error_if_different_display_type (struct cb_list *l, cb_tree local_upon_value,
 				 cb_tree local_line_column, struct cb_attr_struct * const attr_ptr)
 {
 	const enum cb_display_type	type =
-		deduce_display_type (x_list, local_upon_value, local_line_column, attr_ptr);
+		deduce_display_type (l, local_upon_value, local_line_column, attr_ptr);
 
 	/* Avoid re-displaying the same error for mixed DISPLAYs */
 	if (type == display_type || display_type == MIXED_DISPLAY) {
@@ -2062,13 +2048,13 @@ error_if_different_display_type (cb_tree x_list, cb_tree local_upon_value,
 
 	if (type != MIXED_DISPLAY) {
 		if (type == SCREEN_DISPLAY || display_type == SCREEN_DISPLAY) {
-			cb_error_x (x_list, _("cannot mix screens and fields in the same DISPLAY statement"));
+			cb_error_x (CB_TREE(l), _("cannot mix screens and fields in the same DISPLAY statement"));
 		} else {
 			/*
 			  The only other option is that there is a mix of
 			  FIELD_ON_SCREEN_DISPLAY and DEVICE_DISPLAY.
 			*/
-			cb_error_x (x_list, _("ambiguous DISPLAY; put items to display on device in separate DISPLAY"));
+			cb_error_x (CB_TREE(l), _("ambiguous DISPLAY; put items to display on device in separate DISPLAY"));
 		}
 	}
 
@@ -12047,17 +12033,19 @@ display_body:
 screen_or_device_display:
   display_list _x_list
   {
-	if ($2 != NULL) {
-		error_if_different_display_type ($2, NULL, NULL, NULL);
+	if (CB_VALID_TREE($2)) {
+		error_if_different_display_type (CB_LIST($2), NULL, NULL, NULL);
 		cb_emit_display ($2, NULL, cb_int1, NULL, NULL, 0,
 				 display_type);
 	}
   }
 | x_list
   {
-	set_display_type ($1, NULL, NULL, NULL);
-	cb_emit_display ($1, NULL, cb_int1, NULL, NULL, 1,
-			 display_type);
+	if (CB_VALID_TREE($1)) {
+		set_display_type (CB_LIST($1), NULL, NULL, NULL);
+		cb_emit_display ($1, NULL, cb_int1, NULL, NULL, 1,
+				 display_type);
+	}
   }
 ;
 
@@ -12077,24 +12065,27 @@ display_atom:
   }
   display_clauses
   {
-	if ($1 == cb_null) {
-		/* Emit DISPLAY OMITTED. */
-		CB_UNFINISHED_X (CB_TREE(current_statement), "DISPLAY OMITTED");
-		error_if_no_advancing_in_screen_display (advancing_value);
-	}
+	if (CB_VALID_TREE($1)) {
+		struct cb_list *l = CB_LIST($1);
+		if (l->value == cb_null) {
+			/* Emit DISPLAY OMITTED. */
+			CB_UNFINISHED_X (CB_TREE(current_statement), "DISPLAY OMITTED");
+			error_if_no_advancing_in_screen_display (advancing_value);
+		}
 
-	/* Emit device or screen DISPLAY. */
+		/* Emit device or screen DISPLAY. */
 
-	/*
-	  Check that disp_list does not contain an invalid mix of fields.
-	*/
-	if (display_type == UNKNOWN_DISPLAY) {
-		set_display_type ($1, upon_value, line_column,
-				  current_statement->attr_ptr);
-	} else {
-		error_if_different_display_type ($1, upon_value,
-						 line_column,
-						 current_statement->attr_ptr);
+		/*
+		  Check that disp_list does not contain an invalid mix of fields.
+		*/
+		if (display_type == UNKNOWN_DISPLAY) {
+			set_display_type (l, upon_value, line_column,
+					  current_statement->attr_ptr);
+		} else {
+			error_if_different_display_type (l, upon_value,
+							 line_column,
+							 current_statement->attr_ptr);
+		}
 	}
 
 	if (display_type == SCREEN_DISPLAY
@@ -12117,7 +12108,7 @@ disp_list:
   }
 | OMITTED
   {
-	$$ = cb_null;
+	$$ = CB_LIST_INIT(cb_null);
   }
 ;
 

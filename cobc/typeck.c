@@ -20,7 +20,7 @@
 */
 
 
-#include <config.h>
+#include "config.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -2461,25 +2461,25 @@ cb_validate_parameters_and_returning (struct cb_program *prog, cb_tree using_lis
 			f = CB_FIELD (cb_ref (x));
 			if (!prog->flag_chained) {
 				if (f->storage != CB_STORAGE_LINKAGE) {
-					cb_warning_x (cb_warn_repository_checks, x, _("'%s' is not in LINKAGE SECTION"), f->name);
+					cb_error_x (x, _("'%s' is not in LINKAGE SECTION"), f->name);
 				}
 				if (f->flag_item_based || f->flag_external) {
-					cb_warning_x (cb_warn_repository_checks, x, _("'%s' cannot be BASED/EXTERNAL"), f->name);
+					cb_error_x (x, _("'%s' cannot be BASED/EXTERNAL"), f->name);
 				}
 				f->flag_is_pdiv_parm = 1;
 			} else {
 				if (f->storage != CB_STORAGE_WORKING) {
-					cb_warning_x (cb_warn_repository_checks, x, _("'%s' is not in WORKING-STORAGE SECTION"), f->name);
+					cb_error_x (x, _("'%s' is not in WORKING-STORAGE SECTION"), f->name);
 				}
 				f->flag_chained = 1;
 				f->param_num = param_num;
 				param_num++;
 			}
 			if (f->level != 01 && f->level != 77) {
-				cb_warning_x (cb_warn_repository_checks, x, _("'%s' not level 01 or 77"), f->name);
+				cb_error_x (x, _("'%s' not level 01 or 77"), f->name);
 			}
 			if (f->redefines) {
-				cb_warning_x (cb_warn_repository_checks, x, _("'%s' REDEFINES field not allowed here"), f->name);
+				cb_error_x (x, _("'%s' REDEFINES field not allowed here"), f->name);
 			}
 			/* add a "receiving" entry for the USING parameter */
 			if (cb_listing_xref) {
@@ -2498,7 +2498,7 @@ cb_validate_parameters_and_returning (struct cb_program *prog, cb_tree using_lis
 			if (x != cb_error_node) {
 				for (l2 = check_list; l2 != l; l2 = CB_CHAIN (l2)) {
 					if (cb_ref (CB_VALUE (l2)) == x) {
-						cb_warning_x (cb_warn_repository_checks, l,
+						cb_error_x (l,
 							_("duplicate USING BY REFERENCE item '%s'"),
 							cb_name (CB_VALUE (l)));
 						CB_VALUE (l) = cb_error_node;
@@ -2513,7 +2513,7 @@ cb_validate_parameters_and_returning (struct cb_program *prog, cb_tree using_lis
 		cb_ref (prog->returning) != cb_error_node) {
 		ret_f = CB_FIELD (cb_ref (prog->returning));
 		if (ret_f->redefines) {
-			cb_warning_x (cb_warn_repository_checks, prog->returning,
+			cb_error_x (prog->returning,
 				_("'%s' REDEFINES field not allowed here"), ret_f->name);
 		}
 	} else {
@@ -2527,7 +2527,7 @@ cb_validate_parameters_and_returning (struct cb_program *prog, cb_tree using_lis
 			if (CB_VALID_TREE (x) && cb_ref (x) != cb_error_node) {
 				f = CB_FIELD (cb_ref (x));
 				if (ret_f == f) {
-					cb_warning_x (cb_warn_repository_checks, x, _("'%s' USING item duplicates RETURNING item"), f->name);
+					cb_error_x (x, _("'%s' USING item duplicates RETURNING item"), f->name);
 				}
 			}
 		}
@@ -8012,13 +8012,12 @@ cb_emit_command_line (cb_tree value)
   precise) or is an error node. Otherwise, return 0.
 */
 static int
-validate_types_of_display_values (cb_tree values)
+validate_types_of_display_values (struct cb_list *l)
 {
-	cb_tree		l;
 	cb_tree		x;
 
-	for (l = values; l; l = CB_CHAIN (l)) {
-		x = CB_VALUE (l);
+	for (; l; l = l->chain ? CB_LIST(l->chain): NULL) {
+		x = l->value;
 		if (x == cb_error_node) {
 			return 1;
 		}
@@ -8256,7 +8255,7 @@ emit_field_display_for_last (cb_tree values, cb_tree line_column, cb_tree fgc,
 	int	is_first_item;
 
 	/* DISPLAY OMITTED ? */
-	if (values == cb_null) {
+	if (CB_LIST(values)->value == cb_null) {
 		l = last_elt = cb_null;
 	} else {
 		for (l = values; l && CB_CHAIN (l); l = CB_CHAIN (l));
@@ -8295,13 +8294,10 @@ cb_emit_display (cb_tree values, cb_tree upon, cb_tree no_adv,
 	struct cb_field	*f = NULL;
 
 	/* Validate upon and values */
-	if (values != cb_null) /* DISPLAY OMITTED */ {
-		if (upon == cb_error_node
-		 || !values
-		 || cb_validate_list (values)
-		 || validate_types_of_display_values (values)) {
-			return;
-		}
+	if (upon == cb_error_node
+	 || cb_validate_list (values)
+	 || validate_types_of_display_values (CB_LIST(values))) {
+		return;
 	}
 
 	/* Validate line_column and the attributes */
@@ -8316,7 +8312,7 @@ cb_emit_display (cb_tree values, cb_tree upon, cb_tree no_adv,
 
 		/* CGI: DISPLAY external-form */
 		/* TODO: CHECKME, see Patch #27 */
-		m = CB_VALUE(values);
+		m = CB_LIST(values)->value;
 		if (CB_REF_OR_FIELD_P (m)) {
 			f = CB_FIELD_PTR (m);
 		}
@@ -8354,7 +8350,7 @@ cb_emit_display (cb_tree values, cb_tree upon, cb_tree no_adv,
 
 	case FIELD_ON_SCREEN_DISPLAY:
 		/* no DISPLAY OMITTED */
-		if (values != cb_null) {
+		if (CB_LIST(values)->value != cb_null) {
 			emit_default_field_display_for_all_but_last (values, size_is,
 									 is_first_display_list);
 		}
