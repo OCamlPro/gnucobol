@@ -2219,7 +2219,7 @@ typedef struct __fcd3 {
 	unsigned char	blocking;				
 	unsigned char	idxCacheSz;			/* index cache size */
 	unsigned char	percent;
-	unsigned char	blockSize;
+	unsigned char	blockSize;			/* block-size, fcd-convert only */
 	unsigned char	flags1;
 	unsigned char	flags2;
 	unsigned char	mvsFlags;
@@ -2316,9 +2316,10 @@ typedef struct __fcd2 {
 	unsigned char	fcdVer;				/* reserved */
 #define FCD2_VER	0
 	unsigned char	fileOrg;			/* file organization */
-	unsigned char	accessFlags;		/* status byte & file access flags */
+	unsigned char	accessFlags;		/* status byte (bit 7) & file access flags (bits 0-6)*/
 	unsigned char	openMode;			/* open mode INPUT, I-O, etc. */
-	char			res2[3];			/* reserved */
+	char			res2[2];			/* reserved */
+	unsigned char	blockSize;			/* block-size, fcd-convert only */
 	unsigned char	fnameLen[2];		/* file name length */
 	unsigned char	relByteAdrs64[8];	/* 64-bit, relative byte address */
 	char			res3[3];			/* reserved */
@@ -2326,7 +2327,7 @@ typedef struct __fcd2 {
 	unsigned char	otherFlags;			/* miscellaneous flags */
 	char			res4[2];			/* reserved */
 	void			*fileHandle2;		/* file handle */
-	unsigned char   gcFlags;			/* Flags used by sttfh.c */
+	unsigned char   gcFlags;			/* Flags used in 4.x by extfh.c */
 	unsigned char	fstatusType;		/* file status type */
 	unsigned char	fileFormat;			/* file format */
 	char			res6[3];			/* reserved */

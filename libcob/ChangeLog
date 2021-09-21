@@ -1,4 +1,18 @@
 
+2021-09-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (cob_pre_open): remove trailing spaces from fcd->filenameptr
+	  and ensure that the filename length does not extend our max size
+	* fileio.c (copy_fcd_to_file): ignore flag "file with user status"
+	* fileio.c (fcd2_to_fcd3, fcd3_to_fcd): copy block size parameter (ignored)
+	* fileio.c (copy_fcd_to_file) [_WIN32]: additional handle DOS Slash when
+	  building the assign name
+	* fileio.c (update_record_and_keys_if_necessary): extracted from
+	  (find_file) and called separately
+	* fileio.c (find_file): set file's fcd backreference
+	* fileio.c (EXTFH3): disabled auto-adjustment of files' and fcd's
+	  access mode for ORGANIZATION INDEXED, along with pre-setting status to 00
+
 2021-09-15  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fileio.c (fcd2_to_fcd3): removed checks as this function only converts
@@ -49,7 +63,6 @@
 2021-08-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fextfh.c (copy_fcd_to_file): only access key structure for INDEXED files
-
 
 2021-08-29  Ron Norman <rjn@inglenet.com>
 

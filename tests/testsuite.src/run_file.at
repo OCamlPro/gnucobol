@@ -10031,7 +10031,6 @@ AT_DATA([prog.cob], [
        DATA DIVISION.
        FILE SECTION.
        WORKING-STORAGE SECTION.
-       77  FCD2                            PIC X(100).
        77  CKEYS                           PIC 9(04) COMP-5.
        77  NKEYS                           PIC 9(04) COMP-5.
        77  CURR-OFF                        PIC 9(04) COMP-5.
@@ -10538,6 +10537,10 @@ AT_CLEANUP
 
 
 AT_SETUP([EXTFH: auto-conversion FCD2 <-> FCD3 on 32bit])
+
+# FIXME: check for missing record / file pointer address should be
+#        moved to general EXTFH test
+
 AT_SKIP_IF([test "$COB_HAS_64_BIT_POINTER" = "yes"])
 AT_KEYWORDS([runfile EXTFH])
 
@@ -10791,15 +10794,15 @@ AT_DATA([prog.cob], [
       *   MOVE OP-OPEN-OUTPUT TO ACTION-CODE
       *   PERFORM 800-CALL-EXTFH
 
-          SET  FCD-RECORD-ADDRESS     TO ADDRESS OF FCD-RECORD
-          SET  FCD-FILENAME-ADDRESS TO NULL
+          SET  FCD-RECORD-ADDRESS    TO ADDRESS OF FCD-RECORD
+          SET  FCD-FILENAME-ADDRESS  TO NULL
       *  Check for missing filename address
           MOVE OP-OPEN-OUTPUT TO ACTION-CODE
           PERFORM 800-CALL-EXTFH
 
       *  Now set record address
-          SET  FCD-FILENAME-ADDRESS TO ADDRESS OF WS-FCD-DDNAME
-          SET  FCD-RECORD-ADDRESS     TO ADDRESS OF FCD-RECORD
+          SET  FCD-RECORD-ADDRESS    TO ADDRESS OF FCD-RECORD
+          SET  FCD-FILENAME-ADDRESS  TO ADDRESS OF WS-FCD-DDNAME
           MOVE OP-OPEN-OUTPUT TO ACTION-CODE
           PERFORM 800-CALL-EXTFH
           .
