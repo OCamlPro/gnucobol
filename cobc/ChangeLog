@@ -1,4 +1,23 @@
 
+2021-09-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.h (cb_param_size), parser.y: new enum instead of single defines,
+	  including new CB_SIZE_UNSET and partial addition CB_SIZE_16/CB_SIZE_32
+	* tree.c (set_sign_and_size_from_parameter_field): extracted from
+	  (output_call_protocast, output_call_by_value_args)
+	* tree.c (get_size_parameter_type): extracted from (output_call_protocast,
+	  output_call_by_value_args, try_get_by_value_parameter_type)
+
+2021-09-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (cobc_abort, abort_if_too_many_continuation_lines,
+	  cobc_tree_cast_error): use common diagnostic format for internal errors
+	* tree.c (cb_build_call_parameter), tree.h, parser.y: extracted from
+	  parser, internally convert BY VALUE ZERO to BY VALUE 0
+	* parser.y (call_param): added MicroFocus SIZE IS clause for CALL BY VALUE,
+	  but deactivated because of reduce/reduce conflicts -> needs dialect
+	  option and scanner adjustment or drop of OpenCOBOL SIZE IS extension
+
 2021-09-19  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y, typeck.c: let DISPLAY OMITTED be handled identical

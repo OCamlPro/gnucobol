@@ -2447,6 +2447,28 @@ cb_build_ppointer (cb_tree x)
 
 /* Validate program */
 
+
+static void
+set_argument_defaults (cb_tree argument, cb_tree parameter, const struct cb_field *arg_field)
+{
+	const int argument_size = CB_SIZES_INT(argument);
+	if (argument_size == CB_SIZE_UNSET) {
+		if (parameter) {
+			CB_SIZES(argument) = CB_SIZES(parameter);
+		} else {
+#ifdef COB_64_BIT_POINTER
+			CB_SIZES(argument) = CB_SIZE_8;
+#else
+			CB_SIZES(argument) = CB_SIZE_4;
+#endif
+		}
+	} else if (argument_size == CB_SIZE_AUTO && arg_field) {
+		/* TODO: move size upon field size setting here */
+	}
+
+}
+
+
 void
 cb_validate_parameters_and_returning (struct cb_program *prog, cb_tree using_list)
 {
@@ -2456,6 +2478,7 @@ cb_validate_parameters_and_returning (struct cb_program *prog, cb_tree using_lis
 	int		param_num = 1;
 
 	for (l = using_list; l; l = CB_CHAIN (l)) {
+		set_argument_defaults (l, NULL, NULL);	/* TODO: move for supporting that with prototypes */
 		x = CB_VALUE (l);
 		if (cb_try_ref (x) != cb_error_node) {
 			f = CB_FIELD (cb_ref (x));
@@ -2835,13 +2858,13 @@ get_size (cb_tree x)
 }
 
 static void
-check_argument_conformance (struct cb_program *program, cb_tree argument_pair,
+check_argument_conformance (struct cb_program *program, cb_tree argument_tripple,
 			    const int param_num)
 {
 	cb_tree		param = find_nth_parameter (program, param_num);
-	cb_tree		arg_tree = CB_VALUE (argument_pair);
-	enum cb_call_mode	arg_mode = CB_PURPOSE_INT (argument_pair);
-	enum cb_call_mode	param_mode = CB_PURPOSE_INT (param);
+	cb_tree		arg_tree = CB_VALUE (argument_tripple);
+	enum cb_call_mode	arg_mode = CB_PURPOSE_INT (argument_tripple);
+	const enum cb_call_mode	param_mode = CB_PURPOSE_INT (param);
 	const struct cb_field	*arg_field, *param_field;
 	cb_tree			param_ref;
 	int			error_found = 0;
@@ -2850,7 +2873,7 @@ check_argument_conformance (struct cb_program *program, cb_tree argument_pair,
 	/* Check BY REFERENCE/CONTENT/VALUE is correct. */
 	if ((arg_mode == CB_CALL_BY_REFERENCE || arg_mode == CB_CALL_BY_CONTENT)
 	 &&  param_mode != CB_CALL_BY_REFERENCE) {
-		/* TO-DO: Improve name of CB_VALUE (argument_pair) */
+		/* TO-DO: Improve name of CB_VALUE (argument_tripple) */
 		cb_warning_x (cb_warn_repository_checks, arg_tree, _("expected argument #%d, %s, to be passed BY VALUE"),
 			    param_num, cb_name (arg_tree));
 	} else if (arg_mode == CB_CALL_BY_VALUE
@@ -2865,19 +2888,6 @@ check_argument_conformance (struct cb_program *program, cb_tree argument_pair,
 		arg_field = NULL;
 	}
 	param_field = CB_FIELD_PTR(CB_VALUE(param));
-
-	if (arg_mode == CB_CALL_DEFAULT_MODE) {
-		if (param_mode == CB_CALL_BY_REFERENCE) {
-			if (CB_LITERAL_P (arg_tree)
-			 || (arg_field && arg_field->flag_item_78)) {
-				arg_mode = CB_CALL_BY_CONTENT;
-			} else {
-				arg_mode = CB_CALL_BY_REFERENCE;
-			}
-		} else {
-			arg_mode = CB_CALL_BY_VALUE;
-		}
-	}
 
 	/*
 	  If BY REFERENCE, check OMITTED was specified for OPTIONAL parameter.
@@ -2928,6 +2938,11 @@ check_argument_conformance (struct cb_program *program, cb_tree argument_pair,
 				error_found = !items_have_same_data_clauses (arg_field, param_field, 0);
 			}
 		} else { /* BY CONTENT or BY VALUE */
+			if (arg_mode == CB_CALL_BY_VALUE) {
+				set_argument_defaults (argument_tripple, param, arg_field);
+				/* TODO: check size conformance */
+			}
+
 			param_class = CB_TREE_CLASS (param);
 			if (CB_TREE_CLASS (param) == CB_CLASS_POINTER
 			 || CB_TREE_CLASS (arg_tree) == CB_CLASS_POINTER) {
@@ -2967,6 +2982,9 @@ cb_check_conformance (cb_tree prog_ref, cb_tree using_list,
 	if (!program) {
 		/*
 		 */
+		for (l = using_list; l;	l = CB_CHAIN (l)) {
+			set_argument_defaults (l, NULL, NULL);
+		}
 		return;
 	}
 
@@ -7575,7 +7593,7 @@ cb_emit_call (cb_tree prog, cb_tree par_using, cb_tree returning,
 			} else if (x == cb_zero) {
 				x = cb_build_numsize_literal ("0", 1, 0);
 			} else{
-				cb_error_x (x, _ ("figurative constant %s invalid here"), cb_name (x));
+				cb_error_x (x, _("figurative constant %s invalid here"), cb_name (x));
 				error_ind = 1;
 				continue;
 			}

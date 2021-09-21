@@ -1436,7 +1436,7 @@ setup_prototype (cb_tree prototype_name, cb_tree ext_name,
 	prototype = cb_build_prototype (prototype_name, ext_name, type);
 
 	if (!is_current_element
-	    && check_for_duplicate_prototype (prototype_name, prototype)) {
+	 && check_for_duplicate_prototype (prototype_name, prototype)) {
 		return;
 	}
 
@@ -9924,7 +9924,7 @@ _procedure_using_chaining:
 | USING
   {
 	call_mode = CB_CALL_BY_REFERENCE;
-	size_mode = CB_SIZE_4;
+	size_mode = CB_SIZE_UNSET;
   }
   procedure_param_list
   {
@@ -10001,7 +10001,11 @@ _procedure_type:
 
 _size_optional:
   /* empty */
-| SIZE _is AUTO
+| using_size_clause
+;
+
+using_size_clause:
+  SIZE _is AUTO
   {
 	if (call_mode != CB_CALL_BY_VALUE) {
 		cb_error (_("SIZE only allowed for BY VALUE items"));
@@ -10011,6 +10015,7 @@ _size_optional:
   }
 | SIZE _is DEFAULT
   {
+    /* TODO: handle all this for prototypes */
 	if (call_mode != CB_CALL_BY_VALUE) {
 		cb_error (_("SIZE only allowed for BY VALUE items"));
 	} else {
@@ -10059,6 +10064,14 @@ size_is_integer:
 		case '8':
 			size_mode = CB_SIZE_8;
 			break;
+#if 0 /* reserved */
+		case '16':
+			size_mode = CB_SIZE_16;
+			break;
+		case '32':
+			size_mode = CB_SIZE_32;
+			break;
+#endif
 		default:
 			cb_error_x ($3, _("invalid value for SIZE"));
 			break;
@@ -11510,7 +11523,7 @@ call_using:
 | USING
   {
 	call_mode = CB_CALL_BY_REFERENCE;
-	size_mode = CB_SIZE_4;
+	size_mode = CB_SIZE_UNSET;
   }
   call_param_list
   {
@@ -11534,42 +11547,34 @@ call_param:
   {
 	if (call_mode != CB_CALL_BY_REFERENCE) {
 		cb_error_x (CB_TREE (current_statement),
-			    _("OMITTED only allowed when arguments are passed BY REFERENCE"));
+			    _("%s only allowed when arguments are passed %s"), "OMITTED", "BY REFERENCE");
 	}
 	$$ = CB_BUILD_PAIR (cb_int (call_mode), cb_null);
   }
-| _call_type _size_optional call_x
+| _call_type call_x
   {
-	int	save_mode;	/* internal single parameter only mode */
-
-	save_mode = call_mode;
-	if (call_mode != CB_CALL_BY_REFERENCE) {
-		if (CB_FILE_P ($3)
-		|| (CB_REFERENCE_P ($3) && CB_FILE_P (CB_REFERENCE ($3)->value))) {
-			cb_error_x (CB_TREE (current_statement),
-				    _("invalid file name reference"));
-		} else if (call_mode == CB_CALL_BY_VALUE) {
-			/* FIXME: compiler configuration needed, IBM allows one-byte
-			          alphanumeric items [--> a `char`], too, while
-			          COBOL 2002/2014 allow only numeric literals
-			   --> revise after rw-merge */
-			if (cb_category_is_alpha ($3)) {
-				cb_warning_x (COBC_WARN_FILLER, $3,
-					      _("BY CONTENT assumed for alphanumeric item '%s'"),
-						  cb_name ($3));
-				call_mode = CB_CALL_BY_CONTENT;
-			} else if (cb_category_is_national ($3)) {
-				cb_warning_x (COBC_WARN_FILLER, $3,
-					      _("BY CONTENT assumed for national item '%s'"),
-						  cb_name ($3));
-				call_mode = CB_CALL_BY_CONTENT;
-			}
-		}
-	}
-	$$ = CB_BUILD_PAIR (cb_int (call_mode), $3);
-	CB_SIZES ($$) = size_mode;
-	call_mode = save_mode;
+	$$ = cb_build_call_parameter ($2, call_mode, size_mode);
   }
+| _call_type using_size_clause call_x /* OC-extension: size before argument, allows ZERO */
+  {
+	$$ = cb_build_call_parameter ($3, call_mode, size_mode);
+	/* note: the OpenCOBOL extension keeps the size... - that is possibly problematic
+	   recheck: drop that extension with GC 4.0 - or prefer the scanner adjustment
+	            to fix the conflict?
+	*/
+  }
+/* FIXME: reduce/reduce conflict, BY VALUE 10, 42 SIZE IS 2 15 -> size either for 42 or 15
+| _call_type integer size_is_integer	/ * MF-extension: size after integer * /
+  {
+	if (call_type != CB_CALL_BY_VALUE) {
+		cb_error_x ($2 /* or CB_TREE (current_statement) ? * /,
+			    _("%s only allowed when arguments are passed %s", "SIZE IS", "BY VALUE"));
+	}
+	$$ = cb_build_call_parameter ($2, call_mode, size_mode);
+	/ * note: ... while the MF extension is only given for the previous integer * /
+	size_mode = CB_SIZE_4;
+  }
+*/
 ;
 
 _call_type:
@@ -11580,21 +11585,29 @@ _call_type:
   }
 | _by CONTENT
   {
+#if 0 /* CHECKME: seems to only belong to PROCEDURE DIVISION - but this is a different token */
 	if (current_program->flag_chained) {
 		cb_error_x (CB_TREE (current_statement),
 			    _("%s not allowed in CHAINED programs"), "BY CONTENT");
 	} else {
 		call_mode = CB_CALL_BY_CONTENT;
 	}
+#else
+	call_mode = CB_CALL_BY_CONTENT;
+#endif
   }
 | _by VALUE
   {
+#if 0 /* CHECKME: seems to only belong to PROCEDURE DIVISION - but this is a different token */
 	if (current_program->flag_chained) {
 		cb_error_x (CB_TREE (current_statement),
 			    _("%s not allowed in CHAINED programs"), "BY VALUE");
 	} else {
 		call_mode = CB_CALL_BY_VALUE;
 	}
+#else
+	call_mode = CB_CALL_BY_VALUE;
+#endif
   }
 ;
 

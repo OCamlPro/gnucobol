@@ -5928,6 +5928,52 @@ cb_build_call (const cb_tree name, const cb_tree args, const cb_tree on_exceptio
 	return CB_TREE (p);
 }
 
+cb_tree
+cb_build_call_parameter (cb_tree arg, int call_mode, int size_mode)
+{
+	cb_tree	res;
+	if (call_mode != CB_CALL_BY_REFERENCE) {
+		if (CB_FILE_P (arg)
+		|| (CB_REFERENCE_P (arg) && CB_FILE_P (CB_REFERENCE (arg)->value))) {
+			cb_error_x (CB_TREE (current_statement),
+				    _("invalid file name reference"));
+		} else if (call_mode == CB_CALL_BY_VALUE) {
+			/* FIXME: compiler configuration needed, IBM allows one-byte
+			          alphanumeric items [--> a `char`], too, while
+			          COBOL 2002/2014 allow only numeric literals
+			   --> revise after rw-merge */
+			if (cb_category_is_alpha (arg)) {
+				cb_warning_x (COBC_WARN_FILLER, arg,
+					      _("BY CONTENT assumed for alphanumeric item '%s'"),
+						  cb_name (arg));
+				call_mode = CB_CALL_BY_CONTENT;
+			} else if (cb_category_is_national (arg)) {
+				cb_warning_x (COBC_WARN_FILLER, arg,
+					      _("BY CONTENT assumed for national item '%s'"),
+						  cb_name (arg));
+				call_mode = CB_CALL_BY_CONTENT;
+			} else if (arg == cb_zero) {
+				/* conversion of single "constant" numeric literal */
+				arg = CB_TREE(cb_build_numeric_literal (0, "0", 0));
+			}
+		}
+	}
+	
+	res = CB_BUILD_PAIR (cb_int (call_mode), arg);
+	if (call_mode == CB_CALL_BY_VALUE) {
+		if (size_mode != CB_SIZE_UNSET) {
+			CB_SIZES (res) = size_mode;
+		} else {
+#ifdef COB_64_BIT_POINTER
+			CB_SIZES (res) = CB_SIZE_8;
+#else
+			CB_SIZES (res) = CB_SIZE_4;
+#endif
+		}
+	}
+	return res;
+}
+
 /* CANCEL */
 
 cb_tree

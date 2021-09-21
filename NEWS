@@ -17,6 +17,14 @@ NEWS - user visible changes				-*- outline -*-
 
 ** Support of additional $SET directives: ODOSLIDE
 
+* Changes that potentially effects recompilation of existing programs:
+
+** in 64bit environments, the default of BY VALUE size was adjusted:
+   if no explicit SIZE IS clause was specified it will now pass/expect
+   a 64bit item instead of a 32bit one; to always use a 32bit item
+   (on the C side "int") a code change of SIZE IS 4 needs to be coded,
+   which will work identical with older versions of GnuCOBOL
+
 * Changes to the COBOL compiler (cobc) options:
 
 ** the compile flag -fodoslide was moved to a dialect configuration,
@@ -25,7 +33,7 @@ NEWS - user visible changes				-*- outline -*-
    with -fno-odoslide
 
 ** the GnuCOBOL extension of auto-adding the RECURSIVE attribute
-   if a program potentionally calls its own PROGRAM-ID was moved
+   if a program potentially calls its own PROGRAM-ID was moved
    to a dialect option; it is now only active with -std=default
    (and raises a warning as previously with -Wextra); if you want
    to use this extension for other dialects use the new

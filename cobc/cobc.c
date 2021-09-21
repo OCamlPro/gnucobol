@@ -944,7 +944,7 @@ cobc_abort (const char * filename, const int line_num)
 {
 	++errorcount;
 
-	cobc_err_msg ("%s: %d: %s", filename, line_num,
+	cobc_err_msg ("%s:%d: %s", filename, line_num,
 		_("internal compiler error"));
 	cobc_abort_terminate (1);
 }
@@ -976,7 +976,7 @@ cobc_tree_cast_error (const cb_tree x, const char * filename, const int line_num
 
 	putc ('\n', stderr);
 	/* not translated as this only occurs if developer-only setup is used: */
-	cobc_err_msg ("%s: %d: invalid cast from '%s' type %s to type %s",
+	cobc_err_msg ("%s:%d: invalid cast from '%s' type %s to type %s",
 		filename, line_num, name, type,
 		cobc_enum_explain (tagnum));
 
@@ -6603,7 +6603,7 @@ static void
 abort_if_too_many_continuation_lines (int pline_cnt, const char *filename, int line_num)
 {
 	if (pline_cnt >= CB_READ_AHEAD) {
-		cobc_err_msg (_("%s: %d: Too many continuation lines"),
+		cobc_err_msg (_("%s:%d: too many continuation lines"),
 				filename, line_num);
 		cobc_abort_terminate (0);
 	}

@@ -49,6 +49,7 @@
 #define CB_PREFIX_REPORT_REF	"rr_"	/* Report CONTROL reference (cob_report_control_ref) */
 #define CB_PREFIX_REPORT_SUM_CTR "rsc_"	/* Report SUM COUNTER */
 
+/* call mode for passing/receiving a parameter */
 enum cb_call_mode {
 	CB_CALL_BY_REFERENCE = 1,
 	CB_CALL_BY_CONTENT,
@@ -56,12 +57,19 @@ enum cb_call_mode {
 	CB_CALL_DEFAULT_MODE
 };
 
-#define CB_SIZE_AUTO		0
-#define CB_SIZE_1		1
-#define CB_SIZE_2		2
-#define CB_SIZE_4		3
-#define CB_SIZE_8		4
-#define CB_SIZE_UNSIGNED	8
+/* call size for passing/receiving a parameter, must always
+   be accessed via macros CB_SIZES_INT | CB_SIZES_INT_UNSIGNED */
+enum cb_param_size {
+	CB_SIZE_UNSET = 0,
+	CB_SIZE_1 = 1,			/*  8bit item -> char */
+	CB_SIZE_2 = 2,			/* 16bit item -> short */
+	CB_SIZE_4 = 4,			/* 32bit item -> int */
+	CB_SIZE_8 = 8,			/* 64bit item -> long long int */
+	CB_SIZE_16 = 16,		/* 128bit reserved */
+	CB_SIZE_32 = 32,		/* 256bit reserved */
+	CB_SIZE_AUTO = 64,		/* "as needed" 1-8, CHECKME: in some cases only 4/8 */
+	CB_SIZE_UNSIGNED = 128	/* not directly used, contained to ensure correct position for bit-operation */
+};
 
 /* Hash values */
 /* Power of 2 - see hash function in tree.c */
@@ -1446,7 +1454,7 @@ struct cb_list {
 
 #define CB_PURPOSE_INT(x)		(CB_INTEGER (CB_PURPOSE (x))->val)
 
-#define CB_SIZES_INT(x)			((CB_LIST (x)->sizes) & 0x07)
+#define CB_SIZES_INT(x)			((CB_LIST (x)->sizes) & 0x7F)
 #define CB_SIZES_INT_UNSIGNED(x)	((CB_LIST (x)->sizes) & CB_SIZE_UNSIGNED)
 
 /* Pair */
@@ -1902,6 +1910,7 @@ extern cb_tree			cb_build_call (const cb_tree, const cb_tree,
 					       const cb_tree, const cb_tree,
 					       const cb_tree, const cob_u32_t,
 					       const int);
+extern cb_tree			cb_build_call_parameter (cb_tree, int, const int);
 
 extern cb_tree			cb_build_alter (const cb_tree, const cb_tree);
 

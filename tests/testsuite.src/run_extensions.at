@@ -1888,8 +1888,11 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([CALL BY VALUE numeric literal WITH SIZE])
+AT_SETUP([CALL BY VALUE numeric literal with SIZE IS])
 AT_KEYWORDS([extensions])
+
+# note: Eiter MicroFocus SIZE IS extension will be added via dialect option
+#       or OpenCOBOL SIZE IS extension be removed later
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -1940,6 +1943,8 @@ AT_DATA([prog.cob], [
            *>END-CALL
 
            STOP RUN.
+       END PROGRAM prog. *> FIXME: C compile warnings when moved to end (nested programs)
+
        PROGRAM-ID.      prog2.
        DATA             DIVISION.
        LINKAGE          SECTION.
@@ -1965,14 +1970,11 @@ AT_DATA([prog.cob], [
            END-EVALUATE
            EXIT PROGRAM.
        END PROGRAM prog2.
-       END PROGRAM prog.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [], ignore)
-#AT_CHECK([$COMPILE prog.cob], [0], [],
-# hack for now: ignore
-#[prog.cob:58: warning: handling of parameters passed BY VALUE is unfinished; implementation is likely to be changed
-#])
+# hack for now: explicit suppress warning
+AT_CHECK([$COMPILE -Wno-unfinished prog.cob], [0], [], [])
+
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [4: +0000000001
 1: +002
@@ -1987,6 +1989,87 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 8: +00000000000000000005
 4: +0000000006
 ], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([CALL BY VALUE to C])
+AT_KEYWORDS([extensions SIZE CHAINING])
+
+AT_DATA([caller.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      caller.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       77 CALL-NAME     PIC X(10).
+       01.
+         03 SOME-FILL   PIC X(33).
+         03 ADR-PTR     USAGE POINTER.
+         03 ADR-BUFFER  REDEFINES ADR-PTR  USAGE COMP-5 PIC S9(8).
+       77 BIG-BUFF      USAGE COMP-5 PIC S9(18) VALUE 99999999999999.
+       PROCEDURE        DIVISION  CHAINING CALL-NAME.
+
+      >> IF P64 DEFINED
+           MOVE "callee64" TO CALL-NAME
+      >> ELSE
+           MOVE "callee32" TO CALL-NAME
+      >> END-IF
+
+           MOVE 12345678 TO ADR-BUFFER
+           CALL CALL-NAME USING BY VALUE ADR-PTR
+
+           CALL CALL-NAME USING BY VALUE ADR-BUFFER
+
+           CALL CALL-NAME USING BY VALUE LENGTH OF SOME-FILL
+
+           MOVE -42 TO ADR-BUFFER
+      >> IF P64 DEFINED
+           CALL "callee32" USING BY VALUE SIZE 4 ADR-BUFFER
+           CALL "callee64" USING BY VALUE BIG-BUFF
+      >> ELSE
+           CALL "callee32" USING BY VALUE ADR-BUFFER
+           CALL "callee64" USING BY VALUE SIZE 8 BIG-BUFF
+      >> END-IF
+
+           GOBACK.
+])
+# hack for now: explicit suppress warning
+AT_CHECK([$COMPILE -Wno-unfinished caller.cob], [0], [], [])
+
+AT_DATA([callee64.c], [
+#include <stdio.h>
+#include <libcob.h>
+
+COB_EXT_EXPORT int
+callee64(cob_s64_t val)
+{
+  printf("VAL received: " CB_FMT_LLD "\n", val);
+  return 0;
+}
+])
+
+AT_DATA([callee32.c], [
+#include <stdio.h>
+#include <libcob.h>
+
+COB_EXT_EXPORT int
+callee32(cob_s32_t val)
+{
+  printf("VAL received: %d\n", val);
+  return 0;
+}
+])
+
+AT_CHECK([$COMPILE_MODULE callee32.c callee64.c], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./caller], [0],
+[VAL received: 12345678
+VAL received: 12345678
+VAL received: 33
+VAL received: -42
+VAL received: 99999999999999
+], [])
+
 
 AT_CLEANUP
 
