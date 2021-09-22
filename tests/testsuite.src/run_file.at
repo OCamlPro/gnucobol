@@ -11027,7 +11027,8 @@ Listing TESTOUT   .
 00018:   8 Enjoy the show :
 00003:   9 :
 00003:  10 :
-], [libcob: prog.cob:297: warning: ERROR: EXTFH called with no filename pointer
+], [libcob: prog.cob:293: warning: ERROR: EXTFH called with no filename pointer
+libcob: prog.cob:293: warning: call to 'EXTFH' with invalid parameter 'fcd'
 ])
 
 
