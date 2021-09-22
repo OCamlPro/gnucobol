@@ -1,4 +1,8 @@
 
+2021-09-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* scanner.l, cobc.c: fix ODOSLIDE directive
+
 2021-09-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* tree.h (cb_param_size), parser.y: new enum instead of single defines,
@@ -50,8 +54,7 @@
 	* config.def, flag.def, cobc.c, codegen.c, field.c, typeck.c:
 	  moved and renamed cb_flag_odoslide to dialect option cb_odoslide and
 	  explicit check for it along complex_odo instead of setting it
-	* ppparse.y, pplex.l, scanner.l, cobc.c (process_translate):
-	  add support for ODOSLIDE directive
+	* ppparse.y, pplex.l, scanner.l, cobc.c: add support for ODOSLIDE directive
 
 2021-09-07  Simon Sobisch <simonsobisch@gnu.org>
 

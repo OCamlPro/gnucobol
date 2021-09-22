@@ -281,7 +281,7 @@ static void *	copy_literal (cb_tree l);
 }
 
 <*>^[ ]?"#ODOSLIDE "[0-1]\n {
-	cb_odoslide = (yytext[13] - '0');
+	cb_odoslide = (yytext[10] - '0');
 }
 
 <*>^[ ]?"#ASSIGN "[0-9]\n {

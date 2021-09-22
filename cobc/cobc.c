@@ -7503,8 +7503,6 @@ process_translate (struct filename *fn)
 	int			ret;
 	int			i;
 
-	int			save_odoslide;
-
 	/* Initialize */
 	cb_source_file = NULL;
 	cb_source_line = 0;
@@ -7525,9 +7523,6 @@ process_translate (struct filename *fn)
 	cb_correct_program_order = 0;
 	cb_source_file = fn->source;
 
-	/* Save default flags in case program directives change them */
-	save_odoslide = cb_odoslide;
-
 	cb_init_constants ();
 
 	/* Parse */
@@ -7540,9 +7535,6 @@ process_translate (struct filename *fn)
 	ylex_call_destroy ();
 
 	output_return (ret);
-
-	/* Restore default flags */	
-	cb_odoslide = save_odoslide;
 
 	if (ret) {
 		/* If processing raised errors set syntax-only flag to not
@@ -8662,6 +8654,9 @@ process_file (struct filename *fn, int status)
 		return status;
 	}
 	if (fn->need_translate) {
+		/* Save default flags in case program directives change them */
+		int			save_odoslide = cb_odoslide;
+
 		/* Parse / Translate (to C code) */
 		fn->has_error = process_translate (fn);
 		status |= fn->has_error;
@@ -8676,6 +8671,8 @@ process_file (struct filename *fn, int status)
 		}
 		cobc_parsemem_base = NULL;
 		cb_init_codegen ();
+		/* Restore default flags */
+		cb_odoslide = save_odoslide;
 	} else {
 		if (cb_src_list_file) {
 			print_program_listing ();
