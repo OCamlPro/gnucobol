@@ -2154,7 +2154,7 @@ cb_build_const_length (cb_tree x)
 	struct cb_field		*f;
 	char			buff[32];
 
-	if (x == cb_error_node) {
+	if (CB_INVALID_TREE(x)) {
 		return cb_error_node;
 	}
 	if (CB_INTEGER_P (x)) {

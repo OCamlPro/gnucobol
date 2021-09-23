@@ -1,4 +1,9 @@
 
+2021-09-23  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_const_length): ensure we actually have a valid
+	  tree to build the length of, fixing #769 SIGSEGV with invalid code
+
 2021-09-22  Simon Sobisch <simonsobisch@gnu.org>
 
 	* scanner.l, cobc.c: fix ODOSLIDE directive

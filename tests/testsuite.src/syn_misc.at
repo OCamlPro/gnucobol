@@ -7810,10 +7810,42 @@ AT_DATA([prog.cob], [
 
        PROCEDURE DIVISION.
            OPEN INPUT gen-file
-	   .
+           .
 ])
 
 AT_CHECK([$COMPILE_ONLY -std=cobol85 prog.cob], [0], [])
 AT_CLEANUP
+
+
+AT_SETUP([Invalid PERFORM statement])
+AT_KEYWORDS([misc])
+
+# TODO: likely more to add here when inspecting code-coverage
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. DEMOUNSTRING.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  Full-Name               PIC X(40).
+       01  SUB1                    USAGE BINARY-SHORT.
+       PROCEDURE DIVISION.
+           MOVE 1                  TO SUB1
+           PERFORM LENGTH(Full-Name) TIMES
+           IF Full-Name(SUB2:1) = SPACE
+              IF Full-Name(SUB2 + 1:1) = SPACE
+                 DISPLAY 'IN'
+                 EXIT PERFORM CYCLE 
+              END-IF
+           END-IF
+           ADD 1 TO SUB1.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[[prog.cob:10: error: syntax error, unexpected (
+prog.cob:17: error: syntax error, unexpected ., expecting TIMES
+]])
+AT_CLEANUP
+
 
 # TODO: add missing tests for syntax errors in >>IF/ELSE/END
