@@ -1867,7 +1867,7 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([ASSIGN DYNAMIC with LOCAL-STORAGE item and INITIAL prog])
+AT_SETUP([ASSIGN DYNAMIC with LOCAL-STORAGE item, INITIAL])
 AT_KEYWORDS([runfile])
 
 # Files are initialised in a different location in INITIAL program, hence the
@@ -4578,9 +4578,27 @@ AT_DATA([prog2.cob], [
         STOP RUN.
 ])
 
-AT_DATA([prog3.cob], [
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [],
+[libcob: prog.cob:15: warning: call to CBL_CREATE_FILE with wrong file_lock: 11
+libcob: prog.cob:15: warning: call to CBL_CREATE_FILE with wrong file_dev: 22
+libcob: prog.cob:15: warning: call to CBL_OPEN_FILE with wrong access mode: 55
+])
+
+AT_CHECK([$COMPILE prog2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([System routines for files - filename mapping])
+AT_KEYWORDS([extensions runfile CBL_CREATE_FILE CBL_WRITE_FILE CBL_FLUSH_FILE
+CBL_OPEN_FILE CBL_READ_FILE CBL_CLOSE_FILE CBL_RENAME_FILE CBL_DELETE_FILE
+C$DELETE])
+
+AT_DATA([prog.cob], [
         IDENTIFICATION DIVISION.
-        PROGRAM-ID.     prog3.
+        PROGRAM-ID.     prog.
         DATA DIVISION.
         WORKING-STORAGE SECTION.
         01 FNAME        PIC X(256).
@@ -4608,88 +4626,77 @@ AT_DATA([prog3.cob], [
         STOP RUN.
 ])
 
-
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [],
-[libcob: prog.cob:15: warning: call to CBL_CREATE_FILE with wrong file_lock: 11
-libcob: prog.cob:15: warning: call to CBL_CREATE_FILE with wrong file_dev: 22
-libcob: prog.cob:15: warning: call to CBL_OPEN_FILE with wrong access mode: 55
-])
-
-AT_CHECK([$COMPILE prog2.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [], [])
-
 AT_CHECK([mkdir -p sub], [0], [], [])
-AT_CHECK([$COMPILE prog3.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog3 notthere], [0],
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog notthere], [0],
 [RUN WITH notthere
 error opening file ...
 ], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog3 prog2], [0],
-[RUN WITH prog2
+AT_CHECK([$COBCRUN_DIRECT ./prog prog.cob], [0],
+[RUN WITH prog.cob
 ], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog3 ./prog2], [0],
-[RUN WITH ./prog2
+AT_CHECK([$COBCRUN_DIRECT ./prog ./prog.cob], [0],
+[RUN WITH ./prog.cob
 ], [])
 # the first part is resolved by DD_var and dd_var
-AT_CHECK([DD_dot="." dd_dot="A" dot="B"  $COBCRUN_DIRECT ./prog3 'dot/prog'], [0],
-[RUN WITH dot/prog
+AT_CHECK([DD_dot="." dd_dot="A" dot="B"  $COBCRUN_DIRECT ./prog 'dot/prog.cob'], [0],
+[RUN WITH dot/prog.cob
 ], [])
-AT_CHECK([DD_dot="" dd_dot="." dot="A"  $COBCRUN_DIRECT ./prog3 'dot/prog'], [0],
-[RUN WITH dot/prog
+AT_CHECK([DD_dot="" dd_dot="." dot="A"  $COBCRUN_DIRECT ./prog 'dot/prog.cob'], [0],
+[RUN WITH dot/prog.cob
 ], [])
 # MF would say (ignore for now as this conflicts with ACUCOBOL) don't resolve by $
 # as it does not start with $:
-#AT_CHECK([DD_dot="" dd_dot="" dot="." $COBCRUN_DIRECT ./prog3 'dot/prog'], [0],
-#[RUN WITH dot/prog
+#AT_CHECK([DD_dot="" dd_dot="" dot="." $COBCRUN_DIRECT ./prog 'dot/prog.cob'], [0],
+#[RUN WITH dot/prog.cob
 #error opening file ...
 #], [])
-AT_CHECK([DD_dot="" dd_dot="" dot="." $COBCRUN_DIRECT ./prog3 'dot/prog'], [0],
-[RUN WITH dot/prog
+AT_CHECK([DD_dot="" dd_dot="" dot="." $COBCRUN_DIRECT ./prog 'dot/prog.cob'], [0],
+[RUN WITH dot/prog.cob
 ], [])
-AT_CHECK([DD_dot="" dd_dot="" dot="" $COBCRUN_DIRECT ./prog3 'dot/prog'], [0],
-[RUN WITH dot/prog
+AT_CHECK([DD_dot="" dd_dot="" dot="" $COBCRUN_DIRECT ./prog 'dot/prog.cob'], [0],
+[RUN WITH dot/prog.cob
 error opening file ...
 ], [])
 # the first part with $  is resolved by DD_var and dd_var and var
-AT_CHECK([DD_dot="." dd_dot="" dot=""  $COBCRUN_DIRECT ./prog3 '$dot/prog'], [0],
-[RUN WITH $dot/prog
+AT_CHECK([DD_dot="." dd_dot="" dot=""  $COBCRUN_DIRECT ./prog '$dot/prog.cob'], [0],
+[RUN WITH $dot/prog.cob
 ], [])
-AT_CHECK([DD_dot="" dd_dot="." dot=""  $COBCRUN_DIRECT ./prog3 '$dot/prog'], [0],
-[RUN WITH $dot/prog
+AT_CHECK([DD_dot="" dd_dot="." dot=""  $COBCRUN_DIRECT ./prog '$dot/prog.cob'], [0],
+[RUN WITH $dot/prog.cob
 ], [])
-AT_CHECK([DD_dot="" dd_dot="" dot="."  $COBCRUN_DIRECT ./prog3 '$dot/prog'], [0],
-[RUN WITH $dot/prog
+AT_CHECK([DD_dot="" dd_dot="" dot="."  $COBCRUN_DIRECT ./prog '$dot/prog.cob'], [0],
+[RUN WITH $dot/prog.cob
 ], [])
 # if a _leading_ $ does not exist it is removed, together with the following slash
-# should ignore the variable and the first slash
-AT_CHECK([DD_dot="" dd_dot="" dot=""  $COBCRUN_DIRECT ./prog3 '$dot/prog'], [0],
-[RUN WITH $dot/prog
+# --> should ignore the variable and the first slash
+AT_CHECK([DD_dot="" dd_dot="" dot=""  $COBCRUN_DIRECT ./prog '$dot/prog.cob'], [0],
+[RUN WITH $dot/prog.cob
 ], [])
 # would _possibly_ fail with MF (docs are wrong here in any case...)
 # but this is by GnuCOBOL design here:
-AT_CHECK([DD_dot="" dd_dot="" dot=""  $COBCRUN_DIRECT ./prog3 '$dot/$dotter/prog'], [0],
-[RUN WITH $dot/$dotter/prog
+AT_CHECK([DD_dot="" dd_dot="" dot=""  $COBCRUN_DIRECT ./prog '$dot/$dotter/prog.cob'], [0],
+[RUN WITH $dot/$dotter/prog.cob
 ], [])
-AT_CHECK([DD_dot="" dd_dot="" dot="dot"  $COBCRUN_DIRECT ./prog3 '$dot/prog'], [0],
-[RUN WITH $dot/prog
+AT_CHECK([DD_dot="" dd_dot="" dot="dot"  $COBCRUN_DIRECT ./prog '$dot/prog.cob'], [0],
+[RUN WITH $dot/prog.cob
 error opening file ...
 ], [])
 # should try './prog'
-AT_CHECK([DD_prog="A" dd_prog="B" prog="C"  $COBCRUN_DIRECT ./prog3 './prog'], [0],
-[RUN WITH ./prog
+AT_CHECK([DD_prog="A" dd_prog="B" prog="C"  $COBCRUN_DIRECT ./prog './prog.cob'], [0],
+[RUN WITH ./prog.cob
 ], [])
 # should try './$prog'
-AT_CHECK([DD_prog="" dd_prog="" prog=""  $COBCRUN_DIRECT ./prog3 './$prog'], [0],
-[RUN WITH ./$prog
+AT_CHECK([DD_prog="" dd_prog="" prog=""  $COBCRUN_DIRECT ./prog './$prog.cob'], [0],
+[RUN WITH ./$prog.cob
 error opening file ...
 ], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog3 ../prog2], [0],
-[RUN WITH ../prog2
+AT_CHECK([$COBCRUN_DIRECT ./prog ../prog.cob], [0],
+[RUN WITH ../prog.cob
 error opening file ...
 ], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog3 sub/../prog2], [0],
-[RUN WITH sub/../prog2
+AT_CHECK([$COBCRUN_DIRECT ./prog sub/../prog.cob], [0],
+[RUN WITH sub/../prog.cob
 ], [])
 
 AT_CLEANUP
