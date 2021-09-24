@@ -2964,7 +2964,7 @@ valid_char_order (const cob_pic_symbol *str, const int s_char_seen)
 	const cob_pic_symbol	*first_floating_sym;
 	const cob_pic_symbol	*last_floating_sym;
 	int		before_decimal_point = 1;
-	int		idx,pre;
+	int		idx;
 	const cob_pic_symbol	*s;
 	int		repeated;
 	int		i,j,k;
@@ -2975,7 +2975,6 @@ valid_char_order (const cob_pic_symbol *str, const int s_char_seen)
 	find_floating_insertion_str (str, &first_floating_sym, &last_floating_sym);
 
 	k=0;
-	pre = -1;
 	for (s = str; s->symbol != '\0'; ++s) {
 		/* Perform the check twice if a character is repeated, e.g. to detect 9VV. */
 		repeated = s->times_repeated > 1;
@@ -3728,13 +3727,12 @@ struct cb_field *
 cb_field_direct (struct cb_field *frm, struct cb_reference *ref, char *report, 
 				int *pos, int *len)
 {
-	cb_tree		x;
 	cb_tree		l;
-	struct cb_field *s, *f, *p;
-	char		buff[COB_MINI_BUFF], pic[30], comma[6];
+	struct cb_field *s, *f;
+	char		comma[6];
 	char		tmp[COB_SMALL_BUFF] = { 0 };
 	char		wrk[COB_SMALL_BUFF] = { 0 };
-	int			rl, offset, sub, dec, dig, allok, simple, tlen;
+	int			rl, offset, sub, allok, simple;
 
 	allok = 1;
 	simple = 1;
@@ -3786,7 +3784,7 @@ cb_field_direct (struct cb_field *frm, struct cb_reference *ref, char *report,
 				if (s->parent)
 					s = s->parent;
 			} else {
-				tlen = cb_name_1 (wrk, CB_VALUE(l), COB_SMALL_MAX);
+				cb_name_1 (wrk, CB_VALUE(l), COB_SMALL_MAX);
 				rl += sprintf (&report[rl], "%s%s",comma,wrk);
 			}
 			strcpy(comma,", ");
@@ -3799,7 +3797,7 @@ cb_field_direct (struct cb_field *frm, struct cb_reference *ref, char *report,
 			offset += cb_get_int (ref->offset) - 1;
 			rl += sprintf (&report[rl], " (%d",cb_get_int (ref->offset));
 		} else {
-			tlen = cb_name_1 (wrk, ref->offset, COB_SMALL_MAX);
+			cb_name_1 (wrk, ref->offset, COB_SMALL_MAX);
 			rl += sprintf (&report[rl], " (%s",wrk);
 		}
 	}
@@ -3808,7 +3806,7 @@ cb_field_direct (struct cb_field *frm, struct cb_reference *ref, char *report,
 	 	if (CB_NUMERIC_LITERAL_P(ref->length)) {
 			rl += sprintf (&report[rl], ":%d) ",cb_get_int (ref->length));
 		} else {
-			tlen = cb_name_1 (wrk, ref->length, COB_SMALL_MAX);
+			cb_name_1 (wrk, ref->length, COB_SMALL_MAX);
 			rl += sprintf (&report[rl], ":%s) ",wrk);
 		}
 	}
