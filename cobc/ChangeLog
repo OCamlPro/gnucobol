@@ -1,4 +1,13 @@
 
+2021-09-25  Ron Norman <rjn@inglenet.com>
+
+	* cobc.c: Defer processing of -std= as much as possible. Needed to
+			be able to insert -std=default for test cases even if
+			the compiler was built with a differente default
+	* flag.def, cobc.c: Add -ffile-format= mf | gc 
+			Defines default file format for Sequential/Relative files
+			(This obsoletes -fmf-files which could be removed later)
+
 2021-09-12  Ron Norman <rjn@inglenet.com>
 
 	* codegen.c: If -fmf-files, then set mod->flag_file_format = COB_FILE_IS_MF

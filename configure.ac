@@ -77,10 +77,10 @@ AH_TEMPLATE([COB_PARAM_CHECK], [Enable minimum parameter check for system librar
 AH_TEMPLATE([PATCH_LEVEL], [Define a patch level (numeric, max. 8 digits)])
 AH_TEMPLATE([MAX_CALL_FIELD_PARAMS], [Define maximum parameters for CALL])
 AH_TEMPLATE([WITH_MATH], [Math multiple precision library])
-AH_TEMPLATE([WITH_INDEX_EXTFH], [Compile with obsolete external INDEXED handler])
+AH_TEMPLATE([WITH_STD], [Default dialect for -std= ])
+AH_TEMPLATE([WITH_FILE_FORMAT], [Default file format: mf  gc ])
 AH_TEMPLATE([WITH_INDEXED], [Default INDEXED file handler define])
 AH_TEMPLATE([WITH_IXDFLT], [Default INDEXED file handler name])
-AH_TEMPLATE([WITH_SEQRA_EXTFH], [Compile with obsolete external SEQ/RAN handler])
 AH_TEMPLATE([WITH_VISAM], [Use V-ISAM as INDEXED handler])
 AH_TEMPLATE([WITH_DISAM], [Use D-ISAM as INDEXED handler])
 AH_TEMPLATE([WITH_CISAM], [Use C-ISAM as INDEXED handler])
@@ -90,6 +90,8 @@ AH_TEMPLATE([WITH_LMDB], [Use Lightning Memory-Mapped Database as INDEXED handle
 AH_TEMPLATE([WITH_ODBC], [Use ODBC for INDEXED file handler])
 AH_TEMPLATE([WITH_OCI], [Use OCI for INDEXED file handler])
 AH_TEMPLATE([WITH_STATIC_ISAM], [Build ISAM into libcob])
+AH_TEMPLATE([WITH_SEQRA_EXTFH], [Compile with obsolete external SEQ/RAN handler])
+AH_TEMPLATE([WITH_INDEX_EXTFH], [Compile with obsolete external INDEXED handler])
 
 AH_TEMPLATE([WITH_XML2], [Use libxml2 as XML handler])
 AH_TEMPLATE([WITH_JSON], [JSON handler])
@@ -218,6 +220,36 @@ AC_ARG_WITH([max-call-params],
   [with_max_call_params=192])
 
 AC_DEFINE_UNQUOTED([MAX_CALL_FIELD_PARAMS], [$with_max_call_params])
+
+AC_ARG_WITH([std],
+  [AS_HELP_STRING([--with-std],
+    [Define default COBOL dialect:mf, acu, ibm, cobol85, cobol2002, cobol2014])],
+  [case $with_std in
+    acu)	AC_DEFINE([WITH_STD], ["acu"]) ;;
+    cobol2002)	AC_DEFINE([WITH_STD], ["cobol2002"]) ;;
+    cobol2014)	AC_DEFINE([WITH_STD], ["mf"]) ;;
+    cobol85)	AC_DEFINE([WITH_STD], ["cobol85"]) ;;
+    ibm)	AC_DEFINE([WITH_STD], ["ibm"]) ;;
+    mf)		AC_DEFINE([WITH_STD], ["mf"]) ;;
+    mvs)	AC_DEFINE([WITH_STD], ["mvs"]) ;;
+    realia)	AC_DEFINE([WITH_STD], ["realia"]) ;;
+    rm)		AC_DEFINE([WITH_STD], ["rm"]) ;;
+    xopen)	AC_DEFINE([WITH_STD], ["xopen"]) ;;
+    *)		AC_MSG_ERROR([[Define default COBOL dialect ]])
+		;;
+  esac],
+  [])
+
+AC_ARG_WITH([file-format],
+  [AS_HELP_STRING([--with-file-format],
+    [Define default file format: mf, gc])],
+  [case $with_file_format in
+    mf)	AC_DEFINE([WITH_FILE_FORMAT], [COB_FILE_IS_MF]) ;;
+    gc)	AC_DEFINE([WITH_FILE_FORMAT], [COB_FILE_IS_GC]) ;;
+    *)	AC_MSG_ERROR([[Define default file format]])
+		;;
+  esac],
+  [])
 
 
 # Basic capability tests

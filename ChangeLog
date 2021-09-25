@@ -1,4 +1,12 @@
 
+2021-09-25  Ron Norman <rjn@inglenet.com> 
+
+	* configure.ac: Add --with-std= to define default COBOL dialect
+					Add --with-file-format= to define default file format
+					for Sequential/Relative files. 
+						mf for Microfocus
+						gc for old GnuCOBOL which results in non portable data
+
 2021-07-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: moved definitions of INDEXED related variables for the

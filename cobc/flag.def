@@ -215,7 +215,11 @@ CB_FLAG_ON (cb_flag_c_decl_for_static_call, 1, "gen-c-decl-static-call",
 	  "                        for subroutines with static CALL"))
 
 CB_FLAG (cb_mf_files, 1, "mf-files",
-	 _("  -fmf-files           Sequential & Relative files will match Micro Focus format"))
+	 _("  -fmf-files            Sequential & Relative files will match Micro Focus format"))
+
+CB_FLAG_RQ (cb_file_format, 1, "file-format", 0, 12,
+	_("  -ffile-format=[MF|GC]\tdefine default format for Sequential/Relative files\n"
+	  "                        * default: GC"))
 
 CB_FLAG_ON (cb_listing_with_header, 1, "theaders",
 	_("  -fno-theaders         suppress all headers and output of compilation\n"

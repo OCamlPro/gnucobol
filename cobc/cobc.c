@@ -221,6 +221,8 @@ int cb_warn_opt_val[COB_WARNOPT_MAX];
 
 /* Local variables */
 
+static char	cob_std_conf[64] = "";
+static int		num_std = 0;
 static struct cb_define_struct	*cb_define_list = NULL;
 
 static struct cobc_mem_struct	*cobc_mainmem_base = NULL;
@@ -2521,6 +2523,17 @@ cobc_print_info (void)
 	cobc_var_print (_("indexed file handler"),		_("disabled"), 0);
 #endif
 
+#if defined(WITH_STD)
+	cobc_var_print (_("default COBOL dialect"),	"-std=" WITH_STD, 0);
+#endif
+
+#if defined(WITH_FILE_FORMAT)
+	if (WITH_FILE_FORMAT == COB_FILE_IS_MF)
+		cobc_var_print (_("default file format"),	"-ffile-format=mf", 0);
+	else if (WITH_FILE_FORMAT == COB_FILE_IS_GC)
+		cobc_var_print (_("default file format"),	"-ffile-format=gc", 0);
+#endif
+
 #if defined(__MPIR_VERSION)
 #if defined(HAVE_MPIR_H)
 	cobc_var_print (_("mathematical library"),	"MPIR", 0);
@@ -2799,6 +2812,12 @@ process_command_line (const int argc, char **argv)
 	cb_dialect = "DEFAULT";
 	cb_mf_ibm_comp = -1;
 	cb_warn_opt_val[(int)cb_warn_unsupported] = COBC_WARN_AS_ERROR;
+#ifdef WITH_FILE_FORMAT
+	if (WITH_FILE_FORMAT == COB_FILE_IS_MF)
+		cb_mf_files = 1;
+	else if (WITH_FILE_FORMAT == COB_FILE_IS_GC)
+		cb_mf_files = 0;
+#endif
 
 #if defined (_WIN32) || defined (__DJGPP__)
 	if (!getenv ("POSIXLY_CORRECT")) {
@@ -2972,8 +2991,8 @@ process_command_line (const int argc, char **argv)
 				ext[n] = toupper(cob_optarg[n]);
 			ext[n] = 0;
 			cb_dialect = cobc_strdup (ext); 
-			snprintf (ext, (size_t)COB_MINI_MAX, "%s.conf", cob_optarg);
-			conf_ret |= cb_load_std (ext);
+			snprintf (cob_std_conf, sizeof(cob_std_conf), "%s.conf", cob_optarg);
+			num_std++;
 			break;
 
 		case '&':
@@ -2981,6 +3000,14 @@ process_command_line (const int argc, char **argv)
 			if (strlen (cob_optarg) > COB_SMALL_MAX) {
 				cobc_err_exit (COBC_INV_PAR, "-conf");
 			}
+			if (num_std > 1			/* -std was deferred so load now */
+			 || memcmp(cob_std_conf,"default",7) != 0) {
+				if (verbose_output) {
+					fprintf(stderr, _("loading configuration file '%s'\n"),cob_std_conf);
+				}
+				conf_ret |= cb_load_std (cob_std_conf);
+			}
+			cob_std_conf[0] = 0;		/* Avoid reloading this one */
 			conf_ret |= cb_load_conf (cob_optarg, 0);
 			break;
 
@@ -2999,12 +3026,31 @@ process_command_line (const int argc, char **argv)
 	}
 
 	/* Load default configuration file if necessary */
+	if (cb_config_name == NULL
+	 && cob_std_conf[0] > ' ') {
+		if (verbose_output) {
+			fprintf(stderr, _("loading configuration file '%s'\n"),cob_std_conf);
+		}
+		conf_ret |= cb_load_std (cob_std_conf);
+	} else
 	if (cb_config_name == NULL) {
+#ifdef	WITH_STD
+		strcpy(ext, WITH_STD);
+		for (n=0; ext[n] != 0; n++)
+			ext[n] = toupper(ext[n]);
+		ext[n] = 0;
+		cb_dialect = cobc_strdup (ext); 
+		if (verbose_output) {
+			fprintf(stderr, _("loading default configuration file '%s.conf'\n"),WITH_STD);
+		}
+		conf_ret |= cb_load_std (WITH_STD ".conf");
+#else
 		if (verbose_output) {
 			fputs (_("loading standard configuration file 'default.conf'"), stderr);
 			fputc ('\n', stderr);
 		}
 		conf_ret |= cb_load_std ("default.conf");
+#endif
 	}
 
 	/* Exit for configuration errors resulting from -std/--conf/default.conf */
@@ -3520,6 +3566,18 @@ process_command_line (const int argc, char **argv)
 			mkdir (cob_schema_dir, 0777);
 			chmod (cob_schema_dir, 0777);
 #endif
+			break;
+
+		case 12:
+			/* -ffile-format=<name> : Database schema name for XFD */
+			if (strcasecmp (cob_optarg, "mf") == 0) {
+				cb_mf_files = 1;
+			} else
+			if (strcasecmp (cob_optarg, "gc") == 0) {
+				cb_mf_files = 0;
+			} else {
+				printf("Warning: -ffile-format = mf | gc\n");
+			}
 			break;
 
 		case 'A':

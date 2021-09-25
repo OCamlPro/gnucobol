@@ -1,4 +1,10 @@
 
+2021-09-25   Ron Norman <rjn@inglenet.com>
+
+	* atlocal.in,atlocal_win,atlocal_valgrind: Add -std=default to COBC
+	         so that test cases run with 'default' config
+			 This is needed in case GnuCOBOL was built with --with-std=
+
 2021-08-29   Ron Norman <rjn@inglenet.com>
 
 	* testsuite.src/run_file.at: Add more EXTFH test cases
