@@ -5377,7 +5377,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -ffile-format=gc prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [(a   )
 (ab  )
@@ -18509,7 +18509,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -ffile-format=gc prog.cob], [0], [], [])
 
 AT_CHECK([export DD_INFILE=./inp_data
 export OUTFILE=TEST-FILE
@@ -20335,7 +20335,7 @@ AT_DATA([prog.cob], [
 
 ])
 
-AT_CHECK([$COMPILE -w prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -ffile-format=gc -w prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [1)  Good Delete File
