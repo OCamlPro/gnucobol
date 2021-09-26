@@ -1,4 +1,8 @@
 
+2021-09-26  Ron Norman <rjn@inglenet.com>
+
+	* reportio.c: Fixed to call back to DECLARATIVES for DETAIL line
+
 2021-09-13  Ron Norman <rjn@inglenet.com>
 
 	* fextfh.c: Some fixes to following changes

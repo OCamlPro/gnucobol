@@ -1563,7 +1563,7 @@ cob_report_generate (cob_report *r, cob_report_line *l)
 static	cob_report_control	*rc, *rp;
 static	cob_report_control_ref	*rr;
 static	cob_report_line		*pl, *sl;
-static	int		maxctl,ln,num,gengrp;
+static	int		maxctl,ln,num,gengrp,last_use;
 #if defined(COB_DEBUG_LOG) 
 	char			wrk[256];
 #endif
@@ -1598,10 +1598,16 @@ static	int		maxctl,ln,num,gengrp;
 		case 3:		goto PrintFooting;
 		case 4:		goto PrintHeading;
 		case 5:		goto PrintDetail;
+		case 6:		goto PrintDetail2;
 		default:	r->go_label = 0;
 		}
 	}
-	DEBUG_LOG("rw",("~  Enter %sGENERATE\n",r->first_generate?"first ":""));
+	last_use = 0;
+	if (l) {
+		DEBUG_LOG("rw",("~  Enter %sGENERATE  line %d\n",r->first_generate?"first ":"",l->lineid));
+	} else {
+		DEBUG_LOG("rw",("~  Enter %sGENERATE\n",r->first_generate?"first ":""));
+	}
 
 	if (r->incr_line) {
 		r->incr_line = FALSE;
@@ -1805,6 +1811,16 @@ PrintHeading:
 		l->suppress = FALSE;
 		DEBUG_LOG("rw",(" Line# %d SUPPRESSed\n",r->curr_line));
 	} else {
+		if(l->use_source) {
+			DEBUG_LOG("rw",("  Return %s Detail Line case %d\n",
+					r->report_name,l->use_source));
+			sl = l;
+			r->exec_source = l->use_source;
+			last_use = l->use_source;
+			r->go_label = 6;
+			return 1;	/* Back for DECLARATIVES */
+		}
+PrintDetail2:
 		gengrp = 0;
 		if(l->fields == NULL
 		&& l->child != NULL
@@ -1843,11 +1859,13 @@ PrintHeading:
 			l = get_print_line(pl);		/* Find line with data fields */
 			if(!l->suppress) {
 				r->next_just_set = FALSE;
-				if (l->use_decl > 0 || l->use_source) {
+				if (l->use_source > 0
+				 && l->use_source != last_use) {
 					sl = l;
 					r->exec_source = l->use_source;
+					l->use_source = l->use_source;
 					r->go_label = 5;
-					DEBUG_LOG("rw",("  Return to Detail Declaratives %d; case %d, lineid %d\n",
+					DEBUG_LOG("rw",("  Return to Detail Declaratives %d; case %d, line %d\n",
 								l->use_decl,l->use_source,l->lineid));
 					return 1;
 PrintDetail:	;
