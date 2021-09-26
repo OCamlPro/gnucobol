@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2020 Free Software Foundation, Inc.
+   Copyright (C) 2001-2021 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -1050,6 +1050,10 @@ create_implicit_picture (struct cb_field *f)
 	}
 
 	if (f->storage == CB_STORAGE_REPORT) {
+		if (f->report_source || f->report_sum_counter) {
+			cb_error_x (x, _ ("PICTURE clause required for '%s'"),
+				cb_name (x));
+		}
 		if (first_value) {
 			sprintf (pic, "X(%d)", size_implied);
 		} else {

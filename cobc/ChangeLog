@@ -1,4 +1,9 @@
 
+2021-09-26  Simon Sobisch <simonsobisch@gnu.org>
+
+	* field.c (create_implicit_picture): PICTURE is mandatory
+	  for report description entries with SOURCE or SUM clause
+
 2021-09-23  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (cb_build_const_length): ensure we actually have a valid

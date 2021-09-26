@@ -4031,11 +4031,7 @@ finalize_report (struct cb_report *r, struct cb_field *records)
 		/* report source field */
 		if (p->report_source
 		 && CB_REF_OR_FIELD_P (p->report_source)) {
-			/* force generation of report source field TODO: Check why */
 			fld = CB_FIELD_PTR (p->report_source);
-			if (fld->count == 0) {
-				fld->count = 1;
-			}
 			if (CB_TREE_TAG (p->report_source) == CB_TAG_REFERENCE) {
 				ref = CB_REFERENCE (p->report_source);
 				if (ref->offset || ref->length || ref->subs || fld->flag_local) {
@@ -4043,15 +4039,23 @@ finalize_report (struct cb_report *r, struct cb_field *records)
 					p->report_source = cb_field_dup (fld, ref);
 				}
 			}
-		}
-		/* force generation of report sum counter TODO: Check why */
-		if (p->report_sum_counter
-		 && CB_REF_OR_FIELD_P (p->report_sum_counter)) {
-			fld = CB_FIELD_PTR (p->report_sum_counter);
+			/* force generation of report source field
+			   CHECKME: Why - it should be the target of an internal
+			            MOVE or COMPUTE (for ROUNDED clause)
+						which sets the reference */
 			if (fld->count == 0) {
 				fld->count = 1;
 			}
 		}
+		if (p->report_sum_counter
+		 && CB_REF_OR_FIELD_P (p->report_sum_counter)) {
+			fld = CB_FIELD_PTR (p->report_sum_counter);
+			/* force generation of report sum counter TODO: Check why */
+			if (fld->count == 0) {
+				fld->count = 1;
+			}
+		}
+		/* force generation of report control counter TODO: Check why */
 		if (p->report_control
 		 && CB_REF_OR_FIELD_P (p->report_control)) {
 			fld = CB_FIELD_PTR (p->report_control);
