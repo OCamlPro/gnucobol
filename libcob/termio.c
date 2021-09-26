@@ -916,6 +916,8 @@ cob_accept (cob_field *f)
 	if (COB_MODULE_PTR->crt_status) {
 		if (COB_FIELD_IS_NUMERIC (COB_MODULE_PTR->crt_status)) {
 			cob_set_int (COB_MODULE_PTR->crt_status, 0);
+		} else if (COB_MODULE_PTR->crt_status->size == 3) {
+			memcpy (COB_MODULE_PTR->crt_status->data, "0\0\0", (size_t)3);
 		} else {
 			memset (COB_MODULE_PTR->crt_status->data, '0', (size_t)4);
 		}

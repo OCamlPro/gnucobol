@@ -1234,17 +1234,29 @@ AT_DATA([prog5.cob], [
            STOP RUN.
 ])
 
+AT_DATA([prog6.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       77  CRT-STATUS   PIC X(3) IS SPECIAL-NAMES CRT STATUS.
+       PROCEDURE        DIVISION.
+           ACCEPT OMITTED END-ACCEPT.
+           STOP RUN.
+])
+
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:14: error: duplicate CRT STATUS clause
 ])
 AT_CHECK([$COMPILE_ONLY prog2.cob], [1], [],
-[prog2.cob:6: error: 'CRT-STATUS' CRT STATUS must be 4 characters long
+[prog2.cob:6: error: 'CRT-STATUS' CRT STATUS must be 3 or 4 characters long
 ])
 AT_CHECK([$COMPILE_ONLY prog3.cob], [0], [], [])
 AT_CHECK([$COMPILE_ONLY prog4.cob], [0], [], [])
 AT_CHECK([$COMPILE_ONLY prog5.cob], [1], [],
-[prog5.cob:6: error: 'CRT-STATUS' CRT STATUS must have at least 4 digits
+[prog5.cob:6: error: 'CRT-STATUS' numeric CRT STATUS must have at least 4 digits
 ])
+AT_CHECK([$COMPILE_ONLY prog6.cob], [0], [], [])
 
 AT_CLEANUP
 

@@ -2416,3 +2416,298 @@ prog2.cob:20: warning: 'FILLER' has FROM, TO or USING without PIC; PIC will be i
 ])
 
 AT_CLEANUP
+
+
+AT_SETUP([CRT STATUS clause])
+AT_KEYWORDS([SPECIAL-NAMES])
+
+AT_SKIP_IF(test "$COB_HAS_CURSES" != "yes")
+
+AT_DATA([prog1.cob], [
+       identification division.
+       program-id. prog.
+
+       environment division.
+       configuration section.
+       special-names.
+           crt status is my-status.
+       data division.
+       working-storage section.
+
+       01 my-status.
+          05 one     pic  X.
+          05 two     pic  X.
+          05 three   pic  X.
+          05 four    pic  X.
+
+       77 loop       pic 99.
+       77 test-field pic x(5).
+
+       screen section.
+
+       01 screen-example .
+          05 message1  value is "status:     " line 1 col 10.
+          05 filler    from  my-status.
+
+          05 message2  value is "test-field: " line 2 col 10.
+          05 filler    using test-field.
+
+       procedure division.
+
+           set environment 'COB_SCREEN_EXCEPTIONS' to 'TRUE'
+           set environment 'COB_SCREEN_ESC'        to 'TRUE'
+           perform varying loop from 1 by 1
+                  until loop > 10
+              display "screen accept no. "
+                      at line 10 col 4
+                      loop "/10"
+              display screen-example
+              accept  screen-example
+           end-perform
+
+           goback.
+])
+
+AT_DATA([prog2.cob], [
+       identification division.
+       program-id. prog.
+
+       data division.
+       working-storage section.
+
+       77 my-status  pic 9(05) is special-names crt status.
+
+       77 loop       pic 99.
+       77 test-field pic x(5).
+
+       screen section.
+
+       01 screen-example .
+          05 message1  value is "status:     " line 1 col 10.
+          05 filler    from  my-status.
+
+          05 message2  value is "test-field: " line 2 col 10.
+          05 filler    using test-field.
+
+       procedure division.
+
+           set environment 'COB_SCREEN_EXCEPTIONS' to 'TRUE'
+           set environment 'COB_SCREEN_ESC'        to 'TRUE'
+           perform varying loop from 1 by 1
+                  until loop > 10
+              display "screen accept no. "
+                      at line 10 col 4
+                      loop "/10"
+              display screen-example
+              accept  screen-example
+           end-perform
+
+           goback.
+])
+
+AT_CHECK([$COMPILE prog1.cob], [0], [],
+[prog1.cob:25: warning: 'FILLER' has FROM, TO or USING without PIC; PIC will be implied
+prog1.cob:28: warning: 'FILLER' has FROM, TO or USING without PIC; PIC will be implied
+])
+AT_CHECK([$COMPILE prog2.cob], [0], [],
+[prog2.cob:17: warning: 'FILLER' has FROM, TO or USING without PIC; PIC will be implied
+prog2.cob:20: warning: 'FILLER' has FROM, TO or USING without PIC; PIC will be implied
+])
+
+# user-instructions what to test is missing
+AT_SKIP_IF(true)
+
+AT_CHECK([$RUN_PROG_MANUAL ./prog1], [0], [], [])
+AT_CHECK([$RUN_PROG_MANUAL ./prog2], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([CRT STATUS clause])
+AT_KEYWORDS([SPECIAL-NAMES])
+
+AT_SKIP_IF(test "$COB_HAS_CURSES" != "yes")
+
+AT_DATA([prog.cob], [
+       identification division.
+       program-id. prog-crt4.
+
+       data division.
+       working-storage section.
+
+       01 crt4 pic 9(4) is special-names crt status.
+
+       01 test-tab.
+         05 test-01 pic x(20) value "Function key 01 1001".
+         05 test-02 pic x(20) value "Function key 02 1002".
+         05 test-03 pic x(20) value "Function key 03 1003".
+         05 test-04 pic x(20) value "Function key 04 1004".
+         05 test-05 pic x(20) value "Function key 05 1005".
+         05 test-06 pic x(20) value "Prev-page key   2001".
+         05 test-07 pic x(20) value "Next-page key   2002".
+
+       01 test-rab-r redefines test-tab.
+         05 test-data occurs 7 times.
+           10 test-name         pic x(16).
+           10 test-crt4         pic 9(4).
+
+       01 linenr                pic 9(2) value 0.
+
+       01 test-result-4         pic 9(4).
+
+       01 return-value          pic 9 value 0.
+
+       77 loop                  pic 9(2).
+       77 test-field            pic x.
+
+
+       procedure division.
+
+       set environment 'COB_SCREEN_EXCEPTIONS' to 'TRUE'
+       set environment 'COB_SCREEN_ESC'        to 'TRUE'
+
+       perform forever
+         display spaces with blank screen
+
+         move 0 to return-value
+         perform varying loop from 1 by 1 until loop > 7
+           compute linenr = loop + 5
+
+           display "Please press " line linenr, column 1
+           display test-name(loop) line linenr, column 14
+
+           move spaces to test-field
+           accept test-field
+            line linenr column 30
+
+           display crt4 line linenr, column 30
+
+           if crt4 = test-crt4(loop)
+             display "passed" line linenr, column 36
+           else
+             move 1 to return-value
+             display "failed" line linenr, column 36
+           end-if
+         end-perform
+
+         if return-value = 0
+           exit perform
+         end-if
+
+         display "Try again? (Y/n) " line 20, column 1
+         move "Y" to test-field
+         accept test-field line 20, column 18
+         if not (test-field = "Y" or "y")
+           exit perform
+         end-if
+       end-perform
+
+       goback returning return-value
+       .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+
+AT_CHECK([$RUN_PROG_MANUAL ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([X/Open CRT STATUS clause])
+AT_KEYWORDS([SPECIAL-NAMES])
+
+AT_SKIP_IF(test "$COB_HAS_CURSES" != "yes")
+
+AT_DATA([prog.cob], [
+       identification division.
+       program-id. prog-crt3.
+
+       data division.
+       working-storage section.
+
+       01 crt3 is special-names crt status.
+         05 crt3-1   pic 9.
+         05 crt3-2   usage binary-char unsigned.
+         05 crt3-3   usage binary-char unsigned.
+
+       01 test-tab.
+         05 test-01 pic x(20) value "Function key 01 1001".
+         05 test-02 pic x(20) value "Function key 02 1002".
+         05 test-03 pic x(20) value "Function key 03 1003".
+         05 test-04 pic x(20) value "Function key 04 1004".
+         05 test-05 pic x(20) value "Function key 05 1005".
+         05 test-06 pic x(20) value "Prev-page key   2001".
+         05 test-07 pic x(20) value "Next-page key   2002".
+
+       01 test-rab-r redefines test-tab.
+         05 test-data occurs 7 times.
+           10 test-name         pic x(16).
+           10 test-crt31        pic 9.
+           10 test-crt32        pic 9(3).
+
+       01 linenr                pic 9(2) value 0.
+
+       01 test-result-1         pic 9.
+       01 test-result-3         pic 9(3).
+
+       01 return-value          pic 9 value 0.
+
+       77 loop                  pic 9(2).
+       77 test-field            pic x.
+
+
+       procedure division.
+
+       set environment 'COB_SCREEN_EXCEPTIONS' to 'TRUE'
+       set environment 'COB_SCREEN_ESC'        to 'TRUE'
+
+       perform forever
+         display spaces with blank screen
+
+         move 0 to return-value
+         perform varying loop from 1 by 1 until loop > 7
+           compute linenr = loop + 5
+
+           display "Please press " line linenr, column 1
+           display test-name(loop) line linenr, column 14
+
+           move spaces to test-field
+           accept test-field
+            line linenr column 30
+
+           move crt3-1 to test-result-1
+           display test-result-1 line linenr, column 30
+
+           move crt3-2 to test-result-3
+           display test-result-3 line linenr, column 32
+
+           if test-result-1 = test-crt31(loop) and
+            test-result-3 = test-crt32(loop)
+             display "passed" line linenr, column 36
+           else
+             move 1 to return-value
+             display "failed" line linenr, column 36
+           end-if
+         end-perform
+
+         if return-value = 0
+           exit perform
+         end-if
+
+         display "Try again? (Y/n) " line 20, column 1
+         move "Y" to test-field
+         accept test-field line 20, column 18
+         if not (test-field = "Y" or "y")
+           exit perform
+         end-if
+       end-perform
+
+       goback returning return-value
+       .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+
+AT_CHECK([$RUN_PROG_MANUAL ./prog], [0], [], [])
+
+AT_CLEANUP

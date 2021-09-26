@@ -56,6 +56,16 @@ Open Plans:
    -Wconstant-expression was changed to a group warning and includes
     the new, previously integrated, -Wconstant-numlit-expression
 
+* Changes to the COBOL compiler (cobc):
+
+** allow 3-byte CRT STATUS variable according to X/Open standard
+
+
+* Changes in the COBOL runtime (libcob)
+
+** handle CRT STATUS either numerically, alphanumerically (4 digits) or as 3 bytes according
+   to X/Open standard, depending on format and size
+
 
 
 * Known issues in 3.1
