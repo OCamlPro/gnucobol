@@ -83,7 +83,7 @@ static char	cmdfile[256] = "";
 static char	cblout[48] = "CPYFILE";
 static char	proglwr[32] = "CPYFILE";
 static char	progid[32] = "CPYFILE";
-static char cobcopts[128] = "-fmf-files";
+static char cobcopts[128] = "-ffile-format=mf";
 static char copyin[256] = "";
 static char copyout[256] = "";
 static char fileindef[256] = "";
