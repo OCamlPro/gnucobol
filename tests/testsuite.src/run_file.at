@@ -16895,8 +16895,7 @@ AT_DATA([prog.cob], [
            WRITE TSPFL-RECORD.
 ])
 
-# CHECKME: do we need -std/-fmf-files here?
-AT_CHECK([$COMPILE -std=mf -fmf-files prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -std=mf -ffile-format=mf prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
@@ -17699,8 +17698,7 @@ AT_DATA([prog.cob], [
            MOVE SPACES TO REPORT-RECORD.
 ])
 
-# CHECKME: do we need -std/-fmf-files here?
-AT_CHECK([$COMPILE -std=mf -fmf-files prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -std=mf -ffile-format=mf prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
@@ -18625,9 +18623,8 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-# FIXME: must work with -std=mf alone --> -fmf-files split and included as configuration options!
 # AT_CHECK([$COMPILE -std=mf prog.cob], [0], [], [])
-AT_CHECK([$COMPILE -std=mf -fmf-files prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -std=mf -ffile-format=mf prog.cob], [0], [], [])
 
 AT_CHECK([export DD_INFILE=./inp_data
 export OUTFILE=TEST-FILE
@@ -19242,7 +19239,7 @@ AT_DATA([prog.cob], [
                DISPLAY "Write Error " CUST-STAT.
 ])
 
-AT_CHECK([$COBC -x -std=mf -w -fmf-files prog.cob ], [0], [], [])
+AT_CHECK([$COBC -x -std=mf -w -ffile-format=mf prog.cob ], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [Loading sample program data file.
 Sample program data file load complete.
@@ -20263,7 +20260,7 @@ AT_DATA([prog.cob], [
 
 ])
 
-AT_CHECK([$COBC -x -std=mf -w -fmf-files prog.cob ], [0], [], [])
+AT_CHECK([$COBC -x -std=mf -w -ffile-format=mf prog.cob ], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [1)  Good Delete File
 1a) Delete File Status: '00'
@@ -20877,7 +20874,7 @@ AT_DATA([prog.cob], [
 
 ])
 
-AT_CHECK([$COMPILE -std=mf -w -fmf-files prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE -std=mf -w -ffile-format=mf prog.cob ], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [Using Built-in INDEXED handler
@@ -21359,7 +21356,7 @@ AT_DATA([prog.cob], [
 
 ])
 
-AT_CHECK([$COBC -x -std=mf -w -fmf-files prog.cob ], [0], [], [])
+AT_CHECK([$COBC -x -std=mf -w -ffile-format=mf prog.cob ], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [--- +++ *** +++ ---
 Loading Relative File
@@ -21666,7 +21663,7 @@ AT_DATA([prog.cob], [
                DISPLAY "Write Error " CUST-STAT.
 ])
 
-AT_CHECK([$COMPILE -fmf-files prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -ffile-format=mf prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [Loading sample program data file.
