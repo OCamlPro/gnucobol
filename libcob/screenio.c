@@ -702,6 +702,56 @@ cob_convert_key (int *keyp, const cob_u32_t field_accept)
 	}
 }
 
+
+static void
+cob_set_crt3_status (cob_field *status_field, int fret)
+{
+	unsigned char	crtstat[3];
+
+	crtstat[0] = '0';
+	crtstat[1] = '\0';
+	crtstat[2] = '\0';
+
+	switch (fret) {
+	case 0:	/* OK */
+		crtstat[0] = '0';
+		crtstat[1] = '0';
+		break;
+
+	case 2005:	/* ESC */
+		crtstat[0] = '1';
+		crtstat[1] = '\0';
+		break;
+
+	case 8000:	/* NO_FIELD */
+	case 9001:	/* MAX_FIELD */
+		crtstat[0] = '9';
+		crtstat[1] = '\0';
+		break;
+
+	case 8001:	/* TIMEOUT, CHECKME */
+		crtstat[0] = '9';
+		crtstat[1] = '\1';
+		break;
+
+	/* TODO: more case COB_SCR_... */
+
+	default:
+		if (fret >= 1001 && fret <= 1064) {
+			/* function keys */
+			crtstat[0] = '1';
+			crtstat[1] = (unsigned char)(fret - 1000);
+		} else if (fret >= 2001 && fret <= 2110) {
+			/* exception keys */
+			crtstat[0] = '2';
+			crtstat[1] = (unsigned char)(fret - 2000);
+		}
+	}
+
+	memcpy (status_field->data, crtstat, 3);
+}
+
+
 static void
 handle_status (const int fret)
 {
@@ -714,6 +764,8 @@ handle_status (const int fret)
 		cob_field	*status_field = COB_MODULE_PTR->crt_status;
 		if (COB_FIELD_IS_NUMERIC (status_field)) {
 			cob_set_int (status_field, fret);
+		} else if (status_field->size == 3) {
+			cob_set_crt3_status (status_field, fret);
 		} else {
 			char	buff[23]; /* 10: make the compiler happy as "int" *could*
 						         have more digits than we "assume" */
