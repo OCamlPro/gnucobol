@@ -46,7 +46,6 @@ NEWS - user visible changes				-*- outline -*-
 ** new compiler command line option to list the known runtime exception names
    and fatality `cobc --list-exceptions`
 
-
 * Important Bugfixes:
 
  * for dialects other than the GnuCOBOL default different reserved "alias" words
@@ -171,7 +170,9 @@ NEWS - user visible changes				-*- outline -*-
 
 ** cobc -g now auto-includes references to the COBOL source file and to
    all ENTRY and SECTION elements to ease source level debugging
-   
+
+** allow 3-byte CRT STATUS variable according to X/Open standard
+
 
 
 * Changes in the COBOL runtime (libcob)
@@ -190,6 +191,9 @@ NEWS - user visible changes				-*- outline -*-
    were added, see new C-API documentation
 
 ** first-time file-locking under Win32
+
+** handle CRT STATUS either numerically, alphanumerically (4 digits) or as 3 bytes according
+    to X/Open standard, depending on format and size
 
 ** Breaking change: previously the return-code of registered error handlers
    (by CBL_ERROR_PROC) were ignored. This was changed according to the
