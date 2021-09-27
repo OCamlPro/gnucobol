@@ -1555,7 +1555,7 @@ cob_report_generate (cob_report *r, cob_report_line *l, int ctl)
 	cob_report_control	*rc, *rp;
 	cob_report_control_ref	*rr;
 	cob_report_line		*pl;
-	static	int		maxctl,ln,num,gengrp;
+	static	int		maxctl,ln,num,gengrp, last_use;
 #if defined(COB_DEBUG_LOG) 
 	char			wrk[256];
 #endif
@@ -1611,6 +1611,8 @@ cob_report_generate (cob_report *r, cob_report_line *l, int ctl)
 			}
 		}
 		DEBUG_LOG("rw",("Could not find Declarative %d\n",ctl));
+	} else {
+		last_use = 0;
 	}
 
 	if (r->incr_line) {
@@ -1623,6 +1625,13 @@ cob_report_generate (cob_report *r, cob_report_line *l, int ctl)
 		 * First GENERATE of the report
 		 */
 		DEBUG_LOG("rw",("Process First GENERATE\n"));
+		if (r->first_line->use_decl
+		 && r->first_line->use_decl != last_use) {
+			DEBUG_LOG ("rw", ("  Return first %s Heading Line case %d\n",
+				r->report_name, r->first_line->use_decl));
+			last_use = r->first_line->use_decl;
+			return r->first_line->use_decl;	/* Back for DECLARATIVES */
+		}
 		report_line_type(r,r->first_line,COB_REPORT_HEADING);
 		do_page_heading(r);
 		/* do CONTROL Headings */
@@ -1786,19 +1795,29 @@ PrintHeading:
 
 	} else if(l->suppress) {
 		l->suppress = FALSE;
+		DEBUG_LOG("rw",(" Line# %d SUPPRESSed\n",r->curr_line));
 	} else {
-		gengrp = 0;
 		if(l->fields == NULL
 		&& l->child != NULL
 		&& l->child->sister != NULL) {
+			if (l->use_decl
+			 && l->use_decl != last_use) {
+				DEBUG_LOG("rw",("  Return to Detail Declaratives (no fields) %d\n",l->use_decl));
+				last_use = l->use_decl;
+				return l->use_decl;
+			}
 			l = l->child;		/* Multiple Detail Lines in group */
 			gengrp = 1;
+		} else {
+			gengrp = 0;
 		}
 
 		num = ln = 0;
 		for(pl = l; pl; pl = pl->sister) {
-			if( NOTDETAIL(pl->flags) )
+			if( NOTDETAIL(pl->flags) ) {
+				DEBUG_LOG("rw",("A NOT Detail Line 0x%X\n",pl->flags));
 				break;
+			}
 			if((pl->flags & COB_REPORT_LINE_PLUS)
 			&& pl->line > 1) {
 				ln += pl->line;
@@ -1815,28 +1834,39 @@ PrintHeading:
 			saveLineCounter(r);
 		}
 
+		if (l->use_decl
+		 && l->use_decl != last_use) {
+			DEBUG_LOG("rw",("  Return to Detail Declaratives  %d\n",l->use_decl));
+			last_use = l->use_decl;
+			return l->use_decl;
+		}
 		for(pl = l; pl; pl = pl->sister) {
-			if( NOTDETAIL(pl->flags) )
+			if( NOTDETAIL(pl->flags) ) {
+				DEBUG_LOG("rw",("B NOT Detail Line 0x%X\n",pl->flags));
 				break;
+			}
 			l = get_print_line(pl);		/* Find line with data fields */
 			if(!l->suppress) {
 				r->next_just_set = FALSE;
-				if (l->use_decl > 0) {
-					xrc = rc;
-					xrp = rp;
-					xrr = rr;
-					xpl = pl;
-					inDetailDecl = l->use_decl;
-					DEBUG_LOG("rw",("  Return to Detail Declaratives %d\n",l->use_decl));
-					return l->use_decl;
+				if (l->use_decl) {
+					if (l->use_decl != last_use) {
+						xrc = rc;
+						xrp = rp;
+						xrr = rr;
+						xpl = pl;
+						inDetailDecl = l->use_decl;
+						DEBUG_LOG("rw",("  Return to Detail Declaratives %d\n",l->use_decl));
+						return l->use_decl;
+					} else {
 do_detail:
-					inDetailDecl = 0;
-					DEBUG_LOG("rw",("  Continue after Detail Declaratives %d\n",ctl));
-					rc = xrc;
-					rp = xrp;
-					rr = xrr;
-					pl = xpl;
-					xpl = NULL;
+						inDetailDecl = 0;
+						DEBUG_LOG("rw",("  Continue after Detail Declaratives %d\n",ctl));
+						rc = xrc;
+						rp = xrp;
+						rr = xrr;
+						pl = xpl;
+						xpl = NULL;
+					}
 				}
 				report_line(r,l);	/* Generate this DETAIL line */
 			}

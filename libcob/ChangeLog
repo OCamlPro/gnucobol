@@ -4,6 +4,10 @@
 	* common.c (call_exit_handlers_and_terminate): extracted from
 	  (cob_stop_run, cob_tidy)
 
+2021-09-26  Ron Norman <rjn@inglenet.com>
+
+	* reportio.c: Fixed to call back to DECLARATIVES for DETAIL line
+
 2021-09-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fileio.c (cob_pre_open): remove trailing spaces from fcd->filenameptr
@@ -22,6 +26,10 @@
 
 	* fileio.c (fcd2_to_fcd3): removed checks as this function only converts
 	* fileio.c (cob_sys_extfh): minor adjustments for bad arguments
+
+2021-09-13  Ron Norman <rjn@inglenet.com>
+
+	* fextfh.c->fileio.c: Some fixes to following changes
 
 2021-09-13  Simon Sobisch <simonsobisch@gnu.org>
 
