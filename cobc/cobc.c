@@ -5420,6 +5420,10 @@ print_fields (struct cb_field *top, int *found)
 			} else {
 				pd_off += sprintf (print_data + pd_off, "OCCURS %d", top->occurs_max);
 			}
+			if (top->step_count
+			 && top->step_count > top->size) {
+				pd_off += sprintf (print_data + pd_off, ", STEP %d", top->step_count);
+			}
 		}
 		if (top->flag_external) {
 			pd_off += sprintf (print_data + pd_off, " EXTERNAL");

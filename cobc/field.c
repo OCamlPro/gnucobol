@@ -2024,6 +2024,7 @@ static unsigned int
 validate_field_1 (struct cb_field *f)
 {
 	cb_tree		x;
+	int			sts = 0;
 
 #if 0
 	/* LCOV_EXCL_START */
@@ -2044,9 +2045,9 @@ validate_field_1 (struct cb_field *f)
 
 	x = CB_TREE (f);
 	if (f->level == 77) {
-		if (f->storage != CB_STORAGE_WORKING &&
-		    f->storage != CB_STORAGE_LOCAL &&
-		    f->storage != CB_STORAGE_LINKAGE) {
+		if (f->storage != CB_STORAGE_WORKING
+		 && f->storage != CB_STORAGE_LOCAL
+		 && f->storage != CB_STORAGE_LINKAGE) {
 			cb_error_x (x, _("'%s' 77 level is not allowed here"), cb_name (x));
 		}
 	}
@@ -2079,10 +2080,11 @@ validate_field_1 (struct cb_field *f)
 	}
 
 	if (f->children) {
-		return validate_group (f);
+		sts = validate_group (f);
 	} else {
-		return validate_elementary_item (f);
+		sts = validate_elementary_item (f);
 	}
+	return sts;
 }
 
 static void
@@ -2375,13 +2377,12 @@ compute_binary_size (struct cb_field *f, const int size)
 static struct cb_field *
 get_last_child (struct cb_field *f)
 {
-	do {
+	while (f->children) {
 		f = f->children;
 		while (f->sister) {
 			f = f->sister;
 		}
-	} while (f->children);
-
+	}
 	return f;
 }
 
@@ -2437,7 +2438,7 @@ compute_size (struct cb_field *f)
 	if (f->storage == CB_STORAGE_REPORT) {
 		if (f->report_num_col > 1) {
 			if (f->flag_occurs) {
-				/* FIXME: this is no size calculation and likely not reachable (if it is: move) */
+				/* FIXME (done in 4,x): this is no size calculation and likely not reachable (if it is: move) */
 				cb_error_x (CB_TREE (f), _("OCCURS and multi COLUMNs is not allowed"));
 			} else {
 				f->occurs_max = f->occurs_min = f->report_num_col;
@@ -2493,8 +2494,8 @@ unbounded_again:
 				c->offset = c->redefines->offset;
 				compute_size (c);
 				/* Increase the size if redefinition is larger */
-				if (c->level != 66 &&
-				    c->size * c->occurs_max >
+				if (c->level != 66
+				 && c->size * c->occurs_max >
 				    c->redefines->size * c->redefines->occurs_max) {
 					if (cb_larger_redefines_ok) {
 						cb_warning_x (cb_warn_additional, CB_TREE (c),
@@ -2588,8 +2589,11 @@ unbounded_again:
 					size_check = (c->offset + c->size);
 			}
 		}
+
 		/* Ensure items within OCCURS are aligned correctly. */
-		if (f->occurs_max > 1 && (size_check % occur_align_size) != 0) {
+		if (f->occurs_max > 1 
+		 && occur_align_size > 1
+		 && (size_check % occur_align_size) != 0) {
 			pad = occur_align_size - (size_check % occur_align_size);
 			size_check += pad;
 			/*
@@ -2670,6 +2674,8 @@ unbounded_again:
 			compute_binary_size (f, size);
 			break;
 		case CB_USAGE_DISPLAY:
+			if (f->pic == NULL)
+				break;
 			/* boolean items without USAGE BIT */
 			if (f->pic->category == CB_CATEGORY_BOOLEAN) {
 				f->size = f->pic->size / 8;
@@ -2690,10 +2696,12 @@ unbounded_again:
 			}
 			break;
 		case CB_USAGE_PACKED:
-			f->size = f->pic->size / 2 + 1;
+			if (f->pic != NULL)
+				f->size = f->pic->size / 2 + 1;
 			break;
 		case CB_USAGE_COMP_6:
-			f->size = (f->pic->size + 1) / 2;
+			if (f->pic != NULL)
+				f->size = (f->pic->size + 1) / 2;
 			break;
 		case CB_USAGE_INDEX:
 		case CB_USAGE_HNDL:

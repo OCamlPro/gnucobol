@@ -125,6 +125,13 @@
 	  as literal (similar to assign-clause=external, but without label
 	  handling), see bug 669
 
+2021-08-01  Ron Norman <rjn@inglenet.com>
+
+	* tree.h: additional fields for REPORT (varying, etc)
+	* cobc.c (print_fields): for listing of REPORT show STEP value
+	* parser.y: implement parsing for VARYING and nested OCCURS
+	* parser.y: only skip COL + if first field on a report LINE
+
 2021-07-29  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y, config.def: changed the auto-setting of the RECURSIVE attribute
