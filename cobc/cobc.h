@@ -94,6 +94,15 @@ enum cb_format {
 	CB_FORMAT_FREE
 };
 
+#if 0 /* ancient OSVS registers that need special runtime handling - low priority */
+/* format in CURRENT-DATE register */
+enum cb_current_date {
+	CB_DATE_MDY = 0,
+	CB_DATE_YMD,
+	CB_DATE_DMY
+};
+#endif
+
 /* COPY extended syntax defines */
 #define CB_REPLACE_LEADING		1U
 #define CB_REPLACE_TRAILING		2U
@@ -368,6 +377,9 @@ extern struct list_files	*cb_listing_files;
 extern struct list_files	*cb_current_file;
 
 extern enum cb_format		cb_source_format;
+#if 0 /* ancient OSVS registers that need special runtime handling - low priority */
+extern enum cb_current_date	current_date;
+#endif
 extern int			cb_text_column;	/* end of area B (in single-byte characters) */
 
 extern struct cb_exception	cb_exception_table[];

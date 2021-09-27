@@ -1841,7 +1841,7 @@ extern struct cb_picture	*cb_build_binary_picture (const char *,
 extern cb_tree			cb_build_field (cb_tree);
 extern cb_tree			cb_build_implicit_field (cb_tree, const int);
 extern cb_tree			cb_build_constant (cb_tree, cb_tree);
-extern int			cb_build_generic_register (const char *, const char *);
+extern int			cb_build_generic_register (const char *, const char *, struct cb_field **);
 
 extern void			cb_build_symbolic_chars (const cb_tree,
 							 const cb_tree);

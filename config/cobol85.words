@@ -390,7 +390,9 @@ reserved:	ZEROES=ZERO
 reserved:	ZEROS=ZERO
 
 
-not-register:	DIALECT-ALL	# disable all registers, specify used below
+not-register:	DIALECT-ALL	# disable all registers that don't need explicit
+#            	enabling - the ones used are specified below
+
 register:	DEBUG-ITEM
 #register:	"LINAGE-COUNTER"	# not yet handled as register in GnuCOBOL
 #register:	"LINE-COUNTER"	# not yet handled as register in GnuCOBOL

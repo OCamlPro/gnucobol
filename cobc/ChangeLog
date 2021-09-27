@@ -1,4 +1,12 @@
 
+2021-09-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_generic_register): handle CONSTANT
+	* error.c (ambiguous_error): handling for internal definitions / registers
+	* typeck.c (cb_build_generic_register), tree.h: optionally return
+	  cob_field for register
+	* cobc.c, cobc.h, reserved.c: code for ancient OSVS registers - disabled
+
 2021-09-26  Simon Sobisch <simonsobisch@gnu.org>
 
 	* field.c (create_implicit_picture): PICTURE is mandatory

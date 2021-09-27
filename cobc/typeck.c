@@ -1184,10 +1184,12 @@ cb_build_register_when_compiled (const char *name, const char *definition)
 		cb_build_alphanumeric_literal (buff, lit_size));
 }
 
-/* General register creation; used for TALLY, LIN, COL */
+/* General register creation; used for TALLY, LIN, COL,
+   stores the resulting field's address in the optional last parameter */
 /* TODO: complete change to generic function */
 int
-cb_build_generic_register (const char *name, const char *external_definition)
+cb_build_generic_register (const char *name, const char *external_definition,
+	struct cb_field **result_field)
 {
 	cb_tree field_tree;
 	char	definition[COB_MINI_BUFF];
@@ -1199,6 +1201,9 @@ cb_build_generic_register (const char *name, const char *external_definition)
 	if (!external_definition) {
 		external_definition = cb_get_register_definition (name);
 		if (!external_definition) {
+			if (result_field) {
+				*result_field = NULL;
+			}
 			return 1;
 		}
 	}
@@ -1206,10 +1211,15 @@ cb_build_generic_register (const char *name, const char *external_definition)
 	strncpy (definition, external_definition, COB_MINI_MAX);
 	definition[COB_MINI_MAX] = 0;
 
-	/* check for GLOBAL, leave if we don't need to define it again (nested program)*/
+	/* check for GLOBAL, leave if we don't need to define it again (nested program) */
 	p = strstr (definition, "GLOBAL");
 	if (p) {
 		if (current_program && current_program->nested_level) {
+			if (result_field) {
+				/* TODO: test pending */
+				field_tree = cb_ref (cb_build_reference (name));
+				*result_field = CB_FIELD_PTR(field_tree);
+			}
 			return 0;
 		}
 		memset (p, ' ', 6);	/* remove from local copy */
@@ -1286,6 +1296,15 @@ cb_build_generic_register (const char *name, const char *external_definition)
 		COB_UNUSED (p);	/* FIXME: parse actual VALUE */
 		field->values = CB_LIST_INIT (cb_zero);
 	}
+
+	/* handle CONSTANT */
+	p = strstr (definition, "CONSTANT ");
+	if (p) {
+		memset (p, ' ', 8);
+		p += 8;
+		field->flag_internal_constant = 1;
+	}
+
 	field->flag_internal_register = 1;
 
 	/* TODO: check that the local definition is completely parsed -> spaces */
@@ -1299,6 +1318,10 @@ cb_build_generic_register (const char *name, const char *external_definition)
 		CB_FIELD_ADD (external_defined_fields_global, field);
 	} else {
 		CB_FIELD_ADD (external_defined_fields_ws, field);
+	}
+
+	if (result_field) {
+		*result_field = field;
 	}
 
 	return 0;
@@ -1412,7 +1435,7 @@ cb_build_single_register (const char *name, const char *definition)
 	if (!strcasecmp (name, "TALLY")
 	 || !strcasecmp (name, "LIN")
 	 || !strcasecmp (name, "COL")) {
-		cb_build_generic_register (name, definition);
+		cb_build_generic_register (name, definition, NULL);
 		return;
 	}
 
@@ -9475,10 +9498,9 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 	}
 	*move_zero = 0;
 	if (CB_REFERENCE_P (dst)) {
-		if (CB_ALPHABET_NAME_P(CB_REFERENCE(dst)->value)) {
-			goto invalid;
-		}
-		if (CB_FILE_P(CB_REFERENCE(dst)->value)) {
+		cb_tree dstr = CB_REFERENCE(dst)->value;
+		if (CB_ALPHABET_NAME_P(dstr)
+		 || CB_FILE_P (dstr)) {
 			goto invalid;
 		}
 	}
@@ -9500,6 +9522,9 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 	}
 
 	fdst = CB_FIELD_PTR (dst);
+	if (fdst->flag_internal_constant || fdst->flag_constant) {
+		goto invalid;
+	}
 	switch (CB_TREE_TAG (src)) {
 	case CB_TAG_CONST:
 		if (src == cb_space || src == cb_low || src == cb_high || src == cb_quote) {

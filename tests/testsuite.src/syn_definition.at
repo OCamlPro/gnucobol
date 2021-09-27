@@ -1193,6 +1193,76 @@ prog4.cob:5: error: 'RETURN-CODE' is not defined
 AT_CLEANUP
 
 
+AT_SETUP([OSVS register CURRENT-DATE and TIME-OF-DAY])
+AT_KEYWORDS([definition])
+
+# special "special register" - the value is dynamic like a function so needs to
+# be either handled as an "internal" function call with c/s reserved words or
+# new codegen branch for "set variable on use" which would allow register handling
+
+AT_XFAIL_IF(true)
+
+AT_DATA([prog1.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog1.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       77 display-out   pic x(10).
+       PROCEDURE        DIVISION.
+           MOVE CURRENT-DATE TO DISPLAY-OUT
+           MOVE TIME-OF-DAY  TO DISPLAY-OUT
+           STOP RUN.
+])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog2.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       77 current-date  pic x(08).
+       PROCEDURE        DIVISION.
+           MOVE 'unknown' TO CURRENT-DATE
+           STOP RUN.
+])
+
+AT_DATA([prog3.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog3.
+       PROCEDURE        DIVISION.
+           MOVE 'unknown' TO CURRENT-DATE
+           STOP RUN.
+])
+
+# this extension is NOT available with Enterprise COBOL (also not by default for MF)
+AT_CHECK([$COMPILE_ONLY -std=cobol85 prog1.cob], [1], [],
+[prog1.cob:8: error: 'CURRENT-DATE' is not defined
+prog1.cob:9: error: 'TIME-OF-DAY' is not defined
+])
+AT_CHECK([$COMPILE_ONLY -std=ibm-strict prog1.cob], [1], [],
+[prog1.cob:8: error: 'CURRENT-DATE' is not defined
+prog1.cob:9: error: 'TIME-OF-DAY' is not defined
+])
+AT_CHECK([$COMPILE_ONLY -std=mf prog1.cob], [1], [],
+[prog1.cob:8: error: 'CURRENT-DATE' is not defined
+prog1.cob:9: error: 'TIME-OF-DAY' is not defined
+])
+
+AT_CHECK([$COMPILE_ONLY prog1.cob prog2.cob], [1], [],
+[prog1.cob:8: error: 'CURRENT-DATE' is not defined
+prog1.cob:9: error: 'TIME-OF-DAY' is not defined
+])
+AT_CHECK([$COMPILE_ONLY -fregister=current-date,time-of-day \
+  prog1.cob prog2.cob prog3.cob], [1], [],
+[prog2.cob:6: warning: redefinition of 'CURRENT-DATE'
+prog2.cob:8: error: 'CURRENT-DATE' is ambiguous; needs qualification
+prog2.cob:8: note: 'CURRENT-DATE' is a special register
+prog2.cob:6: note: 'CURRENT-DATE' defined here
+prog3.cob:5: error: invalid MOVE statement
+])
+
+AT_CLEANUP
+
+
 AT_SETUP([Invalid ENVIRONMENT DIVISION order])
 AT_KEYWORDS([definition])
 

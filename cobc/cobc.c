@@ -262,6 +262,9 @@ struct cob_time		current_compile_time = { 0 };
 struct tm		current_compile_tm = { 0 };
 
 enum cb_format		cb_source_format = CB_FORMAT_FIXED;
+#if 0 /* ancient OSVS registers that need special runtime handling - low priority */
+enum cb_current_date	current_date = CB_DATE_MDY;
+#endif
 int			cb_text_column;
 int			cb_indicator_column;
 int			cb_id = 0;

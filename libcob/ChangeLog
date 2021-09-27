@@ -1,4 +1,9 @@
 
+2021-09-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (call_exit_handlers_and_terminate): extracted from
+	  (cob_stop_run, cob_tidy)
+
 2021-09-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fileio.c (cob_pre_open): remove trailing spaces from fcd->filenameptr

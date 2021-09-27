@@ -3111,6 +3111,10 @@ static struct register_struct	register_list[] = {
 	{"COL", "PIC S9(4) USAGE COMP", CB_FEATURE_MUST_BE_ENABLED},	/* rare, normally conflicting --> must be explicit enabled */
 	{"LIN", "PIC S9(4) USAGE COMP", CB_FEATURE_MUST_BE_ENABLED},	/* rare, only in combination with COL */
 	{"WHEN-COMPILED", "CONSTANT PICTURE X(16) USAGE DISPLAY", CB_FEATURE_ACTIVE},
+#if 0 /* ancient OSVS registers that need special runtime handling - low priority */
+	{"CURRENT-DATE", "CONSTANT PICTURE X(8) USAGE DISPLAY", CB_FEATURE_MUST_BE_ENABLED},	/* ancient IBM extension, conflicts with COBOL85 amendment */
+	{"TIME-OF-DAY", "CONSTANT PICTURE 9(6) USAGE DISPLAY", CB_FEATURE_MUST_BE_ENABLED},		/* ancient IBM extension */
+#endif
 	{"XML-CODE", "GLOBAL PICTURE S9(9) USAGE BINARY VALUE 0", CB_FEATURE_ACTIVE},
 	/* {"XML-EVENT", "USAGE DISPLAY PICTURE X(30) VALUE SPACE", CB_FEATURE_ACTIVE}, */
 	/* {"XML-INFORMATION", "PICTURE S9(9) USAGE BINARY VALUE 0", CB_FEATURE_ACTIVE}, */

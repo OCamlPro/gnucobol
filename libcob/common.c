@@ -2241,23 +2241,26 @@ cob_field_to_string (const cob_field *f, void *str, const size_t maxsize)
 	s[i] = 0;
 }
 
-void
-cob_stop_run (const int status)
+static void
+call_exit_handlers_and_terminate (void)
 {
-	struct exit_handlerlist	*h;
-
-	if (!cob_initialized) {
-		exit (EXIT_FAILURE);
-	}
-
 	if (exit_hdlrs != NULL) {
-		h = exit_hdlrs;
+		struct exit_handlerlist* h = exit_hdlrs;
 		while (h != NULL) {
 			h->proc ();
 			h = h->next;
 		}
 	}
 	cob_terminate_routines ();
+}
+
+void
+cob_stop_run (const int status)
+{
+	if (!cob_initialized) {
+		exit (EXIT_FAILURE);
+	}
+	call_exit_handlers_and_terminate ();
 	exit (status);
 }
 
@@ -4741,19 +4744,10 @@ cob_command_line (int flags, int *pargc, char ***pargv,
 int
 cob_tidy (void)
 {
-	struct exit_handlerlist	*h;
-
 	if (!cob_initialized) {
 		return 1;
 	}
-	if (exit_hdlrs != NULL) {
-		h = exit_hdlrs;
-		while (h != NULL) {
-			h->proc ();
-			h = h->next;
-		}
-	}
-	cob_terminate_routines ();
+	call_exit_handlers_and_terminate ();
 	return 0;
 }
 

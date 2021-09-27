@@ -972,6 +972,7 @@ ambiguous_error (cb_tree x)
 
 	ignore_error_sav = ignore_error;
 	ignore_error = 0;
+	/* FIXME: qualification may not be possible, would need the code below to execute first */
 	cb_error_x (x, _("'%s' is ambiguous; needs qualification"),
 		get_qualified_name (r));
 	ignore_error = ignore_error_sav;
@@ -1000,9 +1001,14 @@ ambiguous_error (cb_tree x)
 			break;
 		}
 		if (y->source_line == 0) {
-			continue;
+			if (cb_get_register_definition (w->name)) {
+				cb_note_x (COB_WARNOPT_NONE, x, _("'%s' is a special register"), w->name);
+			} else {
+				cb_note_x (COB_WARNOPT_NONE, x, _("'%s' internally defined"), errnamebuff);
+			}
+		} else {
+			cb_note_x (COB_WARNOPT_NONE, y, _("'%s' defined here"), errnamebuff);
 		}
-		cb_note_x (COB_WARNOPT_NONE, y, _("'%s' defined here"), errnamebuff);
 	}
 	return COBC_WARN_AS_ERROR;
 }
