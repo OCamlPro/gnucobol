@@ -3,6 +3,8 @@
 
 	* common.c (call_exit_handlers_and_terminate): extracted from
 	  (cob_stop_run, cob_tidy)
+	* reportio.c (cob_report_generate): backport of 2021-09-26 change
+	* common.c (cob_gettmpdir): fix to remove trailing slash
 
 2021-09-26  Ron Norman <rjn@inglenet.com>
 

@@ -18,8 +18,8 @@
    along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <config.h>
-#include <tarstamp.h>
+#include "config.h"
+#include "tarstamp.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -4602,7 +4602,7 @@ check_valid_dir (const char *dir)
 }
 
 static const char *
-check_valid_env_tmpdir (const char * envname)
+check_valid_env_tmpdir (const char *envname)
 {
 	const char *dir;
 
@@ -4650,7 +4650,7 @@ cob_gettmpdir (void)
 		} else {
 			size_t size = strlen (tmpdir) - 1;
 			if (tmpdir[size] == SLASH_CHAR) {
-				tmp = (char*)cob_fast_malloc (size);
+				tmp = (char*)cob_fast_malloc (size + 1);
 				memcpy (tmp, tmpdir, size);
 				tmp[size] = 0;
 				tmpdir = tmp;
