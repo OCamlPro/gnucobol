@@ -10,6 +10,12 @@
 
 	* reportio.c: Fixed to call back to DECLARATIVES for DETAIL line
 
+2021-09-21  Christian Lademann <christian@lademann.online>
+
+	* termio.c, screenio.c: recognize 3-byte crt_status item and fill it
+	 according to X/Open standard (CRT STATUS byte 3 will always be NULL).
+	 The format of CRT STATUS depends on type and size of the defined item.
+
 2021-09-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fileio.c (cob_pre_open): remove trailing spaces from fcd->filenameptr
