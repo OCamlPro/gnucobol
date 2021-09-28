@@ -1,4 +1,9 @@
 
+2021-09-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* lax.conf-inc: set synchronized-clause to be only ignored if the
+	  dialect including this has it set to error/unconformable
+
 2021-09-17  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobol2002.words, cobol2014.words: fixed missing aliases THROUGH=THRU,
