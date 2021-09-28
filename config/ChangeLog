@@ -1,4 +1,9 @@
 
+2021-09-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* lax.conf-inc: set synchronized-clause to be only ignored if the
+	  dialect including this has it set to error/unconformable
+
 2021-03-05  Ron Norman <rjn@inglenet.com>
 
 	* fileio: added COB_FILE_ISNODAT to disable ISAM datafile.dat
@@ -591,7 +596,7 @@
 	* default.inc, Makefile.am: New files.
 
 
-Copyright 2003,2005-2007-2010,2014-2020 Free Software Foundation, Inc.
+Copyright 2003,2005-2007-2010,2014-2021 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.
