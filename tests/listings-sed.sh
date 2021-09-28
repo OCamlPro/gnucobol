@@ -2,7 +2,7 @@
 #
 # listings-sed.sh gnucobol/tests
 #
-# Copyright (C) 2016-2017, 2020 Free Software Foundation, Inc.
+# Copyright (C) 2016-2017, 2020-2021 Free Software Foundation, Inc.
 # Written by Simon Sobisch, David Pitts
 #
 # This file is part of GnuCOBOL.
@@ -26,9 +26,13 @@
 #       Mayor (2) '.' Minor (2) '.' Patchlevel (8 - as some people place a date here)
 # Note: We replace the date two times, as not all systems have %e modifier in C
 #       and use %E in this case ("Mon Feb 04" instead of "Mon Feb  4").
+# Note: after all parts are replaced (the date may need a local adjustment depending
+#       on configure specified LISTING_TIMESTAMP_FORMAT) we replace those
+#       with the ANSI format which is expected in the listing test references
 
 date1=`date +"%a %b %e"`
 date2=`date +"%a %b %d"`
+year=`date +"%Y"`
 
 if test "x$SED" = "x" ; then SED=sed ; fi
 
@@ -36,17 +40,21 @@ if test "$3" = "once"; then
 	$SED \
 	-e 's/GnuCOBOL [0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[-devalphabetarc]*[0-9]*\.[0-9][0-9]*  */GnuCOBOL V.R.P               /g' \
 	-e 's/GnuCOBOL [0-9][0-9]*\.[0-9][0-9]*[-devalphabetarc]*[0-9]*\.[0-9][0-9]*  */GnuCOBOL V.R.P               /g' \
-	-e 's/[0-2][0-9]:[0-6][0-9]:[0-9][0-9] [0-9][0-9][0-9][0-9]$/HH:MM:SS YYYY/g' \
 	-e 's/'"$date1"'/DDD MMM dd/g' \
 	-e 's/'"$date2"'/DDD MMM dd/g' \
+	-e 's/'"$year"'/YYYY/g' \
+	-e 's/[0-2][0-9]:[0-6][0-9]:[0-9][0-9]/HH:MM:SS/g' \
+	-e 's/DDD MMM dd YYYY HH:MM:SS/DDD MMM dd HH:MM:SS YYYY/g' \
 	<"$1" >"$2"
 else
 	$SED \
 	-e 's/GnuCOBOL [0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[-devalphabetarc]*[0-9]*\.[0-9][0-9]*  */GnuCOBOL V.R.P          /g' \
 	-e 's/GnuCOBOL [0-9][0-9]*\.[0-9][0-9]*[-devalphabetarc]*[0-9]*\.[0-9][0-9]*  */GnuCOBOL V.R.P          /g' \
-	-e 's/[0-2][0-9]:[0-6][0-9]:[0-9][0-9] [0-9][0-9][0-9][0-9]/HH:MM:SS YYYY/g' \
 	-e 's/'"$date1"'/DDD MMM dd/g' \
 	-e 's/'"$date2"'/DDD MMM dd/g' \
+	-e 's/'"$year"'/YYYY/g' \
+	-e 's/[0-2][0-9]:[0-6][0-9]:[0-9][0-9]/HH:MM:SS/g' \
+	-e 's/DDD MMM dd YYYY HH:MM:SS/DDD MMM dd HH:MM:SS YYYY/g' \
 	<"$1" >"$2"
 fi
 
