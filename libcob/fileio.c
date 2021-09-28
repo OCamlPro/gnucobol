@@ -9143,7 +9143,24 @@ org_handling:
 		update_file_to_fcd (f, fcd, fnstatus);
 		return sts;
 
+	case OP_FLUSH:
+		cob_sync (f);
+		return sts;
+
+	case OP_DELETE_FILE:
+		cob_delete_file (f, fs);
+		memcpy (fcd->fileStatus, fnstatus, 2);
+		return sts;
+
 	case OP_GETINFO:			/* Nothing needed here */
+		return sts;
+
+	case OP_COMMIT:
+		cob_commit ();
+		return sts;
+
+	case OP_ROLLBACK:
+		cob_rollback ();
 		return sts;
 	}
 
@@ -9317,23 +9334,6 @@ org_handling:
 		update_file_to_fcd (f, fcd, fnstatus);
 		break;
 
-	case OP_COMMIT:
-		cob_commit();
-		break;
-
-	case OP_ROLLBACK:
-		cob_rollback();
-		break;
-
-	case OP_DELETE_FILE:
-		cob_delete_file (f, fs);
-		memcpy(fcd->fileStatus, fnstatus, 2);
-		break;
-
-	case OP_FLUSH:
-		cob_sync (f);
-		break;
-
 	case OP_UNLOCK_REC:
 		cob_unlock_file (f, fs);
 		update_file_to_fcd (f, fcd, fnstatus);
@@ -9341,7 +9341,16 @@ org_handling:
 
 	/* Similar for other possible 'opcode' values */
 	default:
-		/* Some sort of error message */
+		fcd->fileStatus[0] = '9';
+#if 0	/* MF seems to return 142 file not open, possibly only until opened;
+		   we use 100->invalid file operation */
+		fcd->fileStatus[1] = 142;
+#else
+		fcd->fileStatus[1] = 100;
+#endif
+		cob_runtime_warning (_("ERROR: EXTFH called with unknown Function %d"),
+				opcd & 0xFF);
+		/* MF does not set the return-code in this case - we possible want to do that */
 		break;
 	}
 	return sts;

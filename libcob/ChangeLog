@@ -1,4 +1,10 @@
 
+2021-09-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (EXTFH3): also handle OP_FLUSH, OP_DELETE_FILE, OP_COMMIT and
+	  OP_ROLLBACK before checking record-pointer;
+	  set file status 9/100 for unknown op-codes
+
 2021-09-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_gettmpdir): do the lookup and validation only once,
