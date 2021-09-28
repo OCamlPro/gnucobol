@@ -30,9 +30,7 @@ if test "$GNUCOBOL_ENV_SETUP" != "1" -a "$GNUCOBOL_TEST_LOCAL" != "1"; then
 	COBCRUN_DIRECT="" # used for running created executables through tools
 	# prepend PATH with the actual binaries to let the testsuite find them for
 	# general check and version output, otherwise not needed
-	PATH="${abs_top_builddir}/libcob/.libs:${PATH}"
 	PATH="${abs_top_builddir}/cobc:${abs_top_builddir}/bin:${PATH}"
-	export PATH
 	LOCAL_ENV="${abs_top_builddir}/pre-inst-env"
 else
 	if test "x${COBC}" = "x"; then
@@ -101,6 +99,12 @@ _return_path () {
 # Fix for testcases where cobc translates path to win32 equivalents
 if test "x$MSYSTEM" != "x"; then
 	PATHSEP=";"
+	# finding the cobc executable is done from MSYS, but if this calls cobcrun
+	# it just uses the PATH variable which not necessarily has the correct
+	# order - especially if the current system has cobcrun installed - so
+	# let that cobc call COBCRUN with a full path (converted by MSYS into
+	# the Win32 variant when starting the cobc process)
+	COBCRUN=${ABS_COBCRUN}
 else
 	PATHSEP='@PATH_SEPARATOR@';
 fi
@@ -118,6 +122,7 @@ if test "$GNUCOBOL_ENV_SETUP" != "1" -a "$GNUCOBOL_TEST_LOCAL" != "1"; then
 	COB_CONFIG_DIR="${abs_top_srcdir}/config"
 	COB_COPY_DIR="${abs_top_srcdir}/copy"
 	LD_LIBRARY_PATH="${abs_top_builddir}/libcob/.libs:$LD_LIBRARY_PATH"
+	PATH="${abs_top_builddir}/libcob/.libs:$PATH"
 	DYLD_LIBRARY_PATH="${abs_top_builddir}/libcob/.libs:$DYLD_LIBRARY_PATH"
 	SHLIB_PATH="${abs_top_builddir}/libcob/.libs:$SHLIB_PATH"
 	LIBPATH="${abs_top_builddir}/libcob/.libs:$LIBPATH"
@@ -125,7 +130,7 @@ if test "$GNUCOBOL_ENV_SETUP" != "1" -a "$GNUCOBOL_TEST_LOCAL" != "1"; then
 
 	export COB_CFLAGS COB_LIBS
 	export COB_CONFIG_DIR COB_COPY_DIR
-	export LD_LIBRARY_PATH DYLD_LIBRARY_PATH SHLIB_PATH LIBPATH
+	export LD_LIBRARY_PATH PATH DYLD_LIBRARY_PATH SHLIB_PATH LIBPATH
 	export COB_LIBRARY_PATH
 fi
 COB_UNIX_LF=1

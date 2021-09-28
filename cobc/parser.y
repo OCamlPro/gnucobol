@@ -8564,7 +8564,7 @@ report_varying_clause:
 		CB_FIELD (x)->usage = CB_USAGE_INDEX;
 		CB_FIELD (x)->index_type = CB_STATIC_INT_INDEX;
 		if (current_field->report_vary_from) {
-		CB_FIELD (x)->values = CB_LIST_INIT (current_field->report_vary_from);
+			CB_FIELD (x)->values = CB_LIST_INIT (current_field->report_vary_from);
 		} else {
 			CB_FIELD (x)->values = CB_LIST_INIT (cb_zero);
 		}

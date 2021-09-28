@@ -1,4 +1,9 @@
 
+2021-09-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_gettmpdir): do the lookup and validation only once,
+	  also ensure for TMPDIR that it has no trailing slash
+
 2021-09-27  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (call_exit_handlers_and_terminate): extracted from
@@ -13,8 +18,8 @@
 2021-09-21  Christian Lademann <christian@lademann.online>
 
 	* termio.c, screenio.c: recognize 3-byte crt_status item and fill it
-	 according to X/Open standard (CRT STATUS byte 3 will always be NULL).
-	 The format of CRT STATUS depends on type and size of the defined item.
+	  according to X/Open standard (CRT STATUS byte 3 will always be NULL).
+	  The format of CRT STATUS depends on type and size of the defined item.
 
 2021-09-21  Simon Sobisch <simonsobisch@gnu.org>
 

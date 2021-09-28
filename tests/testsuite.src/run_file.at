@@ -4642,9 +4642,13 @@ AT_CHECK([$COBCRUN_DIRECT ./prog ./prog.cob], [0],
 AT_CHECK([DD_dot="." dd_dot="A" dot="B"  $COBCRUN_DIRECT ./prog 'dot/prog.cob'], [0],
 [RUN WITH dot/prog.cob
 ], [])
-AT_CHECK([DD_dot="" dd_dot="." dot="A"  $COBCRUN_DIRECT ./prog 'dot/prog.cob'], [0],
-[RUN WITH dot/prog.cob
+# MinGW and other Win32 builds would fail this - because "getenv is not case sensitive"
+# note: does not apply to cygwin; "AAA" wins over "aaa"
+if test "$PATHSEP" != ";"; then
+   AT_CHECK([DD_dot="" dd_dot="." dot="A"  $COBCRUN_DIRECT ./prog 'dot/prog.cob'], [0],
+   [RUN WITH dot/prog.cob
 ], [])
+fi
 # MF would say (ignore for now as this conflicts with ACUCOBOL) don't resolve by $
 # as it does not start with $:
 #AT_CHECK([DD_dot="" dd_dot="" dot="." $COBCRUN_DIRECT ./prog 'dot/prog.cob'], [0],
@@ -4662,9 +4666,13 @@ error opening file ...
 AT_CHECK([DD_dot="." dd_dot="" dot=""  $COBCRUN_DIRECT ./prog '$dot/prog.cob'], [0],
 [RUN WITH $dot/prog.cob
 ], [])
-AT_CHECK([DD_dot="" dd_dot="." dot=""  $COBCRUN_DIRECT ./prog '$dot/prog.cob'], [0],
-[RUN WITH $dot/prog.cob
+# MinGW and other Win32 builds would fail this - because "getenv is not case sensitive"
+# note: does not apply to cygwin; "AAA" wins over "aaa"
+if test "$PATHSEP" != ";"; then
+   AT_CHECK([DD_dot="" dd_dot="." dot=""  $COBCRUN_DIRECT ./prog '$dot/prog.cob'], [0],
+   [RUN WITH $dot/prog.cob
 ], [])
+fi
 AT_CHECK([DD_dot="" dd_dot="" dot="."  $COBCRUN_DIRECT ./prog '$dot/prog.cob'], [0],
 [RUN WITH $dot/prog.cob
 ], [])
@@ -4673,7 +4681,7 @@ AT_CHECK([DD_dot="" dd_dot="" dot="."  $COBCRUN_DIRECT ./prog '$dot/prog.cob'], 
 AT_CHECK([DD_dot="" dd_dot="" dot=""  $COBCRUN_DIRECT ./prog '$dot/prog.cob'], [0],
 [RUN WITH $dot/prog.cob
 ], [])
-# would _possibly_ fail with MF (docs are wrong here in any case...)
+# would _possibly_ fail with MF (their docs do not match their behaviour in any case...)
 # but this is by GnuCOBOL design here:
 AT_CHECK([DD_dot="" dd_dot="" dot=""  $COBCRUN_DIRECT ./prog '$dot/$dotter/prog.cob'], [0],
 [RUN WITH $dot/$dotter/prog.cob
@@ -10513,7 +10521,7 @@ AT_DATA([prog.cob], [
            MOVE READ-RANDOM-LOCK     TO COBOL-OP.
            SET FCD-RECORD-ADDRESS    TO ADDRESS OF RECORD-AREA.
            PERFORM A-200-CALL-EXTFH.
-		   MOVE FCD-RELATIVE-KEY TO I.
+           MOVE FCD-RELATIVE-KEY TO I.
        A-400-REWRITE-RECORD.
            MOVE COBOL-TYPE     TO ACTION-TYPE.
            MOVE REWRITE-RECORD TO COBOL-OP.
