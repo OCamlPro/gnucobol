@@ -1,4 +1,12 @@
 
+2021-09-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (cobc_print_info): skip initial "." when printing COB_EXE_EXT
+	* cobc.c (process_command_line): postpone version output for --verbose
+	* cobc.c (set_listing_date): use formatted instead of ANSI timestamp,
+	  allow format to be specified at cobc compile-time via with define
+	  LISTING_TIMESTAMP_FORMAT
+
 2021-09-27  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (cb_build_generic_register): handle CONSTANT

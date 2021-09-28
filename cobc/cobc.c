@@ -2219,7 +2219,6 @@ cobc_clean_up (const int status)
 static void
 set_listing_date (void)
 {
-	char	*time_buff;
 	if (!current_compile_time.year) {
 		current_compile_time = cob_get_current_date_and_time();
 	}
@@ -2238,15 +2237,14 @@ set_listing_date (void)
 	}
 	current_compile_tm.tm_yday = current_compile_time.day_of_year;
 	current_compile_tm.tm_isdst = current_compile_time.is_daylight_saving_time;
-	time_buff = asctime (&current_compile_tm);
-	/* LCOV_EXCL_START */
-	if (!time_buff) {
-		strncpy (cb_listing_date, "DATE BUG, PLEASE REPORT", CB_LISTING_DATE_MAX);
-		return;
-	}
-	/* LCOV_EXCL_STOP */
-	*strchr (time_buff, '\n') = '\0';
-	strncpy (cb_listing_date, time_buff, CB_LISTING_DATE_MAX);
+
+#ifdef LISTING_TIMESTAMP_ANSI
+	#define LISTING_TIMESTAMP_FORMAT "%a %b %d %H:%M:%S %Y" /* same format as asctime */
+#elif !defined (LISTING_TIMESTAMP_FORMAT)
+#define LISTING_TIMESTAMP_FORMAT "%a %b %d %Y %H:%M:%S"
+#endif
+	strftime (cb_listing_date, (size_t)CB_LISTING_DATE_MAX,
+		LISTING_TIMESTAMP_FORMAT, &current_compile_tm);
 }
 
 
@@ -2535,7 +2533,11 @@ cobc_print_info (void)
 	}
 	cobc_var_print ("COB_OBJECT_EXT",	COB_OBJECT_EXT, 0);
 	cobc_var_print ("COB_MODULE_EXT",	COB_MODULE_EXT, 0);
-	cobc_var_print ("COB_EXE_EXT",		COB_EXE_EXT, 0);
+	if (!verbose_output && COB_EXE_EXT[0] == '.') {
+		cobc_var_print ("COB_EXE_EXT", COB_EXE_EXT + 1, 0);
+	} else {
+		cobc_var_print ("COB_EXE_EXT", COB_EXE_EXT, 0);
+	}
 
 #ifdef COB_64_BIT_POINTER
 	cobc_var_print ("64bit-mode",	_("yes"), 0);
@@ -2893,10 +2895,17 @@ process_command_line (const int argc, char **argv)
 
 		case '?':
 			/* Unknown option or ambiguous */
+			if (verbose_output >= 1) {
+				cobc_print_shortversion ();
+			}
 			cobc_early_exit (EXIT_FAILURE);
 
 		case 'h':
 			/* --help */
+			if (verbose_output >= 1) {
+				cobc_print_shortversion ();
+				puts ("\n");
+			}
 			cobc_print_usage (argv[0]);
 			if (verbose_output) {
 				puts ("\n");
@@ -3025,14 +3034,8 @@ process_command_line (const int argc, char **argv)
 					cobc_err_exit (COBC_INV_PAR, "-verbose");
 				}
 				verbose_output = n;
-				if (verbose_output >= 1) {
-					cobc_print_shortversion ();
-				}
 			} else {
 				verbose_output++;
-				if (verbose_output == 1) {
-					cobc_print_shortversion ();
-				}
 			}
 			break;
 
@@ -3115,6 +3118,10 @@ process_command_line (const int argc, char **argv)
 			/* as we postpone most options simply skip everything other here */
 			break;
 		}
+	}
+
+	if (verbose_output >= 1) {
+		cobc_print_shortversion ();
 	}
 
 	/* Load default configuration file if necessary */

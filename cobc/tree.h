@@ -147,40 +147,40 @@ enum cb_tag {
 /* Call convention bits */
 /* Bit number	Meaning			Value */
 /*	0	currently ignored by GC			*/
-/*		Parameter order		0 - Right to left		*/
-/*					1 - Left to right		*/
+/*		Parameter order     0 - Right to left		*/
+/*		                    1 - Left to right		*/
 /*	1	currently ignored by GC			*/
-/*		Stack manipulation	0 - Caller removes params	*/
-/*					1 - Callee removes params	*/
-/*	2	RETURN-CODE update	0 - Updated			*/
-/*					1 - Not updated			*/
+/*		Stack manipulation  0 - Caller removes params	*/
+/*		                    1 - Callee removes params	*/
+/*	2	RETURN-CODE update  0 - Updated			*/
+/*		                    1 - Not updated			*/
 /*	3	Linking behaviour	0 - Normal linking		*/
-/*					1 - Static CALL linking		*/
+/*		                    1 - Static CALL linking		*/
 /*	4	currently ignored by GC + MF		*/
-/*		OS/2 Optlink		0 - ??				*/
-/*					1 - ??				*/
+/*		OS/2 Optlink        0 - ??				*/
+/*		                    1 - ??				*/
 /*	5	currently ignored by GC + MF		*/
-/*		Thunked to 16 bit	0 - No thunk			*/
-/*					1 - Thunk			*/
+/*		Thunked to 16 bit   0 - No thunk			*/
+/*		                    1 - Thunk			*/
 /*	6	GC: works both with static/dynamic calls */
 /*		MF: this has his has no effect on dynamic calls	*/
-/*		STDCALL convention	0 - CDECL			*/
-/*					1 - STDCALL			*/
+/*		STDCALL convention  0 - CDECL			*/
+/*		                    1 - STDCALL			*/
 /*	7	currently ignored by GC + MF		*/
 /*	8	currently ignored by GC			*/
-/*		parameter-count for individual entry points	0 - checked	*/
-/*					1 - not checked			*/
+/*		parameter-count for individual entry points 0 - checked	*/
+/*		                                            1 - not checked	*/
 /*	9	currently ignored by GC			*/
-/*		case of call + program names	0 - disregarded (depending on compile time flags)		*/
-/*					1 - regarded			*/
+/*		case of call + program names	0 - disregarded (depending on compile time flags) */
+/*		                                1 - regarded			*/
 /*	10	currently ignored by GC			*/
-/*		RETURN-CODE storage	0 - passed as return value		*/
-/*					1 - passed in the first parameter			*/
+/*		RETURN-CODE storage 0 - passed as return value		*/
+/*		                    1 - passed in the first parameter			*/
 /*	11-14	currently ignored by GC+MF			*/
-/*	15	GC: enabling COBOL parameter handling for external callers	*/
+/*	15	GC: enabling COBOL parameter handling for external callers, likely dropped with GC4	*/
 /*		currently ignored by MF			*/
 /*					0 - external callers don't set cob_call_params	*/
-/*					1 - external callers set cob_call_params	- standard (!)*/
+/*					1 - external callers set cob_call_params	- standard (!) */
 
 #define CB_CONV_L_TO_R		(1 << 0)
 #define CB_CONV_CALLEE_STACK	(1 << 1)

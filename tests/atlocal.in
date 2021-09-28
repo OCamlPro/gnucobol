@@ -147,7 +147,7 @@ for cobenv in $(${LOCAL_ENV} ${ABS_COBCRUN} --runtime-conf \
 done
 
 # prevent multiple calls by caching the output
-${LOCAL_ENV} ${ABS_COBC} --info > info.out
+${LOCAL_ENV} ${ABS_COBC} --verbose --info > info.out
 
 # ... and also unset for the compiler
 if test "$GNUCOBOL_TEST_LOCAL" != "1"; then
