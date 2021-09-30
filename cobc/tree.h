@@ -926,6 +926,8 @@ struct cb_field {
 	unsigned int flag_constant	: 1;	/* Is 01 AS CONSTANT */
 	unsigned int flag_internal_constant	: 1;	/* Is an internally generated CONSTANT */
 
+	unsigned int flag_sync_left : 1;	/* SYNCHRONIZED LEFT */
+	unsigned int flag_sync_right : 1;	/* SYNCHRONIZED RIGHT */
 	unsigned int flag_internal_register	: 1;	/* Is an internally generated register */
 	unsigned int flag_is_typedef : 1;	/* TYPEDEF  */
 };

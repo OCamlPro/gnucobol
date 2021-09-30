@@ -1388,6 +1388,95 @@ validate_pic (struct cb_field *f)
 		return 0;
 	}
 
+#if 0 /* CHECKME - come back later to this (possible 4.x only feature) */
+	/* Check for Group attributes to be carried to elementary field */
+	if (!f->flag_validated
+	 && cb_nonnumeric_with_numeric_group_usage == CB_OK
+	 && f->parent
+	 && !f->children) {
+		struct cb_field *p;
+		if (f->flag_usage_defined
+		 && is_numeric_field (f)) {
+			for (p = f->parent; p; p = p->parent) {
+				if (p->usage != CB_USAGE_DISPLAY
+				 && f->usage != p->usage) {
+					cb_error_x (x, _("%s USAGE %s incompatible with %s USAGE %s"),
+							p->flag_filler?"FILLER":p->name, cb_get_usage_string (p->usage),
+							f->flag_filler?"FILLER":f->name, cb_get_usage_string (f->usage));
+					break;
+				}
+			}
+		}
+		if (!f->flag_usage_defined
+		 && is_numeric_field (f)) {
+			for (p = f->parent; p; p = p->parent) {
+				if (p->usage != CB_USAGE_DISPLAY) {
+					f->usage = p->usage;
+					break;
+				}
+			}
+		}
+		/* TODO: handle this "per dialect", some disallow this (per ANSI85) or ignore it */
+		if (!f->flag_synchronized
+		 && f->parent
+		 && (f->usage == CB_USAGE_BINARY
+		  || f->usage == CB_USAGE_FLOAT
+		  || f->usage == CB_USAGE_DOUBLE
+		  || f->usage == CB_USAGE_UNSIGNED_SHORT
+		  || f->usage == CB_USAGE_SIGNED_SHORT
+		  || f->usage == CB_USAGE_UNSIGNED_INT
+		  || f->usage == CB_USAGE_SIGNED_INT
+		  || f->usage == CB_USAGE_UNSIGNED_LONG
+		  || f->usage == CB_USAGE_SIGNED_LONG
+		  || f->usage == CB_USAGE_COMP_5
+		  || f->usage == CB_USAGE_COMP_6
+		  || f->usage == CB_USAGE_FP_DEC64
+		  || f->usage == CB_USAGE_FP_DEC128
+		  || f->usage == CB_USAGE_FP_BIN32
+		  || f->usage == CB_USAGE_FP_BIN64
+		  || f->usage == CB_USAGE_FP_BIN128
+		  || f->usage == CB_USAGE_LONG_DOUBLE)) {
+			struct cb_field *p;
+			for (p = f->parent; p; p = p->parent) {
+				if (p->flag_synchronized) {
+					f->flag_synchronized = 1;
+					break;
+				}
+			}
+		}
+		/* ignore sync for binary items */
+		if (f->flag_synchronized
+		 && cb_binary_sync_clause == CB_IGNORE) {
+			switch (f->usage) {
+			case CB_USAGE_SIGNED_SHORT:
+			case CB_USAGE_UNSIGNED_SHORT:
+			case CB_USAGE_SIGNED_INT:
+			case CB_USAGE_UNSIGNED_INT:
+			case CB_USAGE_SIGNED_LONG:
+			case CB_USAGE_UNSIGNED_LONG:
+				f->flag_synchronized = 0;
+				break;
+			default:
+				break;
+			}
+		}
+		if (f->pic
+		 && f->pic->category == CB_CATEGORY_NUMERIC
+		 && f->flag_sign_separate == 0
+		 && f->flag_sign_leading == 0) {
+			for (p = f->parent; p; p = p->parent) {
+				if (p->flag_sign_separate
+				 || p->flag_sign_leading) {
+					f->flag_sign_separate = p->flag_sign_separate;
+					f->flag_sign_leading  = p->flag_sign_leading;
+					break;
+				}
+			}
+		}
+	}
+	f->flag_validated = 1;
+#endif
+
 	/* if picture is not needed it is an error to specify it
 	   note: we may have set the picture internal */
 	if (f->pic != NULL && !f->pic->flag_is_calculated && !need_picture) {
@@ -2409,7 +2498,7 @@ set_report_field_offset (struct cb_field *f)
 			for (c = pp->children; c; c = c->sister) {	/* Find previous field */
 				if (c->sister == f) {
 					if (c->occurs_max > 1) {
-					 	f->offset = c->offset + c->size * c->occurs_max + f->report_column;
+						f->offset = c->offset + c->size * c->occurs_max + f->report_column;
 					}
 					else {
 						f->offset = c->offset + c->size + f->report_column;
@@ -2482,6 +2571,7 @@ compute_size (struct cb_field *f)
 
 		/* Groups */
 		if (f->flag_synchronized) {
+			/* TODO: handle this "per dialect", some disallow this (per ANSI85) or ignore it */
 			cb_warning_x (cb_warn_additional, CB_TREE (f),
 				_("ignoring SYNCHRONIZED for group item '%s'"),
 				cb_name (CB_TREE (f)));

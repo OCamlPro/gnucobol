@@ -71,6 +71,10 @@
 
 	* general: added option numeric-pointer *EXPERIMENTAL*
 
+2020-01-12 Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: bug #513 (partial) added sync-left-right
+
 2020-01-04  Edward Hart <edward.dan.hart@gmail.com>
 
 	* general: added options assign-variable, assign-using-variable,

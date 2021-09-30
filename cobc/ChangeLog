@@ -1,4 +1,8 @@
 
+2021-09-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y, field.c: partial merge of 2020-01-12 related to bug #513
+
 2021-09-29  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c (output_file_initialization): don't generate attribute
@@ -961,6 +965,16 @@
 2020-02-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c, cobc.h: added check for COB_UNIX_LF again
+
+2020-01-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y, config.def: bug #513 (partial) added dialect option
+	  cb_sync_left_right and if it isn't ignored warn again about it being
+	  not implemented
+	* parser.y, tree.h: added flag_sync_left, flag_sync_right
+	  (currently not taken care of in codegen!)
+	* parser.y, field.c, tree.h: removed flag_ignore_sync, instead handle
+	  cb_binary_sync_clause == CB_IGNORE in (validate_pic)
 
 2020-01-11  Simon Sobisch <simonsobisch@gnu.org>
 

@@ -855,10 +855,10 @@ AS_IF([test "$USE_JSON" = "cjson" -o "$USE_JSON" = "local" -o "$USE_JSON" = "che
 	   LIBS="$LIBS $COMMON_LIBS"
 	   AC_LINK_IFELSE([
 		AC_LANG_PROGRAM([[#include "cJSON.c"]],
-	                   [[#if (CJSON_VERSION_MAJOR * 100 + CJSON_VERSION_MINOR) < 103
-                        	#error Needs at least cJSON 1.3.0
-					     #endif
-						 cJSON_CreateNull ();]])],
+		               [[#if (CJSON_VERSION_MAJOR * 100 + CJSON_VERSION_MINOR) < 103
+		                    #error Needs at least cJSON 1.3.0
+		                 #endif
+		                 cJSON_CreateNull ();]])],
 	   [AC_MSG_RESULT([yes])
 	    AC_DEFINE([WITH_CJSON], [1])
 	    with_cjson_local="yes (in ./libcob)"],
@@ -873,10 +873,10 @@ AS_IF([test "$USE_JSON" = "cjson" -o "$USE_JSON" = "local" -o "$USE_JSON" = "che
 	     LIBS="$LIBS $COMMON_LIBS"
 	     AC_LINK_IFELSE([
 		  AC_LANG_PROGRAM([[#include "cJSON.c"]],
-	                     [[#if (CJSON_VERSION_MAJOR * 100 + CJSON_VERSION_MINOR) < 103
-                         	  #error Needs at least cJSON 1.3.0
-					       #endif
-						   cJSON_CreateNull ();]])],
+		                 [[#if (CJSON_VERSION_MAJOR * 100 + CJSON_VERSION_MINOR) < 103
+		                       #error Needs at least cJSON 1.3.0
+		                   #endif
+		                   cJSON_CreateNull ();]])],
 	     [AC_MSG_RESULT([yes])
 	      AC_DEFINE([WITH_CJSON], [1])
 	      with_cjson_local="yes (in \"$srcdir/libcob\")"],

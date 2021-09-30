@@ -461,6 +461,7 @@ test.conf: missing definitions:
 	no definition of 'type-to-clause'
 	no definition of 'usage-type'
 	no definition of 'synchronized-clause'
+	no definition of 'sync-left-right'
 	no definition of 'special-names-clause'
 	no definition of 'goto-statement-without-name'
 	no definition of 'stop-literal-statement'

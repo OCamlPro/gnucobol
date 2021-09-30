@@ -210,6 +210,9 @@ CB_CONFIG_SUPPORT (cb_usage_type_name, "usage-type",
 CB_CONFIG_SUPPORT (cb_synchronized_clause, "synchronized-clause",
 	_("SYNCHRONIZED clause"))
 
+CB_CONFIG_SUPPORT (cb_sync_left_right, "sync-left-right",
+	_("LEFT/RIGHT phrases in SYNCHRONIZED clause"))
+
 CB_CONFIG_SUPPORT (cb_special_names_clause, "special-names-clause",
 	_("SPECIAL-NAMES clause"))
 

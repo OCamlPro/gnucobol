@@ -7822,16 +7822,23 @@ synchronized_clause:
 	if (cb_verify (cb_synchronized_clause, _("SYNCHRONIZED clause"))) {
 		current_field->flag_synchronized = 1;
 	}
+	if (with_attrs && cb_verify (cb_sync_left_right, _("LEFT/RIGHT phrases in SYNCHRONIZED clause"))) {
+		if (current_field->flag_synchronized) {
+			if (with_attrs == 1) {
+				current_field->flag_sync_left = 1;
+			} else {
+				current_field->flag_sync_right = 1;
+			}
+		}
+		CB_PENDING ("SYNCHRONIZED LEFT/RIGHT");
+	}
   }
 ;
 
 _left_or_right:
-  /* empty -> implemented as LEFT */
-| LEFT
-| RIGHT
-  {
-	CB_PENDING ("SYNCHRONIZED RIGHT");
-  }
+  /* empty */	{ with_attrs = 0; }
+| LEFT		{ with_attrs = 1; }
+| RIGHT		{ with_attrs = -1; }
 ;
 
 
