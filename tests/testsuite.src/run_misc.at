@@ -9351,9 +9351,10 @@ X is 000005441
 [libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 
- Last statement of sub1 was at line 4 of cpyabrt
- Last statement of sub2 was at line 48 of sub2.cob
- Last statement of prog was at line 118 of prog.cob
+ Last statement of "sub1" was at line 4 of cpyabrt
+ Last statement of "sub2" was at line 48 of sub2.cob
+ Last statement of "prog" was at line 118 of prog.cob
+ Started by ./prog
 ])
 
 AT_CHECK([$COMPILE -fdump=ALL -fno-dump prog.cob sub2.cob], [0], [], [])
@@ -9367,15 +9368,16 @@ X is 000005441
 [libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 
- Last statement of sub1 was at line 4 of cpyabrt
- Last statement of sub2 was at line 48 of sub2.cob
- Last statement of prog was at line 118 of prog.cob
+ Last statement of "sub1" was at line 4 of cpyabrt
+ Last statement of "sub2" was at line 48 of sub2.cob
+ Last statement of "prog" was at line 118 of prog.cob
+ Started by ./prog
 ])
 
-AT_CHECK([$COMPILE -fdump=ALL prog.cob sub2.cob], [0], [], [])
+AT_CHECK([$COMPILE_MODULE -fdump=ALL prog.cob sub2.cob], [0], [], [])
 
 AT_CHECK([COB_DUMP_FILE=tstdump.dump \
-$COBCRUN_DIRECT ./prog], [1],
+$COBCRUN prog], [1],
 [X is 000000001
 X is 000005441
 ],
@@ -9385,12 +9387,22 @@ libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 dump written to tstdump.dump
 ])
 
+AT_CHECK([COB_DUMP_FILE=NONE \
+$COBCRUN prog], [1],
+[X is 000000001
+X is 000005441
+],
+[libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
+libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
+])
+
 AT_DATA([reference_tmpl], [
 Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 
- Last statement of sub1 was at line 4 of cpyabrt
- Last statement of sub2 was at line 48 of sub2.cob
- Last statement of prog was at line 118 of prog.cob
+ Last statement of "sub1" was at line 4 of cpyabrt
+ Last statement of "sub2" was at line 48 of sub2.cob
+ Last statement of "prog" was at line 118 of prog.cob
+ Started by prog
 
 Dump Program-Id sub1 from prog.cob compiled MMM DD YYYY HH:MM:SS
 
@@ -9593,16 +9605,17 @@ AT_CHECK([diff reference tstdump.sed], [0], [], [])
 
 # using both
 AT_CHECK([COB_STACKTRACE=1 COB_DUMP_FILE=tstdump.dump \
-$COBCRUN_DIRECT ./prog], [1],
+$COBCRUN prog], [1],
 [X is 000000001
 X is 000005441
 ],
 [libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 
- Last statement of sub1 was at line 4 of cpyabrt
- Last statement of sub2 was at line 48 of sub2.cob
- Last statement of prog was at line 118 of prog.cob
+ Last statement of "sub1" was at line 4 of cpyabrt
+ Last statement of "sub2" was at line 48 of sub2.cob
+ Last statement of "prog" was at line 118 of prog.cob
+ Started by prog
  
 dump written to tstdump.dump
 ])
@@ -9631,9 +9644,10 @@ AT_CAPTURE_FILE(./tstdump_fdls.dump)
 AT_DATA([reference_fdls_tmpl], [
 Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 
- Last statement of sub1 was at line 4 of cpyabrt
- Last statement of sub2 was at line 48 of sub2.cob
- Last statement of prog was at line 118 of prog.cob
+ Last statement of "sub1" was at line 4 of cpyabrt
+ Last statement of "sub2" was at line 48 of sub2.cob
+ Last statement of "prog" was at line 118 of prog.cob
+ Started by ./prog_fdls
 
 Dump Program-Id sub1 from prog.cob compiled MMM DD YYYY HH:MM:SS
 
@@ -9700,7 +9714,10 @@ dump written to tstdump_allfdls.dump
 AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g' \
 tstdump_allfdls.dump > tstdump.sed], [0], [], [])
 
-AT_CHECK([diff reference tstdump.sed], [0], [], [])
+AT_CHECK([$SED -e 's/prog_fdls/prog_allfdls/' \
+reference > reference_all], [0], [], [])
+
+AT_CHECK([diff reference_all tstdump.sed], [0], [], [])
 
 # CHECKME @ Ron: The result is likely wrong, please verify later
 #AT_CHECK([$COMPILE -fdump=LS prog.cob sub2.cob -fsticky-linkage -o prog_ls_sticky], [0], [], [])
@@ -9722,9 +9739,10 @@ AT_CHECK([diff reference tstdump.sed], [0], [], [])
 #AT_DATA([reference_ls_sticky_tmpl], [
 #Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 #
-# Last statement of sub1 was at line 4 of cpyabrt
-# Last statement of sub2 was at line 48 of sub2.cob
-# Last statement of prog was at line 118 of prog.cob
+# Last statement of "sub1" was at line 4 of cpyabrt
+ Last statement of "sub2" was at line 48 of sub2.cob
+# Last statement of "prog" was at line 118 of prog.cob
+# Started by ./prog_ls_sticky
 #
 #Dump Program-Id sub1 from prog.cob compiled MMM DD YYYY HH:MM:SS
 #
@@ -9871,7 +9889,7 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE -fdump=ALL prog.cob], [0], [], [])
 
 AT_CHECK([COB_DUMP_FILE=dumpall.txt \
-$COBCRUN_DIRECT ./prog], [1],
+$COBCRUN_DIRECT ./prog "param 1" param 'param 3'], [1],
 [GRP-2:***ABCD ABCD ABCD ABCD ABCD ABCD ABCD ABCD AB***
 GRP-3:***ABC00D99D99D99D99XXABC00D99D99D99D99XXABC00D99 00D99D99XX***
 GRP-5:***Mon49eyMon49eyMon49eyMon49eyMon49eyMon49eyMon49ey
@@ -9886,7 +9904,11 @@ AT_CAPTURE_FILE(./dumpall.txt)
 AT_DATA([reference_tmpl], [
 Module dump due to BASED/LINKAGE item 'A-TABLE' has NULL address
 
- Last statement of prog was at line 102 of prog.cob
+ Last statement of "prog" was at line 102 of prog.cob
+ Started by ./prog
+            param 1
+            param
+            param 3
 
 Dump Program-Id prog from prog.cob compiled MMM DD YYYY HH:MM:SS
 

@@ -1781,6 +1781,7 @@ COB_EXPIMP void			cob_set_runtime_option		(enum cob_runtime_option_switch opt, v
 COB_EXPIMP void			*cob_get_runtime_option		(enum cob_runtime_option_switch opt);
 
 COB_EXPIMP void			cob_stack_trace (void *target);		/* 'target' is FILE *  */
+COB_EXPIMP void			cob_backtrace	(void *target, int count);		/* 'target' is FILE *  */
 
 #define COB_GET_LINE_NUM(n) ( n & 0xFFFFF )
 #define COB_GET_FILE_NUM(n) ( (n >> 20) & 0xFFF)

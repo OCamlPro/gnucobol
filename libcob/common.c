@@ -220,6 +220,7 @@ struct cob_alloc_cache {
 	void			*cob_pointer;	/* Pointer to malloced space */
 	size_t			size;		/* Item size */
 };
+const int	MAX_MODULE_ITERS = 10240;
 
 struct cob_alloc_module {
 	struct cob_alloc_module	*next;		/* Pointer to next */
@@ -457,7 +458,7 @@ static unsigned int 	dump_trace_started;	/* ensures that we dump/stacktrace only
 #define 		DUMP_TRACE_DONE_DUMP 		(1U << 0)
 #define 		DUMP_TRACE_DONE_TRACE		(1U << 1)
 #define 		DUMP_TRACE_ACTIVE_TRACE		(1U << 2)
-static void		cob_stack_trace_internal (FILE *target);
+static void		cob_stack_trace_internal (FILE *target, int verbose, int count);
 
 #ifdef COB_DEBUG_LOG
 static void		cob_debug_open	(void);
@@ -620,7 +621,7 @@ cob_terminate_routines (void)
 			if (!(dump_trace_started & (DUMP_TRACE_DONE_TRACE | DUMP_TRACE_ACTIVE_TRACE))) {
 				dump_trace_started |= DUMP_TRACE_DONE_TRACE;
 				dump_trace_started |= DUMP_TRACE_ACTIVE_TRACE;
-				cob_stack_trace_internal (stderr);
+				cob_stack_trace_internal (stderr, 1, 0);
 				dump_trace_started ^= DUMP_TRACE_ACTIVE_TRACE;
 			}
 		}
@@ -808,17 +809,26 @@ cob_sig_handler (int signal_value)
 	}
 	/* LCOV_EXCL_STOP */
 
-	/* Skip dumping for SIGTERM and SIGINT */
+	/* Skip dumping for SIGTERM, SIGINT and "other process" issue's SIGHUP, SIGPIPE */
+	switch (signal_value) {
+	case -1:
 #ifdef	SIGTERM
-	if (signal_value == SIGTERM) {
-		dump_trace_started |= DUMP_TRACE_DONE_DUMP;
-	}
+	case SIGTERM:
 #endif
 #ifdef	SIGINT
-	if (signal_value == SIGINT) {
-		dump_trace_started |= DUMP_TRACE_DONE_DUMP;
-	}
+	case SIGINT:
 #endif
+#ifdef	SIGHUP
+	case SIGHUP:
+#endif
+#ifdef	SIGPIPE
+	case SIGPIPE:
+#endif
+		dump_trace_started |= DUMP_TRACE_DONE_DUMP;
+		/* Fall-through */
+	default:
+		break;
+	}
 
 #ifdef	HAVE_SIGACTION
 #ifndef	SA_RESETHAND
@@ -1477,7 +1487,6 @@ cob_open_logfile (const char *filename)
 static void
 cob_check_trace_file (void)
 {
-
 	if (cobsetptr->cob_trace_file) {
 		return;
 	}
@@ -1545,9 +1554,8 @@ int
 cob_check_env_false (char * s)
 {
 	return s && ((strlen (s) == 1 && (*s == 'N' || *s == 'n' || *s == '0'))
-		     || (strcasecmp (s, "NO") == 0 || strcasecmp (s, "NONE") == 0
-			 || strcasecmp (s, "OFF") == 0
-			 || strcasecmp (s, "FALSE") == 0));
+	          || (strcasecmp (s, "NO") == 0 || strcasecmp (s, "NONE") == 0
+	          || strcasecmp (s, "OFF") == 0 || strcasecmp (s, "FALSE") == 0));
 }
 
 static void
@@ -2285,12 +2293,6 @@ int
 cob_module_global_enter (cob_module **module, cob_global **mglobal,
 		  const int auto_init, const int entry, const unsigned int *name_hash)
 {
-	cob_module	*mod;
-	const int	MAX_ITERS = 10240;
-	int		k;
-	struct cob_alloc_module	*mod_ptr;
-
-
 	/* Check initialized */
 	if (unlikely (!cob_initialized)) {
 		if (auto_init) {
@@ -2309,14 +2311,12 @@ cob_module_global_enter (cob_module **module, cob_global **mglobal,
 	if (name_hash != NULL
 	 && cobglobptr->cob_call_name_hash != 0) {
 		cobglobptr->cob_call_from_c = 1;
-		k = 0;
 		while (*name_hash != 0) {	/* Scan table of values */
 			if (cobglobptr->cob_call_name_hash == *name_hash) {
 				cobglobptr->cob_call_from_c = 0;
 				break;
 			}
 			name_hash++;
-			k++;
 		}
 	}
 #else
@@ -2326,6 +2326,8 @@ cob_module_global_enter (cob_module **module, cob_global **mglobal,
 
 	/* Check module pointer */
 	if (!*module) {
+		struct cob_alloc_module* mod_ptr;
+
 		*module = cob_cache_malloc (sizeof (cob_module));
 		/* Add to list of all modules activated */
 		mod_ptr = cob_malloc (sizeof (struct cob_alloc_module));
@@ -2339,7 +2341,9 @@ cob_module_global_enter (cob_module **module, cob_global **mglobal,
 #else
 	} else if (entry == 0) {
 #endif
-		for (k = 0, mod = COB_MODULE_PTR; mod && k < MAX_ITERS; mod = mod->next, k++) {
+		int		k = 0;
+		cob_module	*mod;
+		for (mod = COB_MODULE_PTR; mod; mod = mod->next) {
 			if (*module == mod) {
 				if (cobglobptr->cob_stmt_exception) {
 					/* CALL has ON EXCEPTION so return to caller */
@@ -2349,6 +2353,11 @@ cob_module_global_enter (cob_module **module, cob_global **mglobal,
 				}
 				cob_module_err = mod;
 				cob_fatal_error (COB_FERROR_RECURSIVE);
+			}
+			if (k++ == MAX_MODULE_ITERS) {
+				/* not translated as highly unexpected */
+				cob_runtime_warning ("max module iterations exceeded, possible broken chain");
+				break;
 			}
 		}
 	}
@@ -3289,8 +3298,8 @@ cob_check_numeric (const cob_field *f, const char *name)
 }
 
 void
-cob_check_odo (const int i, const int min,
-			const int max, const char *name, const char *dep_name)
+cob_check_odo (const int i, const int min, const int max,
+			const char *name, const char *dep_name)
 {
 	/* Check OCCURS DEPENDING ON item */
 	if (i < min || i > max) {
@@ -5795,7 +5804,7 @@ cob_sys_getopt_long_long (void *so, void *lo, void *idx, const int long_only, vo
 	for (i = 0; i < lo_amount; i++) {
 		j = sizeof (l->name) - 1;
 		while (j >= 0 && l->name[j] == ' ') {
-			l->name[j] = 0x00;
+			l->name[j] = 0;
 			j--;
 		}
 		longoptions->name = l->name;
@@ -5882,20 +5891,22 @@ cob_sys_getopt_long_long (void *so, void *lo, void *idx, const int long_only, vo
 int
 cob_sys_printable (void *p1, ...)
 {
-	cob_u8_ptr		data;
+	size_t			datalen, n;
 	unsigned char		*dotptr;
-	size_t			datalen;
-	size_t			n;
 	unsigned char		dotrep;
 	va_list			args;
+	cob_u8_ptr		data;
+	char		*previous_locale = NULL;
 
 	COB_CHK_PARMS (CBL_GC_PRINTABLE, 1);
 
 	if (!COB_MODULE_PTR->cob_procedure_params[0]) {
 		return 0;
 	}
-	data = p1;
 	datalen = COB_MODULE_PTR->cob_procedure_params[0]->size;
+	if (datalen == 0) {
+		return 0;
+	}
 	if (cobglobptr->cob_call_params > 1) {
 		va_start (args, p1);
 		dotptr = va_arg (args, unsigned char *);
@@ -5904,10 +5915,18 @@ cob_sys_printable (void *p1, ...)
 	} else {
 		dotrep = (unsigned char)'.';
 	}
+	if (cobglobptr->cob_locale_ctype) {
+		previous_locale = setlocale (LC_CTYPE, NULL);
+		setlocale (LC_CTYPE, cobglobptr->cob_locale_ctype);
+	}
+	data = p1;
 	for (n = 0; n < datalen; ++n) {
 		if (!isprint (data[n])) {
 			data[n] = dotrep;
 		}
+	}
+	if (previous_locale) {
+		setlocale (LC_CTYPE, previous_locale);
 	}
 	return 0;
 }
@@ -6401,17 +6420,17 @@ translate_boolean_to_int (const char* ptr)
 		return atoi (ptr);		/* 0 or 1 */
 	} else
 	if (strcasecmp (ptr, "true") == 0
-		|| strcasecmp (ptr, "t") == 0
-		|| strcasecmp (ptr, "on") == 0
-		|| strcasecmp (ptr, "yes") == 0
-		|| strcasecmp (ptr, "y") == 0) {
+	 || strcasecmp (ptr, "t") == 0
+	 || strcasecmp (ptr, "on") == 0
+	 || strcasecmp (ptr, "yes") == 0
+	 || strcasecmp (ptr, "y") == 0) {
 		return 1;			/* True value */
 	} else
 	if (strcasecmp (ptr, "false") == 0
-		|| strcasecmp (ptr, "f") == 0
-		|| strcasecmp (ptr, "off") == 0
-		|| strcasecmp (ptr, "no") == 0
-		|| strcasecmp (ptr, "n") == 0) {
+	 || strcasecmp (ptr, "f") == 0
+	 || strcasecmp (ptr, "off") == 0
+	 || strcasecmp (ptr, "no") == 0
+	 || strcasecmp (ptr, "n") == 0) {
 		return 0;			/* False value */
 	}
 	return 2;
@@ -8775,6 +8794,12 @@ cob_set_runtime_option (enum cob_runtime_option_switch opt, void *p)
 		/* note: if set cob_dump_file is always external (libcob only opens it on abort)
 		         therefore we don't need to close the old one */
 		cobsetptr->cob_dump_file = (FILE *)p;
+		if (!cobsetptr->cob_dump_file) {
+			if (cobsetptr->cob_dump_filename) {
+				cob_free (cobsetptr->cob_dump_filename);
+			}
+			cobsetptr->cob_dump_filename = cob_strdup ("NONE");
+		}
 		break;
 	case COB_SET_RUNTIME_RESCAN_ENV:
 		cob_rescan_env_vals ();
@@ -8822,15 +8847,52 @@ cob_stack_trace (void *target)
 		return;
 	}
 	dump_trace_started |= DUMP_TRACE_ACTIVE_TRACE;
-	cob_stack_trace_internal ((FILE *)target);
+	cob_stack_trace_internal ((FILE *)target, 1, 0);
+	dump_trace_started ^= DUMP_TRACE_ACTIVE_TRACE;
+}
+
+static void
+flush_target (FILE* target) {
+	if (target == stderr
+	 || target == stdout) {
+		fflush (stdout);
+		fflush (stderr);
+	} else {
+		fflush (target);
+	}
+}
+
+/* output the COBOL-view of the stacktrace to the given target,
+   does an early exit if 'target' is NULL,
+   'target' is FILE *, output similar to GDBs backtrace command,
+   "count" to limit to the first / last entries,
+   REMARK: other than in GDB 0 means "full output" */
+void
+cob_backtrace (void *target, int count)
+{
+	if (target == NULL) {
+		return;
+	}
+	if (!cobglobptr || !COB_MODULE_PTR) {
+		flush_target (target);
+		fputc (' ', target);
+		/* TRANSLATORS: This msgid is shown for a requested but empty stack trace. */
+		fputs (_("No COBOL runtime elements on stack."), target);
+		fputc ('\n', target);
+		return;
+	}
+	dump_trace_started |= DUMP_TRACE_ACTIVE_TRACE;
+	cob_stack_trace_internal ((FILE *)target, 0, count);
 	dump_trace_started ^= DUMP_TRACE_ACTIVE_TRACE;
 }
 
 /* internal output the COBOL-view of the stacktrace to the given target */
 void
-cob_stack_trace_internal (FILE *target)
+cob_stack_trace_internal (FILE *target, int verbose, int count)
 {
 	cob_module	*mod;
+	int	first_entry = 0;
+	int i, k;
 
 	/* exit early in the case of no module loaded at all,
 	   possible to happen for example when aborted from cob_check_version of first module */
@@ -8840,28 +8902,74 @@ cob_stack_trace_internal (FILE *target)
 		return;
 	}
 
-	if (target == stderr
-	 || target == stdout) {
-		fflush (stdout);
-		fflush (stderr);
+	flush_target (target);
+
+	k = 0;
+	if (count < 0) {
+		for (mod = COB_MODULE_PTR, i = 0; mod; mod = mod->next, i++) {
+			if (mod->next == mod
+			 || k++ == MAX_MODULE_ITERS) {
+				break;	/* messages in same checks below */
+			}
+		}
+		first_entry = i + count;
 	}
 
-	fputc ('\n', target);
-	for (mod = COB_MODULE_PTR; mod; mod = mod->next) {
+	if (verbose) {
+		fputc ('\n', target);
+	}
+	k = 0;
+	for (mod = COB_MODULE_PTR, i = 0; mod; mod = mod->next, i++) {
+		if (i < first_entry) {
+			continue;
+		}
+		if (count > 0 && count == i) {
+			break;
+		}
 		if (mod->module_stmt != 0
 		 && mod->module_sources) {
-			fprintf (target, _(" Last statement of %s was at line %d of %s"),
-					mod->module_name,
-					COB_GET_LINE_NUM(mod->module_stmt),
-					mod->module_sources[COB_GET_FILE_NUM(mod->module_stmt)]);
-			fputc ('\n', target);
-			if (mod->next == mod) {
-				fputs ("FIXME: recursive mod (stack trace)\n", target);
-				break;
+			const unsigned int source_file = COB_GET_FILE_NUM (mod->module_stmt);
+			const unsigned int source_line = COB_GET_LINE_NUM (mod->module_stmt);
+			fputc (' ', target);
+			if (verbose) {
+				fprintf (target, _("Last statement of \"%s\" was at line %d of %s"),
+					mod->module_name, source_line, mod->module_sources[source_file]);
+			} else {
+				fprintf (target, "%s at %s:%d",
+					mod->module_name, mod->module_sources[source_file], source_line);
 			}
 		} else {
-			fprintf (target, _(" Last statement of %s unknown"), mod->module_name);
-			fputc ('\n', target);
+			if (verbose) {
+				fprintf (target, _("Last statement of \"%s\" unknown"), mod->module_name);
+			} else {
+				fprintf (target, "%s at unknown", mod->module_name);
+			}
+		}
+		fputc ('\n', target);
+		if (mod->next == mod) {
+			/* not translated as highly unexpected */
+			fputs ("FIXME: recursive mod (stack trace)\n", target);
+			break;
+		}
+		if (k++ == MAX_MODULE_ITERS) {
+			/* not translated as highly unexpected */
+			fputs ("max module iterations exceeded, possible broken chain\n", target);
+			break;
+		}
+			
+	}
+	if (mod) {
+		fputc (' ', target);
+		/* TRANSLATORS: This msgid is shown for a requested but not complete stack trace. */
+		fputs (_("(more COBOL runtime elements follow...)"), target);
+		fputc ('\n', target);
+	}
+
+	if (verbose && cob_argc != 0) {
+		size_t i;
+		fprintf (target, " Started by %s\n", cob_argv[0]);
+		for (i = 1; i < (size_t)cob_argc; ++i) {
+			fprintf (target, "            %s\n", cob_argv[i]);
 		}
 	}
 }
@@ -8873,6 +8981,9 @@ cob_get_dump_file (void)
 	if (cobsetptr->cob_dump_file != NULL) {	/* If DUMP active, use that */
 		return cobsetptr->cob_dump_file;
 	} else if (cobsetptr->cob_dump_filename != NULL) {	/* DUMP file defined */
+		if (cob_check_env_false(cobsetptr->cob_dump_filename)) {
+			return NULL;
+		}
 		cobsetptr->cob_dump_file = cob_open_logfile (cobsetptr->cob_dump_filename);
 		if (cobsetptr->cob_dump_file != NULL) {
 			return cobsetptr->cob_dump_file;
@@ -8896,6 +9007,9 @@ cob_get_dump_file (void)
 			if(cobsetptr->cob_trace_file != NULL) {	/* If TRACE active, use that */
 				fp = cobsetptr->cob_trace_file;
 			} else if(cobsetptr->cob_dump_filename != NULL) {	/* Dump file defined */
+				if (cob_check_env_false(cobsetptr->cob_dump_filename)) {
+					return NULL;
+				}
 				fp = fopen(cobsetptr->cob_dump_filename, "a");
 				if(fp == NULL)
 					fp = stderr;
@@ -8925,26 +9039,41 @@ cob_dump_module (char *reason)
 {
 	cob_module	*mod;
 	int		wants_dump = 0;
+	int k;
 
 	/* Was any module compiled with -fdump? */
+	k = 0;
 	for (mod = COB_MODULE_PTR; mod; mod = mod->next) {
 		if (mod->flag_dump_ready) {
 			wants_dump = 1;
-			break;
 		}
 		if (mod->next == mod) {
+			/* not translated as highly unexpected */
 			fputs ("FIXME: recursive mod (module dump)\n", stderr);
+			break;
+		}
+		if (k++ == MAX_MODULE_ITERS) {
+			/* not translated as highly unexpected */
+			fputs ("max module iterations exceeded, possible broken chain\n", stderr);
+			break;
+		}
+		if (mod->flag_dump_ready) {
 			break;
 		}
 	}
 
 	if (wants_dump) {
 		FILE		*fp;
+		char		*previous_locale = NULL;
 #if 1 /* new version as currently only COB_DUMP_TO_FILE is used */
 		fp = cob_get_dump_file ();
 #else
 		fp = cob_get_dump_file (COB_DUMP_TO_FILE);
 #endif
+		/* explicit disabled dump */
+		if (fp == NULL) {
+			return;
+		}
 		if (fp != stderr) {
 			if (reason) {
 				if (reason[0] == 0) {
@@ -8959,7 +9088,7 @@ cob_dump_module (char *reason)
 				   so skip here for stdout/stderr ... */
 				if (!(dump_trace_started & DUMP_TRACE_ACTIVE_TRACE)) {
 					dump_trace_started |= DUMP_TRACE_ACTIVE_TRACE;
-					cob_stack_trace_internal (fp);
+					cob_stack_trace_internal (fp, 1, 0);
 					dump_trace_started ^= DUMP_TRACE_ACTIVE_TRACE;
 				}
 			}
@@ -8969,6 +9098,11 @@ cob_dump_module (char *reason)
 		}
 
 		fputc ('\n', fp);
+		if (cobglobptr->cob_locale_ctype) {
+			previous_locale = setlocale (LC_CTYPE, NULL);
+			setlocale (LC_CTYPE, cobglobptr->cob_locale_ctype);
+		}
+		k = 0;
 		for (mod = COB_MODULE_PTR; mod; mod = mod->next) {
 			if (mod->module_cancel.funcint) {
 				int (*cancel_func)(const int);
@@ -8980,12 +9114,13 @@ cob_dump_module (char *reason)
 				(void)cancel_func (-10);
 				fputc ('\n', fp);
 			}
-			if (mod->next == mod) {
-#if 0			/* already output above */
-				fputs ("FIXME: recursive mod (module dump)\n", stderr);
-#endif
+			if (mod->next == mod
+			 || k++ == MAX_MODULE_ITERS) {
 				break;
 			}
+		}
+		if (previous_locale) {
+			setlocale (LC_CTYPE, previous_locale);
 		}
 		if (fp != stdout && fp != stderr) {
 			char * fname = NULL;

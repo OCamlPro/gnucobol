@@ -1,4 +1,9 @@
 
+2021-09-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c: save-guard against broken cob_module chain in dump
+	* termio.c, common.c: allow to explicit disable dump
+
 2021-09-29  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fileio.c (EXTFH3): also handle OP_FLUSH, OP_DELETE_FILE, OP_COMMIT and
@@ -156,6 +161,15 @@
 	* fileio.c: Additonal code to inspect the index control blocks
 	            of an ISAM file and save the details
 
+2021-04-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* termio.c (display_alnum_dump): only consider isprint to decide
+	  for necessary hex output
+	* common.c (cob_dump_module): set C locale to original one before dump
+	  and restore previous one afterwards
+	* common.c (cob_sys_printable): set C locale to original one before
+	  checking and restore previous one afterwards
+
 2021-01-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fileio.c (lineseq_read), common.c, coblocal.h:
@@ -164,6 +178,17 @@
 2021-01-27  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_sys_getopt_long_long): fix for EBCDIC
+
+2021-01-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_sig_handler): skip module dump for SIGHUP and SIGPIPE
+	* common.c (cob_stack_trace_internal): dump starting program and
+	  parameters if in "verbose" mode (which is the default)
+
+2021-01-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_backtrace), common.h: new variant of cob_stacktrace
+	  with format similar to GDB's backtrace
 
 2021-01-07  Simon Sobisch <simonsobisch@gnu.org>
 

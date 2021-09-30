@@ -604,6 +604,11 @@ cob_dump_output (const char *str)
 {
 	FILE	*fp = cob_get_dump_file ();
 
+	/* explicit disabled dump */
+	if (fp == NULL) {
+		return;
+	}
+
 	dump_pending_output (fp);
 
 	fprintf (fp, "\n%s\n**********************\n", str);
@@ -615,6 +620,11 @@ cob_dump_file (const char *name, cob_file *fl)
 {
 	FILE	*fp = cob_get_dump_file ();
 	const char *mode;
+
+	/* explicit disabled dump */
+	if (fp == NULL) {
+		return;
+	}
 
 	dump_pending_output (fp);
 
@@ -889,6 +899,11 @@ cob_dump_field (const int level, const char *name, cob_field *f_addr,
 	unsigned int indexes = indexes_ext;
 	va_list	ap;
 
+	/* check for explicit disabled dump */
+	if (cob_get_dump_file() == NULL) {
+		return;
+	}
+
 	if (level < 0) {	/* Special directive, only included for 3.1rc1 - compat */
 		if (level == -1) {
 			cob_dump_output (name);
@@ -911,6 +926,11 @@ cob_dump_field_ext (const int level, const char *name, cob_field *f_addr,
 		const cob_uli_t field_offset, const cob_u32_t indexes, ...)
 {
 	va_list	ap;
+
+	/* check for explicit disabled dump */
+	if (cob_get_dump_file () == NULL) {
+		return;
+	}
 	va_start (ap, indexes);
 	dump_field_internal (level, name, f_addr, field_offset, indexes, ap);
 	va_end (ap);

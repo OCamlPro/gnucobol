@@ -72,6 +72,14 @@ NEWS - user visible changes				-*- outline -*-
 
 * More notable changes
 
+** the call-stack on error / in the dump file now contains all parameters given
+   to the program via command line options, if any
+
+** the dump that is created on abort for all programs that were compiled with
+   -fdump can be explicit disabled by setting COB_DUMP_FILE=NONE; it is
+   automatically disabled if the process ends upon signals SIGINT/SIGTERM and
+   now also disabled upon SIGHUP/SIGPIPE
+
 ** source references shown in diagnostic messages during runtime, the tracing
    options and during debugging were extended, for example each executed WHEN,
    VARYING and UNTIL phrases are now seen
