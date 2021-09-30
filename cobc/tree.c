@@ -5741,6 +5741,7 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 	p->op = op;
 	p->x = x;
 	p->y = y;
+	copy_file_line (CB_TREE (p), x, y);
 	return CB_TREE (p);
 }
 
@@ -6118,6 +6119,8 @@ cb_build_perform_varying (cb_tree name, cb_tree from, cb_tree by, cb_tree until)
 			return CB_TREE (p);
 		}
 		x = cb_build_add (name, by, cb_high);
+		copy_file_line (x, by, NULL);
+
 		if (current_program->flag_debugging &&
 		    !current_statement->flag_in_debug &&
 		    CB_FIELD_P (l) && CB_FIELD (l)->flag_field_debug) {

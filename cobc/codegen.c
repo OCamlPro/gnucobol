@@ -276,6 +276,8 @@ static void output_param	(cb_tree, int);
 static void output_funcall	(cb_tree);
 static void output_report_summed_field (struct cb_field *);
 
+static void output_source_reference (cb_tree, const char *);
+
 static void codegen_init (struct cb_program *, const char *);
 static void codegen_internal (struct cb_program *, const int);
 static void codegen_finalize (void);
@@ -6870,6 +6872,19 @@ output_perform_until (struct cb_perform *p, cb_tree l)
 		output_cond_debug (v->until);
 	}
 
+	/* CHECKME: should always have a line reference, but seems to not be guaranteed,
+	   for stable 3.x: only output if line reference is given, for trunk: "guess it is" */
+	if (v->until->source_line) {
+		output_source_reference (v->until, "UNTIL");
+#ifdef COB_TREE_DEBUG
+	/* LCOV_EXCL_START */
+	} else {
+		cobc_err_msg ("missing source reference in output_perform_until");
+		cobc_abort_terminate (1);
+	/* LCOV_EXCL_STOP */
+#endif
+	}
+
 	output_prefix ();
 	output ("if (");
 	output_cond (v->until, 0);
@@ -6882,6 +6897,7 @@ output_perform_until (struct cb_perform *p, cb_tree l)
 	}
 
 	if (v->step) {
+		output_source_reference (v->step, "VARYING");
 		output_stmt (v->step);
 	}
 
@@ -7451,6 +7467,30 @@ output_line_and_trace_info (cb_tree x, const char *name)
 }
 
 static void
+output_source_reference (cb_tree tree, const char *stmt_name)
+{
+	output_prefix ();
+	output ("/* Line: %-10d: %-19s", tree->source_line, stmt_name);
+	if (tree->source_file) {
+		output (": %s ", tree->source_file);
+	}
+	output ("*/");
+	output_newline ();
+	/* Output source location as code */
+	if (cb_flag_source_location
+	 || cb_flag_dump) {
+		if (last_line != tree->source_line) {
+			output_line ("module->module_stmt = 0x%08X;",
+				COB_SET_LINE_FILE(tree->source_line, lookup_source(tree->source_file)));
+		}
+	}
+	if (last_line != tree->source_line) {
+		/* Output source location as code */
+		output_line_and_trace_info (tree, stmt_name);
+	}
+}
+
+static void
 output_label_info (cb_tree x, struct cb_label *lp)
 {
 	if (lp->flag_dummy_section || lp->flag_dummy_paragraph) {
@@ -7800,28 +7840,33 @@ output_stmt (cb_tree x)
 		if (lp->flag_begin) {
 			output_line ("%s%d:;", CB_PREFIX_LABEL, lp->id);
 		}
-		if (cb_flag_c_line_directives) {
-			output_cobol_info (x);
-		}
-		if (cb_flag_c_labels && (lp->flag_entry || lp->flag_section)) {
-			/* possibly come back later adding paragraphs, too */
-			const char *prf;
-			unsigned char buff[COB_MINI_BUFF];
-			unsigned char *ptr = (unsigned char *)&buff;
-			cob_encode_program_id ((unsigned char*)lp->orig_name, ptr,
-				COB_MINI_MAX, COB_FOLD_UPPER);
-			if (lp->flag_section) prf = "SECTION";
-			else if (lp->flag_entry_for_goto) prf = "ENTRY_GOTO";
-			else prf = "ENTRY";
-			if (*ptr == '_') ptr++;
-			output_line ("%s_%s:;", prf, ptr);
+		if (!lp->flag_dummy_exit
+			&& !lp->flag_dummy_section
+			&& !lp->flag_dummy_paragraph) {
 			if (cb_flag_c_line_directives) {
-				output_c_info ();
+				output_cobol_info (x);
 			}
-		} else {
-			if (cb_flag_c_line_directives) {
-				output_line ("cob_nop ();");
-				output_c_info ();
+			if (cb_flag_c_labels
+			 && (lp->flag_entry || lp->flag_section)) {
+				/* possibly come back later adding paragraphs, too */
+				const char *prf;
+				unsigned char buff[COB_MINI_BUFF];
+				unsigned char *ptr = (unsigned char *)&buff;
+				cob_encode_program_id ((unsigned char*)lp->orig_name, ptr,
+					COB_MINI_MAX, COB_FOLD_UPPER);
+				if (lp->flag_section) prf = "SECTION";
+				else if (lp->flag_entry_for_goto) prf = "ENTRY_GOTO";
+				else prf = "ENTRY";
+				if (*ptr == '_') ptr++;
+				output_line ("%s_%s:\t%s;", prf, ptr, "cob_nop ()");
+				if (cb_flag_c_line_directives) {
+					output_c_info ();
+				}
+			} else {
+				if (cb_flag_c_line_directives) {
+					output_line ("cob_nop ();");
+					output_c_info ();
+				}
 			}
 		}
 
@@ -8032,25 +8077,7 @@ output_stmt (cb_tree x)
 					if (ip->test->source_line) {
 						w = ip->test;
 					}
-					output_prefix ();
-					output ("/* Line: %-10d: %-19s", w->source_line, "WHEN");
-					if (w->source_file) {
-						output (": %s ", w->source_file);
-					}
-					output ("*/");
-					output_newline ();
-					/* Output source location as code */
-					if (cb_flag_source_location
-					 || cb_flag_dump) {
-						if (last_line != w->source_line) {
-							output_line ("module->module_stmt = 0x%08X;",
-								COB_SET_LINE_FILE(w->source_line, lookup_source(w->source_file)));
-						}
-					}
-					if (last_line != w->source_line) {
-						/* Output source location as code */
-						output_line_and_trace_info (w, "WHEN");
-					}
+					output_source_reference (w, "WHEN");
 				} else {
 					output_line ("/* WHEN */");
 				}
@@ -8065,7 +8092,7 @@ output_stmt (cb_tree x)
 			}
 			output_newline ();
 		}
-#ifdef COBC_HAS_CUTOFF_FLAG	/* CHECKME: likely will be removed completely in 3.2 */
+#ifdef COBC_HAS_CUTOFF_FLAG	/* Note: will be removed completely in 4.x */
 		gen_if_level++;
 		code = 0;
 #endif
@@ -8092,7 +8119,7 @@ output_stmt (cb_tree x)
 			output_line ("} else {");
 			output_line ("\t%s%d.suppress = 1;", px, p2->id);
 			output_line ("}");
-#ifdef COBC_HAS_CUTOFF_FLAG	/* CHECKME: likely will be removed completely in 3.1 */
+#ifdef COBC_HAS_CUTOFF_FLAG	/* Note: will be removed completely in 4.x */
 			gen_if_level--;
 #endif
 			break;
@@ -8119,7 +8146,7 @@ output_stmt (cb_tree x)
 			output_line ("} else {");
 			output_line ("\t%s%d.suppress = 1;", px, p2->id);
 			output_line ("}");
-#ifdef COBC_HAS_CUTOFF_FLAG	/* CHECKME: likely will be removed completely in 3.1 */
+#ifdef COBC_HAS_CUTOFF_FLAG	/* Note: will be removed completely in 4.x */
 			gen_if_level--;
 #endif
 			break;
@@ -8141,7 +8168,7 @@ output_stmt (cb_tree x)
 			} else {
 				output_line ("; /* Nothing */");
 			}
-#ifdef COBC_HAS_CUTOFF_FLAG	/* CHECKME: likely will be removed completely in 3.2 */
+#ifdef COBC_HAS_CUTOFF_FLAG	/* Note: will be removed completely in 4.x */
 			if (gen_if_level > cb_if_cutoff) {
 				if (ip->stmt2) {
 					code = cb_id++;
@@ -8151,7 +8178,7 @@ output_stmt (cb_tree x)
 #endif
 			output_block_close ();
 		}
-#ifdef COBC_HAS_CUTOFF_FLAG	/* CHECKME: likely will be removed completely in 3.2 */
+#ifdef COBC_HAS_CUTOFF_FLAG	/* Note: will be removed completely in 4.x */
 		if (ip->stmt2) {
 			if (gen_if_level <= cb_if_cutoff) {
 				if (!skip_else) {
@@ -12584,7 +12611,7 @@ codegen_internal (struct cb_program *prog, const int subsequent_call)
 	loop_counter = 0;
 	output_indent_level = 0;
 	last_line = 0;
-	needs_exit_prog = 0;
+	needs_exit_prog = cb_flag_c_labels;	/* always add the exit _label_ in this case */
 	gen_custom = 0;
 	gen_nested_tab = 0;
 	gen_dynamic = 0;

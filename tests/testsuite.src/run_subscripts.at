@@ -466,7 +466,7 @@ AT_SETUP([SSRANGE and NOSSRANGE directives])
 AT_KEYWORDS([runsubscripts subscripts extensions directive])
 
 # WARNING: this testcase is "broken" as those SSRANGE may only be
-#          defined before IDENTIFICATION DIVISION (iniatial $SET)
+#          defined before IDENTIFICATION DIVISION (initial $SET)
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.

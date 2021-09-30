@@ -70,6 +70,12 @@ NEWS - user visible changes				-*- outline -*-
    old format `-DLISTING_TIMESTAMP_ANSI`, for an explicit format (cut at 26
    characters) for example date only: `-DLISTING_TIMESTAMP_FORMAT="%Y-%m-%d"`
 
+* More notable changes
+
+** source references shown in diagnostic messages during runtime, the tracing
+   options and during debugging were extended, for example each executed WHEN,
+   VARYING and UNTIL phrases are now seen
+
 
  GnuCOBOL 3.1.2 released (20201223)
  GnuCOBOL 3.1.1 released (20201208) containing INITIALIZE bug #694

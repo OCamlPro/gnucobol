@@ -228,6 +228,25 @@
 
 	* tree.h [COB_EXTERNAL_XREF]: fixed define of no-op cobc_xref_call
 
+2021-02-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_stmt): extracted output_source_reference and
+	  also used for PERFORM UNTIL and VARYING
+	* tree.c (cb_build_binary_op): add source reference to non-constant
+	  expressions
+	* tree.c (cb_build_perform_varying): add source reference to VARYING clause
+
+2021-02-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_stmt): dont' emit C labels for dummy sections,
+	  don't emit C line directives for dummy sections/paragraphs
+
+2021-02-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_stmt): emit cob_nop in C labels to fix
+	  position in the generated assembler which was previously
+	  in the COBOL statement above the label
+
 2021-01-07  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (cobc_print_version): msgid change moving URLs to parameter per

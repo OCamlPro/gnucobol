@@ -6701,6 +6701,7 @@ Program-Id: callee1          Statement: IF                     Line: 9
 Program-Id: callee1          Statement: CONTINUE               Line: 12
 Program-Id: callee1          Statement: EVALUATE               Line: 14
 Program-Id: callee1          Statement: WHEN                   Line: 15
+Program-Id: callee1          Statement: WHEN                   Line: 18
 Program-Id: callee1          Statement: CONTINUE               Line: 21
 Program-Id: callee1          Statement: EVALUATE               Line: 23
 Program-Id: callee1          Statement: WHEN                   Line: 24
@@ -6743,6 +6744,7 @@ Program-Id: callee1          Statement: IF                     Line: 9
 Program-Id: callee1          Statement: CONTINUE               Line: 12
 Program-Id: callee1          Statement: EVALUATE               Line: 14
 Program-Id: callee1          Statement: WHEN                   Line: 15
+Program-Id: callee1          Statement: WHEN                   Line: 18
 Program-Id: callee1          Statement: CONTINUE               Line: 21
 Program-Id: callee1          Statement: EVALUATE               Line: 23
 Program-Id: callee1          Statement: WHEN                   Line: 24
@@ -6818,6 +6820,7 @@ Program-Id:  callee1                     IF                              Line:  
 Program-Id:  callee1                     CONTINUE                        Line:     12
 Program-Id:  callee1                     EVALUATE                        Line:     14
 Program-Id:  callee1                     WHEN                            Line:     15
+Program-Id:  callee1                     WHEN                            Line:     18
 Program-Id:  callee1                     CONTINUE                        Line:     21
 Program-Id:  callee1                     EVALUATE                        Line:     23
 Program-Id:  callee1                     WHEN                            Line:     24
@@ -6854,6 +6857,7 @@ Program-Id:  callee1                     IF                              Line:  
 Program-Id:  callee1                     CONTINUE                        Line:     12
 Program-Id:  callee1                     EVALUATE                        Line:     14
 Program-Id:  callee1                     WHEN                            Line:     15
+Program-Id:  callee1                     WHEN                            Line:     18
 Program-Id:  callee1                     CONTINUE                        Line:     21
 Program-Id:  callee1                     EVALUATE                        Line:     23
 Program-Id:  callee1                     WHEN                            Line:     24
@@ -7360,7 +7364,7 @@ AT_DATA([prog.cob], [
                                 UPON CONSOLE
                STOP RUN
            END-IF.
-           PERFORM UNTIL CUST-STAT NOT = "00"
+           PERFORM UNTIL CUST-STAT NOT = "00"  *> no WITH AFTER for trace check
                       OR REC-NUM > REC-MAX
                DISPLAY "Key: " CM-CUST-NUM " is " CM-COMPANY
                         " Disk=" CM-DISK "."
@@ -7369,8 +7373,8 @@ AT_DATA([prog.cob], [
                READ TSPFILE NEXT RECORD
                     AT END
                         MOVE "99" TO CUST-STAT
-                END-READ
-                ADD 1 TO REC-NUM
+               END-READ
+               ADD 1 TO REC-NUM
            END-PERFORM
            IF CUST-STAT = "99"
                DISPLAY "Hit End of File: " CALL-NUM UPON CONSOLE
@@ -7392,7 +7396,7 @@ AT_DATA([prog.cob], [
                                 UPON CONSOLE
                STOP RUN
            END-IF.
-           PERFORM UNTIL CUST-STAT NOT = "00"
+           PERFORM  WITH TEST AFTER  UNTIL CUST-STAT NOT = "00"
                       OR REC-NUM > REC-MAX
                DISPLAY "Key: " CM-CUST-NUM " is " CM-COMPANY
                         " Disk=" CM-DISK "."
@@ -7400,8 +7404,8 @@ AT_DATA([prog.cob], [
                READ TSPFILE PREVIOUS RECORD
                     AT END
                         MOVE "99" TO CUST-STAT
-                END-READ
-                ADD 1 TO REC-NUM
+               END-READ
+               ADD 1 TO REC-NUM
            END-PERFORM.
 
            CLOSE TSPFILE.
@@ -8375,6 +8379,7 @@ Line:    336            DISPLAY
 Line:    339            OPEN
 Line:    340            IF
 Line:    346            PERFORM
+Line:    348            UNTIL
 Line:    358 Paragraph: 1000-LOAD-RECORD
 Line:    360            MOVE
 Line:    361            MOVE
@@ -8393,6 +8398,8 @@ Line:    374            MOVE
 Line:    375            MOVE
 Line:    381            WRITE
 Line:    382            IF
+Line:    347            VARYING
+Line:    348            UNTIL
 Line:    358 Paragraph: 1000-LOAD-RECORD
 Line:    360            MOVE
 Line:    361            MOVE
@@ -8411,6 +8418,8 @@ Line:    378            MOVE
 Line:    379            MOVE
 Line:    381            WRITE
 Line:    382            IF
+Line:    347            VARYING
+Line:    348            UNTIL
 Line:    358 Paragraph: 1000-LOAD-RECORD
 Line:    360            MOVE
 Line:    361            MOVE
@@ -8429,6 +8438,8 @@ Line:    374            MOVE
 Line:    375            MOVE
 Line:    381            WRITE
 Line:    382            IF
+Line:    347            VARYING
+Line:    348            UNTIL
 Line:    358 Paragraph: 1000-LOAD-RECORD
 Line:    360            MOVE
 Line:    361            MOVE
@@ -8447,6 +8458,8 @@ Line:    378            MOVE
 Line:    379            MOVE
 Line:    381            WRITE
 Line:    382            IF
+Line:    347            VARYING
+Line:    348            UNTIL
 Line:    358 Paragraph: 1000-LOAD-RECORD
 Line:    360            MOVE
 Line:    361            MOVE
@@ -8465,6 +8478,8 @@ Line:    374            MOVE
 Line:    375            MOVE
 Line:    381            WRITE
 Line:    382            IF
+Line:    347            VARYING
+Line:    348            UNTIL
 Line:    358 Paragraph: 1000-LOAD-RECORD
 Line:    360            MOVE
 Line:    361            MOVE
@@ -8483,6 +8498,8 @@ Line:    378            MOVE
 Line:    379            MOVE
 Line:    381            WRITE
 Line:    382            IF
+Line:    347            VARYING
+Line:    348            UNTIL
 Line:    358 Paragraph: 1000-LOAD-RECORD
 Line:    360            MOVE
 Line:    361            MOVE
@@ -8501,6 +8518,8 @@ Line:    374            MOVE
 Line:    375            MOVE
 Line:    381            WRITE
 Line:    382            IF
+Line:    347            VARYING
+Line:    348            UNTIL
 Line:    358 Paragraph: 1000-LOAD-RECORD
 Line:    360            MOVE
 Line:    361            MOVE
@@ -8519,6 +8538,8 @@ Line:    378            MOVE
 Line:    379            MOVE
 Line:    381            WRITE
 Line:    382            IF
+Line:    347            VARYING
+Line:    348            UNTIL
 Line:    358 Paragraph: 1000-LOAD-RECORD
 Line:    360            MOVE
 Line:    361            MOVE
@@ -8537,6 +8558,8 @@ Line:    374            MOVE
 Line:    375            MOVE
 Line:    381            WRITE
 Line:    382            IF
+Line:    347            VARYING
+Line:    348            UNTIL
 Line:    358 Paragraph: 1000-LOAD-RECORD
 Line:    360            MOVE
 Line:    361            MOVE
@@ -8555,6 +8578,8 @@ Line:    374            MOVE
 Line:    375            MOVE
 Line:    381            WRITE
 Line:    382            IF
+Line:    347            VARYING
+Line:    348            UNTIL
 Line:    358 Paragraph: 1000-LOAD-RECORD
 Line:    360            MOVE
 Line:    361            MOVE
@@ -8573,6 +8598,8 @@ Line:    374            MOVE
 Line:    375            MOVE
 Line:    381            WRITE
 Line:    382            IF
+Line:    347            VARYING
+Line:    348            UNTIL
 Line:    358 Paragraph: 1000-LOAD-RECORD
 Line:    360            MOVE
 Line:    361            MOVE
@@ -8591,6 +8618,8 @@ Line:    378            MOVE
 Line:    379            MOVE
 Line:    381            WRITE
 Line:    382            IF
+Line:    347            VARYING
+Line:    348            UNTIL
 Line:    358 Paragraph: 1000-LOAD-RECORD
 Line:    360            MOVE
 Line:    361            MOVE
@@ -8609,6 +8638,8 @@ Line:    378            MOVE
 Line:    379            MOVE
 Line:    381            WRITE
 Line:    382            IF
+Line:    347            VARYING
+Line:    348            UNTIL
 Line:    358 Paragraph: 1000-LOAD-RECORD
 Line:    360            MOVE
 Line:    361            MOVE
@@ -8627,6 +8658,8 @@ Line:    378            MOVE
 Line:    379            MOVE
 Line:    381            WRITE
 Line:    382            IF
+Line:    347            VARYING
+Line:    348            UNTIL
 Line:    358 Paragraph: 1000-LOAD-RECORD
 Line:    360            MOVE
 Line:    361            MOVE
@@ -8645,6 +8678,8 @@ Line:    378            MOVE
 Line:    379            MOVE
 Line:    381            WRITE
 Line:    382            IF
+Line:    347            VARYING
+Line:    348            UNTIL
 Line:    358 Paragraph: 1000-LOAD-RECORD
 Line:    360            MOVE
 Line:    361            MOVE
@@ -8663,6 +8698,8 @@ Line:    378            MOVE
 Line:    379            MOVE
 Line:    381            WRITE
 Line:    382            IF
+Line:    347            VARYING
+Line:    348            UNTIL
 Line:    350            DISPLAY
 Line:    352            CLOSE
 Line:    321            PERFORM
@@ -8690,50 +8727,62 @@ Line:    413            IF
 Line:    418            READ
 Line:    419            IF
 Line:    424            PERFORM
+Line:    425            UNTIL
 Line:    426            DISPLAY
 Line:    429            CALL
 Line:    430            READ
 Line:    434            ADD
+Line:    425            UNTIL
 Line:    426            DISPLAY
 Line:    429            CALL
 Line:    430            READ
 Line:    434            ADD
+Line:    425            UNTIL
 Line:    426            DISPLAY
 Line:    429            CALL
 Line:    430            READ
 Line:    434            ADD
+Line:    425            UNTIL
 Line:    426            DISPLAY
 Line:    429            CALL
 Line:    430            READ
 Line:    434            ADD
+Line:    425            UNTIL
 Line:    426            DISPLAY
 Line:    429            CALL
 Line:    430            READ
 Line:    434            ADD
+Line:    425            UNTIL
 Line:    426            DISPLAY
 Line:    429            CALL
 Line:    430            READ
 Line:    434            ADD
+Line:    425            UNTIL
 Line:    426            DISPLAY
 Line:    429            CALL
 Line:    430            READ
 Line:    434            ADD
+Line:    425            UNTIL
 Line:    426            DISPLAY
 Line:    429            CALL
 Line:    430            READ
 Line:    434            ADD
+Line:    425            UNTIL
 Line:    426            DISPLAY
 Line:    429            CALL
 Line:    430            READ
 Line:    434            ADD
+Line:    425            UNTIL
 Line:    426            DISPLAY
 Line:    429            CALL
 Line:    430            READ
 Line:    434            ADD
+Line:    425            UNTIL
 Line:    426            DISPLAY
 Line:    429            CALL
 Line:    430            READ
 Line:    434            ADD
+Line:    425            UNTIL
 Line:    436            IF
 Line:    439            DISPLAY
 Line:    442            DISPLAY
@@ -8746,36 +8795,47 @@ Line:    456            PERFORM
 Line:    458            DISPLAY
 Line:    461            READ
 Line:    465            ADD
+Line:    457            UNTIL
 Line:    458            DISPLAY
 Line:    461            READ
 Line:    465            ADD
+Line:    457            UNTIL
 Line:    458            DISPLAY
 Line:    461            READ
 Line:    465            ADD
+Line:    457            UNTIL
 Line:    458            DISPLAY
 Line:    461            READ
 Line:    465            ADD
+Line:    457            UNTIL
 Line:    458            DISPLAY
 Line:    461            READ
 Line:    465            ADD
+Line:    457            UNTIL
 Line:    458            DISPLAY
 Line:    461            READ
 Line:    465            ADD
+Line:    457            UNTIL
 Line:    458            DISPLAY
 Line:    461            READ
 Line:    465            ADD
+Line:    457            UNTIL
 Line:    458            DISPLAY
 Line:    461            READ
 Line:    465            ADD
+Line:    457            UNTIL
 Line:    458            DISPLAY
 Line:    461            READ
 Line:    465            ADD
+Line:    457            UNTIL
 Line:    458            DISPLAY
 Line:    461            READ
 Line:    465            ADD
+Line:    457            UNTIL
 Line:    458            DISPLAY
 Line:    461            READ
 Line:    465            ADD
+Line:    457            UNTIL
 Line:    468            CLOSE
 Line:    470            OPEN
 Line:    471            MOVE
@@ -10404,9 +10464,9 @@ COB_EXT_EXPORT int
 CAPI (void *p1, ...)
 {
    int      k,nargs,type,digits,scale,size,sign,byvalue;
-   cob_s64_t   val;
+   cob_s64_t   val = 0;
    char     *str;
-   char     wrk[80],pic[30];	/* note: maxium _theoretical_ size */
+   char     wrk[80],pic[30];	/* note: maximum _theoretical_ size */
 
    nargs = cob_get_num_params();
    printf ("CAPI called with %d parameters\n",nargs);
@@ -10641,7 +10701,7 @@ CAPI (void *p1, ...)
    int      k,nargs,type,digits,scale,size,sign,byvalue;
    cob_s64_t   val;
    char     *str;
-   char     wrk[80],pic[30];	/* note: maxium _theoretical_ size */
+   char     wrk[80],pic[30];	/* note: maximum _theoretical_ size */
 
    nargs = cob_get_num_params();
    printf ("CAPI called with %d parameters\n",nargs);
