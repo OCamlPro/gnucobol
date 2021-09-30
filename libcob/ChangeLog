@@ -170,6 +170,12 @@
 	* common.c (cob_sys_printable): set C locale to original one before
 	  checking and restore previous one afterwards
 
+2021-02-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* call.c (add_to_preload, cob_try_preload): extracted from
+	  (cob_init_call handle), additional preparare cob_try_preload to be
+	  callable from debuggers
+
 2021-01-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fileio.c (lineseq_read), common.c, coblocal.h:

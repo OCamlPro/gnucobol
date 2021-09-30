@@ -501,7 +501,7 @@ AT_CLEANUP
 
 
 AT_SETUP([cobcrun -M DSO entry argument])
-AT_KEYWORDS([runmisc])
+AT_KEYWORDS([runmisc preload])
 
 AT_DATA([callee.cob], [
        IDENTIFICATION   DIVISION.
@@ -600,7 +600,7 @@ AT_CLEANUP
 
 
 AT_SETUP([cobcrun -M directory/dso alternate])
-AT_KEYWORDS([runmisc])
+AT_KEYWORDS([runmisc preload])
 
 AT_DATA([callee.cob], [
        IDENTIFICATION   DIVISION.
@@ -651,7 +651,7 @@ AT_CLEANUP
 
 
 AT_SETUP([cobcrun -M DSO entry multiple arguments])
-AT_KEYWORDS([runmisc])
+AT_KEYWORDS([runmisc preload])
 
 # Test that modules can be called with ARGUMENT-VALUES
 AT_DATA([called.cob], [
