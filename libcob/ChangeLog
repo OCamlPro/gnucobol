@@ -4,6 +4,11 @@
 	* fileio.c (EXTFH3): also handle OP_FLUSH, OP_DELETE_FILE, OP_COMMIT and
 	  OP_ROLLBACK before checking record-pointer;
 	  set file status 9/100 for unknown op-codes
+	* common.c (cob_external_addr): split into muliple functions
+	* fileio.c (cob_file_malloc): set the file's number of keys directly
+	* fileio.c (cob_file_external_addr): change the way the file is allocated,
+	  having only its POINTER be "external" and use cob_file_malloc to allocate
+	  and set the attributes
 
 2021-09-28  Simon Sobisch <simonsobisch@gnu.org>
 

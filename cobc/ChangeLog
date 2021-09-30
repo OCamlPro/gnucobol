@@ -1,4 +1,9 @@
 
+2021-09-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_file_initialization): don't generate attribute
+	  setting which is done in cob_file_malloc / cob_file_external_addr
+
 2021-09-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (cobc_print_info): skip initial "." when printing COB_EXE_EXT

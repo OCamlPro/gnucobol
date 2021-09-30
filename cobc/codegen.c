@@ -8419,10 +8419,15 @@ output_file_initialization (struct cb_file *f)
 							CB_PREFIX_FILE, f->cname,
 							key_ptr, nkeys, f->linage?1:0);
 	}
-	nkeys = 1;
 	/* Output RELATIVE/RECORD KEY's */
 	if (f->organization == COB_ORG_RELATIVE
 	 || f->organization == COB_ORG_INDEXED) {
+#if 0 /* now done in cob_file_malloc / cob_file_external_addr */
+		output_line ("%s%s->nkeys = %d;", CB_PREFIX_FILE,
+			     f->cname, nkeys);
+		output_line ("%s%s->keys = %s%s;", CB_PREFIX_FILE,
+			     f->cname, CB_PREFIX_KEYS, f->cname);
+#endif
 		output_prefix ();
 		output ("%s%s->field = ", CB_PREFIX_KEYS, f->cname);
 		if (f->organization == COB_ORG_RELATIVE
@@ -8441,6 +8446,7 @@ output_file_initialization (struct cb_file *f)
 		} else {
 			output_line ("%s%s->offset = 0;", CB_PREFIX_KEYS, f->cname);
 		}
+		nkeys = 1;
 		for (l = f->alt_key_list; l; l = l->next) {
 			output_prefix ();
 			output ("(%s%s + %d)->field = ", CB_PREFIX_KEYS, f->cname,
@@ -8464,6 +8470,11 @@ output_file_initialization (struct cb_file *f)
 			}
 			nkeys++;
 		}
+#if 0 /* now done in cob_file_malloc / cob_file_external_addr */
+	} else {
+		output_line ("%s%s->nkeys = 0;", CB_PREFIX_FILE, f->cname);
+		output_line ("%s%s->keys = NULL;", CB_PREFIX_FILE, f->cname);
+#endif
 	}
 
 	output_line ("%s%s->select_name = (const char *)\"%s\";", CB_PREFIX_FILE,
@@ -8501,16 +8512,6 @@ output_file_initialization (struct cb_file *f)
 	output_line ("%s%s->record_max = %d;", CB_PREFIX_FILE,
 		     f->cname, f->record_max);
 
-	if (f->organization == COB_ORG_RELATIVE
-	 || f->organization == COB_ORG_INDEXED) {
-		output_line ("%s%s->nkeys = %d;", CB_PREFIX_FILE,
-			     f->cname, nkeys);
-		output_line ("%s%s->keys = %s%s;", CB_PREFIX_FILE,
-			     f->cname, CB_PREFIX_KEYS, f->cname);
-	} else {
-		output_line ("%s%s->nkeys = 0;", CB_PREFIX_FILE, f->cname);
-		output_line ("%s%s->keys = NULL;", CB_PREFIX_FILE, f->cname);
-	}
 	output_line ("%s%s->file = NULL;", CB_PREFIX_FILE, f->cname);
 
 	if (f->linage) {
@@ -8899,13 +8900,13 @@ output_report_data (struct cb_field *p)
 			}
 		}
 		output_emit_field(cb_build_field_reference (p, NULL), NULL);
-		if(p->report_sum_counter) {
+		if (p->report_sum_counter) {
 			output_emit_field (p->report_sum_counter, "SUM");
 		}
-		if(p->report_source) {
+		if (p->report_source) {
 			output_emit_field (p->report_source, "SOURCE");
 		}
-		if(p->report_control) {
+		if (p->report_control) {
 			output_emit_field (p->report_control, "CONTROL");
 		}
 		if (p->children) {
@@ -8922,19 +8923,20 @@ static void
 output_report_sum_control_field (struct cb_field *p)
 {
 	cb_tree	l,x;
-    	if(p == NULL)
-	    return;
-	if(p->storage == CB_STORAGE_REPORT) {
-		if(p->level == 01) {
+	if (p == NULL) {
+		return;
+	}
+	if (p->storage == CB_STORAGE_REPORT) {
+		if (p->level == 01) {
 			output_base(p,1U);
 		}
-		if(p->report_sum_counter) {
+		if (p->report_sum_counter) {
 			output_base(cb_code_field(p->report_sum_counter),1U);
 		}
-		if(p->report_control) {
+		if (p->report_control) {
 			output_base(cb_code_field(p->report_control),1U);
 		}
-		if(p->report_source) {
+		if (p->report_source) {
 			output_base(cb_code_field(p->report_source),1U);
 		}
 		for (l = p->report_sum_list; l; l = CB_CHAIN (l)) {

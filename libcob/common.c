@@ -3421,10 +3421,47 @@ cob_check_ref_mod_minimal (const char* name, const int offset, const int length)
 	}
 }
 
+/* check if already allocated, if yes returns its address and sets exlength */
+static void *
+cob_external_addr_lookup (const char *exname, int *exlength)
+{
+	struct cob_external *eptr;
+
+	for (eptr = basext; eptr; eptr = eptr->next) {
+		if (!strcmp (exname, eptr->ename)) {
+			if (exlength) {
+				*exlength = eptr->esize;
+			}
+			return eptr->ext_alloc;
+		}
+	}
+	return NULL;
+}
+
+/* allocate new external entry;
+   returns allocated pointer with requested size */
+static void *
+cob_external_addr_create (const char *exname, int exlength)
+{
+	struct cob_external *eptr;
+
+	eptr = cob_malloc (sizeof (struct cob_external));
+	eptr->next = basext;
+	eptr->esize = exlength;
+	eptr->ename = cob_strdup (exname);
+	eptr->ext_alloc = cob_malloc ((size_t)exlength);
+	basext = eptr;
+
+	return eptr->ext_alloc;
+}
+
+/* lookup external item, if already created before check given length;
+   returns allocated pointer with at least requested size */
 void *
 cob_external_addr (const char *exname, const int exlength)
 {
-	struct cob_external *eptr;
+	int		stored_length;
+	void	*ret;
 
 	/* special external "C" registers */
 	if (exlength == sizeof (int)
@@ -3433,30 +3470,23 @@ cob_external_addr (const char *exname, const int exlength)
 	}
 
 	/* Locate or allocate EXTERNAL item */
-	for (eptr = basext; eptr; eptr = eptr->next) {
-		if (!strcmp (exname, eptr->ename)) {
-			if (exlength > eptr->esize) {
-				cob_runtime_error (_("EXTERNAL item '%s' previously allocated with size %d, requested size is %d"),
-						   exname, eptr->esize, exlength);
-				cob_stop_run (1);
-			}
-			if (exlength < eptr->esize) {
-				cob_runtime_warning (_("EXTERNAL item '%s' previously allocated with size %d, requested size is %d"),
-						   exname, eptr->esize, exlength);
-			}
-			cobglobptr->cob_initial_external = 0;
-			return eptr->ext_alloc;
+	ret = cob_external_addr_lookup (exname, &stored_length);
+	if (ret != NULL) {
+		if (exlength > stored_length) {
+			cob_runtime_error (_ ("EXTERNAL item '%s' previously allocated with size %d, requested size is %d"),
+				exname, stored_length, exlength);
+			cob_stop_run (1);
 		}
+		if (exlength < stored_length) {
+			cob_runtime_warning (_ ("EXTERNAL item '%s' previously allocated with size %d, requested size is %d"),
+				exname, stored_length, exlength);
+		}
+		cobglobptr->cob_initial_external = 0;
+	} else {
+		ret = cob_external_addr_create (exname, exlength);
+		cobglobptr->cob_initial_external = 1;
 	}
-	eptr = cob_malloc (sizeof (struct cob_external));
-	eptr->next = basext;
-	eptr->esize = exlength;
-	eptr->ename = cob_malloc (strlen (exname) + 1U);
-	strcpy (eptr->ename, exname);
-	eptr->ext_alloc = cob_malloc ((size_t)exlength);
-	basext = eptr;
-	cobglobptr->cob_initial_external = 1;
-	return eptr->ext_alloc;
+	return ret;
 }
 
 #if defined (_MSC_VER) && COB_USE_VC2008_OR_GREATER

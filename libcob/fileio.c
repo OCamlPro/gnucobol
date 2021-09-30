@@ -5232,25 +5232,27 @@ cob_file_external_addr (const char *exname,
 		cob_file **pfl, cob_file_key **pky,
 		const int nkeys, const int linage)
 {
-	cob_file	*fl;
-	fl = cob_external_addr (exname, sizeof (cob_file));
-	if (fl->file_version == 0)
-		fl->file_version = COB_FILE_VERSION;
+	pfl = cob_external_addr (exname, sizeof (cob_file *));
 
-	if (nkeys > 0
-	 && fl->keys == NULL) {
-		fl->keys = cob_cache_malloc (sizeof (cob_file_key) * nkeys);
+	if (*pfl != NULL) {
+		cob_file	*fl = *pfl;
+		if (pky != NULL) {
+			*pky = fl->keys;
+		}
+		/* already allocated, just pass on;
+		   TODO: verify file attributes (here or in the caller?) */
+#if 0
+		if (fl->nkeys != nkeys) {
+			/* reallocate if KEYCHECK and bigger / raise exception otherwise ? */
+		}
+		if (linage > 0
+		 && fl->linorkeyptr == NULL) {
+			/* CHECKME: is this allowed to happen? */
+		}
+#endif
+	} else {
+		cob_file_malloc (pfl, pky, nkeys, linage);
 	}
-
-	if (pky != NULL) {
-		*pky = fl->keys;
-	}
-
-	if (linage > 0
-	 && fl->linorkeyptr == NULL) {
-		fl->linorkeyptr = cob_cache_malloc (sizeof (cob_linage));
-	}
-	*pfl = fl;
 }
 
 /*
@@ -5263,6 +5265,7 @@ cob_file_malloc (cob_file **pfl, cob_file_key **pky,
 	cob_file	*fl;
 	fl = cob_cache_malloc (sizeof (cob_file));
 	fl->file_version = COB_FILE_VERSION;
+	fl->nkeys = (size_t)nkeys;	/* casting away bad difference... */
 
 	if (nkeys > 0
 	 && pky != NULL) {
