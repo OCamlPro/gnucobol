@@ -4163,7 +4163,6 @@ AT_CLEANUP
 
 
 AT_SETUP([EXTERNAL RELATIVE file])
-# FIXME: Check the function of the EXTERNAL file using a second program, too
 AT_KEYWORDS([runfile])
 
 AT_DATA([prog.cob], [
@@ -4188,11 +4187,40 @@ AT_DATA([prog.cob], [
        01  my-key PIC 9.
 
        PROCEDURE DIVISION.
-           CONTINUE
-           .
+           OPEN OUTPUT my-file
+           MOVE 'testme' TO my-record
+           CALL 'prog2'
+           CLOSE my-file
+           GOBACK.
+])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog2.
+
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT my-file
+               ASSIGN TO "somefile"
+               ORGANIZATION IS RELATIVE
+               RELATIVE KEY IS my-key.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD my-file EXTERNAL.
+       01 two-record    PIC X(80).
+
+       WORKING-STORAGE SECTION.
+       01  my-key PIC 9.
+
+       PROCEDURE DIVISION.
+           WRITE two-record
+           GOBACK.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_MODULE prog2.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP

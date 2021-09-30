@@ -443,9 +443,6 @@ AT_CLEANUP
 AT_SETUP([EXTERNAL data item size mismatch])
 AT_KEYWORDS([runmisc])
 
-# FIXME - see Bug #445
-AT_XFAIL_IF(true)
-
 AT_DATA([callee.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      callee.
@@ -456,13 +453,9 @@ AT_DATA([callee.cob], [
        01 EXT-VAR       PIC X(8) EXTERNAL.
        PROCEDURE        DIVISION.
            IF PRG-VAR NOT = "Extrn"
-              DISPLAY PRG-VAR
-              END-DISPLAY
-           END-IF.
-           IF EXT-VAR NOT = "Hello"
-              DISPLAY EXT-VAR
-              END-DISPLAY
-           END-IF.
+              DISPLAY 'local named external is not correct: ' PRG-VAR.
+           IF COB-VAR NOT = "Hello"
+              DISPLAY 'remote named external is not correct: ' COB-VAR.
            MOVE "World" TO EXT-VAR.
            EXIT PROGRAM.
 ])
@@ -472,18 +465,16 @@ AT_DATA([bigger.cob], [
        PROGRAM-ID.      error.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       01 MYVAR         PIC X(10) EXTERNAL AS "COB-VAR".
        01 WRK-VAR       PIC X(10) EXTERNAL.
+       01 MYVAR         PIC X(10) EXTERNAL AS "COB-VAR".
        01 EXT-VAR       PIC X(10) EXTERNAL.
        PROCEDURE        DIVISION.
-           MOVE "Extrn" TO WRK-VAR.
-           MOVE "Hello" TO MYVAR.
+           MOVE "Extrn" TO WRK-VAR
+           MOVE "Hello" TO MYVAR
+           MOVE SPACES  TO EXT-VAR
            CALL "callee"
-           END-CALL.
-           IF MYVAR NOT = "World"
-              DISPLAY MYVAR
-              END-DISPLAY
-           END-IF.
+           IF EXT-VAR NOT = "World"
+              DISPLAY 'simple external back not correct: ' EXT-VAR.
            STOP RUN.
 ])
 
@@ -492,30 +483,35 @@ AT_DATA([smaller.cob], [
        PROGRAM-ID.      error.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       01 MYVAR         PIC X(5) EXTERNAL AS "COB-VAR".
        01 WRK-VAR       PIC X(5) EXTERNAL.
+       01 MYVAR         PIC X(5) EXTERNAL AS "COB-VAR".
        01 EXT-VAR       PIC X(5) EXTERNAL.
        PROCEDURE        DIVISION.
-           MOVE "Extrn" TO WRK-VAR.
-           MOVE "Hello" TO MYVAR.
+           MOVE "Extrn" TO WRK-VAR
+           MOVE "Hello" TO MYVAR
+           MOVE SPACES  TO EXT-VAR
            CALL "callee"
-           END-CALL.
-           IF MYVAR NOT = "World"
-              DISPLAY MYVAR
-              END-DISPLAY
-           END-IF.
+           IF EXT-VAR NOT = "World"
+              DISPLAY 'simple external back not correct: ' EXT-VAR.
            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
 AT_CHECK([$COMPILE bigger.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./bigger], [0], [], ignore)
+
+AT_CHECK([$COMPILE smaller.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./smaller], [1], [], ignore)
+
+# FIXME - messages should be adjusted, see Bug #445
+AT_XFAIL_IF(true)
+
 AT_CHECK([$COBCRUN_DIRECT ./bigger], [0], [],
 [libcob: callee.cob:6: warning: EXTERNAL item 'WRK-VAR' previously allocated with size 10, requested size is 8
 libcob: callee.cob:7: warning: EXTERNAL item 'EXT-VAR' previously allocated with size 10, requested size is 8
 libcob: callee.cob:8: warning: EXTERNAL item 'EXT-VAR' previously allocated with size 10, requested size is 8
 ])
 
-AT_CHECK([$COMPILE smaller.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./smaller], [1], [],
 [libcob: callee.cob:6: error: EXTERNAL item 'WRK-VAR' previously allocated with size 5, requested size is 8
 ])

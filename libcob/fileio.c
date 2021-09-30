@@ -5232,16 +5232,22 @@ cob_file_external_addr (const char *exname,
 		cob_file **pfl, cob_file_key **pky,
 		const int nkeys, const int linage)
 {
-	pfl = cob_external_addr (exname, sizeof (cob_file *));
+	cob_file	**epfl = cob_external_addr (exname, sizeof (cob_file *));
 
-	if (*pfl != NULL) {
-		cob_file	*fl = *pfl;
+	if (cobglobptr->cob_initial_external) {
+		/* if the pointer was setup the first time:
+		   allocate the file and store the address for next request */
+		cob_file_malloc (pfl, pky, nkeys, linage);
+		*epfl = *pfl;
+	} else {
+		/* external pointer available - get the address stored
+		   and set / check keys */
+		cob_file	*fl = *pfl = *epfl;
+		/* already allocated, just pass on */		
 		if (pky != NULL) {
 			*pky = fl->keys;
 		}
-		/* already allocated, just pass on;
-		   TODO: verify file attributes (here or in the caller?) */
-#if 0
+#if 0	/* TODO: verify file attributes (here or in the caller?) */
 		if (fl->nkeys != nkeys) {
 			/* reallocate if KEYCHECK and bigger / raise exception otherwise ? */
 		}
@@ -5250,8 +5256,6 @@ cob_file_external_addr (const char *exname,
 			/* CHECKME: is this allowed to happen? */
 		}
 #endif
-	} else {
-		cob_file_malloc (pfl, pky, nkeys, linage);
 	}
 }
 
