@@ -25,7 +25,10 @@
 #define cobglobptr file_globptr
 #define cobsetptr file_setptr
 
-#include "config.h"
+#ifndef _CONFIG_H
+#include <config.h>
+#define _CONFIG_H
+#endif
 
 #define _LFS64_LARGEFILE		1
 #define _LFS64_STDIO			1

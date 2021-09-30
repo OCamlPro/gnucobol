@@ -1452,7 +1452,7 @@ struct cob_func_loc {
 
 /* Key structure */
 
-#define COB_MAX_KEYCOMP 8	/* max number of parts in a compound key (disam.h :: NPARTS ) */
+#define COB_MAX_KEYCOMP 16	/* max number of parts in a compound key (disam.h :: NPARTS ) */
 
 typedef struct __cob_file_key {
 	unsigned int	offset;			/* Offset of field within record */

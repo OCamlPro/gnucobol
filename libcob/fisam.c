@@ -91,6 +91,12 @@ static	cob_settings	*isam_setptr;
 #if defined(HAVE_ISWRAP_H)
 #include <iswrap.h>
 #endif
+#ifdef ISMAXKEY
+#ifdef MAXKEYLEN
+#undef MAXKEYLEN
+#endif
+#define MAXKEYLEN ISMAXKEY
+#endif
 #if ( ISCOBOL & ISCOBOL_STATS )
 #ifndef COB_WITH_STATUS_02 
 #define	COB_WITH_STATUS_02
@@ -141,9 +147,10 @@ static	vb_rtd_t *vbisam_rtd = NULL;
 #include <visam.h>
 /* VBISAM 2.2: access to isrecnum iserrno etc is global */
 #ifdef VB_MAX_KEYLEN
-#ifndef MAXKEYLEN
-#define MAXKEYLEN VB_MAX_KEYLEN
+#ifdef MAXKEYLEN
+#undef MAXKEYLEN
 #endif
+#define MAXKEYLEN VB_MAX_KEYLEN
 #endif
 #if defined(VB_RTD)
 #undef VB_RTD
@@ -160,7 +167,7 @@ static	vb_rtd_t *vbisam_rtd = NULL;
 #endif
 
 #ifndef MAXKEYLEN
-#define MAXKEYLEN 120
+#define MAXKEYLEN 240
 #endif
 
 #ifndef ISVARLEN
@@ -253,6 +260,10 @@ static const struct cob_fileio_funcs ext_indexed_funcs = {
 	isam_dummy,			/* unlock */
 	isam_version
 };
+
+/* max_keycomp may be reduced depending on the x-ISAM configuration */
+static int max_keycomp = COB_MAX_KEYCOMP;
+static const char *isam_name = "xISAM";
 
 /* Local functions */
 
@@ -349,17 +360,17 @@ indexed_keydesc (cob_file *f, struct keydesc *kd, cob_file_key *key)
 
 	/* multi- and single field key as component */
 	/* LCOV_EXCL_START */
-	if (key->count_components > COB_MAX_KEYCOMP) {
+	if (key->count_components > max_keycomp) {
 		/* not translated as this is safety guard unlikely to be ever triggered */
 		cob_runtime_warning ("module specifies %d key components, "
-			"this runtime ignores all parts greater than %d",
-			key->count_components, COB_MAX_KEYCOMP);
-		key->count_components = COB_MAX_KEYCOMP;
+			"%s runtime ignores all parts greater than %d",
+			key->count_components, isam_name, max_keycomp);
+		key->count_components = max_keycomp;
 	}
 	/* LCOV_EXCL_STOP */
 
 	keylen = 0;
-	for (part=0; part < key->count_components && part < COB_MAX_KEYCOMP; part++) {
+	for (part=0; part < key->count_components && part < max_keycomp; part++) {
 		kd->k_part[part].kp_start = key->component[part]->data - f->record->data;
 		kd->k_part[part].kp_leng = key->component[part]->size;
 		keylen += kd->k_part[part].kp_leng;
@@ -2017,12 +2028,23 @@ cob_isam_exit_fileio (cob_file_api *a)
 void
 cob_isam_init_fileio (cob_file_api *a)
 {
+#ifdef NPARTS
+	if (max_keycomp > NPARTS)
+		max_keycomp = NPARTS;
+#endif
+#ifdef ISMAXPARTS
+	if (max_keycomp > ISMAXPARTS)
+		max_keycomp = ISMAXPARTS;
+#endif
 #if defined(WITH_DISAM)
 	a->io_funcs[COB_IO_DISAM] = (void*) &ext_indexed_funcs;
+	isam_name = "D-ISAM";
 #elif defined(WITH_CISAM)
 	a->io_funcs[COB_IO_CISAM] = (void*) &ext_indexed_funcs;
+	isam_name = "C-ISAM";
 #elif defined(WITH_VISAM)
 	a->io_funcs[COB_IO_VISAM] = (void*) &ext_indexed_funcs;
+	isam_name = "V-ISAM";
 #ifdef VB_RTD
 	if (vbisam_rtd == NULL) {	/* VB-ISAM 2.2 run-time pointer */
 		vbisam_rtd = VB_GET_RTD;
@@ -2030,6 +2052,7 @@ cob_isam_init_fileio (cob_file_api *a)
 #endif
 #elif defined(WITH_VBISAM)
 	a->io_funcs[COB_IO_VBISAM] = (void*) &ext_indexed_funcs;
+	isam_name = "VB-ISAM";
 #ifdef VB_RTD
 	if (vbisam_rtd == NULL) {	/* VB-ISAM 2.1.1 run-time pointer */
 		vbisam_rtd = VB_GET_RTD;

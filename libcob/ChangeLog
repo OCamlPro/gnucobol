@@ -1,3 +1,11 @@
+
+2021-09-30  Ron Norman <rjn@inglenet.com>
+
+	* common.h: COB_MAX_KEYCOMP increased to 16
+	* fileio.h: config.h is only included if not already
+	* fisam.c: (COB_MAX_KEYCOMP) is compared to actual limit in
+			the ISAM libray and may reduce to what is allowed
+
 2021-09-26  Christian Lademann <christian@lademann.online>
 
 	* termio.c, screenio.c: recognize 3-byte crt_status item and fill it
