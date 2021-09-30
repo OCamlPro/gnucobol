@@ -3,6 +3,7 @@
 
 	* codegen.c (output_file_initialization): don't generate attribute
 	  setting which is done in cob_file_malloc / cob_file_external_addr
+	* codegen.c (output_module_init_function): set module->gc_version
 
 2021-09-28  Simon Sobisch <simonsobisch@gnu.org>
 

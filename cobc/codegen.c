@@ -10194,6 +10194,7 @@ output_module_init_function (struct cb_program *prog)
 	output_line ("module->module_name = \"%s\";", prog->orig_program_id);
 	output_line ("module->module_formatted_date = COB_MODULE_FORMATTED_DATE;");
 	output_line ("module->module_source = COB_SOURCE_FILE;");
+	output_line ("module->gc_version = COB_PACKAGE_VERSION;");
 	if (!prog->nested_level) {
 		output_line ("module->module_entry.funcptr = (void *(*)())%s;",
 			     prog->program_id);

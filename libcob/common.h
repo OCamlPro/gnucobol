@@ -1289,6 +1289,8 @@ typedef struct __cob_module {
 
 	cob_field		*json_code;		/* JSON-CODE */
 	cob_field		*json_status;		/* JSON-STATUS */
+
+	const char	*gc_version;	/* module version, until 3.1.2: set by cob_check_version */
 } cob_module;
 
 
@@ -1312,9 +1314,9 @@ struct cob_func_loc {
 
 typedef struct __cob_file_key {
 	cob_field	*field;	/* Key field */
-	int		flag;				/* ASCENDING/DESCENDING (for SORT) */
+	int		flag;				/* ASCENDING/DESCENDING (for SORT) [3.x only] */
 	int		tf_duplicates;			/* WITH DUPLICATES (for RELATIVE/INDEXED) */
-	int		tf_ascending;			/* ASCENDING/DESCENDING (for SORT)*/
+	int		tf_ascending;			/* ASCENDING/DESCENDING (for SORT) [4.x only, for now: unused] */
 	int		tf_suppress;			/* supress keys where all chars = char_suppress */
 	int		char_suppress;			/* key supression character  */
 	unsigned int	offset;			/* Offset of field */

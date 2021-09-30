@@ -57,7 +57,11 @@ NEWS - user visible changes				-*- outline -*-
    "ibm" (to Enterprise COBOL 6.3) and "mf" (to Micro Focus Visual COBOL 6.0)
 ** for all "lax" updates SYNC was handled even if commonly ignored by the strict
    dialects, this was fixed so SYNC is ignored depending on the dialect
-   
+** COBOL programs compiled with versions before GnuCOBOL 3 that used files with
+   ORGANIZATION INDEXED or RELATIVE chrashed when executed with newer versions,
+   this has been fixed so that all modules compiled with GnuCOBOL 2.2 can be
+   executed with GnuCOBOL 3.2
+
 * Listing changes
 
 ** the timestamp in the header was changed from ANSI date format like
@@ -65,6 +69,7 @@ NEWS - user visible changes				-*- outline -*-
    changed during `configure` with adding a define to CPPFLAGS, for using the
    old format `-DLISTING_TIMESTAMP_ANSI`, for an explicit format (cut at 26
    characters) for example date only: `-DLISTING_TIMESTAMP_FORMAT="%Y-%m-%d"`
+
 
  GnuCOBOL 3.1.2 released (20201223)
  GnuCOBOL 3.1.1 released (20201208) containing INITIALIZE bug #694

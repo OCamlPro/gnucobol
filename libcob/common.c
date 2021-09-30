@@ -2518,12 +2518,20 @@ cob_check_version (const char *prog,
 			 &app.major, &app.minor, &app.point);
 		app.version = version_bitstring(app);
 
+		if (app.major == 2 && app.minor < 2) {
+			goto err;
+		}
+		/* COB_MODULE_PTR is expected to be set, because cob_module_global_enter
+		   was called _directly_ before this function, also with 2.2,
+		   still checking at least for the case of "misuse" of this function as
+		   undocumented ABI call [as in our testsuite ...] */
+		if (cobglobptr && COB_MODULE_PTR && !COB_MODULE_PTR->gc_version) {
+			COB_MODULE_PTR->gc_version = packver_prog;
+		}
 		if (app.version == lib.version
 		 && patchlev_prog <= PATCH_LEVEL) {
 			return;
-		} else 
-		if (app.major == 2 && app.minor < 2) {
-		} else
+		}
 		if (app.version < lib.version) {
 			/* we only claim compatibility to 2.2+ */
 			struct ver_t minimal = { 2, 2 }; 
@@ -2536,7 +2544,8 @@ cob_check_version (const char *prog,
 			}
 		}
 	}
-	
+
+err:
 	cob_runtime_error (_("version mismatch"));
 	cob_runtime_hint (_("%s has version %s.%d"), prog,
 			   packver_prog, patchlev_prog);

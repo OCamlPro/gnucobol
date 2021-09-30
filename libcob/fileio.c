@@ -1186,6 +1186,14 @@ cob_sync (cob_file *f)
 	}
 }
 
+
+typedef struct __cob_file_key_pre3 {
+	cob_field	*field;	/* Key field */
+	int		flag;	/* WITH DUPLICATES (for RELATIVE/INDEXED) */
+					/* ASCENDING/DESCENDING (for SORT) */
+	unsigned int	offset;			/* Offset of field */
+} cob_file_key_pre3;
+
 static void
 cob_cache_file (cob_file *f)
 {
@@ -1200,6 +1208,38 @@ cob_cache_file (cob_file *f)
 	l->file = f;
 	l->next = file_cache;
 	file_cache = l;
+
+	/* reset bad file_key attributes, 3.0 had split "flags" and added fields
+	   before the offset; since 2.2 the memory is allocated in libcob via
+	   (cob_file_malloc), but the module is the one that needs to (and does)
+	   set the file and key attributes. If the module is older than 3.0 it has
+	   set those "at the wrong place" - reset here; only possible because we
+	   know that the full memory is allocated and because each module has its
+	   own cob_file pointer that only itself set the cob_file_key attributes */
+	if (COB_MODULE_PTR->gc_version && COB_MODULE_PTR->gc_version[0] == '2') {
+		int 	k;
+		/* copy over "old view" into local fields */
+		cob_file_key_pre3 * old_view = (cob_file_key_pre3 *)f->keys;
+		cob_file_key_pre3 * old_keys = cob_malloc (sizeof (cob_file_key_pre3) * f->nkeys);
+		for (k = 0; k < f->nkeys; ++k) {
+			old_keys[k].field = old_view[k].field;
+			old_keys[k].flag = old_view[k].flag;
+			old_keys[k].offset = old_view[k].offset;
+		}
+		/* copy local fields into actual data */
+		for (k = 0; k < f->nkeys; ++k) {
+			memset(&f->keys[k], 0, sizeof(cob_file_key));
+			f->keys[k].field = old_keys[k].field;
+			if (f->organization == COB_ORG_SORT) {
+				f->keys[k].flag = old_keys[k].flag;	/* tf_ascending not used in 3.x... */
+			} else {
+				f->keys[k].tf_duplicates = old_keys[k].flag;
+			}
+			f->keys[k].offset = old_keys[k].offset;
+		}
+		cob_free (old_keys);
+	}
+	
 }
 
 static void

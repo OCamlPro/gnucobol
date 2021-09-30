@@ -9,6 +9,11 @@
 	* fileio.c (cob_file_external_addr): change the way the file is allocated,
 	  having only its POINTER be "external" and use cob_file_malloc to allocate
 	  and set the attributes
+	* common.h (cob_module): new attribute gc_version
+	* common.c (cob_check_version): set last modules gc_version
+	* fileio.c (cob_cache_file): fix aborts when running GC 2 modules with
+	  INDEXED/RELATIVE files by converting old cob_file_key structure
+	  to the expected one
 
 2021-09-28  Simon Sobisch <simonsobisch@gnu.org>
 
