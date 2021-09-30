@@ -229,9 +229,18 @@
 	* cobc.c (cobc_print_version): msgid change moving URLs to parameter per
 	  gettext-guidelines
 
+2021-02-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.h: remove unused cb_listing_files
+
 2021-01-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.h, cobc.c: removed unused cb_exception->explicit_enable_val
+
+2020-12-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* flag.def, cobc.c: change cb_flag_notrunc to cb_flag_trunc to "fix"
+	  -fno-fnotrunc with backward-compatibilty handling
 
 2020-12-23  Simon Sobisch <simonsobisch@gnu.org>
 

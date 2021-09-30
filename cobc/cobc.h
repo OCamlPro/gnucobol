@@ -161,6 +161,7 @@ enum cb_current_date {
 #define	CB_CS_I_O_CONTROL		CB_CS_DAY
 #define	CB_CS_TYPEDEF			CB_CS_DAY
 #define	CB_CS_EXHIBIT			CB_CS_DAY
+#define	CB_CS_MOVE_CONV			CB_CS_DAY
 
 /* Support for cobc from stdin */
 #define COB_DASH			"-"
@@ -373,7 +374,6 @@ struct list_files {
 	const char		*name;		/* Name of this file */
 };
 
-extern struct list_files	*cb_listing_files;
 extern struct list_files	*cb_current_file;
 
 extern enum cb_format		cb_source_format;

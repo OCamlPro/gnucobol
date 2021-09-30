@@ -617,6 +617,10 @@ static const struct option long_options[] = {
 	{"fibmcomp",		CB_NO_ARG, &cb_mf_ibm_comp, 1},
 	{"fno-ibmcomp",		CB_NO_ARG, &cb_mf_ibm_comp, 0},
 
+	/* alias for backwards-compatibility, removed with 4.x: */
+	{"fnotrunc",		CB_NO_ARG, &cb_flag_trunc, 0},
+	{"fno-notrunc",		CB_NO_ARG, &cb_flag_trunc, 1},
+
 #define	CB_CONFIG_ANY(type,var,name,doc)	\
 	{"f" name,		CB_RQ_ARG, NULL, '%'},
 #define	CB_CONFIG_INT(var,name,min,max,odoc,doc)	\
@@ -3869,7 +3873,7 @@ process_command_line (const int argc, char **argv)
 	&&  cb_listing_statements > CB_OBSOLETE) {
 		cb_listing_statements = cb_title_statement;
 	}
-	if (cb_flag_notrunc) {
+	if (!cb_flag_trunc) {
 		cb_binary_truncate = 0;
 		cb_pretty_display = 0;
 	}
