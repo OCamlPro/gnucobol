@@ -2531,7 +2531,8 @@ typedef struct __fcd2 {
 	unsigned char	fileOrg;			/* file organization */
 	unsigned char	accessFlags;		/* status byte & file access flags */
 	unsigned char	openMode;			/* open mode INPUT, I-O, etc. */
-	char			res2[3];			/* reserved */
+	char			res2[2];			/* reserved */
+	unsigned char	blockSize;			/* block-size, fcd-convert only */
 	unsigned char	fnameLen[2];		/* file name length */
 	unsigned char	relByteAdrs64[8];	/* 64-bit, relative byte address */
 	char			res3[3];			/* reserved */
