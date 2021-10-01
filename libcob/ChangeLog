@@ -6,12 +6,39 @@
 	* common.c: Changes related to removal of COB_MF_LS_xxx from runtime.cfg
 	* fileio.c: Changes related to removal of COB_MF_LS_xxx from runtime.cfg
 
+2021-10-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fextfh.c: merged EXTFH changes from 3.x (fileio.c)
+
+2021-09-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c: save-guard against broken cob_module chain in dump
+	* termio.c, common.c: allow to explicit disable dump
+
 2021-09-30  Ron Norman <rjn@inglenet.com>
 
 	* common.h: COB_MAX_KEYCOMP increased to 16
 	* fileio.h: config.h is only included if not already
 	* fisam.c: (COB_MAX_KEYCOMP) is compared to actual limit in
 			the ISAM libray and may reduce to what is allowed
+
+2021-09-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (EXTFH3): also handle OP_FLUSH, OP_DELETE_FILE, OP_COMMIT and
+	  OP_ROLLBACK before checking record-pointer;
+	  set file status 9/100 for unknown op-codes
+	* common.c (cob_external_addr): split into muliple functions
+	* fileio.c (cob_file_malloc): set the file's number of keys directly
+	* fileio.c (cob_file_external_addr): change the way the file is allocated,
+	  having only its POINTER be "external" and use cob_file_malloc to allocate
+	  and set the attributes
+
+2021-09-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (call_exit_handlers_and_terminate): extracted from
+	  (cob_stop_run, cob_tidy)
+	* reportio.c (cob_report_generate): backport of 2021-09-26 change
+	* common.c (cob_gettmpdir): fix to remove trailing slash
 
 2021-09-26  Christian Lademann <christian@lademann.online>
 
@@ -23,9 +50,24 @@
 
 	* reportio.c: Fixed to call back to DECLARATIVES for DETAIL line
 
-2021-09-13  Ron Norman <rjn@inglenet.com>
+2021-09-21  Simon Sobisch <simonsobisch@gnu.org>
 
-	* fextfh.c: Some fixes to following changes
+	* fileio.c (cob_pre_open): remove trailing spaces from fcd->filenameptr
+	  and ensure that the filename length does not extend our max size
+	* fileio.c (copy_fcd_to_file): ignore flag "file with user status"
+	* fileio.c (fcd2_to_fcd3, fcd3_to_fcd): copy block size parameter (ignored)
+	* fileio.c (copy_fcd_to_file) [_WIN32]: additional handle DOS Slash when
+	  building the assign name
+	* fileio.c (update_record_and_keys_if_necessary): extracted from
+	  (find_file) and called separately
+	* fileio.c (find_file): set file's fcd backreference
+	* fileio.c (EXTFH3): disabled auto-adjustment of files' and fcd's
+	  access mode for ORGANIZATION INDEXED, along with pre-setting status to 00
+
+2021-09-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fextfh.c (fcd2_to_fcd3): removed checks as this function only converts
+	* fextfh.c (cob_sys_extfh): minor adjustments for bad arguments
 
 2021-09-13  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -57,6 +99,11 @@
 2021-09-05  Ron Norman <rjn@inglenet.com>
 
 	* fextfh.c: Add check for record address being available
+
+2021-08-31  Simon Sobisch <simonsobisch@gnu.org>
+
+	* intrinsic.c, common.h: implemented (cob_intr_bit_of),
+	  (cob_intr_bit_to_char)
 
 2021-08-30  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -101,6 +148,11 @@
 	          Additional changes as each LINE now has its own data area
 			  The cob_report now has a version which is checked at runtime
 			  The format of cob_report I/O routines changed
+
+2021-07-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* intrinsic.c, common.h: implemented (cob_intr_hex_of),
+	  (cob_intr_hex_to_char)
 
 2021-07-12  Ron Norman <rjn@inglenet.com>
 

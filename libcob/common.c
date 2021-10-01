@@ -159,7 +159,7 @@ struct cob_alloc_cache {
 	void			*cob_pointer;	/* Pointer to malloced space */
 	size_t			size;		/* Item size */
 };
-const int   MAX_MODULE_ITERS = 10240;
+const int	MAX_MODULE_ITERS = 10240;
 
 struct cob_alloc_module {
 	struct cob_alloc_module	*next;		/* Pointer to next */
@@ -1599,7 +1599,6 @@ cob_open_logfile (const char *filename)
 static void
 cob_check_trace_file (void)
 {
-
 	if (cobsetptr->cob_trace_file) {
 		return;
 	}
@@ -1667,9 +1666,8 @@ int
 cob_check_env_false (char * s)
 {
 	return s && ((strlen (s) == 1 && (*s == 'N' || *s == 'n' || *s == '0'))
-		     || (strcasecmp (s, "NO") == 0 || strcasecmp (s, "NONE") == 0
-			 || strcasecmp (s, "OFF") == 0
-			 || strcasecmp (s, "FALSE") == 0));
+	          || (strcasecmp (s, "NO") == 0 || strcasecmp (s, "NONE") == 0
+	           || strcasecmp (s, "OFF") == 0 || strcasecmp (s, "FALSE") == 0));
 }
 
 static void
@@ -2331,12 +2329,9 @@ call_exit_handlers_and_terminate (void)
 void
 cob_stop_run (const int status)
 {
-	struct exit_handlerlist	*h;
-
 	if (!cob_initialized) {
 		exit (EXIT_FAILURE);
 	}
-
 	call_exit_handlers_and_terminate ();
 	exit (status);
 }
@@ -3361,8 +3356,8 @@ cob_check_numeric (const cob_field *f, const char *name)
 }
 
 void
-cob_check_odo (const int i, const int min, const int max, 
-				const char *name, const char *dep_name)
+cob_check_odo (const int i, const int min, const int max,
+			const char *name, const char *dep_name)
 {
 	/* Check OCCURS DEPENDING ON item */
 	if (i < min || i > max) {
@@ -4667,6 +4662,8 @@ check_valid_env_tmpdir (const char *envname)
 	return dir;
 }
 
+
+/* return pointer to TMPDIR without trailing slash */
 static const char *
 cob_gettmpdir (void)
 {
@@ -4791,8 +4788,6 @@ cob_command_line (int flags, int *pargc, char ***pargv,
 int
 cob_tidy (void)
 {
-	struct exit_handlerlist	*h;
-
 	if (!cob_initialized) {
 		return 1;
 	}
@@ -5786,7 +5781,7 @@ cob_sys_getopt_long_long (void *so, void *lo, void *idx, const int long_only, vo
 	for (i = 0; i < lo_amount; i++) {
 		j = sizeof (l->name) - 1;
 		while (j >= 0 && l->name[j] == ' ') {
-			l->name[j] = 0x00;
+			l->name[j] = 0;
 			j--;
 		}
 		longoptions->name = l->name;

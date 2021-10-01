@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2020 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2021 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 ## Ron Norman
 ##
@@ -3307,7 +3307,7 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE -ffile-format=gc prog.cob], [0], [], [])
-AT_CHECK([export COB_LS_SPLIT=false
+AT_CHECK([COB_LS_SPLIT=false \
 $COBCRUN_DIRECT ./prog], [0],
 [(a   )
 (ab  )

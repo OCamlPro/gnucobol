@@ -1779,15 +1779,15 @@ cob_set_file_defaults (cob_file *f)
 		f->flag_big_endian = 1;
 	else if (file_setptr->cob_bdb_byteorder == COB_BDB_IS_LITTLE)
 		f->flag_little_endian = 1;
-	if(f->dflt_retry == 0) {
-		if(f->dflt_times > 0)
+	if (f->dflt_retry == 0) {
+		if (f->dflt_times > 0)
 			f->dflt_retry |= COB_RETRY_TIMES;
-		if(f->dflt_seconds > 0)
+		if (f->dflt_seconds > 0)
 			f->dflt_retry |= COB_RETRY_SECONDS;
 	}
 
-	if(file_setptr->cob_file_format == COB_FILE_IS_MF) {
-		f->file_format == COB_FILE_IS_MF;
+	if (file_setptr->cob_file_format == COB_FILE_IS_MF) {
+		f->file_format = COB_FILE_IS_MF;
 	}
 	if (f->file_format == COB_FILE_IS_DFLT	/* File type not set by compiler; Set default */
 	 || f->file_format == COB_FILE_IS_GC) {
@@ -1874,6 +1874,8 @@ cob_set_file_defaults (cob_file *f)
 
 /*
  * Set file format based on IO_filename options
+ * FIXME: _checking_ of file attributes should be not
+ *        part of this function --> split function
  */
 static int
 cob_set_file_format (cob_file *f, char *defstr, int updt)
@@ -2319,7 +2321,7 @@ cob_set_file_format (cob_file *f, char *defstr, int updt)
 					f->file_features |= COB_FILE_LS_LF;
 #endif
 					continue;
-				} 
+				}
 				if (strcasecmp(option,"gc") == 0
 				 || strcasecmp(option,"gc3") == 0) {	/* LS file like GnuCOBOL used to do */
 					f->flag_set_type = 1;
@@ -6033,6 +6035,7 @@ cob_file_complete ( cob_file * fl)
 {
 	fl->flag_ready = 1;
 }
+
 /*
  * Allocate memory for 'IS EXTERNAL' cob_file
  */
@@ -6087,6 +6090,7 @@ cob_file_malloc (cob_file **pfl, cob_file_key **pky,
 	cob_file	*fl;
 	fl = cob_cache_malloc (sizeof (cob_file));
 	fl->file_version = COB_FILE_VERSION;
+	fl->nkeys = (size_t)nkeys;	/* casting away bad difference... */
 
 	if (nkeys > 0
 	 && pky != NULL) {
@@ -8723,13 +8727,13 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 	char	*p;
 	int	i,k;
 
-	file_api.glbptr = file_globptr = lptr;
-	file_api.setptr = file_setptr  = sptr;
 	runtime_buffer = cob_fast_malloc ((size_t)(4 * COB_FILE_BUFF) + 4);
 	file_open_env = runtime_buffer + COB_FILE_BUFF;
 	file_open_name = runtime_buffer + (2 * COB_FILE_BUFF);
 	file_open_buff = runtime_buffer + (3 * COB_FILE_BUFF);
 
+	file_api.glbptr = file_globptr = lptr;
+	file_api.setptr = file_setptr  = sptr;
 	file_api.add_file_cache = cob_cache_file;
 	file_api.del_file_cache = cob_cache_del;
 	file_api.cob_write_dict = cob_write_dict;
