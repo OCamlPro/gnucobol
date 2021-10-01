@@ -2,6 +2,9 @@
 2021-10-01  Simon Sobisch <simonsobisch@gnu.org>
 
 	* ppparse.y, pplex.l, scanner.l: implementation of COBOL-WORDS directive
+	* reserved.c, cobc.h, tree.h: added missing COBOL 202x reserved words
+	  and intrinsic functions to the internal lists
+	* parser.y: _parsing_ of INSPECT BACKWARD, SEND mcs
 
 2021-09-30  Simon Sobisch <simonsobisch@gnu.org>
 

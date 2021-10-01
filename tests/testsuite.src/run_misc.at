@@ -6091,9 +6091,9 @@ AT_DATA([callee2.cob], [
            EXIT PROGRAM.
 ])
 
-AT_CHECK([$COMPILE_MODULE -fnot-reserved=double,float,new,volatile callee.cob], [0], [], [])
-AT_CHECK([$COMPILE_MODULE -fnot-reserved=double,float,new,volatile callee2.cob], [0], [], [])
-AT_CHECK([$COMPILE -fnot-reserved=double,float,new,volatile -o prog caller.cob], [0], [], [])
+AT_CHECK([$COMPILE_MODULE -fnot-reserved=double,float,new,volatile,xor callee.cob], [0], [], [])
+AT_CHECK([$COMPILE_MODULE -fnot-reserved=double,float,new,volatile,xor callee2.cob], [0], [], [])
+AT_CHECK([$COMPILE -fnot-reserved=double,float,new,volatile,xor -o prog caller.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP

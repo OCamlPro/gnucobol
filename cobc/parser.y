@@ -2272,6 +2272,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token BACKGROUND_HIGH		"BACKGROUND-HIGH"
 %token BACKGROUND_LOW		"BACKGROUND-LOW"
 %token BACKGROUND_STANDARD		"BACKGROUND-STANDARD"
+%token BACKWARD
 %token BAR
 %token BASED
 %token BEFORE
@@ -2484,6 +2485,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token END_RETURN		"END-RETURN"
 %token END_REWRITE		"END-REWRITE"
 %token END_SEARCH		"END-SEARCH"
+%token END_SEND		"END-SEND"
 %token END_START		"END-START"
 %token END_STRING		"END-STRING"
 %token END_SUBTRACT		"END-SUBTRACT"
@@ -3255,6 +3257,7 @@ set_record_size (cb_tree min, cb_tree max)
 %nonassoc END_RETURN
 %nonassoc END_REWRITE
 %nonassoc END_SEARCH
+%nonassoc END_SEND
 %nonassoc END_START
 %nonassoc END_STRING
 %nonassoc END_SUBTRACT
@@ -13634,7 +13637,17 @@ inspect_statement:
 ;
 
 inspect_body:
-  send_identifier inspect_list
+  _backward send_identifier inspect_list
+  {
+	if ($1) {
+		CB_PENDING ("INSPECT BACKWARD");
+	}
+  }
+;
+
+_backward:
+  /* empty */	{ $$ = NULL; }
+| BACKWARD		{ $$ = cb_int0; }
 ;
 
 send_identifier:
@@ -13856,14 +13869,8 @@ json_generate_body:
 ;
 
 _json_suppress:
-  /* empty */
-  {
-	$$ = NULL;
-  }
-| SUPPRESS_XML json_suppress_list
-  {
-	$$ = $2;
-  }
+  /* empty */			{ $$ = NULL; }
+| SUPPRESS_XML json_suppress_list  { $$ = $2; }
 ;
 
 json_suppress_list:
@@ -13896,7 +13903,7 @@ json_parse_statement:
   JSON PARSE
   {
 	begin_statement ("JSON PARSE", TERM_JSON);
-	CB_PENDING (_("JSON PARSE"));
+	CB_PENDING ("JSON PARSE");
   }
   json_parse_body
   _end_json
@@ -14817,7 +14824,9 @@ send_statement:
   send_body
 ;
 
-send_body:		send_body_mcs | send_body_cd ;
+send_body:
+  send_body_mcs END_SEND /* END-SEND is mandatory for MCS */
+| send_body_cd ;
 
 send_body_mcs:
 /* FIXME: conflict because x may an identifier in both _mcs and _cs
@@ -14830,12 +14839,12 @@ send_body_mcs:
    FIXME - workaround end */
   RETURNING message_tag_data_item
   {
-		CB_PENDING ("COBOL 202x MCS");
+	CB_PENDING ("COBOL 202x MCS");
   }
 /* FIXME later: too many conflicts here
 | _to message_tag_data_item from_identifier _send_raising _common_exception_phrases
   {
-		CB_PENDING ("COBOL 202x MCS");
+	CB_PENDING ("COBOL 202x MCS");
   }
    FIXME - workaround end */
 ;
@@ -16067,7 +16076,7 @@ use_exception:
 	}
 	current_section->flag_real_label = 1;
 	emit_statement(cb_build_comment("USE AFTER EXCEPTION CONDITION"));
-	CB_PENDING("USE AFTER EXCEPTION CONDITION");
+	CB_PENDING ("USE AFTER EXCEPTION CONDITION");
   }
 ;
 
