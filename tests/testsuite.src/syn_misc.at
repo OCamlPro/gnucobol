@@ -4606,38 +4606,115 @@ prog.cob:31: error: wrong number of WHEN parameters
 AT_CLEANUP
 
 
-AT_SETUP([MF reserved word directives])
-AT_KEYWORDS([extensions ADDRSV ADDSYN MAKESYN OVERRIDE REMOVE])
+AT_SETUP([COBOL-WORDS directive])
+AT_KEYWORDS([misc reserved words])
+
+# note: currently not checked - should all be seen before first IDENTIFICATION DIVISION
 
 AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION.
+           *> Valid
+           >>COBOL-WORDS RESERVE "CAT"
+           *> Valid (GC-extension)
+           >>COBOL-WORDS RESERVE  "doggy" "catty" "mouse"
+           *> Valid
+           >>COBOL-WORDS EQUATE "VALUE" WITH "VA"
+           *> Invalid - Bread is not reserved.
+           >>COBOL-WORDS EQUATE "BREAD" WITH "BARA"
+           *> Invalid - ID is already reserved
+           >>COBOL-WORDS EQUATE "IDENTIFICATION" WITH "ID"
+
+           *> Valid, BREAD is not reserved.
+           >>COBOL-WORDS SUBSTITUTE "program" BY "bread"
+           *> Valid (GC-extension)
+           >>COBOL-WORDS SUBSTITUTE "DIVISION" BY "DIV", "JUST" BY "JS"
+           *> Invalid - Bread is not reserved.
+           >>COBOL-WORDS SUBSTITUTE "BREAD" BY "BARA"
+           *> Invalid - ID is already reserved
+           >>COBOL-WORDS SUBSTITUTE "IDENTIFICATION" BY "ID"
+           *> Invalid - needs BY, not WITH
+           *> FIXME: error-recovery is bad, see below
+           *> >>COBOL-WORDS SUBSTITUTE "INITIALIZE" WITH "INIT"
+
+           *> Valid
+           >>COBOL-WORDS UNDEFINE "BREAD"
+           *> Valid (GC-extension)
+           >>COBOL-WORDS UNDEFINE "DOGGY" "CATTY"
+           *> Invalid in Standard COBOL, must be a defined word
+           >>COBOL-WORDS UNDEFINE "BREAD"
+           
+           *> FIXME: error-recovery is bad, see below
+           *>>COBOL-WORDS REMOVE "BREAD"
+
+       IDENTIFICATION DIV.
        PROGRAM-ID. prog.
 
+       DATA DIV.
+       WORKING-STORAGE SECTION.
+       *> Check EQUATE and SUBSTITUTE work correctly
+       01  just PIC XX VA "1" JS.
+       *> Check RESERVE
+       01  cat PIC 9 VA 1.
+       *> Check UNDEFINE
+       01  dog PIC 9 VA 1.
+])
+
+# TODO: add checks for valid reserved word names
+# CHECKME: do we follow the rule "The same COBOL word shall not be contained
+# in a literal in more than one COBOL-WORDS directive within a single compilation group."
+# or specify "this restriction is removed"
+
+# FIXME: error-recovery is really bad, the lines above lead to only directives
+# being part of prog.i, ending with the first broken one
+# prog.cob:23: error: syntax error, unexpected BY, expecting WITH
+# prog.cob:26: error: syntax error, unexpected Literal, expecting EQUATE or UNDEFINE or SUBSTITUTE or RESERVE
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:9: error: 'BREAD' is not a default reserved word, so cannot be aliased
+prog.cob:11: error: 'ID' is already reserved
+prog.cob:18: error: 'BREAD' is not a default reserved word, so cannot be aliased
+prog.cob:20: error: 'ID' is already reserved
+prog.cob:30: error: 'BREAD' is not a reserved word, so cannot be removed
+prog.cob:43: error: 'cat' is a reserved word, but isn't supported
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([MF reserved word directives])
+AT_KEYWORDS([misc extensions ADDRSV ADDSYN MAKESYN OVERRIDE REMOVE])
+
+# note: currently not checked - should all be seen before first IDENTIFICATION DIVISION
+
+AT_DATA([prog.cob], [
            *> Valid
            $SET ADDRSV"DOG""CAT"
            $SET ADD-RSV  "doggy" "catty"
            *> Valid
            $SET ADD-SYN "VALUE" = "VA"
-           *> Bread is not reserved.
+           *> Invalid - Bread is not reserved.
            $SET ADDSYN "BREAD" = "BARA"
-           *> ID is already reserved
+           *> Invalid - ID is already reserved
            $SET ADDSYN "IDENTIFICATION" = "ID"
 
            *> Valid
            $SET MAKESYN(PROGRAM) = (FUNCTION)
-           *> BREAD is not reserved.
+           *> Invalid - BREAD is not reserved.
            $SET MAKESYN "BREAD" = "PROGRAM"
            $SET MAKE-SYN "program" = "bread"
 
            *> Valid
            $SET OVERRIDE "DIVISION" = "DIV" "JUST" = "JS"
-           *> Bread is not reserved
-           $SET OVERRIDE "BREAD"="BARA"
-           *> ID is already reserved
-           $SET OVERRIDE "IDENTIFICATION"="ID"
+           *> Invalid - Bread is not reserved
+           $SET OVERRIDE "BREAD" = "BARA"
+           *>Invalid - ID is already reserved; note: MF documents this rule but
+           *>  does not check it and applies the line; we do it better on purpose :-)
+           $SET OVERRIDE "IDENTIFICATION" = "ID"
 
-           *> Valid
+           *> Valid - note: MF rules does allow reserving not reserved words
            $SET REMOVE "BREAD" (BARA)REMOVE(DOG)
+
+       IDENTIFICATION DIV.
+       PROGRAM-ID. prog.
 
        DATA DIV.
        WORKING-STORAGE SECTION.
@@ -4649,17 +4726,17 @@ AT_DATA([prog.cob], [
        01  dog PIC 9 VA 1.
 ])
 
-# TODO: add checks for valid reserved word names,
-#       ideally with implementing COBOL-WORDS directive (COBOL 202x)
-
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:11: error: 'BREAD' is not a default reserved word, so cannot be aliased
-prog.cob:13: error: 'ID' is already reserved; you may want MAKESYN instead
-prog.cob:18: error: 'BREAD' is not a default reserved word, so cannot be aliased
-prog.cob:19: error: 'BREAD' is not a reserved word; you may want ADDSYN or OVERRIDE instead
-prog.cob:24: error: 'BREAD' is not a default reserved word, so cannot be aliased
-prog.cob:26: error: 'ID' is already reserved; you may want MAKESYN instead
-prog.cob:36: error: 'cat' is a reserved word, but isn't supported
+[prog.cob:8: error: 'BREAD' is not a default reserved word, so cannot be aliased
+prog.cob:10: error: 'ID' is already reserved
+prog.cob:10: note: you may want MAKESYN instead
+prog.cob:15: error: 'BREAD' is not a default reserved word, so cannot be aliased
+prog.cob:16: error: 'BREAD' is not a reserved word
+prog.cob:16: note: you may want ADDSYN or OVERRIDE instead
+prog.cob:21: error: 'BREAD' is not a default reserved word, so cannot be aliased
+prog.cob:24: error: 'ID' is already reserved
+prog.cob:24: note: you may want MAKESYN instead
+prog.cob:37: error: 'cat' is a reserved word, but isn't supported
 ])
 
 AT_CLEANUP

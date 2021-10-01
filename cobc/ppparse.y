@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2015-2020 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2015-2021 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 
    This file is part of GnuCOBOL.
@@ -588,6 +588,12 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %token LISTING_STATEMENT
 %token TITLE_STATEMENT
 
+%token COBOL_WORDS_DIRECTIVE
+%token EQUATE
+%token UNDEFINE
+%token SUBSTITUTE
+%token RESERVE
+
 %token CONTROL_STATEMENT
 %token SOURCE
 %token NOSOURCE
@@ -690,6 +696,10 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %type <l>	text_partial_src
 %type <l>	text_partial_dst
 %type <l>	alnum_list
+%type <l>	alnum_with
+%type <l>	alnum_with_list
+%type <l>	alnum_by
+%type <l>	alnum_by_list
 %type <l>	alnum_equality
 %type <l>	alnum_equality_list
 %type <l>	ec_list
@@ -727,6 +737,7 @@ statement:
 directive:
   SOURCE_DIRECTIVE source_directive
 | DEFINE_DIRECTIVE define_directive
+| COBOL_WORDS_DIRECTIVE cobol_words_directive
 | SET_DIRECTIVE set_directive
 | REFMOD_DIRECTIVE refmod_directive
 | TURN_DIRECTIVE turn_directive
@@ -801,7 +812,6 @@ set_choice:
 | ADDRSV alnum_list
   {
 	struct cb_text_list	*l;
-
 	for (l = $2; l; l = l->next) {
 		fprintf (ppout, "#ADDRSV %s\n", l->text);
 	}
@@ -809,7 +819,6 @@ set_choice:
 | ADDSYN alnum_equality
   {
 	struct cb_text_list	*l;
-	
 	for (l = $2; l; l = l->next->next) {
 		fprintf (ppout, "#ADDSYN %s %s\n", l->text, l->next->text);
 	}
@@ -957,16 +966,14 @@ set_choice:
   }
 | OVERRIDE alnum_equality_list
   {
-      struct cb_text_list	*l;
-
-      for (l = $2; l; l = l->next->next) {
-	      fprintf (ppout, "#OVERRIDE %s %s\n", l->text, l->next->text);
-      }
+	struct cb_text_list	*l;
+	for (l = $2; l; l = l->next->next) {
+		fprintf (ppout, "#OVERRIDE %s %s\n", l->text, l->next->text);
+	}
   }
 | REMOVE alnum_list
   {
 	struct cb_text_list	*l;
-
 	for (l = $2; l; l = l->next) {
 		fprintf (ppout, "#REMOVE %s\n", l->text);
 	}
@@ -1062,12 +1069,44 @@ alnum_equality_list:
   alnum_equality
 | alnum_equality_list alnum_equality
   {
-	  $$ = ppp_list_append ($1, $2);
+	$$ = ppp_list_append ($1, $2);
   }
 ;
 
 alnum_equality:
   LITERAL EQ LITERAL
+  {
+	$$ = ppp_list_add (NULL, $1);
+	$$ = ppp_list_add ($$, $3);
+  }
+;
+
+alnum_with_list:
+  alnum_with
+| alnum_with_list alnum_with
+  {
+	$$ = ppp_list_append ($1, $2);
+  }
+;
+
+alnum_with:
+  LITERAL WITH LITERAL
+  {
+	$$ = ppp_list_add (NULL, $1);
+	$$ = ppp_list_add ($$, $3);
+  }
+;
+
+alnum_by_list:
+  alnum_by
+| alnum_by_list alnum_by
+  {
+	$$ = ppp_list_append ($1, $2);
+  }
+;
+
+alnum_by:
+  LITERAL BY LITERAL
   {
 	$$ = ppp_list_add (NULL, $1);
 	$$ = ppp_list_add ($$, $3);
@@ -1200,6 +1239,39 @@ define_directive:
 | variable_or_literal
   {
 	cb_error (_("invalid %s directive"), "DEFINE/SET");
+  }
+;
+
+cobol_words_directive:
+  EQUATE alnum_with_list
+  {
+	struct cb_text_list* l;
+	/* GC-Extension: standard has only one literal combination here */
+	for (l = $2; l; l = l->next->next) {
+		fprintf (ppout, "#ADDSYN-STD %s %s\n", l->text, l->next->text);
+	}
+  }
+| UNDEFINE alnum_list	/* GC-Extension: standard has only one literal here */
+  {
+	struct cb_text_list	*l;
+	for (l = $2; l; l = l->next) {
+		fprintf (ppout, "#REMOVE-STD %s\n", l->text);
+	}
+  }
+| SUBSTITUTE alnum_by_list
+  {
+	struct cb_text_list* l;
+	/* GC-Extension: standard has only one literal combination here */
+	for (l = $2; l; l = l->next->next) {
+		fprintf (ppout, "#OVERRIDE-STD %s %s\n", l->text, l->next->text);
+	}
+  }
+| RESERVE alnum_list	/* GC-Extension: standard has only one literal here */
+  {
+	struct cb_text_list	*l;
+	for (l = $2; l; l = l->next) {
+		fprintf (ppout, "#ADDRSV %s\n", l->text);
+	}
   }
 ;
 
