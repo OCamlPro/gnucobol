@@ -2267,6 +2267,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token AT
 %token ATTRIBUTE
 %token ATTRIBUTES
+%token AUTHOR	/* remark: not used here */
 %token AUTO
 %token AUTO_DECIMAL			"AUTO-DECIMAL"
 %token AUTO_SPIN			"AUTO-SPIN"
@@ -2414,7 +2415,10 @@ set_record_size (cb_tree min, cb_tree max)
 %token DATA_COLUMNS		"DATA-COLUMNS"
 %token DATA_TYPES		"DATA-TYPES"
 %token DATE
+%token DATE_COMPILED	"DATE-COMPILED"	/* remark: not used here */
 %token DATE_ENTRY		"DATE-ENTRY"
+%token DATE_MODIFIED	"DATE-MODIFIED"	/* remark: not used here */
+%token DATE_WRITTEN		"DATE-WRITTEN"	/* remark: not used here */
 %token DAY
 %token DAY_OF_WEEK		"DAY-OF-WEEK"
 %token DE
@@ -2629,6 +2633,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token INSERTION_INDEX	"INSERTION-INDEX"
 %token INSERT_ROWS		"INSERT-ROWS"
 %token INSPECT
+%token INSTALLATION		/* remark: not used here */
 %token INTERMEDIATE
 %token INTO
 %token INTRINSIC
@@ -2883,6 +2888,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token RELATIVE
 %token RELEASE
 %token REMAINDER
+%token REMARKS			/* remark: not used here */
 %token REMOVAL
 %token RENAMES
 %token REORG_CRITERIA		"REORG-CRITERIA"
@@ -2941,6 +2947,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token SECONDS
 %token SECTION
 %token SECURE
+%token SECURITY			/* remark: not used here */
 %token SEGMENT
 %token SEGMENT_LIMIT		"SEGMENT-LIMIT"
 %token SELECT

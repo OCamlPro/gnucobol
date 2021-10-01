@@ -607,6 +607,11 @@ cob_dump_output (const char *str)
 {
 	FILE	*fp = cob_get_dump_file ();
 
+	/* explicit disabled dump */
+	if (fp == NULL) {
+		return;
+	}
+
 	dump_pending_output (fp);
 
 	fprintf (fp, "\n%s\n**********************\n", str);
@@ -618,6 +623,11 @@ cob_dump_file (const char *name, cob_file *fl)
 {
 	FILE	*fp = cob_get_dump_file ();
 	const char *mode;
+
+	/* explicit disabled dump */
+	if (fp == NULL) {
+		return;
+	}
 
 	dump_pending_output (fp);
 
@@ -737,7 +747,12 @@ cob_dump_field (const int level, const char *name,
 	FILE	*fp = cob_get_dump_file ();
 	unsigned int calc_dump_index = indexes;
 
-	for(cob_idx = 0; cob_idx < COB_MAX_SUBSCRIPTS; cob_idx++)
+	/* check for explicit disabled dump */
+	if (cob_get_dump_file () == NULL) {
+		return;
+	}
+
+	for (cob_idx = 0; cob_idx < COB_MAX_SUBSCRIPTS; cob_idx++)
 		subscript [cob_idx] = 0;
 
 	/* copy over indexes to local array and calculate size offset */

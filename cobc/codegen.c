@@ -267,6 +267,8 @@ static int	any_source_moves (struct cb_field *f, int first);
 static struct cb_field * real_field_founder (const struct cb_field *f);
 static void add_field_cache (struct cb_field *f01);
 
+static void output_source_reference (cb_tree, const char *);
+
 /* Local functions */
 
 static void
@@ -7740,6 +7742,18 @@ output_perform_until (struct cb_perform *p, cb_tree l)
 		output_cond_debug (v->until);
 	}
 
+	/* FIXME: should always have a line reference, but this is to not guaranteed in trunk */
+	if (v->until->source_line) {
+		output_source_reference (v->until, "UNTIL");
+#if 0 /* def COB_TREE_DEBUG */
+	/* LCOV_EXCL_START */
+	} else {
+		cobc_err_msg ("missing source reference in output_perform_until");
+		cobc_abort_terminate (1);
+	/* LCOV_EXCL_STOP */
+#endif
+	}
+
 	output_prefix ();
 	output ("if (");
 	output_cond (v->until, 0);
@@ -7752,6 +7766,7 @@ output_perform_until (struct cb_perform *p, cb_tree l)
 	}
 
 	if (v->step) {
+		output_source_reference (v->step, "VARYING");
 		output_stmt (v->step);
 	}
 
@@ -8309,6 +8324,30 @@ output_line_and_trace_info (cb_tree x, const char *name)
 }
 
 static void
+output_source_reference (cb_tree tree, const char *stmt_name)
+{
+	output_prefix ();
+	output ("/* Line: %-10d: %-19s", tree->source_line, stmt_name);
+	if (tree->source_file) {
+		output (": %s ", tree->source_file);
+	}
+	output ("*/");
+	output_newline ();
+	/* Output source location as code */
+	if (cb_flag_source_location
+	 || cb_flag_dump) {
+		if (last_line != tree->source_line) {
+			output_line ("module->module_stmt = 0x%08X;",
+				COB_SET_LINE_FILE(tree->source_line, lookup_source(tree->source_file)));
+		}
+	}
+	if (last_line != tree->source_line) {
+		/* Output source location as code */
+		output_line_and_trace_info (tree, stmt_name);
+	}
+}
+
+static void
 output_label_info (cb_tree x, struct cb_label *lp)
 {
 	if (lp->flag_dummy_section || lp->flag_dummy_paragraph) {
@@ -8716,28 +8755,32 @@ output_stmt (cb_tree x)
 		if (lp->flag_begin) {
 			output_line ("%s%d:;", CB_PREFIX_LABEL, lp->id);
 		}
-		if (cb_flag_c_line_directives) {
-			output_cobol_info (x);
-		}
-		if (cb_flag_c_labels && (lp->flag_entry  || lp->flag_section)) {
-			/* possibly come back later adding paragraphs, too */
-			const char *prf;
-			unsigned char buff[COB_MINI_BUFF];
-			unsigned char *ptr = (unsigned char *)&buff;
-			cob_encode_program_id ((unsigned char*)lp->orig_name, ptr,
-				COB_MINI_MAX, COB_FOLD_UPPER);
-			if (lp->flag_section) prf = "SECTION";
-			else if (lp->flag_entry_for_goto) prf = "ENTRY_GOTO";
-			else prf = "ENTRY";
-			if (*ptr == '_') ptr++;
-			output_line ("%s_%s:;", prf, ptr);
+		if (!lp->flag_dummy_exit
+			&& !lp->flag_dummy_section
+			&& !lp->flag_dummy_paragraph) {
 			if (cb_flag_c_line_directives) {
-				output_c_info ();
+				output_cobol_info (x);
 			}
-		} else {
-			if (cb_flag_c_line_directives) {
-				output_line (";");
-				output_c_info ();
+			if (cb_flag_c_labels && (lp->flag_entry  || lp->flag_section)) {
+				/* possibly come back later adding paragraphs, too */
+				const char *prf;
+				unsigned char buff[COB_MINI_BUFF];
+				unsigned char *ptr = (unsigned char *)&buff;
+				cob_encode_program_id ((unsigned char*)lp->orig_name, ptr,
+					COB_MINI_MAX, COB_FOLD_UPPER);
+				if (lp->flag_section) prf = "SECTION";
+				else if (lp->flag_entry_for_goto) prf = "ENTRY_GOTO";
+				else prf = "ENTRY";
+				if (*ptr == '_') ptr++;
+				output_line ("%s_%s:;", prf, ptr);
+				if (cb_flag_c_line_directives) {
+					output_c_info ();
+				}
+			} else {
+				if (cb_flag_c_line_directives) {
+					output_line (";");
+					output_c_info ();
+				}
 			}
 		}
 
@@ -9003,25 +9046,7 @@ output_stmt (cb_tree x)
 					if (ip->test->source_line) {
 						w = ip->test;
 					}
-					output_prefix ();
-					output ("/* Line: %-10d: %-19s", w->source_line, "WHEN");
-					if (w->source_file) {
-						output (": %s ", w->source_file);
-					}
-					output ("*/");
-					output_newline ();
-					/* Output source location as code */
-					if (cb_flag_source_location
-					 || cb_flag_dump) {
-						if (last_line != w->source_line) {
-							output_line ("module->module_stmt = 0x%08X;",
-								COB_SET_LINE_FILE(w->source_line, lookup_source(w->source_file)));
-						}
-					}
-					if (last_line != w->source_line) {
-						/* Output source location as code */
-						output_line_and_trace_info (w, "WHEN");
-					}
+					output_source_reference (w, "WHEN");
 				} else {
 					output_line ("/* WHEN */");
 				}
@@ -9434,38 +9459,49 @@ output_file_initialization (struct cb_file *f)
 	/* Output RELATIVE/RECORD KEY's */
 	if (f->organization == COB_ORG_RELATIVE
 	 || f->organization == COB_ORG_INDEXED) {
+#if 0 /* now done in cob_file_malloc / cob_file_external_addr */
+		output_line ("%s%s->nkeys = %d;", CB_PREFIX_FILE,
+			     f->cname, nkeys);
+		output_line ("%s%s->keys = %s%s;", CB_PREFIX_FILE,
+			     f->cname, CB_PREFIX_KEYS, f->cname);
+#endif
 		output_prefix ();
-		output ("cob_file_set_key (%s,0,",file_name);
+		output ("cob_file_set_key (%s, 0, ", file_name);
 		if (f->organization == COB_ORG_RELATIVE
 		 && f->key == NULL) {
 			output ("&%s%s_recnum", CB_PREFIX_FIELD, f->cname);
 		} else {
 			output_param (f->key, -1);
 		}
-		output (",0,0,-1,NULL");
+		output (", 0, 0, -1, NULL");
 		output_key_components (f, f->component_list, 0);
 
 		for (l = f->alt_key_list; l; l = l->next) {
 			output_prefix ();
-			output ("cob_file_set_key (%s,%d,",file_name,nkeys);
+			output ("cob_file_set_key (%s, %d, ", file_name, nkeys);
 			output_param (l->key, -1);
-			output (",%d,0",l->duplicates);
+			output (", %d, 0" , l->duplicates);
 			if (l->suppress
 			 && CB_LITERAL_P(l->suppress)) {
 				struct cb_literal	*lit = CB_LITERAL (l->suppress);
-				output (",%d,\"%.*s\"",lit->size,lit->size,lit->data);
+				output (", %d, \"%.*s\"", lit->size, lit->size, lit->data);
 			} else
 			if (l->tf_suppress) {
 				if (isprint((char)l->char_suppress))
-					output (",0,(const unsigned char *)\"%c\"",l->char_suppress);
+					output (", 0, (const unsigned char *)\"%c\"",l->char_suppress);
 				else
-					output (",0,(const unsigned char *)\"\\%03o\"",l->char_suppress);
+					output (", 0, (const unsigned char *)\"\\%03o\"",l->char_suppress);
 			} else {
-				output (",-1,NULL");
+				output (", -1, NULL");
 			}
 			output_key_components (f, l->component_list, nkeys);
 			nkeys++;
 		}
+#if 0 /* now done in cob_file_malloc / cob_file_external_addr */
+	} else {
+		output_line ("%s%s->nkeys = 0;", CB_PREFIX_FILE, f->cname);
+		output_line ("%s%s->keys = NULL;", CB_PREFIX_FILE, f->cname);
+#endif
 	}
 
 	if (f->flag_line_adv
@@ -9802,7 +9838,7 @@ output_report_data (struct cb_field *p)
 		if(p->report_sum_counter) {
 			output_emit_field (p->report_sum_counter, "SUM");
 		}
-		if(p->report_control) {
+		if (p->report_control) {
 			output_emit_field (p->report_control, "CONTROL");
 		}
 		if (p->children) {
@@ -9819,19 +9855,20 @@ output_report_sum_control_field (struct cb_field *p)
 {
 	cb_tree	l,x;
 	struct cb_field *f;
-   	if(p == NULL)
-	    return;
-	if(p->storage == CB_STORAGE_REPORT) {
-		if(p->level == 01) {
+	if (p == NULL) {
+		return;
+	}
+	if (p->storage == CB_STORAGE_REPORT) {
+		if (p->level == 01) {
 			output_base(p,1U);
 		}
-		if(p->report_sum_counter) {
+		if (p->report_sum_counter) {
 			output_base(cb_code_field(p->report_sum_counter),1U);
 		}
-		if(p->report_control) {
+		if (p->report_control) {
 			output_base(cb_code_field(p->report_control),1U);
 		}
-		if(p->report_source) {
+		if (p->report_source) {
 			output_base(cb_code_field(p->report_source),1U);
 		}
 		for (l = p->report_sum_list; l; l = CB_CHAIN (l)) {
@@ -13357,7 +13394,7 @@ codegen (struct cb_program *prog, const char *translate_name, const int subseque
 	loop_counter = 0;
 	output_indent_level = 0;
 	last_line = 0;
-	needs_exit_prog = 0;
+	needs_exit_prog = cb_flag_c_labels;	/* always add the exit _label_ in this case */
 	gen_custom = 0;
 	gen_nested_tab = 0;
 	gen_dynamic = 0;

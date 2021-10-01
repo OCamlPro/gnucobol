@@ -451,12 +451,17 @@ align_decimal (cob_decimal *d1, cob_decimal *d2)
 static void
 cob_decimal_adjust (cob_decimal *d, mpz_t max_value, int min_exp, int max_exp)
 {
+	/* FIXME: in the (special) testsuite case " FLOAT-DECIMAL w/o SIZE ERROR"
+	   we spend most of the (relative long) time here, the CHECKME calls
+	   below are done, according to callgrind, 4,633,961 times each and take
+	   quite some time - can we improve this without overal performance drop? */
 	if (mpz_cmpabs (d->value, max_value) > 0) {
 		/* Adjust by 100000000 to get close */
 		while (mpz_cmpabs (d->value, max_value) > 0
 		    && mpz_divisible_ui_p (d->value, 100000000UL)) {	
 			if (d->scale-8 < min_exp)
 				break;
+			/* CHECKME: TEST above: ~20% computation time */
 			mpz_tdiv_q_ui (d->value, d->value, 100000000UL);
 			d->scale -= 8;
 		}
@@ -465,6 +470,7 @@ cob_decimal_adjust (cob_decimal *d, mpz_t max_value, int min_exp, int max_exp)
 		    && mpz_divisible_ui_p (d->value, 1000UL)) {
 			if (d->scale-3 < min_exp)
 				break;
+			/* CHECKME: TEST above: ~70% computation time */
 			mpz_tdiv_q_ui (d->value, d->value, 1000UL);
 			d->scale -= 3;
 		}

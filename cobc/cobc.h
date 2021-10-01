@@ -71,6 +71,15 @@ enum cb_format {
 	CB_FORMAT_FREE
 };
 
+#if 0 /* ancient OSVS registers that need special runtime handling - low priority */
+/* format in CURRENT-DATE register */
+enum cb_current_date {
+	CB_DATE_MDY = 0,
+	CB_DATE_YMD,
+	CB_DATE_DMY
+};
+#endif
+
 /* COPY extended syntax defines */
 #define CB_REPLACE_LEADING		1U
 #define CB_REPLACE_TRAILING		2U
@@ -123,6 +132,7 @@ enum cb_format {
 /* HACK: no more space - using minor one until re-written */
 #define	CB_CS_I_O_CONTROL		CB_CS_DAY
 #define	CB_CS_EXHIBIT			CB_CS_DAY
+#define	CB_CS_MOVE_CONV			CB_CS_DAY
 
 /* Support for cobc from stdin */
 #define COB_DASH			"-"
@@ -334,10 +344,12 @@ struct list_files {
 	const char		*name;		/* Name of this file */
 };
 
-extern struct list_files	*cb_listing_files;
 extern struct list_files	*cb_current_file;
 
 extern enum cb_format		cb_source_format;
+#if 0 /* ancient OSVS registers that need special runtime handling - low priority */
+extern enum cb_current_date	current_date;
+#endif
 extern int			cb_text_column;	/* end of area B (in single-byte characters) */
 extern int	cb_mf_ibm_comp;
 extern int	cb_cob_line_num;
@@ -662,7 +674,7 @@ extern struct reserved_word_list	*cobc_user_res_list;
 
 extern void		remove_reserved_word (const char *, const char *, const int);
 extern void		add_reserved_word (const char *, const char *, const int);
-extern void		remove_reserved_word_now (char * const);
+extern void		remove_reserved_word_now (const char * const);
 extern void		add_reserved_word_now (char * const, char * const);
 
 extern void		remove_register (const char *, const char *, const int);

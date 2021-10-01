@@ -48,41 +48,97 @@ Open Plans:
 * codegen: split of functions (big modules into multiple C functions)
 * ...
 
- GnuCOBOL 3.2 to be released until September 2021
+ GnuCOBOL 3.2
+
+
+* New GnuCOBOL features
+
+** Support for the EXTFH interface was heavily improved, now also supporting
+   FH--FCD and FH--KEYDEF, fixed use of different attributes and changing
+   pointers and now supports - for 32-bit builds - an internal conversion between
+   FCD2 and FCD3 for cases where existing programs are coded with FCD2
+
+** TODO - More to add
+
+** New intrinsic functions
+
+  BIT-OF, BIT-TO-CHAR, HEX-OF, HEX-TO-CHAR
+
+** Support of COBOL 202x directive COBOL-WORDS
+
+** Support of additional $SET directives: ODOSLIDE
+
+* Changes that potentially effects recompilation of existing programs:
+
+** in 64-bit environments, the default size for BY VALUE parameters has changed:
+   If no explicit SIZE IS clause is specified,
+	old behavior: parameter passed as 32-bit value
+	new behavior: parameter passed as 64-bit value
+   To specify a 32-bit BY VALUE parameter, change the COBOL source to use
+   SIZE IS 4.  To continue to rely on the default size, both caller and
+   callee modules that use BY VALUE must be compiled with the same version of
+   GnuCOBOL, either prior this release, or since.
 
 * Changes to the COBOL compiler (cobc) options:
+
+** the compile flag -fodoslide was moved to a dialect configuration,
+   while -fodoslide still works as before it is now implied with
+   -std=ibm/mvs/bs2000, for compatibility to previous behaviour compile
+   with -fno-odoslide
+
+** the GnuCOBOL extension of auto-adding the RECURSIVE attribute
+   if a program potentially calls its own PROGRAM-ID was moved
+   to a dialect option; it is now only active with -std=default
+   (and raises a warning as previously with -Wextra); if you want
+   to use this extension for other dialects use the new
+   -fself-call-recursive=warning (or "ok")
 
 ** adjustments to warning options:
    -Wconstant-expression was changed to a group warning and includes
     the new, previously integrated, -Wconstant-numlit-expression
 
-* Changes to the COBOL compiler (cobc):
+** new compiler command line option to list the known runtime exception names
+   and fatality `cobc --list-exceptions`
 
-** allow 3-byte CRT STATUS variable according to X/Open standard
+* Important Bugfixes:
+
+** for dialects other than the GnuCOBOL default different reserved "alias" words
+   were not usable, for example SYNCHRONIZED or COMPUTATIONAL. This was fixed
+   and reserved words updated for the dialects "acu" (to ACUCOBOL-GT 10.4),
+   "ibm" (to Enterprise COBOL 6.3) and "mf" (to Micro Focus Visual COBOL 6.0)
+** for all "lax" updates SYNC was handled even if commonly ignored by the strict
+   dialects, this was fixed so SYNC is ignored depending on the dialect
+** COBOL programs compiled with versions before GnuCOBOL 3 that used files with
+   ORGANIZATION INDEXED or RELATIVE chrashed when executed with newer versions,
+   this has been fixed so that all modules compiled with GnuCOBOL 2.2 can be
+   executed with GnuCOBOL 3.2
+
+* Listing changes
+
+** the timestamp in the header was changed from ANSI date format like
+   "Tue Sep 28 09:49:43 2021" to formatted time (year after day); this may be
+   changed during `configure` with adding a define to CPPFLAGS, for using the
+   old format `-DLISTING_TIMESTAMP_ANSI`, for an explicit format (cut at 26
+   characters) for example date only: `-DLISTING_TIMESTAMP_FORMAT="%Y-%m-%d"`
+
+* More notable changes
+
+** the call-stack on error / in the dump file now contains all parameters given
+   to the program via command line options, if any
+
+** the dump that is created on abort for all programs that were compiled with
+   -fdump can be explicit disabled by setting COB_DUMP_FILE=NONE; it is
+   automatically disabled if the process ends upon signals SIGINT/SIGTERM and
+   now also disabled upon SIGHUP/SIGPIPE
+
+** source references shown in diagnostic messages during runtime, the tracing
+   options and during debugging were extended, for example each executed WHEN,
+   VARYING and UNTIL phrases are now seen
 
 
-* Changes in the COBOL runtime (libcob)
-
-** handle CRT STATUS either numerically, alphanumerically (4 digits) or as 3 bytes according
-   to X/Open standard, depending on format and size
-
-
-
-* Known issues in 3.1
-
-** testsuite:
-  * if built with vbisam, cisam or disam, depending on the version used, some
-    tests will lead to UNEXPECTED PASS, while others may fail
-  * possibly failing tests (false positives):
-    * temporary path invalid
-    * compiler outputs (assembler)
-    * function with variable-length RETURNING item
-
-** the recent additions of ">> TURN" and "variable LIKE variable" do not work
-   as expected in all cases
-
-
- GnuCOBOL 3.1 (October 2020)
+ GnuCOBOL 3.1.2 released (20201223)
+ GnuCOBOL 3.1.1 released (20201208) containing INITIALIZE bug #694
+ GnuCOBOL 3.1 released   (20201111) had build issues that were fixed
 
 * New GnuCOBOL features
 
@@ -90,7 +146,7 @@ Open Plans:
    (note: runtime support needs additional library libxml2)
 
 ** JSON GENERATE statement
-   (note: runtime support needs additional library cJSON or json-c)
+   (note: runtime support needs additional library cJSON or JSON-C)
    
 ** CONTINUE AFTER statement (COBOL 202x) implemented, also handle fractions
    of seconds in C$SLEEP now
@@ -98,12 +154,8 @@ Open Plans:
 ** TYPEDEF and SAME AS (COBOL 2002) implemented, including the MicroFocus
    and RM/COBOL variants
 
-   TO BE MERGED (not in trunk yet):
 ** >>TURN (COBOL 2002) directive implemented, allowing some exception checks
    to be turned on/off per source as desired
-
-** on abort a stack trace will be genereated, this can be suppressed by
-   runtime configuration option COB_STRACK_TRACE
 
 ** Improved support for different compiler extensions (ACUCOBOL, IBM,
    Fujitsu, MicroFocus COBOL, Microsoft COBOL, RM/COBOL, CA Realia and more)

@@ -99,7 +99,7 @@ lt_dlerror (void)
 #endif
 
 #elif	defined(USE_LIBDL)
-
+/* note: only defined in configure when HAVE_DLFCN_H is true and dlopen can be linked */
 #include <dlfcn.h>
 
 #define lt_dlopen(x)	dlopen(x, RTLD_LAZY | RTLD_GLOBAL)
@@ -526,34 +526,10 @@ cache_dynload (const char *path, lt_dlhandle handle)
 	base_dynload_ptr = dynptr;
 }
 
-static size_t
-cache_preload (const char *path)
+static void
+add_to_preload (const char *path, lt_dlhandle libhandle, struct struct_handle *last_elem)
 {
-	struct struct_handle	*preptr;
-	lt_dlhandle		libhandle;
-#if defined(_WIN32) || defined(__CYGWIN__)
-	struct struct_handle	*last_elem = NULL;
-#endif
-
-	/* Check for duplicate */
-	for (preptr = base_preload_ptr; preptr; preptr = preptr->next) {
-		if (!strcmp (path, preptr->path)) {
-			return 1;
-		}
-#if defined(_WIN32) || defined(__CYGWIN__)
-		/* Save last element of preload list */
-		if (!preptr->next) last_elem = preptr;
-#endif
-	}
-
-	if (access (path, R_OK) != 0) {
-		return 0;
-	}
-
-	libhandle = lt_dlopen (path);
-	if (!libhandle) {
-		return 0;
-	}
+	struct struct_handle *preptr;
 
 	preptr = cob_malloc (sizeof (struct struct_handle));
 	preptr->path = cob_strdup (path);
@@ -578,10 +554,10 @@ cache_preload (const char *path)
 		base_preload_ptr = preptr;
 	}
 #else
+	COB_UNUSED (last_elem);
 	preptr->next = base_preload_ptr;
 	base_preload_ptr = preptr;
 #endif
-
 
 	if (!cobsetptr->cob_preload_str) {
 		cobsetptr->cob_preload_str = cob_strdup(path);
@@ -589,6 +565,71 @@ cache_preload (const char *path)
 		cobsetptr->cob_preload_str = cob_strcat((char*) PATHSEP_STR, cobsetptr->cob_preload_str, 2);
 		cobsetptr->cob_preload_str = cob_strcat((char*) path, cobsetptr->cob_preload_str, 2);
 	}
+}
+
+/* preload module, returns:
+   * 0 if not possible,
+   * 1 if added (also adds full module path to cob_preload_str in this case)
+   * 2 if already preloaded
+   * 3 if previously CALLed and not CANCELed, now marked as pre-loaded (no physical cancel)
+ */
+static size_t
+cache_preload (const char *path)
+{
+	struct struct_handle	*preptr;
+	lt_dlhandle		libhandle;
+	struct struct_handle	*last_elem = NULL;	/* only set in win32 */
+
+	/* Check for duplicate in pre-load */
+	for (preptr = base_preload_ptr; preptr; preptr = preptr->next) {
+		if (!strcmp (path, preptr->path)) {
+			return 2;
+		}
+#if defined(_WIN32) || defined(__CYGWIN__)
+		/* Save last element of preload list */
+		if (!preptr->next) last_elem = preptr;
+#endif
+	}
+
+	/* Check for duplicate in already loaded programs;
+	   this will be empty during initial setup but likely set
+	   on calls of cob_try_preload later on (only expected when
+	   done via interactive debugger) */
+	if (call_buffer
+#ifndef	COB_ALT_HASH
+	 && call_table) {
+		struct call_hash	*p;
+		size_t	i;
+		for (i = 0; i < HASH_SIZE; ++i) {
+			p = call_table[i];
+#else
+	 ) {
+			p = call_table;
+#endif
+			for (; p;) {
+				if ((p->path && !strcmp (path, p->path))
+				 || (p->name && !strcmp (path, p->name))) {
+					p->no_phys_cancel = 1;
+					add_to_preload (path, p->handle, last_elem);
+					return 3;
+				}
+				p = p->next;
+			}
+		}
+#ifndef	COB_ALT_HASH
+	}
+#endif
+
+	if (access (path, R_OK) != 0) {
+		return 0;
+	}
+
+	libhandle = lt_dlopen (path);
+	if (!libhandle) {
+		return 0;
+	}
+
+	add_to_preload (path, libhandle, last_elem);
 
 	return 1;
 }
@@ -800,6 +841,8 @@ cob_resolve_internal (const char *name, const char *dirent,
 #ifndef	COB_BORKED_DLOPEN
 	/* Search the main program */
 	if (mainhandle != NULL) {
+		/* warning: on GNU systems this will also searched in all
+		  currently loaded linked libraries, but possibly not on MSVC! */
 		func = lt_dlsym (mainhandle, call_entry_buff);
 		if (func != NULL) {
 			insert (name, func, mainhandle, NULL, NULL, 1);
@@ -1671,7 +1714,6 @@ void *
 cob_savenv2 (struct cobjmp_buf *jbuf, const int jsize)
 {
 	COB_UNUSED (jsize);
-
 	return cob_savenv (jbuf);
 }
 
@@ -1698,14 +1740,8 @@ cob_longjmp (struct cobjmp_buf *jbuf)
 void
 cob_exit_call (void)
 {
-	struct call_hash	*p;
-	struct call_hash	*q;
 	struct struct_handle	*h;
 	struct struct_handle	*j;
-
-#ifndef	COB_ALT_HASH
-	size_t			i;
-#endif
 
 	if (call_filename_buff) {
 		cob_free (call_filename_buff);
@@ -1731,6 +1767,9 @@ cob_exit_call (void)
 
 #ifndef	COB_ALT_HASH
 	if (call_table) {
+		struct call_hash	*p;
+		struct call_hash	*q;
+		size_t			i;
 		for (i = 0; i < HASH_SIZE; ++i) {
 			p = call_table[i];
 #else
@@ -1795,17 +1834,45 @@ cob_exit_call (void)
 
 }
 
+/* try to load specified module from all entries in COB_LIBRARY_PATH
+   return values see cache_preload */
+static
+size_t cob_try_preload (const char* module_name)
+{
+	char		buff[COB_MEDIUM_BUFF];
+
+#ifdef	__OS400__
+	char	*b = buff;
+	char	*t;
+
+	for (t = module_name; *t; ++t, ++b) {
+		*b = toupper (*t);
+	}
+	*b = 0;
+
+	return cache_preload (buff);
+#else
+	size_t				i, ret;
+
+	for (i = 0; i < resolve_size; ++i) {
+		snprintf (buff, (size_t)COB_MEDIUM_MAX,
+			"%s%c%s.%s",
+			resolve_path[i], SLASH_CHAR, module_name, COB_MODULE_EXT);
+		ret = cache_preload (buff);
+		if (ret) {
+			return ret;
+		}
+	}
+	/* If not found, try just using the name as-is */
+	return cache_preload (module_name);
+#endif
+}
+
 void
 cob_init_call (cob_global *lptr, cob_settings* sptr, const int check_mainhandle)
 {
-	char				*s;
-	char				*p;
-	size_t				i;
 #ifndef	HAVE_DESIGNATED_INITS
 	const unsigned char		*pv;
-#endif
-#ifdef	__OS400__
-	char				*t;
 #endif
 
 	cobglobptr = lptr;
@@ -1856,7 +1923,12 @@ cob_init_call (cob_global *lptr, cob_settings* sptr, const int check_mainhandle)
 	call_filename_buff = cob_malloc ((size_t)COB_NORMAL_BUFF);
 
 	if (cobsetptr->cob_preload_str != NULL) {
+		char	*p;
+		char	*s;
 
+		/* using temporary buffer as cob_preload_str
+		   will be adjusted in the call and contains only
+		   the loaded modules after this call */
 		p = cob_strdup (cobsetptr->cob_preload_str);
 
 		cob_free (cobsetptr->cob_preload_str);
@@ -1864,26 +1936,7 @@ cob_init_call (cob_global *lptr, cob_settings* sptr, const int check_mainhandle)
 
 		s = strtok (p, PATHSEP_STR);
 		for (; s; s = strtok (NULL, PATHSEP_STR)) {
-			char		buff[COB_MEDIUM_BUFF];
-#ifdef __OS400__
-			for (t = s; *t; ++t) {
-				*t = toupper (*t);
-			}
-			cache_preload (t);
-#else
-			for (i = 0; i < resolve_size; ++i) {
-				snprintf (buff, (size_t)COB_MEDIUM_MAX,
-					  "%s%c%s.%s",
-					  resolve_path[i], SLASH_CHAR, s, COB_MODULE_EXT);
-				if (cache_preload (buff)) {
-					break;
-				}
-			}
-			/* If not found, try just using the name as-is */
-			if (i == resolve_size) {
-				(void)cache_preload (s);
-			}
-#endif
+			(void)cob_try_preload (s);
 		}
 		cob_free (p);
 	}

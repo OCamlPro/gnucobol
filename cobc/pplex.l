@@ -180,6 +180,7 @@ SET_PAREN_LIT	\([^()\n]*\)
 DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 
 %x CALL_DIRECTIVE_STATE
+%x COBOL_WORDS_DIRECTIVE_STATE
 %x COPY_STATE
 %x PSEUDO_STATE
 %x SOURCE_DIRECTIVE_STATE
@@ -206,6 +207,12 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 		ppecho (" ", 0, 1);
 	}
 	#endif
+}
+
+^[ ]*">>"[ ]?"COBOL-WORDS"	{
+	/* 202x+: directive for setting source format */
+	BEGIN COBOL_WORDS_DIRECTIVE_STATE;
+	return COBOL_WORDS_DIRECTIVE;
 }
 
 ^[ ]*">>"[ ]?"DEFINE"	{
@@ -547,7 +554,8 @@ IF_DIRECTIVE_STATE,
 ELSE_DIRECTIVE_STATE,
 ENDIF_DIRECTIVE_STATE,
 ALNUM_LITERAL_STATE,
-CONTROL_STATEMENT_STATE>{
+CONTROL_STATEMENT_STATE,
+COBOL_WORDS_DIRECTIVE_STATE>{
   \n			{
 	BEGIN INITIAL;
 	unput ('\n');
@@ -578,6 +586,20 @@ CONTROL_STATEMENT_STATE>{
 <ON_OFF_DIRECTIVE_STATE>{
   "ON"			{ return ON; }
   "OFF"			{ return OFF; }
+}
+
+<COBOL_WORDS_DIRECTIVE_STATE>{
+  "EQUATE"		{ return EQUATE; }
+  "WITH"		{ return WITH; }
+  "UNDEFINE"	{ return UNDEFINE; }
+  "SUBSTITUTE"	{ return SUBSTITUTE; }
+  "BY"			{ return BY; }
+  "RESERVE"		{ return RESERVE; }
+  {NUMRIC_LITERAL} |
+  {ALNUM_LITERAL}	{
+	pplval.s = cobc_plex_strdup (yytext);
+	return LITERAL;
+  }
 }
 
 <SOURCE_DIRECTIVE_STATE>{
@@ -707,7 +729,8 @@ CONTROL_STATEMENT_STATE>{
 	pplval.s = cobc_plex_strdup (yytext);
 	return VARIABLE_NAME;
   }
-  "="			{
+  " = "			{
+	/* MF rule: "The equals signs must be surrounded by spaces." */
 	return EQ;
   }
 }

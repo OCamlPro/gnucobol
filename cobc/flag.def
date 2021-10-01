@@ -185,8 +185,9 @@ CB_FLAG (cb_flag_acucomment, 1, "acucomment",
 	_("  -facucomment          '$' in indicator area treated as '*',\n"
 	  "                        '|' treated as floating comment"))
 
-CB_FLAG (cb_flag_notrunc, 1, "notrunc",
-	_("  -fnotrunc             allow numeric field overflow\n"
+/* note: compatibility for 1.1 "fnotrunc" provided by cobc.c */
+CB_FLAG_ON (cb_flag_trunc, 1, "trunc",
+	_("  -fno-trunc            allow numeric field overflow\n"
 	  "                        * non-ANSI behaviour"))
 
 CB_FLAG (cb_flag_odoslide, 1, "odoslide",

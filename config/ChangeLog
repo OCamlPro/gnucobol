@@ -4,6 +4,18 @@
 	* lax.conf-inc: set synchronized-clause to be only ignored if the
 	  dialect including this has it set to error/unconformable
 
+2021-08-31  Simon Sobisch <simonsobisch@gnu.org>
+
+	* acu.words, bs2000.words, cobol85.words, ibm.words, mf.words, mvs.words,
+	  realia.words, rm.words: fixed missing aliases CORR=CORRESPONDING,
+	  COMPUTATIONAL*=COMP*, QUOTES=QUOTE, SYNC=SYNCHRONIZED, THROUGH=THRU
+	* ibm.words: updated to Enterprise COBOL 6.3, now includes a lot of
+	  ISO2002 functions and HEX/BIT conversion functions
+	* mf.words: updated to Visual COBOL 6.0, similar additions to ibm,
+	  removed ISO2002-only words
+	* acu.words: updated to ACUCOBOL-GT 10.4, now with XML and JSON
+	  statements from MF/IBM
+
 2021-03-05  Ron Norman <rjn@inglenet.com>
 
 	* fileio: added COB_FILE_ISNODAT to disable ISAM datafile.dat
@@ -229,7 +241,7 @@
 
 2017-11-09  Simon Sobisch <simonsobisch@gnu.org>
 
-	* cobol85.words, ibm.words, mvs.words, mf.words rm.words, xopen.conf:
+	* cobol85.words, ibm.words, mf.words, mvs.words, rm.words, xopen.conf:
 	  added DEBUG-ITEM to be handled as register
 
 2017-11-06  Simon Sobisch <simonsobisch@gnu.org>

@@ -1,4 +1,4 @@
-## Copyright (C) 2007-2012, 2014-2018, 2020 Free Software Foundation, Inc.
+## Copyright (C) 2007-2012, 2014-2018, 2020-2021 Free Software Foundation, Inc.
 ## Written by Roger While, Simon Sobisch, Edward Hart
 ##
 ## This file is part of GnuCOBOL.
@@ -270,8 +270,7 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
 AT_CHECK([$COMPILE_ONLY -std=acu-strict prog.cob], [1], [],
-[prog.cob:9: error: FUNCTION 'TRIM' unknown
-prog.cob:10: error: FUNCTION 'SUBSTITUTE' unknown
+[prog.cob:10: error: FUNCTION 'SUBSTITUTE' unknown
 ])
 
 AT_CLEANUP

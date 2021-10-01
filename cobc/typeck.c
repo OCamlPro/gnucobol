@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2020 Free Software Foundation, Inc.
+   Copyright (C) 2001-2021 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -804,8 +804,6 @@ cb_check_needs_break (cb_tree stmt)
 static size_t
 cb_validate_one (cb_tree x)
 {
-	cb_tree		y;
-	struct cb_field		*f;
 
 	if (x == cb_error_node) {
 		return 1;
@@ -814,12 +812,12 @@ cb_validate_one (cb_tree x)
 		return 0;
 	}
 	if (CB_REFERENCE_P (x)) {
-		y = cb_ref (x);
+		const cb_tree	y = cb_ref (x);
 		if (y == cb_error_node) {
 			return 1;
 		}
 		if (CB_FIELD_P (y)) {
-			f = CB_FIELD (y);
+			const struct cb_field	*f = CB_FIELD (y);
 			if (f->level == 88) {
 				cb_error_x (x, _("condition-name not allowed here: '%s'"), f->name);
 				return 1;
@@ -1500,10 +1498,12 @@ cb_build_register_when_compiled (const char *name, const char *definition)
 		cb_build_alphanumeric_literal (buff, lit_size));
 }
 
-/* General register creation; used for TALLY, LIN, COL */
+/* General register creation; used for TALLY, LIN, COL,
+   stores the resulting field's address in the optional last parameter */
 /* TODO: complete change to generic function */
 int
-cb_build_generic_register (const char *name, const char *external_definition)
+cb_build_generic_register (const char *name, const char *external_definition,
+	struct cb_field **result_field)
 {
 	cb_tree field_tree;
 	char	definition[COB_MINI_BUFF];
@@ -1516,6 +1516,9 @@ cb_build_generic_register (const char *name, const char *external_definition)
 	if (!external_definition) {
 		external_definition = cb_get_register_definition (name);
 		if (!external_definition) {
+			if (result_field) {
+				*result_field = NULL;
+			}
 			return 1;
 		}
 	}
@@ -1523,10 +1526,15 @@ cb_build_generic_register (const char *name, const char *external_definition)
 	strncpy (definition, external_definition, COB_MINI_MAX);
 	definition[COB_MINI_MAX] = 0;
 
-	/* check for GLOBAL, leave if we don't need to define it again (nested program)*/
+	/* check for GLOBAL, leave if we don't need to define it again (nested program) */
 	p = strstr (definition, "GLOBAL");
 	if (p) {
 		if (current_program && current_program->nested_level) {
+			if (result_field) {
+				/* TODO: test pending */
+				field_tree = cb_ref (cb_build_reference (name));
+				*result_field = CB_FIELD_PTR(field_tree);
+			}
 			return 0;
 		}
 		memset (p, ' ', 6);	/* remove from local copy */
@@ -1601,6 +1609,15 @@ cb_build_generic_register (const char *name, const char *external_definition)
 		COB_UNUSED (p);	/* FIXME: parse actual VALUE */
 		field->values = CB_LIST_INIT (cb_zero);
 	}
+
+	/* handle CONSTANT */
+	p = strstr (definition, "CONSTANT ");
+	if (p) {
+		memset (p, ' ', 8);
+		p += 8;
+		field->flag_internal_constant = 1;
+	}
+
 	field->flag_internal_register = 1;
 
 	/* TODO: check that the local definition is completely parsed -> spaces */
@@ -1614,6 +1631,10 @@ cb_build_generic_register (const char *name, const char *external_definition)
 		CB_FIELD_ADD (external_defined_fields_global, field);
 	} else {
 		CB_FIELD_ADD (external_defined_fields_ws, field);
+	}
+
+	if (result_field) {
+		*result_field = field;
 	}
 
 	return 0;
@@ -1727,7 +1748,7 @@ cb_build_single_register (const char *name, const char *definition)
 	if (!strcasecmp (name, "TALLY")
 	 || !strcasecmp (name, "LIN")
 	 || !strcasecmp (name, "COL")) {
-		cb_build_generic_register (name, definition);
+		cb_build_generic_register (name, definition, NULL);
 		return;
 	}
 
@@ -3267,6 +3288,24 @@ cb_build_debug_item (void)
 	cb_tree			x;
 	cb_tree			lvl01_tree;
 
+	/* check if it is actually available - for example not the case for ACU */
+	if (!cb_get_register_definition ("DEBUG-ITEM")) {
+		return;
+	}
+
+	/* unreserve the DEBUG-ITEM register/reserved words */
+
+	/* FIXME: using remove_reserved_word lead to those words be still available,
+	          using remove_reserved_word_now breaks the reserved word list,
+			  effectively removing other words */
+	remove_reserved_word_now ("DEBUG-ITEM");
+	remove_reserved_word_now ("DEBUG-LINE");
+	remove_reserved_word_now ("DEBUG-NAME");
+	remove_reserved_word_now ("DEBUG-SUB-1");
+	remove_reserved_word_now ("DEBUG-SUB-2");
+	remove_reserved_word_now ("DEBUG-SUB-3");
+	remove_reserved_word_now ("DEBUG-CONTENTS");
+
 	/* Set up DEBUG-ITEM */
 	l = cb_build_reference ("DEBUG-ITEM");
 	lvl01_tree = cb_build_field_tree (NULL, l, NULL, CB_STORAGE_WORKING,
@@ -3569,19 +3608,11 @@ create_implicit_assign_dynamic_var (struct cb_program * const prog,
 	cb_warning (cb_warn_implicit_define,
 		    _("variable '%s' will be implicitly defined"), CB_NAME (assign));
 	x = cb_build_implicit_field (assign, COB_FILE_MAX);
+	p = CB_FIELD (x);
 #if 0
-	CB_FIELD (x)->count++;
+	p->count++;
 #endif
-	p = prog->working_storage;
-	if (p) {
-		while (p->sister) {
-			p = p->sister;
-		}
-		p->sister = CB_FIELD (x);
-	} else {
-		prog->working_storage = CB_FIELD (x);
-	}
-
+	CB_FIELD_ADD (prog->working_storage, p);
 }
 
 static void
@@ -9974,6 +10005,11 @@ validate_move_from_field_or_ref (cb_tree src, cb_tree dst)
 	struct cb_field		*fsrc;
 	cb_tree			loc = src->source_line ? src : dst;
 
+	fdst = CB_FIELD_PTR (dst);
+	/* Check dst not constant */
+	if (fdst->flag_internal_constant || fdst->flag_constant) {
+		return MOVE_INVALID;
+	}
 	if (CB_REFERENCE_P(src) &&
 	    CB_ALPHABET_NAME_P(CB_REFERENCE(src)->value)) {
 		return MOVE_OK;
@@ -9983,7 +10019,6 @@ validate_move_from_field_or_ref (cb_tree src, cb_tree dst)
 		return MOVE_INVALID;
 	}
 	fsrc = CB_FIELD_PTR (src);
-	fdst = CB_FIELD_PTR (dst);
 
 	if (cb_move_ibm) {
 		/* This MOVE result is exactly as on IBM, ignore overlapping */
@@ -10018,12 +10053,10 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 	/* Easy stuff */
 	/* Check dst not alphabet or file */
 	if (CB_REFERENCE_P (dst)) {
-		if (CB_ALPHABET_NAME_P (CB_REFERENCE (dst)->value)) {
-		        outcome = MOVE_INVALID;
-			goto process_outcome;
-		}
-		if (CB_FILE_P (CB_REFERENCE (dst)->value)) {
-		        outcome = MOVE_INVALID;
+		cb_tree dstr = CB_REFERENCE(dst)->value;
+		if (CB_ALPHABET_NAME_P(dstr)
+		 || CB_FILE_P (dstr)) {
+			outcome = MOVE_INVALID;
 			goto process_outcome;
 		}
 	}
@@ -11078,8 +11111,8 @@ cb_emit_perform (cb_tree perform, cb_tree body, cb_tree newthread, cb_tree handl
 		cb_error_x (handle, _("HANDLE must be either a generic or a THREAD HANDLE"));
 		return;
 	}
-	if (current_program->flag_debugging &&
-	    !current_statement->flag_in_debug && body && CB_PAIR_P (body)) {
+	if (current_program->flag_debugging
+	 && !current_statement->flag_in_debug && body && CB_PAIR_P (body)) {
 		cb_emit (cb_build_debug (cb_debug_contents, "PERFORM LOOP", NULL));
 	}
 

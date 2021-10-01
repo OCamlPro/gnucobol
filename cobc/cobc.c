@@ -164,6 +164,9 @@ char			*source_name = NULL;
 #endif
 
 enum cb_format		cb_source_format = CB_FORMAT_FIXED;
+#if 0 /* ancient OSVS registers that need special runtime handling - low priority */
+enum cb_current_date	current_date = CB_DATE_MDY;
+#endif
 int			cb_text_column;
 int			cb_indicator_column;
 int			cb_id = 0;
@@ -495,6 +498,10 @@ static const struct option long_options[] = {
 	{"fibmcomp",		CB_NO_ARG, &cb_mf_ibm_comp, 1},
 	{"fno-ibmcomp",		CB_NO_ARG, &cb_mf_ibm_comp, 0},
 	{"fdatamap",		CB_NO_ARG, &cb_list_datamap, 1},
+
+	/* alias for backwards-compatibility, removed with 4.x: */
+	{"fnotrunc",		CB_NO_ARG, &cb_flag_trunc, 0},
+	{"fno-notrunc",		CB_NO_ARG, &cb_flag_trunc, 1},
 
 #define	CB_CONFIG_ANY(type,var,name,doc)	\
 	{"f" name,		CB_RQ_ARG, NULL, '%'},
@@ -3840,7 +3847,7 @@ process_command_line (const int argc, char **argv)
 	&&  cb_listing_statements > CB_OBSOLETE) {
 		cb_listing_statements = cb_title_statement;
 	}
-	if (cb_flag_notrunc) {
+	if (!cb_flag_trunc) {
 		cb_binary_truncate = 0;
 		cb_pretty_display = 0;
 	}

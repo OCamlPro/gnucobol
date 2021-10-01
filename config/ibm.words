@@ -1,6 +1,6 @@
 # GnuCOBOL compiler - list of reserved words
 #
-# Copyright (C) 2016-2018 Free Software Foundation, Inc.
+# Copyright (C) 2016-2018,2021 Free Software Foundation, Inc.
 # Written by Simon Sobisch, Edward Hart
 #
 # This file is part of GnuCOBOL.
@@ -19,7 +19,7 @@
 # along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 
 
-# Word list for dialect: IBM Enterprise COBOL for z/OS
+# Word list for dialect: IBM Enterprise COBOL for z/OS (current: 6.3)
 
 # Note: only used for strict dialect and when
 #       requested by compiler directive >> IMP WORDS IBM
@@ -106,12 +106,12 @@ reserved:	COMP-2
 reserved:	COMP-3
 reserved:	COMP-4
 reserved:	COMP-5
-reserved:	COMPUTATIONAL
-reserved:	COMPUTATIONAL-1
-reserved:	COMPUTATIONAL-2
-reserved:	COMPUTATIONAL-3
-reserved:	COMPUTATIONAL-4
-reserved:	COMPUTATIONAL-5
+reserved:	COMPUTATIONAL=COMP
+reserved:	COMPUTATIONAL-1=COMP-1
+reserved:	COMPUTATIONAL-2=COMP-2
+reserved:	COMPUTATIONAL-3=COMP-3
+reserved:	COMPUTATIONAL-4=COMP-4
+reserved:	COMPUTATIONAL-5=COMP-5
 reserved:	COMPUTE
 reserved:	CONFIGURATION
 reserved:	CONTAINS
@@ -121,7 +121,7 @@ reserved:	CONTROL
 reserved:	CONTROLS
 reserved:	CONVERTING
 reserved:	COPY
-reserved:	CORR
+reserved:	CORR=CORRESPONDING
 reserved:	CORRESPONDING
 reserved:	COUNT
 reserved:	CURRENCY
@@ -138,6 +138,17 @@ reserved:	DBCLOB-FILE      # note: only with EXEC SQL coprocessor
 reserved:	DBCLOB-LOCATOR   # note: only with EXEC SQL coprocessor
 reserved:	DBCS
 reserved:	DE
+# note: the following are part of the register DEBUG-ITEM,
+#       they are automatically unreserved if the register is
+#       created, which happens on USE FOR DEBUGGING
+reserved:	DEBUG-CONTENTS
+reserved:	DEBUG-ITEM
+reserved:	DEBUG-LINE
+reserved:	DEBUG-NAME
+reserved:	DEBUG-SUB-1
+reserved:	DEBUG-SUB-2
+reserved:	DEBUG-SUB-3
+# debug-item end
 reserved:	DEBUGGING
 reserved:	DECIMAL-POINT
 reserved:	DECLARATIVES
@@ -214,6 +225,7 @@ reserved:	FILE-CONTROL
 reserved:	FILLER
 reserved:	FINAL
 reserved:	FIRST
+reserved:	FIXED*           # CALL ... USING
 reserved:	FOOTING
 reserved:	FOR
 reserved:	FREE             # V6
@@ -251,9 +263,11 @@ reserved:	INSERT
 reserved:	INSPECT
 reserved:	INSTALLATION
 reserved:	INTO
+reserved:	INTRINSIC*       # REPOSITORY paragraph
 reserved:	INVALID
 reserved:	INVOKE
 reserved:	IS
+reserved:	JAVA
 reserved:	JNIENVPTR        # note: this is a register, move as soon as supported
 reserved:	JSON
 reserved:	JSON-CODE        # note: this is a register, move as soon as supported
@@ -333,7 +347,7 @@ reserved:	PADDING
 reserved:	PAGE
 reserved:	PAGE-COUNTER
 reserved:	PARAGRAPH*
-reserved:	PARSE            # note: not included in IBM's reserved word list,
+reserved:	PARSE*           # note: not included in IBM's reserved word list,
          	                 #       but obviously needed for XML PARSE
 reserved:	PASSWORD
 reserved:	PERFORM
@@ -343,6 +357,10 @@ reserved:	PIC=PICTURE
 reserved:	PICTURE
 reserved:	PLUS
 reserved:	POINTER
+#reserved:	POINTER-24       # potentially reserved
+#reserved:	POINTER-31       # potentially reserved
+reserved:	POINTER-32 X
+#reserved:	POINTER-64       # potentially reserved
 reserved:	POSITION
 reserved:	POSITIVE
 reserved:	PRINTING
@@ -356,7 +374,7 @@ reserved:	PROGRAM-ID
 reserved:	PURGE
 reserved:	QUEUE
 reserved:	QUOTE
-reserved:	QUOTES
+reserved:	QUOTES=QUOTE
 reserved:	RANDOM
 reserved:	RD
 reserved:	READ
@@ -451,7 +469,7 @@ reserved:	SUPER
 reserved:	SUPPRESS
 reserved:	SYMBOL
 reserved:	SYMBOLIC
-reserved:	SYNC
+reserved:	SYNC=SYNCHRONIZED
 reserved:	SYNCHRONIZED
 reserved:	TABLE
 reserved:	TALLYING
@@ -462,7 +480,7 @@ reserved:	TEST
 reserved:	TEXT
 reserved:	THAN
 reserved:	THEN
-reserved:	THROUGH
+reserved:	THROUGH=THRU
 reserved:	THRU
 reserved:	TIME
 reserved:	TIME-RECORD
@@ -488,6 +506,7 @@ reserved:	UPON
 reserved:	USAGE
 reserved:	USE
 reserved:	USING
+reserved:	UTF-8
 reserved:	V*
 reserved:	VALIDATING*           # note: not included in IBMs reserved words
          	                      #       list, but as a phrase to be parsed
@@ -568,11 +587,16 @@ system-name:	UPSI-7
 not-intrinsic-function:	DIALECT-ALL
 
 # add all that are supported by IBM
+intrinsic-function:	ABS
 intrinsic-function:	ACOS
 intrinsic-function:	ANNUITY
 intrinsic-function:	ASIN
 intrinsic-function:	ATAN
+intrinsic-function:	BIT-OF
+intrinsic-function:	BIT-TO-CHAR
+intrinsic-function:	BYTE-LENGTH       # additional: C/S to PICTURE
 intrinsic-function:	CHAR
+intrinsic-function:	COMBINED-DATETIME
 intrinsic-function:	COS
 intrinsic-function:	CURRENT-DATE
 intrinsic-function:	DATE-OF-INTEGER
@@ -583,10 +607,20 @@ intrinsic-function:	DATE-TO-YYYYMMDD
 intrinsic-function:	DAY-OF-INTEGER
 intrinsic-function:	DAY-TO-YYYYDDD
 intrinsic-function:	DISPLAY-OF
+intrinsic-function:	E
+intrinsic-function:	EXP
+intrinsic-function:	EXP10
 intrinsic-function:	FACTORIAL
+intrinsic-function:	FORMATTED-CURRENT-DATE
+intrinsic-function:	FORMATTED-DATE
+intrinsic-function:	FORMATTED-DATETIME
+intrinsic-function:	FORMATTED-TIME
+intrinsic-function:	HEX-OF
+intrinsic-function:	HEX-TO-CHAR
 intrinsic-function:	INTEGER
 intrinsic-function:	INTEGER-OF-DATE
 intrinsic-function:	INTEGER-OF-DAY
+intrinsic-function:	INTEGER-OF-FORMATTED-DATE
 intrinsic-function:	INTEGER-PART
 intrinsic-function:	LENGTH
 intrinsic-function:	LOG
@@ -601,19 +635,31 @@ intrinsic-function:	MOD
 intrinsic-function:	NATIONAL-OF
 intrinsic-function:	NUMVAL
 intrinsic-function:	NUMVAL-C
+intrinsic-function:	NUMVAL-F
 intrinsic-function:	ORD
 intrinsic-function:	ORD-MAX
 intrinsic-function:	ORD-MIN
+intrinsic-function:	PI
 intrinsic-function:	PRESENT-VALUE
 intrinsic-function:	RANDOM
 intrinsic-function:	RANGE
 intrinsic-function:	REM
 intrinsic-function:	REVERSE
+intrinsic-function:	SECONDS-FROM-FORMATTED-TIME
+intrinsic-function:	SECONDS-PAST-MIDNIGHT
+intrinsic-function:	SIGN
 intrinsic-function:	SIN
 intrinsic-function:	SQRT
 intrinsic-function:	STANDARD-DEVIATION
 intrinsic-function:	SUM
 intrinsic-function:	TAN
+intrinsic-function:	TEST-DATE-YYYYMMDD
+intrinsic-function:	TEST-DAY-YYYYDDD
+intrinsic-function:	TEST-FORMATTED-DATETIME
+intrinsic-function:	TEST-NUMVAL
+intrinsic-function:	TEST-NUMVAL-C
+intrinsic-function:	TEST-NUMVAL-F
+intrinsic-function:	TRIM
 #intrinsic-function:	ULENGTH          # IBM extension, not known to GnuCOBOL
 #intrinsic-function:	UNDATE           # IBM extension (Millennium Language Extension,
 #                   	                   removed with IBM Enterprise COBOL V5),
@@ -624,6 +670,7 @@ intrinsic-function:	UPPER-CASE
 #intrinsic-function:	USUPPLEMENTARY   # IBM extension, not known to GnuCOBOL
 #intrinsic-function:	UVALID           # IBM extension, not known to GnuCOBOL
 #intrinsic-function:	UWIDTH           # IBM extension, not known to GnuCOBOL
+#intrinsic-function:	UUID4            # IBM extension, not known to GnuCOBOL
 intrinsic-function:	VARIANCE
 intrinsic-function:	WHEN-COMPILED
 intrinsic-function:	YEAR-TO-YYYY

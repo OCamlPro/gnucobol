@@ -369,6 +369,8 @@ enum cb_intr_enum {
 	CB_INTR_ANNUITY,
 	CB_INTR_ASIN,
 	CB_INTR_ATAN,
+	CB_INTR_BIT_OF,
+	CB_INTR_BIT_TO_CHAR,
 	CB_INTR_BOOLEAN_OF_INTEGER,
 	CB_INTR_BYTE_LENGTH,
 	CB_INTR_CHAR,
@@ -400,6 +402,8 @@ enum cb_intr_enum {
 	CB_INTR_FORMATTED_DATETIME,
 	CB_INTR_FORMATTED_TIME,
 	CB_INTR_FRACTION_PART,
+	CB_INTR_HEX_OF,
+	CB_INTR_HEX_TO_CHAR,
 	CB_INTR_HIGHEST_ALGEBRAIC,
 	CB_INTR_INTEGER,
 	CB_INTR_INTEGER_OF_BOOLEAN,
@@ -1891,7 +1895,7 @@ extern struct cb_picture	*cb_build_binary_picture (const char *,
 extern cb_tree			cb_build_field (cb_tree);
 extern cb_tree			cb_build_implicit_field (cb_tree, const int);
 extern cb_tree			cb_build_constant (cb_tree, cb_tree);
-extern int			cb_build_generic_register (const char *, const char *);
+extern int			cb_build_generic_register (const char *, const char *, struct cb_field **);
 
 extern void			cb_build_symbolic_chars (const cb_tree,
 							 const cb_tree);
@@ -2057,6 +2061,7 @@ extern void			cb_list_system_names (void);
 extern void			cb_list_registers (void);
 extern void			cb_list_system_routines (void);
 extern int			cb_list_map (cb_tree (*) (cb_tree), cb_tree);
+extern void			cb_strncpy_upper (char *, const char * const, const size_t);
 
 /* error.c */
 extern void		cb_warning_x (const enum cb_warn_opt, cb_tree, const char *, ...) COB_A_FORMAT34;

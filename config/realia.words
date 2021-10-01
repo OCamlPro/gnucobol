@@ -1,6 +1,6 @@
 # GnuCOBOL compiler - list of reserved words
 #
-# Copyright (C) 2019 Free Software Foundation, Inc.
+# Copyright (C) 2019,2021 Free Software Foundation, Inc.
 # Written by Edward Hart
 #
 # This file is part of GnuCOBOL.
@@ -110,12 +110,12 @@ reserved:	COMP-2
 reserved:	COMP-3
 reserved:	COMP-4
 reserved:	COMP-5
-reserved:	COMPUTATIONAL
-reserved:	COMPUTATIONAL-1
-reserved:	COMPUTATIONAL-2
-reserved:	COMPUTATIONAL-3
-reserved:	COMPUTATIONAL-4
-reserved:	COMPUTATIONAL-5
+reserved:	COMPUTATIONAL=COMP
+reserved:	COMPUTATIONAL-1=COMP-1
+reserved:	COMPUTATIONAL-2=COMP-2
+reserved:	COMPUTATIONAL-3=COMP-3
+reserved:	COMPUTATIONAL-4=COMP-4
+reserved:	COMPUTATIONAL-5=COMP-5
 reserved:	COMPUTE
 reserved:	CONFIGURATION
 reserved:	CONTAINS
@@ -126,7 +126,7 @@ reserved:	CONTROLS
 reserved:	CONVERTING
 reserved:	COPY
 reserved:	CORE-INDEX
-reserved:	CORR
+reserved:	CORR=CORRESPONDING
 reserved:	CORRESPONDING
 reserved:	COUNT
 reserved:	CRT
@@ -144,6 +144,7 @@ reserved:	DAY-OF-WEEK
 reserved:	DBCS
 reserved:	DE
 reserved:	DEBUG
+# note: the following words are reserved but cannot be used - DEBUGGING module not supported
 reserved:	DEBUG-CONTENTS
 reserved:	DEBUG-ITEM
 reserved:	DEBUG-LINE
@@ -151,6 +152,7 @@ reserved:	DEBUG-NAME
 reserved:	DEBUG-SUB-1
 reserved:	DEBUG-SUB-2
 reserved:	DEBUG-SUB-3
+# end of not included DEBUGGING module
 reserved:	DEBUGGING
 reserved:	DECIMAL-POINT
 reserved:	DECLARATIVES
@@ -381,7 +383,7 @@ reserved:	PROMPT
 reserved:	PURGE
 reserved:	QUEUE
 reserved:	QUOTE
-reserved:	QUOTES
+reserved:	QUOTES=QUOTE
 reserved:	RANDOM
 reserved:	RANGE
 reserved:	RD
@@ -485,7 +487,7 @@ reserved:	SUM
 reserved:	SUPER
 reserved:	SUPPRESS
 reserved:	SYMBOLIC
-reserved:	SYNC
+reserved:	SYNC=SYNCHRONIZED
 reserved:	SYNCHRONIZED
 reserved:	TABLE
 reserved:	TALLY
@@ -497,7 +499,7 @@ reserved:	TEST
 reserved:	TEXT
 reserved:	THAN
 reserved:	THEN
-reserved:	THROUGH
+reserved:	THROUGH=THRU
 reserved:	THRU
 reserved:	TIME
 reserved:	TIME-OF-DAY

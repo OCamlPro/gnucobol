@@ -159,6 +159,7 @@ struct cob_alloc_cache {
 	void			*cob_pointer;	/* Pointer to malloced space */
 	size_t			size;		/* Item size */
 };
+const int	MAX_MODULE_ITERS = 10240;
 
 struct cob_alloc_module {
 	struct cob_alloc_module	*next;		/* Pointer to next */
@@ -603,7 +604,7 @@ static unsigned int 	dump_trace_started;	/* ensures that we dump/stacktrace only
 #define 		DUMP_TRACE_DONE_DUMP 		(1U << 0)
 #define 		DUMP_TRACE_DONE_TRACE		(1U << 1)
 #define 		DUMP_TRACE_ACTIVE_TRACE		(1U << 2)
-static void		cob_stack_trace_internal (FILE *target);
+static void		cob_stack_trace_internal (FILE *target, int verbose, int count);
 
 #ifdef COB_DEBUG_LOG
 static void		cob_debug_open	(void);
@@ -767,7 +768,7 @@ cob_terminate_routines (void)
 			if (!(dump_trace_started & (DUMP_TRACE_DONE_TRACE | DUMP_TRACE_ACTIVE_TRACE))) {
 				dump_trace_started |= DUMP_TRACE_DONE_TRACE;
 				dump_trace_started |= DUMP_TRACE_ACTIVE_TRACE;
-				cob_stack_trace_internal (stderr);
+				cob_stack_trace_internal (stderr, 1, 0);
 				dump_trace_started ^= DUMP_TRACE_ACTIVE_TRACE;
 			}
 		}
@@ -934,17 +935,26 @@ cob_sig_handler (int signal_value)
 		cob_rollback ();
 	in_stop_run = 1;
 
-	/* Skip dumping for SIGTERM and SIGINT */
+	/* Skip dumping for SIGTERM, SIGINT and "other process" issue's SIGHUP, SIGPIPE */
+	switch (signal_value) {
+	case -1:
 #ifdef	SIGTERM
-	if (signal_value == SIGTERM) {
-		dump_trace_started |= DUMP_TRACE_DONE_DUMP;
-	}
+	case SIGTERM:
 #endif
 #ifdef	SIGINT
-	if (signal_value == SIGINT) {
-		dump_trace_started |= DUMP_TRACE_DONE_DUMP;
-	}
+	case SIGINT:
 #endif
+#ifdef	SIGHUP
+	case SIGHUP:
+#endif
+#ifdef	SIGPIPE
+	case SIGPIPE:
+#endif
+		dump_trace_started |= DUMP_TRACE_DONE_DUMP;
+		/* Fall-through */
+	default:
+		break;
+	}
 
 #ifdef	HAVE_SIGACTION
 #ifndef	SA_RESETHAND
@@ -1577,7 +1587,6 @@ cob_open_logfile (const char *filename)
 static void
 cob_check_trace_file (void)
 {
-
 	if (cobsetptr->cob_trace_file) {
 		return;
 	}
@@ -1645,9 +1654,8 @@ int
 cob_check_env_false (char * s)
 {
 	return s && ((strlen (s) == 1 && (*s == 'N' || *s == 'n' || *s == '0'))
-		     || (strcasecmp (s, "NO") == 0 || strcasecmp (s, "NONE") == 0
-			 || strcasecmp (s, "OFF") == 0
-			 || strcasecmp (s, "FALSE") == 0));
+	          || (strcasecmp (s, "NO") == 0 || strcasecmp (s, "NONE") == 0
+	          || strcasecmp (s, "OFF") == 0 || strcasecmp (s, "FALSE") == 0));
 }
 
 static void
@@ -2285,15 +2293,9 @@ cob_field_to_string (const cob_field *f, void *str, const size_t maxsize)
 	s[i] = 0;
 }
 
-void
-cob_stop_run (const int status)
+static void
+call_exit_handlers_and_terminate (void)
 {
-	struct exit_handlerlist	*h;
-
-	if (!cob_initialized) {
-		exit (EXIT_FAILURE);
-	}
-
 	if (cobsetptr
 	 && !in_stop_run) {
 		if (cobsetptr->cob_stop_run_commit > 0) 
@@ -2303,13 +2305,22 @@ cob_stop_run (const int status)
 	}
 	in_stop_run = 1;
 	if (exit_hdlrs != NULL) {
-		h = exit_hdlrs;
+		struct exit_handlerlist* h = exit_hdlrs;
 		while (h != NULL) {
 			h->proc ();
 			h = h->next;
 		}
 	}
 	cob_terminate_routines ();
+}
+
+void
+cob_stop_run (const int status)
+{
+	if (!cob_initialized) {
+		exit (EXIT_FAILURE);
+	}
+	call_exit_handlers_and_terminate ();
 	exit (status);
 }
 
@@ -2334,12 +2345,6 @@ int
 cob_module_global_enter (cob_module **module, cob_global **mglobal,
 		  const int auto_init, const int entry, const unsigned int *name_hash)
 {
-	cob_module	*mod;
-	const int	MAX_ITERS = 10240;
-	int		k;
-	struct cob_alloc_module	*mod_ptr;
-
-
 	/* Check initialized */
 	if (!cob_initialized) {
 		if (auto_init) {
@@ -2356,19 +2361,19 @@ cob_module_global_enter (cob_module **module, cob_global **mglobal,
 	if (name_hash != NULL
 	 && cobglobptr->cob_call_name_hash != 0) {
 		cobglobptr->cob_call_from_c = 1;
-		k = 0;
 		while (*name_hash != 0) {	/* Scan table of values */
 			if (cobglobptr->cob_call_name_hash == *name_hash) {
 				cobglobptr->cob_call_from_c = 0;
 				break;
 			}
 			name_hash++;
-			k++;
 		}
 	}
 
 	/* Check module pointer */
 	if (!*module) {
+		struct cob_alloc_module* mod_ptr;
+
 		*module = cob_cache_malloc (sizeof (cob_module));
 		/* Add to list of all modules activated */
 		mod_ptr = cob_malloc (sizeof (struct cob_alloc_module));
@@ -2377,7 +2382,9 @@ cob_module_global_enter (cob_module **module, cob_global **mglobal,
 		cob_module_list = mod_ptr;
 	} else if (entry == 0
 		&& !cobglobptr->cob_call_from_c) {
-		for (k = 0, mod = COB_MODULE_PTR; mod && k < MAX_ITERS; mod = mod->next, k++) {
+		int		k = 0;
+		cob_module	*mod;
+		for (mod = COB_MODULE_PTR; mod; mod = mod->next) {
 			if (*module == mod) {
 				if (cobglobptr->cob_stmt_exception) {
 					/* CALL has ON EXCEPTION so return to caller */
@@ -2387,6 +2394,11 @@ cob_module_global_enter (cob_module **module, cob_global **mglobal,
 				}
 				cob_module_err = mod;
 				cob_fatal_error (COB_FERROR_RECURSIVE);
+			}
+			if (k++ == MAX_MODULE_ITERS) {
+				/* not translated as highly unexpected */
+				cob_runtime_warning ("max module iterations exceeded, possible broken chain");
+				break;
 			}
 		}
 	}
@@ -3332,8 +3344,8 @@ cob_check_numeric (const cob_field *f, const char *name)
 }
 
 void
-cob_check_odo (const int i, const int min,
-			const int max, const char *name, const char *dep_name)
+cob_check_odo (const int i, const int min, const int max,
+			const char *name, const char *dep_name)
 {
 	/* Check OCCURS DEPENDING ON item */
 	if (i < min || i > max) {
@@ -3410,10 +3422,47 @@ cob_check_ref_mod (const int offset, const int length,
 	}
 }
 
+/* check if already allocated, if yes returns its address and sets exlength */
+static void *
+cob_external_addr_lookup (const char *exname, int *exlength)
+{
+	struct cob_external *eptr;
+
+	for (eptr = basext; eptr; eptr = eptr->next) {
+		if (!strcmp (exname, eptr->ename)) {
+			if (exlength) {
+				*exlength = eptr->esize;
+			}
+			return eptr->ext_alloc;
+		}
+	}
+	return NULL;
+}
+
+/* allocate new external entry;
+   returns allocated pointer with requested size */
+static void *
+cob_external_addr_create (const char *exname, int exlength)
+{
+	struct cob_external *eptr;
+
+	eptr = cob_malloc (sizeof (struct cob_external));
+	eptr->next = basext;
+	eptr->esize = exlength;
+	eptr->ename = cob_strdup (exname);
+	eptr->ext_alloc = cob_malloc ((size_t)exlength);
+	basext = eptr;
+
+	return eptr->ext_alloc;
+}
+
+/* lookup external item, if already created before check given length;
+   returns allocated pointer with at least requested size */
 void *
 cob_external_addr (const char *exname, const int exlength)
 {
-	struct cob_external *eptr;
+	int		stored_length;
+	void	*ret;
 
 	/* special external "C" registers */
 	if (exlength == sizeof (int)
@@ -3422,30 +3471,23 @@ cob_external_addr (const char *exname, const int exlength)
 	}
 
 	/* Locate or allocate EXTERNAL item */
-	for (eptr = basext; eptr; eptr = eptr->next) {
-		if (!strcmp (exname, eptr->ename)) {
-			if (exlength > eptr->esize) {
-				cob_runtime_error (_("EXTERNAL item '%s' previously allocated with size %d, requested size is %d"),
-						   exname, eptr->esize, exlength);
-				cob_stop_run (1);
-			}
-			if (exlength < eptr->esize) {
-				cob_runtime_warning (_("EXTERNAL item '%s' previously allocated with size %d, requested size is %d"),
-						   exname, eptr->esize, exlength);
-			}
-			cobglobptr->cob_initial_external = 0;
-			return eptr->ext_alloc;
+	ret = cob_external_addr_lookup (exname, &stored_length);
+	if (ret != NULL) {
+		if (exlength > stored_length) {
+			cob_runtime_error (_ ("EXTERNAL item '%s' previously allocated with size %d, requested size is %d"),
+				exname, stored_length, exlength);
+			cob_stop_run (1);
 		}
+		if (exlength < stored_length) {
+			cob_runtime_warning (_ ("EXTERNAL item '%s' previously allocated with size %d, requested size is %d"),
+				exname, stored_length, exlength);
+		}
+		cobglobptr->cob_initial_external = 0;
+	} else {
+		ret = cob_external_addr_create (exname, exlength);
+		cobglobptr->cob_initial_external = 1;
 	}
-	eptr = cob_malloc (sizeof (struct cob_external));
-	eptr->next = basext;
-	eptr->esize = exlength;
-	eptr->ename = cob_malloc (strlen (exname) + 1U);
-	strcpy (eptr->ename, exname);
-	eptr->ext_alloc = cob_malloc ((size_t)exlength);
-	basext = eptr;
-	cobglobptr->cob_initial_external = 1;
-	return eptr->ext_alloc;
+	return ret;
 }
 
 #if defined (_MSC_VER)
@@ -4608,6 +4650,8 @@ check_valid_env_tmpdir (const char *envname)
 	return dir;
 }
 
+
+/* return pointer to TMPDIR without trailing slash */
 static const char *
 cob_gettmpdir (void)
 {
@@ -4635,6 +4679,14 @@ cob_gettmpdir (void)
 			tmp[0] = '.';
 			tmp[1] = 0;
 			tmpdir = tmp;
+		} else {
+			size_t size = strlen (tmpdir) - 1;
+			if (tmpdir[size] == SLASH_CHAR) {
+				tmp = (char*)cob_fast_malloc (size + 1);
+				memcpy (tmp, tmpdir, size);
+				tmp[size] = 0;
+				tmpdir = tmp;
+			}
 		}
 		(void)cob_setenv ("TMPDIR", tmpdir, 1);
 		if (tmp) {
@@ -4724,19 +4776,10 @@ cob_command_line (int flags, int *pargc, char ***pargv,
 int
 cob_tidy (void)
 {
-	struct exit_handlerlist	*h;
-
 	if (!cob_initialized) {
 		return 1;
 	}
-	if (exit_hdlrs != NULL) {
-		h = exit_hdlrs;
-		while (h != NULL) {
-			h->proc ();
-			h = h->next;
-		}
-	}
-	cob_terminate_routines ();
+	call_exit_handlers_and_terminate ();
 	return 0;
 }
 
@@ -5725,8 +5768,8 @@ cob_sys_getopt_long_long (void *so, void *lo, void *idx, const int long_only, vo
 	longoptions = longoptions_root;
 	for (i = 0; i < lo_amount; i++) {
 		j = sizeof (l->name) - 1;
-		while (j >= 0 && l->name[j] == 0x20) {
-			l->name[j] = 0x00;
+		while (j >= 0 && l->name[j] == ' ') {
+			l->name[j] = 0;
 			j--;
 		}
 		longoptions->name = l->name;
@@ -5812,11 +5855,11 @@ cob_sys_getopt_long_long (void *so, void *lo, void *idx, const int long_only, vo
 int
 cob_sys_printable (void *p1, ...)
 {
-	cob_u8_ptr		data;
+	size_t			datalen, n;
 	unsigned char		*dotptr;
-	int				datalen;
-	size_t			n;
 	unsigned char		dotrep;
+	cob_u8_ptr		data;
+	char		*previous_locale = NULL;
 
 	COB_CHK_PARMS (CBL_GC_PRINTABLE, 1);
 	COB_UNUSED (p1);
@@ -5834,10 +5877,18 @@ cob_sys_printable (void *p1, ...)
 	} else {
 		dotrep = (unsigned char)'.';
 	}
+	if (cobglobptr->cob_locale_ctype) {
+		previous_locale = setlocale (LC_CTYPE, NULL);
+		setlocale (LC_CTYPE, cobglobptr->cob_locale_ctype);
+	}
+	data = p1;
 	for (n = 0; n < datalen; ++n) {
 		if (!isprint (data[n])) {
 			data[n] = dotrep;
 		}
+	}
+	if (previous_locale) {
+		setlocale (LC_CTYPE, previous_locale);
 	}
 	return 0;
 }
@@ -6298,17 +6349,17 @@ translate_boolean_to_int (const char* ptr)
 		return atoi (ptr);		/* 0 or 1 */
 	} else
 	if (strcasecmp (ptr, "true") == 0
-		|| strcasecmp (ptr, "t") == 0
-		|| strcasecmp (ptr, "on") == 0
-		|| strcasecmp (ptr, "yes") == 0
-		|| strcasecmp (ptr, "y") == 0) {
+	 || strcasecmp (ptr, "t") == 0
+	 || strcasecmp (ptr, "on") == 0
+	 || strcasecmp (ptr, "yes") == 0
+	 || strcasecmp (ptr, "y") == 0) {
 		return 1;			/* True value */
 	} else
 	if (strcasecmp (ptr, "false") == 0
-		|| strcasecmp (ptr, "f") == 0
-		|| strcasecmp (ptr, "off") == 0
-		|| strcasecmp (ptr, "no") == 0
-		|| strcasecmp (ptr, "n") == 0) {
+	 || strcasecmp (ptr, "f") == 0
+	 || strcasecmp (ptr, "off") == 0
+	 || strcasecmp (ptr, "no") == 0
+	 || strcasecmp (ptr, "n") == 0) {
 		return 0;			/* False value */
 	}
 	return 2;
@@ -8764,6 +8815,12 @@ cob_set_runtime_option (enum cob_runtime_option_switch opt, void *p)
 		/* note: if set cob_dump_file is always external (libcob only opens it on abort)
 		         therefore we don't need to close the old one */
 		cobsetptr->cob_dump_file = (FILE *)p;
+		if (!cobsetptr->cob_dump_file) {
+			if (cobsetptr->cob_dump_filename) {
+				cob_free (cobsetptr->cob_dump_filename);
+			}
+			cobsetptr->cob_dump_filename = cob_strdup ("NONE");
+		}
 		break;
 	case COB_SET_RUNTIME_RESCAN_ENV:
 		cob_rescan_env_vals ();
@@ -8811,38 +8868,129 @@ cob_stack_trace (void *target)
 		return;
 	}
 	dump_trace_started |= DUMP_TRACE_ACTIVE_TRACE;
-	cob_stack_trace_internal ((FILE *)target);
+	cob_stack_trace_internal ((FILE *)target, 1, 0);
+	dump_trace_started ^= DUMP_TRACE_ACTIVE_TRACE;
+}
+
+static void
+flush_target (FILE* target) {
+	if (target == stderr
+	 || target == stdout) {
+		fflush (stdout);
+		fflush (stderr);
+	} else {
+		fflush (target);
+	}
+}
+
+/* output the COBOL-view of the stacktrace to the given target,
+   does an early exit if 'target' is NULL,
+   'target' is FILE *, output similar to GDBs backtrace command,
+   "count" to limit to the first / last entries,
+   REMARK: other than in GDB 0 means "full output" */
+void
+cob_backtrace (void *target, int count)
+{
+	if (target == NULL) {
+		return;
+	}
+	if (!cobglobptr || !COB_MODULE_PTR) {
+		flush_target (target);
+		fputc (' ', target);
+		/* TRANSLATORS: This msgid is shown for a requested but empty stack trace. */
+		fputs (_("No COBOL runtime elements on stack."), target);
+		fputc ('\n', target);
+		return;
+	}
+	dump_trace_started |= DUMP_TRACE_ACTIVE_TRACE;
+	cob_stack_trace_internal ((FILE *)target, 0, count);
 	dump_trace_started ^= DUMP_TRACE_ACTIVE_TRACE;
 }
 
 /* internal output the COBOL-view of the stacktrace to the given target */
 void
-cob_stack_trace_internal (FILE *target)
+cob_stack_trace_internal (FILE *target, int verbose, int count)
 {
 	cob_module	*mod;
+	int	first_entry = 0;
+	int i, k;
 
-	if (target == stderr
-	 || target == stdout) {
-		fflush (stdout);
-		fflush (stderr);
+	/* exit early in the case of no module loaded at all,
+	   possible to happen for example when aborted from cob_check_version of first module */
+	if (!COB_MODULE_PTR
+	 || (   COB_MODULE_PTR->module_stmt == 0
+	     && COB_MODULE_PTR->next == NULL)) {
+		return;
 	}
 
-	fputc ('\n', target);
-	for (mod = COB_MODULE_PTR; mod; mod = mod->next) {
+	flush_target (target);
+
+	k = 0;
+	if (count < 0) {
+		for (mod = COB_MODULE_PTR, i = 0; mod; mod = mod->next, i++) {
+			if (mod->next == mod
+			 || k++ == MAX_MODULE_ITERS) {
+				break;	/* messages in same checks below */
+			}
+		}
+		first_entry = i + count;
+	}
+
+	if (verbose) {
+		fputc ('\n', target);
+	}
+	k = 0;
+	for (mod = COB_MODULE_PTR, i = 0; mod; mod = mod->next, i++) {
+		if (i < first_entry) {
+			continue;
+		}
+		if (count > 0 && count == i) {
+			break;
+		}
 		if (mod->module_stmt != 0
 		 && mod->module_sources) {
-			fprintf (target, _(" Last statement of %s was at line %d of %s"),
-					mod->module_name,
-					COB_GET_LINE_NUM(mod->module_stmt),
-					mod->module_sources[COB_GET_FILE_NUM(mod->module_stmt)]);
-			fputc ('\n', target);
-			if (mod->next == mod) {
-				fputs ("FIXME: recursive mod (stack trace)\n", target);
-				break;
+			const unsigned int source_file = COB_GET_FILE_NUM (mod->module_stmt);
+			const unsigned int source_line = COB_GET_LINE_NUM (mod->module_stmt);
+			fputc (' ', target);
+			if (verbose) {
+				fprintf (target, _("Last statement of \"%s\" was at line %d of %s"),
+					mod->module_name, source_line, mod->module_sources[source_file]);
+			} else {
+				fprintf (target, "%s at %s:%d",
+					mod->module_name, mod->module_sources[source_file], source_line);
 			}
 		} else {
-			fprintf (target, _(" Last statement of %s unknown"), mod->module_name);
-			fputc ('\n', target);
+			if (verbose) {
+				fprintf (target, _("Last statement of \"%s\" unknown"), mod->module_name);
+			} else {
+				fprintf (target, "%s at unknown", mod->module_name);
+			}
+		}
+		fputc ('\n', target);
+		if (mod->next == mod) {
+			/* not translated as highly unexpected */
+			fputs ("FIXME: recursive mod (stack trace)\n", target);
+			break;
+		}
+		if (k++ == MAX_MODULE_ITERS) {
+			/* not translated as highly unexpected */
+			fputs ("max module iterations exceeded, possible broken chain\n", target);
+			break;
+		}
+			
+	}
+	if (mod) {
+		fputc (' ', target);
+		/* TRANSLATORS: This msgid is shown for a requested but not complete stack trace. */
+		fputs (_("(more COBOL runtime elements follow...)"), target);
+		fputc ('\n', target);
+	}
+
+	if (verbose && cob_argc != 0) {
+		size_t i;
+		fprintf (target, " Started by %s\n", cob_argv[0]);
+		for (i = 1; i < (size_t)cob_argc; ++i) {
+			fprintf (target, "            %s\n", cob_argv[i]);
 		}
 	}
 }
@@ -8853,6 +9001,9 @@ cob_get_dump_file (void)
 	if (cobsetptr->cob_dump_file != NULL) {	/* If DUMP active, use that */
 		return cobsetptr->cob_dump_file;
 	} else if (cobsetptr->cob_dump_filename != NULL) {	/* DUMP file defined */
+		if (cob_check_env_false(cobsetptr->cob_dump_filename)) {
+			return NULL;
+		}
 		cobsetptr->cob_dump_file = cob_open_logfile (cobsetptr->cob_dump_filename);
 		if (cobsetptr->cob_dump_file != NULL) {
 			return cobsetptr->cob_dump_file;
@@ -9069,22 +9220,37 @@ cob_dump_module (char *reason)
 {
 	cob_module	*mod;
 	int		wants_dump = 0;
+	int k;
 
 	/* Was any module compiled with -fdump? */
+	k = 0;
 	for (mod = COB_MODULE_PTR; mod; mod = mod->next) {
 		if (mod->flag_dump_ready) {
 			wants_dump = 1;
-			break;
 		}
 		if (mod->next == mod) {
+			/* not translated as highly unexpected */
 			fputs ("FIXME: recursive mod (module dump)\n", stderr);
+			break;
+		}
+		if (k++ == MAX_MODULE_ITERS) {
+			/* not translated as highly unexpected */
+			fputs ("max module iterations exceeded, possible broken chain\n", stderr);
+			break;
+		}
+		if (mod->flag_dump_ready) {
 			break;
 		}
 	}
 
 	if (wants_dump) {
 		FILE		*fp;
+		char		*previous_locale = NULL;
 		fp = cob_get_dump_file ();
+		/* explicit disabled dump */
+		if (fp == NULL) {
+			return;
+		}
 		if (fp != stderr) {
 			if (reason) {
 				if (reason[0] == 0) {
@@ -9099,7 +9265,7 @@ cob_dump_module (char *reason)
 				   so skip here for stdout/stderr ... */
 				if (!(dump_trace_started & DUMP_TRACE_ACTIVE_TRACE)) {
 					dump_trace_started |= DUMP_TRACE_ACTIVE_TRACE;
-					cob_stack_trace_internal (fp);
+					cob_stack_trace_internal (fp, 1, 0);
 					dump_trace_started ^= DUMP_TRACE_ACTIVE_TRACE;
 				}
 			}
@@ -9109,15 +9275,24 @@ cob_dump_module (char *reason)
 		}
 
 		fputc ('\n', fp);
+		if (cobglobptr->cob_locale_ctype) {
+			previous_locale = setlocale (LC_CTYPE, NULL);
+			setlocale (LC_CTYPE, cobglobptr->cob_locale_ctype);
+		}
+		k = 0;
 		for (mod = COB_MODULE_PTR; mod; mod = mod->next) {
 			if (mod->module_symbols
 			 && mod->num_symbols > 0
 			 && !(mod->flag_debug_trace & COB_MODULE_DUMPED)) {
 					cob_dump_symbols (mod);
 			}
-			if (mod->next == mod) {
+			if (mod->next == mod
+			 || k++ == MAX_MODULE_ITERS) {
 				break;
 			}
+		}
+		if (previous_locale) {
+			setlocale (LC_CTYPE, previous_locale);
 		}
 		if (fp != stdout && fp != stderr) {
 			char * fname = NULL;

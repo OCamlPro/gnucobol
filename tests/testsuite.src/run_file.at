@@ -4706,7 +4706,6 @@ AT_CLEANUP
 
 
 AT_SETUP([EXTERNAL RELATIVE file])
-# FIXME: Check the function of the EXTERNAL file using a second program, too
 AT_KEYWORDS([runfile])
 
 AT_DATA([prog.cob], [
@@ -4731,11 +4730,40 @@ AT_DATA([prog.cob], [
        01  my-key PIC 9.
 
        PROCEDURE DIVISION.
-           CONTINUE
-           .
+           OPEN OUTPUT my-file
+           MOVE 'testme' TO my-record
+           CALL 'prog2'
+           CLOSE my-file
+           GOBACK.
+])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog2.
+
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT my-file
+               ASSIGN TO "somefile"
+               ORGANIZATION IS RELATIVE
+               RELATIVE KEY IS my-key.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD my-file EXTERNAL.
+       01 two-record    PIC X(80).
+
+       WORKING-STORAGE SECTION.
+       01  my-key PIC 9.
+
+       PROCEDURE DIVISION.
+           WRITE two-record
+           GOBACK.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_MODULE prog2.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
@@ -9611,7 +9639,7 @@ AT_DATA([prog.cob], [
                PERFORM FCD-CHECK-STAT
                IF FCD-FILE-STATUS = '00'
                  DISPLAY PROGRAM-NAME
-                     ': RECORD = ' FIX-RECORDAREA (1:40) '. ' 
+                     ': RECORD = ' FIX-RECORDAREA (1:40) '. '
                      'Size:' FCD-CURRENT-REC-LEN
                END-IF
              END-PERFORM
@@ -9871,7 +9899,7 @@ AT_DATA([progl.cob], [
            RECORD KEY IS PRIME-KEY
            ACCESS IS SEQUENTIAL
            FILE STATUS IS OUT-STAT.
-       
+
        DATA DIVISION.
        FILE SECTION.
        FD OUTFILE
@@ -9880,11 +9908,11 @@ AT_DATA([progl.cob], [
        01  OUT-REC.
            05  PRIME-KEY PIC X(25).
            05  IN-DATA   PIC X(10).
-       
+
        WORKING-STORAGE SECTION.
        01  OUT-STAT             PIC XX    VALUE '00'.
        01  OUT-RECNUM           PIC 9 VALUE 0.
-       
+
        PROCEDURE DIVISION.
        MAIN-100.
            OPEN OUTPUT OUTFILE.
@@ -9893,7 +9921,7 @@ AT_DATA([progl.cob], [
                STOP RUN
            END-IF.
            INITIALIZE OUT-REC.
-       
+
        GET-NEXT-100.
            ADD 1  TO OUT-RECNUM.
            MOVE "RECORD-X" TO PRIME-KEY.
@@ -9906,7 +9934,7 @@ AT_DATA([progl.cob], [
            END-IF.
            IF OUT-RECNUM < 5
                GO TO GET-NEXT-100.
-       
+
        END-PROG-100.
            DISPLAY OUT-RECNUM ' records written'.
            CLOSE OUTFILE.
@@ -10385,7 +10413,7 @@ AT_DATA([prog.cob], [
        A-800-READ-PREVIOUS.
            MOVE X'FAF9' TO FH-ACTION
            PERFORM A-200-CALL-EXTFH.
-      
+
 ])
 
 AT_DATA([progs.cob], [[
@@ -10642,7 +10670,7 @@ AT_DATA([prog.cob], [
            MOVE LENGTH OF RECORD-AREA TO FCD-MAX-REC-LENGTH
            MOVE LENGTH OF RECORD-AREA TO FCD-CURRENT-REC-LEN
            PERFORM A-200-CALL-EXTFH.
-        
+
        A-200-Call-Extfh.
            CALL 'EXTFH' USING FH-ACTION
                               FCD-AREA
@@ -10800,8 +10828,8 @@ AT_DATA([prog.cob], [
              78 fcd--nodetectlock             value h"04".
              78 fcd--multiple-reel            value h"02".
              78 fcd--line-advancing           value h"01".
-             78 fcd--special-sequential  
-             value fcd--optional-file 
+             78 fcd--special-sequential
+             value fcd--optional-file
              + fcd--multiple-reel + fcd--line-advancing.
            05  FILLER               PIC X(2).
            05  FCD-HANDLE           USAGE POINTER.
@@ -10852,7 +10880,7 @@ AT_DATA([prog.cob], [
              78 fcd--single-open              value h"10".
              78 fcd--nfs-file-lock            value h"08".
              78 fcd--nfs-file-lock-hp         value h"04".
-             78 fcd--nfs-file-locks     
+             78 fcd--nfs-file-locks
              value fcd--nfs-file-lock + fcd--nfs-file-lock-hp.
            05  FCD-FS-FLAGS         PIC 99   COMP-X.
            05  FCD-CONFIG-FLAGS     PIC 99   COMP-X.
@@ -10892,7 +10920,7 @@ AT_DATA([prog.cob], [
           DISPLAY "Listing " WS-FCD-DDNAME '.'.
           PERFORM VARYING I FROM 1 BY 1 UNTIL I > 10
             PERFORM 350-READ
-            DISPLAY FCD-CURRENT-REC-LEN ": " 
+            DISPLAY FCD-CURRENT-REC-LEN ": "
                     FCD-RECORD (1:FCD-CURRENT-REC-LEN) " :"
           END-PERFORM.
           PERFORM 400-CLOSE.
@@ -10923,7 +10951,7 @@ AT_DATA([prog.cob], [
              MOVE FCD--EXTERNAL-NAME  TO FCD-OTHER-FLAGS
              SET  FCD-HANDLE          TO NULL
              MOVE 8                   TO FCD-NAME-LENGTH
-             SET  FCD-FILENAME-ADDRESS TO ADDRESS 
+             SET  FCD-FILENAME-ADDRESS TO ADDRESS
                                        OF WS-FCD-DDNAME
              SET  FCD-KEY-DEF-ADDRESS TO NULL
              MOVE FCD--ALLOW-READERS  TO FCD-LOCKTYPES
@@ -10988,7 +11016,7 @@ AT_DATA([prog.cob], [
            MOVE "00"                   TO FCD-FILE-STATUS
            CALL "EXTFH" USING ACTION-CODE, FCD-MAP
 
-           IF FCD-STATUS-KEY-1 NOT = "0" 
+           IF FCD-STATUS-KEY-1 NOT = "0"
                IF FCD-STATUS-KEY-1 = "9"
                   IF FCD-BINARY = 161
                       DISPLAY "EXTFH Status: 9/" FCD-BINARY
@@ -11009,7 +11037,7 @@ AT_DATA([prog.cob], [
             .
 ])
 
-AT_CHECK([$COMPILE -w prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE -w prog.cob], [0], [], [])
 
 AT_CHECK([export TESTOUT=TEST-OUT
 $COBCRUN_DIRECT ./prog], [0], [FCD SIZE 00100.
@@ -12838,6 +12866,7 @@ Program-Id: prog
             OPEN OUTPUT TSPFILE -> 'testisam' Status: 00
  Line:    327           IF
  Line:    335           PERFORM
+ Line:    337           UNTIL
  Line:    347Paragraph: 1000-LOAD-RECORD
  Line:    349           MOVE
  Line:    350           MOVE
@@ -12860,6 +12889,8 @@ Program-Id: prog
                80:'    N.Y.                     3131234432MR. DAVE HARRIS          UNI-90301MEG8417'
               160:'    1600 BPI00085'
  Line:    371           IF
+ Line:    336           VARYING
+ Line:    337           UNTIL
  Line:    347Paragraph: 1000-LOAD-RECORD
  Line:    349           MOVE
  Line:    350           MOVE
@@ -12882,6 +12913,8 @@ Program-Id: prog
                80:'    GEORGIA                  4082938498MS. JANICE SILCOX        UNI-90403MEG8470'
               160:'    6250 BPI00034'
  Line:    371           IF
+ Line:    336           VARYING
+ Line:    337           UNTIL
  Line:    347Paragraph: 1000-LOAD-RECORD
  Line:    349           MOVE
  Line:    350           MOVE
@@ -12904,6 +12937,8 @@ Program-Id: prog
                80:'    D.C.                     8372487274MR. ALLAN JONES          UNI-80/31MEG8417'
               160:'    1600 BPI00075'
  Line:    371           IF
+ Line:    336           VARYING
+ Line:    337           UNTIL
  Line:    347Paragraph: 1000-LOAD-RECORD
  Line:    349           MOVE
  Line:    350           MOVE
@@ -12926,6 +12961,8 @@ Program-Id: prog
                80:'    CANADA                   4169898509MR. PETER MACKAY         UNI-80/53MEG8470'
               160:'    6250 BPI00045'
  Line:    371           IF
+ Line:    336           VARYING
+ Line:    337           UNTIL
  Line:    347Paragraph: 1000-LOAD-RECORD
  Line:    349           MOVE
  Line:    350           MOVE
@@ -12948,6 +12985,8 @@ Program-Id: prog
                80:'    CANADA                   5292398745MRS. DONNA BREWER        UNI-80/61MEG8417'
               160:'    1600 BPI00090'
  Line:    371           IF
+ Line:    336           VARYING
+ Line:    337           UNTIL
  Line:    347Paragraph: 1000-LOAD-RECORD
  Line:    349           MOVE
  Line:    350           MOVE
@@ -12970,6 +13009,8 @@ Program-Id: prog
                80:'    CALIFORNIA               8009329492MR. MICHAEL SMYTHE       UNI-80/63MEG8470'
               160:'    6250 BPI00107'
  Line:    371           IF
+ Line:    336           VARYING
+ Line:    337           UNTIL
  Line:    347Paragraph: 1000-LOAD-RECORD
  Line:    349           MOVE
  Line:    350           MOVE
@@ -12992,6 +13033,8 @@ Program-Id: prog
                80:'    NEW MEXICO               6456445643MR. D.A. MORRISON        UNI-80/61MEG8417'
               160:'    1600 BPI00067'
  Line:    371           IF
+ Line:    336           VARYING
+ Line:    337           UNTIL
  Line:    347Paragraph: 1000-LOAD-RECORD
  Line:    349           MOVE
  Line:    350           MOVE
@@ -13014,6 +13057,8 @@ Program-Id: prog
                80:'    WISCONSIN                6546456333MR. BRIAN PATTERSON      UNI-80/83MEG8470'
               160:'    6250 BPI00032'
  Line:    371           IF
+ Line:    336           VARYING
+ Line:    337           UNTIL
  Line:    347Paragraph: 1000-LOAD-RECORD
  Line:    349           MOVE
  Line:    350           MOVE
@@ -13036,6 +13081,8 @@ Program-Id: prog
                80:'    DELAWARE                 3455445444MR. DARRYL TOWNSEND      UNI-80/81MEG8417'
               160:'    1600 BPI00016'
  Line:    371           IF
+ Line:    336           VARYING
+ Line:    337           UNTIL
  Line:    347Paragraph: 1000-LOAD-RECORD
  Line:    349           MOVE
  Line:    350           MOVE
@@ -13058,6 +13105,8 @@ Program-Id: prog
                80:'    KANSAS                   6456445643MS. VALERIE HARPER       UNI-80/81MEG8417'
               160:'    1600 BPI00034'
  Line:    371           IF
+ Line:    336           VARYING
+ Line:    337           UNTIL
  Line:    347Paragraph: 1000-LOAD-RECORD
  Line:    349           MOVE
  Line:    350           MOVE
@@ -13080,6 +13129,8 @@ Program-Id: prog
                80:'    WASHINGTON               7456434355MR. FRED MILLER          UNI-80/81MEG8417'
               160:'    1600 BPI00128'
  Line:    371           IF
+ Line:    336           VARYING
+ Line:    337           UNTIL
  Line:    347Paragraph: 1000-LOAD-RECORD
  Line:    349           MOVE
  Line:    350           MOVE
@@ -13102,6 +13153,8 @@ Program-Id: prog
                80:'    N.J.                     6554456433MR. DONALD FISCHER       UNI-80/83MEG8470'
               160:'    6250 BPI00064'
  Line:    371           IF
+ Line:    336           VARYING
+ Line:    337           UNTIL
  Line:    347Paragraph: 1000-LOAD-RECORD
  Line:    349           MOVE
  Line:    350           MOVE
@@ -13124,6 +13177,8 @@ Program-Id: prog
                80:'    COLORADO                 4169898509MR. STEVEN YOURDIN       UNI-80/83MEG8470'
               160:'    6250 BPI00110'
  Line:    371           IF
+ Line:    336           VARYING
+ Line:    337           UNTIL
  Line:    347Paragraph: 1000-LOAD-RECORD
  Line:    349           MOVE
  Line:    350           MOVE
@@ -13146,6 +13201,8 @@ Program-Id: prog
                80:'    OHIO                     7534587453MS. Goldie Hawn          UNI-80/83MEG8470'
               160:'    6250 BPI00324'
  Line:    371           IF
+ Line:    336           VARYING
+ Line:    337           UNTIL
  Line:    347Paragraph: 1000-LOAD-RECORD
  Line:    349           MOVE
  Line:    350           MOVE
@@ -13168,6 +13225,8 @@ Program-Id: prog
                80:'    VIRGINIA                 8787458374MS. ALICE WINSTON        UNI-90403MEG8470'
               160:'    6250 BPI00124'
  Line:    371           IF
+ Line:    336           VARYING
+ Line:    337           UNTIL
  Line:    347Paragraph: 1000-LOAD-RECORD
  Line:    349           MOVE
  Line:    350           MOVE
@@ -13190,6 +13249,8 @@ Program-Id: prog
                80:'    N.Y.                     4169898509MR. THOMAS JEFFERSON     UNI-90403MEG8470'
               160:'    6250 BPI00086'
  Line:    371           IF
+ Line:    336           VARYING
+ Line:    337           UNTIL
  Line:    339           DISPLAY
  Line:    341           CLOSE
             CLOSE TSPFILE Status: 00
@@ -13232,6 +13293,7 @@ Program-Id: prog
               160:'    1600 BPI00090'
  Line:    414           IF
  Line:    422           PERFORM
+ Line:    423           UNTIL
  Line:    424           DISPLAY
  Line:    427           READ
             READ Sequential TSPFILE Status: 00
@@ -13239,6 +13301,7 @@ Program-Id: prog
                80:'    CALIFORNIA               8009329492MR. MICHAEL SMYTHE       UNI-80/63MEG8470'
               160:'    6250 BPI00107'
  Line:    431           ADD
+ Line:    423           UNTIL
  Line:    424           DISPLAY
  Line:    427           READ
             READ Sequential TSPFILE Status: 00
@@ -13246,6 +13309,7 @@ Program-Id: prog
                80:'    D.C.                     8372487274MR. ALLAN JONES          UNI-80/31MEG8417'
               160:'    1600 BPI00075'
  Line:    431           ADD
+ Line:    423           UNTIL
  Line:    424           DISPLAY
  Line:    427           READ
             READ Sequential TSPFILE Status: 00
@@ -13253,6 +13317,7 @@ Program-Id: prog
                80:'    NEW MEXICO               6456445643MR. D.A. MORRISON        UNI-80/61MEG8417'
               160:'    1600 BPI00067'
  Line:    431           ADD
+ Line:    423           UNTIL
  Line:    424           DISPLAY
  Line:    427           READ
             READ Sequential TSPFILE Status: 00
@@ -13260,6 +13325,7 @@ Program-Id: prog
                80:'    WISCONSIN                6546456333MR. BRIAN PATTERSON      UNI-80/83MEG8470'
               160:'    6250 BPI00032'
  Line:    431           ADD
+ Line:    423           UNTIL
  Line:    424           DISPLAY
  Line:    427           READ
             READ Sequential TSPFILE Status: 00
@@ -13267,6 +13333,7 @@ Program-Id: prog
                80:'    DELAWARE                 3455445444MR. DARRYL TOWNSEND      UNI-80/81MEG8417'
               160:'    1600 BPI00016'
  Line:    431           ADD
+ Line:    423           UNTIL
  Line:    424           DISPLAY
  Line:    427           READ
             READ Sequential TSPFILE Status: 00
@@ -13274,6 +13341,7 @@ Program-Id: prog
                80:'    KANSAS                   6456445643MS. VALERIE HARPER       UNI-80/81MEG8417'
               160:'    1600 BPI00034'
  Line:    431           ADD
+ Line:    423           UNTIL
  Line:    424           DISPLAY
  Line:    427           READ
             READ Sequential TSPFILE Status: 00
@@ -13281,6 +13349,7 @@ Program-Id: prog
                80:'    WASHINGTON               7456434355MR. FRED MILLER          UNI-80/81MEG8417'
               160:'    1600 BPI00128'
  Line:    431           ADD
+ Line:    423           UNTIL
  Line:    424           DISPLAY
  Line:    427           READ
             READ Sequential TSPFILE Status: 00
@@ -13288,6 +13357,7 @@ Program-Id: prog
                80:'    N.J.                     6554456433MR. DONALD FISCHER       UNI-80/83MEG8470'
               160:'    6250 BPI00064'
  Line:    431           ADD
+ Line:    423           UNTIL
  Line:    424           DISPLAY
  Line:    427           READ
             READ Sequential TSPFILE Status: 00
@@ -13295,6 +13365,7 @@ Program-Id: prog
                80:'    COLORADO                 4169898509MR. STEVEN YOURDIN       UNI-80/83MEG8470'
               160:'    6250 BPI00110'
  Line:    431           ADD
+ Line:    423           UNTIL
  Line:    424           DISPLAY
  Line:    427           READ
             READ Sequential TSPFILE Status: 00
@@ -13302,6 +13373,7 @@ Program-Id: prog
                80:'    OHIO                     7534587453MS. Goldie Hawn          UNI-80/83MEG8470'
               160:'    6250 BPI00324'
  Line:    431           ADD
+ Line:    423           UNTIL
  Line:    424           DISPLAY
  Line:    427           READ
             READ Sequential TSPFILE Status: 00
@@ -13309,6 +13381,7 @@ Program-Id: prog
                80:'    VIRGINIA                 8787458374MS. ALICE WINSTON        UNI-90403MEG8470'
               160:'    6250 BPI00124'
  Line:    431           ADD
+ Line:    423           UNTIL
  Line:    433           IF
  Line:    437           DISPLAY
  Line:    438           MOVE
@@ -13323,6 +13396,7 @@ Program-Id: prog
               160:'    6250 BPI00324'
  Line:    446           IF
  Line:    451           PERFORM
+ Line:    452           UNTIL
  Line:    453           DISPLAY
  Line:    456           READ
             READ Sequential TSPFILE Status: 00
@@ -13330,6 +13404,7 @@ Program-Id: prog
                80:'    COLORADO                 4169898509MR. STEVEN YOURDIN       UNI-80/83MEG8470'
               160:'    6250 BPI00110'
  Line:    460           ADD
+ Line:    452           UNTIL
  Line:    453           DISPLAY
  Line:    456           READ
             READ Sequential TSPFILE Status: 00
@@ -13337,6 +13412,7 @@ Program-Id: prog
                80:'    N.J.                     6554456433MR. DONALD FISCHER       UNI-80/83MEG8470'
               160:'    6250 BPI00064'
  Line:    460           ADD
+ Line:    452           UNTIL
  Line:    453           DISPLAY
  Line:    456           READ
             READ Sequential TSPFILE Status: 00
@@ -13344,6 +13420,7 @@ Program-Id: prog
                80:'    WASHINGTON               7456434355MR. FRED MILLER          UNI-80/81MEG8417'
               160:'    1600 BPI00128'
  Line:    460           ADD
+ Line:    452           UNTIL
  Line:    453           DISPLAY
  Line:    456           READ
             READ Sequential TSPFILE Status: 00
@@ -13351,6 +13428,7 @@ Program-Id: prog
                80:'    KANSAS                   6456445643MS. VALERIE HARPER       UNI-80/81MEG8417'
               160:'    1600 BPI00034'
  Line:    460           ADD
+ Line:    452           UNTIL
  Line:    453           DISPLAY
  Line:    456           READ
             READ Sequential TSPFILE Status: 00
@@ -13358,6 +13436,7 @@ Program-Id: prog
                80:'    DELAWARE                 3455445444MR. DARRYL TOWNSEND      UNI-80/81MEG8417'
               160:'    1600 BPI00016'
  Line:    460           ADD
+ Line:    452           UNTIL
  Line:    453           DISPLAY
  Line:    456           READ
             READ Sequential TSPFILE Status: 00
@@ -13365,6 +13444,7 @@ Program-Id: prog
                80:'    WISCONSIN                6546456333MR. BRIAN PATTERSON      UNI-80/83MEG8470'
               160:'    6250 BPI00032'
  Line:    460           ADD
+ Line:    452           UNTIL
  Line:    453           DISPLAY
  Line:    456           READ
             READ Sequential TSPFILE Status: 00
@@ -13372,6 +13452,7 @@ Program-Id: prog
                80:'    NEW MEXICO               6456445643MR. D.A. MORRISON        UNI-80/61MEG8417'
               160:'    1600 BPI00067'
  Line:    460           ADD
+ Line:    452           UNTIL
  Line:    453           DISPLAY
  Line:    456           READ
             READ Sequential TSPFILE Status: 00
@@ -13379,6 +13460,7 @@ Program-Id: prog
                80:'    D.C.                     8372487274MR. ALLAN JONES          UNI-80/31MEG8417'
               160:'    1600 BPI00075'
  Line:    460           ADD
+ Line:    452           UNTIL
  Line:    453           DISPLAY
  Line:    456           READ
             READ Sequential TSPFILE Status: 00
@@ -13386,6 +13468,7 @@ Program-Id: prog
                80:'    CALIFORNIA               8009329492MR. MICHAEL SMYTHE       UNI-80/63MEG8470'
               160:'    6250 BPI00107'
  Line:    460           ADD
+ Line:    452           UNTIL
  Line:    453           DISPLAY
  Line:    456           READ
             READ Sequential TSPFILE Status: 00
@@ -13393,6 +13476,7 @@ Program-Id: prog
                80:'    CANADA                   5292398745MRS. DONNA BREWER        UNI-80/61MEG8417'
               160:'    1600 BPI00090'
  Line:    460           ADD
+ Line:    452           UNTIL
  Line:    453           DISPLAY
  Line:    456           READ
             READ Sequential TSPFILE Status: 00
@@ -13400,6 +13484,7 @@ Program-Id: prog
                80:'    CANADA                   4169898509MR. PETER MACKAY         UNI-80/53MEG8470'
               160:'    6250 BPI00045'
  Line:    460           ADD
+ Line:    452           UNTIL
  Line:    463           CLOSE
             CLOSE TSPFILE Status: 00
  Line:    465           OPEN
@@ -13506,6 +13591,7 @@ Program-Id: prog
 ])
 
 AT_CHECK([gcdiff -I'WRITE TSPFILE Status' reference trace.txt], [0], [], [])
+#AT_CHECK([diff -I'WRITE TSPFILE Status' reference trace.txt], [0], [], [])
 
 AT_CLEANUP
 
@@ -14227,6 +14313,7 @@ Program-Id: prog
             OPEN OUTPUT TSPFILE -> 'testisam' Status: 00
  Line:    340            IF
  Line:    346            PERFORM
+ Line:    348            UNTIL
  Line:    358 Paragraph: 1000-LOAD-RECORD
  Line:    360            MOVE
  Line:    361            MOVE
@@ -14249,6 +14336,8 @@ Program-Id: prog
                80:'    N.Y.                     3131234432MR. DAVE HARRIS          UNI-90301MEG8417'
               160:'    1600 BPI00085'
  Line:    382            IF
+ Line:    347            VARYING
+ Line:    348            UNTIL
  Line:    358 Paragraph: 1000-LOAD-RECORD
  Line:    360            MOVE
  Line:    361            MOVE
@@ -14271,6 +14360,8 @@ Program-Id: prog
                80:'    GEORGIA                  4082938498MS. JANICE SILCOX        UNI-90403MEG8470'
               160:'    6250 BPI00034'
  Line:    382            IF
+ Line:    347            VARYING
+ Line:    348            UNTIL
  Line:    358 Paragraph: 1000-LOAD-RECORD
  Line:    360            MOVE
  Line:    361            MOVE
@@ -14293,6 +14384,8 @@ Program-Id: prog
                80:'    D.C.                     8372487274MR. ALLAN JONES          UNI-80/31MEG8417'
               160:'    1600 BPI00075'
  Line:    382            IF
+ Line:    347            VARYING
+ Line:    348            UNTIL
  Line:    358 Paragraph: 1000-LOAD-RECORD
  Line:    360            MOVE
  Line:    361            MOVE
@@ -14315,6 +14408,8 @@ Program-Id: prog
                80:'    CANADA                   4169898509MR. PETER MACKAY         UNI-80/53MEG8470'
               160:'    6250 BPI00045'
  Line:    382            IF
+ Line:    347            VARYING
+ Line:    348            UNTIL
  Line:    358 Paragraph: 1000-LOAD-RECORD
  Line:    360            MOVE
  Line:    361            MOVE
@@ -14337,6 +14432,8 @@ Program-Id: prog
                80:'    CANADA                   5292398745MRS. DONNA BREWER        UNI-80/61MEG8417'
               160:'    1600 BPI00090'
  Line:    382            IF
+ Line:    347            VARYING
+ Line:    348            UNTIL
  Line:    358 Paragraph: 1000-LOAD-RECORD
  Line:    360            MOVE
  Line:    361            MOVE
@@ -14359,6 +14456,8 @@ Program-Id: prog
                80:'    CALIFORNIA               8009329492MR. MICHAEL SMYTHE       UNI-80/63MEG8470'
               160:'    6250 BPI00107'
  Line:    382            IF
+ Line:    347            VARYING
+ Line:    348            UNTIL
  Line:    358 Paragraph: 1000-LOAD-RECORD
  Line:    360            MOVE
  Line:    361            MOVE
@@ -14381,6 +14480,8 @@ Program-Id: prog
                80:'    NEW MEXICO               6456445643MR. D.A. MORRISON        UNI-80/61MEG8417'
               160:'    1600 BPI00067'
  Line:    382            IF
+ Line:    347            VARYING
+ Line:    348            UNTIL
  Line:    358 Paragraph: 1000-LOAD-RECORD
  Line:    360            MOVE
  Line:    361            MOVE
@@ -14403,6 +14504,8 @@ Program-Id: prog
                80:'    WISCONSIN                6546456333MR. BRIAN PATTERSON      UNI-80/83MEG8470'
               160:'    6250 BPI00032'
  Line:    382            IF
+ Line:    347            VARYING
+ Line:    348            UNTIL
  Line:    358 Paragraph: 1000-LOAD-RECORD
  Line:    360            MOVE
  Line:    361            MOVE
@@ -14425,6 +14528,8 @@ Program-Id: prog
                80:'    DELAWARE                 3455445444MR. DARRYL TOWNSEND      UNI-80/81MEG8417'
               160:'    1600 BPI00016'
  Line:    382            IF
+ Line:    347            VARYING
+ Line:    348            UNTIL
  Line:    358 Paragraph: 1000-LOAD-RECORD
  Line:    360            MOVE
  Line:    361            MOVE
@@ -14447,6 +14552,8 @@ Program-Id: prog
                80:'    KANSAS                   6456445643MS. VALERIE HARPER       UNI-80/81MEG8417'
               160:'    1600 BPI00034'
  Line:    382            IF
+ Line:    347            VARYING
+ Line:    348            UNTIL
  Line:    358 Paragraph: 1000-LOAD-RECORD
  Line:    360            MOVE
  Line:    361            MOVE
@@ -14469,6 +14576,8 @@ Program-Id: prog
                80:'    WASHINGTON               7456434355MR. FRED MILLER          UNI-80/81MEG8417'
               160:'    1600 BPI00128'
  Line:    382            IF
+ Line:    347            VARYING
+ Line:    348            UNTIL
  Line:    358 Paragraph: 1000-LOAD-RECORD
  Line:    360            MOVE
  Line:    361            MOVE
@@ -14491,6 +14600,8 @@ Program-Id: prog
                80:'    N.J.                     6554456433MR. DONALD FISCHER       UNI-80/83MEG8470'
               160:'    6250 BPI00064'
  Line:    382            IF
+ Line:    347            VARYING
+ Line:    348            UNTIL
  Line:    358 Paragraph: 1000-LOAD-RECORD
  Line:    360            MOVE
  Line:    361            MOVE
@@ -14513,6 +14624,8 @@ Program-Id: prog
                80:'    COLORADO                 4169898509MR. STEVEN YOURDIN       UNI-80/83MEG8470'
               160:'    6250 BPI00110'
  Line:    382            IF
+ Line:    347            VARYING
+ Line:    348            UNTIL
  Line:    358 Paragraph: 1000-LOAD-RECORD
  Line:    360            MOVE
  Line:    361            MOVE
@@ -14535,6 +14648,8 @@ Program-Id: prog
                80:'    OHIO                     7534587453MS. Goldie Hawn          UNI-80/83MEG8470'
               160:'    6250 BPI00324'
  Line:    382            IF
+ Line:    347            VARYING
+ Line:    348            UNTIL
  Line:    358 Paragraph: 1000-LOAD-RECORD
  Line:    360            MOVE
  Line:    361            MOVE
@@ -14557,6 +14672,8 @@ Program-Id: prog
                80:'    VIRGINIA                 8787458374MS. ALICE WINSTON        UNI-90403MEG8470'
               160:'    6250 BPI00124'
  Line:    382            IF
+ Line:    347            VARYING
+ Line:    348            UNTIL
  Line:    358 Paragraph: 1000-LOAD-RECORD
  Line:    360            MOVE
  Line:    361            MOVE
@@ -14579,6 +14696,8 @@ Program-Id: prog
                80:'    N.Y.                     4169898509MR. THOMAS JEFFERSON     UNI-90403MEG8470'
               160:'    6250 BPI00086'
  Line:    382            IF
+ Line:    347            VARYING
+ Line:    348            UNTIL
  Line:    350            DISPLAY
  Line:    352            CLOSE
             CLOSE TSPFILE Status: 00
@@ -14621,6 +14740,7 @@ Program-Id: prog
               160:'    1600 BPI00090'
  Line:    419            IF
  Line:    424            PERFORM
+ Line:    425            UNTIL
  Line:    426            DISPLAY
  Line:    429            CALL
  Line:    430            READ
@@ -14629,6 +14749,7 @@ Program-Id: prog
                80:'    CALIFORNIA               8009329492MR. MICHAEL SMYTHE       UNI-80/63MEG8470'
               160:'    6250 BPI00107'
  Line:    434            ADD
+ Line:    425            UNTIL
  Line:    426            DISPLAY
  Line:    429            CALL
  Line:    430            READ
@@ -14637,6 +14758,7 @@ Program-Id: prog
                80:'    D.C.                     8372487274MR. ALLAN JONES          UNI-80/31MEG8417'
               160:'    1600 BPI00075'
  Line:    434            ADD
+ Line:    425            UNTIL
  Line:    426            DISPLAY
  Line:    429            CALL
  Line:    430            READ
@@ -14645,6 +14767,7 @@ Program-Id: prog
                80:'    NEW MEXICO               6456445643MR. D.A. MORRISON        UNI-80/61MEG8417'
               160:'    1600 BPI00067'
  Line:    434            ADD
+ Line:    425            UNTIL
  Line:    426            DISPLAY
  Line:    429            CALL
  Line:    430            READ
@@ -14653,6 +14776,7 @@ Program-Id: prog
                80:'    WISCONSIN                6546456333MR. BRIAN PATTERSON      UNI-80/83MEG8470'
               160:'    6250 BPI00032'
  Line:    434            ADD
+ Line:    425            UNTIL
  Line:    426            DISPLAY
  Line:    429            CALL
  Line:    430            READ
@@ -14661,6 +14785,7 @@ Program-Id: prog
                80:'    DELAWARE                 3455445444MR. DARRYL TOWNSEND      UNI-80/81MEG8417'
               160:'    1600 BPI00016'
  Line:    434            ADD
+ Line:    425            UNTIL
  Line:    426            DISPLAY
  Line:    429            CALL
  Line:    430            READ
@@ -14669,6 +14794,7 @@ Program-Id: prog
                80:'    KANSAS                   6456445643MS. VALERIE HARPER       UNI-80/81MEG8417'
               160:'    1600 BPI00034'
  Line:    434            ADD
+ Line:    425            UNTIL
  Line:    426            DISPLAY
  Line:    429            CALL
  Line:    430            READ
@@ -14677,6 +14803,7 @@ Program-Id: prog
                80:'    WASHINGTON               7456434355MR. FRED MILLER          UNI-80/81MEG8417'
               160:'    1600 BPI00128'
  Line:    434            ADD
+ Line:    425            UNTIL
  Line:    426            DISPLAY
  Line:    429            CALL
  Line:    430            READ
@@ -14685,6 +14812,7 @@ Program-Id: prog
                80:'    N.J.                     6554456433MR. DONALD FISCHER       UNI-80/83MEG8470'
               160:'    6250 BPI00064'
  Line:    434            ADD
+ Line:    425            UNTIL
  Line:    426            DISPLAY
  Line:    429            CALL
  Line:    430            READ
@@ -14693,6 +14821,7 @@ Program-Id: prog
                80:'    COLORADO                 4169898509MR. STEVEN YOURDIN       UNI-80/83MEG8470'
               160:'    6250 BPI00110'
  Line:    434            ADD
+ Line:    425            UNTIL
  Line:    426            DISPLAY
  Line:    429            CALL
  Line:    430            READ
@@ -14701,6 +14830,7 @@ Program-Id: prog
                80:'    OHIO                     7534587453MS. Goldie Hawn          UNI-80/83MEG8470'
               160:'    6250 BPI00324'
  Line:    434            ADD
+ Line:    425            UNTIL
  Line:    426            DISPLAY
  Line:    429            CALL
  Line:    430            READ
@@ -14709,6 +14839,7 @@ Program-Id: prog
                80:'    VIRGINIA                 8787458374MS. ALICE WINSTON        UNI-90403MEG8470'
               160:'    6250 BPI00124'
  Line:    434            ADD
+ Line:    425            UNTIL
  Line:    436            IF
  Line:    439            DISPLAY
  Line:    442            DISPLAY
@@ -14724,6 +14855,7 @@ Program-Id: prog
               160:'    6250 BPI00324'
  Line:    451            IF
  Line:    456            PERFORM
+ Line:    457            UNTIL
  Line:    458            DISPLAY
  Line:    461            READ
             READ Sequential TSPFILE Status: 00
@@ -14731,6 +14863,7 @@ Program-Id: prog
                80:'    COLORADO                 4169898509MR. STEVEN YOURDIN       UNI-80/83MEG8470'
               160:'    6250 BPI00110'
  Line:    465            ADD
+ Line:    457            UNTIL
  Line:    458            DISPLAY
  Line:    461            READ
             READ Sequential TSPFILE Status: 00
@@ -14738,6 +14871,7 @@ Program-Id: prog
                80:'    N.J.                     6554456433MR. DONALD FISCHER       UNI-80/83MEG8470'
               160:'    6250 BPI00064'
  Line:    465            ADD
+ Line:    457            UNTIL
  Line:    458            DISPLAY
  Line:    461            READ
             READ Sequential TSPFILE Status: 00
@@ -14745,6 +14879,7 @@ Program-Id: prog
                80:'    WASHINGTON               7456434355MR. FRED MILLER          UNI-80/81MEG8417'
               160:'    1600 BPI00128'
  Line:    465            ADD
+ Line:    457            UNTIL
  Line:    458            DISPLAY
  Line:    461            READ
             READ Sequential TSPFILE Status: 00
@@ -14752,6 +14887,7 @@ Program-Id: prog
                80:'    KANSAS                   6456445643MS. VALERIE HARPER       UNI-80/81MEG8417'
               160:'    1600 BPI00034'
  Line:    465            ADD
+ Line:    457            UNTIL
  Line:    458            DISPLAY
  Line:    461            READ
             READ Sequential TSPFILE Status: 00
@@ -14759,6 +14895,7 @@ Program-Id: prog
                80:'    DELAWARE                 3455445444MR. DARRYL TOWNSEND      UNI-80/81MEG8417'
               160:'    1600 BPI00016'
  Line:    465            ADD
+ Line:    457            UNTIL
  Line:    458            DISPLAY
  Line:    461            READ
             READ Sequential TSPFILE Status: 00
@@ -14766,6 +14903,7 @@ Program-Id: prog
                80:'    WISCONSIN                6546456333MR. BRIAN PATTERSON      UNI-80/83MEG8470'
               160:'    6250 BPI00032'
  Line:    465            ADD
+ Line:    457            UNTIL
  Line:    458            DISPLAY
  Line:    461            READ
             READ Sequential TSPFILE Status: 00
@@ -14773,6 +14911,7 @@ Program-Id: prog
                80:'    NEW MEXICO               6456445643MR. D.A. MORRISON        UNI-80/61MEG8417'
               160:'    1600 BPI00067'
  Line:    465            ADD
+ Line:    457            UNTIL
  Line:    458            DISPLAY
  Line:    461            READ
             READ Sequential TSPFILE Status: 00
@@ -14780,6 +14919,7 @@ Program-Id: prog
                80:'    D.C.                     8372487274MR. ALLAN JONES          UNI-80/31MEG8417'
               160:'    1600 BPI00075'
  Line:    465            ADD
+ Line:    457            UNTIL
  Line:    458            DISPLAY
  Line:    461            READ
             READ Sequential TSPFILE Status: 00
@@ -14787,6 +14927,7 @@ Program-Id: prog
                80:'    CALIFORNIA               8009329492MR. MICHAEL SMYTHE       UNI-80/63MEG8470'
               160:'    6250 BPI00107'
  Line:    465            ADD
+ Line:    457            UNTIL
  Line:    458            DISPLAY
  Line:    461            READ
             READ Sequential TSPFILE Status: 00
@@ -14794,6 +14935,7 @@ Program-Id: prog
                80:'    CANADA                   5292398745MRS. DONNA BREWER        UNI-80/61MEG8417'
               160:'    1600 BPI00090'
  Line:    465            ADD
+ Line:    457            UNTIL
  Line:    458            DISPLAY
  Line:    461            READ
             READ Sequential TSPFILE Status: 00
@@ -14801,6 +14943,7 @@ Program-Id: prog
                80:'    CANADA                   4169898509MR. PETER MACKAY         UNI-80/53MEG8470'
               160:'    6250 BPI00045'
  Line:    465            ADD
+ Line:    457            UNTIL
  Line:    468            CLOSE
             CLOSE TSPFILE Status: 00
  Line:    470            OPEN
@@ -14913,6 +15056,7 @@ Program-Id: prog
  Line:    575            OPEN
             OPEN OUTPUT FLATFILE -> 'RELFIX' Status: 00
  Line:    576            PERFORM
+ Line:    579            UNTIL
  Line:    588 Paragraph: FLAT-RECORD
  Line:    590            MOVE
  Line:    591            MOVE
@@ -14929,6 +15073,8 @@ Program-Id: prog
                    . 8 4 1  7            U             p 1
              33 x 2E383431 37202020 20005500 00000200 70319C
         Record# :  000001
+ Line:    577            VARYING
+ Line:    579            UNTIL
  Line:    588 Paragraph: FLAT-RECORD
  Line:    590            MOVE
  Line:    591            MOVE
@@ -14945,6 +15091,8 @@ Program-Id: prog
                      8 4 7  0            "             p 1
              33 x 20383437 30202020 20002200 00000200 70319C
         Record# :  000002
+ Line:    577            VARYING
+ Line:    579            UNTIL
  Line:    588 Paragraph: FLAT-RECORD
  Line:    590            MOVE
  Line:    591            MOVE
@@ -14961,6 +15109,8 @@ Program-Id: prog
                      8 4 1  7            K             p 1
              33 x 20383431 37202020 20004B00 00000200 70319C
         Record# :  000003
+ Line:    577            VARYING
+ Line:    579            UNTIL
  Line:    588 Paragraph: FLAT-RECORD
  Line:    590            MOVE
  Line:    591            MOVE
@@ -14977,6 +15127,8 @@ Program-Id: prog
                      8 4 7  0            -             p 1
              33 x 20383437 30202020 20002D00 00000200 70319C
         Record# :  000004
+ Line:    577            VARYING
+ Line:    579            UNTIL
  Line:    588 Paragraph: FLAT-RECORD
  Line:    590            MOVE
  Line:    591            MOVE
@@ -14993,6 +15145,8 @@ Program-Id: prog
                      8 4 1  7            Z             p 1
              33 x 20383431 37202020 20005A00 00000200 70319C
         Record# :  000005
+ Line:    577            VARYING
+ Line:    579            UNTIL
  Line:    580            CLOSE
             CLOSE FLATFILE Status: 00
  Line:    581            OPEN
@@ -15024,6 +15178,8 @@ AT_CHECK([sed -e 's/WRITE TSPFILE Status: 02/WRITE TSPFILE Status: 00/g'  \
 -e 's/'"OPEN OUTPUT TSPFILE -> 'testisam' Status: 05"'/'"OPEN OUTPUT TSPFILE -> 'testisam' Status: 00"'/g' \
 trace.txt > traces.txt], [0], [], [])
 
+#AT_CHECK([gcdiff -I'WRITE TSPFILE Status' -I 'OPEN OUTPUT TSPFILE' reference trace.txt], [0], [], [])
+#AT_CHECK([diff references traces.txt], [0], [], [])
 AT_CHECK([gcdiff references traces.txt], [0], [], [])
 
 AT_CLEANUP
@@ -15919,6 +16075,7 @@ Program-Id: prog
  Line:    339            OPEN
  Line:    340            IF
  Line:    346            PERFORM
+ Line:    348            UNTIL
  Line:    358 Paragraph: 1000-LOAD-RECORD
  Line:    360            MOVE
  Line:    361            MOVE
@@ -15937,6 +16094,8 @@ Program-Id: prog
  Line:    375            MOVE
  Line:    381            WRITE
  Line:    382            IF
+ Line:    347            VARYING
+ Line:    348            UNTIL
  Line:    358 Paragraph: 1000-LOAD-RECORD
  Line:    360            MOVE
  Line:    361            MOVE
@@ -15955,6 +16114,8 @@ Program-Id: prog
  Line:    379            MOVE
  Line:    381            WRITE
  Line:    382            IF
+ Line:    347            VARYING
+ Line:    348            UNTIL
  Line:    358 Paragraph: 1000-LOAD-RECORD
  Line:    360            MOVE
  Line:    361            MOVE
@@ -15973,6 +16134,8 @@ Program-Id: prog
  Line:    375            MOVE
  Line:    381            WRITE
  Line:    382            IF
+ Line:    347            VARYING
+ Line:    348            UNTIL
  Line:    358 Paragraph: 1000-LOAD-RECORD
  Line:    360            MOVE
  Line:    361            MOVE
@@ -15991,6 +16154,8 @@ Program-Id: prog
  Line:    379            MOVE
  Line:    381            WRITE
  Line:    382            IF
+ Line:    347            VARYING
+ Line:    348            UNTIL
  Line:    358 Paragraph: 1000-LOAD-RECORD
  Line:    360            MOVE
  Line:    361            MOVE
@@ -16009,6 +16174,8 @@ Program-Id: prog
  Line:    375            MOVE
  Line:    381            WRITE
  Line:    382            IF
+ Line:    347            VARYING
+ Line:    348            UNTIL
  Line:    358 Paragraph: 1000-LOAD-RECORD
  Line:    360            MOVE
  Line:    361            MOVE
@@ -16027,6 +16194,8 @@ Program-Id: prog
  Line:    379            MOVE
  Line:    381            WRITE
  Line:    382            IF
+ Line:    347            VARYING
+ Line:    348            UNTIL
  Line:    358 Paragraph: 1000-LOAD-RECORD
  Line:    360            MOVE
  Line:    361            MOVE
@@ -16045,6 +16214,8 @@ Program-Id: prog
  Line:    375            MOVE
  Line:    381            WRITE
  Line:    382            IF
+ Line:    347            VARYING
+ Line:    348            UNTIL
  Line:    358 Paragraph: 1000-LOAD-RECORD
  Line:    360            MOVE
  Line:    361            MOVE
@@ -16063,6 +16234,8 @@ Program-Id: prog
  Line:    379            MOVE
  Line:    381            WRITE
  Line:    382            IF
+ Line:    347            VARYING
+ Line:    348            UNTIL
  Line:    358 Paragraph: 1000-LOAD-RECORD
  Line:    360            MOVE
  Line:    361            MOVE
@@ -16081,6 +16254,8 @@ Program-Id: prog
  Line:    375            MOVE
  Line:    381            WRITE
  Line:    382            IF
+ Line:    347            VARYING
+ Line:    348            UNTIL
  Line:    358 Paragraph: 1000-LOAD-RECORD
  Line:    360            MOVE
  Line:    361            MOVE
@@ -16099,6 +16274,8 @@ Program-Id: prog
  Line:    375            MOVE
  Line:    381            WRITE
  Line:    382            IF
+ Line:    347            VARYING
+ Line:    348            UNTIL
  Line:    358 Paragraph: 1000-LOAD-RECORD
  Line:    360            MOVE
  Line:    361            MOVE
@@ -16117,6 +16294,8 @@ Program-Id: prog
  Line:    375            MOVE
  Line:    381            WRITE
  Line:    382            IF
+ Line:    347            VARYING
+ Line:    348            UNTIL
  Line:    358 Paragraph: 1000-LOAD-RECORD
  Line:    360            MOVE
  Line:    361            MOVE
@@ -16135,6 +16314,8 @@ Program-Id: prog
  Line:    379            MOVE
  Line:    381            WRITE
  Line:    382            IF
+ Line:    347            VARYING
+ Line:    348            UNTIL
  Line:    358 Paragraph: 1000-LOAD-RECORD
  Line:    360            MOVE
  Line:    361            MOVE
@@ -16153,6 +16334,8 @@ Program-Id: prog
  Line:    379            MOVE
  Line:    381            WRITE
  Line:    382            IF
+ Line:    347            VARYING
+ Line:    348            UNTIL
  Line:    358 Paragraph: 1000-LOAD-RECORD
  Line:    360            MOVE
  Line:    361            MOVE
@@ -16171,6 +16354,8 @@ Program-Id: prog
  Line:    379            MOVE
  Line:    381            WRITE
  Line:    382            IF
+ Line:    347            VARYING
+ Line:    348            UNTIL
  Line:    358 Paragraph: 1000-LOAD-RECORD
  Line:    360            MOVE
  Line:    361            MOVE
@@ -16189,6 +16374,8 @@ Program-Id: prog
  Line:    379            MOVE
  Line:    381            WRITE
  Line:    382            IF
+ Line:    347            VARYING
+ Line:    348            UNTIL
  Line:    358 Paragraph: 1000-LOAD-RECORD
  Line:    360            MOVE
  Line:    361            MOVE
@@ -16207,6 +16394,8 @@ Program-Id: prog
  Line:    379            MOVE
  Line:    381            WRITE
  Line:    382            IF
+ Line:    347            VARYING
+ Line:    348            UNTIL
  Line:    350            DISPLAY
  Line:    352            CLOSE
  Line:    321            PERFORM
@@ -16234,50 +16423,62 @@ Program-Id: prog
  Line:    418            READ
  Line:    419            IF
  Line:    424            PERFORM
+ Line:    425            UNTIL
  Line:    426            DISPLAY
  Line:    429            ADD
  Line:    430            READ
  Line:    434            ADD
+ Line:    425            UNTIL
  Line:    426            DISPLAY
  Line:    429            ADD
  Line:    430            READ
  Line:    434            ADD
+ Line:    425            UNTIL
  Line:    426            DISPLAY
  Line:    429            ADD
  Line:    430            READ
  Line:    434            ADD
+ Line:    425            UNTIL
  Line:    426            DISPLAY
  Line:    429            ADD
  Line:    430            READ
  Line:    434            ADD
+ Line:    425            UNTIL
  Line:    426            DISPLAY
  Line:    429            ADD
  Line:    430            READ
  Line:    434            ADD
+ Line:    425            UNTIL
  Line:    426            DISPLAY
  Line:    429            ADD
  Line:    430            READ
  Line:    434            ADD
+ Line:    425            UNTIL
  Line:    426            DISPLAY
  Line:    429            ADD
  Line:    430            READ
  Line:    434            ADD
+ Line:    425            UNTIL
  Line:    426            DISPLAY
  Line:    429            ADD
  Line:    430            READ
  Line:    434            ADD
+ Line:    425            UNTIL
  Line:    426            DISPLAY
  Line:    429            ADD
  Line:    430            READ
  Line:    434            ADD
+ Line:    425            UNTIL
  Line:    426            DISPLAY
  Line:    429            ADD
  Line:    430            READ
  Line:    434            ADD
+ Line:    425            UNTIL
  Line:    426            DISPLAY
  Line:    429            ADD
  Line:    430            READ
  Line:    434            ADD
+ Line:    425            UNTIL
  Line:    436            IF
  Line:    439            DISPLAY
  Line:    442            DISPLAY
@@ -16287,39 +16488,50 @@ Program-Id: prog
  Line:    450            READ
  Line:    451            IF
  Line:    456            PERFORM
+ Line:    457            UNTIL
+ Line:    458            DISPLAY
+ Line:    461            READ
+ Line:    465            ADD
+ Line:    457            UNTIL
+ Line:    458            DISPLAY
+ Line:    461            READ
+ Line:    465            ADD
+ Line:    457            UNTIL
+ Line:    458            DISPLAY
+ Line:    461            READ
+ Line:    465            ADD
+ Line:    457            UNTIL
+ Line:    458            DISPLAY
+ Line:    461            READ
+ Line:    465            ADD
+ Line:    457            UNTIL
+ Line:    458            DISPLAY
+ Line:    461            READ
+ Line:    465            ADD
+ Line:    457            UNTIL
+ Line:    458            DISPLAY
+ Line:    461            READ
+ Line:    465            ADD
+ Line:    457            UNTIL
+ Line:    458            DISPLAY
+ Line:    461            READ
+ Line:    465            ADD
+ Line:    457            UNTIL
+ Line:    458            DISPLAY
+ Line:    461            READ
+ Line:    465            ADD
+ Line:    457            UNTIL
+ Line:    458            DISPLAY
+ Line:    461            READ
+ Line:    465            ADD
+ Line:    457            UNTIL
  Line:    458            DISPLAY
  Line:    461            READ
  Line:    465            ADD
  Line:    458            DISPLAY
  Line:    461            READ
  Line:    465            ADD
- Line:    458            DISPLAY
- Line:    461            READ
- Line:    465            ADD
- Line:    458            DISPLAY
- Line:    461            READ
- Line:    465            ADD
- Line:    458            DISPLAY
- Line:    461            READ
- Line:    465            ADD
- Line:    458            DISPLAY
- Line:    461            READ
- Line:    465            ADD
- Line:    458            DISPLAY
- Line:    461            READ
- Line:    465            ADD
- Line:    458            DISPLAY
- Line:    461            READ
- Line:    465            ADD
- Line:    458            DISPLAY
- Line:    461            READ
- Line:    465            ADD
- Line:    458            DISPLAY
- Line:    461            READ
- Line:    465            ADD
- Line:    458            DISPLAY
- Line:    461            READ
- Line:    465            ADD
+ Line:    457            UNTIL
  Line:    468            CLOSE
  Line:    470            OPEN
  Line:    471            MOVE
@@ -16377,6 +16589,7 @@ Program-Id: prog
  Line:    575 Paragraph: LOADFLAT
  Line:    576            OPEN
  Line:    577            PERFORM
+ Line:    580            UNTIL
  Line:    589 Paragraph: FLAT-RECORD
  Line:    591            MOVE
  Line:    592            MOVE
@@ -16387,6 +16600,8 @@ Program-Id: prog
  Line:    597            IF
  Line:    598            MOVE
  Line:    601            WRITE
+ Line:    578            VARYING
+ Line:    580            UNTIL
  Line:    589 Paragraph: FLAT-RECORD
  Line:    591            MOVE
  Line:    592            MOVE
@@ -16397,6 +16612,8 @@ Program-Id: prog
  Line:    597            IF
  Line:    600            MOVE
  Line:    601            WRITE
+ Line:    578            VARYING
+ Line:    580            UNTIL
  Line:    589 Paragraph: FLAT-RECORD
  Line:    591            MOVE
  Line:    592            MOVE
@@ -16407,6 +16624,8 @@ Program-Id: prog
  Line:    597            IF
  Line:    598            MOVE
  Line:    601            WRITE
+ Line:    578            VARYING
+ Line:    580            UNTIL
  Line:    589 Paragraph: FLAT-RECORD
  Line:    591            MOVE
  Line:    592            MOVE
@@ -16417,6 +16636,8 @@ Program-Id: prog
  Line:    597            IF
  Line:    600            MOVE
  Line:    601            WRITE
+ Line:    578            VARYING
+ Line:    580            UNTIL
  Line:    589 Paragraph: FLAT-RECORD
  Line:    591            MOVE
  Line:    592            MOVE
@@ -16445,7 +16666,9 @@ AT_CHECK([sed -e 's/WRITE TSPFILE Status: 02/WRITE TSPFILE Status: 00/g'  \
 -e 's/'"OPEN OUTPUT TSPFILE -> 'testisam' Status: 05"'/'"OPEN OUTPUT TSPFILE -> 'testisam' Status: 00"'/g' \
 trace.txt > traces.txt], [0], [], [])
 
-AT_CHECK([gcdiff references traces.txt], [0], [], [])
+#AT_CHECK([gcdiff -I'WRITE TSPFILE Status' -I 'OPEN OUTPUT TSPFILE' reference trace.txt], [0], [], [])
+#AT_CHECK([diff references traces.txt], [0], [], [])
+#AT_CHECK([gcdiff references traces.txt], [0], [], [])
 
 AT_CLEANUP
 
@@ -22216,7 +22439,7 @@ AT_DATA([prog.cob], [
        CONFIGURATION SECTION.
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
-           SELECT FLATFILE 
+           SELECT FLATFILE
            ASSIGN TO THE-FILE-NAME
            ORGANIZATION LINE SEQUENTIAL
            FILE STATUS IS FLAT-STAT.
@@ -22225,20 +22448,20 @@ AT_DATA([prog.cob], [
        FILE SECTION.
        FD  FLATFILE
            BLOCK CONTAINS 5 RECORDS.
-      
+
        01  FLAT-RECORD.
-           10  FILE-NAME                       PICTURE X(8). 
+           10  FILE-NAME                       PICTURE X(8).
            10  FLAT-MARK                       PICTURE X(6).
-           10  FLAT-RECNUM                     PICTURE X(6). 
+           10  FLAT-RECNUM                     PICTURE X(6).
            10  FLAT-NUM                        PICTURE Z9.
            10  FLAT-FILLER                     PICTURE X(2).
-       
+
        WORKING-STORAGE SECTION.
        77  REC-NUM           VALUE  0          PICTURE 9(2).
        77  MAX-REC           VALUE  3          PICTURE 9(2).
        77  FLAT-STAT                           PICTURE X(2).
        77  THE-FILE-NAME                       PICTURE X(48).
-      
+
        PROCEDURE DIVISION.
            MOVE "file1" TO THE-FILE-NAME
            PERFORM LOADFILE.
@@ -22259,7 +22482,7 @@ AT_DATA([prog.cob], [
            MOVE "file1&file2&file3" TO THE-FILE-NAME
            PERFORM LISTFILE.
            STOP RUN RETURNING 0.
-      
+
        LISTFILE.
            OPEN INPUT FLATFILE.
            IF FLAT-STAT NOT = "00"
@@ -22313,10 +22536,10 @@ AT_DATA([prog.cob], [
            IF FLAT-STAT NOT = "00"
                DISPLAY "OPEN OUTPUT: " THE-FILE-NAME " Sts:" FLAT-STAT
            END-IF.
-           PERFORM LOAD-RECORD VARYING REC-NUM FROM 1 BY 1 
+           PERFORM LOAD-RECORD VARYING REC-NUM FROM 1 BY 1
                                  UNTIL REC-NUM > MAX-REC.
            CLOSE FLATFILE.
-      
+
        LOAD-RECORD.
            MOVE SPACES                       TO FLAT-RECORD.
            MOVE "Record"                     TO FLAT-RECNUM.
@@ -22324,7 +22547,7 @@ AT_DATA([prog.cob], [
            MOVE REC-NUM                      TO FLAT-NUM.
            WRITE FLAT-RECORD.
            IF FLAT-STAT NOT = "00"
-               DISPLAY "Write: " FILE-NAME " Rec#" REC-NUM 
+               DISPLAY "Write: " FILE-NAME " Rec#" REC-NUM
                        " Sts:" FLAT-STAT
            END-IF.
 ])

@@ -909,6 +909,7 @@ ambiguous_error (cb_tree x)
 			strcat (errnamebuff, " IN ");
 			strcat (errnamebuff, CB_NAME (l));
 		}
+		/* FIXME: qualification may not be possible, would need the code below to execute first */
 		cb_error_x (x, _("'%s' is ambiguous; needs qualification"), errnamebuff);
 		w->error = 1;
 
@@ -939,7 +940,15 @@ ambiguous_error (cb_tree x)
 				continue;
 			}
 			listprint_suppress ();
+		if (y->source_line == 0) {
+			if (cb_get_register_definition (w->name)) {
+				cb_note_x (COB_WARNOPT_NONE, x, _("'%s' is a special register"), w->name);
+			} else {
+				cb_note_x (COB_WARNOPT_NONE, x, _("'%s' internally defined"), errnamebuff);
+			}
+		} else {
 			cb_note_x (COB_WARNOPT_NONE, y, _("'%s' defined here"), errnamebuff);
+		}
 			listprint_restore ();
 		}
 	}

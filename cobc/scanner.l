@@ -169,7 +169,8 @@ static void	count_lines (const char *);
 static void	scan_define_options (const char *);
 static void	copy_word_in_quotes (char ** const);
 static void	copy_two_words_in_quotes (char ** const, char ** const);
-static void	add_synonym (const int);
+static void	add_synonym (const int, const int);
+static void	make_synonym (void);
 static void *	copy_literal (cb_tree l);
 
 %}
@@ -252,33 +253,35 @@ static void *	copy_literal (cb_tree l);
 	cobc_free (word);
 }
 
+<*>^[ ]?"#ADDSYN-STD".*\n {
+	add_synonym (1, 0);
+}
 <*>^[ ]?"#ADDSYN".*\n {
-	add_synonym (0);
+	add_synonym (0, 0);
 }
 
 <*>^[ ]?"#MAKESYN".*\n {
-	char	*new_meaning;
-	char	*word_to_change;
-
-	copy_two_words_in_quotes (&new_meaning, &word_to_change);
-
-	if (!is_default_reserved_word (new_meaning)) {
-		cb_error (_("'%s' is not a default reserved word, so cannot be aliased"),
-			  new_meaning);
-	} else if (!is_reserved_word (word_to_change)) {
-		cb_error (_("'%s' is not a reserved word; you may want ADDSYN or OVERRIDE instead"),
-			  word_to_change);
-	} else {
-		remove_reserved_word_now (word_to_change);
-		add_reserved_word_now (word_to_change, new_meaning);
-	}
-
-	cobc_free (new_meaning);
-	cobc_free (word_to_change);
+	make_synonym ();
  }
 
+<*>^[ ]?"#OVERRIDE-STD".*\n {
+	add_synonym (1, 1);
+}
 <*>^[ ]?"#OVERRIDE".*\n {
-	add_synonym (1);
+	add_synonym (0, 1);
+}
+
+<*>^[ ]?"#REMOVE-STD".*\n {
+	char	*word;
+
+	copy_word_in_quotes (&word);
+	if (!is_reserved_word (word)) {
+		cb_error (_("'%s' is not a reserved word, so cannot be removed"),
+			word);
+	} else {
+		remove_reserved_word_now (word);
+	}
+	cobc_free (word);
 }
 
 <*>^[ ]?"#REMOVE".*\n {
@@ -2230,21 +2233,23 @@ freevar:
 
 /*
   For yytext of the form '#directive "a-word"' or '#directive
-  (a-word)', copy a-word into word.
+  (a-word)', copy a-word into word, converting it to upper-case.
 */
 static void
 copy_word_in_quotes (char ** const word)
 {
 	char	*text = cobc_strdup (yytext);
 	char	*word_str;
+	size_t	word_len;
 
 	/* Skip directive */
 	word_str = strtok (text, " ");
 
 	/* Get word and remove quotes */
 	word_str = strtok (NULL, "\n");
-	*word = cobc_malloc (strlen (word_str) - 1);
-	strncpy (*word, word_str + 1, strlen (word_str) - 2);
+	word_len = strlen (word_str) - 2;
+	*word = cobc_malloc (word_len + 1);
+	cb_strncpy_upper (*word, word_str + 1, word_len);
 
 	cobc_free (text);
 }
@@ -2252,7 +2257,7 @@ copy_word_in_quotes (char ** const word)
 /*
    For yytext of the form '#directive "first-word" "second-word"' or '#directive
    (first-word) (second-word)', allocate copies of first-word for word1 and
-   second-word for word2.
+   second-word for word2, converting them to upper-case.
 */
 static void
 copy_two_words_in_quotes (char ** const word1, char ** const word2)
@@ -2260,25 +2265,28 @@ copy_two_words_in_quotes (char ** const word1, char ** const word2)
 	char	*text = cobc_strdup (yytext);
 	char	*word1_str;
 	char	*word2_str;
+	size_t	word_len;
 
 	/* Skip directive. */
-        word1_str = strtok (text, " ");
+	word1_str = strtok (text, " ");
 
 	/* Get words and remove surrounding quotes. */
 
 	word1_str = strtok (NULL, " ");
-	*word1 = cobc_malloc (strlen (word1_str) - 1);
-	strncpy (*word1, word1_str + 1, strlen (word1_str) - 2);
+	word_len = strlen (word1_str) - 2;
+	*word1 = cobc_malloc (word_len + 1);
+	cb_strncpy_upper (*word1, word1_str + 1, word_len);
 
 	word2_str = strtok (NULL, "\n");
-	*word2 = cobc_malloc (strlen (word2_str) - 1);
-	strncpy (*word2, word2_str + 1, strlen (word2_str) - 2);
+	word_len = strlen (word2_str) - 2;
+	*word2 = cobc_malloc (word_len + 1);
+	cb_strncpy_upper (*word2, word2_str + 1, word_len);
 
 	cobc_free (text);
 }
 
 static void
-add_synonym (const int synonym_replaces_original)
+add_synonym (const int std, const int synonym_replaces_original)
 {
 	char	*word;
 	char	*synonym;
@@ -2289,8 +2297,12 @@ add_synonym (const int synonym_replaces_original)
 		cb_error (_("'%s' is not a default reserved word, so cannot be aliased"),
 			  word);
 	} else if (is_reserved_word (synonym)) {
-		cb_error (_("'%s' is already reserved; you may want MAKESYN instead"),
-			  synonym);
+		cb_error (_("'%s' is already reserved"), synonym);
+		#if 0 /* not merged yet */
+		if (!std) {
+			cb_note (COB_WARNOPT_NONE, 0, _("you may want MAKESYN instead"));
+		}
+		#endif
 	} else {
 		if (synonym_replaces_original) {
 			remove_reserved_word_now (word);
@@ -2300,6 +2312,31 @@ add_synonym (const int synonym_replaces_original)
 
 	cobc_free (word);
 	cobc_free (synonym);
+}
+
+static void
+make_synonym (void)
+{
+	char* new_meaning;
+	char* word_to_change;
+
+	copy_two_words_in_quotes (&new_meaning, &word_to_change);
+
+	if (!is_default_reserved_word (new_meaning)) {
+		cb_error (_("'%s' is not a default reserved word, so cannot be aliased"),
+			new_meaning);
+	} else if (!is_reserved_word (word_to_change)) {
+		cb_error (_("'%s' is not a reserved word"), word_to_change);
+		#if 0 /* not merged yet */
+		cb_note (COB_WARNOPT_NONE, 0, _("you may want ADDSYN or OVERRIDE instead"));
+		#endif
+	} else {
+		remove_reserved_word_now (word_to_change);
+		add_reserved_word_now (word_to_change, new_meaning);
+	}
+
+	cobc_free (new_meaning);
+	cobc_free (word_to_change);
 }
 
 /* Global functions */

@@ -1378,7 +1378,8 @@ typedef struct __cob_module {
 #define COB_DUMP_LO		0x40  		/* LOCAL-STORAGE SECTION */
 #define COB_DUMP_ALL	(COB_DUMP_FD|COB_DUMP_WS|COB_DUMP_RD|COB_DUMP_SD|COB_DUMP_SC|COB_DUMP_LS|COB_DUMP_LO)
 
-	unsigned int		module_stmt;		/* Last statement executed */
+	unsigned int		module_stmt;		/* Last statement executed as modulated source line
+											   and index to module_sources for source file */
 	const char		**module_sources;	/* Source module names compiled */
 
 	unsigned int		param_buf_size;		/* Size of 'param_buf' */
@@ -2012,6 +2013,7 @@ COB_EXPIMP void			cob_set_runtime_option		(enum cob_runtime_option_switch opt, v
 COB_EXPIMP void			*cob_get_runtime_option		(enum cob_runtime_option_switch opt);
 
 COB_EXPIMP void			cob_stack_trace (void *target);		/* 'target' is FILE *  */
+COB_EXPIMP void			cob_backtrace	(void *target, int count);		/* 'target' is FILE *  */
 
 #define COB_GET_LINE_NUM(n) ( n & 0xFFFFF )
 #define COB_GET_FILE_NUM(n) ( (n >> 20) & 0xFFF)
@@ -2966,5 +2968,9 @@ COB_EXPIMP cob_field *cob_intr_integer_of_formatted_date	(cob_field *,
 COB_EXPIMP cob_field *cob_intr_content_length		(cob_field *);
 COB_EXPIMP cob_field *cob_intr_content_of		(const int, const int,
 							 const int, ...);
+COB_EXPIMP cob_field *cob_intr_bit_of		(cob_field *);
+COB_EXPIMP cob_field *cob_intr_bit_to_char		(cob_field *);
+COB_EXPIMP cob_field* cob_intr_hex_of (cob_field*);
+COB_EXPIMP cob_field* cob_intr_hex_to_char (cob_field*);
 
 #endif	/* COB_COMMON_H */

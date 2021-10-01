@@ -6016,6 +6016,7 @@ cob_file_complete ( cob_file * fl)
 {
 	fl->flag_ready = 1;
 }
+
 /*
  * Allocate memory for 'IS EXTERNAL' cob_file
  */
@@ -6024,25 +6025,31 @@ cob_file_external_addr (const char *exname,
 		cob_file **pfl, cob_file_key **pky,
 		const int nkeys, const int linage)
 {
-	cob_file	*fl;
-	fl = cob_external_addr (exname, sizeof (cob_file));
-	if (fl->file_version == 0)
-		fl->file_version = COB_FILE_VERSION;
+	cob_file	**epfl = cob_external_addr (exname, sizeof (cob_file *));
 
-	if (nkeys > 0
-	 && fl->keys == NULL) {
-		fl->keys = cob_cache_malloc (sizeof (cob_file_key) * nkeys);
+	if (cobglobptr->cob_initial_external) {
+		/* if the pointer was setup the first time:
+		   allocate the file and store the address for next request */
+		cob_file_malloc (pfl, pky, nkeys, linage);
+		*epfl = *pfl;
+	} else {
+		/* external pointer available - get the address stored
+		   and set / check keys */
+		cob_file	*fl = *pfl = *epfl;
+		/* already allocated, just pass on */		
+		if (pky != NULL) {
+			*pky = fl->keys;
+		}
+#if 0	/* TODO: verify file attributes (here or in the caller?) */
+		if (fl->nkeys != nkeys) {
+			/* reallocate if KEYCHECK and bigger / raise exception otherwise ? */
+		}
+		if (linage > 0
+		 && fl->linorkeyptr == NULL) {
+			/* CHECKME: is this allowed to happen? */
+		}
+#endif
 	}
-
-	if (pky != NULL) {
-		*pky = fl->keys;
-	}
-
-	if (linage > 0
-	 && fl->linage == NULL) {
-		fl->linage = cob_cache_malloc (sizeof (cob_linage));
-	}
-	*pfl = fl;
 }
 
 /*
@@ -6064,6 +6071,7 @@ cob_file_malloc (cob_file **pfl, cob_file_key **pky,
 	cob_file	*fl;
 	fl = cob_cache_malloc (sizeof (cob_file));
 	fl->file_version = COB_FILE_VERSION;
+	fl->nkeys = (size_t)nkeys;	/* casting away bad difference... */
 
 	if (nkeys > 0
 	 && pky != NULL) {
