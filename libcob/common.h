@@ -1028,41 +1028,42 @@ enum cob_file_access {
 
 /* I-O status */
 
-#define COB_STATUS_00_SUCCESS			00
+#define COB_STATUS_00_SUCCESS				00
 #define COB_STATUS_02_SUCCESS_DUPLICATE		02
 #define COB_STATUS_04_SUCCESS_INCOMPLETE	04
 #define COB_STATUS_05_SUCCESS_OPTIONAL		05
+#define COB_STATUS_06_READ_TRUNCATE			06
 #define COB_STATUS_07_SUCCESS_NO_UNIT		07
-#define COB_STATUS_10_END_OF_FILE		10
+#define COB_STATUS_10_END_OF_FILE			10
 #define COB_STATUS_14_OUT_OF_KEY_RANGE		14
-#define COB_STATUS_21_KEY_INVALID		21
-#define COB_STATUS_22_KEY_EXISTS		22
+#define COB_STATUS_21_KEY_INVALID			21
+#define COB_STATUS_22_KEY_EXISTS			22
 #define COB_STATUS_23_KEY_NOT_EXISTS		23
-#define COB_STATUS_24_KEY_BOUNDARY		24
+#define COB_STATUS_24_KEY_BOUNDARY			24
 #define COB_STATUS_30_PERMANENT_ERROR		30
 #define COB_STATUS_31_INCONSISTENT_FILENAME	31
 #define COB_STATUS_34_BOUNDARY_VIOLATION	34
-#define COB_STATUS_35_NOT_EXISTS		35
+#define COB_STATUS_35_NOT_EXISTS			35
 #define COB_STATUS_37_PERMISSION_DENIED		37
 #define COB_STATUS_38_CLOSED_WITH_LOCK		38
 #define COB_STATUS_39_CONFLICT_ATTRIBUTE	39
-#define COB_STATUS_41_ALREADY_OPEN		41
-#define COB_STATUS_42_NOT_OPEN			42
-#define COB_STATUS_43_READ_NOT_DONE		43
+#define COB_STATUS_41_ALREADY_OPEN			41
+#define COB_STATUS_42_NOT_OPEN				42
+#define COB_STATUS_43_READ_NOT_DONE			43
 #define COB_STATUS_44_RECORD_OVERFLOW		44
 #define COB_STATUS_45_IDENTIFICATION_FAILURE	45	/* currently not implemented */
-#define COB_STATUS_46_READ_ERROR		46
-#define COB_STATUS_47_INPUT_DENIED		47
-#define COB_STATUS_48_OUTPUT_DENIED		48
-#define COB_STATUS_49_I_O_DENIED		49
-#define COB_STATUS_51_RECORD_LOCKED		51
-#define COB_STATUS_52_DEAD_LOCK			52	/* currently not implemented (patch available) */
-#define COB_STATUS_53_MAX_LOCKS			53	
-#define COB_STATUS_54_MAX_LOCKS_FD		54	/* currently not implemented */
-#define COB_STATUS_57_I_O_LINAGE		57
-#define COB_STATUS_61_FILE_SHARING		61
-#define COB_STATUS_71_BAD_CHAR			71
-#define COB_STATUS_91_NOT_AVAILABLE		91
+#define COB_STATUS_46_READ_ERROR			46
+#define COB_STATUS_47_INPUT_DENIED			47
+#define COB_STATUS_48_OUTPUT_DENIED			48
+#define COB_STATUS_49_I_O_DENIED			49
+#define COB_STATUS_51_RECORD_LOCKED			51
+#define COB_STATUS_52_DEAD_LOCK				52	/* currently not implemented (patch available) */
+#define COB_STATUS_53_MAX_LOCKS				53	
+#define COB_STATUS_54_MAX_LOCKS_FD			54	/* currently not implemented */
+#define COB_STATUS_57_I_O_LINAGE			57
+#define COB_STATUS_61_FILE_SHARING			61
+#define COB_STATUS_71_BAD_CHAR				71
+#define COB_STATUS_91_NOT_AVAILABLE			91
 
 /* Special status */
 /* Used by extfh handler */
@@ -1378,8 +1379,7 @@ typedef struct __cob_module {
 #define COB_DUMP_LO		0x40  		/* LOCAL-STORAGE SECTION */
 #define COB_DUMP_ALL	(COB_DUMP_FD|COB_DUMP_WS|COB_DUMP_RD|COB_DUMP_SD|COB_DUMP_SC|COB_DUMP_LS|COB_DUMP_LO)
 
-	unsigned int		module_stmt;		/* Last statement executed as modulated source line
-											   and index to module_sources for source file */
+	unsigned int		module_stmt;		/* Last statement executed */
 	const char		**module_sources;	/* Source module names compiled */
 
 	unsigned int		param_buf_size;		/* Size of 'param_buf' */
@@ -2013,7 +2013,6 @@ COB_EXPIMP void			cob_set_runtime_option		(enum cob_runtime_option_switch opt, v
 COB_EXPIMP void			*cob_get_runtime_option		(enum cob_runtime_option_switch opt);
 
 COB_EXPIMP void			cob_stack_trace (void *target);		/* 'target' is FILE *  */
-COB_EXPIMP void			cob_backtrace	(void *target, int count);		/* 'target' is FILE *  */
 
 #define COB_GET_LINE_NUM(n) ( n & 0xFFFFF )
 #define COB_GET_FILE_NUM(n) ( (n >> 20) & 0xFFF)
@@ -2968,9 +2967,5 @@ COB_EXPIMP cob_field *cob_intr_integer_of_formatted_date	(cob_field *,
 COB_EXPIMP cob_field *cob_intr_content_length		(cob_field *);
 COB_EXPIMP cob_field *cob_intr_content_of		(const int, const int,
 							 const int, ...);
-COB_EXPIMP cob_field *cob_intr_bit_of		(cob_field *);
-COB_EXPIMP cob_field *cob_intr_bit_to_char		(cob_field *);
-COB_EXPIMP cob_field* cob_intr_hex_of (cob_field*);
-COB_EXPIMP cob_field* cob_intr_hex_to_char (cob_field*);
 
 #endif	/* COB_COMMON_H */

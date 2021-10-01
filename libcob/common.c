@@ -159,7 +159,7 @@ struct cob_alloc_cache {
 	void			*cob_pointer;	/* Pointer to malloced space */
 	size_t			size;		/* Item size */
 };
-const int	MAX_MODULE_ITERS = 10240;
+const int   MAX_MODULE_ITERS = 10240;
 
 struct cob_alloc_module {
 	struct cob_alloc_module	*next;		/* Pointer to next */
@@ -392,24 +392,40 @@ static struct config_enum beepopts[] = {{"FLASH", "1"}, {"SPEAKER", "2"}, {"FALS
 static struct config_enum timeopts[] = {{"0", "1000"}, {"1", "100"}, {"2", "10"}, {"3", "1"}, {NULL, NULL}};
 static struct config_enum syncopts[] = {{"P", "1"}, {NULL, NULL}};
 static struct config_enum varseqopts[] = {{"0", "0"}, {"1", "1"}, {"2", "2"}, {"3", "3"},
-					  {"mf","11"},{"gc","10"},
+					  {"mf","11"},{"gc","10"},{"gc3","10"},
 					  {"b4","4"},{"b32","4"},
 					  {"l4","6"},{"l32","6"},
 					  {NULL, NULL}};
 /* Make sure the values here match up with those defined in common.h */
 static struct config_enum relopts[]	= {
-						{"0","0"},{"gc","10"},{"mf","11"},
-					   {"b4","4"},{"b32","4"},{"b8","5"},{"b64","5"},
-					   {"l4","6"},{"l32","6"},{"l8","7"},{"l64","7"},
-					   {NULL,NULL}};
+						{"0","0"},{"gc","10"},{"mf","11"},{"gc3","10"},
+						{"b4","4"},{"b32","4"},{"b8","5"},{"b64","5"},
+						{"l4","6"},{"l32","6"},{"l8","7"},{"l64","7"},
+						{NULL,NULL}};
+static struct config_enum format_opts[]	= {{"0","0"},
+						{"gc","10"},{"gc3","10"},{"mf","11"},
+						{NULL,NULL}};
+#if defined(WITH_FILE_FORMAT) && (WITH_FILE_FORMAT == COB_FILE_IS_MF)
+static char	file_format_dflt[8] = "mf";	/* Default file format */
+static char	varrel_dflt[8] = "mf";	/* Default Variable length Relative file format */
+static char	fixrel_dflt[8] = "mf";	/* Default Fixed length Relative file format */
+static char	varseq_dflt[8] = "mf";	/* Default Variable length Sequential MF format */
+#elif defined(WITH_FILE_FORMAT) && (WITH_FILE_FORMAT == COB_FILE_IS_GC)
+static char	file_format_dflt[8] = "gc";	/* Default file format */
 static char	varrel_dflt[8] = "gc";	/* Default Variable length Relative file format */
 static char	fixrel_dflt[8] = "gc";	/* Default Fixed length Relative file format */
+static char	varseq_dflt[8] = "gc";	/* varseq0: Default Variable length Sequential file format */
+#else
+static char	file_format_dflt[8] = "0";	/* Default file format */
+static char	varrel_dflt[8] = "0";	/* Default Variable length Relative file format */
+static char	fixrel_dflt[8] = "0";	/* Default Fixed length Relative file format */
+static char	varseq_dflt[8] = "0";	/* varseq0: Default Variable length Sequential file format */
+#endif
 static struct config_enum shareopts[]	= {{"none","0"},{"read","1"},{"all","2"},{"no","4"},{NULL,NULL}};
 static struct config_enum retryopts[]	= {{"none","0"},{"never","64"},{"forever","8"},{NULL,NULL}};
 static struct config_enum dict_opts[]	= {{"false","0"},{"true","1"},{"always","2"},
 											{"no","0"},{"min","1"},{"max","2"},{NULL,NULL}};
 static struct config_enum dups_opts[]	= {{"default","0"},{"never","1"},{"always","2"}};
-static char	varseq_dflt[8] = "0";	/* varseq0: Default Variable length Sequential file format */
 static struct config_enum bdborder[]	= {
 						{"native","0"},
 						{"big-endian","1"},{"little-endian","2"},
@@ -474,21 +490,17 @@ static struct config_tbl gc_conf[] = {
 #endif
 	{"COB_FILE_PATH","file_path",		NULL,	NULL,GRP_FILE,ENV_PATH,SETPOS(cob_file_path)},
 	{"COB_LIBRARY_PATH","library_path",	NULL,	NULL,GRP_CALL,ENV_PATH,SETPOS(cob_library_path)}, /* default value set in cob_init_call() */
-	{"COB_MF_FILES","mf_files",		"false",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_mf_files)},
+	{"COB_FILE_FORMAT","file_format",file_format_dflt,format_opts,GRP_FILE,ENV_UINT|ENV_ENUM,SETPOS(cob_file_format)},
 	{"COB_FIXREL_FORMAT","fixrel_format",	fixrel_dflt,relopts,GRP_FILE,ENV_UINT|ENV_ENUM,SETPOS(cob_fixrel_type)},
 	{"COB_VARREL_FORMAT","varrel_format",	varrel_dflt,relopts,GRP_FILE,ENV_UINT|ENV_ENUM,SETPOS(cob_varrel_type)},
 	{"COB_VARSEQ_FORMAT","varseq_format",	varseq_dflt,varseqopts,GRP_FILE,ENV_UINT|ENV_ENUM,SETPOS(cob_varseq_type)},
 	{"COB_BDB_BYTEORDER","bdb_byteorder",	"native",bdborder,GRP_FILE,ENV_UINT|ENV_ENUM,SETPOS(cob_bdb_byteorder)},
 	{"COB_LS_FIXED","ls_fixed",		"0",	NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_fixed)},
 	{"STRIP_TRAILING_SPACES","strip_trailing_spaces",		NULL,	NULL,GRP_HIDE,ENV_BOOL|ENV_NOT,SETPOS(cob_ls_fixed)},
-	{"COB_LS_NULLS","ls_nulls",				"false",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_nulls)},
-	{"COB_LS_SPLIT","ls_split",				"false",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_split)},
-	{"COB_LS_VALIDATE","ls_validate",		"true",	NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_validate)},
-	{"COB_MF_LS_NULLS","mf_ls_nulls",		"true",	NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_mf_ls_nulls)},
-	{"COB_MF_LS_SPLIT","mf_ls_split",		"true",	NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_mf_ls_split)},
-	{"COB_MF_LS_INSTAB","mf_ls_instab",		"false",	NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_mf_ls_instab)},
-	{"COB_MF_LS_VALIDATE","mf_ls_validate",	"false",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_mf_ls_validate)},
-	{"COB_GC_FILES","gc_files",				"false",NULL,GRP_HIDE,ENV_BOOL,SETPOS(cob_gc_files)},
+	{"COB_LS_NULLS","ls_nulls",				"not set",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_nulls)},
+	{"COB_LS_SPLIT","ls_split",				"not set",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_split)},
+	{"COB_LS_VALIDATE","ls_validate",		"not set",	NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_validate)},
+	{"COB_LS_INSTAB","ls_instab",			"not set",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_instab)},
 	{"COB_SHARE_MODE","share_mode",			"none",shareopts,GRP_FILE,ENV_UINT|ENV_ENUM,SETPOS(cob_share_mode)},
 	{"COB_RETRY_MODE","retry_mode",			"none",retryopts,GRP_FILE,ENV_UINT|ENV_ENUM,SETPOS(cob_retry_mode)},
 	{"COB_RETRY_TIMES","retry_times",		"0",NULL,GRP_FILE,ENV_UINT,SETPOS(cob_retry_times)},
@@ -1587,6 +1599,7 @@ cob_open_logfile (const char *filename)
 static void
 cob_check_trace_file (void)
 {
+
 	if (cobsetptr->cob_trace_file) {
 		return;
 	}
@@ -1654,8 +1667,9 @@ int
 cob_check_env_false (char * s)
 {
 	return s && ((strlen (s) == 1 && (*s == 'N' || *s == 'n' || *s == '0'))
-	          || (strcasecmp (s, "NO") == 0 || strcasecmp (s, "NONE") == 0
-	          || strcasecmp (s, "OFF") == 0 || strcasecmp (s, "FALSE") == 0));
+		     || (strcasecmp (s, "NO") == 0 || strcasecmp (s, "NONE") == 0
+			 || strcasecmp (s, "OFF") == 0
+			 || strcasecmp (s, "FALSE") == 0));
 }
 
 static void
@@ -2317,9 +2331,12 @@ call_exit_handlers_and_terminate (void)
 void
 cob_stop_run (const int status)
 {
+	struct exit_handlerlist	*h;
+
 	if (!cob_initialized) {
 		exit (EXIT_FAILURE);
 	}
+
 	call_exit_handlers_and_terminate ();
 	exit (status);
 }
@@ -3344,8 +3361,8 @@ cob_check_numeric (const cob_field *f, const char *name)
 }
 
 void
-cob_check_odo (const int i, const int min, const int max,
-			const char *name, const char *dep_name)
+cob_check_odo (const int i, const int min, const int max, 
+				const char *name, const char *dep_name)
 {
 	/* Check OCCURS DEPENDING ON item */
 	if (i < min || i > max) {
@@ -4650,8 +4667,6 @@ check_valid_env_tmpdir (const char *envname)
 	return dir;
 }
 
-
-/* return pointer to TMPDIR without trailing slash */
 static const char *
 cob_gettmpdir (void)
 {
@@ -4776,6 +4791,8 @@ cob_command_line (int flags, int *pargc, char ***pargv,
 int
 cob_tidy (void)
 {
+	struct exit_handlerlist	*h;
+
 	if (!cob_initialized) {
 		return 1;
 	}
@@ -5769,7 +5786,7 @@ cob_sys_getopt_long_long (void *so, void *lo, void *idx, const int long_only, vo
 	for (i = 0; i < lo_amount; i++) {
 		j = sizeof (l->name) - 1;
 		while (j >= 0 && l->name[j] == ' ') {
-			l->name[j] = 0;
+			l->name[j] = 0x00;
 			j--;
 		}
 		longoptions->name = l->name;
@@ -6344,6 +6361,8 @@ translate_boolean_to_int (const char* ptr)
 	if (ptr == NULL || *ptr == 0) {
 		return 2;
 	}
+	if (strcasecmp (ptr, "not set") == 0)
+		return -1;
 
 	if (*(ptr + 1) == 0 && isdigit ((unsigned char)*ptr)) {
 		return atoi (ptr);		/* 0 or 1 */
@@ -6508,7 +6527,8 @@ set_config_val (char *value, int pos)
 	} else if ((data_type & ENV_BOOL)) {	/* Boolean: Yes/No, True/False,... */
 		numval = translate_boolean_to_int (ptr);
 
-		if (numval != 1
+		if (numval != -1
+		 && numval != 1
 		 && numval != 0) {
 			conf_runtime_error_value (ptr, pos);
 			conf_runtime_error (1, _("should be one of the following values: %s"), "true, false");
@@ -6668,6 +6688,9 @@ get_config_val (char *value, int pos, char *orgvalue)
 		if ((data_type & ENV_NOT)) {
 			numval = !numval;
 		}
+		if (numval == -1) {
+			strcpy (value, _("not set"));
+		} else
 		if (numval) {
 			strcpy (value, _("yes"));
 		} else {
@@ -7109,7 +7132,9 @@ cob_load_config (void)
 		}
 	}
 
+#ifndef WITH_FILE_FORMAT
 	sprintf (varseq_dflt, "%d", WITH_VARSEQ);		/* Default comes from config.h */
+#endif
 	for (i = 0; i < NUM_CONFIG; i++) {
 		gc_conf[i].data_type &= ~(STS_ENVSET | STS_CNFSET | STS_ENVCLR);	/* Clear status */
 	}
@@ -8176,6 +8201,13 @@ print_info_detailed (const int verbose)
 	if (num == 0)
 	var_print (_("indexed file handler"), 		_("disabled"), "", 0);
 
+#if defined(WITH_FILE_FORMAT)
+	if (WITH_FILE_FORMAT == COB_FILE_IS_MF)
+		var_print (_("default file format"),	"-ffile-format=mf", "", 0);
+	else if (WITH_FILE_FORMAT == COB_FILE_IS_GC)
+		var_print (_("default file format"),	"-ffile-format=gc", "", 0);
+#endif
+
 	{
 		char	math_info[115];
 		get_math_info ((char*)&math_info, sizeof (math_info), verbose);
@@ -8873,7 +8905,8 @@ cob_stack_trace (void *target)
 }
 
 static void
-flush_target (FILE* target) {
+flush_target (FILE* target)
+{
 	if (target == stderr
 	 || target == stdout) {
 		fflush (stdout);

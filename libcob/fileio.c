@@ -1781,12 +1781,16 @@ cob_set_file_defaults (cob_file *f)
 		f->flag_little_endian = 1;
 	if(f->dflt_retry == 0) {
 		if(f->dflt_times > 0)
-				f->dflt_retry |= COB_RETRY_TIMES;
+			f->dflt_retry |= COB_RETRY_TIMES;
 		if(f->dflt_seconds > 0)
-				f->dflt_retry |= COB_RETRY_SECONDS;
+			f->dflt_retry |= COB_RETRY_SECONDS;
 	}
 
-	if (f->file_format == 255) {	/* File type not set by compiler; Set default */
+	if(file_setptr->cob_file_format == COB_FILE_IS_MF) {
+		f->file_format == COB_FILE_IS_MF;
+	}
+	if (f->file_format == COB_FILE_IS_DFLT	/* File type not set by compiler; Set default */
+	 || f->file_format == COB_FILE_IS_GC) {
 		if (f->organization == COB_ORG_SEQUENTIAL) {
 			if (f->record_min != f->record_max) {
 				f->file_format = (unsigned char)file_setptr->cob_varseq_type;
@@ -1808,61 +1812,68 @@ cob_set_file_defaults (cob_file *f)
 
 	if (f->organization == COB_ORG_LINE_SEQUENTIAL) {
 		f->io_routine = COB_IO_LINE_SEQUENTIAL;
-		if(file_setptr->cob_ls_fixed)
+		if (f->file_format == COB_FILE_IS_MF) {		/* Set MF defaults */
+			f->file_features &= ~COB_FILE_LS_FIXED;
+			f->file_features |= COB_FILE_LS_NULLS;
+			f->file_features |= COB_FILE_LS_SPLIT;
+			f->file_features &= ~COB_FILE_LS_VALIDATE;
+#ifdef	_WIN32
+			f->file_features |= COB_FILE_LS_CRLF;
+#else
+			f->file_features |= COB_FILE_LS_LF;
+#endif
+		} else
+		if (f->file_format == COB_FILE_IS_GC) {		/* Set GC defaults */
+			f->file_features &= ~COB_FILE_LS_FIXED;
+			f->file_features &= ~COB_FILE_LS_NULLS;
+			f->file_features &= ~COB_FILE_LS_SPLIT;
+			f->file_features &= ~COB_FILE_LS_VALIDATE;
+#ifdef	_WIN32
+			f->file_features |= COB_FILE_LS_CRLF;
+#else
+			f->file_features |= COB_FILE_LS_LF;
+#endif
+		}
+		if(file_setptr->cob_ls_fixed == 1)
 			f->file_features |= COB_FILE_LS_FIXED;
-		else
+		else if(file_setptr->cob_ls_fixed == 0)
 			f->file_features &= ~COB_FILE_LS_FIXED;
 #ifdef	_WIN32
-		if(file_setptr->cob_unix_lf)
+		if(file_setptr->cob_unix_lf == 1)
 			f->file_features |= COB_FILE_LS_LF;
 		else
 			f->file_features |= COB_FILE_LS_CRLF;
 #else
 		f->file_features |= COB_FILE_LS_LF;
 #endif
-		if(file_setptr->cob_ls_uses_cr)
+		if(file_setptr->cob_ls_uses_cr == 1)
 			f->file_features |= COB_FILE_LS_CRLF;
 
-		if(f->file_format == COB_FILE_IS_MF) {			/* Micro Focus format LINE SEQUENTIAL */
-			if(file_setptr->cob_mf_ls_split)
-				f->file_features |= COB_FILE_LS_SPLIT;
-			else
-				f->file_features &= ~COB_FILE_LS_SPLIT;
-			if(file_setptr->cob_mf_ls_nulls)
-				f->file_features |= COB_FILE_LS_NULLS;
-			else
-				f->file_features &= ~COB_FILE_LS_NULLS;
-			if(file_setptr->cob_mf_ls_instab)
-				f->flag_ls_instab = 1;
-			else
-				f->flag_ls_instab = 0;
-			if(file_setptr->cob_mf_ls_validate
-			&& !f->flag_line_adv)
-				f->file_features |= COB_FILE_LS_VALIDATE;
-			else
-				f->file_features &= ~COB_FILE_LS_VALIDATE;
-		} else {										/* GnuCOBOL default format LINE SEQUENTIAL */
-			if(file_setptr->cob_ls_split)
-				f->file_features |= COB_FILE_LS_SPLIT;
-			else
-				f->file_features &= ~COB_FILE_LS_SPLIT;
-			if(file_setptr->cob_ls_nulls)
-				f->file_features |= COB_FILE_LS_NULLS;
-			else
-				f->file_features &= ~COB_FILE_LS_NULLS;
-			if(file_setptr->cob_ls_validate
-			&& !f->flag_line_adv)
-				f->file_features |= COB_FILE_LS_VALIDATE;
-			else
-				f->file_features &= ~COB_FILE_LS_VALIDATE;
-		}
+		if(file_setptr->cob_ls_instab == 1)
+			f->flag_ls_instab = 1;
+		else
+			f->flag_ls_instab = 0;
+
+		if(file_setptr->cob_ls_split == 1)
+			f->file_features |= COB_FILE_LS_SPLIT;
+		else if(file_setptr->cob_ls_split == 0)
+			f->file_features &= ~COB_FILE_LS_SPLIT;
+
+		if(file_setptr->cob_ls_nulls == 1)
+			f->file_features |= COB_FILE_LS_NULLS;
+		else if(file_setptr->cob_ls_nulls == 0)
+			f->file_features &= ~COB_FILE_LS_NULLS;
+
+		if(file_setptr->cob_ls_validate == 1
+		&& !f->flag_line_adv)
+			f->file_features |= COB_FILE_LS_VALIDATE;
+		else if(file_setptr->cob_ls_validate == 0)
+			f->file_features &= ~COB_FILE_LS_VALIDATE;
 	}
 }
 
 /*
  * Set file format based on IO_filename options
- * FIXME: _checking_ of file attributes should be not
- *        part of this function --> split
  */
 static int
 cob_set_file_format (cob_file *f, char *defstr, int updt)
@@ -2138,30 +2149,31 @@ cob_set_file_format (cob_file *f, char *defstr, int updt)
 				if(j >= COB_IO_MAX) {
 					if(strcasecmp(value,"auto") == 0) {
 						f->flag_auto_type = 1;
-					} else if(strcasecmp(value,"mf") == 0) {
+					} else if (strcasecmp(value,"mf") == 0) {
 						f->file_format = COB_FILE_IS_MF;
 						f->flag_set_type = 1;
-					} else if(strcasecmp(value,"gc") == 0) {
+					} else if (strcasecmp(value,"gc") == 0
+							|| strcasecmp(value,"gc3") == 0) {
 						f->file_format = COB_FILE_IS_GC;
 						f->flag_set_type = 1;
-					} else if(strcasecmp(value,"0") == 0) {
+					} else if (strcasecmp(value,"0") == 0) {
 						f->file_format = COB_FILE_IS_GCVS0;
-					} else if(strcasecmp(value,"1") == 0) {
+					} else if (strcasecmp(value,"1") == 0) {
 						f->file_format = COB_FILE_IS_GCVS1;
-					} else if(strcasecmp(value,"2") == 0) {
+					} else if (strcasecmp(value,"2") == 0) {
 						f->file_format = COB_FILE_IS_GCVS2;
-					} else if(strcasecmp(value,"3") == 0) {
+					} else if (strcasecmp(value,"3") == 0) {
 						f->file_format = COB_FILE_IS_GCVS3;
-					} else if(strcasecmp(value,"b4") == 0
+					} else if (strcasecmp(value,"b4") == 0
 						|| strcasecmp(value,"b32") == 0) {
 						f->file_format = COB_FILE_IS_B32;
-					} else if(strcasecmp(value,"l4") == 0
+					} else if (strcasecmp(value,"l4") == 0
 						|| strcasecmp(value,"l32") == 0) {
 						f->file_format = COB_FILE_IS_L32;
-					} else if(strcasecmp(value,"b8") == 0
+					} else if (strcasecmp(value,"b8") == 0
 						|| strcasecmp(value,"b64") == 0) {
 						f->file_format = COB_FILE_IS_B64;
-					} else if(strcasecmp(value,"l8") == 0
+					} else if (strcasecmp(value,"l8") == 0
 						|| strcasecmp(value,"l64") == 0) {
 						f->file_format = COB_FILE_IS_L64;
 					} else {
@@ -2307,8 +2319,9 @@ cob_set_file_format (cob_file *f, char *defstr, int updt)
 					f->file_features |= COB_FILE_LS_LF;
 #endif
 					continue;
-				}
-				if(strcasecmp(option,"gc") == 0) {	/* LS file like GnuCOBOL used to do */
+				} 
+				if (strcasecmp(option,"gc") == 0
+				 || strcasecmp(option,"gc3") == 0) {	/* LS file like GnuCOBOL used to do */
 					f->flag_set_type = 1;
 					f->flag_ls_instab = 0;
 					f->file_features &= ~COB_FILE_LS_FIXED;
@@ -2331,7 +2344,8 @@ cob_set_file_format (cob_file *f, char *defstr, int updt)
 				}
 				continue;
 			}
-			if(strcasecmp(option,"gc") == 0) {
+			if (strcasecmp(option,"gc") == 0
+			 || strcasecmp(option,"gc3") == 0) {
 				if(settrue) {
 					f->file_format = COB_FILE_IS_GC;
 #ifdef WITH_VARSEQ 
@@ -4558,6 +4572,7 @@ lineseq_read (cob_file_api *a, cob_file *f, const int read_opts)
 {
 	unsigned char	*dataptr;
 	size_t		i = 0;
+	int		sts = COB_STATUS_00_SUCCESS;
 	int		n;
 
 	COB_UNUSED (a);
@@ -4618,7 +4633,7 @@ again:
 			 && (f->file_features & COB_FILE_LS_SPLIT)) {
 				/* If record is too long, then simulate end
 				 * so balance becomes the next record read */
-				int	k = 1;
+				long	k = 1;
 				n = getc ((FILE *)f->file);
 				if (n == '\r') {
 					n = getc ((FILE *)f->file);
@@ -4626,6 +4641,8 @@ again:
 				}
 				if (n != '\n') {
 					fseek((FILE*)f->file, -k, SEEK_CUR);
+					if (f->file_format != COB_FILE_IS_MF) 
+						sts = COB_STATUS_06_READ_TRUNCATE;
 				}
 				break;
 			}
@@ -4639,7 +4656,7 @@ again:
 	f->record->size = i;
 	if (f->open_mode == COB_OPEN_I_O)	/* Required on some systems */
 		fflush((FILE*)f->file); 
-	return COB_STATUS_00_SUCCESS;
+	return sts;
 }
 
 #define IS_BAD_CHAR(x) (x < ' ' && x != COB_CHAR_BS && x != COB_CHAR_ESC \
@@ -6016,7 +6033,6 @@ cob_file_complete ( cob_file * fl)
 {
 	fl->flag_ready = 1;
 }
-
 /*
  * Allocate memory for 'IS EXTERNAL' cob_file
  */
@@ -6071,7 +6087,6 @@ cob_file_malloc (cob_file **pfl, cob_file_key **pky,
 	cob_file	*fl;
 	fl = cob_cache_malloc (sizeof (cob_file));
 	fl->file_version = COB_FILE_VERSION;
-	fl->nkeys = (size_t)nkeys;	/* casting away bad difference... */
 
 	if (nkeys > 0
 	 && pky != NULL) {
@@ -6580,6 +6595,7 @@ cob_read (cob_file *f, cob_field *key, cob_field *fnstatus, const int read_opts)
 	switch (ret) {
 	case COB_STATUS_00_SUCCESS:
 	case COB_STATUS_02_SUCCESS_DUPLICATE:
+	case COB_STATUS_06_READ_TRUNCATE:
 		f->flag_first_read = 0;
 		f->flag_read_done = 1;
 		f->flag_end_of_file = 0;
@@ -6714,6 +6730,7 @@ Again:
 	switch (ret) {
 	case COB_STATUS_00_SUCCESS:
 	case COB_STATUS_02_SUCCESS_DUPLICATE:
+	case COB_STATUS_06_READ_TRUNCATE:
 		/* If record has suppressed key, skip it */
 		/* This is to catch CISAM, old VBISAM, ODBC & OCI */
 		if (f->organization == COB_ORG_INDEXED) {
@@ -7178,8 +7195,7 @@ cob_delete_file (cob_file *f, cob_field *fnstatus, const int override)
 	}
 	if (errno == ENOENT) {
 		cob_file_save_status (f, fnstatus, 5);
-		if (file_setptr->cob_mf_files
-		 || f->file_format == COB_FILE_IS_MF) {
+		if(f->file_format == COB_FILE_IS_MF) {
 			f->file_status[0] = '9';
 			f->file_status[1] = 13;
 			if (fnstatus) {
@@ -8707,13 +8723,13 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 	char	*p;
 	int	i,k;
 
+	file_api.glbptr = file_globptr = lptr;
+	file_api.setptr = file_setptr  = sptr;
 	runtime_buffer = cob_fast_malloc ((size_t)(4 * COB_FILE_BUFF) + 4);
 	file_open_env = runtime_buffer + COB_FILE_BUFF;
 	file_open_name = runtime_buffer + (2 * COB_FILE_BUFF);
 	file_open_buff = runtime_buffer + (3 * COB_FILE_BUFF);
 
-	file_api.glbptr = file_globptr = lptr;
-	file_api.setptr = file_setptr  = sptr;
 	file_api.add_file_cache = cob_cache_file;
 	file_api.del_file_cache = cob_cache_del;
 	file_api.cob_write_dict = cob_write_dict;
@@ -8752,10 +8768,13 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 		file_setptr->cob_sort_chunk = file_setptr->cob_sort_memory / 2;
 	}
 
-	if(file_setptr->cob_mf_files) {	/* Just use all MF format files */
-		file_setptr->cob_ls_nulls = 1;
-		file_setptr->cob_ls_split = 1;
-		file_setptr->cob_ls_validate = 0;
+	if(file_setptr->cob_file_format == COB_FILE_IS_MF) {	/* all MF format files */
+		if (file_setptr->cob_ls_nulls == -1)				/* Set MF default if not defined */
+			file_setptr->cob_ls_nulls = 1;
+		if (file_setptr->cob_ls_split == -1)
+			file_setptr->cob_ls_split = 1;
+		if (file_setptr->cob_ls_validate == -1)
+			file_setptr->cob_ls_validate = 0;
 		if(file_setptr->cob_varseq_type == COB_FILE_IS_GC
 		|| file_setptr->cob_varseq_type == 0)
 			file_setptr->cob_varseq_type = COB_FILE_IS_MF;
@@ -8763,11 +8782,14 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 			file_setptr->cob_varrel_type = COB_FILE_IS_MF;
 		if(file_setptr->cob_fixrel_type == COB_FILE_IS_GC)
 			file_setptr->cob_fixrel_type = COB_FILE_IS_MF;
-	}
-	if(file_setptr->cob_gc_files) {	/* Just use all GnuCOBOL format files */
-		file_setptr->cob_ls_nulls = 0;
-		file_setptr->cob_ls_split = 0;
-		file_setptr->cob_ls_validate = 0;
+	} else
+	if(file_setptr->cob_file_format == COB_FILE_IS_GC) {	/* all GC3 format files */
+		if (file_setptr->cob_ls_nulls == -1)				/* Set GC default if not defined */
+			file_setptr->cob_ls_nulls = 0;
+		if (file_setptr->cob_ls_split == -1)
+			file_setptr->cob_ls_split = 0;
+		if (file_setptr->cob_ls_validate == -1)
+			file_setptr->cob_ls_validate = 0;
 		if(file_setptr->cob_varseq_type == COB_FILE_IS_MF)
 			file_setptr->cob_varseq_type = COB_FILE_IS_GC;
 		if(file_setptr->cob_varrel_type == COB_FILE_IS_MF)

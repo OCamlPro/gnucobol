@@ -3307,7 +3307,8 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE -ffile-format=gc prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+AT_CHECK([export COB_LS_SPLIT=false
+$COBCRUN_DIRECT ./prog], [0],
 [(a   )
 (ab  )
 (abc )

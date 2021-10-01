@@ -237,15 +237,11 @@ typedef struct __cob_settings {
 	unsigned int	cob_ls_nulls;		/* NUL insert to Line Sequential */
 	unsigned int	cob_ls_split;		/* Split 'too long' record into parts (Default is truncate) */
 	unsigned int	cob_ls_validate;	/* Validate data in Line Sequential */
-	unsigned int	cob_mf_ls_nulls;	/* MF file: NUL insert to Line Sequential (INSERTNULL)*/
-	unsigned int	cob_mf_ls_instab;	/* MF file: TAB insert to Line Sequential (INSERTTAB)*/
-	unsigned int	cob_mf_ls_split;	/* MF file: Split 'too long' record into parts */
-	unsigned int	cob_mf_ls_validate;	/* MF file: Validate data in Line Sequential */
+	unsigned int	cob_ls_instab;		/* TAB insert to Line Sequential (INSERTTAB)*/
 	unsigned int	cob_varseq_type;	/* Variable Sequential Default file format */
 	unsigned int	cob_varrel_type;	/* Variable Relative default file format */
 	unsigned int	cob_fixrel_type;	/* Fixed Relative default file format */
-	unsigned int	cob_mf_files;		/* If TRUE, use Micro Focus file formats */
-	unsigned int	cob_gc_files;		/* If TRUE, revert back to old GNU Cobol file formats */
+	unsigned int	cob_file_format;	/* Set to either COB_FILE_IS_MF or COB_FILE_IS_GC */
 	unsigned int	cob_retry_times;	/* Default: RETRY n TIMES value */
 	unsigned int	cob_retry_seconds;	/* Default: RETRY n SECONDS value */
 	unsigned int	cob_trace_io;		/* If TRACE READY, also dump File/Record/Status */

@@ -1,4 +1,9 @@
 
+2021-10-01  Ron Norman <rjn@inglenet.com>
+
+	* fileio: Removed the COB_MF_LS_xxx options and replaced COB_MF_FILES
+			with COB_FILE_FORMAT
+
 2021-09-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* lax.conf-inc: set synchronized-clause to be only ignored if the

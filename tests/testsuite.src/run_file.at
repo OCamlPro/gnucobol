@@ -4706,6 +4706,7 @@ AT_CLEANUP
 
 
 AT_SETUP([EXTERNAL RELATIVE file])
+# FIXME: Check the function of the EXTERNAL file using a second program, too
 AT_KEYWORDS([runfile])
 
 AT_DATA([prog.cob], [
@@ -4730,40 +4731,11 @@ AT_DATA([prog.cob], [
        01  my-key PIC 9.
 
        PROCEDURE DIVISION.
-           OPEN OUTPUT my-file
-           MOVE 'testme' TO my-record
-           CALL 'prog2'
-           CLOSE my-file
-           GOBACK.
-])
-
-AT_DATA([prog2.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. prog2.
-
-       ENVIRONMENT DIVISION.
-       INPUT-OUTPUT SECTION.
-       FILE-CONTROL.
-           SELECT my-file
-               ASSIGN TO "somefile"
-               ORGANIZATION IS RELATIVE
-               RELATIVE KEY IS my-key.
-
-       DATA DIVISION.
-       FILE SECTION.
-       FD my-file EXTERNAL.
-       01 two-record    PIC X(80).
-
-       WORKING-STORAGE SECTION.
-       01  my-key PIC 9.
-
-       PROCEDURE DIVISION.
-           WRITE two-record
-           GOBACK.
+           CONTINUE
+           .
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COMPILE_MODULE prog2.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
@@ -5390,29 +5362,82 @@ AT_DATA([prog.cob], [
        INPUT-OUTPUT     SECTION.
        FILE-CONTROL.
        SELECT TEST-FILE ASSIGN       "./TEST-FILE"
-                        ORGANIZATION IS LINE SEQUENTIAL.
+                        ORGANIZATION IS LINE SEQUENTIAL
+                        FILE STATUS  IS INPUT-STATUS .
        DATA             DIVISION.
        FILE             SECTION.
        FD TEST-FILE.
        01 TEST-REC      PIC X(4).
+       WORKING-STORAGE SECTION.
+       77 INPUT-STATUS  PIC X(2).
        PROCEDURE        DIVISION.
            OPEN INPUT TEST-FILE.
            PERFORM 6 TIMES
                READ TEST-FILE
-               DISPLAY "(" TEST-REC ")"
+               DISPLAY INPUT-STATUS " (" TEST-REC ")"
            END-PERFORM
            CLOSE TEST-FILE.
            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE -ffile-format=gc prog.cob], [0], [], [])
+AT_CHECK([export COB_LS_SPLIT=true
+$COBCRUN_DIRECT ./prog], [0],
+[00 (a   )
+00 (ab  )
+00 (abc )
+00 (abcd)
+06 (abcd)
+00 (e   )
+])
+
+AT_CLEANUP
+
+AT_SETUP([LINE SEQUENTIAL record split MF no 06])
+AT_KEYWORDS([runfile])
+
+AT_DATA([TEST-FILE],
+[a
+ab
+abc
+abcd
+abcde
+abcdef
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       ENVIRONMENT      DIVISION.
+       INPUT-OUTPUT     SECTION.
+       FILE-CONTROL.
+       SELECT TEST-FILE ASSIGN       "./TEST-FILE"
+                        ORGANIZATION IS LINE SEQUENTIAL
+                        FILE STATUS  IS INPUT-STATUS .
+       DATA             DIVISION.
+       FILE             SECTION.
+       FD TEST-FILE.
+       01 TEST-REC      PIC X(4).
+       WORKING-STORAGE SECTION.
+       77 INPUT-STATUS  PIC X(2).
+       PROCEDURE        DIVISION.
+           OPEN INPUT TEST-FILE.
+           PERFORM 6 TIMES
+               READ TEST-FILE
+               DISPLAY INPUT-STATUS " (" TEST-REC ")"
+           END-PERFORM
+           CLOSE TEST-FILE.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -ffile-format=mf prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
-[(a   )
-(ab  )
-(abc )
-(abcd)
-(abcd)
-(abcd)
+[00 (a   )
+00 (ab  )
+00 (abc )
+00 (abcd)
+00 (abcd)
+00 (e   )
 ])
 
 AT_CLEANUP
@@ -9639,7 +9664,7 @@ AT_DATA([prog.cob], [
                PERFORM FCD-CHECK-STAT
                IF FCD-FILE-STATUS = '00'
                  DISPLAY PROGRAM-NAME
-                     ': RECORD = ' FIX-RECORDAREA (1:40) '. '
+                     ': RECORD = ' FIX-RECORDAREA (1:40) '. ' 
                      'Size:' FCD-CURRENT-REC-LEN
                END-IF
              END-PERFORM
@@ -9899,7 +9924,7 @@ AT_DATA([progl.cob], [
            RECORD KEY IS PRIME-KEY
            ACCESS IS SEQUENTIAL
            FILE STATUS IS OUT-STAT.
-
+       
        DATA DIVISION.
        FILE SECTION.
        FD OUTFILE
@@ -9908,11 +9933,11 @@ AT_DATA([progl.cob], [
        01  OUT-REC.
            05  PRIME-KEY PIC X(25).
            05  IN-DATA   PIC X(10).
-
+       
        WORKING-STORAGE SECTION.
        01  OUT-STAT             PIC XX    VALUE '00'.
        01  OUT-RECNUM           PIC 9 VALUE 0.
-
+       
        PROCEDURE DIVISION.
        MAIN-100.
            OPEN OUTPUT OUTFILE.
@@ -9921,7 +9946,7 @@ AT_DATA([progl.cob], [
                STOP RUN
            END-IF.
            INITIALIZE OUT-REC.
-
+       
        GET-NEXT-100.
            ADD 1  TO OUT-RECNUM.
            MOVE "RECORD-X" TO PRIME-KEY.
@@ -9934,7 +9959,7 @@ AT_DATA([progl.cob], [
            END-IF.
            IF OUT-RECNUM < 5
                GO TO GET-NEXT-100.
-
+       
        END-PROG-100.
            DISPLAY OUT-RECNUM ' records written'.
            CLOSE OUTFILE.
@@ -10413,7 +10438,7 @@ AT_DATA([prog.cob], [
        A-800-READ-PREVIOUS.
            MOVE X'FAF9' TO FH-ACTION
            PERFORM A-200-CALL-EXTFH.
-
+      
 ])
 
 AT_DATA([progs.cob], [[
@@ -10670,7 +10695,7 @@ AT_DATA([prog.cob], [
            MOVE LENGTH OF RECORD-AREA TO FCD-MAX-REC-LENGTH
            MOVE LENGTH OF RECORD-AREA TO FCD-CURRENT-REC-LEN
            PERFORM A-200-CALL-EXTFH.
-
+        
        A-200-Call-Extfh.
            CALL 'EXTFH' USING FH-ACTION
                               FCD-AREA
@@ -10828,8 +10853,8 @@ AT_DATA([prog.cob], [
              78 fcd--nodetectlock             value h"04".
              78 fcd--multiple-reel            value h"02".
              78 fcd--line-advancing           value h"01".
-             78 fcd--special-sequential
-             value fcd--optional-file
+             78 fcd--special-sequential  
+             value fcd--optional-file 
              + fcd--multiple-reel + fcd--line-advancing.
            05  FILLER               PIC X(2).
            05  FCD-HANDLE           USAGE POINTER.
@@ -10880,7 +10905,7 @@ AT_DATA([prog.cob], [
              78 fcd--single-open              value h"10".
              78 fcd--nfs-file-lock            value h"08".
              78 fcd--nfs-file-lock-hp         value h"04".
-             78 fcd--nfs-file-locks
+             78 fcd--nfs-file-locks     
              value fcd--nfs-file-lock + fcd--nfs-file-lock-hp.
            05  FCD-FS-FLAGS         PIC 99   COMP-X.
            05  FCD-CONFIG-FLAGS     PIC 99   COMP-X.
@@ -10920,7 +10945,7 @@ AT_DATA([prog.cob], [
           DISPLAY "Listing " WS-FCD-DDNAME '.'.
           PERFORM VARYING I FROM 1 BY 1 UNTIL I > 10
             PERFORM 350-READ
-            DISPLAY FCD-CURRENT-REC-LEN ": "
+            DISPLAY FCD-CURRENT-REC-LEN ": " 
                     FCD-RECORD (1:FCD-CURRENT-REC-LEN) " :"
           END-PERFORM.
           PERFORM 400-CLOSE.
@@ -10951,7 +10976,7 @@ AT_DATA([prog.cob], [
              MOVE FCD--EXTERNAL-NAME  TO FCD-OTHER-FLAGS
              SET  FCD-HANDLE          TO NULL
              MOVE 8                   TO FCD-NAME-LENGTH
-             SET  FCD-FILENAME-ADDRESS TO ADDRESS
+             SET  FCD-FILENAME-ADDRESS TO ADDRESS 
                                        OF WS-FCD-DDNAME
              SET  FCD-KEY-DEF-ADDRESS TO NULL
              MOVE FCD--ALLOW-READERS  TO FCD-LOCKTYPES
@@ -11016,7 +11041,7 @@ AT_DATA([prog.cob], [
            MOVE "00"                   TO FCD-FILE-STATUS
            CALL "EXTFH" USING ACTION-CODE, FCD-MAP
 
-           IF FCD-STATUS-KEY-1 NOT = "0"
+           IF FCD-STATUS-KEY-1 NOT = "0" 
                IF FCD-STATUS-KEY-1 = "9"
                   IF FCD-BINARY = 161
                       DISPLAY "EXTFH Status: 9/" FCD-BINARY
@@ -11037,7 +11062,7 @@ AT_DATA([prog.cob], [
             .
 ])
 
-AT_CHECK([$COMPILE -w prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -w prog.cob ], [0], [], [])
 
 AT_CHECK([export TESTOUT=TEST-OUT
 $COBCRUN_DIRECT ./prog], [0], [FCD SIZE 00100.
@@ -13591,7 +13616,6 @@ Program-Id: prog
 ])
 
 AT_CHECK([gcdiff -I'WRITE TSPFILE Status' reference trace.txt], [0], [], [])
-#AT_CHECK([diff -I'WRITE TSPFILE Status' reference trace.txt], [0], [], [])
 
 AT_CLEANUP
 
@@ -15178,8 +15202,6 @@ AT_CHECK([sed -e 's/WRITE TSPFILE Status: 02/WRITE TSPFILE Status: 00/g'  \
 -e 's/'"OPEN OUTPUT TSPFILE -> 'testisam' Status: 05"'/'"OPEN OUTPUT TSPFILE -> 'testisam' Status: 00"'/g' \
 trace.txt > traces.txt], [0], [], [])
 
-#AT_CHECK([gcdiff -I'WRITE TSPFILE Status' -I 'OPEN OUTPUT TSPFILE' reference trace.txt], [0], [], [])
-#AT_CHECK([diff references traces.txt], [0], [], [])
 AT_CHECK([gcdiff references traces.txt], [0], [], [])
 
 AT_CLEANUP
@@ -16666,9 +16688,7 @@ AT_CHECK([sed -e 's/WRITE TSPFILE Status: 02/WRITE TSPFILE Status: 00/g'  \
 -e 's/'"OPEN OUTPUT TSPFILE -> 'testisam' Status: 05"'/'"OPEN OUTPUT TSPFILE -> 'testisam' Status: 00"'/g' \
 trace.txt > traces.txt], [0], [], [])
 
-#AT_CHECK([gcdiff -I'WRITE TSPFILE Status' -I 'OPEN OUTPUT TSPFILE' reference trace.txt], [0], [], [])
 #AT_CHECK([diff references traces.txt], [0], [], [])
-#AT_CHECK([gcdiff references traces.txt], [0], [], [])
 
 AT_CLEANUP
 
@@ -18642,7 +18662,7 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 AT_CLEANUP
 
 
-AT_SETUP([GC LINE SEQUENTIAL Long-Record])
+AT_SETUP([GC LINE SEQUENTIAL Long-Record NO SPILT])
 AT_KEYWORDS([runfile])
 
 AT_DATA([inp_data],
@@ -18708,6 +18728,7 @@ AT_DATA([prog.cob], [
            DISPLAY " Read 4: STATUS IS " INPUT-STATUS
                    " LENGTH IS " INPUT-LEN
            IF INPUT-STATUS = "00"
+           OR INPUT-STATUS = "06"
                DISPLAY "       :" INPUT-REC ":"
            END-IF
            CLOSE INFILE
@@ -18734,6 +18755,7 @@ AT_CHECK([$COMPILE -ffile-format=gc prog.cob], [0], [], [])
 
 AT_CHECK([export DD_INFILE=./inp_data
 export OUTFILE=TEST-FILE
+export COB_LS_SPLIT=false
 ./prog], [0], [ Read 1: STATUS IS 00 LENGTH IS 040
        :Record 1................................:
  Read 2: STATUS IS 00 LENGTH IS 030
@@ -18741,6 +18763,124 @@ export OUTFILE=TEST-FILE
  Read 3: STATUS IS 00 LENGTH IS 040
        :Record 3................................:
  Read 4: STATUS IS 10 LENGTH IS 000
+Write 1: STATUS IS 00 LENGTH IS 009
+Write 2: STATUS IS 00 LENGTH IS 064
+], [])
+
+
+AT_CAPTURE_FILE(./TEST-FILE)
+
+AT_DATA([reference],
+[Record 1.
+Record 2................................
+])
+
+AT_CHECK([gcdiff reference TEST-FILE], [0], [], [])
+
+AT_CLEANUP
+
+AT_SETUP([GC LINE SEQUENTIAL Long-Record SPLIT])
+AT_KEYWORDS([runfile])
+
+AT_DATA([inp_data],
+[Record 1................................X.......
+Record 2.....................X
+Record 3................................X...
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT INFILE     ASSIGN TO EXTERNAL INFILE
+                ORGANIZATION IS LINE SEQUENTIAL
+                FILE STATUS  IS INPUT-STATUS .
+
+           SELECT OUTFILE   ASSIGN TO EXTERNAL OUTFILE
+                ORGANIZATION IS LINE SEQUENTIAL
+                FILE STATUS  IS INPUT-STATUS .
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD INFILE
+             RECORD IS VARYING IN SIZE FROM 18 TO 40 CHARACTERS
+             DEPENDING ON INPUT-LEN
+            .
+       01  INPUT-REC           PIC X(40).
+
+       FD OUTFILE
+             RECORD IS VARYING IN SIZE FROM 18 TO 40 CHARACTERS
+             DEPENDING ON INPUT-LEN
+            .
+       01  OUTPUT-REC          PIC X(40).
+
+       WORKING-STORAGE SECTION.
+
+       01  OUTPUT-FILE         PIC X(19)     VALUE 'TEST-FILE'.
+       01  INPUT-FILE          PIC X(19)     VALUE 'TEST-INP'.
+       01  INPUT-STATUS        PIC XX.
+       01  INPUT-LEN           PIC 999  VALUE 18 .
+
+       PROCEDURE DIVISION.
+       A000-BEGIN.
+           OPEN INPUT INFILE.
+           READ INFILE
+           DISPLAY " Read 1: STATUS IS " INPUT-STATUS
+                   " LENGTH IS " INPUT-LEN
+           DISPLAY "       :" INPUT-REC ":"
+           READ INFILE
+           DISPLAY " Read 2: STATUS IS " INPUT-STATUS
+                   " LENGTH IS " INPUT-LEN
+           DISPLAY "       :" INPUT-REC ":"
+           MOVE 0 TO INPUT-LEN
+           READ INFILE
+           DISPLAY " Read 3: STATUS IS " INPUT-STATUS
+                   " LENGTH IS " INPUT-LEN
+           DISPLAY "       :" INPUT-REC ":"
+           MOVE SPACES TO INPUT-REC
+           MOVE 0 TO INPUT-LEN
+           READ INFILE
+           DISPLAY " Read 4: STATUS IS " INPUT-STATUS
+                   " LENGTH IS " INPUT-LEN
+           IF INPUT-STATUS = "00"
+           OR INPUT-STATUS = "06"
+               DISPLAY "       :" INPUT-REC ":"
+           END-IF
+           CLOSE INFILE
+
+           OPEN OUTPUT OUTFILE
+           MOVE 9 TO INPUT-LEN
+           MOVE "Record 1............." TO OUTPUT-REC
+           WRITE OUTPUT-REC
+           DISPLAY "Write 1: STATUS IS " INPUT-STATUS
+                   " LENGTH IS " INPUT-LEN
+                             UPON CONSOLE
+           MOVE 64 TO INPUT-LEN
+           MOVE ALL '.' TO OUTPUT-REC
+           MOVE "Record 2" TO OUTPUT-REC (1:8)
+           WRITE OUTPUT-REC
+           DISPLAY "Write 2: STATUS IS " INPUT-STATUS
+                   " LENGTH IS " INPUT-LEN
+                             UPON CONSOLE
+           CLOSE OUTFILE
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -ffile-format=gc prog.cob], [0], [], [])
+
+AT_CHECK([export DD_INFILE=./inp_data
+export OUTFILE=TEST-FILE
+export COB_LS_SPLIT=true
+./prog], [0], [ Read 1: STATUS IS 06 LENGTH IS 040
+       :Record 1................................:
+ Read 2: STATUS IS 00 LENGTH IS 008
+       :X.......                                :
+ Read 3: STATUS IS 00 LENGTH IS 030
+       :Record 2.....................X          :
+ Read 4: STATUS IS 06 LENGTH IS 040
+       :Record 3................................:
 Write 1: STATUS IS 00 LENGTH IS 009
 Write 2: STATUS IS 00 LENGTH IS 064
 ], [])
@@ -18824,6 +18964,7 @@ AT_DATA([prog.cob], [
            DISPLAY " Read 4: STATUS IS " INPUT-STATUS
                    " LENGTH IS " INPUT-LEN
            IF INPUT-STATUS = "00"
+           OR INPUT-STATUS = "06"
                DISPLAY "       :" INPUT-REC ":"
            END-IF
            CLOSE INFILE
@@ -22439,7 +22580,7 @@ AT_DATA([prog.cob], [
        CONFIGURATION SECTION.
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
-           SELECT FLATFILE
+           SELECT FLATFILE 
            ASSIGN TO THE-FILE-NAME
            ORGANIZATION LINE SEQUENTIAL
            FILE STATUS IS FLAT-STAT.
@@ -22448,20 +22589,20 @@ AT_DATA([prog.cob], [
        FILE SECTION.
        FD  FLATFILE
            BLOCK CONTAINS 5 RECORDS.
-
+      
        01  FLAT-RECORD.
-           10  FILE-NAME                       PICTURE X(8).
+           10  FILE-NAME                       PICTURE X(8). 
            10  FLAT-MARK                       PICTURE X(6).
-           10  FLAT-RECNUM                     PICTURE X(6).
+           10  FLAT-RECNUM                     PICTURE X(6). 
            10  FLAT-NUM                        PICTURE Z9.
            10  FLAT-FILLER                     PICTURE X(2).
-
+       
        WORKING-STORAGE SECTION.
        77  REC-NUM           VALUE  0          PICTURE 9(2).
        77  MAX-REC           VALUE  3          PICTURE 9(2).
        77  FLAT-STAT                           PICTURE X(2).
        77  THE-FILE-NAME                       PICTURE X(48).
-
+      
        PROCEDURE DIVISION.
            MOVE "file1" TO THE-FILE-NAME
            PERFORM LOADFILE.
@@ -22482,7 +22623,7 @@ AT_DATA([prog.cob], [
            MOVE "file1&file2&file3" TO THE-FILE-NAME
            PERFORM LISTFILE.
            STOP RUN RETURNING 0.
-
+      
        LISTFILE.
            OPEN INPUT FLATFILE.
            IF FLAT-STAT NOT = "00"
@@ -22536,10 +22677,10 @@ AT_DATA([prog.cob], [
            IF FLAT-STAT NOT = "00"
                DISPLAY "OPEN OUTPUT: " THE-FILE-NAME " Sts:" FLAT-STAT
            END-IF.
-           PERFORM LOAD-RECORD VARYING REC-NUM FROM 1 BY 1
+           PERFORM LOAD-RECORD VARYING REC-NUM FROM 1 BY 1 
                                  UNTIL REC-NUM > MAX-REC.
            CLOSE FLATFILE.
-
+      
        LOAD-RECORD.
            MOVE SPACES                       TO FLAT-RECORD.
            MOVE "Record"                     TO FLAT-RECNUM.
@@ -22547,7 +22688,7 @@ AT_DATA([prog.cob], [
            MOVE REC-NUM                      TO FLAT-NUM.
            WRITE FLAT-RECORD.
            IF FLAT-STAT NOT = "00"
-               DISPLAY "Write: " FILE-NAME " Rec#" REC-NUM
+               DISPLAY "Write: " FILE-NAME " Rec#" REC-NUM 
                        " Sts:" FLAT-STAT
            END-IF.
 ])

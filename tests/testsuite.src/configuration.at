@@ -660,7 +660,7 @@ defunc.cfg:3: invalid value 'notwithme' for configuration tag 'physical_cancel';
 defunc.cfg:4: invalid value 'insensitive' for configuration tag 'load_case';
 	should be one of the following values: LOWER(1), UPPER(2), not set(0)
 defunc.cfg:5: invalid value 'big' for configuration tag 'varseq_format';
-	should be one of the following values: 0, 1, 2, 3, mf, gc, b4, b32, l4, l32
+	should be one of the following values: 0, 1, 2, 3, mf, gc, gc3, b4, b32, l4, l32
 defunc.cfg:6: invalid value '4K' for configuration tag 'sort_chunk';
 	minimum value: 131072
 defunc.cfg:7: invalid value '4G' for configuration tag 'sort_memory';
