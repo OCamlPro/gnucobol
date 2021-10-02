@@ -3,6 +3,7 @@
 
 	* common.c: Runtime report show 'not set' if that was the default
 	* fileio.c: Change default for LS_SPLIT = TRUE
+				Check LINE SEQUENTIAL data and if invalid return 09 status
 
 2021-10-01  Ron Norman <rjn@inglenet.com>
 

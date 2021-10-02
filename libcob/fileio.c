@@ -1676,6 +1676,62 @@ cob_cache_del (cob_file *f)
 	}
 }
 
+static void
+cob_set_ls_defaults (cob_file *f)
+{
+	f->io_routine = COB_IO_LINE_SEQUENTIAL;
+	f->file_features |= COB_FILE_LS_SPLIT;
+#ifdef	_WIN32
+	f->file_features |= COB_FILE_LS_CRLF;
+#else
+	f->file_features |= COB_FILE_LS_LF;
+#endif
+	f->file_features &= ~COB_FILE_LS_FIXED;
+	f->file_features &= ~COB_FILE_LS_VALIDATE;
+	f->file_features &= ~COB_FILE_LS_NULLS;
+	if (f->file_format == COB_FILE_IS_MF) {		/* Set MF defaults */
+		f->file_features |= COB_FILE_LS_NULLS;
+	} else
+	if (f->file_format == COB_FILE_IS_GC) {		/* Set GC defaults */
+		f->file_features |= COB_FILE_LS_VALIDATE;
+	}
+	if(file_setptr->cob_ls_fixed == 1)
+		f->file_features |= COB_FILE_LS_FIXED;
+	else if(file_setptr->cob_ls_fixed == 0)
+		f->file_features &= ~COB_FILE_LS_FIXED;
+#ifdef	_WIN32
+	if(file_setptr->cob_unix_lf == 1)
+		f->file_features |= COB_FILE_LS_LF;
+	else
+		f->file_features |= COB_FILE_LS_CRLF;
+#else
+	f->file_features |= COB_FILE_LS_LF;
+#endif
+	if(file_setptr->cob_ls_uses_cr == 1)
+		f->file_features |= COB_FILE_LS_CRLF;
+
+	if(file_setptr->cob_ls_instab == 1)
+		f->flag_ls_instab = 1;
+	else
+		f->flag_ls_instab = 0;
+
+	if(file_setptr->cob_ls_split == 1)
+		f->file_features |= COB_FILE_LS_SPLIT;
+	else if(file_setptr->cob_ls_split == 0)
+		f->file_features &= ~COB_FILE_LS_SPLIT;
+
+	if(file_setptr->cob_ls_nulls == 1)
+		f->file_features |= COB_FILE_LS_NULLS;
+	else if(file_setptr->cob_ls_nulls == 0)
+		f->file_features &= ~COB_FILE_LS_NULLS;
+
+	if(file_setptr->cob_ls_validate == 1
+	&& !f->flag_line_adv)
+		f->file_features |= COB_FILE_LS_VALIDATE;
+	else if(file_setptr->cob_ls_validate == 0)
+		f->file_features &= ~COB_FILE_LS_VALIDATE;
+}
+
 /*
  * Set file format based on defaults, runtime.cfg 
  */
@@ -1811,57 +1867,7 @@ cob_set_file_defaults (cob_file *f)
 	}
 
 	if (f->organization == COB_ORG_LINE_SEQUENTIAL) {
-		f->io_routine = COB_IO_LINE_SEQUENTIAL;
-		f->file_features |= COB_FILE_LS_SPLIT;
-#ifdef	_WIN32
-		f->file_features |= COB_FILE_LS_CRLF;
-#else
-		f->file_features |= COB_FILE_LS_LF;
-#endif
-		f->file_features &= ~COB_FILE_LS_FIXED;
-		f->file_features &= ~COB_FILE_LS_VALIDATE;
-		f->file_features &= ~COB_FILE_LS_NULLS;
-		if (f->file_format == COB_FILE_IS_MF) {		/* Set MF defaults */
-			f->file_features |= COB_FILE_LS_NULLS;
-		} else
-		if (f->file_format == COB_FILE_IS_GC) {		/* Set GC defaults */
-			f->file_features |= COB_FILE_LS_VALIDATE;
-		}
-		if(file_setptr->cob_ls_fixed == 1)
-			f->file_features |= COB_FILE_LS_FIXED;
-		else if(file_setptr->cob_ls_fixed == 0)
-			f->file_features &= ~COB_FILE_LS_FIXED;
-#ifdef	_WIN32
-		if(file_setptr->cob_unix_lf == 1)
-			f->file_features |= COB_FILE_LS_LF;
-		else
-			f->file_features |= COB_FILE_LS_CRLF;
-#else
-		f->file_features |= COB_FILE_LS_LF;
-#endif
-		if(file_setptr->cob_ls_uses_cr == 1)
-			f->file_features |= COB_FILE_LS_CRLF;
-
-		if(file_setptr->cob_ls_instab == 1)
-			f->flag_ls_instab = 1;
-		else
-			f->flag_ls_instab = 0;
-
-		if(file_setptr->cob_ls_split == 1)
-			f->file_features |= COB_FILE_LS_SPLIT;
-		else if(file_setptr->cob_ls_split == 0)
-			f->file_features &= ~COB_FILE_LS_SPLIT;
-
-		if(file_setptr->cob_ls_nulls == 1)
-			f->file_features |= COB_FILE_LS_NULLS;
-		else if(file_setptr->cob_ls_nulls == 0)
-			f->file_features &= ~COB_FILE_LS_NULLS;
-
-		if(file_setptr->cob_ls_validate == 1
-		&& !f->flag_line_adv)
-			f->file_features |= COB_FILE_LS_VALIDATE;
-		else if(file_setptr->cob_ls_validate == 0)
-			f->file_features &= ~COB_FILE_LS_VALIDATE;
+		cob_set_ls_defaults (f);
 	}
 }
 
@@ -2027,6 +2033,7 @@ cob_set_file_format (cob_file *f, char *defstr, int updt)
 						f->organization = COB_ORG_LINE_SEQUENTIAL;
 						f->flag_line_adv = 0;
 						f->flag_set_isam = 0;
+						cob_set_ls_defaults (f);
 					} else if(strcasecmp(value,"LA") == 0) {
 						f->organization = COB_ORG_LINE_SEQUENTIAL;
 						f->flag_line_adv = 1;
@@ -2151,6 +2158,9 @@ cob_set_file_format (cob_file *f, char *defstr, int updt)
 							|| strcasecmp(value,"gc3") == 0) {
 						f->file_format = COB_FILE_IS_GC;
 						f->flag_set_type = 1;
+						if (f->organization == COB_ORG_LINE_SEQUENTIAL) {
+							cob_set_ls_defaults (f);
+						}
 					} else if (strcasecmp(value,"0") == 0) {
 						f->file_format = COB_FILE_IS_GCVS0;
 					} else if (strcasecmp(value,"1") == 0) {
@@ -4561,6 +4571,8 @@ sequential_rewrite (cob_file_api *a, cob_file *f, const int opt)
 	return COB_STATUS_00_SUCCESS;
 }
 
+#define IS_BAD_CHAR(x) (x < ' ' && x != COB_CHAR_BS && x != COB_CHAR_ESC \
+					 && x != COB_CHAR_FF && x != COB_CHAR_SI && x != COB_CHAR_TAB)
 /* LINE SEQUENTIAL */
 static int
 lineseq_read (cob_file_api *a, cob_file *f, const int read_opts)
@@ -4591,20 +4603,20 @@ again:
 			}
 		}
 		if (n == 0
-		&& (f->file_features & COB_FILE_LS_NULLS)) {
+		 && (f->file_features & COB_FILE_LS_NULLS)) {
 			n = getc ((FILE *)f->file);
 			/* LCOV_EXCL_START */
 			if (n == EOF) {
 				return COB_STATUS_30_PERMANENT_ERROR;
 			}
 			if ((f->file_features & COB_FILE_LS_VALIDATE)
-			&& (unsigned char)n >= ' ') {		/* Should be less than a space */
+			 && (unsigned char)n >= ' ') {		/* Should be less than a space */
 				return COB_STATUS_71_BAD_CHAR;
 			}
 			/* LCOV_EXCL_STOP */
 		} else
 		if (n == COB_CHAR_TAB
-		&& f->flag_ls_instab) {
+		 && f->flag_ls_instab) {
 			*dataptr++ = ' ';
 			i++;
 			while ((i % 8) != 0
@@ -4619,6 +4631,11 @@ again:
 			}
 			if (n == '\n') {
 				break;
+			}
+			if ((f->file_features & COB_FILE_LS_VALIDATE)
+			 && (IS_BAD_CHAR (n) 
+			  || (n > 0x7E && !isprint(n)))) {
+				return COB_STATUS_09_READ_DATA_BAD;
 			}
 		}
 		if (i < f->record_max) {
@@ -4655,8 +4672,6 @@ again:
 	return sts;
 }
 
-#define IS_BAD_CHAR(x) (x < ' ' && x != COB_CHAR_BS && x != COB_CHAR_ESC \
-					 && x != COB_CHAR_FF && x != COB_CHAR_SI && x != COB_CHAR_TAB)
 /* Determine the size to be written */
 static size_t
 lineseq_size (cob_file *f)
@@ -8768,12 +8783,6 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 	}
 
 	if(file_setptr->cob_file_format == COB_FILE_IS_MF) {	/* all MF format files */
-		if (file_setptr->cob_ls_nulls == -1)				/* Set MF default if not defined */
-			file_setptr->cob_ls_nulls = 1;
-		if (file_setptr->cob_ls_split == -1)
-			file_setptr->cob_ls_split = 1;
-		if (file_setptr->cob_ls_validate == -1)
-			file_setptr->cob_ls_validate = 0;
 		if(file_setptr->cob_varseq_type == COB_FILE_IS_GC
 		|| file_setptr->cob_varseq_type == 0)
 			file_setptr->cob_varseq_type = COB_FILE_IS_MF;
@@ -8783,12 +8792,6 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 			file_setptr->cob_fixrel_type = COB_FILE_IS_MF;
 	} else
 	if(file_setptr->cob_file_format == COB_FILE_IS_GC) {	/* all GC3 format files */
-		if (file_setptr->cob_ls_nulls == -1)				/* Set GC default if not defined */
-			file_setptr->cob_ls_nulls = 0;
-		if (file_setptr->cob_ls_split == -1)
-			file_setptr->cob_ls_split = 0;
-		if (file_setptr->cob_ls_validate == -1)
-			file_setptr->cob_ls_validate = 0;
 		if(file_setptr->cob_varseq_type == COB_FILE_IS_MF)
 			file_setptr->cob_varseq_type = COB_FILE_IS_GC;
 		if(file_setptr->cob_varrel_type == COB_FILE_IS_MF)
