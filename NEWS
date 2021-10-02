@@ -277,6 +277,9 @@ Open Plans:
    against libcob and need cob_decimal include gmp.h/mpir.h yourself before;
    otherwise you do not need it in your include path any more
 
+** For LINE SEQUENTIAL files the behaviour has been changed to always split lines
+   longer than the record area into multiple records. 
+   Setting COB_LS_SPLIT = false will have the old behaviour of truncating the record.
 
 * New build features
 
@@ -332,6 +335,16 @@ Open Plans:
   if set to any value the option parsing in cobc, cobcrun and CBL_GC_GETOPT
   stops at the first nonoption, otherwise it stays with the old behaviour and
   re-orders nonoptions to the end)
+
+* new configure option --with-std= lets to build into the compiler the default
+  COBOL dialect if -std= is not provided at compile time. If unspecified the
+  default is 'default'
+
+* new configure option --with-file-format=mf lets to build into the compiler 
+  the default file format. If not provided then the old GnuCOBOL 3 format files
+  are used and for Variable length SEQUENTIAL or RELATIVE files the file is
+  not portable across different platforms.
+  Using 'mf' (Microfocus) format, data files are portable across platforms.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

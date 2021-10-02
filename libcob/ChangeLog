@@ -1,4 +1,9 @@
 
+2021-10-02  Ron Norman <rjn@inglenet.com>
+
+	* common.c: Runtime report show 'not set' if that was the default
+	* fileio.c: Change default for LS_SPLIT = TRUE
+
 2021-10-01  Ron Norman <rjn@inglenet.com>
 
 	* coblocal.h: Removed the cob_mf_ls_xxx fields

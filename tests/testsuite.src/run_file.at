@@ -5409,8 +5409,7 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE -ffile-format=gc prog.cob], [0], [], [])
-AT_CHECK([export COB_LS_SPLIT=true
-$COBCRUN_DIRECT ./prog], [0],
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [00 (a   )
 00 (ab  )
 00 (abc )
@@ -5459,13 +5458,23 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -ffile-format=mf prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -std=mf prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [00 (a   )
 00 (ab  )
 00 (abc )
 00 (abcd)
 00 (abcd)
+00 (e   )
+])
+
+AT_CHECK([$COMPILE -std=default prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[00 (a   )
+00 (ab  )
+00 (abc )
+00 (abcd)
+06 (abcd)
 00 (e   )
 ])
 

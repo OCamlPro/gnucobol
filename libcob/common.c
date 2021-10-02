@@ -495,12 +495,12 @@ static struct config_tbl gc_conf[] = {
 	{"COB_VARREL_FORMAT","varrel_format",	varrel_dflt,relopts,GRP_FILE,ENV_UINT|ENV_ENUM,SETPOS(cob_varrel_type)},
 	{"COB_VARSEQ_FORMAT","varseq_format",	varseq_dflt,varseqopts,GRP_FILE,ENV_UINT|ENV_ENUM,SETPOS(cob_varseq_type)},
 	{"COB_BDB_BYTEORDER","bdb_byteorder",	"native",bdborder,GRP_FILE,ENV_UINT|ENV_ENUM,SETPOS(cob_bdb_byteorder)},
-	{"COB_LS_FIXED","ls_fixed",		"0",	NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_fixed)},
-	{"STRIP_TRAILING_SPACES","strip_trailing_spaces",		NULL,	NULL,GRP_HIDE,ENV_BOOL|ENV_NOT,SETPOS(cob_ls_fixed)},
+	{"COB_LS_FIXED","ls_fixed",				"0",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_fixed)},
+	{"STRIP_TRAILING_SPACES","strip_trailing_spaces",NULL,NULL,GRP_HIDE,ENV_BOOL|ENV_NOT,SETPOS(cob_ls_fixed)},
+	{"COB_LS_SPLIT","ls_split",				"true",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_split)},
+	{"COB_LS_INSTAB","ls_instab",			"false",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_instab)},
 	{"COB_LS_NULLS","ls_nulls",				"not set",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_nulls)},
-	{"COB_LS_SPLIT","ls_split",				"not set",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_split)},
-	{"COB_LS_VALIDATE","ls_validate",		"not set",	NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_validate)},
-	{"COB_LS_INSTAB","ls_instab",			"not set",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_instab)},
+	{"COB_LS_VALIDATE","ls_validate",		"not set",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_validate)},
 	{"COB_SHARE_MODE","share_mode",			"none",shareopts,GRP_FILE,ENV_UINT|ENV_ENUM,SETPOS(cob_share_mode)},
 	{"COB_RETRY_MODE","retry_mode",			"none",retryopts,GRP_FILE,ENV_UINT|ENV_ENUM,SETPOS(cob_retry_mode)},
 	{"COB_RETRY_TIMES","retry_times",		"0",NULL,GRP_FILE,ENV_UINT,SETPOS(cob_retry_times)},
@@ -1666,8 +1666,8 @@ int
 cob_check_env_false (char * s)
 {
 	return s && ((strlen (s) == 1 && (*s == 'N' || *s == 'n' || *s == '0'))
-	          || (strcasecmp (s, "NO") == 0 || strcasecmp (s, "NONE") == 0
-	           || strcasecmp (s, "OFF") == 0 || strcasecmp (s, "FALSE") == 0));
+				|| (strcasecmp (s, "NO") == 0 || strcasecmp (s, "NONE") == 0
+				|| strcasecmp (s, "OFF") == 0 || strcasecmp (s, "FALSE") == 0));
 }
 
 static void
@@ -6169,8 +6169,8 @@ var_print (const char *msg, const char *val, const char *default_val,
 	if (!val && (!default_val || default_val[0] == 0)) {
 		putchar ('\n');
 		return;
-	} else if (format == 1 && val && default_val &&
-		(val[0] == '0' || strcmp (val, default_val) == 0)) {
+	} else if (format == 1 && val && default_val 
+			&& (val[0] == '0' || strcmp (val, default_val) == 0)) {
 		char dflt[40];
 		snprintf (dflt, 39, " %s", _("(default)"));
 		val = cob_strcat ((char *) default_val, dflt, 0);
@@ -6182,8 +6182,8 @@ var_print (const char *msg, const char *val, const char *default_val,
 	if (!val && (!default_val || default_val[0] == 0)) {
 		putchar ('\n');
 		return;
-	} else if (format != 0 && val && default_val &&
-		((format != 2 && val[0] == '0') || strcmp (val, default_val) == 0)) {
+	} else if (format != 0 && val && default_val 
+			&& ((format != 2 && val[0] == '0') || strcmp (val, default_val) == 0)) {
 		char dflt[40];
 		snprintf (dflt, 39, " %s", _("(default)"));
 		val = cob_strcat ((char *) default_val, dflt, 0);
@@ -8426,6 +8426,9 @@ print_runtime_conf ()
 					if ((gc_conf[i].data_type & STS_RESET)) {
 						printf (_("(reset)"));
 					} else if (strcmp (value, not_set) != 0) {
+						printf (_("(default)"));
+					} else if (gc_conf[i].default_val
+							&& strcmp (gc_conf[i].default_val, not_set) == 0) {
 						printf (_("(default)"));
 					}
 				}

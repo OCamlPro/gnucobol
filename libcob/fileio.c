@@ -1812,27 +1812,20 @@ cob_set_file_defaults (cob_file *f)
 
 	if (f->organization == COB_ORG_LINE_SEQUENTIAL) {
 		f->io_routine = COB_IO_LINE_SEQUENTIAL;
-		if (f->file_format == COB_FILE_IS_MF) {		/* Set MF defaults */
-			f->file_features &= ~COB_FILE_LS_FIXED;
-			f->file_features |= COB_FILE_LS_NULLS;
-			f->file_features |= COB_FILE_LS_SPLIT;
-			f->file_features &= ~COB_FILE_LS_VALIDATE;
+		f->file_features |= COB_FILE_LS_SPLIT;
 #ifdef	_WIN32
-			f->file_features |= COB_FILE_LS_CRLF;
+		f->file_features |= COB_FILE_LS_CRLF;
 #else
-			f->file_features |= COB_FILE_LS_LF;
+		f->file_features |= COB_FILE_LS_LF;
 #endif
+		f->file_features &= ~COB_FILE_LS_FIXED;
+		f->file_features &= ~COB_FILE_LS_VALIDATE;
+		f->file_features &= ~COB_FILE_LS_NULLS;
+		if (f->file_format == COB_FILE_IS_MF) {		/* Set MF defaults */
+			f->file_features |= COB_FILE_LS_NULLS;
 		} else
 		if (f->file_format == COB_FILE_IS_GC) {		/* Set GC defaults */
-			f->file_features &= ~COB_FILE_LS_FIXED;
-			f->file_features &= ~COB_FILE_LS_NULLS;
-			f->file_features &= ~COB_FILE_LS_SPLIT;
-			f->file_features &= ~COB_FILE_LS_VALIDATE;
-#ifdef	_WIN32
-			f->file_features |= COB_FILE_LS_CRLF;
-#else
-			f->file_features |= COB_FILE_LS_LF;
-#endif
+			f->file_features |= COB_FILE_LS_VALIDATE;
 		}
 		if(file_setptr->cob_ls_fixed == 1)
 			f->file_features |= COB_FILE_LS_FIXED;
@@ -4643,7 +4636,8 @@ again:
 				}
 				if (n != '\n') {
 					fseek((FILE*)f->file, -k, SEEK_CUR);
-					if (f->file_format != COB_FILE_IS_MF) 
+					if (!(COB_MODULE_PTR
+					 && COB_MODULE_PTR->flag_dialect == COB_DIALECT_MF))
 						sts = COB_STATUS_06_READ_TRUNCATE;
 				}
 				break;
