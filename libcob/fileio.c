@@ -7193,7 +7193,8 @@ cob_delete_file (cob_file *f, cob_field *fnstatus, const int override)
 	}
 	if (errno == ENOENT) {
 		cob_file_save_status (f, fnstatus, 5);
-		if(f->file_format == COB_FILE_IS_MF) {
+		if (COB_MODULE_PTR
+		 && COB_MODULE_PTR->flag_dialect == COB_DIALECT_MF) {
 			f->file_status[0] = '9';
 			f->file_status[1] = 13;
 			if (fnstatus) {

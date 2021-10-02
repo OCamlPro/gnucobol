@@ -20740,13 +20740,22 @@ AT_DATA([prog.cob], [
 
 ])
 
-AT_CHECK([$COMPILE -ffile-format=gc -w prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -std=default -w prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [1)  Good Delete File
 1a) Delete File Status: '00'
 2)  Delete File Status: '05'
 2a) Delete File Status: '05'
+], [])
+
+AT_CHECK([$COMPILE -std=mf -w prog.cob], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[1)  Good Delete File
+1a) Delete File Status: '00'
+2)  Delete File Status: '9'/013
+2a) Delete File Status: '9'/013
 ], [])
 
 AT_CLEANUP
