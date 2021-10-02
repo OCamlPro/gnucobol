@@ -10851,13 +10851,13 @@ AT_DATA([prog.cob], [
              78 fcd--indexed-org              value 2.
              78 fcd--relative-org             value 3.
              78 fcd--determine-org            value 255. *> see opcode 0006
-           05  FCD-ACCESS-MODE      PIC 9(2) COMP-X.
+           05  FCD-ACCESS-MODE      PIC X COMP-X.
              78 fcd--sequential-access        value 0.
              78 fcd--dup-prime-access         value 1.
              78 fcd--random-access            value 4.
              78 fcd--dynamic-access           value 8.
              78 fcd--status-defined           value h"80".
-           05  FCD-OPEN-MODE        PIC 9(2) COMP-X.
+           05  FCD-OPEN-MODE        PIC X COMP-X.
              78 fcd--open-input               value 0.
              78 fcd--open-output              value 1.
              78 fcd--open-i-o                 value 2.
