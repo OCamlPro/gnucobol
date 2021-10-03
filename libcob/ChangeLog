@@ -2,6 +2,10 @@
 2021-10-03  Ron Norman <rjn@inglenet.com>
 
 	* fileio.c: for LS_OPTIONS set defaults when base format is defined
+				Always check IO/xx_OPTIONS and IO_asgname regardless
+				of filename-mapping setting
+	* fisam.c: Report maximum number of key parts if less than COB_MAX_KEYCOMP
+	* fextfh.c: Use cob_file_malloc to alloc cob_file
 
 2021-10-02  Ron Norman <rjn@inglenet.com>
 

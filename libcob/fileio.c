@@ -932,7 +932,7 @@ cob_key_def (cob_file *f, const int keyn, char *p, int keycheck)
 	if (f->flag_redo_keydef) {		/* Update index definitions */
 		for (k=0; k < (int)f->nkeys && f->keys[k].field != NULL; k++);
 		if (k >= (int)f->nkeys)
-			return 0;	/* CHECKME / add comment */
+			return 0;
 	}
 	/* No match so add this index to table */
 	loc = cloc[0];
@@ -1380,6 +1380,7 @@ cob_read_dict (cob_file *f, char *filename, int updt)
 	return ret;
 }
 
+/* Check for file options from environment variables */
 static char *
 cob_chk_file_env (cob_file *f, const char *src)
 {
@@ -1443,8 +1444,7 @@ cob_chk_file_env (cob_file *f, const char *src)
 			file_open_io_env = cob_get_env (file_open_env, NULL);
 		}
 	}
-	if (file_open_io_env == NULL) {
-		/* Re-check for IO_fdname */
+	if (file_open_io_env == NULL) {	/* Re-check for IO_fdname */
 		snprintf (file_open_env, (size_t)COB_FILE_MAX, "%s%s", "IO_", f->select_name);
 		if ((file_open_io_env = cob_get_env (file_open_env, NULL)) == NULL) {
 			snprintf (file_open_env, (size_t)COB_FILE_MAX, "%s%s", "io_", f->select_name);
@@ -1458,6 +1458,14 @@ cob_chk_file_env (cob_file *f, const char *src)
 		}
 	}
 
+	if (COB_MODULE_PTR
+	&& !COB_MODULE_PTR->flag_filename_mapping) {	/* No DD_name checks */
+		strcpy (file_open_env, file_open_name);
+		if (q) {
+			cob_free (q);
+		}
+		return NULL;
+	}
 
 	p = NULL;
 	for (i = 0; i < NUM_PREFIX; ++i) {
@@ -1500,11 +1508,6 @@ cob_chk_file_mapping (cob_file *f, char *filename)
 	char		*orig;
 	unsigned int	dollar;
 	int		k;
-
-	if (COB_MODULE_PTR
-	&& !COB_MODULE_PTR->flag_filename_mapping) {
-		return;
-	}
 
 	if (filename)
 		strcpy(file_open_name, filename);
@@ -1676,14 +1679,18 @@ cob_cache_del (cob_file *f)
 	}
 }
 
+/* Set options for LINE SEQUENTIAL file */
 static void
 cob_set_ls_defaults (cob_file *f)
 {
+	if (f->organization != COB_ORG_LINE_SEQUENTIAL)
+		return;
 	f->io_routine = COB_IO_LINE_SEQUENTIAL;
 	f->file_features |= COB_FILE_LS_SPLIT;
 #ifdef	_WIN32
 	f->file_features |= COB_FILE_LS_CRLF;
 #else
+	f->file_features &= ~COB_FILE_LS_CRLF;
 	f->file_features |= COB_FILE_LS_LF;
 #endif
 	f->file_features &= ~COB_FILE_LS_FIXED;
@@ -1692,7 +1699,8 @@ cob_set_ls_defaults (cob_file *f)
 	if (f->file_format == COB_FILE_IS_MF) {		/* Set MF defaults */
 		f->file_features |= COB_FILE_LS_NULLS;
 	} else
-	if (f->file_format == COB_FILE_IS_GC) {		/* Set GC defaults */
+	if (f->file_format == COB_FILE_IS_DFLT	
+	 || f->file_format == COB_FILE_IS_GC) { 	/* Set GC defaults */
 		f->file_features |= COB_FILE_LS_VALIDATE;
 	}
 	if(file_setptr->cob_ls_fixed == 1)
@@ -1700,10 +1708,12 @@ cob_set_ls_defaults (cob_file *f)
 	else if(file_setptr->cob_ls_fixed == 0)
 		f->file_features &= ~COB_FILE_LS_FIXED;
 #ifdef	_WIN32
-	if(file_setptr->cob_unix_lf == 1)
+	if(file_setptr->cob_unix_lf == 1) {
+		f->file_features &= ~COB_FILE_LS_CRLF;
 		f->file_features |= COB_FILE_LS_LF;
-	else
+	} else {
 		f->file_features |= COB_FILE_LS_CRLF;
+	}
 #else
 	f->file_features |= COB_FILE_LS_LF;
 #endif
@@ -2033,13 +2043,13 @@ cob_set_file_format (cob_file *f, char *defstr, int updt)
 						f->organization = COB_ORG_LINE_SEQUENTIAL;
 						f->flag_line_adv = 0;
 						f->flag_set_isam = 0;
-						cob_set_ls_defaults (f);
 					} else if(strcasecmp(value,"LA") == 0) {
 						f->organization = COB_ORG_LINE_SEQUENTIAL;
 						f->flag_line_adv = 1;
 						f->flag_set_isam = 0;
 					}
 					cob_set_file_defaults (f);
+					cob_set_ls_defaults (f);
 					if(strcasecmp(value,"DA") == 0) {
 						f->file_format = COB_FILE_IS_MF;
 						f->flag_set_type = 1;
@@ -2316,12 +2326,14 @@ cob_set_file_format (cob_file *f, char *defstr, int updt)
 				}
 				if(strcasecmp(option,"mf") == 0) {	/* LS file like MF would do */
 					f->flag_set_type = 1;
+					f->file_format = COB_FILE_IS_MF;
 					cob_set_ls_defaults (f);
 					continue;
 				}
 				if (strcasecmp(option,"gc") == 0
 				 || strcasecmp(option,"gc3") == 0) {	/* LS file like GnuCOBOL used to do */
 					f->flag_set_type = 1;
+					f->file_format = COB_FILE_IS_GC;
 					cob_set_ls_defaults (f);
 					continue;
 				}
@@ -4174,8 +4186,6 @@ cob_file_close (cob_file_api *a, cob_file *f, const int opt)
 						system(buff);
 #endif
 					}
-#else
-					/* CHECKME: anything to do here? */
 #endif
 				} else {
 					pclose ((FILE *)f->file);
@@ -4956,7 +4966,6 @@ lineseq_rewrite (cob_file_api *a, cob_file *f, const int opt)
 	if (f->flag_select_features & COB_SELECT_LINAGE) {
 		COB_CHECKED_FPUTC ('\n', (FILE *)f->file);
 	} else
-	/* CHECKME - differences to lineseq_write */
 	if ((f->file_features & COB_FILE_LS_CRLF)) {
 		if ((opt & COB_WRITE_PAGE)
 		 || (opt & COB_WRITE_BEFORE && f->flag_needs_nl)) {
@@ -6084,7 +6093,8 @@ cob_file_malloc (cob_file **pfl, cob_file_key **pky,
 	cob_file	*fl;
 	fl = cob_cache_malloc (sizeof (cob_file));
 	fl->file_version = COB_FILE_VERSION;
-	fl->nkeys = (size_t)nkeys;	/* casting away bad difference... */
+	fl->open_mode = COB_OPEN_CLOSED;
+	fl->nkeys = nkeys;	
 
 	if (nkeys > 0
 	 && pky != NULL) {
@@ -8733,7 +8743,6 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 	file_api.del_file_cache = cob_cache_del;
 	file_api.cob_write_dict = cob_write_dict;
 	file_api.cob_read_dict = cob_read_dict;
-	file_api.file_paths = file_paths;
 	file_api.io_funcs = fileio_funcs;
 	file_api.chk_file_mapping = cob_chk_file_mapping;
 	file_api.cob_file_write_opt = cob_file_write_opt;
@@ -8759,6 +8768,7 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 			file_paths[++k] = NULL;
 		}
 	}
+	file_api.file_paths = file_paths;
 
 	file_cache = NULL;
 	eop_status = 0;

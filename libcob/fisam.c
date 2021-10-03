@@ -819,31 +819,39 @@ isam_file_delete (cob_file_api *a, cob_file *f, char *filename)
 static char *
 isam_version (void)
 {
+	static char	msg[64];
+	int		ln = 0;
+	strcpy(msg,"NO ISAM");
+#ifdef NPARTS
+	if (max_keycomp > NPARTS)
+		max_keycomp = NPARTS;
+#endif
+#ifdef ISMAXPARTS
+	if (max_keycomp > ISMAXPARTS)
+		max_keycomp = ISMAXPARTS;
+#endif
 #if defined(WITH_CISAM)
-	return (char*)"C-ISAM";
+	ln = sprintf(msg,"C-ISAM");
 #elif defined(WITH_DISAM)
-	static char	msg[64];
-	sprintf(msg,"D-ISAM %s",isversnumber);
-	return msg;
+	ln = sprintf(msg,"D-ISAM %s",isversnumber);
 #elif defined(WITH_VBISAM)
-	static char	msg[64];
 #ifdef VBISAM_VERSION
-	sprintf(msg,"VB-ISAM %s",VBISAM_VERSION);
+	ln = sprintf(msg,"VB-ISAM %s",VBISAM_VERSION);
 #elif defined  (VB_RTD)
-	strcpy(msg,"VB-ISAM (RTD)");
+	ln = sprintf(msg,"VB-ISAM (RTD)");
 #else
-	strcpy(msg,"VB-ISAM");
+	ln = sprintf(msg,"VB-ISAM");
 #endif
-	return msg;
 #elif defined(WITH_VISAM)
-	static char	msg[64];
 #ifdef VISAM_VERSION
-	sprintf(msg,"V-ISAM %s ",VISAM_VERSION);
+	ln = sprintf(msg,"V-ISAM %s ",VISAM_VERSION);
 #else
-	strcpy(msg,"VB-CISAM (May not work!)");
+	ln = sprintf(msg,"VB-CISAM (May not work!)");
 #endif
+#endif
+	if (max_keycomp < COB_MAX_KEYCOMP)
+		sprintf(&msg[ln]," (max %d key parts)",max_keycomp);
 	return msg;
-#endif
 }
 
 /* OPEN INDEXED file */

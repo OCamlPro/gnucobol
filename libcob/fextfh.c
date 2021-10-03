@@ -381,7 +381,7 @@ copy_keys_fcd_to_file (FCD3 *fcd, cob_file *f, int doall)
 	EXTKEY	*key;
 	f->flag_keycheck = 0;
 	parts_seen = 0;
-	for (k=0; k < (int)f->nkeys; k++) {
+	for (k=0; k < f->nkeys; k++) {
 		if (fcd->kdbPtr->key[k].keyFlags & KEY_SPARSE) {
 			f->keys[k].char_suppress = fcd->kdbPtr->key[k].sparse;
 			f->keys[k].tf_suppress = 1;
@@ -817,7 +817,9 @@ static cob_file *
 find_file (FCD3 *fcd)
 {
 	cob_file	*f;
+	cob_file_key *k;
 	struct fcd_file	*ff;
+	int	nkeys, linage;
 	for (ff = fcd_file_list; ff; ff=ff->next) {
 		if (ff->fcd == fcd) {
 			f = ff->f;
@@ -830,9 +832,13 @@ find_file (FCD3 *fcd)
 		}
 	}
 	/* create cob_file */
-	f = cob_cache_malloc (sizeof(cob_file));
-	f->file_version = COB_FILE_VERSION;
-	f->open_mode = COB_OPEN_CLOSED;
+	nkeys = linage = 0;
+	if (fcd->kdbPtr != NULL
+	 && LDCOMPX2(fcd->kdbPtr->nkeys) > 0) {
+		/* Copy Key information from FCD to cob_file */
+		nkeys = LDCOMPX2(fcd->kdbPtr->nkeys);
+	}
+	cob_file_malloc (&f, &k, nkeys, linage);
 	f->fcd = fcd;
 	copy_fcd_to_file (fcd, f);
 	/* attach it to our fcd_file_list, if not found above create a new one */
@@ -856,8 +862,7 @@ find_file (FCD3 *fcd)
 static void
 update_record_and_keys_if_necessary (cob_file * f, FCD3 *fcd)
 {
-	if (f->record == NULL) {
-		/* that's actually an error, it seems */
+	if (f->record == NULL) { /* that's actually an error, it seems */
 		return;
 	}
 	if (f->record->data != fcd->recPtr
@@ -866,7 +871,6 @@ update_record_and_keys_if_necessary (cob_file * f, FCD3 *fcd)
 			f->record->data = fcd->recPtr;
 		} else {
 			f->record->data = cob_cache_malloc (f->record_max + 1);
-			/* CHECKME: is that somewhere freed? */
 		}
 		f->record->size = LDCOMPX4(fcd->curRecLen);
 		f->record->attr = &alnum_attr;
@@ -1394,10 +1398,8 @@ EXTFH3 (unsigned char *opcode, FCD3 *fcd)
 	fs->data = fnstatus;
 	fs->size = sizeof(fnstatus);
 	fs->attr = &alnum_attr;
-#if 0	/* why? */
 	memcpy (fnstatus, "00", 2);
 	memcpy (fcd->fileStatus, "00", 2);
-#endif
 
 	if (cobglobptr == NULL) {	/* Auto Init GnuCOBOL runtime */
 		cob_init (0, NULL);
@@ -1406,7 +1408,7 @@ EXTFH3 (unsigned char *opcode, FCD3 *fcd)
 		COB_MODULE_PTR = cob_malloc( sizeof(cob_module) );
 		COB_MODULE_PTR->module_name = "GnuCOBOL-fileio";
 		COB_MODULE_PTR->module_source = "GnuCOBOL-fileio";
-		COB_MODULE_PTR->module_formatted_date = "2021/09/21 12:01:20";
+		COB_MODULE_PTR->module_formatted_date = "2021/10/03 12:01:20";
 	}
 
 	if (*opcode == 0xFA) {
