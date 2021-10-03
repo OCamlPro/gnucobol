@@ -2154,6 +2154,9 @@ cob_set_file_format (cob_file *f, char *defstr, int updt)
 					} else if (strcasecmp(value,"mf") == 0) {
 						f->file_format = COB_FILE_IS_MF;
 						f->flag_set_type = 1;
+						if (f->organization == COB_ORG_LINE_SEQUENTIAL) {
+							cob_set_ls_defaults (f);
+						}
 					} else if (strcasecmp(value,"gc") == 0
 							|| strcasecmp(value,"gc3") == 0) {
 						f->file_format = COB_FILE_IS_GC;
@@ -2313,31 +2316,13 @@ cob_set_file_format (cob_file *f, char *defstr, int updt)
 				}
 				if(strcasecmp(option,"mf") == 0) {	/* LS file like MF would do */
 					f->flag_set_type = 1;
-					f->flag_ls_instab = 0;
-					f->file_features &= ~COB_FILE_LS_FIXED;
-					f->file_features |= COB_FILE_LS_NULLS;
-					f->file_features |= COB_FILE_LS_SPLIT;
-					f->file_features &= ~COB_FILE_LS_VALIDATE;
-#ifdef	_WIN32
-					f->file_features |= COB_FILE_LS_CRLF;
-#else
-					f->file_features |= COB_FILE_LS_LF;
-#endif
+					cob_set_ls_defaults (f);
 					continue;
 				}
 				if (strcasecmp(option,"gc") == 0
 				 || strcasecmp(option,"gc3") == 0) {	/* LS file like GnuCOBOL used to do */
 					f->flag_set_type = 1;
-					f->flag_ls_instab = 0;
-					f->file_features &= ~COB_FILE_LS_FIXED;
-					f->file_features &= ~COB_FILE_LS_NULLS;
-					f->file_features &= ~COB_FILE_LS_SPLIT;
-					f->file_features &= ~COB_FILE_LS_VALIDATE;
-#ifdef	_WIN32
-					f->file_features |= COB_FILE_LS_CRLF;
-#else
-					f->file_features |= COB_FILE_LS_LF;
-#endif
+					cob_set_ls_defaults (f);
 					continue;
 				}
 			}

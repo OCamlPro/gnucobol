@@ -1,4 +1,8 @@
 
+2021-10-03  Ron Norman <rjn@inglenet.com>
+
+	* fileio.c: for LS_OPTIONS set defaults when base format is defined
+
 2021-10-02  Ron Norman <rjn@inglenet.com>
 
 	* common.c: Runtime report show 'not set' if that was the default
