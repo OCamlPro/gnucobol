@@ -12796,3 +12796,38 @@ note: TooHigh3 has version 4.0.1.2
 ], [])
 
 AT_CLEANUP
+
+
+AT_SETUP([assorted math])
+AT_KEYWORDS([runmisc expression])
+
+# this is a test containing differnt small reproducers from
+# bug reports
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 n pic 99 value 89.
+       01 variable usage signed-int value 0.
+          88 a-one value 1.
+          88 a-two value 2.
+       LINKAGE SECTION.
+       PROCEDURE DIVISION.
+           display n(n**0+ 1:).   *> bug # 702 ("pow"-call in generated program
+           if not a-one and not a-two  *> arithmetic handling (optimize code)
+              display 'succeeded'
+           else
+              display 'failed'
+           end-if.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[9
+succeeded
+], [])
+
+AT_CLEANUP

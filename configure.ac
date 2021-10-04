@@ -534,12 +534,35 @@ if test "x$COB_CC" = "x"; then
 	COB_CC="$CC"
 fi
 
-# FIXME: -lm should only be used if needed (which it often is not), see Bug #559
-if test "$COB_USES_ICC_ONLY" = "yes"; then
-	COMMON_LIBS="-limf -lm"
-else
-	COMMON_LIBS="-lm"
-fi
+
+# Get necessary math libs, if any (often part of the C library)
+# until shown otherwise these are not needed currently as all
+# "real" compute functions are used from GMP within libcob only
+# and math.h is nowhere included
+#AC_MSG_NOTICE([Checks for math library ...])
+#if test "x$MATH_LIBS" = "x"; then
+#	if test "$COB_USES_ICC_ONLY" = "yes"; then
+#		MATH_LIBS="-limf -lm"
+#	else
+#		curr_libs=$LIBS
+#		AC_SEARCH_LIBS([cos], [m], [], [
+#		  AC_MSG_ERROR([unable to find the cos() function])
+#		])
+#		if test "x$curr_libs" = "x"; then
+#			MATH_LIBS=$LIBS
+#		else
+#			MATH_LIBS=$(echo "$LIBS" | sed 's#'"$curr_libs"'##')
+#		fi
+#		LIBS=$curr_libs
+#	fi
+#fi
+#if test "x$MATH_LIBS" = "x"; then
+#	AC_MSG_NOTICE([none needed])
+#else
+#	AC_MSG_NOTICE([using $MATH_LIBS])
+#fi
+#COMMON_LIBS=MATH_LIBS
+
 if test "x$LIBCOB_LIBS" != "x"; then
 	LIBCOB_LIBS="$LIBCOB_LIBS $COMMON_LIBS"
 else
@@ -1519,18 +1542,18 @@ if test "$DEFINE_DL" = "no" -a "$with_dl" = "yes"; then
       if test "$DEFINE_DL" = "yes"; then
         AC_DEFINE([USE_LIBDL], [1])
         LIBCOB_LIBS="$LIBCOB_LIBS -ldl"
-        AC_CHECK_LIB([dl], [dladdr], [AC_DEFINE([HAVE_DLADDR], [1])], [], [])
+        # AC_CHECK_LIB([dl], [dladdr], [AC_DEFINE([HAVE_DLADDR], [1])], [], [])
       else
         AC_CHECK_LIB([dld], [dlopen], [DEFINE_DL="yes"], [], [])
         if test "$DEFINE_DL" = "yes"; then
           AC_DEFINE([USE_LIBDL], [1])
           LIBCOB_LIBS="$LIBCOB_LIBS -ldld"
-          AC_CHECK_LIB([dld], [dladdr], [AC_DEFINE([HAVE_DLADDR], [1])], [], [])
+          # AC_CHECK_LIB([dld], [dladdr], [AC_DEFINE([HAVE_DLADDR], [1])], [], [])
         fi
       fi
     else
       AC_DEFINE([USE_LIBDL], [1])
-      AC_CHECK_LIB([c], [dladdr], [AC_DEFINE([HAVE_DLADDR], [1])], [], [])
+      # AC_CHECK_LIB([c], [dladdr], [AC_DEFINE([HAVE_DLADDR], [1])], [], [])
     fi
   fi
 fi

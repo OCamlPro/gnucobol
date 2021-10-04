@@ -1,4 +1,10 @@
 
+2021-10-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_integer, output_long_integer): use
+	  integer exponentiation in libcob instead of floating point
+	  from libmath/math.h, fixing #702
+
 2021-10-01  Simon Sobisch <simonsobisch@gnu.org>
 
 	* ppparse.y, pplex.l, scanner.l: implementation of COBOL-WORDS directive

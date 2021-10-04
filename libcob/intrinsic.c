@@ -2221,29 +2221,13 @@ rest_is_offset_format (const char *str, const int with_colon)
 	}
 }
 
-/*
-  This function is needed because, on MinGW, (int) pow (10, 8) == 9999999, not
-  10^8. This also occurs with other powers. See http://stackoverflow.com/q/9704195.
-*/
-static unsigned int
-int_pow (const unsigned int base, unsigned int power)
-{
-	unsigned int	ret = 1;
-
-	while (power > 0) {
-	        ret *= base;
-		--power;
-	}
-
-	return ret;
-}
-
+/* CHECKME: Why not using GMP string functions here? */
 static void
 add_decimal_digits (int decimal_places, cob_decimal *second_fraction,
 		    char *buff, ptrdiff_t *buff_pos)
 {
-	unsigned int	scale = second_fraction->scale;
-	unsigned int	power_of_ten;
+	int	scale = second_fraction->scale;
+	int	power_of_ten;
 	unsigned int	fraction = mpz_get_ui (second_fraction->value);
 
 	/* Add decimal point */
@@ -2253,7 +2237,7 @@ add_decimal_digits (int decimal_places, cob_decimal *second_fraction,
 	/* Append decimal digits from second_fraction from left to right */
 	while (scale != 0 && decimal_places != 0) {
 		--scale;
-		power_of_ten = int_pow (10, scale);
+		power_of_ten = cob_s32_pow (10, scale);
 		buff[*buff_pos] = (char) ('0' + (fraction / power_of_ten));
 
 		fraction %= power_of_ten;

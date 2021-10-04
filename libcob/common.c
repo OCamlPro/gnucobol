@@ -60,6 +60,12 @@
 #ifdef	HAVE_SIGNAL_H
 #include <signal.h>
 #endif
+#ifndef SIGFPE
+#ifndef NSIG
+#define NSIG 240
+#endif
+#define SIGFPE NSIG + 1
+#endif
 
 #ifdef	HAVE_LOCALE_H
 #include <locale.h>
@@ -862,11 +868,9 @@ cob_sig_handler (int signal_value)
 		fprintf (stderr, _("bus error"));
 		break;
 #endif
-#ifdef	SIGFPE
-	case SIGFPE:
+	case SIGFPE:	/* always defined, if missing */
 		fprintf (stderr, _("fatal arithmetic error"));
 		break;
-#endif
 	default:
 		fprintf (stderr, _("caught signal"));
 		break;

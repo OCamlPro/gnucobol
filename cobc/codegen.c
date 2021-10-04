@@ -2862,7 +2862,8 @@ output_integer (cb_tree x)
 			}
 		}
 		if (p->op == '^') {
-			output ("(int) pow (");
+			/* TODO: Optimize: base of constant 1/-1 -> (int)0 */
+			output ("cob_s32_pow (");
 			output_integer (p->x);
 			output (", ");
 			output_integer (p->y);
@@ -3161,7 +3162,8 @@ output_long_integer (cb_tree x)
 			}
 		}
 		if (p->op == '^') {
-			output ("(cob_s64_t) pow (");
+			/* TODO: Optimize: base of constant 1/-1 -> (int)0 */
+			output ("cob_s64_pow (");
 			output_long_integer (p->x);
 			output (", ");
 			output_long_integer (p->y);

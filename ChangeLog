@@ -1,4 +1,11 @@
 
+2021-10-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: cleanup for math library check fixing #559
+	* configure.ac: removed check for dladdr as we don't use it
+	* configure.ac: removed math library as not necessary anymore,
+	  see related #702
+
 2021-09-15  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: allow local cJSON to be used during cross-compile

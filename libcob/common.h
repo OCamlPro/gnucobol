@@ -1970,6 +1970,9 @@ COB_EXPIMP void	cob_decimal_pop		(const cob_u32_t, ...);
 
 COB_EXPIMP void	cob_gmp_free		(void *);
 
+COB_EXPIMP cob_s32_t	cob_s32_pow	(cob_s32_t, cob_s32_t);
+COB_EXPIMP cob_s64_t	cob_s64_pow (cob_s64_t, cob_s64_t);
+
 
 /*******************************/
 /* Functions in call.c */

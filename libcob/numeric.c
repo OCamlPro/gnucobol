@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2020 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2021 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -63,6 +63,17 @@
 #endif
 #include "libcob.h"
 #include "coblocal.h"
+
+
+#ifdef	HAVE_SIGNAL_H
+#include <signal.h>
+#endif
+#ifndef SIGFPE
+#ifndef NSIG
+#define NSIG 240
+#endif
+#define SIGFPE NSIG + 1
+#endif
 
 #define DECIMAL_CHECK(d1,d2) \
 	if (unlikely (d1->scale == COB_DECIMAL_NAN || \
@@ -2612,6 +2623,49 @@ cob_decimal_pop (const cob_u32_t params, ...)
 	}
 	va_end (args);
 }
+
+/* Helper routines (pow functions for integers to not stumble over truncation from double)
+
+  (int) pow ((double)10, (double)8) may be 9999999, not 10^8.
+  This also applies to other powers. See http://stackoverflow.com/q/9704195.
+
+  while using signed types we actually _expect_ only positive exponents
+*/
+
+#define POW_IMPL(type)	                           \
+{                                                  \
+	type	ret;                                   \
+	if (power == 0 || base == 1 || base == -1) {   \
+		return 1;                                  \
+	}                                              \
+	if (power < 0) {                               \
+		/* division by zero */                     \
+		if (base == 0) {                           \
+			cob_raise (SIGFPE);                    \
+		}                                          \
+		/* too small -> (int)0 */                  \
+		return 0;                                  \
+	}                                              \
+	ret = 1;                                       \
+	while (power > 0) {                            \
+		ret *= base;                               \
+		--power;                                   \
+	}                                              \
+	return ret;                                    \
+}
+
+cob_s32_t
+cob_s32_pow (cob_s32_t base, cob_s32_t power)
+{
+	POW_IMPL(cob_s32_t)
+}
+cob_s64_t
+cob_s64_pow (cob_s64_t base, cob_s64_t power)
+{
+	POW_IMPL (cob_s64_t)
+}
+#undefine POW_IMPL
+
 
 /* Init/Exit routines */
 
