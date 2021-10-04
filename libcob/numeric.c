@@ -2664,7 +2664,7 @@ cob_s64_pow (cob_s64_t base, cob_s64_t power)
 {
 	POW_IMPL (cob_s64_t)
 }
-#undefine POW_IMPL
+#undef POW_IMPL
 
 
 /* Init/Exit routines */

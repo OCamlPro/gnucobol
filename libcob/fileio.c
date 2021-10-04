@@ -65,7 +65,7 @@
 #if !defined(__BORLANDC__) && !defined(__WATCOMC__) && !defined(__ORANGEC__)
 #define	getcwd		_getcwd
 #define	chdir		_chdir
-#define	mkdir		_mkdir
+#define	mkdir(path,mode)		_mkdir(mode)
 #define	rmdir		_rmdir
 #define	open		_open
 #define	close		_close
@@ -6567,11 +6567,7 @@ cob_sys_create_dir (unsigned char *dir)
 		return -1;
 	}
 	fn = cob_str_from_fld (COB_MODULE_PTR->cob_procedure_params[0]);
-#ifdef	_WIN32
-	ret = mkdir (fn);
-#else
 	ret = mkdir (fn, 0770);
-#endif
 	cob_free (fn);
 	if (ret) {
 		return 128;
@@ -7914,10 +7910,10 @@ update_fcd_to_file (FCD3* fcd, cob_file *f, cob_field *fnstatus, int wasOpen)
 			cobglobptr->cob_exception_code = 0;
 		}
 		if (f->file_status) {
-			memcpy(f->file_status, fcd->fileStatus, 2);
+			memcpy (f->file_status, fcd->fileStatus, 2);
 		}
 		if (fnstatus) {
-			memcpy(fnstatus->data, fcd->fileStatus, 2);
+			memcpy (fnstatus->data, fcd->fileStatus, 2);
 		}
 	}
 	if (wasOpen > 0) {
@@ -8187,7 +8183,7 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f)
 			if (fcd->kdbPtr != NULL
 			 && LDCOMPX2(fcd->kdbPtr->nkeys) > 0) {
 				/* Copy Key information from FCD to cob_file,
-				   CHECKME: possibly only for ORG_DETERMINE ? */
+				   CHECKME: possibly only for ORG_DETERMINE + OP-DELETE-FILE ? */
 				f->nkeys = LDCOMPX2(fcd->kdbPtr->nkeys);
 				if (f->nkeys > MAX_FILE_KEYS) {
 					/* CHECKME - Should this result in any error handling? */
@@ -8483,11 +8479,11 @@ cob_extfh_open (
 
 	fcd = find_fcd(f);
 	f->last_open_mode = mode;
-	if(mode == COB_OPEN_OUTPUT)
+	if (mode == COB_OPEN_OUTPUT)
 		STCOMPX2(OP_OPEN_OUTPUT, opcode);
-	else if(mode == COB_OPEN_I_O)
+	else if (mode == COB_OPEN_I_O)
 		STCOMPX2(OP_OPEN_IO, opcode);
-	else if(mode == COB_OPEN_EXTEND)
+	else if (mode == COB_OPEN_EXTEND)
 		STCOMPX2(OP_OPEN_EXTEND, opcode);
 	else
 		STCOMPX2(OP_OPEN_INPUT, opcode);
@@ -9227,7 +9223,7 @@ org_handling:
 	rec->attr = &alnum_attr;
 
 #if 0	/* CHECKME: why should we adjust the access mode?
-	If wrong file status should be raised in the following functions */
+	If wrong file, status should be raised in the following functions */
 	if (f->organization == COB_ORG_INDEXED
 	&& (f->open_mode == COB_OPEN_I_O
 	 || f->open_mode == COB_OPEN_OUTPUT)) {

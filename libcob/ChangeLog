@@ -5,6 +5,8 @@
 	* numeric.c (cob_s32_pow, cob_s64_pow), common.h: new functions for
 	  integer exponentiation, see related #702
 	* intrinsic.c: replace int_pow definition and use with cob_s32_pow
+	* fileio.c [WIN32]: redefine mkdir instead of handling mode parameter
+	  via defines when used
 
 2021-09-30  Simon Sobisch <simonsobisch@gnu.org>
 
