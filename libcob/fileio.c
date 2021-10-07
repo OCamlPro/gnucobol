@@ -65,7 +65,7 @@
 #if !defined(__BORLANDC__) && !defined(__WATCOMC__) && !defined(__ORANGEC__)
 #define	getcwd		_getcwd
 #define	chdir		_chdir
-#define	mkdir(path,mode)		_mkdir(mode)
+#define	mkdir(path,mode)		_mkdir(path)
 #define	rmdir		_rmdir
 #define	open		_open
 #define	close		_close
@@ -8106,27 +8106,22 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f)
 
 	/* Try for some record size */
 	min = LDCOMPX4(fcd->minRecLen);
-	max = LDCOMPX4(fcd->maxRecLen);
-	k   = LDCOMPX4(fcd->curRecLen);
-	if (min < 0) { /* Should not happen, but we're unsigned ... */
+	if (min < 0) {
 		min = 0;
 		STCOMPX4 (min, fcd->minRecLen);
 	}
-	f->record_min = min;
-	if (max > 0) {
-		f->record_max = max;
-	} else if (k > 0) {
-		max = k;
-		STCOMPX4 (k, fcd->maxRecLen);
-	}
+	k   = LDCOMPX4(fcd->curRecLen);
 	if (k < min) {
 		k = min;
-		STCOMPX4 (min, fcd->curRecLen);
+		STCOMPX4 (k, fcd->curRecLen);
 	}
-	if (k > max) {
-		k = max;
-		STCOMPX4 (max, fcd->curRecLen);
+	max = LDCOMPX4(fcd->maxRecLen);
+	if (max < k) {
+		max = k;
+		STCOMPX4 (max, fcd->maxRecLen);
 	}
+	f->record_min = min;
+	f->record_max = max;
 	/* Allocate cob_file fields as needed and copy from FCD */
 	if (f->record == NULL
 	 && fcd->recPtr != NULL
