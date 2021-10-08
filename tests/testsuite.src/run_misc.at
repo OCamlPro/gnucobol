@@ -12815,8 +12815,10 @@ AT_DATA([prog.cob], [
           88 a-two value 2.
        LINKAGE SECTION.
        PROCEDURE DIVISION.
-           display n(n**0+ 1:).   *> bug # 702 ("pow"-call in generated program
-           if not a-one and not a-two  *> arithmetic handling (optimize code)
+      *> bug #702, "pow"-call in generated program
+           display n(n**0+ 1:).
+      *> bug #631 arithmetic handling (optimize code)
+           if not a-one and not a-two
               display 'succeeded'
            else
               display 'failed'

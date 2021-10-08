@@ -643,9 +643,47 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([Overlapping MOVE])
+AT_SETUP([Overlapping MOVE (GnuCOBOL)])
 AT_KEYWORDS([fundamental])
 
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA  DIVISION.
+       WORKING-STORAGE SECTION.
+       01  FILLER.
+         05  TSTMOV1 PIC X(479).
+         05  TSTMOV2 PIC X(10).
+       PROCEDURE DIVISION.
+           MOVE "0123456789" TO TSTMOV2.
+           MOVE TSTMOV2 (2:9) TO TSTMOV2 (1:9)
+           IF TSTMOV2 NOT = "1234567899"
+              DISPLAY "  PROBLEM MOVE: " TSTMOV2
+           ELSE
+              DISPLAY "  OK with MOVE: " TSTMOV2.
+           MOVE "0123456789" TO TSTMOV2.
+           MOVE TSTMOV2 (1:8) TO TSTMOV2 (2:8)
+           IF TSTMOV2 = "0000000009"
+              DISPLAY "IBM style MOVE: " TSTMOV2
+           ELSE IF TSTMOV2 NOT = "0012345679"
+              DISPLAY "  PROBLEM MOVE: " TSTMOV2
+           ELSE
+              DISPLAY "  OK with MOVE: " TSTMOV2.
+           STOP RUN.
+])
+
+# directly seen by the compiler
+AT_CHECK([$COMPILE prog.cob], [0], [],
+[prog.cob:11: warning: overlapping MOVE may produce unpredictable results
+prog.cob:17: warning: overlapping MOVE may produce unpredictable results
+])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[  OK with MOVE: 1234567899
+  OK with MOVE: 0012345679
+], [])
+
+# not seen by the compiler because in LINKAGE
 AT_DATA([subprog.cob], [
         IDENTIFICATION DIVISION.
         PROGRAM-ID. subprog.
@@ -656,18 +694,16 @@ AT_DATA([subprog.cob], [
         01 F2 PIC X(15).
 
         PROCEDURE DIVISION USING F1 F2.
-        MOVE F2(1:6) TO F1 (1:8).
-        IF F1 not = "Hallo1  90"
-           DISPLAY "error:3: " F1
-           END-DISPLAY
-        END-IF
+        MOVE F1(1:8) TO F2 (7:8).
+        IF F2 NOT = "Hallo1123456780"
+           DISPLAY "error:3: " F2.
 
         GOBACK.
 ])
 
-AT_DATA([prog.cob], [
+AT_DATA([prog2.cob], [
         IDENTIFICATION DIVISION.
-        PROGRAM-ID. prog.
+        PROGRAM-ID. prog2.
 
         DATA DIVISION.
         WORKING-STORAGE SECTION.
@@ -679,72 +715,19 @@ AT_DATA([prog.cob], [
            MOVE "Hallo" TO FIELD1.
            MOVE "1234567890" TO FIELD2.
 
-           MOVE FIELD2 TO STRUCTURE.
-           IF FIELD1 not = "12345"
-              DISPLAY "error:1: " FIELD1
-              END-DISPLAY
-           END-IF
-           IF FIELD2 not = "67890     "
-              DISPLAY "error:2: " FIELD2
-              END-DISPLAY
-           END-IF
-
-
-           MOVE "Hallo" TO FIELD1.
-           MOVE "1234567890" TO FIELD2.
-
-           CALL "subprog" USING BY REFERENCE FIELD2 STRUCTURE
-           END-CALL
+           CALL "subprog" USING BY REFERENCE FIELD2 STRUCTURE.
 
            STOP RUN.
 ])
 
+AT_CHECK([$COMPILE prog2.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE subprog.cob], [0], [], [])
-AT_CHECK([$COMPILE prog.cob], [0], [],
-[prog.cob:15: warning: overlapping MOVE may produce unpredictable results
-])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
-
-AT_DATA([prog2.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. prog2.
-       DATA  DIVISION.
-       WORKING-STORAGE SECTION.
-       01  FILLER.
-         05  TSTMOV1 PIC X(479).
-         05  TSTMOV2 PIC X(10).
-       PROCEDURE DIVISION.
-           MOVE "0123456789" TO TSTMOV2.
-           MOVE TSTMOV2 (2:9) TO TSTMOV2 (1:9)
-           IF TSTMOV2 NOT = "1234567899"
-              DISPLAY "  PROBLEM MOVE: " TSTMOV2
-           ELSE
-              DISPLAY "  OK with MOVE: " TSTMOV2.
-           MOVE "0123456789" TO TSTMOV2.
-           MOVE TSTMOV2 (1:8) TO TSTMOV2 (2:8)
-           IF TSTMOV2 = "0000000009"
-              DISPLAY "IBM style MOVE: " TSTMOV2
-           ELSE IF TSTMOV2 NOT = "0012345679"
-              DISPLAY "  PROBLEM MOVE: " TSTMOV2
-           ELSE
-              DISPLAY "  OK with MOVE: " TSTMOV2.
-           STOP RUN.
-])
-
-AT_CHECK([$COMPILE prog2.cob], [0], [],
-[prog2.cob:11: warning: overlapping MOVE may produce unpredictable results
-prog2.cob:17: warning: overlapping MOVE may produce unpredictable results
-])
-
-AT_CHECK([$COBCRUN_DIRECT ./prog2], [0],
-[  OK with MOVE: 1234567899
-  OK with MOVE: 0012345679
-], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [], [])
 
 AT_CLEANUP
 
 
-AT_SETUP([Overlapping MOVE])
+AT_SETUP([Overlapping MOVE (IBM)])
 AT_KEYWORDS([fundamental])
 
 AT_DATA([prog.cob], [
@@ -773,54 +756,54 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [],
-[prog.cob:11: warning: overlapping MOVE may produce unpredictable results
-prog.cob:17: warning: overlapping MOVE may produce unpredictable results
-])
-
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
-[  OK with MOVE: 1234567899
-  OK with MOVE: 0012345679
-], [])
-
-AT_CLEANUP
-
-
-AT_SETUP([IBM MOVE])
-AT_KEYWORDS([fundamental])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. prog.
-       DATA  DIVISION.
-       WORKING-STORAGE SECTION.
-       01  FILLER.
-         05  TSTMOV1 PIC X(479).
-         05  TSTMOV2 PIC X(10).
-       PROCEDURE DIVISION.
-           MOVE "0123456789" TO TSTMOV2.
-           MOVE TSTMOV2 (2:9) TO TSTMOV2 (1:9)
-           IF TSTMOV2 NOT = "1234567899"
-              DISPLAY "  PROBLEM MOVE: " TSTMOV2
-           ELSE
-              DISPLAY "  OK with MOVE: " TSTMOV2.
-           MOVE "0123456789" TO TSTMOV2.
-           MOVE TSTMOV2 (1:8) TO TSTMOV2 (2:8)
-           IF TSTMOV2 = "0000000009"
-              DISPLAY "IBM style MOVE: " TSTMOV2
-           ELSE IF TSTMOV2 NOT = "0012345679"
-              DISPLAY "  PROBLEM MOVE: " TSTMOV2
-           ELSE
-              DISPLAY "  OK with MOVE: " TSTMOV2.
-           STOP RUN.
-])
-
+# Overlap directly seen by the compiler, ignored because of move-ibm
 AT_CHECK([$COMPILE -fmove-ibm prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [  OK with MOVE: 1234567899
 IBM style MOVE: 0000000009
 ], [])
+
+# not seen by the compiler because in LINKAGE
+AT_DATA([subprog.cob], [
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. subprog.
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        LINKAGE SECTION.
+        01 F1 PIC X(10).
+        01 F2 PIC X(15).
+
+        PROCEDURE DIVISION USING F1 F2.
+        MOVE F1(1:8) TO F2 (7:8).
+        IF F2 NOT = "Hallo1111111110"
+           DISPLAY "error:3: " F2.
+
+        GOBACK.
+])
+
+AT_DATA([prog2.cob], [
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. prog2.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 STRUCTURE.
+            05 FIELD1 PIC X(5).
+            05 FIELD2 PIC X(10).
+
+        PROCEDURE DIVISION.
+           MOVE "Hallo" TO FIELD1.
+           MOVE "1234567890" TO FIELD2.
+
+           CALL "subprog" USING BY REFERENCE FIELD2 STRUCTURE.
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog2.cob], [0], [], [])
+AT_CHECK([$COMPILE_MODULE -fmove-ibm subprog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [], [])
 
 AT_CLEANUP
 
