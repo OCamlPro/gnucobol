@@ -1,7 +1,7 @@
 #!/bin/sh
 # cobcinfo.sh gnucobol/doc
 #
-# Copyright (C) 2010,2012, 2015-2020 Free Software Foundation, Inc.
+# Copyright (C) 2010,2012, 2015-2021 Free Software Foundation, Inc.
 # Written by Roger While, Simon Sobisch, James K. Lowden
 #
 # This file is part of GnuCOBOL.
@@ -202,6 +202,11 @@ _create_file () {
 			printf "\n\n" >>$1
 		done
 		;;
+	"cbexceptions.tex")
+		echo "@verbatim"   >$1
+		$COBC -q --list-exceptions >> $1
+		echo "">>$1; echo "@end verbatim"   >>$1
+		;;
 	"cbconf.tex")
 		lines=2
 		$GREP -A9999 "https://www.gnu.org/licenses/" \
@@ -219,7 +224,7 @@ _create_file () {
 docdir="`dirname $0`"
 confdir="$docdir/../config"
 created_texfiles="cbhelp.tex cbchelp.tex cbrese.tex cbintr.tex cbsyst.tex"
-created_texfiles="$created_texfiles cbmnem.tex cbconf.tex cbrunt.tex"
+created_texfiles="$created_texfiles cbmnem.tex cbexceptions.tex cbconf.tex cbrunt.tex"
 
 
 # for old systems that don't support this POSIX parameter expansion:
@@ -240,6 +245,7 @@ case "${1##*/}" in
 		_create_file "cbintr.tex"
 		_create_file "cbsyst.tex"
 		_create_file "cbmnem.tex"
+		_create_file "cbexceptions.tex"
 		;;
 	"conf")
 		_create_file "cbconf.tex"
@@ -252,7 +258,8 @@ case "${1##*/}" in
 	"cbsyst.tex" |\
 	"cbmnem.tex" |\
 	"cbconf.tex" |\
-	"cbrunt.tex")
+	"cbrunt.tex" |\
+	"cbexceptions.tex")
 		_create_file "${1##*/}"
 		;;
 	"fixtimestamps")

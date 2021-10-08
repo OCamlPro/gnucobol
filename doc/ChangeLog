@@ -1,4 +1,11 @@
 
+2021-10-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobcinfo.sh, gnucobol.texi, Makefile.am: added generation and use
+	  of cbexceptions.tex (needs to be beautified later)
+	* Makefile.am.texi: removed hacky overwrite of TEXI2DVI, because
+	  the additional includes seem not to be necessary in any case
+
 2020-10-13  Simon Sobisch <simonsobisch@gnu.org>
 
 	* gnucobol.texi: remove node structuring that is identical to default

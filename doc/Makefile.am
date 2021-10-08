@@ -1,7 +1,7 @@
 #
 # Makefile gnucobol/doc
 #
-# Copyright (C) 2003-2012, 2015-2020 Free Software Foundation, Inc.
+# Copyright (C) 2003-2012, 2015-2021 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -39,7 +39,7 @@ COBCINFOSH = $(PASSED_OPTIONS) $(top_builddir)/pre-inst-env \
 
 info_TEXINFOS = gnucobol.texi
 GENINCLUDES = cbhelp.tex cbrese.tex cbintr.tex cbsyst.tex cbmnem.tex \
-	cbconf.tex cbchelp.tex cbrunt.tex
+	cbconf.tex cbchelp.tex cbrunt.tex cbexceptions.tex
 gnucobol_TEXINFOS = $(GENINCLUDES) fdl.texi
 BUILT_SOURCES = $(GENINCLUDES)
 
@@ -68,10 +68,19 @@ cbrese.tex cbsyst.tex cbmnem.tex: \
 	 $(top_srcdir)/cobc/reserved.c \
 	$(top_srcdir)/doc/cobcinfo.sh
 	$(COBCINFOSH) $@
+
+cbexceptions.tex: \
+	 $(top_srcdir)/cobc/reserved.c \
+	 $(top_srcdir)/libcob/exception.def \
+	 $(top_srcdir)/libcob/exception-io.def \
+	 $(top_srcdir)/doc/cobcinfo.sh
+	$(COBCINFOSH) $@
+
 else
 cbchelp.tex \
  cbhelp.tex cbintr.tex \
- cbrese.tex cbsyst.tex cbmnem.tex: \
+ cbrese.tex cbsyst.tex cbmnem.tex \
+ cbexceptions.tex: \
 	$(top_srcdir)/doc/cobcinfo.sh
 	$(COBCINFOSH) "fixtimestamps"
 endif
@@ -100,4 +109,3 @@ dist_noinst_SCRIPTS = cobcinfo.sh cbhelp.tex.gen cbintr.tex.gen cbrunt.tex.gen
 AM_MAKEINFOHTMLFLAGS = --no-headers --no-split
 CLEANFILES = *.aux  *.cp *.fn *.ky *.log *.pg *.toc *.tp *.vr *.vrs
 MAINTAINERCLEANFILES = $(GENINCLUDES)
-TEXI2DVI = texi2dvi -I $(srcdir)
