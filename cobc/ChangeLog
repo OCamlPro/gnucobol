@@ -1,4 +1,11 @@
 
+2021-10-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* field.c (cb_build_full_field_reference): fix bug #776
+	  infinite loop for FILLER definitions above KEY in OCCURS
+	* field.c (copy_into_field_recursive): explicit const specification for
+	  key references
+
 2021-10-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c (output_integer, output_long_integer): use
