@@ -3136,20 +3136,13 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -flarger-redefines-ok -Wno-constant-expression prog.cob], [0], [],
-[prog.cob:12: warning: size of 'XMAIN0502' larger than size of 'XMAIN0501'
-prog.cob:21: warning: size of 'FIRST-VARIANT-A' larger than size of 'FIRST-DATA'
-prog.cob:23: warning: size of 'FIRST-VARIANT-B' larger than size of 'FIRST-DATA'
-prog.cob:25: warning: size of 'FIRST-VARIANT-C' larger than size of 'FIRST-DATA'
-prog.cob:31: warning: size of 'SECOND-VARIANT-A' larger than size of 'SECOND-HEADER'
-prog.cob:33: warning: size of 'SECOND-VARIANT-B' larger than size of 'SECOND-HEADER'
-])
+AT_CHECK([$COMPILE -flarger-redefines=ok -Wno-constant-expression prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
 AT_SETUP([REDEFINES: non-referenced ambiguous item])
-AT_KEYWORDS([extensions redefines])
+AT_KEYWORDS([extensions redefines mf])
 
 # bad extension, supported for compatibility to at least MicroFocus
 # the redefines always applies to the item defined before 

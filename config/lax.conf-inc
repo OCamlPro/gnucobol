@@ -45,8 +45,8 @@ complex-odo:			yes
 # Allow REDEFINES to other than last equal level number
 indirect-redefines:		yes
 
-# Allow larger REDEFINES items
-larger-redefines-ok:		yes
+# Allow larger REDEFINES items other than 01 non-external
+larger-redefines:		+warning
 
 # Allow certain syntax variations (eg. REDEFINES position)
 relax-syntax-checks:		yes

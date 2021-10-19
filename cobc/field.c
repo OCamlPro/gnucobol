@@ -2549,7 +2549,7 @@ compute_size (struct cb_field *f)
 	 && !(f->report_flag & COB_REPORT_LINE_PLUS)
 	 && f->parent
 	 && f->parent->children != f) {
-		for(c = f->parent->children; c && c != f; c = c->sister) {
+		for (c = f->parent->children; c && c != f; c = c->sister) {
 			if ((c->report_flag & COB_REPORT_LINE)
 			 && !(c->report_flag & COB_REPORT_LINE_PLUS)
 			 && c->report_line == f->report_line) {
@@ -2585,10 +2585,7 @@ unbounded_again:
 				if (c->level != 66
 				 && c->size * c->occurs_max >
 				    c->redefines->size * c->redefines->occurs_max) {
-					if (cb_larger_redefines_ok) {
-						cb_warning_x (cb_warn_additional, CB_TREE (c),
-							_("size of '%s' larger than size of '%s'"),
-							c->name, c->redefines->name);
+					if (cb_verify_x (CB_TREE (c), cb_larger_redefines, _("larger REDEFINES"))) {
 						maxsz = c->redefines->size * c->redefines->occurs_max;
 						for (c0 = c->redefines->sister; c0 != c; c0 = c0->sister) {
 							if (c0->size * c0->occurs_max > maxsz) {
@@ -2598,10 +2595,11 @@ unbounded_again:
 						if (c->size * c->occurs_max > maxsz) {
 							size_check += (c->size * c->occurs_max) - maxsz;
 						}
-					} else {
-						cb_error_x (CB_TREE (c),
-							    _("size of '%s' larger than size of '%s'"),
-							    c->name, c->redefines->name);
+					}
+					if (cb_larger_redefines >= CB_WARNING) {
+						cb_note_x (cb_warn_dialect, CB_TREE (c),
+							_("size of '%s' larger than size of '%s'"),
+							c->name, c->redefines->name);
 					}
 				}
 			} else {
@@ -2844,17 +2842,22 @@ unbounded_again:
 		}
 	}
 
-	/* The size of redefining field should not be larger than
-	   the size of redefined field unless the redefined field
-	   is level 01 and non-external */
-	if (f->redefines && f->redefines->flag_external &&
-	    (f->size * f->occurs_max > f->redefines->size * f->redefines->occurs_max)) {
-		if (cb_larger_redefines_ok) {
-			cb_warning_x (cb_warn_additional, CB_TREE (f),
-				_("size of '%s' larger than size of '%s'"),
-				f->name, f->redefines->name);
+	/* COBOL standard: The size of redefining field should not be larger
+	   than the size of redefined field unless the redefined field is
+	   level 01 and non-external */
+	if (f->level == 1 && f->redefines
+	 && (f->size * f->occurs_max > f->redefines->size * f->redefines->occurs_max)) {
+		/* note: when allowed the redefined field is NOT size-adjusted here */
+		if (f->redefines->flag_external) {
+			if (!cb_verify_x (CB_TREE (f), cb_larger_redefines, _("larger REDEFINES"))
+			 || cb_larger_redefines == CB_WARNING) {
+				cb_note_x (cb_warn_dialect, CB_TREE (f),
+					_("size of '%s' larger than size of '%s'"),
+					f->name, f->redefines->name);
+			}
 		} else {
-			cb_error_x (CB_TREE (f), _("size of '%s' larger than size of '%s'"),
+			cb_warning_x (cb_warn_larger_01_redefines, CB_TREE (f),
+				_("size of '%s' larger than size of '%s'"),
 				f->name, f->redefines->name);
 		}
 	}

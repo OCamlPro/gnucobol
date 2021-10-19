@@ -24,7 +24,7 @@
 /* Always active, start doc with do not warn...  */
 /* CB_ONWARNDEF (var, name, doc) */
 
-/* Do not include warning with -Wall */
+/* Do not include warning with -Wextra [or old: -Wall] */
 /* CB_NOWARNDEF (var, name, doc) */
 
 CB_WARNDEF (cb_warn_additional, "additional",
@@ -92,6 +92,9 @@ CB_WARNDEF (cb_warn_constant_expr, "constant-expression",
 
 CB_WARNDEF (cb_warn_constant_numlit_expr, "constant-numlit-expression",
 	_("  -Wconstant-numlit-expression\twarn about numeric expressions that always resolve to true/false"))
+
+CB_WARNDEF (cb_warn_larger_01_redefines, "larger-01-redefines",
+	_("  -Wlarger-01-redefines  warn about larger redefines allowed by COBOL standards"))
 
 CB_NOWARNDEF (cb_warn_column_overflow, "column-overflow",
 	_("  -Wcolumn-overflow     warn about text after program-text area, FIXED format"))

@@ -1,4 +1,13 @@
 
+2021-10-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* config.def (larger-redefines): changed to support option from boolean
+	  larger-redefines-ok
+	* warning.def (cb_warn_larger_01_redefines): new warning for possibly
+	  problematic but allowed level 01 non-external REDEFINE
+	* field.c (compute_size): cater for cb_larger_redefines and
+	  cb_warn_larger_01_redefines
+
 2021-10-18  Simon Sobisch <simonsobisch@gnu.org>
 
 	* field.c (cb_build_full_field_reference): fix bug #776

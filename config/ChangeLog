@@ -1,4 +1,9 @@
 
+2021-10-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: changed larger-redefines-ok (boolean) to larger-redefines,
+	  now a support option allowing "warning only"
+
 2021-09-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* lax.conf-inc: set synchronized-clause to be only ignored if the

@@ -106,9 +106,6 @@ CB_CONFIG_BOOLEAN (cb_odoslide, "odoslide",
 CB_CONFIG_BOOLEAN (cb_indirect_redefines, "indirect-redefines",
 	_("allow REDEFINES to other than last equal level number"))
 
-CB_CONFIG_BOOLEAN (cb_larger_redefines_ok, "larger-redefines-ok", /* TO-DO: change to CB_CONFIG_SUPPORT */
-	_("allow larger REDEFINES items"))
-
 CB_CONFIG_BOOLEAN (cb_relaxed_syntax_checks, "relax-syntax-checks",
 	_("allow certain syntax variations (e.g. REDEFINES position)"))
 
@@ -302,6 +299,10 @@ CB_CONFIG_SUPPORT (cb_accept_display_extensions, "accept-display-extensions",
 
 CB_CONFIG_SUPPORT (cb_renames_uncommon_levels, "renames-uncommon-levels",
 	_("RENAMES of 01-, 66- and 77-level items"))
+
+/* larger REDEFINES items other than 01 non-external */
+CB_CONFIG_SUPPORT (cb_larger_redefines, "larger-redefines",
+	_("allow larger REDEFINES items"))
 
 CB_CONFIG_SUPPORT (cb_symbolic_constant, "symbolic-constant",
 	_("constants defined in SPECIAL-NAMES"))

@@ -41,6 +41,12 @@ NEWS - user visible changes				-*- outline -*-
    -std=ibm/mvs/bs2000, for compatibility to previous behaviour compile
    with -fno-odoslide
 
+** the dialect configuration option larger-redefines-ok was changed to
+   a support option larger-redefines; if specified on the command-line
+   it is now -f[no-]larger-redefines instead of -f[no-]larger-redefines-ok,
+   which allows to also raise a warning for those with -flarger-redefines=warn
+   Note: the short one works both in current and older versions of cobc
+
 ** the GnuCOBOL extension of auto-adding the RECURSIVE attribute
    if a program potentially calls its own PROGRAM-ID was moved
    to a dialect option; it is now only active with -std=default
@@ -51,6 +57,8 @@ NEWS - user visible changes				-*- outline -*-
 ** adjustments to warning options:
    -Wconstant-expression was changed to a group warning and includes
     the new, previously integrated, -Wconstant-numlit-expression
+   -Wlarger-01-redefines as new warning (included with -Wextra) to check for
+    the only larger REDEFINES that is explicit allowed by the COBOL standard
 
 ** new compiler command line option to list the known runtime exception names
    and fatality `cobc --list-exceptions`
