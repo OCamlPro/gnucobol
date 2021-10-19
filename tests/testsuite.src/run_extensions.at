@@ -3104,39 +3104,27 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            MOVE    LENGTH OF XMAIN       TO Z.
            IF Z NOT = 8
-              DISPLAY "Test 1 " Z
-              END-DISPLAY
-           END-IF.
+              DISPLAY "Test 1 " Z.
            MOVE    LENGTH OF XMAINRED    TO Z.
            IF Z NOT = 9
-              DISPLAY "Test 2 " Z
-              END-DISPLAY
-           END-IF.
+              DISPLAY "Test 2 " Z.
            MOVE    LENGTH OF XMAIN03     TO Z.
            IF Z NOT = 5
-              DISPLAY "Test 3 " Z
-              END-DISPLAY
-           END-IF.
+              DISPLAY "Test 3 " Z.
            MOVE    LENGTH OF XMAIN0501   TO Z.
            IF Z NOT = 4
-              DISPLAY "Test 4 " Z
-              END-DISPLAY
-           END-IF.
+              DISPLAY "Test 4 " Z.
            MOVE    LENGTH OF XMAIN0502   TO Z.
            IF Z NOT = 5
-              DISPLAY "Test 5 " Z
-              END-DISPLAY
-           END-IF.
+              DISPLAY "Test 5 " Z.
            IF LENGTH OF USE-FIRST  NOT = 33211
-              DISPLAY LENGTH OF USE-FIRST   END-DISPLAY
-           END-IF.
+              DISPLAY LENGTH OF USE-FIRST   END-DISPLAY.
            IF LENGTH OF USE-SECOND NOT = 27241
-              DISPLAY LENGTH OF USE-SECOND  END-DISPLAY
-           END-IF.
+              DISPLAY LENGTH OF USE-SECOND  END-DISPLAY.
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -flarger-redefines=ok -Wno-constant-expression prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -flarger-redefines=ok -w prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
