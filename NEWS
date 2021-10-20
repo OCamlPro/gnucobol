@@ -96,8 +96,8 @@ NEWS - user visible changes				-*- outline -*-
    automatically disabled if the process ends upon signals SIGINT/SIGTERM and
    now also disabled upon SIGHUP/SIGPIPE
 
-** source references shown in diagnostic messages during runtime, the tracing
-   options and during debugging were extended, for example each executed WHEN,
+** source references shown in diagnostic messages and for trace at runtime
+   as well as during debugging were extended, for example each executed WHEN,
    VARYING and UNTIL phrases are now seen
 
 

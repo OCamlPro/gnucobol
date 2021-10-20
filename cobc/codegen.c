@@ -9866,7 +9866,11 @@ output_field_display (struct cb_field *f, size_t offset,
 
 	svlocal = f->flag_local;
 	f->flag_local = 0;
-	x = cb_build_field_reference (f, NULL);
+	if (f->level != 88) {
+		x = cb_build_field_reference (f, NULL);
+	} else {
+		x = cb_build_field_reference (f->parent, NULL);
+	}
 	output_prefix ();
 	if (output_as_comment) {
 		output ("/* ");
@@ -9927,7 +9931,8 @@ output_field_display (struct cb_field *f, size_t offset,
 	     || f->flag_item_based
 	     || f->flag_external
 	     || f->flag_is_global
-	     || f->flag_any_length)) {
+	     || f->flag_any_length
+		 || f->level == 88)) {
 		if (!output_as_comment) {
 			output (" /*");
 		}
@@ -9950,6 +9955,29 @@ output_field_display (struct cb_field *f, size_t offset,
 		if (f->flag_any_length) {
 			output (" ANYLENGTH");
 		}
+		/* always last entry */
+		if (f->level == 88) {
+			cb_tree l;
+			int param = 0;
+			/* Build condition */
+			for (l = f->values; l; l = CB_CHAIN (l)) {
+				cb_tree t = CB_VALUE (l);
+				if (!param) {
+					output (" VALUE ");
+				} else {
+					output (" OR ");
+				}
+				if (CB_PAIR_P (t)) {
+					/* VALUE THRU VALUE */
+					output_param (CB_PAIR_X (t), param++);
+					output (" THRU ");
+					output_param (CB_PAIR_Y (t), param++);
+				} else {
+					/* VALUE */
+					output_param (t, param++);
+				}
+			}
+		}
 		if (!output_as_comment) {
 			output (" */");
 		}
@@ -9967,8 +9995,7 @@ output_display_fields (struct cb_field *f, size_t offset, unsigned int idx)
 	for (; f; f = f->sister) {
 		int has_based_check = 0;
 		/* skip entries we never want to dump */
-		if (f->level == 88
-		 || (f->level == 0 && f->file == NULL)) {
+		if (f->level == 0 && f->file == NULL) {
 			continue;
 		}
 		/* For special registers */
@@ -9980,6 +10007,7 @@ output_display_fields (struct cb_field *f, size_t offset, unsigned int idx)
 		   note: using increment/decrement and
 		         static as we are called recursive */
 		if (f->redefines
+		 || f->level == 88
 		 || f->level == 78
 		 || f->level == 66) {
 			if (!cb_wants_dump_comments) {
@@ -10064,12 +10092,18 @@ output_display_fields (struct cb_field *f, size_t offset, unsigned int idx)
 			field_subscript[idx-1] = -(int)idx;
 			size_subscript[idx-1] = f->size;
 			output_field_display (f, offset, idx);
+			if (cb_wants_dump_comments && f->validation) {
+				output_display_fields (f->validation, offset, idx);
+			}
 			output_display_fields (f->children, offset, idx);
 			output_block_close ();
 			output_block_close ();
 			idx--;
 		} else {
 			output_field_display (f, offset, idx);
+			if (cb_wants_dump_comments && f->validation) {
+				output_display_fields (f->validation, offset, idx);
+			}
 			output_display_fields (f->children, offset, idx);
 		}
 		if (has_based_check) {

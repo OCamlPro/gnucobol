@@ -7,6 +7,9 @@
 	  problematic but allowed level 01 non-external REDEFINE
 	* field.c (compute_size): cater for cb_larger_redefines and
 	  cb_warn_larger_01_redefines
+	* codegen.c (output_display_fields, output_field_display): add validation
+	  (level 88) items in commented output if COBC_GEN_DUMP_COMMENTS is active
+	  with full list of VALUE constants
 
 2021-10-18  Simon Sobisch <simonsobisch@gnu.org>
 
