@@ -16732,6 +16732,1287 @@ AT_CHECK([diff references traces.txt], [0], [], [])
 
 AT_CLEANUP
 
+AT_SETUP([Over use FCD ])
+AT_KEYWORDS([EXTFH])
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT SYSUT1
+               FILE STATUS IS SYSUT1-STATUS
+               ORGANIZATION IS SEQUENTIAL
+               ASSIGN TO SYSUT1-DSN.
+       DATA DIVISION.
+       FILE SECTION.
+       FD  SYSUT1
+           BLOCK CONTAINS 1 RECORDS.
+       01  SYSUT1-DATA               PIC X(120).
+       WORKING-STORAGE SECTION.
+       77  TESTING                   PIC X(01).
+       77  FCD-STS                   PIC X(02) VALUE 'xx'.
+       77  FROM-FCD                  PIC X(256).
+       77  FROM-KEY                  PIC X(600).
+       77  TO-FCD                    PIC X(256).
+       77  TO-KEY                    PIC X(600).
+       77  KEYBLOCK-FUNC   PIC X(08).
+       77  KEYBLOCK-STATUS PIC X(02).
+       77  KEYBLOCK  PIC X(500).
+       77  ZKEYBLCK PIC X(08) VALUE 'ZKEYBLCK'.
+       77  EXFHKEYS PIC X(08) VALUE 'EXFHKEYS'.
+       77  SYSUT1-DSN                      PIC X(64).
+       77  SYSUT1-STATUS                   PIC X(02).
+       77  CKEYS                           PIC 9(04) COMP-5.
+       77  NKEYS                           PIC 9(04) COMP-5.
+       77  CURR-OFF                        PIC 9(04) COMP-5.
+       77  I                               PIC 9(04) COMP-5.
+       77  J                               PIC 9(04) COMP-5.
+       77  K                               PIC 9(04) COMP-5.
+       77  L                               PIC 9(04) COMP-5.
+       77  M                               PIC 9(04) COMP-5.
+       77  WRITE-LOOP                      PIC X(01) VALUE '0'.
+       77  FH-ACTION                       PIC X(02).
+       77  VER                             PIC 9.
+       01  FILE-NAME                       PIC X(64).
+       01  FILLER REDEFINES FILE-NAME.
+           05  FILE-NAME-CHR  PIC X OCCURS 64 TIMES.
+       77  FILE-NAME-LEN                   PIC 9(04) COMP-X.
+       01  PROGRAM-FIELDS.
+           05  ZOSICF-SVC.
+               10  FH-CODE        PIC X(01).
+               10  FH-ACTION-CODE PIC X(01).
+       01  ACB-KEY-GROUP.
+           05  ACB-CNT          PIC 9(02).
+           05  ACB-KEY-TABLE OCCURS 32 TIMES.
+               10  ACB-KEY-LEN  PIC 9(04) COMP-4.
+               10  ACB-KEY-POS  PIC 9(04) COMP-4.
+               10  ACB-KEY-DUPE PIC 9(02) COMP-X.
+      *COPY EXTFHOPS.
+       01  ACTION-CODE.
+           05  ACTION-TYPE    PIC X(01).
+               78  COBOL-TYPE                  VALUE X'FA'.
+               78  SPECIAL-TYPE                VALUE X'00'.
+           05  COBOL-OP       PIC X(01).
+               78  OPEN-INPUT                  VALUE X'00'.
+               78  OPEN-OUTPUT                 VALUE X'01'.
+               78  OPEN-I-O                    VALUE X'02'.
+               78  OPEN-EXTEND                 VALUE X'03'.
+               78  OPEN-INPUT-NO-REWIND        VALUE X'04'.
+               78  OPEN-OUTPUT-NO-REWIND       VALUE X'05'.
+               78  OPEN-INPUT-REVERSED         VALUE X'08'.
+               78  CLOSE-FILE                  VALUE X'80'.
+               78  CLOSE-LOCK                  VALUE X'81'.
+               78  CLOSE-NO-REWIND             VALUE X'82'.
+               78  CLOSE-REEL-UNIT             VALUE X'84'.
+               78  CLOSE-REEL-UNIT-FOR-REMOVAL VALUE X'85'.
+               78  CLOSE-REEL-UNIT-NO-REWIND   VALUE X'86'.
+               78  READ-SEQ-NO-LOCK            VALUE X'8D'.
+               78  READ-SEQ-LOCK               VALUE X'D8'.
+               78  READ-SEQ-KEPT-LOCK          VALUE X'D9'.
+               78  READ-SEQ                    VALUE X'F5'.
+               78  READ-PREVIOUS-NO-LOCK       VALUE X'8C'.
+               78  READ-PREVIOUS-LOCK          VALUE X'DE'.
+               78  READ-PREVIOUS-KEPT-LOCK     VALUE X'DF'.
+               78  READ-PREVIOUS               VALUE X'F9'.
+               78  READ-RANDOM-NO-LOCK         VALUE X'8E'.
+               78  READ-RANDOM-LOCK            VALUE X'DA'.
+               78  READ-RANDOM-KEPT-LOCK       VALUE X'DB'.
+               78  READ-RANDOM                 VALUE X'F6'.
+               78  READ-DIRECT-NO-LOCK         VALUE X'8F'.
+               78  READ-DIRECT-LOCK            VALUE X'D6'.
+               78  READ-DIRECT-KEPT-LOCK       VALUE X'D7'.
+               78  READ-DIRECT                 VALUE X'C9'.
+               78  READ-POSITION               VALUE X'F1'.
+               78  WRITE-BEFORE                VALUE X'E1'.
+               78  WRITE-AFTER                 VALUE X'E2'.
+               78  WRITE-BEFORE-TAB            VALUE X'E3'.
+               78  WRITE-AFTER-TAB             VALUE X'E4'.
+               78  WRITE-BEFORE-PAGE           VALUE X'E5'.
+               78  WRITE-AFTER-PAGE            VALUE X'E6'.
+               78  WRITE-RECORD                VALUE X'F3'.
+               78  REWRITE-RECORD              VALUE X'F4'.
+               78  START-EQUAL-PRIME-KEY       VALUE X'E8'.
+               78  START-EQUAL-KEY             VALUE X'E9'.
+               78  START-GREATER               VALUE X'EA'.
+               78  START-NOT-LESS              VALUE X'EB'.
+               78  START-LESS                  VALUE X'FE'.
+               78  START-LESS-OR-EQUAL         VALUE X'FF'.
+               78  STEP-NEXT-NO-LOCK           VALUE X'90'.
+               78  STEP-NEXT-LOCK              VALUE X'D4'.
+               78  STEP-NEXT-KEPT-LOCK         VALUE X'D5'.
+               78  STEP-NEXT                   VALUE X'CA'.
+               78  STEP-FIRST-NO-LOCK          VALUE X'92'.
+               78  STEP-FIRST-LOCK             VALUE X'D0'.
+               78  STEP-FIRST-KEPT-LOCK        VALUE X'D1'.
+               78  STEP-FIRST                  VALUE X'CC'.
+               78  DELETE-RECORD               VALUE X'F7'.
+               78  DELETE-FILE                 VALUE X'F8'.
+               78  UNLOCK-CURRENT              VALUE X'0E'.
+               78  COMMIT-ALL                  VALUE X'DC'.
+               78  ROLLBACK-ALL                VALUE X'DD'.
+               78  GET-FILE-INFO               VALUE X'06'.
+               78  OPEN-NEW-INDEX              VALUE X'07'.
+               78  GET-NEXT-RECORD             VALUE X'08'.
+               78  ADD-KEY-VALUE               VALUE X'09'.
+               78  UNLOCK-RECORD               VALUE X'0F'.
+       01  FCD-AREA.
+           COPY xfhfcd.
+
+       01  RECORD-AREA.
+           05  PRIME-KEY                   PIC X(20).
+           05  DATA-AREA-G.
+               10  DATA-AREA1              PIC 9(18).
+           05  DATA-AREA                   PIC X(50).
+
+       01  KEY-DEF-AREA PIC X(512).
+
+       PROCEDURE DIVISION.
+       A-000-MAIN.
+           DISPLAY 'TESTING' UPON ENVIRONMENT-NAME
+           ACCEPT TESTING FROM ENVIRONMENT-VALUE
+           IF TESTING = 'X'
+               DISPLAY '**************** TEST 1 DELETE B6353 *****'
+               PERFORM A-1000-DELETE-FILE
+               DISPLAY '**************** TEST 2 CREATE B6353*****'
+               PERFORM A-100-CREATE-FILE
+               DISPLAY '**************** TEST 6  DELETE B6555 ****'
+               PERFORM A-1005-DELETE-B6555
+               DISPLAY '**************** TEST 7  CREATE B6555 ****'
+               PERFORM A-105-CREATE-B6555
+               DISPLAY '**************** TEST 5 OPEN B6353 *******'
+               PERFORM A-120-OPEN
+               DISPLAY '**************** TEST 5 OPEN B6555 *****'
+               PERFORM A-125-OPEN-B6555
+               STOP RUN
+           END-IF
+           IF TESTING = '1'
+               DISPLAY '**************** TEST 1 DELETE B6353 *****'
+               PERFORM A-1000-DELETE-FILE
+               STOP RUN
+           END-IF
+           IF TESTING = '2'
+               DISPLAY '**************** TEST 2 CREATE B6353*****'
+               PERFORM A-100-CREATE-FILE
+               STOP RUN
+           END-IF
+           IF TESTING = '3'
+               DISPLAY '**************** TEST 3 ******************'
+               PERFORM A-1000-DELETE-FILE
+               DISPLAY '**************** TEST 3  DELETE **********'
+               PERFORM A-100-CREATE-FILE
+               STOP RUN
+           END-IF
+           IF TESTING = '4'
+               DISPLAY '**************** TEST 4  OPEN B6353 ******'
+               PERFORM A-120-OPEN
+               DISPLAY '**************** TEST 4  OPEN B6555 ******'
+               PERFORM A-125-OPEN-B6555
+               STOP RUN
+           END-IF
+           IF TESTING = '5'
+               DISPLAY '**************** TEST 5 OPEN B6353 *******'
+               PERFORM A-120-OPEN
+               DISPLAY '**************** TEST 5 OPEN B6555 *****'
+               PERFORM A-125-OPEN-B6555
+               STOP RUN
+           END-IF
+           IF TESTING = '6'
+               DISPLAY '**************** TEST 6  DELETE B6555 ****'
+               PERFORM A-1005-DELETE-B6555
+               STOP RUN
+           END-IF
+           IF TESTING = '7'
+               DISPLAY '**************** TEST 7  CREATE B6555 ****'
+               PERFORM A-105-CREATE-B6555
+               STOP RUN
+           END-IF
+           PERFORM A-300-READ-RECORD.
+           DISPLAY 'AFTER READ ------>   ' RECORD-AREA (1:55)
+           MOVE '1234567890' TO RECORD-AREA (46:10)
+           PERFORM A-400-REWRITE-RECORD.
+           PERFORM A-300-READ-RECORD.
+           DISPLAY 'AFTER REWRITE -----> ' RECORD-AREA (1:55)
+           MOVE SPACES TO DATA-AREA.
+           PERFORM A-400-REWRITE-RECORD.
+           PERFORM A-700-START.
+           PERFORM A-800-READ-PREVIOUS.
+           DISPLAY 'AFTER READ PREV ->   ' RECORD-AREA (1:55)
+           PERFORM A-900-DELETE.
+           DISPLAY 'DELETE SUCCESSFUL -> '
+           PERFORM A-600-CLOSE-FILE.
+      **   DELETE FILE AND INDEX(S)
+           PERFORM A-1000-DELETE-FILE.
+           DISPLAY 'DELETE FILE SUCCESSFUL'
+           STOP RUN.
+       A-100-CREATE-FILE.
+           MOVE LOW-VALUES TO FCD-AREA
+           MOVE FCD--VERSION-NUMBER TO FCD-VERSION.
+           MOVE LOW-VALUES TO ACB-KEY-GROUP
+      ** MAKE 3 KEYS
+           MOVE 2 TO ACB-CNT
+           MOVE 0 TO ACB-KEY-POS (1)
+           MOVE 20 TO ACB-KEY-LEN (1)
+           MOVE 0 TO ACB-KEY-DUPE (1)
+           MOVE 30 TO ACB-KEY-POS (2)
+           MOVE 20 TO ACB-KEY-LEN (2)
+           MOVE 1 TO ACB-KEY-DUPE (2)
+      ** MAKE MF KEY-DEF
+           CALL EXFHKEYS USING
+                         ACB-KEY-GROUP
+                         KEY-DEF-AREA
+           MOVE KEY-DEF-AREA TO KEYBLOCK
+           MOVE 'B6353.VSM' TO FILE-NAME
+           SET FCD-KEY-DEF-ADDRESS TO ADDRESS OF KEY-DEF-AREA
+      **   STORE THE KEY DATA
+           MOVE 'OPIO' TO KEYBLOCK-FUNC
+           CALL ZKEYBLCK USING
+                         KEYBLOCK-FUNC
+                         KEYBLOCK
+                         FILE-NAME
+                         FCD-AREA
+                         KEYBLOCK-STATUS
+           DISPLAY 'KEYBLOCK STATUS04 =:' KEYBLOCK-STATUS
+           MOVE 'DLET' TO KEYBLOCK-FUNC
+           CALL ZKEYBLCK USING
+                         KEYBLOCK-FUNC
+                         KEYBLOCK
+                         FILE-NAME
+                         FCD-AREA
+                         KEYBLOCK-STATUS
+           MOVE 'ISRT' TO KEYBLOCK-FUNC
+           CALL ZKEYBLCK USING
+                         KEYBLOCK-FUNC
+                         KEYBLOCK
+                         FILE-NAME
+                         FCD-AREA
+                         KEYBLOCK-STATUS
+           MOVE 'SYSUT01.DATA' TO SYSUT1-DSN
+           OPEN OUTPUT SYSUT1
+           MOVE KEYBLOCK (1:120) TO SYSUT1-DATA
+           WRITE SYSUT1-DATA
+           CLOSE SYSUT1
+           DISPLAY 'KEYBLOCK STATUS05 =:' KEYBLOCK-STATUS
+           MOVE 'CLOSE' TO KEYBLOCK-FUNC
+           CALL ZKEYBLCK USING
+                         KEYBLOCK-FUNC
+                         KEYBLOCK
+                         FILE-NAME
+                         FCD-AREA
+                         KEYBLOCK-STATUS
+           DISPLAY 'KEYBLOCK STATUS06 =:' KEYBLOCK-STATUS
+           MOVE X'FA01' TO FH-ACTION
+           SET FCD-KEY-DEF-ADDRESS TO ADDRESS OF KEY-DEF-AREA
+           MOVE 'B6353.VSM' TO FILE-NAME
+           COMPUTE FILE-NAME-LEN = FUNCTION LENGTH (FILE-NAME)
+           MOVE FILE-NAME-LEN TO FCD-NAME-LENGTH
+           MOVE 0 TO FCD-ACCESS-MODE
+           MOVE 2 TO FCD-ORGANIZATION
+      **   FIXED OR VARIABLE
+           MOVE 1 TO FCD-RECORDING-MODE
+           MOVE 0 TO FCD-RECORDING-MODE
+           SET FCD-FILENAME-ADDRESS TO ADDRESS OF FILE-NAME
+           MOVE 100 TO FCD-MIN-REC-LENGTH
+           MOVE 100 TO FCD-MAX-REC-LENGTH
+      ** CREATE THE ISAM FILE
+           MOVE 128 TO FCD-OPEN-MODE
+           MOVE X'FA01' TO ZOSICF-SVC
+           CALL 'EXTFH' USING
+                        ZOSICF-SVC
+                        FCD-AREA
+           MOVE '02' TO FCD-STS PERFORM FCD-REPORT
+      ** CLOSE THE ISAM FILE
+           MOVE X'FA80' TO ZOSICF-SVC
+           CALL 'EXTFH' USING
+                       ZOSICF-SVC
+                       FCD-AREA
+           MOVE '03' TO FCD-STS PERFORM FCD-REPORT.
+       A-100-EXIT.
+           EXIT.
+       A-105-CREATE-B6555.
+           MOVE LOW-VALUES TO ACB-KEY-GROUP
+      ** MAKE 3 KEYS
+           MOVE 2  TO ACB-CNT
+           MOVE 0  TO ACB-KEY-POS (1)
+           MOVE 20 TO ACB-KEY-LEN (1)
+           MOVE 0  TO ACB-KEY-DUPE (1)
+           MOVE 30 TO ACB-KEY-POS (2)
+           MOVE 20 TO ACB-KEY-LEN (2)
+           MOVE 1  TO ACB-KEY-DUPE (2)
+      ** MAKE MF KEY-DEF
+           CALL EXFHKEYS USING
+                         ACB-KEY-GROUP
+                         KEY-DEF-AREA
+           MOVE KEY-DEF-AREA TO KEYBLOCK
+           MOVE 'B6555.VSM' TO FILE-NAME
+           SET FCD-KEY-DEF-ADDRESS TO ADDRESS OF KEY-DEF-AREA
+      **   STORE THE KEY DATA
+           MOVE 'OPIO' TO KEYBLOCK-FUNC
+           CALL ZKEYBLCK USING
+                         KEYBLOCK-FUNC
+                         KEYBLOCK
+                         FILE-NAME
+                         FCD-AREA
+                         KEYBLOCK-STATUS
+           DISPLAY 'KEYBLOCK STATUS04 =:' KEYBLOCK-STATUS
+           MOVE 'DLET' TO KEYBLOCK-FUNC
+           CALL ZKEYBLCK USING
+                         KEYBLOCK-FUNC
+                         KEYBLOCK
+                         FILE-NAME
+                         FCD-AREA
+                         KEYBLOCK-STATUS
+           MOVE 'ISRT' TO KEYBLOCK-FUNC
+           CALL ZKEYBLCK USING
+                         KEYBLOCK-FUNC
+                         KEYBLOCK
+                         FILE-NAME
+                         FCD-AREA
+                         KEYBLOCK-STATUS
+           MOVE LOW-VALUES TO FCD-AREA
+           MOVE FCD--VERSION-NUMBER TO FCD-VERSION.
+           MOVE 'SYSUT01.DATA' TO SYSUT1-DSN
+           OPEN OUTPUT SYSUT1
+           MOVE KEYBLOCK (1:120) TO SYSUT1-DATA
+           WRITE SYSUT1-DATA
+           CLOSE SYSUT1
+           DISPLAY 'KEYBLOCK STATUS05 =:' KEYBLOCK-STATUS
+           MOVE 'CLOSE' TO KEYBLOCK-FUNC
+           CALL ZKEYBLCK USING
+                         KEYBLOCK-FUNC
+                         KEYBLOCK
+                         FILE-NAME
+                         FCD-AREA
+                         KEYBLOCK-STATUS
+           DISPLAY 'KEYBLOCK STATUS06 =:' KEYBLOCK-STATUS
+           MOVE X'FA01' TO FH-ACTION
+           SET FCD-KEY-DEF-ADDRESS TO ADDRESS OF KEYBLOCK
+           MOVE 'B6555.VSM' TO FILE-NAME
+           COMPUTE FILE-NAME-LEN = FUNCTION LENGTH (FILE-NAME)
+           MOVE FILE-NAME-LEN TO FCD-NAME-LENGTH
+           MOVE 0 TO FCD-ACCESS-MODE
+           MOVE 2 TO FCD-ORGANIZATION
+      **   FIXED OR VARIABLE
+           MOVE 1 TO FCD-RECORDING-MODE
+           MOVE 0 TO FCD-RECORDING-MODE
+           SET FCD-FILENAME-ADDRESS TO ADDRESS OF FILE-NAME
+           MOVE 100 TO FCD-MIN-REC-LENGTH
+           MOVE 100 TO FCD-MAX-REC-LENGTH FCD-CURRENT-REC-LEN
+      ** CREATE THE ISAM FILE
+           MOVE 128 TO FCD-OPEN-MODE
+           MOVE X'FA01' TO ZOSICF-SVC
+           CALL 'EXTFH' USING
+                        ZOSICF-SVC
+                        FCD-AREA
+           MOVE '12' TO FCD-STS PERFORM FCD-REPORT
+      ** CLOSE THE ISAM FILE
+           MOVE X'FA80' TO ZOSICF-SVC
+           CALL 'EXTFH' USING
+                       ZOSICF-SVC
+                       FCD-AREA
+           MOVE '13' TO FCD-STS PERFORM FCD-REPORT.
+       A-100-EXIT.
+           EXIT.
+       A-110-WRITE.
+           MOVE X'FA02' TO FH-ACTION
+           MOVE 8 TO FCD-ACCESS-MODE
+           PERFORM A-200-CALL-EXTFH.
+           MOVE '1' TO WRITE-LOOP.
+           MOVE LOW-VALUE TO RECORD-AREA
+           MOVE 0 TO DATA-AREA1
+           ADD 1 TO DATA-AREA1
+           MOVE 400 TO FCD-CURRENT-REC-LEN
+           MOVE 'RECORD-1'           TO PRIME-KEY.
+           MOVE X'FAF3' TO FH-ACTION
+           SET FCD-RECORD-ADDRESS    TO ADDRESS OF RECORD-AREA.
+           PERFORM A-200-CALL-EXTFH.
+           DISPLAY 'GOOD RECORD=:' RECORD-AREA (1:50)
+           ADD 1 TO DATA-AREA1
+           MOVE 'RECORD-2'           TO PRIME-KEY.
+           PERFORM A-200-CALL-EXTFH.
+           DISPLAY 'GOOD RECORD=:' RECORD-AREA (1:50)
+           ADD 1 TO DATA-AREA1
+           MOVE 'RECORD-3'           TO PRIME-KEY.
+           PERFORM A-200-CALL-EXTFH.
+           DISPLAY 'GOOD RECORD=:' RECORD-AREA (1:50)
+           MOVE 'RECORD-4'           TO PRIME-KEY.
+           ADD 1 TO DATA-AREA1
+           PERFORM A-200-CALL-EXTFH.
+           MOVE 'RECORD-5'           TO PRIME-KEY.
+           ADD 1 TO DATA-AREA1
+           PERFORM A-200-CALL-EXTFH.
+           MOVE 'RECORD-6'           TO PRIME-KEY.
+           ADD 1 TO DATA-AREA1
+           PERFORM A-200-CALL-EXTFH.
+           MOVE 'RECORD-7'           TO PRIME-KEY.
+           ADD 1 TO DATA-AREA1
+           SET FCD-RECORD-ADDRESS    TO ADDRESS OF RECORD-AREA.
+           PERFORM A-200-CALL-EXTFH.
+           MOVE '0' TO WRITE-LOOP.
+       A-110-EXIT.
+           EXIT.
+       A-120-OPEN.
+           MOVE LOW-VALUES TO FCD-AREA
+           MOVE FCD--VERSION-NUMBER TO FCD-VERSION.
+           MOVE LOW-VALUES TO ACB-KEY-GROUP
+           MOVE 'B6353.VSM' TO FILE-NAME
+           MOVE 'OPIO' TO KEYBLOCK-FUNC
+           CALL ZKEYBLCK USING
+                         KEYBLOCK-FUNC
+                         KEYBLOCK
+                         FILE-NAME
+                         FCD-AREA
+                         KEYBLOCK-STATUS
+           DISPLAY 'KEYBLOCK STATUS01 =:' KEYBLOCK-STATUS
+           MOVE 'GU' TO KEYBLOCK-FUNC
+           CALL ZKEYBLCK USING
+                         KEYBLOCK-FUNC
+                         KEYBLOCK
+                         FILE-NAME
+                         FCD-AREA
+                         KEYBLOCK-STATUS
+           MOVE 'SYSUT02.DATA' TO SYSUT1-DSN
+           OPEN OUTPUT SYSUT1
+           MOVE KEYBLOCK (1:120) TO SYSUT1-DATA
+           WRITE SYSUT1-DATA
+           CLOSE SYSUT1
+           SET FCD-KEY-DEF-ADDRESS TO ADDRESS OF KEYBLOCK
+           DISPLAY 'KEYBLOCK STATUS02 =:' KEYBLOCK-STATUS
+           MOVE 'CLOSE' TO KEYBLOCK-FUNC
+           CALL ZKEYBLCK USING
+                         KEYBLOCK-FUNC
+                         KEYBLOCK
+                         FILE-NAME
+                         FCD-AREA
+                         KEYBLOCK-STATUS
+           MOVE 'B6353.VSM' TO FILE-NAME
+           COMPUTE FILE-NAME-LEN = FUNCTION LENGTH (FILE-NAME)
+           MOVE FILE-NAME-LEN TO FCD-NAME-LENGTH
+           MOVE 0 TO FCD-ACCESS-MODE
+           MOVE 2 TO FCD-ORGANIZATION
+      **   FIXED OR VARIABLE
+           MOVE 1 TO FCD-RECORDING-MODE
+           MOVE 0 TO FCD-RECORDING-MODE
+           SET FCD-FILENAME-ADDRESS TO ADDRESS OF FILE-NAME
+           MOVE 100 TO FCD-MIN-REC-LENGTH
+           MOVE 100 TO FCD-MAX-REC-LENGTH
+           MOVE X'FAF8' TO FH-ACTION
+      ** OPEN THE EXISTING FILE
+           SET FCD-RECORD-ADDRESS TO ADDRESS OF RECORD-AREA.
+           MOVE 0 TO FCD-OPEN-MODE
+           MOVE 128 TO FCD-OPEN-MODE
+           MOVE X'FA01' TO ZOSICF-SVC
+           IF TESTING = '5'
+               MOVE X'FA00' TO ZOSICF-SVC
+           END-IF
+           CALL 'EXTFH' USING
+                        ZOSICF-SVC
+                        FCD-AREA
+           MOVE '05' TO FCD-STS PERFORM FCD-REPORT.
+       A-120-EXIT.
+           EXIT.
+       A-125-OPEN-B6555.
+           MOVE FCD-AREA TO FROM-FCD.
+           MOVE KEYBLOCK TO FROM-KEY
+           MOVE LOW-VALUES TO ACB-KEY-GROUP
+           MOVE 'B6555.VSM' TO FILE-NAME
+      ** BOTH B6353 AND B6555 HAVE THE SAME KEY PROPERTIES - JUST USE 6353
+           MOVE 'B6353.VSM' TO FILE-NAME
+           MOVE 'OPIO' TO KEYBLOCK-FUNC
+           CALL ZKEYBLCK USING
+                         KEYBLOCK-FUNC
+                         KEYBLOCK
+                         FILE-NAME
+                         FCD-AREA
+                         KEYBLOCK-STATUS
+           DISPLAY 'KEYBLOCK STATUS01 =:' KEYBLOCK-STATUS
+           MOVE 'GU' TO KEYBLOCK-FUNC
+           CALL ZKEYBLCK USING
+                         KEYBLOCK-FUNC
+                         KEYBLOCK
+                         FILE-NAME
+                         FCD-AREA
+                         KEYBLOCK-STATUS
+           MOVE 'SYSUT02.DATA' TO SYSUT1-DSN
+           OPEN OUTPUT SYSUT1
+           MOVE KEYBLOCK (1:120) TO SYSUT1-DATA
+           WRITE SYSUT1-DATA
+           CLOSE SYSUT1
+           DISPLAY 'KEYBLOCK STATUS02 =:' KEYBLOCK-STATUS
+           MOVE 'CLOSE' TO KEYBLOCK-FUNC
+           CALL ZKEYBLCK USING
+                         KEYBLOCK-FUNC
+                         KEYBLOCK
+                         FILE-NAME
+                         FCD-AREA
+                         KEYBLOCK-STATUS
+           MOVE LOW-VALUES TO FCD-AREA
+           MOVE FCD--VERSION-NUMBER TO FCD-VERSION.
+           SET FCD-KEY-DEF-ADDRESS TO ADDRESS OF KEYBLOCK
+           MOVE 'B6555.VSM' TO FILE-NAME
+           COMPUTE FILE-NAME-LEN = FUNCTION LENGTH (FILE-NAME)
+           MOVE FILE-NAME-LEN TO FCD-NAME-LENGTH
+           MOVE 0 TO FCD-ACCESS-MODE
+           MOVE 2 TO FCD-ORGANIZATION
+      **   FIXED OR VARIABLE
+           MOVE 1 TO FCD-RECORDING-MODE
+           MOVE 0 TO FCD-RECORDING-MODE
+           SET FCD-FILENAME-ADDRESS TO ADDRESS OF FILE-NAME
+           MOVE 100 TO FCD-MIN-REC-LENGTH
+           MOVE 100 TO FCD-MAX-REC-LENGTH
+      ** OPEN THE EXISTING B6555 OR CREATE B6555 DEPENDING ON TESTING CONTENTS
+           SET FCD-RECORD-ADDRESS TO ADDRESS OF RECORD-AREA.
+           MOVE 128 TO FCD-OPEN-MODE
+           MOVE X'FA01' TO ZOSICF-SVC
+           CALL 'EXTFH' USING
+                        ZOSICF-SVC
+                        FCD-AREA
+           MOVE '15' TO FCD-STS PERFORM FCD-REPORT.
+           MOVE 0 TO FCD-OPEN-MODE
+           MOVE FCD-AREA TO TO-FCD.
+           MOVE KEYBLOCK TO TO-KEY.
+           MOVE FROM-FCD TO FCD-AREA
+           MOVE FROM-KEY TO KEYBLOCK.
+      ** CLOSE THE ISAM FILE
+           MOVE X'FA80' TO ZOSICF-SVC
+           CALL 'EXTFH' USING
+                       ZOSICF-SVC
+                       FCD-AREA
+           MOVE '16' TO FCD-STS PERFORM FCD-REPORT.
+           MOVE 'B6353.VSM' TO FILE-NAME
+      ** CLOSE THE ISAM FILE
+           MOVE X'FA80' TO ZOSICF-SVC
+           CALL 'EXTFH' USING
+                       ZOSICF-SVC
+                       FCD-AREA
+           MOVE '17' TO FCD-STS PERFORM FCD-REPORT.
+       A-125-EXIT.
+           EXIT.
+       A-200-CALL-EXTFH.
+           CALL 'EXTFH' USING
+                        FH-ACTION
+                        FCD-AREA
+           IF FCD-FILE-STATUS NOT = '00' AND NOT = '02'
+               IF FCD-STATUS-KEY-1 = '9'
+                   DISPLAY "FILE ERROR, STATUS: 9/" FCD-BINARY
+               ELSE
+                   DISPLAY "FILE ERROR, STATUS: " FCD-FILE-STATUS
+               END-IF
+               DISPLAY 'BAD  RECORD=:' RECORD-AREA (1:50)
+               GOBACK
+           END-IF.
+       A-300-READ-RECORD.
+           INITIALIZE RECORD-AREA.
+           MOVE 'RECORD-3'           TO PRIME-KEY.
+           MOVE X'FA8E' TO FH-ACTION
+           SET FCD-RECORD-ADDRESS    TO ADDRESS OF RECORD-AREA.
+           PERFORM A-200-CALL-EXTFH.
+       A-400-REWRITE-RECORD.
+           MOVE X'FAF4' TO FH-ACTION
+           MOVE REWRITE-RECORD TO COBOL-OP.
+           PERFORM A-200-CALL-EXTFH.
+       A-600-CLOSE-FILE.
+           MOVE X'FA80' TO FH-ACTION.
+           PERFORM A-200-CALL-EXTFH.
+       A-700-START.
+           SET FCD-RECORD-ADDRESS     TO ADDRESS OF RECORD-AREA.
+           MOVE 20                    TO FCD-KEY-LENGTH.
+           MOVE HIGH-VALUES           TO PRIME-KEY.
+           MOVE X'FAFE' TO FH-ACTION
+           PERFORM A-200-CALL-EXTFH.
+       A-800-READ-PREVIOUS.
+           MOVE X'FAF9' TO FH-ACTION
+           PERFORM A-200-CALL-EXTFH.
+       A-900-DELETE.
+           MOVE X'FAF7' TO FH-ACTION
+           PERFORM A-200-CALL-EXTFH.
+       A-1000-DELETE-FILE.
+           MOVE LOW-VALUE TO FCD-AREA
+           MOVE FCD--VERSION-NUMBER TO FCD-VERSION.
+           MOVE 2 TO ACB-CNT
+           MOVE 0 TO ACB-KEY-POS (1)
+           MOVE 20 TO ACB-KEY-LEN (1)
+           MOVE 0 TO ACB-KEY-DUPE (1)
+           MOVE 30 TO ACB-KEY-POS (2)
+           MOVE 20 TO ACB-KEY-LEN (2)
+           MOVE 1 TO ACB-KEY-DUPE (2)
+      ** MAKE MF KEY-DEF
+           CALL EXFHKEYS USING
+                         ACB-KEY-GROUP
+                         KEY-DEF-AREA
+           SET FCD-KEY-DEF-ADDRESS TO ADDRESS OF KEY-DEF-AREA
+           MOVE 'B6353.VSM' TO FILE-NAME
+           COMPUTE FILE-NAME-LEN = FUNCTION LENGTH (FILE-NAME)
+           MOVE FILE-NAME-LEN TO FCD-NAME-LENGTH
+           MOVE 0 TO FCD-ACCESS-MODE
+           MOVE 2 TO FCD-ORGANIZATION
+      **   FIXED OR VARIABLE
+           MOVE 1 TO FCD-RECORDING-MODE
+           MOVE 0 TO FCD-RECORDING-MODE
+           SET FCD-FILENAME-ADDRESS TO ADDRESS OF FILE-NAME
+           MOVE 100 TO FCD-MIN-REC-LENGTH
+           MOVE 100 TO FCD-MAX-REC-LENGTH
+           MOVE X'FAF8' TO FH-ACTION
+      ** DELETE THE EXISTING FILE
+           MOVE 0 TO FCD-OPEN-MODE
+           MOVE X'FAF8' TO ZOSICF-SVC
+           CALL 'EXTFH' USING
+                        ZOSICF-SVC
+                        FCD-AREA
+           MOVE '04' TO FCD-STS PERFORM FCD-REPORT.
+       A-1000-EXIT.
+           EXIT.
+       A-1005-DELETE-B6555.
+           MOVE FCD-AREA TO FROM-FCD
+           MOVE KEYBLOCK TO FROM-KEY
+           MOVE LOW-VALUES TO FCD-AREA
+           MOVE FCD--VERSION-NUMBER TO FCD-VERSION.
+           MOVE 'B6353.VSM' TO FILE-NAME
+           MOVE 'OPIO' TO KEYBLOCK-FUNC
+           CALL ZKEYBLCK USING
+                         KEYBLOCK-FUNC
+                         KEYBLOCK
+                         FILE-NAME
+                         FCD-AREA
+                         KEYBLOCK-STATUS
+           DISPLAY 'KEYBLOCK STATUS11 =:' KEYBLOCK-STATUS
+           MOVE 'GU' TO KEYBLOCK-FUNC
+           CALL ZKEYBLCK USING
+                         KEYBLOCK-FUNC
+                         KEYBLOCK
+                         FILE-NAME
+                         FCD-AREA
+                         KEYBLOCK-STATUS
+           SET FCD-KEY-DEF-ADDRESS TO ADDRESS OF KEYBLOCK
+           MOVE 'SYSUT02.DATA' TO SYSUT1-DSN
+           OPEN OUTPUT SYSUT1
+           MOVE KEYBLOCK (1:120) TO SYSUT1-DATA
+           WRITE SYSUT1-DATA
+           CLOSE SYSUT1
+           DISPLAY 'KEYBLOCK STATUS12 =:' KEYBLOCK-STATUS
+           MOVE 'CLOSE' TO KEYBLOCK-FUNC
+           CALL ZKEYBLCK USING
+                         KEYBLOCK-FUNC
+                         KEYBLOCK
+                         FILE-NAME
+                         FCD-AREA
+                         KEYBLOCK-STATUS
+           MOVE 'B6555.VSM' TO FILE-NAME
+           COMPUTE FILE-NAME-LEN = FUNCTION LENGTH (FILE-NAME)
+           MOVE FILE-NAME-LEN TO FCD-NAME-LENGTH
+           MOVE 0 TO FCD-ACCESS-MODE
+           MOVE 2 TO FCD-ORGANIZATION
+      **   FIXED OR VARIABLE
+           MOVE 1 TO FCD-RECORDING-MODE
+           MOVE 0 TO FCD-RECORDING-MODE
+           SET FCD-FILENAME-ADDRESS TO ADDRESS OF FILE-NAME
+           MOVE 100 TO FCD-MIN-REC-LENGTH
+           MOVE 100 TO FCD-MAX-REC-LENGTH
+           MOVE X'FAF8' TO FH-ACTION
+      ** DELETE THE EXISTING FILE
+           MOVE 0 TO FCD-OPEN-MODE
+           MOVE X'FAF8' TO ZOSICF-SVC
+           CALL 'EXTFH' USING
+                        ZOSICF-SVC
+                        FCD-AREA
+           MOVE '14' TO FCD-STS PERFORM FCD-REPORT.
+           MOVE FROM-FCD TO FCD-AREA.
+       A-1005-EXIT.
+           EXIT.
+       FCD-REPORT.
+           PERFORM VARYING K FROM 1 BY 1
+                     UNTIL FILE-NAME-CHR (K) = ' '
+               CONTINUE
+           END-PERFORM.
+           IF K > 1 SUBTRACT 1 FROM K.
+           MOVE FCD-VERSION TO VER.
+           IF FCD-STATUS-KEY-1 = '9'
+               DISPLAY "FCD " FCD-STS " STATUS: 9/" FCD-BINARY
+                       "; File:" FILE-NAME (1:K) "."
+           ELSE
+               DISPLAY "FCD " FCD-STS " STATUS: " FCD-FILE-STATUS
+                       "; File:" FILE-NAME (1:K) "."
+           END-IF.
+           END PROGRAM prog.
+      **  CREATE KEY-DEF-AREA FROM ACB ARRAY
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. EXFHKEYS.
+       ENVIRONMENT DIVISION.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       77  ZX1           PIC X(04).
+       77  ZX2           PIC X(04).
+       77  ZX4           PIC X(08).
+       77  Z91           PIC 9(04) COMP-5.
+       77  Z92           PIC 9(04) COMP-5.
+       77  Z93           PIC 9(08) COMP-5.
+       77  Z94           PIC 9(08) COMP-5.
+       77  E4            PIC X(08) VALUE 'E4'.
+       77  E6            PIC X(08) VALUE 'E6'.
+       77  OFF1          PIC X(4)    COMP-X.
+       77  OFF2          PIC X(2)    COMP-X.
+       01  PROGRAM-DATA.
+           05  I                         PIC 9(4) COMP.
+           05  J                         PIC 9(4) COMP.
+           05  K                         PIC 9(4) COMP.
+           05  X                         PIC 9(4) COMP.
+           05  Y                         PIC 9(4) COMP.
+           05  Z                         PIC 9(4) COMP.
+       01  KEY-DEF-AREA.
+           05  GLOBAL-INFORMATION-AREA.
+               10  KEY-DEF-LEN             PIC 9(04) COMP-X.
+               10  FILLER                  PIC X(04).
+               10  NUMBER-OF-KEYS          PIC 9(04) COMP-X.
+               10  FILLER                  PIC X(06).
+           05  KEY-DEFINITION-PARAMETER-BLOCK
+            OCCURS 1 TO 15 TIMES DEPENDING ON NUMBER-OF-KEYS.
+               10 COMPONENT-COUNT     PIC 9(4) COMP-X.
+               10 OFFSET-TO-COMPONENT PIC 9(4) COMP-X.
+               10 KEY-FLAGS           PIC 9(2) COMP-X.
+               10 KEY-COMPRESSION     PIC 9(2) COMP-X.
+               10 SPARSE-CHARACTER    PIC X.
+               10 FILLER              PIC X(9).
+           05  COMPONENT-DEFINITION-AREA
+             OCCURS 1 TO 15 TIMES DEPENDING ON NUMBER-OF-KEYS.
+               10 FILLER                  PIC X(2).
+               10 OFFSET-TO-COMPONENT-DEF PIC 9(9) COMP-X.
+               10 COMPONENT-LENGTH        PIC 9(9) COMP-X.
+       LINKAGE SECTION.
+       01  ACB-KEY-GROUP.
+           05  ACB-CNT           PIC 9(02).
+           05  ACB-KEY-TABLE OCCURS 32 TIMES.
+               10  ACB-KEY-LEN   PIC 9(04) COMP-4.
+               10  ACB-KEY-LENX REDEFINES ACB-KEY-LEN  PIC X(02).
+               10  ACB-KEY-POS   PIC 9(04) COMP-4.
+               10  ACB-KEY-POSX REDEFINES ACB-KEY-POS  PIC X(02).
+               10  ACB-KEY-DUP PIC 9(02) COMP-X.
+               10  ACB-KEY-DUPX REDEFINES ACB-KEY-DUP PIC X(01).
+       01 KEY-DEFS PIC X(512).
+       PROCEDURE DIVISION USING
+                          ACB-KEY-GROUP
+                          KEY-DEFS.
+       A-010-MAINLINE.
+           MOVE LOW-VALUES TO KEY-DEFS
+           MOVE LOW-VALUES TO KEY-DEF-AREA
+      ** POPULATE THE GLOBAL AREA
+           MOVE ACB-CNT TO NUMBER-OF-KEYS
+           COMPUTE KEY-DEF-LEN  = (ACB-CNT * 16) + (ACB-CNT * 10) + 14
+      ** POPULATE KEY-DEFINITION-PARAMETER-BLOCK & COMPONENT DEFEINTION
+           PERFORM A-020-MAKE-KEY-DEF THRU A-020-EXIT
+           MOVE KEY-DEF-AREA (1:KEY-DEF-LEN) TO KEY-DEFS (1:KEY-DEF-LEN)
+           GOBACK.
+       A-010-EXIT.
+           EXIT.
+       A-020-MAKE-KEY-DEF.
+      ** DO THE PRIMARY KEY
+           MOVE 1 TO I
+           MOVE 1 TO COMPONENT-COUNT (I)
+           MOVE 16 TO KEY-FLAGS (I)
+           COMPUTE OFF2 = (ACB-CNT * 16) + ((I - 1) * 10) + 14
+           MOVE OFF2 TO OFFSET-TO-COMPONENT (I)
+           MOVE ACB-KEY-POS (I) TO OFFSET-TO-COMPONENT-DEF (I)
+           MOVE 10 TO COMPONENT-LENGTH (I)
+      ** IF THERE ARE NO ALTERNATE KEYS EXIT - KEY DEF IS BUILT
+           IF ACB-CNT < 2
+               GO TO A-020-EXIT
+           END-IF
+      ** DO ALTERNATE INDEX(S)
+           PERFORM VARYING I FROM 2 BY 1 UNTIL I > ACB-CNT
+               MOVE 1 TO COMPONENT-COUNT (I)
+               COMPUTE OFF2 = (ACB-CNT * 16) + ((I - 1) * 10) + 14
+               MOVE OFF2 TO OFFSET-TO-COMPONENT (I)
+               IF ACB-KEY-DUP (I) = 1
+                   MOVE 64 TO KEY-FLAGS (I)
+               ELSE
+                   MOVE 16 TO KEY-FLAGS (I)
+                   MOVE 0 TO KEY-FLAGS (I)
+               END-IF
+               MOVE ACB-KEY-POS (I) TO OFFSET-TO-COMPONENT-DEF (I)
+               MOVE ACB-KEY-LEN (I) TO COMPONENT-LENGTH (I)
+           END-PERFORM.
+       A-020-EXIT.
+           EXIT.
+       END PROGRAM EXFHKEYS.
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. ZKEYBLCK.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT XRF-FILE
+               ASSIGN TO 'KEYBLOCK.VSM'
+               ORGANIZATION IS INDEXED
+               ACCESS DYNAMIC
+               RECORD KEY XRF-KEY
+               FILE STATUS XRF-FILE-STATUS.
+       DATA DIVISION.
+       FILE SECTION.
+       FD  XRF-FILE .
+       01  XRF-DATA.
+           05  XRF-KEY                 PIC X(64).
+           05  KEY-DEFINITION          PIC X(500).
+           05  KEY-FCB                 PIC X(100).
+       WORKING-STORAGE SECTION.
+       77  PARM-FUNC                   PIC X(08).
+       77  FIRST-TIME                  PIC X(01) VALUE '1'.
+       77  ZMSG1                       PIC X(78).
+       01  PROGRAM-FIELDS.
+           05  LOCAL-FUNC              PIC X(08).
+           05  FILEDEV                 PIC X(79).
+           05  FILESPEC                PIC X(18).
+           05  TEST-FILE-STATUS.
+               10 TEST-ST1                PIC X(01).
+               10 TEST-ST2                PIC X(01) COMP-X.
+           05  XRF-FILE-STATUS.
+               10 XRF-ST1                 PIC X(01).
+               10 XRF-ST2                 PIC X(01).
+           05  XRF-OPEN                   PIC X(01) VALUE '0'.
+           05  XRF-DSN                    PIC X(250).
+           05  I                          PIC 9(04) COMP-5.
+           05  J                          PIC 9(04) COMP-5.
+           05  K                          PIC 9(04) COMP-5.
+           05  ERROR-PAUSE                PIC X(01).
+           05  ENQ-PAUSE                  PIC X(01).
+           05  FIRST-CALL                 PIC X(01) VALUE '1'.
+           05  IO-OK                      PIC X(01).
+           05  EOD-IO                     PIC X(01).
+           05  EOD-DELETE                 PIC X(01).
+           05  FILE-STATUS                PIC X(01) VALUE 'C'.
+           05  FIRST-RETRY                PIC X(01) VALUE 'Y'.
+      * ----------------------------------------------------------------
+       LINKAGE SECTION.
+       01  LINK-FUNC                   PIC X(08).
+       01  LINK-KEYBLOCK               PIC X(500).
+       01  LINK-DSN                    PIC X(64).
+       01  LINK-FCB                    PIC X(100).
+       01  LINK-STATUS                 PIC X(02).
+       PROCEDURE DIVISION USING
+                          LINK-FUNC
+                          LINK-KEYBLOCK
+                          LINK-DSN
+                          LINK-FCB
+                          LINK-STATUS.
+       DECLARATIVES.
+      **A-000-XRF-ERROR SECTION.
+      **       USE AFTER ERROR PROCEDURE ON XRF-FILE.
+      **        CONTINUE.
+      **A-000-EXIT.
+      **   EXIT.
+       END DECLARATIVES.
+           MOVE LINK-FUNC TO PARM-FUNC.
+           MOVE LINK-DSN TO XRF-KEY.
+           MOVE LINK-KEYBLOCK TO KEY-DEFINITION.
+           MOVE LINK-FCB TO KEY-FCB.
+           DISPLAY 'FILE KEY=:' XRF-KEY (1:12) '.'
+           EVALUATE PARM-FUNC
+               WHEN 'CLOS    '
+               WHEN 'CLOSE   '
+                   MOVE 'CLOS' TO LOCAL-FUNC
+                   PERFORM B-001-SERVICE-IO THRU B-001-EXIT
+               WHEN 'OPEN    '
+                   MOVE PARM-FUNC TO LOCAL-FUNC
+                   PERFORM B-001-SERVICE-IO THRU B-001-EXIT
+               WHEN 'OPIO    '
+                   MOVE PARM-FUNC TO LOCAL-FUNC
+                   PERFORM B-001-SERVICE-IO THRU B-001-EXIT
+               WHEN 'OPOT    '
+                   MOVE PARM-FUNC TO LOCAL-FUNC
+                   PERFORM B-001-SERVICE-IO THRU B-001-EXIT
+               WHEN 'BROWSE  '
+                   MOVE 'OPEN' TO LOCAL-FUNC
+                   PERFORM B-001-SERVICE-IO THRU B-001-EXIT
+               WHEN OTHER
+                   MOVE PARM-FUNC TO LOCAL-FUNC
+                   PERFORM B-001-SERVICE-IO THRU B-001-EXIT
+           END-EVALUATE.
+           IF TEST-FILE-STATUS = '00'
+               IF PARM-FUNC (1:2) NOT = 'OP'
+                 AND NOT = 'CL' AND NOT = 'ST'
+                   MOVE KEY-DEFINITION TO LINK-KEYBLOCK
+                   MOVE KEY-FCB TO LINK-FCB
+               END-IF
+           END-IF
+           DISPLAY 'ZKEYBLCK INTERNAL STATUS =:' TEST-FILE-STATUS
+                   ' for ' PARM-FUNC '.'
+           MOVE TEST-FILE-STATUS TO LINK-STATUS.
+           GOBACK.
+       B-001-SERVICE-IO.
+           MOVE '0' TO IO-OK.
+           MOVE '1' TO FIRST-CALL.
+           MOVE '00' TO TEST-FILE-STATUS
+           EVALUATE LOCAL-FUNC
+                WHEN 'UPDT'
+                  PERFORM B-070-REWRITE THRU B-070-EXIT
+                   UNTIL IO-OK NOT = '0'
+                WHEN 'CLOS'
+                  MOVE 'C' TO FILE-STATUS
+                  PERFORM B-030-CLOSE THRU B-030-EXIT
+                WHEN 'DLET'
+                  PERFORM B-050-DLET THRU B-050-EXIT
+                          UNTIL IO-OK NOT = '0'
+                WHEN 'GET'
+                  PERFORM B-010-GU THRU B-010-EXIT
+                   UNTIL IO-OK NOT = '0'
+                WHEN 'GN  '
+                  PERFORM B-020-GN THRU B-020-EXIT
+                   UNTIL IO-OK NOT = '0'
+                WHEN 'GU  '
+                  PERFORM B-010-GU THRU B-010-EXIT
+                   UNTIL IO-OK NOT = '0'
+                WHEN 'ISRT'
+                  PERFORM B-060-ISRT THRU B-060-EXIT
+                   UNTIL IO-OK NOT = '0'
+                WHEN 'OPEN'
+                  PERFORM B-005-OPEN THRU B-005-EXIT
+                WHEN 'OPIO'
+                  PERFORM B-005-OPEN THRU B-005-EXIT
+                WHEN 'OPOT'
+                  PERFORM B-005-OPEN THRU B-005-EXIT
+                WHEN 'PREV'
+                  PERFORM B-090-GET-PREV THRU B-090-EXIT
+                   UNTIL IO-OK NOT = '0'
+                WHEN 'STN<'
+                  PERFORM B-040-START-KEY THRU B-040-EXIT
+                   UNTIL IO-OK NOT = '0'
+                WHEN 'STN>'
+                  PERFORM B-045-START-KEY THRU B-045-EXIT
+                   UNTIL IO-OK NOT = '0'
+           END-EVALUATE.
+       B-001-EXIT.
+           EXIT.
+       B-005-OPEN.
+           IF XRF-OPEN = '1'
+               IF LOCAL-FUNC = 'OPEN' AND FILE-STATUS = 'I'
+                   GO TO B-005-EXIT
+               END-IF
+               IF LOCAL-FUNC = 'OPIO' AND FILE-STATUS = 'B'
+                   GO TO B-005-EXIT
+               END-IF
+               IF LOCAL-FUNC = 'OPOT' AND FILE-STATUS = 'O'
+                   GO TO B-005-EXIT
+               END-IF
+           END-IF.
+           IF LOCAL-FUNC = 'OPIO'
+               MOVE '1' TO XRF-OPEN
+               OPEN I-O XRF-FILE
+               MOVE 'B' TO FILE-STATUS
+               MOVE XRF-FILE-STATUS TO TEST-FILE-STATUS
+               IF TEST-FILE-STATUS = '35'
+                   MOVE 'OPOT' TO LOCAL-FUNC
+               END-IF
+           END-IF.
+           IF LOCAL-FUNC = 'OPOT'
+               MOVE '1' TO XRF-OPEN
+               OPEN OUTPUT XRF-FILE
+               MOVE 'O' TO FILE-STATUS
+               MOVE XRF-FILE-STATUS TO TEST-FILE-STATUS
+           END-IF.
+           IF LOCAL-FUNC NOT = 'OPIO' AND NOT = 'OPOT'
+               MOVE '1' TO XRF-OPEN
+               MOVE 'I' TO FILE-STATUS
+               OPEN INPUT XRF-FILE
+               MOVE XRF-FILE-STATUS TO TEST-FILE-STATUS
+               IF XRF-FILE-STATUS = '35'
+                   MOVE '1' TO XRF-OPEN
+                   OPEN OUTPUT XRF-FILE
+                   MOVE 'O' TO FILE-STATUS
+                   MOVE XRF-FILE-STATUS TO TEST-FILE-STATUS
+               END-IF
+           END-IF.
+       B-005-EXIT.
+           EXIT.
+       B-010-GU.
+           MOVE 'ZKEYBLCK: IN GU 01           ' TO ZMSG1
+           MOVE '0' TO EOD-IO.
+           PERFORM B-011-READ THRU B-011-EXIT
+            UNTIL EOD-IO NOT = '0'.
+           IF TEST-FILE-STATUS = '00'
+               MOVE '1' TO IO-OK
+           END-IF.
+       B-010-EXIT.
+           EXIT.
+       B-011-READ.
+           MOVE 'ZKEYBLCK: IN GU 02           ' TO ZMSG1
+           MOVE LINK-DSN TO XRF-KEY.
+           READ XRF-FILE
+               KEY XRF-KEY.
+           MOVE 'ZKEYBLCK: IN GU 03           ' TO ZMSG1
+           MOVE XRF-FILE-STATUS TO TEST-FILE-STATUS.
+               DISPLAY 'XRF-STATUS=:' XRF-FILE-STATUS
+               DISPLAY 'XRF-KEY1 =:' XRF-KEY (1:12) '.'
+           IF TEST-FILE-STATUS = '00'
+            OR (TEST-ST1 = '9' AND TEST-ST2 = 68
+            AND FILE-STATUS = 'I')
+               MOVE '00' TO TEST-FILE-STATUS
+               MOVE '1' TO EOD-IO
+               GO TO B-011-EXIT
+           ELSE
+               PERFORM B-200-ENQD THRU B-200-EXIT
+               IF IO-OK = '2'
+                   MOVE '1' TO EOD-IO
+                   GO TO B-011-EXIT
+               END-IF
+           END-IF.
+       B-011-EXIT.
+           EXIT.
+       B-020-GN.
+           MOVE '0' TO EOD-IO.
+           PERFORM B-021-GN THRU B-021-EXIT
+            UNTIL EOD-IO NOT = '0'.
+           IF TEST-FILE-STATUS = '00'
+               MOVE '1' TO IO-OK
+           END-IF.
+       B-020-EXIT.
+           EXIT.
+       B-021-GN.
+           READ XRF-FILE NEXT.
+           MOVE XRF-FILE-STATUS TO TEST-FILE-STATUS.
+           IF TEST-FILE-STATUS = '00'
+            OR (TEST-ST1 = '9' AND TEST-ST2 = 68
+            AND FILE-STATUS = 'I')
+               MOVE '00' TO TEST-FILE-STATUS
+               MOVE '1' TO EOD-IO
+               GO TO B-021-EXIT
+           ELSE
+               PERFORM B-200-ENQD THRU B-200-EXIT
+               IF IO-OK = '2'
+                   MOVE '1' TO EOD-IO
+                   GO TO B-021-EXIT
+               END-IF
+           END-IF.
+       B-021-EXIT.
+           EXIT.
+       B-030-CLOSE.
+           CLOSE XRF-FILE.
+           MOVE XRF-FILE-STATUS TO TEST-FILE-STATUS.
+           MOVE '0' TO XRF-OPEN.
+       B-030-EXIT.
+           EXIT.
+       B-040-START-KEY.
+           START XRF-FILE
+            KEY NOT < XRF-KEY.
+           MOVE XRF-FILE-STATUS TO TEST-FILE-STATUS.
+           IF TEST-FILE-STATUS = '00'
+            OR (TEST-ST1 = '9' AND TEST-ST2 = 68
+            AND FILE-STATUS = 'I')
+                MOVE '00' TO TEST-FILE-STATUS
+                MOVE '1' TO IO-OK
+                GO TO B-040-EXIT
+           ELSE
+               PERFORM B-200-ENQD THRU B-200-EXIT
+               IF IO-OK = '2'
+                   GO TO B-040-EXIT
+               END-IF
+           END-IF.
+       B-040-EXIT.
+           EXIT.
+       B-045-START-KEY.
+           START XRF-FILE
+            KEY NOT > XRF-KEY.
+           MOVE XRF-FILE-STATUS TO TEST-FILE-STATUS.
+           IF TEST-FILE-STATUS = '00'
+            OR (TEST-ST1 = '9' AND TEST-ST2 = 68
+            AND FILE-STATUS = 'I')
+                MOVE '00' TO TEST-FILE-STATUS
+                MOVE '1' TO IO-OK
+                GO TO B-045-EXIT
+           ELSE
+               PERFORM B-200-ENQD THRU B-200-EXIT
+               IF IO-OK = '2'
+                   GO TO B-045-EXIT
+               END-IF
+           END-IF.
+       B-045-EXIT.
+           EXIT.
+       B-050-DLET.
+           MOVE '0' TO IO-OK.
+           PERFORM B-051-DELETE THRU B-051-EXIT
+            UNTIL IO-OK NOT = '0'.
+       B-050-EXIT.
+           EXIT.
+       B-051-DELETE.
+           DELETE XRF-FILE.
+           MOVE XRF-FILE-STATUS TO TEST-FILE-STATUS.
+           IF TEST-FILE-STATUS = '00'
+                MOVE '00' TO TEST-FILE-STATUS
+                MOVE '1' TO IO-OK
+                GO TO B-051-EXIT
+           ELSE
+               PERFORM B-200-ENQD THRU B-200-EXIT
+               IF IO-OK = '2'
+                   GO TO B-051-EXIT
+               END-IF
+           END-IF.
+       B-051-EXIT.
+           EXIT.
+       B-060-ISRT.
+           PERFORM B-061-ISRT THRU B-061-EXIT
+            UNTIL IO-OK NOT = '0'.
+       B-060-EXIT.
+           EXIT.
+       B-061-ISRT.
+           MOVE LINK-DSN TO XRF-KEY.
+           WRITE XRF-DATA.
+           MOVE XRF-FILE-STATUS TO TEST-FILE-STATUS.
+           IF TEST-FILE-STATUS = '22'
+               PERFORM B-070-REWRITE THRU B-070-EXIT
+               GO TO B-061-EXIT
+           END-IF.
+           IF TEST-FILE-STATUS = '00'
+               MOVE '00' TO TEST-FILE-STATUS
+               MOVE '1' TO IO-OK
+               DISPLAY 'XRF-STATUS=:' XRF-FILE-STATUS
+               DISPLAY 'XRF-KEY =:' XRF-KEY (1:12) '.'
+      *        DISPLAY 'XRF-DEF =:' KEY-DEFINITION (1:120)
+               GO TO B-061-EXIT
+           ELSE
+               PERFORM B-200-ENQD THRU B-200-EXIT
+               IF IO-OK = '2'
+                   GO TO B-061-EXIT
+               END-IF
+           END-IF.
+       B-061-EXIT.
+           EXIT.
+       B-070-REWRITE.
+           PERFORM B-071-REWRITE THRU B-071-EXIT
+            UNTIL IO-OK NOT = '0'.
+       B-070-EXIT.
+           EXIT.
+       B-071-REWRITE.
+           REWRITE XRF-DATA.
+           MOVE XRF-FILE-STATUS TO TEST-FILE-STATUS.
+           IF TEST-FILE-STATUS = '00'
+            OR (TEST-ST1 = '9' AND TEST-ST2 = 68
+            AND FILE-STATUS = 'I')
+                MOVE '00' TO TEST-FILE-STATUS
+                MOVE '1' TO IO-OK
+                GO TO B-071-EXIT
+           ELSE
+               PERFORM B-200-ENQD THRU B-200-EXIT
+               IF IO-OK = '2'
+                   GO TO B-071-EXIT
+               END-IF
+           END-IF.
+       B-071-EXIT.
+           EXIT.
+       B-090-GET-PREV.
+           MOVE '0' TO EOD-IO.
+           PERFORM B-091-GET-PREV THRU B-091-EXIT
+            UNTIL EOD-IO NOT = '0'.
+           IF TEST-FILE-STATUS = '00'
+               MOVE '1' TO IO-OK
+           ELSE
+               GO TO B-090-EXIT
+           END-IF.
+       B-090-EXIT.
+           EXIT.
+       B-091-GET-PREV.
+           READ XRF-FILE PREVIOUS.
+           MOVE XRF-FILE-STATUS TO TEST-FILE-STATUS.
+           IF TEST-FILE-STATUS = '00'
+            OR (TEST-ST1 = '9' AND TEST-ST2 = 68
+            AND FILE-STATUS = 'I')
+               MOVE '00' TO TEST-FILE-STATUS
+               MOVE '1' TO EOD-IO
+               GO TO B-091-EXIT
+           ELSE
+               PERFORM B-200-ENQD THRU B-200-EXIT
+               IF IO-OK = '2'
+                   MOVE '1' TO EOD-IO
+                   GO TO B-091-EXIT
+               END-IF
+           END-IF.
+       B-091-EXIT.
+           EXIT.
+       B-200-ENQD.
+           MOVE '2' TO IO-OK.
+       B-200-EXIT.
+           EXIT.
+       END PROGRAM ZKEYBLCK.
+])
+
+AT_CHECK([$COMPILE -x -std=mf -debug -Wall -fodoslide -fstatic-call prog.cob ], [0], [], [])
+
+AT_CHECK([export TESTING=X
+$COBCRUN_DIRECT ./prog], [0], [**************** TEST 1 DELETE B6353 *****
+FCD 04 STATUS: 00; File:B6353.VSM.
+**************** TEST 2 CREATE B6353*****
+FILE KEY=:B6353.VSM   .
+ZKEYBLCK INTERNAL STATUS =:00 for OPIO    .
+KEYBLOCK STATUS04 =:00
+FILE KEY=:B6353.VSM   .
+ZKEYBLCK INTERNAL STATUS =:49 for DLET    .
+FILE KEY=:B6353.VSM   .
+XRF-STATUS=:00
+XRF-KEY =:B6353.VSM   .
+ZKEYBLCK INTERNAL STATUS =:00 for ISRT    .
+KEYBLOCK STATUS05 =:00
+FILE KEY=:B6353.VSM   .
+ZKEYBLCK INTERNAL STATUS =:00 for CLOSE   .
+KEYBLOCK STATUS06 =:00
+FCD 02 STATUS: 00; File:B6353.VSM.
+FCD 03 STATUS: 00; File:B6353.VSM.
+**************** TEST 6  DELETE B6555 ****
+FILE KEY=:B6353.VSM   .
+ZKEYBLCK INTERNAL STATUS =:00 for OPIO    .
+KEYBLOCK STATUS11 =:00
+FILE KEY=:B6353.VSM   .
+XRF-STATUS=:00
+XRF-KEY1 =:B6353.VSM   .
+ZKEYBLCK INTERNAL STATUS =:00 for GU      .
+KEYBLOCK STATUS12 =:00
+FILE KEY=:B6353.VSM   .
+ZKEYBLCK INTERNAL STATUS =:00 for CLOSE   .
+FCD 14 STATUS: 00; File:B6555.VSM.
+**************** TEST 7  CREATE B6555 ****
+FILE KEY=:B6555.VSM   .
+ZKEYBLCK INTERNAL STATUS =:00 for OPIO    .
+KEYBLOCK STATUS04 =:00
+FILE KEY=:B6555.VSM   .
+ZKEYBLCK INTERNAL STATUS =:23 for DLET    .
+FILE KEY=:B6555.VSM   .
+XRF-STATUS=:00
+XRF-KEY =:B6555.VSM   .
+ZKEYBLCK INTERNAL STATUS =:00 for ISRT    .
+KEYBLOCK STATUS05 =:00
+FILE KEY=:B6555.VSM   .
+ZKEYBLCK INTERNAL STATUS =:00 for CLOSE   .
+KEYBLOCK STATUS06 =:00
+FCD 12 STATUS: 00; File:B6555.VSM.
+FCD 13 STATUS: 00; File:B6555.VSM.
+**************** TEST 5 OPEN B6353 *******
+FILE KEY=:B6353.VSM   .
+ZKEYBLCK INTERNAL STATUS =:00 for OPIO    .
+KEYBLOCK STATUS01 =:00
+FILE KEY=:B6353.VSM   .
+XRF-STATUS=:00
+XRF-KEY1 =:B6353.VSM   .
+ZKEYBLCK INTERNAL STATUS =:00 for GU      .
+KEYBLOCK STATUS02 =:00
+FILE KEY=:B6353.VSM   .
+ZKEYBLCK INTERNAL STATUS =:00 for CLOSE   .
+FCD 05 STATUS: 00; File:B6353.VSM.
+**************** TEST 5 OPEN B6555 *****
+FILE KEY=:B6353.VSM   .
+ZKEYBLCK INTERNAL STATUS =:00 for OPIO    .
+KEYBLOCK STATUS01 =:00
+FILE KEY=:B6353.VSM   .
+XRF-STATUS=:00
+XRF-KEY1 =:B6353.VSM   .
+ZKEYBLCK INTERNAL STATUS =:00 for GU      .
+KEYBLOCK STATUS02 =:00
+FILE KEY=:B6353.VSM   .
+ZKEYBLCK INTERNAL STATUS =:00 for CLOSE   .
+FCD 15 STATUS: 00; File:B6555.VSM.
+FCD 16 STATUS: 00; File:B6555.VSM.
+FCD 17 STATUS: 00; File:B6353.VSM.
+], [])
+
+AT_CLEANUP
 
 AT_SETUP([RELATIVE File Locking])
 AT_KEYWORDS([runfile])

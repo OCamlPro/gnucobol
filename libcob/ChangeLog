@@ -1,4 +1,11 @@
 
+2021-10-22  Ron Norman <rjn@inglenet.com>
+
+	* fextfh.c: Changed to select cob_file/FCD pairing based on 
+				the 'file name' instead of the FCD address in order
+				to handle the case of the FCD being used for more
+				than one open file
+
 2021-10-03  Ron Norman <rjn@inglenet.com>
 
 	* fileio.c: for LS_OPTIONS set defaults when base format is defined

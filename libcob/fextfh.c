@@ -27,11 +27,14 @@
 static struct fcd_file {
 	struct fcd_file	*next;
 	FCD3		*fcd;
-	FCD2		*fcd2;
 	cob_file	*f;
+	char		*fname;
 	int			sts;
 	int			free_fcd;
 } *fcd_file_list = NULL;
+#if !COB_64_BIT_POINTER
+static	FCD3	*tmpfcd = NULL;	/* Used to convert FCD2 into FCD3 for I/O */
+#endif
 static const cob_field_attr alnum_attr = {COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL};
 static const cob_field_attr compx_attr = {COB_TYPE_NUMERIC_BINARY, 0, 0, 0, NULL};
 
@@ -56,6 +59,9 @@ free_extfh_fcd (void)
 		} else {
 			cob_cache_free((void*)ff->f);
 		}
+		if (ff->fname) {
+			cob_cache_free ((void*)ff->fname);
+		}
 		cob_cache_free((void*)ff);
 	}
 }
@@ -70,7 +76,6 @@ update_file_to_fcd (cob_file *f, FCD3 *fcd, unsigned char *fnstatus)
 		memcpy (fcd->fileStatus, fnstatus, 2);
 	else if (f->file_status)
 		memcpy (fcd->fileStatus, f->file_status, 2);
-	/* FIXME: use switch here */
 	if (f->open_mode == COB_OPEN_CLOSED)
 		fcd->openMode = OPEN_NOT_OPEN;
 	else if( f->open_mode == COB_OPEN_INPUT)
@@ -668,66 +673,18 @@ find_fcd (cob_file *f)
 
 
 #if !COB_64_BIT_POINTER
-/*
- * Construct FCD based on information from 'FCD2'
- */
-static FCD3 *
-find_fcd2 (FCD2 *fcd2)
-{
-	FCD3	*fcd;
-	struct fcd_file	*ff;
-	for (ff = fcd_file_list; ff; ff=ff->next) {
-		if (ff->fcd2 == fcd2) {
-			return ff->fcd;
-		}
-	}
-	fcd = cob_cache_malloc (sizeof(FCD3));
-	fcd->fcdVer = FCD_VER_64Bit;
-	STCOMPX2 (sizeof (FCD3), fcd->fcdLen);
-	ff = cob_cache_malloc (sizeof(struct fcd_file));
-	ff->next = fcd_file_list;
-	ff->fcd = fcd;
-	ff->fcd2 = fcd2;
-	ff->free_fcd = 2;
-	fcd_file_list = ff;
-	return fcd;
-}
-
-/*
- * Free FCD from 'FCD2'
- */
-static void
-free_fcd2 (FCD2 *fcd2)
-{
-	struct fcd_file	*ff, *pff;
-	pff = NULL;
-	for (ff = fcd_file_list; ff; ff=ff->next) {
-		if (ff->fcd2 == fcd2) {
-			if (pff) {
-				pff->next = ff->next;
-			} else {
-				fcd_file_list = ff->next;
-			}
-			if (ff->fcd) {
-				cob_cache_free ((void*)ff->fcd);
-			}
-			if (ff->f) {
-				cob_cache_free ((void*)ff->f);
-			}
-			cob_cache_free ((void*)ff);
-			return;
-		}
-		pff = ff;
-	}
-	return;
-}
-
 /* Convert FCD2 into FCD3 format, note: explicit no checks here
    as those have to be in EXTFH3 / fileio later */
 static FCD3 *
 fcd2_to_fcd3 (FCD2 *fcd2)
 {
-	FCD3 *fcd = find_fcd2 (fcd2);
+	FCD3 *fcd;
+	if (tmpfcd == NULL) {
+		tmpfcd = cob_cache_malloc (sizeof(FCD3));
+	}
+	fcd = tmpfcd;
+	fcd->fcdVer = FCD_VER_64Bit;
+	STCOMPX2 (sizeof (FCD3), fcd->fcdLen);
 	memcpy (fcd->fileStatus, fcd2->fileStatus, 2);
 	fcd->fileOrg = fcd2->fileOrg;
 	fcd->accessFlags = fcd2->accessFlags;
@@ -814,23 +771,39 @@ fcd3_to_fcd2 (FCD3 *fcd, FCD2 *fcd2)
  * Construct cob_file based on information from 'FCD'
  */
 static cob_file *
-find_file (FCD3 *fcd)
+find_file (FCD3 *fcd, char *fname)
 {
 	cob_file	*f;
 	cob_file_key *k;
 	struct fcd_file	*ff;
 	int	nkeys, linage;
+
 	for (ff = fcd_file_list; ff; ff=ff->next) {
-		if (ff->fcd == fcd) {
+		if (ff->fname
+		 && strcmp(ff->fname,fname) == 0) {
 			f = ff->f;
 			if (f == NULL) {
-				/* entry in fcd_file_list found, but has no cob_file, create below */
-				break;
+				ff = NULL;
+				goto newfile;
 			}
-			/* entry in fcd_file_list found with cob_file, all done */
-			return f;
+			return f;	/* entry in fcd_file_list found, all done */
 		}
 	}
+
+	for (ff = fcd_file_list; ff; ff=ff->next) {
+		if (ff->fcd == fcd) {
+			if (ff->fname
+			 && strcmp(ff->fname,fname) != 0) {	/* Same FCD, different filename */
+				continue;
+			}
+			f = ff->f;
+			if (f == NULL) 	/* no cob_file, create below */
+				goto newfile;
+			return f;		/* entry in fcd_file_list found, all done */
+		}
+	}
+
+newfile:
 	/* create cob_file */
 	nkeys = linage = 0;
 	if (fcd->kdbPtr != NULL
@@ -847,6 +820,8 @@ find_file (FCD3 *fcd)
 		ff->free_fcd = 0;
 		ff->next = fcd_file_list;
 		ff->fcd = fcd;
+		ff->fname = cob_cache_malloc (strlen(fname) + 1);
+		strcpy(ff->fname, fname);
 		fcd_file_list = ff;
 	}
 	ff->f = f;
@@ -979,6 +954,9 @@ cob_extfh_close (
 				cob_cache_free((void*)ff->fcd);
 			} else {
 				cob_cache_free((void*)ff->f);
+			}
+			if (ff->fname) {
+				cob_cache_free ((void*)ff->fname);
 			}
 			cob_cache_free((void*)ff);
 			break;
@@ -1361,10 +1339,6 @@ EXTFH (unsigned char *opcode, FCD3 *fcd)
 		/* Convert FCD3 back to FCD2 format */
 		fcd3_to_fcd2 (fcd, fcd2);
 
-		if (opcode[1] == OP_CLOSE) {
-			free_fcd2 (fcd2);
-		}
-
 		return rtnsts;
 	}
 #endif
@@ -1419,7 +1393,18 @@ EXTFH3 (unsigned char *opcode, FCD3 *fcd)
 
 	/* Look for fcd in table and if found use associated 'cob_file' after copying values over */
 	/* If fcd is not found, then 'callfh' created it, so create a new 'cob_file' and table that */
-	f = find_file (fcd);
+	k = 0;
+	if (fcd->fnamePtr) {
+		k = strlen(fcd->fnamePtr);
+		if (k > LDCOMPX2(fcd->fnameLen))
+			k = LDCOMPX2(fcd->fnameLen);
+		while (k > 0 && fcd->fnamePtr[k-1] == ' ')
+			--k;
+		STCOMPX2(k,fcd->fnameLen);
+		memcpy (fname, fcd->fnamePtr, k);
+	}
+	fname[k] = 0;
+	f = find_file (fcd, fname);
 
 	update_record_and_keys_if_necessary (f, fcd);
 
