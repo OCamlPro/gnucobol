@@ -1400,7 +1400,6 @@ EXTFH3 (unsigned char *opcode, FCD3 *fcd)
 			k = LDCOMPX2(fcd->fnameLen);
 		while (k > 0 && fcd->fnamePtr[k-1] == ' ')
 			--k;
-		STCOMPX2(k,fcd->fnameLen);
 		memcpy (fname, fcd->fnamePtr, k);
 	}
 	fname[k] = 0;
@@ -1449,7 +1448,6 @@ org_handling:
 					k = LDCOMPX2(fcd->fnameLen);
 				while (k > 0 && fcd->fnamePtr[k-1] == ' ')
 					--k;
-				STCOMPX2(k,fcd->fnameLen);
 				memcpy (fname, fcd->fnamePtr, k);
 				fname[k] = 0;
 				f->flag_auto_type = 1;
