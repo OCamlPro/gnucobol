@@ -442,8 +442,7 @@ static size_t		manilink_len;
 #endif
 
 static size_t		strip_output = 0;
-static size_t		gflag_set = 0;
-static size_t		aflag_set = 0;
+static size_t		source_debugging = 0;
 
 static const char	*const cob_csyns[] = {
 #ifndef	COB_EBCDIC_MACHINE
@@ -3098,7 +3097,7 @@ process_command_line (const int argc, char **argv)
 		case 'g':
 			/* -g : Generate C debug code */
 			save_all_src = 1;
-			gflag_set = 1;
+			source_debugging = 1;
 			cb_flag_stack_check = 1;
 			cb_flag_source_location = 1;
 #if 1		/* auto-included, may be disabled manually if needed */
@@ -3200,6 +3199,17 @@ process_command_line (const int argc, char **argv)
 			if (cb_compile_level != 0) {
 				cobc_options_error_nonfinal ();
 			}
+#if defined(__TINYC__) || defined(__OS400__)
+			/* check if we run the testsuite and skip the run,
+			   otherwise exit with error  */
+#define no_asm_msg _("the used C compiler is known to not be able to generate assembler code")
+			if (getenv ("COB_IS_RUNNING_IN_TESTMODE")) {
+				cobc_err_msg (no_asm_msg);
+				cobc_early_exit (77);
+			} else {
+				cobc_err_exit (no_asm_msg);
+			}
+#endif
 			cb_compile_level = CB_LEVEL_COMPILE;
 			break;
 
@@ -3624,7 +3634,6 @@ process_command_line (const int argc, char **argv)
 		case 'A':
 			/* -A <xx> : Add options to C compile phase */
 			COBC_ADD_STR (cobc_cflags, " ", cob_optarg, NULL);
-			aflag_set = 1;
 			break;
 
 		case 'Q':
@@ -3883,7 +3892,7 @@ process_command_line (const int argc, char **argv)
 	}
 
 	/* If C debug, do not strip output */
-	if (gflag_set) {
+	if (source_debugging) {
 		strip_output = 0;
 	}
 
@@ -4490,7 +4499,6 @@ process (char *cmd)
 	int	nlibs = 0;
 	int	noptc = 0;
 	int	noptl = 0;
-	int	dbg = 0;
 	int	comp_only = 0;
 	int	shared = 0;
 	int	optimize = 0;
@@ -4500,9 +4508,6 @@ process (char *cmd)
 
 	if (verbose_output) {
 		cobc_cmd_print (cmd);
-	}
-	if (gflag_set) {
-		dbg = 1;
 	}
 	token = strtok (cmd, " ");
 	if (token != NULL) {
@@ -4583,7 +4588,7 @@ process (char *cmd)
 			shared = 1;
 			break;
 		case 'g':
-			dbg = 1;
+			/* already handled */
 			break;
 		case 'O':
 			optimize = 1;
@@ -4638,7 +4643,7 @@ process (char *cmd)
 		if (optimize) {
 			strcat (buffptr, " OPTIMIZE(40)");
 		}
-		if (dbg) {
+		if (source_debugging) {
 			strcat (buffptr, " DBGVIEW(*ALL)");
 		}
 		if (cobc_gen_listing) {
@@ -5691,7 +5696,6 @@ xref_88_values (struct cb_field *field)
 			"%-30.30s %-6u ",
 			lcl_name, f->common.source_line);
 		xref_print (&f->xref, XREF_FIELD, NULL);
-
 	}
 }
 
@@ -7735,7 +7739,7 @@ process_compile (struct filename *fn)
 	cobc_chk_buff_size (bufflen);
 
 #ifdef	_MSC_VER
-	sprintf (cobc_buffer, gflag_set ?
+	sprintf (cobc_buffer, source_debugging ?
 		"%s /c %s %s /Od /MDd /Zi /FR /c /Fa\"%s\" /Fo\"%s\" \"%s\"" :
 		"%s /c %s %s     /MD          /c /Fa\"%s\" /Fo\"%s\" \"%s\"",
 			cobc_cc, cobc_cflags, cobc_include, name,
@@ -7785,7 +7789,7 @@ process_assemble (struct filename *fn)
 	cobc_chk_buff_size (bufflen);
 
 #ifdef	_MSC_VER
-	sprintf (cobc_buffer, gflag_set ?
+	sprintf (cobc_buffer, source_debugging ?
 		"%s /c %s %s /Od /MDd /Zi /FR /Fo\"%s\" \"%s\"" :
 		"%s /c %s %s     /MD          /Fo\"%s\" \"%s\"",
 			cobc_cc, cobc_cflags, cobc_include,
@@ -7890,7 +7894,7 @@ process_module_direct (struct filename *fn)
 	cobc_chk_buff_size (bufflen);
 
 #ifdef	_MSC_VER
-	sprintf (cobc_buffer, gflag_set ?
+	sprintf (cobc_buffer, source_debugging ?
 		"%s %s %s /Od /MDd /LDd /Zi /FR /Fe\"%s\" /Fo\"%s\" \"%s\" %s %s %s %s" :
 		"%s %s %s     /MD  /LD          /Fe\"%s\" /Fo\"%s\" \"%s\" %s %s %s %s",
 			cobc_cc, cobc_cflags, cobc_include, exe_name, name,
@@ -8003,7 +8007,7 @@ process_module (struct filename *fn)
 	cobc_chk_buff_size (bufflen);
 
 #ifdef	_MSC_VER
-	sprintf (cobc_buffer, gflag_set ?
+	sprintf (cobc_buffer, source_debugging ?
 		"%s /Od /MDd /LDd /Zi /FR /Fe\"%s\" \"%s\" %s %s %s %s" :
 		"%s     /MD  /LD          /Fe\"%s\" \"%s\" %s %s %s %s",
 		cobc_cc, exe_name, fn->object,
@@ -8116,7 +8120,7 @@ process_library (struct filename *l)
 	cobc_chk_buff_size (bufflen);
 
 #ifdef	_MSC_VER
-	sprintf (cobc_buffer, gflag_set ?
+	sprintf (cobc_buffer, source_debugging ?
 		"%s /Od /MDd /LDd /Zi /FR /Fe\"%s\" %s %s %s %s %s" :
 		"%s     /MD  /LD          /Fe\"%s\" %s %s %s %s %s",
 		cobc_cc, exe_name, cobc_objects_buffer,
@@ -8238,7 +8242,7 @@ process_link (struct filename *l)
 	cobc_chk_buff_size (bufflen);
 
 #ifdef	_MSC_VER
-	sprintf (cobc_buffer, gflag_set ?
+	sprintf (cobc_buffer, source_debugging ?
 		"%s /Od /MDd /Zi /FR /Fe\"%s\" %s %s %s %s %s" :
 		"%s     /MD          /Fe\"%s\" %s %s %s %s %s",
 		cobc_cc, exe_name, cobc_objects_buffer,
