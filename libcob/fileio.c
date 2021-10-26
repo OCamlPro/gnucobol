@@ -1698,6 +1698,8 @@ cob_set_ls_defaults (cob_file *f)
 	f->file_features &= ~COB_FILE_LS_NULLS;
 	if (f->file_format == COB_FILE_IS_MF) {		/* Set MF defaults */
 		f->file_features |= COB_FILE_LS_NULLS;
+		if (f->flag_line_adv)
+			f->file_features |= COB_FILE_LS_CRLF;
 	} else
 	if (f->file_format == COB_FILE_IS_DFLT	
 	 || f->file_format == COB_FILE_IS_GC) { 	/* Set GC defaults */
@@ -3298,13 +3300,15 @@ file_linage_check (cob_file *f)
 
 	lingptr = f->linage;
 	lingptr->lin_lines = cob_get_int (lingptr->linage);
+	DEBUG_LOG("io",("File %s linage lines %d\n",f->select_name,lingptr->lin_lines));
 	if (lingptr->lin_lines < 1) {
 		goto linerr;
 	}
 	if (lingptr->latfoot) {
 		lingptr->lin_foot = cob_get_int (lingptr->latfoot);
-		if (lingptr->lin_foot < 1 ||
-		    lingptr->lin_foot > lingptr->lin_lines) {
+		DEBUG_LOG("io",("File %s linage foot %d\n",f->select_name,lingptr->lin_foot));
+		if (lingptr->lin_foot < 1
+		 || lingptr->lin_foot > lingptr->lin_lines) {
 			goto linerr;
 		}
 	} else {
@@ -3312,6 +3316,7 @@ file_linage_check (cob_file *f)
 	}
 	if (lingptr->lattop) {
 		lingptr->lin_top = cob_get_int (lingptr->lattop);
+		DEBUG_LOG("io",("File %s linage top %d\n",f->select_name,lingptr->lin_top));
 		if (lingptr->lin_top < 0) {
 			goto linerr;
 		}
@@ -3320,6 +3325,7 @@ file_linage_check (cob_file *f)
 	}
 	if (lingptr->latbot) {
 		lingptr->lin_bot = cob_get_int (lingptr->latbot);
+		DEBUG_LOG("io",("File %s linage bot %d\n",f->select_name,lingptr->lin_bot));
 		if (lingptr->lin_bot < 0) {
 			goto linerr;
 		}
@@ -3412,11 +3418,20 @@ cob_seq_write_opt (cob_file *f, const int opt)
 			/* AFTER/BEFORE 0 */
 			COB_CHECKED_WRITE (f->fd, "\r", 1);
 		} else {
+			if (f->flag_line_adv
+			 && f->file_format == COB_FILE_IS_MF) {
+				COB_CHECKED_FPUTC ('\r', (FILE *)f->file);
+				f->flag_needs_cr = 0;
+			}   
 			for (i = opt & COB_WRITE_MASK; i > 0; --i) {
 				COB_CHECKED_WRITE (f->fd, "\n", 1);
 			}
 		}
 	} else if (opt & COB_WRITE_PAGE) {
+		if ((f->file_features & COB_FILE_LS_CRLF)) {
+			COB_CHECKED_FPUTC ('\r', (FILE *)f->file);
+			f->flag_needs_cr = 0;
+		}
 		COB_CHECKED_WRITE (f->fd, "\f", 1);
 	}
 	return 0;
@@ -3437,13 +3452,25 @@ cob_file_write_opt (cob_file *f, const int opt)
 		i = opt & COB_WRITE_MASK;
 		if (!i) {
 			/* AFTER/BEFORE 0 */
-			COB_CHECKED_FPUTC ('\r', (FILE *)f->file);
+			if (f->flag_needs_cr)
+				COB_CHECKED_FPUTC ('\r', (FILE *)f->file);
+			f->flag_needs_cr = 0;
 		} else {
+			if ((f->file_features & COB_FILE_LS_CRLF)) {
+				if (f->flag_needs_cr)
+					COB_CHECKED_FPUTC ('\r', (FILE *)f->file);
+			}
+			f->flag_needs_cr = 0;
 			for (; i > 0; --i) {
 				COB_CHECKED_FPUTC ('\n', (FILE *)f->file);
 			}
 		}
 	} else if (opt & COB_WRITE_PAGE) {
+		if ((f->file_features & COB_FILE_LS_CRLF)) {
+			if (f->flag_needs_cr)
+				COB_CHECKED_FPUTC ('\r', (FILE *)f->file);
+			f->flag_needs_cr = 0;
+		}
 		COB_CHECKED_FPUTC ('\f', (FILE *)f->file);
 	}
 	return 0;
@@ -4023,6 +4050,7 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename, const int mode, con
 	}
 
 	errno = 0;
+	f->last_write_mode = COB_LAST_WRITE_UNKNOWN;
 	fp = fopen (filename, fmode);
 	f->file = fp;
 	if (fp) {
@@ -4033,6 +4061,7 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename, const int mode, con
 	switch (errno) {
 	case 0:
 		f->open_mode = (unsigned char)mode;
+		f->flag_needs_cr = 1;
 		break;
 	case EINVAL:
 		if (f->flag_optional && nonexistent) {
@@ -4122,12 +4151,20 @@ cob_file_close (cob_file_api *a, cob_file *f, const int opt)
 		/* Fall through */
 	case COB_CLOSE_NORMAL:
 	case COB_CLOSE_NO_REWIND:
+		if (f->flag_line_adv 
+		 && (f->file_features & COB_FILE_LS_CRLF)
+		 && f->last_write_mode != COB_LAST_WRITE_UNKNOWN) {
+			if (f->flag_needs_cr)
+				COB_CHECKED_FPUTC ('\r', (FILE *)f->file);
+			f->flag_needs_cr = 0;
+		}
 		if (f->organization == COB_ORG_LINE_SEQUENTIAL) {
 			if (f->flag_needs_nl 
+			 && f->file_format != COB_FILE_IS_MF
 			 && !(f->flag_select_features & COB_SELECT_LINAGE)) {
-				f->flag_needs_nl = 0;
 				putc ('\n', (FILE *)f->file);
 			}
+			f->flag_needs_nl = 0;
 		} else if (f->flag_needs_nl) {
 			f->flag_needs_nl = 0;
 			if (f->fd >= 0) {
@@ -4395,6 +4432,7 @@ sequential_write (cob_file_api *a, cob_file *f, const int opt)
 			return COB_STATUS_30_PERMANENT_ERROR;
 		}
 		f->flag_needs_nl = 1;
+		f->last_write_mode = COB_LAST_WRITE_AFTER;
 	}
 
 	if (f->open_mode == COB_OPEN_EXTEND
@@ -4727,18 +4765,36 @@ lineseq_write (cob_file_api *a, cob_file *f, const int opt)
 		/* WRITE AFTER */
 		if ((opt & COB_WRITE_AFTER)
 		 &&  !f->flag_is_pipe) {
-			ret = cob_file_write_opt (f, opt);
-			if (ret) {
-				return ret;
+			if (f->flag_select_features & COB_SELECT_LINAGE) {
+				ret = cob_linage_write_opt (f, opt);
+				if (ret)
+					return ret;
+			} else
+			if (f->last_write_mode == COB_LAST_WRITE_BEFORE) {
+				COB_CHECKED_FPUTC ('\n', (FILE *)f->file);
+				f->flag_needs_nl = 0;
+			} else { 
+				ret = cob_file_write_opt (f, opt);
+				if (ret)
+					return ret;
+				f->flag_needs_nl = 1;
 			}
-			f->flag_needs_nl = 1;
+			f->last_write_mode = COB_LAST_WRITE_AFTER;
 		}
 
 		f->record_off = ftell ((FILE *)f->file);	/* Save file position at start of line */
 	}
 
+	if ((opt & COB_WRITE_BEFORE) 
+	 && f->last_write_mode == COB_LAST_WRITE_AFTER) {
+		if ((f->file_features & COB_FILE_LS_CRLF))
+			COB_CHECKED_FPUTC ('\r', (FILE *)f->file);
+		f->last_write_mode = COB_LAST_WRITE_BEFORE;
+		f->flag_needs_cr = 0;
+	} 
 	/* Write to the file */
 	if (size) {
+		f->flag_needs_cr = 1;
 		if (f->file_features & COB_FILE_LS_NULLS) {
 			size_t i, j, k, t;
 			p = f->record->data;
@@ -4807,14 +4863,18 @@ lineseq_write (cob_file_api *a, cob_file *f, const int opt)
 
 	if (f->flag_select_features & COB_SELECT_LINAGE) {
 		COB_CHECKED_FPUTC ('\n', fo);
+		f->flag_needs_nl = 0;
 	} else
 	if ((f->file_features & COB_FILE_LS_CRLF)) {
 		if ((opt & COB_WRITE_PAGE)
-		 || (opt & COB_WRITE_BEFORE && f->flag_needs_nl)) {
+		 || ((opt & COB_WRITE_BEFORE) && f->flag_needs_nl)) {
 			COB_CHECKED_FPUTC ('\r', fo);
+			f->flag_needs_cr = 0;
 		/* CHECKME - possible bug, see discussion board */
-		} else if ((opt == 0) ) {
-			COB_CHECKED_FPUTC ('\r', fo);
+		} else if (opt == 0) {
+			if (f->flag_needs_cr)
+				COB_CHECKED_FPUTC ('\r', fo);
+			f->flag_needs_cr = 0;
 		}
 	}
 

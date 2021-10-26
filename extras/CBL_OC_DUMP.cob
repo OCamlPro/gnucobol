@@ -7,6 +7,7 @@
       *>            (memory address and dump length)
       *>            export OC_DUMP_EXT=Y for extended explanatory text
       *>            (architecture   and endian-order plus above)
+      *>            export OC_DUMP_SPC=N to not output blank lines
       *>----------------------------------------------------------------
       *>
       *>  This file is part of GnuCOBOL.
@@ -67,6 +68,7 @@
            88 show-extended-infos      values '1', '2', 'Y', 'y'.
            88 show-very-extended-infos values '2', 'Y', 'y'.
 
+       01  blank-line            pic x value 'Y'.
        01  len-display           pic ZZZZZ9.
 
        01  byte                  pic x.
@@ -128,6 +130,8 @@
        >>ELSE
               set  is-big-endian-no  to true
        >>END-IF
+              accept blank-line from environment 'OC_DUMP_SPC'
+              end-accept
 
               *> Get and display characteristics and headline
               accept extended-infos from environment 'OC_DUMP_EXT'
@@ -219,9 +223,9 @@
               end-display
            end-if
 
-           display ' '
-                   upon SYSERR
-           end-display
+           if blank-line not = 'N'
+              display ' ' upon SYSERR
+           end-if
            display 'Offset  ' &
                    'HEX-- -- -- -5 -- -- -- -- 10 ' &
                    '-- -- -- -- 15 --   ' &
@@ -247,14 +251,15 @@
               call "CBL_GC_PRINTABLE" using show dots
               end-call
               move counter to offset
-              display disp-line
-                      upon SYSERR
-              end-display
+              if blank-line not = 'N'
+              or disp-line not = SPACES
+                 display disp-line upon SYSERR
+              end-if
            end-perform
 
-           display ' '
-                   upon SYSERR
-           end-display
+           if blank-line not = 'N'
+              display ' ' upon SYSERR
+           end-if
 
            goback
            .

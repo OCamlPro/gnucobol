@@ -1,4 +1,10 @@
 
+2021-10-26  Ron Norman <rjn@inglenet.com>
+
+	* common.h: Fields added to cob_file for MF style LINE ADVANCING files
+	* fileio.c: Updates to create more MF format LINE ADVANCING SEQUENTIAL
+	            Becomes default when -ffile-format=mf
+
 2021-10-22  Ron Norman <rjn@inglenet.com>
 
 	* fextfh.c: Changed to select cob_file/FCD pairing based on 

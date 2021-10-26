@@ -1010,6 +1010,11 @@ enum cob_file_access {
 #define COB_WRITE_LOCK		0x00800000
 #define COB_WRITE_NO_LOCK	0x01000000
 
+/* Last write mode for LINE SEQUENTIAL file */
+#define	COB_LAST_WRITE_UNKNOWN	0
+#define	COB_LAST_WRITE_AFTER	1
+#define	COB_LAST_WRITE_BEFORE	2
+
 /* Read options */
 
 #define COB_READ_NEXT		(1 << 0)
@@ -1554,6 +1559,7 @@ typedef struct __cob_file {
 	unsigned char		dflt_share;			/* Default SHARING MODE */
 	unsigned char		isam_duplen;		/* ISAM size of dups counter */
 	unsigned char		isam_idxsz;			/* ISAM size of index block / 512 */
+	unsigned char		last_write_mode;	/* remember last write mode */
 
 	unsigned short		retry_mode;		/* RETRY mode */
 	unsigned short		dflt_retry;		/* Default RETRY mode */
@@ -1590,9 +1596,10 @@ typedef struct __cob_file {
 	unsigned int		flag_updt_file:1;	/* Allow this 'cob_file' to be updated */
 	unsigned int		flag_is_std:1;		/* LINE SEQUENTIAL as 'stdin/stdout/stderr' */
 	unsigned int		flag_is_concat:1;	/* SEQUENTIAL concatenated file names */
-	unsigned int		unused_bits:5;
+	unsigned int		flag_needs_cr;		/* Needs CR */
+	unsigned int		unused_bits:4;
 
-	cob_field		*last_key;		/* Last field used as 'key' for I/O */
+	cob_field			*last_key;		/* Last field used as 'key' for I/O */
 	unsigned char		last_operation;		/* Most recent I/O operation */
 #define COB_LAST_START		1
 #define COB_LAST_READ_SEQ	2

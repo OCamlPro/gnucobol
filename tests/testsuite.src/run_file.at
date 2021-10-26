@@ -338,7 +338,7 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([COB_CURRENT_DATE="2015/02/06 16:40:52" $COBCRUN_DIRECT ./prog], [0],
 [Normal termination, ending status: 10
 ], [])
-AT_CHECK([diff mini-report reference-report], [0], [], [])
+AT_CHECK([gcdiff mini-report reference-report], [0], [], [])
 
 AT_CLEANUP
 
@@ -24198,6 +24198,154 @@ file3         Record 1  .
 file3         Record 2  .
 file3         Record 3  .
 ], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([LINE SEQUENTIAL])
+AT_KEYWORDS([MF-FILE])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+         SELECT FILE1
+          ASSIGN TO 'FILE1'.
+         SELECT FILE2
+          ASSIGN TO LINE ADVANCING FILE "FILE2".
+         SELECT FILE3
+          ORGANIZATION LINE SEQUENTIAL
+          ASSIGN TO 'FILE3'.
+         SELECT FILE4
+          ASSIGN TO LINE ADVANCING FILE "FILE4".
+         SELECT FILE5
+          ASSIGN TO LINE ADVANCING FILE "FILE5".
+         SELECT FILED
+          ORGANIZATION SEQUENTIAL
+          ASSIGN TO DUMP-FILE.
+       DATA DIVISION.
+       FILE SECTION.
+       FD  FILE1.
+       01  FILE1-RECORD.
+           03 FILLER                    PIC X(30).
+       FD  FILE2.
+       01  FILE2-RECORD.
+           03 FILLER                    PIC X(30).
+       FD  FILE3.
+       01  FILE3-RECORD.
+           03 FILLER                    PIC X(30).
+       FD  FILE4.
+       01  FILE4-RECORD.
+           03 FILLER                    PIC X(30).
+       FD  FILE5.
+       01  FILE5-RECORD.
+           03 FILLER                    PIC X(30).
+       FD  FILED.
+       01  FILED-RECORD.
+           03 FILLER                    PIC X(64).
+       WORKING-STORAGE SECTION.
+       01  DUMP-FILE   PIC X(5).
+       PROCEDURE DIVISION.
+
+           OPEN OUTPUT FILE1.
+           OPEN OUTPUT FILE3.
+
+           MOVE 'A' TO FILE1-RECORD
+                       FILE3-RECORD.
+
+           WRITE FILE1-RECORD.
+           WRITE FILE3-RECORD.
+           WRITE FILE1-RECORD.
+           WRITE FILE3-RECORD.
+
+           OPEN OUTPUT FILE2.
+           MOVE 'AP'  TO FILE2-RECORD.
+           WRITE FILE2-RECORD AFTER PAGE.
+           MOVE 'A1'     TO FILE2-RECORD.
+           WRITE FILE2-RECORD AFTER 1.
+           MOVE 'A2'     TO FILE2-RECORD.
+           WRITE FILE2-RECORD AFTER 2.
+           MOVE 'B1'    TO FILE2-RECORD.
+           WRITE FILE2-RECORD BEFORE 1.
+           MOVE 'B2'    TO FILE2-RECORD.
+           WRITE FILE2-RECORD BEFORE 2.
+           MOVE 'A1'     TO FILE2-RECORD.
+           WRITE FILE2-RECORD AFTER 1.
+           MOVE 'A2'     TO FILE2-RECORD.
+           WRITE FILE2-RECORD AFTER 2.
+           MOVE 'A0'     TO FILE2-RECORD.
+           WRITE FILE2-RECORD AFTER 0.
+           MOVE 'B0'     TO FILE2-RECORD.
+           WRITE FILE2-RECORD AFTER 0.
+
+           OPEN OUTPUT FILE4.
+           MOVE 'AP'  TO FILE4-RECORD.
+           WRITE FILE4-RECORD AFTER PAGE.
+           MOVE 'A1'     TO FILE4-RECORD.
+           WRITE FILE4-RECORD AFTER 1.
+           MOVE 'A2'     TO FILE4-RECORD.
+           WRITE FILE4-RECORD AFTER 2.
+
+           OPEN OUTPUT FILE5.
+           MOVE 'AP'  TO FILE5-RECORD.
+           WRITE FILE5-RECORD AFTER PAGE.
+           MOVE 'B1'     TO FILE5-RECORD.
+           WRITE FILE5-RECORD AFTER 1.
+           MOVE 'B2'     TO FILE5-RECORD.
+           WRITE FILE5-RECORD AFTER 2.
+
+           CLOSE FILE1.
+           CLOSE FILE2.
+           CLOSE FILE3.
+           CLOSE FILE4.
+           CLOSE FILE5.
+           MOVE "FILE2" TO DUMP-FILE PERFORM DUMP-IT.
+           MOVE "FILE3" TO DUMP-FILE PERFORM DUMP-IT.
+           MOVE "FILE4" TO DUMP-FILE PERFORM DUMP-IT.
+           MOVE "FILE5" TO DUMP-FILE PERFORM DUMP-IT.
+           STOP RUN.
+       DUMP-IT.
+           DISPLAY "Dump of " DUMP-FILE UPON SYSERR.
+           MOVE LOW-VALUES TO FILED-RECORD.
+           OPEN INPUT FILED.
+           READ FILED.
+           INSPECT FILED-RECORD REPLACING
+                   TRAILING SPACES BY LOW-VALUES
+           CALL 'CBL_OC_DUMP' USING FILED-RECORD.
+           CLOSE FILED.
+])
+
+AT_CHECK([$COBC -x -std=mf -w -ffile-format=MF prog.cob ], [0], [], [])
+
+AT_CHECK([export OC_DUMP_SPC=N
+$COBCRUN_DIRECT ./prog], [0], [], [Dump of FILE2
+Offset  HEX-- -- -- -5 -- -- -- -- 10 -- -- -- -- 15 --   CHARS----1----5-
+000000  0d 0c 41 50 0d 0a 41 31 0d 0a 0a 41 32 0d 42 31   ..AP..A1...A2.B1
+000016  0d 0a 42 32 0d 0a 0a 0a 41 31 0d 0a 0a 41 32 0d   ..B2....A1...A2.
+000032  41 30 0d 42 30 0d 00 00 00 00 00 00 00 00 00 00   A0.B0...........
+000048  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+Dump of FILE3
+Offset  HEX-- -- -- -5 -- -- -- -- 10 -- -- -- -- 15 --   CHARS----1----5-
+000000  41 0a 41 0a 00 00 00 00 00 00 00 00 00 00 00 00   A.A.............
+000016  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+000032  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+000048  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+Dump of FILE4
+Offset  HEX-- -- -- -5 -- -- -- -- 10 -- -- -- -- 15 --   CHARS----1----5-
+000000  0d 0c 41 50 0d 0a 41 31 0d 0a 0a 41 32 0d 00 00   ..AP..A1...A2...
+000016  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+000032  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+000048  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+Dump of FILE5
+Offset  HEX-- -- -- -5 -- -- -- -- 10 -- -- -- -- 15 --   CHARS----1----5-
+000000  0d 0c 41 50 0d 0a 42 31 0d 0a 0a 42 32 0d 00 00   ..AP..B1...B2...
+000016  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+000032  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+000048  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................
+])
 
 AT_CLEANUP
 
