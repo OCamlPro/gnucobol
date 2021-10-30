@@ -1,4 +1,9 @@
 
+2021-10-30  Ron Norman <rjn@inglenet.com>
+
+	* parser.y: For ASSIGN PRINTER or PRINTER-1 set file type to 
+				LINE ADVANCING
+
 2021-10-01  Simon Sobisch <simonsobisch@gnu.org>
 
 	* ppparse.y, pplex.l, scanner.l: implementation of COBOL-WORDS directive
