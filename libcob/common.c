@@ -4372,7 +4372,8 @@ cob_display_environment (const cob_field *f)
 	}
 	cob_field_to_string (f, cob_local_env, cob_local_env_size);
 	if (unlikely (cobsetptr->cob_env_mangle)) {
-		for (i = 0; i < strlen (cob_local_env); ++i) {
+		const size_t len = strlen (cob_local_env);
+		for (i = 0; i < len; ++i) {
 			if (!isalnum ((int)cob_local_env[i])) {
 				cob_local_env[i] = '_';
 			}
@@ -4428,7 +4429,8 @@ cob_get_environment (const cob_field *envname, cob_field *envval)
 	buff = cob_malloc (envname->size + 1U);
 	cob_field_to_string (envname, buff, envname->size);
 	if (unlikely (cobsetptr->cob_env_mangle)) {
-		for (size = 0; size < strlen (buff); ++size) {
+		const size_t len = strlen (buff);
+		for (size = 0; size < len; ++size) {
 			if (!isalnum ((int)buff[size])) {
 				buff[size] = '_';
 			}

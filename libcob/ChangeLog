@@ -1,4 +1,17 @@
 
+2021-11-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* coblocal.h: adjusted ISFINITE definition
+	* coblocal.h: removed 'extern "C"' as this header should not
+	  be externally included
+	* common.h, coblocal.h: moved _MSC_VER comparison macros as those are
+	  not relevant to user-space
+
+2021-10-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_get_environment, cob_display_environment): move strlen
+	  out of a loop
+
 2021-10-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c: always handle SIGFPE, define manually if needed

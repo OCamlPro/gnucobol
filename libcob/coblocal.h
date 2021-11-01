@@ -22,24 +22,21 @@
 #ifndef COB_LOCAL_H
 #define COB_LOCAL_H
 
-#ifdef	HAVE_STRINGS_H
-#include <strings.h>
-#endif
-
 /* We use this file to define/prototype things that should not be
    exported to user space
 */
 
+#ifdef	HAVE_STRINGS_H
+#include <strings.h>
+#endif
+
 #ifdef HAVE_ISFINITE
 #define ISFINITE isfinite
+#elif	defined(_MSC_VER) || defined(__BORLANDC__) || defined(__WATCOMC__)
+#include <float.h>
+#define	ISFINITE		_finite
 #else
 #define ISFINITE finite
-#endif
-#if	defined(_MSC_VER) || defined(__BORLANDC__) || defined(__WATCOMC__)
-
-#include <float.h>
-#undef ISFINITE
-#define	ISFINITE		_finite
 #endif
 
 
@@ -66,6 +63,54 @@
 #else
 #define COB_HIDDEN	extern
 #endif
+
+/* Readable compiler version defines */
+
+#if defined(_MSC_VER)
+
+/*
+_MSC_VER == 1400 (Visual Studio 2005, VS8 , MSVC 8) since OS-Version 2000
+_MSC_VER == 1500 (Visual Studio 2008, VS9 , MSVC 9) since OS-Version XP / 2003
+_MSC_VER == 1600 (Visual Studio 2010, VS10, MSVC10) since OS-Version XP / 2003
+_MSC_VER == 1700 (Visual Studio 2012, VS11, MSVC11) since OS-Version 7(XP) / 2008 R2(2003)
+_MSC_VER == 1800 (Visual Studio 2013, VS12, MSVC12) since OS-Version 7(XP) / 2008 R2(2003)
+_MSC_VER == 1900 (Visual Studio 2015, VS14, MSVC14) since OS-Version 7(XP) / 2008 R2(2003)
+_MSC_VER == 1910 (Visual Studio 2017, VS15, MSVC14.1) since OS-Version 7 / 2012 R2
+_MSC_VER == 1920 (Visual Studio 2019, VS16, MSVC14.2) since OS-Version 7 / 2012 R2
+
+Note: also defined together with __clang__ in both frontends:
+   __llvm__ Clang LLVM frontend for Visual Studio by LLVM Project (via clang-cl.exe [cl build options])
+   __c2__   Clang C2 frontend with MS CodeGen (via clang.exe [original clang build options])
+*/
+
+#if _MSC_VER >= 1500
+#define COB_USE_VC2008_OR_GREATER 1
+#else
+#define COB_USE_VC2008_OR_GREATER 0
+#if _MSC_VER < 1400
+#error Support for Visual Studio 2003 and older Visual C++ compilers dropped with GnuCOBOL 2.0
+#endif
+#endif
+
+#if _MSC_VER >= 1700
+#define COB_USE_VC2012_OR_GREATER 1
+#else
+#define COB_USE_VC2012_OR_GREATER 0
+#endif
+
+#if _MSC_VER >= 1800
+#define COB_USE_VC2013_OR_GREATER 1
+#else
+#define COB_USE_VC2013_OR_GREATER 0
+#endif
+
+#if _MSC_VER >= 1900
+#define COB_USE_VC2015_OR_GREATER 1
+#else
+#define COB_USE_VC2015_OR_GREATER 0
+#endif
+
+#endif /* _MSC_VER */
 
 #ifndef	F_OK
 #define	F_OK		0
@@ -201,10 +246,6 @@
 #define	COB_MOUSE_FLAGS	cobsetptr->cob_mouse_flags
 #define	COB_MOUSE_INTERVAL	cobsetptr->cob_mouse_interval
 #define	COB_USE_ESC		cobsetptr->cob_use_esc
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /* Global settings structure */
 
@@ -451,11 +492,6 @@ cob_max_int (const int x, const int y)
 	if (x > y) return x;
 	return y;
 }
-
-
-#ifdef __cplusplus
-}
-#endif
 
 #undef	COB_HIDDEN
 
