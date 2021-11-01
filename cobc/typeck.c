@@ -12708,25 +12708,14 @@ cb_emit_write (cb_tree record, cb_tree from, cb_tree opt, cb_tree lockopt)
 	}
 	if (f->organization == COB_ORG_LINE_SEQUENTIAL
 	&&  opt == cb_int0) {
-		if(cb_mf_files) {
-			/* Micro Focus has omission of ADVANCING default to
-			 *   BEFORE ADVANCING 1 LINE
-			 */
-			if (cb_flag_write_after) {		/* -fwrite-after */
-				opt = cb_int_hex (COB_WRITE_AFTER | COB_WRITE_LINES | 1);
-			} else {
-				opt = cb_int_hex (COB_WRITE_BEFORE | COB_WRITE_LINES | 1);
-			}
+		/* Omission of ADVANCING default to
+		 *   AFTER ADVANCING 1 LINE
+		 */
+		if (cb_flag_write_after			/* -fwrite-after */
+		||  CB_FILE(file)->flag_line_adv) {
+			opt = cb_int_hex (COB_WRITE_AFTER | COB_WRITE_LINES | 1);
 		} else {
-			/* ISO Standard has omission of ADVANCING default to
-			 *   AFTER ADVANCING 1 LINE
-			 */
-			if (cb_flag_write_after			/* -fwrite-after */
-			||  CB_FILE(file)->flag_line_adv) {
-				opt = cb_int_hex (COB_WRITE_AFTER | COB_WRITE_LINES | 1);
-			} else {
-				opt = cb_int_hex (COB_WRITE_BEFORE | COB_WRITE_LINES | 1);
-			}
+			opt = cb_int_hex (COB_WRITE_BEFORE | COB_WRITE_LINES | 1);
 		}
 	}
 	if (current_statement->handler_type == EOP_HANDLER &&

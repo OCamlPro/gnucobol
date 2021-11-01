@@ -1,4 +1,8 @@
 
+2021-11-01  Ron Norman <rjn@inglenet.com>
+	* typeck.c (cb_emit_write): For LINE SEQUENTIAL, default WRITE with no
+				ADVANCING to AFTER ADVANCING 1 LINE
+
 2021-10-30  Ron Norman <rjn@inglenet.com>
 
 	* parser.y: For ASSIGN PRINTER or PRINTER-1 set file type to 

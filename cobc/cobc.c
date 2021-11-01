@@ -3576,7 +3576,7 @@ process_command_line (const int argc, char **argv)
 			break;
 
 		case 12:
-			/* -ffile-format=<name> : Database schema name for XFD */
+			/* -ffile-format=<name> : Default file format */
 			if (strcasecmp (cob_optarg, "mf") == 0) {
 				cb_mf_files = 1;
 			} else
