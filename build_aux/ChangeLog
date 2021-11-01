@@ -1,4 +1,9 @@
 
+2021-10-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* ar-lib: added from
+	  https://git.savannah.gnu.org/cgit/gnulib.git/tree/build-aux/
+
 2020-11-12  Simon Sobisch <simonsobisch@gnu.org>
 
 	* pre-inst-env.in: added prefix
@@ -74,7 +79,7 @@
 2018-06-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* ltmain.sh [WIN32, !GCC]: local fix for libtool issue #109514 to
-	  support buildinf with configure using other Win32 compilers than MSC
+	  support building with configure using other Win32 compilers than MSC
 
 2018-02-28  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -128,7 +133,7 @@
 	  without uname(1) [removed 2014-01-25] from old version
 
 
-Copyright 2015-2020 Free Software Foundation, Inc.
+Copyright 2015-2021 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

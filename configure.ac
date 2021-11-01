@@ -67,7 +67,15 @@ if echo "$CC$CFLAGS" | grep 'aix64' 1>/dev/null 2>&1; then
 	NM="/usr/ccs/bin/nm -X64 -B"
 fi
 
-AM_INIT_AUTOMAKE([gnu no-texinfo.tex])
+# We don't want to have the full list of automatic defines from automake,
+# and take care of the one we want explicit AC_DEFINE_UNQUOTED.
+# While we do care about portability we get a long list of false-positives
+# because of code-coverage parts that are only part of the final Makefile if we
+# actually do use GNU make, so skip those warnings here and manually check with
+# "automake -Wall" before creating a release quality tarball.
+AM_INIT_AUTOMAKE([gnu no-texinfo.tex no-define -Wno-portability])
+AC_DEFINE_UNQUOTED([PACKAGE], ["$PACKAGE"], [Name of package])  # used for bindtextdomain and in .rc-files
+
 
 # Autoheader templates
 AH_TEMPLATE([COB_DEBUG_LOG], [Enable internal logging (Developers only!)])
@@ -97,7 +105,7 @@ AH_TEMPLATE([COB_DEBUG_FLAGS], [Compile/link option for debugging])
 AH_TEMPLATE([COB_SHARED_OPT], [Compile/link option for shared code])
 AH_TEMPLATE([COB_STRIP_CMD], [Strip command])
 AH_TEMPLATE([USE_LIBDL], [Use system dynamic loader])
-AH_TEMPLATE([HAVE_DLADDR], [Has dladdr function])
+#AH_TEMPLATE([HAVE_DLADDR], [Has dladdr function])
 AH_TEMPLATE([WITH_VARSEQ], [Define variable sequential file format])
 AH_TEMPLATE([HAVE_ATTRIBUTE_ALIGNED], [Has __attribute__((aligned))])
 AH_TEMPLATE([HAVE_TIMEZONE], [Has timezone variable])
@@ -337,42 +345,17 @@ AS_IF([test "x$PROGRAMS_LIBS" != "x"], [
 ])
 LIBS="$curr_libs"
 
-
-LT_INIT([dlopen win32-dll])
-
-AC_PROG_EGREP
 AM_PROG_CC_C_O
 
-AM_PROG_LEX
-AC_PROG_YACC
-
+LT_PREREQ([2.2])
 LT_PROG_RC
+AM_PROG_AR
+# CHECKME: do we want disable-static (mind libsupport) 
+#          if yes then drop AM_PROG_AR + build_aux/ar-lib
+LT_INIT([dlopen win32-dll])
 
-# only GNU Bison is supported, so drop yacc-compatibility warnings if possible
-# note: that breaks old Bison versions which we still support,
-#       if that changes the test may be obsolete
-AC_MSG_CHECKING([how to disable yacc compatibility warnings])
-case "$YACC $YFLAGS $AM_YFLAGS" in
-  *-Wno-yacc*)
-   AC_MSG_RESULT([already specified])
-  ;;
-  *-Wyacc*)
-   AC_MSG_RESULT([explicit enabled])
-  ;;
-  *)
-   $YACC $AM_YFLAGS $YFLAGS -Wno-yacc -V 1>/dev/null  2>&1
-   if test $? -eq 0; then
-      AC_MSG_RESULT([-Wno-yacc])
-      if test -z "$YFLAGS"; then
-         YFLAGS="-Wno-yacc"
-      else
-         YFLAGS="$YFLAGS -Wno-yacc"
-      fi
-   else
-      AC_MSG_RESULT([not supported])
-   fi
-  ;;
-esac
+AX_PROG_FLEX
+AX_PROG_BISON
 
 AC_ARG_VAR(DIFF_FLAGS, arguments passed to diff)
 AC_MSG_CHECKING([for diff arguments])
@@ -412,10 +395,10 @@ AC_HEADER_STDC
 # entries only used from external includes -> likely no need to check here
 # AC_CHECK_HEADERS([stdint.h whcar.h malloc.h])
 # mandatory:
-AC_CHECK_HEADERS([sys/types.h signal.h stddef.h sys/time.h], [],
+AC_CHECK_HEADERS([sys/types.h signal.h stddef.h], [],
 	[AC_MSG_ERROR([mandatory header could not be found or included])])
 # optional:
-AC_CHECK_HEADERS([locale.h fcntl.h dlfcn.h])
+AC_CHECK_HEADERS([sys/time.h locale.h fcntl.h dlfcn.h])
 
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -1483,7 +1466,9 @@ if test "$with_db" = "yes"; then
 		AC_MSG_CHECKING([for Berkeley DB library with version $COB_BDB_HEADER])
 		# prefer library with version number included as some systems link against wrong version
 		# of the library and to not break when a newer BDB version is installed, see bug #100
-		for cobdb in db-$COB_BDB_HEADER db
+		COB_BDB_HEADER_CLEAN=$(echo "$COB_BDB_HEADER" | sed -e 's/\.//' -e 's/\-//')
+		for cobdb in db-$COB_BDB_HEADER db-$COB_BDB_HEADER_CLEAN db \
+			libdb$COB_BDB_HEADER libdb$COB_BDB_HEADER_CLEAN  # for common Win32 versions...
 		do
 			LIBS="$test_libs -l$cobdb"
 			AC_RUN_IFELSE([AC_LANG_PROGRAM([[#include <stdio.h>

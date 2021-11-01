@@ -1,4 +1,20 @@
 
+2021-10-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: requiring libtool 2.2 via LT_PREREQ,
+	  specify use of ar-lib for systems that may need it via AM_PROG_AR
+	* configure.ac: moved sys/time.h to optional headers
+	* configure.ac: check for more BDB library names (Win32 common names)
+
+2021-10-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: dropped portibility warnings for automake because
+	  of false-positives, only define specific names we want instead
+	  "everything that automake has"
+	* configure.ac: explicit check for bison/flex
+	* m4/ax_prog_bison.m4, m4/ax_prog_flex.m4: new files from the
+	  GNU Autoconf Archive
+
 2021-10-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: cleanup for math library check fixing #559
