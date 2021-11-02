@@ -1,4 +1,12 @@
 
+2021-11-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: use `dnl` comments in all places that are not intended be
+	  included in the generated configure script, fixing spurious warnings
+	  about potentially undefined macros; 
+	* configure.ac: copyright notice in generated script
+	* m4/libtool.m4: updated from libtool, with additions for netbsd from Debian
+
 2021-10-11  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: requiring libtool 2.2 via LT_PREREQ,
