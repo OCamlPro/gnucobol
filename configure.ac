@@ -1,25 +1,26 @@
-#
-# Configure template for GnuCOBOL
-# Process this file with autoconf to produce a configure script.
-#
-# Copyright (C) 2001-2012, 2014-2021 Free Software Foundation, Inc.
-# Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
-# Edward Hart
-#
-# This file is part of GnuCOBOL.
-#
-# The GnuCOBOL compiler is free software: you can redistribute it
-# and/or modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation, either version 3 of the
-# License, or (at your option) any later version.
-#
-# GnuCOBOL is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+dnl
+dnl Configure template for GnuCOBOL
+dnl Process this file with autoconf to produce a configure script.
+dnl
+dnl Copyright (C) 2001-2012, 2014-2021 Free Software Foundation, Inc.
+dnl Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
+dnl Edward Hart
+dnl
+dnl This file is part of GnuCOBOL.
+dnl
+dnl The GnuCOBOL compiler is free software: you can redistribute it
+dnl and/or modify it under the terms of the GNU General Public License
+dnl as published by the Free Software Foundation, either version 3 of the
+dnl License, or (at your option) any later version.
+dnl
+dnl GnuCOBOL is distributed in the hope that it will be useful,
+dnl but WITHOUT ANY WARRANTY; without even the implied warranty of
+dnl MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+dnl GNU General Public License for more details.
+dnl
+dnl You should have received a copy of the GNU General Public License
+dnl along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+dnl
 
 AC_PREREQ([2.64])
 
@@ -28,7 +29,13 @@ AC_INIT([GnuCOBOL],
 	[bug-gnucobol@gnu.org],
 	[gnucobol],
 	[https://www.gnu.org/software/gnucobol/])
-AC_REVISION([GnuCOBOL snapshot $Revision: 4272 $])
+AC_REVISION([GnuCOBOL snapshot $Revision: 4437 $])
+AC_COPYRIGHT([This file is part of GnuCOBOL.
+
+Copyright (C) 2001-2012, 2014-2021 Free Software Foundation, Inc.
+Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
+Edward Hart
+])
 AC_CONFIG_SRCDIR([libcob.h])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_TESTDIR([tests])
@@ -67,9 +74,17 @@ if echo "$CC$CFLAGS" | grep 'aix64' 1>/dev/null 2>&1; then
 	NM="/usr/ccs/bin/nm -X64 -B"
 fi
 
-AM_INIT_AUTOMAKE([gnu no-texinfo.tex])
+dnl We don't want to have the full list of automatic defines from automake,
+dnl and take care of the one we want explicit AC_DEFINE_UNQUOTED.
+dnl While we do care about portability we get a long list of false-positives
+dnl because of code-coverage parts that are only part of the final Makefile if we
+dnl actually do use GNU make, so skip those warnings here and manually check with
+dnl "automake -Wall" before creating a release quality tarball.
+AM_INIT_AUTOMAKE([gnu no-texinfo.tex no-define -Wno-portability])
+AC_DEFINE_UNQUOTED([PACKAGE], ["$PACKAGE"], [Name of package])  # used for bindtextdomain and in .rc-files
 
-# Autoheader templates
+
+dnl Autoheader templates
 AH_TEMPLATE([COB_DEBUG_LOG], [Enable internal logging (Developers only!)])
 AH_TEMPLATE([COB_EXPERIMENTAL], [Enable experimental code (Developers only!)])
 AH_TEMPLATE([COB_TREE_DEBUG], [Enable extra checks within the compiler (Developers only!)])
@@ -130,14 +145,16 @@ AH_TEMPLATE([HAVE_CLOCK_GETTIME], [Has clock_gettime function and CLOCK_REALTIME
 AH_TEMPLATE([HAVE_ISFINITE], [Has isfinite function])
 AH_TEMPLATE([HAVE_READLINE], [Has readline function])
 AH_TEMPLATE([HAVE_MP_GET_MEMORY_FUNCTIONS], [Do we have mp_get_memory_functions in GMP/MPIR])
-#AH_TEMPLATE([HAVE_RAISE], [Has raise function])
+dnl done via AC_CHECK_FUNCS: AH_TEMPLATE([HAVE_RAISE], [Has raise function])
 AH_TEMPLATE([HAVE_FINITE_IEEEFP_H],
 	[Declaration of finite function in ieeefp.h instead of math.h])
 
-# preparation for cross-compilation
+dnl preparation for cross-compilation
 AC_ARG_PROGRAM
 
-# Configure options part I (not needing any compilation)
+dnl
+dnl Configure options part I (not needing any compilation)
+dnl
 
 AC_ARG_ENABLE([debug],
   [AS_HELP_STRING([--enable-debug],
@@ -296,23 +313,24 @@ AM_CONDITIONAL([MAKE_HAS_PREREQ_ONLY], [test "${_am_result}" = "yes"])
 
 curr_libs="$LIBS"
 
+dnl Checked before AC_PROG_CC and default flags are applied.
 enable_cflags_setting=no
 AC_MSG_CHECKING([whether CFLAGS -O can be modified])
 # Enable setting if the user has not specified the optimisation in CFLAGS.
-# Checked before AC_PROG_CC and default flags are applied.
 echo "$CFLAGS" | grep "\-O.*\( \|$\)" 1>/dev/null 2>/dev/null
 if test $? != 0; then
 	enable_cflags_setting=yes
 fi
 AC_MSG_RESULT([$enable_cflags_setting])
 
-# Default CFLAGS (removed -g set in AC_INIT for compatibility)
+dnl Default CFLAGS (removed -g set in AC_INIT for compatibility)
 : ${CFLAGS="-O2"}
 
 AC_PROG_CC([gcc xlc cc])
 AC_PROG_CC_STDC
 
-AC_PROG_CPP
+dnl no explict usage of CPP var
+dnl AC_PROG_CPP
 
 AC_USE_SYSTEM_EXTENSIONS
 
@@ -366,39 +384,23 @@ AS_IF([test "x$PROGRAMS_LIBS" != "x"], [
 ])
 LIBS="$curr_libs"
 
-
-LT_INIT([dlopen win32-dll])
-
-AC_PROG_EGREP
+dnl only needed until automake 1.14 - but we don't have a check for the
+dnl                                   minimal version, so leaving in
 AM_PROG_CC_C_O
 
-AM_PROG_LEX
-AC_PROG_YACC
+LT_PREREQ([2.2])
+LT_PROG_RC
 
-# only GNU Bison 3+ is supported, so drop yacc-compatibility warnings
-# TODO: check for Bison 3+ here
-AC_MSG_CHECKING([how to disable yacc compatibility warnings])
-case "$YACC $YFLAGS $AM_YFLAGS" in
-  *-Wno-yacc*)
-   AC_MSG_RESULT([already specified])
-  ;;
-  *-Wyacc*)
-   AC_MSG_RESULT([explicit enabled])
-  ;;
-  *)
-   $YACC $AM_YFLAGS $YFLAGS -Wno-yacc -V 1>/dev/null  2>&1
-   if test $? -eq 0; then
-      AC_MSG_RESULT([-Wno-yacc])
-      if test -z "$YFLAGS"; then
-         YFLAGS="-Wno-yacc"
-      else
-         YFLAGS="$YFLAGS -Wno-yacc"
-      fi
-   else
-      AC_MSG_RESULT([not supported])
-   fi
-  ;;
-esac
+AM_PROG_AR
+dnl CHECKME: do we want disable-static (mind libsupport) 
+dnl          if yes then drop AM_PROG_AR + build_aux/ar-lib
+LT_INIT([dlopen win32-dll])
+
+AX_PROG_FLEX
+AX_PROG_BISON
+# only GNU Bison 3+ is supported, TODO: check for Bison 3+ here
+dnl AC_PATH_PROG([BISON],[bison])
+dnl AX_PROG_BISON_VERSION([3.0.2],[],[ ... ])
 
 AC_ARG_VAR(DIFF_FLAGS, arguments passed to diff)
 AC_MSG_CHECKING([for diff arguments])
@@ -438,10 +440,11 @@ AC_LIB_RPATH
 
 # Checks for header files.
 AC_HEADER_STDC
-# entries only used from external includes -> likely no need to check here
-# AC_CHECK_HEADERS([stdint.h whcar.h malloc.h])
+
+dnl entries only used from external includes -> likely no need to check here
+dnl AC_CHECK_HEADERS([stdint.h whcar.h malloc.h])
 # mandatory:
-AC_CHECK_HEADERS([sys/types.h signal.h stddef.h sys/time.h], [],
+AC_CHECK_HEADERS([sys/types.h signal.h stddef.h], [],
 	[AC_MSG_ERROR([mandatory header could not be found or included])])
 # optional:
 AC_CHECK_HEADERS([locale.h fcntl.h dlfcn.h sys/wait.h sys/sysmacros.h])
@@ -454,7 +457,7 @@ AC_TYPE_SIZE_T
 AC_STRUCT_TM
 AC_CHECK_TYPES([sig_atomic_t], [], [], [[#include <signal.h>]])
 
-# Don't use AC_C_INLINE here. We need the value
+dnl Note: Don't use AC_C_INLINE here. We need the value.
 
 AC_MSG_CHECKING([for inline keyword])
 for cob_keyw in __inline __inline__ inline
@@ -563,7 +566,7 @@ if test "x$COB_CC" = "x"; then
 	COB_CC="$CC"
 fi
 
-# FIXME: -lm should only be used if needed (which it often is not), see Bug #559
+dnl FIXME: -lm should only be used if needed (which it often is not), see Bug #559
 if test "$COB_USES_ICC_ONLY" = "yes"; then
 	COMMON_LIBS="-limf -lm"
 else
@@ -591,7 +594,7 @@ if test "x$LDFLAGS" != "x"; then
 	fi
 fi
 
-# Add --enable-code-coverage and test for code-coverage tools if enabled
+dnl Add --enable-code-coverage and test for code-coverage tools if enabled
 AX_CODE_COVERAGE
 
 if test "$COB_USES_GCC_NO_ICC" != yes -a "$enable_code_coverage" = "yes"; then
@@ -599,7 +602,7 @@ if test "$COB_USES_GCC_NO_ICC" != yes -a "$enable_code_coverage" = "yes"; then
 fi
 
 
-# set PKG_CONFIG to use (cross-compile aware)
+dnl set PKG_CONFIG to use (cross-compile aware)
 PKG_PROG_PKG_CONFIG
 
 
@@ -778,7 +781,10 @@ AC_CHECK_LIB([readline], [readline],
  [AC_DEFINE([HAVE_READLINE], [1])
   LIBCOB_LIBS="$LIBCOB_LIBS -lreadline" ], [], [])
 
-# Configure options part II (needing compilation)
+dnl
+dnl Configure options part II (needing compilation)
+dnl
+
 AC_ARG_WITH([xml2],
   [AS_HELP_STRING([--with-xml2],
     [Use libxml2 as XML handler (default)])],
@@ -1103,13 +1109,13 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <math.h>]],
   	])
 )
 
-# Check for raise (optional) --> done via AC_CHECK_FUNCS
-#AC_MSG_CHECKING([for raise])
-#AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <signal.h>]],
-#  [[raise (SIGINT);]])],
-#  [AC_DEFINE([HAVE_RAISE], [1]) AC_MSG_RESULT([yes])],
-#  [AC_MSG_RESULT([no])],
-#  [])
+dnl  Check for raise (optional) --> done via AC_CHECK_FUNCS
+dnl AC_MSG_CHECKING([for raise])
+dnl AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <signal.h>]],
+dnl   [[raise (SIGINT);]])],
+dnl   [AC_DEFINE([HAVE_RAISE], [1]) AC_MSG_RESULT([yes])],
+dnl   [AC_MSG_RESULT([no])],
+dnl   [])
 
 AC_CHECK_FUNCS([fdatasync sigaction fmemopen])
 AC_CHECK_DECLS([fdatasync])	# also check for declaration, missing on MacOS...
@@ -1722,7 +1728,9 @@ if test "$with_db" = "yes" -o "$with_db" = "check"; then
 		AC_MSG_CHECKING([for Berkeley DB library with version $COB_BDB_HEADER])
 		# prefer library with version number included as some systems link against wrong version
 		# of the library and to not break when a newer BDB version is installed, see bug #100
-		for cobdb in db-$COB_BDB_HEADER db
+		COB_BDB_HEADER_CLEAN=$(echo "$COB_BDB_HEADER" | sed -e 's/\.//' -e 's/\-//')
+		for cobdb in db-$COB_BDB_HEADER db-$COB_BDB_HEADER_CLEAN db \
+			libdb$COB_BDB_HEADER libdb$COB_BDB_HEADER_CLEAN  # for common Win32 versions...
 		do
 			LIBS="$test_libs -l$cobdb"
 			AC_RUN_IFELSE([AC_LANG_PROGRAM([[#include <stdio.h>
@@ -1981,23 +1989,23 @@ AC_RUN_IFELSE([AC_LANG_PROGRAM([[]], [[
 	 fi
 	 AC_MSG_WARN([cannot run test program while cross-compiling])])
 
-# Check gcc wrapv option
-# We likely don't need this and remove it before 3.0 final release
-#if test "$COB_USES_GCC_NO_ICC" = "yes"; then
-#	curr_cflags="$CFLAGS"
-#	CFLAGS="$CFLAGS -fwrapv"
-#	AC_MSG_CHECKING([for gcc -fwrapv option])
-#	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[int testint;]])],
-#		[AC_DEFINE([HAVE_FWRAPV_OPT], [1]) AC_MSG_RESULT([yes])],
-#		[AC_MSG_RESULT([no])])
-#		[],
-#		[CFLAGS="$curr_cflags"])
-#	CFLAGS="$curr_cflags"
-#fi
+dnl We likely don't need this and remove it before 4.0 final release
+dnl # Check gcc wrapv option
+dnl if test "$COB_USES_GCC_NO_ICC" = "yes"; then
+dnl 	curr_cflags="$CFLAGS"
+dnl 	CFLAGS="$CFLAGS -fwrapv"
+dnl 	AC_MSG_CHECKING([for gcc -fwrapv option])
+dnl 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[int testint;]])],
+dnl 		[AC_DEFINE([HAVE_FWRAPV_OPT], [1]) AC_MSG_RESULT([yes])],
+dnl 		[AC_MSG_RESULT([no])])
+dnl 		[],
+dnl 		[CFLAGS="$curr_cflags"])
+dnl 	CFLAGS="$curr_cflags"
+dnl fi
 
 # Check if aligned attribute seems to work
 # done:   does not raise an error
-# *TODO*: has same output as omitting it)
+# *TODO*: has same output as omitting it
 AC_MSG_CHECKING([for aligned attribute])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]],
 	[[char testchar[4] __attribute__((aligned));]])],
@@ -2005,16 +2013,16 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]],
 	],
 	[AC_MSG_RESULT([no])])
 
-# Simon: removed, use --disable-nls instead
-## Disable for Cygwin
-#AC_MSG_CHECKING([for __CYGWIN__])
-#AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
-#	#ifndef __CYGWIN__
-#	# error macro not defined
-#	#endif]])],
-#	[enable_nls=no
-#	 AC_MSG_RESULT([yes])],
-#	[AC_MSG_RESULT([no])])
+dnl  Simon: removed, use --disable-nls instead
+dnl # Disable for Cygwin
+dnl AC_MSG_CHECKING([for __CYGWIN__])
+dnl AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+dnl 	#ifndef __CYGWIN__
+dnl 	# error macro not defined
+dnl 	#endif]])],
+dnl 	[enable_nls=no
+dnl 	 AC_MSG_RESULT([yes])],
+dnl 	[AC_MSG_RESULT([no])])
 
 AM_GNU_GETTEXT([external])
 AM_GNU_GETTEXT_VERSION([0.19.8])
@@ -2028,7 +2036,7 @@ if test "x$LTLIBINTL" != "x"; then
 fi
 
 # Checks for internationalization stuff
-# AM_ICONV
+dnl currently not directly used: AM_ICONV
 AM_LANGINFO_CODESET
 
 # GnuCOBOL Configuration
@@ -2068,7 +2076,7 @@ fi
 
 unset enable_cflags_setting
 
-# cobc.c assumed -g for all but _MSC_VER
+# Note: cobc.c assumed -g for all but _MSC_VER
 if test "${COB_DEBUG_FLAGS}x" = "x"; then
 COB_DEBUG_FLAGS="-g"
 
@@ -2505,7 +2513,8 @@ unset curr_libs
 
 AM_CONDITIONAL([COB_MAKE_IX], [test "$COB_HAS_ISAM" != no])
 AM_CONDITIONAL([COB_MAKE_RUN_BINARIES], [test "$cross_compiling" != yes])
-# FIXME: Should be tested as the system may can actually run these (Bash on Windows?)
+dnl FIXME: Should be tested as the system may can actually run these
+dnl        for example x86/x64 cross, GNU/Linux with Wine, Bash on Windows, ...
 
 AC_DEFINE_UNQUOTED([COB_CC],			["$COB_CC"],		[compiler used by cobc])
 AX_AC_DEFINE_RESOLVED([COB_CFLAGS],		[$COB_CFLAGS],		[compiler flags passed to compiler by cobc])
@@ -2526,13 +2535,13 @@ AX_AC_DEFINE_RESOLVED([COB_CONFIG_DIR],	[$COB_CONFIG_DIR],	[default search path 
 AX_AC_DEFINE_RESOLVED([COB_COPY_DIR],	[$COB_COPY_DIR],	[default search path for configuration files])
 AX_AC_DEFINE_RESOLVED([COB_SCHEMA_DIR],	[$COB_SCHEMA_DIR],	[default search path for indexed schema definitions])
 
-#AX_AC_DEFINE_RESOLVED([DATADIR],		[$datarootdir], 	[path for configuration files])
-#AX_AC_DEFINE_RESOLVED([LOCALEDIR],		[$localedir], 		[path for locale-dependent data])
+dnl unused: AX_AC_DEFINE_RESOLVED([DATADIR],		[$datarootdir], 	[path for configuration files])
+dnl unused: AX_AC_DEFINE_RESOLVED([LOCALEDIR],		[$localedir], 		[path for locale-dependent data])
 
-#AC_DEFINE_UNQUOTED([COBC_NAME],	["$(echo cobc    | $SED "$program_transform_name")"], [executable name for compiler])
+dnl unused: AC_DEFINE_UNQUOTED([COBC_NAME],	["$(echo cobc    | $SED "$program_transform_name")"], [executable name for compiler])
 AC_DEFINE_UNQUOTED([COBCRUN_NAME],	["$(echo cobcrun | $SED "$program_transform_name")"], [executable name for module runner])
 
-# informational only
+dnl informational only
 AC_DEFINE_UNQUOTED([COB_BLD_CC],		["$CC"],		[informational: compiler during compilation])
 AC_DEFINE_UNQUOTED([COB_BLD_CFLAGS],	["$CFLAGS"],	[informational: compiler flags during compilation])
 AC_DEFINE_UNQUOTED([COB_BLD_CPPFLAGS],	["$CPPFLAGS"],	[informational: preparser flags during compilation])
@@ -2573,14 +2582,14 @@ AC_SUBST([OCI_CFLAGS])
 AC_SUBST([BDB_CFLAGS])
 AC_SUBST([LMDB_CFLAGS])
 
-# was used in bin/Makefile.am - seems not to be needed
-#AC_SUBST([COB_EXPORT_DYN])
+dnl was used in bin/Makefile.am - seems not to be needed
+dnl AC_SUBST([COB_EXPORT_DYN])
 
-# used in the testsuite
+dnl used in the testsuite
 COB_BIGENDIAN="$ac_cv_c_bigendian"
 AC_SUBST([COB_BIGENDIAN])
 
-#AC_SUBST([COB_FIX_LIB])
+dnl unused: AC_SUBST([COB_FIX_LIB])
 AC_SUBST([COB_FIX_LIBTOOL])
 
 AC_SUBST([COB_HAS_ISAM])

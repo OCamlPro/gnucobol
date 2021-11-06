@@ -1040,30 +1040,49 @@ AT_CLEANUP
 
 
 AT_SETUP([maximum data size])
-AT_KEYWORDS([misc])
+AT_KEYWORDS([misc max])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       01 SINGLE-ITEM   PIC X(999999999).
+       01 SINGLE-ITEM   PIC X(9999999999).
        01 GROUP-ITEM1.
-          05 FILLER     PIC X(999999999).
+          05 FILLER     PIC X(9999999999).
        01 GROUP-ITEM2.
           05 FILLER     PIC X(199999999).
           05 FILLER     PIC X(199999999).
+       >> IF P64 SET
+          05 FILLER     PIC X(1999999999).
+       >> END-IF
        PROCEDURE        DIVISION.
            STOP RUN.
 
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+AT_CHECK([test "$COB_HAS_64_BIT_POINTER" = "yes"], [0], [], [],
+
+# Previous test "failed" --> 32 bit
+[AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:6: error: 'SINGLE-ITEM' cannot be larger than 268435456 bytes
 prog.cob:8: error: 'FILLER 1' cannot be larger than 268435456 bytes
 prog.cob:7: error: 'GROUP-ITEM1' cannot be larger than 268435456 bytes
 prog.cob:9: error: 'GROUP-ITEM2' cannot be larger than 268435456 bytes
-])
+])]
+
+,
+
+# Previous test "passed" --> 64 bit
+[AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:6: error: 'SINGLE-ITEM' cannot be larger than 2147483646 bytes
+prog.cob:8: error: 'FILLER 1' cannot be larger than 2147483646 bytes
+prog.cob:7: error: 'GROUP-ITEM1' cannot be larger than 2147483646 bytes
+prog.cob:9: error: 'GROUP-ITEM2' cannot be larger than 2147483646 bytes
+])]
+
+)
+
 
 AT_CLEANUP
 

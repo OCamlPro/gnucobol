@@ -1,5 +1,14 @@
 
+2021-11-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* field.c (compute_size): adjusted check to correctly catch items bigger
+	  than 2 GB
+	* tree.c (get_pic_number_from_str) [COB_64_BIT_POINTER]: allow up to
+	  10 significant digits
+	* tree.c (cb_build_picture): check for value <= INT_MAX
+
 2021-11-01  Ron Norman <rjn@inglenet.com>
+
 	* typeck.c (cb_emit_write): For LINE SEQUENTIAL, default WRITE with no
 				ADVANCING to AFTER ADVANCING 1 LINE
 
@@ -7,6 +16,13 @@
 
 	* parser.y: For ASSIGN PRINTER or PRINTER-1 set file type to 
 				LINE ADVANCING
+
+2021-10-23  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (process_command_line) [__TINYC__, __OS400__): early exit when
+	  assembling is requested, for the testsuite with a "skip" status
+	* cobc.c: removed unused aflag_set, renamed gflag_set to source_debugging
+	* cobc.c (process) [__OS400__]: simplified source-debugging handling
 
 2021-10-01  Simon Sobisch <simonsobisch@gnu.org>
 

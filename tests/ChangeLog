@@ -1,4 +1,9 @@
 
+2021-11-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* testsuite.src/listings.at: ignore all stderr in listing tests
+	  as those are checked via the listing output there
+
 2021-09-25   Ron Norman <rjn@inglenet.com>
 
 	* atlocal.in,atlocal_win,atlocal_valgrind: Add -std=default to COBC
@@ -1054,7 +1059,7 @@
 	* redef.at, subref.at, runtime.at: New files.
 
 
-Copyright 2002-2020 Free Software Foundation, Inc.
+Copyright 2002-2021 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

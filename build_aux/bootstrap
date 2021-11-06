@@ -3,7 +3,7 @@
 # Bootstrap gnucobol package from checked-out sources
 # Note:  call as ./bootstrap if you don't have readlink -f
 #
-# Copyright (C) 2017-2020 Free Software Foundation, Inc.
+# Copyright (C) 2017-2021 Free Software Foundation, Inc.
 # Written by Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -49,7 +49,7 @@ else
 fi
 
 echo; echo "ensure that we have executable scripts..."
-scripts="compile config.guess config.rpath config.sub depcomp install-sh ltmain.sh mdate-sh missing mkinstalldirs ylwrap create_win_dist.sh"
+scripts="ar-lib compile config.guess config.rpath config.sub depcomp install-sh ltmain.sh mdate-sh missing mkinstalldirs ylwrap"
 for file in $scripts ; do
   if test -f $MAINPATH/build_aux/$file; then
     chmod -f u+x $MAINPATH/build_aux/$file
@@ -58,12 +58,14 @@ for file in $scripts ; do
   fi
 done
 
-scripts="autogen.sh doc/cobcinfo.sh po/update_linguas.sh"
+scripts="autogen.sh doc/cobcinfo.sh po/update_linguas.sh tests/listings-sed.sh create_win_dist.sh"
 for file in $scripts ; do
   if test -f $MAINPATH/$file; then
     chmod -f u+x $MAINPATH/$file
   else
-    echo "WARNING, file $MAINPATH/$file is missing."
+    if test ! $file = "create_win_dist.sh"; then
+      echo "WARNING, file $MAINPATH/$file is missing."
+    fi
   fi
 done
 

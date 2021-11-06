@@ -19,7 +19,7 @@ If you build from VCS the tools in the first 4 lists are always needed.
 
 For running "autogen.sh" (necessary after VCS checkout) / reconfigure:
   o autoconf 2.64
-  o automake 1.10.1
+  o automake 1.13
   o libtool 2.2.6
   o m4 1.4.12
 
