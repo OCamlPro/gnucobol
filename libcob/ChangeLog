@@ -5,6 +5,9 @@
 	  intended for values > INT_MAX
 	* common.h [HAVE_CONFIG_H]: include config.h (to be moved to coblocal.h)
 	* common.h [COB_64_BIT_POINTER]: allow field size up to 2GB
+	* intrinsic.c [HAVE_LANGINFO_CODESET && _WIN32]: fix compile error,
+	  needs to be checked later if undefine of HAVE_LANGINFO_CODESET is
+	  reasonable
 
 2021-11-01  Simon Sobisch <simonsobisch@gnu.org>
 

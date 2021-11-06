@@ -3338,7 +3338,7 @@ error: D must be followed by B
 000027         01  too-many-digits PIC 9(50).
 error: numeric field cannot be larger than 38 digits
 000028         01  too-long-number-in-parens PIC 9(11111111111111).
-error: only up to 9 significant digits are permitted within parentheses
+error: only up to 10 significant digits are permitted within parentheses
 000029         01  nested-parens PIC 9((100)).
 error: parentheses must be preceded by a picture symbol
 000030         01  unbalanced-parens PIC 9(.
@@ -3575,7 +3575,7 @@ prog.cob:24: error: invalid PICTURE character 'K'
 prog.cob:25: error: C must be followed by R
 prog.cob:26: error: D must be followed by B
 prog.cob:27: error: numeric field cannot be larger than 38 digits
-prog.cob:28: error: only up to 9 significant digits are permitted within parentheses
+prog.cob:28: error: only up to 10 significant digits are permitted within parentheses
 prog.cob:29: error: parentheses must be preceded by a picture symbol
 prog.cob:30: error: unbalanced parentheses
 prog.cob:31: error: parentheses must be preceded by a picture symbol

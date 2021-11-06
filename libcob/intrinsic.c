@@ -19,7 +19,7 @@
 */
 
 
-#include <config.h>
+#include "config.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,6 +33,18 @@
 #include <sys/time.h>
 #endif
 #include <math.h>
+
+/* Force symbol exports, include decimal definitions */
+#define	COB_LIB_EXPIMP
+#ifdef	HAVE_GMP_H
+#include <gmp.h>
+#elif defined HAVE_MPIR_H
+#include <mpir.h>
+#else
+#error either HAVE_GMP_H or HAVE_MPIR_H needs to be defined
+#endif
+#include "libcob.h"
+#include "coblocal.h"
 
 /* Note we include the Cygwin version of windows.h here */
 #if defined(_WIN32) || defined(__CYGWIN__) || defined(HAVE_LANGINFO_CODESET)
@@ -52,18 +64,6 @@
 #ifdef	HAVE_LOCALE_H
 #include <locale.h>
 #endif
-
-/* Force symbol exports, include decimal definitions */
-#define	COB_LIB_EXPIMP
-#ifdef	HAVE_GMP_H
-#include <gmp.h>
-#elif defined HAVE_MPIR_H
-#include <mpir.h>
-#else
-#error either HAVE_GMP_H or HAVE_MPIR_H needs to be defined
-#endif
-#include "libcob.h"
-#include "coblocal.h"
 
 /* Function prototypes */
 static cob_u32_t	integer_of_date (const int, const int, const int);
