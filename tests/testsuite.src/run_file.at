@@ -24388,7 +24388,7 @@ AT_DATA([prog.cob], [
        PROCEDURE DIVISION.
 
            DISPLAY "IO_FILEO"  UPON ENVIRONMENT-NAME
-           DISPLAY "type=SA" UPON ENVIRONMENT-VALUE.
+           DISPLAY "format=mf,type=SA" UPON ENVIRONMENT-VALUE.
            MOVE "SA" TO FILEI-MODE.
            PERFORM WRITEIT.
 
@@ -24396,7 +24396,7 @@ AT_DATA([prog.cob], [
            PERFORM LISTIT.
 
            DISPLAY "IO_FILEO"  UPON ENVIRONMENT-NAME
-           DISPLAY "type=SQ" UPON ENVIRONMENT-VALUE.
+           DISPLAY "format=mf,type=SQ" UPON ENVIRONMENT-VALUE.
            MOVE "SQ" TO FILEI-MODE.
            PERFORM WRITEIT.
 
