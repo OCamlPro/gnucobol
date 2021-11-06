@@ -1,4 +1,10 @@
 
+2021-11-06  Ron Norman <rjn@inglenet.com>
+
+	* common.h: Add COB_LINE_ADVANCE, COB_RECORD_ADVANCE
+	* fileio.c: For SEQUENTIAL with COB_RECORD_ADVANCE, insert
+				blank records for WRITE ADVANCING 
+
 2021-11-05  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_allocate): fixed check for maximum size to work as

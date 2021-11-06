@@ -1526,6 +1526,8 @@ typedef struct __cob_file {
 	unsigned char		organization;		/* ORGANIZATION */
 	unsigned char		access_mode;		/* ACCESS MODE */
 	unsigned char		flag_line_adv;		/* LINE ADVANCING */
+#define COB_LINE_ADVANCE		1			/* insert CR/LF as needed */
+#define COB_RECORD_ADVANCE		2			/* WRITE BEFORE/AFTER in 'record mode' */
 	unsigned char		flag_optional;		/* OPTIONAL */
 	unsigned char		flag_select_features;	/* SELECT features */
 	unsigned char		file_format;		/* File I/O format: 255 means unspecified */
