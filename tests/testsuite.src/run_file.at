@@ -24349,3 +24349,132 @@ Offset  HEX-- -- -- -5 -- -- -- -- 10 -- -- -- -- 15 --   CHARS----1----5-
 
 AT_CLEANUP
 
+
+AT_SETUP([SEQUENTIAL ADVANCING Record])
+AT_KEYWORDS([runfile])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT FILEO
+            ASSIGN TO 'FILEO'.
+
+           SELECT FILEI
+            FILE STATUS IS FI-STS
+            ASSIGN TO FILEI-NAME.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD  FILEO.
+       01  FILEO-RECORD.
+           03 FILLER                    PIC X(20).
+
+       FD  FILEI.
+       01  FILEI-RECORD.
+           03 FILLER                    PIC X(20).
+
+       WORKING-STORAGE SECTION.
+       01  FILEI-NAME PIC X(6).
+       01  FILEI-MODE PIC X(2).
+       01  FI-STS     PIC X(2) VALUE '00'.
+       01  REDEFINES FI-STS.
+           05  FI-STS1     PIC X.
+           05  FI-STS2     PIC X COMP-X.
+
+       PROCEDURE DIVISION.
+
+           DISPLAY "IO_FILEO"  UPON ENVIRONMENT-NAME
+           DISPLAY "type=SA" UPON ENVIRONMENT-VALUE.
+           MOVE "SA" TO FILEI-MODE.
+           PERFORM WRITEIT.
+
+           MOVE "FILEO" TO FILEI-NAME.
+           PERFORM LISTIT.
+
+           DISPLAY "IO_FILEO"  UPON ENVIRONMENT-NAME
+           DISPLAY "type=SQ" UPON ENVIRONMENT-VALUE.
+           MOVE "SQ" TO FILEI-MODE.
+           PERFORM WRITEIT.
+
+           MOVE "FILEO" TO FILEI-NAME.
+           PERFORM LISTIT.
+
+           STOP RUN.
+
+       WRITEIT.
+           OPEN OUTPUT FILEO.
+           MOVE 'Record 1' TO FILEO-RECORD
+           WRITE FILEO-RECORD.
+           MOVE 'Record 2' TO FILEO-RECORD
+           WRITE FILEO-RECORD.
+           MOVE 'B1' TO FILEO-RECORD
+           WRITE FILEO-RECORD BEFORE 1.
+           MOVE 'B2' TO FILEO-RECORD
+           WRITE FILEO-RECORD BEFORE 2.
+           MOVE 'Record 3' TO FILEO-RECORD
+           WRITE FILEO-RECORD.
+           MOVE 'A2' TO FILEO-RECORD
+           WRITE FILEO-RECORD AFTER 2.
+           MOVE 'A1' TO FILEO-RECORD
+           WRITE FILEO-RECORD AFTER 1.
+           MOVE 'Record X' TO FILEO-RECORD
+           WRITE FILEO-RECORD.
+           CLOSE FILEO.
+
+       LISTIT.
+           DISPLAY "*** List mode=" FILEI-MODE " ***".
+           OPEN INPUT FILEI.
+           PERFORM READIN UNTIL FI-STS NOT = '00'.
+           CLOSE FILEI.
+
+       READIN.
+           MOVE SPACES TO FILEI-RECORD.
+           READ FILEI.
+           IF FI-STS = '00'
+             IF FILEI-RECORD = LOW-VALUES
+                MOVE " *** Advancing ***" TO FILEI-RECORD
+             END-IF
+			 INSPECT FILEI-RECORD REPLACING ALL X'0D' BY '~'
+			 INSPECT FILEI-RECORD REPLACING ALL X'0A' BY '`'
+             DISPLAY "'" FILEI-RECORD "'"
+           ELSE IF FI-STS1 = '9'
+             DISPLAY FILEI-NAME " Status: 9/" FI-STS2
+           ELSE IF FI-STS NOT = '10'
+             DISPLAY FILEI-NAME " Status: " FI-STS.
+])
+
+AT_CHECK([$COBC -x -std=mf -w prog.cob ], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [*** List mode=SA ***
+'Record 1            '
+'Record 2            '
+'B1                  '
+'~`B2                '
+'  ~``Record 3       '
+'     ~``A2          '
+'        ~`A1        '
+'          ~Record X '
+FILEO  Status: 04
+*** List mode=SQ ***
+'Record 1            '
+'Record 2            '
+'B1                  '
+' *** Advancing ***  '
+'B2                  '
+' *** Advancing ***  '
+' *** Advancing ***  '
+'Record 3            '
+' *** Advancing ***  '
+' *** Advancing ***  '
+'A2                  '
+' *** Advancing ***  '
+'A1                  '
+'Record X            '
+], [])
+
+AT_CLEANUP
+
