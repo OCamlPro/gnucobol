@@ -2513,7 +2513,7 @@ compute_size (struct cb_field *f)
 {
 	struct cb_field	*c;
 	int		size = 0;
-	int		size_check = 0;
+	cob_s64_t		size_check = 0;
 	int		align_size;
 	int		pad;
 	int		unbounded_items = 0;
@@ -2593,7 +2593,7 @@ unbounded_again:
 							}
 						}
 						if (c->size * c->occurs_max > maxsz) {
-							size_check += (c->size * c->occurs_max) - maxsz;
+							size_check += ((cob_s64_t)c->size * c->occurs_max) - maxsz;
 						}
 					}
 					if (cb_larger_redefines >= CB_WARNING) {
@@ -2609,7 +2609,7 @@ unbounded_again:
 					unbounded_items++;
 					c->occurs_max = (COB_MAX_UNBOUNDED_SIZE / c->size / unbounded_parts) - 1;
 				}
-				size_check += c->size * c->occurs_max;
+				size_check += (cob_s64_t)c->size * c->occurs_max;
 
 				if (c->report_column > 0) { 		/* offset based on COLUMN value */
 					set_report_field_offset(c);
@@ -2672,7 +2672,7 @@ unbounded_again:
 			if (c->sister == NULL
 			 && c->storage == CB_STORAGE_REPORT) {	/* To set parent size */
 				if((c->offset + c->size) > size_check)
-					size_check = (c->offset + c->size);
+					size_check = (cob_s64_t)c->offset + c->size;
 			}
 		}
 
@@ -2714,7 +2714,11 @@ unbounded_again:
 					_("'%s' cannot be larger than %d bytes"),
 					f->name, COB_MAX_FIELD_SIZE);
 		}
-		f->size = (int) size_check;
+		if (size_check <= INT_MAX) {
+			f->size = (int) size_check;
+		} else {
+			f->size = INT_MAX;
+		}
 	} else if (!f->flag_is_external_form) {
 		/* Elementary item */
 		if (f->report_column > 0) { 		/* offset based on COLUMN value */
@@ -2771,7 +2775,7 @@ unbounded_again:
 				break;
 			}
 			f->size = f->pic->size;
-			/* size check for single items */
+			/* note: size check for single items > INT_MAX done in tree.c */
 			if (f->size > COB_MAX_FIELD_SIZE) {
 				cb_error_x (CB_TREE (f),
 						_("'%s' cannot be larger than %d bytes"),

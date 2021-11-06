@@ -25,6 +25,9 @@ NEWS - user visible changes				-*- outline -*-
    to cater for new features of COBOL 202x; if compiling with any non-strict
    dialect you may need to unreserve any conflicting words / functions
 
+** in 64-bit environments, the maximum field size was increased from
+   268435456 bytes (999999998 bytes for OCCURS UNBOUNDED) to 2 GB
+
 ** in 64-bit environments, the default size for BY VALUE parameters has changed:
    If no explicit SIZE IS clause is specified,
 	old behavior: parameter passed as 32-bit value

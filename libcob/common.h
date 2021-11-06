@@ -545,6 +545,12 @@ only usable with COB_USE_VC2013_OR_GREATER */
 
 /* End compiler stuff */
 
+/* TODO: move everything not needed here to coblocal.h */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+
 /* EBCDIC determination */
 
 #if ' ' == 0x40
@@ -612,11 +618,19 @@ only usable with COB_USE_VC2013_OR_GREATER */
 /* Maximum bytes in a single/group field,
    which doesn't contain UNBOUNDED items */
 /* TODO: add compiler configuration for limiting this */
+#ifndef COB_64_BIT_POINTER
 #define	COB_MAX_FIELD_SIZE	268435456
+#else
+#define	COB_MAX_FIELD_SIZE	2147483646
+#endif
 
 /* Maximum bytes in an unbounded table entry
-   (IBM: 999999998) */
-#define	COB_MAX_UNBOUNDED_SIZE	999999998
+   (IBM: old 999999998, current 999999999) */
+#ifndef COB_64_BIT_POINTER
+#define	COB_MAX_UNBOUNDED_SIZE	999999999
+#else
+#define	COB_MAX_UNBOUNDED_SIZE	2147483646
+#endif
 
 /* Maximum number of cob_decimal structures */
 #define	COB_MAX_DEC_STRUCT	32

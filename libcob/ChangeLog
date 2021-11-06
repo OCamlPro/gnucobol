@@ -1,4 +1,11 @@
 
+2021-11-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_allocate): fixed check for maximum size to work as
+	  intended for values > INT_MAX
+	* common.h [HAVE_CONFIG_H]: include config.h (to be moved to coblocal.h)
+	* common.h [COB_64_BIT_POINTER]: allow field size up to 2GB
+
 2021-11-01  Simon Sobisch <simonsobisch@gnu.org>
 
 	* coblocal.h: adjusted ISFINITE definition

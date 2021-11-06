@@ -1,4 +1,12 @@
 
+2021-11-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* field.c (compute_size): adjusted check to correctly catch items bigger
+	  than 2 GB
+	* tree.c (get_pic_number_from_str) [COB_64_BIT_POINTER]: allow up to
+	  10 significant digits
+	* tree.c (cb_build_picture): check for value <= INT_MAX
+
 2021-10-23  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (process_command_line) [__TINYC__, __OS400__): early exit when

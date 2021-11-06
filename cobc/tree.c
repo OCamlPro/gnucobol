@@ -2971,11 +2971,12 @@ valid_char_order (const cob_pic_symbol *str, const int s_char_seen)
 	return !error_detected;
 }
 
-static int
+static cob_u64_t
 get_pic_number_from_str (const unsigned char *str, unsigned int * const error_detected)
 {
 	cob_u32_t		num_sig_digits = 0;
-	int			value = 0;
+	cob_u64_t		value = 0;
+	const int	max_sig_digits = 10;
 
 	/* Ignore leading zeroes */
 	for (; *str == '0' && *str; str++);
@@ -2989,11 +2990,13 @@ get_pic_number_from_str (const unsigned char *str, unsigned int * const error_de
 		}
 
 		num_sig_digits++;
-		if (num_sig_digits <= 9) {
+		if (num_sig_digits <= max_sig_digits) {
 			value = value * 10 + (*str - '0');
-		} else if (num_sig_digits == 10) {
-			cb_error (_("only up to 9 significant digits are permitted within parentheses"));
+		} else if (*error_detected == 0) {
+			cb_error (_("only up to %d significant digits are permitted within parentheses"),
+				max_sig_digits);
 			*error_detected = 1;
+			return COB_MAX_FIELD_SIZE + 1;
 		}
 	}
 
@@ -3023,7 +3026,7 @@ skip_bad_parentheses(const unsigned char *p)
   When the function returns, p will point to the closing parentheses or the null
   terminator.
 */
-static int
+static cob_u64_t
 get_number_in_parentheses (const unsigned char ** p,
 			   unsigned int * const error_detected)
 {
@@ -3146,7 +3149,6 @@ cb_build_picture (const char *str)
 	int			category = 0;
 	int			size = 0;
 	int			scale = 0;
-	int			paren_num;
 	int			n;
 	unsigned char		c;
 	unsigned char		first_last_char = '\0';
@@ -3198,6 +3200,7 @@ repeat:
 		}
 
 		if (p[1] == '(') {
+			cob_u64_t	paren_num, pic_num;
 			has_parens = 1;
 			++p;
 			++pic_str_len;
@@ -3205,14 +3208,13 @@ repeat:
 				cb_warning (COBC_WARN_FILLER, _("uncommon parentheses"));
 			}
 			paren_num = get_number_in_parentheses (&p, &error_detected);
-
-			n += paren_num - 1;
 			/*
 			  The number of digits of the number in parentheses is
 			  counted in the length of the PICTURE string (not the
 			  length of the constant-name, if one was used).
 			*/
-			for (; paren_num != 0; paren_num /= 10) {
+			pic_num = paren_num;
+			for (; pic_num != 0; pic_num /= 10) {
 				++pic_str_len;
 			}
 			if (p[1] == '(') {
@@ -3221,6 +3223,27 @@ repeat:
 				pic_str_len += skipped;
 				error_detected = 1;
 			}
+			/* max value depends on grammar */
+			if (paren_num > 999999999) {
+				int delta = n - 1 + x_digits;
+				switch (c) {
+				case 'X':
+				case 'A':
+					if (paren_num + delta > INT_MAX) {
+						paren_num = INT_MAX - delta;
+					}
+					break;
+				case 'N':
+					if (paren_num * 2 + delta > INT_MAX) {
+						paren_num = (INT_MAX - delta) / 2;
+					}
+					break;
+				default:
+					/* much too much... */
+					paren_num = 99999;
+				}
+			}
+			n += paren_num - 1;
 		}
 		if (category & PIC_NUMERIC_FLOATING) {
 			if (c != '9') {
@@ -3258,7 +3281,7 @@ repeat:
 				category |= PIC_NATIONAL;
 				CB_UNFINISHED ("USAGE NATIONAL");
 			}
-			x_digits += n;
+			x_digits += n * 2;
 			break;
 
 		case 'A':

@@ -4497,14 +4497,13 @@ cob_allocate (unsigned char **dataptr, cob_field *retptr,
 {
 	void			*mptr;
 	struct cob_alloc_cache	*cache_ptr;
-	int			fsize;
+	cob_s64_t		fsize;
 	cob_field		temp;
 
 	/* ALLOCATE */
 	cobglobptr->cob_exception_code = 0;
 	mptr = NULL;
-	fsize = cob_get_int (sizefld);
-	/* FIXME: doesn't work correctly if fsize is > INT_MAX */
+	fsize = cob_get_llint (sizefld);
 	if (fsize > COB_MAX_ALLOC_SIZE) {
 		cob_set_exception (COB_EC_STORAGE_IMP);
 	} else if (fsize > 0) {
