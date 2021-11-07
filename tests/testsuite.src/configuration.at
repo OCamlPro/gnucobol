@@ -427,6 +427,7 @@ test.conf: missing definitions:
 	no definition of 'pretty-display'
 	no definition of 'binary-truncate'
 	no definition of 'complex-odo'
+	no definition of 'odoslide'
 	no definition of 'indirect-redefines'
 	no definition of 'larger-redefines-ok'
 	no definition of 'relax-syntax-checks'

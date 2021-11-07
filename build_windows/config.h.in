@@ -257,61 +257,6 @@
 /* compiler flags passed to compiler by cobc */
 #undef COB_CFLAGS
 
-// Use \ to escape things, for example \\ for using in paths
-// Use \" for paths with spaces
-
-// define MAKE_DIST for using C:\\GnuCOBOL_Version:
-//#define MAKE_DIST 1
-
-#ifdef MAKE_DIST
-#ifndef COB_MAIN_DIR
-#define COB_MAIN_DIR     "C:\\" PACKAGE_NAME "_" PACKAGE_VERSION
-#endif
-#define COB_CFLAGS       "-I \"" COB_MAIN_DIR "\\include\""
-
-#if defined(__ORANGEC__)
-#ifdef _WIN64 /*note: currently no x64 with OrangeC */
-#define COB_LDFLAGS      "/L\"" COB_MAIN_DIR "\\lib_x64\""
-#else
-#define COB_LDFLAGS      "/L\"" COB_MAIN_DIR "\\lib\""
-#endif
-#else  /* __ORANGEC__ */
-#ifdef _WIN64
-#define COB_LDFLAGS      "/incremental:no /LIBPATH:\"" COB_MAIN_DIR "\\lib_x64\""
-#else
-#define COB_LDFLAGS      "/incremental:no /LIBPATH:\"" COB_MAIN_DIR "\\lib\""
-#endif
-#endif
-
-#else  // no MAKE_DIST
-
-// specify the local path where the gnucobol sources reside in:
-
-#ifndef COB_MAIN_DIR
-#define COB_MAIN_DIR     "C:\\GnuCOBOL"
-#endif
-#define COB_CFLAGS       "-I \"" COB_MAIN_DIR "\" -I \"" COB_MAIN_DIR "\\build_windows\""
-
-#ifdef _WIN64
-#define TARGET_PLATFORM "x64"
-#else
-#define TARGET_PLATFORM "win32"
-#endif
-
-#ifdef _DEBUG
-#define TARGET_CONFIG "debug"
-#else
-#define TARGET_CONFIG "release"
-#endif
-
-#if defined(__ORANGEC__)
-#define COB_LDFLAGS      "/L\"" COB_MAIN_DIR "\\build_windows\\" TARGET_PLATFORM "\\" TARGET_CONFIG "\""
-#else
-#define COB_LDFLAGS      "/incremental:no /LIBPATH:\"" COB_MAIN_DIR "\\build_windows\\" TARGET_PLATFORM "\\" TARGET_CONFIG "\""
-#endif
-
-#endif // no MAKE_DIST
-
 /* Compilation of computed gotos works */
 /* #undef COB_COMPUTED_GOTO */
 
@@ -872,6 +817,62 @@
 
 /* Define a patch level (numeric, max. 8 digits) */
 #define PATCH_LEVEL COB_NUM_TAR_DATE
+
+
+// Use \ to escape things, for example \\ for using in paths
+// Use \" for paths with spaces
+
+// define MAKE_DIST for using C:\\GnuCOBOL_Version:
+//#define MAKE_DIST 1
+
+#ifdef MAKE_DIST
+#ifndef COB_MAIN_DIR
+#define COB_MAIN_DIR     "C:\\" PACKAGE_NAME "_" PACKAGE_VERSION
+#endif
+#define COB_CFLAGS       "-I \"" COB_MAIN_DIR "\\include\""
+
+#if defined(__ORANGEC__)
+#ifdef _WIN64 /*note: currently no x64 with OrangeC */
+#define COB_LDFLAGS      "/L\"" COB_MAIN_DIR "\\lib_x64\""
+#else
+#define COB_LDFLAGS      "/L\"" COB_MAIN_DIR "\\lib\""
+#endif
+#else  /* __ORANGEC__ */
+#ifdef _WIN64
+#define COB_LDFLAGS      "/incremental:no /LIBPATH:\"" COB_MAIN_DIR "\\lib_x64\""
+#else
+#define COB_LDFLAGS      "/incremental:no /LIBPATH:\"" COB_MAIN_DIR "\\lib\""
+#endif
+#endif
+
+#else  // no MAKE_DIST
+
+// specify the local path where the gnucobol sources reside in:
+
+#ifndef COB_MAIN_DIR
+#define COB_MAIN_DIR     "C:\\GnuCOBOL"
+#endif
+#define COB_CFLAGS       "-I \"" COB_MAIN_DIR "\" -I \"" COB_MAIN_DIR "\\build_windows\""
+
+#ifdef _WIN64
+#define TARGET_PLATFORM "x64"
+#else
+#define TARGET_PLATFORM "win32"
+#endif
+
+#ifdef _DEBUG
+#define TARGET_CONFIG "debug"
+#else
+#define TARGET_CONFIG "release"
+#endif
+
+#if defined(__ORANGEC__)
+#define COB_LDFLAGS      "/L\"" COB_MAIN_DIR "\\build_windows\\" TARGET_PLATFORM "\\" TARGET_CONFIG "\""
+#else
+#define COB_LDFLAGS      "/incremental:no /LIBPATH:\"" COB_MAIN_DIR "\\build_windows\\" TARGET_PLATFORM "\\" TARGET_CONFIG "\""
+#endif
+
+#endif // no MAKE_DIST
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1

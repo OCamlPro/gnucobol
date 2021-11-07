@@ -614,9 +614,16 @@ generate_json_from_tree (cob_ml_tree *tree, const char decimal_point, cJSON *out
 		return 0;
 	}
 
-	name = get_trimmed_json_data (tree->name);
+	/* NAME OF ... OMITTED to generate an anonymous JSON object */
+	if (tree->name != NULL) {
+		name = get_trimmed_json_data (tree->name);
+	}
 	if (tree->children) {
-		children_json = cJSON_CreateObject ();
+		if (name != NULL) {
+			children_json = cJSON_CreateObject ();
+		} else {
+			children_json = out;
+		}
 		for (child = tree->children; child; child = child->sibling) {
 			status = generate_json_from_tree (child, decimal_point,
 							  children_json);
@@ -625,8 +632,15 @@ generate_json_from_tree (cob_ml_tree *tree, const char decimal_point, cJSON *out
 				goto end;
 			}
 		}
-		cJSON_AddItemToObject (out, name, children_json);
+		if (name != NULL) {
+			cJSON_AddItemToObject (out, name, children_json);
+		}
 	} else if (tree->content) {
+		if (name == NULL) {
+			/* TO-DO: Handle correctly, that's possibly an internal error! */
+			cob_set_exception (COB_EC_IMP_FEATURE_MISSING);
+			cob_fatal_error (COB_FERROR_JSON);
+		}
 		if (COB_FIELD_IS_FP (tree->content)) {
 			/* TO-DO: Implement! */
 			/* TO-DO: Stop compilation if float in field */
@@ -675,9 +689,16 @@ generate_json_from_tree (cob_ml_tree *tree, const char decimal_point, json_objec
 		return 0;
 	}
 
-	name = get_trimmed_json_data (tree->name);
+	/* NAME OF ... OMITTED to generate an anonymous JSON object */
+	if (tree->name != NULL) {
+		name = get_trimmed_json_data (tree->name);
+	}
 	if (tree->children) {
-		children_json = json_object_new_object ();
+		if (name != NULL) {
+			children_json = json_object_new_object ();
+		} else {
+			children_json = out;
+		}
 		for (child = tree->children; child; child = child->sibling) {
 			status = generate_json_from_tree (child, decimal_point, children_json);
 			if (status < 0) {
@@ -685,8 +706,15 @@ generate_json_from_tree (cob_ml_tree *tree, const char decimal_point, json_objec
 				goto end;
 			}
 		}
-		json_object_object_add (out, name, children_json);
+		if (name != NULL) {
+			json_object_object_add (out, name, children_json);
+		}
 	} else if (tree->content) {
+		if (name == NULL) {
+			/* TO-DO: Handle correctly, that's possibly an internal error! */
+			cob_set_exception (COB_EC_IMP_FEATURE_MISSING);
+			cob_fatal_error (COB_FERROR_JSON);
+		}
 		if (COB_FIELD_IS_FP (tree->content)) {
 			/* TO-DO: Implement! */
 			/* TO-DO: Stop compilation if float in field */

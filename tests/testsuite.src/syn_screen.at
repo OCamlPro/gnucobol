@@ -1,4 +1,4 @@
-## Copyright (C) 2014-2019 Free Software Foundation, Inc.
+## Copyright (C) 2014-2021 Free Software Foundation, Inc.
 ## Written by Simon Sobisch, Edward Hart, Ron Norman
 ##
 ## This file is part of GnuCOBOL.
@@ -555,9 +555,11 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:9: error: syntax error, unexpected Literal
+# Note: currently depends on -std, may also depend on -frelax-syntax-checks
+AT_CHECK([$COMPILE_ONLY -std=cobol2002 prog.cob], [1], [],
+[prog.cob:9: error: missing VALUE
 ])
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
 
 AT_CLEANUP
 

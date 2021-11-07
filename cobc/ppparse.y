@@ -596,7 +596,9 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %token MAKESYN
 %token NODPC_IN_DATA	"NODPC-IN-DATA"
 %token NOFOLDCOPYNAME
+%token NOODOSLIDE
 /* OVERRIDE token defined above. */
+%token ODOSLIDE
 %token REMOVE
 %token SOURCEFORMAT
 
@@ -857,6 +859,14 @@ set_choice:
 | NOFOLDCOPYNAME
   {
 	cb_fold_copy = 0;
+  }
+| NOODOSLIDE
+  {
+	fprintf (ppout, "#ODOSLIDE 0\n");
+  }
+| ODOSLIDE
+  {
+	fprintf (ppout, "#ODOSLIDE 1\n");
   }
 | OVERRIDE alnum_equality_list
   {

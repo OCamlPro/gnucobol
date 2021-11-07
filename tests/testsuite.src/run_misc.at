@@ -6974,7 +6974,7 @@ AT_DATA([prog.cob], [
        PROGRAM-ID. sub1.
        DATA DIVISION.
        WORKING-STORAGE SECTION.
-       01  ZRO PIC 9(9) BINARY VALUE 0.
+       01  ZRO  PIC 9(9) BINARY VALUE 0.
        01  HEXV PIC X  COMP-X.
        01  HEXC REDEFINES HEXV PIC X.
 

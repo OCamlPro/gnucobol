@@ -44,6 +44,8 @@ AT_CHECK([$COBC -std=acu --list-registers], [0], [ignore], [])
 AT_CHECK([$COBC -std=cobol2002 --list-intrinsics], [0], [ignore], [])
 AT_CHECK([$COBC -std=ibm --list-mnemonics], [0], [ignore], [])
 AT_CHECK([$COBC --list-system], [0], [ignore], [])
+#TODO: merge exception-io.def and everything related
+#AT_CHECK([$COBC --list-exceptions], [0], [ignore], [])
 AT_CLEANUP
 
 

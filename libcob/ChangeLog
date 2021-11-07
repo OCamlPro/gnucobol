@@ -595,6 +595,11 @@
 	* fisam.c: If isbuild returns EBADARG, then iserase and retry
 	* fileio.c: More changes for "format=vbcisam"
 
+2020-12-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	FR #397: add support for JSON GENERATE anonymous JSON objects
+	* mlio.c (generate_json_from_tree): handle OMITTED NAME attribute
+
 2020-12-16  Ron Norman <rjn@inglenet.com>
 
 	* common.h: Changes to handle VBISAM in CISAM mode
@@ -668,7 +673,7 @@
 
 2020-11-22  Ron Norman <rjn@inglenet.com>
 
-	* common.c: set LIBC_FATAL_STDERR_ more hard coded 
+	* common.c: set LIBC_FATAL_STDERR_ more hard coded
 	* fbdb.c (ix_bdb_delete_internal): fix error in use of wrong record area
 	* fextfh.c (copy_file_to_fcd): use cob_cache_malloc instead of cob_strdup
 	* fsqlxfd.c: if count_components > 1 then its a composite key
@@ -693,11 +698,12 @@
 
 2020-10-27  Simon Sobisch <simonsobisch@gnu.org>
 
-	* common.h, common.c: external version defintion via new defines
-	  __LIBCOB_VERSION, __LIBCOB_VERSION_MINOR, __LIBCOB_VERSION_PATCHLEVEL,
-	  __LIBCOB_RELEASE and functions libcob_version, set_libcob_version to
-	  query and/or compare these;
-	  note: __LIBCOB_VERSION_PATCHLEVEL is _not_ the package's PATCHLEVEL 
+	* common.h, common.c: FR #323 - external visible version number
+	  external version defintion via new defines __LIBCOB_VERSION,
+	  __LIBCOB_VERSION_MINOR, __LIBCOB_VERSION_PATCHLEVEL, __LIBCOB_RELEASE
+	  and functions libcob_version, set_libcob_version to query and/or compare
+	  these;
+	  note: __LIBCOB_VERSION_PATCHLEVEL is _not_ the package's PATCHLEVEL
 	* common.c: extracted set_cob_build_stamp from print_version
 	* common.c, common.h: new function print_version_summary providing a two line
 	  output for GnuCOBOL + C compiler and used libraries
@@ -1009,7 +1015,7 @@
 	* coblocal.h: adjusted GCC-version for definition of visibility attribute
 	  COB_HIDDEN and option to disable via COB_NO_VISIBILITY_ATTRIBUTE;
 	  not a solution (-> move to configure) but a workaround...
-	
+
 	Work on signal and call SYSTEM handling
 	* common.c (get_signal_name): extracted from (cob_sig_handler)
 	* common.c (cob_sys_system): don't abort if the command is too long

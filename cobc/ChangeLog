@@ -50,17 +50,49 @@
 			Defines default file format for Sequential/Relative files
 			(This obsoletes -fmf-files which could be removed later)
 
+2021-09-23  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_const_length): ensure we actually have a valid
+	  tree to build the length of, fixing #769 SIGSEGV with invalid code
+
+2021-09-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* scanner.l, cobc.c: fix ODOSLIDE directive
+
+2021-09-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y: some minor conflicts "resolved", support of old extension
+	  SCREEN SECTION VALUE without "VALUE", fixed ACU's PROPERTY xyz ARE
+
 2021-09-16  Edward Hart <edward.dan.hart@gmail.com>
 
 	* reserved.c: fixed bug #764, where deleting a reserved word which
 	  shares the same hash as another word could make the other word
 	  inaccessible in the reserve word table.
 
+2021-09-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* config.def, flag.def, cobc.c, codegen.c, field.c, typeck.c:
+	  moved and renamed cb_flag_odoslide to dialect option cb_odoslide and
+	  explicit check for it along complex_odo instead of setting it
+	* ppparse.y, pplex.l, scanner.l, cobc.c: add support for ODOSLIDE directive
+
 2021-09-12  Ron Norman <rjn@inglenet.com>
 
 	* codegen.c: If -fmf-files, then set mod->flag_file_format = COB_FILE_IS_MF
 	* reserved.c (cb_list_reserved): specify DEBUG-ITEM variables as
 	  implemented if defined as register
+
+2021-09-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y: combined multiple exception_phrases nonterminals moving the
+	  single difference to the new function get_handler_type_from_statement
+	  which is a bit slower but reduces duplications
+	* reserved.c, parser.y: added parsing for RAISING clause, combining
+	  identical code forEXIT and GOBACK to (goback_exit_body)
+	* reserved.c, parser.y, scanner.l, tree.h: initial parsing approach for
+	  COBOL 202x Message Control System (MCS) statements SEND and RECEIVE
+	* scanner.l: return WORD token if SUPPRESS is not reserved
 
 2021-09-02  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -320,6 +352,13 @@
 
 	* cobc.c: --info Displays short (concatenated) list of available
 	  INDEXED file handlers
+
+2020-12-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	FR #397: add support for JSON GENERATE anonymous JSON objects
+	* parser.y: split _name_of to _xml_name_of and _json_name_of, the later
+	  one with additional possible NAME ... IS OMITTED and
+	  without GENERATE XML checks
 
 2020-12-15  Ron Norman <rjn@inglenet.com>
 

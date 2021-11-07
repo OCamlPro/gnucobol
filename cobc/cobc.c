@@ -3684,7 +3684,7 @@ process_command_line (const int argc, char **argv)
 			break;
 
 		case 'z':
-			/* -Wno-error[=warning] : Treat all/single warnings as errors */
+			/* -Wno-error[=warning] : Treat all/single warnings not as errors */
 			if (cob_optarg) {
 #define CB_CHECK_WARNING(opt,name)  \
 				if (strcmp (cob_optarg, name) == 0	\
@@ -3836,10 +3836,6 @@ process_command_line (const int argc, char **argv)
 #undef	CB_ONWARNDEF
 #undef	CB_NOWARNDEF
 #undef	CB_ERRWARNDEF
-	}
-
-	if (cb_flag_odoslide) {
-		cb_complex_odo = 1;
 	}
 
 	if (fatal_errors_flag) {
@@ -4801,9 +4797,7 @@ static int
 preprocess (struct filename *fn)
 {
 	const char		*sourcename;
-	int			save_source_format;
-	int			save_fold_copy;
-	int			save_fold_call;
+	int			save_source_format, save_fold_copy, save_fold_call;
 #ifndef COB_INTERNAL_XREF
 #ifdef	_WIN32
 	const char *envname = "%PATH%";
@@ -8634,6 +8628,9 @@ process_file (struct filename *fn, int status)
 		return status;
 	}
 	if (fn->need_translate) {
+		/* Save default flags in case program directives change them */
+		int			save_odoslide = cb_odoslide;
+
 		/* Parse / Translate (to C code) */
 		fn->has_error = process_translate (fn);
 		status |= fn->has_error;
@@ -8648,6 +8645,8 @@ process_file (struct filename *fn, int status)
 		}
 		cobc_parsemem_base = NULL;
 		cb_init_codegen ();
+		/* Restore default flags */
+		cb_odoslide = save_odoslide;
 	} else {
 		if (cb_src_list_file) {
 			print_program_listing ();

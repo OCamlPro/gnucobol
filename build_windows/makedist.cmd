@@ -403,15 +403,15 @@ goto :eof
 
 
 :setver
-for /f "tokens=3 delims= " %%a in ('find "PACKAGE_NAME"    "config.h"') do (
+for /f "tokens=3 delims= " %%a in ('find "define PACKAGE_NAME"    "config.h"') do (
    set PVTEMP=%%a
 )
 set PACKAGE_NAME=!PVTEMP:"=!
-for /f "tokens=3 delims= " %%a in ('find "PACKAGE_VERSION" "config.h"') do (
+for /f "tokens=3 delims= " %%a in ('find "define PACKAGE_VERSION" "config.h"') do (
    set PVTEMP=%%a
 )
 set PACKAGE_VERSION=!PVTEMP:"=!
-for /f "tokens=3 delims= " %%a in ('find "PACKAGE_TARNAME" "config.h"') do (
+for /f "tokens=3 delims= " %%a in ('find "define PACKAGE_TARNAME" "config.h"') do (
    set PVTEMP=%%a
 )
 set PACKAGE_TARNAME=!PVTEMP:"=!

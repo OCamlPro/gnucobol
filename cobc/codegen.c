@@ -1099,7 +1099,7 @@ output_base (struct cb_field *f, const cob_u32_t no_output)
 		 && strstr (f01->name, " Record")) {	/* Skip to First 01 within FD */
 			f01 = f01->sister;
 		}
-		if (cb_flag_odoslide) {
+		if (cb_odoslide) {
 			out_odoslide_offset (f01, f);
 		} else {
 			for (p = f->parent; p; f = f->parent, p = f->parent) {
@@ -1243,7 +1243,7 @@ output_data (cb_tree x)
 						continue;
 					}
 
-					if (cb_flag_odoslide
+					if (cb_odoslide
 					 && !gen_init_working
 					 && f != o
 					 && chk_field_variable_size(f)) {
@@ -1271,7 +1271,7 @@ output_data (cb_tree x)
 								output ("%d * ", f->size);
 							}
 						}
-						if (cb_flag_odoslide
+						if (cb_odoslide
 						 && !gen_init_working
 						 && f->depending) {
 							o_slide = f;
@@ -1363,7 +1363,7 @@ output_size (const cb_tree x)
 			break;
 		}
 		if (p != NULL
-		 && (cb_flag_odoslide
+		 && (cb_odoslide
 		  || f->flag_local
 		  || f->flag_item_based
 		  || f->storage == CB_STORAGE_LINKAGE)
@@ -1372,7 +1372,7 @@ output_size (const cb_tree x)
 		} else {
 			q = f;
 again:
-			if ((!cb_flag_odoslide || gen_init_working)
+			if ((!cb_odoslide || gen_init_working)
 			 && p != NULL
 			 && p->flag_odo_relative) {
 				q = p;
@@ -5344,13 +5344,12 @@ output_initialize_uniform (cb_tree x, const int c, const int size)
 			output (", %d, ", c);
 			output_size (x);
 			output (");");
-		} else if (CB_REFERENCE_P(x) 
-				&& CB_REFERENCE(x)->length) {
+		} else if (CB_REFERENCE_P(x) && CB_REFERENCE(x)->length) {
 			output (", %d, ", c);
 			output_size (x);
 			output (");");
 		} else if (!gen_init_working 
-				&& (f->flag_unbounded || !cb_complex_odo)
+				&& (f->flag_unbounded || !(cb_complex_odo || cb_odoslide))
 				&& chk_field_variable_size (f) != NULL) {
 			output (", %d, ", c);
 			out_odoslide_size (f);

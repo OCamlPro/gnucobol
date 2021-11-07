@@ -75,6 +75,7 @@ reserved:	CLOSE
 reserved:	COBOL
 reserved:	CODE
 reserved:	CODE-SET
+#reserved:	COL			# CHECKME: not in this list before - missing or added 2002?
 reserved:	COLLATING
 reserved:	COLUMN
 reserved:	COMMA

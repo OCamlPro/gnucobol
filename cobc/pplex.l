@@ -658,51 +658,58 @@ COBOL_WORDS_DIRECTIVE_STATE>{
 }
 
 <SET_DIRECTIVE_STATE>{
-  "ADDRSV" |
-  "ADD-RSV"		{
+  "ADDRSV"	|
+  "ADD-RSV"	{
 	return ADDRSV;
   }
-  "ADDSYN" |
-  "ADD-SYN"		{
+  "ADDSYN"	|
+  "ADD-SYN"	{
 	return ADDSYN;
   }
-  "ASSIGN"		{
+  "ASSIGN"	{
 	return ASSIGN;
   }
-  "CALLFH"		{
+  "CALLFH"	{
 	return CALLFH;
   }
-  "COMP1" |
-  "COMP-1"		{
+  "COMP1"	|
+  "COMP-1"	{
 	return COMP1;
   }
-  "CONSTANT"		{
+  "CONSTANT"	{
 	return CONSTANT;
   }
-  "DPCINDATA" |
-  "DPC-IN-DATA"		{
+  "DPCINDATA"	|
+  "DPC-IN-DATA"	{
 	return DPC_IN_DATA;
   }
-  "FOLDCOPYNAME" |
+  "FOLDCOPYNAME"	|
   "FOLD-COPY-NAME"	{
 	return FOLDCOPYNAME;
   }
-  "MAKESYN" |
-  "MAKE-SYN"		{
+  "MAKESYN" 	|
+  "MAKE-SYN"	{
 	return MAKESYN;
   }
-  "NODPCINDATA" |
-  "NO-DPCINDATA" |
-  "NODPC-IN-DATA" |
-  "NO-DPC-IN-DATA" {
+  "NODPCINDATA" 	|
+  "NO-DPCINDATA"	|
+  "NODPC-IN-DATA"	|
+  "NO-DPC-IN-DATA"	{
 	return NODPC_IN_DATA;
   }
-  "NOFOLDCOPYNAME" |
-  "NOFOLD-COPY-NAME" |
+  "NOFOLDCOPYNAME"  	|
+  "NOFOLD-COPY-NAME"	|
   "NO-FOLD-COPY-NAME"	{
 	return NOFOLDCOPYNAME;
   }
-  "OVERRIDE"		{
+  "NOODOSLIDE"	|
+  "NO-ODOSLIDE"	{
+	return NOODOSLIDE;
+  }
+  "ODOSLIDE"	{
+	return ODOSLIDE;
+  }
+  "OVERRIDE"	{
 	return OVERRIDE;
   }
   "REMOVE"		{
@@ -718,10 +725,9 @@ COBOL_WORDS_DIRECTIVE_STATE>{
   "XFD"		{
 	return XFD;
   }
-  {DEFNUM_LITERAL} |
-  {ALNUM_LITERAL} |
+  {DEFNUM_LITERAL}	|
+  {ALNUM_LITERAL}	|
   {SET_PAREN_LIT}	{
-	  
 	pplval.s = cobc_plex_strdup (yytext);
 	return LITERAL;
   }

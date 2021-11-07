@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2020 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2021 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 
    This file is part of GnuCOBOL.
@@ -105,6 +105,9 @@ CB_CONFIG_BOOLEAN (cb_binary_truncate, "binary-truncate",
 
 CB_CONFIG_BOOLEAN (cb_complex_odo, "complex-odo",
 	_("allow complex OCCURS DEPENDING ON"))
+
+CB_CONFIG_BOOLEAN (cb_odoslide, "odoslide",
+	_("adjust items following OCCURS DEPENDING (implies complex-odo)"))
 
 CB_CONFIG_BOOLEAN (cb_indirect_redefines, "indirect-redefines",
 	_("allow REDEFINES to other than last equal level number"))
@@ -252,7 +255,7 @@ CB_CONFIG_BOOLEAN (cb_occurs_max_length_without_subscript, "occurs-max-length-wi
 	_("occurs max length without subscript"))
 
 CB_CONFIG_BOOLEAN (cb_length_in_data_division, "length-in-data-division",
-      _("length in data division")) 
+	_("length in data division")) 
 
 CB_CONFIG_SUPPORT (cb_move_fig_constant_to_numeric, "move-figurative-constant-to-numeric",
 	_("move figurative constants to numeric"))

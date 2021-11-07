@@ -1,4 +1,11 @@
 
+2021-11-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* config.h.in: moved references to PACKACAGE_defines after the define,
+	  fixing dist builds since 2020-10-27
+	* makedist.cmd: explicit search for "define PACKAGE_define" which fixes the
+	  multiple results
+
 2021-07-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* config.h.in: updated for adjustments in ORGANIZATION INDEXED
@@ -19,8 +26,8 @@
 	  * makebisonflex.bat       -> makebisonflex.cmd
 	* gcvars.cmd: new internal script that does the actual setup and execution
 	  logic, derived from set_env* which now call this
-	* gcvars.cmd: extended with option to double-click and "drop to execute" and
-	  compressed info output
+	* gcvars.cmd: extended with option to double-click and "drop to execute"
+	  and compressed info output
 	* general: look for variable "CI" in .cmd to not wait for input in that env
 	* README.txt, makedist.cmd: adjusted for new script/template names
 	* makedist.cmd: now working with json-c and vcexport included libraries

@@ -256,9 +256,6 @@ static cb_tree			eval_check[EVAL_DEPTH][EVAL_DEPTH];
 
 static const char		*backup_source_file = NULL;
 static int			backup_source_line = 0;
-#define EXCEPT_MAX	32
-static int			except_idx = 0;
-static enum cb_handler_type except_type[EXCEPT_MAX];
 
 /* Defines for header presence */
 
@@ -1055,6 +1052,30 @@ check_conf_section_order (const cob_flags_t part)
 }
 
 #undef MESSAGE_LEN
+
+static enum cb_handler_type
+get_handler_type_from_statement (struct cb_statement *statement)
+{
+	if (!strcmp (statement->name, "DISPLAY")) {
+		return DISPLAY_HANDLER;
+	}
+	if (strlen (statement->name) > 3
+	 && !memcmp (statement->name, "XML", 3)) {
+		return XML_HANDLER;
+	}
+	if (strlen (statement->name) > 4
+	 && !memcmp (statement->name, "JSON", 4)) {
+		return JSON_HANDLER;
+	}
+	if (!strcmp (statement->name, "DELETE FILE")) {
+		return DELETE_FILE_HANDLER;
+	}
+	if (!strcmp (statement->name, "SEND")
+	 || !strcmp (statement->name, "RECEIVE")) {
+		return MCS_HANDLER;
+	}
+	return NO_HANDLER;
+}
 
 static void
 build_words_for_nested_programs (void)
@@ -2864,6 +2885,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token RADIO_BUTTON		"RADIO-BUTTON"
 %token RAISE
 %token RAISED
+%token RAISING
 %token RANDOM
 %token RD
 %token READ
@@ -2871,6 +2893,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token READ_ONLY		"READ-ONLY"
 %token READY_TRACE		"READY TRACE"
 %token RECEIVE
+%token RECEIVED
 %token RECORD
 %token RECORD_DATA		"RECORD-DATA"
 %token RECORD_OVERFLOW		"RECORD-OVERFLOW"
@@ -4887,9 +4910,7 @@ select_clause:
 | nominal_key_clause
 | track_area_clause
 | track_limit_clause
-/* FXIME: disabled because of shift/reduce conflict
 | encryption_clause
-*/
 /* FXIME: disabled because of shift/reduce conflict
   (optional in [alternate] record key, could be moved here
    if the suppress_clause goes here too and both entries verify that
@@ -5187,9 +5208,9 @@ password_clause:
   }
 ;
 
-/* FXIME: disabled because of shift/reduce conflict
 encryption_clause:
-  _with ENCRYPTION
+  /* FIXME: has an optional _with - disabled because of shift/reduce conflict */
+  ENCRYPTION
   {
 	if (current_file->organization == COB_ORG_INDEXED) {
 		cb_error (_("%s only valid with ORGANIZATION %s"), "WITH ENCRYPTION", "INDEXED");
@@ -5199,7 +5220,6 @@ encryption_clause:
 	}
   }
 ;
-*/
 
 _suppress_clause:
   /* empty */
@@ -7129,9 +7149,11 @@ locale_name:
 /* USAGE clause */
 
 usage_clause:
-  usage
-| USAGE _is usage
-| USAGE _is WORD
+  _usage_is usage
+| USAGE _is WORD	/* MF extension for referencing types, full support would need
+                	   _usage_is, but this leads to shift/reduce conflicts,
+                	   FIXME: handle conflict by returning TYPEDEF_NAME token,
+                	          then move this to "usage" */
   {
 	if (is_reserved_word (CB_NAME ($3))) {
 		cb_error_x ($3, _("'%s' is not a valid USAGE"), CB_NAME ($3));
@@ -7148,6 +7170,10 @@ usage_clause:
   {
 	check_and_set_usage (CB_USAGE_ERROR);
   }
+;
+
+_usage_is:
+| USAGE _is
 ;
 
 usage:
@@ -8960,7 +8986,7 @@ screen_option:
 | screen_global_clause
 | justified_clause
 | sign_clause
-| value_clause
+| screen_value_clause
 | picture_clause
 | screen_occurs_clause
 | USING identifier
@@ -8985,6 +9011,24 @@ screen_option:
 	current_field->screen_to = $$;
 	current_field->screen_flag |= COB_SCREEN_INPUT;
   }
+;
+
+screen_value_clause:
+  _value_is basic_literal
+  {
+	/* omitting VALUE is at least allowed in MS-COBOL, MF-COBOL, ACUCOBOL for SCREEN VALUE,
+	   and not according to XOPEN uses 85-std which has no SCREEN SECTION and newer Standards */
+	if (!$1 && cb_std_define >= CB_STD_85) {
+		cb_error (_("missing %s"), "VALUE");
+	}
+	check_repeated ("VALUE", SYN_CLAUSE_12, &check_pic_duplicate);
+	current_field->values = CB_LIST_INIT ($2);
+  }
+;
+
+_value_is:
+/* empty */	{ $$ = NULL; }
+| VALUE _is	{ $$ = cb_int0; }
 ;
 
 control_definition:
@@ -9045,7 +9089,8 @@ control_attributes:
 
 control_attribute:
   control_style
-| control_property _is_are_equal x_list
+| control_property _is_are_equal x
+| control_property _is_are_equal TOK_OPEN_PAREN x_list TOK_CLOSE_PAREN
 ;
 
 control_style:
@@ -9691,9 +9736,6 @@ _procedure_division:
 	current_paragraph = NULL;
 	check_pic_duplicate = 0;
 	check_duplicate = 0;
-	for (except_idx=0; except_idx < EXCEPT_MAX; except_idx++)
-		except_type [except_idx] = NO_HANDLER;
-	except_idx = 0;
 	if (!current_program->entry_convention) {
 		current_program->entry_convention = cb_int (CB_CONV_COBOL);
 	}
@@ -10074,7 +10116,6 @@ procedure:
 | TOK_DOT
   {
 	/* check_unreached = 0; */
-	except_idx = 0;
 	cb_end_statement();
   }
 ;
@@ -11784,7 +11825,11 @@ delete_body:
   {
 	cb_emit_delete ($1);
   }
-| TOK_FILE delete_file_list _delete_exception_phrases
+| TOK_FILE
+  {
+	current_statement->name = "DELETE FILE";
+  }
+  delete_file_list _common_exception_phrases
 ;
 
 delete_file_list:
@@ -11861,23 +11906,23 @@ display_statement:
 ;
 
 display_body:
-  id_or_lit UPON_ENVIRONMENT_NAME _display_exception_phrases
+  id_or_lit UPON_ENVIRONMENT_NAME _common_exception_phrases
   {
 	cb_emit_env_name ($1);
   }
-| id_or_lit UPON_ENVIRONMENT_VALUE _display_exception_phrases
+| id_or_lit UPON_ENVIRONMENT_VALUE _common_exception_phrases
   {
 	cb_emit_env_value ($1);
   }
-| id_or_lit UPON_ARGUMENT_NUMBER _display_exception_phrases
+| id_or_lit UPON_ARGUMENT_NUMBER _common_exception_phrases
   {
 	cb_emit_arg_number ($1);
   }
-| id_or_lit UPON_COMMAND_LINE _display_exception_phrases
+| id_or_lit UPON_COMMAND_LINE _common_exception_phrases
   {
 	cb_emit_command_line ($1);
   }
-| screen_or_device_display _display_exception_phrases
+| screen_or_device_display _common_exception_phrases
 | display_erase	/* note: may also be part of display_pos_specifier */
 | display_pos_specifier
 | display_message_box
@@ -12972,7 +13017,7 @@ exit_body:
   {
   /* TODO: add warning/error if there's another statement in the paragraph */
   }
-| PROGRAM exit_program_returning
+| PROGRAM goback_exit_body
   {
 	if (in_declaratives && use_global_ind) {
 		cb_error_x (CB_TREE (current_statement),
@@ -12986,13 +13031,6 @@ exit_body:
 		check_unreached = 0;
 	} else {
 		check_unreached = 1;
-	}
-	if ($2) {
-		if (!current_program->cb_return_code) {
-			cb_error_x ($2, _("RETURNING/GIVING not allowed for non-returning runtime elements"));
-		} else {
-			cb_emit_move ($2, CB_LIST_INIT (current_program->cb_return_code));
-		}
 	}
 	current_statement->name = (const char *)"EXIT PROGRAM";
 	cb_emit_exit (0);
@@ -13101,11 +13139,22 @@ exit_body:
   }
 ;
 
-exit_program_returning:
-  /* empty */			{ $$ = NULL; }
-  /* extension supported by MF and ACU
+goback_exit_body:
+  /* empty */
+| /* extension supported by MF and ACU
      (note: ACU supports this with x only, too) */
-| return_give x		{ $$ = $2; }
+  return_give x
+  {
+	if (!current_program->cb_return_code) {
+		cb_error_x ($2, _("RETURNING/GIVING not allowed for non-returning runtime elements"));
+	} else {
+		cb_emit_move ($2, CB_LIST_INIT (current_program->cb_return_code));
+	}
+  }
+| RAISING raise_body
+| RAISING LAST _exception {
+	CB_PENDING ("RAISE statement");
+  }
 ;
 
 
@@ -13198,17 +13247,12 @@ goto_depending:
 /* GOBACK statement */
 
 goback_statement:
-  GOBACK exit_program_returning
-  {
+  GOBACK {
 	begin_statement ("GOBACK", 0);
+  }
+  goback_exit_body	  
+  {
 	check_unreached = 1;
-	if ($2) {
-		if (!current_program->cb_return_code) {
-			cb_error_x ($2, _("RETURNING/GIVING not allowed for non-returning runtime elements"));
-		} else {
-			cb_emit_move ($2, CB_LIST_INIT (current_program->cb_return_code));
-		}
-	}
 	cb_emit_exit (1U);
   }
 ;
@@ -13634,13 +13678,13 @@ json_generate_body:
   {
 	ml_suppress_list = NULL;
   }
-  _name_of
+  _json_name_of
   _json_suppress
   {
 	cobc_in_json_generate_body = 0;
 	cobc_cs_check = 0;
   }
-  _json_exception_phrases
+  _common_exception_phrases
   {
 	cb_emit_json_generate ($1, $3, $4, $6, ml_suppress_list);
   }
@@ -13696,9 +13740,9 @@ json_parse_statement:
 json_parse_body:
   identifier INTO identifier
   _with_detail
-  _name_of
+  _json_name_of
   _json_suppress
-  _json_exception_phrases
+  _common_exception_phrases
 ;
 
 _with_detail:
@@ -14195,7 +14239,6 @@ raise_body:
 ;
 
 
-
 exception_name:
   WORD
   {
@@ -14635,12 +14678,38 @@ send_statement:
   send_body
 ;
 
-send_body:
-  cd_name from_identifier
+send_body:		send_body_mcs | send_body_cd ;
+
+send_body_mcs:
+/* FIXME: conflict because x may an identifier in both _mcs and _cs
+  _to
+   FIXME - workaround: expeciting TO here */
+  TO
+  x from_identifier 
+/* FIXME: conflict because the RETURNING could belong to the exception phrases
+  _common_exception_phrases
+   FIXME - workaround end */
+  RETURNING message_tag_data_item
   {
+		CB_PENDING ("COBOL 202x MCS");
   }
-| cd_name _from_identifier with_indicator write_option _replacing_line
+/* FIXME later: too many conflicts here
+| _to message_tag_data_item from_identifier _send_raising _common_exception_phrases
   {
+		CB_PENDING ("COBOL 202x MCS");
+  }
+   FIXME - workaround end */
+;
+
+message_tag_data_item:
+  identifier
+  {
+	/* TODO:
+	cb_tree exception = get_exception (CB_NAME($1));
+	if (!exception) {
+		cb_error (_("'%s' is not a message-tag data item"), CB_NAME ($1));
+	}
+	*/
   }
 ;
 
@@ -14652,6 +14721,30 @@ _from_identifier:
 from_identifier:
   FROM identifier
   {
+  }
+;
+  
+/* FIXME later: too many conflicts here
+_send_raising:
+  %prec SHIFT_PREFER
+| send_raising
+;
+
+send_raising:
+  RAISING EXCEPTION exception_name
+| RAISING LAST _exception
+;
+FIXME - workaround end */
+
+
+send_body_cd:
+  cd_name from_identifier
+  {
+	  /* PENDING note in COMMUNICATION SECTION, which defines cd-names */
+  }
+| cd_name _from_identifier with_indicator write_option _replacing_line
+  {
+	  /* PENDING note in COMMUNICATION SECTION, which defines cd-names */
   }
 ;
 
@@ -15952,14 +16045,14 @@ xml_generate_body:
   }
   _with_encoding_xml_dec_and_attrs
   _xml_gen_namespace
-  _name_of
+  _xml_name_of
   _type_of
   _xml_gen_suppress
   {
 	cobc_in_xml_generate_body = 0;
 	cobc_cs_check = 0;
   }
-  _xml_exception_phrases
+  _common_exception_phrases
   {
 	cb_emit_xml_generate ($1, $3, $4, xml_encoding, with_xml_dec,
 			      with_attrs, $7, $8, $9, ml_suppress_list);
@@ -16034,7 +16127,7 @@ _xml_gen_namespace_prefix:
   }
 ;
 
-_name_of:
+_xml_name_of:
   /* empty */
   {
 	$$ = NULL;
@@ -16062,6 +16155,39 @@ identifier_is_name:
   identifier _is literal
   {
 	$$ = CB_BUILD_PAIR ($1, $3);
+  }
+;
+
+_json_name_of:
+  /* empty */
+  {
+	$$ = NULL;
+  }
+| NAME _of json_identifier_name_list
+  {
+	$$ = $3;
+  }
+;
+
+json_identifier_name_list:
+  json_identifier_is_name
+  {
+	$$ = CB_LIST_INIT ($1);
+  }
+| json_identifier_name_list json_identifier_is_name
+  {
+	$$ = cb_list_add ($1, $2);
+  }
+;
+
+json_identifier_is_name:
+  identifier _is literal
+  {
+	$$ = CB_BUILD_PAIR ($1, $3);
+  }
+| identifier _is OMITTED
+  {
+	$$ = CB_BUILD_PAIR ($1, cb_null);
   }
 ;
 
@@ -16189,7 +16315,7 @@ xml_parse_statement:
   {
 	begin_statement ("XML PARSE", TERM_XML);
 	/* TO-DO: Add xml-parse and xml-parse-extra-phrases config options. */
-	CB_PENDING (_("XML PARSE"));
+	CB_PENDING ("XML PARSE");
 	cobc_cs_check = CB_CS_XML_PARSE;
   }
   xml_parse_body
@@ -16205,7 +16331,7 @@ xml_parse_body:
   {
 	cobc_cs_check = 0;
   }
-  _xml_exception_phrases
+  _common_exception_phrases
 ;
 
 _with_encoding:
@@ -16294,44 +16420,8 @@ not_escape_or_not_exception:
 | NOT_EXCEPTION
 ;
 
-_display_exception_phrases:
-  {
-	except_type [except_idx++] = DISPLAY_HANDLER;
-  }
-  _exception_phrases
-  {
-	  except_idx--;
-  };
-
-_delete_exception_phrases:
-  {
-	except_type [except_idx++] = DELETE_FILE_HANDLER;
-  }
-  _exception_phrases
-  {
-	  except_idx--;
-  };
-
-_xml_exception_phrases:
-  {
-	except_type [except_idx++] = XML_HANDLER;
-  }
-  _exception_phrases
-  {
-	  except_idx--;
-  };
-
-_json_exception_phrases:
-  {
-	except_type [except_idx++] = JSON_HANDLER;
-  }
-  _exception_phrases
-  {
-	  except_idx--;
-  };
-
 /* Generic [NOT] ON EXCEPTION */
-_exception_phrases:
+_common_exception_phrases:
   %prec SHIFT_PREFER
 | except_on_exception _except_not_on_exception
 | except_not_on_exception _except_on_exception
@@ -16357,7 +16447,7 @@ _except_on_exception:
 except_on_exception:
   EXCEPTION statement_list
   {
-	current_statement->handler_type = except_type [except_idx-1];
+	current_statement->handler_type = get_handler_type_from_statement(current_statement);
 	current_statement->ex_handler = $2;
   }
 ;
@@ -16370,7 +16460,7 @@ _except_not_on_exception:
 except_not_on_exception:
   NOT_EXCEPTION statement_list
   {
-	current_statement->handler_type = except_type [except_idx-1];
+	current_statement->handler_type = get_handler_type_from_statement (current_statement);
 	current_statement->not_ex_handler = $2;
   }
 ;
@@ -18522,6 +18612,8 @@ _when:		| WHEN ;
 _when_set_to:	| WHEN SET TO ;
 _with:		| WITH ;
 _with_for:	| WITH | FOR ;
+
+_exception:	  %prec SHIFT_PREFER | EXCEPTION ;
 
 /* Mandatory selection */
 

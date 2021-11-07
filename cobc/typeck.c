@@ -2478,7 +2478,7 @@ cb_build_length_1 (cb_tree x)
 	for (f = f->children; f; f = f->sister) {
 		size = cb_build_length_1 (cb_build_field_reference (f, x));
 		if (f->depending) {
-			if (!cb_flag_odoslide && f->flag_odo_relative) {
+			if (!cb_odoslide && f->flag_odo_relative) {
 				size = cb_build_binary_op (size, '*', cb_int (f->occurs_max));
 			} else {
 				size = cb_build_binary_op (size, '*', f->depending);
@@ -2497,7 +2497,7 @@ cb_build_const_length (cb_tree x)
 	struct cb_field		*f;
 	char			buff[32];
 
-	if (x == cb_error_node) {
+	if (CB_INVALID_TREE(x)) {
 		return cb_error_node;
 	}
 	if (CB_INTEGER_P (x)) {
@@ -3827,7 +3827,7 @@ cb_validate_program_data (struct cb_program *prog)
 		for (p = q; ; p = p->parent) {
 			if (p->depending) {
 				if (odo_level > 0
-				 && !cb_flag_odoslide) {
+				 && !cb_odoslide) {
 					xerr = x;
 					cb_error_x (x,
 						_ ("'%s' cannot have nested OCCURS DEPENDING"),
@@ -3848,7 +3848,8 @@ cb_validate_program_data (struct cb_program *prog)
 						    p->sister->name);
 				}
 				if (!p->sister->redefines) {
-					if (!cb_complex_odo
+					if (!cb_odoslide
+					 && !cb_complex_odo
 					 && x != xerr) {
 						xerr = x;
 						cb_error_x (x,
@@ -10994,7 +10995,7 @@ cb_emit_move (cb_tree src, cb_tree dsts)
 		if (!tempval) {
 			if (CB_REFERENCE_P (x)
 			 && CB_REFERENCE (x)->length == NULL
-			 && cb_complex_odo) {
+			 && (cb_odoslide || cb_complex_odo)) {
 				p = CB_FIELD_PTR(x);
 				if ((f = chk_field_variable_size (p)) != NULL) {
 					bgnpos = -1;
@@ -13334,7 +13335,7 @@ syntax_check_ml_gen_name_list (cb_tree name_list, cb_tree input)
 			error |= error_if_ignored_in_ml_gen (ref, input, _("NAME OF item"));
 		}
 
-		if (!is_valid_xml_name (CB_LITERAL (name))) {
+		if (name != cb_null && !is_valid_xml_name (CB_LITERAL (name))) {
 			cb_error_x (ref, _("NAME OF name must be a valid XML name"));
 			error = 1;
 		}
