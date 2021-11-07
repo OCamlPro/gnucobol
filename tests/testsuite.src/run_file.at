@@ -24353,7 +24353,6 @@ Offset  HEX-- -- -- -5 -- -- -- -- 10 -- -- -- -- 15 --   CHARS----1----5-
 
 AT_CLEANUP
 
-
 AT_SETUP([SEQUENTIAL ADVANCING Record])
 AT_KEYWORDS([runfile])
 
@@ -24383,33 +24382,42 @@ AT_DATA([prog.cob], [
 
        WORKING-STORAGE SECTION.
        01  FILEI-NAME PIC X(6).
-       01  FILEI-MODE PIC X(2).
+       01  FILE-TYPE  PIC X(2) VALUE SPACES.
+       01  FILE-FORM  PIC X(2) VALUE SPACES.
+       01  FILE-SET   PIC X(17) VALUE SPACES.
        01  FI-STS     PIC X(2) VALUE '00'.
        01  REDEFINES FI-STS.
            05  FI-STS1     PIC X.
            05  FI-STS2     PIC X COMP-X.
 
        PROCEDURE DIVISION.
-
-           DISPLAY "IO_FILEO"  UPON ENVIRONMENT-NAME
-           DISPLAY "format=mf,type=SA" UPON ENVIRONMENT-VALUE.
-           MOVE "SA" TO FILEI-MODE.
+           MOVE "GC" TO FILE-FORM.
+           PERFORM WRITEIT.
+           MOVE "MF" TO FILE-FORM.
            PERFORM WRITEIT.
 
-           MOVE "FILEO" TO FILEI-NAME.
-           PERFORM LISTIT.
-
-           DISPLAY "IO_FILEO"  UPON ENVIRONMENT-NAME
-           DISPLAY "format=mf,type=SQ" UPON ENVIRONMENT-VALUE.
-           MOVE "SQ" TO FILEI-MODE.
+           MOVE "GC" TO FILE-FORM.
+           MOVE "SA" TO FILE-TYPE.
+           PERFORM WRITEIT.
+           MOVE "SQ" TO FILE-TYPE.
            PERFORM WRITEIT.
 
-           MOVE "FILEO" TO FILEI-NAME.
-           PERFORM LISTIT.
+           MOVE "MF" TO FILE-FORM.
+           MOVE "SA" TO FILE-TYPE.
+           PERFORM WRITEIT.
+           MOVE "SQ" TO FILE-TYPE.
+           PERFORM WRITEIT.
 
            STOP RUN.
 
        WRITEIT.
+           IF FILE-TYPE NOT = SPACES
+             STRING "format=" FILE-FORM ",type=" FILE-TYPE INTO FILE-SET
+           ELSE
+             STRING "format=" FILE-FORM INTO FILE-SET
+           END-IF.
+           DISPLAY "IO_FILEO"  UPON ENVIRONMENT-NAME
+           DISPLAY FILE-SET UPON ENVIRONMENT-VALUE.
            OPEN OUTPUT FILEO.
            MOVE 'Record 1' TO FILEO-RECORD
            WRITE FILEO-RECORD.
@@ -24428,9 +24436,11 @@ AT_DATA([prog.cob], [
            MOVE 'Record X' TO FILEO-RECORD
            WRITE FILEO-RECORD.
            CLOSE FILEO.
+           MOVE "FILEO" TO FILEI-NAME.
+           PERFORM LISTIT.
 
        LISTIT.
-           DISPLAY "*** List mode=" FILEI-MODE " ***".
+           DISPLAY "*** List " FILE-SET " ***".
            OPEN INPUT FILEI.
            PERFORM READIN UNTIL FI-STS NOT = '00'.
            CLOSE FILEI.
@@ -24442,8 +24452,8 @@ AT_DATA([prog.cob], [
              IF FILEI-RECORD = LOW-VALUES
                 MOVE " *** Advancing ***" TO FILEI-RECORD
              END-IF
-			 INSPECT FILEI-RECORD REPLACING ALL X'0D' BY '~'
-			 INSPECT FILEI-RECORD REPLACING ALL X'0A' BY '`'
+             INSPECT FILEI-RECORD REPLACING ALL X'0D' BY '~'
+             INSPECT FILEI-RECORD REPLACING ALL X'0A' BY '`'
              DISPLAY "'" FILEI-RECORD "'"
            ELSE IF FI-STS1 = '9'
              DISPLAY FILEI-NAME " Status: 9/" FI-STS2
@@ -24453,7 +24463,16 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COBC -x -std=mf -w prog.cob ], [0], [], [])
 
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [*** List mode=SA ***
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [*** List format=GC         ***
+'Record 1            '
+'Record 2            '
+'B1                  '
+'B2                  '
+'Record 3            '
+'A2                  '
+'A1                  '
+'Record X            '
+*** List format=MF         ***
 'Record 1            '
 'Record 2            '
 'B1                  '
@@ -24463,7 +24482,41 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [*** List mode=SA ***
 '        ~`A1        '
 '          ~Record X '
 FILEO  Status: 04
-*** List mode=SQ ***
+*** List format=GC,type=SA ***
+'Record 1            '
+'Record 2            '
+'B1                  '
+' *** Advancing ***  '
+'B2                  '
+' *** Advancing ***  '
+' *** Advancing ***  '
+'Record 3            '
+' *** Advancing ***  '
+' *** Advancing ***  '
+'A2                  '
+' *** Advancing ***  '
+'A1                  '
+'Record X            '
+*** List format=GC,type=SQ ***
+'Record 1            '
+'Record 2            '
+'B1                  '
+'B2                  '
+'Record 3            '
+'A2                  '
+'A1                  '
+'Record X            '
+*** List format=MF,type=SA ***
+'Record 1            '
+'Record 2            '
+'B1                  '
+'~`B2                '
+'  ~``Record 3       '
+'     ~``A2          '
+'        ~`A1        '
+'          ~Record X '
+FILEO  Status: 04
+*** List format=MF,type=SQ ***
 'Record 1            '
 'Record 2            '
 'B1                  '
