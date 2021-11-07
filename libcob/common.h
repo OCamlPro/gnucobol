@@ -2563,7 +2563,7 @@ typedef struct __fcd2 {
 	unsigned char	otherFlags;			/* miscellaneous flags */
 	char			res4[2];			/* reserved */
 	void			*fileHandle2;		/* file handle */
-	unsigned char   gcFlags;			/* Flags used by sttfh.c */
+	unsigned char   gcFlags;			/* Flags used by extfh.c */
 	unsigned char	fstatusType;		/* file status type */
 	unsigned char	fileFormat;			/* file format */
 	char			res6[3];			/* reserved */
