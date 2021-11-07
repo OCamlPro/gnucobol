@@ -1,8 +1,8 @@
 
 2021-10-01  Ron Norman <rjn@inglenet.com>
 
-	* fileio: Removed the COB_MF_LS_xxx options and replaced COB_MF_FILES
-			with COB_FILE_FORMAT
+	* runtime.cfg: Removed the COB_MF_LS_xxx options and replaced COB_MF_FILES
+	  with COB_FILE_FORMAT
 
 2021-09-28  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -75,13 +75,17 @@
 
 	* general: added option vsam-status.
 
-2020-03-31  Ron Norman <rjn@inglenet.com>
+2020-05-11  Simon Sobisch <simonsobisch@gnu.org>
 
-	* general: added option align-record and align-opt
+	* general: added options type-to-clause and usage-type
 
 2020-04-03  Simon Sobisch <simonsobisch@gnu.org>
 
 	* general: added option numeric-pointer *EXPERIMENTAL*
+
+2020-03-31  Ron Norman <rjn@inglenet.com>
+
+	* general: added option align-record and align-opt
 
 2020-03-27  Simon Sobisch <simonsobisch@gnu.org>
 

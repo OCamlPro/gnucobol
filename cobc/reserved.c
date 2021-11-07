@@ -1688,6 +1688,9 @@ static struct cobc_reserved default_reserved_words[] = {
   { "LESS",			0, 0, LESS,			/* 2002 */
 				0, 0
   },
+  { "LIKE",			0, 0, LIKE,			/* ILE COBOL */
+				0, 0
+  },
   { "LIMIT",			0, 0, LIMIT,			/* 2002 */
 				0, 0
   },
@@ -2679,9 +2682,8 @@ static struct cobc_reserved default_reserved_words[] = {
   { "STRING",			1, 0, STRING,			/* 2002 */
 				0, 0
   },
-  { "STRONG",			0, 1, -1,			/* 2002 (C/S) */
-				0, 0
-	/* FIXME: 2014 Context-sensitive to TYPEDEF clause */
+  { "STRONG",			0, 1, STRONG,			/* 2002 (C/S) */
+				0, CB_CS_TYPEDEF
   },
   { "STYLE",			0, 1, STYLE,			/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
@@ -2868,8 +2870,8 @@ static struct cobc_reserved default_reserved_words[] = {
   { "TYPE",			0, 0, TYPE,			/* 2002 */
 				0, 0
   },
-  { "TYPEDEF",			0, 0, -1,			/* 2002 */
-				0, 0
+  { "TYPEDEF",			0, 0, TYPEDEF,			/* 2002 */
+				CB_CS_TYPEDEF, 0
   },
   { "U",			0, 1, U,			/* Extension */
 				0, CB_CS_RECORDING

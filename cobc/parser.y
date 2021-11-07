@@ -193,6 +193,7 @@ static cb_tree			save_tree;
 static cb_tree			start_tree;
 
 static unsigned int		check_unreached;
+static unsigned int		within_typedef_definition;
 static unsigned int		in_declaratives;
 static unsigned int		in_debugging;
 static unsigned int		current_linage;
@@ -759,27 +760,44 @@ setup_use_file (struct cb_file *fileptr)
 	}
 }
 
-static void
+/* note: same message in field.c */
+static int
 emit_duplicate_clause_message (const char *clause)
 {
 	/* FIXME: replace by a new warning level that is set
 	   to warn/error depending on cb_relaxed_syntax_checks */
 	if (cb_relaxed_syntax_checks) {
 		cb_warning (COBC_WARN_FILLER, _("duplicate %s clause"), clause);
-	} else {
-		cb_error (_("duplicate %s clause"), clause);
+		return 0;
 	}
+	cb_error (_("duplicate %s clause"), clause);
+	return 1;
+}
+
+static int
+check_repeated (const char *clause, const cob_flags_t bitval,
+			cob_flags_t *already_seen)
+{
+	if (*already_seen & bitval) {
+		return emit_duplicate_clause_message (clause);
+	}
+	*already_seen |= bitval;
+	return 0;
 }
 
 static void
-check_repeated (const char *clause, const cob_flags_t bitval, cob_flags_t *already_seen)
+emit_conflicting_clause_message (const char *clause, const char *conflicting)
 {
-	if (*already_seen & bitval) {
-		emit_duplicate_clause_message (clause);
+	if (cb_relaxed_syntax_checks) {
+		cb_warning (COBC_WARN_FILLER, _("cannot specify both %s and %s; %s is ignored"),
+			clause, conflicting, clause);
 	} else {
-		*already_seen |= bitval;
+		cb_error (_("cannot specify both %s and %s"),
+			clause, conflicting);
 	}
+
 }
+
 
 static void
 error_if_no_page_lines_limit (const char *phrase)
@@ -1611,27 +1629,140 @@ set_current_field (cb_tree level, cb_tree name)
 	} else {
 		current_field = CB_FIELD (x);
 		check_pic_duplicate = 0;
+		if (current_field->level == 1 || current_field->level == 77) {
+			within_typedef_definition = 0;
+		}
 	}
 
 	return 0;
 }
 
-/* verifies that no conflicting clauses are used and inherits the definition of the original field */
 static void
-inherit_same_as ()
+setup_external_definition (cb_tree x, const int type)
+{
+	/* note: syntax checks for conflicting clauses
+	         are done in inherit_external_definition */
+
+	if (x != cb_error_node) {
+		struct cb_field *f = CB_FIELD (cb_ref (x));
+
+		/* additional checks if the definition isn't provided by type */
+		if (type != 1 /* called with SAME AS / LIKE data-name */ ) {
+			if (f->level == 88) {
+				cb_error (_("condition-name not allowed here: '%s'"), cb_name (x));
+				x = cb_error_node;
+			}
+			/* note: the following are not explicit specified but implied with
+			   LIKE as ILE-COBOL does not have those sections */
+			if (f->storage == CB_STORAGE_SCREEN) {
+				cb_error (_("SCREEN item cannot be used here"));
+				x = cb_error_node;
+			} else if (f->storage == CB_STORAGE_REPORT) {
+				cb_error (_("REPORT item cannot be used here"));
+				x = cb_error_node;
+			}
+			if (type == 0) {
+				/* rules that apply only to SAME AS */
+				if (f->flag_is_typedef) {
+					cb_error (_("TYPEDEF item cannot be used here"));
+					x = cb_error_node;
+				}
+			}
+		}
+
+		if (current_field->level == 77) {
+			if (type != 2 /* called with LIKE */
+			 && f->children) {
+				cb_error (_("elementary item expected"));
+				x = cb_error_node;
+			}
+		} else {
+			struct cb_field *p;
+			for (p = current_field; p; p = p->parent) {
+				if (p == f) {
+					cb_error (_("item may not reference itself"));
+					x = cb_error_node;
+					break;
+				}
+			}
+			for (p = f->parent; p; p = p->parent) {
+				if (p->usage != CB_USAGE_DISPLAY) {
+					cb_error (_("item may not be subordinate to any item with USAGE clause"));
+				} else if (p->flag_sign_clause) {
+					cb_error (_("item may not be subordinate to any item with SIGN clause"));
+				} else {
+					continue;
+				}
+				x = cb_error_node;
+				break;
+			}
+		}
+	}
+
+	if (x == cb_error_node) {
+		current_field->flag_is_verified = 1;
+		current_field->flag_invalid = 1;
+		current_field->external_definition = cb_error_node;
+	} else {
+		current_field->external_definition = cb_ref (x);
+	}
+}
+
+static void
+setup_external_definition_type (cb_tree x)
+{
+	if (!check_repeated ("TYPE TO", SYN_CLAUSE_31, &check_pic_duplicate)) {
+		if (current_field->external_definition) {
+			emit_conflicting_clause_message ("SAME AS", "TYPE TO");
+		}
+		setup_external_definition (x, 1);
+	}
+}
+
+/* verifies that no conflicting clauses are used and
+   inherits the definition of the original field specified
+   by SAME AS or by type_name */
+static void
+inherit_external_definition (cb_tree lvl)
 {
 	/* note: REDEFINES (clause 1) is allowed with RM/COBOL but not COBOL 2002+ */
 	static const cob_flags_t	allowed_clauses =
-		SYN_CLAUSE_1 | SYN_CLAUSE_2 | SYN_CLAUSE_3 | SYN_CLAUSE_7;
+		SYN_CLAUSE_1 | SYN_CLAUSE_2 | SYN_CLAUSE_3 | SYN_CLAUSE_7 | SYN_CLAUSE_12;
 	cob_flags_t	tested = check_pic_duplicate & ~(allowed_clauses);
-	if (tested != SYN_CLAUSE_30) {
-		cb_error_x (CB_TREE(current_field), _("illegal combination of %s with other clauses"), "SAME AS");
+	if (tested != SYN_CLAUSE_30 && tested != SYN_CLAUSE_31
+	 && tested != 0 /* USAGE as TYPE TO */) {
+		struct cb_field *fld = CB_FIELD (current_field->external_definition);
+		cb_error_x (CB_TREE(current_field), _("illegal combination of %s with other clauses"),
+			fld->flag_is_typedef ? "TYPE TO" : "SAME AS");
 		current_field->flag_is_verified = 1;
 		current_field->flag_invalid = 1;
 	} else {
-		struct cb_field* fld = CB_FIELD (current_field->same_as);
-		current_field = copy_into_field (fld, current_field, 1);
+		struct cb_field *fld = CB_FIELD (current_field->external_definition);
+		int new_level = lvl ? cb_get_level (lvl) : 0;
+		int old_level = current_field->level;
+		copy_into_field (fld, current_field);
+		if (new_level > 1 && new_level < 66 && new_level > old_level) {
+			cb_error_x (lvl, _("entry following %s may not be subordinate to it"),
+				fld->flag_is_typedef ? "TYPE TO" : "SAME AS");
+		}
 	}
+}
+
+static cb_tree
+get_finalized_description_tree (void)
+{
+	struct cb_field *p;
+
+	/* finalize last field if target of SAME AS / TYPEDEF */
+	if (current_field && !CB_INVALID_TREE (current_field->external_definition)) {
+		inherit_external_definition (NULL);
+	}
+
+	/* validate the complete current "block" */
+	for (p = description_field; p; p = p->sister) {
+		cb_validate_field (p);
+	}
+	return CB_TREE (description_field);
 }
 
 static void
@@ -1645,7 +1776,6 @@ check_not_both (const cob_flags_t flag1, const cob_flags_t flag2,
 	} else if (flag_to_set == flag2 && (flags & flag1)) {
 		cb_error (_("cannot specify both %s and %s"),
 			  flag1_name, flag2_name);
-
 	}
 }
 
@@ -1665,19 +1795,6 @@ set_screen_attr (const char *clause, const cob_flags_t bitval)
 	} else {
 		current_field->screen_flag |= bitval;
 	}
-}
-
-static void
-emit_conflicting_clause_message (const char *clause, const char *conflicting)
-{
-	if (cb_relaxed_syntax_checks) {
-		cb_warning (COBC_WARN_FILLER, _("cannot specify both %s and %s; %s is ignored"),
-			clause, conflicting, clause);
-	} else {
-		cb_error (_("cannot specify both %s and %s"),
-			clause, conflicting);
-	}
-
 }
 
 static void
@@ -2694,6 +2811,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token LESS
 %token LESS_OR_EQUAL		"LESS OR EQUAL"
 %token LEVEL_NUMBER		"level-number"		/* 01 thru 49, 77 */
+%token LIKE
 %token LIMIT
 %token LIMITS
 %token LINAGE
@@ -3029,6 +3147,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token STEP
 %token STOP
 %token STRING
+%token STRONG
 %token STYLE
 %token SUB_QUEUE_1		"SUB-QUEUE-1"
 %token SUB_QUEUE_2		"SUB-QUEUE-2"
@@ -3107,6 +3226,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token TRIM_FUNC		"FUNCTION TRIM"
 %token TRUNCATION
 %token TYPE
+%token TYPEDEF
 %token U
 %token UCS_4		"UCS-4"
 %token UNBOUNDED
@@ -3446,6 +3566,7 @@ _program_body:
 	/* note:
 	   we also validate all references we found so far here */
 	cb_validate_program_data (current_program);
+	within_typedef_definition = 0;
   }
   _procedure_division
 ;
@@ -6462,16 +6583,7 @@ _record_description_list:
   }
   record_description_list
   {
-	struct cb_field *p;
-	/* finalize last field if target of SAME AS */
-	if (current_field && !CB_INVALID_TREE (current_field->same_as)) {
-		inherit_same_as ();
-	}
-
-	for (p = description_field; p; p = p->sister) {
-		cb_validate_field (p);
-	}
-	$$ = CB_TREE (description_field);
+	$$ = get_finalized_description_tree ();
   }
 ;
 
@@ -6486,9 +6598,9 @@ data_description:
 | condition_name_entry
 | level_number _entry_name
   {
-	if (current_field && !CB_INVALID_TREE (current_field->same_as)) {
-		/* finalize last field if target of SAME AS */
-		inherit_same_as ();
+	if (current_field && !CB_INVALID_TREE (current_field->external_definition)) {
+		/* finalize last field if target of SAME AS / type-name */
+		inherit_external_definition ($1);
 	}
 	if (set_current_field ($1, $2)) {
 		YYERROR;
@@ -6841,11 +6953,14 @@ data_description_clause_sequence:
 data_description_clause:
   redefines_clause
 | same_as_clause
+| typedef_clause
+| like_clause
 | external_clause
 | special_names_clause
 | global_clause
 | picture_clause
 | usage_clause
+| type_to_clause
 | sign_clause
 | occurs_clause
 | justified_clause
@@ -6881,62 +6996,82 @@ redefines_clause:
 ;
 
 
+/* LIKE clause (ILE extension) */
+
+like_clause:
+  LIKE identifier_field _length_modifier
+  {
+	if (!check_repeated ("LIKE", SYN_CLAUSE_30, &check_pic_duplicate)) {
+		if (current_field->external_definition) {
+			emit_conflicting_clause_message ("TYPE TO", "SAME AS");
+		}
+		setup_external_definition ($2, 0);
+		current_field->like_modifier = $3;
+		CB_PENDING_X ($2, "LIKE clause");
+	}
+  }
+;
+
+_length_modifier:
+  /* empty */	{ $$ = cb_int0; }
+| length_modifier;
+
+length_modifier:
+  TOK_OPEN_PAREN nonzero_numeric_literal TOK_CLOSE_PAREN
+  {
+	$$ = $2;
+  }
+;
+
 /* SAME AS clause ("AS" optional with RM-COBOL, not with COBOL2002+) */
 
 same_as_clause:
   SAME _as identifier_field
   {
-	cb_tree x = $3;
-	check_repeated ("SAME AS", SYN_CLAUSE_30, &check_pic_duplicate);
-	
-	/* note: syntax checks for conflicting clauses done in inherit_same_as */
-	if (cb_verify (cb_same_as_clause, _("SAME AS clause"))
-	 && x != cb_error_node) {
-		struct cb_field *f = CB_FIELD (cb_ref (x));
-		if (f->storage == CB_STORAGE_SCREEN) {
-			cb_error (_("SCREEN item cannot be used here"));
-			x = cb_error_node;
-		} else if (f->storage == CB_STORAGE_REPORT) {
-			cb_error (_("REPORT item cannot be used here"));
-			x = cb_error_node;
-		} else if (f->level == 88) {
-			cb_error (_("condition-name not allowed here: '%s'"), cb_name (x));
-			x = cb_error_node;
-		} else if (current_field->level == 77) {
-			if (f->children) {
-				cb_error (_("elementary item expected"));
-				x = cb_error_node;
-			}
-		} else {
-			struct cb_field *p;
-			for (p = current_field; p; p = p->parent) {
-				if (p == f) {
-					cb_error (_ ("SAME AS item may not reference itself"));
-					x = cb_error_node;
-					break;
-				}
-			}
-			for (p = f->parent; p; p = p->parent) {
-				if (p->usage != CB_USAGE_DISPLAY) {
-					cb_error (_("SAME AS item may not be subordinate to any item with USAGE clause"));
-				} else if (p->flag_sign_clause) {
-					cb_error (_("SAME AS item may not be subordinate to any item with SIGN clause"));
-				} else {
-					continue;
-				}
-				x = cb_error_node;
-				break;
-			}
+	if (!check_repeated ("SAME AS", SYN_CLAUSE_30, &check_pic_duplicate)) {
+		if (current_field->external_definition) {
+			emit_conflicting_clause_message ("TYPE TO", "SAME AS");
 		}
+		cb_verify (cb_same_as_clause, _("SAME AS clause"));
+		setup_external_definition ($3, 0);
 	}
 
-	if (x == cb_error_node) {
-		current_field->flag_is_verified = 1;
-		current_field->flag_invalid = 1;
-		current_field->same_as = x;
-	} else {
-		current_field->same_as = cb_ref (x);
+
+  }
+;
+
+
+/* TYPEDEF clause (COBOL2002+ rule "directly after entry-name" ignored [not true for MF!]) */
+
+typedef_clause:
+  _is TYPEDEF _strong
+  {
+	if (current_field->flag_is_typedef) {
+		emit_duplicate_clause_message ("TYPEDEF");
+		YYERROR;
 	}
+	/* note: no explicit verification as all dialects with this reserved word use it */
+	current_field->flag_is_typedef = 1;
+	within_typedef_definition = 1;
+
+	if (current_field->level != 1 && current_field->level != 77) {
+		cb_error (_("%s only allowed at 01/77 level"), "TYPEDEF");
+	}
+	if (!qualifier) {
+		cb_error (_("%s requires a data name"), "TYPEDEF");
+	}
+	if (current_storage == CB_STORAGE_SCREEN
+	 || current_storage == CB_STORAGE_REPORT) {
+		cb_error (_("%s not allowed in %s"), "TYPEDEF",
+			enum_explain_storage(current_storage));
+	}
+  }
+;
+
+_strong:
+| STRONG
+  {
+	CB_PENDING ("TYPEDEF STRONG");
   }
 ;
 
@@ -7101,13 +7236,13 @@ picture_clause:
 	check_repeated ("PICTURE", SYN_CLAUSE_4, &check_pic_duplicate);
 	current_field->pic = CB_PICTURE ($1);
 
-	if ($2 && $2 != cb_error_node) {
+	if (CB_VALID_TREE ($2)) {
 		if (  (current_field->pic->category != CB_CATEGORY_NUMERIC
 		    && current_field->pic->category != CB_CATEGORY_NUMERIC_EDITED)
 		 || strpbrk (current_field->pic->orig, " CRDB-*") /* the standard seems to forbid also ',' */) {
 			cb_error_x ($1, _("a locale-format PICTURE string must only consist of '9', '.', '+', 'Z' and the currency-sign"));
 		} else {
-			/* TODO: check that not in or part of CONSTANT RECORD */
+			/* TODO: check that not we're not within a CONSTANT RECORD */
 			CB_PENDING_X ($1, "locale-format PICTURE");
 		}
 	}
@@ -7146,6 +7281,17 @@ locale_name:
 ;
 
 
+/* TYPE TO clause, optional "TO", fixed to clean conflicts for screen-items */
+
+type_to_clause:
+  TYPE _to type_name
+  {
+	cb_verify (cb_type_to_clause, _("TYPE TO clause"));
+	setup_external_definition_type ($3);
+  }
+;
+
+
 /* USAGE clause */
 
 usage_clause:
@@ -7155,6 +7301,24 @@ usage_clause:
                 	   FIXME: handle conflict by returning TYPEDEF_NAME token,
                 	          then move this to "usage" */
   {
+	{
+		cb_tree x = cb_try_ref ($3);
+		if (!CB_INVALID_TREE (x) && CB_FIELD_P (x) && CB_FIELD (x)->flag_is_typedef) {
+			if (!check_repeated ("USAGE", SYN_CLAUSE_5, &check_pic_duplicate)) {
+				if (current_field->external_definition) {
+					emit_conflicting_clause_message ("USAGE", "SAME AS / TYPE TO");
+				} else {
+					cb_verify (cb_usage_type_name, _("USAGE type-name"));
+					/* replace usage by type definition */
+					check_pic_duplicate &= ~SYN_CLAUSE_5;
+					check_repeated ("USAGE/TYPE", SYN_CLAUSE_31, &check_pic_duplicate);
+					setup_external_definition ($3, 1);
+					break;	/* everything done here */
+				}
+			}
+			YYERROR;
+		}
+	}
 	if (is_reserved_word (CB_NAME ($3))) {
 		cb_error_x ($3, _("'%s' is not a valid USAGE"), CB_NAME ($3));
 	} else if (is_default_reserved_word (CB_NAME ($3))) {
@@ -7572,24 +7736,22 @@ _occurs_keys_and_indexed:
 occurs_keys:
   occurs_key_list
   {
-	if ($1) {
-		cb_tree		l;
-		struct cb_key	*keys;
-		int		i;
-		int		nkeys;
+	cb_tree		l;
+	struct cb_key	*keys;
+	int		i;
+	int		nkeys;
 
-		l = $1;
-		nkeys = cb_list_length ($1);
-		keys = cobc_parse_malloc (sizeof (struct cb_key) * nkeys);
+	l = $1;
+	nkeys = cb_list_length ($1);
+	keys = cobc_parse_malloc (sizeof (struct cb_key) * nkeys);
 
-		for (i = 0; i < nkeys; i++) {
-			keys[i].dir = CB_PURPOSE_INT (l);
-			keys[i].key = CB_VALUE (l);
-			l = CB_CHAIN (l);
-		}
-		current_field->keys = keys;
-		current_field->nkeys = nkeys;
+	for (i = 0; i < nkeys; i++) {
+		keys[i].dir = CB_PURPOSE_INT (l);
+		keys[i].key = CB_VALUE (l);
+		l = CB_CHAIN (l);
 	}
+	current_field->keys = keys;
+	current_field->nkeys = nkeys;
   }
 ;
 
@@ -7601,29 +7763,21 @@ occurs_key_list:
 occurs_key_field:
   ascending_or_descending _key _is single_reference_list
   {
-	cb_tree l, item;
-	struct cb_field *field;
+	cb_tree ref = NULL;
+	cb_tree rchain = NULL;
+	cb_tree l;
+
+	/* create reference chaing all the way up
+	   as later fields may have same name */
+	if (!within_typedef_definition) {
+		rchain = cb_build_full_field_reference (current_field->parent);
+	}
 
 	for (l = $4; l; l = CB_CHAIN (l)) {
 		CB_PURPOSE (l) = $1;
-		item = CB_VALUE (l);
-		if (item == cb_error_node) {
-			continue;
-		}
-		/* internally reference-modify each of the given keys */
-		if (qualifier
-#if 0 /* Simon: those are never reference-modified ... */
-		  && !CB_REFERENCE(item)->chain
-#endif /* the following is perfectly fine and would raise a syntax error
-		  if we add the self-reference */
-		  && strcasecmp (CB_NAME(item), CB_NAME(qualifier))) {
-			/* reference by the OCCURS item */
-			CB_REFERENCE(item)->chain = qualifier;
-		}
-		/* reference all the way up as later fields may have same name */
-		for (field = CB_FIELD(cb_ref(qualifier))->parent; field; field = field->parent) {
-			if (field->flag_filler) continue;
-			CB_REFERENCE(item)->chain = cb_build_reference(field->name);
+		ref = CB_VALUE (l);
+		if (CB_VALID_TREE(ref)) {
+			CB_REFERENCE (ref)->chain = rchain;
 		}
 	}
 	keys_list = cb_list_append (keys_list, $4);
@@ -7914,18 +8068,14 @@ report_description:
   _report_description_options TOK_DOT
   _report_group_description_list
   {
-	struct cb_field *p;
+	$$ = get_finalized_description_tree ();
 
-	for (p = description_field; p; p = p->sister) {
-		cb_validate_field (p);
-	}
 	current_program->report_storage = description_field;
 	current_program->flag_report = 1;
 	if (current_report->records == NULL) {
 		current_report->records = description_field;
 	}
 	finalize_report (current_report, description_field);
-	$$ = CB_TREE (description_field);
   }
 ;
 
@@ -8197,11 +8347,12 @@ _report_group_options:
 ;
 
 report_group_option:
-  type_clause
+  type_is_clause
 | next_group_clause
 | line_clause
 | picture_clause
 | usage_clause
+| type_to_clause
 | sign_clause
 | justified_clause
 | column_clause
@@ -8215,10 +8366,10 @@ report_group_option:
 | report_varying_clause
 ;
 
-type_clause:
+type_is_clause:
   TYPE _is type_option
   {
-	check_repeated ("TYPE", SYN_CLAUSE_16, &check_pic_duplicate);
+	check_repeated ("TYPE IS", SYN_CLAUSE_16, &check_pic_duplicate);
   }
 ;
 
@@ -8634,12 +8785,8 @@ _screen_section:
   }
   _screen_description_list
   {
-	struct cb_field *p;
-
 	if (description_field) {
-		for (p = description_field; p; p = p->sister) {
-			cb_validate_field (p);
-		}
+		get_finalized_description_tree ();
 		current_program->screen_storage = description_field;
 		current_program->flag_screen = 1;
 	}
@@ -8982,6 +9129,9 @@ screen_option:
 	current_field->screen_backg = $3;
   }
 | usage_clause
+/* FIXME shift/reduce conflict with control_attributes
+| type_to_clause
+*/
 | blank_clause
 | screen_global_clause
 | justified_clause
@@ -9767,7 +9917,8 @@ procedure_division:
 	}
 	if (call_conv) {
 		if (current_program->entry_convention) {
-			cb_warning (COBC_WARN_FILLER, _("overriding convention specified in ENTRY-CONVENTION"));
+			cb_warning (COBC_WARN_FILLER,
+				_("overriding convention specified in ENTRY-CONVENTION"));
 		}
 		current_program->entry_convention = call_conv;
 	} else if (!current_program->entry_convention) {
@@ -17257,7 +17408,9 @@ single_reference_list:
 single_reference:
   unqualified_word
   {
-	CB_ADD_TO_CHAIN ($1, current_program->reference_list);
+	if (!within_typedef_definition) {
+		CB_ADD_TO_CHAIN ($1, current_program->reference_list);
+	}
   }
 ;
 
@@ -17708,6 +17861,27 @@ identifier_field:
 	} else {
 		if (x != cb_error_node) {
 			cb_error_x ($1, _("'%s' is not a field"), cb_name ($1));
+		}
+		$$ = cb_error_node;
+	}
+  }
+;
+
+/* guarantees a reference to a validated field-reference which has
+   the type attribute (or cb_error_node) */
+type_name:
+  WORD
+  {
+	cb_tree x = NULL;
+	if (CB_REFERENCE_P ($1)) {
+		x = cb_ref ($1);
+	}
+
+	if (x && CB_FIELD_P (x) && CB_FIELD (x)->flag_is_typedef) {
+		$$ = $1;
+	} else {
+		if (x != cb_error_node) {
+			cb_error_x ($1, _("'%s' is not a type-name"), cb_name ($1));
 		}
 		$$ = cb_error_node;
 	}

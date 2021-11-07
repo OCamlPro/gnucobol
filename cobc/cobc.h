@@ -131,6 +131,7 @@ enum cb_current_date {
 #define	CB_CS_JSON_GENERATE		(1U << 31)
 /* HACK: no more space - using minor one until re-written */
 #define	CB_CS_I_O_CONTROL		CB_CS_DAY
+#define	CB_CS_TYPEDEF			CB_CS_DAY
 #define	CB_CS_EXHIBIT			CB_CS_DAY
 #define	CB_CS_MOVE_CONV			CB_CS_DAY
 

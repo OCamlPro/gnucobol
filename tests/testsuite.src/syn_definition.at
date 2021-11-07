@@ -2001,7 +2001,7 @@ AT_CLEANUP
 
 
 AT_SETUP([SAME AS clause])
-AT_KEYWORDS([definition EXTERNAL GLOBAL ])
+AT_KEYWORDS([definition EXTERNAL GLOBAL])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -2019,7 +2019,7 @@ AT_DATA([prog.cob], [
       
        77 OUTPUT-NAME SAME AS DETAIL-NO GLOBAL.
 
-       01 Z-MESSAGE-T2 SAME AS AUSGABE-FILE-NAME-2.       
+       01 Z-MESSAGE-T2 SAME AS AUSGABE-FILE-NAME-2.
        01 Z-MESSAGE-T3.
           49 MT3       SAME AS MESSAGE-TEXT-2.
           49 MT3-REN  REDEFINES MT3 SAME AS MESSAGE-TEXT-2.
@@ -2046,6 +2046,7 @@ AT_DATA([badprog.cob], [
        77 OUTPUT-NAME  SAME AS MESSAGE-TEXT-2.
 ])
 
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
 AT_CHECK([$COMPILE_ONLY -std=mf-strict prog.cob], [1], [],
 [prog.cob:13: error: SAME AS clause does not conform to Micro Focus COBOL
 prog.cob:15: error: SAME AS clause does not conform to Micro Focus COBOL
@@ -2053,12 +2054,300 @@ prog.cob:17: error: SAME AS clause does not conform to Micro Focus COBOL
 prog.cob:19: error: SAME AS clause does not conform to Micro Focus COBOL
 prog.cob:20: error: SAME AS clause does not conform to Micro Focus COBOL
 ])
-AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
 AT_CHECK([$COMPILE_ONLY badprog.cob], [1], [],
-[badprog.cob:8: error: SAME AS item may not reference itself
+[badprog.cob:8: error: item may not reference itself
 badprog.cob:10: error: entry following SAME AS may not be subordinate to it
 badprog.cob:11: error: illegal combination of SAME AS with other clauses
 badprog.cob:12: error: elementary item expected
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([TYPEDEF clause])
+AT_KEYWORDS([definition EXTERNAL GLOBAL TYPE USAGE listing symbols])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 AUSGABE-FILE-NAME-T          PIC X(50) IS TYPEDEF.
+       01 SOME-VERY-LONG-TYPEDEF-NAME  PIC 9999  IS TYPEDEF.
+       01 AUSGABE-FILE-NAME-2T         IS TYPEDEF.
+          05 FILLER    PIC 9999.
+          05 DETAIL-NO USAGE SOME-VERY-LONG-TYPEDEF-NAME.
+      *
+       01  MESSAGE-TEXT-2T IS TYPEDEF.
+         02 AUSGABE-FILE-NAME     USAGE AUSGABE-FILE-NAME-T.
+         02 FILLER REDEFINES AUSGABE-FILE-NAME.
+             05 FILLER PIC 9999.
+         02 AUSGABE-FILE-NAME-2   USAGE AUSGABE-FILE-NAME-2T.
+         02 FILLER                USAGE AUSGABE-FILE-NAME-T.
+      *
+       01  MESSAGE-TEXT-2 EXTERNAL USAGE MESSAGE-TEXT-2T.
+      
+       77 OUTPUT-NAME USAGE SOME-VERY-LONG-TYPEDEF-NAME GLOBAL.
+
+       01 Z-MESSAGE-T2 USAGE AUSGABE-FILE-NAME-2T.
+       01 Z-MESSAGE-T3.
+          49 MT3                    USAGE MESSAGE-TEXT-2T.
+          49 MT3-REN  REDEFINES MT3 USAGE MESSAGE-TEXT-2T.
+
+       77 CALCULUS             PIC S9(15)V9(03) IS TYPEDEF.
+       01 USER-TYPE            IS TYPEDEF.
+          02 AMOUNT            USAGE CALCULUS.
+          02 FILLER            OCCURS 100.
+             05 GRP-AMOUNT     USAGE CALCULUS.
+       01 USER-VAR             USAGE USER-TYPE.
+
+       PROCEDURE DIVISION.
+           DISPLAY AUSGABE-FILE-NAME OF MESSAGE-TEXT-2
+           DISPLAY DETAIL-NO         OF Z-MESSAGE-T2
+           DISPLAY AUSGABE-FILE-NAME OF MT3
+           DISPLAY OUTPUT-NAME
+           MOVE -123.45 TO AMOUNT
+           MOVE AMOUNT  TO GRP-AMOUNT (1)
+           GOBACK.
+])
+
+AT_DATA([progstd.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 AUSGABE-FILE-NAME-T     PIC X(50) IS TYPEDEF.
+       01 DETAIL-NO-T             PIC 9999  IS TYPEDEF.
+       01 AUSGABE-FILE-NAME-2T              IS TYPEDEF.
+          05 FILLER    PIC 9999.
+          05 DETAIL-NO TYPE TO DETAIL-NO-T.
+      *
+       01  MESSAGE-TEXT-2T IS TYPEDEF.
+         02 AUSGABE-FILE-NAME     TYPE AUSGABE-FILE-NAME-T.
+         02 FILLER REDEFINES AUSGABE-FILE-NAME.
+             05 FILLER PIC 9999.
+         02 AUSGABE-FILE-NAME-2   TYPE AUSGABE-FILE-NAME-2T.
+         02 FILLER                TYPE AUSGABE-FILE-NAME-T.
+      *
+       01  MESSAGE-TEXT-2 EXTERNAL TYPE MESSAGE-TEXT-2T.
+      
+       77 OUTPUT-NAME TYPE TO DETAIL-NO-T GLOBAL.
+
+       01 Z-MESSAGE-T2 TYPE AUSGABE-FILE-NAME-2T.
+       01 Z-MESSAGE-T3.
+          49 MT3                    TYPE MESSAGE-TEXT-2T.
+          49 MT3-REN  REDEFINES MT3 TYPE MESSAGE-TEXT-2T.
+
+       77 CALCULUS             PIC S9(15)V9(03) IS TYPEDEF.
+
+       01 SOME-STRUCT          IS TYPEDEF.
+          02 SOME-DATA         PIC 9.
+          02 SOME-VALUES       OCCURS 3.
+             03 OTHER-DATA     PIC X.
+             03 OTHER-VALUES   OCCURS 2 PIC 9.
+       77 SOME2-DATA           PIC 9.      *> temporary variant until solved...
+       01 SOME-STRUCT2         IS TYPEDEF.
+      *>  02 SOME2-DATA        PIC 9.      TODO!
+          02 SOME2-VALUES      OCCURS 1 TO 6 DEPENDING ON SOME2-DATA
+                               DESCENDING KEY SB SA
+                               INDEXED BY SOME2-INDEX.
+             05 SA             PIC X VALUE x'12'.
+             05 SB             PIC 9 VALUE 0.
+             05 SDATA          PIC X(12).
+
+       01 MY-TEST.
+          02 AMOUNT            TYPE CALCULUS.
+          02 FILLER            OCCURS 100.
+             05 GRP-AMOUNT     TYPE CALCULUS.
+          02 MY-NAME           TYPE SOME-STRUCT  OCCURS 5.
+          02 MY-NAME2          TYPE SOME-STRUCT2.
+       01 MY-TEST2             TYPE SOME-STRUCT2.
+       LINKAGE SECTION.
+       01 MY-STORE             TYPE CALCULUS.
+
+       PROCEDURE DIVISION USING MY-STORE.
+           DISPLAY AUSGABE-FILE-NAME OF MESSAGE-TEXT-2
+           DISPLAY DETAIL-NO         OF Z-MESSAGE-T2
+           DISPLAY AUSGABE-FILE-NAME OF MT3
+           DISPLAY OUTPUT-NAME
+           SET ADDRESS OF MY-STORE TO NULL
+           INITIALIZE MY-NAME(2) GRP-AMOUNT (99)
+           INITIALIZE OTHER-VALUES (2, 3, 2)
+           SEARCH ALL SOME2-VALUES OF MY-NAME2
+      *>     WHEN SA(SOME2-INDEX) = x'12'  CHECKME: Should work
+             WHEN SA OF MY-NAME2(SOME2-INDEX OF MY-NAME2) = x'12'
+                CONTINUE.
+           GOBACK.
+])
+
+AT_DATA([badprog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  MESSAGE-TEXT-2T IS TYPEDEF.
+         02 AUSGABE-FILE-NAME     PIC X(50).
+         02 F1      USAGE MESSAGE-TEXT-2T.
+       01 MT2 USAGE MESSAGE-TEXT-2T.
+             05 FILLER PIC 9999.
+       01 MT3 TYPE TO MESSAGE-TEXT-2T PIC X.
+       77 OUTPUT-NAME  TYPE TO MESSAGE-TEXT-2T.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -std=cobol2002 prog.cob], [1], [],
+[prog.cob:10: error: USAGE type-name does not conform to COBOL 2002
+prog.cob:13: error: USAGE type-name does not conform to COBOL 2002
+prog.cob:16: error: USAGE type-name does not conform to COBOL 2002
+prog.cob:17: error: USAGE type-name does not conform to COBOL 2002
+prog.cob:19: error: USAGE type-name does not conform to COBOL 2002
+prog.cob:21: error: USAGE type-name does not conform to COBOL 2002
+prog.cob:23: error: USAGE type-name does not conform to COBOL 2002
+prog.cob:25: error: USAGE type-name does not conform to COBOL 2002
+prog.cob:26: error: USAGE type-name does not conform to COBOL 2002
+prog.cob:30: error: USAGE type-name does not conform to COBOL 2002
+prog.cob:32: error: USAGE type-name does not conform to COBOL 2002
+prog.cob:33: error: USAGE type-name does not conform to COBOL 2002
+])
+AT_CHECK([$COMPILE_ONLY -std=mf-strict prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY progstd.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -std=cobol2002 progstd.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -std=mf-strict progstd.cob], [1], [],
+[progstd.cob:10: error: TYPE TO clause does not conform to Micro Focus COBOL
+progstd.cob:13: error: TYPE TO clause does not conform to Micro Focus COBOL
+progstd.cob:16: error: TYPE TO clause does not conform to Micro Focus COBOL
+progstd.cob:17: error: TYPE TO clause does not conform to Micro Focus COBOL
+progstd.cob:19: error: TYPE TO clause does not conform to Micro Focus COBOL
+progstd.cob:21: error: TYPE TO clause does not conform to Micro Focus COBOL
+progstd.cob:23: error: TYPE TO clause does not conform to Micro Focus COBOL
+progstd.cob:25: error: TYPE TO clause does not conform to Micro Focus COBOL
+progstd.cob:26: error: TYPE TO clause does not conform to Micro Focus COBOL
+progstd.cob:46: error: TYPE TO clause does not conform to Micro Focus COBOL
+progstd.cob:48: error: TYPE TO clause does not conform to Micro Focus COBOL
+progstd.cob:49: error: TYPE TO clause does not conform to Micro Focus COBOL
+progstd.cob:50: error: TYPE TO clause does not conform to Micro Focus COBOL
+progstd.cob:51: error: TYPE TO clause does not conform to Micro Focus COBOL
+progstd.cob:53: error: TYPE TO clause does not conform to Micro Focus COBOL
+])
+
+AT_CHECK([$COMPILE_ONLY badprog.cob], [1], [],
+[badprog.cob:8: error: item may not reference itself
+badprog.cob:10: error: entry following TYPE TO may not be subordinate to it
+badprog.cob:11: error: illegal combination of TYPE TO with other clauses
+badprog.cob:12: error: elementary item expected
+])
+
+AT_CAPTURE_FILE([symbols.lst])
+AT_CHECK([$COMPILE_ONLY -std=mf-strict -t symbols.lst -tsymbols -fno-tsource -fno-tmessages -tlines=0 prog.cob],
+[0], [], [])
+
+AT_DATA([prog.lst],
+[GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY
+
+SIZE  TYPE           LVL  NAME                           PICTURE
+
+      WORKING-STORAGE SECTION
+
+00050 ALPHANUMERIC   01   AUSGABE-FILE-NAME-T            X(50)
+
+00004 NUMERIC        01   SOME-VERY-LONG-TYPEDEF-NAME    9999
+
+00008 GROUP          01   AUSGABE-FILE-NAME-2T
+00004 NUMERIC        05   FILLER                         9999
+00004 NUMERIC        05   DETAIL-NO                      SOME-VERY-LONG-TYPEDE...
+
+00108 GROUP          01   MESSAGE-TEXT-2T
+00050 ALPHANUMERIC   02   AUSGABE-FILE-NAME              AUSGABE-FILE-NAME-T
+00004 GROUP          02   FILLER, REDEFINES AUSGABE-FILE-NAME
+00004 NUMERIC        05   FILLER                         9999
+00008 GROUP          02   AUSGABE-FILE-NAME-2            AUSGABE-FILE-NAME-2T
+00050 ALPHANUMERIC   02   FILLER                         AUSGABE-FILE-NAME-T
+
+00108 GROUP          01   MESSAGE-TEXT-2                 MESSAGE-TEXT-2T EXTERNAL
+
+00004 NUMERIC        77   OUTPUT-NAME                    SOME-VERY-LONG-TYPEDE... GLOBAL
+
+00008 GROUP          01   Z-MESSAGE-T2                   AUSGABE-FILE-NAME-2T
+
+00108 GROUP          01   Z-MESSAGE-T3
+00108 GROUP          49   MT3                            MESSAGE-TEXT-2T
+00108 GROUP          49   MT3-REN                        MESSAGE-TEXT-2T, REDEFINES MT3
+
+00018 NUMERIC        77   CALCULUS                       S9(15)V9(03)
+
+01818 GROUP          01   USER-TYPE
+00018 NUMERIC        02   AMOUNT                         CALCULUS
+01800 GROUP          02   FILLER                         OCCURS 100
+00018 NUMERIC        05   GRP-AMOUNT                     CALCULUS
+
+01818 GROUP          01   USER-VAR                       USER-TYPE
+
+
+])
+
+
+#AT_CHECK([$UNIFY_LISTING symbols.lst symbols.lis once], [0], [], [])
+AT_CHECK([gcdiff prog.lst symbols.lst], [0], [], [])
+
+
+
+
+AT_CLEANUP
+
+
+AT_SETUP([LIKE clause])
+AT_KEYWORDS([definition EXTERNAL GLOBAL])
+
+# work in progress
+AT_XFAIL_IF(true)
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  MESSAGE-TEXT-2 EXTERNAL.
+         02 AUSGABE-FILE-NAME     PIC X(50).
+         02 FILLER REDEFINES AUSGABE-FILE-NAME.
+             05 FILLER PIC 9999.
+         02 AUSGABE-FILE-NAME-2.
+             05 FILLER PIC 9999.
+             05 DETAIL-NO PIC 9999.
+         02 FILLER LIKE AUSGABE-FILE-NAME.
+      
+       77 OUTPUT-VAL     LIKE DETAIL-NO GLOBAL.
+       77 OUTPUT-VAL-P1  LIKE DETAIL-NO (+1).
+       77 OUTPUT-VAL-P1b LIKE DETAIL-NO (1).
+       77 OUTPUT-VAL-M2  LIKE DETAIL-NO (-2).
+
+       01 Z-MESSAGE-T2 LIKE AUSGABE-FILE-NAME-2.
+       01 Z-MESSAGE-T3.
+          49 MT3      LIKE MESSAGE-TEXT-2.
+
+       PROCEDURE DIVISION.
+           DISPLAY AUSGABE-FILE-NAME OF MESSAGE-TEXT-2
+           DISPLAY Z-MESSAGE-T2 (55:LENGTH OF DETAIL-NO)
+           DISPLAY MT3 (1:LENGTH OF AUSGABE-FILE-NAME)
+           ADD OUTPUT-VAL TO DETAIL-NO
+           GOBACK.
+])
+
+# TODO add tests and syntax checks in cobc
+# AT_DATA([badprog.cob], [
+#        IDENTIFICATION   DIVISION.
+#        PROGRAM-ID.      prog.
+#        DATA             DIVISION.
+#        WORKING-STORAGE  SECTION.
+# 
+# ])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -std=mf-strict prog.cob], [1], [],
+[prog.cob:13: error: SAME AS clause does not conform to Micro Focus COBOL
+prog.cob:15: error: SAME AS clause does not conform to Micro Focus COBOL
+prog.cob:17: error: SAME AS clause does not conform to Micro Focus COBOL
+prog.cob:19: error: SAME AS clause does not conform to Micro Focus COBOL
+prog.cob:20: error: SAME AS clause does not conform to Micro Focus COBOL
 ])
 
 AT_CLEANUP

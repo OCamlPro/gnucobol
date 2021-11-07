@@ -717,6 +717,24 @@
 	* typeck.c: Changes for EXCEPTION handling for DELETE FILE
 			and some code tidy up
 
+2020-06-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	FR #193 work on TYPE TO / SAME AS, LIKE
+	* parser.y (inherit_external_definition): added missing syntax check
+	* parser.y (single_reference): don't add entries in typedef to
+	  reference_list as those are not accesible outside of it
+	* field.c (copy_into_field, copy_into_field_recursive): completely
+	  rewritten, now copies single attributes explicit instead of copying the
+	  complete source and restore some items later; re-create "local" fields
+	  like indices and keys for OCCURS in the target space
+	* field.c (copy_into_field): handle VALUE clause on source and target
+
+	* parser.y (occurs_keys): removed unneeded NULL check
+	* parser.y (occurs_key_field): only build up field reference once and
+	  reuse it for every key definition
+	* field.c, tree.h, parser.y (occurs_key_field): new function in field.c:
+	  cb_build_full_field_reference, extracted and simplified from parser.y
+
 2020-06-20  Edward Hart <edward.dan.hart@gmail.com>
 
 	* parser.y (emit_entry): added parameter for main program as pending
@@ -729,10 +747,36 @@
 	  empty.
 	* codegen.c: minor refactoring of duplicated code.
 
+
+2020-06-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (get_finalized_description_tree): extracted to remove
+	  duplicate code (part of it was missing in some old places)
+	* typeck.c (cb_build_move): simplified special handling for
+	  cb_numeric_pointer
+	* typeck.c (cb_emit_move): removed checking of rw-sum-field on nearly
+	  every codegen of a move instruction
+	* field.c (setup_parameters): early setup of tree category for fields with
+	  USAGE DISPLAY as this was broken for at least all unreferenced fields
+
+	FR #193 work on TYPE TO / SAME AS, LIKE
+	* tree.c (cb_ref_internal): don't consider items within a typedef as
+	  candidate for a reference
+	* cobc.c (set_picture): use originating field as USAGE/PICTURE
+	* cobc.c (print_fields): skip details in symbol listing for fields that
+	  only reference another field
+
 2020-06-16  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (print_fields): minor improvement to the symbol listing:
-	  note EXTERNAL and BASED attributes
+	  note EXTERNAL, BASED and GLOBAL attributes
+	* field.c (pic_digits): changed type from int to unsigned char as it
+	  is used for accessing arrays
+
+	FR #193 work on TYPE TO / SAME AS, LIKE
+	* parser.y (usage_clause): fixes for USAGE type-name
+	* field.c (copy_into_field): first working draft for LIKE-integer,
+	  fixes for TYPE TO / USAGE type-name
 
 2020-06-15  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -763,6 +807,11 @@
 	* parser.y (emit_entry), typeck.c (cb_emit_call): collect BY REFERENCE
 	  items and check for duplicates
 
+	FR #193 work on TYPE TO / SAME AS, LIKE
+	* field.c (copy_into_field), tree.h: split out to static functions;
+	  include specified VALUE clause from definition
+	* parser.y, reserved.c, tree.h: added parsing for LIKE clause as pending
+
 2020-06-09  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (call_system, output_return): new functions extracted from
@@ -787,6 +836,18 @@
 2020-05-26  Ron Norman <rjn@inglenet.com>
 	* codegen.c: In output_local_field_cache if REPORT field
 			then use output_emit_field 
+
+2020-05-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y: TYPEDEF is allowed with level 77
+	* field.c: attributes of OCCURS copied in TYPE TO entries
+
+2020-05-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y, field.c, tree.h, config.def, reserved.c, cobc.h:
+	  FR #193 implementation of TYPEDEF, TYPE TO and USAGE type-name,
+	  fixed some issues with SAME AS
+	* tree.c (cb_ref_internal): limit scope of some variables
 
 2020-05-06  Ron Norman <rjn@inglenet.com>
 

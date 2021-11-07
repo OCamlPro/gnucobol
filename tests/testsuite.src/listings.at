@@ -802,7 +802,7 @@ AT_CLEANUP
 
 
 AT_SETUP([COPY multiple files])
-AT_KEYWORDS([listing symbols BASED EXTERNAL])
+AT_KEYWORDS([listing symbols BASED EXTERNAL GLOBAL])
 
 AT_CAPTURE_FILE([prog.lst])
 
@@ -881,6 +881,8 @@ AT_DATA([tstcpybk.cob], [
               'Name:tstcpybk.cbl  Version:1.7.1  Date:2017-03-15'.
            03 FILLER         PIC X(002)     VALUE LOW-VALUES.
       *
+       77  GLOB              PIC 99         GLOBAL.
+      *
            COPY "copy-ws-1.inc".
            COPY "copy-ws-2.inc".
 
@@ -948,7 +950,9 @@ LINE    PG/LN  A...B............................................................
 000025                'Name:tstcpybk.cbl  Version:1.7.1  Date:2017-03-15'.
 000026             03 FILLER         PIC X(002)     VALUE LOW-VALUES.
 000027        *
-000028             COPY "copy-ws-1.inc".
+000028         77  GLOB              PIC 99         GLOBAL.
+000029        *
+000030             COPY "copy-ws-1.inc".
 000001C
 000002C        01  TEXTFILE-1-NAME          PIC X(080)     VALUE "TEXTFILE.1".
 000003C        01  TEXTFILE-1-OCFG          PIC X(001)     VALUE "C".
@@ -956,7 +960,7 @@ LINE    PG/LN  A...B............................................................
 000005C            88 TEXTFILE-1-IS-OPEN    VALUE "I", "O", "U".
 000006C        01  TEXTFILE-1-SIZE          PIC 9(004) EXTERNAL.
 000007C       *
-000029             COPY "copy-ws-2.inc".
+000031             COPY "copy-ws-2.inc".
 000001C
 000002C        01  TEXTFILE-2-NAME          PIC X(080)     VALUE "TEXTFILE.2".
 000003C        01  TEXTFILE-2-OCFG          PIC X(001)     VALUE "C".
@@ -964,13 +968,13 @@ LINE    PG/LN  A...B............................................................
 000005C            88 TEXTFILE-2-IS-OPEN    VALUE "I", "O", "U".
 000006C        01  TEXTFILE-2-SIZE          PIC 9(004).
 000007C       *
-000030
-000031         PROCEDURE DIVISION.
-000032         MAIN-PROCEDURE SECTION.
-000033         MAIN-PROCEDURE-0000.
-000034             CONTINUE.
-000035         MAIN-PROCEDURE-EXIT.
-000036             STOP RUN.
+000032
+000033         PROCEDURE DIVISION.
+000034         MAIN-PROCEDURE SECTION.
+000035         MAIN-PROCEDURE-0000.
+000036             CONTINUE.
+000037         MAIN-PROCEDURE-EXIT.
+000038             STOP RUN.
 
 SIZE  TYPE           LVL  NAME                           PICTURE
 
@@ -989,13 +993,15 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 00064 ALPHANUMERIC   03   FILLER                         X(064)
 00002 ALPHANUMERIC   03   FILLER                         X(002)
 
+00002 NUMERIC        77   GLOB                           99 GLOBAL
+
 00080 ALPHANUMERIC   01   TEXTFILE-1-NAME                X(080)
 
 00001 ALPHANUMERIC   01   TEXTFILE-1-OCFG                X(001)
       CONDITIONAL    88   TEXTFILE-1-NOTOPEN
       CONDITIONAL    88   TEXTFILE-1-IS-OPEN
 
-00004 ALPHANUMERIC   01   TEXTFILE-1-SIZE                9(004) EXTERNAL
+00004 NUMERIC        01   TEXTFILE-1-SIZE                9(004) EXTERNAL
 
 00080 ALPHANUMERIC   01   TEXTFILE-2-NAME                X(080)
 
@@ -1003,7 +1009,7 @@ SIZE  TYPE           LVL  NAME                           PICTURE
       CONDITIONAL    88   TEXTFILE-2-NOTOPEN
       CONDITIONAL    88   TEXTFILE-2-IS-OPEN
 
-00004 ALPHANUMERIC   01   TEXTFILE-2-SIZE                9(004)
+00004 NUMERIC        01   TEXTFILE-2-SIZE                9(004)
 
 
 0 warnings in compilation group
@@ -1930,7 +1936,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -tsymbols prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -fno-tmessages -tsymbols prog.cob], [0], [], [])
 
 AT_DATA([prog15.lst],
 [GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY
@@ -1971,8 +1977,6 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 00013 NUMERIC        01   WS-SEVEN                       $$,$$$,$$9.99
 
 
-0 warnings in compilation group
-0 errors in compilation group
 ])
 
 AT_CHECK([gcdiff prog15.lst prog.lst], [0], [], [])
@@ -1989,37 +1993,22 @@ AT_DATA([prog2.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -tsymbols prog2.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -fno-tmessages -fno-tsource -tsymbols prog2.cob], [0], [], [])
 
 AT_DATA([prog16.lst],
 [GnuCOBOL V.R.P               prog2.cob                  DDD MMM dd HH:MM:SS YYYY
-
-LINE    PG/LN  A...B............................................................
-
-000001
-000002         IDENTIFICATION   DIVISION.
-000003         PROGRAM-ID.      prog2.
-000004         DATA             DIVISION.
-000005         LINKAGE          SECTION.
-000006         01 WS-ONE    PIC 9(4).
-000007         01 WS-TWO    PIC A(4).
-000008         01 WS-THREE  PIC X(4).
-000009         PROCEDURE        DIVISION.
-000010             STOP RUN.
 
 SIZE  TYPE           LVL  NAME                           PICTURE
 
       LINKAGE SECTION
 
-00004 ALPHANUMERIC   01   WS-ONE                         9(4)
+00004 NUMERIC        01   WS-ONE                         9(4)
 
-00004 ALPHANUMERIC   01   WS-TWO                         A(4)
+00004 ALPHABETIC     01   WS-TWO                         A(4)
 
 00004 ALPHANUMERIC   01   WS-THREE                       X(4)
 
 
-0 warnings in compilation group
-0 errors in compilation group
 ])
 
 AT_CHECK([gcdiff prog16.lst prog.lst], [0], [], [])
@@ -2040,33 +2029,39 @@ AT_DATA([prog3.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY -t prog.lst prog3.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -fno-tsource -fno-tmessages -tsymbols prog3.cob], [0], [], [])
 
 AT_DATA([prog15-1.lst],
-[GnuCOBOL V.R.P          prog3.cob            DDD MMM dd HH:MM:SS YYYY  Page 0001
+[GnuCOBOL V.R.P          prog3.cob                  DDD MMM dd HH:MM:SS YYYY
 
-LINE    PG/LN  A...B............................................................
+SIZE  TYPE           LVL  NAME                           PICTURE
 
-000001
-000002         IDENTIFICATION   DIVISION.
-000003         PROGRAM-ID.      prog3.
-000004         DATA             DIVISION.
-000005         WORKING-STORAGE  SECTION.
-000006         01 WS-ONE    PIC 9(4) VALUE 37.
-000007         01 WS-TWO    PIC A(4) VALUE 'HIGH'.
-000008         01 WS-THREE  PIC X(4) VALUE 'BAR'.
-000009         01 WS-FOUR            COMP-1 VALUE 37.
-000010         01 WS-FIVE            COMP-2 VALUE 37.
-000011         01 WS-SIX    PIC S999 COMP-3 VALUE -37.
-000012         01 WS-SEVEN  PIC $$,$$$,$$9.99 VALUE ZERO.
-000013         PROCEDURE        DIVISION.
-000014             STOP RUN.
+      WORKING-STORAGE SECTION
+
+00004 NUMERIC        01   WS-ONE                         9(4)
+
+00004 ALPHABETIC     01   WS-TWO                         A(4)
+
+00004 ALPHANUMERIC   01   WS-THREE                       X(4)
+
+00004 NUMERIC        01   WS-FOUR                        S9(7)V9(8) COMP-1
+
+00008 NUMERIC        01   WS-FIVE                        S9(17)V9(17) COMP-2
+
+00002 NUMERIC        01   WS-SIX                         S999 COMP-3
+
+00013 NUMERIC        01   WS-SEVEN                       $$,$$$,$$9.99
 
 
-0 warnings in compilation group
-0 errors in compilation group
 ])
 
+AT_CHECK([gcdiff prog15-1.lst prog.lst], [0], [], [])
+
+# verify that the symbol listing is identical if full codegen was done
+AT_CHECK([$COMPILE -t prog.lst -tlines=0 -fno-tsource -fno-tmessages -tsymbols prog3.cob], [0], [], [])
+
+#AT_CHECK([$UNIFY_LISTING prog.lst compiled.lis], [0], [], [])
+#AT_CHECK([diff prog15-1.lst compiled.lis], [0], [], [])
 AT_CHECK([gcdiff prog15-1.lst prog.lst], [0], [], [])
 
 AT_CLEANUP
@@ -2203,7 +2198,7 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 00064 ALPHANUMERIC   02   ws-mysql-socket                X(64)
 04096 ALPHANUMERIC   02   ws-mysql-command               X(4096)
 
-00004 ALPHANUMERIC   01   ws-No-Paragraph                9(4)
+00004 NUMERIC        01   ws-No-Paragraph                9(4)
 
       LOCAL-STORAGE SECTION
 
@@ -2222,7 +2217,7 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 00018 ALPHANUMERIC   03   FILLER                         X(18)
 00004 ALPHANUMERIC   03   FILLER                         X(4)
 00006 ALPHANUMERIC   03   FILLER                         X(6)
-00003 ALPHANUMERIC   03   FILLER                         9(3)
+00003 NUMERIC        03   FILLER                         9(3)
 00009 ALPHANUMERIC   03   FILLER                         X(9)
 00199 ALPHANUMERIC   03   FILLER                         X(199)
 00012 ALPHANUMERIC   03   FILLER                         X(12)
@@ -2312,7 +2307,7 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 00064 ALPHANUMERIC   02   ws-mysql-socket                X(64)
 04096 ALPHANUMERIC   02   ws-mysql-command               X(4096)
 
-00004 ALPHANUMERIC   01   ws-No-Paragraph                9(4)
+00004 NUMERIC        01   ws-No-Paragraph                9(4)
 
       LOCAL-STORAGE SECTION
 
@@ -2331,7 +2326,7 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 00018 ALPHANUMERIC   03   FILLER                         X(18)
 00004 ALPHANUMERIC   03   FILLER                         X(4)
 00006 ALPHANUMERIC   03   FILLER                         X(6)
-00003 ALPHANUMERIC   03   FILLER                         9(3)
+00003 NUMERIC        03   FILLER                         9(3)
 00009 ALPHANUMERIC   03   FILLER                         X(9)
 00199 ALPHANUMERIC   03   FILLER                         X(199)
 00012 ALPHANUMERIC   03   FILLER                         X(12)
@@ -2560,14 +2555,14 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 
 05204 GROUP          01   SETUP-REC
 00004 ALPHANUMERIC   05   FL1                            X(04)
-00005 ALPHANUMERIC   05   FL2                            ZZZZZ
-00004 ALPHANUMERIC   05   FL3                            9(04)
+00005 NUMERIC        05   FL2                            ZZZZZ
+00004 NUMERIC        05   FL3                            9(04)
 00004 NUMERIC        05   FL4                            9(08) COMP
 00002 NUMERIC        05   FL5                            9(04) COMP
-00008 ALPHANUMERIC   05   FL6                            Z,ZZZ.99
-00006 ALPHANUMERIC   05   FL7                            S9(05)
+00008 NUMERIC        05   FL6                            Z,ZZZ.99
+00006 NUMERIC        05   FL7                            S9(05)
 00004 ALPHANUMERIC   05   FL8                            X(04)
-00004 ALPHANUMERIC   05   FL9                            9(04), REDEFINES FL8
+00004 NUMERIC        05   FL9                            9(04), REDEFINES FL8
 00060 GROUP          05   FLA
 00040 GROUP          10   FLB                            OCCURS 20
 00002 ALPHANUMERIC   15   FLC                            X(02)
@@ -2969,11 +2964,11 @@ SIZE  TYPE           LVL  NAME                           PICTURE
       CONDITIONAL    88   CHANGE
       CONDITIONAL    88   DISPLY
 00001 ALPHANUMERIC   03   FILLER                         X
-00005 ALPHANUMERIC   03   A-FIELD                        9(5)
+00005 NUMERIC        03   A-FIELD                        9(5)
 00005 ALPHANUMERIC   03   A-ALPHA                        X(5), REDEFINES A-FIELD
       CONDITIONAL    88   A-BLANK
 00004 ALPHANUMERIC   03   FILLER                         X(4)
-00005 ALPHANUMERIC   03   B-FIELD                        9(5)
+00005 NUMERIC        03   B-FIELD                        9(5)
 00005 ALPHANUMERIC   03   B-ALPHA                        X(5), REDEFINES B-FIELD
       CONDITIONAL    88   B-BLANK
 00054 ALPHANUMERIC   03   FILLER                         X(54)
@@ -3341,7 +3336,7 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 00000 ALPHANUMERIC   03   FILLER                         INVALID
 00000 ALPHANUMERIC   03   FILLER                         INVALID
 
-00050 ALPHANUMERIC   01   too-many-digits                9(50)
+00050 NUMERIC        01   too-many-digits                9(50)
 
 00000 ALPHANUMERIC   01   too-long-number-in-parens      INVALID
 
@@ -3392,14 +3387,14 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 00000 ALPHANUMERIC   03   FILLER                         INVALID
 
 00086 GROUP          01   valid-pics
-00002 ALPHANUMERIC   03   FILLER                         VP9B
-00002 ALPHANUMERIC   03   FILLER                         B9P(3)
-00004 ALPHANUMERIC   03   FILLER                         B$$$
-00014 ALPHANUMERIC   03   FILLER                         0000+B0+++0B,+
-00005 ALPHANUMERIC   03   FILLER                         +(5)P(3)
-00005 ALPHANUMERIC   03   FILLER                         ++.++
-00005 ALPHANUMERIC   03   FILLER                         $(INTEGER-CONSTANT)
-00049 ALPHANUMERIC   03   FILLER                         $$$$$$$$$$$$$$$$$$$$$$$
+00002 NUMERIC        03   FILLER                         VP9B
+00002 NUMERIC        03   FILLER                         B9P(3)
+00004 NUMERIC        03   FILLER                         B$$$
+00014 NUMERIC        03   FILLER                         0000+B0+++0B,+
+00005 NUMERIC        03   FILLER                         +(5)P(3)
+00005 NUMERIC        03   FILLER                         ++.++
+00005 NUMERIC        03   FILLER                         $(INTEGER-CONSTANT)
+00049 NUMERIC        03   FILLER                         $$$$$$$$$$$$$$$$$$$$$$$
 
 00008 GROUP          01   PC-COLOR-BACKGROUND-TABLE
 00001 NUMERIC        05   BIT-BACKGROUND-BLACK           1(8)
@@ -5611,16 +5606,16 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 
 00080 FILE                TRANSACTION-DATA
 00080 GROUP          01   TRANSACTION-RECORD
-00004 ALPHANUMERIC   03   TR-CUSTOMER-NUMBER             9(04)
+00004 NUMERIC        03   TR-CUSTOMER-NUMBER             9(04)
 00001 ALPHANUMERIC   03   FILLER                         X(01)
 00016 ALPHANUMERIC   03   TR-CUSTOMER-NAME               X(16)
 00001 ALPHANUMERIC   03   FILLER                         X(01)
-00005 ALPHANUMERIC   03   TR-ITEM-NUMBER                 9(05)
+00005 NUMERIC        03   TR-ITEM-NUMBER                 9(05)
 00005 GROUP          03   FILLER, REDEFINES TR-ITEM-NUMBER
-00001 ALPHANUMERIC   05   TR-ITEM-DEPARTMENT             9(01)
-00004 ALPHANUMERIC   05   FILLER                         9(04)
+00001 NUMERIC        05   TR-ITEM-DEPARTMENT             9(01)
+00004 NUMERIC        05   FILLER                         9(04)
 00001 ALPHANUMERIC   03   FILLER                         X(01)
-00005 ALPHANUMERIC   03   TR-ITEM-COST                   9(03)V99
+00005 NUMERIC        03   TR-ITEM-COST                   9(03)V99
 00047 ALPHANUMERIC   03   FILLER                         X(47)
 
 00067 FILE                REPORT-FILE
@@ -5644,11 +5639,11 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 
 00057 GROUP          01   CHARGE-DETAIL
 00057 GROUP          02   FILLER
-00004 ALPHANUMERIC   03   FILLER                         Z(04)
+00004 NUMERIC        03   FILLER                         Z(04)
 00016 ALPHANUMERIC   03   FILLER                         X(16)
-00001 ALPHANUMERIC   03   FILLER                         9(01)
-00005 ALPHANUMERIC   03   FILLER                         9(05)
-00007 ALPHANUMERIC   03   FILLER                         $$$$.99
+00001 NUMERIC        03   FILLER                         9(01)
+00005 NUMERIC        03   FILLER                         9(05)
+00007 NUMERIC        03   FILLER                         $$$$.99
 
 
 NAME                           DEFINED                REFERENCES

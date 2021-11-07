@@ -835,12 +835,14 @@ struct cb_field {
 	cb_tree			report_vary_var;/* VARYING identifier */
 	cb_tree			report_vary_from;/* VARYING FROM arith */
 	cb_tree			report_vary_by;	/* VARYING BY arith */
-	cb_tree			same_as;	/* SAME AS data-name (points to field) */
 	const char		*report_source_txt;	/* SOURCE as text string */
 	const char		*report_field_name;	/* Name used for this REPORT field */
 	struct cb_field	*report_field_from;	/* 'field' used as SOURCE */
 	int				report_field_offset;
 	int				report_field_size;
+	cb_tree			external_definition;	/* by SAME AS / LIKE data-name or
+											 by type-name (points to field) */
+	cb_tree			like_modifier;	/* set for LIKE, may contain a length modifier */
 
 	int			id;		/* Field id */
 	int			size;		/* Field size */
@@ -953,6 +955,8 @@ struct cb_field {
 	unsigned int flag_binary_assign: 1;	/* BINARY field for simple assignment */
 	unsigned int flag_occurs_multi_col: 1;	/* OCCURS and multi COLUMNs reported */
 	unsigned int flag_set_col_offset: 1;	/* offset was set based on COLUMN */
+
+	unsigned int flag_is_typedef : 1;	/* TYPEDEF  */
 
 };
 
@@ -2096,8 +2100,9 @@ extern int		cb_get_level (cb_tree);
 extern cb_tree		cb_build_field_tree (cb_tree, cb_tree, struct cb_field *,
 					     enum cb_storage, struct cb_file *,
 					     const int);
+extern cb_tree		cb_build_full_field_reference (struct cb_field *);
 extern struct cb_field	*cb_resolve_redefines (struct cb_field *, cb_tree);
-extern struct cb_field	*copy_into_field (struct cb_field *, struct cb_field *, const int);
+extern void		copy_into_field (struct cb_field *, struct cb_field *);
 extern void		cb_validate_field (struct cb_field *);
 extern void		cb_validate_88_item (struct cb_field *);
 extern struct cb_field	*cb_validate_78_item (struct cb_field *, const cob_u32_t);

@@ -53,7 +53,7 @@ size_t			cb_needs_01 = 0;
 
 static struct cb_field	*last_real_field = NULL;
 static int		occur_align_size = 0;
-static const int	pic_digits[] = { 3, 5, 8, 10, 13, 15, 17, 19 };
+static const unsigned char	pic_digits[] = { 3, 5, 8, 10, 13, 15, 17, 19 };
 #define CB_MAX_OPS	32
 static int			op_pos = 1, op_val_pos;
 static char			op_type	[CB_MAX_OPS+1];
@@ -413,8 +413,8 @@ cb_build_field_tree (cb_tree level, cb_tree name, struct cb_field *last_field,
 	int			lv;
 
 	if (!expl_level) {
-		/* note: the level number is always a valid tree,
-		   the name may be a defined constant which leads to an error node here */
+		/* note: the level number is always a valid tree here, but the
+		   name may be a defined constant which leads to an error node */
 		if (name == cb_error_node) {
 			return cb_error_node;
 		}
@@ -451,12 +451,8 @@ cb_build_field_tree (cb_tree level, cb_tree name, struct cb_field *last_field,
 		}
 	}
 	if (last_field) {
-		if (last_field->same_as && f->level != 77 && f->level != 66 && f->level > last_field->level) {
-			cb_error_x (name, _("entry following SAME AS may not be subordinate to it"));
-			return cb_error_node;
-		}
 		if (last_field->level == 77 && f->level != 01 &&
-		    f->level != 77 && f->level != 66 && f->level != 88) {
+			f->level != 77 && f->level != 66 && f->level != 88) {
 			cb_error_x (name, _("level number must begin with 01 or 77"));
 			return cb_error_node;
 		}
@@ -563,13 +559,18 @@ same_level:
 
 	/* Inherit parents properties */
 	if (f->parent) {
+		struct cb_field *parent = f->parent;
+#if 1 /* CHECKME: original version of trunk, looks suspicious */
 		f->usage = CB_USAGE_DISPLAY;	/* Default to DISPLAY data */
-		f->indexes = f->parent->indexes;
-		f->flag_sign_leading = f->parent->flag_sign_leading;
-		f->flag_sign_separate = f->parent->flag_sign_separate;
-		f->flag_is_global = f->parent->flag_is_global;
+#else	/* old version, used also in 3.2 */
+		f->usage = parent->usage;
+#endif
+		f->indexes = parent->indexes;
+		f->flag_sign_leading = parent->flag_sign_leading;
+		f->flag_sign_separate = parent->flag_sign_separate;
+		f->flag_is_global = parent->flag_is_global;
 		if (f->level <= 66) {
-			f->flag_volatile = f->parent->flag_volatile;
+			f->flag_volatile = parent->flag_volatile;
 		}
 	}
 
@@ -579,6 +580,28 @@ same_level:
 		cb_parse_xfd (fn, f);
 	}
 	return CB_TREE (f);
+}
+
+cb_tree
+cb_build_full_field_reference (struct cb_field* field)
+{
+	cb_tree ret = NULL;
+	cb_tree ref = NULL;
+	cb_tree rchain = NULL;
+
+	while (field) {
+		if (field->flag_filler) continue;
+		rchain = cb_build_reference (field->name);
+		if (ref) {
+			CB_REFERENCE (ref)->chain = rchain;
+		} else {
+			ret = rchain;
+		}
+		ref = rchain;
+		field = field->parent;
+	}
+
+	return ret;
 }
 
 struct cb_field *
@@ -652,92 +675,132 @@ cb_resolve_redefines (struct cb_field *field, cb_tree redefines)
 	return f;
 }
 
-struct cb_field *
-copy_into_field (struct cb_field *source, struct cb_field *target, const int first)
+static void copy_into_field_recursive (struct cb_field *, struct cb_field *, const int);
+
+static void
+copy_children (struct cb_field *child, struct cb_field *target,
+	const int level, const int outer_indexes, const enum cb_storage storage)
 {
-	/* backup some entries */
-	struct cb_tree_common	common = target->common;
-	int		id = target->id;
-	int		level = target->level;
-	int		occurs_min = target->occurs_min;
-	int		occurs_max = target->occurs_max;
-	unsigned int		occurs = target->flag_occurs;
-	unsigned char		external = target->flag_external;
-	unsigned char		global = target->flag_is_global;
-	enum cb_storage storage = target->storage;
-	const char *name = target->name;
-	const char *ename = target->ename;
-	struct cb_field *parent = target->parent;
-	struct cb_field *result_fld = target;
-	struct cb_field *redefines = target->redefines;
+	int level_child;
+	cb_tree n, x;
 
-	/* copy everything and restore */
-	memcpy (target, source, sizeof (struct cb_field));
-
-	target->common = common;
-	target->id = id;
-	target->level = level;
-	target->storage = storage;
-	target->flag_is_global = global;
-	target->flag_external = external;
-	target->flag_occurs = occurs;
-	target->occurs_min = occurs_min;
-	target->occurs_max = occurs_max;
-	if (name) {
-		target->name = name;
-	}
-	if (ename) {
-		target->name = ename;
-	}
-	target->parent = parent;
-#if 0 /* temporary code to resolve a redefine from the source, likely not reasonable... */
-	if (target->redefines) {
-		cb_tree x = cb_build_reference (target->redefines->name);
-		if (x != cb_error_node) {
-			target->redefines = cb_resolve_redefines (target, x);
+	if (child->level > level) {
+		level_child = child->level;
+	} else {
+		level_child = level + 1;
+		if (level_child == 66 || level_child == 78 || level_child == 88) {
+			level_child++;
+		} else if (level_child == 77) {
+			level_child = 79;
 		}
 	}
-#else
-	target->redefines = redefines;
-#endif
 
-	/* duplicate and reset */
-	if (target->pic) {
-		target->pic = CB_PICTURE (cb_build_picture (target->pic->orig));
+	if (child->name) {
+		n = cb_build_reference (child->name);
+	} else {
+		n = cb_build_filler ();
 	}
-	target->children = NULL;
-	target->sister = NULL;
+	x = cb_build_field_tree (NULL, n, target, storage, NULL, level_child);
+	if (x != cb_error_node) {
+		copy_into_field_recursive (child, CB_FIELD (x), outer_indexes);
+	}
+}
 
-	/* likely more to reset here ... */
+#define field_attribute_copy(attribute)	\
+	if (source->attribute) target->attribute = source->attribute
+#define field_attribute_override(attribute)	\
+	target->attribute = source->attribute
 
-	if (source->children) {
-		cb_tree n, x;
-		int level_new;
-		if (source->children->level > level) {
-			level_new = source->children->level;
-		} else {
-			level_new = level + 1;
-			if (level_new == 66 || level_new == 77
-			 || level_new == 78 || level_new == 88) {
-				level_new++;
+static void
+copy_into_field_recursive (struct cb_field *source, struct cb_field *target,
+			const int outer_indexes)
+{
+	field_attribute_override (usage);
+
+	/* checkme: how to handle DEPENDING and INDICES here ? */
+	field_attribute_override (occurs_min);
+	field_attribute_override (occurs_max);
+	field_attribute_override (flag_occurs);
+	if (CB_VALID_TREE (source->depending)) {
+#if 0	/* TODO: check if DEPENDING field is part of the original TYPEDEF,
+		   if yes then full-qualify the reference */
+		struct cb_field *dep_field = CB_FIELD_PTR (source->depending);
+		struct cb_field *field;
+		target->depending = cb_build_reference (CB_NAME(source->depending));
+		dep_field = dep_field->parent;
+		if (dep_field) {
+			for (field = target->parent; field; field = field->parent) {
+				if (dep_field == field) {
+					cb_tree rchain = cb_build_full_field_reference (field);
+					CB_REFERENCE (target->depending)->chain = rchain;
+					break;
+				}
 			}
 		}
+#else
+		target->depending = cb_build_reference (CB_NAME (source->depending));
+#endif
+		CB_ADD_TO_CHAIN (target->depending, current_program->reference_list);
+	}
+	field_attribute_override (nkeys);
+	if (source->keys) {
+		cb_tree ref = NULL;
+		cb_tree rchain = NULL;
+		int	i;
 
-		if (source->children->name) {
-			n = cb_build_reference (source->children->name);
-		} else {
-			n = cb_build_filler ();
-		}
-		x = cb_build_field_tree (NULL, n, target, storage, NULL, level_new);
-		if (x != cb_error_node) {
-			result_fld = copy_into_field (source->children, CB_FIELD (x), 0);
+		/* create reference chaing all the way up
+		   as later fields may have same name */
+		rchain = cb_build_full_field_reference (target);
+
+		target->keys = cobc_parse_malloc (sizeof (struct cb_key) * target->nkeys);
+		for (i = 0; i < target->nkeys; i++) {
+			const struct cb_reference* r = CB_REFERENCE (source->keys[i].key);
+			ref = cb_build_reference (r->word->name);
+			CB_REFERENCE (ref)->chain = rchain;
+			target->keys[i].key = ref;
+			CB_ADD_TO_CHAIN (ref, current_program->reference_list);
+			field_attribute_override (keys[i].dir);
 		}
 	}
-	if (first) {
-		/* adjust reference counter to allow "no codegen" if only used as type */
-		source->count--;
-		target->count--;
-	} else if (source->sister) {
+	if (source->index_list) {
+		cb_tree x;
+		target->index_list = NULL;
+		for (x = source->index_list; x; x = CB_CHAIN (x)) {
+			cb_tree ind_ref = cb_build_reference (CB_FIELD_PTR (CB_VALUE (x))->name);
+			cb_tree entry = cb_build_index (ind_ref, cb_int1, 1U, target);
+			CB_FIELD_PTR (entry)->index_type = CB_STATIC_INT_INDEX;
+			if (!target->index_list) {
+				target->index_list = CB_LIST_INIT (entry);
+			} else {
+				target->index_list = cb_list_add (target->index_list, entry);
+			}
+		}
+	}
+
+	field_attribute_override (values);
+	field_attribute_override (flag_blank_zero);
+	field_attribute_override (flag_justified);
+	field_attribute_override (flag_sign_clause);
+	field_attribute_override (flag_sign_leading);
+	field_attribute_override (flag_sign_separate);
+	field_attribute_override (flag_synchronized);
+	field_attribute_override (flag_item_based);
+	field_attribute_override (flag_any_length);
+	field_attribute_override (flag_any_numeric);
+	field_attribute_override (flag_invalid);
+
+	if (CB_VALID_TREE (source->redefines)) {
+		cb_tree ref = cb_build_reference (source->redefines->name);
+		target->redefines = cb_resolve_redefines (target, ref);
+	}
+
+	if (source->children) {
+		copy_children (source->children, target, target->level, outer_indexes, target->storage);
+	} else if (source->pic){
+		target->pic = CB_PICTURE (cb_build_picture (source->pic->orig));
+	}
+
+	if (source->sister) {
 		/* for children: all sister entries need to be copied */
 		cb_tree n, x;
 		if (source->sister->name) {
@@ -745,19 +808,158 @@ copy_into_field (struct cb_field *source, struct cb_field *target, const int fir
 		} else {
 			n = cb_build_filler ();
 		}
-		x = cb_build_field_tree (NULL, n, target, storage, NULL, level);
+		x = cb_build_field_tree (NULL, n, target, target->storage, NULL, target->level);
 		if (x != cb_error_node) {
-			result_fld = copy_into_field (source->sister, CB_FIELD (x), 0);
+			copy_into_field_recursive (source->sister, CB_FIELD (x), outer_indexes);
 		}
 	}
-	return result_fld;
+	/* special case: normally incremented during parse */
+	target->indexes = source->indexes + outer_indexes;
+	cb_validate_field (target);
+}
+
+
+/* note: same message in parser.y */
+static int
+duplicate_clause_message (cb_tree x, const char *clause)
+{
+	/* FIXME: replace by a new warning level that is set
+	   to warn/error depending on cb_relaxed_syntax_checks */
+	if (cb_relaxed_syntax_checks) {
+		cb_warning_x (COBC_WARN_FILLER, x, _("duplicate %s clause"), clause);
+		return 0;
+	}
+
+	cb_error_x (x, _("duplicate %s clause"), clause);
+	return 1;
+}
+
+void
+copy_into_field (struct cb_field *source, struct cb_field *target)
+{
+#if 0
+	cb_tree	external_definition = target->external_definition;
+#endif
+
+	/* note: EXTERNAL is always applied from the typedef (if level (1/77),
+			 but may be specified on the field */
+	if (target->level == 1 || target->level == 77) {
+		field_attribute_copy (flag_external);
+	}
+	target->usage = source->usage;
+	if (source->values) {
+		if (target->values) {
+			duplicate_clause_message (target->values, "VALUE");
+		} else {
+			target->values = source->values;
+		}
+	}
+	field_attribute_copy (flag_blank_zero);
+	field_attribute_copy (flag_justified);
+	field_attribute_copy (flag_sign_clause);
+	field_attribute_copy (flag_sign_leading);
+	field_attribute_copy (flag_sign_separate);
+	field_attribute_copy (flag_synchronized);
+	field_attribute_copy (flag_item_based);
+	field_attribute_override (flag_any_length);
+	field_attribute_override (flag_any_numeric);
+
+	if (!target->like_modifier) {
+		if (source->children) {
+			copy_children (source->children, target, target->level, target->indexes, target->storage);
+		} else if (source->pic) {
+			target->pic = CB_PICTURE (cb_build_picture (source->pic->orig));
+		}
+	} else {
+		struct cb_picture* new_pic = NULL;
+		int modifier = cb_get_int (target->like_modifier);
+		if (modifier) {
+			switch (target->usage) {
+
+			case CB_USAGE_COMP_X:
+			case CB_USAGE_COMP_N:
+				if (target->pic->category == CB_CATEGORY_ALPHANUMERIC) {
+					char		pic[8];
+					unsigned char		newsize;
+					if (target->pic->size > 8) {
+						newsize = 36;
+					} else {
+						newsize = pic_digits[target->pic->size - 1];
+					}
+					newsize += modifier;
+					if (newsize > 36) {
+						newsize = 36;
+					}
+					sprintf (pic, "9(%u)", newsize);
+					new_pic = CB_PICTURE (cb_build_picture (pic));
+					break;
+				}
+
+			case CB_USAGE_BINARY:
+			case CB_USAGE_PACKED:
+			case CB_USAGE_COMP_5:
+			case CB_USAGE_COMP_6:
+				if (target->pic->orig[0] == '9') {
+					char		pic[38];
+					/* only a prototype here,
+					   TODO: add handling for S and friends... */
+					if (modifier > 0) {
+						sprintf (pic, "9(%d)", modifier);
+						strcat (pic, target->pic->orig);
+						new_pic = CB_PICTURE (cb_build_picture (pic));
+					} else {
+						CB_PENDING_X (CB_TREE (target), "LIKE ... negative-integer");
+					}
+				} else {
+					cb_error_x (CB_TREE (target), _ ("%s clause not compatible with PIC %s"),
+						"LIKE", target->pic->orig);
+					target->flag_invalid = 1;
+				}
+				break;
+
+			case CB_USAGE_DISPLAY:
+			case CB_USAGE_NATIONAL:
+				break;
+
+			default:
+				cb_error_x (CB_TREE (target), _("%s clause not compatible with USAGE %s"),
+					"LIKE", cb_get_usage_string (target->usage));
+				target->flag_invalid = 1;
+			}
+ 
+#if 0		/* TODO, also syntax-check for usage here */
+			if (target->cat is_numeric) {
+				sprintf (pic, "9(%d)", size_implied);
+			} else {
+				sprintf (pic, "X(%d)", size_implied);
+			}
+			new_pic = CB_PICTURE (cb_build_picture (pic));
+#endif
+		}
+		if (new_pic) {
+			target->pic = new_pic;
+		} else if (target->pic) {
+			target->pic = CB_PICTURE (cb_build_picture (target->pic->orig));
+		}
+	}
+
+	/* adjust reference counter to allow "no codegen" if only used as type */
+	source->count--;
+#if 0
+	target->count--;
+	target->external_definition = external_definition;
+#endif
+
+	/* validate field to ensure applying its own attributes
+	   in relation to its childs) */
+	cb_validate_field (target);
 }
 
 static COB_INLINE COB_A_INLINE void
 emit_incompatible_pic_and_usage_error (cb_tree item, const enum cb_usage usage)
 {
-	cb_error_x (item, _("PICTURE clause not compatible with USAGE %s"),
-		    cb_get_usage_string (usage));
+	cb_error_x (item, _("%s clause not compatible with USAGE %s"),
+		    "PICTURE", cb_get_usage_string (usage));
 }
 
 static COB_INLINE COB_A_INLINE int
@@ -1808,8 +2010,6 @@ static unsigned int
 validate_elementary_item (struct cb_field *f)
 {
 	unsigned int	ret;
-	cob_pic_symbol	*pstr = NULL;
-	int		n = 0;
 
 	ret = validate_usage (f);
 	if (f->flag_sign_clause) {
@@ -1900,6 +2100,8 @@ validate_elementary_item (struct cb_field *f)
 	 && f->pic
 	 && f->pic->category == CB_CATEGORY_NUMERIC) {
 		cb_tree x;
+		cob_pic_symbol	*pstr;
+		int		n;
 		/* Reconstruct the picture string */
 		if (f->pic->scale > 0) {
 			/* Size for genned string */
@@ -1923,10 +2125,10 @@ validate_elementary_item (struct cb_field *f)
 		default:
 			break;
 		case CB_USAGE_DISPLAY:
-			if (current_program->flag_trailing_separate &&
-			    f->pic &&
-			    f->pic->category == CB_CATEGORY_NUMERIC &&
-			    !f->flag_sign_leading) {
+			if (current_program->flag_trailing_separate
+			 && f->pic
+			 && f->pic->category == CB_CATEGORY_NUMERIC
+			 && !f->flag_sign_leading) {
 				f->flag_sign_separate = 1;
 			}
 			break;
@@ -2021,8 +2223,8 @@ validate_field_1 (struct cb_field *f)
 
 	x = CB_TREE (f);
 	if (f->level == 77) {
-		if (f->storage != CB_STORAGE_WORKING 
-		 && f->storage != CB_STORAGE_LOCAL 
+		if (f->storage != CB_STORAGE_WORKING
+		 && f->storage != CB_STORAGE_LOCAL
 		 && f->storage != CB_STORAGE_LINKAGE) {
 			cb_error_x (x, _("'%s' 77 level is not allowed here"), cb_name (x));
 		}
@@ -2160,7 +2362,7 @@ setup_parameters (struct cb_field *f)
 				f->pic = CB_PICTURE (cb_build_picture ("9(36)"));
 			} else {
 				char		pic[8];
-				sprintf (pic, "9(%d)", pic_digits[f->pic->size - 1]);
+				sprintf (pic, "9(%u)", pic_digits[f->pic->size - 1]);
 				f->pic = CB_PICTURE (cb_build_picture (pic));
 				if(f->compx_size > 0)
 					f->pic->size = f->compx_size;
@@ -2175,6 +2377,12 @@ setup_parameters (struct cb_field *f)
 			f->flag_binary_swap = 1;
 		}
 #endif
+		break;
+
+	case CB_USAGE_DISPLAY:
+		/* in case of usage display we often don't have the category
+		   setup correctly, work around this explicit resolving it here */
+		cb_tree_category (CB_TREE (f));
 		break;
 
 	default:

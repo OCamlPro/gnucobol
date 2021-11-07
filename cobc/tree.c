@@ -1296,7 +1296,7 @@ cb_tree_category (cb_tree x)
 	case CB_TAG_FIELD:
 		f = CB_FIELD (x);
 		if (f->children) {
-			/* CHECKME: may should be alphabetic/national depending on the content */
+			/* CHECKME: may should be alphabetic/national/... depending on the content */
 			x->category = CB_CATEGORY_ALPHANUMERIC;
 		} else if (f->usage == CB_USAGE_POINTER && f->level != 88) {
 			x->category = CB_CATEGORY_DATA_POINTER;
@@ -1306,7 +1306,7 @@ cb_tree_category (cb_tree x)
 			switch (f->level) {
 			case 66:
 				if (f->rename_thru) {
-					/* CHECKME: may should be alphabetic/national depending on the content */
+					/* CHECKME: may should be alphabetic/national/... depending on the content */
 					x->category = CB_CATEGORY_ALPHANUMERIC;
 				} else {
 					x->category = cb_tree_category (CB_TREE (f->redefines));
@@ -5021,7 +5021,6 @@ cb_ref_internal (cb_tree x, const int emit_error)
 {
 	struct cb_reference	*r;
 	struct cb_field		*p;
-	struct cb_label		*s;
 	cb_tree			candidate;
 	cb_tree			items;
 	cb_tree			cb1;
@@ -5066,19 +5065,23 @@ cb_ref_internal (cb_tree x, const int emit_error)
 
 	candidate = NULL;
 	ambiguous = 0;
-	items = r->word->items;
-	for (; items; items = CB_CHAIN (items)) {
+	for (items = r->word->items; items; items = CB_CHAIN (items)) {
 		/* Find a candidate value by resolving qualification */
 		v = CB_VALUE (items);
 		c = r->chain;
 		switch (CB_TREE_TAG (v)) {
-		case CB_TAG_FIELD:
+		case CB_TAG_FIELD: {
+			struct cb_field* fld = CB_FIELD (v);
+			/* ignore sub-items of typedefs */
+			if (fld->parent != NULL && cb_field_founder (fld)->flag_is_typedef) {
+				continue;
+			}
 			/* In case the value is a field, it might be qualified
 			   by its parent names and a file name */
-			if (CB_FIELD (v)->flag_indexed_by) {
-				p = CB_FIELD (v)->index_qual;
+			if (fld->flag_indexed_by) {
+				p = fld->index_qual;
 			} else {
-				p = CB_FIELD (v)->parent;
+				p = fld->parent;
 			}
 			/* Resolve by parents */
 			for (; p; p = p->parent) {
@@ -5090,17 +5093,18 @@ cb_ref_internal (cb_tree x, const int emit_error)
 			/* Resolve by file or CD */
 			if (c && CB_REFERENCE (c)->chain == NULL
 			    && CB_WORD_COUNT (c) == 1) {
-				if (field_is_in_file_record (cb_ref (c), CB_FIELD (v))
-				    || field_is_in_cd_record (cb_ref (c), CB_FIELD (v))) {
+				cb_tree tree = cb_ref (c);
+				if (field_is_in_file_record (tree, fld)
+				 || field_is_in_cd_record (tree, fld)) {
 					c = CB_REFERENCE (c)->chain;
 				}
 			}
-
 			break;
-		case CB_TAG_LABEL:
+		}
+		case CB_TAG_LABEL: {
 			/* In case the value is a label, it might be qualified
 			   by its section name */
-			s = CB_LABEL (v)->section;
+			struct cb_label* s = CB_LABEL (v)->section;
 
 			/* Unqualified paragraph name referenced within the section
 			   is resolved without ambiguity check if not duplicated */
@@ -5122,6 +5126,7 @@ cb_ref_internal (cb_tree x, const int emit_error)
 			}
 
 			break;
+		}
 		default:
 			/* Other values cannot be qualified */
 			break;

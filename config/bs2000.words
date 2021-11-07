@@ -510,7 +510,7 @@ reserved:	TRAILING
 reserved:	TRUE
 reserved:	TRY
 reserved:	TYPE
-reserved:	TYPEDEF
+reserved:	TYPEDEF		# reserved but not supported !
 reserved:	U*
 reserved:	UCS-2*
 reserved:	UCS-4*

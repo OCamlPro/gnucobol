@@ -89,6 +89,8 @@ section-segments:			+ignore
 stop-literal-statement:			+obsolete
 stop-identifier-statement:		ok
 same-as-clause:				ok
+type-to-clause:				ok
+usage-type:					ok
 synchronized-clause:			+ignore
 sync-left-right:			+ignore # better use "skip" here?
 special-names-clause:			+warning

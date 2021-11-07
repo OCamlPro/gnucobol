@@ -209,6 +209,12 @@ CB_CONFIG_SUPPORT (cb_select_working, "select-working",
 CB_CONFIG_SUPPORT (cb_same_as_clause, "same-as-clause",
 	_("SAME AS clause"))
 
+CB_CONFIG_SUPPORT (cb_type_to_clause, "type-to-clause",
+	_("TYPE TO clause"))
+
+CB_CONFIG_SUPPORT (cb_usage_type_name, "usage-type",
+	_("USAGE type-name"))
+
 CB_CONFIG_SUPPORT (cb_synchronized_clause, "synchronized-clause",
 	_("SYNCHRONIZED clause"))
 
