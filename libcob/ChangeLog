@@ -1,6 +1,11 @@
 
 2021-11-06  Ron Norman <rjn@inglenet.com>
 
+	* common.h: Add COB_SET_SEQUENTIAL, COB_SET_ADVANCING
+	* fileio.c: improvments to WRITE ADVANCING for SEQUENTIAL file
+
+2021-11-06  Ron Norman <rjn@inglenet.com>
+
 	* common.h: Add COB_LINE_ADVANCE, COB_RECORD_ADVANCE
 	* fileio.c: For SEQUENTIAL with COB_RECORD_ADVANCE, insert
 				blank records for WRITE ADVANCING 

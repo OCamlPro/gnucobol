@@ -691,7 +691,10 @@ write_file_def (cob_file *f, char *out)
 		if(f->file_format < 12)
 			k += sprintf(&out[k],",%s",file_format[f->file_format]);
 	} else if(f->organization == COB_ORG_SEQUENTIAL) {
-		k += sprintf(&out[k],"type=SQ");
+		if ((f->flag_line_adv & COB_SET_ADVANCING))
+			k += sprintf(&out[k],"type=SA");
+		else
+			k += sprintf(&out[k],"type=SQ");
 		if(f->file_format < 12)
 			k += sprintf(&out[k],",%s",file_format[f->file_format]);
 	} else if(f->organization == COB_ORG_LINE_SEQUENTIAL) {
@@ -1683,6 +1686,40 @@ cob_cache_del (cob_file *f)
 static void
 cob_set_ls_defaults (cob_file *f)
 {
+	if (f->organization == COB_ORG_SEQUENTIAL) {
+		f->io_routine = COB_IO_SEQUENTIAL;
+		f->file_features &= ~COB_FILE_LS_CRLF;
+		if ((f->flag_line_adv & COB_SET_SEQUENTIAL)) {	/* type = SQ */
+			f->flag_line_adv &= ~COB_RECORD_ADVANCE;
+			f->flag_line_adv &= ~COB_LINE_ADVANCE;
+			if (f->file_format == COB_FILE_IS_MF)
+				f->flag_line_adv |= COB_RECORD_ADVANCE;
+		} else
+		if ((f->flag_line_adv & COB_SET_ADVANCING)) {	/* type = SA */
+			f->flag_line_adv &= ~COB_RECORD_ADVANCE;
+			f->flag_line_adv &= ~COB_LINE_ADVANCE;
+			if (f->record_min == f->record_max) {
+				if (f->file_format == COB_FILE_IS_MF) {
+					f->flag_line_adv |= COB_LINE_ADVANCE;	/* MF bugs and all */
+					f->file_features |= COB_FILE_LS_CRLF;
+				} else {
+					f->flag_line_adv |= COB_RECORD_ADVANCE;
+				}
+			}
+		} else {										/* Set defaults */
+			if (f->file_format == COB_FILE_IS_MF) {		/* MF defaults */
+				if (f->record_min == f->record_max		/* Fixed Size so CR/LF may be used */
+				 && !(f->flag_line_adv & COB_RECORD_ADVANCE))
+					f->file_features |= COB_FILE_LS_CRLF;
+			} else {
+				f->flag_line_adv &= ~COB_LINE_ADVANCE;	
+				if ((f->flag_line_adv & COB_RECORD_ADVANCE))
+					f->file_features &= ~COB_FILE_LS_CRLF;
+			}
+		}
+		return;
+	}
+
 	if (f->organization != COB_ORG_LINE_SEQUENTIAL)
 		return;
 	f->io_routine = COB_IO_LINE_SEQUENTIAL;
@@ -1854,7 +1891,8 @@ cob_set_file_defaults (cob_file *f)
 			f->dflt_retry |= COB_RETRY_SECONDS;
 	}
 
-	if (file_setptr->cob_file_format == COB_FILE_IS_MF) {
+	if (file_setptr->cob_file_format == COB_FILE_IS_MF
+	 && !f->flag_set_type) {
 		f->file_format = COB_FILE_IS_MF;
 	}
 	if (f->file_format == COB_FILE_IS_DFLT	/* File type not set by compiler; Set default */
@@ -1878,14 +1916,7 @@ cob_set_file_defaults (cob_file *f)
 		}
 	}
 
-	if (f->organization == COB_ORG_LINE_SEQUENTIAL) {
-		cob_set_ls_defaults (f);
-	} else if (f->organization == COB_ORG_SEQUENTIAL) {
-		if (f->record_min == f->record_max			/* Fixed Size so CR/LF may be used */
-		 && f->file_format == COB_FILE_IS_MF) {		/* Set MF defaults */
-			f->file_features |= COB_FILE_LS_CRLF;
-		}
-	}
+	cob_set_ls_defaults (f);
 }
 
 /*
@@ -2043,18 +2074,16 @@ cob_set_file_format (cob_file *f, char *defstr, int updt)
 						f->flag_set_isam = 0;
 					} else if(strcasecmp(value,"SQ") == 0) {
 						f->organization = COB_ORG_SEQUENTIAL;
+						f->flag_line_adv |= COB_SET_SEQUENTIAL;
+						f->flag_line_adv &= ~COB_SET_ADVANCING;
 						f->flag_set_isam = 0;
-						if (f->record_min == f->record_max) {
-							f->flag_line_adv = COB_RECORD_ADVANCE;
-							f->file_features &= ~COB_FILE_LS_CRLF;
-						}
+						cob_set_ls_defaults (f);
 					} else if(strcasecmp(value,"SA") == 0) {
 						f->organization = COB_ORG_SEQUENTIAL;
 						f->flag_set_isam = 0;
-						if (f->record_min == f->record_max) {
-							f->flag_line_adv = COB_LINE_ADVANCE;	/* MF bugs and all */
-							f->file_features |= COB_FILE_LS_CRLF;
-						}
+						f->flag_line_adv &= ~COB_SET_SEQUENTIAL;
+						f->flag_line_adv |= COB_SET_ADVANCING;
+						cob_set_ls_defaults (f);
 					} else if(strcasecmp(value,"LS") == 0) {
 						f->organization = COB_ORG_LINE_SEQUENTIAL;
 						f->flag_line_adv = 0;
@@ -2180,16 +2209,12 @@ cob_set_file_format (cob_file *f, char *defstr, int updt)
 					} else if (strcasecmp(value,"mf") == 0) {
 						f->file_format = COB_FILE_IS_MF;
 						f->flag_set_type = 1;
-						if (f->organization == COB_ORG_LINE_SEQUENTIAL) {
-							cob_set_ls_defaults (f);
-						}
+						cob_set_ls_defaults (f);
 					} else if (strcasecmp(value,"gc") == 0
 							|| strcasecmp(value,"gc3") == 0) {
 						f->file_format = COB_FILE_IS_GC;
 						f->flag_set_type = 1;
-						if (f->organization == COB_ORG_LINE_SEQUENTIAL) {
-							cob_set_ls_defaults (f);
-						}
+						cob_set_ls_defaults (f);
 					} else if (strcasecmp(value,"0") == 0) {
 						f->file_format = COB_FILE_IS_GCVS0;
 					} else if (strcasecmp(value,"1") == 0) {
@@ -2358,6 +2383,7 @@ cob_set_file_format (cob_file *f, char *defstr, int updt)
 				if(settrue) {
 					f->file_format = COB_FILE_IS_MF;
 					f->flag_set_type = 1;
+					cob_set_ls_defaults (f);
 					continue;
 				}
 				continue;
@@ -2372,6 +2398,7 @@ cob_set_file_format (cob_file *f, char *defstr, int updt)
 						f->file_format = WITH_VARSEQ;
 #endif
 					f->flag_set_type = 1;
+					cob_set_ls_defaults (f);
 					continue;
 				}
 				continue;
@@ -4513,6 +4540,9 @@ sequential_write (cob_file_api *a, cob_file *f, int opt)
 	}
 
 	if (f->record_min != f->record_max)	/* No ADVANCING if Variable Length */
+		opt = 0;
+	if (!(f->flag_line_adv & (COB_LINE_ADVANCE|COB_RECORD_ADVANCE))
+	 && f->file_format != COB_FILE_IS_MF)
 		opt = 0;
 
 	/* WRITE AFTER */

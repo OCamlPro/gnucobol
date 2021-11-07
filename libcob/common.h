@@ -1526,8 +1526,10 @@ typedef struct __cob_file {
 	unsigned char		organization;		/* ORGANIZATION */
 	unsigned char		access_mode;		/* ACCESS MODE */
 	unsigned char		flag_line_adv;		/* LINE ADVANCING */
-#define COB_LINE_ADVANCE		1			/* insert CR/LF as needed */
-#define COB_RECORD_ADVANCE		2			/* WRITE BEFORE/AFTER in 'record mode' */
+#define COB_LINE_ADVANCE	1				/* insert CR/LF as needed */
+#define COB_RECORD_ADVANCE	2				/* WRITE BEFORE/AFTER in 'record mode' */
+#define COB_SET_SEQUENTIAL	4				/* ORG_SEQ set via IO_xxxx type=SQ */
+#define COB_SET_ADVANCING	8				/* ORG_SEQ set via IO_xxxx type=SQ */
 	unsigned char		flag_optional;		/* OPTIONAL */
 	unsigned char		flag_select_features;	/* SELECT features */
 	unsigned char		file_format;		/* File I/O format: 255 means unspecified */
