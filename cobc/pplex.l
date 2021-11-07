@@ -1491,7 +1491,7 @@ switch_to_buffer (const int line, const char *file, const YY_BUFFER_STATE buffer
 static int
 is_condition_directive_clause (const char *buff)
 {
-	while (buff && !isalpha (*buff)) {
+	while (buff && !isalpha ((unsigned char)(*buff))) {
 		++buff;
 	}
 
@@ -1657,7 +1657,7 @@ start:
 	buff[n] = 0;
 
 	/* check for vcs conflict marker */
-	if (n == 8 || (n > 8 && isspace(buff[7]))) {
+	if (n == 8 || (n > 8 && isspace((unsigned char) buff[7]))) {
 		if (memcmp("<<<<<<<", buff, 7) == 0
 		 || memcmp("=======", buff, 7) == 0
 		 || memcmp(">>>>>>>", buff, 7) == 0) {

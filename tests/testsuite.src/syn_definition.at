@@ -1651,6 +1651,24 @@ prog.cob:96: warning: USAGE BIT is not implemented
 AT_CLEANUP
 
 
+AT_SETUP([PICTURE string with control character])
+AT_KEYWORDS([definition])
+
+AT_DATA([prog.cob], [
+       PIC(P)
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:2: error: 'P' is not defined
+prog.cob:2: error: invalid PICTURE character ''
+prog.cob:2: error: PICTURE string must contain at least one of the set A, N, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
+prog.cob:2: error: PROGRAM-ID header missing
+prog.cob:2: error: PROCEDURE DIVISION header missing
+prog.cob:2: error: syntax error, unexpected PICTURE
+])
+AT_CLEANUP
+
+
 AT_SETUP([PICTURE strings invalid with BLANK WHEN ZERO])
 AT_KEYWORDS([definition])
 

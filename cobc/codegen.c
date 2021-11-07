@@ -200,7 +200,7 @@ static int			working_mem = 0;
 static int			local_working_mem = 0;
 static int			output_indent_level = 0;
 static int			last_segment = 0;
-static int			gen_init_working = 0;
+static int			gen_init_working = 0;	/* enable (0) / disable (1) use of DEPENDING ON fields */
 static int			need_plus_sign = 0;
 static int			odo_stop_now = 0;
 static int			gen_num_lit_big_end = 1;
@@ -738,24 +738,22 @@ real_field_founder (const struct cb_field *f)
 struct cb_field *
 chk_field_variable_size (struct cb_field *f)
 {
-	struct cb_field		*p;
-	struct cb_field		*fc;
-
-	if (f->flag_vsize_done) {
-		return f->vsize;
-	}
-	for (fc = f->children; fc; fc = fc->sister) {
-		if (fc->depending) {
-			f->vsize = fc;
-			f->flag_vsize_done = 1;
-			return fc;
-		} else if ((p = chk_field_variable_size (fc)) != NULL) {
-			return p;
+	if (!f->flag_vsize_done) {
+		struct cb_field		*p;
+		struct cb_field		*fc;
+		f->vsize = NULL;
+		for (fc = f->children; fc; fc = fc->sister) {
+			if (fc->depending) {
+				f->vsize = fc;
+				break;
+			} else if ((p = chk_field_variable_size (fc)) != NULL) {
+				f->vsize = p;
+				break;
+			}
 		}
+		f->flag_vsize_done = 1;
 	}
-	f->vsize = NULL;
-	f->flag_vsize_done = 1;
-	return NULL;
+	return f->vsize;
 }
 
 /* Check if previous field on current or higher level has variable size */
@@ -6634,8 +6632,9 @@ output_call (struct cb_call *p)
 	unsigned int 			pval;
 
 	except_id = 0;
-	if (p->call_returning && p->call_returning != cb_null &&
-	    CB_TREE_CLASS(p->call_returning) == CB_CLASS_POINTER) {
+	if (p->call_returning
+	 && p->call_returning != cb_null
+	 && CB_TREE_CLASS(p->call_returning) == CB_CLASS_POINTER) {
 		ret_ptr = 1;
 	}
 	system_call = NULL;
@@ -6685,15 +6684,24 @@ output_call (struct cb_call *p)
 	}
 	need_brace = 0;
 
-#ifdef	COB_NON_ALIGNED
-	if (dynamic_link && ret_ptr) {
-		if (!need_brace) {
-			need_brace = 1;
-			output_block_open ();
+	if (!ret_ptr) {
+		if (p->call_returning && p->call_returning != cb_null) {
+			if (!need_brace) {
+				need_brace = 1;
+				output_block_open ();
+			}
+			output_line ("int ret;");
 		}
-		output_line ("void *temptr;");
-	}
+#ifdef	COB_NON_ALIGNED
+		else if (dynamic_link) {
+			if (!need_brace) {
+				need_brace = 1;
+				output_block_open ();
+			}
+			output_line ("void *temptr;");
+		}
 #endif
+	}
 
 	if (CB_REFERENCE_P (p->name)
 	 && CB_FIELD_P (CB_REFERENCE (p->name)->value)
@@ -7023,14 +7031,14 @@ output_call (struct cb_call *p)
 			output_integer (p->call_returning);
 #endif
 			output (" = cob_unifunc.funcptr");
+		} else if (p->call_returning) {
+			output ("ret = cob_unifunc.funcint");
+		} else if (p->convention & CB_CONV_NO_RET_UPD
+		       ||  !current_prog->cb_return_code) {
+			output ("(void)cob_unifunc.funcint");
 		} else {
-			if (p->convention & CB_CONV_NO_RET_UPD
-			||  !current_prog->cb_return_code) {
-				output ("(void)cob_unifunc.funcint");
-			} else {
-				output_integer (current_prog->cb_return_code);
-				output (" = cob_unifunc.funcint");
-			}
+			output_integer (current_prog->cb_return_code);
+			output (" = cob_unifunc.funcint");
 		}
 	} else if (!dynamic_link) {
 		/* Static link */
@@ -7051,6 +7059,8 @@ output_call (struct cb_call *p)
 				output_integer (p->call_returning);
 #endif
 				output (" = (void *)");
+			} else if (p->call_returning) {
+				output ("ret = ");
 			} else if (!(p->convention & CB_CONV_NO_RET_UPD)
 			       &&  current_prog->cb_return_code) {
 				output_integer (current_prog->cb_return_code);
@@ -7152,18 +7162,16 @@ output_call (struct cb_call *p)
 			output_integer (p->call_returning);
 #endif
 			output (" = ((void *(*)");
+		} else if (p->call_returning == cb_null) {
+			output ("((void (*)");
+		} else if (p->call_returning) {
+			output ("ret = ((int (*)");
+		} else if (p->convention & CB_CONV_NO_RET_UPD
+		        || !current_prog->cb_return_code) {
+			output ("((int (*)");
 		} else {
-			if (p->call_returning != cb_null) {
-				if (p->convention & CB_CONV_NO_RET_UPD
-				|| !current_prog->cb_return_code) {
-					output ("((int (*)");
-				} else {
-					output_integer (current_prog->cb_return_code);
-					output (" = ((int (*)");
-				}
-			} else {
-				output ("((void (*)");
-			}
+			output_integer (current_prog->cb_return_code);
+			output (" = ((int (*)");
 		}
 		if (p->args) {
 			output ("(");
@@ -7274,25 +7282,21 @@ output_call (struct cb_call *p)
 		output_line ("\tgoto %s%d;", CB_PREFIX_LABEL, except_id);
 	}
 
-	if (p->call_returning
-	&& (!(p->convention & CB_CONV_NO_RET_UPD))
-	&& current_prog->cb_return_code) {
-		if (p->call_returning == cb_null) {
-			output_prefix ();
-			output_integer (current_prog->cb_return_code);
-			output (" = 0;");
-			output_newline ();
-		} else if (!ret_ptr) {
-			output_move (current_prog->cb_return_code,
-				     p->call_returning);
+	if (p->call_returning) {
+		if (ret_ptr) {
 #ifdef	COB_NON_ALIGNED
-		} else {
 			output_prefix ();
 			output ("memcpy (");
 			output_data (p->call_returning);
 			output (", &temptr, %u);", (cob_u32_t)sizeof (void *));
 			output_newline ();
 #endif
+		} else if (p->call_returning != cb_null) {
+			output_prefix ();
+			output ("cob_set_int (");
+			output_param (p->call_returning, -1);
+			output (", ret);");
+			output_newline ();
 		}
 	}
 	if (gen_exit_program) {
@@ -12101,12 +12105,11 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 
 	if (prog->prog_type == COB_MODULE_TYPE_FUNCTION
 	 && CB_FIELD_PTR(prog->returning)->storage == CB_STORAGE_LINKAGE) {
+		struct cb_field *ret = CB_FIELD_PTR (prog->returning);
 		output_line ("/* Storage for returning item */");
 		output_prefix ();
 		output_data (prog->returning);
-		output (" = cob_malloc (");
-		output_size (prog->returning);
-		output ("U);");
+		output (" = cob_malloc (%uU);", ret->memory_size);
 		output_newline ();
 		output_newline ();
 	}

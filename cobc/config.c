@@ -594,9 +594,10 @@ cb_config_entry (char *buff, const char *fname, const int line)
 			}
 		} else if (strcmp (name, "reserved-words") == 0) {
 			/* store translated to lower case */
-			for (e = (char *)val; *e; e++) {
-				if (isupper (*e)) {
-					*e = (cob_u8_t)tolower (*e);
+			cob_u8_t *p;
+			for (p = (cob_u8_t *)val; *p; p++) {
+				if (isupper (*p)) {
+					*p = (cob_u8_t)tolower (*p);
 				}
 			}
 			/* if explicit requested: disable */

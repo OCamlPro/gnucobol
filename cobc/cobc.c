@@ -6378,7 +6378,7 @@ print_errors_for_line (const struct list_error * const first_error,
 			if (pd_off >= max_chars_on_line) {
 				/* trim on last space */
 				pd_off = strlen (print_data) - 1;
-				while (pd_off && !isspace (print_data[pd_off])) {
+				while (pd_off && !isspace ((unsigned char)print_data[pd_off])) {
 					pd_off--;
 				}
 				print_data[pd_off] = '\0';
@@ -6590,7 +6590,7 @@ is_continuation_line (char *line, int fixed)
 		/* check for "&" as last character */
 		/* CHECKME: does this work with inline comments after "&"? */
 		i = strlen (line) - 1;
-		while (i && isspace (line[i])) i--;
+		while (i && isspace ((unsigned char)line[i])) i--;
 		if (line[i] == '&') {
 			return 1;
 		}
@@ -6696,7 +6696,8 @@ reflow_replaced_fixed_format_text (const char *cfile_name, char *pline[CB_READ_A
 	  Start adding tokens from margin B or the first non-space character.
 	*/
 	for (first_nonspace = first_col;
-	     (first_nonspace < last) && isspace (pline[0][first_nonspace]);
+	     (first_nonspace < last)
+	      && isspace ((unsigned char)(pline[0][first_nonspace]));
 	     first_nonspace++);
 	if (first_nonspace >= CB_MARGIN_B) {
 		first_col = CB_MARGIN_B;
@@ -6854,7 +6855,7 @@ print_replace_text (struct list_files *cfile, FILE *fd,
 
 	/* Trim the string to search and replace */
 	(void)terminate_str_at_first_trailing_space (rfp);
-	while (*rfp && isspace (*rfp)) {
+	while (*rfp && isspace ((unsigned char)(*rfp))) {
 		rfp++;
 	}
 	multi_token = (strchr (rfp, ' ') != NULL);

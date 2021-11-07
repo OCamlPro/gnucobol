@@ -2415,6 +2415,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token BACKGROUND_HIGH		"BACKGROUND-HIGH"
 %token BACKGROUND_LOW		"BACKGROUND-LOW"
 %token BACKGROUND_STANDARD		"BACKGROUND-STANDARD"
+%token BACKWARD
 %token BAR
 %token BASED
 %token BEFORE
@@ -2628,6 +2629,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token END_RETURN		"END-RETURN"
 %token END_REWRITE		"END-REWRITE"
 %token END_SEARCH		"END-SEARCH"
+%token END_SEND		"END-SEND"
 %token END_START		"END-START"
 %token END_STRING		"END-STRING"
 %token END_SUBTRACT		"END-SUBTRACT"
@@ -3403,6 +3405,7 @@ set_record_size (cb_tree min, cb_tree max)
 %nonassoc END_RETURN
 %nonassoc END_REWRITE
 %nonassoc END_SEARCH
+%nonassoc END_SEND
 %nonassoc END_START
 %nonassoc END_STRING
 %nonassoc END_SUBTRACT
@@ -4016,10 +4019,8 @@ program_coll_sequence_values:
 object_computer_segment:
   SEGMENT_LIMIT _is integer
   {
-	int segnum;
-
 	if (cb_verify (cb_section_segments, "SEGMENT LIMIT")) {
-		segnum = cb_get_int ($3);
+		int segnum = cb_get_int ($3);
 		if (segnum == 0 || segnum > 49) {
 			cb_error (_("segment-number must be in range of values 1 to 49"));
 			$$ = NULL;
@@ -8661,8 +8662,8 @@ column_clause:
   col_keyword_clause col_or_plus
   {
 	check_repeated ("COLUMN", SYN_CLAUSE_18, &check_pic_duplicate);
-	if((current_field->report_flag & (COB_REPORT_COLUMN_LEFT|COB_REPORT_COLUMN_RIGHT|COB_REPORT_COLUMN_CENTER))
-	&& (current_field->report_flag & COB_REPORT_COLUMN_PLUS)) {
+	if ((current_field->report_flag & (COB_REPORT_COLUMN_LEFT|COB_REPORT_COLUMN_RIGHT|COB_REPORT_COLUMN_CENTER))
+	 && (current_field->report_flag & COB_REPORT_COLUMN_PLUS)) {
 		if (cb_relaxed_syntax_checks) {
 			cb_warning (COBC_WARN_FILLER, _("PLUS is not recommended with LEFT, RIGHT or CENTER"));
 		} else {
@@ -8705,8 +8706,9 @@ col_or_plus:
 		 && current_field->parent->children == current_field
 		 && (current_field->parent->report_flag & COB_REPORT_LINE)) {
 			cb_warning (COBC_WARN_FILLER, _("PLUS is ignored on first field of line"));
-			if (current_field->step_count == 0)
+			if (current_field->step_count == 0) {
 				current_field->step_count = colnum;
+			}
 		} else {
 			current_field->report_flag |= COB_REPORT_COLUMN_PLUS;
 		}
@@ -10191,10 +10193,17 @@ _procedure_returning:
 				if (f->flag_any_length) {
 					cb_error (_("function RETURNING item may not be ANY LENGTH"));
 				}
-
 				f->flag_is_returning = 1;
 			}
+#if 0	/* doesn't work for programs, will be fixed with allocating in the source-unit */
 			current_program->returning = $2;
+#else
+			if (current_program->prog_type == COB_MODULE_TYPE_FUNCTION) {
+				current_program->returning = $2;
+			} else {
+				CB_PENDING ("program RETURNING");
+			}
+#endif
 		}
 	}
   }
@@ -10396,10 +10405,9 @@ _segment:
   }
 | integer
   {
-	int segnum = cb_get_int ($1);
-
 	$$ = NULL;
 	if (cb_verify (cb_section_segments, _("section segments"))) {
+		int segnum = cb_get_int ($1);
 		if (segnum > 99) {
 			cb_error (_("SECTION segment-number must be less than or equal to 99"));
 		} else {
@@ -13620,7 +13628,17 @@ inspect_statement:
 ;
 
 inspect_body:
-  send_identifier inspect_list
+  _backward send_identifier inspect_list
+  {
+	if ($1) {
+		CB_PENDING ("INSPECT BACKWARD");
+	}
+  }
+;
+
+_backward:
+  /* empty */	{ $$ = NULL; }
+| BACKWARD		{ $$ = cb_int0; }
 ;
 
 send_identifier:
@@ -13842,14 +13860,8 @@ json_generate_body:
 ;
 
 _json_suppress:
-  /* empty */
-  {
-	$$ = NULL;
-  }
-| SUPPRESS_XML json_suppress_list
-  {
-	$$ = $2;
-  }
+  /* empty */			{ $$ = NULL; }
+| SUPPRESS_XML json_suppress_list  { $$ = $2; }
 ;
 
 json_suppress_list:
@@ -13882,7 +13894,7 @@ json_parse_statement:
   JSON PARSE
   {
 	begin_statement ("JSON PARSE", TERM_JSON);
-	CB_PENDING (_("JSON PARSE"));
+	CB_PENDING ("JSON PARSE");
   }
   json_parse_body
   _end_json
@@ -14829,7 +14841,9 @@ send_statement:
   send_body
 ;
 
-send_body:		send_body_mcs | send_body_cd ;
+send_body:
+  send_body_mcs END_SEND /* END-SEND is mandatory for MCS */
+| send_body_cd ;
 
 send_body_mcs:
 /* FIXME: conflict because x may an identifier in both _mcs and _cs
@@ -14842,12 +14856,12 @@ send_body_mcs:
    FIXME - workaround end */
   RETURNING message_tag_data_item
   {
-		CB_PENDING ("COBOL 202x MCS");
+	CB_PENDING ("COBOL 202x MCS");
   }
 /* FIXME later: too many conflicts here
 | _to message_tag_data_item from_identifier _send_raising _common_exception_phrases
   {
-		CB_PENDING ("COBOL 202x MCS");
+	CB_PENDING ("COBOL 202x MCS");
   }
    FIXME - workaround end */
 ;
@@ -16093,7 +16107,7 @@ use_exception:
 	}
 	current_section->flag_real_label = 1;
 	emit_statement(cb_build_comment("USE AFTER EXCEPTION CONDITION"));
-	CB_PENDING("USE AFTER EXCEPTION CONDITION");
+	CB_PENDING ("USE AFTER EXCEPTION CONDITION");
   }
 ;
 

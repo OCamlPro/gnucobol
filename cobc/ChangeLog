@@ -27,6 +27,9 @@
 2021-10-01  Simon Sobisch <simonsobisch@gnu.org>
 
 	* ppparse.y, pplex.l, scanner.l: implementation of COBOL-WORDS directive
+	* reserved.c, cobc.h, tree.h: added missing COBOL 202x reserved words
+	  and intrinsic functions to the internal lists
+	* parser.y: _parsing_ of INSPECT BACKWARD, SEND mcs
 
 2021-09-29  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -644,6 +647,12 @@
 	  including fix for bug #670 "multiple listing of -debug"
 	* flag.def: removed dummy variables cb_def_dump, cb_def_callfh
 
+2020-07-09  Edward Hart <edward.dan.hart@gmail.com>
+
+	* reserved.c (is_reserved_word): fixed division by zero when called
+	  before reserved words list has been initialised (bug #659). Thanks
+	  to Paul Smith for fix.
+
 2020-07-26  Edward Hart <edward.dan.hart@gmail.com>
 
 	* config.def: added possible values for assign-clause and
@@ -694,6 +703,15 @@
 	* typeck.c (validate_move): refactored.
 	* typeck.c: strengthened syntax checks on (UN)STRING ... POINTER
 	  (bug #488) and UNSTRING ... COUNT (bug #653).
+
+2020-06-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_internal_function): fix bug #641 FUNCTION RETURNING
+	  with variable field size
+	* parser.y (_procedure_returning): work around for bug #650
+	  disabled PROCEDURE DIVISION USING for normal programs as pending
+	* codegen.c (output_call): use a temporary integer for CALL ... RETURNING
+	  to not pollute RETURN-CODE in this case, fixing bug #651
 
 2020-06-28  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -848,6 +866,11 @@
 	  FR #193 implementation of TYPEDEF, TYPE TO and USAGE type-name,
 	  fixed some issues with SAME AS
 	* tree.c (cb_ref_internal): limit scope of some variables
+
+2020-05-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c, config.c, pplex.l, scanner.l: silenced char-subscript warnings
+	  by casts to unsigned char
 
 2020-05-06  Ron Norman <rjn@inglenet.com>
 

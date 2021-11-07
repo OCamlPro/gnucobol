@@ -1033,7 +1033,9 @@
 	* screenio.c (get_line_and_col_from_field): refactored from
 	  get_line_and_col_from_num and get_cursor_from_program, now
 	  containing additional handing of non-numeric group fields
-	  for the position, fixing bug #632
+	  for the position, fixing bug #632 DISPLAY/ACCEPT AT group-field
+	* common.c (check_current_date): silenced char-subscript warnings
+	  by casts to unsigned char
 
 2020-04-28  Ron Norman <rjn@inglenet.com>
 

@@ -4895,7 +4895,7 @@ AT_CLEANUP
 
 
 # Placed as extra routine as we should find a way to test this
-# without CBL_GC_FORK (which isn't available on all systems where-
+# without CBL_GC_FORK (which isn't available on all systems where
 # CBL_GC_WAITPID is available, for example MINGW)
 AT_SETUP([System routine CBL_GC_WAITPID])
 AT_KEYWORDS([extensions CBL_GC_FORK])

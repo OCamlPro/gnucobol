@@ -1393,8 +1393,12 @@ cb_build_register_return_code (const char *name, const char *definition)
 		}
 	}
 
-	/* take care of GLOBAL */
+	/* take care of (likely) GLOBAL */
+#if 0	/* more to adjust in other places */
+	if (current_program->nested_level && strstr (definition, "GLOBAL")) {
+#else
 	if (current_program->nested_level) {
+#endif
 		return;
 	}
 
@@ -1417,6 +1421,13 @@ cb_build_register_sort_return (const char *name, const char *definition)
 			return;
 		}
 	}
+
+#if 0	/* more to adjust in other places */
+	/* take care of (unlikely) GLOBAL */
+	if (current_program->nested_level && strstr (definition, "GLOBAL")) {
+		return;
+	}
+#endif
 
 	field = cb_build_index (cb_build_reference (name), cb_zero, 0, NULL);
 	CB_FIELD_PTR (field)->flag_no_init = 1;

@@ -2162,15 +2162,15 @@ scan_define_options (const char *text)
 	/* Scan a source inline define */
 	p = cobc_strdup (text);
 
-	q = &p[strlen(p)-1];
+	q = &p [strlen (p)-1];
 	while(q != p
-	   && (isspace(*q) || *q == '\n' || *q == '\r'))
+	   && (isspace ((unsigned char)(*q)) || *q == '\n' || *q == '\r'))
 		q--;
 	q = q - 7;
-	if (memcmp(q,"OVERRIDE",8) == 0) {
+	if (memcmp (q, "OVERRIDE", 8) == 0) {
 		override = 1;
-		while (q[-1] == ' ') q--;
-		strcpy(q,"\n");
+		while (isspace((unsigned char)(q[-1]))) q--;
+		strcpy (q,"\n");
 	} else {
 		override = 0;
 	}

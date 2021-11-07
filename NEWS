@@ -70,6 +70,10 @@ Open Plans:
 
 * Changes that potentially effects recompilation of existing programs:
 
+** the reserved word list and intrinsic functions was updated, especially
+   to cater for new features of COBOL 202x; if compiling with any non-strict
+   dialect you may need to unreserve any conflicting words / functions
+
 ** in 64-bit environments, the maximum field size was increased from
    268435456 bytes (999999998 bytes for OCCURS UNBOUNDED) to 2 GB
 
@@ -109,8 +113,10 @@ Open Plans:
    were not usable, for example SYNCHRONIZED or COMPUTATIONAL. This was fixed
    and reserved words updated for the dialects "acu" (to ACUCOBOL-GT 10.4),
    "ibm" (to Enterprise COBOL 6.3) and "mf" (to Micro Focus Visual COBOL 6.0)
+
 ** for all "lax" updates SYNC was handled even if commonly ignored by the strict
    dialects, this was fixed so SYNC is ignored depending on the dialect
+
 ** COBOL programs compiled with versions before GnuCOBOL 3 that used files with
    ORGANIZATION INDEXED or RELATIVE chrashed when executed with newer versions,
    this has been fixed so that all modules compiled with GnuCOBOL 2.2 can be

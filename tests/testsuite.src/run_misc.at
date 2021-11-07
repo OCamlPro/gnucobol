@@ -6220,9 +6220,9 @@ AT_DATA([callee2.cob], [
            EXIT PROGRAM.
 ])
 
-AT_CHECK([$COMPILE_MODULE -fnot-reserved=double,float,new,volatile callee.cob], [0], [], [])
-AT_CHECK([$COMPILE_MODULE -fnot-reserved=double,float,new,volatile callee2.cob], [0], [], [])
-AT_CHECK([$COMPILE -fnot-reserved=double,float,new,volatile -o prog caller.cob], [0], [], [])
+AT_CHECK([$COMPILE_MODULE -fnot-reserved=double,float,new,volatile,xor callee.cob], [0], [], [])
+AT_CHECK([$COMPILE_MODULE -fnot-reserved=double,float,new,volatile,xor callee2.cob], [0], [], [])
+AT_CHECK([$COMPILE -fnot-reserved=double,float,new,volatile,xor -o prog caller.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
@@ -6590,6 +6590,78 @@ BIGFLT is 5.4312347E+12
 MOVE ALL '21' TO BIGFLT
 BIGFLT is 2.1212121E+37
 ], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([CALL RETURNING])
+AT_KEYWORDS([runmisc GIVING RETURN-CODE])
+
+AT_DATA([callee.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      callee.
+       PROCEDURE        DIVISION.
+           MOVE 43 TO RETURN-CODE
+           EXIT PROGRAM.
+])
+
+AT_DATA([caller.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      caller.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       77 my-display-return   PIC 99.
+       77 my-binary-return    USAGE BINARY-LONG.
+       PROCEDURE        DIVISION.
+           CALL "callee" RETURNING my-display-return
+           END-CALL
+           IF RETURN-CODE NOT = 0
+              DISPLAY '1 - unexpected RETURN-CODE: ' RETURN-CODE.
+           IF my-display-return NOT = 43
+              DISPLAY '1- unexpected RETURNING: ' my-display-return.
+      *>
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -static caller.cob callee.cob -o prog], [0], [], [])
+#AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
+AT_CHECK([$COMPILE caller.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./caller], [0], [], [])
+
+AT_CLEANUP
+
+
+# PROCEDURE DIVISION RETURNING OMITTED, CALL RETURNING NOTHING
+AT_SETUP([void PROCEDURE, NOTHING return])
+AT_KEYWORDS([runmisc PROCEDURE USING RETURNING OMITTED CALL GIVING])
+
+AT_DATA([callee.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      callee.
+       DATA             DIVISION.
+       PROCEDURE        DIVISION RETURNING OMITTED.
+           MOVE 43 TO RETURN-CODE
+           EXIT PROGRAM.
+])
+
+AT_DATA([caller.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      caller.
+       PROCEDURE        DIVISION.
+           MOVE 42 TO RETURN-CODE
+           CALL "callee" RETURNING NOTHING
+           END-CALL.
+           IF RETURN-CODE NOT = 42
+              DISPLAY 'unexpected RETURN-CODE: ' RETURN-CODE.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -static caller.cob callee.cob -o prog], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [42], [], [])
+AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
+AT_CHECK([$COMPILE caller.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./caller], [42], [], [])
 
 AT_CLEANUP
 
@@ -8371,37 +8443,6 @@ END OF DUMP - prog
 
 AT_CHECK([gcdiff reference dumpall.txt], [0], [], [])
 #AT_CHECK([diff reference dumpall.txt], [0], [], [])
-
-AT_CLEANUP
-
-
-# PROCEDURE DIVISION RETURNING OMITTED, CALL RETURNING NOTHING
-AT_SETUP([void PROCEDURE, NOTHING return])
-AT_KEYWORDS([runmisc])
-
-AT_DATA([callee.cob], [
-       IDENTIFICATION   DIVISION.
-       PROGRAM-ID.      callee.
-       DATA             DIVISION.
-       PROCEDURE        DIVISION RETURNING OMITTED.
-           MOVE 42 TO RETURN-CODE
-           EXIT PROGRAM.
-])
-
-AT_DATA([caller.cob], [
-       IDENTIFICATION   DIVISION.
-       PROGRAM-ID.      caller.
-       PROCEDURE        DIVISION.
-           MOVE 42 TO RETURN-CODE
-           CALL "callee" RETURNING NOTHING
-           END-CALL.
-           DISPLAY RETURN-CODE WITH NO ADVANCING
-           STOP RUN.
-])
-
-AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
-AT_CHECK([$COMPILE caller.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./caller], [42], [+000000042], [])
 
 AT_CLEANUP
 
