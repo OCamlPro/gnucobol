@@ -1,4 +1,9 @@
 
+2021-11-08  Ron Norman <rjn@inglenet.com>
+
+	* common.h: Add feature flag COB_FILE_LS_DEFAULT
+	* fileio.c: improvments to WRITE ADVANCING for SEQUENTIAL file
+
 2021-11-06  Ron Norman <rjn@inglenet.com>
 
 	* common.h: Add COB_SET_SEQUENTIAL, COB_SET_ADVANCING

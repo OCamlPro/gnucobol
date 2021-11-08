@@ -9507,6 +9507,12 @@ output_file_initialization (struct cb_file *f)
 #endif
 	}
 
+	if (!f->flag_line_adv
+	 && !f->flag_has_organization
+	 && f->organization == COB_ORG_LINE_SEQUENTIAL
+	 && strcmp(file_features,"0") == 0) {
+		file_features = "COB_FILE_LS_DEFAULT";
+	}
 	if (f->flag_line_adv
 	 || f->record_depending
 	 || strcmp(file_features,"0") != 0) {

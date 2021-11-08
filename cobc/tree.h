@@ -1114,7 +1114,7 @@ struct cb_file {
 	unsigned int		flag_fileid	: 1;	/* ASSIGN DISK */
 	unsigned int		flag_global	: 1;	/* Is GLOBAL */
 	unsigned int		flag_fl_debug	: 1;	/* DEBUGGING */
-	unsigned int		flag_line_adv	: 1;	/* LINE ADVANCING */
+	unsigned int		flag_line_adv	: 4;	/* LINE ADVANCING */
 	unsigned int		flag_delimiter	: 1;	/* RECORD DELIMITER */
 
 	unsigned int		flag_report	: 1;	/* Used by REPORT */
@@ -1127,6 +1127,7 @@ struct cb_file {
 	/* Whether the file's ASSIGN is like "ASSIGN word", not "ASSIGN
            EXTERNAL/DYNAMIC/USING/... word" */
 	unsigned int		flag_assign_no_keyword : 1;
+	unsigned int		flag_has_organization : 1;	/* ORGANIZATION was declared */
 };
 
 #define CB_FILE(x)	(CB_TREE_CAST (CB_TAG_FILE, struct cb_file, x))

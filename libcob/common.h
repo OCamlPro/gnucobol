@@ -973,6 +973,7 @@ enum cob_file_access {
 #define COB_FILE_LS_CRLF	(1 << 4)/* End LINE SEQUENTIAL records with CR LF */
 #define COB_FILE_LS_LF		(1 << 5)/* End LINE SEQUENTIAL records with LF */
 #define COB_FILE_LS_SPLIT	(1 << 6)/* LINE SEQUENTIAL records longer than max should be split */
+#define COB_FILE_LS_DEFAULT	(1 << 7)/* Defaulted to LINE SEQUENTIAL */
 									/* Default is longer than max get truncated & skip to LF */
 
 /* Sharing option */

@@ -5164,19 +5164,19 @@ assign_device:
   {
 	assign_device = CB_ASSIGN_PRINTER_DEVICE;
 	current_file->organization = COB_ORG_LINE_SEQUENTIAL;
-	current_file->flag_line_adv = 1;
+	current_file->flag_line_adv = COB_LINE_ADVANCE;
   }
 | PRINTER_1
   {
 	assign_device = CB_ASSIGN_PRINTER_1_DEVICE;
 	current_file->organization = COB_ORG_LINE_SEQUENTIAL;
-	current_file->flag_line_adv = 1;
+	current_file->flag_line_adv = COB_LINE_ADVANCE;
   }
 | PRINT
   {
 	assign_device = CB_ASSIGN_PRINT_DEVICE;
 	current_file->organization = COB_ORG_LINE_SEQUENTIAL;
-	current_file->flag_line_adv = 1;
+	current_file->flag_line_adv = COB_LINE_ADVANCE;
   }
 ;
 
@@ -5201,7 +5201,7 @@ line_seq_device_name:
 line_adv_file:
   LINE ADVANCING _file
   {
-	current_file->flag_line_adv = 1;
+	current_file->flag_line_adv = COB_LINE_ADVANCE;
   }
 ;
 
@@ -5538,18 +5538,21 @@ organization:
 	check_repeated ("ORGANIZATION", SYN_CLAUSE_6, &check_duplicate);
 	error_if_record_delimiter_incompatible (COB_ORG_INDEXED, "INDEXED");
 	current_file->organization = COB_ORG_INDEXED;
+	current_file->flag_has_organization = 1;
   }
 | _record _binary SEQUENTIAL
   {
 	check_repeated ("ORGANIZATION", SYN_CLAUSE_6, &check_duplicate);
 	error_if_record_delimiter_incompatible (COB_ORG_SEQUENTIAL, "SEQUENTIAL");
 	current_file->organization = COB_ORG_SEQUENTIAL;
+	current_file->flag_has_organization = 1;
   }
 | RELATIVE
   {
 	check_repeated ("ORGANIZATION", SYN_CLAUSE_6, &check_duplicate);
 	error_if_record_delimiter_incompatible (COB_ORG_RELATIVE, "RELATIVE");
 	current_file->organization = COB_ORG_RELATIVE;
+	current_file->flag_has_organization = 1;
   }
 | LINE SEQUENTIAL
   {
@@ -5557,6 +5560,7 @@ organization:
 	error_if_record_delimiter_incompatible (COB_ORG_LINE_SEQUENTIAL,
 						"LINE SEQUENTIAL");
 	current_file->organization = COB_ORG_LINE_SEQUENTIAL;
+	current_file->flag_has_organization = 1;
   }
 ;
 
@@ -6365,7 +6369,7 @@ report_clause:
 	} else {
 		current_file->reports = $2;
 		current_file->organization = COB_ORG_LINE_SEQUENTIAL;
-		current_file->flag_line_adv = 1;
+		current_file->flag_line_adv = COB_LINE_ADVANCE;
 	}
   }
 ;

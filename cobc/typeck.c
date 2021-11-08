@@ -12719,6 +12719,11 @@ cb_emit_write (cb_tree record, cb_tree from, cb_tree opt, cb_tree lockopt)
 		cb_emit (cb_build_move (record, cb_debug_contents));
 		cb_emit (cb_build_debug_call (CB_FIELD_PTR (record)->debug_section));
 	}
+	if (f->organization == COB_ORG_SEQUENTIAL
+	 && !f->flag_has_organization
+	 &&  opt != cb_int0) {
+		f->organization = COB_ORG_LINE_SEQUENTIAL;
+	}
 	if (f->organization == COB_ORG_LINE_SEQUENTIAL
 	&&  opt == cb_int0) {
 		/* Omission of ADVANCING default to

@@ -1779,6 +1779,11 @@ cob_set_ls_defaults (cob_file *f)
 		f->file_features |= COB_FILE_LS_VALIDATE;
 	else if (file_setptr->cob_ls_validate == 0)
 		f->file_features &= ~COB_FILE_LS_VALIDATE;
+
+	if ((f->file_features & COB_FILE_LS_DEFAULT)) {
+		f->file_features |= COB_FILE_LS_FIXED;
+		f->file_features &= ~COB_FILE_LS_VALIDATE;
+	}
 }
 
 /*

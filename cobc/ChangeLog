@@ -1,4 +1,15 @@
 
+2021-11-08  Ron Norman <rjn@inglenet.com>
+
+	* tree.h: Add for file flag_has_organization
+	* codegen.c: Is ORGANIZATION was not defined in SELECT but
+				WRITE ADVANCING was used then default to LINE SEQUENTIAL
+				(This will soon become an option)
+	* parser.y: Set flag flag_has_organization if ORGANIZATION was define
+	* typeck.c: If ORGANIZATION not specific and WRITE ADVANCING default
+				to LINE SEQUENTIAL
+				(This will soon become an option)
+
 2021-11-05  Simon Sobisch <simonsobisch@gnu.org>
 
 	* field.c (compute_size): adjusted check to correctly catch items bigger
