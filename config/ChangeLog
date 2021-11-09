@@ -1,4 +1,8 @@
 
+2021-11-09  Ron Norman <rjn@inglenet.com>
+
+	* Added 'record-sequential-advancing' initial value
+
 2021-10-01  Ron Norman <rjn@inglenet.com>
 
 	* runtime.cfg: Removed the COB_MF_LS_xxx options and replaced COB_MF_FILES

@@ -368,6 +368,9 @@ CB_CONFIG_SUPPORT (cb_sequential_delimiters, "sequential-delimiters",
 CB_CONFIG_SUPPORT (cb_record_delim_with_fixed_recs, "record-delim-with-fixed-recs",
 	_("RECORD DELIMITER clause on file with fixed-length records"))
 
+CB_CONFIG_SUPPORT (cb_sequential_advancing, "record-sequential-advancing",
+	_("SEQUENTIAL with WRITE ADVANCING phrases"))
+
 CB_CONFIG_SUPPORT (cb_missing_statement, "missing-statement",
 	_("missing statement (e.g. empty IF / PERFORM)"))
 

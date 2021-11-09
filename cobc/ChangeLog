@@ -1,4 +1,13 @@
 
+2021-11-09  Ron Norman <rjn@inglenet.com>
+
+	* config.def: Added 'record-sequential-advancing' 
+	* codegen.c: Is ORGANIZATION was not defined in SELECT but
+				WRITE ADVANCING was used then default to LINE SEQUENTIAL
+	* typeck.c: If ORGANIZATION not specific and WRITE ADVANCING default
+				to LINE SEQUENTIAL based on 'record-sequential-advancing'
+				
+
 2021-11-08  Ron Norman <rjn@inglenet.com>
 
 	* tree.h: Add for file flag_has_organization

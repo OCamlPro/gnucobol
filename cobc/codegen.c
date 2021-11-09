@@ -9392,6 +9392,13 @@ output_file_initialization (struct cb_file *f)
 		acc_name = "COB_ACCESS_DYNAMIC";
 		break;
 	}
+	if (!f->flag_line_adv
+	 && !f->flag_has_organization
+	 && f->organization == COB_ORG_LINE_SEQUENTIAL
+	 && strcmp(file_features,"0") == 0) {
+		file_features = "COB_FILE_LS_DEFAULT";
+		fmt_name = "COB_FILE_IS_DFLT";
+	} else
 	if (cb_mf_files) {
 		fmt_name = "COB_FILE_IS_MF";
 		if (f->organization == COB_ORG_LINE_SEQUENTIAL) {
@@ -9500,19 +9507,8 @@ output_file_initialization (struct cb_file *f)
 			output_key_components (f, l->component_list, nkeys);
 			nkeys++;
 		}
-#if 0 /* now done in cob_file_malloc / cob_file_external_addr */
-	} else {
-		output_line ("%s%s->nkeys = 0;", CB_PREFIX_FILE, f->cname);
-		output_line ("%s%s->keys = NULL;", CB_PREFIX_FILE, f->cname);
-#endif
 	}
 
-	if (!f->flag_line_adv
-	 && !f->flag_has_organization
-	 && f->organization == COB_ORG_LINE_SEQUENTIAL
-	 && strcmp(file_features,"0") == 0) {
-		file_features = "COB_FILE_LS_DEFAULT";
-	}
 	if (f->flag_line_adv
 	 || f->record_depending
 	 || strcmp(file_features,"0") != 0) {

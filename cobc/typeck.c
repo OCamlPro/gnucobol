@@ -12720,9 +12720,37 @@ cb_emit_write (cb_tree record, cb_tree from, cb_tree opt, cb_tree lockopt)
 		cb_emit (cb_build_debug_call (CB_FIELD_PTR (record)->debug_section));
 	}
 	if (f->organization == COB_ORG_SEQUENTIAL
-	 && !f->flag_has_organization
 	 &&  opt != cb_int0) {
-		f->organization = COB_ORG_LINE_SEQUENTIAL;
+		if (!f->flag_has_organization) {		/* No ORGANIZATION was used */
+			if (cb_sequential_advancing == CB_WARNING
+			 || cb_sequential_advancing == CB_OK) {
+				f->organization = COB_ORG_LINE_SEQUENTIAL;
+				if (cb_sequential_advancing == CB_WARNING)
+					cb_warning_x (COBC_WARN_FILLER, CB_TREE (current_statement),
+							_("WRITE ADVANCING with default SEQUENTIAL file"));
+			} else
+			if (cb_sequential_advancing == CB_IGNORE) {
+				opt = cb_int0;		/* Ignore the ADVANCING clause */
+			} else
+			if (cb_sequential_advancing == CB_ERROR) {
+				cb_error_x (CB_TREE (current_statement),
+							_("WRITE ADVANCING with default SEQUENTIAL file"));
+			}
+		} else {		/* Specificly used ORGANIZATION SEQUENTIAL */
+			if (cb_sequential_advancing == CB_WARNING
+			 || cb_sequential_advancing == CB_OK) {
+				if (cb_sequential_advancing == CB_WARNING)
+					cb_warning_x (COBC_WARN_FILLER, CB_TREE (current_statement),
+							_("WRITE ADVANCING with RECORD SEQUENTIAL file"));
+			} else
+			if (cb_sequential_advancing == CB_IGNORE) {
+				opt = cb_int0;		/* Ignore the ADVANCING clause */
+			} else
+			if (cb_sequential_advancing == CB_ERROR) {
+				cb_error_x (CB_TREE (current_statement),
+							_("WRITE ADVANCING with RECORD SEQUENTIAL file"));
+			}
+		}
 	}
 	if (f->organization == COB_ORG_LINE_SEQUENTIAL
 	&&  opt == cb_int0) {
