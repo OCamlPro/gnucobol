@@ -2817,6 +2817,7 @@ process_command_line (const int argc, char **argv)
 
 	cb_dialect = "DEFAULT";
 	cb_mf_ibm_comp = -1;
+	cb_mf_files = 0;
 	cb_warn_opt_val[(int)cb_warn_unsupported] = COBC_WARN_AS_ERROR;
 #ifdef WITH_FILE_FORMAT
 	if (WITH_FILE_FORMAT == COB_FILE_IS_MF)

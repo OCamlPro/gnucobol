@@ -12736,7 +12736,7 @@ cb_emit_write (cb_tree record, cb_tree from, cb_tree opt, cb_tree lockopt)
 				cb_error_x (CB_TREE (current_statement),
 							_("WRITE ADVANCING with default SEQUENTIAL file"));
 			}
-		} else {		/* Specificly used ORGANIZATION SEQUENTIAL */
+		} else {		/* Specifically used ORGANIZATION SEQUENTIAL */
 			if (cb_sequential_advancing == CB_WARNING
 			 || cb_sequential_advancing == CB_OK) {
 				if (cb_sequential_advancing == CB_WARNING)
@@ -12763,6 +12763,13 @@ cb_emit_write (cb_tree record, cb_tree from, cb_tree opt, cb_tree lockopt)
 		} else {
 			opt = cb_int_hex (COB_WRITE_BEFORE | COB_WRITE_LINES | 1);
 		}
+	} else
+	if (f->organization == COB_ORG_LINE_SEQUENTIAL
+	 && opt != cb_int0
+	 && cb_sequential_advancing == CB_OK
+	 && cb_std_define == CB_STD_MF
+	 && f->flag_line_adv == 0) {
+		f->flag_line_adv = COB_LINE_ADVANCE;	/* Default to LINE ADVANCING */
 	}
 	if (current_statement->handler_type == EOP_HANDLER &&
 	    current_statement->ex_handler) {

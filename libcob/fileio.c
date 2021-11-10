@@ -4758,11 +4758,27 @@ again:
 			continue;
 		} else {
 			if (n == '\r') {
-				continue;
+#if 1
+				continue;			/* Ignore CR on reading */
+#else
+				/* How to decide when to enable this path? */
+				n = getc ((FILE *)f->file);
+				if (n == '\f')		/* Skip NEW PAGE on reading */
+					n = getc ((FILE *)f->file);
+				if (n == '\n'		/* CR LF so end of line */
+				 || n == EOF) {
+					break;
+				}
+				fseek((FILE*)f->file, (long)-1, SEEK_CUR);
+				/* Should the CR end the line or returned as data */
+				break;	
+#endif
 			}
 			if (n == '\n') {
 				break;
 			}
+			if (n == '\f')			/* Skip NEW PAGE on reading */
+				continue;
 			if ((f->file_features & COB_FILE_LS_VALIDATE)
 			 && (IS_BAD_CHAR (n) 
 			  || (n > 0x7E && !isprint(n)))) {

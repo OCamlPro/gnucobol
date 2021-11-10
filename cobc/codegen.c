@@ -9399,7 +9399,8 @@ output_file_initialization (struct cb_file *f)
 		file_features = "COB_FILE_LS_DEFAULT";
 		fmt_name = "COB_FILE_IS_DFLT";
 	} else
-	if (cb_mf_files) {
+	if (cb_mf_files
+	 && cb_std_define != CB_STD_85) {	/* Not if cobol85 test suite */
 		fmt_name = "COB_FILE_IS_MF";
 		if (f->organization == COB_ORG_LINE_SEQUENTIAL) {
 			file_features = "COB_FILE_LS_NULLS";
@@ -11157,7 +11158,8 @@ output_module_init_function (struct cb_program *prog)
 	output_line ("module->flag_main = %d;", cobc_flag_main);
 	output_line ("module->flag_fold_call = %d;", cb_fold_call);
 	output_line ("module->flag_dialect = COB_DIALECT_%s;", cb_dialect);
-	if (cb_mf_files) {
+	if (cb_mf_files
+	 && cb_std_define != CB_STD_85) {	/* Not if cobol85 test suite */
 		output_line ("module->flag_file_format = COB_FILE_IS_MF;");
 	} else {
 		output_line ("module->flag_file_format = COB_FILE_IS_DFLT;");

@@ -1,4 +1,8 @@
 
+2021-11-10  Ron Norman <rjn@inglenet.com>
+
+	* fileio.c: Test code for bug #604 but not sure if it should be
+
 2021-11-08  Ron Norman <rjn@inglenet.com>
 
 	* common.h: Add feature flag COB_FILE_LS_DEFAULT

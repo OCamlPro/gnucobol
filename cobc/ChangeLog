@@ -1,4 +1,10 @@
 
+2021-11-10  Ron Norman <rjn@inglenet.com>
+
+	* cobc.c: Init cb_mf_files to 0
+	* codegen.c: Add some exceptions for -std=cobol85
+	* typeck.c: Add exception for -std=cobol85 for the COBOL85 tests
+
 2021-11-09  Ron Norman <rjn@inglenet.com>
 
 	* config.def: Added 'record-sequential-advancing' 
