@@ -401,28 +401,28 @@ static struct cobc_reserved default_reserved_words[] = {
   { "AWAY-FROM-ZERO",		0, 1, AWAY_FROM_ZERO,		/* 2014 (C/S) */
 				0, CB_CS_ROUNDED
   },
-  { "B-AND",			0, 0, -1,			/* 2002 */
+  { "B-AND",			0, 0, B_AND,			/* 2002 */
 				0, 0
   },
-  { "B-NOT",			0, 0, -1,			/* 2002 */
+  { "B-NOT",			0, 0, B_NOT,			/* 2002 */
 				0, 0
   },
-  { "B-OR",			0, 0, -1,			/* 2002 */
+  { "B-OR",			0, 0, B_OR,			/* 2002 */
 				0, 0
   },
-  { "B-XOR",			0, 0, -1,			/* 2002 */
+  { "B-XOR",			0, 0, B_XOR,			/* 2002 */
 				0, 0
   },
-  { "B-SHIFT-L",			0, 0, -1,			/* 202x */
+  { "B-SHIFT-L",			0, 0, B_SHIFT_L,	/* 202x */
 				0, 0
   },
-  { "B-SHIFT-LC",			0, 0, -1,			/* 202x */
+  { "B-SHIFT-LC",			0, 0, B_SHIFT_LC,			/* 202x */
 				0, 0
   },
-  { "B-SHIFT-R",			0, 0, -1,			/* 202x */
+  { "B-SHIFT-R",			0, 0, B_SHIFT_R,	/* 202x */
 				0, 0
   },
-  { "B-SHIFT-RC",			0, 0, -1,			/* 202x */
+  { "B-SHIFT-RC",			0, 0, B_SHIFT_RC,			/* 202x */
 				0, 0
   },
   { "BACKGROUND-COLOR",		0, 1, BACKGROUND_COLOR,		/* 2002 (C/S) */

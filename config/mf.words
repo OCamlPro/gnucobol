@@ -70,12 +70,12 @@ reserved:	AUTO-HYPHEN-SKIP
 reserved:	AUTO-SKIP=AUTO
 reserved:	AUTOMATIC
 reserved:	B-AND
-reserved:	B-EXOR
-reserved:	B-LEFT
 reserved:	B-NOT
 reserved:	B-OR
-reserved:	B-RIGHT
 reserved:	B-XOR
+reserved:	B-LEFT=B-SHIFT-L
+reserved:	B-RIGHT=B-SHIFT-R
+reserved:	B-EXOR=B-XOR
 reserved:	BACKGROUND-COLOR*
 reserved:	BACKGROUND-COLOUR*=BACKGROUND-COLOR
 reserved:	BACKWARD

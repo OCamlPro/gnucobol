@@ -1,4 +1,10 @@
 
+2021-11-14  Ron Norman <rjn@inglenet.com>
+
+	* common.h: Add prototype for BIT-WISE cob_logical_xxx functions
+	* numeric.c: Add code for the BIT-WISE cob_logical_xxx functions
+	* intrinsic.c (cob_intr_binop): add code for the BIT-WISE operations
+
 2021-11-10  Ron Norman <rjn@inglenet.com>
 
 	* fileio.c: Test code for bug #604 but not sure if it should be

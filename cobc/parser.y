@@ -2411,6 +2411,14 @@ set_record_size (cb_tree min, cb_tree max)
 %token AUTO_SPIN			"AUTO-SPIN"
 %token AUTOMATIC
 %token AWAY_FROM_ZERO		"AWAY-FROM-ZERO"
+%token B_AND		"B-AND"
+%token B_NOT		"B-NOT"
+%token B_OR			"B-OR"
+%token B_XOR		"B-XOR"
+%token B_SHIFT_L	"B-SHIFT-L"
+%token B_SHIFT_R	"B-SHIFT-R"
+%token B_SHIFT_LC	"B-SHIFT-LC"
+%token B_SHIFT_RC	"B-SHIFT-RC"
 %token BACKGROUND_COLOR		"BACKGROUND-COLOR"
 %token BACKGROUND_HIGH		"BACKGROUND-HIGH"
 %token BACKGROUND_LOW		"BACKGROUND-LOW"
@@ -16988,6 +16996,14 @@ expr_token:
 | not_expr
 | AND				{ push_expr ('&', NULL); }
 | OR				{ push_expr ('|', NULL); }
+| B_AND				{ push_expr ('a', NULL); }
+| B_OR				{ push_expr ('o', NULL); }
+| B_XOR				{ push_expr ('e', NULL); }
+| B_NOT				{ push_expr ('n', NULL); }
+| B_SHIFT_L			{ push_expr ('l', NULL); }
+| B_SHIFT_R			{ push_expr ('r', NULL); }
+| B_SHIFT_LC		{ push_expr ('c', NULL); }
+| B_SHIFT_RC		{ push_expr ('d', NULL); }
 ;
 
 _not_expr:
@@ -17070,6 +17086,13 @@ exp:
 exp_term:
   exp_term TOK_MUL exp_factor	{ $$ = cb_build_binary_op ($1, '*', $3); }
 | exp_term TOK_DIV exp_factor	{ $$ = cb_build_binary_op ($1, '/', $3); }
+| exp_term B_AND exp_factor	{ $$ = cb_build_binary_op ($1, 'a', $3); }
+| exp_term B_OR exp_factor	{ $$ = cb_build_binary_op ($1, 'o', $3); }
+| exp_term B_XOR exp_factor	{ $$ = cb_build_binary_op ($1, 'e', $3); }
+| exp_term B_SHIFT_L exp_factor	{ $$ = cb_build_binary_op ($1, 'l', $3); }
+| exp_term B_SHIFT_R exp_factor	{ $$ = cb_build_binary_op ($1, 'r', $3); }
+| exp_term B_SHIFT_LC exp_factor	{ $$ = cb_build_binary_op ($1, 'c', $3); }
+| exp_term B_SHIFT_RC exp_factor	{ $$ = cb_build_binary_op ($1, 'd', $3); }
 | exp_factor			{ $$ = $1; }
 ;
 
@@ -17084,6 +17107,7 @@ exp_factor:
 exp_unary:
   TOK_PLUS exp_atom		{ $$ = $2; }
 | TOK_MINUS exp_atom		{ $$ = cb_build_binary_op (cb_zero, '-', $2); }
+| B_NOT exp_atom		{ $$ = cb_build_binary_op (cb_zero, 'n', $2); }
 | exp_atom			{ $$ = $1; }
 
 exp_atom:

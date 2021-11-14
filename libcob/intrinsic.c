@@ -3497,6 +3497,29 @@ cob_valid_datetime_format (const char *format, const char decimal_point)
 cob_field *
 cob_intr_binop (cob_field *f1, const int op, cob_field *f2)
 {
+	switch (op) {
+	case 'a':
+		cob_alloc_set_field_uint (cob_get_int (f1) & cob_get_int (f2));
+		return curr_field;
+	case 'o':
+		cob_alloc_set_field_uint (cob_get_int (f1) | cob_get_int (f2));
+		return curr_field;
+	case 'e':
+		cob_alloc_set_field_uint (cob_get_int (f1) ^ cob_get_int (f2));
+		return curr_field;
+	case 'l':
+		cob_alloc_set_field_uint (cob_get_int (f1) << cob_get_int (f2));
+		return curr_field;
+	case 'r':
+		cob_alloc_set_field_uint (cob_get_int (f1) >> cob_get_int (f2));
+		return curr_field;
+	case 'n':
+		cob_alloc_set_field_uint ( ~ cob_get_int (f2));
+		return curr_field;
+	default:
+		break;
+	}
+
 	cob_decimal_set_field (&d1, f1);
 	cob_decimal_set_field (&d2, f2);
 	switch (op) {

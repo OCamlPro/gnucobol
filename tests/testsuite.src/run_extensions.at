@@ -5711,3 +5711,178 @@ RETURN-CODE = +000000000 TALLY = 00000
 ])
 
 AT_CLEANUP
+
+AT_SETUP([Bit Operations])
+AT_KEYWORDS([BIT-WISE])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 X1  PIC X  COMP-X VALUE 0.
+       01 X2  PIC X  COMP-X VALUE 0.
+       01 X3  PIC X  COMP-X VALUE 0.
+       01 XX1 PIC XX COMP-X VALUE 0.
+       01 XX2 PIC XX COMP-X VALUE 0.
+       01 XX3 PIC XX COMP-X VALUE 0.
+       PROCEDURE DIVISION.
+           MOVE 2 TO XX2 X2
+           MOVE 4 TO XX3 X3.
+
+           DISPLAY "Test using PIC XX COMP-X"
+           COMPUTE XX1 = (XX2 B-OR XX3).
+           DISPLAY XX2 " B-OR  " XX3 " is " XX1.
+           MOVE 3 TO XX3.
+           COMPUTE XX1 = (XX2 B-XOR XX3).
+           DISPLAY XX2 " B-XOR " XX3 " is " XX1.
+           MOVE 3 TO XX2
+           MOVE 1 TO XX1.
+           IF (XX2 B-AND XX1) = XX1
+                DISPLAY XX2 " B-AND " XX1 " = " XX1 " TRUE"
+            ELSE
+                DISPLAY XX2 " B-AND " XX1 " = " XX1 " FALSE"
+           END-IF.
+           COMPUTE XX1 = (XX2 B-XOR XX3) + 1 .
+           DISPLAY "(" XX2 " B-XOR " XX3 ") + 1 is " XX1.
+           COMPUTE XX1 = XX2 B-XOR (XX3 + 1).
+           DISPLAY XX2 " B-XOR (" XX3 " + 1) is " XX1.
+           MOVE  x#09 TO XX3.
+           MOVE  x#0E TO XX2.
+           COMPUTE XX1 = XX2 B-AND XX3 .
+           DISPLAY XX2 " B-AND " XX3 " is " XX1.
+           COMPUTE XX1 = (x#05 B-OR x#22).
+           DISPLAY "x#05 B-OR x#22 is " XX1.
+           COMPUTE XX1 = B-NOT XX2 .
+           DISPLAY "B-NOT " XX2 " is " XX1.
+           COMPUTE XX1 = B-NOT x#22 .
+           DISPLAY "B-NOT x#22 is " XX1.
+
+           DISPLAY "  -----"
+           DISPLAY "Test using PIC X COMP-X"
+           COMPUTE X1 = (X2 B-OR X3).
+           DISPLAY X2 " B-OR  " X3 " is " X1.
+           MOVE 3 TO X3.
+           COMPUTE X1 = (X2 B-XOR X3).
+           DISPLAY X2 " B-XOR " X3 " is " X1.
+           MOVE 3 TO X2
+           MOVE 1 TO X1.
+           IF (X2 B-AND X1) = X1
+                DISPLAY X2 " B-AND " X1 " = " X1 " TRUE"
+            ELSE
+                DISPLAY X2 " B-AND " X1 " = " X1 " FALSE"
+           END-IF.
+           COMPUTE X1 = (X2 B-XOR X3) + 1 .
+           DISPLAY "(" X2 " B-XOR " X3 ") + 1 is " X1.
+           COMPUTE X1 = X2 B-XOR (X3 + 1).
+           DISPLAY X2 " B-XOR (" X3 " + 1) is " X1.
+           MOVE  x#09 TO X3.
+           MOVE  x#0E TO X2.
+           COMPUTE X1 = X2 B-AND X3 .
+           DISPLAY X2 " B-AND " X3 " is " X1.
+           COMPUTE X1 = B-NOT X2 .
+           DISPLAY "B-NOT " X2 " is " X1.
+           COMPUTE X1 = B-NOT x#22 .
+           DISPLAY "B-NOT x#22 is " X1.
+           STOP RUN.
+])
+
+AT_CHECK([$COBC -x -std=mf -w prog.cob ], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [Test using PIC XX COMP-X
+00002 B-OR  00004 is 00006
+00002 B-XOR 00003 is 00001
+00003 B-AND 00001 = 00001 TRUE
+(00003 B-XOR 00003) + 1 is 00001
+00003 B-XOR (00003 + 1) is 00007
+00014 B-AND 00009 is 00008
+x#05 B-OR x#22 is 00039
+B-NOT 00014 is 65521
+B-NOT x#22 is 65501
+  -----
+Test using PIC X COMP-X
+002 B-OR  004 is 006
+002 B-XOR 003 is 001
+003 B-AND 001 = 001 TRUE
+(003 B-XOR 003) + 1 is 001
+003 B-XOR (003 + 1) is 007
+014 B-AND 009 is 008
+B-NOT 014 is 241
+B-NOT x#22 is 221
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([Bit Shift Operations])
+AT_KEYWORDS([BIT-WISE])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 X1 PIC XX COMP-X VALUE 0.
+       01 X2 PIC XX COMP-X VALUE 0.
+       01 N1 PIC 9(4) COMP-5 VALUE 0.
+       01 N2 PIC 9(4) COMP-5 VALUE 0.
+       PROCEDURE DIVISION.
+           MOVE  x#0A TO X2.
+           DISPLAY "Using PIC XX COMP-X"
+           COMPUTE X1 = (x#22 B-LEFT x#05).
+           DISPLAY " x#22 B-LEFT  x#05   is " X1.
+           COMPUTE X1 = (x#22 B-RIGHT x#02).
+           DISPLAY " x#22 B-RIGHT x#02   is " X1.
+           COMPUTE X1 = (x#22 B-SHIFT-L x#05).
+           DISPLAY " x#22 B-SHIFT-L x#05 is " X1.
+           COMPUTE X1 = (x#22 B-SHIFT-R x#02).
+           DISPLAY " x#22 B-SHIFT-R x#02 is " X1.
+           COMPUTE X1 = (X2 B-LEFT x#05).
+           DISPLAY X2 " B-LEFT  x#05   is " X1.
+           COMPUTE X1 = (X2 B-RIGHT x#02).
+           DISPLAY X2 " B-RIGHT x#02   is " X1.
+           MOVE  x#7573 TO X2.
+           COMPUTE X1 = (X2 B-SHIFT-LC 4).
+           DISPLAY X2 " B-SHIFT-LC 4   is " X1.
+           COMPUTE X1 = (X2 B-SHIFT-RC 4).
+           DISPLAY X2 " B-SHIFT-RC 4   is " X1.
+
+           MOVE  10 TO N2.
+           DISPLAY "Using PIC 9(4) COMP-5"
+           COMPUTE N1 = (x#22 B-LEFT x#05).
+           DISPLAY " x#22 B-LEFT  x#05   is " N1.
+           COMPUTE N1 = (x#22 B-RIGHT x#02).
+           DISPLAY " x#22 B-RIGHT x#02   is " N1.
+           COMPUTE N1 = (x#22 B-SHIFT-L x#05).
+           DISPLAY " x#22 B-SHIFT-L x#05 is " N1.
+           COMPUTE N1 = (x#22 B-SHIFT-R x#02).
+           DISPLAY " x#22 B-SHIFT-R x#02 is " N1.
+           COMPUTE N1 = (N2 B-LEFT x#05).
+           DISPLAY N2 " B-LEFT  x#05   is " N1.
+           COMPUTE N1 = (N2 B-RIGHT x#02).
+           DISPLAY N2 " B-RIGHT x#02   is " N1.
+           STOP RUN.
+])
+
+AT_CHECK([$COBC -x -std=mf -w prog.cob ], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [Using PIC XX COMP-X
+ x#22 B-LEFT  x#05   is 01088
+ x#22 B-RIGHT x#02   is 00008
+ x#22 B-SHIFT-L x#05 is 01088
+ x#22 B-SHIFT-R x#02 is 00008
+00010 B-LEFT  x#05   is 00320
+00010 B-RIGHT x#02   is 00002
+30067 B-SHIFT-LC 4   is 22327
+30067 B-SHIFT-RC 4   is 14167
+Using PIC 9(4) COMP-5
+ x#22 B-LEFT  x#05   is 01088
+ x#22 B-RIGHT x#02   is 00008
+ x#22 B-SHIFT-L x#05 is 01088
+ x#22 B-SHIFT-R x#02 is 00008
+00010 B-LEFT  x#05   is 00320
+00010 B-RIGHT x#02   is 00002
+], [])
+
+AT_CLEANUP
+

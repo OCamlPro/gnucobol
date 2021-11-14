@@ -1,4 +1,13 @@
 
+2021-11-14  Ron Norman <rjn@inglenet.com>
+
+	* reserved.c: Add bit-wise words B-AND, B-NOT, B-OR, B-SHIFT-L, B-SHIFT-R
+				B-XOR, B-SHIFT-LC, B-SHIFT-RC
+	* parser.y: Add grammar for handling the BIT-WISE operations
+	* typeck.c: Add checks for handling the BIT-WISE operations
+	* tree.c: Add checks for handling the BIT-WISE operations
+	* codegen.c: Add code emission for the BIT-WISE operations
+
 2021-11-10  Ron Norman <rjn@inglenet.com>
 
 	* cobc.c: Init cb_mf_files to 0

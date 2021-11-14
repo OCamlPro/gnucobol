@@ -2694,3 +2694,60 @@ cob_init_numeric (cob_global *lptr)
 		cob_decimal_init (d1);
 	}
 }
+
+/* BIT-WISE functions */
+void
+cob_logical_not (cob_decimal *d0, cob_decimal *d1)
+{
+	cob_decimal_set_ullint (d0, ~ mpz_get_ui (d1->value));
+}
+
+void
+cob_logical_or (cob_decimal *d0, cob_decimal *d1)
+{
+	cob_decimal_set_ullint (d0, mpz_get_ui (d0->value) | mpz_get_ui (d1->value));
+}
+
+void
+cob_logical_and (cob_decimal *d0, cob_decimal *d1)
+{
+	cob_decimal_set_ullint (d0, mpz_get_ui (d0->value) & mpz_get_ui (d1->value));
+}
+
+void
+cob_logical_xor (cob_decimal *d0, cob_decimal *d1)
+{
+	cob_decimal_set_ullint (d0, mpz_get_ui (d0->value) ^ mpz_get_ui (d1->value));
+}
+
+void
+cob_logical_left (cob_decimal *d0, cob_decimal *d1)
+{
+	cob_decimal_set_ullint (d0, mpz_get_ui (d0->value) << mpz_get_ui (d1->value));
+}
+
+void
+cob_logical_right (cob_decimal *d0, cob_decimal *d1)
+{
+	cob_decimal_set_ullint (d0, mpz_get_ui (d0->value) >> mpz_get_ui (d1->value));
+}
+
+void			/* Circulare LEFT shift */
+cob_logical_left_c (cob_decimal *d0, cob_decimal *d1, int bytes)
+{
+	cob_u64_t	u0, u1, ur; 
+	u0 = mpz_get_ui (d0->value);
+	u1 = mpz_get_ui (d1->value);
+	ur = (u0 << u1) | (u0 >> (bytes*8 - u1));
+	cob_decimal_set_ullint (d0, ur);
+}
+
+void			/* Circulare RIGHT shift */
+cob_logical_right_c (cob_decimal *d0, cob_decimal *d1, int bytes)
+{
+	cob_u64_t	u0, u1, ur; 
+	u0 = mpz_get_ui (d0->value);
+	u1 = mpz_get_ui (d1->value);
+	ur = (u0 >> u1) | (u0 << (bytes*8 - u1));
+	cob_decimal_set_ullint (d0, ur);
+}
