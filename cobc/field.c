@@ -2100,8 +2100,8 @@ validate_elementary_item (struct cb_field *f)
 	 && f->pic
 	 && f->pic->category == CB_CATEGORY_NUMERIC) {
 		cb_tree x;
-		cob_pic_symbol	*pstr;
-		int		n;
+		cob_pic_symbol	*pstr = NULL;
+		int		n = 0;
 		/* Reconstruct the picture string */
 		if (f->pic->scale > 0) {
 			/* Size for genned string */
