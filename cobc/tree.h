@@ -961,6 +961,7 @@ struct cb_field {
 	unsigned int flag_set_col_offset: 1;	/* offset was set based on COLUMN */
 
 	unsigned int flag_is_typedef : 1;	/* TYPEDEF  */
+	unsigned int flag_occurs_values: 1;	/* OCCURS and multi VALUEs done */
 
 };
 

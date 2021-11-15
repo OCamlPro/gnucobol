@@ -5656,6 +5656,51 @@ output_initialize_one (struct cb_initialize *p, cb_tree x)
 	}
 }
 
+/*
+ * If OCCURS field hs multiple VALUEs then init each occurence
+ */
+static void
+output_initialize_occurs (struct cb_initialize *p, cb_tree x)
+{
+	struct cb_field		*f;
+	cb_tree		value, list;
+	cb_tree		l;
+	int			i, offset, occ;
+
+	f = cb_code_field (x);
+	if (f->flag_occurs 
+	 && CB_CHAIN (f->values)
+	 && f->children == NULL) {
+		list = f->values;
+		offset = f->offset;
+		occ = f->occurs_max;
+		i = 0;
+		f->flag_occurs = 0;
+		f->occurs_max = 0;
+		for (l = list; l && i < occ; l = CB_CHAIN (l)) {
+			f->values = l;
+			output_initialize_one (p, x);	/* Init with each value */
+			f->offset += f->size;
+			i++;
+		}
+		while (i < occ) {					/* Clear any remainder */
+			if (f->usage == CB_USAGE_DISPLAY)
+				output_move (cb_space, x);
+			else
+				output_move (cb_zero, x);
+			f->offset += f->size;
+			i++;
+		}
+		f->values = list;
+		f->offset = offset;
+		f->flag_occurs = 1;
+		f->occurs_max = occ;
+		f->flag_occurs_values = 1;
+	} else {
+		output_initialize_one (p, x);
+	}
+}
+
 static void
 output_initialize_compound (struct cb_initialize *p, cb_tree x)
 {
@@ -5729,7 +5774,7 @@ output_initialize_compound (struct cb_initialize *p, cb_tree x)
 				ref->check = NULL;
 				ref->subs = CB_BUILD_CHAIN (cb_int1, ref->subs);
 				if (type == INITIALIZE_ONE) {
-					output_initialize_one (p, c);
+					output_initialize_occurs (p, c);
 				} else {
 					ref->length = NULL;
 					output_initialize_compound (p, c);
@@ -5740,7 +5785,8 @@ output_initialize_compound (struct cb_initialize *p, cb_tree x)
 				ref->check = NULL;
 				ref->length = NULL;
 
-				propagate_table (c);
+				if (!f->flag_occurs_values)
+					propagate_table (c);
 
 				/* restore previous exception-checks for the reference */
 				ref->check = save_check;
@@ -5769,7 +5815,7 @@ output_initialize (struct cb_initialize *p)
 		case INITIALIZE_NONE:
 			return;
 		case INITIALIZE_ONE:
-			output_initialize_one (p, p->var);
+			output_initialize_occurs (p, p->var);
 			output_initialize_chaining (f, p);
 			return;
 		case INITIALIZE_DEFAULT:
@@ -5812,7 +5858,7 @@ output_initialize (struct cb_initialize *p)
 	case INITIALIZE_NONE:
 		return;
 	case INITIALIZE_ONE:
-		output_initialize_one (p, p->var);
+		output_initialize_occurs (p, p->var);
 		output_initialize_chaining (f, p);
 		return;
 	case INITIALIZE_DEFAULT:

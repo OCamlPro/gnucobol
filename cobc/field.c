@@ -1647,7 +1647,9 @@ validate_elem_value (const struct cb_field * const f)
 	const struct cb_field	*p;
 
 	if (CB_PAIR_P (CB_VALUE (f->values)) || CB_CHAIN (f->values)) {
-		cb_error_x (x, _("only level 88 items may have multiple values"));
+		if (!f->flag_occurs
+		 || f->children)
+			cb_error_x (x, _("only level 88 items may have multiple values"));
 	}
 
 	/* ISO+IEC+1989-2002: 13.16.42.2-10 */
