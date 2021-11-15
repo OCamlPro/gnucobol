@@ -1,4 +1,9 @@
 
+2021-11-14  Ron Norman <rjn@inglenet.com>
+
+	* mf.words: Add MF specific names B-EXOR, B-LEFT, B-RIGHT for bit
+			operations
+
 2021-10-19  Simon Sobisch <simonsobisch@gnu.org>
 
 	* general: changed larger-redefines-ok (boolean) to larger-redefines,

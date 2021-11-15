@@ -5276,6 +5276,7 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 }
 
 /* Expression */
+static int rel_bin_op = 0;
 
 static enum cb_warn_opt
 get_warnopt_for_constant (cb_tree x, cb_tree y)
@@ -5435,7 +5436,89 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 					break;
 				}
 			}
+		} else
+		if (cb_constant_folding
+		 && CB_NUMERIC_LITERAL_P(y)) {
+			yl = CB_LITERAL(y);
+			if (yl->scale == 0) {
+				yval = atoll((const char*)yl->data);
+				if ((op == '+' || op == '-') 
+		 		 && !rel_bin_op 
+				 && yval == 0) {		/* + or - ZERO does nothing */
+					return x;
+				}
+				if ((op == '*' || op == '/') 
+				 && yval == 1
+				 && yl->sign != -1) {	/* * or / by ONE does nothing */
+					return x;
+				}
+				if (op == '*'
+				 && yval == 0) {		/* * ZERO is ZERO */
+					return cb_zero_lit;
+				}
+			}
 		}
+		rel_bin_op = 0;
+		category = CB_CATEGORY_NUMERIC;
+		break;
+
+	case 'n':
+	case 'c':
+	case 'd':
+		rel_bin_op = 0;
+		category = CB_CATEGORY_NUMERIC;
+		break;
+
+	case 'a':
+	case 'o':
+	case 'e':
+	case 'l':
+	case 'r':
+		/* Bit-wise operators */
+		x = cb_check_numeric_value (x);
+		y = cb_check_numeric_value (y);
+		if (x == cb_error_node || y == cb_error_node) {
+			return cb_error_node;
+		}
+		if ((CB_REF_OR_FIELD_P (x)) 
+		 && !(CB_FIELD_PTR (x)->usage == CB_USAGE_COMP_5
+		  || CB_FIELD_PTR (x)->usage == CB_USAGE_COMP_X)) {
+			cb_error_x (CB_TREE(current_statement), 
+					_("%s should be COMP-X/COMP-5 for logical operator"), CB_FIELD_PTR (x)->name);
+			return cb_error_node;
+		}
+		if ((CB_REF_OR_FIELD_P (y)) 
+		 && !(CB_FIELD_PTR (y)->usage == CB_USAGE_COMP_5
+		  || CB_FIELD_PTR (y)->usage == CB_USAGE_COMP_X)) {
+			cb_error_x (CB_TREE(current_statement), 
+					_("%s should be COMP-X/COMP-5 for logical operator"), CB_FIELD_PTR (y)->name);
+			return cb_error_node;
+		}
+		if (cb_constant_folding
+		&&  CB_NUMERIC_LITERAL_P(x)
+		&&  CB_NUMERIC_LITERAL_P(y)) {
+			xl = CB_LITERAL(x);
+			yl = CB_LITERAL(y);
+			if (xl->scale == 0
+			&& yl->scale == 0) {
+				xval = atoll((const char*)xl->data);
+				if(xl->sign == -1) xval = -xval;
+				yval = atoll((const char*)yl->data);
+				if(yl->sign == -1) yval = -yval;
+				if (op == 'a')
+					sprintf (result, CB_FMT_LLD, xval & yval);
+				else if (op == 'o')
+					sprintf (result, CB_FMT_LLD, xval | yval);
+				else if (op == 'e')
+					sprintf (result, CB_FMT_LLD, xval ^ yval);
+				else if (op == 'l')
+					sprintf (result, CB_FMT_LLD, xval << yval);
+				else if (op == 'r')
+					sprintf (result, CB_FMT_LLD, xval >> yval);
+				return cb_build_numeric_literal (0, result, 0);
+			}
+		}
+		rel_bin_op = 0;
 		category = CB_CATEGORY_NUMERIC;
 		break;
 
@@ -5446,6 +5529,7 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 	case '[':
 	case ']':
 		/* Relational operators */
+		rel_bin_op = 1;
 		if ((CB_REF_OR_FIELD_P (x)) &&
 		    CB_FIELD_PTR (x)->level == 88) {
 			cb_error_x (e, _("invalid expression"));
@@ -5658,6 +5742,7 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 	case '&':
 	case '|':
 		/* Logical operators */
+		rel_bin_op = 1;
 		if (CB_TREE_CLASS (x) != CB_CLASS_BOOLEAN
 		 || (y && CB_TREE_CLASS (y) != CB_CLASS_BOOLEAN)) {
 			copy_file_line (e, y, x);

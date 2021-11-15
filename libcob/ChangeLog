@@ -1,4 +1,10 @@
 
+2021-11-14  Ron Norman <rjn@inglenet.com>
+
+	Implement FR #235: add bitwise operators for numeric items
+	* numeric.c, common.h: new cob_logical_xxx functions for bitwise operations
+	* intrinsic.c (cob_intr_binop): add code for bitwise operations
+
 2021-11-05  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_allocate): fixed check for maximum size to work as

@@ -2868,6 +2868,10 @@ output_integer (cb_tree x)
 			output (", ");
 			output_integer (p->y);
 			output (")");
+		} else if (p->op == 'n') {
+			output (" ~ (");
+			output_integer (p->y);
+			output (")");
 		} else {
 			output ("(");
 #ifdef	COB_NON_ALIGNED
@@ -2884,7 +2888,18 @@ output_integer (cb_tree x)
 			}
 #endif
 			output_integer (p->x);
-			output (" %c ", p->op);
+			if (p->op == 'a')
+				output (" & ");
+			else if (p->op == 'o')
+				output (" | ");
+			else if (p->op == 'e')
+				output (" ^ ");
+			else if (p->op == 'l')
+				output (" << ");
+			else if (p->op == 'r')
+				output (" >> ");
+			else
+				output (" %c ", p->op);
 #ifdef	COB_NON_ALIGNED
 			if (CB_TREE_TAG (p->y) == CB_TAG_REFERENCE
 			 && p->y != cb_null) {

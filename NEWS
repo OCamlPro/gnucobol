@@ -17,6 +17,8 @@ NEWS - user visible changes				-*- outline -*-
 
 ** Support of COBOL 202x directive COBOL-WORDS
 
+** Support of bit operations according to COBOL 202x with MF compatibility
+
 ** Support of additional $SET directives: ODOSLIDE
 
 * Changes that potentially effects recompilation of existing programs:

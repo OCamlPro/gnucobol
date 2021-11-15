@@ -1907,6 +1907,14 @@ COB_EXPIMP void	cob_decimal_div		(cob_decimal *, cob_decimal *);
 COB_EXPIMP void	cob_decimal_pow		(cob_decimal *, cob_decimal *);
 COB_EXPIMP int	cob_decimal_cmp		(cob_decimal *, cob_decimal *);
 COB_EXPIMP void	cob_decimal_align(cob_decimal *, const int);
+COB_EXPIMP void cob_logical_not (cob_decimal *d0, cob_decimal *d1);
+COB_EXPIMP void cob_logical_and (cob_decimal *d0, cob_decimal *d1);
+COB_EXPIMP void cob_logical_xor (cob_decimal *d0, cob_decimal *d1);
+COB_EXPIMP void cob_logical_or  (cob_decimal *d0, cob_decimal *d1);
+COB_EXPIMP void cob_logical_left  (cob_decimal *d0, cob_decimal *d1);
+COB_EXPIMP void cob_logical_right (cob_decimal *d0, cob_decimal *d1);
+COB_EXPIMP void cob_logical_left_c  (cob_decimal *d0, cob_decimal *d1, int sz);
+COB_EXPIMP void cob_logical_right_c (cob_decimal *d0, cob_decimal *d1, int sz);
 #endif
 
 COB_EXPIMP void	cob_add			(cob_field *, cob_field *, const int);

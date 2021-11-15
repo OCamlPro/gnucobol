@@ -115,6 +115,7 @@ static cb_tree			expr_lh;		/* Last left hand */
 static int			expr_dmax = -1;		/* Max scale for expression result */
 #define MAX_NESTED_EXPR	64
 static cb_tree			expr_x = NULL;
+static cb_tree		sz_shift;
 static int			expr_dec_align = -1;
 static int			expr_nest = 0;
 static int			expr_decp[MAX_NESTED_EXPR];
@@ -142,6 +143,14 @@ static const unsigned char	expr_prio[256] = {
 	['/'] = 2,
 	['+'] = 3,
 	['-'] = 3,
+	['a'] = 3,	/* B-AND */
+	['n'] = 3,	/* B-NOT */
+	['o'] = 3,	/* B-OR */
+	['e'] = 3,	/* B-XOR */
+	['l'] = 3,	/* B-LEFT */
+	['r'] = 3,	/* B-RIGHT */
+	['c'] = 3,	/* B-SHIFT-LC */
+	['d'] = 3,	/* B-SHIFT-RC */
 	['='] = 4,
 	['~'] = 4,
 	['<'] = 4,
@@ -481,6 +490,277 @@ static void cb_walk_cond		(cb_tree);
 static int	cb_check_move		(cb_tree, cb_tree, const int);
 static int	cb_check_set_to		(cb_tree, cb_tree, const int);
 static int	cb_check_arithmetic	(cb_tree, cb_tree, const int);
+
+#if 0 /* TODO: merge of fast math */
+static int cb_is_integer_expr (cb_tree x);
+
+/*
+ * Is the field 'native' binary (short/int/long)
+ * and aligned on memory address suitable for direct use
+ */
+static int
+cb_is_integer_field (struct cb_field *f)
+{
+#if 0 /* CHECKME: should this depend on this flag? */
+	if (!cb_flag_fast_math)
+		return 0;
+#endif
+	if (f->flag_sign_clause
+	 || f->flag_blank_zero
+	 || f->flag_any_numeric
+	 || f->indexes != 0
+	 || !f->pic
+	 || f->pic->scale != 0)
+		return 0;
+	if (f->usage == CB_USAGE_DISPLAY
+	 && f->size < 16)
+		return 1;
+	if (f->usage == CB_USAGE_COMP_X
+	 && f->size == 1)
+		return 1;
+	if (f->usage == CB_USAGE_BINARY
+	 && cb_binary_truncate)
+		return 0;
+#ifdef WORDS_BIGENDIAN
+	if (f->usage != CB_USAGE_COMP_5
+	 && f->usage != CB_USAGE_DISPLAY
+	 && f->usage != CB_USAGE_BINARY
+	 && f->usage != CB_USAGE_COMP_X)
+		return 0;
+#else
+	if (f->usage != CB_USAGE_COMP_5
+	 && f->usage != CB_USAGE_BINARY
+	 && f->usage != CB_USAGE_DISPLAY)
+		return 0;
+#endif
+	if (f->storage == CB_STORAGE_WORKING
+#ifdef	COB_SHORT_BORK
+	 && (f->size == 4 || f->size == 8 || f->size == 1)
+#else
+	 && (f->size == 2 || f->size == 4 || f->size == 8 || f->size == 1)
+#endif
+#if !defined(COB_ALLOW_UNALIGNED)
+	 && (f->offset % f->size) == 0
+#endif
+	 ) {
+		return 1;
+	}
+	return 0;
+}
+
+/*
+ * Is the field 'native' binary (short/int/long) or comp-x
+ */
+static int
+cb_is_compx_field (struct cb_field *f)
+{
+	if (f->usage == CB_USAGE_COMP_5
+	 || f->usage == CB_USAGE_COMP_X)
+		return 1;
+	cb_error_x (CB_TREE(current_statement), _("%s should be COMP-5/COMP-X for logical operator"), f->name);
+	return 0;
+}
+
+/*
+ * Is this an 'compx' value or expression
+ */
+static int
+cb_is_compx_expr (cb_tree x)
+{
+	struct cb_binary_op	*p;
+	cb_tree	y;
+	if (!cb_flag_fast_math)
+		return 0;
+	if (current_statement
+	 && (current_statement->ex_handler
+	  || current_statement->not_ex_handler
+	  || current_statement->handler_type != NO_HANDLER))
+		return 0;
+	if (CB_REFERENCE_P (x)) {
+		y = cb_ref (x);
+		if (y == cb_error_node) {
+			return 0;
+		}
+		if (CB_FIELD_P (y))
+			return cb_is_compx_field (CB_FIELD_PTR (y));
+		return 0;
+	}
+	if (CB_FIELD_P (x)) {
+		return cb_is_compx_field (CB_FIELD_PTR (x));
+	}
+	if (CB_BINARY_OP_P (x)) {
+		p = CB_BINARY_OP (x);
+		if (p->op == '+'
+		 || p->op == '-'
+		 || p->op == '*') {
+			if (cb_is_integer_expr (p->x)
+			 && cb_is_integer_expr (p->y))
+				return 1;
+		}
+		if (p->op == '='
+		 || p->op == '>'
+		 || p->op == '<'
+		 || p->op == ']'
+		 || p->op == '['
+		 || p->op == '~'
+		 || p->op == '('
+		 || p->op == ')'
+		 || p->op == '@') {
+			if (CB_NUMERIC_LITERAL_P (p->x)
+			 && (CB_NUMERIC_LITERAL_P (p->y) || CB_BINARY_OP_P (p->y)))
+				return 0;
+			if (CB_NUMERIC_LITERAL_P (p->y)
+			 && (CB_NUMERIC_LITERAL_P (p->x) || CB_BINARY_OP_P (p->x)))
+				return 0;
+			if (p->x
+			 && !cb_is_integer_expr (p->x))
+				return 0;
+			if (p->y
+			 && !cb_is_integer_expr (p->y))
+				return 0;
+			return 1;
+		}
+		if (p->op == 'a'
+		 || p->op == 'o'
+		 || p->op == 'e'
+		 || p->op == 'c'
+		 || p->op == 'd'
+		 || p->op == 'l'
+		 || p->op == 'r') {	/* BIT-WISE */
+			if (p->x
+			 && !cb_is_compx_expr (p->x))
+				return 0;
+			if (p->y
+			 && !cb_is_compx_expr (p->y))
+				return 0;
+			return 1;
+		}
+		if (p->op == 'n') {	/* BIT-WISE */
+			if (cb_is_compx_expr (p->y))
+				return 1;
+		}
+	}
+	if (CB_NUMERIC_LITERAL_P (x))
+		return 1;
+	return 0;
+}
+
+/*
+ * Is this an 'integer' value or expression
+ */
+static int
+cb_is_integer_expr (cb_tree x)
+{
+	struct cb_binary_op	*p;
+	cb_tree	y;
+	if (!cb_flag_fast_math)
+		return 0;
+	if (current_statement
+	 && (current_statement->ex_handler
+	  || current_statement->not_ex_handler
+	  || current_statement->handler_type != NO_HANDLER))
+		return 0;
+	if (CB_REFERENCE_P (x)) {
+		y = cb_ref (x);
+		if (y == cb_error_node) {
+			return 0;
+		}
+		if (CB_FIELD_P (y))
+			return cb_is_integer_field (CB_FIELD_PTR (y));
+		return 0;
+	}
+	if (CB_FIELD_P (x)) {
+		return cb_is_integer_field (CB_FIELD_PTR (x));
+	}
+	if (CB_NUMERIC_LITERAL_P (x)) {
+		if (CB_LITERAL (x)->scale == 0
+		 && cb_fits_int (x))
+			return 1;
+		return 0;
+	}
+	if (CB_BINARY_OP_P (x)) {
+		p = CB_BINARY_OP (x);
+		if (p->op == '+'
+		 || p->op == '-'
+		 || p->op == '*') {
+			if (cb_is_integer_expr (p->x)
+			 && cb_is_integer_expr (p->y))
+				return 1;
+		}
+		if (p->op == '='
+		 || p->op == '>'
+		 || p->op == '<'
+		 || p->op == ']'
+		 || p->op == '['
+		 || p->op == '~'
+		 || p->op == '('
+		 || p->op == ')'
+		 || p->op == '@') {
+			if (CB_NUMERIC_LITERAL_P (p->x)
+			 && (CB_NUMERIC_LITERAL_P (p->y) || CB_BINARY_OP_P (p->y)))
+				return 0;
+			if (CB_NUMERIC_LITERAL_P (p->y)
+			 && (CB_NUMERIC_LITERAL_P (p->x) || CB_BINARY_OP_P (p->x)))
+				return 0;
+			if (p->x
+			 && !cb_is_integer_expr (p->x))
+				return 0;
+			if (p->y
+			 && !cb_is_integer_expr (p->y))
+				return 0;
+			return 1;
+		}
+		if (p->op == 'a'
+		 || p->op == 'o'
+		 || p->op == 'e'
+		 || p->op == 'l'
+		 || p->op == 'r') {	/* BIT-WISE */
+			if (CB_NUMERIC_LITERAL_P (p->x)
+			 && (CB_NUMERIC_LITERAL_P (p->y) || CB_BINARY_OP_P (p->y))) {
+				return 1;
+			}
+			if (CB_NUMERIC_LITERAL_P (p->y)
+			 && (CB_NUMERIC_LITERAL_P (p->x) || CB_BINARY_OP_P (p->x))) {
+				return 1;
+			}
+			if (p->x
+			 && !cb_is_compx_expr (p->x))
+				return 0;
+			if (p->y
+			 && !cb_is_compx_expr (p->y))
+				return 0;
+			return 1;
+		}
+		if (p->op == 'n') {	/* BIT-WISE NOT */
+			if (p->y
+			 && !cb_is_compx_expr (p->y))
+				return 0;
+			return 1;
+		}
+	}
+	return 0;
+}
+
+/*
+ * Is field an aligned binary and 'n' is either integer
+ * or another aligned binary field
+ */
+static int
+cb_is_integer_field_and_int (struct cb_field *f, cb_tree n)
+{
+	if (!cb_is_integer_field (f))
+		return 0;
+	if (CB_NUMERIC_LITERAL_P (n)) {
+	 	if (CB_LITERAL (n)->scale == 0
+		 && CB_LITERAL (n)->sign
+		 && cb_fits_int (n)
+		 && f->pic->have_sign == 0)
+			return 0;
+		return 1;
+	}
+	return cb_is_integer_expr (n);
+}
+#endif
 
 static cb_tree
 cb_check_needs_break (cb_tree stmt)
@@ -4656,6 +4936,7 @@ expr_reduce (int token)
 		case 'x':
 			return 0;
 
+		case 'a': case 'o': case 'e': case 'l': case 'r': /* BIT-WISE */
 		case '+':
 		case '-':
 		case '*':
@@ -4670,6 +4951,7 @@ expr_reduce (int token)
 			expr_index -= 2;
 			break;
 
+		case 'n':  /* BIT-WISE */
 		case '!':
 			/* Negation: '!' 'x' */
 			if (TOKEN (-1) != 'x') {
@@ -5169,6 +5451,14 @@ explain_operator (const int op)
 		return "AND";
 	case '|':
 		return "OR";
+	case 'a':	return "B-AND";
+	case 'n':	return "B-NOT";
+	case 'o':	return "B-OR";
+	case 'e':	return "B-XOR";
+	case 'l':	return "B-SHIFT-L";
+	case 'r':	return "B-SHIFT-R";
+	case 'c':	return "B-SHIFT-LC";
+	case 'd':	return "B-SHIFT-RC";
 	default:
 		return NULL;
 	}
@@ -5369,6 +5659,30 @@ decimal_compute (const int op, cb_tree x, cb_tree y)
 	case '^':
 		func = "cob_decimal_pow";
 		break;
+	case 'n':
+		func = "cob_logical_not";
+		break;
+	case 'a':
+		func = "cob_logical_and";
+		break;
+	case 'o':
+		func = "cob_logical_or";
+		break;
+	case 'e':
+		func = "cob_logical_xor";
+		break;
+	case 'l':
+		func = "cob_logical_left";
+		break;
+	case 'r':
+		func = "cob_logical_right";
+		break;
+	case 'c':
+		func = "cob_logical_left_c";
+		break;
+	case 'd':
+		func = "cob_logical_right_c";
+		break;
 	default:
 		func = explain_operator (op);
 		/* LCOV_EXCL_START */
@@ -5412,11 +5726,17 @@ decimal_compute (const int op, cb_tree x, cb_tree y)
 				expr_decp [expr_nest-1] = expr_decp [expr_nest-1] - expr_decp [expr_nest];
 			}
 			break;
+		default:
+			break;
 		}
 		decp = expr_decp [expr_nest-1];
 	}
 
-	dpush (CB_BUILD_FUNCALL_2 (func, x, y));
+	if (op == 'c' || op == 'd') {
+		dpush (CB_BUILD_FUNCALL_3 (func, x, y, sz_shift));
+	} else {
+		dpush (CB_BUILD_FUNCALL_2 (func, x, y));
+	}
 
 	/* Save for later decimal_align */
 	if (cb_arithmetic_osvs) {
@@ -5516,6 +5836,12 @@ decimal_expand (cb_tree d, cb_tree x)
 		 * Set t, Y
 		 * OP d, t */
 		p = CB_BINARY_OP (x);
+		if ((p->op == 'c' || p->op == 'd')		/* Circular Shift */
+		 && CB_REF_OR_FIELD_P (p->x)) {
+			sz_shift = cb_int (CB_FIELD_PTR (p->x)->size);
+		} else {
+			sz_shift = cb_int1;
+		}
 		decimal_expand (d, p->x);
 
 		if (CB_TREE_TAG (p->y) == CB_TAG_LITERAL
@@ -12811,6 +13137,14 @@ cobc_init_typeck (void)
 	expr_prio['/' & 0xFF] = 2;
 	expr_prio['+' & 0xFF] = 3;
 	expr_prio['-' & 0xFF] = 3;
+	expr_prio['a' & 0xFF] = 3;
+	expr_prio['n' & 0xFF] = 3;
+	expr_prio['o' & 0xFF] = 3;
+	expr_prio['e' & 0xFF] = 3;
+	expr_prio['l' & 0xFF] = 3;
+	expr_prio['r' & 0xFF] = 3;
+	expr_prio['c' & 0xFF] = 3;
+	expr_prio['d' & 0xFF] = 3;
 	expr_prio['=' & 0xFF] = 4;
 	expr_prio['~' & 0xFF] = 4;
 	expr_prio['<' & 0xFF] = 4;

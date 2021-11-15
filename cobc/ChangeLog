@@ -1,4 +1,13 @@
 
+2021-11-14  Ron Norman <rjn@inglenet.com>
+
+	Implement FR 235: add bitwise operators for numeric items
+	* reserved.c: Add bit-wise words B-AND, B-NOT, B-OR, B-SHIFT-L, B-SHIFT-R,
+	  B-XOR, B-SHIFT-LC, B-SHIFT-RC
+	* parser.y: Add grammar for handling bitwise operations
+	* typeck.c, tree.c: Add checks for handling the bitwise operations
+	* codegen.c: Add code emission for the bitwise operations
+
 2021-11-05  Simon Sobisch <simonsobisch@gnu.org>
 
 	* field.c (compute_size): adjusted check to correctly catch items bigger
