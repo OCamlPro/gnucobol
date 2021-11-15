@@ -499,3 +499,55 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
+
+AT_SETUP([OCCURS multi VALUEs])
+AT_KEYWORDS([Initialize])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION. 
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION. 
+       CONFIGURATION SECTION. 
+       DATA DIVISION. 
+       WORKING-STORAGE SECTION. 
+       
+       01  WS. 
+         05  IDX PIC 99.
+         05  MONTH-IN-YEAR OCCURS 13 TIMES PICTURE X(3)
+                         VALUE "Jan" "Feb" "Mar" "Apr"
+                               "May" "Jun" "Jul" "Aug"
+                               "Sep" "Oct" "Nov" "Dec".
+         05  DAYS-IN-MONTH OCCURS 13 TIMES PICTURE 9(2) BINARY 
+                         VALUE 31 28 31 30 31 30 31 31 30 31 30 31.
+       
+       PROCEDURE DIVISION.
+       
+       INIT-RTN. 
+           PERFORM VARYING IDX FROM 1 BY 1 UNTIL IDX > 13
+              DISPLAY IDX ": "
+                      MONTH-IN-YEAR (IDX) " has " 
+                      DAYS-IN-MONTH (IDX) " days"
+              END-DISPLAY
+           END-PERFORM.
+           STOP RUN.
+])
+
+AT_CHECK([$COBC -x -std=mf -w prog.cob ], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [01: Jan has 31 days
+02: Feb has 28 days
+03: Mar has 31 days
+04: Apr has 30 days
+05: May has 31 days
+06: Jun has 30 days
+07: Jul has 31 days
+08: Aug has 31 days
+09: Sep has 30 days
+10: Oct has 31 days
+11: Nov has 30 days
+12: Dec has 31 days
+13:     has 00 days
+], [])
+
+AT_CLEANUP
+
