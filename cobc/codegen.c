@@ -5669,8 +5669,9 @@ output_initialize_occurs (struct cb_initialize *p, cb_tree x)
 
 	f = cb_code_field (x);
 	if (f->flag_occurs 
-	 && CB_CHAIN (f->values)
-	 && f->children == NULL) {
+	 && f->children == NULL
+	 && f->values
+	 && CB_CHAIN (f->values)) {
 		list = f->values;
 		offset = f->offset;
 		occ = f->occurs_max;
