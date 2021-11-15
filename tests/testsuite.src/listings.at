@@ -2032,7 +2032,7 @@ AT_DATA([prog3.cob], [
 AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -fno-tsource -fno-tmessages -tsymbols prog3.cob], [0], [], [])
 
 AT_DATA([prog15-1.lst],
-[GnuCOBOL V.R.P          prog3.cob                  DDD MMM dd HH:MM:SS YYYY
+[GnuCOBOL V.R.P               prog3.cob                  DDD MMM dd HH:MM:SS YYYY
 
 SIZE  TYPE           LVL  NAME                           PICTURE
 
@@ -2055,14 +2055,14 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 
 ])
 
-AT_CHECK([gcdiff prog15-1.lst prog.lst], [0], [], [])
+AT_CHECK([gcdiff -IGnuCOBOL prog15-1.lst prog.lst], [0], [], [])
 
 # verify that the symbol listing is identical if full codegen was done
 AT_CHECK([$COMPILE -t prog.lst -tlines=0 -fno-tsource -fno-tmessages -tsymbols prog3.cob], [0], [], [])
 
 #AT_CHECK([$UNIFY_LISTING prog.lst compiled.lis], [0], [], [])
 #AT_CHECK([diff prog15-1.lst compiled.lis], [0], [], [])
-AT_CHECK([gcdiff prog15-1.lst prog.lst], [0], [], [])
+AT_CHECK([gcdiff -IGnuCOBOL prog15-1.lst prog.lst], [0], [], [])
 
 AT_CLEANUP
 
