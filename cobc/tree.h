@@ -934,6 +934,7 @@ struct cb_field {
 	unsigned int flag_sync_right : 1;	/* SYNCHRONIZED RIGHT */
 	unsigned int flag_internal_register	: 1;	/* Is an internally generated register */
 	unsigned int flag_is_typedef : 1;	/* TYPEDEF  */
+	unsigned int flag_occurs_values: 1;	/* OCCURS and multi VALUEs done */
 };
 
 #define CB_FIELD(x)		(CB_TREE_CAST (CB_TAG_FIELD, struct cb_field, x))

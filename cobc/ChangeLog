@@ -1,4 +1,11 @@
 
+2021-11-15  Ron Norman <rjn@inglenet.com>
+
+	FR #234: multiple VALUEs for OCCURS
+	* field.c (validate_elem_value): Accept multi VALUES for simple OCCURS
+	* tree.h: Add flag_occurs_values to cb_field
+	* codegen.c: Handle initialize of OCCURS with multiple VALUES
+
 2021-11-14  Ron Norman <rjn@inglenet.com>
 
 	Implement FR 235: add bitwise operators for numeric items
