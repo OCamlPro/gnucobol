@@ -1646,8 +1646,11 @@ validate_elem_value (const struct cb_field * const f)
 	const cb_tree		x = CB_TREE (f);
 	const struct cb_field	*p;
 
-	if (CB_PAIR_P (CB_VALUE (f->values)) || CB_CHAIN (f->values)) {
-		if (!f->flag_occurs
+	if (f->values != NULL
+	 && (CB_PAIR_P (CB_VALUE (f->values)) || CB_CHAIN (f->values))) {
+		for (p = f; p && !p->flag_occurs; p = p->parent);
+		if (p == NULL
+		 || !p->flag_occurs
 		 || f->children)
 			cb_error_x (x, _("only level 88 items may have multiple values"));
 	}
