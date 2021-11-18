@@ -489,6 +489,7 @@
 #define HAVE_FLOCKFILE 1
 #else
 /* #undef HAVE_FLOCKFILE */
+#endif
 
 /* Define to 1 if you have the `getexecname' function. */
 #if defined(__ORANGEC__)
