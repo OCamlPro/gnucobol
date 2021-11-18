@@ -82,7 +82,7 @@
 #if !defined(__BORLANDC__) && !defined(__WATCOMC__) && !defined(__ORANGEC__)
 #define	getcwd		_getcwd
 #define	chdir		_chdir
-#define	mkdir		_mkdir
+#define	mkdir(path,mode)		_mkdir(path)
 #define	rmdir		_rmdir
 #define	open		_open
 #define	close		_close

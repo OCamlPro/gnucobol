@@ -4,6 +4,15 @@
 	* ar-lib: added from
 	  https://git.savannah.gnu.org/cgit/gnulib.git/tree/build-aux/
 
+2020-11-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* pre-inst-env.in: added prefix
+
+2020-11-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* create_win_dist.sh: removed obsolete defaults.h
+	* pre-inst-env.in: exec_prefix as exec_prefix
+
 2020-10-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* create_mingw_bindist.sh: completely revised, now also copying

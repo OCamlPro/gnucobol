@@ -19,7 +19,15 @@
 # You should have received a copy of the GNU General Public License
 # along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 
+lib_LTLIBRARIES = libcob.la
+libcob_la_SOURCES = common.c move.c numeric.c strings.c \
+	fileio.c call.c intrinsic.c termio.c screenio.c reportio.c cobgetopt.c \
+	mlio.c
 
+if LOCAL_CJSON
+nodist_libcob_la_SOURCES = cJSON.c
+DISTCLEANFILES = cJSON.c cJSON.h
+endif
 
 #ToDo Man Page
 #dist_man_MANS = libcob.3
@@ -35,8 +43,8 @@ libcob_la_SOURCES = common.c move.c numeric.c strings.c \
 	fileio.c fextfh.c focextfh.c  mlio.c fisam.c \
 	call.c cobcapi.c intrinsic.c termio.c screenio.c reportio.c cobgetopt.c 
 
-libcob_la_LIBADD = $(LIBCOB_LIBS) $(top_builddir)/lib/libsupport.a \
-	$(CODE_COVERAGE_LIBS)
+# note: currently misses libsupport...
+libcob_la_LIBADD = $(LIBCOB_LIBS) $(CODE_COVERAGE_LIBS)
 libcob_la_LDFLAGS = $(AM_LDFLAGS) -version-info 5:0:0
 
 INDEXED_LD_FLAGS = -version-info 1:0:0

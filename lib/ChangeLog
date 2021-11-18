@@ -1,7 +1,7 @@
 
 2020-09-30  Simon Sobisch <simonsobisch@gnu.org>
 
-	* Makefile.am [LOCAL_CJSON]: moved from "libcob"
+	* Makefile.am: libtoolized libsupport
 
 2017-10-22  Simon Sobisch <simonsobisch@gnu.org>
 

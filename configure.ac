@@ -430,10 +430,6 @@ AC_DEFUN([AC_PROG_CXX], [])
 AC_PROG_LN_S
 AC_PROG_INSTALL
 
-# AC_LIBTOOL_DLOPEN
-# AC_LIBTOOL_WIN32_DLL
-# AC_PROG_LIBTOOL
-
 AC_PROG_MAKE_SET
 AC_LIB_RPATH
 
@@ -566,12 +562,35 @@ if test "x$COB_CC" = "x"; then
 	COB_CC="$CC"
 fi
 
-dnl FIXME: -lm should only be used if needed (which it often is not), see Bug #559
-if test "$COB_USES_ICC_ONLY" = "yes"; then
-	COMMON_LIBS="-limf -lm"
-else
-	COMMON_LIBS="-lm"
-fi
+
+dnl until shown otherwise the math checks are not needed currently as all
+dnl "real" compute functions are used from GMP within libcob only
+dnl and math.h is nowhere included
+dnl # Get necessary math libs, if any (often part of the C library)
+dnl AC_MSG_NOTICE([Checks for math library ...])
+dnl if test "x$MATH_LIBS" = "x"; then
+dnl 	if test "$COB_USES_ICC_ONLY" = "yes"; then
+dnl 		MATH_LIBS="-limf -lm"
+dnl 	else
+dnl 		curr_libs=$LIBS
+dnl 		AC_SEARCH_LIBS([cos], [m], [], [
+dnl 		  AC_MSG_ERROR([unable to find the cos() function])
+dnl 		])
+dnl 		if test "x$curr_libs" = "x"; then
+dnl 			MATH_LIBS=$LIBS
+dnl 		else
+dnl 			MATH_LIBS=$(echo "$LIBS" | sed 's#'"$curr_libs"'##')
+dnl 		fi
+dnl 		LIBS=$curr_libs
+dnl 	fi
+dnl fi
+dnl if test "x$MATH_LIBS" = "x"; then
+dnl 	AC_MSG_NOTICE([none needed])
+dnl else
+dnl 	AC_MSG_NOTICE([using $MATH_LIBS])
+dnl fi
+dnl COMMON_LIBS=MATH_LIBS
+
 if test "x$LIBCOB_LIBS" != "x"; then
 	LIBCOB_LIBS="$LIBCOB_LIBS $COMMON_LIBS"
 else
@@ -875,7 +894,7 @@ AC_ARG_WITH([json],
 		AC_MSG_ERROR([invalid value "$with_json" for --with-json,
   must be one of the following:
   cjson, json-c  (use only the specified library)
-  local  (use cjson source included in lib)
+  local  (use cjson source included in libcob)
   check  (use whatever json library is usable, disable if no one usable)
   no  (disable json usage)])
 		;;
@@ -887,9 +906,9 @@ AS_IF([test "$USE_JSON" = "cjson" -o "$USE_JSON" = "local" -o "$USE_JSON" = "che
 	AC_MSG_NOTICE([Checks for local cJSON ...])
 	curr_libs="$LIBS"; curr_cppflags="$CPPFLAGS"
 	with_cjson_local=no
-	AC_CHECK_FILE([./lib/cJSON.c],
-	  [AC_MSG_CHECKING([if linking of ./lib/cJSON.c works])
-	   CPPFLAGS="$curr_cppflags -I./lib"
+	AS_IF([test -e ./libcob/cJSON.c],
+	  [AC_MSG_CHECKING([if linking of ./libcob/cJSON.c works])
+	   CPPFLAGS="$curr_cppflags -I./libcob"
 	   LIBS="$LIBS $COMMON_LIBS"
 	   AC_LINK_IFELSE([
 		AC_LANG_PROGRAM([[#include "cJSON.c"]],
@@ -899,15 +918,15 @@ AS_IF([test "$USE_JSON" = "cjson" -o "$USE_JSON" = "local" -o "$USE_JSON" = "che
 						 cJSON_CreateNull ();]])],
 	   [AC_MSG_RESULT([yes])
 	    AC_DEFINE([WITH_CJSON], [1])
-	    with_cjson_local="yes (in ./lib)"],
+	    with_cjson_local="yes (in ./libcob)"],
 	   [AC_MSG_RESULT([no])]
 	   )
 	   LIBS="$curr_libs"]
 	)
 	if test "$with_cjson_local" = "no"; then
-	  AC_CHECK_FILE([$srcdir/lib/cJSON.c],
-	    [AC_MSG_CHECKING([if linking of $srcdir/lib/cJSON.c works])
-	     CPPFLAGS="$curr_cppflags -I$srcdir/lib"
+	  AS_IF([test -e "$srcdir/libcob/cJSON.c"],
+	    [AC_MSG_CHECKING([if linking of "$srcdir/libcob/cJSON.c" works])
+	     CPPFLAGS="$curr_cppflags -I\"$srcdir/libcob\""
 	     LIBS="$LIBS $COMMON_LIBS"
 	     AC_LINK_IFELSE([
 		  AC_LANG_PROGRAM([[#include "cJSON.c"]],
@@ -917,7 +936,7 @@ AS_IF([test "$USE_JSON" = "cjson" -o "$USE_JSON" = "local" -o "$USE_JSON" = "che
 						   cJSON_CreateNull ();]])],
 	     [AC_MSG_RESULT([yes])
 	      AC_DEFINE([WITH_CJSON], [1])
-	      with_cjson_local="yes (in $srcdir/lib)"],
+	      with_cjson_local="yes (in \"$srcdir/libcob\")"],
 	     [AC_MSG_RESULT([no])]
 	     )
 	     LIBS="$curr_libs"]
@@ -927,7 +946,7 @@ AS_IF([test "$USE_JSON" = "cjson" -o "$USE_JSON" = "local" -o "$USE_JSON" = "che
 	AS_IF([test "$with_cjson_local" = "no"], [
 		AC_MSG_NOTICE([using local cJSON: no])
 		if test "$with_json" = "local"; then
-		  AC_MSG_ERROR([[cJSON source is required in directory "lib" for --with-json=local]])
+		  AC_MSG_ERROR([[cJSON source is required in directory "libcob" for --with-json=local]])
 		fi
 		PKG_CHECK_MODULES([CJSON], [libcjson], [], [#
 		])
@@ -943,7 +962,7 @@ AS_IF([test "$USE_JSON" = "cjson" -o "$USE_JSON" = "local" -o "$USE_JSON" = "che
 			[if test "$with_json" = "cjson"; then
 			    AC_MSG_ERROR([Headers for libcjson are required for --with-json, you may adjust CJSON_CFLAGS])
 			 else
-				AC_MSG_WARN([Headers for libcjson missing, you may adjust CJSON_CFLAGS or put cJSON sources in "lib"])
+				AC_MSG_WARN([Headers for libcjson missing, you may adjust CJSON_CFLAGS or put cJSON sources in "libcob"])
 			 fi]
 		)])
 		if test "x$ac_cv_header_cJSON_h" = "xyes" -o "x$ac_cv_header_cjson_cJSON_h" = "xyes"; then
@@ -1631,9 +1650,9 @@ AC_ARG_WITH([odbc],
 	fi
 	AC_CHECK_HEADERS([sql.h sqlext.h], [],
 		AC_MSG_ERROR([sql.h and sqlext.h are required for ODBC]))
-# DB2 should work fine using the ODBC interface (RJN Dec 2020) but should be tested
-#	AC_CHECK_HEADERS([sqlcli1.h sqlca.h sqludf.h], [],
-#		AC_MSG_ERROR([sqlcli1.h, sqlca.h, and sqludf.h are required for ODBC (DB2)]))
+dnl DB2 should work fine using the ODBC interface (RJN Dec 2020) but should be tested
+dnl	AC_CHECK_HEADERS([sqlcli1.h sqlca.h sqludf.h], [],
+dnl		AC_MSG_ERROR([sqlcli1.h, sqlca.h, and sqludf.h are required for ODBC (DB2)]))
 
 	if test "x$ODBC_LIBS" = "x"; then
 		ODBC_LIBS="-lodbc"
@@ -1760,7 +1779,7 @@ if test "$with_db" = "yes" -o "$with_db" = "check"; then
 			with_db=no
 		else
 			AC_MSG_RESULT([no])
-			AC_MSG_ERROR([BDB library version $COB_BDB_HEADER not found])
+			AC_MSG_ERROR([BDB library version $COB_BDB_HEADER could not be linked])
 		fi
 		unset cobdb
 		unset cob_got_db
@@ -1874,18 +1893,18 @@ if test "$DEFINE_DL" = "no" -a "$with_dl" = "yes"; then
       if test "$DEFINE_DL" = "yes"; then
         AC_DEFINE([USE_LIBDL], [1])
         LIBCOB_LIBS="$LIBCOB_LIBS -ldl"
-        AC_CHECK_LIB([dl], [dladdr], [AC_DEFINE([HAVE_DLADDR], [1])], [], [])
+        # AC_CHECK_LIB([dl], [dladdr], [AC_DEFINE([HAVE_DLADDR], [1])], [], [])
       else
         AC_CHECK_LIB([dld], [dlopen], [DEFINE_DL="yes"], [], [])
         if test "$DEFINE_DL" = "yes"; then
           AC_DEFINE([USE_LIBDL], [1])
           LIBCOB_LIBS="$LIBCOB_LIBS -ldld"
-          AC_CHECK_LIB([dld], [dladdr], [AC_DEFINE([HAVE_DLADDR], [1])], [], [])
+          # AC_CHECK_LIB([dld], [dladdr], [AC_DEFINE([HAVE_DLADDR], [1])], [], [])
         fi
       fi
     else
       AC_DEFINE([USE_LIBDL], [1])
-      AC_CHECK_LIB([c], [dladdr], [AC_DEFINE([HAVE_DLADDR], [1])], [], [])
+      # AC_CHECK_LIB([c], [dladdr], [AC_DEFINE([HAVE_DLADDR], [1])], [], [])
     fi
   fi
 fi
@@ -1915,79 +1934,30 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
 	 AC_MSG_RESULT([yes])],
 	[AC_MSG_RESULT([no])])
 
-# Checks for size of long
+
+AC_MSG_NOTICE([Checks for different sizes ...])
+
+AC_CHECK_SIZEOF(long int)
+AC_CHECK_SIZEOF(long long)
+AC_CHECK_SIZEOF(long)
+AC_CHECK_SIZEOF(void *)
+
 AC_MSG_CHECKING([if size of long int = size of long long])
-AC_RUN_IFELSE([AC_LANG_PROGRAM([[]], [[
-	if (sizeof(long int) == sizeof(long long))
-		return 0;
-	return 1;
-	]])],
+AS_IF([test "$ac_cv_sizeof_long_int" = "$ac_cv_sizeof_long_long"],
 	[AC_DEFINE([COB_LI_IS_LL], [1]) AC_MSG_RESULT([yes])],
-	[AC_MSG_RESULT([no])],
-	[if test "$COB_LI_IS_LL" = "0"; then
-		AC_MSG_RESULT([specified "no" on configure line])
-	 else
-		if test "$COB_LI_IS_LL" = "1"; then
-			AC_MSG_RESULT([specified "yes" on configure line])
-		else
-			COB_LI_IS_LL=1
-			AC_MSG_RESULT([assumed - cross-compilation])
-		fi
-	 fi
-	 AC_DEFINE([COB_LI_IS_LL], [$COB_LI_IS_LL])
-	 AC_MSG_WARN([cannot run test program while cross-compiling])])
+	[AC_MSG_RESULT([no])])
 
 AC_MSG_CHECKING([if long is 32 bits])
-AC_RUN_IFELSE([AC_LANG_PROGRAM([[]], [[
-	if (sizeof (long) == 4)
-		return 0;
-	return 1;
-	]])],
+AS_IF([test "$ac_cv_sizeof_long" = 4],
 	[AC_DEFINE([COB_32_BIT_LONG], [1]) AC_MSG_RESULT([yes])],
-	[AC_MSG_RESULT([no])],
-	[if test "$COB_32_BIT_LONG" = "0"; then
-		AC_MSG_RESULT([specified "no" on configure line])
-	 else
-		if test "$COB_32_BIT_LONG" = "1"; then
-			AC_MSG_RESULT([specified "yes" on configure line])
-		else
-			COB_32_BIT_LONG=1
-			AC_MSG_RESULT([assumed - cross-compilation])
-		fi
-	 fi
-	 AC_DEFINE([COB_32_BIT_LONG], [$COB_32_BIT_LONG])
-	 AC_MSG_WARN([cannot run test program while cross-compiling])])
+	[AC_MSG_RESULT([no])])
 
-
-if test "cross_compiling" != "yes"; then
-	COB_HAS_64_BIT_POINTER="no"
-fi
 AC_MSG_CHECKING([if pointer is longer than 32 bits])
-AC_RUN_IFELSE([AC_LANG_PROGRAM([[]], [[
-	if (sizeof (void *) > 4U)
-		return 0;
-	return 1;
-	]])],
+AS_IF([test "$ac_cv_sizeof_void_p" -gt 4],
 	[COB_HAS_64_BIT_POINTER="yes"
 	 AC_DEFINE([COB_64_BIT_POINTER], [1])
 	 AC_MSG_RESULT([yes])],
-	[AC_MSG_RESULT([no])],
-	[if test "$COB_HAS_64_BIT_POINTER" = "0"; then
-		COB_HAS_64_BIT_POINTER="no"
-		AC_DEFINE([COB_64_BIT_POINTER], [0])
-		AC_MSG_RESULT([specified "no" on configure line])
-	 else
-		if test "$COB_HAS_64_BIT_POINTER" = "1"; then
-			COB_HAS_64_BIT_POINTER="yes"
-			AC_DEFINE([COB_64_BIT_POINTER], [1])
-			AC_MSG_RESULT([specified "yes" on configure line])
-		else
-			COB_HAS_64_BIT_POINTER="no"
-			AC_DEFINE([COB_64_BIT_POINTER], [0])
-			AC_MSG_RESULT([assumed "no" - cross-compilation])
-		fi
-	 fi
-	 AC_MSG_WARN([cannot run test program while cross-compiling])])
+	[AC_MSG_RESULT([no])])
 
 dnl We likely don't need this and remove it before 4.0 final release
 dnl # Check gcc wrapv option
@@ -2082,10 +2052,11 @@ COB_DEBUG_FLAGS="-g"
 
 # For debugging: add most expressive debug level if using GCC (compatible)
 curr_cflags="$CFLAGS"
-cob_temp_flags="-ggdb3"
-CFLAGS="$curr_cflags $cob_temp_flags"
-AC_MSG_CHECKING([for debug option $cob_temp_flags])
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[int testint;]])],
+if test "$COB_USES_GCC" = "yes"; then
+  cob_temp_flags="-ggdb3"
+  CFLAGS="$curr_cflags $cob_temp_flags"
+  AC_MSG_CHECKING([for debug option $cob_temp_flags])
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[int testint;]])],
 	[AC_MSG_RESULT([yes])
 	 COB_DEBUG_FLAGS="$cob_temp_flags"],
 	[AC_MSG_RESULT([no])
@@ -2099,10 +2070,10 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[int testint;]])],
 	]
 )
 
-cob_temp_flags="-fasynchronous-unwind-tables"
-CFLAGS="$curr_cflags $cob_temp_flags"
-AC_MSG_CHECKING([for debug option $cob_temp_flags])
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[int testint;]])],
+  cob_temp_flags="-fasynchronous-unwind-tables"
+  CFLAGS="$curr_cflags $cob_temp_flags"
+  AC_MSG_CHECKING([for debug option $cob_temp_flags])
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[int testint;]])],
 	[AC_MSG_RESULT([yes])
 	 COB_DEBUG_FLAGS="$COB_DEBUG_FLAGS $cob_temp_flags"],
 	[AC_MSG_RESULT([no])
@@ -2114,7 +2085,8 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[int testint;]])],
 		 COB_DEBUG_FLAGS="$COB_DEBUG_FLAGS $cob_temp_flags"],
 		[AC_MSG_RESULT([no])])
 	]
-)
+  )
+fi
 
 if test "$enable_debug" = "yes"; then
 	CFLAGS="$curr_cflags $COB_DEBUG_FLAGS"

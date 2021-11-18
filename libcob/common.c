@@ -54,11 +54,17 @@
 #undef MOUSE_MOVED
 #include <process.h>
 #include <io.h>
-#include <fcntl.h>
+#include <fcntl.h>	/* for _O_BINARY only */
 #endif
 
 #ifdef	HAVE_SIGNAL_H
 #include <signal.h>
+#endif
+#ifndef SIGFPE
+#ifndef NSIG
+#define NSIG 240
+#endif
+#define SIGFPE NSIG + 1
 #endif
 
 #ifdef	HAVE_LOCALE_H
@@ -573,9 +579,7 @@ static struct signal_table {
 #ifdef	SIGBUS
 	{SIGBUS,2,1,0,"SIGBUS","bus error"},
 #endif
-#ifdef	SIGFPE
-	{SIGFPE,1,1,0,"SIGFPE","fatal arithmetic error"},
-#endif
+	{SIGFPE,1,1,0,"SIGFPE","fatal arithmetic error"},	/* always defined, if missing */
 #ifdef	SIGILL
 	{SIGILL,0,0,0,"SIGILL","illegal instruction"},
 #endif

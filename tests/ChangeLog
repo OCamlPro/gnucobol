@@ -53,6 +53,14 @@
 	  remove temporary file info.out after use
 	* listings-sed.sh: replace both 2 and 3-part version numbers
 
+2020-11-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* atlocal.in, atlocal_valgrind: added prefix
+
+2020-11-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* atlocal.in, atlocal_valgrind: exec_prefix as exec_prefix
+
 2020-10-26  Simon Sobisch <simonsobisch@gnu.org>
 
 	* atlocal.in, atlocal_valgrind, atlocal_win:

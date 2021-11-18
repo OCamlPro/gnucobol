@@ -8553,6 +8553,7 @@ getType (int type, int byvalue)
        /* fall through as the test will have different results
           on big endian systems otherwise
         return "COMP-5"; */
+        COB_UNUSED (byvalue);
    case COB_TYPE_NUMERIC_BINARY:  return "BINARY";
    case COB_TYPE_NUMERIC_PACKED:  return "COMP-3";
    case COB_TYPE_NUMERIC_FLOAT:   return "COMP-1";
@@ -8992,7 +8993,7 @@ CAPI (void *p1, ...)
          str = (char *) cob_get_field_str (fld, wrk, 78);
          printf (" to %.*s",size,wrk);
       } else {
-         if(scale > 0) {
+         if (scale > 0) {
             sprintf (pic,"%s9(%d)V9(%d)",sign?"S":"",digits-scale,scale);
          } else {
             sprintf (pic,"%s9(%d)",sign?"S":"",digits-scale);
@@ -15828,6 +15829,41 @@ AT_CHECK([$COMPILE -fnotrunc prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [32767 vs 32767
 65535 vs 65535
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([assorted math])
+AT_KEYWORDS([runmisc expression])
+
+# this is a test containing differnt small reproducers from
+# bug reports
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 n pic 99 value 89.
+       01 variable usage signed-int value 0.
+          88 a-one value 1.
+          88 a-two value 2.
+       LINKAGE SECTION.
+       PROCEDURE DIVISION.
+           display n(n**0+ 1:).   *> bug # 702 ("pow"-call in generated program
+           if not a-one and not a-two  *> arithmetic handling (optimize code)
+              display 'succeeded'
+           else
+              display 'failed'
+           end-if.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[9
+succeeded
 ], [])
 
 AT_CLEANUP

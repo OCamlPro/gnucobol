@@ -33,7 +33,9 @@ export PATH
 GNUCOBOL_ENV_SETUP=1
 export GNUCOBOL_ENV_SETUP
 
-exec_prefix="@prefix@" # this is is likely referenced in the LIBS entries below
+# entries likely referenced in the LIBS entries below
+prefix="@prefix@"
+exec_prefix="@exec_prefix@"
 
 # options that are also used in atlocal (always add to both)
 COB_CFLAGS="-I@abs_top_srcdir@ @COB_CFLAGS@ ${COB_CFLAGS}"

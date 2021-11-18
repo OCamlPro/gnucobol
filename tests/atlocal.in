@@ -25,8 +25,8 @@ TEMPLATE="${abs_srcdir}/testsuite.src"
 # TODO: add missing parts for installcheck
 
 if test "$GNUCOBOL_ENV_SETUP" != "1" -a "$GNUCOBOL_TEST_LOCAL" != "1"; then
-	COBC="cobc@COB_EXE_EXT@"
-	COBCRUN="cobcrun@COB_EXE_EXT@"
+	COBC="cobc"
+	COBCRUN="cobcrun"
 	COBCRUN_DIRECT="" # used for running created executables through tools
 	# prepend PATH with the actual binaries to let the testsuite find them for
 	# general check and version output, otherwise not needed

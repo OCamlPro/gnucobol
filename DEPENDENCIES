@@ -128,7 +128,7 @@ The following libraries ARE required WHEN :
 
   o cJSON >= 1.3.0 - https://github.com/DaveGamble/cJSON
     Note: As an alternative of an installed version you may place
-    cJSON.c and cJSON.h under "lib" to include the used functions
+    cJSON.c and cJSON.h under "libcob" to include the used functions
     directly in the COBOL runtime.
 
     cJSON is distributed under MIT License.

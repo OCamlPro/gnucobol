@@ -20,13 +20,9 @@
 # along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 
 noinst_HEADERS = gettext.h
-noinst_LIBRARIES = libsupport.a
+noinst_LTLIBRARIES = libsupport.la
 
 AM_CPPFLAGS = -I$(top_srcdir)
-libsupport_a_SOURCES = dummymac.c
-libsupport_a_LIBADD = @LIBOBJS@
-
-if LOCAL_CJSON
-nodist_libsupport_a_SOURCES = cJSON.c
-DISTCLEANFILES = cJSON.c cJSON.h
-endif
+libsupport_la_SOURCES = dummymac.c
+libsupport_la_LDFLAGS = -static
+libsupport_la_LIBADD = @LIBOBJS@

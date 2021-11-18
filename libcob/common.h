@@ -380,7 +380,6 @@ only usable with COB_USE_VC2013_OR_GREATER */
 #endif /* __MINGW32__ */
 
 #ifdef __BORLANDC__
-#include <io.h>
 #define strncasecmp	strnicmp
 #define strcasecmp	stricmp
 #define _setmode	setmode
@@ -401,7 +400,9 @@ only usable with COB_USE_VC2013_OR_GREATER */
 #pragma error_messages (off, E_STATEMENT_NOT_REACHED)
 #endif
 
+#ifndef COB_WITHOUT_JMP
 #include <setjmp.h>
+#endif
 
 #ifndef	COB_EXT_EXPORT
 #if	((defined(_WIN32) || defined(__CYGWIN__)) && !defined(__clang__))
@@ -1486,8 +1487,8 @@ typedef struct __cob_file_key {
 	unsigned char	tf_ascending;	/* ASCENDING/DESCENDING (for SORT)*/
 	unsigned char	tf_suppress;	/* supress keys where all chars = char_suppress */
 	unsigned char	char_suppress;	/* key supression character  */
-	cob_field	*	field;			/* Key field (or SPLIT key save area) */
-	unsigned char *	str_suppress;	/* Complete SUPPRESS "string" */
+	cob_field		*field;			/* Key field (or SPLIT key save area) */
+	unsigned char	*str_suppress;	/* Complete SUPPRESS "string" */
 	cob_field	*component[COB_MAX_KEYCOMP];/* key-components iff split-key   */
 } cob_file_key;
 
@@ -1845,6 +1846,7 @@ typedef struct __cob_global {
 
 } cob_global;
 
+#ifndef COB_WITHOUT_JMP
 /* Low level jump structure */
 struct cobjmp_buf {
 	int	cbj_int[4];
@@ -1852,6 +1854,7 @@ struct cobjmp_buf {
 	jmp_buf	cbj_jmp_buf;
 	void	*cbj_ptr_rest[2];
 };
+#endif
 
 #define __LIBCOB_VERSION	4
 #define __LIBCOB_VERSION_MINOR		0
@@ -2236,6 +2239,9 @@ COB_EXPIMP void	cob_decimal_pop		(const cob_u32_t, ...);
 
 COB_EXPIMP void	cob_gmp_free		(void *);
 
+COB_EXPIMP cob_s32_t	cob_s32_pow	(cob_s32_t, cob_s32_t);
+COB_EXPIMP cob_s64_t	cob_s64_pow (cob_s64_t, cob_s64_t);
+
 
 /*******************************/
 /* Functions in call.c */
@@ -2264,9 +2270,13 @@ COB_EXPIMP void		cob_cancel_field	(const cob_field *,
 COB_EXPIMP void		cob_cancel		(const char *);
 COB_EXPIMP int		cob_call		(const char *, const int, void **);
 COB_EXPIMP int		cob_func		(const char *, const int, void **);
+
+#ifndef COB_WITHOUT_JMP
 COB_EXPIMP void		*cob_savenv		(struct cobjmp_buf *);
 COB_EXPIMP void		*cob_savenv2		(struct cobjmp_buf *, const int);
 COB_EXPIMP void		cob_longjmp		(struct cobjmp_buf *);
+#endif
+
 COB_EXPIMP int		cob_call_cobol	(const char *, const int, ...);
 COB_EXPIMP int		cob_call_entry	(void *, const int, ...);
 COB_EXPIMP int		cob_get_name_line ( char *prog, int *line );

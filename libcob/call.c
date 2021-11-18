@@ -1690,6 +1690,8 @@ cob_call_entry (void *entry, const int argc, ...)
 	return i;
 }
 
+
+#ifndef COB_WITHOUT_JMP
 void *
 cob_savenv (struct cobjmp_buf *jbuf)
 {
@@ -1736,6 +1738,7 @@ cob_longjmp (struct cobjmp_buf *jbuf)
 	cob_jmp_primed = 0;
 	longjmp (jbuf->cbj_jmp_buf, 1);
 }
+#endif
 
 void
 cob_exit_call (void)

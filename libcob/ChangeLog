@@ -4,6 +4,7 @@
 	* common.h: Add prototype for BIT-WISE cob_logical_xxx functions
 	* numeric.c: Add code for the BIT-WISE cob_logical_xxx functions
 	* intrinsic.c (cob_intr_binop): add code for the BIT-WISE operations
+	* common.h, call.c: allow removal of longjump by defining COB_WITHOUT_JMP
 
 2021-11-10  Ron Norman <rjn@inglenet.com>
 
@@ -48,6 +49,15 @@
 				to handle the case of the FCD being used for more
 				than one open file
 	* fextfh.c: Removed update of FCD-NAME-LENGTH
+
+2021-10-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c: always handle SIGFPE, define manually if needed
+	* numeric.c (cob_s32_pow, cob_s64_pow), common.h: new functions for
+	  integer exponentiation, see related #702
+	* intrinsic.c: replace int_pow definition and use with cob_s32_pow
+	* fileio.c [WIN32]: redefine mkdir instead of handling mode parameter
+	  via defines when used
 
 2021-10-03  Ron Norman <rjn@inglenet.com>
 
@@ -806,9 +816,6 @@
 
 2020-09-30  Simon Sobisch <simonsobisch@gnu.org>
 
-	* Makefile.am [LOCAL_CJSON]: moved to "lib"
-	* Makefile.am: fixed inclusion of libsupport
-	* coblocal.h: include gettext without lib prefix
 	* call.c, common.c: use EXIT_SUCCESS and EXIT_FAILURE instead of exit(0/1)
 
 2020-09-29  Simon Sobisch <simonsobisch@gnu.org>

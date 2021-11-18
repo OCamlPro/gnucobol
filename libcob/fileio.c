@@ -7879,11 +7879,7 @@ cob_sys_create_dir (unsigned char *dir)
 	if (fn == NULL) {
 		return -1;
 	}
-#ifdef	_WIN32
-	ret = mkdir (fn);
-#else
 	ret = mkdir (fn, 0770);
-#endif
 	cob_free (fn);
 	if (ret) {
 		return 128;
