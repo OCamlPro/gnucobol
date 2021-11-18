@@ -595,7 +595,7 @@
 
 2020-09-30  Simon Sobisch <simonsobisch@gnu.org>
 
-	* Makefile.am: fixed inclusion of libsupport
+	* Makefile.am: fixed inclusion of libsupport, now libtoolized
 	* cobc.h: include gettext without lib prefix
 	* pplex.l: extracted (ppcopy_try_open) from (ppcopy) to split file search
 	  from actual processing and removing duplicate code

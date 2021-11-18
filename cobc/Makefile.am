@@ -31,7 +31,7 @@ AM_CPPFLAGS = -I$(top_srcdir) -I$(top_builddir)/lib -I$(top_srcdir)/lib \
 	$(COBC_CPPFLAGS)
 AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
 cobc_LDADD = $(PROGRAMS_LIBS) $(top_builddir)/libcob/libcob.la \
-	$(top_builddir)/lib/libsupport.a $(CODE_COVERAGE_LIBS)
+	$(top_builddir)/lib/libsupport.la $(CODE_COVERAGE_LIBS)
 
 dist_man_MANS = cobc.1
 COBC = cobc$(EXEEXT)

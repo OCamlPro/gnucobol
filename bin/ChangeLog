@@ -49,7 +49,7 @@
 
 2020-09-30  Simon Sobisch <simonsobisch@gnu.org>
 
-	* Makefile.am: fixed inclusion of libsupport
+	* Makefile.am: fixed inclusion of libsupport, now libtoolized
 	* cobcrun.c, gcdiff.c: include gettext without lib prefix
 	* cobcrun.c: use EXIT_SUCCESS and EXIT_FAILURE instead of exit(0/1)
 
