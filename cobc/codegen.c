@@ -5716,9 +5716,9 @@ static void
 output_initialize_occurs (struct cb_initialize *p, cb_tree x)
 {
 	struct cb_field		*f, *pf;
-	cb_tree		value, list;
+	cb_tree		list;
 	cb_tree		l;
-	int			i, j, k, offset, idx;
+	int			k, offset, idx;
 	int			idxtbl[COB_MAX_SUBSCRIPTS+1];
 	int			occtbl[COB_MAX_SUBSCRIPTS+1];
 	struct cb_field	*pftbl[COB_MAX_SUBSCRIPTS+1];
@@ -5744,7 +5744,6 @@ output_initialize_occurs (struct cb_initialize *p, cb_tree x)
 		idx_stop = 0;
 		offset = f->offset;
 		list = f->values;
-		i = 0;
 		l = list;
 		while (!idx_stop) {
 			pf = pftbl[0];
@@ -5764,6 +5763,11 @@ output_initialize_occurs (struct cb_initialize *p, cb_tree x)
 					} else {
 						output_move (cb_space, x);
 					}
+				}
+				if (l != NULL) {
+					for (k=0; l; l = CB_CHAIN(l)) k++;
+					cb_error_x ((cb_tree)f, "%s has %d more value%s than needed",
+									f->name,k,k>1?"s":"");
 				}
 			} else {
 				while (!idx_stop) {					/* Init all occurences to same value */
