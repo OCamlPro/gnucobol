@@ -1,4 +1,11 @@
 
+2021-11-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_get_sig_name, cob_get_sig_description,
+	  cob_set_sig_description): hardened against unexpected signal numbers
+	* common.c (signals, cob_get_sig_description): description is
+	  post-initialized to allow use of gettext - non-static descriptions
+
 2021-11-14  Ron Norman <rjn@inglenet.com>
 
 	* common.h: Add prototype for BIT-WISE cob_logical_xxx functions

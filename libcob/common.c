@@ -553,55 +553,55 @@ static struct signal_table {
 	const char	*description;	/* Longer desciption message */
 } signals[] = {
 #ifdef	SIGINT
-	{SIGINT,1,0,0,"SIGINT","interrupt from keyboard"},
+	{SIGINT,1,0,0,"SIGINT"},
 #endif
 #ifdef	SIGHUP
-	{SIGHUP,1,0,0,"SIGHUP","hangup"},
+	{SIGHUP,1,0,0,"SIGHUP"},
 #endif
 #ifdef	SIGQUIT
-	{SIGQUIT,1,0,0,"SIGQUIT","quit"},
+	{SIGQUIT,1,0,0,"SIGQUIT"},
 #endif
 #ifdef	SIGTERM
-	{SIGTERM,1,0,0,"SIGTERM","termination"},
+	{SIGTERM,1,0,0,"SIGTERM"},
 #endif
 #ifdef	SIGEMT
-	{SIGEMT,1,0,0,"SIGEMT","emt termination"},
+	{SIGEMT,1,0,0,"SIGEMT"},
 #endif
 #ifdef	SIGPIPE
-	{SIGPIPE,1,0,0,"SIGPIPE","broken pipe"},
+	{SIGPIPE,1,0,0,"SIGPIPE"},
 #endif
 #ifdef	SIGIO
-	{SIGIO,1,0,0,"SIGIO","I/O signal"},
+	{SIGIO,1,0,0,"SIGIO"},
 #endif
 #ifdef	SIGSEGV
-	{SIGSEGV,2,1,0,"SIGSEGV","attempt to reference invalid memory address"},
+	{SIGSEGV,2,1,0,"SIGSEGV"},
 #endif
 #ifdef	SIGBUS
-	{SIGBUS,2,1,0,"SIGBUS","bus error"},
+	{SIGBUS,2,1,0,"SIGBUS"},
 #endif
-	{SIGFPE,1,1,0,"SIGFPE","fatal arithmetic error"},	/* always defined, if missing */
+	{SIGFPE,1,1,0,"SIGFPE"},	/* always defined, if missing */
 #ifdef	SIGILL
-	{SIGILL,0,0,0,"SIGILL","illegal instruction"},
+	{SIGILL,0,0,0,"SIGILL"},
 #endif
 #ifdef	SIGABRT
-	{SIGABRT,0,0,0,"SIGABRT","abort"},
+	{SIGABRT,0,0,0,"SIGABRT"},
 #endif
 #ifdef	SIGKILL
-	{SIGKILL,0,0,0,"SIGKILL","process killed"},
+	{SIGKILL,0,0,0,"SIGKILL"},
 #endif
 #ifdef	SIGALRM
-	{SIGALRM,0,0,0,"SIGALRM","alarm signal"},
+	{SIGALRM,0,0,0,"SIGALRM"},
 #endif
 #ifdef	SIGSTOP
-	{SIGSTOP,0,0,0,"SIGSTOP","stop process"},
+	{SIGSTOP,0,0,0,"SIGSTOP"},
 #endif
 #ifdef	SIGCHLD
-	{SIGCHLD,0,0,0,"SIGCHLD","child process stopped"},
+	{SIGCHLD,0,0,0,"SIGCHLD"},
 #endif
 #ifdef	SIGCLD
-	{SIGCLD,0,0,0,"SIGCLD","child process stopped"},
+	{SIGCLD,0,0,0,"SIGCLD"},
 #endif
-	{-1,0,0,0,"unknown","unknown"}
+	{-1,0,0,0,"unknown"}
 };
 #define NUM_SIGNALS (int)((sizeof (signals) / sizeof (struct signal_table)) - 1)
 
@@ -1047,6 +1047,7 @@ cob_get_sig_name (int sig)
 		if (signals[k].signum == sig)
 			break;
 	}
+	if (k == NUM_SIGNALS) return "unknown";
 	return signals[k].shortname;
 }
 
@@ -1057,6 +1058,79 @@ cob_get_sig_description (int sig)
 	for (k = 0; k < NUM_SIGNALS; k++) {
 		if (signals[k].signum == sig)
 			break;
+	}
+	if (k == NUM_SIGNALS) return _("unknown");
+	if (!signals[k].description) {
+		/* always defined, if missing */ 
+		if (sig == SIGFPE) {
+			signals[k].description = _("fatal arithmetic error");
+	#ifdef	SIGINT
+		} else if (sig == SIGINT) {
+			signals[k].description = _("interrupt from keyboard");
+	#endif
+	#ifdef	SIGHUP
+		} else if (sig == SIGHUP) {
+			signals[k].description = _("hangup");
+	#endif
+	#ifdef	SIGQUIT
+		} else if (sig == SIGQUIT) {
+			signals[k].description = _("quit");
+	#endif
+	#ifdef	SIGTERM
+		} else if (sig == SIGTERM) {
+			signals[k].description = _("termination");
+	#endif
+	#ifdef	SIGEMT
+		} else if (sig == SIGEMT) {
+			signals[k].description = _("emt termination");
+	#endif
+	#ifdef	SIGPIPE
+		} else if (sig == SIGPIPE) {
+			signals[k].description = _("broken pipe");
+	#endif
+	#ifdef	SIGIO
+		} else if (sig == SIGIO) {
+			signals[k].description = _("I/O signal");
+	#endif
+	#ifdef	SIGSEGV
+		} else if (sig == SIGSEGV) {
+			signals[k].description = _("attempt to reference invalid memory address");
+	#endif
+	#ifdef	SIGBUS
+		} else if (sig == SIGBUS) {
+			signals[k].description = _("bus error");
+	#endif
+	#ifdef	SIGILL
+		} else if (sig == SIGILL) {
+			signals[k].description = _("illegal instruction");
+	#endif
+	#ifdef	SIGABRT
+		} else if (sig == SIGABRT) {
+			signals[k].description = _("abort");
+	#endif
+	#ifdef	SIGKILL
+		} else if (sig == SIGKILL) {
+			signals[k].description = _("process killed");
+	#endif
+	#ifdef	SIGALRM
+		} else if (sig == SIGALRM) {
+			signals[k].description = _("alarm signal");
+	#endif
+	#ifdef	SIGSTOP
+		} else if (sig == SIGSTOP) {
+			signals[k].description = _("stop process");
+	#endif
+	#ifdef	SIGCHLD
+		} else if (sig == SIGCHLD) {
+			signals[k].description = _("child process stopped");
+	#endif
+	#ifdef	SIGCLD
+		} else if (sig == SIGCLD) {
+			signals[k].description = _("child process stopped");
+	#endif
+		} else {
+			signals[k].description = _("unknown");
+		}
 	}
 	return signals[k].description;
 }
@@ -1071,6 +1145,7 @@ cob_set_sig_description (int sig, const char *msg)
 			break;
 		}
 	}
+	if (k == NUM_SIGNALS) return _("unknown");
 	return signals[k].description;
 }
 
