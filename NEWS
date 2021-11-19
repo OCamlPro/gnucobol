@@ -4,13 +4,6 @@ NEWS - user visible changes				-*- outline -*-
 
 * New GnuCOBOL features
 
-** Support for the EXTFH interface was heavily improved, now also supporting
-   FH--FCD and FH--KEYDEF, fixed use of different attributes and changing
-   pointers and now supports - for 32-bit builds - an internal conversion between
-   FCD2 and FCD3 for cases where existing programs are coded with FCD2
-
-** TODO - More to add
-
 ** New intrinsic functions
 
   BIT-OF, BIT-TO-CHAR, HEX-OF, HEX-TO-CHAR
@@ -20,6 +13,15 @@ NEWS - user visible changes				-*- outline -*-
 ** Support of bit operations according to COBOL 202x with MF compatibility
 
 ** Support of additional $SET directives: ODOSLIDE
+
+** Support for the EXTFH interface was heavily improved, now also supporting
+   FH--FCD and FH--KEYDEF, fixed use of different attributes and changing
+   pointers and now supports - for 32-bit builds - an internal conversion between
+   FCD2 and FCD3 for cases where existing programs are coded with FCD2
+
+** OCCURS with multiple VALUEs supported (BS2000 format without FROM/TO)
+
+** TODO - More to add
 
 * Changes that potentially effects recompilation of existing programs:
 

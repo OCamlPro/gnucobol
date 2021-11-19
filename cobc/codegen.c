@@ -5081,44 +5081,135 @@ output_initialize_one (struct cb_initialize *p, cb_tree x)
 	}
 }
 
+static int	idx_incr = -1;
+static int	idx_next = 0;
+static int	idx_stop = 0;
+static void
+incr_table_index (int idx, int *idxtbl, int *occtbl)
+{
+	int		k;
+	idxtbl[idx_incr]++;		/* Increment subscript */
+	while (idx_incr < idx
+	 && !idx_stop
+	 && idxtbl[idx_incr] >= occtbl[idx_incr]) {	/* At max, reset and advance next subscript */
+		for (k = idx_incr; k >= 0; k--)			/* Clear subscripts below current */
+			idxtbl[k] = 0;
+		idx_incr++;
+		if (idx_incr > idx_next) {
+			idx_next++;
+			if (idx_next > idx) {				/* Finished all so stop */
+				idx_stop = 1;
+				idx_next = 0;
+				return;
+			}
+		}
+		incr_table_index ( idx, idxtbl, occtbl);
+		idx_incr = 0;
+	}
+	if (idx_next >= idx) {
+		idx_stop = 1;
+		idx_next = idx_incr = 0;
+		for (k = idx - 1; k >= 0; k--)			/* Clear subscripts */
+			idxtbl[k] = 0;
+	}
+}
+
+/* Compute offset to occurence of the data field */
+static int
+get_table_offset (int offset, int idx, int *idxtbl, int *occtbl, struct cb_field **pf)
+{
+	int	i;
+	for (i = 0; i < idx; i++) {
+		offset += idxtbl[i] * pf[i]->size;
+	}
+	if (idx_incr < 0) {
+		idx_stop = 0;
+		idx_next = idx_incr = 0;
+	}
+
+	incr_table_index (idx, idxtbl, occtbl);
+
+	return offset;
+}
+
 /*
  * If OCCURS field has multiple VALUEs then init each occurence
  */
 static void
 output_initialize_occurs (struct cb_initialize *p, cb_tree x)
 {
-	struct cb_field		*f = cb_code_field (x);
-	if (f->flag_occurs
-	 && f->children == NULL
-	 && f->values
-	 && CB_CHAIN (f->values)) {
-		const int		occ = f->occurs_max;
-		const int		offset = f->offset;
-		cb_tree		list = f->values;
-		cb_tree		l;
-		int			i = 0;
-		f->flag_occurs = 0;
-		f->occurs_max = 0;
-		for (l = list; l && i < occ; l = CB_CHAIN (l)) {
-			f->values = l;
-			output_initialize_one (p, x);	/* Init with each value */
-			f->offset += f->size;
-			i++;
+	struct cb_field		*f, *pf;
+	struct cb_field	*pftbl[COB_MAX_SUBSCRIPTS+1] = { NULL };
+	int			idxtbl[COB_MAX_SUBSCRIPTS+1] = { 0 };
+	int			occtbl[COB_MAX_SUBSCRIPTS+1] = { 0 };
+	int			idx;
+
+	f = cb_code_field (x);
+#if 0 /* CHECKME: the init above should be fine */
+	for (idx=0; idx <= COB_MAX_SUBSCRIPTS; idx++) {
+		idxtbl[idx] = 0;
+		pftbl[idx] = NULL;
+	}
+#endif
+	for (idx = 0, pf = f; pf; pf = pf->parent) {
+		if (pf->flag_occurs
+		 && pf->occurs_max > 1) {
+			pftbl [idx] = pf;
+			occtbl[idx] = pf->occurs_max;
+			idx++;
 		}
-		while (i < occ) {					/* Clear any remainder */
-			if (f->usage == CB_USAGE_DISPLAY) {
-				output_move (cb_space, x);
+	}
+
+	if (idx > 0
+	 && !p->flag_init_statement
+	 && !f->depending
+	 && (f->children == NULL || f->values)) {
+		const int offset = f->offset;
+		const cb_tree	values = f->values;
+		cb_tree		l = values;
+		int k;
+		idx_incr = -1;
+		idx_stop = 0;
+		while (!idx_stop) {
+			pf = pftbl[0];
+			pf->flag_occurs = 0;
+			pf->occurs_max = 0;
+			if (values && CB_CHAIN (values)) {	/* Multiple VALUEs present */
+				for (; l && !idx_stop; l = CB_CHAIN (l)) {
+					f->values = l;
+					f->offset = get_table_offset ( offset, idx, idxtbl, occtbl, pftbl);
+					output_initialize_one (p, x);	/* Init with each value */
+				}
+				while (!idx_stop) {					/* Clear any remainder */
+					f->offset = get_table_offset ( offset, idx, idxtbl, occtbl, pftbl);
+					if (f->pic
+					 && f->pic->category == CB_CATEGORY_NUMERIC) {
+						output_move (cb_zero, x);
+					} else {
+						output_move (cb_space, x);
+					}
+				}
+				if (l != NULL) {
+					for (k=0; l; l = CB_CHAIN(l)) k++;
+					cb_error_x ((cb_tree)f, "%s has %d more value%s than needed",
+									f->name,k,k>1?"s":"");
+				}
 			} else {
-				output_move (cb_zero, x);
+				while (!idx_stop) {					/* Init all occurences to same value */
+					f->offset = get_table_offset ( offset, idx, idxtbl, occtbl, pftbl);
+					output_initialize_one (p, x);
+				}
 			}
-			f->offset += f->size;
-			i++;
 		}
-		f->values = list;
-		f->offset = offset;
-		f->flag_occurs = 1;
-		f->occurs_max = occ;
 		f->flag_occurs_values = 1;
+		f->offset = offset;
+		f->values = values;
+		for (k=0; k < idx; k++) {
+			pf = pftbl[k];
+			pf->flag_occurs = 1;
+			pf->flag_occurs_values = 1;
+			pf->occurs_max = occtbl[k];
+		}
 	} else {
 		output_initialize_one (p, x);
 	}
@@ -5127,7 +5218,7 @@ output_initialize_occurs (struct cb_initialize *p, cb_tree x)
 static void
 output_initialize_compound (struct cb_initialize *p, cb_tree x)
 {
-	struct cb_field	*ff;
+	struct cb_field	*ff, *pf;
 	struct cb_field	*f;
 	struct cb_field	*last_field;
 	cb_tree		c;
@@ -5147,6 +5238,12 @@ output_initialize_compound (struct cb_initialize *p, cb_tree x)
 				last_field = f;
 				last_char = initialize_uniform_char (f, p);
 
+				for (pf = f; pf && !pf->flag_occurs; pf = pf->parent);
+				if (pf != NULL
+				 && pf->flag_occurs_values) {	/* Multi-value init */
+					output_initialize_occurs (p, c);
+					break;
+				}
 				if (last_char != -1) {
 					if (f->flag_occurs) {
 						CB_REFERENCE (c)->subs =
@@ -5179,7 +5276,7 @@ output_initialize_compound (struct cb_initialize *p, cb_tree x)
 		default:
 			if (!f->flag_occurs) {
 				if (type == INITIALIZE_ONE) {
-					output_initialize_one (p, c);
+					output_initialize_occurs (p, c);
 				} else {
 					output_initialize_compound (p, c);
 				}
@@ -5209,8 +5306,9 @@ output_initialize_compound (struct cb_initialize *p, cb_tree x)
 					output_initialize_compound (p, c);
 				}
 
-				if (!f->flag_occurs_values
-				 && f->occurs_max > 1) {
+				for (pf = f; pf && !pf->flag_occurs_values; pf = pf->parent);
+				if (pf == NULL
+				 || (!pf->flag_occurs_values && f->occurs_max > 1)) {
 					ref->length = NULL;
 					output_line ("/* copy initialized record for %s to later occurrences */",
 						f->name);
@@ -5228,7 +5326,7 @@ output_initialize_compound (struct cb_initialize *p, cb_tree x)
 static void
 output_initialize (struct cb_initialize *p)
 {
-	struct cb_field		*f;
+	struct cb_field		*f, *pf;
 	cb_tree			x;
 	int			c;
 	int			type;
@@ -5260,7 +5358,10 @@ output_initialize (struct cb_initialize *p)
 			CB_REFERENCE (x)->subs = CB_BUILD_CHAIN (cb_int1, CB_REFERENCE (x)->subs);
 			output_initialize_compound (p, x);
 			CB_REFERENCE (x)->subs = CB_CHAIN (CB_REFERENCE (x)->subs);
-			propagate_table (x);
+			for (pf = f; pf && !pf->flag_occurs; pf = pf->parent);
+			if (pf == NULL
+			 || !pf->flag_occurs_values)
+				propagate_table (x);
 			output_initialize_chaining (f, p);
 			return;
 		default:

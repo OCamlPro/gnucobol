@@ -1,4 +1,9 @@
 
+2021-11-18  Ron Norman <rjn@inglenet.com>
+
+	* field.c: More work for OCCURS with multiple VALUES
+	* codegen.c: More work for initialize of OCCURS with multiple VALUES
+
 2021-11-15  Ron Norman <rjn@inglenet.com>
 
 	FR #234: multiple VALUEs for OCCURS
