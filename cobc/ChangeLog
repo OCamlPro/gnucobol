@@ -70,6 +70,8 @@
 2021-09-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y, field.c: partial merge of 2020-01-12 related to bug #513
+	* codegen.c: use of new enum cobc_init_type instead of comparing an int
+	  to #define'd constants, reduced some variable scope
 
 2021-09-29  Simon Sobisch <simonsobisch@gnu.org>
 
