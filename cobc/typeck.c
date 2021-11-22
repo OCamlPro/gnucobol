@@ -6238,30 +6238,22 @@ cb_check_num_cond (cb_tree x, cb_tree y)
 	struct cb_field		*fx;
 	struct cb_field		*fy;
 
-	if (!CB_REF_OR_FIELD_P (x)) {
+	if (!CB_REF_OR_FIELD_P (x)
+	 || !CB_REF_OR_FIELD_P (y)) {
 		return 0;
 	}
-	if (!CB_REF_OR_FIELD_P (y)) {
+	if (CB_TREE_CATEGORY (x) != CB_CATEGORY_NUMERIC
+	 || CB_TREE_CATEGORY (y) != CB_CATEGORY_NUMERIC) {
 		return 0;
 	}
-	if (CB_TREE_CATEGORY (x) != CB_CATEGORY_NUMERIC) {
-		return 0;
-	}
-	if (CB_TREE_CATEGORY (y) != CB_CATEGORY_NUMERIC) {
-		return 0;
-	}
-	if (CB_TREE_CLASS (x) != CB_CLASS_NUMERIC) {
-		return 0;
-	}
-	if (CB_TREE_CLASS (y) != CB_CLASS_NUMERIC) {
+	if (CB_TREE_CLASS (x) != CB_CLASS_NUMERIC
+	 || CB_TREE_CLASS (y) != CB_CLASS_NUMERIC) {
 		return 0;
 	}
 	fx = CB_FIELD_PTR (x);
 	fy = CB_FIELD_PTR (y);
-	if (fx->usage != CB_USAGE_DISPLAY) {
-		return 0;
-	}
-	if (fy->usage != CB_USAGE_DISPLAY) {
+	if (fx->usage != CB_USAGE_DISPLAY
+	 || fy->usage != CB_USAGE_DISPLAY) {
 		return 0;
 	}
 	if (fx->pic->have_sign || fy->pic->have_sign) {
@@ -6432,12 +6424,12 @@ cb_build_cond (cb_tree x)
 				return cb_error_node;
 			}
 			if (CB_INDEX_OR_HANDLE_P (p->x)
-			||  CB_INDEX_OR_HANDLE_P (p->y)
-			||  CB_TREE_CLASS (p->x) == CB_CLASS_POINTER
-			||  CB_TREE_CLASS (p->y) == CB_CLASS_POINTER) {
+			 || CB_INDEX_OR_HANDLE_P (p->y)
+			 || CB_TREE_CLASS (p->x) == CB_CLASS_POINTER
+			 || CB_TREE_CLASS (p->y) == CB_CLASS_POINTER) {
 				ret = cb_build_binary_op (p->x, '-', p->y);
 			} else if (CB_BINARY_OP_P (p->x)
-				|| CB_BINARY_OP_P (p->y)) {
+			        || CB_BINARY_OP_P (p->y)) {
 				/* Decimal comparison */
 				d1 = decimal_alloc ();
 				d2 = decimal_alloc ();
@@ -7667,41 +7659,70 @@ cb_emit_accept_name (cb_tree var, cb_tree name)
 
 /* ALLOCATE statement */
 
-void
-cb_emit_allocate (cb_tree target1, cb_tree target2, cb_tree size,
-		  cb_tree initialize)
+static int
+check_allocate_returning (cb_tree returning)
 {
-	cb_tree		x;
+	if (!returning) {
+		return 0;
+	}
+	if (!(CB_REFERENCE_P(returning) &&
+		    CB_TREE_CLASS (returning) == CB_CLASS_POINTER)) {
+		cb_error_x (CB_TREE(current_statement),
+			_("target of RETURNING is not a data pointer"));
+		return 1;
+	}
+	if (cb_listing_xref) {
+		cobc_xref_set_receiving (returning);
+	}
+	return 0;
+}
+
+void
+cb_emit_allocate_identifier (cb_tree allocate_identifier, cb_tree returning, const int init_flag)
+{
 	char		buff[32];
 
-	if (cb_validate_one (target1)
-	 || cb_validate_one (target2)
-	 || cb_validate_one (size)
-	 || cb_validate_one (initialize)) {
+	if (cb_validate_one (allocate_identifier)
+	 || cb_validate_one (returning)) {
 		return;
 	}
-	if (target1) {
-		if (!(CB_REFERENCE_P(target1) &&
-		      CB_FIELD_PTR (target1)->flag_item_based)) {
-			cb_error_x (CB_TREE(current_statement),
-				_("target of ALLOCATE is not a BASED item"));
-			return;
-		}
-		if (cb_listing_xref) {
-			cobc_xref_set_receiving (target1);
-		}
+
+	/* syntax checks */
+	if (!(CB_REFERENCE_P(allocate_identifier) &&
+		    CB_FIELD_PTR (allocate_identifier)->flag_item_based)) {
+		cb_error_x (CB_TREE(current_statement),
+			_("target of ALLOCATE is not a BASED item"));
+		return;
 	}
-	if (target2) {
-		if (!(CB_REFERENCE_P(target2) &&
-		      CB_TREE_CLASS (target2) == CB_CLASS_POINTER)) {
-			cb_error_x (CB_TREE(current_statement),
-				_("target of RETURNING is not a data pointer"));
-			return;
-		}
-		if (cb_listing_xref) {
-			cobc_xref_set_receiving (target2);
-		}
+	if (cb_listing_xref) {
+		cobc_xref_set_receiving (allocate_identifier);
 	}
+	if (check_allocate_returning (returning)) {
+		return;
+	}
+
+	/* code to emit for:	ALLOCATE identifier [INITIALIZED] [RETURNING x] */
+	sprintf (buff, "%d", CB_FIELD_PTR (allocate_identifier)->memory_size);
+	cb_emit (CB_BUILD_FUNCALL_4 ("cob_allocate",
+			CB_BUILD_CAST_ADDR_OF_ADDR (allocate_identifier),
+			returning, cb_build_numeric_literal (0, buff, 0), NULL));
+	/* ALLOCATE identifier INITIALIZED -> implicit INITIALIZE identifier */
+	if (init_flag) {
+		current_statement->not_ex_handler =
+			cb_build_initialize (allocate_identifier, cb_true, NULL, 1, 0, 0);
+	}
+}
+
+void
+cb_emit_allocate_characters (cb_tree size, cb_tree initialized_to, cb_tree returning)
+{
+	if (cb_validate_one (size)
+	 || cb_validate_one (initialized_to)
+	 || cb_validate_one (returning)) {
+		return;
+	}
+
+	/* syntax checks */
 	if (size) {
 		if (CB_TREE_CLASS (size) != CB_CLASS_NUMERIC) {
 			cb_error_x (CB_TREE(current_statement),
@@ -7709,24 +7730,17 @@ cb_emit_allocate (cb_tree target1, cb_tree target2, cb_tree size,
 			return;
 		}
 	}
-	if (target1) {
-		sprintf (buff, "%d", CB_FIELD_PTR (target1)->memory_size);
-		x = cb_build_numeric_literal (0, buff, 0);
-		cb_emit (CB_BUILD_FUNCALL_4 ("cob_allocate",
-			 CB_BUILD_CAST_ADDR_OF_ADDR (target1),
-			 target2, x, NULL));
-	} else {
-		if (initialize && !cb_category_is_alpha (initialize)) {
-			cb_error_x (CB_TREE(current_statement),
-				_("INITIALIZED TO item is not alphanumeric"));
-		}
-		cb_emit (CB_BUILD_FUNCALL_4 ("cob_allocate",
-			 NULL, target2, size, initialize));
+	if (initialized_to && !cb_category_is_alpha (initialized_to)) {
+		cb_error_x (CB_TREE (current_statement),
+			_("INITIALIZED TO item is not alphanumeric"));
 	}
-	if (initialize && target1) {
-		current_statement->not_ex_handler =
-			cb_build_initialize (target1, cb_true, NULL, 1, 0, 0);
+	if (check_allocate_returning (returning)) {
+		return;
 	}
+
+	/* code to emit for
+	   ALLOCATE size CHARACTERS [INITIALIZED [TO x]] RETURNING alloc_return */
+	cb_emit (CB_BUILD_FUNCALL_4 ("cob_allocate", NULL, returning, size, initialized_to));
 }
 
 

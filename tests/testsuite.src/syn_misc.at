@@ -7259,13 +7259,14 @@ AT_DATA([prog.cob], [
        PROCEDURE DIVISION.
            ALLOCATE one
            ALLOCATE seven INITIALIZED
-           ALLOCATE seven CHARACTERS.
-           ALLOCATE seven CHARACTERS RETURNING ptr.
-           ALLOCATE 1 + 2 * 3 CHARACTERS RETURNING ptr.
-           ALLOCATE 1 + one * 3 CHARACTERS RETURNING ptr.
-           ALLOCATE one   CHARACTERS RETURNING ptr.
-           ALLOCATE seven CHARACTERS INITIALIZED RETURNING ptr.
+           ALLOCATE seven CHARACTERS
+           ALLOCATE seven CHARACTERS RETURNING ptr
+           ALLOCATE 1 + 2 * 3 CHARACTERS RETURNING ptr
+           ALLOCATE 1 + one * 3 CHARACTERS RETURNING ptr
+           ALLOCATE one   CHARACTERS RETURNING ptr
+           ALLOCATE seven CHARACTERS INITIALIZED RETURNING ptr
            ALLOCATE var
+           ALLOCATE 9 CHARACTERS INITIALIZED TO 9 RETURNING ptr.
            FREE var
            FREE ADDRESS OF var
            FREE one
@@ -7286,8 +7287,9 @@ prog.cob:23: error: ALLOCATE CHARACTERS requires RETURNING clause
 prog.cob:26: error: 'one' is not a numeric value
 prog.cob:27: error: amount must be specified as a numeric expression
 prog.cob:29: error: target of ALLOCATE is not a BASED item
-prog.cob:30: error: target 1 of FREE is not a BASED data item
+prog.cob:30: error: INITIALIZED TO item is not alphanumeric
 prog.cob:31: error: target 1 of FREE is not a BASED data item
+prog.cob:32: error: target 1 of FREE is not a BASED data item
 ])
 AT_CLEANUP
 

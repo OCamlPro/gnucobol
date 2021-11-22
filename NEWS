@@ -23,6 +23,13 @@ NEWS - user visible changes				-*- outline -*-
 
 ** TODO - More to add
 
+* Changes that potentially effects existing programs:
+
+** ALLOCATE statement: earlier versions of GnuCOBOL initialized the memory
+   (to binary zero) if the INITIALIZED clause was not specified,
+   this isn't done anymore so if you need the memory to be initialized
+   specify that explicit in the source and recompile
+
 * Changes that potentially effects recompilation of existing programs:
 
 ** the reserved word list and intrinsic functions was updated, especially

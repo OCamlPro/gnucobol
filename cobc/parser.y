@@ -11275,17 +11275,17 @@ allocate_statement:
 ;
 
 allocate_body:
-  identifier flag_initialized _loc allocate_returning
+  identifier _flag_initialized _loc _allocate_returning
   {
-	cb_emit_allocate ($1, $4, NULL, $2);
+	cb_emit_allocate_identifier ($1, $4, $2 != NULL);
   }
-| exp CHARACTERS flag_initialized_to _loc allocate_returning
+| exp CHARACTERS _flag_initialized_to _loc _allocate_returning
   {
 	if ($5 == NULL) {
 		cb_error_x (CB_TREE (current_statement),
 			    _("ALLOCATE CHARACTERS requires RETURNING clause"));
 	} else {
-		cb_emit_allocate (NULL, $5, $1, $3);
+		cb_emit_allocate_characters ($1, $3, $5);
 	}
   }
 ;
@@ -11304,7 +11304,7 @@ _loc:
 	}
   }
 
-allocate_returning:
+_allocate_returning:
   /* empty */			{ $$ = NULL; }
 | RETURNING target_x		{ $$ = $2; }
 ;
@@ -18190,10 +18190,9 @@ literal:
   }
 | ALL basic_value
   {
-	struct cb_literal	*l;
-
 	if (CB_LITERAL_P ($2)) {
 		/* We must not alter the original definition */
+		struct cb_literal	*l;
 		l = cobc_parse_malloc (sizeof(struct cb_literal));
 		*l = *(CB_LITERAL($2));
 		l->all = 1;
@@ -18473,29 +18472,30 @@ flag_duplicates:
 | _with DUPLICATES	{ $$ = cb_int1; }
 ;
 
-flag_initialized:
+_flag_initialized:
   /* empty */			{ $$ = NULL; }
 | INITIALIZED			{ $$ = cb_int1; }
 ;
 
-flag_initialized_to:
+_flag_initialized_to:
   /* empty */
   {
 	$$ = NULL;
   }
-| INITIALIZED to_init_val
+| INITIALIZED _to_init_val
   {
 	$$ = $2;
   }
 ;
 
-to_init_val:
+_to_init_val:
   /* empty */
   {
-	$$ = NULL;
+	$$ = cb_low;
   }
 | TO simple_all_value
   {
+	/* GC extension */
 	$$ = $2;
   }
 ;

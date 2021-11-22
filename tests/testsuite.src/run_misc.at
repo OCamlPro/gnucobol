@@ -3315,8 +3315,8 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [42], [subprogram+000000042], [])
 AT_CLEANUP
 
 
-AT_SETUP([COB_LOAD_CASE=UPPER test])
-AT_KEYWORDS([runmisc])
+AT_SETUP([COB_LOAD_CASE=UPPER])
+AT_KEYWORDS([runmisc CALL COB_LOAD_CASE])
 
 AT_DATA([CALLEE.cob], [
        IDENTIFICATION   DIVISION.
@@ -3353,12 +3353,11 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
        ASTART SECTION.
        A01.
-           ALLOCATE MYFLD INITIALIZED.
+           ALLOCATE MYFLD INITIALIZED
            IF MYFLD NOT = "ABCDEF"
               DISPLAY MYFLD
-              END-DISPLAY
-           END-IF.
-           FREE ADDRESS OF MYFLD.
+           END-IF
+           FREE ADDRESS OF MYFLD
            STOP RUN.
 ])
 
@@ -3382,28 +3381,25 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            IF ADDRESS OF MYFLD NOT = NULL
               DISPLAY "BASED ITEM WITH ADDRESS ON START"
-              END-DISPLAY
-           END-IF.
-           FREE MYFLD.
-           ALLOCATE MYFLD.
+           END-IF
+           FREE MYFLD
+           ALLOCATE MYFLD
            IF ADDRESS OF MYFLD = NULL
               DISPLAY "BASED ITEM WITHOUT ADDRESS AFTER ALLOCATE"
-              END-DISPLAY
-           END-IF.
-           INITIALIZE MYFLD.
+           END-IF
+           INITIALIZE MYFLD
            IF MYFLD NOT = " 0"
               DISPLAY "BASED ITEM INITIALIZED WRONG: "
                  WITH NO ADVANCING
               END-DISPLAY
               DISPLAY MYFLD
-              END-DISPLAY
-           END-IF.
+           END-IF
 
-           FREE ADDRESS OF MYFLD.
+           FREE ADDRESS OF MYFLD
            IF ADDRESS OF MYFLD NOT = NULL
               DISPLAY "BASED ITEM WITH ADDRESS AFTER FREE"
-              END-DISPLAY
-           END-IF.
+           END-IF
+           GOBACK.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -3415,7 +3411,7 @@ AT_CHECK([$COBCRUN prog], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([ALLOCATE CHARACTERS INITIALIZED TO])
+AT_SETUP([ALLOCATE CHARACTERS INITIALIZED (TO)])
 AT_KEYWORDS([runmisc])
 
 AT_DATA([prog.cob], [
@@ -3431,22 +3427,28 @@ AT_DATA([prog.cob], [
        A01.
            ALLOCATE 4 CHARACTERS
                     INITIALIZED TO "ABCD"
-                    RETURNING MYPTR.
-           SET ADDRESS OF MYFLD TO MYPTR.
+                    RETURNING MYPTR
+           SET ADDRESS OF MYFLD TO MYPTR
            IF MYFLD NOT = "ABCD"
               DISPLAY MYFLD
-              END-DISPLAY
-           END-IF.
-           FREE MYPTR.
+           END-IF
+           FREE MYPTR
            ALLOCATE 4 CHARACTERS
                     INITIALIZED TO ALL "Z"
-                    RETURNING MYPTR.
-           SET ADDRESS OF MYFLD TO MYPTR.
+                    RETURNING MYPTR
+           SET ADDRESS OF MYFLD TO MYPTR
            IF MYFLD NOT = "ZZZZ"
               DISPLAY MYFLD
-              END-DISPLAY
-           END-IF.
-           FREE MYPTR.
+           END-IF
+           FREE MYPTR
+           ALLOCATE 4 CHARACTERS
+                    INITIALIZED
+                    RETURNING MYPTR
+           SET ADDRESS OF MYFLD TO MYPTR
+           IF MYFLD NOT = LOW-VALUES
+              DISPLAY MYFLD
+           END-IF
+           FREE MYPTR
            STOP RUN.
 ])
 
@@ -3470,8 +3472,7 @@ AT_DATA([prog.cob], [
        A01.
            IF MYFLD NOT = "AAAAAA"
               DISPLAY MYFLD
-              END-DISPLAY
-           END-IF.
+           END-IF
            STOP RUN.
 ])
 
@@ -3494,8 +3495,7 @@ AT_DATA([callee.cob], [
        PROCEDURE        DIVISION USING P1 OPTIONAL P2.
            IF P2 NOT OMITTED
               DISPLAY P2
-              END-DISPLAY
-           END-IF.
+           END-IF
            EXIT PROGRAM.
 ])
 
@@ -3507,9 +3507,7 @@ AT_DATA([caller.cob], [
        01 P1            PIC X    VALUE "A".
        PROCEDURE        DIVISION.
            CALL "callee" USING P1
-           END-CALL.
            CALL "callee" USING P1 OMITTED
-           END-CALL.
            STOP RUN.
 ])
 

@@ -2164,8 +2164,9 @@ extern void		cb_emit_accept_arg_number (cb_tree);
 extern void		cb_emit_accept_arg_value (cb_tree);
 extern void		cb_emit_get_environment (cb_tree, cb_tree);
 
-extern void		cb_emit_allocate (cb_tree, cb_tree,
-					  cb_tree, cb_tree);
+extern void		cb_emit_allocate_identifier (cb_tree, cb_tree, const int);
+extern void		cb_emit_allocate_characters (cb_tree, cb_tree, cb_tree);
+
 extern void		cb_emit_alter (cb_tree, cb_tree);
 extern void		cb_emit_free (cb_tree);
 

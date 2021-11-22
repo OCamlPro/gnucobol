@@ -1,4 +1,9 @@
 
+2021-11-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_emit_allocate_identifier, cb_emit_allocate_characters),
+	  tree.h, parser.y: split and document (cb_emit_allocate)
+
 2021-11-18  Ron Norman <rjn@inglenet.com>
 
 	* field.c: More work for OCCURS with multiple VALUES
