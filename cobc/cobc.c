@@ -593,7 +593,7 @@ static const struct option long_options[] = {
 	{"Werror",		CB_OP_ARG, NULL, 'Z'},
 	{"Wno-error",		CB_OP_ARG, NULL, 'z'},
 	{"tlines",		CB_RQ_ARG, NULL, '*'},
-	{"tsymbols",		CB_NO_ARG, &cb_listing_symbols, 1},		/* kept for backwards-compatibility */
+	{"tsymbols",		CB_NO_ARG, &cb_listing_symbols, 1},	/* kept for backwards-compatibility in 3.x */
 
 #define	CB_FLAG(var,print_help,name,doc)			\
 	{"f" name,		CB_NO_ARG, &var, 1},	\
@@ -1116,6 +1116,7 @@ cobc_main_malloc (const size_t size)
 	return m->memptr;
 }
 
+/* returns a fresh allocated copy of dupstr */
 void *
 cobc_main_strdup (const char *dupstr)
 {
@@ -1134,6 +1135,7 @@ cobc_main_strdup (const char *dupstr)
 	return p;
 }
 
+/* returns a fresh allocated copy of the concatenation from str1 + str2 */
 static char *
 cobc_main_stradd_dup (const char *str1, const char *str2)
 {
@@ -2515,7 +2517,15 @@ cobc_print_info (void)
 	puts (_("GnuCOBOL information"));
 	cobc_var_and_envvar_print ("COB_CC",		COB_CC);
 	cobc_var_and_envvar_print ("COB_CFLAGS",	COB_CFLAGS);
-#ifdef COB_DEBUG_FLAGS
+#ifndef	_MSC_VER
+	if (verbose_output) {
+#ifdef COB_STRIP_CMD
+		char *strip_cmd = (char *)COB_STRIP_CMD;
+#else
+		char *strip_cmd = _("disabled");
+#endif
+		cobc_var_print ("COB_STRIP_CMD",	strip_cmd, 0);
+	}
 	cobc_var_and_envvar_print ("COB_DEBUG_FLAGS", COB_DEBUG_FLAGS);
 #endif
 	cobc_var_and_envvar_print ("COB_LDFLAGS",	COB_LDFLAGS);
@@ -4280,7 +4290,7 @@ output_return (const int status)
 
 /* do system call, with handling verbose options and return */
 static int
-call_system (const char* command)
+call_system (const char *command)
 {
 	int status;
 
@@ -4588,7 +4598,7 @@ process (char *cmd)
 			shared = 1;
 			break;
 		case 'g':
-			/* already handled */
+			/* CHECKME: is this still reached? */
 			break;
 		case 'O':
 			optimize = 1;
@@ -5362,7 +5372,6 @@ static void
 print_fields (struct cb_field *top, int *found)
 {
 	int	first = 1;
-	int	get_cat;
 	int	got_picture;
 	int	old_level = 0;
 	const size_t	picture_len = cb_listing_wide ? 64 : 24;
@@ -5382,28 +5391,23 @@ print_fields (struct cb_field *top, int *found)
 			print_program_data (print_data);
 			print_program_data ("");
 		}
-
-		strncpy (lcl_name, check_filler_name ((char *)top->name),
-			 LCL_NAME_MAX);
-		get_cat = 1;
-		got_picture = 1;
-
-		if (top->children) {
-			strcpy (type, "GROUP");
-			get_cat = 0;
-			if (!top->external_definition) {
-				got_picture = 0;
-			} else {
-				got_picture = set_picture (top, picture, picture_len);
-			}
-		}
 		if ((top->level == 01
 		  || (top->level == 77 && old_level != 77))
 		 && !first) {
 			print_program_data ("");
 		}
 
-		if (get_cat) {
+		strncpy (lcl_name, check_filler_name ((char *)top->name),
+			 LCL_NAME_MAX);
+
+		if (top->children) {
+			strcpy (type, "GROUP");
+			if (!top->external_definition) {
+				got_picture = 0;
+			} else {
+				got_picture = set_picture (top, picture, picture_len);
+			}
+		} else {
 			set_category (top->common.category, top->usage, type);
 			if (top->flag_any_length) {
 				picture[0] = 0;
@@ -5418,17 +5422,22 @@ print_fields (struct cb_field *top, int *found)
 		} else {
 			pd_off = sprintf (print_data, "%05d ", top->size);
 		}
+
 		pd_off += sprintf (print_data + pd_off, "%-14.14s %02d   ", type, top->level);
-		if (top->flag_occurs && got_picture) {
-			pd_off += sprintf (print_data + pd_off, "%-30.30s %s, ", lcl_name, picture);
-		} else if (got_picture) {
+
+		if (got_picture) {
 			pd_off += sprintf (print_data + pd_off, "%-30.30s %s", lcl_name, picture);
 		} else if (top->flag_occurs) {
 			pd_off += sprintf (print_data + pd_off, "%-30.30s ", lcl_name);
 		} else { /* Trailing spaces break testsuite AT_DATA */
 			pd_off += sprintf (print_data + pd_off, "%s", lcl_name);
 		}
+
 		if (top->flag_occurs) {
+			if (got_picture) {
+				/* separator between picture from above and OCCURS */
+				pd_off += sprintf (print_data + pd_off, ", ");
+			}
 			if (top->depending && top->flag_unbounded) {
 				pd_off += sprintf (print_data + pd_off, "OCCURS %d TO UNBOUNDED", top->occurs_min);
 			} else if (top->depending) {
@@ -5441,15 +5450,12 @@ print_fields (struct cb_field *top, int *found)
 				pd_off += sprintf (print_data + pd_off, ", STEP %d", top->step_count);
 			}
 		}
-		if (top->flag_external) {
-			pd_off += sprintf (print_data + pd_off, " EXTERNAL");
-		}
-		if (top->flag_is_global) {
-			pd_off += sprintf (print_data + pd_off, " GLOBAL");
-		}
-		if (top->flag_item_based) {
-			pd_off += sprintf (print_data + pd_off, " BASED");
-		}
+
+		pd_off += sprintf (print_data + pd_off, "%s%s%s",
+			top->flag_external ? " EXTERNAL" : "",
+			top->flag_is_global ? " GLOBAL" : "",
+			top->flag_item_based ? " BASED" : "");
+
 		if (top->redefines && !top->file) {
 			pd_off += sprintf (print_data + pd_off, ", REDEFINES %s", top->redefines->name);
 		}
@@ -5458,7 +5464,7 @@ print_fields (struct cb_field *top, int *found)
 		first = 0;
 		old_level = top->level;
 
-		/* skip printing of details for TYPEDEF / SAME-AS /LIKE */
+		/* skip printing of details for TYPEDEF / SAME-AS / LIKE */
 		if (top->external_definition) {
 			continue;
 		}
@@ -7840,7 +7846,6 @@ process_assemble (struct filename *fn)
 
 /* Create single-element loadable object (as module)
    without intermediate stages */
-
 static int
 process_module_direct (struct filename *fn)
 {
@@ -7875,6 +7880,22 @@ process_module_direct (struct filename *fn)
 #ifdef	_MSC_VER
 	exe_name = cobc_stradd_dup (name, "." COB_MODULE_EXT);
 #endif
+#ifdef	__OS400__
+	/* OS400: compilation needs full path so add it in front of transation name
+	   CHECKME: is this true? Then that code should be moved out and also called in
+	            the other process_xyz functions */
+	if (fn->translate[0] != SLASH_CHAR) {
+		char *p;
+
+		p = cobc_main_malloc (COB_LARGE_BUFF);
+		getcwd (p, COB_LARGE_BUFF);
+
+		strcat (p, SLASH_STR);
+		strcat (p, fn->translate);
+		fn->translate = p;
+		fn->translate_len = strlen (p);
+	}
+#endif
 
 	size = strlen (name);
 #ifdef	_MSC_VER
@@ -7893,8 +7914,28 @@ process_module_direct (struct filename *fn)
 
 	cobc_chk_buff_size (bufflen);
 
-#ifdef	_MSC_VER
-	sprintf (cobc_buffer, source_debugging ?
+#ifndef	_MSC_VER
+#ifdef	__WATCOMC__
+	sprintf (cobc_buffer, "%s %s %s %s %s %s -fe=\"%s\" \"%s\" %s %s %s",
+		 cobc_cc, cobc_cflags, cobc_include, COB_SHARED_OPT,
+		 COB_PIC_FLAGS, COB_EXPORT_DYN, name,
+		 fn->translate, cobc_ldflags, cobc_lib_paths, cobc_libs);
+#else
+	sprintf (cobc_buffer, "%s %s %s %s %s %s -o \"%s\" \"%s\" %s %s %s",
+		 cobc_cc, cobc_cflags, cobc_include, COB_SHARED_OPT,
+		 COB_PIC_FLAGS, COB_EXPORT_DYN, name,
+		 fn->translate, cobc_ldflags, cobc_lib_paths, cobc_libs);
+#endif
+	ret = process (cobc_buffer);
+#ifdef	COB_STRIP_CMD
+	if (strip_output && ret == 0) {
+		cobc_chk_buff_size (strlen (COB_STRIP_CMD) + 4 + strlen (name));
+		sprintf (cobc_buffer, "%s \"%s\"", COB_STRIP_CMD, name);
+		ret = process (cobc_buffer);
+	}
+#endif
+#else	/* _MSC_VER */
+	sprintf (cobc_buffer, cb_source_debugging ?
 		"%s %s %s /Od /MDd /LDd /Zi /FR /Fe\"%s\" /Fo\"%s\" \"%s\" %s %s %s %s" :
 		"%s %s %s     /MD  /LD          /Fe\"%s\" /Fo\"%s\" \"%s\" %s %s %s %s",
 			cobc_cc, cobc_cflags, cobc_include, exe_name, name,
@@ -7921,39 +7962,7 @@ process_module_direct (struct filename *fn)
 	if (strstr (fn->source, cobc_buffer) == NULL)	cobc_check_action (cobc_buffer);
 	sprintf (cobc_buffer, "%s.%s", name, COB_OBJECT_EXT);
 	if (strstr (fn->source, cobc_buffer) == NULL)	cobc_check_action (cobc_buffer);
-#else	/* _MSC_VER */
-#ifdef	__OS400__
-	if (fn->translate[0] != '/') {
-		char	*p;
-
-		p = cobc_main_malloc (COB_LARGE_BUFF);
-		getcwd (p, COB_LARGE_BUFF);
-		strcat (p, "/");
-		strcat (p, fn->translate);
-		fn->translate = p;
-		fn->translate_len = strlen (p);
-	}
 #endif
-#ifdef	__WATCOMC__
-	sprintf (cobc_buffer, "%s %s %s %s %s %s -fe=\"%s\" \"%s\" %s %s %s",
-		 cobc_cc, cobc_cflags, cobc_include, COB_SHARED_OPT,
-		 COB_PIC_FLAGS, COB_EXPORT_DYN, name,
-		 fn->translate, cobc_ldflags, cobc_lib_paths, cobc_libs);
-#else
-	sprintf (cobc_buffer, "%s %s %s %s %s %s -o \"%s\" \"%s\" %s %s %s",
-		 cobc_cc, cobc_cflags, cobc_include, COB_SHARED_OPT,
-		 COB_PIC_FLAGS, COB_EXPORT_DYN, name,
-		 fn->translate, cobc_ldflags, cobc_lib_paths, cobc_libs);
-#endif
-	ret = process (cobc_buffer);
-#ifdef	COB_STRIP_CMD
-	if (strip_output && ret == 0) {
-		cobc_chk_buff_size (strlen (COB_STRIP_CMD) + 3 + strlen (name));
-		sprintf (cobc_buffer, "%s \"%s\"", COB_STRIP_CMD, name);
-		ret = process (cobc_buffer);
-	}
-#endif
-#endif	/* _MSC_VER */
 	return ret;
 }
 
@@ -8006,8 +8015,26 @@ process_module (struct filename *fn)
 
 	cobc_chk_buff_size (bufflen);
 
-#ifdef	_MSC_VER
-	sprintf (cobc_buffer, source_debugging ?
+#ifndef	_MSC_VER
+#ifdef	__WATCOMC__
+	sprintf (cobc_buffer, "%s %s %s %s -fe=\"%s\" \"%s\" %s %s %s",
+		 cobc_cc, COB_SHARED_OPT, COB_PIC_FLAGS, COB_EXPORT_DYN,
+		 name, fn->object, cobc_ldflags, cobc_lib_paths, cobc_libs);
+#else
+	sprintf (cobc_buffer, "%s %s %s %s -o \"%s\" \"%s\" %s %s %s",
+		 cobc_cc, COB_SHARED_OPT, COB_PIC_FLAGS, COB_EXPORT_DYN,
+		 name, fn->object, cobc_ldflags, cobc_lib_paths, cobc_libs);
+#endif
+	ret = process (cobc_buffer);
+#ifdef	COB_STRIP_CMD
+	if (strip_output && ret == 0) {
+		cobc_chk_buff_size (strlen (COB_STRIP_CMD) + 4 + strlen (name));
+		sprintf (cobc_buffer, "%s \"%s\"", COB_STRIP_CMD, name);
+		ret = process (cobc_buffer);
+	}
+#endif
+#else	/* _MSC_VER */
+	sprintf (cobc_buffer, cb_source_debugging ?
 		"%s /Od /MDd /LDd /Zi /FR /Fe\"%s\" \"%s\" %s %s %s %s" :
 		"%s     /MD  /LD          /Fe\"%s\" \"%s\" %s %s %s %s",
 		cobc_cc, exe_name, fn->object,
@@ -8033,25 +8060,7 @@ process_module (struct filename *fn)
 	if (strstr (fn->source, cobc_buffer) == NULL)	cobc_check_action (cobc_buffer);
 	sprintf (cobc_buffer, "%s.obj", name);
 	if (strstr (fn->source, cobc_buffer) == NULL)	cobc_check_action (cobc_buffer);
-#else	/* _MSC_VER */
-#ifdef	__WATCOMC__
-	sprintf (cobc_buffer, "%s %s %s %s -fe=\"%s\" \"%s\" %s %s %s",
-		 cobc_cc, COB_SHARED_OPT, COB_PIC_FLAGS, COB_EXPORT_DYN,
-		 name, fn->object, cobc_ldflags, cobc_lib_paths, cobc_libs);
-#else
-	sprintf (cobc_buffer, "%s %s %s %s -o \"%s\" \"%s\" %s %s %s",
-		 cobc_cc, COB_SHARED_OPT, COB_PIC_FLAGS, COB_EXPORT_DYN,
-		 name, fn->object, cobc_ldflags, cobc_lib_paths, cobc_libs);
 #endif
-	ret = process (cobc_buffer);
-#ifdef	COB_STRIP_CMD
-	if (strip_output && ret == 0) {
-		cobc_chk_buff_size (strlen (COB_STRIP_CMD) + 3 + strlen (name));
-		sprintf (cobc_buffer, "%s \"%s\"", COB_STRIP_CMD, name);
-		ret = process (cobc_buffer);
-	}
-#endif
-#endif	/* _MSC_VER */
 	return ret;
 }
 
@@ -8119,8 +8128,28 @@ process_library (struct filename *l)
 
 	cobc_chk_buff_size (bufflen);
 
-#ifdef	_MSC_VER
-	sprintf (cobc_buffer, source_debugging ?
+#ifndef	_MSC_VER
+#ifdef	__WATCOMC__
+	sprintf (cobc_buffer, "%s %s %s %s -fe=\"%s\" %s %s %s %s",
+		 cobc_cc, COB_SHARED_OPT, COB_PIC_FLAGS,
+		 COB_EXPORT_DYN, name, cobc_objects_buffer,
+		 cobc_ldflags, cobc_lib_paths, cobc_libs);
+#else
+	sprintf (cobc_buffer, "%s %s %s %s -o \"%s\" %s %s %s %s",
+		 cobc_cc, COB_SHARED_OPT, COB_PIC_FLAGS,
+		 COB_EXPORT_DYN, name, cobc_objects_buffer,
+		 cobc_ldflags, cobc_lib_paths, cobc_libs);
+#endif
+	ret = process (cobc_buffer);
+#ifdef	COB_STRIP_CMD
+	if (strip_output && ret == 0) {
+		cobc_chk_buff_size (strlen (COB_STRIP_CMD) + 4 + strlen (name));
+		sprintf (cobc_buffer, "%s \"%s\"", COB_STRIP_CMD, name);
+		ret = process (cobc_buffer);
+	}
+#endif
+#else	/* _MSC_VER */
+	sprintf (cobc_buffer, cb_source_debugging ?
 		"%s /Od /MDd /LDd /Zi /FR /Fe\"%s\" %s %s %s %s %s" :
 		"%s     /MD  /LD          /Fe\"%s\" %s %s %s %s %s",
 		cobc_cc, exe_name, cobc_objects_buffer,
@@ -8150,26 +8179,7 @@ process_library (struct filename *l)
 		}
 	}
 	if (!f)	cobc_check_action (cobc_buffer);
-#else	/* _MSC_VER */
-#ifdef	__WATCOMC__
-	sprintf (cobc_buffer, "%s %s %s %s -fe=\"%s\" %s %s %s %s",
-		 cobc_cc, COB_SHARED_OPT, COB_PIC_FLAGS,
-		 COB_EXPORT_DYN, name, cobc_objects_buffer,
-		 cobc_ldflags, cobc_lib_paths, cobc_libs);
-#else
-	sprintf (cobc_buffer, "%s %s %s %s -o \"%s\" %s %s %s %s",
-		 cobc_cc, COB_SHARED_OPT, COB_PIC_FLAGS,
-		 COB_EXPORT_DYN, name, cobc_objects_buffer,
-		 cobc_ldflags, cobc_lib_paths, cobc_libs);
 #endif
-	ret = process (cobc_buffer);
-#ifdef	COB_STRIP_CMD
-	if (strip_output && ret == 0) {
-		sprintf (cobc_buffer, "%s \"%s\"", COB_STRIP_CMD, name);
-		ret = process (cobc_buffer);
-	}
-#endif
-#endif	/* _MSC_VER */
 	return ret;
 }
 
@@ -8241,8 +8251,47 @@ process_link (struct filename *l)
 
 	cobc_chk_buff_size (bufflen);
 
-#ifdef	_MSC_VER
-	sprintf (cobc_buffer, source_debugging ?
+#ifndef	_MSC_VER
+#ifdef	__WATCOMC__
+	sprintf (cobc_buffer, "%s %s -fe=\"%s\" %s %s %s %s",
+		 cobc_cc, COB_EXPORT_DYN, name, cobc_objects_buffer,
+		 cobc_ldflags, cobc_lib_paths, cobc_libs);
+#else
+	sprintf (cobc_buffer, "%s %s -o \"%s\" %s %s %s %s",
+		 cobc_cc, COB_EXPORT_DYN, name, cobc_objects_buffer,
+		 cobc_ldflags, cobc_lib_paths, cobc_libs);
+#endif
+	ret = process (cobc_buffer);
+
+#ifdef	__hpux
+	if (ret == 0) {
+		sprintf (cobc_buffer, "chatr -s +s enable \"%s%s\" 1>/dev/null 2>&1",
+			 name, COB_EXE_EXT);
+		process (cobc_buffer);
+	}
+#endif
+
+#ifdef	COB_STRIP_CMD
+	if (strip_output && ret == 0) {
+		const char *exe_ext = COB_EXE_EXT;
+		if (*exe_ext) {
+			exe_ext++; /* drop the "." */
+		}
+		cobc_chk_buff_size (strlen (COB_STRIP_CMD) + 4 + strlen (name) + strlen (COB_EXE_EXT));
+		/* only add COB_EXE_EXT if it is not specified */
+		exe_name = file_extension (name);
+		if (strcasecmp (exe_name, exe_ext)) {
+			sprintf (cobc_buffer, "%s \"%s%s\"",
+				 COB_STRIP_CMD, name, COB_EXE_EXT);
+		} else {
+			sprintf (cobc_buffer, "%s \"%s\"",
+				 COB_STRIP_CMD, name);
+		}
+		ret = process (cobc_buffer);
+	}
+#endif
+#else	/* _MSC_VER */
+	sprintf (cobc_buffer, cb_source_debugging ?
 		"%s /Od /MDd /Zi /FR /Fe\"%s\" %s %s %s %s %s" :
 		"%s     /MD          /Fe\"%s\" %s %s %s %s %s",
 		cobc_cc, exe_name, cobc_objects_buffer,
@@ -8262,48 +8311,7 @@ process_link (struct filename *l)
 		cobc_check_action (cobc_buffer);
 	}
 	cobc_free ((void *) exe_name);
-#else	/* _MSC_VER */
-#ifdef	__WATCOMC__
-	sprintf (cobc_buffer, "%s %s -fe=\"%s\" %s %s %s %s",
-		 cobc_cc, COB_EXPORT_DYN, name, cobc_objects_buffer,
-		 cobc_ldflags, cobc_lib_paths, cobc_libs);
-#else
-	sprintf (cobc_buffer, "%s %s -o \"%s\" %s %s %s %s",
-		 cobc_cc, COB_EXPORT_DYN, name, cobc_objects_buffer,
-		 cobc_ldflags, cobc_lib_paths, cobc_libs);
 #endif
-
-	ret = process (cobc_buffer);
-
-#ifdef	__hpux
-	if (ret == 0) {
-		sprintf (cobc_buffer, "chatr -s +s enable \"%s%s\" 1>/dev/null 2>&1",
-			 name, COB_EXE_EXT);
-		process (cobc_buffer);
-	}
-#endif
-
-#ifdef	COB_STRIP_CMD
-	if (strip_output && ret == 0) {
-		const char *exe_ext = COB_EXE_EXT;
-		if (*exe_ext) {
-			exe_ext++; /* drop the "." */
-		}
-		cobc_chk_buff_size (strlen (COB_STRIP_CMD) + 3 + strlen (name) + strlen (COB_EXE_EXT));
-		/* only add COB_EXE_EXT if it is not specified */
-		exe_name = file_extension (name);
-		if (strcasecmp (exe_name, exe_ext)) {
-			sprintf (cobc_buffer, "%s \"%s%s\"",
-				 COB_STRIP_CMD, name, COB_EXE_EXT);
-		} else {
-			sprintf (cobc_buffer, "%s \"%s\"",
-				 COB_STRIP_CMD, name);
-		}
-		ret = process (cobc_buffer);
-	}
-#endif
-
-#endif	/* _MSC_VER */
 	return ret;
 }
 

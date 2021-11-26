@@ -1,4 +1,10 @@
 
+2021-11-26  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (cobc_print_info): output COB_STRIP_CMD when verbose
+	* cobc.c: ensure correct buffer size for handling COB_STRIP_CMD
+	* cobc.c (print_fields): minor refactoring
+
 2021-11-22  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (cb_emit_allocate_identifier, cb_emit_allocate_characters),
