@@ -1,4 +1,9 @@
 
+2021-11-26  Ron Norman <rjn@inglenet.com>
+
+	* field.c: More checks for USAGE on a group and if compatible
+			with the elementary data field description
+
 2021-11-18  Ron Norman <rjn@inglenet.com>
 
 	* field.c: More work for OCCURS with multiple VALUES

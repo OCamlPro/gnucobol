@@ -1116,11 +1116,15 @@ create_implicit_picture (struct cb_field *f)
 		return 0;
 	}
 
-	if (f->usage == CB_USAGE_DISPLAY) {
+	if (f->usage == CB_USAGE_DISPLAY
+	&& !f->flag_usage_defined) {
 		for (p = f->parent; p; p = p->parent) {
-			if (p->usage == CB_USAGE_FLOAT
+			if (p->flag_usage_defined
+			&& (p->usage == CB_USAGE_FLOAT	
 			 || p->usage == CB_USAGE_DOUBLE
-			 || p->usage == CB_USAGE_INDEX) {
+			 || p->usage == CB_USAGE_BINARY
+			 || p->usage == CB_USAGE_POINTER
+			 || p->usage == CB_USAGE_INDEX)) {
 				f->usage = p->usage;	/* Propogate group USAGE to elementary field */
 				return 0;
 			}
@@ -1415,31 +1419,60 @@ validate_pic (struct cb_field *f)
 
 	/* Check for Group attributes to be carried to elementary field */
 	if (!f->flag_validated
-	 && cb_nonnumeric_with_numeric_group_usage == CB_OK
 	 && f->parent
 	 && !f->children) {
-		struct cb_field *p;
-		if (f->flag_usage_defined
-		 && is_numeric_field (f)) {
+		struct cb_field *p = NULL;
+		if (is_numeric_field (f)) {
+			if (f->flag_usage_defined) {
+				for (p = f->parent; p; p = p->parent) {
+					if (p->flag_usage_defined
+					 && f->usage != p->usage) {
+						break;
+					}
+				}
+			} else {
+				for (p = f->parent; p; p = p->parent) {
+					if ((p->usage == CB_USAGE_POINTER
+					  || p->usage == CB_USAGE_FLOAT
+					  || p->usage == CB_USAGE_DOUBLE
+					  || p->usage == CB_USAGE_INDEX)
+					 && f->pic != NULL) {
+						cb_error_x (x, _("%s USAGE %s incompatible with %s PICTURE"),
+								p->flag_filler?"FILLER":p->name, cb_get_usage_string (p->usage),
+								f->flag_filler?"FILLER":f->name);
+						break;
+					}
+					if (p->usage != CB_USAGE_DISPLAY) {
+						f->usage = p->usage;
+						break;
+					}
+				}
+				p = NULL;
+			}
+		} else {
 			for (p = f->parent; p; p = p->parent) {
-				if (p->usage != CB_USAGE_DISPLAY
+				if (!p->flag_usage_defined)
+					continue;
+				if (is_numeric_field(p)
+				 && f->usage != p->usage
+				 && cb_nonnumeric_with_numeric_group_usage == CB_ERROR) {
+					break;
+				}
+				if ((p->usage == CB_USAGE_POINTER
+				  || p->usage == CB_USAGE_FLOAT
+				  || p->usage == CB_USAGE_DOUBLE
+				  || p->usage == CB_USAGE_INDEX)
 				 && f->usage != p->usage) {
-					cb_error_x (x, _("%s USAGE %s incompatible with %s USAGE %s"),
-							p->flag_filler?"FILLER":p->name, cb_get_usage_string (p->usage),
-							f->flag_filler?"FILLER":f->name, cb_get_usage_string (f->usage));
 					break;
 				}
 			}
 		}
-		if (!f->flag_usage_defined
-		 && is_numeric_field (f)) {
-			for (p = f->parent; p; p = p->parent) {
-				if (p->usage != CB_USAGE_DISPLAY) {
-					f->usage = p->usage;
-					break;
-				}
-			}
+		if (p) {
+			cb_error_x (x, _("%s USAGE %s incompatible with %s USAGE %s"),
+					p->flag_filler?"FILLER":p->name, cb_get_usage_string (p->usage),
+					f->flag_filler?"FILLER":f->name, cb_get_usage_string (f->usage));
 		}
+
 		/* TODO: handle this "per dialect", some disallow this (per ANSI85) or ignore it */
 		if (!f->flag_synchronized
 		 && f->parent
@@ -1454,6 +1487,7 @@ validate_pic (struct cb_field *f)
 		  || f->usage == CB_USAGE_SIGNED_LONG
 		  || f->usage == CB_USAGE_COMP_5
 		  || f->usage == CB_USAGE_COMP_6
+		  || f->usage == CB_USAGE_POINTER
 		  || f->usage == CB_USAGE_FP_DEC64
 		  || f->usage == CB_USAGE_FP_DEC128
 		  || f->usage == CB_USAGE_FP_BIN32

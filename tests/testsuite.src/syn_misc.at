@@ -7398,12 +7398,10 @@ prog.cob:38: error: file sort requires KEY phrase
 ])
 AT_CLEANUP
 
-
 AT_SETUP([Group Usage Error])
-AT_KEYWORDS([numeric])
+AT_KEYWORDS([Numeric])
 
-AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION.
+AT_DATA([prog.cob], [       IDENTIFICATION DIVISION.
        PROGRAM-ID. prog.
        ENVIRONMENT DIVISION.
        CONFIGURATION SECTION.
@@ -7412,15 +7410,48 @@ AT_DATA([prog.cob], [
        01  TESTRECORD.
         02  TSTGRP3 COMP-3.
          05  GRP3-1.
-           10  FILLER             PICTURE X(1).
-           10  COM3-FLD1          PICTURE S9(4) COMP-4.
-           10  FILLER             PICTURE X(1).
-           10  COM3-FLD2          PICTURE S9(6).
-           10  FILLER             PICTURE X(1).
-           10  COM3-FLD3          PICTURE S9(6) DISPLAY.
-           10  FILLER             PICTURE X(1).
+           10  FILLER             PICTURE X(1). 
+           10  COM3-FLD1          PICTURE S9(4) COMP-4. 
+           10  FILLER             PICTURE X(1). 
+           10  COM3-FLD2          PICTURE S9(6). 
+           10  FILLER             PICTURE X(1). 
+           10  COM3-FLD3          PICTURE S9(6) DISPLAY. 
+           10  FILLER             PICTURE X(1). 
          05  GRP3-2.
            10  FILLER             USAGE COMP-1.
+
+       01  TSTGRP3 POINTER.
+           05  PTR3-1.
+           05  GRP3-2 SYNC.
+             10  FILLER             PICTURE X. 
+             10  PTR3-2.
+
+       01  TSTGRP4 COMP-2.
+           05  PTR4-1 PIC 99V99.
+           05  GRP4-2 SYNC.
+             10  PTR4-2.
+
+       01  TSTGRP5 USAGE COMP-3.
+             10  COM5-FLD1          PICTURE S9(3) USAGE DISPLAY.
+             10  COM5-FLD2          PICTURE S9(6). 
+
+       01  TSTGRP6 USAGE DISPLAY.
+             10  COM6-FLD1          PICTURE S9(3) USAGE COMP-3.
+             10  COM6-FLD2          PICTURE S9(6). 
+
+       01  TSTGRP7 COMP-2.
+           05  PTR7-1 COMP-1.
+           05  FILLER             PICTURE X. 
+           05  PTR7-2.
+
+       01  TSTGRP8 INDEX.
+           05  PTR8-1.
+           05  GRP8-2 SYNC.
+             10  FILLER             PICTURE X. 
+             10  PTR8-2.
+
+       01  TSTGRP9.
+           05  PTR9-1.
 
        PROCEDURE DIVISION.
 
@@ -7429,17 +7460,24 @@ AT_DATA([prog.cob], [
            MOVE "12345678" TO COM3-FLD2 (1:).
            DISPLAY TESTRECORD.
            STOP RUN.
-
-
 ])
 
-AT_CHECK([$COMPILE_ONLY -std=mf -Wno-truncate prog.cob], [1], [],
-[prog.cob:12: error: TSTGRP3 USAGE COMP-3 incompatible with COM3-FLD1 USAGE COMP
-prog.cob:16: error: TSTGRP3 USAGE COMP-3 incompatible with COM3-FLD3 USAGE DISPLAY
-prog.cob:19: error: TSTGRP3 USAGE COMP-3 incompatible with FILLER USAGE COMP-1
+AT_CHECK([$COBC -x -std=mf -w prog.cob ], [1], [],
+[prog.cob:11: error: TSTGRP3 USAGE COMP-3 incompatible with COM3-FLD1 USAGE COMP
+prog.cob:15: error: TSTGRP3 USAGE COMP-3 incompatible with COM3-FLD3 USAGE DISPLAY
+prog.cob:18: error: TSTGRP3 USAGE COMP-3 incompatible with FILLER USAGE COMP-1
+prog.cob:23: error: TSTGRP3 USAGE POINTER incompatible with FILLER USAGE DISPLAY
+prog.cob:27: error: TSTGRP4 USAGE COMP-2 incompatible with PTR4-1 PICTURE
+prog.cob:32: error: TSTGRP5 USAGE COMP-3 incompatible with COM5-FLD1 USAGE DISPLAY
+prog.cob:36: error: TSTGRP6 USAGE DISPLAY incompatible with COM6-FLD1 USAGE COMP-3
+prog.cob:40: error: TSTGRP7 USAGE COMP-2 incompatible with PTR7-1 USAGE COMP-1
+prog.cob:41: error: TSTGRP7 USAGE COMP-2 incompatible with FILLER USAGE DISPLAY
+prog.cob:47: error: TSTGRP8 USAGE INDEX incompatible with FILLER USAGE DISPLAY
+prog.cob:51: error: PICTURE clause required for 'PTR9-1'
 ])
 
 AT_CLEANUP
+
 
 AT_SETUP([OSVS I/O extensions])
 AT_KEYWORDS([ibm file extensions])

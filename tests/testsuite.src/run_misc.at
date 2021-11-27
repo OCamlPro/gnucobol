@@ -15658,32 +15658,38 @@ AT_DATA([prog.cob], [
        DATA  DIVISION.
        WORKING-STORAGE SECTION.
        01  TESTRECORD.
-        02  TSTGRP3 COMP-4.
-         05  GRP3-1.
-           10  FILLER             PICTURE X(1).
-           10  COM3-FLD1          PICTURE S9(3).
-           10  FILLER             PICTURE X(3).
-           10  COM3-FLD2          PICTURE S9(6).
-         05  GRP3-2 SYNC.
-           10  FILLER             PICTURE X(1).
-           10  COM3-FLD3          PICTURE S9(5).
-           10  FILLER             PICTURE X.
+         02  TSTGRP1 USAGE BINARY.
+           05  GRP1-1.
+             10  FILLER             PICTURE X(1). 
+             10  COM1-FLD1          PICTURE S9(3). 
+             10  FILLER             PICTURE X(3). 
+             10  COM1-FLD2          PICTURE S9(6). 
+           05  GRP1-2 SYNC.
+             10  FILLER             PICTURE X(1). 
+             10  COM1-FLD3          PICTURE S9(5). 
+             10  FILLER             PICTURE X. 
+             10  COM1-FLDX          PICTURE X(5). 
+       01  TSTGRP2 POINTER.
+           05  PTR-1.
+           05  GRP2-2 SYNC.
+             10  PTR-2.
 
        PROCEDURE DIVISION.
 
            MOVE ALL 'x' TO TESTRECORD.
-           MOVE "12345678" TO COM3-FLD1 (1:).
-           MOVE "12345678" TO COM3-FLD2 (1:).
-           MOVE "12345678" TO COM3-FLD3 (1:).
-           DISPLAY TESTRECORD WITH NO ADVANCING.
+           MOVE "12345678" TO COM1-FLD1 (1:).
+           MOVE "12345678" TO COM1-FLD2 (1:).
+           MOVE "12345678" TO COM1-FLD3 (1:).
+           MOVE "********" TO COM1-FLDX (1:).
+           DISPLAY TESTRECORD.
            STOP RUN.
-
-
+           
 ])
 
-AT_CHECK([$COMPILE -w -std=mf prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
-[x12xxx123x123x], [])
+AT_CHECK([$COBC -x -std=mf -w prog.cob ], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [x12xxx123x123x*****
+], [])
 
 AT_CLEANUP
 
@@ -15699,32 +15705,37 @@ AT_DATA([prog.cob], [
        DATA  DIVISION.
        WORKING-STORAGE SECTION.
        01  TESTRECORD.
-        02  TSTGRP3 COMP-4.
-         05  GRP3-1.
-           10  FILLER             PICTURE X(1).
-           10  COM3-FLD1          PICTURE S9(3).
-           10  FILLER             PICTURE X(3).
-           10  COM3-FLD2          PICTURE S9(6).
-         05  GRP3-2 SYNC.
-           10  FILLER             PICTURE X(1).
-           10  COM3-FLD3          PICTURE S9(5).
-           10  FILLER             PICTURE X.
+         02  TSTGRP1 USAGE BINARY.
+           05  GRP1-1.
+             10  FILLER             PICTURE X(1). 
+             10  COM1-FLD1          PICTURE S9(3). 
+             10  FILLER             PICTURE X(3). 
+             10  COM1-FLD2          PICTURE S9(6). 
+           05  GRP1-2 SYNC.
+             10  FILLER             PICTURE X(1). 
+             10  COM1-FLD3          PICTURE S9(5). 
+             10  FILLER             PICTURE X. 
+             10  COM1-FLDX          PICTURE X(5). 
+       01  TSTGRP2 POINTER.
+           05  PTR-1.
+           05  GRP2-2 SYNC.
+             10  PTR-2.
 
        PROCEDURE DIVISION.
 
            MOVE ALL 'x' TO TESTRECORD.
-           MOVE "12345678" TO COM3-FLD1 (1:).
-           MOVE "12345678" TO COM3-FLD2 (1:).
-           MOVE "12345678" TO COM3-FLD3 (1:).
+           MOVE "12345678" TO COM1-FLD1 (1:).
+           MOVE "12345678" TO COM1-FLD2 (1:).
+           MOVE "12345678" TO COM1-FLD3 (1:).
+           MOVE "********" TO COM1-FLDX (1:).
            DISPLAY TESTRECORD.
            STOP RUN.
-
-
+           
 ])
 
-AT_CHECK([$COMPILE -w -fibmcomp prog.cob], [0], [], [])
+AT_CHECK([$COBC -x -std=mf -w -fibmcomp prog.cob ], [0], [], [])
 
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [x12xxx1234xx1234x
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [x12xxx1234xx1234x*****
 ], [])
 
 AT_CLEANUP
