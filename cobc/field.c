@@ -1122,7 +1122,6 @@ create_implicit_picture (struct cb_field *f)
 			if (p->flag_usage_defined
 			&& (p->usage == CB_USAGE_FLOAT	
 			 || p->usage == CB_USAGE_DOUBLE
-			 || p->usage == CB_USAGE_BINARY
 			 || p->usage == CB_USAGE_POINTER
 			 || p->usage == CB_USAGE_INDEX)) {
 				f->usage = p->usage;	/* Propogate group USAGE to elementary field */
