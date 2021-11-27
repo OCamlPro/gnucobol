@@ -442,7 +442,7 @@ static size_t		manilink_len;
 #endif
 
 static size_t		strip_output = 0;
-static size_t		source_debugging = 0;
+static size_t		cb_source_debugging = 0;	/* note: was moved to global one later, so keep that name already*/
 
 static const char	*const cob_csyns[] = {
 #ifndef	COB_EBCDIC_MACHINE
@@ -3107,7 +3107,7 @@ process_command_line (const int argc, char **argv)
 		case 'g':
 			/* -g : Generate C debug code */
 			save_all_src = 1;
-			source_debugging = 1;
+			cb_source_debugging = 1;
 			cb_flag_stack_check = 1;
 			cb_flag_source_location = 1;
 #if 1		/* auto-included, may be disabled manually if needed */
@@ -3902,7 +3902,7 @@ process_command_line (const int argc, char **argv)
 	}
 
 	/* If C debug, do not strip output */
-	if (source_debugging) {
+	if (cb_source_debugging) {
 		strip_output = 0;
 	}
 
@@ -4653,7 +4653,7 @@ process (char *cmd)
 		if (optimize) {
 			strcat (buffptr, " OPTIMIZE(40)");
 		}
-		if (source_debugging) {
+		if (cb_source_debugging) {
 			strcat (buffptr, " DBGVIEW(*ALL)");
 		}
 		if (cobc_gen_listing) {
@@ -7745,7 +7745,7 @@ process_compile (struct filename *fn)
 	cobc_chk_buff_size (bufflen);
 
 #ifdef	_MSC_VER
-	sprintf (cobc_buffer, source_debugging ?
+	sprintf (cobc_buffer, cb_source_debugging ?
 		"%s /c %s %s /Od /MDd /Zi /FR /c /Fa\"%s\" /Fo\"%s\" \"%s\"" :
 		"%s /c %s %s     /MD          /c /Fa\"%s\" /Fo\"%s\" \"%s\"",
 			cobc_cc, cobc_cflags, cobc_include, name,
@@ -7795,7 +7795,7 @@ process_assemble (struct filename *fn)
 	cobc_chk_buff_size (bufflen);
 
 #ifdef	_MSC_VER
-	sprintf (cobc_buffer, source_debugging ?
+	sprintf (cobc_buffer, cb_source_debugging ?
 		"%s /c %s %s /Od /MDd /Zi /FR /Fo\"%s\" \"%s\"" :
 		"%s /c %s %s     /MD          /Fo\"%s\" \"%s\"",
 			cobc_cc, cobc_cflags, cobc_include,

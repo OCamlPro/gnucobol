@@ -4737,6 +4737,7 @@ add_reserved_word (const char *word, const char *fname, const int line)
 static void
 remove_reserved_word_internal (const char *upper_word, const char *fname, const int line)
 {
+	COB_UNUSED (line);
 	add_amendment (upper_word, fname, -1, 0);	/* "line" -1 as we don't want any check here */
 }
 

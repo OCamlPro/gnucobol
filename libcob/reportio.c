@@ -1552,7 +1552,7 @@ PrintReportFooting:
 int
 cob_report_generate (cob_report *r, cob_report_line *l, int ctl)
 {
-	cob_report_control	*rc, *rp;
+	cob_report_control	*rc;
 	cob_report_control_ref	*rr;
 	cob_report_line		*pl;
 	static	int		maxctl,ln,num,gengrp, last_use;
@@ -1699,6 +1699,7 @@ PrintFirstHeading:
 			}
 		}
 		if(maxctl > 0) {
+			cob_report_control *rp;
 			for(rp = r->controls; rp; rp = rp->next) {
 				if(rp->sequence < maxctl
 				&& !rp->data_change) {
@@ -1797,6 +1798,7 @@ PrintHeading:
 		l->suppress = FALSE;
 		DEBUG_LOG("rw",(" Line# %d SUPPRESSed\n",r->curr_line));
 	} else {
+		cob_report_control *rp = NULL;
 		if(l->fields == NULL
 		&& l->child != NULL
 		&& l->child->sister != NULL) {
@@ -1840,6 +1842,7 @@ PrintHeading:
 			last_use = l->use_decl;
 			return l->use_decl;
 		}
+		rr = NULL;
 		for(pl = l; pl; pl = pl->sister) {
 			if( NOTDETAIL(pl->flags) ) {
 				DEBUG_LOG("rw",("B NOT Detail Line 0x%X\n",pl->flags));

@@ -5378,7 +5378,7 @@ cob_pre_open (cob_file *f)
 		if (max > (size_t)COB_FILE_MAX) {
 			max = (size_t)COB_FILE_MAX;
 		}
-		strncpy(file_open_name, f->fcd->fnamePtr, max);
+		strncpy (file_open_name, f->fcd->fnamePtr, max);
 		for (i = max - 1; ; i--) {
 			if (file_open_name[i] && file_open_name[i] != ' ') {
 				file_open_name[i + 1] = 0;
@@ -8811,8 +8811,9 @@ cob_sys_extfh (const void *opcode_ptr, void *fcd_ptr)
  * Sync FCD3 values to cob_file values
  */
 static void
-cob_fcd_file_sync (cob_file *f, char *file_open_name)
+cob_fcd_file_sync (cob_file *f, char *external_file_open_name)
 {
+	COB_UNUSED (external_file_open_name);
 	copy_fcd_to_file (f->fcd, f);
 }
 

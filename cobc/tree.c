@@ -6042,7 +6042,7 @@ cb_build_call (const cb_tree name, const cb_tree args, const cb_tree on_exceptio
 }
 
 cb_tree
-cb_build_call_parameter (cb_tree arg, int call_mode, int size_mode)
+cb_build_call_parameter (cb_tree arg, int call_mode, const int size_mode)
 {
 	cb_tree	res;
 	if (call_mode != CB_CALL_BY_REFERENCE) {
