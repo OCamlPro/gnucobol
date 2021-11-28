@@ -5016,7 +5016,6 @@ lineseq_rewrite (cob_file_api *a, cob_file *f, const int opt)
 {
 	unsigned char	*p;
 	size_t		size, psize, slotlen, rcsz;
-	int			ret;
 	off_t		curroff, savepos;
 	COB_UNUSED (a);
 
