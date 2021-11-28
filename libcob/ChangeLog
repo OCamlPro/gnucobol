@@ -1,4 +1,9 @@
 
+2021-11-28  Ron Norman <rjn@inglenet.com>
+
+	* fileio.c: Changes to open sequential files in binary mode on Windows
+				(Untested on real Windows at this time)
+
 2021-11-18  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_get_sig_name, cob_get_sig_description,

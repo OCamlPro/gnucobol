@@ -4125,22 +4125,28 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename, const int mode, con
 		if ((f->share_mode & COB_SHARE_NO_OTHER)
 		 || (f->lock_mode & COB_FILE_EXCLUSIVE) ) {
 			fmode = "r+";
+#ifndef _WIN32
 		} else 
 		if (!file_setptr->cob_unix_lf) {
 			fmode = "r";
+#endif
 		} else {
 			fmode = "rb";
 		}
 		break;
 	case COB_OPEN_OUTPUT:
+#ifdef _WIN32
+		fmode = "wb";
+#else
 		if (!file_setptr->cob_unix_lf) {
 			fmode = "w";
 		} else {
 			fmode = "wb";
 		}
+#endif
 		break;
 	case COB_OPEN_I_O:
-		fmode = "r+";
+		fmode = "rb+";
 		break;
 	case COB_OPEN_EXTEND:
 		/* Problem on WIN32 (tested _MSC_VER 1500 and GCC build) if file isn't there: */
@@ -4150,11 +4156,15 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename, const int mode, con
 		/* Possible Solutions: */
 		/* a) Create the file and reopen it with a+ */
 		/* b) Check this stuff in EINVAL and just go on */
+#ifdef _WIN32
+		fmode = "ab+";
+#else
 		if (!file_setptr->cob_unix_lf) {
 			fmode = "a+";
 		} else {
 			fmode = "ab+";
 		}
+#endif
 		break;
 	/* LCOV_EXCL_START */
 	default:
@@ -4758,21 +4768,7 @@ again:
 			continue;
 		} else {
 			if (n == '\r') {
-#if 1
 				continue;			/* Ignore CR on reading */
-#else
-				/* How to decide when to enable this path? */
-				n = getc ((FILE *)f->file);
-				if (n == '\f')		/* Skip NEW PAGE on reading */
-					n = getc ((FILE *)f->file);
-				if (n == '\n'		/* CR LF so end of line */
-				 || n == EOF) {
-					break;
-				}
-				fseek((FILE*)f->file, (long)-1, SEEK_CUR);
-				/* Should the CR end the line or returned as data */
-				break;	
-#endif
 			}
 			if (n == '\n') {
 				break;
@@ -5033,6 +5029,8 @@ lineseq_rewrite (cob_file_api *a, cob_file *f, const int opt)
 	p = f->record->data;
 	psize = size;
 	slotlen = curroff - f->record_off - 1;
+	if ((f->file_features & COB_FILE_LS_CRLF)) 
+		slotlen--;
 	if ((f->file_features & COB_FILE_LS_NULLS)) {
 		size_t j;
 		for (j = 0; j < size; j++) {
@@ -5137,25 +5135,8 @@ lineseq_rewrite (cob_file_api *a, cob_file *f, const int opt)
 		}
 	}
 
-	if (f->flag_select_features & COB_SELECT_LINAGE) {
-		COB_CHECKED_FPUTC ('\n', (FILE *)f->file);
-	} else
-	if ((f->file_features & COB_FILE_LS_CRLF)) {
-		if ((opt & COB_WRITE_PAGE)
-		 || (opt & COB_WRITE_BEFORE && f->flag_needs_nl)) {
-			COB_CHECKED_FPUTC ('\r', (FILE *)f->file);
-		}
-	} else {
-		COB_CHECKED_FPUTC ('\n', (FILE *)f->file);
-	}
-
-	/* WRITE BEFORE */
-	if (opt & COB_WRITE_BEFORE) {
-		ret = cob_file_write_opt (f, opt);
-		if (ret) {
-			return ret;
-		}
-		f->flag_needs_nl = 0;
+	if (fseek((FILE*)f->file, (off_t)curroff, SEEK_SET) != 0) {
+		return COB_STATUS_30_PERMANENT_ERROR;
 	}
 	if (f->open_mode == COB_OPEN_I_O)	/* Required on some systems */
 		fflush((FILE*)f->file); 
