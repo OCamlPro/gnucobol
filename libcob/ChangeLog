@@ -732,6 +732,14 @@
 	  a key that has all SUPPRESS character and skip the record.
 	  This will handle old VBISAM which do not support key suppression.
 
+2019-12-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	Fix Bug #608, #700
+	* screenio.c (BUTTON3_DOUBLE_CLICKED): fix value for BUTTON3_DOUBLE_CLICKED
+	* screenio.c (field_accept): pass mouse position on KEY_MOUSE
+	* screenio.c (cob_display_formatted_text): fix early return for broken data
+	* common.c (set_config_val): pass COB_MOUSE_INTERVAL changes to screenio.c
+
 2019-11-18  Ron Norman <rjn@inglenet.com>
 
 	* common.h, fileio.c (fextfh.c, fbdb.c): Updates to support 

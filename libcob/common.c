@@ -6584,7 +6584,11 @@ set_config_val (char *value, int pos)
 			return 1;
 		}
 		set_value (data, data_len, numval);
-		if (strcmp (gc_conf[pos].env_name, "COB_MOUSE_FLAGS") == 0) {
+		if (strcmp (gc_conf[pos].env_name, "COB_MOUSE_FLAGS") == 0
+#ifdef HAVE_MOUSEINTERVAL	/* possibly add an internal option for mouse support, too */
+		 || strcmp (gc_conf[pos].env_name, "COB_MOUSE_INTERVAL") == 0
+#endif
+			) {
 			cob_settings_screenio ();
 		}
 

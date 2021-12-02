@@ -1,5 +1,5 @@
-      *>  Copyright (C) 2008-2012, 2015-2016,
-      *>  2019 Free Software Foundation, Inc.
+      *>  Copyright (C) 2008-2012, 2015-2016, 2019, 2021
+      *>  Free Software Foundation, Inc.
       *>  Written by Roger While, Simon Sobisch
       *>
       *>  This file is part of GnuCOBOL.
@@ -186,8 +186,8 @@
       *>78 COB-SCR-CTRL-WHEEL-RIGHT         VALUE  2091.  *reserved*
        78  COB-SCR-ALT-WHEEL-UP             VALUE  2092.
        78  COB-SCR-ALT-WHEEL-DOWN           VALUE  2093.
-      *>78 COB-SCR-ALT-WHEEL-LEFT           VALUE  2082.  *reserved*
-      *>78 COB-SCR-ALT-WHEEL-RIGHT          VALUE  2083.  *reserved*
+      *>78 COB-SCR-ALT-WHEEL-LEFT           VALUE  2094.  *reserved*
+      *>78 COB-SCR-ALT-WHEEL-RIGHT          VALUE  2095.  *reserved*
       *>  Input validation - Values 8xxx
        78  COB-SCR-NO-FIELD                 VALUE  8000.
        78  COB-SCR-TIME-OUT                 VALUE  8001.

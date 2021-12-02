@@ -1431,8 +1431,8 @@ mouse_to_exception_code (mmask_t mask) {
 	else if (mask & BUTTON3_PRESSED) fret = 2047;
 	else if (mask & BUTTON3_CLICKED) fret = 2047;
 	else if (mask & BUTTON3_RELEASED) fret = 2048;
-	else if (mask & BUTTON3_DOUBLE_CLICKED) fret = 2048;
-	else if (mask & BUTTON3_TRIPLE_CLICKED) fret = 2048;
+	else if (mask & BUTTON3_DOUBLE_CLICKED) fret = 2049;
+	else if (mask & BUTTON3_TRIPLE_CLICKED) fret = 2049;
 #if defined COB_HAS_MOUSEWHEEL
 	else if (mask & BUTTON4_PRESSED) fret = 2080;
 	else if (mask & BUTTON5_PRESSED) fret = 2081;
@@ -2962,6 +2962,19 @@ field_accept (cob_field *f, const int sline, const int scolumn, cob_field *fgc,
 				/* End key. */
 				fret = 2015;
 				goto field_return;
+#ifdef NCURSES_MOUSE_VERSION
+			case KEY_MOUSE:
+			{
+				int mline = mevent.y;
+				int mcolumn = mevent.x;
+				mevent.bstate &= cob_mask_accept;
+				if (mevent.bstate != 0) {
+					fret = mouse_to_exception_code (mevent.bstate);
+					cob_move_cursor (mline, mcolumn);	// move cursor to pass position
+					goto field_return;
+				}
+			}
+#endif
 			default:
 				(void)flushinp ();
 				cob_beep ();
