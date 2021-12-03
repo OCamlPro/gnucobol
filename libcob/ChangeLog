@@ -1,4 +1,9 @@
 
+2021-12-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (print_version_summary) [__PDCURSES__]: show version
+	  info for old versions of PDCurses, too
+
 2021-11-22  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_allocate): only initialize upon request with optimized

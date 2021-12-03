@@ -8016,16 +8016,18 @@ print_version_summary (void)
 	printf (", JSON-c %d.%d.%d",
 		JSON_C_MAJOR_VERSION, JSON_C_MINOR_VERSION, JSON_C_MICRO_VERSION);
 #endif
-#if defined (PDC_VER_MAJOR)
+#if defined (__PDCURSES__)
 	printf (", %s %d.%d",
 #ifdef PDC_VER_YEAR	/* still the correct distinction in 2020 */
 		"PDCursesMod",
 #else
 		"PDCurses",
 #endif
-		PDC_VER_MAJOR, PDC_VER_MINOR);
+		CURSES_CMP_MAJOR, CURSES_CMP_MINOR);
 #ifdef PDC_VER_CHANGE
 	printf (".%d", PDC_VER_CHANGE);
+#elif defined (PDC_BUILD)
+	printf (" (%d)", PDC_BUILD);
 #endif
 #endif
 #if defined (NCURSES_VERSION_MAJOR)

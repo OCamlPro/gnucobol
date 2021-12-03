@@ -2,7 +2,7 @@
 #
 # run_prog_manual.sh gnucobol/tests
 #
-# Copyright (C) 2014-2020 Free Software Foundation, Inc.
+# Copyright (C) 2014-2021 Free Software Foundation, Inc.
 # Written by Edward Hart, Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -29,13 +29,18 @@
 
 abs_top_builddir="@abs_top_builddir@"
 
-TIMEOUT=40        # timeout in seconds
+TIMEOUT=30        # timeout in seconds
 
-#SLEEP_SCALE=1    # always possible
-SLEEP_SCALE=0.1   # needs a "modern" sleep implementation
+if test ! -z "$MSYSTEM"; then
+  SLEEP_SCALE=1     # always possible, done in MSYS to reduce number of spawned processes
+else
+  SLEEP_SCALE=0.1   # needs a "modern" sleep implementation
+fi
+
+TITLE="GnuCOBOL Manual Test Run"
 
 _test_with_xterm () {
-   xterm -T 'GnuCOBOL Manual Test Run' \
+   xterm -T "$TITLE" \
         -fa 'Liberation Mono' -fs 14 \
         -e "bash -c \"(\$COBCRUN_DIRECT $1 2>./syserr.log && echo \$? > ./result) || echo 1 > ./result\""
 }
@@ -49,12 +54,22 @@ _test_with_screen () {
   screen -S "GCTESTS" -X select . 2>/dev/null 1>&2
   if test $? -ne 0; then
      screen -dmS "GCTESTS"
+     # we have a fresh environment there - source the test config once
      screen -S "GCTESTS" -X stuff ". \"${abs_top_builddir}/tests/atconfig\" && . \"${abs_top_builddir}/tests/atlocal\"
 "
      sleep 5
   fi
   # run actual test in screen session
-  screen -S "GCTESTS" -X exec ... bash -c "cd \"$PWD\" && ($COBCRUN_DIRECT $1 2>./syserr.log && echo $? > ./result) || echo 1 > ./result"
+  screen -S "GCTESTS" -X exec ... bash -c "cd \"$PWD\" && ($COBCRUN_DIRECT $* 2>./syserr.log && echo $? > ./result) || echo 1 > ./result"
+}
+
+
+_test_with_cmd () {
+  # run cmd to start a detached cmd (via cmd's start), and execute the tests there
+  cmd.exe /c "start \"$TITLE\" /wait cmd /v:on /c \"$COBCRUN_DIRECT $(echo $* | tr / \\) 2>syserr.log & echo !errorlevel! >result\""
+  #if test -f ./syserr.log; then
+  #  dos2unix -q ./syserr.log
+  #fi
 }
 
 # wait TIMEOUT seconds for the result file to be available
@@ -75,9 +90,11 @@ _wait_result () {
 
 rm -f ./result ./syserr.log
 if test ! -z "$DISPLAY"; then
-  _test_with_xterm  $1 || echo $? > ./result
+  _test_with_xterm  $* || echo $? > ./result
+elif test ! -z "$MSYSTEM"; then
+  _test_with_cmd    $* || echo $? > ./result
 else
-  _test_with_screen $1 || echo $? > ./result
+  _test_with_screen $* || echo $? > ./result
 fi
 
 _wait_result || {

@@ -18,7 +18,7 @@
 
 	* Makefile.am: ensure that the all target comes first as .PHONY is
 	  not mandated by POSIX; renamed "lib" target to "libs" to cater for
-	  make implementations without .PHONY support;
+	  make implementations without .PHONY support
 	* report.pl: fixed warnings when running single test (open LOG_TIME)
 	* report.pl: adjusted log output to include stdin redirect
 
