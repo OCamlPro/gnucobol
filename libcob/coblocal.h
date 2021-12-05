@@ -232,7 +232,6 @@ typedef struct __cob_settings {
 	/* fileio.c */
 	unsigned int	cob_unix_lf;		/* Use POSIX LF */
 	unsigned int	cob_do_sync;
-	unsigned int	cob_ls_uses_cr;		/* Line Sequential uses CR LF */
 	unsigned int	cob_ls_fixed;		/* Line Sequential is fixed length */
 	unsigned int	cob_ls_nulls;		/* NUL insert to Line Sequential */
 	unsigned int	cob_ls_split;		/* Split 'too long' record into parts (Default is truncate) */

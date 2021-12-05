@@ -1,4 +1,8 @@
 
+2021-12-05  Ron Norman <rjn@inglenet.com>
+
+	* fileio.c,coblocal.h: Removed unused/unsettable variable cob_ls_uses_cr
+
 2021-11-28  Ron Norman <rjn@inglenet.com>
 
 	* fileio.c: Changes to open sequential files in binary mode on Windows

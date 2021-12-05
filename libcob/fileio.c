@@ -1756,8 +1756,6 @@ cob_set_ls_defaults (cob_file *f)
 #else
 	f->file_features |= COB_FILE_LS_LF;
 #endif
-	if(file_setptr->cob_ls_uses_cr == 1)
-		f->file_features |= COB_FILE_LS_CRLF;
 
 	if(file_setptr->cob_ls_instab == 1)
 		f->flag_ls_instab = 1;
