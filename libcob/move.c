@@ -1892,6 +1892,24 @@ cob_set_llcon (cob_field *f, cob_s64_t n)
 	return;
 }
 
+static cob_u64_t chopcompx [7] = { 0xFF, 0xFFFF, 0xFFFFFF, 0xFFFFFFFF, 
+		0xFFFFFFFFFF, 0xFFFFFFFFFFFF, 0xFFFFFFFFFFFFFF};
+void
+cob_set_compx (cob_field *f, cob_s64_t n)
+{
+	cob_field	temp;
+	cob_s64_t	v;
+	temp.size = 8;
+	temp.attr = &const_binll_attr;
+	temp.data = (unsigned char *)&n;
+	if (f->size >= 1 && f->size < 8) {	/* Truncate to unsigned value */
+		v = n & chopcompx [f->size];
+		temp.data = (unsigned char *)&v;
+	}
+	cob_move (&temp, f);
+	return;
+}
+
 void
 cob_init_move (cob_global *lptr, cob_settings *sptr)
 {

@@ -1,4 +1,8 @@
 
+2021-12-08  Ron Norman <rjn@inglenet.com>
+
+	* codegen.c: When setting value into COMP-X field use cob_set_compx
+
 2021-11-26  Ron Norman <rjn@inglenet.com>
 
 	* field.c: More checks for USAGE on a group and if compatible

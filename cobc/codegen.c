@@ -9001,6 +9001,14 @@ output_stmt (cb_tree x)
 			 && f1->pic
 			 && f1->usage != CB_USAGE_LENGTH) {
 				output_prefix ();
+			 	if (f1->usage == CB_USAGE_COMP_X) {
+					output ("cob_set_compx (");
+					output_param (ap->var, 0);
+					output (", (cob_s64_t)");
+					output_integer (ap->val);
+					output (");\n");
+					break;
+				} else
 				if (CB_NUMERIC_LITERAL_P (ap->val)
 				 && CB_LITERAL (ap->val)->scale == 0
 				 && cb_get_long_long (ap->val) < cob_exp10_ll[f1->pic->digits]) {
