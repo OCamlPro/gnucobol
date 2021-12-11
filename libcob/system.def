@@ -88,3 +88,58 @@ COB_SYSTEM_GEN ("\xE4",			0, 0, cob_sys_clear_screen)
 COB_SYSTEM_GEN ("\xE5",			0, 0, cob_sys_sound_bell)
 COB_SYSTEM_GEN ("\xF4",			2, 2, cob_sys_xf4)
 COB_SYSTEM_GEN ("\xF5",			2, 2, cob_sys_xf5)
+
+COB_SYSTEM_GEN ("CBL_XAD_RESET_KEYMAP",		0, 1, cbl_xad_reset_keymap)	/* GC XAD extension */
+COB_SYSTEM_GEN ("CBL_XAD_DEFAULT_KEYMAP",	0, 1, cbl_xad_default_keymap)	/* GC XAD extension */
+COB_SYSTEM_GEN ("CBL_XAD_READ_KEYMAPFILE",	1, 2, cbl_xad_read_keymapfile)	/* GC XAD extension */
+COB_SYSTEM_GEN ("CBL_XAD_READ_KEYMAP",		1, 2, cbl_xad_read_keymapfile)	/* GC XAD extension */
+COB_SYSTEM_GEN ("CBL_XAD_ADD_KEYMAPPING",	2, 3, cbl_xad_add_keymapping)	/* GC XAD extension */
+COB_SYSTEM_GEN ("CBL_XAD_ADD_KEYMAP",		2, 3, cbl_xad_add_keymapping)	/* GC XAD extension */
+
+COB_SYSTEM_GEN ("CBL_XAD_SETATTRBIT",		2, 2, cbl_xad_setattrbit)	/* GC XAD extension */
+COB_SYSTEM_GEN ("CBL_XAD_SETATTRBYTE",		1, 1, cbl_xad_setattrbyte)	/* GC XAD extension */
+COB_SYSTEM_GEN ("CBL_XAD_GETATTRBYTE",		1, 1, cbl_xad_getattrbyte)	/* GC XAD extension */
+
+COB_SYSTEM_GEN ("CBL_XAD_SETATTRBITS",		1, 1, cbl_xad_setattrbits)	/* GC XAD extension */
+COB_SYSTEM_GEN ("CBL_XAD_GETATTRBITS",		1, 1, cbl_xad_getattrbits)	/* GC XAD extension */
+
+COB_SYSTEM_GEN ("CBL_XAD_GETATTRS",		1, 1, cbl_xad_getattrs)		/* GC XAD extension */
+COB_SYSTEM_GEN ("CBL_XAD_SETATTR",		2, 2, cbl_xad_setattr)		/* GC XAD extension */
+COB_SYSTEM_GEN ("CBL_XAD_SETATTRS",		1, 1, cbl_xad_setattrs)		/* GC XAD extension */
+COB_SYSTEM_GEN ("CBL_XAD_SETBGCOL",		1, 1, cbl_xad_setbgcol)		/* GC XAD extension */
+COB_SYSTEM_GEN ("CBL_XAD_SETFGCOL",		1, 1, cbl_xad_setfgcol)		/* GC XAD extension */
+COB_SYSTEM_GEN ("CBL_XAD_SETCOLATTRS",		1, 1, cbl_xad_setcolattrs)	/* GC XAD extension */
+COB_SYSTEM_GEN ("CBL_XAD_GETCOLATTRS",		1, 1, cbl_xad_getcolattrs)	/* GC XAD extension */
+
+COB_SYSTEM_GEN ("CBL_XAD_READ_SCR",		3, 4, cbl_xad_read_scr)		/* GC XAD extension */
+COB_SYSTEM_GEN ("CBL_XAD_GETSCREEN",		3, 4, cbl_xad_read_scr)		/* GC XAD extension (DEPRECATED) */
+
+COB_SYSTEM_GEN ("CBL_XAD_REDRAW_SCR",		1, 2, cbl_xad_redraw_scr)	/* GC XAD extension */
+// COB_SYSTEM_GEN ("CBL_XAD_CSR_VIS",		1, 2, cbl_xad_csr_vis)		/* GC XAD extension */
+
+COB_SYSTEM_GEN ("CBL_READ_SCR_ATTRS",		3, 4, cbl_read_scr_attrs)
+COB_SYSTEM_GEN ("CBL_READ_SCR_CHARS",		3, 4, cbl_read_scr_chars)
+COB_SYSTEM_GEN ("CBL_READ_SCR_CHATTRS",		4, 5, cbl_read_scr_chattrs)
+
+COB_SYSTEM_GEN ("CBL_WRITE_SCR_CHATTRS",	4, 5, cbl_write_scr_chattrs)
+COB_SYSTEM_GEN ("CBL_WRITE_SCR_ATTRS",		3, 4, cbl_write_scr_attrs)
+COB_SYSTEM_GEN ("CBL_WRITE_SCR_CHARS",		3, 4, cbl_write_scr_chars)
+COB_SYSTEM_GEN ("CBL_WRITE_SCR_CHARS_ATTR",	4, 5, cbl_write_scr_chars_attr)
+
+COB_SYSTEM_GEN ("CBL_WRITE_SCR_N_ATTR",		3, 4, cbl_write_scr_n_attr)
+COB_SYSTEM_GEN ("CBL_WRITE_SCR_N_CHAR",		3, 4, cbl_write_scr_n_char)
+COB_SYSTEM_GEN ("CBL_WRITE_SCR_N_CHATTR",	4, 5, cbl_write_scr_n_chattr)
+
+// COB_SYSTEM_GEN ("CBL_WRITE_SCR_TTY",		3, 2, cbl_write_scr_tty)
+
+COB_SYSTEM_GEN ("CBL_SWAP_SCR_CHATTRS",		4, 5, cbl_swap_scr_chattrs)
+
+// COB_SYSTEM_GEN ("CBL_CLEAR_SCR",		2, 3, cbl_clear_scr)
+// COB_SYSTEM_GEN ("CBL_GET_SCR_SIZE",		2, 3, cbl_get_scr_size)
+// COB_SYSTEM_GEN ("CBL_GET_CSR_POS",		1, 2, cbl_get_csr_pos)
+// COB_SYSTEM_GEN ("CBL_SET_CSR_POS",		1, 2, cbl_set_csr_pos)
+// COB_SYSTEM_GEN ("CBL_GET_SCR_SIZE",		1, 2, cbl_get_scr_size)
+
+// COB_SYSTEM_GEN ("CBL_GET_KBD_STATUS",	1, 2, cbl_get_kbd_status)
+COB_SYSTEM_GEN ("CBL_READ_KBD_CHAR",		1, 2, cbl_read_kbd_char)
+

@@ -1905,6 +1905,16 @@ set_attribs (cb_tree fgc, cb_tree bgc, cb_tree scroll,
 }
 
 static void
+set_control_attrib (cb_tree ctrl)
+{
+	attach_attrib_to_cur_stmt ();
+
+	if (ctrl) {
+		current_statement->attr_ptr->control = ctrl;
+	}
+}
+
+static void
 set_attribs_with_conflict  (cb_tree fgc, cb_tree bgc, cb_tree scroll,
 			    cb_tree timeout, cb_tree prompt, cb_tree size_is,
 			    const char *clause_name, const cob_flags_t attrib,
@@ -11156,6 +11166,11 @@ accp_attr:
 			&check_duplicate);
 	set_attribs (NULL, NULL, NULL, $3, NULL, NULL, 0);
   }
+| CONTROL id_or_lit
+  {
+	check_repeated ("CONTROL", SYN_CLAUSE_20, &check_duplicate);
+	set_control_attrib ($2);
+  }
 | _control KEY _in key_dest
 ;
 
@@ -12671,6 +12686,11 @@ disp_attr:
 	set_attribs_with_conflict (NULL, NULL, $3, NULL, NULL, NULL,
 				   "SCROLL DOWN", COB_SCREEN_SCROLL_DOWN,
 				   "SCROLL UP", COB_SCREEN_SCROLL_UP);
+  }
+| CONTROL id_or_lit
+  {
+	check_repeated ("CONTROL", SYN_CLAUSE_21, &check_duplicate);
+	set_control_attrib ($2);
   }
 ;
 

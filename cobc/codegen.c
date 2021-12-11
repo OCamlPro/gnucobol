@@ -167,6 +167,10 @@ static struct cb_label		*last_section = NULL;
 static unsigned char		*litbuff = NULL;
 static int			litsize = 0;
 
+#ifdef WITH_EXTENDED_ACCDIS
+static cb_tree			XAD_DEFINITIONS_LIST = NULL;
+#endif
+
 static unsigned int		has_global_file = 0;
 static unsigned int		needs_exit_prog = 0;
 static unsigned int		needs_unifunc = 0;
@@ -4107,6 +4111,18 @@ output_param (cb_tree x, int id)
 	param_id = id;
 
 	switch (CB_TREE_TAG (x)) {
+	case CB_TAG_DIRECT:
+		if (CB_DIRECT (x)->flag_is_direct) {
+			if (CB_DIRECT (x)->flag_new_line) {
+				output_newline ();
+			}
+			output_line ("%s", (const char *)(CB_DIRECT (x)->line));
+		} else {
+			output_newline ();
+			output_line ("/* %s */", (const char *)(CB_DIRECT (x)->line));
+		}
+		break;
+
 	case CB_TAG_CONST:
 		if (x == cb_quote) {
 			gen_figurative |= CB_NEED_QUOTE;
@@ -9782,15 +9798,15 @@ output_file_initialization (struct cb_file *f)
 /* Screen definition */
 
 static void
-output_screen_definition (struct cb_field *p)
+output_screen_definition (struct cb_field *p, int one_only)
 {
 	int	type;
 
-	if (p->sister) {
-		output_screen_definition (p->sister);
+	if (p->sister && !one_only) {
+		output_screen_definition (p->sister, 0);
 	}
 	if (p->children) {
-		output_screen_definition (p->children);
+		output_screen_definition (p->children, 0);
 	}
 
 	type = (p->children ? COB_SCREEN_TYPE_GROUP :
@@ -9798,13 +9814,14 @@ output_screen_definition (struct cb_field *p)
 		(p->size > 0) ? COB_SCREEN_TYPE_FIELD : COB_SCREEN_TYPE_ATTRIBUTE);
 	if (type == COB_SCREEN_TYPE_FIELD || type == COB_SCREEN_TYPE_VALUE) {
 		p->count++;
+		p->screen_flag |= COB_SCREEN_INPUT;
 	}
 
 	output_local ("static cob_screen\t%s%d;\n", CB_PREFIX_SCR_FIELD, p->id);
 }
 
 static void
-output_screen_init (struct cb_field *p, struct cb_field *previous)
+output_screen_init (struct cb_field *p, struct cb_field *previous, int one_only)
 {
 	int	type;
 
@@ -9814,7 +9831,7 @@ output_screen_init (struct cb_field *p, struct cb_field *previous)
 	output_prefix ();
 	output ("cob_set_screen (&%s%d, ", CB_PREFIX_SCR_FIELD, p->id);
 
-	if (p->sister && p->sister->level != 1) {
+	if (p->sister && p->sister->level != 1 && !one_only) {
 		output ("&%s%d, ", CB_PREFIX_SCR_FIELD, p->sister->id);
 	} else {
 		output ("NULL, ");
@@ -9916,12 +9933,45 @@ output_screen_init (struct cb_field *p, struct cb_field *previous)
 	}
 
 	if (p->children) {
-		output_screen_init (p->children, NULL);
+		output_screen_init (p->children, NULL, 0);
 	}
-	if (p->sister) {
-		output_screen_init (p->sister, p);
+	if (p->sister && !one_only) {
+		output_screen_init (p->sister, p, 0);
 	}
 }
+
+
+static void
+increment_count_all_fields (struct cb_field *p)
+{
+	if (p && p != NULL && p != cb_null) {
+	if (p->sister) {
+			increment_count_all_fields (p->sister);
+	}
+		if (p->children) {
+			increment_count_all_fields (p->children);
+}
+
+		p->count++;
+	}
+}
+
+
+#ifdef WITH_EXTENDED_ACCDIS
+void
+xad_add_definition (cb_tree var) {
+	cb_tree	l;
+	for (l = XAD_DEFINITIONS_LIST; l; l = CB_CHAIN (l)) {
+		if (CB_FIELD_PTR (CB_VALUE (l))->id == CB_FIELD_PTR (var)->id) {
+			return;
+		}
+	}
+
+	XAD_DEFINITIONS_LIST = cb_list_add (XAD_DEFINITIONS_LIST, var);
+	increment_count_all_fields (CB_FIELD_PTR (var));
+}
+#endif
+
 
 /* JSON/XML GENERATE trees */
 
@@ -11922,7 +11972,7 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	if (prog->screen_storage) {
 		optimize_defs[COB_SET_SCREEN] = 1;
 		output_local ("\n/* Screens */\n\n");
-		output_screen_definition (prog->screen_storage);
+		output_screen_definition (prog->screen_storage, 0);
 		output_local ("\n");
 	}
 
@@ -12639,9 +12689,26 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 		output_line ("/* Initialize SCREEN items */");
 		/* Initialize items with VALUE */
 		output_initial_values (prog->screen_storage);
-		output_screen_init (prog->screen_storage, NULL);
+		output_screen_init (prog->screen_storage, NULL, 0);
 		output_newline ();
 	}
+
+
+#ifdef WITH_EXTENDED_ACCDIS
+	/* This here is necessary to make sure that all needed cob_fields get defined */
+	if (XAD_DEFINITIONS_LIST) {
+		cb_tree l;
+		FILE	*savetarget = output_target;
+
+		output_target = NULL;
+
+		for (l = XAD_DEFINITIONS_LIST; l; l = CB_CHAIN (l)) {
+			output_screen_init (CB_FIELD_PTR (CB_VALUE (l)), NULL, 1);
+		}
+
+		output_target = savetarget;
+	}
+#endif
 
 	if (prog->report_storage) {
 		output_line ("/* Initialize REPORT data lines */");
@@ -13546,6 +13613,75 @@ emit_base_symbols (struct cb_program *prog)
 	}
 }
 
+
+#ifdef WITH_EXTENDED_ACCDIS
+static void
+output_xad_mask_field (struct cb_field *f, struct cb_field *parent, int only_one, int depth) {
+	struct cb_field *p;
+	int	oc = 0;
+
+	do {
+		output_local ("\t{ ");
+
+		output_local ("&f_%d", f->id);
+
+		if (parent != NULL) {
+			output_local (", &f_%d", parent->id);
+		} else {
+			output_local (", NULL");
+		}
+
+		if (strncmp (f->name, "FILLER ", 7) == 0) {
+			output_local (", COB_XAD_MASK_TYPE_FILLER");
+		} else {
+			if (f->pic == NULL) { // CHECKME: There has to be a better way...
+				output_local (", COB_XAD_MASK_TYPE_GROUP");
+			} else {
+				output_local (", COB_XAD_MASK_TYPE_FIELD");
+			}
+		}
+
+		output_local (", %d", f->size); // field size
+
+		if (f->occurs_min == 0 && f->occurs_max == 1 && f->depending == NULL) {
+			output_local (", 0, NULL");
+		} else {
+			//if (f->depending == NULL) {
+			output_local (", %d", f->occurs_max);
+			output_local (", NULL");
+			//} else {
+			// TODO: ... depending on
+			//	output_local (", %d", f->occurs_max);
+			// 	output_local ("&f_%d", f->depending->id);
+			//}
+		}
+
+		output_local (", %d", depth); // structure depth
+
+		output_local (" }, // %s\n", f->name);
+
+		if (f->children) {
+			output_xad_mask_field (f->children, f, 0, depth + 1);
+		}
+	} while (0 && ++oc < f->occurs_max);
+
+	if (f->sister && !only_one) {
+		output_xad_mask_field (f->sister, parent, 0, depth);
+	}
+}
+
+
+static void
+output_xad_mask (struct cb_field *f) {
+	output_local ("static cob_xad_mask xm_%d[] = {\n", f->id);
+	output_local ("\t{ NULL, NULL, COB_XAD_MASK_TYPE_VERSION, COB_XAD_MASK_VERSION, 0, NULL, 0 }, /* Version %d */\n", COB_XAD_MASK_VERSION);
+	output_xad_mask_field (f, NULL, 1, 0);
+	output_local ("\t{ NULL }\n");
+	output_local ("};\n");
+}
+#endif
+
+
 void
 codegen (struct cb_program *prog, const char *translate_name, const int subsequent_call)
 {
@@ -13807,6 +13943,27 @@ codegen (struct cb_program *prog, const char *translate_name, const int subseque
 		/* Switch to main storage file */
 		output_target = cb_storage_file;
 	}
+
+
+#ifdef WITH_EXTENDED_ACCDIS
+	// ACCEPT 'Screens'
+	if (XAD_DEFINITIONS_LIST && cb_list_length (XAD_DEFINITIONS_LIST) > 0) {
+		cb_tree l;
+
+		/* Switch to local storage file */
+		output_target = current_prog->local_include->local_fp;
+
+		output_local ("\n/* XAD Accept-Screens */\n\n");
+
+		for (l = XAD_DEFINITIONS_LIST; l; l = CB_CHAIN (l)) {
+			output_xad_mask (CB_FIELD_PTR (CB_VALUE (l)));
+		}
+		output_local ("\n");
+
+		output_target = cb_storage_file;
+	}
+#endif
+
 
 	/* Skip to next program contained in the source and
 	   adjust current_program used for error messages */

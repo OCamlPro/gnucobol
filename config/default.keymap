@@ -1,0 +1,51 @@
+# System-Key (Sequence) --> GnuCOBOL-Key
+
+key_f1          cob_scr_f1
+key_f2          cob_scr_f2
+key_f3          cob_scr_f3
+key_f4          cob_scr_f4
+key_f5          cob_scr_f5
+key_f6          cob_scr_f6
+key_f7          cob_scr_f7
+key_f8          cob_scr_f8
+key_f9          cob_scr_f9
+key_f10         cob_scr_f10
+key_f11         cob_scr_f11
+key_f12         cob_scr_f12
+key_f13         cob_scr_f13
+key_f14         cob_scr_f14
+key_f15         cob_scr_f15
+key_f16         cob_scr_f16
+key_f17         cob_scr_f17
+key_f18         cob_scr_f18
+key_f19         cob_scr_f19
+key_f20         cob_scr_f20
+key_f21         cob_scr_f21
+key_f22         cob_scr_f22
+key_f23         cob_scr_f23
+key_f24         cob_scr_f24
+key_f25         cob_scr_f25
+key_f26         cob_scr_f26
+key_f27         cob_scr_f27
+key_f28         cob_scr_f28
+key_f29         cob_scr_f29
+key_f30         cob_scr_f30
+key_f31         cob_scr_f31
+key_f32         cob_scr_f32
+
+key_up          cob_scr_key_up
+key_down        cob_scr_key_down
+key_left        cob_scr_key_left
+key_right       cob_scr_key_right
+
+key_ppage       cob_scr_page_up
+key_npage       cob_scr_page_down
+
+key_tab         cob_scr_tab
+"\t"            cob_scr_tab
+
+key_btab        cob_scr_back_tab
+
+key_enter       cob_scr_ok
+"\n"            cob_scr_ok
+"\r"            cob_scr_ok

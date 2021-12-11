@@ -296,5 +296,10 @@ struct sql_date {
 #define WITH_EXTENDED_SCREENIO
 #endif
 
+#ifdef WITH_EXTENDED_SCREENIO
+#define WITH_EXTENDED_ACCDIS
+#define WITH_XAD
+#endif
+
 /* End of  COB_SYSDEFINE_H */
 #endif

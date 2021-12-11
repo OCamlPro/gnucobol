@@ -314,6 +314,9 @@ CB_CONFIG_SUPPORT (cb_not_exception_before_exception, "not-exception-before-exce
 CB_CONFIG_SUPPORT (cb_accept_display_extensions, "accept-display-extensions",
 	_("extensions to ACCEPT and DISPLAY"))
 
+CB_CONFIG_BOOLEAN (cb_enable_xad, "enable-xad",
+	_("enable XAD extensions for ACCEPT and DISPLAY"))
+
 CB_CONFIG_SUPPORT (cb_renames_uncommon_levels, "renames-uncommon-levels",
 	_("RENAMES of 01-, 66- and 77-level items"))
 

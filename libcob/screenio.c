@@ -1,6 +1,6 @@
 /*
    Copyright (C) 2001-2012, 2014-2020 Free Software Foundation, Inc.
-   Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
+   Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart, Christian Lademann
 
    This file is part of GnuCOBOL.
 
@@ -125,6 +125,8 @@ static int			accept_cursor_x;
 static int			pending_accept;
 static int			got_sys_char;
 static unsigned int	curr_setting_insert_mode = INT_MAX;
+static int 			screen_lines;
+static int 			screen_columns;
 #ifdef NCURSES_MOUSE_VERSION
 static int	curr_setting_mouse_flags = INT_MAX;
 #endif
@@ -134,6 +136,45 @@ static int	curr_setting_mouse_flags = INT_MAX;
 
 #ifdef	WITH_EXTENDED_SCREENIO
 static void cob_screen_init	(void);
+#endif
+
+#ifdef	WITH_EXTENDED_ACCDIS
+#include "xad.h"
+
+xad_attrs_t	XAD_ATTRIBUTES;
+
+xad_attrs_t	XAD_CBLATTRS[8] = {
+	COB_XAD_ATTR_HIGHLIGHT,		/* Bit 0 */
+	COB_XAD_ATTR_UNDERLINE,		/* Bit 1 */
+	COB_XAD_ATTR_REVERSE,		/* Bit 2 */
+	COB_XAD_ATTR_BLINK,		/* Bit 3 */
+	COB_XAD_ATTR_LOWLIGHT,		/* Bit 4 */
+	COB_XAD_ATTR_ALTCHARSET,	/* Bit 5 */
+	COB_XAD_ATTR_NODISPLAY,		/* Bit 6 */
+	0				/* Bit 7 */
+};
+
+static void		cob_xad_init (void);
+static xad_attrs_t	curses_to_xad_attrs (chtype);
+static int		xad_to_cob_attrs (xad_attrs_t);
+static unsigned char	xad_to_cbl_attrs (xad_attrs_t);
+static xad_attrs_t	cbl_to_xad_attrs (unsigned char);
+static unsigned char	curses_to_cbl_attrs (chtype);
+static int		xad_getfgcol (xad_attrs_t *);
+static int		xad_getbgcol (xad_attrs_t *);
+static int		xad_setfgcol (int, xad_attrs_t *);
+static int		xad_setbgcol (int, xad_attrs_t *);
+
+static cob_field	*xad_init_int_field (cob_field *, int);
+static cob_field	*xad_build_int_field (int);
+static cob_field	*xad_build_shared_field (cob_field *, cob_field *, int);
+
+static char		*field_to_str (cob_field *, char *, size_t);
+
+cob_field 		*cob_field_alloc (int);
+cob_field		*cob_field_clone (cob_field *);
+void			cob_field_free (cob_field *);
+
 #endif
 
 /* Local functions */
@@ -252,6 +293,7 @@ cob_to_curses_color (cob_field *f, const short default_color)
 	case COB_SCREEN_WHITE:
 		return COLOR_WHITE;
 	default:
+		/* default also applies to -1 */
 		return default_color;
 	}
 }
@@ -337,18 +379,39 @@ cob_screen_attr (cob_field *fgc, cob_field *bgc, const cob_flags_t attr,
 	if (attr & COB_SCREEN_UNDERLINE) {
 		styles |= A_UNDERLINE;
 	}
+	if (attr & COB_SCREEN_ALTCHARSET) {
+		styles |= A_ALTCHARSET;
+	}
+#if 0
 	if (styles) {
 		attron (styles);
 	}
+#endif
 	if (cob_has_color) {
 		short		fg_color;
 		short		bg_color;
 		short		color_pair_number;
-		fg_color = cob_to_curses_color (fgc, fore_color);
-		bg_color = cob_to_curses_color (bgc, back_color);
+		short		default_fore_color = fore_color;
+		short		default_back_color = back_color;
+
+#ifdef WITH_EXTENDED_ACCDIS	// FIXME: Make "compiletime-transparent"
+		// if (attr & COB_SCREEN_USE_XAD_COLORS) { // CHECKME
+			default_fore_color = xad_getfgcol (NULL);
+			default_back_color = xad_getbgcol (NULL);
+		// }
+#endif
+
+		fg_color = cob_to_curses_color (fgc, default_fore_color);
+		bg_color = cob_to_curses_color (bgc, default_back_color);
 		color_pair_number = cob_get_color_pair (fg_color, bg_color);
 		cob_activate_color_pair (color_pair_number);
+// fprintf (stderr, "fg_c:%d/%d,bg_c:%d/%d,cp_n:%d, ", fg_color, default_fore_color, bg_color, default_back_color, color_pair_number);
 	}
+
+	if (styles) {
+		attron (styles);
+	}
+
 	/* BLANK SCREEN colors the whole screen. */
 	if (attr & COB_SCREEN_BLANK_SCREEN) {
 		getyx (stdscr, line, column);
@@ -356,6 +419,7 @@ cob_screen_attr (cob_field *fgc, cob_field *bgc, const cob_flags_t attr,
 		cob_move_cursor (line, column);
 	}
 
+// fprintf (stderr, "\n");
 	if (stmt == DISPLAY_STATEMENT) {
 		/* BLANK LINE colors the whole line. */
 		if (attr & COB_SCREEN_BLANK_LINE) {
@@ -397,6 +461,10 @@ cob_screen_init (void)
 	accept_cursor_x = 0;
 	pending_accept = 0;
 	got_sys_char = 0;
+
+	/* Configurable screen geometry. CHECKME: Maybe runtime.cfg? */
+	screen_lines = 24;
+	screen_columns = 80;
 
 	fflush (stdout);
 	fflush (stderr);
@@ -503,7 +571,7 @@ cob_screen_init (void)
 #endif
 
 	/* When still missing - self define the keys */
-	/* note: if define_key is not available rhe user will have to manually
+	/* note: if define_key is not available the user will have to manually
 	   assign terminfo values for the control strings to the given
 	   KEY_MAX + n / __KEY_MIN - n values */
 
@@ -546,6 +614,69 @@ cob_screen_init (void)
 #endif
 #endif
 
+#ifdef WITH_EXTENDED_ACCDIS
+	(void) cob_xad_init ();
+#endif
+}
+
+static void
+get_screen_geometry (int *lines, int *columns) {
+#ifdef WITH_EXTENDED_SCREENIO
+	if (screen_lines <= 0) {
+		*lines = (int)LINES;
+	} else {
+		*lines = screen_lines;
+	}
+
+	if (screen_columns <= 0) {
+		*columns = (int)COLS;
+	} else {
+		*columns = screen_columns;
+	}
+
+	/* Paranoia protection ;-) */
+	if (*lines <= 0) {
+		*lines = 24;
+	}
+
+	if (*columns <= 0) {
+		*columns = 80;
+	}
+#else
+	*lines = 24;
+	*columns = 80;
+#endif
+}
+
+
+static void
+set_screen_geometry (int lines, int columns) {
+#ifdef WITH_EXTENDED_SCREENIO
+	screen_lines = lines;
+	screen_columns = columns;
+#else
+	return;
+#endif
+}
+
+
+static int
+get_screen_lines () {
+	int	lines, columns;
+
+	get_screen_geometry (&lines, &columns);
+
+	return (lines);
+}
+
+
+static int
+get_screen_columns () {
+	int	lines, columns;
+
+	get_screen_geometry (&lines, &columns);
+
+	return (columns);
 }
 
 static void
@@ -676,6 +807,94 @@ cob_convert_key (int *keyp, const cob_u32_t field_accept)
 }
 
 
+static int
+cob_convert_key_to_function (const int keyp) {
+	int	keyf = -1;
+
+	switch (keyp) {
+	case ERR:		return COB_SCR_TIME_OUT;
+	case '\033':		return COB_SCR_ESC;
+	// case '\r':
+	// case '\n':
+	case KEY_ENTER:		return COB_SCR_OK;
+	case KEY_PPAGE:		return COB_SCR_PAGE_UP;
+	case KEY_NPAGE:		return COB_SCR_PAGE_DOWN;
+	case KEY_PRINT:		return COB_SCR_PRINT;
+	case KEY_STAB:		return COB_SCR_TAB;
+	case KEY_BTAB:		return COB_SCR_BACK_TAB;
+	case KEY_UP:		return COB_SCR_KEY_UP;
+	case KEY_DOWN:		return COB_SCR_KEY_DOWN;
+	case KEY_HOME:		return COB_SCR_KEY_HOME;
+	case KEY_END:		return COB_SCR_KEY_END;
+	case KEY_BACKSPACE:	return COB_SCR_BACKSPACE;
+	case KEY_LEFT:		return COB_SCR_KEY_LEFT;
+	case KEY_RIGHT:		return COB_SCR_KEY_RIGHT;
+	case KEY_IC:		return COB_SCR_INSERT;
+	case KEY_DC:		return COB_SCR_DELETE;
+
+#if 0 // TODO
+#ifdef NCURSES_MOUSE_VERSION
+	case KEY_MOUSE:
+	{
+		int mline = mevent.y;
+		int mcolumn = mevent.x;
+		/* handle depending on state */
+		if (mevent.bstate & BUTTON1_PRESSED
+		 && COB_MOUSE_FLAGS & 1) {
+			int fld_index = -1;
+			/* if in current field, just move */
+			if (mline == cline) {
+				if (mcolumn >= scolumn
+				 && mcolumn <= right_pos) {
+					ccolumn = mcolumn;
+					cob_move_cursor (cline, ccolumn);
+					p = s->field->data + ccolumn - scolumn;
+					continue;
+				}
+			}
+			finalize_field_input (s);
+
+			fld_index = find_field_by_pos (initial_curs, mline, mcolumn);
+			if (fld_index >= 0) {
+				curr_index = fld_index;
+				SET_FLD_AND_DATA_REFS (curr_index, sptr, s, sline, scolumn, right_pos, p);
+				at_eof = 0;
+				cob_screen_attr (s->foreg, s->backg, s->attr, ACCEPT_STATEMENT);
+				cob_move_cursor (mline, mcolumn);
+				continue;
+			}
+		}
+		mevent.bstate &= cob_mask_accept;
+		if (mevent.bstate != 0) {
+			global_return = mouse_to_exception_code (mevent.bstate);
+			cob_move_cursor (mline, mcolumn);	// move cursor to pass position
+			goto screen_return;
+		}
+		continue;
+	}
+#endif
+#endif
+	default:
+		if (keyp >= KEY_F(1) && keyp <= KEY_F(64)) {
+			return COB_SCR_F0 + keyp - KEY_F(0);
+		}
+
+		/* Handle printable character. */
+#if 0 /* FIXME: we can't handle anything > UCHAR_MAX here because of
+		*p = (unsigned char) keyp;
+		--> revise */
+		if (keyp > 037 && keyp < (int)A_CHARTEXT) {
+#else
+		if (keyp > 037 && keyp <= UCHAR_MAX) {
+#endif
+			return keyp;
+		}
+	}
+
+	return ERR;
+}
+
+
 static void
 cob_set_crt3_status (cob_field *status_field, int fret)
 {
@@ -686,23 +905,23 @@ cob_set_crt3_status (cob_field *status_field, int fret)
 	crtstat[2] = '\0';
 
 	switch (fret) {
-	case 0:	/* OK */
+	case COB_SCR_OK:
 		crtstat[0] = '0';
 		crtstat[1] = '0';
 		break;
 
-	case 2005:	/* ESC */
+	case COB_SCR_ESC:
 		crtstat[0] = '1';
 		crtstat[1] = '\0';
 		break;
 
-	case 8000:	/* NO_FIELD */
-	case 9001:	/* MAX_FIELD */
+	case COB_SCR_NO_FIELD:
+	case COB_SCR_MAX_FIELD:
 		crtstat[0] = '9';
 		crtstat[1] = '\0';
 		break;
 
-	case 8001:	/* TIMEOUT, CHECKME */
+	case COB_SCR_TIME_OUT:	/* CHECKME */
 		crtstat[0] = '9';
 		crtstat[1] = '\1';
 		break;
@@ -710,14 +929,14 @@ cob_set_crt3_status (cob_field *status_field, int fret)
 	/* TODO: more case COB_SCR_... */
 
 	default:
-		if (fret >= 1001 && fret <= 1064) {
+		if (fret >= COB_SCR_FUNCTION_KEYS_MIN && fret <= COB_SCR_FUNCTION_KEYS_MAX) {
 			/* function keys */
 			crtstat[0] = '1';
-			crtstat[1] = (unsigned char)(fret - 1000);
-		} else if (fret >= 2001 && fret <= 2110) {
+			crtstat[1] = (unsigned char)(fret - COB_SCR_FUNCTION_KEYS_MIN + 1);
+		} else if (fret >= COB_SCR_EXCEPTION_KEYS_MIN && fret <= COB_SCR_EXCEPTION_KEYS_MAX) {
 			/* exception keys */
 			crtstat[0] = '2';
-			crtstat[1] = (unsigned char)(fret - 2000);
+			crtstat[1] = (unsigned char)(fret - COB_SCR_EXCEPTION_KEYS_MIN + 1);
 		}
 	}
 
@@ -1048,10 +1267,14 @@ cob_screen_puts (cob_screen *s, cob_field *f, const cob_u32_t is_input,
 #endif
 	if (s->attr & COB_SCREEN_INPUT) {
 		cob_screen_attr (s->foreg, s->backg, s->attr, stmt);
+		if (stmt == DISPLAY_STATEMENT || !is_input) {
+			default_prompt_char = ' ';
+		} else {
 		if (s->prompt) {
 			default_prompt_char = s->prompt->data[0];
 		} else {
 			default_prompt_char = COB_CH_UL;
+		}
 		}
 		p = f->data;
 		raise_ec_on_truncation (f->size);
@@ -1391,42 +1614,42 @@ static int
 mouse_to_exception_code (mmask_t mask) {
 	int fret = -1;
 
-	if (mask & BUTTON1_PRESSED) fret = 2041;
-	else if (mask & BUTTON1_CLICKED) fret = 2041;
-	else if (mask & BUTTON1_RELEASED) fret = 2042;
-	else if (mask & BUTTON1_DOUBLE_CLICKED) fret = 2043;
-	else if (mask & BUTTON1_TRIPLE_CLICKED) fret = 2043;
-	else if (mask & BUTTON2_PRESSED) fret = 2044;
-	else if (mask & BUTTON2_CLICKED) fret = 2044;
-	else if (mask & BUTTON2_RELEASED) fret = 2045;
-	else if (mask & BUTTON2_DOUBLE_CLICKED) fret = 2046;
-	else if (mask & BUTTON2_TRIPLE_CLICKED) fret = 2046;
-	else if (mask & BUTTON3_PRESSED) fret = 2047;
-	else if (mask & BUTTON3_CLICKED) fret = 2047;
-	else if (mask & BUTTON3_RELEASED) fret = 2048;
-	else if (mask & BUTTON3_DOUBLE_CLICKED) fret = 2049;
-	else if (mask & BUTTON3_TRIPLE_CLICKED) fret = 2049;
+	if (mask & BUTTON1_PRESSED) fret = COB_SCR_LEFT_PRESSED; // 2041;
+	else if (mask & BUTTON1_CLICKED) fret = COB_SCR_LEFT_PRESSED; // 2041;
+	else if (mask & BUTTON1_RELEASED) fret = COB_SCR_LEFT_RELEASED; // 2042;
+	else if (mask & BUTTON1_DOUBLE_CLICKED) fret = COB_SCR_LEFT_DBL_CLICK; // 2043;
+	else if (mask & BUTTON1_TRIPLE_CLICKED) fret = COB_SCR_LEFT_DBL_CLICK; // 2043;
+	else if (mask & BUTTON2_PRESSED) fret = COB_SCR_MID_PRESSED; // 2044;
+	else if (mask & BUTTON2_CLICKED) fret = COB_SCR_MID_PRESSED; // 2044;
+	else if (mask & BUTTON2_RELEASED) fret = COB_SCR_MID_RELEASED; // 2045;
+	else if (mask & BUTTON2_DOUBLE_CLICKED) fret = COB_SCR_MID_DBL_CLICK; // 2046;
+	else if (mask & BUTTON2_TRIPLE_CLICKED) fret = COB_SCR_MID_DBL_CLICK; // 2046;
+	else if (mask & BUTTON3_PRESSED) fret = COB_SCR_RIGHT_PRESSED; // 2047;
+	else if (mask & BUTTON3_CLICKED) fret = COB_SCR_RIGHT_PRESSED; // 2047;
+	else if (mask & BUTTON3_RELEASED) fret = COB_SCR_RIGHT_RELEASED; // 2048;
+	else if (mask & BUTTON3_DOUBLE_CLICKED) fret = COB_SCR_RIGHT_DBL_CLICK; // 2049;
+	else if (mask & BUTTON3_TRIPLE_CLICKED) fret = COB_SCR_RIGHT_DBL_CLICK; // 2049;
 #if defined COB_HAS_MOUSEWHEEL
-	else if (mask & BUTTON4_PRESSED) fret = 2080;
-	else if (mask & BUTTON5_PRESSED) fret = 2081;
+	else if (mask & BUTTON4_PRESSED) fret = COB_SCR_WHEEL_UP; // 2080;
+	else if (mask & BUTTON5_PRESSED) fret = COB_SCR_WHEEL_DOWN; // 2081;
 #endif
-	else fret = 2040;	/* mouse-moved (assumed) */
+	else fret = COB_SCR_MOUSE_MOVE; // 2040;	/* mouse-moved (assumed) */
 
 #if defined COB_HAS_MOUSEWHEEL
 	if (mask & BUTTON_SHIFT) {
-		if (fret < 2080) {
+		if (fret < COB_SCR_WHEEL_UP /* 2080 */) {
 			fret += 10;
 		} else {
 			fret += 4;
 		}
 	} else if (mask & BUTTON_CTRL) {
-		if (fret < 2080) {
+		if (fret < COB_SCR_WHEEL_UP /* 2080 */) {
 			fret += 20;
 		} else {
 			fret += 8;
 		}
 	} else if (mask & BUTTON_ALT) {
-		if (fret < 2080) {
+		if (fret < COB_SCR_WHEEL_UP /* 2080 */) {
 			fret += 30;
 		} else {
 			fret += 12;
@@ -1610,6 +1833,52 @@ can_insert_left (cob_field * const f, const unsigned char leftmost_char,
 	}
 }
 
+
+int
+cob_ungot_input = -1;
+
+static int
+cob_get_input (int *keyf, MEVENT *meventp, const int accept_timeout) {
+	int	kf = -1;
+	int	ch = -1;
+
+	if (cob_ungot_input >= 0) {
+		kf = cob_ungot_input;
+		cob_ungot_input = -1;
+	} else {
+
+#ifdef NCURSES_MOUSE_VERSION
+		if (meventp != NULL) {
+			/* prevent warnings about not intialized structure */
+			memset (meventp, 0, sizeof (MEVENT));
+		}
+#endif
+		timeout (accept_timeout);
+
+		if (xad_is_initialized ()) {
+			kf = xad_getch ();
+		} else {
+			ch = getch ();
+			cob_convert_key (&ch, 0);
+
+			kf = cob_convert_key_to_function (ch);
+		}
+	}
+
+	if (keyf != NULL) {
+		*keyf = kf;
+	}
+
+	return kf;
+}
+
+
+void
+cob_unget_input (const int inp) {
+	cob_ungot_input = inp;
+}
+
+
 static void
 cob_screen_get_all (const int initial_curs, const int accept_timeout)
 {
@@ -1680,21 +1949,24 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 
 		refresh ();
 		errno = 0;
-		timeout (accept_timeout);
-		keyp = getch ();
+
+		cob_get_input (&keyp, NULL, accept_timeout);
 
 		/* FIXME: modularize (cob_screen_get_all, field_accept) and
 		          use identical handling of keys wherever possible */
 
 		if (keyp == ERR) {
-			global_return = 8001;
-			goto screen_return;
-		}
-		if (keyp > KEY_F0 && keyp < KEY_F(65)) {
-			global_return = 1000 + keyp - KEY_F0;
+			// CHECKME
+			global_return = COB_SCR_TIME_OUT;
 			goto screen_return;
 		}
 
+		if (keyp >= COB_SCR_FUNCTION_KEYS_MIN && keyp <= COB_SCR_FUNCTION_KEYS_MAX) {
+			global_return = keyp;
+			goto screen_return;
+		}
+
+#if 0 // TODO
 #ifdef NCURSES_MOUSE_VERSION
 		/* get mouse event here, handle later */
 		if (keyp == KEY_MOUSE) {
@@ -1708,9 +1980,9 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 			}
 		}
 #endif
+#endif
 
-		cob_convert_key (&keyp, 0);
-		if (keyp <= 0) {
+		if (keyp < 0) {
 			(void)flushinp ();
 			cob_beep ();
 			continue;
@@ -1719,25 +1991,32 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 		getyx (stdscr, cline, ccolumn);
 
 		switch (keyp) {
-		case KEY_ENTER:
+		case COB_SCR_STOP_RUN:
+			cob_stop_run (0);
+			break;
+
+		case COB_SCR_OK: // KEY_ENTER:
 			if (finalize_all_fields (cob_base_inp, totl_index)) {
 				cob_beep ();
 				continue;
 			}
 			goto screen_return;
-		case KEY_PPAGE:
-			global_return = 2001;
+
+		case COB_SCR_PAGE_UP: // KEY_PPAGE:
+			global_return = keyp;
 			goto screen_return;
-		case KEY_NPAGE:
-			global_return = 2002;
+		case COB_SCR_PAGE_DOWN: // KEY_NPAGE:
+			global_return = keyp;
 			goto screen_return;
-		case KEY_PRINT:
-			global_return = 2006;
+		case COB_SCR_PRINT: // KEY_PRINT:
+			global_return = keyp;
 			goto screen_return;
-		case '\033':
-			global_return = 2005;
+		case COB_SCR_ESC: // '\033':
+			global_return = keyp;
 			goto screen_return;
-		case KEY_STAB:
+
+		case COB_SCR_NEXT_FIELD:
+		case COB_SCR_TAB: // KEY_STAB:
 			finalize_field_input (s);
 
 			if (curr_index < totl_index - 1) {
@@ -1750,7 +2029,8 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 			move_to_initial_field_pos (s->field, sline, scolumn, right_pos, 0, &p);
 			cob_screen_attr (s->foreg, s->backg, s->attr, ACCEPT_STATEMENT);
 			continue;
-		case KEY_BTAB:
+		case COB_SCR_PREV_FIELD:
+		case COB_SCR_BACK_TAB: // KEY_BTAB:
 			finalize_field_input (s);
 
 			if (curr_index > 0) {
@@ -1764,7 +2044,8 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 			ungetched = 0;
 			cob_screen_attr (s->foreg, s->backg, s->attr, ACCEPT_STATEMENT);
 			continue;
-		case KEY_UP:
+		case COB_SCR_KEY_UP: // KEY_UP:
+		// case COB_SCR_PREV_FIELD:
 			finalize_field_input (s);
 
 			curr_index = sptr->up_index;
@@ -1773,7 +2054,8 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 			move_to_initial_field_pos (s->field, sline, scolumn, right_pos, 0, &p);
 			cob_screen_attr (s->foreg, s->backg, s->attr, ACCEPT_STATEMENT);
 			continue;
-		case KEY_DOWN:
+		case COB_SCR_KEY_DOWN: // KEY_DOWN:
+		// case COB_SCR_NEXT_FIELD:
 			finalize_field_input (s);
 
 			curr_index = sptr->down_index;
@@ -1782,7 +2064,7 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 			move_to_initial_field_pos (s->field, sline, scolumn, right_pos, 0, &p);
 			cob_screen_attr (s->foreg, s->backg, s->attr, ACCEPT_STATEMENT);
 			continue;
-		case KEY_HOME:
+		case COB_SCR_KEY_HOME: // KEY_HOME:
 			finalize_field_input (s);
 
 			curr_index = 0;
@@ -1791,7 +2073,7 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 			cob_move_cursor (sline, scolumn);
 			cob_screen_attr (s->foreg, s->backg, s->attr, ACCEPT_STATEMENT);
 			continue;
-		case KEY_END:
+		case COB_SCR_KEY_END: // KEY_END:
 			finalize_field_input (s);
 
 			curr_index = totl_index - 1;
@@ -1800,7 +2082,7 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 			cob_move_cursor (sline, scolumn);
 			cob_screen_attr (s->foreg, s->backg, s->attr, ACCEPT_STATEMENT);
 			continue;
-		case KEY_BACKSPACE:
+		case COB_SCR_BACKSPACE: // KEY_BACKSPACE:
 			/* Backspace key. */
 			/* Don't allow backspacing over a decimal point */
 			if (ccolumn > scolumn
@@ -1852,30 +2134,32 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 				cob_beep ();
 			}
 			continue;
-		case KEY_LEFT:
+		case COB_SCR_KEY_LEFT: // KEY_LEFT:
 			if (ccolumn > scolumn) {
 				ccolumn--;
 				cob_move_cursor (cline, ccolumn);
 				p = s->field->data + ccolumn - scolumn;
 			} else {
 				ungetched = 1;
-				ungetch (KEY_BTAB);
+				// xad_ungetch (KEY_BTAB);
+				cob_unget_input (COB_SCR_PREV_FIELD);
 			}
 			continue;
-		case KEY_RIGHT:
+		case COB_SCR_KEY_RIGHT: // KEY_RIGHT:
 			if (ccolumn < right_pos) {
 				ccolumn++;
 				cob_move_cursor (cline, ccolumn);
 				p = s->field->data + ccolumn - scolumn;
 			} else {
-				ungetch ('\t');
+				// xad_ungetch ('\t');
+				cob_unget_input (COB_SCR_NEXT_FIELD);
 			}
 			continue;
-		case KEY_IC:
+		case COB_SCR_INSERT: // KEY_IC:
 			/* Insert key toggle */
 			cob_toggle_insert();
 			continue;
-		case KEY_DC:
+		case COB_SCR_DELETE: // KEY_DC:
 			/* Delete key. */
 			/* Don't allow deletion of decimal point */
 			if (at_offset_from_decimal_point (s->field, scolumn, ccolumn, 0)) {
@@ -1959,6 +2243,7 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 			/* Enter sign */
 			break;
 			
+#if 0 // TODO
 #ifdef NCURSES_MOUSE_VERSION
 		case KEY_MOUSE:
 		{
@@ -1999,6 +2284,7 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 			continue;
 		}
 #endif
+#endif // 0 (TODO)
 		default:
 			break;
 		}
@@ -2111,9 +2397,10 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 				/* Auto-skip at end of field. */
 				if (s->attr & COB_SCREEN_AUTO) {
 					if (curr_index == totl_index - 1) {
+						/* TODO: Signal auto-skip out of the last field */
 						goto screen_return;
 					} else {
-						ungetch ('\t');
+						cob_unget_input (COB_SCR_NEXT_FIELD);
 					}
 				}
 				cob_move_cursor (cline, ccolumn);
@@ -2177,6 +2464,7 @@ cob_screen_moveyx (cob_screen *s)
 	int	line;
 	int	column;
 
+	x = y = line = column = 0;
 	if (s->line || s->column ||
 	    s->attr & (COB_SCREEN_LINE_PLUS | COB_SCREEN_LINE_MINUS |
 		       COB_SCREEN_COLUMN_PLUS | COB_SCREEN_COLUMN_MINUS)) {
@@ -2187,7 +2475,7 @@ cob_screen_moveyx (cob_screen *s)
 			x = y = 0;
 		}
 		/* Column adjust */
-		if (x != 0) {
+		if (x > 0) {
 			x--;
 		}
 		if (!s->line) {
@@ -2472,14 +2760,14 @@ screen_accept (cob_screen *s, const int line, const int column,
 	/* Prepare input fields */
 	if (cob_prep_input (s)) {
 		pass_cursor_to_program ();
-		handle_status (9001);
+		handle_status (COB_SCR_MAX_FIELD);
 		return;
 	}
 
 	/* No input field is an error */
 	if (!totl_index) {
 		pass_cursor_to_program ();
-		handle_status (8000);
+		handle_status (COB_SCR_NO_FIELD);
 		return;
 	}
 
@@ -2542,6 +2830,10 @@ field_display (cob_field *f, const int line, const int column, cob_field *fgc,
 	int	status;
 	char	fig_const;	/* figurative constant character */
 
+	cob_flags_t	sattr = fattr;
+	cob_field	*sfgc = NULL;
+	cob_field	*sbgc = NULL;
+
 	/* LCOV_EXCL_START */
 	if (!f) {
 		cob_fatal_error(COB_FERROR_CODEGEN);
@@ -2582,8 +2874,19 @@ field_display (cob_field *f, const int line, const int column, cob_field *fgc,
 		pending_accept = 1;
 	}
 
-	cob_screen_attr (fgc, bgc, fattr, DISPLAY_STATEMENT);
-	if (!(fattr & COB_SCREEN_NO_DISP)) {
+	/*
+	 * Create temporary fields to contain values that might be changed by
+	 * xad_set_attributes et.al. to avoid side effects
+	 */
+	sfgc = xad_build_int_field (fgc ? cob_get_int (fgc) : -1);
+	sbgc = xad_build_int_field (bgc ? cob_get_int (bgc) : -1);
+
+	/* set controllable attributes */
+	xad_set_attributes (XAD_ATTRIBUTES, sfgc, sbgc, &sattr);
+
+	cob_screen_attr (sfgc, sbgc, sattr, DISPLAY_STATEMENT);
+
+	if (!(sattr & COB_SCREEN_NO_DISP)) {
 		/* figurative constant and WITH SIZE repeats the literal */
 		if (size_is
 		    && f->attr->type == COB_TYPE_ALPHANUMERIC_ALL) {
@@ -2609,13 +2912,22 @@ field_display (cob_field *f, const int line, const int column, cob_field *fgc,
 	display_cursor_y = sline;
 	display_cursor_x = scolumn + size_display;
 
-	if (fattr & COB_SCREEN_EMULATE_NL) {
-		if (++sline >= LINES) {
+	if (sattr & COB_SCREEN_EMULATE_NL) {
+		// if (++sline >= LINES) {
+		if (++sline >= get_screen_lines ()) {
 			sline = 0;
 		}
 		cob_move_cursor (sline, 0);
 	}
 	refresh ();
+
+	if (sfgc != NULL) {
+		cob_field_free (sfgc);
+	}
+
+	if (sbgc != NULL) {
+		cob_field_free (sbgc);
+	}
 }
 
 static void
@@ -2831,12 +3143,12 @@ field_accept (cob_field *f, const int sline, const int scolumn, cob_field *fgc,
 
 		/* Key error - time out. */
 		if (keyp == ERR) {
-			fret = 8001;
+			fret = COB_SCR_TIME_OUT;
 			goto field_return;
 		}
 		/* Return function keys F1 through F64 */
 		if (keyp > KEY_F0 && keyp < KEY_F(65)) {
-			fret = 1000 + keyp - KEY_F0;
+			fret = COB_SCR_F0 + keyp - KEY_F0;
 			goto field_return;
 		}
 
@@ -2868,36 +3180,36 @@ field_accept (cob_field *f, const int sline, const int scolumn, cob_field *fgc,
 			goto field_return;
 		case KEY_PPAGE:
 			/* Page up. */
-			fret = 2001;
+			fret = COB_SCR_PAGE_UP;
 			goto field_return;
 		case KEY_NPAGE:
 			/* Page down. */
-			fret = 2002;
+			fret = COB_SCR_PAGE_DOWN;
 			goto field_return;
 		case KEY_UP:
 			/* Up arrow. */
-			fret = 2003;
+			fret = COB_SCR_KEY_UP;
 			goto field_return;
 		case KEY_DOWN:
 			/* Down arrow. */
-			fret = 2004;
+			fret = COB_SCR_KEY_DOWN;
 			goto field_return;
 		case KEY_PRINT:
 			/* Print key. */
 			/* pdcurses not returning this ? */
-			fret = 2006;
+			fret = COB_SCR_PRINT;
 			goto field_return;
 		case 033:
 			/* Escape key. */
-			fret = 2005;
+			fret = COB_SCR_ESC;
 			goto field_return;
 		case KEY_STAB:
 			/* Tab key. */
-			fret = 2007;
+			fret = COB_SCR_TAB;
 			goto field_return;
 		case KEY_BTAB:
 			/* Shift-Tab key, Back tab. */
-			fret = 2008;
+			fret = COB_SCR_BACK_TAB;
 			goto field_return;
 		default:
 			break;
@@ -2908,30 +3220,30 @@ field_accept (cob_field *f, const int sline, const int scolumn, cob_field *fgc,
 			/* special keys for ACCEPT OMITTED */
 			switch (keyp) {
 			case KEY_LEFT:
-				fret = 2009;
+				fret = COB_SCR_KEY_LEFT;
 				goto field_return;
 			case KEY_RIGHT:
-				fret = 2010;
+				fret = COB_SCR_KEY_RIGHT;
 				goto field_return;
 			case KEY_IC:
 				/* Insert key. */
-				fret = 2011;
+				fret = COB_SCR_INSERT;
 				goto field_return;
 			case KEY_DC:
 				/* Delete key. */
-				fret = 2012;
+				fret = COB_SCR_DELETE;
 				goto field_return;
 			case KEY_BACKSPACE:
 				/* Backspace key. */
-				fret = 2013;
+				fret = COB_SCR_BACKSPACE;
 				goto field_return;
 			case KEY_HOME:
 				/* Home key. */
-				fret = 2014;
+				fret = COB_SCR_KEY_HOME;
 				goto field_return;
 			case KEY_END:
 				/* End key. */
-				fret = 2015;
+				fret = COB_SCR_KEY_END;
 				goto field_return;
 #ifdef NCURSES_MOUSE_VERSION
 			case KEY_MOUSE:
@@ -3076,7 +3388,7 @@ field_accept (cob_field *f, const int sline, const int scolumn, cob_field *fgc,
 			}
 			/* End of field, auto-skip, return left-arrow. */
 			if (fattr & COB_SCREEN_AUTO && keyp == KEY_LEFT) {
-				fret = 2009;
+				fret = COB_SCR_KEY_LEFT;
 				goto field_return;
 			}
 			cob_beep ();
@@ -3093,7 +3405,7 @@ field_accept (cob_field *f, const int sline, const int scolumn, cob_field *fgc,
 			}
 			/* End of field, auto-skip, return right-arrow. */
 			if (fattr & COB_SCREEN_AUTO && keyp == KEY_RIGHT) {
-				fret = 2010;
+				fret = COB_SCR_KEY_RIGHT;
 				goto field_return;
 			}
 			cob_beep ();
@@ -3344,6 +3656,7 @@ cob_screen_display (cob_screen *s, cob_field *line, cob_field *column,
 				   zero_line_col_allowed, &sline, &scolumn);
 	screen_display (s, sline, scolumn);
 }
+
 void
 cob_screen_accept (cob_screen *s, cob_field *line, cob_field *column,
 		   cob_field *ftimeout, const int zero_line_col_allowed)
@@ -3641,9 +3954,11 @@ cob_screen_line_col (cob_field *f, const int l_or_c)
 	init_cob_screen_if_needed ();
 #ifdef	WITH_EXTENDED_SCREENIO
 	if (!l_or_c) {
-		cob_set_int (f, (int)LINES);
+		// cob_set_int (f, (int)LINES);
+		cob_set_int (f, get_screen_lines ());
 	} else {
-		cob_set_int (f, (int)COLS);
+		// cob_set_int (f, (int)COLS);
+		cob_set_int (f, get_screen_columns ());
 	}
 #else
 	if (!l_or_c) {
@@ -3766,9 +4081,9 @@ cob_sys_set_csr_pos (unsigned char *fld)
 #endif
 }
 
-/* get current screen size */
+/* get current (physical) screen size */
 int
-cob_sys_get_scr_size (unsigned char *line, unsigned char *col)
+cob_sys_get_scr_phys_size (unsigned char *line, unsigned char *col)
 {
 	COB_CHK_PARMS (CBL_GET_SCR_SIZE, 2);
 	init_cob_screen_if_needed ();
@@ -3784,7 +4099,7 @@ cob_sys_get_scr_size (unsigned char *line, unsigned char *col)
 }
 
 int
-cob_get_scr_cols (void)
+cob_get_scr_phys_cols (void)
 {
 	init_cob_screen_if_needed();
 #ifdef	WITH_EXTENDED_SCREENIO
@@ -3795,7 +4110,7 @@ cob_get_scr_cols (void)
 }
 
 int
-cob_get_scr_lines (void)
+cob_get_scr_phys_lines (void)
 {
 	init_cob_screen_if_needed();
 #ifdef	WITH_EXTENDED_SCREENIO
@@ -3804,6 +4119,46 @@ cob_get_scr_lines (void)
 	return 24;
 #endif
 }
+
+/* get current (configurable) screen geometry */
+int
+cob_sys_get_scr_size (unsigned char *line, unsigned char *col)
+{
+	COB_CHK_PARMS (CBL_GET_SCR_SIZE, 2);
+	init_cob_screen_if_needed ();
+
+#ifdef	WITH_EXTENDED_SCREENIO
+	*line = (unsigned char)get_screen_lines ();
+	*col = (unsigned char)get_screen_columns ();
+#else
+	*line = 24U;
+	*col = 80U;
+#endif
+	return 0;
+}
+
+int
+cob_get_scr_cols (void)
+{
+	init_cob_screen_if_needed();
+#ifdef	WITH_EXTENDED_SCREENIO
+	return get_screen_columns ();
+#else
+	return 80;
+#endif
+}
+
+int
+cob_get_scr_lines (void)
+{
+	init_cob_screen_if_needed();
+#ifdef	WITH_EXTENDED_SCREENIO
+	return get_screen_lines ();
+#else
+	return 24;
+#endif
+}
+
 
 /* check and handle adjustments to settings concerning screenio */
 void
@@ -3907,3 +4262,1748 @@ cob_init_screenio (cob_global *lptr, cob_settings *sptr)
 
 	cob_settings_screenio ();
 }
+
+#ifdef WITH_EXTENDED_ACCDIS
+
+/*
+ * Allocate a new cob_screen item
+ */
+cob_screen *
+cob_screen_alloc () {
+	cob_screen *s = NULL;
+
+	if ((s = cob_malloc (sizeof (cob_screen))) == NULL) {
+		return NULL;
+	}
+
+	s->next = s->prev =s->child = s->parent = NULL;
+	s->field = s->value = s->line = s->column = NULL;
+	s->foreg = s->backg = s->prompt = NULL;
+	s->type = s->occurs = s->attr = 0;
+
+	return s;
+}
+
+
+/*
+ * Free a previously allocated cob_screen item
+ */
+void
+cob_screen_free (cob_screen *s) {
+	if (s == NULL) {
+		return;
+	}
+
+	cob_free (s);
+}
+
+
+/*
+ * Allocate a new cob_field item and it's attributes. If 'size' is > 0, allocate data accorgingly
+ */
+cob_field *
+cob_field_alloc (int size) {
+	cob_field *f = NULL;
+
+	if ((f = cob_malloc (sizeof (cob_field))) == NULL) {
+		return NULL;
+	}
+
+	f->size = 0;
+	f->data = NULL;
+	f->attr = NULL;
+
+	if ((f->attr = cob_malloc (sizeof (cob_field_attr))) == NULL) {
+		cob_free (f);
+		return NULL;
+	}
+
+	if (size > 0) {
+		if ((f->data = cob_malloc (size)) == NULL) {
+			cob_free (f->attr);
+			cob_free (f);
+			return NULL;
+		}
+
+		f->size = size;
+	}
+
+	return f;
+}
+
+
+/*
+ * Free a previously allocated cob_field item, it's attributes and it's "own" data
+ */
+void
+cob_field_free (cob_field *f) {
+	if (f == NULL) {
+		return;
+	}
+
+	if (f->data != NULL) {
+		/* Don't free() SHARED_DATA */
+		if (!(f->attr && (f->attr->flags & COB_FLAG_SHARED_DATA))) {
+			cob_free (f->data);
+		}
+	}
+
+	if (f->attr != NULL) {
+		cob_free (f->attr);
+	}
+
+	cob_free (f);
+}
+
+
+/*
+ * Initialize XAD: Read keyboard mappings and initialize attributes
+ */
+void
+cob_xad_init () {
+	char	default_keymap_file[] = "keymap.map";
+	char	*penv;
+	char	keymap_file[COB_MEDIUM_MAX];
+
+	if ((penv = getenv("COB_XAD_KEYMAP")) == NULL) {
+		penv = default_keymap_file;
+	}
+
+	if (index (penv, SLASH_CHAR) != NULL) {
+		snprintf (keymap_file, sizeof (keymap_file), "%s", penv);
+	} else {
+		snprintf (keymap_file, sizeof (keymap_file), "%s%c%s", COB_CONFIG_DIR, SLASH_CHAR, penv);
+	}
+
+	(void) xad_init (keymap_file);
+
+	XAD_ATTRIBUTES = 0;
+	xad_setbgcol (COLOR_BLACK, NULL);
+	xad_setfgcol (COLOR_WHITE, NULL);
+}
+
+
+/*
+ * Read a keyboard mappings file
+ */
+void
+cob_xad_read_keymap (char *filename_) {
+	char	*penv;
+	char	keymap_file[COB_MEDIUM_MAX];
+
+	if (filename_ == NULL) {
+		return;
+	}
+
+	if (index (filename_, SLASH_CHAR) != NULL) {
+		snprintf (keymap_file, sizeof (keymap_file), "%s", filename_);
+	} else {
+		snprintf (keymap_file, sizeof (keymap_file), "%s%c%s", COB_CONFIG_DIR, SLASH_CHAR, filename_);
+	}
+
+	(void) xad_init (keymap_file);
+}
+
+
+/*
+ * Build a cob_screen item as indicated by a cob_xad_mask entry
+ */
+cob_screen *
+xad_construct_screen (cob_xad_mask *m) {
+	cob_screen	*s = NULL;
+
+	if ((s = cob_screen_alloc ()) == NULL) {
+		return NULL;
+	}
+
+	switch (COB_FIELD_TYPE (m->field)) {
+	case COB_TYPE_GROUP:
+		break;
+
+	default:
+		s->next = NULL;
+		s->prev = NULL;
+		s->child = NULL;
+		s->parent = NULL;
+		s->field = m->field;
+		s->value = NULL;
+		s->line = NULL;
+		s->column = NULL;
+		s->occurs = 0;
+	}
+
+	return s;
+}
+
+
+/*
+ * Clone a cob_field item
+ */
+cob_field *
+cob_field_clone (cob_field *fld) {
+	cob_field	*f = NULL;
+
+	if (fld == NULL) {
+		return NULL;
+	}
+
+	if ((f = cob_field_alloc (fld->size)) == NULL) {
+		return NULL;
+	}
+
+	memcpy(f->attr, fld->attr, sizeof (cob_field_attr));
+	if (fld->attr->flags & COB_FLAG_SHARED_DATA) {
+		f->size = fld->size;
+		f->data = fld->data;
+	} else {
+		if (f->size > 0) {
+			memcpy(f->data, fld->data, f->size);
+		}
+	}
+
+	return f;
+}
+
+
+/*
+ * Initialize a cob_field item to contain an int
+ *
+ * n:	value to initialize cob_field with
+ */
+static cob_field *
+xad_init_int_field (cob_field *f, int n) {
+	cob_field	field;
+	cob_field_attr	attr;
+
+	COB_FIELD_INIT (4, (unsigned char *)&n, &attr);
+	COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, 9, 0,
+		       COB_FLAG_HAVE_SIGN | COB_FLAG_REAL_BINARY, NULL);
+
+	return cob_field_clone (&field);
+}
+
+
+/*
+ * Build a cob_field item containing an int
+ *
+ * n:	value to initialize cob_field with
+ */
+static cob_field *
+xad_build_int_field (int n) {
+	cob_field	field;
+	cob_field_attr	attr;
+
+	COB_FIELD_INIT (4, (unsigned char *)&n, &attr);
+	COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, 9, 0,
+		       COB_FLAG_HAVE_SIGN | COB_FLAG_REAL_BINARY, NULL);
+
+	return cob_field_clone (&field);
+}
+
+
+/*
+ * Build a cob_field item copying specifications from a template and
+ * pointing to data of another field at some offset
+ *
+ * template:	cob_field containing the field specifications
+ * base:	cob_field containing the data to point to
+ * offset:	offset into the data to point to
+ */
+static cob_field *
+xad_build_shared_field (cob_field *template, cob_field *base, int offset) {
+	cob_field	field;
+	cob_field	*f;
+	cob_field_attr	attr;
+	if ((f = cob_field_alloc (0)) == NULL) {
+		return NULL;
+	}
+
+	memcpy(&attr, template->attr, sizeof (cob_field_attr));
+	attr.flags |= COB_FLAG_SHARED_DATA;
+	memcpy(f->attr, &attr, sizeof (cob_field_attr));
+	f->size = template->size;
+	f->data = base->data + offset;
+
+	return f;
+}
+
+
+/*
+ * Auxilliary routine: Fix connections between cob_screen items
+ */
+void
+xad_define_screen_fix_prev (cob_screen *s) {
+	if (s == NULL) {
+		return;
+	}
+
+	if (s->child != NULL) {
+		s->child->prev = NULL;
+		xad_define_screen_fix_prev (s->child);
+	}
+
+	if (s->next != NULL) {
+		xad_define_screen_fix_prev (s->next);
+	}
+}
+
+
+/*
+ * Auxilliary routine: Move the dynamically created cob_fields from .value to .field
+ */
+void
+xad_define_screen_fix_fields (cob_screen *s) {
+	if (s == NULL) {
+		return;
+	}
+
+	if (s->value != NULL) {
+		s->field = s->value;
+		s->value = NULL;
+	}
+
+	if (s->child != NULL) {
+		xad_define_screen_fix_fields (s->child);
+	}
+
+	if (s->next != NULL) {
+		xad_define_screen_fix_fields (s->next);
+	}
+}
+
+
+/*
+ * Create a structure of connected cob_screen items as indicated by a cob_xad_mask,
+ * that can later on be used as if they had been defined in a SCREEN SECTION.
+ * For each screen field a cob_field is created, pointing into the data of the
+ * first field at the respective offset.
+ * Fields or groups with an OCCURS clause are repeated accordingly.
+ *
+ * mask[]:	Array of cob_xad_mask items describing one field each
+ * fgc:		default foreground color
+ * bgc:		default background color
+ * prompt:	default prompt character
+ * fattr:	default field flags
+ */
+cob_screen *
+xad_define_screen (cob_xad_mask mask[], cob_field *fgc, cob_field *bgc, cob_field *prompt, const cob_flags_t fattr) {
+	cob_xad_mask	*m;
+	cob_field	*base = NULL;
+	cob_screen	*scr = NULL;
+	cob_screen	*s = NULL;
+	cob_field	*f = NULL;
+	cob_screen	*prev = NULL;
+	int		offset = 0;
+	int		o_offset = 0;
+	int		idx = 0;
+	int		i;
+	int		nr_cols = 80;
+	int		mask_version = -1;
+
+	typedef struct {
+	    int		idx;
+	    int		cnt;
+	}		stack_t;
+	stack_t		occ_stack[50];
+	int		occ_stack_p = 0;
+
+	/*
+	// TODO: configurable geometry
+	nr_cols = COLS;
+
+	if (nr_cols < 1 || nr_cols > 200) {
+		nr_cols = 80;
+	}
+	*/
+
+	nr_cols = 80;
+
+	offset = 0;
+	s = NULL;
+	prev = NULL;
+	scr = NULL;
+
+	i = 0;
+	idx = 0;
+
+	mask_version = 0;
+
+	/* Recognize version */
+	if (mask && mask->type == COB_XAD_MASK_TYPE_VERSION) {
+		mask_version = mask->size;
+		idx++;
+	}
+
+	/* The field of the first (group-) item will be our base - data container */
+	base = (mask + idx)->field;
+
+	while ((mask + idx) != NULL && (mask + idx)->field != NULL && ++i <= COB_INP_FLD_MAX) {
+		m = mask + idx;
+
+		// Has this element an OCCURS clause?
+		if (m->occurs > 1) { // CHECKME: ... occurs 0 to 1 times dependind on ...?
+			// Yes.
+			// Is this our current OCCURS element?
+			if (occ_stack_p > 0 && occ_stack[occ_stack_p - 1].idx == idx) {
+				// Yes. Next loop
+				occ_stack[occ_stack_p - 1].cnt -= 1;
+			} else {
+				// No. Save OCCURS info
+				if (occ_stack_p < 50) {
+					occ_stack[occ_stack_p].idx = idx;
+					occ_stack[occ_stack_p].cnt = m->occurs - 1;
+					occ_stack_p++;
+				} // FIXME: Handle stack overflow
+			}
+		}
+
+		o_offset = offset;
+		prev = s;
+		s = xad_construct_screen (m);
+		s->prev = prev;
+		if (scr == NULL) {
+			scr = s;
+		}
+
+		/* HACK: Save m->field for now, as we might still need it. */
+		s->field = m->field;
+		s->line = xad_build_int_field (offset / nr_cols + 1);
+		s->column = xad_build_int_field (offset % nr_cols + 1);
+
+		// if (m->field->attr->type == COB_TYPE_GROUP) {
+		if (m->type == COB_XAD_MASK_TYPE_GROUP) {
+			s->type = COB_SCREEN_TYPE_GROUP;
+		} else {
+			if (m->type == COB_XAD_MASK_TYPE_FIELD) {
+				s->type = COB_SCREEN_TYPE_FIELD;
+				s->attr = (fattr | COB_SCREEN_INPUT | COB_SCREEN_USE_XAD_COLORS);
+				s->field = m->field;
+				s->foreg = fgc;
+				s->backg = bgc;
+				s->prompt = prompt;
+
+				/* HACK: use s->value as temporory storage */
+				s->value = xad_build_shared_field(s->field, base, o_offset);
+			}
+
+			offset += m->size;
+			// offset += m->field->size;
+		}
+
+		if (m->parent != NULL) {
+			cob_screen *p = s->prev;
+
+			while (p != NULL) {
+				if (p->field == m->parent) {
+					cob_screen	*ch;
+
+					if (p->child) {
+						for (ch = p->child; ch->next; ch = ch->next);
+
+						ch->next = s;
+					} else {
+						p->child = s;
+					}
+					s->next = NULL;
+					s->parent = p;
+
+					break;
+				} else {
+					p = p->prev;
+				}
+			}
+		}
+
+		idx++;
+
+		// Are we within some OCCURS?
+		if (occ_stack_p > 0) {
+			int occ_idx = occ_stack[occ_stack_p - 1].idx;
+
+			if ((mask + idx)->field == NULL || (mask + idx)->depth <= (mask + occ_idx)->depth) {
+				// End of current OCCURS. Another loop?
+				if (occ_stack[occ_stack_p - 1].cnt > 0) {
+					// Yes. Set idx to start of OCCURS
+					/// occ_stack[occ_stack_p - 1].count -= 1;
+					idx = occ_stack[occ_stack_p - 1].idx;
+				} else {
+					// No. Leave idx on following element
+					occ_stack_p--;
+					occ_idx = -1;
+					// TODO: Fix offset according to ODOSLIDE
+				}
+			}
+		}
+	}
+
+	if (scr != NULL) {
+		xad_define_screen_fix_prev (scr);
+		xad_define_screen_fix_fields (scr);
+	}
+
+	return scr;
+}
+
+
+/*
+ * Destroy and free a previously allocated cob_screen - item.
+ * Take care not to free() data we didn't allocate.
+ *
+ * s: cob_screen - item
+ */
+void
+xad_destroy_screen (cob_screen *s) {
+	if (s->line) {
+		cob_field_free (s->line);
+		s->line = NULL;
+	}
+
+	if (s->column) {
+		cob_field_free (s->column);
+		s->column = NULL;
+	}
+
+	if (s->child) {
+		xad_destroy_screen (s->child);
+		s->child = NULL;
+	}
+
+	if (s->next) {
+		xad_destroy_screen (s->next);
+		s->next = NULL;
+	}
+
+	if (s->field && s->field->attr && (s->field->attr->flags & COB_FLAG_SHARED_DATA)) {
+		/* assume dynamically created field */
+		cob_field_free (s->field);
+	}
+
+	/* Don't free() stuff we didn't allocate. */
+
+	cob_screen_free (s);
+}
+
+
+/*
+ * Set cobol attributes and colors from xad_attrs
+ *
+ * xattrs:	attributes in xad-format
+ * fgc:		foreground color to return
+ * bgc:		background color to return
+ * fattr:	field attributes to return
+ */
+void
+xad_set_attributes (xad_attrs_t xattrs, cob_field *fgc, cob_field *bgc, cob_flags_t *fattr) {
+	if (! (*fattr & COB_SCREEN_ATTRIBUTES)) {
+		if (xattrs & COB_XAD_ATTR_BLINK) {
+			*fattr |= COB_SCREEN_BLINK;
+		}
+
+		if (xattrs & COB_XAD_ATTR_HIGHLIGHT) {
+			*fattr |= COB_SCREEN_HIGHLIGHT;
+		}
+
+		if (xattrs & COB_XAD_ATTR_LOWLIGHT) {
+			*fattr |= COB_SCREEN_LOWLIGHT;
+		}
+
+		if (xattrs & COB_XAD_ATTR_REVERSE) {
+			*fattr |= COB_SCREEN_REVERSE;
+		}
+
+		if (xattrs & COB_XAD_ATTR_UNDERLINE) {
+			*fattr |= COB_SCREEN_UNDERLINE;
+		}
+
+		if (xattrs & COB_XAD_ATTR_ALTCHARSET) {
+			*fattr |= COB_SCREEN_ALTCHARSET;
+		}
+
+		if (xattrs & COB_XAD_ATTR_NODISPLAY) {
+			*fattr |= COB_SCREEN_NO_DISP;
+		}
+	}
+
+	*fattr |= COB_SCREEN_USE_XAD_COLORS;
+	if (fgc) {
+		if (cob_get_int (fgc) == 0) { // CHECKME
+			cob_set_int (fgc, (*fattr & COB_XAD_FGCOL) >> 16);
+		}
+	}
+
+	if (bgc) {
+		if (cob_get_int (bgc) == 0) { // CHECKME
+			cob_set_int (bgc, (*fattr & COB_XAD_BGCOL) >> 24);
+		}
+	}
+}
+
+
+/*
+ * Get the current xad-attributes (attributes and colors)
+ *
+ * p0:	cob_field to return complete attributes
+ */
+int
+cbl_xad_getcolattrs (void *p0) {
+	cob_set_int (COB_MODULE_PTR->cob_procedure_params[0], XAD_ATTRIBUTES);
+	return 0;
+}
+
+
+/*
+ * Set the current xad-attributes (attributes and colors)
+ *
+ * p0:	cob_field containing the complete attributes to set
+ */
+int
+cbl_xad_setcolattrs (void *p0) {
+	XAD_ATTRIBUTES = cob_get_int (COB_MODULE_PTR->cob_procedure_params[0]);
+	return 0;
+}
+
+
+int
+cbl_xad_getattrs (void *p0) {
+	cob_set_int (COB_MODULE_PTR->cob_procedure_params[0], XAD_ATTRIBUTES & COB_XAD_ATTRS);
+	return 0;
+}
+
+
+int
+cbl_xad_setattrs (void *p0) {
+	XAD_ATTRIBUTES = (XAD_ATTRIBUTES & ~COB_XAD_ATTRS) | (cob_get_int (COB_MODULE_PTR->cob_procedure_params[0]) & COB_XAD_ATTRS);
+	return 0;
+}
+
+
+int
+cbl_xad_setattr (void *p0, void *p1) {
+	int		attr_num;
+	int		attr_val;
+	xad_attrs_t	attrs;
+
+	attr_num = cob_get_int (COB_MODULE_PTR->cob_procedure_params[0]);
+	attr_val = !!(cob_get_int (COB_MODULE_PTR->cob_procedure_params[1]));
+
+	attrs = (XAD_ATTRIBUTES & COB_XAD_ATTRS) | (attr_val << (attr_num - 1));
+
+	XAD_ATTRIBUTES = (XAD_ATTRIBUTES & ~COB_XAD_ATTRS) | attrs;
+	return 0;
+}
+
+
+int
+cbl_xad_setfgcol (void *p0) {
+	int		color;
+
+	color = cob_get_int (COB_MODULE_PTR->cob_procedure_params[0]) % 0xff;
+
+	xad_setfgcol (color, NULL);
+	return 0;
+}
+
+
+int
+cbl_xad_setbgcol (void *p0) {
+	int		color;
+
+	color = cob_get_int (COB_MODULE_PTR->cob_procedure_params[0]) % 0xff;
+
+	xad_setbgcol (color, NULL);
+
+	return 0;
+}
+
+
+/*
+ * Redraw the current screen content
+ */
+int
+cbl_xad_redraw_scr (void *status_) {
+	cob_field	*status = (cob_field *) COB_MODULE_PTR->cob_procedure_params[0];
+
+	redrawwin (stdscr);
+
+	/* TODO: status ... */
+	return 0;
+}
+
+
+static int
+xad_getfgcol (xad_attrs_t *xattrs) {
+	xad_attrs_t	*p = xattrs;
+
+	if (p == NULL) {
+		p = &XAD_ATTRIBUTES;
+	}
+
+	return ((*p) & COB_XAD_FGCOL) >> 16;
+}
+
+
+static int
+xad_setfgcol (int color, xad_attrs_t *xattrs) {
+	xad_attrs_t	*p = xattrs;
+
+	if (p == NULL) {
+		p = &XAD_ATTRIBUTES;
+	}
+
+	*p = ((*p) & ~COB_XAD_FGCOL) | (color << 16);
+
+	return 0;
+}
+
+
+static int
+xad_getbgcol (xad_attrs_t *xattrs) {
+	xad_attrs_t	*p = xattrs;
+
+	if (p == NULL) {
+		p = &XAD_ATTRIBUTES;
+	}
+
+	return ((*p) & COB_XAD_BGCOL) >> 24;
+}
+
+
+static int
+xad_setbgcol (int color, xad_attrs_t *xattrs) {
+	xad_attrs_t	*p = xattrs;
+
+	if (p == NULL) {
+		p = &XAD_ATTRIBUTES;
+	}
+
+	*p = ((*p) & ~COB_XAD_BGCOL) | (color << 24);
+
+	return 0;
+}
+
+
+/*
+ * Set cobol attributes and colors from CONTROL string
+ *
+ * ctrl:	CONTROL string
+ * fgc:		foreground color to return
+ * bgc:		background color to return
+ * tmo:		timeout value to return
+ * fattr:	field attributes to return
+ */
+static void
+xad_set_ctrl_attributes (cob_field *ctrl, cob_field *fgc, cob_field *bgc, cob_field *tmo, cob_flags_t *fattr) {
+	char	cs[1024];
+	char	*p = NULL;
+	char	*p1 = NULL;
+
+	if (ctrl == NULL) {
+		return;
+	}
+
+	if (ctrl->data == NULL) {
+		return;
+	}
+
+	if (field_to_str (ctrl, cs, sizeof (cs) - 1) == NULL) {
+		return;
+	}
+
+	for (p = cs; *p; p++) {
+		*p = toupper (*p);
+	}
+
+	p = cs;
+	while (*p) {
+		cob_flags_t	c_attr;
+		int	c_fgc, c_bgc, c_tmo, c_no;
+		int	n, n0, n1;
+		char	s[1024];
+
+		c_attr = 0;
+		c_fgc = c_bgc = c_tmo = -1;
+		c_no = 0;
+		n = n1 = 0;
+
+//fprintf (stderr, "match_ctrl:<%s>\n", p);
+		if (*p == ' ' || *p == '\t' || *p == ',' || *p == ';') {
+			p++;
+		} else if (sscanf (p, "%50s%n", &s, &n) >= 1) {
+//fprintf (stderr, "match_word:<%s>\n", s);
+			p += n;
+
+			if (strcasecmp (s, "NO") == 0) {
+				c_no = 1;
+				if (sscanf (p, "%50s%n", &s, &n) < 1) {
+					break;
+				}
+
+				p += n;
+			}
+
+			if (strcasecmp (s, "BLINK") == 0) {
+				c_attr = COB_SCREEN_BLINK;
+			} else if (strcasecmp (s, "HIGHLIGHT") == 0) {
+				c_attr = COB_SCREEN_HIGHLIGHT;
+			} else if (strcasecmp (s, "LOWLIGHT") == 0) {
+				c_attr = COB_SCREEN_LOWLIGHT;
+			} else if (strcasecmp (s, "REVERSE-VIDEO") == 0) {
+				c_attr = COB_SCREEN_REVERSE;
+			} else if (strcasecmp (s, "UNDERLINE") == 0) {
+				c_attr = COB_SCREEN_UNDERLINE;
+			} else if (
+				strcasecmp (s, "BACKGROUND-COLOR") == 0 ||
+				strcasecmp (s, "BACKGROUND-COLOUR") == 0
+			) {
+				n = 0;
+				if (sscanf (p, " IS%n", &n) >= 0 && n > 0) {
+//fprintf (stderr, "bgis:n:%d\n", n);
+					p += n;
+				}
+
+				/* TODO: value by identifier */
+				// n = n1 = 0;
+				if (sscanf (p, " %d%n", &n1, &n) >= 1) {
+					c_bgc = n1;
+					p += n;
+				}
+			} else if (
+				strcasecmp (s, "FOREGROUND-COLOR") == 0 ||
+				strcasecmp (s, "FOREGROUND-COLOUR") == 0
+			) {
+				n = 0;
+				if (sscanf (p, " IS%n", &n) >= 0 && n > 0) {
+//fprintf (stderr, "is:%d\n", n);
+					p += n;
+				}
+
+				/* TODO: value by identifier */
+				// n = n1 = 0;
+				if (sscanf (p, " %d%n", &n1, &n) >= 1) {
+//fprintf (stderr, "n/n1:%d/%d\n", n, n1);
+					c_fgc = n1;
+					p += n;
+				}
+			} else if (strcasecmp (s, "TIMEOUT") == 0) {
+				n = 0;
+				if (sscanf (p, " IS%n", &n) >= 0 && n > 0) {
+					p += n;
+				}
+
+				/* TODO: value by identifier */
+				// n = n1 = 0;
+				if (sscanf (p, " %d%n", &n1, &n) >= 1) {
+//fprintf (stderr, "is:%d\n", n);
+					c_tmo = n1;
+					p += n;
+				}
+			}
+		} else if (sscanf (p, "%*s%n", &n) == 1) {
+			p += n;
+		} else {
+			break;
+		}
+
+//fprintf (stderr, "match_ctrl: attr:0x%x, fgc:%d, bgc:%d, tmo:%d\n", c_attr, c_fgc, c_bgc, c_tmo);
+		if (c_attr != 0 && fattr != NULL) {
+			*fattr |= c_attr;
+		}
+
+		if (c_fgc >= 0 && fgc != NULL) {
+			cob_set_int (fgc, c_fgc);
+		}
+
+		if (c_bgc >= 0 && bgc != NULL) {
+			cob_set_int (bgc, c_bgc);
+		}
+
+		if (c_tmo >= 0 && tmo != NULL) {
+			cob_set_int (tmo, c_tmo);
+		}
+	}
+
+//if (fgc != NULL) {
+//	fprintf(stderr, "FGC:%d\n", cob_get_int (fgc));
+//}
+//if (bgc != NULL) {
+//	fprintf(stderr, "BGC:%d\n", cob_get_int (bgc));
+//}
+}
+
+
+void
+cob_xad_accept (cob_field *f, cob_field *line, cob_field *column,
+		  cob_field *fgc, cob_field *bgc, cob_field *fscroll,
+		  cob_field *ftimeout, cob_field *prompt, cob_field *size_is,
+		  const cob_flags_t fattr, cob_xad_mask *mask,
+		  cob_field *ctrl)
+{
+	cob_screen	*s;
+	int		sline;
+	int		scolumn;
+	cob_flags_t	sattr = fattr;
+	cob_field	*sfgc = NULL;
+	cob_field	*sbgc = NULL;
+	cob_field	*stmo = NULL;
+
+//fprintf (stderr, "cob_xad_accept__0\n");
+//fprintf (stderr, "%s/%d (ctrl=%x)\n", __FILE__, __LINE__, ctrl);
+	init_cob_screen_if_needed ();
+
+	extract_line_and_col_vals (line, column, ACCEPT_STATEMENT, 1, &sline,
+				   &scolumn);
+
+	/*
+	 * Create temporary fields to contain values that might be changed by
+	 * xad_set_attributes et.al. to avoid side effects
+	 */
+	sfgc = xad_build_int_field (fgc ? cob_get_int (fgc) : -1);
+	sbgc = xad_build_int_field (bgc ? cob_get_int (bgc) : -1);
+	stmo = xad_build_int_field (ftimeout ? cob_get_int (ftimeout) : -1);
+
+	xad_set_attributes (XAD_ATTRIBUTES, sfgc, sbgc, &sattr);
+
+	if (ctrl != NULL) {
+// fprintf (stderr, "(ctrl=<%s>)\n", ctrl->data);
+		xad_set_ctrl_attributes (ctrl, sfgc, sbgc, stmo, &sattr);
+	}
+
+	s = xad_define_screen (mask, sfgc, sbgc, prompt, sattr);
+
+	screen_accept (s, sline, scolumn, stmo);
+
+	xad_destroy_screen (s);
+
+	if (sfgc != NULL) {
+		cob_field_free (sfgc);
+	}
+
+	if (sbgc != NULL) {
+		cob_field_free (sbgc);
+	}
+
+	if (stmo != NULL) {
+		cob_field_free (stmo);
+	}
+}
+
+
+#if 0
+void
+cob_xad_accept__2 (cob_field **flds, const cob_flags_t fattr, cob_xad_mask *mask) {
+	/*
+	cob_field *f, cob_field *line, cob_field *column,
+	cob_field *fgc, cob_field *bgc, cob_field *fscroll,
+	cob_field *ftimeout, cob_field *prompt, cob_field *size_is,
+	const cob_flags_t fattr, cob_xad_mask *mask,
+	cob_field *ctrl
+	*/
+
+// fprintf (stderr, "cob_xad_accept__2\n");
+	cob_xad_accept (
+		flds + 0,	// f
+		flds + 1,	// line
+		flds + 2,	// column
+		flds + 3,	// fgc
+		flds + 4,	// bgc
+		flds + 5,	// fscroll
+		flds + 6,	// timeout
+		flds + 7,	// prompt
+		flds + 8,	// size_is
+		fattr, mask,
+		flds + 9	// ctrl
+	);
+}
+#endif
+
+void
+cob_xad_display (cob_field *f, cob_field *line, cob_field *column,
+		  cob_field *fgc, cob_field *bgc, cob_field *fscroll,
+		  cob_field *size_is,
+		  const cob_flags_t fattr, cob_xad_mask *mask,
+		  cob_field *ctrl)
+{
+	cob_screen	*s;
+	int		sline;
+	int		scolumn;
+	cob_flags_t	sattr = fattr;
+	cob_field	*sfgc = NULL;
+	cob_field	*sbgc = NULL;
+
+	init_cob_screen_if_needed ();
+
+	extract_line_and_col_vals (line, column, DISPLAY_STATEMENT, 1, &sline,
+				   &scolumn);
+
+	/*
+	 * Create temporary fields to contain values that might be changed by
+	 * xad_set_attributes et.al. to avoid side effects
+	 */
+	sfgc = xad_build_int_field (fgc ? cob_get_int (fgc) : -1);
+	sbgc = xad_build_int_field (bgc ? cob_get_int (bgc) : -1);
+
+	xad_set_attributes (XAD_ATTRIBUTES, sfgc, sbgc, &sattr);
+
+	if (ctrl != NULL) {
+//fprintf (stderr, "(ctrl=<%s>)\n", ctrl->data);
+		xad_set_ctrl_attributes (ctrl, sfgc, sbgc, NULL, &sattr);
+	}
+
+	if (COB_FIELD_TYPE (f) == COB_TYPE_GROUP) {
+		s = xad_define_screen (mask, sfgc, sbgc, NULL, sattr);
+
+		screen_display (s, sline, scolumn);
+
+		xad_destroy_screen (s);
+	} else {
+		field_display (f, sline, scolumn, sfgc, sbgc, fscroll, size_is, sattr);
+	}
+
+	if (sfgc != NULL) {
+		cob_field_free (sfgc);
+	}
+
+	if (sbgc != NULL) {
+		cob_field_free (sbgc);
+	}
+}
+
+
+static xad_attrs_t
+curses_to_xad_attrs (chtype ch) {
+	chtype		curs_attrs;
+	xad_attrs_t	xad_attrs = 0;
+	short		pair;
+	short		fgcol, bgcol;
+
+	curs_attrs = ch & A_ATTRIBUTES;
+
+	if (curs_attrs & A_REVERSE) {
+		xad_attrs |= COB_XAD_ATTR_REVERSE;
+	}
+
+	if (curs_attrs & A_BOLD) {
+		xad_attrs |= COB_XAD_ATTR_HIGHLIGHT;
+	}
+
+	if (curs_attrs & A_DIM) {
+		xad_attrs |= COB_XAD_ATTR_LOWLIGHT;
+	}
+
+	if (curs_attrs & A_BLINK) {
+		xad_attrs |= COB_XAD_ATTR_BLINK;
+	}
+
+	if (curs_attrs & A_UNDERLINE) {
+		xad_attrs |= COB_XAD_ATTR_UNDERLINE;
+	}
+	
+	if (curs_attrs & A_ALTCHARSET) {
+		xad_attrs |= COB_XAD_ATTR_ALTCHARSET;
+	}
+	
+	if ((pair = PAIR_NUMBER (ch)) != ERR) {
+		if (pair_content (pair, &fgcol, &bgcol) != ERR) {
+			xad_setfgcol (fgcol, &xad_attrs);
+			xad_setbgcol (bgcol, &xad_attrs);
+		}
+	}
+
+	return xad_attrs;
+}
+
+
+static chtype
+xad_to_curses_attrs (xad_attrs_t xad_attrs) {
+	chtype		curs_attrs;
+	short		pair;
+	short		fgcol, bgcol;
+
+	curs_attrs = 0;
+
+	if (xad_attrs & COB_XAD_ATTR_REVERSE) {
+		curs_attrs |= A_REVERSE;
+	}
+
+	if (xad_attrs & COB_XAD_ATTR_HIGHLIGHT) {
+		curs_attrs |= A_BOLD;
+	}
+
+	if (xad_attrs & COB_XAD_ATTR_LOWLIGHT) {
+		curs_attrs |= A_DIM;
+	}
+
+	if (xad_attrs & COB_XAD_ATTR_BLINK) {
+		curs_attrs |= A_BLINK;
+	}
+
+	if (xad_attrs & COB_XAD_ATTR_UNDERLINE) {
+		curs_attrs |= A_UNDERLINE;
+	}
+
+	if (xad_attrs & COB_XAD_ATTR_ALTCHARSET) {
+		curs_attrs |= A_ALTCHARSET;
+	}
+
+	fgcol = xad_getfgcol (&xad_attrs);
+	bgcol = xad_getbgcol (&xad_attrs);
+
+	pair = cob_get_color_pair (fgcol, bgcol);
+
+	curs_attrs = (curs_attrs & ~A_COLOR) | COLOR_PAIR (pair);
+
+	return curs_attrs;
+}
+
+
+static int
+xad_to_cob_attrs (xad_attrs_t xad_attrs) {
+	int		cob_attrs = 0;
+	short		pair;
+	short		fgcol, bgcol;
+
+	if (xad_attrs & COB_XAD_ATTR_REVERSE) {
+		cob_attrs |= COB_SCREEN_REVERSE;
+	}
+
+	if (xad_attrs & COB_XAD_ATTR_HIGHLIGHT) {
+		cob_attrs |= COB_SCREEN_HIGHLIGHT;
+	}
+
+	if (xad_attrs & COB_XAD_ATTR_LOWLIGHT) {
+		cob_attrs |= COB_SCREEN_LOWLIGHT;
+	}
+
+	if (xad_attrs & COB_XAD_ATTR_BLINK) {
+		cob_attrs |= COB_SCREEN_BLINK;
+	}
+
+	if (xad_attrs & COB_XAD_ATTR_UNDERLINE) {
+		cob_attrs |= COB_SCREEN_UNDERLINE;
+	}
+
+	if (xad_attrs & COB_XAD_ATTR_ALTCHARSET) {
+		cob_attrs |= COB_SCREEN_ALTCHARSET;
+	}
+
+	return cob_attrs;
+}
+
+
+static unsigned char
+xad_to_cbl_attrs (xad_attrs_t xad_attrs) {
+	unsigned char	cbl_attrs = '\0';
+	short		pair;
+	short		fgcol, bgcol;
+	int		i;
+
+	for (i = 0; i < 8; i++) {
+		if (xad_attrs & XAD_CBLATTRS[i]) {
+			cbl_attrs |= (1U << i);
+		}
+	}
+
+	return cbl_attrs;
+}
+
+
+static xad_attrs_t
+cbl_to_xad_attrs (unsigned char cbl_attrs) {
+	xad_attrs_t	xad_attrs = 0;
+	int		i;
+
+	for (i = 0; i < 8; i++) {
+		if (cbl_attrs & (1U << i)) {
+			xad_attrs |= XAD_CBLATTRS[i];
+		}
+	}
+
+	return xad_attrs;
+}
+
+
+static unsigned char
+curses_to_cbl_attrs (chtype ch) {
+	return xad_to_cbl_attrs (curses_to_xad_attrs (ch));
+}
+
+
+static chtype
+cbl_to_curses_attrs (unsigned char cbl_attrs) {
+	return xad_to_curses_attrs (cbl_to_xad_attrs (cbl_attrs));
+}
+
+
+static int
+cob_read_scr_chattrs (cob_field *pos, cob_field *chars, cob_field *attrs, int length, cob_field *status) {
+	int		start, line, column, i;
+	int		columns = 80; // FIXME: geometry
+	chtype		ch;
+
+	line = column = start = 0;
+
+	if (pos->size == 2) {
+		line = (int) pos->data[0];
+		column = (int) pos->data[1];
+	} else {
+		i = cob_get_int (pos);
+		line = (i / 100);
+		column = i - line * 100;
+	}
+
+	start = line * columns + column;
+
+	for (i = 0; i < length; i++) {
+		line = (start + i) / columns;
+		column = (start + i) % columns;
+
+		ch = mvinch (line, column);
+
+		if (chars != NULL) {
+			if (i < chars->size) {
+				*(chars->data + i) = (ch & A_CHARTEXT);
+			}
+		}
+
+		if (attrs != NULL) {
+			if (i < attrs->size) {
+				*(attrs->data + i) = curses_to_cbl_attrs(ch);
+			}
+		}
+	}
+
+	if (0 && status != NULL) { // FIXME
+		if (cob_field_is_numeric_or_numeric_edited (status)) { // CHECKME
+			cob_set_int (status, 0);
+		}
+	}
+
+	return 0;
+}
+
+
+int
+cbl_read_scr_chattrs (void *position_, void *chars_, void *attrs_, void *length_, void *status_) {
+	cob_field	*pos = (cob_field *) COB_MODULE_PTR->cob_procedure_params[0];
+	cob_field	*chars = (cob_field *) COB_MODULE_PTR->cob_procedure_params[1];
+	cob_field	*attrs = (cob_field *) COB_MODULE_PTR->cob_procedure_params[2];
+	int		length = cob_get_int (COB_MODULE_PTR->cob_procedure_params[3]);
+	cob_field	*status = (cob_field *) COB_MODULE_PTR->cob_procedure_params[4];
+
+	return cob_read_scr_chattrs (pos, chars, attrs, length, status);
+}
+
+
+int
+cbl_read_scr_attrs (void *position_, void *attrs_, void *length_, void *status_) {
+	cob_field	*pos = (cob_field *) COB_MODULE_PTR->cob_procedure_params[0];
+	cob_field	*attrs = (cob_field *) COB_MODULE_PTR->cob_procedure_params[1];
+	int		length = cob_get_int (COB_MODULE_PTR->cob_procedure_params[2]);
+	cob_field	*status = (cob_field *) COB_MODULE_PTR->cob_procedure_params[3];
+
+	return cob_read_scr_chattrs (pos, NULL, attrs, length, status);
+}
+
+
+int
+cbl_read_scr_chars (void *position_, void *chars_, void *length_, void *status_) {
+	cob_field	*pos = (cob_field *) COB_MODULE_PTR->cob_procedure_params[0];
+	cob_field	*chars = (cob_field *) COB_MODULE_PTR->cob_procedure_params[1];
+	int		length = cob_get_int (COB_MODULE_PTR->cob_procedure_params[2]);
+	cob_field	*status = (cob_field *) COB_MODULE_PTR->cob_procedure_params[3];
+
+	return cob_read_scr_chattrs (pos, chars, NULL, length, status);
+}
+
+
+static int
+cob_write_scr_chattrs (cob_field *pos, cob_field *chars, cob_field *attrs, int length, cob_field *status, int repeat_first) {
+	int		start, line, column, i;
+	int		columns = -1; // 80; // FIXME: geometry
+	int		lines = -1; // 24; // FIXME: geometry
+	chtype		ch;
+	unsigned char	ca;
+
+	get_screen_geometry (&lines, &columns);
+
+	line = column = start = 0;
+
+	if (pos->size == 2) {
+		line = (int) pos->data[0];
+		column = (int) pos->data[1];
+	} else {
+		i = cob_get_int (pos);
+		line = (i / 100);
+		column = i - line * 100;
+	}
+
+	start = line * columns + column;
+
+	for (i = 0; i < length && i + start < lines * columns; i++) {
+		line = (start + i) / columns;
+		column = (start + i) % columns;
+
+		ch = mvinch (line, column);
+
+		if (chars != NULL && chars->data != NULL && chars->size > 0) {
+			if (i < chars->size || repeat_first) {
+				if (repeat_first) {
+					ca = *(chars->data);
+				} else {
+					ca = *(chars->data + i);
+				}
+
+				ch = (ch & ~A_CHARTEXT) | (ca & A_CHARTEXT);
+			}
+		}
+
+		if (attrs != NULL && attrs->data != NULL && attrs->size > 0) {
+			if (i < attrs->size || repeat_first) {
+				if (repeat_first) {
+					ca = *(attrs->data);
+				} else {
+					ca = *(attrs->data + i);
+				}
+
+				ch = (ch & ~A_ATTRIBUTES) | cbl_to_curses_attrs(ca);
+			}
+		}
+
+		mvaddch (line, column, ch);
+	}
+
+	refresh ();
+
+	if (0 && status != NULL) { // FIXME
+		if (cob_field_is_numeric_or_numeric_edited (status)) { // CHECKME
+			cob_set_int (status, 0);
+		}
+	}
+
+	return 0;
+}
+
+
+int
+cbl_write_scr_chattrs (void *position_, void *chars_, void *attrs_, void *length_, void *status_) {
+	cob_field	*pos = (cob_field *) COB_MODULE_PTR->cob_procedure_params[0];
+	cob_field	*chars = (cob_field *) COB_MODULE_PTR->cob_procedure_params[1];
+	cob_field	*attrs = (cob_field *) COB_MODULE_PTR->cob_procedure_params[2];
+	int		length = cob_get_int (COB_MODULE_PTR->cob_procedure_params[3]);
+	cob_field	*status = (cob_field *) COB_MODULE_PTR->cob_procedure_params[4];
+
+	return cob_write_scr_chattrs (pos, chars, attrs, length, status, 0);
+}
+
+
+int
+cbl_write_scr_attrs (void *position_, void *attrs_, void *length_, void *status_) {
+	cob_field	*pos = (cob_field *) COB_MODULE_PTR->cob_procedure_params[0];
+	cob_field	*attrs = (cob_field *) COB_MODULE_PTR->cob_procedure_params[1];
+	int		length = cob_get_int (COB_MODULE_PTR->cob_procedure_params[2]);
+	cob_field	*status = (cob_field *) COB_MODULE_PTR->cob_procedure_params[3];
+
+	return cob_write_scr_chattrs (pos, NULL, attrs, length, status, 0);
+}
+
+
+int
+cbl_write_scr_chars (void *position_, void *chars_, void *length_, void *status_) {
+	cob_field	*pos = (cob_field *) COB_MODULE_PTR->cob_procedure_params[0];
+	cob_field	*chars = (cob_field *) COB_MODULE_PTR->cob_procedure_params[1];
+	int		length = cob_get_int (COB_MODULE_PTR->cob_procedure_params[2]);
+	cob_field	*status = (cob_field *) COB_MODULE_PTR->cob_procedure_params[3];
+
+	return cob_write_scr_chattrs (pos, chars, NULL, length, status, 0);
+}
+
+
+int
+cbl_write_scr_chars_attr (void *position_, void *chars_, void *length_, void *attr_, void *status_) {
+	cob_field	*pos = (cob_field *) COB_MODULE_PTR->cob_procedure_params[0];
+	cob_field	*chars = (cob_field *) COB_MODULE_PTR->cob_procedure_params[1];
+	int		length = cob_get_int (COB_MODULE_PTR->cob_procedure_params[2]);
+	cob_field	*attr = (cob_field *) COB_MODULE_PTR->cob_procedure_params[3];
+	cob_field	*status = (cob_field *) COB_MODULE_PTR->cob_procedure_params[4];
+
+	return cob_write_scr_chattrs (pos, chars, attr, length, status, 1);
+}
+
+
+int
+cbl_write_scr_n_attr (void *position_, void *attr_, void *length_, void *status_) {
+	cob_field	*pos = (cob_field *) COB_MODULE_PTR->cob_procedure_params[0];
+	cob_field	*attr = (cob_field *) COB_MODULE_PTR->cob_procedure_params[1];
+	int		length = cob_get_int (COB_MODULE_PTR->cob_procedure_params[2]);
+	cob_field	*status = (cob_field *) COB_MODULE_PTR->cob_procedure_params[3];
+
+	return cob_write_scr_chattrs (pos, NULL, attr, length, status, 1);
+}
+
+
+int
+cbl_write_scr_n_char (void *position_, void *char_, void *length_, void *status_) {
+	cob_field	*pos = (cob_field *) COB_MODULE_PTR->cob_procedure_params[0];
+	cob_field	*chr = (cob_field *) COB_MODULE_PTR->cob_procedure_params[1];
+	int		length = cob_get_int (COB_MODULE_PTR->cob_procedure_params[2]);
+	cob_field	*status = (cob_field *) COB_MODULE_PTR->cob_procedure_params[3];
+
+	return cob_write_scr_chattrs (pos, chr, NULL, length, status, 1);
+}
+
+
+int
+cbl_write_scr_n_chattr (void *position_, void *char_, void *attr_, void *length_, void *status_) {
+	cob_field	*pos = (cob_field *) COB_MODULE_PTR->cob_procedure_params[0];
+	cob_field	*chr = (cob_field *) COB_MODULE_PTR->cob_procedure_params[1];
+	cob_field	*attr = (cob_field *) COB_MODULE_PTR->cob_procedure_params[2];
+	int		length = cob_get_int (COB_MODULE_PTR->cob_procedure_params[3]);
+	cob_field	*status = (cob_field *) COB_MODULE_PTR->cob_procedure_params[4];
+
+	return cob_write_scr_chattrs (pos, chr, attr, length, status, 1);
+}
+
+
+int
+cbl_swap_scr_chattrs (void *position_, void *chars_, void *attrs_, void *length_, void *status_) {
+	cob_field	*pos = (cob_field *) COB_MODULE_PTR->cob_procedure_params[0];
+	cob_field	*chars = (cob_field *) COB_MODULE_PTR->cob_procedure_params[1];
+	cob_field	*attrs = (cob_field *) COB_MODULE_PTR->cob_procedure_params[2];
+	int		length = cob_get_int (COB_MODULE_PTR->cob_procedure_params[3]);
+	cob_field	*status = (cob_field *) COB_MODULE_PTR->cob_procedure_params[4];
+	cob_field	*fchars = NULL;
+	cob_field	*fattrs = NULL;
+
+	if (chars != NULL) {
+		fchars = cob_field_clone (chars);
+	}
+
+	if (attrs != NULL) {
+		fattrs = cob_field_clone (attrs);
+	}
+
+	cob_read_scr_chattrs (pos, chars, attrs, length, status);
+
+	cob_write_scr_chattrs (pos, fchars, fattrs, length, status, 0);
+
+	if (fattrs != NULL) {
+		cob_free (fattrs);
+	}
+
+	if (fchars != NULL) {
+		cob_free (fchars);
+	}
+
+	return 0;
+}
+
+
+int
+cbl_xad_read_scr (void *start_, void *length_, void *chars_, void *attrs_) {
+	int		start = cob_get_int (COB_MODULE_PTR->cob_procedure_params[0]);
+	int		length = cob_get_int (COB_MODULE_PTR->cob_procedure_params[1]);
+	cob_field	*chars = (cob_field *) COB_MODULE_PTR->cob_procedure_params[2];
+	cob_field	*attrs = (cob_field *) COB_MODULE_PTR->cob_procedure_params[3];
+	int		line, column, todo, i;
+	chtype		ch;
+	xad_attrs_t	xattr;
+
+	for (i = 0; i < length; i++) {
+		line = (start + i) / 80; // FIXME: geometry
+		column = (start + i) % 80; // FIXME: geometry
+
+		if ((ch = mvinch (line, column)) != ERR) {
+			if (chars != NULL) {
+				if (i < chars->size) {
+					*(chars->data + i) = (ch & A_CHARTEXT);
+				}
+			}
+
+			if (attrs != NULL) {
+				xattr = 0;
+				xattr |= (ch & A_REVERSE) ? COB_SCREEN_REVERSE : 0;
+				xattr |= (ch & A_BOLD) ? COB_SCREEN_HIGHLIGHT : 0;
+				xattr |= (ch & A_DIM) ? COB_SCREEN_LOWLIGHT : 0;
+				xattr |= (ch & A_BLINK) ? COB_SCREEN_BLINK : 0;
+				xattr |= (ch & A_UNDERLINE) ? COB_SCREEN_UNDERLINE : 0;
+				xattr |= (ch & A_ALTCHARSET) ? COB_SCREEN_ALTCHARSET : 0;
+
+				if ((i + 1) * sizeof (xattr) <= attrs->size) {
+					memcpy (attrs->data + (i * sizeof (xattr)), &xattr, sizeof(xattr));
+				}
+			}
+		}
+	}
+
+	return 0;
+}
+
+
+int
+cbl_xad_setattrbit (void *bitnr_, void *attr_) {
+	int		bitnr = cob_get_int (COB_MODULE_PTR->cob_procedure_params[0]);
+	int		attr = cob_get_int (COB_MODULE_PTR->cob_procedure_params[1]);
+
+	if (bitnr < 0 || bitnr > 7) {
+		return -1;
+	}
+
+	XAD_CBLATTRS[bitnr] = (attr & COB_XAD_ATTRS);
+
+	return 0;
+}
+
+
+int
+cbl_xad_setattrbyte (void *abyte_) {
+	cob_field	*abyte = (cob_field *) COB_MODULE_PTR->cob_procedure_params[0];
+	xad_attrs_t	xattrs = XAD_ATTRIBUTES;
+
+	if (COB_FIELD_IS_NUMERIC (abyte)) {
+		xattrs = cbl_to_xad_attrs (cob_get_int (abyte));
+	} else {
+		xattrs = cbl_to_xad_attrs ((unsigned char) abyte->data[0]);
+	}
+
+	XAD_ATTRIBUTES = (XAD_ATTRIBUTES & ~COB_XAD_ATTRS) | (xattrs & COB_XAD_ATTRS);
+
+	attrset (cbl_to_curses_attrs (XAD_ATTRIBUTES));
+
+	return 0;
+}
+
+
+int
+cbl_xad_getattrbyte (void *abyte_) {
+	cob_field	*abyte = (cob_field *) COB_MODULE_PTR->cob_procedure_params[0];
+
+	if (COB_FIELD_IS_NUMERIC (abyte)) {
+		cob_set_int (abyte, xad_to_cbl_attrs (XAD_ATTRIBUTES));
+	} else {
+		abyte->data[0] = xad_to_cbl_attrs (XAD_ATTRIBUTES);
+	}
+
+	return 0;
+}
+
+
+/*
+ * Define the meaning of the bits of the attribute byte
+ *
+ * p0:	String of up to 8 characters, each defining one bit of the
+ * 	attribute byte in increasing order (b0, b1, ... b7).
+ *
+ * 	H:	highlight attribute
+ * 	U:	underline attribute
+ * 	R:	reverse attribute
+ * 	B:	blink attribute
+ * 	L:	lowlight attribute
+ * 	A:	alternate character set
+ * 	N:	"no display" attribute
+ * 	0:	remove meaning
+ * 	C:	colorpair number in upto 4 remaining bits (TODO, not implemented)
+ *
+ * 	Other character are ignored and the respective bit remains unchanged.
+ * 	The default definition for the attribute byte is "HURBLAN0"
+ */
+int
+cbl_xad_setattrbits (void *p0_) {
+	cob_field	*p0 = (cob_field *) COB_MODULE_PTR->cob_procedure_params[0];
+
+	if (COB_FIELD_IS_ALNUM (p0) && p0->size > 0) {
+		int	i;
+		for (i = 0; i < 8 && i < p0->size; i++) {
+			switch (*(p0->data + i)) {
+			case 'H': XAD_CBLATTRS[i] = COB_XAD_ATTR_HIGHLIGHT; break;
+			case 'U': XAD_CBLATTRS[i] = COB_XAD_ATTR_UNDERLINE; break;
+			case 'R': XAD_CBLATTRS[i] = COB_XAD_ATTR_REVERSE; break;
+			case 'B': XAD_CBLATTRS[i] = COB_XAD_ATTR_BLINK; break;
+			case 'L': XAD_CBLATTRS[i] = COB_XAD_ATTR_LOWLIGHT; break;
+			case 'A': XAD_CBLATTRS[i] = COB_XAD_ATTR_ALTCHARSET; break;
+			case 'N': XAD_CBLATTRS[i] = COB_XAD_ATTR_NODISPLAY; break;
+			case '0': XAD_CBLATTRS[i] = 0; break;
+			case 'C':
+#if 0 /* TODO ... */
+				/* TODO: Encode color pair number into up to 4 remaining bits of attribute byte */
+				for (j = i; j < 4; j++) {
+					if (j < 8) {
+						XAD_CBLATTRS[j] = COB_XAD_ATTR_COLORPAIR + j;
+					}
+				}
+#endif
+				i += 4;
+				break;
+			}
+		}
+	}
+
+	return 0;
+}
+
+
+/*
+ * Return current definition of the bits of the attribute byte
+ *
+ * p0:	alphanumeric item to return the current definition according to 'cbl_setattrbits' in
+ */
+
+int
+cbl_xad_getattrbits (void *p0_) {
+	cob_field	*p0 = (cob_field *) COB_MODULE_PTR->cob_procedure_params[0];
+
+	if (COB_FIELD_IS_ALNUM (p0) && p0->size > 0) {
+		int	i;
+		char	c;
+
+		memset (p0->data, ' ', p0->size);
+
+		for (i = 0; i < 8 && i < p0->size; i++) {
+			*(p0->data + i) = ' ';
+
+			switch (XAD_CBLATTRS[i]) {
+			case COB_XAD_ATTR_HIGHLIGHT:	*(p0->data + i) = 'H'; break;
+			case COB_XAD_ATTR_UNDERLINE:	*(p0->data + i) = 'U'; break;
+			case COB_XAD_ATTR_REVERSE:	*(p0->data + i) = 'R'; break;
+			case COB_XAD_ATTR_BLINK:	*(p0->data + i) = 'B'; break;
+			case COB_XAD_ATTR_LOWLIGHT:	*(p0->data + i) = 'L'; break;
+			case COB_XAD_ATTR_ALTCHARSET:	*(p0->data + i) = 'A'; break;
+			case COB_XAD_ATTR_NODISPLAY:	*(p0->data + i) = 'N'; break;
+			case 0:				*(p0->data + i) = '0'; break;
+#if 0 /* TODO ... */
+			case COB_XAD_ATTR_COLORPAIR_0:
+			case COB_XAD_ATTR_COLORPAIR_1:
+			case COB_XAD_ATTR_COLORPAIR_2:
+			case COB_XAD_ATTR_COLORPAIR_3:
+				break;
+#endif
+			}
+		}
+	}
+
+	return 0;
+}
+
+
+/* Keyboard routines */
+
+int
+cbl_read_kbd_char (void *rchar_, void *status_) {
+	cob_field	*rchar = (cob_field *) COB_MODULE_PTR->cob_procedure_params[0];
+	cob_field	*status = (cob_field *) COB_MODULE_PTR->cob_procedure_params[1];
+	chtype		ch;
+
+	if (rchar->size < 1) {
+		return 0;
+	}
+
+	if ((ch = getch()) != ERR) {
+		rchar->data[0] = ch & A_CHARTEXT;
+	}
+
+	/* TODO: status, etc. */
+
+	return 0;
+}
+
+
+/*
+ * Disable XAD keyboard mappings
+ */
+int
+cbl_xad_reset_keymap (void *status_) {
+	cob_field	*status = (cob_field *) COB_MODULE_PTR->cob_procedure_params[0];
+
+	xad_reset_keymap ();
+
+	/* TODO: status, etc. */
+
+	return 0;
+}
+
+
+/*
+ * Load default XAD keyboard mappings
+ */
+int
+cbl_xad_default_keymap (void *status_) {
+	cob_field	*status = (cob_field *) COB_MODULE_PTR->cob_procedure_params[0];
+
+	xad_init_default_keymap ();
+
+	/* TODO: status, etc. */
+
+	return 0;
+}
+
+
+/*
+ * Copy a field to a null-terminated string
+ * (essentially taken from intrinsic.c: copy_data_to_null_terminated_str())
+ */
+static char
+*field_to_str (cob_field *f, char *out_str, size_t max_len) {
+	size_t	i;
+	size_t	m = -1;
+
+	for (i = 0; i < f->size; i++) {
+		if (!isspace ((int) *(f->data + i))) {
+			m = i;
+		}
+	}
+
+	m += 1;
+
+	if (m > max_len) {
+		m = max_len;
+	}
+
+	strncpy (out_str, (char *)f->data, m);
+	out_str[m] = '\0';
+
+	return out_str;
+}
+
+
+int
+cbl_xad_read_keymapfile (void *filename_, void *status_) {
+	cob_field	*filename = (cob_field *) COB_MODULE_PTR->cob_procedure_params[0];
+	cob_field	*status = (cob_field *) COB_MODULE_PTR->cob_procedure_params[1];
+	char		path[1024];
+
+	if (field_to_str (filename, path, sizeof (path) - 1) == NULL) {
+		return -1;
+	}
+
+	xad_read_keymap_file (path);
+
+	/* TODO: status, etc. */
+
+	return 0;
+}
+
+
+int
+cbl_xad_add_keymapping (void *pkey_, void *pval_) {
+	cob_field	*f_pkey = (cob_field *) COB_MODULE_PTR->cob_procedure_params[0];
+	cob_field	*f_pval = (cob_field *) COB_MODULE_PTR->cob_procedure_params[1];
+	cob_field	*status = (cob_field *) COB_MODULE_PTR->cob_procedure_params[2];
+	char		pkey[1024];
+	char		pval[1024];
+
+	if (field_to_str (f_pkey, pkey, sizeof (pkey) - 1) == NULL) {
+		return -1;
+	}
+
+	if (field_to_str (f_pval, pval, sizeof (pval) - 1) == NULL) {
+		return -1;
+	}
+
+	xad_add_keymap (pkey, pval);
+
+	/* TODO: status, etc. */
+
+	return 0;
+}
+
+
+#endif

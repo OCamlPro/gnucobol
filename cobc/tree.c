@@ -1236,6 +1236,18 @@ cb_exhbit_literal (cb_tree x)
 	return CB_TREE (build_literal (CB_CATEGORY_ALPHANUMERIC, s, tlen + 3));
 }
 
+cb_tree
+cb_verbatim (char *x)
+{
+	struct cb_string *p;
+
+	p = make_tree (CB_TAG_DIRECT, CB_CATEGORY_ALPHANUMERIC,
+		       sizeof (struct cb_string));
+	p->size = strlen (x);
+	p->data = x;
+	return CB_TREE (p);
+}
+
 enum cb_category
 cb_tree_category (cb_tree x)
 {
@@ -6241,7 +6253,7 @@ cb_build_funcall (const char *name, const int argc,
 		  const cb_tree a1, const cb_tree a2, const cb_tree a3,
 		  const cb_tree a4, const cb_tree a5, const cb_tree a6,
 		  const cb_tree a7, const cb_tree a8, const cb_tree a9,
-		  const cb_tree a10, const cb_tree a11)
+		  const cb_tree a10, const cb_tree a11, const cb_tree a12)
 {
 	struct cb_funcall *p;
 
@@ -6262,6 +6274,7 @@ cb_build_funcall (const char *name, const int argc,
 	p->argv[8] = a9;
 	p->argv[9] = a10;
 	p->argv[10] = a11;
+	p->argv[11] = a12;
 	return CB_TREE (p);
 }
 

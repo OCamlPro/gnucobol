@@ -147,3 +147,6 @@ intrinsic-function:	DIALECT-ALL
 
 # enable all registers
 register:		DIALECT-ALL
+
+# enable XAD
+enable-xad:		yes

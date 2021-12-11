@@ -737,6 +737,7 @@ only usable with COB_USE_VC2013_OR_GREATER */
 #define COB_FLAG_CONSTANT		(1U << 12)	/* 0x1000 */
 #define COB_FLAG_VALUE			(1U << 13)	/* 0x2000 */
 #define COB_FLAG_CONTENT		(1U << 14)	/* 0x4000 */
+#define COB_FLAG_SHARED_DATA		(1U << 15)	/* 0x8000 */
 
 #define COB_FIELD_HAVE_SIGN(f)		((f)->attr->flags & COB_FLAG_HAVE_SIGN)
 #define COB_FIELD_SIGN_SEPARATE(f)	((f)->attr->flags & COB_FLAG_SIGN_SEPARATE)
@@ -1155,10 +1156,19 @@ typedef cob_s64_t cob_flags_t;
 #define COB_SCREEN_UPPER		((cob_flags_t)1 << 28)
 #define COB_SCREEN_LOWER		((cob_flags_t)1 << 29)
 #define COB_SCREEN_GRID			((cob_flags_t)1 << 30)
-/*#define COB_SCREEN_reserved		((cob_flags_t)1 << 31) /+ reserved for next flag used in screenio */
+#define COB_SCREEN_ALTCHARSET		((cob_flags_t)1 << 31) /* Alternate Char Set */
 #define COB_SCREEN_TAB			((cob_flags_t)1 << 32) /* used for syntax checking */
 #define COB_SCREEN_NO_UPDATE		((cob_flags_t)1 << 33) /* used for syntax checking */
 #define COB_SCREEN_SCROLL_UP		((cob_flags_t)1 << 34) /* used for syntax checking */
+#define COB_SCREEN_USE_XAD_COLORS	((cob_flags_t)1 << 35) /* respect color settings in XAD_ATTRIBUTE */
+
+#define COB_SCREEN_ATTRIBUTES 		(COB_SCREEN_BLINK \
+					|COB_SCREEN_HIGHLIGHT \
+					|COB_SCREEN_LOWLIGHT \
+					|COB_SCREEN_REVERSE \
+					|COB_SCREEN_UNDERLINE \
+					|COB_SCREEN_ALTCHARSET \
+					|COB_SCREEN_NO_DISP)
 
 #define COB_SCREEN_TYPE_GROUP		0
 #define COB_SCREEN_TYPE_FIELD		1
@@ -1336,6 +1346,118 @@ typedef struct __cob_screen {
 	int			occurs;		/* OCCURS */
 	int			attr;		/* COB_SCREEN_TYPE_ATTRIBUTE */
 } cob_screen;
+
+
+#define WITH_EXTENDED_ACCDIS /* HACK, FIXME */
+#ifdef WITH_EXTENDED_ACCDIS
+/* XAD */
+
+#define COB_XAD_MASK_VERSION		2000	/* 2.000 */
+
+#define COB_XAD_MASK_TYPE_FIELD		0x00
+#define COB_XAD_MASK_TYPE_GROUP		0x01
+#define COB_XAD_MASK_TYPE_FILLER	0x02
+#define COB_XAD_MASK_TYPE_VERSION	0xff
+
+typedef struct __cob_xad_mask {
+	cob_field	*field;		/* field */
+	cob_field	*parent;	/* parent field */
+	int		type;		/* type: group, field, filler */
+	int		size;		/* size of field */
+	int		occurs;		/* occurs_max */
+	cob_field	*depending;	/* occurs depending on ... */
+	int		depth;		/* "structural depth" */
+} cob_xad_mask;
+
+#if 0
+typedef struct __cob_xad_attrs {
+	cob_field	*line;		/* line on screen */
+	cob_field	*column;	/* column on screen */
+	cob_field	*fgc;		/* foreground color */
+	cob_field	*bgc;		/* background color */
+	cob_field	*fscroll;	/* ? */
+	cob_field	*ftimeout;	/* ?accept timeout */
+	cob_field	*prompt;	/* prompt character */
+	cob_field	*size_is;	/* ? */
+	cob_flags_t	fattr;		/* ?field attributes */
+	cob_xad_mask	*mask;		/* xad_mask */
+	cob_field	*ctrl;		/* control string */
+} cob_xad_attrs;
+#endif
+
+COB_EXPIMP void		cob_xad_accept	(cob_field *, cob_field *, cob_field *,
+					 cob_field *, cob_field *, cob_field *,
+					 cob_field *, cob_field *, cob_field *,
+					 const cob_flags_t, cob_xad_mask [],
+					 cob_field *);
+
+COB_EXPIMP void		cob_xad_display (cob_field *, cob_field *, cob_field *,
+					cob_field *, cob_field *, cob_field *,
+					cob_field *,
+					const cob_flags_t, cob_xad_mask [],
+					cob_field *);
+
+typedef cob_s32_t xad_attrs_t;
+
+#define COB_XAD_ATTR_BLINK		((xad_attrs_t)1 << 0)
+#define COB_XAD_ATTR_HIGHLIGHT		((xad_attrs_t)1 << 1)
+#define COB_XAD_ATTR_LOWLIGHT		((xad_attrs_t)1 << 2)
+#define COB_XAD_ATTR_REVERSE		((xad_attrs_t)1 << 3)
+#define COB_XAD_ATTR_UNDERLINE		((xad_attrs_t)1 << 4)
+#define COB_XAD_ATTR_ALTCHARSET		((xad_attrs_t)1 << 5)
+#define COB_XAD_ATTR_NODISPLAY		((xad_attrs_t)1 << 6)
+
+#define COB_XAD_ATTRS			0x0000ffff
+#define COB_XAD_FGCOL			0x00ff0000
+#define COB_XAD_BGCOL			0xff000000
+
+COB_EXPIMP int cbl_xad_reset_keymap 	(/* void * */);
+COB_EXPIMP int cbl_xad_read_keymapfile 	(/* void * */);
+COB_EXPIMP int cbl_xad_add_keymapping 	(/* void * */);
+COB_EXPIMP int cbl_xad_default_keymap 	(/* void * */);
+
+COB_EXPIMP int cbl_xad_getcolattrs 	(/* void * */);
+COB_EXPIMP int cbl_xad_setcolattrs 	(/* void * */);
+COB_EXPIMP int cbl_xad_getattrs 	(/* void * */);
+COB_EXPIMP int cbl_xad_setattrs 	(/* void * */);
+COB_EXPIMP int cbl_xad_setattr	 	(/* void *, void * */);
+COB_EXPIMP int cbl_xad_setfgcol 	(/* void * */);
+COB_EXPIMP int cbl_xad_setbgcol 	(/* void * */);
+
+COB_EXPIMP int cbl_xad_setattrbit	(/* void *, void * */);
+COB_EXPIMP int cbl_xad_getattrbyte	(/* void * */);
+COB_EXPIMP int cbl_xad_setattrbyte	(/* void * */);
+
+COB_EXPIMP int cbl_xad_setattrbits	(/* void * */);
+COB_EXPIMP int cbl_xad_getattrbits	(/* void * */);
+
+COB_EXPIMP int cbl_xad_read_scr		(/* void *, void *, void *, void * */);
+COB_EXPIMP int cbl_xad_redraw_scr	(/* void * */);
+
+COB_EXPIMP int cbl_read_scr_chattrs	(/* void *, void *, void *, void *, void * */);
+COB_EXPIMP int cbl_read_scr_attrs	(/* void *, void *, void *, void * */);
+COB_EXPIMP int cbl_read_scr_chars	(/* void *, void *, void *, void * */);
+
+COB_EXPIMP int cbl_write_scr_chattrs	(/* void *, void *, void *, void *, void * */);
+COB_EXPIMP int cbl_write_scr_attrs	(/* void *, void *, void *, void * */);
+COB_EXPIMP int cbl_write_scr_chars	(/* void *, void *, void *, void * */);
+
+COB_EXPIMP int cbl_write_scr_chars_attr	(/* void *, void *, void *, void *, void * */);
+COB_EXPIMP int cbl_write_scr_n_attr	(/* void *, void *, void *, void * */);
+COB_EXPIMP int cbl_write_scr_n_char	(/* void *, void *, void *, void * */);
+COB_EXPIMP int cbl_write_scr_n_chattr	(/* void *, void *, void *, void *, void * */);
+
+COB_EXPIMP int cbl_swap_scr_chattrs	(/* void *, void *, void *, void *, void * */);
+
+COB_EXPIMP int cbl_read_kbd_char	(/* void *, void * */);
+
+// COB_EXPIMP int xad_getfgcol 		(/* void * */);
+// COB_EXPIMP int xad_setfgcol 		(/* void *, void */);
+// COB_EXPIMP int xad_getbgcol 		(/* void * */);
+// COB_EXPIMP int xad_setbgcol 		(/* void *, void * */);
+
+COB_EXPIMP void xad_set_attributes	(xad_attrs_t, cob_field *, cob_field *, cob_flags_t *);
+#endif
 
 /* Module structure */
 #define COB_MODULE_TYPE_PROGRAM		0
@@ -2288,6 +2410,8 @@ COB_EXPIMP void		cob_runtime_warning_external	(const char *, const int,
 /*******************************/
 /* Functions in screenio.c */
 
+// #include	<libcob/screenio-common.h>	// Definitions
+
 COB_EXPIMP void		cob_screen_line_col	(cob_field *, const int);
 COB_EXPIMP void		cob_screen_display	(cob_screen *, cob_field *,
 					 cob_field *, const int);
@@ -2301,6 +2425,9 @@ COB_EXPIMP void		cob_field_accept	(cob_field *, cob_field *, cob_field *,
 					 cob_field *, cob_field *, cob_field *,
 					 cob_field *, cob_field *, cob_field *,
 					 const cob_flags_t);
+
+COB_EXPIMP void		cob_xad_accept__2	(cob_field **flds, const cob_flags_t fattr, cob_xad_mask *mask);
+
 COB_EXPIMP int		cob_display_text (const char *);
 COB_EXPIMP int		cob_display_formatted_text (const char *, ...);
 COB_EXPIMP int		cob_get_char	(void);

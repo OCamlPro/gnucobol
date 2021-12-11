@@ -6927,29 +6927,7 @@ get_line_and_column_from_pos (const cb_tree pos, cb_tree * const line_or_pos,
 	}
 }
 
-static void
-cb_gen_field_accept (cb_tree var, cb_tree pos, cb_tree fgc, cb_tree bgc,
-		     cb_tree scroll, cb_tree timeout, cb_tree prompt,
-		     cb_tree size_is, cob_flags_t disp_attrs)
-{
-	cb_tree		line = NULL;
-	cb_tree		column = NULL;
-
-	if (!pos) {
-		cb_emit (CB_BUILD_FUNCALL_10 ("cob_field_accept",
-					      var, NULL, NULL, fgc, bgc, scroll,
-					      timeout, prompt, size_is, cb_flags_t (disp_attrs)));
-	} else if (CB_LIST_P (pos)) {
-		get_line_and_column_from_pos (pos, &line, &column);
-		cb_emit (CB_BUILD_FUNCALL_10 ("cob_field_accept",
-					      var, line, column, fgc, bgc, scroll,
-					      timeout, prompt, size_is, cb_flags_t (disp_attrs)));
-	} else if (valid_screen_pos (pos)) {
-		cb_emit (CB_BUILD_FUNCALL_10 ("cob_field_accept",
-					      var, pos, NULL, fgc, bgc, scroll,
-					      timeout, prompt, size_is, cb_flags_t (disp_attrs)));
-	}
-}
+extern void xad_add_definition (cb_tree var);
 
 static COB_INLINE COB_A_INLINE int
 line_col_zero_is_supported (void)
@@ -6958,6 +6936,96 @@ line_col_zero_is_supported (void)
 		|| cb_accept_display_extensions == CB_WARNING
 		|| cb_accept_display_extensions == CB_ARCHAIC
 		|| cb_accept_display_extensions == CB_OBSOLETE;
+}
+
+static void
+cb_gen_field_accept (cb_tree var, cb_tree pos, cb_tree fgc, cb_tree bgc,
+		     cb_tree scroll, cb_tree timeout, cb_tree prompt,
+		     cb_tree size_is, cob_flags_t disp_attrs,
+		     cb_tree ctrl)
+{
+	cb_tree		line = NULL;
+	cb_tree		column = NULL;
+	char		xmname[50];
+	cb_tree		xmpar = NULL, fspar = NULL;
+
+	if (var == cb_null) {
+		var = NULL;
+	}
+
+#ifdef WITH_EXTENDED_ACCDIS
+	if (cb_enable_xad) {
+		xad_add_definition (var);
+
+		snprintf (xmname, sizeof(xmname), "(cob_xad_mask *)xm_%d", CB_FIELD_PTR (var)->id);
+		xmpar = cb_build_direct (strdup (xmname), 0);
+	} else {
+#endif
+		if (!(pos || fgc || bgc || scroll || disp_attrs
+		      || timeout || prompt || size_is)) {
+			cb_emit (CB_BUILD_FUNCALL_1 ("cob_accept", var));
+			// CB_BUILD_STRING0 (CB_REFERENCE(cb_build_name_reference (p, f))->word->name));
+			return;
+		}
+#ifdef WITH_EXTENDED_ACCDIS
+	} /* cb_enable_xad */
+#endif
+
+	if (!pos) {
+#define COB_XAD_ACCEPT_VERSION	2
+
+#ifdef WITH_EXTENDED_ACCDIS
+		if (cb_enable_xad) {
+			// /*
+			cb_emit (CB_BUILD_FUNCALL_12 ("cob_xad_accept",
+						      var, NULL, NULL, fgc, bgc, scroll,
+						      timeout, prompt, size_is, cb_flags_t (disp_attrs), xmpar, ctrl));
+			// */
+			/*
+			cb_emit (CB_BUILD_FUNCALL_3 ("cob_xad_accept__2",
+						      CB_BUILD_ARGS (var, NULL, NULL, fgc, bgc, scroll,
+						      timeout, prompt, size_is, ctrl), cb_flags_t (disp_attrs), xmpar));
+			*/
+		} else {
+#endif
+			cb_emit (CB_BUILD_FUNCALL_10 ("cob_field_accept",
+						      var, NULL, NULL, fgc, bgc, scroll,
+						      timeout, prompt, size_is, cb_flags_t (disp_attrs)));
+#ifdef WITH_EXTENDED_ACCDIS
+		} /* cb_enable_xad */
+#endif
+	} else if (CB_LIST_P (pos)) {
+		get_line_and_column_from_pos (pos, &line, &column);
+
+#ifdef WITH_EXTENDED_ACCDIS
+		if (cb_enable_xad) {
+			cb_emit (CB_BUILD_FUNCALL_12 ("cob_xad_accept",
+						      var, line, column, fgc, bgc, scroll,
+						      timeout, prompt, size_is, cb_flags_t (disp_attrs), xmpar, ctrl));
+		} else {
+#endif
+			cb_emit (CB_BUILD_FUNCALL_10 ("cob_field_accept",
+						      var, line, column, fgc, bgc, scroll,
+						      timeout, prompt, size_is, cb_flags_t (disp_attrs)));
+#ifdef WITH_EXTENDED_ACCDIS
+		} /* cb_enable_xad */
+#endif
+
+	} else if (valid_screen_pos (pos)) {
+#ifdef WITH_EXTENDED_ACCDIS
+		if (cb_enable_xad) {
+			cb_emit (CB_BUILD_FUNCALL_12 ("cob_xad_accept",
+						      var, pos, NULL, fgc, bgc, scroll,
+						      timeout, prompt, size_is, cb_flags_t (disp_attrs), xmpar, ctrl));
+		} else {
+#endif
+			cb_emit (CB_BUILD_FUNCALL_10 ("cob_field_accept",
+						      var, pos, NULL, fgc, bgc, scroll,
+						      timeout, prompt, size_is, cb_flags_t (disp_attrs)));
+#ifdef WITH_EXTENDED_ACCDIS
+		} /* cb_enable_xad */
+#endif
+	}
 }
 
 void
@@ -6971,6 +7039,7 @@ cb_emit_accept (cb_tree var, cb_tree pos, struct cb_attr_struct *attr_ptr)
 	cb_tree		timeout;
 	cb_tree		prompt;
 	cb_tree		size_is;	/* WITH SIZE IS */
+	cb_tree		ctrl;	/* WITH CONTROL */
 	cob_flags_t		disp_attrs;
 
 	if (current_program->flag_screen) {
@@ -6996,6 +7065,7 @@ cb_emit_accept (cb_tree var, cb_tree pos, struct cb_attr_struct *attr_ptr)
 		timeout = attr_ptr->timeout;
 		prompt = attr_ptr->prompt;
 		size_is = attr_ptr->size_is;
+		ctrl = attr_ptr->control;
 		disp_attrs = attr_ptr->dispattrs;
 		if (cb_validate_one (pos)
 		 || cb_validate_one (fgc)
@@ -7003,6 +7073,7 @@ cb_emit_accept (cb_tree var, cb_tree pos, struct cb_attr_struct *attr_ptr)
 		 || cb_validate_one (scroll)
 		 || cb_validate_one (timeout)
 		 || cb_validate_one (prompt)
+		 || cb_validate_one (ctrl)
 		 || cb_validate_one (size_is)) {
 			return;
 		}
@@ -7013,6 +7084,7 @@ cb_emit_accept (cb_tree var, cb_tree pos, struct cb_attr_struct *attr_ptr)
 		timeout = NULL;
 		prompt = NULL;
 		size_is = NULL;
+		ctrl = NULL;
 		disp_attrs = 0;
 	}
 
@@ -7054,7 +7126,7 @@ cb_emit_accept (cb_tree var, cb_tree pos, struct cb_attr_struct *attr_ptr)
 				cobc_xref_set_receiving (current_program->crt_status);
 			}
 		}
-		if ((CB_REF_OR_FIELD_P (var))
+		if (CB_REF_OR_FIELD_P (var)
 		 && CB_FIELD_PTR (var)->storage == CB_STORAGE_SCREEN) {
 			output_screen_from (CB_FIELD_PTR (var), 0);
 			gen_screen_ptr = 1;
@@ -7081,18 +7153,10 @@ cb_emit_accept (cb_tree var, cb_tree pos, struct cb_attr_struct *attr_ptr)
 			if (var == cb_null) {
 				var = NULL;
 			}
-			if (pos || fgc || bgc || scroll || disp_attrs) {
 				cb_gen_field_accept (var, pos, fgc, bgc, scroll,
-						     timeout, prompt, size_is, disp_attrs);
-			} else {
-				cb_emit (CB_BUILD_FUNCALL_10 ("cob_field_accept",
-							      var, NULL, NULL, fgc, bgc,
-							      scroll, timeout, prompt,
-							      size_is, cb_flags_t (disp_attrs)));
-			}
+					     timeout, prompt, size_is, disp_attrs, ctrl);
 		}
-	} else if (pos || fgc || bgc || scroll || disp_attrs
-			|| timeout || prompt || size_is) {
+			} else {
 		/* Bump ref count to force CRT STATUS field generation
 		   and include it in cross-reference */
 		if (current_program->crt_status) {
@@ -7105,14 +7169,9 @@ cb_emit_accept (cb_tree var, cb_tree pos, struct cb_attr_struct *attr_ptr)
 			var = NULL;
 		}
 		cb_gen_field_accept (var, pos, fgc, bgc, scroll,
-				     timeout, prompt, size_is, disp_attrs);
-	} else {
-		if (var == cb_null) {
-			var = NULL;
+				     timeout, prompt, size_is, disp_attrs, ctrl);
 		}
-		cb_emit (CB_BUILD_FUNCALL_1 ("cob_accept", var));
 	}
-}
 
 void
 cb_emit_accept_line_or_col (cb_tree var, const int l_or_c)
@@ -7935,7 +7994,8 @@ static void
 initialize_attrs (const struct cb_attr_struct * const attr_ptr,
 		  cb_tree * const fgc, cb_tree * const bgc,
 		  cb_tree * const scroll, cb_tree * const size_is,
-		  cob_flags_t * const dispattrs)
+		  cob_flags_t * const dispattrs,
+		  cb_tree * const ctrl)
 {
 	if (attr_ptr) {
 		*fgc = attr_ptr->fgc;
@@ -7943,13 +8003,19 @@ initialize_attrs (const struct cb_attr_struct * const attr_ptr,
 		*scroll = attr_ptr->scroll;
 		*size_is = attr_ptr->size_is;
 		*dispattrs = attr_ptr->dispattrs;
+		if (ctrl) {
+			*ctrl = attr_ptr->control;
+		}
 	} else {
 		*fgc = NULL;
 		*bgc = NULL;
 		*scroll = NULL;
 		*size_is = NULL;
 		*dispattrs = 0;
+		if (ctrl) {
+			*ctrl = NULL;
 	}
+}
 }
 
 
@@ -7963,6 +8029,7 @@ cb_emit_display_window (cb_tree type, cb_tree own_handle, cb_tree upon_handle,
 	cb_tree		bgc;
 	cb_tree		scroll;
 	cb_tree		size_is;	/* WITH SIZE IS */
+	cb_tree		ctrl;	/* WITH CONTROL */
 	cob_flags_t		disp_attrs;
 
 	/* type may be: NULL     --> normal WINDOW,
@@ -7974,7 +8041,7 @@ cb_emit_display_window (cb_tree type, cb_tree own_handle, cb_tree upon_handle,
 	}
 
 	/* Validate line_column and the attributes */
-	initialize_attrs (attr_ptr, &fgc, &bgc, &scroll, &size_is, &disp_attrs);
+	initialize_attrs (attr_ptr, &fgc, &bgc, &scroll, &size_is, &disp_attrs, &ctrl);
 	if (validate_attrs (line_column, fgc, bgc, scroll, size_is)) {
 		return;
 	}
@@ -8357,6 +8424,44 @@ emit_field_display_for_last (cb_tree values, cb_tree line_column, cb_tree fgc,
 			    disp_attrs);
 }
 
+
+#ifdef WITH_EXTENDED_ACCDIS
+static void
+emit_xad_display (cb_tree values, cb_tree line_column, cb_tree fgc,
+		  cb_tree bgc, cb_tree scroll, cb_tree size_is,
+		  cob_flags_t disp_attrs,
+		  const int is_first_display_list, cb_tree ctrl)
+{
+	cb_tree	var = NULL;
+	char	xmname[50];
+	cb_tree	xmpar = NULL;
+	int	is_first_item;
+	cb_tree	line_or_pos = NULL;
+	cb_tree	column = NULL;
+
+	var = CB_VALUE (values);
+
+	xad_add_definition (var);
+
+	snprintf (xmname, sizeof(xmname), "(cob_xad_mask *)xm_%d", CB_FIELD_PTR (var)->id);
+	xmpar = cb_build_direct (strdup (xmname), 0);
+
+	if (line_column == NULL) {
+		is_first_item = is_first_display_list;
+		line_column = get_default_field_line_column (is_first_item);
+	}
+
+	process_special_values (var, &size_is, &disp_attrs);
+
+	get_line_and_column_from_pos (line_column, &line_or_pos, &column);
+	cb_emit (CB_BUILD_FUNCALL_10 ("cob_xad_display",
+				     var, line_or_pos, column, fgc, bgc,
+				     scroll, size_is,
+				     cb_flags_t (disp_attrs), xmpar, ctrl));
+}
+#endif
+
+
 void
 cb_emit_display (cb_tree values, cb_tree upon, cb_tree no_adv,
 		 cb_tree line_column, struct cb_attr_struct *attr_ptr,
@@ -8367,6 +8472,7 @@ cb_emit_display (cb_tree values, cb_tree upon, cb_tree no_adv,
 	cb_tree		bgc;
 	cb_tree		scroll;
 	cb_tree		size_is;	/* WITH SIZE IS */
+	cb_tree		ctrl;		/* WITH CONTROL */
 	cob_flags_t		disp_attrs;
 	cb_tree		m;
 	struct cb_field	*f = NULL;
@@ -8385,7 +8491,7 @@ cb_emit_display (cb_tree values, cb_tree upon, cb_tree no_adv,
 	  	current_statement->handler_type = NO_HANDLER;
 
 	/* Validate line_column and the attributes */
-	initialize_attrs (attr_ptr, &fgc, &bgc, &scroll, &size_is, &disp_attrs);
+	initialize_attrs (attr_ptr, &fgc, &bgc, &scroll, &size_is, &disp_attrs, &ctrl);
 	if (validate_attrs (line_column, fgc, bgc, scroll, size_is)) {
 		return;
 	}
@@ -8433,6 +8539,16 @@ cb_emit_display (cb_tree values, cb_tree upon, cb_tree no_adv,
 		break;
 
 	case FIELD_ON_SCREEN_DISPLAY:
+#ifdef WITH_EXTENDED_ACCDIS
+		if (cb_enable_xad) {
+			if (values != NULL && CB_CHAIN (values) == NULL && values != cb_null && CB_TREE_TAG (CB_VALUE (values)) == CB_TAG_REFERENCE) {
+				emit_xad_display (values, line_column, fgc, bgc,
+						  scroll, size_is, disp_attrs,
+						  is_first_display_list, ctrl);
+				break;
+			}
+		}
+#endif
 		/* no DISPLAY OMITTED */
 		if (values != cb_null) {
 			emit_default_field_display_for_all_but_last (values, size_is,
