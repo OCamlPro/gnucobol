@@ -2080,13 +2080,11 @@ cob_set_file_format (cob_file *f, char *defstr, int updt)
 						f->flag_line_adv |= COB_SET_SEQUENTIAL;
 						f->flag_line_adv &= ~COB_SET_ADVANCING;
 						f->flag_set_isam = 0;
-						cob_set_ls_defaults (f);
 					} else if(strcasecmp(value,"SA") == 0) {
 						f->organization = COB_ORG_SEQUENTIAL;
 						f->flag_set_isam = 0;
 						f->flag_line_adv &= ~COB_SET_SEQUENTIAL;
 						f->flag_line_adv |= COB_SET_ADVANCING;
-						cob_set_ls_defaults (f);
 					} else if(strcasecmp(value,"LS") == 0) {
 						f->organization = COB_ORG_LINE_SEQUENTIAL;
 						f->flag_line_adv = 0;
@@ -2097,7 +2095,6 @@ cob_set_file_format (cob_file *f, char *defstr, int updt)
 						f->flag_set_isam = 0;
 					}
 					cob_set_file_defaults (f);
-					cob_set_ls_defaults (f);
 					if(strcasecmp(value,"DA") == 0) {
 						f->file_format = COB_FILE_IS_MF;
 						f->flag_set_type = 1;
