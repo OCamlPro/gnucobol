@@ -117,19 +117,15 @@ xad_parse_keystring (char *keystring, int *keys, int max, int cobfcns) {
 	char	p1[1024];
 
 	if (keystring == NULL) {
-		return NULL;
+		return -1;
 	}
 
 	if (strlen (keystring) == 0) {
-		return NULL;
+		return -1;
 	}
 
-	// for (i = 0; i < (sizeof (keys) / sizeof (keys[0])); i++) {
 	for (i = 0; i < max; i++) {
-		// keys[i] = -1;
 		keys[i] = DTREE_NULL;
-		// *(keys + i) = -1;
-		// *(keys + i) = DTREE_NULL;
 	}
 
 	if (strlen (keystring) == 1) {
@@ -152,75 +148,74 @@ xad_parse_keystring (char *keystring, int *keys, int max, int cobfcns) {
 			while (*q) {
 				char	c = *q;
 
-				if (!cobfcns) {
-					if (c == '\\') {
-						int	step = 1;
-						char	c2 = *(q + 1);
-						char	c3, c4;
+				if (c == '\\') {
+					int	step = 1;
+					char	c2 = *(q + 1);
+					char	c3, c4;
 
-						switch (c2) {
-						case '\\':	c = '\\'; 	break;
-						case '0':	c = '\0'; 	break;        // null
-						case 'a':	c = '\007';	break;        // bell
-						case 'b':	c = '\010';	break;        // backspace
-						case 'e':	c = '\033';	break;        // escape
-						case 'f':	c = '\011';	break;        // formfeed
-						case 'n':	c = '\012';	break;        // newline
-						case 'r':	c = '\015';	break;        // carriage return
-						case 't':	c = '\011';	break;        // tab
+					switch (c2) {
+					case '\\':	c = '\\'; 	break;
+					// case 'N':	c = '\0'; 	break;        // null
+					case 'a':	c = '\007';	break;        // bell
+					case 'b':	c = '\010';	break;        // backspace
+					case 'e':	c = '\033';	break;        // escape
+					case 'f':	c = '\011';	break;        // formfeed
+					case 'n':	c = '\012';	break;        // newline
+					case 'r':	c = '\015';	break;        // carriage return
+					case 't':	c = '\011';	break;        // tab
 
-						default:
+					default:
 #define _xpk_is_oct(c)	((c) >= '0' && (c) <= '7')
 #define _xpk_is_hex(c)	(((c) >= '0' && (c) <= '9') || ((c) >= 'a' && (c) <= 'f') || ((c) >= 'A' && (c) <= 'F'))
 #define _xpk_hex(c)	(((c) >= '0' && (c) <= '9') ? ((c) - '0') : (((c) >= 'a' && (c) <= 'f') ? ((c) - 'a' + 10) : ((c) - 'A' + 10)))
 
-							step = 0;
+						step = 0;
 
-							if (_xpk_is_oct(c2)) {        // octal
-								// assume "lazy evaluation"
-								if ((c3 = *(q + 2)) && (c4 = *(q + 3))) {
-									if (_xpk_is_oct (c3) && _xpk_is_oct (c4)) {
-										c = (c2 - '0') * 64 + (c3 - '0') * 8 +
-										    (c4 - '0');
-										step = 3;
-									}
+						if (_xpk_is_oct(c2)) {        // octal
+							// assume "lazy evaluation"
+							if ((c3 = *(q + 2)) && (c4 = *(q + 3))) {
+								if (_xpk_is_oct (c3) && _xpk_is_oct (c4)) {
+									c = (c2 - '0') * 64 + (c3 - '0') * 8 +
+									    (c4 - '0');
+									step = 3;
 								}
-							} else if (c2 == 'x' || c2 == 'X') {        // hex
-								// assume "lazy evaluation"
-								if ((c3 = *(q + 2)) && (c4 = *(q + 3))) {
-									if (_xpk_is_hex (c3) && _xpk_is_hex (c4)) {
-										c = _xpk_hex (c3) * 16 + _xpk_hex (c4);
-										step = 3;
-									}
-								}
-
-							} else if (c2 == '^') {        // ctrl, ASCII-only!
-								// assume "lazy evaluation"
-								if ((c3 = *(q + 2))) {
-									if ((c3 >= '@' && c3 <= '_')) {
-										c = (c3 - '@');
-										step = 2;
-									} else if ((c3 >= 'a' && c3 <= 'z')) {
-										c = (c3 - 'a') + 1;
-										step = 2;
-									}
+							}
+							fprintf (stderr, "oct:%02x/%02x/%02x --> %02x\n", c2, c3, c4, c);
+						} else if (c2 == 'x' || c2 == 'X') {        // hex
+							// assume "lazy evaluation"
+							if ((c3 = *(q + 2)) && (c4 = *(q + 3))) {
+								if (_xpk_is_hex (c3) && _xpk_is_hex (c4)) {
+									c = _xpk_hex (c3) * 16 + _xpk_hex (c4);
+									step = 3;
 								}
 							}
 
-							if (step <= 0)
-								failed = 1;
-							else
-								q += step;
+						} else if (c2 == '^') {        // ctrl, ASCII-only!
+							// assume "lazy evaluation"
+							if ((c3 = *(q + 2))) {
+								if ((c3 >= '@' && c3 <= '_')) {
+									c = (c3 - '@');
+									step = 2;
+								} else if ((c3 >= 'a' && c3 <= 'z')) {
+									c = (c3 - 'a') + 1;
+									step = 2;
+								}
+							}
+						}
 
-							break;
+						break;
 #undef _xpk_is_oct
 #undef _xpk_is_hex
 #undef _xpk_hex
-						}
+					}
+
+					if (step <= 0) {
+						failed = 1;
+					} else {
+						q += step;
 					}
 				}
 
-				// if (keys_used >= (sizeof (keys) / sizeof (keys[0]))) {
 				if (keys_used >= max) {
 					failed = 1;
 				}
@@ -229,7 +224,6 @@ xad_parse_keystring (char *keystring, int *keys, int max, int cobfcns) {
 					break;
 				}
 
-				// keys[keys_used++] = (unsigned char)c;
 				*(keys + keys_used++) = (unsigned char)c;
 				q++;
 			}
@@ -241,13 +235,11 @@ xad_parse_keystring (char *keystring, int *keys, int max, int cobfcns) {
 			memset (key_name, 0, sizeof (key_name));
 			strncpy (key_name, p, n);
 			if ((key_n = find_curses_key_number (key_name)) >= 0) {
-				// if (keys_used >= (sizeof (keys) / sizeof (keys[0]))) {
 				if (keys_used >= max) {
 					failed = 1;
 					break;
 				}
 
-				// keys[keys_used++] = key_n;
 				*(keys + keys_used++) = key_n;
 			}
 
@@ -258,13 +250,11 @@ xad_parse_keystring (char *keystring, int *keys, int max, int cobfcns) {
 			memset (key_name, 0, sizeof (key_name));
 			strncpy (key_name, p, n);
 			if ((key_n = find_cob_key_number (key_name)) >= 0) {
-				// if (keys_used >= (sizeof (keys) / sizeof (keys[0]))) {
 				if (keys_used >= max) {
 					failed = 1;
 					break;
 				}
 
-				// keys[keys_used++] = key_n;
 				*(keys + keys_used++) = key_n;
 			}
 
@@ -277,7 +267,6 @@ xad_parse_keystring (char *keystring, int *keys, int max, int cobfcns) {
 
 	if (failed) {
 		for (i = 0; i < keys_used; i++) {
-			// keys[i] = DTREE_NULL;
 			*(keys + i) = DTREE_NULL;
 		}
 
@@ -350,7 +339,6 @@ xad_add_keymapping (dtree_t *tree, char *pkey, char *pval) {
 
 			memcpy (pvalsp, pvals, sizeof (int) * n);
 			pvaln = DTREE_LIST;
-// xad_parsed_keystring_debug (pvals);
 		}
 	}
 
@@ -498,8 +486,6 @@ dtree_t
 	}
 
 	XAD_KEYMAP = tree;
-
-// dtree_debug (XAD_KEYMAP);
 
 	for (i = 0; i < XAD_STACK_SIZE; i++) {
 		XAD_STACK[i] = -1;

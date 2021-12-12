@@ -6,7 +6,7 @@
 # Provide generalized library-building support services.
 # Written by Gordon Matzigkeit <gord@gnu.ai.mit.edu>, 1996
 
-# Copyright (C) 1996-2015, 2018 Free Software Foundation, Inc.
+# Copyright (C) 1996-2015 Free Software Foundation, Inc.
 # This is free software; see the source for copying conditions.  There is NO
 # warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
@@ -26,7 +26,7 @@
 # General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 PROGRAM=libtool
@@ -89,7 +89,7 @@ scriptversion=2015-01-20.17; # UTC
 # General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program. If not, see <https://www.gnu.org/licenses/>.
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 # Please report bugs or propose patches to gary@gnu.org.
 
@@ -1390,7 +1390,7 @@ scriptversion=2014-01-07.03; # UTC
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Please report bugs or propose patches to gary@gnu.org.
 
@@ -5530,7 +5530,7 @@ EOF
 #endif
 #include <stdio.h>
 #include <stdlib.h>
-#if defined (_WIN32) && !defined (__GNUC__)
+#ifdef _MSC_VER
 # include <direct.h>
 # include <process.h>
 # include <io.h>
