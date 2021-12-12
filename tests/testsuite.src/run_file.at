@@ -23428,6 +23428,243 @@ Read Status: 10
 
 AT_CLEANUP
 
+AT_SETUP([OPEN OUTPUT COMMIT/ROLLBACK])
+AT_KEYWORDS([ROLLBACK])
+
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+      * Rollback functionality doesn't work
+      * after reopen the data file, the second record is still
+      * existing
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+           DECIMAL-POINT IS COMMA.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT AUSGABE ASSIGN   "prog  dat"
+                  ORGANIZATION     IS INDEXED
+                  ACCESS MODE      IS DYNAMIC
+                  STATUS           IS A-FILE-STATUS
+                  LOCK MODE        IS MANUAL WITH ROLLBACK
+                  RECORD KEY       IS A-KEY.
+       DATA DIVISION.
+       FILE SECTION.
+       FD  AUSGABE.
+       01  A-SATZ .
+           05 A-KEY.
+              10 A-VERTRETER-NR        PIC X(03).
+              10 A-ART-NUMMER          PIC 9(03).
+           05 A-ART-BEZEICHNUNG        PIC X(20).
+           05 A-ART-PREIS              PIC 9(04)V99.
+       WORKING-STORAGE SECTION.
+       01  ee-msg.
+           05 ee-program-id        pic x(30) value "templ-prg-id".
+           05 filler               pic x(04) value " >> ".
+           05 filler               pic x(03) value "ee:".
+           05 ee-mantis-id         pic x(07) value "0000000".
+           05 filler               pic x(04) value " >> ".
+           05 ee-external          pic x(03) value spaces.
+           05 filler               pic x(01) value ":".
+           
+       01  ee-passed               pic x(06)   value "passed".
+       01  ee-failed               pic x(06)   value "failed".
+       
+       01  checker PIC X(100).
+              
+       01 ZW-TAB.
+          05 ZW-SATZ OCCURS 25.
+             10 ZW-KEY.
+                15 ZW-VERTRETER-NR     PIC X(03).
+                15 ZW-ART-NUMMER       PIC 9(03).
+             10 ZW-ART-BEZEICHNUNG     PIC X(20).
+             10 ZW-ART-PREIS           PIC 9(04)V99.
+       01  EE-INDEX                    PIC 9(02).
+       01  A-FILE-STATUS               PIC X(02) VALUE "00".
+           88 A-ALLES-OK                         VALUE "00".
+        
+      ******************************************************************
+       PROCEDURE DIVISION.
+      ******************************************************************
+       DECLARATIVES.
+       FILES--DECL  SECTION.
+           USE AFTER STANDARD ERROR PROCEDURE ON
+                                AUSGABE.
+       END DECLARATIVES.
+      *            
+       STEUER SECTION.
+           move "GNU-rollback-commit"          to ee-program-id
+           move "0002287"                      to ee-mantis-id
+           move "GNU"                          to ee-external
+           .       
+       STEUER-START.
+           PERFORM DATEN-FELDER-FUELLEN
+           OPEN OUTPUT AUSGABE
+           IF A-FILE-STATUS NOT EQUAL "00"
+              DISPLAY A-FILE-STATUS
+           END-IF   
+           IF A-ALLES-OK
+              MOVE 1                            TO EE-INDEX
+              MOVE ZW-VERTRETER-NR(EE-INDEX)    TO A-VERTRETER-NR
+              MOVE ZW-ART-NUMMER(EE-INDEX)      TO A-ART-NUMMER
+              MOVE ZW-ART-BEZEICHNUNG(EE-INDEX) TO A-ART-BEZEICHNUNG
+              MOVE ZW-ART-PREIS(EE-INDEX)       TO A-ART-PREIS
+              WRITE A-SATZ
+              COMMIT
+      *        DISPLAY "file-status - 1: " A-FILE-STATUS 
+         
+              MOVE 2                            TO EE-INDEX
+              MOVE ZW-VERTRETER-NR(EE-INDEX)    TO A-VERTRETER-NR
+              MOVE ZW-ART-NUMMER(EE-INDEX)      TO A-ART-NUMMER
+              MOVE ZW-ART-BEZEICHNUNG(EE-INDEX) TO A-ART-BEZEICHNUNG
+              MOVE ZW-ART-PREIS(EE-INDEX)       TO A-ART-PREIS
+              WRITE A-SATZ
+              ROLLBACK             
+      *        DISPLAY "file-status - 2: " A-FILE-STATUS 
+       
+              MOVE 3                            TO EE-INDEX
+              MOVE ZW-VERTRETER-NR(EE-INDEX)    TO A-VERTRETER-NR
+              MOVE ZW-ART-NUMMER(EE-INDEX)      TO A-ART-NUMMER
+              MOVE ZW-ART-BEZEICHNUNG(EE-INDEX) TO A-ART-BEZEICHNUNG
+              MOVE ZW-ART-PREIS(EE-INDEX)       TO A-ART-PREIS
+              WRITE A-SATZ
+              COMMIT
+      *        DISPLAY "file-status - 3: " A-FILE-STATUS 
+              CLOSE AUSGABE
+              COMMIT
+      *        DISPLAY "index file greated successfully"
+           ELSE
+              CONTINUE
+      *        DISPLAY "error on open output file"
+           END-IF .
+      *     EXIT PROGRAM.
+       TEST-1.
+          
+           OPEN INPUT AUSGABE 
+            MOVE '001234' TO A-KEY        
+            READ AUSGABE INTO checker
+            INVALID KEY DISPLAY ee-msg ee-passed
+            NOT INVALID KEY DISPLAY ee-msg ee-failed 
+            END-READ 
+           CLOSE AUSGABE
+           
+           STOP RUN
+           .
+       STEUER-EXIT.
+           EXIT.
+      *>****************************************************************
+       DATEN-FELDER-FUELLEN SECTION.
+       DATEN-FELDER-FUELLEN-ST.
+       
+           MOVE "001"                      TO ZW-VERTRETER-NR(01)   
+           MOVE "001"                      TO ZW-VERTRETER-NR(02)
+           MOVE "001"                      TO ZW-VERTRETER-NR(03)
+           MOVE "001"                      TO ZW-VERTRETER-NR(04)
+           MOVE "001"                      TO ZW-VERTRETER-NR(05)
+           MOVE "002"                      TO ZW-VERTRETER-NR(06)
+           MOVE "002"                      TO ZW-VERTRETER-NR(07)
+           MOVE "002"                      TO ZW-VERTRETER-NR(08)
+           MOVE "002"                      TO ZW-VERTRETER-NR(09)
+           MOVE "002"                      TO ZW-VERTRETER-NR(10)
+           MOVE "003"                      TO ZW-VERTRETER-NR(11)
+           MOVE "003"                      TO ZW-VERTRETER-NR(12)
+           MOVE "003"                      TO ZW-VERTRETER-NR(13)
+           MOVE "004"                      TO ZW-VERTRETER-NR(14)
+           MOVE "004"                      TO ZW-VERTRETER-NR(15)
+           MOVE "004"                      TO ZW-VERTRETER-NR(16)
+           MOVE "004"                      TO ZW-VERTRETER-NR(17)
+           MOVE "004"                      TO ZW-VERTRETER-NR(18)
+           MOVE "005"                      TO ZW-VERTRETER-NR(19)
+           MOVE "005"                      TO ZW-VERTRETER-NR(20)
+           MOVE "005"                      TO ZW-VERTRETER-NR(21)
+           MOVE "006"                      TO ZW-VERTRETER-NR(22)
+           MOVE "006"                      TO ZW-VERTRETER-NR(23)
+           MOVE  238                       TO ZW-ART-NUMMER(01)
+           MOVE  234                       TO ZW-ART-NUMMER(02)
+           MOVE  264                       TO ZW-ART-NUMMER(03)
+           MOVE  534                       TO ZW-ART-NUMMER(04)
+           MOVE  645                       TO ZW-ART-NUMMER(05)
+           MOVE  067                       TO ZW-ART-NUMMER(06)
+           MOVE  123                       TO ZW-ART-NUMMER(07)
+           MOVE  213                       TO ZW-ART-NUMMER(08)
+           MOVE  346                       TO ZW-ART-NUMMER(09)
+           MOVE  678                       TO ZW-ART-NUMMER(10)
+           MOVE  214                       TO ZW-ART-NUMMER(11)
+           MOVE  765                       TO ZW-ART-NUMMER(12)
+           MOVE  078                       TO ZW-ART-NUMMER(13)
+           MOVE  532                       TO ZW-ART-NUMMER(14)
+           MOVE  864                       TO ZW-ART-NUMMER(15)
+           MOVE  002                       TO ZW-ART-NUMMER(16)
+           MOVE  675                       TO ZW-ART-NUMMER(17)
+           MOVE  434                       TO ZW-ART-NUMMER(18)
+           MOVE  563                       TO ZW-ART-NUMMER(19)
+           MOVE  002                       TO ZW-ART-NUMMER(20)
+           MOVE  456                       TO ZW-ART-NUMMER(21)
+           MOVE  035                       TO ZW-ART-NUMMER(22)
+           MOVE  001                       TO ZW-ART-NUMMER(23)
+           MOVE "Kuhenstuhl         "     TO ZW-ART-BEZEICHNUNG(01)
+           MOVE "Buostuhl           "     TO ZW-ART-BEZEICHNUNG(02)
+           MOVE "Fersehsessel        "     TO ZW-ART-BEZEICHNUNG(03)
+           MOVE "Biedermeier Stuhl   "     TO ZW-ART-BEZEICHNUNG(04)
+           MOVE "Schaukelstuhl       "     TO ZW-ART-BEZEICHNUNG(05)
+           MOVE "Chefsessel          "     TO ZW-ART-BEZEICHNUNG(06)
+           MOVE "Regiestuhl          "     TO ZW-ART-BEZEICHNUNG(07)
+           MOVE "Barhocker           "     TO ZW-ART-BEZEICHNUNG(08)
+           MOVE "Biedermeiertisch    "     TO ZW-ART-BEZEICHNUNG(09)
+           MOVE "Couchtisch          "     TO ZW-ART-BEZEICHNUNG(10)
+           MOVE "Bistrotisch         "     TO ZW-ART-BEZEICHNUNG(11)
+           MOVE "Telefontisch        "     TO ZW-ART-BEZEICHNUNG(12)
+           MOVE "Kuhentisch         "     TO ZW-ART-BEZEICHNUNG(13)
+           MOVE "Schreibtisch        "     TO ZW-ART-BEZEICHNUNG(14)
+           MOVE "Kommode             "     TO ZW-ART-BEZEICHNUNG(15)
+           MOVE "Bauernschrank       "     TO ZW-ART-BEZEICHNUNG(16)
+           MOVE "BUherschrank       "     TO ZW-ART-BEZEICHNUNG(17)
+           MOVE "Phonowagen          "     TO ZW-ART-BEZEICHNUNG(18)
+           MOVE "Schuhschrank        "     TO ZW-ART-BEZEICHNUNG(19)
+           MOVE "Klappsofa           "     TO ZW-ART-BEZEICHNUNG(20)
+           MOVE "Franzuisches Bett  "     TO ZW-ART-BEZEICHNUNG(21)
+           MOVE "Doppelbett          "     TO ZW-ART-BEZEICHNUNG(22)
+           MOVE "Jugendbett          "     TO ZW-ART-BEZEICHNUNG(23)
+           
+           MOVE  0003,40                    TO ZW-ART-PREIS(01)
+           MOVE  0033,05                    TO ZW-ART-PREIS(02)
+           MOVE  0343,00                    TO ZW-ART-PREIS(03)
+           MOVE  0034,23                    TO ZW-ART-PREIS(04)
+           MOVE  0043,00                    TO ZW-ART-PREIS(05)
+           MOVE  0004,34                    TO ZW-ART-PREIS(06)
+           MOVE  0034,56                    TO ZW-ART-PREIS(07)
+           MOVE  0234,00                    TO ZW-ART-PREIS(08)
+           MOVE  0234,00                    TO ZW-ART-PREIS(09)
+           MOVE  0564,00                    TO ZW-ART-PREIS(10)
+           MOVE  0456,50                    TO ZW-ART-PREIS(11)
+           MOVE  0000,46                    TO ZW-ART-PREIS(12)
+           MOVE  0000,46                    TO ZW-ART-PREIS(13)
+           MOVE  3453,00                    TO ZW-ART-PREIS(14)
+           MOVE  0034,00                    TO ZW-ART-PREIS(15)
+           MOVE  0098,00                    TO ZW-ART-PREIS(16)
+           MOVE  0078,78                    TO ZW-ART-PREIS(17)
+           MOVE  0044,00                    TO ZW-ART-PREIS(18)
+           MOVE  0000,78                    TO ZW-ART-PREIS(19)
+           MOVE  0005,00                    TO ZW-ART-PREIS(20)
+           MOVE  0078,00                    TO ZW-ART-PREIS(21)
+           MOVE  0067,00                    TO ZW-ART-PREIS(22)
+           MOVE  0007,00                    TO ZW-ART-PREIS(23)
+           .
+       DATEN-FELDER-FUELLEN-EXIT.
+           EXIT.
+      *>****************************************************************
+])
+
+AT_CHECK([$COBC -x -std=mf -w -fmf-files prog.cob ], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [GNU-rollback-commit            >> ee:0002287 >> GNU:passed
+], [])
+
+AT_CLEANUP
+
 
 AT_SETUP([MF io status (indexed)])
 AT_KEYWORDS([runfile])

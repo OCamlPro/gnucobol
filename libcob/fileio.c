@@ -7018,14 +7018,16 @@ cob_rewrite (cob_file *f, cob_field *rec, const int opt, cob_field *fnstatus)
 	f->last_operation = COB_LAST_REWRITE;
 	f->last_key = NULL;
 
-	if (f->open_mode != COB_OPEN_I_O) {
-		cob_file_save_status (f, fnstatus, COB_STATUS_49_I_O_DENIED);
-		return;
-	}
+	if (!f->flag_do_rollback) {
+		if (f->open_mode != COB_OPEN_I_O) {
+			cob_file_save_status (f, fnstatus, COB_STATUS_49_I_O_DENIED);
+			return;
+		}
 
-	if (f->access_mode == COB_ACCESS_SEQUENTIAL && !read_done) {
-		cob_file_save_status (f, fnstatus, COB_STATUS_43_READ_NOT_DONE);
-		return;
+		if (f->access_mode == COB_ACCESS_SEQUENTIAL && !read_done) {
+			cob_file_save_status (f, fnstatus, COB_STATUS_43_READ_NOT_DONE);
+			return;
+		}
 	}
 
 	if (f->organization == COB_ORG_SEQUENTIAL) {
@@ -7094,24 +7096,26 @@ cob_delete (cob_file *f, cob_field *fnstatus)
 	f->flag_read_done = 0;
 	f->last_operation = COB_LAST_DELETE;
 
-	if (f->open_mode != COB_OPEN_I_O) {
-		cob_file_save_status (f, fnstatus, COB_STATUS_49_I_O_DENIED);
-		return;
-	}
+	if (!f->flag_do_rollback) {
+		if (f->open_mode != COB_OPEN_I_O) {
+			cob_file_save_status (f, fnstatus, COB_STATUS_49_I_O_DENIED);
+			return;
+		}
 
-	if (f->access_mode == COB_ACCESS_SEQUENTIAL && !read_done) {
-		cob_file_save_status (f, fnstatus, COB_STATUS_43_READ_NOT_DONE);
-		return;
-	}
-	if (f->flag_do_qbl
-	 && !f->flag_io_tran
-	 && (f->organization == COB_ORG_INDEXED
-	  || f->organization == COB_ORG_RELATIVE)) {
-		set_qbl_buf (f->record_max);
-		memcpy (qbl_tmp, f->record->data, f->record_max);
-		if (fileio_funcs[get_io_ptr (f)]->read (&file_api, f, f->keys[0].field, 0) == 0)
-			cob_put_qbl (f, QBL_DELETE);
-		memcpy (f->record->data, qbl_tmp, f->record_max);
+		if (f->access_mode == COB_ACCESS_SEQUENTIAL && !read_done) {
+			cob_file_save_status (f, fnstatus, COB_STATUS_43_READ_NOT_DONE);
+			return;
+		}
+		if (f->flag_do_qbl
+		 && !f->flag_io_tran
+		 && (f->organization == COB_ORG_INDEXED
+		  || f->organization == COB_ORG_RELATIVE)) {
+			set_qbl_buf (f->record_max);
+			memcpy (qbl_tmp, f->record->data, f->record_max);
+			if (fileio_funcs[get_io_ptr (f)]->read (&file_api, f, f->keys[0].field, 0) == 0)
+				cob_put_qbl (f, QBL_DELETE);
+			memcpy (f->record->data, qbl_tmp, f->record_max);
+		}
 	}
 
 	f->flag_was_updated = 1;
@@ -7206,6 +7210,7 @@ cob_rollback (void)
 			strncpy(hdr->name, f->select_name, sizeof(hdr->name)-1);
 			if (strcmp(hdr->name, qbl_hdr->name) == 0) {
 				f->flag_do_qbl = 0;
+				f->flag_do_rollback = 1;
 				svreclen = f->record->size;
 				svfileoff = f->record_off;
 				memcpy (qbl_tmp, f->record->data, f->record_max);
@@ -7271,6 +7276,7 @@ cob_rollback (void)
 				memcpy (f->record->data, qbl_tmp, f->record_max);
 				f->record->size = svreclen;
 				f->flag_do_qbl = 1;
+				f->flag_do_rollback = 0;
 				break;
 			}
 		}

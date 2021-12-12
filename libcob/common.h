@@ -1612,11 +1612,12 @@ typedef struct __cob_file {
 	unsigned int		flag_io_tran:1;		/* IO Handler: able to handle commit/rollback */
 	unsigned int		flag_do_qbl:1;		/* fileio: enable commit/rollback */
 	unsigned int		flag_do_jrn:1;		/* fileio: record updates to journal/audit trail */
+	unsigned int		flag_do_rollback:1;	/* fileio: rollback in process */
 	unsigned int		flag_updt_file:1;	/* Allow this 'cob_file' to be updated */
 	unsigned int		flag_is_std:1;		/* LINE SEQUENTIAL as 'stdin/stdout/stderr' */
 	unsigned int		flag_is_concat:1;	/* SEQUENTIAL concatenated file names */
 	unsigned int		flag_needs_cr;		/* Needs CR */
-	unsigned int		unused_bits:4;
+	unsigned int		unused_bits:3;
 
 	cob_field			*last_key;		/* Last field used as 'key' for I/O */
 	unsigned char		last_operation;		/* Most recent I/O operation */

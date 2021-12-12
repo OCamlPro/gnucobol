@@ -1,7 +1,13 @@
 
+2021-12-12  Ron Norman <rjn@inglenet.com>
+
+	* common.h: Added flag_do_rollback
+	* fileio.c: If flag_do_rollback is set then all WRITE/DELETE/REWRITE
+				to be done regardless of file open mode
+
 2021-12-08  Ron Norman <rjn@inglenet.com>
 
-	* move.c.c,common.h: Added cob_set_compx for saving values into
+	* move.c,common.h: Added cob_set_compx for saving values into
 				COMP-X field
 
 2021-12-05  Ron Norman <rjn@inglenet.com>
