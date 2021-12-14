@@ -3487,7 +3487,6 @@ output_param (cb_tree x, int id)
 {
 	struct cb_reference	*r;
 	struct cb_field		*f;
-	struct cb_field		*ff;
 	struct cb_cast		*cp;
 	struct cb_binary_op	*bp;
 	struct field_list	*fl;
@@ -3730,13 +3729,12 @@ output_param (cb_tree x, int id)
 
 		f = CB_FIELD (r->value);
 
-		ff = real_field_founder (f);
-
-		if (ff->flag_external) {
-			f->flag_external = 1;
-			f->flag_local = 1;
-		} else if (ff->flag_item_based) {
-			f->flag_local = 1;
+		{	
+			struct cb_field	*ff = real_field_founder (f);
+			if (ff->flag_external
+			 || ff->flag_item_based) {
+				f->flag_local = 1;
+			}
 		}
 
 		if (!r->subs
@@ -10096,7 +10094,7 @@ output_field_display (struct cb_field *f, size_t offset,
 	     || f->flag_external
 	     || f->flag_is_global
 	     || f->flag_any_length
-		 || f->level == 88)) {
+	     || f->level == 88)) {
 		if (!output_as_comment) {
 			output (" /*");
 		}
@@ -10107,17 +10105,19 @@ output_field_display (struct cb_field *f, size_t offset,
 			output (" OCCURS %d %d",
 				f->occurs_min, f->flag_unbounded ? -1 : f->occurs_max);
 		}
-		if (f->flag_item_based) {
-			output (" BASED");
-		}
-		if (f->flag_external) {
-			output (" EXTERNAL");
-		}
-		if (f->flag_is_global) {
-			output (" GLOBAL");
-		}
-		if (f->flag_any_length) {
-			output (" ANYLENGTH");
+		if (f->level == 1 || f->level == 77) {
+			if (f->flag_item_based) {
+				output (" BASED");
+			}
+			if (f->flag_external) {
+				output (" EXTERNAL");
+			}
+			if (f->flag_is_global) {
+				output (" GLOBAL");
+			}
+			if (f->flag_any_length) {
+				output (" ANYLENGTH");
+			}
 		}
 		/* always last entry */
 		if (f->level == 88) {

@@ -1,4 +1,10 @@
 
+2021-12-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (print_fields), codegen.c (output_field_display): only check for
+	  EXTERNAL/BASED GLOBAL on level 01/77
+	* codegen.c (output_param): don't set external attribute for sub-fields
+
 2021-11-26  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (cobc_print_info): output COB_STRIP_CMD when verbose
