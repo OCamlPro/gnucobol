@@ -192,7 +192,7 @@ static void *	copy_literal (cb_tree l);
 	if (cobc_repeat_last_token) {
 		cobc_repeat_last_token = 0;
 		yylval = last_yylval;
-	        return last_token;
+		return last_token;
 	}
 
 	/* We treat integer literals immediately after '.' as labels;
@@ -977,8 +977,8 @@ H#[0-9A-Za-z]+ {
 
 	/* Direct recursive reference in function */
 	if (current_program->prog_type == COB_MODULE_TYPE_FUNCTION
-		   && !functions_are_all
-		   && !strcasecmp (yytext, current_program->orig_program_id)) {
+	 && !functions_are_all
+	 && !strcasecmp (yytext, current_program->orig_program_id)) {
 		yylval = cb_build_reference (yytext);
 		RETURN_TOK (USER_FUNCTION_NAME);
 	}
@@ -1037,6 +1037,27 @@ H#[0-9A-Za-z]+ {
 	}
 
 	yylval = cb_build_reference (yytext);
+	if (cobc_in_data_division) {
+		cb_tree			val;
+		struct cb_reference ref[1];
+		int				xref = cb_listing_xref;
+
+		cb_listing_xref = 0;
+		memcpy ((void*)ref, (void*)yylval, sizeof(ref));
+		val = cb_try_ref (ref);
+		cb_listing_xref = xref;
+
+		if (val != NULL
+		 && val != cb_error_node
+		 && CB_FIELD_P (val)) {
+			 if (CB_FIELD (val)->flag_is_typedef)
+				RETURN_TOK (TYPEDEF_NAME);
+		}
+		if (cobc_in_usage
+		 && is_default_reserved_word (yytext)) {
+			RETURN_TOK (OTHER_WORD);
+		}
+	}
 
 	/* Special name handling */
 	if (CB_WORD_COUNT (yylval) > 0 && CB_WORD_ITEMS (yylval)) {

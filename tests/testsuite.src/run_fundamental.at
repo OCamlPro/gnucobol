@@ -5480,3 +5480,65 @@ AT_CHECK([$COMPILE caller.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./caller], [0], [], [])
 AT_CLEANUP
+
+AT_SETUP([Test TYPEDEF])
+AT_KEYWORDS([TYPEDEF])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+        01      CBLT-X1         PIC     X               TYPEDEF.
+        01      CBLT-X1-COMP5   PIC     X       COMP-5  TYPEDEF.
+        01      CBLT-X2-COMP5   PIC     X(2)    COMP-5  TYPEDEF.
+        01      CBLT-X4-COMP5   PIC     X(4)    COMP-5  TYPEDEF.
+        01      CBLT-X8-COMP5   PIC     X(8)    COMP-5  TYPEDEF.
+
+        01      CBLT-X1-COMPX   PIC     X       COMP-X  TYPEDEF.
+        01      CBLT-X2-COMPX   PIC     X(2)    COMP-X  TYPEDEF.
+        01      CBLT-X4-COMPX   PIC     X(4)    COMP-X  TYPEDEF.
+        01      CBLT-X8-COMPX   PIC     X(8)    COMP-X  TYPEDEF.
+
+        01      CBLT-SX4-COMP5  PIC     S9(9)   COMP-5  TYPEDEF.
+        01      CBLT-SX8-COMP5  PIC     S9(18)  COMP-5  TYPEDEF.
+
+        01      CBLT-OS-OFFSET          USAGE CBLT-X8-COMP5   TYPEDEF.
+        01      CBLT-OS-SIZE   USAGE IS CBLT-X8-COMP5   TYPEDEF.
+        01      CBLT-OS-SSIZE           CBLT-SX8-COMP5  TYPEDEF.
+
+        01      CBLT-FILEEXIST-BUF              TYPEDEF.
+          03    CBLTE-FILESIZE               CBLT-X8-COMPX.
+          03    CBLTE-DATE.
+            05  CBLTE-DAY                    CBLT-X1-COMPX.
+            05  CBLTE-MONTH                  CBLT-X1-COMPX.
+            05  CBLTE-YEAR                   CBLT-X2-COMPX.
+          03    CBLTE-TIME.
+            05  CBLTE-HOURS                  CBLT-X1-COMPX.
+            05  CBLTE-MINUTES                CBLT-X1-COMPX.
+            05  CBLTE-SECONDS                CBLT-X1-COMPX.
+            05  CBLTE-HUNDRETHS              CBLT-X1-COMPX.
+
+       PROCEDURE DIVISION.
+       main.
+           display " Hello TYPEDEF."
+           display "  size: " LENGTH OF cblt-os-size.
+           display " ssize: " LENGTH OF cblt-os-ssize.
+           display "offset: " LENGTH OF cblt-os-offset.
+           display "sx4-c5: " LENGTH OF cblt-sx4-comp5.
+           display "fl-buf: " LENGTH OF cblt-fileexist-buf.
+           STOP RUN.
+])
+
+AT_CHECK([$COBC -x -std=mf -w prog.cob ], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [ Hello TYPEDEF.
+  size: 8
+ ssize: 8
+offset: 8
+sx4-c5: 4
+fl-buf: 16
+], [])
+
+AT_CLEANUP
+

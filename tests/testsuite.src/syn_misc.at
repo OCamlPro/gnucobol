@@ -3680,7 +3680,7 @@ AT_CHECK([$COMPILE_ONLY -std=acu-strict prog.cob], [0], [], [])
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
 
 AT_CHECK([$COMPILE_ONLY -std=mf-strict prog.cob], [1], [],
-[prog.cob:6: error: 'float' is not defined, but is a reserved word in another dialect
+[prog.cob:6: error: syntax error, unexpected Identifier
 prog.cob:8: error: 'double' is not defined, but is a reserved word in another dialect
 ])
 
@@ -3773,13 +3773,13 @@ prog.cob:56: error: HANDLE item not allowed here: 'mydir'
 ])
 
 AT_CHECK([$COMPILE_ONLY -std=rm-strict prog.cob], [1], [],
-[prog.cob:12: error: 'handle' is not defined, but is a reserved word in another dialect
+[prog.cob:12: error: syntax error, unexpected Identifier
 prog.cob:14: error: 'handle' is not defined, but is a reserved word in another dialect
 prog.cob:15: error: syntax error, unexpected Identifier
 prog.cob:17: error: 'handle' is not defined, but is a reserved word in another dialect
-prog.cob:19: error: 'handle' is not defined, but is a reserved word in another dialect
+prog.cob:19: error: syntax error, unexpected Identifier
 prog.cob:20: error: 'handle' is not defined, but is a reserved word in another dialect
-prog.cob:21: error: 'handle' is not defined, but is a reserved word in another dialect
+prog.cob:21: error: syntax error, unexpected Identifier
 prog.cob:15: error: PICTURE clause required for 'unused-thread'
 prog.cob: in paragraph 'MAIN':
 prog.cob:35: error: 'handle IN mywindow' is not defined
@@ -4186,7 +4186,7 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY -std=ibm-strict prog.cob], [1], [],
-[prog.cob:7: error: 'BINARY-LONG' is not defined, but is a reserved word in another dialect
+[prog.cob:7: error: syntax error, unexpected Identifier
 ])
 AT_CHECK([$COMPILE_ONLY -std=ibm-strict -freserved=BINARY-LONG prog.cob], [0], [], [])
 AT_CHECK([$COMPILE_ONLY -std=ibm prog.cob], [0], [], [])
@@ -5741,9 +5741,9 @@ prog.cob:9: error: '/' operator misplaced
 
 AT_CHECK([$COMPILE_ONLY -std=mf-strict prog.cob], [1], [],
 [prog.cob:6: error: syntax error, unexpected Identifier
-prog.cob:7: error: syntax error, unexpected Identifier
+prog.cob:7: error: 'CONSTANT' is not defined, but is a reserved word in another dialect
 prog.cob:8: error: syntax error, unexpected Identifier
-prog.cob:9: error: syntax error, unexpected Identifier
+prog.cob:9: error: 'CONSTANT' is not defined, but is a reserved word in another dialect
 prog.cob:10: error: syntax error, unexpected Identifier
 ])
 

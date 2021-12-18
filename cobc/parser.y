@@ -145,6 +145,8 @@ int				suppress_data_exceptions = 0;
 unsigned int			cobc_repeat_last_token = 0;
 unsigned int			cobc_in_id = 0;
 unsigned int			cobc_in_procedure = 0;
+unsigned int			cobc_in_data_division = 0;
+unsigned int			cobc_in_usage = 0;
 unsigned int			cobc_in_repository = 0;
 unsigned int			cobc_force_literal = 0;
 unsigned int			cobc_cs_check = 0;
@@ -1148,7 +1150,9 @@ clear_initial_values (void)
 	inspect_keyword = 0;
 	check_unreached = 0;
 	cobc_in_id = 0;
+	cobc_in_usage = 0;
 	cobc_in_procedure = 0;
+	cobc_in_data_division = 0;
 	cobc_in_repository = 0;
 	cobc_force_literal = 0;
 	cobc_in_xml_generate_body = 0;
@@ -1952,6 +1956,7 @@ check_and_set_usage (const enum cb_usage usage)
 	check_repeated ("USAGE", SYN_CLAUSE_5, &check_pic_duplicate);
 	current_field->usage = usage;
 	current_field->flag_usage_defined = 1;
+	cobc_in_usage = 0;
 }
 
 static void
@@ -2949,6 +2954,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token ORGANIZATION
 %token OTHER
 %token OTHERS
+%token OTHER_WORD		"OTHER WORD"
 %token OUTPUT
 %token OVERLAP_LEFT		"OVERLAP-LEFT"
 %token OVERLAP_TOP		"OVERLAP-TOP"
@@ -3237,6 +3243,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token TRUNCATION
 %token TYPE
 %token TYPEDEF
+%token TYPEDEF_NAME		"TYPEDEF NAME"
 %token U
 %token UCS_4		"UCS-4"
 %token UNBOUNDED
@@ -6003,6 +6010,7 @@ data_division_header:
   DATA DIVISION TOK_DOT
   {
 	header_check |= COBC_HD_DATA_DIVISION;
+	cobc_in_data_division = 1;
   }
 ;
 
@@ -7297,52 +7305,17 @@ locale_name:
 /* TYPE TO clause, optional "TO", fixed to clean conflicts for screen-items */
 
 type_to_clause:
-  TYPE _to type_name
+  TYPE _to TYPEDEF_NAME 
   {
 	cb_verify (cb_type_to_clause, _("TYPE TO clause"));
 	setup_external_definition_type ($3);
   }
 ;
 
-
 /* USAGE clause */
 
 usage_clause:
-  _usage_is usage
-| USAGE _is WORD	/* MF extension for referencing types, full support would need
-                	   _usage_is, but this leads to shift/reduce conflicts,
-                	   FIXME: handle conflict by returning TYPEDEF_NAME token,
-                	          then move this to "usage" */
-  {
-	{
-		cb_tree x = cb_try_ref ($3);
-		if (!CB_INVALID_TREE (x) && CB_FIELD_P (x) && CB_FIELD (x)->flag_is_typedef) {
-			if (!check_repeated ("USAGE", SYN_CLAUSE_5, &check_pic_duplicate)) {
-				if (current_field->external_definition) {
-					emit_conflicting_clause_message ("USAGE", "SAME AS / TYPE TO");
-				} else {
-					cb_verify (cb_usage_type_name, _("USAGE type-name"));
-					/* replace usage by type definition */
-					check_pic_duplicate &= ~SYN_CLAUSE_5;
-					check_repeated ("USAGE/TYPE", SYN_CLAUSE_31, &check_pic_duplicate);
-					setup_external_definition ($3, 1);
-					break;	/* everything done here */
-				}
-			}
-			YYERROR;
-		}
-	}
-	if (is_reserved_word (CB_NAME ($3))) {
-		cb_error_x ($3, _("'%s' is not a valid USAGE"), CB_NAME ($3));
-	} else if (is_default_reserved_word (CB_NAME ($3))) {
-		cb_error_x ($3, _("'%s' is not defined, but is a reserved word in another dialect"),
-				CB_NAME ($3));
-	} else {
-		cb_error_x ($3, _("unknown USAGE: %s"), CB_NAME ($3));
-	}
-	check_and_set_usage (CB_USAGE_ERROR);
-	YYERROR;
-  }
+  _usage_is pre_usage usage post_usage
 | USAGE _is error
   {
 	check_and_set_usage (CB_USAGE_ERROR);
@@ -7351,6 +7324,14 @@ usage_clause:
 
 _usage_is:
 | USAGE _is
+;
+
+pre_usage:
+{ cobc_in_usage = 1; }
+;
+
+post_usage:
+{ cobc_in_usage = 0; }
 ;
 
 usage:
@@ -7593,6 +7574,29 @@ usage:
   {
 	check_repeated ("USAGE", SYN_CLAUSE_5, &check_pic_duplicate);
 	CB_UNFINISHED ("USAGE NATIONAL");
+  }
+| TYPEDEF_NAME 
+	{
+		if (!check_repeated ("USAGE", SYN_CLAUSE_5, &check_pic_duplicate)) {
+			if (current_field->external_definition) {
+				emit_conflicting_clause_message ("USAGE", "SAME AS / TYPE TO");
+			} else {
+				cb_verify (cb_usage_type_name, _("USAGE type-name"));
+				/* replace usage by type definition */
+				check_pic_duplicate &= ~SYN_CLAUSE_5;
+				check_repeated ("USAGE/TYPE", SYN_CLAUSE_31, &check_pic_duplicate);
+				setup_external_definition ($1, 1);
+				break;	/* everything done here */
+			}
+		}
+		YYERROR;
+	}
+| OTHER_WORD
+  {
+	cb_error_x ($1, _("'%s' is not defined, but is a reserved word in another dialect"),
+				CB_NAME ($1));
+	check_and_set_usage (CB_USAGE_ERROR);
+	YYERROR;
   }
 ;
 
@@ -9143,9 +9147,7 @@ screen_option:
 	current_field->screen_backg = $3;
   }
 | usage_clause
-/* FIXME shift/reduce conflict with control_attributes
 | type_to_clause
-*/
 | blank_clause
 | screen_global_clause
 | justified_clause
@@ -9915,6 +9917,7 @@ procedure_division:
 	check_pic_duplicate = 0;
 	check_duplicate = 0;
 	cobc_in_procedure = 1U;
+	cobc_in_data_division = 0;
 	cb_set_system_names ();
 	backup_current_pos ();
   }
@@ -9977,6 +9980,7 @@ procedure_division:
 		current_program->entry_convention = cb_int (CB_CONV_COBOL);
 	}
 	cobc_in_procedure = 1U;
+	cobc_in_data_division = 0;
 	label = cb_build_reference ("MAIN SECTION");
 	current_section = CB_LABEL (cb_build_label (label, NULL));
 	current_section->flag_section = 1;
@@ -17903,27 +17907,6 @@ identifier_field:
 	} else {
 		if (x != cb_error_node) {
 			cb_error_x ($1, _("'%s' is not a field"), cb_name ($1));
-		}
-		$$ = cb_error_node;
-	}
-  }
-;
-
-/* guarantees a reference to a validated field-reference which has
-   the type attribute (or cb_error_node) */
-type_name:
-  WORD
-  {
-	cb_tree x = NULL;
-	if (CB_REFERENCE_P ($1)) {
-		x = cb_ref ($1);
-	}
-
-	if (x && CB_FIELD_P (x) && CB_FIELD (x)->flag_is_typedef) {
-		$$ = $1;
-	} else {
-		if (x != cb_error_node) {
-			cb_error_x ($1, _("'%s' is not a type-name"), cb_name ($1));
 		}
 		$$ = cb_error_node;
 	}

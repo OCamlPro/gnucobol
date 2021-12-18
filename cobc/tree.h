@@ -2050,6 +2050,8 @@ extern int		suppress_data_exceptions;
 extern unsigned int	cobc_repeat_last_token;
 extern unsigned int	cobc_in_id;
 extern unsigned int	cobc_in_procedure;
+extern unsigned int	cobc_in_data_division;
+extern unsigned int	cobc_in_usage;
 extern unsigned int	cobc_in_repository;
 extern unsigned int	cobc_force_literal;
 extern unsigned int	cobc_cs_check;

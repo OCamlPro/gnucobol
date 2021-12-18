@@ -1,4 +1,11 @@
 
+2021-12-18  Ron Norman <rjn@inglenet.com>
+
+	* tree.h: Add extern cobc_in_data_division
+	* tree.c: Clear cobc_in_data_division 
+	* scanner.l: Check for typedef variable and return TYPEDEF_NAME
+	* parser.y: Changes to look for TYPEDEF_NAME
+
 2021-12-08  Ron Norman <rjn@inglenet.com>
 
 	* codegen.c: When setting value into COMP-X field use cob_set_compx
