@@ -1,4 +1,11 @@
 
+2021-12-23  Ron Norman <rjn@inglenet.com>
+
+	* parser.y: Interim Changes to handle multiple VARYING clauses
+				for a REPORT (More to come)
+	* codegen.c: Handle report VARYING clause as a list
+	* field.c:	Allow multiple VALUES when in REPORT section
+
 2021-12-18  Ron Norman <rjn@inglenet.com>
 
 	* tree.h: Add extern cobc_in_data_division

@@ -1680,6 +1680,7 @@ validate_elem_value (const struct cb_field * const f)
 	const struct cb_field	*p;
 
 	if (f->values != NULL
+	 && f->storage != CB_STORAGE_REPORT
 	 && (CB_PAIR_P (CB_VALUE (f->values)) || CB_CHAIN (f->values))) {
 		for (p = f; p && !p->flag_occurs; p = p->parent);
 		if (p == NULL

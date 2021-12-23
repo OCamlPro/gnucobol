@@ -10853,31 +10853,56 @@ static void
 output_report_move_source (struct cb_field *f, int first)
 {
 	struct cb_field *v;
-	int		nested;
+	cb_tree	l;
+	int		i, nested;
 	if (f->report_vary_var) {
-		v = cb_code_field (f->report_vary_var);
-		rpt_idx[report_nest_vary] = v;
-		output_line ("/* VARYING %s for %s */",v->name,f->name);
-		output_prefix ();
-		output ("for (%s%d = ",CB_PREFIX_BASE,v->id);
-		if (f->report_vary_from) {
-			output_integer (f->report_vary_from);
-		} else {
-			output ("1");
+		for (l = f->report_vary_var, i=0; l; l = CB_CHAIN (l), i++) {
+			v = cb_code_field (CB_VALUE(l));
+			output_line ("/* VARYING %s for %s */",v->name,f->name);
 		}
-		output ("; %s%d ",CB_PREFIX_BASE,v->id);
-		output (" <= %d; ",f->occurs_max);
-		output ("%s%d ",CB_PREFIX_BASE,v->id);
-		output (" += ");
-		if (f->report_vary_by) {
-			output_integer (f->report_vary_by);
-		} else {
-			output ("1");
+		output_prefix ();
+		output ("for (");
+		for (l = f->report_vary_var, i=0; l; l = CB_CHAIN (l), i++) {
+			if (i > 0)
+				output (", ");
+			v = cb_code_field (CB_VALUE(l));
+			rpt_idx[report_nest_vary] = v;
+			output ("%s%d = ",CB_PREFIX_BASE,v->id);
+			if (v->report_vary_from) {
+				output_integer (v->report_vary_from);
+			} else if (f->report_vary_from) {
+				output_integer (f->report_vary_from);
+			} else {
+				output ("1");
+			}
+		}
+		output ("; ");
+		for (l = f->report_vary_var, i=0; l; l = CB_CHAIN (l), i++) {
+			if (i > 0)
+				output (" && ");
+			v = cb_code_field (CB_VALUE(l));
+			output ("%s%d ",CB_PREFIX_BASE,v->id);
+			output (" <= %d ",f->occurs_max);
+		}
+		output ("; ");
+		for (l = f->report_vary_var, i=0; l; l = CB_CHAIN (l), i++) {
+			if (i > 0)
+				output (", ");
+			v = cb_code_field (CB_VALUE(l));
+			output ("%s%d ",CB_PREFIX_BASE,v->id);
+			output (" += ");
+			if (v->report_vary_by) {
+				output_integer (v->report_vary_by);
+			} else if (f->report_vary_by) {
+				output_integer (f->report_vary_by);
+			} else {
+				output ("1");
+			}
 		}
 		output (")");
+		report_nest_vary++;
 		output_newline ();
 		output_block_open ();
-		report_nest_vary++;
 	}
 	if (f->report_source) {
 		v = cb_code_field (f->report_source);
