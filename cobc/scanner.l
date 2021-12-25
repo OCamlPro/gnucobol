@@ -1044,7 +1044,7 @@ H#[0-9A-Za-z]+ {
 
 		cb_listing_xref = 0;
 		memcpy ((void*)ref, (void*)yylval, sizeof(ref));
-		val = cb_try_ref (ref);
+		val = cb_try_ref (CB_TREE(ref));
 		cb_listing_xref = xref;
 
 		if (val != NULL

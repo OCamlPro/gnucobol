@@ -4452,7 +4452,7 @@ finalize_report (struct cb_report *r, struct cb_field *records)
 		 && CB_LITERAL_P (p->report_source)) {
 			struct cb_literal 	*xl;
 			xl = CB_LITERAL (p->report_source);
-			p->report_source_txt = cobc_parse_strdup (xl->data);
+			p->report_source_txt = cobc_parse_strdup ((const char*)(xl->data));
 		}
 		/* force generation of report sum counter */
 		if (p->report_sum_counter
