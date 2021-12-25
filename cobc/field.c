@@ -1072,13 +1072,23 @@ create_implicit_picture (struct cb_field *f)
 	if (f->storage == CB_STORAGE_REPORT) {
 		if (first_value) {
 			sprintf (pic, "X(%d)", size_implied);
+		} else if (f->report_source) {
+			size_implied = 1;
+			if (CB_LITERAL_P (f->report_source))
+				size_implied = (int)CB_LITERAL(f->report_source)->size;
+			else if (CB_FIELD_P (f->report_source))
+				size_implied = (int)CB_FIELD(f->report_source)->size;
+			sprintf (pic, "X(%d)", size_implied);
 		} else {
 			/* CHECKME: Where do we want to generate a not-field in the C code?
 			            instead of raising an error here? */
 			f->flag_no_field = 1;
+			size_implied = 1;
 			strcpy (pic, "X");
 		}
 		f->pic = CB_PICTURE (cb_build_picture (pic));
+		if (f->size < size_implied)
+			f->size = size_implied;
 		return 0;
 	}
 
@@ -1409,6 +1419,9 @@ validate_pic (struct cb_field *f)
 		if (create_implicit_picture (f)) {
 			return 1;
 		}
+		if (f->pic
+		 && f->pic->size > f->size)
+			f->size = f->pic->size;
 	}
 
 	/* ACUCOBOL/RM-COBOL-style COMP-1 ignores the PICTURE clause. */

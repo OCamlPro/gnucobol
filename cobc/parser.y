@@ -8348,6 +8348,9 @@ report_group_description_entry:
 	}
   }
   _report_group_options TOK_DOT
+  {
+	  build_sum_counter (current_report, current_field);
+  }
 | level_number error TOK_DOT
   {
 	/* Free tree associated with level number */
@@ -8506,7 +8509,6 @@ sum_clause_list:
   {
 	check_repeated ("SUM", SYN_CLAUSE_19, &check_pic_duplicate);
 	current_field->report_sum_list = $3;
-	build_sum_counter (current_report, current_field);
   }
 ;
 

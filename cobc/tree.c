@@ -207,7 +207,6 @@ static	int	prev_expr_warn[EXPR_WARN_PER_LINE] = {0,0,0,0,0,0,0,0};
 static	int	prev_expr_tf[EXPR_WARN_PER_LINE] = {0,0,0,0,0,0,0,0};
 
 static int	do_set_column = 1;
-static struct cb_report *report_checked = NULL;
 
 /* Local functions */
 
@@ -4098,9 +4097,23 @@ build_sum_counter (struct cb_report *r, struct cb_field *f)
 	if (f->count == 0) {
 		f->count = 1;
 	}
+	if (f->report_sum_list == NULL)
+		return;
+	if (f->pic == NULL) {
+		s = cb_code_field (CB_VALUE(f->report_sum_list));
+		cb_error_x (CB_TREE(f), _("needs PICTURE clause for SUM %s"),s->name);
+		return;
+	}
+	if (f->pic->category != CB_CATEGORY_NUMERIC
+	 && f->pic->category != CB_CATEGORY_NUMERIC_EDITED) {
+		s = cb_code_field (CB_VALUE(f->report_sum_list));
+		cb_warning_x (COBC_WARN_FILLER, CB_TREE(f), 
+					_("non-numeric PICTURE clause for SUM %s"),s->name);
+	}
 	/* Set up SUM COUNTER */
-	if (f->flag_filler) {
-		s = CB_FIELD(CB_VALUE(f->report_sum_list));
+	if (f->flag_filler
+	 || memcmp(f->name,"FILLER ",7) == 0) {
+		s = cb_code_field (CB_VALUE(f->report_sum_list));
 		if (s->count == 0)
 			s->count = 1;
 		snprintf (buff, (size_t)COB_MINI_MAX, "SUM OF %s", s->name);
@@ -4320,8 +4333,8 @@ finalize_report (struct cb_report *r, struct cb_field *records)
 	int		k, maxsz;
 
 	maxsz = 0;
-	if (report_checked != r) {
-		report_checked = r;
+	if (!r->was_checked) {
+		r->was_checked = 1;
 		if (r->lines > 9999) {
 			r->lines = 9999;
 		}
@@ -4418,7 +4431,7 @@ finalize_report (struct cb_report *r, struct cb_field *records)
 		if (p->report_source
 		 && CB_REF_OR_FIELD_P (p->report_source)) {
 			char	tmp[COB_MINI_BUFF];
-			struct cb_field *s;
+			struct cb_field *s = NULL;
 			int		pos, len;
 			/* force generation of report source field */
 			fld = CB_FIELD_PTR (p->report_source);
@@ -4434,6 +4447,12 @@ finalize_report (struct cb_report *r, struct cb_field *records)
 				p->report_field_offset = pos;
 				p->report_field_size = len;
 			}
+		} else
+		if (p->report_source
+		 && CB_LITERAL_P (p->report_source)) {
+			struct cb_literal 	*xl;
+			xl = CB_LITERAL (p->report_source);
+			p->report_source_txt = cobc_parse_strdup (xl->data);
 		}
 		/* force generation of report sum counter */
 		if (p->report_sum_counter

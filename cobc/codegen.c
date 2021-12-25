@@ -10044,7 +10044,8 @@ output_report_sum_control_field (struct cb_field *p)
 		if (p->report_control) {
 			output_base(cb_code_field(p->report_control),1U);
 		}
-		if (p->report_source) {
+		if (p->report_source
+		 && !CB_LITERAL_P (p->report_source)) {
 			output_base(cb_code_field(p->report_source),1U);
 		}
 		for (l = p->report_sum_list; l; l = CB_CHAIN (l)) {
@@ -10282,6 +10283,7 @@ output_report_def_fields (int bgn, int id, struct cb_field *f, struct cb_report 
 	 && f->report_sum_counter == NULL
 	 && f->report_when == NULL
 	 && f->values == NULL
+	 && (f->report_source == NULL || !CB_LITERAL_P (f->report_source))
 	 && f->report_control == NULL)	/* This field has nothing to do */
 		return;
 	output_local ("static cob_report_field %s\t= {%s,", field_name,report_field_name);
@@ -10321,9 +10323,14 @@ output_report_def_fields (int bgn, int id, struct cb_field *f, struct cb_report 
 		output_local("NULL");
 	}
 	output_local(",");
-	if (f->values) {
+	value = NULL;
+	if (f->values) 
 		value = CB_VALUE (f->values);
+	else if (f->report_source 
+		  && CB_LITERAL_P (f->report_source))
+		value = f->report_source;
 
+	if (value) {
 		if (CB_TREE_TAG (value) == CB_TAG_LITERAL) {
 			char	*val;
 			size_t	ref_size;
@@ -10905,7 +10912,9 @@ output_report_move_source (struct cb_field *f, int first)
 		output_block_open ();
 	}
 	if (f->report_source) {
-		v = cb_code_field (f->report_source);
+		if (f->report_source_txt == NULL) {
+			output_line ("/* Move To %s */",f->name);
+		} else
 		if (memcmp (f->name, "FILLER ",7) == 0
 		 || f->flag_filler) {
 			output_line ("/* Move %s To line %d */",f->report_source_txt,f->common.source_line);

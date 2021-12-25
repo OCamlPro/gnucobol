@@ -1565,6 +1565,7 @@ struct cb_report {
 	unsigned int		has_declarative:1;/* Has Declaratives Code to be executed */
 	unsigned int		has_detail:1;	/* Has DETAIL line */
 	unsigned int		has_source_move:1;/* Has Code to MOVE SOURCE values */
+	unsigned int		was_checked:1;
 };
 
 #define CB_REPORT(x)	(CB_TREE_CAST (CB_TAG_REPORT, struct cb_report, x))
