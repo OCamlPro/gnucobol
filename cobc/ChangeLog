@@ -1,11 +1,17 @@
 
 2021-12-25  Ron Norman <rjn@inglenet.com>
-2021-12-23  Ron Norman <rjn@inglenet.com>
 
 	* parser.y: Fix to check for missing REPORT data clauses
 	* codegen.c: Handle report field with SOURCE "literal"
 	* field.c:	Compute report field size for SOURCE "literal"
 	* tree.c:	Check for report field missing PIC when using SUM clause
+
+2021-12-23  Ron Norman <rjn@inglenet.com>
+
+	* parser.y: Interim Changes to handle multiple VARYING clauses
+				for a REPORT (More to come)
+	* codegen.c: Handle report VARYING clause as a list
+	* field.c:  Allow multiple VALUES when in REPORT section 
 
 2021-12-18  Ron Norman <rjn@inglenet.com>
 
