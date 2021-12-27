@@ -816,8 +816,8 @@ do_page_footing(cob_report *r)
 	r->in_page_footing = TRUE;
 	report_line_type(r,r->first_line,COB_REPORT_PAGE_FOOTING);
 	memset(rec,' ',f->record_max);
-	if(r->curr_line < r->def_lines) {
-		write_rec(r, COB_WRITE_BEFORE|COB_WRITE_LINES|(r->def_lines-r->curr_line));
+	if(r->curr_line <= r->def_lines) {
+		write_rec(r, COB_WRITE_BEFORE|COB_WRITE_LINES|(r->def_lines-r->curr_line+1));
 		r->curr_line = r->def_lines;
 		r->incr_line = FALSE;
 	} else {
@@ -979,6 +979,13 @@ report_line(cob_report *r, cob_report_line *l)
 		} else
 		if( !(l->flags & COB_REPORT_LINE_PLUS)
 		&&   (l->flags & COB_REPORT_LINE)) {
+			if(r->curr_line >= r->def_lines) {
+				DEBUG_LOG("rw",("Page %d Line %d to line %d\n",r->curr_page,r->curr_line,l->line));
+				if(r->in_report_footing) {
+					r->curr_page++;		/* Now on next page */
+					r->curr_line = 1;
+				}
+			} else
 			if(r->curr_line > l->line) {
 				DEBUG_LOG("rw",(" Eject Page %d from line %d for Line %d\n",r->curr_page,r->curr_line,l->line));
 				do_page_footing(r);
@@ -1306,7 +1313,7 @@ zero_all_counters(cob_report *r, int	flag, cob_report_line *l)
 		}
 	}
 	if (matched == 0) {
-		DEBUG_LOG("rw",("Nothing matched to ZERO!\n"));
+		DEBUG_LOG("rw",("No counters to ZERO!\n"));
 	}
 }
 
@@ -1469,6 +1476,11 @@ static	cob_report_line		*pl;
 		DEBUG_LOG("rw",("No GENERATE was ever done!\n"));
 		return 0;
 	}
+	if (r->incr_line) {
+		r->incr_line = FALSE;
+		r->curr_line++;
+		saveLineCounter(r);
+	}
 	if (r->go_label > 0) {
 		int backto = r->go_label;
 		DEBUG_LOG("rw",("  Resume %s TERMINATE case%d to %d\n",r->report_name,r->exec_source,r->go_label));
@@ -1529,6 +1541,7 @@ PrintFootingFinal:
 	}
 	zero_all_counters(r, COB_REPORT_CONTROL_FOOTING_FINAL,NULL);
 
+	r->in_report_footing = TRUE;
 	do_page_footing(r);
 
 	pl = get_line_type(r, r->first_line,COB_REPORT_FOOTING);
@@ -1541,10 +1554,15 @@ PrintFootingFinal:
 			return 1;	/* Back for DECLARATIVES */
 		}
 PrintReportFooting:
-		r->in_report_footing = TRUE;
 		report_line_type(r,r->first_line,COB_REPORT_FOOTING);
-		r->in_report_footing = FALSE;
+		memset(r->report_file->record->data,' ',r->report_file->record_max);
+		if(r->curr_line <= r->def_lines) {
+			write_rec(r, COB_WRITE_BEFORE|COB_WRITE_LINES|(r->def_lines-r->curr_line+1));
+			r->curr_line = r->def_lines;
+			r->incr_line = FALSE;
+		}
 	}
+	r->in_report_footing = FALSE;
 
 	free_control_fields (r);
 	r->initiate_done = FALSE;

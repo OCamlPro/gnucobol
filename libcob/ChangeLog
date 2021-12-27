@@ -1,4 +1,8 @@
 
+2021-12-27  Ron Norman <rjn@inglenet.com>
+
+	* reportio.c: Fixed spacing and test cases to match Microfocus
+
 2021-12-12  Ron Norman <rjn@inglenet.com>
 
 	* common.h: Added flag_do_rollback
