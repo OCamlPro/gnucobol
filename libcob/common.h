@@ -1739,14 +1739,16 @@ typedef struct __cob_report_sumctr {
 /* main report table for each RD */
 typedef struct __cob_report {
 	unsigned int	report_ver;			/* To identify version of these tables */
-#define COB_REPORT_VERSION	0x20210901
+#define COB_REPORT_VERSION	0x20211227
 	const char		*report_name;		/* Report name */
 	struct __cob_report	*next;			/* Next report */
 	int				go_label;			/* goto 'label' on reentry */
 	cob_file		*report_file;		/* Report file */
 	cob_field		*page_counter;		/* PAGE-COUNTER */
 	cob_field		*line_counter;		/* LINE-COUNTER */
-	cob_report_line		*first_line;		/* First defined LINE of report */
+	cob_report_line		*first_line;	/* First defined LINE of report */
+	cob_report_line		*heading_final;	/* CONTROL HEADING FINAL line */
+	cob_report_line		*footing_final;	/* CONTROL FOOTING FINAL line */
 	cob_report_control	*controls;		/* control fields of report */
 	cob_report_sum_ctr	*sum_counters;		/* List of SUM counters in report */
 	int			def_lines;		/* Default lines */
@@ -1782,6 +1784,7 @@ typedef struct __cob_report {
 	int			code_len;		/* Length to use for holding 'CODE IS' value */
 	char		*code_is;		/* Value of CODE IS for this report */
 	int			exec_source;	/* Goto Label#  for MOVE SOURCE */
+	int			num_controls;	/* Number of CONTROL fields */
 } cob_report;
 
 /* ML tree structure */

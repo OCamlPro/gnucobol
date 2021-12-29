@@ -1,4 +1,9 @@
 
+2021-12-29  Ron Norman <rjn@inglenet.com>
+
+	* parser.y: Save CONTROL FINAL fields
+	* codegen.c: Emit CONTROL FINAL fields to cob_report
+
 2021-12-25  Ron Norman <rjn@inglenet.com>
 
 	* parser.y: Fix to check for missing REPORT data clauses

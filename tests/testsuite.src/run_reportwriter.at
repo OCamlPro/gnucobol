@@ -9743,3 +9743,289 @@ BEFORE FINAL - SHOULD DISPLAY
 
 AT_CLEANUP
 
+AT_SETUP([Test Control Heading])
+AT_KEYWORDS([REPORT])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT    DIVISION.
+       CONFIGURATION  SECTION.
+       INPUT-OUTPUT   SECTION.
+       FILE-CONTROL.
+
+           SELECT PRINT-FILE ASSIGN TO "report02.txt"
+                  ORGANIZATION IS LINE SEQUENTIAL.
+
+       DATA DIVISION.
+       FILE SECTION.
+
+       FD  PRINT-FILE
+           REPORT IS REPORT-1.
+
+       WORKING-STORAGE SECTION.
+
+       01   WS-CNTR                   PIC  S9(4) COMP VALUE 0.
+       01   WS-DATE                   PIC  X(10) VALUE "2021-12-27".
+       01   WS-IN-REC.
+          05  WS-PAY-DATE.
+              07 WS-YEAR              PIC XXXX.
+              07                      PIC X.
+              07 WS-MONTH             PIC XX.
+              07                      PIC X.
+              07 WS-DAY               PIC XX.
+          05  WS-STUDENT-ID           PIC  X(3).
+          05  WS-STUDENT-NAME         PIC  X(8).
+          05  WS-BOOK-PAY             PIC  999V99.
+          05  WS-TUTION-PAY           PIC  999V99.
+          05  WS-TRANSPORT-PAY        PIC  999V99.
+
+       01 WS-TABLE-SIZE               PIC  S9999 COMP VALUE 007.
+       01 WS-DATA.
+           02 F1 PIC X(41)
+             VALUE "1921-01-01 001 ANDRREA  11100 03900 60001".
+           02 F2 PIC X(41)
+             VALUE "1921-01-02 002 SANDY    11200 04800 20002".
+           02 F3 PIC X(41)
+             VALUE "1921-01-03 003 BRENDA   11300 01000 20003".
+           02 F4 PIC X(41)
+             VALUE "1921-02-04 004 PAUL     11400 20044 10004".
+           02 F5 PIC X(41)
+             VALUE "1921-02-05 005 FININGS  11500 01251 44005".
+           02 F6 PIC X(41)
+             VALUE "1925-01-04 004 AFIK     11400 20044 10004".
+           02 F7 PIC X(41)
+             VALUE "1925-01-05 005 SANDY    00500 00100 00300".
+
+          01 WS-DATA2 REDEFINES WS-DATA.
+             02 DATA-ROW OCCURS           007   TIMES INDEXED BY IX.
+                05  WS-T-PAY-DATE               PIC  X(10).
+                05  FA                          PIC  X.
+                05  WS-T-STUDENT-ID             PIC  9(3).
+                05  FB                          PIC  X.
+                05  WS-T-STUDENT-NAME           PIC  X(8).
+                05  FC                          PIC  X.
+                05  WS-T-BOOK-PAY               PIC  999V99.
+                05  FF                          PIC  X.
+                05  WS-T-TUTION-PAY             PIC  999V99.
+                05  FE                          PIC  X.
+                05  WS-T-TRANSPORT-PAY          PIC  999V99.
+
+       REPORT  SECTION.
+    
+       RD  REPORT-1
+               CONTROLS ARE FINAL WS-YEAR WS-MONTH
+               PAGE     LIMIT   IS 50
+               LAST DETAIL         40
+              .
+       01  PAGE-HEADING
+               TYPE PAGE HEADING.
+               02 LINE 01.            
+                  03 COLUMN 1        PIC X(5)  VALUE "DATE:".
+                  03 COLUMN 6        PIC X(10) SOURCE IS WS-DATE.
+                  03 COLUMN 70       PIC 9(2)  SOURCE LINE-COUNTER.
+
+               02 LINE 03.            
+                  03 COLUMN 21       PIC X(25) 
+                                VALUE "PAID FEES REPORT (DAILY)".
+                  03 COLUMN 70       PIC 9(2)  SOURCE LINE-COUNTER.
+
+               02 LINE 04.            
+                  03 COLUMN 21       PIC X(24) VALUE ALL "-".
+                  03 COLUMN 70       PIC 9(2)  SOURCE LINE-COUNTER.
+
+               02 LINE 06.            
+                  03 COLUMN 1        PIC X(6) VALUE "SERIAL".
+                  03 COLUMN 9        PIC X(2) VALUE "ID".
+                  03 COLUMN 14       PIC X(4) VALUE "NAME".
+                  03 COLUMN 24       PIC X(8) VALUE "PAY DATE".
+                  03 COLUMN 36       PIC X(6) VALUE "TUTION".
+                  03 COLUMN 45       PIC X(5) VALUE "BOOKS".
+                  03 COLUMN 54       PIC X(9) VALUE "TRANSPORT".
+                  03 COLUMN 70       PIC 9(2) SOURCE LINE-COUNTER.
+
+               02 LINE 07.            
+                  03 COLUMN 1        PIC X(68) VALUE ALL "-".
+                  03 COLUMN 70       PIC 9(2)  SOURCE LINE-COUNTER.
+
+       01 CH-FNAL
+             TYPE CONTROL HEADING FINAL.
+             02  LINE PLUS 2.
+                 03  COLUMN 1        PIC X(9)   VALUE "CH FINAL".
+                 03  COLUMN 70       PIC 9(2)  SOURCE LINE-COUNTER.
+
+       01 CH-YEAR
+             TYPE CONTROL HEADING WS-YEAR.
+             02  LINE PLUS 2.
+                 03  COLUMN 1        PIC X(13) VALUE "CH 1 -  YEAR:".
+                 03  COLUMN 15       PIC X(4)  SOURCE WS-YEAR.
+                 03  COLUMN 70       PIC 9(2)  SOURCE LINE-COUNTER.
+
+       01 CH-MONTH
+             TYPE CONTROL HEADING WS-MONTH.
+             02  LINE PLUS 1.
+                 03  COLUMN 1        PIC X(13)  VALUE "CH 2 - MONTH:".
+                 03  COLUMN 15       PIC X(2)   SOURCE WS-MONTH.
+                 03  COLUMN 70       PIC 9(2)  SOURCE LINE-COUNTER.
+
+        01  REPORT-LINE
+               TYPE DETAIL.
+             02 LINE PLUS 1.
+                03 COLUMN 1   PIC X(6)    SOURCE WS-CNTR.
+                03 COLUMN 9   PIC X(3)    SOURCE WS-STUDENT-ID.
+                03 COLUMN 14  PIC X(8)    SOURCE WS-STUDENT-NAME.
+                03 COLUMN 24  PIC X(10)   SOURCE WS-PAY-DATE.
+                03 COLUMN 36  PIC $999.99 SOURCE WS-TUTION-PAY.
+                03 COLUMN 45  PIC $999.99 SOURCE WS-BOOK-PAY.
+                03 COLUMN 54  PIC $999.99 SOURCE WS-TRANSPORT-PAY.
+                03 COLUMN 70  PIC 9(2)    SOURCE LINE-COUNTER.
+
+       01 CF-MONTH
+             TYPE CONTROL FOOTING WS-YEAR.
+           02  LINE PLUS 2.
+             03  COLUMN 1            PIC X(13)  VALUE "CF-1 -  YEAR:".
+             03  COLUMN 15           PIC X(4)   SOURCE WS-YEAR.
+             03  COLUMN 28           PIC X(5)   VALUE " SUM:".
+             03  COLUMN 34           PIC $9(5).99  SUM WS-TUTION-PAY.
+             03  COLUMN 70           PIC 9(2)  SOURCE LINE-COUNTER.
+
+       01 CF-YEAR
+             TYPE CONTROL FOOTING WS-MONTH.
+           02  LINE PLUS 2.
+             03  COLUMN 1            PIC X(13)  VALUE "CF-2 - MONTH:".
+             03  COLUMN 15           PIC X(2)   SOURCE WS-MONTH.
+             03  COLUMN 28           PIC X(5)   VALUE " SUM:".
+             03  COLUMN 34           PIC $9(5).99  SUM WS-TUTION-PAY.
+             03  COLUMN 70           PIC 9(2)  SOURCE LINE-COUNTER.
+
+       01 CF-FINAL
+             TYPE CONTROL FOOTING FINAL.
+           02  LINE PLUS 1.
+             03  COLUMN 1            PIC X(10)  VALUE "CF-FINAL ".
+             03  COLUMN 28           PIC X(5)   VALUE " SUM:".
+             03  COLUMN 34           PIC $9(5).99  SUM WS-TUTION-PAY.
+             03  COLUMN 70           PIC 9(2)   SOURCE LINE-COUNTER.
+
+       01 TYPE PAGE FOOTING.
+             02 LINE PLUS 1.
+                03 COLUMN 1          PIC X(15)   VALUE "* REPORT END *".
+                03 COLUMN 70         PIC 9(2)    SOURCE LINE-COUNTER.
+
+             02 LINE PLUS 1.
+                03 COLUMN 1          PIC X(13)   VALUE "FOOTER PAGE#:".
+                03 COLUMN 15         PIC Z99     SOURCE PAGE-COUNTER.
+                03 COLUMN 70         PIC 9(2)    SOURCE LINE-COUNTER.
+
+      *>---------------------------------------------------------------
+       PROCEDURE DIVISION.
+
+           PERFORM REPORT-INITS
+
+           INITIATE REPORT-1
+
+           PERFORM DO-REPORT
+                   VARYING IX FROM 1 BY 1 UNTIL IX > WS-TABLE-SIZE
+
+           TERMINATE REPORT-1
+
+           CLOSE PRINT-FILE.
+
+           STOP RUN
+           .
+
+       REPORT-INITS.
+           MOVE "2021-12-27" TO WS-DATE
+           MOVE ZERO TO WS-CNTR
+
+           OPEN OUTPUT PRINT-FILE
+           .
+
+        DO-REPORT.
+           ADD 1 TO WS-CNTR
+           PERFORM MOVE-DATA-TO-REPORT
+           DISPLAY WS-YEAR
+           GENERATE REPORT-LINE
+           .
+
+        MOVE-DATA-TO-REPORT.
+           MOVE  WS-T-PAY-DATE      (IX)  TO  WS-PAY-DATE
+           MOVE  WS-T-STUDENT-ID    (IX)  TO  WS-STUDENT-ID
+           MOVE  WS-T-STUDENT-NAME  (IX)  TO  WS-STUDENT-NAME
+           MOVE  WS-T-BOOK-PAY      (IX)  TO  WS-BOOK-PAY
+           MOVE  WS-T-TUTION-PAY    (IX)  TO  WS-TUTION-PAY
+           MOVE  WS-T-TRANSPORT-PAY (IX)  TO  WS-TRANSPORT-PAY
+            .
+
+])
+
+AT_CHECK([$COMPILE -std=default -debug prog.cob ], [0], [], [])
+
+AT_CHECK([export PRINTOUT=report02.txt
+$COBCRUN_DIRECT ./prog], [0], [1921
+1921
+1921
+1921
+1921
+1925
+1925
+], [])
+
+
+AT_CAPTURE_FILE(./report02.txt)
+
+AT_DATA([reference], [DATE:2021-12-27                                                      01
+
+                    PAID FEES REPORT (DAILY)                         03
+                    ------------------------                         04
+
+SERIAL  ID   NAME      PAY DATE    TUTION   BOOKS    TRANSPORT       06
+-------------------------------------------------------------------- 07
+
+CH FINAL                                                             09
+
+CH 1 -  YEAR: 1921                                                   11
+CH 2 - MONTH: 01                                                     12
+0001    001  ANDRREA   1921-01-01  $039.00  $111.00  $600.01         13
+0002    002  SANDY     1921-01-02  $048.00  $112.00  $200.02         14
+0003    003  BRENDA    1921-01-03  $010.00  $113.00  $200.03         15
+
+CF-2 - MONTH: 01            SUM: $00097.00                           17
+CH 2 - MONTH: 02                                                     18
+0004    004  PAUL      1921-02-04  $200.44  $114.00  $100.04         19
+0005    005  FININGS   1921-02-05  $012.51  $115.00  $440.05         20
+
+CF-2 - MONTH: 02            SUM: $00212.95                           22
+
+CF-1 -  YEAR: 1921          SUM: $00309.95                           24
+
+CH 1 -  YEAR: 1925                                                   26
+CH 2 - MONTH: 01                                                     27
+0006    004  AFIK      1925-01-04  $200.44  $114.00  $100.04         28
+0007    005  SANDY     1925-01-05  $001.00  $005.00  $003.00         29
+
+CF-2 - MONTH: 01            SUM: $00201.44                           31
+
+CF-1 -  YEAR: 1925          SUM: $00201.44                           33
+CF-FINAL                    SUM: $00511.39                           34
+
+
+
+
+
+
+* REPORT END *                                                       41
+FOOTER PAGE#:  01                                                    42
+
+
+
+
+
+
+
+
+])
+
+AT_CHECK([gcdiff reference report02.txt], [0], [], [])
+
+AT_CLEANUP
+

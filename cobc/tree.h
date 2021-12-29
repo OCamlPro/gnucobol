@@ -1538,28 +1538,30 @@ struct cb_report {
 	cb_tree			line_counter;	/* LINE-COUNTER */
 	cb_tree			page_counter;	/* PAGE-COUNTER */
 	cb_tree			code_clause;	/* CODE */
-	cb_tree			controls;	/* CONTROLS */
-	cb_tree			t_lines;	/* PAGE LIMIT LINES */
-	cb_tree			t_columns;	/* PAGE LIMIT COLUMNS */
-	cb_tree			t_heading;	/* HEADING */
+	cb_tree			controls;		/* CONTROLS */
+	cb_tree			t_lines;		/* PAGE LIMIT LINES */
+	cb_tree			t_columns;		/* PAGE LIMIT COLUMNS */
+	cb_tree			t_heading;		/* HEADING */
 	cb_tree			t_first_detail;	/* FIRST DE */
 	cb_tree			t_last_control;	/* LAST CH */
 	cb_tree			t_last_detail;	/* LAST DE */
-	cb_tree			t_footing;	/* FOOTING */
-	int			lines;		/* PAGE LIMIT LINES */
-	int			columns;	/* PAGE LIMIT COLUMNS */
-	int			heading;	/* HEADING */
-	int			first_detail;	/* FIRST DE */
-	int			last_control;	/* LAST CH */
-	int			last_detail;	/* LAST DE */
-	int			footing;	/* FOOTING */
+	cb_tree			t_footing;		/* FOOTING */
+	struct cb_field	*t_heading_final;/* CONTROL HEADING FINAL */
+	struct cb_field	*t_footing_final;/* CONTROL FOOTING FINAL */
+	int			lines;				/* PAGE LIMIT LINES */
+	int			columns;			/* PAGE LIMIT COLUMNS */
+	int			heading;			/* HEADING */
+	int			first_detail;		/* FIRST DE */
+	int			last_control;		/* LAST CH */
+	int			last_detail;		/* LAST DE */
+	int			footing;			/* FOOTING */
 	struct cb_field		*records;	/* First record definition of report */
-	int			num_lines;	/* Number of Lines defined */
+	int			num_lines;			/* Number of Lines defined */
 	struct cb_field		**line_ids;	/* array of LINE definitions */
-	int			num_sums;	/* Number of SUM counters defined */
+	int			num_sums;			/* Number of SUM counters defined */
 	struct cb_field		**sums;		/* Array of SUM fields */
-	int			rcsz;		/* Longest record */
-	int			id;		/* unique id for this report */
+	int			rcsz;				/* Longest record */
+	int			id;					/* unique id for this report */
 	unsigned int		control_final:1;/* CONTROL FINAL declared */
 	unsigned int		global:1;	/* IS GLOBAL declared */
 	unsigned int		has_declarative:1;/* Has Declaratives Code to be executed */

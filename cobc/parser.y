@@ -8438,6 +8438,9 @@ _control_heading_final:
 | FINAL _or_page
   {
 	current_field->report_flag |= COB_REPORT_CONTROL_HEADING_FINAL;
+	if (current_report->t_heading_final != NULL)
+			cb_error_x ($1, _("CONTROL HEADING FINAL is allowed once in a REPORT"));
+	current_report->t_heading_final = current_field;
   }
 ;
 
@@ -8462,6 +8465,9 @@ _control_footing_final:
 | FINAL _or_page
   {
 	current_field->report_flag |= COB_REPORT_CONTROL_FOOTING_FINAL;
+	if (current_report->t_footing_final != NULL)
+			cb_error_x ($1, _("CONTROL FOOTING FINAL is allowed once in a REPORT"));
+	current_report->t_footing_final = current_field;
   }
 | ALL
   {

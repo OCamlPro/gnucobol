@@ -10391,7 +10391,7 @@ static void
 output_report_define_lines (int top, struct cb_field *f, struct cb_report *r)
 {
 	struct cb_field *n, *c, *p;
-	char	fname[80];
+	char	fname[128];
 
     if(f == NULL)
 	    return;
@@ -10423,38 +10423,38 @@ output_report_define_lines (int top, struct cb_field *f, struct cb_report *r)
 		return;
 	f->report_flag |= COB_REPORT_LINE_EMITTED;
 
+	if (f->report_flag & COB_REPORT_PAGE_HEADING) {
+		strcpy(fname,"PAGE HEADING");
+	} else if(f->report_flag & COB_REPORT_PAGE_FOOTING) {
+		strcpy(fname,"PAGE HEADING");
+	} else if(f->report_flag & COB_REPORT_HEADING) {
+		strcpy(fname,"REPORT HEADING");
+	} else if(f->report_flag & COB_REPORT_FOOTING) {
+		strcpy(fname,"REPORT FOOTING");
+	} else if(f->report_flag & COB_REPORT_CONTROL_HEADING) {
+		strcpy(fname,"CONTROL HEADING");
+	} else if(f->report_flag & COB_REPORT_CONTROL_FOOTING) {
+		strcpy(fname,"CONTROL FOOTING");
+	} else if(f->report_flag & COB_REPORT_CONTROL_FOOTING_FINAL) {
+		strcpy(fname,"CONTROL FOOTING FINAL");
+	} else if(f->report_flag & COB_REPORT_CONTROL_HEADING_FINAL) {
+		strcpy(fname,"CONTROL HEADING FINAL");
+	} else {
+		sprintf(fname,"Line %d",f->common.source_line);
+	}
+	if (f->children)
+		strcat (fname," GROUP");
+	if (f->report_control) {
+		sprintf(&fname[strlen(fname)], " %s",
+			cb_code_field(f->report_control)->name);
+	}
 	if (memcmp (f->name, "FILLER ",7) == 0
 	 || f->flag_filler) {
-		if (f->report_flag & COB_REPORT_PAGE_HEADING) {
-			strcpy(fname,"PAGE HEADING");
-		} else if(f->report_flag & COB_REPORT_PAGE_FOOTING) {
-			strcpy(fname,"PAGE HEADING");
-		} else if(f->report_flag & COB_REPORT_HEADING) {
-			strcpy(fname,"REPORT HEADING");
-		} else if(f->report_flag & COB_REPORT_FOOTING) {
-			strcpy(fname,"REPORT FOOTING");
-		} else if(f->report_flag & COB_REPORT_CONTROL_HEADING) {
-			strcpy(fname,"CONTROL HEADING");
-		} else if(f->report_flag & COB_REPORT_CONTROL_FOOTING) {
-			strcpy(fname,"CONTROL FOOTING");
-		} else if(f->report_flag & COB_REPORT_CONTROL_FOOTING_FINAL) {
-			strcpy(fname,"CONTROL FOOTING FINAL");
-		} else if(f->report_flag & COB_REPORT_CONTROL_HEADING_FINAL) {
-			strcpy(fname,"CONTROL HEADING FINAL");
-		} else {
-			sprintf(fname,"Line %d",f->common.source_line);
-		}
-		if (f->children)
-			strcat (fname," GROUP");
-		if (f->report_control) {
-			sprintf(&fname[strlen(fname)], " %s",
-				cb_code_field(f->report_control)->name);
-		}
-		if (fname[0]) {
-			strcat (fname, " of ");
-		}
+		strcat (fname, " of ");
 	} else {
-		sprintf (fname, "%s of ", f->name);
+		strcat (fname, " ");
+		strcat (fname,f->name);
+		strcat (fname, " of ");
 	}
 	output_local("\n/* %s%s ",fname,r->name);
 	if (f->report_source_id) {
@@ -10743,6 +10743,16 @@ output_report_definition (struct cb_report *p, struct cb_report *n)
 	}
 	if(p->num_lines > 0) {
 		output_local ("&%s%d,",CB_PREFIX_REPORT_LINE,p->line_ids[0]->id);
+	} else {
+		output_local("NULL,");
+	}
+	if(p->t_heading_final != NULL) {
+		output_local ("&%s%d,",CB_PREFIX_REPORT_LINE,p->t_heading_final->id);
+	} else {
+		output_local("NULL,");
+	}
+	if(p->t_footing_final != NULL) {
+		output_local ("&%s%d,",CB_PREFIX_REPORT_LINE,p->t_footing_final->id);
 	} else {
 		output_local("NULL,");
 	}
