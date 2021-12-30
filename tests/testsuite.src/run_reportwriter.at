@@ -10029,3 +10029,99 @@ AT_CHECK([gcdiff reference report02.txt], [0], [], [])
 
 AT_CLEANUP
 
+
+AT_SETUP([Test Footing Declaratives])
+AT_KEYWORDS([REPORT])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT REPORT-FILE ASSIGN "report.txt"
+           ORGANIZATION LINE SEQUENTIAL.
+       DATA DIVISION.
+       FILE SECTION.
+       
+       FD REPORT-FILE
+       REPORT IS REPORT-1.
+       WORKING-STORAGE SECTION.
+       01 N   COMP PIC 99 VALUE 0.
+       01 TEST-TABLE.
+           02 TEST-DATA.
+               03 PIC 9999 VALUE 1001.
+               03 PIC 9999 VALUE 1002.
+               03 PIC 9999 VALUE 1003.
+               03 PIC 9999 VALUE 2004.
+               03 PIC 9999 VALUE 2005.
+               03 PIC 9999 VALUE 2006.
+           02 TEST-ENTRY REDEFINES TEST-DATA PIC 9999 OCCURS 6.
+       01 REPORT-ENTRY.
+           03 TEST-GROUP PIC 9.
+           03 TEST-VALUE PIC 999.
+       REPORT SECTION.
+       RD REPORT-1
+           CONTROL IS TEST-GROUP
+           PAGE LIMIT 12 LINES.
+       01 RW-DETAIL TYPE DE.
+           02 LINE PLUS 1.
+               03 GRP COLUMN 1 PIC 9   SOURCE TEST-GROUP.
+               03 VAL COLUMN 4 PIC ZZ9 SOURCE TEST-VALUE.
+       01 RW-FOOT TYPE CF TEST-GROUP.
+           02 LINE PLUS 1.
+               03 COLUMN 1      PIC X(6) VALUE "-  ---".
+           02 LINE PLUS 1.
+               03 COLUMN 1      PIC 9 SOURCE TEST-GROUP.
+               03 S-MM COLUMN 4 PIC ZZ9   
+                                SUM TEST-VALUE
+                                RESET TEST-GROUP
+                                .
+           02 LINE PLUS 1 PIC X VALUE SPACE.
+       PROCEDURE DIVISION.
+       DECLARATIVES.
+       DECL-RPT SECTION.
+           USE BEFORE REPORTING RW-FOOT.
+               DISPLAY "Decl RW-FOOT: " S-MM. 
+           END DECLARATIVES.
+       MAIN-LINE SECTION.
+           OPEN OUTPUT REPORT-FILE.
+           INITIATE REPORT-1
+           PERFORM VARYING N FROM 1 BY 1 UNTIL N > 6
+                 MOVE TEST-ENTRY (N) TO REPORT-ENTRY
+                 GENERATE RW-DETAIL
+           END-PERFORM
+           TERMINATE REPORT-1
+           CLOSE REPORT-FILE
+           STOP RUN.
+           END PROGRAM prog.
+])
+
+AT_CHECK([$COMPILE -std=default -debug prog.cob ], [0], [], [])
+
+AT_CHECK([export PRINTOUT=report.txt
+$COBCRUN_DIRECT ./prog], [0], [Decl RW-FOOT:   6
+Decl RW-FOOT:  15
+], [])
+
+
+AT_CAPTURE_FILE(./report.txt)
+
+AT_DATA([reference], [1    1
+1    2
+1    3
+-  ---
+1    6
+
+2    4
+2    5
+2    6
+-  ---
+2   15
+
+])
+
+AT_CHECK([gcdiff reference report.txt], [0], [], [])
+
+AT_CLEANUP
+

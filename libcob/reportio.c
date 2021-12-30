@@ -931,9 +931,95 @@ print_field(cob_report_field *rf, char *rec)
  * GENERATE one report-line
  */
 static void
-report_line (cob_report *r, cob_report_line *l)
+copy_line_fields (cob_report *r, cob_report_line *l, int doset)
 {
 	cob_report_field *rf,*nrf,*prf;
+	cob_file	*f;
+	char		*rec;
+
+	if (l == NULL)
+		return;
+	f = r->report_file;
+	rec = (char *)f->record->data;
+	if (rec == NULL)
+		return;
+	/*
+	 * Copy fields to print line area
+	 */
+	for(rf = l->fields; rf; rf = rf->next) {
+		if((rf->flags & COB_REPORT_GROUP_ITEM)) {
+			if(rf->suppress) {
+				/* group item SUPPRESSed printing, so skip to next field */
+				if (doset)
+					rf->suppress = FALSE;
+				prf = rf;
+				for(nrf = rf->next; nrf && nrf->level > rf->level; nrf = nrf->next) {
+					prf = nrf;
+				}
+				if(prf) {
+					rf = prf;	/* Continue from here */
+					continue;
+				}
+				break;			/* No more so, end of print line */
+			}
+			continue;			/* Group items are not printed */
+		}
+		if ((rf->flags & COB_REPORT_PRESENT)
+		 && !rf->present_now) {
+			continue;
+		}
+		if(rf->suppress 
+		|| rf->group_indicate) {
+			if (rf->step_count > 0)
+				memset (&rec[rf->column-1], ' ', rf->step_count);
+			continue;
+		}
+		if(rf->from.data) {		/* Copy source field in */
+			cob_move(&rf->from,rf->f);
+			print_field(rf, rec);
+		} else if(rf->sum) {		/* Copy SUM field in */
+			cob_move(rf->sum,rf->f);
+			print_field(rf, rec);
+		} else if(rf->litval) {		/* Refresh literal value */
+			memcpy(&rec[rf->column-1], rf->litval, rf->litlen);
+		} else if(rf->f) {
+			print_field(rf, rec);
+		}
+		if (doset
+		 && (rf->flags & COB_REPORT_GROUP_INDICATE)) {	/* Suppress subsequent printings */
+			rf->group_indicate = TRUE;
+		}
+	}
+}
+
+static void
+copy_fields (cob_report *r, cob_report_line *l, int doset)
+{
+	if (l == NULL
+	 || l->suppress)
+		return;
+	
+	if((l->flags & COB_REPORT_LINE)
+	|| l->child == NULL) {
+		copy_line_fields (r,l,doset);
+	}
+	if (!(l->flags & COB_REPORT_PRESENT)
+	 && l->child) {
+		copy_fields (r,l->child,doset);
+	}
+	if(l->sister) {
+		copy_fields (r,l->sister,doset);
+	}
+	return;
+}
+
+/*
+ * GENERATE one report-line
+ */
+static void
+report_line (cob_report *r, cob_report_line *l)
+{
+	cob_report_field *rf;
 	cob_file	*f = r->report_file;
 	char		*rec,wrk[COB_SMALL_BUFF];
 	int		bChkLinePlus = FALSE;
@@ -1060,51 +1146,7 @@ report_line (cob_report *r, cob_report_line *l)
 				memset (l->f->data, ' ', l->f->size);
 			}
 		}
-		/*
-		 * Copy fields to print line area
-		 */
-		for(rf = l->fields; rf; rf = rf->next) {
-			if((rf->flags & COB_REPORT_GROUP_ITEM)) {
-				if(rf->suppress) {
-					/* group item SUPPRESSed printing, so skip to next field */
-					rf->suppress = FALSE;
-					prf = rf;
-					for(nrf = rf->next; nrf && nrf->level > rf->level; nrf = nrf->next) {
-						prf = nrf;
-					}
-					if(prf) {
-						rf = prf;	/* Continue from here */
-						continue;
-					}
-					break;			/* No more so, end of print line */
-				}
-				continue;			/* Group items are not printed */
-			}
-			if ((rf->flags & COB_REPORT_PRESENT)
-			 && !rf->present_now) {
-				continue;
-			}
-			if(rf->suppress 
-			|| rf->group_indicate) {
-				if (rf->step_count > 0)
-					memset (&rec[rf->column-1], ' ', rf->step_count);
-				continue;
-			}
-			if(rf->from.data) {		/* Copy source field in */
-				cob_move(&rf->from,rf->f);
-				print_field(rf, rec);
-			} else if(rf->sum) {		/* Copy SUM field in */
-				cob_move(rf->sum,rf->f);
-				print_field(rf, rec);
-			} else if(rf->litval) {		/* Refresh literal value */
-				memcpy(&rec[rf->column-1], rf->litval, rf->litlen);
-			} else if(rf->f) {
-				print_field(rf, rec);
-			}
-			if((rf->flags & COB_REPORT_GROUP_INDICATE)) {	/* Suppress subsequent printings */
-				rf->group_indicate = TRUE;
-			}
-		}
+		copy_line_fields (r, l, 1);
 	}
 	if (!(l->flags &  COB_REPORT_LINE)
 	 && l->line == 0) {
@@ -1306,9 +1348,6 @@ zero_all_counters(cob_report *r, int	flag, cob_report_line *l)
 					&& rr->ref_line != l
 					&& rr->ref_line != sl
 					&& l != get_print_line(rr->ref_line)) {
-						DEBUG_LOG("rw",("%s LINE not found for %s; flag 0x%X; 0x%X, %p != %p 0x%X\n",
-										rc->name,sc->name,flag,
-										rr->ref_line->flags,rr->ref_line,l,l->flags)); 
 						continue;
 					}
 					if(rr->ref_line
@@ -1516,6 +1555,9 @@ static	cob_report_line		*pl;
 		for(rr = rc->control_ref; rr; rr = rr->next) {
 			if(rr->ref_line->flags & COB_REPORT_CONTROL_FOOTING) {
 				if(rr->ref_line->use_decl) {
+					if(!rc->suppress) {
+						copy_fields (r, rr->ref_line, 0);
+					}
 					DEBUG_LOG("rw",("  Return for %s Footing Declaratives %d; case %d\n",
 							rc->name,rr->ref_line->use_decl,rr->ref_line->use_source));
 					r->exec_source = rr->ref_line->use_source;
@@ -1777,8 +1819,11 @@ PrintFirstHeading:
 				for(rr = rc->control_ref; rr; rr = rr->next) {
 					if(rr->ref_line->flags & COB_REPORT_CONTROL_FOOTING) {
 						if(rr->ref_line->use_decl) {
-							DEBUG_LOG("rw",("  Return for %s Footing Declaratives %d; case %d\n",
+							if(!rc->suppress)
+								copy_fields (r, rr->ref_line, 0);
+							DEBUG_LOG("rw",("1: Return for %s Footing Declaratives %d; case %d\n",
 									rc->name,rr->ref_line->use_decl,rr->ref_line->use_source));
+							sl = l;
 							r->exec_source = rr->ref_line->use_source;
 							r->go_label = 3;
 							return 1;	/* Back for DECLARATIVES */
@@ -1786,7 +1831,9 @@ PrintFirstHeading:
 						pl = get_print_line(rr->ref_line);
 						if(pl != rr->ref_line
 						&& (pl->use_decl || pl->use_source)) {
-							DEBUG_LOG("rw",("  Return for %s Footing Declaratives %d; case %d\n",
+							if(!rc->suppress)
+								copy_fields (r, rr->ref_line, 0);
+							DEBUG_LOG("rw",("2: Return for %s Footing Declaratives %d; case %d\n",
 									rc->name,pl->use_decl,pl->use_source));
 							sl = l;
 							r->exec_source = pl->use_source;
@@ -1862,6 +1909,7 @@ PrintHeading:
 
 	sum_all_detail(r);			/* SUM detail counters */
 	if(l == NULL)	{			/* GENERATE <report-name> */
+		DEBUG_LOG("rw",(" Note line NULL\n"));
 
 	} else if(l->suppress) {
 		l->suppress = FALSE;

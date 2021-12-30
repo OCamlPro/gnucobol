@@ -1,4 +1,8 @@
 
+2021-12-30  Ron Norman <rjn@inglenet.com>
+
+	* reportio.c: Move data fields before invoking DECLARATIVES code
+
 2021-12-29  Ron Norman <rjn@inglenet.com>
 
 	* reportio.c: Process CONTROL Headings in opposite order to Footings

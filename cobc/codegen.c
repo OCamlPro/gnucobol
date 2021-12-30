@@ -10619,9 +10619,8 @@ output_report_sum_counters (const int top, struct cb_field *f, struct cb_report 
 	}
 	if(f->report_flag & COB_REPORT_RESET_FINAL)
 		output_local(" RESET ON FINAL ");
-	if(f->report_reset) {
-		x = CB_VALUE(f->report_reset);
-		output_local(" RESET ON %s ",cb_code_field(x)->name);
+	if (f->report_reset) {
+		output_local(" RESET ON %s ",cb_code_field(f->report_reset)->name);
 	}
 	output_local("*/\n");
 	ctl_foot = sub_ttl = cross_foot = 0;
