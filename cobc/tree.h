@@ -1284,10 +1284,11 @@ struct cb_initialize {
 
 struct cb_search {
 	struct cb_tree_common	common;		/* Common values */
-	cb_tree			table;		/* Table name */
-	cb_tree			var;		/* Varying */
-	cb_tree			end_stmt;	/* AT END */
-	cb_tree			whens;		/* WHEN */
+	cb_tree			table;		/* Reference to table name */
+	cb_tree			var;		/* VARYING field */
+	cb_tree			at_end;		/* AT END (pair of position and statements) */
+	cb_tree			whens;		/* WHEN (conditions and statements)
+	       			      		   [for not SEARCH ALL: list of those] */
 	int			flag_all;	/* SEARCH ALL */
 };
 

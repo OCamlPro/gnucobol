@@ -1,4 +1,23 @@
 
+2021-12-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (table_name): check for KEY phrase in SEARCH ALL
+	* parser.y (end_perform_or_dot): fix terminator cleanup, previously freed the
+	  wrong cb_tree
+	* parser.y, scanner.l: distinguish between tokens END / AT_END,
+	  ESCAPE / ON_ESCAPE, EXCEPTION / ON_EXCEPTION and
+	  renamed tokens NOT_END -> NOT_AT_END, NOT_ON_EXCEPTION -> NOT_EXCEPTION,
+	  NOT_OVERFLOW -> NOT_ON_OVERFLOW, NOT_ESCAPE -> NOT_ON_ESCAPE
+	* codegen.c (output_search_all): add WHEN tracing, to keep performance only
+	  done after the actual execution
+	* codegen.c (output_search_whens): add SEARCH VARYING tracing
+	* tree.h (struct cb_search), tree.c (cb_build_search), parser.y,
+	  typeck.c (cb_emit_search, cb_emit_search_all),
+	  codegen.c (output_search_whens, output_search_all): renamed end_stmt in
+	  cb_search to at_end, storing pair of AT END (position) and statements
+	* codegen.c (output_search_whens, output_search_all): adjust output of
+	  source references for better debugging experience and add AT END tracing
+
 2021-12-14  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (print_fields), codegen.c (output_field_display): only check for

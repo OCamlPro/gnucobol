@@ -3705,7 +3705,7 @@ AT_CLEANUP
 
 
 AT_SETUP([CALL C with callback, ENTRY-CONVENTION EXTERN])
-AT_KEYWORDS([runmisc CALL-CONVENTION LINKAGE])
+AT_KEYWORDS([runmisc CALL-CONVENTION LINKAGE OPTIONS])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -6539,13 +6539,21 @@ AT_CLEANUP
 # and    -fsource-location, which is implied by -debug/g
 AT_SETUP([READY TRACE / RESET TRACE])
 AT_KEYWORDS([runmisc -ftrace -ftraceall -fsource-location
-CALL RECURSIVE RETURN-CODE
+CALL RECURSIVE RETURN-CODE SEARCH
 COB_PHYSICAL_CANCEL COB_PRE_LOAD])
 
 AT_DATA([caller.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      caller.
-      *
+      *>
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 ttab.
+          03 tentries   PIC 9 VALUE 0.
+          03 tentry     OCCURS 0 TO 5    DEPENDING ON tentries
+                        ASCENDING KEY tkey INDEXED BY tidx.
+             05 tkey    pic x(3).
+      *>
        PROCEDURE        DIVISION.
            READY TRACE
            MOVE 1 TO RETURN-CODE
@@ -6560,6 +6568,41 @@ AT_DATA([caller.cob], [
            CANCEL "callee1"
            CALL "callrec"
            MOVE 0 TO RETURN-CODE
+      *>
+           SEARCH ALL tentry
+              AT END
+                 ADD  1    TO tentries
+                 SET  tidx TO tentries
+                 MOVE 'A'  TO tkey(tidx)
+              WHEN tkey(tidx) = 'A'
+                 DISPLAY '*Magic*'
+           END-SEARCH
+      *> tidx is still one, expect a direct find
+           SEARCH tentry
+              AT END
+                 DISPLAY '*Dark Magic*'
+              WHEN tkey(tidx) = 'A'
+                 ADD  1    TO tentries
+                 SET  tidx TO tentries
+                 MOVE 'B'  TO tkey(tidx)
+           END-SEARCH
+      *> tidx is still two, expect end
+           SEARCH tentry
+              VARYING tidx
+              AT END
+                 ADD  1    TO tentries
+                 SET  tidx TO tentries
+                 MOVE 'C'  TO tkey(tidx)
+              WHEN tkey(tidx) = 'A'
+                 DISPLAY '* Darker Magic *'
+           END-SEARCH           
+           SEARCH ALL tentry
+              AT END
+                 DISPLAY 'NO COMMENT'
+              WHEN tkey(tidx) = 'C'
+                 CONTINUE
+           END-SEARCH
+      *>
            STOP RUN.
 ])
 
@@ -6596,7 +6639,7 @@ AT_DATA([callee1.cob], [
            END-EVALUATE
            CALL "callee2"  END-CALL
            CANCEL "callee2"  CALL "callee2b" END-CALL  CANCEL "callee2b"
-           SUBTRACT 1 FROM RETURN-CODE END-SUBTRACT
+           SUBTRACT 1 FROM RETURN-CODE
            EXIT PROGRAM.
 ])
 
@@ -6667,7 +6710,7 @@ AT_DATA([callee2c.cob], [
        END-PAR.
            EXIT PROGRAM.
        OTHER-SEC SECTION.
-           COMPUTE RETURN-CODE = 1 + 2 END-COMPUTE.
+           COMPUTE RETURN-CODE = 1 + 2.
        EX. EXIT.
 ])
 
@@ -6685,10 +6728,10 @@ AT_CHECK([COB_OLD_TRACE=y \
 $COBC -x -o prog -ftraceall caller.cob], [0], [], [])
 AT_CHECK([COB_PHYSICAL_CANCEL=1 COB_PRE_LOAD="preload"$PATHSEP"preload2" $COBCRUN_DIRECT ./prog], [0], [],
 [Source :    'caller.cob'
-Program-Id: caller           Statement: MOVE                   Line: 7
-Program-Id: caller           Statement: RESET TRACE            Line: 8
-Program-Id: caller           Statement: MOVE                   Line: 12
-Program-Id: caller           Statement: CALL                   Line: 13
+Program-Id: caller           Statement: MOVE                   Line: 15
+Program-Id: caller           Statement: RESET TRACE            Line: 16
+Program-Id: caller           Statement: MOVE                   Line: 20
+Program-Id: caller           Statement: CALL                   Line: 21
 Source:     'callee1.cob'
 Program-Id: callee1          Entry:     callee1                Line: 5
 Program-Id: callee1          Section:   (None)                 Line: 5
@@ -6731,7 +6774,7 @@ Program-Id: callee1          Statement: SUBTRACT               Line: 34
 Program-Id: callee1          Statement: EXIT PROGRAM           Line: 35
 Program-Id: callee1          Exit:      callee1
 Source :    'caller.cob'
-Program-Id: caller           Statement: CALL                   Line: 15
+Program-Id: caller           Statement: CALL                   Line: 23
 Source:     'callee1.cob'
 Program-Id: callee1          Entry:     callee1                Line: 5
 Program-Id: callee1          Section:   (None)                 Line: 5
@@ -6774,8 +6817,8 @@ Program-Id: callee1          Statement: SUBTRACT               Line: 34
 Program-Id: callee1          Statement: EXIT PROGRAM           Line: 35
 Program-Id: callee1          Exit:      callee1
 Source :    'caller.cob'
-Program-Id: caller           Statement: CANCEL                 Line: 16
-Program-Id: caller           Statement: CALL                   Line: 17
+Program-Id: caller           Statement: CANCEL                 Line: 24
+Program-Id: caller           Statement: CALL                   Line: 25
 Source:     'preload2.cob'
 Program-Id: callrec          Entry:     callrec                Line: 10
 Program-Id: callrec          Section:   SOME-SEC               Line: 10
@@ -6792,8 +6835,28 @@ Program-Id: callrec          Exit:      callrec
 Program-Id: callrec          Statement: GOBACK                 Line: 15
 Program-Id: callrec          Exit:      callrec
 Source :    'caller.cob'
-Program-Id: caller           Statement: MOVE                   Line: 18
-Program-Id: caller           Statement: STOP RUN               Line: 19
+Program-Id: caller           Statement: MOVE                   Line: 26
+Program-Id: caller           Statement: SEARCH ALL             Line: 28
+Program-Id: caller           Statement: AT END                 Line: 29
+Program-Id: caller           Statement: ADD                    Line: 30
+Program-Id: caller           Statement: SET                    Line: 31
+Program-Id: caller           Statement: MOVE                   Line: 32
+Program-Id: caller           Statement: SEARCH                 Line: 37
+Program-Id: caller           Statement: WHEN                   Line: 40
+Program-Id: caller           Statement: ADD                    Line: 41
+Program-Id: caller           Statement: SET                    Line: 42
+Program-Id: caller           Statement: MOVE                   Line: 43
+Program-Id: caller           Statement: SEARCH                 Line: 46
+Program-Id: caller           Statement: WHEN                   Line: 52
+Program-Id: caller           Statement: SEARCH VARYING         Line: 47
+Program-Id: caller           Statement: AT END                 Line: 48
+Program-Id: caller           Statement: ADD                    Line: 49
+Program-Id: caller           Statement: SET                    Line: 50
+Program-Id: caller           Statement: MOVE                   Line: 51
+Program-Id: caller           Statement: SEARCH ALL             Line: 55
+Program-Id: caller           Statement: WHEN                   Line: 58
+Program-Id: caller           Statement: CONTINUE               Line: 59
+Program-Id: caller           Statement: STOP RUN               Line: 62
 ])
 
 AT_CHECK([$COBC -ftraceall callee1.cob], [0], [], [])
@@ -6805,10 +6868,10 @@ AT_CHECK([$COBC -x -o prog -ftraceall caller.cob], [0], [], [])
 AT_CHECK([COB_PHYSICAL_CANCEL=1 COB_PRE_LOAD="preload"$PATHSEP"preload2" $COBCRUN_DIRECT ./prog], [0], [],
 [Source: 'caller.cob'
 Program-Id:  caller
-Program-Id:  caller                      MOVE                            Line:      7
-Program-Id:  caller                      RESET TRACE                     Line:      8
-Program-Id:  caller                      MOVE                            Line:     12
-Program-Id:  caller                      CALL                            Line:     13
+Program-Id:  caller                      MOVE                            Line:     15
+Program-Id:  caller                      RESET TRACE                     Line:     16
+Program-Id:  caller                      MOVE                            Line:     20
+Program-Id:  caller                      CALL                            Line:     21
 Source: 'callee1.cob'
 Program-Id:  callee1
 Program-Id:  callee1              Entry: callee1                         Line:      5
@@ -6845,7 +6908,7 @@ Program-Id:  callee1                     EXIT PROGRAM                    Line:  
 Program-Id:  callee1               Exit: callee1                         Line:     35
 Source: 'caller.cob'
 Program-Id:  caller
-Program-Id:  caller                      CALL                            Line:     15
+Program-Id:  caller                      CALL                            Line:     23
 Source: 'callee1.cob'
 Program-Id:  callee1
 Program-Id:  callee1              Entry: callee1                         Line:      5
@@ -6882,8 +6945,8 @@ Program-Id:  callee1                     EXIT PROGRAM                    Line:  
 Program-Id:  callee1               Exit: callee1                         Line:     35
 Source: 'caller.cob'
 Program-Id:  caller
-Program-Id:  caller                      CANCEL                          Line:     16
-Program-Id:  caller                      CALL                            Line:     17
+Program-Id:  caller                      CANCEL                          Line:     24
+Program-Id:  caller                      CALL                            Line:     25
 Source: 'preload2.cob'
 Program-Id:  callrec
 Program-Id:  callrec              Entry: callrec                         Line:     10
@@ -6900,15 +6963,35 @@ Program-Id:  callrec                     GOBACK                          Line:  
 Program-Id:  callrec               Exit: callrec                         Line:     15
 Source: 'caller.cob'
 Program-Id:  caller
-Program-Id:  caller                      MOVE                            Line:     18
-Program-Id:  caller                      STOP RUN                        Line:     19
+Program-Id:  caller                      MOVE                            Line:     26
+Program-Id:  caller                      SEARCH ALL                      Line:     28
+Program-Id:  caller                      AT END                          Line:     29
+Program-Id:  caller                      ADD                             Line:     30
+Program-Id:  caller                      SET                             Line:     31
+Program-Id:  caller                      MOVE                            Line:     32
+Program-Id:  caller                      SEARCH                          Line:     37
+Program-Id:  caller                      WHEN                            Line:     40
+Program-Id:  caller                      ADD                             Line:     41
+Program-Id:  caller                      SET                             Line:     42
+Program-Id:  caller                      MOVE                            Line:     43
+Program-Id:  caller                      SEARCH                          Line:     46
+Program-Id:  caller                      WHEN                            Line:     52
+Program-Id:  caller                      SEARCH VARYING                  Line:     47
+Program-Id:  caller                      AT END                          Line:     48
+Program-Id:  caller                      ADD                             Line:     49
+Program-Id:  caller                      SET                             Line:     50
+Program-Id:  caller                      MOVE                            Line:     51
+Program-Id:  caller                      SEARCH ALL                      Line:     55
+Program-Id:  caller                      WHEN                            Line:     55
+Program-Id:  caller                      CONTINUE                        Line:     59
+Program-Id:  caller                      STOP RUN                        Line:     62
 ])
 
 AT_CLEANUP
 
 
 AT_SETUP([Trace feature with subroutine])
-AT_KEYWORDS([Trace])
+#AT_KEYWORDS([Trace])
 
 # FIXME: check if the one above is enough and either
 #        remove this test or exchange by a non-IDX version
@@ -10850,7 +10933,7 @@ libcob: warning: cob_put_field_str: attempt to over-write constant field with 'B
 AT_CLEANUP
 
 
-AT_SETUP([DEFAULT ROUNDED MODE])
+AT_SETUP([OPTIONS paragraph, DEFAULT ROUNDED MODE])
 AT_KEYWORDS([runmisc])
 
 AT_DATA([prog.cob], [

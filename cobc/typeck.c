@@ -11912,6 +11912,7 @@ cb_emit_rollback (void)
 
 /* SEARCH statement */
 
+/* SEARCH ALL with the given key */
 static unsigned int
 search_set_keys (struct cb_field *f, cb_tree x)
 {
@@ -12034,8 +12035,10 @@ cb_emit_search (cb_tree table, cb_tree varying, cb_tree at_end, cb_tree whens)
 		return;
 	}
 	whens = cb_list_reverse (whens);
-	cb_emit (cb_build_search (0, table, varying,
-				  cb_check_needs_break (at_end), whens));
+	if (at_end) {
+		cb_check_needs_break (CB_PAIR_Y (at_end));
+	}
+	cb_emit (cb_build_search (0, table, varying, at_end, whens));
 }
 
 void
@@ -12054,8 +12057,10 @@ cb_emit_search_all (cb_tree table, cb_tree at_end, cb_tree when, cb_tree stmts)
 	}
 
 	stmt_lis = cb_check_needs_break (stmts);
-	cb_emit (cb_build_search (1, table, NULL,
-				  cb_check_needs_break (at_end),
+	if (at_end) {
+		cb_check_needs_break (CB_PAIR_Y (at_end));
+	}
+	cb_emit (cb_build_search (1, table, NULL, at_end,
 				  cb_build_if (x, stmt_lis, NULL, 0)));
 }
 

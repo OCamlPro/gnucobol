@@ -6006,7 +6006,7 @@ cb_build_initialize (const cb_tree var, const cb_tree val, const cb_tree rep,
 
 cb_tree
 cb_build_search (const int flag_all, const cb_tree table, const cb_tree var,
-		 const cb_tree end_stmt, const cb_tree whens)
+		 const cb_tree at_end, const cb_tree whens)
 {
 	struct cb_search *p;
 
@@ -6015,7 +6015,7 @@ cb_build_search (const int flag_all, const cb_tree table, const cb_tree var,
 	p->flag_all = flag_all;
 	p->table = table;
 	p->var = var;
-	p->end_stmt = end_stmt;
+	p->at_end = at_end;
 	p->whens = whens;
 	return CB_TREE (p);
 }

@@ -2260,6 +2260,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token ASCII
 %token ASSIGN
 %token AT
+%token AT_END				"AT END"
 %token ATTRIBUTE
 %token ATTRIBUTES
 %token AUTHOR	/* remark: not used here */
@@ -2772,13 +2773,13 @@ set_record_size (cb_tree min, cb_tree max)
 %token NOTIFY_CHANGE	"NOTIFY-CHANGE"
 %token NOTIFY_DBLCLICK	"NOTIFY-DBLCLICK"
 %token NOTIFY_SELCHANGE	"NOTIFY-SELCHANGE"
-%token NOT_END			"NOT END"
-%token NOT_EOP			"NOT EOP"
-%token NOT_ESCAPE		"NOT ESCAPE"
+%token NOT_AT_END		"NOT AT END"
+%token NOT_EOP			"NOT AT EOP"
+%token NOT_ON_ESCAPE		"NOT ON ESCAPE"
 %token NOT_EQUAL		"NOT EQUAL"
-%token NOT_EXCEPTION		"NOT EXCEPTION"
+%token NOT_ON_EXCEPTION		"NOT ON EXCEPTION"
 %token NOT_INVALID_KEY		"NOT INVALID KEY"
-%token NOT_OVERFLOW		"NOT OVERFLOW"
+%token NOT_ON_OVERFLOW		"NOT ON OVERFLOW"
 %token NOT_SIZE_ERROR		"NOT SIZE ERROR"
 %token NUM_COL_HEADINGS	"NUM-COL-HEADINGS"
 %token NUM_ROWS			"NUM-ROWS"
@@ -2796,6 +2797,8 @@ set_record_size (cb_tree min, cb_tree max)
 %token OMITTED
 %token ON
 %token ONLY
+%token ON_ESCAPE		"ON ESCAPE"
+%token ON_EXCEPTION		"ON EXCEPTION"
 %token OPEN
 %token OPTIONAL
 %token OPTIONS
@@ -3237,12 +3240,12 @@ set_record_size (cb_tree min, cb_tree max)
 %nonassoc WRITE
 %nonassoc XML
 
-%nonassoc NOT_END END
+%nonassoc NOT_AT_END AT_END END
 %nonassoc NOT_EOP EOP
 %nonassoc NOT_INVALID_KEY INVALID_KEY
-%nonassoc NOT_OVERFLOW TOK_OVERFLOW
+%nonassoc NOT_ON_OVERFLOW TOK_OVERFLOW
 %nonassoc NOT_SIZE_ERROR SIZE_ERROR
-%nonassoc NOT_EXCEPTION EXCEPTION NOT_ESCAPE ESCAPE
+%nonassoc NOT_ON_EXCEPTION ON_EXCEPTION EXCEPTION NOT_ON_ESCAPE ON_ESCAPE ESCAPE
 %nonassoc NO_DATA DATA
 
 %nonassoc END_ACCEPT
@@ -11751,7 +11754,7 @@ _call_on_exception:
 ;
 
 call_on_exception:
-  EXCEPTION statement_list
+  on_exception statement_list
   {
 	$$ = $2;
   }
@@ -11774,7 +11777,7 @@ _call_not_on_exception:
 ;
 
 call_not_on_exception:
-  NOT_EXCEPTION statement_list
+  NOT_ON_EXCEPTION statement_list
   {
 	$$ = $2;
   }
@@ -14239,14 +14242,14 @@ _end_perform:
 end_perform_or_dot:
   END_PERFORM
   {
-	TERMINATOR_CLEAR ($-3, PERFORM);
+	TERMINATOR_CLEAR ($-5, PERFORM);
   }
 | TOK_DOT
   {
 	if (cb_relaxed_syntax_checks) {
-		TERMINATOR_WARNING ($-3, PERFORM);
+		TERMINATOR_WARNING ($-5, PERFORM);
 	} else {
-		TERMINATOR_ERROR ($-3, PERFORM);
+		TERMINATOR_ERROR ($-5, PERFORM);
 	}
 	/* Put the dot token back into the stack for reparse */
 	cb_unput_dot ();
@@ -14547,7 +14550,7 @@ _read_key:
 
 read_handler:
   _invalid_key_phrases
-| at_end
+| read_at_end
 ;
 
 _end_read:
@@ -14759,35 +14762,51 @@ search_statement:
   }
   search_body
   _end_search
+| SEARCH ALL
+  {
+	begin_statement ("SEARCH ALL", TERM_SEARCH);
+  }
+  search_all_body
+  _end_search
 ;
 
 search_body:
-  table_name search_varying search_at_end search_whens
+  table_name _search_varying _search_at_end
+  search_whens
   {
 	cb_emit_search ($1, $2, $3, $4);
   }
-| ALL table_name search_at_end WHEN expr
+;
+
+search_all_body:
+  table_name _search_at_end
+  WHEN expr
   statement_list
   {
-	current_statement->name = (const char *)"SEARCH ALL";
-	cb_emit_search_all ($2, $3, $5, $6);
+	cb_emit_search_all ($1, $2, $4, $5);
   }
 ;
 
-search_varying:
+_search_varying:
   /* empty */			{ $$ = NULL; }
 | VARYING identifier		{ $$ = $2; }
 ;
 
-search_at_end:
+_search_at_end:
   /* empty */
   {
 	$$ = NULL;
   }
-| END
+| at_end end_pos_token
   statement_list
   {
-	$$ = $2;
+	$$ = CB_BUILD_PAIR ($2, $3);
+  }
+;
+
+end_pos_token:
+  {
+	$$ = cb_build_comment ("AT END");
   }
 ;
 
@@ -15112,7 +15131,8 @@ sort_statement:
 ;
 
 sort_body:
-  table_identifier _sort_key_list _sort_duplicates _sort_collating
+  table_identifier	/* may reference a file or a table */
+  _sort_key_list _sort_duplicates _sort_collating
   {
 	cb_tree		x = cb_ref ($1);
 
@@ -15328,14 +15348,11 @@ start_op:
 | _flag_not lt		{ $$ = cb_int ($1 ? COB_GE : COB_LT); }
 | _flag_not ge		{ $$ = cb_int ($1 ? COB_LT : COB_GE); }
 | _flag_not le		{ $$ = cb_int ($1 ? COB_GT : COB_LE); }
-| disallowed_op		{ $$ = cb_int (COB_NE); }
-;
-
-disallowed_op:
-  not_equal_op
+| not_equal_op
   {
 	cb_error_x (CB_TREE (current_statement),
-		    _("NOT EQUAL condition not allowed on START statement"));
+		_("NOT EQUAL condition not allowed on START statement"));
+	$$ = cb_int (COB_NE);
   }
 ;
 
@@ -16540,8 +16557,8 @@ accp_on_exception:
 ;
 
 escape_or_exception:
-  ESCAPE
-| EXCEPTION
+  on_escape
+| on_exception
 ;
 
 _accp_not_on_exception:
@@ -16558,8 +16575,8 @@ accp_not_on_exception:
 ;
 
 not_escape_or_not_exception:
-  NOT_ESCAPE
-| NOT_EXCEPTION
+  NOT_ON_ESCAPE
+| NOT_ON_EXCEPTION
 ;
 
 
@@ -16587,7 +16604,7 @@ _common_on_exception:
 ;
 
 common_on_exception:
-  EXCEPTION statement_list
+  on_exception statement_list
   {
 	current_statement->handler_type = get_handler_type_from_statement(current_statement);
 	current_statement->ex_handler = $2;
@@ -16600,7 +16617,7 @@ _common_not_on_exception:
 ;
 
 common_not_on_exception:
-  NOT_EXCEPTION statement_list
+  NOT_ON_EXCEPTION statement_list
   {
 	current_statement->handler_type = get_handler_type_from_statement (current_statement);
 	current_statement->not_ex_handler = $2;
@@ -16692,7 +16709,7 @@ _not_on_overflow:
 ;
 
 not_on_overflow:
-  NOT_OVERFLOW statement_list
+  NOT_ON_OVERFLOW statement_list
   {
 	current_statement->handler_type = OVERFLOW_HANDLER;
 	current_statement->not_ex_handler = $2;
@@ -16710,7 +16727,7 @@ return_at_end:
   }
 ;
 
-at_end:
+read_at_end:
   %prec SHIFT_PREFER
   at_end_clause _not_at_end_clause
 | not_at_end_clause _at_end_clause
@@ -16733,7 +16750,7 @@ _at_end_clause:
 ;
 
 at_end_clause:
-  END statement_list
+  at_end statement_list
   {
 	current_statement->handler_type = AT_END_HANDLER;
 	current_statement->ex_handler = $2;
@@ -16746,7 +16763,7 @@ _not_at_end_clause:
 ;
 
 not_at_end_clause:
-  NOT_END statement_list
+  NOT_AT_END statement_list
   {
 	current_statement->handler_type = AT_END_HANDLER;
 	current_statement->not_ex_handler = $2;
@@ -17218,6 +17235,11 @@ table_name:
 		$$ = cb_error_node;
 	} else if (!CB_FIELD (x)->index_list) {
 		cb_error_x ($1, _("'%s' not indexed"), cb_name ($1));
+		cb_note_x (COB_WARNOPT_NONE, x, _("'%s' defined here"), cb_name (x));
+		$$ = cb_error_node;
+	} else if (CB_FIELD (x)->nkeys == 0
+	        && strcmp(current_statement->name, "SEARCH ALL") == 0) {
+		cb_error_x ($1, _("SEARCH ALL requires KEY phrase"));
 		cb_note_x (COB_WARNOPT_NONE, x, _("'%s' defined here"), cb_name (x));
 		$$ = cb_error_node;
 	} else {
@@ -18793,6 +18815,9 @@ _exception:	  %prec SHIFT_PREFER | EXCEPTION ;
 
 /* Mandatory selection */
 
+at_end:				AT_END | END ;
+on_escape:			ON_ESCAPE | ESCAPE;
+on_exception:		ON_EXCEPTION | EXCEPTION;
 column_or_col:		COLUMN | COL ;
 columns_or_cols:	COLUMNS | COLS ;
 column_or_cols:		column_or_col | columns_or_cols ;

@@ -279,6 +279,7 @@ static void output_param	(cb_tree, int);
 static void output_funcall	(cb_tree);
 static void output_report_summed_field (struct cb_field *);
 
+static void output_trace_info	(cb_tree, const char *);
 static void output_source_reference (cb_tree, const char *);
 
 static void codegen_init (struct cb_program *, const char *);
@@ -5423,13 +5424,11 @@ output_occurs (struct cb_field *p)
 }
 
 static void
-output_search_whens (cb_tree table, struct cb_field *p, cb_tree stmt,
+output_search_whens (cb_tree table, struct cb_field *p, cb_tree at_end,
 						cb_tree var, cb_tree whens)
 {
 	cb_tree		l;
 	cb_tree		idx = NULL;
-
-	COB_UNUSED(table);	/* to be handled later */
 
 	/* LCOV_EXCL_START */
 	if (!p->index_list) {
@@ -5452,6 +5451,7 @@ output_search_whens (cb_tree table, struct cb_field *p, cb_tree stmt,
 	}
 
 	/* Start loop */
+	last_line = -1; /* force statement reference output at begin of loop */
 	output_line ("for (;;) {");
 	output_indent_level += 2;
 
@@ -5463,20 +5463,40 @@ output_search_whens (cb_tree table, struct cb_field *p, cb_tree stmt,
 	output_occurs (p);
 	output (")");
 	output_newline ();
-	output_block_open ();
 	output_line ("/* Table end */");
-	if (stmt) {
-		output_stmt (stmt);
+	output_block_open ();
+	if (at_end) {
+		output_source_reference (CB_PAIR_X (at_end), "AT END");
+		output_stmt (CB_PAIR_Y (at_end));
 	} else {
+		/* position is best guess here */
+		table->source_line++;
+		output_source_reference (table, "AT END");
+		table->source_line--;
 		output_line ("break;");
 	}
 	output_block_close ();
 
 	/* WHEN test */
 	output_stmt (whens);
+	output_newline ();
 
 	/* Iteration */
-	output_newline ();
+	{
+		/* Output source location as code,
+		   especially for tracking adjustment of the index */
+		if (var) {
+			output_source_reference (var, "SEARCH VARYING");
+		} else {
+			/* output_source_reference is correct here but as we don't want
+			   to trace internal code temporary disable source_location
+			   because 3.x includes trace code */
+			int sav_fsl = cb_flag_source_location;
+			cb_flag_source_location = 0;
+			output_source_reference (table, "SEARCH VARYING internal");
+			cb_flag_source_location = sav_fsl;
+		}
+	}
 	output_prefix ();
 	output_integer (idx);
 	output ("++;");
@@ -5484,19 +5504,16 @@ output_search_whens (cb_tree table, struct cb_field *p, cb_tree stmt,
 	if (var && var != idx) {
 		output_move (idx, var);
 	}
-	output_line ("/* Iterate */");
 	/* End loop */
 	output_indent_level -= 2;
 	output_line ("}");
 }
 
 static void
-output_search_all (cb_tree table, struct cb_field *p, cb_tree stmt,
-					cb_tree cond, cb_tree when)
+output_search_all (cb_tree table, struct cb_field *p, cb_tree at_end,
+					cb_tree when_cond, cb_tree when_stmts)
 {
 	cb_tree		idx;
-
-	COB_UNUSED(table);	/* to be handled later */
 
 	idx = CB_VALUE (p->index_list);
 	/* Header */
@@ -5515,23 +5532,42 @@ output_search_all (cb_tree table, struct cb_field *p, cb_tree stmt,
 	output_occurs (p);
 	output (" == 0) head = tail;");
 	output_newline ();
+	output_newline ();
 
 	/* Start loop */
+	last_line = -1; /* force statement reference output at begin of loop */
 	output_line ("for (;;)");
 	output_block_open ();
 
 	/* End test */
 	output_line ("if (head >= tail - 1)");
-	output_block_open ();
 	output_line ("/* Table end */");
-	if (stmt) {
-		output_stmt (stmt);
+	output_block_open ();
+	if (at_end) {
+		output_source_reference (CB_PAIR_X (at_end), "AT END");
+		output_stmt (CB_PAIR_Y (at_end));
 	} else {
+		/* position is best guess here */
+		table->source_line++;
+		output_source_reference (table, "AT END");
+		table->source_line--;
 		output_line ("break;");
 	}
 	output_block_close ();
+	output_newline ();
 
 	/* Next index */
+	{
+		/* Output source location as code,
+		   especially for tracking adjustment of the index */
+		/* output_source_reference is correct here but as we don't want
+			to trace internal code temporary disable source_location
+			because 3.x includes trace code */
+		int sav_fsl = cb_flag_source_location;
+		cb_flag_source_location = 0;
+		output_source_reference (table, "SEARCH VARYING internal");
+		cb_flag_source_location = sav_fsl;
+	}
 	output_prefix ();
 	output_integer (idx);
 	output (" = (head + tail) / 2;");
@@ -5539,16 +5575,33 @@ output_search_all (cb_tree table, struct cb_field *p, cb_tree stmt,
 	output_newline ();
 
 	/* WHEN test */
-	output_line ("/* WHEN */");
+	{
+		/* output_source_reference is correct here but due to 3.x
+		   having source_location including trace code it would
+		   heavily reduce SEARCH ALL performance
+		   --> so temporary disable that here */
+		int sav_fsl = cb_flag_source_location;
+		cb_flag_source_location = 0;
+		output_source_reference (when_cond, "WHEN");
+		cb_flag_source_location = sav_fsl;
+	}
 	output_prefix ();
 	output ("if (");
-	output_cond (cond, 1);
+	output_cond (when_cond, 1);
 	output (")");
 	output_newline ();
 	output_block_open ();
-	output_stmt (when);
+	if (cb_flag_traceall || cb_old_trace) {
+		/* Output trace info */
+		/* note: this actually belongs only before the condition, but
+		   for the trace code we add it here again */
+		output_trace_info (when_cond, "WHEN");
+	}
+	output_stmt (when_stmts);
 	output_block_close ();
+	output_newline ();
 
+	output_line ("/* setup for next binary search position */");
 	output_line ("if (ret < 0)");
 	output_prefix ();
 	output ("  head = ");
@@ -5573,10 +5626,10 @@ output_search (struct cb_search *p)
 	/* TODO: Add run-time checks for the table, including ODO */
 
 	if (p->flag_all) {
-		output_search_all (p->table, fp, p->end_stmt,
+		output_search_all (p->table, fp, p->at_end,
 				   CB_IF (p->whens)->test, CB_IF (p->whens)->stmt1);
 	} else {
-		output_search_whens (p->table, fp, p->end_stmt, p->var, p->whens);
+		output_search_whens (p->table, fp, p->at_end, p->var, p->whens);
 	}
 }
 
@@ -7091,6 +7144,7 @@ output_perform (struct cb_perform *p)
 		output_newline ();
 		loop_counter++;
 		output_block_open ();
+		last_line = -1; /* force statement reference output at begin of loop */
 		output_perform_once (p);
 		output_block_close ();
 		break;
@@ -7117,6 +7171,7 @@ output_perform (struct cb_perform *p)
 	case CB_PERFORM_FOREVER:
 		output_line ("for (;;)");
 		output_block_open ();
+		last_line = -1; /* force statement reference output at begin of loop */
 		output_perform_once (p);
 		output_block_close ();
 		break;
@@ -7494,7 +7549,7 @@ output_cobol_info (cb_tree x)
 	const char	*p = x->source_file;
 	output ("#line %d \"", x->source_line);
 	while(*p){
-		if( *p == '\\' ){
+		if (*p == '\\') {
 			output("%c",'\\');
 		}
 	output("%c",*p++);
@@ -7575,7 +7630,6 @@ output_section_info (struct cb_label *lp)
 	}
 }
 
-
 static void
 output_trace_info (cb_tree x, const char *name)
 {
@@ -7648,10 +7702,10 @@ output_source_reference (cb_tree tree, const char *stmt_name)
 				COB_SET_LINE_FILE(tree->source_line, lookup_source(tree->source_file)));
 		}
 	}
-	if (last_line != tree->source_line) {
-		/* Output source location as code */
-		output_line_and_trace_info (tree, stmt_name);
-	}
+	/* Output source location as code */
+	output_line_and_trace_info (tree, stmt_name);
+
+	last_line = tree->source_line;
 }
 
 static void
@@ -7922,8 +7976,8 @@ output_stmt (cb_tree x)
 			   FIXME: postpone to actual DEBUGGING procedure,
 			          using module->module_stmt there
 			*/
-			if (current_prog->flag_gen_debug &&
-			    !p->flag_in_debug) {
+			if (current_prog->flag_gen_debug
+			 && !p->flag_in_debug) {
 				output_prefix ();
 				output ("memcpy (");
 				output_data (cb_debug_line);
@@ -8247,10 +8301,8 @@ output_stmt (cb_tree x)
 				}
 			} else if (ip->test->source_line) {
 				output_line ("/* Line: %-10d: WHEN */", ip->test->source_line);
-				if (last_line != ip->test->source_line) {
-					/* Output source location as code */
-					output_line_and_trace_info (ip->test, "WHEN");
-				}
+				/* Output source location as code */
+				output_line_and_trace_info (ip->test, "WHEN");
 			} else {
 				output_line ("/* WHEN */");
 			}
