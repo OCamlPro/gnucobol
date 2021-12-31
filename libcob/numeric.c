@@ -1854,16 +1854,28 @@ void
 cob_decimal_add (cob_decimal *d1, cob_decimal *d2)
 {
 	DECIMAL_CHECK (d1, d2);
-	align_decimal (d1, d2);
-	mpz_add (d1->value, d1->value, d2->value);
+	if (d1->scale != d2->scale) {
+		mpz_set (cob_d2.value, d2->value);
+		cob_d2.scale = d2->scale;
+		align_decimal (d1, &cob_d2);
+		mpz_add (d1->value, d1->value, cob_d2.value);
+	} else {
+		mpz_add (d1->value, d1->value, d2->value);
+	}
 }
 
 void
 cob_decimal_sub (cob_decimal *d1, cob_decimal *d2)
 {
 	DECIMAL_CHECK (d1, d2);
-	align_decimal (d1, d2);
-	mpz_sub (d1->value, d1->value, d2->value);
+	if (d1->scale != d2->scale) {
+		mpz_set (cob_d2.value, d2->value);
+		cob_d2.scale = d2->scale;
+		align_decimal (d1, &cob_d2);
+		mpz_sub (d1->value, d1->value, cob_d2.value);
+	} else {
+		mpz_sub (d1->value, d1->value, d2->value);
+	}
 }
 
 void
@@ -1909,7 +1921,14 @@ cob_decimal_div (cob_decimal *d1, cob_decimal *d2)
 int
 cob_decimal_cmp (cob_decimal *d1, cob_decimal *d2)
 {
-	align_decimal (d1, d2);
+	if (d1->scale != d2->scale) {
+		mpz_set (cob_d1.value, d1->value);
+		cob_d1.scale = d1->scale;
+		mpz_set (cob_d2.value, d2->value);
+		cob_d2.scale = d2->scale;
+		align_decimal (&cob_d1, &cob_d2);
+		return mpz_cmp (cob_d1.value, cob_d2.value);
+	}
 	return mpz_cmp (d1->value, d2->value);
 }
 
