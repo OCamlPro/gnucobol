@@ -454,7 +454,7 @@ shift_decimal (cob_decimal *d, const int n)
 		cob_pow_10 (cob_mexp, n);
 		mpz_mul (d->value, d->value, cob_mexp);
 	} else {
-		mpz_ui_pow_ui (cob_mexp, 10UL, (cob_uli_t)-n);
+		cob_pow_10 (cob_mexp, -n);
 		mpz_tdiv_q (d->value, d->value, cob_mexp);
 	}
 	d->scale += n;
@@ -803,7 +803,7 @@ cob_decimal_set_double (cob_decimal *d, const double v)
 	if (len >= 0) {
 		d->scale = len;
 	} else {
-		mpz_ui_pow_ui (cob_mexp, 10UL, (cob_uli_t)-len);
+		cob_pow_10 (cob_mexp, -len);
 		mpz_mul (d->value, d->value, cob_mexp);
 		d->scale = 0;
 	}
@@ -1259,12 +1259,12 @@ cob_decimal_set_display (cob_decimal *d, cob_field *f)
 	data = COB_FIELD_DATA (f);
 	size = COB_FIELD_SIZE (f);
 	if (*data == 255) {
-		mpz_ui_pow_ui (d->value, 10UL, (cob_uli_t)size);
+		cob_pow_10 (d->value, size);
 		d->scale = COB_FIELD_SCALE(f);
 		return;
 	}
 	if (*data == 0) {
-		mpz_ui_pow_ui (d->value, 10UL, (cob_uli_t)size);
+		cob_pow_10 (d->value, size);
 		mpz_neg (d->value, d->value);
 		d->scale = COB_FIELD_SCALE(f);
 		return;
