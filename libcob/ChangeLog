@@ -1,8 +1,12 @@
 
+2021-12-31  Ron Norman <rjn@inglenet.com>
+
+	* numeric.c: Speed up cob_decimal_add, cob_decimal_sub, cob_decimal_cmp
+				Use the powers of 10 table instead of recomputing
+
 2021-12-30  Ron Norman <rjn@inglenet.com>
 
 	* reportio.c: Move data fields before invoking DECLARATIVES code
-	* numeric.c: Speed up cob_decimal_add, cob_decimal_sub, cob_decimal_cmp
 
 2021-12-29  Ron Norman <rjn@inglenet.com>
 
