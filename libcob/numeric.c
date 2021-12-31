@@ -389,15 +389,6 @@ cob_pow_10 (mpz_t mexp, int n)
 	}
 }
 
-/* Decimal <-> Decimal */
-
-static COB_INLINE COB_A_INLINE void
-cob_decimal_set (cob_decimal *dst, const cob_decimal *src)
-{
-	mpz_set (dst->value, src->value);
-	dst->scale = src->scale;
-}
-
 /* Decimal print, note: currently (GC3.1) only called by display/dump
    code from termio.c (cob_display) via cob_print_ieeedec) */
 static void
@@ -1892,6 +1883,15 @@ cob_decimal_sub (cob_decimal *d1, cob_decimal *d2)
 	}
 }
 
+/* Decimal <-> Decimal */
+
+void
+cob_decimal_copy (cob_decimal *dst, cob_decimal *src)
+{
+	mpz_set (dst->value, src->value);
+	dst->scale = src->scale;
+}
+
 void
 cob_decimal_mul (cob_decimal *d1, cob_decimal *d2)
 {
@@ -2009,7 +2009,8 @@ cob_div_quotient (cob_field *dividend, cob_field *divisor,
 
 	cob_decimal_set_field (&cob_d1, dividend);
 	cob_decimal_set_field (&cob_d2, divisor);
-	cob_decimal_set (&cob_d_remainder, &cob_d1);
+	mpz_set (cob_d_remainder.value, cob_d1.value);
+	cob_d_remainder.scale = cob_d1.scale;
 
 	/* Compute quotient */
 	cob_decimal_div (&cob_d1, &cob_d2);
@@ -2021,7 +2022,8 @@ cob_div_quotient (cob_field *dividend, cob_field *divisor,
 	}
 
 	/* Set quotient */
-	cob_decimal_set (&cob_d3, &cob_d1);
+	mpz_set (cob_d3.value, cob_d1.value);
+	cob_d3.scale = cob_d1.scale;
 	(void)cob_decimal_get_field (&cob_d1, quotient, opt);
 
 	/* Truncate digits from the quotient */
