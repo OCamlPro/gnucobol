@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2021 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -472,31 +472,45 @@ cob_decimal_adjust (cob_decimal *d, mpz_t max_value, int min_exp, int max_exp)
 	   below are done, according to callgrind, 4,633,961 times each and take
 	   quite some time - can we improve this without overal performance drop? */
 	if (mpz_cmpabs (d->value, max_value) > 0) {
-		/* Adjust by 100000000 to get close */
-		while (mpz_cmpabs (d->value, max_value) > 0
-		    && mpz_divisible_ui_p (d->value, 100000000UL)) {	
-			if (d->scale-8 < min_exp)
-				break;
-			/* CHECKME: TEST above: ~20% computation time */
-			mpz_tdiv_q_ui (d->value, d->value, 100000000UL);
-			d->scale -= 8;
+#ifndef COB_32_BIT_LONG
+		while ((d->scale - 18) >= min_exp
+			&& mpz_divisible_ui_p (d->value, 1000000000000000000UL)
+			&& mpz_cmpabs (d->value, max_value) > 0) {
+			mpz_divexact_ui (d->value, d->value, 1000000000000000000UL);
+			d->scale -= 18;
 		}
-		/* Adjust by 1000 to get close */
-		while (mpz_cmpabs (d->value, max_value) > 0
-		    && mpz_divisible_ui_p (d->value, 1000UL)) {
-			if (d->scale-3 < min_exp)
-				break;
-			/* CHECKME: TEST above: ~70% computation time */
-			mpz_tdiv_q_ui (d->value, d->value, 1000UL);
+		while ((d->scale - 13) >= min_exp
+			&& mpz_divisible_ui_p (d->value, 10000000000000UL)
+			&& mpz_cmpabs (d->value, max_value) > 0) {
+			mpz_divexact_ui (d->value, d->value, 10000000000000UL);
+			d->scale -= 13;
+		}
+#endif
+		while ((d->scale - 9) >= min_exp
+			&& mpz_divisible_ui_p (d->value, 1000000000UL)
+			&& mpz_cmpabs (d->value, max_value) > 0) {
+			mpz_divexact_ui (d->value, d->value, 1000000000UL);
+			d->scale -= 9;
+		}
+		while ((d->scale - 6) >= min_exp
+			&& mpz_divisible_ui_p (d->value, 1000000UL)
+			&& mpz_cmpabs (d->value, max_value) > 0) {
+			mpz_divexact_ui (d->value, d->value, 1000000UL);
+			d->scale -= 6;
+		}
+		while ((d->scale - 3) >= min_exp
+			&& mpz_divisible_ui_p (d->value, 1000UL)
+			&& mpz_cmpabs (d->value, max_value) > 0) {
+			mpz_divexact_ui (d->value, d->value, 1000UL);
 			d->scale -= 3;
 		}
 	}
 	/* Remove trailing ZEROS */
-	while (mpz_divisible_ui_p (d->value, 10UL)
+	while (mpz_divisible_ui_p (d->value, 10U)
 	    || mpz_cmpabs (d->value, max_value) > 0) {
 		if (d->scale < min_exp)
 			break;
-		mpz_tdiv_q_ui (d->value, d->value, 10UL);
+		mpz_tdiv_q_ui (d->value, d->value, 10U);
 		d->scale--;
 	}
 	if (mpz_cmpabs (d->value, max_value) > 0

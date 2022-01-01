@@ -1,4 +1,8 @@
 
+2022-01-01  Ron Norman <rjn@inglenet.com>
+
+	* numeric.c: Speed up cob_decimal_adjust routine
+
 2021-12-31  Ron Norman <rjn@inglenet.com>
 
 	* numeric.c: Speed up cob_decimal_add, cob_decimal_sub, cob_decimal_cmp
