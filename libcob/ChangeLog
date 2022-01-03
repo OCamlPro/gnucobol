@@ -2,6 +2,7 @@
 2022-01-03  Simon Sobisch <simonsobisch@gnu.org>
 
 	* coblocal.h, common.h: moved some internal limits to coblocal.h
+	* fileio.c, common.h: moved COB_CHAR_xxx to fileio.c
 
 2022-01-01  Ron Norman <rjn@inglenet.com>
 
@@ -29,7 +30,7 @@
 
 	* common.h: Added flag_do_rollback
 	* fileio.c: If flag_do_rollback is set then all WRITE/DELETE/REWRITE
-				to be done regardless of file open mode
+	  to be done regardless of file open mode
 
 2021-12-08  Ron Norman <rjn@inglenet.com>
 
@@ -38,7 +39,7 @@
 
 2021-12-05  Ron Norman <rjn@inglenet.com>
 
-	* fileio.c,coblocal.h: Removed unused/unsettable variable cob_ls_uses_cr
+	* fileio.c, coblocal.h: Removed unused/unsettable variable cob_ls_uses_cr
 
 2021-11-28  Ron Norman <rjn@inglenet.com>
 

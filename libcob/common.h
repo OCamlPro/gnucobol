@@ -575,23 +575,6 @@ only usable with COB_USE_VC2013_OR_GREATER */
 #define ONCE_COB while (0)
 #endif
 
-
-/* Define some characters for checking LINE SEQUENTIAL data content */
-#define COB_CHAR_CR	'\r'
-#define COB_CHAR_FF	'\f'
-#define COB_CHAR_LF	'\n'
-#define COB_CHAR_SPC	' '
-#define COB_CHAR_TAB	'\t'
-#ifdef COB_EBCDIC_MACHINE
-#define COB_CHAR_BS	0x16
-#define COB_CHAR_ESC	0x27
-#define COB_CHAR_SI	0x0F
-#else
-#define COB_CHAR_BS	0x08
-#define COB_CHAR_ESC	0x1B
-#define COB_CHAR_SI	0x0F
-#endif
-
 /* Macro to prevent unused parameter warning */
 
 #define	COB_UNUSED(z)	do { (void)(z); } ONCE_COB
