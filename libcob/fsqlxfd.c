@@ -19,8 +19,6 @@
 */
 
 
-/* Force symbol exports */
-#define	COB_LIB_EXPIMP
 #include "fileio.h"
 
 #if defined(WITH_ODBC) || defined(WITH_OCI) || defined(WITH_DB) || defined(WITH_LMDB)

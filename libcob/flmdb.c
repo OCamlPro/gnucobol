@@ -18,8 +18,6 @@
    along with GnuCOBOL.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/* Force symbol exports */
-#define	COB_LIB_EXPIMP
 #include "fileio.h"
 
 #ifdef HAVE_SYS_SYSMACROS_H

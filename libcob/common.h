@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2021 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2022 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -555,9 +555,13 @@ only usable with COB_USE_VC2013_OR_GREATER */
 
 /* End compiler stuff */
 
-/* TODO: move everything not needed here to coblocal.h */
-#ifdef HAVE_CONFIG_H
-#include "config.h"
+
+/* EBCDIC determination */
+
+#if ' ' == 0x40
+#define	COB_EBCDIC_MACHINE
+#else
+#undef	COB_EBCDIC_MACHINE
 #endif
 
 /* Macro to prevent compiler warning "conditional expression is constant" */
@@ -633,22 +637,7 @@ only usable with COB_USE_VC2013_OR_GREATER */
 /* Maximum exponent digits (both in literals and floating-point numeric-edited item */
 #define COB_FLOAT_DIGITS_MAX         36
 
-/* Maximum bytes in a single/group field,
-   which doesn't contain UNBOUNDED items */
-/* TODO: add compiler configuration for limiting this */
-#ifndef COB_64_BIT_POINTER
-#define	COB_MAX_FIELD_SIZE	268435456
-#else
-#define	COB_MAX_FIELD_SIZE	2147483646
-#endif
-
-/* Maximum bytes in an unbounded table entry
-   (IBM: old 999999998, current 999999999) */
-#ifndef COB_64_BIT_POINTER
-#define	COB_MAX_UNBOUNDED_SIZE	999999999
-#else
-#define	COB_MAX_UNBOUNDED_SIZE	2147483646
-#endif
+/* note: more (internal-only) limits in coblocal.h */
 
 /* Maximum number of cob_decimal structures */
 #define	COB_MAX_DEC_STRUCT	32
@@ -817,7 +806,7 @@ enum cob_fatal_error {
 
 enum cob_exception_id {
 	COB_EC_ZERO = 0,
-#include <libcob/exception.def>
+#include "exception.def"	/* located and installed next to common.h */
 	COB_EC_MAX
 };
 

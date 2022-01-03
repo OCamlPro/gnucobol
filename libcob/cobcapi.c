@@ -30,7 +30,6 @@
 #include <stddef.h>
 #include <stdarg.h>
 #include <string.h>
-#include <errno.h>
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -43,7 +42,7 @@
 
 /* Force symbol exports */
 #define	COB_LIB_EXPIMP
-#include "libcob.h"
+#include "common.h"
 #include "coblocal.h"
 #include "cobcapi.h"
 

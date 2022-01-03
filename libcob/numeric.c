@@ -61,7 +61,7 @@
 #else
 #error either HAVE_GMP_H or HAVE_MPIR_H needs to be defined
 #endif
-#include "libcob.h"
+#include "common.h"
 #include "coblocal.h"
 
 

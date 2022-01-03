@@ -67,7 +67,7 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)..\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\$(TargetName)\</IntDir>
-    <IncludePath>$(SolutionDir)..;$(SolutionDir)..\..;$(SolutionDir)..\..\libcob;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..;$(SolutionDir)..\..;$(IncludePath)</IncludePath>
     <LibraryPath>$(OutDir);$(OutDir)..;$(LibraryPath)</LibraryPath>
     <TargetName>$(ProjectName)-5</TargetName>
   </PropertyGroup>
@@ -76,14 +76,14 @@
     <OutDir>$(SolutionDir)..\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\$(TargetName)\</IntDir>
     <RunCodeAnalysis>true</RunCodeAnalysis>
-    <IncludePath>$(SolutionDir)..;$(SolutionDir)..\..;$(SolutionDir)..\..\libcob;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..;$(SolutionDir)..\..;$(IncludePath)</IncludePath>
     <LibraryPath>$(OutDir);$(OutDir)..;$(LibraryPath)</LibraryPath>
     <TargetName>$(ProjectName)-5</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)..\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\$(TargetName)\</IntDir>
-    <IncludePath>$(SolutionDir)..;$(SolutionDir)..\..;$(SolutionDir)..\..\libcob;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..;$(SolutionDir)..\..;$(IncludePath)</IncludePath>
     <LibraryPath>$(OutDir);$(OutDir)..;$(LibraryPath)</LibraryPath>
     <TargetName>$(ProjectName)-5</TargetName>
   </PropertyGroup>
@@ -91,7 +91,7 @@
     <OutDir>$(SolutionDir)..\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\$(TargetName)\</IntDir>
     <RunCodeAnalysis>true</RunCodeAnalysis>
-    <IncludePath>$(SolutionDir)..;$(SolutionDir)..\..;$(SolutionDir)..\..\libcob;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..;$(SolutionDir)..\..;$(IncludePath)</IncludePath>
     <LibraryPath>$(OutDir);$(OutDir)..;$(LibraryPath)</LibraryPath>
     <LinkIncremental>false</LinkIncremental>
     <TargetName>$(ProjectName)-5</TargetName>

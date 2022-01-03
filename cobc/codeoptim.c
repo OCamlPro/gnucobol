@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2006-2012, 2013, 2017-2021 Free Software Foundation, Inc.
+   Copyright (C) 2006-2012, 2013, 2017-2022 Free Software Foundation, Inc.
    Written by Roger While, Ron Norman, Simon Sobisch
 
    This file is part of GnuCOBOL.

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2021 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch,
    Edward Hart, Ron Norman, Dave Pitts
 
@@ -31,10 +31,10 @@
 #include <strings.h>
 #endif
 
-#include "libcob.h"
+#include "../libcob/common.h"
 
 #ifdef	ENABLE_NLS
-#include "gettext.h"	/* from lib/ */
+#include "../lib/gettext.h"
 #define _(s)		gettext(s)
 #define N_(s)		gettext_noop(s)
 #else

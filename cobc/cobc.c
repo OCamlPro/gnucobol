@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2021 Free Software Foundation, Inc.
+   Copyright (C) 2001-2022 Free Software Foundation, Inc.
 
    Authors:
    Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch, Brian Tiffin,
@@ -23,6 +23,7 @@
 
 /* #define DEBUG_REPLACE */
 
+#include "tarstamp.h"
 #include "config.h"
 
 #include <stdio.h>
@@ -55,14 +56,11 @@
 
 #include <limits.h>
 
-#include "tarstamp.h"
 
 #include "cobc.h"
 #include "tree.h"
 
-#include "lib/gettext.h"
-
-#include "libcob/cobgetopt.h"
+#include "../libcob/cobgetopt.h"
 
 #ifdef COB_INTERNAL_XREF
 enum xref_type {
@@ -200,7 +198,7 @@ cob_u32_t		optimize_defs[COB_OPTIM_MAX] = { 0 };
 #define	COB_EXCEPTION(code,tag,name,critical) {name, 0x##code, 0},
 struct cb_exception cb_exception_table[] = {
 	{NULL, 0, 0},		/* CB_EC_ZERO */
-#include "libcob/exception.def"
+#include "../libcob/exception.def"
 	{NULL, 0, 0}		/* CB_EC_MAX */
 };
 #undef	COB_EXCEPTION
@@ -2269,7 +2267,7 @@ static void
 cobc_print_version (void)
 {
 	printf ("cobc (%s) %s.%d\n", PACKAGE_NAME, PACKAGE_VERSION, PATCH_LEVEL);
-	puts ("Copyright (C) 2021 Free Software Foundation, Inc.");
+	puts ("Copyright (C) 2022 Free Software Foundation, Inc.");
 	printf (_("License GPLv3+: GNU GPL version 3 or later <%s>"), "https://gnu.org/licenses/gpl.html");
 	putchar ('\n');
 	puts (_("This is free software; see the source for copying conditions.  There is NO\n"

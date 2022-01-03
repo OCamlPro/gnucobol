@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2021 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2022 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -26,7 +26,7 @@
 #define cobsetptr file_setptr
 
 #ifndef _CONFIG_H
-#include <config.h>
+#include "config.h"
 #define _CONFIG_H
 #endif
 
@@ -123,7 +123,7 @@ int fdatasync(int fd);
 
 /* Force symbol exports */
 #define	COB_LIB_EXPIMP
-#include "libcob.h"
+#include "common.h"
 #include "coblocal.h"
 
 #ifdef	WORDS_BIGENDIAN

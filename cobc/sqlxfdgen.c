@@ -19,6 +19,7 @@
 */
 
 
+#include "tarstamp.h"
 #include "config.h"
 
 #include <stdio.h>
@@ -29,8 +30,6 @@
 #include <ctype.h>
 #include <time.h>
 #include <limits.h>
-
-#include "tarstamp.h"
 
 #include "cobc.h"
 #include "tree.h"

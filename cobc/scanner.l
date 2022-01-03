@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2021 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Edwart Hart,
    Ron Norman
 

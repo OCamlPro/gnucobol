@@ -20,8 +20,6 @@
 
 /* this file handles the obsolete OpenCOBOL external file handlers */
 
-/* Force symbol exports */
-#define	COB_LIB_EXPIMP
 #include "fileio.h"
 
 #if defined(WITH_INDEX_EXTFH) || defined(WITH_SEQRA_EXTFH)

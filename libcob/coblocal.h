@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2007-2012, 2014-2021 Free Software Foundation, Inc.
+   Copyright (C) 2007-2012, 2014-2022 Free Software Foundation, Inc.
    Written by Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -45,7 +45,7 @@
 
 
 #ifdef ENABLE_NLS
-#include "gettext.h"	/* from lib/ */
+#include "../lib/gettext.h"
 #define _(s)		gettext(s)
 #define N_(s)		gettext_noop(s)
 #else
@@ -359,6 +359,24 @@ struct config_tbl {
 
 #define SETPOS(member)	offsetof(cob_settings,member),sizeof(cobsetptr->member),0,0
 
+/* max sizes */
+
+/* Maximum bytes in a single/group field,
+   which doesn't contain UNBOUNDED items */
+   /* TODO: add compiler configuration for limiting this */
+#ifndef COB_64_BIT_POINTER
+#define	COB_MAX_FIELD_SIZE	268435456
+#else
+#define	COB_MAX_FIELD_SIZE	2147483646
+#endif
+
+/* Maximum bytes in an unbounded table entry
+   (IBM: old 999999998, current 999999999) */
+#ifndef COB_64_BIT_POINTER
+#define	COB_MAX_UNBOUNDED_SIZE	999999999
+#else
+#define	COB_MAX_UNBOUNDED_SIZE	2147483646
+#endif
 
 /* Local function prototypes */
 COB_EXPIMP const char * cob_io_version	(const int, const int);

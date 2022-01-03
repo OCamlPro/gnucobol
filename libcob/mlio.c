@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2018-2021 Free Software Foundation, Inc.
+   Copyright (C) 2018-2022 Free Software Foundation, Inc.
    Written by Edward Hart, Simon Sobisch
 
    This file is part of GnuCOBOL.
@@ -28,7 +28,7 @@
 
 /* Force symbol exports */
 #define	COB_LIB_EXPIMP
-#include "libcob.h"
+#include "common.h"
 #include "coblocal.h"
 
 #if defined (WITH_XML2)
@@ -130,7 +130,7 @@ get_num (cob_field * const f, void * (*strndup_func)(const char *, size_t),
 	cob_field_attr	attr;
 	cob_field       edited_field;
 	char		*dp_pos;
-        void		*num;
+	void		*num;
 
 	/* Initialize attribute for nicely edited version of f */
 	attr.type = COB_TYPE_NUMERIC_EDITED;
@@ -262,12 +262,12 @@ static xmlChar *
 get_xml_name (const cob_field * const f)
 {
 	xmlChar	*name;
-	xmlChar	*underscore;
-	xmlChar	*name_with_underscore;
 
 	name = get_trimmed_xml_data (f);
 
 	if (name && !cob_is_xml_namestartchar (name[0])) {
+		xmlChar	*underscore;
+		xmlChar	*name_with_underscore;
 		underscore = xmlCharStrdup ("_");
 		if (underscore) {
 			name_with_underscore = xmlStrcat (underscore, name);

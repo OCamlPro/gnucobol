@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2012, 2014-2021 Free Software Foundation, Inc.
+   Copyright (C) 2003-2012, 2014-2022 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -122,7 +122,7 @@ lt_dlerror (void)
 
 /* Force symbol exports */
 #define	COB_LIB_EXPIMP
-#include "libcob.h"
+#include "common.h"
 #include "coblocal.h"
 
 #define	COB_MAX_COBCALL_PARMS	16
@@ -767,7 +767,7 @@ cob_encode_program_id (const unsigned char *const name,
 {
 	int pos = 0;
 	/* Encode the initial digit */
-	if (*name <= (unsigned char)'9' && *name >= (unsigned char)'0') {
+	if (isdigit(name[0])) {
 		name_buff[pos++] = (unsigned char)'_';
 	}
 	/* Encode invalid letters */
@@ -781,7 +781,7 @@ cob_encode_program_id (const unsigned char *const name,
 		break;
 	case COB_FOLD_UPPER:
 	{
-		unsigned char *p = name_buff;
+		unsigned char *p;
 		for (p = name_buff; *p; p++) {
 			if (islower (*p)) {
 				*p = (cob_u8_t)toupper (*p);
@@ -791,7 +791,7 @@ cob_encode_program_id (const unsigned char *const name,
 	}
 	case COB_FOLD_LOWER:
 	{
-		unsigned char *p = name_buff;
+		unsigned char *p;
 		for (p = name_buff; *p; p++) {
 			if (isupper (*p)) {
 				*p = (cob_u8_t)tolower (*p);

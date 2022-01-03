@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2021 Free Software Foundation, Inc.
+   Copyright (C) 2001-2022 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -247,7 +247,7 @@ static const unsigned char	cob_refer_ebcdic[256] = {
 #define	COB_SYSTEM_GEN(cob_name, pmin, pmax, c_name)	{ cob_name, pmin, pmax },
 
 static const struct system_table	system_tab[] = {
-#include "libcob/system.def"
+#include "../libcob/system.def"
 	{ NULL, 0, 0 }
 };
 

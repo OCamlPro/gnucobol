@@ -22,6 +22,15 @@
     <Filter Include="Auto Generated Files\Source Files">
       <UniqueIdentifier>{c9882a98-fcb9-40c5-be83-cca99b089812}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Auxiliary Compiler Files">
+      <UniqueIdentifier>{843a7032-6e87-4f74-925e-8574698c106c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Auxiliary Compiler Files\dialects">
+      <UniqueIdentifier>{a4e990ea-24a0-4539-b6bc-da196e9473b8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Auxiliary Compiler Files\copybooks">
+      <UniqueIdentifier>{05f178ca-efa3-41c6-9edf-1b702e6c7f60}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\cobc\cobc.c">
@@ -92,6 +101,114 @@
     </None>
     <None Include="..\..\libcob\system.def">
       <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\config\acu.conf">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\acu.words">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\acu-strict.conf">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\bs2000.conf">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\bs2000.words">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\bs2000-strict.conf">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\ChangeLog">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\cobol85.conf">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\cobol85.words">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\cobol2002.conf">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\cobol2002.words">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\cobol2014.conf">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\cobol2014.words">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\default.conf">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\ibm.conf">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\ibm.words">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\ibm-strict.conf">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\lax.conf-inc">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\mf.conf">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\mf.words">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\mf-strict.conf">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\mvs.conf">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\mvs.words">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\mvs-strict.conf">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\realia.conf">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\realia.words">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\realia-strict.conf">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\rm.conf">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\rm.words">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\rm-strict.conf">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\xopen.conf">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\copy\screenio.cpy">
+      <Filter>Auxiliary Compiler Files\copybooks</Filter>
+    </None>
+    <None Include="..\..\copy\sqlca.cpy">
+      <Filter>Auxiliary Compiler Files\copybooks</Filter>
+    </None>
+    <None Include="..\..\copy\sqlda.cpy">
+      <Filter>Auxiliary Compiler Files\copybooks</Filter>
+    </None>
+    <None Include="..\..\copy\xfhfcd.cpy">
+      <Filter>Auxiliary Compiler Files\copybooks</Filter>
+    </None>
+    <None Include="..\..\copy\ChangeLog">
+      <Filter>Auxiliary Compiler Files\copybooks</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

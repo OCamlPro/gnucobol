@@ -85,20 +85,18 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <CodeAnalysisRuleSet>NativeRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>true</RunCodeAnalysis>
-    <IncludePath>$(SolutionDir)..;$(SolutionDir)..\..;$(SolutionDir)..\..\cobc;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..;$(SolutionDir)..\..;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <CodeAnalysisRuleSet>NativeRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>true</RunCodeAnalysis>
-    <IncludePath>$(SolutionDir)..;$(SolutionDir)..\..;$(SolutionDir)..\..\cobc;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..;$(SolutionDir)..\..;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(SolutionDir)..;$(SolutionDir)..\..;$(SolutionDir)..\..\cobc;$(IncludePath)</IncludePath>
-    <CodeAnalysisRuleSet>NativeRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <IncludePath>$(SolutionDir)..;$(SolutionDir)..\..;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(SolutionDir)..;$(SolutionDir)..\..;$(SolutionDir)..\..\cobc;$(IncludePath)</IncludePath>
-    <CodeAnalysisRuleSet>NativeRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <IncludePath>$(SolutionDir)..;$(SolutionDir)..\..;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Midl>
@@ -295,6 +293,42 @@
     <None Include="..\..\cobc\ppparse.def" />
     <None Include="..\..\cobc\warning.def" />
     <None Include="..\..\cobc\ChangeLog" />
+    <None Include="..\..\config\acu-strict.conf" />
+    <None Include="..\..\config\acu.conf" />
+    <None Include="..\..\config\acu.words" />
+    <None Include="..\..\config\bs2000-strict.conf" />
+    <None Include="..\..\config\bs2000.conf" />
+    <None Include="..\..\config\bs2000.words" />
+    <None Include="..\..\config\ChangeLog" />
+    <None Include="..\..\config\cobol2002.conf" />
+    <None Include="..\..\config\cobol2002.words" />
+    <None Include="..\..\config\cobol2014.conf" />
+    <None Include="..\..\config\cobol2014.words" />
+    <None Include="..\..\config\cobol85.conf" />
+    <None Include="..\..\config\cobol85.words" />
+    <None Include="..\..\config\default.conf" />
+    <None Include="..\..\config\ibm-strict.conf" />
+    <None Include="..\..\config\ibm.conf" />
+    <None Include="..\..\config\ibm.words" />
+    <None Include="..\..\config\lax.conf-inc" />
+    <None Include="..\..\config\mf-strict.conf" />
+    <None Include="..\..\config\mf.conf" />
+    <None Include="..\..\config\mf.words" />
+    <None Include="..\..\config\mvs-strict.conf" />
+    <None Include="..\..\config\mvs.conf" />
+    <None Include="..\..\config\mvs.words" />
+    <None Include="..\..\config\realia-strict.conf" />
+    <None Include="..\..\config\realia.conf" />
+    <None Include="..\..\config\realia.words" />
+    <None Include="..\..\config\rm-strict.conf" />
+    <None Include="..\..\config\rm.conf" />
+    <None Include="..\..\config\rm.words" />
+    <None Include="..\..\config\xopen.conf" />
+    <None Include="..\..\copy\ChangeLog" />
+    <None Include="..\..\copy\screenio.cpy" />
+    <None Include="..\..\copy\sqlca.cpy" />
+    <None Include="..\..\copy\sqlda.cpy" />
+    <None Include="..\..\copy\xfhfcd.cpy" />
     <None Include="..\..\libcob\exception.def" />
     <None Include="..\..\libcob\system.def" />
   </ItemGroup>
