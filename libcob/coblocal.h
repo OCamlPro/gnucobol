@@ -54,8 +54,7 @@
 #endif
 
 
-#include <../libcob/cobinternal.h>
-#include "cobcapi.h"
+#include "cobinternal.h"
 
 #ifndef	F_OK
 #define	F_OK		0

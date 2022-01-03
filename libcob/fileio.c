@@ -38,6 +38,7 @@
 #define cobglobptr file_globptr
 #define cobsetptr file_setptr
 #include "fileio.h"
+#include "cobcapi.h"	/* for helper functions */
 #ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
 #endif
@@ -328,7 +329,9 @@ void cob_seqra_init_fileio (cob_file_api *);
 static int
 isdirvalid (char *filename)
 {
+#ifndef	_WIN32
 	struct stat st;
+#endif
 	char	tmp[COB_NORMAL_BUFF];
 	int		ln = strlen (filename);
 

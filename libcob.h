@@ -27,7 +27,7 @@ extern "C" {
 #endif
 
 #include "libcob/common.h"	/* below this (system) header file */
-#include <libcob/cobcapi.h>
+#include "libcob/cobcapi.h"
 
 #ifdef __cplusplus
 }

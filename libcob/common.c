@@ -134,11 +134,12 @@
 /* Force symbol exports */
 #define	COB_LIB_EXPIMP
 #include "common.h"
+#include "cobcapi.h"	/* for helper functions */
+
 #include "coblocal.h"
 
 #include "cobgetopt.h"
 #include "sysdefines.h"
-#include "cobcapi.h"
 
 /* sanity checks */
 #if COB_MAX_WORDLEN > 255
