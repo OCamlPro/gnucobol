@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2012, 2014-2017, 2019-2021 Free Software Foundation, Inc.
+   Copyright (C) 2003-2012, 2014-2017, 2019-2022 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch
 
    This file is part of GnuCOBOL.
@@ -19,7 +19,7 @@
 */
 
 
-#include <config.h>
+#include "config.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -424,6 +424,8 @@ cb_load_conf (const char *fname, const int prefix_dir)
 
 	/* Get the name for the configuration file */
 	if (prefix_dir) {
+		// CHECKME: would it be useful for at least MinGW to use "all slash"
+		//          if the first slash is a unix slash?
 		snprintf (buff, (size_t)COB_NORMAL_MAX,
 			  "%s%c%s", cob_config_dir, SLASH_CHAR, fname);
 		name = buff;
@@ -596,7 +598,7 @@ cb_config_entry (char *buff, const char *fname, const int line)
 			}
 			/* if explicit requested: disable */
 			if (strcmp (val, "default") == 0
-			    || strcmp (val, "off") == 0) {
+			 || strcmp (val, "off") == 0) {
 				*((const char **)var) = NULL;
 			} else {
 				*((const char **)var) = val;

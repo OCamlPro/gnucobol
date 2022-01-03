@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2021 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Dave Pitts
 
    This file is part of GnuCOBOL.
@@ -73,7 +73,7 @@ static int ppwrap (void) {
 	requires_listing_line = 1;					\
 	comment_allowed = 1;
 
-#include <config.h>
+#include "config.h"
 
 #ifdef	HAVE_UNISTD_H
 #include <unistd.h>

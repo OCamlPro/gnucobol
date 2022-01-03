@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2012, 2014-2021 Free Software Foundation, Inc.
+   Copyright (C) 2003-2012, 2014-2022 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -19,7 +19,7 @@
 */
 
 
-#include <config.h>
+#include "config.h"
 
 #ifndef	_GNU_SOURCE
 #define _GNU_SOURCE	1
@@ -116,7 +116,7 @@ lt_dlerror (void)
 
 /* Force symbol exports */
 #define	COB_LIB_EXPIMP
-#include "libcob.h"
+#include "common.h"
 #include "coblocal.h"
 
 #define	COB_MAX_COBCALL_PARMS	16
@@ -770,7 +770,7 @@ cob_encode_program_id (const unsigned char *const name,
 {
 	int pos = 0;
 	/* Encode the initial digit */
-	if (unlikely (*name <= (unsigned char)'9' && *name >= (unsigned char)'0')) {
+	if (unlikely (isdigit(name[0]))) {
 		name_buff[pos++] = (unsigned char)'_';
 	}
 	/* Encode invalid letters */
@@ -2042,6 +2042,7 @@ cob_get_field_str (const cob_field *f, char *buffer, size_t size)
 			unsigned char pretty = COB_MODULE_PTR->flag_pretty_display;
 			COB_MODULE_PTR->flag_pretty_display = 1;
 			cob_display_common (f, fp);
+			COB_MODULE_PTR->flag_pretty_display = pretty;
 #ifndef HAVE_FMEMOPEN
 			{
 				int cur_pos = ftell (fp);
@@ -2054,7 +2055,6 @@ cob_get_field_str (const cob_field *f, char *buffer, size_t size)
 			}
 #endif
 			fclose (fp);
-			COB_MODULE_PTR->flag_pretty_display = pretty;
 		}
 	}
 	return buffer;

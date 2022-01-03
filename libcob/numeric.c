@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2021 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -19,7 +19,7 @@
 */
 
 
-#include <config.h>
+#include "config.h"
 
 #ifndef	_GNU_SOURCE
 #define _GNU_SOURCE	1
@@ -61,7 +61,7 @@
 #else
 #error either HAVE_GMP_H or HAVE_MPIR_H needs to be defined
 #endif
-#include "libcob.h"
+#include "common.h"
 #include "coblocal.h"
 
 

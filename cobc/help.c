@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2021 Free Software Foundation, Inc.
+   Copyright (C) 2001-2022 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
    Brian Tiffin, Edward Hart, Dave Pitts
 
@@ -19,12 +19,11 @@
    along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <config.h>
+#include "config.h"
 
 #include <stdio.h>
 
 #include "cobc.h"
-#include "lib/gettext.h"
 
 void
 cobc_print_usage (char * prog)

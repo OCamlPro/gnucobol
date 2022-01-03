@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2005-2012, 2014-2021 Free Software Foundation, Inc.
+   Copyright (C) 2005-2012, 2014-2022 Free Software Foundation, Inc.
    Written by Roger While, Simon Sobisch, Edward Hart, Brian Tiffin
 
    This file is part of GnuCOBOL.
@@ -43,7 +43,7 @@
 #else
 #error either HAVE_GMP_H or HAVE_MPIR_H needs to be defined
 #endif
-#include "libcob.h"
+#include "common.h"
 #include "coblocal.h"
 
 /* Note we include the Cygwin version of windows.h here */

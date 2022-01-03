@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2010-2012, 2014-2016, 2018-2020 Free Software Foundation, Inc.
+   Copyright (C) 2010-2012, 2014-2016, 2018-2020, 2022 Free Software Foundation, Inc.
    Modified for use in GnuCOBOL by Roger While, Simon Sobisch
 */
 
@@ -21,7 +21,7 @@
    License along with the GNU C Library; if not, see
    <https://www.gnu.org/licenses/>.  */
 
-#include <config.h>
+#include "config.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -54,7 +54,7 @@
    non-option arguments as arguments to the option character '\x01'.  */
 
 #ifdef	ENABLE_NLS
-#include "lib/gettext.h"
+#include "../lib/gettext.h"
 #define _(msgid)		gettext(msgid)
 #define N_(msgid)		gettext_noop(msgid)
 #else
@@ -69,7 +69,7 @@
 
    /* Force symbol exports */
 #define	COB_LIB_EXPIMP
-#include "libcob.h"
+#include "common.h"
 
 #include "cobgetopt.h"
 

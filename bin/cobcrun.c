@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2004-2012, 2014-2021 Free Software Foundation, Inc.
+   Copyright (C) 2004-2012, 2014-2022 Free Software Foundation, Inc.
    Written by Roger While, Simon Sobisch, Brian Tiffin
 
    This file is part of GnuCOBOL.
@@ -18,6 +18,7 @@
    along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include "tarstamp.h"
 #include "config.h"
 
 #include <stdio.h>
@@ -32,10 +33,8 @@
 #include <unistd.h>
 #endif
 
-#include "libcob.h"
-#include "tarstamp.h"
-
-#include "libcob/cobgetopt.h"
+#include "../libcob/common.h"
+#include "../libcob/cobgetopt.h"
 
 static int arg_shift = 1;
 static int print_runtime_wanted = 0;
@@ -96,7 +95,7 @@ cobcrun_print_version (void)
 	}
 
 	printf ("cobcrun (%s) %s.%d\n", PACKAGE_NAME, PACKAGE_VERSION, PATCH_LEVEL);
-	puts ("Copyright (C) 2021 Free Software Foundation, Inc.");
+	puts ("Copyright (C) 2022 Free Software Foundation, Inc.");
 	printf (_("License GPLv3+: GNU GPL version 3 or later <%s>"), "https://gnu.org/licenses/gpl.html");
 	putchar ('\n');
 	puts (_("This is free software; see the source for copying conditions.  There is NO\n"

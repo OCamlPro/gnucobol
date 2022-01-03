@@ -1,12 +1,12 @@
 #include <windows.h>
 
-#include <tarstamp.h>
-#include <config.h>
+#include "tarstamp.h"
+#include "config.h"
 
 #define COB_WITHOUT_EXCEPTIONS
 #define COB_WITHOUT_JMP
-#include "libcob/common.h"
-#define VCS_REF 4209
+#include "../libcob/common.h"
+#define VCS_REF 4513
 
 #define STRINGIZE_DETAIL_(v) #v
 #define STRINGIZE(v) STRINGIZE_DETAIL_(v)
@@ -46,7 +46,7 @@ VS_VERSION_INFO    VERSIONINFO
       VALUE "FileDescription",  PACKAGE_NAME " module loader"
       VALUE "FileVersion",      STRINGIZE(__LIBCOB_VERSION)"."STRINGIZE(__LIBCOB_VERSION_MINOR)"."STRINGIZE(__LIBCOB_VERSION_PATCHLEVEL)"."STRINGIZE(VCS_REF)
       VALUE "InternalName",     "cobcrun"
-      VALUE "LegalCopyright",   "Copyright (C) 2004-2012, 2014-2021 Free Software Foundation, Inc."
+      VALUE "LegalCopyright",   "Copyright (C) 2004-2012, 2014-2022 Free Software Foundation, Inc."
       VALUE "LegalTrademarks",  "Module Loader: GNU General Public License v3 - see COPYING,\x0ADocumentation: GNU Free Documentation License."
       VALUE "OriginalFilename", "cobcrun.exe"
       VALUE "ProductName",      PACKAGE_NAME " module loader"
@@ -57,7 +57,7 @@ VS_VERSION_INFO    VERSIONINFO
       VALUE "SpecialBuild",     ""
 
       /* Non-Standard entries */
-      VALUE "Build",            "Mar 2021"
+      VALUE "Build",            "Jan 2022"
       VALUE "Developer",        "Roger While, Simon Sobisch, Brian Tiffin (see AUTHORS and THANKS)"
       VALUE "Support",          "https://www.gnu.org/software/gnucobol/"
       VALUE "Users",            "Unlimited."

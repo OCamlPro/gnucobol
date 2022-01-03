@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2020 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2020, 2022 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edwart Hard
 
@@ -20,7 +20,7 @@
 */
 
 
-#include <config.h>
+#include "config.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,7 +36,7 @@
 
 /* Force symbol exports */
 #define	COB_LIB_EXPIMP
-#include "libcob.h"
+#include "common.h"
 #include "coblocal.h"
 
 static cob_global	*cobglobptr;
@@ -1217,12 +1217,13 @@ cob_move (cob_field *src, cob_field *dst)
 {
 	int		opt;
 	cob_field	temp;
-	unsigned char	data[4];
+	unsigned char	data[2];
 
 	if (src == dst) {
 		return;
 	}
 	if (dst->size == 0) {
+		/* TODO: for dynamic sized items: allocate and go on */
 		return;
 	}
 	if (unlikely (src->size == 0)) {

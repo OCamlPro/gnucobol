@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2019 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2019, 2022 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch
 
    This file is part of GnuCOBOL.
@@ -26,7 +26,7 @@
 extern "C" {
 #endif
 
-#include <libcob/common.h>
+#include "libcob/common.h"	/* below this (system) header file */
 
 #ifdef __cplusplus
 }

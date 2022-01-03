@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2021 Free Software Foundation, Inc.
+   Copyright (C) 2003-2022 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
    Edward Hart
 
@@ -19,7 +19,7 @@
    along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-
+#include "tarstamp.h"
 #include "config.h"
 
 #include <stdio.h>
@@ -31,7 +31,6 @@
 #include <time.h>
 #include <limits.h>
 
-#include "tarstamp.h"
 
 #include "cobc.h"
 #include "tree.h"
@@ -255,7 +254,7 @@ static unsigned int		i_counters[COB_MAX_SUBSCRIPTS];
 #define	COB_SYSTEM_GEN(cob_name, pmin, pmax, c_name)	{ cob_name, #c_name, pmax },
 
 static const struct system_table	system_tab[] = {
-#include "libcob/system.def"
+#include "../libcob/system.def"
 	{ NULL, NULL, 0 }
 };
 

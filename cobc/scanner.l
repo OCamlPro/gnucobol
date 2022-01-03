@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2021 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Edwart Hart,
    Ron Norman
 
@@ -80,7 +80,7 @@ static int yywrap (void) {
 		pic_buff2 = cobc_malloc (pic2_size);		\
 	}
 
-#include <config.h>
+#include "config.h"
 
 #include <ctype.h>
 #include <limits.h>

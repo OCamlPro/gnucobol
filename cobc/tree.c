@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2021 Free Software Foundation, Inc.
+   Copyright (C) 2001-2022 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -20,7 +20,7 @@
 */
 
 
-#include <config.h>
+#include "config.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,6 +41,7 @@
 #endif
 
 #include "cobc.h"
+#include "../libcob/coblocal.h"
 #include "tree.h"
 #define _PARSER_H	/* work around bad Windows SDK header */
 #include "parser.h"

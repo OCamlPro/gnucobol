@@ -1,4 +1,8 @@
 
+2022-01-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* coblocal.h, common.h: moved some internal limits to coblocal.h
+
 2021-12-03  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (print_version_summary) [__PDCURSES__]: show version
@@ -4745,7 +4749,7 @@
 	  (cob_init_call): Initialize 'dynamic_reloading'.
 
 
-Copyright 2002-2021 Free Software Foundation, Inc.
+Copyright 2002-2022 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

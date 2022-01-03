@@ -1,4 +1,9 @@
 
+2022-01-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: project files - only include "build_windows" and top_srcdir;
+	  for cobc.vcxproj: have auxiliary compiler files included
+
 2021-11-06  Simon Sobisch <simonsobisch@gnu.org>
 
 	* config.h.in: moved references to PACKACAGE_defines after the define,

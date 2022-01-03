@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2006-2012, 2013, 2017-2018 Free Software Foundation, Inc.
+   Copyright (C) 2006-2012, 2013, 2017-2018, 2022 Free Software Foundation, Inc.
    Written by Roger While, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -18,7 +18,7 @@
    along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <config.h>
+#include "config.h"
 
 #include <stdio.h>
 #include <stdlib.h>

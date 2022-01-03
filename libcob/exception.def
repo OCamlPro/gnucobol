@@ -226,7 +226,7 @@ COB_EXCEPTION  (1502, COB_EC_FUNCTION_PTR_NULL,
 
 
 /* EC-I-O --> for complete group see external definitions */
-#include "exception-io.def"
+#include "exception-io.def"	/* located and installed next to common.h */
 
 
 /* Implementation-defined exception condition */

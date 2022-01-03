@@ -1,4 +1,12 @@
 
+2022-01-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: revert change 2019-06-05 - all header files that are included
+	  from the system use <include.h>, "local.h" is used otherwise with the
+	  exceptions of to-be-installed headers which include files that have a
+	  local reference to each other after installation (common.h + 
+	  and exceptions.def)
+
 2021-11-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: use `dnl` comments in all places that are not intended be
@@ -1370,7 +1378,7 @@
 	* Version 0.9 released.
 
 
-Copyright 2002-2021 Free Software Foundation, Inc.
+Copyright 2002-2022 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.
