@@ -5687,7 +5687,10 @@ record_key_clause:
 			/* note: see ACUCOBOL docs for implementation notes, including [RE]WRITE rules
 			         and "if the underlying (file) system does not support them OPEN
 					 result in (sucessfull) io-status 0M" */
-			CB_PENDING (_("DUPLICATES for primary keys"));
+#if defined(WITH_DB) || defined(WITH_LMDB) || defined(WITH_ODBC) || defined(WITH_OCI)
+			CB_PENDING (_("primary key DUPLICATES for BDB/OCI/ODBC"));
+#endif
+			current_file->flag_primary_dups = 1;
 		};
 
 	}

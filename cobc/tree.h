@@ -1129,6 +1129,7 @@ struct cb_file {
            EXTERNAL/DYNAMIC/USING/... word" */
 	unsigned int		flag_assign_no_keyword : 1;
 	unsigned int		flag_has_organization : 1;	/* ORGANIZATION was declared */
+	unsigned int		flag_primary_dups : 1;	/* PRIMARY key has DUPLICATES */
 };
 
 #define CB_FILE(x)	(CB_TREE_CAST (CB_TAG_FILE, struct cb_file, x))

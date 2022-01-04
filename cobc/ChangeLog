@@ -1,4 +1,9 @@
 
+2022-01-04  Ron Norman <rjn@inglenet.com>
+
+	* codegen.c: Accept INDEXED file with PRIMARY KEY DUPLICATEs
+	* parser.y: Warn if PRIMARY KEY WITH DUPLICATES and using BDB/OCI/ODBC
+
 2021-12-30  Ron Norman <rjn@inglenet.com>
 
 	* codegen.c: Fix handling of RESET ON phrase

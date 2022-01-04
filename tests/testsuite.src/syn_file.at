@@ -2085,7 +2085,7 @@ AT_DATA([prog.cob], [
               ORGANIZATION  INDEXED
               ACCESS        DYNAMIC
               RECORD KEY    TESTKEY-1P1
-                 WITH DUPLICATES
+                 WITH NO DUPLICATES
               ALTERNATE RECORD KEY TESTKEY-1P2
                  WITH NO DUPLICATES
               LOCK EXCLUSIVE MASS-UPDATE
@@ -2146,14 +2146,12 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
-[prog.cob:13: warning: DUPLICATES for primary keys is not implemented
-prog.cob:16: warning: WITH MASS-UPDATE is not implemented
+[prog.cob:16: warning: WITH MASS-UPDATE is not implemented
 prog.cob:65: warning: WITH BULK-ADDITION is not implemented
 prog.cob:67: warning: WITH MASS-UPDATE is not implemented
 ])
 AT_CHECK([$COMPILE_ONLY -std=acu-strict prog.cob], [1], [],
-[prog.cob:13: warning: DUPLICATES for primary keys is not implemented
-prog.cob:16: warning: WITH MASS-UPDATE is not implemented
+[prog.cob:16: warning: WITH MASS-UPDATE is not implemented
 prog.cob:34: error: syntax error, unexpected ENCRYPTION
 prog.cob:38: error: syntax error, unexpected ALLOWING
 prog.cob:65: warning: WITH BULK-ADDITION is not implemented

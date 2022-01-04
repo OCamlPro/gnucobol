@@ -9639,12 +9639,6 @@ output_file_initialization (struct cb_file *f)
 	/* Output RELATIVE/RECORD KEY's */
 	if (f->organization == COB_ORG_RELATIVE
 	 || f->organization == COB_ORG_INDEXED) {
-#if 0 /* now done in cob_file_malloc / cob_file_external_addr */
-		output_line ("%s%s->nkeys = %d;", CB_PREFIX_FILE,
-			     f->cname, nkeys);
-		output_line ("%s%s->keys = %s%s;", CB_PREFIX_FILE,
-			     f->cname, CB_PREFIX_KEYS, f->cname);
-#endif
 		output_prefix ();
 		output ("cob_file_set_key (%s, 0, ", file_name);
 		if (f->organization == COB_ORG_RELATIVE
@@ -9653,7 +9647,7 @@ output_file_initialization (struct cb_file *f)
 		} else {
 			output_param (f->key, -1);
 		}
-		output (", 0, 0, -1, NULL");
+		output (", %d, 0, -1, NULL",f->flag_primary_dups);
 		output_key_components (f, f->component_list, 0);
 
 		for (l = f->alt_key_list; l; l = l->next) {

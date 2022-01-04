@@ -1,4 +1,8 @@
 
+2022-01-04  Ron Norman <rjn@inglenet.com>
+
+	* fisam.c: Handle primary key with DUPLICATES
+
 2022-01-03  Simon Sobisch <simonsobisch@gnu.org>
 
 	* coblocal.h, common.h: moved some internal limits to coblocal.h

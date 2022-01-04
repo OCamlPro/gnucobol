@@ -1251,7 +1251,7 @@ dobuild:
 #ifndef COB_WITH_STATUS_02
 	if (f->flag_read_chk_dups) {
 		int k;
-		for (k = 1; k < f->nkeys; ++k) {
+		for (k = 0; k < f->nkeys; ++k) {
 			if ((fh->key[k].k_flags & ISDUPS))
 				break;
 		}
@@ -1778,7 +1778,7 @@ isam_write (cob_file_api *a, cob_file *f, const int opt)
 	if (f->flag_read_chk_dups) {
 		int k;
 		savefileposition (f);
-		for (k = 1; k < f->nkeys; ++k) {
+		for (k = 0; k < f->nkeys; ++k) {
 			if (fh->key[k].k_flags & ISDUPS) {
 				memcpy (fh->recwrk, f->record->data, f->record_max);
 				isstart (fh->isfd, &fh->key[k], fh->key[k].k_len, 
@@ -1927,7 +1927,7 @@ isam_rewrite (cob_file_api *a, cob_file *f, const int opt)
 		fh->duprecnum = ISRECNUM;
 		if (fh->recorg != NULL)
 			memcpy (fh->recorg, fh->recwrk, f->record_max);
-		for (k = 1; k < f->nkeys && ret == COB_STATUS_00_SUCCESS; ++k) {
+		for (k = 0; k < f->nkeys && ret == COB_STATUS_00_SUCCESS; ++k) {
 			if (fh->key[k].k_flags & ISDUPS) {
 #ifndef COB_WITH_STATUS_02
 				if (f->flag_read_chk_dups
@@ -1956,16 +1956,17 @@ isam_rewrite (cob_file_api *a, cob_file *f, const int opt)
 				}
 #endif
 				ret = COB_STATUS_00_SUCCESS;
-				continue;
-			}
-			memcpy (fh->recwrk, f->record->data, f->record_max);
-			ISERRNO = 0;
-			isstart (fh->isfd, &fh->key[k], fh->key[k].k_len, (void *)fh->recwrk, ISEQUAL);
-			if (ISERRNO == 0
-			 && isread (fh->isfd, (void *)fh->recwrk, ISEQUAL) == 0
-			 && ISRECNUM != fh->recnum) {
-				ret = COB_STATUS_22_KEY_EXISTS;
-				break;
+			} else 
+			if (k > 0) {
+				memcpy (fh->recwrk, f->record->data, f->record_max);
+				ISERRNO = 0;
+				isstart (fh->isfd, &fh->key[k], fh->key[k].k_len, (void *)fh->recwrk, ISEQUAL);
+				if (ISERRNO == 0
+				 && isread (fh->isfd, (void *)fh->recwrk, ISEQUAL) == 0
+				 && ISRECNUM != fh->recnum) {
+					ret = COB_STATUS_22_KEY_EXISTS;
+					break;
+				}
 			}
 		}
 		if (ret == COB_STATUS_00_SUCCESS) {
