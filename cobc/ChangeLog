@@ -3,6 +3,7 @@
 
 	* codegen.c: Fix intialize of table to set 1st occurence
 				and then propogate. Avoid if multiple VALUEs.
+				Fix emitting literal for REPORT
 
 2022-01-04  Ron Norman <rjn@inglenet.com>
 

@@ -10372,43 +10372,46 @@ output_report_def_fields (int bgn, int id, struct cb_field *f, struct cb_report 
 		  && CB_LITERAL_P (f->report_source))
 		value = f->report_source;
 
-	if (value) {
-		if (CB_TREE_TAG (value) == CB_TAG_LITERAL) {
-			char	*val;
-			size_t	ref_size;
-			struct cb_literal	*lit = CB_LITERAL (value);
-			if (lit->all) {
-				ref_size = f->size;
-			} else {
-				ref_size = lit->size;
-			}
-			if (lit->all) {
-				val = (char *)cobc_malloc (ref_size * 2 + 2);
-				if (lit->data[0] == '"'
-				 || lit->data[0] == '\\') {	/* Fix string for C code */
-					for (i = j = 0; j < (unsigned int)f->size; j++) {
-						val[i++] = '\\';
-						val[i++] = lit->data[0];
-					}
-				} else {
-					memset (val, lit->data[0], f->size);
-					i = f->size;
-				}
-			} else {
-				val = (char *)cobc_malloc (lit->size * 2 + 2);
-				for (i = j = 0; j < lit->size; j++) {
-					if (lit->data[j] == '"'
-					 || lit->data[j] == '\\')	/* Fix string for C code */
-						val[i++] = '\\';
-					val[i++] = lit->data[j];
-				}
+	if (value
+	 && CB_TREE_TAG (value) == CB_TAG_LITERAL) {
+		char	*val, *out;
+		size_t	ref_size;
+		struct cb_literal	*lit = CB_LITERAL (value);
+		int		i, j, fsz, lsz;
+		if (lit->all) {
+			ref_size = f->size;
+		} else {
+			ref_size = lit->size;
+		}
+		val = (char *)cobc_malloc (ref_size * 2 + 2);
+		out = (char *)cobc_malloc (ref_size * 2 + 2);
+		if (lit->all) {
+			fsz = (int)f->size;
+			lsz = (int)lit->size;
+			i = 0;
+			while (i < fsz) {
+				if (fsz < (i + lsz))
+					j = fsz - i;
+				else
+					j = lsz;
+				if (j <= 0) break;
+				memcpy (&val[i], lit->data, j);
+				i += j;
 			}
 			val[i] = 0;
-			output_local("\"%s\",%d,", val, (int)ref_size);
-			cobc_free((void*) val);
 		} else {
-			output_local("NULL,0,");
+			memcpy (val, lit->data, lit->size);
 		}
+		for (i = j = 0; j < ref_size && val[j] != 0; j++) {
+			if (val[j] == '"'
+			 || val[j] == '\\')	/* Fix string for C code */
+				out[i++] = '\\';
+			out[i++] = val[j];
+		}
+		out[i] = 0;
+		output_local("\"%s\",%d,", out, (int)ref_size);
+		cobc_free((void*) val);
+		cobc_free((void*) out);
 	} else {
 		output_local("NULL,0,");
 	}
