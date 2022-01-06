@@ -755,6 +755,40 @@ chk_field_variable_size (struct cb_field *f)
 	return f->vsize;
 }
 
+static int
+chk_field_multi_values (struct cb_field *f)
+{
+	struct cb_field		*fc;
+	if (f->values 
+	 && CB_CHAIN (f->values))
+		return 1;
+	if (f->values
+	 && CB_VALUE (f->values)
+	 && CB_LITERAL_P (CB_VALUE(f->values))
+	 && CB_LITERAL (CB_VALUE(f->values))->all)
+		return 1;
+	for (fc = f->children; fc && !fc->redefines; fc = fc->sister) {
+		if (chk_field_multi_values (fc)) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+static int
+chk_field_any_values (struct cb_field *f)
+{
+	struct cb_field		*fc;
+	if (f->values)
+		return 1;
+	for (fc = f->children; fc && !fc->redefines; fc = fc->sister) {
+		if (chk_field_any_values (fc)) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
 /* Check if previous field on current or higher level has variable size */
 unsigned int
 chk_field_variable_address (struct cb_field *fld)
@@ -5004,8 +5038,9 @@ deduce_initialize_type (struct cb_initialize *p, struct cb_field *f,
 		return INITIALIZE_ONE;
 	}
 
-	if (p->var && CB_REFERENCE_P (p->var)
-	    && CB_REFERENCE (p->var)->offset) {
+	if (p->var 
+	 && CB_REFERENCE_P (p->var)
+	 && CB_REFERENCE (p->var)->offset) {
 		/* Reference modified item */
 		return INITIALIZE_ONE;
 	}
@@ -5415,8 +5450,9 @@ output_initialize_one (struct cb_initialize *p, cb_tree x)
 	if (p->val && f->values) {
 		value = CB_VALUE (f->values);
 		/* Check for non-standard OCCURS */
-		if ((f->level == 1 || f->level == 77) &&
-		    f->flag_occurs && !p->flag_init_statement) {
+		if ((f->level == 1 || f->level == 77) 
+		 && f->flag_occurs 
+		 && !p->flag_init_statement) {
 			init_occurs = 1;
 		} else {
 			init_occurs = 0;
@@ -5709,7 +5745,7 @@ get_table_offset ( int offset, int idx, int *idxtbl, int *occtbl, struct cb_fiel
 }
 
 /*
- * If OCCURS field hs multiple VALUEs then init each occurence
+ * If OCCURS field has multiple VALUEs then init each occurence
  */
 static void
 output_initialize_occurs (struct cb_initialize *p, cb_tree x)
@@ -5871,7 +5907,20 @@ output_initialize_compound (struct cb_initialize *p, cb_tree x)
 					output_initialize_occurs (p, c);
 				} else {
 					ref->length = NULL;
-					output_initialize_compound (p, c);
+					if (f->children
+					 && f->flag_occurs 
+					 && !p->flag_init_statement
+					 && p->val
+					 && chk_field_any_values (f)
+					 && !chk_field_multi_values (f)) {
+						struct cb_field		*fc;
+						output_line ("/* Init %s 1st occurence */",f->name);
+						for (fc = f->children; fc; fc = fc->sister) {
+							output_initialize_one (p, cb_build_field_reference (fc, ref));
+						}
+					} else {
+						output_initialize_compound (p, c);
+					}
 				}
 
 				/* all exceptions should have been raised above,

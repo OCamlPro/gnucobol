@@ -1,4 +1,9 @@
 
+2022-01-06  Ron Norman <rjn@inglenet.com>
+
+	* codegen.c: Fix intialize of table to set 1st occurence
+				and then propogate. Avoid if multiple VALUEs.
+
 2022-01-04  Ron Norman <rjn@inglenet.com>
 
 	* codegen.c: Accept INDEXED file with PRIMARY KEY DUPLICATEs
