@@ -763,10 +763,13 @@ chk_field_multi_values (struct cb_field *f)
 	 && CB_CHAIN (f->values))
 		return 1;
 	if (f->values
-	 && CB_VALUE (f->values)
-	 && CB_LITERAL_P (CB_VALUE(f->values))
-	 && CB_LITERAL (CB_VALUE(f->values))->all)
-		return 1;
+	 && CB_VALUE (f->values)) {
+		 if (CB_LITERAL_P (CB_VALUE(f->values))
+		  && CB_LITERAL (CB_VALUE(f->values))->all)
+			return 1;
+		if (f->flag_occurs)
+			return 1;
+	}
 	for (fc = f->children; fc && !fc->redefines; fc = fc->sister) {
 		if (chk_field_multi_values (fc)) {
 			return 1;
@@ -5916,7 +5919,7 @@ output_initialize_compound (struct cb_initialize *p, cb_tree x)
 						struct cb_field		*fc;
 						output_line ("/* Init %s 1st occurence */",f->name);
 						for (fc = f->children; fc; fc = fc->sister) {
-							output_initialize_one (p, cb_build_field_reference (fc, ref));
+							output_initialize_one (p, c);
 						}
 					} else {
 						output_initialize_compound (p, c);
@@ -10282,7 +10285,7 @@ output_report_def_fields (int bgn, int id, struct cb_field *f, struct cb_report 
 	cb_tree	value;
 	struct cb_field *p;
 	char	field_name[16];
-	unsigned int	i, j;
+	unsigned int	i;
 
 	if(bgn == 1) {
 		strcpy (report_field_name, "NULL");
