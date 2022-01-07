@@ -5919,7 +5919,7 @@ output_initialize_compound (struct cb_initialize *p, cb_tree x)
 						struct cb_field		*fc;
 						output_line ("/* Init %s 1st occurence */",f->name);
 						for (fc = f->children; fc; fc = fc->sister) {
-							output_initialize_one (p, c);
+							output_initialize_one (p, cb_build_field_reference (fc, c));
 						}
 					} else {
 						output_initialize_compound (p, c);
@@ -10285,9 +10285,8 @@ output_report_def_fields (int bgn, int id, struct cb_field *f, struct cb_report 
 	cb_tree	value;
 	struct cb_field *p;
 	char	field_name[16];
-	unsigned int	i;
 
-	if(bgn == 1) {
+	if (bgn == 1) {
 		strcpy (report_field_name, "NULL");
 	}
 
@@ -10302,17 +10301,18 @@ output_report_def_fields (int bgn, int id, struct cb_field *f, struct cb_report 
 		output_report_def_fields (0,id,f->sister,r);
 	}
 
-	for (i = 0, p = f; p; p = p->parent) {
-		if (p->flag_occurs)
-			i++;
+	for (p = f; p; p = p->parent) {
+		if (p->flag_occurs) {
+			return;		/* OCCURS is handled via emitted code */
+		}
 	}
-	if (i > 0)			/* OCCURS is handled via emitted code */
-		return;
 
-	if(f->children)
+	if (f->children) {
 		f->report_flag |= COB_REPORT_GROUP_ITEM;
-	if(f->report_when)
+	}
+	if (f->report_when) {
 		f->report_flag |= COB_REPORT_HAD_WHEN;
+	}
 	if (f->children) {
 		output_report_def_fields (0,id,f->children,r);
 	}
@@ -10332,7 +10332,7 @@ output_report_def_fields (int bgn, int id, struct cb_field *f, struct cb_report 
 	 && f->report_control == NULL)	/* This field has nothing to do */
 		return;
 	output_local ("static cob_report_field %s\t= {%s,", field_name,report_field_name);
-	output_local("&%s%d,",CB_PREFIX_FIELD,f->id);
+	output_local ("&%s%d,", CB_PREFIX_FIELD, f->id);
 
 	sprintf (report_field_name, "&%s", field_name);
 
