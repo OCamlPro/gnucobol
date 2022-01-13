@@ -13073,18 +13073,6 @@ cb_emit_report_moves (struct cb_report *r, struct cb_field *f, int forterminate)
 		if(p->report_flag & (COB_REPORT_FOOTING|COB_REPORT_CONTROL_FOOTING|COB_REPORT_CONTROL_FOOTING_FINAL)) {
 			report_in_footing = 1;
 		}
-#if 0 /* DBG RJN Check this later */
-		if(p->report_from) {
-			if(forterminate
-			&& report_in_footing) {
-				cb_emit_move (p->report_from, CB_LIST_INIT (p->report_source));
-			} else
-			if(!forterminate
-			&& !report_in_footing) {
-				cb_emit_move (p->report_from, CB_LIST_INIT (p->report_source));
-			}
-		}
-#endif
 		if(p->report_when) {
 			int  ifwhen = 2;
 			if(p->children)

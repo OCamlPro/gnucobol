@@ -10054,3 +10054,142 @@ AT_CHECK([gcdiff reference report.txt], [0], [], [])
 
 AT_CLEANUP
 
+AT_SETUP([Test SUM/SOURCE expressions])
+AT_KEYWORDS([REPORT])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT    DIVISION.
+       CONFIGURATION  SECTION.
+       INPUT-OUTPUT   SECTION.
+       FILE-CONTROL.
+
+       SELECT PRINT-FILE ASSIGN TO "report.txt"
+             ORGANIZATION IS LINE SEQUENTIAL.
+
+       DATA          DIVISION.
+       FILE          SECTION.
+
+       FD  PRINT-FILE
+           REPORT IS REPORT-1.
+
+       WORKING-STORAGE SECTION.
+
+       01   WS-IN-REC.
+            05  WS-STUDENT-NAME           PIC  X(8).
+            05  WS-BOOK-PAY               PIC  999V99.
+            05  WS-TUITION-PAY            PIC  999V99.
+            05  WS-TRANSPORT-PAY          PIC  999V99.
+
+       REPORT  SECTION.
+
+       RD  REPORT-1
+               CONTROLS ARE     FINAL
+               PAGE     LIMIT   20
+               FIRST    DETAIL  06
+               LAST     DETAIL  16
+               FOOTING          18
+              .
+
+       01  PAGE-HEADING
+               TYPE PAGE HEADING.
+               02 LINE 01.
+                  03 COLUMN 1     PIC X(13) VALUE "PAGE HEADING".
+                  03 COLUMN 20    PIC X(20) VALUE ALL "**** ".
+
+       01  REPORT-LINE
+               TYPE DETAIL.
+               02 LINE PLUS 1.
+
+               03 COLUMN 8        PIC Z9      SUM 1.
+               03 COLUMN 12       PIC 9.999   SUM 2.718.
+               03 COLUMN 26       PIC $999.99 SOURCE WS-TUITION-PAY.
+               03 COLUMN 37       PIC $999.99 SOURCE WS-BOOK-PAY.
+               03 COLUMN 48       PIC $999.99 SOURCE WS-TRANSPORT-PAY.
+               03 COLUMN 59       PIC $999.99
+                                  SOURCE WS-TRANSPORT-PAY + 3.14 .
+
+       01 TYPE CONTROL FOOTING FINAL.
+          02 LINE PLUS 1.
+            03 COLUMN 1        PIC X(13)    VALUE "TOTALS     :".
+            03 FSM-1 COLUMN 24 PIC $9(5).99 SUM WS-TUITION-PAY.
+            03 FSM-2 COLUMN 35 PIC $9(5).99 SUM WS-BOOK-PAY.
+            03 FSM-3 COLUMN 46 PIC $9(5).99 SUM WS-TRANSPORT-PAY.
+            03       COLUMN 57 PIC $9(5).99
+                                  SUM WS-TRANSPORT-PAY + 3.14 .
+
+         02 LINE PLUS 2.
+             03 COLUMN 1          PIC X(13)     VALUE "GRAND TOTAL:".
+             03 GSM1 COLUMN 24    PIC $9(5).99
+                                  SUM WS-TUITION-PAY 10.
+             03 GSM2 COLUMN 35    PIC $9(5).99
+                                  SOURCE FSM-1.
+             03 GSM3 COLUMN 46    PIC $9(5).99
+                                  SUM FSM-1 SUM FSM-2 + FSM-3.
+
+       01 RW-FOOT TYPE PAGE FOOTING.
+         02 LINE PLUS 1.
+             03 COLUMN 1       PIC X(13) VALUE "* PAGE END *".
+
+       PROCEDURE DIVISION.
+
+           OPEN OUTPUT PRINT-FILE
+
+           INITIATE REPORT-1
+
+           MOVE 100 TO WS-TRANSPORT-PAY, WS-BOOK-PAY, WS-TUITION-PAY.
+           GENERATE REPORT-LINE
+           MOVE 220 TO WS-TRANSPORT-PAY, WS-BOOK-PAY, WS-TUITION-PAY.
+           ADD  1   TO WS-TRANSPORT-PAY
+           ADD  2   TO WS-BOOK-PAY
+           ADD  3   TO WS-TUITION-PAY
+           GENERATE REPORT-LINE
+           MOVE 330 TO WS-TRANSPORT-PAY, WS-BOOK-PAY, WS-TUITION-PAY.
+           ADD  4   TO WS-TRANSPORT-PAY
+           ADD  5   TO WS-BOOK-PAY
+           ADD  6   TO WS-TUITION-PAY
+           GENERATE REPORT-LINE
+
+           TERMINATE REPORT-1
+
+           CLOSE PRINT-FILE.
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -std=default -debug prog.cob ], [0], [], [])
+
+AT_CHECK([export PRINTOUT=report.txt
+export IO_OPTIONS=format=gc
+$COBCRUN_DIRECT ./prog], [0], [], [])
+
+
+AT_CAPTURE_FILE(./report.txt)
+
+AT_DATA([reference], [PAGE HEADING       **** **** **** ****
+
+
+
+
+        1  2.718         $100.00    $100.00    $100.00    $103.14
+        2  5.436         $223.00    $222.00    $221.00    $224.14
+        3  8.154         $336.00    $335.00    $334.00    $337.14
+TOTALS     :           $00659.00  $00657.00  $00655.00  $00664.42
+
+GRAND TOTAL:           $00689.00  $00659.00  $01266.00
+
+
+
+
+
+* PAGE END *
+
+
+
+])
+
+AT_CHECK([gcdiff reference report.txt], [0], [], [])
+
+AT_CLEANUP
+

@@ -10090,7 +10090,7 @@ output_report_sum_control_field (struct cb_field *p)
 			output_base(cb_code_field(p->report_control),1U);
 		}
 		if (p->report_source
-		 && !CB_LITERAL_P (p->report_source)) {
+		 && CB_REF_OR_FIELD_P (p->report_source)) {
 			output_base(cb_code_field(p->report_source),1U);
 		}
 		for (l = p->report_sum_list; l; l = CB_CHAIN (l)) {
@@ -10342,6 +10342,7 @@ output_report_def_fields (int bgn, int id, struct cb_field *f, struct cb_report 
 	 && f->report_sum_counter == NULL
 	 && f->report_when == NULL
 	 && f->values == NULL
+	 && f->report_from == NULL
 	 && (f->report_source == NULL || !CB_LITERAL_P (f->report_source))
 	 && f->report_control == NULL)	/* This field has nothing to do */
 		return;
@@ -10364,6 +10365,13 @@ output_report_def_fields (int bgn, int id, struct cb_field *f, struct cb_report 
 			output_local(" + %d",f->report_field_from->offset);
 		output_local(",");
 		output_attr (cb_build_field_reference (f->report_field_from, NULL));
+		output_local("},");
+	} else if (f->report_from) {
+		p = cb_code_field(f->report_from);
+		output_local("/*COMPUTE*/{%d,",p->size);
+		output_base (p, 0);
+		output_local(",");
+		output_attr (cb_build_field_reference (p, NULL));
 		output_local("},");
 	} else {
 		output_local("{0,NULL,NULL},");
@@ -10697,19 +10705,17 @@ output_report_sum_counters (const int top, struct cb_field *f, struct cb_report 
 	ctl_foot = sub_ttl = cross_foot = computed = 0;
 	x = NULL;
 	z = NULL;
-	if (f->report_sum_list) {
-		x = CB_VALUE (f->report_sum_list);
-		if (!CB_LITERAL_P (x)
-		 && !CB_REF_OR_FIELD_P (x)) {
-			if (CB_PURPOSE (l)) {
-				x = CB_PURPOSE (l);
-				computed = 1;
-			}
-		} else {
-			z = get_sum_data_field(r, cb_code_field(x));
-			if (z) {
-				sub_ttl = 1;
-			}
+	x = CB_VALUE (f->report_sum_list);
+	if (CB_REF_OR_FIELD_P (x)) {
+		z = get_sum_data_field(r, cb_code_field(x));
+		if (z) {
+			sub_ttl = 1;
+		}
+	} else
+	if (!CB_LITERAL_P (x)) {
+		if (CB_PURPOSE (f->report_sum_list)) {
+			x = CB_PURPOSE (f->report_sum_list);
+			computed = 1;
 		}
 	}
 
@@ -10904,14 +10910,14 @@ any_source_moves (struct cb_report *r, struct cb_field *f, int first)
 	}
 	if (f->report_source_id != 0)
 		return f->report_source_id;
+	if (f->report_source
+	 && CB_BINARY_OP_P (f->report_source))
+		return ++r_source_id;
 	if (f->report_field_from == NULL
 	&& (f->report_vary_var
 	 || f->report_source)) {
 		return ++r_source_id;
 	}
-	if (f->report_source
-	 && CB_BINARY_OP_P (f->report_source))
-		return ++r_source_id;
 	for (l = f->report_sum_list; l; l = CB_CHAIN (l)) {
 		x = CB_VALUE (l);
 		if (CB_BINARY_OP_P (x)) {
@@ -11070,7 +11076,10 @@ output_report_move_source (struct cb_field *f, int first)
 		output ("cob_move (");
 		output_param (f->report_source, -1);
 		output (", ");
-		output_param (build_field_sub (f), -1);
+		if (f->report_from)
+			output_param (f->report_from, -1);
+		else
+			output_param (build_field_sub (f), -1);
 		output (");");
 		output_newline ();
 	}

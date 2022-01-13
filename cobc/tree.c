@@ -4508,6 +4508,24 @@ finalize_report (struct cb_report *r, struct cb_field *records)
 			struct cb_literal 	*xl;
 			xl = CB_LITERAL (p->report_source);
 			p->report_source_txt = cobc_parse_strdup ((const char*)(xl->data));
+		} else
+		if (p->report_source
+		 && CB_BINARY_OP_P (p->report_source)) {
+			char	tmp[COB_MINI_BUFF];
+			char	buff[COB_MINI_BUFF];
+			int		dig, dec;
+			strncpy (tmp, cb_name (p->report_source), sizeof(tmp)-1);
+			p->report_source_txt = cobc_parse_strdup (tmp);
+			sprintf(buff,"SOURCE-x%d",report_id++);
+			if (p->pic) {
+				if (p->pic->digits == 0) {
+					dig = 16;
+				} else {
+					dig = p->pic->digits + 2;
+				}
+				dec = p->pic->scale;
+				p->report_from = add_report_sum (r, buff, dig, dec);
+			}
 		}
 		/* force generation of report sum counter */
 		if (p->report_sum_counter

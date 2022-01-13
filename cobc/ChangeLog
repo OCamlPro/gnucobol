@@ -1,6 +1,12 @@
 
 2022-01-13  Ron Norman <rjn@inglenet.com>
 
+	* parser.y: Accept  SOURCE  expression and more than one SUM
+	* tree.c: If SOURCE is expression, create temp field for result
+	* codegen.c: If SOURCE expression, report temp field
+
+2022-01-13  Ron Norman <rjn@inglenet.com>
+
 	* parser.y: Accept  SUM  expression-list
 	* codegen.c: Update to generate code to compute SUM expressions
 	* tree.c: Update to handle SUM expressions

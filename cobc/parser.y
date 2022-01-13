@@ -8516,8 +8516,8 @@ next_page:
 sum_clause_list:
   SUM _of exp_list _reset_clause
   {
-	check_repeated ("SUM", SYN_CLAUSE_19, &check_pic_duplicate);
-	current_field->report_sum_list = $3;
+	current_field->report_sum_list =
+			cb_list_append (current_field->report_sum_list, $3);
   }
 ;
 
