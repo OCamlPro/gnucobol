@@ -8514,7 +8514,7 @@ next_page:
 ;
 
 sum_clause_list:
-  SUM _of report_x_list _reset_clause
+  SUM _of exp_list _reset_clause
   {
 	check_repeated ("SUM", SYN_CLAUSE_19, &check_pic_duplicate);
 	current_field->report_sum_list = $3;
@@ -8650,7 +8650,7 @@ report_varying:
 
 var_from:
 |
-FROM arith_x 
+FROM exp 
 {
 	current_field->report_vary_from = $2;
 }
@@ -8658,7 +8658,7 @@ FROM arith_x
 
 var_by:
 |
-BY arith_x 
+BY exp 
 {
 	current_field->report_vary_by = $2;
 }
@@ -8804,7 +8804,7 @@ column_integer:
 ;
 
 source_clause:
-  SOURCE _is arith_x flag_rounded
+  SOURCE _is exp flag_rounded
   {
 	check_repeated ("SOURCE", SYN_CLAUSE_22, &check_pic_duplicate);
 	current_field->report_source = $3;
@@ -17148,8 +17148,6 @@ exp_atom:
 | arith_x				{ $$ = $1; }
 ;
 
-
-
 /* Names */
 
 /* LINAGE-COUNTER LINE-COUNTER PAGE-COUNTER */
@@ -17653,17 +17651,6 @@ length_of_register:
 	          if we actually want to do this,
 	          otherwise raise an error "not defined in this dialect"
 	*/
-  }
-;
-
-report_x_list:
-  arith_x
-  {
-	$$ = CB_LIST_INIT ($1);
-  }
-| report_x_list arith_x
-  {
-	$$ = cb_list_add ($1, $2);
   }
 ;
 

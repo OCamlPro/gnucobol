@@ -262,7 +262,7 @@ static void output_func_1	(const char *, cb_tree);
 static void output_param	(cb_tree, int);
 static void output_funcall	(cb_tree);
 static void output_report_summed_field (struct cb_field *);
-static int	any_source_moves (struct cb_field *f, int first);
+static int	any_source_moves (struct cb_report *r, struct cb_field *f, int first);
 static struct cb_field * real_field_founder (const struct cb_field *f);
 static void add_field_cache (struct cb_field *f01);
 
@@ -10095,8 +10095,15 @@ output_report_sum_control_field (struct cb_field *p)
 		}
 		for (l = p->report_sum_list; l; l = CB_CHAIN (l)) {
 			x = CB_VALUE (l);
-			output_base(cb_code_field(x),1);
-			f = cb_code_field(x);
+			if (!CB_REF_OR_FIELD_P (x)) {
+				if (CB_PURPOSE (l)) {
+					x = CB_PURPOSE (l);
+				} else {
+					continue;
+				}
+			}
+			f = cb_code_field (x);
+			output_base (f,1);
 			if (!f->flag_field) {
 				FILE	*savetarget;
 				struct field_list	*fl;
@@ -10144,6 +10151,13 @@ output_report_summed_field (struct cb_field *p)
 
 		for (l = p->report_sum_list; l; l = CB_CHAIN (l)) {
 			x = CB_VALUE (l);
+			if (!CB_REF_OR_FIELD_P (x)) {
+				if (CB_PURPOSE (l)) {
+					x = CB_PURPOSE (l);
+				} else {
+					continue;
+				}
+			}
 			f = cb_code_field(x);
 			if (f->storage == CB_STORAGE_WORKING
 			&& !(f->report_flag & COB_REPORT_REF_EMITTED)) {
@@ -10538,7 +10552,7 @@ output_report_define_lines (int top, struct cb_field *f, struct cb_report *r)
 	}
 	if (f->report_source_id == 0
 	 && (f->report_flag & COB_REPORT_LINE)) {
-		int		id = any_source_moves (f, 1);
+		int		id = any_source_moves (r, f, 1);
 		if (id > 0) {
 			for (p = f->parent; p; p = p->parent) {
 				if (p->report_source_id) {
@@ -10608,8 +10622,7 @@ output_report_sum_counters (const int top, struct cb_field *f, struct cb_report 
 	struct cb_field *n, *c, *p, *z;
 	cb_tree	l, x;
 	char	fname[64];
-	int	rsid, rsseq, rsprv;
-	int	ctl_foot, sub_ttl, cross_foot;
+	int	ctl_foot, sub_ttl, cross_foot, computed;
 
 	n = f->sister;
 	c = f->children;
@@ -10657,13 +10670,23 @@ output_report_sum_counters (const int top, struct cb_field *f, struct cb_report 
 		if(f->report_control) {
 			sprintf(&fname[strlen(fname)]," %s",cb_code_field(f->report_control)->name);
 		}
+	} else if (memcmp (f->name, "FILLER ",7) == 0) {
+		sprintf(fname,"Source %d",f->common.source_line);
 	} else {
 		sprintf(fname,"%s",f->name);
 	}
 	output_local("\n/* %s SUM ",fname);
 	for (l = f->report_sum_list; l; l = CB_CHAIN (l)) {
 		x = CB_VALUE (l);
-		output_local("%s ",cb_code_field(x)->name);
+		if (CB_REF_OR_FIELD_P (x)) {
+			output_local("%s ",cb_code_field(x)->name);
+		} else
+		if (CB_NUMERIC_LITERAL_P (x)) {
+			output_local("%s ",cb_name (x));
+		} else
+		if (CB_BINARY_OP_P (x)) {
+			output_local("%s ",cb_name (x));
+		}
 	}
 	if(f->report_flag & COB_REPORT_RESET_FINAL)
 		output_local(" RESET ON FINAL ");
@@ -10671,28 +10694,25 @@ output_report_sum_counters (const int top, struct cb_field *f, struct cb_report 
 		output_local(" RESET ON %s ",cb_code_field(f->report_reset)->name);
 	}
 	output_local("*/\n");
-	ctl_foot = sub_ttl = cross_foot = 0;
-	rsid = f->id;
-	rsseq = rsprv = 0;
-	for (l = f->report_sum_list; l; l = CB_CHAIN (l)) {
-		x = CB_VALUE (l);
-		output_local("static cob_report_sum %s%d_%d = {",CB_PREFIX_REPORT_SUM,rsid,++rsseq);
-		if(rsprv) {
-			output_local("&%s%d_%d,",CB_PREFIX_REPORT_SUM,rsid,rsprv);
+	ctl_foot = sub_ttl = cross_foot = computed = 0;
+	x = NULL;
+	z = NULL;
+	if (f->report_sum_list) {
+		x = CB_VALUE (f->report_sum_list);
+		if (!CB_LITERAL_P (x)
+		 && !CB_REF_OR_FIELD_P (x)) {
+			if (CB_PURPOSE (l)) {
+				x = CB_PURPOSE (l);
+				computed = 1;
+			}
 		} else {
-			output_local("NULL,");
+			z = get_sum_data_field(r, cb_code_field(x));
+			if (z) {
+				sub_ttl = 1;
+			}
 		}
-		z = get_sum_data_field(r, cb_code_field(x));
-		if (z) {
-			output_local("&%s%d",CB_PREFIX_FIELD, z->id);
-			sub_ttl = 1;
-		} else {
-			output_local("&%s%d",CB_PREFIX_FIELD, cb_code_field(x)->id);
-		}
-		output_local ("};");
-		output_local ("\n");
-		rsprv = rsseq;
 	}
+
 	output_local ("static cob_report_sum_ctr %s%d = {", CB_PREFIX_REPORT_SUM_CTR,++sum_nxt);
 	if (sum_prv) {
 		output_local("&%s%d,",CB_PREFIX_REPORT_SUM_CTR,sum_prv);
@@ -10700,7 +10720,14 @@ output_report_sum_counters (const int top, struct cb_field *f, struct cb_report 
 		output_local("NULL,");
 	}
 	output_local ("\"%s\",",fname);
-	output_local("&%s%d_%d,",CB_PREFIX_REPORT_SUM,rsid,rsprv);
+	if (CB_LITERAL_P (x)) {
+		output ("(cob_field *)&%s%d,", CB_PREFIX_CONST, cb_lookup_literal (x, 0));
+	} else
+	if (x) {
+		output_local("&%s%d,",CB_PREFIX_FIELD, cb_code_field(x)->id);
+	} else {
+		output_local("/*NO SUM!*/NULL,");
+	}
 	if (f->report_sum_counter) {
 		output_local("&%s%d,",CB_PREFIX_FIELD, cb_code_field(f->report_sum_counter)->id);
 		z = get_sum_data_field(r, cb_code_field(f->report_sum_counter));
@@ -10725,14 +10752,14 @@ output_report_sum_counters (const int top, struct cb_field *f, struct cb_report 
 		}
 	}
 	if (p == NULL) {
-		output_local("NULL, /* No CONTROL field */");
+		output_local("NULL,");
 	}
 	if (f && f->report_flag & COB_REPORT_RESET_FINAL) {
 		output_local("1");
 	} else {
 		output_local("0");
 	}
-	output_local(",%d,%d,%d",ctl_foot,sub_ttl,cross_foot);
+	output_local(",%d,%d,%d,%d",ctl_foot,sub_ttl,cross_foot,computed);
 	output_local ("};\n");
 	sum_prv = sum_nxt;
 }
@@ -10814,7 +10841,7 @@ output_report_definition (struct cb_report *p, struct cb_report *n)
 	} else {
 		output_local("NULL,");
 	}
-	output_local ("\n");
+	output_local (" %d,\n",p->sum_exec);
 	output_local ("\t\t%d,%d,%d,%d,%d,%d,%d,\n",
 			p->lines,p->columns,p->heading,
 			p->first_detail,p->last_control,
@@ -10868,30 +10895,58 @@ output_report_init (struct cb_report *rep)
 }
 
 static int
-any_source_moves (struct cb_field *f, int first)
+any_source_moves (struct cb_report *r, struct cb_field *f, int first)
 {
-	if (f->report_source_id)
+	cb_tree	x, l;
+	if (f->report_decl_id != 0
+	 && f->report_source_id == 0) {
+		f->report_source_id = ++r_source_id;
+	}
+	if (f->report_source_id != 0)
 		return f->report_source_id;
 	if (f->report_field_from == NULL
 	&& (f->report_vary_var
-	 || f->report_source
-	 || f->report_decl_id)) {
+	 || f->report_source)) {
 		return ++r_source_id;
 	}
-	if (f->sister && !first)
-		return any_source_moves (f->sister, 0);
-	if (f->children) 
-		return any_source_moves (f->children, 0);
+	if (f->report_source
+	 && CB_BINARY_OP_P (f->report_source))
+		return ++r_source_id;
+	for (l = f->report_sum_list; l; l = CB_CHAIN (l)) {
+		x = CB_VALUE (l);
+		if (CB_BINARY_OP_P (x)) {
+			if (r->sum_exec == 0)
+				r->sum_exec = ++r_source_id;
+		}
+	}
+	if (f->children) {
+		int id = any_source_moves (r, f->children, 0);
+		if (id)
+			return id;
+	}
+	if (f->sister && !first) {
+		return any_source_moves (r, f->sister, 0);
+	}
 	return 0;
 }
 
 static void
 output_report_source (struct cb_report *rep)
 {
-	struct cb_field	*f;
+	struct cb_field	*f, *c;
 
 	for (f=rep->records; f; f = f->sister) {
-		f->report_source_id = any_source_moves (f, 1);
+		f->report_source_id = any_source_moves (rep, f, 1);
+		if (f->report_source_id != 0
+		 && !(f->report_flag & COB_REPORT_LINE)) {
+			for (c = f->children; c; c = c->children) {
+				if ((c->report_flag & COB_REPORT_LINE)
+				 && c->report_source_id == 0) {
+					c->report_source_id = f->report_source_id;
+					break;
+				}
+			}
+		}
 	}
 }
 
@@ -10911,6 +10966,38 @@ build_field_sub (struct cb_field *f)
 		}
 	}
 	return x;
+}
+
+static void
+output_report_move_sums (struct cb_field *f, int first)
+{
+	cb_tree	x, l;
+	int		nested;
+	for (l = f->report_sum_list; l; l = CB_CHAIN (l)) {
+		x = CB_VALUE (l);
+		if (CB_BINARY_OP_P (x)) {
+			output_line ("/* Compute %s */",cb_name (x));
+			output_prefix ();
+			output ("cob_move (");
+			output_param (x, -1);
+			output (", ");
+			output_param (CB_PURPOSE (l), -1);
+			output (");");
+			output_newline ();
+		}
+	}
+	if (f->children) {
+		nested = report_nest_vary;
+		output_report_move_sums (f->children, 0);
+		while (report_nest_vary > 0
+			&& report_nest_vary >= nested) {
+			output_block_close ();
+			report_nest_vary--;
+		}
+	}
+	if (f->sister && !first) {
+		output_report_move_sums (f->sister, 0);
+	}
 }
 
 static void
@@ -11006,6 +11093,24 @@ output_report_source_move (struct cb_report *rep)
 {
 	struct cb_field	*f;
 	int		first = 1;
+
+	if (rep->sum_exec) {
+		output_line ("/* Compute values for report %s */",rep->cname);
+		output_indent_level = 0;
+		output_line ("rw_src_%d: ",rep->id);
+		output_indent_level = 4;
+		output_line ("switch (%s%s.exec_source)",CB_PREFIX_REPORT,rep->cname);
+		output_block_open ();
+		first = 0;
+		output_line ("case %d: /* Compute SUMs */",rep->sum_exec);
+		output_indent_level += 2;
+		for (f=rep->records; f; f = f->sister) {
+			output_report_move_sums (f, 1);
+		}
+		output_line ("break;");
+		output_newline ();
+		output_indent_level -= 2;
+	}
 
 	for (f=rep->records; f; f = f->sister) {
 		if (f->report_decl_id != 0

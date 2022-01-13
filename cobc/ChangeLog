@@ -1,4 +1,10 @@
 
+2022-01-13  Ron Norman <rjn@inglenet.com>
+
+	* parser.y: Accept  SUM  expression-list
+	* codegen.c: Update to generate code to compute SUM expressions
+	* tree.c: Update to handle SUM expressions
+
 2022-01-06  Ron Norman <rjn@inglenet.com>
 
 	* codegen.c: Fix intialize of table to set 1st occurence

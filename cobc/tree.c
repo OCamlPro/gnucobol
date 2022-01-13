@@ -130,6 +130,7 @@ static struct int_node		*int_node_table_hex = NULL;
 
 static char			*scratch_buff = NULL;
 static int			filler_id = 1;
+static int			report_id = 1;
 static int			class_id = 0;
 static int			toplev_count;
 static int			after_until = 0;
@@ -515,7 +516,14 @@ cb_name_1 (char *s, cb_tree x, const int size)
 
 	case CB_TAG_LITERAL:
 		if (CB_TREE_CLASS (x) == CB_CLASS_NUMERIC) {
-			strncpy (s, (char *)CB_LITERAL (x)->data, size);
+			struct cb_literal 	*xl = CB_LITERAL (x);
+			strncpy (s, (char *)xl->data, size);
+			if (xl->scale > 0) 
+				snprintf (s, size, "%s%.*s.%s", xl->sign == -1 ? "-" : "", 
+								xl->size - xl->scale, (char *)xl->data,
+								(char *)(xl->data + (xl->size - xl->scale)));
+			else
+				snprintf (s, size, "%s%s", xl->sign == -1 ? "-" : "", (char *)xl->data);
 		} else {
 			snprintf (s, size, "\"%s\"", (char *)CB_LITERAL (x)->data);
 		}
@@ -4083,52 +4091,13 @@ build_report (cb_tree name)
 	return p;
 }
 
-/* Add SUM counter to program */
-void
-build_sum_counter (struct cb_report *r, struct cb_field *f)
+static cb_tree
+add_report_sum (struct cb_report *r, char *buff, int dig, int dec)
 {
-	cb_tree		x;
 	struct cb_field *s;
-	char		buff[COB_MINI_BUFF],pic[30];
-	int		dec,dig;
-	size_t	num_sums_size = ((size_t)r->num_sums + 2) * sizeof (struct cb_field *) * 2;
-	size_t	num_sums_square = (size_t)r->num_sums * 2;
+	char	pic[32];
 
-	if (f->count == 0) {
-		f->count = 1;
-	}
-	if (f->report_sum_list == NULL)
-		return;
-	if (f->pic == NULL) {
-		s = cb_code_field (CB_VALUE(f->report_sum_list));
-		cb_error_x (CB_TREE(f), _("needs PICTURE clause for SUM %s"),s->name);
-		return;
-	}
-	if (f->pic->category != CB_CATEGORY_NUMERIC
-	 && f->pic->category != CB_CATEGORY_NUMERIC_EDITED) {
-		s = cb_code_field (CB_VALUE(f->report_sum_list));
-		cb_warning_x (COBC_WARN_FILLER, CB_TREE(f), 
-					_("non-numeric PICTURE clause for SUM %s"),s->name);
-	}
-	/* Set up SUM COUNTER */
-	if (f->flag_filler
-	 || memcmp(f->name,"FILLER ",7) == 0) {
-		s = cb_code_field (CB_VALUE(f->report_sum_list));
-		if (s->count == 0)
-			s->count = 1;
-		snprintf (buff, (size_t)COB_MINI_MAX, "SUM OF %s", s->name);
-	} else {
-		snprintf (buff, (size_t)COB_MINI_MAX, "SUM %s", f->name);
-	}
-	x = cb_build_field (cb_build_reference (buff));
-	if (f->pic->digits == 0) {
-		dig = 16;
-	} else if(f->pic->digits > 17) {
-		dig = 18;
-	} else {
-		dig = f->pic->digits + 2;
-	}
-	if ((dec = f->pic->scale) > 0) {
+	if (dec > 0) {
 		if((dig-dec) == 0) {
 			sprintf(pic,"SV9(%d)",dec);
 		} else if((dig-dec) < 0) {
@@ -4139,28 +4108,114 @@ build_sum_counter (struct cb_report *r, struct cb_field *f)
 	} else {
 		sprintf(pic,"S9(%d)",dig);
 	}
-	s = CB_FIELD (x);
-	s->pic 	= CB_PICTURE (cb_build_picture (pic));
+	s = CB_FIELD (cb_build_field (cb_build_reference (buff)));
+	s->pic		= CB_PICTURE (cb_build_picture (pic));
 	s->values	= CB_LIST_INIT (cb_zero);
 	s->storage	= CB_STORAGE_WORKING;
 	s->usage	= CB_USAGE_DISPLAY;
+	s->report	= r;
+	s->level	= 77;
 	s->count++;
 	cb_validate_field (s);
+	CB_FIELD_ADD (current_program->working_storage, s);
+	return cb_build_field_reference (s, NULL);
+}
+
+
+/* Add SUM counter to program */
+void
+build_sum_counter (struct cb_report *r, struct cb_field *f)
+{
+	cb_tree		x, l;
+	char		buff[COB_MINI_BUFF];
+	int		dec,dig,ln;
+	size_t	num_sums_size = ((size_t)r->num_sums + 2) * sizeof (struct cb_field *) * 2;
+	size_t	num_sums_square = (size_t)r->num_sums * 2;
+
+	if (f->count == 0) {
+		f->count = 1;
+	}
+	if (f->report_sum_list == NULL)
+		return;
+	if (f->pic == NULL) {
+		cb_error_x (CB_TREE(f), _("needs PICTURE clause for SUM %s"),
+							cb_name (CB_VALUE(f->report_sum_list)));
+		return;
+	}
+	if (f->pic->category != CB_CATEGORY_NUMERIC
+	 && f->pic->category != CB_CATEGORY_NUMERIC_EDITED) {
+		cb_warning_x (COBC_WARN_FILLER, CB_TREE(f), 
+					_("non-numeric PICTURE clause for SUM %s"),
+							cb_name (CB_VALUE(f->report_sum_list)));
+	}
+	/* Set up SUM COUNTER */
+	if (f->flag_filler
+	 || memcmp(f->name,"FILLER ",7) == 0) {
+		snprintf (buff, (size_t)COB_MINI_MAX, "SUM OF %s",
+							cb_name (CB_VALUE(f->report_sum_list)));
+	} else {
+		snprintf (buff, (size_t)COB_MINI_MAX, "SUM %s", f->name);
+	}
+	if (f->report == NULL)
+		f->report = r;
 	if (f->count == 0)
 		f->count = 1;
-	f->report_sum_counter = cb_build_field_reference (s, NULL);
-	CB_FIELD_ADD (current_program->working_storage, s);
+	if (f->pic->digits == 0) {
+		dig = 16;
+	} else {
+		dig = f->pic->digits + 2;
+	}
+	dec = f->pic->scale;
+	f->report_sum_counter = add_report_sum (r, buff, dig, dec);
 
 	if (r->sums == NULL) {
 		r->sums = cobc_parse_malloc (num_sums_size);
 	} else {
 		r->sums = cobc_parse_realloc (r->sums, num_sums_size);
 	}
-	r->sums[num_sums_square + 0] = s;
+	r->sums[num_sums_square + 0] = cb_code_field (f->report_sum_counter);
 	r->sums[num_sums_square + 1] = f;
 	r->sums[num_sums_square + 2] = NULL;
 	r->sums[num_sums_square + 3] = NULL;
 	r->num_sums++;
+
+	ln = 0;
+	for (l = f->report_sum_list; l; l = CB_CHAIN (l)) {
+		x = CB_VALUE (l);
+		if (CB_LITERAL_P (x)
+		 && !CB_NUMERIC_LITERAL_P (x)) {
+			cb_error_x (x, _("SUM non-numeric %s is unaccepted"),cb_name (x));
+			ln = -1;
+		}
+	}
+	if (ln == -1) {
+		f->report_sum_list = NULL;
+		return;
+	}
+
+	/* Convert SUM A, B, ... into A + B + ... */
+	if (cb_list_length (f->report_sum_list) > 1) {
+		x = cb_build_binary_op ( CB_VALUE (f->report_sum_list), 
+							'+', CB_VALUE (CB_CHAIN (f->report_sum_list)));
+		l = CB_CHAIN (f->report_sum_list);
+		while ((l = CB_CHAIN (l)) != NULL) {
+			x = cb_build_binary_op (x, '+', CB_VALUE (l));
+		}
+		f->report_sum_list = CB_LIST_INIT (x);
+	}
+
+	ln = strlen(buff);
+	for (l = f->report_sum_list; l; l = CB_CHAIN (l)) {
+		x = CB_VALUE (l);
+		if (CB_NUMERIC_LITERAL_P (x)) {
+			sprintf(&buff[ln],"c%d",report_id++);
+			CB_PURPOSE(l) = add_report_sum (r, buff, dig, dec);
+		} else
+		if (CB_BINARY_OP_P (x)) {
+			sprintf(&buff[ln],"x%d",report_id++);
+			CB_PURPOSE(l) = add_report_sum (r, buff, dig, dec);
+		}
+	}
 }
 
 static int report_col_pos = 1;
@@ -4458,16 +4513,14 @@ finalize_report (struct cb_report *r, struct cb_field *records)
 		if (p->report_sum_counter
 		 && CB_REF_OR_FIELD_P (p->report_sum_counter)) {
 			fld = CB_FIELD_PTR (p->report_sum_counter);
-			if (fld->count == 0) {
+			if (fld->count == 0)
 				fld->count = 1;
-			}
 		}
 		if (p->report_control
 		 && CB_REF_OR_FIELD_P (p->report_control)) {
 			fld = CB_FIELD_PTR (p->report_control);
-			if (fld->count == 0) {
+			if (fld->count == 0)
 				fld->count = 1;
-			}
 		}
 		if (p->children) {
 			finalize_report (r,p->children);

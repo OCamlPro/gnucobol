@@ -3784,7 +3784,6 @@ AT_DATA([reference], [                                                          
 
 
 
-
                                                             PAGE    2
 
                          STUDENT ADVISEMENT LIST
@@ -3983,7 +3982,6 @@ AT_DATA([reference], [
 
 
 
-
          02             00060            5,439.80
 
                                                           5,439.80
@@ -4004,7 +4002,6 @@ AT_DATA([reference], [
 
 
                              -+* End of Page *+-      ************        *************       **************
-
 
 
 
@@ -4129,14 +4126,12 @@ A        1st Detail
 
 
 
-
 HEADING SAVE-ITEM
 B        1st Detail
 B        2nd Detail
 B        3rd Detail 1
 B        3rd Detail 2
       FOOTING SAVE-ITEM
-
 
 
 
@@ -5171,7 +5166,6 @@ IN150222   20150222                          OR150226          020  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page    2
 Region:    MW
 Location:            1000071
@@ -5187,7 +5181,6 @@ IN150228   20150228                          OR150225          098  ITEM_NUMBER_
 
 
                                                                     Branch Total:                   000000084        159.98
-
 
 
 
@@ -5293,7 +5286,6 @@ IN150227   20150227                          OR150223          079  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page    4
 Region:    MW
 Location:            1000291
@@ -5306,7 +5298,6 @@ IN150217   20150217                          OR150218          088  ITEM_NUMBER_
 
 
                                                                     Branch Total:                   000000019         89.99
-
 
 
 
@@ -5415,7 +5406,6 @@ IN150223   20150223                          OR150210          063  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page    6
 Region:    MW
 Location:            1000451
@@ -5428,7 +5418,6 @@ IN150217   20150217                          OR150202          053  ITEM_NUMBER_
 
 
                                                                     Branch Total:                   000000051         69.99
-
 
 
 
@@ -5537,7 +5526,6 @@ IN150224   20150224                          OR150201          036  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page    8
 Region:    MW
 Location:            1000831
@@ -5556,7 +5544,6 @@ IN150220   20150220                          OR150226          048  ITEM_NUMBER_
 
 
                                                                     Branch Total:                   000000154        159.97
-
 
 
 
@@ -5659,7 +5646,6 @@ IN150223   20150223                          OR150227          069  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page   10
 Region:    NE
 Location:            1000001
@@ -5672,7 +5658,6 @@ IN150210   20150210                          OR150217          060  ITEM_NUMBER_
 
 
                                                                     Branch Total:                   000000098         39.99
-
 
 
 
@@ -5781,7 +5766,6 @@ IN150219   20150219                          OR150209          035  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page   12
 Region:    NE
 Location:            1000431
@@ -5842,7 +5826,6 @@ IN150222   20150222                          OR150213          062  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page   13
 Region:    NE
 Location:            1000451
@@ -5855,7 +5838,6 @@ IN150203   20150203                          OR150213          087  ITEM_NUMBER_
 
 
                                                                     Branch Total:                   000000053         89.99
-
 
 
 
@@ -5964,7 +5946,6 @@ IN150221   20150221                          OR150222          034  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page   15
 Region:    NE
 Location:            1000491
@@ -5977,7 +5958,6 @@ IN150217   20150217                          OR150210          037  ITEM_NUMBER_
 
 
                                                                     Branch Total:                   000000007         19.99
-
 
 
 
@@ -6086,7 +6066,6 @@ IN150215   20150215                          OR150211          070  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page   17
 Region:    NE
 Location:            1000631
@@ -6099,7 +6078,6 @@ IN150227   20150227                          OR150209          051  ITEM_NUMBER_
 
 
                                                                     Branch Total:                   000000054          9.99
-
 
 
 
@@ -6208,7 +6186,6 @@ IN150206   20150206                          OR150220          045  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page   19
 Region:    NE
 Location:            1000811
@@ -6224,7 +6201,6 @@ IN150228   20150228                          OR150222          075  ITEM_NUMBER_
 
 
                                                                     Branch Total:                   000000103         99.98
-
 
 
 
@@ -6330,7 +6306,6 @@ IN150216   20150216                          OR150224          004  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page   21
 Region:    NW
 Location:            1000001
@@ -6343,7 +6318,6 @@ IN150224   20150224                          OR150215          029  ITEM_NUMBER_
 
 
                                                                     Branch Total:                   000000035         79.99
-
 
 
 
@@ -6452,7 +6426,6 @@ IN150228   20150228                          OR150209          023  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page   23
 Region:    NW
 Location:            1000051
@@ -6513,7 +6486,6 @@ IN150220   20150220                          OR150221          050  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page   24
 Region:    NW
 Location:            1000071
@@ -6526,7 +6498,6 @@ IN150202   20150202                          OR150223          014  ITEM_NUMBER_
 
 
                                                                     Branch Total:                   000000048         59.99
-
 
 
 
@@ -6635,7 +6606,6 @@ IN150227   20150227                          OR150219          030  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page   26
 Region:    NW
 Location:            1000201
@@ -6648,7 +6618,6 @@ IN150208   20150208                          OR150210          061  ITEM_NUMBER_
 
 
                                                                     Branch Total:                   000000012         39.99
-
 
 
 
@@ -6757,7 +6726,6 @@ IN150214   20150214                          OR150210          044  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page   28
 Region:    NW
 Location:            1000251
@@ -6770,7 +6738,6 @@ IN150212   20150212                          OR150204          059  ITEM_NUMBER_
 
 
                                                                     Branch Total:                   000000060         39.99
-
 
 
 
@@ -6879,7 +6846,6 @@ IN150217   20150217                          OR150203          085  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page   30
 Region:    NW
 Location:            1000411
@@ -6940,7 +6906,6 @@ IN150228   20150228                          OR150221          008  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page   31
 Region:    NW
 Location:            1000491
@@ -6953,7 +6918,6 @@ IN150228   20150228                          OR150201          002  ITEM_NUMBER_
 
 
                                                                     Branch Total:                   000000086         49.99
-
 
 
 
@@ -7062,7 +7026,6 @@ IN150227   20150227                          OR150224          097  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page   33
 Region:    NW
 Location:            1000631
@@ -7123,7 +7086,6 @@ IN150224   20150224                          OR150218          024  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page   34
 Region:    NW
 Location:            1000651
@@ -7136,7 +7098,6 @@ IN150206   20150206                          OR150225          099  ITEM_NUMBER_
 
 
                                                                     Branch Total:                   000000043         59.99
-
 
 
 
@@ -7245,7 +7206,6 @@ IN150213   20150213                          OR150224          041  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page   36
 Region:    NW
 Location:            1000691
@@ -7258,7 +7218,6 @@ IN150204   20150204                          OR150211          092  ITEM_NUMBER_
 
 
                                                                     Branch Total:                   000000094         19.99
-
 
 
 
@@ -7367,7 +7326,6 @@ IN150227   20150227                          OR150217          081  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page   38
 Region:    NW
 Location:            1000851
@@ -7380,7 +7338,6 @@ IN150208   20150208                          OR150203          091  ITEM_NUMBER_
 
 
                                                                     Branch Total:                   000000066         69.99
-
 
 
 
@@ -7489,7 +7446,6 @@ IN150228   20150228                          OR150222          015  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page   40
 Region:    NW
 Location:            1000891
@@ -7550,7 +7506,6 @@ IN150225   20150225                          OR150201          026  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page   41
 Region:    SE
 Location:            1000001
@@ -7563,7 +7518,6 @@ IN150223   20150223                          OR150203          064  ITEM_NUMBER_
 
 
                                                                     Branch Total:                   000000071          9.99
-
 
 
 
@@ -7672,7 +7626,6 @@ IN150212   20150212                          OR150209          066  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page   43
 Region:    SE
 Location:            1000091
@@ -7733,7 +7686,6 @@ IN150226   20150226                          OR150219          038  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page   44
 Region:    SE
 Location:            1000211
@@ -7746,7 +7698,6 @@ IN150206   20150206                          OR150221          089  ITEM_NUMBER_
 
 
                                                                     Branch Total:                   000000045          9.99
-
 
 
 
@@ -7855,7 +7806,6 @@ IN150212   20150212                          OR150208          012  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page   46
 Region:    SE
 Location:            1000431
@@ -7916,7 +7866,6 @@ IN150225   20150225                          OR150220          040  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page   47
 Region:    SE
 Location:            1000451
@@ -7929,7 +7878,6 @@ IN150214   20150214                          OR150204          022  ITEM_NUMBER_
 
 
                                                                     Branch Total:                   000000047         39.99
-
 
 
 
@@ -8038,7 +7986,6 @@ IN150211   20150211                          OR150213          025  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page   49
 Region:    SE
 Location:            1000491
@@ -8051,7 +7998,6 @@ IN150202   20150202                          OR150202          013  ITEM_NUMBER_
 
 
                                                                     Branch Total:                   000000078         19.99
-
 
 
 
@@ -8160,7 +8106,6 @@ IN150224   20150224                          OR150210          039  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page   51
 Region:    SE
 Location:            1000631
@@ -8173,7 +8118,6 @@ IN150201   20150201                          OR150216          003  ITEM_NUMBER_
 
 
                                                                     Branch Total:                   000000011         69.99
-
 
 
 
@@ -8282,7 +8226,6 @@ IN150220   20150220                          OR150214          032  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page   53
 Region:    SE
 Location:            1000891
@@ -8343,7 +8286,6 @@ IN150226   20150226                          OR150229          068  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page   54
 Region:    SW
 Location:            1000011
@@ -8356,7 +8298,6 @@ IN150202   20150202                          OR150206          000  ITEM_NUMBER_
 
 
                                                                     Branch Total:                   000000059         39.99
-
 
 
 
@@ -8465,7 +8406,6 @@ IN150206   20150206                          OR150206          021  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page   56
 Region:    SW
 Location:            1000091
@@ -8478,7 +8418,6 @@ IN150223   20150223                          OR150221          028  ITEM_NUMBER_
 
 
                                                                     Branch Total:                   000000039         69.99
-
 
 
 
@@ -8587,7 +8526,6 @@ IN150225   20150225                          OR150203          052  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page   58
 Region:    SW
 Location:            1000211
@@ -8603,7 +8541,6 @@ IN150208   20150208                          OR150215          007  ITEM_NUMBER_
 
 
                                                                     Branch Total:                   000000102        119.98
-
 
 
 
@@ -8709,7 +8646,6 @@ IN150213   20150213                          OR150207          095  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page   60
 Region:    SW
 Location:            1000401
@@ -8722,7 +8658,6 @@ IN150228   20150228                          OR150202          027  ITEM_NUMBER_
 
 
                                                                     Branch Total:                   000000001         89.99
-
 
 
 
@@ -8831,7 +8766,6 @@ IN150210   20150210                          OR150220          073  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page   62
 Region:    SW
 Location:            1000431
@@ -8892,7 +8826,6 @@ IN150220   20150220                          OR150227          006  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page   63
 Region:    SW
 Location:            1000601
@@ -8905,7 +8838,6 @@ IN150206   20150206                          OR150201          011  ITEM_NUMBER_
 
 
                                                                     Branch Total:                   000000084         79.99
-
 
 
 
@@ -9014,7 +8946,6 @@ IN150206   20150206                          OR150218          019  ITEM_NUMBER_
 
 
 
-
 Run:02/25/2015 153000                  NEXT PAGE ISSUE      Page   65
 Region:    SW
 Location:            1000651
@@ -9027,7 +8958,6 @@ IN150209   20150209                          OR150224          009  ITEM_NUMBER_
 
 
                                                                     Branch Total:                   000000018         29.99
-
 
 
 
@@ -9094,7 +9024,6 @@ IN150222   20150222                          OR150213          058  ITEM_NUMBER_
 
 
                                                                     Branch Total:                   000000189        189.97
-
 
 
 

@@ -1,4 +1,12 @@
 
+2022-01-33  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.h: REPORT struct changes
+	* fileio.c: changes to get CR LF usage to match Microfocus
+	* reportio.c: Updates for SUM expression-list
+			Multiple fields become and expression
+			To compute the expression values a call back is done
+
 2022-01-04  Ron Norman <rjn@inglenet.com>
 
 	* fisam.c: Handle primary key with DUPLICATES

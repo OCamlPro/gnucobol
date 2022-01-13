@@ -1563,6 +1563,7 @@ struct cb_report {
 	struct cb_field		**sums;		/* Array of SUM fields */
 	int			rcsz;				/* Longest record */
 	int			id;					/* unique id for this report */
+	int			sum_exec;			/* Id for computing SUM values */
 	unsigned int		control_final:1;/* CONTROL FINAL declared */
 	unsigned int		global:1;	/* IS GLOBAL declared */
 	unsigned int		has_declarative:1;/* Has Declaratives Code to be executed */

@@ -3589,20 +3589,20 @@ cob_file_write_opt (cob_file *f, const int opt)
 				COB_CHECKED_FPUTC ('\r', (FILE *)f->file);
 			f->flag_needs_cr = 0;
 		} else {
-			if ((f->file_features & COB_FILE_LS_CRLF)) {
-				if (f->flag_needs_cr)
-					COB_CHECKED_FPUTC ('\r', (FILE *)f->file);
-			}
-			f->flag_needs_cr = 0;
 			for (; i > 0; --i) {
+				if (f->flag_needs_cr) {
+					COB_CHECKED_FPUTC ('\r', (FILE *)f->file);
+					f->flag_needs_cr = 0;
+				}
 				COB_CHECKED_FPUTC ('\n', (FILE *)f->file);
 			}
 		}
 	} else if (opt & COB_WRITE_PAGE) {
 		if ((f->file_features & COB_FILE_LS_CRLF)) {
-			if (f->flag_needs_cr)
+			if (f->flag_needs_cr) {
 				COB_CHECKED_FPUTC ('\r', (FILE *)f->file);
-			f->flag_needs_cr = 0;
+				f->flag_needs_cr = 0;
+			}
 		}
 		COB_CHECKED_FPUTC ('\f', (FILE *)f->file);
 	}
@@ -4289,9 +4289,10 @@ cob_file_close (cob_file_api *a, cob_file *f, const int opt)
 		if ((f->flag_line_adv & COB_LINE_ADVANCE)
 		 && (f->file_features & COB_FILE_LS_CRLF)
 		 && f->last_write_mode != COB_LAST_WRITE_UNKNOWN) {
-			if (f->flag_needs_cr)
+			if (f->flag_needs_cr) {
 				COB_CHECKED_FPUTC ('\r', (FILE *)f->file);
-			f->flag_needs_cr = 0;
+				f->flag_needs_cr = 0;
+			}
 		}
 		if (f->organization == COB_ORG_LINE_SEQUENTIAL) {
 			if (f->flag_needs_nl 
@@ -4362,10 +4363,6 @@ cob_file_close (cob_file_api *a, cob_file *f, const int opt)
 						char buff[COB_MINI_BUFF];
 						snprintf((char *)&buff, COB_MINI_MAX, "TASKKILL    /PID %d", f->file_pid);
 						system(buff);
-#if 0
-						snprintf((char *)&buff, COB_MINI_MAX, "TASKKILL /F /PID %d", f->file_pid);
-						system(buff);
-#endif
 					}
 #endif
 				} else {
@@ -4894,6 +4891,7 @@ lineseq_write (cob_file_api *a, cob_file *f, const int opt)
 			if (f->last_write_mode == COB_LAST_WRITE_BEFORE) {
 				COB_CHECKED_FPUTC ('\n', (FILE *)f->file);
 				f->flag_needs_nl = 0;
+				f->flag_needs_cr = 0;
 			} else { 
 				ret = cob_file_write_opt (f, opt);
 				if (ret)
@@ -4907,15 +4905,18 @@ lineseq_write (cob_file_api *a, cob_file *f, const int opt)
 	}
 
 	if ((opt & COB_WRITE_BEFORE) 
-	 && f->last_write_mode == COB_LAST_WRITE_AFTER) {
-		if ((f->file_features & COB_FILE_LS_CRLF))
+	 && f->last_write_mode != COB_LAST_WRITE_BEFORE) {
+		if (f->flag_needs_cr
+		 && f->last_write_mode != COB_LAST_WRITE_UNKNOWN) {
 			COB_CHECKED_FPUTC ('\r', (FILE *)f->file);
-		f->last_write_mode = COB_LAST_WRITE_BEFORE;
+		}
 		f->flag_needs_cr = 0;
+		f->last_write_mode = COB_LAST_WRITE_BEFORE;
 	} 
 	/* Write to the file */
 	if (size) {
-		f->flag_needs_cr = 1;
+		if ((f->file_features & COB_FILE_LS_CRLF))
+			f->flag_needs_cr = 1;
 		if (f->file_features & COB_FILE_LS_NULLS) {
 			size_t i, j, k, t;
 			p = f->record->data;
@@ -4989,13 +4990,12 @@ lineseq_write (cob_file_api *a, cob_file *f, const int opt)
 	if ((f->file_features & COB_FILE_LS_CRLF)) {
 		if ((opt & COB_WRITE_PAGE)
 		 || ((opt & COB_WRITE_BEFORE) && f->flag_needs_nl)) {
-			COB_CHECKED_FPUTC ('\r', fo);
-			f->flag_needs_cr = 0;
-		/* CHECKME - possible bug, see discussion board */
+			/* CHECKME - possible bug, see discussion board */
 		} else if (opt == 0) {
-			if (f->flag_needs_cr)
+			if (f->flag_needs_cr) {
 				COB_CHECKED_FPUTC ('\r', fo);
-			f->flag_needs_cr = 0;
+				f->flag_needs_cr = 0;
+			}
 		}
 	}
 
@@ -5004,6 +5004,10 @@ lineseq_write (cob_file_api *a, cob_file *f, const int opt)
 	&& ((f->file_features & COB_FILE_LS_LF)
 	 || (f->file_features & COB_FILE_LS_CRLF))){
 		/* At least add 1 LF */
+		if (f->flag_needs_cr) {
+			COB_CHECKED_FPUTC ('\r', fo);
+			f->flag_needs_cr = 0;
+		}
 		COB_CHECKED_FPUTC ('\n', fo);
 		f->flag_needs_nl = 0;
 	}
@@ -5015,6 +5019,7 @@ lineseq_write (cob_file_api *a, cob_file *f, const int opt)
 			return ret;
 		}
 		f->flag_needs_nl = 0;
+		f->last_write_mode = COB_LAST_WRITE_BEFORE;
 	}
 	if (f->open_mode == COB_OPEN_I_O)	/* Required on some systems */
 		fflush((FILE*)f->file); 

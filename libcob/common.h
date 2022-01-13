@@ -1001,6 +1001,7 @@ enum cob_file_access {
 #define	COB_LAST_WRITE_UNKNOWN	0
 #define	COB_LAST_WRITE_AFTER	1
 #define	COB_LAST_WRITE_BEFORE	2
+#define	COB_LAST_WRITE_OPEN		3
 
 /* Read options */
 
@@ -1629,12 +1630,6 @@ typedef struct __cob_file {
 /* Report structure */
 /********************/
 
-/* for each SUM field of each line in the report */
-typedef struct __cob_report_sum {
-	struct __cob_report_sum	*next;			/* Next field */
-	cob_field		*f;			/* Field to be summed */
-} cob_report_sum;
-
 /* for each field of each line in the report */
 typedef struct __cob_report_field {
 	struct __cob_report_field *next;			/* Next field */
@@ -1696,22 +1691,23 @@ typedef struct __cob_report_control {
 
 /* for each SUM counter in the report */
 typedef struct __cob_report_sumctr {
-	struct __cob_report_sumctr *next;		/* Next sum counter */
+	struct __cob_report_sumctr *next;/* Next sum counter */
 	const char		*name;			/* Name of this SUM counter */
-	cob_report_sum		*sum;			/* list of fields to be summed */
+	cob_field		*fsum;			/* Data Field to be SUMed (maybe expression result) */
 	cob_field		*counter;		/* Field to hold the SUM counter */
-	cob_field		*f;			/* Data Field for SUM counter */
-	cob_report_control	*control;		/* RESET when this control field changes */
-	unsigned int		reset_final:1;		/* RESET on FINAL */
-	unsigned int		control_final:1;	/* CONTROL FOOTING FINAL */
-	unsigned int		subtotal:1;		/* This is a 'subtotal' counter */
-	unsigned int		crossfoot:1;		/* This is a 'crossfoot' counter */
+	cob_field		*f;				/* Data Field for SUM counter */
+	cob_report_control	*control;	/* RESET when this control field changes */
+	unsigned int	reset_final:1;	/* RESET on FINAL */
+	unsigned int	control_final:1;/* CONTROL FOOTING FINAL */
+	unsigned int	subtotal:1;		/* This is a 'subtotal' counter */
+	unsigned int	crossfoot:1;	/* This is a 'crossfoot' counter */
+	unsigned int	computed:1;		/* This is a computed expression */
 } cob_report_sum_ctr;
 
 /* main report table for each RD */
 typedef struct __cob_report {
 	unsigned int	report_ver;			/* To identify version of these tables */
-#define COB_REPORT_VERSION	0x20211227
+#define COB_REPORT_VERSION	0x20220111
 	const char		*report_name;		/* Report name */
 	struct __cob_report	*next;			/* Next report */
 	int				go_label;			/* goto 'label' on reentry */
@@ -1722,19 +1718,20 @@ typedef struct __cob_report {
 	cob_report_line		*heading_final;	/* CONTROL HEADING FINAL line */
 	cob_report_line		*footing_final;	/* CONTROL FOOTING FINAL line */
 	cob_report_control	*controls;		/* control fields of report */
-	cob_report_sum_ctr	*sum_counters;		/* List of SUM counters in report */
-	int			def_lines;		/* Default lines */
-	int			def_cols;		/* Default columns */
+	cob_report_sum_ctr	*sum_counters;	/* List of SUM counters in report */
+	int			sum_exec;			/* Goto Label#  for SUM computes */
+	int			def_lines;			/* Default lines */
+	int			def_cols;			/* Default columns */
 	int			def_heading;		/* Default heading */
 	int			def_first_detail;	/* Default first detail */
 	int			def_last_control;	/* Default last control */
 	int			def_last_detail;	/* Default last detail */
 	int			def_footing;		/* Default footing */
-	int			curr_page;		/* Current page */
-	int			curr_line;		/* Current line on page */
-	int			curr_cols;		/* Current column on line */
+	int			curr_page;			/* Current page */
+	int			curr_line;			/* Current line on page */
+	int			curr_cols;			/* Current column on line */
 	int			curr_status;		/* Current status */
-	int			next_value;		/* NEXT GROUP Line/Page/Plus value */
+	int			next_value;			/* NEXT GROUP Line/Page/Plus value */
 	unsigned int		control_final:1;	/* CONTROL FINAL declared */
 	unsigned int		global:1;		/* IS GLOBAL declared */
 	unsigned int		first_detail:1;		/* First Detail on page */
@@ -1747,11 +1744,12 @@ typedef struct __cob_report {
 	unsigned int		next_line_plus:1;	/* Advance to plus line on next DETAIL */
 	unsigned int		next_page:1;		/* Advance to next page on next DETAIL */
 	unsigned int		next_just_set:1;	/* NEXT xxx was just set so ignore */
-	unsigned int		in_report_footing:1;	/* doing report footing now */
+	unsigned int		in_report_footing:1;/* doing report footing now */
 	unsigned int		incr_line:1;		/* 'curr_lines' should be incremented */
 	unsigned int		foot_next_page:1;	/* Advance to next page after all CONTROL footings */
 	unsigned int		code_is_present:1;	/* CODE IS present */
-	unsigned int		unused:17;		/* Use these bits up next */
+	unsigned int		incr_page:1;		/* 'curr_page' should be incremented */
+	unsigned int		unused:16;			/* Use these bits up next */
 
 	int			code_len;		/* Length to use for holding 'CODE IS' value */
 	char		*code_is;		/* Value of CODE IS for this report */
