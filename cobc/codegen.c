@@ -316,6 +316,18 @@ cb_code_field (cb_tree x)
 	return CB_FIELD (x);
 }
 
+static char *
+field_name (struct cb_field *f)
+{
+	static char wrk[64];
+	if (memcmp (f->name, "FILLER ",7) == 0
+	 || f->flag_filler) {
+		sprintf (wrk,"Line %d",f->common.source_line);
+		return wrk;
+	}
+	return f->name;
+}
+
 static int
 lookup_string (const char *p)
 {
@@ -2538,11 +2550,7 @@ output_local_base_cache (void)
 				ws_used += fs;
 			}
 		}
-		if (memcmp (blp->f->name, "FILLER ",7) == 0
-		 || blp->f->flag_filler)
-			output_local ("\t/* Line %d */\n", blp->f->common.source_line);
-		else
-			output_local ("\t/* %s */\n", blp->f->name);
+		output_local ("\t/* %s */\n", field_name (blp->f));
 	}
 
 	output_local_ws_group ();
@@ -2732,12 +2740,7 @@ output_emit_one_field (struct cb_field *f, const char *cmt, int sub)
 		output ("static cob_field %s%d\t= ", CB_PREFIX_FIELD, f->id);
 	output_field_sub (f, cb_build_field_reference (f, NULL), sub);
 	output_local(";\t/* ");
-	if (memcmp (f->name, "FILLER ",7) == 0
-	 || f->flag_filler) {
-		output_local ("Line %d ", f->common.source_line);
-	} else {
-		output_local ("%s ", f->name);
-	}
+	output_local ("%s ", field_name (f));
 	if ((f->report_flag & COB_REPORT_COLUMN_RIGHT)) {
 		output_local(", RIGHT %d",f->report_column);
 	} else
@@ -10261,12 +10264,7 @@ output_report_field_cmt (struct cb_field *f)
 	 || (f->report_flag & COB_REPORT_PRESENT)) {
 		output_local("\t\t/* ");
 		if(f->report_source_txt) {
-			if (memcmp (f->name, "FILLER ",7) == 0
-			 || f->flag_filler) {
-				output_local("Line %d, SOURCE %s ",f->common.source_line,f->report_source_txt);
-			} else {
-				output_local("%s SOURCE %s; ",f->name,f->report_source_txt);
-			}
+			output_local("%s, SOURCE %s; ",field_name (f),f->report_source_txt);
 		}
 		if((f->report_flag & COB_REPORT_PRESENT)) {
 			output_local("PRESENT ");
@@ -10914,7 +10912,7 @@ any_source_moves (struct cb_report *r, struct cb_field *f, int first)
 	 && CB_BINARY_OP_P (f->report_source))
 		return ++r_source_id;
 	if (f->report_field_from == NULL
-	&& (f->report_vary_var
+	&& (f->report_vary_list
 	 || f->report_source)) {
 		return ++r_source_id;
 	}
@@ -11009,49 +11007,55 @@ output_report_move_sums (struct cb_field *f, int first)
 static void
 output_report_move_source (struct cb_field *f, int first)
 {
-	struct cb_field *v;
+	struct cb_field *var, *frm, *by;
+	struct cb_vary	*vry;
 	cb_tree	l;
 	int		i, nested;
-	if (f->report_vary_var) {
-		for (l = f->report_vary_var, i=0; l; l = CB_CHAIN (l), i++) {
-			v = cb_code_field (CB_VALUE(l));
-			output_line ("/* VARYING %s for %s */",v->name,f->name);
-		}
-		output_prefix ();
-		output ("for (");
-		for (l = f->report_vary_var, i=0; l; l = CB_CHAIN (l), i++) {
-			if (i > 0)
-				output (", ");
-			v = cb_code_field (CB_VALUE(l));
-			rpt_idx[report_nest_vary] = v;
-			output ("%s%d = ",CB_PREFIX_BASE,v->id);
-			if (v->report_vary_from) {
-				output_integer (v->report_vary_from);
-			} else if (f->report_vary_from) {
-				output_integer (f->report_vary_from);
+	if (f->report_vary_list) {
+		output_block_open ();
+		output_line ("int  ix_%d;", f->id);
+		for (l = f->report_vary_list, i=0; l; l = CB_CHAIN (l), i++) {
+			output_prefix ();
+			vry = CB_VALUE (l);
+			var = cb_code_field (vry->var);
+			rpt_idx[report_nest_vary] = var;
+			output ("%s%d = ",CB_PREFIX_BASE,var->id);
+			if (vry->from) {
+				frm = cb_code_field (vry->from);
+				output_integer (frm);
 			} else {
 				output ("1");
 			}
+			output (";\t\t");
+			output ("/* VARYING %s ",var->name);
+			output ("(%s%d) ",CB_PREFIX_BASE,var->id);
+			if (vry->from) {
+				output ("FROM %s ",cb_name (vry->from));
+			} else {
+				output ("FROM 1 ");
+			}
+			if (vry->by) {
+				output ("BY %s ",cb_name (vry->by));
+			} else {
+				output ("BY 1 ");
+			}
+			output ("*/");
+			output_newline ();
 		}
-		output ("; ");
-		for (l = f->report_vary_var, i=0; l; l = CB_CHAIN (l), i++) {
-			if (i > 0)
-				output (" && ");
-			v = cb_code_field (CB_VALUE(l));
-			output ("%s%d ",CB_PREFIX_BASE,v->id);
-			output (" <= %d ",f->occurs_max);
-		}
-		output ("; ");
-		for (l = f->report_vary_var, i=0; l; l = CB_CHAIN (l), i++) {
-			if (i > 0)
-				output (", ");
-			v = cb_code_field (CB_VALUE(l));
-			output ("%s%d ",CB_PREFIX_BASE,v->id);
-			output (" += ");
-			if (v->report_vary_by) {
-				output_integer (v->report_vary_by);
-			} else if (f->report_vary_by) {
-				output_integer (f->report_vary_by);
+		output_prefix ();
+		output ("for (ix_%d = 1; ix_%d <= ",f->id,f->id);
+		if (f->depending)
+			output_integer (f->depending);
+		else
+			output ("%d",f->occurs_max);
+		output ("; ix_%d++",f->id);
+		for (l = f->report_vary_list; l; l = CB_CHAIN (l)) {
+			output (", ");
+			vry = CB_VALUE (l);
+			var = cb_code_field (vry->var);
+			output ("%s%d += ",CB_PREFIX_BASE,var->id);
+			if (vry->by) {
+				output_integer (vry->by);
 			} else {
 				output ("1");
 			}
@@ -11063,13 +11067,9 @@ output_report_move_source (struct cb_field *f, int first)
 	}
 	if (f->report_source) {
 		if (f->report_source_txt == NULL) {
-			output_line ("/* Move To %s */",f->name);
-		} else
-		if (memcmp (f->name, "FILLER ",7) == 0
-		 || f->flag_filler) {
-			output_line ("/* Move %s To line %d */",f->report_source_txt,f->common.source_line);
+			output_line ("/* Move To %s */",field_name (f));
 		} else {
-			output_line ("/* Move %s To %s */",f->report_source_txt,f->name);
+			output_line ("/* Move %s To %s */",f->report_source_txt,field_name (f));
 		}
 		stack_id = 0;
 		output_prefix ();
@@ -11095,6 +11095,9 @@ output_report_move_source (struct cb_field *f, int first)
 	if (f->sister && !first) {
 		output_report_move_source (f->sister, 0);
 	}
+	if (f->report_vary_list) {
+		output_block_close ();
+	}
 }
 
 static void
@@ -11102,6 +11105,7 @@ output_report_source_move (struct cb_report *rep)
 {
 	struct cb_field	*f;
 	int		first = 1;
+	char	wrk[64];
 
 	if (rep->sum_exec) {
 		output_line ("/* Compute values for report %s */",rep->cname);
@@ -11137,8 +11141,12 @@ output_report_source_move (struct cb_report *rep)
 				output_block_open ();
 				first = 0;
 			}
-			output_line ("case %d: /* Set SOURCE for line %d: %s */",f->report_source_id,
-										f->common.source_line,f->name);
+			if (f->occurs_max > 1)
+				sprintf (wrk," OCCURS %d",f->occurs_max);
+			else
+				strcpy(wrk,"");
+			output_line ("case %d: /* Set SOURCE for line %d: %s%s */",f->report_source_id,
+										f->common.source_line,f->name,wrk);
 			output_indent_level += 2;
 			if (f->report_decl_id) {
 				output_line ("frame_ptr++;\t/* PERFORM Declaratives Before */");

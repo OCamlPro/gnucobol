@@ -118,8 +118,9 @@ enum cb_tag {
 	CB_TAG_DECIMAL_LITERAL,	/* 39 Decimal Literal */
 	CB_TAG_REPORT_LINE,	/* 40 Report line description */
 	CB_TAG_ML_SUPPRESS,	/* 41 JSON/XML GENERATE SUPPRESS clause */
-	CB_TAG_ML_TREE,	/* 42 JSON/XML GENERATE output tree */
-	CB_TAG_ML_SUPPRESS_CHECKS	/* 43 JSON/XML GENERATE SUPPRESS checks */
+	CB_TAG_ML_TREE,		/* 42 JSON/XML GENERATE output tree */
+	CB_TAG_ML_SUPPRESS_CHECKS,	/* 43 JSON/XML GENERATE SUPPRESS checks */
+	CB_TAG_VARY			/* 44 Report line description */
 	/* When adding a new entry, please remember to add it to
 	   cobc_enum_explain as well. */
 };
@@ -790,6 +791,18 @@ struct cb_key {
 	int	dir;			/* ASCENDING or DESCENDING */
 };
 
+/* REPORT:  VARYING var FROM exp BY exp */
+
+struct cb_vary {
+	struct cb_tree_common	common;		/* Common values */
+	cb_tree		var;					/* Variable name being VARYed */
+	cb_tree		from;					/* Starting value */
+	cb_tree		by;						/* Increment value */
+};
+
+#define CB_VARY(x)	(CB_TREE_CAST (CB_TAG_VARY, struct cb_const, x))
+#define CB_VARY_P(x)	(CB_TREE_TAG (x) == CB_TAG_VARY)
+
 /* Field */
 
 struct cb_field {
@@ -836,9 +849,7 @@ struct cb_field {
 	cb_tree			report_control;	/* CONTROL identifier */
 	cb_tree			report_when;	/* PRESENT WHEN condition */
 	cb_tree			report_column_list;/* List of Column Numbers */
-	cb_tree			report_vary_var;/* VARYING identifier */
-	cb_tree			report_vary_from;/* VARYING FROM arith */
-	cb_tree			report_vary_by;	/* VARYING BY arith */
+	cb_tree			report_vary_list;/* VARYING identifier */
 	const char		*report_source_txt;	/* SOURCE as text string */
 	const char		*report_field_name;	/* Name used for this REPORT field */
 	struct cb_field	*report_field_from;	/* 'field' used as SOURCE */
@@ -1909,6 +1920,7 @@ extern struct cb_picture	*cb_build_binary_picture (const char *,
 							  const cob_u32_t);
 
 extern cb_tree			cb_build_field (cb_tree);
+extern cb_tree			cb_build_vary ();
 extern cb_tree			cb_build_implicit_field (cb_tree, const int);
 extern cb_tree			cb_build_constant (cb_tree, cb_tree);
 extern int			cb_build_generic_register (const char *, const char *, struct cb_field **);

@@ -3659,6 +3659,14 @@ end:
 	return CB_TREE (pic);
 }
 
+/* REPORT: VARYING */
+
+cb_tree
+cb_build_vary ()
+{
+	return make_tree (CB_TAG_VARY, CB_CATEGORY_UNKNOWN, sizeof (struct cb_vary));
+}
+
 /* Field */
 
 cb_tree

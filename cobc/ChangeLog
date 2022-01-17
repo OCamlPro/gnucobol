@@ -1,4 +1,11 @@
 
+2022-01-17  Ron Norman <rjn@inglenet.com>
+
+	* parser.y: VARYING var FROM exp BY exp partly added
+	* tree.h:	Add CB_VARY and updated cb_field accodingly
+	* codegen.c: Updated to use new CB_VARY
+				(More to come in the next few days for this)
+
 2022-01-13  Ron Norman <rjn@inglenet.com>
 
 	* parser.y: Accept  SOURCE  expression and more than one SUM

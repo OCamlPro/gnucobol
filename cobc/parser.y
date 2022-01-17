@@ -172,7 +172,8 @@ enum key_clause_type {
 
 static cb_tree			current_expr;
 static struct cb_field		*current_field;
-static struct cb_field		*current_field_vary;
+static struct cb_vary		*current_vary;
+static cb_tree				vary_from = NULL, vary_by = NULL;
 static struct cb_field		*control_field;
 static struct cb_field		*description_field;
 static struct cb_file		*current_file;
@@ -7648,7 +7649,7 @@ sign_clause:
 
 report_occurs_clause:
   OCCURS integer _occurs_to_integer _times
-  _occurs_depending _occurs_step
+  _occurs_depending report_occurs_step
   {
 	/* most of the field attributes are set when parsing the phrases */;
 	setup_occurs ();
@@ -7656,7 +7657,7 @@ report_occurs_clause:
   }
 ;
 
-_occurs_step:
+report_occurs_step:
 | STEP integer
   {
 	current_field->step_count = cb_get_int ($2);
@@ -8606,7 +8607,7 @@ page_or_ids:
 report_varying_clause:
   VARYING report_varying_list
   {
-	current_field->report_vary_var = $2;
+	current_field->report_vary_list = $2;
   }
 ;
 
@@ -8621,6 +8622,7 @@ report_varying:
   {
 	cb_tree x;
 
+	current_vary = CB_VARY (cb_build_vary ());
 	if (CB_WORD_COUNT ($1) == 0) {
 		x = cb_build_field (cb_build_reference (CB_NAME($1)));
 		CB_FIELD (x)->usage = CB_USAGE_INDEX;
@@ -8633,18 +8635,19 @@ report_varying:
 		CB_TREE (x)->category = CB_CATEGORY_NUMERIC;
 		cb_validate_field (CB_FIELD (x));
 		CB_FIELD_ADD (current_program->working_storage, CB_FIELD (x));
-		current_field_vary = CB_FIELD (x);
-		$$ = cb_build_field_reference (CB_FIELD (x), NULL);
+		current_vary->var = CB_FIELD (x);
 	} else {
 		struct cb_field *f = CB_FIELD (cb_ref ($1));
 		if (f->usage != CB_USAGE_INDEX
 		 || !f->flag_internal_register)
 			cb_error_x ($1, _("%s is not valid for VARYING"),f->name);
-		$$ = $1;
-		current_field_vary = f;
+		current_vary->var = f;
 	}
-	current_field_vary->report_vary_from = current_field->report_vary_from;
-	current_field_vary->report_vary_by = current_field->report_vary_by;
+	current_vary->from = vary_from;
+	current_vary->by = vary_by;
+	vary_from = NULL;
+	vary_by = NULL;
+	$$ = CB_TREE (current_vary);
   }
 ;
 
@@ -8652,7 +8655,7 @@ var_from:
 |
 FROM exp 
 {
-	current_field->report_vary_from = $2;
+	vary_from = $2;
 }
 ;
 
@@ -8660,7 +8663,7 @@ var_by:
 |
 BY exp 
 {
-	current_field->report_vary_by = $2;
+	vary_by = $2;
 }
 ;
 
