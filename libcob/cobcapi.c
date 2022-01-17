@@ -46,6 +46,8 @@
 #include "coblocal.h"
 #include "cobcapi.h"
 
+static const cob_field_attr	all_display_attr =
+				{COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL};
 static cob_field_attr	const_float_attr =
 			{COB_TYPE_NUMERIC_DOUBLE, 8, 0, COB_FLAG_HAVE_SIGN, NULL};
 static cob_field_attr	const_binll_attr =
@@ -210,6 +212,13 @@ cob_get_param_constant (int n)
 {
 	cob_field	*f = cob_get_param_field (n, "cob_get_param_constant");
 	return cob_get_field_constant (f);
+}
+
+int
+cob_get_param_right (int n)
+{
+	cob_field	*f = cob_get_param_field (n, "cob_get_param_constant");
+	return cob_get_field_right (f);
 }
 
 const char *
@@ -486,6 +495,17 @@ cob_get_field_constant (const cob_field *f)
 #endif
 }
 
+int
+cob_get_field_right (const cob_field *f)
+{
+	if (f == NULL) {
+		return -1;
+	}
+	if (COB_FIELD_JUSTIFIED(f)) 
+		return 1;
+	return 0;
+}
+
 const char *
 cob_get_field_str (const cob_field *f, char *buffer, size_t size)
 {
@@ -702,6 +722,7 @@ void
 cob_put_picx_param (int n, void *char_field)
 {
 	cob_field	*f = cob_get_param_field (n, "cob_put_picx_param");
+	cob_field	s[1];
 
 	if (f == NULL || char_field == NULL) {
 		return;
@@ -714,7 +735,14 @@ cob_put_picx_param (int n, void *char_field)
 		return;
 	}
 
-	cob_put_picx (f->data, f->size, char_field);
+	if (COB_FIELD_JUSTIFIED (f)) {
+		s->attr = &all_display_attr;
+		s->data = char_field;
+		s->size = strlen (char_field);
+		cob_move (s, f);
+	} else {
+		cob_put_picx (f->data, f->size, char_field);
+	}
 }
 
 void *

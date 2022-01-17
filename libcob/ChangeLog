@@ -1,5 +1,10 @@
 
-2022-01-33  Simon Sobisch <simonsobisch@gnu.org>
+2022-01-17  Ron Norman <rjn@inglenet.com>
+
+	* cobcapi.h: Add  cob_get_field_right & cob_get_param_right
+	* cobcapi.c: Add  cob_get_field_right & cob_get_param_right
+
+2022-01-13  Ron Norman <rjn@inglenet.com>
 
 	* common.h: REPORT struct changes
 	* fileio.c: changes to get CR LF usage to match Microfocus

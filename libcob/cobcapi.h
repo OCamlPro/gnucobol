@@ -34,6 +34,7 @@ COB_EXPIMP int		cob_get_param_sign ( int num_param );
 COB_EXPIMP int		cob_get_param_size ( int num_param );
 COB_EXPIMP int		cob_get_param_type ( int num_param );
 COB_EXPIMP void *	cob_get_param_data ( int num_param );
+COB_EXPIMP int		cob_get_param_right ( int num_param );
 COB_EXPIMP cob_s64_t	cob_get_s64_param  ( int num_param );
 COB_EXPIMP cob_u64_t	cob_get_u64_param  ( int num_param );
 COB_EXPIMP double	cob_get_dbl_param  ( int num_param );
@@ -57,6 +58,7 @@ COB_EXPIMP int		cob_get_field_digits	(const cob_field *);
 COB_EXPIMP int		cob_get_field_scale	(const cob_field *);
 COB_EXPIMP int		cob_get_field_sign	(const cob_field *);
 COB_EXPIMP int		cob_get_field_constant (const cob_field *);
+COB_EXPIMP int		cob_get_field_right (const cob_field *);
 COB_EXPIMP const char	*explain_field_type (const cob_field *);
 
 /* get the field's pretty-display value */
