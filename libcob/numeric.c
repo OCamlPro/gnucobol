@@ -113,7 +113,7 @@ static mpz_t		cob_mpzt;
 static mpz_t		cob_mpzt2;
 static mpz_t		cob_mpz_ten34m1;
 static mpz_t		cob_mpz_ten16m1;
-static mpz_t		cob_mpze10[COB_MAX_BINARY];
+static mpz_t		cob_mpze10[COB_MAX_BINARY + 1];
 
 static mpf_t		cob_mpft;
 static mpf_t		cob_mpft_get;
@@ -382,7 +382,7 @@ cob_decimal_set_llint (cob_decimal *d, const cob_s64_t n)
 static COB_INLINE COB_A_INLINE void
 cob_pow_10 (mpz_t mexp, int n)
 {
-	if (n >= 0 && n < COB_MAX_BINARY) {
+	if (n >= 0 && n <= COB_MAX_BINARY) {
 		mpz_set (mexp, cob_mpze10[n]);
 	} else {
 		mpz_ui_pow_ui (mexp, 10UL, (cob_uli_t)n);
@@ -467,47 +467,17 @@ align_decimal (cob_decimal *d1, cob_decimal *d2)
 static void
 cob_decimal_adjust (cob_decimal *d, mpz_t max_value, int min_exp, int max_exp)
 {
-	/* FIXME: in the (special) testsuite case " FLOAT-DECIMAL w/o SIZE ERROR"
-	   we spend most of the (relative long) time here, the CHECKME calls
-	   below are done, according to callgrind, 4,633,961 times each and take
-	   quite some time - can we improve this without overal performance drop? */
-	if (mpz_cmpabs (d->value, max_value) > 0) {
-#ifndef COB_32_BIT_LONG
-		while ((d->scale - 18) >= min_exp
-			&& mpz_divisible_ui_p (d->value, 1000000000000000000UL)
-			&& mpz_cmpabs (d->value, max_value) > 0) {
-			mpz_divexact_ui (d->value, d->value, 1000000000000000000UL);
-			d->scale -= 18;
-		}
-		while ((d->scale - 13) >= min_exp
-			&& mpz_divisible_ui_p (d->value, 10000000000000UL)
-			&& mpz_cmpabs (d->value, max_value) > 0) {
-			mpz_divexact_ui (d->value, d->value, 10000000000000UL);
-			d->scale -= 13;
-		}
-#endif
-		while ((d->scale - 9) >= min_exp
-			&& mpz_divisible_ui_p (d->value, 1000000000UL)
-			&& mpz_cmpabs (d->value, max_value) > 0) {
-			mpz_divexact_ui (d->value, d->value, 1000000000UL);
-			d->scale -= 9;
-		}
-		while ((d->scale - 6) >= min_exp
-			&& mpz_divisible_ui_p (d->value, 1000000UL)
-			&& mpz_cmpabs (d->value, max_value) > 0) {
-			mpz_divexact_ui (d->value, d->value, 1000000UL);
-			d->scale -= 6;
-		}
-		while ((d->scale - 3) >= min_exp
-			&& mpz_divisible_ui_p (d->value, 1000UL)
-			&& mpz_cmpabs (d->value, max_value) > 0) {
-			mpz_divexact_ui (d->value, d->value, 1000UL);
-			d->scale -= 3;
-		}
-	}
 	/* Remove trailing ZEROS */
-	while (mpz_divisible_ui_p (d->value, 10U)
-	    || mpz_cmpabs (d->value, max_value) > 0) {
+	int power_of_ten;	/* note: old versions have unsigned long, newer a typedef
+	                 	   so we cast to rule them all... */
+	power_of_ten = (int) mpz_remove (cob_t1.value, d->value, cob_mpze10[1]);
+	if (power_of_ten != 0) {
+		mpz_set (d->value, cob_t1.value);
+		d->scale -= power_of_ten;
+	}
+
+	/* move comma to the left */
+	while (mpz_cmpabs (d->value, max_value) > 0) {
 		if (d->scale < min_exp)
 			break;
 		mpz_tdiv_q_ui (d->value, d->value, 10U);
@@ -2753,7 +2723,7 @@ cob_exit_numeric (void)
 
 	mpz_clear (cob_mpz_ten34m1);
 	mpz_clear (cob_mpz_ten16m1);
-	for (i = 0; i < COB_MAX_BINARY; i++) {
+	for (i = 0; i <= COB_MAX_BINARY; i++) {
 		mpz_clear (cob_mpze10[i]);
 	}
 
@@ -2775,7 +2745,7 @@ cob_init_numeric (cob_global *lptr)
 	mpf_init2 (cob_mpft, COB_MPF_PREC);
 	mpf_init2 (cob_mpft_get, COB_MPF_PREC);
 
-	for (i = 0; i < COB_MAX_BINARY; i++) {
+	for (i = 0; i <= COB_MAX_BINARY; i++) {
 		mpz_init2 (cob_mpze10[i], 128UL);
 		mpz_ui_pow_ui (cob_mpze10[i], 10UL, (cob_uli_t)i);
 	}

@@ -1,8 +1,13 @@
 
+2022-01-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_decimal_adjust): rewrite code for trailing zero removing,
+	  heavily improving ccomputation and comparison of FLOAT-DECIMAL
+	* numeric.c: actually handle up to COB_MAX_BINARY, not one less
+
 2022-01-17  Ron Norman <rjn@inglenet.com>
 
-	* cobcapi.h: Add  cob_get_field_right & cob_get_param_right
-	* cobcapi.c: Add  cob_get_field_right & cob_get_param_right
+	* cobcapi.h, cobcapi.c: add cob_get_field_right & cob_get_param_right
 
 2022-01-13  Ron Norman <rjn@inglenet.com>
 
