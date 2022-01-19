@@ -8635,13 +8635,13 @@ report_varying:
 		CB_TREE (x)->category = CB_CATEGORY_NUMERIC;
 		cb_validate_field (CB_FIELD (x));
 		CB_FIELD_ADD (current_program->working_storage, CB_FIELD (x));
-		current_vary->var = CB_FIELD (x);
+		current_vary->var = CB_TREE (x);
 	} else {
 		struct cb_field *f = CB_FIELD (cb_ref ($1));
 		if (f->usage != CB_USAGE_INDEX
 		 || !f->flag_internal_register)
 			cb_error_x ($1, _("%s is not valid for VARYING"),f->name);
-		current_vary->var = f;
+		current_vary->var = CB_TREE (f);
 	}
 	current_vary->from = vary_from;
 	current_vary->by = vary_by;

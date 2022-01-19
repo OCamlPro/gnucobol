@@ -1958,6 +1958,22 @@ cb_list_length (cb_tree l)
 	return 0;
 }
 
+cb_tree 
+cb_list_entry (cb_tree l, int i)
+{
+	if (CB_VALID_TREE(l)) {
+		unsigned int	n = 0;
+		for (; l; l = CB_CHAIN (l)) {
+			n++;
+			if (n == i) {
+				return CB_VALUE (l);
+			}
+		}
+		return NULL;
+	}
+	return NULL;
+}
+
 int
 cb_list_map (cb_tree (*func) (cb_tree x), cb_tree l)
 {
@@ -3662,7 +3678,7 @@ end:
 /* REPORT: VARYING */
 
 cb_tree
-cb_build_vary ()
+cb_build_vary (void)
 {
 	return make_tree (CB_TAG_VARY, CB_CATEGORY_UNKNOWN, sizeof (struct cb_vary));
 }
@@ -4269,7 +4285,8 @@ set_report_column (struct cb_field *f)
 				if ((c->report_flag & COB_REPORT_LINE))
 					prev_col_pos = report_col_pos = 1;
 				set_report_column (c);
-				c->size = c->memory_size = report_col_pos - 1;
+				if (report_col_pos > c->offset)
+					c->size = c->memory_size = report_col_pos - 1 - c->offset;
 			}
 		}
 	} else 

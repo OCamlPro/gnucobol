@@ -800,7 +800,7 @@ struct cb_vary {
 	cb_tree		by;						/* Increment value */
 };
 
-#define CB_VARY(x)	(CB_TREE_CAST (CB_TAG_VARY, struct cb_const, x))
+#define CB_VARY(x)	(CB_TREE_CAST (CB_TAG_VARY, struct cb_vary, x))
 #define CB_VARY_P(x)	(CB_TREE_TAG (x) == CB_TAG_VARY)
 
 /* Field */
@@ -1920,7 +1920,7 @@ extern struct cb_picture	*cb_build_binary_picture (const char *,
 							  const cob_u32_t);
 
 extern cb_tree			cb_build_field (cb_tree);
-extern cb_tree			cb_build_vary ();
+extern cb_tree			cb_build_vary (void);
 extern cb_tree			cb_build_implicit_field (cb_tree, const int);
 extern cb_tree			cb_build_constant (cb_tree, cb_tree);
 extern int			cb_build_generic_register (const char *, const char *, struct cb_field **);
@@ -2016,6 +2016,7 @@ extern cb_tree			cb_list_add (cb_tree, cb_tree);
 extern cb_tree			cb_pair_add (cb_tree, cb_tree, cb_tree);
 extern cb_tree			cb_list_append (cb_tree, cb_tree);
 extern cb_tree			cb_list_reverse (cb_tree);
+extern cb_tree 			cb_list_entry (cb_tree, int);
 extern unsigned int		cb_list_length (cb_tree);
 extern unsigned int		cb_next_length (struct cb_next_elem *);
 

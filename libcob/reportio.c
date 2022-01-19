@@ -971,7 +971,18 @@ copy_line_fields (cob_report *r, cob_report_line *l, int doset)
 			cob_move(rf->sum,rf->f);
 			print_field(rf, rec);
 		} else if(rf->litval) {		/* Refresh literal value */
-			memcpy(&rec[rf->column-1], rf->litval, rf->litlen);
+			if (rf->f
+			 && COB_FIELD_IS_NUMERIC (rf->f)) {
+				cob_field	temp;
+
+				temp.size = (size_t)rf->litlen;
+				temp.data = (unsigned char *)rf->litval;
+				temp.attr = &const_alpha_attr;
+				cob_move (&temp, rf->f);
+				print_field(rf, rec);
+			} else {
+				memcpy(&rec[rf->column-1], rf->litval, rf->litlen);
+			}
 		} else if(rf->f) {
 			print_field(rf, rec);
 		}

@@ -317,7 +317,7 @@ cb_code_field (cb_tree x)
 }
 
 static char *
-field_name (struct cb_field *f)
+get_field_name (struct cb_field *f)
 {
 	static char wrk[64];
 	if (memcmp (f->name, "FILLER ",7) == 0
@@ -325,7 +325,7 @@ field_name (struct cb_field *f)
 		sprintf (wrk,"Line %d",f->common.source_line);
 		return wrk;
 	}
-	return f->name;
+	return (char*)f->name;
 }
 
 static int
@@ -1259,7 +1259,7 @@ output_data (cb_tree x)
 				/* add current field size for OCCURS */
 				ncols = 0;
 				if (f->report_column_list) {
-					for (l = f->report_column_list; l; l = CB_CHAIN (l), ncols++);
+					ncols = cb_list_length (f->report_column_list);
 					if (ncols > 1) {
 						if (CB_NUMERIC_LITERAL_P (CB_VALUE (lsub))
 						 || CB_INTEGER(CB_VALUE (lsub))) {
@@ -2550,7 +2550,7 @@ output_local_base_cache (void)
 				ws_used += fs;
 			}
 		}
-		output_local ("\t/* %s */\n", field_name (blp->f));
+		output_local ("\t/* %s */\n", get_field_name (blp->f));
 	}
 
 	output_local_ws_group ();
@@ -2635,11 +2635,23 @@ output_data_sub (cb_tree x, int subscript)
 		struct cb_field		*f = CB_FIELD (r->value);
 
 		/* Base address */
-		output_base (f, 0);
-
 		if (f->flag_occurs
-		 && subscript > 1) {
-			output (" + %d", (subscript - 1) * f->size);
+		 && subscript >= 1) {
+			if (f->report_column_list
+			 && r->subs == NULL) {
+				cb_tree	value;
+				int		offset = f->offset;
+				value = cb_list_entry (f->report_column_list, subscript);
+				if (value) {
+					f->offset = cb_get_int (value) - 1;
+				}
+				output_base (f, 0);
+				f->offset = offset;
+			} else {
+				output_base (f, 0);
+				if (subscript > 1)
+					output (" + %d", (subscript - 1) * f->size);
+			}
 		}
 
 		/* Subscripts */
@@ -2648,7 +2660,9 @@ output_data_sub (cb_tree x, int subscript)
 			for (; f && lsub; f = f->parent) {
 				if (f->flag_occurs) {
 					output (" + ");
-					if (f->size != 1) {
+					if (f->step_count > f->size) {
+						output ("%d * ", f->step_count);
+					} else if (f->size != 1) {
 						output ("%d * ", f->size);
 					}
 					output_index (CB_VALUE (lsub));
@@ -2740,7 +2754,7 @@ output_emit_one_field (struct cb_field *f, const char *cmt, int sub)
 		output ("static cob_field %s%d\t= ", CB_PREFIX_FIELD, f->id);
 	output_field_sub (f, cb_build_field_reference (f, NULL), sub);
 	output_local(";\t/* ");
-	output_local ("%s ", field_name (f));
+	output_local ("%s ", get_field_name (f));
 	if ((f->report_flag & COB_REPORT_COLUMN_RIGHT)) {
 		output_local(", RIGHT %d",f->report_column);
 	} else
@@ -2751,7 +2765,16 @@ output_emit_one_field (struct cb_field *f, const char *cmt, int sub)
 		output_local(", CENTER %d",f->report_column);
 	} else
 	if (f->report_column > 0) {
-		output_local (", col%4d", f->report_column);
+		if (sub > 0 
+		 && f->occurs_max > 1
+		 && f->report_column_list) {
+			cb_tree value = cb_list_entry (f->report_column_list, sub);
+			if (value) {
+				output_local (", Col%4d", cb_get_int (value));
+			}
+		} else {
+			output_local (", col%4d", f->report_column);
+		}
 	}
 	if ((f->report_flag & COB_REPORT_COLUMN_RIGHT)) {
 		output_local(", GROUP INDICATE");
@@ -2760,11 +2783,6 @@ output_emit_one_field (struct cb_field *f, const char *cmt, int sub)
 		output_local (" : %s ", cmt);
 	}
 	output_local("*/\n");
-	if (f->sister
-	 && f->sister->count > 0
-	 && f->sister->storage == f->storage) {
-		output_emit_one_field (f->sister, cmt, sub);
-	}
 }
 
 /*
@@ -2780,6 +2798,11 @@ output_emit_field (cb_tree x, const char *cmt)
 
 	if (!(f->report_flag & COB_REPORT_REF_EMITTED)) {
 		output_emit_one_field (f, cmt, 0);
+		if (f->sister
+		 && f->sister->count > 0
+		 && f->sister->storage == f->storage) {
+			output_emit_one_field (f->sister, cmt, 0);
+		}
 	}
 }
 
@@ -10264,7 +10287,7 @@ output_report_field_cmt (struct cb_field *f)
 	 || (f->report_flag & COB_REPORT_PRESENT)) {
 		output_local("\t\t/* ");
 		if(f->report_source_txt) {
-			output_local("%s, SOURCE %s; ",field_name (f),f->report_source_txt);
+			output_local("%s, SOURCE %s; ",get_field_name (f),f->report_source_txt);
 		}
 		if((f->report_flag & COB_REPORT_PRESENT)) {
 			output_local("PRESENT ");
@@ -10297,7 +10320,9 @@ output_report_def_fields (int bgn, int id, struct cb_field *f, struct cb_report 
 	cb_tree	value;
 	struct cb_field *p;
 	char	field_name[16];
+	int		occ, idx;
 
+	occ = idx = 0;
 	if (bgn == 1) {
 		strcpy (report_field_name, "NULL");
 	}
@@ -10313,28 +10338,38 @@ output_report_def_fields (int bgn, int id, struct cb_field *f, struct cb_report 
 		output_report_def_fields (0,id,f->sister,r);
 	}
 
-	for (p = f; p; p = p->parent) {
-		if (p->flag_occurs) {
-			return;		/* OCCURS is handled via emitted code */
-		}
-	}
-
 	if (f->children) {
 		f->report_flag |= COB_REPORT_GROUP_ITEM;
 	}
 	if (f->report_when) {
 		f->report_flag |= COB_REPORT_HAD_WHEN;
 	}
+	for (p = f; p; p = p->parent) {
+		if (p->flag_occurs) {
+			if (p->report_column_list
+			 && cb_list_length (p->report_column_list) == p->occurs_max
+			 && f->values) {
+				idx = 1;
+				occ = p->occurs_max;
+				break;
+			}
+			return;		/* OCCURS is handled via emitted code */
+		}
+	}
+
 	if (f->children) {
 		output_report_def_fields (0,id,f->children,r);
 	}
+emit_field:
 	output_report_field_cmt (f);
 
-	if (f->report_field_name == NULL) {
-		sprintf (field_name,"%s%d",CB_PREFIX_REPORT_FIELD,++report_field_id);
-		f->report_field_name = cobc_parse_strdup (field_name);
-	} else {
-		strcpy (field_name, f->report_field_name);
+	if (idx <= 1) {
+		if (f->report_field_name == NULL) {
+			sprintf (field_name,"%s%d",CB_PREFIX_REPORT_FIELD,++report_field_id);
+			f->report_field_name = cobc_parse_strdup (field_name);
+		} else {
+			strcpy (field_name, f->report_field_name);
+		}
 	}
 	if (f->report_field_from == NULL
 	 && f->report_sum_counter == NULL
@@ -10344,8 +10379,12 @@ output_report_def_fields (int bgn, int id, struct cb_field *f, struct cb_report 
 	 && (f->report_source == NULL || !CB_LITERAL_P (f->report_source))
 	 && f->report_control == NULL)	/* This field has nothing to do */
 		return;
+
 	output_local ("static cob_report_field %s\t= {%s,", field_name,report_field_name);
-	output_local ("&%s%d,", CB_PREFIX_FIELD, f->id);
+	if (idx > 1)
+		output_local ("&%s%d_%d,", CB_PREFIX_FIELD, f->id, idx);
+	else
+		output_local ("&%s%d,", CB_PREFIX_FIELD, f->id);
 
 	sprintf (report_field_name, "&%s", field_name);
 
@@ -10389,11 +10428,16 @@ output_report_def_fields (int bgn, int id, struct cb_field *f, struct cb_report 
 	}
 	output_local(",");
 	value = NULL;
-	if (f->values) 
-		value = CB_VALUE (f->values);
-	else if (f->report_source 
-		  && CB_LITERAL_P (f->report_source))
+	if (f->values) {
+		if (idx > 0 && idx <= occ) {
+			value = cb_list_entry (f->values, idx);
+		} else {
+			value = CB_VALUE (f->values);
+		}
+	} else if (f->report_source 
+		  && CB_LITERAL_P (f->report_source)) {
 		value = f->report_source;
+	}
 
 	if (value
 	 && CB_TREE_TAG (value) == CB_TAG_LITERAL) {
@@ -10443,16 +10487,30 @@ output_report_def_fields (int bgn, int id, struct cb_field *f, struct cb_report 
 	if(f->report_column <= 0)	/* No COLUMN was given */
 		f->report_column = 1;
 	if((f->report_flag&~(COB_REPORT_EMITTED|COB_REPORT_COLUMN_PLUS)) == 0) {
-		output_local("0,%d",f->report_line);
+		output_local("0x0,%d",f->report_line);
 	} else {
 		output_local("0x%X,%d",f->report_flag&~COB_REPORT_EMITTED,f->report_line);
 	}
-	output_local(",%d",f->report_column);
+	if (idx) {
+		value = cb_list_entry (f->report_column_list, idx);
+		if (value) {
+			output (",%d ",cb_get_int (value));
+		} else {
+			output_local(",%d",f->report_column);
+		}
+	} else {
+		output_local(",%d",f->report_column);
+	}
 	output_local(",%d",f->step_count);
 	output_local(",%d",f->next_group_line);
 	output_local(",%d",f->level);
-	output_local(",0,0"); /* reportio flags: group_indicate & suppress */
+	output_local(",0,0,0"); /* reportio flags: group_indicate, suppress, present_now */
 	output_local ("};\n");
+	if (idx > 0 && idx < occ) {
+		idx++;
+		sprintf (field_name,"%s%d",CB_PREFIX_REPORT_FIELD,++report_field_id);
+		goto emit_field;
+	}
 }
 
 static void
@@ -11007,7 +11065,7 @@ output_report_move_sums (struct cb_field *f, int first)
 static void
 output_report_move_source (struct cb_field *f, int first)
 {
-	struct cb_field *var, *frm, *by;
+	struct cb_field *var;
 	struct cb_vary	*vry;
 	cb_tree	l;
 	int		i, nested;
@@ -11016,13 +11074,12 @@ output_report_move_source (struct cb_field *f, int first)
 		output_line ("int  ix_%d;", f->id);
 		for (l = f->report_vary_list, i=0; l; l = CB_CHAIN (l), i++) {
 			output_prefix ();
-			vry = CB_VALUE (l);
+			vry = CB_VARY (CB_VALUE (l));
 			var = cb_code_field (vry->var);
 			rpt_idx[report_nest_vary] = var;
 			output ("%s%d = ",CB_PREFIX_BASE,var->id);
 			if (vry->from) {
-				frm = cb_code_field (vry->from);
-				output_integer (frm);
+				output_integer (vry->from);
 			} else {
 				output ("1");
 			}
@@ -11051,7 +11108,7 @@ output_report_move_source (struct cb_field *f, int first)
 		output ("; ix_%d++",f->id);
 		for (l = f->report_vary_list; l; l = CB_CHAIN (l)) {
 			output (", ");
-			vry = CB_VALUE (l);
+			vry = CB_VARY (CB_VALUE (l));
 			var = cb_code_field (vry->var);
 			output ("%s%d += ",CB_PREFIX_BASE,var->id);
 			if (vry->by) {
@@ -11067,9 +11124,9 @@ output_report_move_source (struct cb_field *f, int first)
 	}
 	if (f->report_source) {
 		if (f->report_source_txt == NULL) {
-			output_line ("/* Move To %s */",field_name (f));
+			output_line ("/* Move To %s */",get_field_name (f));
 		} else {
-			output_line ("/* Move %s To %s */",f->report_source_txt,field_name (f));
+			output_line ("/* Move %s To %s */",f->report_source_txt,get_field_name (f));
 		}
 		stack_id = 0;
 		output_prefix ();

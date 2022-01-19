@@ -1,4 +1,8 @@
 
+2022-01-19  Ron Norman <rjn@inglenet.com>
+
+	* reportio.c: Use cob_move to copy 'literal' into report field
+
 2022-01-17  Simon Sobisch <simonsobisch@gnu.org>
 
 	* numeric.c (cob_decimal_adjust): rewrite code for trailing zero removing,
