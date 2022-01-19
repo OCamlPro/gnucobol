@@ -10300,7 +10300,7 @@ AT_DATA([prog.cob], [
            MOVE "WAG2" TO TAG2 (1), TAG2 (2), TAG2 (3).
 ])
 
-AT_CHECK([$COMPILE -std=mf -debug prog.cob ], [0], [], [prog.cob:65: warning: numeric literal in VALUE clause of numeric-edited item used [-Wdialect]
+AT_CHECK([$COMPILE -std=mf -debug prog.cob ], [0], [], [prog.cob:66: warning: numeric literal in VALUE clause of numeric-edited item used [-Wdialect]
 ])
 
 AT_CHECK([export PRINTOUT=tstrwv.txt
