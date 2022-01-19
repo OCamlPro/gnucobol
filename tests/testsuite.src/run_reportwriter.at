@@ -1,4 +1,4 @@
-## Copyright (C) 2014-2021 Free Software Foundation, Inc.
+## Copyright (C) 2014-2022 Free Software Foundation, Inc.
 ## Written by Ron Norman, Simon Sobisch
 ##
 ## This file is part of GnuCOBOL.
@@ -9887,7 +9887,7 @@ AT_DATA([prog.cob], [
 
 ])
 
-AT_CHECK([$COMPILE -std=default -debug prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
 AT_CHECK([export PRINTOUT=report02.txt
 $COBCRUN_DIRECT ./prog], [0], [1921
@@ -10026,7 +10026,7 @@ AT_DATA([prog.cob], [
            END PROGRAM prog.
 ])
 
-AT_CHECK([$COMPILE -std=default -debug prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
 AT_CHECK([export PRINTOUT=report.txt
 $COBCRUN_DIRECT ./prog], [0], [Decl RW-FOOT:   6
@@ -10054,7 +10054,8 @@ AT_CHECK([gcdiff reference report.txt], [0], [], [])
 
 AT_CLEANUP
 
-AT_SETUP([Test SUM/SOURCE expressions])
+
+AT_SETUP([SUM and SOURCE expressions])
 AT_KEYWORDS([REPORT])
 
 AT_DATA([prog.cob], [
@@ -10158,7 +10159,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -std=default -debug prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
 AT_CHECK([export PRINTOUT=report.txt
 export IO_OPTIONS=format=gc
@@ -10193,7 +10194,8 @@ AT_CHECK([gcdiff reference report.txt], [0], [], [])
 
 AT_CLEANUP
 
-AT_SETUP([Report Multi Cols Values])
+
+AT_SETUP([Multiple COLUMN with multiple VALUE])
 AT_KEYWORDS([REPORT])
 
 AT_DATA([prog.cob], [
@@ -10300,11 +10302,11 @@ AT_DATA([prog.cob], [
            MOVE "WAG2" TO TAG2 (1), TAG2 (2), TAG2 (3).
 ])
 
-AT_CHECK([$COMPILE -std=mf -debug prog.cob ], [0], [], [prog.cob:66: warning: numeric literal in VALUE clause of numeric-edited item used [-Wdialect]
-])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
 AT_CHECK([export PRINTOUT=tstrwv.txt
-$COBCRUN_DIRECT ./prog], [0], [Hello World 1
+$COBCRUN_DIRECT ./prog], [0],
+[Hello World 1
 Hello World 2
 ], [])
 
