@@ -1,0 +1,11 @@
+Makefile.in
+/_build
+aclocal.m4
+aminclude_static.am
+autom4te.cache
+config.h.in
+/configure
+/doc/gnucobol.info
+/doc/stamp-vti
+/doc/version.texi
+/tarstamp.h
