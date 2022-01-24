@@ -8544,6 +8544,9 @@ print_runtime_conf ()
 	printf ("    : %-*s : %s\n", hdlen, "LC_MONETARY", setlocale (LC_MONETARY, NULL));
 	printf ("    : %-*s : %s\n", hdlen, "LC_TIME", setlocale (LC_TIME, NULL));
 #endif
+	if (cobsetptr->cob_config_num == 0) {
+		printf (_(" No %s was used\n"),"runtime.cfg");
+	}
 }
 
 cob_settings *

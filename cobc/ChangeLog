@@ -1,4 +1,10 @@
 
+2022-01-24  Ron Norman <rjn@inglenet.com>
+
+	* parser.y: Raise error if REPORT LINE has OCCURS
+	* codegen.c: Partial work on handling REPORT LINE with OCCURS
+				(but this is put back on the shelf for now)
+
 2022-01-19  Ron Norman <rjn@inglenet.com>
 
 	* tree.c,tree.h: Add cb_list_entry routine, returns Nth entry of a list
@@ -9,7 +15,6 @@
 	* parser.y: VARYING var FROM exp BY exp partly added
 	* tree.h:	Add CB_VARY and updated cb_field accodingly
 	* codegen.c: Updated to use new CB_VARY
-				(More to come in the next few days for this)
 
 2022-01-13  Ron Norman <rjn@inglenet.com>
 

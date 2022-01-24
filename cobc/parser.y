@@ -7654,6 +7654,9 @@ report_occurs_clause:
 	/* most of the field attributes are set when parsing the phrases */;
 	setup_occurs ();
 	setup_occurs_min_max ($2, $3);
+	if ((current_field->report_flag & COB_REPORT_LINE)) {
+		cb_error (_("LINE with OCCURS is not supported"));
+	}
   }
 ;
 
@@ -8672,6 +8675,9 @@ line_clause:
   {
 	check_repeated ("LINE", SYN_CLAUSE_21, &check_pic_duplicate);
 	current_field->report_flag |= COB_REPORT_LINE;
+	if (current_field->flag_occurs) {
+		cb_error (_("LINE with OCCURS is not supported"));
+	}
   }
 ;
 

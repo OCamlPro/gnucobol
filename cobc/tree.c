@@ -1962,12 +1962,14 @@ cb_tree
 cb_list_entry (cb_tree l, int i)
 {
 	if (CB_VALID_TREE(l)) {
-		unsigned int	n = 0;
+		int	n = 0;
 		for (; l; l = CB_CHAIN (l)) {
 			n++;
-			if (n == i) {
+			if (n == i)
 				return CB_VALUE (l);
-			}
+			if (i == -1
+			 && CB_CHAIN (l) == NULL)	/* Return last of the list */
+				return CB_VALUE (l);
 		}
 		return NULL;
 	}
