@@ -10482,9 +10482,7 @@ output_report_one_field (struct cb_report *r, struct cb_field *f, int idx, int o
 static void
 output_report_def_fields (int bgn, int id, struct cb_field *f, struct cb_report *r)
 {
-	cb_tree	value;
 	struct cb_field *p;
-	char	field_name[16];
 	int			idxtbl[COB_MAX_SUBSCRIPTS+1];
 	int			occtbl[COB_MAX_SUBSCRIPTS+1];
 	struct cb_field	*pftbl[COB_MAX_SUBSCRIPTS+1];
