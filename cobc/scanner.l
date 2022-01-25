@@ -856,6 +856,12 @@ H#[0-9A-Za-z]+ {
 }
 
 
+"ALTERNATE"[ ,;\n]+"CONSOLE"/[ .,;\n] {
+	count_lines (yytext);
+	yylval = cb_build_reference ("ALTERNATE CONSOLE");
+	RETURN_TOK (WORD);
+}
+
 "SWITCH"[ ]+([0-9][0-9]?|[A-Z])/[ .,;\n] {
 	/* ACUCOBOL extension: switch-names with space and with letter */
 	char suffix[3] = "";

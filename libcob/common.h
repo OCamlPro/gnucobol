@@ -1431,6 +1431,7 @@ typedef struct __cob_module {
 #define COB_DIALECT_RELIA	9	
 #define COB_DIALECT_RM		10	
 #define COB_DIALECT_XOPEN	11	
+#define COB_DIALECT_GCOS	12
 
 /* User function structure */
 

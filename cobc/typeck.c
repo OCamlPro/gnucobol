@@ -8508,6 +8508,7 @@ cb_build_display_name (cb_tree x)
 		if (cb_std_define != CB_STD_IBM
 		 && cb_std_define != CB_STD_MVS
 		 && cb_std_define != CB_STD_MF
+		 && cb_std_define != CB_STD_GCOS
 		 && !cb_relaxed_syntax_checks) {
 		 	/* ... especially as this is not allowed and therefore should raise an error... */
 			cb_warning_x (COBC_WARN_FILLER, x,
