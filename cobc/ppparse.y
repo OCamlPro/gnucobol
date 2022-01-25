@@ -658,6 +658,7 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %type <l>	alnum_by_list
 %type <l>	alnum_equality
 %type <l>	alnum_equality_list
+%type <s>	unquoted_literal
 
 %type <r>	copy_replacing
 %type <r>	replacing_list
@@ -758,15 +759,9 @@ set_choice:
 		fprintf (ppout, "#ADDSYN %s %s\n", l->text, l->next->text);
 	}
   }
-| ASSIGN LITERAL
+| ASSIGN unquoted_literal
   {
 	char	*p = $2;
-	size_t	size;
-
-	/* Remove surrounding quotes/brackets */
-	++p;
-	size = strlen (p) - 1;
-	p[size] = '\0';
 
 	if (!strcasecmp (p, "EXTERNAL")) {
 		fprintf (ppout, "#ASSIGN %d\n", (int)CB_ASSIGN_EXT_FILE_NAME_REQUIRED);
@@ -774,38 +769,23 @@ set_choice:
 		fprintf (ppout, "#ASSIGN %d\n", (int)CB_ASSIGN_VARIABLE_DEFAULT);
 	} else {
 		ppp_error_invalid_option ("ASSIGN", p);
-	}	
+	}
   }
-| CALLFH LITERAL
+| CALLFH unquoted_literal
   {
-	char	*p = $2;
-	/* Remove surrounding quotes/brackets */
-	size_t	size;
-	++p;
-	size = strlen (p) - 1;
-	p[size] = '\0';
-	fprintf (ppout, "#CALLFH \"%s\"\n", p);
+	fprintf (ppout, "#CALLFH \"%s\"\n", $2);
   }
 | CALLFH
   {
 	fprintf (ppout, "#CALLFH \"EXTFH\"\n");
   }
-| XFD LITERAL
+| XFD unquoted_literal
   {
-	char	*p = $2;
-	++p;
-	p[strlen (p) - 1] = '\0';
-	fprintf (ppout, "#XFD \"%s\"\n", p);
+	fprintf (ppout, "#XFD \"%s\"\n", $2);
   }
-| COMP1 LITERAL
+| COMP1 unquoted_literal
   {
 	char	*p = $2;
-	size_t	size;
-
-	/* Remove surrounding quotes/brackets */
-	++p;
-	size = strlen (p) - 1;
-	p[size] = '\0';
 
 	if (!strcasecmp (p, "BINARY")) {
 		cb_binary_comp_1 = 1;
@@ -815,15 +795,9 @@ set_choice:
 		ppp_error_invalid_option ("COMP1", p);
 	}
   }
-| DPC_IN_DATA LITERAL
+| DPC_IN_DATA unquoted_literal
   {
 	char	*p = $2;
-	size_t	size;
-
-	/* Remove surrounding quotes/brackets */
-	++p;
-	size = strlen (p) - 1;
-	p[size] = '\0';
 
 	if (!strcasecmp (p, "XML")) {
 		cb_dpc_in_data = CB_DPC_IN_XML;
@@ -835,15 +809,9 @@ set_choice:
 		ppp_error_invalid_option ("DPC-IN-DATA", p);
 	}
   }
-| FOLDCOPYNAME _as LITERAL
+| FOLDCOPYNAME _as unquoted_literal
   {
 	char	*p = $3;
-	size_t	size;
-
-	/* Remove surrounding quotes/brackets */
-	++p;
-	size = strlen (p) - 1;
-	p[size] = '\0';
 
 	if (!strcasecmp (p, "UPPER")) {
 		cb_fold_copy = COB_FOLD_UPPER;
@@ -887,15 +855,9 @@ set_choice:
 		fprintf (ppout, "#REMOVE %s\n", l->text);
 	}
   }
-| SOURCEFORMAT _as LITERAL
+| SOURCEFORMAT _as unquoted_literal
   {
 	char	*p = $3;
-	size_t	size;
-
-	/* Remove surrounding quotes/brackets */
-	++p;
-	size = strlen (p) - 1;
-	p[size] = '\0';
 
 	if (!strcasecmp (p, "FIXED")) {
 		cb_source_format = CB_FORMAT_FIXED;
@@ -1549,6 +1511,23 @@ lead_trail:
 | TRAILING
   {
 	$$ = CB_REPLACE_TRAILING;
+  }
+;
+
+unquoted_literal:
+  LITERAL
+  {
+	/* Do not reuse unquote_alnum as some literals here may be delimited
+	   with parentheses */
+	char	*p = $1;
+	size_t	size;
+
+	/* Remove surrounding quotes/brackets */
+	++p;
+	size = strlen (p) - 1;
+	p[size] = '\0';
+
+	$$ = p;
   }
 ;
 
