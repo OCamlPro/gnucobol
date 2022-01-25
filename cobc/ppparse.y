@@ -41,6 +41,7 @@
 #ifdef	HAVE_STRINGS_H
 #include <strings.h>
 #endif
+#include <assert.h>
 #include <ctype.h>
 
 #define	COB_IN_PPPARSE	1
@@ -72,15 +73,18 @@ static enum cb_directive_action		current_cmd = PLEX_ACT_IF;
 /* Local functions */
 
 static char *
-fix_filename (char *name)
+unquote_alnum (char *name)
 {
 	/* remove quotation from alphanumeric literals */
 	if (name[0] == '\'' || name[0] == '\"') {
+		size_t size = strlen (name);
+		assert (name[size - 1] == name[0]);
+		name[size - 1] = 0;
 		name++;
-		name[strlen (name) - 1] = 0;
 	}
 	return name;
 }
+#define fix_filename(filename) unquote_alnum (filename)
 
 static char *
 fold_lower (char *name)
@@ -136,7 +140,7 @@ ppp_set_value (struct cb_define_struct *p, const char *value)
 	const char	*s;
 	size_t		size;
 	unsigned int	dotseen;
-	
+
 	p->value = NULL;
 	p->sign = 0;
 	p->int_part = 0;
@@ -479,7 +483,7 @@ append_to_turn_list (struct cb_text_list *ec_names, int enable, int with_locatio
 	l->next = NULL;
 	/* The line number is set properly in the scanner */
 	l->line = -1;
-	
+
 	if (cb_turn_list) {
 		for (turn_list_end = cb_turn_list;
 		     turn_list_end->next;
@@ -705,6 +709,8 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %type <l>	alnum_equality
 %type <l>	alnum_equality_list
 %type <l>	ec_list
+%type <s>	literal_token
+%type <s>	unquoted_literal
 
 %type <r>	copy_replacing
 %type <r>	replacing_list
@@ -830,15 +836,9 @@ set_choice:
 		fprintf (ppout, "#ADDSYN %s %s\n", l->text, l->next->text);
 	}
   }
-| ASSIGN LITERAL
+| ASSIGN unquoted_literal
   {
 	char	*p = $2;
-	size_t	size;
-
-	/* Remove surrounding quotes/brackets */
-	++p;
-	size = strlen (p) - 1;
-	p[size] = '\0';
 
 	if (!cb_strcasecmp (p, "EXTERNAL")) {
 		fprintf (ppout, "#ASSIGN %d\n", (int)CB_ASSIGN_EXT_FILE_NAME_REQUIRED);
@@ -846,23 +846,23 @@ set_choice:
 		fprintf (ppout, "#ASSIGN %d\n", (int)CB_ASSIGN_VARIABLE_DEFAULT);
 	} else {
 		ppp_error_invalid_option ("ASSIGN", p);
-	}	
+	}
   }
 | BOUND
   {
 	/* Enable EC-BOUND-SUBSCRIPT checking */
 	append_to_turn_list (ppp_list_add (NULL, "EC-BOUND-SUBSCRIPT"), 1, 0);
   }
-| CALLFH LITERAL
+| CALLFH unquoted_literal
   {
-	char	*p = $2;
-	/* Remove surrounding quotes/brackets */
-	size_t	size;
-	++p;
-	size = strlen (p) - 1;
-	p[size] = '\0';
-	fprintf (ppout, "#CALLFH \"%s\"\n", p);
+	fprintf (ppout, "#CALLFH \"%s\"\n", $2);
   }
+/* #ifdef COBC_VERSION4
+| XFD unquoted_literal
+  {
+	fprintf (ppout, "#XFD \"%s\"\n", $2);
+  }
+*/
 | CALLFH
   {
 	fprintf (ppout, "#CALLFH \"EXTFH\"\n");
@@ -872,15 +872,9 @@ set_choice:
 	/* Enable EC-DATA-INCOMPATIBLE checking */
 	append_to_turn_list (ppp_list_add (NULL, "EC-DATA-INCOMPATIBLE"), 1, 0);
   }
-| COMP1 LITERAL
+| COMP1 unquoted_literal
   {
 	char	*p = $2;
-	size_t	size;
-
-	/* Remove surrounding quotes/brackets */
-	++p;
-	size = strlen (p) - 1;
-	p[size] = '\0';
 
 	if (!cb_strcasecmp (p, "BINARY")) {
 		cb_binary_comp_1 = 1;
@@ -890,15 +884,9 @@ set_choice:
 		ppp_error_invalid_option ("COMP1", p);
 	}
   }
-| DPC_IN_DATA LITERAL
+| DPC_IN_DATA unquoted_literal
   {
 	char	*p = $2;
-	size_t	size;
-
-	/* Remove surrounding quotes/brackets */
-	++p;
-	size = strlen (p) - 1;
-	p[size] = '\0';
 
 	if (!cb_strcasecmp (p, "XML")) {
 		cb_dpc_in_data = CB_DPC_IN_XML;
@@ -910,15 +898,9 @@ set_choice:
 		ppp_error_invalid_option ("DPC-IN-DATA", p);
 	}
   }
-| FOLDCOPYNAME _as LITERAL
+| FOLDCOPYNAME _as unquoted_literal
   {
 	char	*p = $3;
-	size_t	size;
-
-	/* Remove surrounding quotes/brackets */
-	++p;
-	size = strlen (p) - 1;
-	p[size] = '\0';
 
 	if (!cb_strcasecmp (p, "UPPER")) {
 		cb_fold_copy = COB_FOLD_UPPER;
@@ -964,7 +946,7 @@ set_choice:
 	/* Disable EC-BOUND-SUBSCRIPT and -REF-MOD checking */
 	struct cb_text_list	*txt = ppp_list_add (NULL, "EC-BOUND-SUBSCRIPT");
 	txt = ppp_list_add (txt, "EC-BOUND-REF-MOD");
-	
+
 	append_to_turn_list (txt, 0, 0);
   }
 | ODOSLIDE
@@ -985,15 +967,9 @@ set_choice:
 		fprintf (ppout, "#REMOVE %s\n", l->text);
 	}
   }
-| SOURCEFORMAT _as LITERAL
+| SOURCEFORMAT _as unquoted_literal
   {
 	char	*p = $3;
-	size_t	size;
-
-	/* Remove surrounding quotes/brackets */
-	++p;
-	size = strlen (p) - 1;
-	p[size] = '\0';
 
 	if (!cb_strcasecmp (p, "FIXED")) {
 		cb_source_format = CB_FORMAT_FIXED;
@@ -1025,7 +1001,7 @@ set_choice:
   {
 	char	*p = $2;
 	char	ep = 0;
-	
+
 	/* Remove surrounding quotes/brackets */
 	if (p) {
 		size_t	size;
@@ -1645,6 +1621,10 @@ text_partial_src:
   {
 	$$ = ppp_list_add (NULL, $2);
   }
+| literal_token
+  {
+	$$ = ppp_list_add (NULL, $1);
+  }
 ;
 
 text_partial_dst:
@@ -1655,6 +1635,10 @@ text_partial_dst:
 | EQEQ TOKEN EQEQ
   {
 	$$ = ppp_list_add (NULL, $2);
+  }
+| literal_token
+  {
+	$$ = ppp_list_add (NULL, $1);
   }
 ;
 
@@ -1722,6 +1706,38 @@ lead_trail:
 | TRAILING
   {
 	$$ = CB_REPLACE_TRAILING;
+  }
+;
+
+unquoted_literal:
+  LITERAL
+  {
+	/* Do not reuse unquote_alnum as some literals here may be delimited
+	   with parentheses */
+	char	*p = $1;
+	size_t	size;
+
+	/* Remove surrounding quotes/brackets */
+	++p;
+	size = strlen (p) - 1;
+	p[size] = '\0';
+
+	$$ = p;
+  }
+;
+
+literal_token:
+  TOKEN
+  {
+	char *t = $1;
+	if (t[0] == '\'' || t[0] == '\"') {
+		(void) ppparse_verify (cb_partial_replacing_with_literal,
+				       _("partial replacing with literal"));
+	} else {
+		ppparse_error (_("unexpected COBOL word in partial replacement "
+				 "phrase"));
+	}
+	$$ = unquote_alnum (t);
   }
 ;
 

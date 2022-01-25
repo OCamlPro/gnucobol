@@ -1,3 +1,6 @@
+2022-01-25  Nicolas Berthier <nicolas.berther@ocamlpro.com>
+
+	* testsuite.src/syn_copy.at: test partial replacing with literal
 
 2022-02-10  Simon Sobisch <simonsobisch@gnu.org>
 
