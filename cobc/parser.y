@@ -4199,7 +4199,7 @@ special_name:
 /* Mnemonic name clause */
 
 mnemonic_name_clause:
-  WORD
+  word_or_terminal
   {
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION,
 			       COBC_HD_CONFIGURATION_SECTION,
@@ -4216,6 +4216,10 @@ mnemonic_name_clause:
   }
   mnemonic_choices
 ;
+
+word_or_terminal:
+  WORD     { $$ = $1; }
+| TERMINAL { $$ = cb_build_reference("TERMINAL"); }
 
 mnemonic_choices:
   _is CRT
@@ -12267,7 +12271,7 @@ display_upon:
   {
 	upon_value = cb_build_display_mnemonic ($2);
   }
-| UPON WORD
+| UPON word_or_terminal
   {
 	upon_value = cb_build_display_name ($2);
   }
