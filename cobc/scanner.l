@@ -1271,9 +1271,7 @@ error_literal (const char *type, const char *literal)
 	cb_error ("%s", err_msg);
 }
 
-#define WITH_EBCDIC_LITERALS 1
-#if WITH_EBCDIC_LITERALS				/* EBCDIC (GCOS 7) */
-/* EBCDIC to ASCII table */
+/* EBCDIC to ASCII table, used in read_literal */
 static const cob_u8_t cob_ebcdic_ascii[256] = {
 	0x00, 0x01, 0x02, 0x03, 0xEC, 0x09, 0xCA, 0x7F,
 	0xE2, 0xD2, 0xD3, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
@@ -1326,16 +1324,14 @@ scan_ebcdic_char (int c)
 	}
 	return cob_ebcdic_ascii[c];
 }
-#endif
 
 static void
 read_literal (const char mark, const char *type)
 {
 	size_t		i;
 	int		c;
-#if WITH_EBCDIC_LITERALS				/* EBCDIC (GCOS 7) */
-	int		ebcdic_flag = 0;
-#endif
+	int		ebcdic_flag = 0; /* used for scanning symbolic EBCDIC
+					    characters */
 
 	literal_error = 0;
 
@@ -1358,8 +1354,8 @@ read_literal (const char mark, const char *type)
 			plex_buff[i] = (cob_u8_t)c;
 		}
 
-#if WITH_EBCDIC_LITERALS				/* EBCDIC (GCOS 7) */
 		if (ebcdic_flag) {
+			/* While scanning symbolic EBCDIC character: */
 			if (c == mark) {
 				ebcdic_flag = 0;
 			} else if ('0' <= c && c <= '9') {
@@ -1370,24 +1366,19 @@ read_literal (const char mark, const char *type)
 			}
 			continue;
 		}
-#endif
 
 		if (c == mark && (c = input ()) != (int)mark) {
 			if (c == '-') {
 				/* Free format continuation ("a"- 'b'- ) */
 				/* Hack it as concatenation */
 				unput ('&');
-#if WITH_EBCDIC_LITERALS				/* EBCDIC (GCOS 7) */
-			} else if ('0' <= c && c <= '9') {
+			} else if (type[0] == '\0' && cb_gcos_ebcdic_literals &&
+				   '0' <= c && c <= '9') {
+				/* GCOS 7: symbolic EBCDIC character in
+				   literals */
 				unput (c);
-				if (!cb_verify (cb_gcos_ebcdic_literals,
-						_("EBCDIC symbolic character in literal"))) {
-					break;
-				} else {
-					ebcdic_flag = 1;
-					continue;
-				}
-#endif
+				ebcdic_flag = 1;
+				continue;
 			} else {
 				if (c == EOF || c == 0) break;
 				unput (c);

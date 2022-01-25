@@ -305,7 +305,7 @@ CB_CONFIG_SUPPORT (cb_hp_octal_literals, "hp-octal-literals",
 CB_CONFIG_SUPPORT (cb_acu_literals, "acu-literals",
 	_("ACUCOBOL-GT literals (#B #O #H #X)"))
 
-CB_CONFIG_SUPPORT (cb_gcos_ebcdic_literals, "gcos-ebcdic-literals",
+CB_CONFIG_BOOLEAN (cb_gcos_ebcdic_literals, "gcos-ebcdic-literals",
 	_("GCOS COBOL EBCDIC symbolic characters in literals (\"\"134,150,150\"bar\"194,193,233\")"))
 
 CB_CONFIG_SUPPORT (cb_word_continuation, "word-continuation",
