@@ -34,6 +34,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include <ctype.h>
 
 #define	COB_IN_PPPARSE	1
@@ -65,15 +66,19 @@ static unsigned int		current_cmd = 0;
 /* Local functions */
 
 static char *
-fix_filename (char *name)
+unquote_alnum (char *name)
 {
 	/* remove quotation from alphanumeric literals */
 	if (name[0] == '\'' || name[0] == '\"') {
+		size_t size = strlen (name);
+		assert (name[size - 1] == name[0]);
+		name[size - 1] = 0;
 		name++;
-		name[strlen (name) - 1] = 0;
 	}
 	return name;
 }
+
+#define fix_filename unquote_alnum
 
 static char *
 fold_lower (char *name)
@@ -1451,6 +1456,14 @@ text_partial_src:
   {
 	$$ = ppp_list_add (NULL, $2);
   }
+| TOKEN
+  {
+	if (!cb_verify (cb_partial_replacing_word_or_literal,
+			_("partial replacing with COBOL word or literal"))) {
+		YYERROR;
+	}
+	$$ = ppp_list_add (NULL, unquote_alnum ($1));
+  }
 ;
 
 text_partial_dst:
@@ -1461,6 +1474,14 @@ text_partial_dst:
 | EQEQ TOKEN EQEQ
   {
 	$$ = ppp_list_add (NULL, $2);
+  }
+| TOKEN
+  {
+	if (!cb_verify (cb_partial_replacing_word_or_literal,
+			_("partial replacing with COBOL word or literal"))) {
+		YYERROR;
+	}
+	$$ = ppp_list_add (NULL, unquote_alnum ($1));
   }
 ;
 
