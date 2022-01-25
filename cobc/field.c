@@ -44,6 +44,7 @@
 /* Function prototypes */
 static unsigned int	validate_field_1 (struct cb_field *f);
 static int compute_size (struct cb_field *f);
+static void compute_binary_size (struct cb_field *f, const int size);
 
 /* Global variables */
 
@@ -2260,6 +2261,20 @@ validate_elementary_item (struct cb_field *f)
 	return ret;
 }
 
+static void
+check_compx (struct cb_field *f)
+{
+	if (f->compx_size > COB_MAX_COMPX
+	 || f->memory_size > COB_MAX_COMPX) {
+		cb_error_x (CB_TREE (f),
+				_("'%s' %s field cannot be larger than %d bytes"),
+				f->name, cb_get_usage_string (f->usage), COB_MAX_COMPX);
+		f->size = COB_MAX_COMPX;
+		f->compx_size = COB_MAX_COMPX;
+		f->memory_size = COB_MAX_COMPX;
+	}
+}
+
 static unsigned int
 validate_field_1 (struct cb_field *f)
 {
@@ -2408,22 +2423,27 @@ setup_parameters (struct cb_field *f)
 		/* Fall-through */
 	case CB_USAGE_COMP_X:
 		if (f->pic
-		 && f->pic->category == CB_CATEGORY_ALPHANUMERIC
 		 && f->usage == CB_USAGE_COMP_X) {
-			f->compx_size = f->size = f->pic->size;
-			if (f->pic->size > 8) {
-				f->pic = CB_PICTURE (cb_build_picture ("9(36)"));
-			} else {
-				char		pic[8];
-				sprintf (pic, "9(%u)", pic_digits[f->pic->size - 1]);
-				f->pic = CB_PICTURE (cb_build_picture (pic));
-				if(f->compx_size > 0)
-					f->pic->size = f->compx_size;
+			if (f->pic->category == CB_CATEGORY_NUMERIC) {
+				if (f->compx_size == 0)
+					f->compx_size = f->size;
+			} else
+			if (f->pic->category == CB_CATEGORY_ALPHANUMERIC) {
+				f->compx_size = f->size = f->pic->size;
+				if (f->pic->size > 8) {
+					f->pic = CB_PICTURE (cb_build_picture ("9(36)"));
+				} else {
+					char		pic[8];
+					sprintf (pic, "9(%u)", pic_digits[f->pic->size - 1]);
+					f->pic = CB_PICTURE (cb_build_picture (pic));
+					if (f->compx_size > 0)
+						f->pic->size = f->compx_size;
+				}
 			}
 		}
 #ifndef WORDS_BIGENDIAN
-		if (f->usage == CB_USAGE_COMP_X &&
-			cb_binary_byteorder == CB_BYTEORDER_BIG_ENDIAN) {
+		if (f->usage == CB_USAGE_COMP_X 
+		 && cb_binary_byteorder == CB_BYTEORDER_BIG_ENDIAN) {
 			f->flag_binary_swap = 1;
 		}
 		if (f->usage == CB_USAGE_COMP_N) {
@@ -2867,6 +2887,7 @@ unbounded_again:
 		switch (f->usage) {
 		case CB_USAGE_COMP_X:
 			if(f->compx_size > 0) {
+				check_compx (f);
 				size = f->compx_size;
 				break;
 			}
@@ -2883,6 +2904,7 @@ unbounded_again:
 				   (size <= 26) ? 11 : (size <= 28) ? 12 :
 				   (size <= 31) ? 13 : (size <= 33) ? 14 :
 				   (size <= 36) ? 15 : 16);
+			check_compx (f);
 			break;
 		case CB_USAGE_BINARY:
 		case CB_USAGE_COMP_5:
@@ -3088,6 +3110,11 @@ cb_validate_field (struct cb_field *f)
 		f->memory_size = f->size * f->occurs_max;
 	} else if (f->redefines->memory_size < f->size * f->occurs_max) {
 		f->redefines->memory_size = f->size * f->occurs_max;
+	}
+	if (f->usage == CB_USAGE_COMP_X
+	 && (f->compx_size  > COB_MAX_COMPX
+	  || f->memory_size > COB_MAX_COMPX)) {
+		check_compx (f);
 	}
 
 	validate_field_value (f);

@@ -1,4 +1,8 @@
 
+2022-01-25  Ron Norman <rjn@inglenet.com>
+
+	* common.h: Add define  COB_MAX_COMPX
+
 2022-01-24  Ron Norman <rjn@inglenet.com>
 
 	* common.c: report if no runtime.cfg was used

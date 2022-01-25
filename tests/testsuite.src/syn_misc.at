@@ -7809,5 +7809,50 @@ prog.cob:38: error: FLR has 1 more value than needed
 
 AT_CLEANUP
 
+AT_SETUP([Check PIC COMP-X size])
+AT_KEYWORDS([Numeric])
+
+AT_DATA([prog.cob], [       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA  DIVISION.
+       WORKING-STORAGE SECTION.
+       01  TSTN-4   PIC X(4)  COMP-N.
+       01  TSTN-8   PIC X(8)  COMP-N.
+       01  TSTX-4   PIC X(4)  COMP-5.
+       01  TSTX-8   PIC X(8)  COMP-X.
+       01  TSTX-16  PIC X(16) COMP-X.
+       01  TST9-12  PIC 9(12) COMP-X.
+       01  TST9-19  PIC 9(19) COMP-X.
+       01  TST9-20  PIC 9(20) COMP-X.
+       01  TST9-24  PIC 9(24) COMP-X.
+       01  TSTB-34  PIC 9(34).
+
+       PROCEDURE DIVISION.
+           MOVE 4294967295 TO TSTX-4.
+           DISPLAY "TSTX-4 :" TSTX-4 ", Length: " LENGTH OF TSTX-4.
+           MOVE 9223372036854775807 TO TSTX-8.
+           DISPLAY "TSTX-8 :" TSTX-8 ", Length: " LENGTH OF TSTX-8.
+           MOVE 4294967295 TO TSTN-4.
+           DISPLAY "TSTN-4 :" TSTN-4 ", Length: " LENGTH OF TSTN-4.
+           MOVE 9223372036854775807 TO TSTN-8.
+           DISPLAY "TSTN-8 :" TSTN-8 ", Length: " LENGTH OF TSTN-8.
+           MOVE 999999999999        TO TST9-12.
+           DISPLAY "TST9-12:" TST9-12 ", Length: " LENGTH OF TST9-12.
+           MOVE 9223372036854775807 TO TST9-19.
+           DISPLAY "TST9-19:" TST9-19 ", Length: " LENGTH OF TST9-19.
+           MOVE 999999999999999999999999999999999 TO TSTB-34.
+           DISPLAY "TSTB-34:" TSTB-34 ", Length: " LENGTH OF TSTB-34.
+           COMPUTE TSTB-34 = TSTB-34 * 10000000000.
+           DISPLAY "TSTB-34:" TSTB-34 ", Length: " LENGTH OF TSTB-34.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -std=default prog.cob ], [1], [], [prog.cob:9: error: 'TSTX-16' COMP-X field cannot be larger than 8 bytes
+prog.cob:12: error: 'TST9-20' COMP-X field cannot be larger than 8 bytes
+prog.cob:13: error: 'TST9-24' COMP-X field cannot be larger than 8 bytes
+])
+
+AT_CLEANUP
+
 
 # TODO: add missing tests for syntax errors in >>IF/ELSE/END

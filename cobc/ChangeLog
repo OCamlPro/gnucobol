@@ -1,4 +1,8 @@
 
+2022-01-25  Ron Norman <rjn@inglenet.com>
+
+	* field.c: Check that COMP-X size does not exceed what is supported
+
 2022-01-24  Ron Norman <rjn@inglenet.com>
 
 	* parser.y: Raise error if REPORT LINE has OCCURS

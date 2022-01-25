@@ -614,6 +614,9 @@ only usable with COB_USE_VC2013_OR_GREATER */
 /* Maximum number of field digits */
 #define	COB_MAX_DIGITS		38
 
+/* Maximum bytes in COMP-X field */
+#define	COB_MAX_COMPX		8
+
 /* Maximum digits in binary field */
 #define	COB_MAX_BINARY		39
 
