@@ -180,6 +180,8 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 %x COBOL_WORDS_DIRECTIVE_STATE
 %x COPY_STATE
 %x PSEUDO_STATE
+%x CONTROL_DIVISION_STATE
+%x SUBSTITUTION_SECTION_STATE
 %x SOURCE_DIRECTIVE_STATE
 %x DEFINE_DIRECTIVE_STATE
 %x ON_OFF_DIRECTIVE_STATE
@@ -438,6 +440,45 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 ^[ ]*"*CBL"		{
 	BEGIN CONTROL_STATEMENT_STATE;
 	return CONTROL_STATEMENT;
+}
+
+"CONTROL"[ ,;\n]+"DIVISION" {
+	yy_push_state (CONTROL_DIVISION_STATE);
+	return CONTROL_DIVISION;
+}
+
+<CONTROL_DIVISION_STATE>"SUBSTITUTION"[ ,;\n]+"SECTION" {
+	yy_pop_state ();
+	yy_push_state (SUBSTITUTION_SECTION_STATE);
+	return SUBSTITUTION_SECTION;
+}
+
+<SUBSTITUTION_SECTION_STATE>"REPLACE"	{
+	yy_pop_state ();
+	yy_push_state (COPY_STATE);
+	return REPLACE;
+}
+
+<CONTROL_DIVISION_STATE,
+SUBSTITUTION_SECTION_STATE>{
+  [,;]?\n		{
+	  ECHO;
+	  check_listing (yytext, 0);
+	  cb_source_line++;
+  }
+  [,;]?[ ]+		{ /* ignore */ }
+  \. 			{
+	  return DOT;
+  }
+  ("ID"|"IDENTIFICATION")[ ,;\n]+"DIVISION" {
+	  /* FIXME: is there a way to pop only if in CONTROL_DIVISION_STATE or
+	     SUBSTITUTION_SECTION_STATE? If so that entry could be merged with
+	     the one below. */
+	  yy_pop_state ();
+	  /* Allow comment sentences/paragraphs */
+	  comment_allowed = 1;
+	  ppecho (yytext, 0, (int)yyleng);
+  }
 }
 
 ("ID"|"IDENTIFICATION")[ ,;\n]+"DIVISION" {
