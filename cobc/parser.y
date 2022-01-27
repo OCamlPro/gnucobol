@@ -12140,6 +12140,7 @@ display_body:
 	cb_emit_command_line ($1);
   }
 | screen_or_device_display _common_exception_phrases
+| with_conversion screen_or_device_display _common_exception_phrases
 | display_erase	/* note: may also be part of display_pos_specifier */
 | display_pos_specifier
 | display_message_box
@@ -12162,6 +12163,13 @@ screen_or_device_display:
 	set_display_type ($1, NULL, NULL, NULL);
 	cb_emit_display ($1, NULL, cb_int1, NULL, NULL, 1,
 			 display_type);
+  }
+;
+
+with_conversion:
+ _with CONVERSION
+  {
+	CB_PENDING ("DISPLAY WITH CONVERSION");
   }
 ;
 
