@@ -1,3 +1,12 @@
+2022-01-27  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* pplex.l, ppparse.y: add support for CONTROL DIVISION (GCOS 7
+	  extension); only SUBSTITUTION SECTION is handled yet
+	* config.def: new control-division option
+	* cobc.h, pplex.l (ppparse_verify): feature verification while in
+	  ppparse.y
+	* pplex.l (ppparse_error): shift newline counter by one when
+	  reporting an error when in ppparse.y
 
 2022-05-31  Simon Sobisch <simonsobisch@gnu.org>
 

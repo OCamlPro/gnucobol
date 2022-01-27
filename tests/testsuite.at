@@ -51,6 +51,7 @@ m4_include([syn_multiply.at])		# 14.8.25 MULTIPLY statement
 m4_include([syn_screen.at])		# 13.9 SCREEN section
 m4_include([syn_set.at])		# 14.8.35 SET statement
 m4_include([syn_functions.at])		# 15 Intrinsic functions
+m4_include([syn_control.at])		# CONTROL DIVISION (GCOS)
 
 ## Listings tests
 AT_BANNER([Listing tests])

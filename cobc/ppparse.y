@@ -606,6 +606,9 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 
 %token LEAP_SECOND_DIRECTIVE
 
+%token CONTROL_DIVISION		"CONTROL DIVISION"
+%token SUBSTITUTION_SECTION	"SUBSTITUTION SECTION"
+
 %token SOURCE_DIRECTIVE
 %token FORMAT
 %token IS
@@ -721,13 +724,53 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 
 %%
 
+program_structure:
+  program_with_control_division
+| statement_list
+;
+
+/* GCOS 7 COBOL85 ref. manual p. 136: [...] If the replace-entry is present in
+the Substitution Section of the Control Division of a source program, that
+source program, including all contained programs, must contain no REPLACE
+statement.  Thankfully this helps avoiding some conflicts. */
+program_with_control_division:
+  control_division_prefix statement_list
+| control_division_no_replace statement_no_replace statement_list
+| control_division_no_replace
+| control_division_with_replace DOT statement_no_replace_list
+;
+
+control_division_no_replace:
+  control_division_prefix SUBSTITUTION_SECTION DOT
+;
+
+control_division_with_replace:
+ /* The second period could be optional. */
+  control_division_prefix SUBSTITUTION_SECTION DOT replace_statement
+;
+
+control_division_prefix:
+  CONTROL_DIVISION DOT
+  {
+	  (void) ppparse_verify (cb_control_division, "CONTROL DIVISION");
+  }
+;
+
 statement_list:
 | statement_list statement
 ;
 
+statement_no_replace_list:
+| statement_no_replace_list statement_no_replace
+;
+
 statement:
-  copy_statement DOT
+  statement_no_replace
 | replace_statement DOT
+;
+
+statement_no_replace:
+  copy_statement DOT
 | directive TERMINATOR
 | listing_statement
 | CONTROL_STATEMENT control_options _dot TERMINATOR
