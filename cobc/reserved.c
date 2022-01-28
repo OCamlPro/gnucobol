@@ -334,6 +334,9 @@ static struct cobc_reserved default_reserved_words[] = {
   { "AND",			0, 0, AND,			/* 2002 */
 				0, 0
   },
+  { "ANSI",			0, 1, ANSI,			/* GCOS extension */
+    				0, CB_CS_SELECT
+  },
   { "ANY",			0, 0, ANY,			/* 2002 */
 				0, 0
   },
@@ -2283,6 +2286,9 @@ static struct cobc_reserved default_reserved_words[] = {
   { "QUEUE",			0, 0, QUEUE,			/* Communication Section */
 				0, 0
   },
+  { "QUEUED",			0, 1, QUEUED,			/* GCOS extension */
+    				0, CB_CS_SELECT
+  },
   { "QUOTE",			0, 0, QUOTE,			/* 2002 */
 				0, 0
   },
@@ -2941,6 +2947,9 @@ static struct cobc_reserved default_reserved_words[] = {
   },
   { "UCS-4",			0, 1, UCS_4,			/* 2002 (C/S) */
 				0, CB_CS_ALPHABET
+  },
+  { "UFF",			0, 1, UFF,			/* GCOS extension */
+    				0, CB_CS_SELECT
   },
   { "UNBOUNDED",		0, 1, UNBOUNDED,			/* IBM V5 */
 				0, CB_CS_OCCURS

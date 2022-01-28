@@ -21,7 +21,7 @@ reserved:	ALSO
 reserved:	ALTER
 reserved:	ALTERNATE
 reserved:	AND
-reserved:	ANSI=BINARY		# GCOS
+reserved:	ANSI			# GCOS
 reserved:	ANY
 #reserved:	ANYCASE			# COBOL 2002
 reserved:	APPLY			# Proprietary + GCOS (unsupported)
@@ -394,6 +394,7 @@ reserved:	PROGRAM-ID
 #reserved:	PROTOTYPE		# COBOL 2002
 reserved:	PURGE
 reserved:	QUEUE
+reserved:	QUEUED			# GCOS
 reserved:	QUOTE
 reserved:	QUOTES
 #reserved:	RAISE			# COBOL 2002
@@ -519,7 +520,7 @@ reserved:	TRUE
 reserved:	TYPE
 #reserved:	TYPEDEF			# COBOL 2002
 #reserved:	UCS-4*			# COBOL 2002
-reserved:	UFF=BINARY		# GCOS
+reserved:	UFF			# GCOS
 #reserved:	UNDERLINE*		# COBOL 2002
 reserved:	UNIT
 #reserved:	UNIVERSAL		# COBOL 2002
