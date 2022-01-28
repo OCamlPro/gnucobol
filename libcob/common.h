@@ -942,15 +942,16 @@ enum cob_file_access {
 #define COB_FILE_EXCLUSIVE	(COB_LOCK_EXCLUSIVE | COB_LOCK_OPEN_EXCLUSIVE)
 
 /* File: 'file_features' file processing features */
-#define COB_FILE_SYNC		(1 << 0)/* sync writes to disk */
-#define COB_FILE_LS_VALIDATE	(1 << 1)/* Validate LINE SEQUENTIAL data */
-#define COB_FILE_LS_NULLS	(1 << 2)/* Do NUL insertion for LINE SEQUENTIAL */
-#define COB_FILE_LS_FIXED	(1 << 3)/* Write LINE SEQUENTIAL record fixed size */
-#define COB_FILE_LS_CRLF	(1 << 4)/* End LINE SEQUENTIAL records with CR LF */
-#define COB_FILE_LS_LF		(1 << 5)/* End LINE SEQUENTIAL records with LF */
-#define COB_FILE_LS_SPLIT	(1 << 6)/* LINE SEQUENTIAL records longer than max should be split */
-#define COB_FILE_LS_DEFAULT	(1 << 7)/* Defaulted to LINE SEQUENTIAL */
-									/* Default is longer than max get truncated & skip to LF */
+#define COB_FILE_SYNC		(1 << 0)	/* sync writes to disk */
+#define COB_FILE_LS_VALIDATE	(1 << 1) /* Validate LINE SEQUENTIAL data */
+#define COB_FILE_LS_NULLS	(1 << 2)	/* Do NUL insertion for LINE SEQUENTIAL */
+/* Note: TAB insertion for LINE SEQUENTIAL is handled with the separate 'flag_ls_instab' */
+#define COB_FILE_LS_FIXED	(1 << 3)	/* Write LINE SEQUENTIAL record fixed size */
+#define COB_FILE_LS_CRLF	(1 << 4)	/* End LINE SEQUENTIAL records with CR LF */
+#define COB_FILE_LS_LF		(1 << 5)	/* End LINE SEQUENTIAL records with LF */
+#define COB_FILE_LS_SPLIT	(1 << 6)	/* LINE SEQUENTIAL records longer than max should be split */
+#define COB_FILE_LS_DEFAULT	(1 << 7)	/* Defaulted to LINE SEQUENTIAL */
+								/* Default is longer than max get truncated & skip to LF */
 
 /* Sharing option */
 
@@ -1501,8 +1502,8 @@ typedef struct __cob_linage {
  */
 typedef struct __cob_file {
 	unsigned char		file_version;		/* File handler version */
-	unsigned char		organization;		/* ORGANIZATION */
-	unsigned char		access_mode;		/* ACCESS MODE */
+	enum cob_file_org	organization;		/* ORGANIZATION */
+	enum cob_file_access	access_mode;		/* ACCESS MODE */
 	unsigned char		flag_line_adv;		/* LINE ADVANCING */
 #define COB_LINE_ADVANCE	1				/* insert CR/LF as needed */
 #define COB_RECORD_ADVANCE	2				/* WRITE BEFORE/AFTER in 'record mode' */
@@ -2395,7 +2396,7 @@ typedef struct {
 /**********************************************************/
 
 /**********************************************************/
-/* Following is the 64-bit FCD (or also known as FCD3) */
+/* Following is the 64-bit FCD (or also known as FCD3)    */
 /* This format is used at least for:                      */
 /* - MF Visual COBOL         (both 32 and 64 bit)         */
 /* - MF Developer Enterprise (both 32 and 64 bit)         */
@@ -2776,10 +2777,9 @@ COB_EXPIMP void cob_extfh_start		(int (*callfh)(unsigned char *, FCD3 *),
 COB_EXPIMP void cob_extfh_write		(int (*callfh)(unsigned char *, FCD3 *),
 					cob_file *, cob_field *, const int,
 				 	cob_field *, const unsigned int);
+
 COB_EXPIMP void cob_file_fcd_adrs		(cob_file *, void *);
 COB_EXPIMP void cob_file_fcdkey_adrs	(cob_file *, void *);
-COB_EXPIMP void cob_file_fcd_sync		(cob_file *);
-COB_EXPIMP void cob_fcd_file_sync		(cob_file *, char *);
 
 /* File system routines */
 COB_EXPIMP int cob_sys_open_file	(unsigned char *, unsigned char *,

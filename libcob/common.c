@@ -1673,7 +1673,7 @@ cob_open_logfile (const char *filename)
 }
 
 /* ensure that cob_trace_file is available for writing */
-static void
+void
 cob_check_trace_file (void)
 {
 	if (cobsetptr->cob_trace_file) {

@@ -1,4 +1,20 @@
 
+2022-01-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_check_trace_file), coblocal.h: externalize function
+	* fileio.c (cob_file_save_status): make io tracing independent
+	  of execution tracing
+	* fileio.c (cob_file_save_status): instead of only partial open logic for
+	  the trace file, use full implementation of cob_check_trace_file;
+	  moved some code to inline functions
+	* common.h, coblocal.h: hide cob_file_fcd_sync, cob_fcd_file_sync
+	* fextfh.c (update_file_to_fcd, copy_file_to_fcd): moved some settings in
+	  fcd, amongst others preserving io trace and io stat flags
+	* fileio.c, fextfh.c (update_file_to_fcd, copy_fcd_to_file), fileio.c:
+	  handle ls_instab attribute
+	* common.h (cob_file), fileio.c: define and handle organization and access_mode
+	  as enums
+
 2022-01-25  Ron Norman <rjn@inglenet.com>
 
 	* common.h: Add define  COB_MAX_COMPX

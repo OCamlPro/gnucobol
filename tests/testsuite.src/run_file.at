@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2021 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2022 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
 ## Brian Tiffin, Joe Robbins, Edward Hart
 ##
@@ -893,13 +893,13 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE SECTION.
 
        01  CUST-STAT.
-           05  STAT-1 PICTURE 9(4) COMP SYNC.
+           05  STAT-1 PICTURE 9(4) COMP.
            05  FILLER REDEFINES STAT-1.
                10  STAT-X1 PIC X COMP-X.
                10  STAT-X2 PIC X COMP-X.
        77  BYTE-1  PICTURE 9(3).
        77  BYTE-2  PICTURE 9(3).
-       77  MAX-SUB           VALUE  16         PICTURE 9(5) COMP SYNC.
+       78  MAX-SUB           VALUE  16.
        77  DO-REWRITE   PICTURE X VALUE 'N'.
        77  ENVVAR-IN    PICTURE X(30).
        77  ENVVAR-OUT   PICTURE X(60).
@@ -926,7 +926,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(8) VALUE "PRE00000".
 
          02  DATA-CUST-NUM REDEFINES DATA-CUST-NUM-TBL
-                                       PIC X(8) OCCURS 16.
+                                       PIC X(8) OCCURS MAX-SUB.
          02  DATA-COMPANY-TBL.
 
            05  FILLER PIC X(25) VALUE "ALPHA ELECTRICAL CO. LTD.".
@@ -947,7 +947,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(25) VALUE "PRESTIGE OFFICE FURNITURE".
 
          02  DATA-COMPANY  REDEFINES DATA-COMPANY-TBL
-                                       PIC X(25) OCCURS 16.
+                                       PIC X(25) OCCURS MAX-SUB.
          02  DATA-ADDRESS-1-TBL.
 
            05  FILLER PIC X(25) VALUE "123 MAIN STREET          ".
@@ -968,7 +968,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(25) VALUE "114A MAPLE GROVE         ".
 
          02  DATA-ADDRESS-1 REDEFINES DATA-ADDRESS-1-TBL
-                                       PIC X(25) OCCURS 16.
+                                       PIC X(25) OCCURS MAX-SUB.
          02  DATA-ADDRESS-2-TBL.
 
            05  FILLER PIC X(10) VALUE "NEW YORK  ".
@@ -989,7 +989,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(10) VALUE "WHITEPLAIN".
 
          02  DATA-ADDRESS-2 REDEFINES DATA-ADDRESS-2-TBL
-                                       PIC X(10) OCCURS 16.
+                                       PIC X(10) OCCURS MAX-SUB.
          02  DATA-ADDRESS-3-TBL.
 
            05  FILLER PIC X(10) VALUE "N.Y.      ".
@@ -1010,7 +1010,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(10) VALUE "N.Y.      ".
 
          02  DATA-ADDRESS-3 REDEFINES DATA-ADDRESS-3-TBL
-                                       PIC X(10) OCCURS 16.
+                                       PIC X(10) OCCURS MAX-SUB.
          02  DATA-TELEPHONE-TBL.
 
            05  FILLER PIC 9(10) VALUE 3131234432.
@@ -1031,7 +1031,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC 9(10) VALUE 4169898509.
 
          02  DATA-TELEPHONE REDEFINES DATA-TELEPHONE-TBL
-                                       PIC 9(10) OCCURS 16.
+                                       PIC 9(10) OCCURS MAX-SUB.
          02  DATA-DP-MGR-TBL.
 
            05  FILLER PIC X(20) VALUE "MR. DAVE HARRIS     ".
@@ -1052,7 +1052,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(20) VALUE "MR. THOMAS JEFFERSON".
 
          02  DATA-DP-MGR    REDEFINES DATA-DP-MGR-TBL
-                                       PIC X(20) OCCURS 16.
+                                       PIC X(20) OCCURS MAX-SUB.
          02  DATA-MACHINE-TBL.
 
            05  FILLER PIC X(8) VALUE "UNI-9030".
@@ -1073,7 +1073,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(8) VALUE "UNI-9040".
 
          02  DATA-MACHINE   REDEFINES DATA-MACHINE-TBL
-                                       PIC X(8) OCCURS 16.
+                                       PIC X(8) OCCURS MAX-SUB.
          02  DATA-NO-TERMINALS-TBL.
 
            05  FILLER PIC 9(3) COMP-3 VALUE 85.
@@ -1094,16 +1094,16 @@ AT_DATA([prog.cob], [
            05  FILLER PIC 9(3) COMP-3 VALUE 86.
 
          02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
-                                       PIC 9(3) COMP-3 OCCURS 16.
+                                       PIC 9(3) COMP-3 OCCURS MAX-SUB.
 
+       78  REC-MAX                     VALUE 10.
        01  WORK-AREA.
-           05  REC-NUM                         PICTURE 9(6) VALUE 0.
-           05  REC-MAX                         PICTURE 9(6) VALUE 10.
-           05  SUB                             PICTURE 9(4) COMP SYNC.
-               88  ODD-RECORD                  VALUE 1 3 5 7 9 10 11.
-               88  NULL-KEY                    VALUE 4 5 8 12 14.
+           05  REC-NUM                 BINARY-SHORT UNSIGNED VALUE 0.
+           05  SUB                     BINARY-SHORT UNSIGNED.
+               88  ODD-RECORD          VALUE 1 3 5 7 9 10 11.
+               88  NULL-KEY            VALUE 4 5 8 12 14.
 
-           05  TSPFL-KEY                       PICTURE X(8).
+           05  TSPFL-KEY               PICTURE X(8).
 
        PROCEDURE DIVISION.
 
@@ -1611,7 +1611,7 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE SECTION.
 
        01  CUST-STAT                           PIC XX.
-       77  MAX-SUB           VALUE  16         PICTURE 9(5) COMP.
+       78  MAX-SUB           VALUE  16.
 
        01  TEST-DATA.
          02  DATA-CUST-NUM-TBL.
@@ -1633,7 +1633,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(8) VALUE "PRE00000".
 
          02  DATA-CUST-NUM REDEFINES DATA-CUST-NUM-TBL
-                                       PIC X(8) OCCURS 16.
+                                       PIC X(8) OCCURS MAX-SUB.
          02  DATA-COMPANY-TBL.
            05  FILLER PIC X(25) VALUE "ALPHA ELECTRICAL CO. LTD.".
            05  FILLER PIC X(25) VALUE "BETA SHOE MFG. INC.      ".
@@ -1653,7 +1653,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(25) VALUE "PRESTIGE OFFICE FURNITURE".
 
          02  DATA-COMPANY  REDEFINES DATA-COMPANY-TBL
-                                       PIC X(25) OCCURS 16.
+                                       PIC X(25) OCCURS MAX-SUB.
          02  DATA-ADDRESS-1-TBL.
            05  FILLER PIC X(25) VALUE "123 MAIN STREET          ".
            05  FILLER PIC X(25) VALUE "1090 2ND AVE. WEST       ".
@@ -1673,7 +1673,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(25) VALUE "114A MAPLE GROVE         ".
 
          02  DATA-ADDRESS-1 REDEFINES DATA-ADDRESS-1-TBL
-                                       PIC X(25) OCCURS 16.
+                                       PIC X(25) OCCURS MAX-SUB.
          02  DATA-ADDRESS-2-TBL.
            05  FILLER PIC X(10) VALUE "NEW YORK  ".
            05  FILLER PIC X(10) VALUE "ATLANTA   ".
@@ -1693,7 +1693,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(10) VALUE "WHITEPLAIN".
 
          02  DATA-ADDRESS-2 REDEFINES DATA-ADDRESS-2-TBL
-                                       PIC X(10) OCCURS 16.
+                                       PIC X(10) OCCURS MAX-SUB.
          02  DATA-ADDRESS-3-TBL.
            05  FILLER PIC X(10) VALUE "N.Y.      ".
            05  FILLER PIC X(10) VALUE "GEORGIA   ".
@@ -1713,7 +1713,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(10) VALUE "N.Y.      ".
 
          02  DATA-ADDRESS-3 REDEFINES DATA-ADDRESS-3-TBL
-                                       PIC X(10) OCCURS 16.
+                                       PIC X(10) OCCURS MAX-SUB.
          02  DATA-TELEPHONE-TBL.
            05  FILLER PIC 9(10) VALUE 3131234432.
            05  FILLER PIC 9(10) VALUE 4082938498.
@@ -1733,7 +1733,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC 9(10) VALUE 4169898509.
 
          02  DATA-TELEPHONE REDEFINES DATA-TELEPHONE-TBL
-                                       PIC 9(10) OCCURS 16.
+                                       PIC 9(10) OCCURS MAX-SUB.
          02  DATA-DP-MGR-TBL.
            05  FILLER PIC X(20) VALUE "MR. DAVE HARRIS     ".
            05  FILLER PIC X(20) VALUE "MS. JANICE SILCOX   ".
@@ -1753,7 +1753,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(20) VALUE "MR. THOMAS JEFFERSON".
 
          02  DATA-DP-MGR    REDEFINES DATA-DP-MGR-TBL
-                                       PIC X(20) OCCURS 16.
+                                       PIC X(20) OCCURS MAX-SUB.
          02  DATA-MACHINE-TBL.
            05  FILLER PIC X(8) VALUE "UNI-9030".
            05  FILLER PIC X(8) VALUE "UNI-9040".
@@ -1773,13 +1773,13 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(8) VALUE "UNI-9040".
 
          02  DATA-MACHINE   REDEFINES DATA-MACHINE-TBL
-                                       PIC X(8) OCCURS 16.
+                                       PIC X(8) OCCURS MAX-SUB.
        01  WORK-AREA.
-           05  REC-NUM                         PICTURE 9(2) VALUE 0.
-           05  SUB                             PICTURE 9(4) COMP.
-               88  ODD-RECORD                  VALUE 1 3 5 7 9 10 11.
+           05  REC-NUM                 PICTURE 9(2) VALUE 0.
+           05  SUB                     BINARY-SHORT UNSIGNED.
+               88  ODD-RECORD          VALUE 1 3 5 7 9 10 11.
 
-           05  TSPFL-KEY                       PICTURE X(8).
+           05  TSPFL-KEY               PICTURE X(8).
 
        PROCEDURE DIVISION.
 
@@ -2893,13 +2893,13 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE SECTION.
 
        01  CUST-STAT.
-           05  STAT-1 PICTURE 9(4) COMP SYNC.
+           05  STAT-1 PICTURE 9(4) COMP.
            05  FILLER REDEFINES STAT-1.
                10  STAT-X1 PIC X COMP-X.
                10  STAT-X2 PIC X COMP-X.
        77  BYTE-1  PICTURE 9(3).
        77  BYTE-2  PICTURE 9(3).
-       77  MAX-SUB           VALUE  16         PICTURE 9(5) COMP SYNC.
+       78  MAX-SUB           VALUE  16.
 
        01  TEST-DATA.
 
@@ -2923,7 +2923,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(8) VALUE "PRE00000".
 
          02  DATA-CUST-NUM REDEFINES DATA-CUST-NUM-TBL
-                                       PIC X(8) OCCURS 16.
+                                       PIC X(8) OCCURS MAX-SUB.
          02  DATA-COMPANY-TBL.
 
            05  FILLER PIC X(25) VALUE "ALPHA ELECTRICAL CO. LTD.".
@@ -2944,7 +2944,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(25) VALUE "PRESTIGE OFFICE FURNITURE".
 
          02  DATA-COMPANY  REDEFINES DATA-COMPANY-TBL
-                                       PIC X(25) OCCURS 16.
+                                       PIC X(25) OCCURS MAX-SUB.
          02  DATA-ADDRESS-1-TBL.
 
            05  FILLER PIC X(25) VALUE "123 MAIN STREET          ".
@@ -2965,7 +2965,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(25) VALUE "114A MAPLE GROVE         ".
 
          02  DATA-ADDRESS-1 REDEFINES DATA-ADDRESS-1-TBL
-                                       PIC X(25) OCCURS 16.
+                                       PIC X(25) OCCURS MAX-SUB.
          02  DATA-ADDRESS-2-TBL.
 
            05  FILLER PIC X(10) VALUE "NEW YORK  ".
@@ -2986,7 +2986,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(10) VALUE "WHITEPLAIN".
 
          02  DATA-ADDRESS-2 REDEFINES DATA-ADDRESS-2-TBL
-                                       PIC X(10) OCCURS 16.
+                                       PIC X(10) OCCURS MAX-SUB.
          02  DATA-ADDRESS-3-TBL.
 
            05  FILLER PIC X(10) VALUE "N.Y.      ".
@@ -3007,7 +3007,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(10) VALUE "N.Y.      ".
 
          02  DATA-ADDRESS-3 REDEFINES DATA-ADDRESS-3-TBL
-                                       PIC X(10) OCCURS 16.
+                                       PIC X(10) OCCURS MAX-SUB.
          02  DATA-TELEPHONE-TBL.
 
            05  FILLER PIC 9(10) VALUE 3131234432.
@@ -3028,7 +3028,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC 9(10) VALUE 4169898509.
 
          02  DATA-TELEPHONE REDEFINES DATA-TELEPHONE-TBL
-                                       PIC 9(10) OCCURS 16.
+                                       PIC 9(10) OCCURS MAX-SUB.
          02  DATA-DP-MGR-TBL.
 
            05  FILLER PIC X(20) VALUE "MR. DAVE HARRIS     ".
@@ -3049,7 +3049,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(20) VALUE "MR. THOMAS JEFFERSON".
 
          02  DATA-DP-MGR    REDEFINES DATA-DP-MGR-TBL
-                                       PIC X(20) OCCURS 16.
+                                       PIC X(20) OCCURS MAX-SUB.
          02  DATA-MACHINE-TBL.
 
            05  FILLER PIC X(8) VALUE "UNI-9030".
@@ -3070,7 +3070,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(8) VALUE "UNI-9040".
 
          02  DATA-MACHINE   REDEFINES DATA-MACHINE-TBL
-                                       PIC X(8) OCCURS 16.
+                                       PIC X(8) OCCURS MAX-SUB.
          02  DATA-NO-TERMINALS-TBL.
 
            05  FILLER PIC 9(3) COMP-3 VALUE 85.
@@ -3081,7 +3081,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC 9(3) COMP-3 VALUE 107.
            05  FILLER PIC 9(3) COMP-3 VALUE 67.
            05  FILLER PIC 9(3) COMP-3 VALUE 32.
-           05  FILLER PIC 9(3) COMP-3 VALUE 16.
+           05  FILLER PIC 9(3) COMP-3 VALUE MAX-SUB.
            05  FILLER PIC 9(3) COMP-3 VALUE 34.
            05  FILLER PIC 9(3) COMP-3 VALUE 128.
            05  FILLER PIC 9(3) COMP-3 VALUE 64.
@@ -3091,16 +3091,16 @@ AT_DATA([prog.cob], [
            05  FILLER PIC 9(3) COMP-3 VALUE 86.
 
          02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
-                                       PIC 9(3) COMP-3 OCCURS 16.
+                                       PIC 9(3) COMP-3 OCCURS MAX-SUB.
 
+       78  REC-MAX                     VALUE 10.
        01  WORK-AREA.
-           05  REC-NUM                         PICTURE 9(6) VALUE 0.
-           05  REC-MAX                         PICTURE 9(6) VALUE 10.
-           05  SUB                             PICTURE 9(4) COMP SYNC.
-               88  ODD-RECORD                  VALUE 1 3 5 7 9 10 11.
-               88  NULL-KEY                    VALUE 4 5 8 12 14.
+           05  REC-NUM                 BINARY-SHORT UNSIGNED VALUE 0.
+           05  SUB                     BINARY-SHORT UNSIGNED.
+               88  ODD-RECORD          VALUE 1 3 5 7 9 10 11.
+               88  NULL-KEY            VALUE 4 5 8 12 14.
 
-           05  TSPFL-KEY                       PICTURE X(8).
+           05  TSPFL-KEY               PICTURE X(8).
 
        PROCEDURE DIVISION.
 
@@ -4220,7 +4220,7 @@ AT_DATA([prog.cob], [
 
        WORKING-STORAGE SECTION.
 
-       77  MAX-SUB           VALUE  6          PICTURE 9(4) COMP SYNC.
+       78  MAX-SUB           VALUE  6.
        77  CUST-STAT                           PICTURE X(2).
        77  REC-NUM           VALUE  1          PICTURE 9(4).
 
@@ -4236,7 +4236,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(8) VALUE "GAM00000".
 
          02  DATA-CUST-NUM REDEFINES DATA-CUST-NUM-TBL
-                                       PIC X(8) OCCURS 6.
+                                       PIC X(8) OCCURS MAX-SUB.
          02  DATA-COMPANY-TBL.
 
            05  FILLER PIC X(25) VALUE "ALPHA ELECTRICAL CO. LTD.".
@@ -4246,7 +4246,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(25) VALUE "FORTUNE COOKIE COMPANY   ".
            05  FILLER PIC X(25) VALUE "GAMMA X-RAY TECHNOLOGY   ".
          02  DATA-COMPANY  REDEFINES DATA-COMPANY-TBL
-                                       PIC X(25) OCCURS 6.
+                                       PIC X(25) OCCURS MAX-SUB.
          02  DATA-ADDRESS-2-TBL.
 
            05  FILLER PIC X(10) VALUE "ATLANTA   ".
@@ -4256,7 +4256,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(10) VALUE "WASHINGTON".
            05  FILLER PIC X(10) VALUE "WHITEPLAIN".
          02  DATA-ADDRESS   REDEFINES DATA-ADDRESS-2-TBL
-                                       PIC X(10) OCCURS 6.
+                                       PIC X(10) OCCURS MAX-SUB.
 
          02  DATA-NO-TERMINALS-TBL.
 
@@ -4268,9 +4268,9 @@ AT_DATA([prog.cob], [
            05  FILLER PIC 9(3) COMP-3 VALUE 254.
 
          02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
-                                       PIC 9(3) COMP-3 OCCURS 6.
+                                       PIC 9(3) COMP-3 OCCURS MAX-SUB.
        01  WORK-AREA.
-           05  SUB                             PICTURE 9(4) COMP SYNC.
+           05  SUB                             BINARY-SHORT.
                88  ODD-RECORD                  VALUE 1 3 5.
 
 
@@ -4331,7 +4331,7 @@ AT_CLEANUP
 
 
 AT_SETUP([START RELATIVE (1)])
-AT_KEYWORDS([fundamental runfile DELETE FILE])
+AT_KEYWORDS([runfile fundamental runfile DELETE FILE])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -4380,7 +4380,7 @@ AT_CLEANUP
 
 
 AT_SETUP([START RELATIVE (2)])
-AT_KEYWORDS([fundamental runfile])
+AT_KEYWORDS([runfile fundamental runfile])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -4854,7 +4854,7 @@ AT_CLEANUP
 
 
 AT_SETUP([System routines for directories (1)])
-AT_KEYWORDS([extensions runfile CBL_CREATE_DIR CBL_CHANGE_DIR CBL_DELETE_DIR])
+AT_KEYWORDS([runfile extensions runfile CBL_CREATE_DIR CBL_CHANGE_DIR CBL_DELETE_DIR])
 
 AT_DATA([prog.cob], [
         IDENTIFICATION DIVISION.
@@ -4993,7 +4993,7 @@ AT_CLEANUP
 
 
 AT_SETUP([System routines for files])
-AT_KEYWORDS([extensions runfile CBL_CREATE_FILE CBL_WRITE_FILE CBL_FLUSH_FILE
+AT_KEYWORDS([runfile extensions runfile CBL_CREATE_FILE CBL_WRITE_FILE CBL_FLUSH_FILE
 CBL_OPEN_FILE CBL_READ_FILE CBL_CLOSE_FILE CBL_RENAME_FILE CBL_DELETE_FILE
 C$DELETE])
 
@@ -5163,7 +5163,7 @@ AT_CLEANUP
 
 
 AT_SETUP([System routine CBL_COPY_FILE])
-AT_KEYWORDS([extensions runfile])
+AT_KEYWORDS([runfile extensions runfile])
 
 AT_DATA([prog.cob], [
         IDENTIFICATION DIVISION.
@@ -5245,8 +5245,8 @@ AT_DATA([prog.cob], [
           2  file1-date pic x(8).
           2  file1-time pic x(8).
        WORKING-STORAGE SECTION.
-       77 erc PIC 9(8) COMP.
-       77 rec-size PIC 9(8) COMP VALUE 16.
+       77 erc      BINARY-LONG.
+       77 rec-size BINARY-LONG VALUE 16.
        PROCEDURE DIVISION.
            ACCEPT file1-date FROM DATE YYYYMMDD.
            ACCEPT file1-time FROM TIME.
@@ -7595,7 +7595,7 @@ AT_DATA([prog.cob], [
 
        01  CUST-STAT.
            05  FILLER PICTURE XX.
-       77  MAX-SUB           VALUE  16         PICTURE 9(5) COMP SYNC.
+       78  MAX-SUB           VALUE  16.
 
        01  TEST-DATA.
 
@@ -7619,7 +7619,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(8) VALUE "PRE00000".
 
          02  DATA-CUST-NUM REDEFINES DATA-CUST-NUM-TBL
-                                       PIC X(8) OCCURS 16.
+                                       PIC X(8) OCCURS MAX-SUB.
          02  DATA-COMPANY-TBL.
 
            05  FILLER PIC X(25) VALUE "ALPHA ELECTRICAL CO. LTD.".
@@ -7640,7 +7640,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(25) VALUE "PRESTIGE OFFICE FURNITURE".
 
          02  DATA-COMPANY  REDEFINES DATA-COMPANY-TBL
-                                       PIC X(25) OCCURS 16.
+                                       PIC X(25) OCCURS MAX-SUB.
          02  DATA-ADDRESS-1-TBL.
 
            05  FILLER PIC X(25) VALUE "123 MAIN STREET          ".
@@ -7661,7 +7661,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(25) VALUE "114A MAPLE GROVE         ".
 
          02  DATA-ADDRESS-1 REDEFINES DATA-ADDRESS-1-TBL
-                                       PIC X(25) OCCURS 16.
+                                       PIC X(25) OCCURS MAX-SUB.
          02  DATA-ADDRESS-2-TBL.
 
            05  FILLER PIC X(10) VALUE "NEW YORK  ".
@@ -7682,7 +7682,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(10) VALUE "WHITEPLAIN".
 
          02  DATA-ADDRESS-2 REDEFINES DATA-ADDRESS-2-TBL
-                                       PIC X(10) OCCURS 16.
+                                       PIC X(10) OCCURS MAX-SUB.
          02  DATA-ADDRESS-3-TBL.
 
            05  FILLER PIC X(10) VALUE "N.Y.      ".
@@ -7703,7 +7703,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(10) VALUE "N.Y.      ".
 
          02  DATA-ADDRESS-3 REDEFINES DATA-ADDRESS-3-TBL
-                                       PIC X(10) OCCURS 16.
+                                       PIC X(10) OCCURS MAX-SUB.
          02  DATA-TELEPHONE-TBL.
 
            05  FILLER PIC 9(10) VALUE 3131234432.
@@ -7724,7 +7724,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC 9(10) VALUE 4169898509.
 
          02  DATA-TELEPHONE REDEFINES DATA-TELEPHONE-TBL
-                                       PIC 9(10) OCCURS 16.
+                                       PIC 9(10) OCCURS MAX-SUB.
          02  DATA-DP-MGR-TBL.
 
            05  FILLER PIC X(20) VALUE "MR. DAVE HARRIS     ".
@@ -7745,7 +7745,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(20) VALUE "MR. THOMAS JEFFERSON".
 
          02  DATA-DP-MGR    REDEFINES DATA-DP-MGR-TBL
-                                       PIC X(20) OCCURS 16.
+                                       PIC X(20) OCCURS MAX-SUB.
          02  DATA-MACHINE-TBL.
 
            05  FILLER PIC X(8) VALUE "UNI-9030".
@@ -7766,7 +7766,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(8) VALUE "UNI-9040".
 
          02  DATA-MACHINE   REDEFINES DATA-MACHINE-TBL
-                                       PIC X(8) OCCURS 16.
+                                       PIC X(8) OCCURS MAX-SUB.
          02  DATA-NO-TERMINALS-TBL.
 
            05  FILLER PIC 9(3) COMP-3 VALUE 85.
@@ -7787,15 +7787,15 @@ AT_DATA([prog.cob], [
            05  FILLER PIC 9(3) COMP-3 VALUE 86.
 
          02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
-                                       PIC 9(3) COMP-3 OCCURS 16.
+                                       PIC 9(3) COMP-3 OCCURS MAX-SUB.
 
+       78  REC-MAX                     VALUE 10.
        01  WORK-AREA.
-           05  REC-NUM                         PICTURE 9(6) VALUE 0.
-           05  REC-MAX                         PICTURE 9(6) VALUE 10.
-           05  SUB                             PICTURE 9(4) COMP SYNC.
-               88  ODD-RECORD                  VALUE 1 3 5 7 9 10 11.
+           05  REC-NUM                 BINARY-SHORT UNSIGNED VALUE 0.
+           05  SUB                     BINARY-SHORT UNSIGNED.
+               88  ODD-RECORD          VALUE 1 3 5 7 9 10 11.
 
-           05  TSPFL-KEY                       PICTURE X(8).
+           05  TSPFL-KEY               PICTURE X(8).
 
        PROCEDURE DIVISION.
 
@@ -8261,7 +8261,7 @@ AT_DATA([prog.cob], [
 
        WORKING-STORAGE SECTION.
        01  CUST-STAT.
-           05  STAT-1 PICTURE 9(4) COMP SYNC.
+           05  STAT-1 PICTURE 9(4) COMP.
            05  FILLER REDEFINES STAT-1.
                10  STAT-X1 PIC X COMP-X.
                10  STAT-X2 PIC X COMP-X.
@@ -8466,13 +8466,13 @@ AT_DATA([prog.cob], [
                                        PIC 9(3) COMP-3 OCCURS 16.
 
        01  WORK-AREA.
-           05  REC-NUM                         PICTURE 9(2) VALUE 0.
-           05  SUB                             PICTURE 9(4) COMP SYNC.
-               88  ODD-RECORD                  VALUE 1 3 5 7 9 10 11.
-               88  NULL-KEY                    VALUE 4 5 8 12 14.
+           05  REC-NUM                 PICTURE 9(2) VALUE 0.
+           05  SUB                     BINARY-SHORT UNSIGNED.
+               88  ODD-RECORD          VALUE 1 3 5 7 9 10 11.
+               88  NULL-KEY            VALUE 4 5 8 12 14.
 
-           05  TSPFL-KEY                       PICTURE X(8).
-           05  KC-PTR                          USAGE POINTER.
+           05  TSPFL-KEY               PICTURE X(8).
+           05  KC-PTR                  USAGE POINTER.
 
        LINKAGE SECTION.
 
@@ -8833,7 +8833,7 @@ AT_DATA([prog.cob], [
 
        WORKING-STORAGE SECTION.
 
-       77  MAX-SUB           VALUE  6          PICTURE 9(4) COMP SYNC.
+       78  MAX-SUB           VALUE  6.
        77  CUST-STAT                           PICTURE X(2).
 
        01  TEST-DATA.
@@ -8848,7 +8848,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(8) VALUE "FOR00000".
 
          02  DATA-CUST-NUM REDEFINES DATA-CUST-NUM-TBL
-                                       PIC X(8) OCCURS 6.
+                                       PIC X(8) OCCURS MAX-SUB.
          02  DATA-COMPANY-TBL.
 
            05  FILLER PIC X(25) VALUE "ALPHA ELECTRICAL CO. LTD.".
@@ -8858,7 +8858,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(25) VALUE "EPSILON EQUIPMENT SUPPLY ".
            05  FILLER PIC X(25) VALUE "FORTUNE COOKIE COMPANY   ".
          02  DATA-COMPANY  REDEFINES DATA-COMPANY-TBL
-                                       PIC X(25) OCCURS 6.
+                                       PIC X(25) OCCURS MAX-SUB.
          02  DATA-ADDRESS-2-TBL.
 
            05  FILLER PIC X(10) VALUE "NEW YORK  ".
@@ -8869,7 +8869,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(10) VALUE "WHITEPLAIN".
 
          02  DATA-ADDRESS   REDEFINES DATA-ADDRESS-2-TBL
-                                       PIC X(10) OCCURS 6.
+                                       PIC X(10) OCCURS MAX-SUB.
 
          02  DATA-NO-TERMINALS-TBL.
 
@@ -8881,9 +8881,9 @@ AT_DATA([prog.cob], [
            05  FILLER PIC 9(3) COMP-3 VALUE 254.
 
          02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
-                                       PIC 9(3) COMP-3 OCCURS 6.
+                                       PIC 9(3) COMP-3 OCCURS MAX-SUB.
        01  WORK-AREA.
-           05  SUB                             PICTURE 9(4) COMP SYNC.
+           05  SUB                             BINARY-SHORT.
                88  ODD-RECORD                  VALUE 1 3 5.
 
 
@@ -10598,7 +10598,7 @@ AT_CLEANUP
 
 
 AT_SETUP([EXTFH: RELATIVE files])
-AT_KEYWORDS([EXTFH])
+AT_KEYWORDS([runfile EXTFH])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -11189,10 +11189,9 @@ AT_DATA([prog.cob], [
 
        WORKING-STORAGE SECTION.
 
-       77  MAX-SUB           VALUE  6          PICTURE 9(4) COMP SYNC.
-       77  ZRO               VALUE  1          PICTURE 9(4) COMP SYNC.
+       78  MAX-SUB           VALUE  6.
        77  CUST-STAT                           PICTURE X(2).
-       77  REC-NUM           VALUE  1          PICTURE 9(4) COMP SYNC.
+       77  REC-NUM           VALUE  1          PICTURE 9(04).
 
        01  TEST-DATA.
 
@@ -11206,7 +11205,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(8) VALUE "FOR00000".
 
          02  DATA-CUST-NUM REDEFINES DATA-CUST-NUM-TBL
-                                       PIC X(8) OCCURS 6.
+                                       PIC X(8) OCCURS MAX-SUB.
          02  DATA-COMPANY-TBL.
 
            05  FILLER PIC X(25) VALUE "ALPHA ELECTRICAL CO. LTD.".
@@ -11216,7 +11215,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(25) VALUE "EPSILON EQUIPMENT SUPPLY ".
            05  FILLER PIC X(25) VALUE "FORTUNE COOKIE COMPANY   ".
          02  DATA-COMPANY  REDEFINES DATA-COMPANY-TBL
-                                       PIC X(25) OCCURS 6.
+                                       PIC X(25) OCCURS MAX-SUB.
          02  DATA-ADDRESS-2-TBL.
 
            05  FILLER PIC X(10) VALUE "NEW YORK  ".
@@ -11227,7 +11226,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(10) VALUE "WHITEPLAIN".
 
          02  DATA-ADDRESS   REDEFINES DATA-ADDRESS-2-TBL
-                                       PIC X(10) OCCURS 6.
+                                       PIC X(10) OCCURS MAX-SUB.
 
          02  DATA-NO-TERMINALS-TBL.
 
@@ -11239,9 +11238,9 @@ AT_DATA([prog.cob], [
            05  FILLER PIC 9(3) COMP-3 VALUE 254.
 
          02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
-                                       PIC 9(3) COMP-3 OCCURS 6.
+                                       PIC 9(3) COMP-3 OCCURS MAX-SUB.
        01  WORK-AREA.
-           05  SUB                             PICTURE 9(4) COMP SYNC.
+           05  SUB                             BINARY-SHORT.
                88  ODD-RECORD                  VALUE 1 3 5.
 
 
@@ -11444,9 +11443,9 @@ AT_DATA([prog.cob], [
 
        WORKING-STORAGE SECTION.
 
-       77  MAX-SUB           VALUE  6          PICTURE 9(4) COMP SYNC.
+       78  MAX-SUB           VALUE  6.
        77  CUST-STAT                           PICTURE X(2).
-       77  REC-NUM           VALUE  1          PICTURE 9(4) COMP SYNC.
+       77  REC-NUM           VALUE  1          PICTURE 9(04).
 
        01  TEST-DATA.
 
@@ -11494,7 +11493,7 @@ AT_DATA([prog.cob], [
          02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
                                        PIC 9(3) COMP-3 OCCURS 6.
        01  WORK-AREA.
-           05  SUB                             PICTURE 9(4) COMP SYNC.
+           05  SUB                             BINARY-SHORT.
                88  ODD-RECORD                  VALUE 1 3 5.
 
 
@@ -11848,10 +11847,9 @@ AT_DATA([prog.cob], [
 
        WORKING-STORAGE SECTION.
 
-       77  MAX-SUB           VALUE  6          PICTURE 9(4) COMP.
-       77  ZRO               VALUE  1          PICTURE 9(4) COMP.
+       78  MAX-SUB           VALUE  6.
        77  CUST-STAT                           PICTURE X(2).
-       77  REC-NUM           VALUE  1          PICTURE 9(8) COMP.
+       77  REC-NUM           VALUE  1          BINARY-SHORT UNSIGNED.
 
        01  TEST-DATA.
 
@@ -11865,7 +11863,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(8) VALUE "FOR00000".
 
          02  DATA-CUST-NUM REDEFINES DATA-CUST-NUM-TBL
-                                       PIC X(8) OCCURS 6.
+                                       PIC X(8) OCCURS MAX-SUB.
          02  DATA-COMPANY-TBL.
 
            05  FILLER PIC X(25) VALUE "ALPHA ELECTRICAL CO. LTD.".
@@ -11875,7 +11873,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(25) VALUE "EPSILON EQUIPMENT SUPPLY ".
            05  FILLER PIC X(25) VALUE "FORTUNE COOKIE COMPANY   ".
          02  DATA-COMPANY  REDEFINES DATA-COMPANY-TBL
-                                       PIC X(25) OCCURS 6.
+                                       PIC X(25) OCCURS MAX-SUB.
          02  DATA-ADDRESS-2-TBL.
 
            05  FILLER PIC X(10) VALUE "NEW YORK  ".
@@ -11886,7 +11884,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(10) VALUE "WHITEPLAIN".
 
          02  DATA-ADDRESS   REDEFINES DATA-ADDRESS-2-TBL
-                                       PIC X(10) OCCURS 6.
+                                       PIC X(10) OCCURS MAX-SUB.
 
          02  DATA-NO-TERMINALS-TBL.
 
@@ -11898,9 +11896,9 @@ AT_DATA([prog.cob], [
            05  FILLER PIC 9(4) COMP-4 VALUE 254.
 
          02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
-                                       PIC 9(4) COMP-4 OCCURS 6.
+                                       PIC 9(4) COMP-4 OCCURS MAX-SUB.
        01  WORK-AREA.
-           05  SUB                     PICTURE 9(4) COMP.
+           05  SUB                     BINARY-SHORT.
                88  ODD-RECORD          VALUE 1 3 5.
 
 
@@ -12098,7 +12096,7 @@ AT_DATA([prog.cob], [
 
        WORKING-STORAGE SECTION.
 
-       77  MAX-SUB           VALUE  6          PICTURE 9(4) COMP SYNC.
+       78  MAX-SUB           VALUE  6.
        77  CUST-STAT                           PICTURE X(2).
 
        01  TEST-DATA.
@@ -12148,7 +12146,7 @@ AT_DATA([prog.cob], [
          02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
                                        PIC 9(3) COMP-3 OCCURS 6.
        01  WORK-AREA.
-           05  SUB                             PICTURE 9(4) COMP SYNC.
+           05  SUB                             BINARY-SHORT.
                88  ODD-RECORD                  VALUE 1 3 5.
 
 
@@ -12353,13 +12351,13 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE SECTION.
 
        01  CUST-STAT.
-           05  STAT-1 PICTURE 9(4) COMP SYNC.
+           05  STAT-1 PICTURE 9(4) COMP.
            05  FILLER REDEFINES STAT-1.
                10  STAT-X1 PIC X COMP-X.
                10  STAT-X2 PIC X COMP-X.
        77  BYTE-1  PICTURE 9(3).
        77  BYTE-2  PICTURE 9(3).
-       77  MAX-SUB           VALUE  16         PICTURE 9(5) COMP SYNC.
+       78  MAX-SUB           VALUE  16.
 
        01  TEST-DATA.
 
@@ -12383,7 +12381,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(8) VALUE "PRE00000".
 
          02  DATA-CUST-NUM REDEFINES DATA-CUST-NUM-TBL
-                                       PIC X(8) OCCURS 16.
+                                       PIC X(8) OCCURS MAX-SUB.
          02  DATA-COMPANY-TBL.
 
            05  FILLER PIC X(25) VALUE "ALPHA ELECTRICAL CO. LTD.".
@@ -12404,7 +12402,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(25) VALUE "PRESTIGE OFFICE FURNITURE".
 
          02  DATA-COMPANY  REDEFINES DATA-COMPANY-TBL
-                                       PIC X(25) OCCURS 16.
+                                       PIC X(25) OCCURS MAX-SUB.
          02  DATA-ADDRESS-1-TBL.
 
            05  FILLER PIC X(25) VALUE "123 MAIN STREET          ".
@@ -12425,7 +12423,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(25) VALUE "114A MAPLE GROVE         ".
 
          02  DATA-ADDRESS-1 REDEFINES DATA-ADDRESS-1-TBL
-                                       PIC X(25) OCCURS 16.
+                                       PIC X(25) OCCURS MAX-SUB.
          02  DATA-ADDRESS-2-TBL.
 
            05  FILLER PIC X(10) VALUE "NEW YORK  ".
@@ -12553,13 +12551,13 @@ AT_DATA([prog.cob], [
          02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
                                        PIC 9(3) COMP-3 OCCURS 16.
 
+       78  REC-MAX                     VALUE 10.
        01  WORK-AREA.
-           05  REC-NUM                         PICTURE 9(6) VALUE 0.
-           05  REC-MAX                         PICTURE 9(6) VALUE 10.
-           05  SUB                             PICTURE 9(4) COMP SYNC.
-               88  ODD-RECORD                  VALUE 1 3 5 7 9 10 11.
+           05  REC-NUM                 BINARY-SHORT UNSIGNED VALUE 0.
+           05  SUB                     BINARY-SHORT UNSIGNED.
+               88  ODD-RECORD          VALUE 1 3 5 7 9 10 11.
 
-           05  TSPFL-KEY                       PICTURE X(8).
+           05  TSPFL-KEY               PICTURE X(8).
 
        PROCEDURE DIVISION.
 
@@ -12851,15 +12849,16 @@ AT_DATA([prog.cob], [
            CLOSE TSPFILE.
 ])
 
-AT_CHECK([$COMPILE -ftraceall prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE -ftraceall prog.cob], [0], [], [])
 
-AT_CHECK([export COB_TRACE_FILE=trace.txt
-export COB_TRACE_IO=Y
-export COB_SET_TRACE=Y
-export COB_TRACE_FORMAT=' Line: %L%S'
-export IO_TSPFILE=trace
-export IO_TSTFILE=no-trace
-./prog], [0], [OK: Operations on empty file
+AT_CHECK([COB_TRACE_FILE=trace.txt \
+COB_TRACE_IO=Y     \
+COB_SET_TRACE=Y    \
+COB_TRACE_FORMAT=' Line: %L%S' \
+IO_TSPFILE=trace    \
+IO_TSTFILE=no-trace \
+./prog], [0],
+[OK: Operations on empty file
 Loading sample data file.
 Sample data file load complete.
 LIST SAMPLE FILE
@@ -12901,7 +12900,8 @@ Expected ERROR 39 opening TSTFILE, Record size different
 
 AT_CAPTURE_FILE(./trace.txt)
 
-AT_DATA([reference], [Source: 'prog.cob'
+AT_DATA([reference],
+[Source: 'prog.cob'
 Program-Id: prog
  Line:    279    Entry: prog
  Line:    281Paragraph: MAINFILE
@@ -13656,7 +13656,16 @@ Program-Id: prog
  Line:    320           STOP RUN
 ])
 
-AT_CHECK([gcdiff -I'WRITE TSPFILE Status' reference trace.txt], [0], [], [])
+# hack for not checking Status 02 as this isn't returned by all
+# ISAM implementations
+
+AT_CHECK([sed -e 's/WRITE TSPFILE Status: 02/WRITE TSPFILE Status: 00/g' \
+reference > references], [0], [], [])
+AT_CHECK([sed -e 's/WRITE TSPFILE Status: 02/WRITE TSPFILE Status: 00/g'  \
+-e 's/'"OPEN OUTPUT TSPFILE -> 'testisam' Status: 05"'/'"OPEN OUTPUT TSPFILE -> 'testisam' Status: 00"'/g' \
+trace.txt > traces.txt], [0], [], [])
+
+AT_CHECK([diff references traces.txt], [0], [], [])
 
 AT_CLEANUP
 
@@ -13778,7 +13787,7 @@ AT_DATA([prog.cob], [
 
        01  CUST-STAT.
            05  FILLER PICTURE XX.
-       77  MAX-SUB           VALUE  16         PICTURE 9(5) COMP SYNC.
+       78  MAX-SUB           VALUE  16.
        77  CALL-NUM          VALUE  00         PICTURE 99.
 
        01  TEST-DATA.
@@ -13803,7 +13812,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(8) VALUE "PRE00000".
 
          02  DATA-CUST-NUM REDEFINES DATA-CUST-NUM-TBL
-                                       PIC X(8) OCCURS 16.
+                                       PIC X(8) OCCURS MAX-SUB.
          02  DATA-COMPANY-TBL.
 
            05  FILLER PIC X(25) VALUE "ALPHA ELECTRICAL CO. LTD.".
@@ -13824,7 +13833,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(25) VALUE "PRESTIGE OFFICE FURNITURE".
 
          02  DATA-COMPANY  REDEFINES DATA-COMPANY-TBL
-                                       PIC X(25) OCCURS 16.
+                                       PIC X(25) OCCURS MAX-SUB.
          02  DATA-ADDRESS-1-TBL.
 
            05  FILLER PIC X(25) VALUE "123 MAIN STREET          ".
@@ -13845,7 +13854,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(25) VALUE "114A MAPLE GROVE         ".
 
          02  DATA-ADDRESS-1 REDEFINES DATA-ADDRESS-1-TBL
-                                       PIC X(25) OCCURS 16.
+                                       PIC X(25) OCCURS MAX-SUB.
          02  DATA-ADDRESS-2-TBL.
 
            05  FILLER PIC X(10) VALUE "NEW YORK  ".
@@ -13866,7 +13875,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(10) VALUE "WHITEPLAIN".
 
          02  DATA-ADDRESS-2 REDEFINES DATA-ADDRESS-2-TBL
-                                       PIC X(10) OCCURS 16.
+                                       PIC X(10) OCCURS MAX-SUB.
          02  DATA-ADDRESS-3-TBL.
 
            05  FILLER PIC X(10) VALUE "N.Y.      ".
@@ -13887,7 +13896,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(10) VALUE "N.Y.      ".
 
          02  DATA-ADDRESS-3 REDEFINES DATA-ADDRESS-3-TBL
-                                       PIC X(10) OCCURS 16.
+                                       PIC X(10) OCCURS MAX-SUB.
          02  DATA-TELEPHONE-TBL.
 
            05  FILLER PIC 9(10) VALUE 3131234432.
@@ -13908,7 +13917,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC 9(10) VALUE 4169898509.
 
          02  DATA-TELEPHONE REDEFINES DATA-TELEPHONE-TBL
-                                       PIC 9(10) OCCURS 16.
+                                       PIC 9(10) OCCURS MAX-SUB.
          02  DATA-DP-MGR-TBL.
 
            05  FILLER PIC X(20) VALUE "MR. DAVE HARRIS     ".
@@ -13929,7 +13938,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(20) VALUE "MR. THOMAS JEFFERSON".
 
          02  DATA-DP-MGR    REDEFINES DATA-DP-MGR-TBL
-                                       PIC X(20) OCCURS 16.
+                                       PIC X(20) OCCURS MAX-SUB.
          02  DATA-MACHINE-TBL.
 
            05  FILLER PIC X(8) VALUE "UNI-9030".
@@ -13950,7 +13959,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(8) VALUE "UNI-9040".
 
          02  DATA-MACHINE   REDEFINES DATA-MACHINE-TBL
-                                       PIC X(8) OCCURS 16.
+                                       PIC X(8) OCCURS MAX-SUB.
          02  DATA-NO-TERMINALS-TBL.
 
            05  FILLER PIC 9(3) COMP-3 VALUE 85.
@@ -13971,15 +13980,15 @@ AT_DATA([prog.cob], [
            05  FILLER PIC 9(3) COMP-3 VALUE 86.
 
          02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
-                                       PIC 9(3) COMP-3 OCCURS 16.
+                                       PIC 9(3) COMP-3 OCCURS MAX-SUB.
 
+       78  REC-MAX                     VALUE 10.
        01  WORK-AREA.
-           05  REC-NUM                         PICTURE 9(6) VALUE 0.
-           05  REC-MAX                         PICTURE 9(6) VALUE 10.
-           05  SUB                             PICTURE 9(4) COMP SYNC.
-               88  ODD-RECORD                  VALUE 1 3 5 7 9 10 11.
+           05  REC-NUM                 PICTURE 9(06) VALUE 0.
+           05  SUB                     BINARY-SHORT UNSIGNED.
+               88  ODD-RECORD          VALUE 1 3 5 7 9 10 11.
 
-           05  TSPFL-KEY                       PICTURE X(8).
+           05  TSPFL-KEY               PICTURE X(8).
 
        PROCEDURE DIVISION.
 
@@ -14294,7 +14303,7 @@ AT_DATA([prog.cob], [
            WRITE TSP2-RECORD.
 ])
 
-AT_CHECK([$COMPILE -ftraceall prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE -ftraceall prog.cob], [0], [], [])
 
 AT_CHECK([COB_TRACE_FILE=trace.txt \
 COB_TRACE_IO=Y                     \
@@ -14346,7 +14355,8 @@ Expected ERROR 39 opening TSTFILE, Record size different
 
 AT_CAPTURE_FILE(./trace.txt)
 
-AT_DATA([reference], [Source: 'prog.cob'
+AT_DATA([reference],
+[Source: 'prog.cob'
 Program-Id: prog
  Line:    290     Entry: prog
  Line:    292 Paragraph: MAINFILE
@@ -15121,7 +15131,7 @@ Program-Id: prog
  Line:    575            OPEN
             OPEN OUTPUT FLATFILE -> 'RELFIX' Status: 00
  Line:    576            PERFORM
- Line:    579            UNTIL
+ Line:    578            UNTIL
  Line:    588 Paragraph: FLAT-RECORD
  Line:    590            MOVE
  Line:    591            MOVE
@@ -15133,13 +15143,13 @@ Program-Id: prog
  Line:    597            MOVE
  Line:    600            WRITE
             WRITE FLATFILE Status: 00
-         Record :  A L P 0  0 0 0 0  A L P H  A   E L  E C T R  I C A L    C O .    L T D
-              1 x 414C5030 30303030 414C5048 4120454C 45435452 4943414C 20434F2E 204C5444
-                   . 8 4 1  7            U             p 1
+         Record :  A L P 0  0 0 0 0  A L P H  A   E L  E C T R  I C A L    C O .    L T D _
+              1 x 414C5030 30303030 414C5048 4120454C 45435452 4943414C 20434F2E 204C5444 _
+                   . 8 4 1  7            U             p 1  _
              33 x 2E383431 37202020 20005500 00000200 70319C
         Record# :  000001
  Line:    577            VARYING
- Line:    579            UNTIL
+ Line:    578            UNTIL
  Line:    588 Paragraph: FLAT-RECORD
  Line:    590            MOVE
  Line:    591            MOVE
@@ -15151,13 +15161,13 @@ Program-Id: prog
  Line:    599            MOVE
  Line:    600            WRITE
             WRITE FLATFILE Status: 00
-         Record :  B E T 0  0 0 0 0  B E T A    S H O  E   M F  G .   I  N C .
-              1 x 42455430 30303030 42455441 2053484F 45204D46 472E2049 4E432E20 20202020
-                     8 4 7  0            "             p 1
+         Record :  B E T 0  0 0 0 0  B E T A    S H O  E   M F  G .   I  N C .            _
+              1 x 42455430 30303030 42455441 2053484F 45204D46 472E2049 4E432E20 20202020 _
+                     8 4 7  0            "             p 1  _
              33 x 20383437 30202020 20002200 00000200 70319C
         Record# :  000002
  Line:    577            VARYING
- Line:    579            UNTIL
+ Line:    578            UNTIL
  Line:    588 Paragraph: FLAT-RECORD
  Line:    590            MOVE
  Line:    591            MOVE
@@ -15169,13 +15179,13 @@ Program-Id: prog
  Line:    597            MOVE
  Line:    600            WRITE
             WRITE FLATFILE Status: 00
-         Record :  G A M 0  0 0 0 0  G A M M  A   X -  R A Y    T E C H  N O L O  G Y
-              1 x 47414D30 30303030 47414D4D 4120582D 52415920 54454348 4E4F4C4F 47592020
-                     8 4 1  7            K             p 1
+         Record :  G A M 0  0 0 0 0  G A M M  A   X -  R A Y    T E C H  N O L O  G Y     _
+              1 x 47414D30 30303030 47414D4D 4120582D 52415920 54454348 4E4F4C4F 47592020 _
+                     8 4 1  7            K             p 1  _
              33 x 20383431 37202020 20004B00 00000200 70319C
         Record# :  000003
  Line:    577            VARYING
- Line:    579            UNTIL
+ Line:    578            UNTIL
  Line:    588 Paragraph: FLAT-RECORD
  Line:    590            MOVE
  Line:    591            MOVE
@@ -15187,13 +15197,13 @@ Program-Id: prog
  Line:    599            MOVE
  Line:    600            WRITE
             WRITE FLATFILE Status: 00
-         Record :  D E L 0  0 0 0 0  D E L T  A   L U  G G A G  E   R E  P A I R  S
-              1 x 44454C30 30303030 44454C54 41204C55 47474147 45205245 50414952 53202020
-                     8 4 7  0            -             p 1
+         Record :  D E L 0  0 0 0 0  D E L T  A   L U  G G A G  E   R E  P A I R  S       _
+              1 x 44454C30 30303030 44454C54 41204C55 47474147 45205245 50414952 53202020 _
+                     8 4 7  0            -             p 1  _
              33 x 20383437 30202020 20002D00 00000200 70319C
         Record# :  000004
  Line:    577            VARYING
- Line:    579            UNTIL
+ Line:    578            UNTIL
  Line:    588 Paragraph: FLAT-RECORD
  Line:    590            MOVE
  Line:    591            MOVE
@@ -15205,13 +15215,13 @@ Program-Id: prog
  Line:    597            MOVE
  Line:    600            WRITE
             WRITE FLATFILE Status: 00
-         Record :  E P S 0  0 0 0 0  E P S I  L O N    E Q U I  P M E N  T   S U  P P L Y
-              1 x 45505330 30303030 45505349 4C4F4E20 45515549 504D454E 54205355 50504C59
-                     8 4 1  7            Z             p 1
+         Record :  E P S 0  0 0 0 0  E P S I  L O N    E Q U I  P M E N  T   S U  P P L Y _
+              1 x 45505330 30303030 45505349 4C4F4E20 45515549 504D454E 54205355 50504C59 _
+                     8 4 1  7            Z             p 1  _
              33 x 20383431 37202020 20005A00 00000200 70319C
         Record# :  000005
  Line:    577            VARYING
- Line:    579            UNTIL
+ Line:    578            UNTIL
  Line:    580            CLOSE
             CLOSE FLATFILE Status: 00
  Line:    581            OPEN
@@ -15219,9 +15229,9 @@ Program-Id: prog
  Line:    582            MOVE
  Line:    583            READ
             READ FLATFILE Status: 00
-         Record :  G A M 0  0 0 0 0  G A M M  A   X -  R A Y    T E C H  N O L O  G Y
-              1 x 47414D30 30303030 47414D4D 4120582D 52415920 54454348 4E4F4C4F 47592020
-                     8 4 1  7            K             p 1
+         Record :  G A M 0  0 0 0 0  G A M M  A   X -  R A Y    T E C H  N O L O  G Y     _
+              1 x 47414D30 30303030 47414D4D 4120582D 52415920 54454348 4E4F4C4F 47592020 _
+                     8 4 1  7            K             p 1  _
              33 x 20383431 37202020 20004B00 00000200 70319C
         Record# :  000003
  Line:    584            MOVE
@@ -15238,12 +15248,13 @@ Program-Id: prog
 # ISAM implementations
 
 AT_CHECK([sed -e 's/WRITE TSPFILE Status: 02/WRITE TSPFILE Status: 00/g' \
+-e 's/_$//g' \
 reference > references], [0], [], [])
 AT_CHECK([sed -e 's/WRITE TSPFILE Status: 02/WRITE TSPFILE Status: 00/g'  \
 -e 's/'"OPEN OUTPUT TSPFILE -> 'testisam' Status: 05"'/'"OPEN OUTPUT TSPFILE -> 'testisam' Status: 00"'/g' \
 trace.txt > traces.txt], [0], [], [])
 
-AT_CHECK([gcdiff references traces.txt], [0], [], [])
+AT_CHECK([diff references traces.txt], [0], [], [])
 
 AT_CLEANUP
 
@@ -15339,13 +15350,12 @@ AT_DATA([prog.cob], [
 
        01  CUST-STAT.
            05  FILLER PICTURE XX.
-       77  MAX-SUB           VALUE  16         PICTURE 9(5) COMP SYNC.
+       78  MAX-SUB           VALUE  16.
        77  CALL-NUM          VALUE  00         PICTURE 99.
 
        01  TEST-DATA.
 
          02  DATA-CUST-NUM-TBL.
-
            05  FILLER PIC X(8) VALUE "ALP00000".
            05  FILLER PIC X(8) VALUE "BET00000".
            05  FILLER PIC X(8) VALUE "GAM00000".
@@ -15362,11 +15372,10 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(8) VALUE "NEW00000".
            05  FILLER PIC X(8) VALUE "OLD00000".
            05  FILLER PIC X(8) VALUE "PRE00000".
-
          02  DATA-CUST-NUM REDEFINES DATA-CUST-NUM-TBL
-                                       PIC X(8) OCCURS 16.
-         02  DATA-COMPANY-TBL.
+                                       PIC X(8) OCCURS MAX-SUB.
 
+         02  DATA-COMPANY-TBL.
            05  FILLER PIC X(25) VALUE "ALPHA ELECTRICAL CO. LTD.".
            05  FILLER PIC X(25) VALUE "BETA SHOE MFG. INC.      ".
            05  FILLER PIC X(25) VALUE "GAMMA X-RAY TECHNOLOGY   ".
@@ -15383,11 +15392,10 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(25) VALUE "NEW WAVE SURF SHOPS INC. ".
            05  FILLER PIC X(25) VALUE "OLD TYME PIZZA MFG. CO.  ".
            05  FILLER PIC X(25) VALUE "PRESTIGE OFFICE FURNITURE".
-
          02  DATA-COMPANY  REDEFINES DATA-COMPANY-TBL
-                                       PIC X(25) OCCURS 16.
-         02  DATA-ADDRESS-1-TBL.
+                                       PIC X(25) OCCURS MAX-SUB.
 
+         02  DATA-ADDRESS-1-TBL.
            05  FILLER PIC X(25) VALUE "123 MAIN STREET          ".
            05  FILLER PIC X(25) VALUE "1090 2ND AVE. WEST       ".
            05  FILLER PIC X(25) VALUE "1401 JEFFERSON BLVD.     ".
@@ -15404,11 +15412,10 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(25) VALUE "3240 MARIS AVENUE        ".
            05  FILLER PIC X(25) VALUE "1705 WISCONSIN ROAD      ".
            05  FILLER PIC X(25) VALUE "114A MAPLE GROVE         ".
-
          02  DATA-ADDRESS-1 REDEFINES DATA-ADDRESS-1-TBL
-                                       PIC X(25) OCCURS 16.
-         02  DATA-ADDRESS-2-TBL.
+                                       PIC X(25) OCCURS MAX-SUB.
 
+         02  DATA-ADDRESS-2-TBL.
            05  FILLER PIC X(10) VALUE "NEW YORK  ".
            05  FILLER PIC X(10) VALUE "ATLANTA   ".
            05  FILLER PIC X(10) VALUE "WASHINGTON".
@@ -15425,11 +15432,10 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(10) VALUE "COLUMBUS  ".
            05  FILLER PIC X(10) VALUE "RICHMOND  ".
            05  FILLER PIC X(10) VALUE "WHITEPLAIN".
-
          02  DATA-ADDRESS-2 REDEFINES DATA-ADDRESS-2-TBL
-                                       PIC X(10) OCCURS 16.
-         02  DATA-ADDRESS-3-TBL.
+                                       PIC X(10) OCCURS MAX-SUB.
 
+         02  DATA-ADDRESS-3-TBL.
            05  FILLER PIC X(10) VALUE "N.Y.      ".
            05  FILLER PIC X(10) VALUE "GEORGIA   ".
            05  FILLER PIC X(10) VALUE "D.C.      ".
@@ -15446,11 +15452,10 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(10) VALUE "OHIO      ".
            05  FILLER PIC X(10) VALUE "VIRGINIA  ".
            05  FILLER PIC X(10) VALUE "N.Y.      ".
-
          02  DATA-ADDRESS-3 REDEFINES DATA-ADDRESS-3-TBL
-                                       PIC X(10) OCCURS 16.
-         02  DATA-TELEPHONE-TBL.
+                                       PIC X(10) OCCURS MAX-SUB.
 
+         02  DATA-TELEPHONE-TBL.
            05  FILLER PIC 9(10) VALUE 3131234432.
            05  FILLER PIC 9(10) VALUE 4082938498.
            05  FILLER PIC 9(10) VALUE 8372487274.
@@ -15467,11 +15472,10 @@ AT_DATA([prog.cob], [
            05  FILLER PIC 9(10) VALUE 7534587453.
            05  FILLER PIC 9(10) VALUE 8787458374.
            05  FILLER PIC 9(10) VALUE 4169898509.
-
          02  DATA-TELEPHONE REDEFINES DATA-TELEPHONE-TBL
-                                       PIC 9(10) OCCURS 16.
-         02  DATA-DP-MGR-TBL.
+                                       PIC 9(10) OCCURS MAX-SUB.
 
+         02  DATA-DP-MGR-TBL.
            05  FILLER PIC X(20) VALUE "MR. DAVE HARRIS     ".
            05  FILLER PIC X(20) VALUE "MS. JANICE SILCOX   ".
            05  FILLER PIC X(20) VALUE "MR. ALLAN JONES     ".
@@ -15488,11 +15492,10 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(20) VALUE "MS. Goldie Hawn     ".
            05  FILLER PIC X(20) VALUE "MS. ALICE WINSTON   ".
            05  FILLER PIC X(20) VALUE "MR. THOMAS JEFFERSON".
-
          02  DATA-DP-MGR    REDEFINES DATA-DP-MGR-TBL
-                                       PIC X(20) OCCURS 16.
-         02  DATA-MACHINE-TBL.
+                                       PIC X(20) OCCURS MAX-SUB.
 
+         02  DATA-MACHINE-TBL.
            05  FILLER PIC X(8) VALUE "UNI-9030".
            05  FILLER PIC X(8) VALUE "UNI-9040".
            05  FILLER PIC X(8) VALUE "UNI-80/3".
@@ -15509,9 +15512,9 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(8) VALUE "UNI-80/8".
            05  FILLER PIC X(8) VALUE "UNI-9040".
            05  FILLER PIC X(8) VALUE "UNI-9040".
-
          02  DATA-MACHINE   REDEFINES DATA-MACHINE-TBL
-                                       PIC X(8) OCCURS 16.
+                                       PIC X(8) OCCURS MAX-SUB.
+
          02  DATA-NO-TERMINALS-TBL.
 
            05  FILLER PIC 9(3) COMP-3 VALUE 85.
@@ -15530,17 +15533,17 @@ AT_DATA([prog.cob], [
            05  FILLER PIC 9(3) COMP-3 VALUE 324.
            05  FILLER PIC 9(3) COMP-3 VALUE 124.
            05  FILLER PIC 9(3) COMP-3 VALUE 86.
-
          02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
                                        PIC 9(3) COMP-3 OCCURS 16.
 
+       78  REC-MAX                     VALUE 10.
        01  WORK-AREA.
-           05  REC-NUM                         PICTURE 9(6) VALUE 0.
-           05  REC-MAX                         PICTURE 9(6) VALUE 10.
-           05  SUB                             PICTURE 9(4) COMP SYNC.
-               88  ODD-RECORD                  VALUE 1 3 5 7 9 10 11.
+           05  REC-NUM                 BINARY-SHORT UNSIGNED VALUE 0.
+           05  SUB                     BINARY-SHORT UNSIGNED.
+               88  ODD-RECORD          VALUE 1 3 5 7 9 10 11.
 
-           05  TSPFL-KEY                       PICTURE X(8).
+           05  TSPFL-KEY               PICTURE X(8).
+
 
        PROCEDURE DIVISION.
 
@@ -15879,7 +15882,7 @@ AT_DATA([cmod.c], [[
 #endif
 #define MIN(a,b) (a < b ? a : b)
 
-static char *txtOpCode(int opCode);
+static char *txtOpCode (int opCode);
 
 /*************************************************************************
    Replace filename with environment variable value, then open the file
@@ -15901,28 +15904,28 @@ doOpenFile(
    fcd->otherFlags &= ~OTH_DOLSREAD;
    svOther = fcd->otherFlags;
 
-   return EXTFH( opCodep, fcd );          /* No DD_, so use normal MF File Open */
+   return EXTFH (opCodep, fcd);        /* No DD_, so use normal MF File Open */
 }
 
 /*********************************************************
  *  TSTFH - External File Handler entry point.
 *********************************************************/
 int
-TSTFH( unsigned char *opCodep, FCD3 *fcd)
+TSTFH (unsigned char *opCodep, FCD3 *fcd)
 {
    unsigned int   opCode;
    char  *fname;
    int      sts, ky, j, k;
 
-   if(*opCodep == 0xfa)
+   if (*opCodep == 0xfa)
       opCode = 0xfa00 + opCodep[1];
    else
       opCode = opCodep[1];
 
-   if(fcd->fileOrg == ORG_LINE_SEQ
-   || fcd->fileOrg == ORG_SEQ
-   || fcd->fileOrg == ORG_INDEXED
-   || fcd->fileOrg == ORG_RELATIVE) {
+   if (fcd->fileOrg == ORG_LINE_SEQ
+    || fcd->fileOrg == ORG_SEQ
+    || fcd->fileOrg == ORG_INDEXED
+    || fcd->fileOrg == ORG_RELATIVE) {
       switch (opCode) {
       case OP_OPEN_OUTPUT:
       case OP_OPEN_IO:
@@ -15943,12 +15946,12 @@ TSTFH( unsigned char *opCodep, FCD3 *fcd)
 
    }
 
-   if(opCode == OP_CLOSE
-   && (fcd->openMode & OPEN_NOT_OPEN) ) {
+   if (opCode == OP_CLOSE
+    && (fcd->openMode & OPEN_NOT_OPEN) ) {
       return 0;
    }
 
-   sts = EXTFH( opCodep, fcd );
+   sts = EXTFH (opCodep, fcd);
    return sts;
 }
 
@@ -16012,721 +16015,302 @@ txtOpCode(int opCode)
 }
 ]])
 
-AT_CHECK([$COMPILE -fcallfh=TSTFH -ftraceall prog.cob cmod.c], [0], [], [])
+AT_CHECK([$COMPILE -fcallfh=TSTFH prog.cob cmod.c], [0], [], [])
 
-# first run without runtime tracing
-AT_CHECK([export COB_TRACE_FILE=trace.txt
-export COB_TRACE_IO=Y
-export COB_SET_TRACE=Y
-export COB_TRACE_FORMAT=%L%S
-export IO_TSPFILE=trace
-export IO_TSTFILE=no-trace
-./prog], [0],
-[OK: Operations on empty file
-Loading sample data file.
-Sample data file load complete.
-LIST SAMPLE FILE
-Key: EPS00000 is EPSILON EQUIPMENT SUPPLY  Disk=8417    .
-Key: FOR00000 is FORTUNE COOKIE COMPANY    Disk=8470    .
-Key: GAM00000 is GAMMA X-RAY TECHNOLOGY    Disk=8417    .
-Key: GIB00000 is GIBRALTER LIFE INSURANCE  Disk=8417    .
-Key: H&J00000 is H & J PLUMBING SUPPLIES   Disk=8470    .
-Key: INC00000 is INCREMENTAL BACKUP CORP.  Disk=8417    .
-Key: JOH00000 is JOHNSON BOATING SUPPLIES  Disk=8417    .
-Key: KON00000 is KONFLAB PLASTIC PRODUCTS. Disk=8417    .
-Key: LEW00000 is LEWISTON GRAPHICS LTD.    Disk=8470    .
-Key: MOR00000 is MORNINGSIDE CARPENTRY.    Disk=8470    .
-Key: NEW00000 is NEW WAVE SURF SHOPS INC.  Disk=8470    .
-Stop read after: 11
-LIST SAMPLE FILE DESCENDING
-Key: NEW00000 is NEW WAVE SURF SHOPS INC.  Disk=8470    .
-Key: MOR00000 is MORNINGSIDE CARPENTRY.    Disk=8470    .
-Key: LEW00000 is LEWISTON GRAPHICS LTD.    Disk=8470    .
-Key: KON00000 is KONFLAB PLASTIC PRODUCTS. Disk=8417    .
-Key: JOH00000 is JOHNSON BOATING SUPPLIES  Disk=8417    .
-Key: INC00000 is INCREMENTAL BACKUP CORP.  Disk=8417    .
-Key: H&J00000 is H & J PLUMBING SUPPLIES   Disk=8470    .
-Key: GIB00000 is GIBRALTER LIFE INSURANCE  Disk=8417    .
-Key: GAM00000 is GAMMA X-RAY TECHNOLOGY    Disk=8417    .
-Key: FOR00000 is FORTUNE COOKIE COMPANY    Disk=8470    .
-Key: EPS00000 is EPSILON EQUIPMENT SUPPLY  Disk=8417    .
-Got: BET00000 is BETA SHOE MFG. INC.       Disk=8470    .
-Nxt: DEL00000 is DELTA LUGGAGE REPAIRS     Disk=8470    .
-Ky2: GIB00000 is GIBRALTER LIFE INSURANCE  Mach=UNI-80/6.
-  Write: GIB00000 got 22 as expected
-   Read: GAM00000 got 00 as expected 00075 terminals
-ReWrite: GAM00000 got 00/02 as expected 00080 terminals
-   Read: BET00000 got 00 as expected 00034 terminals
-ReWrite: GAM00000 got 00/02 as expected
-ReWrite: FOR00000 got 00/02 as expected
-Expected ERROR 39 opening TSTFILE, Record size different
-], [])
-
-# not merged yet:
-#export COB_TRACE_IO=Y
-#export IO_TSPFILE=trace
-#export IO_TSTFILE=no-trace
-
+# note: only checking the IO tracing here, also ignoring stdout.
 AT_CHECK([COB_TRACE_FILE=trace.txt \
-COB_SET_TRACE=Y \
-COB_TRACE_FORMAT=" Line: %L %S" \
-$COBCRUN_DIRECT ./prog], [0],
-[OK: Operations on empty file
-Loading sample data file.
-Sample data file load complete.
-LIST SAMPLE FILE
-Key: EPS00000 is EPSILON EQUIPMENT SUPPLY  Disk=8417    .
-Key: FOR00000 is FORTUNE COOKIE COMPANY    Disk=8470    .
-Key: GAM00000 is GAMMA X-RAY TECHNOLOGY    Disk=8417    .
-Key: GIB00000 is GIBRALTER LIFE INSURANCE  Disk=8417    .
-Key: H&J00000 is H & J PLUMBING SUPPLIES   Disk=8470    .
-Key: INC00000 is INCREMENTAL BACKUP CORP.  Disk=8417    .
-Key: JOH00000 is JOHNSON BOATING SUPPLIES  Disk=8417    .
-Key: KON00000 is KONFLAB PLASTIC PRODUCTS. Disk=8417    .
-Key: LEW00000 is LEWISTON GRAPHICS LTD.    Disk=8470    .
-Key: MOR00000 is MORNINGSIDE CARPENTRY.    Disk=8470    .
-Key: NEW00000 is NEW WAVE SURF SHOPS INC.  Disk=8470    .
-Stop read after: 11
-LIST SAMPLE FILE DESCENDING
-Key: NEW00000 is NEW WAVE SURF SHOPS INC.  Disk=8470    .
-Key: MOR00000 is MORNINGSIDE CARPENTRY.    Disk=8470    .
-Key: LEW00000 is LEWISTON GRAPHICS LTD.    Disk=8470    .
-Key: KON00000 is KONFLAB PLASTIC PRODUCTS. Disk=8417    .
-Key: JOH00000 is JOHNSON BOATING SUPPLIES  Disk=8417    .
-Key: INC00000 is INCREMENTAL BACKUP CORP.  Disk=8417    .
-Key: H&J00000 is H & J PLUMBING SUPPLIES   Disk=8470    .
-Key: GIB00000 is GIBRALTER LIFE INSURANCE  Disk=8417    .
-Key: GAM00000 is GAMMA X-RAY TECHNOLOGY    Disk=8417    .
-Key: FOR00000 is FORTUNE COOKIE COMPANY    Disk=8470    .
-Key: EPS00000 is EPSILON EQUIPMENT SUPPLY  Disk=8417    .
-Got: BET00000 is BETA SHOE MFG. INC.       Disk=8470    .
-Nxt: DEL00000 is DELTA LUGGAGE REPAIRS     Disk=8470    .
-Ky2: GIB00000 is GIBRALTER LIFE INSURANCE  Mach=UNI-80/6.
-  Write: GIB00000 got 22 as expected
-   Read: GAM00000 got 00 as expected 00075 terminals
-ReWrite: GAM00000 got 00/02 as expected 00080 terminals
-   Read: BET00000 got 00 as expected 00034 terminals
-ReWrite: GAM00000 got 00/02 as expected
-ReWrite: FOR00000 got 00/02 as expected
-Expected ERROR 39 opening TSTFILE, Record size different
-], [])
-
+ COB_TRACE_IO=Y   COB_SET_TRACE=N  \
+ IO_TSPFILE=trace IO_TSTFILE=no-trace \
+$COBCRUN_DIRECT ./prog], [0], [ignore], [])
 
 AT_CAPTURE_FILE(./trace.txt)
 
 AT_DATA([reference],
-[Source: 'prog.cob'
-Program-Id: prog
- Line:    290     Entry: prog
- Line:    292 Paragraph: MAINFILE
- Line:    293            OPEN
- Line:    294            CLOSE
- Line:    296            OPEN
- Line:    297            MOVE
- Line:    298            READ
- Line:    299            IF
- Line:    304            MOVE
- Line:    305            START
- Line:    306            IF
- Line:    311            READ
- Line:    312            IF
- Line:    317            DISPLAY
- Line:    318            CLOSE
- Line:    320            PERFORM
- Line:    335 Paragraph: LOADFILE
- Line:    336            DISPLAY
- Line:    339            OPEN
- Line:    340            IF
- Line:    346            PERFORM
- Line:    348            UNTIL
- Line:    358 Paragraph: 1000-LOAD-RECORD
- Line:    360            MOVE
- Line:    361            MOVE
- Line:    362            MOVE
- Line:    363            MOVE
- Line:    364            MOVE
- Line:    365            MOVE
- Line:    366            MOVE
- Line:    367            MOVE
- Line:    368            MOVE
- Line:    369            MOVE
- Line:    370            MOVE
- Line:    372            IF
- Line:    373            MOVE
- Line:    374            MOVE
- Line:    375            MOVE
- Line:    381            WRITE
- Line:    382            IF
- Line:    347            VARYING
- Line:    348            UNTIL
- Line:    358 Paragraph: 1000-LOAD-RECORD
- Line:    360            MOVE
- Line:    361            MOVE
- Line:    362            MOVE
- Line:    363            MOVE
- Line:    364            MOVE
- Line:    365            MOVE
- Line:    366            MOVE
- Line:    367            MOVE
- Line:    368            MOVE
- Line:    369            MOVE
- Line:    370            MOVE
- Line:    372            IF
- Line:    377            MOVE
- Line:    378            MOVE
- Line:    379            MOVE
- Line:    381            WRITE
- Line:    382            IF
- Line:    347            VARYING
- Line:    348            UNTIL
- Line:    358 Paragraph: 1000-LOAD-RECORD
- Line:    360            MOVE
- Line:    361            MOVE
- Line:    362            MOVE
- Line:    363            MOVE
- Line:    364            MOVE
- Line:    365            MOVE
- Line:    366            MOVE
- Line:    367            MOVE
- Line:    368            MOVE
- Line:    369            MOVE
- Line:    370            MOVE
- Line:    372            IF
- Line:    373            MOVE
- Line:    374            MOVE
- Line:    375            MOVE
- Line:    381            WRITE
- Line:    382            IF
- Line:    347            VARYING
- Line:    348            UNTIL
- Line:    358 Paragraph: 1000-LOAD-RECORD
- Line:    360            MOVE
- Line:    361            MOVE
- Line:    362            MOVE
- Line:    363            MOVE
- Line:    364            MOVE
- Line:    365            MOVE
- Line:    366            MOVE
- Line:    367            MOVE
- Line:    368            MOVE
- Line:    369            MOVE
- Line:    370            MOVE
- Line:    372            IF
- Line:    377            MOVE
- Line:    378            MOVE
- Line:    379            MOVE
- Line:    381            WRITE
- Line:    382            IF
- Line:    347            VARYING
- Line:    348            UNTIL
- Line:    358 Paragraph: 1000-LOAD-RECORD
- Line:    360            MOVE
- Line:    361            MOVE
- Line:    362            MOVE
- Line:    363            MOVE
- Line:    364            MOVE
- Line:    365            MOVE
- Line:    366            MOVE
- Line:    367            MOVE
- Line:    368            MOVE
- Line:    369            MOVE
- Line:    370            MOVE
- Line:    372            IF
- Line:    373            MOVE
- Line:    374            MOVE
- Line:    375            MOVE
- Line:    381            WRITE
- Line:    382            IF
- Line:    347            VARYING
- Line:    348            UNTIL
- Line:    358 Paragraph: 1000-LOAD-RECORD
- Line:    360            MOVE
- Line:    361            MOVE
- Line:    362            MOVE
- Line:    363            MOVE
- Line:    364            MOVE
- Line:    365            MOVE
- Line:    366            MOVE
- Line:    367            MOVE
- Line:    368            MOVE
- Line:    369            MOVE
- Line:    370            MOVE
- Line:    372            IF
- Line:    377            MOVE
- Line:    378            MOVE
- Line:    379            MOVE
- Line:    381            WRITE
- Line:    382            IF
- Line:    347            VARYING
- Line:    348            UNTIL
- Line:    358 Paragraph: 1000-LOAD-RECORD
- Line:    360            MOVE
- Line:    361            MOVE
- Line:    362            MOVE
- Line:    363            MOVE
- Line:    364            MOVE
- Line:    365            MOVE
- Line:    366            MOVE
- Line:    367            MOVE
- Line:    368            MOVE
- Line:    369            MOVE
- Line:    370            MOVE
- Line:    372            IF
- Line:    373            MOVE
- Line:    374            MOVE
- Line:    375            MOVE
- Line:    381            WRITE
- Line:    382            IF
- Line:    347            VARYING
- Line:    348            UNTIL
- Line:    358 Paragraph: 1000-LOAD-RECORD
- Line:    360            MOVE
- Line:    361            MOVE
- Line:    362            MOVE
- Line:    363            MOVE
- Line:    364            MOVE
- Line:    365            MOVE
- Line:    366            MOVE
- Line:    367            MOVE
- Line:    368            MOVE
- Line:    369            MOVE
- Line:    370            MOVE
- Line:    372            IF
- Line:    377            MOVE
- Line:    378            MOVE
- Line:    379            MOVE
- Line:    381            WRITE
- Line:    382            IF
- Line:    347            VARYING
- Line:    348            UNTIL
- Line:    358 Paragraph: 1000-LOAD-RECORD
- Line:    360            MOVE
- Line:    361            MOVE
- Line:    362            MOVE
- Line:    363            MOVE
- Line:    364            MOVE
- Line:    365            MOVE
- Line:    366            MOVE
- Line:    367            MOVE
- Line:    368            MOVE
- Line:    369            MOVE
- Line:    370            MOVE
- Line:    372            IF
- Line:    373            MOVE
- Line:    374            MOVE
- Line:    375            MOVE
- Line:    381            WRITE
- Line:    382            IF
- Line:    347            VARYING
- Line:    348            UNTIL
- Line:    358 Paragraph: 1000-LOAD-RECORD
- Line:    360            MOVE
- Line:    361            MOVE
- Line:    362            MOVE
- Line:    363            MOVE
- Line:    364            MOVE
- Line:    365            MOVE
- Line:    366            MOVE
- Line:    367            MOVE
- Line:    368            MOVE
- Line:    369            MOVE
- Line:    370            MOVE
- Line:    372            IF
- Line:    373            MOVE
- Line:    374            MOVE
- Line:    375            MOVE
- Line:    381            WRITE
- Line:    382            IF
- Line:    347            VARYING
- Line:    348            UNTIL
- Line:    358 Paragraph: 1000-LOAD-RECORD
- Line:    360            MOVE
- Line:    361            MOVE
- Line:    362            MOVE
- Line:    363            MOVE
- Line:    364            MOVE
- Line:    365            MOVE
- Line:    366            MOVE
- Line:    367            MOVE
- Line:    368            MOVE
- Line:    369            MOVE
- Line:    370            MOVE
- Line:    372            IF
- Line:    373            MOVE
- Line:    374            MOVE
- Line:    375            MOVE
- Line:    381            WRITE
- Line:    382            IF
- Line:    347            VARYING
- Line:    348            UNTIL
- Line:    358 Paragraph: 1000-LOAD-RECORD
- Line:    360            MOVE
- Line:    361            MOVE
- Line:    362            MOVE
- Line:    363            MOVE
- Line:    364            MOVE
- Line:    365            MOVE
- Line:    366            MOVE
- Line:    367            MOVE
- Line:    368            MOVE
- Line:    369            MOVE
- Line:    370            MOVE
- Line:    372            IF
- Line:    377            MOVE
- Line:    378            MOVE
- Line:    379            MOVE
- Line:    381            WRITE
- Line:    382            IF
- Line:    347            VARYING
- Line:    348            UNTIL
- Line:    358 Paragraph: 1000-LOAD-RECORD
- Line:    360            MOVE
- Line:    361            MOVE
- Line:    362            MOVE
- Line:    363            MOVE
- Line:    364            MOVE
- Line:    365            MOVE
- Line:    366            MOVE
- Line:    367            MOVE
- Line:    368            MOVE
- Line:    369            MOVE
- Line:    370            MOVE
- Line:    372            IF
- Line:    377            MOVE
- Line:    378            MOVE
- Line:    379            MOVE
- Line:    381            WRITE
- Line:    382            IF
- Line:    347            VARYING
- Line:    348            UNTIL
- Line:    358 Paragraph: 1000-LOAD-RECORD
- Line:    360            MOVE
- Line:    361            MOVE
- Line:    362            MOVE
- Line:    363            MOVE
- Line:    364            MOVE
- Line:    365            MOVE
- Line:    366            MOVE
- Line:    367            MOVE
- Line:    368            MOVE
- Line:    369            MOVE
- Line:    370            MOVE
- Line:    372            IF
- Line:    377            MOVE
- Line:    378            MOVE
- Line:    379            MOVE
- Line:    381            WRITE
- Line:    382            IF
- Line:    347            VARYING
- Line:    348            UNTIL
- Line:    358 Paragraph: 1000-LOAD-RECORD
- Line:    360            MOVE
- Line:    361            MOVE
- Line:    362            MOVE
- Line:    363            MOVE
- Line:    364            MOVE
- Line:    365            MOVE
- Line:    366            MOVE
- Line:    367            MOVE
- Line:    368            MOVE
- Line:    369            MOVE
- Line:    370            MOVE
- Line:    372            IF
- Line:    377            MOVE
- Line:    378            MOVE
- Line:    379            MOVE
- Line:    381            WRITE
- Line:    382            IF
- Line:    347            VARYING
- Line:    348            UNTIL
- Line:    358 Paragraph: 1000-LOAD-RECORD
- Line:    360            MOVE
- Line:    361            MOVE
- Line:    362            MOVE
- Line:    363            MOVE
- Line:    364            MOVE
- Line:    365            MOVE
- Line:    366            MOVE
- Line:    367            MOVE
- Line:    368            MOVE
- Line:    369            MOVE
- Line:    370            MOVE
- Line:    372            IF
- Line:    377            MOVE
- Line:    378            MOVE
- Line:    379            MOVE
- Line:    381            WRITE
- Line:    382            IF
- Line:    347            VARYING
- Line:    348            UNTIL
- Line:    350            DISPLAY
- Line:    352            CLOSE
- Line:    321            PERFORM
- Line:    387 Paragraph: LISTFILE
- Line:    388            DISPLAY
- Line:    389            OPEN
- Line:    390            MOVE
- Line:    391            MOVE
- Line:    392            START
- Line:    393            READ
- Line:    394            READ
- Line:    395            CLOSE
- Line:    397            MOVE
- Line:    398            OPEN
- Line:    399            IF
- Line:    404            MOVE
- Line:    405            MOVE
- Line:    406            START
- Line:    407            READ
- Line:    408            READ
- Line:    410            MOVE
- Line:    411            MOVE
- Line:    412            START
- Line:    413            IF
- Line:    418            READ
- Line:    419            IF
- Line:    424            PERFORM
- Line:    425            UNTIL
- Line:    426            DISPLAY
- Line:    429            ADD
- Line:    430            READ
- Line:    434            ADD
- Line:    425            UNTIL
- Line:    426            DISPLAY
- Line:    429            ADD
- Line:    430            READ
- Line:    434            ADD
- Line:    425            UNTIL
- Line:    426            DISPLAY
- Line:    429            ADD
- Line:    430            READ
- Line:    434            ADD
- Line:    425            UNTIL
- Line:    426            DISPLAY
- Line:    429            ADD
- Line:    430            READ
- Line:    434            ADD
- Line:    425            UNTIL
- Line:    426            DISPLAY
- Line:    429            ADD
- Line:    430            READ
- Line:    434            ADD
- Line:    425            UNTIL
- Line:    426            DISPLAY
- Line:    429            ADD
- Line:    430            READ
- Line:    434            ADD
- Line:    425            UNTIL
- Line:    426            DISPLAY
- Line:    429            ADD
- Line:    430            READ
- Line:    434            ADD
- Line:    425            UNTIL
- Line:    426            DISPLAY
- Line:    429            ADD
- Line:    430            READ
- Line:    434            ADD
- Line:    425            UNTIL
- Line:    426            DISPLAY
- Line:    429            ADD
- Line:    430            READ
- Line:    434            ADD
- Line:    425            UNTIL
- Line:    426            DISPLAY
- Line:    429            ADD
- Line:    430            READ
- Line:    434            ADD
- Line:    425            UNTIL
- Line:    426            DISPLAY
- Line:    429            ADD
- Line:    430            READ
- Line:    434            ADD
- Line:    425            UNTIL
- Line:    436            IF
- Line:    439            DISPLAY
- Line:    442            DISPLAY
- Line:    443            MOVE
- Line:    444            START
- Line:    445            IF
- Line:    450            READ
- Line:    451            IF
- Line:    456            PERFORM
- Line:    457            UNTIL
- Line:    458            DISPLAY
- Line:    461            READ
- Line:    465            ADD
- Line:    457            UNTIL
- Line:    458            DISPLAY
- Line:    461            READ
- Line:    465            ADD
- Line:    457            UNTIL
- Line:    458            DISPLAY
- Line:    461            READ
- Line:    465            ADD
- Line:    457            UNTIL
- Line:    458            DISPLAY
- Line:    461            READ
- Line:    465            ADD
- Line:    457            UNTIL
- Line:    458            DISPLAY
- Line:    461            READ
- Line:    465            ADD
- Line:    457            UNTIL
- Line:    458            DISPLAY
- Line:    461            READ
- Line:    465            ADD
- Line:    457            UNTIL
- Line:    458            DISPLAY
- Line:    461            READ
- Line:    465            ADD
- Line:    457            UNTIL
- Line:    458            DISPLAY
- Line:    461            READ
- Line:    465            ADD
- Line:    457            UNTIL
- Line:    458            DISPLAY
- Line:    461            READ
- Line:    465            ADD
- Line:    457            UNTIL
- Line:    458            DISPLAY
- Line:    461            READ
- Line:    465            ADD
- Line:    457            UNTIL
- Line:    458            DISPLAY
- Line:    461            READ
- Line:    465            ADD
- Line:    457            UNTIL
- Line:    468            CLOSE
- Line:    470            OPEN
- Line:    471            MOVE
- Line:    472            MOVE
- Line:    473            MOVE
- Line:    474            READ
- Line:    475            IF
- Line:    479            MOVE
- Line:    480            MOVE
- Line:    481            READ
- Line:    482            IF
- Line:    486            DISPLAY
- Line:    490            READ
- Line:    491            IF
- Line:    495            DISPLAY
- Line:    499            MOVE
- Line:    500            MOVE
- Line:    501            READ
- Line:    502            IF
- Line:    506            DISPLAY
- Line:    510            WRITE
- Line:    511            IF
- Line:    515            DISPLAY
- Line:    518            MOVE
- Line:    519            MOVE
- Line:    520            READ
- Line:    521            DISPLAY
- Line:    525            ADD
- Line:    526            REWRITE
- Line:    527            IF
- Line:    533            DISPLAY
- Line:    538            MOVE
- Line:    539            MOVE
- Line:    540            READ
- Line:    541            DISPLAY
- Line:    545            MOVE
- Line:    546            MOVE
- Line:    547            REWRITE
- Line:    548            IF
- Line:    553            DISPLAY
- Line:    557            MOVE
- Line:    558            MOVE
- Line:    559            READ
- Line:    560            MOVE
- Line:    561            MOVE
- Line:    562            REWRITE
- Line:    563            IF
- Line:    568            DISPLAY
- Line:    572            DELETE
- Line:    573            CLOSE
- Line:    322            OPEN
- Line:    323            IF
- Line:    324            DISPLAY
- Line:    332            PERFORM
- Line:    575 Paragraph: LOADFLAT
- Line:    576            OPEN
- Line:    577            PERFORM
- Line:    580            UNTIL
- Line:    589 Paragraph: FLAT-RECORD
- Line:    591            MOVE
- Line:    592            MOVE
- Line:    593            MOVE
- Line:    594            MOVE
- Line:    595            MOVE
- Line:    596            MOVE
- Line:    597            IF
- Line:    598            MOVE
- Line:    601            WRITE
- Line:    578            VARYING
- Line:    580            UNTIL
- Line:    589 Paragraph: FLAT-RECORD
- Line:    591            MOVE
- Line:    592            MOVE
- Line:    593            MOVE
- Line:    594            MOVE
- Line:    595            MOVE
- Line:    596            MOVE
- Line:    597            IF
- Line:    600            MOVE
- Line:    601            WRITE
- Line:    578            VARYING
- Line:    580            UNTIL
- Line:    589 Paragraph: FLAT-RECORD
- Line:    591            MOVE
- Line:    592            MOVE
- Line:    593            MOVE
- Line:    594            MOVE
- Line:    595            MOVE
- Line:    596            MOVE
- Line:    597            IF
- Line:    598            MOVE
- Line:    601            WRITE
- Line:    578            VARYING
- Line:    580            UNTIL
- Line:    589 Paragraph: FLAT-RECORD
- Line:    591            MOVE
- Line:    592            MOVE
- Line:    593            MOVE
- Line:    594            MOVE
- Line:    595            MOVE
- Line:    596            MOVE
- Line:    597            IF
- Line:    600            MOVE
- Line:    601            WRITE
- Line:    578            VARYING
- Line:    580            UNTIL
- Line:    589 Paragraph: FLAT-RECORD
- Line:    591            MOVE
- Line:    592            MOVE
- Line:    593            MOVE
- Line:    594            MOVE
- Line:    595            MOVE
- Line:    596            MOVE
- Line:    597            IF
- Line:    598            MOVE
- Line:    601            WRITE
- Line:    578            VARYING
- Line:    580            UNTIL
- Line:    581            CLOSE
- Line:    582            OPEN
- Line:    583            MOVE
- Line:    584            READ
- Line:    585            MOVE
- Line:    586            READ
- Line:    587            CLOSE
- Line:    333            STOP RUN
+[            OPEN OUTPUT TSPFILE -> 'testisam' Status: 00
+            CLOSE TSPFILE Status: 00
+            OPEN I_O TSPFILE -> 'testisam' Status: 00
+            READ Sequential TSPFILE Status: 10
+            START TSPFILE Status: 23
+            Key : ALL LOW-VALUES
+            READ Sequential TSPFILE Status: 46
+            CLOSE TSPFILE Status: 00
+            OPEN OUTPUT TSPFILE -> 'testisam' Status: 00
+            WRITE TSPFILE Status: 00
+         Record : 'ALP00000 ALPHA ELECTRICAL CO. LTD.123 MAIN STREET          NEW YORK             '
+               80:'    N.Y.                     3131234432MR. DAVE HARRIS          UNI-90301MEG8417'
+              160:'    1600 BPI00085'
+            WRITE TSPFILE Status: 00
+         Record : 'BET00000 BETA SHOE MFG. INC.      1090 2ND AVE. WEST       ATLANTA              '
+               80:'    GEORGIA                  4082938498MS. JANICE SILCOX        UNI-90403MEG8470'
+              160:'    6250 BPI00034'
+            WRITE TSPFILE Status: 02
+         Record : 'GAM00000 GAMMA X-RAY TECHNOLOGY   1401 JEFFERSON BLVD.     WASHINGTON           '
+               80:'    D.C.                     8372487274MR. ALLAN JONES          UNI-80/31MEG8417'
+              160:'    1600 BPI00075'
+            WRITE TSPFILE Status: 02
+         Record : 'DEL00000 DELTA LUGGAGE REPAIRS    1620 ARIZONA WAY         TORONTO              '
+               80:'    CANADA                   4169898509MR. PETER MACKAY         UNI-80/53MEG8470'
+              160:'    6250 BPI00045'
+            WRITE TSPFILE Status: 02
+         Record : 'EPS00000 EPSILON EQUIPMENT SUPPLY 1184 EAST FIRST STREET   CALGARY              '
+               80:'    CANADA                   5292398745MRS. DONNA BREWER        UNI-80/61MEG8417'
+              160:'    1600 BPI00090'
+            WRITE TSPFILE Status: 02
+         Record : 'FOR00000 FORTUNE COOKIE COMPANY   114 JOHN F. KENNEDY AVE. SAN DIEGO            '
+               80:'    CALIFORNIA               8009329492MR. MICHAEL SMYTHE       UNI-80/63MEG8470'
+              160:'    6250 BPI00107'
+            WRITE TSPFILE Status: 02
+         Record : 'GIB00000 GIBRALTER LIFE INSURANCE 650 LIBERTY CRESCENT     LOS RIOS             '
+               80:'    NEW MEXICO               6456445643MR. D.A. MORRISON        UNI-80/61MEG8417'
+              160:'    1600 BPI00067'
+            WRITE TSPFILE Status: 02
+         Record : 'H&J00000 H & J PLUMBING SUPPLIES  77 SUNSET BLVD.          MADISON              '
+               80:'    WISCONSIN                6546456333MR. BRIAN PATTERSON      UNI-80/83MEG8470'
+              160:'    6250 BPI00032'
+            WRITE TSPFILE Status: 02
+         Record : 'INC00000 INCREMENTAL BACKUP CORP. 10908 SANTA MONICA BLVD. WILBUR               '
+               80:'    DELAWARE                 3455445444MR. DARRYL TOWNSEND      UNI-80/81MEG8417'
+              160:'    1600 BPI00016'
+            WRITE TSPFILE Status: 02
+         Record : 'JOH00000 JOHNSON BOATING SUPPLIES 1134 PARIS ROAD          TOPEKA               '
+               80:'    KANSAS                   6456445643MS. VALERIE HARPER       UNI-80/81MEG8417'
+              160:'    1600 BPI00034'
+            WRITE TSPFILE Status: 02
+         Record : 'KON00000 KONFLAB PLASTIC PRODUCTS.808 NORTHWEST MAIN ST.   SEATTLE              '
+               80:'    WASHINGTON               7456434355MR. FRED MILLER          UNI-80/81MEG8417'
+              160:'    1600 BPI00128'
+            WRITE TSPFILE Status: 02
+         Record : 'LEW00000 LEWISTON GRAPHICS LTD.   9904 QUEEN STREET        NEW JERSEY           '
+               80:'    N.J.                     6554456433MR. DONALD FISCHER       UNI-80/83MEG8470'
+              160:'    6250 BPI00064'
+            WRITE TSPFILE Status: 02
+         Record : 'MOR00000 MORNINGSIDE CARPENTRY.   1709 DUNDAS CRESCENT W.  FORT WAYNE           '
+               80:'    COLORADO                 4169898509MR. STEVEN YOURDIN       UNI-80/83MEG8470'
+              160:'    6250 BPI00110'
+            WRITE TSPFILE Status: 02
+         Record : 'NEW00000 NEW WAVE SURF SHOPS INC. 3240 MARIS AVENUE        COLUMBUS             '
+               80:'    OHIO                     7534587453MS. Goldie Hawn          UNI-80/83MEG8470'
+              160:'    6250 BPI00324'
+            WRITE TSPFILE Status: 02
+         Record : 'OLD00000 OLD TYME PIZZA MFG. CO.  1705 WISCONSIN ROAD      RICHMOND             '
+               80:'    VIRGINIA                 8787458374MS. ALICE WINSTON        UNI-90403MEG8470'
+              160:'    6250 BPI00124'
+            WRITE TSPFILE Status: 02
+         Record : 'PRE00000 PRESTIGE OFFICE FURNITURE114A MAPLE GROVE         WHITEPLAIN           '
+               80:'    N.Y.                     4169898509MR. THOMAS JEFFERSON     UNI-90403MEG8470'
+              160:'    6250 BPI00086'
+            CLOSE TSPFILE Status: 00
+            OPEN INPUT TSPFILE -> 'testisam' Status: 00
+            START TSPFILE Status: 00
+            Key : 'PRE00000'
+            READ Sequential TSPFILE Status: 00
+         Record : 'PRE00000 PRESTIGE OFFICE FURNITURE114A MAPLE GROVE         WHITEPLAIN           '
+               80:'    N.Y.                     4169898509MR. THOMAS JEFFERSON     UNI-90403MEG8470'
+              160:'    6250 BPI00086'
+            READ Sequential TSPFILE Status: 10
+            START TSPFILE Status: 00
+            Key : 'DEL00000'
+            READ Sequential TSPFILE Status: 00
+         Record : 'EPS00000 EPSILON EQUIPMENT SUPPLY 1184 EAST FIRST STREET   CALGARY              '
+               80:'    CANADA                   5292398745MRS. DONNA BREWER        UNI-80/61MEG8417'
+              160:'    1600 BPI00090'
+            READ Sequential TSPFILE Status: 00
+         Record : 'FOR00000 FORTUNE COOKIE COMPANY   114 JOHN F. KENNEDY AVE. SAN DIEGO            '
+               80:'    CALIFORNIA               8009329492MR. MICHAEL SMYTHE       UNI-80/63MEG8470'
+              160:'    6250 BPI00107'
+            READ Sequential TSPFILE Status: 00
+         Record : 'GAM00000 GAMMA X-RAY TECHNOLOGY   1401 JEFFERSON BLVD.     WASHINGTON           '
+               80:'    D.C.                     8372487274MR. ALLAN JONES          UNI-80/31MEG8417'
+              160:'    1600 BPI00075'
+            READ Sequential TSPFILE Status: 00
+         Record : 'GIB00000 GIBRALTER LIFE INSURANCE 650 LIBERTY CRESCENT     LOS RIOS             '
+               80:'    NEW MEXICO               6456445643MR. D.A. MORRISON        UNI-80/61MEG8417'
+              160:'    1600 BPI00067'
+            READ Sequential TSPFILE Status: 00
+         Record : 'H&J00000 H & J PLUMBING SUPPLIES  77 SUNSET BLVD.          MADISON              '
+               80:'    WISCONSIN                6546456333MR. BRIAN PATTERSON      UNI-80/83MEG8470'
+              160:'    6250 BPI00032'
+            READ Sequential TSPFILE Status: 00
+         Record : 'INC00000 INCREMENTAL BACKUP CORP. 10908 SANTA MONICA BLVD. WILBUR               '
+               80:'    DELAWARE                 3455445444MR. DARRYL TOWNSEND      UNI-80/81MEG8417'
+              160:'    1600 BPI00016'
+            READ Sequential TSPFILE Status: 00
+         Record : 'JOH00000 JOHNSON BOATING SUPPLIES 1134 PARIS ROAD          TOPEKA               '
+               80:'    KANSAS                   6456445643MS. VALERIE HARPER       UNI-80/81MEG8417'
+              160:'    1600 BPI00034'
+            READ Sequential TSPFILE Status: 00
+         Record : 'KON00000 KONFLAB PLASTIC PRODUCTS.808 NORTHWEST MAIN ST.   SEATTLE              '
+               80:'    WASHINGTON               7456434355MR. FRED MILLER          UNI-80/81MEG8417'
+              160:'    1600 BPI00128'
+            READ Sequential TSPFILE Status: 00
+         Record : 'LEW00000 LEWISTON GRAPHICS LTD.   9904 QUEEN STREET        NEW JERSEY           '
+               80:'    N.J.                     6554456433MR. DONALD FISCHER       UNI-80/83MEG8470'
+              160:'    6250 BPI00064'
+            READ Sequential TSPFILE Status: 00
+         Record : 'MOR00000 MORNINGSIDE CARPENTRY.   1709 DUNDAS CRESCENT W.  FORT WAYNE           '
+               80:'    COLORADO                 4169898509MR. STEVEN YOURDIN       UNI-80/83MEG8470'
+              160:'    6250 BPI00110'
+            READ Sequential TSPFILE Status: 00
+         Record : 'NEW00000 NEW WAVE SURF SHOPS INC. 3240 MARIS AVENUE        COLUMBUS             '
+               80:'    OHIO                     7534587453MS. Goldie Hawn          UNI-80/83MEG8470'
+              160:'    6250 BPI00324'
+            READ Sequential TSPFILE Status: 00
+         Record : 'OLD00000 OLD TYME PIZZA MFG. CO.  1705 WISCONSIN ROAD      RICHMOND             '
+               80:'    VIRGINIA                 8787458374MS. ALICE WINSTON        UNI-90403MEG8470'
+              160:'    6250 BPI00124'
+            START TSPFILE Status: 00
+            Key : 'OLD00000'
+            READ Sequential TSPFILE Status: 00
+         Record : 'NEW00000 NEW WAVE SURF SHOPS INC. 3240 MARIS AVENUE        COLUMBUS             '
+               80:'    OHIO                     7534587453MS. Goldie Hawn          UNI-80/83MEG8470'
+              160:'    6250 BPI00324'
+            READ Sequential TSPFILE Status: 00
+         Record : 'MOR00000 MORNINGSIDE CARPENTRY.   1709 DUNDAS CRESCENT W.  FORT WAYNE           '
+               80:'    COLORADO                 4169898509MR. STEVEN YOURDIN       UNI-80/83MEG8470'
+              160:'    6250 BPI00110'
+            READ Sequential TSPFILE Status: 00
+         Record : 'LEW00000 LEWISTON GRAPHICS LTD.   9904 QUEEN STREET        NEW JERSEY           '
+               80:'    N.J.                     6554456433MR. DONALD FISCHER       UNI-80/83MEG8470'
+              160:'    6250 BPI00064'
+            READ Sequential TSPFILE Status: 00
+         Record : 'KON00000 KONFLAB PLASTIC PRODUCTS.808 NORTHWEST MAIN ST.   SEATTLE              '
+               80:'    WASHINGTON               7456434355MR. FRED MILLER          UNI-80/81MEG8417'
+              160:'    1600 BPI00128'
+            READ Sequential TSPFILE Status: 00
+         Record : 'JOH00000 JOHNSON BOATING SUPPLIES 1134 PARIS ROAD          TOPEKA               '
+               80:'    KANSAS                   6456445643MS. VALERIE HARPER       UNI-80/81MEG8417'
+              160:'    1600 BPI00034'
+            READ Sequential TSPFILE Status: 00
+         Record : 'INC00000 INCREMENTAL BACKUP CORP. 10908 SANTA MONICA BLVD. WILBUR               '
+               80:'    DELAWARE                 3455445444MR. DARRYL TOWNSEND      UNI-80/81MEG8417'
+              160:'    1600 BPI00016'
+            READ Sequential TSPFILE Status: 00
+         Record : 'H&J00000 H & J PLUMBING SUPPLIES  77 SUNSET BLVD.          MADISON              '
+               80:'    WISCONSIN                6546456333MR. BRIAN PATTERSON      UNI-80/83MEG8470'
+              160:'    6250 BPI00032'
+            READ Sequential TSPFILE Status: 00
+         Record : 'GIB00000 GIBRALTER LIFE INSURANCE 650 LIBERTY CRESCENT     LOS RIOS             '
+               80:'    NEW MEXICO               6456445643MR. D.A. MORRISON        UNI-80/61MEG8417'
+              160:'    1600 BPI00067'
+            READ Sequential TSPFILE Status: 00
+         Record : 'GAM00000 GAMMA X-RAY TECHNOLOGY   1401 JEFFERSON BLVD.     WASHINGTON           '
+               80:'    D.C.                     8372487274MR. ALLAN JONES          UNI-80/31MEG8417'
+              160:'    1600 BPI00075'
+            READ Sequential TSPFILE Status: 00
+         Record : 'FOR00000 FORTUNE COOKIE COMPANY   114 JOHN F. KENNEDY AVE. SAN DIEGO            '
+               80:'    CALIFORNIA               8009329492MR. MICHAEL SMYTHE       UNI-80/63MEG8470'
+              160:'    6250 BPI00107'
+            READ Sequential TSPFILE Status: 00
+         Record : 'EPS00000 EPSILON EQUIPMENT SUPPLY 1184 EAST FIRST STREET   CALGARY              '
+               80:'    CANADA                   5292398745MRS. DONNA BREWER        UNI-80/61MEG8417'
+              160:'    1600 BPI00090'
+            READ Sequential TSPFILE Status: 00
+         Record : 'DEL00000 DELTA LUGGAGE REPAIRS    1620 ARIZONA WAY         TORONTO              '
+               80:'    CANADA                   4169898509MR. PETER MACKAY         UNI-80/53MEG8470'
+              160:'    6250 BPI00045'
+            CLOSE TSPFILE Status: 00
+            OPEN I_O TSPFILE -> 'testisam' Status: 00
+            READ TSPFILE Status: 23
+            Key : 'BET0X000'
+            READ TSPFILE Status: 00
+         Record : 'BET00000 BETA SHOE MFG. INC.      1090 2ND AVE. WEST       ATLANTA              '
+               80:'    GEORGIA                  4082938498MS. JANICE SILCOX        UNI-90403MEG8470'
+              160:'    6250 BPI00034'
+            Key : 'BET00000'
+            READ Sequential TSPFILE Status: 00
+         Record : 'DEL00000 DELTA LUGGAGE REPAIRS    1620 ARIZONA WAY         TORONTO              '
+               80:'    CANADA                   4169898509MR. PETER MACKAY         UNI-80/53MEG8470'
+              160:'    6250 BPI00045'
+            READ TSPFILE Status: 00
+         Record : 'GIB00000 GIBRALTER LIFE INSURANCE 650 LIBERTY CRESCENT     LOS RIOS             '
+               80:'    NEW MEXICO               6456445643MR. D.A. MORRISON        UNI-80/61MEG8417'
+              160:'    1600 BPI00067'
+            Key :  6456445643
+            WRITE TSPFILE Status: 22
+         Record : 'GIB00000 GIBRALTER LIFE INSURANCE 650 LIBERTY CRESCENT     LOS RIOS             '
+               80:'    NEW MEXICO               6456445643MR. D.A. MORRISON        UNI-80/61MEG8417'
+              160:'    1600 BPI00067'
+            READ TSPFILE Status: 00
+         Record : 'GAM00000 GAMMA X-RAY TECHNOLOGY   1401 JEFFERSON BLVD.     WASHINGTON           '
+               80:'    D.C.                     8372487274MR. ALLAN JONES          UNI-80/31MEG8417'
+              160:'    1600 BPI00075'
+            Key : 'GAM00000'
+            REWRITE TSPFILE Status: 00
+         Record : 'GAM00000 GAMMA X-RAY TECHNOLOGY   1401 JEFFERSON BLVD.     WASHINGTON           '
+               80:'    D.C.                     8372487274MR. ALLAN JONES          UNI-80/31MEG8417'
+              160:'    1600 BPI00080'
+            READ TSPFILE Status: 00
+         Record : 'BET00000 BETA SHOE MFG. INC.      1090 2ND AVE. WEST       ATLANTA              '
+               80:'    GEORGIA                  4082938498MS. JANICE SILCOX        UNI-90403MEG8470'
+              160:'    6250 BPI00034'
+            Key : 'BET00000'
+            REWRITE TSPFILE Status: 02
+         Record : 'GAM00000 GAMMA X-RAY TECHNOLOGY   1090 2ND AVE. WEST       ATLANTA              '
+               80:'    GEORGIA                  4082938498MS. JANICE SILCOX        UNI-90403MEG8470'
+              160:'    6250 BPI00034'
+            READ TSPFILE Status: 00
+         Record : 'FOR00000 FORTUNE COOKIE COMPANY   114 JOHN F. KENNEDY AVE. SAN DIEGO            '
+               80:'    CALIFORNIA               8009329492MR. MICHAEL SMYTHE       UNI-80/63MEG8470'
+              160:'    6250 BPI00107'
+            Key : 'FOR00000'
+            REWRITE TSPFILE Status: 02
+         Record : 'FOR00000 FORTUNE COOKIE COMPANY   114 JOHN F. KENNEDY AVE. SAN DIEGO            '
+               80:'    CALIFORNIA               6456445643MR. MICHAEL SMYTHE       UNI-80/63MEG8470'
+              160:'    6250 BPI00107'
+            DELETE TSPFILE Status: 00
+         Record : 'FOR00000 FORTUNE COOKIE COMPANY   114 JOHN F. KENNEDY AVE. SAN DIEGO            '
+               80:'    CALIFORNIA               6456445643MR. MICHAEL SMYTHE       UNI-80/63MEG8470'
+              160:'    6250 BPI00107'
+            CLOSE TSPFILE Status: 00
+            OPEN OUTPUT FLATFILE -> 'RELFIX' Status: 00
+            WRITE FLATFILE Status: 00
+         Record :  A L P 0  0 0 0 0  A L P H  A   E L  E C T R  I C A L    C O .    L T D _
+              1 x 414C5030 30303030 414C5048 4120454C 45435452 4943414C 20434F2E 204C5444 _
+                   . 8 4 1  7            U             p 1  _
+             33 x 2E383431 37202020 20005500 00000200 70319C
+        Record# :  00001
+            WRITE FLATFILE Status: 00
+         Record :  B E T 0  0 0 0 0  B E T A    S H O  E   M F  G .   I  N C .            _
+              1 x 42455430 30303030 42455441 2053484F 45204D46 472E2049 4E432E20 20202020 _
+                     8 4 7  0            "             p 1  _
+             33 x 20383437 30202020 20002200 00000200 70319C
+        Record# :  00002
+            WRITE FLATFILE Status: 00
+         Record :  G A M 0  0 0 0 0  G A M M  A   X -  R A Y    T E C H  N O L O  G Y     _
+              1 x 47414D30 30303030 47414D4D 4120582D 52415920 54454348 4E4F4C4F 47592020 _
+                     8 4 1  7            K             p 1  _
+             33 x 20383431 37202020 20004B00 00000200 70319C
+        Record# :  00003
+            WRITE FLATFILE Status: 00
+         Record :  D E L 0  0 0 0 0  D E L T  A   L U  G G A G  E   R E  P A I R  S       _
+              1 x 44454C30 30303030 44454C54 41204C55 47474147 45205245 50414952 53202020 _
+                     8 4 7  0            -             p 1  _
+             33 x 20383437 30202020 20002D00 00000200 70319C
+        Record# :  00004
+            WRITE FLATFILE Status: 00
+         Record :  E P S 0  0 0 0 0  E P S I  L O N    E Q U I  P M E N  T   S U  P P L Y _
+              1 x 45505330 30303030 45505349 4C4F4E20 45515549 504D454E 54205355 50504C59 _
+                     8 4 1  7            Z             p 1  _
+             33 x 20383431 37202020 20005A00 00000200 70319C
+        Record# :  00005
+            CLOSE FLATFILE Status: 00
+            OPEN INPUT FLATFILE -> 'RELFIX' Status: 00
+            READ FLATFILE Status: 00
+         Record :  G A M 0  0 0 0 0  G A M M  A   X -  R A Y    T E C H  N O L O  G Y     _
+              1 x 47414D30 30303030 47414D4D 4120582D 52415920 54454348 4E4F4C4F 47592020 _
+                     8 4 1  7            K             p 1  _
+             33 x 20383431 37202020 20004B00 00000200 70319C
+        Record# :  00003
+            READ FLATFILE Status: 23
+        Record# :  00999
+            CLOSE FLATFILE Status: 00
 ])
+# " fix syntax highlighting
 # hack for not checking Status 02 as this isn't returned by all
-# ISAM implementations
+# ISAM implementations; meve trailing line helper along
 
 AT_CHECK([sed -e 's/WRITE TSPFILE Status: 02/WRITE TSPFILE Status: 00/g' \
+-e 's/_$//g' \
 reference > references], [0], [], [])
 AT_CHECK([sed -e 's/WRITE TSPFILE Status: 02/WRITE TSPFILE Status: 00/g'  \
 -e 's/'"OPEN OUTPUT TSPFILE -> 'testisam' Status: 05"'/'"OPEN OUTPUT TSPFILE -> 'testisam' Status: 00"'/g' \
@@ -16736,8 +16320,9 @@ AT_CHECK([diff references traces.txt], [0], [], [])
 
 AT_CLEANUP
 
-AT_SETUP([Over use FCD ])
-AT_KEYWORDS([EXTFH])
+
+AT_SETUP([Over use FCD])
+AT_KEYWORDS([runfile EXTFH])
 
 AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
 
@@ -18086,10 +17671,9 @@ AT_DATA([prog.cob], [
 
        WORKING-STORAGE SECTION.
 
-       77  MAX-SUB                     PICTURE 9(4) VALUE 6.
+       78  MAX-SUB                     VALUE 6.
        77  CUST-STAT                   PICTURE X(2).
-       77  REC-NUM                     PICTURE 9(4) VALUE 1.
-       77  LCK-REC                     PICTURE 9(4) VALUE 1.
+       77  REC-NUM                     BINARY-SHORT UNSIGNED VALUE 1.
        77  SLP-TIME                    PICTURE 9(9) BINARY VALUE 1.
        77  REPORT-FILE                 PICTURE X(32) VALUE "parent.txt".
 
@@ -18105,7 +17689,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(8) VALUE "GAM00000".
 
          02  DATA-CUST-NUM REDEFINES DATA-CUST-NUM-TBL
-                                       PIC X(8) OCCURS 6.
+                                       PIC X(8) OCCURS MAX-SUB.
          02  DATA-COMPANY-TBL.
 
            05  FILLER PIC X(25) VALUE "ALPHA ELECTRICAL CO. LTD.".
@@ -18115,7 +17699,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(25) VALUE "FORTUNE COOKIE COMPANY   ".
            05  FILLER PIC X(25) VALUE "GAMMA X-RAY TECHNOLOGY   ".
          02  DATA-COMPANY  REDEFINES DATA-COMPANY-TBL
-                                       PIC X(25) OCCURS 6.
+                                       PIC X(25) OCCURS MAX-SUB.
          02  DATA-ADDRESS-2-TBL.
 
            05  FILLER PIC X(10) VALUE "ATLANTA   ".
@@ -18125,10 +17709,10 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(10) VALUE "WASHINGTON".
            05  FILLER PIC X(10) VALUE "WHITEPLAIN".
          02  DATA-ADDRESS   REDEFINES DATA-ADDRESS-2-TBL
-                                       PIC X(10) OCCURS 6.
+                                       PIC X(10) OCCURS MAX-SUB.
 
        01  WORK-AREA.
-           05  SUB                             PICTURE 9(4) COMP SYNC.
+           05  SUB                             BINARY-SHORT.
                88  ODD-RECORD                  VALUE 1 3 5.
 
        01  CMD-LINE     PIC X(64).
@@ -18602,9 +18186,9 @@ AT_DATA([prog.cob], [
 
        WORKING-STORAGE SECTION.
 
-       77  MAX-SUB           VALUE  6          PICTURE 9(4) COMP SYNC.
+       78  MAX-SUB           VALUE  6.
        77  CUST-STAT                           PICTURE X(2).
-       77  REC-NUM           VALUE  1          PICTURE 9(4).
+       77  REC-NUM           VALUE  1          BINARY-SHORT UNSIGNED.
 
        01  TEST-DATA.
 
@@ -18618,7 +18202,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(8) VALUE "GAM00000".
 
          02  DATA-CUST-NUM REDEFINES DATA-CUST-NUM-TBL
-                                       PIC X(8) OCCURS 6.
+                                       PIC X(8) OCCURS MAX-SUB.
          02  DATA-COMPANY-TBL.
 
            05  FILLER PIC X(25) VALUE "ALPHA ELECTRICAL CO. LTD.".
@@ -18628,7 +18212,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(25) VALUE "FORTUNE COOKIE COMPANY   ".
            05  FILLER PIC X(25) VALUE "GAMMA X-RAY TECHNOLOGY   ".
          02  DATA-COMPANY  REDEFINES DATA-COMPANY-TBL
-                                       PIC X(25) OCCURS 6.
+                                       PIC X(25) OCCURS MAX-SUB.
          02  DATA-ADDRESS-2-TBL.
 
            05  FILLER PIC X(10) VALUE "ATLANTA   ".
@@ -18638,7 +18222,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(10) VALUE "WASHINGTON".
            05  FILLER PIC X(10) VALUE "WHITEPLAIN".
          02  DATA-ADDRESS   REDEFINES DATA-ADDRESS-2-TBL
-                                       PIC X(10) OCCURS 6.
+                                       PIC X(10) OCCURS MAX-SUB.
 
          02  DATA-NO-TERMINALS-TBL.
 
@@ -18650,10 +18234,10 @@ AT_DATA([prog.cob], [
            05  FILLER PIC 9(3) COMP-3 VALUE 254.
 
          02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
-                                       PIC 9(3) COMP-3 OCCURS 6.
+                                       PIC 9(3) COMP-3 OCCURS MAX-SUB.
        01  WORK-AREA.
-           05  SUB                             PICTURE 9(4) COMP SYNC.
-               88  ODD-RECORD                  VALUE 1 3 5.
+           05  SUB                     BINARY-SHORT UNSIGNED.
+               88  ODD-RECORD          VALUE 1 3 5.
 
 
        PROCEDURE DIVISION.
@@ -18819,14 +18403,14 @@ AT_DATA([prog.cob], [
          02  DATA-COMPANY  REDEFINES DATA-COMPANY-TBL
                                        PIC X(25) OCCURS 8.
 
+       78  REC-MAX         VALUE 10.
        01  WORK-AREA.
            05  SLP-TIME        PICTURE 9(9) BINARY VALUE 1.
            05  SLP-SHORT       PICTURE 9(18) BINARY VALUE  20000000.
            05  SLP-LONG        PICTURE 9(18) BINARY VALUE 320000000.
            05  LCK-IDX         PICTURE 9(4) BINARY VALUE 1.
-           05  REC-NUM         PICTURE 9(4) VALUE 0.
-           05  REC-MAX         PICTURE 9(5) COMP VALUE 10.
-           05  SUB             PICTURE 9(4) COMP SYNC.
+           05  REC-NUM         BINARY-SHORT UNSIGNED VALUE 0.
+           05  SUB             BINARY-SHORT UNSIGNED.
                88  ODD-RECORD  VALUE 1 3 5 7 9 10 11.
 
            05  TSPFL-KEY       PICTURE X(8).
@@ -19443,7 +19027,7 @@ AT_DATA([prog.cob], [
 
        WORKING-STORAGE SECTION.
 
-       77  MAX-SUB                     PICTURE 9(4) VALUE 6.
+       78  MAX-SUB                     VALUE 6.
        77  CUST-STAT                   PICTURE X(2).
        77  REC-NUM                     PICTURE 9(4) VALUE 1.
        77  LCK-REC                     PICTURE 9(4) VALUE 1.
@@ -19462,7 +19046,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(8) VALUE "GAM00000".
 
          02  DATA-CUST-NUM REDEFINES DATA-CUST-NUM-TBL
-                                       PIC X(8) OCCURS 6.
+                                       PIC X(8) OCCURS MAX-SUB.
          02  DATA-COMPANY-TBL.
 
            05  FILLER PIC X(25) VALUE "ALPHA ELECTRICAL CO. LTD.".
@@ -19472,7 +19056,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(25) VALUE "FORTUNE COOKIE COMPANY   ".
            05  FILLER PIC X(25) VALUE "GAMMA X-RAY TECHNOLOGY   ".
          02  DATA-COMPANY  REDEFINES DATA-COMPANY-TBL
-                                       PIC X(25) OCCURS 6.
+                                       PIC X(25) OCCURS MAX-SUB.
          02  DATA-ADDRESS-2-TBL.
 
            05  FILLER PIC X(10) VALUE "ATLANTA   ".
@@ -19482,10 +19066,10 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(10) VALUE "WASHINGTON".
            05  FILLER PIC X(10) VALUE "WHITEPLAIN".
          02  DATA-ADDRESS   REDEFINES DATA-ADDRESS-2-TBL
-                                       PIC X(10) OCCURS 6.
+                                       PIC X(10) OCCURS MAX-SUB.
 
        01  WORK-AREA.
-           05  SUB                             PICTURE 9(4) COMP SYNC.
+           05  SUB                             BINARY-SHORT.
                88  ODD-RECORD                  VALUE 1 3 5.
 
        01  CMD-LINE     PIC X(64).
@@ -20347,7 +19931,7 @@ AT_CLEANUP
 
 
 AT_SETUP([PIPE I/O])
-AT_KEYWORDS([PIPE])
+AT_KEYWORDS([runfile])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -20523,9 +20107,10 @@ AT_DATA([prog.cob], [
            END-IF.
 ])
 
-AT_CHECK([$COBC -x -std=default -w prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [Show input from pipe
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[Show input from pipe
 01: Bye Bye         :
 02: Birdie          :
 Send data out pipe
@@ -20549,7 +20134,7 @@ AT_CLEANUP
 
 
 AT_SETUP([STDOUT STDERR I/O])
-AT_KEYWORDS([PIPE :CI: :CO: :CE:])
+AT_KEYWORDS([runfile PIPE :CI: :CO: :CE:])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -20714,7 +20299,7 @@ AT_DATA([prog.cob], [
 
 ])
 
-AT_CHECK([$COBC -x -std=default -w prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [Have data read via stdin
 Stdin: Happy days!     :
@@ -20768,9 +20353,9 @@ AT_DATA([prog.cob], [
 
        WORKING-STORAGE SECTION.
 
-       77  MAX-SUB           VALUE  6          PICTURE 9(4) COMP SYNC.
+       78  MAX-SUB           VALUE  6.
        77  CUST-STAT                           PICTURE X(2).
-       77  REC-NUM           VALUE  1          PICTURE 9(8) COMP SYNC.
+       77  REC-NUM           VALUE  1          BINARY-LONG.
 
        01  TEST-DATA.
 
@@ -20784,7 +20369,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(8) VALUE "FOR00000".
 
          02  DATA-CUST-NUM REDEFINES DATA-CUST-NUM-TBL
-                                       PIC X(8) OCCURS 6.
+                                       PIC X(8) OCCURS MAX-SUB.
          02  DATA-COMPANY-TBL.
 
            05  FILLER PIC X(25) VALUE "ALPHA ELECTRICAL CO. LTD.".
@@ -20794,7 +20379,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(25) VALUE "EPSILON EQUIPMENT SUPPLY ".
            05  FILLER PIC X(25) VALUE "FORTUNE COOKIE COMPANY   ".
          02  DATA-COMPANY  REDEFINES DATA-COMPANY-TBL
-                                       PIC X(25) OCCURS 6.
+                                       PIC X(25) OCCURS MAX-SUB.
          02  DATA-ADDRESS-2-TBL.
 
            05  FILLER PIC X(10) VALUE "NEW YORK  ".
@@ -20805,7 +20390,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(10) VALUE "WHITEPLAIN".
 
          02  DATA-ADDRESS   REDEFINES DATA-ADDRESS-2-TBL
-                                       PIC X(10) OCCURS 6.
+                                       PIC X(10) OCCURS MAX-SUB.
 
          02  DATA-NO-TERMINALS-TBL.
 
@@ -20817,9 +20402,9 @@ AT_DATA([prog.cob], [
            05  FILLER PIC 9(5) COMP-3 VALUE 254.
 
          02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
-                                       PIC 9(5) COMP-3 OCCURS 6.
+                                       PIC 9(5) COMP-3 OCCURS MAX-SUB.
        01  WORK-AREA.
-           05  SUB                             PICTURE 9(4) COMP SYNC.
+           05  SUB                             BINARY-SHORT.
                88  ODD-RECORD                  VALUE 1 3 5.
 
 
@@ -20931,9 +20516,10 @@ AT_DATA([prog.cob], [
                DISPLAY "Write Error " CUST-STAT.
 ])
 
-AT_CHECK([$COBC -x -std=mf -w -ffile-format=mf prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE -ffile-format=mf prog.cob], [0], [], [])
 
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [Loading sample program data file.
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[Loading sample program data file.
 Sample program data file load complete.
 Open Sts:00
 Read  ALP00000 Trms:08240
@@ -20970,6 +20556,7 @@ Read Status: 10
 
 AT_CLEANUP
 
+#TODO: Expandtab
 
 AT_SETUP([LINE SEQUENTIAL INSERTTAB])
 AT_KEYWORDS([runfile])
@@ -20980,9 +20567,9 @@ AT_DATA([prog.cob], [
        ENVIRONMENT DIVISION.
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
-           SELECT INFILE     ASSIGN TO "lsfile.txt"
+           SELECT INFILE ASSIGN TO "INFILE"
                 ORGANIZATION IS LINE SEQUENTIAL
-                FILE STATUS  IS INPUT-STATUS .
+                FILE STATUS  IS INPUT-STATUS.
 
        DATA DIVISION.
        FILE SECTION.
@@ -21021,10 +20608,11 @@ AT_DATA([prog.cob], [
                     MOVE "NOP                XYZ" TO INPUT-REC
                     MOVE X"09"                    TO INPUT-REC (27:1)
                     REWRITE INPUT-REC
-                    INSPECT INPUT-REC REPLACING ALL X"09" BY "t"
                     DISPLAY "Rewrite : STATUS IS " INPUT-STATUS
                             " LENGTH IS " INPUT-LEN
-                    DISPLAY "        :" INPUT-REC ":"
+      *> this is bad - needs to dump the file to be seen
+      *             INSPECT INPUT-REC REPLACING ALL X"09" BY "t"
+      *             DISPLAY "        :" INPUT-REC ":"
                  END-IF
               END-IF
            END-PERFORM.
@@ -21036,8 +20624,8 @@ AT_DATA([prog.cob], [
               IF INPUT-STATUS NOT = '10'
                  INSPECT INPUT-REC REPLACING ALL X"09" BY "t"
                  ADD 1 TO REC-NUM
-                 DISPLAY " Read " REC-NUM
-                         ": STATUS IS " INPUT-STATUS
+                 DISPLAY " Read " REC-NUM ":"
+                         " STATUS IS " INPUT-STATUS
                          " LENGTH IS " INPUT-LEN
                  DISPLAY "        :" INPUT-REC ":"
               END-IF
@@ -21046,10 +20634,12 @@ AT_DATA([prog.cob], [
 
        TEST-FILE.
            OPEN OUTPUT INFILE
-           MOVE 40 TO INPUT-LEN
-           MOVE ".........1.........2.........3" TO INPUT-REC
+           MOVE 42 TO INPUT-LEN
+           MOVE ".........1.........2.........3.........4"
+             TO INPUT-REC
            WRITE INPUT-REC
-           MOVE "123456789012345678901234567890" TO INPUT-REC
+           MOVE "123456789012345678901234567890123456789012"
+             TO INPUT-REC
            WRITE INPUT-REC
            MOVE "ABC                DEF" TO INPUT-REC
            MOVE X"09"                    TO INPUT-REC (27:1)
@@ -21075,26 +20665,52 @@ AT_DATA([prog.cob], [
            CLOSE INFILE.
 ])
 
-AT_CHECK([$COBC -x -std=mf -w prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
-AT_CHECK([export COB_MF_LS_INSTAB=true
-$COBCRUN_DIRECT ./prog], [0], [ Read 01: STATUS IS 00 LENGTH IS 030
-        :.........1.........2.........3                    :
- Read 02: STATUS IS 00 LENGTH IS 030
-        :123456789012345678901234567890                    :
+AT_CHECK([DD_INFILE="lsfile.txt" \
+$COBCRUN_DIRECT ./prog], [0],
+[[ Read 01: STATUS IS 00 LENGTH IS 040
+        :.........1.........2.........3.........4          :
+ Read 02: STATUS IS 00 LENGTH IS 042
+        :123456789012345678901234567890123456789012        :
  Read 03: STATUS IS 00 LENGTH IS 032
         :ABC                DEF    t    X                  :
 Rewrite : STATUS IS 00 LENGTH IS 040
-        :NOP                XYZ    t                       :
- Read 01: STATUS IS 00 LENGTH IS 030
-        :.........1.........2.........3                    :
- Read 02: STATUS IS 00 LENGTH IS 030
-        :123456789012345678901234567890                    :
+ Read 01: STATUS IS 00 LENGTH IS 040
+        :.........1.........2.........3.........4          :
+ Read 02: STATUS IS 00 LENGTH IS 042
+        :123456789012345678901234567890123456789012        :
  Read 03: STATUS IS 00 LENGTH IS 032
         :NOP                XYZ    t                       :
-], [])
+]], [])
+
+
+# FIXME: INSERTTAB toggles MFs EXPANDTAB - TODO: split into two
+# FIXME: The EXPANDTAB part actually is not correct, if the 
+#        data itself uses no null-insertion and has a tab at
+#        non 8 character bound
+AT_XFAIL_IF([true])
+
+AT_CHECK([DD_INFILE="lsftab.txt" \
+COB_LS_INSTAB=true \
+$COBCRUN_DIRECT ./prog], [0],
+[[ Read 01: STATUS IS 00 LENGTH IS 040
+        :.........1.........2.........3.........4          :
+ Read 02: STATUS IS 00 LENGTH IS 042
+        :123456789012345678901234567890123456789012        :
+ Read 03: STATUS IS 00 LENGTH IS 032
+        :ABC                DEF         X                  :
+Rewrite : STATUS IS 00 LENGTH IS 040
+ Read 01: STATUS IS 00 LENGTH IS 040
+        :.........1.........2.........3.........4          :
+ Read 02: STATUS IS 00 LENGTH IS 042
+        :123456789012345678901234567890123456789012        :
+ Read 03: STATUS IS 00 LENGTH IS 032
+        :NOP                XYZ                            :
+]], [])
 
 AT_CLEANUP
+
 
 AT_SETUP([INDEXED File READ/DELETE/READ])
 AT_KEYWORDS([runfile READ DELETE])
@@ -21151,7 +20767,7 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE SECTION.
 
        01  CUST-STAT.
-           05  STAT-1 PICTURE 9(4) COMP SYNC.
+           05  STAT-1 PICTURE 9(4) COMP.
            05  FILLER REDEFINES STAT-1.
                10  STAT-X1 PIC X COMP-X.
                10  STAT-X2 PIC X COMP-X.
@@ -21159,7 +20775,7 @@ AT_DATA([prog.cob], [
        77  ISAM-STAT                      PICTURE XX.
        77  BYTE-1  PICTURE 9(3).
        77  BYTE-2  PICTURE 9(3).
-       77  MAX-SUB           VALUE  16         PICTURE 9(5) COMP SYNC.
+       78  MAX-SUB           VALUE  16.
        77  SAV-KEY   PIC X(8).
 
        01  TEST-DATA.
@@ -21184,7 +20800,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(8) VALUE "PRE00000".
 
          02  DATA-CUST-NUM REDEFINES DATA-CUST-NUM-TBL
-                                       PIC X(8) OCCURS 16.
+                                       PIC X(8) OCCURS MAX-SUB.
          02  DATA-COMPANY-TBL.
 
            05  FILLER PIC X(25) VALUE "ALPHA ELECTRICAL CO. LTD.".
@@ -21205,7 +20821,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(25) VALUE "PRESTIGE OFFICE FURNITURE".
 
          02  DATA-COMPANY  REDEFINES DATA-COMPANY-TBL
-                                       PIC X(25) OCCURS 16.
+                                       PIC X(25) OCCURS MAX-SUB.
          02  DATA-ADDRESS-1-TBL.
 
            05  FILLER PIC X(25) VALUE "123 MAIN STREET          ".
@@ -21226,7 +20842,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(25) VALUE "114A MAPLE GROVE         ".
 
          02  DATA-ADDRESS-1 REDEFINES DATA-ADDRESS-1-TBL
-                                       PIC X(25) OCCURS 16.
+                                       PIC X(25) OCCURS MAX-SUB.
          02  DATA-ADDRESS-2-TBL.
 
            05  FILLER PIC X(10) VALUE "NEW YORK  ".
@@ -21247,7 +20863,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(10) VALUE "WHITEPLAIN".
 
          02  DATA-ADDRESS-2 REDEFINES DATA-ADDRESS-2-TBL
-                                       PIC X(10) OCCURS 16.
+                                       PIC X(10) OCCURS MAX-SUB.
          02  DATA-ADDRESS-3-TBL.
 
            05  FILLER PIC X(10) VALUE "N.Y.      ".
@@ -21268,7 +20884,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(10) VALUE "N.Y.      ".
 
          02  DATA-ADDRESS-3 REDEFINES DATA-ADDRESS-3-TBL
-                                       PIC X(10) OCCURS 16.
+                                       PIC X(10) OCCURS MAX-SUB.
          02  DATA-TELEPHONE-TBL.
 
            05  FILLER PIC 9(10) VALUE 3131234432.
@@ -21289,7 +20905,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC 9(10) VALUE 4169898509.
 
          02  DATA-TELEPHONE REDEFINES DATA-TELEPHONE-TBL
-                                       PIC 9(10) OCCURS 16.
+                                       PIC 9(10) OCCURS MAX-SUB.
          02  DATA-DP-MGR-TBL.
 
            05  FILLER PIC X(20) VALUE "MR. DAVE HARRIS     ".
@@ -21310,7 +20926,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(20) VALUE "MR. THOMAS JEFFERSON".
 
          02  DATA-DP-MGR    REDEFINES DATA-DP-MGR-TBL
-                                       PIC X(20) OCCURS 16.
+                                       PIC X(20) OCCURS MAX-SUB.
          02  DATA-MACHINE-TBL.
 
            05  FILLER PIC X(8) VALUE "UNI-9030".
@@ -21331,7 +20947,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(8) VALUE "UNI-9040".
 
          02  DATA-MACHINE   REDEFINES DATA-MACHINE-TBL
-                                       PIC X(8) OCCURS 16.
+                                       PIC X(8) OCCURS MAX-SUB.
          02  DATA-NO-TERMINALS-TBL.
 
            05  FILLER PIC 9(3) COMP-3 VALUE 85.
@@ -21352,13 +20968,12 @@ AT_DATA([prog.cob], [
            05  FILLER PIC 9(3) COMP-3 VALUE 86.
 
          02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
-                                       PIC 9(3) COMP-3 OCCURS 16.
+                                       PIC 9(3) COMP-3 OCCURS MAX-SUB.
 
+       78 REC-MAX                     VALUE 16.
        01  WORK-AREA.
-           05  REC-NUM                PICTURE 9(8) COMP VALUE 0.
-           05  REC-COUNT              PICTURE 9(8) COMP VALUE 0.
-           05  REC-MAX                PICTURE 9(6) VALUE 16.
-           05  SUB                    PICTURE 9(4) COMP SYNC.
+           05  REC-NUM                BINARY-SHORT UNSIGNED VALUE 0.
+           05  SUB                    BINARY-SHORT.
                88  ODD-RECORD         VALUE 1 3 5 7 9 10 11.
                88  NULL-KEY           VALUE 4 5 8 12 14.
 
@@ -21600,7 +21215,7 @@ AT_DATA([prog.cob], [
              AND CUST-STAT NOT = "02"
                  DISPLAY "Error " CUST-STAT " start " CM-CUST-NUM
              ELSE
-                 DISPLAY REC-NUM " Initial: " CM-CUST-NUM
+                 DISPLAY REC-NUM "    Initial: " CM-CUST-NUM
                          " " CM-TELEPHONE
                  IF REC-NUM = 3
                     MOVE CM-CUST-NUM TO SAV-KEY
@@ -21773,9 +21388,10 @@ AT_DATA([prog.cob], [
            END-IF.
 ])
 
-AT_CHECK([$COBC -x -std=mf -w prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [Loading sample data file.
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[Loading sample data file.
 Sample data file load complete.
 List sample data file
 Key: ALP00000 is ALPHA ELECTRICAL CO. LTD. Disk=8417    .
@@ -21861,10 +21477,10 @@ Ph=8372487274 Key: GAM00000 is GAMMA X-RAY TECHNOLOGY   .
 Ph=8787458374 Key: OLD00000 is OLD TYME PIZZA MFG. CO.  .
 Hit End of File
 Read Prev/Delete
-00000001 Initial: PRE00000 4169898509
-00000002 Initial: MOR00000 4169898509
-00000003 Initial: DEL00000 4169898509
-00000004 Initial: BET00000 4169898509
+00001    Initial: PRE00000 4169898509
+00002    Initial: MOR00000 4169898509
+00003    Initial: DEL00000 4169898509
+00004    Initial: BET00000 4169898509
   Start: PRE00000 4169898509
    Prev: MOR00000 4169898509
  Delete: MOR00000 sequential
@@ -21890,6 +21506,7 @@ Hit End of File
 ], [])
 
 AT_CLEANUP
+
 
 AT_SETUP([DELETE FILE MF])
 AT_KEYWORDS([runfile])
@@ -22101,7 +21718,7 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE SECTION.
 
        01  CUST-STAT.
-           05  STAT-1 PICTURE 9(4) COMP SYNC.
+           05  STAT-1 PICTURE 9(4) COMP.
            05  FILLER REDEFINES STAT-1.
                10  STAT-X1 PIC X COMP-X.
                10  STAT-X2 PIC X COMP-X.
@@ -22296,19 +21913,19 @@ AT_DATA([prog.cob], [
          02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
                                        PIC 9(3) COMP-3 OCCURS 16.
 
+       78  REC-MAX                             VALUE 16.
        01  WORK-AREA.
-           05  REC-NUM                         PICTURE 9(4) VALUE 0.
-           05  REC-MAX                         PICTURE 9(4) VALUE 16.
-           05  SUB                             PICTURE 9(3) .
-               88  ODD-RECORD                  VALUE 1 3 5 7 9 10 11.
-               88  NULL-KEY                    VALUE 4 5 8 12 14.
+           05  REC-NUM                 BINARY-SHORT UNSIGNED VALUE 0.
+           05  SUB                     BINARY-SHORT UNSIGNED.
+               88  ODD-RECORD          VALUE 1 3 5 7 9 10 11.
+               88  NULL-KEY            VALUE 4 5 8 12 14.
 
-           05  TSPFL-KEY                       PICTURE X(8).
-       01  START-TIME                          PICTURE 9(8).
+           05  TSPFL-KEY               PICTURE X(8).
+       01  START-TIME                  PICTURE 9(8).
        01  CMD-LINE.
-           05  CMD                             PICTURE X(3).
-           05  FILLER                          PICTURE X.
-           05  CMD-KEY                         PICTURE X(8).
+           05  CMD                     PICTURE X(3).
+           05  FILLER                  PICTURE X.
+           05  CMD-KEY                 PICTURE X(8).
 
        PROCEDURE DIVISION.
 
@@ -22662,7 +22279,7 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE SECTION.
 
        01  CUST-STAT.
-           05  STAT-1 PICTURE 9(4) COMP SYNC.
+           05  STAT-1 PICTURE 9(4) COMP.
            05  FILLER REDEFINES STAT-1.
                10  STAT-X1 PIC X COMP-X.
                10  STAT-X2 PIC X COMP-X.
@@ -22857,14 +22474,14 @@ AT_DATA([prog.cob], [
          02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
                                        PIC 9(3) COMP-3 OCCURS 16.
 
+       78  REC-MAX                     VALUE 16.
        01  WORK-AREA.
-           05  REC-NUM                         PICTURE 9(4) VALUE 0.
-           05  REC-MAX                         PICTURE 9(4) VALUE 16.
-           05  SUB                             PICTURE 9(3) .
-               88  ODD-RECORD                  VALUE 1 3 5 7 9 10 11.
-               88  NULL-KEY                    VALUE 4 5 8 12 14.
+           05  REC-NUM                 PIC 9(04) VALUE 0.
+           05  SUB                     BINARY-SHORT UNSIGNED.
+               88  ODD-RECORD          VALUE 1 3 5 7 9 10 11.
+               88  NULL-KEY            VALUE 4 5 8 12 14.
 
-           05  TSPFL-KEY                       PICTURE X(8).
+           05  TSPFL-KEY               PICTURE X(8).
        PROCEDURE DIVISION.
        MAINTEST.
            PERFORM TESTREL.
@@ -23161,9 +22778,9 @@ AT_DATA([prog.cob], [
 
        WORKING-STORAGE SECTION.
 
-       77  MAX-SUB           VALUE  6          PICTURE 9(4) COMP SYNC.
+       78  MAX-SUB           VALUE  6.
        77  CUST-STAT                           PICTURE X(2).
-       77  REC-NUM           VALUE  1          PICTURE 9(8) COMP SYNC.
+       77  REC-NUM           VALUE  1          BINARY-LONG.
        77  ADD-TERMS                           PICTURE 9(8) VALUE 0.
 
        01  TEST-DATA.
@@ -23178,7 +22795,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(8) VALUE "FOR00000".
 
          02  DATA-CUST-NUM REDEFINES DATA-CUST-NUM-TBL
-                                       PIC X(8) OCCURS 6.
+                                       PIC X(8) OCCURS MAX-SUB.
          02  DATA-COMPANY-TBL.
 
            05  FILLER PIC X(25) VALUE "ALPHA ELECTRICAL CO. LTD.".
@@ -23188,7 +22805,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(25) VALUE "EPSILON EQUIPMENT SUPPLY ".
            05  FILLER PIC X(25) VALUE "FORTUNE COOKIE COMPANY   ".
          02  DATA-COMPANY  REDEFINES DATA-COMPANY-TBL
-                                       PIC X(25) OCCURS 6.
+                                       PIC X(25) OCCURS MAX-SUB.
          02  DATA-ADDRESS-2-TBL.
 
            05  FILLER PIC X(10) VALUE "NEW YORK  ".
@@ -23199,7 +22816,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(10) VALUE "WHITEPLAIN".
 
          02  DATA-ADDRESS   REDEFINES DATA-ADDRESS-2-TBL
-                                       PIC X(10) OCCURS 6.
+                                       PIC X(10) OCCURS MAX-SUB.
 
          02  DATA-NO-TERMINALS-TBL.
 
@@ -23211,9 +22828,9 @@ AT_DATA([prog.cob], [
            05  FILLER PIC 9(5) COMP-3 VALUE 254.
 
          02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
-                                       PIC 9(5) COMP-3 OCCURS 6.
+                                       PIC 9(5) COMP-3 OCCURS MAX-SUB.
        01  WORK-AREA.
-           05  SUB                             PICTURE 9(4) COMP SYNC.
+           05  SUB                             BINARY-SHORT.
                88  ODD-RECORD                  VALUE 1 3 5.
 
 
@@ -23428,8 +23045,8 @@ Read Status: 10
 
 AT_CLEANUP
 
-AT_SETUP([OPEN OUTPUT COMMIT/ROLLBACK])
-AT_KEYWORDS([ROLLBACK])
+AT_SETUP([OPEN OUTPUT COMMIT / ROLLBACK])
+AT_KEYWORDS([runfile])
 
 AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
 
@@ -23658,9 +23275,10 @@ AT_DATA([prog.cob], [
       *>****************************************************************
 ])
 
-AT_CHECK([$COBC -x -std=mf -w -fmf-files prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [GNU-rollback-commit            >> ee:0002287 >> GNU:passed
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[GNU-rollback-commit            >> ee:0002287 >> GNU:passed
 ], [])
 
 AT_CLEANUP
@@ -23702,13 +23320,12 @@ AT_DATA([prog.cob], [
 
        WORKING-STORAGE SECTION.
 
-       77  MAX-SUB           VALUE  4          PICTURE 9(4) COMP .
-       77  ZRO               VALUE  1          PICTURE 9(4) COMP .
+       78  MAX-SUB           VALUE  6.
        01  CUST-STAT                           PICTURE X(2).
        01  FILLER REDEFINES CUST-STAT.
            05  CUST-STAT1                      PICTURE X.
            05  CUST-STAT2                      PICTURE X COMP-X.
-       77  REC-NUM           VALUE  1          PICTURE 9(8) COMP .
+       77  REC-NUM           VALUE  1          BINARY-LONG.
 
        01  TEST-DATA.
 
@@ -23722,7 +23339,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(8) VALUE "FOR00000".
 
          02  DATA-CUST-NUM REDEFINES DATA-CUST-NUM-TBL
-                                       PIC X(8) OCCURS 6.
+                                       PIC X(8) OCCURS MAX-SUB.
          02  DATA-COMPANY-TBL.
 
            05  FILLER PIC X(25) VALUE "ALPHA ELECTRICAL CO. LTD.".
@@ -23732,7 +23349,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(25) VALUE "EPSILON EQUIPMENT SUPPLY ".
            05  FILLER PIC X(25) VALUE "FORTUNE COOKIE COMPANY   ".
          02  DATA-COMPANY  REDEFINES DATA-COMPANY-TBL
-                                       PIC X(25) OCCURS 6.
+                                       PIC X(25) OCCURS MAX-SUB.
          02  DATA-ADDRESS-2-TBL.
 
            05  FILLER PIC X(10) VALUE "NEW YORK  ".
@@ -23743,7 +23360,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(10) VALUE "WHITEPLAIN".
 
          02  DATA-ADDRESS   REDEFINES DATA-ADDRESS-2-TBL
-                                       PIC X(10) OCCURS 6.
+                                       PIC X(10) OCCURS MAX-SUB.
 
          02  DATA-NO-TERMINALS-TBL.
 
@@ -23755,13 +23372,13 @@ AT_DATA([prog.cob], [
            05  FILLER PIC 9(3) COMP-3 VALUE 254.
 
          02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
-                                       PIC 9(3) COMP-3 OCCURS 6.
+                                       PIC 9(3) COMP-3 OCCURS MAX-SUB.
        01  WORK-AREA.
            05  DATAFILE                        PICTURE X(128).
            05  LIST-TEST                       PICTURE X(20).
            05  TST-READ                        PICTURE X VALUE 'Y'.
            05  TST-WRITE                       PICTURE X VALUE 'Y'.
-           05  SUB                             PICTURE 9(4) COMP.
+           05  SUB                             BINARY-SHORT.
                88  ODD-RECORD                  VALUE 1 3 5.
 
 
@@ -23931,13 +23548,12 @@ AT_DATA([prog.cob], [
 
        WORKING-STORAGE SECTION.
 
-       77  MAX-SUB           VALUE  4          PICTURE 9(4) COMP.
-       77  ZRO               VALUE  1          PICTURE 9(4) COMP.
+       78  MAX-SUB           VALUE  6.
        01  CUST-STAT                           PICTURE X(2).
        01  FILLER REDEFINES CUST-STAT.
            05  CUST-STAT1                      PICTURE X.
            05  CUST-STAT2                      PICTURE X COMP-X.
-       77  REC-NUM           VALUE  1          PICTURE 9(8) COMP.
+       77  REC-NUM           VALUE  1          BINARY-LONG.
 
        01  TEST-DATA.
 
@@ -23951,7 +23567,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(8) VALUE "FOR00000".
 
          02  DATA-CUST-NUM REDEFINES DATA-CUST-NUM-TBL
-                                       PIC X(8) OCCURS 6.
+                                       PIC X(8) OCCURS MAX-SUB.
          02  DATA-COMPANY-TBL.
 
            05  FILLER PIC X(25) VALUE "ALPHA ELECTRICAL CO. LTD.".
@@ -23961,7 +23577,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(25) VALUE "EPSILON EQUIPMENT SUPPLY ".
            05  FILLER PIC X(25) VALUE "FORTUNE COOKIE COMPANY   ".
          02  DATA-COMPANY  REDEFINES DATA-COMPANY-TBL
-                                       PIC X(25) OCCURS 6.
+                                       PIC X(25) OCCURS MAX-SUB.
          02  DATA-ADDRESS-2-TBL.
 
            05  FILLER PIC X(10) VALUE "NEW YORK  ".
@@ -23972,7 +23588,7 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(10) VALUE "WHITEPLAIN".
 
          02  DATA-ADDRESS   REDEFINES DATA-ADDRESS-2-TBL
-                                       PIC X(10) OCCURS 6.
+                                       PIC X(10) OCCURS MAX-SUB.
 
          02  DATA-NO-TERMINALS-TBL.
 
@@ -23984,13 +23600,13 @@ AT_DATA([prog.cob], [
            05  FILLER PIC 9(3) COMP-3 VALUE 254.
 
          02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
-                                       PIC 9(3) COMP-3 OCCURS 6.
+                                       PIC 9(3) COMP-3 OCCURS MAX-SUB.
        01  WORK-AREA.
            05  DATAFILE                        PICTURE X(128).
            05  LIST-TEST                       PICTURE X(20).
            05  TST-READ                        PICTURE X VALUE 'Y'.
            05  TST-WRITE                       PICTURE X VALUE 'Y'.
-           05  SUB                             PICTURE 9(4) COMP.
+           05  SUB                             BINARY-SHORT.
                88  ODD-RECORD                  VALUE 1 3 5.
 
 
@@ -24143,7 +23759,8 @@ List tmp directory       Open Sts: 9/021
 
 AT_CLEANUP
 
-AT_SETUP([LINE SEQUENTIAL Data test])
+
+AT_SETUP([LINE SEQUENTIAL Data])
 AT_KEYWORDS([runfile])
 
 AT_DATA([prog.cob], [
@@ -24157,7 +23774,7 @@ AT_DATA([prog.cob], [
        FILE-CONTROL.
            SELECT FLATFILE ASSIGN "LS-TEST"
            ORGANIZATION LINE SEQUENTIAL
-           FILE STATUS IS CUST-STAT .
+           FILE STATUS IS CUST-STAT.
 
        DATA  DIVISION.
        FILE SECTION.
@@ -24174,10 +23791,9 @@ AT_DATA([prog.cob], [
 
        WORKING-STORAGE SECTION.
       
-       77  MAX-SUB           VALUE  4          PICTURE 9(4) COMP SYNC.
-       77  ZRO               VALUE  1          PICTURE 9(4) COMP SYNC.
+       78  MAX-SUB           VALUE  4.
        77  CUST-STAT                           PICTURE X(2).
-       77  REC-NUM           VALUE  1          PICTURE 9(8) COMP SYNC.
+       77  REC-NUM           VALUE  1          BINARY-LONG.
       
        01  TEST-DATA.
       
@@ -24188,21 +23804,21 @@ AT_DATA([prog.cob], [
            05  FILLER PIC X(8) VALUE "DEL00000".
       
          02  DATA-CUST-NUM REDEFINES DATA-CUST-NUM-TBL
-                                       PIC X(8) OCCURS 4.
+                                       PIC X(8) OCCURS MAX-SUB.
          02  DATA-COMPANY-TBL.
            05  FILLER PIC X(25) VALUE "ALPHA ELECTRICAL CO. LTD.".
            05  FILLER PIC X(25) VALUE "BETA SHOE MFG. INC.      ".
            05  FILLER PIC X(25) VALUE "GAMMA X-RAY TECHNOLOGY   ".
            05  FILLER PIC X(25) VALUE "DELTA LUGGAGE REPAIRS    ".
          02  DATA-COMPANY  REDEFINES DATA-COMPANY-TBL
-                                       PIC X(25) OCCURS 4.
+                                       PIC X(25) OCCURS MAX-SUB.
          02  DATA-ADDRESS-2-TBL.
            05  FILLER PIC X(10) VALUE "NEW YORK  ".
            05  FILLER PIC X(10) VALUE "ATLANTA   ".
            05  FILLER PIC X(10) VALUE "WASHINGTON".
            05  FILLER PIC X(10) VALUE "TORONTO   ".
          02  DATA-ADDRESS   REDEFINES DATA-ADDRESS-2-TBL
-                                       PIC X(10) OCCURS 4.
+                                       PIC X(10) OCCURS MAX-SUB.
 
          02  DATA-NO-TERMINALS-TBL.
            05  FILLER PIC 9(3) COMP-3 VALUE 10.
@@ -24210,9 +23826,9 @@ AT_DATA([prog.cob], [
            05  FILLER PIC 9(3) COMP-3 VALUE 3.
            05  FILLER PIC 9(3) COMP-3 VALUE 254.
          02  DATA-NO-TERMINALS REDEFINES DATA-NO-TERMINALS-TBL
-                                       PIC 9(3) COMP-3 OCCURS 4.
+                                       PIC 9(3) COMP-3 OCCURS MAX-SUB.
        01  WORK-AREA.
-           05  SUB                             PICTURE 9(4) COMP SYNC.
+           05  SUB                             BINARY-SHORT.
                88  ODD-RECORD                  VALUE 1 3 5.
       
        PROCEDURE DIVISION.
@@ -24285,9 +23901,10 @@ AT_DATA([prog.cob], [
                        DATA-CUST-NUM (SUB).
 ])
 
-AT_CHECK([$COBC -x -std=mf -w prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [MF Load data
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[MF Load data
 MF List Open Sts:00
 Read  ALP00000 Trms:0010
 Read  BET00000 Trms:0013
@@ -24303,8 +23920,8 @@ Error status 71 writing record ALP00000
 AT_CLEANUP
 
 
-AT_SETUP([Test Concatenated Files])
-AT_KEYWORDS([Status])
+AT_SETUP([Concatenated Files])
+AT_KEYWORDS([runfile Status])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -24444,7 +24061,7 @@ AT_CLEANUP
 
 
 AT_SETUP([LINE SEQUENTIAL])
-AT_KEYWORDS([MF-FILE])
+AT_KEYWORDS([runfile MF-FILE])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -24490,6 +24107,8 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE SECTION.
        01  DUMP-FILE   PIC X(5).
        PROCEDURE DIVISION.
+
+           SET ENVIRONMENT 'OC_DUMP_SPC' TO 'N'
 
            OPEN OUTPUT FILE1.
            OPEN OUTPUT FILE3.
@@ -24559,10 +24178,10 @@ AT_DATA([prog.cob], [
            CLOSE FILED.
 ])
 
-AT_CHECK([$COBC -x -std=mf -w -ffile-format=MF prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE -ffile-format=mf prog.cob], [0], [], [])
 
-AT_CHECK([export OC_DUMP_SPC=N
-$COBCRUN_DIRECT ./prog], [0], [], [Dump of FILE2
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [],
+[Dump of FILE2
 Offset  HEX-- -- -- -5 -- -- -- -- 10 -- -- -- -- 15 --   CHARS----1----5-
 000000  0d 0c 41 50 0d 0a 41 31 0d 0a 0a 41 32 0d 42 31   ..AP..A1...A2.B1
 000016  0d 0a 42 32 0d 0a 0a 0a 41 31 0d 0a 0a 41 32 0d   ..B2....A1...A2.
@@ -24698,9 +24317,10 @@ AT_DATA([prog.cob], [
              DISPLAY FILEI-NAME " Status: " FI-STS.
 ])
 
-AT_CHECK([$COBC -x -std=mf -w prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE prog.cob -Wno-dialect], [0], [], [])
 
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [*** List format=GC         ***
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[*** List format=GC         ***
 'Record 1            '
 'Record 2            '
 'B1                  '

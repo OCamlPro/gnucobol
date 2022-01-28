@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2021 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2022 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -86,50 +86,76 @@ update_file_to_fcd (cob_file *f, FCD3 *fcd, unsigned char *fnstatus)
 		fcd->openMode = OPEN_IO;
 	else if (f->open_mode == COB_OPEN_EXTEND)
 		fcd->openMode = OPEN_EXTEND;
-	STCOMPX4(f->record_min,fcd->minRecLen);
+
+	if (f->flag_line_adv) {
+		fcd->otherFlags |= OTH_LINE_ADVANCE;
+	}
+	fcd->gcFlags |= MF_CALLFH_GNUCOBOL;
+	if (f->trace_io) {
+		fcd->gcFlags |= MF_CALLFH_TRACE;
+	} else {
+		fcd->gcFlags &= ~MF_CALLFH_TRACE;
+	}
+	if (f->io_stats) {
+		fcd->gcFlags |= MF_CALLFH_STATS;
+	} else {
+		fcd->gcFlags &= ~MF_CALLFH_STATS;
+	}
+
+	if (f->record_min != f->record_max) {
+		fcd->recordMode = REC_MODE_VARIABLE;
+	} else {
+		fcd->recordMode = REC_MODE_FIXED;
+	}
+
+	STCOMPX4(f->record_min, fcd->minRecLen);
 	STCOMPX4(f->record_max, fcd->maxRecLen);
 	if (f->record) {
 		STCOMPX4(f->record->size, fcd->curRecLen);
 	} else {
 		STCOMPX4(f->record_max, fcd->curRecLen);
 	}
-	if (f->record_min == f->record_max)
-		fcd->recordMode = REC_MODE_FIXED;
-	else
-		fcd->recordMode = REC_MODE_VARIABLE;
-	if (f->organization == COB_ORG_SEQUENTIAL) {
-		fcd->fileOrg = ORG_SEQ;
-		STCOMPX2(0, fcd->refKey);
-	} else if (f->organization == COB_ORG_LINE_SEQUENTIAL) {
-		fcd->fileOrg = ORG_LINE_SEQ;
-		STCOMPX2(0, fcd->refKey);
-		if((f->file_features & COB_FILE_LS_CRLF))
-			fcd->fstatusType |= MF_FST_CRdelim;
-		if((f->file_features & COB_FILE_LS_NULLS))
-			fcd->fstatusType |= MF_FST_InsertNulls;
-		if((f->file_features & COB_FILE_LS_FIXED))
-			fcd->fstatusType |= MF_FST_NoStripSpaces;
-	} else if (f->organization == COB_ORG_RELATIVE) {
-		fcd->fileOrg = ORG_RELATIVE;
-		STCOMPX2(0, fcd->refKey);
-	} else
-	if (f->organization == COB_ORG_INDEXED) {
+
+	switch (f->organization) {
+	case COB_ORG_INDEXED:
 		fcd->fileOrg = ORG_INDEXED;
-		fcd->fileFormat = MF_FF_CISAM;
-		if (f->io_routine == COB_IO_VBISAM)
+		if (f->flag_vb_isam) {
 			fcd->fileFormat = MF_FF_VBISAM;
-#ifdef WITH_DISAM
-		else if (f->io_routine == COB_IO_DISAM)
-			fcd->fileFormat = MF_FF_DISAM;
-#endif
-#ifdef WITH_DB
-		else if (f->io_routine == COB_IO_BDB)
+		} else if (f->io_routine == COB_IO_ODBC) {
+			fcd->fileFormat = MF_FF_ODBC;
+		} else if (f->io_routine == COB_IO_OCI) {
+			fcd->fileFormat = MF_FF_OCI;
+		} else if (f->io_routine == COB_IO_BDB) {
 			fcd->fileFormat = MF_FF_BDB;
-#endif
-#ifdef WITH_LMDB
-		else if (f->io_routine == COB_IO_LMDB)
+		} else if (f->io_routine == COB_IO_LMDB) {
 			fcd->fileFormat = MF_FF_LMDB;
-#endif
+		} else {
+			fcd->fileFormat = MF_FF_CISAM;
+		}
+		break;
+	case COB_ORG_SEQUENTIAL:
+		fcd->fileOrg = ORG_SEQ;
+		break;
+	case COB_ORG_LINE_SEQUENTIAL:
+		fcd->fileOrg = ORG_LINE_SEQ;
+		if ((f->file_features & COB_FILE_LS_CRLF)) {
+			fcd->fstatusType |= MF_FST_CRdelim;
+		}
+		if ((f->file_features & COB_FILE_LS_NULLS)) {
+			fcd->fstatusType |= MF_FST_InsertNulls;
+		}
+		if ((f->flag_ls_instab)) {
+			fcd->fstatusType |= MF_FST_InsertTabs;
+		}
+		if ((f->file_features & COB_FILE_LS_FIXED)) {
+			fcd->fstatusType |= MF_FST_NoStripSpaces;
+		}
+		break;
+	case COB_ORG_RELATIVE:
+		fcd->fileOrg = ORG_RELATIVE;
+		break;
+	default:
+		break;
 	}
 }
 
@@ -153,27 +179,15 @@ copy_file_to_fcd (cob_file *f, FCD3 *fcd)
 		fcd->otherFlags &= ~OTH_OPTIONAL;
 		fcd->otherFlags |= OTH_NOT_OPTIONAL;
 	}
-	if (f->flag_select_features & COB_SELECT_EXTERNAL)
+	if (f->flag_select_features & COB_SELECT_EXTERNAL) {
 		fcd->otherFlags |= OTH_EXTERNAL;
-	if (f->flag_line_adv)
-		fcd->otherFlags |= OTH_LINE_ADVANCE;
+	}
+	/* note: more flags (that may change with OPEN) set in the following CALL */
+	update_file_to_fcd (f, fcd, NULL);
 
 	STCOMPX2(sizeof(FCD3),fcd->fcdLen);
 	fcd->fcdVer = FCD_VER_64Bit;
-	fcd->gcFlags |= MF_CALLFH_GNUCOBOL;
-	if (f->trace_io)
-		fcd->gcFlags |= MF_CALLFH_TRACE;
-	else
-		fcd->gcFlags &= ~MF_CALLFH_TRACE;
-	if (f->io_stats)
-		fcd->gcFlags |= MF_CALLFH_STATS;
-	else
-		fcd->gcFlags &= ~MF_CALLFH_STATS;
-	if (f->record_min != f->record_max) {
-		fcd->recordMode = REC_MODE_VARIABLE;
-	} else {
-		fcd->recordMode = REC_MODE_FIXED;
-	}
+
 	if (f->fcd != fcd && fcd->fnamePtr) {
 		cob_cache_free ((void*)fcd->fnamePtr);
 		fcd->fnamePtr = NULL;
@@ -195,34 +209,25 @@ copy_file_to_fcd (cob_file *f, FCD3 *fcd)
 		STCOMPX2(fnlen, fcd->fnameLen);
 	}
 	fcd->openMode |= OPEN_NOT_OPEN;
-	STCOMPX2(0, fcd->refKey);
+	STCOMPX2 (0, fcd->refKey);
+
 	if ((f->lock_mode & COB_LOCK_EXCLUSIVE)
-	 || (f->lock_mode & COB_LOCK_OPEN_EXCLUSIVE))
+	 || (f->lock_mode & COB_LOCK_OPEN_EXCLUSIVE)) {
 		fcd->lockMode = FCD_LOCK_EXCL_LOCK;
-	else if(f->lock_mode == COB_LOCK_MANUAL)
+	} else
+	if (f->lock_mode == COB_LOCK_MANUAL) {
 		fcd->lockMode = FCD_LOCK_MANU_LOCK;
-	else if(f->lock_mode == COB_LOCK_AUTOMATIC)
+	} else
+	if (f->lock_mode == COB_LOCK_AUTOMATIC) {
 		fcd->lockMode = FCD_LOCK_AUTO_LOCK;
+	}
 	fcd->recPtr = f->record->data;
+
 	if (f->organization == COB_ORG_INDEXED) {
 		unsigned int	kdblen,idx,keypos,keycomp,k,nkeys;
 		KDB	*kdb;
 		EXTKEY	*key;
 
-		STCOMPX2(0, fcd->refKey);
-		fcd->fileOrg = ORG_INDEXED;
-		fcd->fileFormat = MF_FF_CISAM;
-		if (f->flag_vb_isam) {
-			fcd->fileFormat = MF_FF_VBISAM;
-		} else if (f->io_routine == COB_IO_ODBC) {
-			fcd->fileFormat = MF_FF_ODBC;
-		} else if (f->io_routine == COB_IO_OCI) {
-			fcd->fileFormat = MF_FF_OCI;
-		} else if (f->io_routine == COB_IO_BDB) {
-			fcd->fileFormat = MF_FF_BDB;
-		} else if (f->io_routine == COB_IO_LMDB) {
-			fcd->fileFormat = MF_FF_LMDB;
-		}
 		/* Copy Key information from cob_file to FCD */
 		for (idx=keycomp=0; idx < f->nkeys; idx++) {
 			if (f->keys[idx].count_components <= 1) {
@@ -291,7 +296,6 @@ copy_file_to_fcd (cob_file *f, FCD3 *fcd)
 			}
 		}
 	}
-	update_file_to_fcd (f, fcd, NULL);
 }
 
 /*
@@ -349,30 +353,36 @@ update_fcd_to_file (FCD3* fcd, cob_file *f, cob_field *fnstatus, int wasOpen)
 		}
 	}
 
-	if (fcd->gcFlags & MF_CALLFH_TRACE)
+	if (fcd->gcFlags & MF_CALLFH_TRACE) {
 		f->trace_io = 1;
-	else
+	} else {
 		f->trace_io = 0;
-	if (fcd->gcFlags & MF_CALLFH_STATS)
+	}
+	if (fcd->gcFlags & MF_CALLFH_STATS) {
 		f->io_stats = 1;
-	else
+	} else {
 		f->io_stats = 0;
+	}
 
-	if((fcd->lockMode & FCD_LOCK_EXCL_LOCK))
+	if ((fcd->lockMode & FCD_LOCK_EXCL_LOCK)) {
 		f->lock_mode = COB_LOCK_EXCLUSIVE;
-	else if((fcd->lockMode & FCD_LOCK_MANU_LOCK))
+	} else
+	if ((fcd->lockMode & FCD_LOCK_MANU_LOCK)) {
 		f->lock_mode = COB_LOCK_MANUAL;
-	else if((fcd->lockMode & FCD_LOCK_AUTO_LOCK))
+	} else
+	if ((fcd->lockMode & FCD_LOCK_AUTO_LOCK)) {
 		f->lock_mode = COB_LOCK_AUTOMATIC;
+	}
 
-	if (wasOpen < 0)
+	if (wasOpen < 0) {
 		return;
+	}
 	status = 0;
-	if(isdigit(fcd->fileStatus[0])) {
+	if (isdigit(fcd->fileStatus[0])) {
 		status = fcd->fileStatus[0] - '0';
 	}
 	status = status * 10;
-	if(isdigit(fcd->fileStatus[1]))
+	if (isdigit(fcd->fileStatus[1]))
 		status += (fcd->fileStatus[1] - '0');
 
 	/* Call save_status to get trace & stats done */
@@ -529,10 +539,15 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f)
 			f->file_features |= COB_FILE_LS_LF;
 		}
 #endif
-		if((fcd->fstatusType & MF_FST_InsertNulls))
+		if ((fcd->fstatusType & MF_FST_InsertNulls)) {
 			f->file_features |= COB_FILE_LS_NULLS;
-		if((fcd->fstatusType & MF_FST_NoStripSpaces))
+		}
+		if ((fcd->fstatusType & MF_FST_InsertTabs)) {
+			f->flag_ls_instab = 1;
+		}
+		if ((fcd->fstatusType & MF_FST_NoStripSpaces)) {
 			f->file_features |= COB_FILE_LS_FIXED;
+		}
 	} else if(fcd->fileOrg == ORG_RELATIVE) {
 		f->organization = COB_ORG_RELATIVE;
 		if (f->keys == NULL)
