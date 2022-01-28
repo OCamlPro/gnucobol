@@ -584,15 +584,15 @@ cb_build_full_field_reference (struct cb_field* field)
 	cb_tree ref = NULL;
 
 	while (field) {
-		if (!field->flag_filler) {
-			cb_tree rchain = cb_build_reference (field->name);
-			if (ref) {
-				CB_REFERENCE (ref)->chain = rchain;
-			} else {
-				ret = rchain;
-			}
-			ref = rchain;
+
+                if (field->flag_filler) break;
+                cb_tree rchain = cb_build_reference (field->name);
+                if (ref) {
+                        CB_REFERENCE (ref)->chain = rchain;
+		} else {
+			ret = rchain;
 		}
+		ref = rchain;
 		field = field->parent;
 	}
 

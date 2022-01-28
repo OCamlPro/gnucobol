@@ -1677,10 +1677,10 @@ msgstr ""
 
 #: cobc/flag.def:58
 msgid ""
-"  -ffold-copy=[UPPER|LOWER]\tfold COPY subject to value\n"
+"  -ffold-copy=[UPPER|LOWER|BOTH]\tfold COPY subject to value\n"
 "                        * default: no transformation"
 msgstr ""
-"  -ffold-copy=[UPPER|LOWER]\tconversion du sujet de COPY vers la valeur\n"
+"  -ffold-copy=[UPPER|LOWER|BOTH]\tconversion du sujet de COPY vers la valeur\n"
 "                        * défaut : aucune transformation"
 
 #: cobc/flag.def:62

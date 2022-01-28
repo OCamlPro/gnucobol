@@ -1725,7 +1725,7 @@ msgstr ""
 
 #: cobc/flag.def:58
 msgid ""
-"  -ffold-copy=[UPPER|LOWER]\tfold COPY subject to value\n"
+"  -ffold-copy=[UPPER|LOWER|BOTH]\tfold COPY subject to value\n"
 "                        * default: no transformation"
 msgstr ""
 

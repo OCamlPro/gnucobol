@@ -1,3 +1,11 @@
+2022-01-28  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* cobc: Warning for missing newlines can be disabled by
+	  -Wno-missing-newline instead of -Wno-others
+	* cobc, libcob, po: -ffold-copy accepts BOTH, to check both for
+	  UPPER and LOWER version
+	* cobc/field.c: Fix infinite loop in cb_build_full_field_reference
+
 2022-02-04  David Declerck <david.declerck@ocamlpro.com>
 
 	* config, cobc/cobc.h: add support for GCOS 7 dialect (Bull), both

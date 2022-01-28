@@ -1720,7 +1720,7 @@ turn_ec_io (const struct cb_exception ec_to_turn,
 			cb_error_x (loc, _("file '%s' does not exist"), (*ec_list)->text);
 			return 1;
 		}
-		
+
 		/* Apply to file's exception list */
 		turn_ec_for_table (f->exception_table, cb_io_exception_table_len,
 				   ec_to_turn, to_on_off);
@@ -1822,7 +1822,7 @@ cobc_apply_turn_directives (void)
 
 	loc.source_file = cb_source_file;
 	loc.source_column = 0;
-	
+
 	/* Apply all >>TURN directives the scanner has passed */
 	while (cb_turn_list
 	       && cb_turn_list->line <= cb_source_line
@@ -3564,11 +3564,13 @@ process_command_line (const int argc, char **argv)
 			break;
 
 		case 4:
-			/* -ffold-copy=<UPPER/LOWER> : COPY fold case */
-			if (!cb_strcasecmp (cob_optarg, "UPPER")) {
+			/* -ffold-copy=<UPPER/LOWER/BOTH> : COPY fold case */
+			if (!strcasecmp (cob_optarg, "UPPER")) {
 				cb_fold_copy = COB_FOLD_UPPER;
 			} else if (!cb_strcasecmp (cob_optarg, "LOWER")) {
 				cb_fold_copy = COB_FOLD_LOWER;
+			} else if (!strcasecmp (cob_optarg, "BOTH")) {
+				cb_fold_copy = COB_FOLD_BOTH;
 			} else {
 				cobc_err_exit (COBC_INV_PAR, "-ffold-copy");
 			}
@@ -4066,7 +4068,7 @@ process_filename (const char *filename)
 	if (cb_strcasecmp (extension, "i") == 0) {
 		/* Already preprocessed */
 		fn->need_preprocess = 0;
-	} else 
+	} else
 	if (cb_strcasecmp (extension, "c") == 0
 #if	defined(_WIN32)
 	 || cb_strcasecmp (extension, "asm") == 0
@@ -6476,7 +6478,7 @@ print_line (struct list_files *cfile, char *line, int line_num, int in_copy)
 			return last_col;			\
 		}						\
 	} ONCE_COB
-		
+
 /*
   Copy each token in pline from the start of pline[first_idx] to the end of
   pline[last_idx] into cmp_line, separated by a space. Tokens are copied from
