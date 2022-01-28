@@ -2117,8 +2117,9 @@ cb_build_section_name (cb_tree name, const int sect_or_para)
 		if ((!CB_LABEL_P (x) || sect_or_para == 0 ||
 		    (sect_or_para && CB_LABEL_P (x) &&
 		    CB_LABEL (x)->flag_section)) &&
-                    !(cb_paragraph_name_redefines_field_name &&
-                      CB_FIELD_P (x))) {
+                    !(cb_relaxed_paragraph_name_uniqueness &&
+                      (CB_FIELD_P (x) ||
+                       (CB_LABEL_P (x) && CB_LABEL (x)->flag_section)))) {
 			redefinition_error (name);
 			return cb_error_node;
 		}

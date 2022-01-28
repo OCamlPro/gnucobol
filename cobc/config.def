@@ -424,8 +424,8 @@ CB_CONFIG_SUPPORT (cb_vsam_status, "vsam-status",
 CB_CONFIG_SUPPORT (cb_record_contains_depending_clause, "record-contains-depending-clause",
 	_("DEPENDING clause in RECORD CONTAINS"))
 
-CB_CONFIG_BOOLEAN (cb_paragraph_name_redefines_field_name, "paragraph-name-redefines-field-name",
-	_("paragraph names can redefine field names"))
+CB_CONFIG_BOOLEAN (cb_relaxed_paragraph_name_uniqueness, "relaxed-paragraph-name-uniqueness",
+	_("allow paragraph names to redefine field and section names"))
 
 CB_CONFIG_SUPPORT (cb_select_external, "select-external",
 	_("SELECT EXTERNAL"))
