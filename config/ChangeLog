@@ -1,3 +1,9 @@
+2022-02-04  David Declerck <david.declerck@ocamlpro.com>
+
+	* Makefile.am, cobol2002.conf, cobol2014.conf, cobol85.conf,
+	  gcos-strict.conf, gcos.conf, gcos.words: add support for GCOS 7
+	  dialect (Bull), both a strict variant (gcos-strict) and a variant
+	  with GNUCobol extensions
 
 2025-01-10  David Declerck <david.declerck@ocamlpro.com>
 
