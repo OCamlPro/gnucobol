@@ -1,4 +1,9 @@
 
+2022-01-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_emit_write): changed configuration check and warning
+	  for cb_sequential_advancing to dialect variant
+
 2022-01-25  Ron Norman <rjn@inglenet.com>
 
 	* field.c: Check that COMP-X size does not exceed what is supported
@@ -12,12 +17,12 @@
 2022-01-19  Ron Norman <rjn@inglenet.com>
 
 	* tree.c,tree.h: Add cb_list_entry routine, returns Nth entry of a list
-	* codegen.c:	Handle REPORT field with multiple COLUMNS and VALUES
+	* codegen.c: Handle REPORT field with multiple COLUMNS and VALUES
 
 2022-01-17  Ron Norman <rjn@inglenet.com>
 
 	* parser.y: VARYING var FROM exp BY exp partly added
-	* tree.h:	Add CB_VARY and updated cb_field accodingly
+	* tree.h: Add CB_VARY and updated cb_field accordingly
 	* codegen.c: Updated to use new CB_VARY
 
 2022-01-13  Ron Norman <rjn@inglenet.com>
@@ -8501,7 +8506,7 @@
 	* cobc.h (cobc_verbose_flag): Declared.
 
 
-Copyright 2002-2021 Free Software Foundation, Inc.
+Copyright 2002-2022 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.
