@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2013-2021 Free Software Foundation, Inc.
+   Copyright (C) 2013-2022 Free Software Foundation, Inc.
    Written by Ron Norman, Simon Sobisch
 
    This file is part of GnuCOBOL.
@@ -1259,13 +1259,15 @@ static void
 sum_all_detail (cob_report *r)
 {
 	cob_report_sum_ctr	*sc;
-	int			nmln = 10;
 	int			bHasSum = FALSE;
 
-#if defined(COB_DEBUG_LOG) 
+#if defined(COB_DEBUG_LOG)
+	/* lookup max name length */
+	size_t		nmln = 10;
 	for(sc = r->sum_counters; sc; sc = sc->next) {
-		if (strlen(sc->name) > nmln)
-			nmln = strlen(sc->name);
+		const size_t max_len = strlen(sc->name);
+		if (max_len > nmln)
+			nmln = max_len;
 	}
 #endif
 	/*
@@ -1278,8 +1280,9 @@ sum_all_detail (cob_report *r)
 			bHasSum = TRUE;
 			DEBUG_LOG("rw",(" Do SUM detail counters:\n"));
 		}
-		DEBUG_LOG("rw",(" .. %-*s %s ",nmln,sc->name,sc->computed?"compute":"Add"));
-		cob_add_fields (sc->counter,sc->fsum,sc->counter);
+		DEBUG_LOG("rw",(" .. %-*s %s ", nmln, sc->name,
+			sc->computed ? "compute" : "Add"));
+		cob_add_fields (sc->counter, sc->fsum, sc->counter);
 	}
 }
 
