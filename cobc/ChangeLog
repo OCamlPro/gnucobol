@@ -1,3 +1,12 @@
+2022-01-28  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* cobc.c, cobc.h, flag.def (fold_upper): -ffold-copy accepts BOTH,
+	  to check both for UPPER and LOWER version
+	* pplex.l (ppcopy_find_file, ppcopy_find_file_case): check for
+	  both upper- and lower-case when cb_fold_copy is COB_FOLD_BOTH
+	* pplex.l: Warning for missing newlines can be disabled by
+	  -Wno-missing-newline instead of -Wno-others
+	* field.c (cb_build_full_field_reference): fix infinite loop
 
 2022-03-10  Simon Sobisch <simonsobisch@gnu.org>
 
