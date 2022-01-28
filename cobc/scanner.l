@@ -766,6 +766,46 @@ H#[0-9A-Za-z]+ {
 	RETURN_TOK (DATA);
 }
 
+"WITH"[ ,;\n]+"ASA"/[ .,;\n] {
+	count_lines (yytext);
+	RETURN_TOK (ASA);
+}
+
+"WITH"[ ,;\n]+"SSF"/[ .,;\n] {
+	count_lines (yytext);
+	RETURN_TOK (SSF);
+}
+
+"WITH"[ ,;\n]+"SARF"/[ .,;\n] {
+	count_lines (yytext);
+	RETURN_TOK (SARF);
+}
+
+"WITH"[ ,;\n]+"FLR"/[ .,;\n] {
+	count_lines (yytext);
+	RETURN_TOK (FLR);
+}
+
+"WITH"[ ,;\n]+"VLR"/[ .,;\n] {
+	count_lines (yytext);
+	RETURN_TOK (VLR);
+}
+
+"NO"[ ,;\n]+"BSN"/[ .,;\n] {
+	count_lines (yytext);
+	RETURN_TOK (BSN);
+}
+
+"WITH"[ ,;\n]+("NO"[ ,;\n]+)?"BSN"/[ .,;\n] {
+	count_lines (yytext);
+	RETURN_TOK (BSN);
+}
+
+"WITH"[ ,;\n]+"OVERRIDING"/[ .,;\n] {
+	count_lines (yytext);
+	RETURN_TOK (OVERRIDING);
+}
+
 "UPON"[ ,;\n]+"ENVIRONMENT-NAME"/[ .,;\n] {
 	count_lines (yytext);
 	RETURN_TOK (UPON_ENVIRONMENT_NAME);

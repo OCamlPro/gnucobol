@@ -2407,6 +2407,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token ARGUMENT_VALUE		"ARGUMENT-VALUE"
 %token ARITHMETIC
 %token AS
+%token ASA /* GCOS */
 %token ASCENDING
 %token ASCII
 %token ASSIGN
@@ -2459,6 +2460,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token BOTTOM
 %token BOX
 %token BOXED
+%token BSN /* GCOS */
 %token BULK_ADDITION	"BULK-ADDITION"
 %token BUSY
 %token BUTTONS
@@ -2719,6 +2721,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token FLOAT_LONG		"FLOAT-LONG"
 %token FLOAT_SHORT		"FLOAT-SHORT"
 %token FLOATING
+%token FLR /* GCOS */
 %token FONT
 %token FOOTING
 %token FOR
@@ -2962,6 +2965,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token OVERLAP_LEFT		"OVERLAP-LEFT"
 %token OVERLAP_TOP		"OVERLAP-TOP"
 %token OVERLINE
+%token OVERRIDING /* GCOS */
 %token PACKED_DECIMAL		"PACKED-DECIMAL"
 %token PADDING
 %token PASCAL
@@ -3095,6 +3099,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token RUN
 %token S
 %token SAME
+%token SARF /* GCOS */
 %token SAVE_AS			"SAVE-AS"
 %token SAVE_AS_NO_PROMPT	"SAVE-AS-NO-PROMPT"
 %token SCREEN
@@ -3150,6 +3155,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token SPECIAL_NAMES		"SPECIAL-NAMES"
 %token SPINNER
 %token SQUARE
+%token SSF /* GCOS */
 %token STANDARD
 %token STANDARD_1		"STANDARD-1"
 %token STANDARD_2		"STANDARD-2"
@@ -3296,6 +3302,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token VERY_HEAVY		"VERY-HEAVY"
 %token VIRTUAL_WIDTH	"VIRTUAL-WIDTH"
 %token VISIBLE
+%token VLR /* GCOS */
 %token VOLATILE
 %token VPADDING
 %token VSCROLL
@@ -5064,6 +5071,7 @@ select_clause:
 | track_area_clause
 | track_limit_clause
 | encryption_clause
+| with_clause
 /* FXIME: disabled because of shift/reduce conflict
   (optional in [alternate] record key, could be moved here
    if the suppress_clause goes here too and both entries verify that
@@ -5079,6 +5087,22 @@ select_clause:
 */
 ;
 
+with_clause:
+ raw_with_clause
+  {
+	cb_verify (cb_select_with, "SELECT WITH");
+  }
+;
+
+raw_with_clause:
+  ASA
+| SSF
+| SARF
+| FLR
+| VLR
+| BSN
+| OVERRIDING
+;
 
 /* ASSIGN clause */
 

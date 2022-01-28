@@ -430,5 +430,8 @@ CB_CONFIG_BOOLEAN (cb_relaxed_paragraph_name_uniqueness, "relaxed-paragraph-name
 CB_CONFIG_SUPPORT (cb_select_external, "select-external",
 	_("SELECT EXTERNAL"))
 
+CB_CONFIG_SUPPORT (cb_select_with, "select-with",
+	_("Support WITH clause in SELECT"))
+
 CB_CONFIG_SUPPORT (cb_extra_organization_clauses, "extra-organization-clauses",
 	_("Support additional ORGANIZATION clauses in SELECT"))
