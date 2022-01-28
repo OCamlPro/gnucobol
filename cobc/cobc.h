@@ -638,6 +638,8 @@ extern int		pplex (void);
 extern int		ppparse (void);
 #endif
 
+extern char *           fold_upper (char *name);
+
 extern int		ppopen (const char *, struct cb_replace_list *);
 extern int		ppcopy (const char *, const char *,
 				struct cb_replace_list *);
