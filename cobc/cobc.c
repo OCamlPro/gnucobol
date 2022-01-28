@@ -3503,6 +3503,8 @@ process_command_line (const int argc, char **argv)
 				cb_fold_copy = COB_FOLD_UPPER;
 			} else if (!strcasecmp (cob_optarg, "LOWER")) {
 				cb_fold_copy = COB_FOLD_LOWER;
+			} else if (!strcasecmp (cob_optarg, "BOTH")) {
+				cb_fold_copy = COB_FOLD_BOTH;
 			} else {
 				cobc_err_exit (COBC_INV_PAR, "-ffold-copy");
 			}
