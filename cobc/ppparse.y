@@ -93,7 +93,7 @@ fold_lower (char *name)
 	return name;
 }
 
-static char *
+char *
 fold_upper (char *name)
 {
 	unsigned char	*p;
@@ -862,6 +862,8 @@ set_choice:
 		cb_fold_copy = COB_FOLD_UPPER;
 	} else if (!strcasecmp (p, "LOWER")) {
 		cb_fold_copy = COB_FOLD_LOWER;
+	} else if (!strcasecmp (p, "BOTH")) {
+		cb_fold_copy = COB_FOLD_BOTH;
 	} else {
 		ppp_error_invalid_option ("FOLD-COPY-NAME", p);
 	}
@@ -1358,7 +1360,7 @@ copy_source:
   TOKEN
   {
 	$$ = fix_filename ($1);
-	if (cb_fold_copy == COB_FOLD_LOWER) {
+	if (cb_fold_copy == COB_FOLD_LOWER || cb_fold_copy == COB_FOLD_BOTH) {
 		$$ = fold_lower ($$);
 	} else if (cb_fold_copy == COB_FOLD_UPPER) {
 		$$ = fold_upper ($$);
