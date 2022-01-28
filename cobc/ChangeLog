@@ -1,4 +1,3 @@
-
 2022-05-15  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y (transform_body): add full features of INSPECT CONVERTING

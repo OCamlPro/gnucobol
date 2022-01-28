@@ -1,4 +1,3 @@
-
 2022-05-11  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_get_sign_ascii, cob_put_sign_ascii, cob_put_sign_ebcdic):
