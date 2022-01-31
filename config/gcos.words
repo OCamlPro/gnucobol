@@ -30,6 +30,7 @@ reserved:	AREA
 reserved:	AREAS
 #reserved:	ARITHMETIC*		# COBOL 2002
 #reserved:	AS			# COBOL 2002
+reserved:	ASA			# GCOS
 reserved:	ASCENDING
 reserved:	ASCII			# GCOS
 reserved:	ASSIGN
@@ -61,6 +62,7 @@ reserved:	BLANK
 reserved:	BLOCK
 reserved:	BOOLEAN			# COBOL 2002 + GCOS
 reserved:	BOTTOM
+reserved:	BSN			# GCOS
 reserved:	BY
 #reserved:	BYTE-LENGTH*		# COBOL 2002
 reserved:	CALL
@@ -227,6 +229,7 @@ reserved:	FLOAT-LONG		# COBOL 2002
 #reserved:	FLOAT-NOT-A-NUMBER-QUIET	# COBOL 2014
 #reserved:	FLOAT-NOT-A-NUMBER-SIGNALING	# COBOL 2014
 reserved:	FLOAT-SHORT		# COBOL 2002
+reserved:	FLR			# GCOS
 reserved:	FOOTING
 reserved:	FOR
 #reserved:	FOREGROUND-COLOR*	# COBOL 2002
@@ -363,6 +366,7 @@ reserved:	OTHER
 reserved:	OUTPUT
 reserved:	OVERFLOW
 #reserved:	OVERRIDE		# COBOL 2002
+reserved:	OVERRIDING		# GCOS
 reserved:	PACKED-DECIMAL
 reserved:	PADDING
 reserved:	PAGE
@@ -441,6 +445,7 @@ reserved:	ROUNDED
 #reserved:	ROUNDING*		# COBOL 2014
 reserved:	RUN
 reserved:	SAME
+reserved:	SARF			# GCOS
 #reserved:	SCREEN			# COBOL 2002
 reserved:	SD
 reserved:	SEARCH
@@ -471,6 +476,7 @@ reserved:	SOURCE-COMPUTER
 reserved:	SPACE
 reserved:	SPACES=SPACE
 reserved:	SPECIAL-NAMES
+reserved:	SSF			# GCOS
 reserved:	STANDARD
 reserved:	STANDARD-1
 reserved:	STANDARD-2
@@ -543,6 +549,7 @@ reserved:	USING
 reserved:	VALUE
 reserved:	VALUES=VALUE
 reserved:	VARYING
+reserved:	VLR			# GCOS
 reserved:	WHEN
 reserved:	WITH
 reserved:	WORDS

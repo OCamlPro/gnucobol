@@ -370,6 +370,9 @@ static struct cobc_reserved default_reserved_words[] = {
   { "AS",			0, 0, AS,			/* 2002 */
 				0, 0
   },
+  { "ASA",			0, 1, ASA,			/* GCOS extension */
+    				0, CB_CS_SELECT
+  },
   { "ASCENDING",		0, 0, ASCENDING,		/* 2002 */
 				0, 0
   },
@@ -529,6 +532,9 @@ static struct cobc_reserved default_reserved_words[] = {
   },
   { "BOXED",		0, 1, BOXED,		/* ACU extension */
 				0, CB_CS_DISPLAY
+  },
+  { "BSN",			0, 1, BSN,			/* GCOS extension */
+    				0, CB_CS_SELECT
   },
   { "BULK-ADDITION",		0, 1, BULK_ADDITION,		/* ACU extension */
 				0, CB_CS_OPEN
@@ -1380,6 +1386,9 @@ static struct cobc_reserved default_reserved_words[] = {
   { "FLOATING",			0, 0, FLOATING,			/* ACU extension */
 				0, CB_CS_DISPLAY
   },
+  { "FLR",			0, 1, FLR,			/* GCOS extension */
+    				0, CB_CS_SELECT
+  },
   { "FONT",			0, 0, FONT,			/* ACU extension */
 				0, 0				/* Checkme: likely context sensitive */
   },
@@ -2115,6 +2124,9 @@ static struct cobc_reserved default_reserved_words[] = {
   { "OVERRIDE",			0, 0, -1,			/* 2002 */
 				0, 0
   },
+  { "OVERRIDING",		0, 1, OVERRIDING,		/* GCOS extension */
+    				0, CB_CS_SELECT
+  },
   { "PACKED-DECIMAL",		0, 0, PACKED_DECIMAL,		/* 2002 */
 				0, 0
   },
@@ -2521,6 +2533,9 @@ static struct cobc_reserved default_reserved_words[] = {
   { "SAME",			0, 0, SAME,			/* 2002 */
 				0, 0
   },
+  { "SARF",			0, 1, SARF,			/* GCOS extension */
+    				0, CB_CS_SELECT
+  },
   { "SAVE-AS",			0, 1, SAVE_AS,			/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
   },
@@ -2689,6 +2704,9 @@ static struct cobc_reserved default_reserved_words[] = {
   },
   { "SQUARE",			0, 1, SQUARE,			/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
+  },
+  { "SSF",			0, 1, SSF,			/* GCOS extension */
+    				0, CB_CS_SELECT
   },
   { "STACK",			0, 1, -1,			/* 202x (C/S) */
 				0, CB_CS_MODULE_NAME
@@ -3079,6 +3097,9 @@ static struct cobc_reserved default_reserved_words[] = {
   },
   { "VISIBLE",			0, 1, VISIBLE,			/* ACU extension */
 				0, CB_CS_SCREEN
+  },
+  { "VLR",			0, 1, VLR,			/* GCOS extension */
+    				0, CB_CS_SELECT
   },
   { "VOLATILE",			0, 0, VOLATILE,			/* IBM Extension */
 				0, 0
