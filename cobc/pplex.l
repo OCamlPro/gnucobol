@@ -415,6 +415,17 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 	skip_to_eol ();
 }
 
+<*>#/[ ,;\n] {
+	/* Output a special marker that precedes lines starting in area A.  This
+	   is required to deal with a GCOS Cobol extension that permits sections
+	   and paragraphs that do not terminate with a period.
+
+	   See "(*GCOS*)" in `ppinput' function below for the code that emits
+	   the `#'.
+	*/
+	fprintf (ppout, "\n#area_a\n");
+}
+
 "COPY"/[ ,;\n]			{
 	yy_push_state (COPY_STATE);
 	if (cb_src_list_file) {
@@ -1294,7 +1305,7 @@ ppcopy (const char *name, const char *lib, struct cb_replace_list *replace_list)
 		s = name;
 		filename = ppcopy_find_file (s, has_ext);
 	}
-	
+
 	/* expected case: filename found */
 	if (likely (filename)) {
 		int ret;
@@ -1547,7 +1558,7 @@ get_word (const char *str, char *word_buff)
 			*word_buff = 0;
 		} else {
 			ret = NULL;
-		}		
+		}
 	}
 	return ret;
 }
@@ -1621,6 +1632,7 @@ ppinput (char *buff, const size_t max_size)
 	int	i;
 	int	n;
 	int	coln;
+	int	in_area_a;
 	struct list_skip *skip;
 
 	/* check that we actually have input to process
@@ -1761,7 +1773,7 @@ start:
 		if (memcmp("<<<<<<<", buff, 7) == 0
 		 || memcmp("=======", buff, 7) == 0
 		 || memcmp(">>>>>>>", buff, 7) == 0) {
-			/* FIXME: the different line numbers (see test "conflict markers" 
+			/* FIXME: the different line numbers (see test "conflict markers"
 			   are definitely a bug to solve in short time */
 			if (cb_source_format == CB_FORMAT_FREE) {
 				++newline_count;
@@ -1971,6 +1983,9 @@ start:
 	buff[6] = ' ';
 	bp = buff + 7;
 
+	/* Check blank area A */
+	in_area_a = strncmp (bp, "    ", 4) != 0;
+
 	if (unlikely (continuation)) {
 		/* Line continuation */
 		need_continuation = 0;
@@ -2083,6 +2098,16 @@ start:
 			memmove (buff + newline_count, buff, gotcr + 1);
 			memset (buff, '\n', newline_count);
 			gotcr += newline_count;
+		}
+		if (in_area_a && cb_rely_on_area_a) {
+			/* (*GCOS*): prepend special marker `#', indicating the
+			   current non-continuation line starts in area A (see
+			   <*>#/... lexer rule above).
+
+			   Assumes `buff' is large enough for one extra char. */
+			memmove (buff + 1, buff, gotcr + 1);
+			buff[1] = '#';
+			gotcr += 1;
 		}
 		newline_count = 1;
 	}
