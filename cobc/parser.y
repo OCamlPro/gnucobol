@@ -2371,6 +2371,8 @@ set_record_size (cb_tree min, cb_tree max)
 
 %token TOKEN_EOF 0 "end of file"
 
+%token AREA_A "text in area A"
+
 %token THREEDIMENSIONAL	"3D"
 %token ABSENT
 %token ACCEPT
@@ -3599,6 +3601,14 @@ _program_body:
 	within_typedef_definition = 0;
   }
   _procedure_division
+  {
+	/* AREA_A tokens, emitted when scanning the special marker `#AREA_A',
+	   must be inhibited outside of procedure divisions.  This avoids having
+	   to insert such tokens everywhere they may appear in other parts of
+	   the grammar.  `cobc_in_procedure' is used to filter such
+	   emissions.  */
+	cobc_in_procedure = 0;
+  }
 ;
 
 /* IDENTIFICATION DIVISION */
@@ -4983,7 +4993,7 @@ file_control_entry:
   SELECT flag_external flag_optional undefined_word
   {
 	char	buff[COB_MINI_BUFF];
-	  
+
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION,
 			       COBC_HD_INPUT_OUTPUT_SECTION,
 			       COBC_HD_FILE_CONTROL, 0);
@@ -5332,7 +5342,7 @@ alternate_record_key_clause:
 	 && CB_LITERAL_P ($9)
 	 && !CB_NUMERIC_LITERAL_P($9)) {
 		p->suppress = $9;
-	} else 
+	} else
 	if ($9) {
 		p->tf_suppress = 1;
 		p->char_suppress = CB_INTEGER ($9)->val;
@@ -7384,7 +7394,7 @@ locale_name:
 /* TYPE TO clause, optional "TO", fixed to clean conflicts for screen-items */
 
 type_to_clause:
-  TYPE _to TYPEDEF_NAME 
+  TYPE _to TYPEDEF_NAME
   {
 	cb_verify (cb_type_to_clause, _("TYPE TO clause"));
 	setup_external_definition_type ($3);
@@ -7654,7 +7664,7 @@ usage:
 	check_repeated ("USAGE", SYN_CLAUSE_5, &check_pic_duplicate);
 	CB_UNFINISHED ("USAGE NATIONAL");
   }
-| TYPEDEF_NAME 
+| TYPEDEF_NAME
 	{
 		if (!check_repeated ("USAGE", SYN_CLAUSE_5, &check_pic_duplicate)) {
 			if (current_field->external_definition) {
@@ -10028,6 +10038,7 @@ procedure_division:
 	backup_current_pos ();
   }
   _mnemonic_conv _conv_linkage _procedure_using_chaining _procedure_returning TOK_DOT
+  _area_a
   {
 	cb_tree call_conv = $4;
 	if ($5) {
@@ -10104,7 +10115,11 @@ procedure_division:
 	emit_statement (CB_TREE (current_paragraph));
 	cb_set_system_names ();
   }
-  statements TOK_DOT _procedure_list
+  statements TOK_DOT _area_a _procedure_list
+;
+
+_area_a:
+| AREA_A
 ;
 
 _procedure_using_chaining:
@@ -10332,13 +10347,13 @@ _procedure_returning:
 ;
 
 _procedure_declaratives:
-| DECLARATIVES TOK_DOT
+| DECLARATIVES TOK_DOT _area_a
   {
 	in_declaratives = 1;
 	emit_statement (cb_build_comment ("DECLARATIVES"));
   }
   _procedure_list
-  END DECLARATIVES TOK_DOT
+  END DECLARATIVES TOK_DOT _area_a
   {
 	if (needs_field_debug) {
 		start_debug = 1;
@@ -10376,7 +10391,8 @@ _procedure_list:
 procedure:
   section_header
 | paragraph_header
-| statements TOK_DOT
+| statements TOK_DOT _area_a
+| statements AREA_A
   {
 	if (next_label_list) {
 		cb_tree	plabel;
@@ -10395,7 +10411,7 @@ procedure:
 	cb_end_statement();
   }
 | invalid_statement %prec SHIFT_PREFER
-| TOK_DOT
+| TOK_DOT _area_a
   {
 	/* check_unreached = 0; */
 	cb_end_statement();
@@ -10450,6 +10466,7 @@ section_header:
   {
 	emit_statement (CB_TREE (current_section));
   }
+  _area_a
 ;
 
 _use_statement:

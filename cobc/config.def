@@ -75,6 +75,13 @@ CB_CONFIG_INT (cb_align_record, "align-record", 0, 256, CB_XRANGE(0,256),
 CB_CONFIG_BOOLEAN (cb_align_opt, "align-opt",
 	_("align like MF OPT, Default: false (Like MF ALIGN=FIXED)"))
 
+CB_CONFIG_SUPPORT (cb_loose_area_a, "loose-area-a",
+	_("fixed form programs may use area A freely"))
+
+/* FIXME: the following flag implies `loose-area-a'; this is not yet
+    checked by the compiler. */
+CB_CONFIG_BOOLEAN (cb_rely_on_area_a, "rely-on-area-a",
+	_("checking emptyness of area A is required to parse programs"))
 
 /* Flags with required parameter and special values */
 

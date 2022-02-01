@@ -408,6 +408,17 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 	skip_to_eol ();
 }
 
+<*>#\n {
+	/* Output a special marker that precedes lines starting in area A.  This
+	   is required to deal with a GCOS Cobol extension that permits sections
+	   and paragraphs that do not terminate with a period.
+
+	   See "(*GCOS*)" in `ppinput' function below for the code that emits
+	   the `#'.
+	*/
+	fprintf (ppout, "\n#area_a\n");
+}
+
 "COPY"			{
 	yy_push_state (COPY_STATE);
 	if (cb_src_list_file) {
@@ -1589,6 +1600,7 @@ ppinput (char *buff, const size_t max_size)
 	int	i,k;
 	int	n;
 	int	coln;
+	int	in_area_a;
 	struct list_skip *skip;
 	const char	*paragraph_name;
 
@@ -2003,7 +2015,13 @@ start:
 	buff[cb_indicator_column - 1] = ' ';
 	bp = buff + cb_indicator_column;
 
+	/* Check blank area A */
+	in_area_a = strncmp (bp, "    ", 4) != 0;
+
 	if (continuation) {
+		if (in_area_a)
+			(void) cb_verify (cb_loose_area_a && !cb_rely_on_area_a,
+					  _("non-blank area A on line continuation"));
 		/* Line continuation */
 		need_continuation = 0;
 		for (; *bp == ' '; ++bp) {
@@ -2115,6 +2133,16 @@ start:
 			memmove (buff + newline_count, buff, gotcr + 1);
 			memset (buff, '\n', newline_count);
 			gotcr += newline_count;
+		}
+		if (in_area_a && cb_rely_on_area_a) {
+			/* (*GCOS*): prepend special marker `#', indicating the
+			   current line starts in area A (see <*>#\n lexer rule
+			   above).
+
+			   Assumes `buff' is large enough for one extra char. */
+			memmove (buff + 1, buff, gotcr + 1);
+			buff[0] = '#';
+			gotcr += 1;
 		}
 		newline_count = 1;
 	}
