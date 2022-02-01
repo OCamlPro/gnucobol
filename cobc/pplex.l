@@ -448,13 +448,11 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 }
 
 <CONTROL_DIVISION_STATE>"SUBSTITUTION"[ ,;\n]+"SECTION" {
-	yy_pop_state ();
 	yy_push_state (SUBSTITUTION_SECTION_STATE);
 	return SUBSTITUTION_SECTION;
 }
 
 <SUBSTITUTION_SECTION_STATE>"REPLACE"	{
-	yy_pop_state ();
 	yy_push_state (COPY_STATE);
 	return REPLACE;
 }
@@ -470,18 +468,13 @@ SUBSTITUTION_SECTION_STATE>{
   \. 			{
 	  return DOT;
   }
-  ("ID"|"IDENTIFICATION")[ ,;\n]+"DIVISION" {
-	  /* FIXME: is there a way to pop only if in CONTROL_DIVISION_STATE or
-	     SUBSTITUTION_SECTION_STATE? If so that entry could be merged with
-	     the one below. */
-	  yy_pop_state ();
-	  /* Allow comment sentences/paragraphs */
-	  comment_allowed = 1;
-	  ppecho (yytext, 0, (int)yyleng);
-  }
 }
 
-("ID"|"IDENTIFICATION")[ ,;\n]+"DIVISION" {
+<*>("ID"|"IDENTIFICATION")[ ,;\n]+"DIVISION" {
+	/* Pop any control division-related start condition state. */
+	while (YY_START == CONTROL_DIVISION_STATE ||
+	       YY_START == SUBSTITUTION_SECTION_STATE)
+		yy_pop_state ();
 	/* Allow comment sentences/paragraphs */
 	comment_allowed = 1;
 	ppecho (yytext, 0, (int)yyleng);
