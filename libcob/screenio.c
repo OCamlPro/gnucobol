@@ -3589,7 +3589,7 @@ cob_exit_screen (void)
 
 #else	/* COB_GEN_SCREENIO */
 
-static void
+static int
 cob_screen_init (void)
 {
 	return -1;
