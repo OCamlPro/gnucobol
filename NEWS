@@ -21,6 +21,9 @@ NEWS - user visible changes				-*- outline -*-
 
 ** OCCURS with multiple VALUEs supported (BS2000 format without FROM/TO)
 
+** new function to call COBOL from C that won't exit the program in case
+   of runtime errors or STOP RUN: cob_call_with_exception_check()
+
 ** TODO - More to add
 
 * Changes that potentially effects existing programs:

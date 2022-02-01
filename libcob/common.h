@@ -1569,6 +1569,9 @@ COB_EXPIMP void		print_runtime_conf	(void);
 COB_EXPIMP void		cob_set_exception	(const int);
 COB_EXPIMP int		cob_last_exception_is	(const int);
 
+COB_EXPIMP int		cob_last_exit_code	(void);
+COB_EXPIMP const char*	cob_last_runtime_error	(void);
+
 COB_EXPIMP void		cob_runtime_hint	(const char *, ...) COB_A_FORMAT12;
 COB_EXPIMP void		cob_runtime_error	(const char *, ...) COB_A_FORMAT12;
 COB_EXPIMP void		cob_runtime_warning	(const char *, ...) COB_A_FORMAT12;
@@ -1949,6 +1952,7 @@ COB_EXPIMP void		*cob_call_field		(const cob_field *,
 COB_EXPIMP void		cob_cancel_field	(const cob_field *,
 						 const struct cob_call_struct *);
 COB_EXPIMP void		cob_cancel		(const char *);
+COB_EXPIMP int		cob_call_with_exception_check (const char*, const int, void **);
 COB_EXPIMP int		cob_call		(const char *, const int, void **);
 COB_EXPIMP int		cob_func		(const char *, const int, void **);
 
@@ -2716,15 +2720,13 @@ typedef	char *		cobchar_t;
 #define	cobs64_t	cob_s64_t
 #define	cobuns64_t	cob_u64_t
 
-#ifndef COB_WITHOUT_JMP
 #define	cobsetjmp(x)	setjmp (cob_savenv (x))
 #define	coblongjmp(x)	cob_longjmp (x)
 #define	cobsavenv(x)	cob_savenv (x)
 #define	cobsavenv2(x,z)	cob_savenv2 (x, z)
-#endif
 
-#define	cobfunc(x,y,z)	cob_func (x, y, z)
-#define	cobcall(x,y,z)	cob_call (x, y, z)
+#define	cobfunc(x,y,z)	cob_func (x, y, (void **)z)
+#define	cobcall(x,y,z)	cob_call (x, y, (void **)z)
 #define	cobcancel(x)	cob_cancel (x)
 
 #define	cobgetenv(x)	cob_getenv (x)

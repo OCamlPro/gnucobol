@@ -134,11 +134,9 @@ static unsigned int	curr_setting_mouse_flags = UINT_MAX;
 #endif
 #endif
 
-/* Local function prototypes when screenio activated */
+/* Local function prototypes */
 
-#ifdef	COB_GEN_SCREENIO
-static void cob_screen_init	(void);
-#endif
+static int cob_screen_init	(void);
 
 /* Local functions */
 
@@ -182,11 +180,13 @@ init_cob_screen_if_needed (void)
 	if (!cobglobptr) {
 		cob_fatal_error (COB_FERROR_INITIALIZED);
 	}
-#ifdef	COB_GEN_SCREENIO
 	if (!cobglobptr->cob_screen_initialized) {
-		cob_screen_init ();
+		int ret = cob_screen_init ();
+		if (ret) {
+			/* possibly adjust all callers to raise an exception */
+			cob_hard_failure ();
+		}
 	}
-#endif
 }
 
 #ifdef	COB_GEN_SCREENIO
@@ -403,11 +403,11 @@ cob_screen_attr (cob_field *fgc, cob_field *bgc, const cob_flags_t attr,
 	}
 }
 
-static void
+static int
 cob_screen_init (void)
 {
 	if (cobglobptr->cob_screen_initialized) {
-		return;
+		return 0;
 	}
 
 	cob_base_inp = NULL;
@@ -454,8 +454,7 @@ cob_screen_init (void)
 
 	if (!initscr ()) {
 		cob_runtime_error (_("failed to initialize curses"));
-		/* FIXME: likely should raise an exception instead */
-		cob_stop_run (1);
+		return 1;
 	}
 	cobglobptr->cob_screen_initialized = 1;
 #ifdef	HAVE_USE_LEGACY_CODING
@@ -572,7 +571,7 @@ cob_screen_init (void)
 #define ALT_RIGHT               KEY_ALEFT
 #endif
 #endif
-
+	return 0;
 }
 
 static void
@@ -2442,7 +2441,6 @@ static void
 screen_display (cob_screen *s, const int line, const int column)
 {
 	int		status;
-	init_cob_screen_if_needed ();
 
 	origin_y = line;
 	origin_x = column;
@@ -3368,6 +3366,7 @@ cob_screen_display (cob_screen *s, cob_field *line, cob_field *column,
 {
 	int	sline;
 	int	scolumn;
+	init_cob_screen_if_needed ();
 
 	extract_line_and_col_vals (line, column, DISPLAY_STATEMENT,
 				   zero_line_col_allowed, &sline, &scolumn);
@@ -3590,9 +3589,16 @@ cob_exit_screen (void)
 
 #else	/* COB_GEN_SCREENIO */
 
+static void
+cob_screen_init (void)
+{
+	return -1;
+}
+
 void
 cob_exit_screen (void)
 {
+	/* nothing possible to do here */
 }
 
 void
@@ -3608,6 +3614,7 @@ cob_field_display (cob_field *f, cob_field *line, cob_field *column,
 	COB_UNUSED (fscroll);
 	COB_UNUSED (size_is);
 	COB_UNUSED (fattr);
+	/* TODO: raise exception */
 }
 
 void
@@ -3626,6 +3633,7 @@ cob_field_accept (cob_field *f, cob_field *line, cob_field *column,
 	COB_UNUSED (prompt);
 	COB_UNUSED (size_is);
 	COB_UNUSED (fattr);
+	/* TODO: raise exception */
 }
 
 void
@@ -3636,6 +3644,7 @@ cob_screen_display (cob_screen *s, cob_field *line, cob_field *column,
 	COB_UNUSED (line);
 	COB_UNUSED (column);
 	COB_UNUSED (zero_line_col_allowed);
+	/* TODO: raise exception */
 }
 
 void
@@ -3648,17 +3657,20 @@ cob_screen_accept (cob_screen *s, cob_field *line,
 	COB_UNUSED (column);
 	COB_UNUSED (ftimeout);
 	COB_UNUSED (zero_line_col_allowed);
+	/* TODO: raise exception */
 }
 
 void
 cob_screen_set_mode (const cob_u32_t smode)
 {
 	COB_UNUSED (smode);
+	/* TODO: raise exception */
 }
 
 int
 cob_sys_clear_screen (void)
 {
+	/* TODO: raise exception */
 	return 0;
 }
 
@@ -3680,6 +3692,7 @@ cob_screen_line_col (cob_field *f, const int l_or_c)
 	} else {
 		cob_set_int (f, 80);
 	}
+	/* TODO: _possibly_ raise exception */
 #endif
 }
 
@@ -3690,9 +3703,13 @@ cob_sys_sound_bell (void)
 		return 0;
 	}
 #ifdef	COB_GEN_SCREENIO
-	if (!cobglobptr->cob_screen_initialized &&
-	    COB_BEEP_VALUE != 2) {
-		cob_screen_init ();
+	if (!cobglobptr->cob_screen_initialized
+	 && COB_BEEP_VALUE != 2) {
+		int ret = cob_screen_init ();
+		if (ret) {
+			cob_speaker_beep ();
+			return ret;
+		}
 	}
 	cob_beep ();
 #else
@@ -3727,6 +3744,7 @@ cob_sys_get_csr_pos (unsigned char *fld)
 #else
 	fld[0] = 1U;
 	fld[1] = 1U;
+	/* TODO: _possibly- raise exception */
 #endif
 	return 0;
 }
@@ -3769,6 +3787,7 @@ cob_sys_get_char (unsigned char *fld)
 	}
 #else
 	COB_UNUSED (fld);
+	/* TODO: raise exception */
 #endif
 	return 0;
 }
@@ -3791,6 +3810,7 @@ cob_sys_set_csr_pos (unsigned char *fld)
 	return move (cline, ccol);
 #else
 	COB_UNUSED (fld);
+	/* TODO: raise exception */
 	return 0;
 #endif
 }
@@ -3808,6 +3828,7 @@ cob_sys_get_scr_size (unsigned char *line, unsigned char *col)
 #else
 	*line = 24U;
 	*col = 80U;
+	/* TODO: _possibly_ raise exception */
 #endif
 	return 0;
 }
@@ -3819,6 +3840,7 @@ cob_get_scr_cols (void)
 #ifdef	COB_GEN_SCREENIO
 	return (int)COLS;
 #else
+	/* TODO: _possibly_ raise exception */
 	return 80;
 #endif
 }
@@ -3830,6 +3852,7 @@ cob_get_scr_lines (void)
 #ifdef	COB_GEN_SCREENIO
 	return (int)LINES;
 #else
+	/* TODO: _possibly_ raise exception */
 	return 24;
 #endif
 }

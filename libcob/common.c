@@ -259,7 +259,6 @@ static cob_settings		*cobsetptr = NULL;
 
 static int			last_exception_code;	/* Last exception: code */
 static int			active_error_handler = 0;
-static char			*runtime_err_str = NULL;
 
 static int			cannot_check_subscript = 0;
 
@@ -305,6 +304,15 @@ static int		cob_temp_iteration = 0;
 static unsigned int	conf_runtime_error_displayed = 0;
 static unsigned int	last_runtime_error_line = 0;
 static const char	*last_runtime_error_file = NULL;
+
+static char			runtime_err_str[COB_ERRBUF_SIZE] = {0};	/* emergency buffer */
+static int			exit_code = 0;	/* exit code when leaving libcob */
+
+#ifndef COB_WITHOUT_JMP
+/* longjmp buffer used instead of exit() if cob_init_with_return is used */
+static jmp_buf	return_jmp_buf;
+static int		return_jmp_buffer_set = 0;
+#endif
 
 #if	defined (HAVE_SIGNAL_H) && defined (HAVE_SIG_ATOMIC_T)
 static volatile sig_atomic_t	sig_is_handled = 0;
@@ -544,9 +552,6 @@ cob_exit_common (void)
 	if (cob_last_sfile) {
 		cob_free ((void *)cob_last_sfile);
 	}
-	if (runtime_err_str) {
-		cob_free (runtime_err_str);
-	}
 	if (cobglobptr) {
 		if (cobglobptr->cob_main_argv0) {
 			cob_free ((void *)(cobglobptr->cob_main_argv0));
@@ -767,6 +772,12 @@ cob_sig_handler_ex (int sig)
 		(*cob_ext_sighdl) (sig);
 		cob_ext_sighdl = NULL;
 	}
+	exit_code = sig;
+#ifndef COB_WITHOUT_JMP
+	if (return_jmp_buffer_set) {
+		longjmp (return_jmp_buf, -3);
+	}
+#endif
 #ifdef	SIGSEGV
 	if (sig == SIGSEGV) {
 		exit (SIGSEGV);
@@ -2268,10 +2279,64 @@ void
 cob_stop_run (const int status)
 {
 	if (!cob_initialized) {
-		exit (EXIT_FAILURE);
+		cob_hard_failure ();
 	}
 	call_exit_handlers_and_terminate ();
+	exit_code = status;
+#ifndef COB_WITHOUT_JMP
+	if (return_jmp_buffer_set) {
+		longjmp (return_jmp_buf, 1);
+	}
+#endif
 	exit (status);
+}
+
+void
+cob_hard_failure ()
+{
+	if (cob_initialized) {
+		call_exit_handlers_and_terminate ();
+	}
+	exit_code = -1;
+#ifndef COB_WITHOUT_JMP
+	if (return_jmp_buffer_set) {
+		longjmp (return_jmp_buf, -1);
+	}
+#endif
+	exit (EXIT_FAILURE);
+}
+
+void
+cob_hard_failure_internal ()
+{
+	if (cob_initialized) {
+		call_exit_handlers_and_terminate ();
+	}
+	fputc ('\n', stderr);
+	fputs (_("Please report this!"), stderr);
+	fputc ('\n', stderr);
+	exit_code = -2;
+#ifndef COB_WITHOUT_JMP
+	if (return_jmp_buffer_set) {
+		longjmp (return_jmp_buf, -2);
+	}
+#endif
+	exit (EXIT_FAILURE);
+}
+
+/* get internal exit code, which is set on
+  STOP RUN / last GOBACK / runtime error / cob_tidy */
+int
+cob_last_exit_code ()
+{
+	return exit_code;
+}
+
+/* get pointer to last runtime error (empty if no runtime error raised) */
+const char *
+cob_last_runtime_error ()
+{
+	return runtime_err_str;
 }
 
 int
@@ -2557,21 +2622,23 @@ cob_check_version (const char *prog,
 	}
 
 err:
+	/* TODO: when CALLed - raise exception so program can go ON EXCEPTION */
 	cob_runtime_error (_("version mismatch"));
 	cob_runtime_hint (_("%s has version %s.%d"), prog,
 			   packver_prog, patchlev_prog);
 	cob_runtime_hint (_("%s has version %s.%d"), "libcob",
 			   PACKAGE_VERSION, PATCH_LEVEL);
-	cob_stop_run (1);
+	cob_hard_failure ();
 }
 
 void
 cob_parameter_check (const char *func_name, const int num_arguments)
 {
 	if (cobglobptr->cob_call_params < num_arguments) {
+		/* TODO: raise exception */
 		cob_runtime_error (_("CALL to %s requires %d arguments"),
 				   func_name, num_arguments);
-		cob_stop_run (1);
+		cob_hard_failure ();
 	}
 }
 
@@ -3191,8 +3258,9 @@ cob_check_based (const unsigned char *x, const char *name)
 {
 	if (!x) {
 		/* name includes '' already and can be ... 'x' (addressed by 'y') */
+		/* TODO: raise exception */
 		cob_runtime_error (_("BASED/LINKAGE item %s has NULL address"), name);
-		cob_stop_run (1);
+		cob_hard_failure ();
 	}
 }
 
@@ -3203,13 +3271,15 @@ cob_check_linkage (const unsigned char *x, const char *name, const int check_typ
 		/* name includes '' already and can be ... 'x' of 'y' */
 		switch (check_type) {
 		case 0: /* check for passed items and size on module entry */
+			/* TODO: raise exception */
 			cob_runtime_error (_("LINKAGE item %s not passed by caller"), name);
 			break;
 		case 1: /* check for passed OPTIONAL items on item use */
+			/* TODO: raise exception */
 			cob_runtime_error (_("LINKAGE item %s not passed by caller"), name);
 			break;
 		}
-		cob_stop_run (1);
+		cob_hard_failure ();
 	}
 }
 
@@ -3295,7 +3365,7 @@ cob_check_numeric (const cob_field *f, const char *name)
 		cob_runtime_error (_("'%s' (Type: %s) not numeric: '%s'"),
 			name, explain_field_type(f), buff);
 		cob_free (buff);
-		cob_stop_run (1);
+		cob_hard_failure ();
 	}
 }
 
@@ -3324,7 +3394,7 @@ cob_check_odo (const int i, const int min, const int max,
 		} else {
 			cob_runtime_hint (_("minimum subscript for '%s': %d"), name, min);
 		}
-		cob_stop_run (1);
+		cob_hard_failure ();
 	}
 }
 
@@ -3342,7 +3412,7 @@ cob_check_subscript (const int i, const int max,
 		if (i == 0) {
 			cob_set_exception (COB_EC_BOUND_SUBSCRIPT);
 			cob_runtime_error (_("subscript of '%s' out of bounds: %d"), "unknown field", i);
-			cob_stop_run (1);
+			cob_hard_failure ();
 		}
 		return;
 	}
@@ -3362,7 +3432,7 @@ cob_check_subscript (const int i, const int max,
 							name, max);
 			}
 		}
-		cob_stop_run (1);
+		cob_hard_failure ();
 	}
 }
 
@@ -3383,7 +3453,7 @@ cob_check_ref_mod_detailed (const char *name, const int abend, const int zero_al
 			   name, offset, size);
 		}
 		if (abend) {
-			cob_stop_run (1);
+			cob_hard_failure ();
 		}
 	}
 
@@ -3398,7 +3468,7 @@ cob_check_ref_mod_detailed (const char *name, const int abend, const int zero_al
 			   name, length, size);
 		}
 		if (abend) {
-			cob_stop_run (1);
+			cob_hard_failure ();
 		}
 	}
 
@@ -3408,7 +3478,7 @@ cob_check_ref_mod_detailed (const char *name, const int abend, const int zero_al
 		cob_runtime_error (_("length of '%s' out of bounds: %d, starting at: %d, maximum: %d"),
 			name, length, offset, size);
 		if (abend) {
-			cob_stop_run (1);
+			cob_hard_failure ();
 		}
 	}
 }
@@ -3429,7 +3499,7 @@ cob_check_ref_mod_minimal (const char* name, const int offset, const int length)
 		cob_set_exception (COB_EC_BOUND_REF_MOD);
 		cob_runtime_error (_("offset of '%s' out of bounds: %d"),
 			name, offset);
-		cob_stop_run (1);
+		cob_hard_failure ();
 	}
 
 	/* Check length */
@@ -3437,7 +3507,7 @@ cob_check_ref_mod_minimal (const char* name, const int offset, const int length)
 		cob_set_exception (COB_EC_BOUND_REF_MOD);
 		cob_runtime_error (_("length of '%s' out of bounds: %d"),
 			name, length);
-		cob_stop_run (1);
+		cob_hard_failure ();
 	}
 }
 
@@ -3495,7 +3565,7 @@ cob_external_addr (const char *exname, const int exlength)
 		if (exlength > stored_length) {
 			cob_runtime_error (_ ("EXTERNAL item '%s' previously allocated with size %d, requested size is %d"),
 				exname, stored_length, exlength);
-			cob_stop_run (1);
+			cob_hard_failure ();
 		}
 		if (exlength < stored_length) {
 			cob_runtime_warning (_ ("EXTERNAL item '%s' previously allocated with size %d, requested size is %d"),
@@ -4819,8 +4889,10 @@ int
 cob_tidy (void)
 {
 	if (!cob_initialized) {
+		exit_code = -1;
 		return 1;
 	}
+	exit_code = 0;
 	call_exit_handlers_and_terminate ();
 	return 0;
 }
@@ -4832,9 +4904,8 @@ cob_sys_exit_proc (const void *dispo, const void *pptr)
 {
 	struct exit_handlerlist *hp;
 	struct exit_handlerlist *h;
-	unsigned char data_buff;
-	const unsigned char	*install_flag;
-	const unsigned char	*priority;
+	unsigned char	install_flag;
+	unsigned char	priority;
 	int			(**p)(void);
 
 	COB_CHK_PARMS (CBL_EXIT_PROC, 2);
@@ -4852,14 +4923,13 @@ cob_sys_exit_proc (const void *dispo, const void *pptr)
 			return -1;
 		}
 
-		install_flag = &data_buff;
-		memcpy (&priority, &disp, sizeof (unsigned char *));
+		priority = *(unsigned char *)dispo;
 		if (priority == 254) {
-			*install_flag = 1;
+			install_flag = 1;
 		} else if (priority == 255) {
-			*install_flag = 2;
+			install_flag = 2;
 		} else {
-			*install_flag = 3;
+			install_flag = 3;
 		}
 
 	} else {
@@ -4870,19 +4940,24 @@ cob_sys_exit_proc (const void *dispo, const void *pptr)
 			return -1;
 		}
 
-		install_flag = dispo;
-		if (*install_flag > 3) {
-			return -1;
-		}
-		if (*install_flag == 2 || *install_flag == 3) {
-			memcpy ((void*)(&priority), &pptr + sizeof (void *), sizeof (unsigned char *));
-			if (*install_flag == 3 && *priority > 127) {
-				data_buff = 64;
-				priority = &data_buff;
+		install_flag = *(unsigned char*)dispo;
+		switch (install_flag) {
+		case 0:
+			priority = 64;
+			break;
+		case 1:
+		case 2:
+			/* remove / query - no need to check priority */
+			break;
+		case 3:
+			/* set with explicit priority */
+			priority = *((unsigned char*)pptr + sizeof (void*));
+			if (priority > 127) {
+				priority = 64;
 			}
-		} else {
-			data_buff = 64;
-			priority = &data_buff;
+			break;
+		default:
+			return -1;
 		}
 #if 0
 	}
@@ -4893,15 +4968,24 @@ cob_sys_exit_proc (const void *dispo, const void *pptr)
 	/* Search handler, remove if not function 2  */
 	while (h != NULL) {
 		if (h->proc == *p) {
+			switch (install_flag) {
+			case 2:
 			/* Return priority of installed handler */
-			if (*install_flag == 2) {
 #if 0	/* TODO: take care of ACU variant: priority in return */
 				if (something) {
 					return priority;
 				}
 #endif
-				memcpy ((void *)(&priority), &h->priority, sizeof (unsigned char));
+				*((unsigned char*)pptr + sizeof (void*)) = h->priority;
 				return 0;
+			case 0:
+			case 3:
+				if (priority == h->priority) {
+					return -1;
+				}
+				break;
+			default:
+				break;
 			}
 			if (hp != NULL) {
 				hp->next = h->next;
@@ -4910,7 +4994,7 @@ cob_sys_exit_proc (const void *dispo, const void *pptr)
 			}
 			cob_free (h);
 			/* Remove handler --> done */
-			if (*install_flag == 1) {
+			if (install_flag == 1) {
 				return 0;
 			}
 			break;
@@ -4918,8 +5002,10 @@ cob_sys_exit_proc (const void *dispo, const void *pptr)
 		hp = h;
 		h = h->next;
 	}
-	if (*install_flag == 2) {
-#if 0	/* TODO: take care of ACU variant: priority 255 = not availabe */
+	if (install_flag == 1
+	 || install_flag == 2) {
+		/* deete or query priority with not available */
+#if 0	/* TODO: take care of ACU variant: priority 255 = not available */
 		if (something) {
 			return 255;
 		}
@@ -4929,7 +5015,7 @@ cob_sys_exit_proc (const void *dispo, const void *pptr)
 	h = cob_malloc (sizeof (struct exit_handlerlist));
 	h->next = exit_hdlrs;
 	h->proc = *p;
-	memcpy (&h->priority, priority, sizeof (unsigned char));
+	h->priority = priority;
 	exit_hdlrs = h;
 	return 0;
 }
@@ -5795,12 +5881,12 @@ cob_sys_getopt_long_long (void *so, void *lo, void *idx, const int long_only, vo
 		longoptions_root = (struct option*) cob_malloc (sizeof (struct option) * ((size_t)lo_amount + 1U));
 	} else {
 		cob_runtime_error (_("Call to CBL_GC_GETOPT with wrong longoption size."));
-		cob_stop_run (1);
+		cob_hard_failure ();
 	}
 
 	if (!COB_MODULE_PTR->cob_procedure_params[2]) {
 		cob_runtime_error (_("Call to CBL_GC_GETOPT with missing longind."));
-		cob_stop_run (1);
+		cob_hard_failure ();
 	}
 	longind = cob_get_int (COB_MODULE_PTR->cob_procedure_params[2]);
 
@@ -7310,14 +7396,36 @@ cob_runtime_hint (const char *fmt, ...)
 	fflush (stderr);
 }
 
+/* extra function for direct interaction with the debugger
+   when a new runtime error string is constructed */
+static void COB_NOINLINE 
+cob_setup_runtime_error_str (const char *fmt, va_list ap)
+{
+	char *p = runtime_err_str;
+	if (cob_source_file) {
+		if (cob_source_line) {
+			sprintf (runtime_err_str, "%s:%u: ",
+				cob_source_file, cob_source_line);
+		} else {
+			sprintf (runtime_err_str, "%s: ",
+				cob_source_file);
+		}
+		p = runtime_err_str + strlen (runtime_err_str);
+	}
+	vsprintf (p, fmt, ap);
+}
+
 void
 cob_runtime_error (const char *fmt, ...)
 {
 	struct handlerlist	*h;
-	char			*p;
 	va_list			ap;
 
 	int	more_error_procedures = 1;
+
+	va_start (ap, fmt);
+	cob_setup_runtime_error_str (fmt, ap);
+	va_end (ap);
 
 #if	1	/* RXWRXW - Exit screen */
 	/* Exit screen mode early */
@@ -7330,27 +7438,6 @@ cob_runtime_error (const char *fmt, ...)
 		unsigned int	err_source_line, err_module_statement = 0;
 		cob_module_ptr	err_module_pointer = NULL;
 		int call_params = cobglobptr->cob_call_params;
-
-		if (runtime_err_str) {
-			p = runtime_err_str;
-			if (cob_source_file) {
-				if (cob_source_line) {
-					sprintf (runtime_err_str, "%s:%u: ",
-						cob_source_file, cob_source_line);
-				} else {
-					sprintf (runtime_err_str, "%s: ",
-						cob_source_file);
-				}
-				p = runtime_err_str + strlen (runtime_err_str);
-			}
-			va_start (ap, fmt);
-			vsprintf (p, fmt, ap);
-			va_end (ap);
-		/* LCOV_EXCL_START */
-		} else {
-			runtime_err_str = (char *) "-";
-		}
-		/* LCOV_EXCL_STOP */
 
 		/* save error location */
 		err_source_file = cob_source_file;
@@ -7372,24 +7459,17 @@ cob_runtime_error (const char *fmt, ...)
 
 			if (more_error_procedures) {
 				/* fresh error buffer with guaranteed size */
-				char local_err_str[COB_ERRBUF_SIZE] = "-";
-				if (runtime_err_str != NULL) {
-					memcpy (&local_err_str, runtime_err_str, COB_ERRBUF_SIZE);
-				}
+				char local_err_str[COB_ERRBUF_SIZE];
+				memcpy (&local_err_str, runtime_err_str, COB_ERRBUF_SIZE);
 
 				/* ensure that error handlers set their own locations */
 				cob_source_file = NULL;
 				cob_source_line = 0;
 				cobglobptr->cob_call_params = 1;
 
-				more_error_procedures = current_handler (runtime_err_str);
+				more_error_procedures = current_handler (local_err_str);
 			}
 		}
-		/* LCOV_EXCL_START */
-		if (runtime_err_str[0] == '-' && runtime_err_str[1] == 0) {
-			runtime_err_str = NULL;
-		}
-		/* LCOV_EXCL_STOP */
 		hdlrs = NULL;
 		active_error_handler = 0;
 
@@ -7428,7 +7508,7 @@ cob_runtime_error (const char *fmt, ...)
 	/* setup reason for optional module dump */
 	if (cob_initialized && abort_reason[0] == 0) {
 #if 0	/* Is there a use in this message ?*/
-		fprintf (stderr, "\n");
+		fputc ('\n', stderr);
 		fprintf (stderr, _("abnormal termination - file contents may be incorrect"));
 #endif
 		va_start (ap, fmt);
@@ -7625,7 +7705,7 @@ cob_fatal_error (const enum cob_fatal_error fatal_error)
 		break;
 	/* LCOV_EXCL_STOP */
 	}
-	cob_stop_run (1);
+	cob_hard_failure ();
 }
 
 void
@@ -7912,7 +7992,7 @@ const char* libcob_version () {
 						version, __LIBCOB_VERSION_PATCHLEVEL);
 			cob_runtime_hint (_("%s has version %s.%d"), "libcob package",
 						PACKAGE_VERSION, PATCH_LEVEL);
-			cob_stop_run (1);
+			cob_hard_failure ();
 		}
 		/* LCOV_EXCL_STOP */
 		{
@@ -7924,7 +8004,7 @@ const char* libcob_version () {
 				cob_runtime_error (_("version mismatch"));
 				/* untranslated as it is very unlikely to happen */
 				cob_runtime_hint ("internal version check differs at %d\n", check);
-				cob_stop_run (1);
+				cob_hard_failure ();
 			}
 			/* LCOV_EXCL_STOP */
 		}
@@ -8515,6 +8595,24 @@ cob_common_init (void *setptr)
 #endif
 }
 
+/* normal call, but longjmp back on exit (1),
+   errors (-1), hard errors (-2) or signals (-3) */
+int
+cob_call_with_exception_check (const char *name, const int argc, void **argv)
+{	
+#ifndef COB_WITHOUT_JMP
+	int ret;
+	return_jmp_buffer_set = 1;
+	ret = setjmp (return_jmp_buf);
+	if (ret) {
+		return_jmp_buffer_set = 0;
+		return ret;
+	}
+#endif
+	exit_code = cob_call (name, argc, argv);
+	return 0;
+}
+
 void
 cob_init (const int argc, char **argv)
 {
@@ -8574,9 +8672,6 @@ cob_init (const int argc, char **argv)
 	cob_argc = argc;
 	cob_argv = argv;
 
-	/* Get emergency buffer */
-	runtime_err_str = cob_fast_malloc ((size_t)COB_ERRBUF_SIZE);
-
 	/* Get global structure */
 	cobglobptr = cob_malloc (sizeof (cob_global));
 
@@ -8632,7 +8727,7 @@ cob_init (const int argc, char **argv)
 
 	/* Load runtime configuration file */
 	if (unlikely (cob_load_config () < 0)) {
-		cob_stop_run (1);
+		cob_hard_failure ();
 	}
 
 	/* Copy COB_PHYSICAL_CANCEL from settings (internal) to global structure */
@@ -8665,8 +8760,9 @@ cob_init (const int argc, char **argv)
 
 	/* Set switches */
 	for (i = 0; i <= COB_SWITCH_MAX; ++i) {
-		sprintf (runtime_err_str, "COB_SWITCH_%d", i);
-		s = getenv (runtime_err_str);
+		char	switch_name[16];
+		sprintf (switch_name, "COB_SWITCH_%d", i);
+		s = getenv (switch_name);
 		if (s && (*s == '1' || strcasecmp (s, "ON") == 0)) {
 			cob_switch[i] = 1;
 		} else {
@@ -8679,9 +8775,10 @@ cob_init (const int argc, char **argv)
 #if defined (_WIN32)
 	/* note: only defined manual (needs additional link to advapi32): */
 #if defined (HAVE_GETUSERNAME)
-		unsigned long bsiz = COB_ERRBUF_SIZE;
-		if (GetUserName (runtime_err_str, &bsiz)) {
-			set_config_val_by_name (runtime_err_str, "username", "GetUserName()");
+		unsigned long bsiz = COB_MINI_MAX;
+		char user_name[COB_MINI_BUFF];
+		if (GetUserName (user_name, &bsiz)) {
+			set_config_val_by_name (user_name, "username", "GetUserName()");
 		}
 #endif
 #elif !defined(__OS400__)

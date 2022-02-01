@@ -493,6 +493,10 @@ COB_HIDDEN char		*cob_int_to_formatted_bytestring	(int, char*);
 COB_HIDDEN char		*cob_strcat		(char*, char*, int);
 COB_HIDDEN char		*cob_strjoin		(char**, int, char*);
 
+
+DECLNORET COB_HIDDEN void	cob_hard_failure (void) COB_A_NORETURN;
+DECLNORET COB_HIDDEN void	cob_hard_failure_internal (void) COB_A_NORETURN;
+
 COB_HIDDEN void	cob_set_field_to_uint	(cob_field *, const cob_u32_t);
 
 /* static inline of smaller helpers */

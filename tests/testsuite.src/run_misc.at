@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2021 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2022 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 ## Ron Norman
 ##
@@ -3514,6 +3514,221 @@ AT_DATA([caller.cob], [
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
 AT_CHECK([$COMPILE caller.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./caller], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([direct CALL in from C w/wo error])
+AT_KEYWORDS([runmisc cobcall cob_call cob_init cob_runtime_hint])
+
+# tests and showcases direct C calls, including:
+# as long as the module comes back the caller has control
+# and its return code; but not in the case for errors or STOP RUN
+
+AT_DATA([callee.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      callee.
+       DATA             DIVISION.
+       LINKAGE          SECTION.
+       01 P1            PIC X.
+       01 P2            PIC X(6).
+       PROCEDURE        DIVISION USING P1 OPTIONAL P2.
+           IF P2 NOT OMITTED
+              DISPLAY 'UNEXPECTED P2: ' P2
+              END-DISPLAY
+           END-IF
+           DISPLAY 'P1: ' P1 WITH NO ADVANCING.
+           GOBACK.
+])
+
+AT_DATA([callee2.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      callee2.
+       DATA             DIVISION.
+       LINKAGE          SECTION.
+       01 P             PIC 99.
+       PROCEDURE        DIVISION USING P.
+           DISPLAY 'P: ' P WITH NO ADVANCING.
+           STOP RUN RETURNING P.
+])
+
+AT_DATA([caller.c], [[
+#include <stdio.h>
+#include <libcob.h>
+
+#ifndef NULL
+#define NULL (void*)0
+#endif
+
+int
+main (int argc, char **argv)
+{
+   /* for storing COBOL return code */
+   int cob_ret;
+
+   /* initialize parameters */
+   void *cob_argv[2];
+
+   cob_argv[0] = argv[2];
+   cob_argv[1] = NULL;
+
+   /* initialize the COBOL run-time library */
+   cob_init(argc, argv);
+
+   /* call COBOL program */
+   cob_ret = cob_call (argv[1], 2, cob_argv);
+
+   cob_runtime_hint("program exited normally, "
+       "without STOP RUN with status %d", cob_ret);
+
+   /* Clean up and terminate - This does not return */
+   cob_stop_run (cob_ret);
+}
+]])
+
+AT_CHECK([$COMPILE caller.c], [0], [], [])
+AT_CHECK([$COMPILE_MODULE callee.cob callee2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./caller callee A], [0], [P1: A],
+[note: program exited normally, without STOP RUN with status 0
+])
+AT_CHECK([$COBCRUN_DIRECT ./caller callee2 42], [42], [P: 42], [])
+AT_CHECK([$COBCRUN_DIRECT ./caller notthere], [1], [],
+[libcob: error: module 'notthere' not found
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([direct CALL in from C w/wo error; no exit])
+AT_KEYWORDS([runmisc cobcall cob_call cob_call_with_exception_check cob_runtime_hint])
+
+# tests and showcases the "functional call" of GnuCOBOL modules;
+# in every case (plain goback, STOP RUN, error) the caller gets control,
+# but the actual return / error code has to be queried with an extra call
+
+AT_DATA([callee.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      callee.
+       DATA             DIVISION.
+       LINKAGE          SECTION.
+       01 P1            PIC X.
+       01 RC            PIC 99.
+       01 P2            PIC X(6).
+       PROCEDURE        DIVISION USING P1 RC OPTIONAL P2.
+           IF P2 NOT OMITTED
+              DISPLAY 'UNEXPECTED P2: ' P2.
+           DISPLAY 'P1: ' P1 WITH NO ADVANCING
+           GOBACK RETURNING RC.
+])
+
+AT_DATA([callee2.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      callee2.
+       PROCEDURE        DIVISION.
+           DISPLAY 'STOP WITH 2' WITH NO ADVANCING
+           STOP RUN RETURNING 2.
+])
+
+AT_DATA([buggy.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      buggy.
+       DATA             DIVISION.
+       LOCAL-STORAGE    SECTION.
+       77 VAR           PIC X.
+       77 VPOS          PIC 9 VALUE 2.
+       PROCEDURE        DIVISION.
+           DISPLAY 'out of bounds - refmod following' WITH NO ADVANCING
+           DISPLAY VAR (VPOS:)
+           DISPLAY 'AFTER ERROR'
+           GOBACK.
+])
+
+AT_DATA([caller.c], [[
+#include <stdio.h>
+#include <libcob.h>
+
+#ifndef NULL
+#define NULL (void*)0
+#endif
+
+int
+main (int argc, char **argv)
+{
+   /* for storing libcob return state */
+   int cob_ret;
+
+   /* initialize parameters */
+   void *cob_argv[3];
+
+   char *p1 = "A";
+   cob_argv[0] = p1;
+   cob_argv[1] = argv[2];
+   cob_argv[2] = NULL;
+
+   /* initialize the COBOL run-time library */
+   cob_init (argc, argv);
+
+   /* call COBOL program */
+   cob_ret = cob_call_with_exception_check (argv[1], 2, cob_argv);
+
+   switch (cob_ret) {
+   case 0:  /* program coming back */
+
+      /* Clean up and terminate runtime */
+      cob_runtime_hint("program exited with return code %d",
+         cob_last_exit_code ());
+      cob_tidy ();
+      break;
+
+   case 1:  /* normal exit */
+      cob_runtime_hint("STOP RUN with return code %d",
+         cob_last_exit_code ());
+      break;
+
+   case -1:  /* error exit */
+      cob_runtime_hint("error exit with return code %d and error \"%s\"",
+         cob_last_exit_code (), cob_last_runtime_error ());
+      break;
+
+   case -2:  /* hard error exit */
+      cob_runtime_hint("hard error exit with return code %d and error \"%s\"",
+         cob_last_exit_code (), cob_last_runtime_error ());
+      break;
+
+   case -3:  /* signal handler  exit */
+      cob_runtime_hint("signal handler exit with signal %d and error \"%s\"",
+         cob_last_exit_code (), cob_last_runtime_error ());
+      break;
+
+   default:
+      cob_runtime_hint("unexpected return from cob_call_with_exception_check, "
+         "last exit code %d, last error \"%s\"",
+         cob_last_exit_code (), cob_last_runtime_error ());
+      break;
+   }
+   return 0;
+}
+]])
+
+AT_CHECK([$COMPILE caller.c], [0], [], [])
+AT_CHECK([$COMPILE_MODULE callee.cob callee2.cob buggy.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./caller callee 00], [0], [P1: A],
+[note: program exited with return code 0
+])
+AT_CHECK([$COBCRUN_DIRECT ./caller callee 42], [0], [P1: A],
+[note: program exited with return code 42
+])
+AT_CHECK([$COBCRUN_DIRECT ./caller callee2], [0], [STOP WITH 2],
+[note: STOP RUN with return code 2
+])
+AT_CHECK([$COBCRUN_DIRECT ./caller buggy], [0], [out of bounds - refmod following],
+[libcob: buggy.cob:10: error: offset of 'VAR' out of bounds: 2, maximum: 1
+note: error exit with return code -1 and error "buggy.cob:10: offset of 'VAR' out of bounds: 2, maximum: 1"
+])
+AT_CHECK([$COBCRUN_DIRECT ./caller notthere], [0], [],
+[libcob: error: module 'notthere' not found
+note: error exit with return code -1 and error "module 'notthere' not found"
+])
 
 AT_CLEANUP
 

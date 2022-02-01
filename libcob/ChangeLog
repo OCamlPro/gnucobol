@@ -1,4 +1,25 @@
 
+2022-01-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* call.c (set_resolve_error): distinguish between exceptions
+	  COB_EC_PROGRAM_NOT_FOUND and COB_EC_FUNCTION_NOT_FOUND
+	* fileio.c (indexed_open, join_environment) [WITH_DB]: return
+	  file sharing error if BDB environment cannot be joined
+	* fileio.c (cob_sys_check_file_exist, cob_get_sort_tempfile): return
+	  appropriate error code on errors instead of runtime exit
+	* screenio.c: preparations to later raise exceptions in error cases
+	* common.c (cob_sys_exit_proc): fixes to set / query priority and
+	  return code in case of errors as "per documentation"
+	* common.c, coblocal.h: added cob_hard_failure + cob_hard_failure_internal
+	* call.c, numeric.c, fileio.c, screenio.c: use of cob_hard_failure and
+	  cob_hard_failure_internal instead of internal STOP RUN
+	* common.c: changed runtime error buffer to be static and set
+	  first via new internal function cob_setup_runtime_error_str
+	  when runtime errors occur
+	* common.c (cob_call_with_exception_check, cob_last_exit_code,
+	  cob_last_runtime_error), common.h: added new C API functions that uses
+	  setjmp/longjmp to allow COBOL calls without possible process interruption
+
 2022-01-03  Simon Sobisch <simonsobisch@gnu.org>
 
 	* coblocal.h, common.h: moved some internal limits to coblocal.h

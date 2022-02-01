@@ -66,7 +66,7 @@ together with a designated C compiler and linker.
 This manual corresponds to GnuCOBOL @value{VERSION}.
 @page
 @vskip 0pt plus 1filll
-Copyright @copyright{} 2002-2012, 2014-2020 Free Software Foundation, Inc.@*
+Copyright @copyright{} 2002-2012, 2014-2022 Free Software Foundation, Inc.@*
 Written by Keisuke Nishida, Roger While, Brian Tiffin, Simon Sobisch.
 
 @insertcopying
@@ -150,6 +150,9 @@ Optimize
 Debug
 
 * Debug options::               Debug options
+* Debugger::                    Source Level Debugger
+* Memory Dumps::                Memory Dumps
+* Trace::                       Tracing execution
 
 Extensions
 
@@ -163,7 +166,7 @@ Extensions
 
 System Routines
 
-* CBL_GC_GETOPT                 GETOPT for Cobol
+* CBL_GC_GETOPT                 GETOPT for COBOL
 * CBL_GC_HOSTED                 Access to C hosted variables
 * CBL_GC_NANOSLEEP              Sleep for nanoseconds
 * CBL_GC_FORK                   Fork the current COBOL process to a new one
@@ -203,8 +206,8 @@ This is a sample program that displays ``Hello, world!'':
        IDENTIFICATION DIVISION.
        PROGRAM-ID. hello.
        PROCEDURE DIVISION.
-       DISPLAY "Hello, world!".
-       STOP RUN.
+           DISPLAY "Hello, world!".
+           STOP RUN.
 ----------------------------------------
 @end example
 
@@ -464,13 +467,10 @@ negate @option{-Werror} for specific warnings; for example
 @option{-Wno-error=obsolete} makes @option{-Wobsolete} warnings not be errors,
 even when @option{-Werror} is in effect.
 
-@ignore
-@comment{TODO - add in cobc this way}, see FR #386
 The warning message for each controllable warning includes the option that controls
 the warning. That option can then be used with @option{-Werror=} and
 @option{-Wno-error=} as described above. (Printing of the option in the warning
 message can be disabled using the @option{-fno-diagnostics-show-option} flag.)
-@end ignore
 
 Note that specifying @option{-Werror=foo} automatically implies @option{-Wfoo}.
 However, @option{-Wno-error=foo} does not imply anything.
@@ -801,11 +801,11 @@ Enable/disable specified exception checks,
 @pxref{Appendix F, Exception Names, Exception Names}.
 
 @item -fsource-location
-Generate source location code (implied by @option{-debug}, @option{-g} and
-@option{-fec}); @option{-debug} implies @option{-fec=ALL}.
+Generate source location code (implied by @option{--debug}, @option{-g} and
+@option{-fec}); @option{--debug} implies @option{-fec=ALL}.
 
 @item -fstack-check
-Enable @code{PERFORM} stack checking (implied by @option{-debug} or @option{-g}).
+Enable @code{PERFORM} stack checking (implied by @option{--debug} or @option{-g}).
 
 @item -ftrace
 Generate trace code (log executed procedures, if tracing is enabled).
@@ -1072,8 +1072,9 @@ Include @file{libcob.h} in your C program and call @code{cob_init} before
 using any COBOL module.
 Do a cleanup afterwards, either by calling @code{cob_stop_run} (if your
 program should terminate) or by calling @code{cob_tidy} (if your program
-should execute further on without any more COBOL calls, calling both
-functions in this sequence can be done multiple times).
+should execute further on without any more COBOL calls).
+Calling @code{cob_init}, one or several GnuCOBOL modules and then @code{cob_tidy}
+in this sequence can be done multiple times).
 
 @example
 #include <libcob.h>
@@ -1098,17 +1099,35 @@ main (int argc, char **argv)
 You can write @code{cobc_init(0, NULL);} if you do not want to pass
 command line arguments to COBOL.
 
-You can compile your C program as follows:
+The easiest option to compile and/or link your C program is by passing
+the work to @code{cobc} as follows:
 
 @example
-cc -c @`{}cob-config --cflags@`{} main.c
+cobc -x main.c
 @end example
 
-The compiled object must be linked with libcob as follows:
+possibly running in verbose mode to see what cobc does:
 
 @example
-cc -o main main.o @`{}cob-config --libs@`{}
+cobc -x --verbose main.c   # using -x -v or -xv would be also possible
 @end example
+
+or with several steps:
+
+@example
+cobc -c main.c
+cobc -x main.o
+@end example
+
+As an alternative you can use the @code{cob-config} tool to get the necessary
+options to be passed to the C compiler / linker.
+
+@example
+cc -c @`{}cob-config --cflags@`{} main.c    # compile only
+cc -o main main.o @`{}cob-config --libs@`{} # link only
+
+@end example
+
 
 @node Static C to COBOL
 @subsection Static linking with COBOL programs
@@ -1126,7 +1145,7 @@ Let's call the following COBOL module from a C program:
        01 world PIC X(6).
        PROCEDURE DIVISION USING hello world.
            DISPLAY hello world.
-           EXIT PROGRAM.
+           GOBACK.
 ----------------------------------------
 @end example
 
@@ -1168,7 +1187,15 @@ main()
 ----------------------------------------
 @end example
 
-Compile these programs as follows:
+Compile and run these programs as follows:
+
+@example
+$ cobc -x hello.c say.cob
+$ ./hello
+Hello, world!
+@end example
+
+or, more split and directly using the C compiler:
 
 @example
 $ cc -c `cob-config --cflags` hello.c
@@ -1177,6 +1204,11 @@ $ cobc -x -o hello hello.o say.o
 $ ./hello
 Hello, world!
 @end example
+
+Note: The biggest benefits of static linking are that all programs are verified to
+be available in the resulting binary. Furthermore there is a slightly performance
+benefit in this type of CALL (not visible for "normal" programs).
+
 
 @node Dynamic C to COBOL
 @subsection Dynamic linking with COBOL programs
@@ -1223,16 +1255,119 @@ int main()
 ----------------------------------------
 @end example
 
-Compile these programs as follows:
+Compile and run these programs as follows:
 
 @example
-$ cc -c `cob-config --cflags` hello-dynamic.c
-$ cobc -x -o hello hello-dynamic.o
+$ cobc -x -o hello hello-dynamic.c
 $ cobc -m say.cob
 $ export COB_LIBRARY_PATH=.
 $ ./hello
 Hello, world!
 @end example
+
+The check of the module load as written above can be directly done in
+libcob as follows:
+
+@example
+---- hello-dynamic2.c ------------------
+#include <libcob.h>
+
+int main()
+@{
+  int ret;
+  char hello[8] = "Hello, ";
+  char world[7] = "world!";
+
+  void *cob_argv[2];
+  cob_argv[0] = hello;
+  cob_argv[1] = world;
+
+  /* initialize the COBOL run-time library */
+  cob_init(0, NULL);
+
+  /* do a CALL, expecting the module to exist,
+     otherwise exiting with an error. */
+  ret = cob_call ("say", 2, cob_argv);
+
+  /* ...and exit with the return code. */
+  cob_stop_run(ret);
+@}
+----------------------------------------
+@end example
+
+
+In any case be aware that all errors that happen within COBOL will exit your
+program, as same as a @code{STOP RUN} will do.
+
+Depending on the application you possibly want to register C signal handlers;
+error and/or exit handlers in C and/or COBOL to do cleanups, logging or anything else.
+
+There is one way to handle all these scenarios with a call, too, using 
+@code{cob_call_with_exception_check} instead of @code{cob_call} as follows:
+
+@example
+---- hello-dynamic3.c ------------------
+#include <libcob.h>
+
+int main()
+@{
+  int ret;
+  char hello[8] = "Hello, ";
+  char world[7] = "world!";
+
+  void *cob_argv[2];
+  cob_argv[0] = hello;
+  cob_argv[1] = world;
+
+  /* initialize the COBOL run-time library */
+  cob_init(0, NULL);
+
+  /* do a CALL, catching all possible results, */
+  ret = cob_call_with_exception_check ("say", 2, cob_argv);
+
+  switch (ret) @{
+  case 0:  /* program coming back */
+
+    /* Clean up and terminate runtime */
+    cob_runtime_hint("program exited with return code %d",
+       cob_last_exit_code ());
+    cob_tidy ();
+    break;
+
+  case 1:  /* normal exit */
+    cob_runtime_hint("STOP RUN with return code %d",
+       cob_last_exit_code ());
+    break;
+
+  case -1:  /* error exit */
+    cob_runtime_hint("error exit with return code %d and error \"%s\"",
+       cob_last_exit_code (), cob_last_runtime_error ());
+    break;
+
+  case -2:  /* hard error exit */
+    cob_runtime_hint("hard error exit with return code %d and error \"%s\"",
+       cob_last_exit_code (), cob_last_runtime_error ());
+    break;
+
+  case -3:  /* signal handler  exit */
+    cob_runtime_hint("signal handler exit with signal %d and error \"%s\"",
+       cob_last_exit_code (), cob_last_runtime_error ());
+    break;
+
+  default:
+    cob_runtime_hint("unexpected return from cob_call_with_exception_check,"
+       " last exit code %d, last error \"%s\"",
+       cob_last_exit_code (), cob_last_runtime_error ());
+    break;
+  @}
+
+  /* ...and exit with zero if no error happened */
+  exit(ret != 0 && ret != 1);
+@}
+----------------------------------------
+@end example
+
+
 
 @node Static COBOL to C
 @subsection Static linking with C programs
@@ -1279,6 +1414,14 @@ You can call this function in the same way you call COBOL programs:
 Compile these programs as follows:
 
 @example
+$ cobc -x -o hello -static hello.cob say.c
+$ ./hello
+Hello, world!
+@end example
+
+or separate:
+
+@example
 $ cc -c say.c
 $ cobc -c -static -x hello.cob
 $ cobc -x -o hello hello.o say.o
@@ -1289,8 +1432,18 @@ Hello, world!
 @node Dynamic COBOL to C
 @subsection Dynamic linking with C programs
 
-You can create a dynamically-linked module from a C program by passing an
-option @code{-shared} to the C compiler:
+You can create a dynamically-linked module from a C program by compiling
+it with cobc ...
+
+@example
+$ cobc -m say.c
+$ cobc -x hello.cob
+$ export COB_LIBRARY_PATH=.
+$ ./hello
+Hello, world!
+@end example
+
+or with most C compilers by passing option @code{-shared} to the C compiler:
 
 @example
 $ cc -shared -o say.so say.c
@@ -1299,6 +1452,10 @@ $ export COB_LIBRARY_PATH=.
 $ ./hello
 Hello, world!
 @end example
+
+Mind that for COBOL to be able to load the module via CALL the name of the binary
+must either be identical to the CALL name or the binary containing the entry-point
+must have been loaded before (by a previous call or COB_PRE_LOAD).
 
 @node Interface functions for C
 @subsection Redirecting output to a (FILE *)
@@ -1436,15 +1593,48 @@ In addition, setting the option @code{binary-size} to @code{2-4-8} or
 
 @menu
 * Debug options::               Debug options
+* Debugger::                    Source Level Debugger
+* Memory Dumps::                Memory Dumps
+* Trace::                       Tracing execution
 @end menu
 
 @node Debug options
 @section Debug options
 
-The compiler option @option{-debug} can be used during the development
-of your programs.  It enables all run-time error checking, such as
+The compiler option @option{--debug} can be used, especially during the
+development of your programs.  It enables all run-time error checking, such as
 subscript boundary checks and numeric data checks, and displays
 run-time errors with source locations.
+Exceptions may also be enabled/disabled separately.
+@xref{Debug switches, Debug switches,,,}.
+
+@node Debugger
+@section Source Level Debugger
+Compiling with @option{-g} enables several kinds of debug information, allowing
+you to run your programs with the system debugger.
+This allows you to step through the COBOL code and inspect the call stack,
+but direct access to the COBOL variables is not available.
+Different GDB frontends exist that provide access the COBOL variables directly.
+
+Compiling with debug information also enables several tools to profile the code
+or test it, for example against memory violations.
+
+@comment Much more too add here, at least leaving teasers...
+
+@node Memory Dumps
+@section Memory Dumps
+Memory Dumps can be enabled/disabled at runtime and will by default
+be executed in case of runtime errors or handling of different signals.
+
+They can also be requested via C interface.
+
+Only modules that are explicit enabled for dump code will output their data.
+
+@node Trace
+@section Tracing execution
+Tracing program execution, either in general or in specific parts can be enabled.
+
+
 
 @exampleindent 0
 
@@ -1970,7 +2160,7 @@ For a complete list of supported system routines,
 @pxref{Appendix D, ,System routines}.
 
 @menu
-* CBL_GC_GETOPT::               GETOPT for Cobol
+* CBL_GC_GETOPT::               GETOPT for COBOL
 * CBL_GC_HOSTED::               Access to C hosted variables
 * CBL_GC_NANOSLEEP::            Sleep for nanoseconds
 * CBL_GC_FORK::                 Fork the current COBOL process to a new one

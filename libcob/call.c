@@ -274,10 +274,14 @@ static const unsigned char	pvalid_char[] =
 /* Local functions */
 
 static void
-set_resolve_error (void)
+set_resolve_error (int module_type)
 {
 	resolve_error = resolve_error_buff;
-	cob_set_exception (COB_EC_PROGRAM_NOT_FOUND);
+	if (module_type == COB_MODULE_TYPE_PROGRAM) {
+		cob_set_exception (COB_EC_PROGRAM_NOT_FOUND);
+	} else {
+		cob_set_exception (COB_EC_FUNCTION_NOT_FOUND);
+	}
 }
 
 static int last_entry_is_working_directory (const char *buff, const char *pstr)
@@ -811,7 +815,7 @@ cob_encode_program_id (const unsigned char *const name,
 
 static void *
 cob_resolve_internal (const char *name, const char *dirent,
-	const int fold_case)
+	const int fold_case, int module_type)
 {
 	const unsigned char	*s;
 	void			*func;
@@ -933,7 +937,7 @@ cob_resolve_internal (const char *name, const char *dirent,
 		if (access (call_filename_buff, R_OK) != 0) {
 			snprintf (resolve_error_buff, (size_t)CALL_BUFF_MAX,
 				  "module '%s' not found", name);
-			set_resolve_error ();
+			set_resolve_error (module_type);
 			return NULL;
 		}
 		handle = lt_dlopen (call_filename_buff);
@@ -950,7 +954,7 @@ cob_resolve_internal (const char *name, const char *dirent,
 		}
 		snprintf (resolve_error_buff, (size_t)CALL_BUFF_MAX,
 			  "entry point '%s' not found", (const char *)s);
-		set_resolve_error ();
+		set_resolve_error (module_type);
 		return NULL;
 	}
 	for (i = 0; i < resolve_size; ++i) {
@@ -979,14 +983,14 @@ cob_resolve_internal (const char *name, const char *dirent,
 			}
 			snprintf (resolve_error_buff, (size_t)CALL_BUFF_MAX,
 				  "entry point '%s' not found", (const char *)s);
-			set_resolve_error ();
+			set_resolve_error (module_type);
 			return NULL;
 		}
 	}
 #endif
 	snprintf (resolve_error_buff, (size_t)CALL_BUFF_MAX,
 		  "module '%s' not found", name);
-	set_resolve_error ();
+	set_resolve_error (module_type);
 	return NULL;
 }
 
@@ -1065,7 +1069,7 @@ void
 cob_call_error (void)
 {
 	cob_runtime_error ("%s", cob_resolve_error ());
-	cob_stop_run (EXIT_FAILURE);
+	cob_hard_failure ();
 }
 
 void
@@ -1099,7 +1103,7 @@ cob_resolve (const char *name)
 	char	*dirent;
 
 	entry = cob_chk_call_path (name, &dirent);
-	p = cob_resolve_internal (entry, dirent, 0);
+	p = cob_resolve_internal (entry, dirent, 0, COB_MODULE_TYPE_PROGRAM);
 	if (dirent) {
 		cob_free (dirent);
 	}
@@ -1114,7 +1118,7 @@ cob_resolve_cobol (const char *name, const int fold_case, const int errind)
 	char	*dirent;
 
 	entry = cob_chk_call_path (name, &dirent);
-	p = cob_resolve_internal (entry, dirent, fold_case);
+	p = cob_resolve_internal (entry, dirent, fold_case, COB_MODULE_TYPE_PROGRAM);
 	if (dirent) {
 		cob_free (dirent);
 	}
@@ -1132,10 +1136,11 @@ cob_resolve_func (const char *name)
 {
 	void	*p;
 
-	p = cob_resolve_internal (name, NULL, 0);
+	p = cob_resolve_internal (name, NULL, 0, COB_MODULE_TYPE_FUNCTION);
 	if (unlikely(!p)) {
+		/* Note: exception raised above */
 		cob_runtime_error (_("user-defined FUNCTION '%s' not found"), name);
-		cob_stop_run (EXIT_FAILURE);
+		cob_hard_failure ();
 	}
 	return p;
 }
@@ -1196,7 +1201,7 @@ cob_call_field (const cob_field *f, const struct cob_call_struct *cs,
 		}
 	}
 
-	p = cob_resolve_internal (entry, dirent, fold_case);
+	p = cob_resolve_internal (entry, dirent, fold_case, COB_MODULE_TYPE_PROGRAM);
 	if (dirent) {
 		cob_free (dirent);
 	}
@@ -1225,7 +1230,7 @@ cob_cancel (const char *name)
 	}
 	if (unlikely(!name)) {
 		cob_runtime_error (_("NULL parameter passed to '%s'"), "cob_cancel");
-		cob_stop_run (EXIT_FAILURE);
+		cob_hard_failure ();
 	}
 	/* LCOV_EXCL_STOP */
 	entry = cob_chk_dirp (name);
@@ -1298,13 +1303,13 @@ cob_call (const char *name, const int argc, void **argv)
 	if (unlikely(!cobglobptr)) {
 		cob_fatal_error (COB_FERROR_INITIALIZED);
 	}
-	if (argc < 0 || argc > MAX_CALL_FIELD_PARAMS) {
-		cob_runtime_error (_("invalid number of arguments passed to '%s'"), "cob_call");
-		cob_stop_run (EXIT_FAILURE);
-	}
 	if (unlikely(!name)) {
 		cob_runtime_error (_("NULL parameter passed to '%s'"), "cob_call");
-		cob_stop_run (EXIT_FAILURE);
+		cob_hard_failure ();
+	}
+	if (argc < 0 || argc > MAX_CALL_FIELD_PARAMS) {
+		cob_runtime_error (_("invalid number of arguments passed to '%s'"), "cob_call");
+		cob_hard_failure ();
 	}
 	/* LCOV_EXCL_STOP */
 	unifunc.funcvoid = cob_resolve_cobol (name, 0, 1);
@@ -1412,6 +1417,7 @@ cob_func (const char *name, const int argc, void **argv)
 }
 
 #ifndef COB_WITHOUT_JMP
+/* save jump structure, normally called by cobsetjmp which wraps it into setjmp */
 void *
 cob_savenv (struct cobjmp_buf *jbuf)
 {
@@ -1421,11 +1427,11 @@ cob_savenv (struct cobjmp_buf *jbuf)
 	}
 	if (unlikely(!jbuf)) {
 		cob_runtime_error (_("NULL parameter passed to '%s'"), "cob_savenv");
-		cob_stop_run (EXIT_FAILURE);
+		cob_hard_failure ();
 	}
 	if (cob_jmp_primed) {
 		cob_runtime_error (_("multiple call to 'cob_setjmp'"));
-		cob_stop_run (EXIT_FAILURE);
+		cob_hard_failure ();
 	}
 	/* LCOV_EXCL_STOP */
 	cob_jmp_primed = 1;
@@ -1448,11 +1454,11 @@ cob_longjmp (struct cobjmp_buf *jbuf)
 	}
 	if (unlikely(!jbuf)) {
 		cob_runtime_error (_("NULL parameter passed to '%s'"), "cob_longjmp");
-		cob_stop_run (EXIT_FAILURE);
+		cob_hard_failure ();
 	}
 	if (!cob_jmp_primed) {
 		cob_runtime_error (_("call to 'cob_longjmp' with no prior 'cob_setjmp'"));
-		cob_stop_run (EXIT_FAILURE);
+		cob_hard_failure ();
 	}
 	/* LCOV_EXCL_STOP */
 	cob_jmp_primed = 0;

@@ -784,8 +784,7 @@ bdb_cmpkey (cob_file *f, unsigned char *keyarea, unsigned char *record, int idx,
 		partlen = bdb_keylen(f, idx);
 		if (partlen <= 0) {
 			cob_runtime_error (_("invalid internal call of %s"), "bdb_cmpkey");
-			cob_runtime_error (_("Please report this!"));
-			cob_stop_run (1);
+			cob_hard_failure_internal ();
 		}
 	}
 	if (f->keys[idx].count_components > 0) {
@@ -2829,7 +2828,8 @@ bdb_msgcall_set (DB_ENV *dbe, const char *err)
 	COB_UNUSED (dbe);
 
 	cob_runtime_error (_("BDB error: %s"), err);
-	cob_stop_run (1);
+	/* FIXME: check if possible to be passed to original caller returning status 39 */
+	cob_hard_failure ()
 }
 
 static void
@@ -2838,24 +2838,22 @@ bdb_errcall_set (DB_ENV *dbe, const char *prefix, const char *err)
 	COB_UNUSED (dbe);
 
 	cob_runtime_error (_("BDB error: %s %s"), prefix, err);
-	cob_stop_run (1);
+	/* FIXME: check if possible to be passed to original caller returning status 39 */
+	cob_hard_failure ()
 }
 #endif
 
-static void
+static int
 join_environment (void)
 {
 	cob_u32_t	flags;
 	int		ret;
 
-	if (cobsetptr->bdb_home == NULL) {
-		return;
-	}
 	ret = db_env_create (&bdb_env, 0);
 	if (ret) {
 		cob_runtime_error (_("cannot join BDB environment (%s), error: %d %s"),
 				   "env_create", ret, db_strerror (ret));
-		cob_stop_run (1);
+		return ret;
 	}
 #if	0	/* RXWRXW - BDB msg */
 	bdb_env->set_errcall (bdb_env, bdb_errcall_set);
@@ -2877,12 +2875,13 @@ join_environment (void)
 				   "env->open", ret, db_strerror (ret));
 		bdb_env->close (bdb_env, 0);
 		bdb_env = NULL;
-		cob_stop_run (1);
+		return ret;
 	}
 #if (DB_VERSION_MAJOR > 4) || ((DB_VERSION_MAJOR == 4) && (DB_VERSION_MINOR > 1))
 	bdb_env->get_data_dirs (bdb_env, &bdb_data_dir);
 #endif
 	bdb_env->lock_id (bdb_env, &bdb_lock_id);
+	return 0;
 }
 
 static void
@@ -3232,8 +3231,7 @@ indexed_start_internal (cob_file *f, const int cond, cob_field *key,
 			int keylen = bdb_keylen (f, p->key_index);
 			if (partlen <= 0) {
 				cob_runtime_error (_("invalid internal call of %s"), "indexed_start_internal/bdb_keylen");
-				cob_runtime_error (_("Please report this!"));
-				cob_stop_run (1);
+				cob_hard_failure_internal ();
 			}
 			memcpy (p->last_readkey[p->key_index],
 				    p->temp_key, keylen);
@@ -3749,7 +3747,13 @@ dobuild:
 	COB_UNUSED (sharing);
 	if (cobsetptr->bdb_home != NULL
 	 && bdb_env == NULL) {		/* Join BDB, on first OPEN of INDEXED file */
-		join_environment ();
+		if (join_environment ()) {
+#if 0	/* better return a permanent or sharing error */
+			cob_hard_failure ();
+#else
+			return COB_STATUS_61_FILE_SHARING;
+#endif
+		}
 	}
 	cob_chk_file_mapping ();
 
@@ -6423,7 +6427,12 @@ cob_sys_check_file_exist (unsigned char *file_name, unsigned char *file_info)
 	}
 	if (COB_MODULE_PTR->cob_procedure_params[1]->size < 16U) {
 		cob_runtime_error (_("'%s' - File detail area is too short"), "CBL_CHECK_FILE_EXIST");
-		cob_stop_run (1);
+#if 0 /* should be handled by the caller,
+		TODO: check for better return code (or the one from MF/ACU) */
+		cob_hard_failure ();
+#else
+		return -1;
+#endif
 	}
 
 	{
@@ -6692,8 +6701,8 @@ cob_sys_file_info (unsigned char *file_name, unsigned char *file_info)
 
 	COB_CHK_PARMS (C$FILEINFO, 2);
 
-	if (cobglobptr->cob_call_params < 2 ||
-	    !COB_MODULE_PTR->cob_procedure_params[0]) {
+	if (cobglobptr->cob_call_params < 2
+	 || !COB_MODULE_PTR->cob_procedure_params[0]) {
 		return 128;
 	}
 	if (!COB_MODULE_PTR->cob_procedure_params[1]) {
@@ -6701,7 +6710,12 @@ cob_sys_file_info (unsigned char *file_name, unsigned char *file_info)
 	}
 	if (COB_MODULE_PTR->cob_procedure_params[1]->size < 16U) {
 		cob_runtime_error (_("'%s' - File detail area is too short"), "C$FILEINFO");
-		cob_stop_run (1);
+#if 0 /* should be handled by the caller,
+		TODO: check for better return code (or the one from ACU) */
+		cob_hard_failure ();
+#else
+		return 128;
+#endif
 	}
 
 	fn = cob_str_from_fld (COB_MODULE_PTR->cob_procedure_params[0]);
@@ -6922,10 +6936,12 @@ cob_get_sort_tempfile (struct cobsort *hp, const int n)
 {
 	if (hp->file[n].fp == NULL) {
 		hp->file[n].fp = cob_create_tmpfile (NULL);
+#if 0 /* error to be handled by the caller */
 		if (hp->file[n].fp == NULL) {
 			cob_runtime_error (_("SORT is unable to acquire temporary file"));
-			cob_stop_run (1);
+			cob_hard_failure ();
 		}
+#endif
 	} else {
 		rewind (hp->file[n].fp);
 	}
@@ -8841,8 +8857,7 @@ cob_file_fcd_adrs (cob_file *f, void *pfcd)
 	FCD3	*fcd = NULL;
 	if (f == NULL) {
 		cob_runtime_error (_("invalid internal call of %s"), "cob_file_fcd_adrs");
-		cob_runtime_error (_("Please report this!"));
-		cob_stop_run (1);
+		cob_hard_failure_internal ();
 	}
 	if (f->fcd == NULL) {
 		f->fcd = find_fcd (f);
@@ -8868,8 +8883,7 @@ cob_file_fcdkey_adrs (cob_file *f, void *pkey)
 	FCD3	*fcd = NULL;
 	if (f == NULL) {
 		cob_runtime_error (_("invalid internal call of %s"), "cob_file_fcdkey_adrs");
-		cob_runtime_error (_("Please report this!"));
-		cob_stop_run (1);
+		cob_hard_failure_internal ();
 	}
 	cob_file_fcd_adrs (f, &fcd);
 	memcpy (pkey, &f->fcd->kdbPtr, sizeof(void *));

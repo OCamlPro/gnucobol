@@ -1422,7 +1422,7 @@ cob_report_terminate (cob_report *r, int ctl)
 #if 0	/* TODO: if not enabled: ignore, if enabled and PROPAGATE ON (or TRY) active: handle */
 		return 0;
 #else
-		cob_stop_run (1);
+		cob_hard_failure ();
 #endif
 	}
 	if (r->first_generate) {
@@ -1567,7 +1567,7 @@ cob_report_generate (cob_report *r, cob_report_line *l, int ctl)
 #if 0	/* TODO: if not enabled: ignore, if enabled and PROPAGATE ON (or TRY) active: handle */
 		return 0;
 #else
-		cob_stop_run (1);
+		cob_hard_failure ();
 #endif
 	}
 

@@ -209,7 +209,7 @@
 	  single difference to the new function get_handler_type_from_statement
 	  which is a bit slower but reduces duplications
 	* reserved.c, parser.y: added parsing for RAISING clause, combining
-	  identical code forEXIT and GOBACK to (goback_exit_body)
+	  identical code for EXIT and GOBACK to (goback_exit_body)
 	* reserved.c, parser.y, scanner.l, tree.h: initial parsing approach for
 	  COBOL 202x Message Control System (MCS) statements SEND and RECEIVE
 	* scanner.l: return WORD token if SUPPRESS is not reserved
