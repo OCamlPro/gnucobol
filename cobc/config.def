@@ -69,6 +69,13 @@ CB_CONFIG_INT (cb_lit_length, "literal-length", 1, COB_MAX_LITERAL_LEN, _("<numb
 CB_CONFIG_INT (cb_numlit_length, "numeric-literal-length", 1, COB_MAX_DIGITS, CB_XRANGE(1,COB_MAX_DIGITS),
 	_("maximum numeric literal size"))
 
+CB_CONFIG_SUPPORT (cb_loose_area_a, "loose-area-a",
+	_("fixed form programs may use area A freely"))
+
+/* FIXME: the following flag implies `loose-area-a'; this is not yet
+    checked by the compiler. */
+CB_CONFIG_BOOLEAN (cb_rely_on_area_a, "rely-on-area-a",
+	_("checking emptyness of area A is required to parse programs"))
 
 /* Flags with required parameter and special values */
 

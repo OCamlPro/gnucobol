@@ -300,6 +300,11 @@ static void *	copy_literal (cb_tree l);
 	}
 }
 
+<*>^[ ]?"#AREA_A" {
+	if (cobc_in_procedure)
+		return AREA_A;
+}
+
 <*>\n {
 	cb_source_line++;
 }
