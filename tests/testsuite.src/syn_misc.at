@@ -4542,6 +4542,128 @@ prog.cob:12: warning: ignoring redundant .
 AT_CLEANUP
 
 
+AT_SETUP([optional periods])
+AT_KEYWORDS([misc gcos])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+       PROCEDURE DIVISION.
+	   PERFORM SEC-1.
+	   STOP RUN
+       SEC-1 SECTION.
+           DISPLAY "OK" NO ADVANCING
+	   END-DISPLAY.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:11: error: 'SEC-1' is not defined
+prog.cob:11: error: syntax error, unexpected SECTION
+])
+AT_CHECK([$COMPILE -frely-on-area-a prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
+
+AT_DATA([prog_err.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+       PROCEDURE DIVISION.
+           PERFORM PAR-1.
+           PERFORM SEC-1.
+           STOP RUN
+
+       PAR-1.
+           PERFORM SEC-1.
+           DISPLAY KO NO ADVANCING
+
+       SEC-1 SECTION.
+           DISPLAY 1 NO ADVANCING
+       .
+])
+AT_CHECK([$COMPILE_ONLY -frely-on-area-a prog_err.cob], [1], [],
+[prog_err.cob: in paragraph 'PAR-1':
+prog_err.cob:14: error: 'KO' is not defined
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([optional periods with COPYs])
+AT_KEYWORDS([misc copy gcos])
+
+AT_DATA([ok.inc], [
+       01  OK  PIC XX VALUE "OK".
+])
+
+AT_DATA([sec-1.inc], [
+       SEC-1 SECTION.
+           DISPLAY OK NO ADVANCING
+])
+
+AT_DATA([sec-2.inc], [
+           SEC-2 SECTION.
+           DISPLAY OK NO ADVANCING.
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       COPY "ok.inc".
+
+       PROCEDURE DIVISION.
+           PERFORM SEC-1.
+           PERFORM SEC-2.
+           STOP RUN
+           COPY "sec-1.inc".
+       COPY "sec-2.inc".
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[sec-1.inc:2: error: 'SEC-1' is not defined
+sec-1.inc:2: error: syntax error, unexpected SECTION
+sec-2.inc:2: error: 'SEC-2' is not defined
+sec-2.inc:2: error: syntax error, unexpected SECTION
+])
+AT_CHECK([$COMPILE -frely-on-area-a prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OKOK], [])
+
+AT_DATA([prog_err.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       COPY "ok.inc".
+
+       PROCEDURE DIVISION.
+           PERFORM SEC-1.
+           PERFORM SEC-2.
+           PERFORM SEC-3.
+           STOP RUN
+           COPY "sec-1.inc".
+       COPY "sec-2.inc".
+       SEC-3 SECTION.
+           DISPLAY KO NO ADVANCING.
+])
+
+AT_CHECK([$COMPILE_ONLY -frely-on-area-a prog_err.cob], [1], [],
+[prog_err.cob: in section 'SEC-3':
+prog_err.cob:17: error: 'KO' is not defined
+])
+
+AT_CLEANUP
+
+
 AT_SETUP([IF-ELSE statement list with invalid syntax])
 AT_KEYWORDS([misc])
 

@@ -2225,6 +2225,8 @@ set_record_size (cb_tree min, cb_tree max)
 
 %token TOKEN_EOF 0 "end of file"
 
+%token AREA_A "text in area A"
+
 %token THREEDIMENSIONAL	"3D"
 %token ABSENT
 %token ACCEPT
@@ -3591,7 +3593,18 @@ _program_body:
 	within_typedef_definition = 0;
   }
   _procedure_division
+  {
+	/* AREA_A tokens, emitted when scanning the special marker `#AREA_A',
+	   must be inhibited outside of procedure divisions.  This avoids having
+	   to insert such tokens everywhere they may appear in other parts of
+	   the grammar.  `cobc_in_procedure' is used to filter such
+	   emissions.  */
+	cobc_in_procedure = 0;
+  }
 ;
+
+_area_a: /* empty */ | AREA_A;
+_dot_or_else_area_a: TOK_DOT _area_a | AREA_A;
 
 /* IDENTIFICATION DIVISION */
 
@@ -4987,7 +5000,7 @@ file_control_entry:
   SELECT flag_optional undefined_word
   {
 	char	buff[COB_MINI_BUFF];
-	  
+
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION,
 			       COBC_HD_INPUT_OUTPUT_SECTION,
 			       COBC_HD_FILE_CONTROL, 0);
@@ -9982,6 +9995,7 @@ procedure_division:
 	
 	cb_check_definition_matches_prototype (current_program);
   }
+  _area_a
   _procedure_declaratives
   {
 	if (current_program->flag_main
@@ -10036,7 +10050,7 @@ procedure_division:
 	emit_statement (CB_TREE (current_paragraph));
 	cb_set_system_names ();
   }
-  statements TOK_DOT _procedure_list
+  statements TOK_DOT _area_a _procedure_list
 ;
 
 _procedure_using_chaining:
@@ -10289,6 +10303,7 @@ _procedure_declaratives:
 	in_declaratives = 1;
 	emit_statement (cb_build_comment ("DECLARATIVES"));
   }
+  _area_a
   _procedure_list
   END DECLARATIVES TOK_DOT
   {
@@ -10316,6 +10331,7 @@ _procedure_declaratives:
 	emit_statement (cb_build_comment ("END DECLARATIVES"));
 	check_unreached = 0;
   }
+  _area_a
 ;
 
 
@@ -10328,7 +10344,7 @@ _procedure_list:
 procedure:
   section_header
 | paragraph_header
-| statements TOK_DOT
+| statements
   {
 	if (next_label_list) {
 		cb_tree	plabel;
@@ -10346,12 +10362,14 @@ procedure:
 	/* check_unreached = 0; */
 	cb_end_statement();
   }
+  _dot_or_else_area_a
 | invalid_statement %prec SHIFT_PREFER
 | TOK_DOT
   {
 	/* check_unreached = 0; */
 	cb_end_statement();
   }
+  _area_a
 ;
 
 
@@ -10402,6 +10420,7 @@ section_header:
   {
 	emit_statement (CB_TREE (current_section));
   }
+  _area_a
 ;
 
 _use_statement:
@@ -10451,6 +10470,7 @@ paragraph_header:
 	current_paragraph->segment = current_section->segment;
 	emit_statement (CB_TREE (current_paragraph));
   }
+  _area_a
 ;
 
 invalid_statement:
