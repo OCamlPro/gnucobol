@@ -413,7 +413,7 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 	skip_to_eol ();
 }
 
-<*>#\n {
+<*># {
 	/* Output a special marker that precedes lines starting in area A.  This
 	   is required to deal with a GCOS Cobol extension that permits sections
 	   and paragraphs that do not terminate with a period.
