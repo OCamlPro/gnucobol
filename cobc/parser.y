@@ -10493,6 +10493,7 @@ paragraph_header:
 	current_paragraph->segment = current_section->segment;
 	emit_statement (CB_TREE (current_paragraph));
   }
+  _area_a
 ;
 
 invalid_statement:
