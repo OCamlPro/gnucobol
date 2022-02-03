@@ -560,6 +560,8 @@ extern void			*cobc_realloc (void *, const size_t);
 
 extern void			*cobc_main_malloc (const size_t);
 extern void			*cobc_main_strdup (const char *);
+extern char *                   cobc_main_stradd_dup (const char *s1, const char *s2);
+
 extern void			*cobc_main_realloc (void *, const size_t);
 extern void			cobc_main_free (void *);
 
@@ -726,5 +728,9 @@ extern void		activate_intrinsic (const char *, const char *, const int);
 
 extern void		deactivate_system_name (const char *, const char *, const int);
 extern void		activate_system_name (const char *, const char *, const int);
+
+/* json.c */
+// #define COBC_VERSION4
+extern void             json_print_program(const struct cb_program *tr ) ;
 
 #endif /* CB_COBC_H */

@@ -1134,7 +1134,7 @@ cobc_main_strdup (const char *dupstr)
 }
 
 /* returns a fresh allocated copy of the concatenation from str1 + str2 */
-static char *
+char *
 cobc_main_stradd_dup (const char *str1, const char *str2)
 {
 	char	*p;
@@ -7692,7 +7692,25 @@ process_translate (struct filename *fn)
 		}
 	}
 
+        if( cb_dump_json ){
+           json_print_program(current_program);
+        }
+
+        if( cb_dump_tree ){
+          struct cb_program* p = current_program;
+          int namelen = strlen(p->program_name);
+          char filename [namelen+10];
+          FILE *oc;
+          strcpy(filename, p->program_name);
+          strcpy(filename+namelen, ".tree");
+          oc = fopen(filename, "w");;
+          cb_tree_print( (cb_tree) current_program, oc);
+          fclose(oc);
+          exit(23);
+        }
+
 	/* Translate to C */
+
 	codegen (current_program, fn->translate);
 
 	/* Close files */

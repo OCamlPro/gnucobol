@@ -4816,6 +4816,7 @@ cb_ref_internal (cb_tree x, const int emit_error)
 					candidate = global_check (r, w->items, &ambiguous);
 					if (candidate) {
 						if (ambiguous) {
+
 							goto raise_error;
 						}
 						if (CB_FILE_P(candidate)) {
