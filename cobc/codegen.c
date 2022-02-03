@@ -13830,7 +13830,7 @@ codegen (struct cb_program *prog, const char *translate_name, const int subseque
 	int	comment_gen;
 
 	struct cb_report *rep;
-
+        
 	/* Clear local program stuff */
 	current_prog = prog;
 	param_id = 0;

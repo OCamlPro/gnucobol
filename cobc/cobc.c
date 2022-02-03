@@ -1020,7 +1020,7 @@ cobc_main_strdup (const char *dupstr)
 	return p;
 }
 
-static char *
+char *
 cobc_main_stradd_dup (const char *str1, const char *str2)
 {
 	char	*p;
@@ -7663,6 +7663,24 @@ process_translate (struct filename *fn)
 	current_paragraph = NULL;
 	current_statement = NULL;
 	cb_source_line = 0;
+
+        if( cb_dump_json ){
+           json_print_program(current_program);
+        }
+
+        if( cb_dump_tree ){
+          struct cb_program* p = current_program;
+          int namelen = strlen(p->program_name);
+          char filename [namelen+10];
+          FILE *oc;
+          strcpy(filename, p->program_name);
+          strcpy(filename+namelen, ".tree");
+          oc = fopen(filename, "w");;
+          cb_tree_print( (cb_tree) current_program, oc);
+          fclose(oc);
+          exit(23);
+        }
+        
 	/* Temporarily disable cross-reference during C generation */
 	if (cb_listing_xref) {
 		cb_listing_xref = 0;

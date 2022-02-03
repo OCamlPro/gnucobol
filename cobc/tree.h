@@ -2490,5 +2490,9 @@ extern unsigned int		cb_correct_program_order;
 #define CB_CHAIN_PAIR(x,y,z)		x = cb_pair_add (x, y, z)
 #define CB_FIELD_ADD(x,y)		x = cb_field_add (x, y)
 
+/* debug.c */
+extern void             cb_tree_print(const cb_tree tr, FILE* output ) ;
+extern const char * cb_tag_str(enum cb_tag tag);
+extern const char * cb_category_str(enum cb_category tag);
 
 #endif /* CB_TREE_H */

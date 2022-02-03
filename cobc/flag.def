@@ -147,6 +147,12 @@ CB_FLAG (cb_flag_trace, 1, "trace",
 	_("  -ftrace               generate trace code\n"
 	  "                        * scope: executed SECTION/PARAGRAPH"))
 
+CB_FLAG (cb_dump_tree, 1, "dump-tree",
+	_("  -fdump-tree           dump tree\n"))
+
+CB_FLAG (cb_dump_json, 1, "dump-json",
+	_("  -fdump-json           dump json\n"))
+
 CB_FLAG (cb_flag_traceall, 1, "traceall",
 	_("  -ftraceall            generate trace code\n"
 	  "                        * scope: executed SECTION/PARAGRAPH/STATEMENTS\n"

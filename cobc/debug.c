@@ -24,7 +24,7 @@
 /* #define DEBUG_REPLACE */
 
 #include "config.h"
-#include "defaults.h"
+// #include "defaults.h"
 #include "cobc/cobc.h"
 #include "libcob/common.h"
 #include "tree.h"
@@ -43,7 +43,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include <bsd/vis.h>
+// #include <bsd/vis.h>
 
 #ifdef	HAVE_UNISTD_H
 #include <unistd.h>
@@ -57,7 +57,7 @@ static void print_label( const struct cb_label *tr, FILE *output );
 static void print_report( const struct cb_report * tr, FILE *output );
 static void print_program( const struct cb_program *tr, FILE* output );
 
-static const char *
+const char *
 cb_tag_str(enum cb_tag tag)
 {
 	switch (tag) {
@@ -104,6 +104,8 @@ cb_tag_str(enum cb_tag tag)
 	case CB_TAG_ML_SUPPRESS: return "ML SUPPRESS CLAUSE";
 	case CB_TAG_ML_TREE: return "ML OUTPUT TREE";
 	case CB_TAG_ML_SUPPRESS_CHECKS: return "ML SUPPRESS CHECKS";
+        case CB_TAG_CD: return "CD";
+	case CB_TAG_VARY: return "VARY";
 	}
 
 	static char unknown[64];
@@ -128,6 +130,8 @@ cb_category_str( enum cb_category category ) {
 	case CB_CATEGORY_OBJECT_REFERENCE: return "OBJECT_REFERENCE";
 	case CB_CATEGORY_DATA_POINTER: return "DATA_POINTER";
 	case CB_CATEGORY_PROGRAM_POINTER: return "PROGRAM_POINTER";
+	case CB_CATEGORY_FLOATING_EDITED: return "FLOATING_EDITED";
+	case CB_CATEGORY_ERROR: return "ERROR";
 	}
 	static char unknown[64];
 
@@ -138,17 +142,21 @@ cb_category_str( enum cb_category category ) {
 
 static const char *
 cob_pic_symbol_str( const cob_pic_symbol *pic ) {
-	static char line[80];
-	sprintf(line,
-		"symbol = '%c'\n"
-		"times_repeated = %d\n",
-		pic->symbol, pic->times_repeated);
-	return line;
+  if( pic == NULL )
+    return "(not yet computed)";
+  
+  static char line[80];
+  sprintf(line,
+          "symbol = '%c'\n"
+          "times_repeated = %d\n",
+          pic->symbol, pic->times_repeated);
+  return line;
 }
 
 #define CASE_OF(prefix, name) case prefix ## name: return #name
 #define CASE_NAME(name) case name: return #name
 
+static
 const char *
 cb_ml_suppress_target_str( enum cb_ml_suppress_target target ) {
 	switch(target) {
@@ -156,8 +164,10 @@ cb_ml_suppress_target_str( enum cb_ml_suppress_target target ) {
 		CASE_OF(CB_ML_, SUPPRESS_ALL);
 		CASE_OF(CB_ML_, SUPPRESS_TYPE);
 	}
+        return "UNKNOWN";
 }
 
+static
 const char *
 cb_ml_suppress_category_str( enum cb_ml_suppress_category category ) {
 	switch(category) {
@@ -165,8 +175,10 @@ cb_ml_suppress_category_str( enum cb_ml_suppress_category category ) {
 		CASE_OF(CB_ML_, SUPPRESS_CAT_NONNUMERIC);
 		CASE_OF(CB_ML_, SUPPRESS_CAT_ANY);
 	}
+        return "UNKNOWN";
 }
 
+static
 const char *
 cb_ml_type_str( enum cb_ml_type type ) {
 	switch(type) {
@@ -175,17 +187,22 @@ cb_ml_type_str( enum cb_ml_type type ) {
 		CASE_OF(CB_ML_, CONTENT);
 		CASE_OF(CB_ML_, ANY_TYPE);
 	}
+        return "UNKNOWN";
 }
 
+static
 const char *
 cb_index_type_str( enum cb_index_type type ) {
 	switch(type) {
 		CASE_OF(CB_, NORMAL_INDEX);
 		CASE_OF(CB_, INT_INDEX);
 		CASE_OF(CB_, STATIC_INT_INDEX);
+		CASE_OF(CB_, STATIC_INT_VARYING);
 	}
+        return "UNKNOWN";
 }
 
+static
 const char *
 cb_storage_str( enum cb_storage type ) {
 	switch(type) {
@@ -198,8 +215,10 @@ cb_storage_str( enum cb_storage type ) {
 		CASE_OF(CB_STORAGE_, REPORT);
 		CASE_OF(CB_STORAGE_, COMMUNICATION);
 	}
+        return "UNKNOWN";
 }
 
+static
 const char *
 cb_usage_str( enum cb_usage type ) {
 	switch(type) {
@@ -242,9 +261,12 @@ cb_usage_str( enum cb_usage type ) {
 		CASE_OF(CB_USAGE_, HNDL_LM);
 		CASE_OF(CB_USAGE_, COMP_N);
 		CASE_OF(CB_USAGE_, ERROR);
+		CASE_OF(CB_USAGE_, CONTROL);
 	}
+        return "UNKNOWN";
 }
 
+static
 const char *
 cb_intr_enum_str( enum cb_intr_enum intr ) {
 
@@ -354,10 +376,20 @@ cb_intr_enum_str( enum cb_intr_enum intr ) {
 		CASE_OF(CB_INTR_, USER_FUNCTION);
 		CASE_OF(CB_INTR_, VARIANCE);
 		CASE_OF(CB_INTR_, WHEN_COMPILED);
-		////CASE_OF(CB_INTR_, YEAR_TO_YYY);
+		CASE_OF(CB_INTR_, BASECONVERT);
+		CASE_OF(CB_INTR_, BIT_OF);
+		CASE_OF(CB_INTR_, BIT_TO_CHAR);
+		CASE_OF(CB_INTR_, CONVERT);
+		CASE_OF(CB_INTR_, FIND_STRING);
+		CASE_OF(CB_INTR_, HEX_OF);
+		CASE_OF(CB_INTR_, HEX_TO_CHAR);
+		CASE_OF(CB_INTR_, MODULE_NAME);
+		CASE_OF(CB_INTR_, YEAR_TO_YYYY);
 	}
+        return "UNKNOWN";
 }
 
+static
 const char *
 cb_feature_mode_str( enum cb_feature_mode mode ) {
 	switch(mode) {
@@ -366,8 +398,10 @@ cb_feature_mode_str( enum cb_feature_mode mode ) {
 		CASE_OF(CB_FEATURE_, MUST_BE_ENABLED);
 		CASE_OF(CB_FEATURE_, NOT_IMPLEMENTED);
 	}
+        return "UNKNOWN";
 }
 
+static
 const char *
 cb_cast_type_str( enum cb_cast_type type ) {
 	switch(type) {
@@ -378,8 +412,10 @@ cb_cast_type_str( enum cb_cast_type type ) {
 		CASE_OF(CB_CAST_, LENGTH);
 		CASE_OF(CB_CAST_, PROGRAM_POINTER);
 	}
+        return "UNKNOWN";
 }
 
+static
 const char *
 cb_perform_type_str( enum cb_perform_type type ) {
 	switch(type) {
@@ -389,9 +425,11 @@ cb_perform_type_str( enum cb_perform_type type ) {
 		CASE_OF(CB_PERFORM_, UNTIL);
 		CASE_OF(CB_PERFORM_, FOREVER);
 	}
+        return "UNKNOWN";
 }
 
 
+static
 const char *
 cb_handler_type_str( enum cb_handler_type type ) {
 	switch(type) {
@@ -404,13 +442,17 @@ cb_handler_type_str( enum cb_handler_type type ) {
 		CASE_NAME(EOP_HANDLER);
 		CASE_NAME(INVALID_KEY_HANDLER);
 		CASE_NAME(XML_HANDLER);
-		////CASE_NAME(JSON_HANDLE);
+		CASE_NAME(JSON_HANDLER);
+		CASE_NAME(MCS_HANDLER);
+		CASE_NAME(DELETE_FILE_HANDLER);
 	}
+        return "UNKNOWN";
 }
 
 
 static const char *
 pretty_print( const char input[], size_t len ) {
+  /*
 	static char *output;
 
 	if ((output = realloc(output, 1 + len)) == NULL ) {
@@ -420,10 +462,12 @@ pretty_print( const char input[], size_t len ) {
 	assert(n <= len);
 	output[n] = '\0';
 	return output;
+  */
+  return input;
 }
 
 static void
-print_common( const struct cb_tree_common tr, FILE* output ) {
+print_common( const struct cb_tree_common* tr, FILE* output ) {
 	fprintf( output,
 		 "{\n"
 		 "  tag = %s,\n"
@@ -432,8 +476,9 @@ print_common( const struct cb_tree_common tr, FILE* output ) {
 		 "  source_line = %d,\n"
 		 "  source_column = %d\n"
 		 "}\n",
-		 cb_tag_str(tr.tag), cb_category_str(tr.category),
-		 tr.source_file, tr.source_line, tr.source_column );
+		 cb_tag_str(tr->tag), cb_category_str(tr->category),
+		 tr->source_file != NULL ? tr->source_file : "(none)",
+                 tr->source_line, tr->source_column );
 }
 
 struct flag_day { char name[32]; bool flag; };
@@ -479,6 +524,7 @@ print_call_xref( const struct cb_call_xref xref, FILE* output ) {
 	}
 }
 
+static
 void
 print_ml_generate_tree( struct cb_ml_generate_tree *tr, FILE* output ) {
 	fprintf(output,
@@ -499,11 +545,15 @@ print_ml_generate_tree( struct cb_ml_generate_tree *tr, FILE* output ) {
 }
 
 static void
-print_field(  const struct cb_field *fld, FILE *output ) {
+print_field2(  const struct cb_field *fld, FILE *output, int all );
+static void
+print_field2(  const struct cb_field *fld, FILE *output, int all ) {
+  if( fld != NULL ){
 	fprintf(output,
 		"name = %s\n" "ename = %s\n",
 		fld->name, fld->ename);
 
+        if( all ){
 	struct field_t {
 		char name[20];
 		struct cb_field * field;
@@ -520,17 +570,19 @@ print_field(  const struct cb_field *fld, FILE *output ) {
 
 	for( const struct field_t *p = fields; p < eofields; p++ ) {
 		fprintf(output, "%s:\n", p->name);
-		print_field(p->field, output);
+		print_field2(p->field, output, 0);
 	}
-
+        }
 	cb_tree_print( CB_TREE(fld->file), output );
 	cb_tree_print( CB_TREE(fld->cd), output );
 
-	fprintf(output, "keys, (dir = %d):\n", fld->keys->dir);
-	cb_tree_print( fld->keys->key, output );
-	cb_tree_print( fld->keys->ref, output );
-	cb_tree_print( fld->keys->val, output );
-	fprintf(output, "end keys\n");
+        if( fld->keys != NULL ){
+          fprintf(output, "keys, (dir = %d):\n", fld->keys->dir);
+          cb_tree_print( fld->keys->key, output );
+          cb_tree_print( fld->keys->ref, output );
+          cb_tree_print( fld->keys->val, output );
+          fprintf(output, "end keys\n");
+        }
 
 
 	cb_tree_print( CB_TREE(fld->pic), output );
@@ -669,10 +721,19 @@ print_field(  const struct cb_field *fld, FILE *output ) {
 	};
 
 	print_flags(flags, COUNT_OF(flags), output);
+  }
 }
 
 static void
-print_label(  const struct cb_label *tr, FILE *output ) {
+print_field(  const struct cb_field *fld, FILE *output ) {
+    print_field2( fld, output, 1);
+}
+ 
+static void
+print_label2(  const struct cb_label *tr, FILE *output, int all );
+static void
+  print_label2(  const struct cb_label *tr, FILE *output, int all ) {
+  if( tr != NULL ){
 	//// print_common(tr->common, output);
 
 	fprintf(output,
@@ -687,13 +748,15 @@ print_label(  const struct cb_label *tr, FILE *output ) {
 		tr->section_id,
 		tr->segment );
 
-	print_label( tr->section, output );
-	print_label( tr->debug_section, output );
-
-	for( struct cb_para_label *p = tr->para_label;
-	     p != NULL; p = p->next ) {
-		print_label(p->para, output);
-	}
+        if( all ){
+          print_label2( tr->section, output, 0 );
+          print_label2( tr->debug_section, output, 0 );
+          
+          for( struct cb_para_label *p = tr->para_label;
+               p != NULL; p = p->next ) {
+            print_label2(p->para, output, 0);
+          }
+        }
 
 	print_xref(tr->xref, output);
 	cb_tree_print( tr->exit_label, output );
@@ -728,12 +791,16 @@ print_label(  const struct cb_label *tr, FILE *output ) {
 		{ "skip_label", tr->flag_skip_label }
 	};
 	print_flags(flags, COUNT_OF(flags), output);
-
+  }
 }
 
 static void
+print_label(  const struct cb_label *tr, FILE *output ) {
+  print_label2( tr, output, 1 );
+}
+static void
 print_alphabet_name(  const struct cb_alphabet_name * tr, FILE *output ) {
-
+  if( tr != NULL ){
 	fprintf(output, "name = %s\n" "cname = %s\n", tr->name, tr->cname);
 
 	cb_tree_print( tr->custom_list, output );
@@ -767,6 +834,7 @@ print_alphabet_name(  const struct cb_alphabet_name * tr, FILE *output ) {
 			printf("\n");
 		}
 	}
+  }
 }
 
 static void
@@ -840,7 +908,8 @@ print_reference(  const struct cb_reference *tr, FILE *output ) {
 static void
 print_list(  const struct cb_list *tr, FILE *output ) {
 	fprintf(output, "sizes = %d\n", tr->sizes);
-	cb_tree_print(tr->chain, output);
+        if( tr->chain != NULL )
+          cb_tree_print(tr->chain, output);
 	cb_tree_print(tr->value, output);
 	cb_tree_print(tr->purpose, output);
 }
@@ -946,7 +1015,8 @@ print_file(  const struct cb_file *tr, FILE *output ) {
 
 static void
 print_report(  const struct cb_report * tr, FILE *output ) {
-	print_common(tr->common, output);
+  if( tr != NULL ){
+	print_common(& tr->common, output);
 
 	fprintf(output, "name = %s\n" "cname = %s\n", tr->name, tr->cname);
 
@@ -1005,6 +1075,7 @@ print_report(  const struct cb_report * tr, FILE *output ) {
 		{ "has_detail", tr->has_detail },
 	};
 	print_flags(flags, COUNT_OF(flags), output);
+  }
 }
 
 static void
@@ -1172,6 +1243,7 @@ print_program(const struct cb_program *tr, FILE* output ) {
 		{ "report", tr->flag_report },
 		{ "void", tr->flag_void }
 	};
+        print_flags(flags, COUNT_OF(flags), output);
 }
 
 static void
@@ -1199,6 +1271,7 @@ intrinsic_table_print(const struct cb_intrinsic_table *tr, FILE* output ) {
 
 static void
 print_attr_struct( struct cb_attr_struct *tr, FILE* output ) {
+  if( tr != NULL ){
 	fprintf(output, "0x%llx\n", tr->dispattrs);
 
 	cb_tree_print(tr->fgc, output);
@@ -1207,15 +1280,17 @@ print_attr_struct( struct cb_attr_struct *tr, FILE* output ) {
 	cb_tree_print(tr->timeout, output);
 	cb_tree_print(tr->prompt, output);
 	cb_tree_print(tr->size_is, output);
+  }
 }
 
 void
 cb_tree_print( const cb_tree tr, FILE *output ) {
 	cb_tree subtree;
 
+        if( tr == NULL ) return;
 	if( output == NULL ) return;
 
-	print_common(*tr, output);
+	print_common(tr, output);
 
 	switch( tr->tag ) {
 	case CB_TAG_CONST:
@@ -1223,8 +1298,10 @@ cb_tree_print( const cb_tree tr, FILE *output ) {
 		break;
 	case CB_TAG_INTEGER:
 		fprintf(output,
-			"val = %d\n" "hexvax = %x\n",
-			CB_INTEGER(tr)->val, CB_INTEGER(tr)->hexval);
+			"val = %d\n" // "hexvax = %x\n"
+                        ,
+			CB_INTEGER(tr)->val//, CB_INTEGER(tr)->hexval
+                        );
 		break;
 	case CB_TAG_STRING: {
 		const char *data = pretty_print(CB_STRING(tr)->data,
@@ -1573,6 +1650,9 @@ cb_tree_print( const cb_tree tr, FILE *output ) {
 
 	case CB_TAG_ML_SUPPRESS_CHECKS:
 		print_ml_generate_tree(CB_ML_SUPPRESS_CHECKS(tr)->tree, output);
+		break;
+	case CB_TAG_VARY:
+		fprintf(output, "CB_TAG_VARY ???\n");
 		break;
         }
 }
