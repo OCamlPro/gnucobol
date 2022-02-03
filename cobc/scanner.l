@@ -301,7 +301,7 @@ static void *	copy_literal (cb_tree l);
 	cb_assign_type_default = (enum cb_assign_type)(text[1] - '0');
 }
 
-<*>^[ ]?"#AREA_A" {
+<*>\n"#AREA_A"\n {
 	if (cobc_in_procedure)
 		return AREA_A;
 }
