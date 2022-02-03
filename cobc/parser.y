@@ -5017,11 +5017,9 @@ file_control_entry:
 	}
 	key_type = NO_KEY;
 
-	/* GCOS extension: SELECT EXTERNAL */
 	if ($2) {
-		cb_verify (cb_select_external, _("SELECT EXTERNAL"));
-		ext_dyn_specified = 1;
-		current_file->assign_type = CB_ASSIGN_EXT_FILE_NAME_REQUIRED;
+		cb_verify (cb_select_gcos, _("GCOS-specific SELECT (EXTERNAL)"));
+		current_file->flag_no_mapping = 1;
 	}
   }
   _select_clauses_or_error
@@ -5082,6 +5080,10 @@ select_clause:
 | track_limit_clause
 | encryption_clause
 | with_clause
+  {
+	cb_verify (cb_select_gcos, "GCOS-specific SELECT (WITH)");
+  }
+;
 /* FXIME: disabled because of shift/reduce conflict
   (optional in [alternate] record key, could be moved here
    if the suppress_clause goes here too and both entries verify that
@@ -5098,13 +5100,6 @@ select_clause:
 ;
 
 with_clause:
- raw_with_clause
-  {
-	cb_verify (cb_select_with, "SELECT WITH");
-  }
-;
-
-raw_with_clause:
   ASA
 | SSF
 | SARF
@@ -5128,9 +5123,15 @@ assign_clause:
 	}
 
 	current_file->assign_type = CB_ASSIGN_EXT_FILE_NAME_REQUIRED;
-	current_file->assign = cb_build_assignment_name (current_file, $5);
+	if (cb_is_supported(cb_select_gcos)) {
+		cb_verify (cb_select_gcos, "GCOS-specific SELECT (literal)");
+		current_file->assign = cb_build_gcos_assignment_name
+			(current_file, $5, &current_file->assign_default);
+	} else {
+		current_file->assign = cb_build_assignment_name (current_file, $5);
+	}
   }
-| ASSIGN _to _ext_clause _assign_device_or_line_adv_file qualified_word
+| ASSIGN _to _ext_clause _assign_device_or_line_adv_file qualified_word _literal
   {
 	check_repeated ("ASSIGN", SYN_CLAUSE_1, &check_duplicate);
 
@@ -5138,7 +5139,13 @@ assign_clause:
 	if (!ext_dyn_specified) {
 		current_file->flag_assign_no_keyword = 1;
 	}
+
 	current_file->assign = cb_build_assignment_name (current_file, $5);
+
+	if ($6) {
+		cb_verify (cb_select_gcos, "GCOS-specific SELECT (literal)");
+		current_file->assign_default = (char *)CB_LITERAL ($6)->data;
+	}
   }
 | ASSIGN _to _ext_clause _assign_device_or_line_adv_file using_or_varying qualified_word
   {
@@ -5297,6 +5304,11 @@ ext_clause:
 assignment_name:
   LITERAL
 | qualified_word
+;
+
+_literal:
+  /* empty */	{ $$ = NULL; }
+| LITERAL	{ $$ = $1; }
 ;
 
 /* ACCESS MODE clause */
@@ -5633,15 +5645,15 @@ org_indexed:
   INDEXED
 | UFF INDEXED
   {
-	cb_verify (cb_extra_organization_clauses, "ORGANIZATION UFF INDEXED");
+	cb_verify (cb_select_gcos, "GCOS-specific SELECT (UFF)");
   }
 ;
 
 org_sequential:
   _record _binary SEQUENTIAL
-| extra_org_clause _record _binary SEQUENTIAL
+| gcos_org_clause _record _binary SEQUENTIAL
   {
-	cb_verify (cb_extra_organization_clauses, "ORGANIZATION UFF/ANSI/QUEUED SEQUENTIAL");
+	cb_verify (cb_select_gcos, "GCOS-specific SELECT (UFF/ANSI/QUEUED)");
   }
 ;
 
@@ -5649,11 +5661,11 @@ org_relative:
   RELATIVE
 | UFF RELATIVE
   {
-	cb_verify (cb_extra_organization_clauses, "ORGANIZATION UFF RELATIVE");
+	cb_verify (cb_select_gcos, "GCOS-specific SELECT (UFF)");
   }
 ;
 
-extra_org_clause:
+gcos_org_clause:
   UFF
 | ANSI
 | QUEUED
