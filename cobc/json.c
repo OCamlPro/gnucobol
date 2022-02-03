@@ -33,8 +33,11 @@ static FILE* oc = NULL;
 
 struct json_record {
   int indent;
+  int full;
   int has_field;
 };
+
+static int output_locations = 0;
 
 #define RECORD_BEGIN(r, indent)                         \
   if( indent > MAX_INDENT ){                            \
@@ -44,13 +47,22 @@ struct json_record {
     struct json_record r;                               \
     r.indent = indent+2;                                \
     r.has_field = 0;                                    \
+    r.full = full;                                      \
     fprintf(oc, "{\n");
 
 #define RECORD_FIELD(r, name, printer, value)                   \
     if( r.has_field ) fprintf(oc, ",\n");                       \
     else { r.has_field = 1; }                                   \
     fprintf(oc, "%s\"%s\": ", indents[r.indent], name);         \
-    print_##printer(value, r.indent);
+    print_##printer(value, r.indent, 1);
+
+// This one is used to pass full=0 as argument, usually to tell
+// the printer not to go deep inside the record
+#define RECORD_FIELD0(r, name, printer, value)                   \
+    if( r.has_field ) fprintf(oc, ",\n");                       \
+    else { r.has_field = 1; }                                   \
+    fprintf(oc, "%s\"%s\": ", indents[r.indent], name);         \
+    print_##printer(value, r.indent, 0);
 
 #define RECORD_FIELDB(r, name, value)                           \
  if( value ){                                                   \
@@ -64,6 +76,13 @@ struct json_record {
     RECORD_FIELD(r, name, printer, value);                      \
   }
 
+// This one is used to pass full=0 as argument, usually to tell
+// the printer not to go deep inside the record
+#define RECORD_FIELDP0(r, name, printer, value)                  \
+  if( value != NULL ){                                          \
+    RECORD_FIELD0(r, name, printer, value);                     \
+  }
+
 #define RECORD_FIELDNZ(r, name, printer, value)                  \
     if( value != 0 ){                                            \
       RECORD_FIELD(r, name, printer, value);                     \
@@ -72,36 +91,38 @@ struct json_record {
 #define RECORD_TREE( r, name, t)                                        \
     RECORD_FIELD(r, "node", string, name);                           \
     RECORD_FIELD(r, "uid", pointer, (cb_tree) t);                    \
+    if(output_locations){                                               \
     RECORD_FIELDP(r, "source_file", string, ((cb_tree) t)->source_file); \
     RECORD_FIELDNZ(r, "source_line", int, ((cb_tree) t)->source_line); \
     RECORD_FIELDNZ(r, "source_column", int, ((cb_tree) t)->source_column); \
-
+  }
+    
 #define RECORD_END(r)                           \
   if( r.has_field ) fprintf( oc, "\n" );        \
   fprintf(oc, "%s}", indents[r.indent-2]);      \
   }
 
-static void print_cb_program ( const struct cb_program *p, int indent );
-static void print_cb_tree ( const cb_tree t, int indent );
-static void print_cb_field ( const struct cb_field * t, int indent);
-static void print_cb_label ( struct cb_label * f, int indent );
+static void print_cb_program ( const struct cb_program *p, int indent, int full );
+static void print_cb_tree ( const cb_tree t, int indent, int full );
+static void print_cb_field ( const struct cb_field * t, int indent, int full);
+static void print_cb_label ( struct cb_label * f, int indent, int full );
 
-static void print_pointer ( void* p, int indent )
+static void print_pointer ( void* p, int indent, int full )
 {
   fprintf(oc, "\"%p\"", p);
 }
 
-static void print_int ( int p, int indent )
+static void print_int ( int p, int indent, int full )
 {
   fprintf(oc, "%d", p);
 }
 
-static void print_uint ( unsigned int p, int indent )
+static void print_uint ( unsigned int p, int indent, int full )
 {
   fprintf(oc, "%d", p);
 }
 
-static void print_uchar ( unsigned char c, int indent )
+static void print_uchar ( unsigned char c, int indent, int full )
 {
   if( c > 31 && c < 127 ){
     fprintf(oc, "\"%c\"", c);
@@ -110,27 +131,27 @@ static void print_uchar ( unsigned char c, int indent )
   }
 }
 
-static void print_string ( const char *p, int indent )
+static void print_string ( const char *p, int indent, int full )
 {
   fprintf(oc, "\"%s\"", p); // TODO: json escape string
 }
 
-static void print_ustring ( const unsigned char *p, int indent )
+static void print_ustring ( const unsigned char *p, int indent, int full )
 {
   fprintf(oc, "\"%s\"", p); // TODO: json escape string
 }
 
-static void print_cb_tag ( enum cb_tag tag, int indent )
+static void print_cb_tag ( enum cb_tag tag, int indent, int full )
 {
-  print_string(cb_tag_str(tag), indent);
+  print_string(cb_tag_str(tag), indent, full);
 }
 
-static void print_cb_category ( enum cb_category tag, int indent )
+static void print_cb_category ( enum cb_category tag, int indent, int full )
 {
-  print_string(cb_category_str(tag), indent);
+  print_string(cb_category_str(tag), indent, full);
 }
 
-static void print_cb_nested_list ( struct nested_list* t, int indent )
+static void print_cb_nested_list ( struct nested_list* t, int indent, int full )
 {
   RECORD_BEGIN(r, indent);
   RECORD_FIELD(r, "next", cb_nested_list, t->next);
@@ -138,7 +159,7 @@ static void print_cb_nested_list ( struct nested_list* t, int indent )
   RECORD_END(r);
 }
 
-static void print_cb_list( struct cb_list *l, int indent )
+static void print_cb_list( struct cb_list *l, int indent, int full )
 {
   RECORD_BEGIN( r, indent);
   RECORD_TREE( r, "list", l );
@@ -149,7 +170,7 @@ static void print_cb_list( struct cb_list *l, int indent )
   RECORD_END( r);
 }
 
-static void print_cb_local_filename( struct local_filename *l, int indent )
+static void print_cb_local_filename( struct local_filename *l, int indent, int full )
 {
   RECORD_BEGIN( r, indent);
   RECORD_FIELDP( r, "local_name", string, l->local_name );
@@ -159,7 +180,7 @@ static void print_cb_local_filename( struct local_filename *l, int indent )
   RECORD_END( r);
 }
 
-static void print_cb_key ( struct cb_key * f, int indent )
+static void print_cb_key ( struct cb_key * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
 #if 0
@@ -172,7 +193,7 @@ static void print_cb_key ( struct cb_key * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_cd ( struct cb_cd * f, int indent )
+static void print_cb_cd ( struct cb_cd * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "cd", f);
@@ -183,7 +204,7 @@ static void print_cb_cd ( struct cb_cd * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_const ( struct cb_const * f, int indent )
+static void print_cb_const ( struct cb_const * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "const", f);
@@ -191,7 +212,7 @@ static void print_cb_const ( struct cb_const * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_integer ( struct cb_integer * f, int indent )
+static void print_cb_integer ( struct cb_integer * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "integer", f);
@@ -199,7 +220,7 @@ static void print_cb_integer ( struct cb_integer * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_binary_op ( struct cb_binary_op * f, int indent )
+static void print_cb_binary_op ( struct cb_binary_op * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "binary_op", f);
@@ -210,7 +231,7 @@ static void print_cb_binary_op ( struct cb_binary_op * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_cast ( struct cb_cast * f, int indent )
+static void print_cb_cast ( struct cb_cast * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "cast", f);
@@ -219,7 +240,7 @@ static void print_cb_cast ( struct cb_cast * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_intrinsic ( struct cb_intrinsic * f, int indent )
+static void print_cb_intrinsic ( struct cb_intrinsic * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "intrinsic", f);
@@ -236,7 +257,7 @@ static void print_cb_intrinsic ( struct cb_intrinsic * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_funcall_args ( struct cb_funcall * f, int indent )
+static void print_cb_funcall_args ( struct cb_funcall * f, int indent, int full )
 {
   int i;
   fprintf(oc, "[\n");
@@ -245,12 +266,12 @@ static void print_cb_funcall_args ( struct cb_funcall * f, int indent )
       fprintf(oc,",\n");
     }
     fprintf(oc, "%s",indents[indent+2]);
-    print_cb_tree(f->argv[i], indent + 2 );
+    print_cb_tree(f->argv[i], indent + 2, 1 );
   }
   fprintf(oc, "]");
 }
   
-static void print_cb_funcall ( struct cb_funcall * f, int indent )
+static void print_cb_funcall ( struct cb_funcall * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "funcall", f);
@@ -263,7 +284,7 @@ static void print_cb_funcall ( struct cb_funcall * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_literal ( struct cb_literal * f, int indent )
+static void print_cb_literal ( struct cb_literal * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "literal", f);
@@ -276,7 +297,7 @@ static void print_cb_literal ( struct cb_literal * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_decimal ( struct cb_decimal * f, int indent )
+static void print_cb_decimal ( struct cb_decimal * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "decimal", f);
@@ -284,7 +305,7 @@ static void print_cb_decimal ( struct cb_decimal * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_report ( struct cb_report * f, int indent )
+static void print_cb_report ( struct cb_report * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "report", f);
@@ -331,7 +352,7 @@ static void print_cb_report ( struct cb_report * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_alphabet_name ( struct cb_alphabet_name * f, int indent )
+static void print_cb_alphabet_name ( struct cb_alphabet_name * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "alphabet_name", f);
@@ -351,7 +372,7 @@ static void print_cb_alphabet_name ( struct cb_alphabet_name * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_locale_name ( struct cb_locale_name * f, int indent )
+static void print_cb_locale_name ( struct cb_locale_name * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "locale_name", f);
@@ -361,7 +382,7 @@ static void print_cb_locale_name ( struct cb_locale_name * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_class_name ( struct cb_class_name * f, int indent )
+static void print_cb_class_name ( struct cb_class_name * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "class_name", f);
@@ -371,20 +392,17 @@ static void print_cb_class_name ( struct cb_class_name * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_system_name ( struct cb_system_name * f, int indent )
+static void print_cb_system_name ( struct cb_system_name * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "system_name", f);
   RECORD_FIELDP( r, "value", cb_tree, f->value );
-#if 0
-  // TODO
-	enum cb_system_name_category	category;	/* System category */
-	int				token;		/* Device attributes */
-#endif
+  RECORD_FIELD( r, "category", int, f->category ); // TODO 	enum cb_system_name_category	category;	/* System category */
+  RECORD_FIELD( r, "token", int, f->token );
   RECORD_END( r );
 }
 
-static void print_cb_string ( struct cb_string * f, int indent )
+static void print_cb_string ( struct cb_string * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "string", f);
@@ -393,7 +411,7 @@ static void print_cb_string ( struct cb_string * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_assign ( struct cb_assign * f, int indent )
+static void print_cb_assign ( struct cb_assign * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "assign", f);
@@ -402,7 +420,7 @@ static void print_cb_assign ( struct cb_assign * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_initialize ( struct cb_initialize * f, int indent )
+static void print_cb_initialize ( struct cb_initialize * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "initialize", f);
@@ -416,7 +434,7 @@ static void print_cb_initialize ( struct cb_initialize * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_search ( struct cb_search * f, int indent )
+static void print_cb_search ( struct cb_search * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "search", f);
@@ -428,7 +446,7 @@ static void print_cb_search ( struct cb_search * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_call ( struct cb_call * f, int indent )
+static void print_cb_call ( struct cb_call * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "call", f);
@@ -442,7 +460,7 @@ static void print_cb_call ( struct cb_call * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_goto ( struct cb_goto * f, int indent )
+static void print_cb_goto ( struct cb_goto * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "goto", f);
@@ -451,7 +469,7 @@ static void print_cb_goto ( struct cb_goto * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_if ( struct cb_if * f, int indent )
+static void print_cb_if ( struct cb_if * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "if", f);
@@ -462,16 +480,24 @@ static void print_cb_if ( struct cb_if * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_label ( struct cb_label * f, int indent )
+static void print_cb_label_simple ( struct cb_label * f, int indent, int full )
+{
+  RECORD_BEGIN ( r, indent );
+  RECORD_TREE( r, "label_simple", f);
+  RECORD_FIELDP( r, "name", string, f->name );
+  RECORD_END( r );
+}
+
+static void print_cb_label ( struct cb_label * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "label", f);
   RECORD_FIELDP( r, "name", string, f->name );
   RECORD_FIELDP( r, "orig_name", string, f->orig_name );
+  RECORD_FIELDP( r, "section", cb_label_simple, f->section );
+  RECORD_FIELDP( r, "debug_section", cb_label_simple, f->debug_section );
 #if 0
   // TODO
-	struct cb_label		*section;		/* Parent SECTION */
-	struct cb_label		*debug_section;		/* DEBUG SECTION */
 	struct cb_para_label	*para_label;		/* SECTION Paragraphs */
 	struct cb_xref		xref;			/* xref elements */
 	cb_tree			exit_label;		/* EXIT label */
@@ -508,7 +534,7 @@ static void print_cb_label ( struct cb_label * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_perform ( struct cb_perform * f, int indent )
+static void print_cb_perform ( struct cb_perform * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "perform", f);
@@ -522,18 +548,18 @@ static void print_cb_perform ( struct cb_perform * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_reference ( struct cb_reference * f, int indent )
+static void print_cb_reference ( struct cb_reference * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "reference", f);
+  RECORD_FIELDP( r, "chain", cb_tree, f->chain );
+  RECORD_FIELDP0( r, "value", cb_tree, f->value );
+  RECORD_FIELDP( r, "subs", cb_tree, f->subs );
+  RECORD_FIELDP( r, "offset", cb_tree, f->offset );
+  RECORD_FIELDP( r, "length", cb_tree, f->length );
+  RECORD_FIELDP( r, "check", cb_tree, f->check );
 #if 0
   // TODO
-	cb_tree			chain;		/* Next qualified name */
-	cb_tree			value;		/* Item referred to */
-	cb_tree			subs;		/* List of subscripts */
-	cb_tree			offset;		/* Reference mod offset */
-	cb_tree			length;		/* Reference mod length */
-	cb_tree			check;		/* Runtime checks */
 	struct cb_word		*word;		/* Pointer to word list */
 	struct cb_label		*section;	/* Current section */
 	struct cb_label		*paragraph;	/* Current paragraph */
@@ -557,7 +583,7 @@ static void print_cb_reference ( struct cb_reference * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_statement ( struct cb_statement * f, int indent )
+static void print_cb_statement ( struct cb_statement * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "statement", f);
@@ -589,14 +615,14 @@ static void print_cb_statement ( struct cb_statement * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_continue ( struct cb_continue * f, int indent )
+static void print_cb_continue ( struct cb_continue * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "continue", f);
   RECORD_END( r );
 }
 
-static void print_cb_cancel ( struct cb_cancel * f, int indent )
+static void print_cb_cancel ( struct cb_cancel * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "cancel", f);
@@ -604,7 +630,7 @@ static void print_cb_cancel ( struct cb_cancel * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_alter ( struct cb_alter * f, int indent )
+static void print_cb_alter ( struct cb_alter * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "alter", f);
@@ -613,7 +639,7 @@ static void print_cb_alter ( struct cb_alter * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_set_attr ( struct cb_set_attr * f, int indent )
+static void print_cb_set_attr ( struct cb_set_attr * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "set_attr", f);
@@ -626,7 +652,7 @@ static void print_cb_set_attr ( struct cb_set_attr * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_perform_varying ( struct cb_perform_varying * f, int indent )
+static void print_cb_perform_varying ( struct cb_perform_varying * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "perform_varying", f);
@@ -637,7 +663,7 @@ static void print_cb_perform_varying ( struct cb_perform_varying * f, int indent
   RECORD_END( r );
 }
 
-static void print_cb_picture ( struct cb_picture * f, int indent )
+static void print_cb_picture ( struct cb_picture * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "picture", f);
@@ -656,7 +682,7 @@ static void print_cb_picture ( struct cb_picture * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_vary ( struct cb_vary * f, int indent )
+static void print_cb_vary ( struct cb_vary * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "vary", f);
@@ -666,7 +692,7 @@ static void print_cb_vary ( struct cb_vary * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_direct ( struct cb_direct * f, int indent )
+static void print_cb_direct ( struct cb_direct * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "direct", f);
@@ -676,7 +702,7 @@ static void print_cb_direct ( struct cb_direct * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_debug ( struct cb_debug * f, int indent )
+static void print_cb_debug ( struct cb_debug * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "debug", f);
@@ -687,7 +713,7 @@ static void print_cb_debug ( struct cb_debug * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_debug_call ( struct cb_debug_call * f, int indent )
+static void print_cb_debug_call ( struct cb_debug_call * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "debug_call", f);
@@ -695,7 +721,7 @@ static void print_cb_debug_call ( struct cb_debug_call * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_prototype ( struct cb_prototype * f, int indent )
+static void print_cb_prototype ( struct cb_prototype * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "prototype", f);
@@ -705,7 +731,7 @@ static void print_cb_prototype ( struct cb_prototype * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_decimal_literal ( struct cb_decimal * f, int indent )
+static void print_cb_decimal_literal ( struct cb_decimal * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "decimal_literal", f);
@@ -713,7 +739,7 @@ static void print_cb_decimal_literal ( struct cb_decimal * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_ml_suppress ( struct cb_ml_suppress_clause * f, int indent )
+static void print_cb_ml_suppress ( struct cb_ml_suppress_clause * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "ml_suppress", f);
@@ -734,7 +760,7 @@ static void print_cb_ml_suppress ( struct cb_ml_suppress_clause * f, int indent 
   RECORD_END( r );
 }
 
-static void print_cb_ml_tree ( struct cb_ml_generate_tree * f, int indent )
+static void print_cb_ml_tree ( struct cb_ml_generate_tree * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "ml_tree", f);
@@ -764,7 +790,7 @@ static void print_cb_ml_tree ( struct cb_ml_generate_tree * f, int indent )
   RECORD_END( r );
 }
 
-static void print_cb_ml_suppress_checks ( struct cb_ml_suppress_checks * f, int indent )
+static void print_cb_ml_suppress_checks ( struct cb_ml_suppress_checks * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "ml_suppress_checks", f);
@@ -775,7 +801,7 @@ static void print_cb_ml_suppress_checks ( struct cb_ml_suppress_checks * f, int 
   RECORD_END( r );
 }
 
-static void print_cb_file ( struct cb_file * f, int indent )
+static void print_cb_file ( struct cb_file * f, int indent, int full )
 {
   RECORD_BEGIN ( r, indent );
   RECORD_TREE( r, "file", f );
@@ -850,26 +876,26 @@ static void print_cb_file ( struct cb_file * f, int indent )
         RECORD_END(r);
 };
 
-
 static
- void print_cb_field ( const struct cb_field * t, int indent)
+void print_cb_field ( const struct cb_field * t, int indent, int full)
 {
   RECORD_BEGIN( r, indent);
   RECORD_TREE( r, "field", t );
   RECORD_FIELDP ( r, "name", string, t->name );
+  if( full ){
   RECORD_FIELDP ( r, "ename", string, t->ename );
   RECORD_FIELDP ( r, "depending", cb_tree, t->depending );
   RECORD_FIELDP ( r, "values", cb_tree, t->values );
   RECORD_FIELDP ( r, "false_88", cb_tree, t->false_88 );
   RECORD_FIELDP ( r, "index_list", cb_tree, t->index_list );
   RECORD_FIELDP ( r, "external_form_identifier", cb_tree, t->external_form_identifier );
-  // RECORD_FIELDP ( r, "parent", cb_field, t->parent );
+  RECORD_FIELDP0 ( r, "parent", cb_field, t->parent );
   RECORD_FIELDP ( r, "children", cb_field, t->children );
   RECORD_FIELDP ( r, "validation", cb_field, t->validation );
-  // RECORD_FIELDP ( r, "sister", cb_field, t->sister );
-  RECORD_FIELDP ( r, "redefines", cb_field, t->redefines );
+  RECORD_FIELDP ( r, "sister", cb_field, t->sister );
+  RECORD_FIELDP0 ( r, "redefines", cb_field, t->redefines );
   RECORD_FIELDP ( r, "rename_thru", cb_field, t->rename_thru );
-  RECORD_FIELDP ( r, "index_qual", cb_field, t->index_qual );
+  RECORD_FIELDP0 ( r, "index_qual", cb_field, t->index_qual );
   RECORD_FIELDP ( r, "file", cb_file, t->file );
   RECORD_FIELDP ( r, "cd", cb_cd, t->cd );
   RECORD_FIELDP ( r, "keys", cb_key, t->keys );
@@ -1023,10 +1049,11 @@ static
 	unsigned int flag_is_typedef : 1;	/* TYPEDEF  */
 	unsigned int flag_occurs_values: 1;	/* OCCURS and multi VALUEs done */
 #endif
+  }
   RECORD_END(r);
 }
 
-static void print_cb_program ( const struct cb_program *p, int indent )
+static void print_cb_program ( const struct cb_program *p, int indent, int full )
 {
   RECORD_BEGIN(r, indent);
   RECORD_TREE( r, "program", p );
@@ -1149,98 +1176,98 @@ static void print_cb_program ( const struct cb_program *p, int indent )
         RECORD_END(r);
 };
 
-static void print_cb_tree ( const cb_tree t, int indent )
+static void print_cb_tree ( const cb_tree t, int indent, int full )
 {
   switch( t->tag ){
   case CB_TAG_FIELD :
-    return print_cb_field( (struct cb_field*)t, indent ); 
+    return print_cb_field( (struct cb_field*)t, indent, full ); 
   case CB_TAG_PROGRAM :
-    return print_cb_program( (struct cb_program*)t, indent ); 
+    return print_cb_program( (struct cb_program*)t, indent, full ); 
   case CB_TAG_LIST :
-    return print_cb_list( (struct cb_list*)t, indent );
+    return print_cb_list( (struct cb_list*)t, indent, full );
   case CB_TAG_FILE :
-    return print_cb_file( (struct cb_file*)t, indent );
+    return print_cb_file( (struct cb_file*)t, indent, full );
   case CB_TAG_CD :
-    return print_cb_cd( (struct cb_cd*)t, indent );
+    return print_cb_cd( (struct cb_cd*)t, indent, full );
   case CB_TAG_CONST :
-    return print_cb_const( (struct cb_const*)t, indent );
+    return print_cb_const( (struct cb_const*)t, indent, full );
   case CB_TAG_INTEGER :
-    return print_cb_integer( (struct cb_integer*)t, indent );
+    return print_cb_integer( (struct cb_integer*)t, indent, full );
   case CB_TAG_STRING :
-    return print_cb_string( (struct cb_string*)t, indent );
+    return print_cb_string( (struct cb_string*)t, indent, full );
   case CB_TAG_ALPHABET_NAME :
-    return print_cb_alphabet_name( (struct cb_alphabet_name*)t, indent );
+    return print_cb_alphabet_name( (struct cb_alphabet_name*)t, indent, full );
   case CB_TAG_CLASS_NAME :
-    return print_cb_class_name( (struct cb_class_name*)t, indent );
+    return print_cb_class_name( (struct cb_class_name*)t, indent, full );
   case CB_TAG_LOCALE_NAME :
-    return print_cb_locale_name( (struct cb_locale_name*)t, indent );
+    return print_cb_locale_name( (struct cb_locale_name*)t, indent, full );
   case CB_TAG_SYSTEM_NAME :
-    return print_cb_system_name( (struct cb_system_name*)t, indent );
+    return print_cb_system_name( (struct cb_system_name*)t, indent, full );
   case CB_TAG_LITERAL :
-    return print_cb_literal( (struct cb_literal*)t, indent );
+    return print_cb_literal( (struct cb_literal*)t, indent, full );
   case CB_TAG_DECIMAL :
-    return print_cb_decimal( (struct cb_decimal*)t, indent );
+    return print_cb_decimal( (struct cb_decimal*)t, indent, full );
   case CB_TAG_REPORT :
-    return print_cb_report( (struct cb_report*)t, indent );
+    return print_cb_report( (struct cb_report*)t, indent, full );
   case CB_TAG_REFERENCE :
-    return print_cb_reference( (struct cb_reference*)t, indent );
+    return print_cb_reference( (struct cb_reference*)t, indent, full );
   case CB_TAG_BINARY_OP :
-    return print_cb_binary_op( (struct cb_binary_op*)t, indent );
+    return print_cb_binary_op( (struct cb_binary_op*)t, indent, full );
   case CB_TAG_FUNCALL :
-    return print_cb_funcall( (struct cb_funcall*)t, indent );
+    return print_cb_funcall( (struct cb_funcall*)t, indent, full );
   case CB_TAG_CAST :
-    return print_cb_cast( (struct cb_cast*)t, indent );
+    return print_cb_cast( (struct cb_cast*)t, indent, full );
   case CB_TAG_INTRINSIC :
-    return print_cb_intrinsic( (struct cb_intrinsic*)t, indent );
+    return print_cb_intrinsic( (struct cb_intrinsic*)t, indent, full );
 
   case CB_TAG_LABEL :
-    return print_cb_label( (struct cb_label*)t, indent );
+    return print_cb_label( (struct cb_label*)t, indent, full );
   case CB_TAG_ASSIGN :
-    return print_cb_assign( (struct cb_assign*)t, indent );
+    return print_cb_assign( (struct cb_assign*)t, indent, full );
   case CB_TAG_INITIALIZE :
-    return print_cb_initialize( (struct cb_initialize*)t, indent );
+    return print_cb_initialize( (struct cb_initialize*)t, indent, full );
   case CB_TAG_SEARCH :
-    return print_cb_search( (struct cb_search*)t, indent );
+    return print_cb_search( (struct cb_search*)t, indent, full );
   case CB_TAG_CALL :
-    return print_cb_call( (struct cb_call*)t, indent );
+    return print_cb_call( (struct cb_call*)t, indent, full );
   case CB_TAG_GOTO :
-    return print_cb_goto( (struct cb_goto*)t, indent );
+    return print_cb_goto( (struct cb_goto*)t, indent, full );
   case CB_TAG_IF :
-    return print_cb_if( (struct cb_if*)t, indent );
+    return print_cb_if( (struct cb_if*)t, indent, full );
   case CB_TAG_PERFORM :
-    return print_cb_perform( (struct cb_perform*)t, indent );
+    return print_cb_perform( (struct cb_perform*)t, indent, full );
   case CB_TAG_STATEMENT :
-    return print_cb_statement( (struct cb_statement*)t, indent );
+    return print_cb_statement( (struct cb_statement*)t, indent, full );
   case CB_TAG_CONTINUE :
-    return print_cb_continue( (struct cb_continue*)t, indent );
+    return print_cb_continue( (struct cb_continue*)t, indent, full );
   case CB_TAG_CANCEL :
-    return print_cb_cancel( (struct cb_cancel*)t, indent );
+    return print_cb_cancel( (struct cb_cancel*)t, indent, full );
   case CB_TAG_ALTER :
-    return print_cb_alter( (struct cb_alter*)t, indent );
+    return print_cb_alter( (struct cb_alter*)t, indent, full );
   case CB_TAG_SET_ATTR :
-    return print_cb_set_attr( (struct cb_set_attr*)t, indent );
+    return print_cb_set_attr( (struct cb_set_attr*)t, indent, full );
   case CB_TAG_PERFORM_VARYING :
-    return print_cb_perform_varying( (struct cb_perform_varying*)t, indent );
+    return print_cb_perform_varying( (struct cb_perform_varying*)t, indent, full );
   case CB_TAG_PICTURE :
-    return print_cb_picture( (struct cb_picture*)t, indent );
+    return print_cb_picture( (struct cb_picture*)t, indent, full );
   case CB_TAG_DIRECT :
-    return print_cb_direct( (struct cb_direct*)t, indent );
+    return print_cb_direct( (struct cb_direct*)t, indent, full );
   case CB_TAG_DEBUG :
-    return print_cb_debug( (struct cb_debug*)t, indent );
+    return print_cb_debug( (struct cb_debug*)t, indent, full );
   case CB_TAG_DEBUG_CALL :
-    return print_cb_debug_call( (struct cb_debug_call*)t, indent );
+    return print_cb_debug_call( (struct cb_debug_call*)t, indent, full );
   case CB_TAG_PROTOTYPE :
-    return print_cb_prototype( (struct cb_prototype*)t, indent );
+    return print_cb_prototype( (struct cb_prototype*)t, indent, full );
   case CB_TAG_DECIMAL_LITERAL :
-    return print_cb_decimal_literal( (struct cb_decimal*)t, indent );
+    return print_cb_decimal_literal( (struct cb_decimal*)t, indent, full );
   case CB_TAG_ML_SUPPRESS :
-    return print_cb_ml_suppress( (struct cb_ml_suppress_clause*)t, indent );
+    return print_cb_ml_suppress( (struct cb_ml_suppress_clause*)t, indent, full );
   case CB_TAG_ML_TREE :
-    return print_cb_ml_tree( (struct cb_ml_generate_tree*)t, indent );
+    return print_cb_ml_tree( (struct cb_ml_generate_tree*)t, indent, full );
   case CB_TAG_ML_SUPPRESS_CHECKS :
-    return print_cb_ml_suppress_checks( (struct cb_ml_suppress_checks*)t, indent );
+    return print_cb_ml_suppress_checks( (struct cb_ml_suppress_checks*)t, indent, full );
   case CB_TAG_VARY :
-    return print_cb_vary( (struct cb_vary*)t, indent );
+    return print_cb_vary( (struct cb_vary*)t, indent, full );
   case CB_TAG_REPORT_LINE :
   default: 
   RECORD_BEGIN(r, indent);
@@ -1259,13 +1286,13 @@ void json_print_program( const struct cb_program *p )
   char filename [namelen+10];
   for( i=0; i<=MAX_INDENT; i++ ){
     indentation[i]=' ';
-    indents[i] = (indentation+MAX_INDENT)-i;
+    indents[i] = (indentation+MAX_INDENT)-(i % 80);
   }
   indentation[MAX_INDENT+1] = 0;
   strcpy(filename, p->program_name);
   strcpy(filename+namelen, ".json");
   oc = fopen(filename, "w");;
-  print_cb_program( p, 0 );
+  print_cb_program( p, 0, 1 );
   free(indentation);
   fclose(oc);
 }
