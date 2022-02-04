@@ -4,6 +4,11 @@
 	* gcos-strict.conf, gcos.conf, gcos.words: added config files for
 	  GCOS 7 (Bull) dialect
 
+2022-02-04  David Declerck <david.declerck@ocamlpro.com>
+
+	* general: add an indicator-column option to allow customizing
+	  the position of the indicator
+
 2021-11-14  Ron Norman <rjn@inglenet.com>
 
 	* mf.words: Add MF specific names B-EXOR, B-LEFT, B-RIGHT for bit
