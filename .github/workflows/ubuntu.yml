@@ -1,0 +1,61 @@
+name: Ubuntu Workflow
+
+on:
+  pull_request:
+    branches:
+      - master
+      - gcos
+  push:
+    branches:
+      - master
+      - gcos
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+#          - macos-latest
+
+        include:
+          - os: ubuntu-latest
+            skip_test: true
+
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      - name: Set git user
+        run: |
+          git config --global user.name github-actions
+          git config --global user.email github-actions-bot@users.noreply.github.com
+
+      - run: |
+          sudo apt-get install libdb5.3-dev help2man
+
+      - run: |
+          ./build_aux/bootstrap
+
+      - run: |
+          mkdir _build
+
+      - name: configure
+        run: |
+          cd _build
+          ../configure --enable-cobc-internal-checks --enable-debug --prefix /opt/cobol/gnucobol-gcos --exec-prefix /opt/cobol/gnucobol-gcos
+
+      - name: make
+        run: |
+          cd _build
+          make
+
+      - name: install
+        run: |
+          cd _build
+          make install
+
