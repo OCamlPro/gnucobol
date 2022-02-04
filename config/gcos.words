@@ -93,7 +93,7 @@ reserved:	COMMUNICATION
 reserved:	COMP=COMP-6
 reserved:	COMP-1=BINARY-SHORT		# GCOS
 reserved:	COMP-2=BINARY-LONG		# GCOS
-#reserved:	COMP-3=COMP-6			# GCOS
+reserved:	COMP-3=COMP-3			# GCOS
 reserved:       COMP-6				# GCOS
 reserved:	COMP-5=PACKED-DECIMAL		# GCOS
 reserved:	COMP-8=PACKED-DECIMAL		# GCOS
