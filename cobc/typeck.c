@@ -2195,6 +2195,31 @@ cb_build_assignment_name (struct cb_file *cfile, cb_tree name)
 }
 
 cb_tree
+cb_build_gcos_assignment_name (struct cb_file *cfile, cb_tree name, char **assign_default)
+{
+	if (name == cb_error_node || name == NULL || !CB_LITERAL_P (name)) {
+		return cb_error_node;
+	}
+
+        cb_tree res = NULL;
+
+	char *data = cob_strdup((const char *)CB_LITERAL (name)->data);
+	char *n = strtok(data, " \t,");
+	if (n != NULL) {
+		char *d = strtok(NULL, " \t,");
+		if (!(d != NULL && assign_default == NULL)) {
+			res = cb_build_alphanumeric_literal(n, strlen(n));
+			if (d != NULL && assign_default != NULL) {
+				*assign_default = strdup(d);
+			}
+		}
+	}
+        cob_free(data);
+
+	return res;
+}
+
+cb_tree
 cb_build_index (cb_tree x, cb_tree values, const unsigned int indexed_by,
 		struct cb_field *qual)
 {

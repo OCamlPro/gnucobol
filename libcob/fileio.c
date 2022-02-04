@@ -1477,8 +1477,8 @@ cob_chk_file_env (cob_file *f, const char *src)
 		}
 	}
 
-	if (COB_MODULE_PTR
-	&& !COB_MODULE_PTR->flag_filename_mapping) {	/* No DD_name checks */
+	if ((COB_MODULE_PTR
+	&& !COB_MODULE_PTR->flag_filename_mapping) || f->flag_no_mapping) {	/* No DD_name checks */
 		strcpy (file_open_env, file_open_name);
 		if (q) {
 			cob_free (q);
@@ -1551,33 +1551,38 @@ cob_chk_file_mapping (cob_file *f, char *filename)
 		/* If not found, use as is including the dollar character */
 		if ((p = cob_chk_file_env (f, src)) != NULL) {
 			strncpy (file_open_name, p, (size_t)COB_FILE_MAX);
-		} else if (file_paths) {
-			for(k=0; file_paths[k] != NULL; k++) {
-				snprintf (file_open_buff, (size_t)COB_FILE_MAX, "%s%c%s",
-					  file_paths[k], SLASH_CHAR, file_open_name);
-				file_open_buff[COB_FILE_MAX] = 0;
-				if (access (file_open_buff, F_OK) == 0) {
-					break;
-				}
-#if defined(WITH_CISAM) || defined(WITH_DISAM) || defined(WITH_VBISAM) || defined(WITH_VISAM)
-				/* ISAM may append '.dat' to file name */
-				snprintf (file_open_buff, (size_t)COB_FILE_MAX, "%s%c%s.dat",
-					  file_paths[k], SLASH_CHAR, file_open_name);
-				file_open_buff[COB_FILE_MAX] = 0;
-				if (access (file_open_buff, F_OK) == 0) {
+		} else {
+			if (f->assign_default != NULL) { /* non-NULL in GCOS only */
+				strcpy (file_open_name, f->assign_default);
+			}
+			if (file_paths) {
+				for(k=0; file_paths[k] != NULL; k++) {
 					snprintf (file_open_buff, (size_t)COB_FILE_MAX, "%s%c%s",
 						  file_paths[k], SLASH_CHAR, file_open_name);
 					file_open_buff[COB_FILE_MAX] = 0;
-					break;
-				}
+					if (access (file_open_buff, F_OK) == 0) {
+						break;
+					}
+#if defined(WITH_CISAM) || defined(WITH_DISAM) || defined(WITH_VBISAM) || defined(WITH_VISAM)
+					/* ISAM may append '.dat' to file name */
+					snprintf (file_open_buff, (size_t)COB_FILE_MAX, "%s%c%s.dat",
+						  file_paths[k], SLASH_CHAR, file_open_name);
+					file_open_buff[COB_FILE_MAX] = 0;
+					if (access (file_open_buff, F_OK) == 0) {
+						snprintf (file_open_buff, (size_t)COB_FILE_MAX, "%s%c%s",
+							  file_paths[k], SLASH_CHAR, file_open_name);
+						file_open_buff[COB_FILE_MAX] = 0;
+						break;
+					}
 #endif
+				}
+				if (file_paths[k] == NULL) {
+					snprintf (file_open_buff, (size_t)COB_FILE_MAX, "%s%c%s",
+						  file_paths[0], SLASH_CHAR, file_open_name);
+					file_open_buff[COB_FILE_MAX] = 0;
+				}
+				strncpy (file_open_name, file_open_buff, (size_t)COB_FILE_MAX);
 			}
-			if (file_paths[k] == NULL) {
-				snprintf (file_open_buff, (size_t)COB_FILE_MAX, "%s%c%s",
-					  file_paths[0], SLASH_CHAR, file_open_name);
-				file_open_buff[COB_FILE_MAX] = 0;
-			}
-			strncpy (file_open_name, file_open_buff, (size_t)COB_FILE_MAX);
 		}
 		return;
 	}
@@ -5944,6 +5949,7 @@ cob_file_create (
 	cob_file **	pfl, 
 	const char *exname,
 	const char *select_name,
+	const char *assign_default,
 	const int	fileorg,
 	const int	accessmode,
 	const int	optional,
@@ -5952,6 +5958,7 @@ cob_file_create (
 	const int	nkeys,
 	const int	minrcsz,
 	const int	maxrcsz,
+	const int	no_mapping,
 	cob_field *	assign,
 	cob_field *	record)
 {
@@ -5975,11 +5982,13 @@ cob_file_create (
 		fl->nkeys = nkeys;
 		memset(fl->file_status,'0',4);
 		fl->select_name = select_name;
+		fl->assign_default = assign_default;
 		fl->organization = (unsigned char)fileorg;
 		fl->access_mode = (unsigned char)accessmode;
 		fl->flag_optional = (unsigned char)optional;
 		fl->file_format = (unsigned char)format;
 		fl->flag_select_features = (unsigned char)select;
+		fl->flag_no_mapping = no_mapping;
 		fl->assign = assign;
 		fl->record = record;
 		fl->record_min = minrcsz;

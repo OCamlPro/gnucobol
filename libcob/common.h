@@ -1487,7 +1487,7 @@ typedef struct __cob_linage {
 } cob_linage;
 
 /* File version */
-#define	COB_FILE_VERSION	5
+#define	COB_FILE_VERSION	6
 
 /* File structure */
 
@@ -1515,6 +1515,7 @@ typedef struct __cob_file {
 	const char		*select_name;		/* Name in SELECT */
 	unsigned char		file_status[4];		/* FILE STATUS */
 	cob_field		*assign;		/* ASSIGN TO */
+	const char		*assign_default;	/* [GCOS] Filename to use if file mapping fails  */
 	cob_field		*record;		/* Record area */
 	cob_field		*variable_record;	/* Record size variable */
 	cob_file_key		*keys;			/* ISAM/RANDOM/SORT keys */
@@ -1591,8 +1592,9 @@ typedef struct __cob_file {
 	unsigned int		flag_updt_file:1;	/* Allow this 'cob_file' to be updated */
 	unsigned int		flag_is_std:1;		/* LINE SEQUENTIAL as 'stdin/stdout/stderr' */
 	unsigned int		flag_is_concat:1;	/* SEQUENTIAL concatenated file names */
-	unsigned int		flag_needs_cr;		/* Needs CR */
-	unsigned int		unused_bits:3;
+	unsigned int		flag_needs_cr:1;	/* Needs CR */
+	unsigned int		flag_no_mapping:1;	/* [GCOS] Disable filename mapping for this file */
+	unsigned int		unused_bits:2;
 
 	cob_field			*last_key;		/* Last field used as 'key' for I/O */
 	unsigned char		last_operation;		/* Most recent I/O operation */
@@ -2718,9 +2720,11 @@ COB_EXPIMP void cob_pre_open	(cob_file *f);
 COB_EXPIMP void cob_pre_open_def (cob_file *f, char *setdef, char *isdef, int checkit);
 COB_EXPIMP int	cob_findkey (cob_file *, cob_field *, int *, int *);
 COB_EXPIMP void cob_file_create (cob_file ** pfl, const char *exname, const char *select_name,
+					const char *assign_default,
 					const int fileorg, const int accessmode, const int optional,
 					const int format, const int select_features, const int nkeys, 
-					const int minrcsz, const int maxrcsz, cob_field * assign, cob_field * record);
+					const int minrcsz, const int maxrcsz,
+					const int no_mapping, cob_field * assign, cob_field * record);
 COB_EXPIMP void cob_file_destroy (cob_file ** pfl);
 COB_EXPIMP void cob_file_set_attr (cob_file * fl, cob_field * varsize,
 					const int lineadv, const int features,

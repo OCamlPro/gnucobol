@@ -9605,7 +9605,7 @@ output_file_initialization (struct cb_file *f)
 	char		nxt[8];
 	char		features[128];
 #define FNAME_SIZE	64
-	char		file_name[FNAME_SIZE], extname[FNAME_SIZE + 2];
+	char		file_name[FNAME_SIZE], extname[FNAME_SIZE + 2], assign_default[FNAME_SIZE + 2];
 #undef FNAME_SIZE
 	const char	*org_name = "0";
 	const char	*acc_name = "0";
@@ -9692,10 +9692,17 @@ output_file_initialization (struct cb_file *f)
 	} else {
 		strcpy (extname, "NULL");
 	}
+	if (f->assign_default) {
+		sprintf (assign_default, "\"%s\"", f->assign_default);
+	} else {
+		strcpy (assign_default, "NULL");
+	}
 	output_line ("cob_file_create (&%s, %s, \"%s\",", file_name, extname, f->name);
 	output_indent_level += 17;
+	output_line ("%s,", assign_default);
 	output_line ("%s,%s,%d,",org_name,acc_name,f->optional);
 	output_line ("%s,%s,%d,%d,%d,",fmt_name,features,nkeys,f->record_min,f->record_max);
+	output_line ("%d,",f->flag_no_mapping);
 	output_prefix ();
 	output_param (f->assign, -1);
 	output (",");
