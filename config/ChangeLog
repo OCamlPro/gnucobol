@@ -1,4 +1,8 @@
 
+2022-02-04  David Declerck <david.declerck@ocamlpro.com>
+
+	* general: add a relax-paragraph-name-uniqueness option
+
 2022-02-07  David Declerck <david.declerck@ocamlpro.com>
 
 	* gcos-strict.conf, gcos.conf, gcos.words: added config files for

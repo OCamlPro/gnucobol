@@ -1,4 +1,9 @@
 
+2022-02-04  David Declerck <david.declerck@ocamlpro.com>
+
+	* config.def, typeck.c: allow paragraph names to redefine field
+	  and section names; related to FR#260
+
 2022-05-31  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (cobc_check_string): replaced single string cache by an array

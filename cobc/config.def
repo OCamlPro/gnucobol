@@ -385,3 +385,5 @@ CB_CONFIG_SUPPORT (cb_vsam_status, "vsam-status",
 CB_CONFIG_SUPPORT (cb_self_call_recursive, "self-call-recursive",
 	_("CALL to own PROGRAM-ID implies RECURSIVE attribute"))
 
+CB_CONFIG_BOOLEAN (cb_relax_paragraph_name_uniqueness, "relax-paragraph-name-uniqueness",
+	_("allow paragraph names to redefine field and section names"))
