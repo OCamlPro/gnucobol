@@ -6150,12 +6150,18 @@ record_clause:
 	}
   }
 | RECORD _contains integer TO integer _characters
+  _record_depending /* GCOS extension */
   {
 	check_repeated ("RECORD", SYN_CLAUSE_4, &check_duplicate);
 	if (current_file->organization == COB_ORG_LINE_SEQUENTIAL) {
 		cb_warning (cb_warn_additional, _("RECORD clause ignored for LINE SEQUENTIAL"));
 	} else {
 		set_record_size ($3, $5);
+		if (current_file->record_depending) {
+			cb_verify (cb_record_contains_depending_clause, "RECORD CONTAINS DEPENDING");
+			current_file->flag_check_record_varying_limits =
+				current_file->record_min == 0 || current_file->record_max == 0;
+		}
 	}
   }
 | RECORD _is VARYING _in _size _from_integer _to_integer _characters
