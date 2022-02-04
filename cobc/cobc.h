@@ -384,6 +384,7 @@ extern enum cb_format		cb_source_format;
 #if 0 /* ancient OSVS registers that need special runtime handling - low priority */
 extern enum cb_current_date	current_date;
 #endif
+extern int			cb_indicator_column;
 extern int			cb_text_column;	/* end of area B (in single-byte characters) */
 
 extern struct cb_exception	cb_exception_table[];

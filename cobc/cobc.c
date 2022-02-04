@@ -225,7 +225,7 @@ FILE			*cb_listing_file = NULL;
 
 /* TODO: add new compiler configuration flags for this*/
 #define CB_MARGIN_A	cb_indicator_column
-#define CB_MARGIN_B	11	/* careful, for COBOL 85 this would be 11,
+#define CB_MARGIN_B	CB_MARGIN_A + 4	/* careful, for COBOL 85 this would be 11,
 						   for COBOL 2002 (removed it) would be 7 */
 #define CB_INDICATOR	CB_MARGIN_A - 1
 #define CB_SEQUENCE	cb_text_column /* the only configuration available...*/
@@ -8809,7 +8809,7 @@ main (int argc, char **argv)
 	finish_setup_internal_env ();
 
 	cb_text_column = cb_config_text_column;
-	cb_indicator_column = 7;
+	cb_indicator_column = cb_config_indicator_column;
 
 	memset (cb_listing_header, 0, sizeof (cb_listing_header));
 	/* If -P=file specified, all lists go to this file */
