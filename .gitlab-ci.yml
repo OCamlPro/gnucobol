@@ -1,0 +1,13 @@
+build:
+  stage: build
+  image: registry.ocamlpro.com/ocamlpro/ocaml-docker-images:4.12
+  before_script:
+    - sudo apk add --upgrade --no-cache make patch gcc curl coreutils musl-dev opam git gmp-dev pkgconf libressl-dev emacs cmake  g++ boost boost-dev boost-static autoconf automake libtool help2man texinfo bison make gcc db-dev flex gawk bash
+  script:
+    - ./build_aux/bootstrap
+    - mkdir _build
+    - cd _build
+    - ../configure --enable-cobc-internal-checks --enable-debug --prefix /opt/cobol/gnucobol-gcos --exec-prefix /opt/cobol/gnucobol-gcos
+    - make
+    - sudo make install
+
