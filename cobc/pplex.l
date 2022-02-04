@@ -1716,7 +1716,7 @@ start:
 	if (cb_source_format == CB_FORMAT_FREE) {
 		bp = buff;
 	} else {
-		if (n < cb_indicator_column) {
+		if (n <= cb_indicator_column) {
 			/* Line too short */
 			newline_count++;
 			goto start;
