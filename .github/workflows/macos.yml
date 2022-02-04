@@ -1,0 +1,59 @@
+name: MacOS Workflow
+
+on:
+  pull_request:
+    branches:
+      - master
+      - gcos
+  push:
+    branches:
+      - master
+      - gcos
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      - name: Set git user
+        run: |
+          git config --global user.name github-actions
+          git config --global user.email github-actions-bot@users.noreply.github.com
+
+      - run: |
+          brew install automake libtool help2man texinfo bison
+          echo "/usr/local/opt/bison/bin" >> $GITHUB_PATH
+          echo "/usr/local/opt/texinfo/bin" >> $GITHUB_PATH
+
+      - name: ./build_aux/bootstrap
+        run: |
+          cd build_aux
+          ./bootstrap
+
+      - run: |
+          mkdir _build
+
+      - name: configure
+        run: |
+          cd _build
+          ../configure --enable-cobc-internal-checks --enable-debug --prefix /opt/cobol/gnucobol-gcos --exec-prefix /opt/cobol/gnucobol-gcos
+
+      - name: make
+        run: |
+          cd _build
+          make
+
+      - name: install
+        run: |
+          cd _build
+          sudo make install
+
