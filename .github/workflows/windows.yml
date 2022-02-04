@@ -1,0 +1,62 @@
+name: Windows Workflow
+
+on:
+  pull_request:
+    branches:
+      - master
+      - gcos
+  push:
+    branches:
+      - master
+      - gcos
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - windows-latest
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      - name: Set git user
+        run: |
+          git config --global user.name github-actions
+          git config --global user.email github-actions-bot@users.noreply.github.com
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          install: autoconf automake libtool make mingw-w64-x86_64-db mingw-w64-x86_64-gmp libdb-devel  mingw-w64-x86_64-gcc flex bison gmp-devel help2man texinfo
+
+      - run: |
+          ./build_aux/bootstrap
+        shell: msys2 {0}
+
+      - run: |
+          mkdir _build
+        shell: msys2 {0}
+
+      - name: configure
+        run: |
+          cd _build
+          ../configure --enable-cobc-internal-checks --enable-debug --prefix /opt/cobol/gnucobol-gcos --exec-prefix /opt/cobol/gnucobol-gcos
+        shell: msys2 {0}
+
+      - name: make
+        run: |
+          cd _build
+          make
+        shell: msys2 {0}
+
+      - name: install
+        run: |
+          cd _build
+          make install
+        shell: msys2 {0}
+
