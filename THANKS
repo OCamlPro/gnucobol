@@ -38,3 +38,7 @@ Warren Gay - For testing systems that we didn't known that we even support!
 Ron Norman - Work on C/D/VB-ISAM handler
            - Development of Report Writer
 Fabrizio Calabretta - Work on the EXTFH interface
+
+OCamlPro SAS for assigning David Declerck, Nicolas Berthier and
+Fabrice Le Fessant to work for adding GCOS (Bull) support and
+contributing the result.

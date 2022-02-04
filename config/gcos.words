@@ -1,0 +1,475 @@
+# GnuCOBOL compiler - list of reserved words
+#
+# Copyright (C) 2016-2017,2021-2022 Free Software Foundation, Inc.
+# Written by Simon Sobisch, Edward Hart, David Declerck, Fabrice Le
+# Fessant, Nicolas Berthier
+#
+# This file is part of GnuCOBOL.
+#
+# The GnuCOBOL compiler is free software: you can redistribute it
+# and/or modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# GnuCOBOL is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+
+# Word list for dialect: GCOS 7 (Bull)
+
+# NOTE: the mapping for COMP* usages does not exactly match the GCOS
+# specification, due to the former missing some of the representations
+# required.  The mapping below associates each COMP* with the closest
+# representation currently available.
+#
+# In addition, the mapping for COMP-9 (32bit floating-point), COMP-10
+# (64bit floating-point), and COMP-15 (128bit floating-point) may not
+# use the correct representations (which should be FLOAT_BINARY_*) as
+# at the moment their support is limited in cobc.
+
+reserved:	ACCEPT
+reserved:	ACCESS
+reserved:	ACTUAL
+reserved:	ADD
+reserved:	ADDRESS
+reserved:	ADVANCING
+reserved:	AFTER
+reserved:	ALL
+reserved:	ALPHABET
+reserved:	ALPHABETIC
+reserved:	ALPHABETIC-LOWER
+reserved:	ALPHABETIC-UPPER
+reserved:	ALPHANUMERIC
+reserved:	ALPHANUMERIC-EDITED
+reserved:	ALSO
+reserved:	ALTER
+reserved:	ALTERNATE
+reserved:	AND
+reserved:	ANSI
+reserved:	ANY
+reserved:	APPLY			# not supported yet
+reserved:	ARE
+reserved:	AREA
+reserved:	AREAS
+reserved:	ASA
+reserved:	ASCENDING
+reserved:	ASCII
+reserved:	ASSIGN
+reserved:	AT
+reserved:	AUTHOR
+reserved:	B-AND
+reserved:	B-NOT
+reserved:	B-OR
+reserved:	BEFORE
+reserved:	BINARY
+reserved:	BIT
+reserved:	BLANK
+reserved:	BLOCK
+reserved:	BOOLEAN
+reserved:	BOTTOM
+reserved:	BSN
+reserved:	BY
+reserved:	CALL
+reserved:	CANCEL
+reserved:	CD
+reserved:	CF
+reserved:	CH
+reserved:	CHARACTER
+reserved:	CHARACTERS
+reserved:	CLASS
+reserved:	CLOCK-UNITS
+reserved:	CLOSE
+reserved:	COBOL
+reserved:	CODE
+reserved:	CODE-SET
+reserved:	COLLATING
+reserved:	COLUMN
+reserved:	COMMA
+reserved:	COMMON
+reserved:	COMMUNICATION
+reserved:	COMP=COMP-3
+reserved:	COMP-1=BINARY-SHORT
+reserved:	COMP-2=BINARY-LONG
+reserved:	COMP-3
+reserved:	COMP-5=PACKED-DECIMAL
+reserved:	COMP-8=PACKED-DECIMAL
+reserved:	COMP-9			# single precision
+reserved:	COMP-10			# double precision
+reserved:	COMP-15			# quadruple precision
+reserved:	COMPUTATIONAL=COMP-3
+reserved:	COMPUTATIONAL-1=BINARY-SHORT
+reserved:	COMPUTATIONAL-2=BINARY-LONG
+reserved:	COMPUTATIONAL-3
+reserved:	COMPUTATIONAL-5=PACKED-DECIMAL
+reserved:	COMPUTATIONAL-8=PACKED-DECIMAL
+reserved:	COMPUTATIONAL-9=COMP-9
+reserved:	COMPUTATIONAL-10=COMP-10
+reserved:	COMPUTATIONAL-15=COMP-15
+reserved:	COMPUTE
+reserved:	CONFIGURATION
+reserved:	CONSTANT		# COBOL 2002 != GCOS (unsupported)
+reserved:	CONTAINS
+reserved:	CONTENT
+reserved:	CONTINUE
+reserved:	CONTROL
+reserved:	CONTROLS
+reserved:	CONVERSION		# not supported yet
+reserved:	CONVERTING
+reserved:	COPY
+reserved:	CORR
+reserved:	CORRESPONDING
+reserved:	COUNT
+reserved:	CURRENCY
+reserved:	DATA
+reserved:	DATE
+reserved:	DATE-COMPILED
+reserved:	DATE-WRITTEN
+reserved:	DAY
+reserved:	DAY-OF-WEEK
+reserved:	DE
+reserved:	DEBUGGING
+reserved:	DECIMAL-POINT
+reserved:	DECLARATIVES
+reserved:	DEFAULT			# COBOL 2002 != GCOS (unsupported)
+reserved:	DELETE
+reserved:	DELIMITED
+reserved:	DELIMITER
+reserved:	DEPENDING
+reserved:	DESCENDING
+reserved:	DESTINATION
+reserved:	DETAIL
+reserved:	DISABLE
+reserved:	DISPLAY
+reserved:	DIVIDE
+reserved:	DIVISION
+reserved:	DOWN
+reserved:	DUPLICATES
+reserved:	DYNAMIC
+reserved:	EBCDIC
+reserved:	EGI
+reserved:	ELSE
+reserved:	EMI
+reserved:	ENABLE
+reserved:	END
+reserved:	END-ADD
+reserved:	END-CALL
+reserved:	END-COMPUTE
+reserved:	END-DELETE
+reserved:	END-DIVIDE
+reserved:	END-EVALUATE
+reserved:	END-IF
+reserved:	END-MULTIPLY
+reserved:	END-OF-PAGE
+reserved:	END-PERFORM
+reserved:	END-READ
+reserved:	END-RECEIVE
+reserved:	END-RETURN
+reserved:	END-REWRITE
+reserved:	END-SEARCH
+reserved:	END-START
+reserved:	END-STRING
+reserved:	END-SUBTRACT
+reserved:	END-UNSTRING
+reserved:	END-WRITE
+reserved:	ENTER
+reserved:	ENVIRONMENT
+reserved:	EOP
+reserved:	EQUAL
+reserved:	EQUALS=EQUAL
+reserved:	ERROR
+reserved:	ESI
+reserved:	EVALUATE
+reserved:	EVERY
+reserved:	EXCEEDS=GREATER
+reserved:	EXCEPTION
+reserved:	EXIT
+reserved:	EXTEND
+reserved:	EXTERNAL
+reserved:	FALSE
+reserved:	FD
+reserved:	FILE
+reserved:	FILE-CONTROL
+reserved:	FILLER
+reserved:	FINAL
+reserved:	FIRST
+reserved:	FLR
+reserved:	FOOTING
+reserved:	FOR
+reserved:	FROM
+reserved:	FUNCTION
+reserved:	GENERATE
+reserved:	GIVING
+reserved:	GLOBAL
+reserved:	GO
+reserved:	GREATER
+reserved:	GROUP
+reserved:	HEADING
+reserved:	HIGH-VALUE
+reserved:	HIGH-VALUES=HIGH-VALUE
+reserved:	I-O
+reserved:	I-O-CONTROL
+reserved:	IDENTIFICATION
+reserved:	IF
+reserved:	IN
+reserved:	INDEX
+reserved:	INDEXED
+reserved:	INDICATE
+reserved:	INITIAL
+reserved:	INITIALIZE
+reserved:	INITIATE
+reserved:	INPUT
+reserved:	INPUT-OUTPUT
+reserved:	INSPECT
+reserved:	INSTALLATION
+reserved:	INTO
+reserved:	INVALID
+reserved:	IS
+reserved:	JUST
+reserved:	JUSTIFIED
+reserved:	KEY
+reserved:	LABEL
+reserved:	LAST
+reserved:	LEADING
+reserved:	LEFT
+reserved:	LENGTH
+reserved:	LESS
+reserved:	LIMIT
+reserved:	LIMITS
+reserved:	LINAGE
+reserved:	LINAGE-COUNTER
+reserved:	LINE
+reserved:	LINE-COUNTER
+reserved:	LINES
+reserved:	LINKAGE
+reserved:	LOCK
+reserved:	LOW-VALUE
+reserved:	LOW-VALUES=LOW-VALUE
+reserved:	MEMORY
+reserved:	MERGE
+reserved:	MESSAGE
+reserved:	MODE
+reserved:	MODULES
+reserved:	MOVE
+reserved:	MULTIPLE*
+reserved:	MULTIPLY
+reserved:	NATIVE
+reserved:	NEGATIVE
+reserved:	NEXT
+reserved:	NO
+reserved:	NOT
+reserved:	NULL
+reserved:	NUMBER
+reserved:	NUMERIC
+reserved:	NUMERIC-EDITED
+reserved:	OBJECT			# COBOL 2002 != GCOS (unsupported)
+reserved:	OBJECT-COMPUTER
+reserved:	OCCURS
+reserved:	OF
+reserved:	OFF
+reserved:	OMITTED
+reserved:	ON
+reserved:	OPEN
+reserved:	OPTIONAL
+reserved:	OR
+reserved:	ORDER
+reserved:	ORGANIZATION
+reserved:	OTHER
+reserved:	OUTPUT
+reserved:	OVERFLOW
+reserved:	OVERRIDING
+reserved:	PACKED-DECIMAL
+reserved:	PADDING
+reserved:	PAGE
+reserved:	PAGE-COUNTER
+reserved:	PERFORM
+reserved:	PF
+reserved:	PH
+reserved:	PIC=PICTURE
+reserved:	PICTURE
+reserved:	PLUS
+reserved:	POINTER
+reserved:	POSITION
+reserved:	POSITIVE
+reserved:	PREVIOUS*
+reserved:	PRINTING
+reserved:	PROCEDURE
+reserved:	PROCEDURES
+reserved:	PROCEED
+reserved:	PROGRAM
+reserved:	PROGRAM-ID
+reserved:	PURGE
+reserved:	QUEUE
+reserved:	QUEUED
+reserved:	QUOTE
+reserved:	QUOTES
+reserved:	RANDOM
+reserved:	RD
+reserved:	READ
+reserved:	RECEIVE
+reserved:	RECORD
+reserved:	RECORDS
+reserved:	REDEFINES
+reserved:	REEL
+reserved:	REFERENCE
+reserved:	REFERENCES
+reserved:	RELATIVE
+reserved:	RELEASE
+reserved:	REMAINDER
+reserved:	REMOVAL
+reserved:	RENAMES
+reserved:	REPLACE
+reserved:	REPLACING
+reserved:	REPORT
+reserved:	REPORTING
+reserved:	REPORTS
+reserved:	RERUN
+reserved:	RESERVE
+reserved:	RESET
+reserved:	RETURN
+reserved:	REVERSED
+reserved:	REWIND
+reserved:	REWRITE
+reserved:	RF
+reserved:	RH
+reserved:	RIGHT
+reserved:	ROUNDED
+reserved:	RUN
+reserved:	SAME
+reserved:	SARF
+reserved:	SD
+reserved:	SEARCH
+reserved:	SECTION
+reserved:	SECURITY
+reserved:	SEGMENT
+reserved:	SEGMENT-LIMIT
+reserved:	SELECT
+reserved:	SEND
+reserved:	SENTENCE
+reserved:	SEPARATE
+reserved:	SEQUENCE
+reserved:	SEQUENTIAL
+reserved:	SET
+reserved:	SIGN
+reserved:	SIZE
+reserved:	SORT
+reserved:	SORT-MERGE
+reserved:	SOURCE
+reserved:	SOURCE-COMPUTER
+reserved:	SPACE
+reserved:	SPACES=SPACE
+reserved:	SPECIAL-NAMES
+reserved:	SSF
+reserved:	STANDARD
+reserved:	STANDARD-1
+reserved:	STANDARD-2
+reserved:	START
+reserved:	STATUS
+reserved:	STOP
+reserved:	STRING
+reserved:	SUB-QUEUE-1
+reserved:	SUB-QUEUE-2
+reserved:	SUB-QUEUE-3
+reserved:	SUBTRACT
+reserved:	SUM
+reserved:	SUPPRESS
+reserved:	SYMBOLIC
+reserved:	SYNC
+reserved:	SYNCHRONIZED
+reserved:	TABLE
+reserved:	TALLYING
+reserved:	TAPE
+reserved:	TERMINATE
+reserved:	TEST
+reserved:	TEXT
+reserved:	THAN
+reserved:	THEN
+reserved:	THROUGH
+reserved:	THRU
+reserved:	TIME
+reserved:	TIMES
+reserved:	TO
+reserved:	TOP
+reserved:	TRAILING
+reserved:	TRANSFORM
+reserved:	TRUE
+reserved:	TYPE
+reserved:	UFF
+reserved:	UNIT
+reserved:	UNSTRING
+reserved:	UNTIL
+reserved:	UP
+reserved:	UPON
+reserved:	USAGE
+reserved:	USE
+reserved:	USING
+reserved:	VALUE
+reserved:	VALUES=VALUE
+reserved:	VARYING
+reserved:	VLR
+reserved:	WHEN
+reserved:	WITH
+reserved:	WORDS
+reserved:	WORKING-STORAGE
+reserved:	WRITE
+reserved:	ZERO
+reserved:	ZEROES=ZERO
+reserved:	ZEROS=ZERO
+
+
+# Internal registers
+
+not-register:	DIALECT-ALL
+register:       "TALLY"
+register:	"ADDRESS\ OF"
+register:	"DEBUG-ITEM"
+
+
+# Intrinsics functions
+
+not-intrinsic-function:	DIALECT-ALL
+intrinsic-function:	ACOS
+intrinsic-function:	ANNUITY
+intrinsic-function:	ASIN
+intrinsic-function:	ATAN
+intrinsic-function:	CHAR
+intrinsic-function:	COS
+intrinsic-function:	CURRENT-DATE
+intrinsic-function:	DATE-OF-INTEGER
+intrinsic-function:	DAY-OF-INTEGER
+intrinsic-function:	FACTORIAL
+intrinsic-function:	INTEGER
+intrinsic-function:	INTEGER-OF-DATE
+intrinsic-function:	INTEGER-OF-DAY
+intrinsic-function:	INTEGER-PART
+intrinsic-function:	LENGTH
+intrinsic-function:	LOG
+intrinsic-function:	LOG10
+intrinsic-function:	LOWER-CASE
+intrinsic-function:	MAX
+intrinsic-function:	MEAN
+intrinsic-function:	MEDIAN
+intrinsic-function:	MIDRANGE
+intrinsic-function:	MIN
+intrinsic-function:	MOD
+intrinsic-function:	NUMVAL
+intrinsic-function:	NUMVAL-C
+intrinsic-function:	ORD
+intrinsic-function:	ORD-MAX
+intrinsic-function:	ORD-MIN
+intrinsic-function:	PRESENT-VALUE
+intrinsic-function:	RANDOM
+intrinsic-function:	RANGE
+intrinsic-function:	REM
+intrinsic-function:	REVERSE
+intrinsic-function:	SIN
+intrinsic-function:	SQRT
+intrinsic-function:	STANDARD-DEVIATION
+intrinsic-function:	SUM
+intrinsic-function:	TAN
+intrinsic-function:	UPPER-CASE
+intrinsic-function:	VARIANCE
+intrinsic-function:	WHEN-COMPILED
