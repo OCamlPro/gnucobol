@@ -505,7 +505,7 @@ reserved:	SYNCHRONIZED
 reserved:	TABLE
 reserved:	TALLYING
 reserved:	TAPE
-reserved:	TERMINAL
+#reserved:	TERMINAL
 reserved:	TERMINATE
 reserved:	TEST
 reserved:	TEXT
