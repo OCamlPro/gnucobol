@@ -1,3 +1,8 @@
+2022-02-04  David Declerck <david.declerck@ocamlpro.com>
+
+	* config, cobc/cobc.h: add support for GCOS 7 dialect (Bull), both
+	  a strict variant (config/gcos-strict.conf) and a variant with
+	  GNUCobol extensions (config/gcos.conf)
 
 2022-03-11  Simon Sobisch <simonsobisch@gnu.org>
 
