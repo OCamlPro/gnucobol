@@ -25,10 +25,9 @@ config_DATA = default.conf cobol85.conf cobol2002.conf cobol2014.conf \
 	acu-strict.conf mf-strict.conf ibm-strict.conf mvs-strict.conf \
 	bs2000-strict.conf realia-strict.conf rm-strict.conf xopen.conf \
 	gcos.conf gcos-strict.conf lax.conf-inc \
+	gcos.conf gcos-strict.conf lax.conf-inc \
 	cobol85.words cobol2002.words cobol2014.words \
 	acu.words mf.words ibm.words mvs.words bs2000.words realia.words \
-	rm.words gcos.words runtime.cfg runtime_empty.cfg \
-	default.ttbl alternate.ttbl \
-	ebcdic500_ascii7bit.ttbl ebcdic500_ascii8bit.ttbl ebcdic500_latin1.ttbl
+	rm.words gcos.words runtime.cfg runtime_empty.cfg
 
 EXTRA_DIST = $(config_DATA)
