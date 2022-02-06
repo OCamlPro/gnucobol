@@ -13359,7 +13359,7 @@ Program-Id: prog
               160:'    1600 BPI00090'
  Line:    414           IF
  Line:    422           PERFORM
- Line:    423           UNTIL
+ Line:    422           UNTIL
  Line:    424           DISPLAY
  Line:    427           READ
             READ Sequential TSPFILE Status: 00
@@ -13367,7 +13367,7 @@ Program-Id: prog
                80:'    CALIFORNIA               8009329492MR. MICHAEL SMYTHE       UNI-80/63MEG8470'
               160:'    6250 BPI00107'
  Line:    431           ADD
- Line:    423           UNTIL
+ Line:    422           UNTIL
  Line:    424           DISPLAY
  Line:    427           READ
             READ Sequential TSPFILE Status: 00
@@ -13375,7 +13375,7 @@ Program-Id: prog
                80:'    D.C.                     8372487274MR. ALLAN JONES          UNI-80/31MEG8417'
               160:'    1600 BPI00075'
  Line:    431           ADD
- Line:    423           UNTIL
+ Line:    422           UNTIL
  Line:    424           DISPLAY
  Line:    427           READ
             READ Sequential TSPFILE Status: 00
@@ -13383,7 +13383,7 @@ Program-Id: prog
                80:'    NEW MEXICO               6456445643MR. D.A. MORRISON        UNI-80/61MEG8417'
               160:'    1600 BPI00067'
  Line:    431           ADD
- Line:    423           UNTIL
+ Line:    422           UNTIL
  Line:    424           DISPLAY
  Line:    427           READ
             READ Sequential TSPFILE Status: 00
@@ -13391,7 +13391,7 @@ Program-Id: prog
                80:'    WISCONSIN                6546456333MR. BRIAN PATTERSON      UNI-80/83MEG8470'
               160:'    6250 BPI00032'
  Line:    431           ADD
- Line:    423           UNTIL
+ Line:    422           UNTIL
  Line:    424           DISPLAY
  Line:    427           READ
             READ Sequential TSPFILE Status: 00
@@ -13399,7 +13399,7 @@ Program-Id: prog
                80:'    DELAWARE                 3455445444MR. DARRYL TOWNSEND      UNI-80/81MEG8417'
               160:'    1600 BPI00016'
  Line:    431           ADD
- Line:    423           UNTIL
+ Line:    422           UNTIL
  Line:    424           DISPLAY
  Line:    427           READ
             READ Sequential TSPFILE Status: 00
@@ -13407,7 +13407,7 @@ Program-Id: prog
                80:'    KANSAS                   6456445643MS. VALERIE HARPER       UNI-80/81MEG8417'
               160:'    1600 BPI00034'
  Line:    431           ADD
- Line:    423           UNTIL
+ Line:    422           UNTIL
  Line:    424           DISPLAY
  Line:    427           READ
             READ Sequential TSPFILE Status: 00
@@ -13415,7 +13415,7 @@ Program-Id: prog
                80:'    WASHINGTON               7456434355MR. FRED MILLER          UNI-80/81MEG8417'
               160:'    1600 BPI00128'
  Line:    431           ADD
- Line:    423           UNTIL
+ Line:    422           UNTIL
  Line:    424           DISPLAY
  Line:    427           READ
             READ Sequential TSPFILE Status: 00
@@ -13423,7 +13423,7 @@ Program-Id: prog
                80:'    N.J.                     6554456433MR. DONALD FISCHER       UNI-80/83MEG8470'
               160:'    6250 BPI00064'
  Line:    431           ADD
- Line:    423           UNTIL
+ Line:    422           UNTIL
  Line:    424           DISPLAY
  Line:    427           READ
             READ Sequential TSPFILE Status: 00
@@ -13431,7 +13431,7 @@ Program-Id: prog
                80:'    COLORADO                 4169898509MR. STEVEN YOURDIN       UNI-80/83MEG8470'
               160:'    6250 BPI00110'
  Line:    431           ADD
- Line:    423           UNTIL
+ Line:    422           UNTIL
  Line:    424           DISPLAY
  Line:    427           READ
             READ Sequential TSPFILE Status: 00
@@ -13439,7 +13439,7 @@ Program-Id: prog
                80:'    OHIO                     7534587453MS. Goldie Hawn          UNI-80/83MEG8470'
               160:'    6250 BPI00324'
  Line:    431           ADD
- Line:    423           UNTIL
+ Line:    422           UNTIL
  Line:    424           DISPLAY
  Line:    427           READ
             READ Sequential TSPFILE Status: 00
@@ -13447,7 +13447,7 @@ Program-Id: prog
                80:'    VIRGINIA                 8787458374MS. ALICE WINSTON        UNI-90403MEG8470'
               160:'    6250 BPI00124'
  Line:    431           ADD
- Line:    423           UNTIL
+ Line:    422           UNTIL
  Line:    433           IF
  Line:    437           DISPLAY
  Line:    438           MOVE
@@ -13462,7 +13462,7 @@ Program-Id: prog
               160:'    6250 BPI00324'
  Line:    446           IF
  Line:    451           PERFORM
- Line:    452           UNTIL
+ Line:    451           UNTIL
  Line:    453           DISPLAY
  Line:    456           READ
             READ Sequential TSPFILE Status: 00
@@ -13470,7 +13470,7 @@ Program-Id: prog
                80:'    COLORADO                 4169898509MR. STEVEN YOURDIN       UNI-80/83MEG8470'
               160:'    6250 BPI00110'
  Line:    460           ADD
- Line:    452           UNTIL
+ Line:    451           UNTIL
  Line:    453           DISPLAY
  Line:    456           READ
             READ Sequential TSPFILE Status: 00
@@ -13478,7 +13478,7 @@ Program-Id: prog
                80:'    N.J.                     6554456433MR. DONALD FISCHER       UNI-80/83MEG8470'
               160:'    6250 BPI00064'
  Line:    460           ADD
- Line:    452           UNTIL
+ Line:    451           UNTIL
  Line:    453           DISPLAY
  Line:    456           READ
             READ Sequential TSPFILE Status: 00
@@ -13486,7 +13486,7 @@ Program-Id: prog
                80:'    WASHINGTON               7456434355MR. FRED MILLER          UNI-80/81MEG8417'
               160:'    1600 BPI00128'
  Line:    460           ADD
- Line:    452           UNTIL
+ Line:    451           UNTIL
  Line:    453           DISPLAY
  Line:    456           READ
             READ Sequential TSPFILE Status: 00
@@ -13494,7 +13494,7 @@ Program-Id: prog
                80:'    KANSAS                   6456445643MS. VALERIE HARPER       UNI-80/81MEG8417'
               160:'    1600 BPI00034'
  Line:    460           ADD
- Line:    452           UNTIL
+ Line:    451           UNTIL
  Line:    453           DISPLAY
  Line:    456           READ
             READ Sequential TSPFILE Status: 00
@@ -13502,7 +13502,7 @@ Program-Id: prog
                80:'    DELAWARE                 3455445444MR. DARRYL TOWNSEND      UNI-80/81MEG8417'
               160:'    1600 BPI00016'
  Line:    460           ADD
- Line:    452           UNTIL
+ Line:    451           UNTIL
  Line:    453           DISPLAY
  Line:    456           READ
             READ Sequential TSPFILE Status: 00
@@ -13510,7 +13510,7 @@ Program-Id: prog
                80:'    WISCONSIN                6546456333MR. BRIAN PATTERSON      UNI-80/83MEG8470'
               160:'    6250 BPI00032'
  Line:    460           ADD
- Line:    452           UNTIL
+ Line:    451           UNTIL
  Line:    453           DISPLAY
  Line:    456           READ
             READ Sequential TSPFILE Status: 00
@@ -13518,7 +13518,7 @@ Program-Id: prog
                80:'    NEW MEXICO               6456445643MR. D.A. MORRISON        UNI-80/61MEG8417'
               160:'    1600 BPI00067'
  Line:    460           ADD
- Line:    452           UNTIL
+ Line:    451           UNTIL
  Line:    453           DISPLAY
  Line:    456           READ
             READ Sequential TSPFILE Status: 00
@@ -13526,7 +13526,7 @@ Program-Id: prog
                80:'    D.C.                     8372487274MR. ALLAN JONES          UNI-80/31MEG8417'
               160:'    1600 BPI00075'
  Line:    460           ADD
- Line:    452           UNTIL
+ Line:    451           UNTIL
  Line:    453           DISPLAY
  Line:    456           READ
             READ Sequential TSPFILE Status: 00
@@ -13534,7 +13534,7 @@ Program-Id: prog
                80:'    CALIFORNIA               8009329492MR. MICHAEL SMYTHE       UNI-80/63MEG8470'
               160:'    6250 BPI00107'
  Line:    460           ADD
- Line:    452           UNTIL
+ Line:    451           UNTIL
  Line:    453           DISPLAY
  Line:    456           READ
             READ Sequential TSPFILE Status: 00
@@ -13542,7 +13542,7 @@ Program-Id: prog
                80:'    CANADA                   5292398745MRS. DONNA BREWER        UNI-80/61MEG8417'
               160:'    1600 BPI00090'
  Line:    460           ADD
- Line:    452           UNTIL
+ Line:    451           UNTIL
  Line:    453           DISPLAY
  Line:    456           READ
             READ Sequential TSPFILE Status: 00
@@ -13550,7 +13550,7 @@ Program-Id: prog
                80:'    CANADA                   4169898509MR. PETER MACKAY         UNI-80/53MEG8470'
               160:'    6250 BPI00045'
  Line:    460           ADD
- Line:    452           UNTIL
+ Line:    451           UNTIL
  Line:    463           CLOSE
             CLOSE TSPFILE Status: 00
  Line:    465           OPEN
@@ -14815,7 +14815,7 @@ Program-Id: prog
               160:'    1600 BPI00090'
  Line:    419            IF
  Line:    424            PERFORM
- Line:    425            UNTIL
+ Line:    424            UNTIL
  Line:    426            DISPLAY
  Line:    429            CALL
  Line:    430            READ
@@ -14824,7 +14824,7 @@ Program-Id: prog
                80:'    CALIFORNIA               8009329492MR. MICHAEL SMYTHE       UNI-80/63MEG8470'
               160:'    6250 BPI00107'
  Line:    434            ADD
- Line:    425            UNTIL
+ Line:    424            UNTIL
  Line:    426            DISPLAY
  Line:    429            CALL
  Line:    430            READ
@@ -14833,7 +14833,7 @@ Program-Id: prog
                80:'    D.C.                     8372487274MR. ALLAN JONES          UNI-80/31MEG8417'
               160:'    1600 BPI00075'
  Line:    434            ADD
- Line:    425            UNTIL
+ Line:    424            UNTIL
  Line:    426            DISPLAY
  Line:    429            CALL
  Line:    430            READ
@@ -14842,7 +14842,7 @@ Program-Id: prog
                80:'    NEW MEXICO               6456445643MR. D.A. MORRISON        UNI-80/61MEG8417'
               160:'    1600 BPI00067'
  Line:    434            ADD
- Line:    425            UNTIL
+ Line:    424            UNTIL
  Line:    426            DISPLAY
  Line:    429            CALL
  Line:    430            READ
@@ -14851,7 +14851,7 @@ Program-Id: prog
                80:'    WISCONSIN                6546456333MR. BRIAN PATTERSON      UNI-80/83MEG8470'
               160:'    6250 BPI00032'
  Line:    434            ADD
- Line:    425            UNTIL
+ Line:    424            UNTIL
  Line:    426            DISPLAY
  Line:    429            CALL
  Line:    430            READ
@@ -14860,7 +14860,7 @@ Program-Id: prog
                80:'    DELAWARE                 3455445444MR. DARRYL TOWNSEND      UNI-80/81MEG8417'
               160:'    1600 BPI00016'
  Line:    434            ADD
- Line:    425            UNTIL
+ Line:    424            UNTIL
  Line:    426            DISPLAY
  Line:    429            CALL
  Line:    430            READ
@@ -14869,7 +14869,7 @@ Program-Id: prog
                80:'    KANSAS                   6456445643MS. VALERIE HARPER       UNI-80/81MEG8417'
               160:'    1600 BPI00034'
  Line:    434            ADD
- Line:    425            UNTIL
+ Line:    424            UNTIL
  Line:    426            DISPLAY
  Line:    429            CALL
  Line:    430            READ
@@ -14878,7 +14878,7 @@ Program-Id: prog
                80:'    WASHINGTON               7456434355MR. FRED MILLER          UNI-80/81MEG8417'
               160:'    1600 BPI00128'
  Line:    434            ADD
- Line:    425            UNTIL
+ Line:    424            UNTIL
  Line:    426            DISPLAY
  Line:    429            CALL
  Line:    430            READ
@@ -14887,7 +14887,7 @@ Program-Id: prog
                80:'    N.J.                     6554456433MR. DONALD FISCHER       UNI-80/83MEG8470'
               160:'    6250 BPI00064'
  Line:    434            ADD
- Line:    425            UNTIL
+ Line:    424            UNTIL
  Line:    426            DISPLAY
  Line:    429            CALL
  Line:    430            READ
@@ -14896,7 +14896,7 @@ Program-Id: prog
                80:'    COLORADO                 4169898509MR. STEVEN YOURDIN       UNI-80/83MEG8470'
               160:'    6250 BPI00110'
  Line:    434            ADD
- Line:    425            UNTIL
+ Line:    424            UNTIL
  Line:    426            DISPLAY
  Line:    429            CALL
  Line:    430            READ
@@ -14905,7 +14905,7 @@ Program-Id: prog
                80:'    OHIO                     7534587453MS. Goldie Hawn          UNI-80/83MEG8470'
               160:'    6250 BPI00324'
  Line:    434            ADD
- Line:    425            UNTIL
+ Line:    424            UNTIL
  Line:    426            DISPLAY
  Line:    429            CALL
  Line:    430            READ
@@ -14914,7 +14914,7 @@ Program-Id: prog
                80:'    VIRGINIA                 8787458374MS. ALICE WINSTON        UNI-90403MEG8470'
               160:'    6250 BPI00124'
  Line:    434            ADD
- Line:    425            UNTIL
+ Line:    424            UNTIL
  Line:    436            IF
  Line:    439            DISPLAY
  Line:    442            DISPLAY
@@ -14930,7 +14930,7 @@ Program-Id: prog
               160:'    6250 BPI00324'
  Line:    451            IF
  Line:    456            PERFORM
- Line:    457            UNTIL
+ Line:    456            UNTIL
  Line:    458            DISPLAY
  Line:    461            READ
             READ Sequential TSPFILE Status: 00
@@ -14938,7 +14938,7 @@ Program-Id: prog
                80:'    COLORADO                 4169898509MR. STEVEN YOURDIN       UNI-80/83MEG8470'
               160:'    6250 BPI00110'
  Line:    465            ADD
- Line:    457            UNTIL
+ Line:    456            UNTIL
  Line:    458            DISPLAY
  Line:    461            READ
             READ Sequential TSPFILE Status: 00
@@ -14946,7 +14946,7 @@ Program-Id: prog
                80:'    N.J.                     6554456433MR. DONALD FISCHER       UNI-80/83MEG8470'
               160:'    6250 BPI00064'
  Line:    465            ADD
- Line:    457            UNTIL
+ Line:    456            UNTIL
  Line:    458            DISPLAY
  Line:    461            READ
             READ Sequential TSPFILE Status: 00
@@ -14954,7 +14954,7 @@ Program-Id: prog
                80:'    WASHINGTON               7456434355MR. FRED MILLER          UNI-80/81MEG8417'
               160:'    1600 BPI00128'
  Line:    465            ADD
- Line:    457            UNTIL
+ Line:    456            UNTIL
  Line:    458            DISPLAY
  Line:    461            READ
             READ Sequential TSPFILE Status: 00
@@ -14962,7 +14962,7 @@ Program-Id: prog
                80:'    KANSAS                   6456445643MS. VALERIE HARPER       UNI-80/81MEG8417'
               160:'    1600 BPI00034'
  Line:    465            ADD
- Line:    457            UNTIL
+ Line:    456            UNTIL
  Line:    458            DISPLAY
  Line:    461            READ
             READ Sequential TSPFILE Status: 00
@@ -14970,7 +14970,7 @@ Program-Id: prog
                80:'    DELAWARE                 3455445444MR. DARRYL TOWNSEND      UNI-80/81MEG8417'
               160:'    1600 BPI00016'
  Line:    465            ADD
- Line:    457            UNTIL
+ Line:    456            UNTIL
  Line:    458            DISPLAY
  Line:    461            READ
             READ Sequential TSPFILE Status: 00
@@ -14978,7 +14978,7 @@ Program-Id: prog
                80:'    WISCONSIN                6546456333MR. BRIAN PATTERSON      UNI-80/83MEG8470'
               160:'    6250 BPI00032'
  Line:    465            ADD
- Line:    457            UNTIL
+ Line:    456            UNTIL
  Line:    458            DISPLAY
  Line:    461            READ
             READ Sequential TSPFILE Status: 00
@@ -14986,7 +14986,7 @@ Program-Id: prog
                80:'    NEW MEXICO               6456445643MR. D.A. MORRISON        UNI-80/61MEG8417'
               160:'    1600 BPI00067'
  Line:    465            ADD
- Line:    457            UNTIL
+ Line:    456            UNTIL
  Line:    458            DISPLAY
  Line:    461            READ
             READ Sequential TSPFILE Status: 00
@@ -14994,7 +14994,7 @@ Program-Id: prog
                80:'    D.C.                     8372487274MR. ALLAN JONES          UNI-80/31MEG8417'
               160:'    1600 BPI00075'
  Line:    465            ADD
- Line:    457            UNTIL
+ Line:    456            UNTIL
  Line:    458            DISPLAY
  Line:    461            READ
             READ Sequential TSPFILE Status: 00
@@ -15002,7 +15002,7 @@ Program-Id: prog
                80:'    CALIFORNIA               8009329492MR. MICHAEL SMYTHE       UNI-80/63MEG8470'
               160:'    6250 BPI00107'
  Line:    465            ADD
- Line:    457            UNTIL
+ Line:    456            UNTIL
  Line:    458            DISPLAY
  Line:    461            READ
             READ Sequential TSPFILE Status: 00
@@ -15010,7 +15010,7 @@ Program-Id: prog
                80:'    CANADA                   5292398745MRS. DONNA BREWER        UNI-80/61MEG8417'
               160:'    1600 BPI00090'
  Line:    465            ADD
- Line:    457            UNTIL
+ Line:    456            UNTIL
  Line:    458            DISPLAY
  Line:    461            READ
             READ Sequential TSPFILE Status: 00
@@ -15018,7 +15018,7 @@ Program-Id: prog
                80:'    CANADA                   4169898509MR. PETER MACKAY         UNI-80/53MEG8470'
               160:'    6250 BPI00045'
  Line:    465            ADD
- Line:    457            UNTIL
+ Line:    456            UNTIL
  Line:    468            CLOSE
             CLOSE TSPFILE Status: 00
  Line:    470            OPEN
