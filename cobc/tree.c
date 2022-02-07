@@ -2188,17 +2188,6 @@ cb_insert_common_prog (struct cb_program *prog, struct cb_program *comprog)
 						     comprog);
 }
 
-static COB_INLINE COB_A_INLINE void
-cb_set_source_reference (cb_tree x)
-{
-	if (x) {
-		if (x->source_line == 0)
-			x->source_line = cb_source_line;
-		if (x->source_file == NULL)
-			x->source_file = cb_source_file;
-	}
-}
-
 /* Integer */
 
 static COB_INLINE COB_A_INLINE cb_tree
@@ -6628,8 +6617,6 @@ cb_build_perform (const enum cb_perform_type type)
 	p = make_tree (CB_TAG_PERFORM, CB_CATEGORY_UNKNOWN,
 		       sizeof (struct cb_perform));
 	p->perform_type = type;
-	p->common.source_line = cb_source_line;
-	p->common.source_file = cb_source_file;
 	return CB_TREE (p);
 }
 
@@ -6649,10 +6636,9 @@ cb_build_perform_varying (cb_tree name, cb_tree from, cb_tree by, cb_tree until)
 	p = make_tree (CB_TAG_PERFORM_VARYING, CB_CATEGORY_UNKNOWN,
 		       sizeof (struct cb_perform_varying));
 	p->name = name;
-	cb_set_source_reference (from);
 	p->from = from;
 	p->until = until;
-	cb_set_source_reference (CB_TREE(p));
+
 	if (until == cb_false) {
 		cb_warning_x (cb_warn_additional, until,
 			_("PERFORM FOREVER since UNTIL is always FALSE"));
@@ -6664,8 +6650,6 @@ cb_build_perform_varying (cb_tree name, cb_tree from, cb_tree by, cb_tree until)
 			cb_warning_x (cb_warn_additional, until,
 			_("PERFORM NEVER since UNTIL is always TRUE"));
 		}
-	} else {
-		cb_set_source_reference (until);
 	}
 
 	if (until) {

@@ -1,8 +1,12 @@
 
+2022-01-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_cond): attach source reference for all possible
+	  kind of conditions
+
 2022-02-06  Ron Norman <rjn@inglenet.com>
 
-	* codegen.c: If line or verb changes then emit trace/debug code
-	* tree.c: If source_line not defined for UNTIL then use current line
+	* codegen.c: if verb changes then emit trace/debug code, too
 
 2022-01-28  Simon Sobisch <simonsobisch@gnu.org>
 

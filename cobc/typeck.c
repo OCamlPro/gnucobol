@@ -6067,13 +6067,15 @@ cb_build_cond (cb_tree x)
 		}
 		switch (p->op) {
 		case '!':
-			return CB_BUILD_NEGATION (cb_build_cond (p->x));
+			ret = CB_BUILD_NEGATION (cb_build_cond (p->x));
+			goto return_ret;
 		case '&':
 		case '|':
 			if (!p->y || p->y == cb_error_node) {
 				return cb_error_node;
 			}
-			return cb_build_binary_op (cb_build_cond (p->x), p->op, cb_build_cond (p->y));
+			ret = cb_build_binary_op (cb_build_cond (p->x), p->op, cb_build_cond (p->y));
+			goto return_ret;
 		default:
 			if (!p->y || p->y == cb_error_node) {
 				return cb_error_node;
@@ -6129,7 +6131,9 @@ cb_build_cond (cb_tree x)
 						if (cb_is_integer_field_and_int (f, p->y)
 						 && cb_fits_int (p->y)) {
 							/* 'native' (short/int/long) on SYNC boundary */
-							return CB_BUILD_FUNCALL_3 ("$:", p->x, (cb_tree)(long)p->op, p->y);
+							ret = CB_BUILD_FUNCALL_3 ("$:", p->x, (cb_tree)(long)p->op, p->y);
+							cb_copy_source_reference (ret, x);
+							return ret;
 						}
 					}
 					ret = cb_build_optim_cond (p);
@@ -6173,6 +6177,7 @@ cb_build_cond (cb_tree x)
 			}
 		}
 		ret = cb_build_binary_op (ret, p->op, p->y);
+return_ret:
 		if (ret != cb_true && ret != cb_false) {
 			cb_copy_source_reference (ret, x);
 		}
