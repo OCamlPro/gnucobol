@@ -228,6 +228,7 @@ static int			non_nested_count = 0;
 static int			loop_counter = 0;
 static int			progid = 0;
 static int			last_line = 0;
+static const char *	last_stmt = NULL;
 static cob_u32_t		field_iteration = 0;
 static int			screenptr = 0;
 static int			local_mem = 0;
@@ -7696,7 +7697,8 @@ output_source_reference (cb_tree tree, const char *stmt_name)
 	/* Output source location as code */
 	if (cb_flag_source_location
 	 || cb_flag_dump) {
-		if (last_line != tree->source_line) {
+		if (last_line != tree->source_line
+	 	 || last_stmt != stmt_name) {
 			output_line ("module->module_stmt = 0x%08X;",
 				COB_SET_LINE_FILE(tree->source_line, lookup_source(tree->source_file)));
 		}
@@ -7705,6 +7707,7 @@ output_source_reference (cb_tree tree, const char *stmt_name)
 	output_line_and_trace_info (tree, stmt_name);
 
 	last_line = tree->source_line;
+	last_stmt = stmt_name;
 }
 
 static void

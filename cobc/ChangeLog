@@ -1,4 +1,13 @@
 
+2022-01-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_cond): attach source reference for all possible
+	  kind of conditions
+
+2022-02-06  Ron Norman <rjn@inglenet.com>
+
+	* codegen.c: if verb changes then emit trace/debug code, too
+
 2021-12-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y (table_name): check for KEY phrase in SEARCH ALL

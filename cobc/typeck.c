@@ -6412,13 +6412,15 @@ cb_build_cond (cb_tree x)
 		}
 		switch (p->op) {
 		case '!':
-			return CB_BUILD_NEGATION (cb_build_cond (p->x));
+			ret = CB_BUILD_NEGATION (cb_build_cond (p->x));
+			goto return_ret;
 		case '&':
 		case '|':
 			if (!p->y || p->y == cb_error_node) {
 				return cb_error_node;
 			}
-			return cb_build_binary_op (cb_build_cond (p->x), p->op, cb_build_cond (p->y));
+			ret = cb_build_binary_op (cb_build_cond (p->x), p->op, cb_build_cond (p->y));
+			goto return_ret;
 		default:
 			if (!p->y || p->y == cb_error_node) {
 				return cb_error_node;
@@ -6455,20 +6457,20 @@ cb_build_cond (cb_tree x)
 						cb_int (size1));
 					break;
 				}
-				if (CB_TREE_CLASS (p->x) == CB_CLASS_NUMERIC &&
-				    CB_TREE_CLASS (p->y) == CB_CLASS_NUMERIC &&
-				    cb_fits_long_long (p->y)) {
+				if (CB_TREE_CLASS (p->x) == CB_CLASS_NUMERIC
+				 && CB_TREE_CLASS (p->y) == CB_CLASS_NUMERIC
+				 && cb_fits_long_long (p->y)) {
 					ret = cb_build_optim_cond (p);
 					break;
 				}
 
 				/* Field comparison */
-				if ((CB_REF_OR_FIELD_P (p->x)) &&
-				    (CB_TREE_CATEGORY (p->x) == CB_CATEGORY_ALPHANUMERIC ||
-				     CB_TREE_CATEGORY (p->x) == CB_CATEGORY_ALPHABETIC) &&
-				    cb_field_size (p->x) == 1 &&
-				    !current_program->alphabet_name_list &&
-				    (p->y == cb_space || p->y == cb_low ||
+				if ((CB_REF_OR_FIELD_P (p->x))
+				 && (CB_TREE_CATEGORY (p->x) == CB_CATEGORY_ALPHANUMERIC ||
+				     CB_TREE_CATEGORY (p->x) == CB_CATEGORY_ALPHABETIC)
+				 && cb_field_size (p->x) == 1
+				 && !current_program->alphabet_name_list
+				 && (p->y == cb_space || p->y == cb_low ||
 				     p->y == cb_high || p->y == cb_zero)) {
 					ret = CB_BUILD_FUNCALL_2 ("$G", p->x, p->y);
 					break;
@@ -6498,6 +6500,7 @@ cb_build_cond (cb_tree x)
 			}
 		}
 		ret = cb_build_binary_op (ret, p->op, p->y);
+return_ret:
 		if (ret != cb_true && ret != cb_false) {
 			cb_copy_source_reference (ret, x);
 		}

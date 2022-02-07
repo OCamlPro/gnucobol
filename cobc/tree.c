@@ -6199,6 +6199,7 @@ cb_build_perform_varying (cb_tree name, cb_tree from, cb_tree by, cb_tree until)
 	p->name = name;
 	p->from = from;
 	p->until = until;
+
 	if (until == cb_false) {
 		cb_warning_x (cb_warn_additional, until,
 			_("PERFORM FOREVER since UNTIL is always FALSE"));
