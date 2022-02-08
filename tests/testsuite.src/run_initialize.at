@@ -174,7 +174,7 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            INITIALIZE G1.
            IF G1 NOT = " 000"
-              DISPLAY Test failed: " G1 "."
+              DISPLAY "Test failed: " G1 "."
               DISPLAY "  should be: "
                       " 000.".
            STOP RUN.
@@ -202,7 +202,7 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            INITIALIZE G1.
            IF G1 NOT = "0   0   "
-              DISPLAY Test failed: " G1 "."
+              DISPLAY "Test failed: " G1 "."
               DISPLAY "  should be: "
                       "0   0   .".
            STOP RUN.
@@ -280,7 +280,7 @@ AT_DATA([prog.cob], [
            INITIALIZE Y (X(1)).
            IF G NOT = "2AAAAAAAAAAAB0 0 0 0 0 BCCCCCCCCCCCC"
               DISPLAY "Test 2 failed: " G "."
-              DISPLAY      should be: "
+              DISPLAY "    should be: "
                       "2AAAAAAAAAAAB0 0 0 0 0 BCCCCCCCCCCCC.".
            STOP RUN.
 ])
