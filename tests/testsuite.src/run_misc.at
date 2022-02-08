@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2021 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2022 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 ## Ron Norman
 ##
@@ -6837,7 +6837,7 @@ AT_DATA([preload2.cob], [
        PROGRAM-ID.      callrec IS RECURSIVE.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       01 filler        PIC 9 VALUE 0.
+       01 called-var    PIC 9 VALUE 0.
           88 first-call VALUE 0.
           88 called     VALUE 1.
        PROCEDURE        DIVISION.
@@ -6845,7 +6845,27 @@ AT_DATA([preload2.cob], [
            IF first-call
               SET called TO TRUE
               CALL 'callrec'
+      *>      abbreviated 2 stmts
+              MOVE 0 TO RETURN-CODE, called-var
+      *>      both PERFORM and UNTIL on the same line
+              PERFORM UNTIL RETURN-CODE = 3
+      *>         now PERFORM and UNTIL on different line and
+      *>         constant TRUE condition after compile-time optimization
+                 PERFORM WITH TEST AFTER
+                         UNTIL 1 = 3 - 2
+      *>            no UNTIL - only PERFORM
+                    PERFORM 2 TIMES
+                       COMPUTE RETURN-CODE = 1 + 2
+                    END-PERFORM
+                 END-PERFORM
+              END-PERFORM
+      *>      2 different stmts, same line
+              INITIALIZE RETURN-CODE  SET first-call TO TRUE
+      *>      2 identical stmts, same line
+              MOVE RETURN-CODE TO called-var  MOVE 0 TO RETURN-CODE
+              SET called TO TRUE
            END-IF
+      *>
            GOBACK.
 ])
 
@@ -6870,7 +6890,8 @@ AT_CHECK([$COBC -ftrace preload.cob], [0], [], [])
 AT_CHECK([$COBC -ftraceall preload2.cob], [0], [], [])
 AT_CHECK([$COBC -fsource-location callee2c.cob], [0], [], [])
 AT_CHECK([$COBC -x -o prog -ftraceall caller.cob], [0], [], [])
-AT_CHECK([COB_PHYSICAL_CANCEL=1 COB_PRE_LOAD="preload"$PATHSEP"preload2" $COBCRUN_DIRECT ./prog], [0], [],
+AT_CHECK([COB_PHYSICAL_CANCEL=1 COB_PRE_LOAD="preload"$PATHSEP"preload2" \
+ $COBCRUN_DIRECT ./prog], [0], [],
 [Source: 'caller.cob'
 Program-Id: caller
 Program-Id: caller                      MOVE                            Line:      7
@@ -6962,10 +6983,24 @@ Program-Id: callrec                     CALL                            Line:   
 Program-Id: callrec              Entry: callrec                         Line:      9
 Program-Id: callrec            Section: SOME-SEC                        Line:     10
 Program-Id: callrec                     IF                              Line:     11
-Program-Id: callrec                     GOBACK                          Line:     15
-Program-Id: callrec               Exit: callrec                         Line:     15
-Program-Id: callrec                     GOBACK                          Line:     15
-Program-Id: callrec               Exit: callrec                         Line:     15
+Program-Id: callrec                     GOBACK                          Line:     35
+Program-Id: callrec               Exit: callrec                         Line:     35
+Program-Id: callrec                     MOVE                            Line:     15
+Program-Id: callrec                     PERFORM                         Line:     17
+Program-Id: callrec                     UNTIL                           Line:     17
+Program-Id: callrec                     PERFORM                         Line:     20
+Program-Id: callrec                     PERFORM                         Line:     23
+Program-Id: callrec                     COMPUTE                         Line:     24
+Program-Id: callrec                     COMPUTE                         Line:     24
+Program-Id: callrec                     UNTIL                           Line:     21
+Program-Id: callrec                     UNTIL                           Line:     17
+Program-Id: callrec                     INITIALIZE                      Line:     29
+Program-Id: callrec                     SET                             Line:     29
+Program-Id: callrec                     MOVE                            Line:     31
+Program-Id: callrec                     MOVE                            Line:     31
+Program-Id: callrec                     SET                             Line:     32
+Program-Id: callrec                     GOBACK                          Line:     35
+Program-Id: callrec               Exit: callrec                         Line:     35
 Source: 'caller.cob'
 Program-Id: caller
 Program-Id: caller                      MOVE                            Line:     18

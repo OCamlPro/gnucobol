@@ -768,6 +768,8 @@ chk_field_variable_size (struct cb_field *f)
 	return f->vsize;
 }
 
+/* TODO: as the following two are only called together: combine */
+
 static int
 chk_field_multi_values (struct cb_field *f)
 {
@@ -4281,11 +4283,7 @@ output_param (cb_tree x, int id)
 		output ("&%s%s", CB_PREFIX_REPORT, CB_REPORT_PTR (x)->cname);
 		break;
 	case CB_TAG_REPORT_LINE:
-#if 1 /* FIXME: Why do we need the unchecked cast here? */
-		r = (struct cb_reference *)x;
-#else
-		r = CB_REFERENCE_P (x);
-#endif
+		r = CB_REFERENCE (x);
 		f = CB_FIELD (r->value);
 		output ("&%s%d", CB_PREFIX_REPORT_LINE, f->id);
 		break;
@@ -7989,17 +7987,17 @@ output_perform_until (struct cb_perform *p, cb_tree l)
 		output_cond_debug (v->until);
 	}
 
-	/* FIXME: should always have a line reference, but this is to not guaranteed in trunk */
-	if (v->until->source_line) {
-		output_source_reference (v->until, "UNTIL");
-#if 0 /* def COB_TREE_DEBUG */
+	/* Note: should always have a line reference, test code to be removed later */
+#ifdef COB_TREE_DEBUG
 	/* LCOV_EXCL_START */
-	} else {
-		cobc_err_msg ("missing source reference in output_perform_until");
+	if (!v->until->source_line) {
+		/* untranslated as unlinkely internal-check-only message */
+		cobc_err_msg ("call to output_stmt -> TAG_IF without source reference");
 		cobc_abort_terminate (1);
+	}
 	/* LCOV_EXCL_STOP */
 #endif
-	}
+	output_source_reference (v->until, "UNTIL");
 
 	output_prefix ();
 	output ("if (");
@@ -9289,25 +9287,61 @@ output_stmt (cb_tree x)
 			if (ip->test
 			 && CB_TREE_TAG (ip->test) == CB_TAG_BINARY_OP) {
 				bop = CB_BINARY_OP (ip->test);
-				w = NULL;
 				if (bop->op == '!') {
 					w = bop->x;
 				} else if (bop->y) {
 					w = bop->y;
 				} else if (bop->x) {
 					w = bop->x;
+				} else {
+					w = NULL;
 				}
 				if (w == cb_true) {
-					output_line ("/* WHEN is always %s */", bop->op == '!'?"FALSE":"TRUE");
+					output_line ("/* WHEN is always %s */", bop->op == '!' ? "FALSE" : "TRUE");
 				} else if (w == cb_false) {
-					output_line ("/* WHEN is always %s */", bop->op != '!'?"FALSE":"TRUE");
+					output_line ("/* WHEN is always %s */", bop->op != '!' ? "FALSE" : "TRUE");
+#ifdef COB_TREE_DEBUG	/* to be removed later */
 				} else if (ip->test->source_line || (w && w->source_line)) {
 					if (ip->test->source_line) {
 						w = ip->test;
+					} else {
+						/* untranslated as unlinkely internal-check-only message */
+						cobc_err_msg ("call to output_stmt -> TAG_IF (BINARY) without source reference");
+						cobc_abort_terminate (1);
 					}
 					output_source_reference (w, "WHEN");
 				} else {
 					output_line ("/* WHEN */");
+					/* untranslated as unlikely internal-check-only message */
+					cobc_err_msg ("call to output_stmt -> TAG_IF (BINARY no source) without source reference");
+					cobc_abort_terminate (1);
+			} else if (ip->test->source_line) {
+				output_line ("/* Line: %-10d: WHEN */", ip->test->source_line);
+				if (last_line != ip->test->source_line) {
+					/* Output source location as code */
+					output_line_and_trace_info (ip->test, "WHEN");
+				}
+			/* LCOV_EXCL_START */
+			} else {
+				output_line ("/* WHEN */");
+				/* untranslated as unlinkely internal-check-only message */
+				cobc_err_msg ("call to output_stmt -> TAG_IF without source reference");
+				cobc_abort_terminate (1);
+			/* LCOV_EXCL_STOP */
+			}
+#else
+				} else {
+					w = ip->test;
+					/* LCOV_EXCL_START */
+					if (!ip->test->source_line) {
+						/* untranslated as unlikely internal-check-only message */
+						cobc_err_msg ("Unexpected call to output_stmt -> TAG_IF (BINARY) without source reference");
+						output_line ("/* WHEN */");
+					/* LCOV_EXCL_STOP */
+					} else {
+						output_source_reference (w, "WHEN");
+					}
+#endif
 				}
 			} else if (ip->test->source_line) {
 				output_line ("/* Line: %-10d: WHEN */", ip->test->source_line);
@@ -9315,8 +9349,10 @@ output_stmt (cb_tree x)
 					/* Output source location as code */
 					output_line_and_trace_info (ip->test, "WHEN");
 				}
+			/* LCOV_EXCL_START TODO - REMOVE when verified that we never reach this */
 			} else {
 				output_line ("/* WHEN */");
+			/* LCOV_EXCL_STOP */
 			}
 			output_newline ();
 		}

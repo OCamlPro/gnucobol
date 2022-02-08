@@ -1,8 +1,10 @@
 
-2022-01-28  Simon Sobisch <simonsobisch@gnu.org>
+2022-02-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (cb_build_cond): attach source reference for all possible
 	  kind of conditions
+	* codegen.c: removed check for "has condition a reference" or disabled
+	  this within [COB_TREE_DEBUG]
 
 2022-02-06  Ron Norman <rjn@inglenet.com>
 
