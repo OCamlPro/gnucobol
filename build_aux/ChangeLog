@@ -1,4 +1,10 @@
 
+2022-01-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* config.sub, config.guess: updated to recent versions from
+	  git.savannah.gnu.org/gitweb/?p=config.git to solve build issues
+	  on different machines
+
 2021-10-11  Simon Sobisch <simonsobisch@gnu.org>
 
 	* ar-lib: added from
@@ -133,7 +139,7 @@
 	  without uname(1) [removed 2014-01-25] from old version
 
 
-Copyright 2015-2021 Free Software Foundation, Inc.
+Copyright 2015-2022 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

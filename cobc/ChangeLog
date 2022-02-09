@@ -93,10 +93,16 @@
 
 	* codegen.c: When setting value into COMP-X field use cob_set_compx
 
+2021-11-26  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (cobc_print_info): output COB_STRIP_CMD when verbose
+	* cobc.c: ensure correct buffer size for handling COB_STRIP_CMD
+	* cobc.c (print_fields): minor refactoring
+
 2021-11-26  Ron Norman <rjn@inglenet.com>
 
 	* field.c: More checks for USAGE on a group and if compatible
-			with the elementary data field description
+	  with the elementary data field description
 
 2021-11-18  Ron Norman <rjn@inglenet.com>
 

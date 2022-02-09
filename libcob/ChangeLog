@@ -91,6 +91,11 @@
 
 	* fileio.c, coblocal.h: Removed unused/unsettable variable cob_ls_uses_cr
 
+2021-12-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (print_version_summary) [__PDCURSES__]: show version
+	  info for old versions of PDCurses, too
+
 2021-11-28  Ron Norman <rjn@inglenet.com>
 
 	* fileio.c: Changes to open sequential files in binary mode on Windows

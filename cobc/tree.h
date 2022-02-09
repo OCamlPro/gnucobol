@@ -2092,7 +2092,7 @@ extern void			cb_list_system_names (void);
 extern void			cb_list_registers (void);
 extern void			cb_list_system_routines (void);
 extern int			cb_list_map (cb_tree (*) (cb_tree), cb_tree);
-extern void			cb_strncpy_upper (char *, const char * const, const size_t);
+extern void			cb_strncpy_upper (char *, const char * const, size_t);
 
 /* error.c */
 extern void		cb_warning_x (const enum cb_warn_opt, cb_tree, const char *, ...) COB_A_FORMAT34;

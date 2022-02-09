@@ -1,4 +1,9 @@
 
+2021-12-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* run_prog_manual.sh.in: added option to test from MSYS
+	  which starts a detached cmd prompt (similar to xterm)
+
 2021-11-06  Simon Sobisch <simonsobisch@gnu.org>
 
 	* testsuite.src/listings.at: ignore all stderr in listing tests
