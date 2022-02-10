@@ -1,4 +1,14 @@
 
+2022-02-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* testsuite_manual.at [MANUAL_CHECK]: new macro for running every
+	  manual test, executes the test runner, passing the test description
+	  from the testsuite
+	* testsuite.src/run_manual_screen.at: use of MANUAL_CHECK instead of
+	  AC_CHECK, use COBRUN_DIRECT for running the tests with additional tools
+	* run_prog_manual.sh.in: use DESC as title for the terminal;
+	  also use title for running with GNU screen (by default NOT visible)
+
 2021-12-03  Simon Sobisch <simonsobisch@gnu.org>
 
 	* run_prog_manual.sh.in: added option to test from MSYS
@@ -1031,7 +1041,7 @@
 	* redef.at, subref.at, runtime.at: New files.
 
 
-Copyright 2002-2021 Free Software Foundation, Inc.
+Copyright 2002-2022 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

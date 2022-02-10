@@ -1,7 +1,7 @@
 #
 # atlocal gnucobol/tests
 #
-# Copyright (C) 2003-2012, 2014-2020 Free Software Foundation, Inc.
+# Copyright (C) 2003-2012, 2014-2022 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 #
 # This file is part of GnuCOBOL.
@@ -73,7 +73,7 @@ COMPILE_MODULE="${COBC} -m ${FLAGS}"
 # Helper script to unify listings (replace version, date, time)
 UNIFY_LISTING="${abs_srcdir}/listings-sed.sh"
 
-# test runner for manual tests, content may be changed by the user
+# test runner for manual tests, content may be adjusted by the user
 RUN_PROG_MANUAL="${abs_builddir}/run_prog_manual.sh"
 
 # unset option if not internally set in this script
@@ -216,7 +216,7 @@ else
 fi
 if test "x$MSYSTEM" != "x" -o "$OSTYPE" = "cygwin"; then
 	# running MSYS builds as not-visible child processes result in
-	# "Redirection is not supported" (at least old PDCurses)
+	# "Redirection is not supported" (at least with PDCurses "wincon" port)
 	# --> disabling the tests for this feature
 	# ncurses is known to work as long as TERM is appropriate
 	if test $(grep -i -c "ncurses" info.out) != 0; then
