@@ -1,4 +1,10 @@
 
+2022-02-12  Ron Norman <rjn@inglenet.com>
+
+	* codegen.c: corrected for CB_TAG_REPORT_LINE
+				Removed some code under #ifdef COB_TREE_DEBUG as it does not
+				compile
+
 2022-02-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (cb_build_cond): attach source reference for all possible

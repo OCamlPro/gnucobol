@@ -4283,7 +4283,8 @@ output_param (cb_tree x, int id)
 		output ("&%s%s", CB_PREFIX_REPORT, CB_REPORT_PTR (x)->cname);
 		break;
 	case CB_TAG_REPORT_LINE:
-		r = CB_REFERENCE (x);
+		/* NOTE: do not use CB_REFERENCE_P because 'x' has a tag of CB_TAG_REPORT_LINE */
+		r = (struct cb_reference *)x;
 		f = CB_FIELD (r->value);
 		output ("&%s%d", CB_PREFIX_REPORT_LINE, f->id);
 		break;
@@ -9300,36 +9301,6 @@ output_stmt (cb_tree x)
 					output_line ("/* WHEN is always %s */", bop->op == '!' ? "FALSE" : "TRUE");
 				} else if (w == cb_false) {
 					output_line ("/* WHEN is always %s */", bop->op != '!' ? "FALSE" : "TRUE");
-#ifdef COB_TREE_DEBUG	/* to be removed later */
-				} else if (ip->test->source_line || (w && w->source_line)) {
-					if (ip->test->source_line) {
-						w = ip->test;
-					} else {
-						/* untranslated as unlinkely internal-check-only message */
-						cobc_err_msg ("call to output_stmt -> TAG_IF (BINARY) without source reference");
-						cobc_abort_terminate (1);
-					}
-					output_source_reference (w, "WHEN");
-				} else {
-					output_line ("/* WHEN */");
-					/* untranslated as unlikely internal-check-only message */
-					cobc_err_msg ("call to output_stmt -> TAG_IF (BINARY no source) without source reference");
-					cobc_abort_terminate (1);
-			} else if (ip->test->source_line) {
-				output_line ("/* Line: %-10d: WHEN */", ip->test->source_line);
-				if (last_line != ip->test->source_line) {
-					/* Output source location as code */
-					output_line_and_trace_info (ip->test, "WHEN");
-				}
-			/* LCOV_EXCL_START */
-			} else {
-				output_line ("/* WHEN */");
-				/* untranslated as unlinkely internal-check-only message */
-				cobc_err_msg ("call to output_stmt -> TAG_IF without source reference");
-				cobc_abort_terminate (1);
-			/* LCOV_EXCL_STOP */
-			}
-#else
 				} else {
 					w = ip->test;
 					/* LCOV_EXCL_START */
@@ -9341,7 +9312,6 @@ output_stmt (cb_tree x)
 					} else {
 						output_source_reference (w, "WHEN");
 					}
-#endif
 				}
 			} else if (ip->test->source_line) {
 				output_line ("/* Line: %-10d: WHEN */", ip->test->source_line);
