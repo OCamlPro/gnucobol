@@ -1,4 +1,9 @@
 
+2022-02-13  Ron Norman <rjn@inglenet.com>
+
+	* codegen.c: Fix for setting initial values for WORKING-STORAGE
+				with multiple OCCURS and VALUES
+
 2022-02-12  Ron Norman <rjn@inglenet.com>
 
 	* codegen.c: corrected for CB_TAG_REPORT_LINE

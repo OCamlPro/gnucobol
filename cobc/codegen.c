@@ -5939,10 +5939,13 @@ output_initialize_compound (struct cb_initialize *p, cb_tree x)
 				ref->subs = CB_BUILD_CHAIN (cb_int1, ref->subs);
 				if (type == INITIALIZE_ONE) {
 					output_initialize_occurs (p, c);
+				} else if (type == INITIALIZE_COMPOUND) {
+					ref->length = NULL;
+					output_initialize_compound (p, c);
 				} else {
 					ref->length = NULL;
 					if (f->children
-					 && f->flag_occurs 
+					 && f->flag_occurs
 					 && !p->flag_init_statement
 					 && p->val
 					 && chk_field_any_values (f)
@@ -5980,12 +5983,13 @@ output_initialize (struct cb_initialize *p)
 {
 	struct cb_field		*f, *pf;
 	cb_tree			x;
-	int			c;
-	int			type;
+	int			c, type;
 	struct cb_reference	*r = NULL;
 
 	f = cb_code_field (p->var);
 	type = deduce_initialize_type (p, f, 1);
+	if (type == INITIALIZE_NONE)
+		return;
 	/* Check for non-standard OCCURS */
 	if ((f->level == 1 || f->level == 77) 
 	 && f->flag_occurs 
@@ -6010,7 +6014,7 @@ output_initialize (struct cb_initialize *p)
 			CB_REFERENCE (x)->subs = CB_BUILD_CHAIN (cb_int1, CB_REFERENCE (x)->subs);
 			output_initialize_compound (p, x);
 			CB_REFERENCE (x)->subs = CB_CHAIN (CB_REFERENCE (x)->subs);
-			for (pf = f; pf && !pf->flag_occurs; pf = pf->parent);
+			for (pf = f; pf && !pf->flag_occurs_values; pf = pf->parent);
 			if (pf == NULL
 			 || !pf->flag_occurs_values)
 				propagate_table (x);
@@ -6020,8 +6024,6 @@ output_initialize (struct cb_initialize *p)
 			break;
 		}
 	}
-	if (type == INITIALIZE_NONE)
-		return;
 	if (CB_REFERENCE_P (p->var))
 		r = CB_REFERENCE (p->var);
 	if (r
