@@ -393,3 +393,6 @@ CB_CONFIG_SUPPORT (cb_record_contains_depending_clause, "record-contains-dependi
 
 CB_CONFIG_BOOLEAN (cb_relax_paragraph_name_uniqueness, "relax-paragraph-name-uniqueness",
 	_("allow paragraph names to redefine field and section names"))
+
+CB_CONFIG_SUPPORT (cb_select_gcos, "select-gcos",
+	_("Support GCOS-specific clauses in SELECT"))

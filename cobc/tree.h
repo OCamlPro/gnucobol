@@ -1040,6 +1040,7 @@ struct cb_file {
 	char			*cname;			/* Name used in C */
 	/* SELECT */
 	cb_tree			assign;			/* ASSIGN */
+	char			*assign_default;	/* [GCOS] Filename to use if file mapping fails  */
 	cb_tree			file_status;		/* FILE STATUS */
 	cb_tree			sharing;		/* SHARING */
 	cb_tree			key;			/* Primary RECORD KEY */
@@ -1090,6 +1091,7 @@ struct cb_file {
 	/* Whether the file's ASSIGN is like "ASSIGN word", not "ASSIGN
            EXTERNAL/DYNAMIC/USING/... word" */
 	unsigned int		flag_assign_no_keyword : 1;
+	unsigned int		flag_no_mapping:1;	/* [GCOS] Disable filename mapping for this file */
 	/* Exceptions enabled for file */
 	struct cb_exception	*exception_table;
 };
@@ -2044,6 +2046,7 @@ extern enum cb_warn_val		cb_error_x (cb_tree, const char *, ...) COB_A_FORMAT23;
 extern unsigned int	cb_verify (const enum cb_support, const char *);
 extern unsigned int	cb_verify_x (const cb_tree, const enum cb_support,
 				     const char *);
+extern unsigned int	cb_is_supported (const enum cb_support);
 #if 0 /* CHECKME: Is there any place other than "note" where we want to do listing suppression? */
 extern void		listprint_suppress (void);
 extern void		listprint_restore (void);
@@ -2107,6 +2110,7 @@ extern cb_tree		cb_define_switch_name (cb_tree, cb_tree, const int);
 extern void		cb_check_word_length (unsigned int, const char *);
 extern cb_tree		cb_build_section_name (cb_tree, const int);
 extern cb_tree		cb_build_assignment_name (struct cb_file *, cb_tree);
+extern cb_tree		cb_build_gcos_assignment_name (struct cb_file *, cb_tree, char **);
 extern cb_tree		cb_build_index (cb_tree, cb_tree,
 					const unsigned int, struct cb_field *);
 extern cb_tree		cb_build_identifier (cb_tree, const int);

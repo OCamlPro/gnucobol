@@ -1273,7 +1273,7 @@ typedef struct __cob_file_key {
 
 
 /* File version (likely can be removed from cob_file in the future) */
-#define	COB_FILE_VERSION	1
+#define	COB_FILE_VERSION	2
 
 /* File structure */
 
@@ -1321,6 +1321,9 @@ typedef struct __cob_file {
 	short 				mapkey;			/* Remapped index number, when FD does not match file */
 
 	struct __fcd3		*fcd;			/* FCD created via SET ... TO ADDRESS OF FH--FCD */
+	const char		*assign_default;	/* [GCOS] Filename to use if file mapping fails  */
+	unsigned char		flag_no_mapping;	/* [GCOS] Disable filename mapping for this file */
+
 } cob_file;
 
 

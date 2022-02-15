@@ -993,7 +993,7 @@ do_acu_hypen_translation (char *src)
 }
 
 static void
-cob_chk_file_mapping (void)
+cob_chk_file_mapping (cob_file *f)
 {
 	char		*p;
 	char		*src;
@@ -1003,7 +1003,8 @@ cob_chk_file_mapping (void)
 	unsigned int	dollar;
 
 	/* no mapping at all if explicit disabled on compile-time (dialect configuration)*/
-	if (unlikely (!COB_MODULE_PTR->flag_filename_mapping)) {
+	if (unlikely (!COB_MODULE_PTR->flag_filename_mapping) ||
+            (f != NULL && f->flag_no_mapping)) {
 		return;
 	}
 
@@ -1038,6 +1039,10 @@ cob_chk_file_mapping (void)
 				do_acu_hypen_translation (file_open_name);
 				return ;
 			}
+		}
+		/* On GCOS, use the default name if not found via environment variables */
+		if (f->assign_default != NULL) {
+			strncpy (file_open_name, f->assign_default, (size_t)COB_FILE_MAX);
 		}
 		/* apply COB_FILE_PATH if set (similar to ACUCOBOL's FILE-PREFIX)
 		   MF and Fujistu simply don't have that - not set by default,
@@ -1619,7 +1624,7 @@ cob_file_open (cob_file *f, char *filename, const int mode, const int sharing)
 	ret = extfh_seqra_locate (f, filename);
 	switch (ret) {
 	case COB_NOT_CONFIGURED:
-		cob_chk_file_mapping ();
+		cob_chk_file_mapping (f);
 		errno = 0;
 		if (access (filename, F_OK) && errno == ENOENT) {
 			if (mode != COB_OPEN_OUTPUT && f->flag_optional == 0) {
@@ -1659,7 +1664,7 @@ cob_file_open (cob_file *f, char *filename, const int mode, const int sharing)
 	/* Note filename points to file_open_name */
 	/* cob_chk_file_mapping manipulates file_open_name directly */
 
-	cob_chk_file_mapping ();
+	cob_chk_file_mapping (f);
 
 	nonexistent = 0;
 	errno = 0;
@@ -3465,7 +3470,7 @@ indexed_open (cob_file *f, char *filename, const int mode, const int sharing)
 	ret = extfh_indexed_locate (f, filename);
 	switch (ret) {
 	case COB_NOT_CONFIGURED:
-		cob_chk_file_mapping ();
+		cob_chk_file_mapping (f);
 		errno = 0;
 		if (access (filename, F_OK) && errno == ENOENT) {
 			if (mode != COB_OPEN_OUTPUT && f->flag_optional == 0) {
@@ -3511,7 +3516,7 @@ indexed_open (cob_file *f, char *filename, const int mode, const int sharing)
 
 	COB_UNUSED (sharing);
 
-	cob_chk_file_mapping ();
+	cob_chk_file_mapping (f);
 
 	if (mode == COB_OPEN_INPUT) {
 		checkvalue = R_OK;
@@ -3755,7 +3760,7 @@ dobuild:
 #endif
 		}
 	}
-	cob_chk_file_mapping ();
+	cob_chk_file_mapping (f);
 
 #if	0	/* RXWRXW - Access check BDB Human */
 	if (mode == COB_OPEN_INPUT) {
@@ -5954,7 +5959,7 @@ cob_delete_file (cob_file *f, cob_field *fnstatus)
 
 	/* Obtain the file name */
 	cob_field_to_string (f->assign, file_open_name, (size_t)COB_FILE_MAX);
-	cob_chk_file_mapping ();
+	cob_chk_file_mapping (f);
 
 	if (f->organization != COB_ORG_INDEXED) {
 #ifdef	WITH_SEQRA_EXTFH
@@ -6128,7 +6133,7 @@ open_cbl_file (unsigned char *file_name, unsigned char *file_access,
 		cob_free (fn);
 	}
 
-	cob_chk_file_mapping ();
+	cob_chk_file_mapping (NULL);
 
 	fd = open (file_open_name, flag, COB_FILE_MODE);
 	if (fd < 0) {
@@ -6334,7 +6339,7 @@ cob_sys_delete_file (unsigned char *file_name)
 		file_open_name[COB_FILE_MAX] = 0;
 		cob_free (fn);
 	}
-	cob_chk_file_mapping ();
+	cob_chk_file_mapping (NULL);
 
 	ret = unlink (file_open_name);
 	if (ret) {
@@ -6371,7 +6376,7 @@ cob_sys_copy_file (unsigned char *fname1, unsigned char *fname2)
 		file_open_name[COB_FILE_MAX] = 0;
 		cob_free (fn);
 	}
-	cob_chk_file_mapping ();
+	cob_chk_file_mapping (NULL);
 
 	flag |= O_RDONLY;
 	fd1 = open (file_open_name, flag, 0);
@@ -6385,7 +6390,7 @@ cob_sys_copy_file (unsigned char *fname1, unsigned char *fname2)
 		file_open_name[COB_FILE_MAX] = 0;
 		cob_free (fn);
 	}
-	cob_chk_file_mapping ();
+	cob_chk_file_mapping (NULL);
 
 	flag &= ~O_RDONLY;
 	flag |= O_CREAT | O_TRUNC | O_WRONLY;
@@ -6440,7 +6445,7 @@ cob_sys_check_file_exist (unsigned char *file_name, unsigned char *file_info)
 		strncpy (file_open_name, fn, (size_t)COB_FILE_MAX);
 		cob_free (fn);
 	}
-	cob_chk_file_mapping ();
+	cob_chk_file_mapping (NULL);
 
 	if (stat (file_open_name, &st) < 0) {
 		return 35;
@@ -6500,7 +6505,7 @@ cob_sys_rename_file (unsigned char *fname1, unsigned char *fname2)
 		file_open_name[COB_FILE_MAX] = 0;
 		cob_free (fn);
 	}
-	cob_chk_file_mapping ();
+	cob_chk_file_mapping (NULL);
 	strncpy (localbuff, file_open_name, (size_t)COB_FILE_MAX);
 	localbuff[COB_FILE_MAX] = 0;
 
@@ -6510,7 +6515,7 @@ cob_sys_rename_file (unsigned char *fname1, unsigned char *fname2)
 		file_open_name[COB_FILE_MAX] = 0;
 		cob_free (fn);
 	}
-	cob_chk_file_mapping ();
+	cob_chk_file_mapping (NULL);
 
 	ret = rename (localbuff, file_open_name);
 	if (ret) {
@@ -7524,7 +7529,7 @@ cob_get_filename_print (cob_file* file, const int show_resolved_name)
 	if (show_resolved_name) {
 		strncpy (file_open_name, file_open_env, (size_t)COB_FILE_MAX);
 		file_open_name[COB_FILE_MAX] = 0;
-		cob_chk_file_mapping ();
+		cob_chk_file_mapping (file);
 	}
 
 	if (show_resolved_name
@@ -9038,7 +9043,7 @@ org_handling:
 					f->record_min = LDCOMPX4(fcd->minRecLen);
 					f->record_max = LDCOMPX4(fcd->maxRecLen);
 				}
-				cob_chk_file_mapping ();
+				cob_chk_file_mapping (f);
 #if 0	/* GC 4.x+ only */
 				f->organization = COB_ORG_MAX;	/* To Force file.dd to be processed */
 				sts = cob_read_dict (f, fname, 1);
