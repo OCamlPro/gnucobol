@@ -1,4 +1,8 @@
 
+2022-02-16  Ron Norman <rjn@inglenet.com>
+	* screenio.c (cob_field_display): If no field, use empty field as default
+					This is to handle DISPLAY OMITTED
+
 2022-01-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_check_trace_file), coblocal.h: externalize function

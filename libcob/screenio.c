@@ -2541,17 +2541,26 @@ field_display (cob_field *f, const int line, const int column, cob_field *fgc,
 	int	size_display, fsize;
 	int	status;
 	char	fig_const;	/* figurative constant character */
+	cob_field	char_temp;
+	unsigned char	space_buff[4];
 
 	/* LCOV_EXCL_START */
-	if (!f) {
-		cob_fatal_error(COB_FERROR_CODEGEN);
+	if (f) {
+		fsize = (int)f->size;
+	} else {
+		strcpy (space_buff, " ");
+		char_temp.data = space_buff;
+		char_temp.attr = &const_alpha_attr;
+		char_temp.size = 0;
+		f = &char_temp;
+		fsize = 0;
+		size_is = NULL;
 	}
 	/* LCOV_EXCL_STOP */
 
 	origin_y = 0;
 	origin_x = 0;
 
-	fsize = (int)f->size;
 	if (size_is) {
 		size_display = (unsigned int)cob_get_int (size_is);
 		/* SIZE ZERO is ignored */
@@ -2586,7 +2595,7 @@ field_display (cob_field *f, const int line, const int column, cob_field *fgc,
 	if (!(fattr & COB_SCREEN_NO_DISP)) {
 		/* figurative constant and WITH SIZE repeats the literal */
 		if (size_is
-		    && f->attr->type == COB_TYPE_ALPHANUMERIC_ALL) {
+		 && f->attr->type == COB_TYPE_ALPHANUMERIC_ALL) {
 			if ((int)f->size == 1) {
 				fig_const = f->data[0];
 				cob_addnch (size_display, fig_const);

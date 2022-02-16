@@ -12178,8 +12178,6 @@ display_atom:
   display_clauses
   {
 	if ($1 == cb_null) {
-		/* Emit DISPLAY OMITTED. */
-		CB_UNFINISHED_X (CB_TREE(current_statement), "DISPLAY OMITTED");
 		error_if_no_advancing_in_screen_display (advancing_value);
 	}
 

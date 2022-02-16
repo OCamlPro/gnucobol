@@ -1,4 +1,8 @@
 
+2022-02-16  Ron Norman <rjn@inglenet.com>
+
+	* parser.y: Remove warning about DISPLAY OMITTED
+
 2022-02-13  Ron Norman <rjn@inglenet.com>
 
 	* codegen.c: Fix for setting initial values for WORKING-STORAGE

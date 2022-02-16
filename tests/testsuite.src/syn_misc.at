@@ -4003,27 +4003,6 @@ prog.cob:23: warning: handling of DISPLAY MESSAGE is unfinished; implementation 
 AT_CLEANUP
 
 
-AT_SETUP([DISPLAY OMITTED])
-AT_KEYWORDS([misc extensions screen])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION   DIVISION.
-       PROGRAM-ID.      prog.
-       PROCEDURE DIVISION.
-           DISPLAY OMITTED WITH BELL
-           DISPLAY OMITTED LINE 10 COL 15 ERASE EOL
-      *
-           STOP RUN.
-])
-
-AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
-[prog.cob:5: warning: handling of DISPLAY OMITTED is unfinished; implementation is likely to be changed
-prog.cob:6: warning: handling of DISPLAY OMITTED is unfinished; implementation is likely to be changed
-])
-
-AT_CLEANUP
-
-
 AT_SETUP([CGI: EXTERNAL-FORM])
 AT_KEYWORDS([misc acu extensions accept display])
 
