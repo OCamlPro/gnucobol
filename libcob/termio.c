@@ -107,6 +107,13 @@ pretty_display_numeric (cob_field *f, FILE *fp)
 		fputs (_("(Not representable)"), fp);
 		return;
 	}
+	if (scale < 0) {
+		digits -= scale;
+		size = digits + !!COB_FIELD_HAVE_SIGN (f);
+	} else if (digits < scale) {
+		digits = scale;
+		size = digits + !!COB_FIELD_HAVE_SIGN (f) + 1;
+	}
 	temp.size = size;
 	temp.data = q;
 	temp.attr = &attr;

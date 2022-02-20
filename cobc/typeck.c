@@ -9732,6 +9732,7 @@ validate_move_from_num_lit (cb_tree src, cb_tree dst, const unsigned int is_valu
 			 || fdst->usage == CB_USAGE_COMP_X
 			 || fdst->usage == CB_USAGE_COMP_N
 			 || fdst->usage == CB_USAGE_BINARY))) {
+		int	binln;
 		p = l->data;
 		for (i = 0; i < l->size; i++) {
 			if (l->data[i] != '0') {
@@ -9740,7 +9741,22 @@ validate_move_from_num_lit (cb_tree src, cb_tree dst, const unsigned int is_valu
 			}
 		}
 		i = l->size - i;
-		switch (fdst->size) {
+		binln = (int)fdst->size;
+		if (fdst->pic->flag_has_p) {
+			if (fdst->pic->digits < 3)
+				binln = 1;
+			else if (fdst->pic->digits < 5)
+				binln = 2;
+			else if (fdst->pic->digits < 7)
+				binln = 3;
+			else if (fdst->pic->digits < 10)
+				binln = 4;
+			else if (fdst->pic->digits < 13)
+				binln = 5;
+			else
+				binln = fdst->pic->digits;
+		}
+		switch (binln) {
 		case 1:
 			if (i > 18) {
 				return MOVE_NUMERIC_LIT_OVERFLOW;

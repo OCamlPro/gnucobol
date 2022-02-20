@@ -1,4 +1,11 @@
 
+2022-02-20  Ron Norman <rjn@inglenet.com>
+
+	* tree.h,tree.h: Reinstated 'real_digits' for PICTURE 
+	* codegen.c: Emit cob_field_attr using 'real_digits' if P was in the PIC
+	* typeck.c: For COMP-5 with P in PIC, use pic->digits to recompute data
+				size when checking size of literal
+
 2022-02-16  Ron Norman <rjn@inglenet.com>
 
 	* parser.y: Remove warning about DISPLAY OMITTED

@@ -55,14 +55,12 @@ static const cob_field_attr	const_binll_attr =
 				 COB_FLAG_HAVE_SIGN, NULL};
 static const cob_field_attr	all_display_attr =
 				{COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL};
-static const cob_field_attr	all_numeric_display_attr =
-				{COB_TYPE_NUMERIC_DISPLAY, COB_MAX_DIGITS, 0,
-				 0, NULL};
 
+static const cob_field_attr	all_numeric_display_attr =
+				{COB_TYPE_NUMERIC_DISPLAY, COB_MAX_DIGITS, 0, 0, NULL};
 static unsigned char all_numeric_data[COB_MAX_DIGITS];
 static const cob_field	all_numeric_field  = 
-				{COB_MAX_DIGITS, all_numeric_data,
-				 &all_numeric_display_attr};
+				{COB_MAX_DIGITS, all_numeric_data, &all_numeric_display_attr};
 
 static const int	cob_exp10[10] = {
 	1,
@@ -464,6 +462,31 @@ cob_move_display_to_packed (cob_field *f1, cob_field *f2)
 
 	/* Pack string */
 	memset (f2->data, 0, f2->size);
+	if (scale1 != scale2) {
+		int		diff = 0;
+		if (scale1 < 0 && scale2 < 0) {	/* Both have P */
+			if (scale1 < scale2)
+				diff = - scale2;
+			else
+				diff = - scale1;
+		}
+		if (scale2 < 0) {				/* 99PP type */
+			digits1 += scale2 + diff;
+			scale2 = 0;
+		} else 
+		if (scale2 > digits2) {			/* VPP99 type */
+			digits2 = scale2 + diff;
+			scale2 = 0;
+		}
+		if (scale1 < 0) {
+			digits2 += scale1 + diff;
+			scale1 = 0;
+		} else 
+		if (scale1 > digits1) {
+			digits1 = scale1 + diff;
+			scale1 = 0;
+		}
+	}
 	if (COB_FIELD_NO_SIGN_NIBBLE (f2)) {
 		offset = digits2 % 2;
 	} else {

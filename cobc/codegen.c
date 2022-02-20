@@ -1785,9 +1785,10 @@ output_attr (const cb_tree x)
 					break;
 				}
 
-				id = lookup_attr (type, f->pic->digits,
-						  f->pic->scale, flags,
-						  f->pic->str, f->pic->lenstr);
+				id = lookup_attr (type, 
+							f->pic->flag_has_p?f->pic->real_digits:f->pic->digits,
+							f->pic->scale, flags,
+							f->pic->str, f->pic->lenstr);
 				break;
 			}
 		}

@@ -1,5 +1,11 @@
 
+2022-02-20  Ron Norman <rjn@inglenet.com>
+
+	* move.c (cob_move_display_to_packed): If P used in PIC adjust data move
+	* termio.c (pretty_display): Check for use of P in PIC and adjust
+
 2022-02-16  Ron Norman <rjn@inglenet.com>
+
 	* screenio.c (cob_field_display): If no field, use empty field as default
 					This is to handle DISPLAY OMITTED
 
