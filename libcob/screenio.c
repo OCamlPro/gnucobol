@@ -2548,7 +2548,7 @@ field_display (cob_field *f, const int line, const int column, cob_field *fgc,
 	if (f) {
 		fsize = (int)f->size;
 	} else {
-		strcpy (space_buff, " ");
+		strcpy ((char*)space_buff, " ");
 		char_temp.data = space_buff;
 		char_temp.attr = &const_alpha_attr;
 		char_temp.size = 0;
