@@ -1254,7 +1254,8 @@ cob_init_table (void *tbl, unsigned long len, long occ)
 void
 cob_move (cob_field *src, cob_field *dst)
 {
-	int		opt;
+	int		opt, src_scl;
+	size_t	src_dig;
 	cob_field	temp;
 	unsigned char	data[2];
 
@@ -1293,6 +1294,16 @@ cob_move (cob_field *src, cob_field *dst)
 		}
 	}
 
+	if (COB_FIELD_SCALE (src) < 0) {
+		src_dig = COB_FIELD_DIGITS (src) - COB_FIELD_SCALE (src);
+		src_scl = 0;
+	} else if (COB_FIELD_SCALE (src) > COB_FIELD_DIGITS (src)) {
+		src_dig = COB_FIELD_SCALE (src);
+		src_scl = 0;
+	} else {
+		src_dig = COB_FIELD_DIGITS (src);
+		src_scl = COB_FIELD_SCALE (src);
+	}
 	/* Elementary move */
 	switch (COB_FIELD_TYPE (src)) {
 	case COB_TYPE_NUMERIC_DISPLAY:
@@ -1324,9 +1335,14 @@ cob_move (cob_field *src, cob_field *dst)
 			if (COB_FIELD_SCALE (src) < 0
 			 || COB_FIELD_SCALE (src) > COB_FIELD_DIGITS (src)) {
 				/* Expand P's */
-				indirect_move (cob_move_display_to_display, src, dst,
-						(size_t)cob_max_int ((int)COB_FIELD_DIGITS(src), (int)COB_FIELD_SCALE(src)),
-						cob_max_int (0, (int)COB_FIELD_SCALE(src)));
+				if (COB_FIELD_SCALE (src) > COB_FIELD_DIGITS (src))
+					src_dig = COB_FIELD_SCALE (src);
+				else if (COB_FIELD_SCALE (src) < 0)
+					src_dig = COB_FIELD_DIGITS (src) - COB_FIELD_SCALE (src);
+				else
+					src_dig = COB_FIELD_SIZE (src);
+				indirect_move (cob_move_display_to_display, src, dst, src_dig,
+								cob_max_int (0, (int)COB_FIELD_SCALE(src)));
 				return;
 			} else {
 				cob_move_alphanum_to_edited (src, dst);
@@ -1359,8 +1375,7 @@ cob_move (cob_field *src, cob_field *dst)
 			return;
 		default:
 			indirect_move (cob_move_packed_to_display, src, dst,
-					(size_t)(COB_FIELD_DIGITS(src)),
-					COB_FIELD_SCALE(src));
+							COB_FIELD_DIGITS (src), COB_FIELD_SCALE (src));
 			return;
 		}
 
@@ -1391,13 +1406,11 @@ cob_move (cob_field *src, cob_field *dst)
 			return;
 		case COB_TYPE_NUMERIC_EDITED:
 			indirect_move (cob_move_binary_to_display, src, dst,
-					(size_t)COB_MAX_DIGITS,
-					COB_FIELD_SCALE(src));
+					(size_t)COB_MAX_DIGITS, COB_FIELD_SCALE(src));
 			return;
 		default:
 			indirect_move (cob_move_binary_to_display, src, dst,
-					(size_t)(COB_FIELD_DIGITS(src)),
-					COB_FIELD_SCALE(src));
+							src_dig, src_scl);
 			return;
 		}
 
@@ -1419,8 +1432,7 @@ cob_move (cob_field *src, cob_field *dst)
 		case COB_TYPE_NUMERIC_FP_DEC64:
 		case COB_TYPE_NUMERIC_FP_DEC128:
 			indirect_move (cob_move_edited_to_display, src, dst,
-					(size_t)(2 * COB_MAX_DIGITS),
-					COB_MAX_DIGITS);
+					(size_t)(2 * COB_MAX_DIGITS), COB_MAX_DIGITS);
 			return;
 		case COB_TYPE_ALPHANUMERIC_EDITED:
 			cob_move_alphanum_to_edited (src, dst);
@@ -1549,8 +1561,7 @@ cob_move (cob_field *src, cob_field *dst)
 		case COB_TYPE_NUMERIC_FP_DEC64:
 		case COB_TYPE_NUMERIC_FP_DEC128:
 			indirect_move (cob_move_alphanum_to_display, src, dst,
-					(size_t)(2 * COB_MAX_DIGITS),
-					COB_MAX_DIGITS);
+					(size_t)(2 * COB_MAX_DIGITS), COB_MAX_DIGITS);
 			return;
 		case COB_TYPE_ALPHANUMERIC_EDITED:
 			cob_move_alphanum_to_edited (src, dst);
