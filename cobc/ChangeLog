@@ -1,4 +1,14 @@
 
+2022-03-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* ppparse.y (ppp_set_value): parse MicroFocus style $SET (numlit);
+	  minor refactoring to remove local variables and not allocate
+	  memory for invalid literals
+	* ppparse.y (set_choice): output parsed literal instead of token
+	* cobc.h, tree.h: moved flex directive actions and value types along
+	  with cb_define_struct to tree.h as enum cb_directive_action and
+	  enum cb_definition_type
+
 2022-01-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (cb_build_cond): attach source reference for all possible

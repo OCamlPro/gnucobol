@@ -112,18 +112,6 @@ enum cb_current_date {
 #define CB_XSTRINGIFY(s)		CB_STRINGIFY(s)
 #define CB_XRANGE(min,max)		CB_XSTRINGIFY(min) ".." CB_XSTRINGIFY(max)
 
-/* Flex directive actions */
-#define PLEX_ACT_IF			0
-#define PLEX_ACT_ELSE			1U
-#define PLEX_ACT_END			2U
-#define PLEX_ACT_ELIF			3U
-
-/* Flex value types */
-#define PLEX_DEF_NONE			0
-#define PLEX_DEF_LIT			1U
-#define PLEX_DEF_NUM			2U
-#define PLEX_DEF_DEL			3U
-
 /* Context sensitive keyword defines (trigger words) */
 #define	CB_CS_ACCEPT			(1U << 0)	/* within ACCEPT statement */
 #define CB_CS_ALLOCATE			(1U << 1)	/* within ALLOCATE statement */
@@ -267,18 +255,6 @@ struct cb_replace_list {
 	const struct cb_text_list	*old_text;
 	const struct cb_text_list	*new_text;
 	unsigned int			lead_trail;
-};
-
-/* Generic define list structure */
-struct cb_define_struct {
-	struct cb_define_struct	*next;			/* next pointer */
-	struct cb_define_struct	*last;
-	char			*name;
-	char			*value;
-	unsigned int		deftype;
-	int			sign;
-	int			int_part;
-	int			dec_part;
 };
 
 /* Structure for extended filenames */
@@ -640,14 +616,7 @@ extern int		ppcopy (const char *, const char *,
 extern void		pp_set_replace_list (struct cb_replace_list *,
 					     const cob_u32_t);
 extern void		ppparse_error (const char *);
-extern void		ppparse_clear_vars (const struct cb_define_struct *);
-extern struct cb_define_struct *ppp_search_lists (const char *name);
-extern void		ppp_clear_lists (void);
-extern void		plex_clear_vars (void);
-extern void		plex_clear_all (void);
-extern void		plex_call_destroy (void);
-extern void		plex_action_directive (const unsigned int,
-					       const unsigned int);
+
 
 /* parser (in scanner.l, parser.y) */
 #if	!defined (COB_IN_SCANNER ) && !defined (COB_IN_PPLEX) && \

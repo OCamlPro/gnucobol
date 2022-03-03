@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2021 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -1484,6 +1484,47 @@ struct cb_list {
 #define CB_PAIR_P(x)		(CB_LIST_P (x) && CB_PAIR_X (x))
 #define CB_PAIR_X(x)		CB_PURPOSE (x)
 #define CB_PAIR_Y(x)		CB_VALUE (x)
+
+/* preprocessor definitions */
+
+/* Flex directive actions */
+enum cb_directive_action {
+	PLEX_ACT_IF =	0,
+	PLEX_ACT_ELSE =	1U,
+	PLEX_ACT_END =	2U,
+	PLEX_ACT_ELIF =	3U
+};
+
+/* Flex value types */
+enum cb_definition_type {
+	PLEX_DEF_NONE	=	0,
+	PLEX_DEF_LIT	=	1U,
+	PLEX_DEF_NUM	=	2U,
+	PLEX_DEF_DEL	=	3U
+};
+
+/* Generic define list structure */
+struct cb_define_struct {
+	struct cb_define_struct	*next;			/* next pointer */
+	struct cb_define_struct	*last;
+	char			*name;
+	char			*value;
+	enum cb_definition_type		deftype;
+	int			sign;
+	int			int_part;
+	int			dec_part;
+};
+
+extern void		ppp_clear_lists (void);
+extern void		plex_clear_vars (void);
+extern void		plex_clear_all (void);
+extern void		plex_call_destroy (void);
+
+extern void		ppparse_clear_vars (const struct cb_define_struct *);
+extern struct cb_define_struct *ppp_search_lists (const char *name);
+
+extern void		plex_action_directive (const enum cb_directive_action,
+	const unsigned int);
 
 /* Report */
 

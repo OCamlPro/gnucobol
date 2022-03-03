@@ -1358,7 +1358,7 @@ plex_call_destroy (void)
 }
 
 void
-plex_action_directive (const unsigned int cmdtype, const unsigned int is_true)
+plex_action_directive (const enum cb_directive_action cmdtype, const unsigned int is_true)
 {
 	unsigned int	n;
 
