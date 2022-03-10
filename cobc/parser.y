@@ -2529,6 +2529,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token EVENT_LIST		"EVENT-LIST"
 %token EVENT_STATUS		"EVENT STATUS"
 %token EVERY
+%token EXAMINE
 %token EXCEPTION
 %token EXCEPTION_CONDITION	"EXCEPTION CONDITION"
 %token EXCEPTION_VALUE		"EXCEPTION-VALUE"
@@ -3206,6 +3207,7 @@ set_record_size (cb_tree min, cb_tree max)
 %nonassoc ENABLE
 %nonassoc ENTRY
 %nonassoc EVALUATE
+%nonassoc EXAMINE
 %nonassoc EXHIBIT
 %nonassoc EXIT
 %nonassoc FREE
@@ -13750,6 +13752,27 @@ inspect_statement:
 	inspect_keyword = 0;
   }
   inspect_body
+| EXAMINE
+  send_identifier
+  TALLYING
+  LEADING
+  simple_display_value 
+  {
+	begin_statement ("INSPECT", 0);
+	inspect_keyword = 0;
+        cb_init_tallying();
+        cb_build_tallying_data (
+                                cb_build_identifier(
+                                                    cb_build_reference("TALLY"), 0 )
+                                );
+        cb_build_tallying_leading() ;
+        cb_emit_inspect ($2,
+                         cb_build_tallying_value(
+                                                 $5,
+                                                 cb_build_inspect_region_start ()
+                         ),
+                         TALLYING_CLAUSE);
+  }
 ;
 
 inspect_body:

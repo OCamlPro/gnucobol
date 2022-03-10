@@ -199,6 +199,7 @@ reserved:	ERROR
 reserved:	ESI
 reserved:	EVALUATE
 reserved:	EVERY
+reserved:	EXAMINE         	# GCOS
 reserved:	EXCEEDS=GREATER		# GCOS
 reserved:	EXCEPTION
 #reserved:	EXCEPTION-OBJECT	# COBOL 2002

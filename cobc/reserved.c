@@ -1217,6 +1217,9 @@ static struct cobc_reserved default_reserved_words[] = {
   { "EVERY",			0, 1, EVERY,			/* IBM extension */
 				0, CB_CS_I_O_CONTROL | CB_CS_XML_GENERATE
   },
+  { "EXAMINE",			1, 0, EXAMINE,			/* GCOS extension */
+				CB_CS_INSPECT, 0
+  },
   { "EXCEPTION",		0, 0, EXCEPTION,		/* 2002 */
 				0, 0
   },
