@@ -89,6 +89,7 @@ static int output_locations = 0;
 
 #define RECORD_TREE( r, name, t)                                        \
     RECORD_FIELD(r, "node", string, name);                           \
+    r.has_field = 0;                                                 \
     RECORD_FIELD(r, "uid", pointer, (cb_tree) t);                    \
     if(output_locations){                                               \
     RECORD_FIELDP(r, "source_file", string, ((cb_tree) t)->source_file); \
@@ -143,6 +144,17 @@ static void print_uchar ( unsigned char c, int indent, int full )
   fprintf(oc, "\"");
 }
 
+static void print_intchar ( int c, int indent, int full )
+{
+  if( c>=0 && c<256 ){
+    fprintf(oc, "\"");
+    print_json_char( c );
+    fprintf(oc, "\"");
+  } else {
+    fprintf(oc, "%d", c);
+  }
+}
+
 static void print_string ( const char *p, int indent, int full )
 {
   int len = strlen( p );
@@ -182,9 +194,11 @@ static void print_cb_list( struct cb_list *l, int indent, int full )
   RECORD_BEGIN( r, indent);
   RECORD_TREE( r, "list", l );
   RECORD_FIELDP( r, "value", cb_tree, l->value );
-  RECORD_FIELDP( r, "purpose", cb_tree, l->purpose );
+  if( l->purpose != NULL ){
+    RECORD_FIELDNZ( r, "purpose", intchar, CB_PURPOSE_INT(l) );
+  }
   RECORD_FIELDP( r, "chain", cb_tree, l->chain );
-  RECORD_FIELD( r, "sizes", int, l->sizes );
+  RECORD_FIELDNZ( r, "sizes", int, l->sizes );
   RECORD_END( r);
 }
 
@@ -241,7 +255,7 @@ static void print_cb_binary_op ( struct cb_binary_op * f, int indent, int full )
   RECORD_TREE( r, "binary_op", f);
   RECORD_FIELDP( r, "x", cb_tree, f->x );
   RECORD_FIELDP( r, "y", cb_tree, f->y );
-  RECORD_FIELD( r, "op", int, f->op );
+  RECORD_FIELD( r, "op", intchar, f->op );
   RECORD_FIELD( r, "flag", uint, f->flag );
   RECORD_END( r );
 }
@@ -345,10 +359,10 @@ static void print_cb_literal ( struct cb_literal * f, int indent, int full )
   RECORD_TREE( r, "literal", f);
   RECORD_FIELD( r, "data", ustring, f->data );
   RECORD_FIELD( r, "size", uint, f->size );
-  RECORD_FIELD( r, "scale", int, f->scale );
-  RECORD_FIELD( r, "llit", uint, f->llit );
-  RECORD_FIELD( r, "sign", int, f->sign );
-  RECORD_FIELD( r, "all", int, f->all );
+  RECORD_FIELDNZ( r, "scale", int, f->scale );
+  RECORD_FIELDNZ( r, "llit", uint, f->llit );
+  RECORD_FIELDNZ( r, "sign", int, f->sign );
+  RECORD_FIELDNZ( r, "all", int, f->all );
   RECORD_END( r );
 }
 
@@ -1342,21 +1356,49 @@ static void print_cb_tree ( const cb_tree t, int indent, int full )
   }
 }
 
+static char* indentation = NULL;
+
+static void json_init_indents(void)
+{
+  if( indentation == NULL){
+    int i;
+    indentation = malloc(MAX_INDENT+2);
+    for( i=0; i<=MAX_INDENT; i++ ){
+      indentation[i]=' ';
+      indents[i] = (indentation+MAX_INDENT)-(i % 80);
+    }
+    indentation[MAX_INDENT+1] = 0;
+  }
+}
+
+static void json_free_indents(void)
+{
+  if( indentation != NULL ){
+    free(indentation);
+    indentation = NULL;
+  }
+}
+
+
 void json_print_program( const struct cb_program *p )
 {
-  int i;
-  char* indentation = malloc(MAX_INDENT+2);
   int namelen = strlen(p->program_name);
   char filename [namelen+10];
-  for( i=0; i<=MAX_INDENT; i++ ){
-    indentation[i]=' ';
-    indents[i] = (indentation+MAX_INDENT)-(i % 80);
-  }
-  indentation[MAX_INDENT+1] = 0;
   strcpy(filename, p->program_name);
   strcpy(filename+namelen, ".json");
   oc = fopen(filename, "w");;
+  json_init_indents();
   print_cb_program( p, 0, 1 );
-  free(indentation);
+  json_free_indents();
   fclose(oc);
+}
+
+void json_print_tree ( const char * msg, const cb_tree t )
+{
+  oc = stderr ;
+  json_init_indents();
+  fprintf(oc, "%s>>>>>>\n", msg);
+  print_cb_tree( t, 0, 1 );
+  fprintf(oc, "\n%s<<<<<<\n", msg);
+  json_free_indents();
 }

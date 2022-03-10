@@ -2438,4 +2438,7 @@ extern void             cb_tree_print(const cb_tree tr, FILE* output ) ;
 extern const char * cb_tag_str(enum cb_tag tag);
 extern const char * cb_category_str(enum cb_category tag);
 
+/* json.c */
+extern void             json_print_tree(const char * msg, const cb_tree tr ) ;
+
 #endif /* CB_TREE_H */

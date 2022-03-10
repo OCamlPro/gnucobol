@@ -5329,16 +5329,19 @@ cb_expr_finish (void)
 		return cb_error_node;
 	}
 
+        //        json_print_tree("cb_expr_finish", expr_stack[3].value) ;
 	return expr_stack[3].value;
 }
 
 cb_tree
 cb_build_expr (cb_tree list)
 {
+  
 	cb_tree	l, v;
 	struct cb_field	*f;
 	int	op, has_rel, has_con, has_var, bad_cond;
 
+        //        json_print_tree("cb_expr_init", list);
 	cb_expr_init ();
 
 	/* Checkme: maybe add validate_list(l) here */
@@ -5449,6 +5452,7 @@ cb_build_expr (cb_tree list)
 		}
 	}
 	if (bad_cond) {
+          //          json_print_tree( "cb_build_expr", list );
 		cb_error_x (list, _("invalid conditional expression"));
 		return cb_any;
 	}
