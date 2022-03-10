@@ -5396,6 +5396,9 @@ cb_build_expr (cb_tree list)
 		default:
 			v = CB_VALUE (l);
 			if (op == 'x') {
+                                if( has_var && v == cb_zero ){
+                                        has_rel = 1;
+                                }
 				has_var = 1;
 				if (CB_TREE_TAG (v) == CB_TAG_BINARY_OP) {
 					has_rel = 1;
@@ -5403,7 +5406,7 @@ cb_build_expr (cb_tree list)
 				if (CB_TREE_TAG (v) == CB_TAG_FUNCALL) {
 					has_rel = 1;
 				} else
-				if (CB_REF_OR_FIELD_P (v)) {
+                                if (CB_REF_OR_FIELD_P (v)) {
 					f = CB_FIELD_PTR (v);
 					if (f->level == 88) {
 						has_rel = 1;
