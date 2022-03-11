@@ -133,6 +133,7 @@ static size_t			newline_count = 0;
 static size_t			within_comment = 0;
 static size_t			inside_bracket = 0;
 static size_t			consecutive_quotation = 0;
+static size_t			symbolic_quotation = 0;
 static size_t			need_continuation = 0;
 static size_t			buffer_overflow = 0;
 static size_t			comment_allowed;
@@ -994,6 +995,7 @@ ENDIF_DIRECTIVE_STATE>{
 		copy_stack = NULL;
 		quotation_mark = 0;
 		consecutive_quotation = 0;
+                symbolic_quotation = 0;
 		yyterminate ();
 	}
 
@@ -2047,7 +2049,7 @@ start:
 	for (i = bp - buff; buff[i] != '\n'; ++i) {
 		/* Pick up floating comment and force loop exit */
 		if (!quotation_mark && ((buff[i] == '*' && buff[i + 1] == '>') ||
-			                    (cb_flag_acucomment && buff[i] == '|'))) {
+					      (cb_flag_acucomment && buff[i] == '|'))) {
 			/* remove indicator "source text too long" if the column
 			   leading to the indicator comes after the floating comment
 			*/
@@ -2061,13 +2063,33 @@ start:
 			if (quotation_mark == 0) {
 				/* Literal start */
 				quotation_mark = buff[i];
+/* GCOS symbolic_quotation are handled here only for correct continuations, the second scanner
+  does not understand them correctly and will discard the last comma as a non-significant char. */
+				if( cb_gcos_ebcdic_literals && quotation_mark == '"'
+				   && buff[i+1] == quotation_mark
+				   && buff[i+2] != quotation_mark) {
+				    symbolic_quotation = 1;
+				    i++;
+				}
 			} else if (quotation_mark == buff[i]) {
 				if (i == cb_text_column - 1) {
 					/* Consecutive quotation */
 					consecutive_quotation = 1;
 				} else {
-					/* Literal end */
-					quotation_mark = 0;
+					if( quotation_mark == '"' && buff[i+1] == quotation_mark ){
+						 i++;
+						 if( symbolic_quotation ){
+							quotation_mark = 0;
+							symbolic_quotation = 0;
+						 }
+					} else {
+						 if( symbolic_quotation ){
+							symbolic_quotation = 0;
+						 } else {
+						        /* Literal end */
+                                                        quotation_mark = 0;
+                                                 }
+                                       }
 				}
 			}
 		}
