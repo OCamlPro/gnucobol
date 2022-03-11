@@ -2100,9 +2100,11 @@ start:
 		if (!consecutive_quotation) {
 			need_continuation = 1;
 		}
-		for (; i < cb_text_column;) {
+                if(! cb_del_spaces_before_cont){
+		  for (; i < cb_text_column;) {
 			buff[i++] = ' ';
-		}
+		  }
+                }
 		buff[i] = 0;
 	} else {
 		/* Truncate trailing spaces, including the newline */
