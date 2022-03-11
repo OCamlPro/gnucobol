@@ -1353,10 +1353,11 @@ scan_ebcdic_char (int c)
 	unput (c);
 	buff[j++] = 0;
 	c = atoi (buff);
-	if (c >= 256) {
-		cb_error (_("symbolic character %s out of allowed EBCDIC range (0...255)"),
+	if (c < 1 || c >= 257) {
+		cb_error (_("symbolic character %s out of allowed EBCDIC range (1...256)"),
 			  buff);
 	}
+        c--; // in ordinal, i.e. 1..256 -> 0..255
 #ifdef COB_EBCDIC_MACHINE
 	return (cob_u8_t) c;
 #else
