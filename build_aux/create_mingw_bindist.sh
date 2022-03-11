@@ -174,7 +174,7 @@ if not "%COB_MAIN_DIR%" == "" (
    if "%COB_MAIN_DIR%" == "%~dp0" (
       echo Information: batch was called alread from "%COB_MAIN_DIR%"
       echo              skipping environment setting...
-	  if not [%1] == [] goto :call_if_needed
+      if not [%1] == [] goto :call_if_needed
       goto :cobcver
    ) else (
       echo Warning: batch was called before from "%COB_MAIN_DIR%"

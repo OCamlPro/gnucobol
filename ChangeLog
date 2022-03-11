@@ -1,4 +1,8 @@
 
+2022-03-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am: targets to create binary distributions
+
 2022-01-03  Simon Sobisch <simonsobisch@gnu.org>
 
 	* general: revert change 2019-06-05 - all header files that are included

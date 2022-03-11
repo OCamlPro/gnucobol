@@ -6962,10 +6962,10 @@ cb_config_entry (char *buf, int line)
 
 	value[j] = 0;
 	if (strcasecmp (keyword, "reset") != 0
-	&&  strcasecmp (keyword, "include") != 0
-	&&  strcasecmp (keyword, "includeif") != 0
-	&&  strcasecmp (keyword, "setenv") != 0
-	&&  strcasecmp (keyword, "unsetenv") != 0) {
+	 && strcasecmp (keyword, "include") != 0
+	 && strcasecmp (keyword, "includeif") != 0
+	 && strcasecmp (keyword, "setenv") != 0
+	 && strcasecmp (keyword, "unsetenv") != 0) {
 		i = cb_lookup_config (keyword);
 
 		if (i >= NUM_CONFIG) {
