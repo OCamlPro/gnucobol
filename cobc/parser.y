@@ -336,6 +336,26 @@ begin_implicit_statement (void)
 	current_statement = new_statement;
 }
 
+static
+void finish_statement()
+{
+	if (next_label_list) {
+		cb_tree	plabel;
+		char	name[32];
+
+		snprintf (name, sizeof(name), "L$%d", next_label_id);
+		plabel = cb_build_label (cb_build_reference (name), NULL);
+		CB_LABEL (plabel)->flag_next_sentence = 1;
+		emit_statement (plabel);
+		current_program->label_list =
+			cb_list_append (current_program->label_list, next_label_list);
+		next_label_list = NULL;
+		next_label_id++;
+	}
+	/* check_unreached = 0; */
+	cb_end_statement();
+}
+
 # if 0 /* activate only for debugging purposes for attribs
 	FIXME: Replace by DEBUG_LOG function */
 static
@@ -10368,27 +10388,10 @@ _procedure_list:
 ;
 
 procedure:
-  section_header
-| paragraph_header
-| statements TOK_DOT _area_a
-| statements AREA_A
-  {
-	if (next_label_list) {
-		cb_tree	plabel;
-		char	name[32];
-
-		snprintf (name, sizeof(name), "L$%d", next_label_id);
-		plabel = cb_build_label (cb_build_reference (name), NULL);
-		CB_LABEL (plabel)->flag_next_sentence = 1;
-		emit_statement (plabel);
-		current_program->label_list =
-			cb_list_append (current_program->label_list, next_label_list);
-		next_label_list = NULL;
-		next_label_id++;
-	}
-	/* check_unreached = 0; */
-	cb_end_statement();
-  }
+  section_header              { finish_statement(); }
+| paragraph_header            { finish_statement(); }
+| statements TOK_DOT _area_a  { finish_statement(); }
+| statements AREA_A           { finish_statement(); }
 | invalid_statement %prec SHIFT_PREFER
 | TOK_DOT _area_a
   {
@@ -10456,7 +10459,6 @@ paragraph_header:
   WORD TOK_DOT
   {
 	cb_tree label;
-
 	non_const_word = 0;
 	check_unreached = 0;
 	if (cb_build_section_name ($1, 1) == cb_error_node) {
