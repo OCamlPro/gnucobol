@@ -15515,6 +15515,14 @@ stop_statement:
 	check_unreached = 1;
 	cobc_cs_check = 0;
   }
+| STOP ERROR  /* GCOS/COBOL extension, should error with most -std */
+  {
+	begin_statement ("STOP RUN", 0);
+	cobc_cs_check = CB_CS_STOP;
+	cb_emit_stop_run ( cb_int1 );
+	check_unreached = 1;
+	cobc_cs_check = 0;
+  }
 | STOP stop_argument
   {
 	begin_statement ("STOP", 0);
