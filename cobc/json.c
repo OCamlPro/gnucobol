@@ -1386,7 +1386,9 @@ void json_print_program( const struct cb_program *p )
   char filename [namelen+10];
   strcpy(filename, p->program_name);
   strcpy(filename+namelen, ".json");
-  oc = fopen(filename, "w");;
+  oc = fopen(filename, "w");
+
+  if( getenv("COBC_JSON_LOCS") != NULL ) output_locations = 1;
   json_init_indents();
   print_cb_program( p, 0, 1 );
   json_free_indents();
