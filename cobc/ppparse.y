@@ -34,6 +34,9 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef	HAVE_STRINGS_H
+#include <strings.h>
+#endif
 #include <ctype.h>
 
 #define	COB_IN_PPPARSE	1
@@ -403,7 +406,7 @@ static unsigned int
 ppp_search_comp_vars (const char *name)
 {
 #undef	CB_PARSE_DEF
-#define	CB_PARSE_DEF(x,z)	if (!strcasecmp (name, x)) return (z);
+#define	CB_PARSE_DEF(x,z)	if (!cb_strcasecmp (name, x)) return (z);
 #include "ppparse.def"
 #undef	CB_PARSE_DEF
 	cb_warning (COBC_WARN_FILLER, _("compiler flag '%s' unknown"), name);
@@ -763,9 +766,9 @@ set_choice:
 	size = strlen (p) - 1;
 	p[size] = '\0';
 
-	if (!strcasecmp (p, "EXTERNAL")) {
+	if (!cb_strcasecmp (p, "EXTERNAL")) {
 		fprintf (ppout, "#ASSIGN %d\n", (int)CB_ASSIGN_EXT_FILE_NAME_REQUIRED);
-	} else if (!strcasecmp (p, "DYNAMIC")) {
+	} else if (!cb_strcasecmp (p, "DYNAMIC")) {
 		fprintf (ppout, "#ASSIGN %d\n", (int)CB_ASSIGN_VARIABLE_DEFAULT);
 	} else {
 		ppp_error_invalid_option ("ASSIGN", p);
@@ -802,9 +805,9 @@ set_choice:
 	size = strlen (p) - 1;
 	p[size] = '\0';
 
-	if (!strcasecmp (p, "BINARY")) {
+	if (!cb_strcasecmp (p, "BINARY")) {
 		cb_binary_comp_1 = 1;
-	} else if (!strcasecmp (p, "FLOAT")) {
+	} else if (!cb_strcasecmp (p, "FLOAT")) {
 		cb_binary_comp_1 = 0;
 	} else {
 		ppp_error_invalid_option ("COMP1", p);
@@ -820,11 +823,11 @@ set_choice:
 	size = strlen (p) - 1;
 	p[size] = '\0';
 
-	if (!strcasecmp (p, "XML")) {
+	if (!cb_strcasecmp (p, "XML")) {
 		cb_dpc_in_data = CB_DPC_IN_XML;
-	} else if (!strcasecmp (p, "JSON")) {
+	} else if (!cb_strcasecmp (p, "JSON")) {
 		cb_dpc_in_data = CB_DPC_IN_JSON;
-	} else if (!strcasecmp (p, "ALL")) {
+	} else if (!cb_strcasecmp (p, "ALL")) {
 		cb_dpc_in_data = CB_DPC_IN_ALL;
 	} else {
 		ppp_error_invalid_option ("DPC-IN-DATA", p);
@@ -840,9 +843,9 @@ set_choice:
 	size = strlen (p) - 1;
 	p[size] = '\0';
 
-	if (!strcasecmp (p, "UPPER")) {
+	if (!cb_strcasecmp (p, "UPPER")) {
 		cb_fold_copy = COB_FOLD_UPPER;
-	} else if (!strcasecmp (p, "LOWER")) {
+	} else if (!cb_strcasecmp (p, "LOWER")) {
 		cb_fold_copy = COB_FOLD_LOWER;
 	} else {
 		ppp_error_invalid_option ("FOLD-COPY-NAME", p);
@@ -892,12 +895,12 @@ set_choice:
 	size = strlen (p) - 1;
 	p[size] = '\0';
 
-	if (!strcasecmp (p, "FIXED")) {
+	if (!cb_strcasecmp (p, "FIXED")) {
 		cb_source_format = CB_FORMAT_FIXED;
 		cb_text_column = cb_config_text_column;
-	} else if (!strcasecmp (p, "FREE")) {
+	} else if (!cb_strcasecmp (p, "FREE")) {
 		cb_source_format = CB_FORMAT_FREE;
-	} else if (!strcasecmp (p, "VARIABLE")) {
+	} else if (!cb_strcasecmp (p, "VARIABLE")) {
 		cb_source_format = CB_FORMAT_FIXED;
 		/* This value matches most MF Visual COBOL 4.0 version. */
 		cb_text_column = 250;

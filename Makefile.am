@@ -1,7 +1,7 @@
 #
 # Makefile gnucobol
 #
-# Copyright (C) 2003-2012, 2014-2020 Free Software Foundation, Inc.
+# Copyright (C) 2003-2012, 2014-2020, 2022 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -101,6 +101,45 @@ distmingwdir: all $(top_srcdir)/build_aux/create_mingw_bindist.sh
 distwin:   distwindir
 distmingw: distmingwdir
 
+distbindir = $(distdir)_bin
+distbindir: all distdir
+	$(MAKE) $(AM_MAKEFLAGS) DESTDIR=$(abs_builddir)/$(distbindir) install
+	install -d "$(distbindir)/${datarootdir}/licenses/$(PACKAGE)"
+	install -p -m644 $(distdir)/COPYING*          "$(distbindir)/${datarootdir}/licenses/$(PACKAGE)"
+	install -d "$(distbindir)/${datarootdir}/doc/$(PACKAGE)"
+	install -p -m644 $(distdir)/README*           "$(distbindir)/${datarootdir}/doc/$(PACKAGE)"
+	install -p -m644 $(distdir)/NEWS*             "$(distbindir)/${datarootdir}/doc/$(PACKAGE)"
+	install -p -m644 $(distdir)/ChangeLog         "$(distbindir)/${datarootdir}/doc/$(PACKAGE)"
+	install -p -m644 $(distdir)/bin/ChangeLog     "$(distbindir)/${datarootdir}/doc/$(PACKAGE)/ChangeLog_bin"
+	install -p -m644 $(distdir)/cobc/ChangeLog    "$(distbindir)/${datarootdir}/doc/$(PACKAGE)/ChangeLog_cobc"
+	install -p -m644 $(distdir)/libcob/ChangeLog  "$(distbindir)/${datarootdir}/doc/$(PACKAGE)/ChangeLog_libcob"
+	install -p -m644 $(distdir)/doc/gnucobol*.pdf "$(distbindir)/${datarootdir}/doc/$(PACKAGE)"
+
+DISTBIN_TARGETS = distbin-gzip
+gc__remove_bindistdir = rm -rf $(distbindir)
+gc__post_remove_bindistdir = $(gc__remove_bindistdir)
+distbin-gzip: distbindir
+	tardir=$(distbindir) && $(am__tar) | eval GZIP= gzip $(GZIP_ENV) -c >$(distbindir).tar.gz
+	$(gc__post_remove_bindistdir)
+	$(am__post_remove_distdir)
+distbin-bzip2: distbindir
+	tardir=$(distbindir) && $(am__tar) | BZIP2=$${BZIP2--9} bzip2 -c >$(distbindir).tar.bz2
+	$(gc__post_remove_bindistdir)
+	$(am__post_remove_distdir)
+distbin-lzip: distbindir
+	tardir=$(distbindir) && $(am__tar) | lzip -c $${LZIP_OPT--9} >$(distbindir).tar.lz
+	$(gc__post_remove_bindistdir)
+	$(am__post_remove_distdir)
+distbin-xz: distbindir
+	tardir=$(distbindir) && $(am__tar) | XZ_OPT=$${XZ_OPT--e} xz -c >$(distbindir).tar.xz
+	$(gc__post_remove_bindistdir)
+	$(am__post_remove_distdir)
+
+distbin:
+	$(MAKE) $(AM_MAKEFLAGS) $(DISTBIN_TARGETS) gc__post_remove_bindistdir='@:' am__post_remove_distdir='@:'
+	$(gc__post_remove_bindistdir)
+	$(am__post_remove_distdir)
+
 $(tarstamps):
 	@echo "Creating $@..."
 	@{								\
@@ -116,7 +155,8 @@ vcs-update:
 
 
 # targets that are only logical targets and should always be executed
-.PHONY: test checkall checkmanual vcs-update distwin distmingw
+.PHONY: test checkall checkmanual vcs-update distwin distmingw \
+	distbin distbin-gzip distbin-bzip2 distbin-lzip distbin-xz
 
 test: all
 	cd tests && $(MAKE) $(AM_MAKEFLAGS) test

@@ -26,6 +26,9 @@
 #include <stddef.h>
 #include <stdarg.h>
 #include <string.h>
+#ifdef	HAVE_STRINGS_H
+#include <strings.h>
+#endif
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -4441,7 +4444,8 @@ cob_display_environment (const cob_field *f)
 	}
 	cob_field_to_string (f, cob_local_env, cob_local_env_size);
 	if (cobsetptr->cob_env_mangle) {
-		for (i = 0; i < strlen (cob_local_env); ++i) {
+		const size_t len = strlen (cob_local_env);
+		for (i = 0; i < len; ++i) {
 			if (!isalnum ((int)cob_local_env[i])) {
 				cob_local_env[i] = '_';
 			}
@@ -4497,7 +4501,8 @@ cob_get_environment (const cob_field *envname, cob_field *envval)
 	buff = cob_malloc (envname->size + 1U);
 	cob_field_to_string (envname, buff, envname->size);
 	if (cobsetptr->cob_env_mangle) {
-		for (size = 0; size < strlen (buff); ++size) {
+		const size_t len = strlen (buff);
+		for (size = 0; size < len; ++size) {
 			if (!isalnum ((int)buff[size])) {
 				buff[size] = '_';
 			}
@@ -6899,10 +6904,10 @@ cb_config_entry (char *buf, int line)
 
 	value[j] = 0;
 	if (strcasecmp (keyword, "reset") != 0
-	&&  strcasecmp (keyword, "include") != 0
-	&&  strcasecmp (keyword, "includeif") != 0
-	&&  strcasecmp (keyword, "setenv") != 0
-	&&  strcasecmp (keyword, "unsetenv") != 0) {
+	 && strcasecmp (keyword, "include") != 0
+	 && strcasecmp (keyword, "includeif") != 0
+	 && strcasecmp (keyword, "setenv") != 0
+	 && strcasecmp (keyword, "unsetenv") != 0) {
 		i = cb_lookup_config (keyword);
 
 		if (i >= NUM_CONFIG) {

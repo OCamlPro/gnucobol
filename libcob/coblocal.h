@@ -22,16 +22,19 @@
 #ifndef COB_LOCAL_H
 #define COB_LOCAL_H
 
-#ifdef	HAVE_STRINGS_H
-#include <strings.h>
-#endif
-
 /* We use this file to define/prototype things that should not be
    exported to user space
 */
 
+#ifdef	HAVE_STRINGS_H
+#include <strings.h>
+#endif
+
 #ifdef HAVE_ISFINITE
 #define ISFINITE isfinite
+#elif	defined(_MSC_VER) || defined(__BORLANDC__) || defined(__WATCOMC__)
+#include <float.h>
+#define	ISFINITE		_finite
 #else
 #define ISFINITE finite
 #endif
@@ -190,10 +193,6 @@
 #define	COB_MOUSE_FLAGS	cobsetptr->cob_mouse_flags
 #define	COB_MOUSE_INTERVAL	cobsetptr->cob_mouse_interval
 #define	COB_USE_ESC		cobsetptr->cob_use_esc
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /* Global settings structure */
 
@@ -471,9 +470,5 @@ cob_max_int (const int x, const int y)
 	return y;
 }
 
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif	/* COB_LOCAL_H */

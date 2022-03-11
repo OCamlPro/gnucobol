@@ -85,6 +85,11 @@ static int yywrap (void) {
 #include <ctype.h>
 #include <limits.h>
 
+#include <string.h>
+#ifdef	HAVE_STRINGS_H
+#include <strings.h>
+#endif
+
 #ifdef	HAVE_UNISTD_H
 #include <unistd.h>
 #else
@@ -2299,7 +2304,7 @@ copy_word_in_quotes (char ** const word)
 	word_str = strtok (NULL, "\n");
 	word_len = strlen (word_str) - 2;
 	*word = cobc_malloc (word_len + 1);
-	cb_strncpy_upper (*word, word_str + 1, word_len);
+	cb_memcpy_upper (*word, word_str + 1, word_len);
 
 	cobc_free (text);
 }
@@ -2325,12 +2330,12 @@ copy_two_words_in_quotes (char ** const word1, char ** const word2)
 	word1_str = strtok (NULL, " ");
 	word_len = strlen (word1_str) - 2;
 	*word1 = cobc_malloc (word_len + 1);
-	cb_strncpy_upper (*word1, word1_str + 1, word_len);
+	cb_memcpy_upper (*word1, word1_str + 1, word_len);
 
 	word2_str = strtok (NULL, "\n");
 	word_len = strlen (word2_str) - 2;
 	*word2 = cobc_malloc (word_len + 1);
-	cb_strncpy_upper (*word2, word2_str + 1, word_len);
+	cb_memcpy_upper (*word2, word2_str + 1, word_len);
 
 	cobc_free (text);
 }

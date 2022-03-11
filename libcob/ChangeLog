@@ -155,6 +155,14 @@
 	  needs to be checked later if undefine of HAVE_LANGINFO_CODESET is
 	  reasonable
 
+2021-11-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* coblocal.h: adjusted ISFINITE definition
+	* coblocal.h: removed 'extern "C"' as this header should not
+	  be externally included
+	* common.h, coblocal.h: moved _MSC_VER comparison macros as those are
+	  not relevant to user-space
+
 2021-10-26  Ron Norman <rjn@inglenet.com>
 
 	* common.h: Fields added to cob_file for MF style LINE ADVANCING files
@@ -168,6 +176,11 @@
 				to handle the case of the FCD being used for more
 				than one open file
 	* fextfh.c: Removed update of FCD-NAME-LENGTH
+
+2021-10-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_get_environment, cob_display_environment): move strlen
+	  out of a loop
 
 2021-10-04  Simon Sobisch <simonsobisch@gnu.org>
 

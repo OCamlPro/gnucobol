@@ -1856,43 +1856,43 @@ cb_build_single_register (const char *name, const char *definition)
 	/* registers that are currently created elsewhere
 	   TODO: move them here */
 	/* FIXME: LENGTH OF (must have different results depending on compiler configuration) */
-	if (!strcasecmp (name, "ADDRESS OF")
-	 || !strcasecmp (name, "LENGTH OF")
-	 || !strcasecmp (name, "COB-CRT-STATUS")
-	 || !strcasecmp (name, "DEBUG-ITEM")) {
+	if (!cb_strcasecmp (name, "ADDRESS OF")
+	 || !cb_strcasecmp (name, "LENGTH OF")
+	 || !cb_strcasecmp (name, "COB-CRT-STATUS")
+	 || !cb_strcasecmp (name, "DEBUG-ITEM")) {
 		return;
 	}
 
 	/* registers that need a special handling / internal registration */
-	if (!strcasecmp (name, "JSON-CODE")) {
+	if (!cb_strcasecmp (name, "JSON-CODE")) {
 		cb_build_register_json_code (name, definition);
 		return;
 	}
-	if (!strcasecmp (name, "RETURN-CODE")) {
+	if (!cb_strcasecmp (name, "RETURN-CODE")) {
 		cb_build_register_return_code (name, definition);
 		return;
 	}
-	if (!strcasecmp (name, "SORT-RETURN")) {
+	if (!cb_strcasecmp (name, "SORT-RETURN")) {
 		cb_build_register_sort_return (name, definition);
 		return;
 	}
-	if (!strcasecmp (name, "NUMBER-OF-CALL-PARAMETERS")) {
+	if (!cb_strcasecmp (name, "NUMBER-OF-CALL-PARAMETERS")) {
 		cb_build_register_number_parameters (name, definition);
 		return;
 	}
-	if (!strcasecmp (name, "WHEN-COMPILED")) {
+	if (!cb_strcasecmp (name, "WHEN-COMPILED")) {
 		cb_build_register_when_compiled (name, definition);
 		return;
 	}
-	if (!strcasecmp (name, "XML-CODE")) {
+	if (!cb_strcasecmp (name, "XML-CODE")) {
 		cb_build_register_xml_code (name, definition);
 		return;
 	}
 
 	/* "normal" registers */
-	if (!strcasecmp (name, "TALLY")
-	 || !strcasecmp (name, "LIN")
-	 || !strcasecmp (name, "COL")) {
+	if (!cb_strcasecmp (name, "TALLY")
+	 || !cb_strcasecmp (name, "LIN")
+	 || !cb_strcasecmp (name, "COL")) {
 		cb_build_generic_register (name, definition, NULL);
 		return;
 	}

@@ -2,7 +2,7 @@
 #
 # run_prog_manual.sh gnucobol/tests
 #
-# Copyright (C) 2014-2021 Free Software Foundation, Inc.
+# Copyright (C) 2014-2022 Free Software Foundation, Inc.
 # Written by Edward Hart, Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -37,7 +37,8 @@ else
   SLEEP_SCALE=0.1   # needs a "modern" sleep implementation
 fi
 
-TITLE="GnuCOBOL Manual Test Run"
+# Note: DESC is passed by the caller
+TITLE="GnuCOBOL Manual Test Run - $DESC"
 
 _test_with_xterm () {
    xterm -T "$TITLE" \
@@ -53,13 +54,15 @@ _test_with_screen () {
   # check if screen session already exists, setup if not 
   screen -S "GCTESTS" -X select . 2>/dev/null 1>&2
   if test $? -ne 0; then
-     screen -dmS "GCTESTS"
+     # Note: you may need to adjust screen's terminal to get an output matching the actual running code later
+     screen -dmS "GCTESTS" -t "$TITLE"
      # we have a fresh environment there - source the test config once
      screen -S "GCTESTS" -X stuff ". \"${abs_top_builddir}/tests/atconfig\" && . \"${abs_top_builddir}/tests/atlocal\"
 "
      sleep 5
   fi
   # run actual test in screen session
+  screen -S "GCTESTS" -X title $"TITLE"
   screen -S "GCTESTS" -X exec ... bash -c "cd \"$PWD\" && ($COBCRUN_DIRECT $* 2>./syserr.log && echo $? > ./result) || echo 1 > ./result"
 }
 

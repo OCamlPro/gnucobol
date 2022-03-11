@@ -23,14 +23,12 @@
 #ifndef CB_COBC_H
 #define CB_COBC_H
 
-#include <stdio.h>
+/* inclusion of common.h to get type definitions and some macros
+   TODO: move those out of common.h to a second installed header
+         and include that here */
 #ifdef	HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#ifdef	HAVE_STRINGS_H
-#include <strings.h>
-#endif
-
 #include "../libcob/common.h"
 
 #ifdef	ENABLE_NLS
@@ -689,5 +687,7 @@ extern void		activate_intrinsic (const char *, const char *, const int);
 
 extern void		deactivate_system_name (const char *, const char *, const int);
 extern void		activate_system_name (const char *, const char *, const int);
+
+extern int		cb_strcasecmp (const void *, const void *);
 
 #endif /* CB_COBC_H */

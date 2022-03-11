@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2021 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
    Edward Hart
 
@@ -31,7 +31,11 @@
 #include "config.h"
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
+#ifdef	HAVE_STRINGS_H
+#include <strings.h>
+#endif
 
 #define	COB_IN_PARSER	1
 #include "cobc.h"
@@ -4240,11 +4244,11 @@ mnemonic_choices:
 			CB_CHAIN_PAIR (current_program->mnemonic_spec_list,
 					$3, save_tree);
 			/* remove non-standard context-sensitive words when identical to mnemonic */
-			if (strcasecmp (CB_NAME($3), "EXTERN" ) == 0 ||
-			    strcasecmp (CB_NAME($3), "STDCALL") == 0 ||
-			    strcasecmp (CB_NAME($3), "STATIC" ) == 0 ||
-			    strcasecmp (CB_NAME($3), "C"      ) == 0 ||
-			    strcasecmp (CB_NAME($3), "PASCAL" ) == 0) {
+			if (cb_strcasecmp (CB_NAME($3), "EXTERN" ) == 0
+			 || cb_strcasecmp (CB_NAME($3), "STDCALL") == 0
+			 || cb_strcasecmp (CB_NAME($3), "STATIC" ) == 0
+			 || cb_strcasecmp (CB_NAME($3), "C"      ) == 0
+			 || cb_strcasecmp (CB_NAME($3), "PASCAL" ) == 0) {
 				remove_context_sensitivity (CB_NAME($3), CB_CS_CALL);
 			}
 		}

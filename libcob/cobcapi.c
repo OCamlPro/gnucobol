@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2012, 2014-2021 Free Software Foundation, Inc.
+   Copyright (C) 2003-2012, 2014-2022 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -134,7 +134,7 @@ cob_get_param_field (int n, const char *caller_name)
 }
 
 int
-cob_get_name_line ( char *prog, int *line )
+cob_get_name_line (char *prog, int *line)
 {
 	int	k;
 	if (line != NULL)
@@ -148,7 +148,7 @@ cob_get_name_line ( char *prog, int *line )
 }
 
 int
-cob_get_num_params ( void )
+cob_get_num_params (void)
 {
 	if (cobglobptr) {
 		return cobglobptr->cob_call_params;
@@ -163,7 +163,7 @@ cob_get_num_params ( void )
 int
 cob_get_param_type (int n)
 {
-	cob_field* f = cob_get_param_field (n, "cob_get_param_type");
+	cob_field	*f = cob_get_param_field (n, "cob_get_param_type");
 	return cob_get_field_type (f);
 }
 
@@ -171,40 +171,28 @@ int
 cob_get_param_size (int n)
 {
 	cob_field	*f = cob_get_param_field (n, "cob_get_param_size");
-
-	if (f == NULL)
-		return -1;
-	return (int)f->size;
+	return cob_get_field_size (f);
 }
 
 int
 cob_get_param_sign (int n)
 {
 	cob_field	*f = cob_get_param_field (n, "cob_get_param_sign");
-	if (f == NULL)
-		return -1;
-	if (COB_FIELD_HAVE_SIGN(f)) {
-		return 1;
-	}
-	return 0;
+	return cob_get_field_sign (f);
 }
 
 int
 cob_get_param_scale (int n)
 {
 	cob_field	*f = cob_get_param_field (n, "cob_get_param_scale");
-	if (f == NULL) 
-		return -1;
-	return (int)f->attr->scale;
+	return cob_get_field_scale (f);
 }
 
 int
 cob_get_param_digits (int n)
 {
 	cob_field	*f = cob_get_param_field (n, "cob_get_param_digits");
-	if (f == NULL) 
-		return -1;
-	return (int)f->attr->digits;
+	return cob_get_field_digits (f);
 }
 
 int
@@ -480,11 +468,10 @@ cob_get_field_constant (const cob_field *f)
 	if (f == NULL) {
 		return -1;
 	}
-#if 0 /* maybe previously? got the contant value? */
+#if 0 /* CHECKME: previously returned "is constant yes=1, no=0";
+         possibly split into two functions */
 	return COB_FIELD_CONSTANT (f);
 #else
-	if (f == NULL) 
-		return -1;
 	if (COB_FIELD_CONTENT(f)) 
 		return 3;
 	if (COB_FIELD_VALUE(f)) 
@@ -535,6 +522,7 @@ cob_get_field_str (const cob_field *f, char *buffer, size_t size)
 			unsigned char pretty = COB_MODULE_PTR->flag_pretty_display;
 			COB_MODULE_PTR->flag_pretty_display = 1;
 			cob_display_common (f, fp);
+			COB_MODULE_PTR->flag_pretty_display = pretty;
 #ifndef HAVE_FMEMOPEN
 			{
 				int cur_pos = ftell (fp);
@@ -547,7 +535,6 @@ cob_get_field_str (const cob_field *f, char *buffer, size_t size)
 			}
 #endif
 			fclose (fp);
-			COB_MODULE_PTR->flag_pretty_display = pretty;
 		}
 	}
 	return buffer;

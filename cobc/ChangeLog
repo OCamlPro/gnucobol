@@ -1,4 +1,19 @@
 
+2022-03-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* pplex.l (next_word_is_comment_paragraph_name): extracted from (ppinput)
+	* pplex.l (get_word): new function to extract word and use in
+	  (is_condition_directive_clause, next_word_is_comment_paragraph_name)
+	* reserved.c, scanner.l, tree.h: renamed cb_memcpy_upper to
+	  cb_memcpy_upper, as it does not follow strncpy rules
+	* reserved.c (cb_strcasecmp) streamlined from glibc implementation
+	* reserved.c, cobc.h: exported cb_strcasecmp
+	* cobc.c, parser.y, ppparse.y, typeck.c: replaced locale-aware
+	  strcasecmp with cb_strcasecmp where possible
+	* cobc.c, codegen.c, field.c, help.c, parser.y, pplex.l, ppparse.y,
+	  scanner.l, tree.c, cobc.h: cleanup of header inclusion (stdio.h,
+	  string.h, strings.h)
+
 2022-02-20  Ron Norman <rjn@inglenet.com>
 
 	* tree.h,tree.h: Reinstated 'real_digits' for PICTURE 
@@ -210,6 +225,11 @@
 	  and intrinsic functions to the internal lists
 	* parser.y: _parsing_ of INSPECT BACKWARD, SEND mcs
 
+2021-09-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c: use of new enum cobc_init_type instead of comparing an int
+	  to #define'd constants, reduced some variable scope
+
 2021-09-29  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c (output_file_initialization): don't generate attribute
@@ -279,7 +299,7 @@
 2021-09-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* reserved.c (cb_toupper): extracted and used in different places
-	* reserved.c (cb_strncpy_upper), tree.h: renamed + exported function
+	* reserved.c (cb_memcpy_upper), tree.h: renamed + exported function
 	* scanner.l (copy_word_in_quotes, copy_two_words_in_quotes): internally
 	  upper-case when handling reserved word adjustment
 	* reserved.c (is_invalid_word): word checks extended, cobc does not

@@ -27,6 +27,9 @@
 #include <stddef.h>
 #include <stdarg.h>
 #include <string.h>
+#ifdef	HAVE_STRINGS_H
+#include <strings.h>
+#endif
 #include <ctype.h>
 #include <time.h>
 #include <limits.h>
@@ -45,10 +48,13 @@
 
 #define COB_INSIDE_SIZE		64
 
-#define INITIALIZE_NONE		0
-#define INITIALIZE_ONE		1
-#define INITIALIZE_DEFAULT	2
-#define INITIALIZE_COMPOUND	3
+/* Type of initialization to be done */
+enum cobc_init_type {
+	INITIALIZE_NONE = 0,	/* no init (beause of FILLER, REDEFINES, ...) */
+	INITIALIZE_ONE,		/* initialize a single varialbe */
+	INITIALIZE_COMPOUND,	/* init structure */
+	INITIALIZE_DEFAULT	/* init to default-byte value / PIC (USAGE) */
+};
 
 #define CB_NEED_HIGH		(1U << 0)
 #define CB_NEED_LOW		(1U << 1)
@@ -5034,13 +5040,10 @@ output_move (cb_tree src, cb_tree dst)
 
 /* INITIALIZE */
 
-static int
+static enum cobc_init_type
 deduce_initialize_type (struct cb_initialize *p, struct cb_field *f,
 			const int topfield)
 {
-	cb_tree		l;
-	int		type;
-
 	/* LCOV_EXCL_START */
 	if (f->flag_item_78) {
 		cobc_err_msg (_("unexpected CONSTANT item"));
@@ -5081,7 +5084,8 @@ deduce_initialize_type (struct cb_initialize *p, struct cb_field *f,
 	}
 
 	if (f->children) {
-		type = deduce_initialize_type (p, f->children, 0);
+		const enum cobc_init_type		type
+			= deduce_initialize_type (p, f->children, 0);
 		if (type == INITIALIZE_ONE) {
 			return INITIALIZE_COMPOUND;
 		}
@@ -5092,6 +5096,7 @@ deduce_initialize_type (struct cb_initialize *p, struct cb_field *f,
 		}
 		return type;
 	} else {
+		cb_tree		l;
 		for (l = p->rep; l; l = CB_CHAIN (l)) {
 			if ((int)CB_PURPOSE_INT (l) == (int)CB_TREE_CATEGORY (f)) {
 				return INITIALIZE_ONE;
@@ -5199,6 +5204,10 @@ initialize_uniform_char (const struct cb_field *f,
 {
 	int	c;
 
+	if (cb_default_byte >= 0 && !p->flag_init_statement) {
+		return cb_default_byte;
+	}
+
 	if (f->children) {
 		c = initialize_uniform_char (f->children, p);
 		for (f = f->children->sister; f; f = f->sister) {
@@ -5210,9 +5219,6 @@ initialize_uniform_char (const struct cb_field *f,
 		}
 		return c;
 	} else {
-		if (cb_default_byte >= 0 && !p->flag_init_statement) {
-			return cb_default_byte;
-		}
 		switch (cb_tree_type (CB_TREE (f), f)) {
 		case COB_TYPE_NUMERIC_BINARY:
 			return 0;
@@ -5863,16 +5869,15 @@ output_initialize_occurs (struct cb_initialize *p, cb_tree x)
 static void
 output_initialize_compound (struct cb_initialize *p, cb_tree x)
 {
-	struct cb_field	*ff, *pf;
-	struct cb_field	*f;
+	struct cb_field	*ff = cb_code_field (x);
+	struct cb_field	*pf, *f;
 	struct cb_field	*last_field;
-	cb_tree		c;
-	int		type;
 
-	ff = cb_code_field (x);
 	for (f = ff->children; f; f = f->sister) {
-		type = deduce_initialize_type (p, f, 0);
-		c = cb_build_field_reference (f, x);
+		const enum cobc_init_type	type
+			= deduce_initialize_type (p, f, 0);
+		const cb_tree	c
+			= cb_build_field_reference (f, x);
 
 		switch (type) {
 		case INITIALIZE_NONE:
@@ -5898,8 +5903,8 @@ output_initialize_compound (struct cb_initialize *p, cb_tree x)
 
 					for (; f->sister; f = f->sister) {
 						if (!f->sister->redefines) {
-							if (deduce_initialize_type (p, f->sister, 0) != INITIALIZE_DEFAULT ||
-								initialize_uniform_char (f->sister, p) != last_char) {
+							if (deduce_initialize_type (p, f->sister, 0) != INITIALIZE_DEFAULT
+							 || initialize_uniform_char (f->sister, p) != last_char) {
 								break;
 							}
 						}
@@ -5982,19 +5987,22 @@ output_initialize_compound (struct cb_initialize *p, cb_tree x)
 static void
 output_initialize (struct cb_initialize *p)
 {
-	struct cb_field		*f, *pf;
-	cb_tree			x;
-	int			c, type;
+	struct cb_field		*f = cb_code_field (p->var);
+	struct cb_field		*pf;
 	struct cb_reference	*r = NULL;
+	int			c;
 
-	f = cb_code_field (p->var);
-	type = deduce_initialize_type (p, f, 1);
-	if (type == INITIALIZE_NONE)
+	const enum cobc_init_type	type
+		= deduce_initialize_type (p, f, 1);
+
+	if (type == INITIALIZE_NONE) {
 		return;
+	}
 	/* Check for non-standard OCCURS */
 	if ((f->level == 1 || f->level == 77) 
 	 && f->flag_occurs 
 	 && !p->flag_init_statement) {
+		cb_tree			x;
 		switch (type) {
 		case INITIALIZE_NONE:
 			return;
