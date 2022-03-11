@@ -188,6 +188,9 @@ CB_FLAG (cb_flag_relaxed_syntax, 1, "relax-syntax",
 	  "                        * e.g. REDEFINES position")
 #endif
 
+CB_FLAG (cb_flag_out_of_bounds_correction, 1, "out-of-bounds-correction",
+	_("  -fout-of-bounds-correction         perform out-of-bounds correction on strings"))
+
 CB_FLAG (cb_flag_optional_file, 1, "optional-file",
 	_("  -foptional-file       treat all files as OPTIONAL\n"
 	  "                        * unless NOT OPTIONAL specified"))

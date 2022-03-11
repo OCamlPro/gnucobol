@@ -2153,6 +2153,40 @@ cb_build_name_reference (struct cb_field *f1, struct cb_field *f2)
 	return cb_build_reference (full_name);
 }
 
+
+static void cb_out_of_bounds_correction(const char* name, cb_tree x, struct cb_reference* r, int maxlen)
+{
+  int length = cb_get_int (r->length);
+  /* FIXME: needs to be supported for zero length literals */
+
+  if( cb_flag_out_of_bounds_correction && length > maxlen){
+    
+    if (CB_INTEGER_P(r->length)) {
+      CB_INTEGER(r->length)->val = maxlen;
+    } else {
+      struct cb_literal	*l = CB_LITERAL (r->length);
+      int i = l->size;
+      int n = maxlen;
+      while(i>0){
+        i--;
+        l->data[i] = (n % 10) + '0';
+        n = n / 10;
+      }
+    }
+
+      cb_warning_x (
+                    cb_warn_ignored_error, x,
+                    _("length of '%s' out of bounds [1;%d]: %d"),
+                    name, maxlen, length);
+      length = maxlen;
+  }
+
+  if (length < 1 || length > maxlen) {
+      cb_error_x (x, _("length of '%s' out of bounds [1;%d]: %d"),
+                name, maxlen, length);
+  }
+}
+
 cb_tree
 cb_build_identifier (cb_tree x, const int subchk)
 {
@@ -2368,7 +2402,7 @@ cb_build_identifier (cb_tree x, const int subchk)
 					length = cb_get_int (r->length);
 					/* FIXME: needs to be supported for zero length literals */
 					if (length < 1) {
-						cb_error_x (x, _("length of '%s' out of bounds: %d"),
+						cb_error_x (x, _("length of '%s' out of bounds ([1;_[): %d"),
 							    name, length);
 					}
 				}
@@ -2376,21 +2410,11 @@ cb_build_identifier (cb_tree x, const int subchk)
 				if (offset < 1 || offset > pseudosize) {
 					cb_error_x (x, _("offset of '%s' out of bounds: %d"), name, offset);
 				} else if (r->length && CB_LITERAL_P (r->length)) {
-					length = cb_get_int (r->length);
-					/* FIXME: needs to be supported for zero length literals */
-					if (length < 1 || length > pseudosize - offset + 1) {
-						cb_error_x (x, _("length of '%s' out of bounds: %d"),
-							    name, length);
-					}
+                                  cb_out_of_bounds_correction(name, x, r, pseudosize - offset + 1);
 				}
 			}
 		} else if (r->length && CB_LITERAL_P (r->length)) {
-			length = cb_get_int (r->length);
-			/* FIXME: needs to be supported for zero length literals */
-			if (length < 1 || length > pseudosize) {
-				cb_error_x (x, _("length of '%s' out of bounds: %d"),
-					    name, length);
-			}
+                        cb_out_of_bounds_correction(name, x, r, pseudosize - offset + 1);
 		}
 
 		/* Run-time check */
