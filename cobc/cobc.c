@@ -31,6 +31,9 @@
 #include <stddef.h>
 #include <stdarg.h>
 #include <string.h>
+#ifdef	HAVE_STRINGS_H
+#include <strings.h>
+#endif
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -1733,13 +1736,13 @@ ec_duped (struct cb_text_list *ec_list, struct cb_text_list *ec,
 	struct cb_text_list	*ec_dupchk;
 
 	/* TO-DO: Is duplication a problem? */
-	/* TO-DO: Does this algo work? */
+	/* TO-DO: Does this algo work? At least add a testcase... */
 	for (ec_dupchk = ec_list; ec_dupchk; ec_dupchk = ec_dupchk->next) {
 		if (ec_dupchk == ec) {
 			return 0;
 		}
 		if (ec_dupchk->text
-		    && !strcasecmp(ec->text, ec_dupchk->text)) {
+		    && !cb_strcasecmp(ec->text, ec_dupchk->text)) {
 			cb_error_x (loc, _("duplicate exception '%s'"),
 				    CB_EXCEPTION_NAME (ec_idx));
 			ec_dupchk = NULL;
@@ -2649,7 +2652,7 @@ cobc_def_dump_opts (const char *opt, const int on)
 	int 	dump_to_set;
 	cb_old_trace = 0;			/* Use new methods */
 
-	if (!strcasecmp (opt, "ALL")) {
+	if (!cb_strcasecmp (opt, "ALL")) {
 		if (on) {
 			cb_flag_dump = COB_DUMP_ALL;
 		} else {
@@ -2665,19 +2668,19 @@ cobc_def_dump_opts (const char *opt, const int on)
 	}
 	dump_to_set = 0;
 	while (q) {
-		if (!strcasecmp (q, "FD")) {
+		if (!cb_strcasecmp (q, "FD")) {
 			dump_to_set |= COB_DUMP_FD;
-		} else if (!strcasecmp (q, "WS")) {
+		} else if (!cb_strcasecmp (q, "WS")) {
 			dump_to_set |= COB_DUMP_WS;
-		} else if (!strcasecmp (q, "LS")) {
+		} else if (!cb_strcasecmp (q, "LS")) {
 			dump_to_set |= COB_DUMP_LS;
-		} else if (!strcasecmp (q, "RD")) {
+		} else if (!cb_strcasecmp (q, "RD")) {
 			dump_to_set |= COB_DUMP_RD;
-		} else if (!strcasecmp (q, "SD")) {
+		} else if (!cb_strcasecmp (q, "SD")) {
 			dump_to_set |= COB_DUMP_SD;
-		} else if (!strcasecmp (q, "SC")) {
+		} else if (!cb_strcasecmp (q, "SC")) {
 			dump_to_set |= COB_DUMP_SC;
-		} else if (!strcasecmp (q, "LO")) {
+		} else if (!cb_strcasecmp (q, "LO")) {
 			dump_to_set |= COB_DUMP_LO;
 		} else {
 			cobc_err_exit (_("option requires one of 'ALL', 'FD', 'WS', 'LS', "
@@ -2701,7 +2704,7 @@ cobc_deciph_funcs (const char *opt)
 	char	*p;
 	char	*q;
 
-	if (!strcasecmp (opt, "ALL")) {
+	if (!cb_strcasecmp (opt, "ALL")) {
 		cb_flag_functions_all = 1;
 		return;
 	}
@@ -2780,7 +2783,7 @@ file_basename (const char *filename, const char *strip_ext)
 		endp = startp;
 	}
 	if (endp > startp
-		&& (!strip_ext || strcasecmp (endp, strip_ext) == 0)) {
+		&& (!strip_ext || cb_strcasecmp (endp, strip_ext) == 0)) {
 		len = endp - startp;
 	} else {
 		len = strlen (startp);
@@ -2821,16 +2824,16 @@ set_compile_level_from_file_extension (const char *filename)
 
 	ext = file_extension (filename);
 
-	if (strcasecmp (ext, "i") == 0) {
+	if (cb_strcasecmp (ext, "i") == 0) {
 		cb_compile_level = CB_LEVEL_PREPROCESS;
-	} else if (strcasecmp (ext, "c") == 0) {
+	} else if (cb_strcasecmp (ext, "c") == 0) {
 		cb_compile_level = CB_LEVEL_TRANSLATE;
 		save_c_src = 1;
-	} else if (strcasecmp (ext, "s") == 0 || strcasecmp (ext, "asm") == 0) {
+	} else if (cb_strcasecmp (ext, "s") == 0 || cb_strcasecmp (ext, "asm") == 0) {
 		cb_compile_level = CB_LEVEL_COMPILE;
-	} else if (strcasecmp (ext, COB_OBJECT_EXT) == 0) {
+	} else if (cb_strcasecmp (ext, COB_OBJECT_EXT) == 0) {
 		cb_compile_level = CB_LEVEL_ASSEMBLE;
-	} else if (strcasecmp (ext, COB_MODULE_EXT) == 0 && !cobc_flag_main) {
+	} else if (cb_strcasecmp (ext, COB_MODULE_EXT) == 0 && !cobc_flag_main) {
 		if (cobc_flag_library) {
 			cb_compile_level = CB_LEVEL_LIBRARY;
 		} else {
@@ -3430,7 +3433,7 @@ process_command_line (const int argc, char **argv)
 			if (strlen (cob_optarg) > 64U) {
 				cobc_err_exit (COBC_INV_PAR, "-D");
 			}
-			if (!strcasecmp (cob_optarg, "ebug")) {
+			if (!cb_strcasecmp (cob_optarg, "ebug")) {
 				cobc_err_msg (_("warning: assuming '%s' is a DEFINE - did you intend to use -debug?"),
 						cob_optarg);
 			}
@@ -3490,8 +3493,8 @@ process_command_line (const int argc, char **argv)
 				cobc_err_exit (COBC_INV_PAR, "-l");
 			}
 #ifdef	_MSC_VER
-			/* note: strcasecmp because of possible different specified extension */
-			if (!strcasecmp (file_extension (cob_optarg), "lib")) {
+			/* note: cb_strcasecmp because of likely compilation on FAT/NTFS */
+			if (!cb_strcasecmp (file_extension (cob_optarg), "lib")) {
 				COBC_ADD_STR (cobc_libs, " \"", cob_optarg, "\"");
 			} else {
 				COBC_ADD_STR (cobc_libs, " \"", cob_optarg, ".lib\"");
@@ -3551,9 +3554,9 @@ process_command_line (const int argc, char **argv)
 
 		case 3:
 			/* -fsign=<ASCII/EBCDIC> : Specify display sign */
-			if (!strcasecmp (cob_optarg, "EBCDIC")) {
+			if (!cb_strcasecmp (cob_optarg, "EBCDIC")) {
 				cb_ebcdic_sign = 1;
-			} else if (!strcasecmp (cob_optarg, "ASCII")) {
+			} else if (!cb_strcasecmp (cob_optarg, "ASCII")) {
 				cb_ebcdic_sign = 0;
 			} else {
 				cobc_err_exit (COBC_INV_PAR, "-fsign");
@@ -3562,9 +3565,9 @@ process_command_line (const int argc, char **argv)
 
 		case 4:
 			/* -ffold-copy=<UPPER/LOWER> : COPY fold case */
-			if (!strcasecmp (cob_optarg, "UPPER")) {
+			if (!cb_strcasecmp (cob_optarg, "UPPER")) {
 				cb_fold_copy = COB_FOLD_UPPER;
-			} else if (!strcasecmp (cob_optarg, "LOWER")) {
+			} else if (!cb_strcasecmp (cob_optarg, "LOWER")) {
 				cb_fold_copy = COB_FOLD_LOWER;
 			} else {
 				cobc_err_exit (COBC_INV_PAR, "-ffold-copy");
@@ -3573,9 +3576,9 @@ process_command_line (const int argc, char **argv)
 
 		case 5:
 			/* -ffold-call=<UPPER/LOWER> : CALL/PROG-ID fold case */
-			if (!strcasecmp (cob_optarg, "UPPER")) {
+			if (!cb_strcasecmp (cob_optarg, "UPPER")) {
 				cb_fold_call = COB_FOLD_UPPER;
-			} else if (!strcasecmp (cob_optarg, "LOWER")) {
+			} else if (!cb_strcasecmp (cob_optarg, "LOWER")) {
 				cb_fold_call = COB_FOLD_LOWER;
 			} else {
 				cobc_err_exit (COBC_INV_PAR, "-ffold-call");
@@ -4034,10 +4037,10 @@ process_filename (const char *filename)
 	extension = file_extension (filename);
 	 /* set source file for possible error message */
 	cb_source_file = filename;
-	/* note: strcasecmp because of possible compilation on FAT/NTFS */
-	if (strcasecmp (extension, "lib")
-	 && strcasecmp (extension, "a")
-	 && strcasecmp (extension, COB_OBJECT_EXT)) {
+	/* note: cb_strcasecmp because of possible compilation on FAT/NTFS */
+	if (cb_strcasecmp (extension, "lib")
+	 && cb_strcasecmp (extension, "a")
+	 && cb_strcasecmp (extension, COB_OBJECT_EXT)) {
 		if (cobc_check_valid_name (fbasename, FILE_BASE_NAME)) {
 			return NULL;
 		}
@@ -4064,11 +4067,11 @@ process_filename (const char *filename)
 		/* Already preprocessed */
 		fn->need_preprocess = 0;
 	} else 
-	if (strcasecmp (extension, "c") == 0
+	if (cb_strcasecmp (extension, "c") == 0
 #if	defined(_WIN32)
-	 || strcasecmp (extension, "asm") == 0
+	 || cb_strcasecmp (extension, "asm") == 0
 #endif
-	 || strcasecmp (extension, "s") == 0) {
+	 || cb_strcasecmp (extension, "s") == 0) {
 		/* Already compiled */
 		fn->need_preprocess = 0;
 		fn->need_translate = 0;
@@ -4077,15 +4080,15 @@ process_filename (const char *filename)
 #if	defined(__OS400__)
 	    extension[0] == 0
 #else
-	    strcasecmp (extension, COB_OBJECT_EXT) == 0
+		cb_strcasecmp (extension, COB_OBJECT_EXT) == 0
 #if	defined(_WIN32)
-	 || strcasecmp (extension, "lib") == 0
+	 || cb_strcasecmp (extension, "lib") == 0
 #endif
 #if	!defined(_WIN32) || defined(__MINGW32__) || defined(__MINGW64__)
-	 || strcasecmp (extension, "a") == 0
-	 || strcasecmp (extension, "so") == 0
-	 || strcasecmp (extension, "dylib") == 0
-	 || strcasecmp (extension, "sl") == 0
+	 || cb_strcasecmp (extension, "a") == 0
+	 || cb_strcasecmp (extension, "so") == 0
+	 || cb_strcasecmp (extension, "dylib") == 0
+	 || cb_strcasecmp (extension, "sl") == 0
 #endif
 #endif
 	) {
@@ -4442,7 +4445,7 @@ process_run (const char *name)
 		/* strip period + COB_MODULE_EXT if specified */
 		if (output_name && curr_size < cobc_buffer_size) {
 			buffer = file_extension (output_name);
-			if (!strcasecmp (buffer, COB_MODULE_EXT)) {
+			if (!cb_strcasecmp (buffer, COB_MODULE_EXT)) {
 				*(cobc_buffer + curr_size - strlen (buffer) - 1) = 0;
 			}
 		}
@@ -4453,7 +4456,7 @@ process_run (const char *name)
 		buffer = file_extension (name);
 		/* only prefix with ./ if there is no directory portion in name */
 		if (strchr (name, SLASH_CHAR) == NULL) {
-			if (COB_EXE_EXT[0] && strcasecmp (buffer, exe_ext)) {
+			if (COB_EXE_EXT[0] && cb_strcasecmp (buffer, exe_ext)) {
 				curr_size = snprintf (cobc_buffer, cobc_buffer_size, ".%c%s%s",
 					SLASH_CHAR, name, COB_EXE_EXT);
 			} else {
@@ -4461,7 +4464,7 @@ process_run (const char *name)
 					SLASH_CHAR, name);
 			}
 		} else {
-			if (COB_EXE_EXT[0] && strcasecmp (buffer, exe_ext)) {
+			if (COB_EXE_EXT[0] && cb_strcasecmp (buffer, exe_ext)) {
 				curr_size = snprintf (cobc_buffer, cobc_buffer_size, "%s%s",
 					name, COB_EXE_EXT);
 			} else {
@@ -7217,15 +7220,15 @@ print_replace_main (struct list_files *cfile, FILE *fd,
 
 	/* Check whether we're given a COPY or REPLACE statement. */
 	to_ptr = get_next_token (cmp_line, ttoken, tterm);
-	is_copy_line = !strcasecmp (ttoken, "COPY");
-	is_replace_line = !strcasecmp (ttoken, "REPLACE");
+	is_copy_line = !cb_strcasecmp (ttoken, "COPY");
+	is_replace_line = !cb_strcasecmp (ttoken, "REPLACE");
 	if (is_replace_line && to_ptr) {
 #if 0
 		to_ptr = get_next_token (to_ptr, ttoken, tterm);
 #else
 		(void)get_next_token (to_ptr, ttoken, tterm);
 #endif
-		is_replace_off = !strcasecmp (ttoken, "OFF");
+		is_replace_off = !cb_strcasecmp (ttoken, "OFF");
 	}
 
 	/*
@@ -8280,7 +8283,7 @@ process_link (struct filename *l)
 		cobc_chk_buff_size (strlen (COB_STRIP_CMD) + 4 + strlen (name) + strlen (COB_EXE_EXT));
 		/* only add COB_EXE_EXT if it is not specified */
 		exe_name = file_extension (name);
-		if (strcasecmp (exe_name, exe_ext)) {
+		if (cb_strcasecmp (exe_name, exe_ext)) {
 			sprintf (cobc_buffer, "%s \"%s%s\"",
 				 COB_STRIP_CMD, name, COB_EXE_EXT);
 		} else {
@@ -8397,13 +8400,13 @@ set_cobc_defaults (void)
 	/* Different styles for warning/error messages */
 	p = cobc_getenv ("COB_MSG_FORMAT");
 #if defined (_MSC_VER)
-	if (p && strcasecmp (p, "GCC") == 0) {
+	if (p && cb_strcasecmp (p, "GCC") == 0) {
 		cb_msg_style = CB_MSG_STYLE_GCC;
 	} else {
 		cb_msg_style = CB_MSG_STYLE_MSC;
 	}
 #else
-	if (p && strcasecmp (p, "MSC") == 0) {
+	if (p && cb_strcasecmp (p, "MSC") == 0) {
 		cb_msg_style = CB_MSG_STYLE_MSC;
 	} else {
 		cb_msg_style = CB_MSG_STYLE_GCC;

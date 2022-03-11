@@ -3893,29 +3893,28 @@ cb_toupper (unsigned char c)
 }
 
 /* comparisions _for reserved words_ */
-static int
+
+/* Compare S1 and S2, ignoring case (only a-z converted, no locales),
+   returning less than, equal to or greater than zero
+   if S1 is lexicographically less than, equal to or greater than S2. */
+int
 cb_strcasecmp (const void *s1, const void *s2)
 {
-	const unsigned char	*p1;
-	const unsigned char	*p2;
-	unsigned char		c1;
-	unsigned char		c2;
+	const unsigned char	*p1 = (const unsigned char *)s1;
+	const unsigned char	*p2 = (const unsigned char *)s2;
+	int result;
 
-	p1 = (const unsigned char *)s1;
-	p2 = (const unsigned char *)s2;
+	if (p1 == p2) {
+		return 0;
+	}
 
-	for (;;) {
-		c1 = cb_toupper (*p1++);
-		c2 = cb_toupper (*p2++);
-
-		if (c1 != c2) {
-			return c1 < c2 ? -1 : 1;
-		}
-		if (!c1) {
+	while ((result = cb_toupper (*p1) - cb_toupper (*p2++)) == 0) {
+		if (*p1++ == '\0') {
 			break;
 		}
 	}
-	return 0;
+
+	return result;
 }
 
 static int
@@ -3999,7 +3998,7 @@ has_context_sensitive_indicator (const char *word, const size_t size)
   uppercased, to dest. We use cob_lower_tab instead of toupper for efficiency.
 */
 void
-cb_strncpy_upper (char *dest, const char * source, size_t len)
+cb_memcpy_upper (char *dest, const char *source, size_t len)
 {
 	while (len--) {
 		*dest++ = cb_toupper(*source++);
@@ -4017,15 +4016,19 @@ cb_strupr (char *s) {
 }
 #endif
 
+/* allocate OUT_STR with given SIZE and trailing zero
+   and copy an upper-case version of memory at WORD into it */
 static void
 allocate_upper_case_str (const char *word, const size_t size,
 					   char ** const out_str)
 {
 	*out_str = cobc_main_malloc (size + 1U);
-	cb_strncpy_upper (*out_str, word, size);
+	cb_memcpy_upper (*out_str, word, size);
 	(*out_str)[size] = '\0';
 }
-
+/* allocate OUT_STR with given SIZE and trailing zero
+   and copy an upper-case version of memory at WORD into it;
+   if the position SIZE contains an asterisk don't copy that */
 static void
 allocate_upper_case_str_removing_asterisk (const char *word, const size_t size,
 					   char ** const out_str)
@@ -4103,7 +4106,7 @@ static struct cobc_reserved *
 search_reserved_list (const char * const word, const int needs_uppercasing,
 		      const struct cobc_reserved * const list, size_t list_len)
 {
-	static char		upper_word[43];
+	static char		upper_word[COB_MAX_WORDLEN + 1];
 	size_t			word_len;
 	const char		*sought_word;
 	struct cobc_reserved    to_find;
@@ -4115,7 +4118,7 @@ search_reserved_list (const char * const word, const int needs_uppercasing,
 		}
 
 		/* copy including terminating byte */
-		cb_strncpy_upper (upper_word, word, word_len);
+		cb_memcpy_upper (upper_word, word, word_len);
 		sought_word = upper_word;
 	} else {
 		sought_word = word;
@@ -4730,7 +4733,7 @@ add_reserved_word (const char *word, const char *fname, const int line)
 	if (word_len > sizeof (upper_word)) {
 		return;
 	}
-	cb_strncpy_upper (upper_word, word, word_len);
+	cb_memcpy_upper (upper_word, word, word_len);
 	add_amendment (upper_word, fname, line, 1);
 }
 
@@ -4749,7 +4752,7 @@ remove_reserved_word (const char *word, const char *fname, const int line)
 	if (word_len > sizeof (upper_word)) {
 		return;
 	}
-	cb_strncpy_upper (upper_word, word, word_len);
+	cb_memcpy_upper (upper_word, word, word_len);
 	remove_reserved_word_internal(upper_word, fname, word_len);
 
 	add_amendment (upper_word, fname, line, 0);
@@ -4876,7 +4879,7 @@ lookup_intrinsic (const char *name, const int checkimpl)
 	}
 
 	/* copy including terminating byte */
-	cb_strncpy_upper (upper_name, name, name_len + 1);
+	cb_memcpy_upper (upper_name, name, name_len + 1);
 
 	cbp = bsearch (upper_name, function_list, NUM_INTRINSICS,
 		sizeof (struct cb_intrinsic_table), intrinsic_comp);
@@ -5015,7 +5018,7 @@ lookup_register (const char *name, const int checkimpl)
 	}
 
 	/* copy including terminating byte */
-	cb_strncpy_upper (upper_name, name, name_len + 1);
+	cb_memcpy_upper (upper_name, name, name_len + 1);
 	return lookup_register_internal (upper_name, checkimpl);
 }
 
@@ -5059,7 +5062,7 @@ add_register (const char *name_and_definition, const char *fname, const int line
 		return;
 	}
 	/* copy including terminating byte */
-	cb_strncpy_upper (upper_name, name, name_len + 1);
+	cb_memcpy_upper (upper_name, name, name_len + 1);
 
 	special_register = lookup_register_internal (upper_name, 1);
 	if (!special_register) {

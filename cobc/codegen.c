@@ -27,6 +27,9 @@
 #include <stddef.h>
 #include <stdarg.h>
 #include <string.h>
+#ifdef	HAVE_STRINGS_H
+#include <strings.h>
+#endif
 #include <ctype.h>
 #include <time.h>
 #include <limits.h>

@@ -26,6 +26,9 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
+#ifdef	HAVE_STRINGS_H
+#include <strings.h>
+#endif
 #include <ctype.h>
 #include <limits.h>
 #ifndef LLONG_MAX
