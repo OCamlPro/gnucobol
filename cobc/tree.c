@@ -3655,8 +3655,9 @@ cb_field_dup (struct cb_field *f, struct cb_reference *ref)
 	&& CB_LITERAL_P(ref->length)) {
 		sprintf(pic,"X(%d)",cb_get_int(ref->length));
 	} else
-	if (f->pic->category == CB_CATEGORY_NUMERIC
-	 || f->pic->category == CB_CATEGORY_NUMERIC_EDITED) {
+	if (f->pic != NULL
+            && (f->pic->category == CB_CATEGORY_NUMERIC
+                || f->pic->category == CB_CATEGORY_NUMERIC_EDITED) ) {
 		dig = f->pic->digits;
 		if((dec = f->pic->scale) > 0) {
 			if((dig-dec) == 0) {
@@ -3674,9 +3675,10 @@ cb_field_dup (struct cb_field *f, struct cb_reference *ref)
 	}
 	s = CB_FIELD (x);
 	s->pic 	= CB_PICTURE (cb_build_picture (pic));
-	if (f->pic->category == CB_CATEGORY_NUMERIC
-	 || f->pic->category == CB_CATEGORY_NUMERIC_EDITED
-	 || f->pic->category == CB_CATEGORY_FLOATING_EDITED) {
+	if (f->pic != NULL &&
+            (f->pic->category == CB_CATEGORY_NUMERIC
+             || f->pic->category == CB_CATEGORY_NUMERIC_EDITED
+             || f->pic->category == CB_CATEGORY_FLOATING_EDITED) ) {
 		s->values	= CB_LIST_INIT (cb_zero);
 	} else {
 		s->values	= CB_LIST_INIT (cb_space);
