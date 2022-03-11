@@ -2414,7 +2414,7 @@ cb_build_identifier (cb_tree x, const int subchk)
 				}
 			}
 		} else if (r->length && CB_LITERAL_P (r->length)) {
-                        cb_out_of_bounds_correction(name, x, r, pseudosize - offset + 1);
+                        cb_out_of_bounds_correction(name, x, r, pseudosize);
 		}
 
 		/* Run-time check */
