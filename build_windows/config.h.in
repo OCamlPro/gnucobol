@@ -125,13 +125,13 @@
 #pragma comment(lib, "libz.dll.a")
 #else
 #pragma comment(lib, "libxml2")
-#pragma comment(lib, "libcharset")
-#pragma comment(lib, "libiconv")
-#ifdef _DEBUG
-#pragma comment(lib, "zlibd")
-#else
-#pragma comment(lib, "zlib")
-#endif
+//#pragma comment(lib, "charset")
+//#pragma comment(lib, "iconv")
+//#ifdef _DEBUG
+//#pragma comment(lib, "zlibd")
+//#else
+//#pragma comment(lib, "zlib")
+//#endif
 #endif
 #endif
 
