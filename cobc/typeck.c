@@ -6032,8 +6032,8 @@ cb_emit_arithmetic (cb_tree vars, const int op, cb_tree val)
 
 	if (!CB_BINARY_OP_P (x)
 	 && (op == '+' || op == '-' || op == '*' || op == '/')) {
-		cb_emit_incompat_data_checks (x);
 		cb_tree l;
+		cb_emit_incompat_data_checks (x);
 		for (l = vars; l; l = CB_CHAIN (l)) {
 			cb_emit_incompat_data_checks (CB_VALUE (l));
 			switch (op) {
