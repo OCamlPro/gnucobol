@@ -7,7 +7,7 @@ compilation phase, and dynamic libraries linked either to `libcob`, or
 to the compiled binary (the compiled version of your COBOL
 program). Packaging systems, particularly on Linux, sometimes include
 only the run-time components in the main package, and split the
-compile-time pieces off to a "development" package.  
+compile-time pieces off to a "development" package.
 
 You need both. Header files are required for compilation, and
 libraries for run-time support.
@@ -23,31 +23,31 @@ GnuCOBOL requires *one of* the following external libraries to be installed
 for decimal arithmetic:
 
 * [GNU MP](https://gmplib.org) (libgmp) 4.1.2 or later.
-* [MPIR](http://mpir.org) (libgmp - MPIR gmp-compat) 1.3.1 or later. 
-This is preferred when compiling on Windows with other compilers than gcc. 
+* [MPIR](http://mpir.org) (libgmp - MPIR gmp-compat) 1.3.1 or later.
+This is preferred when compiling on Windows with other compilers than gcc.
 
 GNU MP and MPIR are distributed under GNU Lesser General Public License.
 
 Seldom Required
 ===============
 
-CnuCOBOL requires support for dynamic linking, a feature of nearly all
+GnuCOBOL requires support for dynamic linking, a feature of nearly all
 target operating systems. Among those that include it are Windows,
 Solaris, Linux, any BSD, and recent versions of AIX (>= 5.1) and HP-UX
 (>= 11.1).
 
-If your OS is some flavor of Unix and has no support for
-**dlopen**(3), it can be provided by
+If your OS is some flavor of Unix or DOS and has no support for **dlopen**(3),
+it can be provided by
 
 * [GNU Libtool](https://www.gnu.org/software/libtool/libtool.html)  (libltdl)
 
-`libltdl` is used to implement dynamic CALL statements.  
+`libltdl` is used to implement dynamic CALL statements on those systems.
 
 GNU Libtool is distributed under GNU Lesser General Public License.
 
 Not Required
 ============
-            (but helpful)
+(but helpful)
 
 All dependencies discussed from this point forward support optional
 features of GnuCOBOL.
@@ -92,7 +92,7 @@ by *one* of the following:
 *   [PDCurses](https://pdcurses.org/) or
     [PDCursesMod](https://github.com/Bill-Gray/PDCursesMod/),
     especially for MinGW and native windows ports
-	
+
     PDCurses is distributed as Public Domain.
 
 *   Unix curses (if supplied by your OS)

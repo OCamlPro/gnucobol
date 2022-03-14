@@ -1,4 +1,4 @@
-:: Copyright (C) 2014-2020 Free Software Foundation, Inc.
+:: Copyright (C) 2014-2020,2022 Free Software Foundation, Inc.
 :: Written by Simon Sobisch, Edward Hart
 ::
 :: This file is part of GnuCOBOL.
@@ -58,7 +58,7 @@ if "%errorlevel%" == "0" (
 :: Visual Studio 2017 and newer: no VS150COMNTOOLS globally or vsvars any more...
 :: check if available, otherwise check on
 set "found="
-for %%v in (2019 2017) do (
+for %%v in (2022 2019 2017) do (
    if not "%found%" == ""  goto :eof
    call :vsvars_current %%v
 )
@@ -67,8 +67,8 @@ if not "%found%" == "" (
    goto :setup_gc
 )
 
-:: Visual Studio 2015, 2013, 2012, 2010, 2008, 2005
-for %%v in ("%VS140COMNTOOLS%" "%VS120COMNTOOLS%" "%VS110COMNTOOLS%" "%VS100COMNTOOLS%" "%VS90COMNTOOLS%" "%VS80COMNTOOLS%") do (
+:: Visual Studio 2015, 2013, 2012, 2010, 2008
+for %%v in ("%VS140COMNTOOLS%" "%VS120COMNTOOLS%" "%VS110COMNTOOLS%" "%VS100COMNTOOLS%" "%VS90COMNTOOLS%") do (
    if not "%found%" == ""  goto :eof
    call :vsvars_old "%%v"
 )

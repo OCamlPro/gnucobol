@@ -4063,7 +4063,7 @@ process_filename (const char *filename)
 	fn->demangle_source = cb_encode_program_id (fbasename, 0, cb_fold_call);
 
 	/* Check input file type */
-	if (strcasecmp (extension, "i") == 0) {
+	if (cb_strcasecmp (extension, "i") == 0) {
 		/* Already preprocessed */
 		fn->need_preprocess = 0;
 	} else 

@@ -1,4 +1,4 @@
-[GnuCOBOL}(https://www.gnu.org/software/gnucobol/) is a free
+[GnuCOBOL](https://www.gnu.org/software/gnucobol/) is a free
 COBOL compiler licensed under the GNU Public License (GPL).  
 It implements a substantial part of the COBOL 85,
 COBOL 2002 and COBOL 2014 standards, as well as many extensions
@@ -147,7 +147,7 @@ see HACKING.
 Further information about the project, including the source code repository,
 history, and frequently asked questions, may be found at 
 
-*		https://www.gnu.org/software/gnucobol/
-*		https://sourceforge.net/projects/gnucobol
-*		https://savannah.gnu.org/projects/gnucobol
+*  https://www.gnu.org/software/gnucobol/
+*  https://sourceforge.net/projects/gnucobol
+*  https://savannah.gnu.org/projects/gnucobol
 

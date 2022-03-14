@@ -424,8 +424,8 @@ cb_load_conf (const char *fname, const int prefix_dir)
 
 	/* Get the name for the configuration file */
 	if (prefix_dir) {
-		// CHECKME: would it be useful for at least MinGW to use "all slash"
-		//          if the first slash is a unix slash?
+		/* CHECKME: would it be useful for at least MinGW to use "all slash"
+		            if the first slash is a unix slash? */
 		snprintf (buff, (size_t)COB_NORMAL_MAX,
 			  "%s%c%s", cob_config_dir, SLASH_CHAR, fname);
 		name = buff;
