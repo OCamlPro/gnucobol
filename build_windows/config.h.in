@@ -1,5 +1,5 @@
 
-/* config.h, tested with x86/x64 VS2005-2019
+/* config.h, tested with x86/x64 VS2005-2022
    and OrangeC 6.0.50 (which ignores the lib comments) */
 
 #define NOISAM       0
@@ -111,13 +111,14 @@
 #pragma comment(lib, "libz.dll.a")
 #else
 #pragma comment(lib, "libxml2")
-#pragma comment(lib, "libcharset")
-#pragma comment(lib, "libiconv")
-#ifdef _DEBUG
-#pragma comment(lib, "zlibd")
-#else
-#pragma comment(lib, "zlib")
-#endif
+// Note: the following are only relevant for static libraries
+//#pragma comment(lib, "charset")
+//#pragma comment(lib, "iconv")
+//#ifdef _DEBUG
+//#pragma comment(lib, "zlibd")
+//#else
+//#pragma comment(lib, "zlib")
+//#endif
 #endif
 #endif
 
