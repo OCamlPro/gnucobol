@@ -4971,8 +4971,14 @@ _file_control_header:
 ;
 
 _file_control_sequence:
-| _file_control_sequence file_control_entry
+| file_control_entry file_control_entries
 ;
+
+file_control_entries:
+  TOK_DOT
+| TOK_DOT file_control_entry file_control_entries
+| file_control_entry file_control_entries
+ ;
 
 file_control_entry:
   SELECT flag_external flag_optional undefined_word
@@ -5007,7 +5013,7 @@ file_control_entry:
 		current_file->flag_no_mapping = 1;
 	}
   }
-  _select_clauses_or_error
+  _select_clause_sequence
   {
 	cobc_cs_check = 0;
 	if (CB_VALID_TREE ($4)) {
@@ -5026,16 +5032,8 @@ file_control_entry:
   }
 ;
 
-_select_clauses_or_error:
-  _select_clause_sequence TOK_DOT
-| error TOK_DOT
-  {
-	yyerrok;
-  }
-;
-
 _select_clause_sequence:
-| _select_clause_sequence select_clause
+| _select_clause_sequence select_clause 
   {
 	/* reset context-sensitive words for next clauses */
 	cobc_cs_check = CB_CS_SELECT;
