@@ -124,6 +124,49 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 AT_CLEANUP
 
 
+AT_SETUP([GCOS literals with EBCDIC symbols])
+AT_KEYWORDS([extensions gcos ebcdic])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           DISPLAY ""135,151,151"bar"195, 194, 234""
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fgcos-ebcdic-literals prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[foobarBAZ
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([GCOS literals with EBCDIC symbols])
+AT_KEYWORDS([extensions gcos ebcdic])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           DISPLAY ""135,151,151"bar"195, 194, 0""
+           DISPLAY ""135,    257, 194, 1""
+           DISPLAY ""135,x, 194, 1""
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fgcos-ebcdic-literals prog.cob], [1], [],
+[prog.cob:5: error: symbolic character 0 out of allowed EBCDIC range (1...256)
+prog.cob:6: error: symbolic character 257 out of allowed EBCDIC range (1...256)
+prog.cob:7: error: invalid character 'x' in sequence of symbolic EBCDIC characters
+])
+
+AT_CLEANUP
+
+
 AT_SETUP([HP COBOL octal literals])
 AT_KEYWORDS([extensions])
 

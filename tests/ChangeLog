@@ -1,3 +1,6 @@
+2022-03-25  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* testsuite.src/run_extensions.at: basic test for EBCDIC symbolic-chars
 
 2022-02-10  Simon Sobisch <simonsobisch@gnu.org>
 

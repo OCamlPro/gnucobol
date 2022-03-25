@@ -289,7 +289,7 @@ CB_CONFIG_SUPPORT (cb_acu_literals, "acu-literals",
 	_("ACUCOBOL-GT literals (#B #O #H #X)"))
 
 CB_CONFIG_BOOLEAN (cb_gcos_ebcdic_literals, "gcos-ebcdic-literals",
-	_("GCOS COBOL EBCDIC symbolic characters in literals (\"\"134,150,150\"bar\"194, 193, 233\"\" for \"foobarBAZ\")"))
+	_("GCOS COBOL EBCDIC symbolic characters in literals (\"\"135,151,151\"bar\"195, 194, 234\"\" for \"foobarBAZ\")"))
 
 CB_CONFIG_SUPPORT (cb_word_continuation, "word-continuation",
 	_("continuation of COBOL words"))
