@@ -1,4 +1,11 @@
 
+2022-02-07  David Declerck <david.declerck@ocamlpro.com>
+
+	* gcos-strict.conf: allow relax-syntax-checks, larger-redefines
+	  is an error, set pretty-display to no
+	* gcos.words: COMP-3 is no longer a synonym of COMP-6, TERMINAL
+	  is not a reserved word
+
 2021-11-14  Ron Norman <rjn@inglenet.com>
 
 	* mf.words: Add MF specific names B-EXOR, B-LEFT, B-RIGHT for bit

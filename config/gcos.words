@@ -90,22 +90,20 @@ reserved:	COLUMN
 reserved:	COMMA
 reserved:	COMMON
 reserved:	COMMUNICATION
-reserved:	COMP=COMP-6
+reserved:	COMP=COMP-3
 reserved:	COMP-1=BINARY-SHORT		# GCOS
 reserved:	COMP-2=BINARY-LONG		# GCOS
-#reserved:	COMP-3=COMP-6			# GCOS
-reserved:       COMP-6				# GCOS
+reserved:	COMP-3				# GCOS
 reserved:	COMP-5=PACKED-DECIMAL		# GCOS
 reserved:	COMP-8=PACKED-DECIMAL		# GCOS
 reserved:	COMP-9=FLOAT-SHORT		# GCOS
 reserved:	COMP-10=FLOAT-LONG		# GCOS
 reserved:	COMP-15=FLOAT-LONG		# GCOS
-reserved:	COMPUTATIONAL=COMPUTATIONAL-6
+reserved:	COMPUTATIONAL=COMP-3
 reserved:	COMPUTATIONAL-1=BINARY-SHORT	# GCOS
 reserved:	COMPUTATIONAL-2=BINARY-LONG	# GCOS
-reserved:	COMPUTATIONAL-3=COMPUTATIONAL-6	# GCOS
+reserved:	COMPUTATIONAL-3			# GCOS
 reserved:	COMPUTATIONAL-5=PACKED-DECIMAL	# GCOS
-reserved:       COMPUTATIONAL-6			# GCOS
 reserved:	COMPUTATIONAL-8=PACKED-DECIMAL	# GCOS
 reserved:	COMPUTATIONAL-9=FLOAT-SHORT	# GCOS
 reserved:	COMPUTATIONAL-10=FLOAT-LONG	# GCOS
@@ -505,7 +503,7 @@ reserved:	SYNCHRONIZED
 reserved:	TABLE
 reserved:	TALLYING
 reserved:	TAPE
-reserved:	TERMINAL
+#reserved:	TERMINAL
 reserved:	TERMINATE
 reserved:	TEST
 reserved:	TEXT
