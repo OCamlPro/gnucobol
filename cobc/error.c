@@ -839,7 +839,13 @@ cb_verify_x (const cb_tree x, const enum cb_support tag, const char *feature)
 unsigned int
 cb_verify (const enum cb_support tag, const char *feature)
 {
-	return cb_verify_x (cb_error_node, tag, feature);
+	struct cb_tree_common	loc;
+
+	loc.source_file = cb_source_file;
+	loc.source_line = cb_source_line;
+	loc.source_column = 0;
+
+	return cb_verify_x (&loc, tag, feature);
 }
 
 enum cb_warn_val

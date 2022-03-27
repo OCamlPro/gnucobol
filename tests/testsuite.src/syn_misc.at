@@ -1,4 +1,4 @@
-## Copyright (C) 2007-2012, 2014-2021 Free Software Foundation, Inc.
+## Copyright (C) 2007-2012, 2014-2022 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 ## Ron Norman
 ##
@@ -7679,6 +7679,103 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE_ONLY prog.cob], [0],
 [OK
 ])
+AT_CLEANUP
+
+
+AT_SETUP([SET CONSTANT directive])
+AT_KEYWORDS([misc directives extensions])
+
+# The SET CONSTANT directive defines a level78 variable
+# for the current compilation unit
+
+# original MF extension: $SET CONSTANT
+AT_DATA([prog.cob], [
+       $SET CONSTANT DOGGY "Barky"
+       $SET CONSTANT PONY "Blacky"
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  THEDOG    PIC X(6) VALUE DOGGY.
+       77  MYHORSE   PIC X(7) VALUE PONY.
+       $SET CONSTANT PONY "White"
+      *
+       PROCEDURE DIVISION.
+       MAIN.
+           DISPLAY "Your Dog's name is " DOGGY ";".
+           DISPLAY "The Dog's name is " THEDOG ";".
+           DISPLAY "My Horse is " MYHORSE ";".
+           DISPLAY "My little pony is " PONY ".".
+           STOP RUN.
+])
+
+# OpenCOBOL/GnuCOBOL extension: >>SET CONSTANT
+AT_DATA([prog2.cob], [
+       >>SET CONSTANT DOGGY "Barky"
+       >>SET CONSTANT PONY "Blacky"
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog2.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  THEDOG    PIC X(6) VALUE DOGGY.
+       77  MYHORSE   PIC X(7) VALUE PONY.
+       >>SET CONSTANT PONY "White"
+      *
+       PROCEDURE DIVISION.
+       MAIN.
+           DISPLAY "Your Dog's name is " DOGGY ";".
+           DISPLAY "The Dog's name is " THEDOG ";".
+           DISPLAY "My Horse is " MYHORSE ";".
+           DISPLAY "My little pony is " PONY ".".
+           STOP RUN.
+])
+
+# OpenCOBOL/GnuCOBOL extension: >>DEFINE CONSTANT
+AT_DATA([prog3.cob], [
+       >>DEFINE CONSTANT DOGGY "Barky"
+       >>DEFINE CONSTANT PONY "Blacky"
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog3.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  THEDOG    PIC X(6) VALUE DOGGY.
+       77  MYHORSE   PIC X(7) VALUE PONY.
+       >>DEFINE CONSTANT PONY "White" OVERRIDE
+      *
+       PROCEDURE DIVISION.
+       MAIN.
+           DISPLAY "Your Dog's name is " DOGGY ";".
+           DISPLAY "The Dog's name is " THEDOG ";".
+           DISPLAY "My Horse is " MYHORSE ";".
+           DISPLAY "My little pony is " PONY ".".
+           STOP RUN.
+])
+
+# Note: MF does not redefine a value via SET CONSTANT
+# the first definitions wins (we should add a warning)
+AT_CHECK([$COMPILE_ONLY -std=mf prog.cob], [0], [], [])
+# FIXME: Should raise an error or at least a warning
+# AT_CHECK([$COMPILE_ONLY -std=cobol2002 prog.cob], [0], [], [])
+
+# Note: MF does not redefine a value via SET CONSTANT
+# the first definitions wins (we should add a warning)
+AT_CHECK([$COMPILE_ONLY prog2.cob], [0], [], [])
+# FIXME: Should raise an error or at least a warning
+# AT_CHECK([$COMPILE_ONLY -std=cobol2002 prog2.cob], [0], [], [])
+
+AT_CHECK([$COMPILE_ONLY -fdefine-constant-directive=ok prog3.cob], [0], [], [])
+# CHECKME: Replace the syntax error by explicit "is not defined".
+AT_CHECK([$COMPILE_ONLY -std=cobol2002 prog3.cob], [1], [],
+[prog3.cob:2: error: >> DEFINE CONSTANT var used
+prog3.cob:3: error: >> DEFINE CONSTANT var used
+prog3.cob:10: error: >> DEFINE CONSTANT var used
+prog3.cob:8: error: syntax error, unexpected Identifier
+prog3.cob:9: error: syntax error, unexpected Identifier
+prog3.cob: in paragraph 'MAIN':
+prog3.cob:14: error: 'DOGGY' is not defined
+prog3.cob:17: error: 'PONY' is not defined
+])
+
 AT_CLEANUP
 
 

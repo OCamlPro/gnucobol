@@ -1,4 +1,13 @@
 
+2022-03-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* error.c (cb_verify): use a valid position tree instead of cb_error_node
+	  as this is only valid during parsing + codegen state, fixing #821
+	* cobc.h: define CB_PENDING and CB_UNFINISHED without cb_error_node
+	  as this is only valid during parsing + codegen state
+	* tree.c (cb_init_parse_constants), tree.h, cobc.c: renamed
+	  from cb_init_constants
+
 2022-03-10  Simon Sobisch <simonsobisch@gnu.org>
 
 	* pplex.l (next_word_is_comment_paragraph_name): extracted from (ppinput)
@@ -8069,7 +8078,7 @@
 	* cobc.h (cobc_verbose_flag): Declared.
 
 
-Copyright 2002-2021 Free Software Foundation, Inc.
+Copyright 2002-2022 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

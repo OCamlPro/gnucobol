@@ -1860,7 +1860,7 @@ extern int			cb_get_int (const cb_tree);
 extern cob_s64_t		cb_get_long_long (const cb_tree);
 extern cob_u64_t		cb_get_u_long_long (const cb_tree);
 
-extern void			cb_init_constants (void);
+extern void			cb_init_parse_constants (void);
 
 extern cb_tree			cb_int (const int);
 extern cb_tree			cb_int_hex (const int);

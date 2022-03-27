@@ -11741,7 +11741,7 @@ AT_DATA([prog3.cob], [
 AT_CHECK([$COMPILE -std=mf prog.cob], [0], [], [])
 
 # Note: MF does not redefine a value via SET CONSTANT
-# the first definitions wins (we should add a warning)
+# the first definitions wins (warning check: syn_misc.at)
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [Your Dog's name is Barky;
 The Dog's name is Barky ;
@@ -11752,7 +11752,7 @@ My little pony is Blacky.
 AT_CHECK([$COMPILE prog2.cob], [0], [], [])
 
 # Note: MF does not redefine a value via SET CONSTANT
-# the first definitions wins (we should add a warning)
+# the first definitions wins (warning check: syn_misc.at)
 AT_CHECK([$COBCRUN_DIRECT ./prog2], [0],
 [Your Dog's name is Barky;
 The Dog's name is Barky ;

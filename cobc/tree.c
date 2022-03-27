@@ -1843,7 +1843,7 @@ cb_get_u_long_long (const cb_tree x)
 }
 
 void
-cb_init_constants (void)
+cb_init_parse_constants (void)
 {
 	int	i;
 

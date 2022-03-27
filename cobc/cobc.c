@@ -7554,7 +7554,9 @@ process_translate (struct filename *fn)
 	cb_correct_program_order = 0;
 	cb_source_file = fn->source;
 
-	cb_init_constants ();
+	/* create constants, which are attached to the current
+	   run of parsing + translation; memory is released by the caller! */
+	cb_init_parse_constants ();
 
 	/* Parse */
 	ret = yyparse ();
