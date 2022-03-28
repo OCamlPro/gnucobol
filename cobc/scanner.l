@@ -1257,6 +1257,7 @@ error_literal (const char *type, const char *literal)
 	cb_error ("%s", err_msg);
 }
 
+#ifndef COB_EBCDIC_MACHINE
 /* EBCDIC to ASCII table, used in read_literal; this table was copied from
    `codegen.c:output_ebcdic_to_ascii_table`.  */
 static const cob_u8_t cob_ebcdic_ascii[256] = {
@@ -1293,6 +1294,7 @@ static const cob_u8_t cob_ebcdic_ascii[256] = {
 	0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
 	0x38, 0x39, 0xDB, 0xFB, 0x9A, 0xF4, 0xEA, 0xFF
 };
+#endif	/* COB_EBCDIC_MACHINE */
 
 /* Scans a symbolic EBCDIC character given as a sequence of decimal digits
    starting with `c`, and returns the corresponding code as per the machine
