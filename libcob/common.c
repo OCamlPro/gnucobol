@@ -1750,6 +1750,299 @@ cob_check_env_false (char * s)
 				|| strcasecmp (s, "OFF") == 0 || strcasecmp (s, "FALSE") == 0));
 }
 
+static char file_path_name [512] = "";
+static int	exec_len, build_len, exec_dev, exec_chg;
+static char *exec_cfg_dir = NULL;
+static char	exec_root [128] = COB_BLD_PREFIX;
+static char	build_root [128] = COB_BLD_PREFIX;
+
+#define dMaxGids 32
+
+static int 
+IsGroupMember (gid_t gid)
+{
+	int bRet = 0;
+
+	if(getegid() == gid
+	|| getgid() == gid) {
+		bRet = 1;
+
+	} else {
+		gid_t grouplist[dMaxGids];
+		int nGroups, k;
+
+		for(k=0; k < dMaxGids; k++) grouplist[k] = 0;
+		nGroups = getgroups(dMaxGids, grouplist);
+		for(k=0; k < dMaxGids && k < nGroups; k++) {
+			if (grouplist[k] == gid) {
+				bRet = 1;
+				break;
+			}
+		}
+	}
+
+	return bRet;
+}
+
+#define PERM_UX	00100
+#define PERM_GX	00010
+#define PERM_OX	00001
+
+static int usr_exc = PERM_UX;
+static int grp_exc = PERM_GX;
+static int oth_exc = PERM_OX;
+
+static int 
+IsExecutable (struct stat* pStat)
+{
+	int status = -1;
+
+	if (S_ISDIR(pStat->st_mode)) {
+		return -1;
+	}
+	if (S_ISREG(pStat->st_mode)) {
+		if ((pStat->st_mode & oth_exc) == oth_exc)
+			return 0;
+		if(geteuid() == 0) {		/* Effectively 'root' */
+			if ((pStat->st_mode & (PERM_UX|PERM_GX|PERM_OX)) != 0)
+				return 0;
+		}
+		if(geteuid() == pStat->st_uid
+		|| getuid()  == pStat->st_uid) {
+			if ((pStat->st_mode & usr_exc) == usr_exc)
+				return 0;
+		} else if (IsGroupMember (pStat->st_gid)) {
+			if ((pStat->st_mode & grp_exc) == grp_exc)
+				return 0;
+		}
+	}
+		
+	return status;
+}
+
+char *							/* Return full path name to progam */
+cob_find_path ( 
+	char *progname, 			/* program to search for */
+	char *path )				/* PATH to search or NULL for env PATH */
+{
+	int		status,i,lp,maxfn;
+	struct stat statbuf;
+	char	curdir[350], wrk[512];
+	
+	if(progname == NULL)
+		return NULL;
+
+	if (progname[0] == '.'
+	 && progname[1] == SLASH_CHAR) {
+		getcwd (curdir, sizeof(curdir)-1);
+		sprintf (wrk, "%s%s",curdir,&progname[1]);
+		progname = wrk;
+	} else
+	if (progname[0] == '.'
+	 && progname[1] == '.'
+	 && progname[2] == SLASH_CHAR) {
+		getcwd (curdir, sizeof(curdir)-1);
+		sprintf (wrk, "%s%s%s",curdir,SLASH_STR,progname);
+		progname = wrk;
+	}
+	if(progname[0] == SLASH_CHAR) {	/* Complete path already given ? */
+		strcpy(file_path_name,progname);
+		status = stat(file_path_name, &statbuf);
+		if (status != -1)
+			status = IsExecutable(&statbuf);
+	} else {
+		getcwd (curdir, sizeof(curdir)-1);
+		sprintf (file_path_name, "%s%s%s",curdir,SLASH_STR,progname);
+		status = stat(file_path_name, &statbuf);
+		if (status != -1)
+			status = IsExecutable(&statbuf);
+
+		if (status != 0) {
+			lp = strlen(progname);
+			maxfn = sizeof(file_path_name) - lp - 4;
+			if(path == NULL) {
+				path = (void *)getenv("PATH");
+			}
+			while (path != NULL
+				&& *path != '\0') {
+				for(i=0; *path != '\0' && *path != PATHSEP_CHAR && i < maxfn; i++,path++)
+					file_path_name[i] = *path;
+				if(*path != '\0')
+					path++;
+				file_path_name[i++] = SLASH_CHAR;
+				file_path_name[i++] = '\0';
+				strcat(file_path_name, progname);
+				status = stat(file_path_name, &statbuf);
+				if (status != -1)
+					status = IsExecutable (&statbuf);
+				if (*path == '\0' || status == 0)
+					break;
+			}
+		}
+	}
+
+	if (status == 0) {
+		return file_path_name;
+	} 
+	return NULL;
+}
+
+/* Determine if GnuCOBOL is installed in different location than built for */
+void
+cob_setup_env (const char *progname)
+{
+	char	*binpath, *libpath, *p, cobclibs[12];
+	build_len = strlen (build_root);
+	if (build_len > 0
+	 && build_root[build_len-1] != SLASH_CHAR) {
+		strcat(build_root, SLASH_STR);
+		build_len++;
+	}
+	binpath = NULL;
+	libpath = getenv("LD_LIBRARY_PATH");
+	if (libpath == NULL)
+		libpath = getenv("LIBPATH");
+	if (libpath) {
+		binpath = cob_find_path (p = (char *)"libcob.so", libpath);
+		if (binpath == NULL)
+			binpath = cob_find_path (p = (char *)progname, NULL);
+	}
+	if ((p = getenv ("COB_DIR")) != NULL) {
+		exec_dev = 0;
+		exec_len = sprintf (exec_root, "%s", p);
+	} else {
+		p = strrchr (binpath, SLASH_CHAR);
+		sprintf(cobclibs,"%scobc%s.libs",SLASH_STR,SLASH_STR);
+		if (memcmp (p - 11, cobclibs, 11) == 0) {
+			p = p - 11;
+			*p = 0;
+			exec_dev = 1;
+			exec_len = sprintf (exec_root, "%s", binpath);
+		} else {
+			sprintf(cobclibs,"%sbin%s.libs",SLASH_STR,SLASH_STR);
+			if (memcmp (p - 10, cobclibs, 10) == 0) {
+				p = p - 10;
+				*p = 0;
+				exec_dev = 1;
+			} else {
+				*p = 0;
+				exec_dev = 0;
+				p = strrchr (binpath, SLASH_CHAR);
+				if (memcmp (p+1, "bin", 3) == 0
+				 || memcmp (p+1, "lib", 3) == 0) {
+					*p = 0;
+				}
+			}
+			exec_len = sprintf (exec_root, "%s", binpath);
+		}
+	}
+	if (exec_root[exec_len-1] != SLASH_CHAR) {
+		strcat(exec_root, SLASH_STR);
+		exec_len++;
+	}
+	if (strcmp (build_root, exec_root) == 0)
+		exec_chg = 0;
+	else
+		exec_chg = 1;
+}
+
+/* If not in environment, relocate to installed location */
+char *
+cob_getenv_value (const char *ename)
+{
+	static char getenv_work [512];
+	char	*penv;
+	if ((penv = getenv (ename)) != NULL)
+		return penv;
+
+	if (strcmp (ename, "COB_CONFIG_DIR") == 0) {
+		if (exec_cfg_dir)
+			return exec_cfg_dir;
+		penv = (char *)COB_CONFIG_DIR;
+		if (exec_dev)
+			penv = (char *)"config";
+	} else if (strcmp (ename, "COB_COPY_DIR") == 0) {
+		penv = (char *)COB_COPY_DIR;
+		if (exec_dev)
+			penv = (char *)"copy";
+	} else if (strcmp (ename, "COB_SCHEMA_DIR") == 0) {
+		penv = (char *)COB_SCHEMA_DIR;
+		if (exec_dev)
+			penv = (char *)"schema";
+#ifdef LOCALEDIR
+	} else if (strcmp (ename, "LOCALEDIR") == 0) {
+		if (exec_chg && !exec_dev) {
+			sprintf (getenv_work, "%sshare/locale",exec_root);
+			return getenv_work;
+		}
+		return (char *)LOCALEDIR;
+#endif
+	}
+	if (!exec_chg
+	 || penv == NULL)
+		return penv;
+	if (exec_dev) {
+		sprintf (getenv_work, "%s%s",exec_root,penv);
+		if (strcmp (ename, "COB_CONFIG_DIR") == 0)
+			return exec_cfg_dir = cob_strdup (getenv_work);
+		return cob_strdup (getenv_work);
+	}
+	if (build_len > 0) {
+		if (memcmp (penv,build_root,build_len) == 0) {
+			sprintf (getenv_work, "%s%s",exec_root,&penv[build_len]);
+			if (strcmp (ename, "COB_CONFIG_DIR") == 0)
+				return exec_cfg_dir = cob_strdup (getenv_work);
+			return cob_strdup (getenv_work);
+		}
+		return penv;
+	}
+	if (*penv == SLASH_CHAR)
+		penv++;
+	sprintf (getenv_work, "%s%s",exec_root,penv);
+	if (strcmp (ename, "COB_CONFIG_DIR") == 0)
+		return exec_cfg_dir = cob_strdup (getenv_work);
+	return cob_strdup (getenv_work);
+}
+
+/* Scan string inserting -I and -L with relocated directory where used */
+const char *
+cob_relocate_string (const char *str)
+{
+	static char str_work [512];
+	int		i, j;
+	int		did_I, did_L;
+	if (!exec_chg)
+		return str;
+	did_I = did_L = 0;
+	for (i = j = 0; i < sizeof (str_work) && str[j] != 0; j++) {
+		if (!did_I
+		 && memcmp (&str[j], " -I", 3) == 0) {
+			did_I = 1;
+			i += sprintf (&str_work[i], " -I%sinclude",exec_root);
+		}
+		if (!did_L
+		 && memcmp (&str[j], " -L", 3) == 0) {
+			did_L = 1;
+			i += sprintf (&str_work[i], " -L%slib",exec_root);
+		}
+		if (j == 0) {
+			if (!did_I
+			 && memcmp (&str[j], "-I", 2) == 0) {
+				did_I = 1;
+				i += sprintf (&str_work[i], "-I%sinclude ",exec_root);
+			}
+			if (!did_L
+			 && memcmp (&str[j], "-L", 2) == 0) {
+				did_L = 1;
+				i += sprintf (&str_work[i], "-L%slib ",exec_root);
+			}
+		}
+		str_work [i++] = str[j];
+	}
+	str_work[i] = 0;
+	return (const char *)str_work;
+}
+
 static void
 cob_rescan_env_vals (void)
 {
@@ -6359,12 +6652,7 @@ cob_expand_env_string (char *strval)
 						}
 						env[j++] = strval[k++];
 					}
-				} else if (strcmp (ename, "COB_CONFIG_DIR") == 0) {
-					penv = (char *)COB_CONFIG_DIR;
-				} else if (strcmp (ename, "COB_COPY_DIR") == 0) {
-					penv = (char *)COB_COPY_DIR;
-				} else if (strcmp (ename, "COB_SCHEMA_DIR") == 0) {
-					penv = (char *)COB_SCHEMA_DIR;
+					penv = cob_getenv_value (ename);
 				}
 			}
 			if (penv != NULL) {
@@ -7083,7 +7371,7 @@ cob_load_config_file (const char *config_file, int isoptional)
 			}
 			if (filename[0] == 0) {
 				/* check for COB_CONFIG_DIR (use default if not in environment) */
-				penv = getenv ("COB_CONFIG_DIR");
+				penv = cob_getenv_value ("COB_CONFIG_DIR");
 				if (penv != NULL) {
 					snprintf (filename, (size_t)COB_FILE_MAX, "%s%c%s",
 						penv, SLASH_CHAR, config_file);
@@ -7194,7 +7482,7 @@ cob_load_config (void)
 		}
 	} else {
 		/* check for COB_CONFIG_DIR (use default if not in environment) */
-		if ((env = getenv ("COB_CONFIG_DIR")) != NULL && env[0]) {
+		if ((env = cob_getenv_value ("COB_CONFIG_DIR")) != NULL && env[0]) {
 			snprintf (conf_file, (size_t)COB_MEDIUM_MAX, "%s%c%s", env, SLASH_CHAR, "runtime.cfg");
 		} else {
 			snprintf (conf_file, (size_t)COB_MEDIUM_MAX, "%s%c%s", COB_CONFIG_DIR, SLASH_CHAR, "runtime.cfg");
@@ -8539,7 +8827,7 @@ print_runtime_conf ()
 
 #ifdef	HAVE_SETLOCALE
 #ifdef	ENABLE_NLS
-	s = getenv ("LOCALEDIR");
+	s = cob_getenv_value ("LOCALEDIR");
 	printf ("    : %-*s : %s\n", hdlen, "LOCALEDIR", s ? s : LOCALEDIR);
 #endif
 	printf ("    : %-*s : %s\n", hdlen, "LC_CTYPE", setlocale (LC_CTYPE, NULL));
@@ -8577,7 +8865,7 @@ cob_common_init (void *setptr)
 		struct stat	localest;
 		const char * localedir;
 
-		localedir = getenv ("LOCALEDIR");
+		localedir = cob_getenv_value ("LOCALEDIR");
 		if (localedir != NULL
 		 && !stat (localedir, &localest)
 		 && (S_ISDIR (localest.st_mode))) {
@@ -8670,6 +8958,8 @@ cob_init (const int argc, char **argv)
 
 	cob_argc = argc;
 	cob_argv = argv;
+	if (argc && argv)
+		cob_setup_env (argv[0]);
 
 	/* Get emergency buffer */
 	runtime_err_str = cob_fast_malloc ((size_t)COB_ERRBUF_SIZE);
@@ -8872,6 +9162,8 @@ cob_init (const int argc, char **argv)
 	}
 	/* The above must be last in this function as we do early return */
 	/* from certain ifdef's */
+	if (cobglobptr->cob_main_argv0)
+		cob_setup_env (cobglobptr->cob_main_argv0);
 }
 
 /* Compute a hash value based on the string given */

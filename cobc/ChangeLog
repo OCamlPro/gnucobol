@@ -1,4 +1,10 @@
 
+2022-03-28  Ron Norman <rjn@inglenet.com>
+	* cobc.c : Added calls to cobc_getenv_path which will check for
+				env var and if not present do relocation for runtime
+				Added calls to cob_relocate_string to insert -I and -L
+				for compiler installed in different location
+
 2022-03-10  Simon Sobisch <simonsobisch@gnu.org>
 
 	* pplex.l (next_word_is_comment_paragraph_name): extracted from (ppinput)

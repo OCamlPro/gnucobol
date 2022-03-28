@@ -1819,6 +1819,10 @@ COB_EXPIMP void		print_runtime_conf	(void);
 COB_EXPIMP cob_field_attr *cob_alloc_attr(int type, int digits, int scale, int flags);
 COB_EXPIMP void		cob_sym_get_field (cob_field *f, cob_symbol *sym, int k);
 COB_EXPIMP int		cob_sym_get_occurs (cob_symbol *sym, int k);
+COB_EXPIMP char *	cob_find_path (char *progname, char *path); 
+COB_EXPIMP void		cob_setup_env (const char *progname); 
+COB_EXPIMP char *	cob_getenv_value (const char *ename);
+COB_EXPIMP const char *	cob_relocate_string (const char *str);
 
 COB_EXPIMP void		cob_set_exception	(const int);
 COB_EXPIMP int		cob_last_exception_is	(const int);

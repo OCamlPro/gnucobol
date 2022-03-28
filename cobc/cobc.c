@@ -2414,7 +2414,7 @@ cobc_print_info (void)
 	putchar ('\n');
 	puts (_("GnuCOBOL information"));
 	cobc_var_and_envvar_print ("COB_CC",		COB_CC);
-	cobc_var_and_envvar_print ("COB_CFLAGS",	COB_CFLAGS);
+	cobc_var_and_envvar_print ("COB_CFLAGS",	cob_relocate_string (COB_CFLAGS));
 #ifndef	_MSC_VER
 	if (verbose_output) {
 #ifdef COB_STRIP_CMD
@@ -2426,11 +2426,11 @@ cobc_print_info (void)
 	}
 	cobc_var_and_envvar_print ("COB_DEBUG_FLAGS", COB_DEBUG_FLAGS);
 #endif
-	cobc_var_and_envvar_print ("COB_LDFLAGS",	COB_LDFLAGS);
-	cobc_var_and_envvar_print ("COB_LIBS",		COB_LIBS);
-	cobc_var_and_envvar_print ("COB_CONFIG_DIR",	COB_CONFIG_DIR);
-	cobc_var_and_envvar_print ("COB_COPY_DIR",		COB_COPY_DIR);
-	cobc_var_and_envvar_print ("COB_SCHEMA_DIR",		COB_SCHEMA_DIR);
+	cobc_var_and_envvar_print ("COB_LDFLAGS",	cob_relocate_string (COB_LDFLAGS));
+	cobc_var_and_envvar_print ("COB_LIBS",		cob_relocate_string (COB_LIBS));
+	cobc_var_and_envvar_print ("COB_CONFIG_DIR",cob_getenv_value ("COB_CONFIG_DIR"));
+	cobc_var_and_envvar_print ("COB_SCHEMA_DIR",cob_getenv_value ("COB_SCHEMA_DIR"));
+	cobc_var_and_envvar_print ("COB_COPY_DIR",	cob_getenv_value ("COB_COPY_DIR"));
 	if ((s = getenv ("COBCPY")) != NULL && *s) {
 		cobc_var_print ("COBCPY",	s, 1);
 	}
@@ -2836,6 +2836,11 @@ process_command_line (const int argc, char **argv)
 	else if (WITH_FILE_FORMAT == COB_FILE_IS_GC)
 		cb_mf_files = 0;
 #endif
+
+	cob_config_dir = (const char *) cob_getenv_value ("COB_CONFIG_DIR");
+	if (cob_config_dir == NULL) {
+		cob_config_dir = COB_CONFIG_DIR;
+	}
 
 #if defined (_WIN32) || defined (__DJGPP__)
 	if (!getenv ("POSIXLY_CORRECT")) {
@@ -4286,10 +4291,9 @@ call_system (const char *command)
 		return 0;
 	}
 
-#if 0	/* Is there a need to flush whatever we may have in our streams? */
+	/* flush so that messages appear in order presented */
 	fflush (stdout);
 	fflush (stderr);
-#endif
 
 	status = system (command);
 
@@ -8315,27 +8319,27 @@ set_cobc_defaults (void)
 		cobc_cc = COB_CC;
 	}
 
-	cob_config_dir = cobc_getenv_path ("COB_CONFIG_DIR");
+	cob_config_dir = (const char *) cobc_getenv_path ("COB_CONFIG_DIR");
 	if (cob_config_dir == NULL) {
-		cob_config_dir = COB_CONFIG_DIR;
+		cob_config_dir = cob_getenv_value ("COB_CONFIG_DIR");
 	}
-	cob_schema_dir = cobc_getenv_path ("COB_SCHEMA_DIR");
+	cob_schema_dir = (const char *) cobc_getenv_path ("COB_SCHEMA_DIR");
 	if (cob_schema_dir == NULL) {
-		cob_schema_dir = COB_SCHEMA_DIR;
+		cob_schema_dir = cob_getenv_value ("COB_SCHEMA_DIR");
 	}
 
 	p = cobc_getenv ("COB_CFLAGS");
 	if (p) {
 		COBC_ADD_STR (cobc_cflags, p, NULL, NULL);
 	} else {
-		COBC_ADD_STR (cobc_cflags, COB_CFLAGS, NULL, NULL);
+		COBC_ADD_STR (cobc_cflags, cob_relocate_string (COB_CFLAGS), NULL, NULL);
 	}
 
 	p = cobc_getenv ("COB_LDFLAGS");
 	if (p) {
 		COBC_ADD_STR (cobc_ldflags, p, NULL, NULL);
 	} else {
-		COBC_ADD_STR (cobc_ldflags, COB_LDFLAGS, NULL, NULL);
+		COBC_ADD_STR (cobc_ldflags, cob_relocate_string (COB_LDFLAGS), NULL, NULL);
 	}
 
 #ifdef COB_DEBUG_FLAGS
@@ -8351,7 +8355,7 @@ set_cobc_defaults (void)
 	if (p) {
 		COBC_ADD_STR (cobc_libs, p, NULL, NULL);
 	} else {
-		COBC_ADD_STR (cobc_libs, COB_LIBS, NULL, NULL);
+		COBC_ADD_STR (cobc_libs, cob_relocate_string (COB_LIBS), NULL, NULL);
 	}
 
 	p = cobc_getenv ("COB_LDADD");
@@ -8572,7 +8576,7 @@ finish_setup_internal_env (void)
 	CB_TEXT_LIST_ADD (cb_extension_list, "");
 
 	/* Process COB_COPY_DIR and COBCPY environment variables */
-	process_env_copy_path (getenv ("COB_COPY_DIR"));
+	process_env_copy_path (cob_getenv_value ("COB_COPY_DIR"));
 	process_env_copy_path (getenv ("COBCPY"));
 
 	/* Add default COB_COPY_DIR directory */
@@ -8717,6 +8721,7 @@ main (int argc, char **argv)
 	const char		*run_name = NULL;
 
 	/* Setup routines I */
+	cob_setup_env ((const char*) argv[0]);
 	begin_setup_internal_and_compiler_env ();
 
 	cb_saveargc = argc;

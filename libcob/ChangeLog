@@ -1,4 +1,11 @@
 
+2022-03-28  Ron Norman <rjn@inglenet.com>
+
+	* common.c,common.h : Add routines cob_setup_env, cob_getenv_value,
+						cob_relocate_string. All used for installing
+						compiler into directory different that declared
+						when compiler was built
+
 2022-02-21  Ron Norman <rjn@inglenet.com>
 
 	* move.c (cob_move_display_to_packed): If P used in PIC adjust data move

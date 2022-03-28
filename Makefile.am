@@ -58,6 +58,8 @@ FILES_TO_BE_EXECUTABLE = $(dist_noinst_SCRIPTS) \
 
 tarstamps = $(top_distdir)/tarstamp.h tarstamp.h
 
+releasedir = $(abs_builddir)/gnuCobol4${PLATFORM}
+
 # all parts but tarstamp.h should not be necessary...
 dist-hook:
 	rm -f $(top_distdir)/tarstamp.h
@@ -139,6 +141,30 @@ distbin:
 	$(MAKE) $(AM_MAKEFLAGS) $(DISTBIN_TARGETS) gc__post_remove_bindistdir='@:' am__post_remove_distdir='@:'
 	$(gc__post_remove_bindistdir)
 	$(am__post_remove_distdir)
+
+release:
+	rm -rf ${releasedir} gnuCobol4${PLATFORM}.tar.Z $(distbindir)
+	$(MAKE) $(AM_MAKEFLAGS) DESTDIR=$(releasedir) install
+	if test -f /usr/local/bin/vcheck ; then  \
+		cp /usr/local/bin/vcheck ${releasedir}/$(prefix)/bin ; fi
+	if test -f /usr/local/bin/vrecover ; then  \
+		cp /usr/local/bin/vrecover ${releasedir}/$(prefix)/bin ; fi
+	if test -f /usr/local/lib/libvisam.a ; then  \
+		cp /usr/local/lib/libvisam.a ${releasedir}/$(prefix)/lib ; fi
+	install -d "$(releasedir)/${datarootdir}/licenses/$(PACKAGE)"
+	install -p -m644 $(abs_builddir)/COPYING*          "$(releasedir)/${datarootdir}/licenses/$(PACKAGE)"
+	install -d "$(releasedir)/${datarootdir}/doc/$(PACKAGE)"
+	install -p -m644 $(abs_builddir)/README*           "$(releasedir)/${datarootdir}/doc/$(PACKAGE)"
+	install -p -m644 $(abs_builddir)/NEWS*             "$(releasedir)/${datarootdir}/doc/$(PACKAGE)"
+	install -p -m644 $(abs_builddir)/ChangeLog         "$(releasedir)/${datarootdir}/doc/$(PACKAGE)"
+	install -p -m644 $(abs_builddir)/bin/ChangeLog     "$(releasedir)/${datarootdir}/doc/$(PACKAGE)/ChangeLog_bin"
+	install -p -m644 $(abs_builddir)/cobc/ChangeLog    "$(releasedir)/${datarootdir}/doc/$(PACKAGE)/ChangeLog_cobc"
+	install -p -m644 $(abs_builddir)/libcob/ChangeLog  "$(releasedir)/${datarootdir}/doc/$(PACKAGE)/ChangeLog_libcob"
+	cd ${abs_builddir}/doc; make gnucobol.pdf
+	install -p -m644 $(abs_builddir)/doc/gnucobol*.pdf "$(releasedir)/${datarootdir}/doc/$(PACKAGE)"
+	cd ${releasedir}/$(prefix); tar czf $(abs_builddir)/gnuCobol4${PLATFORM}.tar.Z *
+	@echo gnuCobol4${PLATFORM}.tar.Z created
+	cd ${abs_builddir}; rm -rf ${releasedir}
 
 $(tarstamps):
 	@echo "Creating $@..."

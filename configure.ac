@@ -2520,6 +2520,11 @@ AC_DEFINE_UNQUOTED([COB_BLD_CPPFLAGS],	["$CPPFLAGS"],	[informational: preparser 
 AC_DEFINE_UNQUOTED([COB_BLD_LD],		["$LD"],		[informational: linker during compilation])
 AC_DEFINE_UNQUOTED([COB_BLD_LDFLAGS],	["$LDFLAGS"],	[informational: linker flags during compilation])
 AC_DEFINE_UNQUOTED([COB_BLD_BUILD],		["$build"],		[informational: build environment during compilation])
+if test "x$prefix" = "xNONE"; then
+AC_DEFINE_UNQUOTED([COB_BLD_PREFIX],	["$ac_default_prefix"],	[informational: build environment --prefix= ])
+else
+AC_DEFINE_UNQUOTED([COB_BLD_PREFIX],	["$prefix"],	[informational: build environment --prefix= ])
+fi
 
 AC_SUBST([COB_CC])
 AC_SUBST([COB_CFLAGS])

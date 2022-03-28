@@ -246,6 +246,7 @@ process_command_line (int argc, char *argv[])
 	int			c, idx;
 	const char		*err_msg;
 	
+	cob_setup_env (argv[0]);
 #if defined (_WIN32) || defined (__DJGPP__)
 	if (!getenv ("POSIXLY_CORRECT")) {
 		/* Translate command line arguments from DOS/WIN to UNIX style */
