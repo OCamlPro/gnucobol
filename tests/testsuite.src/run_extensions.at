@@ -132,13 +132,17 @@ AT_DATA([prog.cob], [
        PROGRAM-ID.      prog.
        PROCEDURE        DIVISION.
            DISPLAY ""135,151,151"bar"195, 194, 234""
+           DISPLAY "  "135,151,151"bar"195 194"Z"
+           DISPLAY ' '135,151,  151'bar'195,194'Z'
 
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -fgcos-ebcdic-literals prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -febcdic-symbolic-characters prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [foobarBAZ
+  foobarBAZ
+ foobarBAZ
 ])
 
 AT_CLEANUP
@@ -158,7 +162,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -fgcos-ebcdic-literals prog.cob], [1], [],
+AT_CHECK([$COMPILE -febcdic-symbolic-characters prog.cob], [1], [],
 [prog.cob:5: error: symbolic character 0 out of allowed EBCDIC range (1...256)
 prog.cob:6: error: symbolic character 257 out of allowed EBCDIC range (1...256)
 prog.cob:7: error: invalid character 'x' in sequence of symbolic EBCDIC characters
