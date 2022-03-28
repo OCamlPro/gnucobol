@@ -131,9 +131,9 @@ AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
        PROCEDURE        DIVISION.
-           DISPLAY ""135,151,151"bar"195, 194, 234""
+           DISPLAY ""135,151,151"bar"195,194,234""
            DISPLAY "  "135,151,151"bar"195 194"Z"
-           DISPLAY ' '135,151,  151'bar'195,194'Z'
+           DISPLAY ' '135 151,151'bar'195,194'Z'
 
            STOP RUN.
 ])
@@ -155,9 +155,11 @@ AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
        PROCEDURE        DIVISION.
-           DISPLAY ""135,151,151"bar"195, 194, 0""
-           DISPLAY ""135,    257, 194, 1""
-           DISPLAY ""135,x, 194, 1""
+           DISPLAY ""135,151,151"bar"195,194,0""
+           DISPLAY ""135,257""
+           DISPLAY ""135,x,194,1""
+           DISPLAY " "135, 155,""
+           DISPLAY " "135  155, " "
 
            STOP RUN.
 ])
@@ -166,6 +168,10 @@ AT_CHECK([$COMPILE -febcdic-symbolic-characters prog.cob], [1], [],
 [prog.cob:5: error: symbolic character 0 out of allowed EBCDIC range (1...256)
 prog.cob:6: error: symbolic character 257 out of allowed EBCDIC range (1...256)
 prog.cob:7: error: invalid character 'x' in sequence of symbolic EBCDIC characters
+prog.cob:8: warning: extraneous separator ' ' in sequence of symbolic EBCDIC characters
+prog.cob:8: warning: extraneous separator at end of symbolic EBCDIC characters
+prog.cob:9: warning: extraneous separator ' ' in sequence of symbolic EBCDIC characters
+prog.cob:9: warning: extraneous separator ' ' in sequence of symbolic EBCDIC characters
 ])
 
 AT_CLEANUP

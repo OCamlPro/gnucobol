@@ -1328,7 +1328,8 @@ read_literal (const char mark, const char *type)
 	size_t		i;
 	int		c;
 	int		ebcdic_flag = 0; /* used for scanning symbolic EBCDIC
-					    characters */
+					    characters (== 2 right after
+					    scanning a separator) */
 
 	literal_error = 0;
 
@@ -1354,12 +1355,26 @@ read_literal (const char mark, const char *type)
 		if (ebcdic_flag) {
 			/* While scanning symbolic EBCDIC character: */
 			if (c == mark) {
+				if (ebcdic_flag == 2) {
+					cb_warning (COBC_WARN_FILLER,
+						    _("extraneous separator at end "
+						      "of symbolic EBCDIC characters"));
+				}
 				ebcdic_flag = 0;
 			} else if ('0' <= c && c <= '9') {
 				plex_buff[i++] = scan_ebcdic_char (c);
+				ebcdic_flag = 1;
 			} else if (c != ' ' && c != ',') {
 				cb_error (_("invalid character '%c' in sequence "
 					    "of symbolic EBCDIC characters"), c);
+				ebcdic_flag = 1;
+			} else if (ebcdic_flag == 2) {
+				cb_warning (COBC_WARN_FILLER,
+					    _("extraneous separator '%c' in sequence "
+					      "of symbolic EBCDIC characters"), c);
+				ebcdic_flag = 1;
+			} else {
+				ebcdic_flag = 2;
 			}
 			continue;
 		}
