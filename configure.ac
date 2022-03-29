@@ -22,7 +22,7 @@ dnl You should have received a copy of the GNU General Public License
 dnl along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 dnl
 
-AC_PREREQ([2.64])
+AC_PREREQ([2.67])  # note: 2.67 is the one found in old msys, 2.69 is commonly available
 
 AC_INIT([GnuCOBOL],
 	[3.2-dev],
@@ -32,7 +32,7 @@ AC_INIT([GnuCOBOL],
 AC_REVISION([GnuCOBOL snapshot $Revision$])
 AC_COPYRIGHT([This file is part of GnuCOBOL.
 
-Copyright (C) 2001-2012, 2014-2021 Free Software Foundation, Inc.
+Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
 Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
 Edward Hart
 ])

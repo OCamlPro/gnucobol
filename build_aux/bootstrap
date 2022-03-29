@@ -3,7 +3,7 @@
 # Bootstrap gnucobol package from checked-out sources
 # Note:  call as ./bootstrap if you don't have readlink -f
 #
-# Copyright (C) 2017-2021 Free Software Foundation, Inc.
+# Copyright (C) 2017-2022 Free Software Foundation, Inc.
 # Written by Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -73,7 +73,13 @@ echo; echo "running autoreconf..."
 ret=0
 
 # changing build_aux scripts at large:
-#autoreconf --verbose --force --install --include=m4 $MAINPATH; ret=$?
+AC_OPTS="--verbose --force --include=m4"
+if test "$1" = "install"; then AC_OPTS="$AC_OPTS --install"; fi
+
+# ensure the configure and Makefile parts are up-to-date:
+msgs=/tmp/autoreconf
+echo autoreconf $AC_OPTS $MAINPATH
+autoreconf $AC_OPTS $MAINPATH > $msgs 2>&1; ret=$?
 
 # changing files possibly needed for new systems:
 #config_file_url="https://git.savannah.gnu.org/gitweb/?p=gnulib.git;a=blob_plain;f=build-aux"
@@ -87,9 +93,6 @@ ret=0
 #  test $retval -eq 0 # || exit $retval
 #done
 
-# ensure the configure and Makefile parts are up-to-date:
-msgs=/tmp/autoreconf
-autoreconf --verbose --force --include=m4 $MAINPATH > $msgs 2>&1; ret=$?
 
 # Filter aminclude_static as those are only used _within_ another
 #        check so reporting as portability problem is only noise.
