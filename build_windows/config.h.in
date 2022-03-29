@@ -1,5 +1,5 @@
 
-/* config.h, tested with x86/x64 VS2008-2019
+/* config.h, tested with x86/x64 VS2008-2022
    and OrangeC 6.0.50 (which ignores the lib comments) */
 
 #define NOISAM       0
@@ -48,6 +48,21 @@
    library for each invocation of libcob, even if not used...
 #define HAVE_GETUSERNAME 1
 */
+
+
+//#define MAKE_DIST 1
+
+#ifndef COB_MAIN_DIR
+ // Use \ to escape things, for example \\ for using in paths
+ // Use \" for paths with spaces
+ #ifdef MAKE_DIST
+  // define MAKE_DIST for defaulting to C:\\GnuCOBOL_Version:
+  #define COB_MAIN_DIR     "C:\\" PACKAGE_NAME "_" PACKAGE_VERSION
+ #else
+  // specify the local path where the gnucobol sources reside in:
+  #define COB_MAIN_DIR     "C:\\GnuCOBOL"
+ #endif
+#endif
 
 /* adjust the following defines to override linker pragmas below */
 /* #undef LIB_MATHLIB */
@@ -136,11 +151,11 @@
 #endif
 
 #ifdef LIB_JSON
-#pragma comment(lib, LIB_JSON)
+ #pragma comment(lib, LIB_JSON)
 #elif CONFIGURED_JSON == CJSON || CONFIGURED_JSON == CJSON_CJSON
-#pragma comment(lib, "cjson")
+ #pragma comment(lib, "cjson")
 #elif CONFIGURED_JSON == JSON_C
-#pragma comment(lib, "json-c")
+ #pragma comment(lib, "json-c")
 #endif
 
 #endif /* WITHIN_LIBCOB */
@@ -246,6 +261,9 @@
 #define COB_BLD_BUILD    "i686-pc-windows"
 
 #endif  /* __ORANGEC__ */
+
+/* informational: build environment --prefix= */
+#define COB_BLD_PREFIX COB_MAIN_DIR
 
 /* compiler used by cobc */
 #if defined(__ORANGEC__)
@@ -824,16 +842,7 @@
 #define PATCH_LEVEL COB_NUM_TAR_DATE
 
 
-// Use \ to escape things, for example \\ for using in paths
-// Use \" for paths with spaces
-
-// define MAKE_DIST for using C:\\GnuCOBOL_Version:
-//#define MAKE_DIST 1
-
 #ifdef MAKE_DIST
-#ifndef COB_MAIN_DIR
-#define COB_MAIN_DIR     "C:\\" PACKAGE_NAME "_" PACKAGE_VERSION
-#endif
 #define COB_CFLAGS       "-I \"" COB_MAIN_DIR "\\include\""
 
 #if defined(__ORANGEC__)
@@ -851,12 +860,6 @@
 #endif
 
 #else  // no MAKE_DIST
-
-// specify the local path where the gnucobol sources reside in:
-
-#ifndef COB_MAIN_DIR
-#define COB_MAIN_DIR     "C:\\GnuCOBOL"
-#endif
 #define COB_CFLAGS       "-I \"" COB_MAIN_DIR "\" -I \"" COB_MAIN_DIR "\\build_windows\""
 
 #ifdef _WIN64
