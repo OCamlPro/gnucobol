@@ -3,6 +3,7 @@
 
 	* common.c (cob_find_path) : If unistd.h not present or on Windows
 					The code to check group permissions is not used
+					Check for alternate shared library suffixes
 
 2022-03-28  Ron Norman <rjn@inglenet.com>
 

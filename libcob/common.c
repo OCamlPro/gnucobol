@@ -1751,8 +1751,9 @@ cob_check_env_false (char * s)
 }
 
 static char file_path_name [512] = "";
-static int	exec_len, build_len, exec_dev, exec_chg;
+static int	exec_len = 0, build_len = 0, exec_dev = 0, exec_chg = 0;
 static char *exec_cfg_dir = NULL;
+static char	exec64 [8] = "";
 static char	exec_root [128] = COB_BLD_PREFIX;
 static char	build_root [128] = COB_BLD_PREFIX;
 
@@ -1912,7 +1913,7 @@ cob_find_path (
 void
 cob_setup_env (const char *progname)
 {
-	char	*binpath, *libpath, *p, cobclibs[12];
+	char	*binpath, *libpath, *p, cobclibs[12], libcob[16], *cbdir;
 	build_len = strlen (build_root);
 	if (build_len > 0
 	 && build_root[build_len-1] != SLASH_CHAR) {
@@ -1920,18 +1921,30 @@ cob_setup_env (const char *progname)
 		build_len++;
 	}
 	binpath = NULL;
-	libpath = getenv("LD_LIBRARY_PATH");
-	if (libpath == NULL)
-		libpath = getenv("LIBPATH");
-	if (libpath) {
-		binpath = cob_find_path (p = (char *)"libcob.so", libpath);
-		if (binpath == NULL)
-			binpath = cob_find_path (p = (char *)progname, NULL);
-	}
-	if ((p = getenv ("COB_DIR")) != NULL) {
+	if ((cbdir = getenv ("COB_DIR")) != NULL) {
 		exec_dev = 0;
-		exec_len = sprintf (exec_root, "%s", p);
+		exec_len = sprintf (exec_root, "%s", cbdir);
 	} else {
+		libpath = getenv("LD_LIBRARY_PATH");
+		if (libpath == NULL)
+			libpath = getenv("LIBPATH");
+		if (libpath) {
+			sprintf(libcob,"libcob.%s",COB_MODULE_EXT);
+			binpath = cob_find_path (libcob, libpath);
+			if (binpath == NULL)	/* Try .so */
+				binpath = cob_find_path ((char *)"libcob.so", libpath);
+			if (binpath == NULL)	/* Try .sl */
+				binpath = cob_find_path ((char *)"libcob.sl", libpath);
+			if (binpath == NULL)	/* AIX just has  .a */
+				binpath = cob_find_path ((char *)"libcob.a", libpath);
+			if (binpath == NULL)	/* Search for argv[0] */
+				binpath = cob_find_path ((char *)progname, NULL);
+		}
+		if (binpath == NULL) {
+			exec_chg = 0;
+			exec_dev = 0;
+			return;
+		}
 		p = strrchr (binpath, SLASH_CHAR);
 		sprintf(cobclibs,"%scobc%s.libs",SLASH_STR,SLASH_STR);
 		if (memcmp (p - 11, cobclibs, 11) == 0) {
@@ -1951,12 +1964,15 @@ cob_setup_env (const char *progname)
 				p = strrchr (binpath, SLASH_CHAR);
 				if (memcmp (p+1, "bin", 3) == 0
 				 || memcmp (p+1, "lib", 3) == 0) {
+					if (memcmp (&p[4], "64", 2) == 0)
+						strcpy (exec64,"64");
 					*p = 0;
 				}
 			}
 			exec_len = sprintf (exec_root, "%s", binpath);
 		}
 	}
+
 	if (exec_root[exec_len-1] != SLASH_CHAR) {
 		strcat(exec_root, SLASH_STR);
 		exec_len++;
@@ -2039,23 +2055,23 @@ cob_relocate_string (const char *str)
 		if (!did_I
 		 && memcmp (&str[j], " -I", 3) == 0) {
 			did_I = 1;
-			i += sprintf (&str_work[i], " -I%sinclude",exec_root);
+			i += sprintf (&str_work[i], " -I%s -I%sinclude",exec_root,exec_root);
 		}
 		if (!did_L
 		 && memcmp (&str[j], " -L", 3) == 0) {
 			did_L = 1;
-			i += sprintf (&str_work[i], " -L%slib",exec_root);
+			i += sprintf (&str_work[i], " -L%slib%s",exec_root,exec64);
 		}
 		if (j == 0) {
 			if (!did_I
 			 && memcmp (&str[j], "-I", 2) == 0) {
 				did_I = 1;
-				i += sprintf (&str_work[i], "-I%sinclude ",exec_root);
+				i += sprintf (&str_work[i], "-I%s -I%sinclude ",exec_root,exec_root);
 			}
 			if (!did_L
 			 && memcmp (&str[j], "-L", 2) == 0) {
 				did_L = 1;
-				i += sprintf (&str_work[i], "-L%slib ",exec_root);
+				i += sprintf (&str_work[i], "-L%slib%s ",exec_root,exec64);
 			}
 		}
 		str_work [i++] = str[j];
