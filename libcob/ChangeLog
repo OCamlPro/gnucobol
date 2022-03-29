@@ -1,4 +1,9 @@
 
+2022-03-29  Ron Norman <rjn@inglenet.com>
+
+	* common.c (cob_find_path) : If unistd.h not present or on Windows
+					The code to check group permissions is not used
+
 2022-03-28  Ron Norman <rjn@inglenet.com>
 
 	* common.c,common.h : Add routines cob_setup_env, cob_getenv_value,

@@ -1756,15 +1756,16 @@ static char *exec_cfg_dir = NULL;
 static char	exec_root [128] = COB_BLD_PREFIX;
 static char	build_root [128] = COB_BLD_PREFIX;
 
+#if defined	(HAVE_UNISTD_H) && !(defined (_WIN32)) 
 #define dMaxGids 32
 
 static int 
-IsGroupMember (gid_t gid)
+is_group_member (gid_t gid)
 {
 	int bRet = 0;
 
-	if(getegid() == gid
-	|| getgid() == gid) {
+	if (getegid() == gid
+	 || getgid() == gid) {
 		bRet = 1;
 
 	} else {
@@ -1784,16 +1785,28 @@ IsGroupMember (gid_t gid)
 	return bRet;
 }
 
+#ifdef S_IXUSR
+#define PERM_UX S_IXUSR
+#else
 #define PERM_UX	00100
+#endif
+#ifdef S_IXGRP
+#define PERM_GX S_IXGRP
+#else
 #define PERM_GX	00010
+#endif
+#ifdef S_IXOTH
+#define PERM_OX S_IXOTH
+#else
 #define PERM_OX	00001
+#endif
 
 static int usr_exc = PERM_UX;
 static int grp_exc = PERM_GX;
 static int oth_exc = PERM_OX;
 
 static int 
-IsExecutable (struct stat* pStat)
+is_executable (struct stat *pStat)
 {
 	int status = -1;
 
@@ -1803,15 +1816,15 @@ IsExecutable (struct stat* pStat)
 	if (S_ISREG(pStat->st_mode)) {
 		if ((pStat->st_mode & oth_exc) == oth_exc)
 			return 0;
-		if(geteuid() == 0) {		/* Effectively 'root' */
+		if (geteuid() == (uid_t)0) {		/* Effectively 'root' */
 			if ((pStat->st_mode & (PERM_UX|PERM_GX|PERM_OX)) != 0)
 				return 0;
 		}
-		if(geteuid() == pStat->st_uid
-		|| getuid()  == pStat->st_uid) {
+		if (geteuid() == pStat->st_uid
+		 || getuid()  == pStat->st_uid) {
 			if ((pStat->st_mode & usr_exc) == usr_exc)
 				return 0;
-		} else if (IsGroupMember (pStat->st_gid)) {
+		} else if (is_group_member (pStat->st_gid)) {
 			if ((pStat->st_mode & grp_exc) == grp_exc)
 				return 0;
 		}
@@ -1819,6 +1832,14 @@ IsExecutable (struct stat* pStat)
 		
 	return status;
 }
+
+#else
+static int 
+is_executable (struct stat *pStat)	/* Windows or NO unistd.h */
+{
+	return 1;
+}
+#endif
 
 char *							/* Return full path name to progam */
 cob_find_path ( 
@@ -1849,13 +1870,13 @@ cob_find_path (
 		strcpy(file_path_name,progname);
 		status = stat(file_path_name, &statbuf);
 		if (status != -1)
-			status = IsExecutable(&statbuf);
+			status = is_executable (&statbuf);
 	} else {
 		getcwd (curdir, sizeof(curdir)-1);
 		sprintf (file_path_name, "%s%s%s",curdir,SLASH_STR,progname);
 		status = stat(file_path_name, &statbuf);
 		if (status != -1)
-			status = IsExecutable(&statbuf);
+			status = is_executable (&statbuf);
 
 		if (status != 0) {
 			lp = strlen(progname);
@@ -1874,7 +1895,7 @@ cob_find_path (
 				strcat(file_path_name, progname);
 				status = stat(file_path_name, &statbuf);
 				if (status != -1)
-					status = IsExecutable (&statbuf);
+					status = is_executable (&statbuf);
 				if (*path == '\0' || status == 0)
 					break;
 			}
