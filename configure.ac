@@ -2,7 +2,7 @@ dnl
 dnl Configure template for GnuCOBOL
 dnl Process this file with autoconf to produce a configure script.
 dnl
-dnl Copyright (C) 2001-2012, 2014-2021 Free Software Foundation, Inc.
+dnl Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
 dnl Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
 dnl Edward Hart
 dnl
@@ -297,7 +297,6 @@ dnl Default CFLAGS (removed -g set in AC_INIT for compatibility)
 : ${CFLAGS="-O2"}
 
 AC_PROG_CC([gcc xlc cc])
-AC_PROG_CC_STDC
 
 dnl no explict usage of CPP var
 dnl AC_PROG_CPP

@@ -67,7 +67,7 @@ int				current_call_convention;
 /* Local variables */
 
 static struct cb_define_struct	*ppp_setvar_list = NULL;
-static enum cb_directive_action		current_cmd = 0;
+static enum cb_directive_action		current_cmd = PLEX_ACT_IF;
 
 /* Local functions */
 

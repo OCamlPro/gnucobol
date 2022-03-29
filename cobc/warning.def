@@ -24,7 +24,7 @@
 /* Always active, start doc with do not warn...  */
 /* CB_ONWARNDEF (var, name, doc) */
 
-/* Do not include warning with -Wextra [or old: -Wall] */
+/* Do not include warning with -Wall, only with -Wextra (or old: -W) */
 /* CB_NOWARNDEF (var, name, doc) */
 
 CB_WARNDEF (cb_warn_additional, "additional",

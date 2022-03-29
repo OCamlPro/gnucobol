@@ -1,4 +1,9 @@
 
+2022-03-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: dropped obsolete AC_PROG_CC_STD - already included
+	  in AC_PROG_CC
+
 2022-03-11  Simon Sobisch <simonsobisch@gnu.org>
 
 	* Makefile.am: targets to create binary distributions
