@@ -651,3 +651,33 @@ AT_CHECK([$COMPILE -free prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
 
 AT_CLEANUP
+
+
+AT_SETUP([REPLACE: partial replacement with SPACES figurative constant])
+AT_KEYWORDS([replace gcos])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       REPLACE LEADING "PREFIX-" BY SPACES
+               TRAILING "-SUFFIX" BY SPACE.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 PREFIX-VAR1 PIC X(2) VALUE "OK".
+       01 VAR2-SUFFIX PIC X(2) VALUE "OK".
+       PROCEDURE        DIVISION.
+           DISPLAY VAR1 NO ADVANCING.
+           DISPLAY VAR2 NO ADVANCING.
+           STOP RUN.
+])
+
+AT_DATA([prog_err.cob], [
+       COPY prog REPLACING LEADING SPACES BY "PREFIX-".
+])
+
+AT_CHECK([$COMPILE_ONLY -fpartial-replacing-with-literal=ok prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -fpartial-replacing-with-literal=ok prog_err.cob], [1], [],
+[prog_err.cob:2: error: unexpected COBOL word in partial replacement phrase
+])
+
+AT_CLEANUP

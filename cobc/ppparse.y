@@ -87,6 +87,24 @@ unquote_alnum (char *name)
 #define fix_filename(filename) unquote_alnum (filename)
 
 static char *
+literal_token (char *t, int allow_spaces)
+{
+	if (t[0] == '\'' || t[0] == '\"') {
+		(void) ppparse_verify (cb_partial_replacing_with_literal,
+				       _("partial replacing with literal"));
+	} else if (allow_spaces && (strcmp ("SPACE", t) == 0 ||
+				    strcmp ("SPACES", t) == 0)) {
+		(void) ppparse_verify (cb_partial_replacing_with_literal,
+				       _("partial replacing with literal"));
+		t[0] = '\0';
+	} else {
+		ppparse_error (_("unexpected COBOL word in partial replacement "
+				 "phrase"));
+	}
+	return unquote_alnum (t);
+}
+
+static char *
 fold_lower (char *name)
 {
 	unsigned char	*p;
@@ -709,7 +727,6 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %type <l>	alnum_equality
 %type <l>	alnum_equality_list
 %type <l>	ec_list
-%type <s>	literal_token
 %type <s>	unquoted_literal
 
 %type <r>	copy_replacing
@@ -1621,9 +1638,9 @@ text_partial_src:
   {
 	$$ = ppp_list_add (NULL, $2);
   }
-| literal_token
+| TOKEN
   {
-	$$ = ppp_list_add (NULL, $1);
+	$$ = ppp_list_add (NULL, literal_token ($1, 0));
   }
 ;
 
@@ -1636,9 +1653,9 @@ text_partial_dst:
   {
 	$$ = ppp_list_add (NULL, $2);
   }
-| literal_token
+| TOKEN
   {
-	$$ = ppp_list_add (NULL, $1);
+	$$ = ppp_list_add (NULL, literal_token ($1, 1));
   }
 ;
 
@@ -1723,21 +1740,6 @@ unquoted_literal:
 	p[size] = '\0';
 
 	$$ = p;
-  }
-;
-
-literal_token:
-  TOKEN
-  {
-	char *t = $1;
-	if (t[0] == '\'' || t[0] == '\"') {
-		(void) ppparse_verify (cb_partial_replacing_with_literal,
-				       _("partial replacing with literal"));
-	} else {
-		ppparse_error (_("unexpected COBOL word in partial replacement "
-				 "phrase"));
-	}
-	$$ = unquote_alnum (t);
   }
 ;
 
