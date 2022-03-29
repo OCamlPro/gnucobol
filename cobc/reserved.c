@@ -813,7 +813,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, 0
   },
   { "CONVERSION",		0, 1, CONVERSION,		/* Extension */
-				0, CB_CS_ACCEPT
+				0, CB_CS_ACCEPT | CB_CS_DISPLAY
   },
   { "CONVERTING",		0, 0, CONVERTING,		/* 2002 */
 				0, 0

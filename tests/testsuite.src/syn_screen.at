@@ -827,3 +827,23 @@ prog.cob:13: warning: 'FILLER' has FROM, TO or USING without PIC; PIC will be im
 ])
 
 AT_CLEANUP
+
+
+AT_SETUP([DISPLAY WITH CONVERSION])
+AT_KEYWORDS([DISPLAY])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       PROCEDURE        DIVISION.
+           DISPLAY WITH CONVERSION "Whatever".
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
+[prog.cob:7: warning: DISPLAY WITH CONVERSION is not implemented
+])
+
+AT_CLEANUP
