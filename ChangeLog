@@ -1,8 +1,8 @@
 
 2022-03-29  Simon Sobisch <simonsobisch@gnu.org>
 
-	* configure.ac: dropped obsolete AC_PROG_CC_STD - already included
-	  in AC_PROG_CC
+	* configure.ac: dropped obsolete AC_PROG_CC_STD, AC_HEADER_STDC as
+	  already included in AC_PROG_CC and assumed otherwise
 
 2022-03-11  Simon Sobisch <simonsobisch@gnu.org>
 

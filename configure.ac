@@ -401,8 +401,6 @@ AC_LIB_RPATH
 
 
 # Checks for header files.
-AC_HEADER_STDC
-
 dnl entries only used from external includes -> likely no need to check here
 dnl AC_CHECK_HEADERS([stdint.h whcar.h malloc.h])
 # mandatory:
