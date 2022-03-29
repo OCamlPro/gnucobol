@@ -1,4 +1,9 @@
 
+2022-03-11  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* general: add a stop-error-statement option to allow configuring
+	  the support of the STOP ERROR statement
+
 2022-02-07  David Declerck <david.declerck@ocamlpro.com>
 
 	* gcos-strict.conf, gcos.conf, gcos.words: added config files for
