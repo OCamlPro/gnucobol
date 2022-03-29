@@ -3,7 +3,7 @@
 # Bootstrap gnucobol package from checked-out sources
 # Note:  call as ./autogen.sh if you don't have readlink -f
 #
-# Copyright (C) 2019 Free Software Foundation, Inc.
+# Copyright (C) 2019,2022 Free Software Foundation, Inc.
 # Written by Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -36,7 +36,7 @@ if test ! -f $MAINPATH/$me; then
 fi
 
 olddir_autogen=`pwd`
-cd $MAINPATH/build_aux && (chmod -f u+x ./bootstrap; ./bootstrap); ret=$?
+cd $MAINPATH/build_aux && (chmod -f u+x ./bootstrap; ./bootstrap $*); ret=$?
 cd $olddir_autogen
 
 if test $ret -ne 0; then
