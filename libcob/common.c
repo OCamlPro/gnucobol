@@ -1913,7 +1913,7 @@ cob_find_path (
 void
 cob_setup_env (const char *progname)
 {
-	char	*binpath, *libpath, *p, cobclibs[12], libcob[16], *cbdir;
+	char	*binpath, *libpath, *p, cobclibs[16], libcob[16], *cbdir;
 	build_len = strlen (build_root);
 	if (build_len > 0
 	 && build_root[build_len-1] != SLASH_CHAR) {
@@ -1946,9 +1946,9 @@ cob_setup_env (const char *progname)
 			return;
 		}
 		p = strrchr (binpath, SLASH_CHAR);
-		sprintf(cobclibs,"%scobc%s.libs",SLASH_STR,SLASH_STR);
-		if (memcmp (p - 11, cobclibs, 11) == 0) {
-			p = p - 11;
+		sprintf(cobclibs,"%slibcob%s.libs",SLASH_STR,SLASH_STR);
+		if (memcmp (p - 13, cobclibs, 13) == 0) {
+			p = p - 13;
 			*p = 0;
 			exec_dev = 1;
 			exec_len = sprintf (exec_root, "%s", binpath);
@@ -2055,7 +2055,8 @@ cob_relocate_string (const char *str)
 		if (!did_I
 		 && memcmp (&str[j], " -I", 3) == 0) {
 			did_I = 1;
-			i += sprintf (&str_work[i], " -I%s -I%sinclude",exec_root,exec_root);
+			i += sprintf (&str_work[i], " -I%s -I%slibcob -I%sinclude",
+										exec_root,exec_root,exec_root);
 		}
 		if (!did_L
 		 && memcmp (&str[j], " -L", 3) == 0) {
@@ -2066,7 +2067,8 @@ cob_relocate_string (const char *str)
 			if (!did_I
 			 && memcmp (&str[j], "-I", 2) == 0) {
 				did_I = 1;
-				i += sprintf (&str_work[i], "-I%s -I%sinclude ",exec_root,exec_root);
+				i += sprintf (&str_work[i], "-I%s -I%slibcob -I%sinclude ",
+										exec_root,exec_root,exec_root);
 			}
 			if (!did_L
 			 && memcmp (&str[j], "-L", 2) == 0) {

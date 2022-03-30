@@ -152,16 +152,16 @@ release:
 	if test -f /usr/local/lib/libvisam.a ; then  \
 		cp /usr/local/lib/libvisam.a ${releasedir}/$(libdir) ; fi
 	$(MKDIR_P) "$(releasedir)/${datarootdir}/licenses/$(PACKAGE)"
-	$(INSTALL) -p -m644 $(abs_builddir)/COPYING*          "$(releasedir)/${datarootdir}/licenses/$(PACKAGE)"
+	$(INSTALL_DATA) $(abs_builddir)/COPYING*          "$(releasedir)/${datarootdir}/licenses/$(PACKAGE)"
 	$(MKDIR_P) "$(releasedir)/${datarootdir}/doc/$(PACKAGE)"
-	$(INSTALL) -p -m644 $(abs_builddir)/README*           "$(releasedir)/${datarootdir}/doc/$(PACKAGE)"
-	$(INSTALL) -p -m644 $(abs_builddir)/NEWS*             "$(releasedir)/${datarootdir}/doc/$(PACKAGE)"
-	$(INSTALL) -p -m644 $(abs_builddir)/ChangeLog         "$(releasedir)/${datarootdir}/doc/$(PACKAGE)"
-	$(INSTALL) -p -m644 $(abs_builddir)/bin/ChangeLog     "$(releasedir)/${datarootdir}/doc/$(PACKAGE)/ChangeLog_bin"
-	$(INSTALL) -p -m644 $(abs_builddir)/cobc/ChangeLog    "$(releasedir)/${datarootdir}/doc/$(PACKAGE)/ChangeLog_cobc"
-	$(INSTALL) -p -m644 $(abs_builddir)/libcob/ChangeLog  "$(releasedir)/${datarootdir}/doc/$(PACKAGE)/ChangeLog_libcob"
+	$(INSTALL_DATA) $(abs_builddir)/README*           "$(releasedir)/${datarootdir}/doc/$(PACKAGE)"
+	$(INSTALL_DATA) $(abs_builddir)/NEWS*             "$(releasedir)/${datarootdir}/doc/$(PACKAGE)"
+	$(INSTALL_DATA) $(abs_builddir)/ChangeLog         "$(releasedir)/${datarootdir}/doc/$(PACKAGE)"
+	$(INSTALL_DATA) $(abs_builddir)/bin/ChangeLog     "$(releasedir)/${datarootdir}/doc/$(PACKAGE)/ChangeLog_bin"
+	$(INSTALL_DATA) $(abs_builddir)/cobc/ChangeLog    "$(releasedir)/${datarootdir}/doc/$(PACKAGE)/ChangeLog_cobc"
+	$(INSTALL_DATA) $(abs_builddir)/libcob/ChangeLog  "$(releasedir)/${datarootdir}/doc/$(PACKAGE)/ChangeLog_libcob"
 	cd ${abs_builddir}/doc; make gnucobol.pdf
-	$(INSTALL) -p -m644 $(abs_builddir)/doc/gnucobol*.pdf "$(releasedir)/${datarootdir}/doc/$(PACKAGE)"
+	$(INSTALL_DATA) $(abs_builddir)/doc/gnucobol*.pdf "$(releasedir)/${datarootdir}/doc/$(PACKAGE)"
 	cd ${releasedir}/$(prefix); tar cf $(abs_builddir)/gnuCobol4${PLATFORM}.tar *; compress $(abs_builddir)/gnuCobol4${PLATFORM}.tar
 	@echo gnuCobol4${PLATFORM}.tar.Z created
 	cd ${abs_builddir}; rm -rf ${releasedir}

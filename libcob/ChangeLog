@@ -1,4 +1,8 @@
 
+2022-03-30  Ron Norman <rjn@inglenet.com>
+
+	* common.c (relocate_strings) : add 'libcob' directory for -I
+
 2022-03-29  Ron Norman <rjn@inglenet.com>
 
 	* common.c (cob_find_path) : If unistd.h not present or on Windows
