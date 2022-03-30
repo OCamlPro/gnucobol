@@ -162,7 +162,7 @@ release:
 	$(INSTALL) -p -m644 $(abs_builddir)/libcob/ChangeLog  "$(releasedir)/${datarootdir}/doc/$(PACKAGE)/ChangeLog_libcob"
 	cd ${abs_builddir}/doc; make gnucobol.pdf
 	$(INSTALL) -p -m644 $(abs_builddir)/doc/gnucobol*.pdf "$(releasedir)/${datarootdir}/doc/$(PACKAGE)"
-	cd ${releasedir}/$(prefix); tar czf $(abs_builddir)/gnuCobol4${PLATFORM}.tar *; compress $(abs_builddir)/gnuCobol4${PLATFORM}.tar
+	cd ${releasedir}/$(prefix); tar cf $(abs_builddir)/gnuCobol4${PLATFORM}.tar *; compress $(abs_builddir)/gnuCobol4${PLATFORM}.tar
 	@echo gnuCobol4${PLATFORM}.tar.Z created
 	cd ${abs_builddir}; rm -rf ${releasedir}
 
