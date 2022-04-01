@@ -1,4 +1,9 @@
 
+2022-04-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (process_translate) [HAVE_8DOT3_FILENAMES]: fixed
+	  missing variable definition
+
 2022-03-27  Simon Sobisch <simonsobisch@gnu.org>
 
 	* error.c (cb_verify): use a valid position tree instead of cb_error_node
@@ -2755,6 +2760,7 @@
 	* Makefile.am: moved include of top_srcdir to AM_CPPFLAGS to prevent
 	  user-specified CPPFLAGS to override own includes, see bug #452
 	* cobc.c: minimal support for DJGGP, including generation of 8.3 filenames
+	  via internal HAVE_8DOT3_FILENAMES
 	* cobc.c: don't halt immediately on first PATH error during startup,
 	  postponed until command line arguments are processed
 

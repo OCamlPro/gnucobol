@@ -1,4 +1,8 @@
 
+2022-04-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	libcob/common.h [__DJGPP__]: use DOS path specs
+
 2022-01-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* call.c (set_resolve_error): distinguish between exceptions

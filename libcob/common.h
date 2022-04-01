@@ -531,7 +531,7 @@ only usable with COB_USE_VC2013_OR_GREATER */
 #define PATHSEP_CHAR (char) ':'
 #define PATHSEP_STR (char *) ":"
 #endif
-#ifndef	_WIN32 /* note: needs to be \ for MinGW, needed for cobc -j */
+#if !defined(_WIN32) && !defined(__DJGPP__) /* note: needs to be \ for MinGW, needed for cobc -j */
 #define SLASH_CHAR	(char) '/'
 #define SLASH_STR	(char *) "/"
 #else

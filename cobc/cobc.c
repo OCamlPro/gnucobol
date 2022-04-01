@@ -7658,16 +7658,18 @@ process_translate (struct filename *fn)
 			sprintf (lf->local_name, "%s.l%d.h", fn->translate, ret);
 		}
 #else
-		/* for 8.3 filenames use no ".c" prefix and only one period */
-		buffer = cobc_strdup (fn->translate);
-		*(buffer + strlen(buffer) - 2) = 'l';
-		*(buffer + strlen(buffer) - 1) = 0;
-		if (p == current_program && !p->next_program) {
-			sprintf (lf->local_name, "%s.h", buffer);
-		} else {
-			sprintf (lf->local_name, "%s%d.h", buffer, ret);
+		{
+			/* for 8.3 filenames use no ".c" prefix and only one period */
+			char *buffer = cobc_strdup (fn->translate);
+			*(buffer + strlen(buffer) - 2) = 'l';
+			*(buffer + strlen(buffer) - 1) = 0;
+			if (p == current_program && !p->next_program) {
+				sprintf (lf->local_name, "%s.h", buffer);
+			} else {
+				sprintf (lf->local_name, "%s%d.h", buffer, ret);
+			}
+			cobc_free (buffer);
 		}
-		cobc_free (buffer);
 #endif
 		if (cb_unix_lf) {
 			lf->local_fp = fopen (lf->local_name, "wb");
