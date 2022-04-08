@@ -1,7 +1,22 @@
 
+2022-04-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* strings.c (do_mark, is_marked): extracted from inspect_common
+	* strings.c (set_inspect_mark): new function to remember actual min/ma
+	  positions of the marker bytes to remove the need to initialize huge
+	  areas when we commonly have set only markers in the first n bytes
+	  (or nothing), especially for INSPECT LEADING/TRAILING
+	* strings.c (cob_inspect_init, cob_inspect_characters, is_marked): use of
+	  the now definitive check "did we mark anything" instead of checking all
+	  marker bytes by testing for "inspect_mark[inspect_mark_min] != 0"
+	* strings.c (is_marked): check for possible/definitel overlap of
+	  check and marker range before checking all marker bytes in range
+	* strings.c: increase use of direct pointer comparisons instead of
+	  accessing char arrays or its positions for INSPECT
+
 2022-04-01  Simon Sobisch <simonsobisch@gnu.org>
 
-	libcob/common.h [__DJGPP__]: use DOS path specs
+	* common.h [__DJGPP__]: use DOS path specs
 
 2022-01-30  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -492,7 +507,9 @@
 2020-08-31  Simon Sobisch <simonsobisch@gnu.org>
 
 	* strings.c: huge performance improvements for INSPECT by splitting
-	  the internal pseudo-marker into separate marker+replacement
+	  the internal pseudo-marker "inspect mark" into separate char arrays
+	  for marker and replacement: inspect_mark + inspect_repdata
+	* strings.c: replace magic numbers in inspect_common to enum inspect_type
 
 2020-08-24  Simon Sobisch <simonsobisch@gnu.org>
 

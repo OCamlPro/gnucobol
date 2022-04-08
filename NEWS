@@ -95,6 +95,9 @@ NEWS - user visible changes				-*- outline -*-
    this has been fixed so that all modules compiled with GnuCOBOL 2.2 can be
    executed with GnuCOBOL 3.2
 
+** execution times of INSPECT that use big COBOL fields (multiple KB) were
+   heavily cut down
+
 * Listing changes
 
 ** the timestamp in the header was changed from ANSI date format like
