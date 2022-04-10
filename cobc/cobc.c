@@ -340,7 +340,7 @@ int cb_mf_ibm_comp = -1;
 /* Flag to emit Old style: cob_set_location, cob_trace_section */
 int	cb_old_trace = 0;
 
-int cb_warn_opt_val[COB_WARNOPT_MAX];
+int cb_warn_opt_val[COB_WARNOPT_MAX];	/* note: int as we feed that to getopt */
 
 /* Local variables */
 

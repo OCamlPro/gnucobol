@@ -1,4 +1,9 @@
 
+2022-04-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (process_translate): add length note also for value clauses
+	  which may span multiple lines
+
 2022-04-01  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (process_translate) [HAVE_8DOT3_FILENAMES]: fixed

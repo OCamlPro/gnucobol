@@ -4707,7 +4707,7 @@ cb_validate_program_body (struct cb_program *prog)
 	/* Validate entry points */
 
 	/* Check dangling LINKAGE items */
-	if (cb_warn_opt_val[cb_warn_linkage]
+	if (cb_warn_opt_val[cb_warn_linkage] != COBC_WARN_DISABLED
 	 && prog->linkage_storage) {
 		if (prog->returning
 		 &&	cb_ref (prog->returning) != cb_error_node) {
@@ -6280,8 +6280,8 @@ cb_check_alpha_cond (cb_tree x)
 	if (!CB_REF_OR_FIELD_P (x)) {
 		return 0;
 	}
-	if (CB_TREE_CATEGORY (x) != CB_CATEGORY_ALPHANUMERIC &&
-	    CB_TREE_CATEGORY (x) != CB_CATEGORY_ALPHABETIC) {
+	if (CB_TREE_CATEGORY (x) != CB_CATEGORY_ALPHANUMERIC
+	 && CB_TREE_CATEGORY (x) != CB_CATEGORY_ALPHABETIC) {
 		return 0;
 	}
 	if (cb_field_variable_size (CB_FIELD_PTR (x))) {
@@ -6300,8 +6300,9 @@ cb_walk_cond (cb_tree x)
 	struct cb_field		*f;
 	struct cb_literal	*l;
 
-	if (x == NULL)
+	if (x == NULL) {
 		return;
+	}
 
 	switch (CB_TREE_TAG (x)) {
 	case CB_TAG_LITERAL:
@@ -6475,14 +6476,27 @@ cb_build_cond (cb_tree x)
 					ret = CB_BUILD_FUNCALL_2 ("$G", p->x, p->y);
 					break;
 				}
-				if (cb_check_alpha_cond (p->x) &&
-				    cb_check_alpha_cond (p->y)) {
+				if (cb_check_alpha_cond (p->x)
+				 && cb_check_alpha_cond (p->y)) {
 					size1 = cb_field_size (p->x);
 					size2 = cb_field_size (p->y);
 				} else {
 					size1 = 0;
 					size2 = 0;
 				}
+#if 0			/* possibly add check of classes of the two operands, note that there
+				   are a lot of defined comparisions in the standard 8.8.4.1.1 relation
+				   conditions, with explicit comparision of class alphanumeric (where
+				   all edited items go to) and of class numeric; so likely only do this
+				   with a new warning only enabled with -Wextra. */
+				if (cb_warn_opt_val[cb_warn_strict_typing] != COBC_WARN_DISABLED) {
+					if cb_tree_class...
+						cb_warning_x (cb_warn_strict_typing, x, _("alphanumeric value is expected"));
+					} else {
+						cb_warning_x (cb_warn_strict_typing, x, _("numeric value is expected"));
+					}
+				}
+#endif
 				if (size1 == 1 && size2 == 1) {
 					ret = CB_BUILD_FUNCALL_2 ("$G", p->x, p->y);
 				} else if (size1 != 0 && size1 == size2) {
@@ -9557,6 +9571,11 @@ move_warning (cb_tree src, cb_tree dst, const unsigned int value_flag,
 	if (value_flag) {
 		/* VALUE clause --> always warn */
 		cb_warning_x (COBC_WARN_FILLER, loc, "%s", msg);
+		if (CB_LITERAL_P (src) && src_flag > 0) {
+			/* looks like the message above is always "value size exceeds data size"
+			   when src_flag is > 0 but that is not guaranteed, consider refactoring */
+			cb_note_x (COBC_WARN_FILLER, loc, _("value size is %d"), src_flag);
+		}
 	} else {
 		/* MOVE statement */
 		if (cb_warn_opt_val[warning_opt] != COBC_WARN_DISABLED) {
@@ -13317,8 +13336,8 @@ cb_emit_suppress (struct cb_field *f)
 	cb_tree		z;
 	/* MORE TO DO HERE */
 	/* Find cob_report_control and set on suppress flag */
-	if(f == NULL
-	|| f->report == NULL) {
+	if (f == NULL
+	 || f->report == NULL) {
 		cb_error (_("improper use of SUPPRESS PRINTING"));
 		return;
 	}
@@ -13332,8 +13351,8 @@ cb_emit_suppress (struct cb_field *f)
 static int
 error_if_not_alnum_or_national (cb_tree ref, const char *name)
 {
-	if (!(CB_TREE_CATEGORY (ref) == CB_CATEGORY_ALPHANUMERIC
-	      || CB_TREE_CATEGORY (ref) == CB_CATEGORY_NATIONAL)) {
+	if (!  (CB_TREE_CATEGORY (ref) == CB_CATEGORY_ALPHANUMERIC
+	     || CB_TREE_CATEGORY (ref) == CB_CATEGORY_NATIONAL)) {
 		cb_error_x (ref, _("%s must be alphanumeric or national"), name);
 	        return 1;
 	} else {
@@ -13422,7 +13441,7 @@ error_if_not_elementary (cb_tree ref, const char *name)
 {
 	if (CB_FIELD (cb_ref (ref))->children) {
 		cb_error_x (ref, _("%s must be elementary"), name);
-	        return 1;
+		return 1;
 	} else {
 		return 0;
 	}
@@ -13431,8 +13450,8 @@ error_if_not_elementary (cb_tree ref, const char *name)
 static int
 error_if_not_usage_display_or_national (cb_tree ref, const char *name)
 {
-	if (!(CB_FIELD (cb_ref (ref))->usage == CB_USAGE_DISPLAY
-	      || CB_FIELD (cb_ref (ref))->usage == CB_USAGE_NATIONAL)) {
+	if (!  (CB_FIELD (cb_ref (ref))->usage == CB_USAGE_DISPLAY
+	     || CB_FIELD (cb_ref (ref))->usage == CB_USAGE_NATIONAL)) {
 		cb_error_x (ref, _("%s must be USAGE DISPLAY or NATIONAL"), name);
 		return 1;
 	} else {
@@ -13443,10 +13462,10 @@ error_if_not_usage_display_or_national (cb_tree ref, const char *name)
 static int
 error_if_not_integer_ref (cb_tree ref, const char *name)
 {
-        struct cb_field	*field = CB_FIELD (cb_ref (ref));
+	struct cb_field	*field = CB_FIELD (cb_ref (ref));
 
 	if (CB_TREE_CATEGORY (field) == CB_CATEGORY_NUMERIC
-	    && field->pic && field->pic->scale > 0) {
+	 && field->pic && field->pic->scale > 0) {
 		cb_error_x (ref, _("%s must be an integer"), name);
 		return 1;
 	} else {
