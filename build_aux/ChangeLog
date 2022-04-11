@@ -1,4 +1,9 @@
 
+2022-04-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* bootstrap: handle strange paths, better output for out-of-tree-builds
+	* pre-inst-env.in: handle strange paths, set COB_SCHEMA_DIR if not set
+
 2022-01-07  Simon Sobisch <simonsobisch@gnu.org>
 
 	* config.sub, config.guess: updated to recent versions from

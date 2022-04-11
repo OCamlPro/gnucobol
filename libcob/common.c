@@ -56,9 +56,14 @@
 #include <windows.h>
 #undef MOUSE_MOVED
 #include <process.h>
+#include <direct.h>
 #include <io.h>
 #include <fcntl.h>	/* for _O_BINARY only */
+#if !defined(__BORLANDC__) && !defined(__WATCOMC__) && !defined(__ORANGEC__)
+#define	getcwd		_getcwd
 #endif
+#endif
+
 
 #ifdef	HAVE_SIGNAL_H
 #include <signal.h>
@@ -1750,7 +1755,7 @@ cob_check_env_false (char * s)
 				|| strcasecmp (s, "OFF") == 0 || strcasecmp (s, "FALSE") == 0));
 }
 
-static char file_path_name [512] = "";
+static char file_path_name [COB_FILE_BUFF] = "";
 static int	exec_len = 0, build_len = 0, exec_dev = 0, exec_chg = 0;
 static char *exec_cfg_dir = NULL;
 static char	exec64 [8] = "";
@@ -1806,11 +1811,10 @@ static int usr_exc = PERM_UX;
 static int grp_exc = PERM_GX;
 static int oth_exc = PERM_OX;
 
+/* check if executable, returns 0 if it is */
 static int 
-is_executable (struct stat *pStat)
+is_executable_stat (struct stat *pStat)
 {
-	int status = -1;
-
 	if (S_ISDIR(pStat->st_mode)) {
 		return -1;
 	}
@@ -1830,82 +1834,142 @@ is_executable (struct stat *pStat)
 				return 0;
 		}
 	}
-		
-	return status;
+	return -1;
 }
 
 #else
-static int 
-is_executable (struct stat *pStat)	/* Windows or NO unistd.h */
+/* check if executable, returns 0 if it is */
+static COB_INLINE int 
+is_executable_stat (struct stat *pStat)	/* Windows or NO unistd.h */
 {
-	return 0;
+	return 0;	/* assume "yes" */
 }
 #endif
 
-char *							/* Return full path name to progam */
-cob_find_path ( 
-	char *progname, 			/* program to search for */
-	char *path )				/* PATH to search or NULL for env PATH */
+/* check if existing and executable, returns 0 if it is */
+static COB_INLINE int
+is_executable (const char *path)
 {
-	int		status,i,lp,maxfn;
 	struct stat statbuf;
-	char	curdir[350], wrk[512];
-	
-	if(progname == NULL)
-		return NULL;
+	int status = stat (path, &statbuf);
 
-	if (progname[0] == '.'
-	 && progname[1] == SLASH_CHAR) {
-		getcwd (curdir, sizeof(curdir)-1);
-		sprintf (wrk, "%s%s",curdir,&progname[1]);
-		progname = wrk;
-	} else
-	if (progname[0] == '.'
-	 && progname[1] == '.'
-	 && progname[2] == SLASH_CHAR) {
-		getcwd (curdir, sizeof(curdir)-1);
-		sprintf (wrk, "%s%s%s",curdir,SLASH_STR,progname);
-		progname = wrk;
+	if (status != -1) {
+		status = is_executable_stat (&statbuf);
 	}
-	if(progname[0] == SLASH_CHAR) {	/* Complete path already given ? */
-		strcpy(file_path_name,progname);
-		status = stat(file_path_name, &statbuf);
-		if (status != -1)
-			status = is_executable (&statbuf);
-	} else {
-		getcwd (curdir, sizeof(curdir)-1);
-		sprintf (file_path_name, "%s%s%s",curdir,SLASH_STR,progname);
-		status = stat(file_path_name, &statbuf);
-		if (status != -1)
-			status = is_executable (&statbuf);
+	return status;
+}
 
-		if (status != 0) {
-			lp = strlen(progname);
-			maxfn = sizeof(file_path_name) - lp - 4;
-			if(path == NULL) {
-				path = (void *)getenv("PATH");
-			}
-			while (path != NULL
-				&& *path != '\0') {
-				for(i=0; *path != '\0' && *path != PATHSEP_CHAR && i < maxfn; i++,path++)
-					file_path_name[i] = *path;
-				if(*path != '\0')
-					path++;
-				file_path_name[i++] = SLASH_CHAR;
-				file_path_name[i++] = '\0';
-				strcat(file_path_name, progname);
-				status = stat(file_path_name, &statbuf);
-				if (status != -1)
-					status = is_executable (&statbuf);
-				if (*path == '\0' || status == 0)
-					break;
-			}
+static char *
+cob_find_path_internal (const char *progname, size_t prog_len)
+{
+	errno = 0;
+
+	/* Complete path already given ? */
+	if (progname[0] == SLASH_CHAR
+#if defined (_WIN32) || defined (__DJGPP__)
+	 || (progname[0]
+	  && progname[1] == ':'
+	  && progname[2] == SLASH_CHAR)
+#endif
+	) {
+		if (is_executable (progname) == 0) {
+			strcpy (file_path_name, progname);
+			return file_path_name;
+		}
+		errno = ENOENT;
+		return NULL;
+	}
+
+	/* relative invocation - prefix current path */
+	if (progname[0] == '.') {
+		size_t path_len;
+		char *p = getcwd (file_path_name, COB_FILE_MAX - 1 - prog_len);
+		if (p == NULL) return NULL;	/* unlikely overflow */
+		path_len = strlen (p);
+		if (progname[1] == SLASH_CHAR) {
+			progname++;	/* start copying with slash */
+		} else
+		if (progname[1] == '.'
+		 && progname[2] == SLASH_CHAR) {
+			file_path_name[++path_len] = SLASH_CHAR;	/* add slash, start with copying with .. */
+		} else {
+			/* invalid path, we should never get here */
+			errno = EINVAL;
+			return NULL;
+		}
+		memcpy (file_path_name + path_len, progname, prog_len + 1);	/* add including trailing nul */
+		if (is_executable (file_path_name) == 0) {
+			return file_path_name;
+		}
+		errno = ENOENT;
+	}
+
+	return NULL;
+}
+
+/* Return full path name to progam (pointing to a static buffer) or NULL,
+   checks for existing and, if possible, executable file */
+static char *
+cob_find_path ( 
+	const char *progname, 			/* program/library to search for */
+	const char *path)				/* PATH to search or NULL for env PATH */
+{
+	size_t prog_len;
+	char *p;
+	
+	if (progname == NULL) {
+		errno = EFAULT;
+		return NULL;
+	}
+
+	/* check if  relative / full path */
+	prog_len = strlen (progname);
+	p = cob_find_path_internal (progname, prog_len);
+	if (p || errno) {
+		return p;
+	}
+
+#if 1  /* CHECKME: shouldn't this be only done in _WIN32 where PATH is
+          explicit prefixed by "."? We'd find it below _if_ "." is in PATH */
+	/* check for file in current working directory */
+	{
+		size_t path_len;
+		p = getcwd (file_path_name, COB_FILE_MAX - 1 - prog_len);
+		if (p == NULL) return NULL;	/* unlikely overflow */
+		path_len = strlen (p);
+		file_path_name[path_len++] = SLASH_CHAR;
+		memcpy (file_path_name + path_len, progname, prog_len + 1);	/* add including trailing nul */
+		if (is_executable (file_path_name) == 0) {
+			return file_path_name;
 		}
 	}
+#endif
 
-	if (status == 0) {
-		return file_path_name;
-	} 
+	if (path == NULL) {
+		path = getenv ("PATH");
+		if (path == NULL) return NULL;	/* cater for broken PATH */
+	}
+
+	/* check with all entries of given (or computed) path entries prefixed */
+	while ((p = strchr (path, PATHSEP_CHAR))) {
+		if (p == path) {
+			path++;	/* skip consecutive separators */
+		} else {
+			const size_t path_len = p - path;
+			char  str_work [COB_FILE_BUFF];
+			char  *s = str_work + path_len - 1;
+			memcpy (str_work, path, path_len);
+			if (*s != SLASH_CHAR) {
+				s++; *s = SLASH_CHAR;
+			}
+			memcpy (s + 1, progname, prog_len + 1);	/* add including trailing nul */
+			s = cob_find_path_internal (str_work, path_len + 1 + prog_len);
+			if (s) {
+				return s;	/* pointing to file_path_name */
+			}
+			path = p + 1;
+		}
+	}
 	return NULL;
 }
 
@@ -1913,67 +1977,104 @@ cob_find_path (
 void
 cob_setup_env (const char *progname)
 {
-	char	*binpath, *libpath, *p, cobclibs[16], libcob[16], *cbdir;
+	char	*p;
 	build_len = strlen (build_root);
 	if (build_len > 0
 	 && build_root[build_len-1] != SLASH_CHAR) {
-		strcat(build_root, SLASH_STR);
+		strcat (build_root, SLASH_STR);
 		build_len++;
 	}
-	binpath = NULL;
-	if ((cbdir = getenv ("COB_DIR")) != NULL) {
+	if ((p = getenv ("COB_DIR")) != NULL) {
 		exec_dev = 0;
-		exec_len = sprintf (exec_root, "%s", cbdir);
+		exec_len = sprintf (exec_root, "%s", p);
 	} else {
-		libpath = getenv("LD_LIBRARY_PATH");
+		char * binpath;
+#if !defined (_WIN32) && !defined(__CYGWIN__) && !defined(__DJGPP__)
+		char *libpath = getenv("LD_LIBRARY_PATH");
 		if (libpath == NULL)
 			libpath = getenv("LIBPATH");
 		if (libpath) {
-			sprintf(libcob,"libcob.%s",COB_MODULE_EXT);
-			binpath = cob_find_path (libcob, libpath);
+			/* CHECKME: Shouldn't we search for libcob-5? */
+			binpath = cob_find_path ("libcob." COB_MODULE_EXT, libpath);
+			/* CHECKME: can we drop some because of COB_MODULE_EXT? */
 			if (binpath == NULL)	/* Try .so */
-				binpath = cob_find_path ((char *)"libcob.so", libpath);
+				binpath = cob_find_path ("libcob.so", libpath);
 			if (binpath == NULL)	/* Try .sl */
-				binpath = cob_find_path ((char *)"libcob.sl", libpath);
+				binpath = cob_find_path ("libcob.sl", libpath);
 			if (binpath == NULL)	/* AIX just has  .a */
-				binpath = cob_find_path ((char *)"libcob.a", libpath);
-			if (binpath == NULL)	/* Search for argv[0] */
-				binpath = cob_find_path ((char *)progname, NULL);
+				binpath = cob_find_path ("libcob.a", libpath);
+		}
+#else
+		/* note: "PATH" is checked in cob_find_path() for executables in any case */
+		binpath = cob_find_path ("libcob-5.dll", NULL);
+		if (binpath == NULL) {
+			binpath = cob_find_path ("libcob." COB_MODULE_EXT, NULL);
+		}
+#endif
+		if (binpath == NULL) {	/* Search for argv[0] */
+			binpath = cob_find_path (progname, NULL);
 		}
 		if (binpath == NULL) {
 			exec_chg = 0;
 			exec_dev = 0;
 			return;
 		}
+		/* /path/to/lib/libcob-5.so; positioning to /libcob-5.so */
 		p = strrchr (binpath, SLASH_CHAR);
-		sprintf(cobclibs,"%slibcob%s.libs",SLASH_STR,SLASH_STR);
-		if (memcmp (p - 13, cobclibs, 13) == 0) {
+		exec_dev = 0;
+#if 1	/* TODO: remove exec_dev completely; reasoning:
+		   * we have pre-inst-env script for using a non-installed build-tree and
+		     the testsuite setup with tests/atlocal - both use the environment variables 
+		   * the following won't work with an out-of-tree-build in general
+		     as the config + copy directories are not in the place we setup this way */
+		/* test for libtoolized build-tree */
+		if (memcmp (p - 13, SLASH_STR "libcob" SLASH_STR ".libs", 13) == 0) {
 			p = p - 13;
 			*p = 0;
 			exec_dev = 1;
-			exec_len = sprintf (exec_root, "%s", binpath);
 		} else {
-			sprintf(cobclibs,"%sbin%s.libs",SLASH_STR,SLASH_STR);
-			if (memcmp (p - 10, cobclibs, 10) == 0) {
+			if (memcmp (p - 10, SLASH_STR "bin" SLASH_STR ".libs", 10) == 0) {
 				p = p - 10;
 				*p = 0;
 				exec_dev = 1;
 			} else {
-				*p = 0;
-				exec_dev = 0;
-				p = strrchr (binpath, SLASH_CHAR);
-				if (memcmp (p+1, "bin", 3) == 0
-				 || memcmp (p+1, "lib", 3) == 0) {
-					if (memcmp (&p[4], "64", 2) == 0)
-						strcpy (exec64,"64");
+				if (memcmp (p - 11, SLASH_STR "cobc" SLASH_STR ".libs", 11) == 0) {
+					p = p - 11;
 					*p = 0;
+					exec_dev = 1;
+				} else {
+					if (memcmp (p - 7, SLASH_STR "extras", 7) == 0) {
+						p = p - 7;
+						*p = 0;
+						exec_dev = 1;
+					}
 				}
 			}
-			exec_len = sprintf (exec_root, "%s", binpath);
 		}
+#endif
+		if (exec_dev == 0) {
+			*p = 0;	/* binpath: /path/to/lib/libcob-5.so -> /path/to/lib */
+			/* /path/to/lib; positioning to /lib */
+			p = strrchr (binpath, SLASH_CHAR);
+			if (memcmp (p+1, "bin", 3) == 0
+			 || memcmp (p+1, "lib", 3) == 0) {
+				if (memcmp (p+4, "64", 2) == 0)
+					strcpy (exec64,"64");
+				/* more checks, mostly for Win32 distributions */
+				else if (memcmp (p+4, "_x64", 4) == 0)
+					strcpy (exec64,"_x64");
+				else if (memcmp (p + 4, "_x86", 4) == 0)
+					strcpy (exec64, "_x86");
+				else if (memcmp (p + 4, "_arm64", 6) == 0)
+					strcpy (exec64, "_arm64");
+				*p = 0;
+			}
+		}
+		p = binpath;
 	}
 
-	if (exec_root[exec_len-1] != SLASH_CHAR) {
+	exec_len = sprintf (exec_root, "%s", p);
+	if (exec_len > 0 && exec_root[exec_len-1] != SLASH_CHAR) {
 		strcat(exec_root, SLASH_STR);
 		exec_len++;
 	}
@@ -1995,17 +2096,20 @@ cob_getenv_value (const char *ename)
 	if (strcmp (ename, "COB_CONFIG_DIR") == 0) {
 		if (exec_cfg_dir)
 			return exec_cfg_dir;
-		penv = (char *)COB_CONFIG_DIR;
 		if (exec_dev)
 			penv = (char *)"config";
+		else
+			penv = (char *)COB_CONFIG_DIR;
 	} else if (strcmp (ename, "COB_COPY_DIR") == 0) {
-		penv = (char *)COB_COPY_DIR;
 		if (exec_dev)
 			penv = (char *)"copy";
+		else
+			penv = (char *)COB_COPY_DIR;
 	} else if (strcmp (ename, "COB_SCHEMA_DIR") == 0) {
-		penv = (char *)COB_SCHEMA_DIR;
 		if (exec_dev)
 			penv = (char *)"schema";
+		else
+			penv = (char *)COB_SCHEMA_DIR;
 #ifdef LOCALEDIR
 	} else if (strcmp (ename, "LOCALEDIR") == 0) {
 		if (exec_chg && !exec_dev) {
@@ -2026,7 +2130,7 @@ cob_getenv_value (const char *ename)
 	}
 	if (build_len > 0) {
 		if (memcmp (penv,build_root,build_len) == 0) {
-			sprintf (getenv_work, "%s%s",exec_root,&penv[build_len]);
+			sprintf (getenv_work, "%s%s", exec_root, penv + build_len);
 			if (strcmp (ename, "COB_CONFIG_DIR") == 0)
 				return exec_cfg_dir = cob_strdup (getenv_work);
 			return cob_strdup (getenv_work);
@@ -2035,51 +2139,109 @@ cob_getenv_value (const char *ename)
 	}
 	if (*penv == SLASH_CHAR)
 		penv++;
-	sprintf (getenv_work, "%s%s",exec_root,penv);
+	sprintf (getenv_work, "%s%s", exec_root, penv);
 	if (strcmp (ename, "COB_CONFIG_DIR") == 0)
 		return exec_cfg_dir = cob_strdup (getenv_work);
 	return cob_strdup (getenv_work);
 }
 
-/* Scan string inserting -I and -L with relocated directory where used */
+/* FIXME: this does not relocate the path but prefix
+   necessary include / library directories;
+   check for moving it to cobc and renaming the function
+*/
+
+/* Scan string inserting either -I or -L
+   with relocated directory where used;
+   may return the position to a static buffer */
 const char *
 cob_relocate_string (const char *str)
 {
-	static char str_work [512];
-	int		i, j;
-	int		did_I, did_L;
-	if (!exec_chg)
+	static char str_work [COB_FILE_BUFF];
+
+	const size_t len = strlen (str);
+	const char *do_I, *do_L;
+
+#if defined (_MSC_VER)
+	#define IOPT	"/I"
+	#define LOPT	"/LIBPATH:"
+#elif defined (__WATCOMC__)
+	#define IOPT	"-i"
+	#define LOPT	"-L"
+#else
+	#define IOPT	"-I"
+	#define LOPT	"-L"
+#endif
+
+	if (!exec_chg || len < 3)
 		return str;
-	did_I = did_L = 0;
-	for (i = j = 0; i < sizeof (str_work) && str[j] != 0; j++) {
-		if (!did_I
-		 && memcmp (&str[j], " -I", 3) == 0) {
-			did_I = 1;
-			i += sprintf (&str_work[i], " -I%s -I%slibcob -I%sinclude",
-										exec_root,exec_root,exec_root);
-		}
-		if (!did_L
-		 && memcmp (&str[j], " -L", 3) == 0) {
-			did_L = 1;
-			i += sprintf (&str_work[i], " -L%slib%s",exec_root,exec64);
-		}
-		if (j == 0) {
-			if (!did_I
-			 && memcmp (&str[j], "-I", 2) == 0) {
-				did_I = 1;
-				i += sprintf (&str_work[i], "-I%s -I%slibcob -I%sinclude ",
-										exec_root,exec_root,exec_root);
-			}
-			if (!did_L
-			 && memcmp (&str[j], "-L", 2) == 0) {
-				did_L = 1;
-				i += sprintf (&str_work[i], "-L%slib%s ",exec_root,exec64);
-			}
-		}
-		str_work [i++] = str[j];
+
+#ifndef _MSC_VER
+	if (memcmp (str, IOPT, 2) == 0) {
+		do_I = str;
+	} else {
+		do_I = strstr (str, " "IOPT);
 	}
-	str_work[i] = 0;
+	if (memcmp (str, LOPT, 2) == 0) {
+		do_L = str;
+	} else {
+		do_L = strstr (str, " "LOPT);
+	}
+#else
+	if ((str[0] == '/'  || str[0] == '-')
+	 && (str[1] == 'I'  || str[1] == 'i')
+	 && (str[2] == ' ' || str[2] == '"')) {
+		do_I = str;
+	} else {
+		do_I = cob_str_case_str (str, " /I ");
+		do_L = cob_str_case_str (str, " /i ");
+		if (do_L && (!do_I || do_L > do_I)) {
+			do_I = do_L;
+		}
+		do_L = cob_str_case_str (str, " /I\"");
+		if (do_L && (!do_I || do_L > do_I)) {
+			do_I = do_L;
+		}
+		do_L = cob_str_case_str (str, " /i\"");
+		if (do_L && (!do_I || do_L > do_I)) {
+			do_I = do_L;
+		}
+	}
+	do_L = cob_str_case_str(str, LOPT);
+#endif
+	/* nothing to change (or unexpectedly both) -> return original */
+	if ((!do_I && !do_L)
+	 || (do_I && do_L)) {
+		return str;
+	}
+
+	if (do_I) {
+		size_t i = do_I - str;
+		if (i) {
+			memcpy (str_work, str, i);
+		}
+		if (!exec_dev) {
+			/* include dir is enough, as we only target libcob.h here */
+			snprintf (str_work + i, COB_FILE_MAX - i,
+				" "IOPT"\"%sinclude\" %s",
+				exec_root, do_I);
+		} else {
+			/* include dir should be enough here, too */
+			snprintf (str_work + i, COB_FILE_MAX - i,
+				" "IOPT"\"%s\" "IOPT"\"%slibcob\" "IOPT"\"%sinclude\" %s",
+				exec_root, exec_root, exec_root, do_I);
+		}
+	} else {
+		size_t i = do_L - str;
+		if (i) {
+			memcpy (str_work, str, i);
+		}
+		snprintf (str_work + i, COB_FILE_MAX - i,
+		         " "LOPT"\"%slib%s\" %s",
+		         exec_root, exec64, do_L);
+	}
 	return (const char *)str_work;
+#undef IOPT
+#undef LOPT
 }
 
 static void
@@ -7379,7 +7541,7 @@ cb_config_entry (char *buf, int line)
 static int
 cob_load_config_file (const char *config_file, int isoptional)
 {
-	char			buff[COB_FILE_BUFF-10], filename[COB_FILE_BUFF];
+	char			buff[COB_FILE_BUFF - 10], filename[COB_FILE_BUFF];
 	char			*penv;
 	int			sub_ret, ret;
 	unsigned int	i;

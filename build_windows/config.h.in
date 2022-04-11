@@ -843,7 +843,7 @@
 
 
 #ifdef MAKE_DIST
-#define COB_CFLAGS       "-I \"" COB_MAIN_DIR "\\include\""
+#define COB_CFLAGS       "/I\"" COB_MAIN_DIR "\\include\""
 
 #if defined(__ORANGEC__)
 #ifdef _WIN64 /*note: currently no x64 with OrangeC */
@@ -860,7 +860,7 @@
 #endif
 
 #else  // no MAKE_DIST
-#define COB_CFLAGS       "-I \"" COB_MAIN_DIR "\" -I \"" COB_MAIN_DIR "\\build_windows\""
+#define COB_CFLAGS       "/I\"" COB_MAIN_DIR "\" /I\"" COB_MAIN_DIR "\\build_windows\""
 
 #ifdef _WIN64
 #define TARGET_PLATFORM "x64"

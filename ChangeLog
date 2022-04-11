@@ -1,4 +1,11 @@
 
+2022-04-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: LOCALEDIR back in config.h; include directories quoted;
+	  COB_LIBS containing libraries, COB_LDFLAGS library directory;
+	  use of $SED where possible
+	* autogen.sh: handle strange paths, better output for out-of-tree-builds
+
 2022-03-11  Simon Sobisch <simonsobisch@gnu.org>
 
 	* Makefile.am: targets to create binary distributions

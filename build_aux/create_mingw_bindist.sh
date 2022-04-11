@@ -1,5 +1,5 @@
 #!/bin/bash
-# create_mingw_bindist.sh gnucobol
+# build_aux/create_mingw_bindist.sh gnucobol
 #
 # Copyright (C) 2016-2021 Free Software Foundation, Inc.
 # Written by Simon Sobisch

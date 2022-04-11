@@ -1,4 +1,12 @@
 
+2022-04-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am (AM_CPPFLAGS): removed LOCALEDIR, now back in config.h
+	* common.c: [_WIN32]: necessary inclusion + define for relocation code
+	* common.c (cob_relocate_string, cob_find_path, cob_setup_env): handle
+	  different compilers, win32 paths and binaries
+	* common.c: handle memory issues with long paths
+
 2022-03-30  Ron Norman <rjn@inglenet.com>
 
 	* common.c (relocate_strings) : add 'libcob' directory for -I

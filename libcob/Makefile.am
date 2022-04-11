@@ -1,7 +1,7 @@
 #
 # Makefile gnucobol/libcob
 #
-# Copyright (C) 2003-2012, 2014, 2017-2021 Free Software Foundation, Inc.
+# Copyright (C) 2003-2012, 2014, 2017-2022 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -19,11 +19,6 @@
 # You should have received a copy of the GNU General Public License
 # along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 
-lib_LTLIBRARIES = libcob.la
-libcob_la_SOURCES = common.c move.c numeric.c strings.c \
-	fileio.c call.c intrinsic.c termio.c screenio.c reportio.c cobgetopt.c \
-	mlio.c
-
 if LOCAL_CJSON
 nodist_libcob_la_SOURCES = cJSON.c
 DISTCLEANFILES = cJSON.c cJSON.h
@@ -34,7 +29,7 @@ endif
 #COBCRUN = cobcrun$(EXEEXT)
 
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_builddir)/lib -I$(top_srcdir)/lib \
-	$(LIBCOB_CPPFLAGS) -DLOCALEDIR=\"$(localedir)\"
+	$(LIBCOB_CPPFLAGS)
 AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
 AM_LDFLAGS = $(COB_FIX_LIB) $(COB_FIX_LIBTOOL) -no-undefined
 

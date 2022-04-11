@@ -2377,16 +2377,45 @@ cobc_var_print (const char *msg, const char *val, const unsigned int env)
 }
 
 static void
-cobc_var_and_envvar_print (const char* name, const char* defined_val)
+cobc_var_and_envvar_print (const char *name, const char *defined_val)
 {
-	char* s = getenv (name);
+	char *s = getenv (name);
 
 	cobc_var_print (name, defined_val, 0);
 
 	if (s && *s) {
 		cobc_var_print (name, s, 1);
 	}
+}
 
+static void
+cobc_relocating_var_and_envvar_print (const char *name, const char *defined_val)
+{
+	/* note: this should not be necessary; but the "defined value" below must always
+	   be the defined one, not a translated one */
+	char *s = getenv (name);
+
+	if (s && *s) {
+		cobc_var_print (name, defined_val, 0);
+		cobc_var_print (name, s, 1);
+	} else {
+		cobc_var_print (name, cob_relocate_string (defined_val), 0);
+	}
+}
+
+static void
+cobc_relocating_envvar_and_envvar_print (const char *name, const char *defined_val)
+{
+	/* note: this should not be necessary; but the "defined value" below must always
+	   be the defined one, not a translated one */
+	char *s = getenv (name);
+
+	if (s && *s) {
+		cobc_var_print (name, defined_val, 0);
+		cobc_var_print (name, s, 1);
+	} else {
+		cobc_var_print (name, cob_getenv_value (name), 0);
+	}
 }
 
 /* provides info about how cobc was built/configured, some details about
@@ -2414,7 +2443,7 @@ cobc_print_info (void)
 	putchar ('\n');
 	puts (_("GnuCOBOL information"));
 	cobc_var_and_envvar_print ("COB_CC",		COB_CC);
-	cobc_var_and_envvar_print ("COB_CFLAGS",	cob_relocate_string (COB_CFLAGS));
+	cobc_relocating_var_and_envvar_print ("COB_CFLAGS",	COB_CFLAGS);
 #ifndef	_MSC_VER
 	if (verbose_output) {
 #ifdef COB_STRIP_CMD
@@ -2426,11 +2455,11 @@ cobc_print_info (void)
 	}
 	cobc_var_and_envvar_print ("COB_DEBUG_FLAGS", COB_DEBUG_FLAGS);
 #endif
-	cobc_var_and_envvar_print ("COB_LDFLAGS",	cob_relocate_string (COB_LDFLAGS));
-	cobc_var_and_envvar_print ("COB_LIBS",		cob_relocate_string (COB_LIBS));
-	cobc_var_and_envvar_print ("COB_CONFIG_DIR",cob_getenv_value ("COB_CONFIG_DIR"));
-	cobc_var_and_envvar_print ("COB_SCHEMA_DIR",cob_getenv_value ("COB_SCHEMA_DIR"));
-	cobc_var_and_envvar_print ("COB_COPY_DIR",	cob_getenv_value ("COB_COPY_DIR"));
+	cobc_relocating_var_and_envvar_print ("COB_LDFLAGS",	COB_LDFLAGS);
+	cobc_relocating_var_and_envvar_print ("COB_LIBS",		COB_LIBS);
+	cobc_relocating_envvar_and_envvar_print ("COB_CONFIG_DIR", COB_CONFIG_DIR);
+	cobc_relocating_envvar_and_envvar_print ("COB_SCHEMA_DIR", COB_SCHEMA_DIR);
+	cobc_relocating_envvar_and_envvar_print ("COB_COPY_DIR", COB_COPY_DIR);
 	if ((s = getenv ("COBCPY")) != NULL && *s) {
 		cobc_var_print ("COBCPY",	s, 1);
 	}
@@ -2837,10 +2866,12 @@ process_command_line (const int argc, char **argv)
 		cb_mf_files = 0;
 #endif
 
-	cob_config_dir = (const char *) cob_getenv_value ("COB_CONFIG_DIR");
+	cob_config_dir = cob_getenv_value ("COB_CONFIG_DIR");
+#if 0 /* currently this never happens - but we may adjust this later */
 	if (cob_config_dir == NULL) {
 		cob_config_dir = COB_CONFIG_DIR;
 	}
+#endif
 
 #if defined (_WIN32) || defined (__DJGPP__)
 	if (!getenv ("POSIXLY_CORRECT")) {
@@ -2849,7 +2880,7 @@ process_command_line (const int argc, char **argv)
 		while (++argnum < argc) {
 			if (strrchr(argv[argnum], '/') == argv[argnum]) {
 				if (argv[argnum][1] == '?' && !argv[argnum][2]) {
-					argv[argnum] = "--help";
+					argv[argnum] = (char *)"--help";
 					continue;
 				}
 				argv[argnum][0] = '-';
@@ -3421,7 +3452,7 @@ process_command_line (const int argc, char **argv)
 			}
 #ifdef	_MSC_VER
 			remove_trailing_slash (cob_optarg);
-			COBC_ADD_STR (cobc_include, " /I \"", cob_optarg, "\"");
+			COBC_ADD_STR (cobc_include, " /I\"", cob_optarg, "\"");
 #elif	defined (__WATCOMC__)
 			COBC_ADD_STR (cobc_include, " -i\"", cob_optarg, "\"");
 #else
@@ -8308,7 +8339,7 @@ set_const_cobc_build_stamp (void)
 	cb_cobc_build_stamp = (const char *)cobc_main_strdup (cobc_buffer);
 }
 
-/* Set up compiler defaults from environment/builtin */
+/* Set up compiler defaults from environment/relocation/builtin */
 static void
 set_cobc_defaults (void)
 {
@@ -8321,11 +8352,17 @@ set_cobc_defaults (void)
 
 	cob_config_dir = (const char *) cobc_getenv_path ("COB_CONFIG_DIR");
 	if (cob_config_dir == NULL) {
-		cob_config_dir = cob_getenv_value ("COB_CONFIG_DIR");
+		p = cob_getenv_value ("COB_CONFIG_DIR");
+		if (p) {
+			cob_schema_dir = cobc_main_strdup (p);
+		}
 	}
 	cob_schema_dir = (const char *) cobc_getenv_path ("COB_SCHEMA_DIR");
 	if (cob_schema_dir == NULL) {
-		cob_schema_dir = cob_getenv_value ("COB_SCHEMA_DIR");
+		p = cob_getenv_value ("COB_SCHEMA_DIR");
+		if (p) {
+			cob_schema_dir = cobc_main_strdup (p);
+		}
 	}
 
 	p = cobc_getenv ("COB_CFLAGS");
@@ -8576,11 +8613,11 @@ finish_setup_internal_env (void)
 	CB_TEXT_LIST_ADD (cb_extension_list, "");
 
 	/* Process COB_COPY_DIR and COBCPY environment variables */
-	process_env_copy_path (cob_getenv_value ("COB_COPY_DIR"));
+	process_env_copy_path (getenv ("COB_COPY_DIR"));
 	process_env_copy_path (getenv ("COBCPY"));
 
 	/* Add default COB_COPY_DIR directory */
-	CB_TEXT_LIST_CHK (cb_include_list, COB_COPY_DIR);
+	CB_TEXT_LIST_CHK (cb_include_list, cob_getenv_value ("COB_COPY_DIR"));
 }
 
 static int
@@ -8721,7 +8758,7 @@ main (int argc, char **argv)
 	const char		*run_name = NULL;
 
 	/* Setup routines I */
-	cob_setup_env ((const char*) argv[0]);
+	cob_setup_env (argv[0]); /* setup for possible relocation */
 	begin_setup_internal_and_compiler_env ();
 
 	cb_saveargc = argc;

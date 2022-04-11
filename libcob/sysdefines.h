@@ -228,18 +228,18 @@
 #if	defined(_MSC_VER) || defined(__ORANGEC__) || defined(__WATCOMC__) || \
     defined(__BORLANDC__) || defined(__MINGW32__) || defined (__DJGPP__)
 #define PATHSEP_CHAR (char) ';'
-#define PATHSEP_STR (char *) ";"
+#define PATHSEP_STR ";"
 #else
 #define PATHSEP_CHAR (char) ':'
-#define PATHSEP_STR (char *) ":"
+#define PATHSEP_STR ":"
 #endif
 
 #ifndef	_WIN32 /* note: needs to be \ for MinGW, needed for cobc -j */
 #define SLASH_CHAR	(char) '/'
-#define SLASH_STR	(char *) "/"
+#define SLASH_STR	"/"
 #else
 #define SLASH_CHAR	(char) '\\'
-#define SLASH_STR	(char *) "\\"
+#define SLASH_STR	"\\"
 #endif
 
 #ifdef __DJGPP__

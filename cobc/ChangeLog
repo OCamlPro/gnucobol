@@ -1,9 +1,15 @@
 
+2022-04-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c: adjustments to handle relocation, especially related to
+	  reasonable output in cobc --info
+
 2022-03-28  Ron Norman <rjn@inglenet.com>
+
 	* cobc.c : Added calls to cobc_getenv_path which will check for
-				env var and if not present do relocation for runtime
-				Added calls to cob_relocate_string to insert -I and -L
-				for compiler installed in different location
+	  env var and if not present do relocation for runtime
+	  Added calls to cob_relocate_string to insert -I and -L for compiler
+	  installed in different location
 
 2022-03-10  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -384,11 +390,11 @@
 
 2021-07-06  Ron Norman <rjn@inglenet.com>
 
-	* tree.h: Add cb_field  flag_binary_assign  indicates simple assign 
+	* tree.h (cb_field): add flag_binary_assign indicating simple assign 
 	* field.c: If field is effectively a machine 'int' set flag_binary_assign
-	* codegen.c: Only use cob_set_llcon is not flag_binary_assign
+	* codegen.c: Only use cob_set_llcon if not flag_binary_assign
 	* typeck.c: If assigning a value to an 'int' field and value fits
-	          then try to emit simple assignment statement
+	  then try to emit simple assignment statement
 
 2021-06-28  Ron Norman <rjn@inglenet.com>
 

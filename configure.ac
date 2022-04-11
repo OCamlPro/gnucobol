@@ -2,7 +2,7 @@ dnl
 dnl Configure template for GnuCOBOL
 dnl Process this file with autoconf to produce a configure script.
 dnl
-dnl Copyright (C) 2001-2012, 2014-2021 Free Software Foundation, Inc.
+dnl Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
 dnl Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
 dnl Edward Hart
 dnl
@@ -32,7 +32,7 @@ AC_INIT([GnuCOBOL],
 AC_REVISION([GnuCOBOL snapshot $Revision: 4437 $])
 AC_COPYRIGHT([This file is part of GnuCOBOL.
 
-Copyright (C) 2001-2012, 2014-2021 Free Software Foundation, Inc.
+Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
 Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
 Edward Hart
 ])
@@ -579,7 +579,7 @@ dnl 		])
 dnl 		if test "x$curr_libs" = "x"; then
 dnl 			MATH_LIBS=$LIBS
 dnl 		else
-dnl 			MATH_LIBS=$(echo "$LIBS" | sed 's#'"$curr_libs"'##')
+dnl 			MATH_LIBS=$(echo "$LIBS" | $SED 's#'"$curr_libs"'##')
 dnl 		fi
 dnl 		LIBS=$curr_libs
 dnl 	fi
@@ -597,20 +597,14 @@ else
 	LIBCOB_LIBS="$COMMON_LIBS"
 fi
 
-COB_LIBS="-L$libdir -lcob"
+COB_LIBS="-lcob"
 if test "x$COMMON_LIBS" != "x"; then
-	if test "x$COB_LIBS" != "x"; then
-		COB_LIBS="$COB_LIBS $COMMON_LIBS"
-	else
-		COB_LIBS="$COMMON_LIBS"
-	fi
+	COB_LIBS="$COB_LIBS $COMMON_LIBS"
 fi
+
+COB_LDFLAGS="-L\"$libdir\""
 if test "x$LDFLAGS" != "x"; then
-	if test "x$COB_LDFLAGS" != "x"; then
-		COB_LDFLAGS="$COB_LDFLAGS $LDFLAGS"
-	else
-		COB_LDFLAGS="$LDFLAGS"
-	fi
+	COB_LDFLAGS="$COB_LDFLAGS $LDFLAGS"
 fi
 
 dnl Add --enable-code-coverage and test for code-coverage tools if enabled
@@ -1674,7 +1668,7 @@ AC_ARG_WITH([oci],
 	if test -n "$OCI_CFLAGS"; then
 		CPPFLAGS="$CPPFLAGS $OCI_CFLAGS"
 	elif test -n "$ORACLE_HOME"; then
-		CPPFLAGS="$CPPFLAGS -I${ORACLE_HOME}/rdbms/public"
+		CPPFLAGS="$CPPFLAGS -I\"${ORACLE_HOME}/rdbms/public\""
 	fi
 	AC_CHECK_HEADERS([oci.h], [],
 		AC_MSG_ERROR([oci.h is required for Oracle OCI]))
@@ -1682,14 +1676,14 @@ AC_ARG_WITH([oci],
 	if test -n "$OCI_LIBS"; then
 		LIBS="$LIBS $OCI_LIBS"
 	elif test -n "$ORACLE_HOME"; then
-		OCI_LIBS="-L${ORACLE_HOME}/lib"
+		OCI_LIBS="-L\"${ORACLE_HOME}/lib\""
 		LIBS="$LIBS $OCI_LIBS"
 	fi
 	AC_CHECK_LIB([clntsh], [OCIEnvCreate],
 		[AC_DEFINE([WITH_OCI], [1])],
 		AC_MSG_ERROR([libclnt is required for Oracle OCI]), [])
 	cob_gen_oci=yes 
-	OCI_LIBS="-L${ORACLE_HOME}/lib -lclntsh"
+	OCI_LIBS="-L\"${ORACLE_HOME}/lib\" -lclntsh"
 	CPPFLAGS="$curr_cppflags"
 	LIBS="$curr_libs"
   fi ],
@@ -1747,7 +1741,7 @@ if test "$with_db" = "yes" -o "$with_db" = "check"; then
 		AC_MSG_CHECKING([for Berkeley DB library with version $COB_BDB_HEADER])
 		# prefer library with version number included as some systems link against wrong version
 		# of the library and to not break when a newer BDB version is installed, see bug #100
-		COB_BDB_HEADER_CLEAN=$(echo "$COB_BDB_HEADER" | sed -e 's/\.//' -e 's/\-//')
+		COB_BDB_HEADER_CLEAN=$(echo "$COB_BDB_HEADER" | $SED -e 's/\.//' -e 's/\-//')
 		for cobdb in db-$COB_BDB_HEADER db-$COB_BDB_HEADER_CLEAN db \
 			libdb$COB_BDB_HEADER libdb$COB_BDB_HEADER_CLEAN  # for common Win32 versions...
 		do
@@ -2023,20 +2017,20 @@ else
 		COB_MODULE_EXT="dll"
 	else
 		# normal case...
-		COB_MODULE_EXT=$(echo "$acl_cv_shlibext" | sed -e 's/dll\.a/dll/')
+		COB_MODULE_EXT=$(echo "$acl_cv_shlibext" | $SED -e 's/dll\.a/dll/')
 	fi
 fi
 COB_OBJECT_EXT="$OBJEXT"
 LIBS="$curr_libs"
 COB_EXPORT_DYN="$(eval echo $export_dynamic_flag_spec)"
 # FIXME: lt_prog_compiler_pic is not always correct, for example with occ
-COB_PIC_FLAGS=$(echo "$lt_prog_compiler_pic" | sed -e 's/^ //')
+COB_PIC_FLAGS=$(echo "$lt_prog_compiler_pic" | $SED -e 's/^ //')
 
 if test "$enable_cflags_setting" = "yes"; then
 	if test "$enable_hardening" != "yes"; then
 		# Remove -O2 option added by AC_PROG_CC and add -O0
 		if test "$enable_debug" = "yes" -o "$enable_code_coverage" = "yes"; then
-			CFLAGS=$(echo "$CFLAGS" | sed -e 's/ *-O@<:@0-9a-zA-Z@:>@* */ /g' -e 's/ $//' -e 's/^ //')
+			CFLAGS=$(echo "$CFLAGS" | $SED -e 's/ *-O@<:@0-9a-zA-Z@:>@* */ /g' -e 's/ $//' -e 's/^ //')
 			if test "$COB_USES_GCC" = "yes"; then
 				CFLAGS="$CFLAGS -O0"
 			fi
@@ -2136,24 +2130,24 @@ if test "$COB_USES_GCC" = "yes"; then
 fi
 
 # include directory (install dir)
-
 if test "x$prefix" = "xNONE"; then
-  if test "x$includedir" = "x\${prefix}/include"; then
-    COB_CFLAGS="-I${ac_default_prefix}/include"
+  if test "x$includedir" = "x${prefix}/include"; then
+    includedir_resolved="${ac_default_prefix}/include"
   else
-    COB_CFLAGS="-I${includedir}"
+    includedir_resolved="${includedir}"
   fi
 else
-  if test "x$includedir" = "x\${prefix}/include"; then
+  if test "x$includedir" = "x${prefix}/include"; then
     if test "x$prefix" = "x/usr"; then
-      COB_CFLAGS=""
+      includedir_resolved=""
     else
-      COB_CFLAGS="-I${prefix}/include"
+      includedir_resolved="${prefix}/include"
     fi
   else
-    COB_CFLAGS="-I${includedir}"
+    includedir_resolved="${includedir}"
   fi
 fi
+COB_CFLAGS="-I\"${includedir_resolved}\""
 
 
 # compiler specific general options for COB_CFLAGS, originating from cobc.c (main)
@@ -2207,26 +2201,26 @@ cob_temp_flags="$CFLAGS $CPPFLAGS"
 
 if test "$enable_hardening" = no; then
 	cob_temp_flags=$(echo x$cob_temp_flags |		\
-	 sed -e 's/^x//'				\
- 	     -e 's/-Wp,-D_FORTIFY_SOURCE=.//g'		\
- 	     -e 's/-D_FORTIFY_SOURCE=.//g'		\
- 	     -e 's/-fmessage-length=0//g'		\
- 	     -e 's/-fstack-protector-strong//g'		\
- 	     -e 's/-fstack-protector-all//g'		\
- 	     -e 's/-fstack-protector//g'		\
+	$SED -e 's/^x//'				\
+	     -e 's/-Wp,-D_FORTIFY_SOURCE=.//g'		\
+	     -e 's/-D_FORTIFY_SOURCE=.//g'		\
+	     -e 's/-fmessage-length=0//g'		\
+	     -e 's/-fstack-protector-strong//g'		\
+	     -e 's/-fstack-protector-all//g'		\
+	     -e 's/-fstack-protector//g'		\
 	     )
 fi
 
 cob_temp_flags=$(echo x$cob_temp_flags |		\
-	 sed -e 's/^x//'				\
+	$SED -e 's/^x//'				\
 	     -e 's/-g\(db\)\{0,1\}[[0-9 ]]//g'				\
 	     -e 's/-g\(db\)\{0,1\}$//'				\
 	     -e 's/[[+-]]O[[0-9s]]*//g'			\
- 	     -e 's/-O//g'				\
- 	     -e 's/-funwind-tables//g'			\
- 	     -e 's/-fasynchronous-unwind-tables//g'	\
- 	     -e 's/  / /g'	\
- 	     -e 's/ $//g'	\
+	     -e 's/-O//g'				\
+	     -e 's/-funwind-tables//g'			\
+	     -e 's/-fasynchronous-unwind-tables//g'	\
+	     -e 's/  / /g'	\
+	     -e 's/ $//g'	\
 	     )
 
 if test "x$cob_temp_flags" != "x"; then
@@ -2254,19 +2248,7 @@ COB_SHARED_OPT="-shared"
 COB_FIX_LIB="$COB_EXPORT_DYN"
 COB_FIX_LIBTOOL=""
 case $host_os in
-  mingw*)
-	if test "$prefix" = "NONE"; then
-		COB_CONFIG_DIR="$(cd /usr && pwd -W)/local/share/$PACKAGE_TARNAME/config"
-		COB_COPY_DIR="$(cd /usr && pwd -W)/local/share/$PACKAGE_TARNAME/copy"
-		COB_SCHEMA_DIR="$(cd /usr && pwd -W)/local/share/$PACKAGE_TARNAME/schema"
-	fi
-	if test "$COB_USES_GCC" = "yes"; then
-		COB_EXPORT_DYN="-Wl,--export-all-symbols -Wl,--enable-auto-import -Wl,--enable-auto-image-base"
-		COB_FIX_LIBTOOL="-Wl,--enable-auto-import"
-	fi
-	#COB_FIX_LIB=""
-	;;
-  cygwin*)
+  mingw* | cygwin*)
 	if test "$COB_USES_GCC" = "yes"; then
 		COB_EXPORT_DYN="-Wl,--export-all-symbols -Wl,--enable-auto-import -Wl,--enable-auto-image-base"
 		COB_FIX_LIBTOOL="-Wl,--enable-auto-import"
@@ -2508,7 +2490,7 @@ AX_AC_DEFINE_RESOLVED([COB_COPY_DIR],	[$COB_COPY_DIR],	[default search path for 
 AX_AC_DEFINE_RESOLVED([COB_SCHEMA_DIR],	[$COB_SCHEMA_DIR],	[default search path for indexed schema definitions])
 
 dnl unused: AX_AC_DEFINE_RESOLVED([DATADIR],		[$datarootdir], 	[path for configuration files])
-dnl unused: AX_AC_DEFINE_RESOLVED([LOCALEDIR],		[$localedir], 		[path for locale-dependent data])
+AX_AC_DEFINE_RESOLVED([LOCALEDIR],		[$localedir], 		[path for locale-dependent data])
 
 dnl unused: AC_DEFINE_UNQUOTED([COBC_NAME],	["$(echo cobc    | $SED "$program_transform_name")"], [executable name for compiler])
 AC_DEFINE_UNQUOTED([COBCRUN_NAME],	["$(echo cobcrun | $SED "$program_transform_name")"], [executable name for module runner])
