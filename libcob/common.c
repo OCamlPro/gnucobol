@@ -1838,7 +1838,7 @@ is_executable (struct stat *pStat)
 static int 
 is_executable (struct stat *pStat)	/* Windows or NO unistd.h */
 {
-	return 1;
+	return 0;
 }
 #endif
 
