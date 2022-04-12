@@ -1,4 +1,8 @@
 
+2022-04-12  Ron Norman <rjn@inglenet.com>
+
+	* cobc.c : Minor code reformat
+
 2022-04-05  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c: adjustments to handle relocation, especially related to

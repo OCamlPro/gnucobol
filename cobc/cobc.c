@@ -2464,7 +2464,7 @@ cobc_print_info (void)
 		cobc_var_print ("COBCPY",	s, 1);
 	}
 	{
-		const char* val;
+		const char *val;
 #if defined (_MSC_VER)
 		val = "MSC";
 #else
@@ -3996,7 +3996,7 @@ process_env_copy_path (const char *p)
 	/* Tokenize for path sep. */
 	token = strtok (value, PATHSEP_STR);
 	while (token) {
-		const char* path = token;
+		const char *path = token;
 		/* special case (MF-compat): empty evaluates to "." */
 		if (*path == 0) {
 			path = ".";
@@ -4234,10 +4234,10 @@ process_filename (const char *filename)
  * search_patterns must have a final '|'
  */
 static int
-line_contains (char* line_start, char* line_end, char* search_patterns)
+line_contains (char *line_start, char *line_end, char *search_patterns)
 {
 	int pattern_end, pattern_start, pattern_length, full_length;
-	char* line_pos;
+	char *line_pos;
 
 	if (search_patterns == NULL) return 0;
 
@@ -4375,7 +4375,7 @@ process_run (const char *name)
 	if (cb_compile_level == CB_LEVEL_MODULE
 	 || cb_compile_level == CB_LEVEL_LIBRARY) {
 		const char *cobcrun_path = getenv ("COBCRUN");
-		char* cobcrun_path_malloced = NULL;
+		char *cobcrun_path_malloced = NULL;
 
 		if (!cobcrun_path || !cobcrun_path[0]) {
 			char *cobc_path = getenv ("COBC");
@@ -4710,11 +4710,11 @@ process (const char *cmd)
 static int
 process_filtered (const char *cmd, struct filename *fn)
 {
-	FILE* pipe;
-	char* read_buffer;
+	FILE *pipe;
+	char *read_buffer;
 	char *line_start, *line_end;
-	char* search_pattern, *search_pattern2 = NULL;
-	char* output_name_temp;
+	char *search_pattern, *search_pattern2 = NULL;
+	char *output_name_temp;
 	int i;
 	int ret;
 

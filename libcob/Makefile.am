@@ -40,7 +40,7 @@ libcob_la_SOURCES = common.c move.c numeric.c strings.c \
 
 # note: currently misses libsupport...
 libcob_la_LIBADD = $(LIBCOB_LIBS) $(CODE_COVERAGE_LIBS)
-libcob_la_LDFLAGS = $(AM_LDFLAGS) -version-info 5:0:0
+libcob_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBCOB_VER):0:0
 
 INDEXED_LD_FLAGS = -version-info 1:0:0
 

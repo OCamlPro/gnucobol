@@ -612,7 +612,7 @@ static struct signal_table {
 #define NUM_SIGNALS (int)((sizeof (signals) / sizeof (struct signal_table)) - 1)
 
 /* Local functions */
-static int		translate_boolean_to_int	(const char* ptr);
+static int		translate_boolean_to_int	(const char *ptr);
 static cob_s64_t	get_sleep_nanoseconds	(cob_field *nano_seconds);
 static cob_s64_t	get_sleep_nanoseconds_from_seconds	(cob_field *decimal_seconds);
 static void		internal_nanosleep	(cob_s64_t nsecs, int round_to_minmal);
@@ -1756,7 +1756,7 @@ cob_check_env_false (char * s)
 }
 
 static char file_path_name [COB_FILE_BUFF] = "";
-static int	exec_len = 0, build_len = 0, exec_dev = 0, exec_chg = 0;
+static int	exec_len = 0, build_len = 0, exec_chg = 0;
 static char *exec_cfg_dir = NULL;
 static char	exec64 [8] = "";
 static char	exec_root [128] = COB_BLD_PREFIX;
@@ -1985,28 +1985,30 @@ cob_setup_env (const char *progname)
 		build_len++;
 	}
 	if ((p = getenv ("COB_DIR")) != NULL) {
-		exec_dev = 0;
 		exec_len = sprintf (exec_root, "%s", p);
 	} else {
-		char * binpath;
+		char *binpath = NULL;
+		char	libcobnm[32];
 #if !defined (_WIN32) && !defined(__CYGWIN__) && !defined(__DJGPP__)
 		char *libpath = getenv("LD_LIBRARY_PATH");
 		if (libpath == NULL)
 			libpath = getenv("LIBPATH");
 		if (libpath) {
-			/* CHECKME: Shouldn't we search for libcob-5? */
-			binpath = cob_find_path ("libcob." COB_MODULE_EXT, libpath);
-			/* CHECKME: can we drop some because of COB_MODULE_EXT? */
-			if (binpath == NULL)	/* Try .so */
+			sprintf(libcobnm,"libcob." COB_MODULE_EXT ".%d",COB_LIBCOB_VER);
+			binpath = cob_find_path (libcobnm, libpath);
+			if (binpath == NULL) {	/* Try without the version */
+				binpath = cob_find_path ("libcob." COB_MODULE_EXT, libpath);
+			}
+			if (binpath == NULL)	/* Try .so (some systems have .so and/or .sl) */
 				binpath = cob_find_path ("libcob.so", libpath);
 			if (binpath == NULL)	/* Try .sl */
 				binpath = cob_find_path ("libcob.sl", libpath);
-			if (binpath == NULL)	/* AIX just has  .a */
+			if (binpath == NULL)	/* AIX may just have .a which could contain the .so */
 				binpath = cob_find_path ("libcob.a", libpath);
 		}
 #else
-		/* note: "PATH" is checked in cob_find_path() for executables in any case */
-		binpath = cob_find_path ("libcob-5.dll", NULL);
+		sprintf(libcobnm,"libcob-%d.dll",COB_LIBCOB_VER);
+		binpath = cob_find_path (libcobnm, NULL);
 		if (binpath == NULL) {
 			binpath = cob_find_path ("libcob." COB_MODULE_EXT, NULL);
 		}
@@ -2016,45 +2018,12 @@ cob_setup_env (const char *progname)
 		}
 		if (binpath == NULL) {
 			exec_chg = 0;
-			exec_dev = 0;
 			return;
 		}
 		/* /path/to/lib/libcob-5.so; positioning to /libcob-5.so */
 		p = strrchr (binpath, SLASH_CHAR);
-		exec_dev = 0;
-#if 1	/* TODO: remove exec_dev completely; reasoning:
-		   * we have pre-inst-env script for using a non-installed build-tree and
-		     the testsuite setup with tests/atlocal - both use the environment variables 
-		   * the following won't work with an out-of-tree-build in general
-		     as the config + copy directories are not in the place we setup this way */
-		/* test for libtoolized build-tree */
-		if (memcmp (p - 13, SLASH_STR "libcob" SLASH_STR ".libs", 13) == 0) {
-			p = p - 13;
+		if (p) {
 			*p = 0;
-			exec_dev = 1;
-		} else {
-			if (memcmp (p - 10, SLASH_STR "bin" SLASH_STR ".libs", 10) == 0) {
-				p = p - 10;
-				*p = 0;
-				exec_dev = 1;
-			} else {
-				if (memcmp (p - 11, SLASH_STR "cobc" SLASH_STR ".libs", 11) == 0) {
-					p = p - 11;
-					*p = 0;
-					exec_dev = 1;
-				} else {
-					if (memcmp (p - 7, SLASH_STR "extras", 7) == 0) {
-						p = p - 7;
-						*p = 0;
-						exec_dev = 1;
-					}
-				}
-			}
-		}
-#endif
-		if (exec_dev == 0) {
-			*p = 0;	/* binpath: /path/to/lib/libcob-5.so -> /path/to/lib */
-			/* /path/to/lib; positioning to /lib */
 			p = strrchr (binpath, SLASH_CHAR);
 			if (memcmp (p+1, "bin", 3) == 0
 			 || memcmp (p+1, "lib", 3) == 0) {
@@ -2096,23 +2065,14 @@ cob_getenv_value (const char *ename)
 	if (strcmp (ename, "COB_CONFIG_DIR") == 0) {
 		if (exec_cfg_dir)
 			return exec_cfg_dir;
-		if (exec_dev)
-			penv = (char *)"config";
-		else
-			penv = (char *)COB_CONFIG_DIR;
+		penv = (char *)COB_CONFIG_DIR;
 	} else if (strcmp (ename, "COB_COPY_DIR") == 0) {
-		if (exec_dev)
-			penv = (char *)"copy";
-		else
-			penv = (char *)COB_COPY_DIR;
+		penv = (char *)COB_COPY_DIR;
 	} else if (strcmp (ename, "COB_SCHEMA_DIR") == 0) {
-		if (exec_dev)
-			penv = (char *)"schema";
-		else
-			penv = (char *)COB_SCHEMA_DIR;
+		penv = (char *)COB_SCHEMA_DIR;
 #ifdef LOCALEDIR
 	} else if (strcmp (ename, "LOCALEDIR") == 0) {
-		if (exec_chg && !exec_dev) {
+		if (exec_chg) {
 			sprintf (getenv_work, "%sshare/locale",exec_root);
 			return getenv_work;
 		}
@@ -2122,12 +2082,6 @@ cob_getenv_value (const char *ename)
 	if (!exec_chg
 	 || penv == NULL)
 		return penv;
-	if (exec_dev) {
-		sprintf (getenv_work, "%s%s",exec_root,penv);
-		if (strcmp (ename, "COB_CONFIG_DIR") == 0)
-			return exec_cfg_dir = cob_strdup (getenv_work);
-		return cob_strdup (getenv_work);
-	}
 	if (build_len > 0) {
 		if (memcmp (penv,build_root,build_len) == 0) {
 			sprintf (getenv_work, "%s%s", exec_root, penv + build_len);
@@ -2219,17 +2173,10 @@ cob_relocate_string (const char *str)
 		if (i) {
 			memcpy (str_work, str, i);
 		}
-		if (!exec_dev) {
-			/* include dir is enough, as we only target libcob.h here */
-			snprintf (str_work + i, COB_FILE_MAX - i,
-				" "IOPT"\"%sinclude\" %s",
-				exec_root, do_I);
-		} else {
-			/* include dir should be enough here, too */
-			snprintf (str_work + i, COB_FILE_MAX - i,
-				" "IOPT"\"%s\" "IOPT"\"%slibcob\" "IOPT"\"%sinclude\" %s",
-				exec_root, exec_root, exec_root, do_I);
-		}
+		/* include dir should be enough here, too */
+		snprintf (str_work + i, COB_FILE_MAX - i,
+			" "IOPT"\"%s\" "IOPT"\"%sinclude\" %s",
+			exec_root, exec_root, do_I);
 	} else {
 		size_t i = do_L - str;
 		if (i) {
@@ -5468,7 +5415,7 @@ cob_sys_system (const void *cmdline)
 	COB_CHK_PARMS (SYSTEM, 1);
 
 	if (COB_MODULE_PTR->cob_procedure_params[0]) {
-		const char* cmd = cmdline;
+		const char *cmd = cmdline;
 		size_t		i = COB_MODULE_PTR->cob_procedure_params[0]->size;
 
 		i--;
@@ -6921,7 +6868,7 @@ get_value (char *data, int len)
 }
 
 static int
-translate_boolean_to_int (const char* ptr)
+translate_boolean_to_int (const char *ptr)
 {
 	if (ptr == NULL || *ptr == 0) {
 		return 2;
@@ -8423,7 +8370,9 @@ get_math_info (char *version_buffer, size_t size, const int verbose)
 
 /* internal library version as string,
    note: the patchlevel may differ from the package one */
-const char* libcob_version () {
+const char * 
+libcob_version () 
+{
 
 /* FIXME: replace this define by a general one (COB_TREE_DEBUG) _was_ for debugging
           the parse tree only ... */
@@ -8434,7 +8383,7 @@ const char* libcob_version () {
 		(void)sscanf (PACKAGE_VERSION, "%d.%d", &major, &minor);
 		/* LCOV_EXCL_START */
 		if (major != __LIBCOB_VERSION || minor != __LIBCOB_VERSION_MINOR) {
-			const char* version = CB_XSTRINGIFY (__LIBCOB_VERSION) "."
+			const char *version = CB_XSTRINGIFY (__LIBCOB_VERSION) "."
 				CB_XSTRINGIFY (__LIBCOB_VERSION_MINOR);
 			cob_runtime_error (_("version mismatch"));
 			cob_runtime_hint (_("%s has version %s.%d"), "libcob internally",
@@ -9482,7 +9431,7 @@ cob_stack_trace (void *target)
 }
 
 static void
-flush_target (FILE* target)
+flush_target (FILE *target)
 {
 	if (target == stderr
 	 || target == stdout) {

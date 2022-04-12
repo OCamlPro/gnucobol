@@ -1,4 +1,8 @@
 
+2022-04-12  Ron Norman <rjn@inglenet.com> 
+
+	* configure.ac: Add LIBCOB_VER = 5 as shared library version
+
 2022-04-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: LOCALEDIR back in config.h; include directories quoted;
