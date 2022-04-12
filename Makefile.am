@@ -39,7 +39,7 @@ dist_noinst_SCRIPTS = autogen.sh po/update_linguas.sh \
 # wrapper for the build environment
 noinst_SCRIPTS = pre-inst-env
 
-EXTRA_DIST = gnucobol.spec DEPENDENCIES HACKING
+EXTRA_DIST = gnucobol.spec DEPENDENCIES DEPENDENCIES.md README.md HACKING
 
 # add rules for code-coverage testing, as defined by AX_CODE_COVERAGE
 include $(top_srcdir)/aminclude_static.am

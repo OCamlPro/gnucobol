@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2017-2018 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2017-2018, 2022 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch
 ## 
 ## This file is part of GnuCOBOL.
@@ -171,6 +171,7 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [1], ,
 prog.cob:7: error: invalid VALUE clause
 prog.cob:8: warning: value does not fit the picture string
 prog.cob:10: warning: value size exceeds data size
+prog.cob:10: note: value size is 4
 ])
 
 AT_CLEANUP
@@ -195,6 +196,7 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
 [prog.cob:6: warning: alphanumeric value is expected
 prog.cob:8: warning: value size exceeds data size
+prog.cob:8: note: value size is 4
 prog.cob:9: warning: value does not fit the picture string
 ])
 
@@ -222,6 +224,7 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
 [prog.cob:6: warning: alphanumeric value is expected
 prog.cob:10: warning: value size exceeds data size
+prog.cob:10: note: value size is 4
 ])
 
 AT_CLEANUP
@@ -256,14 +259,17 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
 [prog.cob:10: warning: value size exceeds data size
+prog.cob:10: note: value size is 8
 ])
 AT_CHECK([$COMPILE_ONLY -std=ibm-strict prog.cob], [1], [],
 [prog.cob:7: error: numeric literal in VALUE clause of numeric-edited item used
 prog.cob:10: warning: value size exceeds data size
+prog.cob:10: note: value size is 8
 ])
 AT_CHECK([$COMPILE_ONLY -std=ibm prog.cob], [0], [],
 [prog.cob:7: warning: numeric literal in VALUE clause of numeric-edited item used
 prog.cob:10: warning: value size exceeds data size
+prog.cob:10: note: value size is 8
 ])
 
 AT_CLEANUP
@@ -288,6 +294,7 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
 [prog.cob:6: warning: alphanumeric value is expected
 prog.cob:9: warning: value size exceeds data size
+prog.cob:9: note: value size is 4
 ])
 
 AT_CLEANUP

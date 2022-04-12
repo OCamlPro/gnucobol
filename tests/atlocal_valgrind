@@ -149,6 +149,8 @@ export PATHSEP
 prefix="@prefix@"
 exec_prefix="@exec_prefix@"
 
+# options that are also used in pre-inst-env (always add to both)
+# but not directly in the testsuite
 COB_CFLAGS="-I${abs_top_srcdir} @COB_CFLAGS@"
 COB_LIBS="-L${abs_top_builddir}/libcob/.libs @COB_LIBS@"
 COB_CONFIG_DIR="${abs_top_srcdir}/config"
@@ -234,6 +236,7 @@ else
 	else
 		COB_HAS_JSON="no"
 	fi
+	# see note below
 	if test $(grep -i -c " screen .*disabled" info.out) = 0; then
 		COB_HAS_CURSES="yes"
 	else
@@ -242,7 +245,7 @@ else
 fi
 if test "x$MSYSTEM" != "x" -o "$OSTYPE" = "cygwin"; then
 	# running MSYS builds as not-visible child processes result in
-	# "Redirection is not supported" (at least old PDcurses)
+	# "Redirection is not supported" (at least old PDCurses)
 	# --> disabling the tests for this feature
 	# ncurses is known to work as long as TERM is appropriate
 	if test $(grep -i -c "ncurses" info.out) != 0; then

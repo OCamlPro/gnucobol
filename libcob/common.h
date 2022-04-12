@@ -327,6 +327,8 @@ only usable with COB_USE_VC2013_OR_GREATER */
 #else
 #define	__i386__
 #endif
+#else
+#define __ia64__
 #endif
 
 #endif /* _MSC_VER */

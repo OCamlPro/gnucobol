@@ -6,7 +6,7 @@
 #define COB_WITHOUT_EXCEPTIONS
 #define COB_WITHOUT_JMP
 #include "../libcob/common.h"
-#define VCS_REF 4513
+#define VCS_REF 4596
 
 #define STRINGIZE_DETAIL_(v) #v
 #define STRINGIZE(v) STRINGIZE_DETAIL_(v)
@@ -57,7 +57,7 @@ VS_VERSION_INFO    VERSIONINFO
       VALUE "SpecialBuild",     ""
 
       /* Non-Standard entries */
-      VALUE "Build",            "Jan 2022"
+      VALUE "Build",            "Aprk 2022"
       VALUE "Developer",        "Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch, Edward Hart and many others (see AUTHORS and THANKS)"
       VALUE "Support",          "https://www.gnu.org/software/gnucobol/"
       VALUE "Users",            "Unlimited."

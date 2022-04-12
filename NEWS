@@ -90,7 +90,7 @@ Open Plans:
 
 ** the compile flag -fodoslide was moved to a dialect configuration,
    while -fodoslide still works as before it is now implied with
-   -std=ibm/mvs/bs2000, for compatibility to previous behaviour compile
+   -std=ibm/mvs/bs2000, for compatibility to previous behavior compile
    with -fno-odoslide
 
 ** the GnuCOBOL extension of auto-adding the RECURSIVE attribute
@@ -118,9 +118,12 @@ Open Plans:
    dialects, this was fixed so SYNC is ignored depending on the dialect
 
 ** COBOL programs compiled with versions before GnuCOBOL 3 that used files with
-   ORGANIZATION INDEXED or RELATIVE chrashed when executed with newer versions,
+   ORGANIZATION INDEXED or RELATIVE crashed when executed with newer versions,
    this has been fixed so that all modules compiled with GnuCOBOL 2.2 can be
    executed with GnuCOBOL 3.2
+
+** execution times of INSPECT that use big COBOL fields (multiple KB) were
+   heavily cut down
 
 * Listing changes
 
@@ -144,6 +147,28 @@ Open Plans:
    options and during debugging were extended, for example each executed WHEN,
    VARYING and UNTIL phrases are now seen
 
+
+* Known issues in 3.2 (and 3.1)
+
+** testsuite:
+  * if built with vbisam, cisam or disam, depending on the version used, some
+    tests will lead to UNEXPECTED PASS, while others may fail
+  * possibly failing tests (false positives):
+    * temporary path invalid
+    * compiler outputs (assembler)
+    * compile from stdin
+  * NIST: OBNC1M.CBL false positive (the test runner uses a nonportable way of
+    emulating a program kill)
+
+** the recent additions of ">> TURN" and "variable LIKE variable" may not work
+   as expected in all cases
+
+** features that are known to not be portable to every environment yet
+   (especially when using a different compiler than GCC)
+    * function with variable-length RETURNING item
+    * USAGE POINTER, which may need to be manually aligned
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
  GnuCOBOL 3.1.2 released (20201223)
  GnuCOBOL 3.1.1 released (20201208) containing INITIALIZE bug #694
@@ -176,7 +201,7 @@ Open Plans:
 ** file handling: include support for a callable EXTFH interface also provided
    by several compilers including Micro Focus
    This allows users to insert an external file handler while retaining
-   all of the normal COBOL I/O functions with a possible callback to libcob.
+   all the normal COBOL I/O functions with a possible callback to libcob.
    To have the compiled program call `yourfh()` for file I/O use:
    `cobc -fcallfh=yourfh`
    In turn `yourfh()` may call `EXTFH()` to use I/O functions from GnuCOBOL.
@@ -205,7 +230,7 @@ Open Plans:
      documentation for CBL_ERROR_PROC -> a RETURN-VALUE of ZERO skips further
      error handlers to be called, including the internal one.
 
-  ** build system: defaults.h is not created or included any more, all configure
+  ** build system: defaults.h is not created or included anymore, all configure
      provided defines are now found in the single header config.h
 
   ** cobc -g (and configure --enable-debug) use the most expressive
@@ -227,7 +252,7 @@ Open Plans:
 
   ** COPY statement handling:
      * copybook names that contain an extension aren't search with additional
-       extensions [as post-rc1-change this may be set to old behaviour by
+       extensions [as post-rc1-change this may be set to old behavior by
        defining COB_MULTI_EXTENSION when building GnuCOBOL/cobc]
      * library names are now tested for environment "COB_COPY_LIB_libname",
        allowing the directory to specified externally (also as no-directory 
@@ -286,9 +311,9 @@ Open Plans:
    against libcob and need cob_decimal include gmp.h/mpir.h yourself before;
    otherwise you do not need it in your include path any more
 
-** For LINE SEQUENTIAL files the behaviour has been changed to always split lines
+** For LINE SEQUENTIAL files the behavior has been changed to always split lines
    longer than the record area into multiple records. 
-   Setting COB_LS_SPLIT = false will have the old behaviour of truncating the record.
+   Setting COB_LS_SPLIT = false will have the old behavior of truncating the record.
 
 * New build features
 
@@ -342,7 +367,7 @@ Open Plans:
 
 * GnuCOBOL's getopt implementation honors POSIXLY_CORRECT now:
   if set to any value the option parsing in cobc, cobcrun and CBL_GC_GETOPT
-  stops at the first nonoption, otherwise it stays with the old behaviour and
+  stops at the first nonoption, otherwise it stays with the old behavior and
   re-orders nonoptions to the end)
 
 * new configure option --with-std= lets to build into the compiler the default

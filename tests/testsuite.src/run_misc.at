@@ -311,8 +311,7 @@ AT_DATA([callee2.cob], [
        LINKAGE          SECTION.
        01 LNK-X         PIC XXX.
        PROCEDURE        DIVISION USING LNK-X.
-           DISPLAY LNK-X NO ADVANCING
-           END-DISPLAY.
+           DISPLAY LNK-X NO ADVANCING.
            EXIT PROGRAM.
 ])
 
@@ -324,11 +323,9 @@ AT_DATA([callee.cob], [
        01 LCL-X.
           05 FILLER     PIC XXX VALUE "abc".
        PROCEDURE        DIVISION.
-           CALL "callee2" USING LCL-X
-           END-CALL.
+           CALL "callee2" USING LCL-X.
            MOVE ZERO TO LCL-X.
-           CALL "callee2" USING LCL-X
-           END-CALL.
+           CALL "callee2" USING LCL-X.
            EXIT PROGRAM.
 ])
 
@@ -336,8 +333,7 @@ AT_DATA([caller.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      caller.
        PROCEDURE        DIVISION.
-           CALL "callee"
-           END-CALL.
+           CALL "callee".
            STOP RUN.
 ])
 
@@ -533,9 +529,7 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            MOVE X TO X.
            IF X NOT = 12
-              DISPLAY X NO ADVANCING
-              END-DISPLAY
-           END-IF.
+              DISPLAY X.
            STOP RUN.
 ])
 
@@ -559,9 +553,7 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            MOVE "1" TO X(1:1).
            IF X NOT = 1000
-              DISPLAY X NO ADVANCING
-              END-DISPLAY
-           END-IF.
+              DISPLAY X.
            STOP RUN.
 ])
 
@@ -585,9 +577,7 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            MOVE X(1:I) TO Y.
            IF Y NOT = "1   "
-              DISPLAY Y NO ADVANCING
-              END-DISPLAY
-           END-IF.
+              DISPLAY Y.
            STOP RUN.
 ])
 
@@ -610,9 +600,7 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            MOVE "99" TO G(3:2).
            IF G NOT = "1299"
-              DISPLAY G NO ADVANCING
-              END-DISPLAY
-           END-IF.
+              DISPLAY G.
            STOP RUN.
 ])
 
@@ -636,9 +624,7 @@ AT_DATA([prog.cob], [
            SET I TO ZERO.
            MOVE I TO X(1).
            IF X(1) NOT = "0"
-              DISPLAY X(1) NO ADVANCING
-              END-DISPLAY
-           END-IF.
+              DISPLAY X(1).
            STOP RUN.
 ])
 
@@ -1715,9 +1701,7 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            INSPECT X CONVERTING "ABC" TO SPACES.
            IF X NOT = SPACES
-              DISPLAY X NO ADVANCING
-              END-DISPLAY
-           END-IF.
+              DISPLAY X.
            STOP RUN.
 ])
 
@@ -1739,9 +1723,7 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            INSPECT X CONVERTING NULL TO "A".
            IF X NOT = "AAA"
-              DISPLAY X NO ADVANCING
-              END-DISPLAY
-           END-IF.
+              DISPLAY X.
            STOP RUN.
 ])
 
@@ -1761,11 +1743,9 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE  SECTION.
        01 X             PIC X(3) VALUE "AAA".
        PROCEDURE        DIVISION.
-           INSPECT X CONVERTING "A" TO NULL.
+           INSPECT X CONVERTING "A" TO NULL
            IF X NOT = LOW-VALUES
-              DISPLAY "NG" NO ADVANCING
-              END-DISPLAY
-           END-IF.
+              DISPLAY "NG".
            STOP RUN.
 ])
 
@@ -1775,7 +1755,7 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([INSPECT REPLACING figurative constant])
+AT_SETUP([INSPECT CONVERTING complex])
 AT_KEYWORDS([runmisc])
 
 AT_DATA([prog.cob], [
@@ -1783,19 +1763,22 @@ AT_DATA([prog.cob], [
        PROGRAM-ID.      prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       01 X             PIC X(3) VALUE "BCA".
+       01 X             PIC X(12) VALUE "AZABBCDCCECC".
        PROCEDURE        DIVISION.
-           INSPECT X REPLACING ALL "BC" BY SPACE.
-           IF X NOT = "  A"
-              DISPLAY X NO ADVANCING
-              END-DISPLAY
-           END-IF.
+           INSPECT X CONVERTING "ABZC" TO "ZY0X"
+           IF X NOT = "Z0ZYYXDXXEXX"
+              DISPLAY "1 - " X.
+
+           INSPECT X CONVERTING "XD" TO SPACES
+              BEFORE  "E" AFTER "D"
+           IF X NOT = "Z0ZYYXD  EXX"
+              DISPLAY "2 - " X.
+
            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
-
 AT_CLEANUP
 
 
@@ -1814,17 +1797,15 @@ AT_DATA([prog.cob], [
            INSPECT X TALLYING TAL FOR CHARACTERS
                      BEFORE INITIAL " ".
            IF TAL NOT = 3
-              DISPLAY TAL NO ADVANCING
-              END-DISPLAY
-           END-IF.
+              DISPLAY TAL.
+
            MOVE 0 TO TAL.
            MOVE " ABC" TO X.
            INSPECT X TALLYING TAL FOR CHARACTERS
                      BEFORE INITIAL " ".
            IF TAL NOT = 0
-              DISPLAY TAL NO ADVANCING
-              END-DISPLAY
-           END-IF.
+              DISPLAY TAL.
+
            STOP RUN.
 ])
 
@@ -1849,17 +1830,37 @@ AT_DATA([prog.cob], [
            INSPECT X TALLYING TAL FOR CHARACTERS
                      AFTER INITIAL " ".
            IF TAL NOT = 0
-              DISPLAY TAL NO ADVANCING
-              END-DISPLAY
-           END-IF.
+              DISPLAY TAL.
+
            MOVE 0 TO TAL.
            MOVE " ABC" TO X.
            INSPECT X TALLYING TAL FOR CHARACTERS
                      AFTER INITIAL " ".
            IF TAL NOT = 3
-              DISPLAY TAL NO ADVANCING
-              END-DISPLAY
-           END-IF.
+              DISPLAY TAL.
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([INSPECT REPLACING figurative constant])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X             PIC X(3) VALUE "BCA".
+       PROCEDURE        DIVISION.
+           INSPECT X REPLACING ALL "BC" BY SPACE.
+           IF X NOT = "  A"
+              DISPLAY X.
            STOP RUN.
 ])
 
@@ -1881,9 +1882,7 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            INSPECT X REPLACING TRAILING ZEROS BY SPACES.
            IF X NOT = "1   "
-              DISPLAY X NO ADVANCING
-              END-DISPLAY
-           END-IF.
+              DISPLAY X.
            STOP RUN.
 ])
 
@@ -1894,23 +1893,31 @@ AT_CLEANUP
 
 
 AT_SETUP([INSPECT REPLACING complex])
-AT_KEYWORDS([runmisc])
+AT_KEYWORDS([runmisc CHARACTERS])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       01 X             PIC X(12) VALUE "AAABBCDCCCCC".
+       01 X             PIC X(12) VALUE "AZABBCDCCECC".
        PROCEDURE        DIVISION.
            INSPECT X REPLACING
              ALL      "A" BY "Z"
                       "B" BY "Y"
-             TRAILING "C" BY "X".
-           IF X NOT = "ZZZYYCDXXXXX"
-              DISPLAY X NO ADVANCING
-              END-DISPLAY
-           END-IF.
+                      "Z" BY "0"
+             TRAILING "C" BY "X"
+           IF X NOT = "Z0ZYYCDCCEXX"
+              DISPLAY "1 - " X.
+
+           INSPECT X REPLACING
+             CHARACTERS BY SPACES
+              BEFORE  "C" AFTER "0"
+             CHARACTERS BY ZEROES
+              BEFORE  "E" AFTER "C"
+           IF X NOT = "Z0   C000EXX"
+              DISPLAY "2 - " X.
+
            STOP RUN.
 ])
 
@@ -1948,62 +1955,46 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            IF SWIT1-ON
               DISPLAY "ON" NO ADVANCING
-              END-DISPLAY
            ELSE
-              DISPLAY "OFF" NO ADVANCING
-              END-DISPLAY
-           END-IF.
+              DISPLAY "OFF" NO ADVANCING.
+
            IF SWIT2-ON
               DISPLAY " ON" NO ADVANCING
-              END-DISPLAY
            ELSE
-              DISPLAY " OFF" NO ADVANCING
-              END-DISPLAY
-           END-IF.
+              DISPLAY " OFF" NO ADVANCING.
+
            IF SWIT3-ON
               DISPLAY " ON" NO ADVANCING
-              END-DISPLAY
            ELSE
-              DISPLAY " OFF" NO ADVANCING
-              END-DISPLAY
-           END-IF.
+              DISPLAY " OFF" NO ADVANCING.
+
            IF NOT SWIT4-OFF
               DISPLAY " ON" NO ADVANCING
-              END-DISPLAY
            ELSE
-              DISPLAY " OFF" NO ADVANCING
-              END-DISPLAY
-           END-IF.
+              DISPLAY " OFF" NO ADVANCING.
+
            SET SWIT1 TO OFF.
            SET SWIT2 TO ON.
            IF SWIT1-ON
               DISPLAY " ON" NO ADVANCING
-              END-DISPLAY
            ELSE
-              DISPLAY " OFF" NO ADVANCING
-              END-DISPLAY
-           END-IF.
+              DISPLAY " OFF" NO ADVANCING.
+
            IF SWIT2-ON
               DISPLAY " ON" NO ADVANCING
-              END-DISPLAY
            ELSE
-              DISPLAY " OFF" NO ADVANCING
-              END-DISPLAY
-           END-IF
+              DISPLAY " OFF" NO ADVANCING.
+
            IF SWIT31-ON
               DISPLAY " ON" NO ADVANCING
-              END-DISPLAY
            ELSE
-              DISPLAY " OFF" NO ADVANCING
-              END-DISPLAY
-           END-IF.
+              DISPLAY " OFF" NO ADVANCING.
+
            IF NOT SWIT36-OFF
               DISPLAY " ON" NO ADVANCING
-              END-DISPLAY
            ELSE
-              DISPLAY " OFF" NO ADVANCING
-              END-DISPLAY
-           END-IF.
+              DISPLAY " OFF" NO ADVANCING.
+
            STOP RUN.
 ])
 
@@ -2028,7 +2019,6 @@ AT_DATA([prog.cob], [
              END-DISPLAY
              PERFORM 2 TIMES
                DISPLAY "Y" NO ADVANCING
-               END-DISPLAY
              END-PERFORM
            END-PERFORM.
            STOP RUN.
@@ -2040,7 +2030,7 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [XYYXYY])
 AT_CLEANUP
 
 
-AT_SETUP([PERFORM VARYING BY -0.2])
+AT_SETUP([PERFORM VARYING BY -0.2 decimal])
 AT_KEYWORDS([runmisc])
 
 AT_DATA([prog.cob], [
@@ -2048,21 +2038,59 @@ AT_DATA([prog.cob], [
        PROGRAM-ID.      prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-	   77 X             PIC 9v9.
+       77 X             PIC 9v9.
        PROCEDURE        DIVISION.
            PERFORM VARYING X FROM 0.8 BY -0.2
                    UNTIL   X < 0.4
              DISPLAY "X" NO ADVANCING
-             END-DISPLAY
            END-PERFORM.
-		   IF X NOT = 0.2
-		     DISPLAY "WRONG X: " X END-DISPLAY
-		   END-IF
+           IF X NOT = 0.2
+             DISPLAY "WRONG X: " X END-DISPLAY
+           END-IF
            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [XXX])
+
+AT_CLEANUP
+
+
+AT_SETUP([PERFORM VARYING Float])
+AT_KEYWORDS([perform])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  i USAGE FLOAT-LONG.
+
+       PROCEDURE DIVISION.
+           PERFORM VARYING i FROM 1.0 BY 1.0 UNTIL i > 5.0
+                 DISPLAY i " " NO ADVANCING
+           END-PERFORM .
+           DISPLAY "Test Part 1 Completed".
+           PERFORM VARYING i FROM 1 BY 1 UNTIL i > 5
+                 DISPLAY i " " NO ADVANCING
+           END-PERFORM .
+           DISPLAY "Test Part 2 Completed".
+           PERFORM VARYING i FROM 5 BY -1 UNTIL i < 1
+                 DISPLAY i " " NO ADVANCING
+           END-PERFORM .
+           DISPLAY "Test Part 3 Completed".
+           STOP RUN.
+           END PROGRAM prog.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[1 2 3 4 5 Test Part 1 Completed
+1 2 3 4 5 Test Part 2 Completed
+5 4 3 2 1 Test Part 3 Completed
+], [])
 
 AT_CLEANUP
 
@@ -2075,15 +2103,15 @@ AT_DATA([prog.cob], [
        PROGRAM-ID.      prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-	   77 X             PIC 9.
+       77 X             PIC 9.
        PROCEDURE        DIVISION.
            PERFORM VARYING X FROM 4
                    UNTIL   X > 6
              DISPLAY "X" NO ADVANCING
            END-PERFORM.
-		   IF X NOT = 7
-		     DISPLAY "WRONG X: " X
-		   END-IF
+           IF X NOT = 7
+             DISPLAY "WRONG X: " X
+           END-IF
            STOP RUN.
 ])
 
@@ -2107,10 +2135,8 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            PERFORM 2 TIMES
              DISPLAY "OK" NO ADVANCING
-             END-DISPLAY
              EXIT PERFORM
              DISPLAY "NOT OK"
-             END-DISPLAY
            END-PERFORM
            STOP RUN.
 ])
@@ -2132,10 +2158,8 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            PERFORM 2 TIMES
              DISPLAY "OK" NO ADVANCING
-             END-DISPLAY
              EXIT PERFORM CYCLE
              DISPLAY "NOT OK"
-             END-DISPLAY
            END-PERFORM
            STOP RUN.
 ])
@@ -2166,8 +2190,7 @@ AT_DATA([prog.cob], [
            END-PERFORM.
        A02.
            IF INDVAL NOT = 3
-              DISPLAY INDVAL NO ADVANCING
-              END-DISPLAY
+              DISPLAY INDVAL
            END-IF.
            STOP RUN.
 ])
@@ -2198,13 +2221,10 @@ AT_DATA([prog.cob], [
             END-IF
            END-PERFORM.
        A012.
-           DISPLAY INDVAL NO ADVANCING
-           END-DISPLAY.
+           DISPLAY INDVAL.
        A02 SECTION.
            IF INDVAL NOT = 3
-              DISPLAY INDVAL NO ADVANCING
-              END-DISPLAY
-           END-IF.
+              DISPLAY INDVAL.
            STOP RUN.
 ])
 
@@ -2269,8 +2289,7 @@ AT_DATA([prog.cob], [
             BY 1 UNTIL INDVAL > 2
            END-PERFORM
            IF INDVAL NOT = 3
-              DISPLAY INDVAL NO ADVANCING
-              END-DISPLAY
+              DISPLAY INDVAL
            END-IF
            STOP RUN
            .
@@ -2295,8 +2314,7 @@ AT_DATA([prog.cob], [
            PERFORM VARYING INDVAL FROM 1
             BY 1 UNTIL INDVAL > 2.
            IF INDVAL NOT = 3
-              DISPLAY INDVAL NO ADVANCING
-              END-DISPLAY
+              DISPLAY INDVAL
            END-IF
            .
 ])
@@ -2323,8 +2341,7 @@ AT_DATA([prog.cob], [
            COMPUTE Y = 99
            END-COMPUTE.
            IF Y NOT = 99
-              DISPLAY Y NO ADVANCING
-              END-DISPLAY
+              DISPLAY Y
            END-IF.
            STOP RUN.
 ])
@@ -2369,8 +2386,7 @@ AT_DATA([prog.cob], [
            STRING "abc" INTO X(2)
            END-STRING.
            IF G NOT = "   abc   "
-              DISPLAY X(1) NO ADVANCING
-              END-DISPLAY
+              DISPLAY X(1)
            END-IF.
            STOP RUN.
 ])
@@ -3728,10 +3744,8 @@ AT_DATA([callee.cob], [
        PROCEDURE        DIVISION USING P1 OPTIONAL P2.
            IF P2 NOT OMITTED
               DISPLAY 'UNEXPECTED P2: ' P2
-              END-DISPLAY
            END-IF
            DISPLAY 'P1: ' P1 WITH NO ADVANCING
-           END-DISPLAY.
            EXIT PROGRAM.
 ])
 
@@ -4369,7 +4383,6 @@ AT_DATA([prog.cob], [
        01 X             PIC X(4) BASED.
        PROCEDURE        DIVISION.
            DISPLAY X NO ADVANCING
-           END-DISPLAY.
            STOP RUN.
 ])
 
@@ -4382,7 +4395,6 @@ AT_DATA([prog2.cob], [
           05 Y          PIC X(4).
        PROCEDURE        DIVISION.
            DISPLAY Y NO ADVANCING
-           END-DISPLAY.
            STOP RUN.
 ])
 
@@ -4425,9 +4437,7 @@ AT_DATA([callee.cob], [
           05 Y          PIC X(4).
        PROCEDURE        DIVISION USING OPTIONAL X.
            IF Y NOT = '9876'
-              DISPLAY Y NO ADVANCING
-              END-DISPLAY
-           END-IF.
+              DISPLAY Y.
            GOBACK.
 ])
 
@@ -6294,6 +6304,111 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([PICTURE with Edit mask])
+AT_KEYWORDS([numeric])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA  DIVISION.
+       WORKING-STORAGE SECTION.
+       01  TST.
+           05 DEPT-SUB        PIC 9(7)V999 VALUE 18536.232.
+           05 DEPT-COST-YTD   PIC 9(5)V999 VALUE 18536.232.
+           05 DL-PROD-COST    PIC $$$,$$9.99.
+       77  WFLT  PIC $$$,$$9.99.
+
+       PROCEDURE DIVISION.
+           MOVE 18536.23 TO WFLT.
+           DISPLAY "WFLT IS " WFLT.
+           MULTIPLY DEPT-COST-YTD BY 1 GIVING DL-PROD-COST ROUNDED.
+           DISPLAY "COST IS " DL-PROD-COST.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[WFLT IS $18,536.23
+COST IS $18,536.23
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([COMP-3 Index])
+AT_KEYWORDS([numeric])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 WS-PAGE-NUMBER PIC 9(4) COMP-3 VALUE ZERO.
+       01 WS-LINE-NUMBER PIC 9(3) VALUE ZERO.
+       PROCEDURE DIVISION.
+       PERFORM VARYING WS-LINE-NUMBER FROM 1 BY 1
+                 UNTIL WS-LINE-NUMBER > 10
+       ADD 1 TO WS-PAGE-NUMBER
+       DISPLAY WS-PAGE-NUMBER
+       END-PERFORM.
+       STOP RUN RETURNING 0.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[0001
+0002
+0003
+0004
+0005
+0006
+0007
+0008
+0009
+0010
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([POINTER])
+AT_KEYWORDS([numeric])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID. prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 XX.
+         02 XX-1           PIC X(4) VALUE "1234".
+         02 XX-2           PIC X(4) VALUE "5678".
+       01 P-XX-1        POINTER.
+       01 P-XX-2        POINTER.
+       LINKAGE          SECTION.
+       01 Y2            PIC X(4).
+       PROCEDURE        DIVISION.
+         SET P-XX-1 TO ADDRESS OF XX-1
+         SET P-XX-2 TO ADDRESS OF XX-2
+         SET ADDRESS OF Y2 TO ADDRESS OF XX-1
+         SET ADDRESS OF Y2 UP BY 4
+         IF Y2 NOT = XX-2
+            DISPLAY "Test 2 '" Y2 "'"
+            END-DISPLAY
+         END-IF
+         IF ADDRESS OF Y2 NOT = P-XX-2
+            DISPLAY "NOK"
+         END-IF
+         STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([ON EXCEPTION clause of DISPLAY])
 AT_KEYWORDS([runmisc exceptions screen])
 
@@ -6314,7 +6429,7 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([COB_EXIT_WAIT=0 ./prog], [0], ignore, [])
+AT_CHECK([COB_EXIT_WAIT=0 $COBCRUN_DIRECT ./prog], [0], ignore, [])
 
 AT_CLEANUP
 
@@ -6355,7 +6470,7 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([COB_EXIT_WAIT=0 ./prog], [0], ignore, [])
+AT_CHECK([COB_EXIT_WAIT=0 $COBCRUN_DIRECT ./prog], [0], ignore, [])
 
 AT_CLEANUP
 
@@ -6393,7 +6508,7 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE  -faccept-display-extensions=error prog.cob], [0], [], [])
-AT_CHECK([COB_EXIT_WAIT=0 ./prog], [0], ignore, [])
+AT_CHECK([COB_EXIT_WAIT=0 $COBCRUN_DIRECT ./prog], [0], ignore, [])
 
 AT_CLEANUP
 

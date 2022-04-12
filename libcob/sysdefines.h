@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2020 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2020, 2022 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -225,7 +225,9 @@
 #define COB_MAX_CHAR_SIZE 2000000
 #endif
 /* Define filename & path charcteristics */
-#if	defined(_MSC_VER) || defined(__ORANGEC__) || defined(__WATCOMC__) || \
+
+
+#if defined(_MSC_VER) || defined(__ORANGEC__) || defined(__WATCOMC__) || \
     defined(__BORLANDC__) || defined(__MINGW32__) || defined (__DJGPP__)
 #define PATHSEP_CHAR (char) ';'
 #define PATHSEP_STR ";"
@@ -233,8 +235,7 @@
 #define PATHSEP_CHAR (char) ':'
 #define PATHSEP_STR ":"
 #endif
-
-#ifndef	_WIN32 /* note: needs to be \ for MinGW, needed for cobc -j */
+#if !defined(_WIN32) && !defined(__DJGPP__) /* note: needs to be \ for MinGW, needed for cobc -j */
 #define SLASH_CHAR	(char) '/'
 #define SLASH_STR	"/"
 #else

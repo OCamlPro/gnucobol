@@ -1,4 +1,4 @@
-:: Copyright (C) 2014-2020 Free Software Foundation, Inc.
+:: Copyright (C) 2014-2020,2022 Free Software Foundation, Inc.
 :: Written by Simon Sobisch, Edward Hart
 ::
 :: This file is part of GnuCOBOL.
@@ -58,7 +58,7 @@ if "%errorlevel%" == "0" (
 :: Visual Studio 2017 and newer: no VS150COMNTOOLS globally or vsvars any more...
 :: check if available, otherwise check on
 set "found="
-for %%v in (2019 2017) do (
+for %%v in (2022 2019 2017) do (
    if not "%found%" == ""  goto :eof
    call :vsvars_current %%v
 )

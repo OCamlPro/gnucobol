@@ -428,7 +428,7 @@ enum cb_warn_val {
 	COBC_WARN_AS_ERROR = 4
 };
 
-extern int cb_warn_opt_val[COB_WARNOPT_MAX];
+extern int cb_warn_opt_val[COB_WARNOPT_MAX];	/* note: int as we feed that to getopt */
 
 
 #define	CB_OPTIM_DEF(x)			x,

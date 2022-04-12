@@ -10,6 +10,11 @@
 	  use of $SED where possible
 	* autogen.sh: handle strange paths, better output for out-of-tree-builds
 
+2022-03-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: dropped obsolete AC_PROG_CC_STD, AC_HEADER_STDC as
+	  already included in AC_PROG_CC and assumed otherwise
+
 2022-03-11  Simon Sobisch <simonsobisch@gnu.org>
 
 	* Makefile.am: targets to create binary distributions
@@ -137,6 +142,11 @@
 
 	* configure.ac: Updates to accept --with-vbcisam
 	  which is for VB-ISAM 2.2 build in C-ISAM mode
+
+
+2020-12-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am [EXTRA_DIST]: added README.md and DEPENDENCIES.md
 
 2020-12-07  Simon Sobisch <simonsobisch@gnu.org>
 

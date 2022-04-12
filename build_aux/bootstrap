@@ -73,7 +73,13 @@ echo; echo "running autoreconf..."
 ret=0
 
 # changing build_aux scripts at large:
-#autoreconf --verbose --force --install --include=m4 $MAINPATH; ret=$?
+AC_OPTS="--verbose --force --include=m4"
+if test "$1" = "install"; then AC_OPTS="$AC_OPTS --install"; fi
+
+# ensure the configure and Makefile parts are up-to-date:
+msgs=/tmp/autoreconf
+echo autoreconf $AC_OPTS $MAINPATH
+autoreconf $AC_OPTS $MAINPATH > $msgs 2>&1; ret=$?
 
 # changing files possibly needed for new systems:
 #config_file_url="https://git.savannah.gnu.org/gitweb/?p=gnulib.git;a=blob_plain;f=build-aux"
@@ -86,9 +92,6 @@ ret=0
 #  rm -f $MAINPATH/build_aux/$file.tmp
 #  test $retval -eq 0 # || exit $retval
 #done
-
-# ensure the configure and Makefile parts are up-to-date:
-autoreconf --verbose --force --include=m4 "$MAINPATH"; ret=$?
 
 if test $ret -ne 0; then
   echo; echo "ERROR, autoreconf returned $ret - aborting bootstrap" && exit $ret

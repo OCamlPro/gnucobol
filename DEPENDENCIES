@@ -106,7 +106,7 @@ The following libraries ARE required WHEN :
     Ncurses is distributed under a BSD style license.
 
   o PDCurses (pdcurses) for MinGW/native windows ports
-    https://pdcurses.org/ or https://github.com/Bill-Gray/PDCurses/
+    https://pdcurses.org/ or https://github.com/Bill-Gray/PDCursesMod/
 
     PDCurses is distributed as Public Domain.
 

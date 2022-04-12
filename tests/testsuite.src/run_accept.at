@@ -55,7 +55,7 @@ AT_DATA([prog.cob], [
        PROGRAM-ID.      prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       *> one byte longer to make sure there is no garbage in
+      *> one byte longer to make sure there is no garbage in
        01 X             PIC X(9).
        PROCEDURE        DIVISION.
            ACCEPT X FROM TIME
@@ -205,7 +205,7 @@ AT_DATA([prog.cob], [
        PROGRAM-ID.      prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       *> one byte longer to make sure there is no garbage in
+      *> one byte longer to make sure there is no garbage in
        01  WS-YYYYMMDD   PIC 9(9).
        01  WS-YYYYDDD    PIC 9(8).
        PROCEDURE        DIVISION.
@@ -244,7 +244,7 @@ AT_DATA([prog.cob], [
        PROGRAM-ID.      prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       *> one byte longer to make sure there is no garbage in
+      *> one byte longer to make sure there is no garbage in
        01  WS-YYYYMMDD   PIC 9(9).
        01  WS-YYYYDDD    PIC 9(8).
        PROCEDURE        DIVISION.

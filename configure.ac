@@ -22,7 +22,7 @@ dnl You should have received a copy of the GNU General Public License
 dnl along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 dnl
 
-AC_PREREQ([2.64])
+AC_PREREQ([2.67])  # note: 2.67 is the one found in old msys, 2.69 is commonly available
 
 AC_INIT([GnuCOBOL],
 	[4.0-early-dev],
@@ -435,8 +435,6 @@ AC_LIB_RPATH
 
 
 # Checks for header files.
-AC_HEADER_STDC
-
 dnl entries only used from external includes -> likely no need to check here
 dnl AC_CHECK_HEADERS([stdint.h whcar.h malloc.h])
 # mandatory:

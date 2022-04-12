@@ -4,6 +4,10 @@
 	* bootstrap: handle strange paths, better output for out-of-tree-builds
 	* pre-inst-env.in: handle strange paths, set COB_SCHEMA_DIR if not set
 
+2022-03-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* bootstrap: add "install" option to override all components
+
 2022-01-07  Simon Sobisch <simonsobisch@gnu.org>
 
 	* config.sub, config.guess: updated to recent versions from

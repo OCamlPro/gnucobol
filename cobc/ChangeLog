@@ -3,10 +3,20 @@
 
 	* cobc.c : Minor code reformat
 
+022-04-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (process_translate): add length note also for value clauses
+	  which may span multiple lines
+
 2022-04-05  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c: adjustments to handle relocation, especially related to
 	  reasonable output in cobc --info
+
+2022-04-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (process_translate) [HAVE_8DOT3_FILENAMES]: fixed
+	  missing variable definition
 
 2022-03-28  Ron Norman <rjn@inglenet.com>
 
@@ -3118,6 +3128,7 @@
 	* Makefile.am: moved include of top_srcdir to AM_CPPFLAGS to prevent
 	  user-specified CPPFLAGS to override own includes, see bug #452
 	* cobc.c: minimal support for DJGGP, including generation of 8.3 filenames
+	  via internal HAVE_8DOT3_FILENAMES
 	* cobc.c: don't halt immediately on first PATH error during startup,
 	  postponed until command line arguments are processed
 
