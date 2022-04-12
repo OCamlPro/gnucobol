@@ -38,8 +38,8 @@ prefix="@prefix@"
 exec_prefix="@exec_prefix@"
 
 # options that are also used in atlocal (always add to both)
-COB_CFLAGS="-I\"@abs_top_srcdir@\" "@COB_CFLAGS@" "${COB_CFLAGS}
-COB_LDFLAGS="-L\"@abs_top_builddir@/libcob/.libs\" "@COB_LDFLAGS@" "${COB_LDFLAGS}
+COB_CFLAGS="-I\"@abs_top_srcdir@\" @COB_CFLAGS@ "${COB_CFLAGS}
+COB_LDFLAGS="-L\"@abs_top_builddir@/libcob/.libs\" @COB_LDFLAGS@ "${COB_LDFLAGS}
 COB_LIBS="@COB_LIBS@ ${COB_LIBS}"
 COB_CONFIG_DIR="@abs_top_srcdir@/config"
 COB_COPY_DIR="@abs_top_srcdir@/copy"
