@@ -55,7 +55,7 @@ NEWS - user visible changes				-*- outline -*-
 
 ** the compile flag -fodoslide was moved to a dialect configuration,
    while -fodoslide still works as before it is now implied with
-   -std=ibm/mvs/bs2000, for compatibility to previous behaviour compile
+   -std=ibm/mvs/bs2000, for compatibility to previous behavior compile
    with -fno-odoslide
 
 ** the dialect configuration option larger-redefines-ok was changed to
@@ -91,7 +91,7 @@ NEWS - user visible changes				-*- outline -*-
    dialects, this was fixed so SYNC is ignored depending on the dialect
 
 ** COBOL programs compiled with versions before GnuCOBOL 3 that used files with
-   ORGANIZATION INDEXED or RELATIVE chrashed when executed with newer versions,
+   ORGANIZATION INDEXED or RELATIVE crashed when executed with newer versions,
    this has been fixed so that all modules compiled with GnuCOBOL 2.2 can be
    executed with GnuCOBOL 3.2
 
@@ -121,6 +121,28 @@ NEWS - user visible changes				-*- outline -*-
    VARYING and UNTIL phrases are now seen
 
 
+* Known issues in 3.2 (and 3.1)
+
+** testsuite:
+  * if built with vbisam, cisam or disam, depending on the version used, some
+    tests will lead to UNEXPECTED PASS, while others may fail
+  * possibly failing tests (false positives):
+    * temporary path invalid
+    * compiler outputs (assembler)
+    * compile from stdin
+  * NIST: OBNC1M.CBL false positive (the test runner uses a nonportable way of
+    emulating a program kill)
+
+** the recent additions of ">> TURN" and "variable LIKE variable" may not work
+   as expected in all cases
+
+** features that are known to not be portable to every environment yet
+   (especially when using a different compiler than GCC)
+    * function with variable-length RETURNING item
+    * USAGE POINTER, which may need to be manually aligned
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
  GnuCOBOL 3.1.2 released (20201223)
  GnuCOBOL 3.1.1 released (20201208) containing INITIALIZE bug #694
  GnuCOBOL 3.1 released   (20201111) had build issues that were fixed
@@ -148,7 +170,7 @@ NEWS - user visible changes				-*- outline -*-
 ** file handling: include support for a callable EXTFH interface also provided
    by several compilers including Micro Focus
    This allows users to insert an external file handler while retaining
-   all of the normal COBOL I/O functions with a possible callback to libcob.
+   all the normal COBOL I/O functions with a possible callback to libcob.
    To have the compiled program call `yourfh()` for file I/O use:
    `cobc -fcallfh=yourfh`
    In turn `yourfh()` may call `EXTFH()` to use I/O functions from GnuCOBOL.
@@ -161,7 +183,7 @@ NEWS - user visible changes				-*- outline -*-
 ** file handling: name mapping adjusted (improved MF and ACU-compatibility):
    entries starting with a period or number are not resolved any more,
    periods in the external identifier are always replaced by underscore
-    -> MY.FILE is resolved by DD_MY_FILE, dd_MY_FILE, MIFILE now;
+    -> MY.FILE is resolved by DD_MY_FILE, dd_MY_FILE, MYFILE now;
    prefixes "-F " and "-D " are removed from external names;
    if filename is not absolute after translation, COB_FILE_PATH is now
    still applied;
@@ -171,7 +193,7 @@ NEWS - user visible changes				-*- outline -*-
 ** Screen I/O: initial mouse support (for details see runtime.cfg),
    use of CURSOR clause in SPECIAL-NAMES for positioning on ACCEPT
 
-** on abort a stack trace will be genereated, this can be suppressed by
+** on abort a stack trace will be generated, this can be suppressed by
    runtime configuration option COB_STRACK_TRACE
 
 ** the dump that is generated on abort (depending on -fdump at compile-time)
@@ -180,7 +202,7 @@ NEWS - user visible changes				-*- outline -*-
 
 ** changes in handling COPY statement:
    * copybook names that contain an extension aren't searched with additional
-     extensions [as post-rc1-change this may be set to old behaviour by
+     extensions [as post-rc1-change this may be set to old behavior by
      defining COB_MULTI_EXTENSION when building GnuCOBOL/cobc]
    * library names are now tested for environment "COB_COPY_LIB_libname",
      allowing the directory to specified externally (also as no-directory 
@@ -226,10 +248,10 @@ NEWS - user visible changes				-*- outline -*-
 
    extra information to a warning (or error) is now marked as "note:"
 
-** the interal Xref got a huge speedup, has all references in ascending order
+** the internal Xref got a huge speedup, has all references in ascending order
    now and includes the total amount of direct references
 
-** the interal listing got a speedup and has all error references in
+** the internal listing got a speedup and has all error references in
    ascending order now
 
 ** cobc -g (and configure --enable-debug) use the most expressive
@@ -250,7 +272,7 @@ NEWS - user visible changes				-*- outline -*-
 
 ** libcob.h does no longer auto-include gmp.h (behavior since 2.x), if you link
    against libcob and need cob_decimal include gmp.h/mpir.h yourself before;
-   otherwise you do not need it in your include path any more
+   otherwise you do not need it in your include path anymore
 
 ** execution times of INSPECT and INITIALIZE with OCCURS were heavily cut down
 
@@ -307,7 +329,7 @@ NEWS - user visible changes				-*- outline -*-
    hardening options or leave as-is, or disable (which previous versions
    effectively did)
 
-** build system: defaults.h is not created or included any more, all configure
+** build system: defaults.h is not created or included anymore, all configure
    provided defines are now found in the single header config.h
 
 ** Any time after `make` you can call `pre-inst-env` script to use the still-
@@ -327,29 +349,9 @@ NEWS - user visible changes				-*- outline -*-
 
 * GnuCOBOL's getopt implementation honors POSIXLY_CORRECT now:
   if set to any value the option parsing in cobc, cobcrun and CBL_GC_GETOPT
-  stops at the first nonoption, otherwise it stays with the old behaviour and
+  stops at the first nonoption, otherwise it stays with the old behavior and
   re-orders nonoptions to the end)
 
-
-* Known issues in 3.1
-
-** testsuite:
-  * if built with vbisam, cisam or disam, depending on the version used, some
-    tests will lead to UNEXPECTED PASS, while others may fail
-  * possibly failing tests (false positives):
-    * temporary path invalid
-    * compiler outputs (assembler)
-    * compile from stdin
-  * NIST: OBNC1M.CBL false positive (the test runner uses a nonportable way of
-    emulating a program kill)
-
-** the recent additions of ">> TURN" and "variable LIKE variable" may not work
-   as expected in all cases
-
-** features that are known to not be portable to every environment yet
-   (especially when using a different compiler than GCC)
-    * function with variable-length RETURNING item
-    * USAGE POINTER, which may need to be manually aligned
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

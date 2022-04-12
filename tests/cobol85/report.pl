@@ -1,7 +1,7 @@
 #
 # gnucobol/tests/cobol85/report.pl
 #
-# Copyright (C) 2001-2012, 2016-2020 Free Software Foundation, Inc.
+# Copyright (C) 2001-2012, 2016-2020, 2022 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 #
 # This file is part of GnuCOBOL.
@@ -44,6 +44,7 @@ my $compile_module;
 my $force_cobcrun = 0;
 
 my $cobc = $ENV{"COBC"};
+my $cobol_flags= $ENV{"COBOL_FLAGS"};
 my $cobcrun = $ENV{"COBCRUN"};
 my $cobcrun_direct = $ENV{"COBCRUN_DIRECT"};
 
@@ -62,6 +63,10 @@ if (defined $opt) {
 	$opt = "-std=cobol85 $opt"
 } else {
 	$opt = "-std=cobol85"
+}
+
+if (defined $cobol_flags ) {
+	$opt = "$cobol_flags $opt"
 }
 
 if (defined $cobc) {

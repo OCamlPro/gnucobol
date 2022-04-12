@@ -1,4 +1,16 @@
 
+2022-04-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* strings.c (inspect_find_data): extracted from cob_inspect_before /
+	  cob_inspect_after
+	* strings.c (cob_inspect_characters): use (is_marked) to count/replace
+	  all characters at once when possible
+	* strings.c (inspect_common, cob_inspect_characters,
+	  cob_inspect_converting): early exit if nothing to inspect
+	* strings.c (cob_init_strings, cob_inspect_init, cob_unstring_init):
+	  don't pre-allocate inspect_mark, inspect_repdata, dlm_list but
+	  allocate with minimal default size on first use
+
 2022-04-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* strings.c (do_mark, is_marked): extracted from inspect_common
@@ -17,6 +29,13 @@
 2022-04-01  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.h [__DJGPP__]: use DOS path specs
+
+2022-02-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: backport of REWRITE in LINE SEQUENTIAL (especially: record_off),
+	  COB_LS_VALIDATE to check LINE SEQUENTIAL files during read/write,
+	  COB_SEQ_CONCAT_NAME and COB_SEQ_CONCAT_SEP, and other file specific
+	  features
 
 2022-01-30  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -90,6 +109,11 @@
 	* intrinsic.c: replace int_pow definition and use with cob_s32_pow
 	* fileio.c [WIN32]: redefine mkdir instead of handling mode parameter
 	  via defines when used
+
+2021-10-02  Ron Norman <rjn@inglenet.com>
+
+	* fileio.c (lineseq_read): Check LINE SEQUENTIAL data and if invalid
+	  return 09 status
 
 2021-09-30  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -226,6 +250,15 @@
 
 	* fextfh.c->fileio.c: check FCD-CURRENT-REC-LEN being changed on
 	  WRITE/REWRITE
+
+2021-07-05  Ron Norman <rjn@inglenet.com>
+
+	* common.h (cob_file): Added flag_is_concat, org_filename and nxt_filename
+	* common.c: Handle runtime options COB_SEQ_CONCAT_NAME and
+	  COB_SEQ_CONCAT_SEP used for 'concatenated input files'
+	* coblocal.h (cob_settings): Added fields for concatenated files
+	* fileio.c: Add code to handle SEQUENTIAL and LINE SEQUENTIAL
+	  concatenated input files for OPEN INPUT and I-O
 
 2021-07-02  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -747,6 +780,19 @@
 	* fileio.c (indexed_keydesc): always use key component definition
 	  if available fixing broken 1-part "components" using wrong offset
 
+2020-04-26  Ron Norman <rjn@inglenet.com>
+
+	* fileio.c: For LINE SEQUENTIAL and OPEN I-O some platforms
+				(SUNOS for one) require that a fflush be done
+				between each read/write of the file
+	  Simon 2022-02-04: for now surrounded with [READ_WRITE_NEEDS_FLUSH]
+
+2020-04-14  Ron Norman <rjn@inglenet.com>
+
+	* fileio.c: Fixed to NOT mix I/O to FILE * via putc and 'int fd' via write
+	   'FILE *' is buffered and 'int fd' is NOT so the data
+	   can end up in a very strange sequence in the file
+
 2020-04-11  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (print_info) [mpir_version]: fixed string overflow warnings
@@ -796,6 +842,12 @@
 	* common.h, fileio.c (fextfh.c, fbdb.c): Updates to support 
 	   SET ... TO ADDRESS OF FH--FCD OF file     and
 	   SET ... TO ADDRESS OF FH--KEYDEF OF file
+
+2019-11-14  Ron Norman <rjn@inglenet.com>
+
+	* common.c: Fix for display of runtime options
+	* fileio.c: If bad data in LINE SEQUENTIAL file cause error status 71
+	            instead of 34
 
 2019-10-25  Edward Hart <edward.dan.hart@gmail.com>
 
@@ -2094,6 +2146,12 @@
 
 2016-06-20  Ron Norman <rjn@inglenet.com>
 
+	* common.h: added some COB_CHAR_xxx to define some characters
+	* fileio.c: for LINE SEQUENTIAL files with COB_LS_VALIDATE = true
+	    changed bad data error from 30 to 34
+	    Also allow some characters thru such as BS, FF, TAB, ESC, SI
+	    No data validation is done for LINE ADVANCING output files
+
 	* coblocal.h, common.c: FR #138 identify config variables which accept
 	  a path list and any which only accept a single directory/file
 	  are checked for the PATH_SEP character and error is given if
@@ -2471,6 +2529,11 @@
 	  fields used for CONTROL breaks. This is a cludge to avoid
 	  something that is clobbering free memory on SUN system.
 	  It did work fine on x86 Linux so watch out for this later.
+
+2015-04-27  Ron Norman <rjn@inglenet.com>
+
+	* fileio.c, common.h (cob_file): updated to support line sequential rewrite
+	* fileio.c, common.c, coblocal.h (cob_settings): new COB_LS_VALIDATE
 
 2015-04-14  Ron Norman <rjn@inglenet.com>
 

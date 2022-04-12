@@ -1,4 +1,9 @@
 
+2022-04-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* report.pl: add COBOL_FLAGS from environment to cobc command line
+	  as done for the internal testsuite
+
 2020-11-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* Makefile.am: (newcob.val.Z, newcob.val.tar.gz): raise error message
@@ -345,7 +350,7 @@
 	* SQ.txt, summary.txt : We now pass the LINAGE tests
 
 
-Copyright 2005-2010,2015-2020 Free Software Foundation, Inc.
+Copyright 2005-2010,2015-2020,2022 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

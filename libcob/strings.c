@@ -60,16 +60,16 @@ static cob_field		*inspect_var;
 static unsigned char		*inspect_data;
 static unsigned char		*inspect_start;
 static unsigned char		*inspect_end;
-static unsigned char		*inspect_mark;	/* marker only: 0/1 */
+static unsigned char		*inspect_mark;	/* buffer to marker only: 0/1 */
 static size_t			inspect_mark_size;	/* size of internal marker elements, increased up to
 											   the maximum needed (biggest target field size) */
 static size_t			inspect_mark_min;	/* min. position of the marker set by the last initialize */
 static size_t			inspect_mark_max;	/* max. position of the marker set by the last initialize */
-static unsigned char		*inspect_repdata;	/* contains data for replacing */
-static size_t			inspect_repdata_size;	/* size of internal repdata elements, increased up to
+static unsigned char		*inspect_repdata;	/* contains data for REPLACING which is applied at end */
+static size_t			inspect_repdata_size;	/* size of internal repdata buffer, increased up to
 											   the maximum needed (biggest target field size) */
 static size_t			inspect_size;
-static cob_u32_t		inspect_replacing;
+static cob_u32_t		inspect_replacing;	/* marker about current operation being INSPECT REPLACING */
 static int			inspect_sign;
 static cob_field		inspect_var_copy;
 
@@ -143,6 +143,55 @@ alloc_figurative (const cob_field *f1, const cob_field *f2)
 	alpha_fld.data = figurative_ptr;
 }
 
+/* (re-)allocates the used replace buffer as necessary
+   This is a must-have for REPLACING as the original data may not be
+   changed to correctly handle multiple replacements with BEFORE/AFTER
+   clauses */
+static COB_INLINE COB_A_INLINE void
+setup_repdata (void)
+{
+	/* implementation note:
+	   A version that memcpy'd the complete inspect_data to inspect_repdata
+	   on first use, then memcpy back in cob_inspect_finish was tested but
+	   dropped. While it has the benefit that memory breakpoints in the COBOL
+	   data are only triggered once and always shows the result-to-be and
+	   uses an optimized memcpy instead of a manual loop it involves much more
+	   memory operations than commonly necessary - because normally only a small
+	   percentage of the data is actually replaced.
+	   A version that used inspect_repdata for CONVERTING was also dropped as
+	   we don't need the additional memory there. */
+	if (inspect_size > inspect_repdata_size) {
+		if (inspect_repdata) {
+			cob_free (inspect_repdata);
+			inspect_repdata_size = inspect_size;
+		} else if (inspect_size < COB_NORMAL_BUFF) {
+			inspect_repdata_size = COB_NORMAL_BUFF;
+		} else {
+			inspect_repdata_size = inspect_size;
+		}
+		/* data content does not matter as we only used marked positions at end */
+		inspect_repdata = cob_fast_malloc (inspect_repdata_size + 1);
+	}
+}
+
+static COB_INLINE COB_A_INLINE unsigned char *
+inspect_find_data (const cob_field *str)
+{
+	const unsigned char *data = str->data;
+	const size_t	len = str->size;
+
+	unsigned char* const end_p = inspect_end - len + 1;
+	unsigned char* p = inspect_start;
+
+	while (p != end_p) {
+		if (memcmp (p, data, len) == 0) {
+			return p;
+		}
+		p++;
+	}
+	return NULL;
+}
+
 static COB_INLINE COB_A_INLINE void
 set_inspect_mark (const size_t pos, const size_t length)
 {
@@ -190,15 +239,17 @@ do_mark (const size_t pos, const size_t length, unsigned char *replace_data)
 	if (is_marked (pos, length)) {
 		return 0;	/* it is, nothing to do here */
 	}
+	/* nothing done there yet, so: */
 
-	/* nothing done there yet, so do mark... */
-	set_inspect_mark (pos, length);
-	/* ... and handle possible replacing */
+	/* 1 - handle possible replacing */
 	if (inspect_replacing) {
+		setup_repdata ();
 		memcpy (inspect_repdata + pos, replace_data, length);
 	}
+	/* 2 - set the marker so we won't iterate over this area again */
+	set_inspect_mark (pos, length);
 
-	/* let the caller handle counting */
+	/* 3 - let the caller handle counting and similar */
 	return 1;	
 }
 
@@ -209,6 +260,12 @@ inspect_common (cob_field *f1, cob_field *f2, const enum inspect_type type)
 	const size_t	inspect_len = inspect_end - inspect_start;
 	size_t		i;
 	int		n = 0;
+
+	if (inspect_len == 0) {
+		/* inspecting either a zero-length field or
+		   AFTER ... has not found a place to start the conversion */
+		return;
+	}
 
 	if (unlikely (!f1)) {
 		f1 = &str_cob_low;
@@ -290,6 +347,15 @@ inspect_common (cob_field *f1, cob_field *f2, const enum inspect_type type)
 /* Global functions */
 
 /* INSPECT */
+/* an INSPECT is split into multiple parts:
+   one-time cob_inspect_init   (setting up memory and markers)
+   multiple:
+	cob_inspect_start         (setting inspect_start/end)
+	cob_inspect_before        (optional, adjusting inspect_end)
+	cob_inspect_after         (optional, adjusting inspect_start)
+   one of:
+	cob_inspect_characters/converting/all/leading/trailing/first
+   one-time cob_inspect_finish (copying the REPLACING characters back) */
 
 void
 cob_inspect_init (cob_field *var, const cob_u32_t replacing)
@@ -307,24 +373,18 @@ cob_inspect_init (cob_field *var, const cob_u32_t replacing)
 	inspect_start = NULL;
 	inspect_end = NULL;
 
-	if (replacing
-	 && inspect_size > inspect_repdata_size) {
-		if (inspect_repdata) {
-			cob_free (inspect_repdata);
-		}
-		/* data content does not matter as we only use marked entries */
-		inspect_repdata = cob_fast_malloc (inspect_size + 1);
-		inspect_repdata_size = inspect_size;
-		/* CHECKME: memcpy everything here or better on first replace */
-	}
 	if (inspect_size > inspect_mark_size) {
 		if (inspect_mark) {
 			cob_free (inspect_mark);
+			inspect_mark_size = inspect_size;
+		} else if (inspect_size < COB_NORMAL_BUFF) {
+			inspect_mark_size = COB_NORMAL_BUFF;
+		} else {
+			inspect_mark_size = inspect_size;
 		}
 		/* initialize to zero */
-		inspect_mark = cob_malloc (inspect_size + 1);
-		inspect_mark_size = inspect_size;
-	} else if (inspect_mark[inspect_mark_min] != 0) {
+		inspect_mark = cob_malloc (inspect_mark_size + 1);
+	} else if (inspect_mark_size != 0 && inspect_mark[inspect_mark_min] != 0) {
 		const size_t init_len = inspect_mark_max - inspect_mark_min + 1;
 		memset (inspect_mark + inspect_mark_min, 0, init_len);
 	}
@@ -342,32 +402,21 @@ cob_inspect_start (void)
 void
 cob_inspect_before (const cob_field *str)
 {
-	unsigned char	* const end_p = inspect_end - str->size + 1;
-	unsigned char	*p = inspect_start;
-
-	while (p != end_p) {
-		if (memcmp (p, str->data, str->size) == 0) {
-			inspect_end = p;
-			return;
-		}
-		p++;
+	unsigned char *data_pos = inspect_find_data (str);
+	if (data_pos) {
+		inspect_end = data_pos;
 	}
 }
 
 void
 cob_inspect_after (const cob_field *str)
 {
-	unsigned char	* const end_p = inspect_end - str->size + 1;
-	unsigned char	*p = inspect_start;
-
-	while (p != end_p) {
-		if (memcmp (p, str->data, str->size) == 0) {
-			inspect_start = p + str->size;
-			return;
-		}
-		p++;
+	unsigned char *data_pos = inspect_find_data (str);
+	if (data_pos) {
+		inspect_start = data_pos + str->size;
+	} else {
+		inspect_start = inspect_end;
 	}
-	inspect_start = inspect_end;
 }
 
 void
@@ -378,27 +427,39 @@ cob_inspect_characters (cob_field *f1)
 	const unsigned char	*mark_pos = inspect_mark + pos;
 	const unsigned char * const mark_end = mark_pos + inspect_len;
 
+	if (inspect_len == 0) {
+		/* inspecting either a zero-length field or
+		   AFTER ... has not found a place to start the conversion */
+		return;
+	}
+
 	if (inspect_replacing) {
-		unsigned char	*repdata = inspect_repdata + pos;
-		/* INSPECT REPLACING CHARACTERS f1 */
-		while (mark_pos != mark_end) {
-			/* store original data to replacement for everything
-			   we did not set a replacement for so far */
-			if (*mark_pos++ == 0) {
-				*repdata = *f1->data;
+		/* INSPECT REPLACING CHARACTERS BY f1 */
+		const unsigned char repl_by = *f1->data;
+		unsigned char	*repdata;
+		setup_repdata ();
+		repdata = inspect_repdata + pos;
+		if (is_marked (pos, inspect_len)) {
+			/* at least a partial marking - so iterate */
+			while (mark_pos != mark_end) {
+				/* replace all positions in the original data where
+				   we did not set a replacement for so far */
+				if (*mark_pos++ == 0) {
+					*repdata = repl_by;
+				}
+				repdata++;
 			}
-			repdata++;
+		} else {
+			/* that area is "free to go", so memset */
+			memset (repdata, repl_by, inspect_len);
 		}
-		set_inspect_mark (pos, inspect_len);
 	} else {
 		/* INSPECT TALLYING f1 CHARACTERS */
-		if (inspect_mark[inspect_mark_min] == 0) {
-			/* common case: no markers in the length to check */
-			cob_add_int (f1, (int)inspect_len, 0);
-		} else {
+		if (is_marked (pos, inspect_len)) {
+			/* at least a partial marking - so iterate */
+			int	n = 0;
 			/* Note: field->size and therefore INSPECT target's size are
 			         guaranteed to be < INT_MAX */
-			int	n = 0;
 			while (mark_pos != mark_end) {
 				if (*mark_pos++ == 0) {
 					n++;
@@ -407,9 +468,12 @@ cob_inspect_characters (cob_field *f1)
 			if (n > 0) {
 				cob_add_int (f1, n, 0);
 			}
-			set_inspect_mark (pos, inspect_len);
+		} else {
+			/* common case: no markers in the length to check */
+			cob_add_int (f1, (int)inspect_len, 0);
 		}
 	}
+	set_inspect_mark (pos, inspect_len);
 }
 
 void
@@ -440,7 +504,12 @@ void
 cob_inspect_converting (const cob_field *f1, const cob_field *f2)
 {
 	const size_t	inspect_len = inspect_end - inspect_start;
-	size_t	i, j;
+
+	if (inspect_len == 0) {
+		/* inspecting either a zero-length field or
+		   AFTER ... has not found a place to start the conversion */
+		return;
+	}
 
 	if (unlikely (!f1)) {
 		f1 = &str_cob_low;
@@ -461,15 +530,19 @@ cob_inspect_converting (const cob_field *f1, const cob_field *f2)
 	/* test _all_ positions of the inspect target against
 	   all entries of CONVERTING position by position */
 	{
+		const size_t	pos = inspect_start - inspect_data;
+		const size_t	pos_end = pos + inspect_len;
 		const size_t	conv_len = f1->size;
+		size_t	i, j;
+
 		for (j = 0; j < conv_len; ++j) {
 			const unsigned char conv_from = f1->data[j];
 			const unsigned char conv_to   = f2->data[j];
-			for (i = 0; i < inspect_len; ++i) {
-				/* skip entries that were already replaced by another position */
+			for (i = pos; i < pos_end; ++i) {
+				/* skip entries that were already converted by another position */
 				if (inspect_mark[i] == 0
-					&& inspect_start[i] == conv_from) {
-					inspect_start[i] = conv_to;
+				 && inspect_data[i] == conv_from) {
+					inspect_data[i] = conv_to;
 					set_inspect_mark (i, 1);
 				}
 			}
@@ -480,17 +553,24 @@ cob_inspect_converting (const cob_field *f1, const cob_field *f2)
 void
 cob_inspect_finish (void)
 {
-	size_t	i;
 
-	if (inspect_replacing) {
-		/* copy over all replacement characters
-		  TODO: Use memcpy to repdata at the beginning and
-		         then back here */
-		for (i = 0; i < inspect_size; ++i) {
+	if (inspect_replacing
+	 && inspect_repdata_size != 0	/* check for first INSPECT REPLACING having zero length */
+	 && inspect_mark[inspect_mark_min] != 0) {
+		/* copy over replace data from first to last changed position */
+		size_t	i;
+		for (i = inspect_mark_min; i <= inspect_mark_max; ++i) {
 			if (inspect_mark[i] != 0) {
 				inspect_data[i] = inspect_repdata[i];
 			}
 		}
+#if 0	/* drop data copy because of security issues
+		[may only be done upon request]; if not active and
+		that contains sensitive data do an INSPECT against a field
+		of the same size to overwrite the buffer */
+		memset (inspect_repdata + inspect_mark_min, 0,
+		        inspect_mark_max - inspect_mark_min + 1);
+#endif
 	}
 
 	if (unlikely (inspect_var)) {
@@ -595,9 +675,15 @@ cob_unstring_init (cob_field *src, cob_field *ptr, const size_t num_dlm)
 	unstring_ndlms = 0;
 	cobglobptr->cob_exception_code = 0;
 	if (num_dlm > dlm_list_size) {
-		cob_free (dlm_list);
-		dlm_list = cob_malloc (num_dlm * sizeof(struct dlm_struct));
-		dlm_list_size = num_dlm;
+		if (dlm_list) {
+			cob_free (dlm_list);
+			dlm_list_size = num_dlm;
+		} else if (num_dlm < DLM_DEFAULT_NUM) {
+			dlm_list_size = DLM_DEFAULT_NUM;
+		} else {
+			dlm_list_size = num_dlm;
+		}
+		dlm_list = cob_malloc (dlm_list_size * sizeof(struct dlm_struct));
 	}
 
 	if (unstring_ptr) {
@@ -757,15 +843,6 @@ void
 cob_init_strings (cob_global *lptr)
 {
 	cobglobptr = lptr;
-
-	inspect_mark_size = COB_NORMAL_BUFF;
-	inspect_mark = cob_malloc (inspect_mark_size + 1);
-
-	inspect_repdata_size = COB_NORMAL_BUFF;
-	inspect_repdata = cob_malloc (inspect_repdata_size + 1);
-
-	dlm_list_size = DLM_DEFAULT_NUM;
-	dlm_list = cob_malloc (dlm_list_size * sizeof(struct dlm_struct));
 
 	figurative_ptr = NULL;
 	figurative_size = 0;
