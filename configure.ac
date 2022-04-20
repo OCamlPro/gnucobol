@@ -598,14 +598,15 @@ else
 	LIBCOB_LIBS="$COMMON_LIBS"
 fi
 
-COB_LIBS="-lcob"
+COB_LIBS="-L\"$libdir\" -lcob"
 if test "x$COMMON_LIBS" != "x"; then
 	COB_LIBS="$COB_LIBS $COMMON_LIBS"
 fi
 
-COB_LDFLAGS="-L\"$libdir\""
 if test "x$LDFLAGS" != "x"; then
-	COB_LDFLAGS="$COB_LDFLAGS $LDFLAGS"
+	COB_LDFLAGS="$LDFLAGS"
+else
+	COB_LDFLAGS=" "
 fi
 
 dnl Add --enable-code-coverage and test for code-coverage tools if enabled
