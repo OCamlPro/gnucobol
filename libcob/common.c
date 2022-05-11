@@ -1101,6 +1101,17 @@ cob_get_sign_ascii (unsigned char *p)
 		return -1;
 	case 'y':
 		*p = (unsigned char)'9';
+	case '0':
+	case '1':
+	case '2':
+	case '3':
+	case '4':
+	case '5':
+	case '6':
+	case '7':
+	case '8':
+	case '9':
+		/* already without sign */
 		return -1;
 	}
 	*p = (unsigned char)'0';
@@ -1108,6 +1119,10 @@ cob_get_sign_ascii (unsigned char *p)
 #else
 	if (*p >= (unsigned char)'p' && *p <= (unsigned char)'y') {
 		*p &= ~64U;
+		return -1;
+	}
+	if (*p >= (unsigned char)'0' && *p <= (unsigned char)'9') {
+		/* already without sign */
 		return -1;
 	}
 	*p = (unsigned char)'0';
@@ -1149,6 +1164,18 @@ cob_put_sign_ascii (unsigned char *p)
 		return;
 	case '9':
 		*p = (unsigned char)'y';
+		return;
+	case 'p':
+	case 'q':
+	case 'r':
+	case 's':
+	case 't':
+	case 'u':
+	case 'v':
+	case 'w':
+	case 'x':
+	case 'y':
+		/* already signed */
 		return;
 	default:
 		*p = (unsigned char)'0';
@@ -1272,12 +1299,25 @@ cob_put_sign_ebcdic (unsigned char *p, const int sign)
 		case '9':
 			*p = (unsigned char)'R';
 			return;
+		case '}':
+		case 'J':
+		case 'K':
+		case 'L':
+		case 'M':
+		case 'N':
+		case 'O':
+		case 'P':
+		case 'Q':
+		case 'R':
+			/* already signed */
+			return;
 		default:
 			/* What to do here */
-			*p = (unsigned char)'{';
+			*p = (unsigned char)'}';
 			return;
 		}
 	}
+
 	switch (*p) {
 	case '0':
 		*p = (unsigned char)'{';
@@ -1308,6 +1348,18 @@ cob_put_sign_ebcdic (unsigned char *p, const int sign)
 		return;
 	case '9':
 		*p = (unsigned char)'I';
+		return;
+	case '{':
+	case 'A':
+	case 'B':
+	case 'C':
+	case 'D':
+	case 'E':
+	case 'F':
+	case 'G':
+	case 'H':
+	case 'I':
+		/* already signed */
 		return;
 	default:
 		/* What to do here */

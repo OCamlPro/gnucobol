@@ -9327,15 +9327,13 @@ emit_invalid_target_error (const enum cb_inspect_clause clause)
 void
 cb_emit_inspect (cb_tree var, cb_tree body, const enum cb_inspect_clause clause)
 {
-	int	replacing_or_converting =
-		clause == REPLACING_CLAUSE || clause == CONVERTING_CLAUSE;
-	cb_tree	replacing_flag = clause == REPLACING_CLAUSE ? cb_int1 : cb_int0;
-
 	switch (CB_TREE_TAG (var)) {
 	case CB_TAG_REFERENCE:
 		break;
 	case CB_TAG_INTRINSIC:
-		if (replacing_or_converting) {
+		/* note: the case here and below are pre-checked by the parser already,
+		         therefore we don't ever execute this */
+		if (clause != TALLYING_CLAUSE) {
 			goto error;
 		}
 		switch (CB_TREE_CATEGORY (var)) {
@@ -9348,17 +9346,25 @@ cb_emit_inspect (cb_tree var, cb_tree body, const enum cb_inspect_clause clause)
 		}
 		break;
 	case CB_TAG_LITERAL:
-		if (replacing_or_converting) {
+		if (clause != TALLYING_CLAUSE) {
 			goto error;
 		}
 		break;
 	default:
 		goto error;
 	}
-
-	cb_emit (CB_BUILD_FUNCALL_2 ("cob_inspect_init", var, replacing_flag));
-	cb_emit_list (body);
-	cb_emit (CB_BUILD_FUNCALL_0 ("cob_inspect_finish"));
+	{
+		const cb_tree	replacing_flag = clause == REPLACING_CLAUSE ? cb_int1 : cb_int0;
+		if (clause == CONVERTING_CLAUSE || clause == TRANSFORM_STATEMENT) {
+			cb_emit (CB_BUILD_FUNCALL_1 ("cob_inspect_init_converting", var));
+			cb_emit_list (body);
+			/* no finish here */
+		} else {
+			cb_emit (CB_BUILD_FUNCALL_2 ("cob_inspect_init", var, replacing_flag));
+			cb_emit_list (body);
+			cb_emit (CB_BUILD_FUNCALL_0 ("cob_inspect_finish"));
+		}
+	}
 	return;
 
  error:

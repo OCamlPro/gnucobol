@@ -13652,7 +13652,7 @@ inspect_statement:
 ;
 
 inspect_body:
-  _backward send_identifier inspect_list
+  _backward send_identifier inspect_format_variant
   {
 	if ($1) {
 		CB_PENDING ("INSPECT BACKWARD");
@@ -13671,7 +13671,7 @@ send_identifier:
 | function
 ;
 
-inspect_list:
+inspect_format_variant:
   inspect_tallying inspect_replacing
 | inspect_tallying
 | inspect_replacing
@@ -15650,9 +15650,7 @@ transform_statement:
 transform_body:
   display_identifier FROM simple_display_value TO simple_display_all_value
   {
-	cb_tree		x;
-
-	x = cb_build_converting ($3, $5, cb_build_inspect_region_start ());
+	cb_tree		x = cb_build_converting ($3, $5, cb_build_inspect_region_start ());
 	cb_emit_inspect ($1, x, TRANSFORM_STATEMENT);
   }
 ;

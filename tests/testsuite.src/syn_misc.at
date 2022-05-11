@@ -5109,6 +5109,11 @@ AT_DATA([prog.cob], [
            INSPECT f TALLYING not-a-num FOR ALL 3
                REPLACING FIRST "abcde" BY not-display
            TRANSFORM f FROM 3 TO 2
+           TRANSFORM function udf(f-rec) FROM SPACE TO ZERO
+           TRANSFORM "yada" FROM SPACE TO ZERO
+           INSPECT function trim(f-rec)
+               TALLYING not-display FOR ALL SPACES *> valid with func
+               REPLACING FIRST ZERO BY SPACE       *> not valid
            .
 ])
 
@@ -5124,6 +5129,9 @@ prog.cob:22: error: 'f' is not a field
 prog.cob:22: error: 3 is not an alphanumeric literal
 prog.cob:22: error: 2 is not an alphanumeric literal
 prog.cob:22: error: invalid target for TRANSFORM
+prog.cob:23: error: syntax error, unexpected intrinsic function name, expecting Identifier
+prog.cob:24: error: syntax error, unexpected Literal, expecting Identifier
+prog.cob:25: error: invalid target for REPLACING
 ])
 AT_CLEANUP
 

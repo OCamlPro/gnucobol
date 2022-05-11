@@ -1,4 +1,19 @@
 
+2022-05-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_get_sign_ascii, cob_put_sign_ascii, cob_put_sign_ebcdic):
+	  skip sign-adjustment if data is already without/with sign
+	* common.c (cob_put_sign_ebcdic): invalid data for negative sign is now
+	  converted to -0 instead of +0
+	* strings.c (cob_inspect_init_common): extracted from cob_inspect_init
+	* strings.c (cob_inspect_converting): reordered code, so inspect_mark
+	  is no longer needed
+	* strings.c (cob_inspect_init_common): extracted from cob_inspect_init
+	* strings.c (cob_inspect_init_converting), common.h: new stripped down
+	  variant of cob_inspect_init
+	* strings.c (cob_inspect_converting): changed conversion to be based
+	  on pre-computed conversion tables, improving performance a lot
+
 2022-04-11  Simon Sobisch <simonsobisch@gnu.org>
 
 	* strings.c (inspect_find_data): extracted from cob_inspect_before /

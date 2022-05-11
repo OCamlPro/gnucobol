@@ -1,4 +1,10 @@
 
+2022-05-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_emit_inspect): emit reduced cob_inspect_init_converting
+	  without cob_inspect_finish for INSPECT CONVERTING / TRANSFORM
+	* parser.y: inspect_list renamed to inspect_format_variant
+
 2022-04-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (process_translate): add length note also for value clauses

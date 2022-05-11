@@ -354,24 +354,35 @@ inspect_common (cob_field *f1, cob_field *f2, const enum inspect_type type)
 	cob_inspect_before        (optional, adjusting inspect_end)
 	cob_inspect_after         (optional, adjusting inspect_start)
    one of:
-	cob_inspect_characters/converting/all/leading/trailing/first
+	cob_inspect_characters/cob_inspect_converting (until 3.2)/cob_inspect_all/
+	cob_inspect_leading/cob_inspect_trailing/cob_inspect_first
    one-time cob_inspect_finish (copying the REPLACING characters back) */
 
-void
-cob_inspect_init (cob_field *var, const cob_u32_t replacing)
+static COB_INLINE COB_A_INLINE void
+cob_inspect_init_common (cob_field *var)
 {
-	if (unlikely (COB_FIELD_IS_NUMDISP (var))) {
+	if (COB_FIELD_HAVE_SIGN (var) && !COB_FIELD_SIGN_SEPARATE(var)) {
+		/* it is allowed to TRANSFORM / INSPECT a numeric display signed element;
+		   if it isn't stored separately we need to "remove" it here and add it back
+		   in inspect_finish */
 		inspect_var_copy = *var;
 		inspect_var = &inspect_var_copy;
-		inspect_sign = COB_GET_SIGN (var);
+		inspect_sign = cob_real_get_sign (var);
 	} else {
 		inspect_var = NULL;
 	}
 	inspect_size = COB_FIELD_SIZE (var);
 	inspect_data = COB_FIELD_DATA (var);
-	inspect_replacing = replacing;
 	inspect_start = NULL;
 	inspect_end = NULL;
+
+	cobglobptr->cob_exception_code = 0;
+}
+void
+cob_inspect_init (cob_field *var, const cob_u32_t replacing)
+{
+	cob_inspect_init_common (var);
+	inspect_replacing = replacing;
 
 	if (inspect_size > inspect_mark_size) {
 		if (inspect_mark) {
@@ -389,7 +400,22 @@ cob_inspect_init (cob_field *var, const cob_u32_t replacing)
 		memset (inspect_mark + inspect_mark_min, 0, init_len);
 	}
 	inspect_mark_min = inspect_mark_max = 0;
-	cobglobptr->cob_exception_code = 0;
+}
+
+/* an INSPECT CONVERTING / TRANSFORM is split into multiple parts:
+   one-time cob_inspect_init_converting
+        --> cob_inspect_init_common    (setting up memory)
+   multiple:
+	cob_inspect_start         (setting inspect_start/end)
+	cob_inspect_before        (optional, adjusting inspect_end)
+	cob_inspect_after         (optional, adjusting inspect_start)
+   one-time cob_inspect_converting (actual converstion) */
+
+void
+cob_inspect_init_converting (cob_field *var)
+{
+	cob_inspect_init_common (var);
+	inspect_replacing = 0;	/* only set for pre 3.2 compat because of cob_inspect_finish */
 }
 
 void
@@ -506,7 +532,7 @@ cob_inspect_converting (const cob_field *f1, const cob_field *f2)
 	const size_t	inspect_len = inspect_end - inspect_start;
 
 	if (inspect_len == 0) {
-		/* inspecting either a zero-length field or
+		/* our task is to convert either a zero-length field or
 		   AFTER ... has not found a place to start the conversion */
 		return;
 	}
@@ -530,29 +556,69 @@ cob_inspect_converting (const cob_field *f1, const cob_field *f2)
 	/* test _all_ positions of the inspect target against
 	   all entries of CONVERTING position by position */
 	{
-		const size_t	pos = inspect_start - inspect_data;
-		const size_t	pos_end = pos + inspect_len;
-		const size_t	conv_len = f1->size;
-		size_t	i, j;
-
-		for (j = 0; j < conv_len; ++j) {
-			const unsigned char conv_from = f1->data[j];
-			const unsigned char conv_to   = f2->data[j];
-			for (i = pos; i < pos_end; ++i) {
-				/* skip entries that were already converted by another position */
-				if (inspect_mark[i] == 0
-				 && inspect_data[i] == conv_from) {
-					inspect_data[i] = conv_to;
-					set_inspect_mark (i, 1);
+		unsigned char * cur_data = inspect_data + (inspect_start - inspect_data);
+		unsigned char * const cur_data_end = cur_data + inspect_len;
+		
+#if 1 /* table-approach, _much faster_, _should_ be portable */
+		char conv_tab[255] = { 0 };
+		char conv_set[255] = { 0 };
+		
+		/* pre-fill conversion table, skipping duplicates */
+		{
+			const unsigned char *conv_to   = f2->data;
+			const unsigned char *conv_from = f1->data;
+			const unsigned char * const conv_from_end = f1->data + f1->size;
+			while (conv_from < conv_from_end) {
+				if (conv_set[*conv_from] == 0) {
+					conv_set[*conv_from] = 1;
+					conv_tab[*conv_from] = *conv_to;
 				}
+				conv_from++, conv_to++;
 			}
 		}
+		/* iterate over target converting with table */
+		while (cur_data < cur_data_end) {
+			if (conv_set[*cur_data]) {
+				*cur_data = conv_tab[*cur_data];
+			}
+			cur_data++;
+		}
+#else
+		const size_t	conv_len = f1->size;
+		const unsigned char *conv_to = f2->data;
+		const unsigned char *conv_from = f1->data;
+		const unsigned char * const conv_from_end = conv_from + conv_len;
+
+		while (cur_data < cur_data_end) {
+			conv_to = f2->data;
+			conv_from = f1->data;
+			while (conv_from < conv_from_end) {
+				if (*cur_data == *conv_from) {
+					*cur_data = *conv_to;
+					/* note: as we always have exactly 1 target 1 run,
+					   there's no need to mark anything here,
+					   done last with revision 4592 */
+					break;
+				}
+				conv_from++, conv_to++;
+			}
+			cur_data++;
+		}
+#endif
+	}
+
+	/* note: copied here for 3.2+ as cob_inspect_finish is not generated
+	         for TRANSFORM/INSPECT CONVERTING any more */
+	if (inspect_var) {
+		cob_real_put_sign (inspect_var, inspect_sign);
 	}
 }
 
 void
 cob_inspect_finish (void)
 {
+	/* Note: this is not called any more for TRANSFORM/INSPECT CONVERTING
+	         since GnuCOBOL 3.2 codegen (only for "old modules")! */
 
 	if (inspect_replacing
 	 && inspect_repdata_size != 0	/* check for first INSPECT REPLACING having zero length */
@@ -573,8 +639,8 @@ cob_inspect_finish (void)
 #endif
 	}
 
-	if (unlikely (inspect_var)) {
-		COB_PUT_SIGN (inspect_var, inspect_sign);
+	if (inspect_var) {
+		cob_real_put_sign (inspect_var, inspect_sign);
 	}
 }
 
