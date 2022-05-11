@@ -1811,6 +1811,7 @@ COB_EXPIMP int	cob_numeric_cmp		(cob_field *, cob_field *);
 /* Functions in strings.c */
 
 COB_EXPIMP void cob_inspect_init	(cob_field *, const cob_u32_t);
+COB_EXPIMP void cob_inspect_init_converting	(cob_field *);
 COB_EXPIMP void cob_inspect_start	(void);
 COB_EXPIMP void cob_inspect_before	(const cob_field *);
 COB_EXPIMP void cob_inspect_after	(const cob_field *);
