@@ -1,4 +1,9 @@
 
+2022-05-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (transform_body): add full features of INSPECT CONVERTING
+	  to TRANSFORM statement, adding optional CHARACTERS
+
 2022-05-11  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (cb_emit_inspect): emit reduced cob_inspect_init_converting

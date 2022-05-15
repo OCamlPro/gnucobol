@@ -15648,9 +15648,9 @@ transform_statement:
 ;
 
 transform_body:
-  display_identifier FROM simple_display_value TO simple_display_all_value
+  display_identifier _characters FROM inspect_from TO inspect_to
   {
-	cb_tree		x = cb_build_converting ($3, $5, cb_build_inspect_region_start ());
+	cb_tree		x = cb_build_converting ($4, $6, cb_build_inspect_region_start ());
 	cb_emit_inspect ($1, x, TRANSFORM_STATEMENT);
   }
 ;
@@ -17713,13 +17713,6 @@ alnum_or_id:
 
 simple_display_value:
   simple_value
-  {
-	error_if_not_usage_display_or_nonnumeric_lit ($1);
-  }
-;
-
-simple_display_all_value:
-  simple_all_value
   {
 	error_if_not_usage_display_or_nonnumeric_lit ($1);
   }

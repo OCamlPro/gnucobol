@@ -1603,6 +1603,39 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([TRANSFORM statement])
+AT_KEYWORDS([runmisc CONVERTING ALPHABET])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+           ALPHABET MY-ASCII  IS STANDARD-1.
+           ALPHABET MY-EBCDIC IS EBCDIC.
+
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X             PIC X(3) VALUE "BCA".
+       PROCEDURE        DIVISION.
+      *> internally: "alias" to INSPECT CONVERTING
+           TRANSFORM X FROM "ABC" TO "BCD".
+           IF X NOT = "CDB"
+              DISPLAY "X: " X.
+      *> optional CHARACTERS and ALPHABETs (value test is separate)
+           TRANSFORM X CHARACTERS FROM MY-ASCII TO MY-EBCDIC.
+      *>
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([INSPECT CONVERTING alphabet])
 AT_KEYWORDS([runmisc ASCII EBCDIC])
 
