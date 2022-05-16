@@ -9602,10 +9602,17 @@ catch_sig_jmp (int sig)
 void
 cob_sym_get_field (cob_field *f, cob_symbol *sym, int k)
 {
+	int		j;
 	f->size = sym[k].size;
 	f->attr = sym[k].attr;
 	if (sym[k].is_indirect == SYM_ADRS_PTR) {
 		memcpy (&f->data, sym[k].adrs, sizeof(void*));
+		for (j = k; f->data == NULL; j = sym[j].parent) {
+			if (sym[j].parent == 0) {	/* Base of COBOL Record */
+				memcpy (&f->data, sym[j].adrs, sizeof(void*));
+				break;
+			}
+		}
 		if (f->data != NULL)
 			f->data += sym[k].offset;
 	} else if (sym[k].is_indirect == SYM_ADRS_FIELD) {
