@@ -8662,6 +8662,130 @@ AT_CHECK([gcdiff reference dumpall.txt], [0], [], [])
 
 AT_CLEANUP
 
+AT_SETUP([Test dump feature (5)])
+AT_KEYWORDS([Dump])
+
+AT_DATA([prog.cob], [       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+      
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+       DATA  DIVISION.
+       FILE SECTION.
+       WORKING-STORAGE SECTION.
+       77  UNUSED-VAR        VALUE  1          PICTURE 9(4).
+       01  BIN                      PIC 9(9) BINARY VALUE 0.
+       01  PACKD                    PIC 9(4)V99 COMP-3 VALUE 757.99.
+      
+       01  TSPFL-RECORD.
+           10  CM-CUST-NUM      PICTURE X(8)  VALUE "RON00001". 
+           10  CM-COMPANY       PICTURE X(25) VALUE "IBS Canada". 
+           10  CM-DISK          PICTURE X(8)  VALUE "4TB". 
+           10  CM-NO-TERMINALS  USAGE FLOAT.
+      
+       PROCEDURE DIVISION.
+
+       MAIN-100.
+           MOVE 64.7 TO CM-NO-TERMINALS.
+            IF CM-NO-TERMINALS = 66
+                DISPLAY "What happened!"
+            END-IF.
+           PERFORM CALL-SUB-1.
+           STOP RUN.
+
+       CALL-SUB-1 SECTION.
+           CALL "sub1" USING bin, TSPFL-RECORD.
+       
+           END PROGRAM prog.
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. sub1.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  BAD-PTR      USAGE POINTER.
+
+       LINKAGE SECTION.
+       01  X          PIC 9 ANY NUMERIC.
+       01  TSP-RECORD.
+           10  CM-CUST-NUM                     PICTURE X(8). 
+           10  CM-COMPANY                      PICTURE X(25). 
+           10  CM-DISK                         PICTURE X(8). 
+           10  CM-NO-TERMINALS                 USAGE FLOAT.
+       
+       PROCEDURE DIVISION USING X, TSP-RECORD.
+       MAIN-1 SECTION.
+            PERFORM DMP-TIME.
+            IF CM-NO-TERMINALS = 66
+                DISPLAY X "Miller time!"
+            END-IF.
+            GOBACK.
+       DMP-TIME1.
+            CALL BAD-PTR.
+       DMP-TIME.
+            PERFORM DMP-TIME1.
+       END PROGRAM sub1.
+])
+
+AT_CHECK([$COMPILE -std=default -debug -fdump=ALL prog.cob ], [0], [], [])
+
+AT_CHECK([export COB_DUMP_FILE=dumpall.txt
+$COBCRUN_DIRECT ./prog], [1], [], [libcob: prog.cob:58: error: module '' not found
+
+dump written to dumpall.txt
+])
+
+
+AT_CAPTURE_FILE(./dumpall.txt)
+
+AT_DATA([reference], [
+Module dump due to module '' not found
+
+ Last statement of "sub1" was at line 58 of prog.cob    
+ Last statement of "prog" was at line 32 of prog.cob    
+ Started by ./prog    
+
+Dump Program-Id sub1 from prog.cob compiled MMM DD YYYY HH:MI:SS
+
+WORKING-STORAGE
+**********************
+01        BAD-PTR                         0x0000000000000000
+
+LINKAGE
+**********************
+01        X                               000000000
+01        TSP-RECORD.
+     10   CM-CUST-NUM                    'RON00001'
+     10   CM-COMPANY                     'IBS Canada'
+     10   CM-DISK                        '4TB'
+     10   CM-NO-TERMINALS                 64.699997
+
+END OF DUMP - sub1
+**********************
+
+Dump Program-Id prog from prog.cob compiled MMM DD YYYY HH:MI:SS
+
+WORKING-STORAGE
+**********************
+77        UNUSED-VAR                      0001
+01        BIN                             000000000
+01        PACKD                           0757.99
+01        TSPFL-RECORD.
+     10   CM-CUST-NUM                    'RON00001'
+     10   CM-COMPANY                     'IBS Canada'
+     10   CM-DISK                        '4TB'
+     10   CM-NO-TERMINALS                 64.699997
+
+END OF DUMP - prog    
+**********************
+
+])
+
+AT_CHECK([gcdiff reference dumpall.txt], [0], [], [])
+
+AT_CLEANUP
+
 
 AT_SETUP([C-API Test (param based)])
 AT_KEYWORDS([CALL api])

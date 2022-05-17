@@ -2216,6 +2216,7 @@ emit_one_sym (struct cb_field *f)
 		output(",0");
 	}
 	output (",%d",f->occurs_max>1?f->occurs_max:0);
+	output (", %d",f->offset);
 	output ("}");
 	sym_comma = 1;
 }

@@ -9607,10 +9607,18 @@ cob_sym_get_field (cob_field *f, cob_symbol *sym, int k)
 	f->attr = sym[k].attr;
 	if (sym[k].is_indirect == SYM_ADRS_PTR) {
 		memcpy (&f->data, sym[k].adrs, sizeof(void*));
+		/* 
+		 * If field has not yet been referenced, the address will be NULL
+		 *   Scan up to parent and use that base address plus 'roffset'
+		 * If the field had been referenced the field address will be set
+		 *   and 'offset' will be ZERO
+		 */
 		for (j = k; f->data == NULL; j = sym[j].parent) {
 			if (sym[j].parent == 0) {	/* Base of COBOL Record */
 				memcpy (&f->data, sym[j].adrs, sizeof(void*));
-				break;
+				if (f->data != NULL)
+					f->data += sym[k].roffset;
+				return;
 			}
 		}
 		if (f->data != NULL)

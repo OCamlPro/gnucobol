@@ -1195,10 +1195,11 @@ typedef struct __cob_symbol {
 	unsigned int	has_depend:1;/* Field has DEPENDING ON */
 	unsigned int	subscripts:5;/* Field requires N subscripts */
 
-	unsigned int	offset;		/* Offset within record */
+	unsigned int	offset;		/* Offset in record, May be ZERO for LINKAGE fields */
 	unsigned int	size;		/* Field size */
 	unsigned int	depending;	/* Index to DEPENDING ON  field */
 	unsigned int	occurs;		/* Max number of OCCURS */
+	unsigned int	roffset;	/* Original Offset within record */
 } cob_symbol;
 
 /* Representation of 128 bit FP */

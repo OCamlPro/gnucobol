@@ -1,6 +1,7 @@
 
-2022-05-16  Ron Norman <rjn@inglenet.com>
+2022-05-17  Ron Norman <rjn@inglenet.com>
 
+	* common.h: Add 'roffset' to cob_symbol to hold original offset of field
 	* common.c: Fix issue with a dump incorrectly reporting 'CODEGEN ERROR'
 
 2022-04-12  Ron Norman <rjn@inglenet.com>
