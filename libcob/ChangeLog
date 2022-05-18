@@ -1,3 +1,7 @@
+2022-01-28  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* common.h [COB_FOLD_BOTH]: to check both for UPPER and LOWER
+	  version
 
 2022-01-30  Simon Sobisch <simonsobisch@gnu.org>
 
