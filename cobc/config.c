@@ -753,6 +753,16 @@ cb_config_entry (char *buff, const char *fname, const int line)
 			}
 			break;
 		/* for enums without a string value: set max_value and fall through to CB_INT */
+		} else if (strcmp (name, "ebcdic-literals-charset") == 0) {
+			if (strcmp (val, "default") == 0) {
+				cb_ebcdic_literal_charset = CB_EBCDIC_LITERALS_DEFAULT;
+			} else if (strcmp (val, "gcos7") == 0) {
+				cb_ebcdic_literal_charset = CB_EBCDIC_LITERALS_GCOS7;
+			} else {
+				invalid_value (fname, line, name, val, "default, gcos7", 0, 0);
+				return -1;
+			}
+			break;
 		} else if (strcmp (name, "standard-define") == 0) {
 			config_table[i].max_value = CB_STD_MAX - 1;
 			/* fall through */

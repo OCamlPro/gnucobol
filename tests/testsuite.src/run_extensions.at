@@ -134,15 +134,18 @@ AT_DATA([prog.cob], [
            DISPLAY ""135,151,151"bar"195,194,234""
            DISPLAY "  "135,151,151"bar"195 194"Z"
            DISPLAY ' '135 151,151'bar'195,194'Z'
+           *> GCOS7-specific: should give a ! in between square brackets:
+           DISPLAY ""75,80,91""
 
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -febcdic-symbolic-characters prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -febcdic-symbolic-characters -febcdic-literals-charset=gcos7 prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [foobarBAZ
   foobarBAZ
  foobarBAZ
+[[!]]
 ])
 
 AT_CLEANUP

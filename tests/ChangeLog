@@ -1,3 +1,8 @@
+2022-05-18  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* testsuite.src/run_extensions.at: test GCOS7-specific EBCDIC
+	  symbolic characters
+
 2022-03-25  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* testsuite.src/run_extensions.at: basic test for EBCDIC symbolic-chars

@@ -1,4 +1,14 @@
 
+2022-05-18  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* config.def, config.c, cobc.h: new option ebcdic-literals-charset
+	  to enable tuning the EBCDIC collating sequence used to decode
+	  symbolic characters in alphanumeric literals;
+	* scanner.l (read_literal): customizable decoding of EBCDIC
+	  symbolic characters
+	* config.def, scanner.l (cb_ebcdic_literals): minor renaming of
+	  variable
+
 2022-03-28  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* config.def: substitute ebcdic-symbolic-characters for
