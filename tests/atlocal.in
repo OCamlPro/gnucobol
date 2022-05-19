@@ -184,6 +184,7 @@ else
 	" VBISAM"*)	COB_HAS_ISAM="vbisam";;
 	" D-ISAM")	COB_HAS_ISAM="disam";;
 	" C-ISAM")	COB_HAS_ISAM="cisam";;
+	" V-ISAM")	COB_HAS_ISAM="visam";;
 	" EXTFH")	COB_HAS_ISAM="index_extfh";;
 	*)		echo "unknown entry for indexed handler: '"$cob_indexed"' please report" && exit 1;;
 	esac
