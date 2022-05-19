@@ -2,13 +2,9 @@ name: MacOS Workflow
 
 on:
   pull_request:
-    branches:
-      - master
-      - gcos
+    branches: [ gcos4gnucobol-3.x ]
   push:
-    branches:
-      - master
-      - gcos
+    branches: [ gcos4gnucobol-3.x ]
 
 jobs:
   build:
@@ -22,25 +18,34 @@ jobs:
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install packages
+        run: |
+          brew install automake help2man texinfo bison berkeley-db@4
+          opt="/usr/local/opt"; \
+          for d in automake help2man bison texinfo berkeley-db@4; do \
+            test -d "$opt/$d/bin" && echo "$opt/$d/bin" >> $GITHUB_PATH; \
+            test -d "$opt/$d/lib" && export LDFLAGS="-L$opt/$d/lib $LDFLAGS"; \
+            test -d "$opt/$d/include" && export CPPFLAGS="-I$opt/$d/include $CPPFLAGS"; \
+          done; \
+          echo "LDFLAGS=${LDFLAGS}" >> $GITHUB_ENV; \
+          echo "CPPFLAGS=${CPPFLAGS}" >> $GITHUB_ENV
 
       - name: Set git user
         run: |
           git config --global user.name github-actions
           git config --global user.email github-actions-bot@users.noreply.github.com
 
-      - run: |
-          brew install automake libtool help2man texinfo bison
-          echo "/usr/local/opt/bison/bin" >> $GITHUB_PATH
-          echo "/usr/local/opt/texinfo/bin" >> $GITHUB_PATH
-
-      - name: ./build_aux/bootstrap
+      - name: bootstrap
         run: |
-          cd build_aux
-          ./bootstrap
+          ./autogen.sh
 
-      - run: |
+      - name: Build environment setup
+        run: |
           mkdir _build
+          echo "NPROC=`sysctl -n hw.ncpu`" >> $GITHUB_ENV
 
       - name: configure
         run: |
@@ -50,10 +55,14 @@ jobs:
       - name: make
         run: |
           cd _build
-          make
+          make --jobs=$((${NPROC}+1))
+
+      - name: check
+        run: |
+          cd _build
+          make check TESTSUITEFLAGS="--jobs=$((${NPROC}+1))"
 
       - name: install
         run: |
           cd _build
           sudo make install
-

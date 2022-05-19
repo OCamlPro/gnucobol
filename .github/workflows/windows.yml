@@ -2,13 +2,9 @@ name: Windows Workflow
 
 on:
   pull_request:
-    branches:
-      - master
-      - gcos
+    branches: [ gcos4gnucobol-3.x ]
   push:
-    branches:
-      - master
-      - gcos
+    branches: [ gcos4gnucobol-3.x ]
 
 jobs:
   build:
@@ -22,23 +18,27 @@ jobs:
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install packages
+        uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          install: autoconf automake libtool make mingw-w64-x86_64-db mingw-w64-x86_64-gmp libdb-devel  mingw-w64-x86_64-gcc flex bison gmp-devel help2man texinfo
 
       - name: Set git user
         run: |
           git config --global user.name github-actions
           git config --global user.email github-actions-bot@users.noreply.github.com
 
-      - uses: msys2/setup-msys2@v2
-        with:
-          update: true
-          install: autoconf automake libtool make mingw-w64-x86_64-db mingw-w64-x86_64-gmp libdb-devel  mingw-w64-x86_64-gcc flex bison gmp-devel help2man texinfo
-
-      - run: |
+      - name: bootstrap
+        run: |
           ./build_aux/bootstrap
         shell: msys2 {0}
 
-      - run: |
+      - name: Build environment setup
+        run: |
           mkdir _build
         shell: msys2 {0}
 
@@ -51,7 +51,13 @@ jobs:
       - name: make
         run: |
           cd _build
-          make
+          make --jobs=$(($(nproc)+1))
+        shell: msys2 {0}
+
+      - name: check
+        run: |
+          cd _build
+          make check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"
         shell: msys2 {0}
 
       - name: install
@@ -59,4 +65,3 @@ jobs:
           cd _build
           make install
         shell: msys2 {0}
-
