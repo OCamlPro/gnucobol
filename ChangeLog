@@ -1,3 +1,7 @@
+2022-03-20  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* .github/workflows: improve CI setup
+
 2022-02-04  David Declerck <david.declerck@ocamlpro.com>
 
 	* config, cobc/cobc.h: add support for GCOS 7 dialect (Bull), both
