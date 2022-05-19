@@ -2892,9 +2892,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-# FIXME: currently the .ddl is always created, should be only upon request
 AT_CHECK([$COMPILE -Wno-unsupported -fsql prog.cob], [0], [], [])
-
 
 AT_CAPTURE_FILE(./tspfilex.ddl)
 
@@ -2938,7 +2936,7 @@ AT_CHECK([diff reference tspfilex.ddl], [0], [], [])
 AT_CAPTURE_FILE(./tspfilex.xd)
 
 AT_DATA([reference],
-[# generation comment here
+[# Generated on MMM DD YYYY HH:MM:SS from prog.cob
 H,1,tspfilex,2,',','.',0,3
 D,1,'MMDDYYYY',8,1,0,,0,4:4,0:2,2:2,0:0,0:0,0:0,0:0
 D,2,'YYMMDDCC',8,1,0,,0,0:2,2:2,4:2,0:0,0:0,0:0,6:2
@@ -2989,7 +2987,7 @@ K,2,Y,Y,0x2A,disk,dp_mgr,machine,rid_tspfilex
 K,0,R,N,,rid_tspfilex
 ])
 
-AT_CHECK([gcdiff -I# reference tspfilex.xd], [0], [], [])
+AT_CHECK([gcdiff reference tspfilex.xd], [0], [], [])
 
 AT_CLEANUP
 
