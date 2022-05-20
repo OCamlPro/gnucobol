@@ -41,6 +41,8 @@ jobs:
       - name: bootstrap
         run: |
           ./autogen.sh
+          autoconf
+          autoreconf --install --force
 
       - name: Build environment setup
         run: |
@@ -50,7 +52,14 @@ jobs:
       - name: configure
         run: |
           cd _build
-          ../configure --enable-cobc-internal-checks --enable-debug --prefix /opt/cobol/gnucobol-gcos --exec-prefix /opt/cobol/gnucobol-gcos
+          ../configure --enable-cobc-internal-checks --enable-debug
+
+      - name: Upload config.log
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: macos-config-log
+          path: _build/config.log
 
       - name: make
         run: |
@@ -59,8 +68,15 @@ jobs:
 
       - name: check
         run: |
-          cd _build
+          cd _build/tests
           make check TESTSUITEFLAGS="--jobs=$((${NPROC}+1))"
+
+      - name: Upload testsuite.log
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: macos-testsuite-log
+          path: _build/tests/testsuite.log
 
       - name: install
         run: |

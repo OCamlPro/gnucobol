@@ -1,4 +1,8 @@
 
+2022-05-24  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* .github/workflows: CI setups now emit artifacts
+
 2022-07-06  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* configure.ac: Check for __attribute__((pure))
