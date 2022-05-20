@@ -56,11 +56,19 @@ jobs:
           mkdir _build
           export TERM="vt100"
           echo "TERM=$TERM" >> $GITHUB_ENV
+          echo "INSTALL_PREFIX=$(pwd)/_install" >> $GITHUB_ENV
 
       - name: configure
         run: |
           cd _build
-          ../configure --enable-cobc-internal-checks --enable-debug --prefix /opt/cobol/gnucobol-gcos --exec-prefix /opt/cobol/gnucobol-gcos
+          ../configure --enable-cobc-internal-checks --enable-debug --prefix ${INSTALL_PREFIX}
+
+      - name: Upload config.log
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: ubuntu-config-log
+          path: _build/config.log
 
       - name: make
         run: |
@@ -75,7 +83,21 @@ jobs:
       - name: distcheck
         run: |
           cd _build
-          make distcheck TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"
+          make --jobs=$(($(nproc)+1)) distcheck TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"
+
+      - name: Upload testsuite.log
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          # Assume there's only one directory matching `_build/gnucobol-*`:
+          name: ubuntu-testsuite-log
+          path: _build/gnucobol-*/_build/sub/tests/testsuite.log
+
+      - name: Upload distribution archive
+        uses: actions/upload-artifact@v3
+        with:
+          name: distribution
+          path: _build/gnucobol-*.tar.gz
 
       - name: Cache newcob.val.Z
         uses: actions/cache@v3
