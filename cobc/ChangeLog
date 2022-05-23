@@ -61,6 +61,25 @@
 	  literal errors (intead of cb_error_node) to prevent spurious
 	  follow-up errors on their use
 
+2022-07-12  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* parser.y: add DEPENDING ON for picture strings with an `L`
+	  character; emit an error when used in combination with ODOSLIDE
+	* tree.h (struct cb_picture, struct cb_field), typeck.c
+	  (cb_validate_program_data): account for variable length
+	  alphanumeric fields (GCOS-specific extension), and their impact
+	  on ODO
+	* tree.c: add support for `L` characters in picture strings
+	* tree.c (cb_field_variable_address), codegen.c
+	  (chk_field_variable_address): do not count REDEFINES when checking
+	  varying address
+	* field.c (is_elementary_integer): new function to decide whether
+	  a field hold elementary Integers
+	* field.c (validate_redefines): allow more liberal REDEFINES of
+	  fields with PICTURE L
+	* codegen.c (output_base): do not query for variable addresss when
+	  ODOSLIDE is not set
+
 2022-07-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y (cancel_body): preparation for CANCEL ALL

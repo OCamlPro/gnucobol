@@ -1252,6 +1252,7 @@ validate_occurs (const struct cb_field * const f)
 		/* Cache field for later checking */
 		cb_depend_check = cb_list_add (cb_depend_check, x);
 
+		/* CHECKME: && !f->flag_induce_complex_odo */
 		if (!cb_odoslide && !cb_complex_odo) {
 			/* The data item that contains a OCCURS DEPENDING clause shall not
 			   be subordinate to a data item that has an OCCURS clause */
@@ -1290,10 +1291,12 @@ validate_redefines (const struct cb_field * const f)
 	}
 
 	/* Check variable occurrence */
-	if (f->depending || cb_field_variable_size (f)) {
+	if (f->depending || (!f->flag_induce_complex_odo &&
+			     cb_field_variable_size (f))) {
 		cb_error_x (x, _("'%s' cannot be variable length"), f->name);
 	}
-	if (cb_field_variable_size (f->redefines)) {
+	if (!f->redefines->flag_induce_complex_odo &&
+	    cb_field_variable_size (f->redefines)) {
 		cb_error_x (x, _("the original definition '%s' cannot be variable length"),
 			    f->redefines->name);
 	}
@@ -2161,6 +2164,7 @@ validate_field_1 (struct cb_field *f)
 		/* END: Not validation */
 		validate_occurs (f);
 	}
+
 
 	if (f->level == 66) {
 		/* no check for redefines here */

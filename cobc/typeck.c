@@ -4594,6 +4594,8 @@ cb_validate_program_data (struct cb_program *prog)
 				if (!p->sister->redefines) {
 					if (!cb_odoslide
 					 && !cb_complex_odo
+					 && !p->flag_induce_complex_odo
+					 && !p->sister->flag_induce_complex_odo
 					 && x != xerr) {
 						xerr = x;
 						cb_error_x (x,

@@ -785,6 +785,8 @@ chk_field_variable_address (struct cb_field *fld)
 					return 1;
 				}
 #endif
+				/* Skip redefines as they should not impact addresses: */
+				if (p->redefines) continue;
 				if (p->depending || chk_field_variable_size (p)) {
 #if 0	/* only useful with the code above */
 					/* as we have a variable address, all sisters will also;
@@ -1043,7 +1045,6 @@ static void
 output_base (struct cb_field *f, const cob_u32_t no_output)
 {
 	struct cb_field		*f01;
-	struct cb_field		*p;
 	struct base_list	*bl;
 
 	/* LCOV_EXCL_START */
@@ -1111,31 +1112,14 @@ output_base (struct cb_field *f, const cob_u32_t no_output)
 	}
 
 	if (!gen_init_working
+	 && cb_odoslide
 	 && chk_field_variable_address (f)) {
 		if (f01->level == 0
 		 && f01->sister
 		 && strstr (f01->name, " Record")) {	/* Skip to First 01 within FD */
 			f01 = f01->sister;
 		}
-		if (cb_odoslide) {
-			out_odoslide_offset (f01, f);
-		} else {
-			struct cb_field		*v;
-			for (p = f->parent; p; f = f->parent, p = f->parent) {
-				for (p = p->children; p != f; p = p->sister) {
-					v = chk_field_variable_size (p);
-					if (v) {
-						output (" + %d + ", v->offset - p->offset);
-						if (v->size != 1) {
-							output ("%d * ", v->size);
-						}
-						output_integer (v->depending);
-					} else {
-						output (" + %d", p->size * p->occurs_max);
-					}
-				}
-			}
-		}
+		out_odoslide_offset (f01, f);
 	} else if (f->offset > 0) {
 		output (" + %d", f->offset);
 	}
@@ -1621,10 +1605,9 @@ output_attr (const cb_tree x)
 			case COB_TYPE_GROUP:
 			case COB_TYPE_ALPHANUMERIC:
 				if (f->flag_justified) {
-					id = lookup_attr (type, 0, 0, COB_FLAG_JUSTIFIED, NULL, 0);
-				} else {
-					id = lookup_attr (type, 0, 0, 0, NULL, 0);
+					flags |= COB_FLAG_JUSTIFIED;
 				}
+				id = lookup_attr (type, 0, 0, flags, NULL, 0);
 				break;
 			default:
 				if (f->pic->have_sign) {
