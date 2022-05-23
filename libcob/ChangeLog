@@ -1,4 +1,14 @@
 
+2022-05-23  Simon Sobisch <simonsobisch@gnu.org>
+
+	* strings.c (inspect_common_no_replace, inspect_common_replacing):
+	  split from inspect_common to enable further optimization for
+	  non replacing variant
+	* strings.c (inspect_common_no_replace): for LEADING and TRAILING - do
+	  not mark each occurrence, instead gather range, then set the marker
+	  afterwards to reduce the number of expensive small memsets
+	  (TALLYING for 20000 TRAILING spaces -> 1 memset instead of 20000)
+
 2022-05-11  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_get_sign_ascii, cob_put_sign_ascii, cob_put_sign_ebcdic):
