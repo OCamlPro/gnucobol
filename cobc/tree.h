@@ -770,6 +770,7 @@ struct cb_picture {
 #endif
 	cob_u32_t		have_sign;	/* Have 'S' */
 	unsigned int flag_is_calculated	: 1;	/* is calculated */
+	unsigned int variable_length	: 1;	/* Starts with 'L' */
 };
 
 #define CB_PICTURE(x)	(CB_TREE_CAST (CB_TAG_PICTURE, struct cb_picture, x))
@@ -845,6 +846,7 @@ struct cb_field {
 	cb_tree			external_definition;	/* by SAME AS / LIKE data-name or
 											 by type-name (points to field) */
 	cb_tree			like_modifier;	/* set for LIKE, may contain a length modifier */
+	cb_tree			lenref;		/* Integer for PICTURE L. */
 
 	int			id;		/* Field id */
 	int			size;		/* Field size */

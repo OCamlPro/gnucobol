@@ -1,4 +1,15 @@
 
+2022-05-23  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* common.h: new macros COB_FLAG_VARIABLE_LENGTH and
+	  COB_FIELD_VARIABLE_LENGTH, and adapt COB_FIELD_SIZE to deal with
+	  variable length alphanumerics
+	* common.h (struct __cob_field, cob_get_field_dynsize): new field
+	  and static helper function for retrieving dynamic field length
+	* termio.c (display_alnum): support variable length alphanumerics
+	* move.c (cob_move_alphanum_to_alphanum): support variable length
+	  alphanumerics
+
 2022-05-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* numeric.c (num_byte_memcpy): removed, callers adjusted to

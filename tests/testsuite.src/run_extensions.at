@@ -5345,7 +5345,6 @@ Using PIC 9(4) COMP-5
 AT_CLEANUP
 
 
-
 AT_SETUP([GCOS floating-point usages])
 AT_KEYWORDS([gcos])
 
@@ -5381,5 +5380,123 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 9.899999999998999E+304
 9.888888888888887E+304
 ], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([PICTURE LX])
+AT_KEYWORDS([extensions gcos picture-l])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       1 W-DATA.
+          2 F-DAT         PICTURE X(10).
+          2 L-DAT         PICTURE LX(10) DEPENDING ON LGS.
+          2 L-ALPHA       PICTURE LA(10) DEPENDING ON LGS.
+          2 X-DAT         PICTURE LX(10) DEPENDING ON LGX.
+          2 X-ALPHA       PICTURE LA(10) DEPENDING ON LGX.
+       1 W-LGS.
+          2 LGS         BINARY-LONG.
+          2 LGX         PIC 9 VALUE 8.
+       PROCEDURE        DIVISION.
+           MOVE SPACES TO F-DAT
+           DISPLAY F-DAT NO ADVANCING
+           MOVE "0123456789" TO F-DAT
+           DISPLAY F-DAT
+
+           MOVE 1 TO LGS
+           DISPLAY LGS
+           MOVE 1 TO LGX
+           DISPLAY LGX
+           MOVE SPACES TO L-DAT
+           DISPLAY L-DAT NO ADVANCING
+           MOVE "0123456789" TO F-DAT
+           DISPLAY F-DAT
+
+           MOVE "ABCDE" TO X-DAT
+           DISPLAY X-DAT
+           MOVE 3 TO LGX
+           DISPLAY X-DAT
+           MOVE 5 TO LGX
+           MOVE X-DAT TO L-DAT
+           DISPLAY X-DAT
+           DISPLAY L-DAT
+           MOVE 3 TO LGS
+           DISPLAY L-DAT
+           MOVE 5 TO LGS
+           DISPLAY L-DAT
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[          0123456789
++0000000001
+1
+ 0123456789
+A
+ABC
+ABCDE
+A
+ABC
+ABCDE
+])
+
+AT_DATA([prog_extraneous_depending.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog_extraneous_depending.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       1 L		COMP-1.
+       1 F-DAT		PICTURE X(10) DEPENDING ON L.
+       PROCEDURE        DIVISION.
+           MOVE SPACES TO F-DAT
+           STOP RUN.
+])
+AT_CHECK([$COMPILE prog_extraneous_depending.cob], [1], [],
+[prog_extraneous_depending.cob:7: error: DEPENDING clause must only be specified for PICTURE strings with 'L' character
+])
+
+AT_DATA([prog_missing_depending.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog_missing_depending.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       1 F-DAT		PICTURE LX(10).
+       PROCEDURE        DIVISION.
+           MOVE SPACES TO F-DAT
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog_missing_depending.cob], [1], [],
+[prog_missing_depending.cob:6: error: missing DEPENDING clause for PICTURE string with 'L' character
+])
+
+AT_DATA([prog_errs.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog_errs.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       1 W-LGS.
+         2 LGS		PICTURE X(10).
+       1 W-DATA.
+         2 L-DAT	PICTURE LX(10) DEPENDING ON LGS.
+	 2 L-ERR1       PICTURE L9 DEPENDING ON LGS.
+	 2 L-ERR2       PICTURE XXXXLA(2) DEPENDING ON LGS.
+       PROCEDURE        DIVISION.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog_errs.cob], [1], [],
+[prog_errs.cob:10: error: DEPENDING clause must only be given for alphabetic or alphanumeric PICTURE strings
+prog_errs.cob:11: error: L must be at start of PICTURE string
+prog_errs.cob:11: error: L cannot follow A or X
+prog_errs.cob:11: error: DEPENDING clause must only be given for alphabetic or alphanumeric PICTURE strings
+prog_errs.cob:9: error: Unexpected field LGS with PICTURE X(10) in DEPENDING for PICTURE string: expected elementary integer
+])
 
 AT_CLEANUP

@@ -2116,11 +2116,34 @@ validate_elementary_item (struct cb_field *f)
 	return ret;
 }
 
+/* GCOS7: is_elementary_integer is used in cb_validate_field to check the
+   DEPENDING ON part of PICTURE strings that start with an 'L'.  Documentation
+   indicates the data must be an "elementary integer". */
+static int
+is_elementary_integer (const struct cb_field * const f)
+{
+	/* CHECKME: Are those really "elementary integers"? */
+	return (f->usage == CB_USAGE_BINARY ||
+		f->usage == CB_USAGE_SIGNED_CHAR ||
+		f->usage == CB_USAGE_SIGNED_INT ||
+		f->usage == CB_USAGE_SIGNED_SHORT ||
+		f->usage == CB_USAGE_SIGNED_LONG ||
+		f->usage == CB_USAGE_UNSIGNED_CHAR ||
+		f->usage == CB_USAGE_UNSIGNED_INT ||
+		f->usage == CB_USAGE_UNSIGNED_SHORT ||
+		f->usage == CB_USAGE_UNSIGNED_LONG ||
+		(f->usage == CB_USAGE_DISPLAY &&
+		 f->pic->category == CB_CATEGORY_NUMERIC &&
+		 f->pic->scale == 0 && !f->pic->have_sign));
+}
+
 static unsigned int
 validate_field_1 (struct cb_field *f)
 {
 	cb_tree		x;
 	int			sts = 0;
+	cb_tree		len_ref;
+	struct cb_field	*len_field;
 
 #if 0
 	/* LCOV_EXCL_START */
@@ -2163,6 +2186,35 @@ validate_field_1 (struct cb_field *f)
 		}
 		/* END: Not validation */
 		validate_occurs (f);
+	}
+
+	/* GCOS7: PICTURE L... */
+	if (f->pic && f->pic->variable_length) {
+		if ((len_ref = cb_ref (f->lenref)) == cb_error_node) {
+			return 1;
+		}
+		len_field = CB_FIELD_PTR (len_ref);
+		if (! is_elementary_integer (len_field)) {
+			char buff[50] = { '\00' };
+			if (len_field->usage == CB_USAGE_DISPLAY) {
+				snprintf (buff, 50, "PICTURE %s",
+					  len_field->pic->orig);
+			} else {
+				snprintf (buff, 50, "USAGE %s",
+					  cb_get_usage_string (len_field->usage));
+			}
+			cb_error_x (CB_TREE (f),
+				    _("Unexpected field %s with %s in DEPENDING "
+				      "for PICTURE string: expected elementary integer"),
+				    len_field->name, buff);
+		}
+		if (len_field->storage == CB_STORAGE_REPORT) {
+			/* TODO: Other storage sections not defined by GCOS7 may
+			   need to be ruled out. */
+			cb_error_x (CB_TREE (f),
+				    _("Data item in DEPENDING clause for PICTURE string "
+				      "must not be defined in the Report Section"));
+		}
 	}
 
 	if (f->level == 66) {

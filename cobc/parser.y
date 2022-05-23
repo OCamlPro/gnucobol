@@ -7245,6 +7245,7 @@ volatile_clause:
 picture_clause:
   PICTURE	/* token from scanner, includes full picture definition */
   _pic_locale_format
+  _pic_depending_on
   {
 	check_repeated ("PICTURE", SYN_CLAUSE_4, &check_pic_duplicate);
 	current_field->pic = CB_PICTURE ($1);
@@ -7252,12 +7253,28 @@ picture_clause:
 	if (CB_VALID_TREE ($2)) {
 		if (  (current_field->pic->category != CB_CATEGORY_NUMERIC
 		    && current_field->pic->category != CB_CATEGORY_NUMERIC_EDITED)
-		 || strpbrk (current_field->pic->orig, " CRDB-*") /* the standard seems to forbid also ',' */) {
+		 || strpbrk (current_field->pic->orig, " CRDBL-*") /* the standard seems to forbid also ',' */) {
 			cb_error_x ($1, _("a locale-format PICTURE string must only consist of '9', '.', '+', 'Z' and the currency-sign"));
 		} else {
 			/* TODO: check that not we're not within a CONSTANT RECORD */
 			CB_PENDING_X ($1, "locale-format PICTURE");
 		}
+	}
+
+	if (CB_VALID_TREE ($3)) {
+		if (!current_field->pic->variable_length) {
+			cb_error_x ($1, _("DEPENDING clause must only be specified "
+					  "for PICTURE strings with 'L' character"));
+		} else if (current_field->pic->category != CB_CATEGORY_ALPHABETIC &&
+			   current_field->pic->category != CB_CATEGORY_ALPHANUMERIC) {
+			cb_error_x ($1, _("DEPENDING clause must only be given for "
+					  "alphabetic or alphanumeric PICTURE strings"));
+		} else {
+			current_field->lenref = $3;
+		}
+	} else if (current_field->pic->variable_length) {
+		cb_error_x ($1, _("missing DEPENDING clause for PICTURE string with "
+				  "'L' character"));
 	}
   }
 ;
@@ -7293,6 +7310,16 @@ locale_name:
   }
 ;
 
+_pic_depending_on:
+  /* empty */
+  {
+	  $$ = NULL;
+  }
+| DEPENDING _on reference
+  {
+	  $$ = $3;
+  }
+;
 
 /* TYPE TO clause, optional "TO", fixed to clean conflicts for screen-items */
 
