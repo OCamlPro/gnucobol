@@ -1,4 +1,11 @@
 
+2022-05-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* strings.c (cob_inspect_converting): fix possible stackoverflow
+	* call.c (cob_resolve_internal): fix possible stack-use-after-scope,
+	  happening if name conversion is active, introduced on 2020-11-29
+	  and distributed with 3.1.2
+
 2022-05-23  Simon Sobisch <simonsobisch@gnu.org>
 
 	* strings.c (inspect_common_no_replace, inspect_common_replacing):

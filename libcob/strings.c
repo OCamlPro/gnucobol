@@ -644,8 +644,8 @@ cob_inspect_converting (const cob_field *f1, const cob_field *f2)
 		unsigned char * const cur_data_end = cur_data + inspect_len;
 		
 #if 1 /* table-approach, _much faster_, _should_ be portable */
-		char conv_tab[255] = { 0 };
-		char conv_set[255] = { 0 };
+		char conv_tab[256] = { 0 };		/* using 256 to remove the need to use offset */
+		char conv_set[256] = { 0 };
 		
 		/* pre-fill conversion table, skipping duplicates */
 		{
