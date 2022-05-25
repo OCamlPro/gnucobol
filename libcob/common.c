@@ -2379,7 +2379,7 @@ void
 cob_stop_error (void)
 {
 	cob_runtime_error ("STOP ERROR");
-	cob_stop_run(1);
+	cob_hard_failure ();
 }
 
 void
