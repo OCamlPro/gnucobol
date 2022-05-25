@@ -654,7 +654,7 @@ AT_CLEANUP
 
 
 AT_SETUP([REPLACE: partial replacement with SPACES figurative constant])
-AT_KEYWORDS([replace gcos])
+AT_KEYWORDS([replace gcos acu])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
