@@ -1,4 +1,9 @@
 
+2022-05-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (num_byte_memcpy): removed, callers adjusted to
+	  use memcpy instead
+
 2022-05-24  Simon Sobisch <simonsobisch@gnu.org>
 
 	* strings.c (cob_inspect_converting): fix possible stackoverflow

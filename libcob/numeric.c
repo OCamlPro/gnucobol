@@ -220,36 +220,24 @@ cob_gmp_free (void * ptr) {
 #endif
 }
 
-static COB_INLINE COB_A_INLINE void
-num_byte_memcpy (unsigned char *s1, const unsigned char *s2, size_t size)
-{
-	do {
-		*s1++ = *s2++;
-	} while (--size);
-}
-
 static COB_INLINE COB_A_INLINE cob_s64_t
 cob_binary_get_sint64 (const cob_field * const f)
 {
-	cob_s64_t	n = 0;
-	size_t		fsiz = 8U - f->size;
+	cob_s64_t	n;
+	const size_t	fsiz = 8U - f->size;
 
 #ifndef WORDS_BIGENDIAN
 	if (COB_FIELD_BINARY_SWAP (f)) {
-		num_byte_memcpy ((unsigned char *)&n, f->data, f->size);
+		memcpy (&n, f->data, f->size);
 		n = COB_BSWAP_64 (n);
-		/* Shift with sign */
-		n >>= (cob_s64_t)8 * fsiz;
 	} else {
-		num_byte_memcpy (((unsigned char *)&n) + fsiz, f->data, f->size);
-		/* Shift with sign */
-		n >>= (cob_s64_t)8 * fsiz;
+		memcpy ((char *)&n + fsiz, f->data, f->size);
 	}
 #else	/* WORDS_BIGENDIAN */
-	num_byte_memcpy ((unsigned char *)&n, f->data, f->size);
-	/* Shift with sign */
-	n >>= 8 * fsiz;
+	memcpy (&n, f->data, f->size);
 #endif	/* WORDS_BIGENDIAN */
+	/* Shift with sign */
+	n >>= (cob_s64_t)8 * fsiz;
 
 	return n;
 }
@@ -257,18 +245,19 @@ cob_binary_get_sint64 (const cob_field * const f)
 static COB_INLINE COB_A_INLINE cob_u64_t
 cob_binary_get_uint64 (const cob_field * const f)
 {
-	cob_u64_t		n = 0;
-	size_t			fsiz = 8U - f->size;
+	cob_u64_t		n;
 
 #ifndef WORDS_BIGENDIAN
 	if (COB_FIELD_BINARY_SWAP (f)) {
-		num_byte_memcpy (((unsigned char *)&n) + fsiz, f->data, f->size);
+		const size_t	fsiz = 8U - f->size;
+		memcpy ((char *)&n + fsiz, f->data, f->size);
 		n = COB_BSWAP_64 (n);
 	} else {
-		num_byte_memcpy ((unsigned char *)&n, f->data, f->size);
+		memcpy (&n, f->data, f->size);
 	}
 #else	/* WORDS_BIGENDIAN */
-	num_byte_memcpy (((unsigned char *)&n) + fsiz, f->data, f->size);
+	const size_t	fsiz = 8U - f->size;
+	memcpy ((char *)&n + fsiz, f->data, f->size);
 #endif	/* WORDS_BIGENDIAN */
 
 	return n;
@@ -278,17 +267,16 @@ static COB_INLINE COB_A_INLINE void
 cob_binary_set_uint64 (cob_field *f, cob_u64_t n)
 {
 #ifndef WORDS_BIGENDIAN
-	unsigned char	*s;
-
 	if (COB_FIELD_BINARY_SWAP (f)) {
+		const size_t	fsiz = 8U - f->size;
 		n = COB_BSWAP_64 (n);
-		s = ((unsigned char *)&n) + 8 - f->size;
+		memcpy (f->data, (char *)&n + fsiz, f->size);
 	} else {
-		s = (unsigned char *)&n;
+		memcpy (f->data, (char *)&n, f->size);
 	}
-	num_byte_memcpy (f->data, s, f->size);
 #else	/* WORDS_BIGENDIAN */
-	num_byte_memcpy (f->data, ((unsigned char *)&n) + 8 - f->size, f->size);
+	const size_t	fsiz = 8U - f->size;
+	memcpy (f->data, (char *)&n + fsiz, f->size);
 #endif	/* WORDS_BIGENDIAN */
 }
 
@@ -296,17 +284,16 @@ static COB_INLINE COB_A_INLINE void
 cob_binary_set_int64 (cob_field *f, cob_s64_t n)
 {
 #ifndef WORDS_BIGENDIAN
-	unsigned char	*s;
-
 	if (COB_FIELD_BINARY_SWAP (f)) {
+		const size_t	fsiz = 8U - f->size;
 		n = COB_BSWAP_64 (n);
-		s = ((unsigned char *)&n) + 8 - f->size;
+		memcpy (f->data, (char *)&n + fsiz, f->size);
 	} else {
-		s = (unsigned char *)&n;
+		memcpy (f->data, &n, f->size);
 	}
-	num_byte_memcpy (f->data, s, f->size);
 #else	/* WORDS_BIGENDIAN */
-	num_byte_memcpy (f->data, ((unsigned char *)&n) + 8 - f->size, f->size);
+	const size_t	fsiz = 8U - f->size;
+	memcpy (f->data, (char *)&n + fsiz, f->size);
 #endif	/* WORDS_BIGENDIAN */
 }
 
