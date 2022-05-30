@@ -223,7 +223,7 @@ cob_gmp_free (void * ptr) {
 static COB_INLINE COB_A_INLINE cob_s64_t
 cob_binary_get_sint64 (const cob_field * const f)
 {
-	cob_s64_t	n;
+	cob_s64_t	n = 0;
 	const size_t	fsiz = 8U - f->size;
 
 #ifndef WORDS_BIGENDIAN
@@ -245,7 +245,7 @@ cob_binary_get_sint64 (const cob_field * const f)
 static COB_INLINE COB_A_INLINE cob_u64_t
 cob_binary_get_uint64 (const cob_field * const f)
 {
-	cob_u64_t		n;
+	cob_u64_t		n = 0;
 
 #ifndef WORDS_BIGENDIAN
 	if (COB_FIELD_BINARY_SWAP (f)) {
