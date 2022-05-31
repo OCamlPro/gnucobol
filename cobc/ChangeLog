@@ -62,6 +62,11 @@
 	  with cb_define_struct to tree.h as enum cb_directive_action and
 	  enum cb_definition_type
 
+2022-01-28  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* warning.def, pplex.l: split warning for missing newlines, it now
+	  can be disabled by -Wno-missing-newline instead of -Wno-others
+
 2022-01-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (cb_build_cond): attach source reference for all possible
