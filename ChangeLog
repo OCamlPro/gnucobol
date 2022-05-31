@@ -1,4 +1,23 @@
 
+2022-05-31  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: handle optimization options -Oz and -Ofast,
+	  don't remove leading -O of unknown options
+
+2022-05-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: test for basic MAKE functionality
+	* configure.ac: style change when testing for not set/empty variable
+
+2022-04-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: check for -pipe option for compilers that claim to be GCC,
+	  as this isn't available on all of these and not on all environments
+	* configure.ac: added check for BDB_LIBS, allowing to explicit specify
+	  link options necessary for BDB, library used; if not set use old
+	  logic of deriving the library name from BDB version (db.h)
+	* configure.ac: experimental checking for Xcurses
+
 2022-03-29  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: dropped obsolete AC_PROG_CC_STD, AC_HEADER_STDC as

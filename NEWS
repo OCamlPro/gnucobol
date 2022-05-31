@@ -16,8 +16,8 @@ NEWS - user visible changes				-*- outline -*-
 
 ** Support for the EXTFH interface was heavily improved, now also supporting
    FH--FCD and FH--KEYDEF, fixed use of different attributes and changing
-   pointers and now supports - for 32-bit builds - an internal conversion between
-   FCD2 and FCD3 for cases where existing programs are coded with FCD2
+   pointers and now supports - for 32-bit builds - an internal conversion
+   between FCD2 and FCD3 for cases where existing programs are coded with FCD2
 
 ** OCCURS with multiple VALUEs supported (BS2000 format without FROM/TO)
 
@@ -102,9 +102,10 @@ NEWS - user visible changes				-*- outline -*-
 
 ** the timestamp in the header was changed from ANSI date format like
    "Tue Sep 28 09:49:43 2021" to formatted time (year after day); this may be
-   changed during `configure` with adding a define to CPPFLAGS, for using the
-   old format `-DLISTING_TIMESTAMP_ANSI`, for an explicit format (cut at 26
-   characters) for example date only: `-DLISTING_TIMESTAMP_FORMAT="%Y-%m-%d"`
+   changed during `configure` with adding a define to COBC_CPPFLAGS;
+   to either use the old format, adding add `-DLISTING_TIMESTAMP_ANSI`,
+   or to use an explicit format (cut at 26 characters, may raise false-positives
+   in listing tests) e.g. date only `-DLISTING_TIMESTAMP_FORMAT="%Y-%m-%d"`
 
 * More notable changes
 
@@ -119,6 +120,13 @@ NEWS - user visible changes				-*- outline -*-
 ** source references shown in diagnostic messages and for trace at runtime
    as well as during debugging were extended, for example each executed WHEN,
    VARYING and UNTIL phrases are now seen
+
+
+* New build features
+
+** configure now honors BDB_LIBS
+** configure now checks for XCurses and allows --with-curses=xcurses
+   (experimental)
 
 
 * Known issues in 3.2 (and 3.1)
@@ -236,7 +244,8 @@ NEWS - user visible changes				-*- outline -*-
        specific (this option used to be called -W)
    -Wadditional  new warning group for all warnings that don't have a group
        on their own
-   -Wno-error and -Wno-error=<warning> to treat (specific <warning>s) not as error
+   -Wno-error and -Wno-error=<warning> to treat all or a specific <warning>
+       not as error
    -Wdangling-text for raising the warning "source text after program area",
        not included in -Wall any more
    -Wno-ignored-error allows to suppress messages that normally would be an
@@ -281,8 +290,8 @@ NEWS - user visible changes				-*- outline -*-
 
 ** first-time file-locking under Win32
 
-** handle CRT STATUS either numerically, alphanumerically (4 digits) or as 3 bytes according
-    to X/Open standard, depending on format and size
+** handle CRT STATUS either numerically, alphanumerically (4 digits) or as 3
+    bytes according to X/Open standard, depending on format and size
 
 ** Breaking change: previously the return-code of registered error handlers
    (by CBL_ERROR_PROC) were ignored. This was changed according to the
