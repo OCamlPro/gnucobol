@@ -24,6 +24,8 @@ NEWS - user visible changes				-*- outline -*-
 ** new function to call COBOL from C that won't exit the program in case
    of runtime errors or STOP RUN: cob_call_with_exception_check()
 
+** Support of GCOS 7 (Bull) dialect
+
 ** TODO - More to add
 
 * Changes that potentially effects existing programs:
@@ -79,6 +81,15 @@ NEWS - user visible changes				-*- outline -*-
 
 ** new compiler command line option to list the known runtime exception names
    and fatality `cobc --list-exceptions`
+
+** New -std options:
+
+   gcos            GCOS compatibility
+   gcos-strict     GCOS compatibility                - strict
+
+   We define the GCOS dialect based on the COBOL85 standard, with new
+   dialect configuration options accompanying each specificity
+   introduced by the dialect.
 
 * Important Bugfixes:
 

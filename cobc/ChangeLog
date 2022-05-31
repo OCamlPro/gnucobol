@@ -1,4 +1,12 @@
 
+2022-05-30  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* help.c (cobc_print_usage_common_options): document new -std
+	  dialect options gcos and gcos-strict
+	* reserved.c (default_reserved_words): define words COMP-9,
+	  COMP-10, and COMP-15, that are used by the GCOS dialect for
+	  floating-point usages
+
 2022-05-15  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y (transform_body): add full features of INSPECT CONVERTING

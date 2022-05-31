@@ -77,7 +77,8 @@ cobc_print_usage_common_options (void)
 	        "                        default, cobol2014, cobol2002, cobol85, xopen,\n"
 	        "                        ibm-strict, ibm, mvs-strict, mvs,\n"
 	        "                        mf-strict, mf, bs2000-strict, bs2000,\n"
-	        "                        acu-strict, acu, rm-strict, rm;\n"
+	        "                        acu-strict, acu, rm-strict, rm, gcos-strict,\n"
+	        "                        gcos;\n"
 	        "                        see configuration files in directory config"));
 	puts (_("  -F, --free            use free source format"));
 	puts (_("  --fixed               use fixed source format (default)"));

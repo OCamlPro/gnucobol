@@ -1,4 +1,9 @@
 
+2022-02-07  David Declerck <david.declerck@ocamlpro.com>
+
+	* gcos-strict.conf, gcos.conf, gcos.words: added config files for
+	  GCOS 7 (Bull) dialect
+
 2021-11-14  Ron Norman <rjn@inglenet.com>
 
 	* mf.words: Add MF specific names B-EXOR, B-LEFT, B-RIGHT for bit

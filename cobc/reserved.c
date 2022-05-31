@@ -746,6 +746,15 @@ static struct cobc_reserved default_reserved_words[] = {
   { "COMP-X",			0, 0, COMP_X,			/* Extension */
 				0, 0
   },
+  { "COMP-9",			0, 0, FLOAT_SHORT,		/* GCOS extension */
+				0, 0 /* FIXME: Should be FLOAT_BINARY_32 */
+  },
+  { "COMP-10",			0, 0, FLOAT_LONG,		/* GCOS extension */
+				0, 0 /* FIXME: Should be FLOAT_BINARY_64 */
+  },
+  { "COMP-15",			0, 0, FLOAT_LONG,		/* GCOS extension */
+				0, 0/* FIXME: Should be FLOAT_BINARY_128 */
+  },
   { "COMPUTATIONAL",		0, 0, COMP,			/* 2002 */
 				0, 0
   },
