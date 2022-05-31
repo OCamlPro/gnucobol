@@ -1,4 +1,10 @@
 
+<<<<<<< .working
+2022-02-07  David Declerck <david.declerck@ocamlpro.com>
+
+	* gcos-strict.conf, gcos.conf, gcos.words: added config files for
+	  GCOS 7 (Bull) dialect
+
 2021-11-14  Ron Norman <rjn@inglenet.com>
 
 	* mf.words: Add MF specific names B-EXOR, B-LEFT, B-RIGHT for bit
@@ -41,13 +47,19 @@
 	* acu.words: updated to ACUCOBOL-GT 10.4, now with XML and JSON
 	  statements from MF/IBM
 
+2021-07-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: added self-call-recursive, only active (as "warning") for
+	  default.conf, in all other cases no change to RECURSIVE attribute
+	  is happening any more, fixing bug 686
+
 2021-03-05  Ron Norman <rjn@inglenet.com>
 
-	* fileio: added COB_FILE_ISNODAT to disable ISAM datafile.dat
+	* runtime.cfg (fileio): added COB_FILE_ISNODAT to disable ISAM datafile.dat
 
 2021-02-25  Ron Norman <rjn@inglenet.com>
 
-	* fileio: added COB_FILE_VBISAM to set default ISAM format
+	* runtime.cfg (fileio): added COB_FILE_VBISAM to set default ISAM format
 
 2021-02-12  Ron Norman <rjn@inglenet.com>
 
@@ -56,12 +68,38 @@
 
 2021-02-08  Ron Norman <rjn@inglenet.com>
 
-	* fileio: Change 'file_log' name to 'rollback'
-			removed 'create_table' since table is only created if not present
+	* runtime.cfg (fileio): change 'file_log' name to 'rollback'
+	  removed 'create_table' since table is only created if not present
+
+2021-02-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* acu-strict.conf: fix settings indirect-redefines + assign-variable
 
 2021-01-08  Ron Norman <rjn@inglenet.com>
 
 	* fileio: added option file_log for ISAM files
+
+||||||| .merge-left.r4286
+=======
+2021-07-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: added self-call-recursive, only active (as "warning") for
+	  default.conf, in all other cases no change to RECURSIVE attribute
+	  is happening any more, fixing bug 686
+
+2021-02-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* acu-strict.conf: fix settings indirect-redefines + assign-variable
+
+>>>>>>> .merge-right.r4287
+2020-11-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: added ref-mod-zero-length, only active for default.conf
+
+2020-11-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* default.conf, mf-strict.conf, acu-strict.conf, lax.conf-inc:
+	  vsam-status as ignored
 
 2020-10-19  Ron Norman <rjn@inglenet.com>
 

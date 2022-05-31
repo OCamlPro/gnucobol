@@ -384,7 +384,6 @@ cob_set_library_path ()
 
 	resolve_path = cob_malloc (sizeof (char *) * i);
 	resolve_size = 0;
-	pstr = resolve_alloc;
 
 	for (; ; ) {
 		p = strtok (pstr, PATHSEP_STR);
@@ -446,8 +445,8 @@ do_cancel_module (struct call_hash *p, struct call_hash **base_hash,
 		nocancel = 1;
 	}
 	/* LCOV_EXCL_STOP */
-	if (p->module->module_ref_count &&
-	    *(p->module->module_ref_count)) {
+	if (p->module->module_ref_count
+	 && *p->module->module_ref_count) {
 		nocancel = 1;
 	}
 #ifdef _MSC_VER
@@ -810,14 +809,13 @@ static void *
 cob_resolve_internal (const char *name, const char *dirent,
 	const int fold_case)
 {
-	unsigned char		*p;
 	const unsigned char	*s;
 	void			*func;
 	struct struct_handle	*preptr;
 	lt_dlhandle		handle;
 	size_t			i;
 	char call_entry_buff[COB_MINI_BUFF];
-	char call_entry2_buff[COB_MINI_BUFF];
+	unsigned char call_entry2_buff[COB_MINI_BUFF];
 
 	/* LCOV_EXCL_START */
 	if (!cobglobptr) {
@@ -891,7 +889,7 @@ cob_resolve_internal (const char *name, const char *dirent,
 
 	/* Check if name needs conversion */
 	if (cobsetptr->name_convert != 0) {
-		p = (unsigned char *)call_entry2_buff;
+		unsigned char *p = call_entry2_buff;
 		for (; *s; ++s, ++p) {
 			if (cobsetptr->name_convert == 1 && isupper (*s)) {
 				*p = (cob_u8_t) tolower (*s);
@@ -902,7 +900,7 @@ cob_resolve_internal (const char *name, const char *dirent,
 			}
 		}
 		*p = 0;
-		s = (const unsigned char *)call_entry2_buff;
+		s = call_entry2_buff;
 	}
 
 	/* Search external modules */
@@ -952,7 +950,6 @@ cob_resolve_internal (const char *name, const char *dirent,
 		return NULL;
 	}
 	for (i = 0; i < resolve_size; ++i) {
-		call_filename_buff[COB_NORMAL_MAX] = 0;
 		if (resolve_path[i] == NULL) {
 			snprintf (call_filename_buff, (size_t)COB_NORMAL_MAX,
 				  "%s.%s", (char *)s, COB_MODULE_EXT);
@@ -1185,7 +1182,6 @@ cob_call_field (const cob_field *f, const struct cob_call_struct *cs,
 	char				*buff;
 	char				*entry;
 	char				*dirent;
-	size_t				len;
 
 	/* LCOV_EXCL_START */
 	if (!cobglobptr) {
@@ -1198,6 +1194,7 @@ cob_call_field (const cob_field *f, const struct cob_call_struct *cs,
 
 	/* check for uncommon leading space - trim it */
 	if (*buff == ' ') {
+		size_t				len;
 		/* same warning as in cobc/typeck.c */
 		cob_runtime_warning (
 			_("'%s' literal includes leading spaces which are omitted"), buff);

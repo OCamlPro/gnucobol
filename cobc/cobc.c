@@ -198,6 +198,17 @@ unsigned int	cb_correct_program_order = 0;
 
 cob_u32_t		optimize_defs[COB_OPTIM_MAX] = { 0 };
 
+/* Basic memory structure */
+struct cobc_mem_struct {
+	struct	cobc_mem_struct	*next;			/* next pointer */
+	void			*memptr;
+	size_t			memlen;
+};
+const size_t COBC_MEM_SIZE =
+	((sizeof(struct cobc_mem_struct) + sizeof(long long) - 1)
+	/ sizeof(long long)) * sizeof(long long);
+
+
 #define	COB_EXCEPTION(code,tag,name,critical) {name, 0x##code, 0},
 struct cb_exception cb_exception_table[] = {
 	{NULL, 0, 0},		/* CB_EC_ZERO */
@@ -277,7 +288,9 @@ static size_t		cobc_pic_flags_len;
 #endif
 
 static char		*save_temps_dir = NULL;
-static struct strcache	*base_string;
+
+#define STRING_CACHES 32
+static struct strcache	*base_string[STRING_CACHES];
 
 static char		*cobc_list_dir = NULL;
 static char		*cobc_list_file = NULL;
@@ -1280,6 +1293,7 @@ void *
 cobc_check_string (const char *dupstr)
 {
 	struct strcache	*s;
+	size_t cache_num;
 
 	/* LCOV_EXCL_START */
 	if (!dupstr) {
@@ -1288,18 +1302,32 @@ cobc_check_string (const char *dupstr)
 	}
 	/* LCOV_EXCL_STOP */
 
-	/* FIXME - optimize performance:
-	   this loop is extensively used for comparision of picture strings,
-	   it consumes ~6% of the compilation time with ~3% in strcmp */
-	for (s = base_string; s; s = s->next) {
-		if (!strcmp (dupstr, (const char *)s->val)) {
-			return s->val;
+	/* as we expect small strings, especially for comparision
+	   of picture strings which is the main use of this function,
+	   we use an array of strings with matching lengths, allowing
+	   us to use plain memcmp to a limitted amount of entries
+	   for most cases */
+	cache_num = strlen (dupstr);
+	if (cache_num != 0 && cache_num < STRING_CACHES) {
+		for (s = base_string[cache_num - 1]; s; s = s->next) {
+			if (!memcmp (dupstr, s->val, cache_num)) {
+				return s->val;
+			}
+		}
+		cache_num--;
+	} else {
+		cache_num = STRING_CACHES - 1;
+		for (s = base_string[cache_num]; s; s = s->next) {
+			if (!strcmp (dupstr, (const char *)s->val)) {
+				return s->val;
+			}
 		}
 	}
+
 	s = cobc_main_malloc (sizeof(struct strcache));
-	s->next = base_string;
+	s->next = base_string[cache_num];
 	s->val = cobc_main_strdup (dupstr);
-	base_string = s;
+	base_string[cache_num] = s;
 	return s->val;
 }
 
@@ -1582,7 +1610,7 @@ turn_ec_for_table (struct cb_exception *table, const size_t table_len,
 
 
 static unsigned int
-turn_ec_io (struct cb_exception ec_to_turn,
+turn_ec_io (const struct cb_exception ec_to_turn,
 	    const cob_u32_t to_on_off,
 	    cb_tree loc,
 	    struct cb_text_list ** const ec_list)
@@ -4843,6 +4871,7 @@ preprocess (struct filename *fn)
 {
 	const char		*sourcename;
 	int			save_source_format, save_fold_copy, save_fold_call;
+	int			save_ref_mod_zero_length;
 #ifndef COB_INTERNAL_XREF
 #ifdef	_WIN32
 	const char *envname = "%PATH%";
@@ -4900,6 +4929,7 @@ preprocess (struct filename *fn)
 	save_source_format = cb_source_format;
 	save_fold_copy = cb_fold_copy;
 	save_fold_call = cb_fold_call;
+	save_ref_mod_zero_length = cb_ref_mod_zero_length;
 
 	/* Preprocess */
 	ppparse ();
@@ -4908,6 +4938,7 @@ preprocess (struct filename *fn)
 	cb_source_format = save_source_format;
 	cb_fold_copy = save_fold_copy;
 	cb_fold_call = save_fold_call;
+	cb_ref_mod_zero_length = save_ref_mod_zero_length;
 
 	if (ppin) {
 		fclose (ppin);
@@ -5164,7 +5195,7 @@ static int
 set_picture (struct cb_field *field, char *picture, size_t picture_len)
 {
 	size_t usage_len;
-	char picture_usage[CB_LIST_PICSIZE];
+	char picture_usage[CB_LIST_PICSIZE] = { 0 };
 
 	memset (picture, 0, CB_LIST_PICSIZE);
 
@@ -6427,7 +6458,6 @@ print_line (struct list_files *cfile, char *line, int line_num, int in_copy)
 	struct list_skip	*skip;
 	int	do_print;
 	int	on_off;
-	char	pch;
 
 	do_print = cfile->listing_on;
 	if (line_has_listing_directive (line, cfile->source_format, &on_off)) {
@@ -6441,7 +6471,7 @@ print_line (struct list_files *cfile, char *line, int line_num, int in_copy)
 	}
 
 	if (do_print) {
-		pch = in_copy ? 'C' : ' ';
+		char	pch = in_copy ? 'C' : ' ';
 		for (skip = cfile->skip_head; skip; skip = skip->next) {
 			if (skip->skipline == line_num) {
 				pch = 'X';
@@ -6803,7 +6833,7 @@ reflow_replaced_free_format_text (char *pline[CB_READ_AHEAD],
 		/*
 		  Terminate the line at null or the first non-space character.
 		*/
-		for (j = first_col; pline[i][j] && pline[i][j] == ' '; j++);
+		for (j = first_col; pline[i][j] == ' '; j++);
 		pline[i][j] = '\0';
 
 		/*
@@ -6874,7 +6904,7 @@ print_replace_text (struct list_files *cfile, FILE *fd,
 	char	tterm[2];
 	char	ttoken[CB_LINE_LENGTH + 2];
 	char	cmp_line[CB_LINE_LENGTH + 2];
-	char	from_line[CB_LINE_LENGTH + 2];
+	char	from_line[CB_LINE_LENGTH + 2] = { 0 };
 
 	if (is_comment_line (pline[0], fixed)) {
 		return pline_cnt;
@@ -7043,7 +7073,11 @@ print_replace_text (struct list_files *cfile, FILE *fd,
 		}
 	} else {
 		strcpy (from_line, rfp);
+#if 0
 		from_ptr = get_next_token (from_line, ftoken, fterm);
+#else
+		(void) get_next_token (from_line, ftoken, fterm);
+#endif
 		if (ftoken[0] == ':' || ftoken[0] == '(') {
 			subword = 1;
 		}
@@ -7215,7 +7249,11 @@ print_replace_main (struct list_files *cfile, FILE *fd,
 	is_copy_line = !cb_strcasecmp (ttoken, "COPY");
 	is_replace_line = !cb_strcasecmp (ttoken, "REPLACE");
 	if (is_replace_line && to_ptr) {
+#if 0
 		to_ptr = get_next_token (to_ptr, ttoken, tterm);
+#else
+		(void)get_next_token (to_ptr, ttoken, tterm);
+#endif
 		is_replace_off = !cb_strcasecmp (ttoken, "OFF");
 	}
 
@@ -7521,7 +7559,6 @@ process_translate (struct filename *fn)
 	struct local_filename	*lf;
 	int			ret;
 	int			i;
-	char	*buffer;
 
 	/* Initialize */
 	cb_source_file = NULL;
@@ -7625,7 +7662,7 @@ process_translate (struct filename *fn)
 	/* remove possible path from header name for later codegen */
 	if (strrchr (cb_storage_file_name, '/')
 	 || strrchr (cb_storage_file_name, '\\')) {
-		buffer = file_basename (cb_storage_file_name, COB_BASENAME_KEEP_EXT);
+		char	*buffer = file_basename (cb_storage_file_name, COB_BASENAME_KEEP_EXT);
 		memcpy ((void *) cb_storage_file_name, (void *) buffer, strlen (buffer) + 1);
 	}
 
@@ -8543,7 +8580,6 @@ begin_setup_internal_and_compiler_env (void)
 
 	cb_source_file = NULL;
 	save_temps_dir = NULL;
-	base_string = NULL;
 	cb_id = 1;
 	cb_pic_id = 1;
 	cb_attr_id = 1;

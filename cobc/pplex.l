@@ -227,9 +227,15 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 }
 
 ^[ ]*">>"[ ]?"DISPLAY"[ ]+ {
-	/* OpenCOBOL/GnuCOBOL 2.x extension: display message during compilation */
+	/* OpenCOBOL/GnuCOBOL 2.x extension, 202x: display message during compilation */
 	display_msg[0] = 0;
 	BEGIN DISPLAY_DIRECTIVE_STATE;
+}
+
+^[ ]*">>"[ ]?"REF-MOD-ZERO-LENGTH"	{
+	/* 202x: directive to allow zero ref-mod */
+	BEGIN ON_OFF_DIRECTIVE_STATE;
+	return REFMOD_DIRECTIVE;
 }
 
 ^[ ]*">>D"		{
@@ -371,8 +377,9 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 	BEGIN ELSE_DIRECTIVE_STATE;
 	return ELSE_DIRECTIVE;
 }
-^[ ]*"$END"		{
-	/* MF extension: conditional compilation */
+^[ ]*"$END"		|
+^[ ]*"$END-IF"	{
+	/* MF extension: conditional compilation, second undocumented */
 	BEGIN ENDIF_DIRECTIVE_STATE;
 	return ENDIF_DIRECTIVE;
 }
@@ -410,7 +417,7 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 	skip_to_eol ();
 }
 
-"COPY"			{
+"COPY"/[ ,;\n]			{
 	yy_push_state (COPY_STATE);
 	if (cb_src_list_file) {
 		get_new_listing_file ();
@@ -418,7 +425,7 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 	return COPY;
 }
 
-"INCLUDE"		{
+"INCLUDE"/[ ,;\n]		{
 	/* Note: ++INCLUDE/-INC (include only the data records,
 	   must be specified in column 8/1) and are not implemented yet */
 	yy_push_state (COPY_STATE);
@@ -428,7 +435,7 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 	return COPY;
 }
 
-"REPLACE"		{
+"REPLACE"/[ ,;\n]		{
 	yy_push_state (COPY_STATE);
 	return REPLACE;
 }
@@ -445,19 +452,19 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 	ppecho (yytext, 0, (int)yyleng);
 }
 
-"PROGRAM-ID"	{
+"PROGRAM-ID"/[ .,;\n]	{
 	/* Allow comment sentences/paragraphs */
 	comment_allowed = 1;
 	ppecho (yytext, 0, (int)yyleng);
 }
 
-"DIVISION"	{
+"DIVISION"/[ .,;\n]	{
 	/* Disallow comment sentences/paragraphs */
 	comment_allowed = 0;
 	ppecho (yytext, 0, (int)yyleng);
 }
 
-"SECTION"	{
+"SECTION"/[ .,;\n]	{
 	/* Disallow comment sentences/paragraphs */
 	comment_allowed = 0;
 	ppecho (yytext, 0, (int)yyleng);
@@ -672,6 +679,11 @@ COBOL_WORDS_DIRECTIVE_STATE>{
   }
   "ASSIGN"	{
 	return ASSIGN;
+/* not merged yet
+  }
+  "BOUND"	{
+	 return BOUND;
+*/
   }
   "CALLFH"	{
 	return CALLFH;
@@ -694,6 +706,12 @@ COBOL_WORDS_DIRECTIVE_STATE>{
   "MAKESYN" 	|
   "MAKE-SYN"	{
 	return MAKESYN;
+/* not merged yet
+  }
+  "NOBOUND" |
+  "NO-BOUND"		{
+	return NOBOUND;
+*/
   }
   "NODPCINDATA" 	|
   "NO-DPCINDATA"	|
@@ -705,6 +723,12 @@ COBOL_WORDS_DIRECTIVE_STATE>{
   "NOFOLD-COPY-NAME"	|
   "NO-FOLD-COPY-NAME"	{
 	return NOFOLDCOPYNAME;
+/* not merged yet
+  }
+  "NOSSRANGE"	|
+  "NO-SSRANGE"	{
+	return NOSSRANGE;
+*/
   }
   "NOODOSLIDE"	|
   "NO-ODOSLIDE"	{
@@ -718,6 +742,11 @@ COBOL_WORDS_DIRECTIVE_STATE>{
   }
   "REMOVE"		{
 	return REMOVE;
+/* not merged yet
+  }
+  "SSRANGE"	{
+	return SSRANGE;
+*/
   }
   "SOURCEFORMAT" |
   "SOURCE-FORMAT"	{
@@ -995,8 +1024,6 @@ ppopen (const char *name, struct cb_replace_list *replacing_list)
 	char			*dname;
 	cb_tree			x = NULL;
 
-	unsigned char		bom[4];
-
 	if (ppin) {
 		for (; newline_count > 0; newline_count--) {
 			ungetc ('\n', ppin);
@@ -1049,6 +1076,7 @@ ppopen (const char *name, struct cb_replace_list *replacing_list)
 	/* Check for BOM - *not* for input from stdin as rewind() clears the input
 	  buffer if used on stdin and output in console has normally no BOM at all */
 	if (ppin && strcmp (name, COB_DASH) != 0) {
+		unsigned char		bom[4];
 		if (fread (bom, 3, 1, ppin) == 1) {
 			if (bom[0] != 0xEF || bom[1] != 0xBB || bom[2] != 0xBF) {
 				rewind (ppin);
@@ -1697,7 +1725,7 @@ start:
 		*/
 		if (cb_source_format == CB_FORMAT_FREE) {
 			if (line_overflow == 0) {
-				cb_plex_warning (COBC_WARN_FILLER, newline_count + 1,
+				cb_plex_warning (cb_missing_newline, newline_count + 1,
 						 _("line not terminated by a newline"));
 			} else if (line_overflow == 2) {
 				cb_plex_warning (COBC_WARN_FILLER, newline_count + 1,
@@ -1706,7 +1734,7 @@ start:
 			}
 		} else {
 			if (line_overflow == 0) {
-				cb_plex_warning (COBC_WARN_FILLER, newline_count,
+				cb_plex_warning (cb_missing_newline, newline_count,
 						 _("line not terminated by a newline"));
 			} else if (line_overflow == 2) {
 				cb_plex_warning (COBC_WARN_FILLER, newline_count,

@@ -1165,7 +1165,7 @@ struct cb_word {
 	const char	*name;		/* Word name */
 	cb_tree		items;		/* Objects associated with this word */
 	int		count;		/* Number of words with the same name */
-	int		error;		/* Set to 1 if error detected */
+	int		error;		/* Set to -1 if warning raised for that, -1 if error detected */
 };
 
 #define CB_WORD_TABLE_SIZE	(CB_WORD_HASH_SIZE * sizeof (struct cb_word))
@@ -2094,24 +2094,27 @@ extern int			cb_list_map (cb_tree (*) (cb_tree), cb_tree);
 extern void			cb_memcpy_upper (char *, const char * const, size_t);
 
 /* error.c */
-extern void		cb_warning_x (const enum cb_warn_opt, cb_tree, const char *, ...) COB_A_FORMAT34;
-extern void		cb_warning_dialect_x (const enum cb_support, cb_tree, const char *, ...) COB_A_FORMAT34;
+extern cb_tree			get_cb_error_node (void);
+extern enum cb_warn_val		cb_warning_x (const enum cb_warn_opt, cb_tree, const char *, ...) COB_A_FORMAT34;
+extern enum cb_warn_val		cb_warning_dialect_x (const enum cb_support, cb_tree, const char *, ...) COB_A_FORMAT34;
 extern void		cb_note_x (const enum cb_warn_opt, cb_tree, const char *, ...) COB_A_FORMAT34;
 extern void		cb_inclusion_note (const char *, int);
-extern void		cb_error_x (cb_tree, const char *, ...) COB_A_FORMAT23;
+extern enum cb_warn_val		cb_error_x (cb_tree, const char *, ...) COB_A_FORMAT23;
 extern unsigned int	cb_verify (const enum cb_support, const char *);
-extern unsigned int	cb_verify_x (cb_tree, const enum cb_support,
+extern unsigned int	cb_verify_x (const cb_tree, const enum cb_support,
 				     const char *);
+#if 0 /* CHECKME: Is there any place other than "note" where we want to do listing suppression? */
 extern void		listprint_suppress (void);
 extern void		listprint_restore (void);
+#endif
 
-extern void		redefinition_error (cb_tree);
-extern void		redefinition_warning (cb_tree, cb_tree);
-extern void		undefined_error (cb_tree);
-extern void		ambiguous_error (cb_tree);
-extern void		group_error (cb_tree, const char *);
-extern void		level_require_error (cb_tree, const char *);
-extern void		level_except_error (cb_tree, const char *);
+extern enum cb_warn_val		redefinition_error (cb_tree);
+extern enum cb_warn_val		redefinition_warning (cb_tree, cb_tree);
+extern enum cb_warn_val		undefined_error (cb_tree);
+extern enum cb_warn_val		ambiguous_error (cb_tree);
+extern enum cb_warn_val		group_error (cb_tree, const char *);
+extern enum cb_warn_val		level_require_error (cb_tree, const char *);
+extern enum cb_warn_val		level_except_error (cb_tree, const char *);
 extern int		cb_set_ignore_error (int state);
 
 /* sqlxfdgen.c */

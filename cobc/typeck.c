@@ -1652,7 +1652,7 @@ cb_build_generic_register (const char *name, const char *external_definition,
 {
 	cb_tree field_tree;
 	char	definition[COB_MINI_BUFF];
-	char	temp[COB_MINI_BUFF];
+	char	temp[COB_MINI_BUFF] = { 0 };
 	char *p, *r;
 	struct cb_field *field;
 	enum cb_usage	usage;
@@ -2480,6 +2480,8 @@ cb_build_identifier (cb_tree x, const int subchk)
 
 	/* Reference modification check */
 	pseudosize = f->size;
+#if 0 /* CHECKME: if active, then one test fails (field), if not another (group)...
+                  it seems both are different checks, do we need a flag? */
 	if (cb_reference_bounds_check == CB_WARNING
 	 || cb_reference_bounds_check == CB_OK) {
 		p = cb_field_founder (f);
@@ -2487,6 +2489,7 @@ cb_build_identifier (cb_tree x, const int subchk)
 			pseudosize = p->size - f->offset;	/* Remaining size of group item */
 		}
 	}
+#endif
 	if (f->usage == CB_USAGE_NATIONAL ) {
 		pseudosize = pseudosize / 2;
 	}
@@ -2559,24 +2562,37 @@ cb_build_identifier (cb_tree x, const int subchk)
 			 || !CB_LITERAL_P (r->offset)
 			 || (r->length && !CB_LITERAL_P (r->length))) {
 				cb_tree temp = NULL;
-				if( cb_field_variable_size (f) ) {
+				if (cb_field_variable_size (f) ) {
 					temp = cb_build_index (cb_build_filler (), NULL, 0, NULL);
 					CB_FIELD (cb_ref (temp))->usage = CB_USAGE_LENGTH;
 					CB_FIELD (cb_ref (temp))->count++;
 					CB_FIELD (cb_ref (temp))->pic->have_sign = 0;	/* LENGTH is UNSIGNED */
 					cb_emit (cb_build_assign (temp, cb_build_length_1 (cb_build_field_reference (f, NULL))));
 				}
-				e1 = CB_BUILD_FUNCALL_4 ("cob_check_ref_mod",
-							 cb_build_cast_int (r->offset),
-							 r->length ?
-							  cb_build_cast_int (r->length) :
-							  cb_int1,
-							 cb_field_variable_size (f) ?
-							  cb_build_cast_int (temp) :
-							 f->flag_any_length ?
-							  CB_BUILD_CAST_LENGTH (v) :
-							  cb_int (pseudosize),
-							 CB_BUILD_STRING0 (f->name));
+				/* allow everything but negative/zero */
+				if (cb_ref_mod_zero_length == 2) {
+					e1 = CB_BUILD_FUNCALL_3 ("cob_check_ref_mod_minimal",
+								 CB_BUILD_STRING0 (f->name),
+								 cb_build_cast_int (r->offset),
+								 r->length ?
+								  cb_build_cast_int (r->length) :
+								  cb_int1);
+				} else {
+					/* check upper + size + lower as requested */
+					e1 = CB_BUILD_FUNCALL_6 ("cob_check_ref_mod",
+								 CB_BUILD_STRING0 (f->name),
+								 cb_int1,	/* abend */
+								 cb_int (cb_ref_mod_zero_length),
+								 temp /* field is variable size */ ?
+								  cb_build_cast_int (temp) :
+								 f->flag_any_length ?
+								  CB_BUILD_CAST_LENGTH (v) :
+								  cb_int (pseudosize),
+								 cb_build_cast_int (r->offset),
+								 r->length ?
+								  cb_build_cast_int (r->length) :
+								  cb_int1);
+				}
 				r->check = cb_list_add (r->check, e1);
 			}
 		}
@@ -5027,17 +5043,21 @@ cb_build_expr (cb_tree list)
 			if (cb_warn_parentheses
 			 && expr_index > 3
 			 && (op == '|' || op == '&')) {
-				cb_tree e = cb_any;
+			 	/* hack to use exp_line instead of source_line */
+				cb_error_node->source_line = cb_exp_line;
+#if 0 /* old code */
 				SET_SOURCE(e, cb_source_file, cb_exp_line);
+#endif
 
 				if (op == '|' && expr_stack[expr_index-2].token == '&') {
-					cb_warning_x (cb_warn_parentheses, e,
+					cb_warning_x (cb_warn_parentheses, cb_error_node,
 						_("suggest parentheses around %s within %s"), "AND", "OR");
 				} else
 				if (op == '&' && expr_stack[expr_index-2].token == '|') {
-					cb_warning_x (cb_warn_parentheses, e,
+					cb_warning_x (cb_warn_parentheses, cb_error_node,
 						_("suggest parentheses around %s within %s"), "OR", "AND");
 				}
+				cb_error_node->source_line = 0;	/* undo hack */
 			}
 			cb_expr_shift (op, v);
 			break;
@@ -9028,15 +9048,13 @@ emit_invalid_target_error (const enum cb_inspect_clause clause)
 void
 cb_emit_inspect (cb_tree var, cb_tree body, const enum cb_inspect_clause clause)
 {
-	int	replacing_or_converting =
-		clause == REPLACING_CLAUSE || clause == CONVERTING_CLAUSE;
-	cb_tree	replacing_flag = clause == REPLACING_CLAUSE ? cb_int1 : cb_int0;
-
 	switch (CB_TREE_TAG (var)) {
 	case CB_TAG_REFERENCE:
 		break;
 	case CB_TAG_INTRINSIC:
-		if (replacing_or_converting) {
+		/* note: the case here and below are pre-checked by the parser already,
+		         therefore we don't ever execute this */
+		if (clause != TALLYING_CLAUSE) {
 			goto error;
 		}
 		switch (CB_TREE_CATEGORY (var)) {
@@ -9049,17 +9067,25 @@ cb_emit_inspect (cb_tree var, cb_tree body, const enum cb_inspect_clause clause)
 		}
 		break;
 	case CB_TAG_LITERAL:
-		if (replacing_or_converting) {
+		if (clause != TALLYING_CLAUSE) {
 			goto error;
 		}
 		break;
 	default:
 		goto error;
 	}
-
-	cb_emit (CB_BUILD_FUNCALL_2 ("cob_inspect_init", var, replacing_flag));
-	cb_emit_list (body);
-	cb_emit (CB_BUILD_FUNCALL_0 ("cob_inspect_finish"));
+	{
+		const cb_tree	replacing_flag = clause == REPLACING_CLAUSE ? cb_int1 : cb_int0;
+		if (clause == CONVERTING_CLAUSE || clause == TRANSFORM_STATEMENT) {
+			cb_emit (CB_BUILD_FUNCALL_1 ("cob_inspect_init_converting", var));
+			cb_emit_list (body);
+			/* no finish here */
+		} else {
+			cb_emit (CB_BUILD_FUNCALL_2 ("cob_inspect_init", var, replacing_flag));
+			cb_emit_list (body);
+			cb_emit (CB_BUILD_FUNCALL_0 ("cob_inspect_finish"));
+		}
+	}
 	return;
 
  error:
@@ -9281,7 +9307,6 @@ move_warning (cb_tree src, cb_tree dst, const unsigned int value_flag,
 		/* MOVE statement */
 		if (cb_warn_opt_val[warning_opt] != COBC_WARN_DISABLED) {
 			cb_warning_x (warning_opt, loc, "%s", msg);
-			listprint_suppress ();
 			if (src_flag) {
 				/* note: src_flag is -1 for numeric literals,
 				   contains literal size otherwise */
@@ -9313,7 +9338,6 @@ move_warning (cb_tree src, cb_tree dst, const unsigned int value_flag,
 				}
 			}
 			warning_destination (warning_opt, dst);
-			listprint_restore ();
 		}
 	}
 

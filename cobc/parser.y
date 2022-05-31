@@ -7796,7 +7796,7 @@ occurs_key_field:
 	cb_tree rchain = NULL;
 	cb_tree l;
 
-	/* create reference chaing all the way up
+	/* create reference chain all the way up
 	   as later fields may have same name */
 	if (!within_typedef_definition) {
 		rchain = cb_build_full_field_reference (current_field->parent);
@@ -9136,6 +9136,7 @@ screen_option:
   }
 | PROMPT CHARACTER _is id_or_lit
   {
+	/* FIXME: ACUCOBOL and (undocumented) MF have CHARACTER as optional here */
 	set_screen_attr ("PROMPT", COB_SCREEN_PROMPT);
 	current_field->screen_prompt = $4;
   }
@@ -11110,8 +11111,9 @@ accp_attr:
 	check_repeated ("OVERLINE", SYN_CLAUSE_16, &check_duplicate);
 	set_dispattr (COB_SCREEN_OVERLINE);
   }
-| PROMPT CHARACTER _is id_or_lit
+| PROMPT _character _is id_or_lit
   {
+	/* Note: CHARACTER optional in ACUCOBOL, required by others */
 	check_repeated ("PROMPT", SYN_CLAUSE_17, &check_duplicate);
 	set_attribs (NULL, NULL, NULL, NULL, $4, NULL, COB_SCREEN_PROMPT);
   }
@@ -11416,9 +11418,10 @@ call_body:
 	if (current_program->prog_type == COB_MODULE_TYPE_PROGRAM
 	 && !current_program->flag_recursive
 	 && is_recursive_call ($3)) {
-		cb_warning_x (COBC_WARN_FILLER, $3,
-			_("recursive program call - assuming RECURSIVE attribute"));
-		current_program->flag_recursive = 1;
+	 	if (cb_verify_x ($3, cb_self_call_recursive, _("CALL to own PROGRAM-ID"))) {
+			cb_note_x (cb_warn_dialect, $3, _("assuming RECURSIVE attribute"));
+			current_program->flag_recursive = 1;
+		}
 	}
 	call_conv = current_call_convention;
 	if ($6) {
@@ -13684,7 +13687,7 @@ inspect_statement:
 ;
 
 inspect_body:
-  _backward send_identifier inspect_list
+  _backward send_identifier inspect_format_variant
   {
 	if ($1) {
 		CB_PENDING ("INSPECT BACKWARD");
@@ -13703,7 +13706,7 @@ send_identifier:
 | function
 ;
 
-inspect_list:
+inspect_format_variant:
   inspect_tallying inspect_replacing
 | inspect_tallying
 | inspect_replacing
@@ -15710,11 +15713,9 @@ transform_statement:
 ;
 
 transform_body:
-  display_identifier FROM simple_display_value TO simple_display_all_value
+  display_identifier _characters FROM inspect_from TO inspect_to
   {
-	cb_tree		x;
-
-	x = cb_build_converting ($3, $5, cb_build_inspect_region_start ());
+	cb_tree		x = cb_build_converting ($4, $6, cb_build_inspect_region_start ());
 	cb_emit_inspect ($1, x, TRANSFORM_STATEMENT);
   }
 ;
@@ -17295,9 +17296,7 @@ table_name:
 		$$ = cb_error_node;
 	} else if (!CB_FIELD (x)->index_list) {
 		cb_error_x ($1, _("'%s' not indexed"), cb_name ($1));
-		listprint_suppress ();
 		cb_note_x (COB_WARNOPT_NONE, x, _("'%s' defined here"), cb_name (x));
-		listprint_restore ();
 		$$ = cb_error_node;
 	} else {
 		cb_search_ready (x);
@@ -17758,13 +17757,6 @@ alnum_or_id:
 
 simple_display_value:
   simple_value
-  {
-	error_if_not_usage_display_or_nonnumeric_lit ($1);
-  }
-;
-
-simple_display_all_value:
-  simple_all_value
   {
 	error_if_not_usage_display_or_nonnumeric_lit ($1);
   }

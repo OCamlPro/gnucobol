@@ -641,9 +641,6 @@ cob_exit_common (void)
 	struct cob_external	*q;
 	struct cob_alloc_cache	*x;
 	struct cob_alloc_cache	*y;
-	void 	*data;
-	char	*str;
-	unsigned int	i;
 
 #ifdef	HAVE_SETLOCALE
 	if (cobglobptr->cob_locale_orig) {
@@ -723,6 +720,9 @@ cob_exit_common (void)
 		cobglobptr = NULL;
 	}
 	if (cobsetptr) {
+		void 	*data;
+		char	*str;
+		unsigned int	i;
 		if (cobsetptr->cob_config_file) {
 			for (i = 0; i < cobsetptr->cob_config_num; i++) {
 				if (cobsetptr->cob_config_file[i]) {
@@ -1282,6 +1282,17 @@ cob_get_sign_ascii (unsigned char *p)
 		return -1;
 	case 'y':
 		*p = (unsigned char)'9';
+	case '0':
+	case '1':
+	case '2':
+	case '3':
+	case '4':
+	case '5':
+	case '6':
+	case '7':
+	case '8':
+	case '9':
+		/* already without sign */
 		return -1;
 	}
 	*p = (unsigned char)'0';
@@ -1289,6 +1300,10 @@ cob_get_sign_ascii (unsigned char *p)
 #else
 	if (*p >= (unsigned char)'p' && *p <= (unsigned char)'y') {
 		*p &= ~64U;
+		return -1;
+	}
+	if (*p >= (unsigned char)'0' && *p <= (unsigned char)'9') {
+		/* already without sign */
 		return -1;
 	}
 	*p = (unsigned char)'0';
@@ -1330,6 +1345,18 @@ cob_put_sign_ascii (unsigned char *p)
 		return;
 	case '9':
 		*p = (unsigned char)'y';
+		return;
+	case 'p':
+	case 'q':
+	case 'r':
+	case 's':
+	case 't':
+	case 'u':
+	case 'v':
+	case 'w':
+	case 'x':
+	case 'y':
+		/* already signed */
 		return;
 	default:
 		*p = (unsigned char)'0';
@@ -1453,12 +1480,25 @@ cob_put_sign_ebcdic (unsigned char *p, const int sign)
 		case '9':
 			*p = (unsigned char)'R';
 			return;
+		case '}':
+		case 'J':
+		case 'K':
+		case 'L':
+		case 'M':
+		case 'N':
+		case 'O':
+		case 'P':
+		case 'Q':
+		case 'R':
+			/* already signed */
+			return;
 		default:
 			/* What to do here */
-			*p = (unsigned char)'{';
+			*p = (unsigned char)'}';
 			return;
 		}
 	}
+
 	switch (*p) {
 	case '0':
 		*p = (unsigned char)'{';
@@ -1489,6 +1529,18 @@ cob_put_sign_ebcdic (unsigned char *p, const int sign)
 		return;
 	case '9':
 		*p = (unsigned char)'I';
+		return;
+	case '{':
+	case 'A':
+	case 'B':
+	case 'C':
+	case 'D':
+	case 'E':
+	case 'F':
+	case 'G':
+	case 'H':
+	case 'I':
+		/* already signed */
 		return;
 	default:
 		/* What to do here */
@@ -1621,7 +1673,7 @@ static int
 sort_compare (const void *data1, const void *data2)
 {
 	size_t		i;
-	int		cmp;
+	int		res;
 	cob_field	f1;
 	cob_field	f2;
 
@@ -1630,12 +1682,12 @@ sort_compare (const void *data1, const void *data2)
 		f1.data = (unsigned char *)data1 + sort_keys[i].offset;
 		f2.data = (unsigned char *)data2 + sort_keys[i].offset;
 		if (COB_FIELD_IS_NUMERIC (&f1)) {
-			cmp = cob_numeric_cmp (&f1, &f2);
+			res = cob_numeric_cmp (&f1, &f2);
 		} else {
-			cmp = common_cmps (f1.data, f2.data, f1.size, sort_collate);
+			res = common_cmps (f1.data, f2.data, f1.size, sort_collate);
 		}
-		if (cmp != 0) {
-			return (sort_keys[i].tf_ascending == COB_ASCENDING) ? cmp : -cmp;
+		if (res != 0) {
+			return (sort_keys[i].tf_ascending == COB_ASCENDING) ? res : -res;
 		}
 	}
 	return 0;
@@ -2986,34 +3038,36 @@ void
 cob_module_free (cob_module **module)
 {
 	struct cob_alloc_module	*ptr, *prv;
-	if (*module != NULL) {
-		cob_module_clean ( *module );
-		prv = NULL;
-		/* Remove from list of all modules activated */
-		for (ptr = cob_module_list; ptr; ptr = ptr->next) {
-			if (ptr->cob_pointer == *module) {
-				if (prv == NULL) {
-					cob_module_list = ptr->next;
-				} else {
-					prv->next = ptr->next;
-				}
-				cob_free (ptr);
-				break;
-			}
-			prv = ptr;
-		}
-
-		if (!cobglobptr->cob_call_from_c) {
-			if ((*module)->param_buf != NULL) {
-				cob_cache_free((*module)->param_buf);
-			}
-			if ((*module)->param_field != NULL) {
-				cob_cache_free((*module)->param_field);
-			}
-		}
-		cob_cache_free (*module);
-		*module = NULL;
+	if (*module == NULL) {
+		return;
 	}
+
+	cob_module_clean (*module);
+	prv = NULL;
+	/* Remove from list of all modules activated */
+	for (ptr = cob_module_list; ptr; ptr = ptr->next) {
+		if (ptr->cob_pointer == *module) {
+			if (prv == NULL) {
+				cob_module_list = ptr->next;
+			} else {
+				prv->next = ptr->next;
+			}
+			cob_free (ptr);
+			break;
+		}
+		prv = ptr;
+	}
+
+	if (!cobglobptr->cob_call_from_c) {
+		if ((*module)->param_buf != NULL) {
+			cob_cache_free((*module)->param_buf);
+		}
+		if ((*module)->param_field != NULL) {
+			cob_cache_free((*module)->param_field);
+		}
+	}
+	cob_cache_free (*module);
+	*module = NULL;
 }
 
 /* save module environment - returns an allocated cob_func_loc (free at cob_restore_func)
@@ -3023,9 +3077,7 @@ cob_save_func (cob_field **savefld, const int params,
 	       const int eparams, ...)
 {
 	struct cob_func_loc	*fl;
-	va_list			args;
 	int			numparams;
-	int			n;
 
 	if (params > eparams) {
 		numparams = eparams;
@@ -3050,6 +3102,8 @@ cob_save_func (cob_field **savefld, const int params,
 	COB_MODULE_PTR->cob_procedure_params = fl->func_params;
 	cobglobptr->cob_call_params = numparams;
 	if (numparams) {
+		va_list			args;
+		int			n;
 		va_start (args, eparams);
 		for (n = 0; n < numparams; ++n) {
 			fl->func_params[n] = va_arg (args, cob_field *);
@@ -3917,9 +3971,11 @@ cob_check_subscript (const int i, const int max,
 }
 
 void
-cob_check_ref_mod (const int offset, const int length,
-		   const int size, const char *name)
+cob_check_ref_mod (const char *name, const int abend, const int zero_allowed,
+	const int size, const int offset, const int length)
 {
+	const int minimal_length = zero_allowed ? 0 : 1;
+
 	/* Check offset */
 	if (offset < 1 || offset > size) {
 		cob_set_exception (COB_EC_BOUND_REF_MOD);
@@ -3930,20 +3986,24 @@ cob_check_ref_mod (const int offset, const int length,
 			cob_runtime_error (_("offset of '%s' out of bounds: %d, maximum: %d"),
 			   name, offset, size);
 		}
-		cob_stop_run (1);
+		if (abend) {
+			cob_stop_run (1);
+		}
 	}
 
 	/* Check plain length */
-	if (length < 1 || length > size) {
+	if (length < minimal_length || length > size) {
 		cob_set_exception (COB_EC_BOUND_REF_MOD);
-		if (length < 1) {
+		if (length < minimal_length) {
 			cob_runtime_error (_("length of '%s' out of bounds: %d"),
 			   name, length);
 		} else {
 			cob_runtime_error (_("length of '%s' out of bounds: %d, maximum: %d"),
 			   name, length, size);
 		}
-		cob_stop_run (1);
+		if (abend) {
+			cob_stop_run (1);
+		}
 	}
 
 	/* Check length with offset */
@@ -3951,6 +4011,28 @@ cob_check_ref_mod (const int offset, const int length,
 		cob_set_exception (COB_EC_BOUND_REF_MOD);
 		cob_runtime_error (_("length of '%s' out of bounds: %d, starting at: %d, maximum: %d"),
 			name, length, offset, size);
+		if (abend) {
+			cob_stop_run (1);
+		}
+	}
+}
+
+void
+cob_check_ref_mod_minimal (const char* name, const int offset, const int length)
+{
+	/* Check offset */
+	if (offset < 1) {
+		cob_set_exception (COB_EC_BOUND_REF_MOD);
+		cob_runtime_error (_("offset of '%s' out of bounds: %d"),
+			name, offset);
+		cob_stop_run (1);
+	}
+
+	/* Check length */
+	if (length < 1) {
+		cob_set_exception (COB_EC_BOUND_REF_MOD);
+		cob_runtime_error (_("length of '%s' out of bounds: %d"),
+			name, length);
 		cob_stop_run (1);
 	}
 }
@@ -5053,13 +5135,13 @@ cob_free_alloc (unsigned char **ptr1, unsigned char *ptr2)
 {
 	struct cob_alloc_cache	*cache_ptr;
 	struct cob_alloc_cache	*prev_ptr;
-	void			*vptr1;
 
 	/* FREE */
 	cobglobptr->cob_exception_code = 0;
 	cache_ptr = cob_alloc_base;
 	prev_ptr = cob_alloc_base;
 	if (ptr1 && *ptr1) {
+		void	*vptr1;
 		vptr1 = *ptr1;
 		for (; cache_ptr; cache_ptr = cache_ptr->next) {
 			if (vptr1 == cache_ptr->cob_pointer) {
@@ -6240,13 +6322,12 @@ cob_sys_getopt_long_long (void *so, void *lo, void *idx, const int long_only, vo
 	size_t opt_val_size = 0;
 	size_t so_size = 0;
 	size_t lo_size = 0;
-	size_t optlen;
 
 	unsigned int lo_amount;
 	int exit_status;
 
-	char * shortoptions;
-	char * temp;
+	char *shortoptions;
+	char *temp;
 
 	struct option *longoptions, *longoptions_root;
 	longoption_def *l = NULL;
@@ -6369,6 +6450,7 @@ cob_sys_getopt_long_long (void *so, void *lo, void *idx, const int long_only, vo
 	memcpy (return_char, &return_value, 4);
 
 	if (cob_optarg != NULL) {
+		size_t optlen;
 		memset (opt_val, 0, opt_val_size);
 
 		optlen = strlen (cob_optarg);
@@ -6431,7 +6513,6 @@ int
 cob_sys_justify (void *p1, ...)
 {
 	cob_u8_ptr	data;
-	unsigned char	*direction;
 	size_t		datalen;
 	size_t		left;
 	size_t		right;
@@ -6474,7 +6555,7 @@ cob_sys_justify (void *p1, ...)
 	movelen = datalen - left - right;
 	shifting = 0;
 	if (cob_get_num_params () > 1) {
-		direction = cob_get_param_data (2);
+		unsigned char	*direction = cob_get_param_data (2);
 		if (*direction == 'L') {
 			shifting = 1;
 		} else if (*direction == 'C') {
@@ -6763,7 +6844,7 @@ cob_expand_env_string (char *strval)
 	unsigned int	k = 0;
 	size_t	envlen = 1280;
 	char		*env;
-	char		*str = strval;
+	char		*str;
 	char		ename[128] = { '\0' };
 	char		*penv;
 
@@ -6947,7 +7028,7 @@ set_config_val (char *value, int pos)
 	 || (data_type & ENV_SINT) 				/* Integer data, signed */
 	 || (data_type & ENV_SIZE) ) {				/* Size: integer with K, M, G */
 		char sign = 0;
-		for (; *ptr != 0 && (*ptr == ' '); ptr++);	/* skip leading space */
+		for (; *ptr == ' '; ptr++);	/* skip leading space */
 		if (*ptr == '-'
 		 || *ptr == '+') {
 			if ((data_type & ENV_SINT) == 0) {
@@ -7006,7 +7087,7 @@ set_config_val (char *value, int pos)
 				break;
 			}
 		}
-		for (; *ptr != 0 && (*ptr == ' '); ptr++);	/* skip trailing space */
+		for (; *ptr == ' '; ptr++);	/* skip trailing space */
 		if (*ptr != 0) {
 			conf_runtime_error_value (ptr, pos);
 			conf_runtime_error (1, _("should be numeric"));
@@ -7140,7 +7221,7 @@ get_config_val (char *value, int pos, char *orgvalue)
 	char 	*data;
 	char	*str;
 	double	dval;
-	cob_s64_t	numval = 0;
+	cob_s64_t	numval;
 	int	i, data_type, data_len;
 	size_t	data_loc;
 
@@ -7313,8 +7394,8 @@ cb_config_entry (char *buf, int line)
 {
 	int	i, j, k, old_type;
 	void	*data;
-	char	*env, *str, qt;
-	char	keyword[COB_MINI_BUFF], value[COB_SMALL_BUFF], value2[COB_SMALL_BUFF];
+	char	*str, qt;
+	char	keyword[COB_MINI_BUFF], value[COB_SMALL_BUFF];
 
 	cob_source_line = line;
 
@@ -7363,6 +7444,7 @@ cb_config_entry (char *buf, int line)
 	}
 
 	if (strcasecmp (keyword, "setenv") == 0 ) {
+		char	value2[COB_SMALL_BUFF];
 		/* collect additional value and push into environment */
 		strcpy (value2, "");
 		/* check for := in value 2 and split, if necessary */
@@ -7402,7 +7484,7 @@ cb_config_entry (char *buf, int line)
 	}
 
 	if (strcasecmp (keyword, "unsetenv") == 0) {
-		if ((env = getenv (value)) != NULL ) {
+		if ((getenv (value)) != NULL ) {
 			for (i = 0; i < NUM_CONFIG; i++) {		/* Set value from config file */
 				if (gc_conf[i].env_name
 				&& strcasecmp (value, gc_conf[i].env_name) == 0) {	/* Catch using env var name */
@@ -7559,8 +7641,9 @@ cob_load_config_file (const char *config_file, int isoptional)
 		if (cobsetptr->cob_config_file == NULL) {
 			cobsetptr->cob_config_file = cob_malloc (sizeof (char *));
 		} else {
-			cobsetptr->cob_config_file = cob_realloc (cobsetptr->cob_config_file,
-				sizeof (char *)*(cobsetptr->cob_config_num), sizeof (char *)*(cobsetptr->cob_config_num + 1));
+			const size_t old_size = sizeof (char *) * cobsetptr->cob_config_num;
+			const size_t new_size = sizeof (char *) * (cobsetptr->cob_config_num + 1);
+			cobsetptr->cob_config_file = cob_realloc (cobsetptr->cob_config_file, old_size, new_size);
 		}
 		cobsetptr->cob_config_file[cobsetptr->cob_config_num++] = cob_strdup (config_file);	/* Save config file name */
 		cobsetptr->cob_config_cur = cobsetptr->cob_config_num;
@@ -8261,8 +8344,8 @@ get_screenio_and_mouse_info (char *version_buffer, size_t size, const int verbos
 #if !defined (RESOLVED_PDC_VER)
 	snprintf (version_buffer, size, "%s", curses_version ());
 	major = 0, minor = 0, patch = 0;
-	if ((sscanf (version_buffer, "%s %s %d.%d.%d", (char *)&buff, (char *)&buff, &major, &minor, &patch) < 4)
-	 && (sscanf (version_buffer, "%s %d.%d.%d", (char *)&buff, &major, &minor, &patch) < 3)
+	if ((sscanf (version_buffer, "%55s %55s %d.%d.%d", (char *)&buff, (char *)&buff, &major, &minor, &patch) < 4)
+	 && (sscanf (version_buffer, "%55s %d.%d.%d", (char *)&buff, &major, &minor, &patch) < 3)
 	 && (sscanf (version_buffer, "%d.%d.%d", &major, &minor, &patch) < 2)) {
 		major = 0, minor = 0;
 	}
@@ -8445,7 +8528,7 @@ static void set_cob_build_stamp (char *cob_build_stamp)
 	memset (month, 0, sizeof (month));
 	day = 0;
 	year = 0;
-	status = sscanf (__DATE__, "%s %d %d", month, &day, &year);
+	status = sscanf (__DATE__, "%63s %d %d", month, &day, &year);
 	if (status == 3) {
 		snprintf (cob_build_stamp, (size_t)COB_MINI_MAX,
 			"%s %2.2d %4.4d %s", month, day, year, __TIME__);
@@ -10223,21 +10306,21 @@ cob_debug_dump (void *pMem, int len)
 	char	hex[dMaxHex+4],chr[dMaxPerLine+4];
 	int		adrs = 0;
 
-	if(cob_debug_file == NULL)
+	if (cob_debug_file == NULL)
 		return 0;
-	memset(lastWord,0xFD, 4);
-	for(i=0; i < len; ) {
-		for(j=k=0; j < dMaxPerLine && (i+j) < len; j++) {
+	memset (lastWord,0xFD, 4);
+	for (i=0; i < len; ) {
+		for (j=k=0; j < dMaxPerLine && (i+j) < len; j++) {
 			k += sprintf(&hex[k],"%02X",mem[i+j]&0xFF);
-			if( (j % 4) == 3 )
+			if ((j % 4) == 3 )
 				hex[k++] = ' ';
 		}
-		if(hex[k-1] == ' ')
+		if (k && hex[k-1] == ' ')
 			hex[k-1] = 0;
 		hex[k] = 0;
 
 		k = 0;
-		for(j=0; j<dMaxPerLine && (i+j)<len; j++) {
+		for (j=0; j<dMaxPerLine && (i+j)<len; j++) {
 			c = mem[i+j];
 			chr[k++] =  c >= ' ' && c < 0x7f ? c : '.';
 		}

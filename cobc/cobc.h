@@ -286,15 +286,6 @@ struct cb_exception {
 	int		enable;			/* If turned on */
 };
 
-/* Basic memory structure */
-struct cobc_mem_struct {
-	struct	cobc_mem_struct	*next;			/* next pointer */
-	void			*memptr;
-	size_t			memlen;
-};
-#define COBC_MEM_SIZE ((sizeof(struct cobc_mem_struct) + sizeof(long long) - 1) \
-						/ sizeof(long long)) * sizeof(long long)  
-
 /* Type of name to check in cobc_check_valid_name */
 enum cobc_name_type {
 	FILE_BASE_NAME = 0,
@@ -637,23 +628,20 @@ extern void		cb_init_codegen (void);
 #define CB_MSG_STYLE_GCC	0
 #define CB_MSG_STYLE_MSC	1U
 
-#define CB_PENDING(x) \
-	do { cb_warning (cb_warn_pending, _("%s is not implemented"), x); } ONCE_COB
-#define CB_PENDING_X(x,y) \
-	do { cb_warning_x (cb_warn_pending, x, _("%s is not implemented"), y); } ONCE_COB
-#define CB_UNFINISHED(x) \
-	do { cb_warning (cb_warn_unfinished, \
-		_("handling of %s is unfinished; implementation is likely to be changed"), x); \
-	} ONCE_COB
-#define CB_UNFINISHED_X(x,y) \
+#define CB_PENDING_X(x,s) \
+	do { cb_warning_x (cb_warn_pending, x, _("%s is not implemented"), s); } ONCE_COB
+
+#define CB_UNFINISHED_X(x,s) \
 	do { cb_warning_x (cb_warn_unfinished, x, \
-		_("handling of %s is unfinished; implementation is likely to be changed"), y); \
+		_("handling of %s is unfinished; implementation is likely to be changed"), s); \
 	} ONCE_COB
+#define CB_PENDING(s)		CB_PENDING_X	(cb_error_node, s)
+#define CB_UNFINISHED(s)	CB_UNFINISHED_X	(cb_error_node, s)
 
 extern size_t		cb_msg_style;
 
-extern void		cb_warning (const enum cb_warn_opt, const char *, ...) COB_A_FORMAT23;
-extern void		cb_error (const char *, ...) COB_A_FORMAT12;
+extern enum cb_warn_val		cb_warning (const enum cb_warn_opt, const char *, ...) COB_A_FORMAT23;
+extern enum cb_warn_val		cb_error (const char *, ...) COB_A_FORMAT12;
 extern void		cb_error_always (const char *, ...) COB_A_FORMAT12;
 extern void		cb_perror (const int, const char *, ...) COB_A_FORMAT23;
 extern void		cb_plex_warning (const enum cb_warn_opt, const size_t,

@@ -1,5 +1,5 @@
-## Copyright (C) 2003-2012, 2014, 2020 Free Software Foundation, Inc.
-## Written by Keisuke Nishida, Roger While, Simon Sobisch
+## Copyright (C) 2003-2012, 2014, 2020, 2022 Free Software Foundation, Inc.
+## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 ## 
 ## This file is part of GnuCOBOL.
 ## 
@@ -187,6 +187,40 @@ AT_CHECK([$COMPILE_ONLY -frelax-syntax-checks prog.cob], [1], [],
 prog.cob:14: error: 'X' requires one subscript
 prog.cob:16: warning: subscript missing for 'Y' - defaulting to 1
 prog.cob:20: error: 'Y' requires 2 subscripts
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([SET SSRANGE syntax])
+AT_KEYWORDS([subscripts directive extensions])
+
+# Not fully merged yet
+AT_SKIP_IF(true)
+
+AT_DATA([prog.cob], [
+       *> Valid
+      $SET SSRANGE
+      $SET SSRANGE(1)
+      $SET SSRANGE "2"
+      $SET SSRANGE (3)
+
+       *> Invalid
+      $SET SSRANGE(0)
+      $SET SSRANGE(4)
+      $SET SSRANGE "variable"
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+           GOBACK
+           .
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:9: error: invalid SSRANGE directive option '0'
+prog.cob:10: error: invalid SSRANGE directive option '4'
+prog.cob:11: error: invalid SSRANGE directive option 'variable'
 ])
 
 AT_CLEANUP

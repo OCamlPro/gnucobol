@@ -1190,8 +1190,7 @@ AT_KEYWORDS([fundamental udf])
 
 # see Bug #641
 
-# FIXME: currently this raises a bad error (doesn't happen with 3.2)
-#        recheck!
+# FIXME: currently this raises a bad error (check skipped with 3.2) recheck!
 AT_XFAIL_IF(true)
 
 AT_DATA([prog.cob], [
@@ -1258,7 +1257,6 @@ AT_DATA([prog.cob], [
            GOBACK
            .
        END PROGRAM prog.
-
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])

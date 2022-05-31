@@ -1,6 +1,6 @@
 /*
    Copyright (C) 2001-2012, 2015-2022 Free Software Foundation, Inc.
-   Written by Keisuke Nishida, Roger While, Simon Sobisch
+   Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 
    This file is part of GnuCOBOL.
 
@@ -586,6 +586,8 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %token PARAMETER
 %token OVERRIDE
 
+%token REFMOD_DIRECTIVE
+
 %token SET_DIRECTIVE
 %token ADDRSV
 %token ADDSYN
@@ -604,6 +606,8 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %token ODOSLIDE
 %token REMOVE
 %token SOURCEFORMAT
+%token SPZERO
+%token SSRANGE
 
 %token IF_DIRECTIVE
 %token ELSE_DIRECTIVE
@@ -641,6 +645,7 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 
 %type <s>	copy_in
 %type <s>	copy_source
+%type <s>	_literal
 
 %type <l>	token_list
 %type <l>	identifier
@@ -691,6 +696,7 @@ directive:
 | DEFINE_DIRECTIVE define_directive
 | COBOL_WORDS_DIRECTIVE cobol_words_directive
 | SET_DIRECTIVE set_directive
+| REFMOD_DIRECTIVE refmod_directive
 | TURN_DIRECTIVE turn_directive
 | LISTING_DIRECTIVE listing_directive
 | LEAP_SECOND_DIRECTIVE leap_second_directive
@@ -911,6 +917,58 @@ set_choice:
 		cb_current_file->source_format = cb_source_format;
 	}
   }
+| SOURCEFORMAT _as error
+  {
+    /* FIXME: we should consume until end of line here! */
+	ppp_error_invalid_option ("SOURCEFORMAT", NULL);
+  }
+| SPZERO
+  {
+	CB_PENDING ("SPZERO");
+	/* TODO: cb_space_is_zero = 1; */
+  }
+| SSRANGE _literal
+  {
+	char	*p = $2;
+	char	ep = 0;
+	
+	/* Remove surrounding quotes/brackets */
+	if (p) {
+		size_t	size;
+		++p;
+		size = strlen (p) - 1;
+		p[size] = '\0';
+		if (size == 1 && *p >= '1' && *p <= '3') {
+			ep = *p;
+		}
+	} else {
+		ep = '2';
+	}
+
+	/* Enable EC-BOUND-SUBSCRIPT and -REF-MOD checking */
+	if (ep) {
+		struct cb_text_list	*txt;
+		if (ep == '3') {
+			/* SSRANGE"3": REF-MOD, with zero length allowed (at runtime) */
+			fprintf (ppout, "#REFMOD_ZERO 1\n");
+		} else if (ep == '2') {
+			/* SSRANGE"2": REF-MOD, zero length not allowed */
+			fprintf (ppout, "#REFMOD_ZERO 0\n");
+		} else /* if (ep == '1') */ {
+			/* SSRANGE"1": REF-MOD minimal - check only for zero/negative */
+			fprintf (ppout, "#REFMOD_ZERO 2\n");
+		}
+		txt = ppp_list_add (NULL, "EC-BOUND-SUBSCRIPT");
+		txt = ppp_list_add (txt, "EC-BOUND-REF-MOD");
+#if 0 /* not merged yet */
+		append_to_turn_list (txt, 1, 0);
+#else
+		CB_PENDING ("SSRANGE");
+#endif
+	} else {
+		ppp_error_invalid_option ("SSRANGE", p);
+	}
+  }
 ;
 
 alnum_list:
@@ -983,6 +1041,19 @@ set_options:
   }
 ;
 
+refmod_directive:
+  _on
+  {
+	cb_ref_mod_zero_length = 1;
+	fprintf (ppout, "#OPTION REFMOD_ZERO 1\n");
+  }
+| OFF
+  {
+	cb_ref_mod_zero_length = 0;
+	fprintf (ppout, "#OPTION REFMOD_ZERO 0\n");
+  }
+;
+
 source_directive:
   _format _is format_type
   {
@@ -1014,6 +1085,11 @@ format_type:
   }
 ;
 
+_literal:
+  /* empty */	{ $$ = NULL; }
+| LITERAL
+;
+
 define_directive:
   VARIABLE_NAME _as LITERAL _override
   {
@@ -1029,13 +1105,12 @@ define_directive:
 	char			*s;
 	char			*q;
 	struct cb_define_struct	*p;
-	size_t			size;
 
 	s = getenv ($1);
 	q = NULL;
 	if (s && *s && *s != ' ') {
 		if (*s == '"' || *s == '\'') {
-			size = strlen (s) - 1U;
+			const size_t	size = strlen (s) - 1U;
 			/* Ignore if improperly quoted */
 			if (s[0] == s[size]) {
 				q = s;
@@ -1584,6 +1659,7 @@ _as:		| AS ;
 _format:	| FORMAT ;
 _is:		| IS ;
 _printing:	| PRINTING ;
+_on:		| ON ;
 _than:		| THAN ;
 _to:		| TO ;
 

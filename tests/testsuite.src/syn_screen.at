@@ -784,13 +784,9 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:10: error: 'LIN' is not defined
 prog.cob:10: error: syntax error, unexpected COL
-prog.cob:11: error: 'LIN' is not defined
 prog.cob:11: error: syntax error, unexpected COL, expecting Literal or [)] or Identifier
-prog.cob:12: error: 'LIN' is not defined
 prog.cob:12: error: syntax error, unexpected COL, expecting Literal or [)] or Identifier
-prog.cob:18: error: 'LIN' is not defined
 prog.cob:19: error: syntax error, unexpected COL
-prog.cob:20: error: 'LIN' is not defined
 prog.cob:20: error: syntax error, unexpected COL, expecting Literal or Identifier or ZERO
 ])
 AT_CHECK([$COMPILE_ONLY -fregister=LIN,COL prog.cob], [0], [], [])

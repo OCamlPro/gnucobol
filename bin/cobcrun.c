@@ -84,7 +84,7 @@ cobcrun_print_version (void)
 	memset (month, 0, sizeof(month));
 	day = 0;
 	year = 0;
-	status = sscanf (__DATE__, "%s %d %d", month, &day, &year);
+	status = sscanf (__DATE__, "%63s %d %d", month, &day, &year);
 	/* LCOV_EXCL_START */
 	if (status != 3) {
 		snprintf (cob_build_stamp, (size_t)COB_MINI_MAX,

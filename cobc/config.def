@@ -118,6 +118,9 @@ CB_CONFIG_BOOLEAN (cb_larger_redefines_ok, "larger-redefines-ok", /* TO-DO: chan
 CB_CONFIG_BOOLEAN (cb_relaxed_syntax_checks, "relax-syntax-checks",
 	_("allow certain syntax variations (e.g. REDEFINES position)"))
 
+CB_CONFIG_BOOLEAN (cb_ref_mod_zero_length, "ref-mod-zero-length",
+	_("allow zero length reference-modification (only changed with EC-BOUND-REF-MOD active)"))
+
 CB_CONFIG_BOOLEAN (cb_relax_level_hierarchy, "relax-level-hierarchy",
 	_("allow non-matching level numbers"))
 
@@ -408,3 +411,7 @@ CB_CONFIG_SUPPORT (cb_assign_disk_from, "assign-disk-from",
 
 CB_CONFIG_SUPPORT (cb_vsam_status, "vsam-status",
 	_("VSAM status in FILE STATUS"))
+		
+CB_CONFIG_SUPPORT (cb_self_call_recursive, "self-call-recursive",
+	_("CALL to own PROGRAM-ID implies RECURSIVE attribute"))
+

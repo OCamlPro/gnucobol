@@ -1,13 +1,50 @@
 
+2022-05-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (num_byte_memcpy): removed, callers adjusted to
+	  use memcpy instead
+
+2022-05-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* strings.c (cob_inspect_converting): fix possible stackoverflow
+	* call.c (cob_resolve_internal): fix possible stack-use-after-scope,
+	  happening if name conversion is active, introduced on 2020-11-29
+	  and distributed with 3.1.2
+
+2022-05-23  Simon Sobisch <simonsobisch@gnu.org>
+
+	* strings.c (inspect_common_no_replace, inspect_common_replacing):
+	  split from inspect_common to enable further optimization for
+	  non replacing variant
+	* strings.c (inspect_common_no_replace): for LEADING and TRAILING - do
+	  not mark each occurrence, instead gather range, then set the marker
+	  afterwards to reduce the number of expensive small memsets
+	  (TALLYING for 20000 TRAILING spaces -> 1 memset instead of 20000)
+
 2022-05-17  Ron Norman <rjn@inglenet.com>
 
-	* common.h: Add 'roffset' to cob_symbol to hold original offset of field
-	* common.c: Fix issue with a dump incorrectly reporting 'CODEGEN ERROR'
+	* common.h: add 'roffset' to cob_symbol to hold original offset of field
+	* common.c: fix issue with a dump incorrectly reporting 'CODEGEN ERROR'
+
+2022-05-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_get_sign_ascii, cob_put_sign_ascii, cob_put_sign_ebcdic):
+	  skip sign-adjustment if data is already without/with sign
+	* common.c (cob_put_sign_ebcdic): invalid data for negative sign is now
+	  converted to -0 instead of +0
+	* strings.c (cob_inspect_init_common): extracted from cob_inspect_init
+	* strings.c (cob_inspect_converting): reordered code, so inspect_mark
+	  is no longer needed
+	* strings.c (cob_inspect_init_common): extracted from cob_inspect_init
+	* strings.c (cob_inspect_init_converting), common.h: new stripped down
+	  variant of cob_inspect_init
+	* strings.c (cob_inspect_converting): changed conversion to be based
+	  on pre-computed conversion tables, improving performance a lot
 
 2022-04-12  Ron Norman <rjn@inglenet.com>
 
-	* Makefile.am : Add LIBCOB_VER for --version-info instead of hard coded
-	* common.c: Removed checks for running in development mode for relocation
+	* Makefile.am : add LIBCOB_VER for --version-info instead of hard coded
+	* common.c: removed checks for running in development mode for relocation
 
 2022-04-11  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -190,6 +227,12 @@
 2021-11-10  Ron Norman <rjn@inglenet.com>
 
 	* fileio.c: Test code for bug #604 but not sure if it should be
+
+2020-11-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c, common.h: new function signature cob_check_ref_mod
+	  (3.x had new function cob_check_ref_mod_detailed) and
+	  cob_check_ref_mod_minimal for adjusted check of COB_EC_BOUND_REF_MOD
 
 2021-11-08  Ron Norman <rjn@inglenet.com>
 
@@ -882,6 +925,14 @@
 	* termio.c (cob_dump_field): fixes for non-standard 01 OCCURS for "same as"
 	* termio.c (cob_dump_field): postpone output of "same as" to gather multiple
 	  identical entries into the same line as "XYZ (1,2..20) same as (1)"
+
+2020-11-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c: limit sscanf width for strings
+	* common.c (set_config_val): removed duplicate check for
+	  ptr (!= 0 && == ' ')
+	* call.c, common.c, fileio.c, intrinsic.c, mlio.c, strings.c:
+	  reduced scope of some variables
 
 2020-11-26  Ron Norman <rjn@inglenet.com>
 

@@ -1654,6 +1654,39 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([TRANSFORM statement])
+AT_KEYWORDS([runmisc CONVERTING ALPHABET])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+           ALPHABET MY-ASCII  IS STANDARD-1.
+           ALPHABET MY-EBCDIC IS EBCDIC.
+
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X             PIC X(3) VALUE "BCA".
+       PROCEDURE        DIVISION.
+      *> internally: "alias" to INSPECT CONVERTING
+           TRANSFORM X FROM "ABC" TO "BCD".
+           IF X NOT = "CDB"
+              DISPLAY "X: " X.
+      *> optional CHARACTERS and ALPHABETs (value test is separate)
+           TRANSFORM X CHARACTERS FROM MY-ASCII TO MY-EBCDIC.
+      *>
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([INSPECT CONVERTING alphabet])
 AT_KEYWORDS([runmisc ASCII EBCDIC])
 
@@ -1767,12 +1800,155 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            INSPECT X CONVERTING "ABZC" TO "ZY0X"
            IF X NOT = "Z0ZYYXDXXEXX"
-              DISPLAY "1 - " X.
+              DISPLAY "1 - " X
+              MOVE "Z0ZYYXDXXEXX" TO X.
 
            INSPECT X CONVERTING "XD" TO SPACES
               BEFORE  "E" AFTER "D"
            IF X NOT = "Z0ZYYXD  EXX"
-              DISPLAY "2 - " X.
+              DISPLAY "2 - " X
+              MOVE "Z0ZYYXD  EXX" TO X.
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CLEANUP
+
+
+AT_SETUP([INSPECT numeric signed])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 SEPARATE1     PIC S99 VALUE -11 SIGN LEADING  SEPARATE.
+       01 SEPARATE2     PIC S99 VALUE +11 SIGN LEADING  SEPARATE.
+       01 TSEPARATE1    PIC S99 VALUE -11 SIGN TRAILING SEPARATE.
+       01 TSEPARATE2    PIC S99 VALUE +11 SIGN TRAILING SEPARATE.
+       01 NSEPARATE1    PIC S99 VALUE -11.
+       01 NSEPARATE2    PIC S99 VALUE +11.
+       01 TRAILING1     PIC S99 VALUE -11 SIGN TRAILING.
+       01 TRAILING2     PIC S99 VALUE +11 SIGN TRAILING.
+       77 CNT           USAGE BINARY-INT.
+       PROCEDURE        DIVISION.
+           MOVE 0 TO CNT
+           INSPECT SEPARATE1  TALLYING CNT FOR ALL "1"
+           IF CNT NOT = 2
+              DISPLAY "T1 - " CNT.
+           MOVE 0 TO CNT
+           INSPECT SEPARATE2  TALLYING CNT FOR ALL "1"
+           IF CNT NOT = 2
+              DISPLAY "T2 - " CNT.
+           MOVE 0 TO CNT
+           INSPECT TSEPARATE1 TALLYING CNT FOR ALL "1"
+           IF CNT NOT = 2
+              DISPLAY "T3 - " CNT.
+           MOVE 0 TO CNT
+           INSPECT TSEPARATE2 TALLYING CNT FOR ALL "1"
+           IF CNT NOT = 2
+              DISPLAY "T4 - " CNT.
+           MOVE 0 TO CNT
+           INSPECT NSEPARATE1 TALLYING CNT FOR ALL "1"
+           IF CNT NOT = 2
+              DISPLAY "T5 - " CNT.
+           MOVE 0 TO CNT
+           INSPECT NSEPARATE2 TALLYING CNT FOR ALL "1"
+           IF CNT NOT = 2
+              DISPLAY "T6 - " CNT.
+           MOVE 0 TO CNT
+           INSPECT TRAILING1  TALLYING CNT FOR ALL "1"
+           IF CNT NOT = 2
+              DISPLAY "T7 - " CNT.
+           MOVE 0 TO CNT
+           INSPECT TRAILING2  TALLYING CNT FOR ALL "1"
+           IF CNT NOT = 2
+              DISPLAY "T8 - " CNT.
+
+           INSPECT SEPARATE1  CONVERTING "123" TO "234"
+           IF SEPARATE1 NOT = -22
+              DISPLAY "C1 - " SEPARATE1
+              MOVE -22 TO SEPARATE1.
+           INSPECT SEPARATE2  CONVERTING "123" TO "234"
+           IF SEPARATE2 NOT = +22
+              DISPLAY "C2 - " SEPARATE2
+              MOVE +22 TO SEPARATE2.
+           INSPECT TSEPARATE1 CONVERTING "123" TO "234"
+           IF TSEPARATE1 NOT = -22
+              DISPLAY "C3 - " TSEPARATE1
+              MOVE -22 TO TSEPARATE1.
+           INSPECT TSEPARATE2 CONVERTING "123" TO "234"
+           IF TSEPARATE2 NOT = +22
+              DISPLAY "C4 - " TSEPARATE2
+              MOVE +22 TO TSEPARATE2.
+           INSPECT NSEPARATE1 CONVERTING "123" TO "234"
+           IF NSEPARATE1 NOT = -22
+              DISPLAY "C5 - " NSEPARATE1
+              MOVE -22 TO NSEPARATE1.
+           INSPECT NSEPARATE2 CONVERTING "123" TO "234"
+           IF NSEPARATE2 NOT = +22
+              DISPLAY "C6 - " NSEPARATE2
+              MOVE +22 TO NSEPARATE2.
+           INSPECT TRAILING1  CONVERTING "123" TO "234"
+           IF TRAILING1 NOT = -22
+              DISPLAY "C7 - " TRAILING1
+              MOVE -22 TO TRAILING1.
+           INSPECT TRAILING2  CONVERTING "123" TO "234"
+           IF TRAILING2 NOT = +22
+              DISPLAY "C8 - " TRAILING2
+              MOVE +22 TO TRAILING2.
+
+           INSPECT SEPARATE1  REPLACING ALL "1" BY "2"
+                                            "2" BY "3"
+                                            "3" BY "4"
+           IF SEPARATE1 NOT = -33
+              DISPLAY "R1 - " SEPARATE1
+              MOVE -33 TO SEPARATE1.
+           INSPECT SEPARATE2  REPLACING ALL "1" BY "2"
+                                            "2" BY "3"
+                                            "3" BY "4"
+           IF SEPARATE2 NOT = +33
+              DISPLAY "R2 - " SEPARATE2
+              MOVE +33 TO SEPARATE2.
+           INSPECT TSEPARATE1 REPLACING ALL "1" BY "2"
+                                            "2" BY "3"
+                                            "3" BY "4"
+           IF TSEPARATE1 NOT = -33
+              DISPLAY "R3 - " TSEPARATE1
+              MOVE -33 TO TSEPARATE1.
+           INSPECT TSEPARATE2 REPLACING ALL "1" BY "2"
+                                            "2" BY "3"
+                                            "3" BY "4"
+           IF TSEPARATE2 NOT = +33
+              DISPLAY "R4 - " TSEPARATE2
+              MOVE +33 TO TSEPARATE2.
+           INSPECT NSEPARATE1 REPLACING ALL "1" BY "2"
+                                            "2" BY "3"
+                                            "3" BY "4"
+           IF NSEPARATE1 NOT = -33
+              DISPLAY "R5 - " NSEPARATE1
+              MOVE -33 TO NSEPARATE1.
+           INSPECT NSEPARATE2 REPLACING ALL "1" BY "2"
+                                            "2" BY "3"
+                                            "3" BY "4"
+           IF NSEPARATE2 NOT = +33
+              DISPLAY "R6 - " NSEPARATE2
+              MOVE +33 TO NSEPARATE2.
+           INSPECT TRAILING1  REPLACING ALL "1" BY "2"
+                                            "2" BY "3"
+                                            "3" BY "4"
+           IF TRAILING1 NOT = -33
+              DISPLAY "R7 - " TRAILING1
+              MOVE -33 TO TRAILING1.
+           INSPECT TRAILING2  REPLACING ALL "1" BY "2"
+                                            "2" BY "3"
+                                            "3" BY "4"
+           IF TRAILING2 NOT = +33
+              DISPLAY "R8 - " TRAILING2
+              MOVE +33 TO TRAILING2.
 
            STOP RUN.
 ])

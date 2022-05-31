@@ -470,7 +470,7 @@ AT_CLEANUP
 AT_SETUP([SSRANGE and NOSSRANGE directives])
 AT_KEYWORDS([runsubscripts subscripts extensions directive])
 
-# Not merged yet
+# Not fully merged yet
 AT_SKIP_IF(true)
 
 # WARNING: this testcase is "broken" as those SSRANGE may only be
@@ -486,44 +486,21 @@ AT_DATA([prog.cob], [
            03  y       PIC X OCCURS 5 TIMES VALUE SPACE.
            03  z       PIC X VALUE "!".
        01  idx         PIC 99 VALUE 6.
-       01  n           PIC 9 VALUE 0.
-       01  m           PIC 9 VALUE 2.
-           
+
        PROCEDURE DIVISION.
       $SET NOSSRANGE
            DISPLAY y (idx)
-           DISPLAY y (5) (1:m)
-      $SET SSRANGE(2)
-       >>IF TEST-SUBSCRIPT DEFINED
+      *> Note: MF says "sets BOUND"
+      $SET SSRANGE
            DISPLAY y (idx)
-       >>ELIF TEST-ZERO-LEN-REF-MOD DEFINED
-           DISPLAY y (5) (1:n)
-       >>ELSE
-           DISPLAY y (5) (1:m)
-       >>END-IF
            .
-])
-
-AT_CHECK([$COMPILE -DTEST-SUBSCRIPT prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [1],
-[!
- !
-], [libcob: prog.cob:20: error: subscript of 'y' out of bounds: 6
-note: maximum subscript for 'y': 5
-])
-
-AT_CHECK([$COMPILE -DTEST-ZERO-LEN-REF-MOD prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [1],
-[!
- !
-], [libcob: prog.cob:22: error: length of 'y' out of bounds: 0
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [1],
 [!
- !
-], [libcob: prog.cob:24: error: length of 'y' out of bounds: 2, maximum: 1
+], [libcob: prog.cob:17: error: subscript of 'y' out of bounds: 6
+note: maximum subscript for 'y': 5
 ])
 
 AT_CLEANUP

@@ -1,4 +1,4 @@
-## Copyright (C) 2007-2012, 2014-2021 Free Software Foundation, Inc.
+## Copyright (C) 2007-2012, 2014-2022 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 ## Ron Norman
 ##
@@ -1496,7 +1496,6 @@ prog.cob:49: error: 'SWIT1-ON' is not defined
 prog.cob:56: error: 'SWIT2-ON' is not defined
 prog.cob:63: error: 'SWITCH-B' is not defined
 prog.cob:63: error: syntax error, unexpected OFF
-prog.cob:64: error: 'SWIT2-ON' is not defined
 prog.cob:70: error: 'SWIT26-ON' is not defined
 prog.cob:76: error: 'SWIT32-OFF' is not defined
 ])
@@ -1814,6 +1813,39 @@ prog.cob:8: warning: source text exceeds 512 bytes, will be truncated
 prog.cob:8: error: unknown statement 'This'
 ])
 
+AT_CLEANUP
+
+
+AT_SETUP([missing newline in fixed-form / free-form])
+AT_KEYWORDS([misc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       PROCEDURE        DIVISION.
+           CONTINUE
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:8: error: syntax error, unexpected end of file
+])
+
+# fixing the initial setup but now producing a missing newline:
+printf "           CONTINUE." >> prog.cob
+
+AT_CHECK([$COBC -fsyntax-only -Wextra -fixed prog.cob], [0], [],
+[prog.cob:8: warning: line not terminated by a newline [[-Wmissing-newline]]
+])
+AT_CHECK([$COBC -fsyntax-only -Wextra -free prog.cob], [0], [],
+[prog.cob:8: warning: line not terminated by a newline [[-Wmissing-newline]]
+])
+# not yet merged to trunk:
+# should not happen if the data only consists of space characters
+#printf "\n              \t " >> prog.cob
+#
+#AT_CHECK([$COMPILE_ONLY -Wextra prog.cob], [0], [], [])
 AT_CLEANUP
 
 
@@ -3790,7 +3822,6 @@ prog.cob:39: error: syntax error, unexpected Identifier
 prog.cob:44: error: syntax error, unexpected Identifier, expecting THREAD
 prog.cob:48: error: syntax error, unexpected END-CALL
 prog.cob:51: error: syntax error, unexpected Identifier
-prog.cob:34: error: 'thread' is not defined, but is a reserved word in another dialect
 ])
 
 AT_CLEANUP
@@ -4954,6 +4985,11 @@ AT_DATA([prog.cob], [
            INSPECT f TALLYING not-a-num FOR ALL 3
                REPLACING FIRST "abcde" BY not-display
            TRANSFORM f FROM 3 TO 2
+           TRANSFORM function udf(f-rec) FROM SPACE TO ZERO
+           TRANSFORM "yada" FROM SPACE TO ZERO
+           INSPECT function trim(f-rec)
+               TALLYING not-display FOR ALL SPACES *> valid with func
+               REPLACING FIRST ZERO BY SPACE       *> not valid
            .
 ])
 
@@ -4969,6 +5005,9 @@ prog.cob:22: error: 'f' is not a field
 prog.cob:22: error: 3 is not an alphanumeric literal
 prog.cob:22: error: 2 is not an alphanumeric literal
 prog.cob:22: error: invalid target for TRANSFORM
+prog.cob:23: error: syntax error, unexpected intrinsic function name, expecting Identifier
+prog.cob:24: error: syntax error, unexpected Literal, expecting Identifier
+prog.cob:25: error: invalid target for REPLACING
 ])
 AT_CLEANUP
 
@@ -6119,8 +6158,6 @@ prog.cob:16: warning: expression '115' LESS THAN '16' is always FALSE [-Wconstan
 prog.cob:17: warning: 'notdefined' is not defined [-Wignored-error]
 prog.cob:20: warning: expression '115' LESS THAN '16' is always FALSE [-Wconstant-numlit-expression]
 prog.cob:24: warning: expression '115' LESS THAN '16' is always FALSE [-Wconstant-numlit-expression]
-prog.cob:25: warning: 'notdefined' is not defined [-Wignored-error]
-prog.cob:21: warning: 'notdefined' is not defined [-Wignored-error]
 ]])
 
 # verify that we do only skip an undefined error when it actually was reported
@@ -6155,23 +6192,16 @@ AT_DATA([prog2.cob], [
 AT_CHECK([$COMPILE_ONLY -fdiagnostics-show-option -Wno-constant-expression prog2.cob], [1], [],
 [[prog2.cob:12: warning: 'notdefined' is not defined [-Wignored-error]
 prog2.cob:17: error: 'notdefined' is not defined
-prog2.cob:21: warning: 'notdefined' is not defined [-Wignored-error]
-prog2.cob:24: error: 'notdefined' is not defined
 ]])
 AT_CHECK([$COMPILE_ONLY -fdiagnostics-show-option -Wno-constant-expression -Wno-ignored-error prog2.cob], [1], [],
 [[prog2.cob:17: error: 'notdefined' is not defined
-prog2.cob:24: error: 'notdefined' is not defined
 ]])
 AT_CHECK([$COMPILE_ONLY -fdiagnostics-show-option -Wno-constant-expression -DSKIP-FIRST-ERROR prog2.cob], [1], [],
 [[prog2.cob:12: warning: 'notdefined' is not defined [-Wignored-error]
-prog2.cob:21: warning: 'notdefined' is not defined [-Wignored-error]
 prog2.cob:24: error: 'notdefined' is not defined
 ]])
 AT_CHECK([$COMPILE_ONLY -fdiagnostics-show-option -Wno-constant-expression -Werror=ignored-error prog2.cob], [1], [],
 [[prog2.cob:12: error: 'notdefined' is not defined [-Werror=ignored-error]
-prog2.cob:17: error: 'notdefined' is not defined
-prog2.cob:21: error: 'notdefined' is not defined [-Werror=ignored-error]
-prog2.cob:24: error: 'notdefined' is not defined
 ]])
 
 AT_CLEANUP
@@ -6573,7 +6603,7 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:6: error: invalid SOURCEFORMAT directive option 'hi!'
 prog.cob:7: error: invalid SOURCEFORMAT directive option ''
 prog.cob:8: error: syntax error, unexpected Variable, expecting Literal
-prog.cob:8: warning: alphanumeric literal has zero length; a SPACE will be assumed
+prog.cob:8: error: invalid SOURCEFORMAT directive option '(null)'
 prog.cob:8: error: PROGRAM-ID header missing
 prog.cob:8: error: PROCEDURE DIVISION header missing
 prog.cob:8: error: syntax error, unexpected Literal

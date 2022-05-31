@@ -295,15 +295,29 @@ static void *	copy_literal (cb_tree l);
 	copy_word_in_quotes (&word);
 	remove_reserved_word_now (word);
 	cobc_free (word);
+/* not merged yet
+}
+
+<*>^[ ]?"#REFMOD_ZERO "[0-9]\n {
+	cb_ref_mod_zero_length = (yytext[13] - '0');
+*/
 }
 
 <*>^[ ]?"#ODOSLIDE "[0-1]\n {
 	cb_odoslide = (yytext[10] - '0');
 }
 
-<*>^[ ]?"#ASSIGN".*\n {
-	char	*text = cobc_parse_strdup (yytext);
-	cb_assign_type_default = (enum cb_assign_type)(text[1] - '0');
+<*>^[ ]?"#ASSIGN "[0-9]\n {
+	cb_assign_type_default = (enum cb_assign_type)(yytext[8] - '0');
+/* not merged yet
+<*>^[ ]?"#TURN".*\n {
+	struct cb_turn_list	*l;
+
+	for (l = cb_turn_list; l && l->line != -1; l = l->next);
+	if (l) {
+		l->line = cb_source_line;
+	}
+*/
 }
 
 <*>\n {

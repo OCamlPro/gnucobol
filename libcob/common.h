@@ -1389,12 +1389,13 @@ typedef struct __cob_module {
 #define COB_DIALECT_COBOL85		3
 #define COB_DIALECT_ACU		4
 #define COB_DIALECT_BS2000	5
-#define COB_DIALECT_IBM		6	
+#define COB_DIALECT_IBM		6
 #define COB_DIALECT_MF		7
-#define COB_DIALECT_MVS		8	
-#define COB_DIALECT_RELIA	9	
-#define COB_DIALECT_RM		10	
-#define COB_DIALECT_XOPEN	11	
+#define COB_DIALECT_MVS		8
+#define COB_DIALECT_RELIA	9
+#define COB_DIALECT_RM		10
+#define COB_DIALECT_XOPEN	11
+#define COB_DIALECT_GCOS	12
 
 /* User function structure */
 
@@ -2054,8 +2055,10 @@ COB_EXPIMP void	cob_check_odo		(const int, const int, const int,
 					 const char *, const char *);
 COB_EXPIMP void	cob_check_subscript	(const int, const int,
 					 const char *, const int);
-COB_EXPIMP void	cob_check_ref_mod	(const int, const int,
-					 const int, const char *);
+COB_EXPIMP void	cob_check_ref_mod	(const char *, const int, const int,
+					 const int, const int, const int);
+COB_EXPIMP void	cob_check_ref_mod_minimal	(const char *,
+					 const int, const int);
 
 /* Comparison functions */
 COB_EXPIMP int	cob_numeric_cmp		(cob_field *, cob_field *);
@@ -2064,6 +2067,7 @@ COB_EXPIMP int	cob_numeric_cmp		(cob_field *, cob_field *);
 /* Functions in strings.c */
 
 COB_EXPIMP void cob_inspect_init	(cob_field *, const cob_u32_t);
+COB_EXPIMP void cob_inspect_init_converting	(cob_field *);
 COB_EXPIMP void cob_inspect_start	(void);
 COB_EXPIMP void cob_inspect_before	(const cob_field *);
 COB_EXPIMP void cob_inspect_after	(const cob_field *);

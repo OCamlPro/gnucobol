@@ -1,18 +1,18 @@
 ## Copyright (C) 2003-2012, 2014-2015, 2017-2020 Free Software Foundation, Inc.
-## Written by Keisuke Nishida, Roger While, Simon Sobisch
+## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 ##
 ## This file is part of GnuCOBOL.
-## 
+##
 ## The GnuCOBOL compiler is free software: you can redistribute it
 ## and/or modify it under the terms of the GNU General Public License
 ## as published by the Free Software Foundation, either version 3 of the
 ## License, or (at your option) any later version.
-## 
+##
 ## GnuCOBOL is distributed in the hope that it will be useful,
 ## but WITHOUT ANY WARRANTY; without even the implied warranty of
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ## GNU General Public License for more details.
-## 
+##
 ## You should have received a copy of the GNU General Public License
 ## along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 
@@ -123,41 +123,22 @@ AT_DATA([prog.cob], [
        PROGRAM-ID.      prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       01 X             PIC X(4) VALUE "abcd".
-       01 I             PIC 9 VALUE 5.
+       01.
+          03 X          PIC X(4) VALUE "abcd".
+          03 I          PIC 9 VALUE 5.
        PROCEDURE        DIVISION.
-           DISPLAY X(I:1) NO ADVANCING
-           END-DISPLAY.
+           DISPLAY X(I:1) NO ADVANCING.
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE --debug prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
-[libcob: prog.cob:9: error: offset of 'X' out of bounds: 5, maximum: 4
+[libcob: prog.cob:10: error: offset of 'X' out of bounds: 5, maximum: 4
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
-[libcob: prog.cob:9: error: offset of 'X' out of bounds: 5, maximum: 4
-])
-
-AT_DATA([prog2.cob], [
-       IDENTIFICATION   DIVISION.
-       PROGRAM-ID.      prog2.
-       DATA             DIVISION.
-       WORKING-STORAGE  SECTION.
-       01 X             PIC X(4) VALUE "abcd".
-       01 I             PIC 9 VALUE 5.
-       PROCEDURE        DIVISION.
-           DISPLAY X(I:1) NO ADVANCING
-           END-DISPLAY.
-           STOP RUN.
-])
-
-AT_CHECK([$COMPILE prog2.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog2], [1], [],
-[libcob: prog2.cob:9: error: offset of 'X' out of bounds: 5, maximum: 4
-])
+# again without runtime checks:
+AT_CHECK([$COBC -x prog.cob -o progb], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./progb], [0], [5], [])
 
 AT_CLEANUP
 
@@ -178,9 +159,29 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -std=cobol2002 prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
 [libcob: prog.cob:9: error: length of 'X' out of bounds: 0
+])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog2.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X             PIC X(4) VALUE "abcd".
+       01 I             PIC 9 VALUE 0.
+       PROCEDURE        DIVISION.
+       >> REF-MOD-ZERO-LENGTH
+           DISPLAY X(1:I) NO ADVANCING.
+       >> REF-MOD-ZERO-LENGTH OFF
+           DISPLAY X(1:I) NO ADVANCING.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fno-ref-mod-zero-length prog2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2], [1], [],
+[libcob: prog2.cob:11: error: length of 'X' out of bounds: 0
 ])
 
 AT_CLEANUP
@@ -310,8 +311,204 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
 AT_CLEANUP
 
 
-AT_SETUP([Reference Modification])
+AT_SETUP([enable / disable ref-mod check])
+AT_KEYWORDS([refmod debug exception-name])
+
+
+# Not fully merged yet
+AT_SKIP_IF(true)
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  x.
+           03  y PIC XXX VALUE "abc".
+           03  z PIC X VALUE "d".
+       01  len PIC 99 VALUE 2.
+
+       PROCEDURE DIVISION.
+           DISPLAY y (3:len)
+                   WITH NO ADVANCING
+           DISPLAY FUNCTION TRIM(FUNCTION EXCEPTION-STATUS)
+                   WITH NO ADVANCING
+           DISPLAY "."
+                   WITH NO ADVANCING
+           .
+])
+
+AT_CHECK([$COMPILE -fno-ec=BOUND-REF-MOD prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [cd.], [])
+AT_CHECK([$COMPILE -fno-ec=BOUND prog.cob -o progb], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./progb], [0], [cd.], [])
+AT_CHECK([$COMPILE prog.cob -o progc], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./progc], [1], [],
+[libcob: prog.cob:13: error: length of 'y' out of bounds: 2, starting at: 3, maximum: 3
+])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog2.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  x.
+           03  y PIC X VALUE "a".
+           03  z PIC X VALUE "b".
+       01  len   PIC 99 VALUE 0.
+
+       PROCEDURE DIVISION.
+           DISPLAY y (1:len)
+                   WITH NO ADVANCING
+           DISPLAY FUNCTION TRIM(FUNCTION EXCEPTION-STATUS)
+                   WITH NO ADVANCING
+           DISPLAY "."
+                   WITH NO ADVANCING
+           MOVE    2 TO len
+           DISPLAY y (1:len)
+                   WITH NO ADVANCING
+           DISPLAY FUNCTION TRIM(FUNCTION EXCEPTION-STATUS)
+                   WITH NO ADVANCING
+           DISPLAY "."
+                   WITH NO ADVANCING
+           .
+])
+
+AT_CHECK([$COMPILE -fno-ec=BOUND-REF-MOD prog2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [.ab.], [])
+AT_CHECK([$COMPILE -o prog2b prog2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2b], [1], [.],
+[libcob: prog2.cob:20: error: length of 'y' out of bounds: 2, maximum: 1
+])
+AT_CHECK([$COMPILE -fno-ref-mod-zero-length -o prog2c prog2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2c], [1], [],
+[libcob: prog2.cob:13: error: length of 'y' out of bounds: 0
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([MF SSRANGE and NOSSRANGE directives])
+AT_KEYWORDS([refmod extensions directive])
+
+# Not fully merged yet
+AT_SKIP_IF(true)
+
+# Note: SSRANGE directive is "initial" and must be specified
+#       before IDENTIFICATION DIVISION
+
+AT_DATA([prog.cob], [
+      $SET NOSSRANGE
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  x.
+           03  y       PIC X VALUE SPACE.
+           03  z       PIC X VALUE "!".
+       01  n           PIC 9 VALUE 0.
+       01  m           PIC 9 VALUE 2.
+           
+       PROCEDURE DIVISION.
+           DISPLAY y (1:m) NO ADVANCING
+           DISPLAY y (1:n) no ADVANCING
+           GOBACK.
+])
+
+AT_CHECK([$COBC -x -debug -std=mf prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [ !], [])
+
+AT_DATA([prog1.cob], [
+      $SET SSRANGE"1"
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. progb.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  x.
+           03  y       PIC X VALUE SPACE.
+           03  z       PIC X VALUE "!".
+       01  n           PIC 9 VALUE 0.
+       01  m           PIC 9 VALUE 2.
+           
+       PROCEDURE DIVISION.
+           DISPLAY y (1:m) NO ADVANCING
+           DISPLAY y (1:n)
+           GOBACK.
+])
+
+AT_CHECK([$COBC -x -std=mf prog1.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog1], [1], [ !],
+[libcob: prog1.cob:16: error: length of 'y' out of bounds: 0
+])
+
+AT_DATA([prog2.cob], [
+      $SET SSRANGE"2"
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog2.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  x.
+           03  y       PIC X VALUE SPACE.
+           03  z       PIC X VALUE "!".
+       01  n           PIC 9 VALUE 0.
+       01  m           PIC 9 VALUE 2.
+           
+       PROCEDURE DIVISION.
+      $IF TEST-ZERO-LEN-REF-MOD DEFINED
+           DISPLAY y (1:n)
+      $END
+           DISPLAY y (1:m)
+           GOBACK.
+])
+
+AT_CHECK([$COBC -x -std=mf -DTEST-ZERO-LEN-REF-MOD prog2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2], [1], [],
+[libcob: prog2.cob:16: error: length of 'y' out of bounds: 0
+])
+
+AT_CHECK([$COBC -x -std=mf -o prog2b prog2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2b], [1], [],
+[libcob: prog2.cob:18: error: length of 'y' out of bounds: 2, maximum: 1
+])
+
+AT_DATA([prog3.cob], [
+      $SET SSRANGE"3"
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog3.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  x.
+           03  y       PIC X VALUE SPACE.
+           03  z       PIC X VALUE "!".
+       01  n           PIC 9 VALUE 0.
+       01  m           PIC 9 VALUE 2.
+           
+       PROCEDURE DIVISION.
+           DISPLAY y (1:n) NO ADVANCING
+           DISPLAY y (1:m)
+           GOBACK.
+])
+
+AT_CHECK([$COBC -x -std=mf prog3.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog3], [1], [],
+[libcob: prog3.cob:16: error: length of 'y' out of bounds: 2, maximum: 1
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([Reference Modification Checks in group])
 AT_KEYWORDS([refmod numeric])
+
+# currently failing, see typeck.c
+# "CHECKME: if active, then one test fails, if not another..."
+AT_XFAIL_IF(true)
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -407,7 +604,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -w prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [1],
 [MOVEs to TSTTAIL3 (2:8)

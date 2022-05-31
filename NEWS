@@ -39,13 +39,35 @@ NEWS - user visible changes				-*- outline -*-
 *     next major release
 
 * many internal changes, changing some defaults (TODO: list in detail)
+   
+** For LINE SEQUENTIAL files the behavior has been changed to always split lines
+   longer than the record area into multiple records. 
+   Setting COB_LS_SPLIT = false will have the old behavior of truncating the record.
 
 
+* New build features
+
+* new configure option --with-std= lets to build into the compiler the default
+  COBOL dialect if -std= is not provided at compile time. If unspecified the
+  default is 'default'
+
+* new configure option --with-file-format=mf lets to build into the compiler 
+  the default file format. If not provided then the old GnuCOBOL 3 format files
+  are used and for Variable length SEQUENTIAL or RELATIVE files the file is
+  not portable across different platforms.
+  Using 'mf' (Microfocus) format, data files are portable across platforms.
+
+
+  ** dialect option to allow ref-mod with zero-length (active with -std=default),
+     with runtime checks enabled; also set by directives
+     REF-MOD-ZERO-LENGTH (COBOL202x) and SSRANGE (MF) as appropriate
 
 Open Plans:
 
+* delay-load xml, json and curses
 * start of C standardization
 * codegen: split of functions (big modules into multiple C functions)
+* possible "indent" run
 * ...
 
  GnuCOBOL 3.2
@@ -57,6 +79,8 @@ Open Plans:
    FH--FCD and FH--KEYDEF, fixed use of different attributes and changing
    pointers and now supports - for 32-bit builds - an internal conversion between
    FCD2 and FCD3 for cases where existing programs are coded with FCD2
+   
+** Support of GCOS 7 (Bull) dialect
 
 ** TODO - More to add
 
@@ -107,6 +131,15 @@ Open Plans:
 ** new compiler command line option to list the known runtime exception names
    and fatality `cobc --list-exceptions`
 
+** New -std options:
+
+   gcos            GCOS compatibility
+   gcos-strict     GCOS compatibility                - strict
+
+   We define the GCOS dialect based on the COBOL85 standard, with new
+   dialect configuration options accompanying each specificity
+   introduced by the dialect.
+
 * Important Bugfixes:
 
 ** for dialects other than the GnuCOBOL default different reserved "alias" words
@@ -129,9 +162,10 @@ Open Plans:
 
 ** the timestamp in the header was changed from ANSI date format like
    "Tue Sep 28 09:49:43 2021" to formatted time (year after day); this may be
-   changed during `configure` with adding a define to CPPFLAGS, for using the
-   old format `-DLISTING_TIMESTAMP_ANSI`, for an explicit format (cut at 26
-   characters) for example date only: `-DLISTING_TIMESTAMP_FORMAT="%Y-%m-%d"`
+   changed during `configure` with adding a define to COBC_CPPFLAGS;
+   to either use the old format, adding add `-DLISTING_TIMESTAMP_ANSI`,
+   or to use an explicit format (cut at 26 characters, may raise false-positives
+   in listing tests) e.g. date only `-DLISTING_TIMESTAMP_FORMAT="%Y-%m-%d"`
 
 * More notable changes
 
@@ -146,6 +180,10 @@ Open Plans:
 ** source references shown in diagnostic messages during runtime, the tracing
    options and during debugging were extended, for example each executed WHEN,
    VARYING and UNTIL phrases are now seen
+
+** configure now honors BDB_LIBS
+** configure now checks for XCurses and allows --with-curses=xcurses
+   (experimental)
 
 
 * Known issues in 3.2 (and 3.1)
@@ -181,7 +219,7 @@ Open Plans:
 
 ** JSON GENERATE statement
    (note: runtime support needs additional library cJSON or JSON-C)
-   
+
 ** CONTINUE AFTER statement (COBOL 202x) implemented, also handle fractions
    of seconds in C$SLEEP now
    
@@ -201,7 +239,7 @@ Open Plans:
 ** file handling: include support for a callable EXTFH interface also provided
    by several compilers including Micro Focus
    This allows users to insert an external file handler while retaining
-   all the normal COBOL I/O functions with a possible callback to libcob.
+   all of the normal COBOL I/O functions with a possible callback to libcob.
    To have the compiled program call `yourfh()` for file I/O use:
    `cobc -fcallfh=yourfh`
    In turn `yourfh()` may call `EXTFH()` to use I/O functions from GnuCOBOL.
@@ -217,11 +255,8 @@ Open Plans:
   ** the configure option --with-cjson was replaced by
      --with-json with arguments, allowing new JSON-C handler to be used
 
-  ** new configure option --enable-hardening to either enable GNU C's
-     hardening options or leave as-is, or disable (which previous versions
-     effectively did)
 
- **  ensure runtime checks are generated - nder some conditions the
+ **  ensure runtime checks are generated -u nder some conditions the
      generated code had excluded runtime checks, permitting out-of-bounds or
      null-pointer accesses
 
@@ -241,14 +276,6 @@ Open Plans:
 
   ** the interal listing got a speedup and has all error references in
      ascending order now
-
-
-** adjustments to cobc's warning options:
-   -Wdangling-text "new" option to enable "source text after program area",
-      not included in -Wall any more
-   -Wno-ignored-error allows to suppress messages that normally would be an
-      error and only allowed because they are never executed
-   -Wimplicit-define and -Wcorresponding are now enabled by default
 
   ** COPY statement handling:
      * copybook names that contain an extension aren't search with additional
@@ -298,7 +325,21 @@ Open Plans:
        specific (this option used to be called -W)
    -Wadditional  new warning group for all warnings that don't have a group
        on their own
-   -Wno-error and -Wno-error=<warning> to treat (specific <warning>s) not as error
+   -Wno-error and -Wno-error=<warning> to treat all or a specific <warning>
+       not as error
+   -Wdangling-text for raising the warning "source text after program area",
+       not included in -Wall any more
+   -Wno-ignored-error allows to suppress messages that normally would be an
+       error and are only allowed because they are never executed
+   -Wcorresponding is now enabled by default
+
+   -f[no]-diagnostics-show-option, enabled by default, shows the
+    command line option responsible for the diagnostic message
+
+   extra information to a warning (or error) is now marked as "note:"
+
+** allow 3-byte CRT STATUS variable according to X/Open standard
+
 
 
 * Changes in the COBOL runtime (libcob)
@@ -311,9 +352,6 @@ Open Plans:
    against libcob and need cob_decimal include gmp.h/mpir.h yourself before;
    otherwise you do not need it in your include path any more
 
-** For LINE SEQUENTIAL files the behavior has been changed to always split lines
-   longer than the record area into multiple records. 
-   Setting COB_LS_SPLIT = false will have the old behavior of truncating the record.
 
 * New build features
 
@@ -350,6 +388,13 @@ Open Plans:
    and CJSON_LIBS, similar JSON_C_CFLAGS and JSON_C_LIBS for libjson-c.
    If unset configure will use pkg-config.
 
+** new configure option --enable-hardening to either enable GNU C's
+   hardening options or leave as-is, or disable (which previous versions
+   effectively did)
+
+** build system: defaults.h is not created or included anymore, all configure
+   provided defines are now found in the single header config.h
+
 ** Any time after `make` you can call `pre-inst-env` script to use the still-
    uninstalled binaries. Samples:
    pre-inst-env cobc -xj prog.cob
@@ -369,16 +414,6 @@ Open Plans:
   if set to any value the option parsing in cobc, cobcrun and CBL_GC_GETOPT
   stops at the first nonoption, otherwise it stays with the old behavior and
   re-orders nonoptions to the end)
-
-* new configure option --with-std= lets to build into the compiler the default
-  COBOL dialect if -std= is not provided at compile time. If unspecified the
-  default is 'default'
-
-* new configure option --with-file-format=mf lets to build into the compiler 
-  the default file format. If not provided then the old GnuCOBOL 3 format files
-  are used and for Variable length SEQUENTIAL or RELATIVE files the file is
-  not portable across different platforms.
-  Using 'mf' (Microfocus) format, data files are portable across platforms.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

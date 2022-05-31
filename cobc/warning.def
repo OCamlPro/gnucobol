@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2012, 2016-2018, 2020-2021 Free Software Foundation, Inc.
+   Copyright (C) 2003-2012, 2016-2018, 2020-2022 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch
 
    This file is part of GnuCOBOL.
@@ -110,6 +110,9 @@ CB_ONWARNDEF (cb_warn_dialect, "dialect",
 
 CB_NOWARNDEF (cb_warn_source_after_code, "dangling-text",
 	_("  -Wdangling-text       warn about source text after program-area"))
+
+CB_ONWARNDEF (cb_missing_newline, "missing-newline",
+	_("  -Wno-missing-newline  do not warn about missing newlines"))
 
 CB_ONWARNDEF (cb_warn_filler, "others",
 	_("  -Wno-others           do not warn about different issues"))

@@ -1,13 +1,40 @@
 
+<<<<<<< .working
+2022-05-31  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (cobc_check_string): replaced single string cache by an array
+	  of caches using the string length as index; allowing much faster lookups
+	* codegen.c (chk_field_variable_address): [not working -> disabled] draft
+	  for speedup by not checking the same field multiple time
+
+2022-05-30  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* help.c (cobc_print_usage_common_options): document new -std
+	  dialect options gcos and gcos-strict
+	* reserved.c (default_reserved_words): define words COMP-9,
+	  COMP-10, and COMP-15, that are used by the GCOS dialect for
+	  floating-point usages
+
 2022-05-17  Ron Norman <rjn@inglenet.com>
 
-	* codegen.c : Emit original field offset in cob_symbol table
+	* codegen.c : emit original field offset in cob_symbol table
+
+2022-05-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (transform_body): add full features of INSPECT CONVERTING
+	  to TRANSFORM statement, adding optional CHARACTERS
+
+2022-05-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_emit_inspect): emit reduced cob_inspect_init_converting
+	  without cob_inspect_finish for INSPECT CONVERTING / TRANSFORM
+	* parser.y: inspect_list renamed to inspect_format_variant
 
 2022-04-12  Ron Norman <rjn@inglenet.com>
 
-	* cobc.c : Minor code reformat
+	* cobc.c : minor code reformat
 
-022-04-08  Simon Sobisch <simonsobisch@gnu.org>
+2022-04-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (process_translate): add length note also for value clauses
 	  which may span multiple lines
@@ -379,6 +406,13 @@
 	  own storage area and to have the REPORT field offset and report_column
 	  as computed to be exactly where the data should be in the print line
 
+2021-07-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y, config.def: changed the auto-setting of the RECURSIVE attribute
+	  in programs that CALL their own PROGRAM-ID (possibly deep in never called
+	  copybooks) to depend on the dialect option "self-call-recursive", with the
+	  option to skip that or warn/error, fixing bug 686
+
 2021-07-29  Ron Norman <rjn@inglenet.com>
 
 	* flag.def, cobc.c: Add -fdatamap to usage report
@@ -388,6 +422,16 @@
 	* tree.c: A few more checks for folding constant expressions
 	  Check for + 0, * 1, / 1, * 0
 
+||||||| .merge-left.r4286
+=======
+2021-07-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y, config.def: changed the auto-setting of the RECURSIVE attribute
+	  in programs that CALL their own PROGRAM-ID (possibly deep in never called
+	  copybooks) to depend on the dialect option "self-call-recursive", with the
+	  option to skip that or warn/error, fixing bug 686
+
+>>>>>>> .merge-right.r4287
 2021-07-12  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (cobc_getenv_path): drop invalid list from path
@@ -661,22 +705,43 @@
 	* codegen.c: Only emit the 'i_len' variable if it is used
 	* pplex.l: When searching for COPY book, use 'stat' to verify its a file
 
+2020-11-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c, cobc.h: moved memory related struct and size from header + define
+	  to source + constant
+	* error.c (cb_note_x): fixed late return that lead to listing issues and
+	  memory leak
+
 2020-11-27  Ron Norman <rjn@inglenet.com>
 
-	* codegen.c,typeck.c,parser.y,tree.h: 
-			Optimize subscript checking when SEARCHing table
-			Emit check for valid subscript on entry to SEARCH logic
+	* codegen.c,typeck.c,parser.y,tree.h: Optimize subscript checking when
+	  SEARCHing table
+	  Emit check for valid subscript on entry to SEARCH logic
 
 2020-11-25  Ron Norman <rjn@inglenet.com>
 
-	* codegen.c: Additional work to enhance INITIALIZE
+	* codegen.c: additional work to enhance INITIALIZE
+
+2020-11-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* error.c, cobc.h, tree.h: diagnostic functions now return cb_warn_val to
+	  provide the caller with the information about the type of diagnostic
+	  raised (note: can be adjusted with -W /-Wno / -Werror and by "ignored");
+	  use of cb_error_node for position tree in some wrapper functions (has no
+	  source reference and is therefore always resolved by current line)
+	* error.c, tree.h, typeck.c, parser.y: cb_note_x now implies listing
+	  suppression, therefore made related functions static instead of exporting
+	* error.c, tree.h: cb_word->error now specifies if the word reference
+	  produced a warning or error
+	* error.c (get_qualified_name): extracted from undefined_error and re-use
+	* error.c (undefined_error, ambiguous_error): only raise these errors /
+	  warnings once per word, solving FR #313 report undefined identifiers once
 
 2020-11-23  Ron Norman <rjn@inglenet.com>
 
 	* codegen.c: Generated code for INITIALIZE enhanced to emit progressive
-			'memcpy' to speed up the process
-			If size is not known until run time then emit call to
-			cob_init_table
+	  'memcpy' to speed up the process
+	  If size is not known until run time then emit call to cob_init_table
 
 2020-11-18  Ron Norman <rjn@inglenet.com>
 
@@ -686,6 +751,14 @@
 2020-11-11  Ron Norman <rjn@inglenet.com>
 
 	* codegen.c: Emit correct code for -debug within C function calls
+
+2020-11-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	FR #390 ref-mod with zero-length
+	* config.def, typeck.c (cb_build_identifier): added cb_ref_mod_zero_length
+	  to allow reference-modification at compile-time with a length of zero
+	* pparse.y, pplex.l, scanner.l, cobc.c: added >> REF-MOD-ZERO-LENGTH and
+	  adjusted SSRANGE, now also supporting SSRANGE"1" and SSRANGE"3"
 
 2020-11-04  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -809,8 +882,9 @@
 
 2020-09-10  Simon Sobisch <simonsobisch@gnu.org>
 
-	update for compiler diagnostivs including FR 386: show warning flag in use
-	
+	update for compiler diagnostics including FR 263 (diagnostics as "note")
+	and FR 386 (show warning flag in use)
+
 	* cobc.c, cobc.h, error.c, tree.h, typeck.c: change internal representation
 	  of warning options from integers to new enum cb_warn_opt which can have
 	  a warning value of new enum cb_warn_val instead of defines

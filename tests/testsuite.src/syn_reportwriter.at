@@ -115,7 +115,6 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:67: error: 'CUSTOMER-REPORT' is not defined
 prog.cob:67: error: 'CUSTOMER-REPORT' is not a valid report name
-prog.cob:82: error: 'CUSTOMER-REPORT' is not defined
 prog.cob:82: error: 'CUSTOMER-REPORT' is not a valid report name
 ])
 

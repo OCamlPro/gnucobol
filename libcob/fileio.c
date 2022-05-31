@@ -6672,7 +6672,6 @@ cob_start (cob_file *f, const int cond, cob_field *key,
 						cob_field *keysize, cob_field *fnstatus)
 {
 	int		ret;
-	int		size;
 	cob_field	tempkey;
 
 	f->last_operation = COB_LAST_START;
@@ -6696,9 +6695,8 @@ cob_start (cob_file *f, const int cond, cob_field *key,
 		return;
 	}
 
-	size = 0;
 	if (keysize) {
-		size = cob_get_int (keysize);
+		int		size = cob_get_int (keysize);
 		if (size < 1 || size > (int)key->size) {
 			cob_file_save_status (f, fnstatus, COB_STATUS_23_KEY_NOT_EXISTS);
 			return;

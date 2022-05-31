@@ -3790,7 +3790,7 @@ AT_DATA([prog.cob], [
        file-control.
           select optional indexed-file
           assign to "indexed-file.dat"
-          status is indexing-status-code indexing-isam-status
+          status is indexing-status-code
           organization is indexed
           access mode is dynamic
           record key is keyfield of indexing-record
@@ -3815,11 +3815,6 @@ AT_DATA([prog.cob], [
        01 indexing-status-code pic xx.
        01 indexing-status redefines indexing-status-code pic 99.
           88 indexing-ok       values 0 thru 10.
-       01 indexing-isam-status.
-          03 high-status-code  pic xx.
-          03 high-status redefines high-status-code pic 99.
-          03 low-status-code   pic xx.
-          03 low-status redefines low-status-code pic 99.
 
        78 line-separator       value
            '-----------------------------------------'.
