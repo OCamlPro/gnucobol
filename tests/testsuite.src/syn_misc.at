@@ -1836,10 +1836,10 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 printf "           CONTINUE." >> prog.cob
 
 AT_CHECK([$COBC -fsyntax-only -Wextra -fixed prog.cob], [0], [],
-[prog.cob:8: warning: line not terminated by a newline [[-Wothers]]
+[prog.cob:8: warning: line not terminated by a newline [[-Wmissing-newline]]
 ])
 AT_CHECK([$COBC -fsyntax-only -Wextra -free prog.cob], [0], [],
-[prog.cob:8: warning: line not terminated by a newline [[-Wothers]]
+[prog.cob:8: warning: line not terminated by a newline [[-Wmissing-newline]]
 ])
 # should not happen if the data only consists of space characters
 printf "\n              \t " >> prog.cob
