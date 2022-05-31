@@ -394,7 +394,9 @@ static size_t		cobc_pic_flags_len;
 #endif
 
 static char		*save_temps_dir = NULL;
-static struct strcache	*base_string;
+
+#define STRING_CACHES 32
+static struct strcache	*base_string[STRING_CACHES];
 
 static char		*cobc_list_dir = NULL;
 static char		*cobc_list_file = NULL;
@@ -1392,6 +1394,7 @@ void *
 cobc_check_string (const char *dupstr)
 {
 	struct strcache	*s;
+	size_t cache_num;
 
 	/* LCOV_EXCL_START */
 	if (unlikely (!dupstr)) {
@@ -1400,18 +1403,32 @@ cobc_check_string (const char *dupstr)
 	}
 	/* LCOV_EXCL_STOP */
 
-	/* FIXME - optimize performance:
-	   this loop is extensively used for comparision of picture strings,
-	   it consumes ~6% of the compilation time with ~3% in strcmp */
-	for (s = base_string; s; s = s->next) {
-		if (!strcmp (dupstr, (const char *)s->val)) {
-			return s->val;
+	/* as we expect small strings, especially for comparision
+	   of picture strings which is the main use of this function,
+	   we use an array of strings with matching lengths, allowing
+	   us to use plain memcmp to a limitted amount of entries
+	   for most cases */
+	cache_num = strlen (dupstr);
+	if (cache_num != 0 && cache_num < STRING_CACHES) {
+		for (s = base_string[cache_num - 1]; s; s = s->next) {
+			if (!memcmp (dupstr, s->val, cache_num)) {
+				return s->val;
+			}
+		}
+		cache_num--;
+	} else {
+		cache_num = STRING_CACHES - 1;
+		for (s = base_string[cache_num]; s; s = s->next) {
+			if (!strcmp (dupstr, (const char *)s->val)) {
+				return s->val;
+			}
 		}
 	}
+
 	s = cobc_main_malloc (sizeof(struct strcache));
-	s->next = base_string;
+	s->next = base_string[cache_num];
 	s->val = cobc_main_strdup (dupstr);
-	base_string = s;
+	base_string[cache_num] = s;
 	return s->val;
 }
 
@@ -8541,7 +8558,6 @@ begin_setup_internal_and_compiler_env (void)
 
 	cb_source_file = NULL;
 	save_temps_dir = NULL;
-	base_string = NULL;
 	cb_id = 1;
 	cb_pic_id = 1;
 	cb_attr_id = 1;
