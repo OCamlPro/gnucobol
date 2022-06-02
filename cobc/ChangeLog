@@ -1,5 +1,4 @@
 
-<<<<<<< .working
 2022-05-31  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (cobc_check_string): replaced single string cache by an array

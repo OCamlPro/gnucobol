@@ -93,7 +93,6 @@ type-to-clause:				ok
 usage-type:					ok
 synchronized-clause:			+ignore
 sync-left-right:			+ignore # better use "skip" here?
-synchronized-clause:			ok
 special-names-clause:			+warning
 top-level-occurs-clause:		ok
 value-of-clause:			+obsolete
