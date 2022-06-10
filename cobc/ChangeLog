@@ -1,4 +1,10 @@
 
+2022-06-10  Ron Norman <rjn@inglenet.com>
+
+	* codegen.c : Improvement of code emitted for INITIALIZE of tables
+		Initial table values, then clear next, 
+		then propagate through remainder of the table
+
 2022-05-31  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (cobc_check_string): replaced single string cache by an array

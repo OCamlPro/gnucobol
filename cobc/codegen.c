@@ -5168,15 +5168,18 @@ deduce_initialize_type (struct cb_initialize *p, struct cb_field *f,
  * Emit code to propagate table initialize
  */
 static void
-propagate_table (cb_tree x)
+propagate_table (cb_tree x, int bgn_idx)
 {
 	struct cb_field *f;
-	long len;
+	long len, maxlen;
 	unsigned int occ, j = 1;
 
 	f = cb_code_field (x);
 	len = (long)f->size;
 	occ = f->occurs_max;
+	maxlen = len * occ;
+	if (bgn_idx < 1)
+		bgn_idx = 1;
 
 	if (gen_init_working
 	 || (!chk_field_variable_size(f)
@@ -5189,22 +5192,28 @@ propagate_table (cb_tree x)
 			output_prefix ();
 			output ("cob_u8_ptr b_ptr = ");
 			output_data(x);
+			if (bgn_idx > 1) {
+				output (" + %ld",len * (bgn_idx - 1));
+				maxlen -= len * (bgn_idx - 1);
+			}
 			output (";");
 			output_newline ();
 			do {
 				output_prefix ();
 				output ("memcpy (b_ptr + %6ld, b_ptr, %6ld);", len, len);
-				output ("\t/* %s: %5d thru %d */", f->name, j + 1, j * 2);
+				output ("\t/* %s: %5d thru %d */", f->name, 
+								j + bgn_idx, j * 2 + bgn_idx - 1);
 				output_newline ();
 				j = j * 2;
 				len = len * 2;
 			} while ((j * 2) < occ);
-			if (j < occ) {
+			if (j < occ
+			 && maxlen > len) {
 				output_prefix ();
 				output ("memcpy (b_ptr + %6ld, b_ptr, %6ld);",
-					len, (long)f->size * (occ - j));
+					len, maxlen - len);
 				output ("\t/* %s: %5d thru %d */",
-					f->name, j + 1, occ);
+					f->name, j + bgn_idx, occ);
 				output_newline ();
 			}
 			output_block_close ();
@@ -5660,7 +5669,7 @@ output_initialize_one (struct cb_initialize *p, cb_tree x)
 			return;
 		}
 
-		if (n > 2) {
+		if (n > 8) {
 			offset = size - n;
 			size -= n;
 		} else {
@@ -5819,39 +5828,55 @@ output_initialize_occurs (struct cb_initialize *p, cb_tree x)
 	struct cb_field		*f, *pf;
 	cb_tree		list;
 	cb_tree		l;
-	int			k, offset, idx;
+	int			k, offset, idx, idx_clr, total_occurs, simple_occurs;
 	int			idxtbl[COB_MAX_SUBSCRIPTS+1];
 	int			occtbl[COB_MAX_SUBSCRIPTS+1];
 	struct cb_field	*pftbl[COB_MAX_SUBSCRIPTS+1];
 
 	f = cb_code_field (x);
+	if (f->flag_occurs
+	 && f->occurs_max > 1 
+	 && f->children == NULL)
+		simple_occurs = 1;
+	else
+		simple_occurs = 0;
 	for (idx=0; idx <= COB_MAX_SUBSCRIPTS; idx++) {
 		idxtbl[idx] = 0;
 		pftbl[idx] = NULL;
 	}
+	total_occurs = 1;
+	idx_clr = 0;
 	for (idx = 0, pf = f; pf; pf = pf->parent) {
 		if (pf->flag_occurs
 		 && pf->occurs_max > 1) {
 			pftbl [idx] = pf;
 			occtbl[idx] = pf->occurs_max;
+			total_occurs *= pf->occurs_max;
 			idx++;
 		}
 	}
 	if (idx > 0
-	 && !p->flag_init_statement
+	 && (!p->flag_init_statement 
+	 	|| (simple_occurs && p->val == cb_true))
 	 && !f->depending
 	 && (f->children == NULL || f->values)) {
 		idx_incr = -1;
 		idx_stop = 0;
 		offset = f->offset;
 		list = f->values;
+		k = cb_list_length (f->values) - total_occurs;
+		if (k > 0) {
+			cb_error_x ((cb_tree)f, "%s has %d more value%s than needed",
+							f->name,k,k>1?"s":"");
+			return;
+		}
 		l = list;
 		while (!idx_stop) {
 			pf = pftbl[0];
 			pf->flag_occurs = 0;
 			pf->occurs_max = 0;
 			if (list && CB_CHAIN (list)) {	/* Multiple VALUEs present */
-				for (; l && !idx_stop; l = CB_CHAIN (l)) {
+				for (idx_clr = 0; l && !idx_stop; idx_clr++, l = CB_CHAIN (l)) {
 					f->values = l;
 					f->offset = get_table_offset ( offset, idx, idxtbl, occtbl, pftbl);
 					output_initialize_one (p, x);	/* Init with each value */
@@ -5864,12 +5889,32 @@ output_initialize_occurs (struct cb_initialize *p, cb_tree x)
 					} else {
 						output_move (cb_space, x);
 					}
+					idx_clr ++;
+					/* OCCURS with no child or sister after multiple values */
+					if (idx == 1 && simple_occurs) {
+						for (k=0; k < idx; k++) {
+							pf = pftbl[k];
+							pf->flag_occurs = 1;
+							pf->occurs_max = occtbl[k];
+						}
+						f->offset = offset;
+						propagate_table (x, idx_clr);
+						idx_stop = 1;
+						break;
+					}
 				}
-				if (l != NULL) {
-					for (k=0; l; l = CB_CHAIN(l)) k++;
-					cb_error_x ((cb_tree)f, "%s has %d more value%s than needed",
-									f->name,k,k>1?"s":"");
+			} else if (list && idx == 1 && simple_occurs) {
+				f->offset = get_table_offset ( offset, idx, idxtbl, occtbl, pftbl);
+				output_initialize_one (p, x);
+				/* OCCURS with no child or sister and a single value */
+				for (k=0; k < idx; k++) {
+					pf = pftbl[k];
+					pf->flag_occurs = 1;
+					pf->occurs_max = occtbl[k];
 				}
+				f->offset = offset;
+				propagate_table (x, 1);
+				break;
 			} else {
 				while (!idx_stop) {					/* Init all occurences to same value */
 					f->offset = get_table_offset ( offset, idx, idxtbl, occtbl, pftbl);
@@ -5999,7 +6044,7 @@ output_initialize_compound (struct cb_initialize *p, cb_tree x)
 				for (pf = f; pf && !pf->flag_occurs_values; pf = pf->parent);
 				if (pf == NULL
 				 || !pf->flag_occurs_values)
-					propagate_table (c);
+					propagate_table (c, 1);
 
 				/* restore previous exception-checks for the reference */
 				ref->check = save_check;
@@ -6051,7 +6096,7 @@ output_initialize (struct cb_initialize *p)
 			for (pf = f; pf && !pf->flag_occurs_values; pf = pf->parent);
 			if (pf == NULL
 			 || !pf->flag_occurs_values)
-				propagate_table (x);
+				propagate_table (x, 1);
 			output_initialize_chaining (f, p);
 			return;
 		default:
