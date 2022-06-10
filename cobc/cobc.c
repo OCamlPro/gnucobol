@@ -520,6 +520,8 @@ static const struct option long_options[] = {
 	{"f" name,		CB_RQ_ARG, NULL, '%'},
 #define	CB_CONFIG_INT(var,name,min,max,odoc,doc)	\
 	{"f" name,		CB_RQ_ARG, NULL, '%'},
+#define	CB_CONFIG_SINT(var,name,min,max,odoc,doc)	\
+	{"f" name,		CB_RQ_ARG, NULL, '%'},
 #define	CB_CONFIG_SIZE(var,name,min,max,odoc,doc)	\
 	{"f" name,		CB_RQ_ARG, NULL, '%'},
 #define	CB_CONFIG_STRING(var,name,doc)		\
@@ -532,6 +534,7 @@ static const struct option long_options[] = {
 #include "config.def"
 #undef	CB_CONFIG_ANY
 #undef	CB_CONFIG_INT
+#undef	CB_CONFIG_SINT
 #undef	CB_CONFIG_SIZE
 #undef	CB_CONFIG_STRING
 #undef	CB_CONFIG_BOOLEAN
@@ -2885,6 +2888,7 @@ process_command_line (const int argc, char **argv)
 
 	cb_dialect = "DEFAULT";
 	cb_mf_ibm_comp = -1;
+	cb_default_byte = -1;
 	cb_mf_files = 0;
 	cb_warn_opt_val[(int)cb_warn_unsupported] = COBC_WARN_AS_ERROR;
 #ifdef WITH_FILE_FORMAT

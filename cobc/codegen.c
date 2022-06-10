@@ -13041,7 +13041,16 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	/* Initialize WORKING-STORAGE/files if not INITIAL program */
 	if (!prog->flag_initial) {
 		if (prog->working_storage) {
-			output_line ("/* Initialize WORKING-STORAGE */");
+			char wrk[48];
+			if (cb_default_byte >= 0) {
+				if (isprint (cb_default_byte))
+					sprintf (wrk,", Default byte: '%c'", cb_default_byte);
+				else
+					sprintf (wrk,", Default byte: 0x%02X", cb_default_byte);
+			} else {
+				strcpy(wrk,"");
+			}
+			output_line ("/* Initialize WORKING-STORAGE%s */",wrk);
 			output_initial_values (prog->working_storage);
 			output_newline ();
 		}

@@ -419,6 +419,7 @@ test.conf: missing definitions:
 	no definition of 'word-length'
 	no definition of 'literal-length'
 	no definition of 'numeric-literal-length'
+	no definition of 'defaultbyte'
 	no definition of 'align-record'
 	no definition of 'align-opt'
 	no definition of 'standard-define'

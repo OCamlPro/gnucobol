@@ -1,5 +1,8 @@
 
-<<<<<<< .working
+2022-06-10  Ron Norman <rjn@inglenet.com>
+
+	*  *.conf: Add 'defaultbyte'
+
 2022-02-07  David Declerck <david.declerck@ocamlpro.com>
 
 	* gcos-strict.conf, gcos.conf, gcos.words: added config files for

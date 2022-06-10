@@ -1,6 +1,13 @@
 
 2022-06-10  Ron Norman <rjn@inglenet.com>
 
+	* flag.def,config.def : Moved defaultbyte from flag to config
+	* cobc.h,help.c,codegen.c : Add define CB_CONFIG_SINT as signed 'int'
+	* config.c (cb_config_entry): for CB_INT check for a single character
+		Also check for word 'ignore' and make no changes
+
+2022-06-10  Ron Norman <rjn@inglenet.com>
+
 	* codegen.c : Improvement of code emitted for INITIALIZE of tables
 		Initial table values, then clear next, 
 		then propagate through remainder of the table

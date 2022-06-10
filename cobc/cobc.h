@@ -545,6 +545,8 @@ extern void		cobc_print_usage_flags (void);
 extern type			var;
 #define	CB_CONFIG_INT(var,name,min,max,odoc,doc)	\
 extern unsigned int		var;
+#define	CB_CONFIG_SINT(var,name,min,max,odoc,doc)	\
+extern int		var;
 #define	CB_CONFIG_SIZE(var,name,min,max,odoc,doc)	\
 extern unsigned long	var;
 #define	CB_CONFIG_STRING(var,name,doc)	\
@@ -558,6 +560,7 @@ extern enum				cb_support var;
 
 #undef	CB_CONFIG_ANY
 #undef	CB_CONFIG_INT
+#undef	CB_CONFIG_SINT
 #undef	CB_CONFIG_SIZE
 #undef	CB_CONFIG_STRING
 #undef	CB_CONFIG_BOOLEAN

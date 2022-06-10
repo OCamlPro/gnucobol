@@ -66,6 +66,11 @@ CB_CONFIG_INT (cb_lit_length, "literal-length", 1, COB_MAX_LITERAL_LEN, _("<numb
 CB_CONFIG_INT (cb_numlit_length, "numeric-literal-length", 1, COB_MAX_DIGITS, CB_XRANGE(1,COB_MAX_DIGITS),
 	_("maximum numeric literal size"))
 
+CB_CONFIG_SINT (cb_default_byte, "defaultbyte", -1, 255, _("<number>"),
+	_("initialize fields without VALUE to <number>\n"
+	  "                        * decimal 0..255 representing a character\n"
+	  "                        * default: initialize to picture"))
+
 CB_CONFIG_INT (cb_align_record, "align-record", 0, 256, CB_XRANGE(0,256),
 	_("align WORKING-STORAGE/LOCAL-STORAGE record on boundary"))
 
