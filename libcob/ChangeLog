@@ -51,7 +51,7 @@
 2022-04-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* strings.c (do_mark, is_marked): extracted from inspect_common
-	* strings.c (set_inspect_mark): new function to remember actual min/ma
+	* strings.c (set_inspect_mark): new function to remember actual min/max
 	  positions of the marker bytes to remove the need to initialize huge
 	  areas when we commonly have set only markers in the first n bytes
 	  (or nothing), especially for INSPECT LEADING/TRAILING
@@ -62,6 +62,10 @@
 	  check and marker range before checking all marker bytes in range
 	* strings.c: increase use of direct pointer comparisons instead of
 	  accessing char arrays or its positions for INSPECT
+
+2022-04-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c: adjustments for XCurses defines
 
 2022-04-01  Simon Sobisch <simonsobisch@gnu.org>
 

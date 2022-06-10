@@ -16,7 +16,7 @@
 	* configure.ac: added check for BDB_LIBS, allowing to explicit specify
 	  link options necessary for BDB, library used; if not set use old
 	  logic of deriving the library name from BDB version (db.h)
-	* configure.ac: experimental checking for Xcurses
+	* configure.ac: experimental checking for XCurses
 
 2022-03-29  Simon Sobisch <simonsobisch@gnu.org>
 
