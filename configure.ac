@@ -1942,8 +1942,8 @@ fi
 
 cob_temp_flags=$(echo x$cob_temp_flags |		\
 	 sed -e 's/^x//'				\
-	     -e 's/-g\(db\)\{0,1\}[[0-9 ]]//g'				\
-	     -e 's/-g\(db\)\{0,1\}$//'				\
+	     -e 's/-g\(gdb\)\{0,1\}[[0-9 ]]//g'				\
+	     -e 's/-g\(gdb\)\{0,1\}$//'				\
 	     -e 's/-Ofast//g'			\
 	     -e 's/[[+-]]O[[0-9sz]]* //g'		\
 	     -e 's/[[+-]]O[[0-9sz]]*$//g'		\

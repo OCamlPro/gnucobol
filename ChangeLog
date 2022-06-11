@@ -1,7 +1,11 @@
 
+2022-06-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac (COB_CFLAGS): handle -ggdb options correctly
+
 2022-05-31  Simon Sobisch <simonsobisch@gnu.org>
 
-	* configure.ac: handle optimization options -Oz and -Ofast,
+	* configure.ac (COB_CFLAGS): handle optimization options -Oz and -Ofast,
 	  don't remove leading -O of unknown options
 
 2022-05-04  Simon Sobisch <simonsobisch@gnu.org>
