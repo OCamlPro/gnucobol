@@ -464,6 +464,10 @@
 	* field.c, pplex.l, tree.c, typeck.c: fixed warning option querying enum
 	  instead of actual value via cb_warn_opt_val
 	
+2020-12-09  Ron Norman <rjn@inglenet.com>
+
+	* cobc.c: now calls cob_get_sig_name from common.c to get signal name
+
 2020-12-18  Simon Sobisch <simonsobisch@gnu.org>
 
 	FR #397: add support for JSON GENERATE anonymous JSON objects

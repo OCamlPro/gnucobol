@@ -106,6 +106,13 @@
 	* common.c (cob_allocate): only initialize upon request with optimized
 	  initialization for binary zeroes
 
+2021-11-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_get_sig_name, cob_get_sig_description,
+	  cob_set_sig_description): hardened against unexpected signal numbers
+	* common.c (signals, cob_get_sig_description): description is
+	  post-initialized to allow use of gettext - non-static descriptions
+
 2021-11-14  Ron Norman <rjn@inglenet.com>
 
 	Implement FR #235: add bitwise operators for numeric items
@@ -346,6 +353,12 @@
 	* common.c (print_version): msgid change moving URLs to parameter
 	  per gettext-guidelines
 	* common.h: version defines to 3.2.0
+
+2020-12-09  Ron Norman <rjn@inglenet.com>
+
+	* common.c, common.h: added cob_get_sig_name and cob_get_sig_description
+	* common.c (cob_sig_handler): use cob_get_sig_name instead of get_sig_name
+	* common.c (cob_set_signal): rewrote to be table driven
 
 2020-12-18  Simon Sobisch <simonsobisch@gnu.org>
 
