@@ -237,6 +237,14 @@ enum cb_dpc_in_data_options {
 	CB_DPC_IN_ALL
 };
 
+/* Character set used to decode EBCDIC symbolic characters in alphanumeric
+   literals */
+enum cb_ebcdic_literal_charset {
+	CB_EBCDIC_LITERALS_DEFAULT, /* for lack of a better name (see
+				       read_literal in `scanner.l`) */
+	CB_EBCDIC_LITERALS_GCOS7
+};
+
 /* Generic text list structure */
 struct cb_text_list {
 	struct cb_text_list	*next;			/* next pointer */

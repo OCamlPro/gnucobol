@@ -1,4 +1,17 @@
 
+2022-05-18  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* general: added option ebcdic-literals-charset
+
+2022-03-28  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* general: substitute ebcdic-symbolic-characters for
+	  gcos-ebcdic-literals
+
+2022-01-27  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* general: added option gcos-ebcdic-literals
+
 2022-02-07  David Declerck <david.declerck@ocamlpro.com>
 
 	* gcos-strict.conf, gcos.conf, gcos.words: added config files for
