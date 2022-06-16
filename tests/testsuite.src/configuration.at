@@ -87,6 +87,9 @@ AT_CHECK([$COMPILE_ONLY -std=realia-strict prog.cob], [0], [], [])
 AT_CHECK([$COMPILE_ONLY -std=mvs-strict prog.cob], [0], [],
 [prog.cob:4: warning: AUTHOR is obsolete in MVS/VM COBOL
 ])
+AT_CHECK([$COMPILE_ONLY -std=gcos-strict prog.cob], [0], [],
+[prog.cob:4: warning: AUTHOR is obsolete in GCOS
+])
 AT_CHECK([$COMPILE_ONLY -std=acu prog.cob], [0], [], [])
 AT_CHECK([$COMPILE_ONLY -std=bs2000 prog.cob], [0], [], [])
 AT_CHECK([$COMPILE_ONLY -std=ibm prog.cob], [0], [], [])
@@ -94,6 +97,7 @@ AT_CHECK([$COMPILE_ONLY -std=mf prog.cob], [0], [], [])
 AT_CHECK([$COMPILE_ONLY -std=rm prog.cob], [0], [], [])
 AT_CHECK([$COMPILE_ONLY -std=realia prog.cob], [0], [], [])
 AT_CHECK([$COMPILE_ONLY -std=mvs prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -std=gcos prog.cob], [0], [], [])
 
 AT_CLEANUP
 
@@ -327,7 +331,7 @@ AT_CHECK([$COMPILE_ONLY \
 -fstandard-define=99 prog.cob], [1], [],
 [configuration error:
 -fstandard-define=99: invalid value '99' for configuration tag 'standard-define';
-	maximum value: 10
+	maximum value: 9
 ])
 
 AT_CLEANUP

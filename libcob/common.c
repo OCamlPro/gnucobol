@@ -458,6 +458,70 @@ static struct config_tbl gc_conf[] = {
 #define NUM_CONFIG (sizeof (gc_conf) /sizeof (struct config_tbl) - 1)
 #define FUNC_NAME_IN_DEFAULT NUM_CONFIG + 1
 
+/* 
+ * Table of 'signal' supported by this system 
+ */
+static struct signal_table {
+	short		signum;			/* Signal number */
+	short		for_set;		/* Set via 'cob_set_signal' 1=set if not SIG_IGN */
+	short		for_dump;		/* set via 'cob_set_dump_signal' */
+	short		unused;
+	const char	*shortname;		/* Short signal name */
+	const char	*description;	/* Longer desciption message */
+} signals[] = {
+#ifdef	SIGINT
+	{SIGINT,1,0,0,"SIGINT"},
+#endif
+#ifdef	SIGHUP
+	{SIGHUP,1,0,0,"SIGHUP"},
+#endif
+#ifdef	SIGQUIT
+	{SIGQUIT,1,0,0,"SIGQUIT"},
+#endif
+#ifdef	SIGTERM
+	{SIGTERM,1,0,0,"SIGTERM"},
+#endif
+#ifdef	SIGEMT
+	{SIGEMT,1,0,0,"SIGEMT"},
+#endif
+#ifdef	SIGPIPE
+	{SIGPIPE,1,0,0,"SIGPIPE"},
+#endif
+#ifdef	SIGIO
+	{SIGIO,1,0,0,"SIGIO"},
+#endif
+#ifdef	SIGSEGV
+	{SIGSEGV,2,1,0,"SIGSEGV"},
+#endif
+#ifdef	SIGBUS
+	{SIGBUS,2,1,0,"SIGBUS"},
+#endif
+	{SIGFPE,1,1,0,"SIGFPE"},	/* always defined, if missing */
+#ifdef	SIGILL
+	{SIGILL,0,0,0,"SIGILL"},
+#endif
+#ifdef	SIGABRT
+	{SIGABRT,0,0,0,"SIGABRT"},
+#endif
+#ifdef	SIGKILL
+	{SIGKILL,0,0,0,"SIGKILL"},
+#endif
+#ifdef	SIGALRM
+	{SIGALRM,0,0,0,"SIGALRM"},
+#endif
+#ifdef	SIGSTOP
+	{SIGSTOP,0,0,0,"SIGSTOP"},
+#endif
+#ifdef	SIGCHLD
+	{SIGCHLD,0,0,0,"SIGCHLD"},
+#endif
+#ifdef	SIGCLD
+	{SIGCLD,0,0,0,"SIGCLD"},
+#endif
+	{-1,0,0,0,"unknown"}
+};
+#define NUM_SIGNALS (int)((sizeof (signals) / sizeof (struct signal_table)) - 1)
+
 /* Local functions */
 static int		translate_boolean_to_int	(const char* ptr);
 static cob_s64_t	get_sleep_nanoseconds	(cob_field *nano_seconds);
@@ -719,53 +783,6 @@ cob_get_strerror (void)
 	return msg;
 }
 
-/* LCOV_EXCL_START */
-static const char *
-get_signal_name (int signal_value)
-{
-	switch (signal_value) {
-#ifdef	SIGINT
-	case SIGINT:
-		return "SIGINT";
-#endif
-#ifdef	SIGHUP
-	case SIGHUP:
-		return "SIGHUP";
-#endif
-#ifdef	SIGQUIT
-	case SIGQUIT:
-		return "SIGQUIT";
-#endif
-#ifdef	SIGTERM
-	case SIGTERM:
-		return "SIGTERM";
-#endif
-#ifdef	SIGEMT
-	case SIGEMT:
-		return "SIGEMT";
-#endif
-#ifdef	SIGPIPE
-	case SIGPIPE:
-		return "SIGPIPE";
-#endif
-#ifdef	SIGSEGV
-	case SIGSEGV:
-		return "SIGSEGV";
-#endif
-#ifdef	SIGBUS
-	case SIGBUS:
-		return "SIGBUS";
-#endif
-#ifdef	SIGFPE
-	case SIGFPE:
-		return "SIGFPE";
-#endif
-	default:
-		return NULL;
-	}
-}
-/* LCOV_EXCL_STOP */
-
 #ifdef	HAVE_SIGNAL_H
 DECLNORET static void COB_A_NORETURN
 cob_sig_handler_ex (int sig)
@@ -817,7 +834,7 @@ cob_sig_handler (int signal_value)
 	sig_is_handled = 1;
 #endif
 
-	signal_name = get_signal_name (signal_value);
+	signal_name = cob_get_sig_name (signal_value);
 	/* LCOV_EXCL_START */
 	if (!signal_name) {
 		/* not translated as it is a very unlikely error case */
@@ -869,24 +886,7 @@ cob_sig_handler (int signal_value)
 	}
 
 	/* LCOV_EXCL_START */
-	switch (signal_value) {
-#ifdef	SIGSEGV
-	case SIGSEGV:
-		fprintf (stderr, _("attempt to reference unallocated memory"));
-		break;
-#endif
-#ifdef	SIGBUS
-	case SIGBUS:
-		fprintf (stderr, _("bus error"));
-		break;
-#endif
-	case SIGFPE:	/* always defined, if missing */
-		fprintf (stderr, _("fatal arithmetic error"));
-		break;
-	default:
-		fprintf (stderr, _("caught signal"));
-		break;
-	}
+	fprintf (stderr, cob_get_sig_description (signal_value));
 	/* LCOV_EXCL_STOP */
 	snprintf (signal_text, COB_MINI_MAX, _("signal %s"), signal_name);
 	fprintf (stderr, " (%s)\n", signal_text);
@@ -931,134 +931,163 @@ cob_raise (int sig)
 #endif
 }
 
+const char *
+cob_get_sig_name (int sig)
+{
+	int	k;
+	for (k = 0; k < NUM_SIGNALS; k++) {
+		if (signals[k].signum == sig)
+			break;
+	}
+	if (k == NUM_SIGNALS) return "unknown";
+	return signals[k].shortname;
+}
+
+const char *
+cob_get_sig_description (int sig)
+{
+	int	k;
+	for (k = 0; k < NUM_SIGNALS; k++) {
+		if (signals[k].signum == sig)
+			break;
+	}
+	if (k == NUM_SIGNALS) return _("unknown");
+	if (!signals[k].description) {
+		/* always defined, if missing */ 
+		if (sig == SIGFPE) {
+			signals[k].description = _("fatal arithmetic error");
+	#ifdef	SIGINT
+		} else if (sig == SIGINT) {
+			signals[k].description = _("interrupt from keyboard");
+	#endif
+	#ifdef	SIGHUP
+		} else if (sig == SIGHUP) {
+			signals[k].description = _("hangup");
+	#endif
+	#ifdef	SIGQUIT
+		} else if (sig == SIGQUIT) {
+			signals[k].description = _("quit");
+	#endif
+	#ifdef	SIGTERM
+		} else if (sig == SIGTERM) {
+			signals[k].description = _("termination");
+	#endif
+	#ifdef	SIGEMT
+		} else if (sig == SIGEMT) {
+			signals[k].description = _("emt termination");
+	#endif
+	#ifdef	SIGPIPE
+		} else if (sig == SIGPIPE) {
+			signals[k].description = _("broken pipe");
+	#endif
+	#ifdef	SIGIO
+		} else if (sig == SIGIO) {
+			signals[k].description = _("I/O signal");
+	#endif
+	#ifdef	SIGSEGV
+		} else if (sig == SIGSEGV) {
+			signals[k].description = _("attempt to reference invalid memory address");
+	#endif
+	#ifdef	SIGBUS
+		} else if (sig == SIGBUS) {
+			signals[k].description = _("bus error");
+	#endif
+	#ifdef	SIGILL
+		} else if (sig == SIGILL) {
+			signals[k].description = _("illegal instruction");
+	#endif
+	#ifdef	SIGABRT
+		} else if (sig == SIGABRT) {
+			signals[k].description = _("abort");
+	#endif
+	#ifdef	SIGKILL
+		} else if (sig == SIGKILL) {
+			signals[k].description = _("process killed");
+	#endif
+	#ifdef	SIGALRM
+		} else if (sig == SIGALRM) {
+			signals[k].description = _("alarm signal");
+	#endif
+	#ifdef	SIGSTOP
+		} else if (sig == SIGSTOP) {
+			signals[k].description = _("stop process");
+	#endif
+	#ifdef	SIGCHLD
+		} else if (sig == SIGCHLD) {
+			signals[k].description = _("child process stopped");
+	#endif
+	#ifdef	SIGCLD
+		} else if (sig == SIGCLD) {
+			signals[k].description = _("child process stopped");
+	#endif
+		} else {
+			signals[k].description = _("unknown");
+		}
+	}
+	return signals[k].description;
+}
+
+const char *
+cob_set_sig_description (int sig, const char *msg)
+{
+	int	k;
+	for (k = 0; k < NUM_SIGNALS; k++) {
+		if (signals[k].signum == sig) {
+			signals[k].description = msg;
+			break;
+		}
+	}
+	if (k == NUM_SIGNALS) return _("unknown");
+	return signals[k].description;
+}
+
 static void
 cob_set_signal (void)
 {
-#ifdef	HAVE_SIGNAL_H
-
-#ifdef	HAVE_SIGACTION
+#if	defined(HAVE_SIGACTION)
+	int		k;
 	struct sigaction	sa;
 	struct sigaction	osa;
 
 	memset (&sa, 0, sizeof (sa));
+	memset (&osa, 0, sizeof (osa));
 	sa.sa_handler = cob_sig_handler;
 #ifdef	SA_RESETHAND
 	sa.sa_flags = SA_RESETHAND;
-#else
-	sa.sa_flags = 0;
 #endif
 #ifdef	SA_NOCLDSTOP
 	sa.sa_flags |= SA_NOCLDSTOP;
 #endif
 
-#ifdef	SIGINT
-	(void)sigaction (SIGINT, NULL, &osa);
-	if (osa.sa_handler != SIG_IGN) {
-		(void)sigemptyset (&sa.sa_mask);
-		(void)sigaction (SIGINT, &sa, NULL);
+	for (k = 0; k < NUM_SIGNALS; k++) {
+		if (signals[k].for_set) {
+			if (signals[k].for_set == 2) {
+				(void)sigemptyset (&sa.sa_mask);
+				(void)sigaction (signals[k].signum, &sa, NULL);
+			} else {
+				(void)sigaction (signals[k].signum, NULL, &osa);
+				if (osa.sa_handler != SIG_IGN) {
+					(void)sigemptyset (&sa.sa_mask);
+					(void)sigaction (signals[k].signum, &sa, NULL);
+				}
+			}
+		}
 	}
-#endif
-#ifdef	SIGHUP
-	(void)sigaction (SIGHUP, NULL, &osa);
-	if (osa.sa_handler != SIG_IGN) {
-		(void)sigemptyset (&sa.sa_mask);
-		(void)sigaction (SIGHUP, &sa, NULL);
-	}
-#endif
-#ifdef	SIGQUIT
-	(void)sigaction (SIGQUIT, NULL, &osa);
-	if (osa.sa_handler != SIG_IGN) {
-		(void)sigemptyset (&sa.sa_mask);
-		(void)sigaction (SIGQUIT, &sa, NULL);
-	}
-#endif
-#ifdef	SIGTERM
-	(void)sigaction (SIGTERM, NULL, &osa);
-	if (osa.sa_handler != SIG_IGN) {
-		(void)sigemptyset (&sa.sa_mask);
-		(void)sigaction (SIGTERM, &sa, NULL);
-	}
-#endif
-#ifdef	SIGEMT
-	(void)sigaction (SIGEMT, NULL, &osa);
-	if (osa.sa_handler != SIG_IGN) {
-		(void)sigemptyset (&sa.sa_mask);
-		(void)sigaction (SIGEMT, &sa, NULL);
-	}
-#endif
-#ifdef	SIGPIPE
-	(void)sigaction (SIGPIPE, NULL, &osa);
-	if (osa.sa_handler != SIG_IGN) {
-		(void)sigemptyset (&sa.sa_mask);
-		(void)sigaction (SIGPIPE, &sa, NULL);
-	}
-#endif
-#ifdef	SIGSEGV
-	/* Take direct control of segmentation violation */
-	(void)sigemptyset (&sa.sa_mask);
-	(void)sigaction (SIGSEGV, &sa, NULL);
-#endif
-#ifdef	SIGBUS
-	/* Take direct control of bus error */
-	(void)sigemptyset (&sa.sa_mask);
-	(void)sigaction (SIGBUS, &sa, NULL);
-#endif
-#ifdef	SIGFPE
-	/* fatal arithmetic errors including non-floating-point division by zero */
-	(void)sigaction (SIGFPE, NULL, &osa);
-	if (osa.sa_handler != SIG_IGN) {
-		(void)sigemptyset (&sa.sa_mask);
-		(void)sigaction (SIGFPE, &sa, NULL);
-	}
-#endif
 
-#else
+#elif	defined(HAVE_SIGNAL_H)
+	int		k;
+	for (k = 0; k < NUM_SIGNALS; k++) {
+		if (signals[k].for_set) {
+			if (signals[k].for_set == 2) {
+				(void)signal (signals[k].signum, cob_sig_handler);
+			} else {
+				if (signal (signals[k].signum, SIG_IGN) != SIG_IGN) {
+					(void)signal (signals[k].signum, cob_sig_handler);
+				}
+			}
+		}
+	}
 
-#ifdef	SIGINT
-	if (signal (SIGINT, SIG_IGN) != SIG_IGN) {
-		(void)signal (SIGINT, cob_sig_handler);
-	}
-#endif
-#ifdef	SIGHUP
-	if (signal (SIGHUP, SIG_IGN) != SIG_IGN) {
-		(void)signal (SIGHUP, cob_sig_handler);
-	}
-#endif
-#ifdef	SIGQUIT
-	if (signal (SIGQUIT, SIG_IGN) != SIG_IGN) {
-		(void)signal (SIGQUIT, cob_sig_handler);
-	}
-#endif
-#ifdef	SIGTERM
-	if (signal (SIGTERM, SIG_IGN) != SIG_IGN) {
-		(void)signal (SIGTERM, cob_sig_handler);
-	}
-#endif
-#ifdef	SIGEMT
-	if (signal (SIGEMT, SIG_IGN) != SIG_IGN) {
-		(void)signal (SIGEMT, cob_sig_handler);
-	}
-#endif
-#ifdef	SIGPIPE
-	if (signal (SIGPIPE, SIG_IGN) != SIG_IGN) {
-		(void)signal (SIGPIPE, cob_sig_handler);
-	}
-#endif
-#ifdef	SIGSEGV
-	/* Take direct control of segmentation violation */
-	(void)signal (SIGSEGV, cob_sig_handler);
-#endif
-#ifdef	SIGBUS
-	/* Take direct control of bus error */
-	(void)signal (SIGBUS, cob_sig_handler);
-#endif
-#ifdef	SIGFPE
-	if (signal (SIGFPE, SIG_IGN) != SIG_IGN) {
-		(void)signal (SIGFPE, cob_sig_handler);
-	}
-#endif
-
-#endif
 #endif
 }
 
@@ -5212,7 +5241,7 @@ cob_sys_system (const void *cmdline)
 #ifdef	WIFSIGNALED
 				if (WIFSIGNALED (status)) {
 					int signal_value = WTERMSIG (status);
-					const char * signal_name = get_signal_name (signal_value);
+					const char * signal_name = cob_get_sig_name (signal_value);
 					/* LCOV_EXCL_START */
 					if (!signal_name) {
 						signal_name = _("unknown");

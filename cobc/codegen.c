@@ -726,25 +726,56 @@ chk_field_variable_size (struct cb_field *f)
 static unsigned int
 chk_field_variable_address (struct cb_field *fld)
 {
-	struct cb_field		*p;
-	struct cb_field		*f;
-
-	if (fld->flag_vaddr_done) {
-		return fld->vaddr;
-	}
-	f = fld;
-	for (p = f->parent; p; f = f->parent, p = f->parent) {
-		for (p = p->children; p != f; p = p->sister) {
-			if (p->depending || chk_field_variable_size (p)) {
-				fld->vaddr = 1;
-				fld->flag_vaddr_done = 1;
-				return 1;
+	if (!fld->flag_vaddr_done) {
+		/* CHECKME: only sliding odo may create a varying address, no? */
+		/* Note: this is called _very_ often and takes 15-20% of parse + codegen time,
+		   with about half the time in chk_field_variable_size; so try to not call
+		   this function if not necessary (according to the testsuite: as long as
+		   cb_odoslide is not set, but the caller's coverage is not that well...) */
+		struct cb_field		*f = fld;
+		struct cb_field		*p;
+		for (p = f->parent; p; f = f->parent, p = f->parent) {
+			for (p = p->children; p != f; p = p->sister) {
+#if 0	/* CHECKME: why does this fail the testsuite ? */
+				if (p->flag_vaddr_done) {
+					if (!p->vaddr) {
+						continue;
+					}
+					fld->flag_vaddr_done = 1;
+					fld->vaddr = 1;
+					return 1;
+				}
+#endif
+				if (p->depending || chk_field_variable_size (p)) {
+#if 0	/* only useful with the code above */
+					/* as we have a variable address, all sisters will also;
+					   store this for next check */
+					for (p = p->sister; p; p = p->sister) {
+						p->flag_vaddr_done = 1;
+						p->vaddr = 1;
+					}
+#endif
+					fld->flag_vaddr_done = 1;
+					fld->vaddr = 1;
+					return 1;
+				}
 			}
 		}
+		fld->flag_vaddr_done = 1;
+		fld->vaddr = 0;
+#if 0	/* only useful with the code above */
+		/* as we now know that all previous and higher fields have no
+		   varying address we can store this information for the next check */
+		f = fld;
+		for (p = f->parent; p; f = f->parent, p = f->parent) {
+			for (p = p->children; p != f; p = p->sister) {
+				p->flag_vaddr_done = 1;
+				p->vaddr = 0;
+			}
+		}
+#endif
 	}
-	fld->vaddr = 0;
-	fld->flag_vaddr_done = 1;
-	return 0;
+	return fld->vaddr;
 }
 
 /*

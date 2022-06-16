@@ -5344,3 +5344,42 @@ Using PIC 9(4) COMP-5
 
 AT_CLEANUP
 
+
+
+AT_SETUP([GCOS floating-point usages])
+AT_KEYWORDS([gcos])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 FLOATS.
+         03 FLOAT-BINARY-32  USAGE COMPUTATIONAL-9 VALUE -4.2E+1.
+         03 FLOAT-BINARY-64  USAGE COMPUTATIONAL-10 VALUE 0.0.
+         03 FLOAT-BINARY-128 USAGE COMPUTATIONAL-15 VALUE 1.0.
+
+       PROCEDURE        DIVISION.
+           DISPLAY FLOAT-BINARY-32
+
+           DISPLAY FLOAT-BINARY-64
+           MOVE 9.899999999999E+304 TO FLOAT-BINARY-64
+           DISPLAY FLOAT-BINARY-64
+           ADD -1.111111111011E302 TO FLOAT-BINARY-64
+           DISPLAY FLOAT-BINARY-64
+
+        *> NOTE: FLOAT-BINARY-128 is only syntax-checked as support for
+        *> 128bit floating-point is still partial
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -std=gcos-strict prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[-42
+0
+9.899999999998999E+304
+9.888888888888887E+304
+], [])
+
+AT_CLEANUP

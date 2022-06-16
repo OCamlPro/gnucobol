@@ -1733,7 +1733,7 @@ start:
 		*/
 		if (cb_source_format == CB_FORMAT_FREE) {
 			if (line_overflow == 0) {
-				cb_plex_warning (COBC_WARN_FILLER, newline_count + 1,
+				cb_plex_warning (cb_missing_newline, newline_count + 1,
 						_("line not terminated by a newline"));
 				n++;
 			} else if (line_overflow == 2) {
@@ -1743,7 +1743,7 @@ start:
 			}
 		} else {
 			if (line_overflow == 0) {
-				cb_plex_warning (COBC_WARN_FILLER, newline_count,
+				cb_plex_warning (cb_missing_newline, newline_count,
 						_("line not terminated by a newline"));
 				n++;
 			} else if (line_overflow == 2) {

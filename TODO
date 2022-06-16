@@ -51,6 +51,9 @@ Partially implemented
 
 3.1.2 Use `error' token in the parser for better error recovery
 
+3.2 Data representations
+
+3.2.1 Fix handling of 32bit, 64bit, and 128bit floating-point usages
 
 4 Optimization
 

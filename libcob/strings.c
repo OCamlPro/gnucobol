@@ -233,6 +233,83 @@ is_marked (size_t pos, size_t length)
 	return 0;
 }
 
+static void
+inspect_common_no_replace (cob_field *f1, cob_field *f2,
+	const enum inspect_type type, const size_t pos, const size_t inspect_len)
+{
+	size_t		i;
+	int		n = 0;
+
+	if (type == INSPECT_TRAILING) {
+		const size_t	i_max = inspect_len - f2->size; /* no + 1 here */
+		size_t	first_marker = 0;
+		for (i = i_max; ; --i) {
+			/* Find matching substring */
+			if (memcmp (inspect_start + i, f2->data, f2->size) == 0) {
+				/* when not marked yet: count, mark and skip handled positions */
+				if (!is_marked (pos + i, f2->size)) {
+					n++;
+					first_marker = i;
+					i -= f2->size - 1;
+				}
+				if (i == 0) {
+					break;
+				}
+			} else {
+				break;
+			}
+		}
+		/* set the marker so we won't iterate over this area again */
+		if (n) {
+			set_inspect_mark (pos + first_marker, inspect_len - first_marker);
+		}
+	} else if (type == INSPECT_LEADING) {
+		const size_t	i_max = inspect_len - f2->size + 1;
+		size_t	last_marker = 0;
+		for (i = 0; i < i_max; ++i) {
+			/* Find matching substring */
+			if (memcmp (inspect_start + i, f2->data, f2->size) == 0) {
+				/* when not marked yet: count, skip handled positions and set mark pos */
+				if (!is_marked (pos + i, f2->size)) {
+					n++;
+					i += f2->size - 1;
+					last_marker = i;
+				}
+			} else {
+				break;
+			}
+		}
+		/* set the marker so we won't iterate over this area again */
+		if (n) {
+			set_inspect_mark (pos, last_marker);
+		}
+	/* note: same code as for LEADING, moved out as we don't need to check
+	   LEADING for _every_ byte in that tight loop */
+	} else {
+		const size_t	i_max = inspect_len - f2->size + 1;
+		for (i = 0; i < i_max; ++i) {
+			/* Find matching substring */
+			if (memcmp (inspect_start + i, f2->data, f2->size) == 0) {
+				const size_t checked_pos = pos + i;
+				/* when not marked yet: count, mark and skip handled positions */
+				if (!is_marked (checked_pos, f2->size)) {
+					n++;
+					/* set the marker so we won't iterate over this area again */
+					set_inspect_mark (checked_pos, f2->size);
+					if (type == INSPECT_FIRST) {
+						break;
+					}
+					i += f2->size - 1;
+				}
+			}
+		}
+	}
+
+	if (n != 0) {
+		cob_add_int (f1, n, 0);
+	}
+}
+
 static COB_INLINE COB_A_INLINE int
 do_mark (const size_t pos, const size_t length, unsigned char *replace_data)
 {
@@ -242,52 +319,21 @@ do_mark (const size_t pos, const size_t length, unsigned char *replace_data)
 	/* nothing done there yet, so: */
 
 	/* 1 - handle possible replacing */
-	if (inspect_replacing) {
-		setup_repdata ();
-		memcpy (inspect_repdata + pos, replace_data, length);
-	}
+	setup_repdata ();
+	memcpy (inspect_repdata + pos, replace_data, length);
+
 	/* 2 - set the marker so we won't iterate over this area again */
 	set_inspect_mark (pos, length);
 
-	/* 3 - let the caller handle counting and similar */
-	return 1;	
+	/* 3 - let the caller handle pos adjustment */
+	return 1;
 }
 
 static void
-inspect_common (cob_field *f1, cob_field *f2, const enum inspect_type type)
+inspect_common_replacing (cob_field *f1, cob_field *f2,
+	const enum inspect_type type, const size_t pos, const size_t inspect_len)
 {
-	const size_t	pos = inspect_start - inspect_data;
-	const size_t	inspect_len = inspect_end - inspect_start;
 	size_t		i;
-	int		n = 0;
-
-	if (inspect_len == 0) {
-		/* inspecting either a zero-length field or
-		   AFTER ... has not found a place to start the conversion */
-		return;
-	}
-
-	if (unlikely (!f1)) {
-		f1 = &str_cob_low;
-	}
-	if (unlikely (!f2)) {
-		f2 = &str_cob_low;
-	}
-
-	if (inspect_replacing
-	 && f1->size != f2->size) {
-		if (COB_FIELD_TYPE (f1) == COB_TYPE_ALPHANUMERIC_ALL) {
-			alloc_figurative (f1, f2);
-			f1 = &alpha_fld;
-		} else {
-			cob_set_exception (COB_EC_RANGE_INSPECT_SIZE);
-			return;
-		}
-	}
-
-	if (f2->size > inspect_len) {
-		return;
-	}
 
 	if (type == INSPECT_TRAILING) {
 		const size_t	i_max = inspect_len - f2->size; /* no + 1 here */
@@ -296,7 +342,6 @@ inspect_common (cob_field *f1, cob_field *f2, const enum inspect_type type)
 			if (memcmp (inspect_start + i, f2->data, f2->size) == 0) {
 				/* when not marked yet: count, mark and skip handled positions */
 				if (do_mark (pos + i, f2->size, f1->data)) {
-					n++;
 					i -= f2->size - 1;
 				}
 				if (i == 0) {
@@ -313,7 +358,6 @@ inspect_common (cob_field *f1, cob_field *f2, const enum inspect_type type)
 			if (memcmp (inspect_start + i, f2->data, f2->size) == 0) {
 				/* when not marked yet: count, mark and skip handled positions */
 				if (do_mark (pos + i, f2->size, f1->data)) {
-					n++;
 					i += f2->size - 1;
 				}
 			} else {
@@ -329,7 +373,6 @@ inspect_common (cob_field *f1, cob_field *f2, const enum inspect_type type)
 			if (memcmp (inspect_start + i, f2->data, f2->size) == 0) {
 				/* when not marked yet: count, mark and skip handled positions */
 				if (do_mark (pos + i, f2->size, f1->data)) {
-					n++;
 					if (type == INSPECT_FIRST) {
 						break;
 					}
@@ -338,9 +381,50 @@ inspect_common (cob_field *f1, cob_field *f2, const enum inspect_type type)
 			}
 		}
 	}
+}
 
-	if (n != 0 && !inspect_replacing) {
-		cob_add_int (f1, n, 0);
+static void
+inspect_common (cob_field *f1, cob_field *f2, const enum inspect_type type)
+{
+	const size_t	pos = inspect_start - inspect_data;
+	const size_t	inspect_len = inspect_end - inspect_start;
+
+	if (inspect_len == 0) {
+		/* inspecting either a zero-length field or
+		   AFTER ... has not found a place to start the conversion */
+		return;
+	}
+
+	if (unlikely (!f1)) {
+		f1 = &str_cob_low;
+	}
+	if (unlikely (!f2)) {
+		f2 = &str_cob_low;
+	}
+
+	/* note: inspect_common_no_replace and inspect_common_replacing share most
+	   of its code; still moved out as this allows for further optimizations;
+	   only optimization left: separate entry function and codegen for single
+	   target as this does not need a marker at all */
+	if (!inspect_replacing) {
+		if (f2->size > inspect_len) {
+			return;
+		}
+		inspect_common_no_replace (f1, f2, type, pos, inspect_len);
+	} else {
+		if (f1->size != f2->size) {
+			if (COB_FIELD_TYPE (f1) == COB_TYPE_ALPHANUMERIC_ALL) {
+				alloc_figurative (f1, f2);
+				f1 = &alpha_fld;
+			} else {
+				cob_set_exception (COB_EC_RANGE_INSPECT_SIZE);
+				return;
+			}
+		}
+		if (f2->size > inspect_len) {
+			return;
+		}
+		inspect_common_replacing (f1, f2, type, pos, inspect_len);
 	}
 }
 
@@ -560,8 +644,8 @@ cob_inspect_converting (const cob_field *f1, const cob_field *f2)
 		unsigned char * const cur_data_end = cur_data + inspect_len;
 		
 #if 1 /* table-approach, _much faster_, _should_ be portable */
-		char conv_tab[255] = { 0 };
-		char conv_set[255] = { 0 };
+		char conv_tab[256] = { 0 };		/* using 256 to remove the need to use offset */
+		char conv_set[256] = { 0 };
 		
 		/* pre-fill conversion table, skipping duplicates */
 		{

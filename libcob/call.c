@@ -453,8 +453,8 @@ do_cancel_module (struct call_hash *p, struct call_hash **base_hash,
 		nocancel = 1;
 	}
 	/* LCOV_EXCL_STOP */
-	if (p->module->module_ref_count &&
-	    *(p->module->module_ref_count)) {
+	if (p->module->module_ref_count
+	 && *p->module->module_ref_count) {
 		nocancel = 1;
 	}
 #ifdef _MSC_VER
@@ -823,6 +823,7 @@ cob_resolve_internal (const char *name, const char *dirent,
 	lt_dlhandle		handle;
 	size_t			i;
 	char call_entry_buff[COB_MINI_BUFF];
+	unsigned char call_entry2_buff[COB_MINI_BUFF];
 
 	/* LCOV_EXCL_START */
 	if (unlikely(!cobglobptr)) {
@@ -896,7 +897,6 @@ cob_resolve_internal (const char *name, const char *dirent,
 
 	/* Check if name needs conversion */
 	if (unlikely(cobsetptr->name_convert != 0)) {
-		unsigned char call_entry2_buff[COB_MINI_BUFF];
 		unsigned char *p = call_entry2_buff;
 		for (; *s; ++s, ++p) {
 			if (cobsetptr->name_convert == 1 && isupper (*s)) {
@@ -958,7 +958,6 @@ cob_resolve_internal (const char *name, const char *dirent,
 		return NULL;
 	}
 	for (i = 0; i < resolve_size; ++i) {
-		call_filename_buff[COB_NORMAL_MAX] = 0;
 		if (resolve_path[i] == NULL) {
 			snprintf (call_filename_buff, (size_t)COB_NORMAL_MAX,
 				  "%s.%s", (char *)s, COB_MODULE_EXT);

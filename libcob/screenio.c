@@ -59,6 +59,24 @@
 #define PDC_NCMOUSE		/* use ncurses compatible mouse API */
 #include <pdcurses.h>
 #define COB_GEN_SCREENIO
+#elif defined (HAVE_PDCURSES_CURSES_H)
+/* will internally define NCURSES_MOUSE_VERSION with
+   a recent version (for older version define manually): */
+#define PDC_NCMOUSE		/* use ncurses compatible mouse API */
+#include <pdcurses/curses.h>
+#define COB_GEN_SCREENIO
+#elif defined (HAVE_XCURSES_H)
+/* will internally define NCURSES_MOUSE_VERSION with
+   a recent version (for older version define manually): */
+#define PDC_NCMOUSE		/* use ncurses compatible mouse API */
+#include <xcurses.h>
+#define COB_GEN_SCREENIO
+#elif defined (HAVE_XCURSES_CURSES_H)
+/* will internally define NCURSES_MOUSE_VERSION with
+   a recent version (for older version define manually): */
+#define PDC_NCMOUSE		/* use ncurses compatible mouse API */
+#include <xcurses/curses.h>
+#define COB_GEN_SCREENIO
 #elif defined (HAVE_CURSES_H)
 #define PDC_NCMOUSE	/* see comment above */
 #include <curses.h>
@@ -490,7 +508,7 @@ cob_screen_init (void)
 			cob_has_color = 1;
 			/* explicit reserve pair 1 as all zero as we take this as "initialized" later on */
 			init_pair ((short)1, 0, 0);
-#ifdef	HAVE_LIBPDCURSES
+#if defined	(HAVE_LIBPDCURSES) || defined (HAVE_LIBXCURSES)
 			/* pdcurses sets *ALL* pairs to default fg/bg, while ncurses initialize the to zero
 			   set all to zero here, allowing us to adjust them later */
 			{

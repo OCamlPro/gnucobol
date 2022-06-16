@@ -1,3 +1,26 @@
+
+2022-05-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (num_byte_memcpy): removed, callers adjusted to
+	  use memcpy instead
+
+2022-05-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* strings.c (cob_inspect_converting): fix possible stackoverflow
+	* call.c (cob_resolve_internal): fix possible stack-use-after-scope,
+	  happening if name conversion is active, introduced on 2020-11-29
+	  and distributed with 3.1.2
+
+2022-05-23  Simon Sobisch <simonsobisch@gnu.org>
+
+	* strings.c (inspect_common_no_replace, inspect_common_replacing):
+	  split from inspect_common to enable further optimization for
+	  non replacing variant
+	* strings.c (inspect_common_no_replace): for LEADING and TRAILING - do
+	  not mark each occurrence, instead gather range, then set the marker
+	  afterwards to reduce the number of expensive small memsets
+	  (TALLYING for 20000 TRAILING spaces -> 1 memset instead of 20000)
+
 2022-05-11  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_get_sign_ascii, cob_put_sign_ascii, cob_put_sign_ebcdic):
@@ -28,7 +51,7 @@
 2022-04-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* strings.c (do_mark, is_marked): extracted from inspect_common
-	* strings.c (set_inspect_mark): new function to remember actual min/ma
+	* strings.c (set_inspect_mark): new function to remember actual min/max
 	  positions of the marker bytes to remove the need to initialize huge
 	  areas when we commonly have set only markers in the first n bytes
 	  (or nothing), especially for INSPECT LEADING/TRAILING
@@ -39,6 +62,10 @@
 	  check and marker range before checking all marker bytes in range
 	* strings.c: increase use of direct pointer comparisons instead of
 	  accessing char arrays or its positions for INSPECT
+
+2022-04-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c: adjustments for XCurses defines
 
 2022-04-01  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -78,6 +105,13 @@
 
 	* common.c (cob_allocate): only initialize upon request with optimized
 	  initialization for binary zeroes
+
+2021-11-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_get_sig_name, cob_get_sig_description,
+	  cob_set_sig_description): hardened against unexpected signal numbers
+	* common.c (signals, cob_get_sig_description): description is
+	  post-initialized to allow use of gettext - non-static descriptions
 
 2021-11-14  Ron Norman <rjn@inglenet.com>
 
@@ -319,6 +353,12 @@
 	* common.c (print_version): msgid change moving URLs to parameter
 	  per gettext-guidelines
 	* common.h: version defines to 3.2.0
+
+2020-12-09  Ron Norman <rjn@inglenet.com>
+
+	* common.c, common.h: added cob_get_sig_name and cob_get_sig_description
+	* common.c (cob_sig_handler): use cob_get_sig_name instead of get_sig_name
+	* common.c (cob_set_signal): rewrote to be table driven
 
 2020-12-18  Simon Sobisch <simonsobisch@gnu.org>
 
