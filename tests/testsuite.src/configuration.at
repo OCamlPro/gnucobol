@@ -456,6 +456,7 @@ test.conf: missing definitions:
 	no definition of 'numeric-pointer'
 	no definition of 'move-non-numeric-lit-to-numeric-is-zero'
 	no definition of 'implicit-assign-dynamic-var'
+	no definition of 'device-mnemonics'
 	no definition of 'comment-paragraphs'
 	no definition of 'control-division'
 	no definition of 'partial-replacing-with-literal'

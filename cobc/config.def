@@ -180,6 +180,9 @@ CB_CONFIG_BOOLEAN (cb_move_nonnumlit_to_numeric_is_zero, "move-non-numeric-lit-t
 CB_CONFIG_BOOLEAN (cb_implicit_assign_dynamic_var, "implicit-assign-dynamic-var",
 	_("implicitly define a variable if an ASSIGN DYNAMIC does not match any data item"))
 
+CB_CONFIG_BOOLEAN (cb_device_mnemonics, "device-mnemonics",
+	_("specifying device by mnemonic"))
+
 /* Support flags */
 
 CB_CONFIG_SUPPORT (cb_comment_paragraphs, "comment-paragraphs",
