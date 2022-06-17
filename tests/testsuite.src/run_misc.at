@@ -7290,7 +7290,7 @@ Source :    'callee1.cob'
 Program-Id: callee1          Statement: CANCEL                 Line: 33
 Program-Id: callee1          Statement: CALL                   Line: 33
 Source:     'preload.cob'
-Program-Id: callee2b         Entry:     callee2b               Line: 8
+Program-Id: callee2b         Entry:     callee2b               Line: 9
 Program-Id: callee2b         Section:   SOME-SEC               Line: 9
 Program-Id: callee2b         Paragraph: SOME-PAR               Line: 10
 Program-Id: callee2b         Section:   OTHER-SEC              Line: 16
@@ -7333,7 +7333,7 @@ Source :    'callee1.cob'
 Program-Id: callee1          Statement: CANCEL                 Line: 33
 Program-Id: callee1          Statement: CALL                   Line: 33
 Source:     'preload.cob'
-Program-Id: callee2b         Entry:     callee2b               Line: 8
+Program-Id: callee2b         Entry:     callee2b               Line: 9
 Program-Id: callee2b         Section:   SOME-SEC               Line: 9
 Program-Id: callee2b         Paragraph: SOME-PAR               Line: 10
 Program-Id: callee2b         Section:   OTHER-SEC              Line: 16
@@ -7423,7 +7423,7 @@ Program-Id:  callee1                     CANCEL                          Line:  
 Program-Id:  callee1                     CALL                            Line:     33
 Source: 'preload.cob'
 Program-Id:  callee2b
-Program-Id:  callee2b             Entry: callee2b                        Line:      8
+Program-Id:  callee2b             Entry: callee2b                        Line:      9
 Program-Id:  callee2b           Section: SOME-SEC                        Line:      9
 Program-Id:  callee2b         Paragraph: SOME-PAR                        Line:     10
 Program-Id:  callee2b           Section: OTHER-SEC                       Line:     16
@@ -7460,7 +7460,7 @@ Program-Id:  callee1                     CANCEL                          Line:  
 Program-Id:  callee1                     CALL                            Line:     33
 Source: 'preload.cob'
 Program-Id:  callee2b
-Program-Id:  callee2b             Entry: callee2b                        Line:      8
+Program-Id:  callee2b             Entry: callee2b                        Line:      9
 Program-Id:  callee2b           Section: SOME-SEC                        Line:      9
 Program-Id:  callee2b         Paragraph: SOME-PAR                        Line:     10
 Program-Id:  callee2b           Section: OTHER-SEC                       Line:     16

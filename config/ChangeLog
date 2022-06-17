@@ -1,4 +1,8 @@
 
+2022-02-01  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* general: introduce rely-on-area-a flag (for GCOS)
+
 2022-05-18  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* general: added option ebcdic-literals-charset

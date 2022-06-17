@@ -419,6 +419,7 @@ test.conf: missing definitions:
 	no definition of 'word-length'
 	no definition of 'literal-length'
 	no definition of 'numeric-literal-length'
+	no definition of 'rely-on-area-a'
 	no definition of 'standard-define'
 	no definition of 'binary-size'
 	no definition of 'binary-byteorder'
