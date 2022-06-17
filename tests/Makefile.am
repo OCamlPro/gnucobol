@@ -28,6 +28,7 @@ dist_check_SCRIPTS = listings-sed.sh
 testsuite_sources = \
 	testsuite.src/used_binaries.at \
 	testsuite.src/configuration.at \
+	testsuite.src/syn_control.at \
 	testsuite.src/syn_copy.at \
 	testsuite.src/syn_definition.at \
 	testsuite.src/syn_file.at \

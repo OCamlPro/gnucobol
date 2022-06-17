@@ -2225,6 +2225,8 @@ set_record_size (cb_tree min, cb_tree max)
 
 %token TOKEN_EOF 0 "end of file"
 
+%token AREA_A "text in area A"
+
 %token THREEDIMENSIONAL	"3D"
 %token ABSENT
 %token ACCEPT
@@ -3545,7 +3547,18 @@ _program_body:
 	within_typedef_definition = 0;
   }
   _procedure_division
+  {
+	/* AREA_A tokens, emitted when scanning the special marker `#AREA_A',
+	   must be inhibited outside of procedure divisions.  This avoids having
+	   to insert such tokens everywhere they may appear in other parts of
+	   the grammar.  `cobc_in_procedure' is used to filter such
+	   emissions.  */
+	cobc_in_procedure = 0;
+  }
 ;
+
+_area_a: /* empty */ | AREA_A;
+_dot_or_else_area_a: TOK_DOT _area_a | AREA_A;
 
 /* IDENTIFICATION DIVISION */
 
@@ -4166,7 +4179,7 @@ special_name:
 /* Mnemonic name clause */
 
 mnemonic_name_clause:
-  WORD
+  word_or_terminal
   {
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION,
 			       COBC_HD_CONFIGURATION_SECTION,
@@ -4183,6 +4196,11 @@ mnemonic_name_clause:
   }
   mnemonic_choices
 ;
+
+word_or_terminal:
+  WORD     { $$ = $1; }
+  /* under GCOS, this reserved name can also be a system name */
+| TERMINAL { $$ = cb_build_reference("TERMINAL"); }
 
 mnemonic_choices:
   _is CRT
@@ -4936,7 +4954,7 @@ file_control_entry:
   SELECT flag_optional undefined_word
   {
 	char	buff[COB_MINI_BUFF];
-	  
+
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION,
 			       COBC_HD_INPUT_OUTPUT_SECTION,
 			       COBC_HD_FILE_CONTROL, 0);
@@ -6150,12 +6168,18 @@ record_clause:
 	}
   }
 | RECORD _contains integer TO integer _characters
+  _record_depending /* GCOS extension */
   {
 	check_repeated ("RECORD", SYN_CLAUSE_4, &check_duplicate);
 	if (current_file->organization == COB_ORG_LINE_SEQUENTIAL) {
 		cb_warning (cb_warn_additional, _("RECORD clause ignored for LINE SEQUENTIAL"));
 	} else {
 		set_record_size ($3, $5);
+		if (current_file->record_depending) {
+			cb_verify (cb_record_contains_depending_clause, "RECORD CONTAINS DEPENDING");
+			current_file->flag_check_record_varying_limits =
+				current_file->record_min == 0 || current_file->record_max == 0;
+		}
 	}
   }
 | RECORD _is VARYING _in _size _from_integer _to_integer _characters
@@ -7245,6 +7269,7 @@ volatile_clause:
 picture_clause:
   PICTURE	/* token from scanner, includes full picture definition */
   _pic_locale_format
+  _pic_depending_on
   {
 	check_repeated ("PICTURE", SYN_CLAUSE_4, &check_pic_duplicate);
 	current_field->pic = CB_PICTURE ($1);
@@ -7252,12 +7277,28 @@ picture_clause:
 	if (CB_VALID_TREE ($2)) {
 		if (  (current_field->pic->category != CB_CATEGORY_NUMERIC
 		    && current_field->pic->category != CB_CATEGORY_NUMERIC_EDITED)
-		 || strpbrk (current_field->pic->orig, " CRDB-*") /* the standard seems to forbid also ',' */) {
+		 || strpbrk (current_field->pic->orig, " CRDBL-*") /* the standard seems to forbid also ',' */) {
 			cb_error_x ($1, _("a locale-format PICTURE string must only consist of '9', '.', '+', 'Z' and the currency-sign"));
 		} else {
 			/* TODO: check that not we're not within a CONSTANT RECORD */
 			CB_PENDING_X ($1, "locale-format PICTURE");
 		}
+	}
+
+	if (CB_VALID_TREE ($3)) {
+		if (!current_field->pic->variable_length) {
+			cb_error_x ($1, _("DEPENDING clause must only be specified "
+					  "for PICTURE strings with 'L' character"));
+		} else if (current_field->pic->category != CB_CATEGORY_ALPHABETIC &&
+			   current_field->pic->category != CB_CATEGORY_ALPHANUMERIC) {
+			cb_error_x ($1, _("DEPENDING clause must only be given for "
+					  "alphabetic or alphanumeric PICTURE strings"));
+		} else {
+			current_field->lenref = $3;
+		}
+	} else if (current_field->pic->variable_length) {
+		cb_error_x ($1, _("missing DEPENDING clause for PICTURE string with "
+				  "'L' character"));
 	}
   }
 ;
@@ -7293,6 +7334,16 @@ locale_name:
   }
 ;
 
+_pic_depending_on:
+  /* empty */
+  {
+	  $$ = NULL;
+  }
+| DEPENDING _on reference
+  {
+	  $$ = $3;
+  }
+;
 
 /* TYPE TO clause, optional "TO", fixed to clean conflicts for screen-items */
 
@@ -9925,6 +9976,7 @@ procedure_division:
 	
 	cb_check_definition_matches_prototype (current_program);
   }
+  _area_a
   _procedure_declaratives
   {
 	if (current_program->flag_main
@@ -9979,7 +10031,7 @@ procedure_division:
 	emit_statement (CB_TREE (current_paragraph));
 	cb_set_system_names ();
   }
-  statements TOK_DOT _procedure_list
+  statements TOK_DOT _area_a _procedure_list
 ;
 
 _procedure_using_chaining:
@@ -10232,6 +10284,7 @@ _procedure_declaratives:
 	in_declaratives = 1;
 	emit_statement (cb_build_comment ("DECLARATIVES"));
   }
+  _area_a
   _procedure_list
   END DECLARATIVES TOK_DOT
   {
@@ -10259,6 +10312,7 @@ _procedure_declaratives:
 	emit_statement (cb_build_comment ("END DECLARATIVES"));
 	check_unreached = 0;
   }
+  _area_a
 ;
 
 
@@ -10271,7 +10325,7 @@ _procedure_list:
 procedure:
   section_header
 | paragraph_header
-| statements TOK_DOT
+| statements
   {
 	if (next_label_list) {
 		cb_tree	plabel;
@@ -10289,12 +10343,14 @@ procedure:
 	/* check_unreached = 0; */
 	cb_end_statement();
   }
+  _dot_or_else_area_a
 | invalid_statement %prec SHIFT_PREFER
 | TOK_DOT
   {
 	/* check_unreached = 0; */
 	cb_end_statement();
   }
+  _area_a
 ;
 
 
@@ -10345,6 +10401,7 @@ section_header:
   {
 	emit_statement (CB_TREE (current_section));
   }
+  _area_a
 ;
 
 _use_statement:
@@ -10394,6 +10451,7 @@ paragraph_header:
 	current_paragraph->segment = current_section->segment;
 	emit_statement (CB_TREE (current_paragraph));
   }
+  _area_a
 ;
 
 invalid_statement:
@@ -12101,6 +12159,10 @@ display_body:
 	cb_emit_command_line ($1);
   }
 | screen_or_device_display _common_exception_phrases
+| _with CONVERSION screen_or_device_display _common_exception_phrases
+  {
+	CB_PENDING ("DISPLAY WITH CONVERSION");
+  }
 | display_erase	/* note: may also be part of display_pos_specifier */
 | display_pos_specifier
 | display_message_box
@@ -12237,7 +12299,7 @@ display_upon:
   {
 	upon_value = cb_build_display_mnemonic ($2);
   }
-| UPON WORD
+| UPON word_or_terminal
   {
 	upon_value = cb_build_display_name ($2);
   }
@@ -15390,6 +15452,13 @@ stop_statement:
 	cb_emit_stop_run ($4);
 	check_unreached = 1;
 	cobc_cs_check = 0;
+  }
+| STOP ERROR /* GCOS */
+  {
+	begin_statement ("STOP ERROR", 0);
+	cb_verify (cb_stop_error_statement, "STOP ERROR");
+	cb_emit_stop_error ();
+	check_unreached = 1;
   }
 | STOP stop_argument
   {

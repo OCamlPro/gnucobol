@@ -862,6 +862,27 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
+AT_DATA([prog2.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       ENVIRONMENT      DIVISION.
+       INPUT-OUTPUT     SECTION.
+       FILE-CONTROL.
+       SELECT TEST-FILE ASSIGN TO 'FILE-TEST'
+                        ORGANIZATION IS SEQUENTIAL.
+       DATA             DIVISION.
+       FILE             SECTION.
+       FD TEST-FILE
+           RECORD CONTAINS 12 TO 125 CHARACTERS
+             DEPENDING ON RECORDSIZE.
+       01  TEST-REC.
+           05 FILLER    PIC X(40).
+       PROCEDURE        DIVISION.
+           OPEN  INPUT TEST-FILE.
+           CLOSE TEST-FILE.
+           STOP RUN.
+])
+
 # FIXME: the check misses "prog.cob:40: error: RECORD DEPENDING item must be unsigned numeric"
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:20: error: 'RECORDSIZE' is not defined
@@ -874,6 +895,13 @@ AT_CHECK([$COMPILE_ONLY -frelax-syntax-checks prog.cob], [1], [],
 prog.cob:26: error: RECORD DEPENDING must reference a data-item
 prog.cob:34: warning: RECORD DEPENDING item 'RECORDSIZE3' should be defined in WORKING-STORAGE, LOCAL-STORAGE or LINKAGE SECTION
 prog.cob:40: warning: RECORD DEPENDING item 'RECORDSIZE4' should be defined in WORKING-STORAGE, LOCAL-STORAGE or LINKAGE SECTION
+])
+AT_CHECK([$COMPILE_ONLY -frecord-contains-depending-clause=error prog2.cob], [1], [],
+[prog2.cob:13: error: RECORD CONTAINS DEPENDING used
+prog2.cob:13: error: 'RECORDSIZE' is not defined
+])
+AT_CHECK([$COMPILE_ONLY -frecord-contains-depending-clause=ok prog2.cob], [1], [],
+[prog2.cob:13: error: 'RECORDSIZE' is not defined
 ])
 
 AT_CLEANUP

@@ -237,6 +237,14 @@ enum cb_dpc_in_data_options {
 	CB_DPC_IN_ALL
 };
 
+/* Character set used to decode EBCDIC symbolic characters in alphanumeric
+   literals */
+enum cb_ebcdic_literal_charset {
+	CB_EBCDIC_LITERALS_DEFAULT, /* for lack of a better name (see
+				       read_literal in `scanner.l`) */
+	CB_EBCDIC_LITERALS_GCOS7
+};
+
 /* Generic text list structure */
 struct cb_text_list {
 	struct cb_text_list	*next;			/* next pointer */
@@ -357,6 +365,7 @@ extern enum cb_format		cb_source_format;
 #if 0 /* ancient OSVS registers that need special runtime handling - low priority */
 extern enum cb_current_date	current_date;
 #endif
+extern int			cb_indicator_column;
 extern int			cb_text_column;	/* end of area B (in single-byte characters) */
 
 extern struct cb_exception	cb_exception_table[];
@@ -613,6 +622,8 @@ extern int		ppcopy (const char *, const char *,
 				struct cb_replace_list *);
 extern void		pp_set_replace_list (struct cb_replace_list *,
 					     const cob_u32_t);
+extern unsigned int	ppparse_verify (const enum cb_support tag,
+					const char *feature);
 extern void		ppparse_error (const char *);
 
 

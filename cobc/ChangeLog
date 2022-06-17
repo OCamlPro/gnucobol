@@ -1,18 +1,112 @@
 
-2022-05-31  Simon Sobisch <simonsobisch@gnu.org>
+2022-06-17  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
-	* cobc.c (cobc_check_string): replaced single string cache by an array
-	  of caches using the string length as index; allowing much faster lookups
-	* codegen.c (chk_field_variable_address): [not working -> disabled] draft
-	  for speedup by not checking the same field multiple time
+	* config.def, typeck.c (cb_emit_accept_name, cb_build_display_name):
+	  rely on new option device-mnemonics (boolean) instead of
+	  standard-define to accept device name mnemonics for DISPLAY and ACCEPT
 
-2022-05-30  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+2022-05-23  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
-	* help.c (cobc_print_usage_common_options): document new -std
-	  dialect options gcos and gcos-strict
-	* reserved.c (default_reserved_words): define words COMP-9,
-	  COMP-10, and COMP-15, that are used by the GCOS dialect for
-	  floating-point usages
+	* parser.y: add DEPENDING ON for picture strings with an `L`
+	  character
+	* tree.h (struct cb_picture, struct cb_field): account for
+	  variable length alphanumeric fields (GCOS-specific extension)
+	* tree.c: add support for `L` characters in picture strings
+	* field.c (is_elementary_integer): new function to decide whether
+	  a field hold elementary Integers
+	* field.c (validate_field_1): validate DEPENDING ON field for
+	  PICTURE L.
+	* codegen.c (output_*, output_internal_function): deal with
+	  variable-length alphanumeric fields; in generated code
+
+2022-02-04  David Declerck <david.declerck@ocamlpro.com>
+
+	* parser.y: allow the WITH CONVERSION clause right after DISPLAY (ignored)
+	* config.def, typeck.c: allow paragraph names to redefine field
+	  and section names; related to FR#260
+	* parser.y, reserved.c, scanner.l, typeck.c: Add GCOS-specific mnemonics
+	  ALTERNATE-CONSOLE, ALTERNATE CONSOLE and TERMINAL
+
+2022-02-07  David Declerck <david.declerck@ocamlpro.com>
+
+	* config.def, parser.y: allow DEPENDING clause in RECORD CONTAINS
+
+2022-02-04  David Declerck <david.declerck@ocamlpro.com>
+
+	* cobc.c, cobc.h, config.def, pplex.l, ppparse.y: make the
+	  indicator column configurable
+
+2022-02-01  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* config.def, pplex.l, scanner.l, parser.y: support sections and
+	  paragraphs that do not terminate with a period (allowed by GCOS
+	  implementations).  This is done with the help of a new option
+	  rely-on-area-a, that indicates the dialect may only be parsed
+	  correctly by knowing whether each line starts in area A or not
+
+2022-01-27  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* pplex.l, ppparse.y: add support for CONTROL DIVISION (GCOS 7
+	  extension); only SUBSTITUTION SECTION is handled yet
+	* config.def: new control-division option
+	* cobc.h, pplex.l (ppparse_verify): feature verification while in
+	  ppparse.y
+	* pplex.l (ppparse_error): shift newline counter by one when
+	  reporting an error when in ppparse.y
+
+2022-03-11  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* config.def, parser.y: add support for the STOP ERROR statement
+
+2022-05-18  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* config.def, config.c, cobc.h: new option ebcdic-literals-charset
+	  to enable tuning the EBCDIC collating sequence used to decode
+	  symbolic characters in alphanumeric literals;
+	* scanner.l (read_literal): customizable decoding of EBCDIC
+	  symbolic characters
+	* config.def, scanner.l (cb_ebcdic_literals): minor renaming of
+	  variable
+
+2022-03-28  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* config.def: substitute ebcdic-symbolic-characters for
+	  gcos-ebcdic-literals
+	* scanner.l, pplex.l: detect and issue a warning when EBCDIC
+	  symbolic character strings include extraneous separators
+
+2022-03-25  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* config.def: fix doc for gcos-ebcdic-literals
+
+2022-03-11  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* scanner.l: EBCDIC symbolic-chars are ordinals (1..256 instead of
+	  0..255)
+
+2022-01-27  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* scanner.l, config.def: Add support for EBCDIC symbolic
+	  characters in alphanumeric literals, which is a GCOS-specific
+	  extension; add new configuration option gcos-ebcdic-literals
+
+2022-03-29  Nicolas Berthier <nicolas.berther@ocamlpro.com>
+
+	* ppparse.y (literal_token): support SPACE or SPACES figurative
+	  constant as second operand of partial replacing phrases
+
+2022-01-25  Nicolas Berthier <nicolas.berther@ocamlpro.com>
+
+	* pplex.l, ppparse.y, config.h: support COPY and REPLACE
+	  statements with partial REPLACING operands specified using
+	  literals
+	* ppparse.y (unquote_alnum, fix_filename): factorize code for
+	  unquotation of alphanumeric literals
+	* config.def: new option partial-replacing-with-literal
+	* cobc.h, pplex.l (ppparse_verify): feature verification while in
+	  ppparse.y
+	* pplex.l (ppparse_error): shift newline counter by one when
+	  reporting an error when in ppparse.y
 
 2022-05-15  Simon Sobisch <simonsobisch@gnu.org>
 

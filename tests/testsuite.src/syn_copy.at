@@ -523,6 +523,80 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OKOK])
 AT_CLEANUP
 
 
+AT_SETUP([COPY: partial replacement with literals])
+AT_KEYWORDS([copy gcos])
+
+AT_DATA([copy.inc], [
+       01  TEST-VAR PIC X(2) VALUE "OK".
+       01  NORM-VAR PIC X(2) VALUE "OK".
+])
+
+AT_DATA([copy2.inc], [
+       01  TEST-FIRST  PIC X(2) VALUE "OK".
+       01  TEST-SECOND PIC X(2) VALUE "OK".
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       COPY "copy.inc"
+            REPLACING LEADING "TEST" BY "FIRST"
+                      LEADING "NORM" BY "SECOND".
+       COPY "copy2.inc"
+            REPLACING TRAILING "FIRST" BY "VAR1"
+                      TRAILING "SECOND" BY "VAR2".
+       PROCEDURE        DIVISION.
+           DISPLAY FIRST-VAR NO ADVANCING
+           END-DISPLAY.
+           DISPLAY SECOND-VAR NO ADVANCING
+           END-DISPLAY.
+           DISPLAY TEST-VAR1 NO ADVANCING
+           END-DISPLAY.
+           DISPLAY TEST-VAR2 NO ADVANCING
+           END-DISPLAY.
+           STOP RUN.
+])
+AT_CHECK([$COMPILE -fpartial-replacing-with-literal=ok prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OKOKOKOK])
+AT_CHECK([$COMPILE_ONLY -fpartial-replacing-with-literal=error prog.cob], [1], [],
+[prog.cob:7: error: partial replacing with literal used
+prog.cob:7: error: partial replacing with literal used
+prog.cob:8: error: partial replacing with literal used
+prog.cob:8: error: partial replacing with literal used
+prog.cob:10: error: partial replacing with literal used
+prog.cob:10: error: partial replacing with literal used
+prog.cob:11: error: partial replacing with literal used
+prog.cob:11: error: partial replacing with literal used
+])
+
+AT_DATA([prog_err.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       COPY "copy.inc"
+            REPLACING LEADING TEST BY "FIRST"
+                      LEADING "NORM" BY SECOND.
+       PROCEDURE        DIVISION.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY -fpartial-replacing-with-literal=ok prog_err.cob], [1], [],
+[prog_err.cob:7: error: unexpected COBOL word in partial replacement phrase
+prog_err.cob:8: error: unexpected COBOL word in partial replacement phrase
+])
+AT_CHECK([$COMPILE_ONLY -fpartial-replacing-with-literal=unconformable prog_err.cob], [1], [],
+[prog_err.cob:7: error: unexpected COBOL word in partial replacement phrase
+prog_err.cob:7: error: partial replacing with literal does not conform to GnuCOBOL
+prog_err.cob:8: error: partial replacing with literal does not conform to GnuCOBOL
+prog_err.cob:8: error: unexpected COBOL word in partial replacement phrase
+])
+
+AT_CLEANUP
+
+
 AT_SETUP([COPY: recursive replacement])
 AT_KEYWORDS([copy])
 
@@ -575,5 +649,35 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE -free prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([REPLACE: partial replacement with SPACES figurative constant])
+AT_KEYWORDS([replace gcos acu])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       REPLACE LEADING "PREFIX-" BY SPACES
+               TRAILING "-SUFFIX" BY SPACE.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 PREFIX-VAR1 PIC X(2) VALUE "OK".
+       01 VAR2-SUFFIX PIC X(2) VALUE "OK".
+       PROCEDURE        DIVISION.
+           DISPLAY VAR1 NO ADVANCING.
+           DISPLAY VAR2 NO ADVANCING.
+           STOP RUN.
+])
+
+AT_DATA([prog_err.cob], [
+       COPY prog REPLACING LEADING SPACES BY "PREFIX-".
+])
+
+AT_CHECK([$COMPILE_ONLY -fpartial-replacing-with-literal=ok prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -fpartial-replacing-with-literal=ok prog_err.cob], [1], [],
+[prog_err.cob:2: error: unexpected COBOL word in partial replacement phrase
+])
 
 AT_CLEANUP

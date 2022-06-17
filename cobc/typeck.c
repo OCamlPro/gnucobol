@@ -1935,9 +1935,12 @@ cb_build_section_name (cb_tree name, const int sect_or_para)
 		  Duplicate paragraphs are allowed if not referenced;
 		  Checked in typeck.c
 		*/
-		if (!CB_LABEL_P (x) || sect_or_para == 0 ||
+		if ((!CB_LABEL_P (x) || sect_or_para == 0 ||
 		    (sect_or_para && CB_LABEL_P (x) &&
-		    CB_LABEL (x)->flag_section)) {
+		    CB_LABEL (x)->flag_section)) &&
+		    !(cb_relax_paragraph_name_uniqueness &&
+		      (CB_FIELD_P (x) ||
+		       (CB_LABEL_P (x) && CB_LABEL (x)->flag_section)))) {
 			redefinition_error (name);
 			return cb_error_node;
 		}
@@ -7650,10 +7653,7 @@ cb_emit_accept_name (cb_tree var, cb_tree name)
 		switch (CB_SYSTEM_NAME (sys)->token) {
 		case CB_DEVICE_CONSOLE:
 		case CB_DEVICE_SYSIN:
-			/* possibly others allow this, too, consider adding a config option */
-			if (cb_std_define != CB_STD_IBM
-			 && cb_std_define != CB_STD_MVS
-			 && cb_std_define != CB_STD_MF
+			if (!cb_device_mnemonics
 			 && !cb_relaxed_syntax_checks) {
 				cb_warning_x (COBC_WARN_FILLER, name,
 					_("'%s' is not defined in SPECIAL-NAMES"), CB_NAME (name));
@@ -8818,12 +8818,9 @@ cb_build_display_name (cb_tree x)
 			cb_error_x (x, _("'%s' is not an output device"), name);
 			return cb_error_node;
 		}
-		/* possibly others allow this, too, consider adding a config option */
-		if (cb_std_define != CB_STD_IBM
-		 && cb_std_define != CB_STD_MVS
-		 && cb_std_define != CB_STD_MF
+		if (!cb_device_mnemonics
 		 && !cb_relaxed_syntax_checks) {
-		 	/* ... especially as this is not allowed and therefore should raise an error... */
+			/* TODO: this is not allowed and therefore should raise an error */
 			cb_warning_x (COBC_WARN_FILLER, x,
 				_("'%s' is not defined in SPECIAL-NAMES"), name);
 		}
@@ -12801,6 +12798,12 @@ void
 cb_emit_stop_run (cb_tree x)
 {
 	cb_emit (CB_BUILD_FUNCALL_1 ("cob_stop_run", cb_build_cast_int (x)));
+}
+
+void
+cb_emit_stop_error (void)
+{
+	cb_emit (CB_BUILD_FUNCALL_0 ("cob_stop_error"));
 }
 
 void

@@ -1574,18 +1574,20 @@ output_attr (const cb_tree x)
 		struct cb_reference	*r = CB_REFERENCE (x);
 		struct cb_field		*f = CB_FIELD (r->value);
 		flags = 0;
+		if (f->pic && f->pic->variable_length) {
+			flags |= COB_FLAG_VARIABLE_LENGTH;
+		}
 		if (r->offset) {
-			id = lookup_attr (COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL, 0);
+			id = lookup_attr (COB_TYPE_ALPHANUMERIC, 0, 0, flags, NULL, 0);
 		} else {
 			int type = cb_tree_type (x, f);
 			switch (type) {
 			case COB_TYPE_GROUP:
 			case COB_TYPE_ALPHANUMERIC:
 				if (f->flag_justified) {
-					id = lookup_attr (type, 0, 0, COB_FLAG_JUSTIFIED, NULL, 0);
-				} else {
-					id = lookup_attr (type, 0, 0, 0, NULL, 0);
+					flags |= COB_FLAG_JUSTIFIED;
 				}
+				id = lookup_attr (type, 0, 0, flags, NULL, 0);
 				break;
 			default:
 				if (f->pic->have_sign) {
@@ -2122,6 +2124,8 @@ output_field (cb_tree x)
 	output_data (x);
 	output (", ");
 	output_attr (x);
+	output (", ");
+	output ("NULL");	/* variable length field ref. */
 	output ("}");
 }
 
@@ -2212,6 +2216,8 @@ output_field_sub (cb_tree x, int subscript)
 	output_data_sub (x,subscript);
 	output (", ");
 	output_attr (x);
+	output (", ");
+	output ("NULL");	/* variable length field ref. */
 	output ("}");
 }
 
@@ -2314,6 +2320,7 @@ output_local_field_cache (struct cb_program *prog)
 			output_size (field->x);
 			output (", NULL, ");
 			output_attr (field->x);
+			output (", NULL");
 			output ("}");
 		}
 
@@ -2353,6 +2360,25 @@ output_local_field_cache (struct cb_program *prog)
 	output_target = cb_storage_file;
 }
 
+/* Outputs code that initializes the length references for variable-length
+   fields */
+static void
+output_local_field_length_initialization ()
+{
+	struct field_list	*field;
+	struct cb_field		*f, *f_len;
+
+	for (field = local_field_cache; field; field = field->next) {
+		f = field->f;
+		if (f->pic && f->pic->variable_length) {
+			f_len = CB_FIELD (cb_ref (f->lenref));
+			output_line ("%s%d.length = &%s%d;",
+				     CB_PREFIX_FIELD, f->id,
+				     CB_PREFIX_FIELD, f_len->id);
+		}
+	}
+}
+
 static void
 output_nonlocal_field_cache (void)
 {
@@ -2382,6 +2408,7 @@ output_nonlocal_field_cache (void)
 			output_size (field->x);
 			output (", NULL, ");
 			output_attr (field->x);
+			output (", NULL"); /* variable length field ref. */
 			output ("}");
 		}
 		if (field->f->flag_filler) {
@@ -2404,7 +2431,7 @@ output_low_value (void)
 		output ("static cob_field cob_all_low\t= ");
 		output ("{1, ");
 		output ("(cob_u8_ptr)\"\\0\", ");
-		output ("&cob_all_attr};");
+		output ("&cob_all_attr, NULL};"); /* variable length field ref. */
 		output_newline ();
 	}
 }
@@ -2416,7 +2443,7 @@ output_high_value (void)
 		output ("static cob_field cob_all_high\t= ");
 		output ("{1, ");
 		output ("(cob_u8_ptr)\"\\xff\", ");
-		output ("&cob_all_attr};");
+		output ("&cob_all_attr, NULL};"); /* variable length field ref. */
 		output_newline ();
 	}
 }
@@ -11854,6 +11881,16 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 				output_file_initialization (CB_FILE (CB_VALUE (l)));
 			}
 		}
+	}
+
+	/* GCOS: Initialize references to field lengths, for PICTURE L... */
+	/* Initialization of field length reference is delayed until after all
+	   local fields have been declared to deal with variable-length fields
+	   declared before their length. */
+	if (prog->working_storage) {
+		output_line ("/* Initialize references to field lengths, if any */");
+		output_local_field_length_initialization ();
+		output_newline ();
 	}
 
 	seen = 0;

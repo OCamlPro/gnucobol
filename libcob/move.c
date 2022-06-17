@@ -415,7 +415,7 @@ cob_move_alphanum_to_alphanum (cob_field *f1, cob_field *f2)
 	size_t		size2;
 
 	data1 = f1->data;
-	size1 = f1->size;
+	size1 = COB_FIELD_DATA_SIZE (f1);
 	data2 = f2->data;
 	size2 = f2->size;
 	if (size1 >= size2) {
@@ -1079,7 +1079,7 @@ cob_move_alphanum_to_edited (cob_field *f1, cob_field *f2)
 
 	sign = COB_GET_SIGN (f1);
 	src = COB_FIELD_DATA (f1);
-	max = src + COB_FIELD_SIZE (f1);
+	max = src + COB_FIELD_SIZE (f1); /* COB_FIELD_DATA_SIZE? */
 	dst = f2->data;
 	for (p = COB_FIELD_PIC (f2); p->symbol; ++p) {
 		c = p->symbol;

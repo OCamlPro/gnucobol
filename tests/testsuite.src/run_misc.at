@@ -4681,6 +4681,31 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [1])
 AT_CLEANUP
 
 
+AT_SETUP([STOP ERROR])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           CALL "prog2".
+           DISPLAY "Whatever".
+           STOP RUN.
+       END PROGRAM      prog.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog2.
+       PROCEDURE        DIVISION.
+           STOP ERROR.
+])
+
+AT_CHECK([$COMPILE prog.cob -fstop-error-statement=ok], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
+[libcob: prog.cob:12: error: STOP ERROR
+])
+
+AT_CLEANUP
+
+
 AT_SETUP([SYMBOLIC clause])
 AT_KEYWORDS([runmisc ALPHABET])
 
@@ -7265,7 +7290,7 @@ Source :    'callee1.cob'
 Program-Id: callee1          Statement: CANCEL                 Line: 33
 Program-Id: callee1          Statement: CALL                   Line: 33
 Source:     'preload.cob'
-Program-Id: callee2b         Entry:     callee2b               Line: 8
+Program-Id: callee2b         Entry:     callee2b               Line: 9
 Program-Id: callee2b         Section:   SOME-SEC               Line: 9
 Program-Id: callee2b         Paragraph: SOME-PAR               Line: 10
 Program-Id: callee2b         Section:   OTHER-SEC              Line: 16
@@ -7308,7 +7333,7 @@ Source :    'callee1.cob'
 Program-Id: callee1          Statement: CANCEL                 Line: 33
 Program-Id: callee1          Statement: CALL                   Line: 33
 Source:     'preload.cob'
-Program-Id: callee2b         Entry:     callee2b               Line: 8
+Program-Id: callee2b         Entry:     callee2b               Line: 9
 Program-Id: callee2b         Section:   SOME-SEC               Line: 9
 Program-Id: callee2b         Paragraph: SOME-PAR               Line: 10
 Program-Id: callee2b         Section:   OTHER-SEC              Line: 16
@@ -7398,7 +7423,7 @@ Program-Id:  callee1                     CANCEL                          Line:  
 Program-Id:  callee1                     CALL                            Line:     33
 Source: 'preload.cob'
 Program-Id:  callee2b
-Program-Id:  callee2b             Entry: callee2b                        Line:      8
+Program-Id:  callee2b             Entry: callee2b                        Line:      9
 Program-Id:  callee2b           Section: SOME-SEC                        Line:      9
 Program-Id:  callee2b         Paragraph: SOME-PAR                        Line:     10
 Program-Id:  callee2b           Section: OTHER-SEC                       Line:     16
@@ -7435,7 +7460,7 @@ Program-Id:  callee1                     CANCEL                          Line:  
 Program-Id:  callee1                     CALL                            Line:     33
 Source: 'preload.cob'
 Program-Id:  callee2b
-Program-Id:  callee2b             Entry: callee2b                        Line:      8
+Program-Id:  callee2b             Entry: callee2b                        Line:      9
 Program-Id:  callee2b           Section: SOME-SEC                        Line:      9
 Program-Id:  callee2b         Paragraph: SOME-PAR                        Line:     10
 Program-Id:  callee2b           Section: OTHER-SEC                       Line:     16

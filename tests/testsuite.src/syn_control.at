@@ -1,0 +1,59 @@
+## Copyright (C) 2022 Free Software Foundation, Inc.
+## Written by Keisuke Nishida, Roger While, Simon Sobisch
+## 
+## This file is part of GnuCOBOL.
+## 
+## The GnuCOBOL compiler is free software: you can redistribute it
+## and/or modify it under the terms of the GNU General Public License
+## as published by the Free Software Foundation, either version 3 of the
+## License, or (at your option) any later version.
+## 
+## GnuCOBOL is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+## 
+## You should have received a copy of the GNU General Public License
+## along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+
+### GnuCOBOL Test Suite
+
+AT_SETUP([CONTROL: empty division])
+AT_KEYWORDS([control gcos])
+
+AT_DATA([prog.cob], [
+       CONTROL          DIVISION.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+])
+
+AT_CHECK([$COMPILE_ONLY -fcontrol-division=ok prog.cob], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([CONTROL: replace entry])
+AT_KEYWORDS([control gcos])
+
+AT_DATA([prog.cob], [
+       CONTROL          DIVISION.
+       SUBSTITUTION     SECTION.
+           REPLACE ==TEST-VAR== BY ==VAR==.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 TEST-VAR PIC X(2) VALUE "OK".
+       PROCEDURE        DIVISION.
+           DISPLAY VAR NO ADVANCING
+           END-DISPLAY.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fcontrol-division=ok prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
+AT_CHECK([$COMPILE -fcontrol-division=error prog.cob], [1], [],
+[prog.cob:2: error: CONTROL DIVISION used
+])
+
+AT_CLEANUP

@@ -176,7 +176,9 @@ static void	get_new_listing_file	(void);
 
 WORD		[_0-9A-Z\x80-\xFF-]+
 NUMRIC_LITERAL	[+-]?[0-9,.]*[0-9]
-ALNUM_LITERAL	"\""[^""\n]*"\""|"\'"[^''\n]*"\'"
+ALNUM_LITERAL_Q	"\""([^""\n]|("\""[0-9][0-9, ]*"\""))*"\""
+ALNUM_LITERAL_A	"\'"([^''\n]|("\'"[0-9][0-9, ]+"\'"))*"\'"
+ALNUM_LITERAL	{ALNUM_LITERAL_Q}|{ALNUM_LITERAL_A}
 SET_PAREN_LIT	\([^()\n]*\)
 DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 
@@ -184,6 +186,8 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 %x COBOL_WORDS_DIRECTIVE_STATE
 %x COPY_STATE
 %x PSEUDO_STATE
+%x CONTROL_DIVISION_STATE
+%x SUBSTITUTION_SECTION_STATE
 %x SOURCE_DIRECTIVE_STATE
 %x DEFINE_DIRECTIVE_STATE
 %x ON_OFF_DIRECTIVE_STATE
@@ -415,6 +419,17 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 	skip_to_eol ();
 }
 
+<*>#/[ ,;\n] {
+	/* Output a special marker that precedes lines starting in area A.  This
+	   is required to deal with a GCOS Cobol extension that permits sections
+	   and paragraphs that do not terminate with a period.
+
+	   See "(*GCOS*)" in `ppinput' function below for the code that emits
+	   the `#'.
+	*/
+	fprintf (ppout, "\n#area_a\n");
+}
+
 "COPY"/[ ,;\n]			{
 	yy_push_state (COPY_STATE);
 	if (cb_src_list_file) {
@@ -444,7 +459,41 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 	return CONTROL_STATEMENT;
 }
 
-("ID"|"IDENTIFICATION")[ ,;\n]+"DIVISION" {
+"CONTROL"[ ,;\n]+"DIVISION" {
+	yy_push_state (CONTROL_DIVISION_STATE);
+	return CONTROL_DIVISION;
+}
+
+<CONTROL_DIVISION_STATE>"SUBSTITUTION"[ ,;\n]+"SECTION" {
+	yy_push_state (SUBSTITUTION_SECTION_STATE);
+	return SUBSTITUTION_SECTION;
+}
+
+<SUBSTITUTION_SECTION_STATE>"REPLACE"	{
+	yy_push_state (COPY_STATE);
+	return REPLACE;
+}
+
+<CONTROL_DIVISION_STATE,
+SUBSTITUTION_SECTION_STATE>{
+  [,;]?\n		{
+	  ECHO;
+	  check_listing (yytext, 0);
+	  cb_source_line++;
+  }
+  [,;]?[ ]+		{ /* ignore */ }
+  \. 			{
+	  return DOT;
+  }
+}
+
+<INITIAL,
+CONTROL_DIVISION_STATE,
+SUBSTITUTION_SECTION_STATE>("ID"|"IDENTIFICATION")[ ,;\n]+"DIVISION" {
+	/* Pop any control division-related start condition state. */
+	while (YY_START == CONTROL_DIVISION_STATE ||
+	       YY_START == SUBSTITUTION_SECTION_STATE)
+		yy_pop_state ();
 	/* Allow comment sentences/paragraphs */
 	comment_allowed = 1;
 	ppecho (yytext, 0, (int)yyleng);
@@ -1294,7 +1343,7 @@ ppcopy (const char *name, const char *lib, struct cb_replace_list *replace_list)
 		s = name;
 		filename = ppcopy_find_file (s, has_ext);
 	}
-	
+
 	/* expected case: filename found */
 	if (likely (filename)) {
 		int ret;
@@ -1317,10 +1366,19 @@ ppcopy (const char *name, const char *lib, struct cb_replace_list *replace_list)
 	return -1;
 }
 
+/* `newline_count` is one line ahead when the two functions below are called
+   (from `ppparse.y`). */
+
+unsigned int
+ppparse_verify (const enum cb_support tag, const char *feature)
+{
+	return cb_plex_verify (newline_count-1, tag, feature);
+}
+
 void
 ppparse_error (const char *err_msg)
 {
-	cb_plex_error (newline_count, "%s", err_msg);
+	cb_plex_error (newline_count-1, "%s", err_msg);
 }
 
 void
@@ -1547,7 +1605,7 @@ get_word (const char *str, char *word_buff)
 			*word_buff = 0;
 		} else {
 			ret = NULL;
-		}		
+		}
 	}
 	return ret;
 }
@@ -1621,6 +1679,7 @@ ppinput (char *buff, const size_t max_size)
 	int	i;
 	int	n;
 	int	coln;
+	int	in_area_a;
 	struct list_skip *skip;
 
 	/* check that we actually have input to process
@@ -1761,7 +1820,7 @@ start:
 		if (memcmp("<<<<<<<", buff, 7) == 0
 		 || memcmp("=======", buff, 7) == 0
 		 || memcmp(">>>>>>>", buff, 7) == 0) {
-			/* FIXME: the different line numbers (see test "conflict markers" 
+			/* FIXME: the different line numbers (see test "conflict markers"
 			   are definitely a bug to solve in short time */
 			if (cb_source_format == CB_FORMAT_FREE) {
 				++newline_count;
@@ -1778,7 +1837,7 @@ start:
 	if (cb_source_format == CB_FORMAT_FREE) {
 		bp = buff;
 	} else {
-		if (n < 8) {
+		if (n <= cb_indicator_column) {
 			/* Line too short */
 			newline_count++;
 			goto start;
@@ -1817,14 +1876,14 @@ start:
 			line_overflow = 0;
 		}
 
-		memset (buff, ' ', (size_t)6);
-		/* Note we allow directive lines to start at column 7 */
-		bp = &buff[6];
+		memset (buff, ' ', (size_t)(cb_indicator_column - 1));
+		/* Note we allow directive lines to start in the indicator column */
+		bp = &buff[(cb_indicator_column - 1)];
 
 		/* Special case: acucomment must be checked here as we'd pass comments
 		   as directives otherwise */
-		if (cb_flag_acucomment && buff[6] == '$') {
-			buff[6] = '*';
+		if (cb_flag_acucomment && buff[(cb_indicator_column - 1)] == '$') {
+			buff[(cb_indicator_column - 1)] = '*';
 		}
 	}
 
@@ -1903,8 +1962,8 @@ start:
 
 	/* Fixed format */
 
-	/* Check the indicator (column 7) */
-	switch (buff[6]) {
+	/* Check the indicator */
+	switch (buff[cb_indicator_column - 1]) {
 	case ' ':
 		break;
 	case '-':
@@ -1935,7 +1994,8 @@ start:
 	default:
 		/* Invalid indicator */
 		cb_plex_error (newline_count,
-				_("invalid indicator '%c' at column 7"), buff[6]);
+				_("invalid indicator '%c' at column %d"),
+				buff[cb_indicator_column - 1], cb_indicator_column);
 		/* Note: Treat as comment line to allow further parsing
 		         instead of aborting compilation */
 		newline_count++;
@@ -1945,7 +2005,8 @@ start:
 	/* Skip comments that follow after AUTHORS, etc. */
 	if (unlikely (within_comment)) {
 		/* Check all of "Area A" */
-		for (ipchar = 7; ipchar < (n - 1) && ipchar < 11; ++ipchar) {
+		for (ipchar = cb_indicator_column;
+		     ipchar < (n - 1) && ipchar < cb_indicator_column + 4; ++ipchar) {
 			if (buff[ipchar] != ' ') {
 				ipchar = 0;
 				break;
@@ -1959,7 +2020,7 @@ start:
 	}
 
 	/* Skip blank lines */
-	for (i = 7; buff[i] == ' '; ++i) {
+	for (i = cb_indicator_column; buff[i] == ' '; ++i) {
 		;
 	}
 
@@ -1968,8 +2029,11 @@ start:
 		goto start;
 	}
 
-	buff[6] = ' ';
-	bp = buff + 7;
+	buff[cb_indicator_column - 1] = ' ';
+	bp = buff + cb_indicator_column;
+
+	/* Check blank area A */
+	in_area_a = strncmp (bp, "    ", 4) != 0;
 
 	if (unlikely (continuation)) {
 		/* Line continuation */
@@ -2083,6 +2147,16 @@ start:
 			memmove (buff + newline_count, buff, gotcr + 1);
 			memset (buff, '\n', newline_count);
 			gotcr += newline_count;
+		}
+		if (in_area_a && cb_rely_on_area_a) {
+			/* (*GCOS*): prepend special marker `#', indicating the
+			   current non-continuation line starts in area A (see
+			   <*>#/... lexer rule above).
+
+			   Assumes `buff' is large enough for one extra char. */
+			memmove (buff + 1, buff, gotcr + 1);
+			buff[1] = '#';
+			gotcr += 1;
 		}
 		newline_count = 1;
 	}

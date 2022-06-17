@@ -414,17 +414,20 @@ AT_CHECK([$COMPILE_ONLY -conf=test.conf prog.cob], [1], [],
 test.conf: missing definitions:
 	no definition of 'reserved-words'
 	no definition of 'tab-width'
+	no definition of 'indicator-column'
 	no definition of 'text-column'
 	no definition of 'pic-length'
 	no definition of 'word-length'
 	no definition of 'literal-length'
 	no definition of 'numeric-literal-length'
+	no definition of 'rely-on-area-a'
 	no definition of 'standard-define'
 	no definition of 'binary-size'
 	no definition of 'binary-byteorder'
 	no definition of 'assign-clause'
 	no definition of 'screen-section-rules'
 	no definition of 'dpc-in-data'
+	no definition of 'ebcdic-literals-charset'
 	no definition of 'filename-mapping'
 	no definition of 'pretty-display'
 	no definition of 'binary-truncate'
@@ -453,7 +456,10 @@ test.conf: missing definitions:
 	no definition of 'numeric-pointer'
 	no definition of 'move-non-numeric-lit-to-numeric-is-zero'
 	no definition of 'implicit-assign-dynamic-var'
+	no definition of 'device-mnemonics'
 	no definition of 'comment-paragraphs'
+	no definition of 'control-division'
+	no definition of 'partial-replacing-with-literal'
 	no definition of 'memory-size-clause'
 	no definition of 'multiple-file-tape-clause'
 	no definition of 'label-records-clause'
@@ -469,6 +475,7 @@ test.conf: missing definitions:
 	no definition of 'goto-statement-without-name'
 	no definition of 'stop-literal-statement'
 	no definition of 'stop-identifier-statement'
+	no definition of 'stop-error-statement'
 	no definition of 'debugging-mode'
 	no definition of 'use-for-debugging'
 	no definition of 'padding-character-clause'
@@ -491,6 +498,7 @@ test.conf: missing definitions:
 	no definition of 'national-character-literals'
 	no definition of 'hp-octal-literals'
 	no definition of 'acu-literals'
+	no definition of 'ebcdic-symbolic-characters'
 	no definition of 'word-continuation'
 	no definition of 'not-exception-before-exception'
 	no definition of 'accept-display-extensions'
@@ -523,6 +531,8 @@ test.conf: missing definitions:
 	no definition of 'assign-disk-from'
 	no definition of 'vsam-status'
 	no definition of 'self-call-recursive'
+	no definition of 'record-contains-depending-clause'
+	no definition of 'relax-paragraph-name-uniqueness'
 ])
 
 AT_CLEANUP
@@ -805,5 +815,23 @@ cobc: error: please check environment variables as noted above
 ])
 
 )
+
+AT_CLEANUP
+
+AT_SETUP([cobc configuration: custom indicator column])
+AT_KEYWORDS([configuration misc])
+
+AT_DATA([prog.cob], [
+ IDENTIFICATION   DIVISION.
+ PROGRAM-ID.      prog.
+ AUTHOR. tester.
+ DATA             DIVISION.
+ WORKING-STORAGE  SECTION.
+ PROCEDURE        DIVISION.
+     STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY -findicator-column=1 -fcomment-paragraphs=ok prog.cob],
+[0], [], [])
 
 AT_CLEANUP

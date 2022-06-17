@@ -163,9 +163,10 @@ pretty_display_numeric (cob_field *f, FILE *fp)
 static void
 display_alnum (const cob_field *f, FILE *fp)
 {
-	size_t	i;
+	size_t	i, n;
+	n = COB_FIELD_DATA_SIZE (f);
 
-	for (i = 0; i < f->size; ++i) {
+	for (i = 0; i < n; ++i) {
 		putc (f->data[i], fp);
 	}
 }
