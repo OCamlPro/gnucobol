@@ -186,6 +186,8 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 %x COBOL_WORDS_DIRECTIVE_STATE
 %x COPY_STATE
 %x PSEUDO_STATE
+%x CONTROL_DIVISION_STATE
+%x SUBSTITUTION_SECTION_STATE
 %x SOURCE_DIRECTIVE_STATE
 %x DEFINE_DIRECTIVE_STATE
 %x ON_OFF_DIRECTIVE_STATE
@@ -446,7 +448,41 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 	return CONTROL_STATEMENT;
 }
 
-("ID"|"IDENTIFICATION")[ ,;\n]+"DIVISION" {
+"CONTROL"[ ,;\n]+"DIVISION" {
+	yy_push_state (CONTROL_DIVISION_STATE);
+	return CONTROL_DIVISION;
+}
+
+<CONTROL_DIVISION_STATE>"SUBSTITUTION"[ ,;\n]+"SECTION" {
+	yy_push_state (SUBSTITUTION_SECTION_STATE);
+	return SUBSTITUTION_SECTION;
+}
+
+<SUBSTITUTION_SECTION_STATE>"REPLACE"	{
+	yy_push_state (COPY_STATE);
+	return REPLACE;
+}
+
+<CONTROL_DIVISION_STATE,
+SUBSTITUTION_SECTION_STATE>{
+  [,;]?\n		{
+	  ECHO;
+	  check_listing (yytext, 0);
+	  cb_source_line++;
+  }
+  [,;]?[ ]+		{ /* ignore */ }
+  \. 			{
+	  return DOT;
+  }
+}
+
+<INITIAL,
+CONTROL_DIVISION_STATE,
+SUBSTITUTION_SECTION_STATE>("ID"|"IDENTIFICATION")[ ,;\n]+"DIVISION" {
+	/* Pop any control division-related start condition state. */
+	while (YY_START == CONTROL_DIVISION_STATE ||
+	       YY_START == SUBSTITUTION_SECTION_STATE)
+		yy_pop_state ();
 	/* Allow comment sentences/paragraphs */
 	comment_allowed = 1;
 	ppecho (yytext, 0, (int)yyleng);
