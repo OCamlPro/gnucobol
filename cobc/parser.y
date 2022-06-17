@@ -12132,6 +12132,10 @@ display_body:
 	cb_emit_command_line ($1);
   }
 | screen_or_device_display _common_exception_phrases
+| _with CONVERSION screen_or_device_display _common_exception_phrases
+  {
+	CB_PENDING ("DISPLAY WITH CONVERSION");
+  }
 | display_erase	/* note: may also be part of display_pos_specifier */
 | display_pos_specifier
 | display_message_box

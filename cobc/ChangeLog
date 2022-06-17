@@ -1,6 +1,7 @@
 
 2022-02-04  David Declerck <david.declerck@ocamlpro.com>
 
+	* parser.y: allow the WITH CONVERSION clause right after DISPLAY (ignored)
 	* config.def, typeck.c: allow paragraph names to redefine field
 	  and section names; related to FR#260
 	* parser.y, reserved.c, scanner.l, typeck.c: Add GCOS-specific mnemonics
