@@ -621,6 +621,8 @@ extern int		ppcopy (const char *, const char *,
 				struct cb_replace_list *);
 extern void		pp_set_replace_list (struct cb_replace_list *,
 					     const cob_u32_t);
+extern unsigned int	ppparse_verify (const enum cb_support tag,
+					const char *feature);
 extern void		ppparse_error (const char *);
 
 

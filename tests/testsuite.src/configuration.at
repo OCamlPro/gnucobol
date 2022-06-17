@@ -455,6 +455,7 @@ test.conf: missing definitions:
 	no definition of 'move-non-numeric-lit-to-numeric-is-zero'
 	no definition of 'implicit-assign-dynamic-var'
 	no definition of 'comment-paragraphs'
+	no definition of 'partial-replacing-with-literal'
 	no definition of 'memory-size-clause'
 	no definition of 'multiple-file-tape-clause'
 	no definition of 'label-records-clause'

@@ -180,6 +180,10 @@ CB_CONFIG_BOOLEAN (cb_implicit_assign_dynamic_var, "implicit-assign-dynamic-var"
 CB_CONFIG_SUPPORT (cb_comment_paragraphs, "comment-paragraphs",
 	_("comment paragraphs in IDENTIFICATION DIVISION (AUTHOR, DATE-WRITTEN, ...)"))
 
+CB_CONFIG_SUPPORT (cb_partial_replacing_with_literal,
+		   "partial-replacing-with-literal",
+		   _("partial replacing with literal"))
+
 CB_CONFIG_SUPPORT (cb_memory_size_clause, "memory-size-clause",
 	_("MEMORY-SIZE clause"))
 

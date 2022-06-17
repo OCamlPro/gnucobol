@@ -1,3 +1,4 @@
+
 2022-05-18  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* testsuite.src/run_extensions.at: test GCOS7-specific EBCDIC
@@ -6,6 +7,15 @@
 2022-03-25  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* testsuite.src/run_extensions.at: basic test for EBCDIC symbolic-chars
+
+2022-03-29  Nicolas Berthier <nicolas.berther@ocamlpro.com>
+
+	* testsuite.src/syn_copy.at: test partial replacing with SPACES
+	  figurative constant
+
+2022-01-25  Nicolas Berthier <nicolas.berther@ocamlpro.com>
+
+	* testsuite.src/syn_copy.at: test partial replacing with literal
 
 2022-02-10  Simon Sobisch <simonsobisch@gnu.org>
 
