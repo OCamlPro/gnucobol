@@ -31,6 +31,11 @@
 	* gcos-strict.conf, gcos.conf, gcos.words: added config files for
 	  GCOS 7 (Bull) dialect
 
+2022-02-07  David Declerck <david.declerck@ocamlpro.com>
+
+	* general: add a record-contains-depending-clause option to allow
+	  configuring the support of the DEPENDING clause in RECORD CONTAINS
+
 2022-02-04  David Declerck <david.declerck@ocamlpro.com>
 
 	* general: add an indicator-column option to allow customizing

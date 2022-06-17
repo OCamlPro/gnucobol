@@ -1,4 +1,8 @@
 
+2022-02-07  David Declerck <david.declerck@ocamlpro.com>
+
+	* config.def, parser.y: allow DEPENDING clause in RECORD CONTAINS
+
 2022-02-04  David Declerck <david.declerck@ocamlpro.com>
 
 	* cobc.c, cobc.h, config.def, pplex.l, ppparse.y: make the
