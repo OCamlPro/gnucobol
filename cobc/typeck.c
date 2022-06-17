@@ -12804,6 +12804,12 @@ cb_emit_stop_run (cb_tree x)
 }
 
 void
+cb_emit_stop_error (void)
+{
+	cb_emit (CB_BUILD_FUNCALL_0 ("cob_stop_error"));
+}
+
+void
 cb_emit_stop_thread (cb_tree handle)
 {
 	cb_tree used_handle;

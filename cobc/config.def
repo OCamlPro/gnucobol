@@ -229,6 +229,9 @@ CB_CONFIG_SUPPORT (cb_stop_literal_statement, "stop-literal-statement",
 CB_CONFIG_SUPPORT (cb_stop_identifier_statement, "stop-identifier-statement",
 	_("STOP-identifier statement"))
 
+CB_CONFIG_SUPPORT (cb_stop_error_statement, "stop-error-statement",
+	_("STOP ERROR statement"))
+
 CB_CONFIG_SUPPORT (cb_debugging_mode, "debugging-mode",
 	_("DEBUGGING MODE and debugging indicator"))
 

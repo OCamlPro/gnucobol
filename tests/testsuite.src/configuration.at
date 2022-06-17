@@ -471,6 +471,7 @@ test.conf: missing definitions:
 	no definition of 'goto-statement-without-name'
 	no definition of 'stop-literal-statement'
 	no definition of 'stop-identifier-statement'
+	no definition of 'stop-error-statement'
 	no definition of 'debugging-mode'
 	no definition of 'use-for-debugging'
 	no definition of 'padding-character-clause'
