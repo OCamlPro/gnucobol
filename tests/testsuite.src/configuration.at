@@ -414,6 +414,7 @@ AT_CHECK([$COMPILE_ONLY -conf=test.conf prog.cob], [1], [],
 test.conf: missing definitions:
 	no definition of 'reserved-words'
 	no definition of 'tab-width'
+	no definition of 'indicator-column'
 	no definition of 'text-column'
 	no definition of 'pic-length'
 	no definition of 'word-length'
@@ -811,5 +812,23 @@ cobc: error: please check environment variables as noted above
 ])
 
 )
+
+AT_CLEANUP
+
+AT_SETUP([cobc configuration: custom indicator column])
+AT_KEYWORDS([configuration misc])
+
+AT_DATA([prog.cob], [
+ IDENTIFICATION   DIVISION.
+ PROGRAM-ID.      prog.
+ AUTHOR. tester.
+ DATA             DIVISION.
+ WORKING-STORAGE  SECTION.
+ PROCEDURE        DIVISION.
+     STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY -findicator-column=1 -fcomment-paragraphs=ok prog.cob],
+[0], [], [])
 
 AT_CLEANUP

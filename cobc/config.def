@@ -51,7 +51,10 @@ CB_CONFIG_STRING (cb_reserved_words, "reserved-words", _("use of complete/fixed 
 CB_CONFIG_INT (cb_tab_width, "tab-width", 1, 12, CB_XRANGE(1,12),
 	_("set number of spaces that are assumed for tabs"))
 
-CB_CONFIG_INT (cb_config_text_column, "text-column", 72, 255, CB_XRANGE(72,255),
+CB_CONFIG_INT (cb_config_indicator_column, "indicator-column", 1, 16, CB_XRANGE(1,16),
+	_("set indicator column number for source (fixed format only)"))
+
+CB_CONFIG_INT (cb_config_text_column, "text-column", 66, 255, CB_XRANGE(66,255),
 	_("set right margin for source (fixed format only)"))
 
 CB_CONFIG_INT (cb_pic_length, "pic-length", 1, COB_MINI_MAX, _("<number>"),

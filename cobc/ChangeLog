@@ -1,4 +1,9 @@
 
+2022-02-04  David Declerck <david.declerck@ocamlpro.com>
+
+	* cobc.c, cobc.h, config.def, pplex.l, ppparse.y: make the
+	  indicator column configurable
+
 2022-02-01  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* config.def, pplex.l, scanner.l, parser.y: support sections and

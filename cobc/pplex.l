@@ -1837,7 +1837,7 @@ start:
 	if (cb_source_format == CB_FORMAT_FREE) {
 		bp = buff;
 	} else {
-		if (n < 8) {
+		if (n <= cb_indicator_column) {
 			/* Line too short */
 			newline_count++;
 			goto start;
@@ -1876,14 +1876,14 @@ start:
 			line_overflow = 0;
 		}
 
-		memset (buff, ' ', (size_t)6);
-		/* Note we allow directive lines to start at column 7 */
-		bp = &buff[6];
+		memset (buff, ' ', (size_t)(cb_indicator_column - 1));
+		/* Note we allow directive lines to start in the indicator column */
+		bp = &buff[(cb_indicator_column - 1)];
 
 		/* Special case: acucomment must be checked here as we'd pass comments
 		   as directives otherwise */
-		if (cb_flag_acucomment && buff[6] == '$') {
-			buff[6] = '*';
+		if (cb_flag_acucomment && buff[(cb_indicator_column - 1)] == '$') {
+			buff[(cb_indicator_column - 1)] = '*';
 		}
 	}
 
@@ -1962,8 +1962,8 @@ start:
 
 	/* Fixed format */
 
-	/* Check the indicator (column 7) */
-	switch (buff[6]) {
+	/* Check the indicator */
+	switch (buff[cb_indicator_column - 1]) {
 	case ' ':
 		break;
 	case '-':
@@ -1994,7 +1994,8 @@ start:
 	default:
 		/* Invalid indicator */
 		cb_plex_error (newline_count,
-				_("invalid indicator '%c' at column 7"), buff[6]);
+				_("invalid indicator '%c' at column %d"),
+				buff[cb_indicator_column - 1], cb_indicator_column);
 		/* Note: Treat as comment line to allow further parsing
 		         instead of aborting compilation */
 		newline_count++;
@@ -2004,7 +2005,8 @@ start:
 	/* Skip comments that follow after AUTHORS, etc. */
 	if (unlikely (within_comment)) {
 		/* Check all of "Area A" */
-		for (ipchar = 7; ipchar < (n - 1) && ipchar < 11; ++ipchar) {
+		for (ipchar = cb_indicator_column;
+		     ipchar < (n - 1) && ipchar < cb_indicator_column + 4; ++ipchar) {
 			if (buff[ipchar] != ' ') {
 				ipchar = 0;
 				break;
@@ -2018,7 +2020,7 @@ start:
 	}
 
 	/* Skip blank lines */
-	for (i = 7; buff[i] == ' '; ++i) {
+	for (i = cb_indicator_column; buff[i] == ' '; ++i) {
 		;
 	}
 
@@ -2027,8 +2029,8 @@ start:
 		goto start;
 	}
 
-	buff[6] = ' ';
-	bp = buff + 7;
+	buff[cb_indicator_column - 1] = ' ';
+	bp = buff + cb_indicator_column;
 
 	/* Check blank area A */
 	in_area_a = strncmp (bp, "    ", 4) != 0;
