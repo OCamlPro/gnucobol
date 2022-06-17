@@ -697,6 +697,7 @@ only usable with COB_USE_VC2013_OR_GREATER */
 #define COB_FLAG_REAL_SIGN		(1U << 10)	/* 0x0400 */
 #define COB_FLAG_BINARY_TRUNC		(1U << 11)	/* 0x0800 */
 #define COB_FLAG_CONSTANT		(1U << 12)	/* 0x1000 */
+#define COB_FLAG_VARIABLE_LENGTH	(1U << 13)	/* 0x2000 */
 
 #define COB_FIELD_HAVE_SIGN(f)		((f)->attr->flags & COB_FLAG_HAVE_SIGN)
 #define COB_FIELD_SIGN_SEPARATE(f)	((f)->attr->flags & COB_FLAG_SIGN_SEPARATE)
@@ -711,6 +712,7 @@ only usable with COB_USE_VC2013_OR_GREATER */
 #define COB_FIELD_REAL_SIGN(f)		((f)->attr->flags & COB_FLAG_REAL_SIGN)
 #define COB_FIELD_BINARY_TRUNC(f)	((f)->attr->flags & COB_FLAG_BINARY_TRUNC)
 #define COB_FIELD_CONSTANT(f)		((f)->attr->flags & COB_FLAG_CONSTANT)
+#define COB_FIELD_VARIABLE_LENGTH(f)	((f)->attr->flags & COB_FLAG_VARIABLE_LENGTH)
 
 #define	COB_FLAG_LEADSEP		\
 	(COB_FLAG_SIGN_SEPARATE | COB_FLAG_SIGN_LEADING)
@@ -727,8 +729,12 @@ only usable with COB_USE_VC2013_OR_GREATER */
 #define COB_FIELD_DATA(f)	\
 	((f)->data + (COB_FIELD_SIGN_LEADSEP (f) ? 1 : 0))
 
+
+#define COB_FIELD_DATA_SIZE(f)	       \
+	(COB_FIELD_VARIABLE_LENGTH (f) ? cob_get_field_dynsize (f) : f->size)
+/* Sign-separate is for numerics only, ie, fixed-size. */
 #define COB_FIELD_SIZE(f)	\
-	(COB_FIELD_SIGN_SEPARATE (f) ? f->size - 1 : f->size)
+	(COB_FIELD_SIGN_SEPARATE (f) ? f->size - 1 : COB_FIELD_DATA_SIZE (f))
 
 #define COB_FIELD_IS_NUMERIC(f)	(COB_FIELD_TYPE (f) & COB_TYPE_NUMERIC)
 #define COB_FIELD_IS_NUMDISP(f)	(COB_FIELD_TYPE (f) == COB_TYPE_NUMERIC_DISPLAY)
@@ -1073,6 +1079,7 @@ typedef struct __cob_field {
 	size_t			size;		/* Field size */
 	unsigned char		*data;		/* Pointer to field data */
 	const cob_field_attr	*attr;		/* Pointer to attribute */
+	struct __cob_field	*length;	/* Pointer to length field */
 } cob_field;
 
 #if	0	/* RXWRXW - Constant field */
@@ -2786,6 +2793,15 @@ typedef	char *		cobchar_t;
 #define cobput_xn_compx(d,n,v)	(void)	cob_put_u64_compx(v, d, n)
 #define cobput_sxn_comp5(d,n,v)	(void)	cob_put_s64_comp5(v, d, n)
 #define cobput_sxn_compx(d,n,v)	(void)	cob_put_s64_compx(v, d, n)
+
+/*********************************************************************/
+/* Implementation of helper functions used in macro definitons above */
+/*********************************************************************/
+
+static COB_INLINE int cob_get_field_dynsize (const cob_field *f) {
+	int s = cob_get_int (f->length);
+	return (s < 0) ? 0 : (s > f->size) ? f->size: s;
+}
 
 /*******************************/
 
