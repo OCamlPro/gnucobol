@@ -7650,11 +7650,7 @@ cb_emit_accept_name (cb_tree var, cb_tree name)
 		switch (CB_SYSTEM_NAME (sys)->token) {
 		case CB_DEVICE_CONSOLE:
 		case CB_DEVICE_SYSIN:
-			/* possibly others allow this, too, consider adding a config option */
-			if (cb_std_define != CB_STD_IBM
-			 && cb_std_define != CB_STD_MVS
-			 && cb_std_define != CB_STD_MF
-			 && cb_std_define != CB_STD_GCOS
+			if (!cb_device_mnemonics
 			 && !cb_relaxed_syntax_checks) {
 				cb_warning_x (COBC_WARN_FILLER, name,
 					_("'%s' is not defined in SPECIAL-NAMES"), CB_NAME (name));
@@ -8819,13 +8815,9 @@ cb_build_display_name (cb_tree x)
 			cb_error_x (x, _("'%s' is not an output device"), name);
 			return cb_error_node;
 		}
-		/* possibly others allow this, too, consider adding a config option */
-		if (cb_std_define != CB_STD_IBM
-		 && cb_std_define != CB_STD_MVS
-		 && cb_std_define != CB_STD_MF
-		 && cb_std_define != CB_STD_GCOS
+		if (!cb_device_mnemonics
 		 && !cb_relaxed_syntax_checks) {
-		 	/* ... especially as this is not allowed and therefore should raise an error... */
+			/* TODO: this is not allowed and therefore should raise an error */
 			cb_warning_x (COBC_WARN_FILLER, x,
 				_("'%s' is not defined in SPECIAL-NAMES"), name);
 		}
