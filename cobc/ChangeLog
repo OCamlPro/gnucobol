@@ -1,4 +1,8 @@
 
+2022-03-11  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* config.def, parser.y: add support for the STOP ERROR statement
+
 2022-05-31  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (cobc_check_string): replaced single string cache by an array

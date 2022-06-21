@@ -15391,6 +15391,13 @@ stop_statement:
 	check_unreached = 1;
 	cobc_cs_check = 0;
   }
+| STOP ERROR /* GCOS */
+  {
+	begin_statement ("STOP ERROR", 0);
+	cb_verify (cb_stop_error_statement, "STOP ERROR");
+	cb_emit_stop_error ();
+	check_unreached = 1;
+  }
 | STOP stop_argument
   {
 	begin_statement ("STOP", 0);

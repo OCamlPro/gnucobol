@@ -1,4 +1,8 @@
 
+2022-03-11  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* common.c, common.h: add support for the STOP ERROR statement
+
 2022-05-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* numeric.c (num_byte_memcpy): removed, callers adjusted to
