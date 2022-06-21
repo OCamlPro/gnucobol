@@ -1,4 +1,9 @@
 
+2026-08-26  David Declerck <david.declerck@ocamlpro.com>
+
+	* config.def, typeck.c: allow paragraph names to redefine field
+	  and section names; related to FR#260
+
 2026-08-09  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
 
 	* cobc.c [_MSC_VER]: use new macros CB_MSC_CRT and CB_MSC_CRT_DLL to pass

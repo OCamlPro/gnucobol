@@ -442,3 +442,7 @@ CB_CONFIG_SUPPORT (cb_record_contains_depending_clause, "record-contains-dependi
 
 CB_CONFIG_SUPPORT (cb_picture_l, "picture-l",
 	_("PICTURE string with 'L' character"))
+
+CB_CONFIG_SUPPORT (cb_non_unique_procedure_names, "non-unique-procedure-names",
+	_("allow paragraph names to redefine field and section names"))
+
