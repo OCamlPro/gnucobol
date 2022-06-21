@@ -1938,8 +1938,15 @@ cb_build_section_name (cb_tree name, const int sect_or_para)
 		if (!CB_LABEL_P (x) || sect_or_para == 0 ||
 		    (sect_or_para && CB_LABEL_P (x) &&
 		    CB_LABEL (x)->flag_section)) {
-			redefinition_error (name);
-			return cb_error_node;
+			if (cb_is_supported(cb_non_unique_procedure_names) &&
+			    (CB_FIELD_P (x) ||
+			     (CB_LABEL_P (x) && CB_LABEL (x)->flag_section))) {
+				/* To display the usual warning messages, if any */
+				cb_verify(cb_non_unique_procedure_names, _("non-unique section or paragraph name"));
+			} else {
+				redefinition_error (name);
+				return cb_error_node;
+			}
 		}
 	}
 
