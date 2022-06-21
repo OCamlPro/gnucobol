@@ -532,7 +532,6 @@ test.conf: missing definitions:
 	no definition of 'vsam-status'
 	no definition of 'self-call-recursive'
 	no definition of 'record-contains-depending-clause'
-	no definition of 'relax-paragraph-name-uniqueness'
 ])
 
 AT_CLEANUP

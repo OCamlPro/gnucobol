@@ -3,10 +3,6 @@
 
 	* general: added config option device-mnemonics (boolean)
 
-2022-02-04  David Declerck <david.declerck@ocamlpro.com>
-
-	* general: add a relax-paragraph-name-uniqueness option
-
 2022-02-01  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* general: introduce rely-on-area-a flag (for GCOS)
