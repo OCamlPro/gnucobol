@@ -87,6 +87,24 @@ unquote (char *name)
 #define fix_filename(filename) unquote (filename)
 
 static char *
+literal_token (char *t, int allow_spaces)
+{
+	if (t[0] == '\'' || t[0] == '"') {
+		(void) ppparse_verify (cb_partial_replacing_with_literal,
+				       _("partial replacing with literal"));
+	} else if (allow_spaces && (strcmp ("SPACE", t) == 0 ||
+				    strcmp ("SPACES", t) == 0)) {
+		(void) ppparse_verify (cb_partial_replacing_with_literal,
+				       _("partial replacing with literal"));
+		t[0] = '\0';
+	} else {
+		ppparse_error (_("unexpected COBOL word in partial replacement "
+				 "phrase"));
+	}
+	return unquote (t);
+}
+
+static char *
 fold_lower (char *name)
 {
 	unsigned char	*p;
@@ -1614,6 +1632,10 @@ text_partial_src:
   {
 	$$ = ppp_list_add (NULL, $2);
   }
+| TOKEN
+  {
+	$$ = ppp_list_add (NULL, literal_token ($1, 0));
+  }
 ;
 
 text_partial_dst:
@@ -1624,6 +1646,10 @@ text_partial_dst:
 | EQEQ TOKEN EQEQ
   {
 	$$ = ppp_list_add (NULL, $2);
+  }
+| TOKEN
+  {
+	$$ = ppp_list_add (NULL, literal_token ($1, 1));
   }
 ;
 
