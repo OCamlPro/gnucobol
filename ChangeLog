@@ -1,4 +1,10 @@
 
+2022-06-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: always build INDEXED handlers as separate libraries,
+	  dropped support for static handlers "included in libcob"
+	* configure.ac: spelling correction for DISAM and VBISAM
+
 2022-05-31  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: handle optimization options -Oz and -Ofast,

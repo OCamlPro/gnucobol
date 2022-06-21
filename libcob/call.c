@@ -1145,7 +1145,6 @@ cob_load_lib (const char *library, const char *entry, char *reason)
 {
 	void	*p;
 
-	errno = 0;
 	p = lt_dlopenlcl (library);
 	if (p) {
 		p = lt_dlsym (p, entry);

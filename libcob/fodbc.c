@@ -21,10 +21,9 @@
 
 #include "fileio.h"
 
+/* the common build system only compiles this file if ODBC is available,
+   but legacy hard-wired ones like VS need this "all file" check) */
 #ifdef WITH_ODBC
-#ifdef WITH_OCI
-#undef WITH_OCI
-#endif
 
 #if defined(DB2DBI)
 #include <sqlcli1.h>

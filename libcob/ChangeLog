@@ -1,4 +1,15 @@
 
+2022-06-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am: always build INDEXED handlers as separate libraries
+	* libcobvc.c, libcobvb.c, libcobci.c, libcobdi.c, fileio.h: simplified
+	* fisam.c: spelling correction for DISAM and VBISAM
+	* fileio.c (cob_io_version), common.c: add "quiet" version
+	  to output only name
+	* fileio.c (cob_load_module): try to resolve entrypoint in libcob
+	  if loading in external file did not work
+	* fisam.c: re-arranged defines and checks
+
 2022-05-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* numeric.c (num_byte_memcpy): removed, callers adjusted to
@@ -616,7 +627,7 @@
 2021-02-25  Ron Norman <rjn@inglenet.com>
 
 	* fileio.c: Some additional checks to select appropriate I/O routine
-			if the ISAM files are to be VB-ISAM format instead of C-ISAM
+	  if the ISAM files are to be VBISAM format instead of C-ISAM
 
 2021-02-25  Ron Norman <rjn@inglenet.com>
 
@@ -635,16 +646,16 @@
 
 2021-02-19  Ron Norman <rjn@inglenet.com>
 
-	* fileio.h: When checking INDEXED file format, if VB-ISAM
-				and V-ISAM configured then use V-ISAM
+	* fileio.h: When checking INDEXED file format, if VBISAM
+	  and V-ISAM configured prefer use of newer V-ISAM
 
 2021-02-18  Ron Norman <rjn@inglenet.com>
 
-	* V-ISAM is a reworked VB-ISAM that dynamically supports
-	  the old VB-ISAM file format as well as C-ISAM at runtime
-	* common.h,common.c: Changes to replace VB-CISAM with V-ISAM
-	* fileio.h,fileio.c: Changes to replace VB-CISAM with V-ISAM
-	* Makefile.am,libcobvc.c: Changes to replace VB-CISAM with V-ISAM
+	Adjustments for V-ISAM, a reworked VBISAM that dynamically supports
+	the old VBISAM file format as well as C-ISAM at runtime
+	* common.h, common.c: Changes to replace VB-CISAM with V-ISAM
+	* fileio.h, fileio.c: Changes to replace VB-CISAM with V-ISAM
+	* Makefile.am, libcobvc.c: Changes to replace VB-CISAM with V-ISAM
 	* fisam.c: Changes to replace VB-CISAM with V-ISAM
 	         For OPEN OUTPUT and the file does exist, it checks on the file
 	         format and retains that for the 'isbuild'
@@ -787,22 +798,22 @@
 
 2021-01-14  Ron Norman <rjn@inglenet.com> 
 
-	* fileio.c: Improved check for D-ISAM file for 7.2
+	* fileio.c: Improved check for DISAM file for 7.2
 
 2021-01-12  Ron Norman <rjn@inglenet.com> 
 
 	* fileio.c: Added a flag 'config' to the table of I/O modules
 	            so that it is now which ones had been configured 
 	* fisam.c: Additional work for ISAM logging/transaction ability
-	           VB-ISAM 2.2 in default and CISAM mode works fine
-	           D-ISAM 7.2 is also working in transaction mode
+	           VBISAM 2.2 in default and CISAM mode works fine
+	           DISAM 7.2 is also working in transaction mode
 
 2021-01-10  Ron Norman <rjn@inglenet.com> 
 
 	* fisam.c: Additional work for ISAM logging/transaction ability
-	           VB-ISAM 2.2 in default and CISAM mode works fine
-	           D-ISAM 7.0 is not working in transaction mode
-	           and it may be that D-ISAM 7.2 or better is required
+	           VBISAM 2.2 in default and CISAM mode works fine
+	           DISAM 7.0 is not working in transaction mode
+	           and it may be that DISAM 7.2 or better is required
 
 2021-01-09  Ron Norman <rjn@inglenet.com> 
 
@@ -1624,8 +1635,8 @@
 	* fisam.c Updated for multiple xISAM handlers
 	* Makefile.am Updated for multiple xISAM
 	* libcobci.c - builds fisam.c for C-ISAM
-	* libcobdi.c - builds fisam.c for D-ISAM
-	* libcobvb.c - builds fisam.c for VB-ISAM
+	* libcobdi.c - builds fisam.c for DISAM
+	* libcobvb.c - builds fisam.c for VBISAM
 
 2019-10-20  Ron Norman <rjn@inglenet.com>
 
@@ -1645,7 +1656,7 @@
 	* fileio.h added with common definitions for all fileio modules
 	* flmdb.c copied from isam-lmdb branch
 	* You can now configure multiple INDEXED file handlers but only one of
-	  C-ISAM, D-ISAM or VB-ISAM
+	  C-ISAM, DISAM or VBISAM
 
 2019-10-15  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -1918,7 +1929,7 @@
 2019-03-12  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (print_info): changed msgid for "file handler" and output
-	  if RTD-version of VB-ISAM is used, partially after Ron Norman
+	  if RTD-version of VBISAM is used, partially after Ron Norman
 
 2015-03-03  Ron Norman
 
@@ -2717,11 +2728,12 @@
 	  for DISPLAY screen, too
 
 2017-05-02 Ron Norman <rjn@inglenet.com>
+
 	* common.c,coblocal.h: added 'cob_keycheck' to indicate if INDEXED file
 	  keys must match exactly. Default is TRUE
 	* fileio.c:
 	  Add code to handle 'keycheck' in IO_filename env var.
-	  Added code to indexed_open for C|D|VB-ISAM files to handle keycheck
+	  Added code to indexed_open for ISAM files to handle keycheck
 
 2017-05-01  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -2734,6 +2746,7 @@
 	  for cob_s64_t (CB_FMT_LLD)
 
 2017-04-27 Ron Norman <rjn@inglenet.com>
+
 	* move.c: added 'cob_alloc_move' used to copy data for BY VALUE params
 	* common.c,common.h: added 'cob_get_hase_name' used to create has value
 	  added 'cob_alloc_attr' to create working 'cob_field_attr'
@@ -2983,7 +2996,7 @@
 	  and RETRY clauses on all I/O statements.
 	  Relative files use sigaction/alarm/fcntl to wait for
 	  record locks.
-	  C/D/VB-ISAM files use the ISAM handle functions combined with
+	  ISAM files use the ISAM handle functions combined with
 	  a wait/retry loop. each loop happens at 125ms interval.
 	  BDB code updated to use none deprecated functions, use some
 	  subroutines instead of inline code and changes for SHARING/RETRY
@@ -3641,7 +3654,7 @@
 
 	* fileio.c updated to return correct status codes for WRITE/REWRITE
 	  related to duplicate keys being detected
-	  This was tested with BDB, D-ISAM and VB-ISAM 2.1.1
+	  This was tested with BDB, DISAM and VBISAM 2.1.1
 
 2015-02-26  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -3655,15 +3668,15 @@
 
 2015-02-26  Ron Norman <rjn@inglenet.com>
 
-	* fileio.c [WITH_VBISAM, VB_RTD]: updated to handle VB-ISAM 2.1.1
+	* fileio.c [WITH_VBISAM, VB_RTD]: updated to handle VBISAM 2.1.1
 	* fileio.c [WITH_DB]: handle sparse and split keys for BDB
-	  This was tested with BDB, D-ISAM, VB-ISAM 2.0 and VB-ISAM 2.1.1
+	  This was tested with BDB, DISAM, VBISAM 2.0 and VBISAM 2.1.1
 
 2015-02-23  Ron Norman <rjn@inglenet.com>
 
 	Implemented INDEXED file support for sparse and split keys FR #23 + FR #281
 	* fileio.c: updated to handle sparse and split keys
-	  This was tested with D-ISAM and VB-ISAM 2.0
+	  This was tested with DISAM and VBISAM 2.0
 
 2015-02-18  Ron Norman <rjn@inglenet.com>
 
@@ -4222,12 +4235,12 @@
 
 2007-11-21  Roger While <simrw@sim-basis.de>
 
-	* fileio.c: Add C/D/VB-ISAM code
+	* fileio.c: add ISAM (C-ISAM/DISAM/VBISAM) code
 
 2007-11-20  Roger While <simrw@sim-basis.de>
 
 	* fileio.c: Cater for 02 return status
-	  Put in hooks for C/D/VB-ISAM
+	  Put in hooks for ISAM (C-ISAM/DISAM/VBISAM) code
 
 2007-11-09  Roger While <simrw@sim-basis.de>
 

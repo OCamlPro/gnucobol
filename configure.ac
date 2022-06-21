@@ -29,7 +29,7 @@ AC_INIT([GnuCOBOL],
 	[bug-gnucobol@gnu.org],
 	[gnucobol],
 	[https://www.gnu.org/software/gnucobol/])
-AC_REVISION([GnuCOBOL snapshot $Revision: 4437 $])
+AC_REVISION([GnuCOBOL snapshot $Revision: 4629 $])
 AC_COPYRIGHT([This file is part of GnuCOBOL.
 
 Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
@@ -97,14 +97,13 @@ AH_TEMPLATE([WITH_FILE_FORMAT], [Default file format: mf  gc ])
 AH_TEMPLATE([WITH_INDEXED], [Default INDEXED file handler define])
 AH_TEMPLATE([WITH_IXDFLT], [Default INDEXED file handler name])
 AH_TEMPLATE([WITH_VISAM], [Use V-ISAM as INDEXED handler])
-AH_TEMPLATE([WITH_DISAM], [Use D-ISAM as INDEXED handler])
+AH_TEMPLATE([WITH_DISAM], [Use DISAM as INDEXED handler])
 AH_TEMPLATE([WITH_CISAM], [Use C-ISAM as INDEXED handler])
-AH_TEMPLATE([WITH_VBISAM], [Use VB-ISAM as INDEXED handler])
+AH_TEMPLATE([WITH_VBISAM], [Use VBISAM as INDEXED handler])
 AH_TEMPLATE([WITH_DB], [Use Berkeley DB library as INDEXED handler])
 AH_TEMPLATE([WITH_LMDB], [Use Lightning Memory-Mapped Database as INDEXED handler])
 AH_TEMPLATE([WITH_ODBC], [Use ODBC for INDEXED file handler])
 AH_TEMPLATE([WITH_OCI], [Use OCI for INDEXED file handler])
-AH_TEMPLATE([WITH_STATIC_ISAM], [Build ISAM into libcob])
 AH_TEMPLATE([WITH_SEQRA_EXTFH], [Compile with obsolete external SEQ/RAN handler])
 AH_TEMPLATE([WITH_INDEX_EXTFH], [Compile with obsolete external INDEXED handler])
 
@@ -1446,13 +1445,13 @@ AC_ARG_WITH([cisam],
 
 AC_ARG_WITH([disam],
   [AS_HELP_STRING([--with-disam],
-    [Use D-ISAM for INDEXED I/O])],
+    [Use DISAM for INDEXED I/O])],
   [cob_has_isam=yes],
   [with_disam=check])
 
 AC_ARG_WITH([vbisam],
   [AS_HELP_STRING([--with-vbisam],
-    [Use VB-ISAM for INDEXED I/O])],
+    [Use VBISAM for INDEXED I/O])],
   [cob_has_isam=yes],
   [with_vbisam=check])
 
@@ -1607,7 +1606,7 @@ AS_IF([test "$with_disam" = "yes" -o "$with_disam" = "check"], [
 	else
 		AC_MSG_NOTICE([DISAM library found])
 	fi
-	# note: old DISAM versions only ship disam.h, newer _may_ provide it as convenience
+	# note: old DISAM versions only ship disam.h, newer _may_ provide it as convenience;
 	#       to not break an environment which has both old and new we explicit only check
 	#       what we want to use, matching to the library found (and assume that "none needed"
 	#       means we're using one of the newer ones)
@@ -1650,30 +1649,6 @@ AS_IF([test "$with_cisam" = "yes" -o "$with_cisam" = "check"], [
 	  LIBS="$curr_libs"
    fi ],
   [CISAM_LIBS=""])
-
-static_isam=no
-num_isam=0
-if  test "$cob_gen_visam" = "yes"; then
-	num_isam=`expr $num_isam + 1`
-fi
-if  test "$cob_gen_vbisam" = "yes"; then
-	num_isam=`expr $num_isam + 1`
-fi
-if  test "$cob_gen_disam" = "yes"; then
-	num_isam=`expr $num_isam + 1`
-fi
-if  test "$cob_gen_cisam" = "yes"; then
-	num_isam=`expr $num_isam + 1`
-fi
-#
-# If just one ISAM handler, then build as part of libcob otherwise
-# each ISAM handler needs to be a separate shared code library
-#
-if test $num_isam = 1; then
-	AC_DEFINE([WITH_STATIC_ISAM], [1])
-	LIBCOB_LIBS="$LIBCOB_LIBS $CISAM_LIBS$DISAM_LIBS$VBISAM_LIBS$VISAM_LIBS"
-	static_isam=yes
-fi
 
 AC_ARG_WITH([odbc],
 [AS_HELP_STRING([--with-odbc],
@@ -2449,11 +2424,11 @@ case "$with_indexed" in
 		;;
 	vbisam)
 		AC_DEFINE([WITH_INDEXED], [COB_IO_VBISAM])
-		AC_DEFINE([WITH_IXDFLT], ["VB-ISAM"])
+		AC_DEFINE([WITH_IXDFLT], ["VBISAM"])
 		;;
 	disam)
 		AC_DEFINE([WITH_INDEXED], [COB_IO_DISAM])
-		AC_DEFINE([WITH_IXDFLT], ["D-ISAM"])
+		AC_DEFINE([WITH_IXDFLT], ["DISAM"])
 		;;
 	cisam)
 		AC_DEFINE([WITH_INDEXED], [COB_IO_CISAM])
@@ -2508,15 +2483,14 @@ else
 	COB_HAS_JSON=$USE_JSON
 fi
 
-AM_CONDITIONAL([COB_MAKE_CISAM_LIB], [test "$cob_gen_cisam" = "yes" -a "$static_isam" = "no"])
-AM_CONDITIONAL([COB_MAKE_DISAM_LIB], [test "$cob_gen_disam" = "yes" -a "$static_isam" = "no"])
-AM_CONDITIONAL([COB_MAKE_VBISAM_LIB], [test "$cob_gen_vbisam" = "yes" -a "$static_isam" = "no"])
-AM_CONDITIONAL([COB_MAKE_VISAM_LIB], [test "$cob_gen_visam" = "yes" -a "$static_isam" = "no"])
+AM_CONDITIONAL([COB_MAKE_CISAM_LIB], [test "$cob_gen_cisam" = "yes"])
+AM_CONDITIONAL([COB_MAKE_DISAM_LIB], [test "$cob_gen_disam" = "yes"])
+AM_CONDITIONAL([COB_MAKE_VBISAM_LIB], [test "$cob_gen_vbisam" = "yes"])
+AM_CONDITIONAL([COB_MAKE_VISAM_LIB], [test "$cob_gen_visam" = "yes"])
 AM_CONDITIONAL([COB_MAKE_BDB_LIB], [test "$cob_gen_bdb" = "yes"])
 AM_CONDITIONAL([COB_MAKE_ODBC_LIB], [test "$cob_gen_odbc" = "yes"])
 AM_CONDITIONAL([COB_MAKE_OCI_LIB], [test "$cob_gen_oci" = "yes"])
 AM_CONDITIONAL([COB_MAKE_LMDB_LIB], [test "$cob_gen_lmdb" = "yes"])
-AM_CONDITIONAL([COB_MAKE_STATIC_ISAM], [test "$static_isam" = "yes"])
 
 AM_CONDITIONAL([LOCAL_CJSON],[test "$USE_JSON" = "local"])
 
@@ -2704,13 +2678,13 @@ if test "$with_visam" = "yes"; then
   AC_MSG_NOTICE([ Use V-ISAM for INDEXED I/O                   yes])
 fi
 if test "$with_disam" = "yes"; then
-  AC_MSG_NOTICE([ Use D-ISAM for INDEXED I/O                   yes])
+  AC_MSG_NOTICE([ Use DISAM for INDEXED I/O                    yes])
 fi
 if test "$with_cisam" = "yes"; then
   AC_MSG_NOTICE([ Use C-ISAM for INDEXED I/O                   yes])
 fi
 if test "$with_vbisam" = "yes"; then
-  AC_MSG_NOTICE([ Use VB-ISAM for INDEXED I/O                  yes])
+  AC_MSG_NOTICE([ Use VBISAM for INDEXED I/O                   yes])
 fi
 if test "$with_db" = "yes"; then
   AC_MSG_NOTICE([ Use Berkeley DB for INDEXED I/O:             yes])

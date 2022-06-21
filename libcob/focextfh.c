@@ -18,7 +18,10 @@
    along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/* this file handles the obsolete OpenCOBOL external file handlers */
+/* this file handles the obsolete OpenCOBOL external file handlers,
+   it will go away in later versions of libcob if no explicit user
+   of this file handler is reported and on of those takes over the
+   maintanance for this file */
 
 #include "fileio.h"
 

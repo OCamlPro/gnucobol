@@ -8794,7 +8794,7 @@ print_info_detailed (const int verbose)
 #endif
 #if defined(WITH_INDEXED)
 	if (num > 1)
-	var_print (_("default indexed handler"),	cob_io_version (WITH_INDEXED, verbose), "", 0);
+	var_print (_("default indexed handler"),	cob_io_version (WITH_INDEXED, -1), "", 0);
 #endif
 
 	if (num == 0)

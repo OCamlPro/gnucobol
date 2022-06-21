@@ -35,8 +35,6 @@
  * focextfh.c  has code for obsolete OpenCOBOL WITH_INDEX_EXTFH/WITH_SEQRA_EXTFH 
  *
  */
-#define cobglobptr file_globptr
-#define cobsetptr file_setptr
 #include "fileio.h"
 #include "cobcapi.h"	/* for helper functions */
 #ifdef HAVE_DLFCN_H
@@ -1274,6 +1272,10 @@ cob_load_module (int iortn)
 	module_errmsg[0] = 0;
 	ioinit = (void (*)(cob_file_api *))cob_load_lib (io_rtns[iortn].module, io_rtns[iortn].entry, module_errmsg);
 	if (ioinit == NULL) {
+		/* recheck with libcob */
+		ioinit = (void (*)(cob_file_api *))cob_load_lib ("libcob-5", io_rtns[iortn].entry, NULL);
+	}
+	if (ioinit == NULL) {
 		return 1;
 	}
 
@@ -1299,6 +1301,7 @@ const char *
 cob_io_version (const int iortn, const int verbose)
 {
 	if (iortn > COB_IO_MAX) return _("unsupported");
+	if (verbose < 0) return io_rtns[iortn].name;
 
 	cob_load_module (iortn);
 	if (fileio_funcs[iortn] == NULL) {
@@ -8980,17 +8983,14 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 	/* V-ISAM can handle all of C|D|VB-ISAM format files */
 #if (WITH_INDEXED == COB_IO_VISAM) 
 #if !defined(WITH_CISAM)
-	io_rtns [COB_IO_CISAM].config = 1;
 	io_rtns [COB_IO_CISAM].loaded = 1;
 	file_api.io_funcs[COB_IO_CISAM] = file_api.io_funcs[COB_IO_VISAM];
 #endif
 #if !defined(WITH_DISAM)
-	io_rtns [COB_IO_DISAM].config = 1;
 	io_rtns [COB_IO_DISAM].loaded = 1;
 	file_api.io_funcs[COB_IO_DISAM] = file_api.io_funcs[COB_IO_VISAM];
 #endif
 #if !defined(WITH_VBISAM)
-	io_rtns [COB_IO_VBISAM].config = 1;
 	io_rtns [COB_IO_VBISAM].loaded = 1;
 	file_api.io_funcs[COB_IO_VBISAM] = file_api.io_funcs[COB_IO_VISAM];
 #endif

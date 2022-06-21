@@ -19,16 +19,10 @@
 */
 
 
-#ifndef _FILEIO_H
-#define _FILEIO_H
+#include "config.h"
 
 #define cobglobptr file_globptr
 #define cobsetptr file_setptr
-
-#ifndef _CONFIG_H
-#include "config.h"
-#define _CONFIG_H
-#endif
 
 #define _LFS64_LARGEFILE		1
 #define _LFS64_STDIO			1
@@ -466,14 +460,14 @@ COB_HIDDEN void 	cob_sql_dump_index (struct db_state *db, struct file_xfd *fx, i
 #endif
 
 #ifdef	WITH_ODBC
-void	cob_odbc_init_fileio (cob_file_api *);
+COB_EXPIMP void	cob_odbc_init_fileio (cob_file_api *);
 #endif
 #ifdef	WITH_OCI
-void	cob_oci_init_fileio (cob_file_api *);
+COB_EXPIMP void	cob_oci_init_fileio (cob_file_api *);
 #endif
 
 #if defined(WITH_CISAM) || defined(WITH_DISAM) || defined(WITH_VBISAM) || defined(WITH_VISAM)
-void	cob_isam_init_fileio (cob_file_api *);
+COB_EXPIMP void	cob_isam_init_fileio (cob_file_api *);
 #endif
 
 /* cob_file_dict values */
@@ -485,4 +479,4 @@ void	cob_isam_init_fileio (cob_file_api *);
 #define COB_DUPS_DEFAULT	0
 #define COB_DUPS_NEVER		1
 #define COB_DUPS_ALWAYS		2
-#endif
+

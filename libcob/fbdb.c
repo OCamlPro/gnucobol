@@ -21,6 +21,8 @@
 
 #include "fileio.h"
 
+/* the common build system only compiles this file if BDB is available,
+   but legacy hard-wired ones like VS need this "all file" check) */
 #ifdef WITH_DB
 
 #include <db.h>
@@ -250,12 +252,12 @@ ix_bdb_sync (cob_file_api *a, cob_file *f)
 	if (f->organization == COB_ORG_INDEXED) {
 		p = f->file;
 		if (p) {
-			for (i = 0; i < (int)f->nkeys; ++i) {
-				if (p->db[i]) {
-					DB_SYNC (p->db[i]);
-				}
+		for (i = 0; i < (int)f->nkeys; ++i) {
+			if (p->db[i]) {
+				DB_SYNC (p->db[i]);
 			}
 		}
+	}
 	}
 	return 0;
 }

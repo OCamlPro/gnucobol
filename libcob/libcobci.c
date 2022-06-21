@@ -1,6 +1,6 @@
 /*
-   Copyright (C) 2002-2012, 2014-2019 Free Software Foundation, Inc.
-   Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
+   Copyright (C) 2019, 2020, 2022 Free Software Foundation, Inc.
+   Written by Ron Norman, Simon Sobisch,
 
    This file is part of GnuCOBOL.
 
@@ -18,12 +18,7 @@
    along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef _CONFIG_H
-#include <config.h>
-#define _CONFIG_H
-#endif
-
 #define IS_ISAM_LIB 1
-#define FOR_CISAM
+#define FOR_CISAM 1
 
 #include "fisam.c"

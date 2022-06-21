@@ -20,11 +20,13 @@
 
 #include "fileio.h"
 
+/* the common build system only compiles this file if LMDB is available,
+   but legacy hard-wired ones like VS need this "all file" check) */
+#if WITH_LMDB
+
 #ifdef HAVE_SYS_SYSMACROS_H
 #include <sys/sysmacros.h>
 #endif
-
-#if WITH_LMDB
 
 /* Local variables */
 
@@ -41,6 +43,7 @@ static void cob_lmdb_exit_fileio (cob_file_api *a);
 static int cob_lmdb_fork (cob_file_api *a);
 static int ix_lmdb_file_unlock(cob_file_api *, cob_file *);
 static char * lmdb_version (void);
+
 void cob_lmdb_init_fileio (cob_file_api *a);
 
 static int ix_lmdb_dummy () { return 0; }

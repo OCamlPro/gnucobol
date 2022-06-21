@@ -21,10 +21,9 @@
 
 #include "fileio.h"
 
+/* the common build system only compiles this file if OCI is available,
+   but legacy hard-wired ones like VS need this "all file" check) */
 #ifdef WITH_OCI
-#ifdef WITH_ODBC
-#undef WITH_ODBC
-#endif
 
 #include <oci.h>
 
