@@ -2,10 +2,10 @@
 2022-02-01  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* config.def, pplex.l, scanner.l, parser.y: support sections and
-	  paragraphs that do not terminate with a period (allowed by GCOS
-	  implementations).  This is done with the help of a new option
-	  rely-on-area-a, that indicates the dialect may only be parsed
-	  correctly by knowing whether each line starts in area A or not
+	  paragraphs that do not terminate with a period.  This is done with the
+	  help of a new option rely-on-area-a, that indicates the dialect may
+	  only be parsed correctly by knowing whether each line starts in area A
+	  or not.
 
 2022-05-31  Simon Sobisch <simonsobisch@gnu.org>
 

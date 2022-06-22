@@ -4545,8 +4545,8 @@ AT_CLEANUP
 AT_SETUP([optional periods])
 AT_KEYWORDS([misc gcos])
 
-AT_DATA([prog.cob], [
-       IDENTIFICATION   DIVISION.
+AT_DATA([prog.cob],
+[       IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
 
        DATA DIVISION.
@@ -4562,8 +4562,8 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:11: error: 'SEC-1' is not defined
-prog.cob:11: error: syntax error, unexpected SECTION
+[prog.cob:10: error: 'SEC-1' is not defined
+prog.cob:10: error: syntax error, unexpected SECTION
 ])
 AT_CHECK([$COMPILE -frely-on-area-a prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
