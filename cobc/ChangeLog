@@ -8,6 +8,10 @@
 	* ppparse.y (literal_token): support SPACE or SPACES figurative
 	  constant as second operand of partial replacing phrases
 
+2022-02-04  David Declerck <david.declerck@ocamlpro.com>
+
+	* parser.y: allow the WITH CONVERSION clause right after DISPLAY (ignored)
+
 2022-01-25  Nicolas Berthier <nicolas.berther@ocamlpro.com>
 
 	* pplex.l, ppparse.y, config.h: support COPY and REPLACE
