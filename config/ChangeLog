@@ -34,6 +34,7 @@
 
 	* gcos-strict.conf, gcos.conf, gcos.words: added config files for
 	  GCOS 7 (Bull) dialect
+	* general: add a non-unique-paragraph-names option
 
 2022-02-07  David Declerck <david.declerck@ocamlpro.com>
 

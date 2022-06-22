@@ -1,4 +1,9 @@
 
+2022-02-04  David Declerck <david.declerck@ocamlpro.com>
+
+	* config.def, typeck.c: allow paragraph names to redefine field
+	  and section names; related to FR#260
+
 2022-06-17  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* config.def, typeck.c (cb_emit_accept_name, cb_build_display_name):

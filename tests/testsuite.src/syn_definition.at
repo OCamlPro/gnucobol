@@ -547,7 +547,10 @@ AT_DATA([prog.cob], [
            .
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
+[prog.cob:10: warning: non-unique section or paragraph name used
+])
+AT_CHECK([$COMPILE_ONLY -fnon-unique-procedure-names=error prog.cob], [1], [],
 [prog.cob:10: error: redefinition of 'prog'
 prog.cob:7: note: 'prog' previously defined here
 ])
@@ -928,15 +931,15 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
+[prog.cob: in section 'L':
+prog.cob:6: warning: non-unique section or paragraph name used
+])
+AT_CHECK([$COMPILE_ONLY -fnon-unique-procedure-names=error prog.cob], [1], [],
 [prog.cob: in section 'L':
 prog.cob:6: error: redefinition of 'L'
 prog.cob:5: note: 'L' previously defined here
 ])
-
-# FIXME: as long as there is no direct reference to the section
-#        this should be not more than a warning,
-#        maybe depending on a compiler configuration
 
 AT_CLEANUP
 
@@ -953,16 +956,15 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
+[prog.cob: in section 'L':
+prog.cob:6: warning: non-unique section or paragraph name used
+])
+AT_CHECK([$COMPILE_ONLY -fnon-unique-procedure-names=error prog.cob], [1], [],
 [prog.cob: in section 'L':
 prog.cob:6: error: redefinition of 'L'
 prog.cob:5: note: 'L' previously defined here
 ])
-
-# FIXME: as long as there is no direct reference to
-#        the paragraph/section this should be not more
-#        than a warning, maybe depending on a compiler
-#        configuration
 
 AT_CLEANUP
 
@@ -1051,6 +1053,60 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 prog.cob:10: error: 'L' is ambiguous; needs qualification
 prog.cob:6: note: 'L IN S-1' defined here
 prog.cob:8: note: 'L IN S-2' defined here
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([Identical names for section/paragraph and data])
+AT_KEYWORDS([definition])
+
+# FIXME: Identical data and section (or paragraph) names is not yet
+# supported.
+# See https://sourceforge.net/p/gnucobol/feature-requests/260/
+
+AT_XFAIL_IF(true)
+
+AT_DATA([word.cob], [
+       identification division.
+       program-id. word.
+       data division.
+       working-storage section.
+      *-----------------------------------------------------------------
+       77 word  pic 9.
+       77 word2 pic x.
+      *-----------------------------------------------------------------
+       PROCEDURE DIVISION.
+       main section.
+      *
+           move 0 to word
+           perform word
+	   display word
+      *
+           exit program.
+      *-----------------------------------------------------------------
+       word section.
+      *
+           add 1 to word
+           if word = 2 go to word2.
+           add 1 to word.
+      *
+       word2.
+      *
+           continue.
+      *-----------------------------------------------------------------
+])
+AT_CHECK([$COMPILE_ONLY word.cob], [0], [],
+[word.cob: in section 'main':
+word.cob:19: warning: non-unique section or paragraph name used
+word.cob: in section 'word':
+word.cob:21: warning: non-unique section or paragraph name used
+word.cob:7: note: 'word' defined here
+word.cob:19: note: 'word' defined here
+word.cob:25: warning: non-unique section or paragraph name used
+])
+AT_CHECK([$COMPILE_ONLY -std=cobol2002 word.cob], [1], [],
+[#TBD
 ])
 
 AT_CLEANUP

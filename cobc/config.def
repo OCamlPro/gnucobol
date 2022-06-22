@@ -412,3 +412,6 @@ CB_CONFIG_SUPPORT (cb_self_call_recursive, "self-call-recursive",
 
 CB_CONFIG_SUPPORT (cb_record_contains_depending_clause, "record-contains-depending-clause",
 	_("DEPENDING clause in RECORD CONTAINS"))
+
+CB_CONFIG_SUPPORT (cb_non_unique_procedure_names, "non-unique-procedure-names",
+	_("allow paragraph names to redefine field and section names"))
