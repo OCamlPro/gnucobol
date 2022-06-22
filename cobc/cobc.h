@@ -697,5 +697,6 @@ extern void		deactivate_system_name (const char *, const char *, const int);
 extern void		activate_system_name (const char *, const char *, const int);
 
 extern int		cb_strcasecmp (const void *, const void *);
+extern char *           fold_upper (char *name);
 
 #endif /* CB_COBC_H */

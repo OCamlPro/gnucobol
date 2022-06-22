@@ -1194,7 +1194,7 @@ ppcopy_try_open (const char *dir, const char *name, int has_ext)
    1 - as is
    2 - all known copybook directories */
 static const char *
-ppcopy_find_file (const char *name, int has_ext)
+ppcopy_find_file_case (const char *name, int has_ext)
 {
 	const char* filename;
 
@@ -1221,6 +1221,27 @@ ppcopy_find_file (const char *name, int has_ext)
 
 	/* no candidate found */
 	return NULL;
+}
+
+static const char *
+ppcopy_find_file (const char *name, int has_ext)
+{
+	const char* filename;
+
+	filename = ppcopy_find_file_case (name, has_ext);
+	if (filename) {
+		return filename;
+	}
+
+        if(cb_fold_copy == COB_FOLD_BOTH){
+          const int len = strlen(name);
+          char* name_upper = cob_malloc( len + 1 );
+          strncpy( name_upper, name, len+1 );
+          fold_upper( name_upper );
+  	  filename = ppcopy_find_file_case (name_upper, has_ext);
+          cobc_free( name_upper );
+        }
+        return filename;
 }
 
 int

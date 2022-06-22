@@ -3581,11 +3581,13 @@ process_command_line (const int argc, char **argv)
 			break;
 
 		case 4:
-			/* -ffold-copy=<UPPER/LOWER> : COPY fold case */
+			/* -ffold-copy=<UPPER/LOWER/BOTH> : COPY fold case */
 			if (!cb_strcasecmp (cob_optarg, "UPPER")) {
 				cb_fold_copy = COB_FOLD_UPPER;
 			} else if (!cb_strcasecmp (cob_optarg, "LOWER")) {
 				cb_fold_copy = COB_FOLD_LOWER;
+			} else if (!strcasecmp (cob_optarg, "BOTH")) {
+				cb_fold_copy = COB_FOLD_BOTH;
 			} else {
 				cobc_err_exit (COBC_INV_PAR, "-ffold-copy");
 			}
