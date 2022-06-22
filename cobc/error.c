@@ -848,6 +848,24 @@ cb_verify (const enum cb_support tag, const char *feature)
 	return cb_verify_x (&loc, tag, feature);
 }
 
+/**
+ * tells whether the given compiler option is supported by the current std/configuration
+ * \return	1 = ok/warning/obsolete, 0 = skip/ignore/error/unconformable
+ */
+unsigned int
+cb_is_supported (const enum cb_support tag)
+{
+	switch (tag) {
+	case CB_OK:
+	case CB_WARNING:
+	case CB_ARCHAIC:
+	case CB_OBSOLETE:
+		return 1;
+	default:;
+	}
+	return 0;
+}
+
 enum cb_warn_val
 redefinition_error (cb_tree x)
 {

@@ -2085,6 +2085,7 @@ extern enum cb_warn_val		cb_error_x (cb_tree, const char *, ...) COB_A_FORMAT23;
 extern unsigned int	cb_verify (const enum cb_support, const char *);
 extern unsigned int	cb_verify_x (const cb_tree, const enum cb_support,
 				     const char *);
+extern unsigned int	cb_is_supported (const enum cb_support);
 #if 0 /* CHECKME: Is there any place other than "note" where we want to do listing suppression? */
 extern void		listprint_suppress (void);
 extern void		listprint_restore (void);
