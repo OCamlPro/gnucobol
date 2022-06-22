@@ -419,13 +419,16 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 	skip_to_eol ();
 }
 
-<*>#/[ ,;\n] {
+^[ ]?#			{
 	/* Output a special marker that precedes lines starting in area A.  This
-	   is required to deal with a GCOS Cobol extension that permits sections
-	   and paragraphs that do not terminate with a period.
+	   is required to detect missing periods.
 
-	   See "(*GCOS*)" in `ppinput' function below for the code that emits
+	   See "(*area-a*)" in `ppinput' function below for the code that emits
 	   the `#'.
+
+	   The optional space before '#' in the rule above is only needed to
+	   properly handle the first line in each buffer, that for some reason
+	   always starts with a space.
 	*/
 	fprintf (ppout, "\n#area_a\n");
 }
@@ -2149,9 +2152,9 @@ start:
 			gotcr += newline_count;
 		}
 		if (in_area_a && cb_rely_on_area_a) {
-			/* (*GCOS*): prepend special marker `#', indicating the
-			   current non-continuation line starts in area A (see
-			   <*>#/... lexer rule above).
+			/* (*area-a*): prepend special marker `#', indicating
+			   the current non-continuation line starts in area A
+			   (see ^[ ]?#/... lexer rule above).
 
 			   Assumes `buff' is large enough for one extra char. */
 			memmove (buff + 1, buff, gotcr + 1);
