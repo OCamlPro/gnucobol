@@ -1317,10 +1317,19 @@ ppcopy (const char *name, const char *lib, struct cb_replace_list *replace_list)
 	return -1;
 }
 
+/* `newline_count` is one line ahead when the two functions below are called
+   (from `ppparse.y`). */
+
+unsigned int
+ppparse_verify (const enum cb_support tag, const char *feature)
+{
+	return cb_plex_verify (newline_count-1, tag, feature);
+}
+
 void
 ppparse_error (const char *err_msg)
 {
-	cb_plex_error (newline_count, "%s", err_msg);
+	cb_plex_error (newline_count-1, "%s", err_msg);
 }
 
 void

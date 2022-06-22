@@ -3,8 +3,21 @@
 
 	* config.def, parser.y: add support for the STOP ERROR statement
 
+2022-03-29  Nicolas Berthier <nicolas.berther@ocamlpro.com>
+
+	* ppparse.y (literal_token): support SPACE or SPACES figurative
+	  constant as second operand of partial replacing phrases
+
 2022-01-25  Nicolas Berthier <nicolas.berther@ocamlpro.com>
 
+	* pplex.l, ppparse.y, config.h: support COPY and REPLACE
+	  statements with partial REPLACING operands specified using
+	  literals
+	* config.def: new option partial-replacing-with-literal
+	* cobc.h, pplex.l (ppparse_verify): feature verification while in
+	  ppparse.y
+	* pplex.l (ppparse_error): shift newline counter by one when
+	  reporting an error when in ppparse.y
 	* ppparse.y (unquote, fix_filename): factorize code for
 	  unquotation of alphanumeric literals
 

@@ -4,6 +4,10 @@
 	* general: add a stop-error-statement option to allow configuring
 	  the support of the STOP ERROR statement
 
+2022-05-25  Nicolas Berthier <nicolas.berther@ocamlpro.com>
+
+	* general: added option partial-replacing-with-literal
+
 2022-02-07  David Declerck <david.declerck@ocamlpro.com>
 
 	* gcos-strict.conf, gcos.conf, gcos.words: added config files for
