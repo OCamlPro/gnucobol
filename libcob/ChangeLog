@@ -1,7 +1,8 @@
 
-2022-03-11  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+2022-06-23  Simon Sobisch <simonsobisch@gnu.org>
 
-	* common.c, common.h: add support for the STOP ERROR statement
+	* strings.c (cob_unstring_into): minor performance-tweak
+	  for UNSTRING with a single DELIMITED BY phrase
 
 2022-05-30  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -74,6 +75,10 @@
 2022-04-01  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.h [__DJGPP__]: use DOS path specs
+
+2022-03-11  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* common.c, common.h: add support for the STOP ERROR statement
 
 2022-01-30  Simon Sobisch <simonsobisch@gnu.org>
 
