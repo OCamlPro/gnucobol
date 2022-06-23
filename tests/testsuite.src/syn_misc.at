@@ -4542,8 +4542,8 @@ prog.cob:12: warning: ignoring redundant .
 AT_CLEANUP
 
 
-AT_SETUP([optional periods])
-AT_KEYWORDS([misc gcos])
+AT_SETUP([missing periods])
+AT_KEYWORDS([misc missing-periods])
 
 AT_DATA([prog.cob],
 [       IDENTIFICATION   DIVISION.
@@ -4595,8 +4595,8 @@ prog_err.cob:14: error: 'KO' is not defined
 AT_CLEANUP
 
 
-AT_SETUP([optional periods with COPYs])
-AT_KEYWORDS([misc copy gcos])
+AT_SETUP([missing periods with COPYs])
+AT_KEYWORDS([misc copy missing-periods])
 
 AT_DATA([ok.inc], [
        01  OK  PIC XX VALUE "OK".
@@ -4659,6 +4659,62 @@ AT_DATA([prog_err.cob], [
 AT_CHECK([$COMPILE_ONLY -frely-on-area-a prog_err.cob], [1], [],
 [prog_err.cob: in section 'SEC-3':
 prog_err.cob:17: error: 'KO' is not defined
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([pseudotext replacement with text in area A])
+AT_KEYWORDS([misc copy missing-periods])
+
+AT_DATA([ok.inc],
+[       01  REPLACE-ME
+       01  KO  PIC XX VALUE "KO".
+       PROCEDURE DIVISION.
+           PERFORM SEC-1.
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+           COPY "ok.inc" REPLACING == 01 REPLACE-ME == BY ==
+       01  OK PIC XX VALUE "OK". ==
+           .
+
+           PERFORM SEC-2.
+           STOP RUN
+       SEC-1 SECTION.
+           DISPLAY OK NO ADVANCING
+       SEC-2 SECTION.
+           DISPLAY OK NO ADVANCING.
+])
+
+AT_CHECK([$COMPILE -frely-on-area-a prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OKOK], [])
+
+AT_DATA([prog_err.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+           COPY "ok.inc" REPLACING == 01 REPLACE-ME == BY ==
+       01  OK PIC XX VALUE "OK". ==
+           .
+
+           PERFORM SEC-2.
+           STOP RUN
+       SEC-1 SECTION.
+           DISPLAY OK NO ADVANCING
+       SEC-2 SECTION.
+           DISPLAY NOT-FOUND.
+])
+AT_CHECK([$COMPILE -frely-on-area-a prog_err.cob], [1], [],
+[prog_err.cob: in section 'SEC-2':
+prog_err.cob:16: error: 'NOT-FOUND' is not defined
 ])
 
 AT_CLEANUP
