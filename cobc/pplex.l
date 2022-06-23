@@ -920,6 +920,12 @@ ENDIF_DIRECTIVE_STATE>{
 	cb_source_line++;
   }
 
+  ^[ ]?#		{
+	/* Pseudo-text words that start in area-a retain that property, and
+	   should thus be preceded with carry the marker. */
+	pplval.s = cobc_plex_strdup ("\n#area_a\n");
+  }
+
   [,;]?[ ]+		{
 	pplval.s = cobc_plex_strdup (" ");
 	return TOKEN;

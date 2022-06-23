@@ -1,4 +1,8 @@
 
+2022-06-23  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* pplex.l: detect pseudo-text words that start in area A
+
 2022-02-01  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* config.def, pplex.l, scanner.l, parser.y: support sections and
