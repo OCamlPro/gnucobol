@@ -8,6 +8,12 @@
 	* ppparse.y (literal_token): support SPACE or SPACES figurative
 	  constant as second operand of partial replacing phrases
 
+2022-06-17  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* config.def, typeck.c (cb_emit_accept_name, cb_build_display_name):
+	  rely on new option device-mnemonics (boolean) instead of
+	  standard-define to accept device name mnemonics for DISPLAY and ACCEPT
+
 2022-02-04  David Declerck <david.declerck@ocamlpro.com>
 
 	* parser.y: allow the WITH CONVERSION clause right after DISPLAY (ignored)
@@ -24,6 +30,11 @@
 	  reporting an error when in ppparse.y
 	* ppparse.y (unquote, fix_filename): factorize code for
 	  unquotation of alphanumeric literals
+
+2022-02-04  David Declerck <david.declerck@ocamlpro.com>
+
+	* parser.y, reserved.c, scanner.l, typeck.c: Add GCOS-specific mnemonics
+	  ALTERNATE-CONSOLE, ALTERNATE CONSOLE and TERMINAL
 
 2022-05-31  Simon Sobisch <simonsobisch@gnu.org>
 
