@@ -6157,8 +6157,9 @@ record_clause:
 		cb_warning (cb_warn_additional, _("RECORD clause ignored for LINE SEQUENTIAL"));
 	} else {
 		set_record_size ($3, $5);
-		if (current_file->record_depending) {
+		if ($7) {
 			cb_verify (cb_record_contains_depending_clause, "RECORD CONTAINS DEPENDING");
+			current_file->record_depending = $7;
 			current_file->flag_check_record_varying_limits =
 				current_file->record_min == 0 || current_file->record_max == 0;
 		}
@@ -6169,16 +6170,15 @@ record_clause:
   {
 	check_repeated ("RECORD", SYN_CLAUSE_4, &check_duplicate);
 	set_record_size ($6, $7);
+	current_file->record_depending = $9;
 	current_file->flag_check_record_varying_limits =
 		current_file->record_min == 0 || current_file->record_max == 0;
   }
 ;
 
 _record_depending:
-| DEPENDING _on reference
-  {
-	current_file->record_depending = $3;
-  }
+  /* empty */			{ $$ = NULL; }
+| DEPENDING _on reference	{ $$ = $3; }
 ;
 
 _from_integer:
