@@ -1819,12 +1819,12 @@ start:
 
 		memset (buff, ' ', (size_t)(cb_indicator_column - 1));
 		/* Note we allow directive lines to start in the indicator column */
-		bp = &buff[(cb_indicator_column - 1)];
+		bp = &buff[cb_indicator_column - 1];
 
 		/* Special case: acucomment must be checked here as we'd pass comments
 		   as directives otherwise */
-		if (cb_flag_acucomment && buff[(cb_indicator_column - 1)] == '$') {
-			buff[(cb_indicator_column - 1)] = '*';
+		if (cb_flag_acucomment && buff[cb_indicator_column - 1] == '$') {
+			buff[cb_indicator_column - 1] = '*';
 		}
 	}
 
@@ -1946,8 +1946,9 @@ start:
 	/* Skip comments that follow after AUTHORS, etc. */
 	if (unlikely (within_comment)) {
 		/* Check all of "Area A" */
-		for (ipchar = cb_indicator_column;
-		     ipchar < (n - 1) && ipchar < cb_indicator_column + 4; ++ipchar) {
+		const int margin_b = cb_indicator_column + 4;
+		const int ipchar_max = (n - 1 < margin_b) ? n - 1 : margin_b;
+		for (ipchar = cb_indicator_column; ipchar < ipchar_max; ++ipchar) {
 			if (buff[ipchar] != ' ') {
 				ipchar = 0;
 				break;

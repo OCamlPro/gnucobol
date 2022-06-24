@@ -1,4 +1,9 @@
 
+2022-06-24  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* cobc.c, config.def, flag.def, ppparse.y: requalify indicator-column as
+	  a flag instead of a dialect option
+
 2022-02-04  David Declerck <david.declerck@ocamlpro.com>
 
 	* cobc.c, cobc.h, config.def, pplex.l, ppparse.y: make the

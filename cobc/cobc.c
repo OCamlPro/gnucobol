@@ -226,10 +226,9 @@ FILE			*cb_listing_file = NULL;
 #define CB_LINE_LENGTH	1024 /* hint: we only read PPLEX_BUF_LEN bytes */
 #define CB_READ_AHEAD	800 /* lines to read ahead */
 
-/* TODO: add new compiler configuration flags for this*/
 #define CB_MARGIN_A	cb_indicator_column
 #define CB_MARGIN_B	CB_MARGIN_A + 4	/* careful, for COBOL 85 this would be 11,
-						   for COBOL 2002 (removed it) would be 7 */
+						   for COBOL 2002 there is no margin B */
 #define CB_INDICATOR	CB_MARGIN_A - 1
 #define CB_SEQUENCE	cb_text_column /* the only configuration available...*/
 #define CB_ENDLINE	(cb_text_column + cb_indicator_column + 1)
@@ -267,7 +266,6 @@ enum cb_format		cb_source_format = CB_FORMAT_FIXED;
 enum cb_current_date	current_date = CB_DATE_MDY;
 #endif
 int			cb_text_column;
-int			cb_indicator_column;
 int			cb_id = 0;
 int			cb_pic_id = 0;
 int			cb_attr_id = 0;
@@ -3618,6 +3616,16 @@ process_command_line (const int argc, char **argv)
 				cobc_err_exit (COBC_INV_PAR, "-fmax-errors");
 			}
 			cb_max_errors = n;
+			break;
+
+		case 14:
+			/* -findicator-column=<xx> : indicator column number for
+			   fixed-form reference format */
+			n = cobc_deciph_optarg (cob_optarg, 0);
+			if (n < 1) {
+				cobc_err_exit (COBC_INV_PAR, "-findicator-column");
+			}
+			cb_indicator_column = n;
 			break;
 
 		case 8:
@@ -8787,7 +8795,6 @@ main (int argc, char **argv)
 	finish_setup_internal_env ();
 
 	cb_text_column = cb_config_text_column;
-	cb_indicator_column = cb_config_indicator_column;
 
 	memset (cb_listing_header, 0, sizeof (cb_listing_header));
 	/* If -P=file specified, all lists go to this file */

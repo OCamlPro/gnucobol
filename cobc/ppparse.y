@@ -998,14 +998,12 @@ set_choice:
 	if (!cb_strcasecmp (p, "FIXED")) {
 		cb_source_format = CB_FORMAT_FIXED;
 		cb_text_column = cb_config_text_column;
-		cb_indicator_column = cb_config_indicator_column;
 	} else if (!cb_strcasecmp (p, "FREE")) {
 		cb_source_format = CB_FORMAT_FREE;
 	} else if (!cb_strcasecmp (p, "VARIABLE")) {
 		cb_source_format = CB_FORMAT_FIXED;
 		/* This value matches most MF Visual COBOL 4.0 version. */
 		cb_text_column = 250;
-		cb_indicator_column = 7;
 	} else {
 		ppp_error_invalid_option ("SOURCEFORMAT", p);
 	}
@@ -1160,7 +1158,6 @@ format_type:
   {
 	cb_source_format = CB_FORMAT_FIXED;
 	cb_text_column = cb_config_text_column;
-	cb_indicator_column = cb_config_indicator_column;
   }
 | FREE
   {
@@ -1170,7 +1167,6 @@ format_type:
   {
 	cb_source_format = CB_FORMAT_FIXED;
 	cb_text_column = 500;
-	cb_indicator_column = 7;
   }
 | GARBAGE
   {
