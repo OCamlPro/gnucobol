@@ -36,6 +36,10 @@
 	* parser.y, reserved.c, scanner.l, typeck.c: Add GCOS-specific mnemonics
 	  ALTERNATE-CONSOLE, ALTERNATE CONSOLE and TERMINAL
 
+2022-02-07  David Declerck <david.declerck@ocamlpro.com>
+
+	* config.def, parser.y: allow DEPENDING clause in RECORD CONTAINS
+
 2022-05-31  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (cobc_check_string): replaced single string cache by an array
