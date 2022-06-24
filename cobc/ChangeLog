@@ -1,4 +1,9 @@
 
+2022-07-05  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* pplex.l, parser.y: parse DISPLAY and ACCEPT statements in DEFAULT
+	  SECTION (GCOS 7 extension)
+
 2022-06-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c, help.c: added -dumpversion

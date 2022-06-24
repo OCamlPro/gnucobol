@@ -449,34 +449,52 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 "CONTROL"[ ,;\n]+"DIVISION" {
 	/* Syntax extension for GCOS: such a division may include a SUBSTITUTION
 	   SECTION that records source text replacement statements, along with a
-	   DEFAULT SECTION where compile-time implicits are defined. */
-	/* cf `ppparse.y`, grammar entry `program_with_control_division`. */
-	cb_verify (cb_control_division, "CONTROL DIVISION");
+	   DEFAULT SECTION where compile-time defaults are specified. */
+	/* cf `ppparse.y`, grammar entry `program_with_control_division`, along
+	   with `parser.y`, entry `_control_division`. */
+	ppecho (yytext, 0, (int)yyleng);
 	yy_push_state (CONTROL_DIVISION_STATE);
 	return CONTROL_DIVISION;
 }
 
-<CONTROL_DIVISION_STATE>"SUBSTITUTION"[ ,;\n]+"SECTION" {
-	yy_push_state (SUBSTITUTION_SECTION_STATE);
-	return SUBSTITUTION_SECTION;
+<CONTROL_DIVISION_STATE>{
+  "SUBSTITUTION"[ ,;\n]+"SECTION" {
+	  yy_push_state (SUBSTITUTION_SECTION_STATE);
+	  return SUBSTITUTION_SECTION;
+  }
+  \. 			{
+	  /* Pass dots to the parser to handle DEFAULT SECTION. */
+	  ppecho (yytext, 0, (int)yyleng);
+	  return DOT;
+  }
 }
 
-<SUBSTITUTION_SECTION_STATE>"REPLACE"	{
-	yy_push_state (COPY_STATE);
-	return REPLACE;
+<SUBSTITUTION_SECTION_STATE>{
+  "REPLACE"	       {
+	  yy_push_state (COPY_STATE);
+	  return REPLACE;
+  }
+  \. 			{
+	  /* Intercept dots within the SUBSTITUTION SECTION */
+	  return DOT;
+  }
 }
 
 <CONTROL_DIVISION_STATE,
 SUBSTITUTION_SECTION_STATE>{
+  "DEFAULT"[ ,;\n]+"SECTION" {
+	  /* Pop any control division-related start condition state. */
+	  while (YY_START == CONTROL_DIVISION_STATE ||
+		 YY_START == SUBSTITUTION_SECTION_STATE)
+		  yy_pop_state ();
+	  ppecho (yytext, 0, (int)yyleng);
+  }
   [,;]?\n		{
 	  ECHO;
 	  check_listing (yytext, 0);
 	  cb_source_line++;
   }
   [,;]?[ ]+		{ /* ignore */ }
-  \. 			{
-	  return DOT;
-  }
 }
 
 <INITIAL,
