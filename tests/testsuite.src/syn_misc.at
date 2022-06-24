@@ -8453,8 +8453,8 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE -fcontrol-division=ok prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
-AT_CHECK([$COMPILE -fcontrol-division=error prog.cob], [1], [],
-[prog.cob:2: error: CONTROL DIVISION used
+AT_CHECK([$COMPILE prog.cob], [1], [],
+[prog.cob:2: error: CONTROL DIVISION does not conform to GnuCOBOL
 ])
 
 AT_CLEANUP

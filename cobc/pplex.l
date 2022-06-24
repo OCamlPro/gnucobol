@@ -447,6 +447,10 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 }
 
 "CONTROL"[ ,;\n]+"DIVISION" {
+	/* Syntax extension for GCOS: such a division may include a SUBSTITUTION
+	   SECTION that records source text replacement statements, along with a
+	   DEFAULT SECTION where compile-time implicits are defined. */
+	/* cf `ppparse.y`, grammar entry `program_with_control_division`. */
 	cb_verify (cb_control_division, "CONTROL DIVISION");
 	yy_push_state (CONTROL_DIVISION_STATE);
 	return CONTROL_DIVISION;
@@ -477,7 +481,8 @@ SUBSTITUTION_SECTION_STATE>{
 
 <INITIAL,
 CONTROL_DIVISION_STATE,
-SUBSTITUTION_SECTION_STATE>("ID"|"IDENTIFICATION")[ ,;\n]+"DIVISION" {
+SUBSTITUTION_SECTION_STATE>
+("ID"|"IDENTIFICATION")[ ,;\n]+"DIVISION" {
 	/* Pop any control division-related start condition state. */
 	while (YY_START == CONTROL_DIVISION_STATE ||
 	       YY_START == SUBSTITUTION_SECTION_STATE)
