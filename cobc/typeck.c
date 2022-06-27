@@ -7173,6 +7173,7 @@ numeric_children_screen_pos_type (struct cb_field* child)
 	if (!child) return 0;
 
 	for (; child; child = child->sister) {
+		if (child->redefines) continue;
 		if (!numeric_screen_pos_type (child)) {
 			return 0;
 		}
@@ -12990,7 +12991,7 @@ cb_build_unstring_into (cb_tree name, cb_tree delimiter, cb_tree count)
 		delimiter = cb_int0;
 	}
 	if (count == NULL
-	    || error_if_not_int_field_or_has_pic_p ("COUNT", count)) {
+	 || error_if_not_int_field_or_has_pic_p ("COUNT", count)) {
 		count = cb_int0;
 	}
 	return CB_BUILD_FUNCALL_3 ("cob_unstring_into", name, delimiter, count);

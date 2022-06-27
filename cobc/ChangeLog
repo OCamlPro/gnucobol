@@ -1,44 +1,14 @@
 
-2022-03-11  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+2022-06-27  Simon Sobisch <simonsobisch@gnu.org>
 
-	* config.def, parser.y: add support for the STOP ERROR statement
-
-2022-03-29  Nicolas Berthier <nicolas.berther@ocamlpro.com>
-
-	* ppparse.y (literal_token): support SPACE or SPACES figurative
-	  constant as second operand of partial replacing phrases
+	* typeck.c (numeric_children_screen_pos_type): ignore redefined
+	  fields
 
 2022-06-17  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* config.def, typeck.c (cb_emit_accept_name, cb_build_display_name):
 	  rely on new option device-mnemonics (boolean) instead of
 	  standard-define to accept device name mnemonics for DISPLAY and ACCEPT
-
-2022-02-04  David Declerck <david.declerck@ocamlpro.com>
-
-	* parser.y: allow the WITH CONVERSION clause right after DISPLAY (ignored)
-
-2022-01-25  Nicolas Berthier <nicolas.berther@ocamlpro.com>
-
-	* pplex.l, ppparse.y, config.h: support COPY and REPLACE
-	  statements with partial REPLACING operands specified using
-	  literals
-	* config.def: new option partial-replacing-with-literal
-	* cobc.h, pplex.l (ppparse_verify): feature verification while in
-	  ppparse.y
-	* pplex.l (ppparse_error): shift newline counter by one when
-	  reporting an error when in ppparse.y
-	* ppparse.y (unquote, fix_filename): factorize code for
-	  unquotation of alphanumeric literals
-
-2022-02-04  David Declerck <david.declerck@ocamlpro.com>
-
-	* parser.y, reserved.c, scanner.l, typeck.c: Add GCOS-specific mnemonics
-	  ALTERNATE-CONSOLE, ALTERNATE CONSOLE and TERMINAL
-
-2022-02-07  David Declerck <david.declerck@ocamlpro.com>
-
-	* config.def, parser.y: allow DEPENDING clause in RECORD CONTAINS
 
 2022-05-31  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -85,6 +55,15 @@
 	* tree.c (cb_init_parse_constants), tree.h, cobc.c: renamed
 	  from cb_init_constants
 
+2022-03-29  Nicolas Berthier <nicolas.berther@ocamlpro.com>
+
+	* ppparse.y (literal_token): support SPACE or SPACES figurative
+	  constant as second operand of partial replacing phrases
+
+2022-03-11  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* config.def, parser.y: add support for the STOP ERROR statement
+
 2022-03-10  Simon Sobisch <simonsobisch@gnu.org>
 
 	* pplex.l (next_word_is_comment_paragraph_name): extracted from (ppinput)
@@ -110,6 +89,15 @@
 	  with cb_define_struct to tree.h as enum cb_directive_action and
 	  enum cb_definition_type
 
+2022-02-07  David Declerck <david.declerck@ocamlpro.com>
+
+	* config.def, parser.y: allow DEPENDING clause in RECORD CONTAINS
+
+2022-02-04  David Declerck <david.declerck@ocamlpro.com>
+
+	* parser.y, reserved.c, scanner.l, typeck.c: Add GCOS-specific mnemonics
+	  ALTERNATE-CONSOLE, ALTERNATE CONSOLE and TERMINAL
+
 2022-01-28  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* warning.def, pplex.l: split warning for missing newlines, it now
@@ -123,6 +111,10 @@
 2022-02-06  Ron Norman <rjn@inglenet.com>
 
 	* codegen.c: if verb changes then emit trace/debug code, too
+
+2022-02-04  David Declerck <david.declerck@ocamlpro.com>
+
+	* parser.y: allow the WITH CONVERSION clause right after DISPLAY (ignored)
 
 2021-12-30  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -142,6 +134,19 @@
 	  cb_search to at_end, storing pair of AT END (position) and statements
 	* codegen.c (output_search_whens, output_search_all): adjust output of
 	  source references for better debugging experience and add AT END tracing
+
+2022-01-25  Nicolas Berthier <nicolas.berther@ocamlpro.com>
+
+	* pplex.l, ppparse.y, config.h: support COPY and REPLACE
+	  statements with partial REPLACING operands specified using
+	  literals
+	* config.def: new option partial-replacing-with-literal
+	* cobc.h, pplex.l (ppparse_verify): feature verification while in
+	  ppparse.y
+	* pplex.l (ppparse_error): shift newline counter by one when
+	  reporting an error when in ppparse.y
+	* ppparse.y (unquote, fix_filename): factorize code for
+	  unquotation of alphanumeric literals
 
 2021-12-14  Simon Sobisch <simonsobisch@gnu.org>
 
