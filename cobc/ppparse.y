@@ -612,6 +612,8 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %token FIXED
 %token FREE
 %token VARIABLE
+%token ACUTERM
+%token COBOLX
 
 %token CALL_DIRECTIVE
 %token COBOL
@@ -995,20 +997,11 @@ set_choice:
 	size = strlen (p) - 1;
 	p[size] = '\0';
 
-	if (!cb_strcasecmp (p, "FIXED")) {
-		cb_source_format = CB_FORMAT_FIXED;
-		cb_text_column = cb_config_text_column;
-	} else if (!cb_strcasecmp (p, "FREE")) {
-		cb_source_format = CB_FORMAT_FREE;
-	} else if (!cb_strcasecmp (p, "VARIABLE")) {
-		cb_source_format = CB_FORMAT_FIXED;
-		/* This value matches most MF Visual COBOL 4.0 version. */
-		cb_text_column = 250;
-	} else {
+	if (!cobc_parse_n_set_source_format (p)) {
 		ppp_error_invalid_option ("SOURCEFORMAT", p);
 	}
 	if (cb_src_list_file) {
-		cb_current_file->source_format = cb_source_format;
+		cb_current_file->source_format = cobc_get_source_format ();
 	}
   }
 | SOURCEFORMAT _as error
@@ -1148,26 +1141,17 @@ source_directive:
   _format _is format_type
   {
 	  if (cb_src_list_file) {
-		  cb_current_file->source_format = cb_source_format;
+		  cb_current_file->source_format = cobc_get_source_format ();
 	  }
   }
 ;
 
 format_type:
-  FIXED
-  {
-	cb_source_format = CB_FORMAT_FIXED;
-	cb_text_column = cb_config_text_column;
-  }
-| FREE
-  {
-	cb_source_format = CB_FORMAT_FREE;
-  }
-| VARIABLE
-  {
-	cb_source_format = CB_FORMAT_FIXED;
-	cb_text_column = 500;
-  }
+  FIXED		{ cobc_set_source_format (CB_FORMAT_FIXED); }
+| FREE		{ cobc_set_source_format (CB_FORMAT_FREE); }
+| VARIABLE	{ cobc_set_source_format (CB_FORMAT_VARIABLE); }
+| ACUTERM	{ cobc_set_source_format (CB_FORMAT_ACUTERM); }
+| COBOLX	{ cobc_set_source_format (CB_FORMAT_COBOLX); }
 | GARBAGE
   {
 	cb_error (_("invalid %s directive"), "SOURCE");

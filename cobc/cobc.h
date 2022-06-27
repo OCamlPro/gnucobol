@@ -89,7 +89,10 @@
 /* Source format enum */
 enum cb_format {
 	CB_FORMAT_FIXED = 0,
-	CB_FORMAT_FREE
+	CB_FORMAT_FREE,
+	CB_FORMAT_VARIABLE,
+	CB_FORMAT_ACUTERM,
+	CB_FORMAT_COBOLX,
 };
 
 #if 0 /* ancient OSVS registers that need special runtime handling - low priority */
@@ -353,7 +356,6 @@ struct list_files {
 
 extern struct list_files	*cb_current_file;
 
-extern enum cb_format		cb_source_format;
 #if 0 /* ancient OSVS registers that need special runtime handling - low priority */
 extern enum cb_current_date	current_date;
 #endif
@@ -616,6 +618,9 @@ extern void		pp_set_replace_list (struct cb_replace_list *,
 					     const cob_u32_t);
 extern void		ppparse_error (const char *);
 
+extern int		cobc_parse_n_set_source_format (const char *);
+extern void		cobc_set_source_format (const enum cb_format);
+extern enum cb_format	cobc_get_source_format (void);
 
 /* parser (in scanner.l, parser.y) */
 #if	!defined (COB_IN_SCANNER ) && !defined (COB_IN_PPLEX) && \

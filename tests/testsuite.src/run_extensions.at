@@ -5070,6 +5070,54 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 AT_CLEANUP
 
 
+AT_SETUP([COBOLX format])
+AT_KEYWORDS([extensions runmisc])
+
+AT_DATA([prog.cob], [
+       >>SOURCE FORMAT COBOLX
+ IDENTIFICATION DIVISION.
+ PROGRAM-ID. prog.
+* blah blah blah
+ PROCEDURE DIVISION.
+                                                        DISPLAY "Hello!"
+     .
+ END PROGRAM prog.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[Hello!
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([ACUTERM format])
+AT_KEYWORDS([fundamental extensions])
+
+AT_DATA([prog.cob], [
+* Sample program in ACU terminal format.
+
+IDENTIFICATION   DIVISION.
+PROGRAM-ID.      prog.
+DATA             DIVISION.
+WORKING-STORAGE  SECTION.
+PROCEDURE        DIVISION.
+      DISPLAY "OK" NO ADVANCING
+      END-DISPLAY.
+\D    DISPLAY "KO" NO ADVANCING
+\D    END-DISPLAY.
+      STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fformat=acuterm prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
+AT_CHECK([$COMPILE -fformat=acuterm -fdebugging-line prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OKKO], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([Binary COMP-1 (1)])
 AT_KEYWORDS([extensions])
 

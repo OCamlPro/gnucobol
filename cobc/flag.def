@@ -72,12 +72,11 @@ CB_FLAG_RQ (cb_max_errors, 1, "max-errors", 128, 7,
 	  "                        compilation is aborted\n"
 	  "                        * default: 128"))
 
-CB_FLAG_RQ (cb_indicator_column, 1, "indicator-column", 7, 14,
-	_("  -findicator-column=<number>\tindicator column number for fixed-form\n"
-	  "                        reference-format\n"
-	  "                        * default: 7"))
-
 /* Flags with required parameter and no associated variable */
+
+CB_FLAG_NQ (1, "format", 14,
+	_("  -fformat=[FIXED|FREE|VARIABLE|ACUTERM|COBOLX]\treference format\n"
+	  "                        * default: FIXED"))
 
 CB_FLAG_NQ (1, "intrinsics", 10,
 	_("  -fintrinsics=[ALL|intrinsic function name(,name,...)]\n"

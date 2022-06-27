@@ -128,6 +128,10 @@ struct plex_stack {
 
 /* Global variables */
 
+/* Format-specific columns; should only be assigned in cobc_set_source_format
+   below. */
+int			cb_indicator_column = 7;
+int			cb_text_column;
 
 /* Local variables */
 static char			*plexbuff1 = NULL;
@@ -146,6 +150,7 @@ static int			quotation_mark = 0;
 static int			listing_line = 0;
 static int			requires_listing_line;
 static int			requires_new_line = 0;
+static enum cb_format		cb_source_format;
 
 static char	display_msg[PPLEX_BUFF_LEN];
 
@@ -617,6 +622,8 @@ COBOL_WORDS_DIRECTIVE_STATE>{
   "FIXED"		{ return FIXED; }
   "FREE"		{ return FREE; }
   "VARIABLE"		{ return VARIABLE; }
+  "ACUTERM"		{ return ACUTERM; }
+  "COBOLX"		{ return COBOLX; }
 }
 
 <CALL_DIRECTIVE_STATE>{
@@ -976,7 +983,7 @@ ENDIF_DIRECTIVE_STATE>{
 	/* Restore variables */
 	current_replace_list = current_copy_info->replacing;
 	quotation_mark = current_copy_info->quotation_mark;
-	cb_source_format = current_copy_info->source_format;
+	cobc_set_source_format (current_copy_info->source_format);
 
 	copy_stack = current_copy_info->next;
 	cobc_free (current_copy_info->dname);
@@ -1103,7 +1110,7 @@ ppopen (const char *name, struct cb_replace_list *replacing_list)
 	current_copy_info->replacing = current_replace_list;
 	current_copy_info->line = cb_source_line;
 	current_copy_info->quotation_mark = quotation_mark;
-	current_copy_info->source_format = cb_source_format;
+	current_copy_info->source_format = cobc_get_source_format ();
 
 	current_copy_info->next = copy_stack;
 	current_copy_info->containing_files = old_list_file;
@@ -1323,6 +1330,67 @@ ppparse_error (const char *err_msg)
 	cb_plex_error (newline_count, "%s", err_msg);
 }
 
+
+void
+cobc_set_source_format (const enum cb_format sf) {
+	cb_source_format = sf;
+
+	switch (cb_source_format) {
+	case CB_FORMAT_VARIABLE:
+		/* This value matches most MF Visual COBOL 4.0 version. */
+		/* CHECKME: 500 seen in format_type entry of `ppparse.y`. */
+		cb_text_column = 250;
+		break;
+	default:
+		cb_text_column = cb_config_text_column;
+		break;
+	}
+
+	switch (cb_source_format) {
+	case CB_FORMAT_ACUTERM:
+	case CB_FORMAT_COBOLX:
+		cb_indicator_column = 1;
+		break;
+	default:
+		cb_indicator_column = 7;
+		break;
+	}
+}
+
+enum cb_format
+cobc_get_source_format (void) {
+	return cb_source_format;
+}
+
+static int
+cobc_parse_source_format (enum cb_format *const out, const char *const sfname) {
+	enum cb_format format;
+	if (!cb_strcasecmp (sfname, "FIXED")) {
+		format = CB_FORMAT_FIXED;
+	} else if (!cb_strcasecmp (sfname, "FREE")) {
+		format = CB_FORMAT_FREE;
+	} else if (!cb_strcasecmp (sfname, "VARIABLE")) {
+		format = CB_FORMAT_VARIABLE;
+	} else if (!cb_strcasecmp (sfname, "ACUTERM")) {
+		format = CB_FORMAT_ACUTERM;
+	} else if (!cb_strcasecmp (sfname, "COBOLX")) {
+		format = CB_FORMAT_COBOLX;
+	} else {
+		return 0;	/* invalid argument */
+	}
+	*out = format;
+	return 1;
+}
+
+int cobc_parse_n_set_source_format (const char* const sfname) {
+	enum cb_format format;
+	if (cobc_parse_source_format (&format, sfname)) {
+		cobc_set_source_format (format);
+		return 1;
+	}
+	return 0;
+}
+
 void
 plex_clear_vars (void)
 {
@@ -1467,7 +1535,7 @@ get_new_listing_file (void)
 	cb_current_file->copy_tail = newfile;
 
 	newfile->copy_line = cb_source_line;
-	newfile->source_format = cb_source_format;
+	newfile->source_format = cobc_get_source_format ();
 	old_list_file = cb_current_file;
 	cb_current_file = newfile;
 }
@@ -1792,7 +1860,7 @@ start:
 		}
 
 		/* Check if text is longer than cb_text_column */
-		if (cb_source_format == CB_FORMAT_FIXED
+		if (cb_source_format != CB_FORMAT_VARIABLE
 		 && n > cb_text_column + 1) {
 			/* Show warning if it is not whitespace
 			   (postponed after checking for comments by setting
@@ -1921,6 +1989,9 @@ start:
 		break;
 	case 'd':
 	case 'D':
+		if (cb_source_format == CB_FORMAT_ACUTERM) {
+			break;
+		}
 		/* Debugging line */
 		(void) cb_verify (cb_debugging_mode, _("debugging indicator"));
 		if (cb_flag_debugging_line) {
@@ -1932,7 +2003,26 @@ start:
 	case '/':	/* Comment line requested page-break in listing */
 		newline_count++;
 		goto start;
+	case '\\':
+		if (buff[cb_indicator_column] == 'D' &&
+		    cb_source_format == CB_FORMAT_ACUTERM) {
+			/* ACUTERM debugging line */
+			(void) cb_verify (cb_debugging_mode, _("debugging indicator"));
+			if (cb_flag_debugging_line) {
+				break;
+			}
+		} else {
+			/* Invalid acuterm indicator? */
+			cb_plex_error (newline_count,
+				       _("invalid indicator '\\' at column %d"),
+				       cb_indicator_column);
+		}
+		newline_count++;
+		goto start;
 	default:
+		if (cb_source_format == CB_FORMAT_ACUTERM) {
+			break;
+		}
 		/* Invalid indicator */
 		cb_plex_error (newline_count,
 				_("invalid indicator '%c' at column %d"),
@@ -1946,7 +2036,9 @@ start:
 	/* Skip comments that follow after AUTHORS, etc. */
 	if (unlikely (within_comment)) {
 		/* Check all of "Area A" */
-		const int margin_b = cb_indicator_column + 4;
+		const int margin_b = (cb_source_format == CB_FORMAT_ACUTERM)
+			? cb_indicator_column
+			: cb_indicator_column + 4;
 		const int ipchar_max = (n - 1 < margin_b) ? n - 1 : margin_b;
 		for (ipchar = cb_indicator_column; ipchar < ipchar_max; ++ipchar) {
 			if (buff[ipchar] != ' ') {
@@ -1971,8 +2063,15 @@ start:
 		goto start;
 	}
 
-	buff[cb_indicator_column - 1] = ' ';
-	bp = buff + cb_indicator_column;
+	if (cb_source_format != CB_FORMAT_ACUTERM) {
+		buff[cb_indicator_column - 1] = ' ';
+		bp = buff + cb_indicator_column;
+	} else if (buff[cb_indicator_column - 1] == '\\' &&
+		   buff[cb_indicator_column] == 'D') {
+		buff[cb_indicator_column - 1] = ' ';
+		buff[cb_indicator_column] = ' ';
+		bp = buff + cb_indicator_column;
+	}
 
 	if (unlikely (continuation)) {
 		/* Line continuation */

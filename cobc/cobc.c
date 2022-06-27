@@ -261,11 +261,9 @@ struct list_files	*cb_current_file = NULL;
 struct cob_time		current_compile_time = { 0 };
 struct tm		current_compile_tm = { 0 };
 
-enum cb_format		cb_source_format = CB_FORMAT_FIXED;
 #if 0 /* ancient OSVS registers that need special runtime handling - low priority */
 enum cb_current_date	current_date = CB_DATE_MDY;
 #endif
-int			cb_text_column;
 int			cb_id = 0;
 int			cb_pic_id = 0;
 int			cb_attr_id = 0;
@@ -3288,13 +3286,13 @@ process_command_line (const int argc, char **argv)
 			break;
 
 		case 'F':
-			/* --free */
-			cb_source_format = CB_FORMAT_FREE;
+			/* --free, alias of `-fformat=free` */
+			cobc_set_source_format (CB_FORMAT_FREE);
 			break;
 
 		case 'f':
-			/* --fixed */
-			cb_source_format = CB_FORMAT_FIXED;
+			/* --fixed, alias of `-fformat=fixed` */
+			cobc_set_source_format (CB_FORMAT_FIXED);
 			break;
 
 		case 'q':
@@ -3619,13 +3617,10 @@ process_command_line (const int argc, char **argv)
 			break;
 
 		case 14:
-			/* -findicator-column=<xx> : indicator column number for
-			   fixed-form reference format */
-			n = cobc_deciph_optarg (cob_optarg, 0);
-			if (n < 1) {
-				cobc_err_exit (COBC_INV_PAR, "-findicator-column");
+			/* -fformat=<FIXED/FREE/VARIABLE/ACUTERM/COBOLX> */
+			if (!cobc_parse_n_set_source_format (cob_optarg)) {
+				cobc_err_exit (COBC_INV_PAR, "-fformat");
 			}
-			cb_indicator_column = n;
 			break;
 
 		case 8:
@@ -4897,7 +4892,7 @@ preprocess (struct filename *fn)
 
 	/* Save default exceptions and flags in case program directives change them */
 	memcpy(save_exception_table, cb_exception_table, sizeof(struct cb_exception) * COB_EC_MAX);
-	save_source_format = cb_source_format;
+	save_source_format = cobc_get_source_format ();
 	save_fold_copy = cb_fold_copy;
 	save_fold_call = cb_fold_call;
 	save_ref_mod_zero_length = cb_ref_mod_zero_length;
@@ -4907,7 +4902,7 @@ preprocess (struct filename *fn)
 
 	/* Restore default exceptions and flags */
 	memcpy(cb_exception_table, save_exception_table, sizeof(struct cb_exception) * COB_EC_MAX);
-	cb_source_format = save_source_format;
+	cobc_set_source_format (save_source_format);
 	cb_fold_copy = save_fold_copy;
 	cb_fold_call = save_fold_call;
 	cb_ref_mod_zero_length = save_ref_mod_zero_length;
@@ -4993,7 +4988,7 @@ set_listing_header_code (void)
 			"PG/LN  A...B..............................."
 			".............................");
 		if (cb_listing_wide) {
-			if (cb_listing_file_struct->source_format == CB_FORMAT_FIXED
+			if (cb_listing_file_struct->source_format != CB_FORMAT_VARIABLE
 			    && cb_text_column == 72 && cb_indicator_column == 7) {
 				strcat (cb_listing_header, "SEQUENCE");
 			} else {
@@ -8620,7 +8615,7 @@ process_file (struct filename *fn, int status)
 		cb_current_file = cb_listing_file_struct;
 		cb_current_file->copy_tail = NULL;	/* may include an old reference */
 		cb_current_file->name = cobc_strdup (fn->source);
-		cb_current_file->source_format = cb_source_format;
+		cb_current_file->source_format = cobc_get_source_format ();
 		force_new_page_for_next_line ();
 	}
 
@@ -8794,7 +8789,8 @@ main (int argc, char **argv)
 	finish_setup_compiler_env ();
 	finish_setup_internal_env ();
 
-	cb_text_column = cb_config_text_column;
+	/* Reset source format in case text column has been configured manually. */
+	cobc_set_source_format (cobc_get_source_format ());
 
 	memset (cb_listing_header, 0, sizeof (cb_listing_header));
 	/* If -P=file specified, all lists go to this file */

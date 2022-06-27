@@ -1,4 +1,16 @@
 
+2022-06-27  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* cobc.h, cobc.c: extend cb_format enum with VARIABLE, ACUTERM, and
+	  COBOLX source formats
+	* cobc.c, flag.def: add new flag -fformat and remove flag
+	  indicator-column
+	* cobc.h, pplex.l (cobc_parse_n_set_source_format,
+	  cobc_set_source_format, cobc_get_source_format): encapsulate source
+	  format configuration into preprocessor lexer
+	* pplex.l (ppinput): add support for ACU terminal indicators
+	* ppparse.y: extend SOURCEFORMAT directive for ACUTERM and COBOLX
+
 2022-06-24  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* cobc.c, config.def, flag.def, ppparse.y: requalify indicator-column as
