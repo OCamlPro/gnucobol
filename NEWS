@@ -106,6 +106,8 @@ NEWS - user visible changes				-*- outline -*-
    this has been fixed so that all modules compiled with GnuCOBOL 2.2 can be
    executed with GnuCOBOL 3.2
 
+** cobc's parsing time was heavily cut down for big programs
+
 ** execution times of INSPECT that use big COBOL fields (multiple KB) were
    heavily cut down
 

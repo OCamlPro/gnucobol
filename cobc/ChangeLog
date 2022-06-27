@@ -3,6 +3,9 @@
 
 	* typeck.c (numeric_children_screen_pos_type): ignore redefined
 	  fields
+	* field.c (cb_resolve_redefines): always search candidate with (small)
+	  word list first, instead of checking the complete parent for a same
+	  name with case-insensitive name comparison
 
 2022-06-17  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
