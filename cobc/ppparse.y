@@ -997,7 +997,7 @@ set_choice:
 	size = strlen (p) - 1;
 	p[size] = '\0';
 
-	if (!cobc_parse_n_set_source_format (p)) {
+	if (!cobc_deciph_source_format (p)) {
 		ppp_error_invalid_option ("SOURCEFORMAT", p);
 	}
 	if (cb_src_list_file) {
@@ -1138,23 +1138,18 @@ refmod_directive:
 ;
 
 source_directive:
-  _format _is format_type
+  _format _is VARIABLE_NAME
   {
+	  if (!cobc_deciph_source_format ($3)) {
+		  ppp_error_invalid_option ("SOURCE", $3);
+	  }
 	  if (cb_src_list_file) {
 		  cb_current_file->source_format = cobc_get_source_format ();
 	  }
   }
-;
-
-format_type:
-  FIXED		{ cobc_set_source_format (CB_FORMAT_FIXED); }
-| FREE		{ cobc_set_source_format (CB_FORMAT_FREE); }
-| VARIABLE	{ cobc_set_source_format (CB_FORMAT_VARIABLE); }
-| ACUTERM	{ cobc_set_source_format (CB_FORMAT_ACUTERM); }
-| COBOLX	{ cobc_set_source_format (CB_FORMAT_COBOLX); }
-| GARBAGE
+| _format _is GARBAGE
   {
-	cb_error (_("invalid %s directive"), "SOURCE");
+	cb_error (_("invalid %s directive"), "SOURCE"); /* "FORMAT"? */
 	YYERROR;
   }
 ;

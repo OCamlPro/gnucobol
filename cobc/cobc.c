@@ -3618,7 +3618,7 @@ process_command_line (const int argc, char **argv)
 
 		case 14:
 			/* -fformat=<FIXED/FREE/VARIABLE/ACUTERM/COBOLX> */
-			if (!cobc_parse_n_set_source_format (cob_optarg)) {
+			if (!cobc_deciph_source_format (cob_optarg)) {
 				cobc_err_exit (COBC_INV_PAR, "-fformat");
 			}
 			break;
@@ -4988,7 +4988,7 @@ set_listing_header_code (void)
 			"PG/LN  A...B..............................."
 			".............................");
 		if (cb_listing_wide) {
-			if (cb_listing_file_struct->source_format != CB_FORMAT_VARIABLE
+			if (cb_listing_file_struct->source_format == CB_FORMAT_FIXED
 			    && cb_text_column == 72 && cb_indicator_column == 7) {
 				strcat (cb_listing_header, "SEQUENCE");
 			} else {

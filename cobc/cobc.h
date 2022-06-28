@@ -618,7 +618,7 @@ extern void		pp_set_replace_list (struct cb_replace_list *,
 					     const cob_u32_t);
 extern void		ppparse_error (const char *);
 
-extern int		cobc_parse_n_set_source_format (const char *);
+extern int		cobc_deciph_source_format (const char *);
 extern void		cobc_set_source_format (const enum cb_format);
 extern enum cb_format	cobc_get_source_format (void);
 

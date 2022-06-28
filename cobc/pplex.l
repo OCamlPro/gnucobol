@@ -619,11 +619,10 @@ COBOL_WORDS_DIRECTIVE_STATE>{
 <SOURCE_DIRECTIVE_STATE>{
   "FORMAT"		{ return FORMAT; }
   "IS"			{ return IS; }
-  "FIXED"		{ return FIXED; }
-  "FREE"		{ return FREE; }
-  "VARIABLE"		{ return VARIABLE; }
-  "ACUTERM"		{ return ACUTERM; }
-  "COBOLX"		{ return COBOLX; }
+  {WORD}		{
+	pplval.s = cobc_plex_strdup (yytext);
+	return VARIABLE_NAME;
+  }
 }
 
 <CALL_DIRECTIVE_STATE>{
@@ -1371,7 +1370,7 @@ cobc_parse_source_format (enum cb_format *const out, const char *const sfname) {
 		format = CB_FORMAT_FREE;
 	} else if (!cb_strcasecmp (sfname, "VARIABLE")) {
 		format = CB_FORMAT_VARIABLE;
-	} else if (!cb_strcasecmp (sfname, "ACUTERM")) {
+	} else if (!cb_strcasecmp (sfname, "TERMINAL")) {
 		format = CB_FORMAT_ACUTERM;
 	} else if (!cb_strcasecmp (sfname, "COBOLX")) {
 		format = CB_FORMAT_COBOLX;
@@ -1382,7 +1381,7 @@ cobc_parse_source_format (enum cb_format *const out, const char *const sfname) {
 	return 1;
 }
 
-int cobc_parse_n_set_source_format (const char* const sfname) {
+int cobc_deciph_source_format (const char* const sfname) {
 	enum cb_format format;
 	if (cobc_parse_source_format (&format, sfname)) {
 		cobc_set_source_format (format);
