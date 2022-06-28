@@ -1,4 +1,10 @@
 
+2022-01-27  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* pplex.l, ppparse.y: add support for CONTROL DIVISION (GCOS 7
+	  extension); only SUBSTITUTION SECTION is handled yet
+	* config.def: new control-division option
+
 2022-06-27  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (numeric_children_screen_pos_type): ignore redefined

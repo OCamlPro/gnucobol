@@ -8416,3 +8416,39 @@ AT_CHECK([($GREP -A 200 "P_dump:" prog.c | $GREP -B 200 " CANCEL ") || exit 77],
   /* CANCEL callback handling */
 ])
 AT_CLEANUP
+# one double quote is missing above; adding it here: "
+
+
+AT_SETUP([CONTROL DIVISION])
+AT_KEYWORDS([control gcos])
+
+AT_DATA([empty.cob], [
+       CONTROL          DIVISION.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      empty.
+])
+
+AT_CHECK([$COMPILE_ONLY -fcontrol-division=ok empty.cob], [0], [], [])
+
+AT_DATA([replace.cob], [
+       CONTROL          DIVISION.
+       SUBSTITUTION     SECTION.
+           REPLACE ==TEST-VAR== BY ==VAR==.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      replace.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 TEST-VAR PIC X(2) VALUE "OK".
+       PROCEDURE        DIVISION.
+           DISPLAY VAR NO ADVANCING
+           END-DISPLAY.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fcontrol-division=ok replace.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./replace], [0], [OK], [])
+AT_CHECK([$COMPILE replace.cob], [1], [],
+[replace.cob:2: error: CONTROL DIVISION does not conform to GnuCOBOL
+])
+
+AT_CLEANUP
