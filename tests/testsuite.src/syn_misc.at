@@ -8416,3 +8416,45 @@ AT_CHECK([($GREP -A 200 "P_dump:" prog.c | $GREP -B 200 " CANCEL ") || exit 77],
   /* CANCEL callback handling */
 ])
 AT_CLEANUP
+# one double quote is missing above; adding it here: "
+
+
+AT_SETUP([CONTROL: empty division])
+AT_KEYWORDS([control gcos])
+
+AT_DATA([prog.cob], [
+       CONTROL          DIVISION.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+])
+
+AT_CHECK([$COMPILE_ONLY -fcontrol-division=ok prog.cob], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([CONTROL: replace entry])
+AT_KEYWORDS([control gcos])
+
+AT_DATA([prog.cob], [
+       CONTROL          DIVISION.
+       SUBSTITUTION     SECTION.
+           REPLACE ==TEST-VAR== BY ==VAR==.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 TEST-VAR PIC X(2) VALUE "OK".
+       PROCEDURE        DIVISION.
+           DISPLAY VAR NO ADVANCING
+           END-DISPLAY.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fcontrol-division=ok prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
+AT_CHECK([$COMPILE -fcontrol-division=error prog.cob], [1], [],
+[prog.cob:2: error: CONTROL DIVISION used
+])
+
+AT_CLEANUP

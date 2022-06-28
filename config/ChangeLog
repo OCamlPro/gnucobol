@@ -12,6 +12,10 @@
 
 	* general: added config option device-mnemonics (boolean)
 
+2022-01-27  Nicolas Berthier <nicolas.berther@ocamlpro.com>
+
+	* general: added option control-division
+
 2022-02-07  David Declerck <david.declerck@ocamlpro.com>
 
 	* gcos-strict.conf, gcos.conf, gcos.words: added config files for
