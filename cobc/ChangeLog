@@ -1,9 +1,7 @@
 
-2022-01-27  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+2022-06-28  Simon Sobisch <simonsobisch@gnu.org>
 
-	* pplex.l, ppparse.y: add support for CONTROL DIVISION (GCOS 7
-	  extension); only SUBSTITUTION SECTION is handled yet
-	* config.def: new control-division option
+	* cobc.c, help.c: added -dumpversion
 
 2022-06-27  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -124,6 +122,12 @@
 2022-02-04  David Declerck <david.declerck@ocamlpro.com>
 
 	* parser.y: allow the WITH CONVERSION clause right after DISPLAY (ignored)
+
+2022-01-27  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* pplex.l, ppparse.y: add support for CONTROL DIVISION (GCOS 7
+	  extension); only SUBSTITUTION SECTION is handled yet
+	* config.def: new control-division option
 
 2021-12-30  Simon Sobisch <simonsobisch@gnu.org>
 

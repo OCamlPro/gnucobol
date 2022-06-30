@@ -1,4 +1,13 @@
 
+2022-06-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* gnucobol.texi: minor additions
+
+2022-05-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am: set LANG=C for calling cobcinfo as we currently have
+	  only an English manual and no setup for multi-language includes
+
 2021-01-31  Simon Sobisch <simonsobisch@gnu.org>
 
 	* gnucobol.texi: extended chapters C interface and Debug Options
@@ -7,8 +16,8 @@
 
 	* cobcinfo.sh, gnucobol.texi, Makefile.am: added generation and use
 	  of cbexceptions.tex (needs to be beautified later)
-	* Makefile.am.texi: removed hacky overwrite of TEXI2DVI, because
-	  the additional includes seem not to be necessary in any case
+	* Makefile.am: removed hacky overwrite of TEXI2DVI, because the
+	  additional includes seem not to be necessary in any case
 
 2020-10-13  Simon Sobisch <simonsobisch@gnu.org>
 

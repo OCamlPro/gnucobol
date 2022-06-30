@@ -296,15 +296,19 @@ The following switches display information about the compiler:
 Display help screen (@pxref{Appendix A}).
 No further actions will be taken.
 
-@item --version
+@item --version, -V
 Display compiler version, author package date and executable build
-date.  @option{-V} will also display version. No further actions will be taken.
+date. No further actions will be taken.
+
+@item -dumpversion
+Display internal compiler version (plain string of numbers).
+No further actions will be taken.
 
 @item --info
 Display build information along with the default and current compiler
 configurations. No further actions will be taken except for further display options.
 
-@item --version, -v
+@item --verbose, -v
 Verbosely display the programs invoked during compilation and additional diagnostics. 
 Use multiple times to increase the verbosity.
 
@@ -637,6 +641,9 @@ RM/COBOL compatible
 
 @item -std=realia-strict, -std=realia
 CA Realia II compatible
+
+@item -std=gcos-strict, -std=gcos
+GCOS compatible
 
 @item -freserved-words=@var{dialect}
 Compiler uses the given @var{dialect} to determine the reserved words.

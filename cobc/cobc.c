@@ -555,6 +555,7 @@ static const char short_options[] = "hVivqECScbmxjdFROPgwo:t:T:I:L:l:D:K:k:";
 static const struct option long_options[] = {
 	{"help",		CB_NO_ARG, NULL, 'h'},
 	{"version",		CB_NO_ARG, NULL, 'V'},
+	{"dumpversion",		CB_NO_ARG, NULL, '~'},	/* format: GCC dumpfullversion */
 	{"verbose",		CB_OP_ARG, NULL, 'v'},
 	{"brief",		CB_NO_ARG, NULL, 'q'},
 	{"###",			CB_NO_ARG, NULL, '#'},
@@ -2993,6 +2994,14 @@ process_command_line (const int argc, char **argv)
 			}
 			cobc_early_exit (EXIT_SUCCESS);
 
+		case '~':
+			/* -dumpversion */
+			printf ("%s\n",
+				CB_XSTRINGIFY (__LIBCOB_VERSION) "."
+				CB_XSTRINGIFY (__LIBCOB_VERSION_MINOR) "."
+				CB_XSTRINGIFY (__LIBCOB_VERSION_PATCHLEVEL));
+			exit (EXIT_SUCCESS);
+
 		case 'i':
 			/* --info */
 			cobc_print_info ();
@@ -3347,8 +3356,8 @@ process_command_line (const int argc, char **argv)
 
 		case '%':
 			/* -f<tag>=<value> : Override configuration entry */
-			/* hint: -f[no-]<tag> sets the var directly */
 			/* including options -freserved=word / -fregister=word */
+			/* hint: -f[no-]<tag> sets the var directly */
 			conf_label = cobc_main_malloc (COB_MINI_BUFF);
 			conf_entry = cobc_malloc (COB_MINI_BUFF - 2);
 			snprintf (conf_label, COB_MINI_MAX, "-%s=%s",
