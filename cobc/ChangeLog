@@ -1,4 +1,20 @@
 
+2022-07-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* field.c (validate_blank_when_zero): iterate over pic->str
+	  depending on pic->lenstr (= won't iterate when zero)
+	* codegen.c: minimal refactoring
+	* tree.c (compare_field_literal): ensure field is verified,
+	  otherwise pic and size related checks will fail
+	* parser.y, reserved.c, cobc.h: added most missing COBOL2002 data clauses
+	  as PENDING and reserved words as necessary
+	* scanner.l: distinguish between INVALID KEY and INVALID
+	* parser.y, reserved.c: distinguish between VALUES and VALUE,
+	  fixing falsely parsed VALUE ARE and VALUES IS
+	* parser.y: split level 88 VALUE clause to value_clause_condition,
+	  added content_validation format to it (already usable as condition,
+	  preparation for later content validation by VALUE statement)
+
 2022-06-10  Ron Norman <rjn@inglenet.com>
 
 	* flag.def,config.def : Moved defaultbyte from flag to config
@@ -9,8 +25,8 @@
 2022-06-10  Ron Norman <rjn@inglenet.com>
 
 	* codegen.c : Improvement of code emitted for INITIALIZE of tables
-		Initial table values, then clear next, 
-		then propagate through remainder of the table
+	  Initial table values, then clear next,
+	  then propagate through remainder of the table
 
 2022-05-31  Simon Sobisch <simonsobisch@gnu.org>
 

@@ -1816,10 +1816,10 @@ output_attr (const cb_tree x)
 					break;
 				}
 
-				id = lookup_attr (type, 
-							f->pic->flag_has_p?f->pic->real_digits:f->pic->digits,
-							f->pic->scale, flags,
-							f->pic->str, f->pic->lenstr);
+				id = lookup_attr (type,
+					f->pic->flag_has_p ? f->pic->real_digits : f->pic->digits,
+					f->pic->scale, flags,
+					f->pic->str, f->pic->lenstr);
 				break;
 			}
 		}
@@ -5170,19 +5170,17 @@ deduce_initialize_type (struct cb_initialize *p, struct cb_field *f,
 static void
 propagate_table (cb_tree x, int bgn_idx)
 {
-	struct cb_field *f;
-	long len, maxlen;
-	unsigned int occ, j = 1;
+	struct cb_field *f = cb_code_field (x);
+	const unsigned int occ = f->occurs_max;
+	cob_uli_t len = (cob_uli_t)f->size;
+	cob_uli_t maxlen = len * occ;
+	unsigned int j = 1;
 
-	f = cb_code_field (x);
-	len = (long)f->size;
-	occ = f->occurs_max;
-	maxlen = len * occ;
 	if (bgn_idx < 1)
 		bgn_idx = 1;
 
 	if (gen_init_working
-	 || (!chk_field_variable_size(f)
+	 || (!chk_field_variable_size (f)
 	  && !f->flag_unbounded
 	  && !f->depending)) {
 		/* Table size is known at compile time */
@@ -5198,11 +5196,12 @@ propagate_table (cb_tree x, int bgn_idx)
 			}
 			output (";");
 			output_newline ();
+			/* double the chunks each time */
 			do {
 				output_prefix ();
 				output ("memcpy (b_ptr + %6ld, b_ptr, %6ld);", len, len);
-				output ("\t/* %s: %5d thru %d */", f->name, 
-								j + bgn_idx, j * 2 + bgn_idx - 1);
+				output ("\t/* %s: %5d thru %d */",
+						f->name, j + bgn_idx, j * 2 + bgn_idx - 1);
 				output_newline ();
 				j = j * 2;
 				len = len * 2;
@@ -5236,14 +5235,12 @@ static int
 initialize_uniform_char (const struct cb_field *f,
 			 const struct cb_initialize *p)
 {
-	int	c;
-
 	if (cb_default_byte >= 0 && !p->flag_init_statement) {
 		return cb_default_byte;
 	}
 
 	if (f->children) {
-		c = initialize_uniform_char (f->children, p);
+		const int	c = initialize_uniform_char (f->children, p);
 		for (f = f->children->sister; f; f = f->sister) {
 			if (!f->redefines) {
 				if (c != initialize_uniform_char (f, p)) {
@@ -5525,7 +5522,7 @@ output_initialize_one (struct cb_initialize *p, cb_tree x)
 	if (p->val && f->values) {
 		value = CB_VALUE (f->values);
 		/* Check for non-standard OCCURS */
-		if ((f->level == 1 || f->level == 77) 
+		if ((f->level == 1 || f->level == 77)
 		 && f->flag_occurs 
 		 && !p->flag_init_statement) {
 			init_occurs = 1;
@@ -5864,6 +5861,7 @@ output_initialize_occurs (struct cb_initialize *p, cb_tree x)
 		idx_stop = 0;
 		offset = f->offset;
 		list = f->values;
+		/* TODO: move check to parser and translate msgid */
 		k = cb_list_length (f->values) - total_occurs;
 		if (k > 0) {
 			cb_error_x ((cb_tree)f, "%s has %d more value%s than needed",
@@ -5939,7 +5937,7 @@ output_initialize_occurs (struct cb_initialize *p, cb_tree x)
 static void
 output_initialize_compound (struct cb_initialize *p, cb_tree x)
 {
-	struct cb_field	*ff = cb_code_field (x);
+	const struct cb_field	* const ff = cb_code_field (x);
 	struct cb_field	*pf, *f;
 	struct cb_field	*last_field;
 
@@ -9820,7 +9818,7 @@ output_file_initialization (struct cb_file *f)
 		} else {
 			output_param (f->key, -1);
 		}
-		output (", %d, 0, -1, NULL",f->flag_primary_dups);
+		output (", %d, 0, -1, NULL", f->flag_primary_dups);
 		output_key_components (f, f->component_list, 0);
 
 		for (l = f->alt_key_list; l; l = l->next) {
@@ -10220,11 +10218,12 @@ output_report_sum_control_field (struct cb_field *p)
 				if (CB_PURPOSE (l)) {
 					x = CB_PURPOSE (l);
 				} else {
+					/* TODO: comment about when we get in here */
 					continue;
 				}
 			}
 			f = cb_code_field (x);
-			output_base (f,1);
+			output_base (f, 1);
 			if (!f->flag_field) {
 				FILE	*savetarget;
 				struct field_list	*fl;
@@ -10266,7 +10265,7 @@ output_report_summed_field (struct cb_field *p)
 		return;
 	}
 
-	if(p->storage == CB_STORAGE_REPORT) {
+	if (p->storage == CB_STORAGE_REPORT) {
 		cb_tree	l, x;
 		struct cb_field *f;
 
@@ -10276,13 +10275,14 @@ output_report_summed_field (struct cb_field *p)
 				if (CB_PURPOSE (l)) {
 					x = CB_PURPOSE (l);
 				} else {
+					/* TODO: comment about when we get in here */
 					continue;
 				}
 			}
-			f = cb_code_field(x);
+			f = cb_code_field (x);
 			if (f->storage == CB_STORAGE_WORKING
 			&& !(f->report_flag & COB_REPORT_REF_EMITTED)) {
-				output_emit_field(cb_build_field_reference (f, NULL), NULL);
+				output_emit_field (cb_build_field_reference (f, NULL), NULL);
 			}
 		}
 		if (p->children) {
@@ -11298,19 +11298,22 @@ output_report_move_source (struct cb_field *f, int first)
 	}
 	if (f->report_source) {
 		if (f->report_source_txt == NULL) {
-			output_line ("/* Move To %s */",get_field_name (f));
+			output_line ("/* Move To %s */",
+				get_field_name (f));
 		} else {
-			output_line ("/* Move %s To %s */",f->report_source_txt,get_field_name (f));
+			output_line ("/* Move %s To %s */", f->report_source_txt,
+				get_field_name (f));
 		}
 		stack_id = 0;
 		output_prefix ();
 		output ("cob_move (");
 		output_param (f->report_source, -1);
 		output (", ");
-		if (f->report_from)
+		if (f->report_from) {
 			output_param (f->report_from, -1);
-		else
+		} else {
 			output_param (build_field_sub (f), -1);
+		}
 		output (");");
 		output_newline ();
 	}
@@ -11339,14 +11342,14 @@ output_report_source_move (struct cb_report *rep)
 	char	wrk[64];
 
 	if (rep->sum_exec) {
-		output_line ("/* Compute values for report %s */",rep->cname);
+		output_line ("/* Compute values for report %s */", rep->cname);
 		output_indent_level = 0;
 		output_line ("rw_src_%d: ",rep->id);
 		output_indent_level = 4;
-		output_line ("switch (%s%s.exec_source)",CB_PREFIX_REPORT,rep->cname);
+		output_line ("switch (%s%s.exec_source)", CB_PREFIX_REPORT, rep->cname);
 		output_block_open ();
 		first = 0;
-		output_line ("case %d: /* Compute SUMs */",rep->sum_exec);
+		output_line ("case %d: /* Compute SUMs */", rep->sum_exec);
 		output_indent_level += 2;
 		for (f=rep->records; f; f = f->sister) {
 			output_report_move_sums (f, 1);
@@ -11372,12 +11375,13 @@ output_report_source_move (struct cb_report *rep)
 				output_block_open ();
 				first = 0;
 			}
-			if (f->occurs_max > 1)
-				sprintf (wrk," OCCURS %d",f->occurs_max);
-			else
-				strcpy(wrk,"");
-			output_line ("case %d: /* Set SOURCE for line %d: %s%s */",f->report_source_id,
-										f->common.source_line,f->name,wrk);
+			if (f->occurs_max > 1) {
+				sprintf (wrk, " OCCURS %d", f->occurs_max);
+			} else {
+				wrk[0] = 0;
+			}
+			output_line ("case %d: /* Set SOURCE for line %d: %s%s */",
+				f->report_source_id, f->common.source_line, f->name, wrk);
 			output_indent_level += 2;
 			if (f->report_decl_id) {
 				output_line ("frame_ptr++;\t/* PERFORM Declaratives Before */");
@@ -14313,8 +14317,10 @@ codegen (struct cb_program *prog, const char *translate_name, const int subseque
 				comment_gen = 1;
 				output_storage ("\n/* Decimal constants */\n");
 			}
-			output_storage ("static\tcob_decimal\t%s%d;\n", CB_PREFIX_DEC_FIELD,m->id);
-			output_storage ("static\tcob_decimal\t*%s%d = NULL;\n", CB_PREFIX_DEC_CONST,m->id);
+			output_storage ("static\tcob_decimal\t%s%d;\n",
+					CB_PREFIX_DEC_FIELD, m->id);
+			output_storage ("static\tcob_decimal\t*%s%d = NULL;\n",
+					CB_PREFIX_DEC_CONST, m->id);
 		}
 	}
 	if (comment_gen) {

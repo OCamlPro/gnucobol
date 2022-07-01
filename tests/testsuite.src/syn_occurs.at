@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2015-2019 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2015-2022 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 ##
 ## This file is part of GnuCOBOL.
@@ -130,8 +130,10 @@ AT_DATA([prog.cob], [
            88  y VALUE "a" OCCURS 10.
 ])
 
+# note: the message is from level-88 content-validation entry format,
+#       which is mixed in the parser (as it may be used as) condition format
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:7: error: syntax error, unexpected OCCURS, expecting .
+[prog.cob:7: error: syntax error, unexpected OCCURS, expecting INVALID or VALID
 ])
 
 AT_CLEANUP

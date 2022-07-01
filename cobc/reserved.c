@@ -262,7 +262,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "ACTIVATING",		0, 1, -1,			/* 200x (C/S) */
 				0, CB_CS_MODULE_NAME
   },
-  { "ACTIVE-CLASS",		0, 0, -1,			/* 2002 */
+  { "ACTIVE-CLASS",		0, 0, ACTIVE_CLASS,			/* 2002 */
 				0, 0
   },
   { "ACTIVE-X",		1, 1, ACTIVEX,		/* ACU extension, very unlikely to be implemented */
@@ -289,7 +289,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "ALIGNMENT",		0, 1, ALIGNMENT,		/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
   },
-  { "ALIGNED",			0, 0, -1,			/* 2002 */
+  { "ALIGNED",			0, 0, ALIGNED,			/* 2002 */
 				0, 0
   },
   { "ALL",			0, 0, ALL,			/* 2002 */
@@ -512,7 +512,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "BLOCK",			0, 0, BLOCK,			/* 2002 */
 				0, 0
   },
-  { "BOOLEAN",			0, 0, -1,			/* 2002 */
+  { "BOOLEAN",			0, 0, BOOLEAN,			/* 2002 */
 				0, 0
   },
   { "BOTTOM",			0, 0, BOTTOM,			/* 2002 */
@@ -933,7 +933,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, 0
   },
   { "DEFAULT",			0, 0, DEFAULT,			/* 2002 */
-				0, 0
+				CB_CS_DEFAULT, 0
   },
   { "DEFAULT-BUTTON",		0, 1, DEFAULT_BUTTON,		/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
@@ -1265,7 +1265,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "F",			0, 1, F,			/* Extension */
 				0, CB_CS_RECORDING
   },
-  { "FACTORY",			0, 0, -1,			/* 2002 */
+  { "FACTORY",			0, 0, FACTORY,			/* 2002 */
 				0, 0
   },
   { "FALSE",			0, 0, TOK_FALSE,		/* 2002 */
@@ -1398,7 +1398,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "FOREVER",			0, 1, FOREVER,			/* 2002 (C/S) */
 				0, CB_CS_PERFORM | CB_CS_RETRY
   },
-  { "FORMAT",			0, 0, -1,			/* 2002 */
+  { "FORMAT",			0, 0, FORMAT,			/* 2002 */
 				0, 0
   },
   { "FRAME",		1, 1, FRAME,		/* ACU extension */
@@ -1606,7 +1606,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "INSPECT",			1, 0, INSPECT,			/* 2002 */
 				CB_CS_INSPECT, 0
   },
-  {"INSTALLATION",			0, 1, INSTALLATION,			/* 85 (later: C/S) */
+  { "INSTALLATION",			0, 1, INSTALLATION,			/* 85 (later: C/S) */
 				0, CB_CS_DAY /* HACK, we only want it to normally be not usable */
   },
   { "INTERFACE",		0, 0, -1,			/* 2002 */
@@ -1987,8 +1987,8 @@ static struct cobc_reserved default_reserved_words[] = {
   { "NO-UPDOWN",			0, 1, NO_UPDOWN,			/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
   },
-  { "NONE",			0, 1, -1,			/* 2002 (C/S) */
-				0, 0
+  { "NONE",			0, 1, NONE,			/* 2002 (C/S) */
+				0, CB_CS_DEFAULT
   },
   { "NONNUMERIC",		0, 1, NONNUMERIC,		/* IBM extension */
 				0, CB_CS_XML_GENERATE
@@ -2370,8 +2370,8 @@ static struct cobc_reserved default_reserved_words[] = {
   { "REGION-COLOR",			0, 1, REGION_COLOR,			/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
   },
-  { "RELATION",			0, 1, -1,			/* 2002 (C/S) */
-				0, 0
+  { "RELATION",			0, 1, RELATION,			/* 2002 (C/S) */
+				0, CB_CS_VALIDATE_STATUS
 	/* FIXME: 2014 Context-sensitive to VALIDATE-STATUS clause */
   },
   { "RELATIVE",			0, 0, RELATIVE,			/* 2002 */
@@ -2383,7 +2383,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "REMAINDER",		0, 0, REMAINDER,		/* 2002 */
 				0, 0
   },
-  {"REMARKS",			0, 1, REMARKS,			/* 85 (later: C/S) */
+  { "REMARKS",			0, 1, REMARKS,			/* 85 (later: C/S) */
 				0, CB_CS_DAY /* HACK, we only want it to normally be not usable */
   },
   { "REMOVAL",			0, 0, REMOVAL,			/* 2002 */
@@ -2557,7 +2557,7 @@ static struct cobc_reserved default_reserved_words[] = {
   { "SECURE",			0, 1, SECURE,			/* 2002 (C/S) */
 				0, CB_CS_ACCEPT | CB_CS_DISPLAY | CB_CS_SCREEN
   },
-  {"SECURITY",			0, 1, SECURITY,			/* 85 (later: C/S) */
+  { "SECURITY",			0, 1, SECURITY,			/* 85 (later: C/S) */
 				0, CB_CS_DAY /* HACK, we only want it to normally be not usable */
   },
   { "SEGMENT",			0, 0, SEGMENT,			/* Communication Section */
@@ -3035,22 +3035,25 @@ static struct cobc_reserved default_reserved_words[] = {
   { "V",			0, 1, V,			/* Extension */
 				0, CB_CS_RECORDING
   },
-  { "VAL-STATUS",		0, 0, -1,			/* 2002 */
-				0, 0
+  { "VAL-STATUS",		0, 0, VALIDATE_STATUS,			/* 2002 */
+				0, CB_CS_VALIDATE_STATUS
   },
-  { "VALID",			0, 0, -1,			/* 2002 */
+  { "VALID",			0, 0, VALID,			/* 2002 */
 				0, 0
   },
   { "VALIDATE",			0, 0, VALIDATE,			/* 2002 */
 				0, 0
   },
-  { "VALIDATE-STATUS",		0, 0, -1,			/* 2002 */
-				0, 0
+  { "VALIDATE-STATUS",		0, 0, VALIDATE_STATUS,			/* 2002 */
+				0, CB_CS_VALIDATE_STATUS
   },
   { "VALIDATING",		0, 1, VALIDATING,		/* IBM extension */
 				0, CB_CS_XML_PARSE
   },
   { "VALUE",			0, 0, VALUE,			/* 2002 */
+				0, 0
+  },
+  { "VALUES",			0, 0, VALUES,			/* 2002 */
 				0, 0
   },
   { "VALUE-FORMAT",			0, 1, VALUE_FORMAT,			/* ACU extension */

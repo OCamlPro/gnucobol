@@ -770,9 +770,19 @@ H#[0-9A-Za-z]+ {
 	RETURN_TOK (NOT_INVALID_KEY);
 }
 
-"INVALID"([ ,;\n]+"KEY")?/[ .,;\n] {
+"INVALID"[ ,;\n]+"KEY"/[ .,;\n] {
 	count_lines (yytext);
 	RETURN_TOK (INVALID_KEY);
+}
+
+"INVALID" {
+	if (cobc_in_procedure) {
+		RETURN_TOK (INVALID_KEY);
+	} else {
+		/* note: INVALID is a reserved word in all dialects,
+		         otherwise we'd lookup and return WORD as necessary */
+		RETURN_TOK (INVALID);
+	}
 }
 
 "NO"[ ,;\n]+"DATA"/[ .,;\n] {

@@ -1,7 +1,11 @@
 
+2022-07-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: removed alias VALUES=VALUE, now a separate word
+
 2022-06-10  Ron Norman <rjn@inglenet.com>
 
-	*  *.conf: Add 'defaultbyte'
+	*  general: add 'defaultbyte'
 
 2022-02-07  David Declerck <david.declerck@ocamlpro.com>
 

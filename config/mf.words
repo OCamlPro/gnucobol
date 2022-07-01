@@ -664,7 +664,7 @@ reserved:	USING
 reserved:	V*                   # missing in the list, but actually reserved, at least C/S
 reserved:	VALIDATING*
 reserved:	VALUE
-reserved:	VALUES=VALUE
+reserved:	VALUES
 reserved:	VARBINARY*
 reserved:	VARIABLE
 reserved:	VARYING

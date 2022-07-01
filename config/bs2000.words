@@ -536,7 +536,7 @@ reserved:	VALIDATE
 reserved:	VALIDATE-STATUS
 reserved:	VALIDITY*
 reserved:	VALUE
-reserved:	VALUES=VALUE
+reserved:	VALUES
 reserved:	VARYING
 reserved:	VERSION-XML
 reserved:	WHEN

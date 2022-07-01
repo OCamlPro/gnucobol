@@ -5410,6 +5410,11 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 	/* LCOV_EXCL_STOP */
 
 	f = CB_FIELD (cb_ref (x));
+	/* ensure the reference was validated as this
+		also calculates the reference' picture and size */
+	if (!f->flag_is_verified) {
+		cb_validate_field (f);
+	}
 	if (f->flag_any_length
 	 || (f->pic == NULL && !f->children)) {
 		return cb_any;

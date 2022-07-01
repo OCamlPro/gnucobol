@@ -2380,6 +2380,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token ACCEPT
 %token ACCESS
 %token ACTIVEX			"ACTIVE-X"
+%token ACTIVE_CLASS		"ACTIVE-CLASS"
 %token ACTION
 %token ACTUAL
 %token ADD
@@ -2387,6 +2388,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token ADJUSTABLE_COLUMNS	"ADJUSTABLE-COLUMNS"
 %token ADVANCING
 %token AFTER
+%token ALIGNED
 %token ALIGNMENT
 %token ALL
 %token ALLOCATE
@@ -2459,6 +2461,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token BLANK
 %token BLINK
 %token BLOCK
+%token BOOLEAN
 %token BOTTOM
 %token BOX
 %token BOXED
@@ -2691,6 +2694,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token EXTERNAL
 %token EXTERNAL_FORM		"EXTERNAL-FORM"
 %token F
+%token FACTORY
 %token FD
 %token FH__FCD		"FH--FCD"
 %token FH__KEYDEF		"FH--KEYDEF"
@@ -2727,6 +2731,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token FOR
 %token FOREGROUND_COLOR		"FOREGROUND-COLOR"
 %token FOREVER
+%token FORMAT
 %token FORMATTED_DATE_FUNC	"FUNCTION FORMATTED-DATE"
 %token FORMATTED_DATETIME_FUNC	"FUNCTION FORMATTED-DATETIME"
 %token FORMATTED_TIME_FUNC	"FUNCTION FORMATTED-TIME"
@@ -2916,9 +2921,10 @@ set_record_size (cb_tree min, cb_tree max)
 %token NO_FOCUS			"NO-FOCUS"
 %token NO_GROUP_TAB		"NO-GROUP-TAB"
 %token NO_KEY_LETTER	"NO-KEY-LETTER"
-%token NOMINAL
 %token NO_SEARCH		"NO-SEARCH"
 %token NO_UPDOWN		"NO-UPDOWN"
+%token NOMINAL
+%token NONE
 %token NONNUMERIC
 %token NORMAL
 %token NOT
@@ -3048,6 +3054,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token REFERENCES
 %token REFRESH
 %token REGION_COLOR		"REGION-COLOR"
+%token RELATION
 %token RELATIVE
 %token RELEASE
 %token REMAINDER
@@ -3286,9 +3293,12 @@ set_record_size (cb_tree min, cb_tree max)
 %token UTF_8		"UTF-8"
 %token UTF_16		"UTF-16"
 %token V
+%token VALID
 %token VALIDATE
+%token VALIDATE_STATUS	"VALIDATE-STATUS"
 %token VALIDATING
 %token VALUE
+%token VALUES
 %token VALUE_FORMAT		"VALUE-FORMAT"
 %token VARIABLE
 %token VARIANT
@@ -4699,6 +4709,7 @@ _in_alphabet:
   /* empty */
 | IN alphabet_name
   {
+	/* note: IN is mandatory here */
 	CB_PENDING_X ($2, _("CLASS IS integer IN alphabet-name"));
 	$$ = $2;
   }
@@ -6867,16 +6878,27 @@ _renames_thru:
 ;
 
 condition_name_entry:
-  EIGHTY_EIGHT user_entry_name
+  EIGHTY_EIGHT _user_entry_name
   {
 	if (set_current_field ($1, $2)) {
 		YYERROR;
 	}
   }
-  value_clause
+  value_clause_condition
   {
 	cb_validate_88_item (current_field);
   }
+;
+
+_user_entry_name:
+  /* empty (FILLER not allowed here) */
+  {
+	$$ = cb_build_filler ();
+	qualifier = NULL;
+	keys_list = NULL;
+	non_const_word = 0;
+  }
+| user_entry_name
 ;
 
 constant_entry:
@@ -7002,6 +7024,18 @@ data_description_clause:
 | external_form_clause
 | identified_by_clause
 | volatile_clause
+| select_when_clause
+| format_clause
+| validate_status_clause
+| default_clause
+| class_clause
+| present_when_clause
+| invalid_when_clause
+| destination_clause
+| data_varying_clause
+  {
+	CB_PENDING ("VALIDATE");
+  }
 ;
 
 
@@ -7071,7 +7105,8 @@ same_as_clause:
 ;
 
 
-/* TYPEDEF clause (COBOL2002+ rule "directly after entry-name" ignored [not true for MF!]) */
+/* TYPEDEF clause (COBOL2002+ rule "directly after entry-name" is ignored
+   as this rule does not exist with MF!]) */
 
 typedef_clause:
   _is TYPEDEF _strong
@@ -7240,6 +7275,39 @@ special_names_target:
   }
 ;
 
+/* SELECT WHEN clause */
+
+select_when_clause:
+  SELECT WHEN
+  {
+	if (current_field->level != 1 && current_field->level != 77) {
+		cb_error (_ ("%s only allowed at 01/77 level"), "SELECT WHEN");
+	}
+	CB_PENDING ("SELECT WHEN");
+  }
+  when_choice
+;
+
+when_choice:
+  condition_no_is
+| OTHER
+;
+
+/* FORMAT clause */
+
+format_clause:
+  FORMAT format_choice _data
+  {
+	CB_PENDING ("FORMAT");
+  }
+;
+
+format_choice:
+  BIT		{ $$ = cb_int0; }
+| CHARACTER	{ $$ = cb_int1; }
+| NUMERIC	{ $$ = cb_int2; }
+;
+
 /* VOLATILE clause */
 
 volatile_clause:
@@ -7325,6 +7393,7 @@ type_to_clause:
 
 usage_clause:
   _usage_is pre_usage usage post_usage
+| USAGE _is conflict_usage
 | USAGE _is error
   {
 	check_and_set_usage (CB_USAGE_ERROR);
@@ -7350,6 +7419,13 @@ usage:
   }
 | BIT
   {
+	check_and_set_usage (CB_USAGE_BIT);
+	CB_PENDING ("USAGE BIT");
+  }
+| BIT ALIGNED
+  {
+	/* note: ALIGNED actually is a separate clause but at least
+	         for now we simplify it, requesting it after USAGE BIT */
 	check_and_set_usage (CB_USAGE_BIT);
 	CB_PENDING ("USAGE BIT");
   }
@@ -7607,6 +7683,32 @@ usage:
 	check_and_set_usage (CB_USAGE_ERROR);
 	YYERROR;
   }
+;
+
+/* tokens that explicit need USAGE _is (because of reduce/reduce conflicts) */
+conflict_usage:
+  OBJECT REFERENCE _object_reference_type
+  {
+	check_and_set_usage (CB_USAGE_OBJECT);
+	CB_PENDING ("OBJECTS");
+  }
+;
+
+_object_reference_type:
+  /* empty */
+| WORD
+| _factory_of ACTIVE_CLASS
+| _factory_of CLASS_NAME _only
+;
+
+_factory_of:
+  /* empty */
+| FACTORY _of
+;
+
+_only:
+  /* empty */ { $$ = NULL; }
+| ONLY	 { $$ = cb_int0; }
 ;
 
 double_usage:
@@ -7925,12 +8027,16 @@ based_clause:
 /* VALUE clause */
 
 value_clause:
-  VALUE _is_are value_item_list
+  value_is_are value_item_list
   {
 	check_repeated ("VALUE", SYN_CLAUSE_12, &check_pic_duplicate);
-	current_field->values = $3;
+	current_field->values = $2;
   }
-  _false_is
+;
+
+value_is_are:
+  VALUE _is
+| VALUES _are
 ;
 
 value_item_list:
@@ -7943,16 +8049,149 @@ value_item:
 | constant_expression
 ;
 
-_false_is:
-  /* empty */
-| _when_set_to TOK_FALSE _is lit_or_length
+
+value_clause_condition:
+  value_is_are value_item_list_in_alphabet
   {
-	if (current_field->level != 88) {
-		cb_error (_("FALSE clause only allowed for 88 level"));
-	}
+	current_field->values = $2;
+  }
+  _false_or_content_validation
+;
+
+value_item_list_in_alphabet:
+  value_item_list
+/* the following is correct, passes parser, but is matched in places where
+   it shouldn't (record key), therefore disabled for now
+| value_item_list _in alphabet_name
+  {
+	$$ = $1;
+	CB_PENDING ("literal in alphabet");
+  }
+ */
+;
+
+
+_false_or_content_validation:
+  /* empty */
+| false_is
+| content_validation
+;
+
+false_is:
+  _when_set_to TOK_FALSE _is lit_or_length
+  {
 	current_field->false_88 = CB_LIST_INIT ($4);
   }
 ;
+
+content_validation:
+  /* a content validation entry may be used for condition-check, too
+     and this will work, the VALIDATE part doesn't
+	 (in theory: IN/ARE should not be used for content-validation entries,
+	  but that's too much parser work) */
+  _is_are valid_or_invalid _when_condition
+  {
+	CB_PENDING ("VALIDATE");
+  }
+;
+
+valid_or_invalid:
+  VALID  	{ $$ = cb_int0; }
+| INVALID	{ $$ = cb_int1; }
+;
+
+_when_condition:
+  /* empty */
+| WHEN condition
+  {
+	/* PENDING, but message already above */
+  }
+;
+
+/* VALIDATE-STATUS clause (content-validation) */
+
+validate_status_clause:
+  VALIDATE_STATUS _is target_x when_error_choice _on_choice
+  FOR validate_for_identifier_list
+  {
+	CB_PENDING ("VALIDATE");
+  }
+;
+
+when_error_choice:
+  _when ERROR		{ $$ = cb_int1; }
+| _when NO ERROR	{ $$ = cb_int0; }
+;
+
+_on_choice:
+  /* empty */	{ $$ = NULL; }
+| ON FORMAT 	{ $$ = cb_int0; }
+| ON CONTENT	{ $$ = cb_int1; }
+| ON RELATION	{ $$ = cb_int2; }
+;
+
+/* DEFAULT clause (content-validation) */
+
+default_clause:
+  DEFAULT _is x_or_none
+  {
+	CB_PENDING ("VALIDATE");
+  }
+;
+
+x_or_none:
+  x
+| NONE	{ $$ = NULL; }
+;
+
+/* CLASS clause (content-validation) */
+
+class_clause:
+  CLASS _is class_option
+  {
+	CB_PENDING ("VALIDATE");
+  }
+;
+
+class_option:
+  NUMERIC
+| ALPHABETIC
+| ALPHABETIC_LOWER
+| ALPHABETIC_UPPER
+| BOOLEAN
+| CLASS_NAME
+| alphabet_name
+;
+
+/* DESTINATION clause (content-validation) */
+
+destination_clause:
+  DESTINATION _is target_x_list
+  {
+	/* FIXME: it _seems_ that reference_list would be
+	          better, but that doesn't handle indices / refmod */
+	CB_PENDING ("VALIDATE");
+  }
+;
+
+/* PRESENT WHEN clause (content-validation) */
+
+present_when_clause:
+  PRESENT WHEN condition_no_is
+  {
+	CB_PENDING ("VALIDATE");
+  }
+;
+
+/* INVALID WHEN clause (content-validation) */
+
+invalid_when_clause:
+  INVALID WHEN condition_no_is
+  {
+	CB_PENDING ("VALIDATE");
+  }
+;
+
 
 /* ANY LENGTH clause */
 
@@ -8395,7 +8634,7 @@ report_group_option:
 | present_when_condition
 | group_indicate_clause
 | report_occurs_clause
-| report_varying_clause
+| data_varying_clause
 ;
 
 type_is_clause:
@@ -8611,20 +8850,20 @@ page_or_ids:
 | OR
 ;
 
-report_varying_clause:
-  VARYING report_varying_list
+data_varying_clause:
+  VARYING data_varying_list
   {
 	current_field->report_vary_list = $2;
   }
 ;
 
-report_varying_list:
-  report_varying			{ $$ = CB_LIST_INIT ($1); }
-| report_varying_list
-  report_varying			{ $$ = cb_list_add ($1, $2); }
+data_varying_list:
+  data_varying			{ $$ = CB_LIST_INIT ($1); }
+| data_varying_list
+  data_varying			{ $$ = cb_list_add ($1, $2); }
 ;
 
-report_varying:
+data_varying:
   WORD var_from var_by 
   {
 	cb_tree x;
@@ -17051,6 +17290,70 @@ expr_token:
 | B_SHIFT_RC		{ push_expr ('d', NULL); }
 ;
 
+condition_no_is: /* HACK, FIXME */
+  expr_no_is
+  {
+	$$ = cb_build_cond ($1);
+	cb_end_cond ($$);
+  }
+| error
+  {
+	$$ = cb_error_node;
+	cb_end_cond ($$);
+  }
+;
+
+expr_no_is:
+  partial_expr_no_is
+  {
+	$$ = cb_build_expr ($1);
+  }
+;
+
+partial_expr_no_is:
+  {
+	current_expr = NULL;
+	cb_exp_line = cb_source_line;
+  }
+  expr_tokens_no_is
+  {
+	$$ = cb_list_reverse (current_expr);
+  }
+;
+
+expr_tokens_no_is:
+  expr_token_no_is
+| expr_tokens_no_is expr_token_no_is
+;
+
+expr_token_no_is:
+  x				{ push_expr ('x', $1); }
+| condition_or_class
+| not_expr condition_or_class
+| not_expr ZERO			{ push_expr ('x', cb_zero); }
+/* Parentheses */
+| TOK_OPEN_PAREN		{ push_expr ('(', NULL); }
+| TOK_CLOSE_PAREN		{ push_expr (')', NULL); }
+/* Arithmetic operators */
+| TOK_PLUS			{ push_expr ('+', NULL); }
+| TOK_MINUS			{ push_expr ('-', NULL); }
+| TOK_MUL			{ push_expr ('*', NULL); }
+| TOK_DIV			{ push_expr ('/', NULL); }
+| EXPONENTIATION		{ push_expr ('^', NULL); }
+/* Logical operators */
+| AND				{ push_expr ('&', NULL); }
+| OR				{ push_expr ('|', NULL); }
+| B_AND				{ push_expr ('a', NULL); }
+| B_OR				{ push_expr ('o', NULL); }
+| B_XOR				{ push_expr ('e', NULL); }
+| B_NOT				{ push_expr ('n', NULL); }
+| B_SHIFT_L			{ push_expr ('l', NULL); }
+| B_SHIFT_R			{ push_expr ('r', NULL); }
+| B_SHIFT_LC		{ push_expr ('c', NULL); }
+| B_SHIFT_RC		{ push_expr ('d', NULL); }
+;
+
+
 _not_expr:
   /* empty */
 | not_expr
@@ -17074,6 +17377,7 @@ condition_or_class:
 | ALPHABETIC			{ push_expr ('A', NULL); }
 | ALPHABETIC_LOWER		{ push_expr ('L', NULL); }
 | ALPHABETIC_UPPER		{ push_expr ('U', NULL); }
+/* CHECKME: seems missing  | BOOLEAN */
 /* Sign condition */
 /* ZERO is defined in 'x' */
 | POSITIVE			{ push_expr ('P', NULL); }
@@ -17485,7 +17789,7 @@ _reference:
 
 single_reference_list:
   single_reference			{ $$ = CB_LIST_INIT ($1); }
-| single_reference_list single_reference{ $$ = cb_list_add ($1, $2); }
+| single_reference_list single_reference { $$ = cb_list_add ($1, $2); }
 ;
 
 single_reference:
@@ -17989,6 +18293,39 @@ identifier_list:
 | identifier_list identifier
   {
 	$$ = cb_list_add ($1, $2);
+  }
+;
+
+validate_for_identifier_list:
+  for_identifier
+  {
+	$$ = CB_LIST_INIT ($1);
+  }
+| validate_for_identifier_list for_identifier
+  {
+	$$ = cb_list_add ($1, $2);
+  }
+;
+
+for_identifier:
+  target_identifier_1
+  {
+	cb_tree target = cb_try_ref ($1);
+	if (CB_FIELD_P (target)) {
+		const struct cb_field *f = CB_FIELD (target);
+		struct cb_reference	*r = CB_REFERENCE ($1);
+		if (r->offset) {
+			cb_error_x ($1, _("'%s' cannot be reference modified"), "VALIDATE FOR");
+		}
+		if (f->flag_occurs && current_field->flag_occurs) {
+			/* HACK, should be done correct later, for now adjusts subscript-check */
+			r->flag_all = 1;
+		}
+		$$ = cb_build_identifier ($1, 0);
+	} else {
+		cb_error_x ($1, _("'%s' is not a field"), cb_name (target));
+	}
+	$$ = target;
   }
 ;
 

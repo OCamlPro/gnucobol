@@ -803,7 +803,7 @@ reserved:	USER-COLORS*
 reserved:	USER-GRAY*
 reserved:	USER-WHITE*
 reserved:	VALUE
-reserved:	VALUES=VALUE
+reserved:	VALUES
 reserved:	VALUE-FORMAT*
 reserved:	VARIANT*
 reserved:	VARYING
