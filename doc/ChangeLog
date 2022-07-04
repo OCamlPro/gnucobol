@@ -1,4 +1,8 @@
 
+2022-07-04  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* gnucobol.texi: document newly supported source formats
+
 2021-01-31  Simon Sobisch <simonsobisch@gnu.org>
 
 	* gnucobol.texi: extended chapters C interface and Debug Options

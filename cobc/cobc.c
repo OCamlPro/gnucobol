@@ -240,7 +240,6 @@ FILE			*cb_listing_file = NULL;
 char	print_data[CB_PRINT_LEN + 1];
 size_t	pd_off;
 
-#define IS_DEBUG_LINE(line) ((line)[CB_INDICATOR] == 'D')
 #define IS_CONTINUE_LINE(line) ((line)[CB_INDICATOR] == '-')
 #define IS_COMMENT_LINE(line) \
    ((line)[CB_INDICATOR] == '*' || (line)[CB_INDICATOR] == '/')
@@ -3617,7 +3616,7 @@ process_command_line (const int argc, char **argv)
 			break;
 
 		case 14:
-			/* -fformat=<FIXED/FREE/VARIABLE/ACUTERM/COBOLX> */
+			/* -fformat=<FIXED/FREE/VARIABLE/CRT/XCARD/TERMINAL/COBOLX> */
 			if (!cobc_deciph_source_format (cob_optarg)) {
 				cobc_err_exit (COBC_INV_PAR, "-fformat");
 			}
@@ -6559,14 +6558,16 @@ adjust_line_numbers (struct list_files *cfile, int line_num, int adjust)
 }
 
 static COB_INLINE COB_A_INLINE int
-is_debug_line (char *line, int fixed)
+is_debug_line (char *line, int fixed, int acudebug)
 {
 	if (line == NULL || line[0] == 0) {
 		return 0;
 	}
 	return !cb_flag_debugging_line
-		&& ((fixed && IS_DEBUG_LINE (line))
-		    || (!fixed && !strncasecmp (line, "D ", 2)));
+		&& ((fixed && line[CB_INDICATOR] == 'D')
+		    || (!fixed && (acudebug
+				   ? !strncasecmp (line, "\\D", 2)
+				   : !strncasecmp (line, "D ", 2))));
 }
 
 static COB_INLINE COB_A_INLINE int
@@ -6835,6 +6836,7 @@ print_replace_text (struct list_files *cfile, FILE *fd,
 	char	*to_ptr;
 	char	*newline;
 	const int	fixed = (cfile->source_format == CB_FORMAT_FIXED);
+	const int	acudebug = (cfile->source_format == CB_FORMAT_ACUTERM);
 	int	first_col = fixed ? CB_MARGIN_A : 0;
 	int	last;
 	int	multi_token;
@@ -6982,7 +6984,7 @@ print_replace_text (struct list_files *cfile, FILE *fd,
 				adjust_line_numbers (cfile, line_num,  -1);
 				overread = 1;
 			}
-			if (is_debug_line (pline[pline_cnt], fixed)) {
+			if (is_debug_line (pline[pline_cnt], fixed, acudebug)) {
 				adjust_line_numbers (cfile, line_num,  -1);
 				overread = 1;
 			}
@@ -7000,7 +7002,7 @@ print_replace_text (struct list_files *cfile, FILE *fd,
 				pline[pline_cnt][0] = 0;
 				eof = 1;
 			}
-			if (is_debug_line (pline[pline_cnt], fixed)
+			if (is_debug_line (pline[pline_cnt], fixed, acudebug)
 			    || is_comment_line (pline[pline_cnt], fixed)) {
 				adjust_line_numbers (cfile, line_num,  -1);
 				goto next_rec;

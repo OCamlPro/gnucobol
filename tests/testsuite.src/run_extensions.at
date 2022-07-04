@@ -5067,6 +5067,21 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [Hello!
 ])
 
+AT_DATA([fit.cob], [
+       >>SOURCE FORMAT VARIABLE
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. fit.
+000040 PROCEDURE DIVISION.
+000050                                                                                                                                                                                                                                    DISPLAY "Hello!"
+000060     STOP RUN.
+])
+
+AT_CHECK([$COMPILE fit.cob], [0], [], [])
+AT_CHECK([$COMPILE -ftext-column=250 fit.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./fit], [0],
+[Hello!
+])
+
 AT_CLEANUP
 
 
@@ -5077,53 +5092,39 @@ AT_DATA([prog.cob], [
        >>SOURCE FORMAT COBOLX
  IDENTIFICATION DIVISION.
  PROGRAM-ID. prog.
-* blah blah blah
+* area B can extend up to character position 255
  PROCEDURE DIVISION.
+/
                                                         DISPLAY "Hello!"
+                                                                                                                                                                                                                                                  DISPLAY "Hi!"
 DDISPLAY "Hey!"
 D                                                         DISPLAY "Bye!"
+* trucated alphanumeric literals are not padded with spaces
+ DISPLAY "        20        30        40        50        60        70        80        90       100       110       120       130
+-        "       140       150       160       170       180       190       200       210       220       230       240       250"
  .
 ])
+# " (closing quote)
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [Hello!
+Hi!
+        20        30        40        50        60        70        80        90       100       110       120       130       140       150       160       170       180       190       200       210       220       230       240       250
 ])
 AT_CHECK([$COMPILE -fdebugging-line prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [Hello!
+Hi!
 Hey!
 Bye!
+        20        30        40        50        60        70        80        90       100       110       120       130       140       150       160       170       180       190       200       210       220       230       240       250
 ])
-
-AT_DATA([cobolx.cob], [
- IDENTIFICATION   DIVISION.
- PROGRAM-ID.      cobolx.
- DATA             DIVISION.
- WORKING-STORAGE  SECTION.
-/
- PROCEDURE        DIVISION.
-     DISPLAY '     20        30        40         50       60        70'
-*    One last message in case of debug:
-D    DISPLAY 'DEBUG'
-     STOP RUN.
-])
-
-AT_CHECK([$COMPILE_ONLY -fformat=cobolx cobolx.cob], [0], [], [])
-AT_CHECK([$COMPILE_ONLY -fformat=cobolx -ftext-column=71 cobolx.cob], [1], [],
-[cobolx.cob:11: error: continuation character expected
-cobolx.cob:8: error: invalid literal: ' 20 30 40 50 60 70 ...'
-cobolx.cob:8: error: missing terminating ' character
-cobolx.cob:8: error: syntax error, unexpected end of file
-])
-
-# FIXME: A continuation may not directly follow a debug line, right?
-# In this case the error above is not the correct one.
 
 AT_CLEANUP
 
 
-AT_SETUP([ACUTERM format])
+AT_SETUP([TERMINAL format])
 AT_KEYWORDS([fundamental extensions])
 
 AT_DATA([prog.cob], [
@@ -5141,10 +5142,33 @@ PROCEDURE        DIVISION.
       STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -fformat=acuterm prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fformat=terminal prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
-AT_CHECK([$COMPILE -fformat=acuterm -fdebugging-line prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fformat=terminal -fdebugging-line prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OKKO], [])
+
+AT_DATA([fit.cob], [
+* Sample program in ACU terminal format, and with longer lines and truncated literals.
+
+IDENTIFICATION   DIVISION.
+PROGRAM-ID.      fit.
+DATA             DIVISION.
+WORKING-STORAGE  SECTION.
+PROCEDURE        DIVISION.
+      DISPLAY '   20        30        40        50        60        70        80        90       100       110       120       130       140       150       160       170       180       190       200       210       220       230       240       250       260       270       280       290       300       310      319'
+\D    DISPLAY '   20        30        40        50        60        70        80        90       100       110       120       130       140       150       160       170       180       190       200       210       220       230       240       250       260       270       280       290       300       310      319'
+\D    END-DISPLAY.
+      DISPLAY '   20        30        40        50        60        70        80        90       100       110       120       130
+-             '       140       150       160       170       180       190       200       210       220       230       240       250       260       270       280       290       300       310      319'
+      STOP RUN.
+])
+AT_CHECK([$COMPILE -fformat=terminal fit.cob], [0], [], [])
+AT_CHECK([$COMPILE -fformat=terminal -fdebugging-line fit.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./fit], [0],
+[   20        30        40        50        60        70        80        90       100       110       120       130       140       150       160       170       180       190       200       210       220       230       240       250       260       270       280       290       300       310      319
+   20        30        40        50        60        70        80        90       100       110       120       130       140       150       160       170       180       190       200       210       220       230       240       250       260       270       280       290       300       310      319
+   20        30        40        50        60        70        80        90       100       110       120       130       140       150       160       170       180       190       200       210       220       230       240       250       260       270       280       290       300       310      319
+], [])
 
 AT_CLEANUP
 

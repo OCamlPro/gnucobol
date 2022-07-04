@@ -131,7 +131,9 @@ struct plex_stack {
 /* Format-specific columns; should only be assigned in cobc_set_source_format
    below. */
 int			cb_indicator_column = 7;
-int			cb_text_column;
+int			cb_text_column = 72;
+int			cb_floating_area_b = 0;
+int			cb_fill_literals = 1;
 
 /* Local variables */
 static char			*plexbuff1 = NULL;
@@ -1329,29 +1331,50 @@ ppparse_error (const char *err_msg)
 	cb_plex_error (newline_count, "%s", err_msg);
 }
 
-
+/* Sets `cb_indicator_column`, `cb_text_column`, `cb_floating_area_b`, and
+   `cb_fill_literals`, based on the given source format. */
 void
 cobc_set_source_format (const enum cb_format sf) {
 	cb_source_format = sf;
 
 	switch (cb_source_format) {
+	case CB_FORMAT_ACUTERM:
+	case CB_FORMAT_ICOBOL_CRT:
+	case CB_FORMAT_COBOLX:
+		cb_indicator_column = 1;
+		cb_floating_area_b = cb_source_format != CB_FORMAT_COBOLX;
+		cb_fill_literals = 0;
+		break;
+	default:
+		cb_indicator_column = 7;
+		cb_floating_area_b = 0;
+		cb_fill_literals = 1;
+		break;
+	}
+
+	switch (cb_source_format) {
+	case CB_FORMAT_FIXED:
+		cb_text_column = cb_config_text_column; /* 72 by default */
+		break;
 	case CB_FORMAT_VARIABLE:
 		/* This value matches most MF Visual COBOL 4.0 version. */
 		/* CHECKME: 500 seen in format_type entry of `ppparse.y`. */
 		cb_text_column = 250;
 		break;
-	default:
-		cb_text_column = cb_config_text_column;
-		break;
-	}
-
-	switch (cb_source_format) {
 	case CB_FORMAT_ACUTERM:
-	case CB_FORMAT_COBOLX:
-		cb_indicator_column = 1;
+	case CB_FORMAT_ICOBOL_CRT:
+		/* CHECKME:
+		   https://sf.net/p/gnucobol/feature-requests/29/#c2d0/8d2f */
+		cb_text_column = 320;
 		break;
-	default:
-		cb_indicator_column = 7;
+	case CB_FORMAT_COBOLX:
+	case CB_FORMAT_ICOBOL_XCARD:
+		cb_text_column = 255;
+		break;
+	case CB_FORMAT_FREE:
+		/* text-column should be ignored: put an invalid value to catch
+		   some bugs? */
+		cb_text_column = -1;
 		break;
 	}
 }
@@ -1370,6 +1393,10 @@ cobc_parse_source_format (enum cb_format *const out, const char *const sfname) {
 		format = CB_FORMAT_FREE;
 	} else if (!cb_strcasecmp (sfname, "VARIABLE")) {
 		format = CB_FORMAT_VARIABLE;
+	} else if (!cb_strcasecmp (sfname, "XCARD")) { /* CHECKME: name? */
+		format = CB_FORMAT_ICOBOL_XCARD;
+	} else if (!cb_strcasecmp (sfname, "CRT")) { /* CHECKME: name? */
+		format = CB_FORMAT_ICOBOL_CRT;
 	} else if (!cb_strcasecmp (sfname, "TERMINAL")) {
 		format = CB_FORMAT_ACUTERM;
 	} else if (!cb_strcasecmp (sfname, "COBOLX")) {
@@ -1684,6 +1711,7 @@ ppinput (char *buff, const size_t max_size)
 	size_t	gotcr;
 	size_t	line_overflow;
 	size_t	continuation;
+	size_t	indicator_width;
 	int	ipchar;
 	int	i;
 	int	n;
@@ -1859,8 +1887,7 @@ start:
 		}
 
 		/* Check if text is longer than cb_text_column */
-		if (cb_source_format != CB_FORMAT_VARIABLE
-		 && n > cb_text_column + 1) {
+		if (n > cb_text_column + 1) {
 			/* Show warning if it is not whitespace
 			   (postponed after checking for comments by setting
 			    line_overflow to first column that leads to
@@ -1971,6 +1998,7 @@ start:
 	/* Fixed format */
 
 	/* Check the indicator */
+	indicator_width = 1;
 	switch (buff[cb_indicator_column - 1]) {
 	case ' ':
 		break;
@@ -1989,7 +2017,8 @@ start:
 	case 'd':
 	case 'D':
 		if (cb_source_format == CB_FORMAT_ACUTERM) {
-			break;
+			indicator_width = 0;
+			break; /* ACU terminal: this 'D' denotes a nominal text line */
 		}
 		/* Debugging line */
 		(void) cb_verify (cb_debugging_mode, _("debugging indicator"));
@@ -2007,11 +2036,12 @@ start:
 		    cb_source_format == CB_FORMAT_ACUTERM) {
 			/* ACUTERM debugging line */
 			(void) cb_verify (cb_debugging_mode, _("debugging indicator"));
+			indicator_width = 2;
 			if (cb_flag_debugging_line) {
 				break;
 			}
 		} else {
-			/* Invalid acuterm indicator? */
+			/* Invalid ACU terminal indicator? */
 			cb_plex_error (newline_count,
 				       _("invalid indicator '\\' at column %d"),
 				       cb_indicator_column);
@@ -2019,7 +2049,8 @@ start:
 		newline_count++;
 		goto start;
 	default:
-		if (cb_source_format == CB_FORMAT_ACUTERM) {
+		if (cb_floating_area_b) { /* indicator is optional */
+			indicator_width = 0;
 			break;
 		}
 		/* Invalid indicator */
@@ -2035,9 +2066,10 @@ start:
 	/* Skip comments that follow after AUTHORS, etc. */
 	if (unlikely (within_comment)) {
 		/* Check all of "Area A" */
-		const int margin_b = (cb_source_format == CB_FORMAT_ACUTERM)
-			? cb_indicator_column
-			: cb_indicator_column + 4;
+		/* CHECKME: MF's doc on TERMINAL format reads "Area B starts in
+		   column 5 and extends to the end of the line."  Does this hold
+		   for debug lines "\D ..." as well? */
+		const int margin_b = cb_indicator_column + indicator_width - 1 + 4;
 		const int ipchar_max = (n - 1 < margin_b) ? n - 1 : margin_b;
 		for (ipchar = cb_indicator_column; ipchar < ipchar_max; ++ipchar) {
 			if (buff[ipchar] != ' ') {
@@ -2053,24 +2085,18 @@ start:
 	}
 
 	/* Skip blank lines */
-	for (i = cb_indicator_column; buff[i] == ' '; ++i) {
-		;
-	}
-
+	for (i = cb_indicator_column; buff[i] == ' '; ++i);
 	if (buff[i] == '\n') {
 		newline_count++;
 		goto start;
 	}
 
-	if (cb_source_format != CB_FORMAT_ACUTERM) {
-		buff[cb_indicator_column - 1] = ' ';
-		bp = buff + cb_indicator_column;
-	} else if (buff[cb_indicator_column - 1] == '\\' &&
-		   buff[cb_indicator_column] == 'D') {
-		buff[cb_indicator_column - 1] = ' ';
-		buff[cb_indicator_column] = ' ';
-		bp = buff + cb_indicator_column;
+	/* Substitute spaces for indicator */
+	const int margin_a = cb_indicator_column + indicator_width - 1;
+	for (i = cb_indicator_column - 1; i < margin_a; i++) {
+		buff[i] = ' ';
 	}
+	bp = buff + margin_a;
 
 	if (unlikely (continuation)) {
 		/* Line continuation */
@@ -2145,8 +2171,10 @@ start:
 		if (!consecutive_quotation) {
 			need_continuation = 1;
 		}
-		for (; i < cb_text_column;) {
-			buff[i++] = ' ';
+		if (cb_fill_literals) {
+			for (; i < cb_text_column;) {
+				buff[i++] = ' ';
+			}
 		}
 		buff[i] = 0;
 	} else {
@@ -2438,6 +2466,7 @@ check_listing (const char *text, const unsigned int comment)
 		fprintf (cb_listing_file, "%6d%c", ++listing_line, c);
 	}
 
+	/* FIXME: what's the condition here? */
 	if (requires_listing_line && cb_source_format != CB_FORMAT_FREE &&
 	    strlen (text) > 6) {
 		s = &text[6];

@@ -414,25 +414,54 @@ Place the output into @var{file}.
 @node Source format
 @subsection Source format
 
-GnuCOBOL supports both fixed and free source format.
+GnuCOBOL supports fixed, free, variable, terminal, and COBOLX source formats.
 The default format is the fixed format.
 This can be overridden either by the
-@code{>>SOURCE [FORMAT] [IS] @{FIXED|FREE@}} directive,
+@code{>>SOURCE [FORMAT] [IS] @{FIXED|FREE|VARIABLE|XCARD|CRT|TERMINAL|COBOLX@}} directive,
 or by one of the following options:
 
 @table @code
-@item -free, -F
+@item -free, -F, -fformat=free
 Free format.  The program-text area starts in column 1 and
 continues till the end of line (effectively 255 characters
 in GnuCOBOL).
 
-@item -fixed
+@item -fixed, -fformat=fixed
 Fixed format.  Source code is divided into: columns 1-6, the sequence
 number area; column 7, the indicator area; columns 8-72, the program-text
 area; and columns 72-80 as the reference area.@footnote{Historically, fixed
 format was based on 80-character punch cards.}
 
+@item -fformat=variable
+Microfocus' Variable format.  Identical to the fixed format above except
+for the program-text area which extends up to column 250 instead of 72.
+
+@item -fformat=xcard
+ICOBOL xCard format.  Variable format with right margin set at column
+255 instead of 250.
+
+@item -fformat=crt
+ICOBOL Free-form format (CRT).  The program-text area may start in
+column 1 unless an indicator is present, and lines may contain up to 320
+characters.
+
+@item -fformat=terminal
+ACUCOBOL-GT Terminal format.  Similar to the CRT format above, with
+indicator for debugging lines being @code{\D} instead of @code{D} or
+@code{d}.  This format is mostly compatible with VAX COBOL.
+
+@item -fformat=cobolx
+COBOLX format.  This format is similar to the CRT format above, except
+that the indicator area is always present in column 1; the program-text
+area starts in column 2 and extends up to the end of the record.  Lines
+may contain up to 255 characters.
+
 @end table
+
+Note that with source formats @code{TERMINAL}, @code{CRT}, and
+@code{COBOLX}, missing spaces are not inserted within alphanumeric
+literals that are truncated before the right margin.
+
 
 @node Warning options
 

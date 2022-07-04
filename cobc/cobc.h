@@ -90,9 +90,11 @@
 enum cb_format {
 	CB_FORMAT_FIXED = 0,
 	CB_FORMAT_FREE,
-	CB_FORMAT_VARIABLE,
-	CB_FORMAT_ACUTERM,
-	CB_FORMAT_COBOLX,
+	CB_FORMAT_VARIABLE,	/* MF's Variable format */
+	CB_FORMAT_ICOBOL_XCARD,	/* ICOBOL xCard */
+	CB_FORMAT_ICOBOL_CRT,	/* ICOBOL Free-form format (CRT) */
+	CB_FORMAT_ACUTERM,	/* ACU Terminal format, named "TERMINAL" */
+	CB_FORMAT_COBOLX,	/* GCOS's COBOLX */
 };
 
 #if 0 /* ancient OSVS registers that need special runtime handling - low priority */
@@ -361,6 +363,9 @@ extern enum cb_current_date	current_date;
 #endif
 extern int			cb_indicator_column;
 extern int			cb_text_column;	/* end of area B (in single-byte characters) */
+extern int			cb_floating_area_b; /* whether indicator is optional */
+extern int			cb_fill_literals; /* whether trucated alphanumeric literals should
+						     be filled with spaces up to text column */
 
 extern struct cb_exception	cb_exception_table[];
 extern const struct cb_exception	cb_io_exception_table[];
