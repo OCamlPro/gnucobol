@@ -81,10 +81,10 @@ static	cob_settings	*isam_setptr;
 #define	isfullclose(x)	isclose (x)
 #define	COB_WITH_STATUS_02
 
-/* DISAM specifics */
+/* D-ISAM specifics */
 #elif	defined(WITH_DISAM)
 #define	isfullclose(x)	isclose (x)
-/* current DISAM */
+/* current D-ISAM */
 #if defined(HAVE_ISCONFIG_H) && defined(HAVE_ISINTSTD_H)
 #include <isconfig.h>
 #if defined(HAVE_ISWRAP_H)
@@ -108,11 +108,22 @@ static	cob_settings	*isam_setptr;
 /* V-ISAM specifics (updated free VBISAM) */
 #elif	defined(WITH_VISAM)
 #include <visam.h>
+#ifdef VB_MAX_KEYLEN
+#ifdef MAXKEYLEN
+#undef MAXKEYLEN
+#endif
 #define MAXKEYLEN VB_MAX_KEYLEN
+#endif
+#if defined(VB_RTD)
+#undef VB_RTD
+#endif
 #if defined(ISVARLEN)
+/* Does not work well with V-ISAM */
 #undef ISVARLEN
 #endif
-#define	COB_WITH_STATUS_02
+#if !defined(COB_WITH_STATUS_02)
+#define COB_WITH_STATUS_02
+#endif               
 
 
 /* VBISAM specifics (either "old" one or updated, or VBISAM 2.2) */
@@ -808,7 +819,7 @@ isam_version (void)
 #if defined(WITH_CISAM)
 	ln = sprintf(msg, "C-ISAM");
 #elif defined(WITH_DISAM)
-	ln = sprintf(msg, "DISAM %s",isversnumber);
+	ln = sprintf(msg, "D-ISAM %s",isversnumber);
 #elif defined(WITH_VBISAM)
 #ifdef VBISAM_VERSION
 	ln = sprintf(msg, "VBISAM %s",VBISAM_VERSION);
@@ -819,7 +830,7 @@ isam_version (void)
 #endif
 #elif defined(WITH_VISAM)
 #ifdef VISAM_VERSION
-	ln = sprintf(msg, "V-ISAM %s ",VISAM_VERSION);
+	ln = sprintf(msg, "V-ISAM %s",VISAM_VERSION);
 #else
 	ln = sprintf(msg, "V-ISAM in C-ISAM mode");
 #endif
@@ -2023,7 +2034,7 @@ cob_isam_init_fileio (cob_file_api *a)
 #endif
 #if defined(WITH_DISAM)
 	a->io_funcs[COB_IO_DISAM] = (void*) &ext_indexed_funcs;
-	isam_name = "DISAM";
+	isam_name = "D-ISAM";
 #elif defined(WITH_CISAM)
 	a->io_funcs[COB_IO_CISAM] = (void*) &ext_indexed_funcs;
 	isam_name = "C-ISAM";

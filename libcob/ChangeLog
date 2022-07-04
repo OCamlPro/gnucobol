@@ -1,9 +1,13 @@
 
+2022-07-04  Ron Norman <rjn@inglenet.com>
+	* Updated Copyright date to include 2022
+	* Reverted back to using D-ISAM and V-ISAM names
+
 2022-06-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* Makefile.am: always build INDEXED handlers as separate libraries
 	* libcobvc.c, libcobvb.c, libcobci.c, libcobdi.c, fileio.h: simplified
-	* fisam.c: spelling correction for DISAM and VBISAM
+	* fisam.c: spelling correction for D-ISAM and VBISAM
 	* fileio.c (cob_io_version), common.c: add "quiet" version
 	  to output only name
 	* fileio.c (cob_load_module): try to resolve entrypoint in libcob
@@ -798,22 +802,22 @@
 
 2021-01-14  Ron Norman <rjn@inglenet.com> 
 
-	* fileio.c: Improved check for DISAM file for 7.2
+	* fileio.c: Improved check for D-ISAM file for 7.2
 
 2021-01-12  Ron Norman <rjn@inglenet.com> 
 
 	* fileio.c: Added a flag 'config' to the table of I/O modules
 	            so that it is now which ones had been configured 
 	* fisam.c: Additional work for ISAM logging/transaction ability
-	           VBISAM 2.2 in default and CISAM mode works fine
-	           DISAM 7.2 is also working in transaction mode
+	           VBISAM 2.2 in default and C-ISAM mode works fine
+	           D-ISAM 7.2 is also working in transaction mode
 
 2021-01-10  Ron Norman <rjn@inglenet.com> 
 
 	* fisam.c: Additional work for ISAM logging/transaction ability
-	           VBISAM 2.2 in default and CISAM mode works fine
-	           DISAM 7.0 is not working in transaction mode
-	           and it may be that DISAM 7.2 or better is required
+	           VBISAM 2.2 in default and C-ISAM mode works fine
+	           D-ISAM 7.0 is not working in transaction mode
+	           and it may be that D-ISAM 7.2 or better is required
 
 2021-01-09  Ron Norman <rjn@inglenet.com> 
 
@@ -880,12 +884,12 @@
 
 2020-12-16  Ron Norman <rjn@inglenet.com>
 
-	* common.h: Changes to handle VBISAM in CISAM mode
-	* common.c: Changes to report using VBISAM in CISAM mode
+	* common.h: Changes to handle VBISAM in C-ISAM mode
+	* common.c: Changes to report using VBISAM in C-ISAM mode
 	* fileio.c: Changes to handle "format=vbcisam"
 			    and to load libcobvc.so at startup
-	* fisam.c: Changes for building with VBISAM in CISAM mode
-	* Makefile.am: Changes for configure/build of VBISAM in CISAM mode
+	* fisam.c: Changes for building with VBISAM in C-ISAM mode
+	* Makefile.am: Changes for configure/build of VBISAM in C-ISAM mode
 				
 2020-12-15  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -1635,7 +1639,7 @@
 	* fisam.c Updated for multiple xISAM handlers
 	* Makefile.am Updated for multiple xISAM
 	* libcobci.c - builds fisam.c for C-ISAM
-	* libcobdi.c - builds fisam.c for DISAM
+	* libcobdi.c - builds fisam.c for D-ISAM
 	* libcobvb.c - builds fisam.c for VBISAM
 
 2019-10-20  Ron Norman <rjn@inglenet.com>
@@ -1656,7 +1660,7 @@
 	* fileio.h added with common definitions for all fileio modules
 	* flmdb.c copied from isam-lmdb branch
 	* You can now configure multiple INDEXED file handlers but only one of
-	  C-ISAM, DISAM or VBISAM
+	  C-ISAM, D-ISAM or VBISAM
 
 2019-10-15  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -3654,7 +3658,7 @@
 
 	* fileio.c updated to return correct status codes for WRITE/REWRITE
 	  related to duplicate keys being detected
-	  This was tested with BDB, DISAM and VBISAM 2.1.1
+	  This was tested with BDB, D-ISAM and VBISAM 2.1.1
 
 2015-02-26  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -3670,13 +3674,13 @@
 
 	* fileio.c [WITH_VBISAM, VB_RTD]: updated to handle VBISAM 2.1.1
 	* fileio.c [WITH_DB]: handle sparse and split keys for BDB
-	  This was tested with BDB, DISAM, VBISAM 2.0 and VBISAM 2.1.1
+	  This was tested with BDB, D-ISAM, VBISAM 2.0 and VBISAM 2.1.1
 
 2015-02-23  Ron Norman <rjn@inglenet.com>
 
 	Implemented INDEXED file support for sparse and split keys FR #23 + FR #281
 	* fileio.c: updated to handle sparse and split keys
-	  This was tested with DISAM and VBISAM 2.0
+	  This was tested with D-ISAM and VBISAM 2.0
 
 2015-02-18  Ron Norman <rjn@inglenet.com>
 
@@ -4235,12 +4239,12 @@
 
 2007-11-21  Roger While <simrw@sim-basis.de>
 
-	* fileio.c: add ISAM (C-ISAM/DISAM/VBISAM) code
+	* fileio.c: add ISAM (C-ISAM/D-ISAM/VBISAM) code
 
 2007-11-20  Roger While <simrw@sim-basis.de>
 
 	* fileio.c: Cater for 02 return status
-	  Put in hooks for ISAM (C-ISAM/DISAM/VBISAM) code
+	  Put in hooks for ISAM (C-ISAM/D-ISAM/VBISAM) code
 
 2007-11-09  Roger While <simrw@sim-basis.de>
 

@@ -1301,7 +1301,8 @@ const char *
 cob_io_version (const int iortn, const int verbose)
 {
 	if (iortn > COB_IO_MAX) return _("unsupported");
-	if (verbose < 0) return io_rtns[iortn].name;
+	if (verbose < 0) return io_rtns[iortn].desc ? 
+						io_rtns[iortn].desc : io_rtns[iortn].name;
 
 	cob_load_module (iortn);
 	if (fileio_funcs[iortn] == NULL) {
@@ -1313,7 +1314,8 @@ cob_io_version (const int iortn, const int verbose)
 		return module_msg;
 	}
 	if (fileio_funcs[iortn]->ioversion == NULL) {
-		sprintf (module_msg, "%s %s (%s)", io_rtns[iortn].name,
+		sprintf (module_msg, "%s %s (%s)", 
+			io_rtns[iortn].desc ? io_rtns[iortn].desc : io_rtns[iortn].name,
 			_("unknown"), "no version");
 		return module_msg;
 	}
