@@ -15,6 +15,7 @@
 	  preprocessor lexer
 	* pplex.l (ppinput): add support for ACU terminal and X/Open indicators,
 	  as well as floating margin B
+	* pplex.l (check_listing): do not output sequence number of short lines
 
 2022-06-24  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 

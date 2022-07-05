@@ -2490,12 +2490,12 @@ check_listing (const char *text, const unsigned int comment)
 		fprintf (cb_listing_file, "%6d%c", ++listing_line, c);
 	}
 
-	/* FIXME: what's the condition here? */
-	if (requires_listing_line && source_format != CB_FORMAT_FREE &&
-	    strlen (text) > 6) {
-		s = &text[6];
+	if (requires_listing_line &&
+	    source_format != CB_FORMAT_FREE &&
+	    strlen (text) >= cb_indicator_column) {
+		s = &text[cb_indicator_column - 1];
 	} else {
-		s = text;
+		s = "";		/* do not output sequence area */
 	}
 	fputs (s, cb_listing_file);
 	if (strchr (text, '\n')) {
