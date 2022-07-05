@@ -1142,9 +1142,9 @@ source_directive:
 		  cb_current_file->source_format = cobc_get_source_format ();
 	  }
   }
-| _format _is GARBAGE
+| _format _is LITERAL
   {
-	cb_error (_("invalid %s directive"), "SOURCE"); /* "FORMAT"? */
+	ppp_error_invalid_option ("SOURCE", $3);
 	YYERROR;
   }
 ;
