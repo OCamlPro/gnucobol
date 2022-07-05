@@ -363,9 +363,6 @@ extern enum cb_current_date	current_date;
 #endif
 extern int			cb_indicator_column;
 extern int			cb_text_column;	/* end of area B (in single-byte characters) */
-extern int			cb_floating_area_b; /* whether indicator is optional */
-extern int			cb_fill_literals; /* whether trucated alphanumeric literals should
-						     be filled with spaces up to text column */
 
 extern struct cb_exception	cb_exception_table[];
 extern const struct cb_exception	cb_io_exception_table[];

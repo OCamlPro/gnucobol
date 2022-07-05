@@ -609,11 +609,6 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %token SOURCE_DIRECTIVE
 %token FORMAT
 %token IS
-%token FIXED
-%token FREE
-%token VARIABLE
-%token ACUTERM
-%token COBOLX
 
 %token CALL_DIRECTIVE
 %token COBOL

@@ -129,11 +129,9 @@ struct plex_stack {
 /* Global variables */
 
 /* Format-specific columns; should only be assigned in cobc_set_source_format
-   below. */
+   below (exported for listing code in `cobc.c`) */
 int			cb_indicator_column = 7;
 int			cb_text_column = 72;
-int			cb_floating_area_b = 0;
-int			cb_fill_literals = 1;
 
 /* Local variables */
 static char			*plexbuff1 = NULL;
@@ -152,7 +150,11 @@ static int			quotation_mark = 0;
 static int			listing_line = 0;
 static int			requires_listing_line;
 static int			requires_new_line = 0;
-static enum cb_format		cb_source_format;
+static enum cb_format		source_format;
+static int	floating_area_b = 0;	   /* whether indicator is optional */
+static int	fill_continued_alnums = 1; /* whether continued alphanumeric
+					      literals should be filled with
+					      spaces up to text column */
 
 static char	display_msg[PPLEX_BUFF_LEN];
 
@@ -1331,28 +1333,29 @@ ppparse_error (const char *err_msg)
 	cb_plex_error (newline_count, "%s", err_msg);
 }
 
-/* Sets `cb_indicator_column`, `cb_text_column`, `cb_floating_area_b`, and
-   `cb_fill_literals`, based on the given source format. */
+/* Sets `source_format`, `cb_indicator_column`, `cb_text_column`,
+   `floating_area_b`, and `fill_continued_alnums`, based on the given source
+   format. */
 void
 cobc_set_source_format (const enum cb_format sf) {
-	cb_source_format = sf;
+	source_format = sf;
 
-	switch (cb_source_format) {
+	switch (source_format) {
 	case CB_FORMAT_ACUTERM:
 	case CB_FORMAT_ICOBOL_CRT:
 	case CB_FORMAT_COBOLX:
 		cb_indicator_column = 1;
-		cb_floating_area_b = cb_source_format != CB_FORMAT_COBOLX;
-		cb_fill_literals = 0;
+		floating_area_b = source_format != CB_FORMAT_COBOLX;
+		fill_continued_alnums = 0;
 		break;
 	default:
 		cb_indicator_column = 7;
-		cb_floating_area_b = 0;
-		cb_fill_literals = 1;
+		floating_area_b = 0;
+		fill_continued_alnums = 1;
 		break;
 	}
 
-	switch (cb_source_format) {
+	switch (source_format) {
 	case CB_FORMAT_FIXED:
 		cb_text_column = cb_config_text_column; /* 72 by default */
 		break;
@@ -1381,7 +1384,7 @@ cobc_set_source_format (const enum cb_format sf) {
 
 enum cb_format
 cobc_get_source_format (void) {
-	return cb_source_format;
+	return source_format;
 }
 
 static int
@@ -1826,7 +1829,7 @@ start:
 		   [but only during ppinput() in pplex.l ?]
 		   Workaround for now: Temporary newline_count + 1
 		*/
-		if (cb_source_format == CB_FORMAT_FREE) {
+		if (source_format == CB_FORMAT_FREE) {
 			if (line_overflow == 0) {
 				cb_plex_warning (cb_missing_newline, newline_count + 1,
 						_("line not terminated by a newline"));
@@ -1856,21 +1859,21 @@ start:
 		if (memcmp("<<<<<<<", buff, 7) == 0
 		 || memcmp("=======", buff, 7) == 0
 		 || memcmp(">>>>>>>", buff, 7) == 0) {
-			/* FIXME: the different line numbers (see test "conflict markers" 
+			/* FIXME: the different line numbers (see test "conflict markers"
 			   are definitely a bug to solve in short time */
-			if (cb_source_format == CB_FORMAT_FREE) {
+			if (source_format == CB_FORMAT_FREE) {
 				++newline_count;
 			}
 			cb_plex_error (newline_count,
 				_("version control conflict marker in file"));
-			if (cb_source_format != CB_FORMAT_FREE) {
+			if (source_format != CB_FORMAT_FREE) {
 				++newline_count;
 			}
 			goto start;
 		}
 	}
 
-	if (cb_source_format == CB_FORMAT_FREE) {
+	if (source_format == CB_FORMAT_FREE) {
 		bp = buff;
 	} else {
 		if (n <= cb_indicator_column) {
@@ -1984,7 +1987,7 @@ start:
 	}
 
 	/* Return when free format (no floating comments removed!) */
-	if (cb_source_format == CB_FORMAT_FREE) {
+	if (source_format == CB_FORMAT_FREE) {
 		within_comment = 0;
 		if (newline_count) {
 			memmove (buff + newline_count, buff, (size_t)n + 1);
@@ -2016,7 +2019,7 @@ start:
 		break;
 	case 'd':
 	case 'D':
-		if (cb_source_format == CB_FORMAT_ACUTERM) {
+		if (source_format == CB_FORMAT_ACUTERM) {
 			indicator_width = 0;
 			break; /* ACU terminal: this 'D' denotes a nominal text line */
 		}
@@ -2033,7 +2036,7 @@ start:
 		goto start;
 	case '\\':
 		if (buff[cb_indicator_column] == 'D' &&
-		    cb_source_format == CB_FORMAT_ACUTERM) {
+		    source_format == CB_FORMAT_ACUTERM) {
 			/* ACUTERM debugging line */
 			(void) cb_verify (cb_debugging_mode, _("debugging indicator"));
 			indicator_width = 2;
@@ -2049,7 +2052,7 @@ start:
 		newline_count++;
 		goto start;
 	default:
-		if (cb_floating_area_b) { /* indicator is optional */
+		if (floating_area_b) { /* indicator is optional */
 			indicator_width = 0;
 			break;
 		}
@@ -2171,7 +2174,7 @@ start:
 		if (!consecutive_quotation) {
 			need_continuation = 1;
 		}
-		if (cb_fill_literals) {
+		if (fill_continued_alnums) {
 			for (; i < cb_text_column;) {
 				buff[i++] = ' ';
 			}
@@ -2467,7 +2470,7 @@ check_listing (const char *text, const unsigned int comment)
 	}
 
 	/* FIXME: what's the condition here? */
-	if (requires_listing_line && cb_source_format != CB_FORMAT_FREE &&
+	if (requires_listing_line && source_format != CB_FORMAT_FREE &&
 	    strlen (text) > 6) {
 		s = &text[6];
 	} else {
