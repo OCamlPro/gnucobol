@@ -95,6 +95,7 @@ NEWS - user visible changes				-*- outline -*-
    newly supported formats:
 
    VARIABLE		Microfocus Variable format
+   XOPEN		X/Open Free-form format
    XCARD		ICOBOL xCard (extended card) format
    CRT			ICOBOL Free-form format
    TERMINAL		ACUCOBOL-GT Terminal format

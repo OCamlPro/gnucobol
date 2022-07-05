@@ -417,8 +417,8 @@ Place the output into @var{file}.
 GnuCOBOL supports fixed, free, variable, terminal, and COBOLX source formats.
 The default format is the fixed format.
 This can be overridden either by the
-@code{>>SOURCE [FORMAT] [IS] @{FIXED|FREE|VARIABLE|XCARD|CRT|TERMINAL|COBOLX@}} directive,
-or by one of the following options:
+@code{>>SOURCE [FORMAT] [IS] @{FIXED|FREE|VARIABLE|XOPEN|XCARD|CRT|TERMINAL|COBOLX@}}
+directive, or by one of the following options:
 
 @table @code
 @item -free, -F, -fformat=free
@@ -436,19 +436,26 @@ format was based on 80-character punch cards.}
 Microfocus' Variable format.  Identical to the fixed format above except
 for the program-text area which extends up to column 250 instead of 72.
 
+@item -fformat=xopen
+X/Open free-form format.  The program-text area may start in column 1
+unless an indicator is present, and lines may contain up to 80
+characters.  Indicator for debugging lines is @code{D } instead of
+@code{D} or @code{d}.
+
 @item -fformat=xcard
 ICOBOL xCard format.  Variable format with right margin set at column
 255 instead of 250.
 
 @item -fformat=crt
-ICOBOL Free-form format (CRT).  The program-text area may start in
-column 1 unless an indicator is present, and lines may contain up to 320
-characters.
+ICOBOL Free-form format (CRT).  Similar to the X/Open format above, with
+lines containing up to 320 characters and single-character debugging
+line indicators (@code{D} or @code{d}).
 
 @item -fformat=terminal
 ACUCOBOL-GT Terminal format.  Similar to the CRT format above, with
 indicator for debugging lines being @code{\D} instead of @code{D} or
-@code{d}.  This format is mostly compatible with VAX COBOL.
+@code{d}.  This format is mostly compatible with VAX COBOL terminal
+source format.
 
 @item -fformat=cobolx
 COBOLX format.  This format is similar to the CRT format above, except
@@ -458,9 +465,9 @@ may contain up to 255 characters.
 
 @end table
 
-Note that with source formats @code{TERMINAL}, @code{CRT}, and
-@code{COBOLX}, missing spaces are not inserted within alphanumeric
-literals that are truncated before the right margin.
+Note that with source formats @code{XOPEN}, @code{CRT}, @code{TERMINAL},
+and @code{COBOLX}, missing spaces are not inserted within continued
+alphanumeric literals that are truncated before the right margin.
 
 
 @node Warning options

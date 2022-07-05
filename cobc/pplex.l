@@ -1341,8 +1341,9 @@ cobc_set_source_format (const enum cb_format sf) {
 	source_format = sf;
 
 	switch (source_format) {
-	case CB_FORMAT_ACUTERM:
+	case CB_FORMAT_XOPEN_FFF:
 	case CB_FORMAT_ICOBOL_CRT:
+	case CB_FORMAT_ACUTERM:
 	case CB_FORMAT_COBOLX:
 		cb_indicator_column = 1;
 		floating_area_b = source_format != CB_FORMAT_COBOLX;
@@ -1363,6 +1364,9 @@ cobc_set_source_format (const enum cb_format sf) {
 		/* This value matches most MF Visual COBOL 4.0 version. */
 		/* CHECKME: 500 seen in format_type entry of `ppparse.y`. */
 		cb_text_column = 250;
+		break;
+	case CB_FORMAT_XOPEN_FFF:
+		cb_text_column = 80;
 		break;
 	case CB_FORMAT_ACUTERM:
 	case CB_FORMAT_ICOBOL_CRT:
@@ -1396,9 +1400,11 @@ cobc_parse_source_format (enum cb_format *const out, const char *const sfname) {
 		format = CB_FORMAT_FREE;
 	} else if (!cb_strcasecmp (sfname, "VARIABLE")) {
 		format = CB_FORMAT_VARIABLE;
-	} else if (!cb_strcasecmp (sfname, "XCARD")) { /* CHECKME: name? */
+	} else if (!cb_strcasecmp (sfname, "XOPEN")) {
+		format = CB_FORMAT_XOPEN_FFF;
+	} else if (!cb_strcasecmp (sfname, "XCARD")) {
 		format = CB_FORMAT_ICOBOL_XCARD;
-	} else if (!cb_strcasecmp (sfname, "CRT")) { /* CHECKME: name? */
+	} else if (!cb_strcasecmp (sfname, "CRT")) {
 		format = CB_FORMAT_ICOBOL_CRT;
 	} else if (!cb_strcasecmp (sfname, "TERMINAL")) {
 		format = CB_FORMAT_ACUTERM;
@@ -2006,6 +2012,12 @@ start:
 	case ' ':
 		break;
 	case '-':
+		if (source_format == CB_FORMAT_XOPEN_FFF) {
+			/* X/Open free-form does not interpret '-' as
+			   continuation indicator */
+			indicator_width = 0;
+			break;
+		}
 		if (unlikely (within_comment)) {
 			cb_plex_error (newline_count,
 					_("invalid continuation in comment entry"));
@@ -2022,6 +2034,15 @@ start:
 		if (source_format == CB_FORMAT_ACUTERM) {
 			indicator_width = 0;
 			break; /* ACU terminal: this 'D' denotes a nominal text line */
+		} else if (source_format == CB_FORMAT_XOPEN_FFF) {
+			if (buff[cb_indicator_column - 1] == 'D' &&
+			    buff[cb_indicator_column] == ' ') {
+				indicator_width = 2;
+			} else {
+				/* X/Open free-form: not a debugging line */
+				indicator_width = 0;
+				break;
+			}
 		}
 		/* Debugging line */
 		(void) cb_verify (cb_debugging_mode, _("debugging indicator"));

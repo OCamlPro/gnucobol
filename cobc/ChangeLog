@@ -1,8 +1,10 @@
 
 2022-07-04  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
-	* cobc.h, cobc.c: extend cb_format enum with VARIABLE, TERMINAL, XCARD,
-	  CRT, and COBOLX source formats
+	FR #29 support for ACUCOBOL-GT Terminal format
+	FR #230 support for X/Open Free-form format
+	* cobc.h, cobc.c: extend cb_format enum with VARIABLE, TERMINAL, XOPEN,
+	  XCARD, CRT, and COBOLX source formats
 	* ppparse.y: extend SOURCEFORMAT directive
 	* cobc.c: drop IS_DEBUG_LINE macro to improve support for new source
 	  formats
@@ -11,8 +13,8 @@
 	* cobc.h, pplex.l (cobc_deciph_source_format, cobc_set_source_format,
 	  cobc_get_source_format): encapsulate source format configuration into
 	  preprocessor lexer
-	* pplex.l (ppinput): add support for ACU terminal indicators and
-	  floating margin B
+	* pplex.l (ppinput): add support for ACU terminal and X/Open indicators,
+	  as well as floating margin B
 
 2022-06-24  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 

@@ -91,6 +91,7 @@ enum cb_format {
 	CB_FORMAT_FIXED = 0,
 	CB_FORMAT_FREE,
 	CB_FORMAT_VARIABLE,	/* MF's Variable format */
+	CB_FORMAT_XOPEN_FFF,	/* X/Open Free-form format */
 	CB_FORMAT_ICOBOL_XCARD,	/* ICOBOL xCard */
 	CB_FORMAT_ICOBOL_CRT,	/* ICOBOL Free-form format (CRT) */
 	CB_FORMAT_ACUTERM,	/* ACU Terminal format, named "TERMINAL" */
