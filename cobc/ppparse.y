@@ -992,7 +992,7 @@ set_choice:
 	size = strlen (p) - 1;
 	p[size] = '\0';
 
-	if (!cobc_deciph_source_format (p)) {
+	if (cobc_deciph_source_format (p) != 0) {
 		ppp_error_invalid_option ("SOURCEFORMAT", p);
 	}
 	if (cb_src_list_file) {
@@ -1135,7 +1135,7 @@ refmod_directive:
 source_directive:
   _format _is VARIABLE_NAME
   {
-	  if (!cobc_deciph_source_format ($3)) {
+	  if (cobc_deciph_source_format ($3) != 0) {
 		  ppp_error_invalid_option ("SOURCE", $3);
 	  }
 	  if (cb_src_list_file) {

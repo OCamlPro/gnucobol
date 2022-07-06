@@ -3617,7 +3617,7 @@ process_command_line (const int argc, char **argv)
 
 		case 14:
 			/* -fformat=<FIXED/FREE/VARIABLE/XOPEN/XCARD/CRT/TERMINAL/COBOLX> */
-			if (!cobc_deciph_source_format (cob_optarg)) {
+			if (cobc_deciph_source_format (cob_optarg) != 0) {
 				cobc_err_exit (COBC_INV_PAR, "-fformat");
 			}
 			break;

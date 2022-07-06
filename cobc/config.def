@@ -51,7 +51,7 @@ CB_CONFIG_STRING (cb_reserved_words, "reserved-words", _("use of complete/fixed 
 CB_CONFIG_INT (cb_tab_width, "tab-width", 1, 12, CB_XRANGE(1,12),
 	_("number of spaces that are assumed for tabs"))
 
-CB_CONFIG_INT (cb_config_text_column, "text-column", 66, 255, CB_XRANGE(66,255),
+CB_CONFIG_INT (cb_config_text_column, "text-column", 72, 255, CB_XRANGE(72,255),
 	_("right margin column number for fixed-form reference-format"))
 
 CB_CONFIG_INT (cb_pic_length, "pic-length", 1, COB_MINI_MAX, _("<number>"),

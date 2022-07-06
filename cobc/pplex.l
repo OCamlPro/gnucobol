@@ -1411,19 +1411,19 @@ cobc_parse_source_format (enum cb_format *const out, const char *const sfname) {
 	} else if (!cb_strcasecmp (sfname, "COBOLX")) {
 		format = CB_FORMAT_COBOLX;
 	} else {
-		return 0;	/* invalid argument */
+		return 1;	/* invalid argument */
 	}
 	*out = format;
-	return 1;
+	return 0;
 }
 
 int cobc_deciph_source_format (const char* const sfname) {
 	enum cb_format format;
-	if (cobc_parse_source_format (&format, sfname)) {
+	if (cobc_parse_source_format (&format, sfname) == 0) {
 		cobc_set_source_format (format);
-		return 1;
+		return 0;
 	}
-	return 0;
+	return 1;
 }
 
 void
