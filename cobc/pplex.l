@@ -128,11 +128,6 @@ struct plex_stack {
 
 /* Global variables */
 
-/* Format-specific columns; should only be assigned in cobc_set_source_format
-   below (exported for listing code in `cobc.c`) */
-int			cb_indicator_column = 7;
-int			cb_text_column = 72;
-
 /* Local variables */
 static char			*plexbuff1 = NULL;
 static char			*plexbuff2 = NULL;
@@ -151,6 +146,9 @@ static int			listing_line = 0;
 static int			requires_listing_line;
 static int			requires_new_line = 0;
 static enum cb_format		source_format;
+static int	indicator_column = 7;
+static int	text_column = 72;	   /* end of area B (in single-byte
+					      characters) */
 static int	floating_area_b = 0;	   /* whether indicator is optional */
 static int	fill_continued_alnums = 1; /* whether continued alphanumeric
 					      literals should be filled with
@@ -1333,7 +1331,7 @@ ppparse_error (const char *err_msg)
 	cb_plex_error (newline_count, "%s", err_msg);
 }
 
-/* Sets `source_format`, `cb_indicator_column`, `cb_text_column`,
+/* Sets `source_format`, `indicator_column`, `text_column`,
    `floating_area_b`, and `fill_continued_alnums`, based on the given source
    format. */
 void
@@ -1345,12 +1343,12 @@ cobc_set_source_format (const enum cb_format sf) {
 	case CB_FORMAT_ICOBOL_CRT:
 	case CB_FORMAT_ACUTERM:
 	case CB_FORMAT_COBOLX:
-		cb_indicator_column = 1;
+		indicator_column = 1;
 		floating_area_b = source_format != CB_FORMAT_COBOLX;
 		fill_continued_alnums = 0;
 		break;
 	default:
-		cb_indicator_column = 7;
+		indicator_column = 7;
 		floating_area_b = 0;
 		fill_continued_alnums = 1;
 		break;
@@ -1358,37 +1356,47 @@ cobc_set_source_format (const enum cb_format sf) {
 
 	switch (source_format) {
 	case CB_FORMAT_FIXED:
-		cb_text_column = cb_config_text_column; /* 72 by default */
+		text_column = cb_config_text_column; /* 72 by default */
 		break;
 	case CB_FORMAT_VARIABLE:
 		/* This value matches most MF Visual COBOL 4.0 version. */
 		/* CHECKME: 500 seen in format_type entry of `ppparse.y`. */
-		cb_text_column = 250;
+		text_column = 250;
 		break;
 	case CB_FORMAT_XOPEN_FFF:
-		cb_text_column = 80;
+		text_column = 80;
 		break;
 	case CB_FORMAT_ACUTERM:
 	case CB_FORMAT_ICOBOL_CRT:
 		/* CHECKME:
 		   https://sf.net/p/gnucobol/feature-requests/29/#c2d0/8d2f */
-		cb_text_column = 320;
+		text_column = 320;
 		break;
 	case CB_FORMAT_COBOLX:
 	case CB_FORMAT_ICOBOL_XCARD:
-		cb_text_column = 255;
+		text_column = 255;
 		break;
 	case CB_FORMAT_FREE:
 		/* text-column should be ignored: put an invalid value to catch
 		   some bugs? */
-		cb_text_column = -1;
+		text_column = -1;
 		break;
 	}
 }
 
-enum cb_format
+COB_A_PURE enum cb_format
 cobc_get_source_format (void) {
 	return source_format;
+}
+
+COB_A_PURE int
+cobc_get_indicator_column (void) {
+	return indicator_column;
+}
+
+COB_A_PURE int
+cobc_get_text_column (void) {
+	return text_column;
 }
 
 static int
@@ -1882,7 +1890,7 @@ start:
 	if (source_format == CB_FORMAT_FREE) {
 		bp = buff;
 	} else {
-		if (n <= cb_indicator_column) {
+		if (n <= indicator_column) {
 			/* Line too short */
 			newline_count++;
 			goto start;
@@ -1895,15 +1903,15 @@ start:
 			}
 		}
 
-		/* Check if text is longer than cb_text_column */
-		if (n > cb_text_column + 1) {
+		/* Check if text is longer than text_column */
+		if (n > text_column + 1) {
 			/* Show warning if it is not whitespace
 			   (postponed after checking for comments by setting
 			    line_overflow to first column that leads to
 			    "source text too long")
 			*/
 			if (cb_warn_opt_val[cb_warn_column_overflow] && line_overflow == 0) {
-				for (coln = cb_text_column; coln < n; ++coln) {
+				for (coln = text_column; coln < n; ++coln) {
 					if (buff[coln] != ' ' && buff[coln] != '\n') {
 						line_overflow = coln;
 						break;
@@ -1913,21 +1921,21 @@ start:
 				line_overflow = 0;
 			}
 			/* Remove it */
-			buff[cb_text_column] = '\n';
-			buff[cb_text_column + 1] = 0;
-			n = cb_text_column + 1;
+			buff[text_column] = '\n';
+			buff[text_column + 1] = 0;
+			n = text_column + 1;
 		} else {
 			line_overflow = 0;
 		}
 
-		memset (buff, ' ', (size_t)(cb_indicator_column - 1));
+		memset (buff, ' ', (size_t)(indicator_column - 1));
 		/* Note we allow directive lines to start in the indicator column */
-		bp = &buff[cb_indicator_column - 1];
+		bp = &buff[indicator_column - 1];
 
 		/* Special case: acucomment must be checked here as we'd pass comments
 		   as directives otherwise */
-		if (cb_flag_acucomment && buff[cb_indicator_column - 1] == '$') {
-			buff[cb_indicator_column - 1] = '*';
+		if (cb_flag_acucomment && buff[indicator_column - 1] == '$') {
+			buff[indicator_column - 1] = '*';
 		}
 	}
 
@@ -2008,7 +2016,7 @@ start:
 
 	/* Check the indicator */
 	indicator_width = 1;
-	switch (buff[cb_indicator_column - 1]) {
+	switch (buff[indicator_column - 1]) {
 	case ' ':
 		break;
 	case '-':
@@ -2035,8 +2043,8 @@ start:
 			indicator_width = 0;
 			break; /* ACU terminal: this 'D' denotes a nominal text line */
 		} else if (source_format == CB_FORMAT_XOPEN_FFF) {
-			if (buff[cb_indicator_column - 1] == 'D' &&
-			    buff[cb_indicator_column] == ' ') {
+			if (buff[indicator_column - 1] == 'D' &&
+			    buff[indicator_column] == ' ') {
 				indicator_width = 2;
 			} else {
 				/* X/Open free-form: not a debugging line */
@@ -2056,7 +2064,7 @@ start:
 		newline_count++;
 		goto start;
 	case '\\':
-		if (buff[cb_indicator_column] == 'D' &&
+		if (buff[indicator_column] == 'D' &&
 		    source_format == CB_FORMAT_ACUTERM) {
 			/* ACUTERM debugging line */
 			(void) cb_verify (cb_debugging_mode, _("debugging indicator"));
@@ -2068,7 +2076,7 @@ start:
 			/* Invalid ACU terminal indicator? */
 			cb_plex_error (newline_count,
 				       _("invalid indicator '\\' at column %d"),
-				       cb_indicator_column);
+				       indicator_column);
 		}
 		newline_count++;
 		goto start;
@@ -2080,7 +2088,7 @@ start:
 		/* Invalid indicator */
 		cb_plex_error (newline_count,
 				_("invalid indicator '%c' at column %d"),
-				buff[cb_indicator_column - 1], cb_indicator_column);
+				buff[indicator_column - 1], indicator_column);
 		/* Note: Treat as comment line to allow further parsing
 		         instead of aborting compilation */
 		newline_count++;
@@ -2093,9 +2101,9 @@ start:
 		/* CHECKME: MF's doc on TERMINAL format reads "Area B starts in
 		   column 5 and extends to the end of the line."  Does this hold
 		   for debug lines "\D ..." as well? */
-		const int margin_b = cb_indicator_column + indicator_width - 1 + 4;
+		const int margin_b = indicator_column + indicator_width - 1 + 4;
 		const int ipchar_max = (n - 1 < margin_b) ? n - 1 : margin_b;
-		for (ipchar = cb_indicator_column; ipchar < ipchar_max; ++ipchar) {
+		for (ipchar = indicator_column; ipchar < ipchar_max; ++ipchar) {
 			if (buff[ipchar] != ' ') {
 				ipchar = 0;
 				break;
@@ -2109,15 +2117,15 @@ start:
 	}
 
 	/* Skip blank lines */
-	for (i = cb_indicator_column; buff[i] == ' '; ++i);
+	for (i = indicator_column; buff[i] == ' '; ++i);
 	if (buff[i] == '\n') {
 		newline_count++;
 		goto start;
 	}
 
 	/* Substitute spaces for indicator */
-	const int margin_a = cb_indicator_column + indicator_width - 1;
-	for (i = cb_indicator_column - 1; i < margin_a; i++) {
+	const int margin_a = indicator_column + indicator_width - 1;
+	for (i = indicator_column - 1; i < margin_a; i++) {
 		buff[i] = ' ';
 	}
 	bp = buff + margin_a;
@@ -2168,7 +2176,7 @@ start:
 			/* remove indicator "source text too long" if the column
 			   leading to the indicator comes after the floating comment
 			*/
-			if (i < cb_text_column) {
+			if (i < text_column) {
 				line_overflow = 0;
 			}
 			/* Set to null, 'i' is predecremented further below */
@@ -2179,7 +2187,7 @@ start:
 				/* Literal start */
 				quotation_mark = buff[i];
 			} else if (quotation_mark == buff[i]) {
-				if (i == cb_text_column - 1) {
+				if (i == text_column - 1) {
 					/* Consecutive quotation */
 					consecutive_quotation = 1;
 				} else {
@@ -2196,7 +2204,7 @@ start:
 			need_continuation = 1;
 		}
 		if (fill_continued_alnums) {
-			for (; i < cb_text_column;) {
+			for (; i < text_column;) {
 				buff[i++] = ' ';
 			}
 		}
@@ -2217,12 +2225,12 @@ start:
 		buff[i + 1] = 0;
 	}
 
-	/* Show warning if text is longer than cb_text_column
+	/* Show warning if text is longer than text_column
 	   and not whitespace (postponed here) */
 	if (line_overflow != 0) {
 		cb_plex_warning (cb_warn_source_after_code, newline_count,
 				 _("source text after program-text area (column %d)"),
-				cb_text_column);
+				text_column);
 	}
 
 	if (unlikely (continuation)) {
@@ -2492,8 +2500,8 @@ check_listing (const char *text, const unsigned int comment)
 
 	if (requires_listing_line &&
 	    source_format != CB_FORMAT_FREE &&
-	    strlen (text) >= cb_indicator_column) {
-		s = &text[cb_indicator_column - 1];
+	    strlen (text) >= indicator_column) {
+		s = &text[indicator_column - 1];
 	} else {
 		s = "";		/* do not output sequence area */
 	}

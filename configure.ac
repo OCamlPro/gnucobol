@@ -114,6 +114,7 @@ AH_TEMPLATE([COB_STRIP_CMD], [Strip command])
 AH_TEMPLATE([USE_LIBDL], [Use system dynamic loader])
 AH_TEMPLATE([WITH_VARSEQ], [Define variable sequential file format])
 AH_TEMPLATE([HAVE_ATTRIBUTE_ALIGNED], [Has __attribute__((aligned))])
+AH_TEMPLATE([HAVE_ATTRIBUTE_PURE], [Has __attribute__((pure))])
 AH_TEMPLATE([HAVE_TIMEZONE], [Has timezone variable])
 AH_TEMPLATE([COB_OBJECT_EXT], [Object extension])
 AH_TEMPLATE([COB_MODULE_EXT], [Module extension])
@@ -1690,6 +1691,15 @@ AC_MSG_CHECKING([for aligned attribute])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]],
 	[[char testchar[4] __attribute__((aligned));]])],
 	[AC_DEFINE([HAVE_ATTRIBUTE_ALIGNED], [1]) AC_MSG_RESULT([yes])
+	],
+	[AC_MSG_RESULT([no])])
+
+AC_MSG_CHECKING([for pure attribute])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+	  __attribute__((pure)) int f (void) { return 0; }
+	]],
+	[[]])],
+	[AC_DEFINE([HAVE_ATTRIBUTE_PURE], [1]) AC_MSG_RESULT([yes])
 	],
 	[AC_MSG_RESULT([no])])
 

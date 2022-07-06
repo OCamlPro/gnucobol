@@ -226,12 +226,10 @@ FILE			*cb_listing_file = NULL;
 #define CB_LINE_LENGTH	1024 /* hint: we only read PPLEX_BUF_LEN bytes */
 #define CB_READ_AHEAD	800 /* lines to read ahead */
 
-#define CB_MARGIN_A	cb_indicator_column
-#define CB_MARGIN_B	CB_MARGIN_A + 4	/* careful, for COBOL 85 this would be 11,
-						   for COBOL 2002 there is no margin B */
-#define CB_INDICATOR	CB_MARGIN_A - 1
-#define CB_SEQUENCE	cb_text_column /* the only configuration available...*/
-#define CB_ENDLINE	(cb_text_column + cb_indicator_column + 1)
+#define CB_MARGIN_A()	cobc_get_indicator_column ()
+#define CB_MARGIN_B()	CB_MARGIN_A() + 4 /* careful, for COBOL 85 this would be 11,
+					     for COBOL 2002 there is no margin B */
+#define CB_INDICATOR()	CB_MARGIN_A() - 1
 
 #define CB_MAX_LINES	55
 #define CB_LIST_PICSIZE 80
@@ -239,10 +237,6 @@ FILE			*cb_listing_file = NULL;
 
 char	print_data[CB_PRINT_LEN + 1];
 size_t	pd_off;
-
-#define IS_CONTINUE_LINE(line) ((line)[CB_INDICATOR] == '-')
-#define IS_COMMENT_LINE(line) \
-   ((line)[CB_INDICATOR] == '*' || (line)[CB_INDICATOR] == '/')
 
 FILE			*cb_src_list_file = NULL;
 int			cb_listing_page = 0;
@@ -2560,7 +2554,7 @@ cobc_print_info (void)
 	cobc_var_print ("COB_OBJECT_EXT",	COB_OBJECT_EXT, 0);
 	cobc_var_print ("COB_MODULE_EXT",	COB_MODULE_EXT, 0);
 	if (!verbose_output && COB_EXE_EXT[0] == '.') {
-		cobc_var_print ("COB_EXE_EXT", COB_EXE_EXT + 1, 0);
+		cobc_var_print ("COB_EXE_EXT", &COB_EXE_EXT[1], 0);
 	} else {
 		cobc_var_print ("COB_EXE_EXT", COB_EXE_EXT, 0);
 	}
@@ -4988,7 +4982,7 @@ set_listing_header_code (void)
 			".............................");
 		if (cb_listing_wide) {
 			if (cb_listing_file_struct->source_format == CB_FORMAT_FIXED
-			    && cb_text_column == 72 && cb_indicator_column == 7) {
+			    && cobc_get_text_column () == 72) {
 				strcat (cb_listing_header, "SEQUENCE");
 			} else {
 				strcat (cb_listing_header,
@@ -6141,14 +6135,17 @@ get_next_listing_line (FILE *fd, char **pline, int fixed)
 	}
 
 	if (fixed) {
+		const unsigned int endline =
+			cobc_get_text_column () +
+			cobc_get_indicator_column () + 1;
 #if 1 /* Simon: that should be portable enough */
-		int size = (unsigned int)CB_ENDLINE - i;
+		const int size = endline - i;
 		if (size > 0) {
 			memset (&out_line[i], ' ', (size_t)size);
-			i = (unsigned int)CB_ENDLINE;
+			i = endline;
 		}
 #else
-		while (i < (unsigned int)CB_ENDLINE) {
+		while (i < endline) {
 			out_line[i++] = ' ';
 		}
 #endif
@@ -6167,7 +6164,7 @@ static COB_INLINE COB_A_INLINE char *
 get_first_nonspace (char *line, const enum cb_format source_format)
 {
 	if (source_format != CB_FORMAT_FREE) {
-		return get_next_nonspace (line + CB_INDICATOR + 1);
+		return get_next_nonspace (line + CB_INDICATOR () + 1);
 	} else {
 		return get_next_nonspace (line);
 	}
@@ -6222,7 +6219,7 @@ line_has_page_eject (char *line, const enum cb_format source_format)
 {
 	char	*directive_start;
 
-	if (source_format != CB_FORMAT_FREE && line[CB_INDICATOR] == '/') {
+	if (source_format != CB_FORMAT_FREE && line[CB_INDICATOR ()] == '/') {
 		return 1;
 	} else {
 		directive_start = get_directive_start (line, source_format);
@@ -6322,9 +6319,11 @@ print_fixed_line (const int line_num, char pch, char *line)
 	int		len = strlen (line);
 	const int	max_chars_on_line = cb_listing_wide ? 112 : 72;
 	const char	*format_str;
+	const int	indicator_col = CB_INDICATOR ();
+	const int	text_column = cobc_get_text_column ();
 
-	if (line[CB_INDICATOR] == '&') {
-		line[CB_INDICATOR] = '-';
+	if (line[indicator_col] == '&') {
+		line[indicator_col] = '-';
 		pch = '+';
 	}
 
@@ -6338,7 +6337,7 @@ print_fixed_line (const int line_num, char pch, char *line)
 		(void)terminate_str_at_first_trailing_space (print_data);
 		print_program_data (print_data);
 
-		if (cb_text_column == 72) {
+		if (text_column == 72) {
 			break;
 		}
 		pch = '+';
@@ -6468,7 +6467,7 @@ compare_prepare (char *cmp_line, char *pline[CB_READ_AHEAD],
 	int	out_pos = 0;
 	int	line_idx;
 	int	in_string = 0;
-	int	last_col = CB_SEQUENCE;
+	int	last_col = cobc_get_text_column ();
 	int	last_nonspace;
 
 	cmp_line[0] = 0;
@@ -6564,7 +6563,7 @@ is_debug_line (char *line, int fixed, int acudebug)
 		return 0;
 	}
 	return !cb_flag_debugging_line
-		&& ((fixed && line[CB_INDICATOR] == 'D')
+		&& ((fixed && line[CB_INDICATOR ()] == 'D')
 		    || (!fixed && (acudebug
 				   ? !strncasecmp (line, "\\D", 2)
 				   : !strncasecmp (line, "D ", 2))));
@@ -6576,8 +6575,10 @@ is_comment_line (char *line, int fixed)
 	if (line == NULL || line[0] == 0) {
 		return 0;
 	}
-	return (fixed && IS_COMMENT_LINE (line))
-		|| (!fixed && !strncmp (line, "*>", 2));
+	const int indicator_col = cobc_get_indicator_column ();
+	return fixed
+		? line[indicator_col] == '*' || line[indicator_col] == '/'
+		: !strncmp (line, "*>", 2);
 }
 
 static int
@@ -6589,8 +6590,8 @@ is_continuation_line (char *line, int fixed)
 		return 0;
 	}
 	if (fixed) {
-		/* check for "-" in column 7 */
-		if (IS_CONTINUE_LINE (line)) {
+		/* check for "-" in indicator column */
+		if (line [CB_INDICATOR ()] == '-') {
 			return 1;
 		}
 	} else {
@@ -6620,6 +6621,9 @@ static void
 make_new_continuation_line (const char *cfile_name, char *pline[CB_READ_AHEAD],
 			    int * const pline_cnt, int line_num)
 {
+	const int margin_a = CB_MARGIN_A ();
+	const int indicator_col = CB_INDICATOR ();
+	const int sequence_col = cobc_get_text_column ();
 	abort_if_too_many_continuation_lines (*pline_cnt + 1, cfile_name,
 					      line_num);
 	if (pline[*pline_cnt + 1] == NULL) {
@@ -6627,9 +6631,9 @@ make_new_continuation_line (const char *cfile_name, char *pline[CB_READ_AHEAD],
 	}
 	strcpy (pline[*pline_cnt + 1], pline[*pline_cnt]);
 	strcpy (pline[*pline_cnt], pline[*pline_cnt - 1]);
-	memset (&pline[*pline_cnt][CB_MARGIN_A], ' ',
-		CB_SEQUENCE - CB_MARGIN_A);
-	pline[*pline_cnt][CB_INDICATOR] = '&';
+	memset (&pline[*pline_cnt][margin_a], ' ',
+		sequence_col - margin_a);
+	pline[*pline_cnt][indicator_col] = '&';
 
         (*pline_cnt)++;
 }
@@ -6651,6 +6655,7 @@ add_token_over_multiple_lines (const char *cfile_name,
 	fprintf (stdout, "   new_token_len = %d\n", new_token_len);
 #endif
 
+	const int sequence_col = cobc_get_text_column ();
 	while (new_token_len) {
 		/* Copy the token one character at a time. */
 		pline[*out_line][(*out_col)++] = new_token[tok_char++];
@@ -6659,7 +6664,7 @@ add_token_over_multiple_lines (const char *cfile_name,
 		/*
 		  Move to the next line when reach the end of the current one.
 		*/
-		if (*out_col == CB_SEQUENCE) {
+		if (*out_col == sequence_col) {
 #ifdef DEBUG_REPLACE
 			fprintf (stdout, "   NEW pline[%2d] = %s\n",
 				 *out_line, pline[*out_line]);
@@ -6695,6 +6700,9 @@ reflow_replaced_fixed_format_text (const char *cfile_name, char *pline[CB_READ_A
 	int	out_line;
 	int	force_next_line;
 	int	new_token_len;
+	const int margin_b = CB_MARGIN_B ();
+	const int indicator_col = CB_INDICATOR ();
+	const int sequence_col = cobc_get_text_column ();
 
 	new_token = cobc_malloc (strlen(newline) + 2);
 	new_line_ptr = get_next_token (newline, new_token, token_terminator);
@@ -6706,8 +6714,8 @@ reflow_replaced_fixed_format_text (const char *cfile_name, char *pline[CB_READ_A
 	     (first_nonspace < last)
 	      && isspace ((unsigned char)(pline[0][first_nonspace]));
 	     first_nonspace++);
-	if (first_nonspace >= CB_MARGIN_B) {
-		first_col = CB_MARGIN_B;
+	if (first_nonspace >= margin_b) {
+		first_col = margin_b;
 	}
 
 	/* For each line,  */
@@ -6718,7 +6726,7 @@ reflow_replaced_fixed_format_text (const char *cfile_name, char *pline[CB_READ_A
 		/* Add as many token as possible to the current line. */
 		while (new_line_ptr && !force_next_line) {
 			new_token_len = strlen (new_token);
-			if (new_token_len >= (CB_SEQUENCE - first_col)) {
+			if (new_token_len >= (sequence_col - first_col)) {
 				/*
 				  If the new token does not fit on this line,
 				  reflow it onto the next line.
@@ -6752,7 +6760,7 @@ reflow_replaced_fixed_format_text (const char *cfile_name, char *pline[CB_READ_A
 		}
 
 		if (out_col == first_col) {
-			pline[out_line][CB_INDICATOR] = ' ';
+			pline[out_line][indicator_col] = ' ';
 		}
 		while (out_col < last) {
 			pline[out_line][out_col++] = ' ';
@@ -6837,7 +6845,7 @@ print_replace_text (struct list_files *cfile, FILE *fd,
 	char	*newline;
 	const int	fixed = (cfile->source_format == CB_FORMAT_FIXED);
 	const int	acudebug = (cfile->source_format == CB_FORMAT_ACUTERM);
-	int	first_col = fixed ? CB_MARGIN_A : 0;
+	int	first_col = fixed ? CB_MARGIN_A () : 0;
 	int	last;
 	int	multi_token;
 	int	match = 0;
@@ -7172,7 +7180,7 @@ print_replace_main (struct list_files *cfile, FILE *fd,
 	struct list_files 	*cur;
 	int    		i;
 	const int	fixed = (cfile->source_format == CB_FORMAT_FIXED);
-	const int	first_col = fixed ? CB_MARGIN_A : 0;
+	const int	first_col = fixed ? CB_MARGIN_A () : 0;
 	int		is_copy_line;
 	int		is_replace_line;
 	int		is_replace_off = 0;
@@ -7286,6 +7294,7 @@ print_program_code (struct list_files *cfile, int in_copy)
 	int	i;
 	int	line_num = 1;
 	const int	fixed = (cfile->source_format == CB_FORMAT_FIXED);
+	const int	indicator_col = CB_INDICATOR ();
 	int	eof = 0;
 	int	pline_cnt = 0;
 	char	*pline[CB_READ_AHEAD] = { NULL };
@@ -7376,7 +7385,7 @@ print_program_code (struct list_files *cfile, int in_copy)
 				/* Print each line except the last. */
 				for (i = 0; i < pline_cnt; i++) {
 					if (pline[i][0]) {
-						if (fixed && pline[i][CB_INDICATOR] == '&') {
+						if (fixed && pline[i][indicator_col] == '&') {
 							print_line (cfile, pline[i], line_num, in_copy);
 						} else {
 							print_line (cfile, pline[i], line_num + i, in_copy);
