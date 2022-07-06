@@ -1360,7 +1360,6 @@ cobc_set_source_format (const enum cb_format sf) {
 		break;
 	case CB_FORMAT_VARIABLE:
 		/* This value matches most MF Visual COBOL 4.0 version. */
-		/* CHECKME: 500 seen in format_type entry of `ppparse.y`. */
 		text_column = 250;
 		break;
 	case CB_FORMAT_XOPEN_FFF:
