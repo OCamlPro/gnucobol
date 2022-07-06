@@ -1389,9 +1389,9 @@ COB_A_PURE int cobc_get_text_column (void) { return text_column; }
 
 COB_A_PURE int cobc_get_indicator (void) { return indicator_column - 1; }
 COB_A_PURE int cobc_get_margin_a (void) { return indicator_column; }
-COB_A_PURE int cobc_get_margin_b (void) {
+COB_A_PURE int cobc_get_margin_b (const int indicator_width) {
 	/* careful, for COBOL 2002 there is no margin B */
-	return indicator_column + 4;
+	return indicator_column - indicator_width + 5;
 }
 
 static int
@@ -2096,7 +2096,7 @@ start:
 		/* CHECKME: MF's doc on TERMINAL format reads "Area B starts in
 		   column 5 and extends to the end of the line."  Does this hold
 		   for debug lines "\D ..." as well? */
-		const int margin_b = indicator_column + indicator_width - 1 + 4;
+		const int margin_b = cobc_get_margin_b (indicator_width);
 		const int ipchar_max = (n - 1 < margin_b) ? n - 1 : margin_b;
 		for (ipchar = indicator_column; ipchar < ipchar_max; ++ipchar) {
 			if (buff[ipchar] != ' ') {

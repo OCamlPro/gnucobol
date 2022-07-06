@@ -6696,7 +6696,7 @@ reflow_replaced_fixed_format_text (const char *cfile_name, char *pline[CB_READ_A
 	int	out_line;
 	int	force_next_line;
 	int	new_token_len;
-	const int margin_b = cobc_get_margin_b ();
+	const int margin_b = cobc_get_margin_b (1);
 	const int indicator = cobc_get_indicator ();
 	const int sequence_col = cobc_get_text_column ();
 

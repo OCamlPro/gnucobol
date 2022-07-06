@@ -632,7 +632,7 @@ extern int		cobc_get_indicator_column (void) COB_A_PURE;
 extern int		cobc_get_text_column (void) COB_A_PURE;
 extern int		cobc_get_indicator (void) COB_A_PURE;
 extern int		cobc_get_margin_a (void) COB_A_PURE;
-extern int		cobc_get_margin_b (void) COB_A_PURE;
+extern int		cobc_get_margin_b (int indicator_width) COB_A_PURE;
 
 /* parser (in scanner.l, parser.y) */
 #if	!defined (COB_IN_SCANNER ) && !defined (COB_IN_PPLEX) && \
