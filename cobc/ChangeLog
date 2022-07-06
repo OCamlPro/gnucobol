@@ -3,9 +3,10 @@
 
 	* cobc.h: define function purity attribute COB_A_PURE
 	* cobc.h, cobc.c, pplex.l (cobc_get_indicator_column,
-	  cobc_get_text_column): encapsulate source format-related variables
-	  with pure functions
-	* cobc.c: drop IS_CONTINUE_LINE and IS_COMMENT_LINE macros
+	  cobc_get_text_column, cobc_get_indicator, cobc_get_margin_a,
+	  cobc_get_margin_b): encapsulate source format-related variables with
+	  pure functions
+	* cobc.c: drop source format-related macros
 	* cobc.c (cobc_print_info): silence a warning with string indexing
 
 2022-07-04  Nicolas Berthier <nicolas.berthier@ocamlpro.com>

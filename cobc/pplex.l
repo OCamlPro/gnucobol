@@ -1383,19 +1383,15 @@ cobc_set_source_format (const enum cb_format sf) {
 	}
 }
 
-COB_A_PURE enum cb_format
-cobc_get_source_format (void) {
-	return source_format;
-}
+COB_A_PURE enum cb_format cobc_get_source_format (void) { return source_format; }
+COB_A_PURE int cobc_get_indicator_column (void) { return indicator_column; }
+COB_A_PURE int cobc_get_text_column (void) { return text_column; }
 
-COB_A_PURE int
-cobc_get_indicator_column (void) {
-	return indicator_column;
-}
-
-COB_A_PURE int
-cobc_get_text_column (void) {
-	return text_column;
+COB_A_PURE int cobc_get_indicator (void) { return indicator_column - 1; }
+COB_A_PURE int cobc_get_margin_a (void) { return indicator_column; }
+COB_A_PURE int cobc_get_margin_b (void) {
+	/* careful, for COBOL 2002 there is no margin B */
+	return indicator_column + 4;
 }
 
 static int
