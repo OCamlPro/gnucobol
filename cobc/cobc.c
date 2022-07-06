@@ -6574,11 +6574,12 @@ is_comment_line (char *line, int fixed)
 {
 	if (line == NULL || line[0] == 0) {
 		return 0;
+	} else {
+		const int indicator_col = cobc_get_indicator_column ();
+		return fixed
+			? line[indicator_col] == '*' || line[indicator_col] == '/'
+			: !strncmp (line, "*>", 2);
 	}
-	const int indicator_col = cobc_get_indicator_column ();
-	return fixed
-		? line[indicator_col] == '*' || line[indicator_col] == '/'
-		: !strncmp (line, "*>", 2);
 }
 
 static int
@@ -6650,12 +6651,12 @@ add_token_over_multiple_lines (const char *cfile_name,
 			       int * const out_col)
 {
 	int	tok_char = 0;
+	const int sequence_col = cobc_get_text_column ();
 
 #ifdef DEBUG_REPLACE
 	fprintf (stdout, "   new_token_len = %d\n", new_token_len);
 #endif
 
-	const int sequence_col = cobc_get_text_column ();
 	while (new_token_len) {
 		/* Copy the token one character at a time. */
 		pline[*out_line][(*out_col)++] = new_token[tok_char++];
