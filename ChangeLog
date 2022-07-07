@@ -202,6 +202,10 @@
 
 	* configure.ac: check for PDC_free_memory_allocations
 
+2022-07-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* .github/workflows: CI now emits a coverage report artifact
+
 2022-05-24  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* .github/workflows: CI setups now emit artifacts
