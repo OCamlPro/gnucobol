@@ -5207,11 +5207,19 @@ AT_CLEANUP
 AT_SETUP([TERMINAL format])
 AT_KEYWORDS([fundamental extensions])
 
+# FIXME: For now, only comment paragraphs can be used to check proper
+# handling of margin B w.r.t indicators; better tests shall be
+# implemented once area A/B checking will be available
+
 AT_DATA([prog.cob], [
 * Sample program in ACU terminal format.
 
 IDENTIFICATION   DIVISION.
 PROGRAM-ID.      prog.
+AUTHOR.
+    Somebody.
+\D    Somebody else.
+    One last author.
 DATA             DIVISION.
 WORKING-STORAGE  SECTION.
 PROCEDURE        DIVISION.
@@ -5222,10 +5230,32 @@ PROCEDURE        DIVISION.
       STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -fformat=terminal prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fformat=terminal -fcomment-paragraphs=ok prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
-AT_CHECK([$COMPILE -fformat=terminal -fdebugging-line -o prog prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fformat=terminal -fcomment-paragraphs=ok -fdebugging-line -o prog prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OKKO], [])
+
+AT_DATA([marginberr.cob], [
+IDENTIFICATION   DIVISION.
+PROGRAM-ID.      marginberr.
+AUTHOR.
+* Comment paragraph where margin B depends on indicator width:
+    Somebody
+\D   Somebody else.
+DATA             DIVISION.
+WORKING-STORAGE  SECTION.
+PROCEDURE        DIVISION.
+      DISPLAY "OK" NO ADVANCING
+      STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fformat=terminal -fcomment-paragraphs=ok -fdebugging-line marginberr.cob], [1], [],
+[marginberr.cob:7: error: ENVIRONMENT DIVISION header missing
+marginberr.cob:7: error: CONFIGURATION SECTION header missing
+marginberr.cob:7: error: SPECIAL-NAMES header missing
+marginberr.cob:7: error: invalid system-name 'Somebody'
+marginberr.cob:7: error: syntax error, unexpected ELSE, expecting CRT or Identifier
+])
 
 AT_DATA([fit.cob], [
 * Sample program in ACU terminal format, and with longer lines and truncated literals.

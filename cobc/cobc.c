@@ -6617,7 +6617,7 @@ static void
 make_new_continuation_line (const char *cfile_name, char *pline[CB_READ_AHEAD],
 			    int * const pline_cnt, int line_num)
 {
-	const int margin_a = cobc_get_margin_a ();
+	const int margin_a = cobc_get_margin_a (1);
 	const int indicator = cobc_get_indicator ();
 	const int sequence_col = cobc_get_text_column ();
 	abort_if_too_many_continuation_lines (*pline_cnt + 1, cfile_name,
@@ -6841,7 +6841,7 @@ print_replace_text (struct list_files *cfile, FILE *fd,
 	char	*newline;
 	const int	fixed = (cfile->source_format == CB_FORMAT_FIXED);
 	const int	acudebug = (cfile->source_format == CB_FORMAT_ACUTERM);
-	int	first_col = fixed ? cobc_get_margin_a () : 0;
+	int	first_col = fixed ? cobc_get_margin_a (1) : 0;
 	int	last;
 	int	multi_token;
 	int	match = 0;
@@ -7176,7 +7176,7 @@ print_replace_main (struct list_files *cfile, FILE *fd,
 	struct list_files 	*cur;
 	int    		i;
 	const int	fixed = (cfile->source_format == CB_FORMAT_FIXED);
-	const int	first_col = fixed ? cobc_get_margin_a () : 0;
+	const int	first_col = fixed ? cobc_get_margin_a (1) : 0;
 	int		is_copy_line;
 	int		is_replace_line;
 	int		is_replace_off = 0;

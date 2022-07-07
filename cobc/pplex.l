@@ -1387,11 +1387,17 @@ COB_A_PURE enum cb_format cobc_get_source_format (void) { return source_format; 
 COB_A_PURE int cobc_get_indicator_column (void) { return indicator_column; }
 COB_A_PURE int cobc_get_text_column (void) { return text_column; }
 
-COB_A_PURE int cobc_get_indicator (void) { return indicator_column - 1; }
-COB_A_PURE int cobc_get_margin_a (void) { return indicator_column; }
+/* The three functions below return indexes on the lines (starting from 0), not
+   character positions (counted from 1). */
+COB_A_PURE int cobc_get_indicator (void) {
+	return indicator_column - 1;
+}
+COB_A_PURE int cobc_get_margin_a (const int indicator_width) {
+	return indicator_column + indicator_width - 1;
+}
 COB_A_PURE int cobc_get_margin_b (const int indicator_width) {
 	/* careful, for COBOL 2002 there is no margin B */
-	return indicator_column - indicator_width + 5;
+	return indicator_column + indicator_width + 3;
 }
 
 static int
@@ -2013,6 +2019,9 @@ start:
 	indicator_width = 1;
 	switch (buff[indicator_column - 1]) {
 	case ' ':
+		if (floating_area_b) { /* indicator is optional */
+			indicator_width = 0;
+		}
 		break;
 	case '-':
 		if (source_format == CB_FORMAT_XOPEN_FFF) {
@@ -2093,18 +2102,13 @@ start:
 	/* Skip comments that follow after AUTHORS, etc. */
 	if (unlikely (within_comment)) {
 		/* Check all of "Area A" */
-		/* CHECKME: MF's doc on TERMINAL format reads "Area B starts in
-		   column 5 and extends to the end of the line."  Does this hold
-		   for debug lines "\D ..." as well? */
+		const int margin_a = cobc_get_margin_a (indicator_width);
 		const int margin_b = cobc_get_margin_b (indicator_width);
 		const int ipchar_max = (n - 1 < margin_b) ? n - 1 : margin_b;
-		for (ipchar = indicator_column; ipchar < ipchar_max; ++ipchar) {
-			if (buff[ipchar] != ' ') {
-				ipchar = 0;
-				break;
-			}
-		}
-		if (ipchar) {
+		for (ipchar = margin_a;
+		     ipchar < ipchar_max && buff[ipchar] == ' ';
+		     ++ipchar);
+		if (ipchar == ipchar_max) {
 			newline_count++;
 			goto start;
 		}
@@ -2119,11 +2123,13 @@ start:
 	}
 
 	/* Substitute spaces for indicator */
-	const int margin_a = indicator_column + indicator_width - 1;
-	for (i = indicator_column - 1; i < margin_a; i++) {
-		buff[i] = ' ';
+	{
+		const int margin_a = cobc_get_margin_a (indicator_width);
+		for (i = indicator_column - 1; i < margin_a; i++) {
+			buff[i] = ' ';
+		}
+		bp = buff + margin_a;
 	}
-	bp = buff + margin_a;
 
 	if (unlikely (continuation)) {
 		/* Line continuation */
