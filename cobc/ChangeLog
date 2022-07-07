@@ -1,4 +1,60 @@
 
+2022-07-06  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* cobc.h: define function purity attribute COB_A_PURE
+	* cobc.h, cobc.c, pplex.l (cobc_get_indicator_column,
+	  cobc_get_text_column, cobc_get_indicator, cobc_get_margin_a,
+	  cobc_get_margin_b): encapsulate source format-related variables with
+	  pure functions
+	* cobc.c: drop source format-related macros
+	* cobc.c (cobc_print_info): silence a warning with string indexing
+
+2022-07-05  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* pplex.l, parser.y: parse DISPLAY and ACCEPT statements in DEFAULT
+	  SECTION (GCOS 7 extension)
+
+2022-07-04  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	FR #29 support for ACUCOBOL-GT Terminal format
+	FR #230 support for X/Open Free-form format
+	* cobc.h, cobc.c: extend cb_format enum with VARIABLE, TERMINAL, XOPEN,
+	  XCARD, CRT, and COBOLX source formats
+	* ppparse.y: extend SOURCEFORMAT directive
+	* cobc.c: drop IS_DEBUG_LINE macro to improve support for new source
+	  formats
+	* cobc.c, flag.def: add new flag -fformat and remove flag
+	  indicator-column
+	* cobc.h, pplex.l (cobc_deciph_source_format, cobc_set_source_format,
+	  cobc_get_source_format): encapsulate source format configuration into
+	  preprocessor lexer
+	* pplex.l (ppinput): add support for ACU terminal and X/Open indicators,
+	  as well as floating margin B
+	* pplex.l (check_listing): do not output sequence number of short lines
+
+2022-06-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c, help.c: added -dumpversion
+
+2022-06-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (numeric_children_screen_pos_type): ignore redefined
+	  fields
+	* field.c (cb_resolve_redefines): always search candidate with (small)
+	  word list first, instead of checking the complete parent for a same
+	  name with case-insensitive name comparison
+
+2022-06-24  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* cobc.c, config.def, flag.def, ppparse.y: requalify indicator-column as
+	  a flag instead of a dialect option
+
+2022-06-17  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* config.def, typeck.c (cb_emit_accept_name, cb_build_display_name):
+	  rely on new option device-mnemonics (boolean) instead of
+	  standard-define to accept device name mnemonics for DISPLAY and ACCEPT
+
 2022-05-31  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (cobc_check_string): replaced single string cache by an array
@@ -44,6 +100,15 @@
 	* tree.c (cb_init_parse_constants), tree.h, cobc.c: renamed
 	  from cb_init_constants
 
+2022-03-29  Nicolas Berthier <nicolas.berther@ocamlpro.com>
+
+	* ppparse.y (literal_token): support SPACE or SPACES figurative
+	  constant as second operand of partial replacing phrases
+
+2022-03-11  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* config.def, parser.y: add support for the STOP ERROR statement
+
 2022-03-10  Simon Sobisch <simonsobisch@gnu.org>
 
 	* pplex.l (next_word_is_comment_paragraph_name): extracted from (ppinput)
@@ -69,6 +134,15 @@
 	  with cb_define_struct to tree.h as enum cb_directive_action and
 	  enum cb_definition_type
 
+2022-02-07  David Declerck <david.declerck@ocamlpro.com>
+
+	* config.def, parser.y: allow DEPENDING clause in RECORD CONTAINS
+
+2022-02-04  David Declerck <david.declerck@ocamlpro.com>
+
+	* parser.y, reserved.c, scanner.l, typeck.c: Add GCOS-specific mnemonics
+	  ALTERNATE-CONSOLE, ALTERNATE CONSOLE and TERMINAL
+
 2022-01-28  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* warning.def, pplex.l: split warning for missing newlines, it now
@@ -82,6 +156,21 @@
 2022-02-06  Ron Norman <rjn@inglenet.com>
 
 	* codegen.c: if verb changes then emit trace/debug code, too
+
+2022-02-04  David Declerck <david.declerck@ocamlpro.com>
+
+	* parser.y: allow the WITH CONVERSION clause right after DISPLAY (ignored)
+
+2022-01-27  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* pplex.l, ppparse.y: add support for CONTROL DIVISION (GCOS 7
+	  extension); only SUBSTITUTION SECTION is handled yet
+	* config.def: new control-division option
+
+2022-02-04  David Declerck <david.declerck@ocamlpro.com>
+
+	* cobc.c, cobc.h, config.def, pplex.l, ppparse.y: make the
+	  indicator column configurable
 
 2021-12-30  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -101,6 +190,19 @@
 	  cb_search to at_end, storing pair of AT END (position) and statements
 	* codegen.c (output_search_whens, output_search_all): adjust output of
 	  source references for better debugging experience and add AT END tracing
+
+2022-01-25  Nicolas Berthier <nicolas.berther@ocamlpro.com>
+
+	* pplex.l, ppparse.y, config.h: support COPY and REPLACE
+	  statements with partial REPLACING operands specified using
+	  literals
+	* config.def: new option partial-replacing-with-literal
+	* cobc.h, pplex.l (ppparse_verify): feature verification while in
+	  ppparse.y
+	* pplex.l (ppparse_error): shift newline counter by one when
+	  reporting an error when in ppparse.y
+	* ppparse.y (unquote, fix_filename): factorize code for
+	  unquotation of alphanumeric literals
 
 2021-12-14  Simon Sobisch <simonsobisch@gnu.org>
 

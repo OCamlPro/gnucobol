@@ -296,15 +296,19 @@ The following switches display information about the compiler:
 Display help screen (@pxref{Appendix A}).
 No further actions will be taken.
 
-@item --version
+@item --version, -V
 Display compiler version, author package date and executable build
-date.  @option{-V} will also display version. No further actions will be taken.
+date. No further actions will be taken.
+
+@item -dumpversion
+Display internal compiler version (plain string of numbers).
+No further actions will be taken.
 
 @item --info
 Display build information along with the default and current compiler
 configurations. No further actions will be taken except for further display options.
 
-@item --version, -v
+@item --verbose, -v
 Verbosely display the programs invoked during compilation and additional diagnostics. 
 Use multiple times to increase the verbosity.
 
@@ -414,25 +418,62 @@ Place the output into @var{file}.
 @node Source format
 @subsection Source format
 
-GnuCOBOL supports both fixed and free source format.
-The default format is the fixed format.
-This can be overridden either by the
-@code{>>SOURCE [FORMAT] [IS] @{FIXED|FREE@}} directive,
-or by one of the following options:
+GnuCOBOL supports fixed, free, Microfocus' Variable, X/Open Free-form,
+ICOBOL xCard and Free-form, ACUCOBOL-GT Terminal, and COBOLX source
+formats.  The default format is the fixed format.  This can be
+overridden either by the @code{>>SOURCE [FORMAT] [IS]
+@{FIXED|FREE|VARIABLE|XOPEN|XCARD|CRT|TERMINAL|COBOLX@}} directive, or
+by one of the following options:
 
 @table @code
-@item -free, -F
+@item -free, -F, -fformat=free
 Free format.  The program-text area starts in column 1 and
 continues till the end of line (effectively 255 characters
 in GnuCOBOL).
 
-@item -fixed
+@item -fixed, -fformat=fixed
 Fixed format.  Source code is divided into: columns 1-6, the sequence
 number area; column 7, the indicator area; columns 8-72, the program-text
 area; and columns 72-80 as the reference area.@footnote{Historically, fixed
 format was based on 80-character punch cards.}
 
+@item -fformat=variable
+Microfocus' Variable format.  Identical to the fixed format above except
+for the program-text area which extends up to column 250 instead of 72.
+
+@item -fformat=xopen
+X/Open Free-form format.  The program-text area may start in column 1
+unless an indicator is present, and lines may contain up to 80
+characters.  Indicator for debugging lines is @code{D } instead of
+@code{D} or @code{d}.
+
+@item -fformat=xcard
+ICOBOL xCard format.  Variable format with right margin set at column
+255 instead of 250.
+
+@item -fformat=crt
+ICOBOL Free-form format (CRT).  Similar to the X/Open format above, with
+lines containing up to 320 characters and single-character debugging
+line indicators (@code{D} or @code{d}).
+
+@item -fformat=terminal
+ACUCOBOL-GT Terminal format.  Similar to the CRT format above, with
+indicator for debugging lines being @code{\D} instead of @code{D} or
+@code{d}.  This format is mostly compatible with VAX COBOL terminal
+source format.
+
+@item -fformat=cobolx
+COBOLX format.  This format is similar to the CRT format above, except
+that the indicator area is always present in column 1; the program-text
+area starts in column 2 and extends up to the end of the record.  Lines
+may contain up to 255 characters.
+
 @end table
+
+Note that with source formats @code{XOPEN}, @code{CRT}, @code{TERMINAL},
+and @code{COBOLX}, missing spaces are not inserted within continued
+alphanumeric literals that are truncated before the right margin.
+
 
 @node Warning options
 
@@ -637,6 +678,9 @@ RM/COBOL compatible
 
 @item -std=realia-strict, -std=realia
 CA Realia II compatible
+
+@item -std=gcos-strict, -std=gcos
+GCOS compatible
 
 @item -freserved-words=@var{dialect}
 Compiler uses the given @var{dialect} to determine the reserved words.

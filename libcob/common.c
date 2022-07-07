@@ -2376,6 +2376,13 @@ cob_stop_run (const int status)
 }
 
 void
+cob_stop_error (void)
+{
+	cob_runtime_error ("STOP ERROR");
+	cob_hard_failure ();
+}
+
+void
 cob_hard_failure ()
 {
 	if (cob_initialized) {

@@ -52,6 +52,7 @@ static const struct option long_options[] = {
 	{"verbose",		CB_NO_ARG, NULL, 'v'},
 	{"brief",		CB_NO_ARG, NULL, 'q'},
 	{"info",		CB_NO_ARG, NULL, 'i'},
+	{"dumpversion",		CB_NO_ARG, NULL, '~'},	/* format: GCC dumpfullversion */
 	{"runtime-config",		CB_NO_ARG, NULL, 'r'},
 	{"config",		CB_RQ_ARG, NULL, 'C'},
 	{"module",		CB_RQ_ARG, NULL, 'm'},
@@ -123,7 +124,8 @@ cobcrun_print_usage (char * prog)
 	putchar ('\n');
 	puts (_("Options:"));
 	puts (_("  -h, --help                      display this help and exit"));
-	puts (_("  -V, --version                   display cobcrun and runtime version and exit"));
+	puts (_("  -V, --version                   display version information for cobcrun + runtime and exit"));
+	puts (_("  -dumpversion                    display runtime version and exit"));
 	puts (_("  -i, --info                      display runtime information (build/environment)"));
 	puts (_("  -v, --verbose                   display extended output with --info"));
 #if 0 /* Simon: currently only removing the path from cobcrun in output --> don't show */
@@ -328,6 +330,11 @@ process_command_line (int argc, char *argv[])
 				putchar ('\n');
 				print_version_summary ();
 			}
+			exit (EXIT_SUCCESS);
+
+		case '~':
+			/* -dumpversion */
+			puts (libcob_version());
 			exit (EXIT_SUCCESS);
 
 		case 'M':

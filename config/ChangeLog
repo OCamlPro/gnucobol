@@ -1,8 +1,39 @@
 
+2022-03-11  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* general: add a stop-error-statement option to allow configuring
+	  the support of the STOP ERROR statement
+
+2022-05-25  Nicolas Berthier <nicolas.berther@ocamlpro.com>
+
+	* general: added option partial-replacing-with-literal
+
+2022-06-17  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* general: added config option device-mnemonics (boolean)
+
+2022-01-27  Nicolas Berthier <nicolas.berther@ocamlpro.com>
+
+	* general: added option control-division
+
+2022-06-24  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* general: remove indicator-column option, which is now a flag
+
 2022-02-07  David Declerck <david.declerck@ocamlpro.com>
 
 	* gcos-strict.conf, gcos.conf, gcos.words: added config files for
 	  GCOS 7 (Bull) dialect
+
+2022-02-07  David Declerck <david.declerck@ocamlpro.com>
+
+	* general: add a record-contains-depending-clause option to allow
+	  configuring the support of the DEPENDING clause in RECORD CONTAINS
+
+2022-02-04  David Declerck <david.declerck@ocamlpro.com>
+
+	* general: add an indicator-column option to allow customizing
+	  the position of the indicator
 
 2021-11-14  Ron Norman <rjn@inglenet.com>
 

@@ -5048,6 +5048,35 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([Invalid source format])
+AT_KEYWORDS([extensions runmisc])
+
+AT_DATA([unknown.cob], [
+       >>SOURCE FORMAT UNKNOWN
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+          STOP RUN.
+])
+AT_DATA([lit.cob], [
+       >>SOURCE FORMAT "literal"
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+          STOP RUN.
+])
+
+AT_CHECK([$COMPILE unknown.cob], [1], [],
+[unknown.cob:2: error: invalid SOURCE directive option 'UNKNOWN'
+])
+AT_CHECK([$COMPILE lit.cob], [1], [],
+[lit.cob:2: error: invalid SOURCE directive option
+lit.cob:2: error: PROGRAM-ID header missing
+])
+
+AT_CLEANUP
+
+
 AT_SETUP([Variable format])
 AT_KEYWORDS([extensions runmisc])
 
@@ -5066,6 +5095,195 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [Hello!
 ])
+
+# Check that manually setting -ftext-column in combination with
+# variable source format isstill allowed: -ftext-column now impacts
+# fixed format only; 250 is the default right margin for variable
+# format.
+AT_DATA([fit.cob], [
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. fit.
+000040 PROCEDURE DIVISION.
+000050                                                                                                                                                                                                                                    DISPLAY "Hello!"
+000060     STOP RUN.
+])
+AT_CHECK([$COMPILE -fformat=variable -ftext-column=250 fit.cob], [0], [], [])
+AT_CHECK([$COMPILE -fformat=variable -ftext-column=72 -o fit fit.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./fit], [0],
+[Hello!
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([COBOLX format])
+AT_KEYWORDS([extensions runmisc])
+
+AT_DATA([prog.cob], [
+       >>SOURCE FORMAT COBOLX
+ IDENTIFICATION DIVISION.
+ PROGRAM-ID. prog.
+* area B can extend up to character position 255
+ PROCEDURE DIVISION.
+/
+                                                        DISPLAY "Hello!"
+                                                                                                                                                                                                                                                  DISPLAY "Hi!"
+DDISPLAY "Hey!"
+D                                                         DISPLAY "Bye!"
+* trucated alphanumeric literals are not padded with spaces
+ DISPLAY "        20        30        40        50        60        70        80        90       100       110       120       130
+-        "       140       150       160       170       180       190       200       210       220       230       240       250"
+ .
+])
+# " (closing quote)
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[Hello!
+Hi!
+        20        30        40        50        60        70        80        90       100       110       120       130       140       150       160       170       180       190       200       210       220       230       240       250
+])
+AT_CHECK([$COMPILE -fdebugging-line -o prog prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[Hello!
+Hi!
+Hey!
+Bye!
+        20        30        40        50        60        70        80        90       100       110       120       130       140       150       160       170       180       190       200       210       220       230       240       250
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([X/Open free-form format])
+AT_KEYWORDS([fundamental xopen extensions])
+
+AT_DATA([prog.cob], [
+* Sample program in X/Open free-form format.
+
+IDENTIFICATION   DIVISION.
+PROGRAM-ID.      prog.
+DATA             DIVISION.
+WORKING-STORAGE  SECTION.
+PROCEDURE        DIVISION.
+/ Beginning of the code
+DISPLAY "OK" NO ADVANCING
+* If debug:
+D DISPLAY "KO" NO ADVANCING
+STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fformat=xopen prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
+AT_CHECK([$COMPILE -fformat=xopen -fdebugging-line -o prog prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OKKO], [])
+
+AT_DATA([fit.cob], [
+* Sample program in X/Open format, and with longer lines and truncated literals.
+
+IDENTIFICATION   DIVISION.
+PROGRAM-ID.      fit.
+DATA             DIVISION.
+WORKING-STORAGE  SECTION.
+PROCEDURE        DIVISION.
+DISPLAY '         20        30        40        50        60        70       79'
+D DISPLAY '       20        30        40        50        60        70       79'
+STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fformat=xopen fit.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./fit], [0],
+[         20        30        40        50        60        70       79
+], [])
+AT_CHECK([$COMPILE -fformat=xopen -fdebugging-line -o fit fit.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./fit], [0],
+[         20        30        40        50        60        70       79
+       20        30        40        50        60        70       79
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([TERMINAL format])
+AT_KEYWORDS([fundamental extensions])
+
+# FIXME: For now, only comment paragraphs can be used to check proper
+# handling of margin B w.r.t indicators; better tests shall be
+# implemented once area A/B checking will be available
+
+AT_DATA([prog.cob], [
+* Sample program in ACU terminal format.
+
+IDENTIFICATION   DIVISION.
+PROGRAM-ID.      prog.
+AUTHOR.
+    Somebody.
+\D    Somebody else.
+    One last author.
+DATA             DIVISION.
+WORKING-STORAGE  SECTION.
+PROCEDURE        DIVISION.
+      DISPLAY "OK" NO ADVANCING
+      END-DISPLAY.
+\D    DISPLAY "KO" NO ADVANCING
+\D    END-DISPLAY.
+      STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fformat=terminal -fcomment-paragraphs=ok prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
+AT_CHECK([$COMPILE -fformat=terminal -fcomment-paragraphs=ok -fdebugging-line -o prog prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OKKO], [])
+
+AT_DATA([marginberr.cob], [
+IDENTIFICATION   DIVISION.
+PROGRAM-ID.      marginberr.
+AUTHOR.
+* Comment paragraph where margin B depends on indicator width:
+    Somebody
+\D   Somebody else.
+DATA             DIVISION.
+WORKING-STORAGE  SECTION.
+PROCEDURE        DIVISION.
+      DISPLAY "OK" NO ADVANCING
+      STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fformat=terminal -fcomment-paragraphs=ok -fdebugging-line marginberr.cob], [1], [],
+[marginberr.cob:7: error: ENVIRONMENT DIVISION header missing
+marginberr.cob:7: error: CONFIGURATION SECTION header missing
+marginberr.cob:7: error: SPECIAL-NAMES header missing
+marginberr.cob:7: error: invalid system-name 'Somebody'
+marginberr.cob:7: error: syntax error, unexpected ELSE, expecting CRT or Identifier
+])
+
+AT_DATA([fit.cob], [
+* Sample program in ACU terminal format, and with longer lines and truncated literals.
+
+IDENTIFICATION   DIVISION.
+PROGRAM-ID.      fit.
+DATA             DIVISION.
+WORKING-STORAGE  SECTION.
+PROCEDURE        DIVISION.
+      DISPLAY '   20        30        40        50        60        70        80        90       100       110       120       130       140       150       160       170       180       190       200       210       220       230       240       250       260       270       280       290       300       310      319'
+\D    DISPLAY '   20        30        40        50        60        70        80        90       100       110       120       130       140       150       160       170       180       190       200       210       220       230       240       250       260       270       280       290       300       310      319'
+\D    END-DISPLAY.
+      DISPLAY '   20        30        40        50        60        70        80        90       100       110       120       130
+-             '       140       150       160       170       180       190       200       210       220       230       240       250       260       270       280       290       300       310      319'
+      STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fformat=terminal fit.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./fit], [0],
+[   20        30        40        50        60        70        80        90       100       110       120       130       140       150       160       170       180       190       200       210       220       230       240       250       260       270       280       290       300       310      319
+   20        30        40        50        60        70        80        90       100       110       120       130       140       150       160       170       180       190       200       210       220       230       240       250       260       270       280       290       300       310      319
+], [])
+AT_CHECK([$COMPILE -fformat=terminal -fdebugging-line -o fit fit.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./fit], [0],
+[   20        30        40        50        60        70        80        90       100       110       120       130       140       150       160       170       180       190       200       210       220       230       240       250       260       270       280       290       300       310      319
+   20        30        40        50        60        70        80        90       100       110       120       130       140       150       160       170       180       190       200       210       220       230       240       250       260       270       280       290       300       310      319
+   20        30        40        50        60        70        80        90       100       110       120       130       140       150       160       170       180       190       200       210       220       230       240       250       260       270       280       290       300       310      319
+], [])
 
 AT_CLEANUP
 

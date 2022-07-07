@@ -490,7 +490,7 @@ cob_inspect_init (cob_field *var, const cob_u32_t replacing)
    one-time cob_inspect_init_converting
         --> cob_inspect_init_common    (setting up memory)
    multiple:
-	cob_inspect_start         (setting inspect_start/end)
+	cob_inspect_start       (setting inspect_start/end)
 	cob_inspect_before        (optional, adjusting inspect_end)
 	cob_inspect_after         (optional, adjusting inspect_start)
    one-time cob_inspect_converting (actual converstion) */
@@ -808,6 +808,16 @@ cob_string_finish (void)
 }
 
 /* UNSTRING */
+/* an UNSTRING is split into multiple parts:
+   one-time cob_unstring_init  (setting up memory and static variables)
+   0..n :
+    cob_unstring_delimited  (setting delimiter struct entries)
+   1..n:
+	cob_unstring_into       (to handle a single target
+	                         [optional with counter and/or delimiter])
+   optional:
+     cob_unstring_tallying  setting TALLYING (amount of targets set)
+   one-time cob_unstring_finish (setting the string pointer / overflow exception) */
 
 void
 cob_unstring_init (cob_field *src, cob_field *ptr, const size_t num_dlm)
@@ -855,78 +865,122 @@ cob_unstring_delimited (cob_field *dlm, const cob_u32_t all)
 void
 cob_unstring_into (cob_field *dst, cob_field *dlm, cob_field *cnt)
 {
-	unsigned char	*p;
-	unsigned char	*dp;
-	unsigned char	*s;
 	unsigned char	*dlm_data;
 	unsigned char	*start;
 	size_t		dlm_size = 0;
-	int		i;
-	int		srsize;
-	int		dlsize;
 	int		match_size = 0;
 
 	if (cobglobptr->cob_exception_code) {
+		/* commonly COB_EC_OVERFLOW_UNSTRING: the specified WITH POINTER was
+		   too big, all other functions  must be returned early;
+		   TODO: adjust cobc to only call if cob_unstring_init was
+		         sucessfull / has no exception */
 		return;
 	}
 
-	if (unstring_offset >= (int)unstring_src->size) {
+	if (unstring_offset >= unstring_src->size) {
+		/* overflow from the last iteration (multiple INTO targets) */
 		return;
 	}
 
-	start = unstring_src->data + unstring_offset;
 	dlm_data = NULL;
+	start = unstring_src->data + unstring_offset;
+
+	/* no delimiter - just split into DELIMITED BY SIZE */
 	if (unstring_ndlms == 0) {
+		 /* necessary for correct unstring offset: minimal size */
+		/* Note: field->size and therefore offset
+		   are guaranteed to be < INT_MAX by cobc */
 		match_size = cob_min_int ((int)COB_FIELD_SIZE (dst),
 					  (int)unstring_src->size - unstring_offset);
 		cob_str_memcpy (dst, start, match_size);
 		unstring_offset += match_size;
+
+	/* DELIMITED BY [ALL] x [.. OR [ALL] z] */
 	} else {
-		int		brkpt = 0;
-		srsize = (int) unstring_src->size;
-		s = unstring_src->data + srsize;
-		for (p = start; p < s; ++p) {
-			for (i = 0; i < unstring_ndlms; ++i) {
-				dlsize = (int) dlm_list[i].uns_dlm.size;
-				dp = dlm_list[i].uns_dlm.data;
-				if (p + dlsize > s) {
-					continue;
-				}
-				if (!memcmp (p, dp, (size_t)dlsize)) {             /* delimiter equal */
+
+		const int	srsize = (int)unstring_src->size;
+		unsigned char	*p;
+		unsigned char	*dp;
+		int		found = 0;
+
+		/* note: duplicate code for performance as most cases
+		         have either none or a single delimiter */
+		if (unstring_ndlms == 1) {
+			const struct dlm_struct dlms = dlm_list[0];
+			const int     dlsize = (int) dlms.uns_dlm.size;
+			const unsigned char *s = unstring_src->data + srsize - dlsize + 1;
+			dp = dlms.uns_dlm.data;
+
+			for (p = start; p < s; ++p) {
+				if (!memcmp (p, dp, (size_t)dlsize)) {         /* delimiter matches */
 					match_size = (int)(p - start);             /* count in */
 					cob_str_memcpy (dst, start, match_size);   /* into */
 					unstring_offset += match_size + dlsize;    /* with pointer */
 					dlm_data = dp;
 					dlm_size = dlsize;
-					if (dlm_list[i].uns_all) {                 /* delimited by all */
-						for (p += dlsize ; p < s; p += dlsize) {
-							if (p + dlsize > s) {
-								break;
-							}
+					if (dlms.uns_all) {                     /* delimited by all */
+						for (p += dlsize; p < s; p += dlsize) {
 							if (memcmp (p, dp, (size_t)dlsize)) {
 								break;
 							}
 							unstring_offset += dlsize;
 						}
 					}
-					brkpt = 1;
+					found = 1;
 					break;
 				}
 			}
-			if (brkpt) {
-				break;
+		} else {
+			const unsigned char *s = unstring_src->data + srsize;
+			int		i;
+			for (p = start; p < s; ++p) {
+				for (i = 0; i < unstring_ndlms; ++i) {
+					const struct dlm_struct dlms = dlm_list[i];
+					const int     dlsize = (int)dlms.uns_dlm.size;
+					const unsigned char *s2 = s - dlsize + 1;
+					if (p > s2) {
+						continue;
+					}
+					dp = dlms.uns_dlm.data;
+					if (!memcmp (p, dp, (size_t)dlsize)) {         /* delimiter matches */
+						match_size = (int)(p - start);             /* count in */
+						cob_str_memcpy (dst, start, match_size);   /* into */
+						unstring_offset += match_size + dlsize;    /* with pointer */
+						dlm_data = dp;
+						dlm_size = dlsize;
+						if (dlms.uns_all) {                     /* delimited by all */
+							for (p += dlsize; p < s2; p += dlsize) {
+								if (memcmp (p, dp, (size_t)dlsize)) {
+									break;
+								}
+								unstring_offset += dlsize;
+							}
+						}
+						found = 1;
+						break;
+					}
+				}
+				if (found) {
+					break;
+				}
 			}
 		}
-		if (!brkpt) {
-			/* No match */
+
+		/* if none of the delimiters matched, match to end */
+		if (!found) {
 			match_size = (int)(unstring_src->size - unstring_offset);
 			cob_str_memcpy (dst, start, match_size);
 			unstring_offset = (int) unstring_src->size;
-			dlm_data = NULL;
 		}
 	}
 	unstring_count++;
 
+	/* note: per any known dialect both DELIMITER IN and COUNT IN are only
+	         allowed if there is a DELIMITED BY phrase; the GnuCOBOL parser
+			 does allow this (did so since the first implementation) */
+
+	/* set DELIMITER IN */
 	if (dlm) {
 		if (dlm_data) {
 			cob_str_memcpy (dlm, dlm_data, (int) dlm_size);
@@ -937,6 +991,7 @@ cob_unstring_into (cob_field *dst, cob_field *dlm, cob_field *cnt)
 		}
 	}
 
+	/* set COUNT IN */
 	if (cnt) {
 		cob_set_int (cnt, match_size);
 	}
@@ -952,6 +1007,7 @@ void
 cob_unstring_finish (void)
 {
 	if (unstring_offset < (int)unstring_src->size) {
+		/* overflow from any iteration -> overflow exception */
 		cob_set_exception (COB_EC_OVERFLOW_UNSTRING);
 	}
 

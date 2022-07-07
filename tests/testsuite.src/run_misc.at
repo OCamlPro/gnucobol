@@ -4681,6 +4681,31 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [1])
 AT_CLEANUP
 
 
+AT_SETUP([STOP ERROR])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           CALL "prog2".
+           DISPLAY "Whatever".
+           STOP RUN.
+       END PROGRAM      prog.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog2.
+       PROCEDURE        DIVISION.
+           STOP ERROR.
+])
+
+AT_CHECK([$COMPILE prog.cob -fstop-error-statement=ok], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
+[libcob: prog.cob:12: error: STOP ERROR
+])
+
+AT_CLEANUP
+
+
 AT_SETUP([SYMBOLIC clause])
 AT_KEYWORDS([runmisc ALPHABET])
 

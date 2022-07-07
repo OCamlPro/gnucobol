@@ -1,7 +1,7 @@
 #
 # Makefile gnucobol/doc
 #
-# Copyright (C) 2003-2012, 2015-2021 Free Software Foundation, Inc.
+# Copyright (C) 2003-2012, 2015-2022 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -34,7 +34,7 @@ PASSED_OPTIONS = GREP=$(GREP) \
 		 COBC=$(COBC) \
 		 COBCRUN=$(COBCRUN)
 
-COBCINFOSH = $(PASSED_OPTIONS) $(top_builddir)/pre-inst-env \
+COBCINFOSH = $(PASSED_OPTIONS) LANG=C $(top_builddir)/pre-inst-env \
 	$(top_srcdir)/doc/cobcinfo.sh
 
 info_TEXINFOS = gnucobol.texi

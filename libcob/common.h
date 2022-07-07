@@ -1596,6 +1596,7 @@ COB_EXPIMP void	cob_module_leave		(cob_module *);
 COB_EXPIMP void	cob_module_free	(cob_module **);
 
 DECLNORET COB_EXPIMP void	cob_stop_run	(const int) COB_A_NORETURN;
+DECLNORET COB_EXPIMP void	cob_stop_error	(void) COB_A_NORETURN;
 DECLNORET COB_EXPIMP void	cob_fatal_error	(const enum cob_fatal_error) COB_A_NORETURN;
 
 COB_EXPIMP void	*cob_malloc			(const size_t) COB_A_MALLOC;

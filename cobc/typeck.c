@@ -7173,6 +7173,7 @@ numeric_children_screen_pos_type (struct cb_field* child)
 	if (!child) return 0;
 
 	for (; child; child = child->sister) {
+		if (child->redefines) continue;
 		if (!numeric_screen_pos_type (child)) {
 			return 0;
 		}
@@ -7650,10 +7651,7 @@ cb_emit_accept_name (cb_tree var, cb_tree name)
 		switch (CB_SYSTEM_NAME (sys)->token) {
 		case CB_DEVICE_CONSOLE:
 		case CB_DEVICE_SYSIN:
-			/* possibly others allow this, too, consider adding a config option */
-			if (cb_std_define != CB_STD_IBM
-			 && cb_std_define != CB_STD_MVS
-			 && cb_std_define != CB_STD_MF
+			if (!cb_device_mnemonics
 			 && !cb_relaxed_syntax_checks) {
 				cb_warning_x (COBC_WARN_FILLER, name,
 					_("'%s' is not defined in SPECIAL-NAMES"), CB_NAME (name));
@@ -8818,12 +8816,9 @@ cb_build_display_name (cb_tree x)
 			cb_error_x (x, _("'%s' is not an output device"), name);
 			return cb_error_node;
 		}
-		/* possibly others allow this, too, consider adding a config option */
-		if (cb_std_define != CB_STD_IBM
-		 && cb_std_define != CB_STD_MVS
-		 && cb_std_define != CB_STD_MF
+		if (!cb_device_mnemonics
 		 && !cb_relaxed_syntax_checks) {
-		 	/* ... especially as this is not allowed and therefore should raise an error... */
+			/* TODO: this is not allowed and therefore should raise an error */
 			cb_warning_x (COBC_WARN_FILLER, x,
 				_("'%s' is not defined in SPECIAL-NAMES"), name);
 		}
@@ -12804,6 +12799,12 @@ cb_emit_stop_run (cb_tree x)
 }
 
 void
+cb_emit_stop_error (void)
+{
+	cb_emit (CB_BUILD_FUNCALL_0 ("cob_stop_error"));
+}
+
+void
 cb_emit_stop_thread (cb_tree handle)
 {
 	cb_tree used_handle;
@@ -12990,7 +12991,7 @@ cb_build_unstring_into (cb_tree name, cb_tree delimiter, cb_tree count)
 		delimiter = cb_int0;
 	}
 	if (count == NULL
-	    || error_if_not_int_field_or_has_pic_p ("COUNT", count)) {
+	 || error_if_not_int_field_or_has_pic_p ("COUNT", count)) {
 		count = cb_int0;
 	}
 	return CB_BUILD_FUNCALL_3 ("cob_unstring_into", name, delimiter, count);

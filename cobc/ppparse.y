@@ -71,15 +71,37 @@ static enum cb_directive_action		current_cmd = PLEX_ACT_IF;
 
 /* Local functions */
 
+/* Strips the given string from its quotation characters, if any.  Returns its
+   argument as is otherwise. */
 static char *
-fix_filename (char *name)
+unquote (char *name)
 {
-	/* remove quotation from alphanumeric literals */
-	if (name[0] == '\'' || name[0] == '\"') {
+	size_t size;
+	if ((name[0] == '\'' || name[0] == '"') && (size = strlen (name)) > 1 &&
+	    (name[0] == name[size - 1])) {
+		name[size - 1] = '\0';
 		name++;
-		name[strlen (name) - 1] = 0;
 	}
 	return name;
+}
+#define fix_filename(filename) unquote (filename)
+
+static char *
+literal_token (char *t, int allow_spaces)
+{
+	if (t[0] == '\'' || t[0] == '"') {
+		(void) ppparse_verify (cb_partial_replacing_with_literal,
+				       _("partial replacing with literal"));
+	} else if (allow_spaces && (strcmp ("SPACE", t) == 0 ||
+				    strcmp ("SPACES", t) == 0)) {
+		(void) ppparse_verify (cb_partial_replacing_with_literal,
+				       _("partial replacing with literal"));
+		t[0] = '\0';
+	} else {
+		ppparse_error (_("unexpected COBOL word in partial replacement "
+				 "phrase"));
+	}
+	return unquote (t);
 }
 
 static char *
@@ -136,7 +158,7 @@ ppp_set_value (struct cb_define_struct *p, const char *value)
 	const char	*s;
 	size_t		size;
 	unsigned int	dotseen;
-	
+
 	p->value = NULL;
 	p->sign = 0;
 	p->int_part = 0;
@@ -479,7 +501,7 @@ append_to_turn_list (struct cb_text_list *ec_names, int enable, int with_locatio
 	l->next = NULL;
 	/* The line number is set properly in the scanner */
 	l->line = -1;
-	
+
 	if (cb_turn_list) {
 		for (turn_list_end = cb_turn_list;
 		     turn_list_end->next;
@@ -606,12 +628,12 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 
 %token LEAP_SECOND_DIRECTIVE
 
+%token CONTROL_DIVISION		"CONTROL DIVISION"
+%token SUBSTITUTION_SECTION	"SUBSTITUTION SECTION"
+
 %token SOURCE_DIRECTIVE
 %token FORMAT
 %token IS
-%token FIXED
-%token FREE
-%token VARIABLE
 
 %token CALL_DIRECTIVE
 %token COBOL
@@ -705,6 +727,7 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %type <l>	alnum_equality
 %type <l>	alnum_equality_list
 %type <l>	ec_list
+%type <s>	unquoted_literal
 
 %type <r>	copy_replacing
 %type <r>	replacing_list
@@ -721,13 +744,46 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 
 %%
 
+program_structure:
+  CONTROL_DIVISION DOT program_with_control_division
+| statement_list
+;
+
+/* GCOS 7 COBOL85 ref. manual p. 136: [...] If the replace-entry is present in
+the Substitution Section of the Control Division of a source program, that
+source program, including all contained programs, must contain no REPLACE
+statement.  Thankfully this helps avoiding some conflicts. */
+program_with_control_division:
+  statement_list
+| control_division_no_replace statement_no_replace statement_list
+| control_division_no_replace
+| control_division_with_replace DOT statement_no_replace_list
+;
+
+control_division_no_replace:
+  SUBSTITUTION_SECTION DOT
+;
+
+control_division_with_replace:
+ /* The period could be optional. */
+  SUBSTITUTION_SECTION DOT replace_statement
+;
+
 statement_list:
 | statement_list statement
 ;
 
+statement_no_replace_list:
+| statement_no_replace_list statement_no_replace
+;
+
 statement:
-  copy_statement DOT
+  statement_no_replace
 | replace_statement DOT
+;
+
+statement_no_replace:
+  copy_statement DOT
 | directive TERMINATOR
 | listing_statement
 | CONTROL_STATEMENT control_options _dot TERMINATOR
@@ -830,15 +886,9 @@ set_choice:
 		fprintf (ppout, "#ADDSYN %s %s\n", l->text, l->next->text);
 	}
   }
-| ASSIGN LITERAL
+| ASSIGN unquoted_literal
   {
 	char	*p = $2;
-	size_t	size;
-
-	/* Remove surrounding quotes/brackets */
-	++p;
-	size = strlen (p) - 1;
-	p[size] = '\0';
 
 	if (!cb_strcasecmp (p, "EXTERNAL")) {
 		fprintf (ppout, "#ASSIGN %d\n", (int)CB_ASSIGN_EXT_FILE_NAME_REQUIRED);
@@ -846,22 +896,16 @@ set_choice:
 		fprintf (ppout, "#ASSIGN %d\n", (int)CB_ASSIGN_VARIABLE_DEFAULT);
 	} else {
 		ppp_error_invalid_option ("ASSIGN", p);
-	}	
+	}
   }
 | BOUND
   {
 	/* Enable EC-BOUND-SUBSCRIPT checking */
 	append_to_turn_list (ppp_list_add (NULL, "EC-BOUND-SUBSCRIPT"), 1, 0);
   }
-| CALLFH LITERAL
+| CALLFH unquoted_literal
   {
-	char	*p = $2;
-	/* Remove surrounding quotes/brackets */
-	size_t	size;
-	++p;
-	size = strlen (p) - 1;
-	p[size] = '\0';
-	fprintf (ppout, "#CALLFH \"%s\"\n", p);
+	fprintf (ppout, "#CALLFH \"%s\"\n", $2);
   }
 | CALLFH
   {
@@ -872,15 +916,9 @@ set_choice:
 	/* Enable EC-DATA-INCOMPATIBLE checking */
 	append_to_turn_list (ppp_list_add (NULL, "EC-DATA-INCOMPATIBLE"), 1, 0);
   }
-| COMP1 LITERAL
+| COMP1 unquoted_literal
   {
 	char	*p = $2;
-	size_t	size;
-
-	/* Remove surrounding quotes/brackets */
-	++p;
-	size = strlen (p) - 1;
-	p[size] = '\0';
 
 	if (!cb_strcasecmp (p, "BINARY")) {
 		cb_binary_comp_1 = 1;
@@ -890,15 +928,9 @@ set_choice:
 		ppp_error_invalid_option ("COMP1", p);
 	}
   }
-| DPC_IN_DATA LITERAL
+| DPC_IN_DATA unquoted_literal
   {
 	char	*p = $2;
-	size_t	size;
-
-	/* Remove surrounding quotes/brackets */
-	++p;
-	size = strlen (p) - 1;
-	p[size] = '\0';
 
 	if (!cb_strcasecmp (p, "XML")) {
 		cb_dpc_in_data = CB_DPC_IN_XML;
@@ -910,15 +942,9 @@ set_choice:
 		ppp_error_invalid_option ("DPC-IN-DATA", p);
 	}
   }
-| FOLDCOPYNAME _as LITERAL
+| FOLDCOPYNAME _as unquoted_literal
   {
 	char	*p = $3;
-	size_t	size;
-
-	/* Remove surrounding quotes/brackets */
-	++p;
-	size = strlen (p) - 1;
-	p[size] = '\0';
 
 	if (!cb_strcasecmp (p, "UPPER")) {
 		cb_fold_copy = COB_FOLD_UPPER;
@@ -964,7 +990,7 @@ set_choice:
 	/* Disable EC-BOUND-SUBSCRIPT and -REF-MOD checking */
 	struct cb_text_list	*txt = ppp_list_add (NULL, "EC-BOUND-SUBSCRIPT");
 	txt = ppp_list_add (txt, "EC-BOUND-REF-MOD");
-	
+
 	append_to_turn_list (txt, 0, 0);
   }
 | ODOSLIDE
@@ -985,30 +1011,15 @@ set_choice:
 		fprintf (ppout, "#REMOVE %s\n", l->text);
 	}
   }
-| SOURCEFORMAT _as LITERAL
+| SOURCEFORMAT _as unquoted_literal
   {
 	char	*p = $3;
-	size_t	size;
 
-	/* Remove surrounding quotes/brackets */
-	++p;
-	size = strlen (p) - 1;
-	p[size] = '\0';
-
-	if (!cb_strcasecmp (p, "FIXED")) {
-		cb_source_format = CB_FORMAT_FIXED;
-		cb_text_column = cb_config_text_column;
-	} else if (!cb_strcasecmp (p, "FREE")) {
-		cb_source_format = CB_FORMAT_FREE;
-	} else if (!cb_strcasecmp (p, "VARIABLE")) {
-		cb_source_format = CB_FORMAT_FIXED;
-		/* This value matches most MF Visual COBOL 4.0 version. */
-		cb_text_column = 250;
-	} else {
+	if (cobc_deciph_source_format (p) != 0) {
 		ppp_error_invalid_option ("SOURCEFORMAT", p);
 	}
 	if (cb_src_list_file) {
-		cb_current_file->source_format = cb_source_format;
+		cb_current_file->source_format = cobc_get_source_format ();
 	}
   }
 | SOURCEFORMAT _as error
@@ -1025,7 +1036,7 @@ set_choice:
   {
 	char	*p = $2;
 	char	ep = 0;
-	
+
 	/* Remove surrounding quotes/brackets */
 	if (p) {
 		size_t	size;
@@ -1145,32 +1156,18 @@ refmod_directive:
 ;
 
 source_directive:
-  _format _is format_type
+  _format _is VARIABLE_NAME
   {
+	  if (cobc_deciph_source_format ($3) != 0) {
+		  ppp_error_invalid_option ("SOURCE", $3);
+	  }
 	  if (cb_src_list_file) {
-		  cb_current_file->source_format = cb_source_format;
+		  cb_current_file->source_format = cobc_get_source_format ();
 	  }
   }
-;
-
-format_type:
-  FIXED
+| _format _is LITERAL
   {
-	cb_source_format = CB_FORMAT_FIXED;
-	cb_text_column = cb_config_text_column;
-  }
-| FREE
-  {
-	cb_source_format = CB_FORMAT_FREE;
-  }
-| VARIABLE
-  {
-	cb_source_format = CB_FORMAT_FIXED;
-	cb_text_column = 500;
-  }
-| GARBAGE
-  {
-	cb_error (_("invalid %s directive"), "SOURCE");
+	ppp_error_invalid_option ("SOURCE", $3);
 	YYERROR;
   }
 ;
@@ -1645,6 +1642,10 @@ text_partial_src:
   {
 	$$ = ppp_list_add (NULL, $2);
   }
+| TOKEN
+  {
+	$$ = ppp_list_add (NULL, literal_token ($1, 0));
+  }
 ;
 
 text_partial_dst:
@@ -1655,6 +1656,10 @@ text_partial_dst:
 | EQEQ TOKEN EQEQ
   {
 	$$ = ppp_list_add (NULL, $2);
+  }
+| TOKEN
+  {
+	$$ = ppp_list_add (NULL, literal_token ($1, 1));
   }
 ;
 
@@ -1722,6 +1727,23 @@ lead_trail:
 | TRAILING
   {
 	$$ = CB_REPLACE_TRAILING;
+  }
+;
+
+unquoted_literal:
+  LITERAL
+  {
+	/* Do not reuse unquote as some literals here may be delimited with
+	   parentheses */
+	char	*p = $1;
+	size_t	size;
+
+	/* Remove surrounding quotes/brackets */
+	++p;
+	size = strlen (p) - 1;
+	p[size] = '\0';
+
+	$$ = p;
   }
 ;
 
