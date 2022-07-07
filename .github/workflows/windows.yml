@@ -4,7 +4,8 @@ on:
   pull_request:
     branches: [ gcos4gnucobol-3.x ]
   push:
-    branches: [ gcos4gnucobol-3.x ]
+  # manual run in actions tab - for all branches
+  workflow_dispatch:
 
 jobs:
   build:
@@ -25,7 +26,7 @@ jobs:
         uses: msys2/setup-msys2@v2
         with:
           update: true
-          install: autoconf automake libtool make mingw-w64-x86_64-db mingw-w64-x86_64-gmp libdb-devel  mingw-w64-x86_64-gcc flex bison gmp-devel help2man texinfo
+          install: autoconf automake libtool make mingw-w64-x86_64-db mingw-w64-x86_64-gmp libdb-devel mingw-w64-x86_64-gcc flex bison gmp-devel help2man texinfo
 
       - name: Set git user
         run: |
@@ -45,8 +46,15 @@ jobs:
       - name: configure
         run: |
           cd _build
-          ../configure --enable-cobc-internal-checks --enable-debug --prefix /opt/cobol/gnucobol-gcos --exec-prefix /opt/cobol/gnucobol-gcos
+          ../configure --enable-cobc-internal-checks --enable-hardening --prefix /opt/cobol/gnucobol-gcos
         shell: msys2 {0}
+
+      - name: Upload config.log
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: config.log
+          path: _build/config.log
 
       - name: make
         run: |
@@ -56,9 +64,16 @@ jobs:
 
       - name: check
         run: |
-          cd _build
+          cd _build/tests
           make check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"
         shell: msys2 {0}
+
+      - name: Upload testsuite.log
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: testsuite.log
+          path: _build/tests/testsuite.log
 
       - name: install
         run: |
