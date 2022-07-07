@@ -1,22 +1,4 @@
 
-2022-06-28  Simon Sobisch <simonsobisch@gnu.org>
-
-	* cobc.c, help.c: added -dumpversion
-
-2022-06-27  Simon Sobisch <simonsobisch@gnu.org>
-
-	* typeck.c (numeric_children_screen_pos_type): ignore redefined
-	  fields
-	* field.c (cb_resolve_redefines): always search candidate with (small)
-	  word list first, instead of checking the complete parent for a same
-	  name with case-insensitive name comparison
-
-2022-06-17  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
-
-	* config.def, typeck.c (cb_emit_accept_name, cb_build_display_name):
-	  rely on new option device-mnemonics (boolean) instead of
-	  standard-define to accept device name mnemonics for DISPLAY and ACCEPT
-
 2022-07-06  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* cobc.h: define function purity attribute COB_A_PURE
@@ -26,6 +8,11 @@
 	  pure functions
 	* cobc.c: drop source format-related macros
 	* cobc.c (cobc_print_info): silence a warning with string indexing
+
+2022-07-05  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* pplex.l, parser.y: parse DISPLAY and ACCEPT statements in DEFAULT
+	  SECTION (GCOS 7 extension)
 
 2022-07-04  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
@@ -45,10 +32,28 @@
 	  as well as floating margin B
 	* pplex.l (check_listing): do not output sequence number of short lines
 
+2022-06-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c, help.c: added -dumpversion
+
+2022-06-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (numeric_children_screen_pos_type): ignore redefined
+	  fields
+	* field.c (cb_resolve_redefines): always search candidate with (small)
+	  word list first, instead of checking the complete parent for a same
+	  name with case-insensitive name comparison
+
 2022-06-24  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* cobc.c, config.def, flag.def, ppparse.y: requalify indicator-column as
 	  a flag instead of a dialect option
+
+2022-06-17  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* config.def, typeck.c (cb_emit_accept_name, cb_build_display_name):
+	  rely on new option device-mnemonics (boolean) instead of
+	  standard-define to accept device name mnemonics for DISPLAY and ACCEPT
 
 2022-05-31  Simon Sobisch <simonsobisch@gnu.org>
 

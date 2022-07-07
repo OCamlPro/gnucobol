@@ -3342,6 +3342,7 @@ nested_list:
 	depth = 0;
 	setup_from_identification = 0;
   }
+  _control_division		/* GCOS extension */
   source_element_list
 ;
 
@@ -3526,6 +3527,51 @@ _prototype_procedure_division_header:
 	current_program->num_proc_params = cb_list_length ($3);
 	/* add pseudo-entry as it contains the actual USING parameters */
 	emit_main_entry (current_program, $3);
+  }
+;
+
+/* CONTROL DIVISION (GCOS extension) */
+
+_control_division:
+  /* empty */
+| CONTROL DIVISION TOK_DOT
+  {
+	  cb_verify (cb_control_division, "CONTROL DIVISION");
+  }
+  _default_section
+;
+
+_default_section:
+  /* empty */
+| DEFAULT SECTION TOK_DOT
+  _default_clauses
+  {
+	cobc_cs_check = 0;
+  }
+;
+
+_default_clauses:
+  /*empty*/
+| _default_accept_clause
+  _default_display_clause
+  TOK_DOT
+;
+
+_default_accept_clause:
+  /* empty */
+| ACCEPT _is word_or_terminal
+  {
+	  CB_PENDING ("ACCEPT statement in DEFAULT SECTION");
+	  /* TODO: setup_default_accept ($3); */
+  }
+;
+
+_default_display_clause:
+  /* empty */
+| DISPLAY _is word_or_terminal
+  {
+	  CB_PENDING ("DISPLAY statement in DEFAULT SECTION");
+	  /* TODO: setup_default_display ($3); */
   }
 ;
 
