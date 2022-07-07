@@ -17,6 +17,39 @@
 	  rely on new option device-mnemonics (boolean) instead of
 	  standard-define to accept device name mnemonics for DISPLAY and ACCEPT
 
+2022-07-06  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* cobc.h: define function purity attribute COB_A_PURE
+	* cobc.h, cobc.c, pplex.l (cobc_get_indicator_column,
+	  cobc_get_text_column, cobc_get_indicator, cobc_get_margin_a,
+	  cobc_get_margin_b): encapsulate source format-related variables with
+	  pure functions
+	* cobc.c: drop source format-related macros
+	* cobc.c (cobc_print_info): silence a warning with string indexing
+
+2022-07-04  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	FR #29 support for ACUCOBOL-GT Terminal format
+	FR #230 support for X/Open Free-form format
+	* cobc.h, cobc.c: extend cb_format enum with VARIABLE, TERMINAL, XOPEN,
+	  XCARD, CRT, and COBOLX source formats
+	* ppparse.y: extend SOURCEFORMAT directive
+	* cobc.c: drop IS_DEBUG_LINE macro to improve support for new source
+	  formats
+	* cobc.c, flag.def: add new flag -fformat and remove flag
+	  indicator-column
+	* cobc.h, pplex.l (cobc_deciph_source_format, cobc_set_source_format,
+	  cobc_get_source_format): encapsulate source format configuration into
+	  preprocessor lexer
+	* pplex.l (ppinput): add support for ACU terminal and X/Open indicators,
+	  as well as floating margin B
+	* pplex.l (check_listing): do not output sequence number of short lines
+
+2022-06-24  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* cobc.c, config.def, flag.def, ppparse.y: requalify indicator-column as
+	  a flag instead of a dialect option
+
 2022-05-31  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (cobc_check_string): replaced single string cache by an array
@@ -128,6 +161,11 @@
 	* pplex.l, ppparse.y: add support for CONTROL DIVISION (GCOS 7
 	  extension); only SUBSTITUTION SECTION is handled yet
 	* config.def: new control-division option
+
+2022-02-04  David Declerck <david.declerck@ocamlpro.com>
+
+	* cobc.c, cobc.h, config.def, pplex.l, ppparse.y: make the
+	  indicator column configurable
 
 2021-12-30  Simon Sobisch <simonsobisch@gnu.org>
 

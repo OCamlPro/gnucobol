@@ -91,6 +91,16 @@ NEWS - user visible changes				-*- outline -*-
    dialect configuration options accompanying each specificity
    introduced by the dialect.
 
+** new -fformat flag and extended SOURCE FORMAT directives, with the following
+   newly supported formats:
+
+   VARIABLE		Microfocus Variable format
+   XOPEN		X/Open Free-form format
+   XCARD		ICOBOL xCard (extended card) format
+   CRT			ICOBOL Free-form format
+   TERMINAL		ACUCOBOL-GT Terminal format
+   COBOLX		GCOS 7 extended format
+
 * Important Bugfixes:
 
 ** for dialects other than the GnuCOBOL default different reserved "alias" words

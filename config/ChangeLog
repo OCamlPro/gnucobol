@@ -16,6 +16,10 @@
 
 	* general: added option control-division
 
+2022-06-24  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* general: remove indicator-column option, which is now a flag
+
 2022-02-07  David Declerck <david.declerck@ocamlpro.com>
 
 	* gcos-strict.conf, gcos.conf, gcos.words: added config files for
@@ -25,6 +29,11 @@
 
 	* general: add a record-contains-depending-clause option to allow
 	  configuring the support of the DEPENDING clause in RECORD CONTAINS
+
+2022-02-04  David Declerck <david.declerck@ocamlpro.com>
+
+	* general: add an indicator-column option to allow customizing
+	  the position of the indicator
 
 2021-11-14  Ron Norman <rjn@inglenet.com>
 
