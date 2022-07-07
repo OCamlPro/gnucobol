@@ -1,10 +1,12 @@
 name: Ubuntu Workflow
 
 on:
-  pull_request:
-    branches: [ gcos4gnucobol-3.x ]
+  # pull_request:
+  #   branches: [ gcos4gnucobol-3.x ]
   push:
-    branches: [ gcos4gnucobol-3.x ]
+    branches: [ fix-ci ]
+  # manual run in actions tab - for all branches
+  workflow_dispatch:
 
 jobs:
   build:
@@ -26,7 +28,7 @@ jobs:
 
       - name: Install packages
         run: |
-          sudo apt-get install automake libtool libdb5.3-dev help2man gettext texlive
+          sudo apt-get install automake libtool libdb5.3-dev libxml2-dev libcjson-dev bison flex help2man gettext texlive
 
       - name: Set git user
         run: |
@@ -47,27 +49,28 @@ jobs:
       # ...
       # Failure cases read: "Error opening terminal: unknown." on
       # stderr, and exit with code 1.
-      # 
+      #
       # Another alternative is passing `--with-curses=no` to the
       # configure script, yet distcheck does call configure too...
-      # 
+      #
       - name: Build environment setup
         run: |
           mkdir _build
           export TERM="vt100"
           echo "TERM=$TERM" >> $GITHUB_ENV
-          echo "INSTALL_PREFIX=$(pwd)/_install" >> $GITHUB_ENV
+          echo "INSTALL_PATH=$(pwd)/_install" >> $GITHUB_ENV
 
       - name: configure
         run: |
           cd _build
-          ../configure --enable-cobc-internal-checks --enable-debug --prefix ${INSTALL_PREFIX}
+          ../configure --enable-cobc-internal-checks --enable-hardening --prefix ${INSTALL_PATH}
+          echo "VERSION=PACKAGE_VERSION" | cpp -P -imacros config.h >> $GITHUB_ENV
 
       - name: Upload config.log
         uses: actions/upload-artifact@v3
         if: failure()
         with:
-          name: ubuntu-config-log
+          name: config.log
           path: _build/config.log
 
       - name: make
@@ -80,6 +83,7 @@ jobs:
       #     cd _build
       #     make check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"
 
+      # note: distcheck also creates the dist tarball
       - name: distcheck
         run: |
           cd _build
@@ -90,14 +94,16 @@ jobs:
         if: failure()
         with:
           # Assume there's only one directory matching `_build/gnucobol-*`:
-          name: ubuntu-testsuite-log
-          path: _build/gnucobol-*/_build/sub/tests/testsuite.log
+          name: testsuite.log
+          path: _build/gnucobol-${{ env.VERSION }}/_build/sub/tests/testsuite.log
 
-      - name: Upload distribution archive
-        uses: actions/upload-artifact@v3
+      - name: Upload dist tarball
+        uses: actions/upload-artifact@v3.1.0
         with:
-          name: distribution
-          path: _build/gnucobol-*.tar.gz
+          name: gnucobol-ci source distribution
+          path: _build/gnucobol*.tar*
+          if-no-files-found: error
+          retention-days: 0
 
       - name: Cache newcob.val.Z
         uses: actions/cache@v3
@@ -119,7 +125,77 @@ jobs:
           ln -f newcob.val.Z.cached newcob.val.Z
           make EXEC85 && make --jobs=$(($(nproc)+1)) test
 
+      - uses: actions/upload-artifact@v3
+        with:
+          name: NIST85 results
+          path: |
+            _build/tests/cobol85/**/*.log
+            _build/tests/cobol85/**/*.out
+
       - name: install
         run: |
           cd _build
           make install
+
+
+  coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      # note: less dependencies as we don't generate a dist tarball, one additional for lcov
+      - name: Install dependencies
+        run: |
+          sudo apt-get install automake libtool libdb5.3-dev libxml2-dev libcjson-dev bison flex help2man gettext lcov
+
+      - name: bootstrap
+        run: |
+          ./build_aux/bootstrap
+
+      - name: Build environment setup
+        run: |
+          mkdir _build
+          export TERM="vt100"
+          echo "TERM=$TERM" >> $GITHUB_ENV
+
+      - name: configure
+        run: |
+          cd _build
+          ../configure --enable-code-coverage
+
+      - uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: config.log
+          path: _build/config.log
+
+      - name: make
+        run: |
+          cd _build
+          make --jobs=$(($(nproc)+1))
+
+      - name: coverage
+        run: |
+          cd _build
+          make check-code-coverage TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"
+
+      - uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: testsuite.log
+          path: _build/tests/testsuite.log
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: coverage
+          path: _build/GnuCOBOL-**-coverage/
+
+      - uses: codecov/codecov-action@v2
+        # Shall fail until we have a working account on codecov.io
+        with:
+          # token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+          directory: _build
+          fail_ci_if_error: false # optional (default = false)
+          verbose: true # optional (default = false)
+
