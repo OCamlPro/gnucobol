@@ -1,4 +1,9 @@
 
+2022-06-17  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+	* config.def, typeck.c (cb_emit_accept_name, cb_build_display_name):
+	  rely on new option device-mnemonics (boolean) instead of
+	  standard-define to accept device name mnemonics for DISPLAY and ACCEPT
+
 2022-07-06  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* cobc.h: define function purity attribute COB_A_PURE
@@ -54,6 +59,16 @@
 	* config.def, typeck.c (cb_emit_accept_name, cb_build_display_name):
 	  rely on new option device-mnemonics (boolean) instead of
 	  standard-define to accept device name mnemonics for DISPLAY and ACCEPT
+
+2022-06-10  Ron Norman <rjn@inglenet.com>
+
+	* flag.def,config.def : Moved defaultbyte from flag to config
+	* cobc.h,help.c,codegen.c : Add define CB_CONFIG_SINT as signed 'int'
+	* config.c (cb_config_entry): for CB_INT check for a single character
+		Also check for word 'ignore' and make no changes
+	* codegen.c : Improvement of code emitted for INITIALIZE of tables
+		Initial table values, then clear next, 
+		then propagate through remainder of the table
 
 2022-05-31  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -133,6 +148,11 @@
 	* cobc.h, tree.h: moved flex directive actions and value types along
 	  with cb_define_struct to tree.h as enum cb_directive_action and
 	  enum cb_definition_type
+
+2022-02-13  Ron Norman <rjn@inglenet.com>
+
+	* codegen.c: Fix for setting initial values for WORKING-STORAGE
+				with multiple OCCURS and VALUES
 
 2022-02-07  David Declerck <david.declerck@ocamlpro.com>
 

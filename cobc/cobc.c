@@ -612,6 +612,8 @@ static const struct option long_options[] = {
 	{"f" name,		CB_RQ_ARG, NULL, '%'},
 #define	CB_CONFIG_INT(var,name,min,max,odoc,doc)	\
 	{"f" name,		CB_RQ_ARG, NULL, '%'},
+#define	CB_CONFIG_SINT(var,name,min,max,odoc,doc)	\
+	{"f" name,		CB_RQ_ARG, NULL, '%'},
 #define	CB_CONFIG_STRING(var,name,doc)		\
 	{"f" name,		CB_RQ_ARG, NULL, '%'},
 #define	CB_CONFIG_BOOLEAN(var,name,doc)		\
@@ -622,6 +624,7 @@ static const struct option long_options[] = {
 #include "config.def"
 #undef	CB_CONFIG_ANY
 #undef	CB_CONFIG_INT
+#undef	CB_CONFIG_SINT
 #undef	CB_CONFIG_STRING
 #undef	CB_CONFIG_BOOLEAN
 #undef	CB_CONFIG_SUPPORT

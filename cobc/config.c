@@ -48,6 +48,7 @@ enum cb_config_type {
 
 #define CB_CONFIG_ANY(type,var,name,doc)	type		var = (type)0;
 #define CB_CONFIG_INT(var,name,min,max,odoc,doc)	unsigned int		var = 0;
+#define CB_CONFIG_SINT(var,name,min,max,odoc,doc)	int		var = -1;
 #define CB_CONFIG_STRING(var,name,doc)	const char	*var = NULL;
 #define CB_CONFIG_BOOLEAN(var,name,doc)	int		var = 0;
 #define CB_CONFIG_SUPPORT(var,name,doc)	enum cb_support	var = CB_OK;
@@ -56,6 +57,7 @@ enum cb_config_type {
 
 #undef	CB_CONFIG_ANY
 #undef	CB_CONFIG_INT
+#undef	CB_CONFIG_SINT
 #undef	CB_CONFIG_STRING
 #undef	CB_CONFIG_BOOLEAN
 #undef	CB_CONFIG_SUPPORT
@@ -67,8 +69,10 @@ enum cb_config_type {
 #define CB_CONFIG_ANY(type,var,name,doc)	, {CB_ANY, name, (void *)&var}
 #if COBC_STORES_CONFIG_VALUES
 #define CB_CONFIG_INT(var,name,min,max,odoc,doc)	, {CB_INT, name, (void *)&var, NULL, min, max}
+#define CB_CONFIG_SINT(var,name,min,max,odoc,doc)	, {CB_INT, name, (void *)&var, NULL, min, max}
 #else
 #define CB_CONFIG_INT(var,name,min,max,odoc,doc)	, {CB_INT, name, (void *)&var, 0, min, max}
+#define CB_CONFIG_SINT(var,name,min,max,odoc,doc)	, {CB_INT, name, (void *)&var, 0, min, max}
 #endif
 #define CB_CONFIG_STRING(var,name,doc)	, {CB_STRING, name, (void *)&var}
 #define CB_CONFIG_BOOLEAN(var,name,doc)	, {CB_BOOLEAN, name, (void *)&var}
@@ -107,6 +111,7 @@ static struct config_struct {
 
 #undef	CB_CONFIG_ANY
 #undef	CB_CONFIG_INT
+#undef	CB_CONFIG_SINT
 #undef	CB_CONFIG_STRING
 #undef	CB_CONFIG_BOOLEAN
 #undef	CB_CONFIG_SUPPORT
@@ -484,7 +489,7 @@ cb_config_entry (char *buff, const char *fname, const int line)
 	char		*s;
 	const char	*name;
 	char		*e;
-	char		*val;
+	char		*val, valx[24];;
 	void		*var;
 	enum cb_support	support_val;
 	size_t		i;
@@ -766,6 +771,14 @@ cb_config_entry (char *buff, const char *fname, const int line)
 		/* LCOV_EXCL_STOP */
 
 	case CB_INT:
+		if (strcmp (val, "ignore") == 0)
+			break;
+		if (val[1] == 0
+		 && (islower(val[0]) || isupper(val[0]))) {
+			int v = val[0];
+			sprintf(valx,"%d",v);
+			val = valx;
+		}
 		for (j = 0; val[j]; j++) {
 			if (val[j] < '0' || val[j] > '9') {
 				invalid_value (fname, line, name, val, NULL, 0, 0);
