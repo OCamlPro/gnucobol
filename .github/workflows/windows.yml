@@ -1,9 +1,9 @@
 name: Windows Workflow
 
 on:
-  pull_request:
-    branches: [ gcos4gnucobol-3.x ]
-  push:
+  # pull_request:
+  #   branches: [ gcos4gnucobol-3.x ]
+  # push:
   # manual run in actions tab - for all branches
   workflow_dispatch:
 
