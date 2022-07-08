@@ -640,6 +640,7 @@ only usable with COB_USE_VC2013_OR_GREATER */
 #define	COB_FOLD_NONE		0
 #define	COB_FOLD_UPPER		1
 #define	COB_FOLD_LOWER		2
+#define	COB_FOLD_BOTH		3
 
 /* Locale types */
 #define	COB_LC_COLLATE		0

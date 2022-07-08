@@ -55,7 +55,7 @@ CB_FLAG_RQ (cb_ebcdic_sign, 1, "sign", 0, 3,
 	  "                        * default: machine native"))
 
 CB_FLAG_RQ (cb_fold_copy, 1, "fold-copy", 0, 4,
-	_("  -ffold-copy=[UPPER|LOWER]\tfold COPY subject to value\n"
+	_("  -ffold-copy=[UPPER|LOWER|BOTH]\tfold COPY subject to value\n"
 	  "                        * default: no transformation"))
 
 CB_FLAG_RQ (cb_fold_call, 1, "fold-call", 0, 5,
