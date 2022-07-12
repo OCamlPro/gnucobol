@@ -6442,6 +6442,11 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 	struct cb_field			*fld;
 	enum cb_category		catg;
 
+	/* TODO: if all arguments are constants: build a cob_field,
+	   then call into libcob to get the value and from there the string representation
+	   inserting it here directly (-> numeric/alphanumeric/national constant,
+	   which allows also for optimized use of it */
+
 	int numargs = (int)cb_list_length (args);
 
 	if (unlikely (isuser)) {
@@ -6526,17 +6531,34 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 			fld = CB_FIELD_PTR (x);
 			if (!cb_field_variable_size (fld)
 			 && !fld->flag_any_length) {
-				if (!(fld->pic
-				 && (fld->pic->category == CB_CATEGORY_NATIONAL
-				  || fld->pic->category == CB_CATEGORY_NATIONAL_EDITED)))
-					return cb_build_length (x);
+				int 	len = fld->size;
+				char	buff[32];
+				if (cbp->intr_enum != CB_INTR_BYTE_LENGTH) {
+					/* CHECKME: why don't we just check the category?
+					   Maybe needs to enforce field validation (see cb_build_length) */
+					if ( fld->pic
+					 && (fld->pic->category == CB_CATEGORY_NATIONAL
+					  || fld->pic->category == CB_CATEGORY_NATIONAL_EDITED)) {
+						len /= COB_NATIONAL_SIZE;
+					}
+				}
+				sprintf (buff, "%d", len);
+				return cb_build_numeric_literal (0, buff, 0);
 			}
 		} else if (CB_LITERAL_P (x)) {
-			/* FIXME: we currently generate national constants as alphanumeric constants */
-			if (cbp->intr_enum != CB_INTR_BYTE_LENGTH
-			 || (CB_TREE_CATEGORY (x) != CB_CATEGORY_NATIONAL_EDITED
-			    && CB_TREE_CATEGORY (x) != CB_CATEGORY_NATIONAL))
-			return cb_build_length (x);
+			unsigned int 	len = CB_LITERAL(x)->size;
+			char	buff[32];
+			if (cbp->intr_enum != CB_INTR_BYTE_LENGTH) {
+				enum cb_category cat = CB_TREE_CATEGORY (x);
+				/* CHECKME: why don't we just check the category?
+				   Maybe needs to enforce field validation (see cb_build_length) */
+				if (cat == CB_CATEGORY_NATIONAL
+				 || cat == CB_CATEGORY_NATIONAL_EDITED) {
+					len /= COB_NATIONAL_SIZE;
+				}
+			}
+			sprintf (buff, "%u", len);
+			return cb_build_numeric_literal (0, buff, 0);
 		}
 		return make_intrinsic (func, cbp, args, NULL, NULL, 0);
 
@@ -6647,6 +6669,7 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 
 	case CB_INTR_HIGHEST_ALGEBRAIC:
 	case CB_INTR_LOWEST_ALGEBRAIC:
+		/* TODO: resolve for all (?) values */
 		x = CB_VALUE (args);
 		if (!CB_REF_OR_FIELD_P (x)) {
 			cb_error_x (func, _("FUNCTION '%s' has invalid argument"), cbp->name);
@@ -6683,11 +6706,13 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 
 	case CB_INTR_DISPLAY_OF:
 	case CB_INTR_NATIONAL_OF:
+		/* TODO: resolve for literals */
 		return make_intrinsic (func, cbp, args, cb_int1, refmod, 0);
 
 
 	case CB_INTR_BIT_OF:
 	case CB_INTR_HEX_OF:
+		/* TODO: resolve for literals */
 		x = CB_VALUE (args);
 		if (!CB_REF_OR_FIELD_P (x)
 		 && !CB_LITERAL_P (x)) {
@@ -6697,6 +6722,7 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 		return make_intrinsic (func, cbp, args, NULL, refmod, 0);
 	case CB_INTR_BIT_TO_CHAR:
 	case CB_INTR_HEX_TO_CHAR:
+		/* TODO: resolve for literals */
 		x = CB_VALUE (args);
 		if (!CB_REF_OR_FIELD_P (x)
 		  &&!CB_LITERAL_P (x)) {

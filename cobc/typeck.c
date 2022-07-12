@@ -3375,10 +3375,25 @@ get_value (cb_tree x)
 		return 255;
 	} else if (x == cb_null) {
 		return 0;
-	} else if (CB_TREE_CLASS (x) == CB_CLASS_NUMERIC) {
-		return cb_get_int (x) - 1;
+	} else {
+		enum cb_class cls = CB_TREE_CLASS (x);
+		if (cls == CB_CLASS_NUMERIC) {
+			return cb_get_int (x) - 1;
+		} else {
+			struct cb_literal* lit = CB_LITERAL (x);
+			if (cls == CB_CLASS_NATIONAL) {
+				/* actually would need to check BE/LE here to do correct calculation */
+				cob_u32_t i;
+				int ret = lit->data[0];
+				for (i = 1; i < lit->size; ++i) {
+					ret *= 256;
+					ret += lit->data[i];
+				}
+				return ret;
+			}
+			return lit->data[0];
+		}
 	}
-	return CB_LITERAL (x)->data[0];
 }
 
 static int
@@ -3412,81 +3427,61 @@ cb_validate_collating (cb_tree collating_sequence)
 	return 0;
 }
 
-void
-cb_validate_program_environment (struct cb_program *prog)
+static void
+validate_alphabet (cb_tree alphabet)
 {
-	cb_tree			x;
-	cb_tree			y;
-	cb_tree			l;
-	cb_tree			ls;
-	struct cb_alphabet_name	*ap;
-	struct cb_class_name	*cp;
-	unsigned char		*data;
-	size_t			dupls;
-	size_t			unvals;
-	size_t			count;
-	int			lower;
-	int			upper;
-	int			size;
-	int			n;
-	int			i;
-	int			pos;
-	int			lastval;
-	int			tableval;
-	int			values[256];
-	int			charvals[256];
-	int			dupvals[256];
-	char		errmsg[256];
+	struct cb_alphabet_name *ap = CB_ALPHABET_NAME (alphabet);
+	unsigned int		n;
 
-	/* Check ALPHABET clauses */
-	/* Complicated by difference between code set and collating sequence */
-	for (l = prog->alphabet_name_list; l; l = CB_CHAIN (l)) {
-		ap = CB_ALPHABET_NAME (CB_VALUE (l));
-
-		/* Native */
-		if (ap->alphabet_type == CB_ALPHABET_NATIVE) {
-			for (n = 0; n < 256; n++) {
-				ap->values[n] = n;
-				ap->alphachr[n] = n;
-			}
-			continue;
+	/* Native */
+	if (ap->alphabet_type == CB_ALPHABET_NATIVE) {
+		for (n = 0; n < 256; n++) {
+			ap->values[n] = n;
+			ap->alphachr[n] = n;
 		}
+		return;
+	}
 
-		/* ASCII */
-		if (ap->alphabet_type == CB_ALPHABET_ASCII) {
-			for (n = 0; n < 256; n++) {
+	/* ASCII */
+	if (ap->alphabet_type == CB_ALPHABET_ASCII) {
+		for (n = 0; n < 256; n++) {
 #ifdef	COB_EBCDIC_MACHINE
-				ap->values[n] = (int)cob_refer_ascii[n];
-				ap->alphachr[n] = (int)cob_refer_ascii[n];
+			ap->values[n] = (int)cob_refer_ascii[n];
+			ap->alphachr[n] = (int)cob_refer_ascii[n];
 #else
-				ap->values[n] = n;
-				ap->alphachr[n] = n;
+			ap->values[n] = n;
+			ap->alphachr[n] = n;
 #endif
-			}
-			continue;
 		}
+		return;
+	}
 
-		/* EBCDIC */
-		if (ap->alphabet_type == CB_ALPHABET_EBCDIC) {
-			for (n = 0; n < 256; n++) {
+	/* EBCDIC */
+	if (ap->alphabet_type == CB_ALPHABET_EBCDIC) {
+		for (n = 0; n < 256; n++) {
 #ifdef	COB_EBCDIC_MACHINE
-				ap->values[n] = n;
-				ap->alphachr[n] = n;
+			ap->values[n] = n;
+			ap->alphachr[n] = n;
 #else
-				ap->values[n] = (int)cob_refer_ebcdic[n];
-				ap->alphachr[n] = (int)cob_refer_ebcdic[n];
+			ap->values[n] = (int)cob_refer_ebcdic[n];
+			ap->alphachr[n] = (int)cob_refer_ebcdic[n];
 #endif
-			}
-			continue;
 		}
+		return;
+	}
 
-		/* Custom alphabet */
-		dupls = 0;
-		unvals = 0;
-		pos = 0;
-		count = 0;
-		lastval = 0;
-		tableval = 0;
+	/* Custom alphabet */
+	{
+		cb_tree		l, x;
+		size_t		count = 0;
+		int			unvals = 0, dupls = 0;
+		int			lastval = 0, tableval = 0;
+		int			pos = 0;
+		int			i;
+		int			values[256];
+		int			charvals[256];
+		int			dupvals[256];
+
 		for (n = 0; n < 256; n++) {
 			values[n] = -1;
 			charvals[n] = -1;
@@ -3496,21 +3491,24 @@ cb_validate_program_environment (struct cb_program *prog)
 		}
 		ap->low_val_char = 0;
 		ap->high_val_char = 255;
-		for (y = ap->custom_list; y; y = CB_CHAIN (y)) {
+		for (l = ap->custom_list; l; l = CB_CHAIN (l)) {
 			pos++;
 			if (count > 255) {
 				unvals = pos;
 				break;
 			}
-			x = CB_VALUE (y);
+			x = CB_VALUE (l);
 			if (CB_PAIR_P (x)) {
 				/* X THRU Y */
-				lower = get_value (CB_PAIR_X (x));
-				upper = get_value (CB_PAIR_Y (x));
+				int lower = get_value (CB_PAIR_X (x));
+				int upper = get_value (CB_PAIR_Y (x));
 				lastval = upper;
 				if (!count) {
 					ap->low_val_char = lower;
 				}
+				/* regression in NATIONAL literals as
+				   thpose are unfinished; would be fine
+				   with national alphabet in general */
 				if (lower < 0 || lower > 255) {
 					unvals = pos;
 					continue;
@@ -3545,6 +3543,7 @@ cb_validate_program_environment (struct cb_program *prog)
 					}
 				}
 			} else if (CB_LIST_P (x)) {
+				cb_tree			ls;
 				/* X ALSO Y ... */
 				if (!count) {
 					ap->low_val_char = get_value (CB_VALUE (x));
@@ -3554,6 +3553,9 @@ cb_validate_program_environment (struct cb_program *prog)
 					if (!CB_CHAIN (ls)) {
 						lastval = n;
 					}
+					/* regression in NATIONAL literals as
+					   those are unfinished; would be fine
+					   with national alphabet in general */
 					if (n < 0 || n > 255) {
 						unvals = pos;
 						continue;
@@ -3593,23 +3595,49 @@ cb_validate_program_environment (struct cb_program *prog)
 					ap->values[n] = tableval++;
 					count++;
 				} else if (CB_LITERAL_P (x)) {
-					size = (int)CB_LITERAL (x)->size;
-					data = CB_LITERAL (x)->data;
+					int size = (int)CB_LITERAL (x)->size;
+					unsigned char* data = CB_LITERAL (x)->data;
 					if (!count) {
 						ap->low_val_char = data[0];
 					}
 					lastval = data[size - 1];
-					for (i = 0; i < size; i++) {
-						n = data[i];
-						if (values[n] != -1) {
-							dupvals[n] = n;
-							dupls = 1;
+					if (CB_TREE_CATEGORY (x) != CB_CATEGORY_NATIONAL) {
+						for (i = 0; i < size; i++) {
+							n = data[i];
+							if (values[n] != -1) {
+								dupvals[n] = n;
+								dupls = 1;
+							}
+							values[n] = n;
+							charvals[n] = n;
+							ap->alphachr[tableval] = n;
+							ap->values[n] = tableval++;
+							count++;
 						}
-						values[n] = n;
-						charvals[n] = n;
-						ap->alphachr[tableval] = n;
-						ap->values[n] = tableval++;
-						count++;
+					} else {
+						for (i = 0; i < size; i++) {
+							/* assuming we have UTF16BE here */
+							if (data[i] == 0) {
+							/* only checking lower entries, all others,
+							   which are currently only possible with
+							   national-hex literals are not checked
+							   TODO: add a list of values for those and
+							   iterate over the list */
+								n = data[++i];
+								if (values[n] != -1) {
+									dupvals[n] = n;
+									dupls = 1;
+								}
+								values[n] = n;
+								charvals[n] = n;
+								ap->values[n] = tableval;
+							} else {
+								n = data[i++];
+								n = n * 255 + data[i];
+							}
+							ap->alphachr[tableval++] = n;
+							count++;
+						}
 					}
 				} else {
 					n = get_value (x);
@@ -3634,39 +3662,40 @@ cb_validate_program_environment (struct cb_program *prog)
 		}
 		if (dupls || unvals) {
 			if (dupls) {
+				char		errmsg[256];
 				i = 0;
 				for (n = 0; n < 256; n++) {
 					if (dupvals[n] != -1) {
 						if (i > 240) {
-							sprintf(&errmsg[i], ", ...");
+							sprintf (&errmsg[i], ", ...");
 							i = i + 5;
 							break;
 						}
 						if (i) {
-							sprintf(&errmsg[i], ", ");
+							sprintf (&errmsg[i], ", ");
 							i = i + 2;
 						}
-						if (isprint(n)) {
+						if (isprint (n)) {
 							errmsg[i++] = (char)n;
 						} else {
-							sprintf(&errmsg[i], "x'%02x'", n);
+							sprintf (&errmsg[i], "x'%02x'", n);
 							i = i + 5;
 						}
 					};
 				}
 				errmsg[i] = 0;
-				cb_error_x (CB_VALUE(l),
+				cb_error_x (alphabet,
 					_("duplicate character values in alphabet '%s': %s"),
-					    ap->name, errmsg);
+					ap->name, errmsg);
 			}
 			if (unvals) {
-				cb_error_x (CB_VALUE(l),
+				cb_error_x (alphabet,
 					_("invalid character values in alphabet '%s', starting at position %d"),
-					    ap->name, pos);
+					ap->name, pos);
 			}
 			ap->low_val_char = 0;
 			ap->high_val_char = 255;
-			continue;
+			return;
 		}
 		/* Calculate HIGH-VALUE */
 		/* If all 256 values have been specified, */
@@ -3702,6 +3731,81 @@ cb_validate_program_environment (struct cb_program *prog)
 			}
 		}
 	}
+}
+
+static void
+check_class_duplicates (cb_tree class_name)
+{
+	struct cb_class_name* cp = CB_CLASS_NAME (class_name);
+	size_t			dupls = 0;
+	int			values[256] = { 0 };
+	cb_tree			l;
+
+#if 0 /* should not be necessary with init above */
+	memset (values, 0, sizeof (values));
+#endif
+	for (l = cp->list; l; l = CB_CHAIN (l)) {
+		cb_tree			x = CB_VALUE (l);
+		if (CB_PAIR_P (x)) {
+			/* X THRU Y */
+			int lower = get_value (CB_PAIR_X (x));
+			int upper = get_value (CB_PAIR_Y (x));
+			int i;
+			for (i = lower; i <= upper; i++) {
+				if (values[i]) {
+					dupls = 1;
+				} else {
+					values[i] = 1;
+				}
+			}
+		} else {
+			int			n;
+			if (CB_NUMERIC_LITERAL_P (x)) {
+				n = get_value (x);
+				if (values[n]) {
+					dupls = 1;
+				} else {
+					values[n] = 1;
+				}
+			} else if (CB_LITERAL_P (x)) {
+				int	 size = (int)CB_LITERAL (x)->size;
+				unsigned char* data = CB_LITERAL (x)->data;
+				int i;
+				for (i = 0; i < size; i++) {
+					n = data[i];
+					if (values[n]) {
+						dupls = 1;
+					} else {
+						values[n] = 1;
+					}
+				}
+			} else {
+				n = get_value (x);
+				if (values[n]) {
+					dupls = 1;
+				} else {
+					values[n] = 1;
+				}
+			}
+		}
+	}
+	if (dupls) {
+		cb_warning_x (cb_warn_additional, class_name,
+			_("duplicate character values in class '%s'"),
+			cb_name (class_name));
+	}
+}
+
+void
+cb_validate_program_environment (struct cb_program *prog)
+{
+	cb_tree			l;
+
+	/* Check ALPHABET clauses */
+	/* Complicated by difference between code set and collating sequence */
+	for (l = prog->alphabet_name_list; l; l = CB_CHAIN (l)) {
+		validate_alphabet (CB_VALUE (l));
+	}
 
 	/* Reset HIGH/LOW-VALUES */
 	cb_low = cb_norm_low;
@@ -3709,80 +3813,28 @@ cb_validate_program_environment (struct cb_program *prog)
 
 	/* Check and generate SYMBOLIC clauses */
 	for (l = prog->symbolic_char_list; l; l = CB_CHAIN (l)) {
+		cb_tree x;
 		if (CB_VALUE (l)) {
-			y = cb_ref (CB_VALUE (l));
-			if (y == cb_error_node) {
+			x = cb_ref (CB_VALUE (l));
+			if (x == cb_error_node) {
 				continue;
 			}
-			if (!CB_ALPHABET_NAME_P (y)) {
-				cb_error_x (y, _("invalid ALPHABET name"));
+			if (!CB_ALPHABET_NAME_P (x)) {
+				cb_error_x (x, _("invalid ALPHABET name"));
 				continue;
 			}
 		} else {
-			y = NULL;
+			x = NULL;
 		}
-		cb_build_symbolic_chars (CB_PURPOSE (l), y);
+		cb_build_symbolic_chars (CB_PURPOSE (l), x);
 	}
 
-	/* Check CLASS clauses */
-	for (l = prog->class_name_list; l; l = CB_CHAIN (l)) {
-		cp = CB_CLASS_NAME (CB_VALUE (l));
-		/* LCOV_EXCL_START */
-		if (cp == NULL) {	/* keep the analyzer happy... */
-			cobc_err_msg ("invalid CLASS detected");	/* not translated as highly unlikely */
-			COBC_ABORT ();
+	/* Check CLASS clauses for duplicates */
+	if (cb_warn_additional) {
+		for (l = prog->class_name_list; l; l = CB_CHAIN (l)) {
+			check_class_duplicates (CB_VALUE (l));
 		}
-		/* LCOV_EXCL_STOP */
-		dupls = 0;
-		memset (values, 0, sizeof(values));
-		for (y = cp->list; y; y = CB_CHAIN (y)) {
-			x = CB_VALUE (y);
-			if (CB_PAIR_P (x)) {
-				/* X THRU Y */
-				lower = get_value (CB_PAIR_X (x));
-				upper = get_value (CB_PAIR_Y (x));
-				for (i = lower; i <= upper; i++) {
-					if (values[i]) {
-						dupls = 1;
-					} else {
-						values[i] = 1;
-					}
-				}
-			} else {
-				if (CB_NUMERIC_LITERAL_P (x)) {
-					n = get_value (x);
-					if (values[n]) {
-						dupls = 1;
-					} else {
-						values[n] = 1;
-					}
-				} else if (CB_LITERAL_P (x)) {
-					size = (int)CB_LITERAL (x)->size;
-					data = CB_LITERAL (x)->data;
-					for (i = 0; i < size; i++) {
-						n = data[i];
-						if (values[n]) {
-							dupls = 1;
-						} else {
-							values[n] = 1;
-						}
-					}
-				} else {
-					n = get_value (x);
-					if (values[n]) {
-						dupls = 1;
-					} else {
-						values[n] = 1;
-					}
-				}
-			}
-		}
-		if (dupls) {
-			cb_warning_x (cb_warn_additional, CB_VALUE(l),
-					_("duplicate character values in class '%s'"),
-					    cb_name (CB_VALUE(l)));
-			}
-		}
+	}
 
 	/* Resolve the program collating sequences */
 	if (cb_validate_collating (prog->collating_sequence)) {
@@ -3794,7 +3846,7 @@ cb_validate_program_environment (struct cb_program *prog)
 
 	/* Resolve the program classification */
 	if (prog->classification && prog->classification != cb_int1) {
-		x = cb_ref (prog->classification);
+		cb_tree x = cb_ref (prog->classification);
 		if (!CB_LOCALE_NAME_P (x)) {
 			cb_error_x (prog->classification,
 				    _("'%s' is not a locale name"),
@@ -4356,7 +4408,7 @@ cb_validate_program_data (struct cb_program *prog)
 				 && !cb_odoslide) {
 					xerr = x;
 					cb_error_x (x,
-						_ ("'%s' cannot have nested OCCURS DEPENDING"),
+						_("'%s' cannot have nested OCCURS DEPENDING"),
 						cb_name (x));
 				}
 				odo_level++;
@@ -4379,7 +4431,7 @@ cb_validate_program_data (struct cb_program *prog)
 					 && x != xerr) {
 						xerr = x;
 						cb_error_x (x,
-							_ ("'%s' cannot have OCCURS DEPENDING because of '%s'"),
+							_("'%s' cannot have OCCURS DEPENDING because of '%s'"),
 							cb_name (x), p->sister->name);
 						break;
 					}
