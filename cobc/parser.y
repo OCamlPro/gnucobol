@@ -232,7 +232,7 @@ static enum key_clause_type	key_type;
 
 static int			ext_dyn_specified;
 static enum cb_assign_device	assign_device;
- 
+
 static enum cb_display_type	display_type;
 static int			is_first_display_item;
 static cb_tree			advancing_value;
@@ -402,7 +402,7 @@ emit_entry (const char *name, const int encode, cb_tree using_list, cb_tree conv
 		emit_statement (cb_build_debug (cb_debug_contents,
 						"START PROGRAM", NULL));
 	}
-	
+
 	cb_validate_parameters_and_returning (current_program, using_list);
 
 	for (l = current_program->entry_list; l; l = CB_CHAIN (l)) {
@@ -1915,7 +1915,7 @@ check_not_88_level (cb_tree x)
 		/* invalidate field to prevent same error in typeck.c (validate_one) */
 		/* FIXME: If we really need the additional check here then we missed
 		          a call to cb_validate_one() somewhere */
-		return cb_error_node; 
+		return cb_error_node;
 #endif
 	} else {
 		return x;
@@ -3634,7 +3634,7 @@ program_id_paragraph:
 
 
 	setup_prototype ($3, $4, COB_MODULE_TYPE_PROGRAM, 1);
-	
+
 	if ($5) {
 		if (!current_program->nested_level) {
 			cb_error (_("COMMON may only be used in a contained program"));
@@ -3643,7 +3643,7 @@ program_id_paragraph:
 			cb_add_common_prog (current_program);
 		}
 	}
-	
+
 	/* TODO: do that more clean, this and above was only moved here
 	         to fix a shift/reduce conflict with program prototype */
 	if (save_tree == cb_int1) {
@@ -4991,7 +4991,7 @@ file_control_entry:
   SELECT flag_optional undefined_word
   {
 	char	buff[COB_MINI_BUFF];
-	  
+
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION,
 			       COBC_HD_INPUT_OUTPUT_SECTION,
 			       COBC_HD_FILE_CONTROL, 0);
@@ -7305,85 +7305,40 @@ volatile_clause:
 
 picture_clause:
   PICTURE	/* token from scanner, includes full picture definition */
-  _pic_locale_format
-  _pic_depending_on
   {
 	check_repeated ("PICTURE", SYN_CLAUSE_4, &check_pic_duplicate);
 	current_field->pic = CB_PICTURE ($1);	/* always returned, invalid picture will have size == 0 */
+  }
+  _pic_locale_format
+  _pic_depending_on
+;
 
-	if (CB_VALID_TREE ($2)) {
+_pic_locale_format:
+  /* empty */
+| LOCALE _is_locale_name SIZE _is integer
+  {
+	/* $2 -> optional locale-name to be used */
+	if (CB_VALID_TREE ($5)) {
 		if (  (current_field->pic->category != CB_CATEGORY_NUMERIC
 		    && current_field->pic->category != CB_CATEGORY_NUMERIC_EDITED)
 		 || strpbrk (current_field->pic->orig, " CRDBL-*") /* the standard seems to forbid also ',' */) {
-			cb_error_x ($1, _("a locale-format PICTURE string must only consist of '9', '.', '+', 'Z' and the currency-sign"));
+			cb_error_x (CB_TREE (current_field->pic),
+				    _("a locale-format PICTURE string must only consist of '9', '.', '+', 'Z' and the currency-sign"));
 		} else {
 			/* TODO: check that not we're not within a CONSTANT RECORD */
 			CB_PENDING_X ($1, "locale-format PICTURE");
 		}
 	}
-
-	if (CB_VALID_TREE (current_field->depending) &&
-	    !current_field->flag_occurs) {
-		if (!current_field->pic->variable_length) {
-			cb_error_x ($1, _("DEPENDING clause must only be specified "
-					  "for PICTURE strings with 'L' character"));
-		} else if (current_field->pic->category != CB_CATEGORY_ALPHABETIC &&
-			   current_field->pic->category != CB_CATEGORY_ALPHANUMERIC) {
-			cb_error_x ($1, _("DEPENDING clause must only be given for "
-					  "alphabetic or alphanumeric PICTURE strings"));
-		} else {
-			static int odoslide_check = 0;
-			const char pic[2] = { current_field->pic->orig[1], 0};
-			struct cb_field * const chld =
-				CB_FIELD (cb_build_field (cb_build_filler ()));
-			chld->pic = CB_PICTURE (cb_build_picture (pic));
-			chld->storage = current_field->storage;
-			chld->depending = current_field->depending;
-			chld->flag_occurs = 1;
-			chld->occurs_min = 1;
-			chld->occurs_max = current_field->pic->size - 1;
-			chld->parent = current_field;
-			current_field->children = chld;
-			current_field->pic = NULL;
-			current_field->depending = NULL;
-			if (cb_odoslide && !odoslide_check && current_field->redefines) {
-				cb_error_x ($1, "when ODOSLIDE is set, REDEFINES with "
-					    "PICTURE string with 'L' character are not "
-					    "yet supported");
-				odoslide_check = 1;
-			}
-		}
-		/* Set flag even in the case of errors above, to avoid unrelated
-		   warning or error messages upon tentative field
-		   validation.  */
-		current_field->flag_induce_complex_odo = 1;
-	} else if (current_field->pic->variable_length) {
-		cb_error_x ($1, _("missing DEPENDING clause for PICTURE string with "
-				  "'L' character"));
-	}
-  }
-;
-
-_pic_depending_on: _occurs_depending;
-
-_pic_locale_format:
-  /* empty */
-  { $$ = NULL; }
-| LOCALE _is_locale_name SIZE _is integer  
-  {
-	/* $2 -> optional locale-name to be used */
-	$$ = $5;
   }
 ;
 
 _is_locale_name:
   /* empty */
-| _is locale_name  
+| _is locale_name
   {
 	$$ = $2;
   }
 ;
-
 
 locale_name:
   WORD
@@ -7393,6 +7348,57 @@ locale_name:
 	} else {
 		cb_error_x ($1, _("'%s' is not a locale-name"),	cb_name ($1));
 		$$ = cb_error_node;
+	}
+  }
+;
+
+_pic_depending_on:
+  _occurs_depending
+  {
+	cb_tree depending = CB_TREE ($1);
+	if (CB_VALID_TREE (depending) && !current_field->flag_occurs) {
+		if (!current_field->pic->variable_length) {
+			cb_error_x ($1, _("DEPENDING clause must either have OCCURS clause "
+					  "of PICTURE string with 'L' character"));
+		} else if (current_field->pic->category != CB_CATEGORY_ALPHABETIC &&
+			   current_field->pic->category != CB_CATEGORY_ALPHANUMERIC) {
+			cb_error_x ($1, _("only USAGE DISPLAY may specify a "
+					  "variable-length PICTURE string"));
+			current_field->pic->variable_length = 0;
+		} else if (cb_odoslide && current_field->redefines) {
+			cb_error_x ($1, "when ODOSLIDE is set, REDEFINES with "
+				    "PICTURE string with 'L' character are not "
+				    "yet supported");
+			current_field->pic->variable_length = 0;
+		} else if (current_storage == CB_STORAGE_SCREEN ||
+			   current_storage == CB_STORAGE_REPORT) {
+			cb_error_x ($1, _("variable-length PICTURE string "
+					  "not allowed in %s"),
+				    enum_explain_storage (current_storage));
+			current_field->pic->variable_length = 0;
+		} else {
+			const char pic[2] = { current_field->pic->orig[1], 0};
+			struct cb_field * const chld =
+				CB_FIELD (cb_build_field (cb_build_filler ()));
+			chld->pic = CB_PICTURE (cb_build_picture (pic));
+			chld->storage = current_field->storage;
+			chld->depending = depending;
+			chld->flag_occurs = 1;
+			chld->occurs_min = 1;
+			chld->occurs_max = current_field->pic->size - 1;
+			chld->parent = current_field;
+			cobc_parse_free (current_field->pic);
+			current_field->children = chld;
+			current_field->pic = NULL;
+		}
+		/* Set flag even in the case of errors above, to avoid
+		   unrelated warning or error messages upon tentative
+		   field validation.  */
+		current_field->flag_induce_complex_odo = 1;
+	} else if (current_field->pic->variable_length) {
+		cb_error_x (CB_TREE (current_field->pic),
+			    _("missing DEPENDING clause for PICTURE string with "
+			      "'L' character"));
 	}
   }
 ;
@@ -7736,6 +7742,7 @@ report_occurs_clause:
   OCCURS integer _occurs_to_integer _times
   _occurs_depending _occurs_step
   {
+	current_field->depending = $5;
 	/* most of the field attributes are set when parsing the phrases */;
 	setup_occurs ();
 	setup_occurs_min_max ($2, $3);
@@ -7755,6 +7762,7 @@ occurs_clause:
   OCCURS integer _occurs_to_integer _times
   _occurs_depending _occurs_keys_and_indexed
   {
+	current_field->depending = $5;
 	/* most of the field attributes are set when parsing the phrases */;
 	setup_occurs ();
 	setup_occurs_min_max ($2, $3);
@@ -7804,10 +7812,8 @@ _occurs_integer_to:
 ;
 
 _occurs_depending:
-| DEPENDING _on reference
-  {
-	current_field->depending = $3;
-  }
+  /* empty */			{ $$ = NULL; }
+| DEPENDING _on reference	{ $$ = $3; }
 ;
 _capacity_in:
 | CAPACITY _in WORD
@@ -10025,7 +10031,7 @@ procedure_division:
 		current_program->entry_convention = cb_int (CB_CONV_COBOL);
 	}
 	header_check |= COBC_HD_PROCEDURE_DIVISION;
-	
+
 	cb_check_definition_matches_prototype (current_program);
   }
   _procedure_declaratives
@@ -11100,7 +11106,7 @@ accp_attr:
 	if (current_program->cursor_pos) {
 		emit_duplicate_clause_message ("CURSOR");
 	} else {
-		/* TODO: actually reasonable and easy extension: an 
+		/* TODO: actually reasonable and easy extension: an
 		         *offset within the field* [auto-correct to 1/max]
 				 (when variable also stored back on return)
 		*/
@@ -13550,7 +13556,7 @@ goback_statement:
   GOBACK {
 	begin_statement ("GOBACK", 0);
   }
-  goback_exit_body	  
+  goback_exit_body
   {
 	check_unreached = 1;
 	cb_emit_exit (1U);
@@ -14981,7 +14987,7 @@ send_body_mcs:
   _to
    FIXME - workaround: expeciting TO here */
   TO
-  x from_identifier 
+  x from_identifier
 /* FIXME: conflict because the RETURNING could belong to the exception phrases
   _common_exception_phrases
    FIXME - workaround end */
@@ -15019,7 +15025,7 @@ from_identifier:
   {
   }
 ;
-  
+
 /* FIXME later: too many conflicts here
 _send_raising:
   %prec SHIFT_PREFER
