@@ -5669,17 +5669,22 @@ AT_DATA([redefines.cob], [
        PROCEDURE        DIVISION.
        MAIN.
            MOVE "0123456789" TO X-DAT
-           DISPLAY X-DAT "*" Y1-DAT "*" Y2-DAT "*"
-           MOVE "0123456" TO Z-DAT
-           DISPLAY T-DAT "*" Z-DAT "*"
+	   IF Y1-DAT NOT EQUAL "01234" OR
+	      Y2-DAT NOT EQUAL "01234"
+	      PERFORM FAIL
+	   END-IF
+           MOVE "0123456" TO Z-DAT.
+	   IF T-DAT NOT EQUAL "012.." OR
+	      Z-DAT NOT EQUAL "012"
+	      PERFORM FAIL
+	   END-IF
            STOP RUN.
+       FAIL.
+           DISPLAY X-DAT "*" Y1-DAT "*" Y2-DAT "*" T-DAT "*" Z-DAT "*".
 ])
 
 AT_CHECK([$COMPILE redefines.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./redefines], [0],
-[0123456789*01234*01234*
-012..*012*
-])
+AT_CHECK([$COBCRUN_DIRECT ./redefines], [0], [])
 
 AT_CHECK([$COMPILE -fodoslide redefines.cob], [1], [],
 [redefines.cob:9: error: when ODOSLIDE is set, REDEFINES with PICTURE string with 'L' character are not yet supported
