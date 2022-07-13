@@ -1,8 +1,9 @@
 
 2022-05-23  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
-	* testsuite.src/run_extensions.at: add tests for `L` character in
-	  picture strings for variable length fields (GCOS extension)
+	* testsuite.src/run_extensions.at, testsuite.src/syn_misc.at: add tests
+	  for `L` character in picture strings for variable length fields (GCOS
+	  extension)
 
 2022-03-29  Nicolas Berthier <nicolas.berther@ocamlpro.com>
 
