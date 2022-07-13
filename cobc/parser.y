@@ -7391,13 +7391,16 @@ _pic_depending_on:
 			chld->occurs_min = 1;
 			chld->occurs_max = current_field->pic->size - 1;
 			chld->parent = current_field;
-			cobc_parse_free (current_field->pic);
 			current_field->children = chld;
+			cobc_parse_free (current_field->pic);
 			current_field->pic = NULL;
 		}
-		/* Set flag even in the case of errors above, to avoid
-		   unrelated warning or error messages upon tentative
-		   field validation.  */
+		/* Raise flag that indicates we need complex ODO checks for the
+		   current field and its sisters, due to the way we encode
+		   fields with PIC L. */
+		/* Also, we raise this flag in the error cases above, to avoid
+		   unrelated warning or error messages upon tentative validation
+		   of redefines.  */
 		current_field->flag_induce_complex_odo = 1;
 	} else if (current_field->pic->variable_length) {
 		cb_error_x (CB_TREE (current_field->pic),
