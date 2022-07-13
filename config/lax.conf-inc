@@ -131,6 +131,7 @@ assign-using-variable:			ok
 assign-ext-dyn:				ok
 assign-disk-from:			ok
 vsam-status:				+ignore
+picture-l:				+warning
 
 
 # use complete word list

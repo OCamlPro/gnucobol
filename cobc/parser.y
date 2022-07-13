@@ -7358,8 +7358,12 @@ _pic_depending_on:
 	cb_tree depending = CB_TREE ($1);
 	if (CB_VALID_TREE (depending) && !current_field->flag_occurs) {
 		if (!current_field->pic->variable_length) {
-			cb_error_x ($1, _("DEPENDING clause must either have OCCURS clause "
-					  "of PICTURE string with 'L' character"));
+			cb_error_x ($1, _("DEPENDING clause must either come with "
+					  "an OCCURS clause or a PICTURE string "
+					  "with 'L' character"));
+		} else if (!cb_verify (cb_picture_l,
+				       _("PICTURE string with 'L' character"))) {
+			current_field->pic->variable_length = 0;
 		} else if (current_field->pic->category != CB_CATEGORY_ALPHABETIC &&
 			   current_field->pic->category != CB_CATEGORY_ALPHANUMERIC) {
 			cb_error_x ($1, _("only USAGE DISPLAY may specify a "
