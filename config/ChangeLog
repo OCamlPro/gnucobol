@@ -1,4 +1,8 @@
 
+2022-07-12  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* general: add option picture-l
+
 2022-03-11  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* general: add a stop-error-statement option to allow configuring
