@@ -493,7 +493,7 @@ literal_for_diagnostic (char *buff, const char *literal_data) {
 	   initializer for 'bad_pos' and additional security net */
 	bad_pos = strchr (buff, '\n');
 
-	if (strlen (literal_data) > CB_ERR_LITMAX) {
+	if (strlen (literal_data) >= CB_ERR_LITMAX) {
 		char *long_pos = buff + CB_ERR_LITMAX - 4;
 		if (!bad_pos
 		 || bad_pos > long_pos) {
