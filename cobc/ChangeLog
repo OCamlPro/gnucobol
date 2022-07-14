@@ -1,4 +1,11 @@
 
+2022-07-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* config.def, config.c: changed defaultbyte option from "INT" to ANY"
+	  with explicit check for "init" (GnuCOBOL default behavior, now also
+	  allowing to set it after it was set different) and "none" (in
+	  preparation of missing feature, for now => implicit 0)
+
 2022-07-12  Simon Sobisch <simonsobisch@gnu.org>
 
 	* scanner.l (read_literal): do the necessary conversion for national

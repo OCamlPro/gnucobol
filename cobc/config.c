@@ -197,14 +197,12 @@ check_valid_value (const char *fname, const int line, const char *name, const ch
 	return ret;
 }
 
-#if 0	/* unused */
 static void
 unsupported_value (const char *fname, const int line, const char *name, const char *val)
 {
 	configuration_error (fname, line, 1,
 		_("unsupported value '%s' for configuration tag '%s'"), val, name);
 }
-#endif
 
 static void
 split_and_iterate_on_comma_separated_str (
@@ -489,7 +487,7 @@ cb_config_entry (char *buff, const char *fname, const int line)
 	char		*s;
 	const char	*name;
 	char		*e;
-	char		*val, valx[24];;
+	char		*val;
 	void		*var;
 	enum cb_support	support_val;
 	size_t		i;
@@ -742,7 +740,6 @@ cb_config_entry (char *buff, const char *fname, const int line)
 				return -1;
 			}
 			break;
-		/* for enums without a string value: set max_value and fall through to CB_INT */
 		} else if (strcmp (name, "dpc-in-data") == 0) {
 			if (strcmp (val, "none") == 0) {
 				cb_dpc_in_data = CB_DPC_IN_NONE;
@@ -757,6 +754,40 @@ cb_config_entry (char *buff, const char *fname, const int line)
 				return -1;
 			}
 			break;
+		} else if (strcmp (name, "defaultbyte") == 0) {
+			if (strcmp (val, "init") == 0) {
+				/* generate default initialization per INITIALIZE rules */
+				cb_default_byte = -1;
+				break;
+			}
+			if (strcmp (val, "none") == 0) {
+				cb_default_byte = -2;
+#if 1			/* TODO: do not generate any default initialization for fields without VALUE,
+				   only the storage (best performance, least reproducibility); for now warn
+				   if specified on command line (allowing config files be correct already) */
+				if (strcmp (fname, "-fdefaultbyte=none") == 0) {
+					unsupported_value (fname, line, name, val);
+				}
+				cb_default_byte = 0; /* at least a single fixed value for now... */
+#endif
+				break;
+			}
+			/* otherwise init by character (transformed to number */
+			/* convert quoted character to number */
+			if (val[0] == '"' && val[1] != 0 && val[2] == '"' && val[3] == 0) {
+				cb_default_byte = val[1];
+				break;
+			} else
+			/* convert character to number (as quotes will commonly
+			   be removed when given on shell) */
+			if (val[1] == 0 && (val[0] <= '0' || val[0] >= '9')) {
+				cb_default_byte = val[0];
+				break;
+			}
+			/* just use decimal as character number */
+			config_table[i].min_value = 0;
+			config_table[i].max_value = 255;
+			/* fall through */
 		/* for enums without a string value: set max_value and fall through to CB_INT */
 		} else if (strcmp (name, "standard-define") == 0) {
 			config_table[i].max_value = CB_STD_MAX - 1;
@@ -771,14 +802,7 @@ cb_config_entry (char *buff, const char *fname, const int line)
 		/* LCOV_EXCL_STOP */
 
 	case CB_INT:
-		if (strcmp (val, "ignore") == 0)
-			break;
-		if (val[1] == 0
-		 && (islower(val[0]) || isupper(val[0]))) {
-			int v = val[0];
-			sprintf(valx,"%d",v);
-			val = valx;
-		}
+		/* check for number */
 		for (j = 0; val[j]; j++) {
 			if (val[j] < '0' || val[j] > '9') {
 				invalid_value (fname, line, name, val, NULL, 0, 0);

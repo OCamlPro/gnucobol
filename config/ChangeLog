@@ -1,4 +1,8 @@
 
+2022-07-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: set defaultbyte to "none" for standard COBOL, 32 to " "
+
 2022-07-12  Simon Sobisch <simonsobisch@gnu.org>
 
 	* ibm-strict.conf, mvs-strict.conf, gcos-strict.conf, bs2000-strict.conf:
