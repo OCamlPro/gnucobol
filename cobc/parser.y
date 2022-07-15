@@ -7369,11 +7369,6 @@ _pic_depending_on:
 			cb_error_x ($1, _("only USAGE DISPLAY may specify a "
 					  "variable-length PICTURE string"));
 			current_field->pic->variable_length = 0;
-		} else if (cb_odoslide && current_field->redefines) {
-			cb_error_x ($1, "when ODOSLIDE is set, REDEFINES with "
-				    "PICTURE string with 'L' character are not "
-				    "yet supported");
-			current_field->pic->variable_length = 0;
 		} else if (current_storage == CB_STORAGE_SCREEN ||
 			   current_storage == CB_STORAGE_REPORT) {
 			cb_error_x ($1, _("variable-length PICTURE string "
@@ -7395,13 +7390,10 @@ _pic_depending_on:
 			cobc_parse_free (current_field->pic);
 			current_field->pic = NULL;
 		}
-		/* Raise flag that indicates we need complex ODO checks for the
-		   current field and its sisters, due to the way we encode
-		   fields with PIC L. */
-		/* Also, we raise this flag in the error cases above, to avoid
-		   unrelated warning or error messages upon tentative validation
-		   of redefines.  */
-		current_field->flag_induce_complex_odo = 1;
+		/* Raise this flag in the error cases above, to avoid unrelated
+		   warning or error messages upon tentative validation of
+		   redefines.  */
+		current_field->flag_picture_l = 1;
 	} else if (current_field->pic->variable_length) {
 		cb_error_x (CB_TREE (current_field->pic),
 			    _("missing DEPENDING clause for PICTURE string with "

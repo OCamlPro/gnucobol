@@ -936,7 +936,7 @@ struct cb_field {
 	unsigned int flag_internal_register	: 1;	/* Is an internally generated register */
 	unsigned int flag_is_typedef : 1;	/* TYPEDEF  */
 	unsigned int flag_occurs_values: 1;	/* OCCURS and multi VALUEs done */
-	unsigned int flag_induce_complex_odo : 1; /* Induce complex ODO due to PIC L */
+	unsigned int flag_picture_l : 1;	/* Is USAGE PICTURE L */
 };
 
 #define CB_FIELD(x)		(CB_TREE_CAST (CB_TAG_FIELD, struct cb_field, x))

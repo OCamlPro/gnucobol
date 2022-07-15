@@ -74,7 +74,7 @@
 /* Type of initialization to be done */
 enum cobc_init_type {
 	INITIALIZE_NONE = 0,	/* no init (beause of FILLER, REDEFINES, ...) */
-	INITIALIZE_ONE,		/* initialize a single varialbe */
+	INITIALIZE_ONE,		/* initialize a single variable */
 	INITIALIZE_COMPOUND,	/* init structure */
 	INITIALIZE_DEFAULT	/* init to default-byte value / PIC (USAGE) */
 };
@@ -751,6 +751,8 @@ chk_field_variable_size (struct cb_field *f)
 			if (fc->depending) {
 				f->vsize = fc;
 				break;
+			} else if (fc->flag_picture_l) {
+				continue;
 			} else if ((p = chk_field_variable_size (fc)) != NULL) {
 				f->vsize = p;
 				break;
@@ -787,6 +789,9 @@ chk_field_variable_address (struct cb_field *fld)
 #endif
 				/* Skip redefines as they should not impact addresses: */
 				if (p->redefines) continue;
+				/* Skip PIC L fields as their representation
+				   have constant length */
+				if (p->flag_picture_l) continue;
 				if (p->depending || chk_field_variable_size (p)) {
 #if 0	/* only useful with the code above */
 					/* as we have a variable address, all sisters will also;
@@ -829,7 +834,7 @@ out_odoslide_fld_offset (struct cb_field *p, struct cb_field *fld)
 	if (p == fld) 	/* Single field */
 		return 1;
 
-	if (p->children) {
+	if (p->children && !p->flag_picture_l) {
 		if (out_odoslide_grp_offset (p, fld))
 			return 1;
 	} else {
@@ -4851,17 +4856,14 @@ output_initialize_uniform (cb_tree x, const int c, const int size)
 	} else {
 		output ("memset (");
 		output_data (x);
-		if (size <= 0) {
-			output (", %d, ", c);
-			output_size (x);
-			output (");");
-		} else if (CB_REFERENCE_P(x) && CB_REFERENCE(x)->length) {
+		if (size <= 0 ||
+		    (CB_REFERENCE_P(x) && CB_REFERENCE(x)->length)) {
 			output (", %d, ", c);
 			output_size (x);
 			output (");");
 		} else {
 			struct cb_field		*v = NULL;
-			if (!gen_init_working 
+			if (!gen_init_working
 			 && (f->flag_unbounded || cb_odoslide)) {
 				v = chk_field_variable_size (f);
 			}

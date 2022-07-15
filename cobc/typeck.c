@@ -2418,7 +2418,7 @@ cb_build_identifier (cb_tree x, const int subchk)
 
 		/* Run-time check for ODO (including all the fields subordinate items) */
 		if (CB_EXCEPTION_ENABLE (COB_EC_BOUND_SUBSCRIPT) && f->odo_level != 0) {
-			for (p = f; p; p = p->children) {
+			for (p = f; p && !p->flag_picture_l; p = p->children) {
 				if (p->depending && p->depending != cb_error_node
 				 && !p->flag_unbounded) {
 					e1 = CB_BUILD_FUNCALL_5 ("cob_check_odo",
@@ -4594,8 +4594,7 @@ cb_validate_program_data (struct cb_program *prog)
 				if (!p->sister->redefines) {
 					if (!cb_odoslide
 					 && !cb_complex_odo
-					 && !p->flag_induce_complex_odo
-					 && !p->sister->flag_induce_complex_odo
+					 && !q->parent->flag_picture_l
 					 && x != xerr) {
 						xerr = x;
 						cb_error_x (x,
@@ -4603,7 +4602,7 @@ cb_validate_program_data (struct cb_program *prog)
 							cb_name (x), p->sister->name);
 						break;
 					}
-					p->flag_odo_relative = 1;
+					p->flag_odo_relative = !q->parent->flag_picture_l;
 				}
 			}
 		}
@@ -7158,19 +7157,21 @@ emit_move_corresponding (cb_tree x1, cb_tree x2)
 
 	found = 0;
 	for (f1 = CB_FIELD_PTR (x1)->children; f1; f1 = f1->sister) {
-		if (!f1->redefines && !f1->flag_occurs) {
-			for (f2 = CB_FIELD_PTR (x2)->children; f2; f2 = f2->sister) {
-				if (!f2->redefines && !f2->flag_occurs) {
-					if (strcmp (f1->name, f2->name) == 0) {
-						t1 = cb_build_field_reference (f1, x1);
-						t2 = cb_build_field_reference (f2, x2);
-						if (f1->children && f2->children) {
-							found += emit_move_corresponding (t1, t2);
-						} else {
-							cb_emit (cb_build_move (t1, t2));
-							found++;
-						}
-					}
+		if (f1->redefines || f1->flag_occurs) continue;
+		for (f2 = CB_FIELD_PTR (x2)->children; f2; f2 = f2->sister) {
+			if (f2->redefines || f2->flag_occurs) continue;
+			if (strcmp (f1->name, f2->name) == 0) {
+				t1 = cb_build_field_reference (f1, x1);
+				t2 = cb_build_field_reference (f2, x2);
+				if (f2->flag_picture_l) {
+					CB_REFERENCE (t2)->length = cb_int (f2->size);
+				}
+				if (f1->children && !f1->flag_picture_l &&
+				    f2->children && !f1->flag_picture_l) {
+					found += emit_move_corresponding (t1, t2);
+				} else {
+					cb_emit (cb_build_move (t1, t2));
+					found++;
 				}
 			}
 		}
@@ -9402,8 +9403,13 @@ cb_emit_initialize (cb_tree vars, cb_tree fillinit, cb_tree value,
 
 		f = CB_FIELD_PTR (x);
 		odo_level = 0;
-		while (f->children)
+		while (!f->flag_picture_l && f->children)
 			f = f->children;
+		if (f->flag_picture_l
+		 && CB_REFERENCE_P (x)
+		 && CB_REFERENCE   (x)->length == NULL) {
+			CB_REFERENCE (x)->length = cb_int (f->size);
+		}
 		for (p = f; p; p = p->parent) {
 			if (p->depending) {
 				odo_level++;

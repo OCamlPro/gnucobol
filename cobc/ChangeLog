@@ -64,12 +64,14 @@
 2022-07-12  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* parser.y: add DEPENDING ON for picture strings with an `L`
-	  character; emit an error when used in combination with ODOSLIDE
+	  character
 	* config.def: new option picture-l
 	* tree.h (struct cb_picture, struct cb_field), typeck.c
-	  (cb_validate_program_data): account for variable length
-	  alphanumeric fields (GCOS-specific extension), and their impact
-	  on ODO
+	  (cb_build_identifier, cb_validate_program_data, cb_emit_initialize)
+	  (cb_emit_move_corresponding, emit_move_corresponding), codegen.c
+	  (chk_field_variable_size, chk_field_variable_address)
+	  (out_odoslide_fld_offset): account for PIC L, variable length
+	  alphanumeric fields (GCOS-specific extension)
 	* tree.c: add support for `L` characters in picture strings
 	* tree.c (cb_field_variable_address), codegen.c
 	  (chk_field_variable_address): do not count REDEFINES when checking
@@ -77,9 +79,12 @@
 	* field.c (is_elementary_integer): new function to decide whether
 	  a field hold elementary Integers
 	* field.c (validate_redefines): allow more liberal REDEFINES of
-	  fields with PICTURE L
+	  fields with PIC L
+	* codegen.c (chk_field_variable_address): skip REDEFINE fields
 	* codegen.c (output_base): do not query for variable addresss when
 	  ODOSLIDE is not set
+	* codegen.c (output_initialize_uniform): small code refactoring
+	* typeck.c (emit_move_corresponding): simplified code
 
 2022-07-08  Simon Sobisch <simonsobisch@gnu.org>
 
