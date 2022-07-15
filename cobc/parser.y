@@ -7355,27 +7355,25 @@ locale_name:
 _pic_depending_on:
   _occurs_depending
   {
-	cb_tree depending = CB_TREE ($1);
-	if (CB_VALID_TREE (depending) && !current_field->flag_occurs) {
+	cb_tree depending = $1;
+	if (depending) {
 		if (!current_field->pic->variable_length) {
 			cb_error_x ($1, _("DEPENDING clause must either come with "
 					  "an OCCURS clause or a PICTURE string "
 					  "with 'L' character"));
-		} else if (!cb_verify (cb_picture_l,
-				       _("PICTURE string with 'L' character"))) {
-			current_field->pic->variable_length = 0;
 		} else if (current_field->pic->category != CB_CATEGORY_ALPHABETIC &&
 			   current_field->pic->category != CB_CATEGORY_ALPHANUMERIC) {
 			cb_error_x ($1, _("only USAGE DISPLAY may specify a "
 					  "variable-length PICTURE string"));
-			current_field->pic->variable_length = 0;
 		} else if (current_storage == CB_STORAGE_SCREEN ||
 			   current_storage == CB_STORAGE_REPORT) {
 			cb_error_x ($1, _("variable-length PICTURE string "
 					  "not allowed in %s"),
 				    enum_explain_storage (current_storage));
-			current_field->pic->variable_length = 0;
 		} else {
+			/* Implicitly translate `PIC Lc... DEPENDING N` (where
+			   `c` may actually only be `X` or `A`) into a group
+			   with a single sub-field `PIC c OCCURS 1 TO N`. */
 			const char pic[2] = { current_field->pic->orig[1], 0};
 			struct cb_field * const chld =
 				CB_FIELD (cb_build_field (cb_build_filler ()));
