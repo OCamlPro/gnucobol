@@ -1,4 +1,11 @@
 
+2022-07-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* call.c (cob_resolve_internal): added check for module name length,
+	  fixed compiler warnings
+	* call.c (cob_call): switched argument table from dynamic allocation
+	  to stack allocation
+
 2022-06-23  Simon Sobisch <simonsobisch@gnu.org>
 
 	* strings.c (cob_unstring_into): minor performance-tweak

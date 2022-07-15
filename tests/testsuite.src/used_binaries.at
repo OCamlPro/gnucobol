@@ -1,4 +1,4 @@
-## Copyright (C) 2014-2021 Free Software Foundation, Inc.
+## Copyright (C) 2014-2022 Free Software Foundation, Inc.
 ## Written by Simon Sobisch, Brian Tiffin
 ##
 ## This file is part of GnuCOBOL.
@@ -712,9 +712,19 @@ AT_CHECK([$COBCRUN noprog], [1], [],
 AT_CHECK([$COBCRUN -q -M], [1], [],
 [cobcrun: option requires an argument -- 'M'
 ])
-# FIXME - The following doesn't seem to work correct,
-#         we expect an error about missing module name
-#AT_CHECK([$COBCRUN -q -M noprog], [1], [], [])
+AT_CHECK([$COBCRUN -q -M noprog], [1], [],
+[cobcrun: missing PROGRAM name
+Try 'cobcrun --help' for more information.
+])
+# this was previously checked in cobcrun, now only done in the runtime
+AT_CHECK([$COBCRUN ThisIsANameThatIsReallyNotAllowedAsProgIdInCOBOL], [1], [],
+[libcob: error: ThisIsANameThatIsReallyNotAllowedAsProgIdInCOBOL: PROGRAM name exceeds 31 characters
+])
+# it would be allowed for preloading
+# this was previously checked in cobcrun, now only done in the runtime
+AT_CHECK([$COBCRUN -q -M ThisIsANameThatIsReallyNotAllowedAsProgIdInCOBOL noprog], [1], [],
+[libcob: error: module 'noprog' not found
+])
 
 AT_CLEANUP
 
