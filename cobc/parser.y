@@ -11871,11 +11871,21 @@ cancel_statement:
 ;
 
 cancel_body:
+  cancel_list
+| ALL
+  {
+	const char *all_name = "CANCEL ALL";
+	struct cb_literal *all = build_literal (CB_CATEGORY_ALPHANUMERIC, all_name, strlen (all_name));
+	cb_emit_cancel (CB_TREE(all));
+  }
+;
+
+cancel_list:
   id_or_lit_or_program_name
   {
 	cb_emit_cancel ($1);
   }
-| cancel_body id_or_lit_or_program_name
+| cancel_list id_or_lit_or_program_name
   {
 	cb_emit_cancel ($2);
   }

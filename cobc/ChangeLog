@@ -30,6 +30,10 @@
 	  literal errors (intead of cb_error_node) to prevent spurious
 	  follow-up errors on their use
 
+2022-07-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (cancel_body): preparation for CANCEL ALL
+
 2022-06-17  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* config.def, typeck.c (cb_emit_accept_name, cb_build_display_name):

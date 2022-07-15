@@ -6,6 +6,10 @@
 	* call.c (cob_call): switched argument table from dynamic allocation
 	  to stack allocation
 
+2022-07-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* call.c (cob_cancel): preparation for CANCEL ALL
+
 2022-06-23  Simon Sobisch <simonsobisch@gnu.org>
 
 	* strings.c (cob_unstring_into): minor performance-tweak

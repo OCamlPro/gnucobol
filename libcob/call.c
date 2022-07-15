@@ -1248,9 +1248,10 @@ cob_cancel (const char *name)
 	/* CANCEL ALL (acu extension) */
 	if (strcmp (name, "CANCEL ALL") == 0) {
 		/* TODO: add list of all modules in CALL (with marker preloaded or not)
-		   then when setting the CURRENT->MODULE add the cob_modue *  to this list
-		   then drop in CANCEL and use herem canceling non-active COBOL
-		   and - for physical cancel - also the "not COBOL" ones */
+		   then when setting the COB_MODULE_PTR via cob_module_global_enter add
+		   it also to this new list;
+		   then drop in CANCEL and use here canceling non-active COBOL
+		   and - for physical cancel only - also the "not COBOL" ones */
 		return;
 	}
 
