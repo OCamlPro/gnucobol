@@ -80,6 +80,7 @@
 	  a field hold elementary Integers
 	* field.c (validate_redefines): allow more liberal REDEFINES of
 	  fields with PIC L
+	* field.c (validate_group): A PIC L data-item cannot be JUSTIFIED
 	* codegen.c (chk_field_variable_address): skip REDEFINE fields
 	* codegen.c (output_base): do not query for variable addresss when
 	  ODOSLIDE is not set

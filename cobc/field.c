@@ -1312,7 +1312,11 @@ validate_group (struct cb_field *f)
 		group_error (x, "PICTURE");
 	}
 	if (f->flag_justified) {
-		group_error (x, "JUSTIFIED RIGHT");
+		if (!f->flag_picture_l)
+			group_error (x, "JUSTIFIED RIGHT");
+		else
+			cb_error_x (x, _("'%s' cannot have JUSTIFIED RIGHT clause"),
+				    cb_name (x));
 	}
 	if (f->flag_blank_zero) {
 		group_error (x, "BLANK WHEN ZERO");
