@@ -5670,6 +5670,18 @@ AT_DATA([prog.cob], [
               DISPLAY "DIRECT VAR INITIALIZATION FAILED"
               PERFORM SHOW-VARS-N-EXIT
            END-IF
+           MOVE 1 TO LGX
+      *    IF LENGTH OF X-ALPHA NOT EQUAL 10
+      *       DISPLAY "UNEXPECTED RESULT FOR 'LENGTH OF X-ALPHA': "
+      *               LENGTH OF X-ALPHA
+      *       PERFORM SHOW-VARS-N-EXIT
+      *    END-IF
+           IF FUNCTION LENGTH (X-ALPHA) NOT EQUAL 1
+              DISPLAY "UNEXPECTED RESULT FOR 'FUNCTION LENGTH "-
+                      "(X-ALPHA)': "
+                      FUNCTION LENGTH (X-ALPHA)
+              PERFORM SHOW-VARS-N-EXIT
+           END-IF
            STOP RUN.
        SHOW-VARS-N-EXIT.
            DISPLAY W-DATA "*"
