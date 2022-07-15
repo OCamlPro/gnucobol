@@ -3319,6 +3319,8 @@ repeat:
 
 		case 'L':
 			pic->variable_length = 1;
+			(void) cb_verify (cb_picture_l,
+					  _("PICTURE string with 'L' character"));
 			if (idx != 0) {
 				cb_error (_("L must be at start of PICTURE string"));
 				error_detected = 1;
