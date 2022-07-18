@@ -1,4 +1,16 @@
 
+2022-07-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* config.c (cb_config_entry): fixed defaultbyte convenience option
+	* field.c (cb_build_full_field_reference): minimal refactoring
+	* reserved.c (add_register): enabled generic register generation
+	* tree.c (cb_build_intrinsic): minimal verification for FUNCTION SUBSTITUTE
+	* typeck.c: add field level 77 to any generated register (previously was 0),
+	  those now show up in the symbol and xref list and dump output if they are
+	  used (including GDB debugging extensions)
+	* typeck.c (cb_build_generic_register): now handles VALUE definition and
+	  checks for "able to parse complete definition"
+
 2022-07-14  Matthew Remacle <mattata@users.sf.net>
 
 	* tree.c (literal_for_diagnostic): fixed #844 stack-based buffer overflow
@@ -576,6 +588,10 @@
 
 	* tree.h [COB_EXTERNAL_XREF]: fixed define of no-op cobc_xref_call
 
+2021-02-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* error.c, tree.c: fixed bug #707 SIGSEGV in dialect related messages
+
 2021-02-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c (output_stmt): extracted output_source_reference and
@@ -583,6 +599,10 @@
 	* tree.c (cb_build_binary_op): add source reference to non-constant
 	  expressions
 	* tree.c (cb_build_perform_varying): add source reference to VARYING clause
+
+2021-02-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.h: remove cb_listing_files ...
 
 2021-02-03  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -594,15 +614,24 @@
 	* codegen.c (output_stmt): emit cob_nop in C labels to fix
 	  position in the generated assembler which was previously
 	  in the COBOL statement above the label
+	* codeoptim.def, codeoptim.c, typeck.c, cobc.c: optimized check for
+	  linkage and based items (local check prevents function call),
+	  similar optimized no-op
+
+2021-01-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* reserved.c: fixed context attribute of acu-extension POS 
+	* parser.y, reserved.c, tree.h, cobc.h: added acu-extension
+	  MOVE WITH CONVERSION as PENDING
 
 2021-01-07  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (cobc_print_version): msgid change moving URLs to parameter per
 	  gettext-guidelines
 
-2021-02-04  Simon Sobisch <simonsobisch@gnu.org>
+2021-01-05  Simon Sobisch <simonsobisch@gnu.org>
 
-	* cobc.h: remove unused cb_listing_files
+	* field.c (cb_build_full_field_reference): fix bug #
 
 2021-01-02  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -616,6 +645,7 @@
 2020-12-23  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c (output_initialize_compound): special handling for OCCURS 1
+	* codegen.c (output_report_sum_control_field): adjusted for literal source
 
 2020-12-21  Simon Sobisch <simonsobisch@gnu.org>
 

@@ -1360,6 +1360,7 @@ cb_build_register_return_code (const char *name, const char *definition)
 	field = cb_build_index (cb_build_reference (name), cb_zero, 0, NULL);
 	CB_FIELD_PTR (field)->index_type = CB_STATIC_INT_INDEX;
 	CB_FIELD_PTR (field)->flag_internal_register = 1;
+	CB_FIELD_PTR (field)->level = 77;
 	CB_FIELD_PTR (field)->flag_real_binary = 1;
 	current_program->cb_return_code = field;
 }
@@ -1387,6 +1388,7 @@ cb_build_register_sort_return (const char *name, const char *definition)
 	field = cb_build_index (cb_build_reference (name), cb_zero, 0, NULL);
 	CB_FIELD_PTR (field)->flag_no_init = 1;
 	CB_FIELD_PTR (field)->flag_internal_register = 1;
+	CB_FIELD_PTR (field)->level = 77;
 	CB_FIELD_PTR (field)->flag_real_binary = 1;
 	current_program->cb_sort_return = field;
 }
@@ -1408,6 +1410,7 @@ cb_build_register_number_parameters (const char *name, const char *definition)
 	CB_FIELD_PTR (field)->flag_no_init = 1;
 	CB_FIELD_PTR (field)->flag_local = 1;
 	CB_FIELD_PTR (field)->flag_internal_register = 1;
+	CB_FIELD_PTR (field)->level = 77;
 	CB_FIELD_PTR (field)->index_type = CB_INT_INDEX;
 	CB_FIELD_PTR (field)->flag_real_binary = 1;
 	current_program->cb_call_params = field;
@@ -1417,6 +1420,7 @@ static void cb_build_constant_register (cb_tree name, cb_tree value)
 {
 	cb_tree constant = cb_build_constant (name, value);
 	CB_FIELD (constant)->flag_internal_register = 1;
+	CB_FIELD (constant)->level = 77;
 }
 
 /* WHEN-COMPILED */
@@ -1466,7 +1470,7 @@ cb_build_register_when_compiled (const char *name, const char *definition)
 
 /* General register creation; used for TALLY, LIN, COL,
    stores the resulting field's address in the optional last parameter */
-/* TODO: complete change to generic function */
+/* TODO: test - and possibly complete change to generic function */
 int
 cb_build_generic_register (const char *name, const char *external_definition,
 	struct cb_field **result_field)
@@ -1477,19 +1481,26 @@ cb_build_generic_register (const char *name, const char *external_definition,
 	struct cb_field *field;
 	enum cb_usage	usage;
 	struct cb_picture	*picture;
+	size_t def_len;
+	int ret;
 
 	if (!external_definition) {
 		external_definition = cb_get_register_definition (name);
-		if (!external_definition) {
-			if (result_field) {
-				*result_field = NULL;
-			}
-			return 1;
-		}
 	}
-
-	strncpy (definition, external_definition, COB_MINI_MAX);
-	definition[COB_MINI_MAX] = 0;
+	if (!external_definition || !external_definition[0]) {
+		if (result_field) {
+			*result_field = NULL;
+		}
+		cb_error ("missing definition for special register '%s'", name);
+		return 1;
+	}
+	def_len = strlen(external_definition);
+	if (def_len > COB_MINI_MAX) {
+		cb_error ("unexpected definition for special register '%s', "
+			"too long: %s", name, external_definition);
+		return 1;
+	}
+	memcpy (definition, external_definition, def_len);
 
 	/* check for GLOBAL, leave if we don't need to define it again (nested program) */
 	p = strstr (definition, "GLOBAL");
@@ -1560,6 +1571,8 @@ cb_build_generic_register (const char *name, const char *external_definition,
 
 	field->pic = picture;
 
+	ret = 0;
+
 	/* handle VALUE */
 	p = strstr (definition, "VALUE ");
 	if (p) {
@@ -1573,8 +1586,57 @@ cb_build_generic_register (const char *name, const char *external_definition,
 		}
 	}
 	if (p) {
-		COB_UNUSED (p);	/* FIXME: parse actual VALUE */
-		field->values = CB_LIST_INIT (cb_zero);
+		cb_tree	lit;
+		size_t	lit_size = strlen (p);
+		char	*sep;
+
+		if ((lit_size == 4 && memcmp (p, "ZERO", 4) == 0)
+		 || (lit_size == 5 && memcmp (p, "ZEROS", 5) == 0)
+		 || (lit_size == 6 && memcmp (p, "ZEROES", 6) == 0)) {
+			lit = cb_zero;
+		} else
+		if (lit_size == 4 && memcmp (p, "NULL", 4) == 0) {
+			lit = cb_null;
+		} else
+		if ((lit_size == 5 && memcmp (p, "QUOTE", 5) == 0)
+		 || (lit_size == 6 && memcmp (p, "QUOTES", 6) == 0)) {
+			lit = cb_quote;
+		}
+		else
+		if ((lit_size == 9 && memcmp (p, "LOW-VALUE", 9) == 0)
+		 || (lit_size == 10 && memcmp (p, "LOW-VALUES", 10) == 0)) {
+			lit = cb_low;
+		}
+		else
+		if ((lit_size == 10 && memcmp (p, "HIGH-VALUE", 10) == 0)
+		 || (lit_size == 11 && memcmp (p, "HIGH-VALUES", 11) == 0)) {
+			lit = cb_high;
+		} else
+		if (*p == '"' || *p == '\'') {
+			sep = strchr (p, *p);
+			if (sep == NULL) {
+				cb_error ("unexpected definition for special register '%s', "
+					"not parsed: %s", name, p);
+				ret = 1;
+			} else {
+				lit = cb_build_alphanumeric_literal (p, sep - p);
+			}
+		} else {
+			sep = strchr (p, ' ');
+			/* TODO: missing check for actual numeric value */
+			if (sep == NULL) {
+				lit = cb_build_numeric_literal (0, p, 0);
+			} else {
+				char backup = *sep;
+				*sep = 0;
+				lit = cb_build_numeric_literal (0, p, 0);
+				*sep = backup;
+			}
+		}
+		memset (p, ' ', lit_size);
+		p += lit_size;
+
+		field->values = CB_LIST_INIT (lit);
 	}
 
 	/* handle CONSTANT */
@@ -1586,10 +1648,29 @@ cb_build_generic_register (const char *name, const char *external_definition,
 	}
 
 	field->flag_internal_register = 1;
+	field->level = 77;
 
-	/* TODO: check that the local definition is completely parsed -> spaces */
+	/* check that the local definition is completely parsed -> spaces */
+	{
+		char *d, *e;
+		for (d = definition, e = definition + def_len - 1; d != e; d++) {
+			if (*d != ' ') {
+				while (e != d && *e == ' ') *e-- = 0; /* drop trailing spaces */
+				cb_error ("unexpected definition for special register '%s', "
+					"not parsed: %s", name, d);
+				ret = 1;
+				break;
+			}
+		}
+	}
 
 	cb_validate_field (field);
+
+	if (ret) {
+		/* set after validation above
+		   allowing the rest to still be validated */
+		field->flag_invalid = 1;
+	}
 
 	field->flag_no_init = 1;
 	if (current_program) {
@@ -1602,6 +1683,10 @@ cb_build_generic_register (const char *name, const char *external_definition,
 
 	if (result_field) {
 		*result_field = field;
+	}
+
+	if (field->flag_invalid) {
+		return 1;
 	}
 
 	return 0;
@@ -1634,6 +1719,7 @@ cb_build_register_xml_code (const char *name, const char *definition)
 	field->flag_no_init = 1;
 	field->flag_is_global = 1;
 	field->flag_internal_register = 1;
+	field->level = 77;
 	current_program->xml_code = tfield;
 }
 
@@ -1665,6 +1751,7 @@ cb_build_register_json_code (const char *name, const char *definition)
 	field->flag_no_init = 1;
 	field->flag_is_global = 1;
 	field->flag_internal_register = 1;
+	field->level = 77;
 	current_program->json_code = tfield;
 }
 
@@ -1721,7 +1808,7 @@ cb_build_single_register (const char *name, const char *definition)
 
 	/* LCOV_EXCL_START */
 	/* This should never happen (and therefore doesn't get a translation) */
-	cb_error ("unexpected register %s, defined as \"%s\"", name, definition);
+	cb_error ("unexpected special register '%s', defined as \"%s\"", name, definition);
 	COBC_ABORT();
 	/* LCOV_EXCL_STOP */
 }

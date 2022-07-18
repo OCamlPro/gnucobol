@@ -1380,6 +1380,14 @@ cb_category_is_national (cb_tree x)
 	return category_is_national[CB_TREE_CATEGORY (x)];
 }
 
+static int
+cb_category_is_alpha_or_national (cb_tree x)
+{
+	enum cb_category cat = CB_TREE_CATEGORY (x);
+	return category_is_alphanumeric[cat]
+		|| category_is_national[cat];
+}
+
 int
 cb_tree_type (const cb_tree x, const struct cb_field *f)
 {
@@ -3711,6 +3719,8 @@ cb_field_add (struct cb_field *f, struct cb_field *p)
 	if (f == NULL) {
 		return p;
 	}
+	/* get to the last item, CHECKME: would be a good place for
+	   optimizing if the list can get long... */
 	for (t = f; t->sister; t = t->sister) {
 		;
 	}
@@ -6771,13 +6781,12 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 			cb_error_x (func, _("FUNCTION '%s' has wrong number of arguments"), cbp->name);
 			return cb_error_node;
 		}
-#if	0	/* RXWRXW - Substitute arg 1 */
-		x = CB_VALUE (args);
-		if (!CB_REF_OR_FIELD_P (x)) {
+
+		/* TODO: follow-up arguments should be of same type */
+		if (!cb_category_is_alpha_or_national(CB_VALUE (args))) {
 			cb_error_x (func, _("FUNCTION '%s' has invalid first argument"), cbp->name);
 			return cb_error_node;
 		}
-#endif
 		{
 		enum cb_category cat = get_category_from_arguments (cbp, args, 1, 0, 1);
 		return make_intrinsic_typed (func, cbp, cat, args, cb_int1, refmod, 0);
