@@ -10,8 +10,9 @@
 	  used (including GDB debugging extensions)
 	* typeck.c (cb_build_generic_register): now handles VALUE definition and
 	  checks for "able to parse complete definition"
+	* cobc.c: skip unreferenced special register in listing/xref
 
-2022-07-14  Matthew Remacle <mattata@users.sf.net>
+2022-07-14  Matthew Remacle <mattata@users.sf.net
 
 	* tree.c (literal_for_diagnostic): fixed #844 stack-based buffer overflow
 

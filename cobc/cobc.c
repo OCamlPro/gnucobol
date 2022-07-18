@@ -5356,7 +5356,9 @@ print_fields (struct cb_field *top, int *found)
 	char	lcl_name[LCL_NAME_LEN];
 
 	for (; top; top = top->sister) {
-		if (!top->level) {
+		/* hiding internal fields, when not referenced */
+		if (top->level == 0
+		 || (top->flag_internal_register && !top->count)) {
 			continue;
 		}
 		if (*found == 0) {
@@ -5690,10 +5692,9 @@ xref_fields (struct cb_field *top)
 	int		found = 0;
 
 	for (; top; top = top->sister) {
-		/* no entry for internal generated fields
-		   other than used special indexes */
-		if (!top->level || (top->index_type != CB_NORMAL_INDEX
-				    && !top->count)) {
+		/* hiding internal fields, when not referenced */
+		if (top->level == 0
+		 || (top->flag_internal_register && !top->count)) {
 			continue;
 		}
 
