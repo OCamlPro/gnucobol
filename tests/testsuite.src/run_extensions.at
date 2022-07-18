@@ -5603,6 +5603,8 @@ AT_CLEANUP
 AT_SETUP([PICTURE L])
 AT_KEYWORDS([extensions gcos picture-l odo])
 
+# Basic behaviors
+
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
@@ -5698,6 +5700,48 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [])
 AT_CHECK([$COMPILE -fodoslide -o prog-x prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog-x], [0], [])
 
+# under/over shoot
+
+AT_DATA([under.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      under.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       1 X              PICTURE LX(9) DEPENDING ON LGX.
+       2 LGX            PIC 9 VALUE 9.
+       PROCEDURE        DIVISION.
+       MAIN.
+           INITIALIZE X
+           MOVE 0 TO LGX
+           DISPLAY X NO ADVANCING
+           STOP RUN
+           .
+])
+AT_DATA([over.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      over.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       1 X              PICTURE LX(5) DEPENDING ON LGX.
+       2 LGX            PIC 9 VALUE 9.
+       PROCEDURE        DIVISION.
+       MAIN.
+           DISPLAY X NO ADVANCING
+           STOP RUN
+           .
+])
+AT_CHECK([$COMPILE under.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./under], [0], [0])
+AT_CHECK([$COMPILE -fodoslide -o under-x under.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./under-x], [0], [0])
+
+AT_CHECK([$COMPILE over.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./over], [0], [9])
+AT_CHECK([$COMPILE -fodoslide -o over-x over.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./over-x], [0], [9])
+
+# MOVE CORRESPONDING
+
 AT_DATA([corr.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      corr.
@@ -5762,6 +5806,73 @@ AT_CHECK([$COMPILE corr.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./corr], [0], [])
 AT_CHECK([$COMPILE -fodoslide -o corr-x corr.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./corr-x], [0], [])
+
+# OCCURS ... PIC L  ...
+
+AT_DATA([nested.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      nested.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       1 W-DATA.
+         2 A            OCCURS 4
+                        PICTURE LX(3) DEPENDING ON LGX
+                        VALUE "AAA".
+         2 B            OCCURS 1 TO 10 DEPENDING ON LGY
+                        PICTURE LX(3) DEPENDING ON LGX
+                        VALUE "BBB".
+       1 LGX            USAGE COMP-1 VALUE 3.
+       1 LGY            USAGE COMP-1 VALUE 4.
+       PROCEDURE        DIVISION.
+       MAIN.
+           IF W-DATA NOT EQUAL "AAAAAAAAAAAABBBBBBBBBBBB" OR
+              A (1)  NOT EQUAL "AAA"
+              DISPLAY "GLOBAL INITIALIZATION FAILED"
+              DISPLAY A (1)
+              PERFORM SHOW-VARS
+           END-IF
+           MOVE "CCC" TO A (4)
+           IF W-DATA NOT EQUAL "AAAAAAAAACCCBBBBBBBBBBBB" OR
+              A (4)  NOT EQUAL "CCC"
+              DISPLAY "MOVE TO A (4) FAILED"
+              DISPLAY A (4)
+              PERFORM SHOW-VARS
+           END-IF
+           MOVE A (3) TO B (2)
+           IF W-DATA NOT EQUAL "AAAAAAAAACCCBBBAAABBBBBB" OR
+              B (2)  NOT EQUAL "AAA"
+              DISPLAY "MOVE A (3) TO B (2) FAILED"
+              DISPLAY B (2)
+              PERFORM SHOW-VARS
+           END-IF
+           MOVE 6 TO LGY
+           MOVE 2 TO LGX
+           INITIALIZE B (5)
+           *> NO ODOSLIDE: W-DATA EQUAL "AAAAAAAAACCCBBBAAABBBBBB   BBB"
+           *>    ODOSLIDE: W-DATA EQUAL "AAAAAAAAACCCBBBAAABB"
+           IF A (3)  NOT EQUAL "AA" OR
+              A (4)  NOT EQUAL "CC" OR
+              B (4)  NOT EQUAL "BB" OR
+              B (5)  NOT EQUAL "  " OR
+              B (6)  NOT EQUAL "BB"
+              DISPLAY "MOVE 2,6 TO LGX,Y; INITIALIZE B (5); FAILED"
+              PERFORM SHOW-VARS
+           END-IF
+           STOP RUN
+           .
+       SHOW-VARS.
+           DISPLAY "W-DATA: *" W-DATA "*"
+           DISPLAY "LGX: " LGX
+           DISPLAY "LGY: " LGY
+           .
+])
+
+AT_CHECK([$COMPILE nested.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./nested], [0], [])
+AT_CHECK([$COMPILE -fodoslide -o nested-x nested.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./nested-x], [0], [])
+
+# REDEFINES
 
 AT_DATA([redefines.cob], [
        IDENTIFICATION   DIVISION.

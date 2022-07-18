@@ -4571,7 +4571,8 @@ cb_validate_program_data (struct cb_program *prog)
 		for (p = q; ; p = p->parent) {
 			if (p->depending) {
 				if (odo_level > 0
-				 && !cb_odoslide) {
+				 && !cb_odoslide
+				 && !q->parent->flag_picture_l) {
 					xerr = x;
 					cb_error_x (x,
 						_("'%s' cannot have nested OCCURS DEPENDING"),

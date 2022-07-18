@@ -78,6 +78,7 @@
 	  varying address
 	* field.c (is_elementary_integer): new function to decide whether
 	  a field hold elementary Integers
+	* field.c (validate_occurs): allow PIC L fields in OCCURS groups
 	* field.c (validate_redefines): allow more liberal REDEFINES of
 	  fields with PIC L
 	* field.c (validate_group): A PIC L data-item cannot be JUSTIFIED
