@@ -250,32 +250,32 @@ AT_DATA([prog.cob], [
        LINKAGE          SECTION.
        01 Y             PIC X(3).
        PROCEDURE        DIVISION.
-         SET ADDRESS OF Y TO ADDRESS OF X-1.
-         IF Y NOT = "X-1"
-            DISPLAY "Test 1 " Y
-            END-DISPLAY
-         END-IF.
-         SET PTR-1 TO ADDRESS OF X-2.
-         SET PTR-2 TO PTR-1
-         SET ADDRESS OF Y TO PTR-2.
-         IF Y NOT = "X-2"
-            DISPLAY "Test 2 " Y
-            END-DISPLAY
-         END-IF
-         INITIALIZE PTR-1.
-         IF PTR-1 NOT = NULL
-           DISPLAY "NG 1"
-           END-DISPLAY
-         END-IF.
-         SET ADDRESS OF Y TO NULL.
-         IF PTR-1 NOT = ADDRESS OF Y
-           DISPLAY "NG 2"
-           END-DISPLAY
-         END-IF.
-         IF ADDRESS OF Y NOT = PTR-1
-           DISPLAY "NG 3"
-           END-DISPLAY
-         END-IF.
+           SET ADDRESS OF Y TO ADDRESS OF X-1.
+           IF Y NOT = "X-1"
+              DISPLAY "Test 1 " Y
+              END-DISPLAY
+           END-IF.
+           SET PTR-1 TO ADDRESS OF X-2.
+           SET PTR-2 TO PTR-1
+           SET ADDRESS OF Y TO PTR-2.
+           IF Y NOT = "X-2"
+              DISPLAY "Test 2 " Y
+              END-DISPLAY
+           END-IF
+           INITIALIZE PTR-1.
+           IF PTR-1 NOT = NULL
+             DISPLAY "NG 1"
+             END-DISPLAY
+           END-IF.
+           SET ADDRESS OF Y TO NULL.
+           IF PTR-1 NOT = ADDRESS OF Y
+             DISPLAY "NG 2"
+             END-DISPLAY
+           END-IF.
+           IF ADDRESS OF Y NOT = PTR-1
+             DISPLAY "NG 3"
+             END-DISPLAY
+           END-IF.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -1121,7 +1121,7 @@ AT_DATA([prog.cob], [
            INITIALIZE table-data ALL TO VALUE
 
       *> Test - FUNCTION LENGTH(table-data) must be resolved at run-time
-          INITIALIZE table-data (1:FUNCTION LENGTH(table-data))
+           INITIALIZE table-data (1:FUNCTION LENGTH(table-data))
               ALL TO VALUE
            .
 ])
@@ -1629,47 +1629,47 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
 *     *    MOVE NON-INTEGER TO ALPHA-NUMERIC --> ignore Decimal Point!
        S-01.
-          MOVE SPACES TO ALPHA-FIELD.
-          MOVE INTEGER TO ALPHA-FIELD.
-          DISPLAY  ALPHA-FIELD NO ADVANCING
-          END-DISPLAY.
+           MOVE SPACES TO ALPHA-FIELD.
+           MOVE INTEGER TO ALPHA-FIELD.
+           DISPLAY  ALPHA-FIELD NO ADVANCING
+           END-DISPLAY.
        S-02.
-          MOVE SPACES TO ALPHA-FIELD.
-          MOVE SIGNED-INTEGER TO ALPHA-FIELD.
-          DISPLAY  ALPHA-FIELD NO ADVANCING
-          END-DISPLAY.
+           MOVE SPACES TO ALPHA-FIELD.
+           MOVE SIGNED-INTEGER TO ALPHA-FIELD.
+           DISPLAY  ALPHA-FIELD NO ADVANCING
+           END-DISPLAY.
        S-03.
-          MOVE SPACES TO ALPHA-FIELD.
-          MOVE NON-INTEGER TO ALPHA-FIELD.
-          DISPLAY  ALPHA-FIELD NO ADVANCING
-          END-DISPLAY.
+           MOVE SPACES TO ALPHA-FIELD.
+           MOVE NON-INTEGER TO ALPHA-FIELD.
+           DISPLAY  ALPHA-FIELD NO ADVANCING
+           END-DISPLAY.
        S-10.
-          MOVE SPACES TO ALPHA-FIELD.
-          MOVE NON-INTEGER-2 TO ALPHA-FIELD.
-          DISPLAY  ALPHA-FIELD NO ADVANCING
-          END-DISPLAY.
+           MOVE SPACES TO ALPHA-FIELD.
+           MOVE NON-INTEGER-2 TO ALPHA-FIELD.
+           DISPLAY  ALPHA-FIELD NO ADVANCING
+           END-DISPLAY.
        S-20.
-          MOVE SPACES TO ALPHA-FIELD.
-          MOVE NON-INTEGER-3 TO ALPHA-FIELD.
-          DISPLAY  ALPHA-FIELD NO ADVANCING
-          END-DISPLAY.
+           MOVE SPACES TO ALPHA-FIELD.
+           MOVE NON-INTEGER-3 TO ALPHA-FIELD.
+           DISPLAY  ALPHA-FIELD NO ADVANCING
+           END-DISPLAY.
        S-30.
-          MOVE SPACES TO ALPHA-FIELD.
-          MOVE SIGNED-NON-INTEGER TO ALPHA-FIELD.
-          DISPLAY  ALPHA-FIELD NO ADVANCING
-          END-DISPLAY.
+           MOVE SPACES TO ALPHA-FIELD.
+           MOVE SIGNED-NON-INTEGER TO ALPHA-FIELD.
+           DISPLAY  ALPHA-FIELD NO ADVANCING
+           END-DISPLAY.
        S-40.
-          MOVE SPACES TO ALPHA-FIELD.
-          MOVE SIGNED-NON-INTEGER-2 TO ALPHA-FIELD.
-          DISPLAY  ALPHA-FIELD NO ADVANCING
-          END-DISPLAY.
+           MOVE SPACES TO ALPHA-FIELD.
+           MOVE SIGNED-NON-INTEGER-2 TO ALPHA-FIELD.
+           DISPLAY  ALPHA-FIELD NO ADVANCING
+           END-DISPLAY.
        S-50.
-          MOVE SPACES TO ALPHA-FIELD.
-          MOVE SIGNED-NON-INTEGER-3 TO ALPHA-FIELD.
-          DISPLAY  ALPHA-FIELD NO ADVANCING
-          END-DISPLAY.
+           MOVE SPACES TO ALPHA-FIELD.
+           MOVE SIGNED-NON-INTEGER-3 TO ALPHA-FIELD.
+           DISPLAY  ALPHA-FIELD NO ADVANCING
+           END-DISPLAY.
 
-          STOP RUN.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE -std=mf prog.cob], [0], [],
@@ -4895,8 +4895,9 @@ AT_DATA([progc.cob], [
 AT_DATA([cllprg.cpy], [
            CALL 'prog'.
 ])
-AT_CHECK([$COMPILE progc.cob], [0], [],
+AT_CHECK([$COMPILE -frelax-syntax-checks progc.cob], [0], [],
 [cllprg.cpy: in paragraph 'T2':
+cllprg.cpy:2: warning: missing '.' above this line
 cllprg.cpy:2: warning: CALL to own PROGRAM-ID used
 cllprg.cpy:2: note: assuming RECURSIVE attribute
 ])
@@ -5128,12 +5129,12 @@ AT_DATA([prog.cob], [
 /
                                                         DISPLAY "Hello!"
                                                                                                                                                                                                                                                   DISPLAY "Hi!"
-DDISPLAY "Hey!"
+D    DISPLAY "Hey!"
 D                                                         DISPLAY "Bye!"
 * trucated alphanumeric literals are not padded with spaces
- DISPLAY "        20        30        40        50        60        70        80        90       100       110       120       130
--        "       140       150       160       170       180       190       200       210       220       230       240       250"
- .
+     DISPLAY "        20        30        40        50        60        70        80        90       100       110       120       130
+-            "       140       150       160       170       180       190       200       210       220       230       240       250"
+     .
 ])
 # " (closing quote)
 
@@ -5167,10 +5168,11 @@ DATA             DIVISION.
 WORKING-STORAGE  SECTION.
 PROCEDURE        DIVISION.
 / Beginning of the code
-DISPLAY "OK" NO ADVANCING
-* If debug:
-D DISPLAY "KO" NO ADVANCING
-STOP RUN.
+DUMB-PARAGRAPH.
+    DISPLAY "OK" NO ADVANCING
+* If debug (indicator is "D " instead of only "D"):
+D     DISPLAY "KO" NO ADVANCING
+    STOP RUN.
 ])
 
 AT_CHECK([$COMPILE -fformat=xopen prog.cob], [0], [], [])
@@ -5179,26 +5181,27 @@ AT_CHECK([$COMPILE -fformat=xopen -fdebugging-line -o prog prog.cob], [0], [], [
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OKKO], [])
 
 AT_DATA([fit.cob], [
-* Sample program in X/Open format, and with longer lines and truncated literals.
+* Sample program in X/Open format, with longer lines.
 
 IDENTIFICATION   DIVISION.
 PROGRAM-ID.      fit.
 DATA             DIVISION.
 WORKING-STORAGE  SECTION.
 PROCEDURE        DIVISION.
-DISPLAY '         20        30        40        50        60        70       79'
-D DISPLAY '       20        30        40        50        60        70       79'
-STOP RUN.
+DUMB-PARAGRAPH.
+    DISPLAY '     20        30        40        50        60        70       79'
+D     DISPLAY '   20        30        40        50        60        70       79'
+    STOP RUN.
 ])
 
 AT_CHECK([$COMPILE -fformat=xopen fit.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./fit], [0],
-[         20        30        40        50        60        70       79
+[     20        30        40        50        60        70       79
 ], [])
 AT_CHECK([$COMPILE -fformat=xopen -fdebugging-line -o fit fit.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./fit], [0],
-[         20        30        40        50        60        70       79
-       20        30        40        50        60        70       79
+[     20        30        40        50        60        70       79
+   20        30        40        50        60        70       79
 ], [])
 
 AT_CLEANUP

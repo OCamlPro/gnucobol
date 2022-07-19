@@ -693,35 +693,35 @@ AT_DATA([prog.cob], [
            3 1-rec pic x(12).
 
        PROCEDURE DIVISION.
-          OPEN OUTPUT file1.
-          PERFORM VARYING ix-1 FROM 1 BY 2 UNTIL ix-1 > 10
-             MOVE 1-rsz(ix-1) TO rsz
-             MOVE 1-rec(ix-1) TO file1-rec
-             WRITE file1-rec
-          END-PERFORM.
-          PERFORM VARYING ix-1 FROM 2 BY 2 UNTIL ix-1 > 10
-             MOVE 1-rsz(ix-1) TO rsz
-             MOVE 1-rec(ix-1) TO file1-rec
-             WRITE file1-rec
-          END-PERFORM.
-          CLOSE file1.
-          SORT file3 ON ASCENDING file3-key1
-                        DESCENDING file3-key2
-             USING file1
-             GIVING file2.
-          OPEN INPUT file2.
-          PERFORM VARYING ix-1 FROM 1 BY 1 UNTIL ix-1 > 10
-             READ file2
+           OPEN OUTPUT file1.
+           PERFORM VARYING ix-1 FROM 1 BY 2 UNTIL ix-1 > 10
+              MOVE 1-rsz(ix-1) TO rsz
+              MOVE 1-rec(ix-1) TO file1-rec
+              WRITE file1-rec
+           END-PERFORM.
+           PERFORM VARYING ix-1 FROM 2 BY 2 UNTIL ix-1 > 10
+              MOVE 1-rsz(ix-1) TO rsz
+              MOVE 1-rec(ix-1) TO file1-rec
+              WRITE file1-rec
+           END-PERFORM.
+           CLOSE file1.
+           SORT file3 ON ASCENDING file3-key1
+                         DESCENDING file3-key2
+              USING file1
+              GIVING file2.
+           OPEN INPUT file2.
+           PERFORM VARYING ix-1 FROM 1 BY 1 UNTIL ix-1 > 10
+              READ file2
       *>> fileio-sort currently returns constant length records
-             MOVE 1-rsz(ix-1) TO rsz
+              MOVE 1-rsz(ix-1) TO rsz
       *>> END-OF-DETOUR
-             IF (1-rsz(ix-1) <> rsz) or
-                (1-rec(ix-1) <> file2-rec)
-                DISPLAY "FAILED"
-             END-IF
-          END-PERFORM.
-          CLOSE file2.
-          STOP RUN.
+              IF (1-rsz(ix-1) <> rsz) or
+                 (1-rec(ix-1) <> file2-rec)
+                 DISPLAY "FAILED"
+              END-IF
+           END-PERFORM.
+           CLOSE file2.
+           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -848,54 +848,54 @@ AT_DATA([prog.cob], [
 
        PROCEDURE DIVISION.
 
-       open input data-file.
-       read data-file
-           at end
-               display "File open error: " data-file-status
-               stop run
-       end-read.
+           open input data-file.
+           read data-file
+               at end
+                   display "File open error: " data-file-status
+                   stop run
+           end-read.
 
-       open output mini-report.
+           open output mini-report.
 
-       write report-line
-           from report-line-blank
-       end-write.
+           write report-line
+               from report-line-blank
+           end-write.
 
-       move 1 to page-count.
-       accept page-date from date end-accept.
-       move page-count to page-no.
-       write report-line
-           from report-line-header
-           after advancing page
-       end-write.
+           move 1 to page-count.
+           accept page-date from date end-accept.
+           move page-count to page-no.
+           write report-line
+               from report-line-header
+               after advancing page
+           end-write.
 
-       perform readwrite-loop until endofdata.
+           perform readwrite-loop until endofdata.
 
-       display
-           "Normal termination, ending status: "
-           data-file-status
-       close mini-report.
+           display
+               "Normal termination, ending status: "
+               data-file-status
+           close mini-report.
 
-       close data-file.
-       stop run.
+           close data-file.
+           stop run.
 
       ****************************************************************
        readwrite-loop.
-       move data-record to report-line-data
-       move linage-counter to body-tag
-       write report-line from report-line-data
-           end-of-page
-               add 1 to page-count end-add
-               move page-count to page-no
-               move linage-counter to header-tag
-               write report-line from report-line-header
-                   after advancing page
-               end-write
-       end-write
-       read data-file
-           at end set endofdata to true
-       end-read
-       .
+           move data-record to report-line-data
+           move linage-counter to body-tag
+           write report-line from report-line-data
+               end-of-page
+                   add 1 to page-count end-add
+                   move page-count to page-no
+                   move linage-counter to header-tag
+                   write report-line from report-line-header
+                       after advancing page
+                   end-write
+           end-write
+           read data-file
+               at end set endofdata to true
+           end-read
+           .
 ])
 
 AT_CAPTURE_FILE([mini-report])
@@ -992,48 +992,48 @@ PAGE: 0004                         LC: 000015                       DATE: 150206
 000009
 000010 PROCEDURE DIVISION.
 000011
-000012 open input data-file.
-000013 read data-file
-000014     at end
+000012     open input data-file.
+000013     read data-file
+000014         at end
 
 
 
 
 
 PAGE: 0005                         LC: 000015                       DATE: 150206
-000001         display "File open error: " data-file-status
-000002         stop run
-000003 end-read.
+000001             display "File open error: " data-file-status
+000002             stop run
+000003     end-read.
 000004
-000005 open output mini-report.
+000005     open output mini-report.
 000006
-000007 write report-line
-000008     from report-line-blank
-000009 end-write.
+000007     write report-line
+000008         from report-line-blank
+000009     end-write.
 000010
-000011 move 1 to page-count.
-000012 accept page-date from date end-accept.
-000013 move page-count to page-no.
-000014 write report-line
+000011     move 1 to page-count.
+000012     accept page-date from date end-accept.
+000013     move page-count to page-no.
+000014     write report-line
 
 
 
 
 
 PAGE: 0006                         LC: 000015                       DATE: 150206
-000001     from report-line-header
-000002     after advancing page
-000003 end-write.
+000001         from report-line-header
+000002         after advancing page
+000003     end-write.
 000004
-000005 perform readwrite-loop until endofdata.
+000005     perform readwrite-loop until endofdata.
 000006
-000007 display
-000008     "Normal termination, ending status: "
-000009     data-file-status
-000010 close mini-report.
+000007     display
+000008         "Normal termination, ending status: "
+000009         data-file-status
+000010     close mini-report.
 000011
-000012 close data-file.
-000013 stop run.
+000012     close data-file.
+000013     stop run.
 000014
 
 
@@ -1043,27 +1043,27 @@ PAGE: 0006                         LC: 000015                       DATE: 150206
 PAGE: 0007                         LC: 000015                       DATE: 150206
 000001****************************************************************
 000002 readwrite-loop.
-000003 move data-record to report-line-data
-000004 move linage-counter to body-tag
-000005 write report-line from report-line-data
-000006     end-of-page
-000007         add 1 to page-count end-add
-000008         move page-count to page-no
-000009         move linage-counter to header-tag
-000010         write report-line from report-line-header
-000011             after advancing page
-000012         end-write
-000013 end-write
-000014 read data-file
+000003     move data-record to report-line-data
+000004     move linage-counter to body-tag
+000005     write report-line from report-line-data
+000006         end-of-page
+000007             add 1 to page-count end-add
+000008             move page-count to page-no
+000009             move linage-counter to header-tag
+000010             write report-line from report-line-header
+000011                 after advancing page
+000012             end-write
+000013     end-write
+000014     read data-file
 
 
 
 
 
 PAGE: 0008                         LC: 000015                       DATE: 150206
-000001     at end set endofdata to true
-000002 end-read
-000003 .
+000001         at end set endofdata to true
+000002     end-read
+000003     .
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -1363,37 +1363,37 @@ AT_DATA([prog.cob], [
            3 1-data pic x(10).
        PROCEDURE DIVISION.
        a01-main.
-          SORT file1 ON ASCENDING file1-key
-             INPUT PROCEDURE a02-release-to-sort
-             OUTPUT PROCEDURE a03-return-from-sort.
-          STOP RUN.
+           SORT file1 ON ASCENDING file1-key
+              INPUT PROCEDURE a02-release-to-sort
+              OUTPUT PROCEDURE a03-return-from-sort.
+           STOP RUN.
       *
        a02-release-to-sort.
-          PERFORM VARYING ix-1 FROM 1 BY 2 UNTIL ix-1 > 26
-             RELEASE file1-rec from 1-record(ix-1)
-          END-PERFORM.
-          PERFORM VARYING ix-1 FROM 2 BY 2 UNTIL ix-1 > 26
-             RELEASE file1-rec from 1-record(ix-1)
-          END-PERFORM.
+           PERFORM VARYING ix-1 FROM 1 BY 2 UNTIL ix-1 > 26
+              RELEASE file1-rec from 1-record(ix-1)
+           END-PERFORM.
+           PERFORM VARYING ix-1 FROM 2 BY 2 UNTIL ix-1 > 26
+              RELEASE file1-rec from 1-record(ix-1)
+           END-PERFORM.
       *
        a03-return-from-sort.
-          PERFORM VARYING ix-1 FROM 1 BY 1
-             UNTIL (ix-1 > 26) OR (w-eof = 1)
-             RETURN file1 RECORD
-               AT END MOVE 1 TO w-eof
-             END-RETURN
-             IF (file1-rec <> 1-record(ix-1))
-                MOVE 1 TO w-eof
-             END-IF
-          END-PERFORM.
-          IF (w-eof = 1)
-             DISPLAY "FAILED: unexpected eof"
-          ELSE
-             RETURN file1 RECORD
-               AT END CONTINUE
-               NOT AT END DISPLAY "FAILED: expected eof"
-             END-RETURN
-          END-IF.
+           PERFORM VARYING ix-1 FROM 1 BY 1
+              UNTIL (ix-1 > 26) OR (w-eof = 1)
+              RETURN file1 RECORD
+                AT END MOVE 1 TO w-eof
+              END-RETURN
+              IF (file1-rec <> 1-record(ix-1))
+                 MOVE 1 TO w-eof
+              END-IF
+           END-PERFORM.
+           IF (w-eof = 1)
+              DISPLAY "FAILED: unexpected eof"
+           ELSE
+              RETURN file1 RECORD
+                AT END CONTINUE
+                NOT AT END DISPLAY "FAILED: expected eof"
+              END-RETURN
+           END-IF.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -4321,27 +4321,27 @@ AT_DATA([prog.cob], [
         01 DIR PIC X(4) VALUE 'ABCD'.
 
         PROCEDURE DIVISION.
-        CALL 'CBL_CREATE_DIR' USING DIR END-CALL
-        IF RETURN-CODE NOT = 0
-            DISPLAY 'error creating dir ...' END-DISPLAY
-        END-IF
+            CALL 'CBL_CREATE_DIR' USING DIR END-CALL
+            IF RETURN-CODE NOT = 0
+                DISPLAY 'error creating dir ...' END-DISPLAY
+            END-IF
 
-        CALL 'CBL_CHANGE_DIR' USING DIR END-CALL
-        IF RETURN-CODE NOT = 0
-            DISPLAY 'error changing dir ...' END-DISPLAY
-        END-IF
+            CALL 'CBL_CHANGE_DIR' USING DIR END-CALL
+            IF RETURN-CODE NOT = 0
+                DISPLAY 'error changing dir ...' END-DISPLAY
+            END-IF
 
-        CALL 'CBL_CHANGE_DIR' USING '..' END-CALL
-        IF RETURN-CODE NOT = 0
-            DISPLAY 'error changing dir up ...' END-DISPLAY
-        END-IF
+            CALL 'CBL_CHANGE_DIR' USING '..' END-CALL
+            IF RETURN-CODE NOT = 0
+                DISPLAY 'error changing dir up ...' END-DISPLAY
+            END-IF
 
-        CALL 'CBL_DELETE_DIR' USING DIR END-CALL
-        IF RETURN-CODE NOT = 0
-            DISPLAY 'error deleting dir' END-DISPLAY
-        END-IF
+            CALL 'CBL_DELETE_DIR' USING DIR END-CALL
+            IF RETURN-CODE NOT = 0
+                DISPLAY 'error deleting dir' END-DISPLAY
+            END-IF
 
-        STOP RUN.
+            STOP RUN.
 ])
 
 
@@ -4478,46 +4478,46 @@ AT_DATA([prog.cob], [
         01 WRITE-BUFFER PIC X(20).
 
         PROCEDURE DIVISION.
-        CALL 'CBL_CREATE_FILE' USING FNAME 55 11 22 FHANDLE
-        END-CALL
-        IF RETURN-CODE NOT = -1
-           DISPLAY 'Wrong return codes ...' END-DISPLAY
-        END-IF
-        MOVE 0 TO RETURN-CODE
+            CALL 'CBL_CREATE_FILE' USING FNAME 55 11 22 FHANDLE
+            END-CALL
+            IF RETURN-CODE NOT = -1
+               DISPLAY 'Wrong return codes ...' END-DISPLAY
+            END-IF
+            MOVE 0 TO RETURN-CODE
 
-        CALL 'CBL_CREATE_FILE' USING
-        FNAME ACCESS-MODE 0 0 FHANDLE
-        END-CALL
-        IF RETURN-CODE NOT = 0
-           DISPLAY 'error creating file ...' END-DISPLAY
-           MOVE 0 TO RETURN-CODE
-        END-IF
+            CALL 'CBL_CREATE_FILE' USING
+            FNAME ACCESS-MODE 0 0 FHANDLE
+            END-CALL
+            IF RETURN-CODE NOT = 0
+               DISPLAY 'error creating file ...' END-DISPLAY
+               MOVE 0 TO RETURN-CODE
+            END-IF
 
-        MOVE 'TestText.ABCD' TO WRITE-BUFFER.
-        MOVE 0 TO OFFSET.
-        MOVE 9 TO NBYTES.
+            MOVE 'TestText.ABCD' TO WRITE-BUFFER.
+            MOVE 0 TO OFFSET.
+            MOVE 9 TO NBYTES.
 
-        CALL 'CBL_WRITE_FILE' USING
-        FHANDLE OFFSET NBYTES '0' WRITE-BUFFER
-        END-CALL
-        IF RETURN-CODE NOT = 0
-           DISPLAY 'error writing file ...' END-DISPLAY
-           MOVE 0 TO RETURN-CODE
-        END-IF
+            CALL 'CBL_WRITE_FILE' USING
+            FHANDLE OFFSET NBYTES '0' WRITE-BUFFER
+            END-CALL
+            IF RETURN-CODE NOT = 0
+               DISPLAY 'error writing file ...' END-DISPLAY
+               MOVE 0 TO RETURN-CODE
+            END-IF
 
-        CALL 'CBL_FLUSH_FILE' USING FHANDLE END-CALL
-        IF RETURN-CODE NOT = 0
-           DISPLAY 'error flushing file ...' END-DISPLAY
-           MOVE 0 TO RETURN-CODE
-        END-IF
+            CALL 'CBL_FLUSH_FILE' USING FHANDLE END-CALL
+            IF RETURN-CODE NOT = 0
+               DISPLAY 'error flushing file ...' END-DISPLAY
+               MOVE 0 TO RETURN-CODE
+            END-IF
 
-        CALL 'CBL_CLOSE_FILE' USING FHANDLE END-CALL
-        IF RETURN-CODE NOT = 0
-           DISPLAY 'error closing file ...' END-DISPLAY
-           MOVE 0 TO RETURN-CODE
-        END-IF
+            CALL 'CBL_CLOSE_FILE' USING FHANDLE END-CALL
+            IF RETURN-CODE NOT = 0
+               DISPLAY 'error closing file ...' END-DISPLAY
+               MOVE 0 TO RETURN-CODE
+            END-IF
 
-        STOP RUN.
+            STOP RUN.
 ])
 
 AT_DATA([prog2.cob], [
@@ -4534,76 +4534,76 @@ AT_DATA([prog2.cob], [
         01 READ-BUFFER  PIC X(10).
 
         PROCEDURE DIVISION.
-        CALL 'CBL_OPEN_FILE' USING FNAME 1 0 0 FHANDLE
-        END-CALL
-        IF RETURN-CODE NOT = 0
-           DISPLAY 'error opening file ...' END-DISPLAY
-        END-IF
+            CALL 'CBL_OPEN_FILE' USING FNAME 1 0 0 FHANDLE
+            END-CALL
+            IF RETURN-CODE NOT = 0
+               DISPLAY 'error opening file ...' END-DISPLAY
+            END-IF
 
-        MOVE SPACES TO READ-BUFFER.
-        MOVE 2 TO OFFSET.
-        MOVE 9 TO NBYTES.
+            MOVE SPACES TO READ-BUFFER.
+            MOVE 2 TO OFFSET.
+            MOVE 9 TO NBYTES.
 
-        CALL 'CBL_READ_FILE' USING
-        FHANDLE OFFSET NBYTES 0 READ-BUFFER
-        END-CALL
-        IF RETURN-CODE NOT = 0
-           DISPLAY 'error reading file ...'
-                   return-code
-           END-DISPLAY
-           MOVE 0 TO RETURN-CODE
-        END-IF
-        IF READ-BUFFER NOT = 'stText.' *> text from first test
-           DISPLAY 'Wrong readbuffer ...' END-DISPLAY
-        END-IF
+            CALL 'CBL_READ_FILE' USING
+            FHANDLE OFFSET NBYTES 0 READ-BUFFER
+            END-CALL
+            IF RETURN-CODE NOT = 0
+               DISPLAY 'error reading file ...'
+                       return-code
+               END-DISPLAY
+               MOVE 0 TO RETURN-CODE
+            END-IF
+            IF READ-BUFFER NOT = 'stText.' *> text from first test
+               DISPLAY 'Wrong readbuffer ...' END-DISPLAY
+            END-IF
 
-        CALL 'CBL_CLOSE_FILE' USING FHANDLE END-CALL
-        IF RETURN-CODE NOT = 0
-           DISPLAY 'error closing file ...'
-                   return-code
-           END-DISPLAY
-           MOVE 0 TO RETURN-CODE
-        END-IF
+            CALL 'CBL_CLOSE_FILE' USING FHANDLE END-CALL
+            IF RETURN-CODE NOT = 0
+               DISPLAY 'error closing file ...'
+                       return-code
+               END-DISPLAY
+               MOVE 0 TO RETURN-CODE
+            END-IF
 
-        CALL 'CBL_RENAME_FILE' USING FNAME 'foo.txt' END-CALL
-        IF RETURN-CODE NOT = 0
-           DISPLAY 'error renaming file ...'
-                   return-code
-           END-DISPLAY
-           MOVE 0 TO RETURN-CODE
-        END-IF
+            CALL 'CBL_RENAME_FILE' USING FNAME 'foo.txt' END-CALL
+            IF RETURN-CODE NOT = 0
+               DISPLAY 'error renaming file ...'
+                       return-code
+               END-DISPLAY
+               MOVE 0 TO RETURN-CODE
+            END-IF
 
-        CALL 'CBL_DELETE_FILE' USING 'file1' END-CALL
-        IF RETURN-CODE NOT = 0
-           DISPLAY 'error deleting file1 ...'
-                   return-code
-           END-DISPLAY
-           MOVE 0 TO RETURN-CODE
-        END-IF
-        CALL 'CBL_DELETE_FILE' USING 'file1' END-CALL
-        IF RETURN-CODE = 0
-           DISPLAY 'no error on deleting file1 for the second time...'
-                   return-code
-           END-DISPLAY
-        END-IF
-        MOVE 0 TO RETURN-CODE
+            CALL 'CBL_DELETE_FILE' USING 'file1' END-CALL
+            IF RETURN-CODE NOT = 0
+               DISPLAY 'error deleting file1 ...'
+                       return-code
+               END-DISPLAY
+               MOVE 0 TO RETURN-CODE
+            END-IF
+            CALL 'CBL_DELETE_FILE' USING 'file1' END-CALL
+            IF RETURN-CODE = 0
+               DISPLAY 'no error on deleting file1 for the second '
+	               'time...' return-code
+               END-DISPLAY
+            END-IF
+            MOVE 0 TO RETURN-CODE
 
-        CALL 'C$DELETE' USING 'file2' 'S' END-CALL
-        IF RETURN-CODE NOT = 0
-           DISPLAY 'error deleting file2 ...'
-                   return-code
-           END-DISPLAY
-           MOVE 0 TO RETURN-CODE
-        END-IF
-        CALL 'CBL_DELETE_FILE' USING 'file2' END-CALL
-        IF RETURN-CODE = 0   *> note: should only return 0 or 1 when in ACUCOBOL mode
-           DISPLAY 'no error on deleting file2 for the second time...'
-                   return-code
-           END-DISPLAY
-        END-IF
-        MOVE 0 TO RETURN-CODE
+            CALL 'C$DELETE' USING 'file2' 'S' END-CALL
+            IF RETURN-CODE NOT = 0
+               DISPLAY 'error deleting file2 ...'
+                       return-code
+               END-DISPLAY
+               MOVE 0 TO RETURN-CODE
+            END-IF
+            CALL 'CBL_DELETE_FILE' USING 'file2' END-CALL
+            IF RETURN-CODE = 0   *> note: should only return 0 or 1 when in ACUCOBOL mode
+               DISPLAY 'no error on deleting file2 for the second '
+	               'time...' return-code
+               END-DISPLAY
+            END-IF
+            MOVE 0 TO RETURN-CODE
 
-        STOP RUN.
+            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -4747,8 +4747,8 @@ AT_DATA([prog.cob], [
         DATA DIVISION.
         WORKING-STORAGE SECTION.
         PROCEDURE DIVISION.
-        DISPLAY "test" END-DISPLAY
-        STOP RUN.
+            DISPLAY "test" END-DISPLAY
+            STOP RUN.
 ])
 
 AT_DATA([prog2.cob], [
@@ -4760,10 +4760,10 @@ AT_DATA([prog2.cob], [
         01 FILE2 PIC X(9) VALUE 'prog3.cob'.
 
         PROCEDURE DIVISION.
-        CALL 'CBL_COPY_FILE' USING
-        FILE1 FILE2
-        END-CALL
-        STOP RUN.
+            CALL 'CBL_COPY_FILE' USING
+            FILE1 FILE2
+            END-CALL
+            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog2.cob], [0], [], [])
@@ -9055,83 +9055,83 @@ AT_DATA([prog.cob], [
       *----------------------------------------------------------------*
        000-MAIN.
 
-          PERFORM 100-OPEN.
+           PERFORM 100-OPEN.
 
-          PERFORM VARYING I FROM 1 BY 1 UNTIL I > 10
-            MOVE I TO DISPLAY-A1-ZZ9
-            MOVE DISPLAY-A1-ZZ9 TO FCD-RECORD
-            PERFORM 300-WRITE
-          END-PERFORM.
+           PERFORM VARYING I FROM 1 BY 1 UNTIL I > 10
+             MOVE I TO DISPLAY-A1-ZZ9
+             MOVE DISPLAY-A1-ZZ9 TO FCD-RECORD
+             PERFORM 300-WRITE
+           END-PERFORM.
 
-          PERFORM 400-CLOSE.
-          STOP RUN.
+           PERFORM 400-CLOSE.
+           STOP RUN.
 
       *----------------------------------------------------------------*
       *    Process the open request
       *
        100-OPEN.
 
-          MOVE "TESTOUT" TO WS-FCD-DDNAME
+           MOVE "TESTOUT" TO WS-FCD-DDNAME
 
-          MOVE LENGTH OF FCD-MAP TO WS-FCD-SIZE
-          DISPLAY "FCD SIZE " WS-FCD-SIZE.
+           MOVE LENGTH OF FCD-MAP TO WS-FCD-SIZE
+           DISPLAY "FCD SIZE " WS-FCD-SIZE.
 
-          IF WS-FCD-PTR EQUAL NULL
-             ALLOCATE ws-fcd-size characters
-                           returning WS-FCD-PTR
+           IF WS-FCD-PTR EQUAL NULL
+              ALLOCATE ws-fcd-size characters
+                            returning WS-FCD-PTR
 
-             SET  ADDRESS OF FCD-MAP  TO WS-FCD-PTR
-             MOVE LOW-VALUES          TO FCD-MAP
-             MOVE WS-FCD-SIZE         TO FCD-LENGTH
-             move fcd--version-number TO FCD-VERSION
-             MOVE "00"                TO FCD-FILE-STATUS
-             move fcd--status-defined to FCD-ACCESS-MODE
-             move fcd--open-closed    to FCD-OPEN-MODE
-             move fcd--external-name  to FCD-OTHER-FLAGS
-             SET  FCD-HANDLE          TO NULL
-             MOVE 8                   TO FCD-NAME-LENGTH
-             SET  FCD-FILENAME-ADDRESS TO ADDRESS
-                                       OF WS-FCD-DDNAME
-             SET  FCD-KEY-DEF-ADDRESS TO NULL
-             move fcd--allow-readers  to FCD-LOCKTYPES
-          ELSE
-             SET  ADDRESS OF FCD-MAP  TO WS-FCD-PTR
-             IF FCD-OPEN-MODE NOT = fcd--open-closed
-                DISPLAY "ERRROR - FILE ALREADY OPEN"
-                STOP RUN
-             END-IF
-          END-IF
+              SET  ADDRESS OF FCD-MAP  TO WS-FCD-PTR
+              MOVE LOW-VALUES          TO FCD-MAP
+              MOVE WS-FCD-SIZE         TO FCD-LENGTH
+              move fcd--version-number TO FCD-VERSION
+              MOVE "00"                TO FCD-FILE-STATUS
+              move fcd--status-defined to FCD-ACCESS-MODE
+              move fcd--open-closed    to FCD-OPEN-MODE
+              move fcd--external-name  to FCD-OTHER-FLAGS
+              SET  FCD-HANDLE          TO NULL
+              MOVE 8                   TO FCD-NAME-LENGTH
+              SET  FCD-FILENAME-ADDRESS TO ADDRESS
+                                        OF WS-FCD-DDNAME
+              SET  FCD-KEY-DEF-ADDRESS TO NULL
+              move fcd--allow-readers  to FCD-LOCKTYPES
+           ELSE
+              SET  ADDRESS OF FCD-MAP  TO WS-FCD-PTR
+              IF FCD-OPEN-MODE NOT = fcd--open-closed
+                 DISPLAY "ERRROR - FILE ALREADY OPEN"
+                 STOP RUN
+              END-IF
+           END-IF
 
-          move fcd--line-sequential-org to FCD-ORGANIZATION
-          move fcd--recmode-fixed       to FCD-RECORDING-MODE
-          move 10 to FCD-MIN-REC-LENGTH, FCD-MAX-REC-LENGTH
-          SET  FCD-RECORD-ADDRESS     TO ADDRESS OF FCD-RECORD
+           move fcd--line-sequential-org to FCD-ORGANIZATION
+           move fcd--recmode-fixed       to FCD-RECORDING-MODE
+           move 10 to FCD-MIN-REC-LENGTH, FCD-MAX-REC-LENGTH
+           SET  FCD-RECORD-ADDRESS     TO ADDRESS OF FCD-RECORD
 
       * Move fcd--cr-delimiter for CR LF after each record
       *   move fcd--cr-delimiter        to FCD-STATUS-TYPE
 
-          move op-open-output to action-code
+           move op-open-output to action-code
 
-          PERFORM 800-CALL-EXTFH
-          .
+           PERFORM 800-CALL-EXTFH
+           .
 
       *----------------------------------------------------------------*
       *    Process the write request
       *
        300-WRITE.
 
-          move 10 to FCD-CURRENT-REC-LEN
-          move op-write to action-code
-          PERFORM 800-CALL-EXTFH
-          .
+           move 10 to FCD-CURRENT-REC-LEN
+           move op-write to action-code
+           PERFORM 800-CALL-EXTFH
+           .
       *----------------------------------------------------------------*
       *    Process the close request
       *
        400-CLOSE.
-          MOVE "00"                   TO FCD-FILE-STATUS
-          move op-close               to action-code
-          PERFORM 800-CALL-EXTFH
-          .
+           MOVE "00"                   TO FCD-FILE-STATUS
+           move op-close               to action-code
+           PERFORM 800-CALL-EXTFH
+           .
       *----------------------------------------------------------------*
       *    External file handler interface -- all I/O goes through here
       *

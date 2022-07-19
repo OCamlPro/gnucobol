@@ -491,18 +491,18 @@ AT_DATA([prog1.cob], [
 
        procedure division.
 
-       display hello
+           display hello
 
-       display 'a10-struktur'
-       display a10-struktur
+           display 'a10-struktur'
+           display a10-struktur
 
-       display 'a20-struktur'
-       display a20-struktur
+           display 'a20-struktur'
+           display a20-struktur
 
-       display 'a30-struktur'
-       display a30-struktur
+           display 'a30-struktur'
+           display a30-struktur
 
-       goback.
+           goback.
        end program copytest.
 ])
 
@@ -555,18 +555,18 @@ LINE    PG/LN  A...B............................................................
 000022
 000023         procedure division.
 000024
-000025         display hello
+000025             display hello
 000026
-000027         display 'a10-struktur'
-000028         display a10-struktur
+000027             display 'a10-struktur'
+000028             display a10-struktur
 000029
-000030         display 'a20-struktur'
-000031         display a20-struktur
+000030             display 'a20-struktur'
+000031             display a20-struktur
 000032
-000033         display 'a30-struktur'
-000034         display a30-struktur
+000033             display 'a30-struktur'
+000034             display a30-struktur
 000035
-000036         goback.
+000036             goback.
 000037         end program copytest.
 
 SIZE  TYPE           LVL  NAME                           PICTURE

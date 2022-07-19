@@ -59,12 +59,12 @@ AT_DATA([prog.cob],[
         77 var1    pic 9.
         77 var2    pic 99.
         PROCEDURE DIVISION.
-        PERFORM UNTIL 0 = 1
-           DISPLAY 'BLA'
-        END-PERFORM.
-        MOVE var1 to var2
-        MOVE var2 to var1
-        GOBACK.
+            PERFORM UNTIL 0 = 1
+               DISPLAY 'BLA'
+            END-PERFORM.
+            MOVE var1 to var2
+            MOVE var2 to var1
+            GOBACK.
 ])
 AT_CHECK([$COBC -fsyntax-only prog.cob], [0], [], [])
 # increasing to more warnings
@@ -186,8 +186,8 @@ AT_DATA([prog.cob],[
         WORKING-STORAGE SECTION.
         01 BLA PIC X(5) VALUE 'bluBb'.
         PROCEDURE DIVISION.
-        DISPLAY BLA NO ADVANCING END-DISPLAY
-        STOP RUN.
+            DISPLAY BLA NO ADVANCING END-DISPLAY
+            STOP RUN.
 ])
 
 AT_CHECK([$COBC -C prog.cob], [0], [ignore], [ignore])
@@ -227,15 +227,15 @@ AT_DATA([prog.cob],[
         01 BLA PIC X(5) VALUE 'bluBb'.
         PROCEDURE DIVISION.
         MAIN-PROC SECTION.
-        COPY PROC.
+            COPY PROC.
         END-PROC  SECTION.
-        STOP RUN.
+            STOP RUN.
 ])
 
 AT_CHECK([mkdir -p sub/copy], [0], [], [])
 
 AT_DATA([sub/copy/PROC.cpy],[
-        DISPLAY BLA NO ADVANCING.
+            DISPLAY BLA NO ADVANCING.
 ])
 
 AT_CHECK([$COBC -I sub/copy prog.cob -o prog.c], [0], [], [])
@@ -271,8 +271,8 @@ AT_DATA([prog.cob],[
         WORKING-STORAGE SECTION.
         01 BLA PIC X(5) VALUE 'bluBb'.
         PROCEDURE DIVISION.
-        DISPLAY BLA NO ADVANCING END-DISPLAY
-        STOP RUN.
+            DISPLAY BLA NO ADVANCING END-DISPLAY
+            STOP RUN.
 ])
 
 AT_CHECK([mkdir -p sub], [0], [], [])
@@ -300,8 +300,8 @@ AT_DATA([prog.cob],[
         WORKING-STORAGE SECTION.
         01 BLA PIC X(5) VALUE 'bluBb'.
         PROCEDURE DIVISION.
-        DISPLAY BLA NO ADVANCING END-DISPLAY
-        STOP RUN.
+            DISPLAY BLA NO ADVANCING END-DISPLAY
+            STOP RUN.
 ])
 
 AT_CHECK([$COBC -v -S prog.cob], [0], [ignore], [ignore])
