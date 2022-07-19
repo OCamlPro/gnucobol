@@ -1,4 +1,22 @@
 
+2022-07-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y, typeck.c: temporary adjust source reference when building
+	  registers
+	* tree.c (cb_build_picture, char_to_precedence_idx): cater for possible
+	  call without a current program
+	* tree.c (cb_build_picture), parser.y (picture_clause): in case of broken
+	  picture definitions return NULL, not a partial setup cb_picture
+	* field.c (cb_resolve_redefines): fixed reasonable compiler warning
+	* typeck.c (cb_build_generic_register): finished VALUE definition and
+	  checks, now handling numeric and alphanumeric literals (others prepared)
+	* typeck.c, parser.y, cobc.h: moved external_defined_fields_global and
+	  external_defined_fields_ws to the sole use: typeck.c
+	* typeck.c: first time support for creating registers unknown to cobc
+	  with configuration entry or -fregister, to allow this store the original
+	  pre-validated definition in the new struct external_defined_register
+	  and build the field when parsing for the program starts
+
 2022-07-18  Simon Sobisch <simonsobisch@gnu.org>
 
 	* config.c (cb_config_entry): fixed defaultbyte convenience option

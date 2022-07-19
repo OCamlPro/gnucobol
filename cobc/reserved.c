@@ -5034,9 +5034,7 @@ lookup_register (const char *name, const int checkimpl)
 	return lookup_register_internal (upper_name, checkimpl);
 }
 
-/* add an entry to the register list, currently the definition is ignored,
-   TODO: check definition and add a new special register accordingly */
-
+/* add an entry to the register list */
 void
 add_register (const char *name_and_definition, const char *fname, const int line)
 {
@@ -5078,16 +5076,19 @@ add_register (const char *name_and_definition, const char *fname, const int line
 
 	special_register = lookup_register_internal (upper_name, 1);
 	if (!special_register) {
+		const char *backup_source_file = cb_source_file;
 		if (!definition || *definition == 0) {
 			configuration_error (fname, line, 1,
 				_("special register '%s' is unknown, needs a definition"), name);
 			return;
 		}
-#if 1	/* must be extended and tested before use... */
+#if 1	/* Note: should be extended and tested also via testsuite... */
+		cb_source_file = fname;
 		if (cb_build_generic_register (name, definition, NULL) != 0) {
 			configuration_error (fname, line, 1,
 				_("special register '%s' has a bad definition: %s"), name, definition);
 		}
+		cb_source_file = backup_source_file;
 #else
 		configuration_error (fname, line, 1, _("special register '%s' is unknown"), name);
 #endif

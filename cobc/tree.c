@@ -2704,7 +2704,7 @@ char_to_precedence_idx (const cob_pic_symbol *str,
 
 	case '.':
 	case ',':
-		if (current_sym->symbol == current_program->decimal_point) {
+		if (current_sym->symbol == (current_program ? current_program->decimal_point : '.')) {
 			return 2;
 		} else {
 			return 1;
@@ -2777,7 +2777,7 @@ char_to_precedence_idx (const cob_pic_symbol *str,
 		return 23;
 
 	default:
-		if (current_sym->symbol == current_program->currency_symbol) {
+		if (current_sym->symbol == (current_program ? current_program->currency_symbol : '$')) {
 			if (!(first_floating_sym <= current_sym
 			      && current_sym <= last_floating_sym)) {
 				if (first_sym || second_sym) {
@@ -3163,6 +3163,9 @@ cb_build_picture (const char *str)
 	int			scale = 0;
 	int			n;
 	unsigned char		c;
+	const unsigned char	decimal_point = (current_program ? current_program->decimal_point : '.');
+	const unsigned char	currency_symbol = (current_program ? current_program->currency_symbol : '$');
+
 	unsigned char		first_last_char = '\0';
 	unsigned char		second_last_char = '\0';
 
@@ -3171,7 +3174,7 @@ cb_build_picture (const char *str)
 
 	if (strlen (str) == 0) {
 		cb_error (_("missing PICTURE string"));
-		goto end;
+		return NULL;
 	}
 
 	if (!pic_buff) {
@@ -3262,7 +3265,7 @@ repeat:
 				char symbol[2] = { 0 };
 				symbol[0] = c;
 				cb_error (_("%s cannot follow %s"), symbol, _("exponent"));
-				goto end;
+				return NULL;
 			}
 		}
 
@@ -3324,7 +3327,7 @@ repeat:
 		case ',':
 		case '.':
 			category |= PIC_NUMERIC_EDITED;
-			if (c != current_program->decimal_point) {
+			if (c != decimal_point) {
 				break;
 			}
 			/* fall through */
@@ -3461,7 +3464,7 @@ repeat:
 			/* fall through */
 
 		default:
-			if (c == current_program->currency_symbol) {
+			if (c == currency_symbol) {
 				category |= PIC_NUMERIC_EDITED;
 				if (c_count == 0) {
 					digits += n - 1;
@@ -3474,7 +3477,7 @@ repeat:
 			}
 
 			if (err_char_pos == sizeof err_chars) {
-				goto end;
+				return NULL;
 			}
 			if (!strchr (err_chars, (int)c)) {
 				err_chars[err_char_pos++] = (char)c;
@@ -3522,7 +3525,7 @@ repeat:
 	}
 
 	if (error_detected) {
-		goto end;
+		return NULL;
 	}
 
 	/* Set picture */
@@ -3602,7 +3605,6 @@ repeat:
 		;
 	}
 
-end:
 	return CB_TREE (pic);
 }
 

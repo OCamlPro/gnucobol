@@ -135,8 +135,6 @@ struct cb_program		*current_program = NULL;    /* program in parse/syntax check/
 struct cb_statement		*current_statement = NULL;
 struct cb_label			*current_section = NULL;
 struct cb_label			*current_paragraph = NULL;
-struct cb_field		*external_defined_fields_ws;
-struct cb_field		*external_defined_fields_global;
 cb_tree				defined_prog_list = NULL;
 int				cb_exp_line = 0;
 
@@ -1171,6 +1169,7 @@ setup_program (cb_tree id, cb_tree as_literal, const unsigned char type, const i
 
 	/* finish last program/function */
 	if (!first_prog) {
+		const char *backup_source_file = cb_source_file;
 		if (!current_program->flag_validated) {
 			current_program->flag_validated = 1;
 			cb_validate_program_body (current_program);
@@ -1181,9 +1180,11 @@ setup_program (cb_tree id, cb_tree as_literal, const unsigned char type, const i
 		if (depth) {
 			build_words_for_nested_programs();
 		}
+		cb_source_file = "register-definition";
 		cb_set_intr_when_compiled ();
 		cb_build_registers ();
 		cb_add_external_defined_registers ();
+		cb_source_file = backup_source_file;
 	} else {
 		first_prog = 0;
 	}
@@ -3300,15 +3301,18 @@ set_record_size (cb_tree min, cb_tree max)
 
 start:
   {
+	const char *backup_source_file = cb_source_file;
 	clear_initial_values ();
 	current_program = NULL;
 	defined_prog_list = NULL;
 	cobc_cs_check = 0;
 	main_flag_set = 0;
 	current_program = cb_build_program (NULL, 0);
+	cb_source_file = "register-definition";
 	cb_set_intr_when_compiled ();
 	cb_build_registers ();
 	cb_add_external_defined_registers ();
+	cb_source_file = backup_source_file;
   }
   compilation_group
   {
@@ -7304,7 +7308,9 @@ picture_clause:
   _pic_locale_format
   {
 	check_repeated ("PICTURE", SYN_CLAUSE_4, &check_pic_duplicate);
-	current_field->pic = CB_PICTURE ($1);
+	if (CB_VALID_TREE ($1)) {
+		current_field->pic = CB_PICTURE ($1);
+	}
 
 	if (CB_VALID_TREE ($2)) {
 		if (  (current_field->pic->category != CB_CATEGORY_NUMERIC

@@ -241,6 +241,9 @@ split_and_iterate_on_comma_separated_str (
 				break;
 			}
 		default:
+			/* TODO: never convert within quotes, needed for
+			         register definitions with VALUE clause:
+			         VALUE "stuff"  /  value N'stuff' */
 			if (transform_case == 1) {
 				word_buff[j++] = (char)toupper ((int)val[i]);
 			} else if (transform_case == 2) {

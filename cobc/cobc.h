@@ -526,8 +526,6 @@ extern int			cb_exp_line;
 extern int			functions_are_all;
 extern struct cb_tree_common	*defined_prog_list;
 extern int			current_call_convention;
-extern struct cb_field		*external_defined_fields_ws;
-extern struct cb_field		*external_defined_fields_global;
 
 /* Functions */
 

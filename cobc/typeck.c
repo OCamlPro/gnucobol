@@ -110,6 +110,18 @@ static int			warn_json_done = 0;
 static int			warn_screen_done = 0;
 #endif
 #endif
+
+struct external_defined_register {
+	struct external_defined_register	*next;
+	const char		*name;
+	const char		*definition;
+};
+
+static struct external_defined_register	*external_defined_fields_ws;
+static struct external_defined_register	*external_defined_fields_global;
+
+static int			report_id = 1;
+
 static int			expr_op;		/* Last operator */
 static cb_tree			expr_lh;		/* Last left hand */
 static int			expr_dmax = -1;		/* Max scale for expression result */
@@ -133,7 +145,6 @@ static size_t			overlapping = 0;
 static int			expr_index;		/* Stack index */
 static int			expr_stack_size;	/* Stack max size */
 static struct expr_node		*expr_stack;		/* Expression node stack */
-static int			report_id = 1;
 
 #ifdef	HAVE_DESIGNATED_INITS
 static const unsigned char	expr_prio[256] = {
@@ -1468,21 +1479,62 @@ cb_build_register_when_compiled (const char *name, const char *definition)
 		cb_build_alphanumeric_literal (buff, lit_size));
 }
 
-/* General register creation; used for TALLY, LIN, COL,
+/* save external definition that is able to be parsed for later */
+static void
+add_to_register_list (struct external_defined_register** list, const char *name, const char *definition)
+{
+	struct external_defined_register *reg;
+	reg = cobc_main_malloc (sizeof (struct external_defined_register));
+	reg->next = *list;
+	reg->name = cobc_main_strdup (name);
+	reg->definition = cobc_main_strdup (definition);
+	*list = reg;
+}
+
+/* moves word from sentence buffer to word bufffer,
+   replacing it in sentence buffer to spaces,
+   ignores leading spaces,
+   returns length of word */
+static size_t
+extract_next_word_from_buffer (char *sentence, char *word)
+{
+	char *p = sentence, *r;
+	while (*p == ' ') p++;
+
+	r = p;
+	while (*r != 0 && *r != ' ') r++;
+	memcpy (word, p, r - p);
+	word [r - p] = 0;
+	memset (sentence, ' ', r - sentence);
+	return r - p;
+}
+
+/* General register creation from specified or default definition
+   (may not contain tabs between clauses);
+   used for TALLY, LIN, COL;
    stores the resulting field's address in the optional last parameter */
-/* TODO: test - and possibly complete change to generic function */
+/* TODO: test - and possibly complete change to generic function;
+         currently missing: USAGE (either specify "DISPLAY" or get BINARY) */
 int
 cb_build_generic_register (const char *name, const char *external_definition,
 	struct cb_field **result_field)
 {
-	cb_tree field_tree;
-	char	definition[COB_MINI_BUFF];
-	char *p, *r;
-	struct cb_field *field;
-	enum cb_usage	usage;
-	struct cb_picture	*picture;
-	size_t def_len;
-	int ret;
+	/*
+	   implementation note: this function is called in two scenarios:
+	   1 - free definition outside of parsing tree (current_program != NULL);
+	       in this case (config / command line) we do the complete parsing
+	       here (for error messages), but can't do full field validation and
+	       don't end up storing the prepared field somewhere;
+	       instead the string we know can be fully parsed is cached
+	   2 - building within parsing tree; in this case the result is added
+	       to the current working storage
+	*/
+	struct cb_field	*field;
+	char	definition[COB_MINI_BUFF] = { 0 };
+	char	word[COB_MINI_BUFF];
+	char	*p;
+	size_t	def_len, word_len;
+	int 	ret;
 
 	if (!external_definition) {
 		external_definition = cb_get_register_definition (name);
@@ -1494,57 +1546,53 @@ cb_build_generic_register (const char *name, const char *external_definition,
 		cb_error ("missing definition for special register '%s'", name);
 		return 1;
 	}
-	def_len = strlen(external_definition);
+	def_len = strlen (external_definition);
 	if (def_len > COB_MINI_MAX) {
 		cb_error ("unexpected definition for special register '%s', "
 			"too long: %s", name, external_definition);
-		return 1;
+		def_len = COB_MINI_MAX;	/* still parse up to max */
 	}
 	memcpy (definition, external_definition, def_len);
 
 	/* check for GLOBAL, leave if we don't need to define it again (nested program) */
 	p = strstr (definition, "GLOBAL");
-	if (p) {
+	if (p && (*(p + 6)  == ' ' || *(p + 6) == 0)) {
 		if (current_program && current_program->nested_level) {
-			if (result_field) {
-				/* TODO: test pending */
-				field_tree = cb_ref (cb_build_reference (name));
-				*result_field = CB_FIELD_PTR(field_tree);
-			}
+			/* in this case the program creation should have copied the reference */
+			/* TODO: test pending */
 			return 0;
 		}
 		memset (p, ' ', 6);	/* remove from local copy */
 	}
 
 	/* actual field generation */
-	field_tree = cb_build_field (cb_build_reference (name));
-	field = CB_FIELD_PTR (field_tree);
+	ret = 0;
+	field = CB_FIELD (cb_build_field (cb_build_reference (name)));
 	field->flag_is_global = (p != NULL);		/* any GLOBAL found ? */
 
 	/* handle USAGE */
-	usage = CB_USAGE_DISPLAY;
 	p = strstr (definition, "USAGE ");
 	if (p) {
+		enum cb_usage	usage;
 		memset (p, ' ', 5);
 		p += 6;
-		while (*p == ' ') p++;
-
-		if (strncmp (p, "DISPLAY", (size_t)7) == 0) {
-			memset (p, ' ', 7);
+		word_len = extract_next_word_from_buffer (p, word);
+		if (word_len == 7 && memcmp (word, "DISPLAY", 7)) {
+			usage = CB_USAGE_DISPLAY;
 		} else {
-			char	temp[COB_MINI_BUFF];
-			r = p;
-			while (*r != 0 && *r != ' ') r++;
-			memcpy (temp, p, r - p);
-			temp [r - p] = 0;
-			memset (p, ' ', r - p);
-			COB_UNUSED (temp);	/* FIXME: parse actual USAGE from temp */
+			/* FIXME: parse actual USAGE from word */
 			usage = CB_USAGE_BINARY;
 		}
+		field->usage = usage;
+#if 0
+	} else {
+		/* CHECKME: Should this be derived from PIC? */
+		/* note: default usage from cb_build_field is CB_USAGE_DISPLAY */
+#endif
 	}
-	field->usage = usage;
 
 	/* handle PICTURE */
+	field->pic = NULL;
 	p = strstr (definition, "PIC ");
 	if (p) {
 		memset (p, ' ', 3);
@@ -1557,86 +1605,113 @@ cb_build_generic_register (const char *name, const char *external_definition,
 		}
 	}
 	if (p) {
-		char	temp[COB_MINI_BUFF];
-		while (*p == ' ') p++;
-		r = p;
-		while (*r != 0 && *r != ' ') r++;
-		memcpy (temp, p, r - p);
-		temp [r - p] = 0;
-		memset (p, ' ', r - p);
-		picture = CB_PICTURE (cb_build_picture (temp));
-	} else {
-		picture = NULL;
+		cb_tree picture;
+		(void)extract_next_word_from_buffer (p, word);
+		picture = cb_build_picture (word);
+		if (picture) {
+			field->pic = CB_PICTURE (picture);
+		} else {
+			ret = 1;
+		}
 	}
-
-	field->pic = picture;
-
-	ret = 0;
+	/* CHECKME: Is PIC calculated from VALUE later on if empty? */
 
 	/* handle VALUE */
 	p = strstr (definition, "VALUE ");
 	if (p) {
 		memset (p, ' ', 5);
 		p += 6;
-	} else {
-		p = strstr (definition, "VALUES ");
-		if (p) {
-			memset (p, ' ', 6);
-			p += 7;
-		}
 	}
 	if (p) {
-		cb_tree	lit;
-		size_t	lit_size = strlen (p);
-		char	*sep;
+		cb_tree	lit = NULL;
+		char *p2;
 
-		if ((lit_size == 4 && memcmp (p, "ZERO", 4) == 0)
-		 || (lit_size == 5 && memcmp (p, "ZEROS", 5) == 0)
-		 || (lit_size == 6 && memcmp (p, "ZEROES", 6) == 0)) {
-			lit = cb_zero;
-		} else
-		if (lit_size == 4 && memcmp (p, "NULL", 4) == 0) {
-			lit = cb_null;
-		} else
-		if ((lit_size == 5 && memcmp (p, "QUOTE", 5) == 0)
-		 || (lit_size == 6 && memcmp (p, "QUOTES", 6) == 0)) {
-			lit = cb_quote;
-		}
-		else
-		if ((lit_size == 9 && memcmp (p, "LOW-VALUE", 9) == 0)
-		 || (lit_size == 10 && memcmp (p, "LOW-VALUES", 10) == 0)) {
-			lit = cb_low;
-		}
-		else
-		if ((lit_size == 10 && memcmp (p, "HIGH-VALUE", 10) == 0)
-		 || (lit_size == 11 && memcmp (p, "HIGH-VALUES", 11) == 0)) {
-			lit = cb_high;
-		} else
-		if (*p == '"' || *p == '\'') {
-			sep = strchr (p, *p);
+		while (*p == ' ') p++;
+
+		/* alphanumeric / national / boolean literal, possibly in hex */
+		p2 = (*p == 'N' || *p == 'B') ? p + 1 : p;
+		if (*p2 == 'X') p2++;
+		if (*p2 == '"' || *p2 == '\'') {
+			char	*sep = strchr (p2 + 1, *p2);
 			if (sep == NULL) {
+				/* closing quote missing */
 				cb_error ("unexpected definition for special register '%s', "
-					"not parsed: %s", name, p);
+					"not parsed: VALUE %s", name, p);
 				ret = 1;
+				memset (p, ' ', strlen (p));
+			} else if (p2 == p) {
+				/* plain alphanumeric literal */
+				if (current_program) {
+					lit = cb_build_alphanumeric_literal (p + 1, sep - 1 - p);
+				}
+				memset (p, ' ', sep - p);
 			} else {
-				lit = cb_build_alphanumeric_literal (p, sep - p);
+		
+				/* on the first run we don't add anything to the actual parse tree */
+#if 0			/* TODO: move literal building out of scanner.l and call here */
+				if (current_program) {
+					lit = cb_build_some_literal (p, sep);
+				}
+#else
+				*(sep + 1) = 0;
+				cb_error ("unexpected definition for special register '%s', "
+					"not parsed: VALUE %s", name, p);
+				ret = 1;
+#endif
+				memset (p, ' ', sep - p);
 			}
 		} else {
-			sep = strchr (p, ' ');
-			/* TODO: missing check for actual numeric value */
-			if (sep == NULL) {
-				lit = cb_build_numeric_literal (0, p, 0);
+			word_len = extract_next_word_from_buffer (p, word);
+			/* note: without current_program cb_zero and friends will be
+			         either NULL or point to invalid memory - that's no
+			         problem as we only want do do the parsing in this case */
+			if ((word_len == 4 && memcmp (word, "ZERO", 4) == 0)
+			 || (word_len == 5 && memcmp (word, "ZEROS", 5) == 0)
+			 || (word_len == 6 && memcmp (word, "ZEROES", 6) == 0)) {
+				lit = cb_zero;
+			} else
+			if ((word_len == 5 && memcmp (word, "SPACE", 5) == 0)
+			 || (word_len == 6 && memcmp (word, "SPACES", 6) == 0)) {
+				lit = cb_space;
+			}
+			else
+			if (word_len == 4 && memcmp (word, "NULL", 4) == 0) {
+				lit = cb_null;
+			} else
+			if ((word_len == 5 && memcmp (word, "QUOTE", 5) == 0)
+			 || (word_len == 6 && memcmp (word, "QUOTES", 6) == 0)) {
+				lit = cb_quote;
+			}
+			else
+			if ((word_len == 9 && memcmp (word, "LOW-VALUE", 9) == 0)
+			 || (word_len == 10 && memcmp (word, "LOW-VALUES", 10) == 0)) {
+				lit = cb_low;
+			}
+			else
+			if ((word_len == 10 && memcmp (word, "HIGH-VALUE", 10) == 0)
+			 || (word_len == 11 && memcmp (word, "HIGH-VALUES", 11) == 0)) {
+				lit = cb_high;
 			} else {
-				char backup = *sep;
-				*sep = 0;
-				lit = cb_build_numeric_literal (0, p, 0);
-				*sep = backup;
+				for (p2 = word; *p2; p2++) {
+					if (*p2 < '0' || *p2 > '9') {
+						ret = 2;
+						break;
+					}
+				}
+				if (ret == 2) {
+					cb_error ("unexpected definition for special register '%s', "
+							"not parsed: VALUE %s", name, word);
+				} else {
+					/* on the first run we don't add anything to the actual parse tree */
+					if (current_program) {
+						lit = cb_build_numeric_literal (0, word, 0);
+					}
+				}
 			}
 		}
-		memset (p, ' ', lit_size);
-		p += lit_size;
-
-		field->values = CB_LIST_INIT (lit);
+		if (lit) {
+			field->values = CB_LIST_INIT (lit);
+		}
 	}
 
 	/* handle CONSTANT */
@@ -1646,9 +1721,6 @@ cb_build_generic_register (const char *name, const char *external_definition,
 		p += 8;
 		field->flag_internal_constant = 1;
 	}
-
-	field->flag_internal_register = 1;
-	field->level = 77;
 
 	/* check that the local definition is completely parsed -> spaces */
 	{
@@ -1664,29 +1736,31 @@ cb_build_generic_register (const char *name, const char *external_definition,
 		}
 	}
 
-	cb_validate_field (field);
-
 	if (ret) {
-		/* set after validation above
-		   allowing the rest to still be validated */
 		field->flag_invalid = 1;
-	}
-
-	field->flag_no_init = 1;
+	} else
 	if (current_program) {
-		CB_FIELD_ADD (current_program->working_storage, field);
-	} else if (field->flag_is_global) {
-		CB_FIELD_ADD (external_defined_fields_global, field);
-	} else {
-		CB_FIELD_ADD (external_defined_fields_ws, field);
-	}
-
-	if (result_field) {
-		*result_field = field;
+		/* note: the necessary tree items like cb_zero won't be available
+		   without a program, and therefore full validation is not possible */
+		field->flag_internal_register = 1;
+		field->level = 77;
+		field->flag_no_init = 1;
+		cb_validate_field (field);
 	}
 
 	if (field->flag_invalid) {
 		return 1;
+	}
+
+	if (current_program) {
+		CB_FIELD_ADD (current_program->working_storage, field);
+	} else if (field->flag_is_global) {
+		add_to_register_list (&external_defined_fields_global, name, external_definition);
+	} else {
+		add_to_register_list (&external_defined_fields_ws, name, external_definition);
+	}
+	if (result_field) {
+		*result_field = field;
 	}
 
 	return 0;
@@ -1817,8 +1891,8 @@ cb_build_single_register (const char *name, const char *definition)
 void
 cb_build_registers (void)
 {
-	const char *name, *definition = NULL;
 
+	const char *name, *definition = NULL;
 	name = cb_register_list_get_first (&definition);
 	while (name) {
 		cb_build_single_register (name, definition);
@@ -1830,11 +1904,19 @@ cb_build_registers (void)
 void
 cb_add_external_defined_registers (void)
 {
+	/* in this case we have a list of entries and need to reparse these,
+	   to add the fields both to the program's working storage and word list */
+	struct external_defined_register* list;
+
 	if (external_defined_fields_ws) {
-		CB_FIELD_ADD (current_program->working_storage, external_defined_fields_ws);
+		for (list = external_defined_fields_ws; list; list = list->next) {
+			cb_build_generic_register (list->name, list->definition, NULL);
+		}
 	}
 	if (external_defined_fields_global && !current_program->nested_level) {
-		CB_FIELD_ADD (current_program->working_storage, external_defined_fields_global);
+		for (list = external_defined_fields_global; list; list = list->next) {
+			cb_build_generic_register (list->name, list->definition, NULL);
+		}
 	}
 }
 

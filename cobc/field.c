@@ -605,7 +605,7 @@ cb_resolve_redefines (struct cb_field *field, cb_tree redefines)
 	struct cb_reference	*r;
 	const char		*name;
 	cb_tree			x;
-	cb_tree			candidate;
+	cb_tree			candidate = NULL;
 	cb_tree			items;
 
 	r = CB_REFERENCE (redefines);
