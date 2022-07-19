@@ -20,10 +20,6 @@
 
 	* general: remove indicator-column option, which is now a flag
 
-2022-02-01  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
-
-	* general: introduce rely-on-area-a flag (for GCOS)
-
 2022-02-07  David Declerck <david.declerck@ocamlpro.com>
 
 	* gcos-strict.conf, gcos.conf, gcos.words: added config files for

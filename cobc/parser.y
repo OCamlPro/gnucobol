@@ -2225,7 +2225,7 @@ set_record_size (cb_tree min, cb_tree max)
 
 %token TOKEN_EOF 0 "end of file"
 
-%token AREA_A "text in area A"
+%token TOK_AREA_A "text in area A"
 
 %token THREEDIMENSIONAL	"3D"
 %token ABSENT
@@ -3594,7 +3594,7 @@ _program_body:
   }
   _procedure_division
   {
-	/* AREA_A tokens, emitted when scanning the special marker `#AREA_A',
+	/* TOK_AREA_A tokens, emitted when scanning the special marker `#AREA_A',
 	   must be inhibited outside of procedure divisions.  This avoids having
 	   to insert such tokens everywhere they may appear in other parts of
 	   the grammar.  `cobc_in_procedure' is used to filter such
@@ -3603,8 +3603,19 @@ _program_body:
   }
 ;
 
-_area_a: /* empty */ | AREA_A;
-_dot_or_else_area_a: TOK_DOT _area_a | AREA_A;
+_area_a: /* empty */ | area_a_p;
+area_a_p: TOK_AREA_A | TOK_AREA_A area_a_p;
+_dot_or_else_area_a:
+  TOK_DOT _area_a
+| area_a_p
+  {
+	  if (cb_relaxed_syntax_checks) {
+		  cb_warning (COBC_WARN_FILLER, _("missing '.' above this line"));
+	  } else {
+		  cb_error (_("missing '.' above this line"));
+	  }
+  }
+;
 
 /* IDENTIFICATION DIVISION */
 
@@ -10050,7 +10061,7 @@ procedure_division:
 	emit_statement (CB_TREE (current_paragraph));
 	cb_set_system_names ();
   }
-  statements TOK_DOT _area_a _procedure_list
+  statements _dot_or_else_area_a _procedure_list
 ;
 
 _procedure_using_chaining:
@@ -10376,7 +10387,7 @@ procedure:
 /* Section/Paragraph */
 
 section_header:
-  WORD SECTION
+  WORD _area_a SECTION		/* adhoc Area A token */
   {
 	non_const_word = 0;
 	check_unreached = 0;

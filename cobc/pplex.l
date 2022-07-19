@@ -187,6 +187,9 @@ ALNUM_LITERAL	"\""[^""\n]*"\""|"\'"[^''\n]*"\'"
 SET_PAREN_LIT	\([^()\n]*\)
 DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 
+AREA_A		[ ]?#
+MAYBE_AREA_A	[ ]?#?
+
 %x CALL_DIRECTIVE_STATE
 %x COBOL_WORDS_DIRECTIVE_STATE
 %x COPY_STATE
@@ -401,7 +404,7 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 	skip_to_eol ();
 }
 
-^......."@OPTIONS"	{
+^{MAYBE_AREA_A}[ ]*"@OPTIONS"	{	/* Strip eventual Area A marker */
 	/* Fujitsu COBOL extension for specifying command line options */
 	/* TODO: check position of the @OPTIONS directive */
 	char *s = strchr (yytext, '@');
@@ -410,7 +413,7 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 	skip_to_eol ();
 }
 
-^[ ]*("PROCESS"|"CBL")/[ ,;\n] {
+^{MAYBE_AREA_A}[ ]*("PROCESS"|"CBL")/[ ,;\n] {
 	/* IBM COBOL extension for specifying compiler options */
 	/* TODO: The CBL (PROCESS) statement must be placed before any comment lines or other compiler-directing statements. */
 	cb_plex_warning (COBC_WARN_FILLER, newline_count - 1,
@@ -424,7 +427,7 @@ DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 	skip_to_eol ();
 }
 
-^[ ]?#			{
+^{AREA_A}		{
 	/* Output a special marker that precedes lines starting in area A.  This
 	   is required to detect missing periods.
 
@@ -516,6 +519,7 @@ SUBSTITUTION_SECTION_STATE>{
 	  cb_source_line++;
   }
   [,;]?[ ]+		{ /* ignore */ }
+  ^{AREA_A}		{}
 }
 
 <INITIAL,
@@ -549,10 +553,10 @@ SUBSTITUTION_SECTION_STATE>
 	ppecho (yytext, 0, (int)yyleng);
 }
 
-^[ ]*"EJECT"([ ]*\.)? |
-^[ ]*"SKIP1"([ ]*\.)? |
-^[ ]*"SKIP2"([ ]*\.)? |
-^[ ]*"SKIP3"([ ]*\.)?	{
+^{MAYBE_AREA_A}[ ]*"EJECT"([ ]*\.)? |
+^{MAYBE_AREA_A}[ ]*"SKIP1"([ ]*\.)? |
+^{MAYBE_AREA_A}[ ]*"SKIP2"([ ]*\.)? |
+^{MAYBE_AREA_A}[ ]*"SKIP3"([ ]*\.)?	{
 	/* These words can either be a listing-directive statement,
 	   a reserved word, or a user-defined word...
 	   some implementations (dis-)allow the (optional) "."
@@ -571,7 +575,7 @@ SUBSTITUTION_SECTION_STATE>
 	}
 }
 
-^[ ]*"TITLE"[ ,;\n]	{
+^{MAYBE_AREA_A}[ ]*"TITLE"[ ,;\n]	{
 	/* This word can either be a listing-directive statement,
 	   a reserved word, or a user-defined word...
 	   some implementations (dis-)allow the (optional) "."
@@ -946,6 +950,7 @@ ENDIF_DIRECTIVE_STATE>{
 	cb_source_line++;
   }
   [,;]?[ ]+		{ /* ignore */ }
+  ^{AREA_A}		{}
   [_0-9A-Z\x80-\xFF-]+(\.[_0-9A-Z\x80-\xFF-]+)+		{
 	/* special case to allow copybook names with periods
 	   without a literal
@@ -988,9 +993,9 @@ ENDIF_DIRECTIVE_STATE>{
 	cb_source_line++;
   }
 
-  ^[ ]?#		{
+  ^{AREA_A}		{
 	/* Pseudo-text words that start in area-a retain that property, and
-	   should thus be preceded with carry the marker. */
+	   should thus be preceded with the marker. */
 	pplval.s = cobc_plex_strdup ("\n#area_a\n");
   }
 
@@ -2212,17 +2217,21 @@ start:
 		goto start;
 	}
 
-	/* Substitute spaces for indicator */
+	/* Substitute spaces for indicator, and check whether area A is blank */
 	{
 		const int margin_a = cobc_get_margin_a (indicator_width);
+		const int margin_b = cobc_get_margin_b (indicator_width);
 		for (i = indicator_column - 1; i < margin_a; i++) {
 			buff[i] = ' ';
 		}
 		bp = buff + margin_a;
-	}
 
-	/* Check blank area A */
-	in_area_a = strncmp (bp, "    ", 4) != 0;
+		in_area_a = 0;
+		if (cb_flag_preproc_area_a && source_format != CB_FORMAT_FREE) {
+			for (i = margin_a; i < margin_b && buff[i] != '.'; i++)
+				in_area_a |= (buff[i] != ' ') ? 1 : 0;
+		}
+	}
 
 	if (unlikely (continuation)) {
 		/* Line continuation */
@@ -2339,7 +2348,7 @@ start:
 			memset (buff, '\n', newline_count);
 			gotcr += newline_count;
 		}
-		if (in_area_a && cb_rely_on_area_a) {
+		if (in_area_a) {
 			/* (*area-a*): prepend special marker `#', indicating
 			   the current non-continuation line starts in area A
 			   (see ^[ ]?#/... lexer rule above).

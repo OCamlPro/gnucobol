@@ -66,9 +66,6 @@ CB_CONFIG_INT (cb_lit_length, "literal-length", 1, COB_MAX_LITERAL_LEN, _("<numb
 CB_CONFIG_INT (cb_numlit_length, "numeric-literal-length", 1, COB_MAX_DIGITS, CB_XRANGE(1,COB_MAX_DIGITS),
 	_("maximum numeric literal size"))
 
-CB_CONFIG_BOOLEAN (cb_rely_on_area_a, "rely-on-area-a",
-	_("checking emptyness of area A is required to parse programs"))
-
 /* Flags with required parameter and special values */
 
 CB_CONFIG_ANY (enum cb_std_def, cb_std_define, "standard-define", NULL) /* Used Standard (set via -std) */

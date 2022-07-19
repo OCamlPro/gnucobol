@@ -306,8 +306,10 @@ static void *	copy_literal (cb_tree l);
 }
 
 <*>\n"#AREA_A"\n {
-	if (cobc_in_procedure)
-		return AREA_A;
+	if (cobc_in_procedure) {
+		last_token_is_dot = 1; /* always assume we've just seen a dot. */
+		return TOK_AREA_A;
+	}
 }
 
 <*>\n {
@@ -1092,7 +1094,9 @@ H#[0-9A-Za-z]+ {
 	RETURN_TOK (EXPONENTIATION);
 }
 
-"."([ \n]*".")* {
+"."(([ \n]|\n"#AREA_A"\n)*".")* {
+	/* Additional Area A markers need to be consumed here due to
+	   COPY/REPLACE statements starting in Area A. */
 	if (last_token_is_dot || strlen (yytext) > 1) {
 		cb_warning (COBC_WARN_FILLER, _("ignoring redundant ."));
 	}

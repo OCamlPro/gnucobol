@@ -1,4 +1,13 @@
 
+2022-07-19  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	FR #309 raise warnings/errors when some periods are missing
+	* pplex.l, scanner.l, parser.y: check for empty area A, and use a
+	  dedicated TOK_AREA_A token to detect missing periods in PROCEDURE
+	  DIVISION
+	* flag.def, cobc.c: new flag -fpreproc-area-a, to explicitly enable
+	  area A markers in preprocessed output (-E)
+
 2022-07-06  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* cobc.h: define function purity attribute COB_A_PURE
@@ -58,14 +67,6 @@
 	* config.def, typeck.c (cb_emit_accept_name, cb_build_display_name):
 	  rely on new option device-mnemonics (boolean) instead of
 	  standard-define to accept device name mnemonics for DISPLAY and ACCEPT
-
-2022-02-01  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
-
-	* config.def, pplex.l, scanner.l, parser.y: support sections and
-	  paragraphs that do not terminate with a period.  This is done with the
-	  help of a new option rely-on-area-a, that indicates the dialect may
-	  only be parsed correctly by knowing whether each line starts in area A
-	  or not.
 
 2022-05-31  Simon Sobisch <simonsobisch@gnu.org>
 
