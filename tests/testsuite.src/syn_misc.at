@@ -8627,6 +8627,21 @@ AT_CHECK([$COMPILE_ONLY prog_missing_depending.cob], [1], [],
 [prog_missing_depending.cob:6: error: missing DEPENDING clause for PICTURE string with 'L' character
 ])
 
+AT_DATA([prog_value.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog_value.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       1 L		COMP-1 VALUE 10.
+       1 F-DAT		PICTURE LX(10) DEPENDING ON L
+                        VALUE "0123456789".
+       PROCEDURE        DIVISION.
+           STOP RUN.
+])
+AT_CHECK([$COMPILE_ONLY prog_value.cob], [1], [],
+[prog_value.cob:7: error: PICTURE L and VALUE are mutually exclusive
+])
+
 AT_DATA([prog_errs.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog_errs.

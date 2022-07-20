@@ -2889,10 +2889,13 @@ validate_field_value (struct cb_field *f)
 	if (f->values) {
 		if (f->flag_picture_l) {
 			cb_error_x (CB_TREE (f),
-				    _("field with PICTURE L may not have "
-				      "a VALUE clause"));
+				    _("%s and %s are mutually exclusive"),
+				    "PICTURE L", "VALUE");
+			cobc_parse_free (f->values);
+			f->values = NULL;
+		} else {
+			validate_move (CB_VALUE (f->values), CB_TREE (f), 1, NULL);
 		}
-		validate_move (CB_VALUE (f->values), CB_TREE (f), 1, NULL);
 	}
 
 	if (f->children) {
