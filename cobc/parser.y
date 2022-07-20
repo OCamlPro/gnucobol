@@ -2223,9 +2223,7 @@ set_record_size (cb_tree min, cb_tree max)
 
 %}
 
-%token TOKEN_EOF 0 "end of file"
-
-%token TOK_AREA_A "text in area A"
+%token TOK_AREA_A "text in Area A"
 
 %token THREEDIMENSIONAL	"3D"
 %token ABSENT
@@ -2269,7 +2267,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token AT_END				"AT END"
 %token ATTRIBUTE
 %token ATTRIBUTES
-%token AUTHOR	/* remark: not used here */
+%token AUTHOR			/* remark: not used here */
 %token AUTO
 %token AUTO_DECIMAL			"AUTO-DECIMAL"
 %token AUTO_SPIN			"AUTO-SPIN"
@@ -2352,7 +2350,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token CLASS_NAME		"class-name"
 %token CLEAR_SELECTION		"CLEAR-SELECTION"
 %token CLINE
-%token CLINES
+%token CLINES			/* remark: not used here */
 %token CLOSE
 %token COBOL
 %token CODE
@@ -2388,7 +2386,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token COMP_N			"COMP-N"
 %token COMP_X			"COMP-X"
 %token CONCATENATE_FUNC		"FUNCTION CONCATENATE"
-%token CONDITION
+%token CONDITION		/* remark: not used here */
 %token CONFIGURATION
 %token CONSTANT
 %token CONTAINS
@@ -2400,7 +2398,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token CONTROLS
 %token CONVERSION
 %token CONVERTING
-%token COPY
+%token COPY			/* remark: not used here */
 %token COPY_SELECTION	"COPY-SELECTION"
 %token CORE_INDEX		"CORE-INDEX"
 %token CORRESPONDING
@@ -2454,7 +2452,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token DISPLAY
 %token DISPLAY_COLUMNS		"DISPLAY-COLUMNS"
 %token DISPLAY_FORMAT		"DISPLAY-FORMAT"
-%token DISPLAY_OF_FUNC		"FUNCTION DISPLAY-OF"
+%token DISPLAY_OF_FUNC		"FUNCTION DISPLAY-OF" /* remark: not used here */
 %token DIVIDE
 %token DIVIDERS
 %token DIVIDER_COLOR		"DIVIDER-COLOR"
@@ -2526,7 +2524,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token ESCAPE_BUTTON	"ESCAPE-BUTTON"
 %token ESI
 %token EVALUATE
-%token EVENT
+%token EVENT			/* remark: not used here */
 %token EVENT_LIST		"EVENT-LIST"
 %token EVENT_STATUS		"EVENT STATUS"
 %token EVERY
@@ -2647,7 +2645,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token INTERMEDIATE
 %token INTO
 %token INTRINSIC
-%token INVALID
+%token INVALID			/* remark: not used here */
 %token INVALID_KEY		"INVALID KEY"
 %token IS
 %token ITEM
@@ -2666,7 +2664,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token LABEL
 %token LABEL_OFFSET			"LABEL-OFFSET"
 %token LARGE_FONT			"LARGE-FONT"
-%token LARGE_OFFSET			"LARGE-OFFSET"
+%token LARGE_OFFSET			"LARGE-OFFSET" /* remark: not used here */
 %token LAST
 %token LAST_ROW				"LAST-ROW"
 %token LAYOUT_DATA			"LAYOUT-DATA"
@@ -2742,7 +2740,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token NAMESPACE_PREFIX		"NAMESPACE-PREFIX"
 %token NATIONAL
 %token NATIONAL_EDITED		"NATIONAL-EDITED"
-%token NATIONAL_OF_FUNC		"FUNCTION NATIONAL-OF"
+%token NATIONAL_OF_FUNC		"FUNCTION NATIONAL-OF" /* remark: not used here */
 %token NATIVE
 %token NAVIGATE_URL		"NAVIGATE-URL"
 %token NEAREST_AWAY_FROM_ZERO	"NEAREST-AWAY-FROM-ZERO"
@@ -2765,7 +2763,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token NO_ECHO			"NO-ECHO"
 %token NO_F4			"NO-F4"
 %token NO_FOCUS			"NO-FOCUS"
-%token NO_GROUP_TAB		"NO-GROUP-TAB"
+%token NO_GROUP_TAB		"NO-GROUP-TAB" /* remark: not used here */
 %token NO_KEY_LETTER	"NO-KEY-LETTER"
 %token NOMINAL
 %token NO_SEARCH		"NO-SEARCH"
@@ -2885,7 +2883,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token READ_ONLY		"READ-ONLY"
 %token READY_TRACE		"READY TRACE"
 %token RECEIVE
-%token RECEIVED
+%token RECEIVED			/* remark: not used here */
 %token RECORD
 %token RECORD_DATA		"RECORD-DATA"
 %token RECORD_OVERFLOW		"RECORD-OVERFLOW"
@@ -2907,7 +2905,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token REMOVAL
 %token RENAMES
 %token REORG_CRITERIA		"REORG-CRITERIA"
-%token REPLACE
+%token REPLACE			/* remark: not used here */
 %token REPLACING
 %token REPORT
 %token REPORTING
@@ -3050,10 +3048,10 @@ set_record_size (cb_tree min, cb_tree max)
 %token TERMINATION_VALUE	"TERMINATION-VALUE"
 %token TEST
 %token TEXT
-%token THAN
+%token THAN			/* remark: not used here */
 %token THEN
 %token THREAD
-%token THREADS
+%token THREADS			/* remark: not used here */
 %token THRU
 %token THUMB_POSITION	"THUMB-POSITION"
 %token TILED_HEADINGS	"TILED-HEADINGS"
@@ -3607,7 +3605,7 @@ _area_a: /* empty */ | area_a_toks;
 area_a_toks: TOK_AREA_A | TOK_AREA_A area_a_toks;
 _dot_or_else_area_a:
   TOK_DOT _area_a
-| TOK_AREA_A
+| area_a_toks
   {
 	  if (cb_relaxed_syntax_checks) {
 		  cb_warning (COBC_WARN_FILLER, _("missing '.' above this line"));
@@ -3615,7 +3613,6 @@ _dot_or_else_area_a:
 		  cb_error (_("missing '.' above this line"));
 	  }
   }
-  _area_a
 ;
 
 /* IDENTIFICATION DIVISION */

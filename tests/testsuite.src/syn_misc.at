@@ -4590,10 +4590,10 @@ AT_DATA([prog_err.cob], [
        .
 ])
 AT_CHECK([$COMPILE_ONLY -floose-area-a=warning -frelax-syntax-checks prog_err.cob], [1], [],
-[prog_err.cob:11: warning: missing '.' above this line
+[prog_err.cob:12: warning: missing '.' above this line
 prog_err.cob: in paragraph 'PAR-1':
 prog_err.cob:14: error: 'KO' is not defined
-prog_err.cob:15: warning: missing '.' above this line
+prog_err.cob:16: warning: missing '.' above this line
 prog_err.cob: in section 'SEC-1':
 prog_err.cob:18: warning: punctuation in Area A used
 ])
@@ -4642,8 +4642,8 @@ sec-2.inc:2: error: syntax error, unexpected SECTION
 ])
 AT_CHECK([$COMPILE -floose-area-a=skip -frelax-syntax-checks prog.cob], [0], [],
 [sec-1.inc:2: warning: missing '.' above this line
-prog.cob: in section 'SEC-1':
-prog.cob:14: warning: missing '.' above this line
+sec-2.inc: in section 'SEC-1':
+sec-2.inc:2: warning: missing '.' above this line
 ])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OKOK], [])
 
@@ -4668,8 +4668,8 @@ AT_DATA([prog_err.cob], [
 
 AT_CHECK([$COMPILE_ONLY -floose-area-a=skip -frelax-syntax-checks prog_err.cob], [1], [],
 [sec-1.inc:2: warning: missing '.' above this line
-prog_err.cob: in section 'SEC-1':
-prog_err.cob:15: warning: missing '.' above this line
+sec-2.inc: in section 'SEC-1':
+sec-2.inc:2: warning: missing '.' above this line
 prog_err.cob: in section 'SEC-3':
 prog_err.cob:17: error: 'KO' is not defined
 ])
