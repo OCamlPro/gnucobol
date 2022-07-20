@@ -1605,12 +1605,9 @@ cb_build_generic_register (const char *name, const char *external_definition,
 		}
 	}
 	if (p) {
-		cb_tree picture;
 		(void)extract_next_word_from_buffer (p, word);
-		picture = cb_build_picture (word);
-		if (picture) {
-			field->pic = CB_PICTURE (picture);
-		} else {
+		field->pic = cb_build_picture (word);
+		if (field->pic->size == 0) {
 			ret = 1;
 		}
 	}
@@ -1787,7 +1784,7 @@ cb_build_register_xml_code (const char *name, const char *definition)
 	tfield = cb_build_field (cb_build_reference (name));
 	field = CB_FIELD (tfield);
 	field->usage = CB_USAGE_BINARY;
-	field->pic = CB_PICTURE (cb_build_picture ("S9(9)"));
+	field->pic = cb_build_picture ("S9(9)");
 	cb_validate_field (field);
 	field->values = CB_LIST_INIT (cb_zero);
 	field->flag_no_init = 1;
@@ -1819,7 +1816,7 @@ cb_build_register_json_code (const char *name, const char *definition)
 	tfield = cb_build_field (cb_build_reference (name));
 	field = CB_FIELD (tfield);
 	field->usage = CB_USAGE_BINARY;
-	field->pic = CB_PICTURE (cb_build_picture ("S9(9)"));
+	field->pic = cb_build_picture ("S9(9)");
 	cb_validate_field (field);
 	field->values = CB_LIST_INIT (cb_zero);
 	field->flag_no_init = 1;
@@ -4072,35 +4069,35 @@ cb_build_debug_item (void)
 	l = cb_build_reference ("DEBUG-LINE");
 	x = cb_build_field_tree (NULL, l, CB_FIELD(lvl01_tree),
 				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = CB_PICTURE (cb_build_picture ("X(6)"));
+	CB_FIELD (x)->pic = cb_build_picture ("X(6)");
 	cb_validate_field (CB_FIELD (x));
 	cb_debug_line = l;
 
 	l = cb_build_filler ();
 	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
 				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = CB_PICTURE (cb_build_picture ("X"));
+	CB_FIELD (x)->pic = cb_build_picture ("X");
 	CB_FIELD (x)->flag_filler = 1;
 	cb_validate_field (CB_FIELD (x));
 
 	l = cb_build_reference ("DEBUG-NAME");
 	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
 				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = CB_PICTURE (cb_build_picture ("X(30)"));
+	CB_FIELD (x)->pic = cb_build_picture ("X(30)");
 	cb_validate_field (CB_FIELD (x));
 	cb_debug_name = l;
 
 	l = cb_build_filler ();
 	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
 				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = CB_PICTURE (cb_build_picture ("X"));
+	CB_FIELD (x)->pic = cb_build_picture ("X");
 	CB_FIELD (x)->flag_filler = 1;
 	cb_validate_field (CB_FIELD (x));
 
 	l = cb_build_reference ("DEBUG-SUB-1");
 	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
 				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = CB_PICTURE (cb_build_picture ("S9(4)"));
+	CB_FIELD (x)->pic = cb_build_picture ("S9(4)");
 	CB_FIELD (x)->flag_sign_leading = 1;
 	CB_FIELD (x)->flag_sign_separate = 1;
 	cb_validate_field (CB_FIELD (x));
@@ -4109,14 +4106,14 @@ cb_build_debug_item (void)
 	l = cb_build_filler ();
 	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
 				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = CB_PICTURE (cb_build_picture ("X"));
+	CB_FIELD (x)->pic = cb_build_picture ("X");
 	CB_FIELD (x)->flag_filler = 1;
 	cb_validate_field (CB_FIELD (x));
 
 	l = cb_build_reference ("DEBUG-SUB-2");
 	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
 				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = CB_PICTURE (cb_build_picture ("S9(4)"));
+	CB_FIELD (x)->pic = cb_build_picture ("S9(4)");
 	CB_FIELD (x)->flag_sign_leading = 1;
 	CB_FIELD (x)->flag_sign_separate = 1;
 	cb_validate_field (CB_FIELD (x));
@@ -4125,14 +4122,14 @@ cb_build_debug_item (void)
 	l = cb_build_filler ();
 	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
 				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = CB_PICTURE (cb_build_picture ("X"));
+	CB_FIELD (x)->pic = cb_build_picture ("X");
 	CB_FIELD (x)->flag_filler = 1;
 	cb_validate_field (CB_FIELD (x));
 
 	l = cb_build_reference ("DEBUG-SUB-3");
 	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
 				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = CB_PICTURE (cb_build_picture ("S9(4)"));
+	CB_FIELD (x)->pic = cb_build_picture ("S9(4)");
 	CB_FIELD (x)->flag_sign_leading = 1;
 	CB_FIELD (x)->flag_sign_separate = 1;
 	cb_validate_field (CB_FIELD (x));
@@ -4141,15 +4138,15 @@ cb_build_debug_item (void)
 	l = cb_build_filler ();
 	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
 				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = CB_PICTURE (cb_build_picture ("X"));
+	CB_FIELD (x)->pic = cb_build_picture ("X");
 	CB_FIELD (x)->flag_filler = 1;
 	cb_validate_field (CB_FIELD (x));
 
 	l = cb_build_reference ("DEBUG-CONTENTS");
 	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
 				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = CB_PICTURE (
-		cb_build_picture ("X(" CB_XSTRINGIFY(DFLT_DEBUG_CONTENTS_SIZE) ")"));
+	CB_FIELD (x)->pic =
+		cb_build_picture ("X(" CB_XSTRINGIFY(DFLT_DEBUG_CONTENTS_SIZE) ")");
 	cb_validate_field (CB_FIELD (x));
 	cb_debug_contents = l;
 
@@ -4535,7 +4532,7 @@ cb_validate_program_data (struct cb_program *prog)
 		if (x == cb_error_node) {
 			p = CB_FIELD (cb_build_field (l));
 			p->usage = CB_USAGE_DISPLAY;
-			p->pic = CB_PICTURE (cb_build_picture ("9(4)"));
+			p->pic = cb_build_picture ("9(4)");
 			cb_validate_field (p);
 			p->flag_no_init = 1;
 			/* Do not initialize/bump ref count here

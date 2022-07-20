@@ -2,11 +2,11 @@
 2022-07-19  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y, typeck.c: temporary adjust source reference when building
-	  registers
+	  registers to not point to an innocent source code
 	* tree.c (cb_build_picture, char_to_precedence_idx): cater for possible
 	  call without a current program
-	* tree.c (cb_build_picture), parser.y (picture_clause): in case of broken
-	  picture definitions return NULL, not a partial setup cb_picture
+	* tree.c (cb_build_picture): return cb_picture instead of cb_tree, as
+	  all but one caller directly use it that way
 	* field.c (cb_resolve_redefines): fixed reasonable compiler warning
 	* typeck.c (cb_build_generic_register): finished VALUE definition and
 	  checks, now handling numeric and alphanumeric literals (others prepared)

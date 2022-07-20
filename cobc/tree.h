@@ -1890,7 +1890,6 @@ extern cb_tree			cb_build_decimal (const unsigned int);
 extern cb_tree			cb_build_decimal_literal (const int);
 extern int			cb_lookup_literal (cb_tree x, int make_decimal);
 
-extern cb_tree			cb_build_picture (const char *);
 extern cb_tree			cb_build_comment (const char *);
 extern cb_tree			cb_build_direct (const char *,
 						 const unsigned int);
@@ -1898,6 +1897,7 @@ extern cb_tree			cb_build_debug (const cb_tree, const char *,
 						const cb_tree);
 extern cb_tree			cb_build_debug_call (struct cb_label *);
 
+extern struct cb_picture	*cb_build_picture (const char *);
 extern struct cb_picture	*cb_build_binary_picture (const char *,
 							  const cob_u32_t,
 							  const cob_u32_t);

@@ -7308,9 +7308,7 @@ picture_clause:
   _pic_locale_format
   {
 	check_repeated ("PICTURE", SYN_CLAUSE_4, &check_pic_duplicate);
-	if (CB_VALID_TREE ($1)) {
-		current_field->pic = CB_PICTURE ($1);
-	}
+	current_field->pic = CB_PICTURE ($1);	/* always returned, invalid picture will have size == 0 */
 
 	if (CB_VALID_TREE ($2)) {
 		if (  (current_field->pic->category != CB_CATEGORY_NUMERIC

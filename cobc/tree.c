@@ -3130,7 +3130,9 @@ get_number_in_parentheses (const unsigned char ** p,
 	}
 }
 
-cb_tree
+/* build picture from string; _always_ returns a cb_picture,
+   but in case of errors during parsing the pic->size is zero */
+struct cb_picture *
 cb_build_picture (const char *str)
 {
 	struct cb_picture	*pic;
@@ -3174,7 +3176,7 @@ cb_build_picture (const char *str)
 
 	if (strlen (str) == 0) {
 		cb_error (_("missing PICTURE string"));
-		return NULL;
+		return pic;
 	}
 
 	if (!pic_buff) {
@@ -3265,7 +3267,7 @@ repeat:
 				char symbol[2] = { 0 };
 				symbol[0] = c;
 				cb_error (_("%s cannot follow %s"), symbol, _("exponent"));
-				return NULL;
+				return pic;
 			}
 		}
 
@@ -3477,7 +3479,7 @@ repeat:
 			}
 
 			if (err_char_pos == sizeof err_chars) {
-				return NULL;
+				return pic;
 			}
 			if (!strchr (err_chars, (int)c)) {
 				err_chars[err_char_pos++] = (char)c;
@@ -3525,7 +3527,7 @@ repeat:
 	}
 
 	if (error_detected) {
-		return NULL;
+		return pic;
 	}
 
 	/* Set picture */
@@ -3605,7 +3607,7 @@ repeat:
 		;
 	}
 
-	return CB_TREE (pic);
+	return pic;
 }
 
 /* Field */
@@ -3635,7 +3637,7 @@ cb_build_implicit_field (cb_tree name, const int len)
 	x = cb_build_field (name);
 	memset (pic, 0, sizeof(pic));
 	snprintf (pic, sizeof(pic), "X(%d)", len);
-	CB_FIELD (x)->pic = CB_PICTURE (cb_build_picture (pic));
+	CB_FIELD (x)->pic = cb_build_picture (pic);
 	cb_validate_field (CB_FIELD (x));
 	return x;
 }
@@ -3659,34 +3661,35 @@ cb_field_dup (struct cb_field *f, struct cb_reference *ref)
 	cb_tree		x;
 	struct cb_field *s;
 	char		buff[COB_MINI_BUFF], pic[30];
-	int		dec, dig;
 
-	snprintf (buff, (size_t)COB_MINI_MAX, "COPY OF %s", f->name);
-	x = cb_build_field (cb_build_reference (buff));
-	if(ref
-	&& ref->length
-	&& CB_LITERAL_P(ref->length)) {
-		sprintf(pic,"X(%d)",cb_get_int(ref->length));
+	if (ref && ref->length
+	 && CB_LITERAL_P (ref->length)) {
+		sprintf (pic, "X(%d)", cb_get_int (ref->length));
 	} else
 	if (f->pic->category == CB_CATEGORY_NUMERIC
 	 || f->pic->category == CB_CATEGORY_NUMERIC_EDITED) {
-		dig = f->pic->digits;
-		if((dec = f->pic->scale) > 0) {
-			if((dig-dec) == 0) {
-				sprintf(pic,"SV9(%d)",dec);
-			} else if((dig-dec) < 0) {
-				sprintf(pic,"SP(%d)V9(%d)",-(dig-dec),dec);
+		const int	dig = f->pic->digits;
+		const int	scale = f->pic->scale;
+		if (scale > 0) {
+			const int dec = dig - scale;
+			if (dec == 0) {
+				sprintf (pic,"SV9(%d)", scale);
+			} else if (dec < 0) {
+				sprintf (pic, "SP(%d)V9(%d)",-dec, scale);
 			} else {
-				sprintf(pic,"S9(%d)V9(%d)",dig-dec,dec);
+				sprintf (pic, "S9(%d)V9(%d)", dec, scale);
 			}
 		} else {
-			sprintf(pic,"S9(%d)",dig);
+			sprintf (pic, "S9(%d)", dig);
 		}
 	} else {
-		sprintf(pic,"X(%d)",f->size);
+		sprintf (pic, "X(%d)", f->size);
 	}
+
+	snprintf (buff, (size_t)COB_MINI_MAX, "COPY OF %s", f->name);
+	x = cb_build_field (cb_build_reference (buff));
 	s = CB_FIELD (x);
-	s->pic 	= CB_PICTURE (cb_build_picture (pic));
+	s->pic = cb_build_picture (pic);
 	if (f->pic->category == CB_CATEGORY_NUMERIC
 	 || f->pic->category == CB_CATEGORY_NUMERIC_EDITED
 	 || f->pic->category == CB_CATEGORY_FLOATING_EDITED) {
@@ -3951,7 +3954,7 @@ build_sum_counter (struct cb_report *r, struct cb_field *f)
 		sprintf(pic,"S9(%d)",dig);
 	}
 	s = CB_FIELD (x);
-	s->pic 	= CB_PICTURE (cb_build_picture (pic));
+	s->pic 	= cb_build_picture (pic);
 	s->values	= CB_LIST_INIT (cb_zero);
 	s->storage	= CB_STORAGE_WORKING;
 	s->usage	= CB_USAGE_DISPLAY;
@@ -4287,7 +4290,7 @@ validate_indexed_key_field (struct cb_file *f, struct cb_field *records,
 		if (composite_key->pic != NULL) {
 			cobc_parse_free (composite_key->pic);
 		}
-		composite_key->pic = CB_PICTURE (cb_build_picture (pic));
+		composite_key->pic = cb_build_picture (pic);
 		cb_validate_field (composite_key);
 	} else {
 		/* Check that key file is actual part of the file's records */
