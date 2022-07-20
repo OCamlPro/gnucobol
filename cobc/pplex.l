@@ -153,6 +153,7 @@ static int	floating_area_b = 0;	   /* whether indicator is optional */
 static int	fill_continued_alnums = 1; /* whether continued alphanumeric
 					      literals should be filled with
 					      spaces up to text column */
+static int	emit_area_a_tokens = 0;
 
 static char	display_msg[PPLEX_BUFF_LEN];
 
@@ -1477,6 +1478,11 @@ cobc_set_source_format (const enum cb_format sf) {
 	}
 }
 
+void
+cobc_enable_area_a_tokens (int forced) {
+	emit_area_a_tokens = forced || cb_loose_area_a != CB_OK;
+}
+
 COB_A_PURE enum cb_format cobc_get_source_format (void) { return source_format; }
 COB_A_PURE int cobc_get_indicator_column (void) { return indicator_column; }
 COB_A_PURE int cobc_get_text_column (void) { return text_column; }
@@ -2227,9 +2233,9 @@ start:
 		bp = buff + margin_a;
 
 		in_area_a = 0;
-		if (cb_flag_preproc_area_a && source_format != CB_FORMAT_FREE) {
-			for (i = margin_a; i < margin_b && buff[i] != '.'; i++)
-				in_area_a |= (buff[i] != ' ') ? 1 : 0;
+		if (emit_area_a_tokens && source_format != CB_FORMAT_FREE) {
+			for (i = margin_a; i < margin_b; i++)
+				in_area_a |= buff[i] != ' ';
 		}
 	}
 

@@ -234,49 +234,49 @@ AT_DATA([prog.cob], [
 
        PROCEDURE DIVISION.
 
-           EVALUATE TRUE
-             WHEN TESTME IS NOT-DEFINED
-               CONTINUE
-             WHEN TESTME = 'A'
-               CONTINUE
-             WHEN OTHER
-               IF NOT TESTME IS NOT-DEFINED
-               THEN
-                 CONTINUE
-               ELSE
-                 CONTINUE
-               END-IF
-           END-EVALUATE
-           EVALUATE TRUE
-             WHEN TESTME IS 'ABC'
-               CONTINUE
-             WHEN TESTME = 'B'
-               CONTINUE
-           END-EVALUATE
-           EVALUATE TRUE
-             WHEN TESTME IS TESTME
-               CONTINUE
-             WHEN TESTME = 'C'
-               CONTINUE
-           END-EVALUATE
-           EVALUATE TRUE
-             WHEN TESTME NOT = NOT-DEFINED
-               CONTINUE
-             WHEN TESTME = 'D'
-               CONTINUE
-           END-EVALUATE
-           EVALUATE TRUE
-             WHEN TESTME ELSE NOT-DEFINED
-               CONTINUE
-             WHEN TESTME = 'E'
-               CONTINUE
-           END-EVALUATE
-           EVALUATE broken
-             WHEN NOT-DEFINED
-               continue
-           END-EVALUATE
+          EVALUATE TRUE
+            WHEN TESTME IS NOT-DEFINED
+              CONTINUE
+            WHEN TESTME = 'A'
+              CONTINUE
+            WHEN OTHER
+              IF NOT TESTME IS NOT-DEFINED
+              THEN
+                CONTINUE
+              ELSE
+                CONTINUE
+              END-IF
+          END-EVALUATE
+          EVALUATE TRUE
+            WHEN TESTME IS 'ABC'
+              CONTINUE
+            WHEN TESTME = 'B'
+              CONTINUE
+          END-EVALUATE
+          EVALUATE TRUE
+            WHEN TESTME IS TESTME
+              CONTINUE
+            WHEN TESTME = 'C'
+              CONTINUE
+          END-EVALUATE
+          EVALUATE TRUE
+            WHEN TESTME NOT = NOT-DEFINED
+              CONTINUE
+            WHEN TESTME = 'D'
+              CONTINUE
+          END-EVALUATE
+          EVALUATE TRUE
+            WHEN TESTME ELSE NOT-DEFINED
+              CONTINUE
+            WHEN TESTME = 'E'
+              CONTINUE
+          END-EVALUATE
+          EVALUATE broken
+            WHEN NOT-DEFINED
+              continue
+          END-EVALUATE
 
-           GOBACK.
+          GOBACK.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
@@ -2603,7 +2603,7 @@ AT_DATA([prog.cob], [
        PROGRAM-ID. prog.
        PROCEDURE DIVISION.
        DEPTHDRUSE SECTION.
-           USE BEFORE REPORTING DEPTHDR.
+       USE BEFORE REPORTING DEPTHDR.
 ])
 
 AT_CHECK([$COMPILE_ONLY -std=default prog.cob ], [1], [],

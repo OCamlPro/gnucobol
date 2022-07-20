@@ -2738,7 +2738,6 @@ NOFLOATING
 AT_CHECK([$COMPILE_ONLY prog2.cob], [1], [],
 [prog2.cob:11: error: invalid indicator '$' at column 7
 prog2.cob:17: error: invalid symbol '|' - skipping word
-prog2.cob:17: error: missing '.' above this line
 ])
 
 # note: for checking the result we actually either need to run the program
@@ -2757,7 +2756,6 @@ NOFLOATING
 AT_CHECK([$COMPILE_ONLY -fmfcomment prog2.cob], [1], [],
 [prog2.cob:11: error: invalid indicator '$' at column 7
 prog2.cob:17: error: invalid symbol '|' - skipping word
-prog2.cob:17: error: missing '.' above this line
 ])
 
 # COMPILE needed, see note above
@@ -2824,10 +2822,6 @@ prog3.cob:16: error: invalid indicator 'x' at column 7
 prog3.cob:6: error: PROGRAM-ID header missing
 prog3.cob:6: error: PROCEDURE DIVISION header missing
 prog3.cob:6: error: syntax error, unexpected DIVISION
-prog3.cob:13: error: missing '.' above this line
-prog3.cob:14: error: missing '.' above this line
-prog3.cob:15: error: missing '.' above this line
-prog3.cob:17: error: missing '.' above this line
 ])
 
 AT_CLEANUP
@@ -4559,18 +4553,19 @@ AT_DATA([prog.cob],
        WORKING-STORAGE SECTION.
 
        PROCEDURE DIVISION.
-           PERFORM SEC-1.
-           STOP RUN
+	   PERFORM SEC-1.
+	   STOP RUN
        SEC-1 SECTION.
            DISPLAY "OK" NO ADVANCING
-           END-DISPLAY.
+	   END-DISPLAY.
            GOBACK.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:10: error: missing '.' above this line
+[prog.cob:10: error: 'SEC-1' is not defined
+prog.cob:10: error: syntax error, unexpected SECTION
 ])
-AT_CHECK([$COMPILE -frelax-syntax-checks prog.cob], [0], [],
+AT_CHECK([$COMPILE -floose-area-a=skip -frelax-syntax-checks prog.cob], [0], [],
 [prog.cob:10: warning: missing '.' above this line
 ])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
@@ -4592,13 +4587,15 @@ AT_DATA([prog_err.cob], [
 
        SEC-1 SECTION.
            DISPLAY 1 NO ADVANCING
-           .
+       .
 ])
-AT_CHECK([$COMPILE_ONLY -frelax-syntax-checks prog_err.cob], [1], [],
-[prog_err.cob:12: warning: missing '.' above this line
+AT_CHECK([$COMPILE_ONLY -floose-area-a=warning -frelax-syntax-checks prog_err.cob], [1], [],
+[prog_err.cob:11: warning: missing '.' above this line
 prog_err.cob: in paragraph 'PAR-1':
 prog_err.cob:14: error: 'KO' is not defined
-prog_err.cob:16: warning: missing '.' above this line
+prog_err.cob:15: warning: missing '.' above this line
+prog_err.cob: in section 'SEC-1':
+prog_err.cob:18: warning: punctuation in Area A used
 ])
 
 AT_CLEANUP
@@ -4638,14 +4635,15 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[sec-1.inc:2: error: missing '.' above this line
-sec-2.inc: in section 'SEC-1':
-sec-2.inc:2: error: missing '.' above this line
+[sec-1.inc:2: error: 'SEC-1' is not defined
+sec-1.inc:2: error: syntax error, unexpected SECTION
+sec-2.inc:2: error: 'SEC-2' is not defined
+sec-2.inc:2: error: syntax error, unexpected SECTION
 ])
-AT_CHECK([$COMPILE -frelax-syntax-checks prog.cob], [0], [],
+AT_CHECK([$COMPILE -floose-area-a=skip -frelax-syntax-checks prog.cob], [0], [],
 [sec-1.inc:2: warning: missing '.' above this line
-sec-2.inc: in section 'SEC-1':
-sec-2.inc:2: warning: missing '.' above this line
+prog.cob: in section 'SEC-1':
+prog.cob:14: warning: missing '.' above this line
 ])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OKOK], [])
 
@@ -4668,10 +4666,10 @@ AT_DATA([prog_err.cob], [
            DISPLAY KO NO ADVANCING.
 ])
 
-AT_CHECK([$COMPILE_ONLY -frelax-syntax-checks prog_err.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY -floose-area-a=skip -frelax-syntax-checks prog_err.cob], [1], [],
 [sec-1.inc:2: warning: missing '.' above this line
-sec-2.inc: in section 'SEC-1':
-sec-2.inc:2: warning: missing '.' above this line
+prog_err.cob: in section 'SEC-1':
+prog_err.cob:15: warning: missing '.' above this line
 prog_err.cob: in section 'SEC-3':
 prog_err.cob:17: error: 'KO' is not defined
 ])
@@ -4680,7 +4678,7 @@ AT_CLEANUP
 
 
 AT_SETUP([pseudotext replacement with text in area A])
-AT_KEYWORDS([misc copy missing-periods])
+AT_KEYWORDS([misc gcos copy missing-periods])
 
 AT_DATA([ok.inc],
 [       01  REPLACE-ME
@@ -4707,7 +4705,7 @@ AT_DATA([prog.cob], [
            DISPLAY OK NO ADVANCING.
 ])
 
-AT_CHECK([$COMPILE -frelax-syntax-checks prog.cob], [0], [],
+AT_CHECK([$COMPILE -std=gcos prog.cob], [0], [],
 [prog.cob:13: warning: missing '.' above this line
 prog.cob: in section 'SEC-1':
 prog.cob:15: warning: missing '.' above this line
@@ -4731,7 +4729,7 @@ AT_DATA([prog_err.cob], [
        SEC-2 SECTION.
            DISPLAY NOT-FOUND.
 ])
-AT_CHECK([$COMPILE -frelax-syntax-checks prog_err.cob], [1], [],
+AT_CHECK([$COMPILE -std=gcos prog_err.cob], [1], [],
 [prog_err.cob:13: warning: missing '.' above this line
 prog_err.cob: in section 'SEC-1':
 prog_err.cob:15: warning: missing '.' above this line
@@ -5410,18 +5408,18 @@ AT_DATA([prog3.cob], [
            EXTERN
            WITH C LINKAGE.
            CONTINUE
-           ENTRY 'ANOTHERSTATEMENT'.
-               CONTINUE
-           ENTRY EXTERN 'ANOTHERSTATEMENT2'.
-               CONTINUE
-           ENTRY 'ANOTHERSTATEMENT3' WITH C LINKAGE.
-               CONTINUE
-           ENTRY
-               EXTERN
-               'ANOTHERSTATEMENT4'
-               WITH C LINKAGE.
-               CONTINUE
-               .
+       ENTRY 'ANOTHERSTATEMENT'.
+           CONTINUE
+       ENTRY EXTERN 'ANOTHERSTATEMENT2'.
+           CONTINUE
+       ENTRY 'ANOTHERSTATEMENT3' WITH C LINKAGE.
+           CONTINUE
+       ENTRY
+           EXTERN
+           'ANOTHERSTATEMENT4'
+           WITH C LINKAGE.
+           CONTINUE
+           .
 ])
 AT_CHECK([$COMPILE_ONLY prog3.cob], [1], [],
 [prog3.cob:11: error: CALL-CONVENTION and WITH LINKAGE are mutually exclusive

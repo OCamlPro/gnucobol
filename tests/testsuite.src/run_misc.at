@@ -933,11 +933,11 @@ AT_DATA([prog.cob], [
        01 G.
          02 X           PIC X OCCURS 1 INDEXED BY I.
        PROCEDURE        DIVISION.
-           IF I < (I + 2)
-             DISPLAY "OK" NO ADVANCING
-             END-DISPLAY
-           END-IF.
-           STOP RUN.
+         IF I < (I + 2)
+           DISPLAY "OK" NO ADVANCING
+           END-DISPLAY
+         END-IF.
+         STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -957,12 +957,12 @@ AT_DATA([prog.cob], [
        01 X-X           PIC XXXX VALUE "0001".
        01 X-9           PIC 9999 COMP VALUE 1.
        PROCEDURE        DIVISION.
-           IF X-X = X-9
-              STOP RUN
-           END-IF.
-           DISPLAY "NG" NO ADVANCING
-           END-DISPLAY
-           STOP RUN.
+         IF X-X = X-9
+            STOP RUN
+         END-IF.
+         DISPLAY "NG" NO ADVANCING
+         END-DISPLAY
+         STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -2753,8 +2753,8 @@ AT_DATA([prog.cob], [
        01  WS-KEYWORD               PIC X(32).
        01  WS-POINTER               PIC 99.
        PROCEDURE       DIVISION.
-           MOVE  '        10  AF-RECORD-TYPE-SEQUENCE-04     PIC   9(05)
-      -          ' COMP-3.'
+           MOVE
+       '        10  AF-RECORD-TYPE-SEQUENCE-04     PIC   9(05) COMP-3.'
                   TO WS-LAY-RECORD.
            MOVE 1 TO WS-POINTER.
            PERFORM 0001-SUB.
@@ -3410,13 +3410,13 @@ AT_DATA([prog.cob], [
 
         PROCEDURE DIVISION.
 
-            ENTRY 'ent1'.
-            DISPLAY VAR1 END-DISPLAY
-            GOBACK.
+        ENTRY 'ent1'.
+        DISPLAY VAR1 END-DISPLAY
+        GOBACK.
 
-            ENTRY 'ent2'.
-            DISPLAY VAR2 END-DISPLAY
-            GOBACK.
+        ENTRY 'ent2'.
+        DISPLAY VAR2 END-DISPLAY
+        GOBACK.
 ])
 
 AT_DATA([prog1.cob], [
@@ -3431,13 +3431,13 @@ AT_DATA([prog1.cob], [
 
         PROCEDURE DIVISION.
 
-            ENTRY 'ent2'.
-            DISPLAY VAR2 END-DISPLAY
-            GOBACK.
+        ENTRY 'ent2'.
+        DISPLAY VAR2 END-DISPLAY
+        GOBACK.
 
-            ENTRY 'ent3'.
-            DISPLAY VAR3 END-DISPLAY
-            GOBACK.
+        ENTRY 'ent3'.
+        DISPLAY VAR3 END-DISPLAY
+        GOBACK.
 ])
 
 AT_DATA([main-prog.cob], [
@@ -3447,11 +3447,11 @@ AT_DATA([main-prog.cob], [
         WORKING-STORAGE SECTION.
         PROCEDURE DIVISION.
 
-            CALL 'ent1' END-CALL
-            CALL 'ent2' END-CALL
-            CALL 'ent3' END-CALL
+        CALL 'ent1' END-CALL
+        CALL 'ent2' END-CALL
+        CALL 'ent3' END-CALL
 
-            STOP RUN.
+        STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
@@ -3478,27 +3478,27 @@ AT_DATA([prog.cob], [
        01 PROGRAM-LINK         USAGE PROGRAM-POINTER.
 
        PROCEDURE DIVISION.
-           SET PROGRAM-LINK TO ENTRY "subprogram"
-           IF PROGRAM-LINK EQUAL NULL THEN
-               DISPLAY "error: no subprogram linkage" UPON SYSERR
-               END-DISPLAY
-           ELSE
-               CALL PROGRAM-LINK
-                 ON EXCEPTION
-                    DISPLAY "hard error: unable to invoke subprogram"
-                       UPON SYSERR
-                    END-DISPLAY
-               END-CALL
-               DISPLAY RETURN-CODE WITH NO ADVANCING
-               END-DISPLAY
-           END-IF
-           GOBACK.
+       SET PROGRAM-LINK TO ENTRY "subprogram"
+       IF PROGRAM-LINK EQUAL NULL THEN
+           DISPLAY "error: no subprogram linkage" UPON SYSERR
+           END-DISPLAY
+       ELSE
+           CALL PROGRAM-LINK
+               ON EXCEPTION
+                   DISPLAY "hard error: unable to invoke subprogram"
+                      UPON SYSERR
+                   END-DISPLAY
+           END-CALL
+           DISPLAY RETURN-CODE WITH NO ADVANCING
+           END-DISPLAY
+       END-IF
+       GOBACK.
 
        ENTRY "subprogram".
            DISPLAY "subprogram" WITH NO ADVANCING
            END-DISPLAY
            SET RETURN-CODE TO 42
-           .
+       .
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -6566,12 +6566,12 @@ AT_DATA([prog.cob], [
        01 WS-PAGE-NUMBER PIC 9(4) COMP-3 VALUE ZERO.
        01 WS-LINE-NUMBER PIC 9(3) VALUE ZERO.
        PROCEDURE DIVISION.
-           PERFORM VARYING WS-LINE-NUMBER FROM 1 BY 1
-                     UNTIL WS-LINE-NUMBER > 10
-           ADD 1 TO WS-PAGE-NUMBER
-           DISPLAY WS-PAGE-NUMBER
-           END-PERFORM.
-           STOP RUN RETURNING 0.
+       PERFORM VARYING WS-LINE-NUMBER FROM 1 BY 1
+                 UNTIL WS-LINE-NUMBER > 10
+       ADD 1 TO WS-PAGE-NUMBER
+       DISPLAY WS-PAGE-NUMBER
+       END-PERFORM.
+       STOP RUN RETURNING 0.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -6608,18 +6608,18 @@ AT_DATA([prog.cob], [
        LINKAGE          SECTION.
        01 Y2            PIC X(4).
        PROCEDURE        DIVISION.
-           SET P-XX-1 TO ADDRESS OF XX-1
-           SET P-XX-2 TO ADDRESS OF XX-2
-           SET ADDRESS OF Y2 TO ADDRESS OF XX-1
-           SET ADDRESS OF Y2 UP BY 4
-           IF Y2 NOT = XX-2
-              DISPLAY "Test 2 '" Y2 "'"
-              END-DISPLAY
-           END-IF
-           IF ADDRESS OF Y2 NOT = P-XX-2
-              DISPLAY "NOK"
-           END-IF
-           STOP RUN.
+         SET P-XX-1 TO ADDRESS OF XX-1
+         SET P-XX-2 TO ADDRESS OF XX-2
+         SET ADDRESS OF Y2 TO ADDRESS OF XX-1
+         SET ADDRESS OF Y2 UP BY 4
+         IF Y2 NOT = XX-2
+            DISPLAY "Test 2 '" Y2 "'"
+            END-DISPLAY
+         END-IF
+         IF ADDRESS OF Y2 NOT = P-XX-2
+            DISPLAY "NOK"
+         END-IF
+         STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -13123,24 +13123,24 @@ AT_DATA([prog.cob], [
            DEPENDING ON JUMP-ENTRY
            DISPLAY 'NOT JUMPED'
            GOBACK.
-           ENTRY FOR GO TO 'STMT01'
-               DISPLAY 'STMT01'
-           ENTRY FOR GO TO 'STMT02'
-               PERFORM 3 TIMES
-           ENTRY FOR GO TO 'STMT03'
-                  DISPLAY 'STMT03'
-           ENTRY FOR GO TO 'STMT04'  DISPLAY 'STMT04'
-                  IF EXT-MODUS EXIT PERFORM END-IF
-               END-PERFORM
-           ENTRY FOR GO TO 'STMT05'
-               DISPLAY 'STMT05'
-               SUBTRACT 1 FROM JUMP-ENTRY
-               GO TO MAIN.
+       ENTRY FOR GO TO 'STMT01'
+           DISPLAY 'STMT01'
+       ENTRY FOR GO TO 'STMT02'
+           PERFORM 3 TIMES
+       ENTRY FOR GO TO 'STMT03'
+              DISPLAY 'STMT03'
+       ENTRY FOR GO TO 'STMT04'  DISPLAY 'STMT04'
+              IF EXT-MODUS EXIT PERFORM END-IF
+           END-PERFORM
+       ENTRY FOR GO TO 'STMT05'
+           DISPLAY 'STMT05'
+           SUBTRACT 1 FROM JUMP-ENTRY
+           GO TO MAIN.
 
 ])
 
 # TODO: move to syntax checks, together with all expected error messages
-AT_CHECK([$COMPILE -std=mf-strict prog.cob], [1], [],
+AT_CHECK([$COMPILE -std=mf-strict -floose-area-a=ok prog.cob], [1], [],
 [prog.cob:10: error: ENTRY FOR GO TO does not conform to Micro Focus COBOL
 prog.cob: in paragraph 'MAIN':
 prog.cob:18: error: ENTRY FOR GO TO does not conform to Micro Focus COBOL

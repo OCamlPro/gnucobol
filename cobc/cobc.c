@@ -8807,7 +8807,10 @@ main (int argc, char **argv)
 
 	/* Reset source format in case text column has been configured manually. */
 	cobc_set_source_format (cobc_get_source_format ());
-	cb_flag_preproc_area_a |= cb_compile_level != CB_LEVEL_PREPROCESS;
+
+	/* Force emission of Area A tokens if required (non-free format mode only) */
+	cobc_enable_area_a_tokens (cb_flag_preproc_area_a &&
+				   cb_compile_level != CB_LEVEL_PREPROCESS);
 
 	memset (cb_listing_header, 0, sizeof (cb_listing_header));
 	/* If -P=file specified, all lists go to this file */

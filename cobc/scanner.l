@@ -305,6 +305,20 @@ static void *	copy_literal (cb_tree l);
 	}
 }
 
+<*>\n"#AREA_A"\n[[:space:]]*/[^[:alnum:][:space:]#] {
+	/* We exclude the `#` from the trail to avoid considering a subsequent
+	   `#line` as a punctuation.  Another alternative may be to add a
+	   mandatory space at the end of the pattern, as pre-processed lines are
+	   usually (?) prefixed with a space (does this hold for every source
+	   format?). */
+	/* <*>\n"#AREA_A"[[:space:]]*[ ]/[^[:alnum:][:space:]] { */
+	count_lines (yytext);
+	cb_source_line -= 2;
+	if (cobc_in_procedure) {
+		(void) cb_verify (cb_loose_area_a, _("punctuation in Area A"));
+	}
+}
+
 <*>\n"#AREA_A"\n {
 	if (cobc_in_procedure) {
 		last_token_is_dot = 1; /* always assume we've just seen a dot. */

@@ -3603,11 +3603,11 @@ _program_body:
   }
 ;
 
-_area_a: /* empty */ | area_a_p;
-area_a_p: TOK_AREA_A | TOK_AREA_A area_a_p;
+_area_a: /* empty */ | area_a_toks;
+area_a_toks: TOK_AREA_A | TOK_AREA_A area_a_toks;
 _dot_or_else_area_a:
   TOK_DOT _area_a
-| area_a_p
+| TOK_AREA_A
   {
 	  if (cb_relaxed_syntax_checks) {
 		  cb_warning (COBC_WARN_FILLER, _("missing '.' above this line"));
@@ -3615,6 +3615,7 @@ _dot_or_else_area_a:
 		  cb_error (_("missing '.' above this line"));
 	  }
   }
+  _area_a
 ;
 
 /* IDENTIFICATION DIVISION */

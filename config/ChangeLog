@@ -1,4 +1,8 @@
 
+2022-07-20  Nicolas Berthier <nicolas.berther@ocamlpro.com>
+
+	* general: added option loose-area-a
+
 2022-03-11  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* general: add a stop-error-statement option to allow configuring

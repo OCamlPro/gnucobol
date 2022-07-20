@@ -1292,8 +1292,8 @@ AT_DATA([prog.cob], [
        PROGRAM-ID.      prog.
        DATA DIVISION.
        PROCEDURE        DIVISION.
-           CALL 'module'
-           STOP RUN.
+       CALL 'module'
+       STOP RUN.
 ])
 
 AT_DATA([module.c], [
@@ -3901,38 +3901,38 @@ AT_DATA([prog.cob], [
 
         PROCEDURE DIVISION.
 
-            MOVE 5000 TO P-FIELD1.
-            ADD 5 TO P-FIELD1 END-ADD
-            IF P-FIELD1 NOT = 5000
-                DISPLAY "Error: Add 5 to PIC 99PPP."
-                END-DISPLAY
-            END-IF
-            CALL "dump" USING P-FIELD1 END-CALL
+        MOVE 5000 TO P-FIELD1.
+        ADD 5 TO P-FIELD1 END-ADD
+        IF P-FIELD1 NOT = 5000
+            DISPLAY "Error: Add 5 to PIC 99PPP."
+            END-DISPLAY
+        END-IF
+        CALL "dump" USING P-FIELD1 END-CALL
 
-            ADD 5000 TO P-FIELD1 END-ADD
-            IF P-FIELD1 NOT = 10000
-                DISPLAY "Error: Add 5000 to PIC 99PPP."
-                END-DISPLAY
-            END-IF
-            CALL "dump" USING P-FIELD1 END-CALL
+        ADD 5000 TO P-FIELD1 END-ADD
+        IF P-FIELD1 NOT = 10000
+            DISPLAY "Error: Add 5000 to PIC 99PPP."
+            END-DISPLAY
+        END-IF
+        CALL "dump" USING P-FIELD1 END-CALL
 
-            MOVE 0.00055 TO P-FIELD2.
-            ADD 0.00033 TO P-FIELD2 END-ADD
-            IF P-FIELD2 NOT = 0.00088
-                DISPLAY "Error: Add 0.00033 to PIC PPP99."
-                END-DISPLAY
-            END-IF
-            CALL "dump" USING P-FIELD2 END-CALL
+        MOVE 0.00055 TO P-FIELD2.
+        ADD 0.00033 TO P-FIELD2 END-ADD
+        IF P-FIELD2 NOT = 0.00088
+            DISPLAY "Error: Add 0.00033 to PIC PPP99."
+            END-DISPLAY
+        END-IF
+        CALL "dump" USING P-FIELD2 END-CALL
 
-            MOVE 0.00055 TO P-FIELD2.
-            ADD 0.00300 TO P-FIELD2 END-ADD
-            IF P-FIELD2 NOT = 0.00055
-                DISPLAY "Error: Add 0.00300 to PIC PPP99."
-                END-DISPLAY
-            END-IF
-            CALL "dump" USING P-FIELD2 END-CALL
+        MOVE 0.00055 TO P-FIELD2.
+        ADD 0.00300 TO P-FIELD2 END-ADD
+        IF P-FIELD2 NOT = 0.00055
+            DISPLAY "Error: Add 0.00300 to PIC PPP99."
+            END-DISPLAY
+        END-IF
+        CALL "dump" USING P-FIELD2 END-CALL
 
-            STOP RUN.
+        STOP RUN.
 
 ])
 
@@ -4307,24 +4307,24 @@ AT_DATA([prog.cob], [
           05 FIELD-D           PIC 9.
 
        PROCEDURE DIVISION.
-           ADD CORRESPONDING GROUP-1 TO GROUP-2.
-           IF FIELD-A IN GROUP-2 NOT EQUAL 1 THEN
-               DISPLAY "BAD FIELD-A " FIELD-A IN GROUP-2
-               END-DISPLAY
-           END-IF.
-           IF FIELD-B IN GROUP-2 NOT EQUAL 2 THEN
-               DISPLAY "BAD FIELD-B " FIELD-B IN GROUP-2
-               END-DISPLAY
-           END-IF.
-           IF FIELD-C IN GROUP-2 NOT EQUAL 3 THEN
-               DISPLAY "BAD FIELD-C " FIELD-C IN GROUP-2
-               END-DISPLAY
-           END-IF.
-           IF FIELD-D IN GROUP-2 NOT EQUAL 0 THEN
-               DISPLAY "BAD FIELD-D " FIELD-D IN GROUP-2
-               END-DISPLAY
-           END-IF.
-           STOP RUN.
+       ADD CORRESPONDING GROUP-1 TO GROUP-2.
+       IF FIELD-A IN GROUP-2 NOT EQUAL 1 THEN
+           DISPLAY "BAD FIELD-A " FIELD-A IN GROUP-2
+           END-DISPLAY
+       END-IF.
+       IF FIELD-B IN GROUP-2 NOT EQUAL 2 THEN
+           DISPLAY "BAD FIELD-B " FIELD-B IN GROUP-2
+           END-DISPLAY
+       END-IF.
+       IF FIELD-C IN GROUP-2 NOT EQUAL 3 THEN
+           DISPLAY "BAD FIELD-C " FIELD-C IN GROUP-2
+           END-DISPLAY
+       END-IF.
+       IF FIELD-D IN GROUP-2 NOT EQUAL 0 THEN
+           DISPLAY "BAD FIELD-D " FIELD-D IN GROUP-2
+           END-DISPLAY
+       END-IF.
+       STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -4355,24 +4355,24 @@ AT_DATA([prog.cob], [
           05 FIELD-D           PIC X VALUE "A".
 
        PROCEDURE DIVISION.
-           SUBTRACT CORRESPONDING GROUP-2 FROM GROUP-1.
-           IF FIELD-A IN GROUP-2 NOT EQUAL 1 THEN
-               DISPLAY "BAD FIELD-A " FIELD-A IN GROUP-2
-               END-DISPLAY
-           END-IF.
-           IF FIELD-B IN GROUP-2 NOT EQUAL 2 THEN
-               DISPLAY "BAD FIELD-B " FIELD-B IN GROUP-2
-               END-DISPLAY
-           END-IF.
-           IF FIELD-C IN GROUP-2 NOT EQUAL 3 THEN
-               DISPLAY "BAD FIELD-C " FIELD-C IN GROUP-2
-               END-DISPLAY
-           END-IF.
-           IF FIELD-D IN GROUP-2 NOT EQUAL "A" THEN
-               DISPLAY "BAD FIELD-D " FIELD-D IN GROUP-2
-               END-DISPLAY
-           END-IF.
-           STOP RUN.
+       SUBTRACT CORRESPONDING GROUP-2 FROM GROUP-1.
+       IF FIELD-A IN GROUP-2 NOT EQUAL 1 THEN
+           DISPLAY "BAD FIELD-A " FIELD-A IN GROUP-2
+           END-DISPLAY
+       END-IF.
+       IF FIELD-B IN GROUP-2 NOT EQUAL 2 THEN
+           DISPLAY "BAD FIELD-B " FIELD-B IN GROUP-2
+           END-DISPLAY
+       END-IF.
+       IF FIELD-C IN GROUP-2 NOT EQUAL 3 THEN
+           DISPLAY "BAD FIELD-C " FIELD-C IN GROUP-2
+           END-DISPLAY
+       END-IF.
+       IF FIELD-D IN GROUP-2 NOT EQUAL "A" THEN
+           DISPLAY "BAD FIELD-D " FIELD-D IN GROUP-2
+           END-DISPLAY
+       END-IF.
+       STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [],
