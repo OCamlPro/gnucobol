@@ -180,6 +180,8 @@ static void *	copy_literal (cb_tree l);
 
 %}
 
+AREA_A		\n"#AREA_A"\n
+
 %s DECIMAL_IS_PERIOD DECIMAL_IS_COMMA
 %x PICTURE_STATE FUNCTION_STATE
 
@@ -305,21 +307,20 @@ static void *	copy_literal (cb_tree l);
 	}
 }
 
-<*>\n"#AREA_A"\n[[:space:]]*/[^[:alnum:][:space:]#] {
+<*>{AREA_A}[[:space:]]*/[^[:alnum:][:space:]#] {
 	/* We exclude the `#` from the trail to avoid considering a subsequent
 	   `#line` as a punctuation.  Another alternative may be to add a
 	   mandatory space at the end of the pattern, as pre-processed lines are
 	   usually (?) prefixed with a space (does this hold for every source
 	   format?). */
 	/* <*>\n"#AREA_A"[[:space:]]*[ ]/[^[:alnum:][:space:]] { */
-	count_lines (yytext);
-	cb_source_line -= 2;
+	count_lines (yytext + 9); /* skip "\n#area_a\n" */
 	if (cobc_in_procedure) {
 		(void) cb_verify (cb_loose_area_a, _("punctuation in Area A"));
 	}
 }
 
-<*>\n"#AREA_A"\n {
+<*>{AREA_A} {
 	if (cobc_in_procedure) {
 		last_token_is_dot = 1; /* always assume we've just seen a dot. */
 		return TOK_AREA_A;
@@ -1108,7 +1109,7 @@ H#[0-9A-Za-z]+ {
 	RETURN_TOK (EXPONENTIATION);
 }
 
-"."(([ \n]|\n"#AREA_A"\n)*".")* {
+"."(([ \n]|{AREA_A})*".")* {
 	/* Additional Area A markers need to be consumed here due to
 	   COPY/REPLACE statements starting in Area A. */
 	if (last_token_is_dot || strlen (yytext) > 1) {
