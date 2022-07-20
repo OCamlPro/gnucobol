@@ -2223,6 +2223,8 @@ set_record_size (cb_tree min, cb_tree max)
 
 %}
 
+%token TOKEN_EOF 0 "end of file"
+
 %token TOK_AREA_A "text in Area A"
 
 %token THREEDIMENSIONAL	"3D"
