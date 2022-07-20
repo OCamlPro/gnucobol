@@ -1,4 +1,8 @@
 
+2022-07-20  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* .github/workflows: fix handling of quotes in testuite artifact name
+
 2022-07-07  Simon Sobisch <simonsobisch@gnu.org>
 
 	* .github/workflows: CI now emits a coverage report artifact
