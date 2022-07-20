@@ -5618,14 +5618,16 @@ AT_DATA([prog.cob], [
        1 W-NESTED.
          2 X-GRP.
            3 X-0       PICTURE X VALUE "0".
-           3 X-V       PICTURE LX(10) DEPENDING ON LGX VALUE SPACES.
+           3 X-V       PICTURE LX(10) DEPENDING ON LGX.
            3 X-1       PICTURE X VALUE "1".
        1 W-LGS.
           2 LGX         USAGE COMP-1 VALUE 10.
           2 LGY         PIC 9 VALUE 9.
+       1 W-LEN          USAGE COMP-1.
        PROCEDURE        DIVISION.
        MAIN.
            MOVE SPACES TO W-DATA
+           MOVE SPACES TO X-V
            IF X-DAT   NOT EQUAL "          " OR
               X-ALPHA NOT EQUAL "          " OR
               Y-DAT   NOT EQUAL "         " OR
@@ -5647,21 +5649,21 @@ AT_DATA([prog.cob], [
            END-IF
            MOVE ".........." TO X-DAT
            MOVE "XXXXXXXXXX" TO X-ALPHA
-           MOVE "YYYYYYYYY" TO Y-DAT
-           MOVE "^^^^^^^^^" TO Y-ALPHA
+           MOVE "999999999" TO Y-DAT
+           MOVE "AAAAAAAAA" TO Y-ALPHA
            IF X-DAT   NOT EQUAL "....." OR
               X-ALPHA NOT EQUAL "XXXXX" OR
-              Y-DAT   NOT EQUAL "Y" OR
-              Y-ALPHA NOT EQUAL "^"
+              Y-DAT   NOT EQUAL "9" OR
+              Y-ALPHA NOT EQUAL "A"
               DISPLAY "MOVES FROM LITERALS FAILED"
               PERFORM SHOW-VARS
            END-IF
            MOVE X-DAT TO Y-DAT
-           MOVE Y-ALPHA TO X-DAT
-           IF X-DAT   NOT EQUAL "^    " OR
-              X-ALPHA NOT EQUAL "XXXXX" OR
+           MOVE Y-ALPHA TO X-ALPHA
+           IF X-DAT   NOT EQUAL "....." OR
+              X-ALPHA NOT EQUAL "A    " OR
               Y-DAT   NOT EQUAL "." OR
-              Y-ALPHA NOT EQUAL "^"
+              Y-ALPHA NOT EQUAL "A"
               DISPLAY "MOVES FROM/TO VARS FAILED"
               PERFORM SHOW-VARS
            END-IF
@@ -5673,15 +5675,16 @@ AT_DATA([prog.cob], [
               PERFORM SHOW-VARS
            END-IF
            MOVE 1 TO LGX
-      *    IF LENGTH OF X-ALPHA NOT EQUAL 10
-      *       DISPLAY "UNEXPECTED RESULT FOR 'LENGTH OF X-ALPHA': "
-      *               LENGTH OF X-ALPHA
+      *    COMPUTE W-LEN = LENGTH OF X-DAT
+      *    IF W-LEN NOT EQUAL 1
+      *       DISPLAY "UNEXPECTED RESULT FOR 'LENGTH OF X-DAT': "
+      *               W-LEN
       *       PERFORM SHOW-VARS
       *    END-IF
-           IF FUNCTION LENGTH (X-ALPHA) NOT EQUAL 1
-              DISPLAY "UNEXPECTED RESULT FOR 'FUNCTION LENGTH "-
-                      "(X-ALPHA)': "
-                      FUNCTION LENGTH (X-ALPHA)
+           COMPUTE W-LEN = FUNCTION LENGTH (X-ALPHA)
+           IF W-LEN NOT EQUAL 1
+              DISPLAY "UNEXPECTED RESULT FOR 'FUNCTION LENGTH "
+                      "(X-ALPHA)': " W-LEN
               PERFORM SHOW-VARS
            END-IF
            STOP RUN
@@ -5749,15 +5752,17 @@ AT_DATA([corr.cob], [
        WORKING-STORAGE  SECTION.
        1 W-DATA.
          2 GA.
-           3 X1         PICTURE LX(5) DEPENDING ON LGX VALUE "AAAAA".
+           3 X1         PICTURE LX(5) DEPENDING ON LGX.
          2 GB.
-           3 X1         PICTURE LX(5) DEPENDING ON LGX VALUE "BBBBB".
+           3 X1         PICTURE LX(5) DEPENDING ON LGX.
          2 GC.
            3 X1         PICTURE X(5) VALUE "+++++".
        1 LGX            USAGE COMP-1 VALUE 5.
        1 CNT            USAGE COMP-1.
        PROCEDURE        DIVISION.
        MAIN.
+           MOVE "AAAAA" TO X1 OF GA
+           MOVE "BBBBB" TO X1 OF GB
            IF X1 OF GA NOT EQUAL "AAAAA" OR
               X1 OF GB NOT EQUAL "BBBBB"
               DISPLAY "GLOBAL INITIALIZATION FAILED"
@@ -5816,15 +5821,14 @@ AT_DATA([nested.cob], [
        WORKING-STORAGE  SECTION.
        1 W-DATA.
          2 A            OCCURS 4
-                        PICTURE LX(3) DEPENDING ON LGX
-                        VALUE "AAA".
+                        PICTURE LX(3) DEPENDING ON LGX.
          2 B            OCCURS 1 TO 10 DEPENDING ON LGY
-                        PICTURE LX(3) DEPENDING ON LGX
-                        VALUE "BBB".
+                        PICTURE LX(3) DEPENDING ON LGX.
        1 LGX            USAGE COMP-1 VALUE 3.
        1 LGY            USAGE COMP-1 VALUE 4.
        PROCEDURE        DIVISION.
        MAIN.
+           MOVE "AAAAAAAAAAAABBBBBBBBBBBB" TO W-DATA
            IF W-DATA NOT EQUAL "AAAAAAAAAAAABBBBBBBBBBBB" OR
               A (1)  NOT EQUAL "AAA"
               DISPLAY "GLOBAL INITIALIZATION FAILED"
@@ -5847,14 +5851,15 @@ AT_DATA([nested.cob], [
            END-IF
            MOVE 6 TO LGY
            MOVE 2 TO LGX
-           INITIALIZE B (5)
-           *> NO ODOSLIDE: W-DATA EQUAL "AAAAAAAAACCCBBBAAABBBBBB   BBB"
-           *>    ODOSLIDE: W-DATA EQUAL "AAAAAAAAACCCBBBAAABB"
+      *    Operand of 'INITIALIZE' may not have 'OCCURS DEPENDING ON':
+      *    INITIALIZE B (5)
+           MOVE SPACES TO B (5)
+      *    *> NO ODOSLIDE: W-DATA EQUAL "AAAAAAAAACCCBBBAAABBBBBB      "
+      *    *>    ODOSLIDE: W-DATA EQUAL "AAAAAAAAACCCBBBAAABB"
            IF A (3)  NOT EQUAL "AA" OR
               A (4)  NOT EQUAL "CC" OR
               B (4)  NOT EQUAL "BB" OR
-              B (5)  NOT EQUAL "  " OR
-              B (6)  NOT EQUAL "BB"
+              B (5)  NOT EQUAL "  "
               DISPLAY "MOVE 2,6 TO LGX,Y; INITIALIZE B (5); FAILED"
               PERFORM SHOW-VARS
            END-IF
@@ -5885,16 +5890,18 @@ AT_DATA([redefines.cob], [
           2 Y1-DAT      REDEFINES X-DAT PICTURE LX(5) DEPENDING ON LGY.
           2 Y2-DAT      REDEFINES X-DAT PICTURE LX(5) DEPENDING ON LGY.
           2 UNUSED-2    PIC X VALUE "!".
-          2 Z-DAT       PICTURE LX(7) DEPENDING ON LGZ VALUE ".......".
+          2 Z-DAT       PICTURE LX(7) DEPENDING ON LGZ.
           2 T-DAT       REDEFINES Z-DAT PICTURE LX(7) DEPENDING ON LGT.
           2 UNUSED-3    PIC X VALUE ".".
        1 W-LGS.
           2 LGX         PIC 99 VALUE 10.
           2 LGY         PIC 9 VALUE 5.
-          2 LGZ         PIC 9 VALUE 3.
+          2 LGZ         PIC 9 VALUE 7.
           2 LGT         PIC 9 VALUE 5.
        PROCEDURE        DIVISION.
        MAIN.
+           MOVE "......." TO Z-DAT
+           MOVE 3 TO LGZ
            MOVE "0123456789" TO X-DAT
            IF Y1-DAT NOT EQUAL "01234" OR
               Y2-DAT NOT EQUAL "01234"

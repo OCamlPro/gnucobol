@@ -2887,6 +2887,11 @@ static int
 validate_field_value (struct cb_field *f)
 {
 	if (f->values) {
+		if (f->flag_picture_l) {
+			cb_error_x (CB_TREE (f),
+				    _("field with PICTURE L may not have "
+				      "a VALUE clause"));
+		}
 		validate_move (CB_VALUE (f->values), CB_TREE (f), 1, NULL);
 	}
 
