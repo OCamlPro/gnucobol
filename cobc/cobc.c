@@ -8809,8 +8809,8 @@ main (int argc, char **argv)
 	cobc_set_source_format (cobc_get_source_format ());
 
 	/* Force emission of Area A tokens if required (non-free format mode only) */
-	cobc_enable_area_a_tokens (cb_flag_preproc_area_a &&
-				   cb_compile_level != CB_LEVEL_PREPROCESS);
+	cobc_enable_area_a_tokens (cb_compile_level == CB_LEVEL_PREPROCESS &&
+				   cb_flag_preproc_area_a);
 
 	memset (cb_listing_header, 0, sizeof (cb_listing_header));
 	/* If -P=file specified, all lists go to this file */
