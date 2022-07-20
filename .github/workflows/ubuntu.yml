@@ -63,7 +63,7 @@ jobs:
         run: |
           cd _build
           ../configure --enable-cobc-internal-checks --enable-hardening --prefix ${INSTALL_PATH}
-          echo "VERSION=PACKAGE_VERSION" | cpp -P -imacros config.h >> $GITHUB_ENV
+          echo "VERSION=PACKAGE_VERSION" | cpp -P -imacros config.h | tr -d \" >> $GITHUB_ENV
 
       - name: Upload config.log
         uses: actions/upload-artifact@v3
