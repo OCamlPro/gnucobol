@@ -2891,7 +2891,6 @@ validate_field_value (struct cb_field *f)
 			cb_error_x (CB_TREE (f),
 				    _("%s and %s are mutually exclusive"),
 				    "PICTURE L", "VALUE");
-			cobc_parse_free (f->values);
 			f->values = NULL;
 		} else {
 			validate_move (CB_VALUE (f->values), CB_TREE (f), 1, NULL);
