@@ -6,7 +6,7 @@
 	  dedicated TOK_AREA_A token to detect missing periods in PROCEDURE
 	  DIVISION
 	* config.def: add option loose-area-a to configure strictness check for
-	  Area A contents (for now: only '.' prefix is disallowed)
+	  Area A contents
 	* pplex.l, cobc.h (cobc_enable_area_a_tokens): new function
 	* flag.def, cobc.c: new flag -fpreproc-area-a, to explicitly enable
 	  area A markers in preprocessed output (-E)
