@@ -369,6 +369,9 @@ CB_CONFIG_SUPPORT (cb_record_delim_with_fixed_recs, "record-delim-with-fixed-rec
 CB_CONFIG_SUPPORT (cb_missing_statement, "missing-statement",
 	_("missing statement (e.g. empty IF / PERFORM)"))
 
+CB_CONFIG_SUPPORT (cb_loose_area_a, "loose-area-a",
+	_("allow any text in Area A, when source is in non-free format"))
+
 CB_CONFIG_SUPPORT (cb_zero_length_lit, "zero-length-literals",
 	_("zero-length literals, e.g. '' and \"\""))
 

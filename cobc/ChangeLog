@@ -1,4 +1,16 @@
 
+2022-07-19  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	FR #309 raise warnings/errors when some periods are missing
+	* pplex.l, scanner.l, parser.y: check for empty Area A, and use a
+	  dedicated TOK_AREA_A token to detect missing periods in PROCEDURE
+	  DIVISION
+	* config.def: add option loose-area-a to configure strictness check for
+	  Area A contents
+	* pplex.l, cobc.h (cobc_enable_area_a_tokens): new function
+	* flag.def, cobc.c: new flag -fpreproc-area-a, to explicitly enable
+	  area A markers in preprocessed output (-E)
+
 2022-07-06  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* cobc.h: define function purity attribute COB_A_PURE
@@ -48,6 +60,10 @@
 
 	* cobc.c, config.def, flag.def, ppparse.y: requalify indicator-column as
 	  a flag instead of a dialect option
+
+2022-06-23  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* pplex.l: detect pseudo-text words that start in area A
 
 2022-06-17  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 

@@ -141,6 +141,10 @@ CB_FLAG (cb_flag_traceall, 1, "traceall",
 CB_FLAG (cb_flag_syntax_only, 1, "syntax-only",
 	_("  -fsyntax-only         syntax error checking only; don't emit any output"))
 
+CB_FLAG (cb_flag_preproc_area_a, 1, "preproc-area-a",
+	_("  -fpreproc-area-a      include '#area_a' markers in preprocessed output\n"
+	  "                        * only effective when -E is given"))
+
 CB_FLAG (cb_flag_debugging_line, 1, "debugging-line",
 	_("  -fdebugging-line      enable debugging lines\n"
 	  "                        * 'D' in indicator column or floating >>D"))

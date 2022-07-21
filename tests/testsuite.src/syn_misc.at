@@ -4542,6 +4542,204 @@ prog.cob:12: warning: ignoring redundant .
 AT_CLEANUP
 
 
+AT_SETUP([missing periods])
+AT_KEYWORDS([misc missing-periods])
+
+AT_DATA([prog.cob],
+[       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+       PROCEDURE DIVISION.
+	   PERFORM SEC-1.
+	   STOP RUN
+       SEC-1 SECTION.
+           DISPLAY "OK" NO ADVANCING
+	   END-DISPLAY.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:10: error: 'SEC-1' is not defined
+prog.cob:10: error: syntax error, unexpected SECTION
+])
+AT_CHECK([$COMPILE -floose-area-a=skip -frelax-syntax-checks prog.cob], [0], [],
+[prog.cob:10: warning: missing '.' above this line
+])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
+
+AT_DATA([prog_err.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+       PROCEDURE DIVISION.
+           PERFORM PAR-1.
+           PERFORM SEC-1.
+           STOP RUN
+
+       PAR-1.
+           PERFORM SEC-1.
+           DISPLAY KO NO ADVANCING
+
+       SEC-1 SECTION.
+           DISPLAY 1 NO ADVANCING
+       .
+])
+AT_CHECK([$COMPILE_ONLY -floose-area-a=warning -frelax-syntax-checks prog_err.cob], [1], [],
+[prog_err.cob:12: warning: missing '.' above this line
+prog_err.cob: in paragraph 'PAR-1':
+prog_err.cob:14: error: 'KO' is not defined
+prog_err.cob:16: warning: missing '.' above this line
+prog_err.cob: in section 'SEC-1':
+prog_err.cob:18: warning: punctuation in Area A used
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([missing periods with COPYs])
+AT_KEYWORDS([misc copy missing-periods])
+
+AT_DATA([ok.inc], [
+       01  OK  PIC XX VALUE "OK".
+])
+
+AT_DATA([sec-1.inc], [
+       SEC-1 SECTION.
+           DISPLAY OK NO ADVANCING
+])
+
+AT_DATA([sec-2.inc], [
+           SEC-2 SECTION.
+           DISPLAY OK NO ADVANCING.
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       COPY "ok.inc".
+
+       PROCEDURE DIVISION.
+           PERFORM SEC-1.
+           PERFORM SEC-2.
+           STOP RUN
+           COPY "sec-1.inc".
+       COPY "sec-2.inc".
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[sec-1.inc:2: error: 'SEC-1' is not defined
+sec-1.inc:2: error: syntax error, unexpected SECTION
+sec-2.inc:2: error: 'SEC-2' is not defined
+sec-2.inc:2: error: syntax error, unexpected SECTION
+])
+AT_CHECK([$COMPILE -floose-area-a=skip -frelax-syntax-checks prog.cob], [0], [],
+[sec-1.inc:2: warning: missing '.' above this line
+sec-2.inc: in section 'SEC-1':
+sec-2.inc:2: warning: missing '.' above this line
+])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OKOK], [])
+
+AT_DATA([prog_err.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       COPY "ok.inc".
+
+       PROCEDURE DIVISION.
+           PERFORM SEC-1.
+           PERFORM SEC-2.
+           PERFORM SEC-3.
+           STOP RUN
+           COPY "sec-1.inc".
+       COPY "sec-2.inc".
+       SEC-3 SECTION.
+           DISPLAY KO NO ADVANCING.
+])
+
+AT_CHECK([$COMPILE_ONLY -floose-area-a=skip -frelax-syntax-checks prog_err.cob], [1], [],
+[sec-1.inc:2: warning: missing '.' above this line
+sec-2.inc: in section 'SEC-1':
+sec-2.inc:2: warning: missing '.' above this line
+prog_err.cob: in section 'SEC-3':
+prog_err.cob:17: error: 'KO' is not defined
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([pseudotext replacement with text in area A])
+AT_KEYWORDS([misc gcos copy missing-periods])
+
+AT_DATA([ok.inc],
+[       01  REPLACE-ME
+       01  KO  PIC XX VALUE "KO".
+       PROCEDURE DIVISION.
+           PERFORM SEC-1.
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+           COPY "ok.inc" REPLACING == 01 REPLACE-ME == BY ==
+       01  OK PIC XX VALUE "OK". ==
+           .
+
+           PERFORM SEC-2.
+           STOP RUN
+       SEC-1 SECTION.
+           DISPLAY OK NO ADVANCING
+       SEC-2 SECTION.
+           DISPLAY OK NO ADVANCING.
+])
+
+AT_CHECK([$COMPILE -std=gcos prog.cob], [0], [],
+[prog.cob:13: warning: missing '.' above this line
+prog.cob: in section 'SEC-1':
+prog.cob:15: warning: missing '.' above this line
+])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OKOK], [])
+
+AT_DATA([prog_err.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+           COPY "ok.inc" REPLACING == 01 REPLACE-ME == BY ==
+       01  OK PIC XX VALUE "OK". ==
+           .
+
+           PERFORM SEC-2.
+           STOP RUN
+       SEC-1 SECTION.
+           DISPLAY OK NO ADVANCING
+       SEC-2 SECTION.
+           DISPLAY NOT-FOUND.
+])
+AT_CHECK([$COMPILE -std=gcos prog_err.cob], [1], [],
+[prog_err.cob:13: warning: missing '.' above this line
+prog_err.cob: in section 'SEC-1':
+prog_err.cob:15: warning: missing '.' above this line
+prog_err.cob: in section 'SEC-2':
+prog_err.cob:16: error: 'NOT-FOUND' is not defined
+])
+
+AT_CLEANUP
+
+
 AT_SETUP([IF-ELSE statement list with invalid syntax])
 AT_KEYWORDS([misc])
 
