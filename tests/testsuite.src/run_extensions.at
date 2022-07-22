@@ -5711,37 +5711,48 @@ AT_DATA([under.cob], [
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
        1 X              PICTURE LX(9) DEPENDING ON LGX.
-       2 LGX            PIC 9 VALUE 9.
+       1 LGX            PIC 9 VALUE 9.
        PROCEDURE        DIVISION.
        MAIN.
-           INITIALIZE X
            MOVE 0 TO LGX
-           DISPLAY X NO ADVANCING
+           DISPLAY X
            STOP RUN
            .
 ])
+AT_CHECK([$COMPILE under.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./under], [1], [],
+[libcob: under.cob:11: error: OCCURS DEPENDING ON 'LGX' out of bounds: 0
+note: minimum subscript for 'FILLER 1': 1
+])
+AT_CHECK([$COMPILE -fodoslide -o under-x under.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./under-x], [1], [],
+[libcob: under.cob:11: error: OCCURS DEPENDING ON 'LGX' out of bounds: 0
+note: minimum subscript for 'FILLER 1': 1
+])
+
 AT_DATA([over.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      over.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
        1 X              PICTURE LX(5) DEPENDING ON LGX.
-       2 LGX            PIC 9 VALUE 9.
+       1 LGX            PIC 9 VALUE 9.
        PROCEDURE        DIVISION.
        MAIN.
-           DISPLAY X NO ADVANCING
+           DISPLAY X
            STOP RUN
            .
 ])
-AT_CHECK([$COMPILE under.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./under], [0], [0])
-AT_CHECK([$COMPILE -fodoslide -o under-x under.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./under-x], [0], [0])
-
 AT_CHECK([$COMPILE over.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./over], [0], [9])
+AT_CHECK([$COBCRUN_DIRECT ./over], [1], [],
+[libcob: over.cob:10: error: OCCURS DEPENDING ON 'LGX' out of bounds: 9
+note: maximum subscript for 'FILLER 1': 5
+])
 AT_CHECK([$COMPILE -fodoslide -o over-x over.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./over-x], [0], [9])
+AT_CHECK([$COBCRUN_DIRECT ./over-x], [1], [],
+[libcob: over.cob:10: error: OCCURS DEPENDING ON 'LGX' out of bounds: 9
+note: maximum subscript for 'FILLER 1': 5
+])
 
 # MOVE CORRESPONDING
 

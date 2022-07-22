@@ -1252,7 +1252,6 @@ validate_occurs (const struct cb_field * const f)
 		/* Cache field for later checking */
 		cb_depend_check = cb_list_add (cb_depend_check, x);
 
-		/* CHECKME: && !f->flag_picture_l */
 		if (!cb_odoslide && !cb_complex_odo) {
 			/* The data item that contains a OCCURS DEPENDING clause shall not
 			   be subordinate to a data item that has an OCCURS clause */

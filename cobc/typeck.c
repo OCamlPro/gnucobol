@@ -2418,8 +2418,9 @@ cb_build_identifier (cb_tree x, const int subchk)
 
 		/* Run-time check for ODO (including all the fields subordinate items) */
 		if (CB_EXCEPTION_ENABLE (COB_EC_BOUND_SUBSCRIPT) && f->odo_level != 0) {
-			for (p = f; p && !p->flag_picture_l; p = p->children) {
+			for (p = f; p; p = p->children) {
 				if (p->depending && p->depending != cb_error_node
+				 && (p == f || p->parent == f || !p->parent->flag_picture_l)
 				 && !p->flag_unbounded) {
 					e1 = CB_BUILD_FUNCALL_5 ("cob_check_odo",
 						 cb_build_cast_int (p->depending),
