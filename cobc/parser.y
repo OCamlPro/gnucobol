@@ -7301,42 +7301,87 @@ volatile_clause:
 
 picture_clause:
   PICTURE	/* token from scanner, includes full picture definition */
-  _pic_locale_format
   {
 	check_repeated ("PICTURE", SYN_CLAUSE_4, &check_pic_duplicate);
 	current_field->pic = CB_PICTURE ($1);
-
-	if (CB_VALID_TREE ($2)) {
-		if (  (current_field->pic->category != CB_CATEGORY_NUMERIC
-		    && current_field->pic->category != CB_CATEGORY_NUMERIC_EDITED)
-		 || strpbrk (current_field->pic->orig, " CRDB-*") /* the standard seems to forbid also ',' */) {
-			cb_error_x ($1, _("a locale-format PICTURE string must only consist of '9', '.', '+', 'Z' and the currency-sign"));
-		} else {
-			/* TODO: check that not we're not within a CONSTANT RECORD */
-			CB_PENDING_X ($1, "locale-format PICTURE");
-		}
-	}
+  }
+  _pic_locale_format_or_depending_on
+  {
+	  if ((!current_field->pic || current_field->pic->variable_length) &&
+	      !current_field->flag_picture_l) {
+		  /* Current field with PIC L was not translated */
+		  cb_error_x (CB_TREE (current_field->pic),
+			      _("missing DEPENDING clause for PICTURE string with "
+				"'L' character"));
+	  }
   }
 ;
 
-_pic_locale_format:
+_pic_locale_format_or_depending_on:
   /* empty */
-  { $$ = NULL; }
-| LOCALE _is_locale_name SIZE _is integer  
+| LOCALE _is_locale_name SIZE _is integer
   {
-	/* $2 -> optional locale-name to be used */
-	$$ = $5;
+	  /* $2 -> optional locale-name to be used */
+	  if (CB_VALID_TREE ($5)) {
+		  if (  (current_field->pic->category != CB_CATEGORY_NUMERIC
+			 && current_field->pic->category != CB_CATEGORY_NUMERIC_EDITED)
+			|| strpbrk (current_field->pic->orig, " CRDBL-*") /* the standard seems to forbid also ',' */) {
+			  cb_error_x (CB_TREE (current_field->pic),
+				      _("a locale-format PICTURE string must only consist of '9', '.', '+', 'Z' and the currency-sign"));
+		  } else {
+			  /* TODO: check that not we're not within a CONSTANT RECORD */
+			  CB_PENDING_X ($1, "locale-format PICTURE");
+		  }
+	  }
+  }
+| DEPENDING _on reference
+  {
+	  cb_tree depending = $3;
+	  if (!current_field->pic->variable_length) {
+		  cb_error_x ($3, _("DEPENDING clause must either come with "
+				    "an OCCURS clause or a PICTURE string "
+				    "with 'L' character"));
+	  } else if (current_field->pic->category != CB_CATEGORY_ALPHABETIC &&
+		     current_field->pic->category != CB_CATEGORY_ALPHANUMERIC) {
+		  cb_error_x ($3, _("only USAGE DISPLAY may specify a "
+				    "variable-length PICTURE string"));
+	  } else if (current_storage == CB_STORAGE_SCREEN ||
+		     current_storage == CB_STORAGE_REPORT) {
+		  cb_error_x ($3, _("variable-length PICTURE string "
+				    "not allowed in %s"),
+			      enum_explain_storage (current_storage));
+	  } else {
+		  /* Implicitly translate `PIC Lc... DEPENDING N` (where
+		     `c` may actually only be `X` or `A`) into a group
+		     with a single sub-field `PIC c OCCURS 1 TO N`. */
+		  const char pic[2] = { current_field->pic->orig[1], 0};
+		  struct cb_field * const chld =
+			  CB_FIELD (cb_build_field (cb_build_filler ()));
+		  chld->pic = CB_PICTURE (cb_build_picture (pic));
+		  chld->storage = current_field->storage;
+		  chld->depending = depending;
+		  chld->flag_occurs = 1;
+		  chld->occurs_min = 1;
+		  chld->occurs_max = current_field->pic->size - 1;
+		  chld->parent = current_field;
+		  current_field->children = chld;
+		  cobc_parse_free (current_field->pic);
+		  current_field->pic = NULL;
+	  }
+	  /* Raise this flag in the error cases above, to avoid unrelated
+	     warning or error messages upon tentative validation of
+	     redefines.  */
+	  current_field->flag_picture_l = 1;
   }
 ;
 
 _is_locale_name:
   /* empty */
-| _is locale_name  
+| _is locale_name
   {
 	$$ = $2;
   }
 ;
-
 
 locale_name:
   WORD
@@ -7349,7 +7394,6 @@ locale_name:
 	}
   }
 ;
-
 
 /* TYPE TO clause, optional "TO", fixed to clean conflicts for screen-items */
 
@@ -7690,6 +7734,7 @@ report_occurs_clause:
   OCCURS integer _occurs_to_integer _times
   _occurs_depending _occurs_step
   {
+	current_field->depending = $5;
 	/* most of the field attributes are set when parsing the phrases */;
 	setup_occurs ();
 	setup_occurs_min_max ($2, $3);
@@ -7709,6 +7754,7 @@ occurs_clause:
   OCCURS integer _occurs_to_integer _times
   _occurs_depending _occurs_keys_and_indexed
   {
+	current_field->depending = $5;
 	/* most of the field attributes are set when parsing the phrases */;
 	setup_occurs ();
 	setup_occurs_min_max ($2, $3);
@@ -7758,10 +7804,8 @@ _occurs_integer_to:
 ;
 
 _occurs_depending:
-| DEPENDING _on reference
-  {
-	current_field->depending = $3;
-  }
+  /* empty */			{ $$ = NULL; }
+| DEPENDING _on reference	{ $$ = $3; }
 ;
 _capacity_in:
 | CAPACITY _in WORD

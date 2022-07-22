@@ -1260,6 +1260,7 @@ validate_occurs (const struct cb_field * const f)
 			/* The data item that contains a OCCURS DEPENDING clause shall not
 			   be subordinate to a data item that has an OCCURS clause */
 			for (p = f->parent; p; p = p->parent) {
+				if (p->flag_picture_l) continue;
 				if (p->flag_occurs) {
 					cb_error_x (CB_TREE (p),
 						    _("'%s' cannot have the OCCURS clause due to '%s'"),
@@ -1294,10 +1295,11 @@ validate_redefines (const struct cb_field * const f)
 	}
 
 	/* Check variable occurrence */
-	if (f->depending || cb_field_variable_size (f)) {
+	if (f->depending ||
+	    (!f->flag_picture_l && cb_field_variable_size (f))) {
 		cb_error_x (x, _("'%s' cannot be variable length"), f->name);
 	}
-	if (cb_field_variable_size (f->redefines)) {
+	if (!f->redefines->flag_picture_l && cb_field_variable_size (f->redefines)) {
 		cb_error_x (x, _("the original definition '%s' cannot be variable length"),
 			    f->redefines->name);
 	}
@@ -1314,7 +1316,11 @@ validate_group (struct cb_field *f)
 		group_error (x, "PICTURE");
 	}
 	if (f->flag_justified) {
-		group_error (x, "JUSTIFIED RIGHT");
+		if (!f->flag_picture_l)
+			group_error (x, "JUSTIFIED RIGHT");
+		else
+			cb_error_x (x, _("'%s' cannot have JUSTIFIED RIGHT clause"),
+				    cb_name (x));
 	}
 	if (f->flag_blank_zero) {
 		group_error (x, "BLANK WHEN ZERO");
@@ -2166,6 +2172,7 @@ validate_field_1 (struct cb_field *f)
 		validate_occurs (f);
 	}
 
+
 	if (f->level == 66) {
 		/* no check for redefines here */
 		return 0;
@@ -2883,7 +2890,14 @@ static int
 validate_field_value (struct cb_field *f)
 {
 	if (f->values) {
-		validate_move (CB_VALUE (f->values), CB_TREE (f), 1, NULL);
+		if (f->flag_picture_l) {
+			cb_error_x (CB_TREE (f),
+				    _("%s and %s are mutually exclusive"),
+				    "PICTURE L", "VALUE");
+			f->values = NULL;
+		} else {
+			validate_move (CB_VALUE (f->values), CB_TREE (f), 1, NULL);
+		}
 	}
 
 	if (f->children) {
