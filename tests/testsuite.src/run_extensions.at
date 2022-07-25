@@ -5667,20 +5667,21 @@ AT_DATA([prog.cob], [
               DISPLAY "MOVES FROM/TO VARS FAILED"
               PERFORM SHOW-VARS
            END-IF
+           MOVE "AAAAA" TO X-ALPHA
            MOVE 1 TO LGX
            INITIALIZE X-ALPHA
            MOVE 10 TO LGX
-           IF X-ALPHA NOT EQUAL "          "
+           IF X-ALPHA NOT EQUAL " AAAA     "
               DISPLAY "DIRECT VAR INITIALIZATION FAILED"
               PERFORM SHOW-VARS
            END-IF
            MOVE 1 TO LGX
-      *    COMPUTE W-LEN = LENGTH OF X-DAT
-      *    IF W-LEN NOT EQUAL 1
-      *       DISPLAY "UNEXPECTED RESULT FOR 'LENGTH OF X-DAT': "
-      *               W-LEN
-      *       PERFORM SHOW-VARS
-      *    END-IF
+           COMPUTE W-LEN = LENGTH OF X-DAT
+           IF W-LEN NOT EQUAL 10
+              DISPLAY "UNEXPECTED RESULT FOR 'LENGTH OF X-DAT': "
+                     W-LEN
+              PERFORM SHOW-VARS
+           END-IF
            COMPUTE W-LEN = FUNCTION LENGTH (X-ALPHA)
            IF W-LEN NOT EQUAL 1
               DISPLAY "UNEXPECTED RESULT FOR 'FUNCTION LENGTH "
@@ -5792,19 +5793,20 @@ AT_DATA([corr.cob], [
               DISPLAY "MOVE CORRESPONDING GC TO GA: FAILED"
               PERFORM SHOW-VARS
            END-IF
-      *    From pic-l to basic field: curr. size should be respected
+      *    From pic-l to basic field: curr. size is ignored
            MOVE CORRESPONDING GB TO GC
            INSPECT X1 OF GC TALLYING CNT FOR ALL "B"
-           IF X1 OF GC NOT EQUAL "BB   " OR
-              CNT      NOT EQUAL 2
+           IF X1 OF GC NOT EQUAL "BBBBB" OR
+              CNT      NOT EQUAL 5
               DISPLAY "MOVE CORRESPONDING GB TO GC: FAILED"
               PERFORM SHOW-VARS
            END-IF
-      *    From pic-l to pic-l: sender size should be respected
+      *    From pic-l to pic-l: sizes are ignored
            MOVE CORRESPONDING GA TO GB
            MOVE 0 TO CNT
            INSPECT X1 OF GB TALLYING CNT FOR ALL "+"
-           IF X1 OF GB NOT EQUAL "++" OR
+           MOVE 5 TO LGX
+           IF X1 OF GB NOT EQUAL "+++++" OR
               CNT      NOT EQUAL 2
               DISPLAY "MOVE CORRESPONDING GA TO GB: FAILED"
               PERFORM SHOW-VARS
@@ -5934,12 +5936,14 @@ AT_DATA([redefines.cob], [
                        T-DAT
               PERFORM SHOW-VARS
            END-IF
-      *    Initialize PICTURE L field: curr. size should be ignored
+      *    Initialize PICTURE L field: curr. size is ignored
            MOVE "???????" TO T-DAT
            INITIALIZE Z-DAT
-           IF T-DAT NOT EQUAL "       "
-              DISPLAY "UNEXPECTED T-DAT AFTER 'INITIALIZE Z-DAT': "
-                       T-DAT
+           MOVE 2 TO LGZ
+           IF T-DAT NOT EQUAL " ??????" OR
+              Z-DAT NOT EQUAL " ?"
+              DISPLAY "UNEXPECTED T-DAT/Z-DAT AFTER "
+                       "'INITIALIZE Z-DAT': " T-DAT "/" Z-DAT "*"
               PERFORM SHOW-VARS
            END-IF
            STOP RUN

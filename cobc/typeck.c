@@ -2886,7 +2886,7 @@ cb_build_length (cb_tree x)
 		if (f->flag_any_length) {
 			return cb_build_any_intrinsic (CB_LIST_INIT (x));
 		}
-		if (cb_field_variable_size (f) == NULL) {
+		if (f->flag_picture_l || cb_field_variable_size (f) == NULL) {
 			sprintf (buff, "%d", cb_field_size (x));
 			return cb_build_numeric_literal (0, buff, 0);
 		}
@@ -4604,7 +4604,7 @@ cb_validate_program_data (struct cb_program *prog)
 							cb_name (x), p->sister->name);
 						break;
 					}
-					p->flag_odo_relative = !q->parent->flag_picture_l;
+					p->flag_odo_relative = /* CHECKME: !q->parent->flag_picture_l */1;
 				}
 			}
 		}
@@ -7165,6 +7165,9 @@ emit_move_corresponding (cb_tree x1, cb_tree x2)
 			if (strcmp (f1->name, f2->name) == 0) {
 				t1 = cb_build_field_reference (f1, x1);
 				t2 = cb_build_field_reference (f2, x2);
+				if (f1->flag_picture_l) {
+					CB_REFERENCE (t1)->length = cb_int (f1->size);
+				}
 				if (f2->flag_picture_l) {
 					CB_REFERENCE (t2)->length = cb_int (f2->size);
 				}
@@ -9405,13 +9408,8 @@ cb_emit_initialize (cb_tree vars, cb_tree fillinit, cb_tree value,
 
 		f = CB_FIELD_PTR (x);
 		odo_level = 0;
-		while (!f->flag_picture_l && f->children)
+		while (f->children)
 			f = f->children;
-		if (f->flag_picture_l
-		 && CB_REFERENCE_P (x)
-		 && CB_REFERENCE   (x)->length == NULL) {
-			CB_REFERENCE (x)->length = cb_int (f->size);
-		}
 		for (p = f; p; p = p->parent) {
 			if (p->depending) {
 				odo_level++;
