@@ -1,4 +1,13 @@
 
+2022-07-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.h (cob_file_routines, cob_file_operation): moved defines to enum
+	* common.h (cob_file), fileio.c: adjusted to use new enums
+	* fileio (not_available_funcs): new io function set, returning status 91
+	* fileio (get_io_ptr): if function is not available change io functions
+	  to COB_IO_NOT_AVAIL to prevent follow-up SIGSEGVs and provide reasonable
+	  return value to the program
+
 2022-07-04  Ron Norman <rjn@inglenet.com>
 	* Updated Copyright date to include 2022
 	* Reverted back to using D-ISAM and V-ISAM names

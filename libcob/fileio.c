@@ -271,9 +271,29 @@ static struct cob_fileio_funcs relative_funcs = {
 	(void*)dummy_stub
 };
 
+static struct cob_fileio_funcs not_available_funcs = {
+	(void*)dummy_91,
+	(void*)dummy_91,
+	(void*)dummy_91,
+	(void*)dummy_91,
+	(void*)dummy_91,
+	(void*)dummy_91,
+	(void*)dummy_91,
+	(void*)dummy_91,
+	(void*)dummy_stub,
+	(void*)dummy_stub,
+	(void*)dummy_stub,
+	(void*)dummy_stub,
+	(void*)dummy_stub,
+	(void*)dummy_stub,
+	(void*)dummy_stub,
+	(void*)dummy_stub
+};
+
 static struct cob_fileio_funcs	*fileio_funcs[COB_IO_MAX] = {
 	&sequential_funcs, &lineseq_funcs, &relative_funcs,
-	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+	&not_available_funcs
 };
 
 #if defined (__CYGWIN__)
@@ -311,6 +331,7 @@ static struct {
 	{0,0,1,"ODBC",LIB_PRF "cobod" LIB_SUF, "cob_odbc_init_fileio",NULL},
 	{0,0,1,"OCI",LIB_PRF "coboc" LIB_SUF, "cob_oci_init_fileio",NULL},
 	{0,0,1,"LMDB",LIB_PRF "coblm" LIB_SUF, "cob_lmdb_init_fileio",NULL},
+	{0,0,0,"NOT AVAILABLE",NULL,NULL,NULL},
 	{0,0,0,NULL,NULL,NULL,NULL}
 };
 #ifdef	WITH_INDEX_EXTFH
@@ -381,12 +402,13 @@ isdirname (char *value)
 	return 0;
 }
 
-static COB_INLINE int
+static COB_INLINE enum cob_file_operation
 get_io_ptr (cob_file *f)
 {
 	if (fileio_funcs[f->io_routine] == NULL) {
 		cob_runtime_error (_("ERROR I/O routine %s is not present"),
 							io_rtns[f->io_routine].name);
+		f->io_routine = COB_IO_NOT_AVAIL;
 	}
 	return f->io_routine;
 }
@@ -659,7 +681,9 @@ indexed_file_type (cob_file *f, char *filename)
 	if(hbuf[0] == 0x33
 	&& hbuf[1] == 0xFE) {		/* Micro Focus format */
 		fclose(fdin);
-		return COB_IO_MFIDX4;	/* Currently not supported!! */
+		/* Currently not supported!! */
+		#define COB_IO_MFIDX4 COB_IO_NOT_AVAIL
+		return COB_IO_MFIDX4;
 	}
 	fclose(fdin);
 	return -1;
@@ -1654,7 +1678,7 @@ void
 cob_file_sync (cob_file *f)
 {
 	if (f->organization == COB_ORG_INDEXED) {
-		     fileio_funcs[get_io_ptr (f)]->iosync (&file_api, f);
+		fileio_funcs[get_io_ptr (f)]->iosync (&file_api, f);
 		return;
 	}
 	if (f->organization != COB_ORG_SORT) {
@@ -3132,7 +3156,7 @@ cob_file_save_status (cob_file *f, cob_field *fnstatus, const int status)
 	}
 
 	if (f->trace_io
-	 && f->last_operation != 0) {
+	 && f->last_operation != COB_LAST_NONE) {
 		/* If necessary open, so that I/O can be traced by itself */
 		cob_check_trace_file ();
 		fprintf (file_setptr->cob_trace_file, "%*s", indent-3, "");
@@ -3227,17 +3251,19 @@ cob_file_save_status (cob_file *f, cob_field *fnstatus, const int status)
 
 	if (f->io_stats
 	 && file_setptr->cob_stats_filename
-	 && f->last_operation > 0) {
-		if (f->last_operation <= 6) {
-			f->stats[f->last_operation-1].rqst_io++;
+	 && f->last_operation != COB_LAST_NONE) {
+		/* Gather stats for record related commands only */
+		if (f->last_operation < COB_LAST_OPEN) {
+			int stat = (int)f->last_operation - 1;
+			f->stats[stat].rqst_io++;
 			if (status != 0
 			 && status != 2) {
-				f->stats[f->last_operation-1].fail_io++;
+				f->stats[stat].fail_io++;
 			}
 		}
-		if (f->last_operation == COB_LAST_CLOSE) {	/* Write stats out on FILE Close */
+		/* Write stats out on FILE Close */
+		else if (f->last_operation == COB_LAST_CLOSE) {
 			FILE	*fo = NULL;
-			const char	*prcoma;
 			struct stat	st;
 			if (stat (file_setptr->cob_stats_filename, &st) == -1) {
 				fo = fopen (file_setptr->cob_stats_filename, "w");
@@ -3246,22 +3272,17 @@ cob_file_save_status (cob_file *f, cob_field *fnstatus, const int status)
 					iotype[COB_LAST_READ]	 = "READ";
 					iotype[COB_LAST_WRITE]	 = "WRITE";
 					iotype[COB_LAST_REWRITE] = "REWRITE";
-					iotype[COB_LAST_DELETE]  = "DELETE";
+					iotype[COB_LAST_DELETE]	 = "DELETE";
 					iotype[COB_LAST_START]	 = "START";
 					iotype[COB_LAST_READ_SEQ]= "READ_SEQ";
-					fprintf (fo, "%19s%s," ,"Time", " Source, FDSelect, ");
-					prcoma = "";
-					for (k=1; k <= 6; k++) {
-						fprintf (fo, "%s%s", prcoma, iotype[k]);
-						prcoma = ",";
+					fprintf (fo, "%19s%s," ,"Time", " Source, FDSelect");
+					for (k = 1; k < (int)COB_LAST_OPEN; k++) {
+						fprintf (fo, ", %s", iotype[k]);
 					}
-					prcoma = "";
-					fprintf (fo,", ");
-					for (k=1; k <= 6; k++) {
-						fprintf (fo, "%sX%s", prcoma, iotype[k]);
-						prcoma = ",";
+					for (k = 1; k < (int)COB_LAST_OPEN; k++) {
+						fprintf (fo, ", X%s", iotype[k]);
 					}
-					fprintf (fo,"\n");
+					fprintf (fo, "\n");
 					fclose (fo);
 					fo = NULL;
 				}
@@ -3273,25 +3294,20 @@ cob_file_save_status (cob_file *f, cob_field *fnstatus, const int status)
 						tod.year,tod.month,tod.day_of_month,
 						tod.hour,tod.minute,tod.second);
 				/* CHECKME: Shouldn't this be always set with GC4+? */
-				fprintf (fo, "%s,%s, ",
+				fprintf (fo, "%s,%s",
 					COB_MODULE_PTR && COB_MODULE_PTR->module_source ? 
 					COB_MODULE_PTR->module_source : "unknown",
 					f->select_name);
-				prcoma = "";
-				for (k=0; k <= 5; k++) {
-					fprintf (fo, "%s%d", prcoma, f->stats[k].rqst_io);
-					prcoma = ",";
+				for (k = 0; k < (int)COB_LAST_OPEN - 1; k++) {
+					fprintf (fo, ", %d", f->stats[k].rqst_io);
 				}
-				fprintf (fo,", ");
-				prcoma = "";
-				for (k=0; k <= 5; k++) {
-					fprintf (fo, "%s%d", prcoma, f->stats[k].fail_io);
-					prcoma = ",";
+				for (k = 0; k < (int)COB_LAST_OPEN - 1; k++) {
+					fprintf (fo, ", %d", f->stats[k].fail_io);
 				}
 				fprintf (fo,"\n");
 				fclose (fo);
 			}
-			for (k=0; k <= 5; k++) {		/* Reset counts on CLOSE */
+			for (k = 0; k < (int)COB_LAST_OPEN - 1; k++) {		/* Reset counts on CLOSE */
 				f->stats[k].rqst_io = 0;
 				f->stats[k].fail_io = 0;
 			}
@@ -3300,7 +3316,7 @@ cob_file_save_status (cob_file *f, cob_field *fnstatus, const int status)
 	if (f->fcd) {
 		cob_file_fcd_sync (f);			/* Copy cob_file to app's FCD */
 	}
-	f->last_operation = 0;				/* Avoid double count/trace */
+	f->last_operation = COB_LAST_NONE;		/* Avoid double count/trace */
 	f->retry_mode = f->dflt_retry;
 	f->retry_times = f->dflt_times;
 	f->retry_seconds = f->dflt_seconds;

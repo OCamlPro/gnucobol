@@ -845,7 +845,6 @@ enum cob_file_org {
 };
 
 /* Access mode */
-
 enum cob_file_access {
 	COB_ACCESS_SEQUENTIAL = 1,
 	COB_ACCESS_DYNAMIC = 2,
@@ -853,25 +852,45 @@ enum cob_file_access {
 };
 
 /* io_routine */
+enum cob_file_routines {
+	COB_IO_SEQUENTIAL	= 0,
+	COB_IO_LINE_SEQUENTIAL	= 1,
+	COB_IO_RELATIVE		= 2,
+	COB_IO_CISAM		= 3,	/* INDEXED via C-ISAM */
+	COB_IO_DISAM		= 4,	/* INDEXED via D-ISAM */
+	COB_IO_VBISAM		= 5,	/* INDEXED via VB-ISAM */
+	COB_IO_BDB			= 6,	/* INDEXED via BDB */
+	COB_IO_VISAM		= 7,	/* INDEXED via V-ISAM */
+	COB_IO_IXEXT 		= 8,	/* INDEXED via Local old style WITH_INDEX_EXTFH */
+	COB_IO_SQEXT 		= 9,	/* SEQUENTIAL via old style WITH_SEQRA_EXTFH */
+	COB_IO_RLEXT 		= 10,	/* RELATIVE via old style WITH_SEQRA_EXTFH */
+	COB_IO_ODBC			= 11,	/* INDEXED via ODBC */
+	COB_IO_OCI			= 12,	/* INDEXED via OCI */
+	COB_IO_LMDB			= 13,	/* INDEXED via LMDB */
+#if 0 /* Not yet implemented */
+	COB_IO_MFIDX4		= 14,	/* Micro Focus IDX4 format */
+	COB_IO_MFIDX8		= 15,	/* Micro Focus IDX8 format */
+#endif
+/* the following two are always last */
+	COB_IO_NOT_AVAIL,	/* INDEXED handler - not loaded */
+	COB_IO_MAX
+};
 
-#define COB_IO_SEQUENTIAL	0
-#define COB_IO_LINE_SEQUENTIAL	1
-#define COB_IO_RELATIVE		2
-#define COB_IO_CISAM		3	/* INDEXED via C-ISAM */
-#define COB_IO_DISAM		4	/* INDEXED via D-ISAM */
-#define COB_IO_VBISAM		5	/* INDEXED via VB-ISAM */
-#define COB_IO_BDB			6	/* INDEXED via BDB */
-#define COB_IO_VISAM		7	/* INDEXED via V-ISAM */
-#define COB_IO_IXEXT 		8	/* INDEXED via Local old style WITH_INDEX_EXTFH */
-#define COB_IO_SQEXT 		9	/* SEQUENTIAL via old style WITH_SEQRA_EXTFH */
-#define COB_IO_RLEXT 		10	/* RELATIVE via old style WITH_SEQRA_EXTFH */
-#define COB_IO_ODBC			11	/* INDEXED via ODBC */
-#define COB_IO_OCI			12	/* INDEXED via OCI */
-#define COB_IO_LMDB			13	/* INDEXED via LMDB */
-#define COB_IO_MAX			14 
-/* Not yet implemented */
-#define COB_IO_MFIDX4		14	/* Micro Focus IDX4 format */
-#define COB_IO_MFIDX8		15	/* Micro Focus IDX8 format */
+/* io_routine */
+enum cob_file_operation {
+	COB_LAST_NONE	= 0,
+	COB_LAST_START		= 1,
+	COB_LAST_READ_SEQ	= 2,
+	COB_LAST_READ		= 3,
+	COB_LAST_WRITE		= 4,
+	COB_LAST_REWRITE	= 5,
+	COB_LAST_DELETE		= 6,
+	COB_LAST_OPEN		= 7,
+	COB_LAST_CLOSE		= 8,
+	COB_LAST_DELETE_FILE	= 9,
+	COB_LAST_COMMIT		= 10,
+	COB_LAST_ROLLBACK	= 11
+};
 
 /* SELECT features */
 
@@ -1558,21 +1577,8 @@ typedef struct __cob_file {
 	unsigned int		unused_bits:3;
 
 	cob_field			*last_key;		/* Last field used as 'key' for I/O */
-	unsigned char		last_operation;		/* Most recent I/O operation */
-#define COB_LAST_START		1
-#define COB_LAST_READ_SEQ	2
-#define COB_LAST_READ		3
-#define COB_LAST_WRITE		4
-#define COB_LAST_REWRITE	5
-#define COB_LAST_DELETE		6
-
-#define COB_LAST_OPEN		7
-#define COB_LAST_CLOSE		8
-#define COB_LAST_DELETE_FILE	9
-#define COB_LAST_COMMIT		10
-#define COB_LAST_ROLLBACK	11
-
-	unsigned char		io_routine;		/* Index to I/O routine function pointers */
+	enum cob_file_operation		last_operation;		/* Most recent I/O operation */
+	enum cob_file_routines		io_routine;		/* Index to I/O routine function pointers */
 	unsigned char		tran_open_mode;	/* initial OPEN mode for commit/rollback */
 	short 				curkey;			/* Current file index read sequentially */
 	short 				mapkey;			/* Remapped index number, when FD does note match file */
