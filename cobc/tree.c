@@ -1060,7 +1060,7 @@ build_condition_token_list (cb_tree record, cb_tree when_list)
 	for (l = when_list; l; l = CB_CHAIN (l)) {
 		if (!cond) {
 			record_ref = cb_build_field_reference (CB_FIELD (record), NULL);
-		        cond = cb_build_list (cb_int ('x'), record_ref, NULL);
+			cond = cb_build_list (cb_int ('x'), record_ref, NULL);
 		} else {
 			cond = cb_build_list (cb_int ('|'), NULL, cond);
 		}
@@ -3776,7 +3776,7 @@ cb_field_size (const cb_tree x)
 	}
 #ifndef _MSC_VER
 	/* NOT REACHED */
-	return 0;
+	return -1;
 #endif
 	/* LCOV_EXCL_STOP */
 }
@@ -4610,8 +4610,8 @@ cb_build_filler (void)
 }
 
 /*
-  Return a reference to the field f. If ref != NULL, other attributes are set to
-  the same as ref.
+  Return a reference to the field f.
+  If ref != NULL, other attributes are set to the same as ref.
 */
 cb_tree
 cb_build_field_reference (struct cb_field *f, cb_tree ref)

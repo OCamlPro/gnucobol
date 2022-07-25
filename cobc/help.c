@@ -271,6 +271,7 @@ cobc_print_usage_dialect (void)
 	cobc_print_config_flag ("reserved", _("word to be added to reserved words list"), _("<word>"));
 	cobc_print_config_flag ("reserved", _("word to be added to reserved words list as alias"), _("<word>:<alias>"));
 	cobc_print_config_flag ("not-register", _("special register to disable"), _("<word>"));
-	cobc_print_config_flag ("register", _("special register to enable"), _("<word>"));
+	cobc_print_config_flag ("register", _("special register to enable"),
+		_("<word> or <word>:<definition>, where definition uses backslash escaped spaces"));
 	putchar ('\n');
 }

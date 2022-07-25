@@ -1,4 +1,11 @@
 
+2022-07-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* field.c (create_implicit_picture): explicit disallow generating picture
+	  from FUNCTION which size is commonly unknown (and use of intrinsic
+	  functions outside of PROCEDURE DIVISION is an extension already)
+	* field.c (validate_elem_screen_clauses_std): require PIC in more cases
+
 2022-07-19  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y, typeck.c: temporary adjust source reference when building
@@ -16,6 +23,7 @@
 	  with configuration entry or -fregister, to allow this store the original
 	  pre-validated definition in the new struct external_defined_register
 	  and build the field when parsing for the program starts
+	* help.c (cobc_print_usage_dialect): extended -fregister help
 
 2022-07-18  Simon Sobisch <simonsobisch@gnu.org>
 

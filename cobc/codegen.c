@@ -9312,20 +9312,20 @@ output_report_sum_control_field (struct cb_field *p)
 	}
 	if (p->storage == CB_STORAGE_REPORT) {
 		if (p->level == 01) {
-			output_base(p,1U);
+			output_base (p, 1U);
 		}
 		if (p->report_sum_counter) {
-			output_base(cb_code_field(p->report_sum_counter),1U);
+			output_base (cb_code_field (p->report_sum_counter), 1U);
 		}
 		if (p->report_control) {
-			output_base(cb_code_field(p->report_control),1U);
+			output_base (cb_code_field (p->report_control), 1U);
 		}
-		if (p->report_source) {
-			output_base(cb_code_field(p->report_source),1U);
+		if (p->report_source && CB_REF_OR_FIELD_P (p->report_source)) {
+			output_base (cb_code_field (p->report_source), 1U);
 		}
 		for (l = p->report_sum_list; l; l = CB_CHAIN (l)) {
 			x = CB_VALUE (l);
-			output_base(cb_code_field(x),1);
+			output_base (cb_code_field (x), 1);
 		}
 		if (p->children) {
 			output_report_sum_control_field (p->children);
@@ -10217,7 +10217,7 @@ output_field_display (struct cb_field *f, size_t offset,
 	struct cb_field *p;
 	cb_tree x;
 	int 	svlocal;
-	const char* fname = f->flag_filler ? "FILLER" : f->name;
+	const char *fname = f->flag_filler ? "FILLER" : f->name;
 
 	svlocal = f->flag_local;
 	f->flag_local = 0;
@@ -10377,7 +10377,7 @@ output_display_fields (struct cb_field *f, size_t offset, unsigned int idx)
 		 && (f->level == 77 || f->level == 1)
 		 && !f->redefines
 		 && (f->flag_item_based || f->storage == CB_STORAGE_LINKAGE)) {
-			const char* fname = f->flag_filler ? "FILLER" : f->name;
+			const char *fname = f->flag_filler ? "FILLER" : f->name;
 			output_line ("/* Check %s address for %s */",
 						f->flag_item_based ? "BASED" : "LINKAGE",
 						fname);

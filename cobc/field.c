@@ -1022,11 +1022,11 @@ create_implicit_picture (struct cb_field *f)
 			if (impl_tree == cb_error_node) {
 				return 1;
 			}
-			if (!CB_CONST_P (impl_tree)) {
+			if (CB_INTRINSIC_P (impl_tree) || CB_CONST_P (impl_tree)) {
+				size_implied = FIELD_SIZE_UNKNOWN;
+			} else {
 				size_implied = cb_field_size (impl_tree);
 				is_numeric = CB_TREE_CATEGORY (impl_tree) == CB_CATEGORY_NUMERIC;
-			} else {
-				size_implied = FIELD_SIZE_UNKNOWN;
 			}
 		} else if (first_value) {
 			/* done later*/
@@ -1053,7 +1053,7 @@ create_implicit_picture (struct cb_field *f)
 
 	if (f->storage == CB_STORAGE_REPORT) {
 		if (f->report_source || f->report_sum_counter) {
-			cb_error_x (x, _ ("PICTURE clause required for '%s'"),
+			cb_error_x (x, _("PICTURE clause required for '%s'"),
 				cb_name (x));
 		}
 		if (first_value) {
@@ -1687,9 +1687,9 @@ error_both_full_and_justified (const struct cb_field * const f)
 static int
 warn_from_to_using_without_pic (const struct cb_field * const f)
 {
-	const cb_tree	x = CB_TREE (f);
 
 	if ((f->screen_from || f->screen_to) && !f->pic) {
+		const cb_tree	x = CB_TREE (f);
 		/* TO-DO: Change to dialect option */
 		cb_warning_x (cb_warn_additional, x,
 			      _("'%s' has FROM, TO or USING without PIC; PIC will be implied"),
@@ -1705,42 +1705,16 @@ static int
 warn_pic_for_numeric_value_implied (const struct cb_field * const f)
 {
 	if (f->values && CB_NUMERIC_LITERAL_P (CB_VALUE (f->values))) {
-		cb_warning_x (cb_warn_additional, CB_TREE (f),
+		const cb_tree	x = CB_TREE (f);
+		/* TO-DO: Change to dialect option */
+		cb_warning_x (cb_warn_additional, x,
 			      _("'%s' has numeric VALUE without PIC; PIC will be implied"),
-			      cb_name (CB_TREE (f)));
+			      cb_name (x));
+		/* TO-DO: Add setting of PIC below here or move warnings to the code which sets the PIC */
 		return 1;
 	} else {
 		return 0;
 	}
-}
-
-static void
-validate_elem_screen_clauses_std (struct cb_field * const f)
-{
-	const cb_tree	x = CB_TREE (f);
-
-	if (!has_std_needed_screen_clause (f)) {
-		if (f->pic) {
-			cb_error_x (x, _("'%s' cannot have PIC without FROM, TO, USING or numeric VALUE"),
-				    cb_name (x));
-		} else if (warn_from_to_using_without_pic (f)) {
-			/*
-			  The above rule is not explicitly stated, but the general rules of FROM,
-			  TO and USING assume the item has a PICTURE clause.
-			*/
-			;
-		} else if (warn_pic_for_numeric_value_implied (f)) {
-			;
-			/* TO-DO: Add setting of PIC below here or move warnings to the code which sets the PIC */
-		} else {
-			cb_error_x (x, _("'%s' needs a PIC, FROM, TO, USING, VALUE, BELL, BLANK or ERASE clause"),
-				    cb_name (x));
-		}
-	}
-
-	error_both_full_and_justified (f);
-
-	error_value_figurative_constant (f);
 }
 
 static void
@@ -1760,6 +1734,14 @@ error_pic_without_from_to_using (const struct cb_field * const f)
 }
 
 static void
+error_pic_for_numeric_value (const struct cb_field * const f)
+{
+	if (f->values && CB_NUMERIC_LITERAL_P (CB_VALUE (f->values))) {
+		cb_error_x (CB_TREE (f), _("cannot have numeric VALUE without PIC"));
+	}
+}
+
+static void
 error_from_to_using_without_pic (const struct cb_field * const f)
 {
 	/* TO-DO: Replace warning, like in validate_elem_screen_clauses_std? */
@@ -1772,7 +1754,7 @@ static void
 error_value_numeric (const struct cb_field * const f)
 {
 	if (f->values
-	    && CB_TREE_CATEGORY (CB_VALUE (f->values)) == CB_CATEGORY_NUMERIC) {
+	 && CB_TREE_CATEGORY (CB_VALUE (f->values)) == CB_CATEGORY_NUMERIC) {
 		cb_error_x (CB_TREE (f), _("VALUE item may not be numeric"));
 	}
 }
@@ -1780,18 +1762,42 @@ error_value_numeric (const struct cb_field * const f)
 static void
 error_no_screen_clause_needed_by_xopen (const struct cb_field * const f)
 {
-	const cb_tree	x = CB_TREE (f);
-
 	if (!(f->pic
-	      || f->screen_column
-	      || f->screen_flag & COB_SCREEN_BELL
-	      || f->screen_flag & COB_SCREEN_BLANK_LINE
-	      || f->screen_flag & COB_SCREEN_BLANK_SCREEN
-	      || f->screen_line
-	      || f->values)) {
+	   || f->screen_column
+	   || f->screen_flag & COB_SCREEN_BELL
+	   || f->screen_flag & COB_SCREEN_BLANK_LINE
+	   || f->screen_flag & COB_SCREEN_BLANK_SCREEN
+	   || f->screen_line
+	   || f->values)) {
+		const cb_tree	x = CB_TREE (f);
 		cb_error_x (x, _("'%s' needs a PIC, COL, LINE, VALUE, BELL or BLANK clause"),
 			    cb_name (x));
 	}
+}
+
+static void
+validate_elem_screen_clauses_std (struct cb_field * const f)
+{
+	const cb_tree	x = CB_TREE (f);
+
+	if (!has_std_needed_screen_clause (f)) {
+		if (f->pic) {
+			cb_error_x (x, _("'%s' cannot have PIC without FROM, TO, USING or numeric VALUE"),
+				    cb_name (x));
+		} else if (f->values) {
+			/* TO-DO: Add setting of PIC below here or move warnings to the code which sets the PIC */
+			error_pic_for_numeric_value (f);
+		} else if (f->screen_from || f->screen_to) {
+			error_from_to_using_without_pic (f);
+		} else {
+			cb_error_x (x, _("'%s' needs a PIC, FROM, TO, USING, VALUE, BELL, BLANK or ERASE clause"),
+				    cb_name (x));
+		}
+	}
+
+	error_both_full_and_justified (f);
+
+	error_value_figurative_constant (f);
 }
 
 static void
@@ -1815,18 +1821,18 @@ validate_elem_screen_clauses_mf (const struct cb_field * const f)
 	error_value_numeric (f);
 
 	if (!f->screen_to
-	    && ((f->screen_flag & COB_SCREEN_AUTO)
-		|| (f->screen_flag & COB_SCREEN_FULL)
-		|| (f->screen_flag & COB_SCREEN_PROMPT)
-		|| (f->screen_flag & COB_SCREEN_REQUIRED)
-		|| (f->screen_flag & COB_SCREEN_SECURE))) {
+	  && ((f->screen_flag & COB_SCREEN_AUTO)
+	   || (f->screen_flag & COB_SCREEN_FULL)
+	   || (f->screen_flag & COB_SCREEN_PROMPT)
+	   || (f->screen_flag & COB_SCREEN_REQUIRED)
+	   || (f->screen_flag & COB_SCREEN_SECURE))) {
 		cb_error_x (x, _("cannot use AUTO, FULL, PROMPT, REQUIRED or SECURE on elementary item without TO or USING"));
 	}
 	if (!f->screen_from && !f->screen_to
-	    && (f->flag_blank_zero
-		|| f->flag_justified
-		|| f->flag_occurs
-		|| f->flag_sign_clause)) {
+	  && (f->flag_blank_zero
+	   || f->flag_justified
+	   || f->flag_occurs
+	   || f->flag_sign_clause)) {
 		cb_error_x (x, _("cannot use BLANK WHEN ZERO, JUSTIFIED, OCCURS or SIGN on item without FROM, TO or USING"));
 	}
 }
@@ -1834,8 +1840,6 @@ validate_elem_screen_clauses_mf (const struct cb_field * const f)
 static void
 validate_elem_screen_clauses_rm (struct cb_field *f)
 {
-	const cb_tree	x = CB_TREE (f);
-
 	error_both_pic_and_value (f);
 	error_pic_without_from_to_using (f);
 	error_from_to_using_without_pic (f);
@@ -1843,15 +1847,16 @@ validate_elem_screen_clauses_rm (struct cb_field *f)
 	error_value_numeric (f);
 
 	if (!f->pic) {
+		const cb_tree	x = CB_TREE (f);
 		if ((f->screen_flag & COB_SCREEN_AUTO)
-		    || (f->screen_flag & COB_SCREEN_FULL)
-		    || (f->screen_flag & COB_SCREEN_REQUIRED)
-		    || (f->screen_flag & COB_SCREEN_SECURE)) {
+		 || (f->screen_flag & COB_SCREEN_FULL)
+		 || (f->screen_flag & COB_SCREEN_REQUIRED)
+		 || (f->screen_flag & COB_SCREEN_SECURE)) {
 			cb_error_x (x, _("cannot use AUTO, FULL, REQUIRED or SECURE on elementary item without FROM, TO or USING"));
 		}
 		if (f->flag_blank_zero
-		    || f->flag_justified
-		    || f->flag_sign_clause) {
+		 || f->flag_justified
+		 || f->flag_sign_clause) {
 			cb_error_x (x, _("cannot use BLANK WHEN ZERO, JUSTIFIED or SIGN without FROM, TO or USING"));
 		}
 	}
@@ -1860,8 +1865,6 @@ validate_elem_screen_clauses_rm (struct cb_field *f)
 static void
 validate_elem_screen_clauses_acu (struct cb_field *f)
 {
-	const cb_tree	x = CB_TREE (f);
-
 	error_both_pic_and_value (f);
 	error_pic_without_from_to_using (f);
 
@@ -1869,6 +1872,7 @@ validate_elem_screen_clauses_acu (struct cb_field *f)
 
 	warn_from_to_using_without_pic (f);
 	if (!f->pic) {
+		const cb_tree	x = CB_TREE (f);
 		if (f->flag_blank_zero) {
 			cb_error_x (x, _("cannot have BLANK WHEN ZERO without PIC"));
 		}
@@ -1892,12 +1896,12 @@ validate_elem_screen_clauses_xopen (struct cb_field *f)
 	error_value_numeric (f);
 
 	if (!f->screen_to && !f->screen_from
-	    && (f->screen_flag & COB_SCREEN_AUTO)) {
+	 && (f->screen_flag & COB_SCREEN_AUTO)) {
 		cb_error_x (x, _("cannot have AUTO without FROM, TO or USING"));
 	}
 	if (!f->screen_to
-	    && ((f->screen_flag & COB_SCREEN_FULL)
-		|| (f->screen_flag & COB_SCREEN_REQUIRED))) {
+	  && ((f->screen_flag & COB_SCREEN_FULL)
+	   || (f->screen_flag & COB_SCREEN_REQUIRED))) {
 		cb_error_x (x, _("cannot use FULL or REQUIRED on item without TO or USING"));
 	}
 
