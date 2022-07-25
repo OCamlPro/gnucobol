@@ -612,6 +612,8 @@ static const struct option long_options[] = {
 	{"f" name,		CB_RQ_ARG, NULL, '%'},
 #define	CB_CONFIG_INT(var,name,min,max,odoc,doc)	\
 	{"f" name,		CB_RQ_ARG, NULL, '%'},
+#define	CB_CONFIG_SINT(var,name,min,max,odoc,doc)	\
+	{"f" name,		CB_RQ_ARG, NULL, '%'},
 #define	CB_CONFIG_STRING(var,name,doc)		\
 	{"f" name,		CB_RQ_ARG, NULL, '%'},
 #define	CB_CONFIG_BOOLEAN(var,name,doc)		\
@@ -622,6 +624,7 @@ static const struct option long_options[] = {
 #include "config.def"
 #undef	CB_CONFIG_ANY
 #undef	CB_CONFIG_INT
+#undef	CB_CONFIG_SINT
 #undef	CB_CONFIG_STRING
 #undef	CB_CONFIG_BOOLEAN
 #undef	CB_CONFIG_SUPPORT
@@ -5353,7 +5356,9 @@ print_fields (struct cb_field *top, int *found)
 	char	lcl_name[LCL_NAME_LEN];
 
 	for (; top; top = top->sister) {
-		if (!top->level) {
+		/* hiding internal fields, when not referenced */
+		if (top->level == 0
+		 || (top->flag_internal_register && !top->count)) {
 			continue;
 		}
 		if (*found == 0) {
@@ -5687,10 +5692,9 @@ xref_fields (struct cb_field *top)
 	int		found = 0;
 
 	for (; top; top = top->sister) {
-		/* no entry for internal generated fields
-		   other than used special indexes */
-		if (!top->level || (top->index_type != CB_NORMAL_INDEX
-				    && !top->count)) {
+		/* hiding internal fields, when not referenced */
+		if (top->level == 0
+		 || (top->flag_internal_register && !top->count)) {
 			continue;
 		}
 

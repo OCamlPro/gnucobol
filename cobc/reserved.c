@@ -942,7 +942,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
   },
   { "DEFAULT-FONT",		0, 0, DEFAULT_FONT,		/* ACU extension */
-				0, 0				/* CHECKME: likely context sensitive */
+				0, 0				/* Checkme: likely context sensitive */
   },
   { "DELETE",			1, 0, DELETE,			/* 2002 */
 				0, 0
@@ -1329,7 +1329,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, CB_CS_RECORDING
   },
   { "FIXED-FONT",		0, 0, FIXED_FONT,		/* ACU extension */
-				0, 0				/* CHECKME: likely context sensitive */
+				0, 0				/* Checkme: likely context sensitive */
   },
   { "FIXED-WIDTH",		0, 1, FIXED_WIDTH,		/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
@@ -1384,7 +1384,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, CB_CS_DISPLAY
   },
   { "FONT",			0, 0, FONT,			/* ACU extension */
-				0, 0				/* CHECKME: likely context sensitive */
+				0, 0				/* Checkme: likely context sensitive */
   },
   { "FOOTING",			0, 0, FOOTING,			/* 2002 */
 				0, 0
@@ -1674,7 +1674,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
   },
   { "LARGE-FONT",		0, 0, LARGE_FONT,		/* ACU extension */
-				0, 0				/* CHECKME: likely context sensitive */
+				0, 0				/* Checkme: likely context sensitive */
   },
   { "LARGE-OFFSET",			0, 1, LARGE_OFFSET,			/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
@@ -1776,7 +1776,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				CB_CS_GRAPHICAL_CONTROL, CB_CS_DISPLAY | CB_CS_SCREEN
   },
   { "LM-RESIZE",		0, 0, LM_RESIZE,		/* ACU extension */
-				0, 0				/* CHECKME: likely context sensitive */
+				0, 0				/* Checkme: likely context sensitive */
   },
   { "LOC",		0, 1, LOC,		/* IBM extension (ignored) */
 				0, CB_CS_ALLOCATE
@@ -1840,13 +1840,13 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
   },
   { "MEDIUM-FONT",		0, 0, MEDIUM_FONT,		/* ACU extension */
-				0, 0				/* CHECKME: likely context sensitive */
+				0, 0				/* Checkme: likely context sensitive */
   },
   { "MEMORY",			0, 1, MEMORY,			/* 85 */
 				0, CB_CS_OBJECT_COMPUTER
   },
   { "MENU",			0, 0, MENU,			/* ACU extension */
-				0, 0				/* CHECKME: likely context sensitive */
+				0, 0				/* Checkme: likely context sensitive */
   },
   { "MERGE",			0, 0, MERGE,			/* 2002 */
 				0, 0
@@ -2223,7 +2223,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, 0
   },
   { "PRIORITY",			0, 0, PRIORITY,			/* ACU extension */
-				0, 0				/* CHECKME: likely context sensitive */
+				0, 0				/* Checkme: likely context sensitive */
   },
   { "PROCEDURE",		0, 0, PROCEDURE,		/* 2002 */
 				0, 0
@@ -2643,7 +2643,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, 0
   },
   { "SMALL-FONT",		0, 0, SMALL_FONT,		/* ACU extension */
-				0, 0				/* CHECKME: likely context sensitive */
+				0, 0				/* Checkme: likely context sensitive */
   },
   { "SORT",			0, 0, SORT,			/* 2002 */
 				0, 0
@@ -2758,7 +2758,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, 0
   },
   { "SUBWINDOW",		0, 0, SUBWINDOW,		/* ACU extension */
-				0, 0				/* CHECKME: likely context sensitive */
+				0, 0				/* Checkme: likely context sensitive */
   },
   { "SUM",			0, 0, SUM,			/* 2002 */
 				0, 0
@@ -2897,7 +2897,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, CB_CS_SELECT
   },
   { "TRADITIONAL-FONT",		0, 0, TRADITIONAL_FONT,		/* ACU extension */
-				0, 0					/* CHECKME: likely context sensitive */
+				0, 0					/* Checkme: likely context sensitive */
   },
   { "TRAILING",			0, 0, TRAILING,			/* 2002 */
 				0, 0
@@ -5034,9 +5034,7 @@ lookup_register (const char *name, const int checkimpl)
 	return lookup_register_internal (upper_name, checkimpl);
 }
 
-/* add an entry to the register list, currently the definition is ignored,
-   TODO: check definition and add a new special register accordingly */
-
+/* add an entry to the register list */
 void
 add_register (const char *name_and_definition, const char *fname, const int line)
 {
@@ -5078,15 +5076,21 @@ add_register (const char *name_and_definition, const char *fname, const int line
 
 	special_register = lookup_register_internal (upper_name, 1);
 	if (!special_register) {
+		const char *backup_source_file = cb_source_file;
 		if (!definition || *definition == 0) {
 			configuration_error (fname, line, 1,
-				_("special register %s is unknown, needs a definition"), name);
+				_("special register '%s' is unknown, needs a definition"), name);
 			return;
 		}
-#if 0	/* must be extended and tested before use... */
-		cb_build_generic_register (name, definition);
+#if 1	/* Note: should be extended and tested also via testsuite... */
+		cb_source_file = fname;
+		if (cb_build_generic_register (name, definition, NULL) != 0) {
+			configuration_error (fname, line, 1,
+				_("special register '%s' has a bad definition: %s"), name, definition);
+		}
+		cb_source_file = backup_source_file;
 #else
-		configuration_error (fname, line, 1, _("special register %s is unknown"), name);
+		configuration_error (fname, line, 1, _("special register '%s' is unknown"), name);
 #endif
 		return;
 	}

@@ -10020,6 +10020,7 @@ Dump Program-Id sub1 from prog.cob compiled MMM DD YYYY HH:MM:SS
 
 WORKING-STORAGE
 **********************
+77        RETURN-CODE                     +000000000
 01        ZRO                             000000000
 01        HEXV                            13
 01        TEST-BASED.                    <NULL> address
@@ -10083,6 +10084,7 @@ Dump Program-Id sub2 from sub2.cob compiled MMM DD YYYY HH:MM:SS
 
 WORKING-STORAGE
 **********************
+77        RETURN-CODE                     +000000000
 01        ZRO                             000000000
 01        HEXV                            13
 01        IDX                             000000000
@@ -10162,6 +10164,7 @@ FD FLATFILE
 
 WORKING-STORAGE
 **********************
+77        RETURN-CODE                     +000000000
 77        MAX-SUB                         0006
 77        CUST-STAT                      ALL ZEROES
 77        REC-NUM                         0001
@@ -10526,6 +10529,7 @@ Dump Program-Id prog from prog.cob compiled MMM DD YYYY HH:MM:SS
 
 WORKING-STORAGE
 **********************
+77        RETURN-CODE                     +000000000
 01        P2                              0x0000000000000000
 01        TAB-ADR-COUNT                   +0008
    INDEX  TAB-ADR-IND                     +000000001

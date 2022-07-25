@@ -225,6 +225,8 @@ cobc_print_usage_dialect (void)
 	cobc_print_config_flag (name, doc, _("<value>"));
 #define	CB_CONFIG_INT(var,name,min,max,odoc,doc)		\
 	cobc_print_config_flag (name, doc, odoc);
+#define	CB_CONFIG_SINT(var,name,min,max,odoc,doc)		\
+	cobc_print_config_flag (name, doc, odoc);
 #define	CB_CONFIG_ANY(type,var,name,doc)		\
 	cobc_print_config_flag (name, doc, _("<value>"));
 #define	CB_CONFIG_BOOLEAN(var,name,doc)		\
@@ -234,6 +236,7 @@ cobc_print_usage_dialect (void)
 #include "config.def"
 #undef	CB_CONFIG_ANY
 #undef	CB_CONFIG_INT
+#undef	CB_CONFIG_SINT
 #undef	CB_CONFIG_STRING
 #undef	CB_CONFIG_BOOLEAN
 #undef	CB_CONFIG_SUPPORT

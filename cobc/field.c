@@ -583,7 +583,7 @@ cb_build_full_field_reference (struct cb_field* field)
 	cb_tree ret = NULL;
 	cb_tree ref = NULL;
 
-	while (field) {
+	for (; field; field = field->parent) {
 		if (!field->flag_filler) {
 			cb_tree rchain = cb_build_reference (field->name);
 			if (ref) {
@@ -593,7 +593,6 @@ cb_build_full_field_reference (struct cb_field* field)
 			}
 			ref = rchain;
 		}
-		field = field->parent;
 	}
 
 	return ret;
@@ -606,7 +605,7 @@ cb_resolve_redefines (struct cb_field *field, cb_tree redefines)
 	struct cb_reference	*r;
 	const char		*name;
 	cb_tree			x;
-	cb_tree			candidate;
+	cb_tree			candidate = NULL;
 	cb_tree			items;
 
 	r = CB_REFERENCE (redefines);
@@ -791,7 +790,7 @@ copy_into_field_recursive (struct cb_field *source, struct cb_field *target,
 	if (source->children) {
 		copy_children (source->children, target, target->level, outer_indexes, target->storage);
 	} else if (source->pic){
-		target->pic = CB_PICTURE (cb_build_picture (source->pic->orig));
+		target->pic = cb_build_picture (source->pic->orig);
 	}
 
 	if (source->sister) {
@@ -862,7 +861,7 @@ copy_into_field (struct cb_field *source, struct cb_field *target)
 		if (source->children) {
 			copy_children (source->children, target, target->level, target->indexes, target->storage);
 		} else if (source->pic) {
-			target->pic = CB_PICTURE (cb_build_picture (source->pic->orig));
+			target->pic = cb_build_picture (source->pic->orig);
 		}
 	} else {
 		struct cb_picture* new_pic = NULL;
@@ -885,7 +884,7 @@ copy_into_field (struct cb_field *source, struct cb_field *target)
 						newsize = 36;
 					}
 					sprintf (pic, "9(%u)", newsize);
-					new_pic = CB_PICTURE (cb_build_picture (pic));
+					new_pic = cb_build_picture (pic);
 					break;
 				}
 
@@ -900,7 +899,7 @@ copy_into_field (struct cb_field *source, struct cb_field *target)
 					if (modifier > 0) {
 						sprintf (pic, "9(%d)", modifier);
 						strcat (pic, target->pic->orig);
-						new_pic = CB_PICTURE (cb_build_picture (pic));
+						new_pic = cb_build_picture (pic);
 					} else {
 						CB_PENDING_X (CB_TREE (target), "LIKE ... negative-integer");
 					}
@@ -927,13 +926,13 @@ copy_into_field (struct cb_field *source, struct cb_field *target)
 			} else {
 				sprintf (pic, "X(%d)", size_implied);
 			}
-			new_pic = CB_PICTURE (cb_build_picture (pic));
+			new_pic = cb_build_picture (pic);
 #endif
 		}
 		if (new_pic) {
 			target->pic = new_pic;
 		} else if (target->pic) {
-			target->pic = CB_PICTURE (cb_build_picture (target->pic->orig));
+			target->pic = cb_build_picture (target->pic->orig);
 		}
 	}
 
@@ -1033,7 +1032,7 @@ create_implicit_picture (struct cb_field *f)
 			/* done later*/
 		} else {
 			f->flag_no_field = 1;
-			f->pic = CB_PICTURE (cb_build_picture ("X"));
+			f->pic = cb_build_picture ("X");
 			return 0;
 		}
 
@@ -1048,7 +1047,7 @@ create_implicit_picture (struct cb_field *f)
 		} else {
 			sprintf (pic, "X(%d)", size_implied);
 		}
-		f->pic = CB_PICTURE (cb_build_picture (pic));
+		f->pic = cb_build_picture (pic);
 		return 0;
 	}
 
@@ -1065,7 +1064,7 @@ create_implicit_picture (struct cb_field *f)
 			f->flag_no_field = 1;
 			strcpy (pic, "X");
 		}
-		f->pic = CB_PICTURE (cb_build_picture (pic));
+		f->pic = cb_build_picture (pic);
 		return 0;
 	}
 
@@ -1092,11 +1091,11 @@ create_implicit_picture (struct cb_field *f)
 			} else {
 				f->usage = CB_USAGE_DISPLAY;
 			}
-			f->pic = CB_PICTURE (cb_build_picture (pic));
+			f->pic = cb_build_picture (pic);
 			f->pic->category = CB_CATEGORY_NUMERIC;
 		} else {
 			sprintf (pic, "X(%d)", (int)lp->size);
-			f->pic = CB_PICTURE (cb_build_picture (pic));
+			f->pic = cb_build_picture (pic);
 			f->pic->category = CB_CATEGORY_ALPHANUMERIC;
 			f->usage = CB_USAGE_DISPLAY;
 		}
@@ -1133,7 +1132,7 @@ create_implicit_picture (struct cb_field *f)
 	} else {
 		sprintf (pic, "X(%d)", size_implied);
 	}
-	f->pic = CB_PICTURE (cb_build_picture (pic));
+	f->pic = cb_build_picture (pic);
 	f->pic->category = CB_CATEGORY_ALPHANUMERIC;
 	f->usage = CB_USAGE_DISPLAY;
 	return ret;
@@ -1162,11 +1161,8 @@ validate_any_length_item (struct cb_field *f)
 		return 1;
 	}
 	if (!f->pic) {
-		if (f->flag_any_numeric) {
-			f->pic = CB_PICTURE (cb_build_picture ("9"));
-		} else {
-			f->pic = CB_PICTURE (cb_build_picture ("X"));
-		}
+		const char *pic = f->flag_any_numeric ? "9" : "X";
+		f->pic = cb_build_picture (pic);
 	} else if (f->flag_any_numeric) {
 		if (f->pic->category != CB_CATEGORY_NUMERIC) {
 			cb_error_x (x, _("'%s' ANY NUMERIC must be PIC 9"),
@@ -2217,7 +2213,7 @@ setup_parameters (struct cb_field *f)
 	case CB_USAGE_HNDL_MENU:
 	case CB_USAGE_HNDL_VARIANT:
 	case CB_USAGE_HNDL_LM:
-		f->pic = CB_PICTURE (cb_build_picture ("S9(9)"));
+		f->pic = cb_build_picture ("S9(9)");
 		f->pic->flag_is_calculated = 1;
 #if 0
 		/* REMIND: The category should be set, but doing so causes
@@ -2231,35 +2227,35 @@ setup_parameters (struct cb_field *f)
 		break;
 
 	case CB_USAGE_LENGTH:
-		f->pic = CB_PICTURE (cb_build_picture ("9(9)"));
+		f->pic = cb_build_picture ("9(9)");
 		f->pic->flag_is_calculated = 1;
 		break;
 
 	case CB_USAGE_POINTER:
 	case CB_USAGE_PROGRAM_POINTER:
 #ifdef COB_64_BIT_POINTER
-		f->pic = CB_PICTURE (cb_build_picture ("9(17)"));
+		f->pic = cb_build_picture ("9(17)");
 #else
-		f->pic = CB_PICTURE (cb_build_picture ("9(10)"));
+		f->pic = cb_build_picture ("9(10)");
 #endif
 		f->pic->flag_is_calculated = 1;
 		break;
 	case CB_USAGE_FLOAT:
-		f->pic = CB_PICTURE (cb_build_picture ("S9(7)V9(8)"));
+		f->pic = cb_build_picture ("S9(7)V9(8)");
 		f->pic->flag_is_calculated = 1;
 		break;
 	case CB_USAGE_DOUBLE:
-		f->pic = CB_PICTURE (cb_build_picture ("S9(17)V9(17)"));
+		f->pic = cb_build_picture ("S9(17)V9(17)");
 		f->pic->flag_is_calculated = 1;
 		break;
 	case CB_USAGE_FP_DEC64:
 		/* RXWRXW - Scale Fix me */
-		f->pic = CB_PICTURE (cb_build_picture ("S9(17)V9(16)"));
+		f->pic = cb_build_picture ("S9(17)V9(16)");
 		f->pic->flag_is_calculated = 1;
 		break;
 	case CB_USAGE_FP_DEC128:
 		/* RXWRXW - Scale Fix me */
-		f->pic = CB_PICTURE (cb_build_picture ("S999V9(34)"));
+		f->pic = cb_build_picture ("S999V9(34)");
 		f->pic->flag_is_calculated = 1;
 		break;
 
@@ -2270,11 +2266,11 @@ setup_parameters (struct cb_field *f)
 	case CB_USAGE_COMP_N:
 		if (f->pic->category == CB_CATEGORY_ALPHANUMERIC) {
 			if (f->pic->size > 8) {
-				f->pic = CB_PICTURE (cb_build_picture ("9(36)"));
+				f->pic = cb_build_picture ("9(36)");
 			} else {
 				char		pic[8];
 				sprintf (pic, "9(%u)", pic_digits[f->pic->size - 1]);
-				f->pic = CB_PICTURE (cb_build_picture (pic));
+				f->pic = cb_build_picture (pic);
 			}
 		}
 #ifndef WORDS_BIGENDIAN
@@ -3101,8 +3097,8 @@ error_if_invalid_type_in_renames_range (const struct cb_field * const item)
 	while (f) {
 		category = cb_tree_category (CB_TREE (f));
 		if (category == CB_CATEGORY_OBJECT_REFERENCE
-		    || category == CB_CATEGORY_DATA_POINTER
-		    || category == CB_CATEGORY_PROGRAM_POINTER) {
+		 || category == CB_CATEGORY_DATA_POINTER
+		 || category == CB_CATEGORY_PROGRAM_POINTER) {
 			cb_error_x (CB_TREE (item),
 				    _("RENAMES may not contain '%s' as it is a pointer or object reference"),
 				    cb_name (CB_TREE (f)));

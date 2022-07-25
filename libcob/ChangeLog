@@ -1,4 +1,15 @@
 
+2022-07-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* call.c (cob_resolve_internal): added check for module name length,
+	  fixed compiler warnings
+	* call.c (cob_call): switched argument table from dynamic allocation
+	  to stack allocation
+
+2022-07-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* call.c (cob_cancel): preparation for CANCEL ALL
+
 2022-06-23  Simon Sobisch <simonsobisch@gnu.org>
 
 	* strings.c (cob_unstring_into): minor performance-tweak
@@ -101,9 +112,25 @@
 	  cob_last_runtime_error), common.h: added new C API functions that uses
 	  setjmp/longjmp to allow COBOL calls without possible process interruption
 
+2022-01-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_decimal_adjust): rewrite code for trailing zero removing,
+	  heavily improving ccomputation and comparison of FLOAT-DECIMAL
+	* numeric.c: actually handle up to COB_MAX_BINARY, not one less
+
 2022-01-03  Simon Sobisch <simonsobisch@gnu.org>
 
 	* coblocal.h, common.h: moved some internal limits to coblocal.h
+
+2022-01-01  Ron Norman <rjn@inglenet.com>
+
+	* numeric.c: Speed up cob_decimal_adjust routine
+
+2021-12-31  Ron Norman <rjn@inglenet.com>
+
+	* numeric.c: Speed up cob_decimal_add, cob_decimal_sub, cob_decimal_cmp
+	  Use the powers of 10 table instead of recomputing
+	  Add cob_decimal_copy for use by emitted code
 
 2021-12-03  Simon Sobisch <simonsobisch@gnu.org>
 
