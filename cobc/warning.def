@@ -119,3 +119,6 @@ CB_ONWARNDEF (cb_missing_newline, "missing-newline",
 
 CB_ONWARNDEF (cb_warn_filler, "others",
 	_("  -Wno-others           do not warn about different issues"))
+
+CB_ERRWARNDEF (cb_warn_unsupported, "unsupported",
+	_("  -Wno-unsupported      do not warn if runtime does not support a feature used"))

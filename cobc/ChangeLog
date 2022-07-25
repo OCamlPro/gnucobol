@@ -1,4 +1,11 @@
 
+2022-07-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.c (finalize_file), codegen.c (output_file_initialization):
+	  moved -Wunsupported check for ORGANIZATION INDEXED from codegen
+	  to parsing
+	* tree.c, typeck.c: msgid change for -Wunsupported
+
 2022-07-24  Simon Sobisch <simonsobisch@gnu.org>
 
 	* field.c (create_implicit_picture): explicit disallow generating picture
@@ -12,8 +19,8 @@
 	  registers to not point to an innocent source code
 	* tree.c (cb_build_picture, char_to_precedence_idx): cater for possible
 	  call without a current program
-	* tree.c (cb_build_picture): return cb_picture instead of cb_tree, as
-	  all but one caller directly use it that way
+	* tree.c (cb_build_picture), tree.h: return cb_picture instead of cb_tree,
+	  as all but one caller directly use it that way
 	* field.c (cb_resolve_redefines): fixed reasonable compiler warning
 	* typeck.c (cb_build_generic_register): finished VALUE definition and
 	  checks, now handling numeric and alphanumeric literals (others prepared)
@@ -1389,6 +1396,22 @@
 
 	* cobc.c: bug #618, fix -j mode with -o name that includes a directory
 	  and when multiple inputs are involved in a compile pass
+
+2020-02-10  Ron Norman <rjn@inglenet.com>
+
+	* cobc.c, cobc.h, codegen.c, help.c, warning.def: 
+		Add new define CB_ERRWARNDEF
+
+2020-02-05  Ron Norman <rjn@inglenet.com>
+
+	* cobc.c, codegen.c, typeck.c, sysdefines.h, warning.def: FR #117
+	  report when the COBOL code is using a feature which GnuCOBOL was not
+	  configured to support;
+	  -Wunsupported  is set to 'error' by default but can be downgraded
+	  warning/error is given for unsupported use of
+	    XML, JSON, file with ORGANIZATION INDEXED, extended screen-io
+	* codegen.c: Emit warning if ORANIZATION INDEXED used but not supported
+	* typeck.c: Emit warning if XML or JSON used but not supported
 
 2020-02-02  Simon Sobisch <simonsobisch@gnu.org>
 

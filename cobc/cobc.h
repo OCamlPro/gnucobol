@@ -426,6 +426,7 @@ extern int cb_old_trace;
 #define	CB_WARNDEF(opt,name,doc)	opt,
 #define	CB_ONWARNDEF(opt,name,doc)	opt,
 #define	CB_NOWARNDEF(opt,name,doc)	opt,
+#define	CB_ERRWARNDEF(opt,name,doc)	opt,
 enum cb_warn_opt
 {
 	COB_WARNOPT_NONE = 0,
@@ -435,6 +436,7 @@ enum cb_warn_opt
 #undef	CB_WARNDEF
 #undef	CB_ONWARNDEF
 #undef	CB_NOWARNDEF
+#undef	CB_ERRWARNDEF
 
 #define COBC_WARN_FILLER  cb_warn_filler
 

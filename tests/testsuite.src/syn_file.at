@@ -2297,7 +2297,7 @@ AT_DATA([prog.cob], [
 ])
 
 # note: we actually want to check codegen -> C compilation here
-AT_CHECK([$COMPILE -std=cobol2002 prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -std=cobol2002 -Wno-unsupported prog.cob], [0], [], [])
 
 AT_CLEANUP
 

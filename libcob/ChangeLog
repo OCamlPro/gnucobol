@@ -5,6 +5,20 @@
 	  fixed compiler warnings
 	* call.c (cob_call): switched argument table from dynamic allocation
 	  to stack allocation
+	* common.c (cob_add_exception), coblocal.h: new function to activate more
+	  than one exception at the same time
+	* common.c (cob_get_last_exception_name): adjusted to care for
+	  cob_add_exception
+	* screenio.c (handle_status): pass type of statement to raise
+	  either COB_EC_IMP_ACCEPT or COB_EC_IMP_DISPLAY
+	* screenio.c (handle_status, cob_set_crt3_status) [!COB_GEN_SCREENIO]:
+	  unconditionally defined those functions and finally return error
+	  status and nonfatal exception along with a warning on accept if the
+	  runtime is not configured for extended screenio
+	* mlio.c (set_xml_exception, set_xml_code, set_json_exception,
+	  set_json_code): unconditionally defined those functions and return
+	  error status and fatal exception (no runtime exit) along with a
+	  warning if the runtime is not configured for XML / JSON
 
 2022-07-08  Simon Sobisch <simonsobisch@gnu.org>
 

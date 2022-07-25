@@ -4533,6 +4533,17 @@ finalize_file (struct cb_file *f, struct cb_field *records)
 		f->linage_ctr = cb_build_field_reference (CB_FIELD (x), NULL);
 		CB_FIELD_ADD (current_program->working_storage, CB_FIELD (x));
 	}
+
+#if	!defined (WITH_INDEX_EXTFH) && \
+	!defined (WITH_DB) && \
+	!defined (WITH_CISAM) && !defined(WITH_DISAM) && !defined(WITH_VBISAM)
+	if (f->organization == COB_ORG_INDEXED) {
+		char msg[80];
+		snprintf (msg, sizeof (msg), "ORGANIZATION INDEXED; FD %s", f->name);
+		cb_warning (cb_warn_unsupported,
+			_("runtime is not configured to support %s"), msg);
+	}
+#endif
 }
 
 /* Communication description */

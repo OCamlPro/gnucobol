@@ -82,6 +82,9 @@ NEWS - user visible changes				-*- outline -*-
     the new, previously integrated, -Wconstant-numlit-expression
    -Wlarger-01-redefines as new warning (included with -Wextra) to check for
     the only larger REDEFINES that is explicit allowed by the COBOL standard
+   -Wno-unsupported -Wunsupported new option to disable or only warn
+    on use of features the runtime is not configured for;
+    this new option defaults to an error (= -Werror=unsupported)
 
 ** new compiler command line option to list the known runtime exception names
    and fatality `cobc --list-exceptions`
@@ -150,6 +153,9 @@ NEWS - user visible changes				-*- outline -*-
 ** source references shown in diagnostic messages and for trace at runtime
    as well as during debugging were extended, for example each executed WHEN,
    VARYING and UNTIL phrases are now seen
+
+** in case of any runtime features being used that are not available a warning
+   is generated and related exception status set
 
 
 * New build features

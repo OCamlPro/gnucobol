@@ -37,6 +37,19 @@
 #include <windows.h>
 #endif
 
+
+#if	defined (HAVE_NCURSESW_NCURSES_H) || \
+	defined (HAVE_NCURSESW_CURSES_H) || \
+	defined (HAVE_NCURSES_H) || \
+	defined (HAVE_NCURSES_NCURSES_H) || \
+	defined (HAVE_PDCURSES_H) || \
+	defined (HAVE_PDCURSES_CURSES_H) || \
+	defined (HAVE_XCURSES_H) || \
+	defined (HAVE_XCURSES_CURSES_H) || \
+	defined (HAVE_CURSES_H)
+#define WITH_EXTENDED_SCREENIO
+#endif
+
 #ifdef	HAVE_LOCALE_H
 #include <locale.h>
 #endif
@@ -99,7 +112,6 @@ static const char		*inspect_func;
 static cb_tree			inspect_data;
 struct cb_statement		*error_statement = NULL;
 
-#if 0 /* pending merge of cb_warn_unsupported */
 #ifndef WITH_XML2
 static int			warn_xml_done = 0;
 #endif
@@ -108,7 +120,6 @@ static int			warn_json_done = 0;
 #endif
 #ifndef WITH_EXTENDED_SCREENIO
 static int			warn_screen_done = 0;
-#endif
 #endif
 
 struct external_defined_register {
@@ -7512,6 +7523,15 @@ cb_emit_accept (cb_tree var, cb_tree pos, struct cb_attr_struct *attr_ptr)
 	cb_tree		size_is;	/* WITH SIZE IS */
 	cob_flags_t		disp_attrs;
 
+	if (current_program->flag_screen) {
+#ifndef WITH_EXTENDED_SCREENIO
+	if (!warn_screen_done) {
+		warn_screen_done = 1;
+		cb_warning (cb_warn_unsupported,
+			_("runtime is not configured to support %s"), "SCREEN SECTION");
+	}
+#endif
+	}
 	if (cb_validate_one (var)) {
 		return;
 	}
@@ -7584,8 +7604,8 @@ cb_emit_accept (cb_tree var, cb_tree pos, struct cb_attr_struct *attr_ptr)
 				cobc_xref_set_receiving (current_program->crt_status);
 			}
 		}
-		if ((CB_REF_OR_FIELD_P (var)) &&
-		     CB_FIELD_PTR (var)->storage == CB_STORAGE_SCREEN) {
+		if ((CB_REF_OR_FIELD_P (var)) 
+		 && CB_FIELD_PTR (var)->storage == CB_STORAGE_SCREEN) {
 			output_screen_from (CB_FIELD_PTR (var), 0);
 			gen_screen_ptr = 1;
 			if (pos) {
@@ -14115,6 +14135,13 @@ cb_emit_xml_generate (cb_tree out, cb_tree from, cb_tree count,
 	struct cb_ml_generate_tree	*tree;
 	unsigned char decimal_point;
 
+#ifndef WITH_XML2
+	if (!warn_xml_done) {
+		warn_xml_done = 1;
+		cb_warning (cb_warn_unsupported,
+			_("runtime is not configured to support %s"), "XML");
+	}
+#endif
 	if (syntax_check_ml_generate (out, from, count, encoding,
 						namespace_and_prefix, name_list,
 						type_list, suppress_list, 1)) {
@@ -14160,17 +14187,17 @@ cb_emit_json_generate (cb_tree out, cb_tree from, cb_tree count,
 	struct cb_ml_generate_tree	*tree;
 	unsigned char decimal_point;
 
-#if 0 /* pending merge of cb_warn_unsupported */
+#if 0 /* pending merge of ??? */
 	if (current_statement->ex_handler == NULL
 	 && current_statement->not_ex_handler == NULL)
 	  	current_statement->handler_type = NO_HANDLER;
+#endif
 #if	!defined (WITH_CJSON) && !defined (WITH_JSON_C)
 	if (!warn_json_done) {
 		warn_json_done = 1;
 		cb_warning (cb_warn_unsupported,
-			_("compiler is not configured to support %s"), "JSON");
+			_("runtime is not configured to support %s"), "JSON");
 	}
-#endif
 #endif
 	if (syntax_check_ml_generate (out, from, count, NULL,
 						NULL, name_list,

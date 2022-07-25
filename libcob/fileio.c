@@ -3996,11 +3996,18 @@ dobuild:
 	return 0;
 
 #else
+	static int first_idx_open = 1;
+
 	COB_UNUSED (f);
 	COB_UNUSED (filename);
 	COB_UNUSED (sharing);
 	COB_UNUSED (mode);
 
+	if (first_idx_open) {
+		first_idx_open = 0;
+		cob_runtime_warning (_("runtime is not configured to support %s"),
+			"ORGANIZATION INDEXED");
+	}
 	return COB_STATUS_91_NOT_AVAILABLE;
 #endif
 }

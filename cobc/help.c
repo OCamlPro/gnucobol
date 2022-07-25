@@ -150,10 +150,13 @@ cobc_print_usage_warnings (void)
 	puts (doc);							\
 	/* TRANSLATORS: This msgid is appended to msgid for -Wpossible-truncate and others */ \
 	puts (_("                        * NOT set with -Wall"));
+#define	CB_ERRWARNDEF(opt,name,doc)		\
+	puts (doc);
 #include "warning.def"
 #undef	CB_WARNDEF
 #undef	CB_ONWARNDEF
 #undef	CB_NOWARNDEF
+#undef	CB_ERRWARNDEF
 	puts (_("  -Werror               treat all warnings as errors"));
 	puts (_("  -Wno-error            don't treat warnings as errors"));
 	puts (_("  -Werror=<warning>     treat specified <warning> as error"));
