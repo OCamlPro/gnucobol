@@ -9797,15 +9797,6 @@ output_file_initialization (struct cb_file *f)
 	output_indent_level -= 17;
 	output_newline ();
 
-#if !defined(HAS_WITH_INDEXED) && !defined(WITH_INDEXED)
-	if (f->organization == COB_ORG_INDEXED) {
-		char msg[80];
-		snprintf(msg,sizeof(msg),"ORGANIZATION INDEXED; FD %s",f->name);
-		cb_warning (cb_warn_unsupported, 
-				_("compiler is not configured to support %s"), msg);
-	}
-#endif
-
 	nkeys = 1;
 	/* Output RELATIVE/RECORD KEY's */
 	if (f->organization == COB_ORG_RELATIVE

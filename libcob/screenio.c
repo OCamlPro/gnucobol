@@ -130,7 +130,11 @@ static int	curr_setting_mouse_flags = INT_MAX;
 #endif
 #endif
 
-/* Local function prototypes when screenio activated */
+enum screen_statement {
+	ACCEPT_STATEMENT,
+	DISPLAY_STATEMENT
+};
+
 
 #ifdef	WITH_EXTENDED_SCREENIO
 static void cob_screen_init	(void);
@@ -162,25 +166,80 @@ init_cob_screen_if_needed (void)
 #endif
 }
 
-#ifdef	WITH_EXTENDED_SCREENIO
 
 static void
-cob_beep (void)
+cob_set_crt3_status (cob_field *status_field, int fret)
 {
-	switch (COB_BEEP_VALUE) {
-	case 1:
-		(void)flash ();
-		return;
-	case 2:
-		cob_speaker_beep ();
-		return;
-	case 9:
-		return;
+	unsigned char	crtstat[3];
+
+	crtstat[0] = '0';
+	crtstat[1] = '\0';
+	crtstat[2] = '\0';
+
+	switch (fret) {
+	case 0:	/* OK */
+		crtstat[0] = '0';
+		crtstat[1] = '0';
+		break;
+
+	case 2005:	/* ESC */
+		crtstat[0] = '1';
+		crtstat[1] = '\0';
+		break;
+
+	case 8000:	/* NO_FIELD */
+	case 9001:	/* MAX_FIELD */
+		crtstat[0] = '9';
+		crtstat[1] = '\0';
+		break;
+
+	case 8001:	/* TIMEOUT, CHECKME */
+		crtstat[0] = '9';
+		crtstat[1] = '\1';
+		break;
+
+	/* TODO: more case COB_SCR_... */
+
 	default:
-		(void)beep ();
-		return;
+		if (fret >= 1001 && fret <= 1064) {
+			/* function keys */
+			crtstat[0] = '1';
+			crtstat[1] = (unsigned char)(fret - 1000);
+		} else if (fret >= 2001 && fret <= 2110) {
+			/* exception keys */
+			crtstat[0] = '2';
+			crtstat[1] = (unsigned char)(fret - 2000);
+		}
+	}
+
+	memcpy (status_field->data, crtstat, 3);
+}
+
+static void
+handle_status (const int fret, const enum screen_statement stmt)
+{
+	if (fret) {
+		cob_set_exception (stmt == ACCEPT_STATEMENT ?
+			COB_EC_IMP_ACCEPT : COB_EC_IMP_DISPLAY);
+	}
+	COB_ACCEPT_STATUS = fret;
+
+	if (COB_MODULE_PTR && COB_MODULE_PTR->crt_status) {
+		cob_field	*status_field = COB_MODULE_PTR->crt_status;
+		if (COB_FIELD_IS_NUMERIC (status_field)) {
+			cob_set_int (status_field, fret);
+		} else if (status_field->size == 3) {
+			cob_set_crt3_status (status_field, fret);
+		} else {
+			char	buff[23]; /* 10: make the compiler happy as "int" *could*
+						         have more digits than we "assume" */
+			sprintf (buff, "%4.4d", fret);
+			memcpy (status_field->data, buff, 4U);
+		}
 	}
 }
+
+#ifdef	WITH_EXTENDED_SCREENIO
 
 static void
 raise_ec_on_invalid_line_or_col (const int line, const int column)
@@ -307,11 +366,6 @@ cob_activate_color_pair (const short color_pair_number)
 
 	return ret;
 }
-
-enum screen_statement {
-	ACCEPT_STATEMENT,
-	DISPLAY_STATEMENT
-};
 
 static void
 cob_screen_attr (cob_field *fgc, cob_field *bgc, const cob_flags_t attr,
@@ -676,78 +730,6 @@ cob_convert_key (int *keyp, const cob_u32_t field_accept)
 }
 
 
-static void
-cob_set_crt3_status (cob_field *status_field, int fret)
-{
-	unsigned char	crtstat[3];
-
-	crtstat[0] = '0';
-	crtstat[1] = '\0';
-	crtstat[2] = '\0';
-
-	switch (fret) {
-	case 0:	/* OK */
-		crtstat[0] = '0';
-		crtstat[1] = '0';
-		break;
-
-	case 2005:	/* ESC */
-		crtstat[0] = '1';
-		crtstat[1] = '\0';
-		break;
-
-	case 8000:	/* NO_FIELD */
-	case 9001:	/* MAX_FIELD */
-		crtstat[0] = '9';
-		crtstat[1] = '\0';
-		break;
-
-	case 8001:	/* TIMEOUT, CHECKME */
-		crtstat[0] = '9';
-		crtstat[1] = '\1';
-		break;
-
-	/* TODO: more case COB_SCR_... */
-
-	default:
-		if (fret >= 1001 && fret <= 1064) {
-			/* function keys */
-			crtstat[0] = '1';
-			crtstat[1] = (unsigned char)(fret - 1000);
-		} else if (fret >= 2001 && fret <= 2110) {
-			/* exception keys */
-			crtstat[0] = '2';
-			crtstat[1] = (unsigned char)(fret - 2000);
-		}
-	}
-
-	memcpy (status_field->data, crtstat, 3);
-}
-
-
-static void
-handle_status (const int fret)
-{
-	if (fret) {
-		cob_set_exception (COB_EC_IMP_ACCEPT);
-	}
-	COB_ACCEPT_STATUS = fret;
-
-	if (COB_MODULE_PTR && COB_MODULE_PTR->crt_status) {
-		cob_field	*status_field = COB_MODULE_PTR->crt_status;
-		if (COB_FIELD_IS_NUMERIC (status_field)) {
-			cob_set_int (status_field, fret);
-		} else if (status_field->size == 3) {
-			cob_set_crt3_status (status_field, fret);
-		} else {
-			char	buff[23]; /* 10: make the compiler happy as "int" *could*
-						         have more digits than we "assume" */
-			sprintf (buff, "%4.4d", fret);
-			memcpy (status_field->data, buff, 4U);
-		}
-	}
-}
-
 /* update field for the programs SPECIAL-NAMES CURSOR clause */
 static void
 pass_cursor_to_program (void)
@@ -972,12 +954,12 @@ get_size (cob_screen *s)
 
 }
 static void
-get_screen_item_line_and_col (cob_screen * s, int * const line,
+get_screen_item_line_and_col (cob_screen *s, int * const line,
 			      int * const col)
 {
 	int		found_line = 0;
 	int		found_col = 0;
-	int	        is_screen_to_display = 1;
+	int		is_screen_to_display = 1;
 	int		is_elementary;
 
 	*line = 0;
@@ -1008,7 +990,7 @@ get_screen_item_line_and_col (cob_screen * s, int * const line,
 			}
 			
 			if (!found_col && !s->column && is_elementary
-			    && !is_first_screen_item (s)) {
+			 && !is_first_screen_item (s)) {
 				/*
 				  Note that group items are excluded; the
 				  standard assumes COL + 1, unless otherwise
@@ -1020,7 +1002,7 @@ get_screen_item_line_and_col (cob_screen * s, int * const line,
 			}
 		}
 
-	        is_screen_to_display = 0;
+		is_screen_to_display = 0;
 	}
 
 	*line += origin_y;
@@ -2472,14 +2454,14 @@ screen_accept (cob_screen *s, const int line, const int column,
 	/* Prepare input fields */
 	if (cob_prep_input (s)) {
 		pass_cursor_to_program ();
-		handle_status (9001);
+		handle_status (9001, ACCEPT_STATEMENT);
 		return;
 	}
 
 	/* No input field is an error */
 	if (!totl_index) {
 		pass_cursor_to_program ();
-		handle_status (8000);
+		handle_status (8000, ACCEPT_STATEMENT);
 		return;
 	}
 
@@ -2528,7 +2510,7 @@ screen_accept (cob_screen *s, const int line, const int column,
 	}
 	cob_screen_get_all (initial_curs, accept_timeout);
 	pass_cursor_to_program ();
-	handle_status (global_return);
+	handle_status (global_return, ACCEPT_STATEMENT);
 }
 
 static void
@@ -3303,7 +3285,7 @@ field_accept (cob_field *f, const int sline, const int scolumn, cob_field *fgc,
 	}
  field_return:
 	pass_cursor_to_program ();
-	handle_status (fret);
+	handle_status (fret, ACCEPT_STATEMENT);
 	if (f) {
 		cob_move (&temp_field, f);
 		cob_move_cursor (sline, right_pos + 1);
@@ -3588,6 +3570,7 @@ cob_field_display (cob_field *f, cob_field *line, cob_field *column,
 	COB_UNUSED (fscroll);
 	COB_UNUSED (size_is);
 	COB_UNUSED (fattr);
+	handle_status (9000, DISPLAY_STATEMENT);
 }
 
 void
@@ -3596,6 +3579,7 @@ cob_field_accept (cob_field *f, cob_field *line, cob_field *column,
 		  cob_field *ftimeout, cob_field *prompt,
 		  cob_field *size_is, const cob_flags_t fattr)
 {
+	static int first_accept = 1;
 	COB_UNUSED (f);
 	COB_UNUSED (line);
 	COB_UNUSED (column);
@@ -3606,6 +3590,12 @@ cob_field_accept (cob_field *f, cob_field *line, cob_field *column,
 	COB_UNUSED (prompt);
 	COB_UNUSED (size_is);
 	COB_UNUSED (fattr);
+	if (first_accept) {
+		first_accept = 0;
+		cob_runtime_warning (_("runtime is not configured to support %s"),
+			"screenio ACCEPT");
+	}
+	handle_status (9000, ACCEPT_STATEMENT);
 }
 
 void
@@ -3616,6 +3606,7 @@ cob_screen_display (cob_screen *s, cob_field *line, cob_field *column,
 	COB_UNUSED (line);
 	COB_UNUSED (column);
 	COB_UNUSED (zero_line_col_allowed);
+	handle_status (9000, DISPLAY_STATEMENT);
 }
 
 void
@@ -3623,11 +3614,18 @@ cob_screen_accept (cob_screen *s, cob_field *line,
 		   cob_field *column, cob_field *ftimeout,
 		    const int zero_line_col_allowed)
 {
+	static int first_accept = 1;
 	COB_UNUSED (s);
 	COB_UNUSED (line);
 	COB_UNUSED (column);
 	COB_UNUSED (ftimeout);
 	COB_UNUSED (zero_line_col_allowed);
+	if (first_accept) {
+		first_accept = 0;
+		cob_runtime_warning (_("runtime is not configured to support %s"),
+			"screenio ACCEPT");
+	}
+	handle_status (9000, ACCEPT_STATEMENT);
 }
 
 void

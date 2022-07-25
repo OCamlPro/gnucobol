@@ -7015,7 +7015,7 @@ cb_emit_accept (cb_tree var, cb_tree pos, struct cb_attr_struct *attr_ptr)
 	if (!warn_screen_done) {
 		warn_screen_done = 1;
 		cb_warning (cb_warn_unsupported,
-			_("compiler is not configured to support %s"), "SCREEN SECTION");
+			_("runtime is not configured to support %s"), "SCREEN SECTION");
 	}
 #endif
 	}
@@ -13765,7 +13765,7 @@ cb_emit_xml_generate (cb_tree out, cb_tree from, cb_tree count,
 	if (!warn_xml_done) {
 		warn_xml_done = 1;
 		cb_warning (cb_warn_unsupported,
-			_("compiler is not configured to support %s"), "XML");
+			_("runtime is not configured to support %s"), "XML");
 	}
 #endif
 	if (syntax_check_ml_generate (out, from, count, encoding,
@@ -13820,7 +13820,7 @@ cb_emit_json_generate (cb_tree out, cb_tree from, cb_tree count,
 	if (!warn_json_done) {
 		warn_json_done = 1;
 		cb_warning (cb_warn_unsupported,
-			_("compiler is not configured to support %s"), "JSON");
+			_("runtime is not configured to support %s"), "JSON");
 	}
 #endif
 	if (syntax_check_ml_generate (out, from, count, NULL,

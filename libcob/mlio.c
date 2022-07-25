@@ -71,6 +71,43 @@ static cob_global		*cobglobptr;
 
 /* Local functions */
 
+
+static void
+set_xml_code (const unsigned int code)
+{
+	/* if the COBOL module never checks the code it isn't generated,
+	   this also makes clear that we don't need to (and can't) set it */
+	if (!COB_MODULE_PTR->xml_code) {
+		return;
+	}
+	cob_set_field_to_uint (COB_MODULE_PTR->xml_code, code);
+}
+
+static void
+set_xml_exception (const unsigned int code)
+{
+	cob_set_exception (COB_EC_XML_IMP);
+	set_xml_code (code);
+}
+
+static void
+set_json_code (const unsigned int code)
+{
+	/* if the COBOL module never checks the code it isn't generated,
+	   this also makes clear that we don't need to (and can't) set it */
+	if (!COB_MODULE_PTR->json_code) {
+		return;
+	}
+	cob_set_field_to_uint (COB_MODULE_PTR->json_code, code);
+}
+
+static void
+set_json_exception (const unsigned int code)
+{
+	cob_set_exception (COB_EC_JSON_IMP);
+	set_json_code (code);
+}
+
 #if defined (WITH_XML2) || defined (WITH_CJSON) || defined (WITH_JSON_C)
 
 static void *
@@ -170,17 +207,6 @@ get_num (cob_field * const f, void * (*strndup_func)(const char *, size_t),
 #endif
 
 #if WITH_XML2
-
-static void
-set_xml_code (const unsigned int code)
-{
-	/* if the COBOL module never checks the code it isn't generated,
-	   this also makes clear that we don't need to (and can't) set it */
-	if (!COB_MODULE_PTR->xml_code) {
-		return;
-	}
-	cob_set_field_to_uint (COB_MODULE_PTR->xml_code, code);
-}
 
 static int
 is_all_spaces (const cob_field * const f)
@@ -551,34 +577,9 @@ generate_xml_from_tree (xmlTextWriterPtr writer, cob_ml_tree *tree,
 
 #undef IF_NEG_RETURN_ELSE_COUNT
 
-static void
-set_xml_exception (const unsigned int code)
-{
-	cob_set_exception (COB_EC_XML_IMP);
-	set_xml_code (code);
-}
-
 #endif
 
 #if defined (WITH_CJSON) || defined (WITH_JSON_C)
-
-static void
-set_json_code (const unsigned int code)
-{
-	/* if the COBOL module never checks the code it isn't generated,
-	   this also makes clear that we don't need to (and can't) set it */
-	if (!COB_MODULE_PTR->json_code) {
-		return;
-	}
-	cob_set_field_to_uint (COB_MODULE_PTR->json_code, code);
-}
-
-static void
-set_json_exception (const unsigned int code)
-{
-	cob_set_exception (COB_EC_JSON_IMP);
-	set_json_code (code);
-}
 
 static void *
 json_strndup (const char *str, const size_t size)
@@ -938,6 +939,8 @@ cob_xml_generate (cob_field *out, cob_ml_tree *tree, cob_field *count,
 		  const int with_xml_dec, cob_field *ns, cob_field *ns_prefix,
 		  const char decimal_point)
 {
+	static int first_xml = 1;
+
 	COB_UNUSED (out);
 	COB_UNUSED (tree);
 	COB_UNUSED (count);
@@ -945,6 +948,13 @@ cob_xml_generate (cob_field *out, cob_ml_tree *tree, cob_field *count,
 	COB_UNUSED (ns);
 	COB_UNUSED (ns_prefix);
 	COB_UNUSED (decimal_point);
+	if (first_xml) {
+		first_xml = 0;
+		cob_runtime_warning (_("runtime is not configured to support %s"),
+			"XML");
+	}
+	set_xml_exception (XML_INTERNAL_ERROR);
+	cob_add_exception (COB_EC_IMP_FEATURE_DISABLED);
 }
 
 #endif
@@ -1042,10 +1052,20 @@ void
 cob_json_generate (cob_field *out, cob_ml_tree *tree, cob_field *count,
 		   const char decimal_point)
 {
+	static int first_json = 1;
+
 	COB_UNUSED (out);
 	COB_UNUSED (tree);
 	COB_UNUSED (count);
 	COB_UNUSED (decimal_point);
+
+	if (first_json) {
+		first_json = 0;
+		cob_runtime_warning (_("runtime is not configured to support %s"),
+			"JSON");
+	}
+	set_json_exception (JSON_INTERNAL_ERROR);
+	cob_add_exception (COB_EC_IMP_FEATURE_DISABLED);
 }
 
 #endif

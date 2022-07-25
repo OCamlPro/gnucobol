@@ -436,6 +436,7 @@ COB_HIDDEN void		cob_screen_set_mode	(const cob_u32_t);
 COB_HIDDEN void		cob_settings_screenio	(void);
 
 COB_HIDDEN int		cob_get_last_exception_code	(void);
+COB_HIDDEN void		cob_add_exception (const int);
 COB_HIDDEN int		cob_check_env_true	(char*);
 COB_HIDDEN int		cob_check_env_false	(char*);
 COB_HIDDEN const char	*cob_get_last_exception_name	(void);

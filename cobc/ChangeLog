@@ -1,4 +1,11 @@
 
+2022-07-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.c (finalize_file), codegen.c (output_file_initialization):
+	  moved -Wunsupported check for ORGANIZATION INDEXED from codegen
+	  to parsing
+	* tree.c, typeck.c: msgid change for -Wunsupported
+
 2022-07-01  Simon Sobisch <simonsobisch@gnu.org>
 
 	* field.c (validate_blank_when_zero): iterate over pic->str
