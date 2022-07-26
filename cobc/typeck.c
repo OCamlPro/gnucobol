@@ -2420,8 +2420,14 @@ cb_build_identifier (cb_tree x, const int subchk)
 		if (CB_EXCEPTION_ENABLE (COB_EC_BOUND_SUBSCRIPT) && f->odo_level != 0) {
 			for (p = f; p; p = p->children) {
 				if (p->depending && p->depending != cb_error_node
-				    /* For PIC L, check length only for direct access */
-				 && (p == f || p->parent == f || !p->parent->flag_picture_l)
+				    /* Do not check length for implicit access
+				       to a PIC L field (i.e, via enclosing
+				       group), as those disregard the DEPENDING.
+				       However, assuming the filler is never
+				       explicitly accessed (p == f), check is
+				       still done for explicit access to PIC L
+				       field (p->parent == f). */
+				 && (p->parent == f || !p->parent->flag_picture_l)
 				 && !p->flag_unbounded) {
 					e1 = CB_BUILD_FUNCALL_5 ("cob_check_odo",
 						 cb_build_cast_int (p->depending),
@@ -7171,7 +7177,7 @@ emit_move_corresponding (cb_tree x1, cb_tree x2)
 				t1 = cb_build_field_reference (f1, x1);
 				t2 = cb_build_field_reference (f2, x2);
 				/* GCOS 7: Contrary to the documentation,
-				   handling of PIL L fields in MOVE
+				   handling of PIC L fields in MOVE
 				   CORRESPONDING ignores the DEPENDING var for
 				   both sending and receiving fields. */
 				if (f1->flag_picture_l) {

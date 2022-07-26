@@ -1114,8 +1114,6 @@ output_base (struct cb_field *f, const cob_u32_t no_output)
 		output ("%s%d", CB_PREFIX_BASE, f01->id);
 	}
 
-	/* CHECKME: May varying addresses occur only with sliging ODO?  If yes
-	   we can jump straight into the else branche when !cb_odoslide. */
 	if (!gen_init_working
 	 && chk_field_variable_address (f)) {
 		if (f01->level == 0
