@@ -66,16 +66,15 @@
 	* parser.y: add DEPENDING ON for picture strings with an `L`
 	  character
 	* config.def: new option picture-l
-	* tree.h (struct cb_picture, struct cb_field), typeck.c
+	* tree.h (struct cb_picture, struct cb_field), tree.c
+	  (cb_field_variable_size, cb_field_variable_address), typeck.c
 	  (cb_build_identifier, cb_validate_program_data, cb_emit_initialize)
 	  (cb_emit_move_corresponding, emit_move_corresponding), codegen.c
 	  (chk_field_variable_size, chk_field_variable_address)
-	  (out_odoslide_fld_offset): account for PIC L, variable length
-	  alphanumeric fields (GCOS-specific extension)
-	* tree.c: add support for `L` characters in picture strings
-	* tree.c (cb_field_variable_address), codegen.c
-	  (chk_field_variable_address): do not count REDEFINES when checking
-	  varying address
+	  (out_odoslide_fld_offset): add support for `L` characters in picture
+	  strings, variable length alphanumeric fields (GCOS-specific extension)
+	* codegen.c (chk_field_variable_address): do not count REDEFINES when
+	  checking varying address
 	* field.c (is_elementary_integer): new function to decide whether
 	  a field hold elementary Integers
 	* field.c (validate_value): PIC L fields may not have VALUE clause

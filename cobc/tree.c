@@ -3836,6 +3836,8 @@ cb_field_variable_size (const struct cb_field *f)
 	for (fc = f->children; fc; fc = fc->sister) {
 		if (fc->depending) {
 			return fc;
+		} else if (fc->flag_picture_l) {
+			continue;
 		} else if ((p = cb_field_variable_size (fc)) != NULL) {
 			return p;
 		}
@@ -3852,9 +3854,8 @@ cb_field_variable_address (const struct cb_field *fld)
 	f = fld;
 	for (p = f->parent; p; f = f->parent, p = f->parent) {
 		for (p = p->children; p != f; p = p->sister) {
-			/* Skip redefines as they should not impact addresses */
-			if (p->redefines) continue;
-			if (p->depending || cb_field_variable_size (p)) {
+			if (p->depending ||
+			    (!p->flag_picture_l && cb_field_variable_size (p))) {
 				return 1;
 			}
 		}
@@ -4416,7 +4417,7 @@ finalize_file (struct cb_file *f, struct cb_field *records)
 			}
 		}
 	}
-	
+
 	/* Validate and set max and min record size */
 	for (p = records; p; p = p->sister) {
 		if (f->organization == COB_ORG_INDEXED

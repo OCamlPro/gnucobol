@@ -2420,6 +2420,7 @@ cb_build_identifier (cb_tree x, const int subchk)
 		if (CB_EXCEPTION_ENABLE (COB_EC_BOUND_SUBSCRIPT) && f->odo_level != 0) {
 			for (p = f; p; p = p->children) {
 				if (p->depending && p->depending != cb_error_node
+				    /* For PIC L, check length only for direct access */
 				 && (p == f || p->parent == f || !p->parent->flag_picture_l)
 				 && !p->flag_unbounded) {
 					e1 = CB_BUILD_FUNCALL_5 ("cob_check_odo",
@@ -7165,6 +7166,10 @@ emit_move_corresponding (cb_tree x1, cb_tree x2)
 			if (strcmp (f1->name, f2->name) == 0) {
 				t1 = cb_build_field_reference (f1, x1);
 				t2 = cb_build_field_reference (f2, x2);
+				/* GCOS 7: Contrary to the documentation,
+				   handling of PIL L fields in MOVE
+				   CORRESPONDING ignores the DEPENDING var for
+				   both sending and receiving fields. */
 				if (f1->flag_picture_l) {
 					CB_REFERENCE (t1)->length = cb_int (f1->size);
 				}
@@ -7172,7 +7177,7 @@ emit_move_corresponding (cb_tree x1, cb_tree x2)
 					CB_REFERENCE (t2)->length = cb_int (f2->size);
 				}
 				if (f1->children && !f1->flag_picture_l &&
-				    f2->children && !f1->flag_picture_l) {
+				    f2->children && !f2->flag_picture_l) {
 					found += emit_move_corresponding (t1, t2);
 				} else {
 					cb_emit (cb_build_move (t1, t2));
@@ -9423,6 +9428,9 @@ cb_emit_initialize (cb_tree vars, cb_tree fillinit, cb_tree value,
 		 && CB_REFERENCE_P (x)
 		 && CB_REFERENCE   (x)->subs == NULL
 		 && CB_REFERENCE   (x)->length == NULL) {
+			/* GCOS 7: Contrary to what the documentation states,
+			   PIC L fields are initialized up to length indicated
+			   by DEPENDING var. */
 			cb_tree		temp;
 			temp = cb_build_index (cb_build_filler (), NULL, 0, NULL);
 			CB_FIELD (cb_ref (temp))->usage = CB_USAGE_LENGTH;

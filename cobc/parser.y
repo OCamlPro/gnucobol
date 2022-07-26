@@ -7738,7 +7738,6 @@ report_occurs_clause:
   OCCURS integer _occurs_to_integer _times
   _occurs_depending _occurs_step
   {
-	current_field->depending = $5;
 	/* most of the field attributes are set when parsing the phrases */;
 	setup_occurs ();
 	setup_occurs_min_max ($2, $3);
@@ -7758,7 +7757,6 @@ occurs_clause:
   OCCURS integer _occurs_to_integer _times
   _occurs_depending _occurs_keys_and_indexed
   {
-	current_field->depending = $5;
 	/* most of the field attributes are set when parsing the phrases */;
 	setup_occurs ();
 	setup_occurs_min_max ($2, $3);
@@ -7808,8 +7806,10 @@ _occurs_integer_to:
 ;
 
 _occurs_depending:
-  /* empty */			{ $$ = NULL; }
-| DEPENDING _on reference	{ $$ = $3; }
+| DEPENDING _on reference
+  {
+	current_field->depending = $3;
+  }
 ;
 _capacity_in:
 | CAPACITY _in WORD

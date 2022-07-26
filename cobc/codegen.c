@@ -787,12 +787,10 @@ chk_field_variable_address (struct cb_field *fld)
 					return 1;
 				}
 #endif
-				/* Skip redefines as they should not impact addresses: */
-				if (p->redefines) continue;
 				/* Skip PIC L fields as their representation
 				   have constant length */
-				if (p->flag_picture_l) continue;
-				if (p->depending || chk_field_variable_size (p)) {
+				if (p->depending ||
+				    (!p->flag_picture_l && chk_field_variable_size (p))) {
 #if 0	/* only useful with the code above */
 					/* as we have a variable address, all sisters will also;
 					   store this for next check */
@@ -1119,7 +1117,6 @@ output_base (struct cb_field *f, const cob_u32_t no_output)
 	/* CHECKME: May varying addresses occur only with sliging ODO?  If yes
 	   we can jump straight into the else branche when !cb_odoslide. */
 	if (!gen_init_working
-	 && cb_odoslide
 	 && chk_field_variable_address (f)) {
 		if (f01->level == 0
 		 && f01->sister
