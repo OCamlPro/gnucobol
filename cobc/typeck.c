@@ -4556,7 +4556,7 @@ cb_validate_program_data (struct cb_program *prog)
 	/* Check ODO items */
 	for (l = cb_depend_check; l; l = CB_CHAIN (l)) {
 		struct cb_field		*depfld = NULL;
-		unsigned int		odo_level = 0;
+		unsigned int		odo_level = 0, parent_is_pic_l;
 		cb_tree	xerr = NULL;
 		x = CB_VALUE (l);
 		if (x == NULL || x == cb_error_node) {
@@ -4568,13 +4568,17 @@ cb_validate_program_data (struct cb_program *prog)
 		} else if (cb_ref (q->depending) != cb_error_node) {
 			depfld = CB_FIELD_PTR (q->depending);
 		}
+		/* Direct parent being PIC L means we are checking an implicit
+		   FILLER with ODO: this permits nested ODO and further sister
+		   fields. */
+		parent_is_pic_l = q->parent && q->parent->flag_picture_l;
 		/* The data item that contains a OCCURS DEPENDING clause must be
 		   the last data item in the group */
 		for (p = q; ; p = p->parent) {
 			if (p->depending) {
 				if (odo_level > 0
 				 && !cb_odoslide
-				 && !q->parent->flag_picture_l) {
+				 && !parent_is_pic_l) {
 					xerr = x;
 					cb_error_x (x,
 						_("'%s' cannot have nested OCCURS DEPENDING"),
@@ -4597,7 +4601,7 @@ cb_validate_program_data (struct cb_program *prog)
 				if (!p->sister->redefines) {
 					if (!cb_odoslide
 					 && !cb_complex_odo
-					 && !q->parent->flag_picture_l
+					 && !parent_is_pic_l
 					 && x != xerr) {
 						xerr = x;
 						cb_error_x (x,
@@ -4605,7 +4609,7 @@ cb_validate_program_data (struct cb_program *prog)
 							cb_name (x), p->sister->name);
 						break;
 					}
-					p->flag_odo_relative = /* CHECKME: !q->parent->flag_picture_l */1;
+					p->flag_odo_relative = /* CHECKME: !parent_is_pic_l */1;
 				}
 			}
 		}
