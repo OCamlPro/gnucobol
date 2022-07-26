@@ -1116,6 +1116,8 @@ output_base (struct cb_field *f, const cob_u32_t no_output)
 		output ("%s%d", CB_PREFIX_BASE, f01->id);
 	}
 
+	/* CHECKME: May varying addresses occur only with sliging ODO?  If yes
+	   we can jump straight into the else branche when !cb_odoslide. */
 	if (!gen_init_working
 	 && cb_odoslide
 	 && chk_field_variable_address (f)) {
@@ -1124,7 +1126,25 @@ output_base (struct cb_field *f, const cob_u32_t no_output)
 		 && strstr (f01->name, " Record")) {	/* Skip to First 01 within FD */
 			f01 = f01->sister;
 		}
-		out_odoslide_offset (f01, f);
+		if (cb_odoslide) {
+			out_odoslide_offset (f01, f);
+		} else {
+			struct cb_field		*v, *p;
+			for (p = f->parent; p; f = f->parent, p = f->parent) {
+				for (p = p->children; p != f; p = p->sister) {
+					v = chk_field_variable_size (p);
+					if (v) {
+						output (" + %d + ", v->offset - p->offset);
+						if (v->size != 1) {
+							output ("%d * ", v->size);
+						}
+						output_integer (v->depending);
+					} else {
+						output (" + %d", p->size * p->occurs_max);
+					}
+				}
+			}
+		}
 	} else if (f->offset > 0) {
 		output (" + %d", f->offset);
 	}
