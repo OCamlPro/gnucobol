@@ -4609,7 +4609,7 @@ cb_validate_program_data (struct cb_program *prog)
 							cb_name (x), p->sister->name);
 						break;
 					}
-					p->flag_odo_relative = /* CHECKME: !parent_is_pic_l */1;
+					p->flag_odo_relative = 1;
 				}
 			}
 		}
