@@ -242,6 +242,24 @@ handle_status (const int fret, const enum screen_statement stmt)
 #ifdef	WITH_EXTENDED_SCREENIO
 
 static void
+cob_beep (void)
+{
+	switch (COB_BEEP_VALUE) {
+	case 1:
+		(void)flash ();
+		return;
+	case 2:
+		cob_speaker_beep ();
+		return;
+	case 9:
+		return;
+	default:
+		(void)beep ();
+		return;
+	}
+}
+
+static void
 raise_ec_on_invalid_line_or_col (const int line, const int column)
 {
 	int	max_y;
