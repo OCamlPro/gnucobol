@@ -5688,6 +5688,16 @@ AT_DATA([prog.cob], [
                       "(X-ALPHA)': " W-LEN
               PERFORM SHOW-VARS
            END-IF
+           MOVE 9 TO LGY
+           MOVE ALL "A" TO Y-ALPHA
+           MOVE 5 TO LGY
+           INITIALIZE Y-ALPHA
+           MOVE 9 TO LGY
+           IF Y-ALPHA NOT EQUAL "     AAAA"
+              DISPLAY "UNEXPECTED RESULT AFTER 'MOVE ALL/INITIALIZE': "
+                      Y-ALPHA
+              PERFORM SHOW-VARS
+           END-IF
            STOP RUN
            .
        SHOW-VARS.
