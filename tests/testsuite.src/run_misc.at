@@ -3165,6 +3165,28 @@ AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [0004030201], [])
 AT_CLEANUP
 
 
+AT_SETUP([SORT: table sort (toplevel)])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 VAL           PIC X(5) VALUE "43512".
+       01 TBL           REDEFINES VAL PIC X OCCURS 5.
+       PROCEDURE        DIVISION.
+           SORT TBL ASCENDING
+           IF VAL NOT = "12345" DISPLAY VAL.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([SORT: EBCDIC table sort])
 AT_KEYWORDS([runmisc ALPHABET OBJECT-COMPUTER])
 

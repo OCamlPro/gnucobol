@@ -67,7 +67,7 @@ unset LANG
 # FLAGS="-debug -Wall ${COBOL_FLAGS}"
 FLAGS="-debug -Wall ${COBOL_FLAGS} -fno-diagnostics-show-option"
 COMPILE="${COBC} -x ${FLAGS}"
-COMPILE_ONLY="${COBC} -fsyntax-only ${FLAGS}"
+COMPILE_ONLY="${COBC} -fsyntax-only ${FLAGS} -Wno-unsupported"
 COMPILE_MODULE="${COBC} -m ${FLAGS}"
 
 # Helper script to unify listings (replace version, date, time)

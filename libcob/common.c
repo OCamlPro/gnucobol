@@ -1733,8 +1733,23 @@ cob_get_last_exception_name (void)
 {
 	size_t	n;
 
-	for (n = 0; n < EXCEPTION_TAB_SIZE; ++n) {
+	/* direct match */
+	for (n = 1; n < EXCEPTION_TAB_SIZE; ++n) {
 		if (last_exception_code == cob_exception_tab_code[n]) {
+			return cob_exception_tab_name[n];
+		}
+	}
+	/* any match (last to first to get most specific one,
+	   checking missing/not supported first) */
+	if (cob_last_exception_is (COB_EC_IMP_FEATURE_MISSING)) {
+		return cob_exception_tab_name[COB_EC_IMP_FEATURE_MISSING];
+	}
+	if (cob_last_exception_is (COB_EC_IMP_FEATURE_DISABLED)) {
+		return cob_exception_tab_name[COB_EC_IMP_FEATURE_DISABLED];
+	}
+	for (n = EXCEPTION_TAB_SIZE - 1; n != 0; --n) {
+		if ((last_exception_code & cob_exception_tab_code[n])
+			== cob_exception_tab_code[n]) {
 			return cob_exception_tab_name[n];
 		}
 	}
@@ -1776,6 +1791,18 @@ cob_set_exception (const int id)
 		cobglobptr->last_exception_section = NULL;
 		cobglobptr->last_exception_paragraph = NULL;
 	}
+}
+
+/* add to last exception, set if empty */
+void
+cob_add_exception (const int id)
+{
+	if (!cobglobptr->cob_exception_code) {
+		cob_set_exception (id);
+		return;
+	}
+	cobglobptr->cob_exception_code |= cob_exception_tab_code[id];
+	last_exception_code |= cob_exception_tab_code[id];
 }
 
 /* return the last exception value */

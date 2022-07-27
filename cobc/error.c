@@ -312,10 +312,12 @@ static char *warning_option_text (const enum cb_warn_opt opt, const enum cb_warn
 #define	CB_WARNDEF(opt_val,name,doc)	case opt_val: opt_name = name; break;
 #define	CB_ONWARNDEF(opt_val,name,doc)	case opt_val: opt_name = name; break;
 #define	CB_NOWARNDEF(opt_val,name,doc)	case opt_val: opt_name = name; break;
+#define	CB_ERRWARNDEF(opt_val,name,doc)	case opt_val: opt_name = name; break;
 #include "warning.def"
 #undef	CB_WARNDEF
 #undef	CB_ONWARNDEF
 #undef	CB_NOWARNDEF
+#undef	CB_ERRWARNDEF
 		/* LCOV_EXCL_START */
 	case COB_WARNOPT_NONE:
 	case COB_WARNOPT_MAX:

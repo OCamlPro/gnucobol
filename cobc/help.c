@@ -150,10 +150,13 @@ cobc_print_usage_warnings (void)
 	puts (doc);							\
 	/* TRANSLATORS: This msgid is appended to msgid for -Wpossible-truncate and others */ \
 	puts (_("                        * NOT set with -Wall"));
+#define	CB_ERRWARNDEF(opt,name,doc)		\
+	puts (doc);
 #include "warning.def"
 #undef	CB_WARNDEF
 #undef	CB_ONWARNDEF
 #undef	CB_NOWARNDEF
+#undef	CB_ERRWARNDEF
 	puts (_("  -Werror               treat all warnings as errors"));
 	puts (_("  -Wno-error            don't treat warnings as errors"));
 	puts (_("  -Werror=<warning>     treat specified <warning> as error"));
@@ -271,6 +274,7 @@ cobc_print_usage_dialect (void)
 	cobc_print_config_flag ("reserved", _("word to be added to reserved words list"), _("<word>"));
 	cobc_print_config_flag ("reserved", _("word to be added to reserved words list as alias"), _("<word>:<alias>"));
 	cobc_print_config_flag ("not-register", _("special register to disable"), _("<word>"));
-	cobc_print_config_flag ("register", _("special register to enable"), _("<word>"));
+	cobc_print_config_flag ("register", _("special register to enable"),
+		_("<word> or <word>:<definition>, where definition uses backslash escaped spaces"));
 	putchar ('\n');
 }

@@ -1,12 +1,30 @@
 
+2022-07-27  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* typeck.c (cb_emit_sort_init): avoid SIGSEGV on SORT of toplevel field
+
+2022-07-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.c (finalize_file), codegen.c (output_file_initialization):
+	  moved -Wunsupported check for ORGANIZATION INDEXED from codegen
+	  to parsing
+	* tree.c, typeck.c: msgid change for -Wunsupported
+
+2022-07-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* field.c (create_implicit_picture): explicit disallow generating picture
+	  from FUNCTION which size is commonly unknown (and use of intrinsic
+	  functions outside of PROCEDURE DIVISION is an extension already)
+	* field.c (validate_elem_screen_clauses_std): require PIC in more cases
+
 2022-07-19  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y, typeck.c: temporary adjust source reference when building
 	  registers to not point to an innocent source code
 	* tree.c (cb_build_picture, char_to_precedence_idx): cater for possible
 	  call without a current program
-	* tree.c (cb_build_picture): return cb_picture instead of cb_tree, as
-	  all but one caller directly use it that way
+	* tree.c (cb_build_picture), tree.h: return cb_picture instead of cb_tree,
+	  as all but one caller directly use it that way
 	* field.c (cb_resolve_redefines): fixed reasonable compiler warning
 	* typeck.c (cb_build_generic_register): finished VALUE definition and
 	  checks, now handling numeric and alphanumeric literals (others prepared)
@@ -16,6 +34,7 @@
 	  with configuration entry or -fregister, to allow this store the original
 	  pre-validated definition in the new struct external_defined_register
 	  and build the field when parsing for the program starts
+	* help.c (cobc_print_usage_dialect): extended -fregister help
 
 2022-07-18  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -30,7 +49,7 @@
 	  checks for "able to parse complete definition"
 	* cobc.c: skip unreferenced special register in listing/xref
 
-2022-07-14  Matthew Remacle <mattata@users.sf.net
+2022-07-14  Matthew Remacle <mattata@users.sf.net>
 
 	* tree.c (literal_for_diagnostic): fixed #844 stack-based buffer overflow
 
@@ -60,6 +79,28 @@
 	  passing it (to error_literal); return a valid literal in case of
 	  literal errors (intead of cb_error_node) to prevent spurious
 	  follow-up errors on their use
+
+2022-07-12  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* parser.y: add DEPENDING ON for picture strings with an `L`
+	  character
+	* config.def: new option picture-l
+	* tree.h (struct cb_picture, struct cb_field), tree.c
+	  (cb_field_variable_size, cb_field_variable_address), typeck.c
+	  (cb_build_identifier, cb_validate_program_data, cb_emit_initialize)
+	  (cb_emit_move_corresponding, emit_move_corresponding), codegen.c
+	  (chk_field_variable_size, chk_field_variable_address)
+	  (out_odoslide_fld_offset): add support for `L` characters in picture
+	  strings, variable-length alphanumeric fields (GCOS extension)
+	* field.c (validate_field_value): PIC L fields may not have VALUE clause
+	* field.c (validate_occurs): allow PIC L fields in OCCURS groups
+	* field.c (validate_redefines): allow more liberal REDEFINES of
+	  fields with PIC L
+	* field.c (validate_group): A PIC L data-item cannot be JUSTIFIED
+	  or BLANK WHEN ZERO
+	* typeck.c (emit_move_corresponding): simplified code
+	* codegen.c (output_base, output_initialize_uniform): small code
+	  refactorings
 
 2022-07-08  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -134,7 +175,7 @@
 	* config.c (cb_config_entry): for CB_INT check for a single character
 		Also check for word 'ignore' and make no changes
 	* codegen.c : Improvement of code emitted for INITIALIZE of tables
-		Initial table values, then clear next, 
+		Initial table values, then clear next,
 		then propagate through remainder of the table
 
 2022-05-31  Simon Sobisch <simonsobisch@gnu.org>
@@ -1381,6 +1422,22 @@
 
 	* cobc.c: bug #618, fix -j mode with -o name that includes a directory
 	  and when multiple inputs are involved in a compile pass
+
+2020-02-10  Ron Norman <rjn@inglenet.com>
+
+	* cobc.c, cobc.h, codegen.c, help.c, warning.def: 
+		Add new define CB_ERRWARNDEF
+
+2020-02-05  Ron Norman <rjn@inglenet.com>
+
+	* cobc.c, codegen.c, typeck.c, sysdefines.h, warning.def: FR #117
+	  report when the COBOL code is using a feature which GnuCOBOL was not
+	  configured to support;
+	  -Wunsupported  is set to 'error' by default but can be downgraded
+	  warning/error is given for unsupported use of
+	    XML, JSON, file with ORGANIZATION INDEXED, extended screen-io
+	* codegen.c: Emit warning if ORANIZATION INDEXED used but not supported
+	* typeck.c: Emit warning if XML or JSON used but not supported
 
 2020-02-02  Simon Sobisch <simonsobisch@gnu.org>
 

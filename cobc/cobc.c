@@ -646,10 +646,14 @@ static const struct option long_options[] = {
 #define	CB_NOWARNDEF(opt,name,doc)			\
 	{"W" name,		CB_NO_ARG, &cb_warn_opt_val[opt], COBC_WARN_ENABLED_EXPL},	\
 	{"Wno-" name,		CB_NO_ARG, &cb_warn_opt_val[opt], COBC_WARN_DISABLED_EXPL},
+#define	CB_ERRWARNDEF(opt,name,doc)			\
+	{"W" name,		CB_NO_ARG, &cb_warn_opt_val[opt], COBC_WARN_ENABLED_EXPL},	\
+	{"Wno-" name,		CB_NO_ARG, &cb_warn_opt_val[opt], COBC_WARN_DISABLED_EXPL},
 #include "warning.def"
 #undef	CB_WARNDEF
 #undef	CB_ONWARNDEF
 #undef	CB_NOWARNDEF
+#undef	CB_ERRWARNDEF
 	{"Wfatal-errors",	CB_NO_ARG, &fatal_errors_flag, 1},
 	{"Wno-fatal-errors",	CB_NO_ARG, &fatal_errors_flag, 0},
 
@@ -3677,10 +3681,12 @@ process_command_line (const int argc, char **argv)
 #define	CB_WARNDEF(opt,name,doc)	cb_warn_opt_val[opt] = COBC_WARN_DISABLED;
 #define	CB_ONWARNDEF(opt,name,doc)	cb_warn_opt_val[opt] = COBC_WARN_DISABLED;
 #define	CB_NOWARNDEF(opt,name,doc)	cb_warn_opt_val[opt] = COBC_WARN_DISABLED;
+#define	CB_ERRWARNDEF(opt,name,doc)	cb_warn_opt_val[opt] = COBC_WARN_DISABLED;
 #include "warning.def"
 #undef	CB_WARNDEF
 #undef	CB_ONWARNDEF
 #undef	CB_NOWARNDEF
+#undef	CB_ERRWARNDEF
 			break;
 
 		case 'W':
@@ -3688,10 +3694,12 @@ process_command_line (const int argc, char **argv)
 #define	CB_WARNDEF(opt,name,doc)	cb_warn_opt_val[opt] = COBC_WARN_ENABLED;
 #define	CB_ONWARNDEF(opt,name,doc)
 #define	CB_NOWARNDEF(opt,name,doc)
+#define	CB_ERRWARNDEF(opt,name,doc)	cb_warn_opt_val[opt] = COBC_WARN_AS_ERROR;
 #include "warning.def"
 #undef	CB_WARNDEF
 #undef	CB_ONWARNDEF
 #undef	CB_NOWARNDEF
+#undef	CB_ERRWARNDEF
 			break;
 
 		case 'Y':
@@ -3699,10 +3707,12 @@ process_command_line (const int argc, char **argv)
 #define	CB_WARNDEF(opt,name,doc)	cb_warn_opt_val[opt] = COBC_WARN_ENABLED;
 #define	CB_ONWARNDEF(opt,name,doc)
 #define	CB_NOWARNDEF(opt,name,doc)	cb_warn_opt_val[opt] = COBC_WARN_ENABLED;
+#define	CB_ERRWARNDEF(opt,name,doc)	cb_warn_opt_val[opt] = COBC_WARN_AS_ERROR;
 #include "warning.def"
 #undef	CB_WARNDEF
 #undef	CB_ONWARNDEF
 #undef	CB_NOWARNDEF
+#undef	CB_ERRWARNDEF
 			break;
 
 #if 0 /* TODO */
@@ -3725,11 +3735,13 @@ process_command_line (const int argc, char **argv)
 #define	CB_WARNDEF(opt,name,doc)	CB_CHECK_WARNING(opt, name)
 #define	CB_ONWARNDEF(opt,name,doc)	CB_CHECK_WARNING(opt, name)
 #define	CB_NOWARNDEF(opt,name,doc)	CB_CHECK_WARNING(opt, name)
+#define	CB_ERRWARNDEF(opt,name,doc)	CB_CHECK_WARNING(opt, name)
 #include "warning.def"
 #undef	CB_CHECK_WARNING
 #undef	CB_WARNDEF
 #undef	CB_ONWARNDEF
 #undef	CB_NOWARNDEF
+#undef	CB_ERRWARNDEF
 				/* note: ends block from last CB_CHECK_WARNING */
 				/* else */ if (verbose_output) {
 					cobc_err_msg (_("unknown warning option '%s'"),
@@ -3751,11 +3763,13 @@ process_command_line (const int argc, char **argv)
 #define	CB_WARNDEF(opt,name,doc)	CB_CHECK_WARNING(opt, name)
 #define	CB_ONWARNDEF(opt,name,doc)	CB_CHECK_WARNING(opt, name)
 #define	CB_NOWARNDEF(opt,name,doc)	CB_CHECK_WARNING(opt, name)
+#define	CB_ERRWARNDEF(opt,name,doc)	CB_CHECK_WARNING(opt, name)
 #include "warning.def"
 #undef	CB_CHECK_WARNING
 #undef	CB_WARNDEF
 #undef	CB_ONWARNDEF
 #undef	CB_NOWARNDEF
+#undef	CB_ERRWARNDEF
 				/* note: ends block from last CB_CHECK_WARNING */
 				/* else */ if (verbose_output) {
 					cobc_err_msg (_("unknown warning option '%s'"),
@@ -3877,11 +3891,13 @@ process_command_line (const int argc, char **argv)
 #define	CB_WARNDEF(opt,name,doc)	CB_CHECK_WARNING(opt)
 #define	CB_ONWARNDEF(opt,name,doc)	CB_CHECK_WARNING(opt)
 #define	CB_NOWARNDEF(opt,name,doc)	CB_CHECK_WARNING(opt)
+#define	CB_ERRWARNDEF(opt,name,doc)	CB_CHECK_WARNING(opt)
 #include "warning.def"
 #undef	CB_CHECK_WARNING
 #undef	CB_WARNDEF
 #undef	CB_ONWARNDEF
 #undef	CB_NOWARNDEF
+#undef	CB_ERRWARNDEF
 	}
 	/* Set active warnings to errors, if requested */
 	if (error_all_warnings) {
@@ -3892,11 +3908,13 @@ process_command_line (const int argc, char **argv)
 #define	CB_WARNDEF(opt,name,doc)	CB_CHECK_WARNING(opt)
 #define	CB_ONWARNDEF(opt,name,doc)	CB_CHECK_WARNING(opt)
 #define	CB_NOWARNDEF(opt,name,doc)	CB_CHECK_WARNING(opt)
+#define	CB_ERRWARNDEF(opt,name,doc)	CB_CHECK_WARNING(opt)
 #include "warning.def"
 #undef	CB_CHECK_WARNING
 #undef	CB_WARNDEF
 #undef	CB_ONWARNDEF
 #undef	CB_NOWARNDEF
+#undef	CB_ERRWARNDEF
 	}
 
 	if (fatal_errors_flag) {
@@ -8556,10 +8574,12 @@ begin_setup_internal_and_compiler_env (void)
 #define	CB_WARNDEF(opt,name,doc)	cb_warn_opt_val[opt] = COBC_WARN_DISABLED;
 #define	CB_ONWARNDEF(opt,name,doc)	cb_warn_opt_val[opt] = COBC_WARN_ENABLED;
 #define	CB_NOWARNDEF(opt,name,doc)	cb_warn_opt_val[opt] = COBC_WARN_DISABLED;
+#define	CB_ERRWARNDEF(opt,name,doc)	cb_warn_opt_val[opt] = COBC_WARN_AS_ERROR;
 #include "warning.def"
 #undef	CB_WARNDEF
 #undef	CB_ONWARNDEF
 #undef	CB_NOWARNDEF
+#undef	CB_ERRWARNDEF
 
 	/* minimal initialization of the environment like binding textdomain,
 	   allowing test to be run under WIN32 (implied in cob_init(),

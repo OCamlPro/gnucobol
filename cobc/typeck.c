@@ -37,6 +37,19 @@
 #include <windows.h>
 #endif
 
+
+#if	defined (HAVE_NCURSESW_NCURSES_H) || \
+	defined (HAVE_NCURSESW_CURSES_H) || \
+	defined (HAVE_NCURSES_H) || \
+	defined (HAVE_NCURSES_NCURSES_H) || \
+	defined (HAVE_PDCURSES_H) || \
+	defined (HAVE_PDCURSES_CURSES_H) || \
+	defined (HAVE_XCURSES_H) || \
+	defined (HAVE_XCURSES_CURSES_H) || \
+	defined (HAVE_CURSES_H)
+#define WITH_EXTENDED_SCREENIO
+#endif
+
 #ifdef	HAVE_LOCALE_H
 #include <locale.h>
 #endif
@@ -99,7 +112,6 @@ static const char		*inspect_func;
 static cb_tree			inspect_data;
 struct cb_statement		*error_statement = NULL;
 
-#if 0 /* pending merge of cb_warn_unsupported */
 #ifndef WITH_XML2
 static int			warn_xml_done = 0;
 #endif
@@ -108,7 +120,6 @@ static int			warn_json_done = 0;
 #endif
 #ifndef WITH_EXTENDED_SCREENIO
 static int			warn_screen_done = 0;
-#endif
 #endif
 
 struct external_defined_register {
@@ -1643,7 +1654,7 @@ cb_build_generic_register (const char *name, const char *external_definition,
 				}
 				memset (p, ' ', sep - p);
 			} else {
-		
+
 				/* on the first run we don't add anything to the actual parse tree */
 #if 0			/* TODO: move literal building out of scanner.l and call here */
 				if (current_program) {
@@ -2420,6 +2431,14 @@ cb_build_identifier (cb_tree x, const int subchk)
 		if (CB_EXCEPTION_ENABLE (COB_EC_BOUND_SUBSCRIPT) && f->odo_level != 0) {
 			for (p = f; p; p = p->children) {
 				if (p->depending && p->depending != cb_error_node
+				    /* Do not check length for implicit access
+				       to a PIC L field (i.e, via enclosing
+				       group), as those disregard the DEPENDING.
+				       However, assuming the filler is never
+				       explicitly accessed (p == f), check is
+				       still done for explicit access to PIC L
+				       field (p->parent == f). */
+				 && (p->parent == f || !p->parent->flag_picture_l)
 				 && !p->flag_unbounded) {
 					e1 = CB_BUILD_FUNCALL_5 ("cob_check_odo",
 						 cb_build_cast_int (p->depending),
@@ -2885,7 +2904,7 @@ cb_build_length (cb_tree x)
 		if (f->flag_any_length) {
 			return cb_build_any_intrinsic (CB_LIST_INIT (x));
 		}
-		if (cb_field_variable_size (f) == NULL) {
+		if (f->flag_picture_l || cb_field_variable_size (f) == NULL) {
 			sprintf (buff, "%d", cb_field_size (x));
 			return cb_build_numeric_literal (0, buff, 0);
 		}
@@ -3026,7 +3045,7 @@ cb_validate_parameters_and_returning (struct cb_program *prog, cb_tree using_lis
 	}
 }
 
- 
+
 /* TO-DO: Add params differing in BY REFERENCE/VALUE and OPTIONAL to testsuite */
 
 static struct cb_program *
@@ -4554,7 +4573,7 @@ cb_validate_program_data (struct cb_program *prog)
 	/* Check ODO items */
 	for (l = cb_depend_check; l; l = CB_CHAIN (l)) {
 		struct cb_field		*depfld = NULL;
-		unsigned int		odo_level = 0;
+		unsigned int		odo_level = 0, parent_is_pic_l;
 		cb_tree	xerr = NULL;
 		x = CB_VALUE (l);
 		if (x == NULL || x == cb_error_node) {
@@ -4566,12 +4585,17 @@ cb_validate_program_data (struct cb_program *prog)
 		} else if (cb_ref (q->depending) != cb_error_node) {
 			depfld = CB_FIELD_PTR (q->depending);
 		}
+		/* Direct parent being PIC L means we are checking an implicit
+		   FILLER with ODO: this permits nested ODO and further sister
+		   fields. */
+		parent_is_pic_l = q->parent && q->parent->flag_picture_l;
 		/* The data item that contains a OCCURS DEPENDING clause must be
 		   the last data item in the group */
 		for (p = q; ; p = p->parent) {
 			if (p->depending) {
 				if (odo_level > 0
-				 && !cb_odoslide) {
+				 && !cb_odoslide
+				 && !parent_is_pic_l) {
 					xerr = x;
 					cb_error_x (x,
 						_("'%s' cannot have nested OCCURS DEPENDING"),
@@ -4594,6 +4618,7 @@ cb_validate_program_data (struct cb_program *prog)
 				if (!p->sister->redefines) {
 					if (!cb_odoslide
 					 && !cb_complex_odo
+					 && !parent_is_pic_l
 					 && x != xerr) {
 						xerr = x;
 						cb_error_x (x,
@@ -7156,19 +7181,28 @@ emit_move_corresponding (cb_tree x1, cb_tree x2)
 
 	found = 0;
 	for (f1 = CB_FIELD_PTR (x1)->children; f1; f1 = f1->sister) {
-		if (!f1->redefines && !f1->flag_occurs) {
-			for (f2 = CB_FIELD_PTR (x2)->children; f2; f2 = f2->sister) {
-				if (!f2->redefines && !f2->flag_occurs) {
-					if (strcmp (f1->name, f2->name) == 0) {
-						t1 = cb_build_field_reference (f1, x1);
-						t2 = cb_build_field_reference (f2, x2);
-						if (f1->children && f2->children) {
-							found += emit_move_corresponding (t1, t2);
-						} else {
-							cb_emit (cb_build_move (t1, t2));
-							found++;
-						}
-					}
+		if (f1->redefines || f1->flag_occurs) continue;
+		for (f2 = CB_FIELD_PTR (x2)->children; f2; f2 = f2->sister) {
+			if (f2->redefines || f2->flag_occurs) continue;
+			if (strcmp (f1->name, f2->name) == 0) {
+				t1 = cb_build_field_reference (f1, x1);
+				t2 = cb_build_field_reference (f2, x2);
+				/* GCOS 7: Contrary to the documentation,
+				   handling of PIC L fields in MOVE
+				   CORRESPONDING ignores the DEPENDING var for
+				   both sending and receiving fields. */
+				if (f1->flag_picture_l) {
+					CB_REFERENCE (t1)->length = cb_int (f1->size);
+				}
+				if (f2->flag_picture_l) {
+					CB_REFERENCE (t2)->length = cb_int (f2->size);
+				}
+				if (f1->children && !f1->flag_picture_l &&
+				    f2->children && !f2->flag_picture_l) {
+					found += emit_move_corresponding (t1, t2);
+				} else {
+					cb_emit (cb_build_move (t1, t2));
+					found++;
 				}
 			}
 		}
@@ -7512,6 +7546,15 @@ cb_emit_accept (cb_tree var, cb_tree pos, struct cb_attr_struct *attr_ptr)
 	cb_tree		size_is;	/* WITH SIZE IS */
 	cob_flags_t		disp_attrs;
 
+	if (current_program->flag_screen) {
+#ifndef WITH_EXTENDED_SCREENIO
+	if (!warn_screen_done) {
+		warn_screen_done = 1;
+		cb_warning (cb_warn_unsupported,
+			_("runtime is not configured to support %s"), "SCREEN SECTION");
+	}
+#endif
+	}
 	if (cb_validate_one (var)) {
 		return;
 	}
@@ -7584,8 +7627,8 @@ cb_emit_accept (cb_tree var, cb_tree pos, struct cb_attr_struct *attr_ptr)
 				cobc_xref_set_receiving (current_program->crt_status);
 			}
 		}
-		if ((CB_REF_OR_FIELD_P (var)) &&
-		     CB_FIELD_PTR (var)->storage == CB_STORAGE_SCREEN) {
+		if ((CB_REF_OR_FIELD_P (var)) 
+		 && CB_FIELD_PTR (var)->storage == CB_STORAGE_SCREEN) {
 			output_screen_from (CB_FIELD_PTR (var), 0);
 			gen_screen_ptr = 1;
 			if (pos) {
@@ -9415,6 +9458,9 @@ cb_emit_initialize (cb_tree vars, cb_tree fillinit, cb_tree value,
 		 && CB_REFERENCE_P (x)
 		 && CB_REFERENCE   (x)->subs == NULL
 		 && CB_REFERENCE   (x)->length == NULL) {
+			/* GCOS 7: Contrary to what the documentation states,
+			   PIC L fields are initialized up to length indicated
+			   by DEPENDING var. */
 			cb_tree		temp;
 			temp = cb_build_index (cb_build_filler (), NULL, 0, NULL);
 			CB_FIELD (cb_ref (temp))->usage = CB_USAGE_LENGTH;
@@ -11623,7 +11669,7 @@ cb_emit_move (cb_tree src, cb_tree dsts)
 					}
 					if (bgnpos >= 1
 					 && p->storage != CB_STORAGE_LINKAGE
-					 && !p->flag_item_based 
+					 && !p->flag_item_based
 					 && CB_LITERAL_P (src)
 					 && !cb_is_field_unbounded (p)) {
 						CB_REFERENCE (x)->length = cb_int (p->size - bgnpos + 1);
@@ -12406,7 +12452,7 @@ void
 cb_emit_set_to (cb_tree vars, cb_tree x)
 {
 	cb_tree	l;
-	
+
 	if (cb_check_set_to (vars, x, 1)) {
 		return;
 	}
@@ -12775,11 +12821,12 @@ cb_emit_sort_init (cb_tree name, cb_tree keys, cb_tree col, cb_tree nat_col)
 					     cb_int ((int)cb_list_length (keys)), col));
 		/* TODO: pass key-specific collation to libcob */
 		for (l = keys; l; l = CB_CHAIN (l)) {
+			struct cb_field * const f = CB_FIELD_PTR (CB_VALUE(l));
 			cb_emit (CB_BUILD_FUNCALL_3 ("cob_table_sort_init_key",
-					CB_VALUE (l),
-					CB_PURPOSE (l),
-					cb_int(CB_FIELD_PTR (CB_VALUE(l))->offset
-						   - CB_FIELD_PTR (CB_VALUE(l))->parent->offset)));
+						     CB_VALUE (l),
+						     CB_PURPOSE (l),
+						     cb_int(f->offset -
+							    (f->parent ? f->parent->offset : 0))));
 		}
 		f = CB_FIELD (rtree);
 		cb_emit (CB_BUILD_FUNCALL_2 ("cob_table_sort", name,
@@ -14115,6 +14162,13 @@ cb_emit_xml_generate (cb_tree out, cb_tree from, cb_tree count,
 	struct cb_ml_generate_tree	*tree;
 	unsigned char decimal_point;
 
+#ifndef WITH_XML2
+	if (!warn_xml_done) {
+		warn_xml_done = 1;
+		cb_warning (cb_warn_unsupported,
+			_("runtime is not configured to support %s"), "XML");
+	}
+#endif
 	if (syntax_check_ml_generate (out, from, count, encoding,
 						namespace_and_prefix, name_list,
 						type_list, suppress_list, 1)) {
@@ -14160,17 +14214,17 @@ cb_emit_json_generate (cb_tree out, cb_tree from, cb_tree count,
 	struct cb_ml_generate_tree	*tree;
 	unsigned char decimal_point;
 
-#if 0 /* pending merge of cb_warn_unsupported */
+#if 0 /* pending merge of ??? */
 	if (current_statement->ex_handler == NULL
 	 && current_statement->not_ex_handler == NULL)
 	  	current_statement->handler_type = NO_HANDLER;
+#endif
 #if	!defined (WITH_CJSON) && !defined (WITH_JSON_C)
 	if (!warn_json_done) {
 		warn_json_done = 1;
 		cb_warning (cb_warn_unsupported,
-			_("compiler is not configured to support %s"), "JSON");
+			_("runtime is not configured to support %s"), "JSON");
 	}
-#endif
 #endif
 	if (syntax_check_ml_generate (out, from, count, NULL,
 						NULL, name_list,

@@ -8,6 +8,10 @@
 	* ibm-strict.conf, mvs-strict.conf, gcos-strict.conf, bs2000-strict.conf:
 	  adjusted defaultbyte to 0
 
+2022-07-12  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* general: add option picture-l
+
 2022-06-17  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* general: added config option device-mnemonics (boolean)

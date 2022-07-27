@@ -5561,7 +5561,6 @@ Using PIC 9(4) COMP-5
 AT_CLEANUP
 
 
-
 AT_SETUP([GCOS floating-point usages])
 AT_KEYWORDS([gcos])
 
@@ -5597,5 +5596,380 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 9.899999999998999E+304
 9.888888888888887E+304
 ], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([PICTURE L])
+AT_KEYWORDS([extensions gcos picture-l odo])
+
+# Basic behaviors
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       1 W-DATA.
+         2 X-DAT       PICTURE LX(10) DEPENDING ON LGX.
+         2 X-ALPHA     PICTURE LA(10) DEPENDING ON LGX.
+         2 Y-DAT       PICTURE LX(9) DEPENDING ON LGY.
+         2 Y-ALPHA     PICTURE LA(9) DEPENDING ON LGY.
+       1 W-NESTED.
+         2 X-GRP.
+           3 X-0       PICTURE X VALUE "0".
+           3 X-V       PICTURE LX(10) DEPENDING ON LGX.
+           3 X-1       PICTURE X VALUE "1".
+       1 W-LGS.
+          2 LGX         USAGE COMP-1 VALUE 10.
+          2 LGY         PIC 9 VALUE 9.
+       1 W-LEN          USAGE COMP-1.
+       PROCEDURE        DIVISION.
+       MAIN.
+           MOVE SPACES TO W-DATA
+           MOVE SPACES TO X-V
+           IF X-DAT   NOT EQUAL "          " OR
+              X-ALPHA NOT EQUAL "          " OR
+              Y-DAT   NOT EQUAL "         " OR
+              Y-ALPHA NOT EQUAL "         "
+              DISPLAY "GROUP INITIALIZATION WITH SPACES FAILED"
+              PERFORM SHOW-VARS
+           END-IF
+           MOVE 5 TO LGX
+           MOVE 1 TO LGY
+           IF W-DATA NOT EQUAL "                                      "
+              DISPLAY "GROUP COMPARISON FAILED (W-DATA)"
+              PERFORM SHOW-VARS
+           END-IF
+           IF W-NESTED NOT EQUAL "0          1" OR
+              X-GRP    NOT EQUAL W-NESTED       OR
+              X-V      NOT EQUAL "     "
+              DISPLAY "GROUP COMPARISON FAILED (W-NESTED)"
+              PERFORM SHOW-VARS
+           END-IF
+           MOVE ".........." TO X-DAT
+           MOVE "XXXXXXXXXX" TO X-ALPHA
+           MOVE "999999999" TO Y-DAT
+           MOVE "AAAAAAAAA" TO Y-ALPHA
+           IF X-DAT   NOT EQUAL "....." OR
+              X-ALPHA NOT EQUAL "XXXXX" OR
+              Y-DAT   NOT EQUAL "9" OR
+              Y-ALPHA NOT EQUAL "A"
+              DISPLAY "MOVES FROM LITERALS FAILED"
+              PERFORM SHOW-VARS
+           END-IF
+           MOVE X-DAT TO Y-DAT
+           MOVE Y-ALPHA TO X-ALPHA
+           IF X-DAT   NOT EQUAL "....." OR
+              X-ALPHA NOT EQUAL "A    " OR
+              Y-DAT   NOT EQUAL "." OR
+              Y-ALPHA NOT EQUAL "A"
+              DISPLAY "MOVES FROM/TO VARS FAILED"
+              PERFORM SHOW-VARS
+           END-IF
+           MOVE "AAAAA" TO X-ALPHA
+           MOVE 1 TO LGX
+           INITIALIZE X-ALPHA
+           MOVE 10 TO LGX
+           IF X-ALPHA NOT EQUAL " AAAA     "
+              DISPLAY "DIRECT VAR INITIALIZATION FAILED"
+              PERFORM SHOW-VARS
+           END-IF
+           MOVE 1 TO LGX
+           COMPUTE W-LEN = LENGTH OF X-DAT
+           IF W-LEN NOT EQUAL 10
+              DISPLAY "UNEXPECTED RESULT FOR 'LENGTH OF X-DAT': "
+                     W-LEN
+              PERFORM SHOW-VARS
+           END-IF
+           COMPUTE W-LEN = FUNCTION LENGTH (X-ALPHA)
+           IF W-LEN NOT EQUAL 1
+              DISPLAY "UNEXPECTED RESULT FOR 'FUNCTION LENGTH "
+                      "(X-ALPHA)': " W-LEN
+              PERFORM SHOW-VARS
+           END-IF
+           MOVE 9 TO LGY
+           MOVE ALL "A" TO Y-ALPHA
+           MOVE 5 TO LGY
+           INITIALIZE Y-ALPHA
+           MOVE 9 TO LGY
+           IF Y-ALPHA NOT EQUAL "     AAAA"
+              DISPLAY "UNEXPECTED RESULT AFTER 'MOVE ALL/INITIALIZE': "
+                      Y-ALPHA
+              PERFORM SHOW-VARS
+           END-IF
+           STOP RUN
+           .
+       SHOW-VARS.
+           DISPLAY W-DATA "*"
+           DISPLAY X-DAT "*" X-ALPHA "*" Y-DAT "*" Y-ALPHA "*"
+           DISPLAY W-NESTED "*"
+           DISPLAY X-GRP "*"
+           DISPLAY X-V "*"
+           .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [])
+AT_CHECK([$COMPILE -fodoslide -o prog-x prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog-x], [0], [])
+
+# under/over shoot
+
+AT_DATA([under.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      under.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       1 X              PICTURE LX(9) DEPENDING ON LGX.
+       1 LGX            PIC 9 VALUE 9.
+       PROCEDURE        DIVISION.
+       MAIN.
+           MOVE 0 TO LGX
+           DISPLAY X
+           STOP RUN
+           .
+])
+AT_CHECK([$COMPILE under.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./under], [1], [],
+[libcob: under.cob:11: error: OCCURS DEPENDING ON 'LGX' out of bounds: 0
+note: minimum subscript for 'FILLER 1': 1
+])
+AT_CHECK([$COMPILE -fodoslide -o under-x under.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./under-x], [1], [],
+[libcob: under.cob:11: error: OCCURS DEPENDING ON 'LGX' out of bounds: 0
+note: minimum subscript for 'FILLER 1': 1
+])
+
+AT_DATA([over.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      over.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       1 X              PICTURE LX(5) DEPENDING ON LGX.
+       1 LGX            PIC 9 VALUE 9.
+       PROCEDURE        DIVISION.
+       MAIN.
+           DISPLAY X
+           STOP RUN
+           .
+])
+AT_CHECK([$COMPILE over.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./over], [1], [],
+[libcob: over.cob:10: error: OCCURS DEPENDING ON 'LGX' out of bounds: 9
+note: maximum subscript for 'FILLER 1': 5
+])
+AT_CHECK([$COMPILE -fodoslide -o over-x over.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./over-x], [1], [],
+[libcob: over.cob:10: error: OCCURS DEPENDING ON 'LGX' out of bounds: 9
+note: maximum subscript for 'FILLER 1': 5
+])
+
+# MOVE CORRESPONDING
+
+AT_DATA([corr.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      corr.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       1 W-DATA.
+         2 GA.
+           3 X          PICTURE X VALUE "X".
+           3 YZ         PICTURE XX VALUE "YZ".
+           3 X1         PICTURE LX(5) DEPENDING ON LGX.
+         2 GB.
+           3 X1         PICTURE LX(5) DEPENDING ON LGX.
+           3 X          PICTURE X VALUE SPACE.
+         2 GC.
+           3 X1         PICTURE X(5) VALUE "+++++".
+       1 LGX            USAGE COMP-1 VALUE 5.
+       1 CNT            USAGE COMP-1.
+       PROCEDURE        DIVISION.
+       MAIN.
+           MOVE "AAAAA" TO X1 OF GA
+           MOVE "BBBBB" TO X1 OF GB
+           IF X1 OF GA NOT EQUAL "AAAAA" OR
+              X1 OF GB NOT EQUAL "BBBBB"
+              DISPLAY "GLOBAL INITIALIZATION FAILED"
+              PERFORM SHOW-VARS
+           END-IF
+           MOVE 2 TO LGX
+           IF W-DATA NOT EQUAL "XYZAAAAABBBBB +++++"
+              DISPLAY "GROUP COMPARISON FAILED"
+              DISPLAY GA
+              PERFORM SHOW-VARS
+           END-IF
+      *    From basic to pic-l field: curr size should be ignored
+           MOVE CORRESPONDING GC TO GA
+           IF X1 OF GA NOT EQUAL "++" OR
+              GA       NOT EQUAL "XYZ+++++"
+              DISPLAY "MOVE CORRESPONDING GC TO GA: FAILED"
+              PERFORM SHOW-VARS
+           END-IF
+      *    From pic-l to basic field: curr. size is ignored
+           MOVE CORRESPONDING GB TO GC
+           INSPECT X1 OF GC TALLYING CNT FOR ALL "B"
+           IF X1 OF GC NOT EQUAL "BBBBB" OR
+              CNT      NOT EQUAL 5
+              DISPLAY "MOVE CORRESPONDING GB TO GC: FAILED"
+              PERFORM SHOW-VARS
+           END-IF
+      *    From pic-l to pic-l: sizes are ignored
+           MOVE CORRESPONDING GA TO GB
+           MOVE 0 TO CNT
+           INSPECT X1 OF GB TALLYING CNT FOR ALL "+"
+           MOVE 5 TO LGX
+           IF X1 OF GB NOT EQUAL "+++++" OR
+              X  OF GB NOT EQUAL "X" OR
+              CNT      NOT EQUAL 2
+              DISPLAY "MOVE CORRESPONDING GA TO GB: FAILED"
+              PERFORM SHOW-VARS
+           END-IF
+           STOP RUN
+           .
+       SHOW-VARS.
+           DISPLAY "LGX: " LGX
+           DISPLAY "W-DATA: *" W-DATA "*"
+           DISPLAY "CNT: " CNT
+           .
+])
+
+AT_CHECK([$COMPILE corr.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./corr], [0], [])
+AT_CHECK([$COMPILE -fodoslide -o corr-x corr.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./corr-x], [0], [])
+
+# OCCURS ... PIC L  ...
+
+AT_DATA([nested.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      nested.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       1 W-DATA.
+         2 A            OCCURS 4
+                        PICTURE LX(3) DEPENDING ON LGX.
+         2 B            OCCURS 1 TO 10 DEPENDING ON LGY
+                        PICTURE LX(3) DEPENDING ON LGX.
+       1 LGX            USAGE COMP-1 VALUE 3.
+       1 LGY            USAGE COMP-1 VALUE 4.
+       PROCEDURE        DIVISION.
+       MAIN.
+           MOVE "AAAAAAAAAAAABBBBBBBBBBBB" TO W-DATA
+           IF W-DATA NOT EQUAL "AAAAAAAAAAAABBBBBBBBBBBB" OR
+              A (1)  NOT EQUAL "AAA"
+              DISPLAY "GLOBAL INITIALIZATION FAILED"
+              DISPLAY A (1)
+              PERFORM SHOW-VARS
+           END-IF
+           MOVE "CCC" TO A (4)
+           IF W-DATA NOT EQUAL "AAAAAAAAACCCBBBBBBBBBBBB" OR
+              A (4)  NOT EQUAL "CCC"
+              DISPLAY "MOVE TO A (4) FAILED"
+              DISPLAY A (4)
+              PERFORM SHOW-VARS
+           END-IF
+           MOVE A (3) TO B (2)
+           IF W-DATA NOT EQUAL "AAAAAAAAACCCBBBAAABBBBBB" OR
+              B (2)  NOT EQUAL "AAA"
+              DISPLAY "MOVE A (3) TO B (2) FAILED"
+              DISPLAY B (2)
+              PERFORM SHOW-VARS
+           END-IF
+           MOVE 6 TO LGY
+           MOVE 2 TO LGX
+      *    Operand of 'INITIALIZE' may not have 'OCCURS DEPENDING ON':
+      *    INITIALIZE B (5)
+           MOVE SPACES TO B (5)
+      *    *> NO ODOSLIDE: W-DATA EQUAL "AAAAAAAAACCCBBBAAABBBBBB      "
+      *    *>    ODOSLIDE: W-DATA EQUAL "AAAAAAAAACCCBBBAAABB"
+           IF A (3)  NOT EQUAL "AA" OR
+              A (4)  NOT EQUAL "CC" OR
+              B (4)  NOT EQUAL "BB" OR
+              B (5)  NOT EQUAL "  "
+              DISPLAY "MOVE 2,6 TO LGX,Y; INITIALIZE B (5); FAILED"
+              PERFORM SHOW-VARS
+           END-IF
+           STOP RUN
+           .
+       SHOW-VARS.
+           DISPLAY "W-DATA: *" W-DATA "*"
+           DISPLAY "LGX: " LGX
+           DISPLAY "LGY: " LGY
+           .
+])
+
+AT_CHECK([$COMPILE nested.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./nested], [0], [])
+AT_CHECK([$COMPILE -fodoslide -o nested-x nested.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./nested-x], [0], [])
+
+# REDEFINES
+
+AT_DATA([redefines.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      redefines.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       1 W-DATA.
+          2 UNUSED-1    PIC X VALUE "?".
+          2 X-DAT       PICTURE X(10).
+          2 Y1-DAT      REDEFINES X-DAT PICTURE LX(5) DEPENDING ON LGY.
+          2 Y2-DAT      REDEFINES X-DAT PICTURE LX(5) DEPENDING ON LGY.
+          2 UNUSED-2    PIC X VALUE "!".
+          2 Z-DAT       PICTURE LX(7) DEPENDING ON LGZ.
+          2 T-DAT       REDEFINES Z-DAT PICTURE LX(7) DEPENDING ON LGT.
+          2 UNUSED-3    PIC X VALUE ".".
+       1 W-LGS.
+          2 LGX         PIC 99 VALUE 10.
+          2 LGY         PIC 9 VALUE 5.
+          2 LGZ         PIC 9 VALUE 7.
+          2 LGT         PIC 9 VALUE 5.
+       PROCEDURE        DIVISION.
+       MAIN.
+           MOVE "......." TO Z-DAT
+           MOVE 3 TO LGZ
+           MOVE "0123456789" TO X-DAT
+           IF Y1-DAT NOT EQUAL "01234" OR
+              Y2-DAT NOT EQUAL "01234"
+              DISPLAY "INITIAL MOVE FAILED"
+              PERFORM SHOW-VARS
+           END-IF
+           MOVE "0123456" TO Z-DAT.
+           IF T-DAT NOT EQUAL "012.." OR
+              Z-DAT NOT EQUAL "012"
+              DISPLAY "SECOND MOVE FAILED"
+              PERFORM SHOW-VARS
+           END-IF
+      *    Initialize group containing PICTURE L field: curr. size should be ignored
+           MOVE 1 TO LGZ
+           INITIALIZE W-DATA
+           MOVE 7 TO LGT
+           IF T-DAT NOT EQUAL "       "
+              DISPLAY "UNEXPECTED T-DAT AFTER 'INITIALIZE W-DATA': "
+                       T-DAT
+              PERFORM SHOW-VARS
+           END-IF
+      *    Initialize PICTURE L field: curr. size is ignored
+           MOVE "???????" TO T-DAT
+           INITIALIZE Z-DAT
+           MOVE 2 TO LGZ
+           IF T-DAT NOT EQUAL " ??????" OR
+              Z-DAT NOT EQUAL " ?"
+              DISPLAY "UNEXPECTED T-DAT/Z-DAT AFTER "
+                       "'INITIALIZE Z-DAT': " T-DAT "/" Z-DAT "*"
+              PERFORM SHOW-VARS
+           END-IF
+           STOP RUN
+           .
+       SHOW-VARS.
+           DISPLAY X-DAT "*" Y1-DAT "*" Y2-DAT "*" T-DAT "*" Z-DAT "*"
+           .
+])
+
+AT_CHECK([$COMPILE redefines.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./redefines], [0], [])
+AT_CHECK([$COMPILE -fodoslide -o redefines-x redefines.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./redefines-x], [0], [])
 
 AT_CLEANUP
