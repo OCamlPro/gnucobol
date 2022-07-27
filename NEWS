@@ -24,7 +24,10 @@ NEWS - user visible changes				-*- outline -*-
 ** new function to call COBOL from C that won't exit the program in case
    of runtime errors or STOP RUN: cob_call_with_exception_check()
 
-** Support of GCOS 7 (Bull) dialect
+** Support of GCOS 7 (Bull) dialect, including:
+   * PICTURE strings with L character (variable length fields)
+   * CONTROL DIVISION with SUBSTITUTION SECTION (full support) and DEFAULT
+     SECTION (partial support)
 
 ** TODO - More to add
 

@@ -49,7 +49,7 @@
 	  checks for "able to parse complete definition"
 	* cobc.c: skip unreferenced special register in listing/xref
 
-2022-07-14  Matthew Remacle <mattata@users.sf.net
+2022-07-14  Matthew Remacle <mattata@users.sf.net>
 
 	* tree.c (literal_for_diagnostic): fixed #844 stack-based buffer overflow
 
@@ -79,6 +79,28 @@
 	  passing it (to error_literal); return a valid literal in case of
 	  literal errors (intead of cb_error_node) to prevent spurious
 	  follow-up errors on their use
+
+2022-07-12  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* parser.y: add DEPENDING ON for picture strings with an `L`
+	  character
+	* config.def: new option picture-l
+	* tree.h (struct cb_picture, struct cb_field), tree.c
+	  (cb_field_variable_size, cb_field_variable_address), typeck.c
+	  (cb_build_identifier, cb_validate_program_data, cb_emit_initialize)
+	  (cb_emit_move_corresponding, emit_move_corresponding), codegen.c
+	  (chk_field_variable_size, chk_field_variable_address)
+	  (out_odoslide_fld_offset): add support for `L` characters in picture
+	  strings, variable-length alphanumeric fields (GCOS extension)
+	* field.c (validate_field_value): PIC L fields may not have VALUE clause
+	* field.c (validate_occurs): allow PIC L fields in OCCURS groups
+	* field.c (validate_redefines): allow more liberal REDEFINES of
+	  fields with PIC L
+	* field.c (validate_group): A PIC L data-item cannot be JUSTIFIED
+	  or BLANK WHEN ZERO
+	* typeck.c (emit_move_corresponding): simplified code
+	* codegen.c (output_base, output_initialize_uniform): small code
+	  refactorings
 
 2022-07-08  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -153,7 +175,7 @@
 	* config.c (cb_config_entry): for CB_INT check for a single character
 		Also check for word 'ignore' and make no changes
 	* codegen.c : Improvement of code emitted for INITIALIZE of tables
-		Initial table values, then clear next, 
+		Initial table values, then clear next,
 		then propagate through remainder of the table
 
 2022-05-31  Simon Sobisch <simonsobisch@gnu.org>

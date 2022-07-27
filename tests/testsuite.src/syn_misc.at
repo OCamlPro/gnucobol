@@ -8592,3 +8592,96 @@ prog.cob:9: warning: DISPLAY statement in DEFAULT SECTION is not implemented
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
 
 AT_CLEANUP
+
+
+AT_SETUP([PICTURE L])
+AT_KEYWORDS([extensions gcos picture-l])
+
+AT_DATA([prog_extraneous_depending.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog_extraneous_depending.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       1 L		COMP-1.
+       1 F-DAT		PICTURE X(10) DEPENDING ON L.
+       PROCEDURE        DIVISION.
+           MOVE SPACES TO F-DAT
+           STOP RUN.
+])
+AT_CHECK([$COMPILE_ONLY prog_extraneous_depending.cob], [1], [],
+[prog_extraneous_depending.cob:7: error: DEPENDING clause needs either an OCCURS clause or a variable-length PICTURE
+])
+
+AT_DATA([prog_missing_depending.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog_missing_depending.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       1 F-DAT		PICTURE LX(10).
+       PROCEDURE        DIVISION.
+           MOVE SPACES TO F-DAT
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY prog_missing_depending.cob], [1], [],
+[prog_missing_depending.cob:6: error: variable-length PICTURE requires DEPENDING clause
+])
+
+AT_DATA([prog_value.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog_value.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       1 L              COMP-1 VALUE 10.
+       1 F-DAT          PICTURE LX(10) DEPENDING ON L
+                        VALUE "0123456789".
+       1 F-DAT2         PICTURE LX(10) DEPENDING ON L
+                        BLANK WHEN ZERO.
+       PROCEDURE        DIVISION.
+           STOP RUN.
+])
+AT_CHECK([$COMPILE_ONLY prog_value.cob], [1], [],
+[prog_value.cob:7: error: variable-length PICTURE and VALUE are mutually exclusive
+prog_value.cob:9: error: 'F-DAT2' cannot have BLANK WHEN ZERO clause
+])
+
+AT_DATA([prog_errs.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog_errs.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       1 W-LGS.
+         2 LGS		PICTURE X(10).
+       1 W-DATA.
+         2 L-DAT	PICTURE LX(10) DEPENDING ON LGS.
+	 2 L-ERR1       PICTURE L9 DEPENDING ON LGS.
+	 2 L-ERR2       PICTURE XXXXLA(2) DEPENDING ON LGS.
+	 2 L-ERR3       PICTURE LX(1) DEPENDING ON LGS JUSTIFIED.
+       PROCEDURE        DIVISION.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY prog_errs.cob], [1], [],
+[prog_errs.cob:10: error: only USAGE DISPLAY may specify a variable-length PICTURE
+prog_errs.cob:11: error: L must be at start of PICTURE string
+prog_errs.cob:11: error: L cannot follow A or X
+prog_errs.cob:11: error: only USAGE DISPLAY may specify a variable-length PICTURE
+prog_errs.cob:12: error: 'L-ERR3' cannot have JUSTIFIED RIGHT clause
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       1 LGS		PICTURE X(10).
+       1 L-DAT		PICTURE LX(10) DEPENDING ON LGS.
+       PROCEDURE        DIVISION.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY -fpicture-l=warning prog.cob], [0], [],
+[prog.cob:7: warning: PICTURE string with 'L' character used
+])
+
+AT_CLEANUP
