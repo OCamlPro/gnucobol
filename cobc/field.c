@@ -2893,7 +2893,7 @@ validate_field_value (struct cb_field *f)
 		if (f->flag_picture_l) {
 			cb_error_x (CB_TREE (f),
 				    _("%s and %s are mutually exclusive"),
-				    "PICTURE L", "VALUE");
+				    _("variable-length PICTURE"), "VALUE");
 			f->values = NULL;
 		} else {
 			validate_move (CB_VALUE (f->values), CB_TREE (f), 1, NULL);

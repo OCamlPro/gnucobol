@@ -7315,8 +7315,8 @@ picture_clause:
 	      !current_field->flag_picture_l) {
 		  /* Current field with PIC L was not translated */
 		  cb_error_x (CB_TREE (current_field->pic),
-			      _("missing DEPENDING clause for PICTURE string with "
-				"'L' character"));
+			      _("%s requires DEPENDING clause"),
+			      _("variable-length PICTURE"));
 	  }
   }
 ;
@@ -7326,33 +7326,31 @@ _pic_locale_format_or_depending_on:
 | LOCALE _is_locale_name SIZE _is integer
   {
 	  /* $2 -> optional locale-name to be used */
-	  if (CB_VALID_TREE ($5)) {
-		  if (  (current_field->pic->category != CB_CATEGORY_NUMERIC
-			 && current_field->pic->category != CB_CATEGORY_NUMERIC_EDITED)
-			|| strpbrk (current_field->pic->orig, " CRDBL-*") /* the standard seems to forbid also ',' */) {
-			  cb_error_x (CB_TREE (current_field->pic),
-				      _("a locale-format PICTURE string must only consist of '9', '.', '+', 'Z' and the currency-sign"));
-		  } else {
-			  /* TODO: check that not we're not within a CONSTANT RECORD */
-			  CB_PENDING_X ($1, "locale-format PICTURE");
-		  }
+	  if ((current_field->pic->category != CB_CATEGORY_NUMERIC &&
+	       current_field->pic->category != CB_CATEGORY_NUMERIC_EDITED) ||
+	      strpbrk (current_field->pic->orig, " CRDBL-*") /* the standard seems to forbid also ',' */) {
+		  cb_error_x (CB_TREE (current_field->pic),
+			      _("a locale-format PICTURE string must only consist of '9', '.', '+', 'Z' and the currency-sign"));
+	  } else {
+		  /* TODO: check that not we're not within a CONSTANT RECORD */
+		  CB_PENDING_X (CB_TREE (current_field->pic), "locale-format PICTURE");
 	  }
   }
 | DEPENDING _on reference
   {
 	  cb_tree depending = $3;
 	  if (!current_field->pic->variable_length) {
-		  cb_error_x ($3, _("DEPENDING clause must either come with "
-				    "an OCCURS clause or a PICTURE string "
-				    "with 'L' character"));
+		  cb_error_x ($3, _("DEPENDING clause needs either an "
+				    "OCCURS clause or a variable-length "
+				    "PICTURE"));
 	  } else if (current_field->pic->category != CB_CATEGORY_ALPHABETIC &&
 		     current_field->pic->category != CB_CATEGORY_ALPHANUMERIC) {
 		  cb_error_x ($3, _("only USAGE DISPLAY may specify a "
-				    "variable-length PICTURE string"));
+				    "variable-length PICTURE"));
 	  } else if (current_storage == CB_STORAGE_SCREEN ||
 		     current_storage == CB_STORAGE_REPORT) {
-		  cb_error_x ($3, _("variable-length PICTURE string "
-				    "not allowed in %s"),
+		  cb_error_x ($3, _("%s not allowed in %s"),
+			      _("variable-length PICTURE"),
 			      enum_explain_storage (current_storage));
 	  } else {
 		  /* Implicitly translate `PIC Lc... DEPENDING N` (where
