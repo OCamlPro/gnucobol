@@ -866,7 +866,7 @@ copy_into_field (struct cb_field *source, struct cb_field *target)
 	} else {
 		struct cb_picture* new_pic = NULL;
 		int modifier = cb_get_int (target->like_modifier);
-		if (modifier) {			
+		if (modifier) {
 			switch (target->usage) {
 
 			case CB_USAGE_COMP_X:
@@ -919,7 +919,7 @@ copy_into_field (struct cb_field *source, struct cb_field *target)
 					"LIKE", cb_get_usage_string (target->usage));
 				target->flag_invalid = 1;
 			}
- 
+
 #if 0		/* TODO, also syntax-check for usage here */
 			if (target->cat is_numeric) {
 				sprintf (pic, "9(%d)", size_implied);
@@ -1121,7 +1121,7 @@ create_implicit_picture (struct cb_field *f)
 			ret = 1;
 		}
 	}
-	
+
 	/* Checkme: should we raise an error for !cb_relaxed_syntax_checks? */
 	if (!ret) {
 		cb_warning_x (cb_warn_additional, x, _("defining implicit picture size %d for '%s'"),
@@ -1319,7 +1319,11 @@ validate_group (struct cb_field *f)
 				    cb_name (x));
 	}
 	if (f->flag_blank_zero) {
-		group_error (x, "BLANK WHEN ZERO");
+		if (!f->flag_picture_l)
+			group_error (x, "BLANK WHEN ZERO");
+		else
+			cb_error_x (x, _("'%s' cannot have BLANK WHEN ZERO clause"),
+				    cb_name (x));
 	}
 
 	if (f->storage == CB_STORAGE_SCREEN &&
@@ -2690,7 +2694,7 @@ unbounded_again:
 		}
 
 		/* Ensure items within OCCURS are aligned correctly. */
-		if (f->occurs_max > 1 
+		if (f->occurs_max > 1
 		 && occur_align_size > 1
 		 && (size_check % occur_align_size) != 0) {
 			pad = occur_align_size - (size_check % occur_align_size);

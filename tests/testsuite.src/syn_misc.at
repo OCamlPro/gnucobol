@@ -8632,14 +8632,17 @@ AT_DATA([prog_value.cob], [
        PROGRAM-ID.      prog_value.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       1 L		COMP-1 VALUE 10.
-       1 F-DAT		PICTURE LX(10) DEPENDING ON L
+       1 L              COMP-1 VALUE 10.
+       1 F-DAT          PICTURE LX(10) DEPENDING ON L
                         VALUE "0123456789".
+       1 F-DAT2         PICTURE LX(10) DEPENDING ON L
+                        BLANK WHEN ZERO.
        PROCEDURE        DIVISION.
            STOP RUN.
 ])
 AT_CHECK([$COMPILE_ONLY prog_value.cob], [1], [],
 [prog_value.cob:7: error: PICTURE L and VALUE are mutually exclusive
+prog_value.cob:9: error: 'F-DAT2' cannot have BLANK WHEN ZERO clause
 ])
 
 AT_DATA([prog_errs.cob], [
