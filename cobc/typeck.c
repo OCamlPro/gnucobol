@@ -1643,7 +1643,7 @@ cb_build_generic_register (const char *name, const char *external_definition,
 				}
 				memset (p, ' ', sep - p);
 			} else {
-		
+
 				/* on the first run we don't add anything to the actual parse tree */
 #if 0			/* TODO: move literal building out of scanner.l and call here */
 				if (current_program) {
@@ -3026,7 +3026,7 @@ cb_validate_parameters_and_returning (struct cb_program *prog, cb_tree using_lis
 	}
 }
 
- 
+
 /* TO-DO: Add params differing in BY REFERENCE/VALUE and OPTIONAL to testsuite */
 
 static struct cb_program *
@@ -11623,7 +11623,7 @@ cb_emit_move (cb_tree src, cb_tree dsts)
 					}
 					if (bgnpos >= 1
 					 && p->storage != CB_STORAGE_LINKAGE
-					 && !p->flag_item_based 
+					 && !p->flag_item_based
 					 && CB_LITERAL_P (src)
 					 && !cb_is_field_unbounded (p)) {
 						CB_REFERENCE (x)->length = cb_int (p->size - bgnpos + 1);
@@ -12406,7 +12406,7 @@ void
 cb_emit_set_to (cb_tree vars, cb_tree x)
 {
 	cb_tree	l;
-	
+
 	if (cb_check_set_to (vars, x, 1)) {
 		return;
 	}
@@ -12775,11 +12775,12 @@ cb_emit_sort_init (cb_tree name, cb_tree keys, cb_tree col, cb_tree nat_col)
 					     cb_int ((int)cb_list_length (keys)), col));
 		/* TODO: pass key-specific collation to libcob */
 		for (l = keys; l; l = CB_CHAIN (l)) {
+			struct cb_field * const f = CB_FIELD_PTR (CB_VALUE(l));
 			cb_emit (CB_BUILD_FUNCALL_3 ("cob_table_sort_init_key",
-					CB_VALUE (l),
-					CB_PURPOSE (l),
-					cb_int(CB_FIELD_PTR (CB_VALUE(l))->offset
-						   - CB_FIELD_PTR (CB_VALUE(l))->parent->offset)));
+						     CB_VALUE (l),
+						     CB_PURPOSE (l),
+						     cb_int(f->offset -
+							    (f->parent ? f->parent->offset : 0))));
 		}
 		f = CB_FIELD (rtree);
 		cb_emit (CB_BUILD_FUNCALL_2 ("cob_table_sort", name,
