@@ -888,7 +888,7 @@ cob_chk_file_env (const char *src)
 		return NULL;
 	}
 
-	/* no mapping if filename begins with a slash [externally checked], hypen or digits
+	/* no mapping if filename begins with a slash [externally checked], hyphen or digits
 	   (taken from "Programmer's Guide to File Handling, Chapter 2: File Naming") */
 	switch (*file_open_name) {
 	case '-':
@@ -966,10 +966,10 @@ looks_absolute (char *src)
 	return 0;
 }
 
-/* checks for special ACUCOBOL-case: file that start with hypen [note: -P not supported]
+/* checks for special ACUCOBOL-case: file that start with hyphen [note: -P not supported]
    no translation at all, name starts after first non-space */
 static int
-has_acu_hypen (char *src)
+has_acu_hyphen (char *src)
 {
 	if ( src[0] == '-'
 	 && (src[1] == 'F' || src[1] == 'D' || src[1] == 'f' || src[1] == 'd')
@@ -981,7 +981,7 @@ has_acu_hypen (char *src)
 
 /* do acu translation, 'src' may not be file_open_buff! */
 static void
-do_acu_hypen_translation (char *src)
+do_acu_hyphen_translation (char *src)
 {
 	/* maybe store device type to "adjust locking rules" */
 	/* find first non-space and return it in the original storage  */
@@ -1007,10 +1007,10 @@ cob_chk_file_mapping (void)
 		return;
 	}
 
-	/* Special ACUCOBOL-case: file that start with hypen [note: -P not supported]
+	/* Special ACUCOBOL-case: file that start with hyphen [note: -P not supported]
 	   no translation at all, name starts after first non-space */
-	if (has_acu_hypen (file_open_name)) {
-		do_acu_hypen_translation (file_open_name);
+	if (has_acu_hyphen (file_open_name)) {
+		do_acu_hyphen_translation (file_open_name);
 		return ;
 	}
 
@@ -1034,8 +1034,8 @@ cob_chk_file_mapping (void)
 			if (looks_absolute (src)) {
 				return;
 			}
-			if (has_acu_hypen (file_open_name)) {
-				do_acu_hypen_translation (file_open_name);
+			if (has_acu_hyphen (file_open_name)) {
+				do_acu_hyphen_translation (file_open_name);
 				return ;
 			}
 		}

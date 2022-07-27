@@ -54,8 +54,9 @@ NEWS - user visible changes				-*- outline -*-
 
 ** the compile flag -fodoslide was moved to a dialect configuration,
    while -fodoslide still works as before it is now implied with
-   -std=ibm/mvs/bs2000, for compatibility to previous behavior compile
-   with -fno-odoslide
+   -std=ibm/mvs/bs2000, if you use those dialects consider to recompile
+   affected programs (with OCCURS DEPENDING ON) or compile with additional
+   -fno-odoslide to get the same results as with older GnuCOBOL versions
 
 ** the compile flag -fdefaultbyte was moved to a dialect configuration,
    while -fdefaultbyte still works as before it is now implied as binary
