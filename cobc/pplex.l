@@ -1728,7 +1728,7 @@ get_word (const char *str, char *word_buff)
 			*word_buff = 0;
 		} else {
 			ret = NULL;
-		}		
+		}
 	}
 	return ret;
 }

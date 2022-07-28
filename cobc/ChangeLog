@@ -1,4 +1,9 @@
 
+2022-07-28  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* parser.y, pplex.l: annot every token that is not used in the grammar,
+	  whitespace fixes
+
 2022-07-27  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* typeck.c (cb_emit_sort_init): avoid SIGSEGV on SORT of toplevel field
