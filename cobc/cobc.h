@@ -95,14 +95,17 @@
 /* Source format enum */
 enum cb_format {
 	CB_FORMAT_FIXED = 0,
+	CB_FORMAT_COBOL85,	/* Fixed format with Area A checks (pending) */
 	CB_FORMAT_FREE,
-	CB_FORMAT_VARIABLE,	/* MF's Variable format */
+	CB_FORMAT_VARIABLE,     /* MF's Variable format */
 	CB_FORMAT_XOPEN_FFF,	/* X/Open Free-form format */
 	CB_FORMAT_ICOBOL_XCARD,	/* ICOBOL xCard */
 	CB_FORMAT_ICOBOL_CRT,	/* ICOBOL Free-form format (CRT) */
 	CB_FORMAT_ACUTERM,	/* ACU Terminal format, named "TERMINAL" */
 	CB_FORMAT_COBOLX,	/* GCOS's COBOLX */
 };
+#define CB_SF_FREE(sf) ((sf) == CB_FORMAT_FREE)
+#define CB_SF_FIXED(sf) ((sf) == CB_FORMAT_FIXED || (sf) == CB_FORMAT_COBOL85)
 
 #if 0 /* ancient OSVS registers that need special runtime handling - low priority */
 /* format in CURRENT-DATE register */

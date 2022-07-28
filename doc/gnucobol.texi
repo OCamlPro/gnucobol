@@ -437,6 +437,11 @@ number area; column 7, the indicator area; columns 8-72, the program-text
 area; and columns 72-80 as the reference area.@footnote{Historically, fixed
 format was based on 80-character punch cards.}
 
+@ignore (pending)
+@item -fformat=cobol85
+Fixed format with enforcements on the use of Area A.
+@end ignore
+
 @item -fformat=variable
 Microfocus' Variable format.  Identical to the fixed format above except
 for the program-text area which extends up to column 250 instead of 72.

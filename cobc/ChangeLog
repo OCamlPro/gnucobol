@@ -1,6 +1,9 @@
 
 2022-07-28  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
+	* cobc.h: extend cb_format_enum with COBOL85 (fixed format with
+	  pending Area A enforcement); define CB_SF_FIXED and CB_SF_FREE
+	* cobc.c: use new source format macros, whitespace fixes
 	* parser.y, pplex.l: annot every token that is not used in the grammar,
 	  whitespace fixes
 
