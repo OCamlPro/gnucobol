@@ -1,4 +1,13 @@
 
+2022-07-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* atlocal.in: option to run part of the testsuite via perf -stat
+	  to check for performance (enabled for runtime only by default),
+	  which can be activated by setting PERFSUFFIX variable
+	* Makefile.am: additional dependencies atlocal and
+	  run_prog_manual.sh where used
+	* testsuite.src: added missing $COBCRUN_DIRECT
+
 2022-03-29  Nicolas Berthier <nicolas.berther@ocamlpro.com>
 
 	* testsuite.src/syn_copy.at: test partial replacing with SPACES

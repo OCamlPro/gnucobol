@@ -9671,7 +9671,7 @@ AT_CLEANUP
 AT_SETUP([stack and dump feature])
 #AT_KEYWORDS([Dump])
 
-AT_DATA([./cpyabrt], [
+AT_DATA([cpyabrt], [
             MOVE "Quick brown fox jumped over the dog"
               TO TSTTAILX (1:40).
             MOVE CM-COMPANY TO TSTTAILX (42:20).
@@ -12487,7 +12487,7 @@ AT_CLEANUP
 
 
 AT_SETUP([FLOAT-DECIMAL w/o SIZE ERROR])
-AT_KEYWORDS([Numeric runmisc
+AT_KEYWORDS([Numeric runmisc overflow
 FLOAT-DECIMAL-16 FLOAT-DECIMAL-34
 DISPLAY COMPUTE])
 
@@ -12661,7 +12661,7 @@ AT_CLEANUP
 
 
 AT_SETUP([FLOAT-SHORT / FLOAT-LONG w/o SIZE ERROR])
-AT_KEYWORDS([Numeric runmisc
+AT_KEYWORDS([Numeric runmisc overflow
 COMP-1 COMP-2
 DISPLAY COMPUTE])
 
@@ -12860,7 +12860,7 @@ AT_CLEANUP
 
 
 AT_SETUP([FLOAT-SHORT with SIZE ERROR])
-AT_KEYWORDS([COMP-1])
+AT_KEYWORDS([COMP-1 overflow])
 
 AT_DATA([prog.cob], [
        identification division.
@@ -12903,7 +12903,7 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
-AT_CHECK([./prog], [0],
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [SIZE ERROR, last value = 1.7014118E+38
 ], [])
 
@@ -12911,7 +12911,7 @@ AT_CLEANUP
 
 
 AT_SETUP([FLOAT-LONG with SIZE ERROR])
-AT_KEYWORDS([COMP-2])
+AT_KEYWORDS([COMP-2 overflow])
 
 AT_DATA([prog.cob], [
        identification division.
@@ -12961,8 +12961,9 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
-# note: the actual value is not checked as this depends on intermediate rounding
-AT_CHECK([./prog], [0], ignore, [SIZE ERROR raised])
+# note: the actual value is not checked as it depends on non-portable
+#       intermediate rounding
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], ignore, [SIZE ERROR raised])
 
 AT_CLEANUP
 
