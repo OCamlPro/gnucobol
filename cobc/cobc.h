@@ -92,12 +92,12 @@
 #define YY_FATAL_ERROR(msg)		\
 	flex_fatal_error (msg, __FILE__, __LINE__)
 
-/* Source format enum */
+/* Source reference-format enum */
 enum cb_format {
-	CB_FORMAT_FIXED = 0,
+	CB_FORMAT_FIXED = 0,	/* COBOL2002+ fixed-form */
 	CB_FORMAT_COBOL85,	/* Fixed format with Area A checks (pending) */
-	CB_FORMAT_FREE,
-	CB_FORMAT_VARIABLE,     /* MF's Variable format */
+	CB_FORMAT_FREE,		/* COBOL2002+ free-form */
+	CB_FORMAT_VARIABLE,	/* MF's Variable fixed-form format */
 	CB_FORMAT_XOPEN_FFF,	/* X/Open Free-form format */
 	CB_FORMAT_ICOBOL_XCARD,	/* ICOBOL xCard */
 	CB_FORMAT_ICOBOL_CRT,	/* ICOBOL Free-form format (CRT) */
