@@ -1729,7 +1729,7 @@ turn_ec_io (const struct cb_exception ec_to_turn,
 			cb_error_x (loc, _("file '%s' does not exist"), (*ec_list)->text);
 			return 1;
 		}
-		
+
 		/* Apply to file's exception list */
 		turn_ec_for_table (f->exception_table, cb_io_exception_table_len,
 				   ec_to_turn, to_on_off);
@@ -1831,7 +1831,7 @@ cobc_apply_turn_directives (void)
 
 	loc.source_file = cb_source_file;
 	loc.source_column = 0;
-	
+
 	/* Apply all >>TURN directives the scanner has passed */
 	while (cb_turn_list
 	       && cb_turn_list->line <= cb_source_line
@@ -3620,13 +3620,6 @@ process_command_line (const int argc, char **argv)
 			cb_max_errors = n;
 			break;
 
-		case 14:
-			/* -fformat=<FIXED/FREE/VARIABLE/XOPEN/XCARD/CRT/TERMINAL/COBOLX> */
-			if (cobc_deciph_source_format (cob_optarg) != 0) {
-				cobc_err_exit (COBC_INV_PAR, "-fformat");
-			}
-			break;
-
 		case 8:
 			/* -fdump=<scope> : Add sections for dump code generation */
 			cobc_def_dump_opts (cob_optarg, 1);
@@ -4104,7 +4097,7 @@ process_filename (const char *filename)
 	if (cb_strcasecmp (extension, "i") == 0) {
 		/* Already preprocessed */
 		fn->need_preprocess = 0;
-	} else 
+	} else
 	if (cb_strcasecmp (extension, "c") == 0
 #if	defined(_WIN32)
 	 || cb_strcasecmp (extension, "asm") == 0
@@ -5001,13 +4994,13 @@ static void
 set_listing_header_code (void)
 {
 	strcpy (cb_listing_header, "LINE    ");
-	if (cb_listing_file_struct->source_format != CB_FORMAT_FREE) {
+	if (! CB_SF_FREE (cb_listing_file_struct->source_format)) {
 		strcat (cb_listing_header,
 			"PG/LN  A...B..............................."
 			".............................");
 		if (cb_listing_wide) {
-			if (cb_listing_file_struct->source_format == CB_FORMAT_FIXED
-			    && cobc_get_text_column () == 72) {
+			if (CB_SF_FIXED (cb_listing_file_struct->source_format)
+			    && (cobc_get_text_column () == 72)) {
 				strcat (cb_listing_header, "SEQUENCE");
 			} else {
 				strcat (cb_listing_header,
@@ -6189,7 +6182,7 @@ get_next_listing_line (FILE *fd, char **pline, int fixed)
 static COB_INLINE COB_A_INLINE char *
 get_first_nonspace (char *line, const enum cb_format source_format)
 {
-	if (source_format != CB_FORMAT_FREE) {
+	if (! CB_SF_FREE (source_format)) {
 		return get_next_nonspace (line + cobc_get_indicator () + 1);
 	} else {
 		return get_next_nonspace (line);
@@ -6245,7 +6238,7 @@ line_has_page_eject (char *line, const enum cb_format source_format)
 {
 	char	*directive_start;
 
-	if (source_format != CB_FORMAT_FREE && line[cobc_get_indicator ()] == '/') {
+	if (! CB_SF_FREE (source_format) && line[cobc_get_indicator ()] == '/') {
 		return 1;
 	} else {
 		directive_start = get_directive_start (line, source_format);
@@ -6453,9 +6446,9 @@ print_line (struct list_files *cfile, char *line, int line_num, int in_copy)
 		}
 
 		(void)terminate_str_at_first_trailing_space (line);
-		if (cfile->source_format == CB_FORMAT_FIXED) {
+		if (CB_SF_FIXED (cfile->source_format)) {
 			print_fixed_line (line_num, pch, line);
-		} else { /* CB_FORMAT_FREE */
+		} else {
 			print_free_line (line_num, pch, line);
 		}
 	}
@@ -6475,7 +6468,7 @@ print_line (struct list_files *cfile, char *line, int line_num, int in_copy)
 			return last_col;			\
 		}						\
 	} ONCE_COB
-		
+
 /*
   Copy each token in pline from the start of pline[first_idx] to the end of
   pline[last_idx] into cmp_line, separated by a space. Tokens are copied from
@@ -6870,7 +6863,7 @@ print_replace_text (struct list_files *cfile, FILE *fd,
 	char	*from_ptr;
 	char	*to_ptr;
 	char	*newline;
-	const int	fixed = (cfile->source_format == CB_FORMAT_FIXED);
+	const int	fixed = CB_SF_FIXED (cfile->source_format);
 	const int	acudebug = (cfile->source_format == CB_FORMAT_ACUTERM);
 	int	first_col = fixed ? cobc_get_margin_a (1) : 0;
 	int	last;
@@ -7206,7 +7199,7 @@ print_replace_main (struct list_files *cfile, FILE *fd,
 	struct list_replace	*rep;
 	struct list_files 	*cur;
 	int    		i;
-	const int	fixed = (cfile->source_format == CB_FORMAT_FIXED);
+	const int	fixed = CB_SF_FIXED (cfile->source_format);
 	const int	first_col = fixed ? cobc_get_margin_a (1) : 0;
 	int		is_copy_line;
 	int		is_replace_line;
@@ -7215,7 +7208,7 @@ print_replace_main (struct list_files *cfile, FILE *fd,
 	char		ttoken[CB_LINE_LENGTH + 2] = { '\0' };
 	char		cmp_line[CB_LINE_LENGTH + 2] = { '\0' };
 
-	if (is_comment_line (pline[0], cfile->source_format != CB_FORMAT_FREE)) {
+	if (is_comment_line (pline[0], ! CB_SF_FREE (cfile->source_format))) {
 		return pline_cnt;
 	}
 
@@ -7228,7 +7221,7 @@ print_replace_main (struct list_files *cfile, FILE *fd,
 #endif
 
 	compare_prepare (cmp_line, pline, 0, pline_cnt, first_col,
-			 cfile->source_format != CB_FORMAT_FREE);
+			 ! CB_SF_FREE (cfile->source_format));
 
 	/* Check whether we're given a COPY or REPLACE statement. */
 	to_ptr = get_next_token (cmp_line, ttoken, tterm);
@@ -7320,7 +7313,7 @@ print_program_code (struct list_files *cfile, int in_copy)
 	struct list_error	*err;
 	int	i;
 	int	line_num = 1;
-	const int	fixed = (cfile->source_format == CB_FORMAT_FIXED);
+	const int	fixed = CB_SF_FIXED (cfile->source_format);
 	const int	indicator = cobc_get_indicator ();
 	int	eof = 0;
 	int	pline_cnt = 0;
@@ -7383,7 +7376,7 @@ print_program_code (struct list_files *cfile, int in_copy)
 
 				/* Collect all adjacent continuation lines */
 				if (is_continuation_line (pline[fixed ? pline_cnt : pline_cnt - 1],
-						  cfile->source_format != CB_FORMAT_FREE)) {
+							  ! CB_SF_FREE (cfile->source_format))) {
 					continue;
 				}
 				/* handling for preprocessed directives */

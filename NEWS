@@ -38,6 +38,18 @@ NEWS - user visible changes				-*- outline -*-
    this isn't done anymore so if you need the memory to be initialized
    specify that explicit in the source and recompile
 
+** new -fformat dialect option, and extended SOURCE FORMAT directives, with
+   the following newly supported reference-formats (in addition to
+   FIXED/FREE):
+
+   COBOL85              Fixed-form format with enforcement of Area A (pending)
+   COBOLX		GCOS 7 extended format
+   CRT			ICOBOL Free-form format
+   TERMINAL		ACUCOBOL-GT Terminal format
+   VARIABLE		Micro Focus Variable Fixed-form format
+   XCARD		ICOBOL xCard (extended card) format
+   XOPEN		X/Open Free-form format
+
 * Changes that potentially effects recompilation of existing programs:
 
 ** the reserved word list and intrinsic functions was updated, especially
@@ -101,16 +113,6 @@ NEWS - user visible changes				-*- outline -*-
    We define the GCOS dialect based on the COBOL85 standard, with new
    dialect configuration options accompanying each specificity
    introduced by the dialect.
-
-** new -fformat flag and extended SOURCE FORMAT directives, with the following
-   newly supported formats:
-
-   VARIABLE		Microfocus Variable format
-   XOPEN		X/Open Free-form format
-   XCARD		ICOBOL xCard (extended card) format
-   CRT			ICOBOL Free-form format
-   TERMINAL		ACUCOBOL-GT Terminal format
-   COBOLX		GCOS 7 extended format
 
 * Important Bugfixes:
 
