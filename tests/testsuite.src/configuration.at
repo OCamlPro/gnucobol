@@ -1,4 +1,4 @@
-## Copyright (C) 2014-2021 Free Software Foundation, Inc.
+## Copyright (C) 2014-2022 Free Software Foundation, Inc.
 ## Written by Simon Sobisch
 ##
 ## This file is part of GnuCOBOL.
@@ -419,7 +419,9 @@ test.conf: missing definitions:
 	no definition of 'word-length'
 	no definition of 'literal-length'
 	no definition of 'numeric-literal-length'
+	no definition of 'defaultbyte'
 	no definition of 'standard-define'
+	no definition of 'format'
 	no definition of 'binary-size'
 	no definition of 'binary-byteorder'
 	no definition of 'assign-clause'
@@ -529,6 +531,7 @@ test.conf: missing definitions:
 	no definition of 'vsam-status'
 	no definition of 'self-call-recursive'
 	no definition of 'record-contains-depending-clause'
+	no definition of 'picture-l'
 ])
 
 AT_CLEANUP
@@ -834,10 +837,13 @@ AT_DATA([fixed.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY -fformat=unknown fixed.cob], [1], [],
-[cobc: error: invalid parameter: -fformat
+[configuration error:
+-fformat=unknown: invalid value 'unknown' for configuration tag 'format';
+	should be one of the following values: FIXED, FREE, COBOL85, VARIABLE, XOPEN, XCARD, CRT, TERMINAL, COBOLX
 ])
 AT_CHECK([$COMPILE_ONLY -fixed fixed.cob], [0], [], [])
 AT_CHECK([$COMPILE_ONLY -fformat=fixed fixed.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -fformat=cobol85 fixed.cob], [0], [], [])
 
 AT_DATA([wide.cob], [
       *Example prog in fixed format with wider record length
@@ -853,6 +859,12 @@ AT_DATA([wide.cob], [
            STOP RUN.
 ])
 AT_CHECK([$COMPILE_ONLY -fformat=fixed wide.cob], [1], [],
+[wide.cob:10: error: continuation character expected
+wide.cob:9: error: invalid literal: '  ...'
+wide.cob:9: error: missing terminating ' character
+wide.cob:9: error: syntax error, unexpected end of file
+])
+AT_CHECK([$COMPILE_ONLY -fformat=cobol85 wide.cob], [1], [],
 [wide.cob:10: error: continuation character expected
 wide.cob:9: error: invalid literal: '  ...'
 wide.cob:9: error: missing terminating ' character

@@ -92,17 +92,24 @@
 #define YY_FATAL_ERROR(msg)		\
 	flex_fatal_error (msg, __FILE__, __LINE__)
 
-/* Source format enum */
+/* Source reference-format enum */
 enum cb_format {
-	CB_FORMAT_FIXED = 0,
-	CB_FORMAT_FREE,
-	CB_FORMAT_VARIABLE,	/* MF's Variable format */
+	CB_FORMAT_FIXED = 0,	/* COBOL2002+ fixed-form */
+	CB_FORMAT_COBOL85,	/* Fixed format with Area A checks (pending) */
+	CB_FORMAT_FREE,		/* COBOL2002+ free-form */
+	CB_FORMAT_VARIABLE,	/* MF's Variable fixed-form format */
 	CB_FORMAT_XOPEN_FFF,	/* X/Open Free-form format */
 	CB_FORMAT_ICOBOL_XCARD,	/* ICOBOL xCard */
 	CB_FORMAT_ICOBOL_CRT,	/* ICOBOL Free-form format (CRT) */
 	CB_FORMAT_ACUTERM,	/* ACU Terminal format, named "TERMINAL" */
 	CB_FORMAT_COBOLX,	/* GCOS's COBOLX */
 };
+#define CB_SF_FREE(sf) (sf == CB_FORMAT_FREE)
+#define CB_SF_FIXED(sf) (sf == CB_FORMAT_FIXED || sf == CB_FORMAT_COBOL85)
+
+/* Common definition for help output and error messages: */
+#define CB_SF_ALL_NAMES							\
+	"FIXED, FREE, COBOL85, VARIABLE, XOPEN, XCARD, CRT, TERMINAL, COBOLX"
 
 #if 0 /* ancient OSVS registers that need special runtime handling - low priority */
 /* format in CURRENT-DATE register */
@@ -426,6 +433,7 @@ extern int cb_old_trace;
 #define	CB_WARNDEF(opt,name,doc)	opt,
 #define	CB_ONWARNDEF(opt,name,doc)	opt,
 #define	CB_NOWARNDEF(opt,name,doc)	opt,
+#define	CB_ERRWARNDEF(opt,name,doc)	opt,
 enum cb_warn_opt
 {
 	COB_WARNOPT_NONE = 0,
@@ -435,6 +443,7 @@ enum cb_warn_opt
 #undef	CB_WARNDEF
 #undef	CB_ONWARNDEF
 #undef	CB_NOWARNDEF
+#undef	CB_ERRWARNDEF
 
 #define COBC_WARN_FILLER  cb_warn_filler
 
@@ -526,8 +535,6 @@ extern int			cb_exp_line;
 extern int			functions_are_all;
 extern struct cb_tree_common	*defined_prog_list;
 extern int			current_call_convention;
-extern struct cb_field		*external_defined_fields_ws;
-extern struct cb_field		*external_defined_fields_global;
 
 /* Functions */
 
@@ -581,6 +588,8 @@ extern void		cobc_print_usage_flags (void);
 extern type			var;
 #define	CB_CONFIG_INT(var,name,min,max,odoc,doc)	\
 extern unsigned int		var;
+#define	CB_CONFIG_SINT(var,name,min,max,odoc,doc)	\
+extern int		var;
 #define	CB_CONFIG_STRING(var,name,doc)	\
 extern const char		*var;
 #define	CB_CONFIG_BOOLEAN(var,name,doc)	\
@@ -592,6 +601,7 @@ extern enum				cb_support var;
 
 #undef	CB_CONFIG_ANY
 #undef	CB_CONFIG_INT
+#undef	CB_CONFIG_SINT
 #undef	CB_CONFIG_STRING
 #undef	CB_CONFIG_BOOLEAN
 #undef	CB_CONFIG_SUPPORT

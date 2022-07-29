@@ -24,7 +24,10 @@ NEWS - user visible changes				-*- outline -*-
 ** new function to call COBOL from C that won't exit the program in case
    of runtime errors or STOP RUN: cob_call_with_exception_check()
 
-** Support of GCOS 7 (Bull) dialect
+** Support of GCOS 7 (Bull) dialect, including:
+   * PICTURE strings with L character (variable length fields)
+   * CONTROL DIVISION with SUBSTITUTION SECTION (full support) and DEFAULT
+     SECTION (partial support)
 
 ** TODO - More to add
 
@@ -35,14 +38,23 @@ NEWS - user visible changes				-*- outline -*-
    this isn't done anymore so if you need the memory to be initialized
    specify that explicit in the source and recompile
 
+** new -fformat dialect option, and extended SOURCE FORMAT directives, with
+   the following newly supported reference-formats (in addition to
+   FIXED/FREE):
+
+   COBOL85              Fixed-form format with enforcement of Area A (pending)
+   COBOLX		GCOS 7 extended format
+   CRT			ICOBOL Free-form format
+   TERMINAL		ACUCOBOL-GT Terminal format
+   VARIABLE		Micro Focus Variable Fixed-form format
+   XCARD		ICOBOL xCard (extended card) format
+   XOPEN		X/Open Free-form format
+
 * Changes that potentially effects recompilation of existing programs:
 
 ** the reserved word list and intrinsic functions was updated, especially
    to cater for new features of COBOL 202x; if compiling with any non-strict
    dialect you may need to unreserve any conflicting words / functions
-
-** in 64-bit environments, the maximum field size was increased from
-   268435456 bytes (999999998 bytes for OCCURS UNBOUNDED) to 2 GB
 
 ** in 64-bit environments, the default size for BY VALUE parameters has changed:
    If no explicit SIZE IS clause is specified,
@@ -57,8 +69,16 @@ NEWS - user visible changes				-*- outline -*-
 
 ** the compile flag -fodoslide was moved to a dialect configuration,
    while -fodoslide still works as before it is now implied with
-   -std=ibm/mvs/bs2000, for compatibility to previous behavior compile
-   with -fno-odoslide
+   -std=ibm/mvs/bs2000, if you use those dialects consider to recompile
+   affected programs (with OCCURS DEPENDING ON) or compile with additional
+   -fno-odoslide to get the same results as with older GnuCOBOL versions
+
+** the compile flag -fdefaultbyte was moved to a dialect configuration,
+   while -fdefaultbyte still works as before it is now implied as binary
+   zero with -std=ibm/mvs/bs2000, space for -std=mf/acu/rm/realia, and
+   no defined initialization for -std=cobol85/cobol2002/cobol2014/xopen,
+   it is unchanged for -std=default (initialize to PICTURE/USAGE)
+   for compatibility to previous behavior compile with -fdefaultbyte=init
 
 ** the dialect configuration option larger-redefines-ok was changed to
    a support option larger-redefines; if specified on the command-line
@@ -78,6 +98,9 @@ NEWS - user visible changes				-*- outline -*-
     the new, previously integrated, -Wconstant-numlit-expression
    -Wlarger-01-redefines as new warning (included with -Wextra) to check for
     the only larger REDEFINES that is explicit allowed by the COBOL standard
+   -Wno-unsupported -Wunsupported new option to disable or only warn
+    on use of features the runtime is not configured for;
+    this new option defaults to an error (= -Werror=unsupported)
 
 ** new compiler command line option to list the known runtime exception names
    and fatality `cobc --list-exceptions`
@@ -90,16 +113,6 @@ NEWS - user visible changes				-*- outline -*-
    We define the GCOS dialect based on the COBOL85 standard, with new
    dialect configuration options accompanying each specificity
    introduced by the dialect.
-
-** new -fformat flag and extended SOURCE FORMAT directives, with the following
-   newly supported formats:
-
-   VARIABLE		Microfocus Variable format
-   XOPEN		X/Open Free-form format
-   XCARD		ICOBOL xCard (extended card) format
-   CRT			ICOBOL Free-form format
-   TERMINAL		ACUCOBOL-GT Terminal format
-   COBOLX		GCOS 7 extended format
 
 * Important Bugfixes:
 
@@ -132,6 +145,9 @@ NEWS - user visible changes				-*- outline -*-
 
 * More notable changes
 
+** in 64-bit environments, the maximum field size was increased from
+   268435456 bytes (999999998 bytes for OCCURS UNBOUNDED) to 2 GB
+
 ** the call-stack on error / in the dump file now contains all parameters given
    to the program via command line options, if any
 
@@ -143,6 +159,9 @@ NEWS - user visible changes				-*- outline -*-
 ** source references shown in diagnostic messages and for trace at runtime
    as well as during debugging were extended, for example each executed WHEN,
    VARYING and UNTIL phrases are now seen
+
+** in case of any runtime features being used that are not available a warning
+   is generated and related exception status set
 
 
 * New build features

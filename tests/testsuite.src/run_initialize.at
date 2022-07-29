@@ -1,5 +1,6 @@
-## Copyright (C) 2003-2012, 2014-2015, 2017-2018, 2021 Free Software Foundation, Inc.
-## Written by Keisuke Nishida, Roger While, Simon Sobisch
+## Copyright (C) 2003-2012, 2014-2015, 2017-2018, 2020-2022
+## Free Software Foundation, Inc.
+## Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 ##
 ## This file is part of GnuCOBOL.
 ##
@@ -19,6 +20,7 @@
 ### GnuCOBOL Test Suite
 
 ### ISO+IEC+1989-2002 14.8.19 INITIALIZE statement
+### (and partial "internal" INITIALIZE for setting up WORKING-STORAGE)
 
 ## 14.8.19.3 General rules
 
@@ -148,7 +150,7 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([./prog], [0],
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [.123000000000000000+
 .456000000000000000-
 ], [])
@@ -172,9 +174,9 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            INITIALIZE G1.
            IF G1 NOT = " 000"
-              DISPLAY G1 NO ADVANCING
-              END-DISPLAY
-           END-IF.
+              DISPLAY "Test failed: " G1 "."
+              DISPLAY "  should be: "
+                      " 000.".
            STOP RUN.
 ])
 
@@ -200,14 +202,97 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            INITIALIZE G1.
            IF G1 NOT = "0   0   "
-              DISPLAY G1 NO ADVANCING
-              END-DISPLAY
-           END-IF.
+              DISPLAY "Test failed: " G1 "."
+              DISPLAY "  should be: "
+                      "0   0   .".
            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([initial value for group item with VALUE])
+AT_KEYWORDS([initialize])
+
+# see bug #694
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 G.
+         02 G2          OCCURS 3.
+           03 X         PIC 9 VALUE ZERO.
+           03 Y.
+             04 Y-REC   OCCURS 5.
+              05  Y1    PIC 9 VALUE 9.
+              05  Y2    PIC X VALUE 'Y'.
+           03 Z         PIC X VALUE 'Z'.
+       PROCEDURE        DIVISION.
+           IF G NOT = "09Y9Y9Y9Y9YZ09Y9Y9Y9Y9YZ09Y9Y9Y9Y9YZ"
+              DISPLAY "Test failed: " G "."
+              DISPLAY "  should be: "
+                      "09Y9Y9Y9Y9YZ09Y9Y9Y9Y9YZ09Y9Y9Y9Y9YZ.".
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([Value for group item with VALUE])
+AT_KEYWORDS([INITIALIZE])
+
+AT_DATA([prog.cob], [       IDENTIFICATION   DIVISION.
+       PROGRAM-ID. prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 FAILED        PIC 9(4) COMP-5 VALUE ZERO.
+       01 G.
+         02 G2          OCCURS 3.
+           03 X         PIC 9 VALUE ZERO.
+           03 Y.
+             04 Y-REC   OCCURS 5.
+              05  Y1    PIC 9 VALUE 9.
+              05  Y2    PIC X VALUE 'Y'.
+           03 Z         PIC X VALUE 'Z'.
+       PROCEDURE        DIVISION.
+           IF G NOT = "09Y9Y9Y9Y9YZ09Y9Y9Y9Y9YZ09Y9Y9Y9Y9YZ"
+              DISPLAY "Compile failed: " G "."
+              DISPLAY "     should be: "
+                      "09Y9Y9Y9Y9YZ09Y9Y9Y9Y9YZ09Y9Y9Y9Y9YZ."
+              ADD 1 TO FAILED
+           END-IF.
+           INITIALIZE G.
+           IF G NOT = "00 0 0 0 0  00 0 0 0 0  00 0 0 0 0  "
+              DISPLAY "INITIALIZE failed: " G "."
+              DISPLAY "        should be: "
+                      "00 0 0 0 0  00 0 0 0 0  00 0 0 0 0  ."
+              ADD 1 TO FAILED
+           END-IF.
+           INITIALIZE G ALL TO VALUE.
+           IF G NOT = "09Y9Y9Y9Y9YZ09Y9Y9Y9Y9YZ09Y9Y9Y9Y9YZ"
+              DISPLAY "INIT VALUE failed: " G "."
+              DISPLAY "        should be: "
+                      "09Y9Y9Y9Y9YZ09Y9Y9Y9Y9YZ09Y9Y9Y9Y9YZ."
+              ADD 1 TO FAILED
+           END-IF.
+           IF FAILED = ZERO
+              DISPLAY "All INITILIZE tests passed."
+           END-IF.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -std=default prog.cob ], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [All INITILIZE tests passed.
+], [])
 
 AT_CLEANUP
 
@@ -236,14 +321,18 @@ AT_DATA([prog.cob], [
            MOVE ALL "C" TO G2(3)
            INITIALIZE Y (2).
            IF G NOT = "AAAAAAAAAAAAB0 0 0 0 0 BCCCCCCCCCCCC"
-              DISPLAY "Test 1 failed: " G ".".
+              DISPLAY "Test 1 failed: " G "."
+              DISPLAY "    should be: "
+                      "AAAAAAAAAAAAB0 0 0 0 0 BCCCCCCCCCCCC.".
            MOVE ALL "A" TO G2(1)
            MOVE ALL "B" TO G2(2)
            MOVE ALL "C" TO G2(3)
            MOVE 2       TO X(1)
            INITIALIZE Y (X(1)).
            IF G NOT = "2AAAAAAAAAAAB0 0 0 0 0 BCCCCCCCCCCCC"
-              DISPLAY "Test 2 failed: " G ".".
+              DISPLAY "Test 2 failed: " G "."
+              DISPLAY "    should be: "
+                      "2AAAAAAAAAAAB0 0 0 0 0 BCCCCCCCCCCCC.".
            STOP RUN.
 ])
 
@@ -267,18 +356,23 @@ AT_DATA([prog2.cob], [
            MOVE ALL "C" TO G2(3)
            INITIALIZE Y (2).
            IF G NOT = "AAAAAAAAAAAAB0 0 0 0 0 BCCCCCCCCCCCC"
-              DISPLAY "Test 1 failed: " G ".".
+              DISPLAY "Test 1 failed: " G "."
+              DISPLAY "    should be: "
+                      "AAAAAAAAAAAAB0 0 0 0 0 BCCCCCCCCCCCC.".
            MOVE ALL "A" TO G2(1)
            MOVE ALL "B" TO G2(2)
            MOVE ALL "C" TO G2(3)
            MOVE 2       TO X(1)
            INITIALIZE Y (X(1)).
            IF G NOT = "2AAAAAAAAAAAB0 0 0 0 0 BCCCCCCCCCCCC"
-              DISPLAY "Test 2 failed: " G ".".
+              DISPLAY "Test 2 failed: " G "."
+              DISPLAY "    should be: "
+                      "2AAAAAAAAAAAB0 0 0 0 0 BCCCCCCCCCCCC.".
            STOP RUN.
 ])
 
-# CHECK later...
+# FIXME: finish test later, using both ODOSLIDE (ibm)
+#        and complex-odo alone (GC)...
 #AT_DATA([prog3.cob], [
 #       IDENTIFICATION   DIVISION.
 #       PROGRAM-ID.      prog3.

@@ -1451,6 +1451,7 @@ cobc_set_source_format (const enum cb_format sf) {
 
 	switch (source_format) {
 	case CB_FORMAT_FIXED:
+	case CB_FORMAT_COBOL85:
 		text_column = cb_config_text_column; /* 72 by default */
 		break;
 	case CB_FORMAT_VARIABLE:
@@ -1507,6 +1508,8 @@ cobc_parse_source_format (enum cb_format *const out, const char *const sfname) {
 		format = CB_FORMAT_FIXED;
 	} else if (!cb_strcasecmp (sfname, "FREE")) {
 		format = CB_FORMAT_FREE;
+	} else if (!cb_strcasecmp (sfname, "COBOL85")) {
+		format = CB_FORMAT_COBOL85;
 	} else if (!cb_strcasecmp (sfname, "VARIABLE")) {
 		format = CB_FORMAT_VARIABLE;
 	} else if (!cb_strcasecmp (sfname, "XOPEN")) {

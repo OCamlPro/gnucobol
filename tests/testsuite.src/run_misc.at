@@ -3165,6 +3165,28 @@ AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [0004030201], [])
 AT_CLEANUP
 
 
+AT_SETUP([SORT: table sort (toplevel)])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 VAL           PIC X(5) VALUE "43512".
+       01 TBL           REDEFINES VAL PIC X OCCURS 5.
+       PROCEDURE        DIVISION.
+           SORT TBL ASCENDING
+           IF VAL NOT = "12345" DISPLAY VAL.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([SORT: EBCDIC table sort])
 AT_KEYWORDS([runmisc ALPHABET OBJECT-COMPUTER])
 
@@ -9550,7 +9572,7 @@ ReWrite: FOR00000 got 00/02 as expected
 
 AT_CHECK([COB_TRACE_FILE=+trace_append.txt \
 COB_SET_TRACE=Y \
-COB_TRACE_FORMAT="%S - %L"\
+COB_TRACE_FORMAT="%S - %L" \
 $COBCRUN_DIRECT ./prog_s], [0],
 [OK: Operations on empty file
 Loading sample data file.
@@ -9649,7 +9671,7 @@ AT_CLEANUP
 AT_SETUP([stack and dump feature])
 #AT_KEYWORDS([Dump])
 
-AT_DATA([./cpyabrt], [
+AT_DATA([cpyabrt], [
             MOVE "Quick brown fox jumped over the dog"
               TO TSTTAILX (1:40).
             MOVE CM-COMPANY TO TSTTAILX (42:20).
@@ -10020,6 +10042,7 @@ Dump Program-Id sub1 from prog.cob compiled MMM DD YYYY HH:MM:SS
 
 WORKING-STORAGE
 **********************
+77        RETURN-CODE                     +000000000
 01        ZRO                             000000000
 01        HEXV                            13
 01        TEST-BASED.                    <NULL> address
@@ -10083,6 +10106,7 @@ Dump Program-Id sub2 from sub2.cob compiled MMM DD YYYY HH:MM:SS
 
 WORKING-STORAGE
 **********************
+77        RETURN-CODE                     +000000000
 01        ZRO                             000000000
 01        HEXV                            13
 01        IDX                             000000000
@@ -10162,6 +10186,7 @@ FD FLATFILE
 
 WORKING-STORAGE
 **********************
+77        RETURN-CODE                     +000000000
 77        MAX-SUB                         0006
 77        CUST-STAT                      ALL ZEROES
 77        REC-NUM                         0001
@@ -10526,6 +10551,7 @@ Dump Program-Id prog from prog.cob compiled MMM DD YYYY HH:MM:SS
 
 WORKING-STORAGE
 **********************
+77        RETURN-CODE                     +000000000
 01        P2                              0x0000000000000000
 01        TAB-ADR-COUNT                   +0008
    INDEX  TAB-ADR-IND                     +000000001
@@ -12461,7 +12487,7 @@ AT_CLEANUP
 
 
 AT_SETUP([FLOAT-DECIMAL w/o SIZE ERROR])
-AT_KEYWORDS([Numeric runmisc
+AT_KEYWORDS([Numeric runmisc overflow
 FLOAT-DECIMAL-16 FLOAT-DECIMAL-34
 DISPLAY COMPUTE])
 
@@ -12635,7 +12661,7 @@ AT_CLEANUP
 
 
 AT_SETUP([FLOAT-SHORT / FLOAT-LONG w/o SIZE ERROR])
-AT_KEYWORDS([Numeric runmisc
+AT_KEYWORDS([Numeric runmisc overflow
 COMP-1 COMP-2
 DISPLAY COMPUTE])
 
@@ -12834,7 +12860,7 @@ AT_CLEANUP
 
 
 AT_SETUP([FLOAT-SHORT with SIZE ERROR])
-AT_KEYWORDS([COMP-1])
+AT_KEYWORDS([COMP-1 overflow])
 
 AT_DATA([prog.cob], [
        identification division.
@@ -12877,7 +12903,7 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
-AT_CHECK([./prog], [0],
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [SIZE ERROR, last value = 1.7014118E+38
 ], [])
 
@@ -12885,7 +12911,7 @@ AT_CLEANUP
 
 
 AT_SETUP([FLOAT-LONG with SIZE ERROR])
-AT_KEYWORDS([COMP-2])
+AT_KEYWORDS([COMP-2 overflow])
 
 AT_DATA([prog.cob], [
        identification division.
@@ -12935,8 +12961,9 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
-# note: the actual value is not checked as this depends on intermediate rounding
-AT_CHECK([./prog], [0], ignore, [SIZE ERROR raised])
+# note: the actual value is not checked as it depends on non-portable
+#       intermediate rounding
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], ignore, [SIZE ERROR raised])
 
 AT_CLEANUP
 

@@ -1,4 +1,13 @@
 
+2022-07-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: check for ncursesw first, then ncurses;
+	  in case of ncurses check for ncurses.h again
+
+2022-07-20  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* .github/workflows: fix handling of quotes in testuite artifact name
+
 2022-07-07  Simon Sobisch <simonsobisch@gnu.org>
 
 	* .github/workflows: CI now emits a coverage report artifact

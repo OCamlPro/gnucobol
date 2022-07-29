@@ -1,4 +1,8 @@
 
+2022-07-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobcrun.c: no module name check (done in libcob now)
+
 2022-06-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobcrun.c: added -dumpversion (called from libcob)

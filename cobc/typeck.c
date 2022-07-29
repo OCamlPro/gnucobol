@@ -37,6 +37,19 @@
 #include <windows.h>
 #endif
 
+
+#if	defined (HAVE_NCURSESW_NCURSES_H) || \
+	defined (HAVE_NCURSESW_CURSES_H) || \
+	defined (HAVE_NCURSES_H) || \
+	defined (HAVE_NCURSES_NCURSES_H) || \
+	defined (HAVE_PDCURSES_H) || \
+	defined (HAVE_PDCURSES_CURSES_H) || \
+	defined (HAVE_XCURSES_H) || \
+	defined (HAVE_XCURSES_CURSES_H) || \
+	defined (HAVE_CURSES_H)
+#define WITH_EXTENDED_SCREENIO
+#endif
+
 #ifdef	HAVE_LOCALE_H
 #include <locale.h>
 #endif
@@ -99,7 +112,6 @@ static const char		*inspect_func;
 static cb_tree			inspect_data;
 struct cb_statement		*error_statement = NULL;
 
-#if 0 /* pending merge of cb_warn_unsupported */
 #ifndef WITH_XML2
 static int			warn_xml_done = 0;
 #endif
@@ -109,7 +121,18 @@ static int			warn_json_done = 0;
 #ifndef WITH_EXTENDED_SCREENIO
 static int			warn_screen_done = 0;
 #endif
-#endif
+
+struct external_defined_register {
+	struct external_defined_register	*next;
+	const char		*name;
+	const char		*definition;
+};
+
+static struct external_defined_register	*external_defined_fields_ws;
+static struct external_defined_register	*external_defined_fields_global;
+
+static int			report_id = 1;
+
 static int			expr_op;		/* Last operator */
 static cb_tree			expr_lh;		/* Last left hand */
 static int			expr_dmax = -1;		/* Max scale for expression result */
@@ -133,7 +156,6 @@ static size_t			overlapping = 0;
 static int			expr_index;		/* Stack index */
 static int			expr_stack_size;	/* Stack max size */
 static struct expr_node		*expr_stack;		/* Expression node stack */
-static int			report_id = 1;
 
 #ifdef	HAVE_DESIGNATED_INITS
 static const unsigned char	expr_prio[256] = {
@@ -1360,6 +1382,7 @@ cb_build_register_return_code (const char *name, const char *definition)
 	field = cb_build_index (cb_build_reference (name), cb_zero, 0, NULL);
 	CB_FIELD_PTR (field)->index_type = CB_STATIC_INT_INDEX;
 	CB_FIELD_PTR (field)->flag_internal_register = 1;
+	CB_FIELD_PTR (field)->level = 77;
 	CB_FIELD_PTR (field)->flag_real_binary = 1;
 	current_program->cb_return_code = field;
 }
@@ -1387,6 +1410,7 @@ cb_build_register_sort_return (const char *name, const char *definition)
 	field = cb_build_index (cb_build_reference (name), cb_zero, 0, NULL);
 	CB_FIELD_PTR (field)->flag_no_init = 1;
 	CB_FIELD_PTR (field)->flag_internal_register = 1;
+	CB_FIELD_PTR (field)->level = 77;
 	CB_FIELD_PTR (field)->flag_real_binary = 1;
 	current_program->cb_sort_return = field;
 }
@@ -1408,6 +1432,7 @@ cb_build_register_number_parameters (const char *name, const char *definition)
 	CB_FIELD_PTR (field)->flag_no_init = 1;
 	CB_FIELD_PTR (field)->flag_local = 1;
 	CB_FIELD_PTR (field)->flag_internal_register = 1;
+	CB_FIELD_PTR (field)->level = 77;
 	CB_FIELD_PTR (field)->index_type = CB_INT_INDEX;
 	CB_FIELD_PTR (field)->flag_real_binary = 1;
 	current_program->cb_call_params = field;
@@ -1417,6 +1442,7 @@ static void cb_build_constant_register (cb_tree name, cb_tree value)
 {
 	cb_tree constant = cb_build_constant (name, value);
 	CB_FIELD (constant)->flag_internal_register = 1;
+	CB_FIELD (constant)->level = 77;
 }
 
 /* WHEN-COMPILED */
@@ -1464,76 +1490,120 @@ cb_build_register_when_compiled (const char *name, const char *definition)
 		cb_build_alphanumeric_literal (buff, lit_size));
 }
 
-/* General register creation; used for TALLY, LIN, COL,
+/* save external definition that is able to be parsed for later */
+static void
+add_to_register_list (struct external_defined_register** list, const char *name, const char *definition)
+{
+	struct external_defined_register *reg;
+	reg = cobc_main_malloc (sizeof (struct external_defined_register));
+	reg->next = *list;
+	reg->name = cobc_main_strdup (name);
+	reg->definition = cobc_main_strdup (definition);
+	*list = reg;
+}
+
+/* moves word from sentence buffer to word bufffer,
+   replacing it in sentence buffer to spaces,
+   ignores leading spaces,
+   returns length of word */
+static size_t
+extract_next_word_from_buffer (char *sentence, char *word)
+{
+	char *p = sentence, *r;
+	while (*p == ' ') p++;
+
+	r = p;
+	while (*r != 0 && *r != ' ') r++;
+	memcpy (word, p, r - p);
+	word [r - p] = 0;
+	memset (sentence, ' ', r - sentence);
+	return r - p;
+}
+
+/* General register creation from specified or default definition
+   (may not contain tabs between clauses);
+   used for TALLY, LIN, COL;
    stores the resulting field's address in the optional last parameter */
-/* TODO: complete change to generic function */
+/* TODO: test - and possibly complete change to generic function;
+         currently missing: USAGE (either specify "DISPLAY" or get BINARY) */
 int
 cb_build_generic_register (const char *name, const char *external_definition,
 	struct cb_field **result_field)
 {
-	cb_tree field_tree;
-	char	definition[COB_MINI_BUFF];
-	char *p, *r;
-	struct cb_field *field;
-	enum cb_usage	usage;
-	struct cb_picture	*picture;
+	/*
+	   implementation note: this function is called in two scenarios:
+	   1 - free definition outside of parsing tree (current_program != NULL);
+	       in this case (config / command line) we do the complete parsing
+	       here (for error messages), but can't do full field validation and
+	       don't end up storing the prepared field somewhere;
+	       instead the string we know can be fully parsed is cached
+	   2 - building within parsing tree; in this case the result is added
+	       to the current working storage
+	*/
+	struct cb_field	*field;
+	char	definition[COB_MINI_BUFF] = { 0 };
+	char	word[COB_MINI_BUFF];
+	char	*p;
+	size_t	def_len, word_len;
+	int 	ret;
 
 	if (!external_definition) {
 		external_definition = cb_get_register_definition (name);
-		if (!external_definition) {
-			if (result_field) {
-				*result_field = NULL;
-			}
-			return 1;
-		}
 	}
-
-	strncpy (definition, external_definition, COB_MINI_MAX);
-	definition[COB_MINI_MAX] = 0;
+	if (!external_definition || !external_definition[0]) {
+		if (result_field) {
+			*result_field = NULL;
+		}
+		cb_error ("missing definition for special register '%s'", name);
+		return 1;
+	}
+	def_len = strlen (external_definition);
+	if (def_len > COB_MINI_MAX) {
+		cb_error ("unexpected definition for special register '%s', "
+			"too long: %s", name, external_definition);
+		def_len = COB_MINI_MAX;	/* still parse up to max */
+	}
+	memcpy (definition, external_definition, def_len);
 
 	/* check for GLOBAL, leave if we don't need to define it again (nested program) */
 	p = strstr (definition, "GLOBAL");
-	if (p) {
+	if (p && (*(p + 6)  == ' ' || *(p + 6) == 0)) {
 		if (current_program && current_program->nested_level) {
-			if (result_field) {
-				/* TODO: test pending */
-				field_tree = cb_ref (cb_build_reference (name));
-				*result_field = CB_FIELD_PTR(field_tree);
-			}
+			/* in this case the program creation should have copied the reference */
+			/* TODO: test pending */
 			return 0;
 		}
 		memset (p, ' ', 6);	/* remove from local copy */
 	}
 
 	/* actual field generation */
-	field_tree = cb_build_field (cb_build_reference (name));
-	field = CB_FIELD_PTR (field_tree);
+	ret = 0;
+	field = CB_FIELD (cb_build_field (cb_build_reference (name)));
 	field->flag_is_global = (p != NULL);		/* any GLOBAL found ? */
 
 	/* handle USAGE */
-	usage = CB_USAGE_DISPLAY;
 	p = strstr (definition, "USAGE ");
 	if (p) {
+		enum cb_usage	usage;
 		memset (p, ' ', 5);
 		p += 6;
-		while (*p == ' ') p++;
-
-		if (strncmp (p, "DISPLAY", (size_t)7) == 0) {
-			memset (p, ' ', 7);
+		word_len = extract_next_word_from_buffer (p, word);
+		if (word_len == 7 && memcmp (word, "DISPLAY", 7)) {
+			usage = CB_USAGE_DISPLAY;
 		} else {
-			char	temp[COB_MINI_BUFF];
-			r = p;
-			while (*r != 0 && *r != ' ') r++;
-			memcpy (temp, p, r - p);
-			temp [r - p] = 0;
-			memset (p, ' ', r - p);
-			COB_UNUSED (temp);	/* FIXME: parse actual USAGE from temp */
+			/* FIXME: parse actual USAGE from word */
 			usage = CB_USAGE_BINARY;
 		}
+		field->usage = usage;
+#if 0
+	} else {
+		/* CHECKME: Should this be derived from PIC? */
+		/* note: default usage from cb_build_field is CB_USAGE_DISPLAY */
+#endif
 	}
-	field->usage = usage;
 
 	/* handle PICTURE */
+	field->pic = NULL;
 	p = strstr (definition, "PIC ");
 	if (p) {
 		memset (p, ' ', 3);
@@ -1546,35 +1616,110 @@ cb_build_generic_register (const char *name, const char *external_definition,
 		}
 	}
 	if (p) {
-		char	temp[COB_MINI_BUFF];
-		while (*p == ' ') p++;
-		r = p;
-		while (*r != 0 && *r != ' ') r++;
-		memcpy (temp, p, r - p);
-		temp [r - p] = 0;
-		memset (p, ' ', r - p);
-		picture = CB_PICTURE (cb_build_picture (temp));
-	} else {
-		picture = NULL;
+		(void)extract_next_word_from_buffer (p, word);
+		field->pic = cb_build_picture (word);
+		if (field->pic->size == 0) {
+			ret = 1;
+		}
 	}
-
-	field->pic = picture;
+	/* CHECKME: Is PIC calculated from VALUE later on if empty? */
 
 	/* handle VALUE */
 	p = strstr (definition, "VALUE ");
 	if (p) {
 		memset (p, ' ', 5);
 		p += 6;
-	} else {
-		p = strstr (definition, "VALUES ");
-		if (p) {
-			memset (p, ' ', 6);
-			p += 7;
-		}
 	}
 	if (p) {
-		COB_UNUSED (p);	/* FIXME: parse actual VALUE */
-		field->values = CB_LIST_INIT (cb_zero);
+		cb_tree	lit = NULL;
+		char *p2;
+
+		while (*p == ' ') p++;
+
+		/* alphanumeric / national / boolean literal, possibly in hex */
+		p2 = (*p == 'N' || *p == 'B') ? p + 1 : p;
+		if (*p2 == 'X') p2++;
+		if (*p2 == '"' || *p2 == '\'') {
+			char	*sep = strchr (p2 + 1, *p2);
+			if (sep == NULL) {
+				/* closing quote missing */
+				cb_error ("unexpected definition for special register '%s', "
+					"not parsed: VALUE %s", name, p);
+				ret = 1;
+				memset (p, ' ', strlen (p));
+			} else if (p2 == p) {
+				/* plain alphanumeric literal */
+				if (current_program) {
+					lit = cb_build_alphanumeric_literal (p + 1, sep - 1 - p);
+				}
+				memset (p, ' ', sep - p);
+			} else {
+
+				/* on the first run we don't add anything to the actual parse tree */
+#if 0			/* TODO: move literal building out of scanner.l and call here */
+				if (current_program) {
+					lit = cb_build_some_literal (p, sep);
+				}
+#else
+				*(sep + 1) = 0;
+				cb_error ("unexpected definition for special register '%s', "
+					"not parsed: VALUE %s", name, p);
+				ret = 1;
+#endif
+				memset (p, ' ', sep - p);
+			}
+		} else {
+			word_len = extract_next_word_from_buffer (p, word);
+			/* note: without current_program cb_zero and friends will be
+			         either NULL or point to invalid memory - that's no
+			         problem as we only want do do the parsing in this case */
+			if ((word_len == 4 && memcmp (word, "ZERO", 4) == 0)
+			 || (word_len == 5 && memcmp (word, "ZEROS", 5) == 0)
+			 || (word_len == 6 && memcmp (word, "ZEROES", 6) == 0)) {
+				lit = cb_zero;
+			} else
+			if ((word_len == 5 && memcmp (word, "SPACE", 5) == 0)
+			 || (word_len == 6 && memcmp (word, "SPACES", 6) == 0)) {
+				lit = cb_space;
+			}
+			else
+			if (word_len == 4 && memcmp (word, "NULL", 4) == 0) {
+				lit = cb_null;
+			} else
+			if ((word_len == 5 && memcmp (word, "QUOTE", 5) == 0)
+			 || (word_len == 6 && memcmp (word, "QUOTES", 6) == 0)) {
+				lit = cb_quote;
+			}
+			else
+			if ((word_len == 9 && memcmp (word, "LOW-VALUE", 9) == 0)
+			 || (word_len == 10 && memcmp (word, "LOW-VALUES", 10) == 0)) {
+				lit = cb_low;
+			}
+			else
+			if ((word_len == 10 && memcmp (word, "HIGH-VALUE", 10) == 0)
+			 || (word_len == 11 && memcmp (word, "HIGH-VALUES", 11) == 0)) {
+				lit = cb_high;
+			} else {
+				for (p2 = word; *p2; p2++) {
+					if (*p2 < '0' || *p2 > '9') {
+						ret = 2;
+						break;
+					}
+				}
+				if (ret == 2) {
+					cb_error ("unexpected definition for special register '%s', "
+							"not parsed: VALUE %s", name, word);
+				} else {
+					/* on the first run we don't add anything to the actual parse tree */
+					if (current_program) {
+						lit = cb_build_numeric_literal (0, word, 0);
+					}
+				}
+			}
+		}
+		if (lit) {
+			field->values = CB_LIST_INIT (lit);
+		}
 	}
 
 	/* handle CONSTANT */
@@ -1585,21 +1730,43 @@ cb_build_generic_register (const char *name, const char *external_definition,
 		field->flag_internal_constant = 1;
 	}
 
-	field->flag_internal_register = 1;
+	/* check that the local definition is completely parsed -> spaces */
+	{
+		char *d, *e;
+		for (d = definition, e = definition + def_len - 1; d != e; d++) {
+			if (*d != ' ') {
+				while (e != d && *e == ' ') *e-- = 0; /* drop trailing spaces */
+				cb_error ("unexpected definition for special register '%s', "
+					"not parsed: %s", name, d);
+				ret = 1;
+				break;
+			}
+		}
+	}
 
-	/* TODO: check that the local definition is completely parsed -> spaces */
+	if (ret) {
+		field->flag_invalid = 1;
+	} else
+	if (current_program) {
+		/* note: the necessary tree items like cb_zero won't be available
+		   without a program, and therefore full validation is not possible */
+		field->flag_internal_register = 1;
+		field->level = 77;
+		field->flag_no_init = 1;
+		cb_validate_field (field);
+	}
 
-	cb_validate_field (field);
+	if (field->flag_invalid) {
+		return 1;
+	}
 
-	field->flag_no_init = 1;
 	if (current_program) {
 		CB_FIELD_ADD (current_program->working_storage, field);
 	} else if (field->flag_is_global) {
-		CB_FIELD_ADD (external_defined_fields_global, field);
+		add_to_register_list (&external_defined_fields_global, name, external_definition);
 	} else {
-		CB_FIELD_ADD (external_defined_fields_ws, field);
+		add_to_register_list (&external_defined_fields_ws, name, external_definition);
 	}
-
 	if (result_field) {
 		*result_field = field;
 	}
@@ -1628,12 +1795,13 @@ cb_build_register_xml_code (const char *name, const char *definition)
 	tfield = cb_build_field (cb_build_reference (name));
 	field = CB_FIELD (tfield);
 	field->usage = CB_USAGE_BINARY;
-	field->pic = CB_PICTURE (cb_build_picture ("S9(9)"));
+	field->pic = cb_build_picture ("S9(9)");
 	cb_validate_field (field);
 	field->values = CB_LIST_INIT (cb_zero);
 	field->flag_no_init = 1;
 	field->flag_is_global = 1;
 	field->flag_internal_register = 1;
+	field->level = 77;
 	current_program->xml_code = tfield;
 }
 
@@ -1659,12 +1827,13 @@ cb_build_register_json_code (const char *name, const char *definition)
 	tfield = cb_build_field (cb_build_reference (name));
 	field = CB_FIELD (tfield);
 	field->usage = CB_USAGE_BINARY;
-	field->pic = CB_PICTURE (cb_build_picture ("S9(9)"));
+	field->pic = cb_build_picture ("S9(9)");
 	cb_validate_field (field);
 	field->values = CB_LIST_INIT (cb_zero);
 	field->flag_no_init = 1;
 	field->flag_is_global = 1;
 	field->flag_internal_register = 1;
+	field->level = 77;
 	current_program->json_code = tfield;
 }
 
@@ -1721,7 +1890,7 @@ cb_build_single_register (const char *name, const char *definition)
 
 	/* LCOV_EXCL_START */
 	/* This should never happen (and therefore doesn't get a translation) */
-	cb_error ("unexpected register %s, defined as \"%s\"", name, definition);
+	cb_error ("unexpected special register '%s', defined as \"%s\"", name, definition);
 	COBC_ABORT();
 	/* LCOV_EXCL_STOP */
 }
@@ -1730,8 +1899,8 @@ cb_build_single_register (const char *name, const char *definition)
 void
 cb_build_registers (void)
 {
-	const char *name, *definition = NULL;
 
+	const char *name, *definition = NULL;
 	name = cb_register_list_get_first (&definition);
 	while (name) {
 		cb_build_single_register (name, definition);
@@ -1743,11 +1912,19 @@ cb_build_registers (void)
 void
 cb_add_external_defined_registers (void)
 {
+	/* in this case we have a list of entries and need to reparse these,
+	   to add the fields both to the program's working storage and word list */
+	struct external_defined_register* list;
+
 	if (external_defined_fields_ws) {
-		CB_FIELD_ADD (current_program->working_storage, external_defined_fields_ws);
+		for (list = external_defined_fields_ws; list; list = list->next) {
+			cb_build_generic_register (list->name, list->definition, NULL);
+		}
 	}
 	if (external_defined_fields_global && !current_program->nested_level) {
-		CB_FIELD_ADD (current_program->working_storage, external_defined_fields_global);
+		for (list = external_defined_fields_global; list; list = list->next) {
+			cb_build_generic_register (list->name, list->definition, NULL);
+		}
 	}
 }
 
@@ -2254,6 +2431,14 @@ cb_build_identifier (cb_tree x, const int subchk)
 		if (CB_EXCEPTION_ENABLE (COB_EC_BOUND_SUBSCRIPT) && f->odo_level != 0) {
 			for (p = f; p; p = p->children) {
 				if (p->depending && p->depending != cb_error_node
+				    /* Do not check length for implicit access
+				       to a PIC L field (i.e, via enclosing
+				       group), as those disregard the DEPENDING.
+				       However, assuming the filler is never
+				       explicitly accessed (p == f), check is
+				       still done for explicit access to PIC L
+				       field (p->parent == f). */
+				 && (p->parent == f || !p->parent->flag_picture_l)
 				 && !p->flag_unbounded) {
 					e1 = CB_BUILD_FUNCALL_5 ("cob_check_odo",
 						 cb_build_cast_int (p->depending),
@@ -2719,7 +2904,7 @@ cb_build_length (cb_tree x)
 		if (f->flag_any_length) {
 			return cb_build_any_intrinsic (CB_LIST_INIT (x));
 		}
-		if (cb_field_variable_size (f) == NULL) {
+		if (f->flag_picture_l || cb_field_variable_size (f) == NULL) {
 			sprintf (buff, "%d", cb_field_size (x));
 			return cb_build_numeric_literal (0, buff, 0);
 		}
@@ -2860,7 +3045,7 @@ cb_validate_parameters_and_returning (struct cb_program *prog, cb_tree using_lis
 	}
 }
 
- 
+
 /* TO-DO: Add params differing in BY REFERENCE/VALUE and OPTIONAL to testsuite */
 
 static struct cb_program *
@@ -3375,10 +3560,25 @@ get_value (cb_tree x)
 		return 255;
 	} else if (x == cb_null) {
 		return 0;
-	} else if (CB_TREE_CLASS (x) == CB_CLASS_NUMERIC) {
-		return cb_get_int (x) - 1;
+	} else {
+		enum cb_class cls = CB_TREE_CLASS (x);
+		if (cls == CB_CLASS_NUMERIC) {
+			return cb_get_int (x) - 1;
+		} else {
+			struct cb_literal* lit = CB_LITERAL (x);
+			if (cls == CB_CLASS_NATIONAL) {
+				/* actually would need to check BE/LE here to do correct calculation */
+				cob_u32_t i;
+				int ret = lit->data[0];
+				for (i = 1; i < lit->size; ++i) {
+					ret *= 256;
+					ret += lit->data[i];
+				}
+				return ret;
+			}
+			return lit->data[0];
+		}
 	}
-	return CB_LITERAL (x)->data[0];
 }
 
 static int
@@ -3412,81 +3612,61 @@ cb_validate_collating (cb_tree collating_sequence)
 	return 0;
 }
 
-void
-cb_validate_program_environment (struct cb_program *prog)
+static void
+validate_alphabet (cb_tree alphabet)
 {
-	cb_tree			x;
-	cb_tree			y;
-	cb_tree			l;
-	cb_tree			ls;
-	struct cb_alphabet_name	*ap;
-	struct cb_class_name	*cp;
-	unsigned char		*data;
-	size_t			dupls;
-	size_t			unvals;
-	size_t			count;
-	int			lower;
-	int			upper;
-	int			size;
-	int			n;
-	int			i;
-	int			pos;
-	int			lastval;
-	int			tableval;
-	int			values[256];
-	int			charvals[256];
-	int			dupvals[256];
-	char		errmsg[256];
+	struct cb_alphabet_name *ap = CB_ALPHABET_NAME (alphabet);
+	unsigned int		n;
 
-	/* Check ALPHABET clauses */
-	/* Complicated by difference between code set and collating sequence */
-	for (l = prog->alphabet_name_list; l; l = CB_CHAIN (l)) {
-		ap = CB_ALPHABET_NAME (CB_VALUE (l));
-
-		/* Native */
-		if (ap->alphabet_type == CB_ALPHABET_NATIVE) {
-			for (n = 0; n < 256; n++) {
-				ap->values[n] = n;
-				ap->alphachr[n] = n;
-			}
-			continue;
+	/* Native */
+	if (ap->alphabet_type == CB_ALPHABET_NATIVE) {
+		for (n = 0; n < 256; n++) {
+			ap->values[n] = n;
+			ap->alphachr[n] = n;
 		}
+		return;
+	}
 
-		/* ASCII */
-		if (ap->alphabet_type == CB_ALPHABET_ASCII) {
-			for (n = 0; n < 256; n++) {
+	/* ASCII */
+	if (ap->alphabet_type == CB_ALPHABET_ASCII) {
+		for (n = 0; n < 256; n++) {
 #ifdef	COB_EBCDIC_MACHINE
-				ap->values[n] = (int)cob_refer_ascii[n];
-				ap->alphachr[n] = (int)cob_refer_ascii[n];
+			ap->values[n] = (int)cob_refer_ascii[n];
+			ap->alphachr[n] = (int)cob_refer_ascii[n];
 #else
-				ap->values[n] = n;
-				ap->alphachr[n] = n;
+			ap->values[n] = n;
+			ap->alphachr[n] = n;
 #endif
-			}
-			continue;
 		}
+		return;
+	}
 
-		/* EBCDIC */
-		if (ap->alphabet_type == CB_ALPHABET_EBCDIC) {
-			for (n = 0; n < 256; n++) {
+	/* EBCDIC */
+	if (ap->alphabet_type == CB_ALPHABET_EBCDIC) {
+		for (n = 0; n < 256; n++) {
 #ifdef	COB_EBCDIC_MACHINE
-				ap->values[n] = n;
-				ap->alphachr[n] = n;
+			ap->values[n] = n;
+			ap->alphachr[n] = n;
 #else
-				ap->values[n] = (int)cob_refer_ebcdic[n];
-				ap->alphachr[n] = (int)cob_refer_ebcdic[n];
+			ap->values[n] = (int)cob_refer_ebcdic[n];
+			ap->alphachr[n] = (int)cob_refer_ebcdic[n];
 #endif
-			}
-			continue;
 		}
+		return;
+	}
 
-		/* Custom alphabet */
-		dupls = 0;
-		unvals = 0;
-		pos = 0;
-		count = 0;
-		lastval = 0;
-		tableval = 0;
+	/* Custom alphabet */
+	{
+		cb_tree		l, x;
+		size_t		count = 0;
+		int			unvals = 0, dupls = 0;
+		int			lastval = 0, tableval = 0;
+		int			pos = 0;
+		int			i;
+		int			values[256];
+		int			charvals[256];
+		int			dupvals[256];
+
 		for (n = 0; n < 256; n++) {
 			values[n] = -1;
 			charvals[n] = -1;
@@ -3496,21 +3676,24 @@ cb_validate_program_environment (struct cb_program *prog)
 		}
 		ap->low_val_char = 0;
 		ap->high_val_char = 255;
-		for (y = ap->custom_list; y; y = CB_CHAIN (y)) {
+		for (l = ap->custom_list; l; l = CB_CHAIN (l)) {
 			pos++;
 			if (count > 255) {
 				unvals = pos;
 				break;
 			}
-			x = CB_VALUE (y);
+			x = CB_VALUE (l);
 			if (CB_PAIR_P (x)) {
 				/* X THRU Y */
-				lower = get_value (CB_PAIR_X (x));
-				upper = get_value (CB_PAIR_Y (x));
+				int lower = get_value (CB_PAIR_X (x));
+				int upper = get_value (CB_PAIR_Y (x));
 				lastval = upper;
 				if (!count) {
 					ap->low_val_char = lower;
 				}
+				/* regression in NATIONAL literals as
+				   thpose are unfinished; would be fine
+				   with national alphabet in general */
 				if (lower < 0 || lower > 255) {
 					unvals = pos;
 					continue;
@@ -3545,6 +3728,7 @@ cb_validate_program_environment (struct cb_program *prog)
 					}
 				}
 			} else if (CB_LIST_P (x)) {
+				cb_tree			ls;
 				/* X ALSO Y ... */
 				if (!count) {
 					ap->low_val_char = get_value (CB_VALUE (x));
@@ -3554,6 +3738,9 @@ cb_validate_program_environment (struct cb_program *prog)
 					if (!CB_CHAIN (ls)) {
 						lastval = n;
 					}
+					/* regression in NATIONAL literals as
+					   those are unfinished; would be fine
+					   with national alphabet in general */
 					if (n < 0 || n > 255) {
 						unvals = pos;
 						continue;
@@ -3593,23 +3780,49 @@ cb_validate_program_environment (struct cb_program *prog)
 					ap->values[n] = tableval++;
 					count++;
 				} else if (CB_LITERAL_P (x)) {
-					size = (int)CB_LITERAL (x)->size;
-					data = CB_LITERAL (x)->data;
+					int size = (int)CB_LITERAL (x)->size;
+					unsigned char* data = CB_LITERAL (x)->data;
 					if (!count) {
 						ap->low_val_char = data[0];
 					}
 					lastval = data[size - 1];
-					for (i = 0; i < size; i++) {
-						n = data[i];
-						if (values[n] != -1) {
-							dupvals[n] = n;
-							dupls = 1;
+					if (CB_TREE_CATEGORY (x) != CB_CATEGORY_NATIONAL) {
+						for (i = 0; i < size; i++) {
+							n = data[i];
+							if (values[n] != -1) {
+								dupvals[n] = n;
+								dupls = 1;
+							}
+							values[n] = n;
+							charvals[n] = n;
+							ap->alphachr[tableval] = n;
+							ap->values[n] = tableval++;
+							count++;
 						}
-						values[n] = n;
-						charvals[n] = n;
-						ap->alphachr[tableval] = n;
-						ap->values[n] = tableval++;
-						count++;
+					} else {
+						for (i = 0; i < size; i++) {
+							/* assuming we have UTF16BE here */
+							if (data[i] == 0) {
+							/* only checking lower entries, all others,
+							   which are currently only possible with
+							   national-hex literals are not checked
+							   TODO: add a list of values for those and
+							   iterate over the list */
+								n = data[++i];
+								if (values[n] != -1) {
+									dupvals[n] = n;
+									dupls = 1;
+								}
+								values[n] = n;
+								charvals[n] = n;
+								ap->values[n] = tableval;
+							} else {
+								n = data[i++];
+								n = n * 255 + data[i];
+							}
+							ap->alphachr[tableval++] = n;
+							count++;
+						}
 					}
 				} else {
 					n = get_value (x);
@@ -3634,39 +3847,40 @@ cb_validate_program_environment (struct cb_program *prog)
 		}
 		if (dupls || unvals) {
 			if (dupls) {
+				char		errmsg[256];
 				i = 0;
 				for (n = 0; n < 256; n++) {
 					if (dupvals[n] != -1) {
 						if (i > 240) {
-							sprintf(&errmsg[i], ", ...");
+							sprintf (&errmsg[i], ", ...");
 							i = i + 5;
 							break;
 						}
 						if (i) {
-							sprintf(&errmsg[i], ", ");
+							sprintf (&errmsg[i], ", ");
 							i = i + 2;
 						}
-						if (isprint(n)) {
+						if (isprint (n)) {
 							errmsg[i++] = (char)n;
 						} else {
-							sprintf(&errmsg[i], "x'%02x'", n);
+							sprintf (&errmsg[i], "x'%02x'", n);
 							i = i + 5;
 						}
 					};
 				}
 				errmsg[i] = 0;
-				cb_error_x (CB_VALUE(l),
+				cb_error_x (alphabet,
 					_("duplicate character values in alphabet '%s': %s"),
-					    ap->name, errmsg);
+					ap->name, errmsg);
 			}
 			if (unvals) {
-				cb_error_x (CB_VALUE(l),
+				cb_error_x (alphabet,
 					_("invalid character values in alphabet '%s', starting at position %d"),
-					    ap->name, pos);
+					ap->name, pos);
 			}
 			ap->low_val_char = 0;
 			ap->high_val_char = 255;
-			continue;
+			return;
 		}
 		/* Calculate HIGH-VALUE */
 		/* If all 256 values have been specified, */
@@ -3702,6 +3916,81 @@ cb_validate_program_environment (struct cb_program *prog)
 			}
 		}
 	}
+}
+
+static void
+check_class_duplicates (cb_tree class_name)
+{
+	struct cb_class_name* cp = CB_CLASS_NAME (class_name);
+	size_t			dupls = 0;
+	int			values[256] = { 0 };
+	cb_tree			l;
+
+#if 0 /* should not be necessary with init above */
+	memset (values, 0, sizeof (values));
+#endif
+	for (l = cp->list; l; l = CB_CHAIN (l)) {
+		cb_tree			x = CB_VALUE (l);
+		if (CB_PAIR_P (x)) {
+			/* X THRU Y */
+			int lower = get_value (CB_PAIR_X (x));
+			int upper = get_value (CB_PAIR_Y (x));
+			int i;
+			for (i = lower; i <= upper; i++) {
+				if (values[i]) {
+					dupls = 1;
+				} else {
+					values[i] = 1;
+				}
+			}
+		} else {
+			int			n;
+			if (CB_NUMERIC_LITERAL_P (x)) {
+				n = get_value (x);
+				if (values[n]) {
+					dupls = 1;
+				} else {
+					values[n] = 1;
+				}
+			} else if (CB_LITERAL_P (x)) {
+				int	 size = (int)CB_LITERAL (x)->size;
+				unsigned char* data = CB_LITERAL (x)->data;
+				int i;
+				for (i = 0; i < size; i++) {
+					n = data[i];
+					if (values[n]) {
+						dupls = 1;
+					} else {
+						values[n] = 1;
+					}
+				}
+			} else {
+				n = get_value (x);
+				if (values[n]) {
+					dupls = 1;
+				} else {
+					values[n] = 1;
+				}
+			}
+		}
+	}
+	if (dupls) {
+		cb_warning_x (cb_warn_additional, class_name,
+			_("duplicate character values in class '%s'"),
+			cb_name (class_name));
+	}
+}
+
+void
+cb_validate_program_environment (struct cb_program *prog)
+{
+	cb_tree			l;
+
+	/* Check ALPHABET clauses */
+	/* Complicated by difference between code set and collating sequence */
+	for (l = prog->alphabet_name_list; l; l = CB_CHAIN (l)) {
+		validate_alphabet (CB_VALUE (l));
+	}
 
 	/* Reset HIGH/LOW-VALUES */
 	cb_low = cb_norm_low;
@@ -3709,80 +3998,28 @@ cb_validate_program_environment (struct cb_program *prog)
 
 	/* Check and generate SYMBOLIC clauses */
 	for (l = prog->symbolic_char_list; l; l = CB_CHAIN (l)) {
+		cb_tree x;
 		if (CB_VALUE (l)) {
-			y = cb_ref (CB_VALUE (l));
-			if (y == cb_error_node) {
+			x = cb_ref (CB_VALUE (l));
+			if (x == cb_error_node) {
 				continue;
 			}
-			if (!CB_ALPHABET_NAME_P (y)) {
-				cb_error_x (y, _("invalid ALPHABET name"));
+			if (!CB_ALPHABET_NAME_P (x)) {
+				cb_error_x (x, _("invalid ALPHABET name"));
 				continue;
 			}
 		} else {
-			y = NULL;
+			x = NULL;
 		}
-		cb_build_symbolic_chars (CB_PURPOSE (l), y);
+		cb_build_symbolic_chars (CB_PURPOSE (l), x);
 	}
 
-	/* Check CLASS clauses */
-	for (l = prog->class_name_list; l; l = CB_CHAIN (l)) {
-		cp = CB_CLASS_NAME (CB_VALUE (l));
-		/* LCOV_EXCL_START */
-		if (cp == NULL) {	/* keep the analyzer happy... */
-			cobc_err_msg ("invalid CLASS detected");	/* not translated as highly unlikely */
-			COBC_ABORT ();
+	/* Check CLASS clauses for duplicates */
+	if (cb_warn_additional) {
+		for (l = prog->class_name_list; l; l = CB_CHAIN (l)) {
+			check_class_duplicates (CB_VALUE (l));
 		}
-		/* LCOV_EXCL_STOP */
-		dupls = 0;
-		memset (values, 0, sizeof(values));
-		for (y = cp->list; y; y = CB_CHAIN (y)) {
-			x = CB_VALUE (y);
-			if (CB_PAIR_P (x)) {
-				/* X THRU Y */
-				lower = get_value (CB_PAIR_X (x));
-				upper = get_value (CB_PAIR_Y (x));
-				for (i = lower; i <= upper; i++) {
-					if (values[i]) {
-						dupls = 1;
-					} else {
-						values[i] = 1;
-					}
-				}
-			} else {
-				if (CB_NUMERIC_LITERAL_P (x)) {
-					n = get_value (x);
-					if (values[n]) {
-						dupls = 1;
-					} else {
-						values[n] = 1;
-					}
-				} else if (CB_LITERAL_P (x)) {
-					size = (int)CB_LITERAL (x)->size;
-					data = CB_LITERAL (x)->data;
-					for (i = 0; i < size; i++) {
-						n = data[i];
-						if (values[n]) {
-							dupls = 1;
-						} else {
-							values[n] = 1;
-						}
-					}
-				} else {
-					n = get_value (x);
-					if (values[n]) {
-						dupls = 1;
-					} else {
-						values[n] = 1;
-					}
-				}
-			}
-		}
-		if (dupls) {
-			cb_warning_x (cb_warn_additional, CB_VALUE(l),
-					_("duplicate character values in class '%s'"),
-					    cb_name (CB_VALUE(l)));
-			}
-		}
+	}
 
 	/* Resolve the program collating sequences */
 	if (cb_validate_collating (prog->collating_sequence)) {
@@ -3794,7 +4031,7 @@ cb_validate_program_environment (struct cb_program *prog)
 
 	/* Resolve the program classification */
 	if (prog->classification && prog->classification != cb_int1) {
-		x = cb_ref (prog->classification);
+		cb_tree x = cb_ref (prog->classification);
 		if (!CB_LOCALE_NAME_P (x)) {
 			cb_error_x (prog->classification,
 				    _("'%s' is not a locale name"),
@@ -3851,35 +4088,35 @@ cb_build_debug_item (void)
 	l = cb_build_reference ("DEBUG-LINE");
 	x = cb_build_field_tree (NULL, l, CB_FIELD(lvl01_tree),
 				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = CB_PICTURE (cb_build_picture ("X(6)"));
+	CB_FIELD (x)->pic = cb_build_picture ("X(6)");
 	cb_validate_field (CB_FIELD (x));
 	cb_debug_line = l;
 
 	l = cb_build_filler ();
 	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
 				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = CB_PICTURE (cb_build_picture ("X"));
+	CB_FIELD (x)->pic = cb_build_picture ("X");
 	CB_FIELD (x)->flag_filler = 1;
 	cb_validate_field (CB_FIELD (x));
 
 	l = cb_build_reference ("DEBUG-NAME");
 	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
 				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = CB_PICTURE (cb_build_picture ("X(30)"));
+	CB_FIELD (x)->pic = cb_build_picture ("X(30)");
 	cb_validate_field (CB_FIELD (x));
 	cb_debug_name = l;
 
 	l = cb_build_filler ();
 	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
 				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = CB_PICTURE (cb_build_picture ("X"));
+	CB_FIELD (x)->pic = cb_build_picture ("X");
 	CB_FIELD (x)->flag_filler = 1;
 	cb_validate_field (CB_FIELD (x));
 
 	l = cb_build_reference ("DEBUG-SUB-1");
 	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
 				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = CB_PICTURE (cb_build_picture ("S9(4)"));
+	CB_FIELD (x)->pic = cb_build_picture ("S9(4)");
 	CB_FIELD (x)->flag_sign_leading = 1;
 	CB_FIELD (x)->flag_sign_separate = 1;
 	cb_validate_field (CB_FIELD (x));
@@ -3888,14 +4125,14 @@ cb_build_debug_item (void)
 	l = cb_build_filler ();
 	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
 				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = CB_PICTURE (cb_build_picture ("X"));
+	CB_FIELD (x)->pic = cb_build_picture ("X");
 	CB_FIELD (x)->flag_filler = 1;
 	cb_validate_field (CB_FIELD (x));
 
 	l = cb_build_reference ("DEBUG-SUB-2");
 	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
 				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = CB_PICTURE (cb_build_picture ("S9(4)"));
+	CB_FIELD (x)->pic = cb_build_picture ("S9(4)");
 	CB_FIELD (x)->flag_sign_leading = 1;
 	CB_FIELD (x)->flag_sign_separate = 1;
 	cb_validate_field (CB_FIELD (x));
@@ -3904,14 +4141,14 @@ cb_build_debug_item (void)
 	l = cb_build_filler ();
 	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
 				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = CB_PICTURE (cb_build_picture ("X"));
+	CB_FIELD (x)->pic = cb_build_picture ("X");
 	CB_FIELD (x)->flag_filler = 1;
 	cb_validate_field (CB_FIELD (x));
 
 	l = cb_build_reference ("DEBUG-SUB-3");
 	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
 				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = CB_PICTURE (cb_build_picture ("S9(4)"));
+	CB_FIELD (x)->pic = cb_build_picture ("S9(4)");
 	CB_FIELD (x)->flag_sign_leading = 1;
 	CB_FIELD (x)->flag_sign_separate = 1;
 	cb_validate_field (CB_FIELD (x));
@@ -3920,15 +4157,15 @@ cb_build_debug_item (void)
 	l = cb_build_filler ();
 	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
 				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = CB_PICTURE (cb_build_picture ("X"));
+	CB_FIELD (x)->pic = cb_build_picture ("X");
 	CB_FIELD (x)->flag_filler = 1;
 	cb_validate_field (CB_FIELD (x));
 
 	l = cb_build_reference ("DEBUG-CONTENTS");
 	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
 				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = CB_PICTURE (
-		cb_build_picture ("X(" CB_XSTRINGIFY(DFLT_DEBUG_CONTENTS_SIZE) ")"));
+	CB_FIELD (x)->pic =
+		cb_build_picture ("X(" CB_XSTRINGIFY(DFLT_DEBUG_CONTENTS_SIZE) ")");
 	cb_validate_field (CB_FIELD (x));
 	cb_debug_contents = l;
 
@@ -4314,7 +4551,7 @@ cb_validate_program_data (struct cb_program *prog)
 		if (x == cb_error_node) {
 			p = CB_FIELD (cb_build_field (l));
 			p->usage = CB_USAGE_DISPLAY;
-			p->pic = CB_PICTURE (cb_build_picture ("9(4)"));
+			p->pic = cb_build_picture ("9(4)");
 			cb_validate_field (p);
 			p->flag_no_init = 1;
 			/* Do not initialize/bump ref count here
@@ -4336,7 +4573,7 @@ cb_validate_program_data (struct cb_program *prog)
 	/* Check ODO items */
 	for (l = cb_depend_check; l; l = CB_CHAIN (l)) {
 		struct cb_field		*depfld = NULL;
-		unsigned int		odo_level = 0;
+		unsigned int		odo_level = 0, parent_is_pic_l;
 		cb_tree	xerr = NULL;
 		x = CB_VALUE (l);
 		if (x == NULL || x == cb_error_node) {
@@ -4348,15 +4585,20 @@ cb_validate_program_data (struct cb_program *prog)
 		} else if (cb_ref (q->depending) != cb_error_node) {
 			depfld = CB_FIELD_PTR (q->depending);
 		}
+		/* Direct parent being PIC L means we are checking an implicit
+		   FILLER with ODO: this permits nested ODO and further sister
+		   fields. */
+		parent_is_pic_l = q->parent && q->parent->flag_picture_l;
 		/* The data item that contains a OCCURS DEPENDING clause must be
 		   the last data item in the group */
 		for (p = q; ; p = p->parent) {
 			if (p->depending) {
 				if (odo_level > 0
-				 && !cb_odoslide) {
+				 && !cb_odoslide
+				 && !parent_is_pic_l) {
 					xerr = x;
 					cb_error_x (x,
-						_ ("'%s' cannot have nested OCCURS DEPENDING"),
+						_("'%s' cannot have nested OCCURS DEPENDING"),
 						cb_name (x));
 				}
 				odo_level++;
@@ -4376,10 +4618,11 @@ cb_validate_program_data (struct cb_program *prog)
 				if (!p->sister->redefines) {
 					if (!cb_odoslide
 					 && !cb_complex_odo
+					 && !parent_is_pic_l
 					 && x != xerr) {
 						xerr = x;
 						cb_error_x (x,
-							_ ("'%s' cannot have OCCURS DEPENDING because of '%s'"),
+							_("'%s' cannot have OCCURS DEPENDING because of '%s'"),
 							cb_name (x), p->sister->name);
 						break;
 					}
@@ -6938,19 +7181,28 @@ emit_move_corresponding (cb_tree x1, cb_tree x2)
 
 	found = 0;
 	for (f1 = CB_FIELD_PTR (x1)->children; f1; f1 = f1->sister) {
-		if (!f1->redefines && !f1->flag_occurs) {
-			for (f2 = CB_FIELD_PTR (x2)->children; f2; f2 = f2->sister) {
-				if (!f2->redefines && !f2->flag_occurs) {
-					if (strcmp (f1->name, f2->name) == 0) {
-						t1 = cb_build_field_reference (f1, x1);
-						t2 = cb_build_field_reference (f2, x2);
-						if (f1->children && f2->children) {
-							found += emit_move_corresponding (t1, t2);
-						} else {
-							cb_emit (cb_build_move (t1, t2));
-							found++;
-						}
-					}
+		if (f1->redefines || f1->flag_occurs) continue;
+		for (f2 = CB_FIELD_PTR (x2)->children; f2; f2 = f2->sister) {
+			if (f2->redefines || f2->flag_occurs) continue;
+			if (strcmp (f1->name, f2->name) == 0) {
+				t1 = cb_build_field_reference (f1, x1);
+				t2 = cb_build_field_reference (f2, x2);
+				/* GCOS 7: Contrary to the documentation,
+				   handling of PIC L fields in MOVE
+				   CORRESPONDING ignores the DEPENDING var for
+				   both sending and receiving fields. */
+				if (f1->flag_picture_l) {
+					CB_REFERENCE (t1)->length = cb_int (f1->size);
+				}
+				if (f2->flag_picture_l) {
+					CB_REFERENCE (t2)->length = cb_int (f2->size);
+				}
+				if (f1->children && !f1->flag_picture_l &&
+				    f2->children && !f2->flag_picture_l) {
+					found += emit_move_corresponding (t1, t2);
+				} else {
+					cb_emit (cb_build_move (t1, t2));
+					found++;
 				}
 			}
 		}
@@ -7294,6 +7546,15 @@ cb_emit_accept (cb_tree var, cb_tree pos, struct cb_attr_struct *attr_ptr)
 	cb_tree		size_is;	/* WITH SIZE IS */
 	cob_flags_t		disp_attrs;
 
+	if (current_program->flag_screen) {
+#ifndef WITH_EXTENDED_SCREENIO
+	if (!warn_screen_done) {
+		warn_screen_done = 1;
+		cb_warning (cb_warn_unsupported,
+			_("runtime is not configured to support %s"), "SCREEN SECTION");
+	}
+#endif
+	}
 	if (cb_validate_one (var)) {
 		return;
 	}
@@ -7366,8 +7627,8 @@ cb_emit_accept (cb_tree var, cb_tree pos, struct cb_attr_struct *attr_ptr)
 				cobc_xref_set_receiving (current_program->crt_status);
 			}
 		}
-		if ((CB_REF_OR_FIELD_P (var)) &&
-		     CB_FIELD_PTR (var)->storage == CB_STORAGE_SCREEN) {
+		if ((CB_REF_OR_FIELD_P (var)) 
+		 && CB_FIELD_PTR (var)->storage == CB_STORAGE_SCREEN) {
 			output_screen_from (CB_FIELD_PTR (var), 0);
 			gen_screen_ptr = 1;
 			if (pos) {
@@ -9197,6 +9458,9 @@ cb_emit_initialize (cb_tree vars, cb_tree fillinit, cb_tree value,
 		 && CB_REFERENCE_P (x)
 		 && CB_REFERENCE   (x)->subs == NULL
 		 && CB_REFERENCE   (x)->length == NULL) {
+			/* GCOS 7: Contrary to what the documentation states,
+			   PIC L fields are initialized up to length indicated
+			   by DEPENDING var. */
 			cb_tree		temp;
 			temp = cb_build_index (cb_build_filler (), NULL, 0, NULL);
 			CB_FIELD (cb_ref (temp))->usage = CB_USAGE_LENGTH;
@@ -11405,7 +11669,7 @@ cb_emit_move (cb_tree src, cb_tree dsts)
 					}
 					if (bgnpos >= 1
 					 && p->storage != CB_STORAGE_LINKAGE
-					 && !p->flag_item_based 
+					 && !p->flag_item_based
 					 && CB_LITERAL_P (src)
 					 && !cb_is_field_unbounded (p)) {
 						CB_REFERENCE (x)->length = cb_int (p->size - bgnpos + 1);
@@ -12188,7 +12452,7 @@ void
 cb_emit_set_to (cb_tree vars, cb_tree x)
 {
 	cb_tree	l;
-	
+
 	if (cb_check_set_to (vars, x, 1)) {
 		return;
 	}
@@ -12557,11 +12821,12 @@ cb_emit_sort_init (cb_tree name, cb_tree keys, cb_tree col, cb_tree nat_col)
 					     cb_int ((int)cb_list_length (keys)), col));
 		/* TODO: pass key-specific collation to libcob */
 		for (l = keys; l; l = CB_CHAIN (l)) {
+			struct cb_field * const f = CB_FIELD_PTR (CB_VALUE(l));
 			cb_emit (CB_BUILD_FUNCALL_3 ("cob_table_sort_init_key",
-					CB_VALUE (l),
-					CB_PURPOSE (l),
-					cb_int(CB_FIELD_PTR (CB_VALUE(l))->offset
-						   - CB_FIELD_PTR (CB_VALUE(l))->parent->offset)));
+						     CB_VALUE (l),
+						     CB_PURPOSE (l),
+						     cb_int(f->offset -
+							    (f->parent ? f->parent->offset : 0))));
 		}
 		f = CB_FIELD (rtree);
 		cb_emit (CB_BUILD_FUNCALL_2 ("cob_table_sort", name,
@@ -13897,6 +14162,13 @@ cb_emit_xml_generate (cb_tree out, cb_tree from, cb_tree count,
 	struct cb_ml_generate_tree	*tree;
 	unsigned char decimal_point;
 
+#ifndef WITH_XML2
+	if (!warn_xml_done) {
+		warn_xml_done = 1;
+		cb_warning (cb_warn_unsupported,
+			_("runtime is not configured to support %s"), "XML");
+	}
+#endif
 	if (syntax_check_ml_generate (out, from, count, encoding,
 						namespace_and_prefix, name_list,
 						type_list, suppress_list, 1)) {
@@ -13942,17 +14214,17 @@ cb_emit_json_generate (cb_tree out, cb_tree from, cb_tree count,
 	struct cb_ml_generate_tree	*tree;
 	unsigned char decimal_point;
 
-#if 0 /* pending merge of cb_warn_unsupported */
+#if 0 /* pending merge of ??? */
 	if (current_statement->ex_handler == NULL
 	 && current_statement->not_ex_handler == NULL)
 	  	current_statement->handler_type = NO_HANDLER;
+#endif
 #if	!defined (WITH_CJSON) && !defined (WITH_JSON_C)
 	if (!warn_json_done) {
 		warn_json_done = 1;
 		cb_warning (cb_warn_unsupported,
-			_("compiler is not configured to support %s"), "JSON");
+			_("runtime is not configured to support %s"), "JSON");
 	}
-#endif
 #endif
 	if (syntax_check_ml_generate (out, from, count, NULL,
 						NULL, name_list,

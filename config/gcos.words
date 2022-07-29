@@ -423,9 +423,9 @@ reserved:	ZEROS=ZERO
 # Internal registers
 
 not-register:	DIALECT-ALL
-register:       "TALLY"
+register:	TALLY
 register:	"ADDRESS\ OF"
-register:	"DEBUG-ITEM"
+register:	DEBUG-ITEM
 
 
 # Intrinsics functions

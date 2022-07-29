@@ -770,6 +770,7 @@ struct cb_picture {
 #endif
 	cob_u32_t		have_sign;	/* Have 'S' */
 	unsigned int flag_is_calculated	: 1;	/* is calculated */
+	unsigned int variable_length	: 1;	/* Starts with 'L' */
 };
 
 #define CB_PICTURE(x)	(CB_TREE_CAST (CB_TAG_PICTURE, struct cb_picture, x))
@@ -935,6 +936,7 @@ struct cb_field {
 	unsigned int flag_internal_register	: 1;	/* Is an internally generated register */
 	unsigned int flag_is_typedef : 1;	/* TYPEDEF  */
 	unsigned int flag_occurs_values: 1;	/* OCCURS and multi VALUEs done */
+	unsigned int flag_picture_l : 1;	/* Is USAGE PICTURE L */
 };
 
 #define CB_FIELD(x)		(CB_TREE_CAST (CB_TAG_FIELD, struct cb_field, x))
@@ -1890,7 +1892,6 @@ extern cb_tree			cb_build_decimal (const unsigned int);
 extern cb_tree			cb_build_decimal_literal (const int);
 extern int			cb_lookup_literal (cb_tree x, int make_decimal);
 
-extern cb_tree			cb_build_picture (const char *);
 extern cb_tree			cb_build_comment (const char *);
 extern cb_tree			cb_build_direct (const char *,
 						 const unsigned int);
@@ -1898,6 +1899,7 @@ extern cb_tree			cb_build_debug (const cb_tree, const char *,
 						const cb_tree);
 extern cb_tree			cb_build_debug_call (struct cb_label *);
 
+extern struct cb_picture	*cb_build_picture (const char *);
 extern struct cb_picture	*cb_build_binary_picture (const char *,
 							  const cob_u32_t,
 							  const cob_u32_t);

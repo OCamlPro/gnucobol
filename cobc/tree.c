@@ -493,7 +493,7 @@ literal_for_diagnostic (char *buff, const char *literal_data) {
 	   initializer for 'bad_pos' and additional security net */
 	bad_pos = strchr (buff, '\n');
 
-	if (strlen (literal_data) > CB_ERR_LITMAX) {
+	if (strlen (literal_data) >= CB_ERR_LITMAX) {
 		char *long_pos = buff + CB_ERR_LITMAX - 4;
 		if (!bad_pos
 		 || bad_pos > long_pos) {
@@ -1060,7 +1060,7 @@ build_condition_token_list (cb_tree record, cb_tree when_list)
 	for (l = when_list; l; l = CB_CHAIN (l)) {
 		if (!cond) {
 			record_ref = cb_build_field_reference (CB_FIELD (record), NULL);
-		        cond = cb_build_list (cb_int ('x'), record_ref, NULL);
+			cond = cb_build_list (cb_int ('x'), record_ref, NULL);
 		} else {
 			cond = cb_build_list (cb_int ('|'), NULL, cond);
 		}
@@ -1378,6 +1378,14 @@ int
 cb_category_is_national (cb_tree x)
 {
 	return category_is_national[CB_TREE_CATEGORY (x)];
+}
+
+static int
+cb_category_is_alpha_or_national (cb_tree x)
+{
+	enum cb_category cat = CB_TREE_CATEGORY (x);
+	return category_is_alphanumeric[cat]
+		|| category_is_national[cat];
 }
 
 int
@@ -2674,6 +2682,20 @@ find_floating_insertion_str (const cob_pic_symbol *str,
 	*last = str - 1;
 }
 
+/* Number of character types in picture strings */
+/*
+  The 25 character types are:
+  B  ,  .  +  +  + CR cs cs  Z  Z  +  + cs cs  9  A  L  S  V  P  P  1  N  E
+  0           -  - DB        *  *  -  -           X
+  /
+  Duplicates indicate floating/non-floating insertion symbols and/or left/right
+  of decimal point positon.
+*/
+#define CB_PIC_CHAR_TYPES 25
+#define CB_FIRST_NON_P_DIGIT_CHAR_TYPE 9
+#define CB_LAST_NON_P_DIGIT_CHAR_TYPE 15
+#define CB_PIC_S_CHAR_TYPE 18
+
 static int
 char_to_precedence_idx (const cob_pic_symbol *str,
 			const cob_pic_symbol *current_sym,
@@ -2696,7 +2718,7 @@ char_to_precedence_idx (const cob_pic_symbol *str,
 
 	case '.':
 	case ',':
-		if (current_sym->symbol == current_program->decimal_point) {
+		if (current_sym->symbol == (current_program ? current_program->decimal_point : '.')) {
 			return 2;
 		} else {
 			return 1;
@@ -2746,30 +2768,33 @@ char_to_precedence_idx (const cob_pic_symbol *str,
 	case 'X':
 		return 16;
 
-	case 'S':
+	case 'L':
 		return 17;
 
-	case 'V':
+	case 'S':
 		return 18;
+
+	case 'V':
+		return 19;
 
 	case 'P':
 	        if (non_p_digits_seen && before_decimal_point) {
-			return 19;
-		} else {
 			return 20;
+		} else {
+			return 21;
 		}
 
 	case '1':
-		return 21;
-
-	case 'N':
 		return 22;
 
-	case 'E':
+	case 'N':
 		return 23;
 
+	case 'E':
+		return 24;
+
 	default:
-		if (current_sym->symbol == current_program->currency_symbol) {
+		if (current_sym->symbol == (current_program ? current_program->currency_symbol : '$')) {
 			if (!(first_floating_sym <= current_sym
 			      && current_sym <= last_floating_sym)) {
 				if (first_sym || second_sym) {
@@ -2844,18 +2869,20 @@ get_char_type_description (const int idx)
 	case 16:
 		return _("A or X");
 	case 17:
-		return "S";
+		return "L";
 	case 18:
-		return "V";
+		return "S";
 	case 19:
-		return _("a P which is before the decimal point");
+		return "V";
 	case 20:
-		return _("a P which is after the decimal point");
+		return _("a P which is before the decimal point");
 	case 21:
-		return "1";
+		return _("a P which is after the decimal point");
 	case 22:
-		return "N";
+		return "1";
 	case 23:
+		return "N";
+	case 24:
 		return "E";
 	default:
 		return NULL;
@@ -2883,43 +2910,47 @@ emit_precedence_error (const int preceding_idx, const int following_idx)
 static int
 valid_char_order (const cob_pic_symbol *str, const int s_char_seen)
 {
-	const int	precedence_table[24][24] = {
+	const int	precedence_table[CB_PIC_CHAR_TYPES][CB_PIC_CHAR_TYPES] = {
 		/*
 		  Refer to the standard's PICTURE clause precedence rules for
 		  complete explanation.
+
+		  The entries for character `L' are based on the GCOS7 reference
+		  manual.
 		*/
 		/*
-		  B  ,  .  +  +  + CR cs cs  Z  Z  +  + cs cs  9  A  S  V  P  P  1  N  E
+		  B  ,  .  +  +  + CR cs cs  Z  Z  +  + cs cs  9  A  L  S  V  P  P  1  N  E
 		  0           -  - DB        *  *  -  -           X
 		  /
 		*/
-		{ 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0 },
-		{ 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0 },
-		{ 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-		{ 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0 },
-		{ 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0 },
-		{ 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-		{ 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0 },
-		{ 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-		{ 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0 },
-		{ 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-		{ 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 },
-		{ 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-		{ 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0 },
-		{ 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1 },
-		{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-		{ 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0 },
-		{ 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0 },
-		{ 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0 },
-		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0 },
-		{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0 },
-		{ 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
+		{ 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0 },
+		{ 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0 },
+		{ 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+		{ 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0 },
+		{ 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0 },
+		{ 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+		{ 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0 },
+		{ 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+		{ 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0 },
+		{ 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+		{ 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 },
+		{ 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+		{ 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 },
+		{ 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1 },
+		{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+		{ 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0 },
+		{ 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0 },
+		{ 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0 },
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0 },
+		{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0 },
+		{ 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
 	};
-	int		error_emitted[24][24] = {{ 0 }};
-	int		chars_seen[24] = { 0 };
+	int		error_emitted[CB_PIC_CHAR_TYPES][CB_PIC_CHAR_TYPES] = {{ 0 }};
+	int		chars_seen[CB_PIC_CHAR_TYPES] = { 0 };
 	const cob_pic_symbol	*first_floating_sym;
 	const cob_pic_symbol	*last_floating_sym;
 	int		before_decimal_point = 1;
@@ -2931,7 +2962,7 @@ valid_char_order (const cob_pic_symbol *str, const int s_char_seen)
 	int		non_p_digits_seen = 0;
 	int		error_detected = 0;
 
-	chars_seen[17] = s_char_seen;
+	chars_seen[CB_PIC_S_CHAR_TYPE] = s_char_seen;
 	find_floating_insertion_str (str, &first_floating_sym, &last_floating_sym);
 
 	for (s = str; s->symbol != '\0'; ++s) {
@@ -2945,7 +2976,8 @@ valid_char_order (const cob_pic_symbol *str, const int s_char_seen)
 						      non_p_digits_seen);
 			if (idx == -1) {
 				continue;
-			} else if (9 <= idx && idx <= 15) {
+			} else if (CB_FIRST_NON_P_DIGIT_CHAR_TYPE <= idx &&
+				   idx <= CB_LAST_NON_P_DIGIT_CHAR_TYPE) {
 				non_p_digits_seen = 1;
 			}
 
@@ -2954,7 +2986,7 @@ valid_char_order (const cob_pic_symbol *str, const int s_char_seen)
 			  character it is not allowed to. Display an error once
 			  for each combination detected.
 			*/
-			for (j = 0; j < 24; ++j) {
+			for (j = 0; j < CB_PIC_CHAR_TYPES; ++j) {
 				if (chars_seen[j]
 				    && !precedence_table[idx][j]
 				    && !error_emitted[idx][j]) {
@@ -3122,7 +3154,9 @@ get_number_in_parentheses (const unsigned char ** p,
 	}
 }
 
-cb_tree
+/* build picture from string; _always_ returns a cb_picture,
+   but in case of errors during parsing the pic->size is zero */
+struct cb_picture *
 cb_build_picture (const char *str)
 {
 	struct cb_picture	*pic;
@@ -3155,6 +3189,9 @@ cb_build_picture (const char *str)
 	int			scale = 0;
 	int			n;
 	unsigned char		c;
+	const unsigned char	decimal_point = (current_program ? current_program->decimal_point : '.');
+	const unsigned char	currency_symbol = (current_program ? current_program->currency_symbol : '$');
+
 	unsigned char		first_last_char = '\0';
 	unsigned char		second_last_char = '\0';
 
@@ -3163,7 +3200,7 @@ cb_build_picture (const char *str)
 
 	if (strlen (str) == 0) {
 		cb_error (_("missing PICTURE string"));
-		goto end;
+		return pic;
 	}
 
 	if (!pic_buff) {
@@ -3254,7 +3291,7 @@ repeat:
 				char symbol[2] = { 0 };
 				symbol[0] = c;
 				cb_error (_("%s cannot follow %s"), symbol, _("exponent"));
-				goto end;
+				return pic;
 			}
 		}
 
@@ -3293,6 +3330,16 @@ repeat:
 			x_digits += n;
 			break;
 
+		case 'L':
+			pic->variable_length = 1;
+			(void) cb_verify (cb_picture_l,
+					  _("PICTURE string with 'L' character"));
+			if (idx != 0) {
+				cb_error (_("L must be at start of PICTURE string"));
+				error_detected = 1;
+			}
+			break;
+
 		case 'S':
 			category |= PIC_NUMERIC;
 			if (s_count <= 1) {
@@ -3316,7 +3363,7 @@ repeat:
 		case ',':
 		case '.':
 			category |= PIC_NUMERIC_EDITED;
-			if (c != current_program->decimal_point) {
+			if (c != decimal_point) {
 				break;
 			}
 			/* fall through */
@@ -3453,7 +3500,7 @@ repeat:
 			/* fall through */
 
 		default:
-			if (c == current_program->currency_symbol) {
+			if (c == currency_symbol) {
 				category |= PIC_NUMERIC_EDITED;
 				if (c_count == 0) {
 					digits += n - 1;
@@ -3466,7 +3513,7 @@ repeat:
 			}
 
 			if (err_char_pos == sizeof err_chars) {
-				goto end;
+				return pic;
 			}
 			if (!strchr (err_chars, (int)c)) {
 				err_chars[err_char_pos++] = (char)c;
@@ -3514,7 +3561,7 @@ repeat:
 	}
 
 	if (error_detected) {
-		goto end;
+		return pic;
 	}
 
 	/* Set picture */
@@ -3594,8 +3641,7 @@ repeat:
 		;
 	}
 
-end:
-	return CB_TREE (pic);
+	return pic;
 }
 
 /* Field */
@@ -3625,7 +3671,7 @@ cb_build_implicit_field (cb_tree name, const int len)
 	x = cb_build_field (name);
 	memset (pic, 0, sizeof(pic));
 	snprintf (pic, sizeof(pic), "X(%d)", len);
-	CB_FIELD (x)->pic = CB_PICTURE (cb_build_picture (pic));
+	CB_FIELD (x)->pic = cb_build_picture (pic);
 	cb_validate_field (CB_FIELD (x));
 	return x;
 }
@@ -3649,34 +3695,35 @@ cb_field_dup (struct cb_field *f, struct cb_reference *ref)
 	cb_tree		x;
 	struct cb_field *s;
 	char		buff[COB_MINI_BUFF], pic[30];
-	int		dec, dig;
 
-	snprintf (buff, (size_t)COB_MINI_MAX, "COPY OF %s", f->name);
-	x = cb_build_field (cb_build_reference (buff));
-	if(ref
-	&& ref->length
-	&& CB_LITERAL_P(ref->length)) {
-		sprintf(pic,"X(%d)",cb_get_int(ref->length));
+	if (ref && ref->length
+	 && CB_LITERAL_P (ref->length)) {
+		sprintf (pic, "X(%d)", cb_get_int (ref->length));
 	} else
 	if (f->pic->category == CB_CATEGORY_NUMERIC
 	 || f->pic->category == CB_CATEGORY_NUMERIC_EDITED) {
-		dig = f->pic->digits;
-		if((dec = f->pic->scale) > 0) {
-			if((dig-dec) == 0) {
-				sprintf(pic,"SV9(%d)",dec);
-			} else if((dig-dec) < 0) {
-				sprintf(pic,"SP(%d)V9(%d)",-(dig-dec),dec);
+		const int	dig = f->pic->digits;
+		const int	scale = f->pic->scale;
+		if (scale > 0) {
+			const int dec = dig - scale;
+			if (dec == 0) {
+				sprintf (pic,"SV9(%d)", scale);
+			} else if (dec < 0) {
+				sprintf (pic, "SP(%d)V9(%d)",-dec, scale);
 			} else {
-				sprintf(pic,"S9(%d)V9(%d)",dig-dec,dec);
+				sprintf (pic, "S9(%d)V9(%d)", dec, scale);
 			}
 		} else {
-			sprintf(pic,"S9(%d)",dig);
+			sprintf (pic, "S9(%d)", dig);
 		}
 	} else {
-		sprintf(pic,"X(%d)",f->size);
+		sprintf (pic, "X(%d)", f->size);
 	}
+
+	snprintf (buff, (size_t)COB_MINI_MAX, "COPY OF %s", f->name);
+	x = cb_build_field (cb_build_reference (buff));
 	s = CB_FIELD (x);
-	s->pic 	= CB_PICTURE (cb_build_picture (pic));
+	s->pic = cb_build_picture (pic);
 	if (f->pic->category == CB_CATEGORY_NUMERIC
 	 || f->pic->category == CB_CATEGORY_NUMERIC_EDITED
 	 || f->pic->category == CB_CATEGORY_FLOATING_EDITED) {
@@ -3711,6 +3758,8 @@ cb_field_add (struct cb_field *f, struct cb_field *p)
 	if (f == NULL) {
 		return p;
 	}
+	/* get to the last item, CHECKME: would be a good place for
+	   optimizing if the list can get long... */
 	for (t = f; t->sister; t = t->sister) {
 		;
 	}
@@ -3761,7 +3810,7 @@ cb_field_size (const cb_tree x)
 	}
 #ifndef _MSC_VER
 	/* NOT REACHED */
-	return 0;
+	return -1;
 #endif
 	/* LCOV_EXCL_STOP */
 }
@@ -3787,6 +3836,8 @@ cb_field_variable_size (const struct cb_field *f)
 	for (fc = f->children; fc; fc = fc->sister) {
 		if (fc->depending) {
 			return fc;
+		} else if (fc->flag_picture_l) {
+			continue;
 		} else if ((p = cb_field_variable_size (fc)) != NULL) {
 			return p;
 		}
@@ -3803,7 +3854,8 @@ cb_field_variable_address (const struct cb_field *fld)
 	f = fld;
 	for (p = f->parent; p; f = f->parent, p = f->parent) {
 		for (p = p->children; p != f; p = p->sister) {
-			if (p->depending || cb_field_variable_size (p)) {
+			if (p->depending ||
+			    (!p->flag_picture_l && cb_field_variable_size (p))) {
 				return 1;
 			}
 		}
@@ -3939,7 +3991,7 @@ build_sum_counter (struct cb_report *r, struct cb_field *f)
 		sprintf(pic,"S9(%d)",dig);
 	}
 	s = CB_FIELD (x);
-	s->pic 	= CB_PICTURE (cb_build_picture (pic));
+	s->pic 	= cb_build_picture (pic);
 	s->values	= CB_LIST_INIT (cb_zero);
 	s->storage	= CB_STORAGE_WORKING;
 	s->usage	= CB_USAGE_DISPLAY;
@@ -4275,7 +4327,7 @@ validate_indexed_key_field (struct cb_file *f, struct cb_field *records,
 		if (composite_key->pic != NULL) {
 			cobc_parse_free (composite_key->pic);
 		}
-		composite_key->pic = CB_PICTURE (cb_build_picture (pic));
+		composite_key->pic = cb_build_picture (pic);
 		cb_validate_field (composite_key);
 	} else {
 		/* Check that key file is actual part of the file's records */
@@ -4365,7 +4417,7 @@ finalize_file (struct cb_file *f, struct cb_field *records)
 			}
 		}
 	}
-	
+
 	/* Validate and set max and min record size */
 	for (p = records; p; p = p->sister) {
 		if (f->organization == COB_ORG_INDEXED
@@ -4518,6 +4570,17 @@ finalize_file (struct cb_file *f, struct cb_field *records)
 		f->linage_ctr = cb_build_field_reference (CB_FIELD (x), NULL);
 		CB_FIELD_ADD (current_program->working_storage, CB_FIELD (x));
 	}
+
+#if	!defined (WITH_INDEX_EXTFH) && \
+	!defined (WITH_DB) && \
+	!defined (WITH_CISAM) && !defined(WITH_DISAM) && !defined(WITH_VBISAM)
+	if (f->organization == COB_ORG_INDEXED) {
+		char msg[80];
+		snprintf (msg, sizeof (msg), "ORGANIZATION INDEXED; FD %s", f->name);
+		cb_warning (cb_warn_unsupported,
+			_("runtime is not configured to support %s"), msg);
+	}
+#endif
 }
 
 /* Communication description */
@@ -4595,8 +4658,8 @@ cb_build_filler (void)
 }
 
 /*
-  Return a reference to the field f. If ref != NULL, other attributes are set to
-  the same as ref.
+  Return a reference to the field f.
+  If ref != NULL, other attributes are set to the same as ref.
 */
 cb_tree
 cb_build_field_reference (struct cb_field *f, cb_tree ref)
@@ -6442,6 +6505,11 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 	struct cb_field			*fld;
 	enum cb_category		catg;
 
+	/* TODO: if all arguments are constants: build a cob_field,
+	   then call into libcob to get the value and from there the string representation
+	   inserting it here directly (-> numeric/alphanumeric/national constant,
+	   which allows also for optimized use of it */
+
 	int numargs = (int)cb_list_length (args);
 
 	if (unlikely (isuser)) {
@@ -6526,17 +6594,34 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 			fld = CB_FIELD_PTR (x);
 			if (!cb_field_variable_size (fld)
 			 && !fld->flag_any_length) {
-				if (!(fld->pic
-				 && (fld->pic->category == CB_CATEGORY_NATIONAL
-				  || fld->pic->category == CB_CATEGORY_NATIONAL_EDITED)))
-					return cb_build_length (x);
+				int 	len = fld->size;
+				char	buff[32];
+				if (cbp->intr_enum != CB_INTR_BYTE_LENGTH) {
+					/* CHECKME: why don't we just check the category?
+					   Maybe needs to enforce field validation (see cb_build_length) */
+					if ( fld->pic
+					 && (fld->pic->category == CB_CATEGORY_NATIONAL
+					  || fld->pic->category == CB_CATEGORY_NATIONAL_EDITED)) {
+						len /= COB_NATIONAL_SIZE;
+					}
+				}
+				sprintf (buff, "%d", len);
+				return cb_build_numeric_literal (0, buff, 0);
 			}
 		} else if (CB_LITERAL_P (x)) {
-			/* FIXME: we currently generate national constants as alphanumeric constants */
-			if (cbp->intr_enum != CB_INTR_BYTE_LENGTH
-			 || (CB_TREE_CATEGORY (x) != CB_CATEGORY_NATIONAL_EDITED
-			    && CB_TREE_CATEGORY (x) != CB_CATEGORY_NATIONAL))
-			return cb_build_length (x);
+			unsigned int 	len = CB_LITERAL(x)->size;
+			char	buff[32];
+			if (cbp->intr_enum != CB_INTR_BYTE_LENGTH) {
+				enum cb_category cat = CB_TREE_CATEGORY (x);
+				/* CHECKME: why don't we just check the category?
+				   Maybe needs to enforce field validation (see cb_build_length) */
+				if (cat == CB_CATEGORY_NATIONAL
+				 || cat == CB_CATEGORY_NATIONAL_EDITED) {
+					len /= COB_NATIONAL_SIZE;
+				}
+			}
+			sprintf (buff, "%u", len);
+			return cb_build_numeric_literal (0, buff, 0);
 		}
 		return make_intrinsic (func, cbp, args, NULL, NULL, 0);
 
@@ -6647,6 +6732,7 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 
 	case CB_INTR_HIGHEST_ALGEBRAIC:
 	case CB_INTR_LOWEST_ALGEBRAIC:
+		/* TODO: resolve for all (?) values */
 		x = CB_VALUE (args);
 		if (!CB_REF_OR_FIELD_P (x)) {
 			cb_error_x (func, _("FUNCTION '%s' has invalid argument"), cbp->name);
@@ -6683,11 +6769,13 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 
 	case CB_INTR_DISPLAY_OF:
 	case CB_INTR_NATIONAL_OF:
+		/* TODO: resolve for literals */
 		return make_intrinsic (func, cbp, args, cb_int1, refmod, 0);
 
 
 	case CB_INTR_BIT_OF:
 	case CB_INTR_HEX_OF:
+		/* TODO: resolve for literals */
 		x = CB_VALUE (args);
 		if (!CB_REF_OR_FIELD_P (x)
 		 && !CB_LITERAL_P (x)) {
@@ -6697,6 +6785,7 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 		return make_intrinsic (func, cbp, args, NULL, refmod, 0);
 	case CB_INTR_BIT_TO_CHAR:
 	case CB_INTR_HEX_TO_CHAR:
+		/* TODO: resolve for literals */
 		x = CB_VALUE (args);
 		if (!CB_REF_OR_FIELD_P (x)
 		  &&!CB_LITERAL_P (x)) {
@@ -6745,13 +6834,12 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 			cb_error_x (func, _("FUNCTION '%s' has wrong number of arguments"), cbp->name);
 			return cb_error_node;
 		}
-#if	0	/* RXWRXW - Substitute arg 1 */
-		x = CB_VALUE (args);
-		if (!CB_REF_OR_FIELD_P (x)) {
+
+		/* TODO: follow-up arguments should be of same type */
+		if (!cb_category_is_alpha_or_national(CB_VALUE (args))) {
 			cb_error_x (func, _("FUNCTION '%s' has invalid first argument"), cbp->name);
 			return cb_error_node;
 		}
-#endif
 		{
 		enum cb_category cat = get_category_from_arguments (cbp, args, 1, 0, 1);
 		return make_intrinsic_typed (func, cbp, cat, args, cb_int1, refmod, 0);

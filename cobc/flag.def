@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2012, 2014-2021 Free Software Foundation, Inc.
+   Copyright (C) 2003-2012, 2014-2022 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -62,22 +62,12 @@ CB_FLAG_RQ (cb_fold_call, 1, "fold-call", 0, 5,
 	_("  -ffold-call=[UPPER|LOWER]\tfold PROGRAM-ID, CALL, CANCEL subject to value\n"
 	  "                        * default: no transformation"))
 
-CB_FLAG_RQ (cb_default_byte, 1, "defaultbyte", -1, 6,
-	_("  -fdefaultbyte=<value>\tinitialize fields without VALUE to value\n"
-	  "                        * decimal 0..255 or any quoted character\n"
-	  "                        * default: initialize to picture"))
-
 CB_FLAG_RQ (cb_max_errors, 1, "max-errors", 128, 7,
 	_("  -fmax-errors=<number>\tmaximum number of errors to report before\n"
 	  "                        compilation is aborted\n"
 	  "                        * default: 128"))
 
 /* Flags with required parameter and no associated variable */
-
-CB_FLAG_NQ (1, "format", 14,
-	_("  -fformat=[FIXED|FREE|VARIABLE|XOPEN|XCARD|CRT|TERMINAL|COBOLX]\n"
-	  "                        reference format\n"
-	  "                        * default: FIXED"))
 
 CB_FLAG_NQ (1, "intrinsics", 10,
 	_("  -fintrinsics=[ALL|intrinsic function name(,name,...)]\n"

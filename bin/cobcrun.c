@@ -403,24 +403,23 @@ main (int argc, char **argv)
 		return 1;
 	}
 
-	if (strlen (argv[arg_shift]) > COB_MAX_NAMELEN) {
-		/* note: we allow up to COB_MAX_WORDLEN for relaxed syntax... */
-		fprintf (stderr, _("%s: PROGRAM name exceeds %d characters"), argv[0], COB_MAX_NAMELEN);
-		putc ('\n', stderr);
-		fflush (stderr);
-		return 1;
-	}
-
-	/* Initialize the COBOL system, resolve the PROGRAM name */
-	/*   and invoke, wrapped in a STOP RUN, if found */
-	/*   note: we use cob_init_nomain here as there are no functions */
-	/*         linked here we want to provide for the COBOL environment */
+	/* Initialize the COBOL system, ... */
+	/* Note: we use cob_init_nomain here as there are no functions
+	         linked here we want to provide for the COBOL environment */
 	cob_init_nomain (argc - arg_shift, &argv[arg_shift]);
 	if (print_runtime_wanted) {
 		print_runtime_conf ();
 		putc ('\n', stdout);
 	}
-	/* Note: cob_resolve_cobol takes care for call errors, no need to check here */
+	/* ... verify and resolve the PROGRAM name, ... */
+	/* Note: cob_resolve_cobol takes care for call errors,
+	   because of the last parameter; no need to check here afterwards;
+	   another program may use "0" and check for function pointer != NULL */
 	unifunc.funcvoid = cob_resolve_cobol (argv[arg_shift], 0, 1);
+	
+	/* ... then invoke, wrapped in a STOP RUN */
+	/* Note:  we requested a program exit if resolving had issues,
+	          so are only still running if we have a a valid, _likely_ COBOL
+	          function to execute */
 	cob_stop_run (unifunc.funcint());
 }

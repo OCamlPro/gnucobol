@@ -1179,23 +1179,6 @@ fi
 dnl note: when switching to $ncurses all checks are done correctly but no generation in config.h is done
 libfound=false
 if test "x$CURSES_LIBS" = x; then
-  if test "$USE_CURSES" = "ncurses" -o "$USE_CURSES" = "check"; then
-    AC_CHECK_LIB([ncurses], [initscr], [libfound=true],
-      [AS_IF([test "$USE_CURSES" != check], [USE_CURSES="missing_lib"])])
-  fi
-fi
-if test "$USE_CURSES" = "ncurses" -o $libfound = true; then
-  AC_CHECK_HEADERS([ncurses/ncurses.h], [USE_CURSES="ncurses"],
-    [AC_CHECK_HEADERS([ncurses/curses.h], [USE_CURSES="ncurses"],
-      [AS_IF([test "$USE_CURSES" != check],
-        [USE_CURSES="missing_header"],
-        [LIBS=$curr_libs]) ]) ])
-  AS_IF([test $USE_CURSES="ncurses" -a "x$CURSES_LIBS" = x],
-    [CURSES_LIBS="-l$USE_CURSES"])
-fi
-
-libfound=false
-if test "x$CURSES_LIBS" = x; then
   if test "$USE_CURSES" = "ncursesw" -o "$USE_CURSES" = "check"; then
     AC_CHECK_LIB([ncursesw], [initscr], [libfound=true],
       [AS_IF([test "$USE_CURSES" != check], [USE_CURSES="missing_lib"])])
@@ -1208,6 +1191,24 @@ if test "$USE_CURSES" = "ncursesw" -o $libfound = true; then
         [USE_CURSES="missing_header"],
         [LIBS=$curr_libs]) ]) ])
   AS_IF([test $USE_CURSES="ncursesw" -a "x$CURSES_LIBS" = x],
+    [CURSES_LIBS="-l$USE_CURSES"])
+fi
+
+libfound=false
+if test "x$CURSES_LIBS" = x; then
+  if test "$USE_CURSES" = "ncurses" -o "$USE_CURSES" = "check"; then
+    AC_CHECK_LIB([ncurses], [initscr], [libfound=true],
+      [AS_IF([test "$USE_CURSES" != check], [USE_CURSES="missing_lib"])])
+  fi
+fi
+if test "$USE_CURSES" = "ncurses" -o $libfound = true; then
+  AC_CHECK_HEADERS([ncurses/ncurses.h], [USE_CURSES="ncurses"],
+    [AC_CHECK_HEADERS([ncurses/curses.h], [USE_CURSES="ncurses"],
+      [AC_CHECK_HEADERS([ncurses.h], [USE_CURSES="ncurses"],
+        [AS_IF([test "$USE_CURSES" != check],
+          [USE_CURSES="missing_header"],
+          [LIBS=$curr_libs]) ]) ]) ])
+  AS_IF([test $USE_CURSES="ncurses" -a "x$CURSES_LIBS" = x],
     [CURSES_LIBS="-l$USE_CURSES"])
 fi
 
@@ -1278,7 +1279,7 @@ case "$USE_CURSES" in
 	;;
 esac
 
-
+LIBS="$LIBS $CURSES_LIBS"
 if test "$USE_CURSES" = "ncurses" -o "$USE_CURSES" = "ncursesw"; then
     AC_MSG_CHECKING([for ncurses _nc_freeall function])
     AC_LINK_IFELSE([AC_LANG_PROGRAM([[

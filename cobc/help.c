@@ -59,14 +59,14 @@ cobc_print_usage_common_options (void)
 	puts (_("  -h, --help            display this help and exit"));
 	puts (_("  -V, --version         display compiler version information and exit"));
 	puts (_("  -dumpversion          display compiler version and exit"));
-	puts (_("  -i, --info            display compiler information (build/environment)\n" 
+	puts (_("  -i, --info            display compiler information (build/environment)\n"
 	        "                        and exit"));
 	puts (_("  -v, --verbose         verbose mode, display additional information;\n"
-		    "                        multiple -v options increase the verbosity,\n"   
-		    "                        the maximum is 3 as follows:\n"                  
-		    "                        (1) display compiler version and the commands\n" 
-	        "                        invoked by the compiler,\n"                      
-		    "                        (2) pass verbose option to assembler/compiler\n" 
+		    "                        multiple -v options increase the verbosity,\n"
+		    "                        the maximum is 3 as follows:\n"
+		    "                        (1) display compiler version and the commands\n"
+	        "                        invoked by the compiler,\n"
+		    "                        (2) pass verbose option to assembler/compiler\n"
 		    "                        (3) pass verbose option to linker"));
 	puts (_("  -q, --brief           reduced displays, commands invoked not shown"));
 	puts (_("  -###                  like -v but commands not executed"));
@@ -81,8 +81,9 @@ cobc_print_usage_common_options (void)
 	        "                        acu-strict, acu, rm-strict, rm, gcos-strict,\n"
 	        "                        gcos;\n"
 	        "                        see configuration files in directory config"));
-	puts (_("  -F, --free            use free source format"));
-	puts (_("  --fixed               use fixed source format (default)"));
+	puts (_("  -F, --free            use free source format (alias for -fformat=free)"));
+	puts (_("  --fixed               use fixed source format (default; alias for\n"
+		"                        -fformat=fixed)"));
 	puts (_("  -O, -O2, -O3, -Os     enable optimization"));
 	puts (_("  -O0                   disable optimization"));
 	puts (_("  -g                    enable C compiler debug and stack check"));
@@ -150,10 +151,13 @@ cobc_print_usage_warnings (void)
 	puts (doc);							\
 	/* TRANSLATORS: This msgid is appended to msgid for -Wpossible-truncate and others */ \
 	puts (_("                        * NOT set with -Wall"));
+#define	CB_ERRWARNDEF(opt,name,doc)		\
+	puts (doc);
 #include "warning.def"
 #undef	CB_WARNDEF
 #undef	CB_ONWARNDEF
 #undef	CB_NOWARNDEF
+#undef	CB_ERRWARNDEF
 	puts (_("  -Werror               treat all warnings as errors"));
 	puts (_("  -Wno-error            don't treat warnings as errors"));
 	puts (_("  -Werror=<warning>     treat specified <warning> as error"));
@@ -225,6 +229,8 @@ cobc_print_usage_dialect (void)
 	cobc_print_config_flag (name, doc, _("<value>"));
 #define	CB_CONFIG_INT(var,name,min,max,odoc,doc)		\
 	cobc_print_config_flag (name, doc, odoc);
+#define	CB_CONFIG_SINT(var,name,min,max,odoc,doc)		\
+	cobc_print_config_flag (name, doc, odoc);
 #define	CB_CONFIG_ANY(type,var,name,doc)		\
 	cobc_print_config_flag (name, doc, _("<value>"));
 #define	CB_CONFIG_BOOLEAN(var,name,doc)		\
@@ -234,6 +240,7 @@ cobc_print_usage_dialect (void)
 #include "config.def"
 #undef	CB_CONFIG_ANY
 #undef	CB_CONFIG_INT
+#undef	CB_CONFIG_SINT
 #undef	CB_CONFIG_STRING
 #undef	CB_CONFIG_BOOLEAN
 #undef	CB_CONFIG_SUPPORT
@@ -268,6 +275,7 @@ cobc_print_usage_dialect (void)
 	cobc_print_config_flag ("reserved", _("word to be added to reserved words list"), _("<word>"));
 	cobc_print_config_flag ("reserved", _("word to be added to reserved words list as alias"), _("<word>:<alias>"));
 	cobc_print_config_flag ("not-register", _("special register to disable"), _("<word>"));
-	cobc_print_config_flag ("register", _("special register to enable"), _("<word>"));
+	cobc_print_config_flag ("register", _("special register to enable"),
+		_("<word> or <word>:<definition>, where definition uses backslash escaped spaces"));
 	putchar ('\n');
 }

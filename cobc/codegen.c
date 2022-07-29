@@ -74,7 +74,7 @@
 /* Type of initialization to be done */
 enum cobc_init_type {
 	INITIALIZE_NONE = 0,	/* no init (beause of FILLER, REDEFINES, ...) */
-	INITIALIZE_ONE,		/* initialize a single varialbe */
+	INITIALIZE_ONE,		/* initialize a single variable */
 	INITIALIZE_COMPOUND,	/* init structure */
 	INITIALIZE_DEFAULT	/* init to default-byte value / PIC (USAGE) */
 };
@@ -697,6 +697,45 @@ real_field_founder (const struct cb_field *f)
 	return (struct cb_field *)f;
 }
 
+/* TODO: as the following two are only called together: combine */
+
+static int
+chk_field_multi_values (struct cb_field *f)
+{
+	struct cb_field		*fc;
+	if (f->values 
+	 && CB_CHAIN (f->values))
+		return 1;
+	if (f->values
+	 && CB_VALUE (f->values)) {
+		 if (CB_LITERAL_P (CB_VALUE(f->values))
+		  && CB_LITERAL (CB_VALUE(f->values))->all)
+			return 1;
+		if (f->flag_occurs)
+			return 1;
+	}
+	for (fc = f->children; fc && !fc->redefines; fc = fc->sister) {
+		if (chk_field_multi_values (fc)) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+static int
+chk_field_any_values (struct cb_field *f)
+{
+	struct cb_field		*fc;
+	if (f->values)
+		return 1;
+	for (fc = f->children; fc && !fc->redefines; fc = fc->sister) {
+		if (chk_field_any_values (fc)) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
 static struct cb_field *
 chk_field_variable_size (struct cb_field *f)
 {
@@ -712,6 +751,8 @@ chk_field_variable_size (struct cb_field *f)
 			if (fc->depending) {
 				f->vsize = fc;
 				break;
+			} else if (fc->flag_picture_l) {
+				continue;
 			} else if ((p = chk_field_variable_size (fc)) != NULL) {
 				f->vsize = p;
 				break;
@@ -746,7 +787,10 @@ chk_field_variable_address (struct cb_field *fld)
 					return 1;
 				}
 #endif
-				if (p->depending || chk_field_variable_size (p)) {
+				/* Skip PIC L fields as their representation
+				   have constant length */
+				if (p->depending ||
+				    (!p->flag_picture_l && chk_field_variable_size (p))) {
 #if 0	/* only useful with the code above */
 					/* as we have a variable address, all sisters will also;
 					   store this for next check */
@@ -788,7 +832,7 @@ out_odoslide_fld_offset (struct cb_field *p, struct cb_field *fld)
 	if (p == fld) 	/* Single field */
 		return 1;
 
-	if (p->children) {
+	if (p->children && !p->flag_picture_l) {
 		if (out_odoslide_grp_offset (p, fld))
 			return 1;
 	} else {
@@ -1004,7 +1048,6 @@ static void
 output_base (struct cb_field *f, const cob_u32_t no_output)
 {
 	struct cb_field		*f01;
-	struct cb_field		*p;
 	struct base_list	*bl;
 
 	/* LCOV_EXCL_START */
@@ -1081,7 +1124,7 @@ output_base (struct cb_field *f, const cob_u32_t no_output)
 		if (cb_odoslide) {
 			out_odoslide_offset (f01, f);
 		} else {
-			struct cb_field		*v;
+			struct cb_field		*v, *p;
 			for (p = f->parent; p; f = f->parent, p = f->parent) {
 				for (p = p->children; p != f; p = p->sister) {
 					v = chk_field_variable_size (p);
@@ -1582,10 +1625,9 @@ output_attr (const cb_tree x)
 			case COB_TYPE_GROUP:
 			case COB_TYPE_ALPHANUMERIC:
 				if (f->flag_justified) {
-					id = lookup_attr (type, 0, 0, COB_FLAG_JUSTIFIED, NULL, 0);
-				} else {
-					id = lookup_attr (type, 0, 0, 0, NULL, 0);
+					flags |= COB_FLAG_JUSTIFIED;
 				}
+				id = lookup_attr (type, 0, 0, flags, NULL, 0);
 				break;
 			default:
 				if (f->pic->have_sign) {
@@ -3644,7 +3686,8 @@ output_param (cb_tree x, int id)
 		output ("&%s%s", CB_PREFIX_REPORT, CB_REPORT_PTR (x)->cname);
 		break;
 	case CB_TAG_REPORT_LINE:
-#if 1 /* FIXME: Why do we need the unchecked cast here? */
+		/* NOTE: do not use CB_REFERENCE_P because 'x' has a tag of CB_TAG_REPORT_LINE */
+#if 1 /* FIXME: Should have expected type! */
 		r = (struct cb_reference *)x;
 #else
 		r = CB_REFERENCE (x);
@@ -4463,8 +4506,9 @@ deduce_initialize_type (struct cb_initialize *p, struct cb_field *f,
 		return INITIALIZE_ONE;
 	}
 
-	if (p->var && CB_REFERENCE_P (p->var)
-	    && CB_REFERENCE (p->var)->offset) {
+	if (p->var 
+	 && CB_REFERENCE_P (p->var)
+	 && CB_REFERENCE (p->var)->offset) {
 		/* Reference modified item */
 		return INITIALIZE_ONE;
 	}
@@ -4529,12 +4573,17 @@ deduce_initialize_type (struct cb_initialize *p, struct cb_field *f,
  * Emit code to propagate table initialize
  */
 static void
-propagate_table (cb_tree x)
+propagate_table (cb_tree x, int bgn_idx)
 {
 	struct cb_field *f = cb_code_field (x);
-	cob_uli_t len = (cob_uli_t)f->size;
 	const unsigned int occ = f->occurs_max;
+	cob_uli_t len = (cob_uli_t)f->size;
+	cob_uli_t maxlen = len * occ;
 	unsigned int j = 1;
+
+	if (bgn_idx < 1) {
+		bgn_idx = 1;
+	}
 
 	if (gen_init_working
 	 || (!chk_field_variable_size(f)
@@ -4542,38 +4591,43 @@ propagate_table (cb_tree x)
 	  && !f->depending)) {
 		/* Table size is known at compile time */
 		/* Generate inline 'memcpy' to propagate the array data */
-		output_block_open ();
-		output_prefix ();
-		output ("cob_u8_ptr b_ptr = ");
-		output_data(x);
-		output (";");
-		output_newline ();
-
-		/* double the chunks each time */
-		do {
+		if (occ > 1) {
+			output_block_open ();
 			output_prefix ();
-			output ("memcpy (b_ptr + %6lu, b_ptr, %6lu);", len, len);
-			output ("\t/* %s: %6u thru %u */", f->name, j + 1, j * 2);
+			output ("cob_u8_ptr b_ptr = ");
+			output_data(x);
+			if (bgn_idx > 1) {
+				output (" + %ld",len * (bgn_idx - 1));
+				maxlen -= len * (bgn_idx - 1);
+			}
+			output (";");
 			output_newline ();
-			j = j * 2;
-			len = len * 2;
-		} while ((j * 2) < occ);
-
-		/* missing piece after last chunk */
-		if (j < occ) {
-			output_prefix ();
-			output ("memcpy (b_ptr + %6lu, b_ptr, %6lu);",
-				len, (long)f->size * (occ - j));
-			output ("\t/* %s: %6u thru %u */",
-				f->name, j + 1, occ);
-			output_newline ();
+			/* double the chunks each time */
+			do {
+				output_prefix ();
+				output ("memcpy (b_ptr + %6ld, b_ptr, %6ld);", len, len);
+				output ("\t/* %s: %5d thru %d */", f->name, 
+								j + bgn_idx, j * 2 + bgn_idx - 1);
+				output_newline ();
+				j = j * 2;
+				len = len * 2;
+			} while ((j * 2) < occ);
+			if (j < occ
+			 && maxlen > len) {
+				output_prefix ();
+				output ("memcpy (b_ptr + %6ld, b_ptr, %6ld);",
+					len, maxlen - len);
+				output ("\t/* %s: %5d thru %d */",
+					f->name, j + bgn_idx, occ);
+				output_newline ();
+			}
+			output_block_close ();
 		}
-		output_block_close ();
 	} else {
 		/* Table size is only known at run time */
 		output_prefix ();
 		output ("cob_init_table (");
-		output_base (f, 0);
+		output_data (x);
 		output (", ");
 		output_size (x);
 		output (", ");
@@ -4817,17 +4871,14 @@ output_initialize_uniform (cb_tree x, const int c, const int size)
 	} else {
 		output ("memset (");
 		output_data (x);
-		if (size <= 0) {
-			output (", %d, ", c);
-			output_size (x);
-			output (");");
-		} else if (CB_REFERENCE_P(x) && CB_REFERENCE(x)->length) {
+		if (size <= 0 ||
+		    (CB_REFERENCE_P(x) && CB_REFERENCE(x)->length)) {
 			output (", %d, ", c);
 			output_size (x);
 			output (");");
 		} else {
 			struct cb_field		*v = NULL;
-			if (!gen_init_working 
+			if (!gen_init_working
 			 && (f->flag_unbounded || cb_odoslide)) {
 				v = chk_field_variable_size (f);
 			}
@@ -5022,7 +5073,7 @@ output_initialize_one (struct cb_initialize *p, cb_tree x)
 			return;
 		}
 
-		if (n > 2) {
+		if (n > 8) {
 			offset = size - n;
 			size -= n;
 		} else {
@@ -5178,26 +5229,35 @@ output_initialize_occurs (struct cb_initialize *p, cb_tree x)
 	struct cb_field	*pftbl[COB_MAX_SUBSCRIPTS+1] = { NULL };
 	int			idxtbl[COB_MAX_SUBSCRIPTS+1] = { 0 };
 	int			occtbl[COB_MAX_SUBSCRIPTS+1] = { 0 };
-	int			idx;
+	int			idx, idx_clr, total_occurs, simple_occurs;
 
 	f = cb_code_field (x);
+	if (f->flag_occurs
+	 && f->occurs_max > 1 
+	 && f->children == NULL)
+		simple_occurs = 1;
+	else
+		simple_occurs = 0;
 #if 0 /* CHECKME: the init above should be fine */
 	for (idx=0; idx <= COB_MAX_SUBSCRIPTS; idx++) {
 		idxtbl[idx] = 0;
 		pftbl[idx] = NULL;
 	}
 #endif
+	total_occurs = 1;
+	idx_clr = 0;
 	for (idx = 0, pf = f; pf; pf = pf->parent) {
 		if (pf->flag_occurs
 		 && pf->occurs_max > 1) {
 			pftbl [idx] = pf;
 			occtbl[idx] = pf->occurs_max;
+			total_occurs *= pf->occurs_max;
 			idx++;
 		}
 	}
-
 	if (idx > 0
-	 && !p->flag_init_statement
+	 && (!p->flag_init_statement 
+	 	|| (simple_occurs && p->val == cb_true))
 	 && !f->depending
 	 && (f->children == NULL || f->values)) {
 		const int offset = f->offset;
@@ -5206,12 +5266,18 @@ output_initialize_occurs (struct cb_initialize *p, cb_tree x)
 		int k;
 		idx_incr = -1;
 		idx_stop = 0;
+		k = cb_list_length (f->values) - total_occurs;
+		if (k > 0) {
+			cb_error_x ((cb_tree)f, "%s has %d more value%s than needed",
+							f->name,k,k>1?"s":"");
+			return;
+		}
 		while (!idx_stop) {
 			pf = pftbl[0];
 			pf->flag_occurs = 0;
 			pf->occurs_max = 0;
 			if (values && CB_CHAIN (values)) {	/* Multiple VALUEs present */
-				for (; l && !idx_stop; l = CB_CHAIN (l)) {
+				for (idx_clr = 0; l && !idx_stop; idx_clr++, l = CB_CHAIN (l)) {
 					f->values = l;
 					f->offset = get_table_offset ( offset, idx, idxtbl, occtbl, pftbl);
 					output_initialize_one (p, x);	/* Init with each value */
@@ -5224,12 +5290,32 @@ output_initialize_occurs (struct cb_initialize *p, cb_tree x)
 					} else {
 						output_move (cb_space, x);
 					}
+					idx_clr ++;
+					/* OCCURS with no child or sister after multiple values */
+					if (idx == 1 && simple_occurs) {
+						for (k=0; k < idx; k++) {
+							pf = pftbl[k];
+							pf->flag_occurs = 1;
+							pf->occurs_max = occtbl[k];
+						}
+						f->offset = offset;
+						propagate_table (x, idx_clr);
+						idx_stop = 1;
+						break;
+					}
 				}
-				if (l != NULL) {
-					for (k=0; l; l = CB_CHAIN(l)) k++;
-					cb_error_x ((cb_tree)f, "%s has %d more value%s than needed",
-									f->name,k,k>1?"s":"");
+			} else if (values && idx == 1 && simple_occurs) {
+				f->offset = get_table_offset ( offset, idx, idxtbl, occtbl, pftbl);
+				output_initialize_one (p, x);
+				/* OCCURS with no child or sister and a single value */
+				for (k=0; k < idx; k++) {
+					pf = pftbl[k];
+					pf->flag_occurs = 1;
+					pf->occurs_max = occtbl[k];
 				}
+				f->offset = offset;
+				propagate_table (x, 1);
+				break;
 			} else {
 				while (!idx_stop) {					/* Init all occurences to same value */
 					f->offset = get_table_offset ( offset, idx, idxtbl, occtbl, pftbl);
@@ -5336,18 +5422,38 @@ output_initialize_compound (struct cb_initialize *p, cb_tree x)
 				ref->subs = CB_BUILD_CHAIN (cb_int1, ref->subs);
 				if (type == INITIALIZE_ONE) {
 					output_initialize_occurs (p, c);
-				} else {
+				} else if (type == INITIALIZE_COMPOUND) {
 					ref->length = NULL;
 					output_initialize_compound (p, c);
+				} else {
+					ref->length = NULL;
+					if (f->children
+					 && f->flag_occurs
+					 && !p->flag_init_statement
+					 && p->val
+					 && chk_field_any_values (f)
+					 && !chk_field_multi_values (f)) {
+						struct cb_field		*fc;
+						output_line ("/* Init %s 1st occurence */",f->name);
+						for (fc = f->children; fc; fc = fc->sister) {
+							output_initialize_one (p, cb_build_field_reference (fc, c));
+						}
+					} else {
+						output_initialize_compound (p, c);
+					}
 				}
 
+				/* all exceptions should have been raised above,
+				   so temporarily detach from the reference */
+				ref->check = NULL;
+				ref->length = NULL;
+
 				for (pf = f; pf && !pf->flag_occurs_values; pf = pf->parent);
-				if (f->occurs_max > 1
-				 && (pf == NULL || !pf->flag_occurs_values)) {
-					ref->length = NULL;
+				if (pf == NULL
+				 || !pf->flag_occurs_values) {
 					output_line ("/* copy initialized record for %s to later occurrences */",
 						f->name);
-					propagate_table (c);
+					propagate_table (c, 1);
 				}
 
 				/* restore previous exception-checks for the reference */
@@ -5369,6 +5475,8 @@ output_initialize (struct cb_initialize *p)
 	const enum cobc_init_type	type
 		= deduce_initialize_type (p, f, 1);
 
+	if (type == INITIALIZE_NONE)
+		return;
 	/* Check for non-standard OCCURS */
 	if ((f->level == 1 || f->level == 77) 
 	 && f->flag_occurs 
@@ -5394,18 +5502,15 @@ output_initialize (struct cb_initialize *p)
 			CB_REFERENCE (x)->subs = CB_BUILD_CHAIN (cb_int1, CB_REFERENCE (x)->subs);
 			output_initialize_compound (p, x);
 			CB_REFERENCE (x)->subs = CB_CHAIN (CB_REFERENCE (x)->subs);
-			for (pf = f; pf && !pf->flag_occurs; pf = pf->parent);
+			for (pf = f; pf && !pf->flag_occurs_values; pf = pf->parent);
 			if (pf == NULL
 			 || !pf->flag_occurs_values)
-				propagate_table (x);
+				propagate_table (x, 1);
 			output_initialize_chaining (f, p);
 			return;
 		default:
 			break;
 		}
-	}
-	if (type == INITIALIZE_NONE) {
-		return;
 	}
 	if (CB_REFERENCE_P (p->var))
 		r = CB_REFERENCE (p->var);
@@ -9207,20 +9312,20 @@ output_report_sum_control_field (struct cb_field *p)
 	}
 	if (p->storage == CB_STORAGE_REPORT) {
 		if (p->level == 01) {
-			output_base(p,1U);
+			output_base (p, 1U);
 		}
 		if (p->report_sum_counter) {
-			output_base(cb_code_field(p->report_sum_counter),1U);
+			output_base (cb_code_field (p->report_sum_counter), 1U);
 		}
 		if (p->report_control) {
-			output_base(cb_code_field(p->report_control),1U);
+			output_base (cb_code_field (p->report_control), 1U);
 		}
-		if (p->report_source) {
-			output_base(cb_code_field(p->report_source),1U);
+		if (p->report_source && CB_REF_OR_FIELD_P (p->report_source)) {
+			output_base (cb_code_field (p->report_source), 1U);
 		}
 		for (l = p->report_sum_list; l; l = CB_CHAIN (l)) {
 			x = CB_VALUE (l);
-			output_base(cb_code_field(x),1);
+			output_base (cb_code_field (x), 1);
 		}
 		if (p->children) {
 			output_report_sum_control_field (p->children);
@@ -10112,7 +10217,7 @@ output_field_display (struct cb_field *f, size_t offset,
 	struct cb_field *p;
 	cb_tree x;
 	int 	svlocal;
-	const char* fname = f->flag_filler ? "FILLER" : f->name;
+	const char *fname = f->flag_filler ? "FILLER" : f->name;
 
 	svlocal = f->flag_local;
 	f->flag_local = 0;
@@ -10272,7 +10377,7 @@ output_display_fields (struct cb_field *f, size_t offset, unsigned int idx)
 		 && (f->level == 77 || f->level == 1)
 		 && !f->redefines
 		 && (f->flag_item_based || f->storage == CB_STORAGE_LINKAGE)) {
-			const char* fname = f->flag_filler ? "FILLER" : f->name;
+			const char *fname = f->flag_filler ? "FILLER" : f->name;
 			output_line ("/* Check %s address for %s */",
 						f->flag_item_based ? "BASED" : "LINKAGE",
 						fname);
@@ -11845,7 +11950,16 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	/* Initialize WORKING-STORAGE/files if not INITIAL program */
 	if (!prog->flag_initial) {
 		if (prog->working_storage) {
-			output_line ("/* Initialize WORKING-STORAGE */");
+			char wrk[48];
+			if (cb_default_byte >= 0) {
+				if (isprint (cb_default_byte))
+					sprintf (wrk,", Default byte: '%c'", cb_default_byte);
+				else
+					sprintf (wrk,", Default byte: 0x%02X", cb_default_byte);
+			} else {
+				strcpy(wrk,"");
+			}
+			output_line ("/* Initialize WORKING-STORAGE%s */",wrk);
 			output_initial_values (prog->working_storage);
 			output_newline ();
 		}
