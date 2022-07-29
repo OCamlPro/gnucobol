@@ -9572,7 +9572,7 @@ ReWrite: FOR00000 got 00/02 as expected
 
 AT_CHECK([COB_TRACE_FILE=+trace_append.txt \
 COB_SET_TRACE=Y \
-COB_TRACE_FORMAT="%S - %L"\
+COB_TRACE_FORMAT="%S - %L" \
 $COBCRUN_DIRECT ./prog_s], [0],
 [OK: Operations on empty file
 Loading sample data file.
