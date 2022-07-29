@@ -90,10 +90,10 @@ localcheck: prereq-testsuite
 	@GNUCOBOL_TEST_LOCAL="1" $(TESTSUITE) $(TESTSUITEFLAGS) || (rm -f testsuite.dir/at-job-fifo; exit 1)
 	@rm -f testsuite.dir/at-job-fifo
 
-prereq-testsuite: $(TESTSUITE)
+prereq-testsuite: $(TESTSUITE) atlocal
 	@rm -rf testsuite.dir
 
-prereq-manual: $(TESTSUITE_MANUAL)
+prereq-manual: $(TESTSUITE_MANUAL) atlocal run_prog_manual.sh
 	@rm -rf testsuite_manual.dir
 
 clean-local:
@@ -107,7 +107,7 @@ checkmanual: prereq-manual
 .PHONY: test checkall checkmanual localcheck \
 	prereq-check prereq-testsuite prereq-manual
 
-test:
+test: atlocal
 	@echo testing for perl && perl -v 1>/dev/null \
 		|| (echo "Error: no working 'perl' in PATH" && false)
 	@cd cobol85 && $(MAKE) $(AM_MAKEFLAGS) test

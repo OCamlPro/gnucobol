@@ -1,4 +1,14 @@
 
+2022-07-29  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* flag.def, config.def: make format a dialect option instead of a flag
+	* help.c: mention alias for options --free and --fixed
+	* cobc.h: extend cb_format_enum with COBOL85 (fixed format with
+	  pending Area A enforcement); define CB_SF_FIXED and CB_SF_FREE
+	* cobc.c: use new source format macros
+	* parser.y, pplex.l: annotate every token that is not used in the
+	  grammar
+
 2022-07-27  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* typeck.c (cb_emit_sort_init): avoid SIGSEGV on SORT of toplevel field

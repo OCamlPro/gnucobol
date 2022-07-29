@@ -70,6 +70,17 @@ COMPILE="${COBC} -x ${FLAGS}"
 COMPILE_ONLY="${COBC} -fsyntax-only ${FLAGS} -Wno-unsupported"
 COMPILE_MODULE="${COBC} -m ${FLAGS}"
 
+# get performance counters for compiler and/or runtime
+if test "x$PERFSUFFIX" != "x"; then
+  mkdir -p ${abs_builddir}/perf
+  PERF="perf stat -e instructions --output ${abs_builddir}/perf/perf_$PERFSUFFIX.log --append"
+  # COBC="${PERF} ${COBC} -O0"   # note: full check including C compiler!
+  # COMPILE_ONLY="${PERF} ${COMPILE_ONLY}"  # more reasonable - checks cobc only, but misses codegen
+  # most reasonable: check actual COBOL runtime performance
+  COBCRUN="${PERF} ${COBCRUN}"
+  COBCRUN_DIRECT="${PERF} ${COBCRUN_DIRECT}"
+fi
+
 # Helper script to unify listings (replace version, date, time)
 UNIFY_LISTING="${abs_srcdir}/listings-sed.sh"
 
