@@ -81,8 +81,8 @@ cobc_print_usage_common_options (void)
 	        "                        acu-strict, acu, rm-strict, rm, gcos-strict,\n"
 	        "                        gcos;\n"
 	        "                        see configuration files in directory config"));
-	puts (_("  -F, --free            use free source format (alias of -fformat=free)"));
-	puts (_("  --fixed               use fixed source format (default; alias of\n"
+	puts (_("  -F, --free            use free source format (alias for -fformat=free)"));
+	puts (_("  --fixed               use fixed source format (default; alias for\n"
 		"                        -fformat=fixed)"));
 	puts (_("  -O, -O2, -O3, -Os     enable optimization"));
 	puts (_("  -O0                   disable optimization"));

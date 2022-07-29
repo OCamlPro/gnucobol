@@ -104,9 +104,10 @@ enum cb_format {
 	CB_FORMAT_ACUTERM,	/* ACU Terminal format, named "TERMINAL" */
 	CB_FORMAT_COBOLX,	/* GCOS's COBOLX */
 };
-#define CB_SF_FREE(sf) ((sf) == CB_FORMAT_FREE)
-#define CB_SF_FIXED(sf) ((sf) == CB_FORMAT_FIXED || (sf) == CB_FORMAT_COBOL85)
+#define CB_SF_FREE(sf) (sf == CB_FORMAT_FREE)
+#define CB_SF_FIXED(sf) (sf == CB_FORMAT_FIXED || sf == CB_FORMAT_COBOL85)
 
+/* Common definition for help output and error messages: */
 #define CB_SF_ALL_NAMES							\
 	"FIXED, FREE, COBOL85, VARIABLE, XOPEN, XCARD, CRT, TERMINAL, COBOLX"
 

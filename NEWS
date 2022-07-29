@@ -43,12 +43,12 @@ NEWS - user visible changes				-*- outline -*-
    FIXED/FREE):
 
    COBOL85              Fixed-form format with enforcement of Area A (pending)
-   VARIABLE		Microfocus Variable Fixed-form format
-   XOPEN		X/Open Free-form format
-   XCARD		ICOBOL xCard (extended card) format
+   COBOLX		GCOS 7 extended format
    CRT			ICOBOL Free-form format
    TERMINAL		ACUCOBOL-GT Terminal format
-   COBOLX		GCOS 7 extended format
+   VARIABLE		Micro Focus Variable Fixed-form format
+   XCARD		ICOBOL xCard (extended card) format
+   XOPEN		X/Open Free-form format
 
 * Changes that potentially effects recompilation of existing programs:
 

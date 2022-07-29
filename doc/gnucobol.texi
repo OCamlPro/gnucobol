@@ -418,7 +418,7 @@ Place the output into @var{file}.
 @node Source format
 @subsection Source format
 
-GnuCOBOL supports fixed, free, Microfocus' Variable, X/Open Free-form,
+GnuCOBOL supports fixed, free, Micro Focus' Variable, X/Open Free-form,
 ICOBOL xCard and Free-form, ACUCOBOL-GT Terminal, and COBOLX source
 formats.  The default format is the fixed format.  This can be
 overridden either by the @code{>>SOURCE [FORMAT] [IS]
@@ -443,8 +443,9 @@ Fixed format with enforcements on the use of Area A.
 @end ignore
 
 @item -fformat=variable
-Microfocus' Variable format.  Identical to the fixed format above except
-for the program-text area which extends up to column 250 instead of 72.
+Micro Focus' Variable format.  Identical to the fixed format above
+except for the program-text area which extends up to column 250 instead
+of 72.
 
 @item -fformat=xopen
 X/Open Free-form format.  The program-text area may start in column 1

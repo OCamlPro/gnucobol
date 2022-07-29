@@ -80,7 +80,7 @@ CB_CONFIG_ANY (signed int, cb_default_byte, "defaultbyte",
 CB_CONFIG_ANY (enum cb_std_def, cb_std_define, "standard-define", NULL) /* Used Standard (set via -std) */
 
 CB_CONFIG_ANY (enum cb_format, cb_source_format, "format",
-	_("default source reference-format, may be one of: " CB_SF_ALL_NAMES))
+	_("default reference-format, may be one of: " CB_SF_ALL_NAMES))
 
 CB_CONFIG_ANY (enum cb_binary_size_options, cb_binary_size, "binary-size",
 	_("binary byte size - defines the allocated bytes according to PIC, may be one of: 2-4-8, 1-2-4-8, 1--8"))
