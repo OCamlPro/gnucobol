@@ -107,6 +107,9 @@ enum cb_format {
 #define CB_SF_FREE(sf) ((sf) == CB_FORMAT_FREE)
 #define CB_SF_FIXED(sf) ((sf) == CB_FORMAT_FIXED || (sf) == CB_FORMAT_COBOL85)
 
+#define CB_SF_ALL_NAMES							\
+	"FIXED, FREE, COBOL85, VARIABLE, XOPEN, XCARD, CRT, TERMINAL, COBOLX"
+
 #if 0 /* ancient OSVS registers that need special runtime handling - low priority */
 /* format in CURRENT-DATE register */
 enum cb_current_date {

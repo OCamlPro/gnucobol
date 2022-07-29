@@ -3620,14 +3620,6 @@ process_command_line (const int argc, char **argv)
 			cb_max_errors = n;
 			break;
 
-		case 14:
-			/* -fformat=<FIXED/FREE/COBOL85/VARIABLE
-			   /XOPEN/XCARD/CRT/TERMINAL/COBOLX> */
-			if (cobc_deciph_source_format (cob_optarg) != 0) {
-				cobc_err_exit (COBC_INV_PAR, "-fformat");
-			}
-			break;
-
 		case 8:
 			/* -fdump=<scope> : Add sections for dump code generation */
 			cobc_def_dump_opts (cob_optarg, 1);

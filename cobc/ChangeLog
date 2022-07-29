@@ -1,6 +1,7 @@
 
 2022-07-28  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
+	* flag.def, config.def: make format a dialect option instead of a flag
 	* help.c: mention alias for options --free and --fixed
 	* cobc.h: extend cb_format_enum with COBOL85 (fixed format with
 	  pending Area A enforcement); define CB_SF_FIXED and CB_SF_FREE
