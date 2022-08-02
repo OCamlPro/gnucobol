@@ -1629,47 +1629,47 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
 *     *    MOVE NON-INTEGER TO ALPHA-NUMERIC --> ignore Decimal Point!
        S-01.
-           MOVE SPACES TO ALPHA-FIELD.
-           MOVE INTEGER TO ALPHA-FIELD.
-           DISPLAY  ALPHA-FIELD NO ADVANCING
-           END-DISPLAY.
+          MOVE SPACES TO ALPHA-FIELD.
+          MOVE INTEGER TO ALPHA-FIELD.
+          DISPLAY  ALPHA-FIELD NO ADVANCING
+          END-DISPLAY.
        S-02.
-           MOVE SPACES TO ALPHA-FIELD.
-           MOVE SIGNED-INTEGER TO ALPHA-FIELD.
-           DISPLAY  ALPHA-FIELD NO ADVANCING
-           END-DISPLAY.
+          MOVE SPACES TO ALPHA-FIELD.
+          MOVE SIGNED-INTEGER TO ALPHA-FIELD.
+          DISPLAY  ALPHA-FIELD NO ADVANCING
+          END-DISPLAY.
        S-03.
-           MOVE SPACES TO ALPHA-FIELD.
-           MOVE NON-INTEGER TO ALPHA-FIELD.
-           DISPLAY  ALPHA-FIELD NO ADVANCING
-           END-DISPLAY.
+          MOVE SPACES TO ALPHA-FIELD.
+          MOVE NON-INTEGER TO ALPHA-FIELD.
+          DISPLAY  ALPHA-FIELD NO ADVANCING
+          END-DISPLAY.
        S-10.
-           MOVE SPACES TO ALPHA-FIELD.
-           MOVE NON-INTEGER-2 TO ALPHA-FIELD.
-           DISPLAY  ALPHA-FIELD NO ADVANCING
-           END-DISPLAY.
+          MOVE SPACES TO ALPHA-FIELD.
+          MOVE NON-INTEGER-2 TO ALPHA-FIELD.
+          DISPLAY  ALPHA-FIELD NO ADVANCING
+          END-DISPLAY.
        S-20.
-           MOVE SPACES TO ALPHA-FIELD.
-           MOVE NON-INTEGER-3 TO ALPHA-FIELD.
-           DISPLAY  ALPHA-FIELD NO ADVANCING
-           END-DISPLAY.
+          MOVE SPACES TO ALPHA-FIELD.
+          MOVE NON-INTEGER-3 TO ALPHA-FIELD.
+          DISPLAY  ALPHA-FIELD NO ADVANCING
+          END-DISPLAY.
        S-30.
-           MOVE SPACES TO ALPHA-FIELD.
-           MOVE SIGNED-NON-INTEGER TO ALPHA-FIELD.
-           DISPLAY  ALPHA-FIELD NO ADVANCING
-           END-DISPLAY.
+          MOVE SPACES TO ALPHA-FIELD.
+          MOVE SIGNED-NON-INTEGER TO ALPHA-FIELD.
+          DISPLAY  ALPHA-FIELD NO ADVANCING
+          END-DISPLAY.
        S-40.
-           MOVE SPACES TO ALPHA-FIELD.
-           MOVE SIGNED-NON-INTEGER-2 TO ALPHA-FIELD.
-           DISPLAY  ALPHA-FIELD NO ADVANCING
-           END-DISPLAY.
+          MOVE SPACES TO ALPHA-FIELD.
+          MOVE SIGNED-NON-INTEGER-2 TO ALPHA-FIELD.
+          DISPLAY  ALPHA-FIELD NO ADVANCING
+          END-DISPLAY.
        S-50.
-           MOVE SPACES TO ALPHA-FIELD.
-           MOVE SIGNED-NON-INTEGER-3 TO ALPHA-FIELD.
-           DISPLAY  ALPHA-FIELD NO ADVANCING
-           END-DISPLAY.
+          MOVE SPACES TO ALPHA-FIELD.
+          MOVE SIGNED-NON-INTEGER-3 TO ALPHA-FIELD.
+          DISPLAY  ALPHA-FIELD NO ADVANCING
+          END-DISPLAY.
 
-           STOP RUN.
+          STOP RUN.
 ])
 
 AT_CHECK([$COMPILE -std=mf prog.cob], [0], [],
@@ -5095,9 +5095,9 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 ])
 
 # Check that manually setting -ftext-column in combination with
-# variable source format isstill allowed: -ftext-column now impacts
-# fixed format only; 250 is the default right margin for variable
-# format.
+# variable source format is still allowed: -ftext-column now impacts
+# fixed and cobol85 format only; 250 is the default right margin for
+# variable format.
 AT_DATA([fit.cob], [
 000010 IDENTIFICATION DIVISION.
 000020 PROGRAM-ID. fit.

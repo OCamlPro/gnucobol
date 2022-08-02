@@ -639,7 +639,6 @@ extern void		ppparse_error (const char *);
 
 extern int		cobc_deciph_source_format (const char *);
 extern void		cobc_set_source_format (const enum cb_format);
-extern void		cobc_enable_area_a_tokens (int forced);
 extern enum cb_format	cobc_get_source_format (void) COB_A_PURE;
 extern int		cobc_get_indicator_column (void) COB_A_PURE;
 extern int		cobc_get_text_column (void) COB_A_PURE;

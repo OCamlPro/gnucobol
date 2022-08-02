@@ -176,6 +176,7 @@ static void	switch_to_buffer	(const int, const char *,
 					 const YY_BUFFER_STATE);
 static void	check_listing		(const char *, const unsigned int);
 static void	skip_to_eol		(void);
+static void	count_newlines		(const char *);
 static void	display_finish		(void);
 static void	set_print_replace_list	(struct cb_replace_list *list);
 static void	get_new_listing_file	(void);
@@ -405,9 +406,8 @@ MAYBE_AREA_A	[ ]?#?
 	skip_to_eol ();
 }
 
-^{MAYBE_AREA_A}[ ]*"@OPTIONS"	{	/* Strip eventual Area A marker */
-	/* Fujitsu COBOL extension for specifying command line options */
-	/* TODO: check position of the @OPTIONS directive */
+^{MAYBE_AREA_A}[ ]{7}"@OPTIONS"	{ /* Strip Area A marker, depending on format */
+	/* Fujitsu COBOL extension for specifying a limited set of 'cobol' command line options */
 	char *s = strchr (yytext, '@');
 	cb_plex_warning (COBC_WARN_FILLER, newline_count - 1,
 		_("ignoring unknown directive: '%s'"), s);
@@ -422,25 +422,19 @@ MAYBE_AREA_A	[ ]?#?
 	skip_to_eol ();
 }
 
-^[ ]*"$"		{
+^{MAYBE_AREA_A}[ ]*"$"		{
 	cb_plex_warning (COBC_WARN_FILLER, newline_count,
 		_("spurious '$' detected - ignored"));
 	skip_to_eol ();
 }
 
-^{AREA_A}		{
-	/* Output a special marker that precedes lines starting in area A.  This
-	   is required to detect missing periods.
-
-	   See "(*area-a*)" in `ppinput' function below for the code that emits
-	   the `#'.
-
-	   The optional space before '#' in the rule above is only needed to
-	   properly handle the first line in each buffer, that for some reason
-	   always starts with a space.
-	*/
-	fprintf (ppout, "\n#area_a\n");
-}
+%{/* Strip any Area A marker leading to COPY, INCLUDE, and REPLACE right now as
+     at this stage they may not be seen on the line that directly follows the
+     marker.  However, we still need to count the lines we are skipping this
+     way. */%}
+^{AREA_A}[ \n]*/"COPY"[ ,;\n]    { count_newlines (yytext); }
+^{AREA_A}[ \n]*/"INCLUDE"[ ,;\n] { count_newlines (yytext); }
+^{AREA_A}[ \n]*/"REPLACE"[ ,;\n] { count_newlines (yytext); }
 
 "COPY"/[ ,;\n]			{
 	yy_push_state (COPY_STATE);
@@ -465,10 +459,24 @@ MAYBE_AREA_A	[ ]?#?
 	return REPLACE;
 }
 
-^[ ]*"*CONTROL"		|
-^[ ]*"*CBL"		{
+^{MAYBE_AREA_A}[ ]*"*CONTROL"		|
+^{MAYBE_AREA_A}[ ]*"*CBL"		{
 	BEGIN CONTROL_STATEMENT_STATE;
 	return CONTROL_STATEMENT;
+}
+
+^{AREA_A}		{
+	/* Output a special marker that precedes lines starting in area A.  This
+	   is required to detect missing periods.
+
+	   See "(*area-a*)" in `ppinput' function below for the code that emits
+	   the `#'.
+
+	   The optional space before '#' in the rule above is only needed to
+	   properly handle the first line in each buffer, that for some reason
+	   always starts with a space.
+	*/
+	fprintf (ppout, "\n#area_a\n");
 }
 
 "CONTROL"[ ,;\n]+"DIVISION" {
@@ -1477,11 +1485,15 @@ cobc_set_source_format (const enum cb_format sf) {
 		text_column = -1;
 		break;
 	}
-}
 
-void
-cobc_enable_area_a_tokens (int forced) {
-	emit_area_a_tokens = forced || cb_loose_area_a != CB_OK;
+	switch (source_format) {
+	case CB_FORMAT_FIXED:
+	case CB_FORMAT_FREE:
+		emit_area_a_tokens = 0;
+		break;
+	default:
+		emit_area_a_tokens = 1;
+	}
 }
 
 COB_A_PURE enum cb_format cobc_get_source_format (void) { return source_format; }
@@ -2236,7 +2248,7 @@ start:
 		bp = buff + margin_a;
 
 		in_area_a = 0;
-		if (emit_area_a_tokens && source_format != CB_FORMAT_FREE) {
+		if (emit_area_a_tokens) {
 			for (i = margin_a; i < margin_b; i++)
 				in_area_a |= buff[i] != ' ';
 		}
@@ -2560,6 +2572,14 @@ skip_to_eol (void)
 	if (c != EOF) {
 		unput (c);
 	}
+}
+
+static void
+count_newlines (const char *p)
+{
+	for (; *p; p++)
+		if (*p == '\n')
+			newline_count++;
 }
 
 static void

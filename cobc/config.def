@@ -380,8 +380,11 @@ CB_CONFIG_SUPPORT (cb_record_delim_with_fixed_recs, "record-delim-with-fixed-rec
 CB_CONFIG_SUPPORT (cb_missing_statement, "missing-statement",
 	_("missing statement (e.g. empty IF / PERFORM)"))
 
-CB_CONFIG_SUPPORT (cb_loose_area_a, "loose-area-a",
-	_("allow any text in Area A, when source is in non-free format"))
+CB_CONFIG_SUPPORT (cb_missing_period, "missing-period",
+	_("missing period in PROCEDURE DIVISION (when reference format supports Area A enforcement)"))
+
+CB_CONFIG_SUPPORT (cb_non_word_in_area_a, "non-word-in-area-a",
+	_("non user-defined words in Area A of PROCEDURE DIVISION (when reference format supports Area A enforcement)"))
 
 CB_CONFIG_SUPPORT (cb_zero_length_lit, "zero-length-literals",
 	_("zero-length literals, e.g. '' and \"\""))

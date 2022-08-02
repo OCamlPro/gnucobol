@@ -4520,7 +4520,7 @@ AT_CLEANUP
 
 
 AT_SETUP([redundant periods])
-AT_KEYWORDS([misc])
+AT_KEYWORDS([misc redundant-periods])
 
 AT_DATA([a.cpy], [
        01  var PIC X
@@ -4550,79 +4550,63 @@ AT_CLEANUP
 
 
 AT_SETUP([missing periods])
-AT_KEYWORDS([misc missing-periods])
+AT_KEYWORDS([misc cobol85 area-a missing-periods])
 
-AT_DATA([prog.cob],
-[       IDENTIFICATION   DIVISION.
+# Check whether the first line is correcly handled:
+AT_DATA([prog.cob], [       IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
 
        DATA DIVISION.
        WORKING-STORAGE SECTION.
+       01 DONE COMP-1 VALUE ZERO.
 
        PROCEDURE DIVISION.
-	   PERFORM SEC-1.
-	   STOP RUN
+       MAIN SECTION.
+           PERFORM SEC-1.
+           IF NOT DONE = 1
+              DISPLAY "SEC-1 NOT EXECUTED"
+           END-IF
+           STOP RUN
        SEC-1 SECTION.
-           DISPLAY "OK" NO ADVANCING
-	   END-DISPLAY.
+           MOVE 1 TO DONE
            GOBACK.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:10: error: 'SEC-1' is not defined
-prog.cob:10: error: syntax error, unexpected SECTION
+[prog.cob: in section 'MAIN':
+prog.cob:15: error: 'SEC-1' is not defined
+prog.cob:15: error: syntax error, unexpected SECTION
 ])
-AT_CHECK([$COMPILE -floose-area-a=skip -frelax-syntax-checks prog.cob], [0], [],
-[prog.cob:10: warning: missing '.' above this line
+AT_CHECK([$COMPILE_ONLY -fformat=cobol85 -fmissing-period=error prog.cob], [1], [],
+[prog.cob: in section 'MAIN':
+prog.cob:15: error: optional period used
 ])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
-
-AT_DATA([prog_err.cob], [
-       IDENTIFICATION   DIVISION.
-       PROGRAM-ID.      prog.
-       DATA DIVISION.
-       WORKING-STORAGE SECTION.
-
-       PROCEDURE DIVISION.
-           PERFORM PAR-1.
-           PERFORM SEC-1.
-           STOP RUN
-
-       PAR-1.
-           PERFORM SEC-1.
-           DISPLAY KO NO ADVANCING
-
-       SEC-1 SECTION.
-           DISPLAY 1 NO ADVANCING
-       .
+AT_CHECK([$COMPILE -fformat=cobol85 prog.cob], [0], [],
+[prog.cob: in section 'MAIN':
+prog.cob:15: warning: optional period used
 ])
-AT_CHECK([$COMPILE_ONLY -floose-area-a=warning -frelax-syntax-checks prog_err.cob], [1], [],
-[prog_err.cob:12: warning: missing '.' above this line
-prog_err.cob: in paragraph 'PAR-1':
-prog_err.cob:14: error: 'KO' is not defined
-prog_err.cob:16: warning: missing '.' above this line
-prog_err.cob: in section 'SEC-1':
-prog_err.cob:18: warning: punctuation in Area A used
-])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
 
 
 AT_SETUP([missing periods with COPYs])
-AT_KEYWORDS([misc copy missing-periods])
+AT_KEYWORDS([misc cobol85 area-a missing-periods copy])
 
 AT_DATA([ok.inc], [
-       01  OK  PIC XX VALUE "OK".
+       01 FLG PIC XX VALUE "KO".
 ])
 
 AT_DATA([sec-1.inc], [
        SEC-1 SECTION.
-           DISPLAY OK NO ADVANCING
+           MOVE "OK" TO FLG
 ])
 
 AT_DATA([sec-2.inc], [
-           SEC-2 SECTION.
-           DISPLAY OK NO ADVANCING.
+       SEC-2 SECTION.
+           IF FLG NOT EQUAL "OK"
+              DISPLAY "DEC-1 NOT EXECUTED"
+           END-IF.
 ])
 
 AT_DATA([prog.cob], [
@@ -4634,25 +4618,31 @@ AT_DATA([prog.cob], [
        COPY "ok.inc".
 
        PROCEDURE DIVISION.
+       MAIN SECTION.
            PERFORM SEC-1.
            PERFORM SEC-2.
-           STOP RUN
+      * Directive purposefully in Area A
+        REPLACE ==RUNNN== BY ==RUN==.
+           STOP RUNNN
            COPY "sec-1.inc".
-       COPY "sec-2.inc".
+      * Also purposefully in Area A
+        COPY "sec-2.inc".
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[sec-1.inc:2: error: 'SEC-1' is not defined
+[sec-1.inc: in section 'MAIN':
+sec-1.inc:2: error: 'SEC-1' is not defined
 sec-1.inc:2: error: syntax error, unexpected SECTION
 sec-2.inc:2: error: 'SEC-2' is not defined
 sec-2.inc:2: error: syntax error, unexpected SECTION
 ])
-AT_CHECK([$COMPILE -floose-area-a=skip -frelax-syntax-checks prog.cob], [0], [],
-[sec-1.inc:2: warning: missing '.' above this line
+AT_CHECK([$COMPILE -fformat=cobol85 prog.cob], [0], [],
+[sec-1.inc: in section 'MAIN':
+sec-1.inc:2: warning: optional period used
 sec-2.inc: in section 'SEC-1':
-sec-2.inc:2: warning: missing '.' above this line
+sec-2.inc:2: warning: optional period used
 ])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OKOK], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_DATA([prog_err.cob], [
        IDENTIFICATION   DIVISION.
@@ -4663,8 +4653,11 @@ AT_DATA([prog_err.cob], [
        COPY "ok.inc".
 
        PROCEDURE DIVISION.
+       MAIN SECTION.
            PERFORM SEC-1.
            PERFORM SEC-2.
+      * Directive purposefully in Area A
+        REPLACE ==RUNNN== BY ==RUN==.
            PERFORM SEC-3.
            STOP RUN
            COPY "sec-1.inc".
@@ -4673,25 +4666,75 @@ AT_DATA([prog_err.cob], [
            DISPLAY KO NO ADVANCING.
 ])
 
-AT_CHECK([$COMPILE_ONLY -floose-area-a=skip -frelax-syntax-checks prog_err.cob], [1], [],
-[sec-1.inc:2: warning: missing '.' above this line
+AT_CHECK([$COMPILE_ONLY -fformat=cobol85 prog_err.cob], [1], [],
+[sec-1.inc: in section 'MAIN':
+sec-1.inc:2: warning: optional period used
 sec-2.inc: in section 'SEC-1':
-sec-2.inc:2: warning: missing '.' above this line
+sec-2.inc:2: warning: optional period used
 prog_err.cob: in section 'SEC-3':
-prog_err.cob:17: error: 'KO' is not defined
+prog_err.cob:20: error: 'KO' is not defined
 ])
 
 AT_CLEANUP
 
 
-AT_SETUP([pseudotext replacement with text in area A])
-AT_KEYWORDS([misc gcos copy missing-periods])
+AT_SETUP([statement in Area A])
+AT_KEYWORDS([misc cobol85 area-a])
 
-AT_DATA([ok.inc],
-[       01  REPLACE-ME
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 FLAG          PIC 9 VALUE ZERO.
+       PROCEDURE        DIVISION.
+       MAIN
+       .
+         PERFORM SEC-1
+         IF NOT FLAG = 1
+              DISPLAY "SEC-1 NOT EXECUTED"
+         END-IF
+         STOP RUN
+         .
+       SEC-1 SECTION.
+         MOVE 1 TO FLAG
+         .
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [])
+AT_CHECK([$COMPILE_ONLY -std=cobol85 prog.cob], [1], [],
+[prog.cob:9: error: punctuation in Area A used
+prog.cob: in paragraph 'MAIN':
+prog.cob:10: error: statement in Area A used
+prog.cob:11: error: statement in Area A used
+prog.cob:13: error: syntax error, unexpected END-IF
+prog.cob:14: error: statement in Area A used
+prog.cob:15: error: punctuation in Area A used
+prog.cob: in section 'SEC-1':
+prog.cob:17: error: statement in Area A used
+prog.cob:18: error: punctuation in Area A used
+])
+
+# That error is hard to bypass: -fformat=fixed is needed (and loss of
+# support for missing periods).
+AT_CHECK([$COMPILE_ONLY -std=cobol85 -fnon-word-in-area-a=ok prog.cob], [1], [],
+[prog.cob: in paragraph 'MAIN':
+prog.cob:13: error: syntax error, unexpected END-IF
+])
+AT_CHECK([$COMPILE_ONLY -std=cobol85 -fnon-word-in-area-a=ok -fformat=fixed prog.cob], [0], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([pseudotext replacement with text in area A])
+AT_KEYWORDS([misc cobol85 gcos copy missing-periods])
+
+# Check whether the first line is correcly handled:
+AT_DATA([ok.inc], [       01  REPLACE-ME
        01  KO  PIC XX VALUE "KO".
        PROCEDURE DIVISION.
-           PERFORM SEC-1.
+       MAIN SECTION.
+           PERFORM SEC-1
 ])
 
 AT_DATA([prog.cob], [
@@ -4704,20 +4747,22 @@ AT_DATA([prog.cob], [
        01  OK PIC XX VALUE "OK". ==
            .
 
-           PERFORM SEC-2.
+           PERFORM SEC-2
            STOP RUN
+           CONTINUE
        SEC-1 SECTION.
-           DISPLAY OK NO ADVANCING
+           IF OK NOT EQUAL "OK" DISPLAY OK
        SEC-2 SECTION.
-           DISPLAY OK NO ADVANCING.
+           IF OK NOT EQUAL "OK" DISPLAY OK.
 ])
 
-AT_CHECK([$COMPILE -std=gcos prog.cob], [0], [],
-[prog.cob:13: warning: missing '.' above this line
+AT_CHECK([$COMPILE -std=cobol85 -fmissing-period=warning prog.cob], [0], [],
+[prog.cob: in section 'MAIN':
+prog.cob:14: warning: optional period used
 prog.cob: in section 'SEC-1':
-prog.cob:15: warning: missing '.' above this line
+prog.cob:16: warning: optional period used
 ])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OKOK], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_DATA([prog_err.cob], [
        IDENTIFICATION   DIVISION.
@@ -4732,14 +4777,15 @@ AT_DATA([prog_err.cob], [
            PERFORM SEC-2.
            STOP RUN
        SEC-1 SECTION.
-           DISPLAY OK NO ADVANCING
+           IF OK NOT EQUAL "OK" DISPLAY OK
        SEC-2 SECTION.
            DISPLAY NOT-FOUND.
 ])
 AT_CHECK([$COMPILE -std=gcos prog_err.cob], [1], [],
-[prog_err.cob:13: warning: missing '.' above this line
+[prog_err.cob: in section 'MAIN':
+prog_err.cob:13: warning: optional period used
 prog_err.cob: in section 'SEC-1':
-prog_err.cob:15: warning: missing '.' above this line
+prog_err.cob:15: warning: optional period used
 prog_err.cob: in section 'SEC-2':
 prog_err.cob:16: error: 'NOT-FOUND' is not defined
 ])
@@ -5454,12 +5500,15 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:10: error: CALL-CONVENTION and WITH LINKAGE are mutually exclusive
 ])
+# CHECKME: GOBACK does not belong to COBOL85 reserved words; the last
+# line is therefore an empty paragraph that does not start in Area A
 AT_CHECK([$COMPILE_ONLY -std=cobol85 -freserved=EXTERN,C prog.cob], [1], [],
 [prog.cob:5: error: CALL-/ENTRY-CONVENTION does not conform to COBOL 85
 prog.cob:6: error: WITH ... LINKAGE does not conform to COBOL 85
 prog.cob:8: error: CALL-/ENTRY-CONVENTION does not conform to COBOL 85
 prog.cob:10: error: WITH ... LINKAGE does not conform to COBOL 85
 prog.cob:10: error: CALL-CONVENTION and WITH LINKAGE are mutually exclusive
+prog.cob:12: error: user-defined word not in Area A used
 ])
 AT_CLEANUP
 

@@ -13167,7 +13167,7 @@ AT_DATA([prog.cob], [
 ])
 
 # TODO: move to syntax checks, together with all expected error messages
-AT_CHECK([$COMPILE -std=mf-strict -floose-area-a=ok prog.cob], [1], [],
+AT_CHECK([$COMPILE -std=mf-strict prog.cob], [1], [],
 [prog.cob:10: error: ENTRY FOR GO TO does not conform to Micro Focus COBOL
 prog.cob: in paragraph 'MAIN':
 prog.cob:18: error: ENTRY FOR GO TO does not conform to Micro Focus COBOL

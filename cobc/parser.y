@@ -282,6 +282,44 @@ static int			backup_source_line = 0;
 
 /* Static functions */
 
+/* Area A enforcement */
+
+/* TOK_AREA_A tokens are emitted when scanning the special marker `#AREA_A',
+   while in PROCEDURE DIVISIONs.  This avoids having to insert such tokens
+   everywhere they may appear in other parts of the grammar. */
+
+static int area_a = 0;		/* has a TOK_AREA_A token been seen? */
+static int missing_dot = 0;	/* a missing period has been detected. */
+
+static COB_INLINE void
+check_optional_period (void) {
+	if (missing_dot) {
+		(void) cb_verify (cb_missing_period, _("optional period"));
+		missing_dot = area_a = 0;
+	}
+}
+
+static COB_INLINE void
+check_area_a (cb_tree word) {
+	if (!area_a && !missing_dot) {
+		(void) cb_verify_x (word, cb_non_word_in_area_a,
+				    _("user-defined word not in Area A"));
+		area_a = 0;
+	}
+	check_optional_period ();
+}
+
+static COB_INLINE void
+check_non_area_a (cb_tree stmt) {
+	if (area_a) {
+		(void) cb_verify_x (stmt, cb_non_word_in_area_a,
+				    _("statement in Area A"));
+		area_a = 0;
+	}
+}
+
+/* Statements */
+
 static void
 begin_statement (const char *name, const unsigned int term)
 {
@@ -293,6 +331,7 @@ begin_statement (const char *name, const unsigned int term)
 	CB_TREE (current_statement)->source_file = cb_source_file;
 	CB_TREE (current_statement)->source_line = cb_source_line;
 	current_statement->flag_in_debug = in_debugging;
+	check_non_area_a (CB_TREE (current_statement));
 	emit_statement (CB_TREE (current_statement));
 	if (term) {
 		term_array[term]++;
@@ -3598,27 +3637,23 @@ _program_body:
   }
   _procedure_division
   {
-	/* TOK_AREA_A tokens, emitted when scanning the special marker `#AREA_A',
-	   must be inhibited outside of procedure divisions.  This avoids having
-	   to insert such tokens everywhere they may appear in other parts of
-	   the grammar.  `cobc_in_procedure' is used to filter such
-	   emissions.  */
+	/* `cobc_in_procedure' is used in `scanner.l` to filter emissions of
+	   TOK_AREA_A.  */
 	cobc_in_procedure = 0;
   }
 ;
 
-_area_a: /* empty */ | area_a_toks;
-area_a_toks: TOK_AREA_A | TOK_AREA_A area_a_toks;
+area_a_toks:
+  TOK_AREA_A
+| TOK_AREA_A area_a_toks
+;
+_area_a:
+  /* empty */ { area_a = 0; }
+| area_a_toks { area_a = 1; }
+;
 _dot_or_else_area_a:
-  TOK_DOT _area_a
-| area_a_toks
-  {
-	  if (cb_relaxed_syntax_checks) {
-		  cb_warning (COBC_WARN_FILLER, _("missing '.' above this line"));
-	  } else {
-		  cb_error (_("missing '.' above this line"));
-	  }
-  }
+  TOK_DOT _area_a { missing_dot = 0; }
+| area_a_toks     { missing_dot = area_a = 1; }
 ;
 
 /* IDENTIFICATION DIVISION */
@@ -10028,7 +10063,7 @@ procedure_division:
 	cb_set_system_names ();
 	backup_current_pos ();
   }
-  _mnemonic_conv _conv_linkage _procedure_using_chaining _procedure_returning TOK_DOT
+  _mnemonic_conv _conv_linkage _procedure_using_chaining _procedure_returning
   {
 	cb_tree call_conv = $4;
 	if ($5) {
@@ -10052,7 +10087,7 @@ procedure_division:
 
 	cb_check_definition_matches_prototype (current_program);
   }
-  _area_a
+  _dot_or_else_area_a
   _procedure_declaratives
   {
 	if (current_program->flag_main
@@ -10107,7 +10142,9 @@ procedure_division:
 	emit_statement (CB_TREE (current_paragraph));
 	cb_set_system_names ();
   }
-  statements _dot_or_else_area_a _procedure_list
+  statements
+  _dot_or_else_area_a		/* Area A check is in _procedure_list */
+  _procedure_list
 ;
 
 _procedure_using_chaining:
@@ -10355,14 +10392,15 @@ _procedure_returning:
 ;
 
 _procedure_declaratives:
-| DECLARATIVES TOK_DOT
+| DECLARATIVES
   {
+	check_area_a ($1);	/* Is "DECLARATIVES" in Area A? */
 	in_declaratives = 1;
 	emit_statement (cb_build_comment ("DECLARATIVES"));
   }
-  _area_a
+  _dot_or_else_area_a
   _procedure_list
-  END DECLARATIVES TOK_DOT
+  END DECLARATIVES
   {
 	if (needs_field_debug) {
 		start_debug = 1;
@@ -10388,14 +10426,16 @@ _procedure_declaratives:
 	emit_statement (cb_build_comment ("END DECLARATIVES"));
 	check_unreached = 0;
   }
-  _area_a
+  _dot_or_else_area_a
 ;
 
 
 /* Procedure list */
 
 _procedure_list:
-| _procedure_list procedure
+  { check_optional_period (); }
+| _procedure_list
+  procedure
 ;
 
 procedure:
@@ -10419,7 +10459,7 @@ procedure:
 	/* check_unreached = 0; */
 	cb_end_statement();
   }
-  _dot_or_else_area_a
+  _dot_or_else_area_a		/* Area A check is in _procedure_list */
 | invalid_statement %prec SHIFT_PREFER
 | TOK_DOT
   {
@@ -10433,7 +10473,7 @@ procedure:
 /* Section/Paragraph */
 
 section_header:
-  WORD _area_a SECTION		/* adhoc Area A token */
+  WORD SECTION
   {
 	non_const_word = 0;
 	check_unreached = 0;
@@ -10462,6 +10502,8 @@ section_header:
 					"FALL THROUGH", NULL));
 		}
 	}
+
+	check_area_a ($1);	/* is $1 in Area A? */
 
 	/* Begin a new section */
 	current_section = CB_LABEL (cb_build_label ($1, NULL));
@@ -10509,6 +10551,8 @@ paragraph_header:
 		}
 	}
 
+	check_area_a ($1);	/* is $1 in Area A? */
+
 	/* Begin a new paragraph */
 	if (!current_section) {
 		label = cb_build_reference ("MAIN SECTION");
@@ -10536,6 +10580,8 @@ invalid_statement:
 	non_const_word = 0;
 	check_unreached = 0;
 	if (cb_build_section_name ($1, 0) != cb_error_node) {
+		check_non_area_a ($1); /* CHECKME: $1 should not be in Area A if
+					  it's a statement, right? */
 		if (is_reserved_word (CB_NAME ($1))) {
 			cb_error_x ($1, _("'%s' is not a statement"), CB_NAME ($1));
 		} else if (is_default_reserved_word (CB_NAME ($1))) {

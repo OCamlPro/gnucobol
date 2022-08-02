@@ -155,6 +155,7 @@ static size_t			plex_size;
 static size_t			pic1_size;
 static size_t			pic2_size;
 static unsigned int		last_token_is_dot = 0;
+static unsigned int		last_token_is_area_a = 0;
 static unsigned int		integer_is_label = 0;
 static unsigned int		inside_bracket = 0;
 static char			err_msg[COB_MINI_BUFF];
@@ -206,6 +207,9 @@ AREA_A		\n"#AREA_A"\n
 	if (last_token_is_dot) {
 		integer_is_label = 1;
 		last_token_is_dot = 0;
+	} else if (last_token_is_area_a) {
+		integer_is_label = 1;
+		last_token_is_area_a = 0;
 	} else {
 		integer_is_label = 0;
 	}
@@ -306,22 +310,17 @@ AREA_A		\n"#AREA_A"\n
 	}
 }
 
-<*>{AREA_A}[[:space:]]*/[^[:alnum:][:space:]#] {
-	/* We exclude the `#` from the trail to avoid considering a subsequent
-	   `#line` as a punctuation.  Another alternative may be to add a
-	   mandatory space at the end of the pattern, as pre-processed lines are
-	   usually (?) prefixed with a space (does this hold for every source
-	   format?). */
-	/* <*>\n"#AREA_A"[[:space:]]*[ ]/[^[:alnum:][:space:]] { */
+<*>^{AREA_A}[ ]*/"." {
 	count_lines (yytext + 9); /* skip "\n#area_a\n" */
 	if (cobc_in_procedure) {
-		(void) cb_verify (cb_loose_area_a, _("punctuation in Area A"));
+		(void) cb_verify (cb_non_word_in_area_a,
+				  _("punctuation in Area A"));
 	}
 }
 
-<*>{AREA_A} {
+<*>^{AREA_A} {
 	if (cobc_in_procedure) {
-		last_token_is_dot = 1; /* always assume we've just seen a dot. */
+		last_token_is_area_a = 1;
 		return TOK_AREA_A;
 	}
 }
@@ -1108,9 +1107,7 @@ H#[0-9A-Za-z]+ {
 	RETURN_TOK (EXPONENTIATION);
 }
 
-"."(([ \n]|{AREA_A})*".")* {
-	/* Additional Area A markers need to be consumed here due to
-	   COPY/REPLACE statements starting in Area A. */
+"."([ \n]*".")* {
 	if (last_token_is_dot || strlen (yytext) > 1) {
 		cb_warning (COBC_WARN_FILLER, _("ignoring redundant ."));
 	}
@@ -1241,6 +1238,7 @@ H#[0-9A-Za-z]+ {
 	}
 	top_78_ptr = NULL;
 	last_token_is_dot = 0;
+	last_token_is_area_a = 0;
 	integer_is_label = 0;
 	inside_bracket = 0;
 	lev_78_ptr = NULL;
@@ -1450,7 +1448,7 @@ scan_x (const char *text, const char *type)
 			yylval = cb_build_numeric_literal (0, "0", 0);
 			RETURN_TOK (LITERAL);
 		}
-		
+
 		/* GnuCOBOL currently only support 64 bit booleans */
 		if (unlikely (result_len > 64)) {
 			snprintf (err_msg, COB_MINI_MAX,
