@@ -1580,6 +1580,7 @@ cb_build_generic_register (const char *name, const char *external_definition,
 	ret = 0;
 	field = CB_FIELD (cb_build_field (cb_build_reference (name)));
 	field->flag_is_global = (p != NULL);		/* any GLOBAL found ? */
+	field->level = 77;
 
 	/* handle USAGE */
 	p = strstr (definition, "USAGE ");
@@ -1588,7 +1589,7 @@ cb_build_generic_register (const char *name, const char *external_definition,
 		memset (p, ' ', 5);
 		p += 6;
 		word_len = extract_next_word_from_buffer (p, word);
-		if (word_len == 7 && memcmp (word, "DISPLAY", 7)) {
+		if (word_len == 7 && memcmp (word, "DISPLAY", 7) == 0) {
 			usage = CB_USAGE_DISPLAY;
 		} else {
 			/* FIXME: parse actual USAGE from word */
@@ -1616,13 +1617,33 @@ cb_build_generic_register (const char *name, const char *external_definition,
 		}
 	}
 	if (p) {
+		const enum cb_warn_val backup = cb_warn_opt_val[cb_warn_unfinished];
 		(void)extract_next_word_from_buffer (p, word);
+		cb_warn_opt_val[cb_warn_unfinished] = COBC_WARN_DISABLED;
 		field->pic = cb_build_picture (word);
+		cb_warn_opt_val[cb_warn_unfinished] = backup;
 		if (field->pic->size == 0) {
 			ret = 1;
 		}
 	}
 	/* CHECKME: Is PIC calculated from VALUE later on if empty? */
+	
+	/* handle ANY LENGTH / ANY NUMERIC (automatic: read-only) */
+	p = strstr (definition, "ANY ");
+	if (p) {
+		field->storage = CB_STORAGE_LINKAGE;
+		field->level = 01;
+		word_len = extract_next_word_from_buffer (p + 4, word);
+		if (word_len == 6 && memcmp (word, "LENGTH", 6) == 0) {
+			memset (p, ' ', 3);
+			field->flag_any_length = 1;
+		} else
+		if (word_len == 7 && memcmp (word, "NUMERIC", 7) == 0) {
+			memset (p, ' ', 3);
+			field->flag_any_length = 1;
+			field->flag_any_numeric = 1;
+		}
+	}
 
 	/* handle VALUE */
 	p = strstr (definition, "VALUE ");
@@ -1748,12 +1769,14 @@ cb_build_generic_register (const char *name, const char *external_definition,
 		field->flag_invalid = 1;
 	} else
 	if (current_program) {
+		const enum cb_warn_val backup = cb_warn_opt_val[cb_warn_unfinished];
 		/* note: the necessary tree items like cb_zero won't be available
 		   without a program, and therefore full validation is not possible */
 		field->flag_internal_register = 1;
-		field->level = 77;
 		field->flag_no_init = 1;
+		cb_warn_opt_val[cb_warn_unfinished] = COBC_WARN_DISABLED;
 		cb_validate_field (field);
+		cb_warn_opt_val[cb_warn_unfinished] = backup;
 	}
 
 	if (field->flag_invalid) {
@@ -1761,7 +1784,14 @@ cb_build_generic_register (const char *name, const char *external_definition,
 	}
 
 	if (current_program) {
-		CB_FIELD_ADD (current_program->working_storage, field);
+		if (field->storage == CB_STORAGE_LINKAGE) {
+			CB_FIELD_ADD (current_program->linkage_storage, field);
+		} else
+		if (field->storage == CB_STORAGE_LOCAL) {
+			CB_FIELD_ADD (current_program->local_storage, field);
+		} else {
+			CB_FIELD_ADD (current_program->working_storage, field);
+		}
 	} else if (field->flag_is_global) {
 		add_to_register_list (&external_defined_fields_global, name, external_definition);
 	} else {
@@ -1774,22 +1804,22 @@ cb_build_generic_register (const char *name, const char *external_definition,
 	return 0;
 }
 
-static void
-cb_build_register_xml_code (const char *name, const char *definition)
+static cb_tree
+cb_build_register_internal_code (const char* name, const char* definition)
 {
 	cb_tree tfield;
 	struct cb_field *field;
 
+	/* take care of GLOBAL */
+	if (current_program->nested_level) {
+		return NULL;
+	}
+
 	if (!definition) {
 		definition = cb_get_register_definition (name);
 		if (!definition) {
-			return;
+			return NULL;
 		}
-	}
-
-	/* take care of GLOBAL */
-	if (current_program->nested_level) {
-		return;
 	}
 
 	tfield = cb_build_field (cb_build_reference (name));
@@ -1802,39 +1832,8 @@ cb_build_register_xml_code (const char *name, const char *definition)
 	field->flag_is_global = 1;
 	field->flag_internal_register = 1;
 	field->level = 77;
-	current_program->xml_code = tfield;
-}
 
-/* TO-DO: Duplication! */
-static void
-cb_build_register_json_code (const char *name, const char *definition)
-{
-	cb_tree tfield;
-	struct cb_field *field;
-
-	if (!definition) {
-		definition = cb_get_register_definition (name);
-		if (!definition) {
-			return;
-		}
-	}
-
-	/* take care of GLOBAL */
-	if (current_program->nested_level) {
-		return;
-	}
-
-	tfield = cb_build_field (cb_build_reference (name));
-	field = CB_FIELD (tfield);
-	field->usage = CB_USAGE_BINARY;
-	field->pic = cb_build_picture ("S9(9)");
-	cb_validate_field (field);
-	field->values = CB_LIST_INIT (cb_zero);
-	field->flag_no_init = 1;
-	field->flag_is_global = 1;
-	field->flag_internal_register = 1;
-	field->level = 77;
-	current_program->json_code = tfield;
+	return tfield;
 }
 
 
@@ -1855,10 +1854,6 @@ cb_build_single_register (const char *name, const char *definition)
 	}
 
 	/* registers that need a special handling / internal registration */
-	if (!cb_strcasecmp (name, "JSON-CODE")) {
-		cb_build_register_json_code (name, definition);
-		return;
-	}
 	if (!cb_strcasecmp (name, "RETURN-CODE")) {
 		cb_build_register_return_code (name, definition);
 		return;
@@ -1876,7 +1871,87 @@ cb_build_single_register (const char *name, const char *definition)
 		return;
 	}
 	if (!cb_strcasecmp (name, "XML-CODE")) {
-		cb_build_register_xml_code (name, definition);
+		cb_tree tfield = cb_build_register_internal_code (name, definition);
+		if (tfield) {
+			current_program->xml_code = tfield;
+		}
+		return;
+	}
+	if (!cb_strcasecmp (name, "XML-EVENT")) {
+		struct cb_field *field = NULL;
+		cb_build_generic_register (name, definition, &field);
+		if (field) {
+			current_program->xml_event = CB_TREE (field);
+		}
+		return;
+	}
+	if (!cb_strcasecmp (name, "XML-INFORMATION")) {
+		cb_tree tfield = cb_build_register_internal_code (name, definition);
+		if (tfield) {
+			current_program->xml_information = tfield;
+		}
+		return;
+	}
+	if (!cb_strcasecmp (name, "XML-TEXT")) {
+		struct cb_field *field = NULL;
+		cb_build_generic_register (name, definition, &field);
+		if (field) {
+			current_program->xml_text = CB_TREE (field);
+		}
+		return;
+	}
+	if (!cb_strcasecmp (name, "XML-NTEXT")) {
+		struct cb_field *field = NULL;
+		cb_build_generic_register (name, definition, &field);
+		if (field) {
+			current_program->xml_ntext = CB_TREE (field);
+		}
+		return;
+	}
+	if (!cb_strcasecmp (name, "XML-NAMESPACE")) {
+		struct cb_field *field = NULL;
+		cb_build_generic_register (name, definition, &field);
+		if (field) {
+			current_program->xml_namespace = CB_TREE (field);
+		}
+		return;
+	}
+	if (!cb_strcasecmp (name, "XML-NNAMESPACE")) {
+		struct cb_field *field = NULL;
+		cb_build_generic_register (name, definition, &field);
+		if (field) {
+			current_program->xml_nnamespace = CB_TREE (field);
+		}
+		return;
+	}
+	if (!cb_strcasecmp (name, "XML-NAMESPACE-PREFIX")) {
+		struct cb_field *field = NULL;
+		cb_build_generic_register (name, definition, &field);
+		if (field) {
+			current_program->xml_namespace_prefix = CB_TREE (field);
+		}
+		return;
+	}
+	if (!cb_strcasecmp (name, "XML-NNAMESPACE-PREFIX")) {
+		struct cb_field *field = NULL;
+		cb_build_generic_register (name, definition, &field);
+		if (field) {
+			current_program->xml_nnamespace_prefix = CB_TREE (field);
+		}
+		return;
+	}
+	if (!cb_strcasecmp (name, "JSON-CODE")) {
+		cb_tree tfield = cb_build_register_internal_code (name, definition);
+		if (tfield) {
+			current_program->json_code = tfield;
+		}
+		return;
+	}
+	if (!cb_strcasecmp (name, "JSON-STATUS")) {
+		cb_tree tfield = cb_build_register_internal_code (name, definition);
+		if (tfield) {
+			current_program->json_status = tfield;
+		}
 		return;
 	}
 
@@ -4926,7 +5001,8 @@ cb_validate_program_body (struct cb_program *prog)
 			/* only check fields with ANY LENGTH;
 			   RETURNING is already a valid reference */
 			if (!f->flag_any_length
-			 || f->flag_is_returning) {
+			  || f->flag_internal_register
+			  || f->flag_is_returning) {
 				continue;
 			}
 
@@ -4965,9 +5041,11 @@ cb_validate_program_body (struct cb_program *prog)
 		for (v = prog->entry_list; v; v = CB_CHAIN (v)) {
 			for (f = prog->linkage_storage; f; f = f->sister) {
 
-				/* ignore RETURNING fields and fields that REDEFINES */
+				/* ignore RETURNING fields, fields that REDEFINES
+				   and internal registers */
 				if (f == ret_fld
-				 || f->redefines) {
+				 || f->redefines
+				 || f->flag_internal_register) {
 					continue;
 				}
 
@@ -4984,7 +5062,7 @@ cb_validate_program_body (struct cb_program *prog)
 					continue;
 				}
 
-				/* check if field or its cildren have any actual reference,
+				/* check if field or its children have any actual reference,
 				   otherwise the warning is useless */
 				if (has_sub_reference(f)) {
 					cb_warning_x (cb_warn_linkage, CB_TREE (f),
@@ -12014,8 +12092,8 @@ error_if_invalid_file_from_clause_literal (cb_tree literal)
 	}
 
 	if (!(category == CB_CATEGORY_ALPHANUMERIC
-	      || category == CB_CATEGORY_NATIONAL
-	      || category == CB_CATEGORY_BOOLEAN)) {
+	   || category == CB_CATEGORY_NATIONAL
+	   || category == CB_CATEGORY_BOOLEAN)) {
 		cb_error_x (literal, _("literal in FROM clause must be alphanumeric, national or boolean"));
 		return 1;
 	}
@@ -12865,8 +12943,8 @@ cb_emit_sort_using (cb_tree file, cb_tree l)
 void
 cb_emit_sort_input (cb_tree proc)
 {
-	if (current_program->flag_debugging &&
-	    !current_statement->flag_in_debug) {
+	if (current_program->flag_debugging
+	 && !current_statement->flag_in_debug) {
 		cb_emit (cb_build_debug (cb_debug_contents, "SORT INPUT", NULL));
 	}
 	cb_emit (cb_build_perform_once (proc));
@@ -14204,6 +14282,37 @@ cb_emit_xml_generate (cb_tree out, cb_tree from, cb_tree count,
 		cb_emit (CB_BUILD_FUNCALL_7 ("cob_xml_generate_new", out, CB_TREE (tree),
 					     count, cb_int (with_xml_dec),
 					     NULL, NULL, cb_int (decimal_point)));
+	}
+}
+
+void
+cb_emit_xml_parse (cb_tree data, cb_tree proc,
+		      const int returning_national,
+		      cb_tree encoding, cb_tree validation)
+{
+	cb_tree ref;
+
+#ifndef WITH_XML2
+	if (!warn_xml_done) {
+		warn_xml_done = 1;
+		cb_warning (cb_warn_unsupported,
+			_("runtime is not configured to support %s"), "XML");
+	}
+#endif
+#if 0	/* TODO: more syntax checks */
+	if (syntax_check_ml_generate (out, from, count, encoding,
+						namespace_and_prefix, name_list,
+						type_list, suppress_list, 1)) {
+		return;
+	}
+#endif
+	ref = cb_ref (data);
+	if (CB_FIELD_P (ref)) {
+		struct cb_field * field = CB_FIELD (ref);
+		/* type checks here */
+		cb_emit (cb_build_xml_parse (data, proc, returning_national,
+			encoding, validation));
+	} else {
 	}
 }
 

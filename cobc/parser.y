@@ -3170,6 +3170,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token X
 %token XML
 %token XML_DECLARATION		"XML-DECLARATION"
+%token XML_SCHEMA		"XML-SCHEMA"
 %token Y
 %token YYYYDDD
 %token YYYYMMDD
@@ -4181,6 +4182,7 @@ special_names_header:
 	if (current_program->nested_level) {
 		cb_error (_("%s not allowed in nested programs"), "SPECIAL-NAMES");
 	}
+	cobc_cs_check = CB_CS_SPECIAL_NAMES;
   }
 ;
 
@@ -4204,6 +4206,7 @@ special_name:
 | class_name_clause
 | currency_sign_clause
 | decimal_point_clause
+| xml_schema_clause
 | numeric_sign_clause
 | cursor_clause
 | crt_status_clause
@@ -4739,6 +4742,49 @@ locale_clause:
 			current_program->locale_list =
 				cb_list_add (current_program->locale_list, l);
 		}
+	}
+  }
+;
+
+/* XML-SCHEMA clause */
+
+xml_schema_clause:
+  XML_SCHEMA undefined_word
+  {
+	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION,
+			       COBC_HD_CONFIGURATION_SECTION,
+			       COBC_HD_SPECIAL_NAMES, 0);
+	if (current_program->nested_level) {
+		cb_error (_("%s not allowed in nested programs"), "SPECIAL-NAMES");
+		$$ = NULL;
+	} else {
+		/* Returns null on error */
+		$$ = cb_build_schema_name ($2);
+	}
+  }
+  schema_definition
+  {
+	if ($3) {
+		current_program->schema_name_list =
+			cb_list_add (current_program->schema_name_list, $3);
+	}
+	cobc_cs_check = 0;
+  }
+;
+
+schema_definition:
+  literal
+  {
+	$$ = $0;
+	if ($0) {
+		CB_SCHEMA_NAME ($0)->data = (const char *) CB_LITERAL ($1)->data;
+	}
+  }
+| WORD
+  {
+	$$ = $0;
+	if ($0) {
+		CB_SCHEMA_NAME ($0)->data = CB_REFERENCE ($1)->word->name;
 	}
   }
 ;
@@ -13978,6 +14024,7 @@ json_generate_statement:
 	begin_statement ("JSON GENERATE", TERM_JSON);
 	cobc_in_json_generate_body = 1;
 	cobc_cs_check = CB_CS_JSON_GENERATE;
+	cobc_xref_set_receiving (current_program->json_code);
   }
   json_generate_body
   _end_json
@@ -14037,6 +14084,8 @@ json_parse_statement:
   {
 	begin_statement ("JSON PARSE", TERM_JSON);
 	CB_PENDING ("JSON PARSE");
+	cobc_xref_set_receiving (current_program->json_code);
+	cobc_xref_set_receiving (current_program->json_status);
   }
   json_parse_body
   _end_json
@@ -14417,8 +14466,9 @@ _perform_option:
 	if (!$3) {
 		$$ = cb_build_perform_forever (NULL);
 	} else {
-		if ($1 == CB_AFTER)
-			cb_build_perform_after_until();
+		if ($1 == CB_AFTER) {
+			cb_build_perform_after_until ();
+		}
 		varying = CB_LIST_INIT (cb_build_perform_varying (NULL, NULL, NULL, $3));
 		$$ = cb_build_perform_until ($1, varying);
 	}
@@ -16315,6 +16365,7 @@ xml_generate_statement:
 	begin_statement ("XML GENERATE", TERM_XML);
 	cobc_in_xml_generate_body = 1;
 	cobc_cs_check = CB_CS_XML_GENERATE;
+	cobc_xref_set_receiving (current_program->xml_code);
   }
   xml_generate_body
   _end_xml
@@ -16600,9 +16651,19 @@ xml_parse_statement:
   XML PARSE
   {
 	begin_statement ("XML PARSE", TERM_XML);
-	/* TO-DO: Add xml-parse and xml-parse-extra-phrases config options. */
 	CB_PENDING ("XML PARSE");
 	cobc_cs_check = CB_CS_XML_PARSE;
+	cobc_xref_set_receiving (current_program->xml_code);
+	cobc_xref_set_receiving (current_program->xml_event);
+	cobc_xref_set_receiving (current_program->xml_text);
+	cobc_xref_set_receiving (current_program->xml_ntext);
+	if (cb_xml_parse_xmlss) {
+		cobc_xref_set_receiving (current_program->xml_information);
+		cobc_xref_set_receiving (current_program->xml_namespace);
+		cobc_xref_set_receiving (current_program->xml_namespace_prefix);
+		cobc_xref_set_receiving (current_program->xml_nnamespace);
+		cobc_xref_set_receiving (current_program->xml_nnamespace_prefix);
+	}
   }
   xml_parse_body
   _end_xml
@@ -16615,34 +16676,48 @@ xml_parse_body:
   _validating_with
   PROCESSING PROCEDURE _is perform_procedure
   {
+	if (($2 || $3 || $4) && !cb_xml_parse_xmlss) {
+		cb_verify_x (CB_TREE (current_statement),
+			CB_ERROR, "XML PARSE XMLSS");
+	}
 	cobc_cs_check = 0;
   }
   _common_exception_phrases
+  {
+	cb_emit_xml_parse ($1, $8, $3 == cb_true, $2, $4);
+  }
 ;
 
 _with_encoding:
 /* empty */
+  {
+	$$ = NULL;
+  }
 | _with ENCODING simple_value
+  {
+	CB_PENDING ("XML PARSE ENCODING");
+	$$ = $3;
+  }
 ;
 
 _returning_national:
-/* empty */
-| RETURNING NATIONAL
+/* empty */				{ $$ = NULL; }
+| RETURNING NATIONAL	{ $$ = cb_true; }
 ;
 
 _validating_with:
-/* empty */
-| VALIDATING _with schema_file_or_record_name
+/* empty */	{ $$ = NULL; }
+| VALIDATING _with schema_file_or_record_name { $$ = $3; }
 ;
 
 schema_file_or_record_name:
   record_name
 | TOK_FILE WORD
   {
-	if (CB_FILE_P (cb_ref ($2))) {
+	if (CB_SCHEMA_NAME_P (cb_ref ($2))) {
 		$$ = $2;
 	} else {
-		cb_error_x ($2, _("'%s' is not a file name"), CB_NAME ($2));
+		cb_error_x ($2, _("'%s' is not a schema name"), CB_NAME ($2));
 		$$ = cb_error_node;
 	}
   }
