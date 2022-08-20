@@ -1,4 +1,12 @@
 
+2022-08-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* pplex.l: match and ignore editor folding $REGION statement
+	* pplex.l: output actual directive for @OPTIONS and PROCESS
+	* pplex.l: *CONTROL from col7+
+	* pparse.y: don't warn on *CONTROL as this adjust listing only
+	  and does not apply directly (possibly real handling later)
+
 2022-07-29  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* flag.def, config.def: make format a dialect option instead of a flag
@@ -4653,7 +4661,7 @@
 	* tree.h:  new field flag_unbounded for OCCURS ... TO UNBOUNDED
 	* cobc.h: added CB_CS_OCCURS
 	* reserved.c: added UNBOUNDED as context sensitive reserved word for OCCURS
-	* parser.y: added token UNBOUNDED and first attemt for adding
+	* parser.y: added token UNBOUNDED and first attemt to add
 	  OCCURS ... TO UNBOUNDED in the parser
 
 2016-08-13  Simon Sobisch <simonsobisch@gnu.org>
