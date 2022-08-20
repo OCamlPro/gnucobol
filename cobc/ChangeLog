@@ -7,6 +7,29 @@
 	* pparse.y: don't warn on *CONTROL as this adjust listing only
 	  and does not apply directly (possibly real handling later)
 
+2022-08-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* field.c (validate_any_length_item): don't enforce codegen for
+	  unused ANY LENGTH items
+	* parser.y, cobc.c (cobc_xref_set_receiving): set XML and JSON
+	  registers to be receiving items in XML and JSON statements
+	  and to increment their used counter
+	* cobc.c, codegen.c (has_field_to_dump): only output symbol and
+	  xref headers as well as dump comments if there are actual
+	  generated fields
+
+2022-08-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (create_field): extracted from (output_param)
+	* parser.y, codegen.c ,tree.c, tree.h: added codegen for XML PARSE
+	* reserved.c, config.h, parser.y, tree.h, cobc.c: added parsing
+	  for XML-SCHEMA clause in SPECIAL NAMES
+	* typeck.c: adjust for generation of ANY LENGTH registers (only to be
+	  set in the runtime)
+	* reserved.c, typeck.c: added all XML and JSON registers
+	* config.def, parser.y, codegen.c: added cb_xml_parse_xmlss, passed
+	  to runtime as module->xml_mode
+
 2022-07-29  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* flag.def, config.def: make format a dialect option instead of a flag
