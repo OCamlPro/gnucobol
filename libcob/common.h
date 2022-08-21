@@ -1217,14 +1217,8 @@ typedef struct __cob_module {
 #endif
 #define COB_MODULE_TRACE	2
 #define COB_MODULE_TRACEALL	4
-	unsigned char		xml_mode;		/* Mode to handle XML PARSE (may be extended) */
-#define COB_XML_XMLNSS		1			/* similar to XMLPARSE(XMLNSS) Micro Focus,
-											   IBM may be different (_very_ likely for error codes);
-											   but the main difference is to "COMPAT" */
 
-#if 0
-	unsigned char		unused[4];		/* Use these flags up later, added for alignment */
-#endif
+	unsigned char		unused[1];		/* Use these flags up later, added for alignment */
 
 	unsigned int		module_stmt;		/* Last statement executed as modulated source line
 											   and index to module_sources for source file */
@@ -1244,6 +1238,12 @@ typedef struct __cob_module {
 	cob_field		*json_status;		/* JSON-STATUS */
 
 	const char	*gc_version;	/* module version, until 3.1.2: set by cob_check_version */
+
+	unsigned char		xml_mode;		/* Mode to handle XML PARSE (may be extended) */
+#define COB_XML_XMLNSS		1			/* similar to XMLPARSE(XMLNSS) Micro Focus,
+											   IBM may be different (_very_ likely for error codes);
+											   but the main difference is to "COMPAT" */
+
 } cob_module;
 
 
