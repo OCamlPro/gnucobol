@@ -2372,7 +2372,8 @@ start:
 		if (in_area_a) {
 			/* (*area-a*): prepend special marker `#', indicating
 			   the current non-continuation line starts in area A
-			   (see ^[ ]?#/... lexer rule above).
+			   (see "AREA_A" and "MAYBE_AREA_A"... in lexer rules
+			   above).
 
 			   Assumes `buff' is large enough for one extra char. */
 			memmove (buff + 1, buff, gotcr + 1);
