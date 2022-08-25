@@ -1854,6 +1854,9 @@ static struct cobc_reserved default_reserved_words[] = {
   { "MEDIUM-FONT",		0, 0, MEDIUM_FONT,		/* ACU extension */
 				0, 0				/* Checkme: likely context sensitive */
   },
+  { "MEMBER",			0, 0, MEMBER,			/* GCOS extension */
+				0, 0
+  },
   { "MEMORY",			0, 1, MEMORY,			/* 85 */
 				0, CB_CS_OBJECT_COMPUTER
   },

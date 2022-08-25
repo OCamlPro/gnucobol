@@ -2248,6 +2248,9 @@ extern void		cb_emit_allocate_characters (cb_tree, cb_tree, cb_tree);
 extern void		cb_emit_alter (cb_tree, cb_tree);
 extern void		cb_emit_free (cb_tree);
 
+extern void		cb_emit_assign_to_file (cb_tree, cb_tree);
+extern void		cb_emit_assign_to_member (cb_tree, cb_tree, cb_tree);
+
 extern void		cb_emit_call (cb_tree, cb_tree, cb_tree, cb_tree,
 				      cb_tree, cb_tree, cb_tree, cb_tree, int);
 

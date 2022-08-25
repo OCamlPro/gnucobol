@@ -2724,6 +2724,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token MAX_PROGRESS		"MAX-PROGRESS"
 %token MAX_TEXT			"MAX-TEXT"
 %token MAX_VAL			"MAX-VAL"
+%token MEMBER
 %token MEMORY
 %token MEDIUM_FONT			"MEDIUM-FONT"
 %token MENU
@@ -3196,6 +3197,7 @@ set_record_size (cb_tree min, cb_tree max)
 %nonassoc ADD
 %nonassoc ALLOCATE
 %nonassoc ALTER
+%nonassoc ASSIGN
 %nonassoc CALL
 %nonassoc CANCEL
 %nonassoc CLOSE
@@ -10758,6 +10760,7 @@ statement:
 | add_statement
 | allocate_statement
 | alter_statement
+| assign_statement
 | call_statement
 | cancel_statement
 | close_statement
@@ -11577,6 +11580,56 @@ alter_entry:
 ;
 
 _proceed_to:	| PROCEED TO ;
+
+
+/* ASSIGN statement */
+
+assign_statement:
+  ASSIGN
+  {
+	begin_statement ("ASSIGN", TERM_NONE);
+	cb_verify (cb_assign_statement, _("ASSIGN statement"));
+  }
+  assign_body
+;
+
+assign_body:
+  file_name TO TOK_FILE id_or_lit_or_file_name
+  {
+	cb_emit_assign_to_file ($1, $4);
+  }
+
+| file_name TO MEMBER assign_op id_or_lit_or_actual
+  {
+	cb_emit_assign_to_member ($1, $4, $5);
+  }
+;
+
+assign_op:
+  eq			{ $$ = cb_int (COB_EQ); }
+| not_equal_op		{ $$ = cb_int (COB_NE); }
+| _flag_not gt		{ $$ = cb_int ($1 ? COB_LE : COB_GT); }
+| _flag_not lt		{ $$ = cb_int ($1 ? COB_GE : COB_LT); }
+| _flag_not ge		{ $$ = cb_int ($1 ? COB_LT : COB_GE); }
+| _flag_not le		{ $$ = cb_int ($1 ? COB_GT : COB_LE); }
+;
+
+id_or_lit_or_actual:
+  identifier
+  {
+	$$ = check_not_88_level ($1);
+  }
+| LITERAL
+| ACTUAL
+;
+
+id_or_lit_or_file_name:
+  identifier_or_file_name
+  {
+	$$ = check_not_88_level ($1);
+  }
+| LITERAL
+;
 
 
 /* CALL statement */

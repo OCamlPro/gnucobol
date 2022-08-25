@@ -2,6 +2,7 @@
 2022-08-02  David Declerck <david.declerck@ocamlpro.com>
 
 	Support GCOS-specific SELECT
+	Support ASSIGN statements (GCOS extension)
 	* config.def: add options interpret-assign-literal, select-external,
 	  select-extra-organization-clauses, select-with
 	* tree.h, typeck.c (cb_build_interpreted_assignment_name,
@@ -14,6 +15,10 @@
 	  organization clauses
 	* codegen.c (output_file_initialization): record default file
 	  assignment
+	* config.def: add option assign-statement
+	* reserved.c: reserved MEMBER keyword
+	* typeck.c (cb_emit_assign_to_file, cb_emit_assign_to_member),
+	  tree.h, parser.y: support ASSIGN statements
 
 2022-08-20  Simon Sobisch <simonsobisch@gnu.org>
 

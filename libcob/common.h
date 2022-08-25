@@ -1283,6 +1283,14 @@ typedef struct __cob_file_key {
 
 /* File structure */
 
+/* Assignment status, checked and set by ASSIGN statements */
+enum cob_assign_status {
+	COB_ASSIGN_UNASSIGNED = 0,
+	COB_ASSIGN_FAILED,
+	COB_ASSIGN_ASSIGNED,
+	COB_ASSIGN_RESOLVED,
+};
+
 /*NOTE: *** Add new fields to end  ***
  *       cob_file is now allocated by cob_file_malloc in common.c
  *       so as long as you add new fields to the end there should be no
@@ -1328,7 +1336,8 @@ typedef struct __cob_file {
 
 	struct __fcd3		*fcd;			/* FCD created via SET ... TO ADDRESS OF FH--FCD */
 	const char		*assign_default;	/* [GCOS] External filename to use if file mapping fails  */
-
+	const char		*assign_current;	/* [GCOS] Currently assigned external filename  */
+	enum cob_assign_status	assign_status;		/* [GCOS] Current assignment status */
 } cob_file;
 
 
@@ -2472,6 +2481,8 @@ COB_EXPIMP void cob_delete_file	(cob_file *, cob_field *);
 COB_EXPIMP void cob_unlock_file	(cob_file *, cob_field *);
 COB_EXPIMP void cob_commit	(void);
 COB_EXPIMP void cob_rollback	(void);
+
+COB_EXPIMP void cob_assign_to_file	(cob_file *, cob_field *, cob_file *);
 
 
 /* functions in fileio.c for the MF style EXTFH interface */

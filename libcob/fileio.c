@@ -993,7 +993,7 @@ do_acu_hyphen_translation (char *src)
 }
 
 static void
-cob_chk_file_mapping (cob_file *f)
+cob_chk_file_mapping_raw (cob_file *f)
 {
 	const char	*p;
 	const char	*src;
@@ -1148,6 +1148,44 @@ cob_chk_file_mapping (cob_file *f)
 			(size_t)COB_FILE_MAX);
 	}
 
+}
+
+static void
+cob_chk_file_mapping (cob_file *f)
+{
+	/* If there was no previous assignment, we perform regular file
+	   mapping */
+	if (!f || f->assign_status == COB_ASSIGN_UNASSIGNED) {
+		cob_chk_file_mapping_raw (f);
+	} else {	 /* Otherwise, there was a previous assignment [GCOS] */
+
+		/* If it failed, we return an invalid name */
+		if (f->assign_status == COB_ASSIGN_FAILED) {
+			file_open_name[0] = 0;
+
+		/* If it succeeded, we prepend the file path, if needed */
+		} else if ((f->assign_status == COB_ASSIGN_ASSIGNED) &&
+				!looks_absolute (file_open_name) &&
+				cobsetptr->cob_file_path != NULL) {
+			snprintf (file_open_buff, (size_t)COB_FILE_MAX, "%s%c%s",
+				cobsetptr->cob_file_path, SLASH_CHAR, file_open_name);
+			file_open_buff[COB_FILE_MAX] = 0;
+			strncpy (file_open_name, file_open_buff, (size_t)COB_FILE_MAX);
+		}
+
+		/* If the path was assigned, mark it resolved */
+		if (f->assign_status == COB_ASSIGN_ASSIGNED) {
+			f->assign_status = COB_ASSIGN_RESOLVED;
+		}
+
+		/* If the path is resolved and differs from the one
+		   stored in the file structure, update it */
+		if ((f->assign_status == COB_ASSIGN_RESOLVED) &&
+				(strcmp (f->assign_current, file_open_name) != 0)) {
+			cob_free((char *)f->assign_current);
+			f->assign_current = cob_strdup(file_open_name);
+		}
+	}
 }
 
 static void
@@ -5404,9 +5442,10 @@ cob_pre_open (cob_file *f)
 				break;
 			}
 		}
-	} else
-	if (f->assign != NULL
-	 && f->assign->data != NULL) {
+	} else if (f->assign_current != NULL) {
+		strncpy (file_open_name, f->assign_current, (size_t)COB_FILE_MAX);
+	} else if (f->assign != NULL
+	        && f->assign->data != NULL) {
 		cob_field_to_string (f->assign, file_open_name, (size_t)COB_FILE_MAX);
 	}
 }
@@ -6048,6 +6087,61 @@ cob_savekey (cob_file *f, int idx, unsigned char *data)
 		len += f->keys[idx].component[part]->size;
 	}
 	return len;
+}
+
+void
+cob_assign_to_file (cob_file *f, cob_field *tfield, cob_file *tfile)
+{
+	cob_field *fnstatus = NULL;
+
+	/* Must de-assign first, according to GCOS docs */
+	if (f->assign_current != NULL) {
+		cob_free ((char *)f->assign_current);
+		f->assign_current = NULL;
+	}
+	f->assign_status = COB_ASSIGN_UNASSIGNED;
+
+	/* File is already open */
+	if (f->open_mode != COB_OPEN_CLOSED) {
+		save_status (f, fnstatus, COB_STATUS_41_ALREADY_OPEN);
+		f->assign_status = COB_ASSIGN_FAILED;
+		return;
+	}
+
+	/* Target file is already open */
+	if ((tfile != NULL) && (tfile->open_mode != COB_OPEN_CLOSED)) {
+		save_status (tfile, fnstatus, COB_STATUS_41_ALREADY_OPEN);
+		f->assign_status = COB_ASSIGN_FAILED;
+		return;
+	}
+
+
+	if (tfield != NULL) {
+		char fn[(size_t)COB_FILE_MAX];
+		cob_field_to_string (tfield, fn, (size_t)COB_FILE_MAX);
+		f->assign_current = cob_strdup (fn);
+		/* TODO: should check the file literal is valid and fail if it
+		   is not */
+		f->assign_status = COB_ASSIGN_ASSIGNED;
+
+	} else if (tfile != NULL) {
+		if (tfile->assign_status == COB_ASSIGN_UNASSIGNED) {
+			if (tfile->assign != NULL && tfile->assign->data != NULL) {
+				cob_field_to_string (tfile->assign, file_open_name,
+							(size_t)COB_FILE_MAX);
+				cob_chk_file_mapping_raw (f); /* we use f instead of tfile */
+				f->assign_current = cob_strdup (file_open_name);
+				f->assign_status = COB_ASSIGN_ASSIGNED;
+			} else {
+				f->assign_status = COB_ASSIGN_FAILED;
+			}
+		} else if (tfile->assign_status == COB_ASSIGN_FAILED) {
+			f->assign_status = COB_ASSIGN_FAILED;
+		} else {
+			f->assign_current = cob_strdup (tfile->assign_current);
+			f->assign_status = tfile->assign_status;
+		}
+	}
 }
 
 /* System routines */

@@ -419,6 +419,9 @@ CB_CONFIG_SUPPORT (cb_assign_ext_dyn, "assign-ext-dyn",
 CB_CONFIG_SUPPORT (cb_assign_disk_from, "assign-disk-from",
 	_("ASSIGN DISK FROM variable in SELECT"))
 
+CB_CONFIG_SUPPORT (cb_assign_statement, "assign-statement",
+	_("ASSIGN statement"))
+
 CB_CONFIG_SUPPORT (cb_vsam_status, "vsam-status",
 	_("VSAM status in FILE STATUS"))
 		
