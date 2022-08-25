@@ -1,4 +1,20 @@
 
+2022-08-02  David Declerck <david.declerck@ocamlpro.com>
+
+	Support GCOS-specific SELECT
+	* config.def: add options interpret-assign-literal, select-external,
+	  select-extra-organization-clauses, select-with
+	* tree.h, typeck.c (cb_build_interpreted_assignment_name,
+	  is_valid_assign_filename): new functions to support tokenization and
+	  parsing of interpreted literals in ASSIGN clause
+	* parser.y: add support for interpreted literals for ASSIGN clause in
+	  SELECT, SELECT EXTERNAL, WITH clause (syntax only), and extra
+	  organization clauses (syntax only)
+	* reserved.c, scanner.l: add reserved keywords for WITH and
+	  organization clauses
+	* codegen.c (output_file_initialization): record default file
+	  assignment
+
 2022-02-20  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* scanner.l (read_literal): refactor to use `enum cb_literal_type`

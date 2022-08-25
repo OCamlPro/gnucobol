@@ -1,4 +1,10 @@
 
+2022-08-02  David Declerck <david.declerck@ocamlpro.com>
+
+	* general: add options interpret-assign-literal, select-external,
+	  select-extra-organization-clauses, select-with, to support
+	  GCOS-style SELECT
+
 2023-02-16  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* gcos.words: remove alias VALUES=VALUE, to correctly parse

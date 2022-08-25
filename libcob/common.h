@@ -1374,6 +1374,7 @@ typedef struct __cob_file {
 
 	struct __fcd3		*fcd;			/* FCD created via SET ... TO ADDRESS OF FH--FCD */
 
+
 	cob_s64_t			record_off;		/* Starting position of last record read/written
 	         			           		   (in 3.x: [LINE] SEQUENTIAL ONLY!) */
 	char				*org_filename;	/* Full concatenated file name */
@@ -1383,6 +1384,9 @@ typedef struct __cob_file {
 	const unsigned char* code_set_read;	/* CODE-SET conversion for READs */
 	size_t			nconvert_fields;	/* Number of logical fields to convert */
 	cob_field	*convert_field;		/* logical fields to convert for CODE-SET */
+
+	const char		*assign_default;	/* [GCOS] External filename to use if file mapping fails  */
+
 } cob_file;
 
 

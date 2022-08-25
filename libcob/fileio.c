@@ -1032,7 +1032,7 @@ cob_chk_file_env (const char *src)
 
 /* checks if 'src' containes a / or \ */
 static int
-has_directory_separator (char *src)
+has_directory_separator (const char *src)
 {
 	for (; *src; src++) {
 		if (*src == '/' || *src == '\\') {
@@ -1044,7 +1044,7 @@ has_directory_separator (char *src)
 
 /* checks if 'src' looks like starting with  name */
 static int
-looks_absolute (char *src)
+looks_absolute (const char * const src)
 {
 	/* no file path adjustment if filename is absolute
 	   because it begins with a slash (or win-disk-drive) */
@@ -1076,26 +1076,20 @@ has_acu_hyphen (char *src)
 static void
 do_acu_hyphen_translation (char *src)
 {
-	size_t len;
 	/* maybe store device type to "adjust locking rules" */
 	/* find first non-space and return it in the original storage  */
 	for (src = src + 3; *src && isspace ((cob_u8_t)*src); src++);
 
-	len = strlen (src);
-	if (len >= COB_FILE_MAX) {
-		len = COB_FILE_MAX;
-	}
-	memcpy (file_open_buff, src, len);
-	file_open_buff[len + 1] = 0;
-
+	strncpy (file_open_buff, src, (size_t)COB_FILE_MAX);
+	file_open_buff[COB_FILE_MAX] = 0;
 	strncpy (file_open_name, file_open_buff, (size_t)COB_FILE_MAX);
 }
 
 static void
-cob_chk_file_mapping (void)
+cob_chk_file_mapping (cob_file *f)
 {
-	char		*p;
-	char		*src;
+	const char	*p;
+	const char	*src;
 	char		*dst;
 	char		*saveptr;
 	char		*orig;
@@ -1125,7 +1119,10 @@ cob_chk_file_mapping (void)
 		/* Check for DD_xx, dd_xx, xx environment variables */
 		/* Note: ACU and Fujitsu would only check for xx */
 		/* If not found, use as is, possibly including the dollar character */
-		if ((p = cob_chk_file_env (src)) != NULL) {
+		if (((p = cob_chk_file_env (src)) != NULL)
+		    /* ASSIGN fallback: use the default name if not found via
+		       environment variables (GCOS extension) */
+		 || (f && (p = f->assign_default) != NULL)) {
 			strncpy (file_open_name, p, (size_t)COB_FILE_MAX);
 			/* Note: ACU specifies: "repeated until variable can't be resolved"
 			   we don't apply this and will not in the future
@@ -1154,6 +1151,8 @@ cob_chk_file_mapping (void)
 	/* Complex */
 
 	/* Note: ACU and Fujitsu would return the value back and stop here */
+	/* Note: on GCOS, we should not reach this point (no separator in
+	   internal filename) */
 
 	/* Isolate first element (everything before the slash) */
 	/* If it starts with a $, mark and skip over the $ */
@@ -1795,7 +1794,7 @@ cob_file_open (cob_file *f, char *filename,
 	ret = extfh_seqra_locate (f, filename);
 	switch (ret) {
 	case COB_NOT_CONFIGURED:
-		cob_chk_file_mapping ();
+		cob_chk_file_mapping (f);
 		errno = 0;
 		if (access (filename, F_OK) && errno == ENOENT) {
 			if (mode != COB_OPEN_OUTPUT && f->flag_optional == 0) {
@@ -1835,7 +1834,7 @@ cob_file_open (cob_file *f, char *filename,
 	/* Note filename points to file_open_name */
 	/* cob_chk_file_mapping manipulates file_open_name directly */
 
-	cob_chk_file_mapping ();
+	cob_chk_file_mapping (f);
 
 	nonexistent = 0;
 	errno = 0;
@@ -4128,7 +4127,7 @@ indexed_open (cob_file *f, char *filename,
 	ret = extfh_indexed_locate (f, filename);
 	switch (ret) {
 	case COB_NOT_CONFIGURED:
-		cob_chk_file_mapping ();
+		cob_chk_file_mapping (f);
 		errno = 0;
 		if (access (filename, F_OK) && errno == ENOENT) {
 			if (mode != COB_OPEN_OUTPUT && f->flag_optional == 0) {
@@ -4174,7 +4173,7 @@ indexed_open (cob_file *f, char *filename,
 
 	COB_UNUSED (sharing);
 
-	cob_chk_file_mapping ();
+	cob_chk_file_mapping (f);
 
 	if (mode == COB_OPEN_INPUT) {
 		checkvalue = R_OK;
@@ -4419,7 +4418,7 @@ dobuild:
 #endif
 		}
 	}
-	cob_chk_file_mapping ();
+	cob_chk_file_mapping (f);
 
 #if	0	/* RXWRXW - Access check BDB Human */
 	if (mode == COB_OPEN_INPUT) {
@@ -6861,7 +6860,7 @@ cob_delete_file (cob_file *f, cob_field *fnstatus)
 
 	/* Obtain the file name */
 	cob_field_to_string (f->assign, file_open_name, (size_t)COB_FILE_MAX);
-	cob_chk_file_mapping ();
+	cob_chk_file_mapping (f);
 
 	if (f->organization != COB_ORG_INDEXED) {
 #ifdef	WITH_SEQRA_EXTFH
@@ -7040,7 +7039,7 @@ open_cbl_file (unsigned char *file_name, unsigned char *file_access,
 		cob_free (fn);
 	}
 
-	cob_chk_file_mapping ();
+	cob_chk_file_mapping (NULL);
 
 	fd = open (file_open_name, flag, COB_FILE_MODE);
 	if (fd < 0) {
@@ -7246,7 +7245,7 @@ cob_sys_delete_file (unsigned char *file_name)
 		file_open_name[COB_FILE_MAX] = 0;
 		cob_free (fn);
 	}
-	cob_chk_file_mapping ();
+	cob_chk_file_mapping (NULL);
 
 	ret = unlink (file_open_name);
 	if (ret) {
@@ -7283,7 +7282,7 @@ cob_sys_copy_file (unsigned char *fname1, unsigned char *fname2)
 		file_open_name[COB_FILE_MAX] = 0;
 		cob_free (fn);
 	}
-	cob_chk_file_mapping ();
+	cob_chk_file_mapping (NULL);
 
 	flag |= O_RDONLY;
 	fd1 = open (file_open_name, flag, 0);
@@ -7297,7 +7296,7 @@ cob_sys_copy_file (unsigned char *fname1, unsigned char *fname2)
 		file_open_name[COB_FILE_MAX] = 0;
 		cob_free (fn);
 	}
-	cob_chk_file_mapping ();
+	cob_chk_file_mapping (NULL);
 
 	flag &= ~O_RDONLY;
 	flag |= O_CREAT | O_TRUNC | O_WRONLY;
@@ -7352,7 +7351,7 @@ cob_sys_check_file_exist (unsigned char *file_name, unsigned char *file_info)
 		strncpy (file_open_name, fn, (size_t)COB_FILE_MAX);
 		cob_free (fn);
 	}
-	cob_chk_file_mapping ();
+	cob_chk_file_mapping (NULL);
 
 	if (stat (file_open_name, &st) < 0) {
 		return 35;
@@ -7412,7 +7411,7 @@ cob_sys_rename_file (unsigned char *fname1, unsigned char *fname2)
 		file_open_name[COB_FILE_MAX] = 0;
 		cob_free (fn);
 	}
-	cob_chk_file_mapping ();
+	cob_chk_file_mapping (NULL);
 	strncpy (localbuff, file_open_name, (size_t)COB_FILE_MAX);
 	localbuff[COB_FILE_MAX] = 0;
 
@@ -7422,7 +7421,7 @@ cob_sys_rename_file (unsigned char *fname1, unsigned char *fname2)
 		file_open_name[COB_FILE_MAX] = 0;
 		cob_free (fn);
 	}
-	cob_chk_file_mapping ();
+	cob_chk_file_mapping (NULL);
 
 	ret = rename (localbuff, file_open_name);
 	if (ret) {
@@ -8437,7 +8436,7 @@ cob_get_filename_print (cob_file* file, const int show_resolved_name)
 	if (show_resolved_name) {
 		strncpy (file_open_name, file_open_env, (size_t)COB_FILE_MAX);
 		file_open_name[COB_FILE_MAX] = 0;
-		cob_chk_file_mapping ();
+		cob_chk_file_mapping (file);
 	}
 
 	len = strlen (file->select_name);
@@ -10020,7 +10019,7 @@ org_handling:
 					f->record_min = LDCOMPX4 (fcd->minRecLen);
 					f->record_max = LDCOMPX4 (fcd->maxRecLen);
 				}
-				cob_chk_file_mapping ();
+				cob_chk_file_mapping (f);
 #if 0	/* GC 4.x+ only */
 				f->organization = COB_ORG_MAX;	/* To Force file.dd to be processed */
 				sts = cob_read_dict (f, fname, 1);

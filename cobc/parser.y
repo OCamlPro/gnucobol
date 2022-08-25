@@ -2378,6 +2378,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token ALTER
 %token ALTERNATE
 %token AND
+%token ANSI			/* GCOS */
 %token ANY
 %token APPLY
 %token ARE
@@ -2387,6 +2388,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token ARGUMENT_VALUE		"ARGUMENT-VALUE"
 %token ARITHMETIC
 %token AS
+%token ASA			/* GCOS */
 %token ASCENDING
 %token ASCII
 %token ASSIGN
@@ -2441,6 +2443,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token BOTTOM
 %token BOX
 %token BOXED
+%token BSN			/* GCOS */
 %token BULK_ADDITION	"BULK-ADDITION"
 %token BUSY
 %token BUTTONS
@@ -2704,6 +2707,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token FLOAT_LONG		"FLOAT-LONG"
 %token FLOAT_SHORT		"FLOAT-SHORT"
 %token FLOATING
+%token FLR			/* GCOS */
 %token FONT
 %token FOOTING
 %token FOR
@@ -2951,6 +2955,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token OVERLAP_LEFT		"OVERLAP-LEFT"
 %token OVERLAP_TOP		"OVERLAP-TOP"
 %token OVERLINE
+%token OVERRIDING		/* GCOS */
 %token PACKED_DECIMAL		"PACKED-DECIMAL"
 %token PADDING
 %token PASCAL
@@ -3007,6 +3012,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token PUSH_BUTTON		"PUSH-BUTTON"
 %token QUERY_INDEX		"QUERY-INDEX"
 %token QUEUE
+%token QUEUED			/* GCOS */
 %token QUOTE
 %token RADIO_BUTTON		"RADIO-BUTTON"
 %token RAISE
@@ -3084,6 +3090,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token RUN
 %token S
 %token SAME
+%token SARF			/* GCOS */
 %token SAVE_AS			"SAVE-AS"
 %token SAVE_AS_NO_PROMPT	"SAVE-AS-NO-PROMPT"
 %token SCREEN
@@ -3139,6 +3146,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token SPECIAL_NAMES		"SPECIAL-NAMES"
 %token SPINNER
 %token SQUARE
+%token SSF			/* GCOS */
 %token STANDARD
 %token STANDARD_1		"STANDARD-1"
 %token STANDARD_2		"STANDARD-2"
@@ -3237,6 +3245,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token TYPEDEF
 %token U
 %token UCS_4		"UCS-4"
+%token UFF			/* GCOS */
 %token UNBOUNDED
 %token UNDERLINE
 %token UNFRAMED
@@ -3285,6 +3294,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token VERTICAL
 %token VERY_HEAVY		"VERY-HEAVY"
 %token VIRTUAL_WIDTH	"VIRTUAL-WIDTH"
+%token VLR			/* GCOS */
 %token VOLATILE
 %token VPADDING
 %token VSCROLL
@@ -5219,7 +5229,7 @@ _file_control_sequence:
 
 file_control_entry:
   SELECT { check_non_area_a ($1); }
-  flag_optional undefined_word
+   flag_external flag_optional undefined_word
   {
 	char	buff[COB_MINI_BUFF];
 
@@ -5227,10 +5237,10 @@ file_control_entry:
 			       COBC_HD_INPUT_OUTPUT_SECTION,
 			       COBC_HD_FILE_CONTROL, 0);
 	check_duplicate = 0;
-	if (CB_VALID_TREE ($4)) {
+	if (CB_VALID_TREE ($5)) {
 		/* Build new file */
-		current_file = build_file ($4);
-		current_file->optional = CB_INTEGER ($3)->val;
+		current_file = build_file ($5);
+		current_file->optional = CB_INTEGER ($4)->val;
 
 		/* Add file to current program list */
 		CB_ADD_TO_CHAIN (CB_TREE (current_file),
@@ -5245,6 +5255,12 @@ file_control_entry:
 
 	}
 	key_type = NO_KEY;
+
+	if ($3 && cb_verify (cb_select_external, "SELECT EXTERNAL")) {
+		/* (GCOS extension) */
+		current_file->flag_select_external = 1;
+		current_file->flag_external = 1;
+	}
   }
   _select_clauses_or_error
   {
@@ -5303,6 +5319,10 @@ select_clause:
 | track_area_clause
 | track_limit_clause
 | encryption_clause
+| with_clause
+  {
+	  (void) cb_verify (cb_select_with, _("WITH clause in SELECT"));
+  }
 /* FXIME: disabled because of shift/reduce conflict
   (optional in [alternate] record key, could be moved here
    if the suppress_clause goes here too and both entries verify that
@@ -5318,6 +5338,15 @@ select_clause:
 */
 ;
 
+with_clause:
+  ASA
+| SSF
+| SARF
+| FLR
+| VLR
+| BSN
+| OVERRIDING
+;
 
 /* ASSIGN clause */
 
@@ -5332,10 +5361,17 @@ assign_clause:
 		cb_error (_("EXTERNAL/DYNAMIC cannot be used with literals"));
 	}
 
-	current_file->assign_type = CB_ASSIGN_EXT_FILE_NAME_REQUIRED;
-	current_file->assign = cb_build_assignment_name (current_file, $5);
+	if (cb_interpret_assign_literal) {
+		/* current_file->assign_type is set by _ext_clause */
+		current_file->assign =
+			cb_build_interpreted_assignment_name (current_file, $5,
+							      &current_file->assign_default);
+	} else {
+		current_file->assign_type = CB_ASSIGN_EXT_FILE_NAME_REQUIRED;
+		current_file->assign = cb_build_assignment_name (current_file, $5);
+	}
   }
-| ASSIGN _to _ext_clause _assign_device_or_line_adv_file qualified_word
+| ASSIGN _to _ext_clause _assign_device_or_line_adv_file qualified_word _literal
   {
 	check_repeated ("ASSIGN", SYN_CLAUSE_1, &check_duplicate);
 
@@ -5343,7 +5379,15 @@ assign_clause:
 	if (!ext_dyn_specified) {
 		current_file->flag_assign_no_keyword = 1;
 	}
-	current_file->assign = cb_build_assignment_name (current_file, $5);
+
+	if (cb_interpret_assign_literal) {
+		current_file->assign =
+			cb_build_interpreted_assignment_name (current_file, $5, NULL);
+		current_file->assign_default =
+			$6 ? (char *)CB_LITERAL ($6)->data : NULL;
+	} else {
+		current_file->assign = cb_build_assignment_name (current_file, $5);
+	}
   }
 | ASSIGN _to _ext_clause _assign_device_or_line_adv_file using_or_varying qualified_word
   {
@@ -5502,6 +5546,11 @@ ext_clause:
 assignment_name:
   LITERAL
 | qualified_word
+;
+
+_literal:
+  /* empty */	{ $$ = NULL; }
+| LITERAL	{ $$ = $1; }
 ;
 
 /* ACCESS MODE clause */
@@ -5810,19 +5859,19 @@ organization_clause:
 ;
 
 organization:
-  INDEXED
+  org_indexed
   {
 	check_repeated ("ORGANIZATION", SYN_CLAUSE_6, &check_duplicate);
 	error_if_record_delimiter_incompatible (COB_ORG_INDEXED, "INDEXED");
 	current_file->organization = COB_ORG_INDEXED;
   }
-| _record _binary SEQUENTIAL
+| org_sequential
   {
 	check_repeated ("ORGANIZATION", SYN_CLAUSE_6, &check_duplicate);
 	error_if_record_delimiter_incompatible (COB_ORG_SEQUENTIAL, "SEQUENTIAL");
 	current_file->organization = COB_ORG_SEQUENTIAL;
   }
-| RELATIVE
+| org_relative
   {
 	check_repeated ("ORGANIZATION", SYN_CLAUSE_6, &check_duplicate);
 	error_if_record_delimiter_incompatible (COB_ORG_RELATIVE, "RELATIVE");
@@ -5835,6 +5884,39 @@ organization:
 						"LINE SEQUENTIAL");
 	current_file->organization = COB_ORG_LINE_SEQUENTIAL;
   }
+;
+
+org_indexed:
+  INDEXED
+| UFF INDEXED
+  {
+	  (void) cb_verify (cb_select_extra_oganization_clauses,
+			    _("ORGANIZATION UFF INDEXED in SELECT"));
+  }
+;
+
+org_sequential:
+  _record _binary SEQUENTIAL
+| select_extra_org_clause _record _binary SEQUENTIAL
+  {
+	  (void) cb_verify (cb_select_extra_oganization_clauses,
+			    _("ORGANIZATION UFF/ANSI/QUEUED in SELECT"));
+  }
+;
+
+org_relative:
+  RELATIVE
+| UFF RELATIVE
+  {
+	  (void) cb_verify (cb_select_extra_oganization_clauses,
+			    _("ORGANIZATION UFF RELATIVE in SELECT"));
+  }
+;
+
+select_extra_org_clause:
+  UFF
+| ANSI
+| QUEUED
 ;
 
 
@@ -6407,6 +6489,10 @@ file_description_clause:
 		cb_error (_("%s and %s are mutually exclusive"), "EXTERNAL", "GLOBAL");
 	}
 #endif
+	if (current_file->flag_select_external) {
+		cb_error (_("EXTERNAL clause can not be used both in the file "
+			    "descriptor and the file control entry"));
+	}
 	current_file->flag_external = 1;
   }
 | _is GLOBAL
@@ -19817,6 +19903,11 @@ flag_optional:
   /* empty */			{ $$ = cb_int (cb_flag_optional_file); }
 | OPTIONAL   			{ $$ = cb_int1; }
 | NOT OPTIONAL			{ $$ = cb_int0; }
+;
+
+flag_external:
+  /* empty */			{ $$ = NULL; }
+| EXTERNAL			{ $$ = cb_true; }
 ;
 
 flag_rounded:
