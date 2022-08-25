@@ -1055,6 +1055,7 @@ struct cb_file {
 	char			*cname;			/* Name used in C */
 	/* SELECT */
 	cb_tree			assign;			/* ASSIGN */
+	char			*assign_default;	/* [GCOS] Filename to use if file mapping fails  */
 	cb_tree			file_status;		/* FILE STATUS */
 	cb_tree			sharing;		/* SHARING */
 	cb_tree			key;			/* Primary RECORD KEY */
@@ -1105,6 +1106,7 @@ struct cb_file {
 	/* Whether the file's ASSIGN is like "ASSIGN word", not "ASSIGN
            EXTERNAL/DYNAMIC/USING/... word" */
 	unsigned int		flag_assign_no_keyword : 1;
+	unsigned int		flag_select_external : 1; /* [GCOS] EXTERNAL on SELECT */
 	/* Exceptions enabled for file */
 	struct cb_exception	*exception_table;
 };
@@ -2179,6 +2181,9 @@ extern cb_tree		cb_define_switch_name (cb_tree, cb_tree, const int);
 extern void		cb_check_word_length (unsigned int, const char *);
 extern cb_tree		cb_build_section_name (cb_tree, const int);
 extern cb_tree		cb_build_assignment_name (struct cb_file *, cb_tree);
+extern cb_tree		cb_build_interpreted_assignment_name (struct cb_file * const,
+							      const cb_tree,
+							      char ** const);
 extern cb_tree		cb_build_index (cb_tree, cb_tree,
 					const unsigned int, struct cb_field *);
 extern cb_tree		cb_build_identifier (cb_tree, const int);

@@ -2269,6 +2269,66 @@ cb_build_assignment_name (struct cb_file *cfile, cb_tree name)
 	}
 }
 
+static int
+is_valid_assign_filename (const char *fn)
+{				/* GCOS rules for ASSIGN filename */
+	while (*fn && (isalnum (*fn) || *fn == '_' || *fn == '-' || *fn == '.'))
+		fn++;
+	return *fn == '\0';
+}
+
+cb_tree
+cb_build_interpreted_assignment_name (struct cb_file * const cfile,
+				      const cb_tree name,
+				      char ** const assign_default)
+{
+	/* assign_default == NULL => only one positional is allowed */
+	cb_tree res = NULL;
+	char	*data, *n, *d, *filename;
+
+	if (!name || name == cb_error_node ||
+            !(CB_LITERAL_P (name) || CB_REFERENCE_P (name))) {
+		return cb_error_node;
+	}
+
+	data = cob_strdup (CB_LITERAL_P (name)
+			   ? (char *)(CB_LITERAL (name)->data)
+			   : CB_NAME (name));
+	n = strtok (data, " \t,");
+	n = strchr (n, '=') ? NULL : n; /* filter-out non-positional */
+	if (n) {
+		d = strtok (NULL, " \t,");
+		d = strchr (d, '=') ? NULL : d; /* filter-out non-positional */
+		if (d) {
+			/* two non-positionals: n is an internal-file-name, d is
+			   the file-name */
+			if (!assign_default) {
+				cb_error_x (name,
+					    _("expected at most one "
+					      "positional parameter in '%s'"),
+					    data);
+			}
+			filename = d;
+		} else {
+			/* only one non-positional: n is the file-name */
+			filename = n;
+		}
+		res = cb_build_alphanumeric_literal (filename,
+						     strlen (filename));
+		if (assign_default) {
+			/* record filename */
+			*assign_default = strdup (filename);
+		}
+	}
+	cob_free (data);
+
+	if (res && !is_valid_assign_filename ((char *)(CB_LITERAL (res)->data))) {
+		cb_error_x (name, _("invalid filename in ASSIGN literal"));
+	}
+
+	return res;
+}
+
 cb_tree
 cb_build_index (cb_tree x, cb_tree values, const unsigned int indexed_by,
 		struct cb_field *qual)

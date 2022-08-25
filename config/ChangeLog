@@ -1,4 +1,10 @@
 
+2022-08-02  David Declerck <david.declerck@ocamlpro.com>
+
+	* general: add options interpret-assign-literal, select-external,
+	  select-extra-organization-clauses, select-with, to support
+	  GCOS-style SELECT
+
 2022-08-17  Simon Sobisch <simonsobisch@gnu.org>
 
 	* general: add xml-parse-xmlss, note: explicit NOT enabled

@@ -1327,6 +1327,8 @@ typedef struct __cob_file {
 	short 				mapkey;			/* Remapped index number, when FD does not match file */
 
 	struct __fcd3		*fcd;			/* FCD created via SET ... TO ADDRESS OF FH--FCD */
+	const char		*assign_default;	/* [GCOS] External filename to use if file mapping fails  */
+
 } cob_file;
 
 
