@@ -238,6 +238,9 @@ CB_CONFIG_SUPPORT (cb_sync_left_right, "sync-left-right",
 CB_CONFIG_SUPPORT (cb_special_names_clause, "special-names-clause",
 	_("SPECIAL-NAMES clause"))
 
+CB_CONFIG_SUPPORT (cb_examine_statement, "examine-statement",
+	_("EXAMINE statement"))
+
 CB_CONFIG_SUPPORT (cb_goto_statement_without_name, "goto-statement-without-name",
 	_("GOTO statement without name"))
 

@@ -2529,6 +2529,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token EVENT_LIST		"EVENT-LIST"
 %token EVENT_STATUS		"EVENT STATUS"
 %token EVERY
+%token EXAMINE
 %token EXCEPTION
 %token EXCEPTION_CONDITION	"EXCEPTION CONDITION"
 %token EXCEPTION_VALUE		"EXCEPTION-VALUE"
@@ -3200,6 +3201,7 @@ set_record_size (cb_tree min, cb_tree max)
 %nonassoc ENABLE
 %nonassoc ENTRY
 %nonassoc EVALUATE
+%nonassoc EXAMINE
 %nonassoc EXHIBIT
 %nonassoc EXIT
 %nonassoc FREE
@@ -10688,6 +10690,7 @@ statement:
 | enable_statement
 | entry_statement
 | evaluate_statement
+| examine_statement
 | exhibit_statement
 | exit_statement
 | free_statement
@@ -13843,6 +13846,26 @@ inspect_format_variant:
 | inspect_tallying
 | inspect_replacing
 | inspect_converting
+;
+
+/* EXAMINE statement */
+
+examine_statement:
+  EXAMINE
+  {
+	  begin_statement ("EXAMINE", 0);
+	  (void) cb_verify (cb_examine_statement, "EXAMINE");
+  }
+  send_identifier TALLYING LEADING simple_display_value
+  {
+	  inspect_keyword = 0;
+	  cb_init_tallying ();
+	  cb_build_tallying_data (cb_build_identifier (cb_build_reference ("TALLY"), 0));
+	  cb_build_tallying_leading ();
+	  cb_emit_inspect ($3,
+			   cb_build_tallying_value ($6, cb_build_inspect_region_start ()),
+			   TALLYING_CLAUSE);
+  }
 ;
 
 /* INSPECT TALLYING */

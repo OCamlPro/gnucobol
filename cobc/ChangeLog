@@ -44,6 +44,11 @@
 	* config.def, parser.y, codegen.c: added cb_xml_parse_xmlss, passed
 	  to runtime as module->xml_mode
 
+2022-08-03  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* config.def, parser.y, reserved.c: add support for EXAMINE
+	  statement (TALLYING LEADING only)
+
 2022-07-29  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* flag.def, config.def: make format a dialect option instead of a flag
