@@ -395,6 +395,12 @@ MAYBE_AREA_A	[ ]?#?
 	BEGIN ENDIF_DIRECTIVE_STATE;
 	return ENDIF_DIRECTIVE;
 }
+^[ ]*"$REGION"		|
+^[ ]*"$END-$REGION"	{
+	/* MF extension for logical marking of a block in the editor */
+	/* _possibly_ check: MF rule "$REGION and $IF statements must not overlap." */
+	skip_to_eol ();
+}
 
 ^[ ]*"$"[_0-9A-Z-]+	{
 	/* unknown MF style directive */
@@ -406,19 +412,33 @@ MAYBE_AREA_A	[ ]?#?
 	skip_to_eol ();
 }
 
-^{MAYBE_AREA_A}[ ]{7}"@OPTIONS"	{ /* Strip Area A marker, depending on format */
-	/* Fujitsu COBOL extension for specifying a limited set of 'cobol' command line options */
+^{MAYBE_AREA_A}.{7}"@OPTIONS"[ ][A-Z0-9() ,;'"=]* {
+	/* Fujitsu COBOL extension for specifying command line options */
+	/* TODO: check position of the @OPTIONS directive */
 	char *s = strchr (yytext, '@');
 	cb_plex_warning (COBC_WARN_FILLER, newline_count - 1,
 		_("ignoring unknown directive: '%s'"), s);
 	skip_to_eol ();
 }
 
-^{MAYBE_AREA_A}[ ]*("PROCESS"|"CBL")/[ ,;\n] {
+^{MAYBE_AREA_A}[ ]*("PROCESS"|"CBL")[ ,;]*[\n] {
 	/* IBM COBOL extension for specifying compiler options */
-	/* TODO: The CBL (PROCESS) statement must be placed before any comment lines or other compiler-directing statements. */
+	/* TODO: The CBL (PROCESS) statement must be placed before any
+	   comment lines, IDENTIFICATIO DIVISION, or other
+	   compiler-directing statements. */
+	/* empty - so ignored */
+	skip_to_eol ();
+}
+
+^{MAYBE_AREA_A}[ ]*("PROCESS"|"CBL")[ ][A-Z0-9() ,;'"=]* {
+	/* IBM COBOL extension for specifying compiler options */
+	/* TODO: The CBL (PROCESS) statement must be placed before any
+	   comment lines, IDENTIFICATIO DIVISION, or other
+	   compiler-directing statements. */
+	char *s = yytext;
+	while (*s == ' ') s++;
 	cb_plex_warning (COBC_WARN_FILLER, newline_count - 1,
-		_("PROCESS statement ignored"));
+		_("ignoring unknown directive: '%s'"), s);
 	skip_to_eol ();
 }
 
@@ -459,8 +479,8 @@ MAYBE_AREA_A	[ ]?#?
 	return REPLACE;
 }
 
-^{MAYBE_AREA_A}[ ]*"*CONTROL"		|
-^{MAYBE_AREA_A}[ ]*"*CBL"		{
+^{MAYBE_AREA_A}.{6}[ ]*"*CONTROL" |
+^{MAYBE_AREA_A}.{6}[ ]*"*CBL"	{
 	BEGIN CONTROL_STATEMENT_STATE;
 	return CONTROL_STATEMENT;
 }

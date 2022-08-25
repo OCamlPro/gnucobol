@@ -1,4 +1,20 @@
 
+2022-08-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* mlio.c, common.h: added XML PARSE stub including minimal
+	  runtime validation as well as functions and enums to set
+	  related registers
+	* common.c (cob_strndup), coblocal.h: added (for mlio.c)
+
+2022-08-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* mlio.c: use cob_set_int instead of cob_set_field_to_uint as
+	  used registers JSON-CODE and XML-CODE are signed
+	* numeric.c, coblocal.h: remove unused cob_set_field_to_uint
+	* mlio.c: code refactoring and minor improvements for XML GENERATE
+	  and JSON GENERATE (including bug-fix: COUNT IN sets variable,
+	  not increments it)
+
 2022-07-15  Simon Sobisch <simonsobisch@gnu.org>
 
 	* call.c (cob_resolve_internal): added check for module name length,
