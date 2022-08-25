@@ -183,6 +183,9 @@ CB_CONFIG_BOOLEAN (cb_move_nonnumlit_to_numeric_is_zero, "move-non-numeric-lit-t
 CB_CONFIG_BOOLEAN (cb_implicit_assign_dynamic_var, "implicit-assign-dynamic-var",
 	_("implicitly define a variable if an ASSIGN DYNAMIC does not match any data item"))
 
+CB_CONFIG_BOOLEAN (cb_interpret_assign_literal, "interpret-assign-literal",
+	_("interpret literal arguments to ASSIGN clause in SELECT"))
+
 CB_CONFIG_BOOLEAN (cb_device_mnemonics, "device-mnemonics",
 	_("specifying device by mnemonic"))
 
@@ -394,6 +397,15 @@ CB_CONFIG_SUPPORT (cb_continue_after, "continue-after",
 
 CB_CONFIG_SUPPORT (cb_goto_entry, "goto-entry",
 	_("ENTRY FOR GOTO and GOTO ENTRY statements"))
+
+CB_CONFIG_SUPPORT (cb_select_external, "select-external",
+	_("SELECT EXTERNAL"))
+
+CB_CONFIG_SUPPORT (cb_select_extra_oganization_clauses, "select-extra-organization-clauses",
+	_("extra ORGANIZATION clauses in SELECT"))
+
+CB_CONFIG_SUPPORT (cb_select_with, "select-with",
+	_("WITH clause in SELECT"))
 
 CB_CONFIG_SUPPORT (cb_assign_variable, "assign-variable",
 	_("ASSIGN [TO] variable in SELECT"))

@@ -8921,6 +8921,16 @@ output_file_initialization (struct cb_file *f)
 	output_param (f->assign, -1);
 	output (";");
 	output_newline ();
+
+	output_prefix ();
+	output ("%s%s->assign_default = ", CB_PREFIX_FILE, f->cname);
+	if (f->assign_default) {
+		output ("\"%s\";", f->assign_default);
+	} else {
+		output ("NULL;");
+	}
+	output_newline ();
+
 	output_prefix ();
 	output ("%s%s->record = ", CB_PREFIX_FILE, f->cname);
 	output_param (CB_TREE (f->record), -1);
