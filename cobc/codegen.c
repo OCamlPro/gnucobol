@@ -9499,19 +9499,19 @@ output_report_def_fields (int bgn, int id, struct cb_field *f, struct cb_report 
 		return;
 	}
 #endif
-	if(bgn == 1)
+	if (bgn == 1)
 		report_field_id = 0;
 
 	if (bgn == 0
 	&& (f->report_flag & COB_REPORT_LINE)) {	/* Start of next Line */
 		return;
 	}
-	if(subscript <= 0) {
-		if(f->flag_occurs && f->occurs_max > 1) {
+	if (subscript <= 0) {
+		if (f->flag_occurs && f->occurs_max > 1) {
 			if (f->sister) {
 				output_report_def_fields (0,id,f->sister,r,0);
 			}
-			for(idx = f->occurs_max; idx >= 1; idx--) {
+			for (idx = f->occurs_max; idx >= 1; idx--) {
 				output_report_def_fields (0,id,f,r,idx);
 			}
 			return;
@@ -9521,53 +9521,53 @@ output_report_def_fields (int bgn, int id, struct cb_field *f, struct cb_report 
 			output_report_def_fields (0,id,f->sister,r,0);
 		}
 		if (f->children
-		&& f->storage == CB_STORAGE_REPORT
-		&& f->report == r) {
+		 && f->storage == CB_STORAGE_REPORT
+		 && f->report == r) {
 			output_report_def_fields (0,id,f->children,r,0);
 		}
 		if (f->report_source || f->report_control || (f->report_flag & COB_REPORT_PRESENT)) {
 			output_local("\t\t/* ");
-			if(f->report_source) {
+			if (f->report_source) {
 				struct cb_field *s = cb_code_field (f->report_source);
 				if(s) output_local("SOURCE %s; ",s->name);
 			}
-			if((f->report_flag & COB_REPORT_PRESENT)) {
+			if ((f->report_flag & COB_REPORT_PRESENT)) {
 				output_local("PRESENT ");
-				if((f->report_flag & COB_REPORT_BEFORE))
+				if ((f->report_flag & COB_REPORT_BEFORE))
 					output_local("BEFORE ");
 				else
 					output_local("AFTER ");
-				if((f->report_flag & COB_REPORT_ALL))
+				if ((f->report_flag & COB_REPORT_ALL))
 					output_local("ALL ");
-				if((f->report_flag & COB_REPORT_PAGE))
+				if ((f->report_flag & COB_REPORT_PAGE))
 					output_local("PAGE ");
-				if(f->report_control) {
+				if (f->report_control) {
 					struct cb_field *s = cb_code_field (f->report_control);
-					if((f->report_flag & COB_REPORT_PAGE))
+					if ((f->report_flag & COB_REPORT_PAGE))
 						output_local("OR ");
-					if(s) output_local("%s; ",s->name);
+					if (s) output_local("%s; ",s->name);
 				}
 			} else
-			if(f->report_control) {
+			if (f->report_control) {
 				struct cb_field *s = cb_code_field (f->report_control);
 				if(s) output_local("CONTROL %s; ",s->name);
 			}
 			output_local("*/\n");
 		}
 		output_local ("static cob_report_field %s%d\t= {", CB_PREFIX_REPORT_FIELD,f->id);
-		if(report_field_id == 0)
+		if (report_field_id == 0)
 			output_local("NULL,");
 		else
 			output_local("&%s%d,",CB_PREFIX_REPORT_FIELD,report_field_id);
 		output_local("&%s%d,",CB_PREFIX_FIELD,f->id);
 	} else {
-		if(subscript == 1) {
+		if (subscript == 1) {
 			output_local ("static cob_report_field %s%d\t= {", CB_PREFIX_REPORT_FIELD,f->id);
 			output_local("&%s%d_2,",CB_PREFIX_REPORT_FIELD,f->id);
 			output_local("&%s%d,",CB_PREFIX_FIELD,f->id);
 		} else if(subscript == f->occurs_max) {
 			output_local ("static cob_report_field %s%d_%d\t= {", CB_PREFIX_REPORT_FIELD,f->id,subscript);
-			if(report_field_id == 0)
+			if (report_field_id == 0)
 				output_local("NULL,");
 			else
 				output_local("&%s%d,",CB_PREFIX_REPORT_FIELD,report_field_id);
@@ -9580,7 +9580,7 @@ output_report_def_fields (int bgn, int id, struct cb_field *f, struct cb_report 
 	}
 	report_field_id = f->id;
 
-	if(f->report_source) {
+	if (f->report_source) {
 		output_param (f->report_source, 0);
 	} else if(f->report_sum_counter) {
 		output_local("/*SUM*/");
@@ -9589,15 +9589,21 @@ output_report_def_fields (int bgn, int id, struct cb_field *f, struct cb_report 
 		output_local("NULL");
 	}
 	output_local(",");
-	if(f->report_control) {
+	if (f->report_control) {
 		output_param (f->report_control, 0);
 	} else {
 		output_local("NULL");
 	}
 	output_local(",");
+	value = NULL;
 	if (f->values) {
 		value = CB_VALUE (f->values);
+	} else if (f->report_source 
+	        && CB_LITERAL_P (f->report_source)) {
+		value = f->report_source;
+	}
 
+	if (value) {
 		if (CB_TREE_TAG (value) == CB_TAG_LITERAL) {
 			char	*val;
 			size_t	ref_size;

@@ -209,8 +209,6 @@ static	int	prev_expr_pos = 0;
 static	int	prev_expr_warn[EXPR_WARN_PER_LINE] = {0,0,0,0,0,0,0,0};
 static	int	prev_expr_tf[EXPR_WARN_PER_LINE] = {0,0,0,0,0,0,0,0};
 
-static struct cb_report *report_checked = NULL;
-
 /* Local functions */
 
 static int
@@ -3981,6 +3979,20 @@ build_sum_counter (struct cb_report *r, struct cb_field *f)
 	size_t	num_sums_square = (size_t)r->num_sums * 2;
 
 	/* Set up SUM COUNTER */
+	if (f->report_sum_list == NULL)
+		return;
+	if (f->pic == NULL) {
+		s = CB_FIELD_PTR (CB_VALUE(f->report_sum_list));
+		cb_error_x (CB_TREE(f), _("needs PICTURE clause for SUM %s"),s->name);
+		return;
+	}
+	if (f->pic->category != CB_CATEGORY_NUMERIC
+	 && f->pic->category != CB_CATEGORY_NUMERIC_EDITED) {
+		s = CB_FIELD_PTR (CB_VALUE(f->report_sum_list));
+		cb_warning_x (COBC_WARN_FILLER, CB_TREE(f), 
+					_("non-numeric PICTURE clause for SUM %s"),s->name);
+	}
+
 	if (f->flag_filler) {
 		snprintf (buff, (size_t)COB_MINI_MAX, "SUM OF %s",
 					CB_FIELD(CB_VALUE(f->report_sum_list))->name);
@@ -4036,8 +4048,8 @@ finalize_report (struct cb_report *r, struct cb_field *records)
 	struct cb_reference	*ref;
 	int		k;
 
-	if (report_checked != r) {
-		report_checked = r;
+	if (!r->was_checked) {
+		r->was_checked = 1;
 		if (r->lines > 9999) {
 			r->lines = 9999;
 		}

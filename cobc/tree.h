@@ -879,7 +879,9 @@ struct cb_field {
 	int			report_column;	/* COLUMN (first value) */
 	int			report_num_col;	/* Number of COLUMNs defined */
 	int			report_decl_id;	/* Label id of USE FOR REPORTING */
+#if 0 /* items from 4.x */
 	int			report_source_id;	/* Label id of MOVE SOURCE values */
+#endif
 	int			step_count;	/* STEP in REPORT */
 	int			next_group_line;	/* NEXT GROUP [PLUS] line */
 	unsigned int		vaddr;		/* Variable address cache */
@@ -1592,6 +1594,7 @@ struct cb_report {
 	unsigned int		has_declarative:1;/* Has Declaratives Code to be executed */
 	unsigned int		has_detail:1;	/* Has DETAIL line */
 	unsigned int		has_source_move:1;/* Has Code to MOVE SOURCE values */
+	unsigned int		was_checked:1;
 };
 
 #define CB_REPORT(x)	(CB_TREE_CAST (CB_TAG_REPORT, struct cb_report, x))
