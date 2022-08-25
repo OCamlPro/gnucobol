@@ -745,6 +745,8 @@ cobc_enum_explain (const enum cb_tag tag)
 		return "LOCALE";
 	case CB_TAG_SYSTEM_NAME:
 		return "SYSTEM";
+	case CB_TAG_SCHEMA_NAME:
+		return "XML-SCHEMA";
 	case CB_TAG_LITERAL:
 		return "LITERAL";
 	case CB_TAG_DECIMAL:
@@ -791,6 +793,8 @@ cobc_enum_explain (const enum cb_tag tag)
 		return "ALTER";
 	case CB_TAG_SET_ATTR:
 		return "SET ATTRIBUTE";
+	case CB_TAG_XML_PARSE:
+		return "XML PARSE";
 	case CB_TAG_PERFORM_VARYING:
 		return "PERFORM";
 	case CB_TAG_PICTURE:
@@ -5501,6 +5505,35 @@ print_fields_in_section (struct cb_field *first_field_in_section)
 	return found;
 }
 
+/* add a "receiving" entry for a given field reference
+   and increment used counter */
+void
+cobc_xref_set_receiving (const cb_tree target_ext)
+{
+	cb_tree	target = target_ext;
+	struct cb_field		*target_fld;
+	int				xref_line;
+
+	if (CB_CAST_P (target)) {
+		target = CB_CAST (target)->val;
+	}
+	if (!CB_REF_OR_FIELD_P (target)) {
+		return;
+	}
+	target_fld = CB_FIELD_PTR (target);
+	target_fld->count++;
+#ifdef COB_INTERNAL_XREF
+	if (CB_REFERENCE_P (target)) {
+		xref_line = CB_REFERENCE (target)->common.source_line;
+	} else if (current_statement) {
+		xref_line = current_statement->common.source_line;
+	} else {
+		xref_line = cb_source_line;
+	}
+	cobc_xref_link (&target_fld->xref, xref_line, 1);
+#endif
+}
+
 #ifdef COB_INTERNAL_XREF
 /* create xref_elem with line number for existing xref entry */
 void
@@ -5575,32 +5608,6 @@ cobc_xref_link_parent (const struct cb_field *field)
 		}
 		p_xref->tail = f_xref->tail;
 	}
-}
-
-/* add a "receiving" entry for a given field reference */
-void
-cobc_xref_set_receiving (const cb_tree target_ext)
-{
-	cb_tree	target = target_ext;
-	struct cb_field		*target_fld;
-	int				xref_line;
-
-	if (CB_CAST_P (target)) {
-		target = CB_CAST (target)->val;
-	}
-	if (CB_REF_OR_FIELD_P (target)) {
-		target_fld = CB_FIELD_PTR (target);
-	} else {
-		return;
-	}
-	if (CB_REFERENCE_P (target)) {
-		xref_line = CB_REFERENCE (target)->common.source_line;
-	} else if (current_statement) {
-		xref_line = current_statement->common.source_line;
-	} else {
-		xref_line = cb_source_line;
-	}
-	cobc_xref_link (&target_fld->xref, xref_line, 1);
 }
 
 void
@@ -5765,7 +5772,9 @@ xref_fields_in_section (struct cb_field *first_field_in_section)
 
 	if (first_field_in_section != NULL) {
 		found = !!xref_fields (first_field_in_section);
-		print_program_data ("");
+		if (found) {
+			print_program_data ("");
+		}
 	}
 	return found;
 }

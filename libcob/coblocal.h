@@ -459,6 +459,7 @@ COB_HIDDEN void		cob_field_to_string	(const cob_field *, void *,
 COB_HIDDEN void		cob_parameter_check	(const char *, const int);
 
 COB_HIDDEN cob_settings *cob_get_settings_ptr	(void);
+COB_HIDDEN char	*cob_strndup		(const char *, size_t);
 
 /* COB_DEBUG_LOG Macros and routines found in common.c */
 #ifdef COB_DEBUG_LOG
@@ -497,8 +498,6 @@ COB_HIDDEN char		*cob_strjoin		(char**, int, char*);
 
 DECLNORET COB_HIDDEN void	cob_hard_failure (void) COB_A_NORETURN;
 DECLNORET COB_HIDDEN void	cob_hard_failure_internal (void) COB_A_NORETURN;
-
-COB_HIDDEN void	cob_set_field_to_uint	(cob_field *, const cob_u32_t);
 
 /* static inline of smaller helpers */
 

@@ -987,6 +987,9 @@ cob_set_packed_zero (cob_field *f)
 	}
 }
 
+/* get the numeric value and scale from the given field and store it in the
+   specified decimal */
+
 static void
 cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 {
@@ -1047,6 +1050,9 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 	d->scale = COB_FIELD_SCALE(f);
 }
 
+/* get the numeric value from the given decimal and store it in the
+   specified field (or, depending on opt, set overflow exception and return
+   with the field unchanged) */
 static int
 cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 {
@@ -1058,21 +1064,21 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 	size_t		n;
 	size_t		i;
 	int		diff;
-	int		sign;
-	int		digits;
+	const int		sign = mpz_sgn (d->value);
+	const int		digits = COB_FIELD_DIGITS (f);
 	unsigned int	x;
 
 #if	0	/* RXWRXW stack */
 	char		buff[1024];
 #endif
 
-	/* Build string */
-	sign = mpz_sgn (d->value);
-	if (!sign) {
-		/* Value is 0 */
+	if (sign == 0) {
+		/* early exit for zero */
 		cob_set_packed_zero (f);
 		return 0;
 	}
+
+	/* Build string */
 	if (sign < 0) {
 		mpz_abs (d->value, d->value);
 	}
@@ -1091,7 +1097,6 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 
 	/* Store number */
 	data = f->data;
-	digits = COB_FIELD_DIGITS (f);
 #if	0	/* RXWRXW - P Fix */
 	if (digits > (f->size * 2) - 1) {
 		digits = (f->size * 2) - 1;
@@ -1508,22 +1513,6 @@ cob_decimal_get_binary (cob_decimal *d, cob_field *f, const int opt)
 overflow:
 	cob_set_exception (COB_EC_SIZE_OVERFLOW);
 	return cobglobptr->cob_exception_code;
-}
-
-/* General uint -> field */
-
-void
-cob_set_field_to_uint (cob_field *field, const cob_u32_t data)
-{
-	cob_decimal	dec;
-
-	mpz_init2 (dec.value, COB_MPZ_DEF);
-	mpz_set_ui (dec.value, data);
-	dec.scale = 0;
-
-	cob_decimal_get_field (&dec, field, 0);
-
-	mpz_clear (dec.value);
 }
 
 /* General field */

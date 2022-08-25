@@ -1,4 +1,4 @@
-## Copyright (C) 2018-2020 Free Software Foundation, Inc.
+## Copyright (C) 2018-2020, 2022 Free Software Foundation, Inc.
 ## Written by Edward Hart, Simon Sobisch
 ##
 ## This file is part of GnuCOBOL.
@@ -215,47 +215,63 @@ AT_DATA([prog.cob], [
        01  normal-str PIC X(200).
 
        01  valid-rec.
-           03  a PIC XX VALUE "aa".
-           03  b PIC XX VALUE "bb".
-       01  short-str PIC X(5).
-       01  xml-len   PIC 99.
+           03  a      PIC XX VALUE "aa".
+           03  b      PIC XX VALUE "bb".
+       01  short-str  PIC X(5).
+       01  short-str2 PIC X(22).
+       01  xml-len    PIC 99.
 
-       01  valid-namespace CONSTANT "http://www.w3.org/1999/xhtml".
-       01  invalid-namespace CONSTANT X"00".
-       01  invalid-prefix PIC XXX VALUE "#<>".
-       01  invalid-content PIC X(3) VALUE X"8AFF00".
+       01  valid-namespace    CONSTANT "http://www.w3.org/1999/xhtml".
+       01  invalid-namespace  CONSTANT X"00".
+       01  invalid-prefix     PIC XXX VALUE "#<>".
+       01  invalid-content    PIC X(3) VALUE X"8AFF00".
        01  count-in-too-small PIC 9.
 
        PROCEDURE DIVISION.
+           MOVE ALL 'A' TO short-str
            XML GENERATE short-str FROM valid-rec
                COUNT IN xml-len
-           IF short-str <> "<vali"
-                   OR xml-len <> 42
-                   OR XML-CODE <> 400
-               DISPLAY "Failed 1: " short-str " " xml-len " " XML-CODE
+           IF  XML-CODE   <> 400
+            OR short-str  <> "<vali"
+            OR xml-len    <> 42
+      *> FIXME: should be
+      *>    OR short-str  <> "AAAAA"
+      *>    OR xml-len    <> 0
+              DISPLAY "Failed 1a: " short-str  " " xml-len " " XML-CODE
+           END-IF
+           MOVE ALL 'B' TO short-str2
+           XML GENERATE short-str2 FROM valid-rec
+               COUNT IN xml-len
+           IF  XML-CODE   <> 400
+            OR short-str2 <> "<valid-rec><a>aa</a><b"
+            OR xml-len    <> 42
+      *> FIXME: should be
+      *>    OR short-str2 <> "<valid-rec><a>aa</a>BB"
+      *>    OR xml-len    <> 20
+              DISPLAY "Failed 1b: " short-str2 " " xml-len " " XML-CODE
            END-IF
 
            XML GENERATE normal-str FROM valid-rec
                NAMESPACE invalid-namespace
            IF XML-CODE <> 416
-               DISPLAY "Failed 2: " FUNCTION TRIM (normal-str)
-                   " " XML-CODE
+              DISPLAY "Failed 2: " FUNCTION TRIM (normal-str)
+                       " " XML-CODE
            END-IF
 
            XML GENERATE normal-str FROM invalid-content
-           IF normal-str <> '<hex.invalid-content>8aff00</hex.'-
+           IF  XML-CODE <> 417
+            OR normal-str <> '<hex.invalid-content>8aff00</hex.'-
                             'invalid-content>'
-                   OR XML-CODE <> 417
-               DISPLAY "Failed 3: " FUNCTION TRIM (normal-str)
-                   " " XML-CODE
+              DISPLAY "Failed 3: " FUNCTION TRIM (normal-str)
+                      " " XML-CODE
            END-IF
 
            XML GENERATE normal-str FROM valid-rec
                NAMESPACE "http://www.w3.org/1999/xhtml"
                NAMESPACE-PREFIX invalid-prefix
-           IF XML-CODE <> 419
-               DISPLAY "Failed 4: " FUNCTION TRIM (normal-str)
-                   " " XML-CODE
+           IF  XML-CODE <> 419
+              DISPLAY "Failed 4: " FUNCTION TRIM (normal-str)
+                       " " XML-CODE
            END-IF
 
            XML GENERATE normal-str FROM valid-rec

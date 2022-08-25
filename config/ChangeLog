@@ -1,4 +1,9 @@
 
+2022-08-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: add xml-parse-xmlss, note: explicit NOT enabled
+	  in lax.conf-inc as it would change the result for -std=acu
+
 2022-07-28  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* general: add option format

@@ -787,9 +787,6 @@ statement_no_replace:
 | directive TERMINATOR
 | listing_statement
 | CONTROL_STATEMENT control_options _dot TERMINATOR
-  {
-	CB_PENDING (_("*CONTROL statement"));
-  }
 ;
 
 directive:

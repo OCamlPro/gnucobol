@@ -289,6 +289,8 @@ static void codegen_init (struct cb_program *, const char *);
 static void codegen_internal (struct cb_program *, const int);
 static void codegen_finalize (void);
 
+static void output_perform_once (struct cb_perform *);
+
 /* Local functions */
 
 static struct cb_field *
@@ -3559,6 +3561,34 @@ output_ml_trees_definitions (struct cb_ml_generate_tree *tree)
 
 /* Parameter */
 
+static COB_INLINE COB_A_INLINE void
+create_field (struct cb_field *f, cb_tree x)
+{
+	if (!f->flag_field) {
+		struct field_list* fl;
+		FILE* savetarget = output_target;
+		output_target = NULL;
+		output_field (x);
+
+		fl = cobc_parse_malloc (sizeof (struct field_list));
+		fl->x = x;
+		fl->f = f;
+		fl->curr_prog = excp_current_program_id;
+		if (f->index_type != CB_INT_INDEX
+			&& (f->flag_is_global
+				|| current_prog->flag_file_global)) {
+			fl->next = field_cache;
+			field_cache = fl;
+		} else {
+			fl->next = local_field_cache;
+			local_field_cache = fl;
+		}
+
+		f->flag_field = 1;
+		output_target = savetarget;
+	}
+}
+
 static void
 output_param (cb_tree x, int id)
 {
@@ -3566,8 +3596,6 @@ output_param (cb_tree x, int id)
 	struct cb_field		*f;
 	struct cb_cast		*cp;
 	struct cb_binary_op	*bp;
-	struct field_list	*fl;
-	FILE			*savetarget;
 	struct cb_intrinsic	*ip;
 	struct cb_alphabet_name	*abp;
 	cb_tree			l;
@@ -3704,13 +3732,8 @@ output_param (cb_tree x, int id)
 		}
 		break;
 	case CB_TAG_FIELD:
-#if 0	/* TODO: remove me */
-		output_param (cb_build_field_reference (CB_FIELD (x), NULL), id);
-		break;
-#else	/* CHECKME: Is this actually used somewhere? */
 		x = cb_build_field_reference (CB_FIELD (x), NULL);
 		/* Fall through */
-#endif
 	case CB_TAG_REFERENCE:
 		r = CB_REFERENCE (x);
 		if (CB_LOCALE_NAME_P (r->value)) {
@@ -3820,28 +3843,7 @@ output_param (cb_tree x, int id)
 		 && f->count != 0
 		 && !chk_field_variable_size (f)
 		 && !chk_field_variable_address (f)) {
-			if (!f->flag_field) {
-				savetarget = output_target;
-				output_target = NULL;
-				output_field (x);
-
-				fl = cobc_parse_malloc (sizeof (struct field_list));
-				fl->x = x;
-				fl->f = f;
-				fl->curr_prog = excp_current_program_id;
-				if (f->index_type != CB_INT_INDEX
-				 && (   f->flag_is_global
-				     || current_prog->flag_file_global)) {
-					fl->next = field_cache;
-					field_cache = fl;
-				} else {
-					fl->next = local_field_cache;
-					local_field_cache = fl;
-				}
-
-				f->flag_field = 1;
-				output_target = savetarget;
-			}
+			create_field (f, x);
 			if (f->flag_local) {
 #if	0	/* RXWRXW - Any data pointer */
 				if (f->flag_any_length && f->flag_anylen_done) {
@@ -6838,6 +6840,45 @@ output_set_attribute (const struct cb_field *f, cob_flags_t val_on,
 	}
 }
 
+/* XML PARSE */
+
+
+static void
+output_xml_parse (struct cb_xml_parse *p)
+{
+	output_block_open ();
+	output_line ("void *xml_state = NULL;");
+	output_prefix ();
+	output ("cob_set_int ("),
+	output_param (current_program->xml_code, 0);
+	output (", 0);");
+	output_newline ();
+
+	output_line ("for (;;)");
+	output_block_open ();
+
+	/* actual XML parsing function and possible end */
+	output_source_reference (CB_TREE (p), "XML PARSE");
+	output_prefix ();
+	output ("if (cob_xml_parse ("),
+	output_param (p->data, 0);
+	output (", ");
+	output_param (p->encoding, 1);
+	output (", ");
+	output_param (p->validating, 2);
+	output (", %d, &xml_state)) break;", p->returning_national);
+
+	/* COBOL callback function -> PROCESSING PROCEDURE */
+	/* note: automatic source reference */
+	output_newline ();
+	output_perform_once (CB_PERFORM (p->proc));
+
+	output_block_close ();
+
+	output_block_close ();
+	output_newline ();
+}
+
 /* CANCEL */
 
 static void
@@ -8393,6 +8434,9 @@ output_stmt (cb_tree x)
 	case CB_TAG_SET_ATTR:
 		sap = CB_SET_ATTR (x);
 		output_set_attribute (sap->fld, sap->val_on, sap->val_off);
+		break;
+	case CB_TAG_XML_PARSE:
+		output_xml_parse (CB_XML_PARSE (x));
 		break;
 	case CB_TAG_ALTER:
 		output_alter (CB_ALTER (x));
@@ -10346,6 +10390,35 @@ output_field_display (struct cb_field *f, size_t offset,
 	f->flag_local = svlocal;
 }
 
+static int
+has_field_to_dump (struct cb_field * f)
+{
+	for (; f; f = f->sister) {
+		/* skip entries we never want to dump */
+		if (f->level == 0 && f->file == NULL) {
+			continue;
+		}
+		/* For special registers */
+		if (f->flag_no_init && !f->count) {
+			continue;
+		}
+		/* check for dump code we only are interested in
+		   to investigate it, not as executed code,
+		   note: using increment/decrement and
+				 static as we are called recursive */
+		if (f->redefines
+		 || f->level == 88
+		 || f->level == 78
+		 || f->level == 66) {
+			if (!cb_wants_dump_comments) {
+				continue;
+			}
+		}
+		return 1;
+	}
+	return 0;
+}
+
 static void
 output_display_fields (struct cb_field *f, size_t offset, unsigned int idx)
 {
@@ -10673,6 +10746,7 @@ output_module_init_function (struct cb_program *prog)
 		output_line ("module->flag_debug_trace = %d;", opt);
 	}
 	output_line ("module->flag_dump_ready = %u;", cb_flag_dump ? 1 : 0);
+	output_line ("module->xml_mode = %u;", cb_xml_parse_xmlss);
 	output_line ("module->module_stmt = 0;");
 	if (source_cache) {
 		output_line ("module->module_sources = %ssource_files;",
@@ -10857,55 +10931,63 @@ output_dump_code (struct cb_program *prog, cb_tree parameter_list)
 	}
 	if (prog->local_storage) {
 		if (cb_flag_dump & COB_DUMP_LO) {
-			has_dump = 1;
-			output_line ("/* Dump LOCAL-STORAGE SECTION */");
-			output_line ("cob_dump_output(\"LOCAL-STORAGE\");");
-			output_display_fields (prog->local_storage, 0, 0);
-			output_newline ();
+			if (has_field_to_dump (prog->local_storage)) {
+				has_dump = 1;
+				output_line ("/* Dump LOCAL-STORAGE SECTION */");
+				output_line ("cob_dump_output(\"LOCAL-STORAGE\");");
+				output_display_fields (prog->local_storage, 0, 0);
+				output_newline ();
+			}
 		} else if (cb_wants_dump_comments) {
-			has_dump = has_dump ? has_dump : -1;
-			output_line ("/* Dump LOCAL-STORAGE SECTION (informational) */");
-			output_line ("/* cob_dump_output(\"LOCAL-STORAGE\"); */");
-			output_as_comment++;
-			output_display_fields (prog->local_storage, 0, 0);
-			output_as_comment--;
-			output_newline ();
+			if (has_field_to_dump (prog->local_storage)) {
+				has_dump = has_dump ? has_dump : -1;
+				output_line ("/* Dump LOCAL-STORAGE SECTION (informational) */");
+				output_line ("/* cob_dump_output(\"LOCAL-STORAGE\"); */");
+				output_as_comment++;
+				output_display_fields (prog->local_storage, 0, 0);
+				output_as_comment--;
+				output_newline ();
+			}
 		}
 	}
 	if (prog->linkage_storage) {
 		if (cb_flag_dump & COB_DUMP_LS) {
-			struct cb_field	*f2;
-			has_dump = 1;
-			output_newline ();
-			output_line ("/* Dump LINKAGE SECTION */");
-			if (prog->num_proc_params) {
-				/* restore data pointer to last known entry */
-				for (l = parameter_list; l; l = CB_CHAIN (l)) {
-					f2 = cb_code_field (CB_VALUE (l));
-					output_prefix ();
-					output_base (f2, 0);
+			if (has_field_to_dump (prog->linkage_storage)) {
+				struct cb_field	*f2;
+				has_dump = 1;
+				output_newline ();
+				output_line ("/* Dump LINKAGE SECTION */");
+				if (prog->num_proc_params) {
+					/* restore data pointer to last known entry */
+					for (l = parameter_list; l; l = CB_CHAIN (l)) {
+						f2 = cb_code_field (CB_VALUE (l));
+						output_prefix ();
+						output_base (f2, 0);
 #if 0 /* CHECKME: works in 3.1 but not in trunk */
-					output (" = last_");
-					output_base (f2, 0);
-					output (";");
+						output (" = last_");
+						output_base (f2, 0);
+						output (";");
 #else
-					output (" = last_%s%d;",
-						CB_PREFIX_BASE, f2->id);
+						output (" = last_%s%d;",
+							CB_PREFIX_BASE, f2->id);
 #endif
-					output_newline ();
+						output_newline ();
+					}
 				}
+				output_line ("cob_dump_output(\"LINKAGE\");");
+				output_display_fields (prog->linkage_storage, 0, 0);
+				output_newline ();
 			}
-			output_line ("cob_dump_output(\"LINKAGE\");");
-			output_display_fields (prog->linkage_storage, 0, 0);
-			output_newline ();
 		} else if (cb_wants_dump_comments) {
-			has_dump = has_dump ? has_dump : -1;
-			output_line ("/* Dump LINKAGE SECTION (informational) */");
-			output_line ("/* cob_dump_output(\"LINKAGE\"); */");
-			output_as_comment++;
-			output_display_fields (prog->linkage_storage, 0, 0);
-			output_as_comment--;
-			output_newline ();
+			if (has_field_to_dump (prog->linkage_storage)) {
+				has_dump = has_dump ? has_dump : -1;
+				output_line ("/* Dump LINKAGE SECTION (informational) */");
+				output_line ("/* cob_dump_output(\"LINKAGE\"); */");
+				output_as_comment++;
+				output_display_fields (prog->linkage_storage, 0, 0);
+				output_as_comment--;
+				output_newline ();
+			}
 		}
 	}
 	if (nested_dump) {

@@ -1908,6 +1908,22 @@ cob_strdup (const char *p)
 	return mptr;
 }
 
+char *
+cob_strndup (const char *p, const size_t max_len)
+{
+	char	*mptr;
+	size_t	len;
+
+	len = strlen (p);
+	if (len > max_len) {
+		len = max_len;
+	}
+	mptr = (char *)cob_fast_malloc (len + 1);
+	memcpy (mptr, p, len);
+	*(mptr + len) = 0;
+	return mptr;
+}
+
 /* Caching versions of malloc/free */
 void *
 cob_cache_malloc (const size_t size)
@@ -5288,7 +5304,7 @@ cob_sys_system (const void *cmdline)
 				cob_free (command);
 #if 0	/* possibly do this, but only if explicit asked for via a new runtime configuration
 		   as at least MicroFocus always returns all bytes here;
-		   from its docs it _looks_ like ACU only return the lower bytes ... */
+		   from its docs it _looks_ like ACU only returns the lower bytes ... */
 #ifdef WEXITSTATUS
 				if (WIFEXITED (status)) {
 					status = WEXITSTATUS (status);
