@@ -1,4 +1,25 @@
 
+2022-08-02  David Declerck <david.declerck@ocamlpro.com>
+
+	Support GCOS-specific SELECT
+	Support ASSIGN statements (GCOS extension)
+	* config.def: add options interpret-assign-literal, select-external,
+	  select-extra-organization-clauses, select-with
+	* tree.h, typeck.c (cb_build_interpreted_assignment_name,
+	  is_valid_assign_filename): new functions to support tokenization and
+	  parsing of interpreted literals in ASSIGN clause
+	* parser.y: add support for interpreted literals for ASSIGN clause in
+	  SELECT, SELECT EXTERNAL, WITH clause (syntax only), and extra
+	  organization clauses (syntax only)
+	* reserved.c, scanner.l: add reserved keywords for WITH and
+	  organization clauses
+	* codegen.c (output_file_initialization): record default file
+	  assignment
+	* config.def: add option assign-statement
+	* reserved.c: reserved MEMBER keyword
+	* typeck.c (cb_emit_assign_to_file, cb_emit_assign_to_member),
+	  tree.h, parser.y: support ASSIGN statements
+
 2022-08-20  Simon Sobisch <simonsobisch@gnu.org>
 
 	* pplex.l: match and ignore editor folding $REGION statement

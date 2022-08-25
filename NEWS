@@ -28,6 +28,8 @@ NEWS - user visible changes				-*- outline -*-
    * PICTURE strings with L character (variable length fields)
    * CONTROL DIVISION with SUBSTITUTION SECTION (full support) and DEFAULT
      SECTION (partial support)
+   * GCOS-specific handling of ASSIGN clause in SELECT, and ASSIGN
+     statement (support for ASSIGN TO MEMBER is partial)
 
 ** TODO - More to add
 

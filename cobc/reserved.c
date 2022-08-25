@@ -334,6 +334,9 @@ static struct cobc_reserved default_reserved_words[] = {
   { "AND",			0, 0, AND,			/* 2002 */
 				0, 0
   },
+  { "ANSI",			0, 1, ANSI,			/* GCOS extension */
+				0, CB_CS_SELECT
+  },
   { "ANY",			0, 0, ANY,			/* 2002 */
 				0, 0
   },
@@ -366,6 +369,9 @@ static struct cobc_reserved default_reserved_words[] = {
   },
   { "AS",			0, 0, AS,			/* 2002 */
 				0, 0
+  },
+  { "ASA",			0, 1, ASA,			/* GCOS extension */
+				0, CB_CS_SELECT
   },
   { "ASCENDING",		0, 0, ASCENDING,		/* 2002 */
 				0, 0
@@ -529,6 +535,9 @@ static struct cobc_reserved default_reserved_words[] = {
   },
   { "BULK-ADDITION",		0, 1, BULK_ADDITION,		/* ACU extension */
 				0, CB_CS_OPEN
+  },
+  { "BSN",			0, 1, BSN,			/* GCOS extension */
+				0, CB_CS_SELECT
   },
   { "BUSY",		0, 1, BUSY,		/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
@@ -1383,6 +1392,9 @@ static struct cobc_reserved default_reserved_words[] = {
   { "FLOATING",			0, 0, FLOATING,			/* ACU extension */
 				0, CB_CS_DISPLAY
   },
+  { "FLR",			0, 1, FLR,			/* GCOS extension */
+				0, CB_CS_SELECT
+  },
   { "FONT",			0, 0, FONT,			/* ACU extension */
 				0, 0				/* Checkme: likely context sensitive */
   },
@@ -1842,6 +1854,9 @@ static struct cobc_reserved default_reserved_words[] = {
   { "MEDIUM-FONT",		0, 0, MEDIUM_FONT,		/* ACU extension */
 				0, 0				/* Checkme: likely context sensitive */
   },
+  { "MEMBER",			0, 0, MEMBER,			/* GCOS extension */
+				0, 0
+  },
   { "MEMORY",			0, 1, MEMORY,			/* 85 */
 				0, CB_CS_OBJECT_COMPUTER
   },
@@ -2112,6 +2127,9 @@ static struct cobc_reserved default_reserved_words[] = {
   { "OVERRIDE",			0, 0, -1,			/* 2002 */
 				0, 0
   },
+  { "OVERRIDING",		0, 1, OVERRIDING,		/* GCOS extension */
+				0, CB_CS_SELECT
+  },
   { "PACKED-DECIMAL",		0, 0, PACKED_DECIMAL,		/* 2002 */
 				0, 0
   },
@@ -2282,6 +2300,9 @@ static struct cobc_reserved default_reserved_words[] = {
   },
   { "QUEUE",			0, 0, QUEUE,			/* Communication Section */
 				0, 0
+  },
+  { "QUEUED",			0, 1, QUEUED,			/* GCOS extension */
+				0, CB_CS_SELECT
   },
   { "QUOTE",			0, 0, QUOTE,			/* 2002 */
 				0, 0
@@ -2512,6 +2533,9 @@ static struct cobc_reserved default_reserved_words[] = {
   { "SAME",			0, 0, SAME,			/* 2002 */
 				0, 0
   },
+  { "SARF",			0, 1, SARF,			/* GCOS extension */
+				0, CB_CS_SELECT
+  },
   { "SAVE-AS",			0, 1, SAVE_AS,			/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
   },
@@ -2680,6 +2704,9 @@ static struct cobc_reserved default_reserved_words[] = {
   },
   { "SQUARE",			0, 1, SQUARE,			/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
+  },
+  { "SSF",			0, 1, SSF,			/* GCOS extension */
+				0, CB_CS_SELECT
   },
   { "STACK",			0, 1, -1,			/* 202x (C/S) */
 				0, CB_CS_MODULE_NAME
@@ -2936,6 +2963,9 @@ static struct cobc_reserved default_reserved_words[] = {
   { "UCS-4",			0, 1, UCS_4,			/* 2002 (C/S) */
 				0, CB_CS_ALPHABET
   },
+  { "UFF",			0, 1, UFF,			/* GCOS extension */
+				0, CB_CS_SELECT
+  },
   { "UNBOUNDED",		0, 1, UNBOUNDED,			/* IBM V5 */
 				0, CB_CS_OCCURS
   },
@@ -3064,6 +3094,9 @@ static struct cobc_reserved default_reserved_words[] = {
   },
   { "VOLATILE",			0, 0, VOLATILE,			/* IBM Extension */
 				0, 0
+  },
+  { "VLR",			0, 1, VLR,			/* GCOS extension */
+				0, CB_CS_SELECT
   },
   { "VPADDING",			0, 1, VPADDING,			/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY

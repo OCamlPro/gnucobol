@@ -2269,6 +2269,66 @@ cb_build_assignment_name (struct cb_file *cfile, cb_tree name)
 	}
 }
 
+static int
+is_valid_assign_filename (const char *fn)
+{				/* GCOS rules for ASSIGN filename */
+	while (*fn && (isalnum (*fn) || *fn == '_' || *fn == '-' || *fn == '.'))
+		fn++;
+	return *fn == '\0';
+}
+
+cb_tree
+cb_build_interpreted_assignment_name (struct cb_file * const cfile,
+				      const cb_tree name,
+				      char ** const assign_default)
+{
+	/* assign_default == NULL => only one positional is allowed */
+	cb_tree res = NULL;
+	char	*data, *n, *d, *filename;
+
+	if (!name || name == cb_error_node ||
+            !(CB_LITERAL_P (name) || CB_REFERENCE_P (name))) {
+		return cb_error_node;
+	}
+
+	data = cobc_strdup (CB_LITERAL_P (name)
+			    ? (char *)(CB_LITERAL (name)->data)
+			    : CB_NAME (name));
+	n = strtok (data, " \t,");
+	n = strchr (n, '=') ? NULL : n; /* filter-out non-positional */
+	if (n) {
+		d = strtok (NULL, " \t,");
+		d = strchr (d, '=') ? NULL : d; /* filter-out non-positional */
+		if (d) {
+			/* two non-positionals: n is an internal-file-name, d is
+			   the file-name */
+			if (!assign_default) {
+				cb_error_x (name,
+					    _("expected at most one "
+					      "positional parameter in '%s'"),
+					    data);
+			}
+			filename = d;
+		} else {
+			/* only one non-positional: n is the file-name */
+			filename = n;
+		}
+		res = cb_build_alphanumeric_literal (filename,
+						     strlen (filename));
+		if (assign_default) {
+			/* record filename */
+			*assign_default = cobc_strdup (filename);
+		}
+	}
+	cobc_free (data);
+
+	if (res && !is_valid_assign_filename ((char *)(CB_LITERAL (res)->data))) {
+		cb_error_x (name, _("invalid filename in ASSIGN literal"));
+	}
+
+	return res;
+}
+
 cb_tree
 cb_build_index (cb_tree x, cb_tree values, const unsigned int indexed_by,
 		struct cb_field *qual)
@@ -8111,6 +8171,115 @@ cb_emit_alter (cb_tree source, cb_tree target)
 	}
 	CB_REFERENCE(source)->flag_alter_code = 1;
 	cb_emit (cb_build_alter (source, target));
+}
+
+/* ASSIGN statement */
+
+void
+cb_emit_assign_to_file (cb_tree file, cb_tree target)
+{
+	struct cb_file *f;
+        int target_is_file = 0;
+
+	file = cb_ref (file);
+	if (file == cb_error_node) {
+		return;
+	}
+
+	f = CB_FILE (file);
+	if (f->assign_default == NULL) {
+		cb_error_x (CB_TREE (current_statement),
+			    _("ASSIGN can only be used on files whose description "
+			      "specify a file literal in their ASSIGN clause"));
+		return;
+	}
+
+	if (CB_INVALID_TREE(target)) {
+		return;
+	}
+
+	if (CB_LITERAL_P (target)) {
+		// Literal is a file-literal (may be followed by params)
+		struct cb_literal *l = CB_LITERAL (target);
+		if (CB_NUMERIC_LITERAL_P (l)) {
+			cb_error_x (CB_TREE (current_statement),
+				    _("literal must be non-numeric in ASSIGN"));
+			return;
+		}
+	} else {
+		cb_tree x = cb_ref (target);
+		if (CB_FIELD_P (x)) {
+			// Field contains a file-literal (may be followed by params)
+			if (CB_TREE_CATEGORY (x) != CB_CATEGORY_ALPHANUMERIC) {
+				cb_error_x (CB_TREE (current_statement),
+					    _("field must be alphanumeric in ASSIGN"));
+				return;
+			}
+		} else if (CB_FILE_P (x)) {
+			target_is_file = 1;
+		} else {
+			return;
+		}
+	}
+
+	if (target_is_file == 0) {
+		cb_emit (CB_BUILD_FUNCALL_3 ("cob_assign_to_file", file, target, NULL));
+	} else {
+		cb_emit (CB_BUILD_FUNCALL_3 ("cob_assign_to_file", file, NULL, target));
+	}
+}
+
+void
+cb_emit_assign_to_member (cb_tree file, cb_tree op, cb_tree target)
+{
+	struct cb_file *f;
+
+	file = cb_ref (file);
+	if (file == cb_error_node) {
+		return;
+	}
+
+	f = CB_FILE (file);
+	if (f->assign_default == NULL) {
+		cb_error_x (CB_TREE (current_statement),
+			    _("ASSIGN can only be used on files whose description "
+			      "specify a file literal in their ASSIGN clause"));
+		return;
+	}
+
+	if (CB_INVALID_TREE (op) || !CB_INTEGER_P (op)) {
+		return;
+	}
+
+	if (target && CB_INVALID_TREE (target)) {
+		return;
+	}
+
+	if (target == NULL) {
+		// ACTUAL
+	} else if (CB_LITERAL_P (target)) {
+		// Literal is a file-literal (may be followed by params)
+		struct cb_literal *l = CB_LITERAL (target);
+		if (CB_NUMERIC_LITERAL_P (l)) {
+			cb_error_x (CB_TREE (current_statement),
+				    _("literal must be non-numeric in ASSIGN"));
+			return;
+		}
+	} else {
+		cb_tree x = cb_ref (target);
+		if (CB_FIELD_P (x)) {
+			// Field contains a file-literal (may be followed by params)
+			if (CB_TREE_CATEGORY (x) != CB_CATEGORY_ALPHANUMERIC) {
+				cb_error_x (CB_TREE (current_statement),
+					    _("field must be alphanumeric in ASSIGN"));
+				return;
+			}
+		} else {
+			return;
+		}
+	}
+
+	CB_PENDING ("TO MEMBER phrase in ASSIGN statement");
 }
 
 /* CALL statement */

@@ -1,4 +1,12 @@
 
+2022-08-02  David Declerck <david.declerck@ocamlpro.com>
+
+	* common.h (cob_file), fileio.c (cob_chk_file_mapping): support ASSIGN
+	  fallback (GCOS extension)
+	* common.h (cob_assign_status, cob_file), fileio.c
+	  (cob_chk_file_mapping_raw, cob_chk_file_mapping, cob_assign_to_file):
+	  support ASSIGN statements (GCOS extension)
+
 2022-08-19  Simon Sobisch <simonsobisch@gnu.org>
 
 	* mlio.c, common.h: added XML PARSE stub including minimal
