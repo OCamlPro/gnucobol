@@ -472,7 +472,6 @@ test.conf: missing definitions:
 	no definition of 'synchronized-clause'
 	no definition of 'sync-left-right'
 	no definition of 'special-names-clause'
-	no definition of 'examine-statement'
 	no definition of 'goto-statement-without-name'
 	no definition of 'stop-literal-statement'
 	no definition of 'stop-identifier-statement'

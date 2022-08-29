@@ -13854,7 +13854,6 @@ examine_statement:
   EXAMINE
   {
 	  begin_statement ("EXAMINE", 0);
-	  (void) cb_verify (cb_examine_statement, "EXAMINE");
   }
   send_identifier TALLYING LEADING simple_display_value
   {
