@@ -998,9 +998,10 @@ create_implicit_picture (struct cb_field *f)
 				} else {
 					is_numeric = 0;
 				}
+			/* LCOV_EXCL_START */
 			} else {
-				cobc_err_msg (_("unexpected tree tag: %d"), (int)CB_TREE_TAG (x));
-				COBC_ABORT ();	/* LCOV_EXCL_LINE */
+				CB_TREE_TAG_UNEXPECTED_ABORT (x);
+			/* LCOV_EXCL_STOP */
 			}
 		}
 	} else {
@@ -1669,15 +1670,16 @@ warn_full_on_numeric_items_is_useless (const struct cb_field * const f)
 static int
 has_std_needed_screen_clause (const struct cb_field * const f)
 {
-	return (f->pic && (f->screen_from
-			   || f->screen_to
-			   || (f->values && CB_NUMERIC_LITERAL_P (CB_VALUE (f->values)))))
-		|| (f->values
-		    && (CB_LITERAL_P (CB_VALUE (f->values))
-			|| CB_CONST_P (CB_VALUE (f->values)))
-		    && (CB_TREE_CATEGORY (CB_VALUE (f->values)) == CB_CATEGORY_ALPHANUMERIC
-			|| CB_TREE_CATEGORY (CB_VALUE (f->values)) == CB_CATEGORY_BOOLEAN
-			|| CB_TREE_CATEGORY (CB_VALUE (f->values)) == CB_CATEGORY_NATIONAL))
+	const cb_tree val = f->values ? CB_VALUE (f->values) : cb_error_node;
+	return ( f->pic
+		 && (f->screen_from
+		  || f->screen_to
+		  || CB_NUMERIC_LITERAL_P (val)))
+		|| ((CB_LITERAL_P (val)
+		  || CB_CONST_P (val))
+		 && (CB_TREE_CATEGORY (val) == CB_CATEGORY_ALPHANUMERIC
+		  || CB_TREE_CATEGORY (val) == CB_CATEGORY_BOOLEAN
+		  || CB_TREE_CATEGORY (val) == CB_CATEGORY_NATIONAL))
 		|| f->screen_flag & COB_SCREEN_BELL
 		|| f->screen_flag & COB_SCREEN_BLANK_LINE
 		|| f->screen_flag & COB_SCREEN_BLANK_SCREEN
@@ -1689,7 +1691,7 @@ static void
 error_value_figurative_constant(const struct cb_field * const f)
 {
 	if (f->values
-	    && cb_is_figurative_constant (CB_VALUE (f->values))) {
+	 && cb_is_figurative_constant (CB_VALUE (f->values))) {
 		cb_error_x (CB_TREE (f), _("VALUE may not contain a figurative constant"));
 	}
 }
@@ -2978,16 +2980,17 @@ cb_validate_field (struct cb_field *f)
 void
 cb_validate_88_item (struct cb_field *f)
 {
-	cb_tree x = CB_TREE (f);
-	cb_tree l;
-	cb_tree t;
+	if (CB_VALID_TREE (f->parent)
+	 && CB_TREE_CLASS (f->parent) == CB_CLASS_NUMERIC) {
 
-	if (CB_VALID_TREE (f->parent) &&
-	    CB_TREE_CLASS (f->parent) == CB_CLASS_NUMERIC) {
+		cb_tree l;
+
 		for (l = f->values; l; l = CB_CHAIN (l)) {
-			t = CB_VALUE (l);
-			if (t == cb_space || t == cb_low ||
-			    t == cb_high || t == cb_quote) {
+			cb_tree x = CB_VALUE (l);
+			/* for list A THRU C, X, Z we have another list */
+			if (CB_LIST_P (x)) x = CB_VALUE (x);
+			if (CB_TREE_CLASS (x) != CB_CLASS_NUMERIC) {
+				if (CB_CONST_P (x)) x = CB_TREE (f);
 				cb_error_x (x, _("literal type does not match numeric data type"));
 			}
 		}
@@ -3013,7 +3016,7 @@ cb_validate_78_item (struct cb_field *f, const cob_u32_t no78add)
 	}
 
 	if (cb_is_expr (f->values) ) {
-		f->values = CB_LIST_INIT(cb_evaluate_expr (f->values, prec));
+		f->values = CB_LIST_INIT (cb_evaluate_expr (f->values, prec));
 	}
 
 	x = CB_TREE (f);

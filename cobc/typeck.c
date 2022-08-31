@@ -3142,7 +3142,13 @@ try_get_program (cb_tree prog_ref)
 
 		if (CB_FIELD_P (ref) && CB_FIELD (ref)->flag_item_78
 		    /* && TO-DO: Check user wants checks on this kind of CALL. */) {
-			name_str = (char *) CB_LITERAL (CB_VALUE (CB_FIELD (ref)->values))->data;
+			cb_tree x = CB_VALUE (CB_FIELD (ref)->values);
+			if (!CB_LITERAL_P (x)) {
+				/* in theory this could be a figurative constant,
+				   in this case there is no matching program */
+				return NULL;
+			}
+			name_str = (char *) CB_LITERAL (x)->data;
 			program = cb_find_defined_program_by_name (name_str);
 		} else if (CB_PROTOTYPE_P (ref)) {
 			name_str = CB_PROTOTYPE (ref)->ext_name;
@@ -3922,31 +3928,29 @@ validate_alphabet (cb_tree alphabet)
 		}
 		if (dupls || unvals) {
 			if (dupls) {
-				char		errmsg[256];
+				/* FIXME: can't handle UTF8 / NATIONAL values */
+				char		dup_vals[256];
 				i = 0;
 				for (n = 0; n < 256; n++) {
 					if (dupvals[n] != -1) {
 						if (i > 240) {
-							sprintf (&errmsg[i], ", ...");
-							i = i + 5;
+							i += sprintf (dup_vals + i, ", ...");
 							break;
 						}
 						if (i) {
-							sprintf (&errmsg[i], ", ");
-							i = i + 2;
+							i += sprintf (dup_vals + i, ", ");
 						}
 						if (isprint (n)) {
-							errmsg[i++] = (char)n;
+							dup_vals[i++] = (char)n;
 						} else {
-							sprintf (&errmsg[i], "x'%02x'", n);
-							i = i + 5;
+							i += sprintf (dup_vals + i, "x'%02x'", n);
 						}
 					};
 				}
-				errmsg[i] = 0;
+				dup_vals[i] = 0;
 				cb_error_x (alphabet,
 					_("duplicate character values in alphabet '%s': %s"),
-					ap->name, errmsg);
+					ap->name, dup_vals);
 			}
 			if (unvals) {
 				cb_error_x (alphabet,
@@ -4349,7 +4353,7 @@ cb_validate_crt_status (cb_tree ref, cb_tree field_tree) {
 	/* LCOV_EXCL_START */
 	if (ref == NULL || !CB_REFERENCE_P (ref)) {
 		cobc_err_msg (_("call to '%s' with invalid parameter '%s'"),
-			"cb_validate_crt_status", "ref");;
+			"cb_validate_crt_status", "ref");
 		COBC_ABORT ();
 	}
 	/* LCOV_EXCL_STOP */
@@ -6183,8 +6187,7 @@ decimal_expand (cb_tree d, cb_tree x)
 		break;
 	/* LCOV_EXCL_START */
 	default:
-		cobc_err_msg (_("unexpected tree tag: %d"), (int)CB_TREE_TAG (x));
-		COBC_ABORT ();
+		CB_TREE_TAG_UNEXPECTED_ABORT (x);
 	/* LCOV_EXCL_STOP */
 	}
 }
@@ -9846,8 +9849,7 @@ warning_destination (const enum cb_warn_opt warning_opt, cb_tree x)
 	} else {
 		cobc_err_msg (_("call to '%s' with invalid parameter '%s'"),
 			"warning_destination", "x");
-		cobc_err_msg (_("unexpected tree tag: %d"), (int)CB_TREE_TAG (x));
-		COBC_ABORT ();
+		CB_TREE_TAG_UNEXPECTED_ABORT (x);
 	}
 
 #if 1  /* FIXME: this is wrong, should be removed and register building be
@@ -9902,11 +9904,7 @@ move_warning (cb_tree src, cb_tree dst, const unsigned int value_flag,
 	if (suppress_warn) {
 		return;
 	}
-#if 1 /* BAD hack, but works for now */
 	if (cobc_cs_check == CB_CS_SET || !src->source_line) {
-#else /* old version */
-	if (CB_LITERAL_P (src) || !src->source_line) {
-#endif
 		loc = dst;
 	} else {
 		loc = src;
@@ -9920,7 +9918,7 @@ move_warning (cb_tree src, cb_tree dst, const unsigned int value_flag,
 			cb_note_x (COBC_WARN_FILLER, loc, _("value size is %d"), src_flag);
 		}
 	} else {
-		/* MOVE statement */
+		/* MOVE or SET statement */
 		if (cb_warn_opt_val[warning_opt] != COBC_WARN_DISABLED) {
 			cb_warning_x (warning_opt, loc, "%s", msg);
 			if (src_flag) {
@@ -10847,9 +10845,7 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 		break;
 	/* LCOV_EXCL_START */
 	default:
-		cobc_err_msg (_("unexpected tree tag: %d"),
-				(int)CB_TREE_TAG (src));
-		COBC_ABORT ();
+		CB_TREE_TAG_UNEXPECTED_ABORT (src);
 	/* LCOV_EXCL_STOP */
 	}
 	return 0;

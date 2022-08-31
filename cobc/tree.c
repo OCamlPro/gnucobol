@@ -682,8 +682,7 @@ cb_name_1 (char *s, cb_tree x, const int size)
 
 	/* LCOV_EXCL_START */
 	default:
-		cobc_err_msg (_("unexpected tree tag: %d"), (int)CB_TREE_TAG (x));
-		COBC_ABORT ();
+		CB_TREE_TAG_UNEXPECTED_ABORT (x);
 	/* LCOV_EXCL_STOP */
 	}
 
@@ -2118,6 +2117,115 @@ cb_insert_common_prog (struct cb_program *prog, struct cb_program *comprog)
 	prog->nested_prog_list = add_contained_prog (prog->nested_prog_list,
 						     comprog);
 }
+
+/* LCOV_EXCL_START */
+const char *
+cb_enum_explain (const enum cb_tag tag)
+{
+	switch (tag) {
+	case CB_TAG_CONST:
+		return "CONSTANT";
+	case CB_TAG_INTEGER:
+		return "INTEGER";
+	case CB_TAG_STRING:
+		return "STRING";
+	case CB_TAG_ALPHABET_NAME:
+		return "ALPHABET";
+	case CB_TAG_CLASS_NAME:
+		return "CLASS";
+	case CB_TAG_LOCALE_NAME:
+		return "LOCALE";
+	case CB_TAG_SYSTEM_NAME:
+		return "SYSTEM";
+	case CB_TAG_SCHEMA_NAME:
+		return "XML-SCHEMA";
+	case CB_TAG_LITERAL:
+		return "LITERAL";
+	case CB_TAG_DECIMAL:
+		return "DECIMAL";
+	case CB_TAG_FIELD:
+		return "FIELD";
+	case CB_TAG_FILE:
+		return "FILE";
+	case CB_TAG_REPORT:
+		return "REPORT";
+	case CB_TAG_REFERENCE:
+		return "REFERENCE";
+	case CB_TAG_BINARY_OP:
+		return "BINARY OP";
+	case CB_TAG_FUNCALL:
+		return "FUNCTION CALL";
+	case CB_TAG_CAST:
+		return "CAST";
+	case CB_TAG_INTRINSIC:
+		return "INTRINSIC";
+	case CB_TAG_LABEL:
+		return "LABEL";
+	case CB_TAG_ASSIGN:
+		return "ASSIGN";
+	case CB_TAG_INITIALIZE:
+		return "INITIALIZE";
+	case CB_TAG_SEARCH:
+		return "SEARCH";
+	case CB_TAG_CALL:
+		return "CALL";
+	case CB_TAG_GOTO:
+		return "GO TO";
+	case CB_TAG_IF:
+		return "IF";
+	case CB_TAG_PERFORM:
+		return "PERFORM";
+	case CB_TAG_STATEMENT:
+		return "STATEMENT";
+	case CB_TAG_CONTINUE:
+		return "CONTINUE";
+	case CB_TAG_CANCEL:
+		return "CANCEL";
+	case CB_TAG_ALTER:
+		return "ALTER";
+	case CB_TAG_SET_ATTR:
+		return "SET ATTRIBUTE";
+	case CB_TAG_XML_PARSE:
+		return "XML PARSE";
+	case CB_TAG_PERFORM_VARYING:
+		return "PERFORM";
+	case CB_TAG_PICTURE:
+		return "PICTURE";
+	case CB_TAG_LIST:
+		return "LIST";
+	case CB_TAG_DIRECT:
+		return "DIRECT";
+	case CB_TAG_DEBUG:
+		return "DEBUG";
+	case CB_TAG_DEBUG_CALL:
+		return "DEBUG CALL";
+	case CB_TAG_PROGRAM:
+		return "PROGRAM";
+	case CB_TAG_PROTOTYPE:
+		return "PROTOTYPE";
+	case CB_TAG_DECIMAL_LITERAL:
+		return "DECIMAL LITERAL";
+	case CB_TAG_REPORT_LINE:
+		return "REPORT LINE";
+	case CB_TAG_ML_SUPPRESS:
+		return "ML SUPPRESS CLAUSE";
+	case CB_TAG_ML_TREE:
+		return "ML OUTPUT TREE";
+	case CB_TAG_ML_SUPPRESS_CHECKS:
+		return "ML SUPPRESS CHECKS";
+	case CB_TAG_CD:
+		return "COMMUNICATION DESCRIPTION";
+	default: 
+		{
+			/* whenever we get here, someone missed to add to the list above... */
+			static char errmsg[31];
+			snprintf (errmsg, 30, "UNKNOWN: %d", (int)tag);
+			return errmsg;
+		}
+	}
+}
+/* LCOV_EXCL_STOP */
+
 
 /* Integer */
 
@@ -3741,12 +3849,12 @@ cb_field_dup (struct cb_field *f, struct cb_reference *ref)
 	if (f->pic->category == CB_CATEGORY_NUMERIC
 	 || f->pic->category == CB_CATEGORY_NUMERIC_EDITED
 	 || f->pic->category == CB_CATEGORY_FLOATING_EDITED) {
-		s->values	= CB_LIST_INIT (cb_zero);
+		s->values = CB_LIST_INIT (cb_zero);
 	} else {
-		s->values	= CB_LIST_INIT (cb_space);
+		s->values = CB_LIST_INIT (cb_space);
 	}
-	s->storage	= CB_STORAGE_WORKING;
-	s->usage	= CB_USAGE_DISPLAY;
+	s->storage = CB_STORAGE_WORKING;
+	s->usage = CB_USAGE_DISPLAY;
 	s->count++;
 	cb_validate_field (s);
 	CB_FIELD_ADD (current_program->working_storage, s);
@@ -3818,9 +3926,7 @@ cb_field_size (const cb_tree x)
 
 	/* LCOV_EXCL_START */
 	default:
-		/* LCOV_EXCL_START */
-		cobc_err_msg (_("unexpected tree tag: %d"), (int)CB_TREE_TAG (x));
-		COBC_ABORT ();
+		CB_TREE_TAG_UNEXPECTED_ABORT (x);
 	}
 #ifndef _MSC_VER
 	/* NOT REACHED */
@@ -3945,9 +4051,9 @@ build_report (cb_tree name)
 	snprintf (buff, (size_t)COB_MINI_MAX,
 		  "LINE-COUNTER of %s", p->name);
 	x = cb_build_field (cb_build_reference (buff));
-	CB_FIELD (x)->usage	= CB_USAGE_UNSIGNED_INT;
-	CB_FIELD (x)->values	= CB_LIST_INIT (cb_zero);
-	CB_FIELD (x)->storage	= CB_STORAGE_WORKING;
+	CB_FIELD (x)->usage = CB_USAGE_UNSIGNED_INT;
+	CB_FIELD (x)->values = CB_LIST_INIT (cb_zero);
+	CB_FIELD (x)->storage = CB_STORAGE_WORKING;
 	CB_FIELD (x)->count++;
 	cb_validate_field (CB_FIELD (x));
 	p->line_counter = cb_build_field_reference (CB_FIELD (x), NULL);
@@ -3956,9 +4062,9 @@ build_report (cb_tree name)
 	snprintf (buff, (size_t)COB_MINI_MAX,
 		  "PAGE-COUNTER of %s", p->name);
 	y = cb_build_field (cb_build_reference (buff));
-	CB_FIELD (y)->usage	= CB_USAGE_UNSIGNED_INT;
-	CB_FIELD (y)->values	= CB_LIST_INIT (cb_zero);
-	CB_FIELD (y)->storage	= CB_STORAGE_WORKING;
+	CB_FIELD (y)->usage = CB_USAGE_UNSIGNED_INT;
+	CB_FIELD (y)->values = CB_LIST_INIT (cb_zero);
+	CB_FIELD (y)->storage = CB_STORAGE_WORKING;
 	CB_FIELD (y)->count++;
 	cb_validate_field (CB_FIELD (y));
 	p->page_counter = cb_build_field_reference (CB_FIELD (y), NULL);
@@ -4214,7 +4320,7 @@ finalize_report (struct cb_report *r, struct cb_field *records)
 	if (!r || !r->file) {
 		/* checked to keep the analyzer happy, TODO: real fix later */
 		cobc_err_msg (_("call to '%s' with invalid parameter '%s'"),
-			"finalize_report", "r");;
+			"finalize_report", "r");
 		COBC_ABORT ();
 	}
 	/* LCOV_EXCL_STOP */
@@ -4779,7 +4885,7 @@ cb_ref_internal (cb_tree x, const int emit_error)
 	/* LCOV_EXCL_START */
 	if (!CB_REFERENCE_P (x)) {
 		cobc_err_msg (_("call to '%s' with invalid parameter '%s'"),
-			"cb_ref", "x");;
+			"cb_ref", "x");
 		COBC_ABORT ();
 	}
 	/* LCOV_EXCL_STOP */
@@ -5028,7 +5134,7 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 	/* LCOV_EXCL_START */
 	if (!CB_REFERENCE_P(x)) {
 		cobc_err_msg (_("call to '%s' with invalid parameter '%s'"),
-			"compare_field_literal", "x");;
+			"compare_field_literal", "x");
 		COBC_ABORT ();
 	}
 	/* LCOV_EXCL_STOP */

@@ -1,4 +1,18 @@
 
+2022-08-26  Simon Sobisch <simonsobisch@gnu.org>
+
+	* scanner.l (copy_literal): inlined into literal handling and added
+	  missing check for actual literal, fixing bug #773
+	* tree.c, tree.h, cobc.c: moved cobc_enum_explain from cobc.c to
+	  tree.c as cb_enum_explain
+	* tree.h (CB_TREE_TAG_UNEXPECTED_ABORT), field.c, tree.c, typeck.c,
+	  codegen.c: added new macro and using it
+	* field.c (cb_validate_88_item): check against numeric for all type of
+	  values, not only the figurative constants
+	* cobc.c, error.c: adjusted message handling to use local buffers
+	* field.c (has_std_needed_screen_clause), typeck.c (validate_alphabet),
+	  codegen.c (output_initialize_one): minor refactorings
+
 2022-08-20  Simon Sobisch <simonsobisch@gnu.org>
 
 	* pplex.l: match and ignore editor folding $REGION statement
