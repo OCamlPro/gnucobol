@@ -8483,6 +8483,9 @@ report_group_description_entry:
 	}
   }
   _report_group_options TOK_DOT
+  {
+	  build_sum_counter (current_report, current_field);
+  }
 | level_number error TOK_DOT
   {
 	/* Free tree associated with level number */
@@ -8641,7 +8644,6 @@ sum_clause_list:
   {
 	check_repeated ("SUM", SYN_CLAUSE_19, &check_pic_duplicate);
 	current_field->report_sum_list = $3;
-	build_sum_counter (current_report, current_field);
   }
 ;
 
@@ -11528,8 +11530,9 @@ call_body:
 	if (current_program->prog_type == COB_MODULE_TYPE_PROGRAM
 	 && !current_program->flag_recursive
 	 && is_recursive_call ($3)) {
-	 	if (cb_verify_x ($3, cb_self_call_recursive, _("CALL to own PROGRAM-ID"))) {
-			cb_note_x (cb_warn_dialect, $3, _("assuming RECURSIVE attribute"));
+		cb_tree x = CB_TREE (current_statement);
+	 	if (cb_verify_x (x, cb_self_call_recursive, _("CALL to own PROGRAM-ID"))) {
+			cb_note_x (cb_warn_dialect, x, _("assuming RECURSIVE attribute"));
 			current_program->flag_recursive = 1;
 		}
 	}
