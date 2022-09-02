@@ -13881,13 +13881,13 @@ examine_format_variant:
 	cb_init_tallying ();
 	cb_build_tallying_data (tally);
   }
-  examine_tallying_keyword simple_display_value
+  examine_tallying_keyword single_character_value
   _examine_tallying_replacing
   {
 	cb_emit_examine_tallying ($0, $4, examine_keyword.tallying, $5);
   }
 | REPLACING examine_replacing_keyword
-  simple_display_value BY simple_display_value
+  single_character_value BY single_character_value
   {
 	cb_emit_examine_replacing ($0, $3, $5, examine_keyword.replacing);
   }
@@ -13908,9 +13908,25 @@ examine_replacing_keyword:
 
 _examine_tallying_replacing:
   /* empty */				{ $$ = NULL; }
-| REPLACING BY simple_display_value	{ $$ = $3; }
+| REPLACING BY single_character_value	{ $$ = $3; }
 ;
 
+single_character_value:
+  alphabet_lits
+  {
+	if (CB_LITERAL_P ($1) && CB_LITERAL ($1)->size != 1) {
+		cb_error_x ($1, _("single-character literal or data item expected"));
+	}
+	$$ = $1;
+  }
+| identifier
+  {
+	if (CB_REFERENCE_P ($1) && CB_FIELD_PTR ($1)->size != 1) {
+		cb_error_x ($1, _("single-character literal or data item expected"));
+	}
+	$$ = $1;
+  }
+;
 
 /* INSPECT TALLYING */
 

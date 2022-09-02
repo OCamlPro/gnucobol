@@ -9829,7 +9829,6 @@ cb_build_inspect_region_start (void)
 	return CB_LIST_INIT (CB_BUILD_FUNCALL_0 ("cob_inspect_start"));
 }
 
-/* TODO: Check given phrases only refer to single character data items */
 void
 cb_emit_examine_tallying (cb_tree var, cb_tree x,
 			  const enum cb_examine_tallying tallying_type,
@@ -9868,7 +9867,6 @@ cb_emit_examine_tallying (cb_tree var, cb_tree x,
 	}
 }
 
-/* TODO: Check given phrases only refer to single character data items */
 void
 cb_emit_examine_replacing (cb_tree var, cb_tree from, cb_tree to,
 			   const enum cb_examine_replacing replacing_type) {
