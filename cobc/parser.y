@@ -13876,8 +13876,10 @@ examine_statement:
 examine_format_variant:
   TALLYING
   {
+	cb_tree tally = cb_build_identifier (cb_build_reference ("TALLY"), 0);
+	cb_emit_initialize (CB_LIST_INIT (tally), NULL, cb_int0, NULL, NULL);
 	cb_init_tallying ();
-	cb_build_tallying_data (cb_build_identifier (cb_build_reference ("TALLY"), 0));
+	cb_build_tallying_data (tally);
   }
   examine_tallying_keyword simple_display_value
   _examine_tallying_replacing

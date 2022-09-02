@@ -2064,33 +2064,27 @@ AT_DATA([prog.cob], [
            EXAMINE X TALLYING ALL "A"
            IF TALLY NOT = 4
               DISPLAY "Should be 4 but is " TALLY.
-           SET TALLY TO 0
            EXAMINE X TALLYING LEADING "A"
            IF TALLY NOT = 2
               DISPLAY "Should be 2 but is " TALLY.
-           SET TALLY TO 0
            EXAMINE X TALLYING UNTIL FIRST "C"
            IF TALLY NOT = 5
               DISPLAY "Should be 5 but is " TALLY.
-           SET TALLY TO 0
            EXAMINE X TALLYING ALL "A" REPLACING BY "Z"
            IF TALLY NOT = 4
               DISPLAY "Should be 4 but is " TALLY.
            IF X NOT = "ZZBZBCZB"
               DISPLAY "Should be ZZBZBCZB but is " X.
-           SET TALLY TO 0
            EXAMINE X TALLYING LEADING "Z" REPLACING BY "A"
            IF TALLY NOT = 2
               DISPLAY "Should be 2 but is " TALLY.
            IF X NOT = "AABZBCZB"
               DISPLAY "Should be AABZBCZB but is " X.
-           SET TALLY TO 0
            EXAMINE X TALLYING UNTIL FIRST "C" REPLACING BY "X"
            IF TALLY NOT = 5
               DISPLAY "Should be 5 but is " TALLY.
            IF X NOT = "XXXXXCZB"
               DISPLAY "Should be XXXXXCZB but is " X.
-           SET TALLY TO 0
            EXAMINE X TALLYING UNTIL FIRST "Y" REPLACING BY "Y"
            IF TALLY NOT = 8
               DISPLAY "Should be 8 but is " TALLY.
