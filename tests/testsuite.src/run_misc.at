@@ -2060,6 +2060,7 @@ AT_DATA([prog.cob], [
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
        01 X             PIC X(8) VALUE "AABABCAB".
+       01 N             PIC S9(5)V9(2) VALUE -11122.55.
        PROCEDURE        DIVISION.
            EXAMINE X TALLYING ALL "A"
            IF TALLY NOT = 4
@@ -2090,6 +2091,9 @@ AT_DATA([prog.cob], [
               DISPLAY "Should be 8 but is " TALLY.
            IF X NOT = "YYYYYYYY"
               DISPLAY "Should be YYYYYYYY but is " X.
+           EXAMINE N TALLYING UNTIL FIRST 5 REPLACING BY 8
+           IF N NOT = -88888.55
+              DISPLAY "Should be -88888.55 but is " N.
            STOP RUN.
 ])
 
@@ -2109,6 +2113,7 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE  SECTION.
        01 X             PIC X(8) VALUE "AABABCAB".
        01 Y             PIC X VALUE "Y".
+       01 N             PIC S9(5) VALUE -11122.
        PROCEDURE        DIVISION.
            EXAMINE X REPLACING ALL "A" BY "X"
            IF X NOT = "XXBXBCXB"
@@ -2122,6 +2127,9 @@ AT_DATA([prog.cob], [
            EXAMINE X REPLACING UNTIL FIRST "B" BY "Z"
            IF X NOT = "ZZZZBCXB"
               DISPLAY "Should be ZZZZBCXB but is " X.
+           EXAMINE N REPLACING ALL 1 BY 3
+           IF N NOT = -33322
+              DISPLAY "Should be -33322 but is " N.
            STOP RUN.
 ])
 
