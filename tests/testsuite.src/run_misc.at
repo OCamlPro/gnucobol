@@ -2051,6 +2051,92 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([EXAMINE TALLYING])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X             PIC X(8) VALUE "AABABCAB".
+       PROCEDURE        DIVISION.
+           EXAMINE X TALLYING ALL "A"
+           IF TALLY NOT = 4
+              DISPLAY "Should be 4 but is " TALLY.
+           SET TALLY TO 0
+           EXAMINE X TALLYING LEADING "A"
+           IF TALLY NOT = 2
+              DISPLAY "Should be 2 but is " TALLY.
+           SET TALLY TO 0
+           EXAMINE X TALLYING UNTIL FIRST "C"
+           IF TALLY NOT = 5
+              DISPLAY "Should be 5 but is " TALLY.
+           SET TALLY TO 0
+           EXAMINE X TALLYING ALL "A" REPLACING BY "Z"
+           IF TALLY NOT = 4
+              DISPLAY "Should be 4 but is " TALLY.
+           IF X NOT = "ZZBZBCZB"
+              DISPLAY "Should be ZZBZBCZB but is " X.
+           SET TALLY TO 0
+           EXAMINE X TALLYING LEADING "Z" REPLACING BY "A"
+           IF TALLY NOT = 2
+              DISPLAY "Should be 2 but is " TALLY.
+           IF X NOT = "AABZBCZB"
+              DISPLAY "Should be AABZBCZB but is " X.
+           SET TALLY TO 0
+           EXAMINE X TALLYING UNTIL FIRST "C" REPLACING BY "X"
+           IF TALLY NOT = 5
+              DISPLAY "Should be 5 but is " TALLY.
+           IF X NOT = "XXXXXCZB"
+              DISPLAY "Should be XXXXXCZB but is " X.
+           SET TALLY TO 0
+           EXAMINE X TALLYING UNTIL FIRST "Y" REPLACING BY "Y"
+           IF TALLY NOT = 8
+              DISPLAY "Should be 8 but is " TALLY.
+           IF X NOT = "YYYYYYYY"
+              DISPLAY "Should be YYYYYYYY but is " X.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -freserved=EXAMINE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([EXAMINE REPLACING])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X             PIC X(8) VALUE "AABABCAB".
+       01 Y             PIC X VALUE "Y".
+       PROCEDURE        DIVISION.
+           EXAMINE X REPLACING ALL "A" BY "X"
+           IF X NOT = "XXBXBCXB"
+              DISPLAY "Should be XXBXBCXB but is " X.
+           EXAMINE X REPLACING LEADING "X" BY "Y"
+           IF X NOT = "YYBXBCXB"
+              DISPLAY "Should be YYBXBCXB but is " X.
+           EXAMINE X REPLACING FIRST "B" BY "C"
+           IF X NOT = "YYCXBCXB"
+              DISPLAY "Should be YYCXBCXB but is " X.
+           EXAMINE X REPLACING UNTIL FIRST "B" BY "Z"
+           IF X NOT = "ZZZZBCXB"
+              DISPLAY "Should be ZZZZBCXB but is " X.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -freserved=EXAMINE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([SWITCHES (environment COB_SWITCH_n and SET)])
 AT_KEYWORDS([runmisc])
 

@@ -1849,6 +1849,21 @@ enum cb_inspect_clause {
 	TRANSFORM_STATEMENT
 };
 
+/* EXAMINE TALLYING/REPLACING options */
+
+enum cb_examine_tallying {
+	EXAMINE_TAL_ALL,
+	EXAMINE_TAL_LEADING,
+	EXAMINE_TAL_UNTIL_FIRST,
+};
+
+enum cb_examine_replacing {
+	EXAMINE_REP_ALL,
+	EXAMINE_REP_LEADING,
+	EXAMINE_REP_FIRST,
+	EXAMINE_REP_UNTIL_FIRST,
+};
+
 /* Functions/variables */
 
 /* tree.c */
@@ -2314,6 +2329,13 @@ extern cb_tree		cb_build_replacing_first (cb_tree, cb_tree, cb_tree);
 extern cb_tree		cb_build_replacing_trailing (cb_tree, cb_tree, cb_tree);
 extern cb_tree		cb_build_converting (cb_tree, cb_tree, cb_tree);
 extern cb_tree		cb_build_inspect_region_start (void);
+
+extern void		cb_emit_examine_tallying (cb_tree var, cb_tree x,
+						  const enum cb_examine_tallying,
+						  cb_tree replacing_to);
+extern void		cb_emit_examine_replacing (cb_tree var,
+						   cb_tree from, cb_tree to,
+						   const enum cb_examine_replacing);
 
 extern int		validate_move (cb_tree, cb_tree, const unsigned int, int *);
 extern cb_tree		cb_build_move (cb_tree, cb_tree);

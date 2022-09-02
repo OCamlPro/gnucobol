@@ -1,4 +1,11 @@
 
+2022-09-01  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	FR #18 support EXAMINE statement
+	* parser.y: add missing options for EXAMINE statement
+	* tree.h, typeck.c (cb_emit_examine_tallying, cb_emit_examine_replacing):
+	  new functions to construct and validate EXAMINE statements
+
 2022-08-26  Simon Sobisch <simonsobisch@gnu.org>
 
 	* scanner.l (copy_literal): inlined into literal handling and added
@@ -46,8 +53,8 @@
 
 2022-08-03  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
-	* config.def, parser.y, reserved.c: add support for EXAMINE
-	  statement (TALLYING LEADING only)
+	* parser.y, reserved.c: add support for EXAMINE statement (TALLYING
+	  LEADING only)
 
 2022-07-29  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
