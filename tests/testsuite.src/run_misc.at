@@ -2061,6 +2061,7 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE  SECTION.
        01 X             PIC X(8) VALUE "AABABCAB".
        01 N             PIC S9(5)V9(2) VALUE -11122.55.
+       01 T             PIC X(10) VALUE "    8     ".
        PROCEDURE        DIVISION.
            EXAMINE X TALLYING ALL "A"
            IF TALLY NOT = 4
@@ -2094,6 +2095,9 @@ AT_DATA([prog.cob], [
            EXAMINE N TALLYING UNTIL FIRST 5 REPLACING BY 8
            IF N NOT = -88888.55
               DISPLAY "Should be -88888.55 but is " N.
+           EXAMINE N TALLYING LEADING T (5:1)
+           IF TALLY NOT = 5
+              DISPLAY "Should be 5 but is " TALLY.
            STOP RUN.
 ])
 

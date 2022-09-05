@@ -1057,6 +1057,8 @@ AT_DATA([prog.cob], [
            EXAMINE x TALLYING UNTIL FIRST SPACE
            EXAMINE x TALLYING UNTIL FIRST y
            EXAMINE x TALLYING LEADING yy
+           EXAMINE y TALLYING ALL x (3:1)
+           EXAMINE y TALLYING ALL x (3:2)
            EXAMINE x TALLYING UNTIL FIRST ALL
 ])
 
@@ -1064,7 +1066,8 @@ AT_CHECK([$COMPILE_ONLY -freserved=EXAMINE prog.cob], [1], [],
 [prog.cob:12: error: single-character literal or data item expected
 prog.cob:12: error: single-character literal or data item expected
 prog.cob:15: error: single-character literal or data item expected
-prog.cob:16: error: syntax error, unexpected ALL
+prog.cob:17: error: single-character literal or data item expected
+prog.cob:18: error: syntax error, unexpected ALL
 ])
 AT_CLEANUP
 
