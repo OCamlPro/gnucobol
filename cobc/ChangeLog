@@ -3,8 +3,6 @@
 
 	FR #18 support EXAMINE statement
 	* parser.y: add missing options for EXAMINE statement
-	* tree.h, typeck.c (cb_emit_examine_tallying, cb_emit_examine_replacing):
-	  new functions to construct and validate EXAMINE statements
 
 2022-08-26  Simon Sobisch <simonsobisch@gnu.org>
 

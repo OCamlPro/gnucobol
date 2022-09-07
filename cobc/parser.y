@@ -163,8 +163,18 @@ enum inspect_rep_keyword {
 };
 
 union examine_keyword {
-	enum cb_examine_tallying tallying;
-	enum cb_examine_replacing replacing;
+	/* EXAMINE TALLYING/REPLACING options */
+	enum {
+		EXAMINE_TAL_ALL,
+		EXAMINE_TAL_LEADING,
+		EXAMINE_TAL_UNTIL_FIRST,
+	} tallying;
+	enum {
+		EXAMINE_REP_ALL,
+		EXAMINE_REP_LEADING,
+		EXAMINE_REP_FIRST,
+		EXAMINE_REP_UNTIL_FIRST,
+	} replacing;
 };
 
 enum tallying_phrase {
@@ -13884,12 +13894,61 @@ examine_format_variant:
   examine_tallying_keyword single_character_value
   _examine_tallying_replacing
   {
-	cb_emit_examine_tallying ($0, $4, examine_keyword.tallying, $5);
+	cb_tree x = $4, replacing_to = $5;
+	cb_tree t, r = cb_build_inspect_region_start ();
+	switch (examine_keyword.tallying) {
+	case EXAMINE_TAL_ALL:
+		cb_build_tallying_all ();
+		t = cb_build_tallying_value (x, r);
+		break;
+	case EXAMINE_TAL_LEADING:
+		cb_build_tallying_leading ();
+		t = cb_build_tallying_value (x, r);
+		break;
+	case EXAMINE_TAL_UNTIL_FIRST:
+		r = cb_list_add (r, CB_BUILD_FUNCALL_1 ("cob_inspect_before", x));
+		t = cb_build_tallying_characters (r);
+		break;
+	}
+	cb_emit_inspect ($0, t, TALLYING_CLAUSE);
+	if (replacing_to) {
+		r = cb_build_inspect_region_start ();
+		switch (examine_keyword.tallying) {
+		case EXAMINE_TAL_ALL:
+			t = cb_build_replacing_all (x, replacing_to, r);
+			break;
+		case EXAMINE_TAL_LEADING:
+			t = cb_build_replacing_leading (x, replacing_to, r);
+			break;
+		case EXAMINE_TAL_UNTIL_FIRST:
+			r = cb_list_add (r, CB_BUILD_FUNCALL_1 ("cob_inspect_before", x));
+			t = cb_build_replacing_characters (replacing_to, r);
+			break;
+		}
+		cb_emit_inspect ($0, t, REPLACING_CLAUSE);
+	}
   }
 | REPLACING examine_replacing_keyword
   single_character_value BY single_character_value
   {
-	cb_emit_examine_replacing ($0, $3, $5, examine_keyword.replacing);
+	cb_tree from = $3, to = $5;
+	cb_tree t, r = cb_build_inspect_region_start ();
+	switch (examine_keyword.replacing) {
+	case EXAMINE_REP_ALL:
+		t = cb_build_replacing_all (from, to, r);
+		break;
+	case EXAMINE_REP_LEADING:
+		t = cb_build_replacing_leading (from, to, r);
+		break;
+	case EXAMINE_REP_FIRST:
+		t = cb_build_replacing_first (from, to, r);
+		break;
+	case EXAMINE_REP_UNTIL_FIRST:
+		r = cb_list_add (r, CB_BUILD_FUNCALL_1 ("cob_inspect_before", from));
+		t = cb_build_replacing_characters (to, r);
+		break;
+	}
+	cb_emit_inspect ($0, t, REPLACING_CLAUSE);
   }
 ;
 

@@ -9829,66 +9829,6 @@ cb_build_inspect_region_start (void)
 	return CB_LIST_INIT (CB_BUILD_FUNCALL_0 ("cob_inspect_start"));
 }
 
-void
-cb_emit_examine_tallying (cb_tree var, cb_tree x,
-			  const enum cb_examine_tallying tallying_type,
-			  cb_tree replacing_to) {
-	cb_tree t, r = cb_build_inspect_region_start ();
-	switch (tallying_type) {
-	case EXAMINE_TAL_ALL:
-		cb_build_tallying_all ();
-		t = cb_build_tallying_value (x, r);
-		break;
-	case EXAMINE_TAL_LEADING:
-		cb_build_tallying_leading ();
-		t = cb_build_tallying_value (x, r);
-		break;
-	case EXAMINE_TAL_UNTIL_FIRST:
-		r = cb_list_add (r, CB_BUILD_FUNCALL_1 ("cob_inspect_before", x));
-		t = cb_build_tallying_characters (r);
-		break;
-	}
-	cb_emit_inspect (var, t, TALLYING_CLAUSE);
-	if (replacing_to) {
-		r = cb_build_inspect_region_start ();
-		switch (tallying_type) {
-		case EXAMINE_TAL_ALL:
-			t = cb_build_replacing_all (x, replacing_to, r);
-			break;
-		case EXAMINE_TAL_LEADING:
-			t = cb_build_replacing_leading (x, replacing_to, r);
-			break;
-		case EXAMINE_TAL_UNTIL_FIRST:
-			r = cb_list_add (r, CB_BUILD_FUNCALL_1 ("cob_inspect_before", x));
-			t = cb_build_replacing_characters (replacing_to, r);
-			break;
-		}
-		cb_emit_inspect (var, t, REPLACING_CLAUSE);
-	}
-}
-
-void
-cb_emit_examine_replacing (cb_tree var, cb_tree from, cb_tree to,
-			   const enum cb_examine_replacing replacing_type) {
-	cb_tree t, r = cb_build_inspect_region_start ();
-	switch (replacing_type) {
-	case EXAMINE_REP_ALL:
-		t = cb_build_replacing_all (from, to, r);
-		break;
-	case EXAMINE_REP_LEADING:
-		t = cb_build_replacing_leading (from, to, r);
-		break;
-	case EXAMINE_REP_FIRST:
-		t = cb_build_replacing_first (from, to, r);
-		break;
-	case EXAMINE_REP_UNTIL_FIRST:
-		r = cb_list_add (r, CB_BUILD_FUNCALL_1 ("cob_inspect_before", from));
-		t = cb_build_replacing_characters (to, r);
-		break;
-	}
-	cb_emit_inspect (var, t, REPLACING_CLAUSE);
-}
-
 /* MOVE statement */
 
 static void
