@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2021 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2022 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
 ## Brian Tiffin, Joe Robbins, Edward Hart
 ##
@@ -3632,6 +3632,56 @@ rewriting key: 98654321
 rewriting key: 12349865
 rewriting key: 98651234
 ])
+
+AT_CHECK([test "$COB_HAS_ISAM" = "db"], [0], [], [],
+# Previous test "failed" --> other ISAM, no need for more checks
+[AT_CHECK([true], [0])],
+
+# Previous test "passed" --> using BDB, recheck with DB_HOME set
+[AT_CHECK([DB_HOME=. $COBCRUN_DIRECT ./prog], [0],
+[Read all 00b02 keys sequentially
+Reading: 00b02
+    12345679  00 b 02, some 12345679 data
+    97654321  00 b 02, some 97654321 data
+    12349765  00 b 02, some 12349765 data
+    97651234  00 b 02, some 97651234 data
+-----------------------------------------
+Read all alternate keys greater than 00a02
+Seeking >= 00a02
+    12345679  00 b 02, some 12345679 data
+    97654321  00 b 02, some 97654321 data
+    12349765  00 b 02, some 12349765 data
+    97651234  00 b 02, some 97651234 data
+    12345689  00 c 13, some 12345689 data
+    98654321  00 c 13, some 98654321 data
+    12349865  00 c 13, some 12349865 data
+    98651234  00 c 13, some 98651234 data
+-----------------------------------------
+Read all primary keys less than 87654321
+Prime < 87654321
+    87651234  00 a 01, some 87651234 data
+    12349865  00 c 13, some 12349865 data
+    12349765  00 b 02, some 12349765 data
+    12348765  00 a 01, some 12348765 data
+    12345689  00 c 13, some 12345689 data
+    12345679  00 b 02, some 12345679 data
+    12345678  00 a 01, some 12345678 data
+-----------------------------------------
+],
+[rewriting key: 12345678
+rewriting key: 87654321
+rewriting key: 12348765
+rewriting key: 87651234
+rewriting key: 12345679
+rewriting key: 97654321
+rewriting key: 12349765
+rewriting key: 97651234
+rewriting key: 12345689
+rewriting key: 98654321
+rewriting key: 12349865
+rewriting key: 98651234
+])]
+)
 
 AT_CLEANUP
 

@@ -413,6 +413,7 @@
 
 	* common.c (cob_backtrace), common.h: new variant of cob_stacktrace
 	  with format similar to GDB's backtrace
+	* fileio.c (set_dbt): fix bug #701 bad initialization with DB_HOME
 
 2021-01-07  Simon Sobisch <simonsobisch@gnu.org>
 
