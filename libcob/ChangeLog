@@ -1,4 +1,11 @@
 
+2022-09-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fbdb.c: manual merge of fileio.c from 2019-08-25 and 2021-01-08
+	  including clean-up and bugfix of that
+	* fbdb.c: for retry lock: only set loc object dbt once,
+	  not in each iteration
+
 2022-07-25  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.h (cob_file_routines, cob_file_operation): moved defines to enum
@@ -23,6 +30,7 @@
 	  warning if the runtime is not configured for XML / JSON
 
 2022-07-04  Ron Norman <rjn@inglenet.com>
+
 	* Updated Copyright date to include 2022
 	* Reverted back to using D-ISAM and V-ISAM names
 
@@ -848,6 +856,10 @@
 	            and then skip commit/rollback if no modification
 	* fisam.c: Code added for use of ISAM logging/transaction ability
 	* foci.c, fodbc.c: Set on flag_log_support always
+
+2021-01-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (set_dbt)->fbdb.c: fix bug #701 bad initialization with DB_HOME
 
 2021-01-07  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -1733,8 +1745,13 @@
 
 2019-08-27  Ron Norman <rjn@inglenet.com>
 
-	* fileio.c: Clean up 'fcd' tables dynamically allocated via free_extfh_fcd
-	            fix some compile warnings
+	* fileio.c: clean up 'fcd' tables dynamically allocated via
+	  free_extfh_fcd, fix some compile warnings
+
+2019-08-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c [WITH_DB]->fbdb.c: minor refactoring - limit scope of some
+	  variables, extracted (set_dbt) from (lock_record, test_record_lock)
 
 2019-08-17  Simon Sobisch <simonsobisch@gnu.org>
 

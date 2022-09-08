@@ -775,15 +775,20 @@ chk_field_multi_values (struct cb_field *f)
 {
 	struct cb_field		*fc;
 	if (f->values 
-	 && CB_CHAIN (f->values))
+	 && CB_CHAIN (f->values)) {
 		return 1;
+	}
 	if (f->values
 	 && CB_VALUE (f->values)) {
+		/* CHECKME: Why do we return 1 on ALL '0'?
+		   and what about [ALL] ZERO ?*/
 		 if (CB_LITERAL_P (CB_VALUE(f->values))
-		  && CB_LITERAL (CB_VALUE(f->values))->all)
+		  && CB_LITERAL (CB_VALUE(f->values))->all) {
 			return 1;
-		if (f->flag_occurs)
+		}
+		if (f->flag_occurs) {
 			return 1;
+		}
 	}
 	for (fc = f->children; fc && !fc->redefines; fc = fc->sister) {
 		if (chk_field_multi_values (fc)) {
@@ -797,8 +802,9 @@ static int
 chk_field_any_values (struct cb_field *f)
 {
 	struct cb_field		*fc;
-	if (f->values)
+	if (f->values) {
 		return 1;
+	}
 	for (fc = f->children; fc && !fc->redefines; fc = fc->sister) {
 		if (chk_field_any_values (fc)) {
 			return 1;
@@ -1389,16 +1395,14 @@ output_data (cb_tree x)
 	case CB_TAG_CONST:
 		/* LCOV_EXCL_START */
 		if (x != cb_null) {
-			cobc_err_msg (_("unexpected tree tag: %d"), (int)CB_TREE_TAG (x));
-			COBC_ABORT ();
+			CB_TREE_TAG_UNEXPECTED_ABORT (x);
 		}
 		/* LCOV_EXCL_STOP */
 		output ("NULL");
 		break;
 	/* LCOV_EXCL_START */
 	default:
-		cobc_err_msg (_("unexpected tree tag: %d"), (int)CB_TREE_TAG (x));
-		COBC_ABORT ();
+		CB_TREE_TAG_UNEXPECTED_ABORT (x);
 	/* LCOV_EXCL_STOP */
 	}
 }
@@ -1495,8 +1499,7 @@ again:
 		break;
 	/* LCOV_EXCL_START */
 	default:
-		cobc_err_msg (_("unexpected tree tag: %d"), (int)CB_TREE_TAG (x));
-		COBC_ABORT ();
+		CB_TREE_TAG_UNEXPECTED_ABORT (x);
 	/* LCOV_EXCL_STOP */
 	}
 }
@@ -1830,8 +1833,7 @@ output_attr (const cb_tree x)
 		break;
 	/* LCOV_EXCL_START */
 	default:
-		cobc_err_msg (_("unexpected tree tag: %d"), (int)CB_TREE_TAG (x));
-		COBC_ABORT ();
+		CB_TREE_TAG_UNEXPECTED_ABORT (x);
 	/* LCOV_EXCL_STOP */
 	}
 
@@ -2737,8 +2739,7 @@ output_data_sub (cb_tree x, int subscript)
 		/* Fall through */
 	/* LCOV_EXCL_START */
 	default:
-		cobc_err_msg (_("unexpected tree tag: %d"), (int)CB_TREE_TAG (x));
-		COBC_ABORT ();
+		CB_TREE_TAG_UNEXPECTED_ABORT (x);
 	/* LCOV_EXCL_STOP */
 	}
 }
@@ -3836,8 +3837,7 @@ output_integer (cb_tree x)
 		break;
 	/* LCOV_EXCL_START */
 	default:
-		cobc_err_msg (_("unexpected tree tag: %d"), (int)CB_TREE_TAG (x));
-		COBC_ABORT ();
+		CB_TREE_TAG_UNEXPECTED_ABORT (x);
 	/* LCOV_EXCL_STOP */
 	}
 }
@@ -4080,8 +4080,7 @@ output_long_integer (cb_tree x)
 		break;
 	/* LCOV_EXCL_START */
 	default:
-		cobc_err_msg (_("unexpected tree tag: %d"), (int)CB_TREE_TAG (x));
-		COBC_ABORT ();
+		CB_TREE_TAG_UNEXPECTED_ABORT (x);
 	/* LCOV_EXCL_STOP */
 	}
 }
@@ -4607,8 +4606,7 @@ output_param (cb_tree x, int id)
 		break;
 	/* LCOV_EXCL_START */
 	default:
-		cobc_err_msg (_("unexpected tree tag: %d"), (int)CB_TREE_TAG (x));
-		COBC_ABORT ();
+		CB_TREE_TAG_UNEXPECTED_ABORT (x);
 	/* LCOV_EXCL_STOP */
 	}
 }
@@ -5040,8 +5038,7 @@ output_cond (cb_tree x, const int save_flag)
 		break;
 	/* LCOV_EXCL_START */
 	default:
-		cobc_err_msg (_("unexpected tree tag: %d"), (int)CB_TREE_TAG (x));
-		COBC_ABORT ();
+		CB_TREE_TAG_UNEXPECTED_ABORT (x);
 	/* LCOV_EXCL_STOP */
 	}
 	in_cond = 0;
@@ -5523,45 +5520,49 @@ output_initialize_one (struct cb_initialize *p, cb_tree x)
 		value = CB_VALUE (f->values);
 		/* Check for non-standard OCCURS */
 		if ((f->level == 1 || f->level == 77)
-		 && f->flag_occurs 
+		 && f->flag_occurs
 		 && !p->flag_init_statement) {
 			init_occurs = 1;
 		} else {
 			init_occurs = 0;
 		}
-		if (value == cb_space) {
-			output_figurative (x, f, ' ', init_occurs);
-			return;
-		} else if (value == cb_low) {
-			output_figurative (x, f, 0, init_occurs);
-			return;
-		} else if (value == cb_high) {
-			output_figurative (x, f, 255, init_occurs);
-			return;
-		} else if (value == cb_quote) {
-			if (cb_flag_apostrophe) {
-				output_figurative (x, f, '\'', init_occurs);
-			} else {
-				output_figurative (x, f, '"', init_occurs);
-			}
-			return;
-		} else if (value == cb_zero && f->usage == CB_USAGE_DISPLAY) {
-			if (!f->flag_sign_separate && !f->flag_blank_zero) {
-				output_figurative (x, f, '0', init_occurs);
-			} else {
-				output_move (cb_zero, x);
-			}
-			return;
-		} else if (value == cb_null && f->usage == CB_USAGE_DISPLAY) {
-			output_figurative (x, f, 0, init_occurs);
-			return;
-		} else if (CB_LITERAL_P (value) && CB_LITERAL (value)->all) {
+		if (CB_LITERAL_P (value) && CB_LITERAL (value)->all) {
 			/* ALL literal */
 			output_initialize_literal (x, f,
 						   CB_LITERAL (value), init_occurs);
 			return;
-		} else if (CB_CONST_P (value) 
-				|| CB_TREE_CLASS (value) == CB_CLASS_NUMERIC) {
+		}
+		if (CB_CONST_P (value)) {
+			if (value == cb_space) {
+				output_figurative (x, f, ' ', init_occurs);
+				return;
+			} else if (value == cb_low) {
+				output_figurative (x, f, 0, init_occurs);
+				return;
+			} else if (value == cb_high) {
+				output_figurative (x, f, 255, init_occurs);
+				return;
+			} else if (value == cb_quote) {
+				if (cb_flag_apostrophe) {
+					output_figurative (x, f, '\'', init_occurs);
+				} else {
+					output_figurative (x, f, '"', init_occurs);
+				}
+				return;
+			} else if (value == cb_zero && f->usage == CB_USAGE_DISPLAY) {
+				if (!f->flag_sign_separate && !f->flag_blank_zero) {
+					output_figurative (x, f, '0', init_occurs);
+				} else {
+					output_move (cb_zero, x);
+				}
+				return;
+			} else if (value == cb_null && f->usage == CB_USAGE_DISPLAY) {
+				output_figurative (x, f, 0, init_occurs);
+				return;
+			}
+		}
+		if (CB_CONST_P (value)
+		 || CB_TREE_CLASS (value) == CB_CLASS_NUMERIC) {
 			/* Figurative literal, numeric literal */
 			/* Check for non-standard 01 OCCURS */
 			if (init_occurs) {
@@ -9598,8 +9599,7 @@ output_stmt (cb_tree x)
 		break;
 	/* LCOV_EXCL_START */
 	default:
-		cobc_err_msg (_("unexpected tree tag: %d"), (int)CB_TREE_TAG (x));
-		COBC_ABORT ();
+		CB_TREE_TAG_UNEXPECTED_ABORT (x);
 	/* LCOV_EXCL_STOP */
 	}
 }
@@ -10431,37 +10431,37 @@ output_report_one_field (struct cb_report *r, struct cb_field *f, int idx, int o
 		sprintf (report_field_name, "&%s", field_name);
 
 		if (f->report_field_from) {
-			output_local("/*FROM %s*/{",f->report_field_from->name);
+			output_local ("/*FROM %s*/{", f->report_field_from->name);
 			p = real_field_founder (f->report_field_from);
 			if (f->report_field_size > 1)
-				output_local("%d,",f->report_field_size);
+				output_local ("%d,", f->report_field_size);
 			else
-				output_local("%d,",(int)f->report_field_from->size);
-			output_local("%s%d",CB_PREFIX_BASE,p->id);
+				output_local ("%d,", (int)f->report_field_from->size);
+			output_local ("%s%d", CB_PREFIX_BASE,p->id);
 			if (f->report_field_offset > 0)
-				output_local(" + %d",f->report_field_offset);
+				output_local (" + %d", f->report_field_offset);
 			else if (f->report_field_from->offset > 0)
-				output_local(" + %d",f->report_field_from->offset);
-			output_local(",");
+				output_local (" + %d", f->report_field_from->offset);
+			output_local (",");
 			output_attr (cb_build_field_reference (f->report_field_from, NULL));
-			output_local("},");
+			output_local ("},");
 		} else if (f->report_from) {
-			p = cb_code_field(f->report_from);
-			output_local("/*COMPUTE*/{%d,",p->size);
+			p = cb_code_field (f->report_from);
+			output_local ("/*COMPUTE*/{%d,", p->size);
 			output_base (p, 0);
-			output_local(",");
+			output_local (",");
 			output_attr (cb_build_field_reference (p, NULL));
-			output_local("},");
+			output_local ("},");
 		} else {
-			output_local("{0,NULL,NULL},");
+			output_local ("{0,NULL,NULL},");
 		}
 		if (f->report_sum_counter) {
-			output_local("/*SUM*/");
+			output_local ("/*SUM*/");
 			output_param (f->report_sum_counter, 0);
 		} else {
-			output_local("NULL");
+			output_local ("NULL");
 		}
-		output_local(",");
+		output_local (",");
 		if(f->report_control) {
 			output_local("/*CONTROL*/");
 			output_param (f->report_control, 0);
@@ -11663,8 +11663,7 @@ output_module_register_init (cb_tree reg, const char *name)
 
 	/* LCOV_EXCL_START */
 	if (!CB_REF_OR_FIELD_P (reg)) {
-		cobc_err_msg (_("unexpected tree tag: %d"), (int)CB_TREE_TAG (reg));
-		COBC_ABORT ();
+		CB_TREE_TAG_UNEXPECTED_ABORT (reg);
 	}
 	/* LCOV_EXCL_STOP */
 
@@ -13788,7 +13787,7 @@ output_function_prototypes (struct cb_program *prog)
 	if (!prog) {
 		/* checked to keep the analyzer happy, TODO: real fix later */
 		cobc_err_msg (_ ("call to '%s' with invalid parameter '%s'"),
-			"output_function_prototypes", "prog");;
+			"output_function_prototypes", "prog");
 		COBC_ABORT ();
 	}
 	/* LCOV_EXCL_STOP */

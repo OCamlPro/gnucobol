@@ -3062,7 +3062,6 @@ cb_validate_program_environment (struct cb_program *prog)
 	int			values[256];
 	int			charvals[256];
 	int			dupvals[256];
-	char		errmsg[256];
 
 	/* Check ALPHABET clauses */
 	/* Complicated by difference between code set and collating sequence */
@@ -3259,40 +3258,40 @@ cb_validate_program_environment (struct cb_program *prog)
 			}
 		}
 		if (dupls || unvals) {
+			cb_tree alphabet = CB_VALUE (l);
 			if (dupls) {
+				/* FIXME: can't handle UTF8 / NATIONAL values */
+				char		dup_vals[256];
 				i = 0;
 				for (n = 0; n < 256; n++) {
 					if (dupvals[n] != -1) {
 						if (i > 240) {
-							sprintf(&errmsg[i], ", ...");
-							i = i + 5;
+							i += sprintf (dup_vals + i, ", ...");
 							break;
 						}
 						if (i) {
-							sprintf(&errmsg[i], ", ");
-							i = i + 2;
+							i += sprintf (dup_vals + i, ", ");
 						}
-						if (isprint(n)) {
-							errmsg[i++] = (char)n;
+						if (isprint (n)) {
+							dup_vals[i++] = (char)n;
 						} else {
-							sprintf(&errmsg[i], "x'%02x'", n);
-							i = i + 5;
+							i += sprintf (dup_vals + i, "x'%02x'", n);
 						}
 					};
 				}
-				errmsg[i] = 0;
-				cb_error_x (CB_VALUE(l),
+				dup_vals[i] = 0;
+				cb_error_x (alphabet,
 					_("duplicate character values in alphabet '%s': %s"),
-					    ap->name, errmsg);
+					ap->name, dup_vals);
 			}
 			if (unvals) {
-				cb_error_x (CB_VALUE(l),
+				cb_error_x (alphabet,
 					_("invalid character values in alphabet '%s', starting at position %d"),
-					    ap->name, pos);
+					ap->name, pos);
 			}
 			ap->low_val_char = 0;
 			ap->high_val_char = 255;
-			continue;
+			return;
 		}
 		/* Calculate HIGH-VALUE */
 		/* If all 256 values have been specified, */
@@ -3664,7 +3663,7 @@ cb_validate_crt_status (cb_tree ref, cb_tree field_tree) {
 	/* LCOV_EXCL_START */
 	if (ref == NULL || !CB_REFERENCE_P (ref)) {
 		cobc_err_msg (_("call to '%s' with invalid parameter '%s'"),
-			"cb_validate_crt_status", "ref");;
+			"cb_validate_crt_status", "ref");
 		COBC_ABORT ();
 	}
 	/* LCOV_EXCL_STOP */
@@ -5507,8 +5506,7 @@ decimal_expand (cb_tree d, cb_tree x)
 		break;
 	/* LCOV_EXCL_START */
 	default:
-		cobc_err_msg (_("unexpected tree tag: %d"), (int)CB_TREE_TAG (x));
-		COBC_ABORT ();
+		CB_TREE_TAG_UNEXPECTED_ABORT (x);
 	/* LCOV_EXCL_STOP */
 	}
 }
@@ -9230,8 +9228,7 @@ warning_destination (const enum cb_warn_opt warning_opt, cb_tree x)
 	} else {
 		cobc_err_msg (_("call to '%s' with invalid parameter '%s'"),
 			"warning_destination", "x");
-		cobc_err_msg (_("unexpected tree tag: %d"), (int)CB_TREE_TAG (x));
-		COBC_ABORT ();
+		CB_TREE_TAG_UNEXPECTED_ABORT (x);
 	}
 
 #if 1  /* FIXME: this is wrong, should be removed and register building be
@@ -9286,11 +9283,7 @@ move_warning (cb_tree src, cb_tree dst, const unsigned int value_flag,
 	if (suppress_warn) {
 		return;
 	}
-#if 1 /* BAD hack, but works for now */
 	if (cobc_cs_check == CB_CS_SET || !src->source_line) {
-#else /* old version */
-	if (CB_LITERAL_P (src) || !src->source_line) {
-#endif
 		loc = dst;
 	} else {
 		loc = src;
@@ -9304,7 +9297,7 @@ move_warning (cb_tree src, cb_tree dst, const unsigned int value_flag,
 			cb_note_x (COBC_WARN_FILLER, loc, _("value size is %d"), src_flag);
 		}
 	} else {
-		/* MOVE statement */
+		/* MOVE or SET statement */
 		if (cb_warn_opt_val[warning_opt] != COBC_WARN_DISABLED) {
 			cb_warning_x (warning_opt, loc, "%s", msg);
 			if (src_flag) {
@@ -10357,9 +10350,7 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 		break;
 	/* LCOV_EXCL_START */
 	default:
-		cobc_err_msg (_("unexpected tree tag: %d"),
-			      (int)CB_TREE_TAG (src));
-		COBC_ABORT ();
+		CB_TREE_TAG_UNEXPECTED_ABORT (src);
 	/* LCOV_EXCL_STOP */
 	}
 
@@ -11262,7 +11253,7 @@ cb_emit_move (cb_tree src, cb_tree dsts)
 					}
 					if (bgnpos >= 1
 					 && p->storage != CB_STORAGE_LINKAGE
-					 && !p->flag_item_based 
+					 && !p->flag_item_based
 					 && CB_LITERAL_P (src)
 					 && !cb_is_field_unbounded (p)) {
 						CB_REFERENCE (x)->length = cb_int (p->size - bgnpos + 1);
@@ -12411,11 +12402,12 @@ cb_emit_sort_init (cb_tree name, cb_tree keys, cb_tree col, cb_tree nat_col)
 					     cb_int ((int)cb_list_length (keys)), col));
 		/* TODO: pass key-specific collation to libcob */
 		for (l = keys; l; l = CB_CHAIN (l)) {
+			struct cb_field * const f = CB_FIELD_PTR (CB_VALUE(l));
 			cb_emit (CB_BUILD_FUNCALL_3 ("cob_table_sort_init_key",
-					CB_VALUE (l),
-					CB_PURPOSE (l),
-					cb_int(CB_FIELD_PTR (CB_VALUE(l))->offset
-						   - CB_FIELD_PTR (CB_VALUE(l))->parent->offset)));
+						     CB_VALUE (l),
+						     CB_PURPOSE (l),
+						     cb_int(f->offset -
+							    (f->parent ? f->parent->offset : 0))));
 		}
 		f = CB_FIELD (rtree);
 		cb_emit (CB_BUILD_FUNCALL_2 ("cob_table_sort", name,

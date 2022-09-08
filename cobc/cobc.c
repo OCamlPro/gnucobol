@@ -637,106 +637,6 @@ cobc_free_mem (void)
 	ppp_clear_lists ();
 }
 
-#ifdef COB_TREE_DEBUG
-static const char *
-cobc_enum_explain (const enum cb_tag tag)
-{
-	switch (tag) {
-	case CB_TAG_CONST:
-		return "CONSTANT";
-	case CB_TAG_INTEGER:
-		return "INTEGER";
-	case CB_TAG_STRING:
-		return "STRING";
-	case CB_TAG_ALPHABET_NAME:
-		return "ALPHABET";
-	case CB_TAG_CLASS_NAME:
-		return "CLASS";
-	case CB_TAG_LOCALE_NAME:
-		return "LOCALE";
-	case CB_TAG_SYSTEM_NAME:
-		return "SYSTEM";
-	case CB_TAG_LITERAL:
-		return "LITERAL";
-	case CB_TAG_DECIMAL:
-		return "DECIMAL";
-	case CB_TAG_FIELD:
-		return "FIELD";
-	case CB_TAG_FILE:
-		return "FILE";
-	case CB_TAG_REPORT:
-		return "REPORT";
-	case CB_TAG_REFERENCE:
-		return "REFERENCE";
-	case CB_TAG_BINARY_OP:
-		return "BINARY OP";
-	case CB_TAG_FUNCALL:
-		return "FUNCTION CALL";
-	case CB_TAG_CAST:
-		return "CAST";
-	case CB_TAG_INTRINSIC:
-		return "INTRINSIC";
-	case CB_TAG_LABEL:
-		return "LABEL";
-	case CB_TAG_ASSIGN:
-		return "ASSIGN";
-	case CB_TAG_INITIALIZE:
-		return "INITIALIZE";
-	case CB_TAG_SEARCH:
-		return "SEARCH";
-	case CB_TAG_CALL:
-		return "CALL";
-	case CB_TAG_GOTO:
-		return "GO TO";
-	case CB_TAG_IF:
-		return "IF";
-	case CB_TAG_PERFORM:
-		return "PERFORM";
-	case CB_TAG_STATEMENT:
-		return "STATEMENT";
-	case CB_TAG_CONTINUE:
-		return "CONTINUE";
-	case CB_TAG_CANCEL:
-		return "CANCEL";
-	case CB_TAG_ALTER:
-		return "ALTER";
-	case CB_TAG_SET_ATTR:
-		return "SET ATTRIBUTE";
-	case CB_TAG_PERFORM_VARYING:
-		return "PERFORM";
-	case CB_TAG_PICTURE:
-		return "PICTURE";
-	case CB_TAG_LIST:
-		return "LIST";
-	case CB_TAG_DIRECT:
-		return "DIRECT";
-	case CB_TAG_DEBUG:
-		return "DEBUG";
-	case CB_TAG_DEBUG_CALL:
-		return "DEBUG CALL";
-	case CB_TAG_PROGRAM:
-		return "PROGRAM";
-	case CB_TAG_PROTOTYPE:
-		return "PROTOTYPE";
-	case CB_TAG_DECIMAL_LITERAL:
-		return "DECIMAL LITERAL";
-	case CB_TAG_REPORT_LINE:
-		return "REPORT LINE";
-	case CB_TAG_ML_SUPPRESS:
-		return "ML SUPPRESS CLAUSE";
-	case CB_TAG_ML_TREE:
-		return "ML OUTPUT TREE";
-	case CB_TAG_ML_SUPPRESS_CHECKS:
-		return "ML SUPPRESS CHECKS";
-	case CB_TAG_CD:
-		return "COMMUNICATION DESCRIPTION";
-	default:
-		break;
-	}
-	return "UNKNOWN";
-}
-#endif
-
 static void
 free_error_list (struct list_error *err)
 {
@@ -834,14 +734,11 @@ cobc_err_msg (const char *fmt, ...)
 	vfprintf (stderr, fmt, ap);
 
 	if (cb_src_list_file
-		&& cb_listing_file_struct
-		&& cb_listing_file_struct->name) {
-
-		char			errmsg[BUFSIZ];
-		vsprintf (errmsg, fmt, ap);
-
-		cb_add_error_to_listing (NULL, 0,
-			"cobc: ", errmsg);
+	 && cb_listing_file_struct
+	 && cb_listing_file_struct->name) {
+		char errmsg[COB_SMALL_BUFF];
+		vsnprintf (errmsg, COB_SMALL_MAX, fmt, ap);
+		cb_add_error_to_listing (NULL, 0, "cobc: ", errmsg);
 	}
 	va_end (ap);
 	putc ('\n', stderr);
@@ -882,14 +779,14 @@ cobc_tree_cast_error (const cb_tree x, const char * filename, const int line_num
 		type = "None";
 	} else {
 		name = cb_name (x);
-		type = cobc_enum_explain (CB_TREE_TAG (x));
+		type = cb_enum_explain (CB_TREE_TAG (x));
 	}
 
 	putc ('\n', stderr);
 	/* not translated as this only occurs if developer-only setup is used: */
 	cobc_err_msg ("%s: %d: invalid cast from '%s' type %s to type %s",
 		filename, line_num, name, type,
-		cobc_enum_explain (tagnum));
+		cb_enum_explain (tagnum));
 
 	if (cast_error_raised != 1) {
 		cobc_err_msg ("additional cast error was raised during name lookup");
@@ -5880,7 +5777,6 @@ print_program_trailer (void)
 	int			print_names = 0;
 	int			print_break = 1;
 	int			found;
-	char			err_msg[BUFSIZ];
 
 	if (current_program != NULL) {
 
@@ -6009,27 +5905,26 @@ print_program_trailer (void)
 	}
 	if (cb_listing_error_head) {
 		if (cb_listing_with_messages) {
+			char errmsg[COB_SMALL_BUFF];
 			err = cb_listing_error_head;
 			do {
 				const char *prefix = err->prefix ? err->prefix : "";
-				if (err->file) {
-					if (err->line > 0) {
-						if (cb_msg_style == CB_MSG_STYLE_MSC) {
-							snprintf (err_msg, BUFSIZ, "%s(%d): %s%s",
-								err->file, err->line, prefix, err->msg);
-						} else {
-							snprintf (err_msg, BUFSIZ, "%s:%d: %s%s",
-								err->file, err->line, prefix, err->msg);
-						}
-					} else {
-						snprintf (err_msg, BUFSIZ, "%s: %s%s",
-							err->file, prefix, err->msg);
-					}
-				} else {
-					snprintf (err_msg, BUFSIZ, "%s%s",
+				if (!err->file) {
+					snprintf (errmsg, COB_SMALL_MAX, "%s%s",
 						prefix, err->msg);
+				} else
+				if (err->line <= 0) {
+					snprintf (errmsg, COB_SMALL_MAX, "%s: %s%s",
+						err->file, prefix, err->msg);
+				} else
+				if (cb_msg_style == CB_MSG_STYLE_MSC) {
+					snprintf (errmsg, COB_SMALL_MAX, "%s(%d): %s%s",
+						err->file, err->line, prefix, err->msg);
+				} else {
+					snprintf (errmsg, COB_SMALL_MAX, "%s:%d: %s%s",
+						err->file, err->line, prefix, err->msg);
 				}
-				print_program_data (err_msg);
+				print_program_data (errmsg);
 				err = err->next;
 			} while (err);
 			print_program_data ("");

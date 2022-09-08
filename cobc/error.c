@@ -51,14 +51,13 @@ static void
 print_error_prefix (const char *file, int line, const char *prefix)
 {
 	if (file) {
-		if (line > 0) {
-			if (cb_msg_style == CB_MSG_STYLE_MSC) {
-				fprintf (stderr, "%s(%d): ", file, line);
-			} else {
-				fprintf (stderr, "%s:%d: ", file, line);
-			}
-		} else {
+		if (line <= 0) {
 			fprintf (stderr, "%s: ", file);
+		} else
+		if (cb_msg_style == CB_MSG_STYLE_MSC) {
+			fprintf (stderr, "%s(%d): ", file, line);
+		} else {
+			fprintf (stderr, "%s:%d: ", file, line);
 		}
 	}
 	if (prefix) {
@@ -70,8 +69,6 @@ static void
 print_error (const char *file, int line, const char *prefix,
 	     const char *fmt, va_list ap, const char *diagnostic_option)
 {
-	static char errmsg[COB_SMALL_BUFF];
-
 	if (!file) {
 		file = cb_source_file;
 	}
@@ -80,8 +77,8 @@ print_error (const char *file, int line, const char *prefix,
 	}
 
 	if (file != NULL
-	 && strcmp(file,last_file) != 0) {
-		snprintf(last_file,sizeof(last_file)-1,"%s",file);
+	 && strcmp (file,last_file) != 0) {
+		snprintf (last_file,sizeof(last_file)-1,"%s",file);
 		last_section = NULL;
 		last_paragraph = NULL;
 	}
@@ -113,14 +110,23 @@ print_error (const char *file, int line, const char *prefix,
 
 	/* Print the error */
 	print_error_prefix (file, line, prefix);
-	vsnprintf (errmsg, COB_SMALL_MAX, fmt, ap);
-	if (diagnostic_option) {
-		fprintf (stderr, "%s [%s]\n", errmsg, diagnostic_option);
+	if (!cb_src_list_file) {
+		/* note: better would be one print path, but this would
+		   require va_copy (available as Gnulib module) for listing code */
+		vfprintf (stderr, fmt, ap);
+		if (diagnostic_option) {
+			fprintf (stderr, " [%s]\n", diagnostic_option);
+		} else {
+			fputc ('\n', stderr);
+		}
 	} else {
-		fprintf (stderr, "%s\n", errmsg);
-	}
-
-	if (cb_src_list_file) {
+		char	errmsg[COB_SMALL_BUFF];
+		vsnprintf (errmsg, COB_SMALL_MAX, fmt, ap);
+		if (diagnostic_option) {
+			fprintf (stderr, "%s [%s]\n", errmsg, diagnostic_option);
+		} else {
+			fprintf (stderr, "%s\n", errmsg);
+		}
 		cb_add_error_to_listing (file, line, prefix, errmsg);
 	}
 }
@@ -128,36 +134,32 @@ print_error (const char *file, int line, const char *prefix,
 static void
 cobc_too_many_errors (void)
 {
-	if (cb_diagnostic_show_option) {
-		char diagnostic_option[COB_MINI_BUFF];
-		if (cb_max_errors == -1) {
-			snprintf (diagnostic_option, COB_MINI_MAX,
-				"-Wfatal-errors");
-		} else {
-			snprintf (diagnostic_option, COB_MINI_MAX,
-				"-fmax-errors=%d", cb_max_errors);
-		}
-		fprintf (stderr, "cobc: %s [%s]\n", _("too many errors"), diagnostic_option);
+	if (!cb_diagnostic_show_option) {
+		fprintf (stderr, "cobc: %s\n",
+			_("too many errors"));
+	} else
+	if (cb_max_errors == -1) {
+		fprintf (stderr, "cobc: %s [-Wfatal-errors]\n",
+			_("too many errors"));
 	} else {
-		fprintf (stderr, "cobc: %s\n", _("too many errors"));
+		fprintf (stderr, "cobc: %s [-fmax-errors=%d]\n",
+			_("too many errors"), cb_max_errors);
 	}
 	cobc_abort_terminate (0);
 }
-
 
 void
 cb_inclusion_note (const char *file, int line)
 {
 	/* Print the inclusion error */
 	fprintf (stderr, _("in file included from "));
-	if (line > 0) {
-		if (cb_msg_style == CB_MSG_STYLE_MSC) {
-			fprintf (stderr, "%s(%d):\n", file, line);
-		} else {
-			fprintf (stderr, "%s:%d:\n", file, line);
-		}
-	} else {
+	if (line <= 0) {
 		fprintf (stderr, "%s:\n", file);
+	} else
+	if (cb_msg_style == CB_MSG_STYLE_MSC) {
+		fprintf (stderr, "%s(%d):\n", file, line);
+	} else {
+		fprintf (stderr, "%s:%d:\n", file, line);
 	}
 }
 

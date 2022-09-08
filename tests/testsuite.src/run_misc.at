@@ -3360,6 +3360,28 @@ AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [0004030201], [])
 AT_CLEANUP
 
 
+AT_SETUP([SORT: table sort (toplevel)])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 VAL           PIC X(5) VALUE "43512".
+       01 TBL           REDEFINES VAL PIC X OCCURS 5.
+       PROCEDURE        DIVISION.
+           SORT TBL ASCENDING
+           IF VAL NOT = "12345" DISPLAY VAL.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([SORT: EBCDIC table sort])
 AT_KEYWORDS([runmisc ALPHABET OBJECT-COMPUTER])
 
@@ -7027,13 +7049,21 @@ AT_CLEANUP
 # and    -fsource-location, which is implied by -debug/g
 AT_SETUP([READY TRACE / RESET TRACE])
 AT_KEYWORDS([runmisc -ftrace -ftraceall -fsource-location
-CALL RECURSIVE RETURN-CODE
+CALL RECURSIVE RETURN-CODE SEARCH
 COB_PHYSICAL_CANCEL COB_PRE_LOAD])
 
 AT_DATA([caller.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      caller.
-      *
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 ttab.
+          03 tentries   PIC 9 VALUE 0.
+          03 tentry     OCCURS 0 TO 5    DEPENDING ON tentries
+                        ASCENDING KEY tkey INDEXED BY tidx.
+             05 tkey    pic x(3).
+       78 ZER  VALUE ZERO.
+      *>
        PROCEDURE        DIVISION.
            READY TRACE
            MOVE 1 TO RETURN-CODE
@@ -7048,6 +7078,41 @@ AT_DATA([caller.cob], [
            CANCEL "callee1"
            CALL "callrec"
            MOVE 0 TO RETURN-CODE
+      *>
+           SEARCH ALL tentry
+              AT END
+                 ADD  1    TO tentries
+                 SET  tidx TO tentries
+                 MOVE 'A'  TO tkey(tidx)
+              WHEN tkey(tidx) = 'A'
+                 DISPLAY '*Magic*'
+           END-SEARCH
+      *> tidx is still one, expect a direct find
+           SEARCH tentry
+              AT END
+                 DISPLAY '*Dark Magic*'
+              WHEN tkey(tidx) = 'A'
+                 ADD  1    TO tentries
+                 SET  tidx TO tentries
+                 MOVE 'B'  TO tkey(tidx)
+           END-SEARCH
+      *> tidx is still two, expect end
+           SEARCH tentry
+              VARYING tidx
+              AT END
+                 ADD  1    TO tentries
+                 SET  tidx TO tentries
+                 MOVE 'C'  TO tkey(tidx)
+              WHEN tkey(tidx) = ZER
+                 DISPLAY '* Darker Magic *'
+           END-SEARCH
+           SEARCH ALL tentry
+              AT END
+                 DISPLAY 'NO COMMENT'
+              WHEN tkey(tidx) = 'C'
+                 CONTINUE
+           END-SEARCH
+      *>
            STOP RUN.
 ])
 
@@ -7171,7 +7236,7 @@ AT_DATA([callee2c.cob], [
        END-PAR.
            EXIT PROGRAM.
        OTHER-SEC SECTION.
-           COMPUTE RETURN-CODE = 1 + 2 END-COMPUTE.
+           COMPUTE RETURN-CODE = 1 + 2.
        EX. EXIT.
 ])
 
@@ -7185,10 +7250,10 @@ AT_CHECK([COB_PHYSICAL_CANCEL=1 COB_PRE_LOAD="preload"$PATHSEP"preload2" \
  $COBCRUN_DIRECT ./prog], [0], [],
 [Source: 'caller.cob'
 Program-Id: caller
-Program-Id: caller                      MOVE                            Line:      7
-Program-Id: caller                      RESET TRACE                     Line:      8
-Program-Id: caller                      MOVE                            Line:     12
-Program-Id: caller                      CALL                            Line:     13
+Program-Id: caller                      MOVE                            Line:     15
+Program-Id: caller                      RESET TRACE                     Line:     16
+Program-Id: caller                      MOVE                            Line:     20
+Program-Id: caller                      CALL                            Line:     21
 Source: 'callee1.cob'
 Program-Id: callee1
 Program-Id: callee1              Entry: callee1                         Line:      4
@@ -7225,7 +7290,7 @@ Program-Id: callee1                     EXIT PROGRAM                    Line:   
 Program-Id: callee1               Exit: callee1                         Line:     35
 Source: 'caller.cob'
 Program-Id: caller
-Program-Id: caller                      CALL                            Line:     15
+Program-Id: caller                      CALL                            Line:     23
 Source: 'callee1.cob'
 Program-Id: callee1
 Program-Id: callee1              Entry: callee1                         Line:      4
@@ -7262,8 +7327,8 @@ Program-Id: callee1                     EXIT PROGRAM                    Line:   
 Program-Id: callee1               Exit: callee1                         Line:     35
 Source: 'caller.cob'
 Program-Id: caller
-Program-Id: caller                      CANCEL                          Line:     16
-Program-Id: caller                      CALL                            Line:     17
+Program-Id: caller                      CANCEL                          Line:     24
+Program-Id: caller                      CALL                            Line:     25
 Source: 'preload2.cob'
 Program-Id: callrec
 Program-Id: callrec              Entry: callrec                         Line:      9
@@ -7294,8 +7359,24 @@ Program-Id: callrec                     GOBACK                          Line:   
 Program-Id: callrec               Exit: callrec                         Line:     35
 Source: 'caller.cob'
 Program-Id: caller
-Program-Id: caller                      MOVE                            Line:     18
-Program-Id: caller                      STOP RUN                        Line:     19
+Program-Id: caller                      MOVE                            Line:     26
+Program-Id: caller                      SEARCH ALL                      Line:     28
+Program-Id: caller                      ADD                             Line:     30
+Program-Id: caller                      SET                             Line:     31
+Program-Id: caller                      MOVE                            Line:     32
+Program-Id: caller                      SEARCH                          Line:     37
+Program-Id: caller                      WHEN                            Line:     40
+Program-Id: caller                      ADD                             Line:     41
+Program-Id: caller                      SET                             Line:     42
+Program-Id: caller                      MOVE                            Line:     43
+Program-Id: caller                      SEARCH                          Line:     46
+Program-Id: caller                      WHEN                            Line:     52
+Program-Id: caller                      ADD                             Line:     49
+Program-Id: caller                      SET                             Line:     50
+Program-Id: caller                      MOVE                            Line:     51
+Program-Id: caller                      SEARCH ALL                      Line:     55
+Program-Id: caller                      CONTINUE                        Line:     59
+Program-Id: caller                      STOP RUN                        Line:     62
 ])
 
 AT_CLEANUP
