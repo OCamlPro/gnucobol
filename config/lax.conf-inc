@@ -139,6 +139,9 @@ picture-l:				+warning
 # loaded by *including* the appropriate word list)
 reserved-words:		default
 
+# enable EXAMINE statements
+reserved:		EXAMINE
+
 # enable all intrinsic functions
 intrinsic-function:	DIALECT-ALL
 
