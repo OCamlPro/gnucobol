@@ -13982,10 +13982,7 @@ single_character_value:
   {
 	struct cb_reference * const r =
 		CB_REFERENCE_P ($1) ? CB_REFERENCE ($1) : NULL;
-	if (!r ||
-	    (r->length	     /* ref-mod length given as literal only, for now */
-	     ? (CB_LITERAL_P (r->length) && cb_get_int (r->length) != 1)
-	     : (CB_FIELD_PTR ($1)->size != 1))) {
+	if (!r || r->offset || CB_FIELD_PTR ($1)->size != 1) { /* forbid ref-mod */
 		cb_error_x ($1, _("single-character literal or data item expected"));
 	}
 	$$ = $1;

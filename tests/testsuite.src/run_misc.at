@@ -2095,9 +2095,10 @@ AT_DATA([prog.cob], [
            EXAMINE N TALLYING UNTIL FIRST 5 REPLACING BY 8
            IF N NOT = -88888.55
               DISPLAY "Should be -88888.55 but is " N.
-           EXAMINE N TALLYING LEADING T (5:1)
-           IF TALLY NOT = 5
-              DISPLAY "Should be 5 but is " TALLY.
+      *    Re-mod is forbidden here (at least on GCOS):
+      *    EXAMINE N TALLYING LEADING T (5:1)
+      *    IF TALLY NOT = 5
+      *       DISPLAY "Should be 5 but is " TALLY.
            STOP RUN.
 ])
 
