@@ -13978,11 +13978,11 @@ single_character_value:
 	}
 	$$ = $1;
   }
-| identifier
+| qualified_word
   {
 	struct cb_reference * const r =
 		CB_REFERENCE_P ($1) ? CB_REFERENCE ($1) : NULL;
-	if (!r || r->offset || CB_FIELD_PTR ($1)->size != 1) { /* forbid ref-mod */
+	if (!r || CB_FIELD_PTR ($1)->size != 1) {
 		cb_error_x ($1, _("single-character literal or data item expected"));
 	}
 	$$ = $1;
