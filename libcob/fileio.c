@@ -1721,7 +1721,7 @@ cob_file_open (cob_file *f, char *filename, const int mode, const int sharing)
 		break;
 	/* LCOV_EXCL_START */
 	default:
-		cob_fatal_error(COB_FERROR_CODEGEN);
+		cob_fatal_error (COB_FERROR_CODEGEN);
 	/* LCOV_EXCL_STOP */
 	}
 

@@ -391,10 +391,13 @@ cob_get_color_pair (const short fg_color, const short bg_color)
 	}
 	
 	{
+		/* some implementations (especially PDCursesMod 64-bit CHTYPE)
+		   provide more color pairs than we currently support, limit appropriate */
+		const short	max_pairs = COLOR_PAIRS < SHRT_MAX ? COLOR_PAIRS : SHRT_MAX - 1;
 		short	color_pair_number;
 		short	fg_defined, bg_defined;
 
-		for (color_pair_number = 2; color_pair_number < COLOR_PAIRS; color_pair_number++) {
+		for (color_pair_number = 2; color_pair_number < max_pairs; color_pair_number++) {
 
 			pair_content (color_pair_number, &fg_defined, &bg_defined);
 
@@ -576,17 +579,21 @@ cob_screen_init (void)
 			}
 			init_pair ((short)0, fore_color, back_color);
 		}
-		if (COLOR_PAIRS) {
+		if (COLOR_PAIRS > 1) {
 			cob_has_color = 1;
 			/* explicit reserve pair 1 as all zero as we take this as "initialized" later on */
 			init_pair ((short)1, 0, 0);
-#if defined	(HAVE_LIBPDCURSES) || defined (HAVE_LIBXCURSES)
-			/* pdcurses sets *ALL* pairs to default fg/bg, while ncurses initialize the to zero
-			   set all to zero here, allowing us to adjust them later */
+#ifdef __PDCURSES__
+			/* pdcurses wincon + vt sets *ALL* pairs to default fg/bg of the terminal,
+			   while ncurses initializes them to zero;
+			   set all to zero here, allowing us to adjust them later as necessary */
 			{
+				/* some implementations (especially PDCursesMod 64-bit CHTYPE)
+				   provide more color pairs than we currently support, limit appropriate */
+				const short	max_pairs = COLOR_PAIRS < SHRT_MAX ? COLOR_PAIRS : SHRT_MAX - 1;
 				short	color_pair_number;
 	
-				for (color_pair_number = 2; color_pair_number < COLOR_PAIRS; ++color_pair_number) {
+				for (color_pair_number = 2; color_pair_number < max_pairs; ++color_pair_number) {
 					init_pair (color_pair_number, 0, 0);
 					if (color_pair_number == SHRT_MAX) {
 						break;
@@ -3587,6 +3594,11 @@ cob_exit_screen (void)
 				cob_display_text (" ");
 			}
 			flags = COB_SCREEN_NO_ECHO;
+			if (COB_MOUSE_FLAGS & 1024) {
+				/* disable mouse movement to exit the following ACCEPT OMITTED */
+				COB_MOUSE_FLAGS &= ~1024;
+				cob_settings_screenio ();
+			}
 			field_accept_from_curpos (NULL, NULL, NULL, NULL, NULL, NULL, NULL, flags);
 		}
 		cobglobptr->cob_screen_initialized = 0;
