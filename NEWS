@@ -6,6 +6,12 @@ NEWS - user visible changes				-*- outline -*-
      a previous version; the internal library-number was therefore increased
      (libcob-5 instead of libcob-4).
 
+ *** previous versions compiled into the application module data structures 
+     used by the run-time library, making it extremely difficult to expand
+     the data structures for new functionality. An internal function calls
+     were added that now generate the data structures and are completely
+     contained in the run-time library and allowing for future expansion
+
  *** anything may still change during development of this version,
      including incompatible changes ***
 
@@ -16,6 +22,11 @@ NEWS - user visible changes				-*- outline -*-
    necessary internal schema files to match the file definition to the
    database table
 
+** Added support for V-ISAM which is a rewrite of VB-ISAM but V-ISAM supports
+   both C-ISAM and VB-ISAM format files at run time. No need to pre-configure
+   which file format is to be used. In fact both file formats may be used
+   in the same application program for different INDEXED data files.
+
 ** build-system: it is now possible to build GnuCOBOL with multiple handlers
    for ORGANIZATION INDEXED, for example --with-visam --with-db --with-odbc
    and then define at runtime which handler to use, the default is set with
@@ -23,7 +34,7 @@ NEWS - user visible changes				-*- outline -*-
    available handlers and use the first applicable - or none, which removes
    the need to specify --without-db
 
-** new experimental file handler LMDB
+** new experimental file handler LMDB (is slow compared to all others)
 
 ** delay-load of libraries (so far for ORGANIZATION INDEXED, planned: XML,
    JSON, SCREENIO)
@@ -55,7 +66,10 @@ NEWS - user visible changes				-*- outline -*-
   the default file format. If not provided then the old GnuCOBOL 3 format files
   are used and for Variable length SEQUENTIAL or RELATIVE files the file is
   not portable across different platforms.
-  Using 'mf' (Microfocus) format, data files are portable across platforms.
+  Using 'mf' allows programs to read/write Microfocus format data files
+  Using 'mf' (Microfocus) format, data files are portable across platforms
+  where the old default GnuCOBOL data files could be unusable if copied between
+  systems of different hardware architecture.
 
 
   ** dialect option to allow ref-mod with zero-length (active with -std=default),
