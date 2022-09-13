@@ -2536,7 +2536,7 @@ AT_CLEANUP
 
 
 AT_SETUP([FUNCTION NUMVAL-C])
-AT_KEYWORDS([functions])
+AT_KEYWORDS([functions NUMVAL])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -2545,18 +2545,18 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE  SECTION.
        01  X1  PIC   X(14) VALUE " % -9876.1234 ".
        01  X2  PIC   X(20) VALUE " % 19,876.1234 DB".
+       01  X3  PIC   X(12) VALUE "% -9876.1234".
        01  N   PIC   s9(5)v9(5).
        PROCEDURE        DIVISION.
            MOVE FUNCTION NUMVAL-C ( X1 , "%" ) TO N
            IF N NOT = -9876.1234
-              DISPLAY N
-              END-DISPLAY
-           END-IF
+              DISPLAY X1 " - " N.
            MOVE FUNCTION NUMVAL-C ( X2 , "%" ) TO N
            IF N NOT = -19876.1234
-              DISPLAY N
-              END-DISPLAY
-           END-IF
+              DISPLAY X2 " - " N.
+           MOVE FUNCTION NUMVAL-C ( X3 , "%" ) TO N
+           IF N NOT = -9876.1234
+              DISPLAY X3 " - " N.
            STOP RUN.
 ])
 
@@ -2567,7 +2567,7 @@ AT_CLEANUP
 
 
 AT_SETUP([FUNCTION NUMVAL-C DP.COMMA])
-AT_KEYWORDS([functions])
+AT_KEYWORDS([functions NUMVAL])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -2584,9 +2584,7 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            MOVE FUNCTION NUMVAL-C ( X1 , "%" ) TO N
            IF N NOT = -19876,1234
-              DISPLAY N
-              END-DISPLAY
-           END-IF
+              DISPLAY X1 " - " N.
            STOP RUN.
 ])
 
@@ -2597,7 +2595,7 @@ AT_CLEANUP
 
 
 AT_SETUP([FUNCTION NUMVAL-F])
-AT_KEYWORDS([functions])
+AT_KEYWORDS([functions NUMVAL])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -3625,87 +3623,140 @@ AT_DATA([prog.cob], [
        PROGRAM-ID.      prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
+       77 RESULT        USAGE BINARY-LONG.
+       01 EMPTY.
+        03 PIC X OCCURS 0 TO 5 DEPENDING ON RESULT.
        PROCEDURE        DIVISION.
-           IF FUNCTION TEST-NUMVAL ("+ 1")     NOT = 0
-              DISPLAY "Test 1  fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL (" + 1")    NOT = 0
-              DISPLAY "Test 2  fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL ("- 1")     NOT = 0
-              DISPLAY "Test 3  fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL (" - 1")    NOT = 0
-              DISPLAY "Test 4  fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL ("+- 1")    NOT = 2
-              DISPLAY "Test 5  fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL ("1 +")     NOT = 0
-              DISPLAY "Test 6  fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL ("1 -")     NOT = 0
-              DISPLAY "Test 7  fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL ("1 +-")    NOT = 4
-              DISPLAY "Test 8  fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL ("1 -+")    NOT = 4
-              DISPLAY "Test 9  fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL ("+ 1.1")   NOT = 0
-              DISPLAY "Test 10 fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL ("- 1.1")   NOT = 0
-              DISPLAY "Test 11 fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL ("1.1 +")   NOT = 0
-              DISPLAY "Test 12 fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL ("1.1 -")   NOT = 0
-              DISPLAY "Test 13 fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL ("1.1 CR")  NOT = 0
-              DISPLAY "Test 14 fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL ("1.1 DB")  NOT = 0
-              DISPLAY "Test 15 fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL ("1.1 -CR") NOT = 6
-              DISPLAY "Test 16 fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL ("1.1 +DB") NOT = 6
-              DISPLAY "Test 17 fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL ("1.1 CDB") NOT = 6
-              DISPLAY "Test 18 fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL ("+1.1 CR") NOT = 6
-              DISPLAY "Test 19 fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL ("+      ") NOT = 8
-              DISPLAY "Test 20 fail"
-              END-DISPLAY
-           END-IF.
+           MOVE FUNCTION TEST-NUMVAL ("+ 1")     TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 1  fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL (" + 1")    TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 2  fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL ("- 1")     TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 3  fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL (" - 1")    TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 4  fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL ("+- 1")    TO RESULT
+           IF RESULT NOT = 2
+              DISPLAY "Test 5  fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL ("1 +")     TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 6  fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL ("1 -")     TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 7  fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL ("1 +-")    TO RESULT
+           IF RESULT NOT = 4
+              DISPLAY "Test 8  fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL ("1 -+")    TO RESULT
+           IF RESULT NOT = 4
+              DISPLAY "Test 9  fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL ("+ 1.1")   TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 10 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL ("- 1.1")   TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 11 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL ("1.1 +")   TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 12 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL ("1.1 -")   TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 13 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL ("1.1 CR")  TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 14 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL ("1.1 DB")  TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 15 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL ("1.1 -CR") TO RESULT
+           IF RESULT NOT = 6
+              DISPLAY "Test 16 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL ("1.1 +DB") TO RESULT
+           IF RESULT NOT = 6
+              DISPLAY "Test 17 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL ("1.1 CDB") TO RESULT
+           IF RESULT NOT = 6
+              DISPLAY "Test 18 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL ("+1.1 CR") TO RESULT
+           IF RESULT NOT = 6
+              DISPLAY "Test 19 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL ("+      ") TO RESULT
+           IF RESULT NOT = 8
+              DISPLAY "Test 20 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL ("  0.   ") TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 21 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL ("  .0   ") TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 22 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL ("  . 0") TO RESULT
+           IF RESULT NOT = 4
+              DISPLAY "Test 23 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL ("  0 .") TO RESULT
+           IF RESULT NOT = 5
+              DISPLAY "Test 24 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL ("   0+0") TO RESULT
+           IF RESULT NOT = 6
+              DISPLAY "Test 25 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL ("   0+  0") TO RESULT
+           IF RESULT NOT = 8
+              DISPLAY "Test 26 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL ("1.1 D")  TO RESULT
+           IF RESULT NOT = 6
+              DISPLAY "Test 27 fail: " RESULT.
+
+      *    MOVE FUNCTION TEST-NUMVAL ("") TO RESULT
+           MOVE 0 TO RESULT
+           MOVE FUNCTION TEST-NUMVAL (EMPTY) TO RESULT
+           IF RESULT NOT = 1
+              DISPLAY "Test 28 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL ("   ") TO RESULT
+           IF RESULT NOT = 4
+              DISPLAY "Test 29 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL ("  .") TO RESULT
+           IF RESULT NOT = 4
+              DISPLAY "Test 30 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL ("    ") TO RESULT
+           IF RESULT NOT = 5
+              DISPLAY "Test 31 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL (" 1  T") TO RESULT
+           IF RESULT NOT = 5
+              DISPLAY "Test 32 fail: " RESULT.
+
            STOP RUN.
 ])
 
@@ -3716,94 +3767,96 @@ AT_CLEANUP
 
 
 AT_SETUP([FUNCTION TEST-NUMVAL-C])
-AT_KEYWORDS([functions])
+AT_KEYWORDS([functions NUMVAL])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
+       77 RESULT        USAGE BINARY-LONG.
        PROCEDURE        DIVISION.
-           IF FUNCTION TEST-NUMVAL-C ("+ 1")     NOT = 0
-              DISPLAY "Test 1  fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-C (" + 1")    NOT = 0
-              DISPLAY "Test 2  fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-C ("- 1")     NOT = 0
-              DISPLAY "Test 3  fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-C (" - 1")    NOT = 0
-              DISPLAY "Test 4  fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-C ("+- 1")    NOT = 2
-              DISPLAY "Test 5  fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-C ("1 +")     NOT = 0
-              DISPLAY "Test 6  fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-C ("1 -")     NOT = 0
-              DISPLAY "Test 7  fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-C ("1 +-")    NOT = 4
-              DISPLAY "Test 8  fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-C ("1 -+")    NOT = 4
-              DISPLAY "Test 9  fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-C ("+ 1.1")   NOT = 0
-              DISPLAY "Test 10 fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-C ("- 1.1")   NOT = 0
-              DISPLAY "Test 11 fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-C ("1.1 +")   NOT = 0
-              DISPLAY "Test 12 fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-C ("1.1 -")   NOT = 0
-              DISPLAY "Test 13 fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-C ("1.1 CR")  NOT = 0
-              DISPLAY "Test 14 fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-C ("1.1 DB")  NOT = 0
-              DISPLAY "Test 15 fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-C ("1.1 -CR") NOT = 6
-              DISPLAY "Test 16 fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-C ("+ $1.1 ") NOT = 0
-              DISPLAY "Test 17 fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-C ("- $1.1 ") NOT = 0
-              DISPLAY "Test 18 fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-C ("+ X1.1 ", "X") NOT = 0
-              DISPLAY "Test 19 fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-C ("- X1.1 ", "X") NOT = 0
-              DISPLAY "Test 20 fail"
-              END-DISPLAY
-           END-IF.
+
+           MOVE FUNCTION TEST-NUMVAL-C ("+ 1")     TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 1  fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-C (" + 1")    TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 2  fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-C ("- 1")     TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 3  fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-C (" - 1")    TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 4  fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-C ("+- 1")    TO RESULT
+           IF RESULT NOT = 2
+              DISPLAY "Test 5  fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-C ("1 +")     TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 6  fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-C ("1 -")     TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 7  fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-C ("1 +-")    TO RESULT
+           IF RESULT NOT = 4
+              DISPLAY "Test 8  fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-C ("1 -+")    TO RESULT
+           IF RESULT NOT = 4
+              DISPLAY "Test 9  fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-C ("+ 1.1")   TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 10 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-C ("- 1.1")   TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 11 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-C ("1.1 +")   TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 12 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-C ("1.1 -")   TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 13 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-C ("1.1 CR")  TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 14 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-C ("1.1 DB")  TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 15 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-C ("1.1 -CR") TO RESULT
+           IF RESULT NOT = 6
+              DISPLAY "Test 16 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-C ("+ $1.1 ") TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 17 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-C ("- $1.1 ") TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 18 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-C ("+ X1.1 ", "X") TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 19 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-C ("- X1.1 ", "X") TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 20 fail: " RESULT.
+
            STOP RUN.
 ])
 
@@ -3814,94 +3867,96 @@ AT_CLEANUP
 
 
 AT_SETUP([FUNCTION TEST-NUMVAL-F])
-AT_KEYWORDS([functions])
+AT_KEYWORDS([functions NUMVAL])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
+       77 RESULT        USAGE BINARY-LONG.
        PROCEDURE        DIVISION.
-           IF FUNCTION TEST-NUMVAL-F ("+ 1")     NOT = 0
-              DISPLAY "Test 1  fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-F (" + 1")    NOT = 0
-              DISPLAY "Test 2  fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-F ("- 1")     NOT = 0
-              DISPLAY "Test 3  fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-F (" - 1")    NOT = 0
-              DISPLAY "Test 4  fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-F ("+- 1")    NOT = 2
-              DISPLAY "Test 5  fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-F ("1 +")     NOT = 0
-              DISPLAY "Test 6  fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-F ("1 -")     NOT = 0
-              DISPLAY "Test 7  fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-F ("1 +-")    NOT = 4
-              DISPLAY "Test 8  fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-F ("1 -+")    NOT = 4
-              DISPLAY "Test 9  fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-F ("+ 1.1")   NOT = 0
-              DISPLAY "Test 10 fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-F ("- 1.1")   NOT = 0
-              DISPLAY "Test 11 fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-F ("1.1 +")   NOT = 0
-              DISPLAY "Test 12 fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-F ("1.1 -")   NOT = 0
-              DISPLAY "Test 13 fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-F ("1.1   ")  NOT = 0
-              DISPLAY "Test 14 fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-F ("1.1   ")  NOT = 0
-              DISPLAY "Test 15 fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-F ("1.1 -CR") NOT = 6
-              DISPLAY "Test 16 fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-F ("1.1 E+1") NOT = 0
-              DISPLAY "Test 17 fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-F ("1.1 E -1") NOT = 0
-              DISPLAY "Test 18 fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-F ("1.1 EE") NOT = 6
-              DISPLAY "Test 19 fail"
-              END-DISPLAY
-           END-IF.
-           IF FUNCTION TEST-NUMVAL-F ("+1.1 E001") NOT = 7
-              DISPLAY "Test 20 fail"
-              END-DISPLAY
-           END-IF.
+
+           MOVE FUNCTION TEST-NUMVAL-F ("+ 1")     TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 1  fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-F (" + 1")    TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 2  fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-F ("- 1")     TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 3  fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-F (" - 1")    TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 4  fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-F ("+- 1")    TO RESULT
+           IF RESULT NOT = 2
+              DISPLAY "Test 5  fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-F ("1 +")     TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 6  fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-F ("1 -")     TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 7  fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-F ("1 +-")    TO RESULT
+           IF RESULT NOT = 4
+              DISPLAY "Test 8  fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-F ("1 -+")    TO RESULT
+           IF RESULT NOT = 4
+              DISPLAY "Test 9  fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-F ("+ 1.1")   TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 10 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-F ("- 1.1")   TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 11 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-F ("1.1 +")   TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 12 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-F ("1.1 -")   TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 13 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-F ("1.1   ")  TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 14 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-F ("1.1   ")  TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 15 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-F ("1.1 -CR") TO RESULT
+           IF RESULT NOT = 6
+              DISPLAY "Test 16 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-F ("1.1 E+1") TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 17 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-F ("1.1 E -1") TO RESULT
+           IF RESULT NOT = 0
+              DISPLAY "Test 18 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-F ("1.1 EE") TO RESULT
+           IF RESULT NOT = 6
+              DISPLAY "Test 19 fail: " RESULT.
+
+           MOVE FUNCTION TEST-NUMVAL-F ("+1.1 E001") TO RESULT
+           IF RESULT NOT = 7
+              DISPLAY "Test 20 fail: " RESULT.
+
            STOP RUN.
 ])
 
