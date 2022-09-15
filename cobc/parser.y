@@ -151,6 +151,7 @@ unsigned int			cobc_cs_check = 0;
 unsigned int			cobc_allow_program_name = 0;
 unsigned int			cobc_in_xml_generate_body = 0;
 unsigned int			cobc_in_json_generate_body = 0;
+unsigned int			cobc_areacheck = 0;
 
 /* Local variables */
 
@@ -301,10 +302,9 @@ check_optional_period (void) {
 
 static COB_INLINE void
 check_area_a (cb_tree word) {
-	if (!area_a && !missing_dot) {
-		(void) cb_verify_x (word, cb_non_word_in_area_a,
-				    _("user-defined word not in Area A"));
-		area_a = 0;
+	if (cobc_areacheck && !area_a && !missing_dot) {
+		cb_warning_x (COBC_WARN_FILLER, word,
+			      _("user-defined word not in Area A"));
 	}
 	check_optional_period ();
 }
@@ -312,8 +312,9 @@ check_area_a (cb_tree word) {
 static COB_INLINE void
 check_non_area_a (cb_tree stmt) {
 	if (area_a) {
-		(void) cb_verify_x (stmt, cb_non_word_in_area_a,
-				    _("statement in Area A"));
+		if (cobc_areacheck)
+			cb_warning_x (COBC_WARN_FILLER, stmt,
+				      _("start of statement in Area A"));
 		area_a = 0;
 	}
 }

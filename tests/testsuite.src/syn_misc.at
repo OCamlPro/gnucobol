@@ -4679,7 +4679,7 @@ AT_CLEANUP
 
 
 AT_SETUP([statement in Area A])
-AT_KEYWORDS([misc cobol85 area-a])
+AT_KEYWORDS([misc cobol85 areacheck])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -4703,25 +4703,25 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [])
 AT_CHECK([$COMPILE_ONLY -std=cobol85 prog.cob], [1], [],
-[prog.cob:9: error: punctuation in Area A used
+[prog.cob:9: warning: separator period in Area A
 prog.cob: in paragraph 'MAIN':
-prog.cob:10: error: statement in Area A used
-prog.cob:11: error: statement in Area A used
+prog.cob:10: warning: start of statement in Area A
+prog.cob:11: warning: start of statement in Area A
 prog.cob:13: error: syntax error, unexpected END-IF
-prog.cob:14: error: statement in Area A used
-prog.cob:15: error: punctuation in Area A used
+prog.cob:14: warning: start of statement in Area A
+prog.cob:15: warning: separator period in Area A
 prog.cob: in section 'SEC-1':
-prog.cob:17: error: statement in Area A used
-prog.cob:18: error: punctuation in Area A used
+prog.cob:17: warning: start of statement in Area A
+prog.cob:18: warning: separator period in Area A
 ])
 
 # That error is hard to bypass: -fformat=fixed is needed (and loss of
 # support for missing periods).
-AT_CHECK([$COMPILE_ONLY -std=cobol85 -fnon-word-in-area-a=ok prog.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY -std=cobol85 -fno-areacheck prog.cob], [1], [],
 [prog.cob: in paragraph 'MAIN':
 prog.cob:13: error: syntax error, unexpected END-IF
 ])
-AT_CHECK([$COMPILE_ONLY -std=cobol85 -fnon-word-in-area-a=ok -fformat=fixed prog.cob], [0], [])
+AT_CHECK([$COMPILE_ONLY -std=cobol85 -fno-areacheck -fformat=fixed prog.cob], [0], [])
 
 AT_CLEANUP
 

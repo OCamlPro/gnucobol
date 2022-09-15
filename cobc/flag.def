@@ -212,3 +212,7 @@ CB_FLAG (cb_listing_symbols, 1, "tsymbols",
 CB_FLAG_ON (cb_diagnostic_show_option, 1, "diagnostics-show-option",
 	_("  -fno-diagnostics-show-option\tsuppress output of option that directly\n"
 	  "                        controls the diagnostic"))
+
+CB_FLAG_ON (cb_areacheck, 1, "areacheck",
+	_("  -fareacheck           check contents of Area A in PROCEDURE DIVISION\n"
+	  "                        (when reference format supports Area A enforcement)"))

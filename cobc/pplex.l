@@ -1454,8 +1454,8 @@ ppparse_error (const char *err_msg)
 	cb_plex_error (newline_count-1, "%s", err_msg);
 }
 
-/* Sets `source_format`, `indicator_column`, `text_column`,
-   `floating_area_b`, and `fill_continued_alnums`, based on the given source
+/* Sets `source_format`, `indicator_column`, `text_column`, `floating_area_b`,
+   `fill_continued_alnums`, and `cob_areacheck`, based on the given source
    format. */
 void
 cobc_set_source_format (const enum cb_format sf) {
@@ -1510,9 +1510,11 @@ cobc_set_source_format (const enum cb_format sf) {
 	case CB_FORMAT_FIXED:
 	case CB_FORMAT_FREE:
 		emit_area_a_tokens = 0;
+		cobc_areacheck = 0;
 		break;
 	default:
 		emit_area_a_tokens = 1;
+		cobc_areacheck = cb_areacheck; /* CHECKME: all but FREE/FIXED? */
 	}
 }
 

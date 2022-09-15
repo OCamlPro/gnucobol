@@ -5171,9 +5171,9 @@ D DISPLAY "KO" NO ADVANCING
 STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -fformat=xopen prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fformat=xopen -fno-areacheck prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
-AT_CHECK([$COMPILE -fformat=xopen -fdebugging-line -o prog prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fformat=xopen -fno-areacheck -fdebugging-line -o prog prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OKKO], [])
 
 AT_DATA([fit.cob], [
@@ -5189,11 +5189,11 @@ D DISPLAY '       20        30        40        50        60        70       79'
 STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -fformat=xopen fit.cob], [0], [], [])
+AT_CHECK([$COMPILE -fformat=xopen -fno-areacheck fit.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./fit], [0],
 [         20        30        40        50        60        70       79
 ], [])
-AT_CHECK([$COMPILE -fformat=xopen -fdebugging-line -o fit fit.cob], [0], [], [])
+AT_CHECK([$COMPILE -fformat=xopen -fno-areacheck -fdebugging-line -o fit fit.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./fit], [0],
 [         20        30        40        50        60        70       79
        20        30        40        50        60        70       79

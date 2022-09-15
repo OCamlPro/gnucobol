@@ -1,4 +1,18 @@
 
+2022-09-15  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	FR #309 raise warnings/errors when some periods are missing
+	* pplex.l, scanner.l, parser.y: check for empty Area A, and use a
+	  dedicated TOK_AREA_A token to detect missing periods and incorrect
+	  use of Area A in PROCEDURE DIVISIONs
+	* flag.def: add flag areacheck to enable Area A enforcement
+	* config.def: add option missing-period
+	* pplex.l, cobc.h (cobc_enable_area_a_tokens): new function
+	* pplex.l (count_newlines): new helper function
+	* parser.y (check_optional_period, check_area_a, check_non_area_a):
+	  new functions for Area A checks
+	* parser.y (begin_statement): check statement does not start in Area A
+
 2022-08-20  Simon Sobisch <simonsobisch@gnu.org>
 
 	* pplex.l: match and ignore editor folding $REGION statement
@@ -57,20 +71,6 @@
 	  from FUNCTION which size is commonly unknown (and use of intrinsic
 	  functions outside of PROCEDURE DIVISION is an extension already)
 	* field.c (validate_elem_screen_clauses_std): require PIC in more cases
-
-2022-07-19  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
-
-	FR #309 raise warnings/errors when some periods are missing
-	* pplex.l, scanner.l, parser.y: check for empty Area A, and use a
-	  dedicated TOK_AREA_A token to detect missing periods and incorrect
-	  use of Area A in PROCEDURE DIVISIONs
-	* config.def: add options missing-period and non-word-in-area-a to
-	  configure strictness Area A enforcement
-	* pplex.l, cobc.h (cobc_enable_area_a_tokens): new function
-	* pplex.l (count_newlines): new helper function
-	* parser.y (check_optional_period, check_area_a, check_non_area_a):
-	  new functions for Area A checks
-	* parser.y (begin_statement): check statement does not start in Area A
 
 2022-07-19  Simon Sobisch <simonsobisch@gnu.org>
 

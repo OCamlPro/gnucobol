@@ -2086,6 +2086,7 @@ extern unsigned int	cobc_cs_check;
 extern unsigned int	cobc_allow_program_name;
 extern unsigned int	cobc_in_xml_generate_body;
 extern unsigned int	cobc_in_json_generate_body;
+extern unsigned int	cobc_areacheck;
 
 /* reserved.c */
 extern int			is_reserved_word (const char *);
