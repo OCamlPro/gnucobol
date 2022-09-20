@@ -2087,6 +2087,8 @@ extern unsigned int	cobc_allow_program_name;
 extern unsigned int	cobc_in_xml_generate_body;
 extern unsigned int	cobc_in_json_generate_body;
 extern unsigned int	cobc_areacheck;
+extern unsigned int	cobc_in_area_a;	      /* set by scanner only */
+extern unsigned int	cobc_still_in_area_a; /* raised by parser only */
 
 /* reserved.c */
 extern int			is_reserved_word (const char *);
@@ -2410,6 +2412,7 @@ extern int		cb_wants_dump_comments;	/* likely to be removed later */
 
 /* scanner.l */
 extern void		cb_unput_dot (void);
+extern void		cb_unput_str (const char * const);
 extern void		cb_add_78 (struct cb_field *);
 extern void		cb_reset_78 (void);
 extern void		cb_reset_global_78 (void);

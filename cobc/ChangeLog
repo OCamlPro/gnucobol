@@ -3,13 +3,15 @@
 
 	FR #309 raise warnings/errors when some periods are missing
 	* pplex.l, scanner.l, parser.y: check for empty Area A, and use a
-	  dedicated TOK_AREA_A token to detect missing periods and incorrect
-	  use of Area A in PROCEDURE DIVISIONs
+	  dedicated WORD_IN_AREA_A token to detect missing periods and incorrect
+	  use of Area A in PROCEDURE DIVISION
 	* flag.def: add flag areacheck to enable Area A enforcement
 	* config.def: add option missing-period
 	* pplex.l, cobc.h (cobc_enable_area_a_tokens): new function
 	* pplex.l (count_newlines): new helper function
-	* parser.y (check_optional_period, check_area_a, check_non_area_a):
+	* scanner.l (cb_unput_str): new function to rescan words in case of
+	  missing periods
+	* parser.y (check_area_a, check_non_area_a):
 	  new functions for Area A checks
 	* parser.y (begin_statement): check statement does not start in Area A
 

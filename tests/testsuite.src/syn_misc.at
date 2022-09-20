@@ -1804,20 +1804,23 @@ prog.cob:11: warning: source text after program-text area (column 72) [[-Wdangli
 AT_CHECK([$COBC -fsyntax-only -free -Wextra prog.cob], [1], [],
 [prog.cob:7: warning: source text exceeds 512 bytes, will be truncated [[-Wothers]]
 prog.cob:8: warning: source text exceeds 512 bytes, will be truncated [[-Wothers]]
-prog.cob:8: error: unknown statement 'This'
+prog.cob:8: error: syntax error, unexpected IS, expecting SECTION or .
+prog.cob:8: note: unknown statement 'This'
 ])
 
 AT_CHECK([$COBC -fsyntax-only -F -Wextra prog.cob], [1], [],
 [prog.cob:7: warning: source text exceeds 512 bytes, will be truncated [[-Wothers]]
 prog.cob:8: warning: source text exceeds 512 bytes, will be truncated [[-Wothers]]
-prog.cob:8: error: unknown statement 'This'
+prog.cob:8: error: syntax error, unexpected IS, expecting SECTION or .
+prog.cob:8: note: unknown statement 'This'
 ])
 
 # Check dialect option `format` (fixed for default) does not erase flags like `-F`, `--free`:
 AT_CHECK([$COBC -fsyntax-only -F -std=default -Wextra prog.cob], [1], [],
 [prog.cob:7: warning: source text exceeds 512 bytes, will be truncated [[-Wothers]]
 prog.cob:8: warning: source text exceeds 512 bytes, will be truncated [[-Wothers]]
-prog.cob:8: error: unknown statement 'This'
+prog.cob:8: error: syntax error, unexpected IS, expecting SECTION or .
+prog.cob:8: note: unknown statement 'This'
 ])
 
 AT_CLEANUP
@@ -4205,7 +4208,8 @@ AT_DATA([prog2.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY -fnot-reserved=DISPLAY -freserved=COMP-1=DISPLAY prog2.cob], [1], [],
-[prog2.cob:7: error: unknown statement 'DISPLAY'; it may exist in another dialect
+[prog2.cob:7: error: syntax error, unexpected Literal, expecting SECTION or .
+prog2.cob:7: note: unknown statement 'DISPLAY'; it may exist in another dialect
 ])
 
 AT_CLEANUP
@@ -4514,7 +4518,8 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE_ONLY -std=cobol85 prog.cob], [1], [],
 [prog.cob:10: error: 'CONVERSION' is not defined, but is a reserved word in another dialect
-prog.cob:11: error: unknown statement 'TRANSFORM'; it may exist in another dialect
+prog.cob:11: error: syntax error, unexpected Identifier, expecting SECTION or .
+prog.cob:11: note: unknown statement 'TRANSFORM'; it may exist in another dialect
 ])
 AT_CLEANUP
 
@@ -4702,25 +4707,18 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [])
-AT_CHECK([$COMPILE_ONLY -std=cobol85 prog.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY -std=cobol85 prog.cob], [0], [],
 [prog.cob:9: warning: separator period in Area A
 prog.cob: in paragraph 'MAIN':
 prog.cob:10: warning: start of statement in Area A
 prog.cob:11: warning: start of statement in Area A
-prog.cob:13: error: syntax error, unexpected END-IF
-prog.cob:14: warning: start of statement in Area A
 prog.cob:15: warning: separator period in Area A
 prog.cob: in section 'SEC-1':
 prog.cob:17: warning: start of statement in Area A
 prog.cob:18: warning: separator period in Area A
 ])
 
-# That error is hard to bypass: -fformat=fixed is needed (and loss of
-# support for missing periods).
-AT_CHECK([$COMPILE_ONLY -std=cobol85 -fno-areacheck prog.cob], [1], [],
-[prog.cob: in paragraph 'MAIN':
-prog.cob:13: error: syntax error, unexpected END-IF
-])
+AT_CHECK([$COMPILE_ONLY -std=cobol85 -fno-areacheck prog.cob], [0], [])
 AT_CHECK([$COMPILE_ONLY -std=cobol85 -fno-areacheck -fformat=fixed prog.cob], [0], [])
 
 AT_CLEANUP
@@ -5508,7 +5506,6 @@ prog.cob:6: error: WITH ... LINKAGE does not conform to COBOL 85
 prog.cob:8: error: CALL-/ENTRY-CONVENTION does not conform to COBOL 85
 prog.cob:10: error: WITH ... LINKAGE does not conform to COBOL 85
 prog.cob:10: error: CALL-CONVENTION and WITH LINKAGE are mutually exclusive
-prog.cob:12: error: user-defined word not in Area A used
 ])
 AT_CLEANUP
 
@@ -7642,8 +7639,10 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:8: error: BASED only allowed at 01/77 level
 prog.cob:16: error: PROCEDURE DIVISION header missing
 prog.cob:16: error: syntax error, unexpected Identifier
-prog.cob:17: error: unknown statement '01'
-prog.cob:18: error: unknown statement '03'
+prog.cob:17: error: syntax error, unexpected Identifier, expecting SECTION or .
+prog.cob:17: note: unknown statement '01'
+prog.cob:18: error: syntax error, unexpected Identifier, expecting SECTION or .
+prog.cob:18: note: unknown statement '03'
 prog.cob:20: error: syntax error, unexpected PROCEDURE
 prog.cob:23: error: ALLOCATE CHARACTERS requires RETURNING clause
 prog.cob:26: error: 'one' is not a numeric value

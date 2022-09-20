@@ -7312,7 +7312,7 @@ Source :    'callee1.cob'
 Program-Id: callee1          Statement: CANCEL                 Line: 33
 Program-Id: callee1          Statement: CALL                   Line: 33
 Source:     'preload.cob'
-Program-Id: callee2b         Entry:     callee2b               Line: 9
+Program-Id: callee2b         Entry:     callee2b               Line: 8
 Program-Id: callee2b         Section:   SOME-SEC               Line: 9
 Program-Id: callee2b         Paragraph: SOME-PAR               Line: 10
 Program-Id: callee2b         Section:   OTHER-SEC              Line: 16
@@ -7355,7 +7355,7 @@ Source :    'callee1.cob'
 Program-Id: callee1          Statement: CANCEL                 Line: 33
 Program-Id: callee1          Statement: CALL                   Line: 33
 Source:     'preload.cob'
-Program-Id: callee2b         Entry:     callee2b               Line: 9
+Program-Id: callee2b         Entry:     callee2b               Line: 8
 Program-Id: callee2b         Section:   SOME-SEC               Line: 9
 Program-Id: callee2b         Paragraph: SOME-PAR               Line: 10
 Program-Id: callee2b         Section:   OTHER-SEC              Line: 16
@@ -7445,7 +7445,7 @@ Program-Id:  callee1                     CANCEL                          Line:  
 Program-Id:  callee1                     CALL                            Line:     33
 Source: 'preload.cob'
 Program-Id:  callee2b
-Program-Id:  callee2b             Entry: callee2b                        Line:      9
+Program-Id:  callee2b             Entry: callee2b                        Line:      8
 Program-Id:  callee2b           Section: SOME-SEC                        Line:      9
 Program-Id:  callee2b         Paragraph: SOME-PAR                        Line:     10
 Program-Id:  callee2b           Section: OTHER-SEC                       Line:     16
@@ -7482,7 +7482,7 @@ Program-Id:  callee1                     CANCEL                          Line:  
 Program-Id:  callee1                     CALL                            Line:     33
 Source: 'preload.cob'
 Program-Id:  callee2b
-Program-Id:  callee2b             Entry: callee2b                        Line:      9
+Program-Id:  callee2b             Entry: callee2b                        Line:      8
 Program-Id:  callee2b           Section: SOME-SEC                        Line:      9
 Program-Id:  callee2b         Paragraph: SOME-PAR                        Line:     10
 Program-Id:  callee2b           Section: OTHER-SEC                       Line:     16
@@ -12422,7 +12422,16 @@ AT_DATA([prog.cob], [
        STOP RUN RETURNING 0.
 ])
 
-AT_CHECK([$COMPILE -std=ibm prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -std=ibm prog.cob], [0], [],
+[prog.cob:12: warning: start of statement in Area A
+prog.cob:13: warning: start of statement in Area A
+prog.cob:14: warning: start of statement in Area A
+prog.cob:15: warning: start of statement in Area A
+prog.cob:16: warning: start of statement in Area A
+prog.cob:17: warning: start of statement in Area A
+prog.cob:18: warning: start of statement in Area A
+prog.cob:20: warning: start of statement in Area A
+])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog PLAIN], [0],
 [This is sent to CONSOLE PLAIN

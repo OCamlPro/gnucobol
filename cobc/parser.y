@@ -152,6 +152,8 @@ unsigned int			cobc_allow_program_name = 0;
 unsigned int			cobc_in_xml_generate_body = 0;
 unsigned int			cobc_in_json_generate_body = 0;
 unsigned int			cobc_areacheck = 0;
+unsigned int			cobc_in_area_a = 0;
+unsigned int			cobc_still_in_area_a = 0;
 
 /* Local variables */
 
@@ -285,38 +287,18 @@ static int			backup_source_line = 0;
 
 /* Area A enforcement */
 
-/* TOK_AREA_A tokens are emitted when scanning the special marker `#AREA_A',
-   while in PROCEDURE DIVISIONs.  This avoids having to insert such tokens
-   everywhere they may appear in other parts of the grammar. */
-
-static int area_a = 0;		/* has a TOK_AREA_A token been seen? */
-static int missing_dot = 0;	/* a missing period has been detected. */
-
 static COB_INLINE void
-check_optional_period (void) {
-	if (missing_dot) {
-		(void) cb_verify (cb_missing_period, _("optional period"));
-		missing_dot = area_a = 0;
-	}
-}
-
-static COB_INLINE void
-check_area_a (cb_tree word) {
-	if (cobc_areacheck && !area_a && !missing_dot) {
-		cb_warning_x (COBC_WARN_FILLER, word,
-			      _("user-defined word not in Area A"));
-	}
-	check_optional_period ();
+check_area_a (cb_tree stmt) {
+	if (!cobc_in_area_a && cobc_areacheck)
+		cb_warning_x (COBC_WARN_FILLER, stmt,
+			      _("'%s' should be in Area A"), CB_NAME (stmt));
 }
 
 static COB_INLINE void
 check_non_area_a (cb_tree stmt) {
-	if (area_a) {
-		if (cobc_areacheck)
-			cb_warning_x (COBC_WARN_FILLER, stmt,
-				      _("start of statement in Area A"));
-		area_a = 0;
-	}
+	if (cobc_in_area_a && cobc_areacheck)
+		cb_warning_x (COBC_WARN_FILLER, stmt,
+			      _("start of statement in Area A"));
 }
 
 /* Statements */
@@ -2266,8 +2248,6 @@ set_record_size (cb_tree min, cb_tree max)
 
 %token TOKEN_EOF 0 "end of file"
 
-%token TOK_AREA_A "text in Area A"
-
 %token THREEDIMENSIONAL	"3D"
 %token ABSENT
 %token ACCEPT
@@ -3203,6 +3183,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token WITH
 %token WORD			"Identifier"
 %token WORDS
+%token WORD_IN_AREA_A           "Identifier in Area A"
 %token WORKING_STORAGE		"WORKING-STORAGE"
 %token WRAP
 %token WRITE
@@ -3329,6 +3310,7 @@ set_record_size (cb_tree min, cb_tree max)
 %nonassoc IN
 
 %nonassoc WORD
+%nonassoc WORD_IN_AREA_A
 %nonassoc LITERAL
 
 %nonassoc TOK_OPEN_PAREN
@@ -3640,22 +3622,19 @@ _program_body:
   _procedure_division
   {
 	/* `cobc_in_procedure' is used in `scanner.l` to filter emissions of
-	   TOK_AREA_A.  */
+	   WORD_IN_AREA_A.  */
 	cobc_in_procedure = 0;
   }
 ;
 
-area_a_toks:
-  TOK_AREA_A
-| TOK_AREA_A area_a_toks
-;
-_area_a:
-  /* empty */ { area_a = 0; }
-| area_a_toks { area_a = 1; }
-;
 _dot_or_else_area_a:
-  TOK_DOT _area_a { missing_dot = 0; }
-| area_a_toks     { missing_dot = area_a = 1; }
+  TOK_DOT
+| WORD_IN_AREA_A
+  {
+	  (void) cb_verify (cb_missing_period, _("optional period"));
+	  cb_unput_str (CB_NAME ($1)); /* to be rescanned as a `WORD_IN_AREA_A` */
+	  cobc_still_in_area_a = 1;
+  }
 ;
 
 /* IDENTIFICATION DIVISION */
@@ -10441,13 +10420,17 @@ _procedure_returning:
 _procedure_declaratives:
 | DECLARATIVES
   {
-	check_area_a ($1);	/* Is "DECLARATIVES" in Area A? */
+	check_area_a ($1);	/* "DECLARATIVES" should be in Area A */
 	in_declaratives = 1;
 	emit_statement (cb_build_comment ("DECLARATIVES"));
   }
   _dot_or_else_area_a
   _procedure_list
-  END DECLARATIVES
+  END
+  {
+	check_area_a ($5);	/* "END" should be in Area A */
+  }
+  DECLARATIVES
   {
 	if (needs_field_debug) {
 		start_debug = 1;
@@ -10480,7 +10463,6 @@ _procedure_declaratives:
 /* Procedure list */
 
 _procedure_list:
-  { check_optional_period (); }
 | _procedure_list
   procedure
 ;
@@ -10513,14 +10495,25 @@ procedure:
 	/* check_unreached = 0; */
 	cb_end_statement();
   }
-  _area_a
 ;
 
 
 /* Section/Paragraph */
 
+proc_name:
+  WORD_IN_AREA_A
+  {
+	$$ = $1;
+  }
+| WORD
+  {
+	check_area_a ($1);
+	$$ = $1;
+  }
+;
+
 section_header:
-  WORD SECTION
+  proc_name SECTION
   {
 	non_const_word = 0;
 	check_unreached = 0;
@@ -10550,8 +10543,6 @@ section_header:
 		}
 	}
 
-	check_area_a ($1);	/* is $1 in Area A? */
-
 	/* Begin a new section */
 	current_section = CB_LABEL (cb_build_label ($1, NULL));
 	current_section->flag_section = 1;
@@ -10566,7 +10557,6 @@ section_header:
   {
 	emit_statement (CB_TREE (current_section));
   }
-  _area_a
 ;
 
 _use_statement:
@@ -10574,7 +10564,7 @@ _use_statement:
 ;
 
 paragraph_header:
-  WORD TOK_DOT
+  proc_name TOK_DOT
   {
 	cb_tree label;
 
@@ -10598,8 +10588,6 @@ paragraph_header:
 		}
 	}
 
-	check_area_a ($1);	/* is $1 in Area A? */
-
 	/* Begin a new paragraph */
 	if (!current_section) {
 		label = cb_build_reference ("MAIN SECTION");
@@ -10618,24 +10606,24 @@ paragraph_header:
 	current_paragraph->segment = current_section->segment;
 	emit_statement (CB_TREE (current_paragraph));
   }
-  _area_a
 ;
 
 invalid_statement:
-  WORD
+  WORD error	  /* error is required here to avoid a reduce/reduce conflict */
   {
 	non_const_word = 0;
 	check_unreached = 0;
 	if (cb_build_section_name ($1, 0) != cb_error_node) {
-		check_non_area_a ($1); /* CHECKME: $1 should not be in Area A if
-					  it's a statement, right? */
 		if (is_reserved_word (CB_NAME ($1))) {
-			cb_error_x ($1, _("'%s' is not a statement"), CB_NAME ($1));
+			cb_note_x (COB_WARNOPT_NONE, $1,
+				   _("'%s' is not a statement"), CB_NAME ($1));
 		} else if (is_default_reserved_word (CB_NAME ($1))) {
-			cb_error_x ($1, _("unknown statement '%s'; it may exist in another dialect"),
-				    CB_NAME ($1));
+			cb_note_x (COB_WARNOPT_NONE, $1,
+				   _("unknown statement '%s'; it may exist in another dialect"),
+				   CB_NAME ($1));
 		} else {
-			cb_error_x ($1, _("unknown statement '%s'"), CB_NAME ($1));
+			cb_note_x (COB_WARNOPT_NONE, $1,
+				   _("unknown statement '%s'"), CB_NAME ($1));
 		}
 	}
 	YYERROR;
@@ -10812,7 +10800,11 @@ statement:
 | xml_generate_statement
 | xml_parse_statement
 | %prec SHIFT_PREFER
-  NEXT SENTENCE
+  NEXT
+  {
+	check_non_area_a ($1);
+  }
+  SENTENCE
   {
 	if (cb_verify (cb_next_sentence_phrase, "NEXT SENTENCE")) {
 		cb_tree label;
@@ -14096,7 +14088,11 @@ inspect_after:
 /* JSON GENERATE statement */
 
 json_generate_statement:
-  JSON GENERATE
+  JSON
+  {
+	check_non_area_a ($1);
+  }
+  GENERATE
   {
 	begin_statement ("JSON GENERATE", TERM_JSON);
 	cobc_in_json_generate_body = 1;
@@ -14157,7 +14153,11 @@ _end_json:
 /* JSON PARSE statement */
 
 json_parse_statement:
-  JSON PARSE
+  JSON
+  {
+	check_non_area_a ($1);
+  }
+  PARSE
   {
 	begin_statement ("JSON PARSE", TERM_JSON);
 	CB_PENDING ("JSON PARSE");
@@ -15625,38 +15625,54 @@ _end_start:
 /* STOP statement */
 
 stop_statement:
-  STOP RUN
+  STOP
+  {
+	check_non_area_a ($1);
+  }
+  RUN
   {
 	begin_statement ("STOP RUN", 0);
 	cobc_cs_check = CB_CS_STOP;
   }
   stop_returning
   {
-	cb_emit_stop_run ($4);
+	cb_emit_stop_run ($5);
 	check_unreached = 1;
 	cobc_cs_check = 0;
   }
-| STOP ERROR /* GCOS */
+| STOP
+  {
+	check_non_area_a ($1);
+  }
+  ERROR /* GCOS */
   {
 	begin_statement ("STOP ERROR", 0);
 	cb_verify (cb_stop_error_statement, "STOP ERROR");
 	cb_emit_stop_error ();
 	check_unreached = 1;
   }
-| STOP stop_argument
+| STOP
+  {
+	check_non_area_a ($1);
+  }
+  stop_argument
   {
 	begin_statement ("STOP", 0);
-	cb_emit_display (CB_LIST_INIT ($2), cb_int0, cb_int1, NULL,
+	cb_emit_display (CB_LIST_INIT ($3), cb_int0, cb_int1, NULL,
 			 NULL, 1, DEVICE_DISPLAY);
 	cb_emit_accept (cb_null, NULL, NULL);
 	cobc_cs_check = 0;
   }
-| STOP thread_reference_optional
+| STOP
+  {
+	check_non_area_a ($1);
+  }
+  thread_reference_optional
   {
 	begin_statement ("STOP THREAD", 0);
-	cb_emit_stop_thread ($2);
+	cb_emit_stop_thread ($3);
 	cobc_cs_check = 0;
-	cb_warning_x (COBC_WARN_FILLER, $2, _("%s is replaced by %s"), "STOP THREAD", "STOP RUN");
+	cb_warning_x (COBC_WARN_FILLER, $3, _("%s is replaced by %s"), "STOP THREAD", "STOP RUN");
   }
 ;
 
@@ -15845,7 +15861,11 @@ _end_subtract:
 /* SUPPRESS statement */
 
 suppress_statement:
-  SUPPRESS _printing
+  SUPPRESS
+  {
+	check_non_area_a ($1);
+  }
+  _printing
   {
 	begin_statement ("SUPPRESS", 0);
 	if (!in_declaratives) {
@@ -16437,7 +16457,11 @@ _end_write:
 /* XML GENERATE statement */
 
 xml_generate_statement:
-  XML GENERATE
+  XML
+  {
+	check_non_area_a ($1);
+  }
+  GENERATE
   {
 	begin_statement ("XML GENERATE", TERM_XML);
 	cobc_in_xml_generate_body = 1;
@@ -16725,7 +16749,11 @@ _end_xml:
 /* XML PARSE statement */
 
 xml_parse_statement:
-  XML PARSE
+  XML
+  {
+	check_non_area_a ($1);
+  }
+  PARSE
   {
 	begin_statement ("XML PARSE", TERM_XML);
 	CB_PENDING ("XML PARSE");

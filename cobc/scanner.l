@@ -155,7 +155,6 @@ static size_t			plex_size;
 static size_t			pic1_size;
 static size_t			pic2_size;
 static unsigned int		last_token_is_dot = 0;
-static unsigned int		last_token_is_area_a = 0;
 static unsigned int		integer_is_label = 0;
 static unsigned int		inside_bracket = 0;
 static char			err_msg[COB_MINI_BUFF];
@@ -207,12 +206,11 @@ AREA_A		\n"#AREA_A"\n
 	if (last_token_is_dot) {
 		integer_is_label = 1;
 		last_token_is_dot = 0;
-	} else if (last_token_is_area_a) {
-		integer_is_label = 1;
-		last_token_is_area_a = 0;
 	} else {
 		integer_is_label = 0;
 	}
+	cobc_in_area_a = cobc_still_in_area_a;
+	cobc_still_in_area_a = 0;
 %}
 
 <*>^[ ]?"#CALLFH".*\n {
@@ -317,10 +315,9 @@ AREA_A		\n"#AREA_A"\n
 	}
 }
 
-<*>^{AREA_A} {
+<*>^{AREA_A}[ ]* {
 	if (cobc_in_procedure) {
-		last_token_is_area_a = 1;
-		return TOK_AREA_A;
+		cobc_in_area_a = 1;
 	}
 }
 
@@ -1083,7 +1080,11 @@ H#[0-9A-Za-z]+ {
 		}
 	}
 
-	RETURN_TOK (WORD);
+	if (cobc_in_area_a) {
+		RETURN_TOK (WORD_IN_AREA_A);
+	} else {
+		RETURN_TOK (WORD);
+	}
 }
 
 "<=" {
@@ -1237,7 +1238,7 @@ H#[0-9A-Za-z]+ {
 	}
 	top_78_ptr = NULL;
 	last_token_is_dot = 0;
-	last_token_is_area_a = 0;
+	cobc_in_area_a = 0;
 	integer_is_label = 0;
 	inside_bracket = 0;
 	lev_78_ptr = NULL;
@@ -2451,6 +2452,14 @@ void
 cb_unput_dot (void)
 {
 	unput ('.');
+}
+
+void
+cb_unput_str (const char * const w)
+{
+	int i;
+	for (i = strlen (w) - 1; i >= 0; i--)
+		unput (w[i]);
 }
 
 void
