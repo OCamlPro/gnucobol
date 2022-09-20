@@ -5542,6 +5542,7 @@ prog.cob:6: error: WITH ... LINKAGE does not conform to COBOL 85
 prog.cob:8: error: CALL-/ENTRY-CONVENTION does not conform to COBOL 85
 prog.cob:10: error: WITH ... LINKAGE does not conform to COBOL 85
 prog.cob:10: error: CALL-CONVENTION and WITH LINKAGE are mutually exclusive
+prog.cob:12: warning: 'GOBACK' should be in Area A
 ])
 AT_CLEANUP
 
