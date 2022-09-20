@@ -157,6 +157,29 @@ unsigned int			cobc_still_in_area_a = 0;
 
 /* Local variables */
 
+enum inspect_rep_keyword {
+	INSPECT_REP_DEFAULT,
+	INSPECT_REP_ALL,
+	INSPECT_REP_LEADING,
+	INSPECT_REP_FIRST,
+	INSPECT_REP_TRAILING,
+};
+
+union examine_keyword {
+	/* EXAMINE TALLYING/REPLACING options */
+	enum {
+		EXAMINE_TAL_ALL,
+		EXAMINE_TAL_LEADING,
+		EXAMINE_TAL_UNTIL_FIRST,
+	} tallying;
+	enum {
+		EXAMINE_REP_ALL,
+		EXAMINE_REP_LEADING,
+		EXAMINE_REP_FIRST,
+		EXAMINE_REP_UNTIL_FIRST,
+	} replacing;
+};
+
 enum tallying_phrase {
 	NO_PHRASE,
 	FOR_PHRASE,
@@ -205,7 +228,8 @@ static unsigned int		first_prog;
 static unsigned int		setup_from_identification;
 static unsigned int		use_global_ind;
 static unsigned int		same_area;
-static unsigned int		inspect_keyword;
+static enum inspect_rep_keyword	inspect_keyword;
+static union examine_keyword	examine_keyword;
 static unsigned int		main_flag_set;
 static int			next_label_id;
 static int			eval_level;
@@ -1020,7 +1044,7 @@ clear_initial_values (void)
 	eval_level = 0;
 	eval_inc = 0;
 	eval_inc2 = 0;
-	inspect_keyword = 0;
+	inspect_keyword = INSPECT_REP_DEFAULT;
 	check_unreached = 0;
 	cobc_in_id = 0;
 	cobc_in_procedure = 0;
@@ -2551,6 +2575,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token EVENT_LIST		"EVENT-LIST"
 %token EVENT_STATUS		"EVENT STATUS"
 %token EVERY
+%token EXAMINE
 %token EXCEPTION
 %token EXCEPTION_CONDITION	"EXCEPTION CONDITION"
 %token EXCEPTION_VALUE		"EXCEPTION-VALUE"
@@ -3223,6 +3248,7 @@ set_record_size (cb_tree min, cb_tree max)
 %nonassoc ENABLE
 %nonassoc ENTRY
 %nonassoc EVALUATE
+%nonassoc EXAMINE
 %nonassoc EXHIBIT
 %nonassoc EXIT
 %nonassoc FREE
@@ -8522,6 +8548,9 @@ report_group_description_entry:
 	}
   }
   _report_group_options TOK_DOT
+  {
+	  build_sum_counter (current_report, current_field);
+  }
 | level_number error TOK_DOT
   {
 	/* Free tree associated with level number */
@@ -8680,7 +8709,6 @@ sum_clause_list:
   {
 	check_repeated ("SUM", SYN_CLAUSE_19, &check_pic_duplicate);
 	current_field->report_sum_list = $3;
-	build_sum_counter (current_report, current_field);
   }
 ;
 
@@ -10751,6 +10779,7 @@ statement:
 | enable_statement
 | entry_statement
 | evaluate_statement
+| examine_statement
 | exhibit_statement
 | exit_statement
 | free_statement
@@ -11597,8 +11626,9 @@ call_body:
 	if (current_program->prog_type == COB_MODULE_TYPE_PROGRAM
 	 && !current_program->flag_recursive
 	 && is_recursive_call ($3)) {
-	 	if (cb_verify_x ($3, cb_self_call_recursive, _("CALL to own PROGRAM-ID"))) {
-			cb_note_x (cb_warn_dialect, $3, _("assuming RECURSIVE attribute"));
+		cb_tree x = CB_TREE (current_statement);
+	 	if (cb_verify_x (x, cb_self_call_recursive, _("CALL to own PROGRAM-ID"))) {
+			cb_note_x (cb_warn_dialect, x, _("assuming RECURSIVE attribute"));
 			current_program->flag_recursive = 1;
 		}
 	}
@@ -13879,7 +13909,7 @@ inspect_statement:
   INSPECT
   {
 	begin_statement ("INSPECT", 0);
-	inspect_keyword = 0;
+	inspect_keyword = INSPECT_REP_DEFAULT;
   }
   inspect_body
 ;
@@ -13911,6 +13941,123 @@ inspect_format_variant:
 | inspect_converting
 ;
 
+/* EXAMINE statement */
+
+examine_statement:
+  EXAMINE
+  {
+	begin_statement ("EXAMINE", 0);
+  }
+  send_identifier
+  examine_format_variant
+;
+
+examine_format_variant:
+  TALLYING
+  {
+	cb_tree tally = cb_build_identifier (cb_build_reference ("TALLY"), 0);
+	cb_emit_initialize (CB_LIST_INIT (tally), NULL, cb_int0, NULL, NULL);
+	cb_init_tallying ();
+	cb_build_tallying_data (tally);
+  }
+  examine_tallying_keyword single_character_value
+  _examine_tallying_replacing
+  {
+	cb_tree x = $4, replacing_to = $5;
+	cb_tree t, r = cb_build_inspect_region_start ();
+	switch (examine_keyword.tallying) {
+	case EXAMINE_TAL_ALL:
+		cb_build_tallying_all ();
+		t = cb_build_tallying_value (x, r);
+		break;
+	case EXAMINE_TAL_LEADING:
+		cb_build_tallying_leading ();
+		t = cb_build_tallying_value (x, r);
+		break;
+	case EXAMINE_TAL_UNTIL_FIRST:
+		r = cb_list_add (r, CB_BUILD_FUNCALL_1 ("cob_inspect_before", x));
+		t = cb_build_tallying_characters (r);
+		break;
+	}
+	cb_emit_inspect ($0, t, TALLYING_CLAUSE);
+	if (replacing_to) {
+		r = cb_build_inspect_region_start ();
+		switch (examine_keyword.tallying) {
+		case EXAMINE_TAL_ALL:
+			t = cb_build_replacing_all (x, replacing_to, r);
+			break;
+		case EXAMINE_TAL_LEADING:
+			t = cb_build_replacing_leading (x, replacing_to, r);
+			break;
+		case EXAMINE_TAL_UNTIL_FIRST:
+			r = cb_list_add (r, CB_BUILD_FUNCALL_1 ("cob_inspect_before", x));
+			t = cb_build_replacing_characters (replacing_to, r);
+			break;
+		}
+		cb_emit_inspect ($0, t, REPLACING_CLAUSE);
+	}
+  }
+| REPLACING examine_replacing_keyword
+  single_character_value BY single_character_value
+  {
+	cb_tree from = $3, to = $5;
+	cb_tree t, r = cb_build_inspect_region_start ();
+	switch (examine_keyword.replacing) {
+	case EXAMINE_REP_ALL:
+		t = cb_build_replacing_all (from, to, r);
+		break;
+	case EXAMINE_REP_LEADING:
+		t = cb_build_replacing_leading (from, to, r);
+		break;
+	case EXAMINE_REP_FIRST:
+		t = cb_build_replacing_first (from, to, r);
+		break;
+	case EXAMINE_REP_UNTIL_FIRST:
+		r = cb_list_add (r, CB_BUILD_FUNCALL_1 ("cob_inspect_before", from));
+		t = cb_build_replacing_characters (to, r);
+		break;
+	}
+	cb_emit_inspect ($0, t, REPLACING_CLAUSE);
+  }
+;
+
+examine_tallying_keyword:
+  ALL			{ examine_keyword.tallying = EXAMINE_TAL_ALL; }
+| LEADING		{ examine_keyword.tallying = EXAMINE_TAL_LEADING; }
+| UNTIL FIRST		{ examine_keyword.tallying = EXAMINE_TAL_UNTIL_FIRST; }
+;
+
+examine_replacing_keyword:
+  ALL			{ examine_keyword.replacing = EXAMINE_REP_ALL; }
+| LEADING		{ examine_keyword.replacing = EXAMINE_REP_LEADING; }
+| FIRST			{ examine_keyword.replacing = EXAMINE_REP_FIRST; }
+| UNTIL FIRST		{ examine_keyword.replacing = EXAMINE_REP_UNTIL_FIRST; }
+;
+
+_examine_tallying_replacing:
+  /* empty */				{ $$ = NULL; }
+| REPLACING BY single_character_value	{ $$ = $3; }
+;
+
+single_character_value:
+  alphabet_lits
+  {
+	if (CB_LITERAL_P ($1) && CB_LITERAL ($1)->size != 1) {
+		cb_error_x ($1, _("single-character literal or data item expected"));
+	}
+	$$ = $1;
+  }
+| qualified_word
+  {
+	struct cb_reference * const r =
+		CB_REFERENCE_P ($1) ? CB_REFERENCE ($1) : NULL;
+	if (!r || CB_FIELD_PTR ($1)->size != 1) {
+		cb_error_x ($1, _("single-character literal or data item expected"));
+	}
+	$$ = $1;
+  }
+;
+
 /* INSPECT TALLYING */
 
 inspect_tallying:
@@ -13938,7 +14085,7 @@ inspect_replacing:
   REPLACING replacing_list
   {
 	cb_emit_inspect ($0, $2, REPLACING_CLAUSE);
-	inspect_keyword = 0;
+	inspect_keyword = INSPECT_REP_DEFAULT;
   }
 ;
 
@@ -14005,7 +14152,7 @@ replacing_item:
   CHARACTERS BY simple_display_value inspect_region
   {
 	$$ = cb_build_replacing_characters ($3, $4);
-	inspect_keyword = 0;
+	inspect_keyword = INSPECT_REP_DEFAULT;
   }
 | rep_keyword replacing_region
   {
@@ -14015,33 +14162,33 @@ replacing_item:
 
 rep_keyword:
   /* empty */
-| ALL				{ inspect_keyword = 1; }
-| LEADING			{ inspect_keyword = 2; }
-| FIRST				{ inspect_keyword = 3; }
-| TRAILING			{ inspect_keyword = 4; }
+| ALL				{ inspect_keyword = INSPECT_REP_ALL; }
+| LEADING			{ inspect_keyword = INSPECT_REP_LEADING; }
+| FIRST				{ inspect_keyword = INSPECT_REP_FIRST; }
+| TRAILING			{ inspect_keyword = INSPECT_REP_TRAILING; }
 ;
 
 replacing_region:
   inspect_from BY inspect_to inspect_region
   {
 	switch (inspect_keyword) {
-		case 1:
-			$$ = cb_build_replacing_all ($1, $3, $4);
-			break;
-		case 2:
-			$$ = cb_build_replacing_leading ($1, $3, $4);
-			break;
-		case 3:
-			$$ = cb_build_replacing_first ($1, $3, $4);
-			break;
-		case 4:
-			$$ = cb_build_replacing_trailing ($1, $3, $4);
-			break;
-		default:
-			cb_error_x (CB_TREE (current_statement),
-				    _("INSPECT missing ALL/FIRST/LEADING/TRAILING"));
-			$$ = cb_build_replacing_all ($1, $3, $4);
-			break;
+	case INSPECT_REP_ALL:
+		$$ = cb_build_replacing_all ($1, $3, $4);
+		break;
+	case INSPECT_REP_LEADING:
+		$$ = cb_build_replacing_leading ($1, $3, $4);
+		break;
+	case INSPECT_REP_FIRST:
+		$$ = cb_build_replacing_first ($1, $3, $4);
+		break;
+	case INSPECT_REP_TRAILING:
+		$$ = cb_build_replacing_trailing ($1, $3, $4);
+		break;
+	default:
+		cb_error_x (CB_TREE (current_statement),
+			    _("INSPECT missing ALL/FIRST/LEADING/TRAILING"));
+		$$ = cb_build_replacing_all ($1, $3, $4);
+		break;
 	}
   }
 ;

@@ -1721,7 +1721,7 @@ cob_file_open (cob_file *f, char *filename, const int mode, const int sharing)
 		break;
 	/* LCOV_EXCL_START */
 	default:
-		cob_fatal_error(COB_FERROR_CODEGEN);
+		cob_fatal_error (COB_FERROR_CODEGEN);
 	/* LCOV_EXCL_STOP */
 	}
 
@@ -2896,7 +2896,7 @@ set_dbt (struct indexed_file *p, DBT *dbt, const char *key, const unsigned int k
 		(size_t)(p->filenamelen + 1));
 	memcpy ((char *)record_lock_object + p->filenamelen + 1, key,
 		(size_t)keylen);
-	memset (&dbt, 0, sizeof (dbt));
+	memset (dbt, 0, sizeof (DBT));
 	dbt->size = (cob_dbtsize_t) len;
 	dbt->data = record_lock_object;
 }

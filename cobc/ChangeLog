@@ -15,6 +15,25 @@
 	  new functions for Area A checks
 	* parser.y (begin_statement): check statement does not start in Area A
 
+2022-09-01  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	FR #18 support EXAMINE statement
+	* parser.y: add missing options for EXAMINE statement
+
+2022-08-26  Simon Sobisch <simonsobisch@gnu.org>
+
+	* scanner.l (copy_literal): inlined into literal handling and added
+	  missing check for actual literal, fixing bug #773
+	* tree.c, tree.h, cobc.c: moved cobc_enum_explain from cobc.c to
+	  tree.c as cb_enum_explain
+	* tree.h (CB_TREE_TAG_UNEXPECTED_ABORT), field.c, tree.c, typeck.c,
+	  codegen.c: added new macro and using it
+	* field.c (cb_validate_88_item): check against numeric for all type of
+	  values, not only the figurative constants
+	* cobc.c, error.c: adjusted message handling to use local buffers
+	* field.c (has_std_needed_screen_clause), typeck.c (validate_alphabet),
+	  codegen.c (output_initialize_one): minor refactorings
+
 2022-08-20  Simon Sobisch <simonsobisch@gnu.org>
 
 	* pplex.l: match and ignore editor folding $REGION statement
@@ -45,6 +64,11 @@
 	* reserved.c, typeck.c: added all XML and JSON registers
 	* config.def, parser.y, codegen.c: added cb_xml_parse_xmlss, passed
 	  to runtime as module->xml_mode
+
+2022-08-03  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* parser.y, reserved.c: add support for EXAMINE statement (TALLYING
+	  LEADING only)
 
 2022-07-29  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
@@ -357,6 +381,19 @@
 	* cobc.c, cobc.h, config.def, pplex.l, ppparse.y: make the
 	  indicator column configurable
 
+2022-01-25  Nicolas Berthier <nicolas.berther@ocamlpro.com>
+
+	* pplex.l, ppparse.y, config.h: support COPY and REPLACE
+	  statements with partial REPLACING operands specified using
+	  literals
+	* config.def: new option partial-replacing-with-literal
+	* cobc.h, pplex.l (ppparse_verify): feature verification while in
+	  ppparse.y
+	* pplex.l (ppparse_error): shift newline counter by one when
+	  reporting an error when in ppparse.y
+	* ppparse.y (unquote, fix_filename): factorize code for
+	  unquotation of alphanumeric literals
+
 2021-12-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y (table_name): check for KEY phrase in SEARCH ALL
@@ -376,18 +413,13 @@
 	* codegen.c (output_search_whens, output_search_all): adjust output of
 	  source references for better debugging experience and add AT END tracing
 
-2022-01-25  Nicolas Berthier <nicolas.berther@ocamlpro.com>
+2021-12-25  Ron Norman <rjn@inglenet.com>
 
-	* pplex.l, ppparse.y, config.h: support COPY and REPLACE
-	  statements with partial REPLACING operands specified using
-	  literals
-	* config.def: new option partial-replacing-with-literal
-	* cobc.h, pplex.l (ppparse_verify): feature verification while in
-	  ppparse.y
-	* pplex.l (ppparse_error): shift newline counter by one when
-	  reporting an error when in ppparse.y
-	* ppparse.y (unquote, fix_filename): factorize code for
-	  unquotation of alphanumeric literals
+	* parser.y: fix to check for missing REPORT data clauses
+	* codegen.c: handle report field with SOURCE "literal"
+	* field.c: compute report field size for SOURCE "literal"
+	* tree.c: fix bug #772 check for report field missing PIC
+	  when using SUM clause
 
 2021-12-14  Simon Sobisch <simonsobisch@gnu.org>
 

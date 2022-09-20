@@ -706,15 +706,20 @@ chk_field_multi_values (struct cb_field *f)
 {
 	struct cb_field		*fc;
 	if (f->values 
-	 && CB_CHAIN (f->values))
+	 && CB_CHAIN (f->values)) {
 		return 1;
+	}
 	if (f->values
 	 && CB_VALUE (f->values)) {
+		/* CHECKME: Why do we return 1 on ALL '0'?
+		   and what about [ALL] ZERO ?*/
 		 if (CB_LITERAL_P (CB_VALUE(f->values))
-		  && CB_LITERAL (CB_VALUE(f->values))->all)
+		  && CB_LITERAL (CB_VALUE(f->values))->all) {
 			return 1;
-		if (f->flag_occurs)
+		}
+		if (f->flag_occurs) {
 			return 1;
+		}
 	}
 	for (fc = f->children; fc && !fc->redefines; fc = fc->sister) {
 		if (chk_field_multi_values (fc)) {
@@ -728,8 +733,9 @@ static int
 chk_field_any_values (struct cb_field *f)
 {
 	struct cb_field		*fc;
-	if (f->values)
+	if (f->values) {
 		return 1;
+	}
 	for (fc = f->children; fc && !fc->redefines; fc = fc->sister) {
 		if (chk_field_any_values (fc)) {
 			return 1;
@@ -1302,16 +1308,14 @@ output_data (cb_tree x)
 	case CB_TAG_CONST:
 		/* LCOV_EXCL_START */
 		if (x != cb_null) {
-			cobc_err_msg (_("unexpected tree tag: %d"), (int)CB_TREE_TAG (x));
-			COBC_ABORT ();
+			CB_TREE_TAG_UNEXPECTED_ABORT (x);
 		}
 		/* LCOV_EXCL_STOP */
 		output ("NULL");
 		break;
 	/* LCOV_EXCL_START */
 	default:
-		cobc_err_msg (_("unexpected tree tag: %d"), (int)CB_TREE_TAG (x));
-		COBC_ABORT ();
+		CB_TREE_TAG_UNEXPECTED_ABORT (x);
 	/* LCOV_EXCL_STOP */
 	}
 }
@@ -1387,8 +1391,7 @@ again:
 		break;
 	/* LCOV_EXCL_START */
 	default:
-		cobc_err_msg (_("unexpected tree tag: %d"), (int)CB_TREE_TAG (x));
-		COBC_ABORT ();
+		CB_TREE_TAG_UNEXPECTED_ABORT (x);
 	/* LCOV_EXCL_STOP */
 	}
 }
@@ -1706,8 +1709,7 @@ output_attr (const cb_tree x)
 		break;
 	/* LCOV_EXCL_START */
 	default:
-		cobc_err_msg (_("unexpected tree tag: %d"), (int)CB_TREE_TAG (x));
-		COBC_ABORT ();
+		CB_TREE_TAG_UNEXPECTED_ABORT (x);
 	/* LCOV_EXCL_STOP */
 	}
 
@@ -2241,8 +2243,7 @@ output_data_sub (cb_tree x, int subscript)
 		/* Fall through */
 	/* LCOV_EXCL_START */
 	default:
-		cobc_err_msg (_("unexpected tree tag: %d"), (int)CB_TREE_TAG (x));
-		COBC_ABORT ();
+		CB_TREE_TAG_UNEXPECTED_ABORT (x);
 	/* LCOV_EXCL_STOP */
 	}
 }
@@ -3205,8 +3206,7 @@ output_integer (cb_tree x)
 		break;
 	/* LCOV_EXCL_START */
 	default:
-		cobc_err_msg (_("unexpected tree tag: %d"), (int)CB_TREE_TAG (x));
-		COBC_ABORT ();
+		CB_TREE_TAG_UNEXPECTED_ABORT (x);
 	/* LCOV_EXCL_STOP */
 	}
 }
@@ -3458,8 +3458,7 @@ output_long_integer (cb_tree x)
 		break;
 	/* LCOV_EXCL_START */
 	default:
-		cobc_err_msg (_("unexpected tree tag: %d"), (int)CB_TREE_TAG (x));
-		COBC_ABORT ();
+		CB_TREE_TAG_UNEXPECTED_ABORT (x);
 	/* LCOV_EXCL_STOP */
 	}
 }
@@ -4006,8 +4005,7 @@ output_param (cb_tree x, int id)
 		break;
 	/* LCOV_EXCL_START */
 	default:
-		cobc_err_msg (_("unexpected tree tag: %d"), (int)CB_TREE_TAG (x));
-		COBC_ABORT ();
+		CB_TREE_TAG_UNEXPECTED_ABORT (x);
 	/* LCOV_EXCL_STOP */
 	}
 }
@@ -4451,8 +4449,7 @@ output_cond (cb_tree x, const int save_flag)
 		break;
 	/* LCOV_EXCL_START */
 	default:
-		cobc_err_msg (_("unexpected tree tag: %d"), (int)CB_TREE_TAG (x));
-		COBC_ABORT ();
+		CB_TREE_TAG_UNEXPECTED_ABORT (x);
 	/* LCOV_EXCL_STOP */
 	}
 	in_cond = 0;
@@ -4942,39 +4939,43 @@ output_initialize_one (struct cb_initialize *p, cb_tree x)
 		} else {
 			init_occurs = 0;
 		}
-		if (value == cb_space) {
-			output_figurative (x, f, ' ', init_occurs);
-			return;
-		} else if (value == cb_low) {
-			output_figurative (x, f, 0, init_occurs);
-			return;
-		} else if (value == cb_high) {
-			output_figurative (x, f, 255, init_occurs);
-			return;
-		} else if (value == cb_quote) {
-			if (cb_flag_apostrophe) {
-				output_figurative (x, f, '\'', init_occurs);
-			} else {
-				output_figurative (x, f, '"', init_occurs);
-			}
-			return;
-		} else if (value == cb_zero && f->usage == CB_USAGE_DISPLAY) {
-			if (!f->flag_sign_separate && !f->flag_blank_zero) {
-				output_figurative (x, f, '0', init_occurs);
-			} else {
-				output_move (cb_zero, x);
-			}
-			return;
-		} else if (value == cb_null && f->usage == CB_USAGE_DISPLAY) {
-			output_figurative (x, f, 0, init_occurs);
-			return;
-		} else if (CB_LITERAL_P (value) && CB_LITERAL (value)->all) {
+		if (CB_LITERAL_P (value) && CB_LITERAL (value)->all) {
 			/* ALL literal */
 			output_initialize_literal (x, f,
 						   CB_LITERAL (value), init_occurs);
 			return;
-		} else if (CB_CONST_P (value) ||
-			   CB_TREE_CLASS (value) == CB_CLASS_NUMERIC) {
+		}
+		if (CB_CONST_P (value)) {
+			if (value == cb_space) {
+				output_figurative (x, f, ' ', init_occurs);
+				return;
+			} else if (value == cb_low) {
+				output_figurative (x, f, 0, init_occurs);
+				return;
+			} else if (value == cb_high) {
+				output_figurative (x, f, 255, init_occurs);
+				return;
+			} else if (value == cb_quote) {
+				if (cb_flag_apostrophe) {
+					output_figurative (x, f, '\'', init_occurs);
+				} else {
+					output_figurative (x, f, '"', init_occurs);
+				}
+				return;
+			} else if (value == cb_zero && f->usage == CB_USAGE_DISPLAY) {
+				if (!f->flag_sign_separate && !f->flag_blank_zero) {
+					output_figurative (x, f, '0', init_occurs);
+				} else {
+					output_move (cb_zero, x);
+				}
+				return;
+			} else if (value == cb_null && f->usage == CB_USAGE_DISPLAY) {
+				output_figurative (x, f, 0, init_occurs);
+				return;
+			}
+		}
+		if (CB_CONST_P (value)
+		 || CB_TREE_CLASS (value) == CB_CLASS_NUMERIC) {
 			/* Figurative literal, numeric literal */
 			/* Check for non-standard 01 OCCURS */
 			if (init_occurs) {
@@ -8717,8 +8718,7 @@ output_stmt (cb_tree x)
 		break;
 	/* LCOV_EXCL_START */
 	default:
-		cobc_err_msg (_("unexpected tree tag: %d"), (int)CB_TREE_TAG (x));
-		COBC_ABORT ();
+		CB_TREE_TAG_UNEXPECTED_ABORT (x);
 	/* LCOV_EXCL_STOP */
 	}
 }
@@ -9499,19 +9499,19 @@ output_report_def_fields (int bgn, int id, struct cb_field *f, struct cb_report 
 		return;
 	}
 #endif
-	if(bgn == 1)
+	if (bgn == 1)
 		report_field_id = 0;
 
 	if (bgn == 0
 	&& (f->report_flag & COB_REPORT_LINE)) {	/* Start of next Line */
 		return;
 	}
-	if(subscript <= 0) {
-		if(f->flag_occurs && f->occurs_max > 1) {
+	if (subscript <= 0) {
+		if (f->flag_occurs && f->occurs_max > 1) {
 			if (f->sister) {
 				output_report_def_fields (0,id,f->sister,r,0);
 			}
-			for(idx = f->occurs_max; idx >= 1; idx--) {
+			for (idx = f->occurs_max; idx >= 1; idx--) {
 				output_report_def_fields (0,id,f,r,idx);
 			}
 			return;
@@ -9521,53 +9521,53 @@ output_report_def_fields (int bgn, int id, struct cb_field *f, struct cb_report 
 			output_report_def_fields (0,id,f->sister,r,0);
 		}
 		if (f->children
-		&& f->storage == CB_STORAGE_REPORT
-		&& f->report == r) {
+		 && f->storage == CB_STORAGE_REPORT
+		 && f->report == r) {
 			output_report_def_fields (0,id,f->children,r,0);
 		}
 		if (f->report_source || f->report_control || (f->report_flag & COB_REPORT_PRESENT)) {
 			output_local("\t\t/* ");
-			if(f->report_source) {
+			if (f->report_source) {
 				struct cb_field *s = cb_code_field (f->report_source);
 				if(s) output_local("SOURCE %s; ",s->name);
 			}
-			if((f->report_flag & COB_REPORT_PRESENT)) {
+			if ((f->report_flag & COB_REPORT_PRESENT)) {
 				output_local("PRESENT ");
-				if((f->report_flag & COB_REPORT_BEFORE))
+				if ((f->report_flag & COB_REPORT_BEFORE))
 					output_local("BEFORE ");
 				else
 					output_local("AFTER ");
-				if((f->report_flag & COB_REPORT_ALL))
+				if ((f->report_flag & COB_REPORT_ALL))
 					output_local("ALL ");
-				if((f->report_flag & COB_REPORT_PAGE))
+				if ((f->report_flag & COB_REPORT_PAGE))
 					output_local("PAGE ");
-				if(f->report_control) {
+				if (f->report_control) {
 					struct cb_field *s = cb_code_field (f->report_control);
-					if((f->report_flag & COB_REPORT_PAGE))
+					if ((f->report_flag & COB_REPORT_PAGE))
 						output_local("OR ");
-					if(s) output_local("%s; ",s->name);
+					if (s) output_local("%s; ",s->name);
 				}
 			} else
-			if(f->report_control) {
+			if (f->report_control) {
 				struct cb_field *s = cb_code_field (f->report_control);
 				if(s) output_local("CONTROL %s; ",s->name);
 			}
 			output_local("*/\n");
 		}
 		output_local ("static cob_report_field %s%d\t= {", CB_PREFIX_REPORT_FIELD,f->id);
-		if(report_field_id == 0)
+		if (report_field_id == 0)
 			output_local("NULL,");
 		else
 			output_local("&%s%d,",CB_PREFIX_REPORT_FIELD,report_field_id);
 		output_local("&%s%d,",CB_PREFIX_FIELD,f->id);
 	} else {
-		if(subscript == 1) {
+		if (subscript == 1) {
 			output_local ("static cob_report_field %s%d\t= {", CB_PREFIX_REPORT_FIELD,f->id);
 			output_local("&%s%d_2,",CB_PREFIX_REPORT_FIELD,f->id);
 			output_local("&%s%d,",CB_PREFIX_FIELD,f->id);
 		} else if(subscript == f->occurs_max) {
 			output_local ("static cob_report_field %s%d_%d\t= {", CB_PREFIX_REPORT_FIELD,f->id,subscript);
-			if(report_field_id == 0)
+			if (report_field_id == 0)
 				output_local("NULL,");
 			else
 				output_local("&%s%d,",CB_PREFIX_REPORT_FIELD,report_field_id);
@@ -9580,60 +9580,64 @@ output_report_def_fields (int bgn, int id, struct cb_field *f, struct cb_report 
 	}
 	report_field_id = f->id;
 
-	if(f->report_source) {
+	if (f->report_source) {
 		output_param (f->report_source, 0);
 	} else if(f->report_sum_counter) {
-		output_local("/*SUM*/");
+		output_local ("/*SUM*/");
 		output_param (f->report_sum_counter, 0);
 	} else {
-		output_local("NULL");
+		output_local ("NULL");
 	}
 	output_local(",");
-	if(f->report_control) {
+	if (f->report_control) {
 		output_param (f->report_control, 0);
 	} else {
-		output_local("NULL");
+		output_local ("NULL");
 	}
-	output_local(",");
+	output_local (",");
 	if (f->values) {
 		value = CB_VALUE (f->values);
+	} else if (f->report_source 
+	        && CB_LITERAL_P (f->report_source)) {
+		value = f->report_source;
+	} else {
+		value = NULL;
+	}
 
-		if (CB_TREE_TAG (value) == CB_TAG_LITERAL) {
-			char	*val;
-			size_t	ref_size;
-			struct cb_literal	*lit = CB_LITERAL (value);
-			if (lit->all) {
-				ref_size = f->size;
-			} else {
-				ref_size = lit->size;
-			}
-			if (lit->all) {
-				val = (char *)cobc_malloc (ref_size * 2 + 2);
-				if (lit->data[0] == '"'
-				 || lit->data[0] == '\\') {	/* Fix string for C code */
-					for (i = j = 0; j < (unsigned int)f->size; j++) {
-						val[i++] = '\\';
-						val[i++] = lit->data[0];
-					}
-				} else {
-					memset (val, lit->data[0], f->size);
-					i = f->size;
-				}
-			} else {
-				val = (char *)cobc_malloc (lit->size * 2 + 2);
-				for (i = j = 0; j < lit->size; j++) {
-					if (lit->data[j] == '"'
-					 || lit->data[j] == '\\')	/* Fix string for C code */
-						val[i++] = '\\';
-					val[i++] = lit->data[j];
-				}
-			}
-			val[i] = 0;
-			output_local("\"%s\",%d,", val, (int)ref_size);
-			cobc_free((void*) val);
+	if (value && CB_LITERAL_P (value)) {
+		struct cb_literal	*lit = CB_LITERAL (value);
+		char	*val;
+		size_t	ref_size;
+		if (lit->all) {
+			ref_size = f->size;
 		} else {
-			output_local("NULL,0,");
+			ref_size = lit->size;
 		}
+		if (lit->all) {
+			val = (char *)cobc_malloc (ref_size * 2 + 2);
+			if (lit->data[0] == '"'
+				|| lit->data[0] == '\\') {	/* Fix string for C code */
+				for (i = j = 0; j < (unsigned int)f->size; j++) {
+					val[i++] = '\\';
+					val[i++] = lit->data[0];
+				}
+			} else {
+				memset (val, lit->data[0], f->size);
+				i = f->size;
+			}
+		} else {
+			val = (char *)cobc_malloc (lit->size * 2 + 2);
+			for (i = j = 0; j < lit->size; j++) {
+				if (lit->data[j] == '"'
+					|| lit->data[j] == '\\')	/* Fix string for C code */
+					val[i++] = '\\';
+				val[i++] = lit->data[j];
+			}
+		}
+		val[i] = 0;
+		output_local("\"%s\",%d,", val, (int)ref_size);
+		cobc_free((void*) val);
+	/* CHECKME: What about CB_CONST_P (ZERO/SPACE/QUOTE) ? */
 	} else {
 		output_local("NULL,0,");
 	}
@@ -10624,8 +10628,7 @@ output_module_register_init (cb_tree reg, const char *name)
 
 	/* LCOV_EXCL_START */
 	if (!CB_REF_OR_FIELD_P (reg)) {
-		cobc_err_msg (_("unexpected tree tag: %d"), (int)CB_TREE_TAG (reg));
-		COBC_ABORT ();
+		CB_TREE_TAG_UNEXPECTED_ABORT (reg);
 	}
 	/* LCOV_EXCL_STOP */
 
@@ -12776,7 +12779,7 @@ output_function_prototypes (struct cb_program *prog)
 	if (!prog) {
 		/* checked to keep the analyzer happy, TODO: real fix later */
 		cobc_err_msg (_ ("call to '%s' with invalid parameter '%s'"),
-			"output_function_prototypes", "prog");;
+			"output_function_prototypes", "prog");
 		COBC_ABORT ();
 	}
 	/* LCOV_EXCL_STOP */

@@ -129,7 +129,7 @@ enum cb_tag {
 	CB_TAG_ML_TREE,	/* JSON/XML GENERATE output tree */
 	CB_TAG_ML_SUPPRESS_CHECKS	/* JSON/XML GENERATE SUPPRESS checks */
 	/* When adding a new entry, please remember to add it to
-	   cobc_enum_explain as well. */
+	   cb_enum_explain in tree.c as well. */
 };
 
 /* Alphabet target */
@@ -533,6 +533,13 @@ typedef struct cb_tree_common	*cb_tree;
 #define CB_TREE_CLASS(x)	cb_tree_class (CB_TREE (x))
 #define CB_TREE_CATEGORY(x)	cb_tree_category (CB_TREE (x))
 
+#define CB_TREE_TAG_UNEXPECTED_ABORT(x)	\
+	do { /* not translated as unexpected dev-only message */ \
+		cobc_err_msg ("unexpected tree tag: %s",	\
+			cb_enum_explain (CB_TREE_TAG (x))); 	\
+		COBC_ABORT ();		\
+	} ONCE_COB
+
 #define	CB_VALID_TREE(x)	(x && CB_TREE (x) != cb_error_node)
 #define	CB_INVALID_TREE(x)	(!(x) || CB_TREE (x) == cb_error_node)
 
@@ -879,7 +886,9 @@ struct cb_field {
 	int			report_column;	/* COLUMN (first value) */
 	int			report_num_col;	/* Number of COLUMNs defined */
 	int			report_decl_id;	/* Label id of USE FOR REPORTING */
+#if 0 /* items from 4.x */
 	int			report_source_id;	/* Label id of MOVE SOURCE values */
+#endif
 	int			step_count;	/* STEP in REPORT */
 	int			next_group_line;	/* NEXT GROUP [PLUS] line */
 	unsigned int		vaddr;		/* Variable address cache */
@@ -1592,6 +1601,7 @@ struct cb_report {
 	unsigned int		has_declarative:1;/* Has Declaratives Code to be executed */
 	unsigned int		has_detail:1;	/* Has DETAIL line */
 	unsigned int		has_source_move:1;/* Has Code to MOVE SOURCE values */
+	unsigned int		was_checked:1;
 };
 
 #define CB_REPORT(x)	(CB_TREE_CAST (CB_TAG_REPORT, struct cb_report, x))
@@ -2038,7 +2048,7 @@ extern struct cb_field		*get_sum_data_field(struct cb_report *r, struct cb_field
 
 extern void			cb_add_common_prog (struct cb_program *);
 extern void			cb_insert_common_prog (struct cb_program *,
-						       struct cb_program *);
+						   struct cb_program *);
 
 
 extern struct cb_intrinsic_table	*lookup_intrinsic (const char *,
@@ -2048,17 +2058,18 @@ extern cb_tree		cb_build_alphabet_name (cb_tree);
 extern cb_tree		cb_build_schema_name (cb_tree);
 
 extern cb_tree		cb_build_initialize (const cb_tree, const cb_tree,
-					     const cb_tree,
-					     const unsigned int,
-					     const unsigned int,
-					     const unsigned int);
+					   const cb_tree,
+					   const unsigned int,
+					   const unsigned int,
+					   const unsigned int);
 
 struct cb_literal	*build_literal (enum cb_category,
-					const void *,
-					const size_t);
+					   const void *, const size_t);
 
-extern cb_tree	cb_build_system_name (const enum cb_system_name_category,
-				      const int);
+extern cb_tree		cb_build_system_name (const enum cb_system_name_category,
+					   const int);
+
+extern const char	*cb_enum_explain (const enum cb_tag);
 
 extern const char	*cb_get_usage_string (const enum cb_usage);
 

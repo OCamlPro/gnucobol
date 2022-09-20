@@ -1,4 +1,9 @@
 
+2022-08-03  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* general: do not reserve EXAMINE keyword by default, only in
+	  lax configurations
+
 2022-08-17  Simon Sobisch <simonsobisch@gnu.org>
 
 	* general: add xml-parse-xmlss, note: explicit NOT enabled

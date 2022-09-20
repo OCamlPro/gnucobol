@@ -1159,7 +1159,8 @@ AC_ARG_WITH([curses],
   esac],
   [USE_CURSES="check"])
 
-curr_libs="$LIBS" # AC_CHECK_LIB adds anything found into LIBS
+curr_libs="$LIBS" # backup current LIBS for later
+
 if test "x$CURSES_LIBS" != x; then
 	LIBS="$CURSES_LIBS $LIBS"
 	AC_MSG_CHECKING([if linking initscr works with CURSES_LIBS, given as "$CURSES_LIBS"])
@@ -1172,54 +1173,48 @@ if test "x$CURSES_LIBS" != x; then
 	AS_IF([test "$USE_CURSES" = check -o "$USE_CURSES" = no], [
 	  AC_MSG_ERROR([[explicit selection with --with-curses=ARG necessary, as CURSES_LIBS is set]])
 	])
-	curses_def=AS_TR_CPP([HAVE_LIB$USE_CURSES])
-	AC_DEFINE_UNQUOTED($curses_def)
+	LIBS=$"curr_libs"
 fi
 
 dnl note: when switching to $ncurses all checks are done correctly but no generation in config.h is done
-libfound=false
 if test "x$CURSES_LIBS" = x; then
   if test "$USE_CURSES" = "ncursesw" -o "$USE_CURSES" = "check"; then
-    AC_CHECK_LIB([ncursesw], [initscr], [libfound=true],
+    AC_CHECK_LIB([ncursesw], [initscr], [true],
       [AS_IF([test "$USE_CURSES" != check], [USE_CURSES="missing_lib"])])
   fi
 fi
-if test "$USE_CURSES" = "ncursesw" -o $libfound = true; then
+if test "$USE_CURSES" = "ncursesw" -o "x$ac_cv_lib_ncursesw_initscr" = xyes; then
   AC_CHECK_HEADERS([ncursesw/ncurses.h], [USE_CURSES="ncursesw"],
     [AC_CHECK_HEADERS([ncursesw/curses.h], [USE_CURSES="ncursesw"],
       [AS_IF([test "$USE_CURSES" != check],
-        [USE_CURSES="missing_header"],
-        [LIBS=$curr_libs]) ]) ])
+        [USE_CURSES="missing_header"]) ]) ])
   AS_IF([test $USE_CURSES="ncursesw" -a "x$CURSES_LIBS" = x],
     [CURSES_LIBS="-l$USE_CURSES"])
 fi
 
-libfound=false
 if test "x$CURSES_LIBS" = x; then
   if test "$USE_CURSES" = "ncurses" -o "$USE_CURSES" = "check"; then
-    AC_CHECK_LIB([ncurses], [initscr], [libfound=true],
+    AC_CHECK_LIB([ncurses], [initscr], [true],
       [AS_IF([test "$USE_CURSES" != check], [USE_CURSES="missing_lib"])])
   fi
 fi
-if test "$USE_CURSES" = "ncurses" -o $libfound = true; then
+if test "$USE_CURSES" = "ncurses" -o "x$ac_cv_lib_ncurses_initscr" = xyes; then
   AC_CHECK_HEADERS([ncurses/ncurses.h], [USE_CURSES="ncurses"],
     [AC_CHECK_HEADERS([ncurses/curses.h], [USE_CURSES="ncurses"],
       [AC_CHECK_HEADERS([ncurses.h], [USE_CURSES="ncurses"],
         [AS_IF([test "$USE_CURSES" != check],
-          [USE_CURSES="missing_header"],
-          [LIBS=$curr_libs]) ]) ]) ])
+          [USE_CURSES="missing_header"]) ]) ]) ])
   AS_IF([test $USE_CURSES="ncurses" -a "x$CURSES_LIBS" = x],
     [CURSES_LIBS="-l$USE_CURSES"])
 fi
 
-libfound=false
 if test "x$CURSES_LIBS" = x; then
   if test "$USE_CURSES" = "pdcurses" -o "$USE_CURSES" = "check"; then
-    AC_CHECK_LIB([pdcurses], [initscr], [libfound=true],
+    AC_CHECK_LIB([pdcurses], [initscr], [true],
       [AS_IF([test "$USE_CURSES" != check], [USE_CURSES="missing_lib"])])
   fi
 fi
-if test "$USE_CURSES" = "pdcurses" -o $libfound = true; then
+if test "$USE_CURSES" = "pdcurses" -o "x$ac_cv_lib_pdcurses_initscr" = xyes; then
   AC_CHECK_HEADERS([pdcurses.h], [USE_CURSES="pdcurses"],
     [AC_CHECK_HEADERS([curses.h], [USE_CURSES="pdcurses"],
       [AS_IF([test "$USE_CURSES" != check], [USE_CURSES="missing_header"]) ]) ])
@@ -1227,16 +1222,15 @@ if test "$USE_CURSES" = "pdcurses" -o $libfound = true; then
     [CURSES_LIBS="-l$USE_CURSES"])
 fi
 
-libfound=false
 if test "x$CURSES_LIBS" = x; then
   if test "$USE_CURSES" = "xcurses" -o "$USE_CURSES" = "check"; then
     # consider using xcurses-config
     # note: the library name is actually with an upper-case XC:
-    AC_CHECK_LIB([XCurses], [initscr], [libfound=true],
+    AC_CHECK_LIB([XCurses], [initscr], [true],
       [AS_IF([test "$USE_CURSES" != check], [USE_CURSES="missing_lib"])])
   fi
 fi
-if test "$USE_CURSES" = "xcurses" -o $libfound = true; then
+if test "$USE_CURSES" = "xcurses" -o "x$ac_cv_lib_XCurses_initscr" = xyes; then
   AC_CHECK_HEADERS([xcurses.h], [USE_CURSES="xcurses"],
     [AC_CHECK_HEADERS([xcurses/curses.h], [USE_CURSES="xcurses"],
       [AS_IF([test "$USE_CURSES" != check], [USE_CURSES="missing_header"]) ]) ])
@@ -1245,14 +1239,13 @@ if test "$USE_CURSES" = "xcurses" -o $libfound = true; then
     [CURSES_LIBS="-lXCurses"])
 fi
 
-libfound=false
 if test "x$CURSES_LIBS" = x; then
   if test "$USE_CURSES" = "curses" -o "$USE_CURSES" = "check"; then
-    AC_CHECK_LIB([curses], [initscr], [],
+    AC_CHECK_LIB([curses], [initscr], [true],
       [AS_IF([test "$USE_CURSES" != check], [USE_CURSES="missing_lib"])])
   fi
 fi
-if test "$USE_CURSES" = "curses" -o $libfound = true; then
+if test "$USE_CURSES" = "curses" -o "x$ac_cv_lib_curses_initscr" = xyes; then
   AC_CHECK_HEADERS([curses.h], [USE_CURSES="pdcurses"],
     [AS_IF([test "$USE_CURSES" != check], [USE_CURSES="missing_header"]) ])
   AS_IF([test $USE_CURSES="curses" -a "x$CURSES_LIBS" = x],
@@ -1279,7 +1272,7 @@ case "$USE_CURSES" in
 	;;
 esac
 
-LIBS="$LIBS $CURSES_LIBS"
+LIBS="$LIBS $CURSES_LIBS"  # adding found curses libraries to look for functions
 if test "$USE_CURSES" = "ncurses" -o "$USE_CURSES" = "ncursesw"; then
     AC_MSG_CHECKING([for ncurses _nc_freeall function])
     AC_LINK_IFELSE([AC_LANG_PROGRAM([[
@@ -1382,7 +1375,7 @@ if test "$USE_CURSES" != "no" -a "$USE_CURSES" != "not_found"; then
 	[AC_MSG_RESULT([no])],
 	[])
 fi
-LIBS="$curr_libs" # removing curses
+LIBS="$curr_libs"  # clean for next checks
 
 AC_ARG_WITH([seqra-extfh],
   [AS_HELP_STRING([--with-seqra-extfh],
@@ -1583,7 +1576,6 @@ if test "$with_db" = "yes"; then
 	unset cob_got_db
 	unset COB_BDB_HEADER
 fi
-LIBS="$curr_libs"	# removing INDEXED libraries
 
 # Checks for dl/ltdl.
 DEFINE_DL="no"

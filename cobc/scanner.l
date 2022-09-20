@@ -175,7 +175,6 @@ static void	copy_word_in_quotes (char ** const);
 static void	copy_two_words_in_quotes (char ** const, char ** const);
 static void	add_synonym (const int, const int);
 static void	make_synonym (void);
-static void *	copy_literal (cb_tree l);
 
 %}
 
@@ -1062,8 +1061,19 @@ H#[0-9A-Za-z]+ {
 			if (p78->chk_const && p78->not_const) {
 				break;
 			}
-			yylval = copy_literal (CB_VALUE (p78->fld_78->values));
-			SET_LOCATION (yylval);
+			x = CB_VALUE (p78->fld_78->values);
+			if (CB_LITERAL_P (x)) {
+				/* duplicate the constant literal
+				   to assign current source location */
+				yylval = cobc_parse_malloc (sizeof (struct cb_literal));
+				memcpy (yylval, x, sizeof (struct cb_literal));
+				SET_LOCATION (yylval);
+			} else {
+				/* Note: we cannot do this for cb_zero and friends,
+				         as those have sepcial meanings and are checked
+						 by tree comparision only */
+				yylval = x;
+			}
 			RETURN_TOK (LITERAL);
 		}
 	}
@@ -2173,26 +2183,6 @@ cb_add_const_var (const char *name, cb_tree value)
 	} else {
 		top_78_ptr = const_78_ptr;
 	}
-}
-
-
-/* duplicate the given literal to assign a different source location */
-static void *
-copy_literal (cb_tree l)
-{
-	cb_tree x;
-
-	/* LCOV_EXCL_START */
-	if (!CB_LITERAL_P(l)) {
-		cobc_err_msg (_("unexpected tree tag: %d"), (int)CB_TREE_TAG (l));
-		COBC_ABORT ();
-	}
-	/* LCOV_EXCL_STOP */
-
-	x = cobc_parse_malloc (sizeof (struct cb_literal));
-	memcpy (x, l, sizeof (struct cb_literal));
-
-	return x;
 }
 
 static void

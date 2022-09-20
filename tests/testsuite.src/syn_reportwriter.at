@@ -633,6 +633,11 @@ AT_DATA([prog.cob], [
 
        WORKING-STORAGE SECTION.
        01  foo  PIC X(20).
+       01   WS-INPUT-RECORD.
+            05  WSI-A                           PIC X(1).
+            05  WSI-B                           PIC X(1).
+            05  WSI-C                           PIC X(1).
+            05  WSI-V                           PIC 9.
 
        REPORT SECTION.
        RD  rp PAGE LIMIT 3.
@@ -640,10 +645,15 @@ AT_DATA([prog.cob], [
        01  rp-detail TYPE DE.
          02  LINE PLUS 1.
             03  FILLER   SOURCE foo  PIC X(30).
-            03  FILLER                PIC X(6) VALUE "<--->".
+            03  FILLER                PIC X(6) SOURCE "<--->".
             03  THING1                PIC 9(3) BINARY VALUE 12.
-            03  FILLER                PIC 9 COMP-5 VALUE 1.
-            03  THING3                COMP-2          VALUE 12.
+            03  THING2                COMP-2          VALUE 12.
+
+       01 CF-A TYPE CONTROL FOOTING WSI-A.
+           02 LINE PLUS 1.
+              03 COLUMN 1 VALUE "**SUM:".
+              03 COLUMN PLUS 2 SUM WSI-V.
+              03 COLUMN PLUS 2 SUM WSI-V PIC XXX.
 
        PROCEDURE DIVISION.
            OPEN OUTPUT report-file.
@@ -661,10 +671,11 @@ AT_DATA([prog.cob], [
            END PROGRAM prog.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [1], [],
-[prog.cob:25: error: REPORT SECTION item 'THING1' should be USAGE DISPLAY
-prog.cob:26: error: REPORT SECTION item 'FILLER 4' should be USAGE DISPLAY
-prog.cob:27: error: REPORT SECTION item 'THING3' should be USAGE DISPLAY
+AT_CHECK([$COMPILE_ONLY -std=default prog.cob ], [1], [],
+[prog.cob:36: error: needs PICTURE clause for SUM WSI-V
+prog.cob:37: warning: non-numeric PICTURE clause for SUM WSI-V
+prog.cob:30: error: REPORT SECTION item 'THING1' should be USAGE DISPLAY
+prog.cob:31: error: REPORT SECTION item 'THING2' should be USAGE DISPLAY
 ])
 
 AT_CLEANUP

@@ -1039,6 +1039,42 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 AT_CLEANUP
 
 
+AT_SETUP([EXAMINE invalid literals])
+AT_KEYWORDS([misc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  x  PIC X(10).
+       01  y  PIC X.
+       01  yy PIC XX.
+
+       PROCEDURE DIVISION.
+           EXAMINE x TALLYING ALL "AA" REPLACING BY "CC"
+           EXAMINE x TALLYING UNTIL FIRST SPACE
+           EXAMINE x TALLYING UNTIL FIRST y
+           EXAMINE x TALLYING LEADING yy
+           EXAMINE y TALLYING ALL x (1).
+           EXAMINE y TALLYING ALL x (3:2).
+           EXAMINE x TALLYING UNTIL FIRST ALL
+])
+
+AT_CHECK([$COMPILE_ONLY -freserved=EXAMINE prog.cob], [1], [],
+[prog.cob:12: error: single-character literal or data item expected
+prog.cob:12: error: single-character literal or data item expected
+prog.cob:15: error: single-character literal or data item expected
+prog.cob:16: error: single-character literal or data item expected
+prog.cob:16: error: syntax error, unexpected [(]
+prog.cob:17: error: single-character literal or data item expected
+prog.cob:17: error: syntax error, unexpected [(]
+prog.cob:18: error: syntax error, unexpected ALL
+])
+AT_CLEANUP
+
+
 AT_SETUP([maximum data size])
 AT_KEYWORDS([misc max])
 
