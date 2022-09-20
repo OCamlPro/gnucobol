@@ -10208,7 +10208,7 @@ procedure_division:
 	cb_set_system_names ();
   }
   statements
-  _dot_or_else_area_a		/* Area A check is in _procedure_list */
+  _dot_or_else_area_a
   _procedure_list
 ;
 
@@ -10502,8 +10502,7 @@ _procedure_declaratives:
 /* Procedure list */
 
 _procedure_list:
-| _procedure_list
-  procedure
+| _procedure_list procedure
 ;
 
 procedure:
@@ -10527,7 +10526,7 @@ procedure:
 	/* check_unreached = 0; */
 	cb_end_statement();
   }
-  _dot_or_else_area_a		/* Area A check is in _procedure_list */
+  _dot_or_else_area_a
 | invalid_statement %prec SHIFT_PREFER
 | TOK_DOT
   {
