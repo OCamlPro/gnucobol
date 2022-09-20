@@ -307,9 +307,17 @@ AREA_A		\n"#AREA_A"\n
 	}
 }
 
+<*>^[ ]?"#AREACHECK"\n {
+	cobc_areacheck = 1;
+}
+
+<*>^[ ]?"#NOAREACHECK"\n {
+	cobc_areacheck = 0;
+}
+
 <*>^{AREA_A}[ ]*/"." {
 	count_lines (yytext + 9); /* skip "\n#area_a\n" */
-	if (cobc_in_procedure && cb_areacheck) {
+	if (cobc_in_procedure && cobc_areacheck) {
 		cb_warning (COBC_WARN_FILLER, _("separator period in Area A"));
 	}
 }

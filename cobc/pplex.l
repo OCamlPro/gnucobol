@@ -224,33 +224,33 @@ MAYBE_AREA_A	[ ]?#?
 	#endif
 }
 
-^[ ]*">>"[ ]?"COBOL-WORDS"	{
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"COBOL-WORDS"	{
 	/* 202x+: directive for setting source format */
 	BEGIN COBOL_WORDS_DIRECTIVE_STATE;
 	return COBOL_WORDS_DIRECTIVE;
 }
 
-^[ ]*">>"[ ]?"DEFINE"	{
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"DEFINE"	{
 	/* 2002+: definition of compiler constants display message during compilation */
 	/* Define here to preempt next debug rule below */
 	BEGIN DEFINE_DIRECTIVE_STATE;
 	return DEFINE_DIRECTIVE;
 }
 
-^[ ]*">>"[ ]?"DISPLAY"[ ]+ {
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"DISPLAY"[ ]+ {
 	/* previous OpenCOBOL/GnuCOBOL 2.x extension, added in COBOL 202x with slightly different syntax:
 	   display message during compilation --> needs a dialect option to switch to the appropriate state */
 	display_msg[0] = 0;
 	BEGIN DISPLAY_DIRECTIVE_STATE;
 }
 
-^[ ]*">>"[ ]?"REF-MOD-ZERO-LENGTH"	{
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"REF-MOD-ZERO-LENGTH"	{
 	/* 202x: directive to allow zero ref-mod */
 	BEGIN ON_OFF_DIRECTIVE_STATE;
 	return REFMOD_DIRECTIVE;
 }
 
-^[ ]*">>D"		{
+^{MAYBE_AREA_A}[ ]*">>D"		{
 	/* 2002 (only) floating debug line */
 	/* Remove line if debugging lines not activated */
 	/* Otherwise ignore the directive part of the line */
@@ -260,13 +260,13 @@ MAYBE_AREA_A	[ ]?#?
 	}
 }
 
-^[ ]*">>"[ ]?"PAGE"	{
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"PAGE"	{
 	/* 2002+: listing directive for page eject with optional comment
 	   Note: processed in cobc.c */
 	skip_to_eol ();
 }
 
-^[ ]*">>"[ ]?"LISTING"	{
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"LISTING"	{
 	/* 2002+: listing directive for (de-)activating the listing,
 	   ON implied for empty value
 	   Note: further checks in ppparse.y, processed in cobc.c */
@@ -274,68 +274,91 @@ MAYBE_AREA_A	[ ]?#?
 	return LISTING_DIRECTIVE;
 }
 
-^[ ]*">>"[ ]?"SOURCE"	{
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"SOURCE"	{
 	/* 2002+: directive for setting source format */
 	BEGIN SOURCE_DIRECTIVE_STATE;
 	return SOURCE_DIRECTIVE;
 }
 
-^[ ]*">>"[ ]?"SET"	{
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"SET"	{
 	/* OpenCOBOL/GnuCOBOL 2.0 extension: MF SET directive in 2002+ style format */
 	BEGIN SET_DIRECTIVE_STATE;
 	return SET_DIRECTIVE;
 }
 
-^[ ]*">>"[ ]?"TURN"	{
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"TURN"	{
 	/* 2002+: directive for (de-)activating exception checks */
 	BEGIN TURN_DIRECTIVE_STATE;
 	return TURN_DIRECTIVE;
 }
 
-^[ ]*">>"[ ]?"IF"	{
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"IF"	{
 	/* 2002+: conditional compilation */
 	BEGIN IF_DIRECTIVE_STATE;
 	return IF_DIRECTIVE;
 }
-^[ ]*">>"[ ]?"ELIF" |
-^[ ]*">>"[ ]?"ELSE-IF"	{
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"ELIF" |
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"ELSE-IF"	{
 	/* OpenCOBOL extension: conditional compilation combined ELSE IF,
 	   2002+ style format */
 	BEGIN IF_DIRECTIVE_STATE;
 	return ELIF_DIRECTIVE;
 }
-^[ ]*">>"[ ]?"ELSE"	{
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"ELSE"	{
 	/* 2002+: conditional compilation */
 	BEGIN ELSE_DIRECTIVE_STATE;
 	return ELSE_DIRECTIVE;
 }
-^[ ]*">>"[ ]?"END-IF"	{
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"END-IF"	{
 	/* 2002+: conditional compilation */
 	BEGIN ENDIF_DIRECTIVE_STATE;
 	return ENDIF_DIRECTIVE;
 }
 
-^[ ]*">>"[ ]?"LEAP-SECOND"	{
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"LEAP-SECOND"	{
 	/* 2002+: more then 60 seconds per minute (currently always set to off),
 	          OFF implied for empty value */
 	BEGIN ON_OFF_DIRECTIVE_STATE;
 	return LEAP_SECOND_DIRECTIVE;
 }
 
-^[ ]*">>"[ ]?"CALL-CONVENTION"	{
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"CALL-CONVENTION"	{
 	/* 2002+: convention for CALL/CANCEL */
 	BEGIN CALL_DIRECTIVE_STATE;
 	return CALL_DIRECTIVE;
 }
 
-^[ ]*">>"[ ]*\n		{
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"AREACHECK"	|
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"AREA-CHECK"	{
+	if (cobc_has_areacheck ()) {
+		fprintf (ppout, "#AREACHECK\n");
+	} else {
+		cb_plex_warning (COBC_WARN_FILLER, newline_count,
+				 _("ignoring AREACHECK directive"));
+	}
+	skip_to_eol ();
+}
+
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"NOAREACHECK"	|
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"NO-AREACHECK"	|
+^{MAYBE_AREA_A}[ ]*">>"[ ]?"NO-AREA-CHECK"	{
+	if (cobc_has_areacheck ()) {
+		fprintf (ppout, "#NOAREACHECK\n");
+	} else {
+		cb_plex_warning (COBC_WARN_FILLER, newline_count,
+				 _("ignoring NOAREACHECK directive"));
+	}
+	skip_to_eol ();
+}
+
+^{MAYBE_AREA_A}[ ]*">>"[ ]*\n		{
 	/* empty 2002+ style directive */
 	cb_plex_warning (COBC_WARN_FILLER, newline_count,
 			_("ignoring empty directive"));
 	unput ('\n');
 }
 
-^[ ]*">>"[ ]*[_0-9A-Z-]+	{
+^{MAYBE_AREA_A}[ ]*">>"[ ]*[_0-9A-Z-]+	{
 	/* unknown 2002+ style directive */
 	char	*s;
 
@@ -345,64 +368,64 @@ MAYBE_AREA_A	[ ]?#?
 	skip_to_eol ();
 }
 
-^[ ]*">>"		{
+^{MAYBE_AREA_A}[ ]*">>"		{
 	/* unknown 2002+ style directive */
 	cb_plex_warning (COBC_WARN_FILLER, newline_count,
 			_("ignoring invalid directive"));
 	skip_to_eol ();
 }
 
-^[ ]*"$DISPLAY"[ ]+"VCS"[ ]+"="[ ]+	{
+^{MAYBE_AREA_A}[ ]*"$DISPLAY"[ ]+"VCS"[ ]+"="[ ]+	{
 	/* MF extension: include @(#)text\0 in the object file */
 	/* we just add a warning for now, maybe implement it later */
 	CB_PENDING (_("VCS directive"));
 	skip_to_eol ();
 }
 
-^[ ]*"$DISPLAY"[ ]+		{
+^{MAYBE_AREA_A}[ ]*"$DISPLAY"[ ]+		{
 	/* MF extension: display message during compilation */
 	display_msg[0] = 0;
 	BEGIN DISPLAY_DIRECTIVE_STATE;
 }
 
-^[ ]*"$SET"		{
+^{MAYBE_AREA_A}[ ]*"$SET"		{
 	/* MF extension: SET directive */
 	/* TODO: check position of the $SET directive */
 	BEGIN SET_DIRECTIVE_STATE;
 	return SET_DIRECTIVE;
 }
 
-^[ ]*"$IF"		{
+^{MAYBE_AREA_A}[ ]*"$IF"		{
 	/* MF extension: conditional compilation */
 	BEGIN IF_DIRECTIVE_STATE;
 	return IF_DIRECTIVE;
 }
-^[ ]*"$ELIF" |
-^[ ]*"$ELSE-IF"		{
+^{MAYBE_AREA_A}[ ]*"$ELIF" |
+^{MAYBE_AREA_A}[ ]*"$ELSE-IF"		{
 	/* OpenCOBOL/GnuCOBOL 2.0 extension: conditional compilation combined ELSE IF,
 	   MF style format */
 	BEGIN IF_DIRECTIVE_STATE;
 	return ELIF_DIRECTIVE;
 }
-^[ ]*"$ELSE"		{
+^{MAYBE_AREA_A}[ ]*"$ELSE"		{
 	/* MF extension: conditional compilation */
 	BEGIN ELSE_DIRECTIVE_STATE;
 	return ELSE_DIRECTIVE;
 }
-^[ ]*"$END"		|
-^[ ]*"$END-IF"	{
+^{MAYBE_AREA_A}[ ]*"$END"		|
+^{MAYBE_AREA_A}[ ]*"$END-IF"	{
 	/* MF extension: conditional compilation, second undocumented */
 	BEGIN ENDIF_DIRECTIVE_STATE;
 	return ENDIF_DIRECTIVE;
 }
-^[ ]*"$REGION"		|
-^[ ]*"$END-$REGION"	{
+^{MAYBE_AREA_A}[ ]*"$REGION"		|
+^{MAYBE_AREA_A}[ ]*"$END-$REGION"	{
 	/* MF extension for logical marking of a block in the editor */
 	/* _possibly_ check: MF rule "$REGION and $IF statements must not overlap." */
 	skip_to_eol ();
 }
 
-^[ ]*"$"[_0-9A-Z-]+	{
+^{MAYBE_AREA_A}[ ]*"$"[_0-9A-Z-]+	{
 	/* unknown MF style directive */
 	char	*s;
 
@@ -1454,8 +1477,14 @@ ppparse_error (const char *err_msg)
 	cb_plex_error (newline_count-1, "%s", err_msg);
 }
 
+int
+cobc_has_areacheck () {
+	return (source_format != CB_FORMAT_FIXED &&
+		source_format != CB_FORMAT_FREE);
+}
+
 /* Sets `source_format`, `indicator_column`, `text_column`, `floating_area_b`,
-   `fill_continued_alnums`, and `cob_areacheck`, based on the given source
+   `fill_continued_alnums`, and `cobc_areacheck`, based on the given source
    format. */
 void
 cobc_set_source_format (const enum cb_format sf) {
@@ -1514,7 +1543,7 @@ cobc_set_source_format (const enum cb_format sf) {
 		break;
 	default:
 		emit_area_a_tokens = 1;
-		cobc_areacheck = cb_areacheck; /* CHECKME: all but FREE/FIXED? */
+		cobc_areacheck = cb_areacheck;
 	}
 }
 

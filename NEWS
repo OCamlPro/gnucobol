@@ -53,7 +53,8 @@ NEWS - user visible changes				-*- outline -*-
    These formats come with Area A enforcement in the PROCEDURE
    DIVISION, where paragraph and section names should start in Area A
    (i.e, before margin B).  The underlying checks can be enabled or
-   disabled using a new flag `areacheck`.
+   disabled using a new flag `areacheck`, or with `>>AREACHECK` and
+   `>>NOAREACHECK` compiler directives.
 
    Area A enforcement additionally enables detection of missing
    periods before paragraph and section names, configurable with
