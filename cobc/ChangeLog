@@ -1,4 +1,9 @@
 
+2022-09-01  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	FR #18 support EXAMINE statement
+	* parser.y: add missing options for EXAMINE statement
+
 2022-08-26  Simon Sobisch <simonsobisch@gnu.org>
 
 	* scanner.l (copy_literal): inlined into literal handling and added
@@ -43,6 +48,11 @@
 	* reserved.c, typeck.c: added all XML and JSON registers
 	* config.def, parser.y, codegen.c: added cb_xml_parse_xmlss, passed
 	  to runtime as module->xml_mode
+
+2022-08-03  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* parser.y, reserved.c: add support for EXAMINE statement (TALLYING
+	  LEADING only)
 
 2022-07-29  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 

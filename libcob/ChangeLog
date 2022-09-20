@@ -1,4 +1,21 @@
 
+2022-09-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* intrinsic.c (cob_check_numval): fix missing check for
+	  embedded sign and decimal, minor performance-tweak
+
+2022-09-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c (cob_get_color_pair, cob_screen_init): fix overflow
+	  when COLOR_PAIRS is bigger than SHRT_MAX
+	* screenio.c (cob_screen_init) [__PDCURSES__]: fix missing initialization
+	  because of preprocessor symbols dropped
+
+2022-09-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c (cob_exit_screen): ensure to not end COB_EXIT_MESSAGE
+	  on mouse-move
+
 2022-08-19  Simon Sobisch <simonsobisch@gnu.org>
 
 	* mlio.c, common.h: added XML PARSE stub including minimal
@@ -413,6 +430,7 @@
 
 	* common.c (cob_backtrace), common.h: new variant of cob_stacktrace
 	  with format similar to GDB's backtrace
+	* fileio.c (set_dbt): fix bug #701 bad initialization with DB_HOME
 
 2021-01-07  Simon Sobisch <simonsobisch@gnu.org>
 
