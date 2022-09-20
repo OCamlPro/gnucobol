@@ -1,4 +1,8 @@
 
+2022-09-15  Nicolas Berthier <nicolas.berther@ocamlpro.com>
+
+	* general: add option missing-period
+
 2022-08-03  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* general: do not reserve EXAMINE keyword by default, only in
@@ -12,10 +16,6 @@
 2022-07-28  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* general: add option format
-
-2022-07-20  Nicolas Berthier <nicolas.berther@ocamlpro.com>
-
-	* general: add option loose-area-a
 
 2022-07-14  Simon Sobisch <simonsobisch@gnu.org>
 

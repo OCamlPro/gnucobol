@@ -52,16 +52,12 @@ NEWS - user visible changes				-*- outline -*-
 
    These formats come with Area A enforcement in the PROCEDURE
    DIVISION, where paragraph and section names should start in Area A
-   (i.e, before margin B).  The underlying checks can be configured
-   using a new dialect option `non-word-in-area-a`.
+   (i.e, before margin B).  The underlying checks can be enabled or
+   disabled using a new flag `areacheck`.
 
    Area A enforcement additionally enables detection of missing
    periods before paragraph and section names, configurable with
    option `missing-period`.
-
-   However, for technical reasons, a statement that is continued on a
-   line that starts in Area A always triggers a syntax error when Area
-   A enforcement is enabled.
 
    As a result of reference format being a dialect option, Area A
    enforcement is enabled by default for the following dialects:
