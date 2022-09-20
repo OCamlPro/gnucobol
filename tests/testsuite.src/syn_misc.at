@@ -7027,6 +7027,7 @@ prog.cob:8: error: PROCEDURE DIVISION header missing
 prog.cob:8: error: syntax error, unexpected Literal
 ])
 AT_CLEANUP
+# " (close unclosed quotation above)
 
 
 # normal register extension,
@@ -9076,9 +9077,8 @@ AT_CHECK([$COMPILE_ONLY -fpicture-l=warning prog.cob], [0], [],
 
 AT_CLEANUP
 
-# " (close unclosed quotation above)
 AT_SETUP([AREACHECK / NOAREACHECK directives])
-AT_KEYWORDS([areacheck])
+AT_KEYWORDS([directive])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION  DIVISION.

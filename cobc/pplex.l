@@ -330,11 +330,8 @@ MAYBE_AREA_A	[ ]?#?
 
 ^{MAYBE_AREA_A}[ ]*">>"[ ]?"AREACHECK"	|
 ^{MAYBE_AREA_A}[ ]*">>"[ ]?"AREA-CHECK"	{
-	if (cobc_has_areacheck ()) {
+	if (cobc_has_areacheck_directive ("AREACHECK")) {
 		fprintf (ppout, "#AREACHECK\n");
-	} else {
-		cb_plex_warning (COBC_WARN_FILLER, newline_count,
-				 _("ignoring AREACHECK directive"));
 	}
 	skip_to_eol ();
 }
@@ -342,11 +339,8 @@ MAYBE_AREA_A	[ ]?#?
 ^{MAYBE_AREA_A}[ ]*">>"[ ]?"NOAREACHECK"	|
 ^{MAYBE_AREA_A}[ ]*">>"[ ]?"NO-AREACHECK"	|
 ^{MAYBE_AREA_A}[ ]*">>"[ ]?"NO-AREA-CHECK"	{
-	if (cobc_has_areacheck ()) {
+	if (cobc_has_areacheck_directive ("NOAREACHECK")) {
 		fprintf (ppout, "#NOAREACHECK\n");
-	} else {
-		cb_plex_warning (COBC_WARN_FILLER, newline_count,
-				 _("ignoring NOAREACHECK directive"));
 	}
 	skip_to_eol ();
 }
@@ -1478,9 +1472,16 @@ ppparse_error (const char *err_msg)
 }
 
 int
-cobc_has_areacheck () {
-	return (source_format != CB_FORMAT_FIXED &&
-		source_format != CB_FORMAT_FREE);
+cobc_has_areacheck_directive (const char * directive) {
+	if (source_format != CB_FORMAT_FIXED &&
+	    source_format != CB_FORMAT_FREE) {
+		return 1;
+	} else {
+		cb_plex_warning (COBC_WARN_FILLER, newline_count,
+				 _("ignoring %s directive because of %s"),
+				 directive, "-fformat=fixed/free");
+		return 0;
+	}
 }
 
 /* Sets `source_format`, `indicator_column`, `text_column`, `floating_area_b`,

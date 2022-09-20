@@ -313,16 +313,26 @@ static int			backup_source_line = 0;
 
 static COB_INLINE void
 check_area_a (cb_tree stmt) {
-	if (!cobc_in_area_a && cobc_areacheck)
-		cb_warning_x (COBC_WARN_FILLER, stmt,
-			      _("'%s' should be in Area A"), CB_NAME (stmt));
+	if (!cobc_in_area_a && cobc_areacheck) {
+		if (stmt)
+			cb_warning_x (COBC_WARN_FILLER, stmt,
+				      _("'%s' should start in Area A"),
+				      CB_NAME (stmt));
+		else
+			cb_warning (COBC_WARN_FILLER,
+				    _("statement should start in Area A"));
+	}
 }
 
 static COB_INLINE void
 check_non_area_a (cb_tree stmt) {
-	if (cobc_in_area_a && cobc_areacheck)
-		cb_warning_x (COBC_WARN_FILLER, stmt,
-			      _("start of statement in Area A"));
+	if (cobc_in_area_a && cobc_areacheck) {
+		const char *msg = _("start of statement in Area A");
+		if (stmt)
+			cb_warning_x (COBC_WARN_FILLER, stmt, msg);
+		else
+			cb_warning (COBC_WARN_FILLER, msg);
+	}
 }
 
 /* Statements */

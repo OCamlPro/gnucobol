@@ -1488,7 +1488,7 @@ AT_DATA([prog.cob], [
                                L1-3-S
                                L1-3-2-S.
            STOP RUN.
-           END PROGRAM prog.
+       END PROGRAM prog.
 
        IDENTIFICATION DIVISION.
        PROGRAM-ID. IBM-ODO-TEST.
