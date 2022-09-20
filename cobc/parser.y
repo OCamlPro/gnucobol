@@ -3460,6 +3460,7 @@ end_program_list:
 end_program:
   END_PROGRAM
   {
+	check_area_a ($1);
 	backup_current_pos ();
   }
   end_program_name TOK_DOT
