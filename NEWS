@@ -50,9 +50,10 @@ NEWS - user visible changes				-*- outline -*-
    XCARD		ICOBOL xCard (extended card) format
    XOPEN		X/Open Free-form format
 
-   These formats come with Area A enforcement in the PROCEDURE
-   DIVISION, where paragraph and section names should start in Area A
-   (i.e, before margin B).  The underlying checks are enabled or
+   These formats come with Area A enforcement, that checks whether
+   division, section, and paragraph names start in Area A (i.e, before
+   margin B), and so do level indicators FD, SD, and RD, and level
+   numbers 01, 77, and 78.  The underlying checks are enabled or
    disabled by default using dialect option `areacheck`, and then with
    `>>AREACHECK` and `>>NOAREACHECK` compiler directives.
 

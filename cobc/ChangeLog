@@ -1,12 +1,12 @@
 
 2022-09-15  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
-	FR #360 AREACHECK (for PROCEDURE DIVISION only)
+	FR #360 AREACHECK
 	FR #309 raise warnings/errors when some periods are missing
 	* config.def: add dialect options areacheck and missing-period
 	* pplex.l, scanner.l, parser.y: check for empty Area A, and use a
 	  dedicated WORD_IN_AREA_A token to detect missing periods and incorrect
-	  use of Area A in PROCEDURE DIVISION
+	  use of Area A
 	* pplex.l, scanner.l, parser.y: support AREACHECK and NOAREACHECK
 	  directives
 	* pplex.l (cobc_has_areacheck): new helper function
