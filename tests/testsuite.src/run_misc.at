@@ -12524,6 +12524,7 @@ prog.cob:16: warning: start of statement in Area A
 prog.cob:17: warning: start of statement in Area A
 prog.cob:18: warning: start of statement in Area A
 prog.cob:20: warning: start of statement in Area A
+prog.cob:22: warning: start of statement in Area A
 ])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog PLAIN], [0],
