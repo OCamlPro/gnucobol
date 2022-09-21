@@ -5248,11 +5248,11 @@ PROCEDURE        DIVISION.
 ])
 
 AT_CHECK([$COMPILE -fformat=terminal -fcomment-paragraphs=ok -fdebugging-line marginberr.cob], [1], [],
-[marginberr.cob:7: error: ENVIRONMENT DIVISION header missing
-marginberr.cob:7: error: CONFIGURATION SECTION header missing
-marginberr.cob:7: error: SPECIAL-NAMES header missing
-marginberr.cob:7: error: invalid system-name 'Somebody'
-marginberr.cob:7: error: syntax error, unexpected ELSE, expecting CRT or Identifier
+[marginberr.cob:7: error: PROCEDURE DIVISION header missing
+marginberr.cob:7: error: syntax error, unexpected Identifier in Area A
+marginberr.cob:8: error: syntax error, unexpected DATA
+marginberr.cob:9: error: syntax error, unexpected WORKING-STORAGE
+marginberr.cob:10: error: syntax error, unexpected PROCEDURE
 ])
 
 AT_DATA([fit.cob], [

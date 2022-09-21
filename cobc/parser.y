@@ -3588,20 +3588,22 @@ function_prototype:
 
 _prototype_procedure_division_header:
   /* empty */
-| PROCEDURE DIVISION _procedure_using_chaining _procedure_returning TOK_DOT
+| PROCEDURE { check_area_a ($1); }
+  DIVISION _procedure_using_chaining _procedure_returning TOK_DOT
   {
-	cb_validate_parameters_and_returning (current_program, $3);
-	current_program->num_proc_params = cb_list_length ($3);
+	cb_validate_parameters_and_returning (current_program, $4);
+	current_program->num_proc_params = cb_list_length ($4);
 	/* add pseudo-entry as it contains the actual USING parameters */
-	emit_main_entry (current_program, $3);
+	emit_main_entry (current_program, $4);
   }
 ;
 
 /* CONTROL DIVISION (GCOS extension) */
 
+control: CONTROL { check_area_a ($1); };
 _control_division:
   /* empty */
-| CONTROL DIVISION TOK_DOT
+| control DIVISION TOK_DOT
   {
 	  cb_verify (cb_control_division, "CONTROL DIVISION");
   }
@@ -3610,7 +3612,8 @@ _control_division:
 
 _default_section:
   /* empty */
-| DEFAULT SECTION TOK_DOT
+| DEFAULT { check_area_a ($1); }
+  SECTION TOK_DOT
   _default_clauses
   {
 	cobc_cs_check = 0;
@@ -3658,11 +3661,6 @@ _program_body:
 	within_typedef_definition = 0;
   }
   _procedure_division
-  {
-	/* `cobc_in_procedure' is used in `scanner.l` to filter emissions of
-	   WORD_IN_AREA_A.  */
-	cobc_in_procedure = 0;
-  }
 ;
 
 _dot_or_else_area_a:
@@ -3683,7 +3681,8 @@ _identification_header:
 ;
 
 identification_header:
-  identification_or_id DIVISION TOK_DOT
+  identification_or_id { check_area_a ($1); }
+  DIVISION TOK_DOT
   {
 	setup_program_start ();
 	setup_from_identification = 1;
@@ -3951,8 +3950,9 @@ _environment_header:
 | environment_header
 ;
 
+environment: ENVIRONMENT { check_area_a ($1); };
 environment_header:
-  ENVIRONMENT DIVISION TOK_DOT
+  environment DIVISION TOK_DOT
   {
 	header_check |= COBC_HD_ENVIRONMENT_DIVISION;
   }
@@ -3969,8 +3969,9 @@ _configuration_header:
 | configuration_header
 ;
 
+configuration: CONFIGURATION { check_area_a ($1); };
 configuration_header:
-  CONFIGURATION SECTION TOK_DOT
+  configuration SECTION TOK_DOT
   {
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION, 0, 0, 0);
 	header_check |= COBC_HD_CONFIGURATION_SECTION;
@@ -5087,8 +5088,9 @@ _input_output_section:
   _i_o_control
 ;
 
+input_output: INPUT_OUTPUT { check_area_a ($1); };
 _input_output_header:
-| INPUT_OUTPUT SECTION TOK_DOT
+| input_output SECTION TOK_DOT
   {
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION, 0, 0, 0);
 	header_check |= COBC_HD_INPUT_OUTPUT_SECTION;
@@ -6177,8 +6179,9 @@ _data_division_header:
 | data_division_header
 ;
 
+data: DATA { check_area_a ($1); };
 data_division_header:
-  DATA DIVISION TOK_DOT
+  data DIVISION TOK_DOT
   {
 	header_check |= COBC_HD_DATA_DIVISION;
   }
@@ -6186,8 +6189,9 @@ data_division_header:
 
 /* FILE SECTION */
 
+tok_file: TOK_FILE { check_area_a ($1); };
 _file_section_header:
-| TOK_FILE SECTION TOK_DOT
+| tok_file SECTION TOK_DOT
   {
 	current_storage = CB_STORAGE_FILE;
 	check_headers_present (COBC_HD_DATA_DIVISION, 0, 0, 0);
@@ -6252,10 +6256,12 @@ file_description_entry:
 file_type:
   FD
   {
+	check_area_a ($1);
 	$$ = cb_int0;
   }
 | SD
   {
+	check_area_a ($1);
 	$$ = cb_int1;
   }
 ;
@@ -6604,8 +6610,9 @@ rep_name_list:
 
 /* COMMUNICATION SECTION */
 
+communication: COMMUNICATION { check_area_a ($1); };
 _communication_section:
-| COMMUNICATION SECTION TOK_DOT
+| communication SECTION TOK_DOT
   {
 	current_storage = CB_STORAGE_COMMUNICATION;
 	check_headers_present (COBC_HD_DATA_DIVISION, 0, 0, 0);
@@ -6751,8 +6758,9 @@ unnamed_i_o_cd_clauses:
 
 /* WORKING-STORAGE SECTION */
 
+working_storage: WORKING_STORAGE { check_area_a ($1); };
 _working_storage_section:
-| WORKING_STORAGE SECTION TOK_DOT
+| working_storage SECTION TOK_DOT
   {
 	check_headers_present (COBC_HD_DATA_DIVISION, 0, 0, 0);
 	header_check |= COBC_HD_WORKING_STORAGE_SECTION;
@@ -8224,8 +8232,9 @@ identified_by_clause:
 
 /* LOCAL-STORAGE SECTION */
 
+local_storage: LOCAL_STORAGE { check_area_a ($1); };
 _local_storage_section:
-| LOCAL_STORAGE SECTION TOK_DOT
+| local_storage SECTION TOK_DOT
   {
 	check_headers_present (COBC_HD_DATA_DIVISION, 0, 0, 0);
 	header_check |= COBC_HD_LOCAL_STORAGE_SECTION;
@@ -8247,8 +8256,9 @@ _local_storage_section:
 
 /* LINKAGE SECTION */
 
+linkage: LINKAGE { check_area_a ($1); };
 _linkage_section:
-| LINKAGE SECTION TOK_DOT
+| linkage SECTION TOK_DOT
   {
 	check_headers_present (COBC_HD_DATA_DIVISION, 0, 0, 0);
 	header_check |= COBC_HD_LINKAGE_SECTION;
@@ -8265,7 +8275,8 @@ _linkage_section:
 /* REPORT SECTION */
 
 _report_section:
-| REPORT SECTION TOK_DOT
+| REPORT { check_area_a ($1); }
+  SECTION TOK_DOT
   {
 	header_check |= COBC_HD_REPORT_SECTION;
 	current_storage = CB_STORAGE_REPORT;
@@ -8283,15 +8294,16 @@ _report_description_sequence:
 /* RD report description */
 
 report_description:
-  RD report_name
+  RD { check_area_a ($1); }
+  report_name
   {
-	if (CB_INVALID_TREE ($2)) {
+	if (CB_INVALID_TREE ($3)) {
 		YYERROR;
 	} else {
 		current_field = NULL;
 		control_field = NULL;
 		description_field = NULL;
-		current_report = CB_REPORT_PTR ($2);
+		current_report = CB_REPORT_PTR ($3);
 	}
 	check_duplicate = 0;
   }
@@ -8999,7 +9011,8 @@ group_indicate_clause:
 /* SCREEN SECTION */
 
 _screen_section:
-| SCREEN SECTION TOK_DOT
+| SCREEN { check_area_a ($1); }
+  SECTION TOK_DOT
   {
 	cobc_cs_check = CB_CS_SCREEN;
 	current_storage = CB_STORAGE_SCREEN;
@@ -10119,7 +10132,8 @@ _procedure_division:
 ;
 
 procedure_division:
-  PROCEDURE DIVISION
+  PROCEDURE { check_area_a ($1); }
+  DIVISION
   {
 	current_section = NULL;
 	current_paragraph = NULL;
@@ -10131,12 +10145,12 @@ procedure_division:
   }
   _mnemonic_conv _conv_linkage _procedure_using_chaining _procedure_returning
   {
-	cb_tree call_conv = $4;
-	if ($5) {
-		call_conv = $5;
-		if ($4) {
+	cb_tree call_conv = $5;
+	if ($6) {
+		call_conv = $6;
+		if ($5) {
 			/* note: $4 is likely to be a reference to SPECIAL-NAMES */
-			cb_error_x ($5, _("%s and %s are mutually exclusive"),
+			cb_error_x ($6, _("%s and %s are mutually exclusive"),
 				"CALL-CONVENTION", "WITH LINKAGE");
 		}
 	}
@@ -10157,11 +10171,11 @@ procedure_division:
   _procedure_declaratives
   {
 	if (current_program->flag_main
-	 && !current_program->flag_chained && $6) {
+	 && !current_program->flag_chained && $7) {
 		cb_error (_("executable program requested but PROCEDURE/ENTRY has USING clause"));
 	}
 
-	emit_main_entry (current_program, $6);
+	emit_main_entry (current_program, $7);
   }
   _procedure_list
   {

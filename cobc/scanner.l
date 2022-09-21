@@ -323,9 +323,7 @@ AREA_A		\n"#AREA_A"\n
 }
 
 <*>^{AREA_A}[ ]* {
-	if (cobc_in_procedure) {
-		cobc_in_area_a = 1;
-	}
+	cobc_in_area_a = 1;
 }
 
 <*>\n {
