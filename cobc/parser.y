@@ -5274,14 +5274,20 @@ assign_device:
 | PRINTER
   {
 	assign_device = CB_ASSIGN_PRINTER_DEVICE;
+	current_file->organization = COB_ORG_LINE_SEQUENTIAL;
+	current_file->flag_line_adv = 1;
   }
 | PRINTER_1
   {
 	assign_device = CB_ASSIGN_PRINTER_1_DEVICE;
+	current_file->organization = COB_ORG_LINE_SEQUENTIAL;
+	current_file->flag_line_adv = 1;
   }
 | PRINT
   {
 	assign_device = CB_ASSIGN_PRINT_DEVICE;
+	current_file->organization = COB_ORG_LINE_SEQUENTIAL;
+	current_file->flag_line_adv = 1;
   }
 ;
 

@@ -453,6 +453,10 @@
 	  10 significant digits
 	* tree.c (cb_build_picture): check for value <= INT_MAX
 
+2021-10-30  Ron Norman <rjn@inglenet.com>
+
+	* parser.y: For ASSIGN PRINTER or PRINTER-1 set file type to LINE ADVANCING
+
 2021-10-23  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (process_command_line) [__TINYC__, __OS400__): early exit when
