@@ -23,6 +23,7 @@
 
 	* screenio.c (cob_exit_screen): ensure to not end COB_EXIT_MESSAGE
 	  on mouse-move
+	* common.c (cob_sys_exit_proc): fix compiler warning
 
 2022-08-19  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -477,6 +478,11 @@
 
 	FR #397: add support for JSON GENERATE anonymous JSON objects
 	* mlio.c (generate_json_from_tree): handle OMITTED NAME attribute
+
+2020-12-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	Bug #692 missing output for DISPLAY WITH NO ADVANCING
+	* termio.c (cob_accept): always flush to ensure buffered output is seen
 
 2020-12-08  Simon Sobisch <simonsobisch@gnu.org>
 

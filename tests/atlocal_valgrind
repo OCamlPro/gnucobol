@@ -4,7 +4,7 @@
 # This script is a special variant of the atlocal script for testing
 # with Valgrind.
 #
-# Copyright (C) 2003-2012, 2014-2020 Free Software Foundation, Inc.
+# Copyright (C) 2003-2012, 2014-2022 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 #
 # This file is part of GnuCOBOL.
@@ -45,7 +45,7 @@ ABS_COBCRUN="${abs_top_builddir}/bin/cobcrun@COB_EXE_EXT@"
 # To check with valgrind:
 # * ideally: reconfigure with `./configure --enable-debug & make`
 # * temporarily rename atlocal.in to atlocal.bak and atlocal_valgrind to atlocal.in,
-*   then go to top_builddir and `config.status tests/atlocal`;
+#   then go to top_builddir and `config.status tests/atlocal`;
 #   - or as a longer altarnative: diff these parts into your atlocal
 # * set switches you need to the following lines and set the tool accordingly (template has MEMCHECK)
 # * if your system ships with valgrind suppression files (default.supp is always active) you likely
@@ -89,8 +89,8 @@ VG_COBCRUN_DIRECT_LOG="$VG_LOG_PREFIX-cobcrun_direct.log"
 MEMCHECK="valgrind --tool=memcheck --read-var-info=yes --track-origins=yes --leak-check=full --show-leak-kinds=all $VG_SUPPR"
 SGCHECK="valgrind --tool=exp-sgcheck --read-var-info=yes $VG_SUPPR"
 
-COBC="libtool --mode=execute $MEMCHECK --log-file=$VG_COBC_LOG ${COBC}"
-COBCRUN="libtool --mode=execute $MEMCHECK --log-file=$VG_COBCRUN_LOG ${COBCRUN}"
+COBC="${abs_top_builddir}/libtool --mode=execute $MEMCHECK --log-file=$VG_COBC_LOG ${COBC}"
+COBCRUN="${abs_top_builddir}/libtool --mode=execute $MEMCHECK --log-file=$VG_COBCRUN_LOG ${COBCRUN}"
 COBCRUN_DIRECT="$MEMCHECK --log-file=$VG_COBCRUN_DIRECT_LOG ${COBCRUN_DIRECT}"
 
 # -- END OF VALGRIND SPECIFIC PARTS ---
@@ -109,13 +109,13 @@ unset LANG
 # FLAGS="-debug -Wall ${COBOL_FLAGS}"
 FLAGS="-debug -Wall ${COBOL_FLAGS} -fno-diagnostics-show-option"
 COMPILE="${COBC} -x ${FLAGS}"
-COMPILE_ONLY="${COBC} -fsyntax-only ${FLAGS}"
+COMPILE_ONLY="${COBC} -fsyntax-only ${FLAGS} -Wno-unsupported"
 COMPILE_MODULE="${COBC} -m ${FLAGS}"
 
 # Helper script to unify listings (replace version, date, time)
 UNIFY_LISTING="${abs_srcdir}/listings-sed.sh"
 
-# test runner for manual tests, content may be changed by the user
+# test runner for manual tests, content may be adjusted by the user
 RUN_PROG_MANUAL="${abs_builddir}/run_prog_manual.sh"
 
 # unset option if not internally set in this script
@@ -180,7 +180,7 @@ for cobenv in $(${LOCAL_ENV} ${ABS_COBCRUN} --runtime-conf \
 done
 
 # prevent multiple calls by caching the output
-${LOCAL_ENV} ${ABS_COBC} --info > info.out
+${LOCAL_ENV} ${ABS_COBC} --verbose --info > info.out
 
 # ... and also unset for the compiler
 if test "$GNUCOBOL_TEST_LOCAL" != "1"; then
@@ -249,7 +249,7 @@ else
 fi
 if test "x$MSYSTEM" != "x" -o "$OSTYPE" = "cygwin"; then
 	# running MSYS builds as not-visible child processes result in
-	# "Redirection is not supported" (at least old PDCurses)
+	# "Redirection is not supported" (at least with PDCurses "wincon" port)
 	# --> disabling the tests for this feature
 	# ncurses is known to work as long as TERM is appropriate
 	if test $(grep -i -c "ncurses" info.out) != 0; then
@@ -276,7 +276,4 @@ export COB_OBJECT_EXT COB_EXE_EXT
 DB_HOME="" && export DB_HOME
 
 # For the very rare cases where cobc/libcob may need to know if they're running in test mode:
-case $0 in
-	*/testsuite) COB_IS_RUNNING_IN_TESTMODE=1 && export COB_IS_RUNNING_IN_TESTMODE;;
-	*)	unset COB_IS_RUNNING_IN_TESTMODE;;
-esac
+COB_IS_RUNNING_IN_TESTMODE=1 && export COB_IS_RUNNING_IN_TESTMODE

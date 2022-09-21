@@ -2892,16 +2892,11 @@ cb_build_const_next (struct cb_field *f)
 	}
 
 	if (previous->storage != CB_STORAGE_FILE
-	 && previous->storage != CB_STORAGE_LINKAGE) {
-		p = previous;
-		while (p->parent) {
-			p = p->parent;
-		}
-		if (!p->flag_external) {
+	 && previous->storage != CB_STORAGE_LINKAGE
+	 && !cb_field_founder(previous)->flag_external) {
 		cb_error (_("VALUE of '%s': %s target is invalid"), f->name, "NEXT");
 		cb_error (_("target must be in FILE SECTION or LINKAGE SECTION or have the EXTERNAL clause"));
 		return cb_build_numeric_literal (0, "1", 0);
-	}
 	}
 
 	/*

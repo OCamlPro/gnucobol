@@ -1,4 +1,8 @@
 
+2022-09-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (examine_format_variant): fix compiler warning
+
 2022-09-01  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	FR #18 support EXAMINE statement
@@ -74,6 +78,9 @@
 	  moved -Wunsupported check for ORGANIZATION INDEXED from codegen
 	  to parsing
 	* tree.c, typeck.c: msgid change for -Wunsupported
+	* reserved.c (add_reserved_word): fixed theoretical additions of
+	   reserved=alias longer than 32 characters
+	* typeck.c (cb_build_const_next): minor refactoring to get field founder
 
 2022-07-24  Simon Sobisch <simonsobisch@gnu.org>
 

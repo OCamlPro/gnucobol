@@ -9583,7 +9583,7 @@ output_report_def_fields (int bgn, int id, struct cb_field *f, struct cb_report 
 	if (f->report_source) {
 		output_param (f->report_source, 0);
 	} else if(f->report_sum_counter) {
-		output_local ("/*SUM*/");
+		output_local ("/* SUM */");
 		output_param (f->report_sum_counter, 0);
 	} else {
 		output_local ("NULL");
