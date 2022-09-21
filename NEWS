@@ -52,25 +52,27 @@ NEWS - user visible changes				-*- outline -*-
 
    These formats come with Area A enforcement in the PROCEDURE
    DIVISION, where paragraph and section names should start in Area A
-   (i.e, before margin B).  The underlying checks can be enabled or
-   disabled using a new flag `areacheck`, or with `>>AREACHECK` and
-   `>>NOAREACHECK` compiler directives.
+   (i.e, before margin B).  The underlying checks are enabled or
+   disabled by default using dialect option `areacheck`, and then with
+   `>>AREACHECK` and `>>NOAREACHECK` compiler directives.
 
    Area A enforcement additionally enables detection of missing
    periods before paragraph and section names, configurable with
    option `missing-period`.
 
    As a result of reference format being a dialect option, Area A
-   enforcement is enabled by default for the following dialects:
+   enforcement is available for the following dialects:
 
    BS2000 COBOL
    CA Realia II
-   COBOL85
-   GCOS COBOL
-   IBM COBOL
-   MVS/VM COBOL
+   COBOL85       (*)
+   GCOS COBOL    (*)
+   IBM COBOL     (*)
+   MVS/VM COBOL  (*)
    RM-COBOL
-   X/Open COBOL
+   X/Open COBOL  (*)
+
+   and enabled by default for those marked with a (*).
 
 * Changes that potentially effects recompilation of existing programs:
 

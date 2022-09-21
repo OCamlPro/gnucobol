@@ -3,8 +3,7 @@
 
 	FR #360 AREACHECK (for PROCEDURE DIVISION only)
 	FR #309 raise warnings/errors when some periods are missing
-	* flag.def: add flag areacheck to enable Area A enforcement
-	* config.def: add option missing-period
+	* config.def: add dialect options areacheck and missing-period
 	* pplex.l, scanner.l, parser.y: check for empty Area A, and use a
 	  dedicated WORD_IN_AREA_A token to detect missing periods and incorrect
 	  use of Area A in PROCEDURE DIVISION
