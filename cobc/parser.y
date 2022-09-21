@@ -13031,22 +13031,22 @@ enable_statement:
 
 /* ENTRY statement */
 
-entry_statement:
+ENTRY_:
   ENTRY
   {
 	check_non_area_a ($1);
   }
-  entry_args
 ;
 
-entry_args:
+entry_statement:
+  ENTRY_
   {
 	check_unreached = 0;
 	begin_statement ("ENTRY", 0);
 	backup_current_pos ();
   }
   entry_body
-| FOR GO TO
+| ENTRY_ FOR GO TO
   {
 	check_unreached = 0;
 	begin_statement ("ENTRY FOR GO TO", 0);
@@ -14252,12 +14252,15 @@ inspect_after:
 
 /* JSON GENERATE statement */
 
-json_generate_statement:
+JSON_:
   JSON
   {
 	check_non_area_a ($1);
   }
-  GENERATE
+;
+
+json_generate_statement:
+  JSON_ GENERATE
   {
 	begin_statement ("JSON GENERATE", TERM_JSON);
 	cobc_in_json_generate_body = 1;
@@ -14318,11 +14321,7 @@ _end_json:
 /* JSON PARSE statement */
 
 json_parse_statement:
-  JSON
-  {
-	check_non_area_a ($1);
-  }
-  PARSE
+  JSON_ PARSE
   {
 	begin_statement ("JSON PARSE", TERM_JSON);
 	CB_PENDING ("JSON PARSE");
@@ -15169,21 +15168,21 @@ rollback_statement:
 
 /* SEARCH statement */
 
-search_statement:
+SEARCH_:
   SEARCH
   {
 	check_non_area_a ($1);
   }
-  search_args
 ;
 
-search_args:
+search_statement:
+  SEARCH_
   {
 	begin_statement ("SEARCH", TERM_SEARCH);
   }
   search_body
   _end_search
-| ALL
+| SEARCH_ ALL
   {
 	begin_statement ("SEARCH ALL", TERM_SEARCH);
   }
@@ -15796,47 +15795,46 @@ _end_start:
 
 /* STOP statement */
 
-stop_statement:
+STOP_:
   STOP
   {
 	check_non_area_a ($1);
   }
-  stop_args
 ;
 
-stop_args:
-  RUN
+stop_statement:
+  STOP_ RUN
   {
 	begin_statement ("STOP RUN", 0);
 	cobc_cs_check = CB_CS_STOP;
   }
   stop_returning
   {
-	cb_emit_stop_run ($3);
+	cb_emit_stop_run ($4);
 	check_unreached = 1;
 	cobc_cs_check = 0;
   }
-| ERROR /* GCOS */
+| STOP_ ERROR /* GCOS */
   {
 	begin_statement ("STOP ERROR", 0);
 	cb_verify (cb_stop_error_statement, "STOP ERROR");
 	cb_emit_stop_error ();
 	check_unreached = 1;
   }
-| stop_argument
+| STOP_ stop_argument
   {
 	begin_statement ("STOP", 0);
-	cb_emit_display (CB_LIST_INIT ($1), cb_int0, cb_int1, NULL,
+	cb_emit_display (CB_LIST_INIT ($2), cb_int0, cb_int1, NULL,
 			 NULL, 1, DEVICE_DISPLAY);
 	cb_emit_accept (cb_null, NULL, NULL);
 	cobc_cs_check = 0;
   }
-| thread_reference_optional
+| STOP_ thread_reference_optional
   {
 	begin_statement ("STOP THREAD", 0);
-	cb_emit_stop_thread ($1);
+	cb_emit_stop_thread ($2);
 	cobc_cs_check = 0;
-	cb_warning_x (COBC_WARN_FILLER, $1, _("%s is replaced by %s"), "STOP THREAD", "STOP RUN");
+	cb_warning_x (COBC_WARN_FILLER, $2, _("%s is replaced by %s"), "STOP THREAD", "STOP RUN");
   }
 ;
 
@@ -16620,12 +16618,15 @@ _end_write:
 
 /* XML GENERATE statement */
 
-xml_generate_statement:
+XML_:
   XML
   {
 	check_non_area_a ($1);
   }
-  GENERATE
+;
+
+xml_generate_statement:
+  XML_ GENERATE
   {
 	begin_statement ("XML GENERATE", TERM_XML);
 	cobc_in_xml_generate_body = 1;
@@ -16913,11 +16914,7 @@ _end_xml:
 /* XML PARSE statement */
 
 xml_parse_statement:
-  XML
-  {
-	check_non_area_a ($1);
-  }
-  PARSE
+  XML_ PARSE
   {
 	begin_statement ("XML PARSE", TERM_XML);
 	CB_PENDING ("XML PARSE");
