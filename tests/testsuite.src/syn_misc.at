@@ -9133,7 +9133,12 @@ AT_DATA([prog.cob], [
        IDENTIFICATION  DIVISION.
        PROGRAM-ID.     prog.
        DATA            DIVISION.
+       >> AREACHECK
        WORKING-STORAGE SECTION.
+       01 X.
+           02 Y PIC X.
+           01 Z PIC X.
+       >> NOAREACHECK
        PROCEDURE       DIVISION.
        MAIN-1 SECTION.
        DISPLAY "SOMETHING"
@@ -9144,16 +9149,18 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY -std=cobol85 prog.cob], [1], [],
-[prog.cob: in section 'MAIN-1':
-prog.cob:11: error: optional period used
+[prog.cob:10: warning: '01' should start in Area A
+prog.cob: in section 'MAIN-1':
+prog.cob:16: error: optional period used
 prog.cob: in section 'MAIN-2':
-prog.cob:12: warning: start of statement in Area A
-prog.cob:13: warning: start of statement in Area A
+prog.cob:17: warning: start of statement in Area A
+prog.cob:18: warning: start of statement in Area A
 ])
 AT_CHECK([$COMPILE_ONLY -std=cobol85 -fmissing-period=ok prog.cob], [0], [],
-[prog.cob: in section 'MAIN-2':
-prog.cob:12: warning: start of statement in Area A
-prog.cob:13: warning: start of statement in Area A
+[prog.cob:10: warning: '01' should start in Area A
+prog.cob: in section 'MAIN-2':
+prog.cob:17: warning: start of statement in Area A
+prog.cob:18: warning: start of statement in Area A
 ])
 
 AT_CLEANUP

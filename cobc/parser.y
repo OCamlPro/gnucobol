@@ -6840,6 +6840,16 @@ data_description:
 level_number:
   not_const_word LEVEL_NUMBER
   {
+	int level = cb_get_level ($2);
+	switch (level) {
+	case 1:
+	case 77:
+	case 78:
+		check_area_a ($2);
+		break;
+	default:
+		break;
+	}
 	$$ = $2;
   }
 ;
