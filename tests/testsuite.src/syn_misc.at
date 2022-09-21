@@ -4748,6 +4748,7 @@ AT_CHECK([$COMPILE_ONLY -std=cobol85 prog.cob], [0], [],
 prog.cob: in paragraph 'MAIN':
 prog.cob:10: warning: start of statement in Area A
 prog.cob:11: warning: start of statement in Area A
+prog.cob:14: warning: start of statement in Area A
 prog.cob:15: warning: separator period in Area A
 prog.cob: in section 'SEC-1':
 prog.cob:17: warning: start of statement in Area A
@@ -4755,7 +4756,7 @@ prog.cob:18: warning: separator period in Area A
 ])
 
 AT_CHECK([$COMPILE_ONLY -std=cobol85 -fno-areacheck prog.cob], [0], [])
-AT_CHECK([$COMPILE_ONLY -std=cobol85 -fno-areacheck -fformat=fixed prog.cob], [0], [])
+AT_CHECK([$COMPILE_ONLY -std=cobol85 -fformat=fixed prog.cob], [0], [])
 
 AT_CLEANUP
 
@@ -9095,15 +9096,37 @@ AT_DATA([prog.cob], [
        STOP RUN.
 ])
 
+AT_DATA([prog2.cob], [
+       $SET NO-AREA-CHECK
+       IDENTIFICATION  DIVISION.
+       PROGRAM-ID.     prog2.
+       DATA            DIVISION.
+       WORKING-STORAGE SECTION.
+       PROCEDURE       DIVISION.
+       MAIN-1 SECTION.
+       DISPLAY "SOMETHING".
+       $SET AREA-CHECK
+       MAIN-2 SECTION.
+       DISPLAY "SOMETHING ELSE"
+       STOP RUN.
+])
+
 AT_CHECK([$COMPILE_ONLY -std=cobol85 prog.cob], [0], [],
 [prog.cob: in section 'MAIN-2':
 prog.cob:12: warning: start of statement in Area A
+prog.cob:13: warning: start of statement in Area A
+])
+
+AT_CHECK([$COMPILE_ONLY -std=cobol85 prog2.cob], [0], [],
+[prog2.cob: in section 'MAIN-2':
+prog2.cob:12: warning: start of statement in Area A
+prog2.cob:13: warning: start of statement in Area A
 ])
 
 AT_CLEANUP
 
 AT_SETUP([AREACHECK / NOAREACHECK directives (2)])
-AT_KEYWORDS([areacheck missing-periods])
+AT_KEYWORDS([directive missing-periods])
 
 AT_DATA([prog.cob], [
        >> NOAREACHECK
@@ -9125,10 +9148,12 @@ AT_CHECK([$COMPILE_ONLY -std=cobol85 prog.cob], [1], [],
 prog.cob:11: error: optional period used
 prog.cob: in section 'MAIN-2':
 prog.cob:12: warning: start of statement in Area A
+prog.cob:13: warning: start of statement in Area A
 ])
 AT_CHECK([$COMPILE_ONLY -std=cobol85 -fmissing-period=ok prog.cob], [0], [],
 [prog.cob: in section 'MAIN-2':
 prog.cob:12: warning: start of statement in Area A
+prog.cob:13: warning: start of statement in Area A
 ])
 
 AT_CLEANUP

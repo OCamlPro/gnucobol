@@ -327,11 +327,12 @@ check_area_a (cb_tree stmt) {
 static COB_INLINE void
 check_non_area_a (cb_tree stmt) {
 	if (cobc_in_area_a && cobc_areacheck) {
-		const char *msg = _("start of statement in Area A");
 		if (stmt)
-			cb_warning_x (COBC_WARN_FILLER, stmt, msg);
+			cb_warning_x (COBC_WARN_FILLER, stmt,
+				      _("start of statement in Area A"));
 		else
-			cb_warning (COBC_WARN_FILLER, msg);
+			cb_warning (COBC_WARN_FILLER,
+				    _("start of statement in Area A"));
 	}
 }
 
@@ -13033,12 +13034,19 @@ enable_statement:
 entry_statement:
   ENTRY
   {
+	check_non_area_a ($1);
+  }
+  entry_args
+;
+
+entry_args:
+  {
 	check_unreached = 0;
 	begin_statement ("ENTRY", 0);
 	backup_current_pos ();
   }
   entry_body
-| ENTRY FOR GO TO
+| FOR GO TO
   {
 	check_unreached = 0;
 	begin_statement ("ENTRY FOR GO TO", 0);
@@ -15164,11 +15172,18 @@ rollback_statement:
 search_statement:
   SEARCH
   {
+	check_non_area_a ($1);
+  }
+  search_args
+;
+
+search_args:
+  {
 	begin_statement ("SEARCH", TERM_SEARCH);
   }
   search_body
   _end_search
-| SEARCH ALL
+| ALL
   {
 	begin_statement ("SEARCH ALL", TERM_SEARCH);
   }
@@ -15786,6 +15801,10 @@ stop_statement:
   {
 	check_non_area_a ($1);
   }
+  stop_args
+;
+
+stop_args:
   RUN
   {
 	begin_statement ("STOP RUN", 0);
@@ -15793,43 +15812,31 @@ stop_statement:
   }
   stop_returning
   {
-	cb_emit_stop_run ($5);
+	cb_emit_stop_run ($3);
 	check_unreached = 1;
 	cobc_cs_check = 0;
   }
-| STOP
-  {
-	check_non_area_a ($1);
-  }
-  ERROR /* GCOS */
+| ERROR /* GCOS */
   {
 	begin_statement ("STOP ERROR", 0);
 	cb_verify (cb_stop_error_statement, "STOP ERROR");
 	cb_emit_stop_error ();
 	check_unreached = 1;
   }
-| STOP
-  {
-	check_non_area_a ($1);
-  }
-  stop_argument
+| stop_argument
   {
 	begin_statement ("STOP", 0);
-	cb_emit_display (CB_LIST_INIT ($3), cb_int0, cb_int1, NULL,
+	cb_emit_display (CB_LIST_INIT ($1), cb_int0, cb_int1, NULL,
 			 NULL, 1, DEVICE_DISPLAY);
 	cb_emit_accept (cb_null, NULL, NULL);
 	cobc_cs_check = 0;
   }
-| STOP
-  {
-	check_non_area_a ($1);
-  }
-  thread_reference_optional
+| thread_reference_optional
   {
 	begin_statement ("STOP THREAD", 0);
-	cb_emit_stop_thread ($3);
+	cb_emit_stop_thread ($1);
 	cobc_cs_check = 0;
-	cb_warning_x (COBC_WARN_FILLER, $3, _("%s is replaced by %s"), "STOP THREAD", "STOP RUN");
+	cb_warning_x (COBC_WARN_FILLER, $1, _("%s is replaced by %s"), "STOP THREAD", "STOP RUN");
   }
 ;
 

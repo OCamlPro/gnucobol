@@ -807,6 +807,10 @@ COBOL_WORDS_DIRECTIVE_STATE>{
   "ADD-SYN"	{
 	return ADDSYN;
   }
+  "AREACHECK"	|
+  "AREA-CHECK"	{
+	return AREACHECK;
+  }
   "ASSIGN"	{
 	return ASSIGN;
   }
@@ -842,6 +846,11 @@ COBOL_WORDS_DIRECTIVE_STATE>{
   "NOBOUND" |
   "NO-BOUND"		{
 	return NOBOUND;
+  }
+  "NOAREACHECK"		|
+  "NO-AREACHECK"	|
+  "NO-AREA-CHECK"	{
+	return NOAREACHECK;
   }
   "NOCHECKNUM"  	|
   "NO-CHECKNUM" 	|
