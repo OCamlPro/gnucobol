@@ -436,8 +436,11 @@ static struct config_tbl gc_conf[] = {
 	{"COB_VARSEQ_FORMAT", "varseq_format", 	varseq_dflt, varseqopts, GRP_FILE, ENV_UINT | ENV_ENUM, SETPOS (cob_varseq_type)},
 	{"COB_LS_FIXED", "ls_fixed", 		"0", 	NULL, GRP_FILE, ENV_BOOL, SETPOS (cob_ls_fixed)},
 	{"STRIP_TRAILING_SPACES", "strip_trailing_spaces", 		NULL, 	NULL, GRP_HIDE, ENV_BOOL | ENV_NOT, SETPOS (cob_ls_fixed)},
+	{"COB_LS_VALIDATE","ls_validate",	"true",	NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_validate)},
 	{"COB_LS_NULLS", "ls_nulls", 		"0", 	NULL, GRP_FILE, ENV_BOOL, SETPOS (cob_ls_nulls)},
 	{"COB_LS_SPLIT", "ls_split", 		"0", 	NULL, GRP_FILE, ENV_BOOL, SETPOS (cob_ls_split)},
+    {"COB_SEQ_CONCAT_NAME","seq_concat_name","0",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_concat_name)},
+    {"COB_SEQ_CONCAT_SEP","seq_concat_sep","+",NULL,GRP_FILE,ENV_CHAR,SETPOS(cob_concat_sep),1},
 	{"COB_SORT_CHUNK", "sort_chunk", 		"256K", 	NULL, GRP_FILE, ENV_SIZE, SETPOS (cob_sort_chunk), (128 * 1024), (16 * 1024 * 1024)},
 	{"COB_SORT_MEMORY", "sort_memory", 	"128M", 	NULL, GRP_FILE, ENV_SIZE, SETPOS (cob_sort_memory), (1024*1024), 4294967294 /* max. guaranteed - 1 */},
 	{"COB_SYNC", "sync", 			"0", 	syncopts, GRP_FILE, ENV_BOOL, SETPOS (cob_do_sync)},
@@ -7040,6 +7043,25 @@ get_config_val (char *value, int pos, char *orgvalue)
 				break;
 			}
 		}
+		if (gc_conf[pos].enums[i].match == NULL
+		 && gc_conf[pos].default_val != NULL
+		 && strcmp (value, gc_conf[pos].default_val) != 0) {
+			strcpy (orgvalue, value);
+		}
+	} else
+	if (!(gc_conf[pos].data_type & STS_ENVSET)
+	 && !(gc_conf[pos].data_type & STS_CNFSET)
+	 && !(gc_conf[pos].data_type & ENV_BOOL)
+	 && gc_conf[pos].default_val != NULL) {
+		strcpy (value, gc_conf[pos].default_val);
+		orgvalue[0] = 0;
+	}
+
+	if (gc_conf[pos].default_val != NULL
+	 && strcmp (orgvalue, gc_conf[pos].default_val) != 0) {
+		orgvalue[0] = 0;
+	} else if (strcmp (value, orgvalue) == 0) {
+		orgvalue[0] = 0;
 	}
 	return value;
 }

@@ -396,6 +396,8 @@
 	  cb_search to at_end, storing pair of AT END (position) and statements
 	* codegen.c (output_search_whens, output_search_all): adjust output of
 	  source references for better debugging experience and add AT END tracing
+	* typeck.c: Remove ERROR for REWRITE an INPUT-OUTPUT of LINE SEQUENTIAL
+	            This has been supported for a while in rw/trunk
 
 2021-12-25  Ron Norman <rjn@inglenet.com>
 

@@ -285,9 +285,12 @@ typedef struct __cob_settings {
 	unsigned int	cob_do_sync;
 	unsigned int	cob_ls_uses_cr;		/* Line Sequential uses CR LF */
 	unsigned int	cob_ls_fixed;		/* Line Sequential is fixed length */
+	unsigned int	cob_ls_validate;	/* Validate data in Line Sequential */
 	unsigned int	cob_ls_nulls;		/* NUL insert to Line Sequential */
 	unsigned int	cob_ls_split;		/* Split 'too long' record into parts (Default is truncate) */
 	unsigned int	cob_varseq_type;
+	unsigned int	cob_concat_name;	/* Concatenated sequential input file names */
+	unsigned char	cob_concat_sep[4];	/* Concatenated sequential file name separator (+)*/
 	char 		*cob_file_path;
 	char		*bdb_home;
 	size_t		cob_sort_memory;
