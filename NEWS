@@ -55,6 +55,23 @@ NEWS - user visible changes				-*- outline -*-
    If LS_NULLS is active and invalid data (bad encoded or missing encoding)
    is found io status 71 is returned.
 
+* Changes that potentially effects recompilation of existing programs:
+
+** the reserved word list and intrinsic functions was updated, especially
+   to cater for new features of COBOL 202x; if compiling with any non-strict
+   dialect you may need to unreserve any conflicting words / functions
+
+** in 64-bit environments, the default size for BY VALUE parameters has changed:
+   If no explicit SIZE IS clause is specified,
+	old behavior: parameter passed as 32-bit value
+	new behavior: parameter passed as 64-bit value
+   To specify a 32-bit BY VALUE parameter, change the COBOL source to use
+   SIZE IS 4.  To continue to rely on the default size, both caller and
+   callee modules that use BY VALUE must be compiled with the same version of
+   GnuCOBOL, either prior this release, or since.
+
+* Changes to the COBOL compiler (cobc) options:
+
 ** new -fformat dialect option, and extended SOURCE FORMAT directives, with
    the following newly supported reference-formats (in addition to
    FIXED/FREE):
@@ -91,35 +108,6 @@ NEWS - user visible changes				-*- outline -*-
    X/Open COBOL  (*)
 
    and enabled by default for those marked with a (*).
-
-* Changes that potentially effects recompilation of existing programs:
-
-** the reserved word list and intrinsic functions was updated, especially
-   to cater for new features of COBOL 202x; if compiling with any non-strict
-   dialect you may need to unreserve any conflicting words / functions
-
-** in 64-bit environments, the default size for BY VALUE parameters has changed:
-   If no explicit SIZE IS clause is specified,
-	old behavior: parameter passed as 32-bit value
-	new behavior: parameter passed as 64-bit value
-   To specify a 32-bit BY VALUE parameter, change the COBOL source to use
-   SIZE IS 4.  To continue to rely on the default size, both caller and
-   callee modules that use BY VALUE must be compiled with the same version of
-   GnuCOBOL, either prior this release, or since.
-
-* Changes to the COBOL compiler (cobc) options:
-
-** new -fformat dialect option, and extended SOURCE FORMAT directives, with
-   the following newly supported reference-formats (in addition to
-   FIXED/FREE):
-
-   COBOL85      Fixed-form format with enforcement of Area A (pending)
-   COBOLX       GCOS 7 extended format
-   CRT          ICOBOL Free-form format
-   TERMINAL     ACUCOBOL-GT Terminal format
-   VARIABLE     Micro Focus Variable Fixed-form format
-   XCARD        ICOBOL xCard (extended card) format
-   XOPEN        X/Open Free-form format
 
 ** the compile flag -fodoslide was moved to a dialect configuration,
    while -fodoslide still works as before it is now implied with
