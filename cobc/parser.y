@@ -10859,10 +10859,7 @@ statement:
 | xml_generate_statement
 | xml_parse_statement
 | %prec SHIFT_PREFER
-  NEXT
-  {
-	check_non_area_a ($1);
-  }
+  NEXT { check_non_area_a ($1); }
   SENTENCE
   {
 	if (cb_verify (cb_next_sentence_phrase, "NEXT SENTENCE")) {
@@ -13050,13 +13047,7 @@ enable_statement:
 
 /* ENTRY statement */
 
-entry:
-  ENTRY
-  {
-	check_non_area_a ($1);
-  }
-;
-
+entry: ENTRY { check_non_area_a ($1); };
 entry_statement:
   entry
   {
@@ -14271,13 +14262,7 @@ inspect_after:
 
 /* JSON GENERATE statement */
 
-json:
-  JSON
-  {
-	check_non_area_a ($1);
-  }
-;
-
+json: JSON { check_non_area_a ($1); };
 json_generate_statement:
   json GENERATE
   {
@@ -15187,13 +15172,7 @@ rollback_statement:
 
 /* SEARCH statement */
 
-search:
-  SEARCH
-  {
-	check_non_area_a ($1);
-  }
-;
-
+search: SEARCH { check_non_area_a ($1); };
 search_statement:
   search
   {
@@ -15814,13 +15793,7 @@ _end_start:
 
 /* STOP statement */
 
-stop:
-  STOP
-  {
-	check_non_area_a ($1);
-  }
-;
-
+stop: STOP { check_non_area_a ($1); };
 stop_statement:
   stop RUN
   {
@@ -16042,10 +16015,7 @@ _end_subtract:
 /* SUPPRESS statement */
 
 suppress_statement:
-  SUPPRESS
-  {
-	check_non_area_a ($1);
-  }
+  SUPPRESS { check_non_area_a ($1); }
   _printing
   {
 	begin_statement ("SUPPRESS", 0);
@@ -16637,13 +16607,7 @@ _end_write:
 
 /* XML GENERATE statement */
 
-xml:
-  XML
-  {
-	check_non_area_a ($1);
-  }
-;
-
+xml: XML { check_non_area_a ($1); };
 xml_generate_statement:
   xml GENERATE
   {
