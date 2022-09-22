@@ -153,7 +153,6 @@ unsigned int			cobc_in_xml_generate_body = 0;
 unsigned int			cobc_in_json_generate_body = 0;
 unsigned int			cobc_areacheck = 0;
 unsigned int			cobc_in_area_a = 0;
-unsigned int			cobc_still_in_area_a = 0;
 
 /* Local variables */
 
@@ -2740,6 +2739,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token LESS
 %token LESS_OR_EQUAL		"LESS OR EQUAL"
 %token LEVEL_NUMBER		"level-number"		/* 01 thru 49, 77 */
+%token LEVEL_NUMBER_IN_AREA_A	"level-number in Area A"
 %token LIKE
 %token LIMIT
 %token LIMITS
@@ -3661,16 +3661,6 @@ _program_body:
 	within_typedef_definition = 0;
   }
   _procedure_division
-;
-
-_dot_or_else_area_a:
-  TOK_DOT
-| WORD_IN_AREA_A
-  {
-	  (void) cb_verify (cb_missing_period, _("optional period"));
-	  cb_unput_str (CB_NAME ($1)); /* to be rescanned as a `WORD_IN_AREA_A` */
-	  cobc_still_in_area_a = 1;
-  }
 ;
 
 /* IDENTIFICATION DIVISION */
@@ -6793,8 +6783,8 @@ _record_description_list:
 ;
 
 record_description_list:
-  data_description TOK_DOT
-| record_description_list data_description TOK_DOT
+  data_description _dot_or_else_area_a
+| record_description_list data_description _dot_or_else_area_a
 ;
 
 data_description:
@@ -6850,6 +6840,10 @@ level_number:
 	default:
 		break;
 	}
+	$$ = $2;
+  }
+| not_const_word LEVEL_NUMBER_IN_AREA_A
+  {
 	$$ = $2;
   }
 ;
@@ -19213,6 +19207,20 @@ scope_terminator:
 | END_UNSTRING
 | END_WRITE
 | END_XML
+;
+
+_dot_or_else_area_a:
+  TOK_DOT
+| item_in_area_a
+  {
+	  (void) cb_verify (cb_missing_period, _("optional period"));
+	  cobc_repeat_last_token = 1;
+  }
+;
+
+item_in_area_a:
+  WORD_IN_AREA_A
+| LEVEL_NUMBER_IN_AREA_A
 ;
 
 /* Mandatory/Optional keyword selection without actions */

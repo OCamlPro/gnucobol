@@ -208,8 +208,7 @@ AREA_A		\n"#AREA_A"\n
 	} else {
 		integer_is_label = 0;
 	}
-	cobc_in_area_a = cobc_still_in_area_a;
-	cobc_still_in_area_a = 0;
+	cobc_in_area_a = 0;
 %}
 
 <*>^[ ]?"#CALLFH".*\n {
@@ -488,7 +487,7 @@ H#[0-9A-Za-z]+ {
 	int	value;
 
 	cobc_force_literal = 0;
-	if (integer_is_label) {
+	if (integer_is_label || cobc_in_area_a) {
 		yylval = cb_build_reference (yytext);
 
 		if (!cobc_in_procedure) {
@@ -504,12 +503,20 @@ H#[0-9A-Za-z]+ {
 				RETURN_TOK (EIGHTY_EIGHT);
 			} else if ((value >= 1 && value <= 49) || value == 77) {
 				/* level number (1 through 49, 77) */
-				RETURN_TOK (LEVEL_NUMBER);
+				if (cobc_in_area_a) {
+					RETURN_TOK (LEVEL_NUMBER_IN_AREA_A);
+				} else {
+					RETURN_TOK (LEVEL_NUMBER);
+				}
 			}
 		}
 
 		/* Integer label */
-		RETURN_TOK (WORD);
+		if (cobc_in_area_a) {
+			RETURN_TOK (WORD_IN_AREA_A);
+		} else {
+			RETURN_TOK (WORD);
+		}
 	}
 	/* Numeric literal or referenced integer label
 	   remark: all transformations/checks are postponed:
@@ -523,10 +530,14 @@ H#[0-9A-Za-z]+ {
 [0-9]+ {
 
 	cobc_force_literal = 0;
-	if (integer_is_label) {
+	if (integer_is_label || cobc_in_area_a) {
 		/* Integer label */
 		yylval = cb_build_reference (yytext);
-		RETURN_TOK (WORD);
+		if (cobc_in_area_a) {
+			RETURN_TOK (WORD_IN_AREA_A);
+		} else {
+			RETURN_TOK (WORD);
+		}
 	}
 	/* Numeric literal or referenced integer label
 	   remark: all transformations/checks are postponed:
@@ -2448,14 +2459,6 @@ void
 cb_unput_dot (void)
 {
 	unput ('.');
-}
-
-void
-cb_unput_str (const char * const w)
-{
-	int i;
-	for (i = strlen (w) - 1; i >= 0; i--)
-		unput (w[i]);
 }
 
 void

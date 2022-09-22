@@ -2423,7 +2423,6 @@ extern int		cb_wants_dump_comments;	/* likely to be removed later */
 
 /* scanner.l */
 extern void		cb_unput_dot (void);
-extern void		cb_unput_str (const char * const);
 extern void		cb_add_78 (struct cb_field *);
 extern void		cb_reset_78 (void);
 extern void		cb_reset_global_78 (void);
