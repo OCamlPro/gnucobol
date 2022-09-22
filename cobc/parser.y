@@ -3475,7 +3475,7 @@ end_program:
 	check_area_a ($1);
 	backup_current_pos ();
   }
-  end_program_name TOK_DOT
+  end_program_name _dot
   {
 	first_nested_program = 0;
 	clean_up_program ($3, COB_MODULE_TYPE_PROGRAM);
@@ -3487,7 +3487,7 @@ end_function:
   {
 	backup_current_pos ();
   }
-  end_program_name TOK_DOT
+  end_program_name _dot
   {
 	clean_up_program ($3, COB_MODULE_TYPE_FUNCTION);
   }
@@ -3497,7 +3497,7 @@ end_function:
 
 program_prototype:
   _identification_header
-  program_id_header TOK_DOT program_id_name _as_literal _is PROTOTYPE TOK_DOT
+  program_id_header TOK_DOT program_id_name _as_literal _is PROTOTYPE _dot
   {
 	/* Error if program_id_name is a literal */
 
@@ -3547,7 +3547,7 @@ program_prototype:
 
 function_prototype:
   _identification_header
-  function_id_header TOK_DOT program_id_name _as_literal _is PROTOTYPE TOK_DOT
+  function_id_header TOK_DOT program_id_name _as_literal _is PROTOTYPE _dot
   {
 	/* Error if program_id_name is a literal */
 
@@ -3590,7 +3590,7 @@ function_prototype:
 _prototype_procedure_division_header:
   /* empty */
 | PROCEDURE { check_area_a ($1); }
-  DIVISION _procedure_using_chaining _procedure_returning TOK_DOT
+  DIVISION _procedure_using_chaining _procedure_returning _dot
   {
 	cb_validate_parameters_and_returning (current_program, $4);
 	current_program->num_proc_params = cb_list_length ($4);
@@ -3604,7 +3604,7 @@ _prototype_procedure_division_header:
 control: CONTROL { check_area_a ($1); };
 _control_division:
   /* empty */
-| control DIVISION TOK_DOT
+| control DIVISION _dot
   {
 	  cb_verify (cb_control_division, "CONTROL DIVISION");
   }
@@ -3673,7 +3673,7 @@ _identification_header:
 
 identification_header:
   identification_or_id { check_area_a ($1); }
-  DIVISION TOK_DOT
+  DIVISION _dot
   {
 	setup_program_start ();
 	setup_from_identification = 1;
@@ -3694,7 +3694,7 @@ program_id_header:
 ;
 
 program_id_paragraph:
-  program_id_header TOK_DOT program_id_name _as_literal _program_type TOK_DOT
+  program_id_header TOK_DOT program_id_name _as_literal _program_type TOK_DOT /* optional, yet impacts errors on recovery */
   {
 	if (setup_program ($3, $4, COB_MODULE_TYPE_PROGRAM, 0)) {
 		YYABORT;
@@ -3733,7 +3733,7 @@ function_id_header:
 ;
 
 function_id_paragraph:
-  function_id_header TOK_DOT program_id_name _as_literal TOK_DOT
+function_id_header TOK_DOT program_id_name _as_literal TOK_DOT /* optional, yet impacts errors on recovery */
   {
 	if (setup_program ($3, $4, COB_MODULE_TYPE_FUNCTION, 0)) {
 		YYABORT;
@@ -3826,7 +3826,7 @@ _options_clauses:
   _default_rounded_clause
   _entry_convention_clause
   _intermediate_rounding_clause
-  TOK_DOT
+  _dot
 ;
 
 _arithmetic_clause:
@@ -3943,7 +3943,7 @@ _environment_header:
 
 environment: ENVIRONMENT { check_area_a ($1); };
 environment_header:
-  environment DIVISION TOK_DOT
+  environment DIVISION _dot
   {
 	header_check |= COBC_HD_ENVIRONMENT_DIVISION;
   }
@@ -3962,7 +3962,7 @@ _configuration_header:
 
 configuration: CONFIGURATION { check_area_a ($1); };
 configuration_header:
-  configuration SECTION TOK_DOT
+  configuration SECTION _dot
   {
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION, 0, 0, 0);
 	header_check |= COBC_HD_CONFIGURATION_SECTION;
@@ -3997,7 +3997,7 @@ _source_computer_paragraph:
 ;
 
 source_computer_paragraph:
-  SOURCE_COMPUTER TOK_DOT
+  SOURCE_COMPUTER _dot
   {
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION,
 			       COBC_HD_CONFIGURATION_SECTION, 0, 0);
@@ -4025,7 +4025,7 @@ _with_debugging_mode:
 /* OBJECT-COMPUTER paragraph */
 
 object_computer_paragraph:
-  OBJECT_COMPUTER TOK_DOT
+  OBJECT_COMPUTER _dot
   {
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION,
 			       COBC_HD_CONFIGURATION_SECTION, 0, 0);
@@ -4172,7 +4172,7 @@ _repository_paragraph:
 ;
 
 repository_paragraph:
-  REPOSITORY TOK_DOT
+  REPOSITORY _dot
   {
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION,
 			       COBC_HD_CONFIGURATION_SECTION, 0, 0);
@@ -4241,7 +4241,7 @@ repository_name_list:
 /* SPECIAL-NAMES paragraph */
 
 special_names_header:
-  SPECIAL_NAMES TOK_DOT
+  SPECIAL_NAMES _dot
   {
 	check_duplicate = 0;
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION,
@@ -5081,7 +5081,7 @@ _input_output_section:
 
 input_output: INPUT_OUTPUT { check_area_a ($1); };
 _input_output_header:
-| input_output SECTION TOK_DOT
+| input_output SECTION _dot
   {
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION, 0, 0, 0);
 	header_check |= COBC_HD_INPUT_OUTPUT_SECTION;
@@ -5091,7 +5091,7 @@ _input_output_header:
 /* FILE-CONTROL paragraph */
 
 _file_control_header:
-| FILE_CONTROL TOK_DOT
+| FILE_CONTROL _dot
   {
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION,
 			       COBC_HD_INPUT_OUTPUT_SECTION, 0, 0);
@@ -5967,7 +5967,7 @@ _i_o_control:
 ;
 
 i_o_control_header:
-  I_O_CONTROL TOK_DOT
+  I_O_CONTROL _dot
 {
 	check_headers_present(COBC_HD_ENVIRONMENT_DIVISION,
 				 COBC_HD_INPUT_OUTPUT_SECTION, 0, 0);
@@ -6172,7 +6172,7 @@ _data_division_header:
 
 data: DATA { check_area_a ($1); };
 data_division_header:
-  data DIVISION TOK_DOT
+  data DIVISION _dot
   {
 	header_check |= COBC_HD_DATA_DIVISION;
   }
@@ -6182,7 +6182,7 @@ data_division_header:
 
 tok_file: TOK_FILE { check_area_a ($1); };
 _file_section_header:
-| tok_file SECTION TOK_DOT
+| tok_file SECTION _dot
   {
 	current_storage = CB_STORAGE_FILE;
 	check_headers_present (COBC_HD_DATA_DIVISION, 0, 0, 0);
@@ -6603,7 +6603,7 @@ rep_name_list:
 
 communication: COMMUNICATION { check_area_a ($1); };
 _communication_section:
-| communication SECTION TOK_DOT
+| communication SECTION _dot
   {
 	current_storage = CB_STORAGE_COMMUNICATION;
 	check_headers_present (COBC_HD_DATA_DIVISION, 0, 0, 0);
@@ -6751,7 +6751,7 @@ unnamed_i_o_cd_clauses:
 
 working_storage: WORKING_STORAGE { check_area_a ($1); };
 _working_storage_section:
-| working_storage SECTION TOK_DOT
+| working_storage SECTION _dot
   {
 	check_headers_present (COBC_HD_DATA_DIVISION, 0, 0, 0);
 	header_check |= COBC_HD_WORKING_STORAGE_SECTION;
@@ -8239,7 +8239,7 @@ identified_by_clause:
 
 local_storage: LOCAL_STORAGE { check_area_a ($1); };
 _local_storage_section:
-| local_storage SECTION TOK_DOT
+| local_storage SECTION _dot
   {
 	check_headers_present (COBC_HD_DATA_DIVISION, 0, 0, 0);
 	header_check |= COBC_HD_LOCAL_STORAGE_SECTION;
@@ -8263,7 +8263,7 @@ _local_storage_section:
 
 linkage: LINKAGE { check_area_a ($1); };
 _linkage_section:
-| linkage SECTION TOK_DOT
+| linkage SECTION _dot
   {
 	check_headers_present (COBC_HD_DATA_DIVISION, 0, 0, 0);
 	header_check |= COBC_HD_LINKAGE_SECTION;
@@ -8281,7 +8281,7 @@ _linkage_section:
 
 _report_section:
 | REPORT { check_area_a ($1); }
-  SECTION TOK_DOT
+  SECTION _dot
   {
 	header_check |= COBC_HD_REPORT_SECTION;
 	current_storage = CB_STORAGE_REPORT;
@@ -9017,7 +9017,7 @@ group_indicate_clause:
 
 _screen_section:
 | SCREEN { check_area_a ($1); }
-  SECTION TOK_DOT
+  SECTION _dot
   {
 	cobc_cs_check = CB_CS_SCREEN;
 	current_storage = CB_STORAGE_SCREEN;
@@ -19208,6 +19208,13 @@ scope_terminator:
 | END_UNSTRING
 | END_WRITE
 | END_XML
+;
+
+_dot:
+  TOK_DOT
+| {
+	(void) cb_verify (cb_missing_period, _("optional period"));
+  }
 ;
 
 _dot_or_else_area_a:
