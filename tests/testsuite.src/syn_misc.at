@@ -1874,8 +1874,8 @@ AT_DATA([prog.cob], [
            CONTINUE
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:8: error: syntax error, unexpected end of file
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
+[prog.cob:8: warning: optional period used
 ])
 
 # fixing the initial setup but now producing a missing newline:
@@ -7966,7 +7966,6 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE_ONLY -w prog.cob], [1], [],
 [prog.cob:5: error: invalid literal: ' 1 c d e f g h i j k l m n 0 q. 2  ...'
 prog.cob:5: error: missing terminating ' character
-prog.cob:5: error: syntax error, unexpected end of file
 ])
 
 AT_CLEANUP
@@ -9163,6 +9162,61 @@ AT_CHECK([$COMPILE_ONLY -std=cobol85 -fmissing-period=ok prog.cob], [0], [],
 prog.cob: in section 'MAIN-2':
 prog.cob:18: warning: start of statement in Area A
 prog.cob:19: warning: start of statement in Area A
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([Optional dots])
+AT_KEYWORDS([missing-periods])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION  DIVISION
+       PROGRAM-ID.     prog.
+       DATA            DIVISION
+       WORKING-STORAGE SECTION.
+       01 X PIC X.
+       01 Y PIC X.
+       PROCEDURE       DIVISION.
+       MAIN SECTION.
+           PERFORM P
+           STOP RUN.
+       P.
+           GOBACK
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
+[prog.cob:3: warning: optional period used
+prog.cob:5: warning: optional period used
+prog.cob: in section 'MAIN':
+prog.cob: in paragraph 'P':
+prog.cob:14: warning: optional period used
+])
+
+AT_DATA([cobol85.cob], [
+       IDENTIFICATION  DIVISION
+       PROGRAM-ID.     cobol85.
+       DATA            DIVISION
+       WORKING-STORAGE SECTION
+       01 X PIC X *> dot optional here because of cobol85 format
+       01 Y PIC X.
+       PROCEDURE       DIVISION.
+       MAIN SECTION.
+           PERFORM P
+           STOP RUN *> dot optional here because of cobol85 format
+       P.
+           GOBACK
+])
+
+AT_CHECK([$COMPILE_ONLY -fformat=cobol85 cobol85.cob], [0], [],
+[cobol85.cob:3: warning: optional period used
+cobol85.cob:5: warning: optional period used
+cobol85.cob:6: warning: optional period used
+cobol85.cob:7: warning: optional period used
+cobol85.cob: in section 'MAIN':
+cobol85.cob:12: warning: optional period used
+cobol85.cob: in paragraph 'P':
+cobol85.cob:14: warning: optional period used
 ])
 
 AT_CLEANUP

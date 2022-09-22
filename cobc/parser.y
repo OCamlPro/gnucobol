@@ -19199,6 +19199,10 @@ _dot:
 
 _dot_or_else_area_a:
   TOK_DOT
+| TOKEN_EOF
+  {
+	(void) cb_verify (cb_missing_period, _("optional period"));
+  }
 | WORD_IN_AREA_A
   {
 	(void) cb_verify (cb_missing_period, _("optional period"));
