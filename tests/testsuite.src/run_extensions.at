@@ -5249,7 +5249,7 @@ PROCEDURE        DIVISION.
 
 AT_CHECK([$COMPILE -fformat=terminal -fcomment-paragraphs=ok -fdebugging-line marginberr.cob], [1], [],
 [marginberr.cob:7: error: PROCEDURE DIVISION header missing
-marginberr.cob:7: error: syntax error, unexpected Identifier in Area A
+marginberr.cob:7: error: syntax error, unexpected Identifier (in Area A when relevant)
 marginberr.cob:8: error: syntax error, unexpected DATA
 marginberr.cob:9: error: syntax error, unexpected WORKING-STORAGE
 marginberr.cob:10: error: syntax error, unexpected PROCEDURE

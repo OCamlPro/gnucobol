@@ -2739,7 +2739,6 @@ set_record_size (cb_tree min, cb_tree max)
 %token LESS
 %token LESS_OR_EQUAL		"LESS OR EQUAL"
 %token LEVEL_NUMBER		"level-number"		/* 01 thru 49, 77 */
-%token LEVEL_NUMBER_IN_AREA_A	"level-number in Area A"
 %token LIKE
 %token LIMIT
 %token LIMITS
@@ -3219,7 +3218,6 @@ set_record_size (cb_tree min, cb_tree max)
 %token WITH
 %token WORD			"Identifier"
 %token WORDS
-%token WORD_IN_AREA_A           "Identifier in Area A"
 %token WORKING_STORAGE		"WORKING-STORAGE"
 %token WRAP
 %token WRITE
@@ -3234,6 +3232,9 @@ set_record_size (cb_tree min, cb_tree max)
 %token YYYYDDD
 %token YYYYMMDD
 %token ZERO
+
+%token LEVEL_NUMBER_IN_AREA_A	"level-number (in Area A when relevant)"
+%token WORD_IN_AREA_A		"Identifier (in Area A when relevant)"
 
 /* Set up precedence operators to force shift */
 
@@ -6783,8 +6784,8 @@ _record_description_list:
 ;
 
 record_description_list:
-  data_description _dot_or_else_area_a
-| record_description_list data_description _dot_or_else_area_a
+  data_description _dot_or_else_area_a_in_data_division
+| record_description_list data_description _dot_or_else_area_a_in_data_division
 ;
 
 data_description:
@@ -19211,16 +19212,20 @@ scope_terminator:
 
 _dot_or_else_area_a:
   TOK_DOT
-| item_in_area_a
+| WORD_IN_AREA_A
   {
-	  (void) cb_verify (cb_missing_period, _("optional period"));
-	  cobc_repeat_last_token = 1;
+	(void) cb_verify (cb_missing_period, _("optional period"));
+	cobc_repeat_last_token = 1;
   }
 ;
 
-item_in_area_a:
-  WORD_IN_AREA_A
+_dot_or_else_area_a_in_data_division:
+  TOK_DOT
 | LEVEL_NUMBER_IN_AREA_A
+  {
+	(void) cb_verify (cb_missing_period, _("optional period"));
+	cobc_repeat_last_token = 1;
+  }
 ;
 
 /* Mandatory/Optional keyword selection without actions */
