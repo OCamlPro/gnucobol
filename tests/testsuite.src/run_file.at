@@ -3234,7 +3234,7 @@ AT_CLEANUP
 
 
 AT_SETUP([INDEXED sample])
-AT_KEYWORDS([runfile optional file status READ WRITE DUPLICATES START])
+AT_KEYWORDS([runfile optional file status READ WRITE DUPLICATES START COB_SYNC])
 
 # modified version of GC-FAQ: indexing example
 # Author: Brian Tiffin, Date:   17-Feb-2009, 28-Jan-2014
@@ -3633,6 +3633,51 @@ rewriting key: 12349865
 rewriting key: 98651234
 ])
 
+# recheck with COB_SYNC to cover additional code paths - see bug # 753
+AT_CHECK([COB_SYNC=Y $COBCRUN_DIRECT ./prog], [0],
+[Read all 00b02 keys sequentially
+Reading: 00b02
+    12345679  00 b 02, some 12345679 data
+    97654321  00 b 02, some 97654321 data
+    12349765  00 b 02, some 12349765 data
+    97651234  00 b 02, some 97651234 data
+-----------------------------------------
+Read all alternate keys greater than 00a02
+Seeking >= 00a02
+    12345679  00 b 02, some 12345679 data
+    97654321  00 b 02, some 97654321 data
+    12349765  00 b 02, some 12349765 data
+    97651234  00 b 02, some 97651234 data
+    12345689  00 c 13, some 12345689 data
+    98654321  00 c 13, some 98654321 data
+    12349865  00 c 13, some 12349865 data
+    98651234  00 c 13, some 98651234 data
+-----------------------------------------
+Read all primary keys less than 87654321
+Prime < 87654321
+    87651234  00 a 01, some 87651234 data
+    12349865  00 c 13, some 12349865 data
+    12349765  00 b 02, some 12349765 data
+    12348765  00 a 01, some 12348765 data
+    12345689  00 c 13, some 12345689 data
+    12345679  00 b 02, some 12345679 data
+    12345678  00 a 01, some 12345678 data
+-----------------------------------------
+],
+[rewriting key: 12345678
+rewriting key: 87654321
+rewriting key: 12348765
+rewriting key: 87651234
+rewriting key: 12345679
+rewriting key: 97654321
+rewriting key: 12349765
+rewriting key: 97651234
+rewriting key: 12345689
+rewriting key: 98654321
+rewriting key: 12349865
+rewriting key: 98651234
+])
+
 AT_CHECK([test "$COB_HAS_ISAM" = "db"], [0], [], [],
 # Previous test "failed" --> other ISAM, no need for more checks
 [AT_CHECK([true], [0])],
@@ -3687,7 +3732,7 @@ AT_CLEANUP
 
 
 AT_SETUP([WRITE + REWRITE FILE name])
-AT_KEYWORDS([runfile])
+AT_KEYWORDS([runfile RELATIVE COB_SYNC])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -3830,6 +3875,14 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[Loading sample program data file.
+Sample program data file load complete.
+Read    BET00000 Sts:00 Trms:0013
+REWROTE BET00000 Sts:00 Trms:0014
+], [])
+
+# recheck with COB_SYNC to cover additional code paths
+AT_CHECK([COB_SYNC=Y $COBCRUN_DIRECT ./prog], [0],
 [Loading sample program data file.
 Sample program data file load complete.
 Read    BET00000 Sts:00 Trms:0013
@@ -4898,7 +4951,7 @@ AT_CLEANUP
 ### TO-DO: Already in run_extensions.at.
 
 AT_SETUP([SEQUENTIAL basic I/O])
-AT_KEYWORDS([runfile])
+AT_KEYWORDS([runfile READ WRITE REWRITE COB_SYNC])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -4917,22 +4970,34 @@ AT_DATA([prog.cob], [
            MOVE "A" TO file1-rec.
            WRITE file1-rec.
            CLOSE file1.
+           OPEN I-O file1.
+           READ file1.
+           IF file1-rec <> "A"
+              display "FIRST READ FAILED"
+           ELSE
+              MOVE "X" TO file1-rec
+              REWRITE file1-rec.
+           CLOSE file1.
+           IF file1-rec NOT = "X"
+              STOP RUN.
            OPEN INPUT file1.
            READ file1.
-           IF (file1-rec <> "A")
-              display "FAILED".
+           IF file1-rec <> "X"
+              display "SECOND READ FAILED".
            CLOSE file1.
            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+# recheck with COB_SYNC to cover additional code paths
+AT_CHECK([COB_SYNC=Y $COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
 
 
 AT_SETUP([LINE SEQUENTIAL basic I/O])
-AT_KEYWORDS([runfile])
+AT_KEYWORDS([runfile READ WRITE REWRITE])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -12139,7 +12204,7 @@ AT_CLEANUP
 
 
 AT_SETUP([LINE SEQUENTIAL REWRITE])
-AT_KEYWORDS([runfile])
+AT_KEYWORDS([runfile COB_SYNC READ WRITE])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -12335,6 +12400,43 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[Loading sample program data file.
+Sample program data file load complete.
+Open Sts:00
+Read  ALP00000 Trms:08240
+Read  BET00000 Trms:00010
+Read  GAM00000 Trms:00013
+Read  DEL00000 Trms:65535
+Read  ALP00000 Trms:08240
+REWRITE ALP00000 Sts 44 Trms:00010
+Read  ALP00000 Trms:08240
+Read  BET00000 Trms:00010
+REWRITE BET00000 Sts 00 Trms:00011
+Read  GAM00000 Trms:00013
+Read EPS00000 Sts:00
+REWRITE EPS00000 Sts 00 Trms:08240
+List back Open Sts:00
+Read  ALP00000 Trms:08240
+Read  BET00000 Trms:00011
+Read  GAM00000 Trms:00013
+Read  DEL00000 Trms:65535
+Read  EPS00000 Trms:08240
+Read  FOR00000 Trms:00254
+Read Status: 10
+List after extend Open Sts:00
+Read  ALP00000 Trms:08240
+Read  BET00000 Trms:00011
+Read  GAM00000 Trms:00013
+Read  DEL00000 Trms:65535
+Read  EPS00000 Trms:08240
+Read  FOR00000 Trms:00254
+Read  ALP00000 Trms:08240
+Read  BET00000 Trms:00010
+Read Status: 10
+], [])
+
+# recheck with COB_SYNC to cover additional code paths
+AT_CHECK([COB_SYNC=Y $COBCRUN_DIRECT ./prog], [0],
 [Loading sample program data file.
 Sample program data file load complete.
 Open Sts:00

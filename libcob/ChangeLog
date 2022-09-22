@@ -195,6 +195,11 @@
 	  Use the powers of 10 table instead of recomputing
 	  Add cob_decimal_copy for use by emitted code
 
+2021-12-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (indexed_close) [WITH_DB]: fix bug #753 sigsegv on CLOSE
+	  when COB_SYNC is active
+
 2021-12-03  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (print_version_summary) [__PDCURSES__]: show version
