@@ -893,6 +893,7 @@ enum cob_exception_id {
 #define COB_STATUS_04_SUCCESS_INCOMPLETE	04
 #define COB_STATUS_05_SUCCESS_OPTIONAL		05
 #define COB_STATUS_07_SUCCESS_NO_UNIT		07
+#define COB_STATUS_09_READ_DATA_BAD			 9
 #define COB_STATUS_10_END_OF_FILE		10
 #define COB_STATUS_14_OUT_OF_KEY_RANGE		14
 #define COB_STATUS_21_KEY_INVALID		21
@@ -921,6 +922,7 @@ enum cob_exception_id {
 #define COB_STATUS_54_MAX_LOCKS_FD		54	/* currently not implemented */
 #define COB_STATUS_57_I_O_LINAGE		57
 #define COB_STATUS_61_FILE_SHARING		61
+#define COB_STATUS_71_BAD_CHAR				71
 #define COB_STATUS_91_NOT_AVAILABLE		91
 
 /* Special status */
@@ -1327,6 +1329,12 @@ typedef struct __cob_file {
 	short 				mapkey;			/* Remapped index number, when FD does not match file */
 
 	struct __fcd3		*fcd;			/* FCD created via SET ... TO ADDRESS OF FH--FCD */
+
+	cob_s64_t			record_off;		/* Starting position of last record read/written
+	         			           		   (in 3.x: [LINE] SEQUENTIAL ONLY!) */
+	char				*org_filename;	/* Full concatenated file name */
+	char				*nxt_filename;	/* Next position in org_filename */
+	unsigned int		flag_is_concat:1;	/* SEQUENTIAL concatenated file names */
 } cob_file;
 
 

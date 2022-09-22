@@ -4747,7 +4747,8 @@ add_amendment (const char *word, const char *fname, const int line,
 void
 add_reserved_word (const char *word, const char *fname, const int line)
 {
-	char upper_word[COB_MAX_WORDLEN + 1];
+	/* max: NAMEA*=NAMEB */
+	char upper_word[COB_MAX_WORDLEN + 1 + 1 + COB_MAX_WORDLEN + 1];
 	size_t word_len = strlen (word) + 1;
 	if (word_len > sizeof (upper_word)) {
 		return;
