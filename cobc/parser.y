@@ -1863,7 +1863,7 @@ check_preceding_tallying_phrases (const enum tallying_phrase phrase)
 
 	case ALL_LEADING_TRAILING_PHRASES:
 		if (previous_tallying_phrase == CHARACTERS_PHRASE
-			   || previous_tallying_phrase == ALL_LEADING_TRAILING_PHRASES) {
+		 || previous_tallying_phrase == ALL_LEADING_TRAILING_PHRASES) {
 			cb_error (_("missing value between ALL/LEADING/TRAILING words"));
 		}
 		/* fall through */
@@ -1874,8 +1874,8 @@ check_preceding_tallying_phrases (const enum tallying_phrase phrase)
 		break;
 
 	case VALUE_REGION_PHRASE:
-		if (!(previous_tallying_phrase == ALL_LEADING_TRAILING_PHRASES
-		      || previous_tallying_phrase == VALUE_REGION_PHRASE)) {
+		if (! ( previous_tallying_phrase == ALL_LEADING_TRAILING_PHRASES
+		     || previous_tallying_phrase == VALUE_REGION_PHRASE)) {
 			cb_error (_("missing ALL/LEADING/TRAILING before value"));
 		}
 		break;
@@ -1895,8 +1895,8 @@ static int
 has_relative_pos (struct cb_field const *field)
 {
 	return !!(field->screen_flag
-		  & (COB_SCREEN_LINE_PLUS | COB_SCREEN_LINE_MINUS
-		     | COB_SCREEN_COLUMN_PLUS | COB_SCREEN_COLUMN_MINUS));
+		  & ( COB_SCREEN_LINE_PLUS | COB_SCREEN_LINE_MINUS
+		    | COB_SCREEN_COLUMN_PLUS | COB_SCREEN_COLUMN_MINUS));
 }
 
 static int
@@ -1907,7 +1907,7 @@ is_recursive_call (cb_tree target)
 	if (CB_LITERAL_P (target)) {
 		target_name = (const char *)(CB_LITERAL(target)->data);
 	} else if (CB_REFERENCE_P (target)
-		   && CB_PROTOTYPE_P (cb_ref (target))) {
+	        && CB_PROTOTYPE_P (cb_ref (target))) {
 		target_name = CB_PROTOTYPE (cb_ref (target))->ext_name;
 	}
 
@@ -5274,14 +5274,20 @@ assign_device:
 | PRINTER
   {
 	assign_device = CB_ASSIGN_PRINTER_DEVICE;
+	current_file->organization = COB_ORG_LINE_SEQUENTIAL;
+	current_file->flag_line_adv = 1;
   }
 | PRINTER_1
   {
 	assign_device = CB_ASSIGN_PRINTER_1_DEVICE;
+	current_file->organization = COB_ORG_LINE_SEQUENTIAL;
+	current_file->flag_line_adv = 1;
   }
 | PRINT
   {
 	assign_device = CB_ASSIGN_PRINT_DEVICE;
+	current_file->organization = COB_ORG_LINE_SEQUENTIAL;
+	current_file->flag_line_adv = 1;
   }
 ;
 
@@ -12497,7 +12503,6 @@ field_or_literal_or_erase_list:
   }
 ;
 
-
 field_or_literal_or_erase:
   identifier
 | basic_literal
@@ -12508,7 +12513,6 @@ field_or_literal_or_erase:
 	$$ = cb_space;
   }
 ;
-
 
 display_message_box:
   MESSAGE _box x_list
@@ -13909,6 +13913,12 @@ examine_format_variant:
 		r = cb_list_add (r, CB_BUILD_FUNCALL_1 ("cob_inspect_before", x));
 		t = cb_build_tallying_characters (r);
 		break;
+	/* LCOV_EXCL_START */
+	default:
+		/* This should never happen (and therefore doesn't get a translation) */
+		cb_error ("unexpected EXAMINE TALLYING %d", examine_keyword.tallying);
+		COBC_ABORT ();
+	/* LCOV_EXCL_STOP */
 	}
 	cb_emit_inspect ($0, t, TALLYING_CLAUSE);
 	if (replacing_to) {
@@ -13947,6 +13957,12 @@ examine_format_variant:
 		r = cb_list_add (r, CB_BUILD_FUNCALL_1 ("cob_inspect_before", from));
 		t = cb_build_replacing_characters (to, r);
 		break;
+	/* LCOV_EXCL_START */
+	default:
+		/* This should never happen (and therefore doesn't get a translation) */
+		cb_error ("unexpected EXAMINE REPLACING %d", examine_keyword.replacing);
+		COBC_ABORT ();
+	/* LCOV_EXCL_STOP */
 	}
 	cb_emit_inspect ($0, t, REPLACING_CLAUSE);
   }

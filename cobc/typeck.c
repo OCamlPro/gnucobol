@@ -2892,16 +2892,11 @@ cb_build_const_next (struct cb_field *f)
 	}
 
 	if (previous->storage != CB_STORAGE_FILE
-	 && previous->storage != CB_STORAGE_LINKAGE) {
-		p = previous;
-		while (p->parent) {
-			p = p->parent;
-		}
-		if (!p->flag_external) {
-			cb_error (_("VALUE of '%s': %s target is invalid"), f->name, "NEXT");
-			cb_error (_("target must be in FILE SECTION or LINKAGE SECTION or have the EXTERNAL clause"));
-			return cb_build_numeric_literal (0, "1", 0);
-		}
+	 && previous->storage != CB_STORAGE_LINKAGE
+	 && !cb_field_founder(previous)->flag_external) {
+		cb_error (_("VALUE of '%s': %s target is invalid"), f->name, "NEXT");
+		cb_error (_("target must be in FILE SECTION or LINKAGE SECTION or have the EXTERNAL clause"));
+		return cb_build_numeric_literal (0, "1", 0);
 	}
 
 	/*
@@ -8168,10 +8163,10 @@ cb_emit_call (cb_tree prog, cb_tree par_using, cb_tree returning,
 		if (CB_TREE_CLASS (returning) != CB_CLASS_NUMERIC &&
 		    CB_TREE_CLASS (returning) != CB_CLASS_POINTER) {
 			cb_error_x (CB_TREE (current_statement),
-				    _("invalid RETURNING field"));
-			return;
+					_("invalid RETURNING field"));
+				return;
+			}
 		}
-	}
 
 	error_ind = 0;
 
@@ -11805,11 +11800,6 @@ cb_emit_open (cb_tree file, cb_tree mode, cb_tree sharing)
 		cb_error_x (CB_TREE (current_statement),
 				_("%s not allowed on %s files"), "OPEN", "SORT");
 		return;
-	} else if (f->organization == COB_ORG_LINE_SEQUENTIAL &&
-		   open_mode == COB_OPEN_I_O) {
-		cb_error_x (CB_TREE (current_statement),
-				_("%s not allowed on %s files"), "OPEN I-O", "LINE SEQUENTIAL");
-		return;
 	}
 	if (sharing == NULL) {
 		if (f->sharing) {
@@ -12160,10 +12150,6 @@ cb_emit_rewrite (cb_tree record, cb_tree from, cb_tree lockopt)
 	} else if (f->reports) {
 		cb_error_x (CB_TREE (current_statement),
 				_("%s not allowed on %s files"), "REWRITE", "REPORT");
-		return;
-	} else if (f->organization == COB_ORG_LINE_SEQUENTIAL) {
-		cb_error_x (CB_TREE (current_statement),
-				_("%s not allowed on %s files"), "REWRITE", "LINE SEQUENTIAL");
 		return;
 	} else if (current_statement->handler_type == INVALID_KEY_HANDLER &&
 		  (f->organization != COB_ORG_RELATIVE &&

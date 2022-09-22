@@ -1,4 +1,8 @@
 
+2022-09-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* runtime.cfg: extend docs for LINE SEQUENTIAL settings
+
 2022-08-03  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* general: do not reserve EXAMINE keyword by default, only in
@@ -109,6 +113,11 @@
 	* general: added self-call-recursive, only active (as "warning") for
 	  default.conf, in all other cases no change to RECURSIVE attribute
 	  is happening any more, fixing bug 686
+
+2021-07-05  Ron Norman <rjn@inglenet.com>
+
+	* runtime.cfg: added COB_SEQ_CONCAT_NAME and COB_SEQ_CONCAT_SEP used
+	  for 'concatenated input files'
 
 2021-02-03  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -559,6 +568,10 @@
 	* cobol2014.conf: added new configuration for COBOL 2014 (most values
 	  marked as not verified yet)
 	* general: added literal-length, numeric-literal-length
+
+2015-03-14  Ron Norman <rjn@inglenet.com>
+
+	* runtime.cfg: add COB_LS_VALIDATE
 
 2015-03-14  Ron Norman <rjn@inglenet.com>
 

@@ -1737,41 +1737,6 @@ AT_CLEANUP
 
 
 
-AT_SETUP([WRITE / REWRITE on LINE SEQUENTIAL files])
-AT_KEYWORDS([file])
-
-# FIXME: this should be depending on a compilation flag,
-#        see reportwriter branch for this feature
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. prog.
-
-       ENVIRONMENT DIVISION.
-       INPUT-OUTPUT SECTION.
-       FILE-CONTROL.
-           SELECT f ASSIGN TO "ssad" LINE SEQUENTIAL.
-
-       DATA DIVISION.
-       FILE SECTION.
-       FD  f.
-       01  f-rec PIC X(05).
-
-       PROCEDURE DIVISION.
-           OPEN OUTPUT f
-           WRITE FILE f FROM "abc"
-           REWRITE FILE f FROM "abc"
-           CLOSE f
-           .
-])
-
-AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:18: error: REWRITE not allowed on LINE SEQUENTIAL files
-])
-AT_CLEANUP
-
-
-
 AT_SETUP([WRITE / REWRITE on REPORT files])
 AT_KEYWORDS([file])
 
@@ -1959,31 +1924,6 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE_ONLY -Wimplicit-define prog.cob], [0], [],
 [[prog.cob:60: warning: variable 'GLOB-PATH' will be implicitly defined
 ]])
-AT_CLEANUP
-
-
-AT_SETUP([OPEN I-O with LINE SEQUENTIAL])
-AT_KEYWORDS([file])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. prog.
-       ENVIRONMENT DIVISION.
-       INPUT-OUTPUT SECTION.
-       FILE-CONTROL.
-           SELECT file1 ASSIGN DISK ORGANIZATION LINE SEQUENTIAL.
-       DATA DIVISION.
-       FILE SECTION.
-       FD  file1.
-       01  file1-rec PIC X.
-       PROCEDURE DIVISION.
-           OPEN I-O file1.
-])
-
-AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:13: error: OPEN I-O not allowed on LINE SEQUENTIAL files
-])
-
 AT_CLEANUP
 
 

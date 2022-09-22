@@ -1,4 +1,8 @@
 
+2022-09-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (examine_format_variant): fix compiler warning
+
 2022-09-01  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	FR #18 support EXAMINE statement
@@ -74,6 +78,9 @@
 	  moved -Wunsupported check for ORGANIZATION INDEXED from codegen
 	  to parsing
 	* tree.c, typeck.c: msgid change for -Wunsupported
+	* reserved.c (add_reserved_word): fixed theoretical additions of
+	   reserved=alias longer than 32 characters
+	* typeck.c (cb_build_const_next): minor refactoring to get field founder
 
 2022-07-24  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -396,6 +403,8 @@
 	  cb_search to at_end, storing pair of AT END (position) and statements
 	* codegen.c (output_search_whens, output_search_all): adjust output of
 	  source references for better debugging experience and add AT END tracing
+	* typeck.c: Remove ERROR for REWRITE an INPUT-OUTPUT of LINE SEQUENTIAL
+	            This has been supported for a while in rw/trunk
 
 2021-12-25  Ron Norman <rjn@inglenet.com>
 
@@ -450,6 +459,10 @@
 	* tree.c (get_pic_number_from_str) [COB_64_BIT_POINTER]: allow up to
 	  10 significant digits
 	* tree.c (cb_build_picture): check for value <= INT_MAX
+
+2021-10-30  Ron Norman <rjn@inglenet.com>
+
+	* parser.y: For ASSIGN PRINTER or PRINTER-1 set file type to LINE ADVANCING
 
 2021-10-23  Simon Sobisch <simonsobisch@gnu.org>
 
