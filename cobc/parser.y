@@ -19193,7 +19193,8 @@ scope_terminator:
 _dot:
   TOK_DOT
 | {
-	(void) cb_verify (cb_missing_period, _("optional period"));
+	if (! cb_verify (cb_missing_period, _("optional period")))
+		YYERROR;
   }
 ;
 
@@ -19201,10 +19202,12 @@ _dot_or_else_area_a:
   TOK_DOT
 | TOKEN_EOF
   {
-	(void) cb_verify (cb_missing_period, _("optional period"));
+	if (! cb_verify (cb_missing_period, _("optional period")))
+		YYERROR;
   }
 | WORD_IN_AREA_A
   {
+	/* No need to raise the error for *_IN_AREA_A tokens */
 	(void) cb_verify (cb_missing_period, _("optional period"));
 	cobc_repeat_last_token = 1;
   }
@@ -19214,6 +19217,7 @@ _dot_or_else_area_a_in_data_division:
   TOK_DOT
 | LEVEL_NUMBER_IN_AREA_A
   {
+	/* No need to raise the error for *_IN_AREA_A tokens */
 	(void) cb_verify (cb_missing_period, _("optional period"));
 	cobc_repeat_last_token = 1;
   }
