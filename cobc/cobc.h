@@ -646,7 +646,6 @@ extern int		cobc_get_text_column (void) COB_A_PURE;
 extern int		cobc_get_indicator (void) COB_A_PURE;
 extern int		cobc_get_margin_a (int indicator_width) COB_A_PURE;
 extern int		cobc_get_margin_b (int indicator_width) COB_A_PURE;
-extern int		cobc_has_areacheck_directive (const char * directive);
 
 /* parser (in scanner.l, parser.y) */
 #if	!defined (COB_IN_SCANNER ) && !defined (COB_IN_PPLEX) && \

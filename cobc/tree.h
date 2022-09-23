@@ -2451,6 +2451,9 @@ extern void			cobc_xref_call (const char *, const int, const int, const int);
 extern void			cobc_xref_set_receiving (const cb_tree);
 extern unsigned int		cb_correct_program_order;
 
+/* pplex.l */
+extern int		cobc_has_areacheck_directive (const char *directive);
+
 /* Function defines */
 
 #define CB_BUILD_FUNCALL_0(f)					\
