@@ -457,6 +457,7 @@ test.conf: missing definitions:
 	no definition of 'implicit-assign-dynamic-var'
 	no definition of 'device-mnemonics'
 	no definition of 'xml-parse-xmlss'
+	no definition of 'areacheck'
 	no definition of 'comment-paragraphs'
 	no definition of 'control-division'
 	no definition of 'partial-replacing-with-literal'
@@ -520,6 +521,7 @@ test.conf: missing definitions:
 	no definition of 'sequential-delimiters'
 	no definition of 'record-delim-with-fixed-recs'
 	no definition of 'missing-statement'
+	no definition of 'missing-period'
 	no definition of 'zero-length-literals'
 	no definition of 'xml-generate-extra-phrases'
 	no definition of 'continue-after'
@@ -862,13 +864,13 @@ AT_CHECK([$COMPILE_ONLY -fformat=fixed wide.cob], [1], [],
 [wide.cob:10: error: continuation character expected
 wide.cob:9: error: invalid literal: '  ...'
 wide.cob:9: error: missing terminating ' character
-wide.cob:9: error: syntax error, unexpected end of file
+wide.cob:9: warning: optional period used
 ])
 AT_CHECK([$COMPILE_ONLY -fformat=cobol85 wide.cob], [1], [],
 [wide.cob:10: error: continuation character expected
 wide.cob:9: error: invalid literal: '  ...'
 wide.cob:9: error: missing terminating ' character
-wide.cob:9: error: syntax error, unexpected end of file
+wide.cob:9: warning: optional period used
 ])
 AT_CHECK([$COMPILE_ONLY -ftext-column=80 wide.cob], [0], [], [])
 

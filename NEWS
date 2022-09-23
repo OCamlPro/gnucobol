@@ -76,13 +76,33 @@ NEWS - user visible changes				-*- outline -*-
    the following newly supported reference-formats (in addition to
    FIXED/FREE):
 
-   COBOL85      Fixed-form format with enforcement of Area A (pending)
-   COBOLX       GCOS 7 extended format
-   CRT          ICOBOL Free-form format
-   TERMINAL     ACUCOBOL-GT Terminal format
-   VARIABLE     Micro Focus Variable Fixed-form format
-   XCARD        ICOBOL xCard (extended card) format
-   XOPEN        X/Open Free-form format
+   COBOL85              Fixed-form format with enforcement of Area A
+   COBOLX		GCOS 7 extended format
+   CRT			ICOBOL Free-form format
+   TERMINAL		ACUCOBOL-GT Terminal format
+   VARIABLE		Micro Focus Variable Fixed-form format
+   XCARD		ICOBOL xCard (extended card) format
+   XOPEN		X/Open Free-form format
+
+   These formats come with Area A enforcement, that checks whether
+   division, section, and paragraph names start in Area A (i.e, before
+   margin B), and so do level indicators FD, SD, and RD, and level
+   numbers 01, 77, and 78.  The underlying checks are enabled or
+   disabled by default using dialect option `areacheck`, and then with
+   `>>AREACHECK` and `>>NOAREACHECK` compiler directives (or their
+   counterparts `$SET (NO)AREACHECK`).
+
+   As a result of reference format being a dialect option, Area A
+   enforcement is available and enabled by default for dialects BS2000
+   COBOL, CA Realia II, COBOL85, GCOS COBOL, IBM COBOL, MVS/VM COBOL,
+   RM-COBOL, and X/Open COBOL.
+
+   Area A enforcement additionally enables detection of missing
+   periods before level numbers that lie in Area A in the DATA
+   DIVISION, and before paragraph and section names in the PROCEDURE
+   DIVISION.  More generally, some, but not all, missing periods can
+   be reported and recovered from.  This is configurable with option
+   `missing-period`.
 
 ** the compile flag -fodoslide was moved to a dialect configuration,
    while -fodoslide still works as before it is now implied with

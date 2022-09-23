@@ -3,6 +3,23 @@
 
 	* parser.y (examine_format_variant): fix compiler warning
 
+2022-09-15  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	FR #360 AREACHECK
+	FR #309 raise warnings/errors when some periods are missing
+	* config.def: add dialect options areacheck and missing-period
+	* pplex.l, scanner.l, parser.y: check for empty Area A, and use a
+	  dedicated *_IN_AREA_A tokens to detect missing periods and incorrect
+	  use of Area A
+	* pplex.l, scanner.l, parser.y: support AREACHECK and NOAREACHECK
+	  directives
+	* pplex.l (cobc_has_areacheck_directive): new helper function
+	* pplex.l (count_newlines): new helper function
+	* parser.y (check_area_a, check_non_area_a): new functions for Area A
+	  checks
+	* parser.y (begin_statement): check statement does not start in Area A
+	* parser.y: support some missing periods
+
 2022-09-01  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	FR #18 support EXAMINE statement

@@ -122,6 +122,7 @@ record-delimiter:			ok
 sequential-delimiters:			ok
 record-delim-with-fixed-recs:		ok
 missing-statement:			+warning
+missing-period:				+warning
 zero-length-literals:			ok
 xml-generate-extra-phrases:		ok
 continue-after:				warning

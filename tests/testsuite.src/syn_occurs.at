@@ -94,7 +94,7 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:7: error: syntax error, unexpected OCCURS, expecting .
+[prog.cob:7: error: syntax error, unexpected OCCURS, expecting . or level-number (Area A)
 ])
 
 AT_CLEANUP
@@ -112,7 +112,7 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:6: error: syntax error, unexpected OCCURS, expecting .
+[prog.cob:6: error: syntax error, unexpected OCCURS, expecting . or level-number (Area A)
 ])
 
 AT_CLEANUP
@@ -131,7 +131,7 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:7: error: syntax error, unexpected OCCURS, expecting .
+[prog.cob:7: error: syntax error, unexpected OCCURS, expecting . or level-number (Area A)
 ])
 
 AT_CLEANUP

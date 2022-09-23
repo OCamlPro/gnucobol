@@ -3,6 +3,16 @@
 
 	* atlocal_valgrind, atlocal_win: updated to match atlocal.in
 
+2022-07-19  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* general: fix area A in testsuite
+
+2022-03-29  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* testsuite.src/configuration.at, testsuite.at/syn_misc.at: new
+	  tests for sections and paragraphs that do not end with a period
+	* testsuite.src/run_misc.at: fix lines in trace test
+
 2022-07-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* atlocal.in: option to run part of the testsuite via perf -stat
