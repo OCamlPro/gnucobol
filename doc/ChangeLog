@@ -1,4 +1,8 @@
 
+2022-09-23  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* gnucobol.texi: mention Area A enforcement
+
 2022-07-29  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* gnucobol.texi: document newly supported source formats

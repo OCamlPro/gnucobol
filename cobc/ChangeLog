@@ -13,7 +13,7 @@
 	  use of Area A
 	* pplex.l, scanner.l, parser.y: support AREACHECK and NOAREACHECK
 	  directives
-	* pplex.l (cobc_has_areacheck): new helper function
+	* pplex.l (cobc_has_areacheck_directive): new helper function
 	* pplex.l (count_newlines): new helper function
 	* parser.y (check_area_a, check_non_area_a): new functions for Area A
 	  checks
