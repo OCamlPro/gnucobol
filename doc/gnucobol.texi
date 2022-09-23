@@ -480,15 +480,20 @@ alphanumeric literals that are truncated before the right margin.
 
 @emph{Area A} denotes the source code that spans between margin A and
 margin B, and Area B spans from the latter to the end of the record.
-@emph{Area A enforcement} checks the contents of Area A within
-@code{PROCEDURE DIVISION}s, where paragraph and section names must start
-in Area A, and statements must fit in Area B.
-@ignore
-Area A enforcement enables recovery from missing periods between
-paragraphs and sections.
-@end ignore
-Every source format above is subject to Area A enforcement, except
-@code{FIXED} and @code{FREE}.
+@emph{Area A enforcement} checks the contents of Area A, and reports any
+item that does not belong to the correct Area: this feature helps in
+developping COBOL programs that are portable to actual mainframe
+environments.
+
+In general, division, section, and paragraph names must start in Area A.
+In the @code{DATA DIVISION}, level numbers @code{01}, @code{77}, and (as
+an extension) @code{78}, must also start in Area A.  In the
+@code{PROCEDURE DIVISION}s, statements and separator periods must fit
+within Area B.  Every source format listed above may be subject to Area
+A enforcement, except @code{FIXED} and @code{FREE}.
+
+Note that Area A enforcement enables recovery from missing periods
+between paragraphs and sections.
 
 @node Warning options
 

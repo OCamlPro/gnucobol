@@ -89,25 +89,20 @@ NEWS - user visible changes				-*- outline -*-
    margin B), and so do level indicators FD, SD, and RD, and level
    numbers 01, 77, and 78.  The underlying checks are enabled or
    disabled by default using dialect option `areacheck`, and then with
-   `>>AREACHECK` and `>>NOAREACHECK` compiler directives.
-
-   Area A enforcement additionally enables detection of missing
-   periods before paragraph and section names, configurable with
-   option `missing-period`.
+   `>>AREACHECK` and `>>NOAREACHECK` compiler directives (or their
+   counterparts `$SET (NO)AREACHECK`).
 
    As a result of reference format being a dialect option, Area A
-   enforcement is available for the following dialects:
+   enforcement is available and enabled by default for dialects BS2000
+   COBOL, CA Realia II, COBOL85, GCOS COBOL, IBM COBOL, MVS/VM COBOL,
+   RM-COBOL, and X/Open COBOL.
 
-   BS2000 COBOL
-   CA Realia II
-   COBOL85       (*)
-   GCOS COBOL    (*)
-   IBM COBOL     (*)
-   MVS/VM COBOL  (*)
-   RM-COBOL
-   X/Open COBOL  (*)
-
-   and enabled by default for those marked with a (*).
+   Area A enforcement additionally enables detection of missing
+   periods before level numbers that lie in Area A in the DATA
+   DIVISION, and before paragraph and section names in the PROCEDURE
+   DIVISION.  More generally, some, but not all, missing periods can
+   be reported and recovered from.  This is configurable with option
+   `missing-period`.
 
 ** the compile flag -fodoslide was moved to a dialect configuration,
    while -fodoslide still works as before it is now implied with
