@@ -6184,7 +6184,7 @@ prog.cob:10: error: syntax error, unexpected Identifier
 AT_CHECK([$COMPILE_ONLY -std=mf-strict -freserved=CONSTANT prog.cob], [1], [],
 [prog.cob:6: error: 01 CONSTANT does not conform to Micro Focus COBOL
 prog.cob:7: error: 01 CONSTANT does not conform to Micro Focus COBOL
-prog.cob:7: error: syntax error, unexpected Identifier, expecting . or level-number (in Area A when relevant)
+prog.cob:7: error: syntax error, unexpected Identifier, expecting . or level-number (Area A)
 ])
 
 AT_CHECK([$COMPILE_ONLY -std=mf prog.cob], [1], [],

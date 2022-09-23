@@ -3233,8 +3233,8 @@ set_record_size (cb_tree min, cb_tree max)
 %token YYYYMMDD
 %token ZERO
 
-%token LEVEL_NUMBER_IN_AREA_A	"level-number (in Area A when relevant)"
-%token WORD_IN_AREA_A		"Identifier (in Area A when relevant)"
+%token LEVEL_NUMBER_IN_AREA_A	"level-number (Area A)"
+%token WORD_IN_AREA_A		"Identifier (Area A)"
 
 /* Set up precedence operators to force shift */
 
