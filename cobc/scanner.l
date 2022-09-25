@@ -178,6 +178,8 @@ static void	make_synonym (void);
 
 %}
 
+AREA_A		\n"#AREA_A"\n
+
 %s DECIMAL_IS_PERIOD DECIMAL_IS_COMMA
 %x PICTURE_STATE FUNCTION_STATE
 
@@ -206,6 +208,7 @@ static void	make_synonym (void);
 	} else {
 		integer_is_label = 0;
 	}
+	cobc_in_area_a = 0;
 %}
 
 <*>^[ ]?"#CALLFH".*\n {
@@ -301,6 +304,25 @@ static void	make_synonym (void);
 	if (l) {
 		l->line = cb_source_line;
 	}
+}
+
+<*>^[ ]?"#AREACHECK"\n {
+	cobc_areacheck = 1;
+}
+
+<*>^[ ]?"#NOAREACHECK"\n {
+	cobc_areacheck = 0;
+}
+
+<*>^{AREA_A}[ ]*/"." {
+	count_lines (yytext + 9); /* skip "\n#area_a\n" */
+	if (cobc_in_procedure && cobc_areacheck) {
+		cb_warning (COBC_WARN_FILLER, _("separator period in Area A"));
+	}
+}
+
+<*>^{AREA_A}[ ]* {
+	cobc_in_area_a = 1;
 }
 
 <*>\n {
@@ -465,7 +487,7 @@ H#[0-9A-Za-z]+ {
 	int	value;
 
 	cobc_force_literal = 0;
-	if (integer_is_label) {
+	if (integer_is_label || cobc_in_area_a) {
 		yylval = cb_build_reference (yytext);
 
 		if (!cobc_in_procedure) {
@@ -481,12 +503,20 @@ H#[0-9A-Za-z]+ {
 				RETURN_TOK (EIGHTY_EIGHT);
 			} else if ((value >= 1 && value <= 49) || value == 77) {
 				/* level number (1 through 49, 77) */
-				RETURN_TOK (LEVEL_NUMBER);
+				if (cobc_in_area_a) {
+					RETURN_TOK (LEVEL_NUMBER_IN_AREA_A);
+				} else {
+					RETURN_TOK (LEVEL_NUMBER);
+				}
 			}
 		}
 
 		/* Integer label */
-		RETURN_TOK (WORD);
+		if (cobc_in_area_a) {
+			RETURN_TOK (WORD_IN_AREA_A);
+		} else {
+			RETURN_TOK (WORD);
+		}
 	}
 	/* Numeric literal or referenced integer label
 	   remark: all transformations/checks are postponed:
@@ -500,10 +530,14 @@ H#[0-9A-Za-z]+ {
 [0-9]+ {
 
 	cobc_force_literal = 0;
-	if (integer_is_label) {
+	if (integer_is_label || cobc_in_area_a) {
 		/* Integer label */
 		yylval = cb_build_reference (yytext);
-		RETURN_TOK (WORD);
+		if (cobc_in_area_a) {
+			RETURN_TOK (WORD_IN_AREA_A);
+		} else {
+			RETURN_TOK (WORD);
+		}
 	}
 	/* Numeric literal or referenced integer label
 	   remark: all transformations/checks are postponed:
@@ -1073,7 +1107,11 @@ H#[0-9A-Za-z]+ {
 		}
 	}
 
-	RETURN_TOK (WORD);
+	if (cobc_in_area_a) {
+		RETURN_TOK (WORD_IN_AREA_A);
+	} else {
+		RETURN_TOK (WORD);
+	}
 }
 
 "<=" {
@@ -1227,6 +1265,7 @@ H#[0-9A-Za-z]+ {
 	}
 	top_78_ptr = NULL;
 	last_token_is_dot = 0;
+	cobc_in_area_a = 0;
 	integer_is_label = 0;
 	inside_bracket = 0;
 	lev_78_ptr = NULL;
@@ -1436,7 +1475,7 @@ scan_x (const char *text, const char *type)
 			yylval = cb_build_numeric_literal (0, "0", 0);
 			RETURN_TOK (LITERAL);
 		}
-		
+
 		/* GnuCOBOL currently only support 64 bit booleans */
 		if (unlikely (result_len > 64)) {
 			snprintf (err_msg, COB_MINI_MAX,

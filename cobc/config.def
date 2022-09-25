@@ -189,6 +189,10 @@ CB_CONFIG_BOOLEAN (cb_device_mnemonics, "device-mnemonics",
 CB_CONFIG_BOOLEAN (cb_xml_parse_xmlss, "xml-parse-xmlss",
 	"XML PARSE XMLSS")
 
+CB_CONFIG_BOOLEAN (cb_areacheck, "areacheck",
+	_("check contents of Area A in PROCEDURE DIVISION "
+	  "(when reference format supports Area A enforcement)"))
+
 /* Support flags */
 
 CB_CONFIG_SUPPORT (cb_comment_paragraphs, "comment-paragraphs",
@@ -382,6 +386,9 @@ CB_CONFIG_SUPPORT (cb_record_delim_with_fixed_recs, "record-delim-with-fixed-rec
 
 CB_CONFIG_SUPPORT (cb_missing_statement, "missing-statement",
 	_("missing statement (e.g. empty IF / PERFORM)"))
+
+CB_CONFIG_SUPPORT (cb_missing_period, "missing-period",
+	_("missing period in PROCEDURE DIVISION (when reference format supports Area A enforcement)"))
 
 CB_CONFIG_SUPPORT (cb_zero_length_lit, "zero-length-literals",
 	_("zero-length literals, e.g. '' and \"\""))

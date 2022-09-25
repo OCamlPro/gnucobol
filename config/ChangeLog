@@ -3,6 +3,10 @@
 
 	* runtime.cfg: extend docs for LINE SEQUENTIAL settings
 
+2022-09-15  Nicolas Berthier <nicolas.berther@ocamlpro.com>
+
+	* general: add options areacheck and missing-period
+
 2022-08-03  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* general: do not reserve EXAMINE keyword by default, only in

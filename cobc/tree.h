@@ -2097,6 +2097,9 @@ extern unsigned int	cobc_cs_check;
 extern unsigned int	cobc_allow_program_name;
 extern unsigned int	cobc_in_xml_generate_body;
 extern unsigned int	cobc_in_json_generate_body;
+extern unsigned int	cobc_areacheck;
+extern unsigned int	cobc_in_area_a;	      /* set by scanner only */
+extern unsigned int	cobc_still_in_area_a; /* raised by parser only */
 
 /* reserved.c */
 extern int			is_reserved_word (const char *);
@@ -2447,6 +2450,9 @@ extern void			cobc_xref_call (const char *, const int, const int, const int);
 #endif
 extern void			cobc_xref_set_receiving (const cb_tree);
 extern unsigned int		cb_correct_program_order;
+
+/* pplex.l */
+extern int		cobc_has_areacheck_directive (const char *directive);
 
 /* Function defines */
 

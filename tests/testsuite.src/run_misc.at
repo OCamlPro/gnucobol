@@ -12515,7 +12515,17 @@ AT_DATA([prog.cob], [
        STOP RUN RETURNING 0.
 ])
 
-AT_CHECK([$COMPILE -std=ibm prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -std=ibm prog.cob], [0], [],
+[prog.cob:12: warning: start of statement in Area A
+prog.cob:13: warning: start of statement in Area A
+prog.cob:14: warning: start of statement in Area A
+prog.cob:15: warning: start of statement in Area A
+prog.cob:16: warning: start of statement in Area A
+prog.cob:17: warning: start of statement in Area A
+prog.cob:18: warning: start of statement in Area A
+prog.cob:20: warning: start of statement in Area A
+prog.cob:22: warning: start of statement in Area A
+])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog PLAIN], [0],
 [This is sent to CONSOLE PLAIN

@@ -1840,20 +1840,23 @@ prog.cob:11: warning: source text after program-text area (column 72) [[-Wdangli
 AT_CHECK([$COBC -fsyntax-only -free -Wextra prog.cob], [1], [],
 [prog.cob:7: warning: source text exceeds 512 bytes, will be truncated [[-Wothers]]
 prog.cob:8: warning: source text exceeds 512 bytes, will be truncated [[-Wothers]]
-prog.cob:8: error: unknown statement 'This'
+prog.cob:8: error: syntax error, unexpected IS, expecting SECTION or .
+prog.cob:8: note: unknown statement 'This'
 ])
 
 AT_CHECK([$COBC -fsyntax-only -F -Wextra prog.cob], [1], [],
 [prog.cob:7: warning: source text exceeds 512 bytes, will be truncated [[-Wothers]]
 prog.cob:8: warning: source text exceeds 512 bytes, will be truncated [[-Wothers]]
-prog.cob:8: error: unknown statement 'This'
+prog.cob:8: error: syntax error, unexpected IS, expecting SECTION or .
+prog.cob:8: note: unknown statement 'This'
 ])
 
 # Check dialect option `format` (fixed for default) does not erase flags like `-F`, `--free`:
 AT_CHECK([$COBC -fsyntax-only -F -std=default -Wextra prog.cob], [1], [],
 [prog.cob:7: warning: source text exceeds 512 bytes, will be truncated [[-Wothers]]
 prog.cob:8: warning: source text exceeds 512 bytes, will be truncated [[-Wothers]]
-prog.cob:8: error: unknown statement 'This'
+prog.cob:8: error: syntax error, unexpected IS, expecting SECTION or .
+prog.cob:8: note: unknown statement 'This'
 ])
 
 AT_CLEANUP
@@ -1871,8 +1874,8 @@ AT_DATA([prog.cob], [
            CONTINUE
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:8: error: syntax error, unexpected end of file
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
+[prog.cob:8: warning: optional period used
 ])
 
 # fixing the initial setup but now producing a missing newline:
@@ -4241,7 +4244,8 @@ AT_DATA([prog2.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY -fnot-reserved=DISPLAY -freserved=COMP-1=DISPLAY prog2.cob], [1], [],
-[prog2.cob:7: error: unknown statement 'DISPLAY'; it may exist in another dialect
+[prog2.cob:7: error: syntax error, unexpected Literal, expecting SECTION or .
+prog2.cob:7: note: unknown statement 'DISPLAY'; it may exist in another dialect
 ])
 
 AT_CLEANUP
@@ -4550,13 +4554,14 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE_ONLY -std=cobol85 prog.cob], [1], [],
 [prog.cob:10: error: 'CONVERSION' is not defined, but is a reserved word in another dialect
-prog.cob:11: error: unknown statement 'TRANSFORM'; it may exist in another dialect
+prog.cob:11: error: syntax error, unexpected Identifier, expecting SECTION or .
+prog.cob:11: note: unknown statement 'TRANSFORM'; it may exist in another dialect
 ])
 AT_CLEANUP
 
 
 AT_SETUP([redundant periods])
-AT_KEYWORDS([misc])
+AT_KEYWORDS([misc redundant-periods])
 
 AT_DATA([a.cpy], [
        01  var PIC X
@@ -4582,6 +4587,244 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
 [prog.cob:6: warning: ignoring redundant .
 prog.cob:12: warning: ignoring redundant .
 ])
+AT_CLEANUP
+
+
+AT_SETUP([missing periods])
+AT_KEYWORDS([misc cobol85 area-a missing-periods])
+
+# Check whether the first line is correcly handled:
+AT_DATA([prog.cob], [       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 DONE COMP-1 VALUE ZERO.
+
+       PROCEDURE DIVISION.
+       MAIN SECTION.
+           PERFORM SEC-1.
+           IF NOT DONE = 1
+              DISPLAY "SEC-1 NOT EXECUTED"
+           END-IF
+           STOP RUN
+       SEC-1 SECTION.
+           MOVE 1 TO DONE
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob: in section 'MAIN':
+prog.cob:15: error: 'SEC-1' is not defined
+prog.cob:15: error: syntax error, unexpected SECTION
+])
+AT_CHECK([$COMPILE_ONLY -fformat=cobol85 -fmissing-period=error prog.cob], [1], [],
+[prog.cob: in section 'MAIN':
+prog.cob:15: error: optional period used
+])
+AT_CHECK([$COMPILE -fformat=cobol85 prog.cob], [0], [],
+[prog.cob: in section 'MAIN':
+prog.cob:15: warning: optional period used
+])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([missing periods with COPYs])
+AT_KEYWORDS([misc cobol85 area-a missing-periods copy])
+
+AT_DATA([ok.inc], [
+       01 FLG PIC XX VALUE "KO".
+])
+
+AT_DATA([sec-1.inc], [
+       SEC-1 SECTION.
+           MOVE "OK" TO FLG
+])
+
+AT_DATA([sec-2.inc], [
+       SEC-2 SECTION.
+           IF FLG NOT EQUAL "OK"
+              DISPLAY "DEC-1 NOT EXECUTED"
+           END-IF.
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       COPY "ok.inc".
+
+       PROCEDURE DIVISION.
+       MAIN SECTION.
+           PERFORM SEC-1.
+           PERFORM SEC-2.
+      * Directive purposefully in Area A
+        REPLACE ==RUNNN== BY ==RUN==.
+           STOP RUNNN
+           COPY "sec-1.inc".
+      * Also purposefully in Area A
+        COPY "sec-2.inc".
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[sec-1.inc: in section 'MAIN':
+sec-1.inc:2: error: 'SEC-1' is not defined
+sec-1.inc:2: error: syntax error, unexpected SECTION
+sec-2.inc:2: error: 'SEC-2' is not defined
+sec-2.inc:2: error: syntax error, unexpected SECTION
+])
+AT_CHECK([$COMPILE -fformat=cobol85 prog.cob], [0], [],
+[sec-1.inc: in section 'MAIN':
+sec-1.inc:2: warning: optional period used
+sec-2.inc: in section 'SEC-1':
+sec-2.inc:2: warning: optional period used
+])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_DATA([prog_err.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       COPY "ok.inc".
+
+       PROCEDURE DIVISION.
+       MAIN SECTION.
+           PERFORM SEC-1.
+           PERFORM SEC-2.
+      * Directive purposefully in Area A
+        REPLACE ==RUNNN== BY ==RUN==.
+           PERFORM SEC-3.
+           STOP RUN
+           COPY "sec-1.inc".
+       COPY "sec-2.inc".
+       SEC-3 SECTION.
+           DISPLAY KO NO ADVANCING.
+])
+
+AT_CHECK([$COMPILE_ONLY -fformat=cobol85 prog_err.cob], [1], [],
+[sec-1.inc: in section 'MAIN':
+sec-1.inc:2: warning: optional period used
+sec-2.inc: in section 'SEC-1':
+sec-2.inc:2: warning: optional period used
+prog_err.cob: in section 'SEC-3':
+prog_err.cob:20: error: 'KO' is not defined
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([statement in Area A])
+AT_KEYWORDS([misc cobol85 areacheck])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 FLAG          PIC 9 VALUE ZERO.
+       PROCEDURE        DIVISION.
+       MAIN
+       .
+         PERFORM SEC-1
+         IF NOT FLAG = 1
+              DISPLAY "SEC-1 NOT EXECUTED"
+         END-IF
+         STOP RUN
+         .
+       SEC-1 SECTION.
+         MOVE 1 TO FLAG
+         .
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [])
+AT_CHECK([$COMPILE_ONLY -std=cobol85 prog.cob], [0], [],
+[prog.cob:9: warning: separator period in Area A
+prog.cob: in paragraph 'MAIN':
+prog.cob:10: warning: start of statement in Area A
+prog.cob:11: warning: start of statement in Area A
+prog.cob:14: warning: start of statement in Area A
+prog.cob:15: warning: separator period in Area A
+prog.cob: in section 'SEC-1':
+prog.cob:17: warning: start of statement in Area A
+prog.cob:18: warning: separator period in Area A
+])
+
+AT_CHECK([$COMPILE_ONLY -std=cobol85 -fno-areacheck prog.cob], [0], [])
+AT_CHECK([$COMPILE_ONLY -std=cobol85 -fformat=fixed prog.cob], [0], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([pseudotext replacement with text in area A])
+AT_KEYWORDS([misc cobol85 gcos copy missing-periods])
+
+# Check whether the first line is correcly handled:
+AT_DATA([ok.inc], [       01  REPLACE-ME
+       01  KO  PIC XX VALUE "KO".
+       PROCEDURE DIVISION.
+       MAIN SECTION.
+           PERFORM SEC-1
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+           COPY "ok.inc" REPLACING == 01 REPLACE-ME == BY ==
+       01  OK PIC XX VALUE "OK". ==
+           .
+
+           PERFORM SEC-2
+           STOP RUN
+           CONTINUE
+       SEC-1 SECTION.
+           IF OK NOT EQUAL "OK" DISPLAY OK
+       SEC-2 SECTION.
+           IF OK NOT EQUAL "OK" DISPLAY OK.
+])
+
+AT_CHECK([$COMPILE -std=cobol85 -fmissing-period=warning prog.cob], [0], [],
+[prog.cob: in section 'MAIN':
+prog.cob:14: warning: optional period used
+prog.cob: in section 'SEC-1':
+prog.cob:16: warning: optional period used
+])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_DATA([prog_err.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+           COPY "ok.inc" REPLACING == 01 REPLACE-ME == BY ==
+       01  OK PIC XX VALUE "OK". ==
+           .
+
+           PERFORM SEC-2.
+           STOP RUN
+       SEC-1 SECTION.
+           IF OK NOT EQUAL "OK" DISPLAY OK
+       SEC-2 SECTION.
+           DISPLAY NOT-FOUND.
+])
+AT_CHECK([$COMPILE -std=gcos prog_err.cob], [1], [],
+[prog_err.cob: in section 'MAIN':
+prog_err.cob:13: warning: optional period used
+prog_err.cob: in section 'SEC-1':
+prog_err.cob:15: warning: optional period used
+prog_err.cob: in section 'SEC-2':
+prog_err.cob:16: error: 'NOT-FOUND' is not defined
+])
+
 AT_CLEANUP
 
 
@@ -5292,12 +5535,15 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:10: error: CALL-CONVENTION and WITH LINKAGE are mutually exclusive
 ])
+# GOBACK does not belong to COBOL85 reserved words; the last line is
+# therefore an empty paragraph that does not start in Area A
 AT_CHECK([$COMPILE_ONLY -std=cobol85 -freserved=EXTERN,C prog.cob], [1], [],
 [prog.cob:5: error: CALL-/ENTRY-CONVENTION does not conform to COBOL 85
 prog.cob:6: error: WITH ... LINKAGE does not conform to COBOL 85
 prog.cob:8: error: CALL-/ENTRY-CONVENTION does not conform to COBOL 85
 prog.cob:10: error: WITH ... LINKAGE does not conform to COBOL 85
 prog.cob:10: error: CALL-CONVENTION and WITH LINKAGE are mutually exclusive
+prog.cob:12: warning: 'GOBACK' should start in Area A
 ])
 AT_CLEANUP
 
@@ -5938,7 +6184,7 @@ prog.cob:10: error: syntax error, unexpected Identifier
 AT_CHECK([$COMPILE_ONLY -std=mf-strict -freserved=CONSTANT prog.cob], [1], [],
 [prog.cob:6: error: 01 CONSTANT does not conform to Micro Focus COBOL
 prog.cob:7: error: 01 CONSTANT does not conform to Micro Focus COBOL
-prog.cob:7: error: syntax error, unexpected Identifier, expecting .
+prog.cob:7: error: syntax error, unexpected Identifier, expecting . or level-number (Area A)
 ])
 
 AT_CHECK([$COMPILE_ONLY -std=mf prog.cob], [1], [],
@@ -6782,6 +7028,7 @@ prog.cob:8: error: PROCEDURE DIVISION header missing
 prog.cob:8: error: syntax error, unexpected Literal
 ])
 AT_CLEANUP
+# " (close unclosed quotation above)
 
 
 # normal register extension,
@@ -7431,8 +7678,10 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:8: error: BASED only allowed at 01/77 level
 prog.cob:16: error: PROCEDURE DIVISION header missing
 prog.cob:16: error: syntax error, unexpected Identifier
-prog.cob:17: error: unknown statement '01'
-prog.cob:18: error: unknown statement '03'
+prog.cob:17: error: syntax error, unexpected Identifier, expecting SECTION or .
+prog.cob:17: note: unknown statement '01'
+prog.cob:18: error: syntax error, unexpected Identifier, expecting SECTION or .
+prog.cob:18: note: unknown statement '03'
 prog.cob:20: error: syntax error, unexpected PROCEDURE
 prog.cob:23: error: ALLOCATE CHARACTERS requires RETURNING clause
 prog.cob:26: error: 'one' is not a numeric value
@@ -7717,7 +7966,6 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE_ONLY -w prog.cob], [1], [],
 [prog.cob:5: error: invalid literal: ' 1 c d e f g h i j k l m n 0 q. 2  ...'
 prog.cob:5: error: missing terminating ' character
-prog.cob:5: error: syntax error, unexpected end of file
 ])
 
 AT_CLEANUP
@@ -8825,6 +9073,150 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE_ONLY -fpicture-l=warning prog.cob], [0], [],
 [prog.cob:7: warning: PICTURE string with 'L' character used
+])
+
+AT_CLEANUP
+
+AT_SETUP([AREACHECK / NOAREACHECK directives])
+AT_KEYWORDS([directive])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION  DIVISION.
+       PROGRAM-ID.     prog.
+       DATA            DIVISION.
+       WORKING-STORAGE SECTION.
+       PROCEDURE       DIVISION.
+       >> NOAREACHECK
+       MAIN-1 SECTION.
+       DISPLAY "SOMETHING".
+       >> AREACHECK
+       MAIN-2 SECTION.
+       DISPLAY "SOMETHING ELSE"
+       STOP RUN.
+])
+
+AT_DATA([prog2.cob], [
+       $SET NO-AREA-CHECK
+       IDENTIFICATION  DIVISION.
+       PROGRAM-ID.     prog2.
+       DATA            DIVISION.
+       WORKING-STORAGE SECTION.
+       PROCEDURE       DIVISION.
+       MAIN-1 SECTION.
+       DISPLAY "SOMETHING".
+       $SET AREA-CHECK
+       MAIN-2 SECTION.
+       DISPLAY "SOMETHING ELSE"
+       STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY -std=cobol85 prog.cob], [0], [],
+[prog.cob: in section 'MAIN-2':
+prog.cob:12: warning: start of statement in Area A
+prog.cob:13: warning: start of statement in Area A
+])
+
+AT_CHECK([$COMPILE_ONLY -std=cobol85 prog2.cob], [0], [],
+[prog2.cob: in section 'MAIN-2':
+prog2.cob:12: warning: start of statement in Area A
+prog2.cob:13: warning: start of statement in Area A
+])
+
+AT_CLEANUP
+
+AT_SETUP([AREACHECK / NOAREACHECK directives (2)])
+AT_KEYWORDS([directive missing-periods])
+
+AT_DATA([prog.cob], [
+       >> NOAREACHECK
+       IDENTIFICATION  DIVISION.
+       PROGRAM-ID.     prog.
+       DATA            DIVISION.
+       >> AREACHECK
+       WORKING-STORAGE SECTION.
+       01 X.
+           02 Y PIC X.
+           01 Z PIC X
+       01 T PIC 9.
+       >> NOAREACHECK
+       PROCEDURE       DIVISION.
+       MAIN-1 SECTION.
+       DISPLAY "SOMETHING"
+       >> AREACHECK
+       MAIN-2 SECTION.
+       DISPLAY "SOMETHING ELSE"
+       STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY -std=cobol85 prog.cob], [1], [],
+[prog.cob:10: warning: '01' should start in Area A
+prog.cob:11: error: optional period used
+prog.cob: in section 'MAIN-1':
+prog.cob:17: error: optional period used
+prog.cob: in section 'MAIN-2':
+prog.cob:18: warning: start of statement in Area A
+prog.cob:19: warning: start of statement in Area A
+])
+AT_CHECK([$COMPILE_ONLY -std=cobol85 -fmissing-period=ok prog.cob], [0], [],
+[prog.cob:10: warning: '01' should start in Area A
+prog.cob: in section 'MAIN-2':
+prog.cob:18: warning: start of statement in Area A
+prog.cob:19: warning: start of statement in Area A
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([Optional dots])
+AT_KEYWORDS([missing-periods])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION  DIVISION
+       PROGRAM-ID.     prog.
+       DATA            DIVISION
+       WORKING-STORAGE SECTION.
+       01 X PIC X.
+       01 Y PIC X.
+       PROCEDURE       DIVISION.
+       MAIN SECTION.
+           PERFORM P
+           STOP RUN.
+       P.
+           GOBACK
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
+[prog.cob:3: warning: optional period used
+prog.cob:5: warning: optional period used
+prog.cob: in section 'MAIN':
+prog.cob: in paragraph 'P':
+prog.cob:14: warning: optional period used
+])
+
+AT_DATA([cobol85.cob], [
+       IDENTIFICATION  DIVISION
+       PROGRAM-ID.     cobol85.
+       DATA            DIVISION
+       WORKING-STORAGE SECTION
+       01 X PIC X *> dot optional here because of cobol85 format
+       01 Y PIC X.
+       PROCEDURE       DIVISION.
+       MAIN SECTION.
+           PERFORM P
+           STOP RUN *> dot optional here because of cobol85 format
+       P.
+           GOBACK
+])
+
+AT_CHECK([$COMPILE_ONLY -fformat=cobol85 cobol85.cob], [0], [],
+[cobol85.cob:3: warning: optional period used
+cobol85.cob:5: warning: optional period used
+cobol85.cob:6: warning: optional period used
+cobol85.cob:7: warning: optional period used
+cobol85.cob: in section 'MAIN':
+cobol85.cob:12: warning: optional period used
+cobol85.cob: in paragraph 'P':
+cobol85.cob:14: warning: optional period used
 ])
 
 AT_CLEANUP
