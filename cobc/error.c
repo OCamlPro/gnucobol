@@ -181,7 +181,7 @@ cb_get_strerror (void)
 
 /* set the value for "ignore errors because instruction is
    in a constant FALSE path which gets no codegen at all"
-   if state is -1, don't set the value 
+   if state is -1, don't set the value
 
    returns the value which was active on call
 */
@@ -195,7 +195,7 @@ cb_set_ignore_error (int state)
 	return prev;
 }
 
-void 
+void
 cb_add_error_to_listing (const char *file, int line,
 		const char *prefix, char *errmsg)
 {
@@ -335,7 +335,7 @@ static char *warning_option_text (const enum cb_warn_opt opt, const enum cb_warn
 }
 
 static enum cb_warn_val
-cb_warning_ (const enum cb_warn_opt opt, const char *fmt, va_list ap)
+cb_warning_internal (const enum cb_warn_opt opt, const char *fmt, va_list ap)
 {
 	const enum cb_warn_val pref = cb_warn_opt_val[opt];
 
@@ -365,18 +365,12 @@ cb_warning_ (const enum cb_warn_opt opt, const char *fmt, va_list ap)
 enum cb_warn_val
 cb_warning (const enum cb_warn_opt opt, const char *fmt, ...)
 {
-	enum cb_warn_val pref = cb_warn_opt_val[opt];
+	enum cb_warn_val ret;
 	va_list ap;
-
-	if (pref == COBC_WARN_DISABLED) {
-		return pref;
-	}
-
 	va_start (ap, fmt);
-	pref = cb_warning_ (opt, fmt, ap);
+	ret = cb_warning_internal (opt, fmt, ap);
 	va_end (ap);
-
-	return pref;
+	return ret;
 }
 
 void
@@ -399,7 +393,7 @@ cb_error_always (const char *fmt, ...)
 
 /* raise error (or warning if current branch is not generated) */
 static enum cb_warn_val
-cb_error_ (const char *fmt, va_list ap)
+cb_error_internal (const char *fmt, va_list ap)
 {
 	const enum cb_warn_opt	opt = cb_warn_ignored_error;
 	const enum cb_warn_val	pref = cb_warn_opt_val[opt];
@@ -436,22 +430,13 @@ cb_error_ (const char *fmt, va_list ap)
 enum cb_warn_val
 cb_error (const char *fmt, ...)
 {
-	const enum cb_warn_opt	opt = cb_warn_ignored_error;
-	const enum cb_warn_val	pref = cb_warn_opt_val[opt];
-	enum cb_warn_val	ret = pref;
+	enum cb_warn_val ret;
 	va_list ap;
-
-	if (ignore_error && pref == COBC_WARN_DISABLED) {
-		return pref;
-	}
-
 	va_start (ap, fmt);
-	ret = cb_error_ (fmt, ap);
+	ret = cb_error_internal (fmt, ap);
 	va_end (ap);
-
 	return ret;
 }
-
 
 void
 cb_perror (const int config_error, const char *fmt, ...)
@@ -635,7 +620,7 @@ configuration_error (const char *fname, const int line,
 
 /* Generic warning/error routines */
 static enum cb_warn_val
-cb_warning_x_ (const enum cb_warn_opt opt, cb_tree x, const char *fmt, va_list ap)
+cb_warning_x_internal (const enum cb_warn_opt opt, cb_tree x, const char *fmt, va_list ap)
 {
 	const enum cb_warn_val pref = cb_warn_opt_val[opt];
 
@@ -663,18 +648,12 @@ cb_warning_x_ (const enum cb_warn_opt opt, cb_tree x, const char *fmt, va_list a
 enum cb_warn_val
 cb_warning_x (const enum cb_warn_opt opt, cb_tree x, const char *fmt, ...)
 {
+	enum cb_warn_val ret;
 	va_list ap;
-	enum cb_warn_val pref = cb_warn_opt_val[opt];
-
-	if (pref == COBC_WARN_DISABLED) {
-		return pref;
-	}
-
 	va_start (ap, fmt);
-	pref = cb_warning_x_ (opt, x, fmt, ap);
+	ret = cb_warning_x_internal (opt, x, fmt, ap);
 	va_end (ap);
-
-	return pref;
+	return ret;
 }
 
 /* raise a warning (or error, or nothing) depending on a dialect option */
@@ -787,7 +766,7 @@ cb_note (const enum cb_warn_opt opt, const int suppress_listing, const char *fmt
 }
 
 static enum cb_warn_val
-cb_error_x_ (cb_tree x, const char *fmt, va_list ap)
+cb_error_x_internal (cb_tree x, const char *fmt, va_list ap)
 {
 	const enum cb_warn_opt	opt = cb_warn_ignored_error;
 	const enum cb_warn_val	pref = cb_warn_opt_val[opt];
@@ -825,56 +804,52 @@ cb_error_x_ (cb_tree x, const char *fmt, va_list ap)
 enum cb_warn_val
 cb_error_x (cb_tree x, const char *fmt, ...)
 {
+	enum cb_warn_val ret;
 	va_list ap;
-	const enum cb_warn_opt	opt = cb_warn_ignored_error;
-	const enum cb_warn_val	pref = cb_warn_opt_val[opt];
-	enum cb_warn_val	ret = COBC_WARN_AS_ERROR;
-
-	if (ignore_error && pref == COBC_WARN_DISABLED) {
-		return COBC_WARN_DISABLED;
-	}
-
 	va_start (ap, fmt);
-	ret = cb_error_x_ (x, fmt, ap);
+	ret = cb_error_x_internal (x, fmt, ap);
 	va_end (ap);
-
 	return ret;
 }
 
 /**
  * dispatches the given message as a warning if cb_relaxed_syntax_checks holds,
  * as an error otherwise
+ *
+ * \return 1 if the message is dispatched to a non-ignored warning, 0 otherwise
  */
-enum cb_warn_val
+unsigned int
 cb_syntax_check (const char *fmt, ...)
 {
-	enum cb_warn_val r;
+	enum cb_warn_val ret;
 	va_list ap;
 	va_start (ap, fmt);
 	if (cb_relaxed_syntax_checks)
-		r = cb_warning_ (COBC_WARN_FILLER, fmt, ap);
+		ret = cb_warning_internal (COBC_WARN_FILLER, fmt, ap);
 	else
-		r = cb_error_ (fmt, ap);
+		ret = cb_error_internal (fmt, ap);
 	va_end (ap);
-	return r;
+	return cb_relaxed_syntax_checks ? ret != COBC_WARN_DISABLED : 0;
 }
 
 /**
  * dispatches the given tree and message to cb_warning_x if
  * cb_relaxed_syntax_checks holds, to cb_error_x otherwise
+ *
+ * \return 1 if the message is dispatched to a non-ignored warning, 0 otherwise
  */
-enum cb_warn_val
+unsigned int
 cb_syntax_check_x (cb_tree x, const char *fmt, ...)
 {
-	enum cb_warn_val r;
+	enum cb_warn_val ret;
 	va_list ap;
 	va_start (ap, fmt);
 	if (cb_relaxed_syntax_checks)
-		r = cb_warning_x_ (COBC_WARN_FILLER, x, fmt, ap);
+		ret = cb_warning_x_internal (COBC_WARN_FILLER, x, fmt, ap);
 	else
-		r = cb_error_x_ (x, fmt, ap);
+		ret = cb_error_x_internal (x, fmt, ap);
 	va_end (ap);
-	return r;
+	return cb_relaxed_syntax_checks ? ret != COBC_WARN_DISABLED : 0;
 }
 
 /**

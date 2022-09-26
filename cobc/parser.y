@@ -311,11 +311,11 @@ static int			backup_source_line = 0;
 /* Area A enforcement */
 
 static COB_INLINE void
-check_area_a (cb_tree stmt) {
+check_area_a (cb_tree word) {
 	if (!cobc_in_area_a && cobc_areacheck) {
-		if (stmt)
-			(void) cb_syntax_check_x (stmt, _("'%s' should start in Area A"),
-						  CB_NAME (stmt));
+		if (word)
+			(void) cb_syntax_check_x (word, _("'%s' should start in Area A"),
+						  CB_NAME (word));
 		else
 			(void) cb_syntax_check (_("statement should start in Area A"));
 	}
@@ -672,14 +672,7 @@ setup_use_file (struct cb_file *fileptr)
 static int
 emit_duplicate_clause_message (const char *clause)
 {
-	/* FIXME: replace by a new warning level that is set
-	   to warn/error depending on cb_relaxed_syntax_checks */
-	if (cb_relaxed_syntax_checks) {
-		cb_warning (COBC_WARN_FILLER, _("duplicate %s clause"), clause);
-		return 0;
-	}
-	cb_error (_("duplicate %s clause"), clause);
-	return 1;
+	return cb_syntax_check (_("duplicate %s clause"), clause);
 }
 
 static int
@@ -696,14 +689,9 @@ check_repeated (const char *clause, const cob_flags_t bitval,
 static void
 emit_conflicting_clause_message (const char *clause, const char *conflicting)
 {
-	if (cb_relaxed_syntax_checks) {
-		cb_warning (COBC_WARN_FILLER, _("cannot specify both %s and %s; %s is ignored"),
-			clause, conflicting, clause);
-	} else {
-		cb_error (_("cannot specify both %s and %s"),
-			clause, conflicting);
+	if (cb_syntax_check (_("cannot specify both %s and %s"), clause, conflicting)) {
+		cb_note (COBC_WARN_FILLER, 0, _("%s is ignored"), clause);
 	}
-
 }
 
 
@@ -750,12 +738,10 @@ setup_occurs_min_max (cb_tree occurs_min, cb_tree occurs_max)
 		if (occurs_max != cb_int0) {
 			current_field->occurs_max = cb_get_int (occurs_max);
 			if (!current_field->depending) {
-				if (cb_relaxed_syntax_checks) {
-					cb_warning (COBC_WARN_FILLER, _("TO phrase without DEPENDING phrase"));
-					cb_warning (COBC_WARN_FILLER, _("maximum number of occurrences assumed to be exact number"));
+				if (cb_syntax_check (_("TO phrase without DEPENDING phrase"))) {
+					cb_warning (COBC_WARN_FILLER,
+						    _("maximum number of occurrences assumed to be exact number"));
 					current_field->occurs_min = 1; /* CHECKME: why using 1 ? */
-				} else {
-					cb_error (_("TO phrase without DEPENDING phrase"));
 				}
 			}
 			if (current_field->occurs_max <= current_field->occurs_min) {
@@ -833,10 +819,8 @@ check_relaxed_syntax (const cob_flags_t lev)
 		break;
 	/* LCOV_EXCL_STOP */
 	}
-	if (cb_relaxed_syntax_checks) {
-		cb_warning (COBC_WARN_FILLER, _("%s header missing - assumed"), s);
-	} else {
-		cb_error (_("%s header missing"), s);
+	if (cb_syntax_check (_("%s header missing"), s)) {
+		cb_note (COBC_WARN_FILLER, 0, _("%s header assumed"), s);
 	}
 }
 
@@ -7969,11 +7953,7 @@ _occurs_keys_and_indexed:
 | occurs_keys occurs_indexed
 | occurs_indexed
   {
-	if (!cb_relaxed_syntax_checks) {
-		cb_error (_("INDEXED should follow ASCENDING/DESCENDING"));
-	} else {
-		cb_warning (cb_warn_additional, _("INDEXED should follow ASCENDING/DESCENDING"));
-	}
+	(void) cb_syntax_check (_("INDEXED should follow ASCENDING/DESCENDING"));
   }
   occurs_keys
 | occurs_indexed

@@ -8,6 +8,8 @@
 	* scanner.l, parser.l: make Area A enforcement raise errors instead of
 	  warnings on strict dialects
 	* parser.y: add missing Area A check on SELECT and CD
+	* parser.y, typeck.c: simplify some uses of cb_relaxed_syntax_checks
+	* pplex.l: drop `>>(NO)AREACHECK` directives
 
 2022-09-20  Simon Sobisch <simonsobisch@gnu.org>
 

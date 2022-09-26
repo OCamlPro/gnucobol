@@ -736,13 +736,20 @@ prog.cob:17: error: PROCEDURE DIVISION header missing
 ])
 
 AT_CHECK([$COMPILE_ONLY -frelax-syntax-checks prog.cob], [0], [],
-[prog.cob:2: warning: PROGRAM-ID header missing - assumed
-prog.cob:2: warning: ENVIRONMENT DIVISION header missing - assumed
-prog.cob:2: warning: CONFIGURATION SECTION header missing - assumed
-prog.cob:10: warning: INPUT-OUTPUT SECTION header missing - assumed
-prog.cob:10: warning: FILE-CONTROL header missing - assumed
-prog.cob:14: warning: FILE SECTION header missing - assumed
-prog.cob:17: warning: PROCEDURE DIVISION header missing - assumed
+[prog.cob:2: warning: PROGRAM-ID header missing
+prog.cob:2: note: PROGRAM-ID header assumed
+prog.cob:2: warning: ENVIRONMENT DIVISION header missing
+prog.cob:2: note: ENVIRONMENT DIVISION header assumed
+prog.cob:2: warning: CONFIGURATION SECTION header missing
+prog.cob:2: note: CONFIGURATION SECTION header assumed
+prog.cob:10: warning: INPUT-OUTPUT SECTION header missing
+prog.cob:10: note: INPUT-OUTPUT SECTION header assumed
+prog.cob:10: warning: FILE-CONTROL header missing
+prog.cob:10: note: FILE-CONTROL header assumed
+prog.cob:14: warning: FILE SECTION header missing
+prog.cob:14: note: FILE SECTION header assumed
+prog.cob:17: warning: PROCEDURE DIVISION header missing
+prog.cob:17: note: PROCEDURE DIVISION header assumed
 ])
 
 AT_CLEANUP
@@ -760,8 +767,10 @@ prog.cob:1: error: PROCEDURE DIVISION header missing
 ])
 
 AT_CHECK([$COMPILE_ONLY -frelax-syntax-checks prog.cob], [0], [],
-[prog.cob:1: warning: PROGRAM-ID header missing - assumed
-prog.cob:1: warning: PROCEDURE DIVISION header missing - assumed
+[prog.cob:1: warning: PROGRAM-ID header missing
+prog.cob:1: note: PROGRAM-ID header assumed
+prog.cob:1: warning: PROCEDURE DIVISION header missing
+prog.cob:1: note: PROCEDURE DIVISION header assumed
 ])
 
 AT_CLEANUP
@@ -804,10 +813,12 @@ AT_CHECK([$COMPILE_ONLY prog3.cob], [1], [],
 ])
 
 AT_CHECK([$COMPILE -frelax-syntax-checks prog3.cob], [0], [],
-[prog3.cob:1: warning: PROGRAM-ID header missing - assumed
+[prog3.cob:1: warning: PROGRAM-ID header missing
+prog3.cob:1: note: PROGRAM-ID header assumed
 ])
 AT_CHECK([$COBC -frelax-syntax-checks prog3.cob], [0], [],
-[prog3.cob:1: warning: PROGRAM-ID header missing - assumed [[-Wothers]]
+[prog3.cob:1: warning: PROGRAM-ID header missing [[-Wothers]]
+prog3.cob:1: note: PROGRAM-ID header assumed [[-Wothers]]
 ])
 
 AT_CLEANUP
@@ -9082,24 +9093,9 @@ AT_SETUP([AREACHECK / NOAREACHECK directives])
 AT_KEYWORDS([misc directive])
 
 AT_DATA([prog.cob], [
-       IDENTIFICATION  DIVISION.
-       PROGRAM-ID.     prog.
-       DATA            DIVISION.
-       WORKING-STORAGE SECTION.
-       PROCEDURE       DIVISION.
-       >> NOAREACHECK
-       MAIN-1 SECTION.
-       DISPLAY "SOMETHING".
-       >> AREACHECK
-       MAIN-2 SECTION.
-       DISPLAY "SOMETHING ELSE"
-       STOP RUN.
-])
-
-AT_DATA([prog2.cob], [
        $SET NO-AREA-CHECK
        IDENTIFICATION  DIVISION.
-       PROGRAM-ID.     prog2.
+       PROGRAM-ID.     prog.
        DATA            DIVISION.
        WORKING-STORAGE SECTION.
        PROCEDURE       DIVISION.
@@ -9122,33 +9118,27 @@ prog.cob:12: warning: start of statement in Area A
 prog.cob:13: warning: start of statement in Area A
 ])
 
-AT_CHECK([$COMPILE_ONLY -std=cobol85 prog2.cob], [1], [],
-[prog2.cob: in section 'MAIN-2':
-prog2.cob:12: error: start of statement in Area A
-prog2.cob:13: error: start of statement in Area A
-])
-
 AT_CLEANUP
 
 AT_SETUP([AREACHECK / NOAREACHECK directives (2)])
 AT_KEYWORDS([misc directive missing-periods])
 
 AT_DATA([prog.cob], [
-       >> NOAREACHECK
+       $SET NOAREACHECK
        IDENTIFICATION  DIVISION.
        PROGRAM-ID.     prog.
        DATA            DIVISION.
-       >> AREACHECK
+       $SET AREACHECK
        WORKING-STORAGE SECTION.
        01 X.
            02 Y PIC X.
            01 Z PIC X
        01 T PIC 9.
-       >> NOAREACHECK
+       $SET NOAREACHECK
        PROCEDURE       DIVISION.
        MAIN-1 SECTION.
        DISPLAY "SOMETHING"
-       >> AREACHECK
+       $SET AREACHECK
        MAIN-2 SECTION.
        DISPLAY "SOMETHING ELSE"
        STOP RUN.
