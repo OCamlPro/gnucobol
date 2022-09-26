@@ -314,12 +314,10 @@ static COB_INLINE void
 check_area_a (cb_tree stmt) {
 	if (!cobc_in_area_a && cobc_areacheck) {
 		if (stmt)
-			cb_warning_x (COBC_WARN_FILLER, stmt,
-				      _("'%s' should start in Area A"),
-				      CB_NAME (stmt));
+			(void) cb_syntax_check_x (stmt, _("'%s' should start in Area A"),
+						  CB_NAME (stmt));
 		else
-			cb_warning (COBC_WARN_FILLER,
-				    _("statement should start in Area A"));
+			(void) cb_syntax_check (_("statement should start in Area A"));
 	}
 }
 
@@ -327,11 +325,9 @@ static COB_INLINE void
 check_non_area_a (cb_tree stmt) {
 	if (cobc_in_area_a && cobc_areacheck) {
 		if (stmt)
-			cb_warning_x (COBC_WARN_FILLER, stmt,
-				      _("start of statement in Area A"));
+			(void) cb_syntax_check_x (stmt, _("start of statement in Area A"));
 		else
-			cb_warning (COBC_WARN_FILLER,
-				    _("start of statement in Area A"));
+			(void) cb_syntax_check (_("start of statement in Area A"));
 	}
 }
 
@@ -5104,7 +5100,8 @@ _file_control_sequence:
 ;
 
 file_control_entry:
-  SELECT flag_optional undefined_word
+  SELECT { check_non_area_a ($1); }
+  flag_optional undefined_word
   {
 	char	buff[COB_MINI_BUFF];
 
@@ -5112,10 +5109,10 @@ file_control_entry:
 			       COBC_HD_INPUT_OUTPUT_SECTION,
 			       COBC_HD_FILE_CONTROL, 0);
 	check_duplicate = 0;
-	if (CB_VALID_TREE ($3)) {
+	if (CB_VALID_TREE ($4)) {
 		/* Build new file */
-		current_file = build_file ($3);
-		current_file->optional = CB_INTEGER ($2)->val;
+		current_file = build_file ($4);
+		current_file->optional = CB_INTEGER ($3)->val;
 
 		/* Add file to current program list */
 		CB_ADD_TO_CHAIN (CB_TREE (current_file),
@@ -5134,7 +5131,7 @@ file_control_entry:
   _select_clauses_or_error
   {
 	cobc_cs_check = 0;
-	if (CB_VALID_TREE ($3)) {
+	if (CB_VALID_TREE ($4)) {
 		if (current_file->organization == COB_ORG_INDEXED
 		    && key_type == RELATIVE_KEY) {
 			cb_error_x (current_file->key,
@@ -5145,7 +5142,7 @@ file_control_entry:
 				    _("cannot use RECORD KEY clause on RELATIVE files"));
 		}
 
-		validate_file (current_file, $3);
+		validate_file (current_file, $4);
 	}
   }
 ;
@@ -6647,8 +6644,9 @@ communication_description:
 
 /* File description entry */
 
+cd: CD { check_non_area_a ($1); };
 communication_description_entry:
-  CD undefined_word
+  cd undefined_word
   {
 	/* CD internally defines a new file */
 	if (CB_VALID_TREE ($2)) {

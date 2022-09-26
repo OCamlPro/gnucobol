@@ -1,4 +1,14 @@
 
+2022-09-26  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* error.c (cb_syntax_check, cb_syntax_check_x): add variants of
+	  cb_{error,warning}[_x] functions with explicit va_list, and new helper
+	  functions to dispach to errors or warnings w.r.t
+	  cb_relaxed_syntax_checks
+	* scanner.l, parser.l: make Area A enforcement raise errors instead of
+	  warnings on strict dialects
+	* parser.y: add missing Area A check on SELECT and CD
+
 2022-09-20  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y (examine_format_variant): fix compiler warning

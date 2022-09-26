@@ -317,7 +317,7 @@ AREA_A		\n"#AREA_A"\n
 <*>^{AREA_A}[ ]*/"." {
 	count_lines (yytext + 9); /* skip "\n#area_a\n" */
 	if (cobc_in_procedure && cobc_areacheck) {
-		cb_warning (COBC_WARN_FILLER, _("separator period in Area A"));
+		(void) cb_syntax_check (_("separator period in Area A"));
 	}
 }
 
