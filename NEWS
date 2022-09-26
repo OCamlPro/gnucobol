@@ -86,7 +86,7 @@ NEWS - user visible changes				-*- outline -*-
 
    These formats come with Area A enforcement, that checks whether
    division, section, and paragraph names start in Area A (i.e, before
-   margin B), and so do level indicators FD, SD, and RD, and level
+   margin B), and so do level indicators FD, SD, RD, and CD, and level
    numbers 01, 77, and 78.  The underlying checks are enabled or
    disabled by default using dialect option `areacheck`, and then with
    `$SET AREACHECK` and `$SET NOAREACHECK` compiler directives.
