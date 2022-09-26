@@ -739,8 +739,8 @@ setup_occurs_min_max (cb_tree occurs_min, cb_tree occurs_max)
 			current_field->occurs_max = cb_get_int (occurs_max);
 			if (!current_field->depending) {
 				if (cb_syntax_check (_("TO phrase without DEPENDING phrase"))) {
-					cb_warning (COBC_WARN_FILLER,
-						    _("maximum number of occurrences assumed to be exact number"));
+					cb_note (COBC_WARN_FILLER, 0,
+						 _("maximum number of occurrences assumed to be exact number"));
 					current_field->occurs_min = 1; /* CHECKME: why using 1 ? */
 				}
 			}
