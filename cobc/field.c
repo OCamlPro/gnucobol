@@ -813,18 +813,10 @@ copy_into_field_recursive (struct cb_field *source, struct cb_field *target,
 
 
 /* note: same message in parser.y */
-static int
+static void
 duplicate_clause_message (cb_tree x, const char *clause)
 {
-	/* FIXME: replace by a new warning level that is set
-	   to warn/error depending on cb_relaxed_syntax_checks */
-	if (cb_relaxed_syntax_checks) {
-		cb_warning_x (COBC_WARN_FILLER, x, _("duplicate %s clause"), clause);
-		return 0;
-	}
-
-	cb_error_x (x, _("duplicate %s clause"), clause);
-	return 1;
+	(void) cb_syntax_check_x (x, _("duplicate %s clause"), clause);
 }
 
 void

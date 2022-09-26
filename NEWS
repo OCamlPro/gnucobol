@@ -86,11 +86,10 @@ NEWS - user visible changes				-*- outline -*-
 
    These formats come with Area A enforcement, that checks whether
    division, section, and paragraph names start in Area A (i.e, before
-   margin B), and so do level indicators FD, SD, and RD, and level
-   numbers 01, 77, and 78.  The underlying checks are enabled or
-   disabled by default using dialect option `areacheck`, and then with
-   `>>AREACHECK` and `>>NOAREACHECK` compiler directives (or their
-   counterparts `$SET (NO)AREACHECK`).
+   margin B), and so do level indicators FD, SD, RD, and CD, and level
+   numbers 01, and 77.  The underlying checks are enabled or disabled
+   by default using dialect option `areacheck`, and then with `$SET
+   AREACHECK` and `$SET NOAREACHECK` compiler directives.
 
    As a result of reference format being a dialect option, Area A
    enforcement is available and enabled by default for dialects BS2000

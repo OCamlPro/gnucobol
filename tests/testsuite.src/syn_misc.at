@@ -736,13 +736,20 @@ prog.cob:17: error: PROCEDURE DIVISION header missing
 ])
 
 AT_CHECK([$COMPILE_ONLY -frelax-syntax-checks prog.cob], [0], [],
-[prog.cob:2: warning: PROGRAM-ID header missing - assumed
-prog.cob:2: warning: ENVIRONMENT DIVISION header missing - assumed
-prog.cob:2: warning: CONFIGURATION SECTION header missing - assumed
-prog.cob:10: warning: INPUT-OUTPUT SECTION header missing - assumed
-prog.cob:10: warning: FILE-CONTROL header missing - assumed
-prog.cob:14: warning: FILE SECTION header missing - assumed
-prog.cob:17: warning: PROCEDURE DIVISION header missing - assumed
+[prog.cob:2: warning: PROGRAM-ID header missing
+prog.cob:2: note: PROGRAM-ID header assumed
+prog.cob:2: warning: ENVIRONMENT DIVISION header missing
+prog.cob:2: note: ENVIRONMENT DIVISION header assumed
+prog.cob:2: warning: CONFIGURATION SECTION header missing
+prog.cob:2: note: CONFIGURATION SECTION header assumed
+prog.cob:10: warning: INPUT-OUTPUT SECTION header missing
+prog.cob:10: note: INPUT-OUTPUT SECTION header assumed
+prog.cob:10: warning: FILE-CONTROL header missing
+prog.cob:10: note: FILE-CONTROL header assumed
+prog.cob:14: warning: FILE SECTION header missing
+prog.cob:14: note: FILE SECTION header assumed
+prog.cob:17: warning: PROCEDURE DIVISION header missing
+prog.cob:17: note: PROCEDURE DIVISION header assumed
 ])
 
 AT_CLEANUP
@@ -760,8 +767,10 @@ prog.cob:1: error: PROCEDURE DIVISION header missing
 ])
 
 AT_CHECK([$COMPILE_ONLY -frelax-syntax-checks prog.cob], [0], [],
-[prog.cob:1: warning: PROGRAM-ID header missing - assumed
-prog.cob:1: warning: PROCEDURE DIVISION header missing - assumed
+[prog.cob:1: warning: PROGRAM-ID header missing
+prog.cob:1: note: PROGRAM-ID header assumed
+prog.cob:1: warning: PROCEDURE DIVISION header missing
+prog.cob:1: note: PROCEDURE DIVISION header assumed
 ])
 
 AT_CLEANUP
@@ -804,10 +813,12 @@ AT_CHECK([$COMPILE_ONLY prog3.cob], [1], [],
 ])
 
 AT_CHECK([$COMPILE -frelax-syntax-checks prog3.cob], [0], [],
-[prog3.cob:1: warning: PROGRAM-ID header missing - assumed
+[prog3.cob:1: warning: PROGRAM-ID header missing
+prog3.cob:1: note: PROGRAM-ID header assumed
 ])
 AT_CHECK([$COBC -frelax-syntax-checks prog3.cob], [0], [],
-[prog3.cob:1: warning: PROGRAM-ID header missing - assumed [[-Wothers]]
+[prog3.cob:1: warning: PROGRAM-ID header missing [[-Wothers]]
+prog3.cob:1: note: PROGRAM-ID header assumed [[-Wothers]]
 ])
 
 AT_CLEANUP
@@ -4743,16 +4754,16 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [])
-AT_CHECK([$COMPILE_ONLY -std=cobol85 prog.cob], [0], [],
-[prog.cob:9: warning: separator period in Area A
+AT_CHECK([$COMPILE_ONLY -std=cobol85 prog.cob], [1], [],
+[prog.cob:9: error: separator period in Area A
 prog.cob: in paragraph 'MAIN':
-prog.cob:10: warning: start of statement in Area A
-prog.cob:11: warning: start of statement in Area A
-prog.cob:14: warning: start of statement in Area A
-prog.cob:15: warning: separator period in Area A
+prog.cob:10: error: start of statement in Area A
+prog.cob:11: error: start of statement in Area A
+prog.cob:14: error: start of statement in Area A
+prog.cob:15: error: separator period in Area A
 prog.cob: in section 'SEC-1':
-prog.cob:17: warning: start of statement in Area A
-prog.cob:18: warning: separator period in Area A
+prog.cob:17: error: start of statement in Area A
+prog.cob:18: error: separator period in Area A
 ])
 
 AT_CHECK([$COMPILE_ONLY -std=cobol85 -fno-areacheck prog.cob], [0], [])
@@ -5543,7 +5554,7 @@ prog.cob:6: error: WITH ... LINKAGE does not conform to COBOL 85
 prog.cob:8: error: CALL-/ENTRY-CONVENTION does not conform to COBOL 85
 prog.cob:10: error: WITH ... LINKAGE does not conform to COBOL 85
 prog.cob:10: error: CALL-CONVENTION and WITH LINKAGE are mutually exclusive
-prog.cob:12: warning: 'GOBACK' should start in Area A
+prog.cob:12: error: 'GOBACK' should start in Area A
 ])
 AT_CLEANUP
 
@@ -9077,28 +9088,14 @@ AT_CHECK([$COMPILE_ONLY -fpicture-l=warning prog.cob], [0], [],
 
 AT_CLEANUP
 
+
 AT_SETUP([AREACHECK / NOAREACHECK directives])
-AT_KEYWORDS([directive])
+AT_KEYWORDS([misc directive])
 
 AT_DATA([prog.cob], [
-       IDENTIFICATION  DIVISION.
-       PROGRAM-ID.     prog.
-       DATA            DIVISION.
-       WORKING-STORAGE SECTION.
-       PROCEDURE       DIVISION.
-       >> NOAREACHECK
-       MAIN-1 SECTION.
-       DISPLAY "SOMETHING".
-       >> AREACHECK
-       MAIN-2 SECTION.
-       DISPLAY "SOMETHING ELSE"
-       STOP RUN.
-])
-
-AT_DATA([prog2.cob], [
        $SET NO-AREA-CHECK
        IDENTIFICATION  DIVISION.
-       PROGRAM-ID.     prog2.
+       PROGRAM-ID.     prog.
        DATA            DIVISION.
        WORKING-STORAGE SECTION.
        PROCEDURE       DIVISION.
@@ -9110,65 +9107,73 @@ AT_DATA([prog2.cob], [
        STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY -std=cobol85 prog.cob], [0], [],
+AT_CHECK([$COMPILE_ONLY -std=cobol85 prog.cob], [1], [],
+[prog.cob: in section 'MAIN-2':
+prog.cob:12: error: start of statement in Area A
+prog.cob:13: error: start of statement in Area A
+])
+AT_CHECK([$COMPILE_ONLY -std=cobol85 -frelax-syntax-checks prog.cob], [0], [],
 [prog.cob: in section 'MAIN-2':
 prog.cob:12: warning: start of statement in Area A
 prog.cob:13: warning: start of statement in Area A
 ])
 
-AT_CHECK([$COMPILE_ONLY -std=cobol85 prog2.cob], [0], [],
-[prog2.cob: in section 'MAIN-2':
-prog2.cob:12: warning: start of statement in Area A
-prog2.cob:13: warning: start of statement in Area A
-])
-
 AT_CLEANUP
 
 AT_SETUP([AREACHECK / NOAREACHECK directives (2)])
-AT_KEYWORDS([directive missing-periods])
+AT_KEYWORDS([misc directive missing-periods])
 
 AT_DATA([prog.cob], [
-       >> NOAREACHECK
+       $SET NOAREACHECK
        IDENTIFICATION  DIVISION.
        PROGRAM-ID.     prog.
        DATA            DIVISION.
-       >> AREACHECK
+       $SET AREACHECK
        WORKING-STORAGE SECTION.
        01 X.
            02 Y PIC X.
            01 Z PIC X
        01 T PIC 9.
-       >> NOAREACHECK
+       $SET NOAREACHECK
        PROCEDURE       DIVISION.
        MAIN-1 SECTION.
        DISPLAY "SOMETHING"
-       >> AREACHECK
+       $SET AREACHECK
        MAIN-2 SECTION.
        DISPLAY "SOMETHING ELSE"
        STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY -std=cobol85 prog.cob], [1], [],
-[prog.cob:10: warning: '01' should start in Area A
+[prog.cob:10: error: '01' should start in Area A
 prog.cob:11: error: optional period used
 prog.cob: in section 'MAIN-1':
 prog.cob:17: error: optional period used
 prog.cob: in section 'MAIN-2':
-prog.cob:18: warning: start of statement in Area A
-prog.cob:19: warning: start of statement in Area A
+prog.cob:18: error: start of statement in Area A
+prog.cob:19: error: start of statement in Area A
 ])
-AT_CHECK([$COMPILE_ONLY -std=cobol85 -fmissing-period=ok prog.cob], [0], [],
-[prog.cob:10: warning: '01' should start in Area A
+AT_CHECK([$COMPILE_ONLY -std=cobol85 -fmissing-period=ok prog.cob], [1], [],
+[prog.cob:10: error: '01' should start in Area A
 prog.cob: in section 'MAIN-2':
-prog.cob:18: warning: start of statement in Area A
-prog.cob:19: warning: start of statement in Area A
+prog.cob:18: error: start of statement in Area A
+prog.cob:19: error: start of statement in Area A
+])
+AT_CHECK([$COMPILE_ONLY -fformat=cobol85 prog.cob], [1], [],
+[prog.cob:10: error: '01' should start in Area A
+prog.cob:11: warning: optional period used
+prog.cob: in section 'MAIN-1':
+prog.cob:17: warning: optional period used
+prog.cob: in section 'MAIN-2':
+prog.cob:18: error: start of statement in Area A
+prog.cob:19: error: start of statement in Area A
 ])
 
 AT_CLEANUP
 
 
 AT_SETUP([Optional dots])
-AT_KEYWORDS([missing-periods])
+AT_KEYWORDS([misc missing-periods])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION  DIVISION
@@ -9217,6 +9222,47 @@ cobol85.cob: in section 'MAIN':
 cobol85.cob:12: warning: optional period used
 cobol85.cob: in paragraph 'P':
 cobol85.cob:14: warning: optional period used
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([AREACHECK])
+AT_KEYWORDS([misc])
+
+AT_DATA([pgm1.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. PGM1.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+       SELECT FILE01 ASSIGN "file01.dat".
+       DATA DIVISION.
+       FILE SECTION.
+       FD FILE01.
+       01 RECORD-FILE01 PIC X(50).
+       WORKING-STORAGE SECTION.
+       01 W-DATA01.
+      * 02 items may still lie in Area A for now:
+       02 W-CH01       PIC X(10).
+       PROCEDURE DIVISION.
+       MAIN-PROCEDURE.
+       DISPLAY "Hello"
+           STOP RUN
+           .
+       END PROGRAM PGM1.
+])
+
+AT_CHECK([$COMPILE_ONLY -std=mvs pgm1.cob], [0], [],
+[pgm1.cob:7: warning: start of statement in Area A
+pgm1.cob: in paragraph 'MAIN-PROCEDURE':
+pgm1.cob:18: warning: start of statement in Area A
+])
+
+AT_CHECK([$COMPILE_ONLY -std=mvs-strict pgm1.cob], [1], [],
+[pgm1.cob:7: error: start of statement in Area A
+pgm1.cob: in paragraph 'MAIN-PROCEDURE':
+pgm1.cob:18: error: start of statement in Area A
 ])
 
 AT_CLEANUP

@@ -2127,7 +2127,9 @@ extern enum cb_warn_val		cb_warning_dialect_x (const enum cb_support, cb_tree, c
 extern void		cb_note_x (const enum cb_warn_opt, cb_tree, const char *, ...) COB_A_FORMAT34;
 extern void		cb_note (const enum cb_warn_opt, const int, const char *, ...) COB_A_FORMAT34;
 extern void		cb_inclusion_note (const char *, int);
-extern enum cb_warn_val		cb_error_x (cb_tree, const char *, ...) COB_A_FORMAT23;
+extern enum cb_warn_val	cb_error_x (cb_tree, const char *, ...) COB_A_FORMAT23;
+extern unsigned int	cb_syntax_check (const char *, ...) COB_A_FORMAT12;
+extern unsigned int	cb_syntax_check_x (cb_tree, const char *, ...) COB_A_FORMAT23;
 extern unsigned int	cb_verify (const enum cb_support, const char *);
 extern unsigned int	cb_verify_x (const cb_tree, const enum cb_support,
 				     const char *);

@@ -328,23 +328,6 @@ MAYBE_AREA_A	[ ]?#?
 	return CALL_DIRECTIVE;
 }
 
-^{MAYBE_AREA_A}[ ]*">>"[ ]?"AREACHECK"	|
-^{MAYBE_AREA_A}[ ]*">>"[ ]?"AREA-CHECK"	{
-	if (cobc_has_areacheck_directive ("AREACHECK")) {
-		fprintf (ppout, "#AREACHECK\n");
-	}
-	skip_to_eol ();
-}
-
-^{MAYBE_AREA_A}[ ]*">>"[ ]?"NOAREACHECK"	|
-^{MAYBE_AREA_A}[ ]*">>"[ ]?"NO-AREACHECK"	|
-^{MAYBE_AREA_A}[ ]*">>"[ ]?"NO-AREA-CHECK"	{
-	if (cobc_has_areacheck_directive ("NOAREACHECK")) {
-		fprintf (ppout, "#NOAREACHECK\n");
-	}
-	skip_to_eol ();
-}
-
 ^{MAYBE_AREA_A}[ ]*">>"[ ]*\n		{
 	/* empty 2002+ style directive */
 	cb_plex_warning (COBC_WARN_FILLER, newline_count,

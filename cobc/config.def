@@ -190,8 +190,12 @@ CB_CONFIG_BOOLEAN (cb_xml_parse_xmlss, "xml-parse-xmlss",
 	"XML PARSE XMLSS")
 
 CB_CONFIG_BOOLEAN (cb_areacheck, "areacheck",
-	_("check contents of Area A in PROCEDURE DIVISION "
-	  "(when reference format supports Area A enforcement)"))
+	_("check contents of Area A (when reference format supports Area A enforcement),\n"
+	  "                        enabled checks include:\n"
+	  "                        * division, section, paragraph names, level indicators (FD, SD, RD, and CD),\n"
+	  "                          and toplevel numbers (01 and 77) must start in Area A;\n"
+	  "                        * statements must not start in Area A; and\n"
+	  "                        * separator periods must not be within Area A."))
 
 /* Support flags */
 

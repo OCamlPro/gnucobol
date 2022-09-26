@@ -311,15 +311,17 @@ static int			backup_source_line = 0;
 /* Area A enforcement */
 
 static COB_INLINE void
-check_area_a (cb_tree stmt) {
+check_area_a (cb_tree word) {
 	if (!cobc_in_area_a && cobc_areacheck) {
-		if (stmt)
-			cb_warning_x (COBC_WARN_FILLER, stmt,
-				      _("'%s' should start in Area A"),
-				      CB_NAME (stmt));
-		else
-			cb_warning (COBC_WARN_FILLER,
-				    _("statement should start in Area A"));
+		(void) cb_syntax_check_x (word, _("'%s' should start in Area A"),
+					  CB_NAME (word));
+	}
+}
+
+static COB_INLINE void
+check_area_a_of (const char * const item) {
+	if (!cobc_in_area_a && cobc_areacheck) {
+		(void) cb_syntax_check (_("'%s' should start in Area A"), item);
 	}
 }
 
@@ -327,11 +329,9 @@ static COB_INLINE void
 check_non_area_a (cb_tree stmt) {
 	if (cobc_in_area_a && cobc_areacheck) {
 		if (stmt)
-			cb_warning_x (COBC_WARN_FILLER, stmt,
-				      _("start of statement in Area A"));
+			(void) cb_syntax_check_x (stmt, _("start of statement in Area A"));
 		else
-			cb_warning (COBC_WARN_FILLER,
-				    _("start of statement in Area A"));
+			(void) cb_syntax_check (_("start of statement in Area A"));
 	}
 }
 
@@ -654,14 +654,7 @@ setup_use_file (struct cb_file *fileptr)
 static int
 emit_duplicate_clause_message (const char *clause)
 {
-	/* FIXME: replace by a new warning level that is set
-	   to warn/error depending on cb_relaxed_syntax_checks */
-	if (cb_relaxed_syntax_checks) {
-		cb_warning (COBC_WARN_FILLER, _("duplicate %s clause"), clause);
-		return 0;
-	}
-	cb_error (_("duplicate %s clause"), clause);
-	return 1;
+	return cb_syntax_check (_("duplicate %s clause"), clause);
 }
 
 static int
@@ -678,14 +671,9 @@ check_repeated (const char *clause, const cob_flags_t bitval,
 static void
 emit_conflicting_clause_message (const char *clause, const char *conflicting)
 {
-	if (cb_relaxed_syntax_checks) {
-		cb_warning (COBC_WARN_FILLER, _("cannot specify both %s and %s; %s is ignored"),
-			clause, conflicting, clause);
-	} else {
-		cb_error (_("cannot specify both %s and %s"),
-			clause, conflicting);
+	if (cb_syntax_check (_("cannot specify both %s and %s"), clause, conflicting)) {
+		cb_note (COBC_WARN_FILLER, 0, _("%s is ignored"), clause);
 	}
-
 }
 
 
@@ -732,12 +720,10 @@ setup_occurs_min_max (cb_tree occurs_min, cb_tree occurs_max)
 		if (occurs_max != cb_int0) {
 			current_field->occurs_max = cb_get_int (occurs_max);
 			if (!current_field->depending) {
-				if (cb_relaxed_syntax_checks) {
-					cb_warning (COBC_WARN_FILLER, _("TO phrase without DEPENDING phrase"));
-					cb_warning (COBC_WARN_FILLER, _("maximum number of occurrences assumed to be exact number"));
+				if (cb_syntax_check (_("TO phrase without DEPENDING phrase"))) {
+					cb_note (COBC_WARN_FILLER, 0,
+						 _("maximum number of occurrences assumed to be exact number"));
 					current_field->occurs_min = 1; /* CHECKME: why using 1 ? */
-				} else {
-					cb_error (_("TO phrase without DEPENDING phrase"));
 				}
 			}
 			if (current_field->occurs_max <= current_field->occurs_min) {
@@ -815,10 +801,8 @@ check_relaxed_syntax (const cob_flags_t lev)
 		break;
 	/* LCOV_EXCL_STOP */
 	}
-	if (cb_relaxed_syntax_checks) {
-		cb_warning (COBC_WARN_FILLER, _("%s header missing - assumed"), s);
-	} else {
-		cb_error (_("%s header missing"), s);
+	if (cb_syntax_check (_("%s header missing"), s)) {
+		cb_note (COBC_WARN_FILLER, 0, _("%s header assumed"), s);
 	}
 }
 
@@ -3450,7 +3434,7 @@ end_program_list:
 end_program:
   END_PROGRAM
   {
-	check_area_a ($1);
+	check_area_a_of ("END PROGRAM");
 	backup_current_pos ();
   }
   end_program_name _dot
@@ -3567,7 +3551,7 @@ function_prototype:
 
 _prototype_procedure_division_header:
   /* empty */
-| PROCEDURE { check_area_a ($1); }
+| PROCEDURE { check_area_a_of ("PROCEDURE DIVISION"); }
   DIVISION _procedure_using_chaining _procedure_returning _dot
   {
 	cb_validate_parameters_and_returning (current_program, $4);
@@ -3579,7 +3563,7 @@ _prototype_procedure_division_header:
 
 /* CONTROL DIVISION (GCOS extension) */
 
-control: CONTROL { check_area_a ($1); };
+control: CONTROL { check_area_a_of ("CONTROL DIVISION"); };
 _control_division:
   /* empty */
 | control DIVISION _dot
@@ -3591,7 +3575,7 @@ _control_division:
 
 _default_section:
   /* empty */
-| DEFAULT { check_area_a ($1); }
+| DEFAULT { check_area_a_of ("DEFAULT SECTION"); }
   SECTION TOK_DOT
   _default_clauses
   {
@@ -3650,7 +3634,7 @@ _identification_header:
 ;
 
 identification_header:
-  identification_or_id { check_area_a ($1); }
+  identification_or_id { check_area_a_of ("IDENTIFICATION DIVISION"); }
   DIVISION _dot
   {
 	setup_program_start ();
@@ -3919,7 +3903,7 @@ _environment_header:
 | environment_header
 ;
 
-environment: ENVIRONMENT { check_area_a ($1); };
+environment: ENVIRONMENT { check_area_a_of ("ENVIRONMENT DIVISION"); };
 environment_header:
   environment DIVISION _dot
   {
@@ -3938,7 +3922,7 @@ _configuration_header:
 | configuration_header
 ;
 
-configuration: CONFIGURATION { check_area_a ($1); };
+configuration: CONFIGURATION { check_area_a_of ("CONFIGURATION SECTION"); };
 configuration_header:
   configuration SECTION _dot
   {
@@ -5057,7 +5041,7 @@ _input_output_section:
   _i_o_control
 ;
 
-input_output: INPUT_OUTPUT { check_area_a ($1); };
+input_output: INPUT_OUTPUT { check_area_a_of ("INPUT-OUTPUT SECTION"); };
 _input_output_header:
 | input_output SECTION _dot
   {
@@ -5082,7 +5066,8 @@ _file_control_sequence:
 ;
 
 file_control_entry:
-  SELECT flag_optional undefined_word
+  SELECT { check_non_area_a ($1); }
+  flag_optional undefined_word
   {
 	char	buff[COB_MINI_BUFF];
 
@@ -5090,10 +5075,10 @@ file_control_entry:
 			       COBC_HD_INPUT_OUTPUT_SECTION,
 			       COBC_HD_FILE_CONTROL, 0);
 	check_duplicate = 0;
-	if (CB_VALID_TREE ($3)) {
+	if (CB_VALID_TREE ($4)) {
 		/* Build new file */
-		current_file = build_file ($3);
-		current_file->optional = CB_INTEGER ($2)->val;
+		current_file = build_file ($4);
+		current_file->optional = CB_INTEGER ($3)->val;
 
 		/* Add file to current program list */
 		CB_ADD_TO_CHAIN (CB_TREE (current_file),
@@ -5112,7 +5097,7 @@ file_control_entry:
   _select_clauses_or_error
   {
 	cobc_cs_check = 0;
-	if (CB_VALID_TREE ($3)) {
+	if (CB_VALID_TREE ($4)) {
 		if (current_file->organization == COB_ORG_INDEXED
 		    && key_type == RELATIVE_KEY) {
 			cb_error_x (current_file->key,
@@ -5123,7 +5108,7 @@ file_control_entry:
 				    _("cannot use RECORD KEY clause on RELATIVE files"));
 		}
 
-		validate_file (current_file, $3);
+		validate_file (current_file, $4);
 	}
   }
 ;
@@ -6154,7 +6139,7 @@ _data_division_header:
 | data_division_header
 ;
 
-data: DATA { check_area_a ($1); };
+data: DATA { check_area_a_of ("DATA DIVISION"); };
 data_division_header:
   data DIVISION _dot
   {
@@ -6164,7 +6149,7 @@ data_division_header:
 
 /* FILE SECTION */
 
-tok_file: TOK_FILE { check_area_a ($1); };
+tok_file: TOK_FILE { check_area_a_of ("FILE SECTION"); };
 _file_section_header:
 | tok_file SECTION _dot
   {
@@ -6231,12 +6216,12 @@ file_description_entry:
 file_type:
   FD
   {
-	check_area_a ($1);
+	check_area_a_of ("FD");
 	$$ = cb_int0;
   }
 | SD
   {
-	check_area_a ($1);
+	check_area_a_of ("SD");
 	$$ = cb_int1;
   }
 ;
@@ -6585,7 +6570,7 @@ rep_name_list:
 
 /* COMMUNICATION SECTION */
 
-communication: COMMUNICATION { check_area_a ($1); };
+communication: COMMUNICATION { check_area_a_of ("COMMUNICATION SECTION"); };
 _communication_section:
 | communication SECTION _dot
   {
@@ -6625,8 +6610,9 @@ communication_description:
 
 /* File description entry */
 
+cd: CD { check_area_a_of ("CD"); };
 communication_description_entry:
-  CD undefined_word
+  cd undefined_word
   {
 	/* CD internally defines a new file */
 	if (CB_VALID_TREE ($2)) {
@@ -6733,7 +6719,7 @@ unnamed_i_o_cd_clauses:
 
 /* WORKING-STORAGE SECTION */
 
-working_storage: WORKING_STORAGE { check_area_a ($1); };
+working_storage: WORKING_STORAGE { check_area_a_of ("WORKING-STORAGE SECTION"); };
 _working_storage_section:
 | working_storage SECTION _dot
   {
@@ -6819,7 +6805,6 @@ level_number:
 	switch (level) {
 	case 1:
 	case 77:
-	case 78:
 		check_area_a ($2);
 		break;
 	default:
@@ -7949,11 +7934,7 @@ _occurs_keys_and_indexed:
 | occurs_keys occurs_indexed
 | occurs_indexed
   {
-	if (!cb_relaxed_syntax_checks) {
-		cb_error (_("INDEXED should follow ASCENDING/DESCENDING"));
-	} else {
-		cb_warning (cb_warn_additional, _("INDEXED should follow ASCENDING/DESCENDING"));
-	}
+	(void) cb_syntax_check (_("INDEXED should follow ASCENDING/DESCENDING"));
   }
   occurs_keys
 | occurs_indexed
@@ -8221,7 +8202,7 @@ identified_by_clause:
 
 /* LOCAL-STORAGE SECTION */
 
-local_storage: LOCAL_STORAGE { check_area_a ($1); };
+local_storage: LOCAL_STORAGE { check_area_a_of ("LOCAL-STORAGE SECTION"); };
 _local_storage_section:
 | local_storage SECTION _dot
   {
@@ -8245,7 +8226,7 @@ _local_storage_section:
 
 /* LINKAGE SECTION */
 
-linkage: LINKAGE { check_area_a ($1); };
+linkage: LINKAGE { check_area_a_of ("LINKAGE SECTION"); };
 _linkage_section:
 | linkage SECTION _dot
   {
@@ -8264,7 +8245,7 @@ _linkage_section:
 /* REPORT SECTION */
 
 _report_section:
-| REPORT { check_area_a ($1); }
+| REPORT { check_area_a_of ("REPORT SECTION"); }
   SECTION _dot
   {
 	header_check |= COBC_HD_REPORT_SECTION;
@@ -8283,7 +8264,7 @@ _report_description_sequence:
 /* RD report description */
 
 report_description:
-  RD { check_area_a ($1); }
+  RD { check_area_a_of ("RD"); }
   report_name
   {
 	if (CB_INVALID_TREE ($3)) {
@@ -9000,7 +8981,7 @@ group_indicate_clause:
 /* SCREEN SECTION */
 
 _screen_section:
-| SCREEN { check_area_a ($1); }
+| SCREEN { check_area_a_of ("SCREEN SECTION"); }
   SECTION _dot
   {
 	cobc_cs_check = CB_CS_SCREEN;
@@ -10121,7 +10102,7 @@ _procedure_division:
 ;
 
 procedure_division:
-  PROCEDURE { check_area_a ($1); }
+  PROCEDURE { check_area_a_of ("PROCEDURE DIVISION"); }
   DIVISION
   {
 	current_section = NULL;
@@ -10463,16 +10444,13 @@ _procedure_returning:
 _procedure_declaratives:
 | DECLARATIVES
   {
-	check_area_a ($1);	/* "DECLARATIVES" should be in Area A */
+	check_area_a_of ("DECLARATIVES");
 	in_declaratives = 1;
 	emit_statement (cb_build_comment ("DECLARATIVES"));
   }
   _dot_or_else_area_a
   _procedure_list
-  END
-  {
-	check_area_a ($5);	/* "END" should be in Area A */
-  }
+  END { check_area_a_of ("END DECLARATIVES"); }
   DECLARATIVES
   {
 	if (needs_field_debug) {
