@@ -6827,7 +6827,6 @@ level_number:
 	switch (level) {
 	case 1:
 	case 77:
-	case 78:
 		check_area_a ($2);
 		break;
 	default:
