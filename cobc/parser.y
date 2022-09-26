@@ -623,28 +623,6 @@ terminator_clear (cb_tree stmt, const unsigned int termid)
 	}
 }
 
-static int
-literal_value (cb_tree x)
-{
-	if (x == cb_space) {
-		return ' ';
-	} else if (x == cb_zero) {
-		return '0';
-	} else if (x == cb_quote) {
-		return cb_flag_apostrophe ? '\'' : '"';
-	} else if (x == cb_null) {
-		return 0;
-	} else if (x == cb_low) {
-		return 0;
-	} else if (x == cb_high) {
-		return 255;
-	} else if (CB_TREE_CLASS (x) == CB_CLASS_NUMERIC) {
-		return cb_get_int (x);
-	} else {
-		return CB_LITERAL (x)->data[0];
-	}
-}
-
 static void
 setup_use_file (struct cb_file *fileptr)
 {
@@ -4764,7 +4742,7 @@ class_item:
 	    CB_LITERAL_P ($3) && CB_LITERAL ($3)->size != 1) {
 		cb_error (_("CLASS literal with THRU must have size 1"));
 	}
-	if (literal_value ($1) <= literal_value ($3)) {
+	if (cb_literal_value ($1) <= cb_literal_value ($3)) {
 		$$ = CB_BUILD_PAIR ($1, $3);
 	} else {
 		$$ = CB_BUILD_PAIR ($3, $1);
@@ -5500,11 +5478,11 @@ _suppress_clause:
   }
 | SUPPRESS WHEN ALL basic_value
   {
-	$$ = cb_int (literal_value ($4));
+	$$ = cb_int (cb_literal_value ($4));
   }
 | SUPPRESS WHEN space_or_zero
   {
-	$$ = cb_int (literal_value ($3));
+	$$ = cb_int (cb_literal_value ($3));
   }
 ;
 

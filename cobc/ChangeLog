@@ -1,4 +1,23 @@
 
+2022-09-26  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (cobc_abort_msg): use negative cb_source_line to reference
+	  last known position during codegen
+	* codegen.c (output_stmt): store source reference if generated
+	  statement has one attached
+	* codegen.c (output_standard_includes): fix bug #708 missing math
+	  header inclusion if first program has no decimal
+	* codegen.c (output_data, output_call): fix bug #855 CALL generation
+	  when using figurative constants
+	* codegen.c: correct use of CB_PREFIX_DECIMAL -> generated code now has
+	  "d_" prefix instead of "d" in all places
+	* cobc.h, tree.h: moved some function declarations
+	* tree.c, tree.h (cb_literal_value), codegen.c, parser.y: moved double
+	  and identical defined function literal_value to a single place
+	* codegen.c, tree.h, cobc.c: renamed cb_init_codegen
+	  to clear_local_codegen_vars
+	* cobc.c: ask user for reporting reallocation memory issues
+
 2022-09-20  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y (examine_format_variant): fix compiler warning

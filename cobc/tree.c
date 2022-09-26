@@ -4034,6 +4034,29 @@ cb_build_symbolic_chars (const cb_tree sym_list, const cb_tree alphabet)
 	}
 }
 
+/* resolve literal value from tree as integer */
+int
+cb_literal_value (cb_tree x)
+{
+	if (x == cb_space) {
+		return ' ';
+	} else if (x == cb_zero) {
+		return '0';
+	} else if (x == cb_quote) {
+		return cb_flag_apostrophe ? '\'' : '"';
+	} else if (x == cb_norm_low) {
+		return 0;
+	} else if (x == cb_norm_high) {
+		return 255;
+	} else if (x == cb_null) {
+		return 0;
+	} else if (CB_TREE_CLASS (x) == CB_CLASS_NUMERIC) {
+		return cb_get_int (x) - 1;
+	} else {
+		return CB_LITERAL (x)->data[0];
+	}
+}
+
 /* Report */
 
 struct cb_report *
