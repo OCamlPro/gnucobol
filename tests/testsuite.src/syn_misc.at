@@ -9159,6 +9159,15 @@ prog.cob: in section 'MAIN-2':
 prog.cob:18: error: start of statement in Area A
 prog.cob:19: error: start of statement in Area A
 ])
+AT_CHECK([$COMPILE_ONLY -fformat=cobol85 prog.cob], [1], [],
+[prog.cob:10: error: '01' should start in Area A
+prog.cob:11: warning: optional period used
+prog.cob: in section 'MAIN-1':
+prog.cob:17: warning: optional period used
+prog.cob: in section 'MAIN-2':
+prog.cob:18: error: start of statement in Area A
+prog.cob:19: error: start of statement in Area A
+])
 
 AT_CLEANUP
 
