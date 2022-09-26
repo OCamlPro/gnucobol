@@ -3573,7 +3573,7 @@ function_prototype:
 
 _prototype_procedure_division_header:
   /* empty */
-| PROCEDURE { check_area_a_of ("PROCEDURE"); }
+| PROCEDURE { check_area_a_of ("PROCEDURE DIVISION"); }
   DIVISION _procedure_using_chaining _procedure_returning _dot
   {
 	cb_validate_parameters_and_returning (current_program, $4);
@@ -3585,7 +3585,7 @@ _prototype_procedure_division_header:
 
 /* CONTROL DIVISION (GCOS extension) */
 
-control: CONTROL { check_area_a_of ("CONTROL"); };
+control: CONTROL { check_area_a_of ("CONTROL DIVISION"); };
 _control_division:
   /* empty */
 | control DIVISION _dot
@@ -3597,7 +3597,7 @@ _control_division:
 
 _default_section:
   /* empty */
-| DEFAULT { check_area_a_of ("DEFAULT"); }
+| DEFAULT { check_area_a_of ("DEFAULT SECTION"); }
   SECTION TOK_DOT
   _default_clauses
   {
@@ -3656,7 +3656,7 @@ _identification_header:
 ;
 
 identification_header:
-  identification_or_id { check_area_a_of ("IDENTIFICATION"); }
+  identification_or_id { check_area_a_of ("IDENTIFICATION DIVISION"); }
   DIVISION _dot
   {
 	setup_program_start ();
@@ -3925,7 +3925,7 @@ _environment_header:
 | environment_header
 ;
 
-environment: ENVIRONMENT { check_area_a_of ("ENVIRONMENT"); };
+environment: ENVIRONMENT { check_area_a_of ("ENVIRONMENT DIVISION"); };
 environment_header:
   environment DIVISION _dot
   {
@@ -3944,7 +3944,7 @@ _configuration_header:
 | configuration_header
 ;
 
-configuration: CONFIGURATION { check_area_a_of ("CONFIGURATION"); };
+configuration: CONFIGURATION { check_area_a_of ("CONFIGURATION SECTION"); };
 configuration_header:
   configuration SECTION _dot
   {
@@ -5063,7 +5063,7 @@ _input_output_section:
   _i_o_control
 ;
 
-input_output: INPUT_OUTPUT { check_area_a_of ("INPUT-OUTPUT"); };
+input_output: INPUT_OUTPUT { check_area_a_of ("INPUT-OUTPUT SECTION"); };
 _input_output_header:
 | input_output SECTION _dot
   {
@@ -6161,7 +6161,7 @@ _data_division_header:
 | data_division_header
 ;
 
-data: DATA { check_area_a_of ("DATA"); };
+data: DATA { check_area_a_of ("DATA DIVISION"); };
 data_division_header:
   data DIVISION _dot
   {
@@ -6171,7 +6171,7 @@ data_division_header:
 
 /* FILE SECTION */
 
-tok_file: TOK_FILE { check_area_a_of ("FILE"); };
+tok_file: TOK_FILE { check_area_a_of ("FILE SECTION"); };
 _file_section_header:
 | tok_file SECTION _dot
   {
@@ -6592,7 +6592,7 @@ rep_name_list:
 
 /* COMMUNICATION SECTION */
 
-communication: COMMUNICATION { check_area_a_of ("COMMUNICATION"); };
+communication: COMMUNICATION { check_area_a_of ("COMMUNICATION SECTION"); };
 _communication_section:
 | communication SECTION _dot
   {
@@ -6741,7 +6741,7 @@ unnamed_i_o_cd_clauses:
 
 /* WORKING-STORAGE SECTION */
 
-working_storage: WORKING_STORAGE { check_area_a_of ("WORKING-STORAGE"); };
+working_storage: WORKING_STORAGE { check_area_a_of ("WORKING-STORAGE SECTION"); };
 _working_storage_section:
 | working_storage SECTION _dot
   {
@@ -8224,7 +8224,7 @@ identified_by_clause:
 
 /* LOCAL-STORAGE SECTION */
 
-local_storage: LOCAL_STORAGE { check_area_a_of ("LOCAL-STORAGE"); };
+local_storage: LOCAL_STORAGE { check_area_a_of ("LOCAL-STORAGE SECTION"); };
 _local_storage_section:
 | local_storage SECTION _dot
   {
@@ -8248,7 +8248,7 @@ _local_storage_section:
 
 /* LINKAGE SECTION */
 
-linkage: LINKAGE { check_area_a_of ("LINKAGE"); };
+linkage: LINKAGE { check_area_a_of ("LINKAGE SECTION"); };
 _linkage_section:
 | linkage SECTION _dot
   {
@@ -8267,7 +8267,7 @@ _linkage_section:
 /* REPORT SECTION */
 
 _report_section:
-| REPORT { check_area_a_of ("REPORT"); }
+| REPORT { check_area_a_of ("REPORT SECTION"); }
   SECTION _dot
   {
 	header_check |= COBC_HD_REPORT_SECTION;
@@ -9003,7 +9003,7 @@ group_indicate_clause:
 /* SCREEN SECTION */
 
 _screen_section:
-| SCREEN { check_area_a_of ("SCREEN"); }
+| SCREEN { check_area_a_of ("SCREEN SECTION"); }
   SECTION _dot
   {
 	cobc_cs_check = CB_CS_SCREEN;
@@ -10124,7 +10124,7 @@ _procedure_division:
 ;
 
 procedure_division:
-  PROCEDURE { check_area_a_of ("PROCEDURE"); }
+  PROCEDURE { check_area_a_of ("PROCEDURE DIVISION"); }
   DIVISION
   {
 	current_section = NULL;
@@ -10472,7 +10472,7 @@ _procedure_declaratives:
   }
   _dot_or_else_area_a
   _procedure_list
-  END { check_area_a_of ("END"); }
+  END { check_area_a_of ("END DECLARATIVES"); }
   DECLARATIVES
   {
 	if (needs_field_debug) {
