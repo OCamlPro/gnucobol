@@ -6644,7 +6644,7 @@ communication_description:
 
 /* File description entry */
 
-cd: CD { check_non_area_a ($1); };
+cd: CD { check_area_a ($1); };
 communication_description_entry:
   cd undefined_word
   {
