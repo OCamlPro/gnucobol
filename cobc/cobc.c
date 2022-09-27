@@ -272,7 +272,7 @@ int			errorcount = 0;
 int			warningcount = 0;
 int			fatal_errors_flag = 0;
 int			no_physical_cancel = 0;
-int			cb_source_line = 0;
+int			cb_source_line = 0;	/* current source line, when negative: in codegen */
 int			cb_saveargc = 0;
 unsigned int	cobc_gen_listing = 0;
 unsigned int	cb_correct_program_order = 0;
@@ -722,7 +722,7 @@ cobc_free_mem (void)
 		cobc_free (repsl);
 	}
 	cobc_mainmem_base = NULL;
-	cb_init_codegen ();
+	clear_local_codegen_vars ();
 	ppp_clear_lists ();
 }
 
@@ -1075,7 +1075,7 @@ cobc_main_realloc (void *prevptr, const size_t size)
 	/* LCOV_EXCL_START */
 	if (unlikely (!curr)) {
 		cobc_err_msg (_("attempt to reallocate non-allocated memory"));
-		cobc_abort_terminate (0);
+		cobc_abort_terminate (1);
 	}
 	/* LCOV_EXCL_STOP */
 	m->next = curr->next;
@@ -1191,7 +1191,7 @@ cobc_parse_realloc (void *prevptr, const size_t size)
 	/* LCOV_EXCL_START */
 	if (unlikely (!curr)) {
 		cobc_err_msg (_("attempt to reallocate non-allocated memory"));
-		cobc_abort_terminate (0);
+		cobc_abort_terminate (1);
 	}
 	/* LCOV_EXCL_STOP */
 	m->next = curr->next;
@@ -2199,13 +2199,18 @@ cobc_abort_msg (void)
 		} else {
 			prog_type = prog_id = (char *)_("unknown");
 		}
-		if (!cb_source_line) {
-			cobc_err_msg (_("aborting codegen for %s (%s: %s)"),
-				cb_source_file, prog_type, prog_id);
-		} else {
+		if (cb_source_line > 0) {
 			cobc_err_msg (_("aborting compile of %s at line %d (%s: %s)"),
 				cb_source_file, cb_source_line, prog_type, prog_id);
+		/* LCOV_EXCL_START */
+		} else if (cb_source_line) {
+			cobc_err_msg (_("aborting codegen for %s, last statement at line %d (%s: %s)"),
+				cb_source_file, -cb_source_line, prog_type, prog_id);
+		} else {
+			cobc_err_msg (_("aborting codegen for %s (%s: %s)"),
+				cb_source_file, prog_type, prog_id);
 		}
+		/* LCOV_EXCL_STOP */
 	} else {
 		cobc_err_msg (_("aborting"));
 	}
@@ -8614,7 +8619,7 @@ process_file (struct filename *fn, int status)
 			cobc_free (mptrt);
 		}
 		cobc_parsemem_base = NULL;
-		cb_init_codegen ();
+		clear_local_codegen_vars ();
 		/* Restore default flags */
 		cb_odoslide = save_odoslide;
 	} else {

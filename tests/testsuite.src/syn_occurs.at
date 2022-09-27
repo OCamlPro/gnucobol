@@ -393,7 +393,7 @@ prog.cob:12: error: 'MISSING' is not defined
 AT_CHECK([$COMPILE_ONLY -frelax-syntax prog.cob], [1], [],
 [prog.cob:8: warning: OCCURS DEPENDING ON without TO phrase used
 prog.cob:10: warning: TO phrase without DEPENDING phrase
-prog.cob:10: warning: maximum number of occurrences assumed to be exact number
+prog.cob:10: note: maximum number of occurrences assumed to be exact number
 prog.cob:12: error: 'MISSING' is not defined
 ])
 

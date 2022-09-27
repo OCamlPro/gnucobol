@@ -1627,7 +1627,7 @@ cb_build_generic_register (const char *name, const char *external_definition,
 		}
 	}
 	/* CHECKME: Is PIC calculated from VALUE later on if empty? */
-	
+
 	/* handle ANY LENGTH / ANY NUMERIC (automatic: read-only) */
 	p = strstr (definition, "ANY ");
 	if (p) {
@@ -2145,12 +2145,9 @@ cb_check_word_length (unsigned int length, const char *word)
 			/* Absolute limit */
 			cb_error (_("word length exceeds maximum of %d characters: '%s'"),
 				  COB_MAX_WORDLEN, word);
-		} else if (!cb_relaxed_syntax_checks) {
-			cb_error (_("word length exceeds %d characters: '%s'"),
-				  cb_word_length, word);
 		} else {
-			cb_warning (cb_warn_additional, _("word length exceeds %d characters: '%s'"),
-				  cb_word_length, word);
+			(void) cb_syntax_check (_("word length exceeds %d characters: '%s'"),
+						cb_word_length, word);
 		}
 	}
 }
@@ -2543,14 +2540,10 @@ cb_build_identifier (cb_tree x, const int subchk)
 				if (CB_LITERAL_P (sub)) {
 					n = cb_get_int (sub);
 					if (n < 1 || (!p->flag_unbounded && n > p->occurs_max)) {
-						if (cb_relaxed_syntax_checks) {
-							cb_warning_x (COBC_WARN_FILLER, x,
-								_("subscript of '%s' out of bounds: %d"),
-								name, n);
+						if (cb_syntax_check_x (x, _("subscript of '%s' out of bounds: %d"),
+								       name, n)) {
 							continue;	/* *skip runtime check, as MF does */
 						}
-						cb_error_x (x, _("subscript of '%s' out of bounds: %d"),
-								name, n);
 					}
 				}
 
@@ -7703,7 +7696,7 @@ cb_emit_accept (cb_tree var, cb_tree pos, struct cb_attr_struct *attr_ptr)
 				cobc_xref_set_receiving (current_program->crt_status);
 			}
 		}
-		if ((CB_REF_OR_FIELD_P (var)) 
+		if ((CB_REF_OR_FIELD_P (var))
 		 && CB_FIELD_PTR (var)->storage == CB_STORAGE_SCREEN) {
 			output_screen_from (CB_FIELD_PTR (var), 0);
 			gen_screen_ptr = 1;

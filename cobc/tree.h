@@ -2083,6 +2083,7 @@ extern cb_tree		cb_build_ml_tree (struct cb_field *, const int,
 					   cb_tree);
 extern cb_tree		cb_build_ml_suppress_checks (struct cb_ml_generate_tree *);
 
+extern int			cb_literal_value (cb_tree);
 
 /* parser.y */
 extern cb_tree		cobc_printer_node;
@@ -2126,7 +2127,9 @@ extern enum cb_warn_val		cb_warning_dialect_x (const enum cb_support, cb_tree, c
 extern void		cb_note_x (const enum cb_warn_opt, cb_tree, const char *, ...) COB_A_FORMAT34;
 extern void		cb_note (const enum cb_warn_opt, const int, const char *, ...) COB_A_FORMAT34;
 extern void		cb_inclusion_note (const char *, int);
-extern enum cb_warn_val		cb_error_x (cb_tree, const char *, ...) COB_A_FORMAT23;
+extern enum cb_warn_val	cb_error_x (cb_tree, const char *, ...) COB_A_FORMAT23;
+extern unsigned int	cb_syntax_check (const char *, ...) COB_A_FORMAT12;
+extern unsigned int	cb_syntax_check_x (cb_tree, const char *, ...) COB_A_FORMAT23;
 extern unsigned int	cb_verify (const enum cb_support, const char *);
 extern unsigned int	cb_verify_x (const cb_tree, const enum cb_support,
 				     const char *);
@@ -2416,9 +2419,12 @@ extern cb_tree		cobc_tree_cast_check (const cb_tree, const char *,
 					      const int, const enum cb_tag);
 #endif
 
+/* codeoptim.c */
+extern void		cob_gen_optim (const enum cb_optim);
 
 /* codegen.c */
 extern void		codegen (struct cb_program *, const char *);
+extern void		clear_local_codegen_vars (void);
 extern int		cb_wants_dump_comments;	/* likely to be removed later */
 
 /* scanner.l */
@@ -2433,6 +2439,10 @@ extern struct cb_program	*cb_find_defined_program_by_id (const char *);
 
 extern void		cb_validate_parameters_and_returning (struct cb_program *, cb_tree);
 extern void		cb_check_definition_matches_prototype (struct cb_program *);
+
+/* parser (in scanner.l) */
+extern void		ylex_clear_all (void);
+extern void		ylex_call_destroy (void);
 
 /* cobc.c */
 #ifndef COB_EXTERNAL_XREF

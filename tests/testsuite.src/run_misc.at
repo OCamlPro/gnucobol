@@ -876,22 +876,28 @@ AT_CLEANUP
 
 ## OCCURS clause
 
-AT_SETUP([Level 01 subscripts])
-AT_KEYWORDS([runmisc])
+AT_SETUP([OCCURS on level 01])
+AT_KEYWORDS([runmisc VALUE SET ADDRESS])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       01 X             PIC X OCCURS 10.
+       01 X             PIC X OCCURS 10 VALUE "A".
+       LINKAGE SECTION.
+       01 X-ALL         PIC X(10).
        PROCEDURE        DIVISION.
+           INITIALIZE   X(1) X(3) X(5) X(7)
+           MOVE ZERO TO X(2) X(4) X(6) X(8)
+           SET ADDRESS OF X-ALL TO ADDRESS OF X(1)
+           IF X-ALL NOT = " 0 0 0 0AA"
+              DISPLAY X-ALL UPON SYSERR
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY -std=cobol2014 prog.cob], [1], [],
-[prog.cob:6: error: level 01 item 'X' cannot have a OCCURS clause
-])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [])
 
 AT_CLEANUP
 
@@ -6173,6 +6179,46 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CHECK([$COMPILE -fnotrunc prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([compilation-group with decimal])
+AT_KEYWORDS([runmisc function numval])
+
+# bug 708 - decimal codegen in generated header when only
+# a later program (nested/contained) has decimals
+
+AT_DATA([prog.cob], [
+       identification division.
+         program-id. cbug.
+       procedure division.
+         mainline.
+           call 'bug'
+           goback
+           .
+       end program cbug.
+      *
+       identification division.
+         program-id. bug.
+       data division.
+         working-storage section.
+           01  pw   pic 9(02).
+           01  px   pic x value '3'.
+       procedure division.
+         mainline.
+           compute pw = function numval(px).
+           if pw <> 3
+              display 'bad calc: ' pw.
+           goback
+           .
+       end program bug.
+])
+
+# we're mostly interested in the codegen, but as we have compiled
+# that we can execute it, too
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
