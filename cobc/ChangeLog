@@ -1,4 +1,21 @@
 
+2022-09-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_stmt): refactored codegen for setting DEBUG-ITEM,
+	  fixing SIGSEGV on USE FOR DEBUGGING with invalid BASED / LINKAGE items
+	* codegen.c (output_debug_stmts): added to not write to the DEBUG-ITEM
+	  when code was generated for USE ON DEBUGGING, but the runtime does
+	  not have it enabled
+	* codegen.c (output_perform_call): allow label end to be NULL if
+	  there is no PERFORM THRU, adjusted callers to not pass duplicate labels
+	* codegen.c (output_stmt): limit scope of some variables, allowing
+	  them to be defined as const
+	* parser.y (allocate_body): set target attribute for target identifier
+	* parser.y (target_identifier): refactored to drop duplicate code
+	* typeck.c (cb_build_move): don't set target attribute (duty of caller)
+	* typeck.c (cb_emit_allocate_identifier): allow nonstandard
+	  ALLOCATE linkage-item depending on cb_relaxed_syntax_checks
+
 2022-09-26  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (cobc_abort_msg): use negative cb_source_line to reference

@@ -8035,12 +8035,20 @@ cb_emit_allocate_identifier (cb_tree allocate_identifier, cb_tree returning, con
 	/* syntax checks */
 	if (!(CB_REFERENCE_P(allocate_identifier) &&
 		    CB_FIELD_PTR (allocate_identifier)->flag_item_based)) {
-		cb_error_x (CB_TREE(current_statement),
-			_("target of ALLOCATE is not a BASED item"));
-		return;
-	}
-	if (cb_listing_xref) {
-		cobc_xref_set_receiving (allocate_identifier);
+		if (cb_relaxed_syntax_checks) {
+			if (CB_FIELD_PTR (allocate_identifier)->storage != CB_STORAGE_LINKAGE) {
+				/* Micro Focus still does not allow BASED items,
+				   but allows a LINKAGE item to be the target for ALLOCATE instead */
+				cb_error_x (CB_TREE (current_statement),
+					_("cannot change address of '%s', which is not BASED or a LINKAGE item"),
+					cb_name (allocate_identifier));
+				return;
+			}
+		} else {
+			cb_error_x (CB_TREE(current_statement),
+				_("target of ALLOCATE must have BASED clause"));
+			return;
+		}
 	}
 	if (check_allocate_returning (returning)) {
 		return;
@@ -8051,7 +8059,8 @@ cb_emit_allocate_identifier (cb_tree allocate_identifier, cb_tree returning, con
 	cb_emit (CB_BUILD_FUNCALL_4 ("cob_allocate",
 			CB_BUILD_CAST_ADDR_OF_ADDR (allocate_identifier),
 			returning, cb_build_numeric_literal (0, buff, 0), NULL));
-	/* ALLOCATE identifier INITIALIZED -> implicit INITIALIZE identifier */
+	/* ALLOCATE identifier INITIALIZED -> implicit
+	   INITIALIZE identifier WITH FILLER ALL TO VALUE THEN TO DEFAULT */
 	if (init_flag) {
 		current_statement->not_ex_handler =
 			cb_build_initialize (allocate_identifier, cb_true, NULL, 1, 0, 0);
@@ -11580,9 +11589,6 @@ cb_build_move (cb_tree src, cb_tree dst)
 		dst_ref = x;
 	} else {
 		dst_ref = NULL;
-	}
-	if (cb_listing_xref) {
-		cobc_xref_set_receiving (dst);
 	}
 
 	if (CB_TREE_CLASS (dst) == CB_CLASS_POINTER

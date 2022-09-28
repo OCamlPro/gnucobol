@@ -1,10 +1,17 @@
 
+2022-09-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (cob_file_close): clear file pointer for LINE SEQUENTIAL
+	  files, fixing a later use
+	* fileio.c: EXTFH memory adjustment - use cache_malloc for internally
+	  created select names and free it along with its fcd_file_list entry
+
 2022-09-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c, fileio.c: change COB_LS_VALIDATE to be the default and to
 	  override COB_LS_NULLS
 	* fileio.c: fix bug #853 pass \r to validation / COBOL if it isn't
-	   followed by \n
+	  followed by \n
 	* fileio.c: minor refactor - use of separate FILE *fp
 
 2022-09-13  Simon Sobisch <simonsobisch@gnu.org>

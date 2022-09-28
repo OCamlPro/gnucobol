@@ -202,7 +202,7 @@ static const char		*excp_current_section = NULL;
 static const char		*excp_current_paragraph = NULL;
 static struct cb_program	*current_prog = NULL;    /* program in codegen (only) */
 
-static struct cb_label		*last_section = NULL;
+static const struct cb_label		*last_section = NULL;
 static unsigned char		*litbuff = NULL;
 static int			litsize = 0;
 
@@ -6951,7 +6951,7 @@ output_perform_call (struct cb_label *lb, struct cb_label *le)
 	if (lb == current_prog->all_procedure || lb->flag_is_debug_sect) {
 		output_line ("/* DEBUGGING Callback PERFORM %s */",
 			     (const char *)lb->name);
-	} else if (lb == le) {
+	} else if (le == NULL || lb == le) {
 		output_line ("/* PERFORM %s */", (const char *)lb->name);
 	} else {
 		output_line ("/* PERFORM %s THRU %s */", (const char *)lb->name,
@@ -7001,7 +7001,7 @@ output_perform_call (struct cb_label *lb, struct cb_label *le)
 		output_line ("if (unlikely(frame_ptr == frame_overflow))");
 		output_line ("\tcob_fatal_error (COB_FERROR_STACK);");
 	}
-	output_line ("frame_ptr->perform_through = %d;", le->id);
+	output_line ("frame_ptr->perform_through = %d;", le ? le->id : lb->id);
 	if (!cb_flag_computed_goto) {
 		l = cobc_parse_malloc (sizeof (struct label_list));
 		l->next = label_cache;
@@ -7126,8 +7126,7 @@ output_funcall_debug (cb_tree x)
 				     (const char *)cb_code_field (z)->name, NULL));
 			output_stmt (cb_build_debug (cb_debug_contents,
 						     NULL, z));
-			output_perform_call (cb_code_field (z)->debug_section,
-					     cb_code_field (z)->debug_section);
+			output_perform_call (cb_code_field (z)->debug_section, NULL);
 		}
 		z = p->argv[1];
 		if (CB_REF_OR_FIELD_P (z) &&
@@ -7137,8 +7136,7 @@ output_funcall_debug (cb_tree x)
 				     (const char *)cb_code_field (z)->name, NULL));
 			output_stmt (cb_build_debug (cb_debug_contents,
 						     NULL, z));
-			output_perform_call (cb_code_field (z)->debug_section,
-					     cb_code_field (z)->debug_section);
+			output_perform_call (cb_code_field (z)->debug_section, NULL);
 		}
 		return;
 	}
@@ -7154,8 +7152,7 @@ output_funcall_debug (cb_tree x)
 						     (const char *)cb_code_field (z)->name, NULL));
 					output_stmt (cb_build_debug (cb_debug_contents,
 								     NULL, z));
-					output_perform_call (cb_code_field (z)->debug_section,
-							     cb_code_field (z)->debug_section);
+					output_perform_call (cb_code_field (z)->debug_section, NULL);
 				}
 				i++;
 			}
@@ -7168,8 +7165,7 @@ output_funcall_debug (cb_tree x)
 					     (const char *)cb_code_field (z)->name, NULL));
 				output_stmt (cb_build_debug (cb_debug_contents,
 							     NULL, z));
-				output_perform_call (cb_code_field (z)->debug_section,
-						     cb_code_field (z)->debug_section);
+				output_perform_call (cb_code_field (z)->debug_section, NULL);
 			}
 		}
 	}
@@ -7215,8 +7211,7 @@ output_cond_debug (cb_tree x)
 					     (const char *)cb_code_field (x)->name, NULL));
 				output_stmt (cb_build_debug (cb_debug_contents,
 							     NULL, x));
-				output_perform_call (cb_code_field (x)->debug_section,
-						     cb_code_field (x)->debug_section);
+				output_perform_call (cb_code_field (x)->debug_section, NULL);
 			}
 			break;
 		}
@@ -7270,8 +7265,7 @@ output_perform_until (struct cb_perform *p, cb_tree l)
 					     (const char *)f->name, NULL));
 				output_stmt (cb_build_debug (cb_debug_contents,
 							     NULL, CB_PERFORM_VARYING (CB_VALUE (next))->name));
-				output_perform_call (f->debug_section,
-						     f->debug_section);
+				output_perform_call (f->debug_section, NULL);
 			}
 		}
 
@@ -7357,8 +7351,7 @@ output_perform (struct cb_perform *p)
 						     (const char *)f->name, NULL));
 					output_stmt (cb_build_debug (cb_debug_contents,
 								     NULL, v->name));
-					output_perform_call (f->debug_section,
-							     f->debug_section);
+					output_perform_call (f->debug_section, NULL);
 				}
 			}
 
@@ -7393,8 +7386,7 @@ output_file_error (struct cb_file *pfile)
 	for (l =  current_prog->local_file_list; l; l = CB_CHAIN (l)) {
 		fl = CB_FILE(CB_VALUE (l));
 		if (!strcmp (pfile->name, fl->name)) {
-			output_perform_call (fl->handler,
-					     fl->handler);
+			output_perform_call (fl->handler, NULL);
 			return;
 		}
 	}
@@ -7402,8 +7394,7 @@ output_file_error (struct cb_file *pfile)
 		fl = CB_FILE(CB_VALUE (l));
 		if (!strcmp (pfile->name, fl->name)) {
 			if (fl->handler_prog == current_prog) {
-				output_perform_call (fl->handler,
-						     fl->handler);
+				output_perform_call (fl->handler, NULL);
 			} else {
 				if (fl->handler_prog->nested_level) {
 					output_line ("%s_%d_ (%d);",
@@ -7419,7 +7410,7 @@ output_file_error (struct cb_file *pfile)
 			return;
 		}
 	}
-	output_perform_call (pfile->handler, pfile->handler);
+	output_perform_call (pfile->handler, NULL);
 }
 
 /* GO TO */
@@ -7494,8 +7485,7 @@ output_goto (struct cb_goto *p)
 					     (const char *)f->name, NULL));
 				output_stmt (cb_build_debug (cb_debug_contents,
 							     NULL, p->depending));
-				output_perform_call (f->debug_section,
-						     f->debug_section);
+				output_perform_call (f->debug_section, NULL);
 			}
 		}
 		output_prefix ();
@@ -7564,11 +7554,9 @@ output_alter (struct cb_alter *p)
 		output_stmt (cb_build_debug (cb_debug_contents,
 					     (const char *)l2->name, NULL));
 		if (current_prog->all_procedure) {
-			output_perform_call (current_prog->all_procedure,
-					     current_prog->all_procedure);
+			output_perform_call (current_prog->all_procedure, NULL);
 		} else if (l1->flag_debugging_mode) {
-			output_perform_call (l1->debug_section,
-					     l1->debug_section);
+			output_perform_call (l1->debug_section, NULL);
 		}
 	}
 }
@@ -7704,7 +7692,7 @@ get_ec_code_for_handler (const enum cb_handler_type handler_type)
 }
 
 static void
-output_ferror_stmt (struct cb_statement *stmt)
+output_ferror_stmt (const struct cb_statement *stmt)
 {
 	output_line ("if (unlikely(cob_glob_ptr->cob_exception_code != 0))");
 	output_block_open ();
@@ -7758,7 +7746,7 @@ output_cobol_info (cb_tree x)
 }
 
 static void
-output_section_info (struct cb_label *lp)
+output_section_info (const struct cb_label *lp)
 {
 	if (CB_TREE (lp) == cb_standard_error_handler) {
 		return;
@@ -7910,7 +7898,7 @@ output_source_reference (cb_tree tree, const char *stmt_name)
 }
 
 static void
-output_label_info (cb_tree x, struct cb_label *lp)
+output_label_info (cb_tree x, const struct cb_label *lp)
 {
 	if (lp->flag_dummy_section || lp->flag_dummy_paragraph) {
 		return;
@@ -7953,7 +7941,7 @@ output_label_info (cb_tree x, struct cb_label *lp)
 }
 
 static void
-output_alter_check (struct cb_label *lp)
+output_alter_check (const struct cb_label *lp)
 {
 	struct cb_alter_id	*aid;
 
@@ -8038,7 +8026,7 @@ output_ec_condition_for_handler (const enum cb_handler_type handler_type)
 }
 
 static void
-output_handler (struct cb_statement *stmt)
+output_handler (const struct cb_statement *stmt)
 {
 	if (stmt->file) {
 		output_ferror_stmt (stmt);
@@ -8070,31 +8058,27 @@ output_handler (struct cb_statement *stmt)
  * set the current address of the field at OPEN time
  */
 static void
-output_file_variable (cb_tree x, struct cb_file *fl, struct cb_statement *p, const char *set_field, int always)
+output_file_variable (cb_tree x, const struct cb_file *fl,
+	const struct cb_statement *p, const char *set_field, int always)
 {
-	struct cb_funcall	*c;
 	struct cb_field		*f;
-	int			set_address;
-	if (x == NULL)
-		return;
-	 if (!CB_REF_OR_FIELD_P (x))
+	if (x == NULL
+	 || !CB_REF_OR_FIELD_P (x)) {
 		 return;
+	}
 	f = cb_code_field(x);
 	if (f) {
-		if (f->flag_local
-		 || f->flag_item_based
-		 || f->flag_local_storage
-		 || f->storage == CB_STORAGE_LINKAGE
-		 || f->storage == CB_STORAGE_LOCAL)
-			set_address = 1;
-		else
-			set_address = 0;
+		const int	set_address = f->flag_local
+		                       || f->flag_item_based
+		                       || f->flag_local_storage
+		                       || f->storage == CB_STORAGE_LINKAGE
+		                       || f->storage == CB_STORAGE_LOCAL;
 		if (set_address
-		&& p->body
-		&& CB_TREE_TAG (CB_VALUE(p->body)) == CB_TAG_FUNCALL) {
-			c = CB_FUNCALL (CB_VALUE(p->body));
-			if (strcmp(c->name,"cob_open") == 0
-			 || strcmp(c->name,"cob_extfh_open") == 0
+		 && p->body
+		 && CB_TREE_TAG (CB_VALUE(p->body)) == CB_TAG_FUNCALL) {
+			const struct cb_funcall	*c = CB_FUNCALL (CB_VALUE(p->body));
+			if (strcmp (c->name, "cob_open") == 0
+			 || strcmp (c->name, "cob_extfh_open") == 0
 			 || always) {
 				output_prefix ();
 				output ("%s%s->%s = ", CB_PREFIX_FILE, fl->cname, set_field);
@@ -8107,26 +8091,17 @@ output_file_variable (cb_tree x, struct cb_file *fl, struct cb_statement *p, con
 }
 
 static void
+output_debug_stmts (cb_tree debug_checks)
+{
+	output_line ("if (cob_glob_ptr->cob_debugging_mode)");
+	output_block_open ();
+	output_stmt (debug_checks);
+	output_block_close ();
+}
+
+static void
 output_stmt (cb_tree x)
 {
-	struct cb_binary_op	*bop;
-	cb_tree			w;
-	struct cb_statement	*p;
-	struct cb_label		*lp;
-	struct cb_assign	*ap;
-	struct cb_if		*ip;
-	struct cb_para_label	*pal;
-	struct cb_set_attr	*sap;
-	struct cb_file		*fl;
-	char	*px;
-#ifdef	COB_NON_ALIGNED
-	struct cb_cast		*cp;
-#endif
-	size_t			size;
-	int			skip_else;
-#ifdef COBC_HAS_CUTOFF_FLAG	/* CHECKME: likely will be removed completely in 3.2 */
-	int			code;
-#endif
 
 	stack_id = 0;
 	if (x == NULL) {
@@ -8155,8 +8130,9 @@ output_stmt (cb_tree x)
 	}
 
 	switch (CB_TREE_TAG (x)) {
-	case CB_TAG_STATEMENT:
-		p = CB_STATEMENT (x);
+	case CB_TAG_STATEMENT: {
+		const struct cb_statement	*p = CB_STATEMENT (x);
+		cb_tree		debug_checks = current_prog->flag_gen_debug ? p->debug_check : NULL;
 		/* note: p->name and x->sourcefile/line are always available here */
 
 		/* Output source location, but only if it isn't an implicit statement */
@@ -8164,17 +8140,17 @@ output_stmt (cb_tree x)
 			/* Output source location as a comment */
 			output_newline ();
 			output_line ("/* Line: %-10d: %-19.19s: %s */",
-				     x->source_line, p->name, x->source_file);
+				x->source_line, p->name, x->source_file);
 			/* Output source location as code */
 			if (cb_flag_source_location
 			 || cb_flag_dump) {
 				if (last_line != x->source_line) {
 					output_line ("module->module_stmt = 0x%08X;",
-						COB_SET_LINE_FILE(x->source_line, lookup_source(x->source_file)));
+						COB_SET_LINE_FILE (x->source_line, lookup_source (x->source_file)));
 				}
 #if 0 /* CHECKME: Do we need this? If yes: move */
 			} else {
-				lookup_source(x->source_file);
+				lookup_source (x->source_file);
 #endif
 			}
 			/* Output source location as code */
@@ -8199,8 +8175,7 @@ output_stmt (cb_tree x)
 		}
 
 		if (p->file) {
-			fl = CB_FILE (p->file);
-
+			const struct cb_file* fl = CB_FILE (p->file);
 			if (fl->organization == COB_ORG_RELATIVE) {
 				output_file_variable (fl->key, fl, p, "keys[0].field", 1);
 			}
@@ -8216,47 +8191,54 @@ output_stmt (cb_tree x)
 		}
 
 		/* USE FOR DEBUGGING: Output field debugging statements */
-		/* FIXME: for statements with body like IF / EVALUATE and
+		/* FIXME: for conditionals like IF / EVALUATE + WHEN this should be
+		          generated before the check; for statements with body like
 		          DISPLAY / CALL [NOT] ON EXCEPTION this comes too late,
 		          should be included in all possible branches as first item */
-		if (current_prog->flag_gen_debug && p->debug_check) {
-			/* FIXME: codegen should generate a surrounding
-			          "if (cob_glob_ptr->cob_debugging_mode)"
-			          here */
-			output_stmt (p->debug_check);
+		if (debug_checks) {
+			if (p->not_ex_handler && !strcmp (p->name, "ALLOCATE")) {
+				/* HACK: postpone to after internal handler code */
+			} else {
+				output_debug_stmts (debug_checks);
+				debug_checks = NULL;
+			}
 		}
 
 		/* Special debugging callback for START / DELETE */
 		/* Must be done immediately after I/O and before */
 		/* status check */
 		if (current_prog->flag_gen_debug && p->file && p->flag_callback) {
+			const struct cb_file* fl = CB_FILE (p->file);
 			output_line ("save_exception_code = cob_glob_ptr->cob_exception_code;");
-			output_stmt (cb_build_debug (cb_debug_name,
-				     CB_FILE(p->file)->name, NULL));
+			output_stmt (cb_build_debug (cb_debug_name, fl->name, NULL));
 			output_move (cb_space, cb_debug_contents);
-			output_perform_call (CB_FILE(p->file)->debug_section,
-					     CB_FILE(p->file)->debug_section);
+			output_perform_call (fl->debug_section, NULL);
 			output_line ("cob_glob_ptr->cob_exception_code = save_exception_code;");
 			need_save_exception = 1;
 		}
 
-		if (p->ex_handler || p->not_ex_handler ||
-		    (p->file && CB_EXCEPTION_ENABLE (COB_EC_I_O))) {
+		if (p->ex_handler || p->not_ex_handler
+		 || (p->file && CB_EXCEPTION_ENABLE (COB_EC_I_O))) {
 			output_handler (p);
+			if (debug_checks) {
+				output_debug_stmts (debug_checks);
+			}
 		}
 		break;
-	case CB_TAG_LABEL:
-		lp = CB_LABEL (x);
+	}
+	case CB_TAG_LABEL: {
+		const struct cb_label * lp = CB_LABEL (x);
 		if (lp->flag_skip_label) {
 			break;
 		}
 		output_label_info (x, lp);
 		if (lp->flag_section) {
+			struct cb_para_label	*pal;
 			for (pal = lp->para_label; pal; pal = pal->next) {
 				if (pal->para->segment > 49
 				 && pal->para->flag_alter) {
 					output_line ("label_%s%d = 0;",
-						     CB_PREFIX_LABEL, pal->para->id);
+						CB_PREFIX_LABEL, pal->para->id);
 				}
 			}
 			last_segment = lp->segment;
@@ -8266,17 +8248,17 @@ output_stmt (cb_tree x)
 			output_line ("%s%d:;", CB_PREFIX_LABEL, lp->id);
 		}
 		if (!lp->flag_dummy_exit
-			&& !lp->flag_dummy_section
-			&& !lp->flag_dummy_paragraph) {
+		 && !lp->flag_dummy_section
+		 && !lp->flag_dummy_paragraph) {
 			if (cb_flag_c_line_directives) {
 				output_cobol_info (x);
 			}
 			if (cb_flag_c_labels
 			 && (lp->flag_entry || lp->flag_section)) {
 				/* possibly come back later adding paragraphs, too */
-				const char *prf;
 				unsigned char buff[COB_MINI_BUFF];
 				unsigned char *ptr = (unsigned char *)&buff;
+				const char *prf;
 				cob_encode_program_id ((unsigned char*)lp->orig_name, ptr,
 					COB_MINI_MAX, COB_FOLD_UPPER);
 				if (lp->flag_section) prf = "SECTION";
@@ -8314,13 +8296,11 @@ output_stmt (cb_tree x)
 		/* Check procedure debugging */
 		if (current_prog->flag_gen_debug && lp->flag_real_label) {
 			output_stmt (cb_build_debug (cb_debug_name,
-				     (const char *)lp->name, NULL));
+				(const char*)lp->name, NULL));
 			if (current_prog->all_procedure) {
-				output_perform_call (current_prog->all_procedure,
-						     current_prog->all_procedure);
+				output_perform_call (current_prog->all_procedure, NULL);
 			} else if (lp->flag_debugging_mode) {
-				output_perform_call (lp->debug_section,
-						     lp->debug_section);
+				output_perform_call (lp->debug_section, NULL);
 			}
 		}
 
@@ -8330,6 +8310,7 @@ output_stmt (cb_tree x)
 		}
 
 		break;
+		}
 	case CB_TAG_FUNCALL:
 		output_prefix ();
 		output_funcall (x);
@@ -8340,8 +8321,8 @@ output_stmt (cb_tree x)
 			inside_stack[inside_check - 1] = 1;
 		}
 		break;
-	case CB_TAG_ASSIGN:
-		ap = CB_ASSIGN (x);
+	case CB_TAG_ASSIGN: {
+		const struct cb_assign *ap = CB_ASSIGN (x);
 #ifdef	COB_NON_ALIGNED
 		/* Nonaligned */
 		if (CB_TREE_CLASS (ap->var) == CB_CLASS_POINTER
@@ -8357,7 +8338,7 @@ output_stmt (cb_tree x)
 				output ("temp_ptr = 0;");
 			} else if (CB_TREE_TAG (ap->val) == CB_TAG_CAST) {
 				/* MOVE ADDRESS OF val ... */
-				cp = CB_CAST (ap->val);
+				const struct cb_cast *cp = CB_CAST (ap->val);
 				output ("temp_ptr = ");
 				switch (cp->cast_type) {
 				case CB_CAST_ADDRESS:
@@ -8378,7 +8359,7 @@ output_stmt (cb_tree x)
 				/* LCOV_EXCL_START */
 				default:
 					cobc_err_msg (_("unexpected cast type: %d"),
-							cp->cast_type);
+						cp->cast_type);
 					COBC_ABORT ();
 				/* LCOV_EXCL_STOP */
 				}
@@ -8395,11 +8376,11 @@ output_stmt (cb_tree x)
 			output_prefix ();
 			if (CB_TREE_TAG (ap->var) == CB_TAG_CAST) {
 				/* SET ADDRESS OF var ... */
-				cp = CB_CAST (ap->var);
+				const struct cb_cast *cp = CB_CAST (ap->var);
 				/* LCOV_EXCL_START */
 				if (cp->cast_type != CB_CAST_ADDRESS) {
 					cobc_err_msg (_("unexpected tree type: %d"),
-							cp->cast_type);
+						cp->cast_type);
 					COBC_ABORT ();
 				}
 				/* LCOV_EXCL_STOP */
@@ -8441,6 +8422,7 @@ output_stmt (cb_tree x)
 		}
 #endif	/* Nonaligned */
 		break;
+	}
 	case CB_TAG_INITIALIZE:
 		output_initialize (CB_INITIALIZE (x));
 		break;
@@ -8456,18 +8438,24 @@ output_stmt (cb_tree x)
 	case CB_TAG_CANCEL:
 		output_cancel (CB_CANCEL (x));
 		break;
-	case CB_TAG_SET_ATTR:
-		sap = CB_SET_ATTR (x);
+	case CB_TAG_SET_ATTR: {
+		const struct cb_set_attr *sap = CB_SET_ATTR (x);
 		output_set_attribute (sap->fld, sap->val_on, sap->val_off);
 		break;
+	}
 	case CB_TAG_XML_PARSE:
 		output_xml_parse (CB_XML_PARSE (x));
 		break;
 	case CB_TAG_ALTER:
 		output_alter (CB_ALTER (x));
 		break;
-	case CB_TAG_IF:
-		ip = CB_IF (x);
+	case CB_TAG_IF: {
+		const struct cb_if *ip = CB_IF (x);
+		char	*px;
+		int			skip_else;
+#ifdef COBC_HAS_CUTOFF_FLAG	/* Note: will be removed completely in 4.x */
+	int			code;
+#endif
 		if (ip->stmt1 == NULL
 		 && ip->stmt2 == NULL) {
 			if (!ip->is_if) {
@@ -8488,8 +8476,8 @@ output_stmt (cb_tree x)
 			} else
 			if (ip->test
 			 && CB_TREE_TAG (ip->test) == CB_TAG_BINARY_OP) {
-				bop = CB_BINARY_OP (ip->test);
-				w = NULL;
+				const struct cb_binary_op	*bop = CB_BINARY_OP (ip->test);
+				cb_tree		w = NULL;
 				if (bop->op == '!') {
 					w = bop->x;
 				} else if (bop->y) {
@@ -8645,6 +8633,7 @@ output_stmt (cb_tree x)
 		}
 #endif
 		break;
+	}
 	case CB_TAG_PERFORM:
 		output_perform (CB_PERFORM (x));
 		break;
@@ -8678,64 +8667,100 @@ output_stmt (cb_tree x)
 			output_line ("/* %s */", (const char *)(CB_DIRECT (x)->line));
 		}
 		break;
-	case CB_TAG_DEBUG:
-		if (!current_prog->flag_gen_debug) {
-			break;
-		}
-		output_prefix ();
-		size = cb_code_field (CB_DEBUG(x)->target)->size;
-		if (CB_DEBUG(x)->value) {
-			if (size <= CB_DEBUG(x)->size) {
-				output ("memcpy (");
-				output_data (CB_DEBUG(x)->target);
-				output (", %s%d, %d);", CB_PREFIX_STRING,
-					lookup_string (CB_DEBUG(x)->value),
-					(int)size);
-				output_newline ();
-			} else {
-				output ("memcpy (");
-				output_data (CB_DEBUG(x)->target);
-				output (", %s%d, %d);\n", CB_PREFIX_STRING,
-					lookup_string (CB_DEBUG(x)->value),
-					(int)CB_DEBUG(x)->size);
-				output_newline ();
-				output_prefix ();
-				output ("memset (");
-				output_data (CB_DEBUG(x)->target);
-				output (" + %d, ' ', %d);",
-					(int)CB_DEBUG(x)->size,
-					(int)(size - CB_DEBUG(x)->size));
-				output_newline ();
 
-			}
-		} else {
-			if (size <= CB_DEBUG(x)->size) {
-				output ("memcpy (");
-				output_data (CB_DEBUG(x)->target);
-				output (", ");
-				output_data (CB_DEBUG(x)->fld);
-				output (", %d);", (int)size);
-				output_newline ();
-			} else {
-				output ("memcpy (");
-				output_data (CB_DEBUG(x)->target);
-				output (", ");
-				output_data (CB_DEBUG(x)->fld);
-				output (", %d);", (int)CB_DEBUG(x)->size);
-				output_newline ();
+	/* setting DEBUG-ITEM */
+	case CB_TAG_DEBUG:
+		if (current_prog->flag_gen_debug) {
+			const struct cb_debug *dbg = CB_DEBUG (x);
+			const size_t	size = cb_code_field (dbg->target)->size;
+			const size_t	copy_size = dbg->size > size ? size : dbg->size;
+			if (dbg->value) {
+				/* pre-defined string */
 				output_prefix ();
-				output ("memset (");
-				output_data (CB_DEBUG(x)->target);
-				output (" + %d, ' ', %d);",
-					(int)CB_DEBUG(x)->size,
-					(int)(size - CB_DEBUG(x)->size));
+				output ("memcpy (");
+				output_data (dbg->target);
+				output (", ");
+				output ("%s%d", CB_PREFIX_STRING, lookup_string (dbg->value));
+				output (", %d);", (int)copy_size);
 				output_newline ();
+				/* ... filled up with space */
+				if (copy_size != size) {
+					output_prefix ();
+					output ("memset (");
+					output_data (dbg->target);
+					output (" + %d, ' ', %d);",
+						(int)dbg->size, (int)(size - dbg->size));
+					output_newline ();
+				}
+			} else {
+				/* content of variable */
+				struct cb_field *f = CB_FIELD_PTR (dbg->fld);
+				/* address may change so we may have NULL or invalid pointer */
+				if (f->flag_item_based || f->storage == CB_STORAGE_LINKAGE) {
+#if 0				/* FIXME: this should be replaced in 4.x by a call to libcob
+					   which checks for NULL, and for invalid access via handler,
+					   then outputs the appropriate value */
+					struct cb_field * ff = real_field_founder (f);
+					output_prefix ();
+					output ("cob_set_verified_data (");
+					output_data (dbg->target);
+					output (", ");
+					output_data (CB_TREE(ff));
+					output (", " CB_FMT_LLU ", % d); ", f->offset, (int)size);
+					output_newline ();
+#else
+
+					const char *null_rep = "<NULL>";
+					f = real_field_founder (f);
+					/* in this case - pre-fill with space, then set var / null_rep */
+					output_prefix ();
+					output ("memset (");
+					output_data (dbg->target);
+					output (", ' ', %d);", (int)size);
+					output_newline ();
+					output_prefix ();
+					output ("if (");
+					output_data (CB_TREE(f));
+					output (" == NULL)");
+					output_newline ();
+					output_prefix ();
+					output ("\t""memcpy (");
+					output_data (dbg->target);
+					output (", %s%d", CB_PREFIX_STRING, lookup_string (null_rep));
+					output (", %d);", (int)strlen(null_rep));
+					output_newline ();
+					output_line ("else");
+					output_prefix ();
+					output ("\t""memcpy (");
+					output_data (dbg->target);
+					output (", ");
+					output_data (dbg->fld);
+					output (", %d);", (int)copy_size);
+					output_newline ();
+#endif
+				} else {
+					/* normal field without changing address, copy data up to max*/
+					output ("memcpy (");
+					output_data (dbg->target);
+					output (", ");
+					output_data (dbg->fld);
+					output (", %d);", (int)copy_size);
+					output_newline ();
+					/* ... filled up with space */
+					if (copy_size != size) {
+						output_prefix ();
+						output ("memset (");
+						output_data (dbg->target);
+						output (" + %d, ' ', %d);",
+							(int)dbg->size, (int)(size - dbg->size));
+						output_newline ();
+					}
+				}
 			}
 		}
 		break;
 	case CB_TAG_DEBUG_CALL:
-		output_perform_call (CB_DEBUG_CALL(x)->target,
-				     CB_DEBUG_CALL(x)->target);
+		output_perform_call (CB_DEBUG_CALL(x)->target, NULL);
 		break;
 	case CB_TAG_ML_SUPPRESS_CHECKS:
 		output_ml_suppress_checks (CB_ML_SUPPRESS_CHECKS (x));
@@ -10579,8 +10604,7 @@ output_error_handler (struct cb_program *prog)
 				output_line ("case %u:", hcounter);
 				output_block_open ();
 				if (prog == hstr->handler_prog) {
-					output_perform_call (hstr->handler_label,
-							     hstr->handler_label);
+					output_perform_call (hstr->handler_label, NULL);
 				} else {
 					output_prefix ();
 					if (hstr->handler_prog->nested_level) {
@@ -12181,6 +12205,7 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	for (l = prog->file_list; l; l = CB_CHAIN (l)) {
 		fl = CB_FILE (CB_VALUE (l));
 		if (fl->organization != COB_ORG_SORT) {
+			/* CHECKME: Shoudln't we raise a runtime warning when still open? */
 			output_line ("cob_close (%s%s, NULL, COB_CLOSE_NORMAL, 1);",
 					CB_PREFIX_FILE, fl->cname);
 			if (!fl->flag_external) {
@@ -12210,7 +12235,8 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 		}
 	}
 
-	/* Release based storage */
+	/* Release BASED storage */
+	/* CHECKME: Is that really correct for RECURSIVE programs? */
 	for (f = prog->working_storage; f; f = f->sister) {
 		if (f->flag_item_based) {
 			output_line ("if (%s%d) {", CB_PREFIX_BASE, f->id);

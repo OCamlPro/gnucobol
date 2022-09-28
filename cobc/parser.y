@@ -11519,7 +11519,7 @@ allocate_statement:
 ;
 
 allocate_body:
-  identifier _flag_initialized _loc _allocate_returning
+  target_identifier_single _flag_initialized _loc _allocate_returning
   {
 	cb_emit_allocate_identifier ($1, $4, $2 != NULL);
   }
@@ -18393,6 +18393,15 @@ identifier_list:
 target_identifier:
   target_identifier_1
   {
+	if (CB_REFERENCE_P ($1)) {
+		CB_REFERENCE ($1)->flag_target = 1;
+		if (cb_listing_xref) {
+			cobc_xref_set_receiving ($1);
+		}
+	}
+	if (start_debug) {
+		cb_check_field_debug ($1);
+	}
 	$$ = cb_build_identifier ($1, 0);
   }
 | line_linage_page_counter
@@ -18405,38 +18414,30 @@ target_identifier_1:
   qualified_word subref refmod
   {
 	$$ = $1;
-	if (CB_REFERENCE_P ($1)) {
-		CB_REFERENCE ($1)->flag_target = 1;
-	}
-	if (start_debug) {
-		cb_check_field_debug ($1);
-	}
   }
 | qualified_word subref %prec SHIFT_PREFER
   {
 	$$ = $1;
-	if (CB_REFERENCE_P ($1)) {
-		CB_REFERENCE ($1)->flag_target = 1;
-	}
-	if (start_debug) {
-		cb_check_field_debug ($1);
-	}
   }
 | qualified_word refmod
   {
 	$$ = $1;
-	if (CB_REFERENCE_P ($1)) {
-		CB_REFERENCE ($1)->flag_target = 1;
-	}
-	if (start_debug) {
-		cb_check_field_debug ($1);
-	}
   }
+| qualified_word %prec SHIFT_PREFER
+  {
+	$$ = $1;
+  }
+;
+
+target_identifier_single:
 | qualified_word %prec SHIFT_PREFER
   {
 	$$ = $1;
 	if (CB_REFERENCE_P ($1)) {
 		CB_REFERENCE ($1)->flag_target = 1;
+		if (cb_listing_xref) {
+			cobc_xref_set_receiving ($1);
+		}
 	}
 	if (start_debug) {
 		cb_check_field_debug ($1);
