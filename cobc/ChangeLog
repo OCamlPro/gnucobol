@@ -4,6 +4,13 @@
 	* parser.y (code_set_clause): set CODE-SET as UNFINISHED and PENDING
 	  with custom code set (which other compilers don't support here)
 	* codegen.c (output_file_initialization): codegen for CODE-SET conversion
+	* codegen.c (output_param): set BASED + EXTERNAL flags from field founder
+	  to field for all fields referenced (this allows an easy check later on,
+	  already done and so far broken in output_local_field_cache)
+	* codegen.c (output_display_fields): fixed a bug introduced on 2021-10-19
+	  which disables requested dump output if COBC_GEN_DUMP_COMMENTS is set
+	* codegen.c (output_dump_code): ensure a bug like the one above does
+	  raise an abort, if it ever occurs again
 
 2022-09-28  Simon Sobisch <simonsobisch@gnu.org>
 

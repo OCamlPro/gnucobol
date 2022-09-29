@@ -2331,7 +2331,6 @@ output_local_field_cache (struct cb_program *prog)
 {
 	struct field_list	*field;
 	struct cb_field		*f;
-	struct cb_report	*rep;
 
 	if (!local_field_cache) {
 		return;
@@ -2384,6 +2383,7 @@ output_local_field_cache (struct cb_program *prog)
 	
 	/* Output report writer special fields */
 	if (prog->report_storage) {
+		struct cb_report	*rep;
 		cb_tree			l;
 		for (l = prog->report_list; l; l = CB_CHAIN (l)) {
 			rep = CB_REPORT(CB_VALUE(l));
@@ -3583,8 +3583,8 @@ create_field (struct cb_field *f, cb_tree x)
 		fl->f = f;
 		fl->curr_prog = excp_current_program_id;
 		if (f->index_type != CB_INT_INDEX
-			&& (f->flag_is_global
-				|| current_prog->flag_file_global)) {
+		 && (f->flag_is_global
+		  || current_prog->flag_file_global)) {
 			fl->next = field_cache;
 			field_cache = fl;
 		} else {
@@ -3844,6 +3844,11 @@ output_param (cb_tree x, int id)
 			 || ff->flag_item_based) {
 				f->flag_local = 1;
 			}
+			/* HACK, these are commonly only set at level 01/77
+				but that _seems_ to only be necessary until codegen
+				where we currently are */
+			f->flag_external = ff->flag_external;
+			f->flag_item_based = ff->flag_item_based;
 		}
 
 		if (!r->subs
@@ -10610,6 +10615,7 @@ output_display_fields (struct cb_field *f, size_t offset, unsigned int idx)
 			output_block_close ();
 		}
 		if (f->redefines
+		 || f->level == 88
 		 || f->level == 78
 		 || f->level == 66) {
 			output_as_comment--;
@@ -11069,6 +11075,13 @@ output_dump_code (struct cb_program *prog, cb_tree parameter_list)
 			output_line ("/* cob_dump_output(\"END OF DUMP - %s\"); */",
 				prog->program_name);
 		}
+	}
+
+	if (output_as_comment) {
+		/* should be always zero here, was not at one time... */
+		cobc_err_msg ("bad comment state in output_dump_code,\n"
+			"you may disable COBC_GEN_DUMP_COMMENTS and retry");
+		cobc_abort_terminate (1);
 	}
 }
 

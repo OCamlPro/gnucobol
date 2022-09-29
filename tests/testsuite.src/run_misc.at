@@ -10149,6 +10149,15 @@ libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 
 AT_CHECK([$COMPILE_MODULE -fdump=ALL prog.cob sub2.cob], [0], [], [])
 
+AT_CHECK([COB_DUMP_FILE=NONE \
+$COBCRUN prog], [1],
+[X is 000000001
+X is 000005441
+],
+[libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
+libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
+])
+
 AT_CHECK([COB_DUMP_FILE=tstdump.dump \
 $COBCRUN prog], [1],
 [X is 000000001
@@ -10158,15 +10167,6 @@ X is 000005441
 libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 
 dump written to tstdump.dump
-])
-
-AT_CHECK([COB_DUMP_FILE=NONE \
-$COBCRUN prog], [1],
-[X is 000000001
-X is 000005441
-],
-[libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
-libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 ])
 
 AT_DATA([reference_tmpl], [
@@ -10379,6 +10379,27 @@ tstdump.dump > tstdump.sed], [0], [], [])
 
 AT_CHECK([diff reference tstdump.sed], [0], [], [])
 
+# recheck with COBC_GEN_DUMP_COMMENTS, which may not change the output
+AT_CHECK([COBC_GEN_DUMP_COMMENTS=1 \
+$COMPILE_MODULE -fdump=ALL prog.cob sub2.cob], [0], [], [])
+
+AT_CHECK([COB_DUMP_FILE=tstdump.dump \
+$COBCRUN prog], [1],
+[X is 000000001
+X is 000005441
+],
+[libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
+libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
+
+dump written to tstdump.dump
+])
+
+AT_CHECK([$SED -e 's/compiled ... .. .... ..:..:../compiled MMM DD YYYY HH:MM:SS/g' \
+tstdump.dump > tstdump.sed], [0], [], [])
+
+AT_CHECK([diff reference tstdump.sed], [0], [], [])
+
+
 # using both
 AT_CHECK([COB_STACKTRACE=1 COB_DUMP_FILE=tstdump.dump \
 $COBCRUN prog], [1],
@@ -10516,7 +10537,7 @@ AT_CHECK([diff reference_all tstdump.sed], [0], [], [])
 #Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 #
 # Last statement of "sub1" was at line 4 of cpyabrt
- Last statement of "sub2" was at line 48 of sub2.cob
+# Last statement of "sub2" was at line 48 of sub2.cob
 # Last statement of "prog" was at line 118 of prog.cob
 # Started by ./prog_ls_sticky
 #

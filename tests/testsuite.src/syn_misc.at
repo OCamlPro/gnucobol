@@ -8731,17 +8731,17 @@ AT_CHECK([($GREP -A 200 "P_dump:" prog.c | $GREP -B 200 "END OF DUMP") || exit 7
       /* cob_dump_field_ext (88, "sw-x-basis-full", COB_SET_FLD(f0, 3, b_62, &a_48), 0, 1, i_1, 3UL); VALUE (cob_field *)&c_18 */
     }
   }
-  /* cob_dump_field_ext ( 1, "x-rms", COB_SET_FLD(f0, 1, b_70, &a_47), 0, 0); */
-  /* cob_dump_field_ext ( 5, "x-rms-a", COB_SET_FLD(f0, 1, b_70, &a_48), 0, 0); */
+  cob_dump_field_ext ( 1, "x-rms", COB_SET_FLD(f0, 1, b_70, &a_47), 0, 0);
+  cob_dump_field_ext ( 5, "x-rms-a", COB_SET_FLD(f0, 1, b_70, &a_48), 0, 0);
   /* cob_dump_field_ext ( 1, "FILLER", COB_SET_FLD(f0, 1, b_70, &a_48), 0, 0); REDEFINES */
   /* cob_dump_field_ext (88, "sw-x-rms-full", COB_SET_FLD(f0, 1, b_70, &a_48), 0, 0); VALUE (cob_field *)&c_19 OR (cob_field *)&c_20 OR (cob_field *)&c_21 THRU (cob_field *)&c_22 OR (cob_field *)&c_20 OR &cob_all_quote */
 
   /* Dump LOCAL-STORAGE SECTION */
   cob_dump_output("LOCAL-STORAGE");
-  /* cob_dump_field_ext ( 1, "var1", COB_SET_FLD(f0, 1, cob_local_ptr, &a_48), 0, 0); */
-  /* cob_dump_field_ext ( 1, "var2", COB_SET_FLD(f0, 2, cob_local_ptr + 16, &a_47), 0, 0); */
-  /* cob_dump_field_ext ( 3, "var2a", COB_SET_FLD(f0, 1, cob_local_ptr + 16, &a_48), 0, 0); */
-  /* cob_dump_field_ext ( 3, "var2b", COB_SET_FLD(f0, 1, cob_local_ptr + 16 + 1, &a_52), 0, 0); */
+  cob_dump_field_ext ( 1, "var1", COB_SET_FLD(f0, 1, cob_local_ptr, &a_48), 0, 0);
+  cob_dump_field_ext ( 1, "var2", COB_SET_FLD(f0, 2, cob_local_ptr + 16, &a_47), 0, 0);
+  cob_dump_field_ext ( 3, "var2a", COB_SET_FLD(f0, 1, cob_local_ptr + 16, &a_48), 0, 0);
+  cob_dump_field_ext ( 3, "var2b", COB_SET_FLD(f0, 1, cob_local_ptr + 16 + 1, &a_52), 0, 0);
   /* cob_dump_field_ext (88, "yay", COB_SET_FLD(f0, 1, cob_local_ptr + 16 + 1, &a_52), 0, 0); VALUE &cob_all_zero OR (cob_field *)&c_23 THRU (cob_field *)&c_24 OR (cob_field *)&c_25 */
 
   cob_dump_output("END OF DUMP - debugme");
