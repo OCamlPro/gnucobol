@@ -5114,8 +5114,8 @@ file_control_entry:
 ;
 
 _select_clauses_or_error:
-  _select_clause_sequence TOK_DOT
-| error TOK_DOT
+  _select_clause_sequence _dot_or_else_area_a_in_file_control
+| error _dot_or_else_area_a_in_file_control
   {
 	yyerrok;
   }
@@ -5945,8 +5945,8 @@ i_o_control_header:
 ;
 
 _i_o_control_entries:
-| i_o_control_list TOK_DOT
-| i_o_control_list error TOK_DOT
+| i_o_control_list _dot_or_else_area_a_in_file_control
+| i_o_control_list error _dot_or_else_area_a_in_file_control
   {
 	yyerrok;
   }
@@ -6206,8 +6206,8 @@ file_description_entry:
 		}
 	}
   }
-  _file_description_clause_sequence TOK_DOT
-| file_type error TOK_DOT
+  _file_description_clause_sequence _dot_or_else_area_a_in_file_description
+| file_type error _dot_or_else_area_a_in_file_description
   {
 	yyerrok;
   }
@@ -6630,7 +6630,8 @@ communication_description_entry:
 	}
 	check_duplicate = 0;
   }
-  _communication_description_clause_sequence TOK_DOT
+  _communication_description_clause_sequence
+  _dot_or_else_area_a_in_communication_description
 ;
 
 _communication_description_clause_sequence:
@@ -6721,7 +6722,8 @@ unnamed_i_o_cd_clauses:
 
 working_storage: WORKING_STORAGE { check_area_a_of ("WORKING-STORAGE SECTION"); };
 _working_storage_section:
-| working_storage SECTION _dot
+| working_storage SECTION
+  _dot_or_else_area_a_in_record_description
   {
 	check_headers_present (COBC_HD_DATA_DIVISION, 0, 0, 0);
 	header_check |= COBC_HD_WORKING_STORAGE_SECTION;
@@ -6754,8 +6756,8 @@ _record_description_list:
 ;
 
 record_description_list:
-  data_description _dot_or_else_area_a_in_data_division
-| record_description_list data_description _dot_or_else_area_a_in_data_division
+  data_description _dot_or_else_area_a_in_record_description
+| record_description_list data_description _dot_or_else_area_a_in_record_description
 ;
 
 data_description:
@@ -8277,7 +8279,8 @@ report_description:
 	}
 	check_duplicate = 0;
   }
-  _report_description_options TOK_DOT
+  _report_description_options
+  _dot_or_else_area_a_in_report_description
   _report_group_description_list
   {
 	$$ = get_finalized_description_tree ();
@@ -8293,7 +8296,7 @@ report_description:
 
 _report_description_options:
 | _report_description_options report_description_option
-| error TOK_DOT
+| error _dot_or_else_area_a_in_report_description
   {
 	yyerrok;
   }
@@ -8541,15 +8544,14 @@ report_group_description_entry:
 		description_field = current_field;
 	}
   }
-  _report_group_options TOK_DOT
+  _report_group_options _dot_or_else_area_a_in_report_group_description
   {
 	  build_sum_counter (current_report, current_field);
   }
-| level_number error TOK_DOT
+| level_number error _dot_or_else_area_a_in_report_group_description
   {
 	/* Free tree associated with level number */
 	cobc_parse_free ($1);
-	cb_unput_dot ();
 	yyerrok;
 	check_pic_duplicate = 0;
 	check_duplicate = 0;
@@ -19154,14 +19156,21 @@ _dot:
   }
 ;
 
-_dot_or_else_area_a:
+_dot_or_else_area_a_in_file_control:
   TOK_DOT
-| TOKEN_EOF
+| _file_control_end_delimiter
   {
 	if (! cb_verify (cb_missing_period, _("optional period")))
 		YYERROR;
+	cobc_repeat_last_token = 1;
   }
-| WORD_IN_AREA_A
+;
+
+_file_control_end_delimiter:
+  SELECT | I_O_CONTROL | DATA | PROCEDURE;
+
+level_number_in_area_a:
+  LEVEL_NUMBER_IN_AREA_A
   {
 	/* No need to raise the error for *_IN_AREA_A tokens */
 	(void) cb_verify (cb_missing_period, _("optional period"));
@@ -19169,9 +19178,54 @@ _dot_or_else_area_a:
   }
 ;
 
-_dot_or_else_area_a_in_data_division:
+_dot_or_else_area_a_in_file_description:
   TOK_DOT
-| LEVEL_NUMBER_IN_AREA_A
+| level_number_in_area_a
+| _file_description_end_delimiter
+  {
+	if (! cb_verify (cb_missing_period, _("optional period")))
+		YYERROR;
+	cobc_repeat_last_token = 1;
+  }
+;
+
+_file_description_end_delimiter:
+  LEVEL_NUMBER
+| TOK_FILE | PROCEDURE;
+
+_dot_or_else_area_a_in_communication_description:
+_dot_or_else_area_a_in_record_description;
+
+_dot_or_else_area_a_in_report_description:
+_dot_or_else_area_a_in_record_description;
+
+_dot_or_else_area_a_in_report_group_description:
+_dot_or_else_area_a_in_record_description;
+
+_dot_or_else_area_a_in_record_description:
+  TOK_DOT
+| level_number_in_area_a
+| _record_description_end_delimiter
+  {
+	if (! cb_verify (cb_missing_period, _("optional period")))
+		YYERROR;
+	cobc_repeat_last_token = 1;
+  }
+;
+
+_record_description_end_delimiter:
+  LEVEL_NUMBER
+| PROCEDURE | COMMUNICATION | LOCAL_STORAGE
+| LINKAGE | REPORT | SCREEN;
+
+_dot_or_else_area_a:		/* in PROCEDURE DIVISION */
+  TOK_DOT
+| TOKEN_EOF
+  {
+	if (! cb_verify (cb_missing_period, _("optional period")))
+		YYERROR;
+  }
+| WORD_IN_AREA_A
   {
 	/* No need to raise the error for *_IN_AREA_A tokens */
 	(void) cb_verify (cb_missing_period, _("optional period"));

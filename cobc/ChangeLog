@@ -1,4 +1,8 @@
 
+2022-09-29  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* parser.y: handle many more missing periods before PROCEDURE DIVISION
+
 2022-09-26  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (cobc_abort_msg): use negative cb_source_line to reference

@@ -6195,7 +6195,7 @@ prog.cob:10: error: syntax error, unexpected Identifier
 AT_CHECK([$COMPILE_ONLY -std=mf-strict -freserved=CONSTANT prog.cob], [1], [],
 [prog.cob:6: error: 01 CONSTANT does not conform to Micro Focus COBOL
 prog.cob:7: error: 01 CONSTANT does not conform to Micro Focus COBOL
-prog.cob:7: error: syntax error, unexpected Identifier, expecting . or level-number (Area A)
+prog.cob:7: error: syntax error, unexpected Identifier
 ])
 
 AT_CHECK([$COMPILE_ONLY -std=mf prog.cob], [1], [],
@@ -9172,7 +9172,7 @@ prog.cob:19: error: start of statement in Area A
 AT_CLEANUP
 
 
-AT_SETUP([Optional dots])
+AT_SETUP([optional dots])
 AT_KEYWORDS([misc missing-periods])
 
 AT_DATA([prog.cob], [
@@ -9227,6 +9227,43 @@ cobol85.cob:14: warning: optional period used
 AT_CLEANUP
 
 
+AT_SETUP([optional dots before PROCEDURE DIVISION])
+AT_KEYWORDS([misc missing-periods])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION
+       PROGRAM-ID. prog.
+       DATA DIVISION
+       WORKING-STORAGE SECTION
+       77 PMODE   PIC X
+       PROCEDURE DIVISION.
+          STOP RUN.
+])
+
+# The syntax error below is hard to avoid, and can be missleading.
+# The error is actually on the `77`, which is only parsed as a
+# LEVEL_NUMBER if the preceding token is a `.`.
+#
+# TODO: To avoid this, we need to unput the WORD/Literal when dealing
+# with optional periods outside of PROCEDURE DIVISION, and ensure it
+# is reparsed as a LEVEL_NUMBER.
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:3: warning: optional period used
+prog.cob:5: warning: optional period used
+prog.cob:6: error: syntax error, unexpected Literal
+])
+
+# Here the AREACHECK helps us recover from all missing periods
+AT_CHECK([$COMPILE_ONLY -fformat=cobol85 prog.cob], [0], [],
+[prog.cob:3: warning: optional period used
+prog.cob:5: warning: optional period used
+prog.cob:6: warning: optional period used
+prog.cob:7: warning: optional period used
+])
+
+AT_CLEANUP
+
+
 AT_SETUP([AREACHECK])
 AT_KEYWORDS([misc])
 
@@ -9266,3 +9303,4 @@ pgm1.cob:18: error: start of statement in Area A
 ])
 
 AT_CLEANUP
+
