@@ -1,4 +1,14 @@
 
+2022-09-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (lineseq_read): Status 09 for validation is a warning,
+	  so still parse until end of field when reading bad data
+
+	FR #422 - initial implementation of conversion via CODE-SET
+	* common.h (cob_file): new fields
+	* fileio.c (sequential_read, lineseq_read, cob_write, cob_rewrite,
+	  get_code_set_converted_data): handle conversion
+
 2022-09-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fileio.c (cob_file_close): clear file pointer for LINE SEQUENTIAL

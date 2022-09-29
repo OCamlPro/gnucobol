@@ -1,4 +1,10 @@
 
+2022-09-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (code_set_clause): set CODE-SET as UNFINISHED and PENDING
+	  with custom code set (which other compilers don't support here)
+	* codegen.c (output_file_initialization): codegen for CODE-SET conversion
+
 2022-09-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c (output_stmt): refactored codegen for setting DEBUG-ITEM,

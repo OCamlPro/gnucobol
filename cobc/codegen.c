@@ -8821,23 +8821,6 @@ output_file_allocation (struct cb_file *f)
 			CB_PREFIX_ATTR, i);
 	}
 
-	if (f->code_set) {
-		gen_native = 1;
-		switch (f->code_set->alphabet_type) {
-		case CB_ALPHABET_ASCII:
-			gen_ebcdic_ascii = 1;
-			break;
-		case CB_ALPHABET_EBCDIC:
-			gen_full_ebcdic = 1;
-			break;
-		case CB_ALPHABET_CUSTOM:
-			gen_custom = 1;
-			break;
-		default:
-			break;
-		}
-	}
-
 	if (f->linage) {
 		return 1;
 	}
@@ -8867,7 +8850,6 @@ output_key_components (struct cb_file* f, struct cb_key_component* key_component
 static void
 output_file_initialization (struct cb_file *f)
 {
-	struct cb_alt_key	*l;
 	int			nkeys;
 	int			features;
 	char			key_ptr[64];
@@ -8875,6 +8857,7 @@ output_file_initialization (struct cb_file *f)
 	output_line ("/* File initialization for %s */", f->name);
 	if (f->organization == COB_ORG_RELATIVE
 	 || f->organization == COB_ORG_INDEXED) {
+		struct cb_alt_key * l;
 		nkeys = 1;
 		for (l = f->alt_key_list; l; l = l->next) {
 			nkeys++;
@@ -8899,6 +8882,7 @@ output_file_initialization (struct cb_file *f)
 	/* Output RELATIVE/RECORD KEY's */
 	if (f->organization == COB_ORG_RELATIVE
 	 || f->organization == COB_ORG_INDEXED) {
+		struct cb_alt_key	*l;
 #if 0 /* now done in cob_file_malloc / cob_file_external_addr */
 		output_line ("%s%s->nkeys = %d;", CB_PREFIX_FILE,
 			     f->cname, nkeys);
@@ -9037,7 +9021,62 @@ output_file_initialization (struct cb_file *f)
 		output_line ("lingptr->lin_bot = 0;");
 	}
 
-	output_line ("%s%s->fd = -1;", CB_PREFIX_FILE, f->cname);
+	if (f->organization != COB_ORG_SORT
+	 && f->code_set) {
+		/* pass CODE-SET as collation */
+		const char *alph_write, *alph_read;
+		switch (f->code_set->alphabet_type) {
+		case CB_ALPHABET_ASCII:
+			if (cb_flag_alt_ebcdic) {
+				alph_read = "cob_a2e";
+				gen_alt_ebcdic = 1;
+			} else {
+				alph_read = "cob_ascii_ebcdic";
+				gen_full_ebcdic = 1;
+			}
+			alph_write = "cob_ebcdic_ascii"; 
+			gen_ebcdic_ascii = 1;
+			break;
+		case CB_ALPHABET_EBCDIC:
+			alph_read = "cob_ebcdic_ascii";
+			gen_ebcdic_ascii = 1;
+			if (cb_flag_alt_ebcdic) {
+				alph_write = "cob_a2e"; 
+				gen_alt_ebcdic = 1;
+			} else {
+				alph_write = "cob_ascii_ebcdic"; 
+				gen_full_ebcdic = 1;
+			}
+			break;
+		/* case CB_ALPHABET_CUSTOM: */ 
+		default:
+			alph_read = alph_write = NULL;
+			break;
+		}
+
+		output_line ("%s%s->sort_collating = %s;", CB_PREFIX_FILE, f->cname, alph_write);
+		output_line ("%s%s->code_set_read = %s;", CB_PREFIX_FILE, f->cname, alph_read);
+		if (f->code_set_items) {
+			const unsigned int items = cb_list_length (CB_TREE (f->code_set_items));
+			unsigned int i = 0;
+			struct cb_list	*l;
+			output_line ("%s%s->nconvert_fields = %u;", CB_PREFIX_FILE, f->cname, items);
+			output_line ("%s%s->convert_field = cob_malloc (sizeof (struct __cob_field) * %u);",
+				CB_PREFIX_FILE, f->cname, items);
+			for (l = f->code_set_items; l; l = CB_LIST (l->chain)) {
+				output_prefix ();
+				output ("COB_SET_FLD (%s%s->convert_field[%u], %d, ",
+					CB_PREFIX_FILE, f->cname, i++, CB_FIELD_PTR (l->value)->size);
+				output_data (l->value);
+				output (", NULL );");
+				output_newline ();
+				if (!l->chain) {
+					break;
+				}
+			}
+		}
+	}
+
 	output_line ("%s%s->organization = %d;", CB_PREFIX_FILE, f->cname,
 		     f->organization);
 	output_line ("%s%s->access_mode = %d;", CB_PREFIX_FILE, f->cname,

@@ -42,6 +42,7 @@
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <limits.h>
 
 #ifdef	HAVE_UNISTD_H
 #include <unistd.h>
@@ -2088,6 +2089,29 @@ again:
 		goto again;
 	}
 
+	/* CODE-SET conversion */
+	if (f->sort_collating) {
+		const unsigned char* rec_end = f->record->data + bytesread;
+		if (f->nconvert_fields) {
+			/* CODE-SET FOR - convert specific area only */
+			size_t ic;
+			for (ic = 0; ic < f->nconvert_fields; ic++) {
+				const cob_field to_conv = f->convert_field[ic];
+				const unsigned char* to_conv_end = to_conv.data + to_conv.size;
+				const unsigned char* conv_end = rec_end < to_conv_end ? rec_end : to_conv_end;
+				unsigned char* p;
+				for (p = to_conv.data; p < conv_end; p++) {
+					*p = f->code_set_read[*p];
+				}
+			}
+		} else {
+			/* CODE-SET conversion for complete record */
+			unsigned char* p;
+			for (p = f->record->data; p < rec_end; p++) {
+				*p = f->code_set_read[*p];
+			}
+		}
+	}
 	if (unlikely (bytesread != (int)f->record->size)) {
 		if (bytesread == 0) {
 			return COB_STATUS_10_END_OF_FILE;
@@ -2202,7 +2226,7 @@ lineseq_read (cob_file *f, const int read_opts)
 	FILE	*fp;
 	unsigned char	*dataptr;
 	size_t		i = 0;
-	int		n;
+	int		n, bad_data = 0;
 
 #ifdef	WITH_SEQRA_EXTFH
 	int		extfh_ret;
@@ -2246,15 +2270,20 @@ again:
 		if (n == '\n') {
 			break;
 		}
+		/* CODE-SET conversion for complete record */
+		if (n < UCHAR_MAX && f->sort_collating && !f->nconvert_fields) {
+			n = f->code_set_read[(unsigned char)n];
+		}
 #if 0 /* Note: file specific features are 4.x only ... */
 		if ((f->file_features & COB_FILE_LS_VALIDATE) {
 #else
 		if (cobsetptr->cob_ls_validate
-		 && !f->flag_line_adv) {
+		 && !f->flag_line_adv
+		 && !f->nconvert_fields) {
 #endif
 			if ((IS_BAD_CHAR (n) 
 			  || (n > 0x7E && !isprint(n)))) {
-				return COB_STATUS_09_READ_DATA_BAD;
+				bad_data = 1;
 			}
 		} else
 		if (cobsetptr->cob_ls_nulls) {
@@ -2270,7 +2299,7 @@ again:
 					return COB_STATUS_71_BAD_CHAR;
 				}
 			/* Not NULL-Encoded, may not be less than a space */
-			} else if ((unsigned char)n < ' ') {
+			} else if (!f->nconvert_fields && (unsigned char)n < ' ') {
 				return COB_STATUS_71_BAD_CHAR;
 			}
 		}
@@ -2301,6 +2330,24 @@ again:
 			}
 		}
 	}
+	/* CODE-SET FOR - convert specific area only */
+	if (f->sort_collating && f->nconvert_fields) {
+		const unsigned char* rec_end = f->record->data + i;
+		size_t ic;
+		for (ic = 0; ic < f->nconvert_fields; ic++) {
+			const cob_field to_conv = f->convert_field[ic];
+			const unsigned char *to_conv_end = to_conv.data + to_conv.size;
+			const unsigned char *conv_end = rec_end < to_conv_end ? rec_end : to_conv_end;
+			unsigned char * p;
+			for (p = to_conv.data; p < conv_end; p++) {
+				n = *p = f->code_set_read[*p];
+				if ((IS_BAD_CHAR (n)
+					|| (n > 0x7E && !isprint (n)))) {
+					bad_data = 1;
+				}
+			}
+		}
+	}
 	if (i < f->record_max) {
 		/* Fill the record with spaces */
 		memset ((unsigned char *)f->record->data + i, ' ',
@@ -2311,6 +2358,9 @@ again:
 	if (f->open_mode == COB_OPEN_I_O)	/* Required on some systems */
 		fflush (fp);
 #endif
+	if (bad_data) {
+		return COB_STATUS_09_READ_DATA_BAD;
+	}
 	return COB_STATUS_00_SUCCESS;
 }
 
@@ -2355,7 +2405,7 @@ lineseq_write (cob_file *f, const int opt)
 	FILE	*fp = (FILE *)f->file;
 	unsigned char		*p;
 	cob_linage		*lingptr;
-	size_t			size;
+	const size_t		size = f->record->size;
 	int			ret;
 
 #ifdef	WITH_SEQRA_EXTFH
@@ -2367,8 +2417,6 @@ lineseq_write (cob_file *f, const int opt)
 	}
 #endif
 
-	/* Determine the size to be written */
-	size = lineseq_size (f);
 
 	if (unlikely (f->flag_select_features & COB_SELECT_LINAGE)) {
 		if (f->flag_needs_top) {
@@ -2398,7 +2446,8 @@ lineseq_write (cob_file *f, const int opt)
 		if ((f->file_features & COB_FILE_LS_VALIDATE)) {
 #else
 		if (cobsetptr->cob_ls_validate
-		 && !f->flag_line_adv) {
+		 && !f->flag_line_adv
+		 && !f->sort_collating /* pre-validated */) {
 #endif
 			p = f->record->data;
 			for (i = 0; i < size; ++i, ++p) {
@@ -2464,7 +2513,8 @@ lineseq_rewrite (cob_file *f, const int opt)
 {
 	FILE	*fp = (FILE *)f->file;
 	unsigned char	*p;
-	size_t		size, psize, slotlen;
+	const size_t		size = f->record->size;
+	size_t		psize, slotlen;
 	off_t		curroff;
 
 #if 0 /* pipes are GC4+ only feature */
@@ -2473,7 +2523,6 @@ lineseq_rewrite (cob_file *f, const int opt)
 #endif
 
 	curroff = ftell (fp);	/* Current file position */
-	size = lineseq_size (f);
 
 	p = f->record->data;
 	psize = size;
@@ -5660,10 +5709,12 @@ cob_file_free (cob_file **pfl, cob_file_key **pky)
 			cob_cache_free (fl->org_filename);
 			fl->org_filename = NULL;
 		}
-		if (*pfl != NULL) {
-			cob_cache_free (*pfl);
-			*pfl = NULL;
+		if (fl->convert_field) {
+			cob_free (fl->convert_field);
+			fl->convert_field = NULL;
 		}
+		cob_cache_free (*pfl);
+		*pfl = NULL;
 	}
 }
 
@@ -6144,6 +6195,41 @@ Again:
 	save_status (f, fnstatus, ret);
 }
 
+/* CODE-SET conversion for re-/write */
+static unsigned char *
+get_code_set_converted_data (cob_file *f)
+{
+	const size_t size = f->record->size;
+	unsigned char *real_rec_data = f->record->data;
+	unsigned char *converted_copy = cob_malloc (size);
+	if (!converted_copy) return NULL;
+
+	if (f->nconvert_fields) {
+		/* CODE-SET FOR - convert specific areas only */
+		const unsigned char* rec_end = converted_copy + size;
+		size_t ic;
+		memcpy (converted_copy, real_rec_data, size);
+		for (ic = 0; ic < f->nconvert_fields; ic++) {
+			const cob_field to_conv = f->convert_field[ic];
+			const unsigned char* to_conv_end = to_conv.data + to_conv.size;
+			const unsigned char* conv_end = rec_end < to_conv_end ? rec_end : to_conv_end;
+			unsigned char* p;
+			for (p = to_conv.data; p < conv_end; p++) {
+				*p = f->sort_collating[*p];
+			}
+		}
+	} else {
+		/* CODE-SET FOR - convert complete record */
+		const unsigned char *rec_end = real_rec_data + size;
+		unsigned char *d, *p;
+		for (d = converted_copy, p = real_rec_data; p < rec_end; d++, p++) {
+			*d = f->sort_collating[*p];
+		}
+	}
+
+	return converted_copy;
+}
+
 void
 cob_write (cob_file *f, cob_field *rec, const int opt, cob_field *fnstatus,
 	   const unsigned int check_eop)
@@ -6179,6 +6265,44 @@ cob_write (cob_file *f, cob_field *rec, const int opt, cob_field *fnstatus,
 	}
 
 	check_eop_status = check_eop;
+
+	if (f->organization == COB_ORG_LINE_SEQUENTIAL) {
+		/* Re-Determine the size to be written (done here so possible
+		   CODE-SET conversions do not convert trailing spaces when
+		   not part of the record [= fixed length] */
+		const size_t size = lineseq_size (f);
+		/* early pre-validation for data we'd otherwise convert */
+		if (cobsetptr->cob_ls_validate
+		 && !f->flag_line_adv
+		 && f->sort_collating) {
+			const unsigned char *p = f->record->data;
+			size_t i;
+			for (i = 0; i < size; ++i, ++p) {
+				if (IS_BAD_CHAR (*p)) {
+					save_status (f, fnstatus, COB_STATUS_71_BAD_CHAR);
+					return;
+				}
+			}
+		}
+		f->record->size = size;
+	}
+
+	/* CODE-SET conversion (write from converted shadow-copy) */
+	if (f->organization != COB_ORG_SORT && f->sort_collating) {
+		unsigned char *real_rec_data = f->record->data;
+		unsigned char *converted_copy = get_code_set_converted_data (f);
+		if (!converted_copy) {
+			save_status (f, fnstatus, COB_STATUS_30_PERMANENT_ERROR);
+			return;
+		}
+		f->record->data = converted_copy;
+		save_status (f, fnstatus,
+				fileio_funcs[(int)f->organization]->write (f, opt));
+		f->record->data = real_rec_data;
+		cob_free (converted_copy);
+		return;
+	}
+
 	save_status (f, fnstatus,
 		     fileio_funcs[(int)f->organization]->write (f, opt));
 }
@@ -6226,6 +6350,29 @@ cob_rewrite (cob_file *f, cob_field *rec, const int opt, cob_field *fnstatus)
 		}
 	} else {
 		f->record->size = rec->size;
+	}
+
+	if (f->organization == COB_ORG_LINE_SEQUENTIAL) {
+		/* Re-Determine the size to be written (done here so possible
+		   CODE-SET conversions do not convert trailing spaces when
+		   not part of the record [= fixed length] */
+		f->record->size = lineseq_size (f);
+	}
+
+	/* CODE-SET conversion (rewrite from converted shadow-copy) */
+	if (f->organization != COB_ORG_SORT && f->sort_collating) {
+		unsigned char *real_rec_data = f->record->data;
+		unsigned char *converted_copy = get_code_set_converted_data (f);
+		if (!converted_copy) {
+			save_status (f, fnstatus, COB_STATUS_30_PERMANENT_ERROR);
+			return;
+		}
+		f->record->data = converted_copy;
+		save_status (f, fnstatus,
+				 fileio_funcs[(int)f->organization]->rewrite (f, opt));
+		f->record->data = real_rec_data;
+		cob_free (converted_copy);
+		return;
 	}
 
 	save_status (f, fnstatus,
@@ -9298,6 +9445,8 @@ EXTFH (unsigned char *opcode, FCD3 *fcd)
 static int
 EXTFH3 (unsigned char *opcode, FCD3 *fcd)
 {
+	/* TODO check CODE-SET conversion for lsq/seq read/write */
+
 	int	opcd,sts,opts,eop,k;
 	unsigned char	fnstatus[2];	/* storage for local file status field */
 	unsigned char	keywrk[80];

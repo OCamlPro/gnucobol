@@ -6236,7 +6236,7 @@ file_description_clause:
 	check_repeated ("EXTERNAL", SYN_CLAUSE_1, &check_duplicate);
 #if	0	/* RXWRXW - Global/External */
 	if (current_file->flag_global) {
-		cb_error (_("file cannot have both EXTERNAL and GLOBAL clauses"));
+		cb_error (_("%s and %s are mutually exclusive"), "EXTERNAL", "GLOBAL");
 	}
 #endif
 	current_file->flag_external = 1;
@@ -6246,7 +6246,7 @@ file_description_clause:
 	check_repeated ("GLOBAL", SYN_CLAUSE_2, &check_duplicate);
 #if	0	/* RXWRXW - Global/External */
 	if (current_file->flag_external) {
-		cb_error (_("file cannot have both EXTERNAL and GLOBAL clauses"));
+		cb_error (_("%s and %s are mutually exclusive"), "EXTERNAL", "GLOBAL");
 	}
 #endif
 	if (current_program->prog_type == COB_MODULE_TYPE_FUNCTION) {
@@ -6478,22 +6478,24 @@ code_set_clause:
 
 	if (CB_VALID_TREE ($3)) {
 		al = CB_ALPHABET_NAME (cb_ref ($3));
+		/* FIXME: should be set depending on program alphabet */
 		switch (al->alphabet_type) {
+		case CB_ALPHABET_CUSTOM:
+			CB_PENDING ("custom CODE-SET");
+			current_file->code_set = al;
+			break;
 #ifdef	COB_EBCDIC_MACHINE
 		case CB_ALPHABET_ASCII:
 #else
 		case CB_ALPHABET_EBCDIC:
 #endif
-		case CB_ALPHABET_CUSTOM:
+			CB_UNFINISHED ("CODE-SET");
 			current_file->code_set = al;
-			CB_PENDING ("CODE-SET");
 			break;
 		default:
 			if (cb_warn_opt_val[cb_warn_additional] != COBC_WARN_DISABLED) {
-				cb_warning_x (cb_warn_additional, $3, _("ignoring CODE-SET '%s'"),
+				cb_note_x (cb_warn_additional, $3, _("ignoring CODE-SET '%s'"),
 						  cb_name ($3));
-			} else {
-				CB_PENDING ("CODE-SET");
 			}
 			break;
 		}
@@ -6510,7 +6512,6 @@ code_set_clause:
 _for_sub_records_clause:
 | FOR reference_list
   {
-	  CB_PENDING ("FOR sub-records");
 	  current_file->code_set_items = CB_LIST ($2);
   }
 ;
