@@ -1,4 +1,8 @@
 
+2022-09-30  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* .github/workflows: fix ubuntu CI setup
+
 2022-09-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: cleanup curses library check

@@ -27,6 +27,7 @@ jobs:
 
       - name: Install packages
         run: |
+          sudo apt-get update
           sudo apt-get install automake libtool libdb5.3-dev libxml2-dev libcjson-dev bison flex help2man gettext texlive
 
       - name: Set git user
