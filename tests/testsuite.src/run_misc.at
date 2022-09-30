@@ -877,7 +877,8 @@ AT_CLEANUP
 ## OCCURS clause
 
 AT_SETUP([OCCURS on level 01])
-AT_KEYWORDS([runmisc VALUE SET ADDRESS])
+AT_KEYWORDS([runmisc toplevel
+VALUE SET ADDRESS BOUND DEPENDING ODO])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -897,7 +898,35 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog2.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       77 XX PIC 99 VALUE 5.
+       01 X             PIC X OCCURS 0 TO 10
+                        DEPENDING ON XX VALUE "A".
+       LINKAGE SECTION.
+       01 X-ALL         PIC X(10).
+       PROCEDURE        DIVISION.
+           INITIALIZE   X(1) X(3) X(5) X(7)
+           MOVE ZERO TO X(2) X(4) X(6) X(8)
+           SET ADDRESS OF X-ALL TO ADDRESS OF X(1)
+           IF X-ALL NOT = " 0 0 0 0AA"
+              DISPLAY X-ALL UPON SYSERR
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fno-ec=bound -o baddy prog2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./baddy], [0], [], [])
+
+AT_CHECK([$COMPILE prog2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2], [1], [],
+[libcob: prog2.cob:13: error: subscript of 'X' out of bounds: 6
+note: current maximum subscript for 'X': 5
+])
 
 AT_CLEANUP
 

@@ -1,4 +1,9 @@
 
+2022-09-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_identifier): fix codegen for odo-check
+	  on level 01 OCCURS items, bug introduced with 2022-07-12
+
 2022-09-29  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y (code_set_clause): set CODE-SET as UNFINISHED and PENDING
