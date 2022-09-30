@@ -1,8 +1,10 @@
 
 2022-09-30  Simon Sobisch <simonsobisch@gnu.org>
 
-	* testsuite.src/run_extensions.at, testsuite.src/run_file.at:
-	  moved LINE SEQUNTIAL related tests to run_file.at
+	* testsuite.src/run_extensions.at, testsuite.src/run_file.at: moved
+	  LINE SEQUNTIAL related tests to run_file.at
+	* testsuite.src/run_misc.at, testsuite.src/run_extensions.at: moved
+	  INSPECT ... TRAILING and EXAMINE related tests to run_extensions.at
 
 2022-09-21  Simon Sobisch <simonsobisch@gnu.org>
 
