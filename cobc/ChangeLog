@@ -3,6 +3,8 @@
 
 	* typeck.c (cb_build_identifier): fix codegen for odo-check
 	  on level 01 OCCURS items, bug introduced with 2022-07-12
+	* pplex.l: dropped check for "spurious '$'", fixing bug #839
+	  and acucomment not handling $ correct
 
 2022-09-29  Simon Sobisch <simonsobisch@gnu.org>
 
