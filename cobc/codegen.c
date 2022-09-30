@@ -213,6 +213,7 @@ static unsigned int		need_save_exception = 0;
 static unsigned int		gen_nested_tab = 0;
 static unsigned int		gen_alt_ebcdic = 0;
 static unsigned int		gen_ebcdic_ascii = 0;
+static unsigned int		gen_ibmebcdic = 0;
 static unsigned int		gen_gcos7ebcdic = 0;
 static unsigned int		gen_full_ebcdic = 0;
 static unsigned int		gen_native = 0;
@@ -2589,6 +2590,11 @@ colseq_table_name (const enum cb_ebcdic_table table_name,
 			COBC_ABORT ();
 		}
 		return "cob_a2e";
+	case CB_EBCDIC_IBM:
+		gen_ibmebcdic = 1;
+		return direction == OF_ASCII
+			? "cob_ascii_ibmebcdic"
+			: "cob_ibmebcdic_ascii";
 	case CB_EBCDIC_GCOS:
 		gen_gcos7ebcdic = 1;
 		return direction == OF_ASCII
@@ -2622,6 +2628,19 @@ output_alt_ebcdic_table (void)
 	output_storage ("\n/* ASCII to EBCDIC translate table (restricted) */\n");
 	output_colseq_table (colseq_table_name (CB_EBCDIC_RESTRICTED_GC, OF_ASCII),
 			     cob_ascii_alt_ebcdic);
+	output_storage ("\n");
+}
+
+static void
+output_ibmebcdic_table (void)
+{
+	if (!gen_ibmebcdic) {
+		return;
+	}
+
+	output_storage ("\n/* extended ASCII to IBM EBCDIC translate table (restricted) */\n");
+	output_colseq_table (colseq_table_name (CB_EBCDIC_IBM, OF_ASCII),
+			     cob_ascii_ibmebcdic);
 	output_storage ("\n");
 }
 

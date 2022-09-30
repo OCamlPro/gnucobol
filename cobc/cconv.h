@@ -53,11 +53,21 @@ extern const cob_u8_t cob_ascii_gcos7ebcdic[256];
 /* ASCII to EBCDIC conversion table (restricted) */
 extern const cob_u8_t cob_ascii_alt_ebcdic[256];
 
-/*  */
+/* IBM EBCDIC to ASCII conversion table (restricted)
 
+   cf https://www.ibm.com/docs/en/iis/11.3?topic=tables-ebcdic-ascii */
+extern const cob_u8_t cob_ibmebcdic_ascii[256];
+
+/* ASCII to IBM EBCDIC conversion table (restricted)
+
+   cf https://www.ibm.com/docs/en/iis/11.3?topic=tables-ascii-ebcdic */
+extern const cob_u8_t cob_ascii_ibmebcdic[256];
+
+/* All supported conversions */
 enum cb_ebcdic_table {
 	CB_EBCDIC_DEFAULT,
 	CB_EBCDIC_RESTRICTED_GC,
+	CB_EBCDIC_IBM,
 	CB_EBCDIC_GCOS,
 };
 
