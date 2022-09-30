@@ -3,8 +3,7 @@
 
 	* codegen.c, cconv.h, cconv.c: extract EBCDIC & ASCII conversion tables
 	  to a dedicated module
-	* flag.def: add -febcdic-table flag to customize EBCDIC translation;
-	  drop -falernate-ebcdic (replaced by -febcdic-table=restricted-gc)
+	* flag.def: add -febcdic-table flag to customize EBCDIC translation
 
 2022-09-30  Simon Sobisch <simonsobisch@gnu.org>
 

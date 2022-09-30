@@ -611,6 +611,10 @@ static const struct option long_options[] = {
 	{"fnotrunc",		CB_NO_ARG, &cb_flag_trunc, 0},
 	{"fno-notrunc",		CB_NO_ARG, &cb_flag_trunc, 1},
 
+	/* alias for backwards-compatibility, removed with 4.x: */
+	{"falternate-ebcdic",		CB_NO_ARG, (int*)&cb_ebcdic_table, CB_EBCDIC_RESTRICTED_GC},
+	{"fno-alternate-ebcdic",	CB_NO_ARG, (int*)&cb_ebcdic_table, CB_EBCDIC_DEFAULT},
+
 #define	CB_CONFIG_ANY(type,var,name,doc)	\
 	{"f" name,		CB_RQ_ARG, NULL, '%'},
 #define	CB_CONFIG_INT(var,name,min,max,odoc,doc)	\
