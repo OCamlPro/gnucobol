@@ -2571,7 +2571,7 @@ output_literals_figuratives_and_constants (void)
 
 enum cb_cconv_dir { OF_ASCII, TO_ASCII };
 static const char *
-colseq_table_name (const enum cb_ebcdic_table table_name,
+colseq_table_name (const enum ebcdic_table table_name,
 		   const enum cb_cconv_dir direction) {
 	/* FIXME: assumes !COB_EBCDIC_MACHINE */
 	switch (table_name) {
@@ -2731,6 +2731,7 @@ static void
 output_collating_tables (void)
 {
 	output_alt_ebcdic_table ();
+	output_ibmebcdic_table ();
 	output_gcos7ebcdic_table ();
 	output_full_ebcdic_table ();
 	output_ebcdic_to_ascii_table ();

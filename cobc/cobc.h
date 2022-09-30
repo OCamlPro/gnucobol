@@ -29,6 +29,7 @@
 #ifdef	HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#include <stdio.h>		/* for FILE */
 #include "../libcob/common.h"
 #include "cconv.h"
 
@@ -537,8 +538,6 @@ extern int			cb_exp_line;
 extern int			functions_are_all;
 extern struct cb_tree_common	*defined_prog_list;
 extern int			current_call_convention;
-
-extern enum cb_ebcdic_table	cb_ebcdic_table;
 
 /* Functions */
 

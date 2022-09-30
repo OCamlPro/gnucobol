@@ -64,14 +64,15 @@ extern const cob_u8_t cob_ibmebcdic_ascii[256];
 extern const cob_u8_t cob_ascii_ibmebcdic[256];
 
 /* All supported conversions */
-enum cb_ebcdic_table {
+enum ebcdic_table {
 	CB_EBCDIC_DEFAULT,
 	CB_EBCDIC_RESTRICTED_GC,
 	CB_EBCDIC_IBM,
 	CB_EBCDIC_GCOS,
 };
 
-int cobc_deciph_ebcdic_table_name (enum cb_ebcdic_table * const,
-				   const char *const);
+extern enum ebcdic_table cb_ebcdic_table;
+
+int cobc_deciph_ebcdic_table_name (const char *const);
 
 #endif /* CB_CCONV_H */

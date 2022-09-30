@@ -19,8 +19,6 @@
    along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "cconv.h"
-
-#include <stdio.h>		/* for FILE (FIXME: move to cobc.h?) */
 #include "cobc.h"		/* for cb_strcasecmp */
 
 /* TODO: Maybe use iconv or gconv before extending to other character sets while
@@ -339,19 +337,19 @@ const cob_u8_t cob_ascii_ibmebcdic[256] = {
 	0x3F, 0x3F, 0x3F, 0x3F, 0x3F, 0x3F, 0x3F, 0x3F
 };
 
+enum ebcdic_table cb_ebcdic_table = CB_EBCDIC_DEFAULT;
 
 /* Decipher character conversion table names */
-int cobc_deciph_ebcdic_table_name (enum cb_ebcdic_table * const t,
-				   const char *name)
+int cobc_deciph_ebcdic_table_name (const char *name)
 {
 	if (! cb_strcasecmp (name, "DEFAULT")) {
-		*t = CB_EBCDIC_DEFAULT;
+		cb_ebcdic_table = CB_EBCDIC_DEFAULT;
 	} else if (! cb_strcasecmp (name, "RESTRICTED-GC")) {
-		*t = CB_EBCDIC_RESTRICTED_GC;
+		cb_ebcdic_table = CB_EBCDIC_RESTRICTED_GC;
 	} else if (! cb_strcasecmp (name, "IBM")) {
-		*t = CB_EBCDIC_IBM;
+		cb_ebcdic_table = CB_EBCDIC_IBM;
 	} else if (! cb_strcasecmp (name, "GCOS")) {
-		*t = CB_EBCDIC_GCOS;
+		cb_ebcdic_table = CB_EBCDIC_GCOS;
 	} else {
 		return 1;
 	}
