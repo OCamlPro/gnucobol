@@ -94,10 +94,10 @@ CB_FLAG_NQ (1, "callfh", 9,
 
 CB_FLAG_NQ (1, "ebcdic-table", 14, /* cf cconv.h for all available tables */
 	_("  -febcdic-table=[DEFAULT|RESTRICTED-GC|IBM|GCOS]\tdefine EBCDIC translation table:\n"
-	  "                        * default: MF-specific translation to extended ASCII\n"
-	  "                        * restricted-gc: translation to restricted ASCII\n"
-	  "                        * ibm: IBM-specific translation to 7-bit ASCII"
-	  "                        * gcos: GCOS-specific translation to extended ASCII"))
+	  "                        * default: translation to extended ASCII as per MF\n"
+	  "                        * restricted-gc: translation from restricted ASCII only\n"
+	  "                        * ibm: translation to restricted ASCII as per IBM"
+	  "                        * gcos: translation to extended ASCII as per GCOS7"))
 
 /* Binary flags */
 

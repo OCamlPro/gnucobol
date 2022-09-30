@@ -103,6 +103,19 @@ NEWS - user visible changes				-*- outline -*-
    be reported and recovered from.  This is configurable with option
    `missing-period`.
 
+** the new -febcdic-table option enables one to specify the
+   translation table used when dealing with EBCDIC codeset.  Available
+   tables are:
+
+   DEFAULT		translation to extended ASCII as per MF
+   RESTRICTED-GC	translation from restricted ASCII only
+   IBM			translation to restricted ASCII as per IBM
+   GCOS			translation to extended ASCII as per GCOS7
+
+   This option supersedes the -falternate-ebcdic flag (still available
+   for backwards compatibility), which is equivalent to
+   -febcdic-table=restricted-gc.
+
 ** the compile flag -fodoslide was moved to a dialect configuration,
    while -fodoslide still works as before it is now implied with
    -std=ibm/mvs/bs2000, if you use those dialects consider to recompile
