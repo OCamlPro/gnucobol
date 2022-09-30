@@ -819,6 +819,7 @@ cobc: error: please check environment variables as noted above
 
 AT_CLEANUP
 
+
 AT_SETUP([cobc configuration: source format])
 AT_KEYWORDS([configuration misc format])
 
@@ -873,5 +874,26 @@ wide.cob:9: error: missing terminating ' character
 wide.cob:9: warning: optional period used
 ])
 AT_CHECK([$COMPILE_ONLY -ftext-column=80 wide.cob], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([cobc configuration: ebcdic-table])
+AT_KEYWORDS([configuration misc ebcdic])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           STOP RUN.
+])
+
+AT_CHECK([$COBC -febcdic-table=default prog.cob], [0], [], [])
+AT_CHECK([$COBC -febcdic-table=restricted-gc prog.cob], [0], [], [])
+AT_CHECK([$COBC -febcdic-table=ibm prog.cob], [0], [], [])
+AT_CHECK([$COBC -febcdic-table=gcos prog.cob], [0], [], [])
+AT_CHECK([$COBC -febcdic-table=unknown prog.cob], [1], [],
+[cobc: error: invalid parameter: -febcdic-table
+])
 
 AT_CLEANUP
