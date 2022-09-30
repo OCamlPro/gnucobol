@@ -1,4 +1,12 @@
 
+2022-09-30  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* codegen.c, cconv.h, cconv.c: extract EBCDIC & ASCII conversion tables
+	  to a dedicated module
+	* codegen.c: factorize functions for outputting conversion tables
+	* flag.def, help.c: add -febcdic-table flag to customize EBCDIC
+	  translation
+
 2022-09-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (cb_build_identifier): fix codegen for odo-check

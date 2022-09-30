@@ -197,6 +197,9 @@ cobc_print_usage_flags (void)
 	cobc_print_active (
 	_("  -fibmcomp             sets -fbinary-size=2-4-8 -fsynchronized-clause=ok\n"
 	  "  -fno-ibmcomp          sets -fbinary-size=1--8  -fsynchronized-clause=ignore"), 0);
+	cobc_print_active (
+	_("  -falternate-ebcdic    use restricted ASCII to EBCDIC translate\n"
+	  "  -fno-alternate-ebcdic use extended ASCII to EBCDIC translate"), 0);
 	putchar ('\n');
 }
 

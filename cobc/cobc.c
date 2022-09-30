@@ -61,6 +61,7 @@
 
 #include "cobc.h"
 #include "tree.h"
+#include "cconv.h"
 
 #include "../libcob/cobgetopt.h"
 
@@ -607,6 +608,10 @@ static const struct option long_options[] = {
 	/* alias for backwards-compatibility, removed with 4.x: */
 	{"fnotrunc",		CB_NO_ARG, &cb_flag_trunc, 0},
 	{"fno-notrunc",		CB_NO_ARG, &cb_flag_trunc, 1},
+
+	/* alias for backwards-compatibility, removed with 4.x: */
+	{"falternate-ebcdic",		CB_NO_ARG, (int*)&cb_ebcdic_table, CB_EBCDIC_RESTRICTED_GC},
+	{"fno-alternate-ebcdic",	CB_NO_ARG, (int*)&cb_ebcdic_table, CB_EBCDIC_DEFAULT},
 
 #define	CB_CONFIG_ANY(type,var,name,doc)	\
 	{"f" name,		CB_RQ_ARG, NULL, '%'},
@@ -3478,6 +3483,13 @@ process_command_line (const int argc, char **argv)
 				cb_ebcdic_sign = 0;
 			} else {
 				cobc_err_exit (COBC_INV_PAR, "-fsign");
+			}
+			break;
+
+		case 14:
+			/* -febcdic-table=<cconv-table> */
+			if (cobc_deciph_ebcdic_table_name (cob_optarg)) {
+				cobc_err_exit (COBC_INV_PAR, "-febcdic-table");
 			}
 			break;
 
