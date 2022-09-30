@@ -436,9 +436,9 @@ static struct config_tbl gc_conf[] = {
 	{"COB_VARSEQ_FORMAT", "varseq_format", 	varseq_dflt, varseqopts, GRP_FILE, ENV_UINT | ENV_ENUM, SETPOS (cob_varseq_type)},
 	{"COB_LS_FIXED", "ls_fixed", 		"0", 	NULL, GRP_FILE, ENV_BOOL, SETPOS (cob_ls_fixed)},
 	{"STRIP_TRAILING_SPACES", "strip_trailing_spaces", 		NULL, 	NULL, GRP_HIDE, ENV_BOOL | ENV_NOT, SETPOS (cob_ls_fixed)},
-	{"COB_LS_VALIDATE","ls_validate",	"true",	NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_validate)},
+	{"COB_LS_VALIDATE","ls_validate",	"1",	NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_ls_validate)},
 	{"COB_LS_NULLS", "ls_nulls", 		"0", 	NULL, GRP_FILE, ENV_BOOL, SETPOS (cob_ls_nulls)},
-	{"COB_LS_SPLIT", "ls_split", 		"0", 	NULL, GRP_FILE, ENV_BOOL, SETPOS (cob_ls_split)},
+	{"COB_LS_SPLIT", "ls_split", 		"1", 	NULL, GRP_FILE, ENV_BOOL, SETPOS (cob_ls_split)},
     {"COB_SEQ_CONCAT_NAME","seq_concat_name","0",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_concat_name)},
     {"COB_SEQ_CONCAT_SEP","seq_concat_sep","+",NULL,GRP_FILE,ENV_CHAR,SETPOS(cob_concat_sep),1},
 	{"COB_SORT_CHUNK", "sort_chunk", 		"256K", 	NULL, GRP_FILE, ENV_SIZE, SETPOS (cob_sort_chunk), (128 * 1024), (16 * 1024 * 1024)},
@@ -6657,6 +6657,11 @@ translate_boolean_to_int (const char* ptr)
 	if (*(ptr + 1) == 0 && isdigit ((unsigned char)*ptr)) {
 		return atoi (ptr);		/* 0 or 1 */
 	} else
+#if 0 /* boolean "not set" - used for file specific settings (4.x feature) */
+	if (strcasecmp (ptr, "not set") == 0) {
+		return -1;
+	} else
+#endif
 	if (strcasecmp (ptr, "true") == 0
 	 || strcasecmp (ptr, "t") == 0
 	 || strcasecmp (ptr, "on") == 0
@@ -6817,7 +6822,8 @@ set_config_val (char *value, int pos)
 	} else if ((data_type & ENV_BOOL)) {	/* Boolean: Yes/No, True/False,... */
 		numval = translate_boolean_to_int (ptr);
 
-		if (numval != 1
+		if (numval != -1
+		 && numval != 1
 		 && numval != 0) {
 			conf_runtime_error_value (ptr, pos);
 			conf_runtime_error (1, _("should be one of the following values: %s"), "true, false");
@@ -6974,17 +6980,25 @@ get_config_val (char *value, int pos, char *orgvalue)
 
 	} else if ((data_type & ENV_BOOL)) {	/* Boolean: Yes/No, True/False,... */
 		numval = get_value (data, data_len);
-		if ((data_type & ENV_NOT)) {
-			numval = !numval;
-		}
-		if (numval) {
-			strcpy (value, _("yes"));
+#if 0 /* boolean "not set" - used for file specific settings (4.x feature) */
+		if (numval == -1) {
+			strcpy (value, _("not set"));
 		} else {
-			strcpy (value, _("no"));
+#endif
+			if (data_type & ENV_NOT) {
+				numval = !numval;
+			}
+			if (numval) {
+				strcpy (value, _("yes"));
+			} else {
+				strcpy (value, _("no"));
+			}
+#if 0
 		}
+#endif
 
 	/* TO-DO: Consolidate copy-and-pasted code! */
-	} else if ((data_type & ENV_STR)) {	/* String stored as a string */
+	} else if (data_type & ENV_STR) {	/* String stored as a string */
 		memcpy (&str, data, sizeof (char *));
 		if (data_loc == offsetof (cob_settings, cob_display_print_filename)
 		 && cobsetptr->cob_display_print_file) {
@@ -7824,6 +7838,9 @@ cob_fatal_error (const enum cob_fatal_error fatal_error)
 		case COB_STATUS_61_FILE_SHARING:
 			msg = _("file sharing conflict");
 			break;
+		case COB_STATUS_71_BAD_CHAR:
+			msg = _("invalid data in LINE SEQUENTIAL file");
+			break;
 		/* LCOV_EXCL_START */
 		case COB_STATUS_91_NOT_AVAILABLE:
 			msg = _("runtime library is not configured for this operation");
@@ -8586,7 +8603,8 @@ print_runtime_conf ()
 					putchar (' ');
 					if (gc_conf[i].data_type & STS_FNCSET) {
 						printf ("   ");
-					} else if ((gc_conf[i].data_type & STS_CNFSET)) {
+					} else
+					if (gc_conf[i].data_type & STS_CNFSET) {
 						printf ("Ovr");
 					} else {
 						printf ("env");
@@ -8598,7 +8616,8 @@ print_runtime_conf ()
 						}
 					}
 					printf (": %-*s : ", hdlen, gc_conf[i].env_name);
-				} else if ((gc_conf[i].data_type & STS_CNFSET)) {
+				} else
+				if (gc_conf[i].data_type & STS_CNFSET) {
 					if ((gc_conf[i].data_type & STS_ENVCLR)) {
 						printf ("    : %-*s : ", hdlen, gc_conf[i].env_name);
 						puts (_("... removed from environment"));
@@ -8666,7 +8685,12 @@ print_runtime_conf ()
 					putchar (' ');
 					if ((gc_conf[i].data_type & STS_RESET)) {
 						printf (_("(reset)"));
-					} else if (strcmp (value, not_set) != 0) {
+					} else
+					if (strcmp (value, not_set) != 0) {
+						printf (_("(default)"));
+					} else
+					if (gc_conf[i].default_val
+					 && strcmp (gc_conf[i].default_val, not_set) == 0) {
 						printf (_("(default)"));
 					}
 				}
@@ -9126,7 +9150,8 @@ cob_stack_trace (void *target)
 }
 
 static void
-flush_target (FILE* target) {
+flush_target (FILE* target)
+{
 	if (target == stderr
 	 || target == stdout) {
 		fflush (stdout);

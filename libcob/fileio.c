@@ -2226,7 +2226,8 @@ lineseq_read (cob_file *f, const int read_opts)
 	FILE	*fp;
 	unsigned char	*dataptr;
 	size_t		i = 0;
-	int		n, bad_data = 0;
+	int		n;
+	int		sts = COB_STATUS_00_SUCCESS;
 
 #ifdef	WITH_SEQRA_EXTFH
 	int		extfh_ret;
@@ -2283,19 +2284,14 @@ again:
 #endif
 			if ((IS_BAD_CHAR (n) 
 			  || (n > 0x7E && !isprint(n)))) {
-				bad_data = 1;
+				sts = COB_STATUS_09_READ_DATA_BAD;
 			}
 		} else
 		if (cobsetptr->cob_ls_nulls) {
 			if (n == 0) {
 				n = getc (fp);
-				/* LCOV_EXCL_START */
-				if (n == EOF) {
-					return COB_STATUS_30_PERMANENT_ERROR;
-				}
-				/* LCOV_EXCL_STOP */
 				/* NULL-Encoded -> should be less than a space */
-				if ((unsigned char)n >= ' ') {		
+				if (n == EOF || (unsigned char)n >= ' ') {		
 					return COB_STATUS_71_BAD_CHAR;
 				}
 			/* Not NULL-Encoded, may not be less than a space */
@@ -2310,14 +2306,14 @@ again:
 			continue;
 		}
 #endif
-		if (likely(i < f->record_max)) {
+		if (i < f->record_max) {
 			*dataptr++ = (unsigned char)n;
 			i++;
 			if (i == f->record_max
 			 && (cobsetptr->cob_ls_split)) {
 				/* If record is too long, then simulate end
 				 * so balance becomes the next record read */
-				int	k = 1;
+				off_t	k = 1;
 				n = getc (fp);
 				if (n == '\r') {
 					n = getc (fp);
@@ -2325,9 +2321,13 @@ again:
 				}
 				if (n != '\n') {
 					fseek (fp, -k, SEEK_CUR);
+					sts = COB_STATUS_06_READ_TRUNCATE;
 				}
 				break;
 			}
+		} else
+		if (i == f->record_max) {
+			sts = COB_STATUS_04_SUCCESS_INCOMPLETE;
 		}
 	}
 	/* CODE-SET FOR - convert specific area only */
@@ -2342,8 +2342,8 @@ again:
 			for (p = to_conv.data; p < conv_end; p++) {
 				n = *p = f->code_set_read[*p];
 				if ((IS_BAD_CHAR (n)
-					|| (n > 0x7E && !isprint (n)))) {
-					bad_data = 1;
+				 || (n > 0x7E && !isprint (n)))) {
+					sts = COB_STATUS_09_READ_DATA_BAD;
 				}
 			}
 		}
@@ -2358,10 +2358,7 @@ again:
 	if (f->open_mode == COB_OPEN_I_O)	/* Required on some systems */
 		fflush (fp);
 #endif
-	if (bad_data) {
-		return COB_STATUS_09_READ_DATA_BAD;
-	}
-	return COB_STATUS_00_SUCCESS;
+	return sts;
 }
 
 /* Determine the size to be written */
@@ -2603,7 +2600,7 @@ lineseq_rewrite (cob_file *f, const int opt)
 		}
 	}
 
-	if (fseek (fp, (off_t)curroff, SEEK_SET) != 0) {
+	if (fseek (fp, curroff, SEEK_SET) != 0) {
 		return COB_STATUS_30_PERMANENT_ERROR;
 	}
 #ifdef READ_WRITE_NEEDS_FLUSH
@@ -6072,6 +6069,9 @@ cob_read (cob_file *f, cob_field *key, cob_field *fnstatus, const int read_opts)
 	switch (ret) {
 	case COB_STATUS_00_SUCCESS:
 	case COB_STATUS_02_SUCCESS_DUPLICATE:
+	case COB_STATUS_04_SUCCESS_INCOMPLETE:
+	case COB_STATUS_06_READ_TRUNCATE:
+	case COB_STATUS_09_READ_DATA_BAD:
 		f->flag_first_read = 0;
 		f->flag_read_done = 1;
 		f->flag_end_of_file = 0;
@@ -6162,6 +6162,9 @@ Again:
 	switch (ret) {
 	case COB_STATUS_00_SUCCESS:
 	case COB_STATUS_02_SUCCESS_DUPLICATE:
+	case COB_STATUS_04_SUCCESS_INCOMPLETE:
+	case COB_STATUS_06_READ_TRUNCATE:
+	case COB_STATUS_09_READ_DATA_BAD:
 		/* If record has suppressed key, skip it */
 		/* This is to catch CISAM, old VBISAM, ODBC & OCI */
 		if (f->organization == COB_ORG_INDEXED) {

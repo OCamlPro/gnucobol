@@ -1781,9 +1781,9 @@ output_standard_includes (struct cb_program *prog)
 	struct cb_program *p;
 
 #if defined (HAVE_GMP_H)
-	const char *math_include = "#include <gmp.h>";
+	#define MATH_INCLUDE "#include <gmp.h>"
 #elif defined (HAVE_MPIR_H)
-	const char *math_include = "#include <mpir.h>";
+	#define MATH_INCLUDE "#include <mpir.h>"
 #else
 #error either HAVE_GMP_H or HAVE_MPIR_H needs to be defined
 #endif
@@ -1805,10 +1805,11 @@ output_standard_includes (struct cb_program *prog)
 	if (cb_flag_winmain) {
 		output_line ("#include <windows.h>");
 	}
-	/* check if any of the processed programs has any decimal - then include appropriate header */
+	/* check if any of the processed programs has any decimal,
+	   then include appropriate header */
 	for (p = prog; p; p = p->next_program) {
 		if (p->decimal_index_max || p->flag_decimal_comp) {
-			output_line (math_include);
+			output_line (MATH_INCLUDE);
 			break;
 		}
 	}
