@@ -3,6 +3,7 @@
 
 	* codegen.c, cconv.h, cconv.c: extract EBCDIC & ASCII conversion tables
 	  to a dedicated module
+	* codegen.c: factorize functions for outputting conversion tables
 	* flag.def: add -febcdic-table flag to customize EBCDIC translation
 
 2022-09-30  Simon Sobisch <simonsobisch@gnu.org>

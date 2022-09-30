@@ -263,8 +263,9 @@ const cob_u8_t cob_ascii_alt_ebcdic[256] = {
 
 /* IBM EBCDIC to ASCII conversion table (restricted)
 
-   cf https://www.ibm.com/docs/en/iis/11.3?topic=tables-ebcdic-ascii */
-const cob_u8_t cob_ibmebcdic_asicc[256] = {
+   cf https://www.ibm.com/docs/en/iis/11.3?topic=tables-ebcdic-ascii;
+   Irregularities not accounted for */
+const cob_u8_t cob_ibmebcdic_ascii[256] = {
 	0x00, 0x01, 0x02, 0x03, 0x1A, 0x09, 0x1A, 0x7F,
 	0x1A, 0x1A, 0x1A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
 	0x10, 0x11, 0x12, 0x13, 0x1A, 0x1A, 0x08, 0x1A,
@@ -301,7 +302,8 @@ const cob_u8_t cob_ibmebcdic_asicc[256] = {
 
 /* ASCII to IBM EBCDIC conversion table (restricted)
 
-   cf https://www.ibm.com/docs/en/iis/11.3?topic=tables-ascii-ebcdic */
+   cf https://www.ibm.com/docs/en/iis/11.3?topic=tables-ascii-ebcdic;
+   Irregularities not accounted for */
 const cob_u8_t cob_ascii_ibmebcdic[256] = {
 	0x00, 0x01, 0x02, 0x03, 0x1A, 0x09, 0x1A, 0x7F,
 	0x1A, 0x1A, 0x1A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,

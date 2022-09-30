@@ -1687,7 +1687,7 @@ AT_DATA([prog.cob], [
        DATA DIVISION.
        WORKING-STORAGE SECTION.
 
-       01 TESTHEX PIC X(10) VALUE X'C17BD6F2F0F1F8404040'.
+       01 TESTHEX PIC X(10) VALUE X'C17BD6F2F0F1F8406A5A'.
 
        procedure division.
        sample-main.
@@ -1701,7 +1701,21 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
-[Converted: "A#O2018   "], [])
+[Converted: "A#O2018 |!"], [])
+
+# For characters above IBM (with irregularities) and GCOS should match:
+AT_CHECK([$COMPILE prog.cob -febcdic-table=ibm -o prog-ibm], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog-ibm], [0],
+[Converted: "A#O2018 |@:>@"], []) # prefix is actually "|]" (escaped for m4 preproc)
+
+AT_CHECK([$COMPILE prog.cob -febcdic-table=gcos -o prog-gcos], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog-gcos], [0],
+[Converted: "A#O2018 |@:>@"], []) # prefix is actually "|]" (escaped for m4 preproc)
+
+# FIXME: This really does not convert to anything close to ASCII;
+# what's this table supposed to encode?
+# AT_CHECK([$COMPILE prog.cob -febcdic-table=restricted-gc -o prog-rgc], [0], [], [])
+# AT_CHECK([$COBCRUN_DIRECT ./prog-rgc], [0], [])
 
 AT_CLEANUP
 
