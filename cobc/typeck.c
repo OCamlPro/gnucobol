@@ -2502,15 +2502,14 @@ cb_build_identifier (cb_tree x, const int subchk)
 		/* Run-time check for ODO (including all the fields subordinate items) */
 		if (CB_EXCEPTION_ENABLE (COB_EC_BOUND_SUBSCRIPT) && f->odo_level != 0) {
 			for (p = f; p; p = p->children) {
-				if (p->depending && p->depending != cb_error_node
-				    /* Do not check length for implicit access
-				       to a PIC L field (i.e, via enclosing
-				       group), as those disregard the DEPENDING.
-				       However, assuming the filler is never
-				       explicitly accessed (p == f), check is
-				       still done for explicit access to PIC L
-				       field (p->parent == f). */
-				 && (p->parent == f || !p->parent->flag_picture_l)
+				if (CB_VALID_TREE (p->depending)
+				    /* Do not check length for implicit access to
+				       a PIC L field (i.e, via enclosing group),
+					   as those disregard the DEPENDING.
+				       However, assuming the filler is never explicitly
+				       accessed (p == f), check is still done for explicit
+				       access to PIC L field (p->parent == f). */
+				 && (!p->parent || p->parent == f || !p->parent->flag_picture_l)
 				 && !p->flag_unbounded) {
 					e1 = CB_BUILD_FUNCALL_5 ("cob_check_odo",
 						 cb_build_cast_int (p->depending),
@@ -7244,8 +7243,6 @@ static unsigned int
 emit_move_corresponding (cb_tree x1, cb_tree x2)
 {
 	struct cb_field *f1, *f2;
-	cb_tree		t1;
-	cb_tree		t2;
 	unsigned int	found;
 
 	found = 0;
@@ -7254,8 +7251,8 @@ emit_move_corresponding (cb_tree x1, cb_tree x2)
 		for (f2 = CB_FIELD_PTR (x2)->children; f2; f2 = f2->sister) {
 			if (f2->redefines || f2->flag_occurs) continue;
 			if (strcmp (f1->name, f2->name) == 0) {
-				t1 = cb_build_field_reference (f1, x1);
-				t2 = cb_build_field_reference (f2, x2);
+				const cb_tree t1 = cb_build_field_reference (f1, x1);
+				const cb_tree t2 = cb_build_field_reference (f2, x2);
 				/* GCOS 7: Contrary to the documentation,
 				   handling of PIC L fields in MOVE
 				   CORRESPONDING ignores the DEPENDING var for
@@ -7266,8 +7263,8 @@ emit_move_corresponding (cb_tree x1, cb_tree x2)
 				if (f2->flag_picture_l) {
 					CB_REFERENCE (t2)->length = cb_int (f2->size);
 				}
-				if (f1->children && !f1->flag_picture_l &&
-				    f2->children && !f2->flag_picture_l) {
+				if (f1->children && !f1->flag_picture_l
+				 && f2->children && !f2->flag_picture_l) {
 					found += emit_move_corresponding (t1, t2);
 				} else {
 					cb_emit (cb_build_move (t1, t2));
@@ -7283,15 +7280,13 @@ void
 cb_emit_move_corresponding (cb_tree source, cb_tree target_list)
 {
 	cb_tree		l;
-	cb_tree		target;
 
 	source = cb_check_group_name (source);
 	if (cb_validate_one (source)) {
 		return;
 	}
 	for (l = target_list; l; l = CB_CHAIN(l)) {
-		target = CB_VALUE(l);
-		target = cb_check_group_name (target);
+		const cb_tree target = cb_check_group_name (CB_VALUE(l));
 		if (cb_validate_one (target)) {
 			return;
 		}
@@ -8035,12 +8030,20 @@ cb_emit_allocate_identifier (cb_tree allocate_identifier, cb_tree returning, con
 	/* syntax checks */
 	if (!(CB_REFERENCE_P(allocate_identifier) &&
 		    CB_FIELD_PTR (allocate_identifier)->flag_item_based)) {
-		cb_error_x (CB_TREE(current_statement),
-			_("target of ALLOCATE is not a BASED item"));
-		return;
-	}
-	if (cb_listing_xref) {
-		cobc_xref_set_receiving (allocate_identifier);
+		if (cb_relaxed_syntax_checks) {
+			if (CB_FIELD_PTR (allocate_identifier)->storage != CB_STORAGE_LINKAGE) {
+				/* Micro Focus still does not allow BASED items,
+				   but allows a LINKAGE item to be the target for ALLOCATE instead */
+				cb_error_x (CB_TREE (current_statement),
+					_("cannot change address of '%s', which is not BASED or a LINKAGE item"),
+					cb_name (allocate_identifier));
+				return;
+			}
+		} else {
+			cb_error_x (CB_TREE(current_statement),
+				_("target of ALLOCATE must have BASED clause"));
+			return;
+		}
 	}
 	if (check_allocate_returning (returning)) {
 		return;
@@ -8051,7 +8054,8 @@ cb_emit_allocate_identifier (cb_tree allocate_identifier, cb_tree returning, con
 	cb_emit (CB_BUILD_FUNCALL_4 ("cob_allocate",
 			CB_BUILD_CAST_ADDR_OF_ADDR (allocate_identifier),
 			returning, cb_build_numeric_literal (0, buff, 0), NULL));
-	/* ALLOCATE identifier INITIALIZED -> implicit INITIALIZE identifier */
+	/* ALLOCATE identifier INITIALIZED -> implicit
+	   INITIALIZE identifier WITH FILLER ALL TO VALUE THEN TO DEFAULT */
 	if (init_flag) {
 		current_statement->not_ex_handler =
 			cb_build_initialize (allocate_identifier, cb_true, NULL, 1, 0, 0);
@@ -11580,9 +11584,6 @@ cb_build_move (cb_tree src, cb_tree dst)
 		dst_ref = x;
 	} else {
 		dst_ref = NULL;
-	}
-	if (cb_listing_xref) {
-		cobc_xref_set_receiving (dst);
 	}
 
 	if (CB_TREE_CLASS (dst) == CB_CLASS_POINTER

@@ -1,4 +1,4 @@
-## Copyright (C) 2015-2021 Free Software Foundation, Inc.
+## Copyright (C) 2015-2022 Free Software Foundation, Inc.
 ## Written by Dave Pitts, Simon Sobisch, Edward Hart
 ##
 ## This file is part of GnuCOBOL.
@@ -4759,13 +4759,13 @@ COMMENT-LINE                   89       87     *162    *170    *171    *176
                                        *293    *296    *299    *302    *314
                                        *321                            x21
 
-COMMAND-ADDITIONS              94       230     233    *234     240    x4
-COMMAND-SUBTRACTIONS           95       263     265     268    *270    x4
-TOTAL-INSERTED                 96       233     294                    x2
-TOTAL-DELETED                  97       268     297                    x2
-OUTPUT-COUNT                   98       280     281     300            x3
-LINE-COUNT                     99      *169     180     241     242     261
-                                        262     315     316            x8
+COMMAND-ADDITIONS              94       230     233    *234    *240    x4
+COMMAND-SUBTRACTIONS           95      *263     265     268    *270    x4
+TOTAL-INSERTED                 96      *233     294                    x2
+TOTAL-DELETED                  97      *268     297                    x2
+OUTPUT-COUNT                   98      *280     281     300            x3
+LINE-COUNT                     99      *169    *180    *241     242    *261
+                                        262    *315     316            x8
 FIELDA                         100     *183     202     208     211    x4
 FIELDB                         101     *184     264                    x2
 BLANK-LINE                     102      171                            x1
@@ -4776,7 +4776,7 @@ PHASE                          110     *306                            x1
 MONTH-RUN                      111     *158                            x1
 DAY-RUN                        113     *159                            x1
 YEAR-RUN                       115     *157                            x1
-PAGE-NUMBER                    118      168    *307                    x2
+PAGE-NUMBER                    118     *168    *307                    x2
 COMMAND-LISTING                120      179                            x1
 COMMAND-IMAGE                  122     *178                            x1
 ACTIVITIES-LISTING             124      239     260     314            x3
@@ -5355,12 +5355,12 @@ COMMENT-LINE                   89       87     *162    *170    *171    *176    *
                                        *232    *239    *260    *267    *275    *293    *296    *299    *302    *314
                                        *321                                                                    x21
 
-COMMAND-ADDITIONS              94       230     233    *234     240                                            x4
-COMMAND-SUBTRACTIONS           95       263     265     268    *270                                            x4
-TOTAL-INSERTED                 96       233     294                                                            x2
-TOTAL-DELETED                  97       268     297                                                            x2
-OUTPUT-COUNT                   98       280     281     300                                                    x3
-LINE-COUNT                     99      *169     180     241     242     261     262     315     316            x8
+COMMAND-ADDITIONS              94       230     233    *234    *240                                            x4
+COMMAND-SUBTRACTIONS           95      *263     265     268    *270                                            x4
+TOTAL-INSERTED                 96      *233     294                                                            x2
+TOTAL-DELETED                  97      *268     297                                                            x2
+OUTPUT-COUNT                   98      *280     281     300                                                    x3
+LINE-COUNT                     99      *169    *180    *241     242    *261     262    *315     316            x8
 FIELDA                         100     *183     202     208     211                                            x4
 FIELDB                         101     *184     264                                                            x2
 BLANK-LINE                     102      171                                                                    x1
@@ -5371,7 +5371,7 @@ PHASE                          110     *306                                     
 MONTH-RUN                      111     *158                                                                    x1
 DAY-RUN                        113     *159                                                                    x1
 YEAR-RUN                       115     *157                                                                    x1
-PAGE-NUMBER                    118      168    *307                                                            x2
+PAGE-NUMBER                    118     *168    *307                                                            x2
 COMMAND-LISTING                120      179                                                                    x1
 COMMAND-IMAGE                  122     *178                                                                    x1
 ACTIVITIES-LISTING             124      239     260     314                                                    x3

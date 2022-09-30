@@ -6195,7 +6195,7 @@ prog.cob:10: error: syntax error, unexpected Identifier
 AT_CHECK([$COMPILE_ONLY -std=mf-strict -freserved=CONSTANT prog.cob], [1], [],
 [prog.cob:6: error: 01 CONSTANT does not conform to Micro Focus COBOL
 prog.cob:7: error: 01 CONSTANT does not conform to Micro Focus COBOL
-prog.cob:7: error: syntax error, unexpected Identifier, expecting . or level-number (Area A)
+prog.cob:7: error: syntax error, unexpected Identifier
 ])
 
 AT_CHECK([$COMPILE_ONLY -std=mf prog.cob], [1], [],
@@ -7697,7 +7697,26 @@ prog.cob:20: error: syntax error, unexpected PROCEDURE
 prog.cob:23: error: ALLOCATE CHARACTERS requires RETURNING clause
 prog.cob:26: error: 'one' is not a numeric value
 prog.cob:27: error: amount must be specified as a numeric expression
-prog.cob:29: error: target of ALLOCATE is not a BASED item
+prog.cob:29: error: target of ALLOCATE must have BASED clause
+prog.cob:30: error: INITIALIZED TO item is not alphanumeric
+prog.cob:31: error: target 1 of FREE is not a BASED data item
+prog.cob:32: error: target 1 of FREE is not a BASED data item
+])
+
+AT_CHECK([$COMPILE_ONLY -frelax-syntax-checks prog.cob], [1], [],
+[prog.cob:8: error: BASED only allowed at 01/77 level
+prog.cob:16: warning: PROCEDURE DIVISION header missing
+prog.cob:16: note: PROCEDURE DIVISION header assumed
+prog.cob:16: error: syntax error, unexpected Identifier
+prog.cob:17: error: syntax error, unexpected Identifier, expecting SECTION or .
+prog.cob:17: note: unknown statement '01'
+prog.cob:18: error: syntax error, unexpected Identifier, expecting SECTION or .
+prog.cob:18: note: unknown statement '03'
+prog.cob:20: error: syntax error, unexpected PROCEDURE
+prog.cob:23: error: ALLOCATE CHARACTERS requires RETURNING clause
+prog.cob:26: error: 'one' is not a numeric value
+prog.cob:27: error: amount must be specified as a numeric expression
+prog.cob:29: error: cannot change address of 'var', which is not BASED or a LINKAGE item
 prog.cob:30: error: INITIALIZED TO item is not alphanumeric
 prog.cob:31: error: target 1 of FREE is not a BASED data item
 prog.cob:32: error: target 1 of FREE is not a BASED data item
@@ -8712,17 +8731,17 @@ AT_CHECK([($GREP -A 200 "P_dump:" prog.c | $GREP -B 200 "END OF DUMP") || exit 7
       /* cob_dump_field_ext (88, "sw-x-basis-full", COB_SET_FLD(f0, 3, b_62, &a_48), 0, 1, i_1, 3UL); VALUE (cob_field *)&c_18 */
     }
   }
-  /* cob_dump_field_ext ( 1, "x-rms", COB_SET_FLD(f0, 1, b_70, &a_47), 0, 0); */
-  /* cob_dump_field_ext ( 5, "x-rms-a", COB_SET_FLD(f0, 1, b_70, &a_48), 0, 0); */
+  cob_dump_field_ext ( 1, "x-rms", COB_SET_FLD(f0, 1, b_70, &a_47), 0, 0);
+  cob_dump_field_ext ( 5, "x-rms-a", COB_SET_FLD(f0, 1, b_70, &a_48), 0, 0);
   /* cob_dump_field_ext ( 1, "FILLER", COB_SET_FLD(f0, 1, b_70, &a_48), 0, 0); REDEFINES */
   /* cob_dump_field_ext (88, "sw-x-rms-full", COB_SET_FLD(f0, 1, b_70, &a_48), 0, 0); VALUE (cob_field *)&c_19 OR (cob_field *)&c_20 OR (cob_field *)&c_21 THRU (cob_field *)&c_22 OR (cob_field *)&c_20 OR &cob_all_quote */
 
   /* Dump LOCAL-STORAGE SECTION */
   cob_dump_output("LOCAL-STORAGE");
-  /* cob_dump_field_ext ( 1, "var1", COB_SET_FLD(f0, 1, cob_local_ptr, &a_48), 0, 0); */
-  /* cob_dump_field_ext ( 1, "var2", COB_SET_FLD(f0, 2, cob_local_ptr + 16, &a_47), 0, 0); */
-  /* cob_dump_field_ext ( 3, "var2a", COB_SET_FLD(f0, 1, cob_local_ptr + 16, &a_48), 0, 0); */
-  /* cob_dump_field_ext ( 3, "var2b", COB_SET_FLD(f0, 1, cob_local_ptr + 16 + 1, &a_52), 0, 0); */
+  cob_dump_field_ext ( 1, "var1", COB_SET_FLD(f0, 1, cob_local_ptr, &a_48), 0, 0);
+  cob_dump_field_ext ( 1, "var2", COB_SET_FLD(f0, 2, cob_local_ptr + 16, &a_47), 0, 0);
+  cob_dump_field_ext ( 3, "var2a", COB_SET_FLD(f0, 1, cob_local_ptr + 16, &a_48), 0, 0);
+  cob_dump_field_ext ( 3, "var2b", COB_SET_FLD(f0, 1, cob_local_ptr + 16 + 1, &a_52), 0, 0);
   /* cob_dump_field_ext (88, "yay", COB_SET_FLD(f0, 1, cob_local_ptr + 16 + 1, &a_52), 0, 0); VALUE &cob_all_zero OR (cob_field *)&c_23 THRU (cob_field *)&c_24 OR (cob_field *)&c_25 */
 
   cob_dump_output("END OF DUMP - debugme");
@@ -9172,7 +9191,7 @@ prog.cob:19: error: start of statement in Area A
 AT_CLEANUP
 
 
-AT_SETUP([Optional dots])
+AT_SETUP([optional dots])
 AT_KEYWORDS([misc missing-periods])
 
 AT_DATA([prog.cob], [
@@ -9227,6 +9246,43 @@ cobol85.cob:14: warning: optional period used
 AT_CLEANUP
 
 
+AT_SETUP([optional dots before PROCEDURE DIVISION])
+AT_KEYWORDS([misc missing-periods])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION
+       PROGRAM-ID. prog.
+       DATA DIVISION
+       WORKING-STORAGE SECTION
+       77 PMODE   PIC X
+       PROCEDURE DIVISION.
+          STOP RUN.
+])
+
+# The syntax error below is hard to avoid, and can be missleading.
+# The error is actually on the `77`, which is only parsed as a
+# LEVEL_NUMBER if the preceding token is a `.`.
+#
+# TODO: To avoid this, we need to unput the WORD/Literal when dealing
+# with optional periods outside of PROCEDURE DIVISION, and ensure it
+# is reparsed as a LEVEL_NUMBER.
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:3: warning: optional period used
+prog.cob:5: warning: optional period used
+prog.cob:6: error: syntax error, unexpected Literal
+])
+
+# Here the AREACHECK helps us recover from all missing periods
+AT_CHECK([$COMPILE_ONLY -fformat=cobol85 prog.cob], [0], [],
+[prog.cob:3: warning: optional period used
+prog.cob:5: warning: optional period used
+prog.cob:6: warning: optional period used
+prog.cob:7: warning: optional period used
+])
+
+AT_CLEANUP
+
+
 AT_SETUP([AREACHECK])
 AT_KEYWORDS([misc])
 
@@ -9266,3 +9322,4 @@ pgm1.cob:18: error: start of statement in Area A
 ])
 
 AT_CLEANUP
+

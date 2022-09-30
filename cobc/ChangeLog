@@ -1,4 +1,43 @@
 
+2022-09-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_identifier): fix codegen for odo-check
+	  on level 01 OCCURS items, bug introduced with 2022-07-12
+
+2022-09-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (code_set_clause): set CODE-SET as UNFINISHED and PENDING
+	  with custom code set (which other compilers don't support here)
+	* codegen.c (output_file_initialization): codegen for CODE-SET conversion
+	* codegen.c (output_param): set BASED + EXTERNAL flags from field founder
+	  to field for all fields referenced (this allows an easy check later on,
+	  already done and so far broken in output_local_field_cache)
+	* codegen.c (output_display_fields): fixed a bug introduced on 2021-10-19
+	  which disables requested dump output if COBC_GEN_DUMP_COMMENTS is set
+	* codegen.c (output_dump_code): ensure a bug like the one above does
+	  raise an abort, if it ever occurs again
+
+2022-09-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_stmt): refactored codegen for setting DEBUG-ITEM,
+	  fixing SIGSEGV on USE FOR DEBUGGING with invalid BASED / LINKAGE items
+	* codegen.c (output_debug_stmts): added to not write to the DEBUG-ITEM
+	  when code was generated for USE ON DEBUGGING, but the runtime does
+	  not have it enabled
+	* codegen.c (output_perform_call): allow label end to be NULL if
+	  there is no PERFORM THRU, adjusted callers to not pass duplicate labels
+	* codegen.c (output_stmt): limit scope of some variables, allowing
+	  them to be defined as const
+	* parser.y (allocate_body): set target attribute for target identifier
+	* parser.y (target_identifier): refactored to drop duplicate code
+	* typeck.c (cb_build_move): don't set target attribute (duty of caller)
+	* typeck.c (cb_emit_allocate_identifier): allow nonstandard
+	  ALLOCATE linkage-item depending on cb_relaxed_syntax_checks
+
+2022-09-29  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* parser.y: handle many more missing periods before PROCEDURE DIVISION
+
 2022-09-26  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (cobc_abort_msg): use negative cb_source_line to reference

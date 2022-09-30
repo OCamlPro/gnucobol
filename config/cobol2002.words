@@ -1,6 +1,6 @@
 # GnuCOBOL compiler - list of reserved words
 #
-# Copyright (C) 2016-2017,2021 Free Software Foundation, Inc.
+# Copyright (C) 2016-2017,2021-2022 Free Software Foundation, Inc.
 # Written by Simon Sobisch, Edward Hart
 #
 # This file is part of GnuCOBOL.
@@ -135,6 +135,19 @@ reserved:	DATE
 reserved:	DAY
 reserved:	DAY-OF-WEEK
 reserved:	DE
+# note: the following are part of the register DEBUG-ITEM,
+#       they are automatically unreserved if the register is
+#       created, which happens on USE FOR DEBUGGING
+# note: USE FOR DEBUGGING and DEBUG-ITEM are obsolete features,
+#       removed in COBOL 2014
+reserved:	DEBUG-CONTENTS
+reserved:	DEBUG-ITEM
+reserved:	DEBUG-LINE
+reserved:	DEBUG-NAME
+reserved:	DEBUG-SUB-1
+reserved:	DEBUG-SUB-2
+reserved:	DEBUG-SUB-3
+# debug-item end
 reserved:	DEBUGGING
 reserved:	DECIMAL-POINT
 reserved:	DECLARATIVES
@@ -509,8 +522,8 @@ reserved:	ZEROS=ZERO
 
 
 not-register:	DIALECT-ALL	# disable all registers, specify used below
-register:	"ADDRESS\ OF"	# not yet handled as register in GnuCOBOL
-#register:	"DEBUG-ITEM"	# not yet handled as register in GnuCOBOL
+register:	"ADDRESS\ OF"
+register:	"DEBUG-ITEM"	# note: obsolete feature, removed in COBOL 2014
 #register:	"LINAGE-COUNTER"	# not yet handled as register in GnuCOBOL
 #register:	"LINE-COUNTER"	# not yet handled as register in GnuCOBOL
 #register:	"PAGE-COUNTER"	# not yet handled as register in GnuCOBOL

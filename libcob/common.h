@@ -1299,7 +1299,7 @@ typedef struct __cob_file {
 	cob_file_key		*keys;			/* ISAM/RANDOM/SORT keys */
 	void			*file;			/* File specific pointer */
 	void			*linorkeyptr;		/* LINAGE or SPLIT KEY */
-	const unsigned char	*sort_collating;	/* SORT collating */
+	const unsigned char	*sort_collating;	/* SORT collating / CODE-SET (used for RE-/WRITE) */
 	void			*extfh_ptr;		/* For EXTFH usage */
 	size_t			record_min;		/* Record min size */
 	size_t			record_max;		/* Record max size */
@@ -1335,6 +1335,10 @@ typedef struct __cob_file {
 	char				*org_filename;	/* Full concatenated file name */
 	char				*nxt_filename;	/* Next position in org_filename */
 	unsigned int		flag_is_concat:1;	/* SEQUENTIAL concatenated file names */
+
+	const unsigned char* code_set_read;	/* CODE-SET conversion for READs */
+	size_t			nconvert_fields;	/* Number of logical fields to convert */
+	cob_field	*convert_field;		/* logical fields to convert for CODE-SET */
 } cob_file;
 
 
