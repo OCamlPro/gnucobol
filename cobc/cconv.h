@@ -45,9 +45,23 @@ extern const cob_u8_t cob_gcos7ebcdic_ascii[256];
 /* EBCDIC GCOS7 8-bit to "default" EBCDIC conversion table */
 extern const cob_u8_t cob_gcos7ebcdic_ebcdic[256];
 
+/* ASCII (8-bit) to EBCDIC GCOS7 conversion table */
+extern const cob_u8_t cob_ascii_gcos7ebcdic[256];
+
 /* Restricted conversions: */
 
 /* ASCII to EBCDIC conversion table (restricted) */
 extern const cob_u8_t cob_ascii_alt_ebcdic[256];
+
+/*  */
+
+enum cb_ebcdic_table {
+	CB_EBCDIC_DEFAULT,
+	CB_EBCDIC_RESTRICTED_GC,
+	CB_EBCDIC_GCOS,
+};
+
+int cobc_deciph_ebcdic_table_name (enum cb_ebcdic_table * const,
+				   const char *const);
 
 #endif /* CB_CCONV_H */

@@ -213,6 +213,7 @@ static unsigned int		need_save_exception = 0;
 static unsigned int		gen_nested_tab = 0;
 static unsigned int		gen_alt_ebcdic = 0;
 static unsigned int		gen_ebcdic_ascii = 0;
+static unsigned int		gen_gcos7ebcdic = 0;
 static unsigned int		gen_full_ebcdic = 0;
 static unsigned int		gen_native = 0;
 static unsigned int		gen_custom = 0;
@@ -2567,9 +2568,37 @@ output_literals_figuratives_and_constants (void)
 
 /* Collating tables */
 
-#include "cconv.h"
+enum cb_cconv_dir { OF_ASCII, TO_ASCII };
+static const char *
+colseq_table_name (const enum cb_ebcdic_table table_name,
+		   const enum cb_cconv_dir direction) {
+	/* FIXME: assumes !COB_EBCDIC_MACHINE */
+	switch (table_name) {
+	case CB_EBCDIC_DEFAULT:
+	default:
+		gen_full_ebcdic |= 1;
+		return direction == OF_ASCII
+			? "cob_ascii_ebcdic"
+			: "cob_ebcdic_ascii";
+	case CB_EBCDIC_RESTRICTED_GC:
+		gen_alt_ebcdic = 1;
+		if (direction == TO_ASCII) {
+			/* TODO: define inverse conversion */
+			cobc_err_msg ("Unexpected conversion from "
+				      "restricted EBCDIC to ASCII!");
+			COBC_ABORT ();
+		}
+		return "cob_a2e";
+	case CB_EBCDIC_GCOS:
+		gen_gcos7ebcdic = 1;
+		return direction == OF_ASCII
+			? "cob_ascii_gcos7ebcdic"
+			: "cob_gcos7ebcdic_ascii";
+	}
+}
 
-/* Outputs identity conversion if `table == NULL`. */
+/* Outputs conversion from given table, or a native conversion (identity) when
+   omitted (if table == NULL). */
 static void
 output_colseq_table (const char * const table_name,
 		     const cob_u8_t table[256]) {
@@ -2591,7 +2620,21 @@ output_alt_ebcdic_table (void)
 	}
 
 	output_storage ("\n/* ASCII to EBCDIC translate table (restricted) */\n");
-	output_colseq_table ("cob_a2e", cob_ascii_alt_ebcdic);
+	output_colseq_table (colseq_table_name (CB_EBCDIC_RESTRICTED_GC, OF_ASCII),
+			     cob_ascii_alt_ebcdic);
+	output_storage ("\n");
+}
+
+static void
+output_gcos7ebcdic_table (void)
+{
+	if (!gen_gcos7ebcdic) {
+		return;
+	}
+
+	output_storage ("\n/* extended ASCII to EBCDIC GCOS7 translate table */\n");
+	output_colseq_table (colseq_table_name (CB_EBCDIC_GCOS, OF_ASCII),
+			     cob_ascii_gcos7ebcdic);
 	output_storage ("\n");
 }
 
@@ -2599,18 +2642,20 @@ static void
 output_full_ebcdic_table (void)
 {
 	int	i;
+	const char * table_name;
 
 	if (!gen_full_ebcdic) {
 		return;
 	}
 
+	table_name = colseq_table_name (CB_EBCDIC_DEFAULT, OF_ASCII);
 	output_storage ("\n/* ASCII to EBCDIC table */\n");
-	output_colseq_table ("cob_ascii_ebcdic", cob_ascii_ebcdic);
+	output_colseq_table (table_name, cob_ascii_ebcdic);
 
 	if (gen_full_ebcdic > 1) {
 		i = lookup_attr (COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL, 0);
-		output_storage ("static cob_field f_ascii_ebcdic = { 256, (cob_u8_ptr)cob_ascii_ebcdic, &%s%d };\n",
-			CB_PREFIX_ATTR, i);
+		output_storage ("static cob_field f_ascii_ebcdic = { 256, (cob_u8_ptr)%s, &%s%d };\n",
+				table_name, CB_PREFIX_ATTR, i);
 	}
 
 	output_storage ("\n");
@@ -2621,18 +2666,20 @@ static void
 output_ebcdic_to_ascii_table (void)
 {
 	int	i;
+	const char * table_name;
 
 	if (!gen_ebcdic_ascii) {
 		return;
 	}
 
+	table_name = colseq_table_name (CB_EBCDIC_DEFAULT, TO_ASCII);
 	output_storage ("\n/* EBCDIC to ASCII table */\n");
-	output_colseq_table ("cob_ebcdic_ascii", cob_ebcdic_ascii);
+	output_colseq_table (table_name, cob_ebcdic_ascii);
 
 	if (gen_ebcdic_ascii > 1) {
 		i = lookup_attr (COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL, 0);
-		output_storage ("static cob_field f_ebcdic_ascii = { 256, (cob_u8_ptr)cob_ebcdic_ascii, &%s%d };\n",
-			CB_PREFIX_ATTR, i);
+		output_storage ("static cob_field f_ebcdic_ascii = { 256, (cob_u8_ptr)%s, &%s%d };\n",
+				table_name, CB_PREFIX_ATTR, i);
 	}
 
 	output_storage ("\n");
@@ -2665,6 +2712,7 @@ static void
 output_collating_tables (void)
 {
 	output_alt_ebcdic_table ();
+	output_gcos7ebcdic_table ();
 	output_full_ebcdic_table ();
 	output_ebcdic_to_ascii_table ();
 	output_native_table ();
@@ -3549,13 +3597,7 @@ output_param (cb_tree x, int id)
 				output ("NULL");
 			}
 #else
-			if (cb_flag_alt_ebcdic) {
-				gen_alt_ebcdic = 1;
-				output ("cob_a2e");
-			} else {
-				gen_full_ebcdic = 1;
-				output ("cob_ascii_ebcdic");
-			}
+			output ("%s", colseq_table_name (cb_ebcdic_table, OF_ASCII));
 #endif
 			break;
 		case CB_ALPHABET_CUSTOM:
@@ -3690,7 +3732,7 @@ output_param (cb_tree x, int id)
 				gen_native = 2;
 				output ("&f_native");
 #else
-				gen_full_ebcdic = 2;
+				gen_full_ebcdic |= 2;
 				output ("&f_ascii_ebcdic");
 #endif
 				break;
@@ -8915,28 +8957,16 @@ output_file_initialization (struct cb_file *f)
 		const char *alph_write, *alph_read;
 		switch (f->code_set->alphabet_type) {
 		case CB_ALPHABET_ASCII:
-			if (cb_flag_alt_ebcdic) {
-				alph_read = "cob_a2e";
-				gen_alt_ebcdic = 1;
-			} else {
-				alph_read = "cob_ascii_ebcdic";
-				gen_full_ebcdic = 1;
-			}
-			alph_write = "cob_ebcdic_ascii"; 
+			alph_read = colseq_table_name (cb_ebcdic_table, OF_ASCII);
+			alph_write = "cob_ebcdic_ascii";
 			gen_ebcdic_ascii = 1;
 			break;
 		case CB_ALPHABET_EBCDIC:
 			alph_read = "cob_ebcdic_ascii";
+			alph_write = colseq_table_name (cb_ebcdic_table, OF_ASCII);
 			gen_ebcdic_ascii = 1;
-			if (cb_flag_alt_ebcdic) {
-				alph_write = "cob_a2e"; 
-				gen_alt_ebcdic = 1;
-			} else {
-				alph_write = "cob_ascii_ebcdic"; 
-				gen_full_ebcdic = 1;
-			}
 			break;
-		/* case CB_ALPHABET_CUSTOM: */ 
+		/* case CB_ALPHABET_CUSTOM: */
 		default:
 			alph_read = alph_write = NULL;
 			break;

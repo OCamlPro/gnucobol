@@ -61,6 +61,7 @@
 
 #include "cobc.h"
 #include "tree.h"
+#include "cconv.h"
 
 #include "../libcob/cobgetopt.h"
 
@@ -266,6 +267,8 @@ int			cb_flag_functions_all = 0;
 int			cb_flag_dump = 0;
 int			cobc_seen_stdin = 0;
 int			cb_unix_lf = 0;
+
+enum cb_ebcdic_table	cb_ebcdic_table = CB_EBCDIC_DEFAULT;
 
 int 		fatal_startup_error = 0;
 int			errorcount = 0;
@@ -3478,6 +3481,13 @@ process_command_line (const int argc, char **argv)
 				cb_ebcdic_sign = 0;
 			} else {
 				cobc_err_exit (COBC_INV_PAR, "-fsign");
+			}
+			break;
+
+		case 14:
+			/* -febcdic-table=<cconv-table> */
+			if (cobc_deciph_ebcdic_table_name (&cb_ebcdic_table, cob_optarg)) {
+				cobc_err_exit (COBC_INV_PAR, "-febcdic-table");
 			}
 			break;
 

@@ -30,6 +30,7 @@
 #include <unistd.h>
 #endif
 #include "../libcob/common.h"
+#include "cconv.h"
 
 #ifdef	ENABLE_NLS
 #include "../lib/gettext.h"
@@ -536,6 +537,8 @@ extern int			cb_exp_line;
 extern int			functions_are_all;
 extern struct cb_tree_common	*defined_prog_list;
 extern int			current_call_convention;
+
+extern enum cb_ebcdic_table	cb_ebcdic_table;
 
 /* Functions */
 
