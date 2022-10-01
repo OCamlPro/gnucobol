@@ -1,7 +1,6 @@
 /*
-   Copyright (C) 2022 Free Software Foundation, Inc.  Written by Keisuke
-   Nishida, Roger While, Simon Sobisch, Edwart Hart, Ron Norman, Nicolas
-   Berthier
+   Copyright (C) 2005,2006,2022 Free Software Foundation, Inc.
+   Written by Roger While, Nicolas Berthier, Simon Sobisch
 
    This file is part of GnuCOBOL.
 
