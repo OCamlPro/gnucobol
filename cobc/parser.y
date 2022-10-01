@@ -1187,7 +1187,7 @@ setup_program (cb_tree id, cb_tree as_literal, const unsigned char type, const i
 
 	/* finish last program/function */
 	if (!first_prog) {
-		const char *backup_source_file = cb_source_file;
+		backup_source_file = cb_source_file;
 		if (!current_program->flag_validated) {
 			current_program->flag_validated = 1;
 			cb_validate_program_body (current_program);
@@ -3326,7 +3326,7 @@ set_record_size (cb_tree min, cb_tree max)
 
 start:
   {
-	const char *backup_source_file = cb_source_file;
+	backup_source_file = cb_source_file;
 	clear_initial_values ();
 	current_program = NULL;
 	defined_prog_list = NULL;

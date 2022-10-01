@@ -29,9 +29,7 @@
 #ifdef	HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#include <stdio.h>		/* for FILE */
 #include "../libcob/common.h"
-#include "cconv.h"
 
 #ifdef	ENABLE_NLS
 #include "../lib/gettext.h"

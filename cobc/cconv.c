@@ -17,8 +17,11 @@
    You should have received a copy of the GNU General Public License
    along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 */
-#include "cconv.h"
+
+#include <stdio.h>		/* for FILE, used in cobc.h */
+
 #include "cobc.h"		/* for cb_strcasecmp */
+#include "cconv.h"
 
 /* TODO: Maybe use iconv or gconv before extending to other character sets while
    using standard naming scheme?  Note, however, that specifications for GCOS7
