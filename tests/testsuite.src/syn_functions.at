@@ -1,4 +1,4 @@
-## Copyright (C) 2007-2012, 2014-2018, 2020-2021 Free Software Foundation, Inc.
+## Copyright (C) 2007-2012, 2014-2018, 2020-2022 Free Software Foundation, Inc.
 ## Written by Roger While, Simon Sobisch, Edward Hart
 ##
 ## This file is part of GnuCOBOL.
@@ -365,30 +365,6 @@ AT_SETUP([Intrinsic functions: reference modification])
 AT_KEYWORDS([functions refmod])
 
 # the following should be checked, currently doesn't work
-#AT_DATA([prog.cob], [
-#       IDENTIFICATION   DIVISION.
-#       PROGRAM-ID.      prog.
-#       ENVIRONMENT DIVISION.
-#       DATA             DIVISION.
-#       WORKING-STORAGE  SECTION.
-#       PROCEDURE        DIVISION.
-#           DISPLAY FUNCTION CHAR (66)(1:2).
-#           DISPLAY FUNCTION NUMVAL-C (123)(1:2).
-#           DISPLAY FUNCTION REVERSE ("TESTME")(20:1).
-#           DISPLAY FUNCTION REVERSE ("TESTME")(-1:1).
-#           DISPLAY FUNCTION REVERSE ("TESTME")(1:0).
-#           STOP RUN.
-#])
-#
-#AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-#[prog.cob:8: error: FUNCTION 'PI' can not have reference modification
-#prog.cob:9: error: FUNCTION 'NUMVAL-C' can not have reference modification
-#prog.cob:10: error: FUNCTION 'REVERSE' has invalid reference modification
-#prog.cob:11: error: FUNCTION 'REVERSE' has invalid reference modification
-#prog.cob:12: error: FUNCTION 'REVERSE' has invalid reference modification
-#])
-
-# test what is in already...
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
@@ -396,15 +372,37 @@ AT_DATA([prog.cob], [
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
        PROCEDURE        DIVISION.
+           DISPLAY FUNCTION CHAR (66)(1:2).
+           DISPLAY FUNCTION NUMVAL-C (123)(1:2).
            DISPLAY FUNCTION REVERSE ("TESTME")(-1:1).
            DISPLAY FUNCTION REVERSE ("TESTME")(1:0).
            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:8: error: FUNCTION 'REVERSE' has invalid reference modification
-prog.cob:9: error: FUNCTION 'REVERSE' has invalid reference modification
+[prog.cob:8: error: FUNCTION 'CHAR' cannot have reference modification
+prog.cob:9: error: FUNCTION 'NUMVAL-C' cannot have reference modification
+prog.cob:10: error: FUNCTION 'REVERSE' has invalid reference modification
+prog.cob:11: error: FUNCTION 'REVERSE' has invalid reference modification
 ])
+
+# missing: resolving constant values at compile-time, allowing us to
+# catch bad ref-mods
+#AT_DATA([prog2.cob], [
+#       IDENTIFICATION   DIVISION.
+#       PROGRAM-ID.      prog2.
+#       ENVIRONMENT DIVISION.
+#       DATA             DIVISION.
+#       WORKING-STORAGE  SECTION.
+#       PROCEDURE        DIVISION.
+#           DISPLAY FUNCTION REVERSE ("TESTME")(20:1).
+#           STOP RUN.
+#])
+#
+#AT_CHECK([$COMPILE_ONLY prog3.cob], [1], [],
+#[prog.cob:8: error: FUNCTION 'REVERSE' has invalid reference modification
+#prog.cob:8: error: reference modification out of bounds
+#])
 
 AT_CLEANUP
 

@@ -55,17 +55,27 @@ NEWS - user visible changes				-*- outline -*-
    a READ may result in status 09 and WRITE may error with status 71;
    to disable this validation see the new runtime option COB_LS_VALIDATE
    to restore old behavior and to increase performance on WRITE;
-   If LS_NULLS is active and invalid data (bad encoded or missing encoding)
-   is found io status 71 is returned.
+   if LS_NULLS is active and invalid data (bad encoded or missing encoding)
+   is found io status 71 is returned
 
 ** LINE SEQUENTIAL files, handling of records that are "too long":
    in case of "overflowing" records previous versions of GnuCOBOL cut the
    data, set io status 00 and skipped the file until the next line
    terminator is found;
    the default changed (per COBOL 2022 and other compilers) so the data is
-   returned as "multiple" records and a warning (status 06) is issued.
-   Setting COB_LS_SPLIT = false will have the old behaviour of truncating
-   the record, but will now set status 04.
+   returned as "multiple" records and a warning (status 06) is issued;
+   setting COB_LS_SPLIT = false will have the old behaviour of truncating
+   the record, but will now set status 04
+
+** FUNCTIONs NUMVAL, NUMVAL-C, NUMVAL-F: if the argument does not match the
+   argument rules previous versions returned zero; now invalid data is skipped;
+   for example: "1. A-0B4.5" now returns -1.045 (or -1045 when the
+   DECIMAL-POINT IS COMMA clause is in effect);
+   as with previous versions the argument can be validated before using the
+   FUNCTIONs TEST-NUMVAL, TEST-NUMVAL-C, TEST-NUMVAL-F or the exception can
+   be checked afterwards using the EXCEPTION related functions;
+   the old behaviour can be enforced by compiling GnuCOBOL with
+   CPPFLAGS=-DINVALID_NUMVAL_IS_ZERO
 
 * Changes that potentially effects recompilation of existing programs:
 

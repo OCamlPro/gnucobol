@@ -1,4 +1,10 @@
 
+2022-10-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (function): attach ref-mod to all kind of functions to consume
+	  them here and to pass invalid ref-mod for all numeric intrinsics to
+	  cb_build_intrinsic enable us to create a nice diagnostic
+
 2022-09-30  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* codegen.c, cconv.h, cconv.c: extract EBCDIC & ASCII conversion tables
@@ -823,6 +829,13 @@
 
 	* warning.def, tree.c, cobc.c, cobc.h: split -Wconstant-numlit-expression
 	  from -Wconstant-expression
+
+2021-03-18  Ron Norman <rjn@inglenet.com>
+
+	* codegen.c (output_section_info, output_trace_info): current name of
+	  section/paragraph/verb are now set via pointers in cob_module instead
+	  of executing trace functions, which are now only generated if trace
+	  is requested
 
 2021-03-07  Simon Sobisch <simonsobisch@gnu.org>
 

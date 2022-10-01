@@ -1,4 +1,13 @@
 
+2022-10-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* intrinsic.c (numval, cob_intr_numval_f): rewritten for improved
+	  performance (and creating smaller temporary fields);
+	  changed to just skip invalid data instead of doing pre-validation
+	  (which can be re-enabled by defining [INVALID_NUMVAL_IS_ZERO])
+	* intrinsic.c (cob_check_numval_f, cob_intr_numval_f): correctly
+	  recognize lowercase E
+
 2022-09-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* general: merged missing line sequential changes from 4.x to 3.x
@@ -459,6 +468,11 @@
 
 	* common.h: Added  FCD2 structure
 	* fextfh.c: Added checks for FCD2 being used
+
+2021-03-18  Ron Norman <rjn@inglenet.com>
+
+	* common.h (cob_module): fields for section/paragraph/statement names
+	* common.c: adjusted to use new fields in cob_module
 
 2021-03-04  Ron Norman <rjn@inglenet.com>
 

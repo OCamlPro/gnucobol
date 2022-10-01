@@ -672,6 +672,8 @@ cob_mod_or_rem (cob_field *f1, cob_field *f2, const int func_is_rem)
 	return curr_field;
 }
 
+/* TEST-NUMVAL-F implementation */
+
 /* Validate NUMVAL-F item */
 /* sp = spaces */
 /* [sp][+|-][sp]{digits[.[digits]]|.digits}[sp][E[sp]{+|-}[sp]digits[sp]] */
@@ -679,31 +681,32 @@ cob_mod_or_rem (cob_field *f1, cob_field *f2, const int func_is_rem)
 int
 cob_check_numval_f (const cob_field *srcfield)
 {
-	unsigned char	*p;
+	unsigned char	*p = srcfield->data;
 	size_t		plus_minus;
 	size_t		digits;
-	size_t		dec_seen;
+	size_t		decimal_seen;
 	size_t		space_seen;
 	size_t		e_seen;
 	size_t		break_needed;
 	size_t		exponent;
 	size_t		e_plus_minus;
 	int		n;
-	unsigned char	dec_pt;
+	const unsigned char	dec_pt = COB_MODULE_PTR->decimal_point;
 
 	if (!srcfield->size) {
 		return 1;
 	}
-	p = srcfield->data;
+
+	/* FIXME later: srcfield may be of category national... */
+
 	plus_minus = 0;
 	digits = 0;
-	dec_seen = 0;
+	decimal_seen = 0;
 	space_seen = 0;
 	e_seen = 0;
 	break_needed = 0;
 	exponent = 0;
 	e_plus_minus = 0;
-	dec_pt = COB_MODULE_PTR->decimal_point;
 
 	/* Check leading positions */
 	for (n = 0; n < (int)srcfield->size; ++n, ++p) {
@@ -770,11 +773,11 @@ cob_check_numval_f (const cob_field *srcfield)
 			continue;
 		case ',':
 		case '.':
-			if (dec_seen || space_seen || e_seen) {
+			if (decimal_seen || space_seen || e_seen) {
 				return n + 1;
 			}
 			if (*p == dec_pt) {
-				dec_seen = 1;
+				decimal_seen = 1;
 				continue;
 			}
 			return n + 1;
@@ -782,6 +785,7 @@ cob_check_numval_f (const cob_field *srcfield)
 			space_seen = 1;
 			continue;
 		case 'E':
+		case 'e':
 			if (e_seen) {
 				return n + 1;
 			}
@@ -1435,19 +1439,51 @@ int_strncasecmp (const void *s1, const void *s2, size_t n)
 	return (int) strncasecmp (s1, s2, n);
 }
 
-/* NUMVAL */
+/* NUMVAL + NUMVAL-C implementation */
 
-static int
-in_last_n_chars (const cob_field *field, const size_t n, const unsigned int i)
+static COB_INLINE COB_A_INLINE int
+space_left (unsigned char * p, unsigned char *p_end)
 {
-	return i + n >= field->size;
+	return p_end - p + 1;
 }
 
-static int
-at_cr_or_db (const cob_field *srcfield, const int pos)
+static COB_INLINE COB_A_INLINE int
+at_cr_or_db (const unsigned char *p)
 {
-	return memcmp (&srcfield->data[pos], "CR", (size_t)2) == 0
-		|| memcmp (&srcfield->data[pos], "DB", (size_t)2) == 0;
+	return memcmp (p, "CR", 2) == 0
+		|| memcmp (p, "DB", 2) == 0;
+}
+
+/* get first and last position of possible numeric data */
+static size_t
+calculate_start_end_for_numval (cob_field *srcfield,
+				unsigned char **pp, unsigned char **pp_end)
+{
+	unsigned char *p = srcfield->data;
+	unsigned char *p_end;
+
+	if (srcfield->size == 0 
+	 || p == NULL) {
+		return 0;
+	}
+
+	/* skip trailing space and low-value */
+	p_end = p + srcfield->size - 1;
+	while (p != p_end) {
+		if (*p_end != ' ' && *p_end != 0) break;
+		p_end--;
+	}
+
+	/* skip leading space and zero */
+	while (p != p_end) {
+		if (*p != ' ' && *p != '0') break;
+		p++;
+	}
+
+	*pp = p;
+	*pp_end = p_end;
+
+	return p_end - p + 1;
 }
 
 enum numval_type {
@@ -1459,82 +1495,177 @@ static cob_field *
 numval (cob_field *srcfield, cob_field *currency, const enum numval_type type)
 {
 	unsigned char	*final_buff = NULL;
+	unsigned char	*p, *p_end;
 	unsigned char	*currency_data = NULL;
-	size_t		i;
-	int		final_digits = 0;
-	int		decimal_digits = 0;
-	int		sign = 0;
-	int		decimal_seen = 0;
-	unsigned char	dec_pt = COB_MODULE_PTR->decimal_point;
-	unsigned char	cur_symb = COB_MODULE_PTR->currency_symbol;
+	size_t		datasize;
+	int		digits, decimal_digits;
+	int		sign, decimal_seen, currency_seen, exception;
+	const unsigned char	dec_pt = COB_MODULE_PTR->decimal_point;
+	const unsigned char	num_sep = COB_MODULE_PTR->numeric_separator;
+	const unsigned char	cur_symb = COB_MODULE_PTR->currency_symbol;
 
+	/* note: versions before 3.2 did a pre-validation here,
+			 we now parse "as valid as possible" by default
+			 (the testsuite checks both variants) */
+#ifdef INVALID_NUMVAL_IS_ZERO 
 	/* Validate source field */
 	if (cob_check_numval (srcfield, currency, type == NUMVAL_C, 0)) {
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
 		cob_alloc_set_field_uint (0);
 		return curr_field;
 	}
+#endif
 
-	final_buff = cob_malloc (srcfield->size + 1U);
-	if (currency && currency->size < srcfield->size) {
+	/* FIXME later: srcfield may be of category national... */
+
+	/* get size along with first/last relevant position */
+	datasize = calculate_start_end_for_numval (srcfield, &p, &p_end);
+
+	/* no data -> zero */
+	if (datasize == 0) {
+		cob_alloc_set_field_uint (0);
+		return curr_field;
+	}
+	/* not wasting buffer space (COBOL2022: 35/34 max)... */
+	if (datasize > COB_MAX_DIGITS) {
+		datasize = COB_MAX_DIGITS;
+	}
+
+	/* acquire temp buffer long enugh */
+	final_buff = cob_malloc (datasize + 1U);
+
+	sign = 0;
+	digits = 0;
+	decimal_digits = 0;
+	decimal_seen = 0;
+	currency_seen = 0;
+	exception = 0;
+
+	if (type == NUMVAL_C && currency && currency->size < datasize) {
 		currency_data = currency->data;
 	}
 
-	for (i = 0; i < srcfield->size; ++i) {
-		if (!in_last_n_chars (srcfield, 2, i)
-		    && at_cr_or_db (srcfield, i)) {
-			sign = 1;
-			break;
+	for ( /* start value for p set above */ ; p <= p_end ; ++p) {
+		if (space_left (p, p_end) >= 2
+		 && at_cr_or_db (p)) {
+			/* CR / DB always wins in GnuCOBOL, sets the sign and ends */
+			if (sign) {
+				/* that's an error, no need to check further */
+				exception = 1;
+			} else {
+				/* post validation - only spaces allowed */
+				p += 2;
+				while (p <= p_end) {
+					if (*p != ' ') {
+						exception = 1;
+						break;
+					}
+					p++;
+				}
+			}
+			sign = -1;
+			goto game_over;
 		}
 
 		if (currency_data) {
-			/* FIXME: only do so if i has a reasonable size [or at least is < INT_MAX]
-			          otherwise an overflow may occur
-			*/
-			if (!(in_last_n_chars (srcfield, currency->size, i))
-			    && !memcmp (&srcfield->data[i], currency_data,
-					currency->size)) {
-				i += (currency->size - 1);
+			if (space_left (p, p_end) >= currency->size
+			 && !memcmp (p, currency_data, currency->size)) {
+				if (currency_seen) {
+					exception = 1;
+				} else {
+					if (digits != 0 || decimal_seen) {
+						exception = 1;
+					}
+					currency_seen = 1;
+				}
+				p += (currency->size - 1);
 				continue;
 			}
-		} else if (type == NUMVAL_C && srcfield->data[i] == cur_symb) {
+		} else if (type == NUMVAL_C && *p == cur_symb) {
+			if (currency_seen) {
+				exception = 1;
+			} else {
+				currency_seen = 1;
+			}
 			continue;
 		}
 
-		if (srcfield->data[i] == ' ') {
-			continue;
-		}
-		if (srcfield->data[i] == '+') {
-			continue;
-		}
-		if (srcfield->data[i] == '-') {
-			sign = 1;
-			continue;
-		}
-		if (srcfield->data[i] == dec_pt) {
-			decimal_seen = 1;
-			continue;
-		}
-		if (srcfield->data[i] >= (unsigned char)'0' &&
-		    srcfield->data[i] <= (unsigned char)'9') {
+		switch (*p) {
+		case '0':
+			if (digits == 0 && !decimal_seen) {
+				/* no data yet, so just skip */
+				continue;
+			}
+			/* Fall through */
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+		case '8':
+		case '9':
 			if (decimal_seen) {
 				decimal_digits++;
 			}
-			final_buff[final_digits++] = srcfield->data[i];
-		}
-		if (final_digits > COB_MAX_DIGITS) {
-			break;
+			final_buff[digits++] = *p;
+			if (digits > COB_MAX_DIGITS) {
+				exception = 1;
+				goto game_over;
+			}
+			continue;
+		case '+':
+			if (sign) {
+				exception = 1;
+			} else {
+				sign = 1;
+			}
+			continue;
+		case '-':
+			if (sign) {
+				exception = 1;
+			} else {
+				sign = -1;
+			}
+			continue;
+		case ' ':
+			/* note: we don't check for bad embedded spaces
+			   because of performance reasons */
+			continue;
+		default:
+			if (*p == dec_pt) {
+				if (decimal_seen) {
+					exception = 1;
+				}
+				decimal_seen = 1;
+			} else
+			if (*p == num_sep && type == NUMVAL_C) {
+				/* note: we don't check for bad numeric seperator places
+				   because of performance reasons */
+			} else {
+				/* must be invalid data, set exception and go on */
+				exception = 1;
+			}
+			continue;
 		}
 	}
 
-	/* If srcfield is an empty string */
-	if (!final_digits) {
+game_over:
+
+	if (!digits) {
+		/* srcfield is an empty / all zero string */
 		final_buff[0] = '0';
 	}
 
 	mpz_set_str (d1.value, (char *)final_buff, 10);
 	cob_free (final_buff);
-	if (sign && mpz_sgn (d1.value)) {
+
+	if (exception) {
+		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
+	}
+
+	if (sign == -1 && mpz_sgn (d1.value)) {
 		mpz_neg (d1.value, d1.value);
 	}
 	d1.scale = decimal_digits;
@@ -3158,7 +3289,7 @@ cob_decimal_move_temp (cob_field *src, cob_field *dst)
 	cob_move (curr_field, dst);
 }
 
-/* TEST-NUMVAL implementation */
+/* TEST-NUMVAL + TEST-NUMVAL-C implementation */
 
 /* Validate NUMVAL / NUMVAL-C item */
 /* [spaces][+|-][spaces]{digits[.[digits]]|.digits}[spaces] */
@@ -3174,12 +3305,12 @@ cob_check_numval (const cob_field *srcfield, const cob_field *currency,
 	size_t		pos;
 	size_t		plus_minus;
 	size_t		digits;
-	size_t		dec_seen;
+	size_t		decimal_seen;
 	size_t		space_seen;
 	size_t		break_needed;
 	size_t		currcy_size;
 	int		n;
-	unsigned char	dec_pt;
+	const unsigned char	dec_pt = COB_MODULE_PTR->decimal_point;
 	unsigned char	cur_symb;
 
 	/* variabe-length zero-size field -> error */
@@ -3249,7 +3380,6 @@ cob_check_numval (const cob_field *srcfield, const cob_field *currency,
 	p = srcfield->data;
 	plus_minus = 0;
 	break_needed = 0;
-	dec_pt = COB_MODULE_PTR->decimal_point;
 	/* check leading positions */
 	for (n = 0; n < (int)max_pos; ++n, ++p) {
 		switch (*p) {
@@ -3302,7 +3432,7 @@ cob_check_numval (const cob_field *srcfield, const cob_field *currency,
 	/* check actual data */
 	break_needed = 0;
 	digits = 0;
-	dec_seen = 0;
+	decimal_seen = 0;
 	space_seen = 0;
 
 	for (; n < (int)max_pos; ++n, ++p) {
@@ -3323,11 +3453,11 @@ cob_check_numval (const cob_field *srcfield, const cob_field *currency,
 			continue;
 		case ',':
 		case '.':
-			if (dec_seen || space_seen) {
+			if (decimal_seen || space_seen) {
 				return n + 1;
 			}
 			if (*p == dec_pt) {
-				dec_seen = 1;
+				decimal_seen = 1;
 			} else if (!chkcurr) {
 				return n + 1;
 			}
@@ -4831,42 +4961,67 @@ cob_intr_numval_c (cob_field *srcfield, cob_field *currency)
 	return numval (srcfield, currency, NUMVAL_C);
 }
 
+/* NUMVAL-F implementation */
+
 cob_field *
 cob_intr_numval_f (cob_field *srcfield)
 {
 	unsigned char	*final_buff;
-	unsigned char	*p;
-	size_t		plus_minus;
+	unsigned char	*p, *p_end;
 	size_t		digits;
 	size_t		decimal_digits;
-	size_t		dec_seen;
-	size_t		e_seen;
 	size_t		exponent;
-	size_t		e_plus_minus;
-	size_t		n;
-	unsigned char	dec_pt;
+	size_t		datasize;
+	int		decimal_seen, e_seen, plus_minus, e_plus_minus, exception;
+	const unsigned char	dec_pt = COB_MODULE_PTR->decimal_point;
 
+	/* note: versions before 3.2 did a pre-validation here,
+	         we now parse "as valid as possible" by default
+	         (the testsuite checks both variants) */
+#ifdef INVALID_NUMVAL_IS_ZERO 
 	/* Validate source field */
 	if (cob_check_numval_f (srcfield)) {
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
 		cob_alloc_set_field_uint (0);
 		return curr_field;
 	}
+#endif
+
+	/* FIXME later: srcfield may be of category national... */
+
+	/* get size along with first/last relevant position */
+	datasize = calculate_start_end_for_numval (srcfield, &p, &p_end);
+
+	/* no data -> zero */
+	if (datasize == 0) {
+		cob_alloc_set_field_uint (0);
+		return curr_field;
+	}
+	/* not wasting buffer space (COBOL2022: 35/34 max)... */
+	if (datasize > COB_MAX_DIGITS) {
+		datasize = COB_MAX_DIGITS;
+	}
+
+	/* acquire temp buffer long enuogh */
+	final_buff = cob_malloc (datasize + 1U);
 
 	plus_minus = 0;
 	digits = 0;
 	decimal_digits = 0;
-	dec_seen = 0;
+	decimal_seen = 0;
 	e_seen = 0;
 	exponent = 0;
 	e_plus_minus = 0;
-	dec_pt = COB_MODULE_PTR->decimal_point;
+	exception = 0;
 
-	final_buff = cob_malloc (srcfield->size + 1U);
-	p = srcfield->data;
-	for (n = 0; n < srcfield->size; ++n, ++p) {
+	for ( /* start value for p set above */; p <= p_end; ++p) {
 		switch (*p) {
 		case '0':
+			if (digits == 0 && !decimal_seen && exponent == 0) {
+				/* no data yet, so just skip */
+				continue;
+			}
+			/* Fall through */
 		case '1':
 		case '2':
 		case '3':
@@ -4880,48 +5035,108 @@ cob_intr_numval_f (cob_field *srcfield)
 				exponent *= 10;
 				exponent += (*p & 0x0F);
 			} else	{
-				if (dec_seen) {
+				if (decimal_seen) {
 					decimal_digits++;
 				}
 				final_buff[digits++] = *p;
+				if (digits > COB_MAX_DIGITS) {
+					exception = 1;
+					goto game_over;
+				}
 			}
 			continue;
-		case 'E':
-			e_seen = 1;
+		case '+':
+			if (e_seen) {
+				if (e_plus_minus) {
+					exception = 1;
+				} else {
+					e_plus_minus = 1;
+				}
+			} else {
+				if (plus_minus) {
+					exception = 1;
+				} else {
+					plus_minus = 1;
+				}
+			}
 			continue;
 		case '-':
 			if (e_seen) {
-				e_plus_minus = 1;
+				if (e_plus_minus) {
+					exception = 1;
+				} else {
+					e_plus_minus = -1;
+				}
 			} else {
-				plus_minus = 1;
+				if (plus_minus) {
+					exception = 1;
+				} else {
+					plus_minus = -1;
+				}
 			}
+			continue;
+		case 'e':
+		case 'E':
+			if (e_seen) {
+				exception = 1;
+			} else {
+				if (digits == 0 && decimal_digits == 0) {
+					exception = 1;
+					goto game_over;
+				}
+				e_seen = 1;
+			}
+			continue;
+		case ' ':
+			/* note: we don't check for bad embedded spaces
+			   because of performance reasons */
 			continue;
 		default:
 			if (*p == dec_pt) {
-				dec_seen = 1;
+				if (decimal_seen) {
+					exception = 1;
+				} else {
+					decimal_seen = 1;
+				}
+			} else {
+				/* must be invalid data, set exception and go on */
+				exception = 1;
 			}
 			continue;
 		}
 	}
 
+game_over:
+
 	if (!digits) {
+		/* srcfield is an empty / all zero string */
 		final_buff[0] = '0';
 	}
 
 	mpz_set_str (d1.value, (char *)final_buff, 10);
 	cob_free (final_buff);
-	if (!mpz_sgn (d1.value)) {
+
+	if (exponent > 9999) {
+		exponent = 9999;
+		exception = 1;
+	}
+
+	if (exception) {
+		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
+	}
+
+	if (mpz_sgn (d1.value) == 0) {
 		/* Value is zero ; sign and exponent irrelevant */
 		d1.scale = 0;
 		cob_alloc_field (&d1);
 		(void)cob_decimal_get_field (&d1, curr_field, 0);
 		return curr_field;
 	}
-	if (plus_minus) {
+	if (plus_minus == -1) {
 		mpz_neg (d1.value, d1.value);
 	}
 	if (exponent) {
-		if (e_plus_minus) {
+		if (e_plus_minus == -1) {
 			/* Negative exponent */
 			d1.scale = decimal_digits + exponent;
 		} else {
