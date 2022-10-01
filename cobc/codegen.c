@@ -37,6 +37,7 @@
 
 #include "cobc.h"
 #include "tree.h"
+#include "cconv.h"
 
 #ifdef	HAVE_ATTRIBUTE_ALIGNED
 #define COB_ALIGN " __attribute__((aligned))"
