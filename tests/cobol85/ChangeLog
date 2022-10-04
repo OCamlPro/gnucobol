@@ -10,6 +10,12 @@
 	* report.pl: add COBOL_FLAGS from environment to cobc command line
 	  as done for the internal testsuite
 
+2021-12-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* report.pl: check for SIGINT also unmasked (as seen on AIX)
+	* Makefile.am: improved support for make implementations without the
+	  POSIX 2001 special target .PHONY; always use $(RM)
+
 2020-11-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* Makefile.am: (newcob.val.Z, newcob.val.tar.gz): raise error message

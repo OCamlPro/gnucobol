@@ -61,9 +61,10 @@ AC_CONFIG_FILES([tests/run_prog_manual.sh],
 #
 # Hack for AIX 64 bit (gcc)
 # Required -
-#  option to configure/export/setenv: CC=gcc -maix
+#  option to configure/export/setenv: CC=gcc -maix64
 # or:
 #  option to configure/export/setenv: CFLAGS=-maix64 and LDFLAGS=-maix64
+# Note: AIX commonly uses -Lpath like GNU/Linux would use -Lpath -Rpath
 
 if echo "$CC$CFLAGS" | grep 'aix64' 1>/dev/null 2>&1; then
 	if test -f /usr/ccs/bin/ar; then
@@ -324,8 +325,13 @@ dnl no explict usage of CPP var
 dnl AC_PROG_CPP
 
 AC_USE_SYSTEM_EXTENSIONS
+#
+## general flags for compiler and linker and tests for those
+#
+# Note:  this and the following checks don't check for stderr and don't need to produce
+#        a working compiler - but need to produce something that passes  make check
+# FIXME: add checking with stderr here, add an option to skip this part with a warning message
 
-# general flags for compiler and linker and tests for those
 AC_ARG_VAR([COBC_CPPFLAGS], [see CPPFLAGS, but only applied during generation of cobc])
 AS_IF([test "x$COBC_CPPFLAGS" != x], [
 	AC_MSG_CHECKING([if compilation with COBC_CPPFLAGS works])
@@ -349,6 +355,15 @@ AS_IF([test "x$LIBCOB_CPPFLAGS" != x], [
 		[AC_MSG_RESULT([no])
 		AC_MSG_ERROR([not possible to compile with LIBCOB_CPPFLAGS="$LIBCOB_CPPFLAGS"])])
 	CPPFLAGS="$curr_cppflags"
+])
+
+AS_IF([test "x$LDFLAGS" != "x" -o "x$LIBS" != "x"], [
+	AC_MSG_CHECKING([if linking with LDFLAGS / LIBS works])
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([],
+		  [[return 0;]])],
+		  [AC_MSG_RESULT([yes])],
+		  [AC_MSG_RESULT([no])
+		   AC_MSG_ERROR([not possible to link with LDFLAGS="$LDFLAGS", / LIBS="$LIBS"])])
 ])
 
 curr_libs="$LIBS"
@@ -487,22 +502,23 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdio.h>]],
 	[AC_DEFINE([HAVE_DESIGNATED_INITS], [1]) AC_MSG_RESULT([yes])],
 	[AC_MSG_RESULT([no])])
 
-# Check gcc/icc/clang
-COB_USES_GCC="no"
+# Check for the compiler used
+dnl COB_USES_GCC="no"
 COB_USES_GCC_NO_ICC="no"
 COB_USES_ICC_ONLY="no"
 COB_USES_CLANG_ONLY="no"
 COB_USES_XLC_ONLY="no"
 COB_USES_WATCOMC_ONLY="no"
 
-AC_MSG_CHECKING([for __GNUC__])
-AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
-	#ifndef __GNUC__
-	# error macro not defined
-	#endif]])],
-	[COB_USES_GCC="yes"
-	 AC_MSG_RESULT([yes])],
-	[AC_MSG_RESULT([no])])
+dnl AC_MSG_CHECKING([for __GNUC__])
+dnl AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+dnl 	#ifndef __GNUC__
+dnl 	# error macro not defined
+dnl 	#endif]])],
+dnl 	[COB_USES_GCC="yes"
+dnl 	 AC_MSG_RESULT([yes])],
+dnl 	[AC_MSG_RESULT([no])])
+COB_USES_GCC=$GCC
 
 AC_MSG_CHECKING([for __INTEL_COMPILER])
 AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
@@ -548,12 +564,36 @@ if test "x$COB_CC" = x; then
 	COB_CC="$CC"
 fi
 
+if test "x$COMMON_LIBS" != x; then
+	if test "x$LIBCOB_LIBS" != x; then
+		LIBCOB_LIBS="$LIBCOB_LIBS $COMMON_LIBS"
+	else
+		LIBCOB_LIBS="$COMMON_LIBS"
+	fi
+	case " $COMMON_LIBS " in
+	  *" -L$libdir "*) COB_LIBS="$COMMON_LIBS -lcob" ;;
+	  *) COB_LIBS="-L$libdir $COMMON_LIBS -lcob" ;;
+	esac
+else
+	COB_LIBS="-L$libdir -lcob"
+fi
 
-dnl until shown otherwise the math checks are not needed currently as all
-dnl "real" compute functions are used from GMP within libcob only
-dnl and math.h is nowhere included
-dnl # Get necessary math libs, if any (often part of the C library)
-dnl AC_MSG_NOTICE([Checks for math library ...])
+if test "x$LDFLAGS" != x; then
+	if test "x$COB_LDFLAGS" != x; then
+		COB_LDFLAGS="$COB_LDFLAGS $LDFLAGS"
+	else
+		COB_LDFLAGS="$LDFLAGS"
+	fi
+fi
+
+
+# some math functions (fabs, isnan, isinf) are used in libcob
+# where math.h is included (especially numeric.c)
+# (all other computations are used from GMP)
+#
+AC_MSG_NOTICE([Checks for math library ...])
+# FIXME - Check for necessary math lib - in most cases they are part of the C library
+# for now: explicit pass them to configure via MATH_LIBS
 dnl if test "x$MATH_LIBS" = x; then
 dnl 	if test "$COB_USES_ICC_ONLY" = "yes"; then
 dnl 		MATH_LIBS="-limf -lm"
@@ -570,34 +610,16 @@ dnl 		fi
 dnl 		LIBS=$curr_libs
 dnl 	fi
 dnl fi
-dnl if test "x$MATH_LIBS" = x; then
-dnl 	AC_MSG_NOTICE([none needed])
-dnl else
-dnl 	AC_MSG_NOTICE([using $MATH_LIBS])
-dnl fi
-dnl COMMON_LIBS=MATH_LIBS
-
-if test "x$LIBCOB_LIBS" != x; then
-	LIBCOB_LIBS="$LIBCOB_LIBS $COMMON_LIBS"
+if test "x$MATH_LIBS" = x; then
+	AC_MSG_NOTICE([none needed])
 else
-	LIBCOB_LIBS="$COMMON_LIBS"
+	AC_MSG_NOTICE([using $MATH_LIBS])
+	case " $LIBCOB_LIBS " in
+	  *" $MATH_LIBS "*) ;;
+	  *) LIBCOB_LIBS="$LIBCOB_LIBS $MATH_LIBS" ;;
+	esac
 fi
 
-COB_LIBS="-L$libdir -lcob"
-if test "x$COMMON_LIBS" != x; then
-	if test "x$COB_LIBS" != x; then
-		COB_LIBS="$COB_LIBS $COMMON_LIBS"
-	else
-		COB_LIBS="$COMMON_LIBS"
-	fi
-fi
-if test "x$LDFLAGS" != x; then
-	if test "x$COB_LDFLAGS" != x; then
-		COB_LDFLAGS="$COB_LDFLAGS $LDFLAGS"
-	else
-		COB_LDFLAGS="$LDFLAGS"
-	fi
-fi
 
 dnl Add --enable-code-coverage and test for code-coverage tools if enabled
 AX_CODE_COVERAGE
@@ -1759,7 +1781,12 @@ fi
 unset enable_cflags_setting
 
 # Note: cobc.c assumed -g for all but _MSC_VER
-COB_DEBUG_FLAGS="-g"
+if test "$ac_cv_prog_cc_g" = "yes"; then
+	COB_DEBUG_FLAGS="-g"
+else
+	COB_DEBUG_FLAGS=""
+	AC_MSG_WARN([No clue how to add debug info with this compiler!])
+fi
 
 # For debugging: add most expressive debug level if using GCC (compatible)
 curr_cflags="$CFLAGS"

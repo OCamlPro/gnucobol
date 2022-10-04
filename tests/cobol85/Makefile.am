@@ -1,7 +1,7 @@
 #
 # Makefile gnucobol/tests/cobol85
 #
-# Copyright (C) 2002-2012, 2015-2020, 2022 Free Software Foundation, Inc.
+# Copyright (C) 2002-2012, 2015-2022 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -48,7 +48,7 @@ EXTRA_DIST = EXEC85.conf.in expand.pl report.pl summary.pl summary.txt \
 
 #CLEANFILES = EXEC85$(EXEEXT) summary.log
 
-COBC = $(PRE_INST_ENV) $(COBC)$(EXEEXT)
+COBC = $(PRE_INST_ENV) cobc$(EXEEXT)
 CURL_FLAGS = 
 WGET_FLAGS = -t1 -T5
 DIFF_FLAGS = @DIFF_FLAGS@
@@ -139,7 +139,10 @@ test-local-compat:
 	@echo
 	$(MAKE) diff-summary
 
-summary.log:
+# FIXME: as some make implementations don't support .PHONY (POSIX 2021)
+# and we don't need it: add all depdencies below (MODULES -> report.txt)
+# then remove the rm of the file below
+summary.log: "$(srcdir)/summary.pl" 
 	@echo "Computing total test results..."
 	@perl "$(srcdir)/summary.pl" $(MODULES) > $@
 
@@ -155,6 +158,7 @@ diff:
 	$(MAKE) diff-summary
 
 diff-summary:
+	@$(RM) summary.log
 	$(MAKE) summary.log
 	@echo "Comparing total test results..."
 	@echo "diff $(SUMMARY)..."
@@ -165,13 +169,13 @@ newcob.val.Z:
 	@echo "Trying to download newcob.val.Z..."
 	@(which curl 1>/dev/null && curl $(CURL_FLAGS) "$(URL_NEWCOB_Z)" -o $@) || \
 	 wget $(WGET_FLAGS) "$(URL_NEWCOB_Z)" || \
-	 (rm -rf $@; echo "Downloading $@ failed"; false)
+	 ($(RM) $@; echo "Downloading $@ failed"; false)
 
 newcob.val.tar.gz:
 	@echo "Trying to download newcob.val.tar.gz..."
 	@(which curl 1>/dev/null && curl $(CURL_FLAGS) "$(URL_NEWCOB_TAR_GZ)" -o $@) || \
 	 wget $(WGET_FLAGS) -O $@ "$(URL_NEWCOB_TAR_GZ)" || \
-	 (rm -rf $@; echo "Downloading $@ failed"; false)
+	 ($(RM) $@; echo "Downloading $@ failed"; false)
 
 unpack-Z: newcob.val.Z
 	@echo "Unpacking $<..."
