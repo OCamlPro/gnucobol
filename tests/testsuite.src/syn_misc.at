@@ -9019,6 +9019,42 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
 AT_CLEANUP
 
 
+AT_SETUP([CONTROL DIVISION & AREACHECK])
+AT_KEYWORDS([gcos])
+
+AT_DATA([prog.cob], [
+       CONTROL          DIVISION.
+       SUBSTITUTION     SECTION.
+       *> This REPLACE in Area A is ignored for now:
+          REPLACE IISS BY IS
+                  TERM BY TERMINAL
+                  "KO" BY "OK".
+       DEFAULT          SECTION.
+          ACCEPT ALTERNATE CONSOLE
+          DISPLAY IISS TERM
+       .
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 VAR PIC X(2) VALUE "KO".
+       PROCEDURE        DIVISION.
+          DISPLAY VAR
+          STOP RUN.
+])
+
+AT_CHECK([$COMPILE -std=gcos-strict prog.cob], [0], [],
+[prog.cob:9: warning: start of statement in Area A
+prog.cob:9: warning: ACCEPT statement in DEFAULT SECTION is not implemented
+prog.cob:10: warning: start of statement in Area A
+prog.cob:10: warning: DISPLAY statement in DEFAULT SECTION is not implemented
+prog.cob:18: warning: start of statement in Area A
+prog.cob:19: warning: start of statement in Area A
+])
+
+AT_CLEANUP
+
+
 AT_SETUP([PICTURE L])
 AT_KEYWORDS([extensions gcos picture-l])
 
