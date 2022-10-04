@@ -61,6 +61,7 @@
 
 #include "cobc.h"
 #include "tree.h"
+#include "cconv.h"
 
 #include "../libcob/cobgetopt.h"
 
@@ -428,8 +429,9 @@ static size_t		manilink_len;
 #define PATTERN_DELIM '|'
 #endif
 
-static size_t		strip_output = 0;
-static size_t		cb_source_debugging = 0;	/* note: was moved to global one later, so keep that name already*/
+static int		strip_output = 0;
+static size_t		cb_source_debugging = 0;	/* note: was moved to global one later, we
+												   already use the name that hints at that */
 
 static const char	*const cob_csyns[] = {
 #ifndef	COB_EBCDIC_MACHINE
@@ -607,6 +609,10 @@ static const struct option long_options[] = {
 	/* alias for backwards-compatibility, removed with 4.x: */
 	{"fnotrunc",		CB_NO_ARG, &cb_flag_trunc, 0},
 	{"fno-notrunc",		CB_NO_ARG, &cb_flag_trunc, 1},
+
+	/* alias for backwards-compatibility, removed with 4.x: */
+	{"falternate-ebcdic",		CB_NO_ARG, (int*)&cb_ebcdic_table, CB_EBCDIC_RESTRICTED_GC},
+	{"fno-alternate-ebcdic",	CB_NO_ARG, (int*)&cb_ebcdic_table, CB_EBCDIC_DEFAULT},
 
 #define	CB_CONFIG_ANY(type,var,name,doc)	\
 	{"f" name,		CB_RQ_ARG, NULL, '%'},
@@ -2813,16 +2819,18 @@ process_command_line (const int argc, char **argv)
 	   We need to postpone single configuration flags as we need
 	   a full configuration to be loaded before */
 	cob_optind = 1;
+	cob_opterr = 1;	/* error handling via getopt */
 	while ((c = cob_getopt_long_long (argc, argv, short_options,
 					  long_options, &idx, 1)) >= 0) {
 		switch (c) {
 
 		case '?':
-			/* Unknown option or ambiguous */
-			if (verbose_output >= 1) {
-				cobc_print_shortversion ();
-			}
-			cobc_early_exit (EXIT_FAILURE);
+			/* Unknown option or ambiguous,
+			   further parse options so we have
+			   all information for the user,
+			   then exit afterwards as failure */
+			exit_option |= 2;
+			break;
 
 		case 'h':
 			/* --help */
@@ -2906,37 +2914,37 @@ process_command_line (const int argc, char **argv)
 		case '5':
 			/* --list-reserved */
 			list_reserved = 1;
-			exit_option = 1;
+			exit_option |= 1;
 			break;
 
 		case '6':
 			/* --list-intrinsics */
 			list_intrinsics = 1;
-			exit_option = 1;
+			exit_option |= 1;
 			break;
 
 		case '7':
 			/* --list-mnemonics */
 			list_system_names = 1;
-			exit_option = 1;
+			exit_option |= 1;
 			break;
 
 		case '8':
 			/* --list-system */
 			list_system_routines = 1;
-			exit_option = 1;
+			exit_option |= 1;
 			break;
 
 		case '9':
 			/* --list-registers */
 			list_registers = 1;
-			exit_option = 1;
+			exit_option |= 1;
 			break;
 
 		case 'a':
 			/* --list-exceptions */
 			list_exceptions = 1;
-			exit_option = 1;
+			exit_option |= 1;
 			break;
 
 		case 'q':
@@ -3028,7 +3036,8 @@ process_command_line (const int argc, char **argv)
 			save_all_src = 1;
 			cb_source_debugging = 1;
 			cb_flag_stack_check = 1;
-			cb_flag_source_location = 1;
+			/* note: cb_flag_source_location and cb_flag_stack_extended
+			         are explicit not set here */
 #if 1		/* auto-included, may be disabled manually if needed */
 			cb_flag_c_line_directives = 1;
 			cb_flag_c_labels = 1;
@@ -3042,8 +3051,23 @@ process_command_line (const int argc, char **argv)
 		case 'd':
 			/* --debug : Turn on all runtime checks */
 			cb_flag_source_location = 1;
+			cb_flag_stack_extended = 1;
 			cb_flag_stack_check = 1;
 			cobc_wants_debug = 1;
+			break;
+
+		case 8:
+			/* -fdump=<scope> : Add sections for dump code generation */
+			cobc_def_dump_opts (cob_optarg, 1);
+			break;
+
+		case 13:
+			/* -fno-dump=<scope> : Suppress sections in dump code generation */
+			if (cob_optarg) {
+				cobc_def_dump_opts (cob_optarg, 0);
+			} else {
+				cb_flag_dump = COB_DUMP_NONE;
+			}
 			break;
 
 		default:
@@ -3077,7 +3101,14 @@ process_command_line (const int argc, char **argv)
 		}
 	}
 
+	/* dump implies extra information (may still be disabled later) */
+	if (cb_flag_dump != COB_DUMP_NONE) {
+		cb_flag_source_location = 1;
+		cb_flag_stack_extended = 1;	/* for extended stack output */
+	}
+
 	cob_optind = 1;
+	cob_opterr = 0;	/* all error handling was done in the call above */
 	while ((c = cob_getopt_long_long (argc, argv, short_options,
 					  long_options, &idx, 1)) >= 0) {
 		switch (c) {
@@ -3085,6 +3116,8 @@ process_command_line (const int argc, char **argv)
 			/* Defined flag */
 			break;
 
+		case '?':
+			/* unknown options */
 		case 'h':
 			/* --help */
 		case 'V':
@@ -3459,7 +3492,7 @@ process_command_line (const int argc, char **argv)
 			cb_stack_size = n;
 			break;
 
-#ifdef COBC_HAS_CUTOFF_FLAG	/* CHECKME: may be removed completely in 3.0 */
+#ifdef COBC_HAS_CUTOFF_FLAG	/* CHECKME: to be removed in 4.0 */
 		case 2:
 			/* -fif-cutoff=<xx> : Specify IF cutoff level */
 			n = cobc_deciph_optarg (cob_optarg, 0);
@@ -3478,6 +3511,13 @@ process_command_line (const int argc, char **argv)
 				cb_ebcdic_sign = 0;
 			} else {
 				cobc_err_exit (COBC_INV_PAR, "-fsign");
+			}
+			break;
+
+		case 14:
+			/* -febcdic-table=<cconv-table> */
+			if (cobc_deciph_ebcdic_table_name (cob_optarg)) {
+				cobc_err_exit (COBC_INV_PAR, "-febcdic-table");
 			}
 			break;
 
@@ -3523,16 +3563,9 @@ process_command_line (const int argc, char **argv)
 
 		case 8:
 			/* -fdump=<scope> : Add sections for dump code generation */
-			cobc_def_dump_opts (cob_optarg, 1);
-			break;
-
 		case 13:
 			/* -fno-dump=<scope> : Suppress sections in dump code generation */
-			if (cob_optarg) {
-				cobc_def_dump_opts (cob_optarg, 0);
-			} else {
-				cb_flag_dump = COB_DUMP_NONE;
-			}
+			/* These options were all processed in the first getopt-run */
 			break;
 
 		case 9:
@@ -3715,6 +3748,12 @@ process_command_line (const int argc, char **argv)
 
 	/* Exit if list options were specified */
 	if (exit_option) {
+		if (exit_option & 2) {
+			if (verbose_output >= 1) {
+				cobc_print_shortversion ();
+			}
+			cobc_early_exit (EXIT_FAILURE);
+		}
 		cobc_early_exit (EXIT_SUCCESS);
 	}
 
@@ -3834,7 +3873,7 @@ process_command_line (const int argc, char **argv)
 		cb_flag_source_location = 1;
 	}
 
-	/* If C debug, do not strip output */
+	/* If C debug, never strip output */
 	if (cb_source_debugging) {
 		strip_output = 0;
 	}

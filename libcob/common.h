@@ -843,12 +843,14 @@ enum cob_exception_id {
 
 /* Open mode */
 
-#define COB_OPEN_CLOSED		0
-#define COB_OPEN_INPUT		1
-#define COB_OPEN_OUTPUT		2
-#define COB_OPEN_I_O		3
-#define COB_OPEN_EXTEND		4
-#define COB_OPEN_LOCKED		5
+enum cob_open_mode {
+	COB_OPEN_CLOSED	= 0,
+	COB_OPEN_INPUT	= 1,
+	COB_OPEN_OUTPUT	= 2,
+	COB_OPEN_I_O	= 3,
+	COB_OPEN_EXTEND	= 4,
+	COB_OPEN_LOCKED	= 5
+};
 
 /* Close options */
 
@@ -888,42 +890,43 @@ enum cob_exception_id {
 
 /* I-O status */
 
-#define COB_STATUS_00_SUCCESS			00
-#define COB_STATUS_02_SUCCESS_DUPLICATE		02
-#define COB_STATUS_04_SUCCESS_INCOMPLETE	04
-#define COB_STATUS_05_SUCCESS_OPTIONAL		05
-#define COB_STATUS_07_SUCCESS_NO_UNIT		07
-#define COB_STATUS_09_READ_DATA_BAD			 9
-#define COB_STATUS_10_END_OF_FILE		10
+#define COB_STATUS_00_SUCCESS				0
+#define COB_STATUS_02_SUCCESS_DUPLICATE		2
+#define COB_STATUS_04_SUCCESS_INCOMPLETE	4
+#define COB_STATUS_05_SUCCESS_OPTIONAL		5
+#define COB_STATUS_06_READ_TRUNCATE			6
+#define COB_STATUS_07_SUCCESS_NO_UNIT		7
+#define COB_STATUS_09_READ_DATA_BAD			9
+#define COB_STATUS_10_END_OF_FILE			10
 #define COB_STATUS_14_OUT_OF_KEY_RANGE		14
-#define COB_STATUS_21_KEY_INVALID		21
-#define COB_STATUS_22_KEY_EXISTS		22
+#define COB_STATUS_21_KEY_INVALID			21
+#define COB_STATUS_22_KEY_EXISTS			22
 #define COB_STATUS_23_KEY_NOT_EXISTS		23
-#define COB_STATUS_24_KEY_BOUNDARY		24
+#define COB_STATUS_24_KEY_BOUNDARY			24
 #define COB_STATUS_30_PERMANENT_ERROR		30
 #define COB_STATUS_31_INCONSISTENT_FILENAME	31
 #define COB_STATUS_34_BOUNDARY_VIOLATION	34
-#define COB_STATUS_35_NOT_EXISTS		35
+#define COB_STATUS_35_NOT_EXISTS			35
 #define COB_STATUS_37_PERMISSION_DENIED		37
 #define COB_STATUS_38_CLOSED_WITH_LOCK		38
 #define COB_STATUS_39_CONFLICT_ATTRIBUTE	39
-#define COB_STATUS_41_ALREADY_OPEN		41
-#define COB_STATUS_42_NOT_OPEN			42
-#define COB_STATUS_43_READ_NOT_DONE		43
+#define COB_STATUS_41_ALREADY_OPEN			41
+#define COB_STATUS_42_NOT_OPEN				42
+#define COB_STATUS_43_READ_NOT_DONE			43
 #define COB_STATUS_44_RECORD_OVERFLOW		44
 #define COB_STATUS_45_IDENTIFICATION_FAILURE	45	/* currently not implemented */
-#define COB_STATUS_46_READ_ERROR		46
-#define COB_STATUS_47_INPUT_DENIED		47
-#define COB_STATUS_48_OUTPUT_DENIED		48
-#define COB_STATUS_49_I_O_DENIED		49
-#define COB_STATUS_51_RECORD_LOCKED		51
-#define COB_STATUS_52_DEAD_LOCK			52	/* currently not implemented (patch available) */
-#define COB_STATUS_53_MAX_LOCKS			53	/* currently not implemented */
-#define COB_STATUS_54_MAX_LOCKS_FD		54	/* currently not implemented */
-#define COB_STATUS_57_I_O_LINAGE		57
-#define COB_STATUS_61_FILE_SHARING		61
+#define COB_STATUS_46_READ_ERROR			46
+#define COB_STATUS_47_INPUT_DENIED			47
+#define COB_STATUS_48_OUTPUT_DENIED			48
+#define COB_STATUS_49_I_O_DENIED			49
+#define COB_STATUS_51_RECORD_LOCKED			51
+#define COB_STATUS_52_DEAD_LOCK				52	/* currently not implemented (patch available) */
+#define COB_STATUS_53_MAX_LOCKS				53	/* currently not implemented */
+#define COB_STATUS_54_MAX_LOCKS_FD			54	/* currently not implemented */
+#define COB_STATUS_57_I_O_LINAGE			57
+#define COB_STATUS_61_FILE_SHARING			61
 #define COB_STATUS_71_BAD_CHAR				71
-#define COB_STATUS_91_NOT_AVAILABLE		91
+#define COB_STATUS_91_NOT_AVAILABLE			91
 
 /* Special status */
 /* Used by extfh handler */
@@ -1119,6 +1122,17 @@ struct cob_frame {
 	unsigned int	return_address_num;	/* Return address number */
 };
 
+/* Extended perform stack structure (available since GC 3.2) */
+struct cob_frame_ext {
+	void		*return_address_ptr;	/* Return address pointer */
+	unsigned int	perform_through;	/* Perform number */
+	unsigned int	return_address_num;	/* Return address number */
+	unsigned int	module_stmt;		/* return statement location */
+	const char	*section_name;		/* Return section name, empty on
+	          	                       "first" entry of a module */
+	const char	*paragraph_name;	/* Return paragraph name */
+};
+
 /* Call union structures */
 
 typedef union __cob_content {
@@ -1222,7 +1236,8 @@ typedef struct __cob_module {
 
 	unsigned char		unused[1];		/* Use these flags up later, added for alignment */
 
-	unsigned int		module_stmt;		/* Last statement executed as modulated source line
+	unsigned int		module_stmt;		/* Position of last statement executed
+											   as modulated source line
 											   and index to module_sources for source file */
 	const char		**module_sources;	/* Source module names compiled */
 
@@ -1245,6 +1260,12 @@ typedef struct __cob_module {
 #define COB_XML_XMLNSS		1			/* similar to XMLPARSE(XMLNSS) Micro Focus,
 											   IBM may be different (_very_ likely for error codes);
 											   but the main difference is to "COMPAT" */
+	struct cob_frame_ext *frame_ptr;	/* current frame ptr, note: if set then cob_frame in this
+										   module is of type "struct cob_frame_ext",
+										   otherwise "struct cob_frame" */
+	const char		*section_name;		/* name of current active section */
+	const char		*paragraph_name;		/* name of current active pagagraph */
+	const char		*stmt_name;			/* last statment VERB name */
 
 } cob_module;
 
@@ -1309,9 +1330,9 @@ typedef struct __cob_file {
 	unsigned char		organization;		/* ORGANIZATION */
 	unsigned char		access_mode;		/* ACCESS MODE */
 	unsigned char		lock_mode;		/* LOCK MODE */
-	unsigned char		open_mode;		/* OPEN MODE */
+	unsigned char		open_mode;		/* OPEN MODE: GC4: cob_open_mode */
 	unsigned char		flag_optional;		/* OPTIONAL */
-	unsigned char		last_open_mode;		/* Mode given by OPEN */
+	unsigned char		last_open_mode;		/* Mode given by OPEN: GC4: cob_open_mode */
 	unsigned char		flag_operation;		/* File type specific */
 	unsigned char		flag_nonexistent;	/* Nonexistent file */
 
@@ -1503,7 +1524,7 @@ typedef struct __cob_ml_tree {
 typedef struct __cob_global {
 	cob_file		*cob_error_file;	/* Last error file */
 	cob_module		*cob_current_module;	/* Current module */
-	const char		*last_exception_statement;	/* SLast exception: tatement */
+	const char		*last_exception_statement;	/* Last exception: Statement */
 	const char		*last_exception_id;	/* Last exception: PROGRAMM-ID / FUNCTION-ID*/
 	const char		*last_exception_section;	/* Last exception: Section */
 	const char		*last_exception_paragraph;	/* Last exception: Paragraph */
@@ -1538,12 +1559,15 @@ typedef struct __cob_global {
 	unsigned int		cob_stmt_exception;	/* Statement has 'On Exception' */
 
 	unsigned int		cob_debugging_mode;	/* activation of USE ON DEBUGGING code */
+#if 0	/* consider addition for 4.x, possibly with getting rid of last_exception_line */
+	const char		*last_exception_source;	/* Last exception: Source */
+#endif
 
 } cob_global;
 
-/* File I/O function pointer structure */
+/* File I/O function pointer structure (left here as it needs to be "external" for GC 4.x) */
 struct cob_fileio_funcs {
-	int	(*open)		(cob_file *, char *, const int, const int);
+	int	(*open)		(cob_file *, char *, const enum cob_open_mode, const int);
 	int	(*close)	(cob_file *, const int);
 	int	(*start)	(cob_file *, const int, cob_field *);
 	int	(*read)		(cob_file *, cob_field *, const int);

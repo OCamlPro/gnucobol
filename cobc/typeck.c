@@ -11803,14 +11803,16 @@ cb_emit_open (cb_tree file, cb_tree mode, cb_tree sharing)
 		}
 	}
 
-	/* TODO: replace mode and sharing with tree containing a string constant
-	         (defines in common.h like COB_OPEN_I_O) */
+	/* TODO: replace sharing with tree containing a string constant
+	         (defines in common.h / codegen like COB_OPEN_I_O) */
 
 	if (f->extfh) {
-		cb_emit (CB_BUILD_FUNCALL_5 ("cob_extfh_open", f->extfh, file, mode,
+		cb_emit (CB_BUILD_FUNCALL_5 ("cob_extfh_open", f->extfh, file,
+			 cb_build_direct (cb_open_mode_to_string (open_mode), 0),
 			 sharing, f->file_status));
 	} else {
-		cb_emit (CB_BUILD_FUNCALL_4 ("cob_open", file, mode,
+		cb_emit (CB_BUILD_FUNCALL_4 ("cob_open", file,
+			 cb_build_direct (cb_open_mode_to_string (open_mode), 0),
 			 sharing, f->file_status));
 	}
 

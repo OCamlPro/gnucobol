@@ -598,874 +598,6 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([File SORT, SEQUENTIAL])
-AT_KEYWORDS([runfile using giving])
-
-# Note: We shouldn't use AT_DATA to create sequential record
-# data, because AT_DATA needs a \n at the end
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION   DIVISION.
-       PROGRAM-ID.      prog.
-       ENVIRONMENT      DIVISION.
-       INPUT-OUTPUT     SECTION.
-       FILE-CONTROL.
-       SELECT SORT-IN   ASSIGN "test.txt".
-       SELECT SORT-OUT  ASSIGN "result.txt".
-       SELECT SORT-WRK  ASSIGN "SORT-WRK".
-       DATA             DIVISION.
-       FILE             SECTION.
-       FD SORT-IN.
-       01 IN-REC        PIC X(6).
-       FD SORT-OUT.
-       01 OUT-REC       PIC X(6).
-       SD SORT-WRK.
-       01 WRK-REC       PIC X(6).
-       PROCEDURE        DIVISION.
-
-      * Special case: write test data in COBOL, see note above
-           OPEN OUTPUT SORT-IN.
-           WRITE IN-REC FROM SPACES   END-WRITE.
-           WRITE IN-REC FROM SPACES   END-WRITE.
-           WRITE IN-REC FROM "world " END-WRITE.
-           WRITE IN-REC FROM SPACES   END-WRITE.
-           WRITE IN-REC FROM "hello " END-WRITE.
-           WRITE IN-REC FROM SPACES   END-WRITE.
-           WRITE IN-REC FROM SPACES   END-WRITE.
-           CLOSE SORT-IN.
-
-           SORT SORT-WRK
-                ASCENDING KEY WRK-REC
-                USING  SORT-IN
-                GIVING SORT-OUT.
-             STOP RUN.
-])
-
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
-AT_CHECK([cat result.txt], [0], [                              hello world ], [])
-
-AT_CLEANUP
-
-
-AT_SETUP([File SORT, SEQUENTIAL variable records])
-AT_KEYWORDS([runfile])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. prog.
-       ENVIRONMENT DIVISION.
-       INPUT-OUTPUT SECTION.
-       FILE-CONTROL.
-       SELECT file1 ORGANIZATION SEQUENTIAL
-                    ASSIGN "./file1".
-       SELECT file2 ORGANIZATION SEQUENTIAL
-                    ASSIGN "./file2".
-       SELECT file3 ASSIGN DISK.
-       DATA DIVISION.
-       FILE SECTION.
-       FD file1 RECORD VARYING FROM 3 TO 12 DEPENDING rsz.
-       1  file1-rec pic x(12).
-       FD file2 RECORD VARYING FROM 3 TO 12 DEPENDING rsz.
-       1  file2-rec pic x(12).
-       SD file3 RECORD VARYING FROM 3 TO 12 DEPENDING rsz.
-       1  file3-rec.
-          2  file3-key1 pic x.
-          2  file3-key2 pic 9.
-          2  filler pic x(10).
-       WORKING-STORAGE SECTION.
-       77 rsz pic 99.
-       1  1-data.
-          2  filler pic x(14) VALUE "03A4X".
-          2  filler pic x(14) VALUE "04A3XX".
-          2  filler pic x(14) VALUE "05A2XXX".
-          2  filler pic x(14) VALUE "06A1XXXX".
-          2  filler pic x(14) VALUE "07A0XXXXX".
-          2  filler pic x(14) VALUE "08B2XXXXXX".
-          2  filler pic x(14) VALUE "09B1XXXXXXX".
-          2  filler pic x(14) VALUE "10C2XXXXXXXX".
-          2  filler pic x(14) VALUE "11C1XXXXXXXXX".
-          2  filler pic x(14) VALUE "12Z9XXXXXXXXXX".
-      *
-       1  filler redefines 1-data.
-          2  filler occurs 10 times indexed by ix-1.
-           3 1-rsz pic 99.
-           3 1-rec pic x(12).
-
-       PROCEDURE DIVISION.
-          OPEN OUTPUT file1.
-          PERFORM VARYING ix-1 FROM 1 BY 2 UNTIL ix-1 > 10
-             MOVE 1-rsz(ix-1) TO rsz
-             MOVE 1-rec(ix-1) TO file1-rec
-             WRITE file1-rec
-          END-PERFORM.
-          PERFORM VARYING ix-1 FROM 2 BY 2 UNTIL ix-1 > 10
-             MOVE 1-rsz(ix-1) TO rsz
-             MOVE 1-rec(ix-1) TO file1-rec
-             WRITE file1-rec
-          END-PERFORM.
-          CLOSE file1.
-          SORT file3 ON ASCENDING file3-key1
-                        DESCENDING file3-key2
-             USING file1
-             GIVING file2.
-          OPEN INPUT file2.
-          PERFORM VARYING ix-1 FROM 1 BY 1 UNTIL ix-1 > 10
-             READ file2
-      *>> fileio-sort currently returns constant length records
-             MOVE 1-rsz(ix-1) TO rsz
-      *>> END-OF-DETOUR
-             IF (1-rsz(ix-1) <> rsz) or
-                (1-rec(ix-1) <> file2-rec)
-                DISPLAY "FAILED"
-             END-IF
-          END-PERFORM.
-          CLOSE file2.
-          STOP RUN.
-])
-
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
-
-AT_CLEANUP
-
-
-AT_SETUP([File SORT, LINE SEQUENTIAL])
-AT_KEYWORDS([runfile using giving])
-
-# Note: We shouldn't use AT_DATA to create sequential record
-# data, because AT_DATA needs a \n at the end
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION   DIVISION.
-       PROGRAM-ID.      prog.
-       ENVIRONMENT      DIVISION.
-       INPUT-OUTPUT     SECTION.
-       FILE-CONTROL.
-       SELECT SORT-IN   ASSIGN "test.txt"
-                        ORGANISATION LINE SEQUENTIAL.
-       SELECT SORT-OUT  ASSIGN "result.txt"
-                        ORGANISATION LINE SEQUENTIAL.
-       SELECT SORT-WRK  ASSIGN "SORT-WRK".
-       DATA             DIVISION.
-       FILE             SECTION.
-       FD SORT-IN.
-       01 IN-REC        PIC X(20).
-       FD SORT-OUT.
-       01 OUT-REC       PIC X(20).
-       SD SORT-WRK.
-       01 WRK-REC       PIC X(6).
-       PROCEDURE        DIVISION.
-
-      * Special case: write test data in COBOL, see note above
-           OPEN OUTPUT SORT-IN.
-           WRITE IN-REC FROM SPACES   END-WRITE.
-           WRITE IN-REC FROM SPACES   END-WRITE.
-           WRITE IN-REC FROM "world " END-WRITE.
-           WRITE IN-REC FROM SPACES   END-WRITE.
-           WRITE IN-REC FROM "hello " END-WRITE.
-           WRITE IN-REC FROM SPACES   END-WRITE.
-           WRITE IN-REC FROM SPACES   END-WRITE.
-           CLOSE SORT-IN.
-
-           SORT SORT-WRK
-                ASCENDING KEY WRK-REC
-                USING  SORT-IN
-                GIVING SORT-OUT.
-             STOP RUN.
-])
-
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
-AT_CHECK([cat result.txt], [0], [
-
-
-
-
-hello
-world
-], [])
-
-AT_CLEANUP
-
-
-AT_SETUP([LINAGE and LINAGE-COUNTER sample])
-AT_KEYWORDS([runfile optional file status READ WRITE END-OF-PAGE LINE SEQUENTIAL configuration COB_CURRENT_DATE])
-
-# modified version of GC-FAQ: Example of LINAGE File Descriptor
-# Author: Brian Tiffin, Date:   10-July-2008
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. prog.
-       ENVIRONMENT DIVISION.
-       INPUT-OUTPUT SECTION.
-       FILE-CONTROL.
-           select optional data-file assign to 'prog.cob'
-               organization is line sequential
-               file status is data-file-status.
-           select mini-report assign to "mini-report".
-
-       DATA DIVISION.
-       FILE SECTION.
-       FD  data-file.
-       01  data-record.
-           88 endofdata        value high-values.
-           02 data-line        pic x(80).
-       FD  mini-report
-           linage is 16 lines
-               with footing at 15
-               lines at top 2
-               lines at bottom 2.
-       01  report-line         pic x(80).
-
-       WORKING-STORAGE SECTION.
-       01  command-arguments   pic x(1024).
-       01  file-name           pic x(160).
-       01  data-file-status    pic xx.
-       01  lc                  pic 99.
-       01  report-line-blank.
-           02 filler           pic x(18) value all "*".
-           02 filler           pic x(05) value spaces.
-           02 filler           pic x(34)
-               VALUE "THIS PAGE INTENTIONALLY LEFT BLANK".
-           02 filler           pic x(05) value spaces.
-           02 filler           pic x(18) value all "*".
-       01  report-line-data.
-           02 body-tag         pic 9(6).
-           02 line-3           pic x(74).
-       01  report-line-header.
-           02 filler           pic x(6) VALUE "PAGE: ".
-           02 page-no          pic 9999.
-           02 filler           pic x(24).
-           02 filler           pic x(5) VALUE " LC: ".
-           02 header-tag       pic 9(6).
-           02 filler           pic x(23).
-           02 filler           pic x(6) VALUE "DATE: ".
-           02 page-date        pic x(6).
-
-       01  page-count          pic 9999.
-
-       PROCEDURE DIVISION.
-
-       open input data-file.
-       read data-file
-           at end
-               display "File open error: " data-file-status
-               stop run
-       end-read.
-
-       open output mini-report.
-
-       write report-line
-           from report-line-blank
-       end-write.
-
-       move 1 to page-count.
-       accept page-date from date end-accept.
-       move page-count to page-no.
-       write report-line
-           from report-line-header
-           after advancing page
-       end-write.
-
-       perform readwrite-loop until endofdata.
-
-       display
-           "Normal termination, ending status: "
-           data-file-status
-       close mini-report.
-
-       close data-file.
-       stop run.
-
-      ****************************************************************
-       readwrite-loop.
-       move data-record to report-line-data
-       move linage-counter to body-tag
-       write report-line from report-line-data
-           end-of-page
-               add 1 to page-count end-add
-               move page-count to page-no
-               move linage-counter to header-tag
-               write report-line from report-line-header
-                   after advancing page
-               end-write
-       end-write
-       read data-file
-           at end set endofdata to true
-       end-read
-       .
-])
-
-AT_CAPTURE_FILE([mini-report])
-AT_DATA([reference-report], [
-
-******************     THIS PAGE INTENTIONALLY LEFT BLANK     ******************
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-PAGE: 0001                         LC: 000000                       DATE: 150206
-000001
-000002 IDENTIFICATION DIVISION.
-000003 PROGRAM-ID. prog.
-000004 ENVIRONMENT DIVISION.
-000005 INPUT-OUTPUT SECTION.
-000006 FILE-CONTROL.
-000007     select optional data-file assign to 'prog.cob'
-000008         organization is line sequential
-000009         file status is data-file-status.
-000010     select mini-report assign to "mini-report".
-000011
-000012 DATA DIVISION.
-000013 FILE SECTION.
-000014 FD  data-file.
-
-
-
-
-
-PAGE: 0002                         LC: 000015                       DATE: 150206
-000001 01  data-record.
-000002     88 endofdata        value high-values.
-000003     02 data-line        pic x(80).
-000004 FD  mini-report
-000005     linage is 16 lines
-000006         with footing at 15
-000007         lines at top 2
-000008         lines at bottom 2.
-000009 01  report-line         pic x(80).
-000010
-000011 WORKING-STORAGE SECTION.
-000012 01  command-arguments   pic x(1024).
-000013 01  file-name           pic x(160).
-000014 01  data-file-status    pic xx.
-
-
-
-
-
-PAGE: 0003                         LC: 000015                       DATE: 150206
-000001 01  lc                  pic 99.
-000002 01  report-line-blank.
-000003     02 filler           pic x(18) value all "*".
-000004     02 filler           pic x(05) value spaces.
-000005     02 filler           pic x(34)
-000006         VALUE "THIS PAGE INTENTIONALLY LEFT BLANK".
-000007     02 filler           pic x(05) value spaces.
-000008     02 filler           pic x(18) value all "*".
-000009 01  report-line-data.
-000010     02 body-tag         pic 9(6).
-000011     02 line-3           pic x(74).
-000012 01  report-line-header.
-000013     02 filler           pic x(6) VALUE "PAGE: ".
-000014     02 page-no          pic 9999.
-
-
-
-
-
-PAGE: 0004                         LC: 000015                       DATE: 150206
-000001     02 filler           pic x(24).
-000002     02 filler           pic x(5) VALUE " LC: ".
-000003     02 header-tag       pic 9(6).
-000004     02 filler           pic x(23).
-000005     02 filler           pic x(6) VALUE "DATE: ".
-000006     02 page-date        pic x(6).
-000007
-000008 01  page-count          pic 9999.
-000009
-000010 PROCEDURE DIVISION.
-000011
-000012 open input data-file.
-000013 read data-file
-000014     at end
-
-
-
-
-
-PAGE: 0005                         LC: 000015                       DATE: 150206
-000001         display "File open error: " data-file-status
-000002         stop run
-000003 end-read.
-000004
-000005 open output mini-report.
-000006
-000007 write report-line
-000008     from report-line-blank
-000009 end-write.
-000010
-000011 move 1 to page-count.
-000012 accept page-date from date end-accept.
-000013 move page-count to page-no.
-000014 write report-line
-
-
-
-
-
-PAGE: 0006                         LC: 000015                       DATE: 150206
-000001     from report-line-header
-000002     after advancing page
-000003 end-write.
-000004
-000005 perform readwrite-loop until endofdata.
-000006
-000007 display
-000008     "Normal termination, ending status: "
-000009     data-file-status
-000010 close mini-report.
-000011
-000012 close data-file.
-000013 stop run.
-000014
-
-
-
-
-
-PAGE: 0007                         LC: 000015                       DATE: 150206
-000001****************************************************************
-000002 readwrite-loop.
-000003 move data-record to report-line-data
-000004 move linage-counter to body-tag
-000005 write report-line from report-line-data
-000006     end-of-page
-000007         add 1 to page-count end-add
-000008         move page-count to page-no
-000009         move linage-counter to header-tag
-000010         write report-line from report-line-header
-000011             after advancing page
-000012         end-write
-000013 end-write
-000014 read data-file
-
-
-
-
-
-PAGE: 0008                         LC: 000015                       DATE: 150206
-000001     at end set endofdata to true
-000002 end-read
-000003 .
-])
-
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([COB_CURRENT_DATE="2015/02/06 16:40:52" $COBCRUN_DIRECT ./prog], [0],
-[Normal termination, ending status: 10
-], [])
-AT_CHECK([diff mini-report reference-report], [0], [], [])
-
-AT_CLEANUP
-
-
-AT_SETUP([File SORT, LINE SEQUENTIAL same file])
-AT_KEYWORDS([runfile using giving])
-
-AT_DATA([test.txt], [
-bla
-world
-hello
-
-blubb
-])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION   DIVISION.
-       PROGRAM-ID.      prog.
-       ENVIRONMENT      DIVISION.
-       INPUT-OUTPUT     SECTION.
-       FILE-CONTROL.
-       SELECT SORT-IN   ASSIGN "test.txt"
-                        ORGANISATION LINE SEQUENTIAL.
-       SELECT SORT-WRK  ASSIGN "dummy".
-       DATA             DIVISION.
-       FILE             SECTION.
-       FD SORT-IN.
-       01 IN-REC        PIC X(6).
-       SD SORT-WRK.
-       01 sort-entry    PIC X(6).
-       PROCEDURE        DIVISION.
-           SORT SORT-WRK
-                ASCENDING sort-entry
-                USING  SORT-IN
-                GIVING SORT-IN.
-             STOP RUN.
-])
-
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
-AT_CHECK([cat test.txt], [0], [
-
-bla
-blubb
-hello
-world
-], [])
-
-AT_CLEANUP
-
-
-AT_SETUP([File SORT, LINE SEQUENTIAL variable records])
-AT_KEYWORDS([runfile])
-
-AT_DATA([file1],
-[A1XXXX
-A2XXX
-A3XX
-Z9XXXXXXXXXX
-A4X
-B1XXXXXXX
-B2XXXXXX
-A0XXXXX
-C1XXXXXXXXX
-C2XXXXXXXX
-])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. prog.
-       ENVIRONMENT DIVISION.
-       INPUT-OUTPUT SECTION.
-       FILE-CONTROL.
-       SELECT file1 ORGANIZATION LINE SEQUENTIAL
-                    ASSIGN "./file1".
-       SELECT file2 ORGANIZATION LINE SEQUENTIAL
-                    ASSIGN "./file2".
-       SELECT file3 ASSIGN DISK.
-       DATA DIVISION.
-       FILE SECTION.
-       FD file1.
-       1  file1-rec pic x(12).
-       FD file2.
-       1  file2-rec pic x(12).
-       SD file3.
-       1  file3-rec.
-          2  file3-key1 pic x.
-          2  file3-key2 pic 9.
-          2  filler pic x(10).
-       PROCEDURE DIVISION.
-          SORT file3 ON ASCENDING file3-key1
-                        DESCENDING file3-key2
-             USING file1
-             GIVING file2.
-          STOP RUN.
-])
-
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
-AT_CHECK([cat file2], [0],
-[A4X
-A3XX
-A2XXX
-A1XXXX
-A0XXXXX
-B2XXXXXX
-B1XXXXXXX
-C2XXXXXXXX
-C1XXXXXXXXX
-Z9XXXXXXXXXX
-])
-
-AT_CLEANUP
-
-
-AT_SETUP([File MERGE, LINE SEQUENTIAL variable records])
-AT_KEYWORDS([runfile])
-
-AT_DATA([file1],
-[A1XXXX
-A2XXX
-A3XX
-Z9XXXXXXXXXX
-A4X
-B1XXXXXXX
-B2XXXXXX
-A0XXXXX
-C1XXXXXXXXX
-C2XXXXXXXX
-])
-
-AT_DATA([file2],
-[A1****
-A2***
-A3**
-Z9**********
-A4*
-B1*******
-B2******
-A0*****
-C1*********
-C2********
-])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. prog.
-       ENVIRONMENT DIVISION.
-       INPUT-OUTPUT SECTION.
-       FILE-CONTROL.
-       SELECT file1 ORGANIZATION LINE SEQUENTIAL
-                    ASSIGN "./file1".
-       SELECT file2 ORGANIZATION LINE SEQUENTIAL
-                    ASSIGN "./file2".
-       SELECT file3 ORGANIZATION LINE SEQUENTIAL
-                    ASSIGN "./file3".
-       SELECT file4 ASSIGN DISK.
-       DATA DIVISION.
-       FILE SECTION.
-       FD file1.
-       1  file1-rec pic x(12).
-       FD file2.
-       1  file2-rec pic x(12).
-       FD file3.
-       1  file3-rec pic x(12).
-       SD file4.
-       1  file4-rec.
-          2  file4-key1 pic x.
-          2  file4-key2 pic 9.
-          2  filler pic x(10).
-       PROCEDURE DIVISION.
-          MERGE file4 ON ASCENDING file4-key1
-                        DESCENDING file4-key2
-             USING file1 file2
-             GIVING file3.
-          STOP RUN.
-])
-
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
-AT_CHECK([cat file3], [0],
-[A4X
-A4*
-A3XX
-A3**
-A2XXX
-A2***
-A1XXXX
-A1****
-A0XXXXX
-A0*****
-B2XXXXXX
-B2******
-B1XXXXXXX
-B1*******
-C2XXXXXXXX
-C2********
-C1XXXXXXXXX
-C1*********
-Z9XXXXXXXXXX
-Z9**********
-])
-
-AT_CLEANUP
-
-
-AT_SETUP([SORT nonexistent file])
-AT_KEYWORDS([runfile])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION   DIVISION.
-       PROGRAM-ID.      prog.
-       ENVIRONMENT      DIVISION.
-       INPUT-OUTPUT     SECTION.
-       FILE-CONTROL.
-       SELECT SORT-IN   ASSIGN "SORT-IN".
-       SELECT SORT-OUT  ASSIGN "SORT-OUT".
-       SELECT SORT-WRK  ASSIGN "SORT-WRK".
-       DATA             DIVISION.
-       FILE             SECTION.
-       FD SORT-IN.
-       01 IN-REC        PIC X(100).
-       FD SORT-OUT.
-       01 OUT-REC       PIC X(100).
-       SD SORT-WRK.
-       01 WRK-REC       PIC X(100).
-       PROCEDURE        DIVISION.
-           SORT SORT-WRK
-                ASCENDING KEY WRK-REC
-                USING  SORT-IN
-                GIVING SORT-OUT.
-             STOP RUN.
-])
-
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
-AT_CHECK([cat SORT-OUT], [0], [], [])
-
-AT_CLEANUP
-
-
-AT_SETUP([SORT with INPUT/OUTPUT PROCEDUREs])
-AT_KEYWORDS([runfile])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. prog.
-       ENVIRONMENT DIVISION.
-       INPUT-OUTPUT SECTION.
-       FILE-CONTROL.
-       SELECT file1 ASSIGN DISK.
-       DATA DIVISION.
-       FILE SECTION.
-       SD file1.
-       1  file1-rec.
-          2  file1-key pic 9(4).
-          2  file1-data pic x(10).
-       WORKING-STORAGE SECTION.
-       77 w-eof pic 9 value 0.
-       1  1-values.
-          2  filler pic x(14) value "0001A--------A".
-          2  filler pic x(14) value "0002B--------B".
-          2  filler pic x(14) value "0003C--------C".
-          2  filler pic x(14) value "0004D--------D".
-          2  filler pic x(14) value "0005E--------E".
-          2  filler pic x(14) value "0006F--------F".
-          2  filler pic x(14) value "0007G--------G".
-          2  filler pic x(14) value "0008H--------H".
-          2  filler pic x(14) value "0009I--------I".
-          2  filler pic x(14) value "0010J--------J".
-          2  filler pic x(14) value "0011K--------K".
-          2  filler pic x(14) value "0012L--------L".
-          2  filler pic x(14) value "0013M--------M".
-          2  filler pic x(14) value "0014N--------N".
-          2  filler pic x(14) value "0015O--------O".
-          2  filler pic x(14) value "0016P--------P".
-          2  filler pic x(14) value "0017Q--------Q".
-          2  filler pic x(14) value "0018R--------R".
-          2  filler pic x(14) value "0019S--------S".
-          2  filler pic x(14) value "0020T--------T".
-          2  filler pic x(14) value "0021U--------U".
-          2  filler pic x(14) value "0022V--------V".
-          2  filler pic x(14) value "0023W--------W".
-          2  filler pic x(14) value "0024X--------X".
-          2  filler pic x(14) value "0025Y--------Y".
-          2  filler pic x(14) value "0026Z--------Z".
-       1  filler redefines 1-values.
-          2  1-record occurs 26 times indexed by ix-1.
-           3 1-key pic 9(4).
-           3 1-data pic x(10).
-       PROCEDURE DIVISION.
-       a01-main.
-          SORT file1 ON ASCENDING file1-key
-             INPUT PROCEDURE a02-release-to-sort
-             OUTPUT PROCEDURE a03-return-from-sort.
-          STOP RUN.
-      *
-       a02-release-to-sort.
-          PERFORM VARYING ix-1 FROM 1 BY 2 UNTIL ix-1 > 26
-             RELEASE file1-rec from 1-record(ix-1)
-          END-PERFORM.
-          PERFORM VARYING ix-1 FROM 2 BY 2 UNTIL ix-1 > 26
-             RELEASE file1-rec from 1-record(ix-1)
-          END-PERFORM.
-      *
-       a03-return-from-sort.
-          PERFORM VARYING ix-1 FROM 1 BY 1
-             UNTIL (ix-1 > 26) OR (w-eof = 1)
-             RETURN file1 RECORD
-               AT END MOVE 1 TO w-eof
-             END-RETURN
-             IF (file1-rec <> 1-record(ix-1))
-                MOVE 1 TO w-eof
-             END-IF
-          END-PERFORM.
-          IF (w-eof = 1)
-             DISPLAY "FAILED: unexpected eof"
-          ELSE
-             RETURN file1 RECORD
-               AT END CONTINUE
-               NOT AT END DISPLAY "FAILED: expected eof"
-             END-RETURN
-          END-IF.
-])
-
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
-
-AT_CLEANUP
-
-
-AT_SETUP([SORT with key1 ASCENDING, key2 DESCENDING])
-AT_KEYWORDS([runfile])
-
-AT_DATA([file1],
-[A1
-A2
-A3
-Z9
-A4
-B1
-B2
-A0
-C1
-C2
-])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. prog.
-       ENVIRONMENT DIVISION.
-       INPUT-OUTPUT SECTION.
-       FILE-CONTROL.
-       SELECT file1 ORGANIZATION LINE SEQUENTIAL
-                    ASSIGN "./file1".
-       SELECT file2 ORGANIZATION LINE SEQUENTIAL
-                    ASSIGN "./file2".
-       SELECT file3 ASSIGN DISK.
-       DATA DIVISION.
-       FILE SECTION.
-       FD file1.
-       1  file1-rec pic xxx.
-       FD file2.
-       1  file2-rec pic xxx.
-       SD file3.
-       1  file3-rec.
-          2  file3-key1 pic x.
-          2  file3-key2 pic 9.
-          2  file3-dot pic x.
-       PROCEDURE DIVISION.
-          SORT file3 ON ASCENDING file3-key1
-                        DESCENDING file3-key2
-             USING file1
-             GIVING file2.
-          STOP RUN.
-])
-
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
-AT_CHECK([cat file2], [0],
-[A4
-A3
-A2
-A1
-A0
-B2
-B1
-C2
-C1
-Z9
-])
-
-AT_CLEANUP
-
-
 ## ASSIGN
 
 
@@ -1594,7 +726,7 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([ASSIGNfilename expansion])
+AT_SETUP([ASSIGN filename expansion])
 AT_KEYWORDS([extensions runfile])
 
 AT_DATA([prog.cob], [
@@ -4947,8 +4079,8 @@ AT_CHECK([unset COB_FILE_PATH ; ./prog], [0], [], [])
 
 AT_CLEANUP
 
+
 ### TO-DO: Move "ASSIGN expansion" test here.
-### TO-DO: Already in run_extensions.at.
 
 AT_SETUP([SEQUENTIAL basic I/O])
 AT_KEYWORDS([runfile READ WRITE REWRITE COB_SYNC])
@@ -4994,6 +4126,9 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CHECK([COB_SYNC=Y $COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
+
+
+## LINE SEQUENTIAL
 
 
 AT_SETUP([LINE SEQUENTIAL basic I/O])
@@ -5062,8 +4197,54 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([LINE SEQUENTIAL record truncation (1)])
+AT_SETUP([LINE SEQUENTIAL WRITE AFTER])
 AT_KEYWORDS([runfile])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       ENVIRONMENT      DIVISION.
+       INPUT-OUTPUT     SECTION.
+       FILE-CONTROL.
+       SELECT TEST-FILE ASSIGN       "./TEST-FILE"
+                        ORGANIZATION IS LINE SEQUENTIAL.
+       DATA             DIVISION.
+       FILE             SECTION.
+       FD TEST-FILE.
+       01 TEST-REC      PIC X(4).
+       PROCEDURE        DIVISION.
+           OPEN OUTPUT TEST-FILE.
+           MOVE "a"    TO TEST-REC.
+           WRITE TEST-REC
+           END-WRITE.
+           MOVE "ab"   TO TEST-REC.
+           WRITE TEST-REC AFTER 1 LINES
+           END-WRITE.
+           MOVE "abc"  TO TEST-REC.
+           WRITE TEST-REC BEFORE 2 LINES
+           END-WRITE.
+           MOVE "abcd" TO TEST-REC.
+           WRITE TEST-REC
+           END-WRITE.
+           CLOSE TEST-FILE.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog])
+AT_CHECK([cat TEST-FILE], [0],
+[a
+
+ababc
+
+abcd
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([LINE SEQUENTIAL record truncation (1)])
+AT_KEYWORDS([runfile extensions READ configuration COB_LS_SPLIT split])
 
 AT_DATA([TEST-FILE],
 [a
@@ -5087,11 +4268,14 @@ AT_DATA([prog.cob], [
        FD TEST-FILE.
        01 TEST-REC      PIC X(4).
        PROCEDURE        DIVISION.
-           OPEN INPUT TEST-FILE.
-           PERFORM 6 TIMES
-               READ TEST-FILE
-               DISPLAY "(" TEST-REC ")"
-           END-PERFORM
+           OPEN INPUT TEST-FILE
+           PERFORM UNTIL EXIT
+              READ TEST-FILE
+                  AT END EXIT PERFORM
+              END-READ
+              DISPLAY "(" TEST-REC ")"
+              END-DISPLAY
+           END-PERFORM.
            CLOSE TEST-FILE.
            STOP RUN.
 ])
@@ -5103,14 +4287,68 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 (abc )
 (abcd)
 (abcd)
+(e   )
 (abcd)
+(ef  )
+])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog2.
+       ENVIRONMENT      DIVISION.
+       INPUT-OUTPUT     SECTION.
+       FILE-CONTROL.
+       SELECT TEST-FILE ASSIGN       "./TEST-FILE"
+                        ORGANIZATION IS LINE SEQUENTIAL
+                        STATUS IS    TEST-STATUS.
+       DATA             DIVISION.
+       FILE             SECTION.
+       FD TEST-FILE.
+       01 TEST-REC      PIC X(4).
+       WORKING-STORAGE  SECTION.
+       77 TEST-STATUS   PIC XX.
+       PROCEDURE        DIVISION.
+           OPEN INPUT TEST-FILE
+           PERFORM UNTIL TEST-STATUS (1:1) NOT = '0'
+              READ TEST-FILE
+              END-READ
+              DISPLAY "(" TEST-REC ") " TEST-STATUS
+              END-DISPLAY
+           END-PERFORM.
+           CLOSE TEST-FILE.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2], [0],
+[(a   ) 00
+(ab  ) 00
+(abc ) 00
+(abcd) 00
+(abcd) 06
+(e   ) 00
+(abcd) 06
+(ef  ) 00
+(ef  ) 10
+])
+
+# this one is the actual extension (old OpenCOBOL/GnuCOBOL behaviour)
+AT_CHECK([COB_LS_SPLIT=FALSE \
+$COBCRUN_DIRECT ./prog2], [0],
+[(a   ) 00
+(ab  ) 00
+(abc ) 00
+(abcd) 00
+(abcd) 04
+(abcd) 04
+(abcd) 10
 ])
 
 AT_CLEANUP
 
 
 AT_SETUP([LINE SEQUENTIAL record truncation (2)])
-AT_KEYWORDS([runfile split])
+AT_KEYWORDS([runfile extensions READ WRITE configuration COB_LS_SPLIT split])
 
 AT_DATA([inp_data],
 [Record 1................................X.......
@@ -5174,7 +4412,7 @@ AT_DATA([prog.cob], [
            READ INFILE
            DISPLAY " Read 4: STATUS IS " INPUT-STATUS
                    " LENGTH IS " INPUT-LEN
-           IF INPUT-STATUS = "00"
+           IF INPUT-STATUS (1:1) = "0"
                DISPLAY "       :" INPUT-REC ":"
            END-IF
            CLOSE INFILE
@@ -5196,21 +4434,6 @@ AT_DATA([prog.cob], [
            CLOSE OUTFILE
            STOP RUN.
 ])
-
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-
-AT_CHECK([DD_INFILE=./inp_data OUTFILE=TEST-FILE \
-$COBCRUN_DIRECT ./prog], [0],
-[ Read 1: STATUS IS 00 LENGTH IS 040
-       :Record 1................................:
- Read 2: STATUS IS 00 LENGTH IS 030
-       :Record 2.....................X          :
- Read 3: STATUS IS 00 LENGTH IS 040
-       :Record 3................................:
- Read 4: STATUS IS 10 LENGTH IS 000
-Write 1: STATUS IS 00 LENGTH IS 009
-Write 2: STATUS IS 00 LENGTH IS 064
-], [])
 
 
 AT_CAPTURE_FILE(./TEST-FILE)
@@ -5220,13 +4443,48 @@ AT_DATA([reference],
 Record 2................................
 ])
 
+# normal compile, switched via runtime option
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+
+AT_CHECK([COB_LS_SPLIT=FALSE DD_INFILE=./inp_data OUTFILE=TEST-FILE \
+$COBCRUN_DIRECT ./prog], [0],
+[ Read 1: STATUS IS 04 LENGTH IS 040
+       :Record 1................................:
+ Read 2: STATUS IS 00 LENGTH IS 030
+       :Record 2.....................X          :
+ Read 3: STATUS IS 04 LENGTH IS 040
+       :Record 3................................:
+ Read 4: STATUS IS 10 LENGTH IS 000
+Write 1: STATUS IS 00 LENGTH IS 009
+Write 2: STATUS IS 00 LENGTH IS 064
+], [])
+
 AT_CHECK([diff reference TEST-FILE], [0], [], [])
+
+# same check with dialect option (4.x feature)
+# AT_CHECK([$COMPILE -std=gc31 prog.cob], [0], [], [])
+#
+# same result, but status 00
+# AT_CHECK([DD_INFILE=./inp_data OUTFILE=TEST-FILE \
+# $COBCRUN_DIRECT ./prog], [0],
+# [ Read 1: STATUS IS 00 LENGTH IS 040
+#        :Record 1................................:
+#  Read 2: STATUS IS 00 LENGTH IS 030
+#        :Record 2.....................X          :
+#  Read 3: STATUS IS 00 LENGTH IS 040
+#        :Record 3................................:
+#  Read 4: STATUS IS 10 LENGTH IS 000
+# Write 1: STATUS IS 00 LENGTH IS 009
+# Write 2: STATUS IS 00 LENGTH IS 064
+# ], [])
+#
+# AT_CHECK([diff reference TEST-FILE], [0], [], [])
 
 AT_CLEANUP
 
 
-AT_SETUP([LINE SEQUENTIAL non-standard record overflow])
-AT_KEYWORDS([runfile split])
+AT_SETUP([LINE SEQUENTIAL standard record overflow])
+AT_KEYWORDS([runfile READ WRITE configuration COB_LS_SPLIT split])
 
 AT_DATA([inp_data],
 [Record 1................................X.......
@@ -5290,7 +4548,7 @@ AT_DATA([prog.cob], [
            READ INFILE
            DISPLAY " Read 4: STATUS IS " INPUT-STATUS
                    " LENGTH IS " INPUT-LEN
-           IF INPUT-STATUS = "00"
+           IF INPUT-STATUS (1:1) = "0"
                DISPLAY "       :" INPUT-REC ":"
            END-IF
            CLOSE INFILE
@@ -5315,19 +4573,17 @@ AT_DATA([prog.cob], [
 
 AT_CAPTURE_FILE(./TEST-FILE)
 
-# normal compile, switched via runtime option
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
 AT_CHECK([DD_INFILE=./inp_data OUTFILE=TEST-FILE \
-COB_LS_SPLIT=TRUE \
 $COBCRUN_DIRECT ./prog], [0],
-[ Read 1: STATUS IS 00 LENGTH IS 040
+[ Read 1: STATUS IS 06 LENGTH IS 040
        :Record 1................................:
  Read 2: STATUS IS 00 LENGTH IS 008
        :X.......                                :
  Read 3: STATUS IS 00 LENGTH IS 030
        :Record 2.....................X          :
- Read 4: STATUS IS 00 LENGTH IS 040
+ Read 4: STATUS IS 06 LENGTH IS 040
        :Record 3................................:
 Write 1: STATUS IS 00 LENGTH IS 009
 Write 2: STATUS IS 00 LENGTH IS 064
@@ -5341,9 +4597,10 @@ Record 2................................
 AT_CHECK([diff reference TEST-FILE], [0], [], [])
 
 # same check with dialect option (4.x feature)
-# AT_CHECK([$COMPILE -std=mf prog.cob], [0], [], [])
+# AT_CHECK([$COMPILE -std=gc31 prog.cob], [0], [], [])
 #
-# AT_CHECK([DD_INFILE=./inp_data OUTFILE=TEST-FILE \
+# same result because of configuration, but status 00
+# AT_CHECK([COB_LS_SPLIT=TRUE DD_INFILE=./inp_data OUTFILE=TEST-FILE \
 # $COBCRUN_DIRECT ./prog], [0],
 # [ Read 1: STATUS IS 00 LENGTH IS 040
 #        :Record 1................................:
@@ -5358,6 +4615,293 @@ AT_CHECK([diff reference TEST-FILE], [0], [], [])
 # ], [])
 #
 # AT_CHECK([diff reference TEST-FILE], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([LINAGE and LINAGE-COUNTER sample])
+AT_KEYWORDS([runfile OPTIONAL FILE STATUS READ WRITE END-OF-PAGE LINE SEQUENTIAL
+configuration COB_CURRENT_DATE date])
+
+# modified version of GC-FAQ: Example of LINAGE File Descriptor
+# Author: Brian Tiffin, Date:   10-July-2008
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           select optional data-file assign to 'prog.cob'
+               organization is line sequential
+               file status is data-file-status.
+           select mini-report assign to "mini-report".
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD  data-file.
+       01  data-record.
+           88 endofdata        value high-values.
+           02 data-line        pic x(80).
+       FD  mini-report
+           linage is 16 lines
+               with footing at 15
+               lines at top 2
+               lines at bottom 2.
+       01  report-line         pic x(80).
+
+       WORKING-STORAGE SECTION.
+       01  command-arguments   pic x(1024).
+       01  file-name           pic x(160).
+       01  data-file-status    pic xx.
+       01  lc                  pic 99.
+       01  report-line-blank.
+           02 filler           pic x(18) value all "*".
+           02 filler           pic x(05) value spaces.
+           02 filler           pic x(34)
+               VALUE "THIS PAGE INTENTIONALLY LEFT BLANK".
+           02 filler           pic x(05) value spaces.
+           02 filler           pic x(18) value all "*".
+       01  report-line-data.
+           02 body-tag         pic 9(6).
+           02 line-3           pic x(74).
+       01  report-line-header.
+           02 filler           pic x(6) VALUE "PAGE: ".
+           02 page-no          pic 9999.
+           02 filler           pic x(24).
+           02 filler           pic x(5) VALUE " LC: ".
+           02 header-tag       pic 9(6).
+           02 filler           pic x(23).
+           02 filler           pic x(6) VALUE "DATE: ".
+           02 page-date        pic x(6).
+
+       01  page-count          pic 9999.
+
+       PROCEDURE DIVISION.
+
+       open input data-file.
+       read data-file
+           at end
+               display "File open error: " data-file-status
+               stop run
+       end-read.
+
+       open output mini-report.
+
+       write report-line
+           from report-line-blank
+       end-write.
+
+       move 1 to page-count.
+       accept page-date from date end-accept.
+       move page-count to page-no.
+       write report-line
+           from report-line-header
+           after advancing page
+       end-write.
+
+       perform readwrite-loop until endofdata.
+
+       display
+           "Normal termination, ending status: "
+           data-file-status
+       close mini-report.
+
+       close data-file.
+       stop run.
+
+      ****************************************************************
+       readwrite-loop.
+       move data-record to report-line-data
+       move linage-counter to body-tag
+       write report-line from report-line-data
+           end-of-page
+               add 1 to page-count end-add
+               move page-count to page-no
+               move linage-counter to header-tag
+               write report-line from report-line-header
+                   after advancing page
+               end-write
+       end-write
+       read data-file
+           at end set endofdata to true
+       end-read
+       .
+])
+
+AT_CAPTURE_FILE([mini-report])
+AT_DATA([reference-report], [
+
+******************     THIS PAGE INTENTIONALLY LEFT BLANK     ******************
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+PAGE: 0001                         LC: 000000                       DATE: 150206
+000001
+000002 IDENTIFICATION DIVISION.
+000003 PROGRAM-ID. prog.
+000004 ENVIRONMENT DIVISION.
+000005 INPUT-OUTPUT SECTION.
+000006 FILE-CONTROL.
+000007     select optional data-file assign to 'prog.cob'
+000008         organization is line sequential
+000009         file status is data-file-status.
+000010     select mini-report assign to "mini-report".
+000011
+000012 DATA DIVISION.
+000013 FILE SECTION.
+000014 FD  data-file.
+
+
+
+
+
+PAGE: 0002                         LC: 000015                       DATE: 150206
+000001 01  data-record.
+000002     88 endofdata        value high-values.
+000003     02 data-line        pic x(80).
+000004 FD  mini-report
+000005     linage is 16 lines
+000006         with footing at 15
+000007         lines at top 2
+000008         lines at bottom 2.
+000009 01  report-line         pic x(80).
+000010
+000011 WORKING-STORAGE SECTION.
+000012 01  command-arguments   pic x(1024).
+000013 01  file-name           pic x(160).
+000014 01  data-file-status    pic xx.
+
+
+
+
+
+PAGE: 0003                         LC: 000015                       DATE: 150206
+000001 01  lc                  pic 99.
+000002 01  report-line-blank.
+000003     02 filler           pic x(18) value all "*".
+000004     02 filler           pic x(05) value spaces.
+000005     02 filler           pic x(34)
+000006         VALUE "THIS PAGE INTENTIONALLY LEFT BLANK".
+000007     02 filler           pic x(05) value spaces.
+000008     02 filler           pic x(18) value all "*".
+000009 01  report-line-data.
+000010     02 body-tag         pic 9(6).
+000011     02 line-3           pic x(74).
+000012 01  report-line-header.
+000013     02 filler           pic x(6) VALUE "PAGE: ".
+000014     02 page-no          pic 9999.
+
+
+
+
+
+PAGE: 0004                         LC: 000015                       DATE: 150206
+000001     02 filler           pic x(24).
+000002     02 filler           pic x(5) VALUE " LC: ".
+000003     02 header-tag       pic 9(6).
+000004     02 filler           pic x(23).
+000005     02 filler           pic x(6) VALUE "DATE: ".
+000006     02 page-date        pic x(6).
+000007
+000008 01  page-count          pic 9999.
+000009
+000010 PROCEDURE DIVISION.
+000011
+000012 open input data-file.
+000013 read data-file
+000014     at end
+
+
+
+
+
+PAGE: 0005                         LC: 000015                       DATE: 150206
+000001         display "File open error: " data-file-status
+000002         stop run
+000003 end-read.
+000004
+000005 open output mini-report.
+000006
+000007 write report-line
+000008     from report-line-blank
+000009 end-write.
+000010
+000011 move 1 to page-count.
+000012 accept page-date from date end-accept.
+000013 move page-count to page-no.
+000014 write report-line
+
+
+
+
+
+PAGE: 0006                         LC: 000015                       DATE: 150206
+000001     from report-line-header
+000002     after advancing page
+000003 end-write.
+000004
+000005 perform readwrite-loop until endofdata.
+000006
+000007 display
+000008     "Normal termination, ending status: "
+000009     data-file-status
+000010 close mini-report.
+000011
+000012 close data-file.
+000013 stop run.
+000014
+
+
+
+
+
+PAGE: 0007                         LC: 000015                       DATE: 150206
+000001****************************************************************
+000002 readwrite-loop.
+000003 move data-record to report-line-data
+000004 move linage-counter to body-tag
+000005 write report-line from report-line-data
+000006     end-of-page
+000007         add 1 to page-count end-add
+000008         move page-count to page-no
+000009         move linage-counter to header-tag
+000010         write report-line from report-line-header
+000011             after advancing page
+000012         end-write
+000013 end-write
+000014 read data-file
+
+
+
+
+
+PAGE: 0008                         LC: 000015                       DATE: 150206
+000001     at end set endofdata to true
+000002 end-read
+000003 .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([COB_CURRENT_DATE="2015/02/06 16:40:52" $COBCRUN_DIRECT ./prog], [0],
+[Normal termination, ending status: 10
+], [])
+AT_CHECK([diff mini-report reference-report], [0], [], [])
 
 AT_CLEANUP
 
@@ -12768,5 +12312,591 @@ file3         Record 1  .
 file3         Record 2  .
 file3         Record 3  .
 ], [])
+
+AT_CLEANUP
+
+
+## SORT/MERGE Module
+## (should stay last here as it uses io functions tested above)
+
+
+AT_SETUP([File SORT, SEQUENTIAL])
+AT_KEYWORDS([runfile using giving])
+
+# Note: We shouldn't use AT_DATA to create sequential record
+# data, because AT_DATA needs a \n at the end
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       ENVIRONMENT      DIVISION.
+       INPUT-OUTPUT     SECTION.
+       FILE-CONTROL.
+       SELECT SORT-IN   ASSIGN "test.txt".
+       SELECT SORT-OUT  ASSIGN "result.txt".
+       SELECT SORT-WRK  ASSIGN "SORT-WRK".
+       DATA             DIVISION.
+       FILE             SECTION.
+       FD SORT-IN.
+       01 IN-REC        PIC X(6).
+       FD SORT-OUT.
+       01 OUT-REC       PIC X(6).
+       SD SORT-WRK.
+       01 WRK-REC       PIC X(6).
+       PROCEDURE        DIVISION.
+
+      * Special case: write test data in COBOL, see note above
+           OPEN OUTPUT SORT-IN.
+           WRITE IN-REC FROM SPACES   END-WRITE.
+           WRITE IN-REC FROM SPACES   END-WRITE.
+           WRITE IN-REC FROM "world " END-WRITE.
+           WRITE IN-REC FROM SPACES   END-WRITE.
+           WRITE IN-REC FROM "hello " END-WRITE.
+           WRITE IN-REC FROM SPACES   END-WRITE.
+           WRITE IN-REC FROM SPACES   END-WRITE.
+           CLOSE SORT-IN.
+
+           SORT SORT-WRK
+                ASCENDING KEY WRK-REC
+                USING  SORT-IN
+                GIVING SORT-OUT.
+             STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CHECK([cat result.txt], [0], [                              hello world ], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([File SORT, SEQUENTIAL variable records])
+AT_KEYWORDS([runfile])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+       SELECT file1 ORGANIZATION SEQUENTIAL
+                    ASSIGN "./file1".
+       SELECT file2 ORGANIZATION SEQUENTIAL
+                    ASSIGN "./file2".
+       SELECT file3 ASSIGN DISK.
+       DATA DIVISION.
+       FILE SECTION.
+       FD file1 RECORD VARYING FROM 3 TO 12 DEPENDING rsz.
+       1  file1-rec pic x(12).
+       FD file2 RECORD VARYING FROM 3 TO 12 DEPENDING rsz.
+       1  file2-rec pic x(12).
+       SD file3 RECORD VARYING FROM 3 TO 12 DEPENDING rsz.
+       1  file3-rec.
+          2  file3-key1 pic x.
+          2  file3-key2 pic 9.
+          2  filler pic x(10).
+       WORKING-STORAGE SECTION.
+       77 rsz pic 99.
+       1  1-data.
+          2  filler pic x(14) VALUE "03A4X".
+          2  filler pic x(14) VALUE "04A3XX".
+          2  filler pic x(14) VALUE "05A2XXX".
+          2  filler pic x(14) VALUE "06A1XXXX".
+          2  filler pic x(14) VALUE "07A0XXXXX".
+          2  filler pic x(14) VALUE "08B2XXXXXX".
+          2  filler pic x(14) VALUE "09B1XXXXXXX".
+          2  filler pic x(14) VALUE "10C2XXXXXXXX".
+          2  filler pic x(14) VALUE "11C1XXXXXXXXX".
+          2  filler pic x(14) VALUE "12Z9XXXXXXXXXX".
+      *
+       1  filler redefines 1-data.
+          2  filler occurs 10 times indexed by ix-1.
+           3 1-rsz pic 99.
+           3 1-rec pic x(12).
+
+       PROCEDURE DIVISION.
+          OPEN OUTPUT file1.
+          PERFORM VARYING ix-1 FROM 1 BY 2 UNTIL ix-1 > 10
+             MOVE 1-rsz(ix-1) TO rsz
+             MOVE 1-rec(ix-1) TO file1-rec
+             WRITE file1-rec
+          END-PERFORM.
+          PERFORM VARYING ix-1 FROM 2 BY 2 UNTIL ix-1 > 10
+             MOVE 1-rsz(ix-1) TO rsz
+             MOVE 1-rec(ix-1) TO file1-rec
+             WRITE file1-rec
+          END-PERFORM.
+          CLOSE file1.
+          SORT file3 ON ASCENDING file3-key1
+                        DESCENDING file3-key2
+             USING file1
+             GIVING file2.
+          OPEN INPUT file2.
+          PERFORM VARYING ix-1 FROM 1 BY 1 UNTIL ix-1 > 10
+             READ file2
+      *>> fileio-sort currently returns constant length records
+             MOVE 1-rsz(ix-1) TO rsz
+      *>> END-OF-DETOUR
+             IF (1-rsz(ix-1) <> rsz) or
+                (1-rec(ix-1) <> file2-rec)
+                DISPLAY "FAILED"
+             END-IF
+          END-PERFORM.
+          CLOSE file2.
+          STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([File SORT, LINE SEQUENTIAL])
+AT_KEYWORDS([runfile using giving])
+
+# Note: We shouldn't use AT_DATA to create sequential record
+# data, because AT_DATA needs a \n at the end
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       ENVIRONMENT      DIVISION.
+       INPUT-OUTPUT     SECTION.
+       FILE-CONTROL.
+       SELECT SORT-IN   ASSIGN "test.txt"
+                        ORGANISATION LINE SEQUENTIAL.
+       SELECT SORT-OUT  ASSIGN "result.txt"
+                        ORGANISATION LINE SEQUENTIAL.
+       SELECT SORT-WRK  ASSIGN "SORT-WRK".
+       DATA             DIVISION.
+       FILE             SECTION.
+       FD SORT-IN.
+       01 IN-REC        PIC X(20).
+       FD SORT-OUT.
+       01 OUT-REC       PIC X(20).
+       SD SORT-WRK.
+       01 WRK-REC       PIC X(6).
+       PROCEDURE        DIVISION.
+
+      * Special case: write test data in COBOL, see note above
+           OPEN OUTPUT SORT-IN.
+           WRITE IN-REC FROM SPACES   END-WRITE.
+           WRITE IN-REC FROM SPACES   END-WRITE.
+           WRITE IN-REC FROM "world " END-WRITE.
+           WRITE IN-REC FROM SPACES   END-WRITE.
+           WRITE IN-REC FROM "hello " END-WRITE.
+           WRITE IN-REC FROM SPACES   END-WRITE.
+           WRITE IN-REC FROM SPACES   END-WRITE.
+           CLOSE SORT-IN.
+
+           SORT SORT-WRK
+                ASCENDING KEY WRK-REC
+                USING  SORT-IN
+                GIVING SORT-OUT.
+             STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CHECK([cat result.txt], [0], [
+
+
+
+
+hello
+world
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([File SORT, LINE SEQUENTIAL same file])
+AT_KEYWORDS([runfile using giving])
+
+AT_DATA([test.txt], [
+bla
+world
+hello
+
+blubb
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       ENVIRONMENT      DIVISION.
+       INPUT-OUTPUT     SECTION.
+       FILE-CONTROL.
+       SELECT SORT-IN   ASSIGN "test.txt"
+                        ORGANISATION LINE SEQUENTIAL.
+       SELECT SORT-WRK  ASSIGN "dummy".
+       DATA             DIVISION.
+       FILE             SECTION.
+       FD SORT-IN.
+       01 IN-REC        PIC X(6).
+       SD SORT-WRK.
+       01 sort-entry    PIC X(6).
+       PROCEDURE        DIVISION.
+           SORT SORT-WRK
+                ASCENDING sort-entry
+                USING  SORT-IN
+                GIVING SORT-IN.
+             STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CHECK([cat test.txt], [0], [
+
+bla
+blubb
+hello
+world
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([File SORT, LINE SEQUENTIAL variable records])
+AT_KEYWORDS([runfile])
+
+AT_DATA([file1],
+[A1XXXX
+A2XXX
+A3XX
+Z9XXXXXXXXXX
+A4X
+B1XXXXXXX
+B2XXXXXX
+A0XXXXX
+C1XXXXXXXXX
+C2XXXXXXXX
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+       SELECT file1 ORGANIZATION LINE SEQUENTIAL
+                    ASSIGN "./file1".
+       SELECT file2 ORGANIZATION LINE SEQUENTIAL
+                    ASSIGN "./file2".
+       SELECT file3 ASSIGN DISK.
+       DATA DIVISION.
+       FILE SECTION.
+       FD file1.
+       1  file1-rec pic x(12).
+       FD file2.
+       1  file2-rec pic x(12).
+       SD file3.
+       1  file3-rec.
+          2  file3-key1 pic x.
+          2  file3-key2 pic 9.
+          2  filler pic x(10).
+       PROCEDURE DIVISION.
+          SORT file3 ON ASCENDING file3-key1
+                        DESCENDING file3-key2
+             USING file1
+             GIVING file2.
+          STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CHECK([cat file2], [0],
+[A4X
+A3XX
+A2XXX
+A1XXXX
+A0XXXXX
+B2XXXXXX
+B1XXXXXXX
+C2XXXXXXXX
+C1XXXXXXXXX
+Z9XXXXXXXXXX
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([File MERGE, LINE SEQUENTIAL variable records])
+AT_KEYWORDS([runfile])
+
+AT_DATA([file1],
+[A1XXXX
+A2XXX
+A3XX
+Z9XXXXXXXXXX
+A4X
+B1XXXXXXX
+B2XXXXXX
+A0XXXXX
+C1XXXXXXXXX
+C2XXXXXXXX
+])
+
+AT_DATA([file2],
+[A1****
+A2***
+A3**
+Z9**********
+A4*
+B1*******
+B2******
+A0*****
+C1*********
+C2********
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+       SELECT file1 ORGANIZATION LINE SEQUENTIAL
+                    ASSIGN "./file1".
+       SELECT file2 ORGANIZATION LINE SEQUENTIAL
+                    ASSIGN "./file2".
+       SELECT file3 ORGANIZATION LINE SEQUENTIAL
+                    ASSIGN "./file3".
+       SELECT file4 ASSIGN DISK.
+       DATA DIVISION.
+       FILE SECTION.
+       FD file1.
+       1  file1-rec pic x(12).
+       FD file2.
+       1  file2-rec pic x(12).
+       FD file3.
+       1  file3-rec pic x(12).
+       SD file4.
+       1  file4-rec.
+          2  file4-key1 pic x.
+          2  file4-key2 pic 9.
+          2  filler pic x(10).
+       PROCEDURE DIVISION.
+          MERGE file4 ON ASCENDING file4-key1
+                        DESCENDING file4-key2
+             USING file1 file2
+             GIVING file3.
+          STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CHECK([cat file3], [0],
+[A4X
+A4*
+A3XX
+A3**
+A2XXX
+A2***
+A1XXXX
+A1****
+A0XXXXX
+A0*****
+B2XXXXXX
+B2******
+B1XXXXXXX
+B1*******
+C2XXXXXXXX
+C2********
+C1XXXXXXXXX
+C1*********
+Z9XXXXXXXXXX
+Z9**********
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([SORT nonexistent file])
+AT_KEYWORDS([runfile])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       ENVIRONMENT      DIVISION.
+       INPUT-OUTPUT     SECTION.
+       FILE-CONTROL.
+       SELECT SORT-IN   ASSIGN "SORT-IN".
+       SELECT SORT-OUT  ASSIGN "SORT-OUT".
+       SELECT SORT-WRK  ASSIGN "SORT-WRK".
+       DATA             DIVISION.
+       FILE             SECTION.
+       FD SORT-IN.
+       01 IN-REC        PIC X(100).
+       FD SORT-OUT.
+       01 OUT-REC       PIC X(100).
+       SD SORT-WRK.
+       01 WRK-REC       PIC X(100).
+       PROCEDURE        DIVISION.
+           SORT SORT-WRK
+                ASCENDING KEY WRK-REC
+                USING  SORT-IN
+                GIVING SORT-OUT.
+             STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CHECK([cat SORT-OUT], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([SORT with INPUT/OUTPUT PROCEDUREs])
+AT_KEYWORDS([runfile])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+       SELECT file1 ASSIGN DISK.
+       DATA DIVISION.
+       FILE SECTION.
+       SD file1.
+       1  file1-rec.
+          2  file1-key pic 9(4).
+          2  file1-data pic x(10).
+       WORKING-STORAGE SECTION.
+       77 w-eof pic 9 value 0.
+       1  1-values.
+          2  filler pic x(14) value "0001A--------A".
+          2  filler pic x(14) value "0002B--------B".
+          2  filler pic x(14) value "0003C--------C".
+          2  filler pic x(14) value "0004D--------D".
+          2  filler pic x(14) value "0005E--------E".
+          2  filler pic x(14) value "0006F--------F".
+          2  filler pic x(14) value "0007G--------G".
+          2  filler pic x(14) value "0008H--------H".
+          2  filler pic x(14) value "0009I--------I".
+          2  filler pic x(14) value "0010J--------J".
+          2  filler pic x(14) value "0011K--------K".
+          2  filler pic x(14) value "0012L--------L".
+          2  filler pic x(14) value "0013M--------M".
+          2  filler pic x(14) value "0014N--------N".
+          2  filler pic x(14) value "0015O--------O".
+          2  filler pic x(14) value "0016P--------P".
+          2  filler pic x(14) value "0017Q--------Q".
+          2  filler pic x(14) value "0018R--------R".
+          2  filler pic x(14) value "0019S--------S".
+          2  filler pic x(14) value "0020T--------T".
+          2  filler pic x(14) value "0021U--------U".
+          2  filler pic x(14) value "0022V--------V".
+          2  filler pic x(14) value "0023W--------W".
+          2  filler pic x(14) value "0024X--------X".
+          2  filler pic x(14) value "0025Y--------Y".
+          2  filler pic x(14) value "0026Z--------Z".
+       1  filler redefines 1-values.
+          2  1-record occurs 26 times indexed by ix-1.
+           3 1-key pic 9(4).
+           3 1-data pic x(10).
+       PROCEDURE DIVISION.
+       a01-main.
+          SORT file1 ON ASCENDING file1-key
+             INPUT PROCEDURE a02-release-to-sort
+             OUTPUT PROCEDURE a03-return-from-sort.
+          STOP RUN.
+      *
+       a02-release-to-sort.
+          PERFORM VARYING ix-1 FROM 1 BY 2 UNTIL ix-1 > 26
+             RELEASE file1-rec from 1-record(ix-1)
+          END-PERFORM.
+          PERFORM VARYING ix-1 FROM 2 BY 2 UNTIL ix-1 > 26
+             RELEASE file1-rec from 1-record(ix-1)
+          END-PERFORM.
+      *
+       a03-return-from-sort.
+          PERFORM VARYING ix-1 FROM 1 BY 1
+             UNTIL (ix-1 > 26) OR (w-eof = 1)
+             RETURN file1 RECORD
+               AT END MOVE 1 TO w-eof
+             END-RETURN
+             IF (file1-rec <> 1-record(ix-1))
+                MOVE 1 TO w-eof
+             END-IF
+          END-PERFORM.
+          IF (w-eof = 1)
+             DISPLAY "FAILED: unexpected eof"
+          ELSE
+             RETURN file1 RECORD
+               AT END CONTINUE
+               NOT AT END DISPLAY "FAILED: expected eof"
+             END-RETURN
+          END-IF.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([SORT with key1 ASCENDING, key2 DESCENDING])
+AT_KEYWORDS([runfile])
+
+AT_DATA([file1],
+[A1
+A2
+A3
+Z9
+A4
+B1
+B2
+A0
+C1
+C2
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+       SELECT file1 ORGANIZATION LINE SEQUENTIAL
+                    ASSIGN "./file1".
+       SELECT file2 ORGANIZATION LINE SEQUENTIAL
+                    ASSIGN "./file2".
+       SELECT file3 ASSIGN DISK.
+       DATA DIVISION.
+       FILE SECTION.
+       FD file1.
+       1  file1-rec pic xxx.
+       FD file2.
+       1  file2-rec pic xxx.
+       SD file3.
+       1  file3-rec.
+          2  file3-key1 pic x.
+          2  file3-key2 pic 9.
+          2  file3-dot pic x.
+       PROCEDURE DIVISION.
+          SORT file3 ON ASCENDING file3-key1
+                        DESCENDING file3-key2
+             USING file1
+             GIVING file2.
+          STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CHECK([cat file2], [0],
+[A4
+A3
+A2
+A1
+A0
+B2
+B1
+C2
+C1
+Z9
+])
 
 AT_CLEANUP

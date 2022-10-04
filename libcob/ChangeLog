@@ -1,4 +1,45 @@
 
+2022-10-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_stack_trace_internal, output_procedure_stack_entry):
+	  use cob_frame_ext information when available to output PERFORM stack
+	* common.c (cob_set_exception): store strings in a local copy
+	  preventing SIGSEGV after CANCEL
+	* common.c (cob_trace_section): if line is not specified (done for
+	  "exit module" tracing), resolve that from current line, if known
+	  (to provide same output as the version that this was used with)
+	* intrinsic.c: extend internal docs
+	* fileio.c: add some guards against bad function calls
+	* common.h (cob_open_mode): new enum instead instead #define'd constants
+	* fileio.c: use cob_open_mode where possible (external functions are
+	  postponed to GC 4.x as this possibly changes the ABI)
+
+2022-10-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* intrinsic.c (numval, cob_intr_numval_f): rewritten for improved
+	  performance (and creating smaller temporary fields);
+	  changed to just skip invalid data instead of doing pre-validation
+	  (which can be re-enabled by defining [INVALID_NUMVAL_IS_ZERO])
+	* intrinsic.c (cob_check_numval_f, cob_intr_numval_f): correctly
+	  recognize lowercase E
+
+2022-09-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: merged missing line sequential changes from 4.x to 3.x
+	* common.c: fixed, then disabled boolean options "not set"
+	* fileio.c (lineseq_read): set io status 71 for EOF after x'00'
+	  when parsed for COB_LS_NULLS
+	* common.c (cob_fatal_error): added missing COB_STATUS_71_BAD_CHAR
+	* fileio.c (cob_read, cob_read_next): handle io status 04 and 09
+	  as successful as io status 06
+	* fileio.c (lineseq_read): set return status 04 if record is truncated
+	  because LS_SPLIT is false
+	* common.c: adjustments for merge of 2021-03-18
+	* common.h (cob_frame_ext): new variant of cob_frame storing the
+	  section/paragraph + location to return to; allowing a full textual
+	  PERFORM stack and used for restoring those on return
+	* common.h (cob_module): fields for current frame_ptr
+
 2022-09-29  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fileio.c (lineseq_read): Status 09 for validation is a warning,
@@ -274,8 +315,17 @@
 
 2021-10-02  Ron Norman <rjn@inglenet.com>
 
-	* fileio.c (lineseq_read): Check LINE SEQUENTIAL data and if invalid
+	* fileio.c (lineseq_read): check LINE SEQUENTIAL data and if invalid
 	  return 09 status per COBOL 2022
+	* fileio.c: change default for LS_SPLIT = TRUE
+
+2021-10-01  Ron Norman <rjn@inglenet.com>
+
+	* fileio.c (lineseq_read): check LINE SEQUENTIAL data and if invalid
+	  return 09 status per COBOL 2022
+	* common.c: added 'not set' for boolean options [disabed in 3.x]
+	* common.c: change default for LS_SPLIT = TRUE
+	* fileio.c, common.h: return status 06 for split line sequential
 
 2021-09-30  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -438,6 +488,11 @@
 
 	* common.h: Added  FCD2 structure
 	* fextfh.c: Added checks for FCD2 being used
+
+2021-03-18  Ron Norman <rjn@inglenet.com>
+
+	* common.h (cob_module): fields for section/paragraph/statement names
+	* common.c: adjusted to use new fields in cob_module
 
 2021-03-04  Ron Norman <rjn@inglenet.com>
 

@@ -36,6 +36,9 @@
     <ClCompile Include="..\..\cobc\cobc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\cobc\cconv.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\cobc\codegen.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -153,6 +156,15 @@
     <None Include="..\..\config\ibm-strict.conf">
       <Filter>Auxiliary Compiler Files\dialects</Filter>
     </None>
+    <None Include="..\..\config\gcos.conf">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\gcos.words">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\gcos-strict.conf">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
     <None Include="..\..\config\lax.conf-inc">
       <Filter>Auxiliary Compiler Files\dialects</Filter>
     </None>
@@ -234,6 +246,9 @@
       <Filter>Auto Generated Files\Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\cobc\cobc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\cobc\cconv.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\libcob\common.h">

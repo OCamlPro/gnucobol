@@ -187,6 +187,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\cobc\cobc.c" />
+    <ClCompile Include="..\..\cobc\cconv.c" />
     <ClCompile Include="..\..\cobc\codegen.c" />
     <ClCompile Include="..\..\cobc\codeoptim.c" />
     <ClCompile Include="..\..\cobc\config.c" />
@@ -298,6 +299,9 @@
     <None Include="..\..\config\cobol85.conf" />
     <None Include="..\..\config\cobol85.words" />
     <None Include="..\..\config\default.conf" />
+    <None Include="..\..\config\gcos-strict.conf" />
+    <None Include="..\..\config\gcos.conf" />
+    <None Include="..\..\config\gcos.words" />
     <None Include="..\..\config\ibm-strict.conf" />
     <None Include="..\..\config\ibm.conf" />
     <None Include="..\..\config\ibm.words" />
@@ -328,6 +332,7 @@
     <ClInclude Include="..\config.h" />
     <ClInclude Include="..\..\libcob.h" />
     <ClInclude Include="..\..\tarstamp.h" />
+    <ClInclude Include="..\..\cobc\cconv.h" />
     <ClInclude Include="..\..\cobc\cobc.h" />
     <ClInclude Include="..\..\cobc\tree.h" />
     <ClInclude Include="..\..\cobc\parser.h" />

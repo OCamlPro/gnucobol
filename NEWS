@@ -4,20 +4,20 @@ NEWS - user visible changes				-*- outline -*-
 
 * New GnuCOBOL features
 
-** Support for LINE SEQUENTIAL file type as per COBOL2022
+** Support for LINE SEQUENTIAL file type as per COBOL 2022
   * OPEN INPUT-OUTPTUT and REWRITE are allowed
-  * validation of data on (RE-)WRITE, active by default, can be adjusted
-    with the new runtime option COB_LS_VALIDATE
+  * validation of data on (RE-)WRITE and READ, active by default,
+    can be adjusted with the new runtime option COB_LS_VALIDATE
 
 ** New intrinsic functions
 
   BIT-OF, BIT-TO-CHAR, HEX-OF, HEX-TO-CHAR
 
-** Support of COBOL 202x directive COBOL-WORDS
+** Support for COBOL 2022 directive COBOL-WORDS
 
-** Support of bit operations according to COBOL 202x with MF compatibility
+** Support for bit operations according to COBOL 2022 with MF compatibility
 
-** Support of additional $SET directives: ODOSLIDE
+** Support for additional $SET directives: ODOSLIDE
 
 ** Support for the EXTFH interface was heavily improved, now also supporting
    FH--FCD and FH--KEYDEF, fixed use of different attributes and changing
@@ -29,7 +29,7 @@ NEWS - user visible changes				-*- outline -*-
 ** new function to call COBOL from C that won't exit the program in case
    of runtime errors or STOP RUN: cob_call_with_exception_check()
 
-** Support of GCOS 7 (Bull) dialect, including:
+** Support for GCOS 7 (Bull) dialect, including:
    * PICTURE strings with L character (variable length fields)
    * CONTROL DIVISION with SUBSTITUTION SECTION (full support) and DEFAULT
      SECTION (partial support)
@@ -38,6 +38,9 @@ NEWS - user visible changes				-*- outline -*-
    files with a separator in its ASSIGN name (either directly or via
    environment), see the new runtime options
    COB_SEQ_CONCAT_NAME (defaulting to false) and COB_SEQ_CONCAT_SEP
+
+** Initial "testing support" of CODE-SET clause to convert between ASCII and
+   EBCDIC on READ/WRITE/REWRITE for sequential and line-sequential files
 
 ** TODO - More to add
 
@@ -52,13 +55,37 @@ NEWS - user visible changes				-*- outline -*-
    a READ may result in status 09 and WRITE may error with status 71;
    to disable this validation see the new runtime option COB_LS_VALIDATE
    to restore old behavior and to increase performance on WRITE;
-   If LS_NULLS is active and invalid data (bad encoded or missing encoding)
-   is found io status 71 is returned.
+   if LS_NULLS is active and invalid data (bad encoded or missing encoding)
+   is found io status 71 is returned
+
+** LINE SEQUENTIAL files, handling of records that are "too long":
+   in case of "overflowing" records previous versions of GnuCOBOL cut the
+   data, set io status 00 and skipped the file until the next line
+   terminator is found;
+   the default changed (per COBOL 2022 and other compilers) so the data is
+   returned as "multiple" records and a warning (status 06) is issued;
+   setting COB_LS_SPLIT = false will have the old behaviour of truncating
+   the record, but will now set status 04
+
+** FUNCTION EXCEPTION-LOCATION: if the source raising an exception was not
+   compiled with location information this function previously returned
+   a single space; GnuCOBOL now always returns the module name, a procedure-
+   name " " and the source (line) identifier "0"
+
+** FUNCTIONs NUMVAL, NUMVAL-C, NUMVAL-F: if the argument does not match the
+   argument rules previous versions returned zero; now invalid data is skipped;
+   for example: "1. A-0B4.5" now returns -1.045 (or -1045 when the
+   DECIMAL-POINT IS COMMA clause is in effect);
+   as with previous versions the argument can be validated before using the
+   FUNCTIONs TEST-NUMVAL, TEST-NUMVAL-C, TEST-NUMVAL-F or the exception can
+   be checked afterwards using the EXCEPTION related functions;
+   the old behaviour can be enforced by compiling GnuCOBOL with
+   CPPFLAGS=-DINVALID_NUMVAL_IS_ZERO
 
 * Changes that potentially effects recompilation of existing programs:
 
 ** the reserved word list and intrinsic functions was updated, especially
-   to cater for new features of COBOL 202x; if compiling with any non-strict
+   to cater for new features of COBOL 2022; if compiling with any non-strict
    dialect you may need to unreserve any conflicting words / functions
 
 ** in 64-bit environments, the default size for BY VALUE parameters has changed:
@@ -103,6 +130,19 @@ NEWS - user visible changes				-*- outline -*-
    be reported and recovered from.  This is configurable with option
    `missing-period`.
 
+** the new -febcdic-table option enables one to specify the
+   translation table used when dealing with EBCDIC codeset;
+   available tables are:
+
+   DEFAULT		translation to extended ASCII as per MF
+   RESTRICTED-GC	translation from restricted ASCII only
+   IBM			translation to restricted ASCII as per IBM
+   GCOS			translation to extended ASCII as per GCOS7
+
+   This option supersedes the -falternate-ebcdic flag (still available
+   for backwards compatibility), which is equivalent to
+   -febcdic-table=restricted-gc.
+
 ** the compile flag -fodoslide was moved to a dialect configuration,
    while -fodoslide still works as before it is now implied with
    -std=ibm/mvs/bs2000, if you use those dialects consider to recompile
@@ -128,6 +168,12 @@ NEWS - user visible changes				-*- outline -*-
    (and raises a warning as previously with -Wextra); if you want
    to use this extension for other dialects use the new
    -fself-call-recursive=warning (or "ok")
+
+** the option -g does not longer imply -fsource-location
+
+** new flag -fstack-extended (implied with --debug and --dump) to include
+   the origin of entrypoints and PERFORM, this is used for the internal
+   stack trace on abort and can be used for source level debugging
 
 ** adjustments to warning options:
    -Wconstant-expression was changed to a group warning and includes
@@ -165,11 +211,6 @@ NEWS - user visible changes				-*- outline -*-
    this has been fixed so that all modules compiled with GnuCOBOL 2.2 can be
    executed with GnuCOBOL 3.2
 
-** cobc's parsing time was heavily cut down for big programs
-
-** execution times of INSPECT that use big COBOL fields (multiple KB) were
-   heavily cut down
-
 * Listing changes
 
 ** the timestamp in the header was changed from ANSI date format like
@@ -199,10 +240,19 @@ NEWS - user visible changes				-*- outline -*-
 ** in case of any runtime features being used that are not available a warning
    is generated and related exception status set
 
+** cobc's parsing time was heavily cut down for big programs
+
+** execution times of INSPECT that use big COBOL fields (multiple KB) were
+   heavily cut down
+
+** execution times for programs that are new generated with -fsource-location
+   (implied with --debug/-fec) are cut down, especially when many "simple"
+   statements or lot of sections/paragraphs are used
 
 * New build features
 
 ** configure now honors BDB_LIBS
+** configure now honors MATH_LIBS
 ** configure now checks for XCurses and allows --with-curses=xcurses
    (experimental)
 
@@ -241,7 +291,7 @@ NEWS - user visible changes				-*- outline -*-
 ** JSON GENERATE statement
    (note: runtime support needs additional library cJSON or JSON-C)
    
-** CONTINUE AFTER statement (COBOL 202x) implemented, also handle fractions
+** CONTINUE AFTER statement (COBOL 2022) implemented, also handle fractions
    of seconds in C$SLEEP now
    
 ** TYPEDEF and SAME AS (COBOL 2002) implemented, including the MicroFocus
@@ -599,7 +649,7 @@ NEWS - user visible changes				-*- outline -*-
   x'E4'                            clear terminal screen
   x'E5'                            ring the bell
 
-** full support of ANSI 85 debugging module:
+** full support for ANSI 85 debugging module:
    USE FOR DEBUGGING declarative procedures (only part of the generation if
    WITH DEBUGGING MODE is active during compilation) and special register:
    01 DEBUG-ITEM.

@@ -1187,7 +1187,7 @@ setup_program (cb_tree id, cb_tree as_literal, const unsigned char type, const i
 
 	/* finish last program/function */
 	if (!first_prog) {
-		const char *backup_source_file = cb_source_file;
+		backup_source_file = cb_source_file;
 		if (!current_program->flag_validated) {
 			current_program->flag_validated = 1;
 			cb_validate_program_body (current_program);
@@ -3326,7 +3326,7 @@ set_record_size (cb_tree min, cb_tree max)
 
 start:
   {
-	const char *backup_source_file = cb_source_file;
+	backup_source_file = cb_source_file;
 	clear_initial_values ();
 	current_program = NULL;
 	defined_prog_list = NULL;
@@ -18692,18 +18692,19 @@ function:
   {
 	$$ = cb_build_intrinsic ($1, $3, $5, 0);
   }
-| LENGTH_FUNC TOK_OPEN_PAREN length_arg TOK_CLOSE_PAREN
+| LENGTH_FUNC TOK_OPEN_PAREN length_arg TOK_CLOSE_PAREN func_refmod
   {
 	$$ = cb_build_intrinsic ($1, $3, NULL, 0);
   }
-| LENGTH_FUNC TOK_OPEN_PAREN length_arg PHYSICAL TOK_CLOSE_PAREN
+| LENGTH_FUNC TOK_OPEN_PAREN length_arg PHYSICAL TOK_CLOSE_PAREN func_refmod
   {
 	CB_PENDING (_("PHYSICAL argument for LENGTH functions"));
 	$$ = cb_build_intrinsic ($1, $3, NULL, 0);
   }
-| NUMVALC_FUNC TOK_OPEN_PAREN numvalc_args TOK_CLOSE_PAREN
+| NUMVALC_FUNC TOK_OPEN_PAREN numvalc_args TOK_CLOSE_PAREN func_refmod
   {
-	$$ = cb_build_intrinsic ($1, $3, NULL, 0);
+	/* note: no ref-mod allowed, parsing here to error in the following function */
+	$$ = cb_build_intrinsic ($1, $3, $5, 0);
   }
 | LOCALE_DATE_FUNC TOK_OPEN_PAREN locale_dt_args TOK_CLOSE_PAREN func_refmod
   {
@@ -18725,13 +18726,13 @@ function:
   {
 	  $$ = cb_build_intrinsic ($1, $3, $5, 0);
   }
-| FUNCTION_NAME func_args
+| FUNCTION_NAME func_args func_refmod
   {
-	$$ = cb_build_intrinsic ($1, $2, NULL, 0);
+	$$ = cb_build_intrinsic ($1, $2, $3, 0);
   }
-| USER_FUNCTION_NAME func_args
+| USER_FUNCTION_NAME func_args func_refmod
   {
-	$$ = cb_build_intrinsic ($1, $2, NULL, 1);
+	$$ = cb_build_intrinsic ($1, $2, $3, 1);
   }
 ;
 

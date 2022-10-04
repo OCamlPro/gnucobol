@@ -523,7 +523,7 @@ static int dummy_rnxt_rewrite	(cob_file *, const int);
 static int dummy_read		(cob_file *, cob_field *, const int);
 static int dummy_start		(cob_file *, const int, cob_field *);
 
-static int cob_file_open	(cob_file *, char *, const int, const int);
+static int cob_file_open	(cob_file *, char *, const enum cob_open_mode, const int);
 static int cob_file_close	(cob_file *, const int);
 static int cob_savekey (cob_file *f, int idx, unsigned char *data);
 static int cob_file_write_opt	(cob_file *, const int);
@@ -541,7 +541,7 @@ static int relative_write	(cob_file *, const int);
 static int relative_rewrite	(cob_file *, const int);
 static int relative_delete	(cob_file *);
 
-static int indexed_open		(cob_file *, char *, const int, const int);
+static int indexed_open		(cob_file *, char *, const enum cob_open_mode, const int);
 static int indexed_close	(cob_file *, const int);
 static int indexed_start	(cob_file *, const int, cob_field *);
 static int indexed_read		(cob_file *, cob_field *, const int);
@@ -802,10 +802,12 @@ bdb_cmpkey (cob_file *f, unsigned char *keyarea, unsigned char *record, int idx,
 
 	if (partlen <= 0) {
 		partlen = bdb_keylen(f, idx);
+		/* LCOV_EXCL_START */
 		if (partlen <= 0) {
 			cob_runtime_error (_("invalid internal call of %s"), "bdb_cmpkey");
 			cob_hard_failure_internal ();
 		}
+		/* LCOV_EXCL_STOP */
 	}
 	if (f->keys[idx].count_components > 0) {
 		totlen = 0;
@@ -1500,8 +1502,9 @@ cob_file_write_opt (cob_file *f, const int opt)
  *  with just an 'fd' (No FILE *)
  */
 static int
-cob_fd_file_open (cob_file *f, char *filename, const int mode, const int sharing,
-	unsigned int	nonexistent)
+cob_fd_file_open (cob_file *f, char *filename,
+		const enum cob_open_mode mode, const int sharing,
+		unsigned int	nonexistent)
 {
 	int		fd;
 	int		fdmode;
@@ -1549,6 +1552,11 @@ cob_fd_file_open (cob_file *f, char *filename, const int mode, const int sharing
 		fperms = COB_FILE_MODE;
 #endif
 		break;
+	/* LCOV_EXCL_START */
+	default:
+		cob_runtime_error (_("invalid internal call of %s"), "cob_fd_file_open");
+		cob_fatal_error (COB_FERROR_CODEGEN);
+	/* LCOV_EXCL_STOP */
 	}
 
 	errno = 0;
@@ -1656,7 +1664,8 @@ cob_fd_file_open (cob_file *f, char *filename, const int mode, const int sharing
 }
 
 static int
-cob_file_open (cob_file *f, char *filename, const int mode, const int sharing)
+cob_file_open (cob_file *f, char *filename,
+		const enum cob_open_mode mode, const int sharing)
 {
 	/* Note filename points to file_open_name */
 	/* cob_chk_file_mapping manipulates file_open_name directly */
@@ -1769,6 +1778,7 @@ cob_file_open (cob_file *f, char *filename, const int mode, const int sharing)
 		break;
 	/* LCOV_EXCL_START */
 	default:
+		cob_runtime_error (_("invalid internal call of %s"), "cob_file_open");
 		cob_fatal_error (COB_FERROR_CODEGEN);
 	/* LCOV_EXCL_STOP */
 	}
@@ -2056,7 +2066,6 @@ again:
 
 	if (unlikely (f->record_min != f->record_max)) {
 		/* Read record size */
-
 		bytesread = read (f->fd, recsize.sbuff, cob_vsq_len);
 		if (bytesread == 0
 		 && open_next (f)) {
@@ -2226,7 +2235,8 @@ lineseq_read (cob_file *f, const int read_opts)
 	FILE	*fp;
 	unsigned char	*dataptr;
 	size_t		i = 0;
-	int		n, bad_data = 0;
+	int		n;
+	int		sts = COB_STATUS_00_SUCCESS;
 
 #ifdef	WITH_SEQRA_EXTFH
 	int		extfh_ret;
@@ -2283,19 +2293,14 @@ again:
 #endif
 			if ((IS_BAD_CHAR (n) 
 			  || (n > 0x7E && !isprint(n)))) {
-				bad_data = 1;
+				sts = COB_STATUS_09_READ_DATA_BAD;
 			}
 		} else
 		if (cobsetptr->cob_ls_nulls) {
 			if (n == 0) {
 				n = getc (fp);
-				/* LCOV_EXCL_START */
-				if (n == EOF) {
-					return COB_STATUS_30_PERMANENT_ERROR;
-				}
-				/* LCOV_EXCL_STOP */
 				/* NULL-Encoded -> should be less than a space */
-				if ((unsigned char)n >= ' ') {		
+				if (n == EOF || (unsigned char)n >= ' ') {		
 					return COB_STATUS_71_BAD_CHAR;
 				}
 			/* Not NULL-Encoded, may not be less than a space */
@@ -2310,14 +2315,14 @@ again:
 			continue;
 		}
 #endif
-		if (likely(i < f->record_max)) {
+		if (i < f->record_max) {
 			*dataptr++ = (unsigned char)n;
 			i++;
 			if (i == f->record_max
 			 && (cobsetptr->cob_ls_split)) {
 				/* If record is too long, then simulate end
 				 * so balance becomes the next record read */
-				int	k = 1;
+				off_t	k = 1;
 				n = getc (fp);
 				if (n == '\r') {
 					n = getc (fp);
@@ -2325,9 +2330,13 @@ again:
 				}
 				if (n != '\n') {
 					fseek (fp, -k, SEEK_CUR);
+					sts = COB_STATUS_06_READ_TRUNCATE;
 				}
 				break;
 			}
+		} else
+		if (i == f->record_max) {
+			sts = COB_STATUS_04_SUCCESS_INCOMPLETE;
 		}
 	}
 	/* CODE-SET FOR - convert specific area only */
@@ -2342,8 +2351,8 @@ again:
 			for (p = to_conv.data; p < conv_end; p++) {
 				n = *p = f->code_set_read[*p];
 				if ((IS_BAD_CHAR (n)
-					|| (n > 0x7E && !isprint (n)))) {
-					bad_data = 1;
+				 || (n > 0x7E && !isprint (n)))) {
+					sts = COB_STATUS_09_READ_DATA_BAD;
 				}
 			}
 		}
@@ -2358,10 +2367,7 @@ again:
 	if (f->open_mode == COB_OPEN_I_O)	/* Required on some systems */
 		fflush (fp);
 #endif
-	if (bad_data) {
-		return COB_STATUS_09_READ_DATA_BAD;
-	}
-	return COB_STATUS_00_SUCCESS;
+	return sts;
 }
 
 /* Determine the size to be written */
@@ -2603,7 +2609,7 @@ lineseq_rewrite (cob_file *f, const int opt)
 		}
 	}
 
-	if (fseek (fp, (off_t)curroff, SEEK_SET) != 0) {
+	if (fseek (fp, curroff, SEEK_SET) != 0) {
 		return COB_STATUS_30_PERMANENT_ERROR;
 	}
 #ifdef READ_WRITE_NEEDS_FLUSH
@@ -3581,13 +3587,17 @@ indexed_start_internal (cob_file *f, const int cond, cob_field *key,
 			memcpy (p->last_readkey[0], p->key.data, p->primekeylen);
 		} else {
 			int keylen = bdb_keylen (f, p->key_index);
+			/* LCOV_EXCL_START */
 			if (partlen <= 0) {
-				cob_runtime_error (_("invalid internal call of %s"), "indexed_start_internal/bdb_keylen");
+				cob_runtime_error (_("invalid internal call of %s"),
+					"indexed_start_internal/bdb_keylen");
 				cob_hard_failure_internal ();
 			}
+			/* LCOV_EXCL_STOP */
 			memcpy (p->last_readkey[p->key_index],
 				    p->temp_key, keylen);
-			memcpy (p->last_readkey[p->key_index + f->nkeys], p->key.data, p->primekeylen);
+			memcpy (p->last_readkey[p->key_index + f->nkeys],
+				    p->key.data, p->primekeylen);
 			if (f->keys[p->key_index].tf_duplicates) {
 				p->last_dupno[p->key_index] = dupno;
 			}
@@ -3806,7 +3816,8 @@ indexed_file_delete (cob_file *f, const char *filename)
 /* OPEN INDEXED file */
 
 static int
-indexed_open (cob_file *f, char *filename, const int mode, const int sharing)
+indexed_open (cob_file *f, char *filename,
+		const enum cob_open_mode mode, const int sharing)
 {
 	/* Note filename points to file_open_name */
 	/* cob_chk_file_mapping manipulates file_open_name directly */
@@ -4165,6 +4176,11 @@ dobuild:
 	case COB_OPEN_EXTEND:
 		flags |= DB_CREATE;
 		break;
+	/* LCOV_EXCL_START */
+	default:
+		cob_runtime_error (_("invalid internal call of %s"), "indexed_open");
+		cob_fatal_error (COB_FERROR_CODEGEN);
+	/* LCOV_EXCL_STOP */
 	}
 
 	p->db = cob_malloc (sizeof (DB *) * f->nkeys);
@@ -5772,6 +5788,8 @@ cob_pre_open (cob_file *f)
 void
 cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 {
+	/*: GC4: mode as cob_open_mode */
+
 	last_operation_open = 1;
 
 	/* File was previously closed with lock */
@@ -6072,6 +6090,9 @@ cob_read (cob_file *f, cob_field *key, cob_field *fnstatus, const int read_opts)
 	switch (ret) {
 	case COB_STATUS_00_SUCCESS:
 	case COB_STATUS_02_SUCCESS_DUPLICATE:
+	case COB_STATUS_04_SUCCESS_INCOMPLETE:
+	case COB_STATUS_06_READ_TRUNCATE:
+	case COB_STATUS_09_READ_DATA_BAD:
 		f->flag_first_read = 0;
 		f->flag_read_done = 1;
 		f->flag_end_of_file = 0;
@@ -6162,6 +6183,9 @@ Again:
 	switch (ret) {
 	case COB_STATUS_00_SUCCESS:
 	case COB_STATUS_02_SUCCESS_DUPLICATE:
+	case COB_STATUS_04_SUCCESS_INCOMPLETE:
+	case COB_STATUS_06_READ_TRUNCATE:
+	case COB_STATUS_09_READ_DATA_BAD:
 		/* If record has suppressed key, skip it */
 		/* This is to catch CISAM, old VBISAM, ODBC & OCI */
 		if (f->organization == COB_ORG_INDEXED) {
@@ -9367,10 +9391,12 @@ void
 cob_file_fcd_adrs (cob_file *f, void *pfcd)
 {
 	FCD3	*fcd = NULL;
+	/* LCOV_EXCL_START */
 	if (f == NULL) {
 		cob_runtime_error (_("invalid internal call of %s"), "cob_file_fcd_adrs");
 		cob_hard_failure_internal ();
 	}
+	/* LCOV_EXCL_STOP */
 	if (f->fcd == NULL) {
 		f->fcd = find_fcd (f);
 	}
@@ -9393,10 +9419,12 @@ void
 cob_file_fcdkey_adrs (cob_file *f, void *pkey)
 {
 	FCD3	*fcd = NULL;
+	/* LCOV_EXCL_START */
 	if (f == NULL) {
 		cob_runtime_error (_("invalid internal call of %s"), "cob_file_fcdkey_adrs");
 		cob_hard_failure_internal ();
 	}
+	/* LCOV_EXCL_STOP */
 	cob_file_fcd_adrs (f, &fcd);
 	memcpy (pkey, &f->fcd->kdbPtr, sizeof(void *));
 	return;

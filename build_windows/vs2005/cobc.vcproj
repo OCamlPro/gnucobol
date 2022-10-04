@@ -189,6 +189,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath="..\..\cobc\cconv.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\cobc\cobc.c"
 				>
 			</File>
@@ -335,6 +339,10 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath="..\..\cobc\cconv.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\cobc\cobc.h"
 				>
 			</File>
@@ -355,7 +363,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\cobc\flag.def"
+				RelativePath="..\..\libcob\exception-io.def"
 				>
 			</File>
 			<File
@@ -363,11 +371,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\libcob\exception-io.def"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libcob\system.def"
+				RelativePath="..\..\cobc\flag.def"
 				>
 			</File>
 			<File
@@ -376,6 +380,10 @@
 			</File>
 			<File
 				RelativePath="..\..\cobc\ppparse.def"
+				>
+			</File>
+			<File
+				RelativePath="..\..\libcob\system.def"
 				>
 			</File>
 			<File
@@ -433,6 +441,174 @@
 				</File>
 				<File
 					RelativePath="..\..\cobc\scanner.c"
+					>
+				</File>
+			</Filter>
+		</Filter>
+		<Filter
+			Name="Auxiliary Compiler Files"
+			>
+			<Filter
+				Name="copybooks"
+				>
+				<File
+					RelativePath="..\..\copy\ChangeLog"
+					>
+				</File>
+				<File
+					RelativePath="..\..\copy\screenio.cpy"
+					>
+				</File>
+				<File
+					RelativePath="..\..\copy\sqlca.cpy"
+					>
+				</File>
+				<File
+					RelativePath="..\..\copy\sqlda.cpy"
+					>
+				</File>
+				<File
+					RelativePath="..\..\copy\xfhfcd.cpy"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="dialects"
+				>
+				<File
+					RelativePath="..\..\config\acu-strict.conf"
+					>
+				</File>
+				<File
+					RelativePath="..\..\config\acu.conf"
+					>
+				</File>
+				<File
+					RelativePath="..\..\config\acu.words"
+					>
+				</File>
+				<File
+					RelativePath="..\..\config\bs2000-strict.conf"
+					>
+				</File>
+				<File
+					RelativePath="..\..\config\bs2000.conf"
+					>
+				</File>
+				<File
+					RelativePath="..\..\config\bs2000.words"
+					>
+				</File>
+				<File
+					RelativePath="..\..\config\ChangeLog"
+					>
+				</File>
+				<File
+					RelativePath="..\..\config\cobol2002.conf"
+					>
+				</File>
+				<File
+					RelativePath="..\..\config\cobol2002.words"
+					>
+				</File>
+				<File
+					RelativePath="..\..\config\cobol2014.conf"
+					>
+				</File>
+				<File
+					RelativePath="..\..\config\cobol2014.words"
+					>
+				</File>
+				<File
+					RelativePath="..\..\config\cobol85.conf"
+					>
+				</File>
+				<File
+					RelativePath="..\..\config\cobol85.words"
+					>
+				</File>
+				<File
+					RelativePath="..\..\config\default.conf"
+					>
+				</File>
+				<File
+					RelativePath="..\..\config\gcos-strict.conf"
+					>
+				</File>
+				<File
+					RelativePath="..\..\config\gcos.conf"
+					>
+				</File>
+				<File
+					RelativePath="..\..\config\gcos.words"
+					>
+				</File>
+				<File
+					RelativePath="..\..\config\ibm-strict.conf"
+					>
+				</File>
+				<File
+					RelativePath="..\..\config\ibm.conf"
+					>
+				</File>
+				<File
+					RelativePath="..\..\config\ibm.words"
+					>
+				</File>
+				<File
+					RelativePath="..\..\config\lax.conf-inc"
+					>
+				</File>
+				<File
+					RelativePath="..\..\config\mf-strict.conf"
+					>
+				</File>
+				<File
+					RelativePath="..\..\config\mf.conf"
+					>
+				</File>
+				<File
+					RelativePath="..\..\config\mf.words"
+					>
+				</File>
+				<File
+					RelativePath="..\..\config\mvs-strict.conf"
+					>
+				</File>
+				<File
+					RelativePath="..\..\config\mvs.conf"
+					>
+				</File>
+				<File
+					RelativePath="..\..\config\mvs.words"
+					>
+				</File>
+				<File
+					RelativePath="..\..\config\realia-strict.conf"
+					>
+				</File>
+				<File
+					RelativePath="..\..\config\realia.conf"
+					>
+				</File>
+				<File
+					RelativePath="..\..\config\realia.words"
+					>
+				</File>
+				<File
+					RelativePath="..\..\config\rm-strict.conf"
+					>
+				</File>
+				<File
+					RelativePath="..\..\config\rm.conf"
+					>
+				</File>
+				<File
+					RelativePath="..\..\config\rm.words"
+					>
+				</File>
+				<File
+					RelativePath="..\..\config\xopen.conf"
 					>
 				</File>
 			</Filter>

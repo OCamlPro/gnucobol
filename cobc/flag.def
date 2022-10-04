@@ -92,6 +92,13 @@ CB_FLAG_NQ (1, "callfh", 9,
 	_("  -fcallfh=<name>       specifies <name> to be used for I/O\n"
 	  "                        as external provided EXTFH interface module"))
 
+CB_FLAG_NQ (1, "ebcdic-table", 14, /* cf cconv.h for all available tables */
+	_("  -febcdic-table=[DEFAULT|RESTRICTED-GC|IBM|GCOS]\tdefine EBCDIC translation table:\n"
+	  "                        * default: translation to extended ASCII as per MF\n"
+	  "                        * restricted-gc: translation from restricted ASCII only\n"
+	  "                        * ibm: translation to restricted ASCII as per IBM"
+	  "                        * gcos: translation to extended ASCII as per GCOS7"))
+
 /* Binary flags */
 
 /* Flags with suppressed help */
@@ -103,9 +110,6 @@ CB_FLAG (cb_flag_winmain, 0, "winmain",
 CB_FLAG (cb_flag_computed_goto, 0, "computed-goto",
 	_("  -fcomputed-goto       generate computed goto C statements"))
 
-CB_FLAG (cb_flag_alt_ebcdic, 0, "alternate-ebcdic",
-	_("  -falternate-ebcdic    use restricted ASCII to EBCDIC translate"))
-
 CB_FLAG (cb_flag_extra_brace, 0, "extra-brace",
 	_("  -fextra-brace         generate extra braces in C source"))
 
@@ -114,6 +118,10 @@ CB_FLAG (cb_flag_correct_numeric, 0, "correct-numeric",
 
 CB_FLAG (cb_flag_stack_on_heap, 0, "stack-on-heap",
 	_("  -fstack-on-heap       PERFORM stack allocated on heap"))
+
+CB_FLAG (cb_flag_stack_extended, 0, "stack-extended",
+	_("  -fstack-extended      store origin of entrypoints and PERFORM\n"
+	  "                        * turned on by -debug/-dump"))
 
 /* Normal flags */
 CB_FLAG_ON (cb_flag_remove_unreachable, 1, "remove-unreachable",
@@ -137,7 +145,7 @@ CB_FLAG (cb_flag_debugging_line, 1, "debugging-line",
 
 CB_FLAG (cb_flag_source_location, 1, "source-location",
 	_("  -fsource-location     generate source location code\n"
-	  "                        * turned on by -debug/-g/-ftraceall/-fec"))
+	  "                        * turned on by -debug/-ftraceall/-fec/-dump"))
 
 CB_FLAG (cb_flag_implicit_init, 1, "implicit-init",
 	_("  -fimplicit-init       automatic initialization of the COBOL runtime system"))
@@ -148,7 +156,7 @@ CB_FLAG_ON (cb_flag_recursive_check, 1, "recursive-check",
 
 CB_FLAG (cb_flag_stack_check, 1, "stack-check",
 	_("  -fstack-check         PERFORM stack checking\n"
-	  "                        * turned on by -debug or -g"))
+	  "                        * turned on by -debug/-g"))
 
 CB_FLAG (cb_flag_write_after, 1, "write-after",
 	_("  -fwrite-after         use AFTER 1 for WRITE of LINE SEQUENTIAL\n"
