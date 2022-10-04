@@ -1223,7 +1223,8 @@ typedef struct __cob_module {
 
 	unsigned char		unused[1];		/* Use these flags up later, added for alignment */
 
-	unsigned int		module_stmt;		/* Last statement executed as modulated source line
+	unsigned int		module_stmt;		/* Position of last statement executed
+											   as modulated source line
 											   and index to module_sources for source file */
 	const char		**module_sources;	/* Source module names compiled */
 
@@ -1246,6 +1247,9 @@ typedef struct __cob_module {
 #define COB_XML_XMLNSS		1			/* similar to XMLPARSE(XMLNSS) Micro Focus,
 											   IBM may be different (_very_ likely for error codes);
 											   but the main difference is to "COMPAT" */
+	const char		*section_name;		/* name of current active section */
+	const char		*paragraph_name;		/* name of current active pagagraph */
+	const char		*stmt_name;			/* last statment VERB name */
 
 } cob_module;
 
@@ -1504,7 +1508,7 @@ typedef struct __cob_ml_tree {
 typedef struct __cob_global {
 	cob_file		*cob_error_file;	/* Last error file */
 	cob_module		*cob_current_module;	/* Current module */
-	const char		*last_exception_statement;	/* SLast exception: tatement */
+	const char		*last_exception_statement;	/* Last exception: Statement */
 	const char		*last_exception_id;	/* Last exception: PROGRAMM-ID / FUNCTION-ID*/
 	const char		*last_exception_section;	/* Last exception: Section */
 	const char		*last_exception_paragraph;	/* Last exception: Paragraph */
@@ -1539,6 +1543,9 @@ typedef struct __cob_global {
 	unsigned int		cob_stmt_exception;	/* Statement has 'On Exception' */
 
 	unsigned int		cob_debugging_mode;	/* activation of USE ON DEBUGGING code */
+#if 0	/* consider addition for 4.x, possibly with getting rid of last_exception_line */
+	const char		*last_exception_source;	/* Last exception: Source */
+#endif
 
 } cob_global;
 

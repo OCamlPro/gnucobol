@@ -67,6 +67,11 @@ NEWS - user visible changes				-*- outline -*-
    setting COB_LS_SPLIT = false will have the old behaviour of truncating
    the record, but will now set status 04
 
+** FUNCTION EXCEPTION-LOCATION: if the source raising an exception was not
+   compiled with location information this function previously returned
+   a single space; GnuCOBOL now always returns the module name, a procedure-
+   name " " and the source (line) identifier "0"
+
 ** FUNCTIONs NUMVAL, NUMVAL-C, NUMVAL-F: if the argument does not match the
    argument rules previous versions returned zero; now invalid data is skipped;
    for example: "1. A-0B4.5" now returns -1.045 (or -1045 when the

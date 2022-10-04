@@ -4060,7 +4060,7 @@ output_funcall_typed_report (struct cb_funcall *p, const char type)
 			if (r->id) {
 				output_line ("\tframe_ptr++;");
 				output_line ("\tframe_ptr->perform_through = 0;");
-				perform_label("rwfoot_",r->id,-1);
+				perform_label ("rwfoot_",r->id,-1);
 				output_line ("\tframe_ptr--;");
 			}
 			output ("\tctl = cob_report_terminate (");
@@ -7706,14 +7706,28 @@ output_cobol_info (cb_tree x)
 {
 	const char	*p = x->source_file;
 	output ("#line %d \"", x->source_line);
-	while(*p){
+	while (*p) {
 		if (*p == '\\') {
-			output("%c",'\\');
+			output ("%c",'\\');
 		}
-	output("%c",*p++);
+		output ("%c",*p++);
 	}
-	output("\"");
+	output ("\"");
 	output_newline ();
+}
+
+static void
+output_module_source_for_tree (cb_tree x)
+{
+	if (!x->source_file) {
+		return;
+	}
+	if (last_line != x->source_line) {
+		output_line ("module->module_stmt = 0x%08X;",
+			COB_SET_LINE_FILE (x->source_line,
+				lookup_source (x->source_file)));
+		last_line = x->source_line;
+	}
 }
 
 static void
@@ -7757,34 +7771,46 @@ output_section_info (const struct cb_label *lp)
 		return;
 	}
 
-	if (CB_TREE (lp)->source_file) {
-		if (last_line != CB_TREE (lp)->source_line) {
-			output_line ("module->module_stmt = 0x%08X;",
-			COB_SET_LINE_FILE(CB_TREE (lp)->source_line, lookup_source(CB_TREE (lp)->source_file)));
-			last_line = CB_TREE (lp)->source_line;
-		}
+	if (cb_flag_source_location || cb_flag_trace) {
+		output_module_source_for_tree (CB_TREE (lp));
 	}
 
 	if (lp->flag_entry) {
-		output_line ("cob_trace_entry (%s%d);",
-			     CB_PREFIX_STRING, lookup_string (lp->orig_name));
+		if (cb_flag_trace) {
+			output_line ("cob_trace_entry (%s%d);",
+					 CB_PREFIX_STRING, lookup_string (lp->orig_name));
+		}
 		return;
 	}
 
 	if (lp->flag_section) {
 		if (!lp->flag_dummy_section) {
-			output_line ("cob_trace_sect (%s%d);",
-				     CB_PREFIX_STRING, lookup_string (lp->orig_name));
+			const int str_num = lookup_string (lp->orig_name);
+			output_line ("module->section_name = %s%d;", CB_PREFIX_STRING, str_num);
+			output_line ("module->paragraph_name = NULL;");
+			if (cb_flag_trace) {
+				output_line ("cob_trace_sect (%s%d);", CB_PREFIX_STRING, str_num);
+			}
 		} else {
-			output_line ("cob_trace_sect (NULL);");
+			output_line ("module->section_name = NULL;");
+			output_line ("module->paragraph_name = NULL;");
+			if (cb_flag_trace) {
+				output_line ("cob_trace_sect (NULL);");
+			}
 		}
 		return;
 	}
+
 	if (!lp->flag_dummy_paragraph) {
-		output_line ("cob_trace_para (%s%d);",
-			     CB_PREFIX_STRING, lookup_string (lp->orig_name));
+		const int str_num = lookup_string (lp->orig_name);
+		output_line ("module->paragraph_name = %s%d;", CB_PREFIX_STRING, str_num);
+		if (cb_flag_trace) {
+			output_line ("cob_trace_para (%s%d);", CB_PREFIX_STRING, str_num);
+		}
 	} else {
-		output_line ("cob_trace_para (NULL);");
+		if (cb_flag_trace) {
+			output_line ("cob_trace_para (NULL);");
+		}
 	}
 }
 
@@ -7816,10 +7842,15 @@ output_trace_info (cb_tree x, const char *name)
 			output ("NULL);");
 		}
 		output_newline ();
-	} else {
-		if (name) {
-			output_line ("cob_trace_stmt (%s%d);",
-					CB_PREFIX_STRING, lookup_string (name));
+		return;
+	}
+
+	if (name) {
+		const int str_num = lookup_string (name);
+		output_module_source_for_tree (x);
+		output_line ("module->stmt_name = %s%d;", CB_PREFIX_STRING, str_num);
+		if (cb_flag_traceall) {
+			output_line ("cob_trace_stmt (%s%d);", CB_PREFIX_STRING, str_num);
 		}
 	}
 }
@@ -7853,8 +7884,7 @@ output_source_reference (cb_tree tree, const char *stmt_name)
 	output ("*/");
 	output_newline ();
 	/* Output source location as code */
-	if (cb_flag_source_location
-	 || cb_flag_dump) {
+	if (cb_flag_source_location) {
 		if (last_line != tree->source_line
 	 	 || last_stmt != stmt_name) {
 			output_line ("module->module_stmt = 0x%08X;",
@@ -8113,8 +8143,7 @@ output_stmt (cb_tree x)
 			output_line ("/* Line: %-10d: %-19.19s: %s */",
 				x->source_line, p->name, x->source_file);
 			/* Output source location as code */
-			if (cb_flag_source_location
-			 || cb_flag_dump) {
+			if (cb_flag_source_location) {
 				if (last_line != x->source_line) {
 					output_line ("module->module_stmt = 0x%08X;",
 						COB_SET_LINE_FILE (x->source_line, lookup_source (x->source_file)));
@@ -8226,7 +8255,12 @@ output_stmt (cb_tree x)
 			}
 			if (cb_flag_c_labels
 			 && (lp->flag_entry || lp->flag_section)) {
-				/* possibly come back later adding paragraphs, too */
+				/* possibly come back later adding paragraphs, too;
+				   note: these need also a prefix to not break some macro names,
+				         and most important: COBOL allows multiple with the same
+						 name, even in the same section; C allows only one per
+						 function and with our current generation that means
+						 one identical generated paragraph name "per program" */
 				unsigned char buff[COB_MINI_BUFF];
 				unsigned char *ptr = (unsigned char *)&buff;
 				const char *prf;
@@ -11443,7 +11477,7 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 		if (cb_flag_stack_check) {
 			output_line ("frame_overflow = frame_ptr + %d - 1;",
 				     cb_stack_size);
-		}
+	}
 	}
 	output_newline ();
 
@@ -11758,8 +11792,7 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	/* End of program / function */
 
 	/* Output source location as code */
-	if (cb_flag_source_location
-	 || cb_flag_dump) {
+	if (cb_flag_source_location) {
 		l = CB_TREE (prog);
 		output_line ("module->module_stmt = 0x%08X;",
 			COB_SET_LINE_FILE(prog->last_source_line, lookup_source(l->source_file)));
@@ -11856,7 +11889,9 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 
 	if (cb_flag_trace) {
 		output_line ("/* Trace program exit */");
-		if (cb_old_trace) {		/* Old code retained for testing */
+		if (cb_old_trace) {
+			/* Old code retained for testing; this epecially helps when running the test
+			   READY TRACE / RESET TRACE generated with 2.2 and compared with 3.x */
 			sprintf (string_buffer, "Exit:      %s", excp_current_program_id);
 			output_line ("cob_trace_section (%s%d, NULL, 0);",
 				     CB_PREFIX_STRING,

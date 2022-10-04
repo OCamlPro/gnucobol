@@ -429,8 +429,9 @@ static size_t		manilink_len;
 #define PATTERN_DELIM '|'
 #endif
 
-static size_t		strip_output = 0;
-static size_t		cb_source_debugging = 0;	/* note: was moved to global one later, so keep that name already*/
+static int		strip_output = 0;
+static size_t		cb_source_debugging = 0;	/* note: was moved to global one later, we
+												   already use the name that hints at that */
 
 static const char	*const cob_csyns[] = {
 #ifndef	COB_EBCDIC_MACHINE
@@ -3033,7 +3034,7 @@ process_command_line (const int argc, char **argv)
 			save_all_src = 1;
 			cb_source_debugging = 1;
 			cb_flag_stack_check = 1;
-			cb_flag_source_location = 1;
+			/* note: cb_flag_source_location is explicit not set here */
 #if 1		/* auto-included, may be disabled manually if needed */
 			cb_flag_c_line_directives = 1;
 			cb_flag_c_labels = 1;
@@ -3049,6 +3050,20 @@ process_command_line (const int argc, char **argv)
 			cb_flag_source_location = 1;
 			cb_flag_stack_check = 1;
 			cobc_wants_debug = 1;
+			break;
+
+		case 8:
+			/* -fdump=<scope> : Add sections for dump code generation */
+			cobc_def_dump_opts (cob_optarg, 1);
+			break;
+
+		case 13:
+			/* -fno-dump=<scope> : Suppress sections in dump code generation */
+			if (cob_optarg) {
+				cobc_def_dump_opts (cob_optarg, 0);
+			} else {
+				cb_flag_dump = COB_DUMP_NONE;
+			}
 			break;
 
 		default:
@@ -3080,6 +3095,11 @@ process_command_line (const int argc, char **argv)
 		for (i = (enum cob_exception_id)1; i < COB_EC_MAX; ++i) {
 			CB_EXCEPTION_ENABLE (i) = 1;
 		}
+	}
+
+	/* dump implies extra information (may still be disabled later) */
+	if (cb_flag_dump != COB_DUMP_NONE) {
+		cb_flag_source_location = 1;
 	}
 
 	cob_optind = 1;
@@ -3464,7 +3484,7 @@ process_command_line (const int argc, char **argv)
 			cb_stack_size = n;
 			break;
 
-#ifdef COBC_HAS_CUTOFF_FLAG	/* CHECKME: may be removed completely in 3.0 */
+#ifdef COBC_HAS_CUTOFF_FLAG	/* CHECKME: to be removed in 4.0 */
 		case 2:
 			/* -fif-cutoff=<xx> : Specify IF cutoff level */
 			n = cobc_deciph_optarg (cob_optarg, 0);
@@ -3535,16 +3555,9 @@ process_command_line (const int argc, char **argv)
 
 		case 8:
 			/* -fdump=<scope> : Add sections for dump code generation */
-			cobc_def_dump_opts (cob_optarg, 1);
-			break;
-
 		case 13:
 			/* -fno-dump=<scope> : Suppress sections in dump code generation */
-			if (cob_optarg) {
-				cobc_def_dump_opts (cob_optarg, 0);
-			} else {
-				cb_flag_dump = COB_DUMP_NONE;
-			}
+			/* These options were all processed in the first getopt-run */
 			break;
 
 		case 9:
@@ -3846,7 +3859,7 @@ process_command_line (const int argc, char **argv)
 		cb_flag_source_location = 1;
 	}
 
-	/* If C debug, do not strip output */
+	/* If C debug, never strip output */
 	if (cb_source_debugging) {
 		strip_output = 0;
 	}

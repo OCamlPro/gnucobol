@@ -4632,12 +4632,12 @@ Error: DemoErrProc; S1; 25-
 AT_CHECK([$COBC -x -o prog_noloc prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog_noloc], [1],
 [Program is starting
-Error (internal):  -
+Error (internal): DemoErrProc; ; 0-
                                                  -
                   EC-PROGRAM-NOT-FOUND           -
 Error-Message:    module 'Tilt' not found
 -*- Returning to Next Error Routine -*-
-Error:  -
+Error: DemoErrProc; ; 0-
                                       -
        EC-PROGRAM-NOT-FOUND           -
 -*- Returning to Standard Error Routine -*-

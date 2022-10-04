@@ -19,6 +19,7 @@
 	  as successful as io status 06
 	* fileio.c (lineseq_read): set return status 04 if record is truncated
 	  because LS_SPLIT is false
+	* common.c: adjustments for merge of 2021-03-18
 
 2022-09-29  Simon Sobisch <simonsobisch@gnu.org>
 

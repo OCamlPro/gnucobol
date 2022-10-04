@@ -283,11 +283,7 @@ static size_t			sort_nkeys = 0;
 static cob_file_key		*sort_keys = NULL;
 static const unsigned char	*sort_collate = NULL;
 
-static const char		*cob_current_program_id = NULL;
-static const char		*cob_current_section = NULL;
-static const char		*cob_current_paragraph = NULL;
 static const char		*cob_source_file = NULL;
-static const char		*cob_source_statement = NULL;
 static unsigned int		cob_source_line = 0;
 
 #ifdef COB_DEBUG_LOG
@@ -772,6 +768,31 @@ cob_terminate_routines (void)
 	cob_exit_common ();
 }
 
+static void
+cob_get_source_line ()
+{
+	if (cobglobptr
+	 && COB_MODULE_PTR) {
+		cob_module	*mod = COB_MODULE_PTR;
+		while (mod && mod->module_stmt == 0) {
+			mod = mod->next;
+		}
+		if (mod
+		 && mod->module_stmt != 0
+		 && mod->module_sources) {
+			cob_source_file =
+				mod->module_sources[COB_GET_FILE_NUM (mod->module_stmt)];
+			cob_source_line = COB_GET_LINE_NUM (mod->module_stmt);
+		}
+#if 0	/* note: those are also manually set
+		         and therefore may not be reset here */
+	} else {
+		cob_source_file = NULL;
+		cob_source_line = 0;
+#endif
+	}
+}
+
 /* reentrant version of strerror */
 static char *
 cob_get_strerror (void)
@@ -879,6 +900,7 @@ cob_sig_handler (int signal_value)
 	(void)signal (signal_value, SIG_DFL);
 #endif
 	cob_exit_screen ();
+	cob_get_source_line ();
 	putc ('\n', stderr);
 	if (cob_source_file) {
 		fprintf (stderr, "%s:", cob_source_file);
@@ -1777,15 +1799,17 @@ cob_last_exception_is (const int exception_to_check)
 void
 cob_set_exception (const int id)
 {
+	cob_get_source_line ();
 	cobglobptr->cob_exception_code = cob_exception_tab_code[id];
 	last_exception_code = cobglobptr->cob_exception_code;
-	if (id) {
+	if (id
+	 && COB_MODULE_PTR) {
 		cobglobptr->cob_got_exception = 1;
-		cobglobptr->last_exception_statement = cob_source_statement;
 		cobglobptr->last_exception_line = cob_source_line;
-		cobglobptr->last_exception_id = cob_current_program_id;
-		cobglobptr->last_exception_section = cob_current_section;
-		cobglobptr->last_exception_paragraph = cob_current_paragraph;
+		cobglobptr->last_exception_id = COB_MODULE_PTR->module_name;
+		cobglobptr->last_exception_statement = COB_MODULE_PTR->stmt_name;
+		cobglobptr->last_exception_section = COB_MODULE_PTR->section_name;
+		cobglobptr->last_exception_paragraph = COB_MODULE_PTR->paragraph_name;
 	} else {
 		cobglobptr->cob_got_exception = 0;
 		cobglobptr->last_exception_statement = NULL;
@@ -1995,21 +2019,22 @@ cob_cache_free (void *ptr)
 	}
 }
 
-/* cob_set_location is kept for backward compatibility (pre 3.0) */
+/* cob_set_location is kept for backward compatibility
+   (pre 3.0, where it was used for setting and tracing) */
 void
 cob_set_location (const char *sfile, const unsigned int sline,
 		  const char *csect, const char *cpara,
 		  const char *cstatement)
 {
+	cob_module	*mod = COB_MODULE_PTR;
 	const char	*s;
 
-	cob_current_program_id = COB_MODULE_PTR->module_name;
+	mod->section_name = csect;
+	mod->paragraph_name = cpara;
 	cob_source_file = sfile;
 	cob_source_line = sline;
-	cob_current_section = csect;
-	cob_current_paragraph = cpara;
 	if (cstatement) {
-		cob_source_statement = cstatement;
+		mod->stmt_name = cstatement;
 	}
 	if (cobsetptr->cob_line_trace) {
 		if (!cobsetptr->cob_trace_file) {
@@ -2087,13 +2112,7 @@ static int
 cob_trace_prep (void)
 {
 	const char	*s;
-	cob_current_program_id = COB_MODULE_PTR->module_name;
-	if (COB_MODULE_PTR->module_stmt != 0
-	 && COB_MODULE_PTR->module_sources) {
-		cob_source_file =
-			COB_MODULE_PTR->module_sources[COB_GET_FILE_NUM(COB_MODULE_PTR->module_stmt)];
-		cob_source_line = COB_GET_LINE_NUM(COB_MODULE_PTR->module_stmt);
-	}
+	cob_get_source_line ();
 	if (!cobsetptr->cob_trace_file) {
 		cob_check_trace_file ();
 		if (!cobsetptr->cob_trace_file)
@@ -2130,6 +2149,8 @@ cob_trace_print (char *val)
 	int	i;
 	int last_pos = (int)(strlen (cobsetptr->cob_trace_format) - 1);
 
+	/* note: only executed after cob_trace_prep(), so
+	         call to cob_get_source_line () already done */
 	for (i=0; cobsetptr->cob_trace_format[i] != 0; i++) {
 		if (cobsetptr->cob_trace_format[i] == '%') {
 			i++;
@@ -2180,15 +2201,14 @@ cob_trace_print (char *val)
 void
 cob_trace_sect (const char *name)
 {
-	char	val[60];
-
-	/* store for CHECKME */
-	cob_current_section = name;
+	/* compat for pre 3.2 */
+	COB_MODULE_PTR->section_name = name;
 
 	/* actual tracing, if activated */
 	if (cobsetptr->cob_line_trace
 	 && (COB_MODULE_PTR->flag_debug_trace & COB_MODULE_TRACE)) {
-		if (cob_trace_prep()
+		char	val[60];
+		if (cob_trace_prep ()
 		 || name == NULL) {
 			return;
 		}
@@ -2196,29 +2216,19 @@ cob_trace_sect (const char *name)
 		cob_trace_print (val);
 		return;
 	}
-
-	/* store for CHECKME */
-	if (COB_MODULE_PTR->module_stmt != 0
-	 && COB_MODULE_PTR->module_sources) {
-		cob_current_program_id = COB_MODULE_PTR->module_name;
-		cob_source_file =
-			COB_MODULE_PTR->module_sources[COB_GET_FILE_NUM(COB_MODULE_PTR->module_stmt)];
-		cob_source_line = COB_GET_LINE_NUM(COB_MODULE_PTR->module_stmt);
-	}
 }
 
 void
 cob_trace_para (const char *name)
 {
-	char	val[60];
-
-	/* store for CHECKME */
-	cob_current_paragraph = name;
+	/* compat for pre 3.2 */
+	COB_MODULE_PTR->paragraph_name = name;
 
 	/* actual tracing, if activated */
 	if (cobsetptr->cob_line_trace
 	 && (COB_MODULE_PTR->flag_debug_trace & COB_MODULE_TRACE)) {
-		if (cob_trace_prep()
+		char	val[60];
+		if (cob_trace_prep ()
 		 || name == NULL) {
 			return;
 		}
@@ -2226,26 +2236,16 @@ cob_trace_para (const char *name)
 		cob_trace_print (val);
 		return;
 	}
-
-	/* store for CHECKME */
-	if (COB_MODULE_PTR->module_stmt != 0
-	 && COB_MODULE_PTR->module_sources) {
-		cob_current_program_id = COB_MODULE_PTR->module_name;
-		cob_source_file =
-			COB_MODULE_PTR->module_sources[COB_GET_FILE_NUM(COB_MODULE_PTR->module_stmt)];
-		cob_source_line = COB_GET_LINE_NUM(COB_MODULE_PTR->module_stmt);
-	}
 }
 
 void
 cob_trace_entry (const char *name)
 {
-	char	val[60];
-
 	/* actual tracing, if activated */
 	if (cobsetptr->cob_line_trace
 	 && (COB_MODULE_PTR->flag_debug_trace & COB_MODULE_TRACE)) {
-		if (cob_trace_prep()
+		char	val[60];
+		if (cob_trace_prep ()
 		 || name == NULL) {
 			return;
 		}
@@ -2253,26 +2253,16 @@ cob_trace_entry (const char *name)
 		cob_trace_print (val);
 		return;
 	}
-
-	/* store for CHECKME */
-	if (COB_MODULE_PTR->module_stmt != 0
-	 && COB_MODULE_PTR->module_sources) {
-		cob_current_program_id = COB_MODULE_PTR->module_name;
-		cob_source_file =
-			COB_MODULE_PTR->module_sources[COB_GET_FILE_NUM(COB_MODULE_PTR->module_stmt)];
-		cob_source_line = COB_GET_LINE_NUM(COB_MODULE_PTR->module_stmt);
-	}
 }
 
 void
 cob_trace_exit (const char *name)
 {
-	char	val[60];
-
 	/* actual tracing, if activated */
 	if (cobsetptr->cob_line_trace
 	 && (COB_MODULE_PTR->flag_debug_trace & COB_MODULE_TRACE)) {
-		if (cob_trace_prep()
+		char	val[60];
+		if (cob_trace_prep ()
 		 || name == NULL) {
 			return;
 		}
@@ -2280,45 +2270,26 @@ cob_trace_exit (const char *name)
 		cob_trace_print (val);
 		return;
 	}
-
-	/* store for CHECKME */
-	if (COB_MODULE_PTR->module_stmt != 0
-	 && COB_MODULE_PTR->module_sources) {
-		cob_current_program_id = COB_MODULE_PTR->module_name;
-		cob_source_file =
-			COB_MODULE_PTR->module_sources[COB_GET_FILE_NUM(COB_MODULE_PTR->module_stmt)];
-		cob_source_line = COB_GET_LINE_NUM(COB_MODULE_PTR->module_stmt);
-	}
 }
 
 void
 cob_trace_stmt (const char *stmt)
 {
-	char	val[60];
-
-	/* store for CHECKME */
 	if (stmt) {
-		cob_source_statement = stmt;
+		/* compat for pre 3.2 */
+		COB_MODULE_PTR->section_name = stmt;
 	}
 
 	/* actual tracing, if activated */
 	if (cobsetptr->cob_line_trace
 	 && (COB_MODULE_PTR->flag_debug_trace & COB_MODULE_TRACEALL)) {
+		char	val[60];
 		if (cob_trace_prep ()) {
 			return;
 		}
 		snprintf (val, sizeof (val), "           %s", stmt ? (char *)stmt : _("unknown"));
 		cob_trace_print (val);
 		return;
-	}
-
-	/* store for CHECKME */
-	if (COB_MODULE_PTR->module_stmt != 0
-	 && COB_MODULE_PTR->module_sources) {
-		cob_current_program_id = COB_MODULE_PTR->module_name;
-		cob_source_file =
-			COB_MODULE_PTR->module_sources[COB_GET_FILE_NUM(COB_MODULE_PTR->module_stmt)];
-		cob_source_line = COB_GET_LINE_NUM(COB_MODULE_PTR->module_stmt);
 	}
 }
 
@@ -7476,8 +7447,8 @@ static void
 output_source_location (void)
 {
 	if (cobglobptr && COB_MODULE_PTR
-		&& COB_MODULE_PTR->module_stmt != 0
-		&& COB_MODULE_PTR->module_sources) {
+	 && COB_MODULE_PTR->module_stmt != 0
+	 && COB_MODULE_PTR->module_sources) {
 		fprintf (stderr, "%s:%u: ",
 			COB_MODULE_PTR->module_sources
 			[COB_GET_FILE_NUM(COB_MODULE_PTR->module_stmt)],
@@ -7487,7 +7458,7 @@ output_source_location (void)
 			fprintf (stderr, "%s:", cob_source_file);
 			if (!cob_source_line) {
 				fputc (' ', stderr);
-		}
+			}
 		}
 		if (cob_source_line) {
 			fprintf (stderr, "%u:", cob_source_line);
@@ -7510,6 +7481,7 @@ cob_runtime_warning_external (const char *caller_name, const int cob_reference, 
 	/* Prefix */
 	fprintf (stderr, "libcob: ");
 	if (cob_reference) {
+		cob_get_source_line ();
 		output_source_location ();
 	}
 	fprintf (stderr, _("warning: "));
@@ -7536,6 +7508,7 @@ cob_runtime_warning (const char *fmt, ...)
 
 	/* Prefix */
 	fprintf (stderr, "libcob: ");
+	cob_get_source_line ();
 	output_source_location ();
 	fprintf (stderr, _("warning: "));
 
@@ -7593,6 +7566,7 @@ cob_runtime_error (const char *fmt, ...)
 	va_list			ap;
 
 	int	more_error_procedures = 1;
+	cob_get_source_line ();
 
 	va_start (ap, fmt);
 	cob_setup_runtime_error_str (fmt, ap);
@@ -8836,11 +8810,7 @@ cob_init (const int argc, char **argv)
 	basext = NULL;
 	sort_keys = NULL;
 	sort_collate = NULL;
-	cob_current_program_id = NULL;
-	cob_current_section = NULL;
-	cob_current_paragraph = NULL;
 	cob_source_file = NULL;
-	cob_source_statement = NULL;
 	exit_hdlrs = NULL;
 	hdlrs = NULL;
 	commlncnt = 0;
@@ -9613,6 +9583,7 @@ cob_debug_logger (const char *fmt, ...)
 		cob_debug_hdr = 1;
 	}
 	if (cob_debug_hdr) {
+		cob_get_source_line ();
 		if (cob_debug_log_time) {
 			time = cob_get_current_date_and_time ();
 			fprintf (cob_debug_file, "%02d:%02d:%02d.%02d ", time.hour, time.minute,
