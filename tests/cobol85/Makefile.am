@@ -142,7 +142,7 @@ test-local-compat:
 # FIXME: as some make implementations don't support .PHONY (POSIX 2021)
 # and we don't need it: add all depdencies below (MODULES -> report.txt)
 # then remove the rm of the file below
-summary.log: "$(srcdir)/summary.pl" 
+summary.log:
 	@echo "Computing total test results..."
 	@perl "$(srcdir)/summary.pl" $(MODULES) > $@
 
