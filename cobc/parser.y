@@ -3592,7 +3592,8 @@ _default_clauses:
 
 _default_accept_clause:
   /* empty */
-| ACCEPT _is word_or_terminal
+| ACCEPT  { check_non_area_a ($1); }
+  _is word_or_terminal
   {
 	  CB_PENDING ("ACCEPT statement in DEFAULT SECTION");
 	  /* TODO: setup_default_accept ($3); */
@@ -3601,7 +3602,8 @@ _default_accept_clause:
 
 _default_display_clause:
   /* empty */
-| DISPLAY _is word_or_terminal
+| DISPLAY { check_non_area_a ($1); }
+  _is word_or_terminal
   {
 	  CB_PENDING ("DISPLAY statement in DEFAULT SECTION");
 	  /* TODO: setup_default_display ($3); */

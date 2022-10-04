@@ -1,4 +1,8 @@
 
+2022-10-04  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* pplex.l, parser.y: fix AREACHECK in DEFAULT SECTION of CONTROL DIVISON
+
 2022-10-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (process_command_line): full parse of options on error to provide
