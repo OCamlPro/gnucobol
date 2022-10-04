@@ -10,6 +10,9 @@
 	  (to provide same output as the version that this was used with)
 	* intrinsic.c: extend internal docs
 	* fileio.c: add some guards against bad function calls
+	* common.h (cob_open_mode): new enum instead instead #define'd constants
+	* fileio.c: use cob_open_mode where possible (external functions are
+	  postponed to GC 4.x as this possibly changes the ABI)
 
 2022-10-01  Simon Sobisch <simonsobisch@gnu.org>
 

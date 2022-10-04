@@ -3984,6 +3984,22 @@ output_param (cb_tree x, int id)
 	case CB_TAG_FUNCALL:
 		output_funcall (x);
 		break;
+
+	case CB_TAG_DIRECT: {
+		const struct cb_direct *direct = CB_DIRECT (x);
+		/* LCOV_EXCL_START */
+		if (!direct->flag_is_direct || direct->flag_new_line) {
+			cobc_err_msg (direct->flag_is_direct ?
+				"unexpected \"direct comment\"" :
+				"unexpected \"direct with newline\""
+			);
+			COBC_ABORT ();
+		}
+		/* LCOV_EXCL_STOP */
+		output ("%s", direct->line);
+		break;
+	}
+
 	/* LCOV_EXCL_START */
 	default:
 		CB_TREE_TAG_UNEXPECTED_ABORT (x);
@@ -10625,6 +10641,23 @@ output_display_fields (struct cb_field *f, size_t offset, unsigned int idx)
 	}
 }
 
+const char *
+cb_open_mode_to_string (const enum cob_open_mode mode)
+{
+	switch (mode) {
+	case COB_OPEN_CLOSED:	return CB_XSTRINGIFY (COB_OPEN_CLOSED);
+	case COB_OPEN_INPUT:	return CB_XSTRINGIFY(COB_OPEN_INPUT);
+	case COB_OPEN_OUTPUT:	return CB_XSTRINGIFY (COB_OPEN_OUTPUT);
+	case COB_OPEN_I_O:		return CB_XSTRINGIFY (COB_OPEN_I_O);
+	case COB_OPEN_EXTEND:	return CB_XSTRINGIFY (COB_OPEN_EXTEND);
+	case COB_OPEN_LOCKED:	return CB_XSTRINGIFY (COB_OPEN_LOCKED);
+	}
+	/* LCOV_EXCL_START */
+	cobc_err_msg ("unexpected cob_open_mode");
+	COBC_ABORT ();
+	/* LCOV_EXCL_STOP */
+}
+
 static void
 output_error_handler (struct cb_program *prog)
 {
@@ -10648,7 +10681,7 @@ output_error_handler (struct cb_program *prog)
 		for (hcounter = COB_OPEN_INPUT; hcounter <= COB_OPEN_EXTEND; hcounter++) {
 			hstr = &prog->global_handler[hcounter];
 			if (hstr->handler_label) {
-				output_line ("case %u:", hcounter);
+				output_line ("case %s:", cb_open_mode_to_string (hcounter));
 				output_block_open ();
 				if (prog == hstr->handler_prog) {
 					output_perform_call (hstr->handler_label, NULL);

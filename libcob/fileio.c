@@ -523,7 +523,7 @@ static int dummy_rnxt_rewrite	(cob_file *, const int);
 static int dummy_read		(cob_file *, cob_field *, const int);
 static int dummy_start		(cob_file *, const int, cob_field *);
 
-static int cob_file_open	(cob_file *, char *, const int, const int);
+static int cob_file_open	(cob_file *, char *, const enum cob_open_mode, const int);
 static int cob_file_close	(cob_file *, const int);
 static int cob_savekey (cob_file *f, int idx, unsigned char *data);
 static int cob_file_write_opt	(cob_file *, const int);
@@ -541,7 +541,7 @@ static int relative_write	(cob_file *, const int);
 static int relative_rewrite	(cob_file *, const int);
 static int relative_delete	(cob_file *);
 
-static int indexed_open		(cob_file *, char *, const int, const int);
+static int indexed_open		(cob_file *, char *, const enum cob_open_mode, const int);
 static int indexed_close	(cob_file *, const int);
 static int indexed_start	(cob_file *, const int, cob_field *);
 static int indexed_read		(cob_file *, cob_field *, const int);
@@ -1503,7 +1503,7 @@ cob_file_write_opt (cob_file *f, const int opt)
  */
 static int
 cob_fd_file_open (cob_file *f, char *filename,
-		const int mode, const int sharing,
+		const enum cob_open_mode mode, const int sharing,
 		unsigned int	nonexistent)
 {
 	int		fd;
@@ -1665,7 +1665,7 @@ cob_fd_file_open (cob_file *f, char *filename,
 
 static int
 cob_file_open (cob_file *f, char *filename,
-		const int mode, const int sharing)
+		const enum cob_open_mode mode, const int sharing)
 {
 	/* Note filename points to file_open_name */
 	/* cob_chk_file_mapping manipulates file_open_name directly */
@@ -3817,7 +3817,7 @@ indexed_file_delete (cob_file *f, const char *filename)
 
 static int
 indexed_open (cob_file *f, char *filename,
-			const int mode, const int sharing)
+		const enum cob_open_mode mode, const int sharing)
 {
 	/* Note filename points to file_open_name */
 	/* cob_chk_file_mapping manipulates file_open_name directly */
@@ -5788,6 +5788,8 @@ cob_pre_open (cob_file *f)
 void
 cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 {
+	/*: GC4: mode as cob_open_mode */
+
 	last_operation_open = 1;
 
 	/* File was previously closed with lock */

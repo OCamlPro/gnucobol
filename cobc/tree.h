@@ -2426,6 +2426,7 @@ extern void		cob_gen_optim (const enum cb_optim);
 extern void		codegen (struct cb_program *, const char *);
 extern void		clear_local_codegen_vars (void);
 extern int		cb_wants_dump_comments;	/* likely to be removed later */
+extern const char *	cb_open_mode_to_string (const enum cob_open_mode);
 
 /* scanner.l */
 extern void		cb_unput_dot (void);

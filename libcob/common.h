@@ -843,12 +843,14 @@ enum cob_exception_id {
 
 /* Open mode */
 
-#define COB_OPEN_CLOSED		0
-#define COB_OPEN_INPUT		1
-#define COB_OPEN_OUTPUT		2
-#define COB_OPEN_I_O		3
-#define COB_OPEN_EXTEND		4
-#define COB_OPEN_LOCKED		5
+enum cob_open_mode {
+	COB_OPEN_CLOSED	= 0,
+	COB_OPEN_INPUT	= 1,
+	COB_OPEN_OUTPUT	= 2,
+	COB_OPEN_I_O	= 3,
+	COB_OPEN_EXTEND	= 4,
+	COB_OPEN_LOCKED	= 5
+};
 
 /* Close options */
 
@@ -1328,9 +1330,9 @@ typedef struct __cob_file {
 	unsigned char		organization;		/* ORGANIZATION */
 	unsigned char		access_mode;		/* ACCESS MODE */
 	unsigned char		lock_mode;		/* LOCK MODE */
-	unsigned char		open_mode;		/* OPEN MODE */
+	unsigned char		open_mode;		/* OPEN MODE: GC4: cob_open_mode */
 	unsigned char		flag_optional;		/* OPTIONAL */
-	unsigned char		last_open_mode;		/* Mode given by OPEN */
+	unsigned char		last_open_mode;		/* Mode given by OPEN: GC4: cob_open_mode */
 	unsigned char		flag_operation;		/* File type specific */
 	unsigned char		flag_nonexistent;	/* Nonexistent file */
 
@@ -1563,9 +1565,9 @@ typedef struct __cob_global {
 
 } cob_global;
 
-/* File I/O function pointer structure */
+/* File I/O function pointer structure (left here as it needs to be "external" for GC 4.x) */
 struct cob_fileio_funcs {
-	int	(*open)		(cob_file *, char *, const int, const int);
+	int	(*open)		(cob_file *, char *, const enum cob_open_mode, const int);
 	int	(*close)	(cob_file *, const int);
 	int	(*start)	(cob_file *, const int, cob_field *);
 	int	(*read)		(cob_file *, cob_field *, const int);
