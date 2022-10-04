@@ -480,10 +480,15 @@ make_constant_label (const char *name)
 char *
 literal_for_diagnostic (char *buff, const char *literal_data) {
 
+	const size_t size = strlen (literal_data);
 	char *bad_pos;
 
-	strncpy (buff, literal_data, CB_ERR_LITMAX);
-	buff[CB_ERR_LITMAX] = '\0';
+	if (size < CB_ERR_LITMAX) {
+		memcpy (buff, literal_data, size + 1);
+	} else {
+		memcpy (buff, literal_data, CB_ERR_LITMAX - 1);
+		buff[CB_ERR_LITMAX] = '\0';
+	}
 
 	/* this previously happened because of a bug in pplex.l,
 	   as this is a seldom-called function and only
@@ -491,7 +496,8 @@ literal_for_diagnostic (char *buff, const char *literal_data) {
 	   initializer for 'bad_pos' and additional security net */
 	bad_pos = strchr (buff, '\n');
 
-	if (strlen (literal_data) >= CB_ERR_LITMAX) {
+	if ( size >= CB_ERR_LITMAX
+	 || (bad_pos && bad_pos - buff + 4 > CB_ERR_LITMAX)) {
 		char *long_pos = buff + CB_ERR_LITMAX - 4;
 		if (!bad_pos
 		 || bad_pos > long_pos) {
@@ -509,76 +515,66 @@ literal_for_diagnostic (char *buff, const char *literal_data) {
 static size_t
 cb_name_1 (char *s, cb_tree x, const int size)
 {
-	char			*orig;
-	struct cb_funcall	*cbip;
-	struct cb_binary_op	*cbop;
-	struct cb_reference	*p;
-	struct cb_field		*f;
-	struct cb_intrinsic	*cbit;
-	cb_tree			l;
-	int			i;
+	const char			*orig = s;
 
-	orig = s;
 	if (!x) {
-		strncpy (s, "(void pointer)", size);
-		return strlen (orig);
+		return snprintf (s, size, "%s", "(void pointer)");
 	}
 	switch (CB_TREE_TAG (x)) {
 	case CB_TAG_CONST:
 		if (x == cb_any) {
-			strncpy (s, "ANY", size);
+			return snprintf (s, size, "%s", "ANY");
 		} else if (x == cb_true) {
-			strncpy (s, "TRUE", size);
+			return snprintf (s, size, "%s", "TRUE");
 		} else if (x == cb_false) {
-			strncpy (s, "FALSE", size);
+			return snprintf (s, size, "%s", "FALSE");
 		} else if (x == cb_null) {
-			strncpy (s, "NULL", size);
+			return snprintf (s, size, "%s", "NULL");
 		} else if (x == cb_zero) {
-			strncpy (s, "ZERO", size);
+			return snprintf (s, size, "%s", "ZERO");
 		} else if (x == cb_space) {
-			strncpy (s, "SPACE", size);
+			return snprintf (s, size, "%s", "SPACE");
 		} else if (x == cb_low || x == cb_norm_low) {
-			strncpy (s, "LOW-VALUE", size);
+			return snprintf (s, size, "%s", "LOW-VALUE");
 		} else if (x == cb_high || x == cb_norm_high) {
-			strncpy (s, "HIGH-VALUE", size);
+			return snprintf (s, size, "%s", "HIGH-VALUE");
 		} else if (x == cb_quote) {
-			strncpy (s, "QUOTE", size);
+			return snprintf (s, size, "%s", "QUOTE");
 		} else if (x == cb_error_node) {
-			strncpy (s, _("internal error node"), size);
+			return snprintf (s, size, "%s", _("internal error node"));
 		} else {
-			strncpy (s, _("unknown constant"), size);
+			return snprintf (s, size, "%s", _("unknown constant"));
 		}
-		break;
 
 	case CB_TAG_LITERAL:
 		/* should only be called for diagnostic messages,
 		   so limit as in scanner.l:  */
 		if (CB_TREE_CLASS (x) == CB_CLASS_NUMERIC) {
-			strncpy (s, (char *)CB_LITERAL (x)->data, size);
+			return snprintf (s, size, "%s", (char *)CB_LITERAL (x)->data);
 		} else {
 			char	lit_buff[CB_ERR_LITMAX + 1];
-			snprintf (s, size, _("literal \"%s\""),
+			return snprintf (s, size, _("literal \"%s\""),
 				literal_for_diagnostic (lit_buff, (char *)CB_LITERAL (x)->data));
 		}
-		break;
 
-	case CB_TAG_FIELD:
-		f = CB_FIELD (x);
+	case CB_TAG_FIELD: {
+		const struct cb_field *f = CB_FIELD (x);
 		if (f->flag_filler) {
-			strncpy (s, "FILLER", size);
+			return snprintf (s, size, "%s", "FILLER");
 		} else {
-			strncpy (s, f->name, size);
+			return snprintf (s, size, "%s", f->name);
 		}
-		break;
+	}
 
-	case CB_TAG_REFERENCE:
-		p = CB_REFERENCE (x);
+	case CB_TAG_REFERENCE: {
+		struct cb_reference *p = CB_REFERENCE (x);
 		if (p->flag_filler_ref) {
 			s += snprintf (s, size, "FILLER");
 		} else {
 			s += snprintf (s, size, "%s", p->word->name);
 		}
 		if (p->subs && CB_VALUE(p->subs) != cb_int1) {
+			cb_tree			l;
 			s += snprintf (s, size - (s - orig), " (");
 			p->subs = cb_list_reverse (p->subs);
 			for (l = p->subs; l; l = CB_CHAIN (l)) {
@@ -594,32 +590,29 @@ cb_name_1 (char *s, cb_tree x, const int size)
 			if (p->length) {
 				s += cb_name_1 (s, p->length, size - (s - orig));
 			}
-			strncpy (s, ")", size - (s - orig));
+			s += snprintf (s, size - (s - orig), ")");
 		}
 		if (p->chain) {
 			s += snprintf (s, size - (s - orig), " in ");
 			s += cb_name_1 (s, p->chain, size - (s - orig));
 		}
-		break;
+		return s - orig;
+	}
 
 	case CB_TAG_LABEL:
-		snprintf (s, size, "%s", (char *)(CB_LABEL (x)->name));
-		break;
+		return snprintf (s, size, "%s", (char *)(CB_LABEL (x)->name));
 
 	case CB_TAG_ALPHABET_NAME:
-		snprintf (s, size, "%s", CB_ALPHABET_NAME (x)->name);
-		break;
+		return snprintf (s, size, "%s", CB_ALPHABET_NAME (x)->name);
 
 	case CB_TAG_CLASS_NAME:
-		snprintf (s, size, "%s", CB_CLASS_NAME (x)->name);
-		break;
+		return snprintf (s, size, "%s", CB_CLASS_NAME (x)->name);
 
 	case CB_TAG_LOCALE_NAME:
-		snprintf (s, size, "%s", CB_LOCALE_NAME (x)->name);
-		break;
+		return snprintf (s, size, "%s", CB_LOCALE_NAME (x)->name);
 
-	case CB_TAG_BINARY_OP:
-		cbop = CB_BINARY_OP (x);
+	case CB_TAG_BINARY_OP: {
+		const struct cb_binary_op * cbop = CB_BINARY_OP (x);
 		if (cbop->op == '@') {
 			s += snprintf (s, size, "(");
 			s += cb_name_1 (s, cbop->x, size - (s - orig));
@@ -632,61 +625,66 @@ cb_name_1 (char *s, cb_tree x, const int size)
 			s += cb_name_1 (s, cbop->x, size - (s - orig));
 			s += snprintf (s, size - (s - orig), " %c ", cbop->op);
 			s += cb_name_1 (s, cbop->y, size - (s - orig));
-			strncpy (s, ")", size - (s - orig));
+			s += snprintf (s, size - (s - orig), ")");
 		}
-		break;
+		return s - orig;
+	}
 
-	case CB_TAG_FUNCALL:
-		cbip = CB_FUNCALL (x);
+	case CB_TAG_FUNCALL: {
+		const struct cb_funcall *cbip = CB_FUNCALL (x);
+		int i;
 		s += snprintf (s, size, "%s", cbip->name);
 		for (i = 0; i < cbip->argc; i++) {
 			s += snprintf (s, size - (s - orig), (i == 0) ? "(" : ", ");
 			s += cb_name_1 (s, cbip->argv[i], size - (s - orig));
 		}
 		s += snprintf (s, size - (s - orig), ")");
-		break;
+		return s - orig;
+	}
 
-	case CB_TAG_INTRINSIC:
-		cbit = CB_INTRINSIC (x);
+	case CB_TAG_INTRINSIC: {
+		const struct cb_intrinsic *cbit = CB_INTRINSIC (x);
 		if (!cbit->isuser) {
-			snprintf (s, size, "FUNCTION %s", cbit->intr_tab->name);
-		} else if (cbit->name && CB_REFERENCE_P(cbit->name)
-				&& CB_REFERENCE(cbit->name)->word) {
-			snprintf (s, size, "USER FUNCTION %s", CB_REFERENCE(cbit->name)->word->name);
+			return snprintf (s, size, "FUNCTION %s", cbit->intr_tab->name);
+		} else
+		if (cbit->name && CB_REFERENCE_P (cbit->name)
+		 && CB_REFERENCE(cbit->name)->word) {
+			return snprintf (s, size, "USER FUNCTION %s", CB_REFERENCE (cbit->name)->word->name);
 		} else {
-			snprintf (s, size, "USER FUNCTION");
+			return snprintf (s, size, "USER FUNCTION");
 		}
-		break;
+	}
 
 	case CB_TAG_FILE:
-		snprintf (s, size, "FILE %s", CB_FILE (x)->name);
-		break;
+		return snprintf (s, size, "FILE %s", CB_FILE (x)->name);
 
 	case CB_TAG_REPORT:
-		snprintf (s, size, "REPORT %s", CB_REPORT_PTR (x)->name);
-		break;
+		return snprintf (s, size, "REPORT %s", CB_REPORT_PTR (x)->name);
 
-	case CB_TAG_REPORT_LINE:
+	case CB_TAG_REPORT_LINE: {
+		struct cb_reference *p;
+		struct cb_field *f;
 #if 1	/* FIXME: Why do we need the unchecked cast here? */
 		p = (struct cb_reference *)x;
 #else
 		p = CB_REFERENCE (x);
 #endif
 		f = CB_FIELD (p->value);
-		snprintf (s, size, "REPORT LINE %s", f->name);
-		break;
+		return snprintf (s, size, "REPORT LINE %s", f->name);
+	}
 
 	case CB_TAG_CD:
-		snprintf (s, size, "%s", CB_CD (x)->name);
-		break;
+		return snprintf (s, size, "%s", CB_CD (x)->name);
 
 	/* LCOV_EXCL_START */
 	default:
 		CB_TREE_TAG_UNEXPECTED_ABORT (x);
-	/* LCOV_EXCL_STOP */
 	}
+	/* LCOV_EXCL_STOP */
 
+#if 0	/* currently unused */
 	return strlen (orig);
+#endif
 }
 
 static cb_tree
@@ -1221,12 +1219,12 @@ char *
 cb_name (cb_tree x)
 {
 	char	*s;
-	char	tmp[COB_SMALL_BUFF] = { 0 };
+	char	tmp[COB_SMALL_BUFF];
 	size_t	tlen;
 
 	tlen = cb_name_1 (tmp, x, COB_SMALL_MAX);
 	s = cobc_parse_malloc (tlen + 1);
-	strncpy (s, tmp, tlen);
+	memcpy (s, tmp, tlen);
 
 	return s;
 }
@@ -1235,13 +1233,13 @@ cb_tree
 cb_exhbit_literal (cb_tree x)
 {
 	char	*s;
-	char	tmp[COB_NORMAL_BUFF] = { 0 };
+	char	tmp[COB_NORMAL_BUFF];
 	size_t	tlen;
 
 	tlen = cb_name_1 (tmp, x, COB_NORMAL_MAX);
 	s = cobc_parse_malloc (tlen + 4);
-	strcpy (s, tmp);
-	strcpy (s + tlen, " = ");
+	memcpy (s, tmp, tlen);
+	memcpy (s + tlen, " = ", 4);
 	return CB_TREE (build_literal (CB_CATEGORY_ALPHANUMERIC, s, tlen + 3));
 }
 
@@ -2645,7 +2643,6 @@ cb_concat_literals (const cb_tree x1, const cb_tree x2)
 {
 	struct cb_literal	*p;
 	cb_tree			l;
-	char		lit_out[39];
 
 	if (x1 == cb_error_node || x2 == cb_error_node) {
 		return cb_error_node;
@@ -2668,9 +2665,8 @@ cb_concat_literals (const cb_tree x1, const cb_tree x2)
 		return cb_error_node;
 	}
 	if (p->size > cb_lit_length) {
-		/* shorten literal for output */
-		strncpy (lit_out, (char *)p->data, 38);
-		strcpy (lit_out + 35, "...");
+		char		lit_out[39];
+		literal_for_diagnostic (lit_out, (void *)p->data);
 		cb_error_x (x1, _("invalid literal: '%s'"), lit_out);
 		cb_error_x (x1, _("literal length %d exceeds %d characters"),
 			p->size, cb_lit_length);
@@ -3234,7 +3230,7 @@ get_number_in_parentheses (const unsigned char ** p,
 		/* Copy name */
 		name_length = close_paren - open_paren;
 		name_buff = cobc_parse_malloc (name_length);
-		strncpy (name_buff, (char *) open_paren + 1, name_length);
+		memcpy (name_buff, open_paren + 1, name_length - 1);
 		name_buff[name_length - 1] = '\0';
 
 		/* TODO: check if name_buf contains a valid user-defined name or not */

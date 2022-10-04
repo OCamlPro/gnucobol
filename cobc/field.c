@@ -673,11 +673,28 @@ cb_resolve_redefines (struct cb_field *field, cb_tree redefines)
 static void copy_into_field_recursive (struct cb_field *, struct cb_field *, const int);
 
 static void
+copy_duplicated_field_into_field (struct cb_field *field, struct cb_field *target,
+	const int level, const int outer_indexes, const enum cb_storage storage)
+{
+	cb_tree	x;
+	if (!field->flag_filler && field->name) {
+		x = cb_build_field_tree (NULL, cb_build_reference (field->name),
+			target, storage, NULL, level);
+	} else {
+		x = cb_build_field_tree (NULL, cb_build_filler (),
+			target, storage, NULL, level);
+	}
+	if (x == cb_error_node) {
+		return;
+	}
+	copy_into_field_recursive (field, CB_FIELD (x), outer_indexes);
+}
+
+static void
 copy_children (struct cb_field *child, struct cb_field *target,
 	const int level, const int outer_indexes, const enum cb_storage storage)
 {
 	int level_child;
-	cb_tree n, x;
 
 	if (child->level > level) {
 		level_child = child->level;
@@ -690,15 +707,8 @@ copy_children (struct cb_field *child, struct cb_field *target,
 		}
 	}
 
-	if (child->name) {
-		n = cb_build_reference (child->name);
-	} else {
-		n = cb_build_filler ();
-	}
-	x = cb_build_field_tree (NULL, n, target, storage, NULL, level_child);
-	if (x != cb_error_node) {
-		copy_into_field_recursive (child, CB_FIELD (x), outer_indexes);
-	}
+	copy_duplicated_field_into_field (child, target, level_child,
+		outer_indexes, storage);
 }
 
 #define field_attribute_copy(attribute)	\
@@ -795,16 +805,8 @@ copy_into_field_recursive (struct cb_field *source, struct cb_field *target,
 
 	if (source->sister) {
 		/* for children: all sister entries need to be copied */
-		cb_tree n, x;
-		if (source->sister->name) {
-			n = cb_build_reference (source->sister->name);
-		} else {
-			n = cb_build_filler ();
-		}
-		x = cb_build_field_tree (NULL, n, target, target->storage, NULL, target->level);
-		if (x != cb_error_node) {
-			copy_into_field_recursive (source->sister, CB_FIELD (x), outer_indexes);
-		}
+		copy_duplicated_field_into_field (source->sister,
+			target, target->level, outer_indexes, target->storage);
 	}
 	/* special case: normally incremented during parse */
 	target->indexes = source->indexes + outer_indexes;

@@ -1263,21 +1263,19 @@ cb_check_field_debug (cb_tree fld)
 	}
 
 	/* Set up debug info */
-	strncpy (buff, CB_FIELD(x)->name, COB_MAX_WORDLEN);
-	buff[COB_MAX_WORDLEN] = 0;
+	size = sprintf (buff, "%s", CB_FIELD (x)->name);
 	l = CB_REFERENCE (fld)->chain;
 	if (l) {
-		size = strlen (buff);
 		for (; l; l = CB_REFERENCE (l)->chain) {
 			z = cb_ref (l);
 			if (z != cb_error_node) {
-				size += strlen (CB_FIELD (z)->name);
-				size += 4;
-				if (size >= sizeof(buff)) {
+				const size_t size_new = strlen (CB_FIELD (z)->name) + 1;
+				if (size + 4 + size_new >= sizeof(buff)) {
 					break;
 				}
-				strcat (buff, " OF ");
-				strcat (buff, CB_FIELD (z)->name);
+				memcpy (buff + size, " OF ", 4);
+				size += 4;
+				memcpy (buff + size, CB_FIELD (z)->name, size_new);
 			}
 		}
 	}
@@ -2932,7 +2930,7 @@ cb_build_const_next (struct cb_field *f)
 cb_tree
 cb_build_length (cb_tree x)
 {
-	struct cb_field		*f;
+	struct cb_field		*f, *ftemp;
 	struct cb_literal	*l;
 	cb_tree			temp;
 	char			buff[32];
@@ -2972,8 +2970,9 @@ cb_build_length (cb_tree x)
 		}
 	}
 	temp = cb_build_index (cb_build_filler (), NULL, 0, NULL);
-	CB_FIELD (cb_ref (temp))->usage = CB_USAGE_LENGTH;
-	CB_FIELD (cb_ref (temp))->count++;
+	ftemp = CB_FIELD (cb_ref (temp));
+	ftemp->usage = CB_USAGE_LENGTH;
+	ftemp->count++;
 	cb_emit (cb_build_assign (temp, cb_build_length_1 (x)));
 	return temp;
 }
@@ -3400,7 +3399,7 @@ get_size (cb_tree x)
 {
 	switch (CB_TREE_TAG (x)) {
 	case CB_TAG_CONST:
-		return strlen (CB_CONST (x)->val);
+		return (int)strlen (CB_CONST (x)->val);
 	case CB_TAG_LITERAL:
 		return CB_LITERAL (x)->size;
 	case CB_TAG_FIELD:
@@ -4122,6 +4121,7 @@ cb_validate_program_environment (struct cb_program *prog)
 void
 cb_build_debug_item (void)
 {
+	struct cb_field	*f;
 	cb_tree			l;
 	cb_tree			x;
 	cb_tree			lvl01_tree;
@@ -4148,95 +4148,96 @@ cb_build_debug_item (void)
 	l = cb_build_reference ("DEBUG-ITEM");
 	lvl01_tree = cb_build_field_tree (NULL, l, NULL, CB_STORAGE_WORKING,
 				 NULL, 1);
-	CB_FIELD (lvl01_tree)->values = CB_LIST_INIT (cb_space);
+	f = CB_FIELD (lvl01_tree);
+	f->values = CB_LIST_INIT (cb_space);
 	cb_debug_item = l;
 
 	l = cb_build_reference ("DEBUG-LINE");
-	x = cb_build_field_tree (NULL, l, CB_FIELD(lvl01_tree),
-				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = cb_build_picture ("X(6)");
-	cb_validate_field (CB_FIELD (x));
+	x = cb_build_field_tree (NULL, l, f, CB_STORAGE_WORKING, NULL, 3);
+	f = CB_FIELD (x);
+	f->pic = cb_build_picture ("X(6)");
+	cb_validate_field (f);
 	cb_debug_line = l;
 
 	l = cb_build_filler ();
-	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
-				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = cb_build_picture ("X");
-	CB_FIELD (x)->flag_filler = 1;
-	cb_validate_field (CB_FIELD (x));
+	x = cb_build_field_tree (NULL, l, f, CB_STORAGE_WORKING, NULL, 3);
+	f = CB_FIELD (x);
+	f->pic = cb_build_picture ("X");
+	f->flag_filler = 1;
+	cb_validate_field (f);
 
 	l = cb_build_reference ("DEBUG-NAME");
-	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
-				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = cb_build_picture ("X(30)");
-	cb_validate_field (CB_FIELD (x));
+	x = cb_build_field_tree (NULL, l, f, CB_STORAGE_WORKING, NULL, 3);
+	f = CB_FIELD (x);
+	f->pic = cb_build_picture ("X(30)");
+	cb_validate_field (f);
 	cb_debug_name = l;
 
 	l = cb_build_filler ();
-	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
-				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = cb_build_picture ("X");
-	CB_FIELD (x)->flag_filler = 1;
-	cb_validate_field (CB_FIELD (x));
+	x = cb_build_field_tree (NULL, l, f, CB_STORAGE_WORKING, NULL, 3);
+	f = CB_FIELD (x);
+	f->pic = cb_build_picture ("X");
+	f->flag_filler = 1;
+	cb_validate_field (f);
 
 	l = cb_build_reference ("DEBUG-SUB-1");
-	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
-				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = cb_build_picture ("S9(4)");
-	CB_FIELD (x)->flag_sign_leading = 1;
-	CB_FIELD (x)->flag_sign_separate = 1;
-	cb_validate_field (CB_FIELD (x));
+	x = cb_build_field_tree (NULL, l, f, CB_STORAGE_WORKING, NULL, 3);
+	f = CB_FIELD (x);
+	f->pic = cb_build_picture ("S9(4)");
+	f->flag_sign_leading = 1;
+	f->flag_sign_separate = 1;
+	cb_validate_field (f);
 	cb_debug_sub_1 = l;
 
 	l = cb_build_filler ();
-	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
-				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = cb_build_picture ("X");
-	CB_FIELD (x)->flag_filler = 1;
-	cb_validate_field (CB_FIELD (x));
+	x = cb_build_field_tree (NULL, l, f, CB_STORAGE_WORKING, NULL, 3);
+	f = CB_FIELD (x);
+	f->pic = cb_build_picture ("X");
+	f->flag_filler = 1;
+	cb_validate_field (f);
 
 	l = cb_build_reference ("DEBUG-SUB-2");
-	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
-				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = cb_build_picture ("S9(4)");
-	CB_FIELD (x)->flag_sign_leading = 1;
-	CB_FIELD (x)->flag_sign_separate = 1;
-	cb_validate_field (CB_FIELD (x));
+	x = cb_build_field_tree (NULL, l, f, CB_STORAGE_WORKING, NULL, 3);
+	f = CB_FIELD (x);
+	f->pic = cb_build_picture ("S9(4)");
+	f->flag_sign_leading = 1;
+	f->flag_sign_separate = 1;
+	cb_validate_field (f);
 	cb_debug_sub_2 = l;
 
 	l = cb_build_filler ();
-	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
-				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = cb_build_picture ("X");
-	CB_FIELD (x)->flag_filler = 1;
-	cb_validate_field (CB_FIELD (x));
+	x = cb_build_field_tree (NULL, l, f, CB_STORAGE_WORKING, NULL, 3);
+	f = CB_FIELD (x);
+	f->pic = cb_build_picture ("X");
+	f->flag_filler = 1;
+	cb_validate_field (f);
 
 	l = cb_build_reference ("DEBUG-SUB-3");
-	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
-				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = cb_build_picture ("S9(4)");
-	CB_FIELD (x)->flag_sign_leading = 1;
-	CB_FIELD (x)->flag_sign_separate = 1;
-	cb_validate_field (CB_FIELD (x));
+	x = cb_build_field_tree (NULL, l, f, CB_STORAGE_WORKING, NULL, 3);
+	f = CB_FIELD (x);
+	f->pic = cb_build_picture ("S9(4)");
+	f->flag_sign_leading = 1;
+	f->flag_sign_separate = 1;
+	cb_validate_field (f);
 	cb_debug_sub_3 = l;
 
 	l = cb_build_filler ();
-	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
-				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = cb_build_picture ("X");
-	CB_FIELD (x)->flag_filler = 1;
-	cb_validate_field (CB_FIELD (x));
+	x = cb_build_field_tree (NULL, l, f, CB_STORAGE_WORKING, NULL, 3);
+	f = CB_FIELD (x);
+	f->pic = cb_build_picture ("X");
+	f->flag_filler = 1;
+	cb_validate_field (f);
 
 	l = cb_build_reference ("DEBUG-CONTENTS");
-	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
-				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic =
-		cb_build_picture ("X(" CB_XSTRINGIFY(DFLT_DEBUG_CONTENTS_SIZE) ")");
-	cb_validate_field (CB_FIELD (x));
+	x = cb_build_field_tree (NULL, l, f, CB_STORAGE_WORKING, NULL, 3);
+	f = CB_FIELD (x);
+	f->pic = cb_build_picture ("X(" CB_XSTRINGIFY(DFLT_DEBUG_CONTENTS_SIZE) ")");
+	cb_validate_field (f);
 	cb_debug_contents = l;
 
-	cb_validate_field (CB_FIELD (lvl01_tree));
-	CB_FIELD_ADD (current_program->working_storage, CB_FIELD (lvl01_tree));
+	f = CB_FIELD (lvl01_tree);
+	cb_validate_field (f);
+	CB_FIELD_ADD (current_program->working_storage, f);
 }
 
 static void
@@ -9535,10 +9536,12 @@ cb_emit_initialize (cb_tree vars, cb_tree fillinit, cb_tree value,
 			   PIC L fields are initialized up to length indicated
 			   by DEPENDING var. */
 			cb_tree		temp;
+			struct cb_field	*f;
 			temp = cb_build_index (cb_build_filler (), NULL, 0, NULL);
-			CB_FIELD (cb_ref (temp))->usage = CB_USAGE_LENGTH;
-			CB_FIELD (cb_ref (temp))->count++;
-			CB_FIELD (cb_ref (temp))->pic->have_sign = 0;	/* LENGTH is UNSIGNED */
+			f = CB_FIELD (cb_ref (temp));
+			f->usage = CB_USAGE_LENGTH;
+			f->count++;
+			f->pic->have_sign = 0;	/* LENGTH is UNSIGNED */
 			cb_emit (cb_build_assign (temp, cb_build_length_1 (x)));
 			CB_REFERENCE (x)->length = temp;
 		}

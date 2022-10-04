@@ -243,8 +243,10 @@ int			cb_listing_xref = 0;
 #define			CB_LISTING_DATE_MAX (CB_LISTING_DATE_BUFF - 1)
 char			cb_listing_date[CB_LISTING_DATE_BUFF]; /* Date/Time buffer for listing */
 struct list_files	*cb_current_file = NULL;
-#define			LCL_NAME_LEN 80
-#define			LCL_NAME_MAX (LCL_NAME_LEN - 1)
+
+#if COB_MAX_WORDLEN > 80 - 1
+#error word length > listing data -> adjust one of those
+#endif
 
 /* compilation date/time of current source file */
 struct cob_time		current_compile_time = { 0 };
@@ -3287,7 +3289,7 @@ process_command_line (const int argc, char **argv)
 			conf_entry = cobc_malloc (COB_MINI_BUFF - 2);
 			snprintf (conf_label, COB_MINI_MAX, "-%s=%s",
 				long_options[idx].name, cob_optarg);
-			strncpy(conf_entry, conf_label + 2, COB_MINI_MAX - 2);
+			strcpy (conf_entry, conf_label + 2);
 			conf_ret |= cb_config_entry (conf_entry, conf_label, 0);
 			cobc_free (conf_entry);
 			break;
@@ -5105,14 +5107,10 @@ check_filler_name (char *name)
 	return name;
 }
 
+/* note: picture_len may also be only 24!*/
 static int
 set_picture (struct cb_field *field, char *picture, size_t picture_len)
 {
-	size_t usage_len;
-	char picture_usage[CB_LIST_PICSIZE] = { 0 };
-
-	memset (picture, 0, CB_LIST_PICSIZE);
-
 	/* check for external definition first */
 	if (field->external_definition) {
 		if (field->external_definition == cb_error_node) {
@@ -5159,11 +5157,7 @@ set_picture (struct cb_field *field, char *picture, size_t picture_len)
 		return 1;
 	}
 
-	/* Get usage for this picture */
-	strcpy (picture_usage, cb_get_usage_string (field->usage));
-	usage_len = strlen (picture_usage);
-
-	/* set picture for the rest */
+	/* set picture for everything, possibly add USAGE */
 	if (field->usage == CB_USAGE_BINARY
 	 || field->usage == CB_USAGE_FLOAT
 	 || field->usage == CB_USAGE_DOUBLE
@@ -5172,27 +5166,35 @@ set_picture (struct cb_field *field, char *picture, size_t picture_len)
 	 || field->usage == CB_USAGE_COMP_6
 	 || field->usage == CB_USAGE_COMP_X
 	 || field->usage == CB_USAGE_COMP_N) {
+		const char *picture_usage = cb_get_usage_string (field->usage);
+		const size_t usage_len = strlen (picture_usage);
 		if (field->pic) {
 			strncpy (picture, field->pic->orig, picture_len - 1 - usage_len);
 			picture[CB_LIST_PICSIZE - 1] = 0;
 			strcat (picture, " ");
 		}
+		strcat (picture, picture_usage);
+		return 1;
 	} else if (field->flag_any_numeric) {
-		strncpy (picture, "9 ANY NUMERIC", 14);
+		strcpy (picture, "9 ANY NUMERIC");
 		return 1;
 	} else if (field->flag_any_length) {
-		strncpy (picture, "X ANY LENGTH", 13);
+		strcpy (picture, "X ANY LENGTH");
 		return 1;
 	} else {
+		size_t fpic_len;
 		if (!field->pic) {
 			return 0;
 		}
-		strncpy (picture, field->pic->orig, picture_len - 1);
+		fpic_len = strlen (field->pic->orig);
+		if (fpic_len < picture_len) {
+			memcpy (picture, field->pic->orig, fpic_len + 1);
+		} else {
+			memcpy (picture, field->pic->orig, picture_len - 1);
+			picture [picture_len] = 0;
+		}
 		return 1;
 	}
-
-	strcat (picture, picture_usage);
-	return 1;
 }
 
 static void
@@ -5283,13 +5285,11 @@ static void
 print_88_values (struct cb_field *field)
 {
 	struct cb_field *f;
-	char lcl_name[LCL_NAME_LEN] = { '\0' };
 
 	for (f = field->validation; f; f = f->sister) {
-		strncpy (lcl_name, (char *)f->name, LCL_NAME_MAX);
 		snprintf (print_data, CB_PRINT_LEN,
 			"      %-14.14s %02d   %s",
-			"CONDITIONAL", f->level, lcl_name);
+			"CONDITIONAL", f->level, f->name);
 		print_program_data (print_data);
 	}
 }
@@ -5304,7 +5304,7 @@ print_fields (struct cb_field *top, int *found)
 	const size_t	picture_len = cb_listing_wide ? 64 : 24;
 	char	type[20];
 	char	picture[CB_LIST_PICSIZE];
-	char	lcl_name[LCL_NAME_LEN];
+	const char	*name_or_filler;
 
 	for (; top; top = top->sister) {
 		/* hiding internal fields, when not referenced */
@@ -5325,9 +5325,6 @@ print_fields (struct cb_field *top, int *found)
 		 && !first) {
 			print_program_data ("");
 		}
-
-		strncpy (lcl_name, check_filler_name ((char *)top->name),
-			 LCL_NAME_MAX);
 
 		if (top->children) {
 			strcpy (type, "GROUP");
@@ -5354,12 +5351,13 @@ print_fields (struct cb_field *top, int *found)
 
 		pd_off += sprintf (print_data + pd_off, "%-14.14s %02d   ", type, top->level);
 
+		name_or_filler = check_filler_name (top);
 		if (got_picture) {
-			pd_off += sprintf (print_data + pd_off, "%-30.30s %s", lcl_name, picture);
+			pd_off += sprintf (print_data + pd_off, "%-30.30s %s", name_or_filler, picture);
 		} else if (top->flag_occurs) {
-			pd_off += sprintf (print_data + pd_off, "%-30.30s ", lcl_name);
+			pd_off += sprintf (print_data + pd_off, "%-30.30s ", name_or_filler);
 		} else { /* Trailing spaces break testsuite AT_DATA */
-			pd_off += sprintf (print_data + pd_off, "%s", lcl_name);
+			pd_off += sprintf (print_data + pd_off, "%s", name_or_filler);
 		}
 
 		if (top->flag_occurs) {
@@ -5576,8 +5574,8 @@ static void
 xref_print (struct cb_xref *xref, const enum xref_type type, struct cb_xref *xref_parent)
 {
 	struct cb_xref_elem	*elem;
-	int     		cnt;
-	int     		maxcnt = cb_listing_wide ? 10 : 5;
+	int    		cnt;
+	int    		maxcnt = cb_listing_wide ? 10 : 5;
 
 	if (xref->head == NULL) {
 		sprintf (print_data + pd_off, "  ");
@@ -5628,13 +5626,10 @@ static void
 xref_88_values (struct cb_field *field)
 {
 	struct cb_field *f;
-	char lcl_name[LCL_NAME_LEN] = { '\0' };
 
 	for (f = field->validation; f; f = f->sister) {
-		strncpy (lcl_name, (char *)f->name, LCL_NAME_MAX);
-		pd_off = sprintf (print_data,
-			"%-30.30s %-6u ",
-			lcl_name, f->common.source_line);
+		pd_off = sprintf (print_data, "%-30.30s %-6u ",
+			f->name, f->common.source_line);
 		xref_print (&f->xref, XREF_FIELD, NULL);
 	}
 }
@@ -5642,7 +5637,6 @@ xref_88_values (struct cb_field *field)
 static int
 xref_fields (struct cb_field *top)
 {
-	char		lcl_name[LCL_NAME_LEN];
 	int		found = 0;
 
 	for (; top; top = top->sister) {
@@ -5651,10 +5645,7 @@ xref_fields (struct cb_field *top)
 		 || (top->flag_internal_register && !top->count)) {
 			continue;
 		}
-
-		strncpy (lcl_name, check_filler_name ((char *)top->name), LCL_NAME_MAX);
-		lcl_name[LCL_NAME_MAX] = 0;	/* make sure we always have the trailing NULL */
-		if (!strcmp (lcl_name, "FILLER") && !top->validation) {
+		if (!top->flag_filler && !top->validation) {
 			if (top->children) {
 				found += xref_fields (top->children);
 			}
@@ -5662,7 +5653,7 @@ xref_fields (struct cb_field *top)
 		}
 		found = 1;
 		pd_off = sprintf (print_data, "%-30.30s %-6u ",
-			 lcl_name, top->common.source_line);
+			 check_filler_name (top), top->common.source_line);
 
 		/* print xref for field */
 		if (top->parent) {

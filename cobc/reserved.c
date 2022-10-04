@@ -4587,9 +4587,7 @@ get_aliases (const unsigned int key, struct list_reserved_line *line)
 		if (i != key
 		    && reserved_word_map[i]
 		    && reserved_word_map[i]->token == given_token) {
-			strncpy (aliases[j], reserved_word_map[i]->name,
-				 COB_MAX_WORDLEN);
-			++j;
+			strcpy (aliases[j++], reserved_word_map[i]->name);
 		}
 	}
 	qsort (aliases, num_aliases, COB_MAX_WORDLEN + 1, &strcmp_for_qsort);
@@ -4656,11 +4654,11 @@ get_system_name (const char *name)
 cb_tree
 get_system_name_translated (cb_tree word)
 {
+	/* note: word never exceeds COB_MAX_WORDLEN */
 	char system_name[COB_MAX_WORDLEN + 1];
 	cb_tree res;
 
-	system_name[COB_MAX_WORDLEN] = 0;
-	strncpy(system_name, CB_NAME (word), COB_MAX_WORDLEN);
+	strcpy (system_name, CB_NAME (word));
 	if (system_name [6] == '_') {
 		system_name [6] = ' ';
 	}
