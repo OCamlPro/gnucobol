@@ -1,9 +1,17 @@
 
+2022-10-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (process_command_line): full parse of options on error to provide
+	  all information to the user
+
 2022-10-01  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y (function): attach ref-mod to all kind of functions to consume
 	  them here and to pass invalid ref-mod for all numeric intrinsics to
 	  cb_build_intrinsic enable us to create a nice diagnostic
+	* cobc.c, flag.def: do not imply -fsource-location with -g any more (but
+	  still with --debug and -ftrace-all); imply -fsource-location with -fdump
+	* codegen.c: don't output source location for -fdump -fno-source-location
 
 2022-09-30  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
@@ -19,6 +27,7 @@
 	  on level 01 OCCURS items, bug introduced with 2022-07-12
 	* pplex.l: dropped check for "spurious '$'", fixing bug #839
 	  and acucomment not handling $ correct
+	* codegen.c (output_section_info, output_trace_info): minor refactoring
 
 2022-09-29  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -413,7 +422,7 @@
 	* pplex.l (next_word_is_comment_paragraph_name): extracted from (ppinput)
 	* pplex.l (get_word): new function to extract word and use in
 	  (is_condition_directive_clause, next_word_is_comment_paragraph_name)
-	* reserved.c, scanner.l, tree.h: renamed cb_memcpy_upper to
+	* reserved.c, scanner.l, tree.h: renamed cb_strncpy_upper to
 	  cb_memcpy_upper, as it does not follow strncpy rules
 	* reserved.c (cb_strcasecmp) streamlined from glibc implementation
 	* reserved.c, cobc.h: exported cb_strcasecmp

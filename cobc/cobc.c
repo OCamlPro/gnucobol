@@ -2819,16 +2819,18 @@ process_command_line (const int argc, char **argv)
 	   We need to postpone single configuration flags as we need
 	   a full configuration to be loaded before */
 	cob_optind = 1;
+	cob_opterr = 1;	/* error handling via getopt */
 	while ((c = cob_getopt_long_long (argc, argv, short_options,
 					  long_options, &idx, 1)) >= 0) {
 		switch (c) {
 
 		case '?':
-			/* Unknown option or ambiguous */
-			if (verbose_output >= 1) {
-				cobc_print_shortversion ();
-			}
-			cobc_early_exit (EXIT_FAILURE);
+			/* Unknown option or ambiguous,
+			   further parse options so we have
+			   all information for the user,
+			   then exit afterwards as failure */
+			exit_option |= 2;
+			break;
 
 		case 'h':
 			/* --help */
@@ -2912,37 +2914,37 @@ process_command_line (const int argc, char **argv)
 		case '5':
 			/* --list-reserved */
 			list_reserved = 1;
-			exit_option = 1;
+			exit_option |= 1;
 			break;
 
 		case '6':
 			/* --list-intrinsics */
 			list_intrinsics = 1;
-			exit_option = 1;
+			exit_option |= 1;
 			break;
 
 		case '7':
 			/* --list-mnemonics */
 			list_system_names = 1;
-			exit_option = 1;
+			exit_option |= 1;
 			break;
 
 		case '8':
 			/* --list-system */
 			list_system_routines = 1;
-			exit_option = 1;
+			exit_option |= 1;
 			break;
 
 		case '9':
 			/* --list-registers */
 			list_registers = 1;
-			exit_option = 1;
+			exit_option |= 1;
 			break;
 
 		case 'a':
 			/* --list-exceptions */
 			list_exceptions = 1;
-			exit_option = 1;
+			exit_option |= 1;
 			break;
 
 		case 'q':
@@ -3103,6 +3105,7 @@ process_command_line (const int argc, char **argv)
 	}
 
 	cob_optind = 1;
+	cob_opterr = 0;	/* all error handling was done in the call above */
 	while ((c = cob_getopt_long_long (argc, argv, short_options,
 					  long_options, &idx, 1)) >= 0) {
 		switch (c) {
@@ -3110,6 +3113,8 @@ process_command_line (const int argc, char **argv)
 			/* Defined flag */
 			break;
 
+		case '?':
+			/* unknown options */
 		case 'h':
 			/* --help */
 		case 'V':
@@ -3740,6 +3745,12 @@ process_command_line (const int argc, char **argv)
 
 	/* Exit if list options were specified */
 	if (exit_option) {
+		if (exit_option & 2) {
+			if (verbose_output >= 1) {
+				cobc_print_shortversion ();
+			}
+			cobc_early_exit (EXIT_FAILURE);
+		}
 		cobc_early_exit (EXIT_SUCCESS);
 	}
 
