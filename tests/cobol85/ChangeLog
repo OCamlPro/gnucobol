@@ -1,4 +1,10 @@
 
+2022-10-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am, Makefile.module.in: added targets test-local (compile + run
+	  with installed/active installation) and test-local-compat (compile with
+	  installed/active installation, run with version in top_builddir)
+
 2022-04-11  Simon Sobisch <simonsobisch@gnu.org>
 
 	* report.pl: add COBOL_FLAGS from environment to cobc command line

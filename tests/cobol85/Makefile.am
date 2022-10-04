@@ -1,7 +1,7 @@
 #
 # Makefile gnucobol/tests/cobol85
 #
-# Copyright (C) 2003-2012, 2015-2020 Free Software Foundation, Inc.
+# Copyright (C) 2002-2012, 2015-2020, 2022 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -48,57 +48,60 @@ EXTRA_DIST = EXEC85.conf.in expand.pl report.pl summary.pl summary.txt \
 
 #CLEANFILES = EXEC85$(EXEEXT) summary.log
 
+COBC = $(PRE_INST_ENV) $(COBC)$(EXEEXT)
 CURL_FLAGS = 
 WGET_FLAGS = -t1 -T5
 DIFF_FLAGS = @DIFF_FLAGS@
 COBC_FLAGS = -std=cobol85 -debug
 
+PRE_INST_ENV = "$(abs_top_builddir)/pre-inst-env"
+
 # MAKEFLAGS = --no-print-directory
 
 # targets that are only logical targets instead of files
-.PHONY: test diff-summary diff summary.log $(MODULES_RUN) unpack-Z unpack-gz
+.PHONY: test test-local diff-summary diff summary.log $(MODULES_RUN) unpack-Z unpack-gz
 
 NC_RUN: NC
-	@cd NC && $(MAKE) -k
+	@cd NC && $(MAKE) -k $(SINGLE_TARGET)
 
 SM_RUN: SM
-	@cd SM && $(MAKE) -k
+	@cd SM && $(MAKE) -k $(SINGLE_TARGET)
 
 IC_RUN: IC
-	@cd IC && $(MAKE) -k
+	@cd IC && $(MAKE) -k $(SINGLE_TARGET)
 
 SQ_RUN: SQ
-	@cd SQ && $(MAKE) -k
+	@cd SQ && $(MAKE) -k $(SINGLE_TARGET)
 
 RL_RUN: RL
-	@cd RL && $(MAKE) -k
+	@cd RL && $(MAKE) -k $(SINGLE_TARGET)
 
 ST_RUN: ST
-	@cd ST && $(MAKE) -k
+	@cd ST && $(MAKE) -k $(SINGLE_TARGET)
 
 SG_RUN: SG
-	@cd SG && $(MAKE) -k
+	@cd SG && $(MAKE) -k $(SINGLE_TARGET)
 
 OB_RUN: OB
-	@cd OB && $(MAKE) -k
+	@cd OB && $(MAKE) -k $(SINGLE_TARGET)
 
 IF_RUN: IF
-	@cd IF && $(MAKE) -k
+	@cd IF && $(MAKE) -k $(SINGLE_TARGET)
 
 RW_RUN: RW
-	@cd RW && $(MAKE) -k
+	@cd RW && $(MAKE) -k $(SINGLE_TARGET)
 
 DB_RUN: DB
-	@cd DB && $(MAKE) -k
+	@cd DB && $(MAKE) -k $(SINGLE_TARGET)
 
 IX_RUN: IX
-	@cd IX && $(MAKE) -k
+	@cd IX && $(MAKE) -k $(SINGLE_TARGET)
 
 DBNOIX_RUN: DBNOIX
-	@cd DBNOIX && $(MAKE) -k
+	@cd DBNOIX && $(MAKE) -k $(SINGLE_TARGET)
 
 CM_RUN: CM
-	@cd CM && $(MAKE) -k
+	@cd CM && $(MAKE) -k $(SINGLE_TARGET)
 
 modules: $(MODULES_ALL)
 
@@ -111,7 +114,28 @@ duration.log:
 	done
 	@echo Done
 
+# most common run target
 test: $(MODULES_RUN)
+	@echo
+	$(MAKE) diff-summary
+
+# testing that the" local active" GnuCOBOL environment works as expected
+test-local:
+	$(MAKE) $(MODULES_RUN) SINGLE_TARGET=all-local
+	@echo
+	$(MAKE) diff-summary
+
+# verify that we can compile with the "local active" version and still
+# get the expected result when executing with the version in top_builddir
+test-local-compat:
+	@echo "Verification for compilation with $$(which cobc) ..."
+	@echo "... as $$($(COBC) --brief --version)"
+	@echo
+	@echo "... and running with $$($(PRE_INST_ENV) cobcrun --verbose --version)"
+	@echo
+	$(MAKE) $(MODULES_RUN) SINGLE_TARGET=all-local \
+		"COBCRUN=$(PRE_INST_ENV) cobcrun" \
+		"COBCRUN_DIRECT=$(PRE_INST_ENV)"
 	@echo
 	$(MAKE) diff-summary
 
@@ -199,7 +223,7 @@ $(MODULES_ALL): newcob.val EXEC85$(EXEEXT) $(srcdir)/EXEC85.conf.in Makefile.mod
 	else \
 		export NEWCOB_VAL=$(abs_srcdir)/newcob.val; \
 	fi; \
-	cd $@ && "$(abs_top_builddir)/pre-inst-env" ../EXEC85$(EXEEXT)
+	cd $@ && $(PRE_INST_ENV) ../EXEC85$(EXEEXT)
 	@perl $(srcdir)/expand.pl $@/newcob.tmp $@
 #	@$(RM) ./$@/newcob.tmp ./$@/newcob.log ./$@/EXEC85.conf
 	@export CBL_LIST="`ls $@/*.CBL | cut -f2 -d/ | tr '\n' ' '`"  && \
@@ -234,4 +258,4 @@ EXEC85.cob: newcob.val
 EXEC85$(EXEEXT): EXEC85.cob
 	@echo "Compiling EXEC85 program"
 	@if test -f "EXEC85.cob"; then EXEC_SRC="EXEC85.cob"; else EXEC_SRC="$(srcdir)/EXEC85.cob"; fi; \
-	 "$(top_builddir)/pre-inst-env" cobc$(EXEEXT) $(COBC_FLAGS) -x "$$EXEC_SRC"
+	 $(COBC) $(COBOL_FLAGS) -x "$$EXEC_SRC"
