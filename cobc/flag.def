@@ -119,6 +119,10 @@ CB_FLAG (cb_flag_correct_numeric, 0, "correct-numeric",
 CB_FLAG (cb_flag_stack_on_heap, 0, "stack-on-heap",
 	_("  -fstack-on-heap       PERFORM stack allocated on heap"))
 
+CB_FLAG (cb_flag_stack_extended, 0, "stack-extended",
+	_("  -fstack-extended      store origin of entrypoints and PERFORM\n"
+	  "                        * turned on by -debug/-dump"))
+
 /* Normal flags */
 CB_FLAG_ON (cb_flag_remove_unreachable, 1, "remove-unreachable",
 	_("  -fno-remove-unreachable\tdisable remove of unreachable code\n"

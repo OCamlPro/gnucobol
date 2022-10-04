@@ -3,6 +3,8 @@
 
 	* cobc.c (process_command_line): full parse of options on error to provide
 	  all information to the user
+	* codegen.c (output_internal_function): only close files on CANCEL-callback
+	  when they aren't closed already, preventing a file exception on CANCEL
 
 2022-10-01  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -27,6 +29,10 @@
 	  on level 01 OCCURS items, bug introduced with 2022-07-12
 	* pplex.l: dropped check for "spurious '$'", fixing bug #839
 	  and acucomment not handling $ correct
+	* flag.def (cb_flag_stack_extended), cobc.c: new option "stack-extended"
+	* codegen.c: handle generation for new cb_flag_stack_extended with
+	  cob_frame_ext (attached origin source location, section and paragraph
+	  name) and its addition to the cob_module
 	* codegen.c (output_section_info, output_trace_info): minor refactoring
 
 2022-09-29  Simon Sobisch <simonsobisch@gnu.org>

@@ -2903,38 +2903,38 @@ AT_DATA([prog.cob], [
       *>------------------
            IF RES-TRGT-1 NOT = 'ABC1'
               DISPLAY 'A: RES-TRGT-1 <'   RES-TRGT-1  '> != <ABC1>'.
-           IF RES-DELIM-1 NOT = '|'                   
+           IF RES-DELIM-1 NOT = '|'
               DISPLAY 'A: RES-DELIM-1 <'  RES-DELIM-1 '> != <|>'.
-           IF RES-COUNT-1 NOT = 4                     
+           IF RES-COUNT-1 NOT = 4
               DISPLAY 'A: RES-COUNT-1 <'  RES-COUNT-1 '> != <4>'.
-           IF RES-TRGT-2 NOT = 'DEF--GHI'             
+           IF RES-TRGT-2 NOT = 'DEF--GHI'
               DISPLAY 'A: RES-TRGT-2 <'   RES-TRGT-2  '> != <DEF--GHI>'.
-           IF RES-DELIM-2  NOT = SPACES               
+           IF RES-DELIM-2  NOT = SPACES
               DISPLAY 'A: RES-DELIM2 <'   RES-DELIM-2 '> != SPACE'.
-           IF RES-COUNT-2 NOT = 8                     
+           IF RES-COUNT-2 NOT = 8
               DISPLAY 'A: RES-COUNT-1 <'  RES-COUNT-2 '> != <8>'.
-           IF STR-POINTER NOT = 14                    
+           IF STR-POINTER NOT = 14
               DISPLAY 'A: STR-POINTER <'  STR-POINTER '> != <14>'.
-           IF RES-TALLY NOT = 2                       
+           IF RES-TALLY NOT = 2
               DISPLAY 'A: RES-TALLY <'    RES-TALLY   '> != <2>'.
-      *>                                              
-       TEST-CASE-2-RESULT.                            
-      *>------------------                            
-           IF RES-TRGT-1 NOT = 'ABC1'                 
+      *>
+       TEST-CASE-2-RESULT.
+      *>------------------
+           IF RES-TRGT-1 NOT = 'ABC1'
               DISPLAY 'B: RES-TRGT-1 <'   RES-TRGT-1  '> != <ABC1>'.
-           IF RES-DELIM-1 NOT = '|'                   
+           IF RES-DELIM-1 NOT = '|'
               DISPLAY 'B: RES-DELIM-1 <'  RES-DELIM-1 '> != <|>'.
-           IF RES-COUNT-1 NOT = 4                     
+           IF RES-COUNT-1 NOT = 4
               DISPLAY 'B: RES-COUNT-1 <'  RES-COUNT-1 '> != <4>'.
-           IF RES-TRGT-2 NOT = 'DEF'                  
+           IF RES-TRGT-2 NOT = 'DEF'
               DISPLAY 'B: RES-TRGT-2 <'   RES-TRGT-2  '> != <DEF>'.
-           IF RES-DELIM-2  NOT = '-'                  
+           IF RES-DELIM-2  NOT = '-'
               DISPLAY 'B: RES-DELIM2 <'   RES-DELIM-2 '> != <->'.
-           IF RES-COUNT-2 NOT = 3                     
+           IF RES-COUNT-2 NOT = 3
               DISPLAY 'B: RES-COUNT-1 <'  RES-COUNT-2 '> != <3>'.
            IF STR-POINTER NOT = 11
               DISPLAY 'B: STR-POINTER <'  STR-POINTER '> != <11>'.
-           IF RES-TALLY NOT = 2                       
+           IF RES-TALLY NOT = 2
               DISPLAY 'B: RES-TALLY <'    RES-TALLY   '> != <2>'.
 ])
 
@@ -7474,7 +7474,7 @@ Source :    'callee1.cob'
 Program-Id: callee1          Statement: CANCEL                 Line: 33
 Program-Id: callee1          Statement: SUBTRACT               Line: 34
 Program-Id: callee1          Statement: EXIT PROGRAM           Line: 35
-Program-Id: callee1          Exit:      callee1
+Program-Id: callee1          Exit:      callee1                Line: 35
 Source :    'caller.cob'
 Program-Id: caller           Statement: CALL                   Line: 23
 Source:     'callee1.cob'
@@ -7517,7 +7517,7 @@ Source :    'callee1.cob'
 Program-Id: callee1          Statement: CANCEL                 Line: 33
 Program-Id: callee1          Statement: SUBTRACT               Line: 34
 Program-Id: callee1          Statement: EXIT PROGRAM           Line: 35
-Program-Id: callee1          Exit:      callee1
+Program-Id: callee1          Exit:      callee1                Line: 35
 Source :    'caller.cob'
 Program-Id: caller           Statement: CANCEL                 Line: 24
 Program-Id: caller           Statement: CALL                   Line: 25
@@ -7533,9 +7533,9 @@ Program-Id: callrec          Section:   SOME-SEC               Line: 10
 Program-Id: callrec          Paragraph: (None)                 Line: 10
 Program-Id: callrec          Statement: IF                     Line: 11
 Program-Id: callrec          Statement: GOBACK                 Line: 15
-Program-Id: callrec          Exit:      callrec
+Program-Id: callrec          Exit:      callrec                Line: 15
 Program-Id: callrec          Statement: GOBACK                 Line: 15
-Program-Id: callrec          Exit:      callrec
+Program-Id: callrec          Exit:      callrec                Line: 15
 Source :    'caller.cob'
 Program-Id: caller           Statement: MOVE                   Line: 26
 Program-Id: caller           Statement: SEARCH ALL             Line: 28
@@ -9818,7 +9818,7 @@ AT_CLEANUP
 
 
 AT_SETUP([stack and dump feature])
-#AT_KEYWORDS([Dump])
+AT_KEYWORDS([stacktrace configuration COB_STACKTRACE COB_DUMP_FILE])
 
 AT_DATA([cpyabrt], [
             MOVE "Quick brown fox jumped over the dog"
@@ -10005,7 +10005,7 @@ AT_DATA([prog.cob], [
             MOVE "Quick brown fox jumped over the dog"
               TO TSTLONG, TSTLONG (50:36).
             MOVE "Quicker grey fox jumped the cougar"
-              TO TSTHEX (1:35).
+              TO TSTHEX (1:35). PERFORM MAIN-2.
        MAIN-2.
             MOVE 17 TO HEXV.
             MOVE HEXC TO TSTHEX (39:1).
@@ -10072,14 +10072,14 @@ AT_DATA([sub2.cob], [
        77  DYNAMIC-NUM            PICTURE 9(4).
 
        PROCEDURE DIVISION USING X, TSPFL-RECORD.
-
+       SubwaY SECTION.
            IF ADDRESS OF BASED-RECORD = NULL
               ALLOCATE BASED-RECORD INITIALIZED
            ELSE
               SET ADDRESS OF DYNAMIC-NUM TO ADDRESS OF BASED-RECORD
               ADD 1 TO B-NUM
-           END-IF
-
+           END-IF.
+       DO-CALL.
            IF X = 5440
                CALL "sub1" USING X, OMITTED.
            MOVE ALL "X" TO TSTREC.
@@ -10134,9 +10134,17 @@ X is 000005441
 [libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 
- Last statement of "sub1" was at line 4 of cpyabrt
- Last statement of "sub2" was at line 48 of sub2.cob
- Last statement of "prog" was at line 118 of prog.cob
+ Last statement of "sub1" was MOVE
+	MAIN-2 OF MAIN-1 at cpyabrt:4
+	MAIN-1 at prog.cob:177
+	ENTRY sub1 at prog.cob:159
+ Last statement of "sub2" was CALL
+	DO-CALL OF SubwaY at sub2.cob:48
+	ENTRY sub2 at sub2.cob:39
+ Last statement of "prog" was CALL
+	CALL-IT-OMIT at prog.cob:118
+	MAIN-100 at prog.cob:85
+	ENTRY prog at prog.cob:77
  Started by ./prog
 ])
 
@@ -10151,9 +10159,17 @@ X is 000005441
 [libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 
- Last statement of "sub1" was at line 4 of cpyabrt
- Last statement of "sub2" was at line 48 of sub2.cob
- Last statement of "prog" was at line 118 of prog.cob
+ Last statement of "sub1" was MOVE
+	MAIN-2 OF MAIN-1 at cpyabrt:4
+	MAIN-1 at prog.cob:177
+	ENTRY sub1 at prog.cob:159
+ Last statement of "sub2" was CALL
+	DO-CALL OF SubwaY at sub2.cob:48
+	ENTRY sub2 at sub2.cob:39
+ Last statement of "prog" was CALL
+	CALL-IT-OMIT at prog.cob:118
+	MAIN-100 at prog.cob:85
+	ENTRY prog at prog.cob:77
  Started by ./prog
 ])
 
@@ -10182,9 +10198,17 @@ dump written to tstdump.dump
 AT_DATA([reference_tmpl], [
 Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 
- Last statement of "sub1" was at line 4 of cpyabrt
- Last statement of "sub2" was at line 48 of sub2.cob
- Last statement of "prog" was at line 118 of prog.cob
+ Last statement of "sub1" was MOVE
+	MAIN-2 OF MAIN-1 at cpyabrt:4
+	MAIN-1 at prog.cob:177
+	ENTRY sub1 at prog.cob:159
+ Last statement of "sub2" was CALL
+	DO-CALL OF SubwaY at sub2.cob:48
+	ENTRY sub2 at sub2.cob:39
+ Last statement of "prog" was CALL
+	CALL-IT-OMIT at prog.cob:118
+	MAIN-100 at prog.cob:85
+	ENTRY prog at prog.cob:77
  Started by prog
 
 Dump Program-Id sub1 from prog.cob compiled MMM DD YYYY HH:MM:SS
@@ -10419,9 +10443,17 @@ X is 000005441
 [libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 
- Last statement of "sub1" was at line 4 of cpyabrt
- Last statement of "sub2" was at line 48 of sub2.cob
- Last statement of "prog" was at line 118 of prog.cob
+ Last statement of "sub1" was MOVE
+	MAIN-2 OF MAIN-1 at cpyabrt:4
+	MAIN-1 at prog.cob:177
+	ENTRY sub1 at prog.cob:159
+ Last statement of "sub2" was CALL
+	DO-CALL OF SubwaY at sub2.cob:48
+	ENTRY sub2 at sub2.cob:39
+ Last statement of "prog" was CALL
+	CALL-IT-OMIT at prog.cob:118
+	MAIN-100 at prog.cob:85
+	ENTRY prog at prog.cob:77
  Started by prog
 
 dump written to tstdump.dump
@@ -10451,9 +10483,17 @@ AT_CAPTURE_FILE(./tstdump_fdls.dump)
 AT_DATA([reference_fdls_tmpl], [
 Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 
- Last statement of "sub1" was at line 4 of cpyabrt
- Last statement of "sub2" was at line 48 of sub2.cob
- Last statement of "prog" was at line 118 of prog.cob
+ Last statement of "sub1" was MOVE
+	MAIN-2 OF MAIN-1 at cpyabrt:4
+	MAIN-1 at prog.cob:177
+	ENTRY sub1 at prog.cob:159
+ Last statement of "sub2" was CALL
+	DO-CALL OF SubwaY at sub2.cob:48
+	ENTRY sub2 at sub2.cob:39
+ Last statement of "prog" was CALL
+	CALL-IT-OMIT at prog.cob:118
+	MAIN-100 at prog.cob:85
+	ENTRY prog at prog.cob:77
  Started by ./prog_fdls
 
 Dump Program-Id sub1 from prog.cob compiled MMM DD YYYY HH:MM:SS
@@ -10546,9 +10586,17 @@ AT_CHECK([diff reference_all tstdump.sed], [0], [], [])
 #AT_DATA([reference_ls_sticky_tmpl], [
 #Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 #
-# Last statement of "sub1" was at line 4 of cpyabrt
-# Last statement of "sub2" was at line 48 of sub2.cob
-# Last statement of "prog" was at line 118 of prog.cob
+# Last statement of "sub1" was MOVE
+#	MAIN-2 OF MAIN-1 at cpyabrt:4
+#	MAIN-1 at prog.cob:177
+#	ENTRY sub1 at prog.cob:159
+# Last statement of "sub2" was CALL
+#	DO-CALL OF SubwaY at sub2.cob:48
+#	ENTRY sub2 at sub2.cob:39
+# Last statement of "prog" was CALL
+#	CALL-IT-OMIT at prog.cob:118
+#	MAIN-100 at prog.cob:85
+#	ENTRY prog at prog.cob:77
 # Started by ./prog_ls_sticky
 #
 #Dump Program-Id sub1 from prog.cob compiled MMM DD YYYY HH:MM:SS
@@ -10585,7 +10633,7 @@ AT_CLEANUP
 
 
 AT_SETUP([dump feature with NULL address])
-#AT_KEYWORDS([Dump])
+AT_KEYWORDS([stack stacktrace])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -10711,11 +10759,12 @@ AT_CAPTURE_FILE(./dumpall.txt)
 AT_DATA([reference_tmpl], [
 Module dump due to BASED/LINKAGE item 'A-TABLE' has NULL address
 
- Last statement of "prog" was at line 102 of prog.cob
+ Last statement of "prog" was MOVE at line 102 of prog.cob
+	ENTRY prog at prog.cob:75
  Started by ./prog
-            param 1
-            param
-            param 3
+	param 1
+	param
+	param 3
 
 Dump Program-Id prog from prog.cob compiled MMM DD YYYY HH:MM:SS
 

@@ -1,4 +1,16 @@
 
+2022-10-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_stack_trace_internal, output_procedure_stack_entry):
+	  use cob_frame_ext information when available to output PERFORM stack
+	* common.c (cob_set_exception): store strings in a local copy
+	  preventing SIGSEGV after CANCEL
+	* common.c (cob_trace_section): if line is not specified (done for
+	  "exit module" tracing), resolve that from current line, if known
+	  (to provide same output as the version that this was used with)
+	* intrinsic.c: extend internal docs
+	* fileio.c: add some guards against bad function calls
+
 2022-10-01  Simon Sobisch <simonsobisch@gnu.org>
 
 	* intrinsic.c (numval, cob_intr_numval_f): rewritten for improved
@@ -20,6 +32,10 @@
 	* fileio.c (lineseq_read): set return status 04 if record is truncated
 	  because LS_SPLIT is false
 	* common.c: adjustments for merge of 2021-03-18
+	* common.h (cob_frame_ext): new variant of cob_frame storing the
+	  section/paragraph + location to return to; allowing a full textual
+	  PERFORM stack and used for restoring those on return
+	* common.h (cob_module): fields for current frame_ptr
 
 2022-09-29  Simon Sobisch <simonsobisch@gnu.org>
 

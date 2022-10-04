@@ -131,8 +131,8 @@ NEWS - user visible changes				-*- outline -*-
    `missing-period`.
 
 ** the new -febcdic-table option enables one to specify the
-   translation table used when dealing with EBCDIC codeset.  Available
-   tables are:
+   translation table used when dealing with EBCDIC codeset;
+   available tables are:
 
    DEFAULT		translation to extended ASCII as per MF
    RESTRICTED-GC	translation from restricted ASCII only
@@ -168,6 +168,12 @@ NEWS - user visible changes				-*- outline -*-
    (and raises a warning as previously with -Wextra); if you want
    to use this extension for other dialects use the new
    -fself-call-recursive=warning (or "ok")
+
+** the option -g does not longer imply -fsource-location
+
+** new flag -fstack-extended (implied with --debug and --dump) to include
+   the origin of entrypoints and PERFORM, this is used for the internal
+   stack trace on abort and can be used for source level debugging
 
 ** adjustments to warning options:
    -Wconstant-expression was changed to a group warning and includes
@@ -205,11 +211,6 @@ NEWS - user visible changes				-*- outline -*-
    this has been fixed so that all modules compiled with GnuCOBOL 2.2 can be
    executed with GnuCOBOL 3.2
 
-** cobc's parsing time was heavily cut down for big programs
-
-** execution times of INSPECT that use big COBOL fields (multiple KB) were
-   heavily cut down
-
 * Listing changes
 
 ** the timestamp in the header was changed from ANSI date format like
@@ -239,10 +240,19 @@ NEWS - user visible changes				-*- outline -*-
 ** in case of any runtime features being used that are not available a warning
    is generated and related exception status set
 
+** cobc's parsing time was heavily cut down for big programs
+
+** execution times of INSPECT that use big COBOL fields (multiple KB) were
+   heavily cut down
+
+** execution times for programs that are new generated with -fsource-location
+   (implied with --debug/-fec) are cut down, especially when many "simple"
+   statements or lot of sections/paragraphs are used
 
 * New build features
 
 ** configure now honors BDB_LIBS
+** configure now honors MATH_LIBS
 ** configure now checks for XCurses and allows --with-curses=xcurses
    (experimental)
 

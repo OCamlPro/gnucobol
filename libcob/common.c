@@ -910,9 +910,7 @@ cob_sig_handler (int signal_value)
 		fputc (' ', stderr);
 	}
 
-	/* LCOV_EXCL_START */
-	fprintf (stderr, cob_get_sig_description (signal_value));
-	/* LCOV_EXCL_STOP */
+	fprintf (stderr, "%s", cob_get_sig_description (signal_value));
 	snprintf (signal_text, COB_MINI_MAX, _("signal %s"), signal_name);
 	fprintf (stderr, " (%s)\n", signal_text);
 
@@ -1052,6 +1050,7 @@ cob_get_sig_description (int sig)
 	return signals[k].description;
 }
 
+#if 0	/* unused */
 const char *
 cob_set_sig_description (int sig, const char *msg)
 {
@@ -1065,6 +1064,7 @@ cob_set_sig_description (int sig, const char *msg)
 	if (k == NUM_SIGNALS) return _("unknown");
 	return signals[k].description;
 }
+#endif
 
 static void
 cob_set_signal (void)
@@ -1799,24 +1799,67 @@ cob_last_exception_is (const int exception_to_check)
 void
 cob_set_exception (const int id)
 {
-	cob_get_source_line ();
 	cobglobptr->cob_exception_code = cob_exception_tab_code[id];
 	last_exception_code = cobglobptr->cob_exception_code;
-	if (id
-	 && COB_MODULE_PTR) {
+
+	cobglobptr->last_exception_statement = NULL;
+	cobglobptr->last_exception_id = NULL;
+	cobglobptr->last_exception_section = NULL;
+	cobglobptr->last_exception_paragraph = NULL;
+
+	if (id) {
+		static char excp_stmt[31 + 1];
+		static char excp_mod[COB_MAX_WORDLEN + 1];
+		static char excp_sec[COB_MAX_WORDLEN + 1];
+		static char excp_para[COB_MAX_WORDLEN + 1];
+		cob_module	*mod = COB_MODULE_PTR;
 		cobglobptr->cob_got_exception = 1;
+#if 0	/* consider addition for 4.x */
+		cobglobptr->last_exception_source = cob_source_file;	/* needs to be strdup'd */
+#endif
 		cobglobptr->last_exception_line = cob_source_line;
-		cobglobptr->last_exception_id = COB_MODULE_PTR->module_name;
-		cobglobptr->last_exception_statement = COB_MODULE_PTR->stmt_name;
-		cobglobptr->last_exception_section = COB_MODULE_PTR->section_name;
-		cobglobptr->last_exception_paragraph = COB_MODULE_PTR->paragraph_name;
+		if (mod) {
+#if 0	/* consider addition for 4.x */
+			if (mod->module_sources
+			 && mod->module_stmt != 0) {
+				/* note: it is likely best to not copy name + line but store the name+line
+				   together, maybe even comma-separated when we have copy->copy-prog */
+				cobglobptr->last_exception_source = mod->module_sources
+					[COB_GET_FILE_NUM (mod->module_stmt)];	/* needs to be strdup'd */
+				cobglobptr->last_exception_line = COB_GET_LINE_NUM (mod->module_stmt);
+#else
+			if (mod->module_stmt != 0) {
+				cobglobptr->last_exception_line = COB_GET_LINE_NUM (mod->module_stmt);
+#endif
+			}
+			if (mod->stmt_name) {
+				strcpy (excp_stmt, mod->stmt_name); /* TODO: replace with enum */
+				cobglobptr->last_exception_statement = excp_stmt;
+			}
+			if (mod->module_name) {
+				strcpy (excp_mod, mod->module_name);
+				cobglobptr->last_exception_id = excp_mod;
+			}
+			if (mod->section_name) {
+				strcpy (excp_sec, mod->section_name);
+				cobglobptr->last_exception_section = excp_sec;
+			}
+			if (mod->paragraph_name) {
+				strcpy (excp_para, mod->paragraph_name);
+				cobglobptr->last_exception_paragraph = excp_para;
+			}
+			return;
+		}
+		/* if no current module is available fall-through */
 	} else {
 		cobglobptr->cob_got_exception = 0;
-		cobglobptr->last_exception_statement = NULL;
+#if 0	/* consider addition for 4.x */
+		if (cobglobptr->last_exception_source) {
+			cobglobptr->last_exception_source = NULL;
+			cob_free (cobglobptr->last_exception_source);
+		}
+#endif
 		cobglobptr->last_exception_line = 0;
-		cobglobptr->last_exception_id = NULL;
-		cobglobptr->last_exception_section = NULL;
-		cobglobptr->last_exception_paragraph = NULL;
 	}
 }
 
@@ -2065,13 +2108,16 @@ cob_set_location (const char *sfile, const unsigned int sline,
 	}
 }
 
-/* cob_trace_section is kept for backward compatibility, but should be eventually removed */
+/* cob_trace_section is kept for backward compatibility,
+   and will be removed in 4.x */
 void
 cob_trace_section (const char *para, const char *source, const int line)
 {
 	const char	*s;
 
 	if (cobsetptr->cob_line_trace) {
+		const cob_module *mod = COB_MODULE_PTR;
+		int pline = line;
 		if (!cobsetptr->cob_trace_file) {
 			cob_check_trace_file ();
 #if _MSC_VER /* fix dumb warning */
@@ -2088,14 +2134,17 @@ cob_trace_section (const char *para, const char *source, const int line)
 			cob_last_sfile = cob_strdup (source);
 			fprintf (cobsetptr->cob_trace_file, "Source:     '%s'\n", source);
 		}
-		if (COB_MODULE_PTR && COB_MODULE_PTR->module_name) {
-			s = COB_MODULE_PTR->module_name;
+		if (mod->module_name) {
+			s = mod->module_name;
+			if (pline == 0 && mod->module_stmt) {
+				pline = COB_GET_LINE_NUM (mod->module_stmt);
+			}
 		} else {
 			s = _("unknown");
 		}
 		fprintf (cobsetptr->cob_trace_file, "Program-Id: %-16s ", s);
-		if (line) {
-			fprintf (cobsetptr->cob_trace_file, "%-34.34sLine: %d\n", para, line);
+		if (pline) {
+			fprintf (cobsetptr->cob_trace_file, "%-34.34sLine: %d\n", para, pline);
 		} else {
 			fprintf (cobsetptr->cob_trace_file, "%s\n", para);
 		}
@@ -2112,12 +2161,12 @@ static int
 cob_trace_prep (void)
 {
 	const char	*s;
-	cob_get_source_line ();
 	if (!cobsetptr->cob_trace_file) {
 		cob_check_trace_file ();
 		if (!cobsetptr->cob_trace_file)
 			return 1; 	/* silence warnings */
 	}
+	cob_get_source_line ();
 	if (cob_source_file
 	 && (!cob_last_sfile || strcmp (cob_last_sfile, cob_source_file))) {
 		if (cob_last_sfile) {
@@ -9155,6 +9204,29 @@ cob_backtrace (void *target, int count)
 	dump_trace_started ^= DUMP_TRACE_ACTIVE_TRACE;
 }
 
+/* internal output the procedure stack entry to the given target */
+static void
+output_procedure_stack_entry (FILE *target, const char *section, const char *paragraph,
+		const char *source_file, const unsigned int source_line)
+{
+	const char *proc_name;
+	char para_of_section[COB_MAX_WORDLEN * 2 + 5];
+	if (paragraph) {
+		if (section) {
+			sprintf (para_of_section, "%s OF %s", paragraph, section);
+			proc_name = para_of_section;
+		} else {
+			proc_name = paragraph;
+		}
+	} else
+	if (section) {
+		proc_name = section;
+	} else {
+		return;
+	}
+	fprintf (target, "\n\t%s at %s:%d", proc_name, source_file, source_line);
+}
+
 /* internal output the COBOL-view of the stacktrace to the given target */
 void
 cob_stack_trace_internal (FILE *target, int verbose, int count)
@@ -9189,6 +9261,7 @@ cob_stack_trace_internal (FILE *target, int verbose, int count)
 	}
 	k = 0;
 	for (mod = COB_MODULE_PTR, i = 0; mod; mod = mod->next, i++) {
+		const char *func_hint = mod->module_type == COB_MODULE_TYPE_FUNCTION ? "FUNCTION " : "";
 		if (i < first_entry) {
 			continue;
 		}
@@ -9197,19 +9270,58 @@ cob_stack_trace_internal (FILE *target, int verbose, int count)
 		}
 		if (mod->module_stmt != 0
 		 && mod->module_sources) {
-			const unsigned int source_file = COB_GET_FILE_NUM (mod->module_stmt);
+			const unsigned int source_file_num = COB_GET_FILE_NUM (mod->module_stmt);
 			const unsigned int source_line = COB_GET_LINE_NUM (mod->module_stmt);
+			const char *source_file = mod->module_sources[source_file_num];
 			fputc (' ', target);
-			if (verbose) {
-				fprintf (target, _("Last statement of \"%s\" was at line %d of %s"),
-					mod->module_name, source_line, mod->module_sources[source_file]);
-			} else {
+			if (!verbose) {
 				fprintf (target, "%s at %s:%d",
-					mod->module_name, mod->module_sources[source_file], source_line);
+					mod->module_name, source_file, source_line);
+			} else
+			if (!mod->stmt_name && !mod->section_name && !mod->paragraph_name) {
+				/* GC 3.1 output, now used for "no source location / no trace" case */
+				fprintf (target, _("Last statement of %s\"%s\" was at line %d of %s"),
+					func_hint, mod->module_name, source_line, source_file);
+			} else
+			if (!mod->section_name && !mod->paragraph_name) {
+				/* special case: there _would_ be data,
+				   but there's no procedure defined in the program */
+				fprintf (target, _("Last statement of %s\"%s\" was %s at line %d of %s"),
+					func_hint, mod->module_name, mod->stmt_name, source_line, source_file);
+			} else {
+				/* common case when compiled with runtime checks enabled: statement and
+				   procedure known - the later is printed from the stack entry with the
+				   source location by the following call */
+				fprintf (target, _("Last statement of %s\"%s\" was %s"),
+					func_hint, mod->module_name, mod->stmt_name);
+			}
+			output_procedure_stack_entry (target, mod->section_name, mod->paragraph_name,
+					source_file, source_line);
+			if (mod->frame_ptr) {
+				struct cob_frame_ext *perform_ptr = mod->frame_ptr;
+				int frame_max = 512; /* from -fstack-size */
+				while (frame_max--) {
+					const unsigned int ffile_num = COB_GET_FILE_NUM (perform_ptr->module_stmt);
+					const unsigned int fline = COB_GET_LINE_NUM (perform_ptr->module_stmt);
+					const char *ffile = mod->module_sources[ffile_num];
+					if (perform_ptr->section_name) {
+						/* marker for "root frame" - at ENTRY */
+						if (perform_ptr->section_name[0] == 0) {
+							fprintf (target, "\n\tENTRY %s at %s:%d",
+								perform_ptr->paragraph_name, ffile, fline);
+							break;
+						}
+					}
+					output_procedure_stack_entry (target,
+						perform_ptr->section_name, perform_ptr->paragraph_name,
+						ffile, fline);
+					perform_ptr--;
+				}
 			}
 		} else {
 			if (verbose) {
-				fprintf (target, _("Last statement of \"%s\" unknown"), mod->module_name);
+				fprintf (target, _("Last statement of %s\"%s\" unknown"),
+					func_hint, mod->module_name);
 			} else {
 				fprintf (target, "%s at unknown", mod->module_name);
 			}
@@ -9238,7 +9350,7 @@ cob_stack_trace_internal (FILE *target, int verbose, int count)
 		size_t i;
 		fprintf (target, " Started by %s\n", cob_argv[0]);
 		for (i = 1; i < (size_t)cob_argc; ++i) {
-			fprintf (target, "            %s\n", cob_argv[i]);
+			fprintf (target, "\t%s\n", cob_argv[i]);
 		}
 	}
 }

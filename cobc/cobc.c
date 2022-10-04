@@ -3036,7 +3036,8 @@ process_command_line (const int argc, char **argv)
 			save_all_src = 1;
 			cb_source_debugging = 1;
 			cb_flag_stack_check = 1;
-			/* note: cb_flag_source_location is explicit not set here */
+			/* note: cb_flag_source_location and cb_flag_stack_extended
+			         are explicit not set here */
 #if 1		/* auto-included, may be disabled manually if needed */
 			cb_flag_c_line_directives = 1;
 			cb_flag_c_labels = 1;
@@ -3050,6 +3051,7 @@ process_command_line (const int argc, char **argv)
 		case 'd':
 			/* --debug : Turn on all runtime checks */
 			cb_flag_source_location = 1;
+			cb_flag_stack_extended = 1;
 			cb_flag_stack_check = 1;
 			cobc_wants_debug = 1;
 			break;
@@ -3102,6 +3104,7 @@ process_command_line (const int argc, char **argv)
 	/* dump implies extra information (may still be disabled later) */
 	if (cb_flag_dump != COB_DUMP_NONE) {
 		cb_flag_source_location = 1;
+		cb_flag_stack_extended = 1;	/* for extended stack output */
 	}
 
 	cob_optind = 1;

@@ -4215,7 +4215,8 @@ cob_intr_exception_file (void)
 	return curr_field;
 }
 
-/* get variable length (at least 1) temporary field containing last exception location */
+/* implementation of FUNCTION EXCEPTION-LOCATION
+   get variable length (at least 1) temporary field containing last exception location */
 cob_field *
 cob_intr_exception_location (void)
 {
@@ -4260,7 +4261,8 @@ cob_intr_exception_location (void)
 	return curr_field;
 }
 
-/* get x(31) temporary field containing last exception name */
+/* implementation of FUNCTION EXCEPTION-STATUS
+   get X(31) temporary field containing last exception name */
 cob_field *
 cob_intr_exception_status (void)
 {
@@ -4281,7 +4283,8 @@ cob_intr_exception_status (void)
 	return curr_field;
 }
 
-/* get x(31) temporary field containing last exception statement */
+/* implementation of FUNCTION EXCEPTION-STATEMENT
+   get X(31) temporary field containing last exception statement */
 cob_field *
 cob_intr_exception_statement (void)
 {
@@ -4302,6 +4305,7 @@ cob_intr_exception_statement (void)
 	return curr_field;
 }
 
+/* implementation of FUNCTION WHEN-COMPILED */
 cob_field *
 cob_intr_when_compiled (const int offset, const int length, cob_field *f)
 {
@@ -4314,6 +4318,8 @@ cob_intr_when_compiled (const int offset, const int length, cob_field *f)
 	return curr_field;
 }
 
+/* implementation of FUNCTION CURRENT-DATE,
+   using the actual current date adjusted/replaced with COB_CURRENT_DATE */
 cob_field *
 cob_intr_current_date (const int offset, const int length)
 {
@@ -4339,6 +4345,8 @@ cob_intr_current_date (const int offset, const int length)
 	return curr_field;
 }
 
+/* implementation of FUNCTION CHAR - character from ordinal
+   FIXME: Should use the program's alphanumeric program collating sequence! */
 cob_field *
 cob_intr_char (cob_field *srcfield)
 {
@@ -6879,6 +6887,9 @@ cob_intr_integer_of_formatted_date (cob_field *format_field,
 	return curr_field;
 }
 
+/* implementation of FUNCTION FORMATTED-CURRENT-DATE,
+   using the actual current date adjusted/replaced with COB_CURRENT_DATE
+   with a specified formatting */
 cob_field *
 cob_intr_formatted_current_date (const int offset, const int length,
 				 cob_field *format_field)
@@ -7034,6 +7045,8 @@ cob_intr_boolean_of_integer (cob_field *f1, cob_field *f2)
 	error_not_implemented ();
 }
 
+/* implementation of FUNCTION CHAR-NATIONAL - character from ordinal
+   FIXME: Not implemented, Should use the program's national program collating sequence! */
 cob_field *
 cob_intr_char_national (cob_field *srcfield)
 {
@@ -7042,6 +7055,8 @@ cob_intr_char_national (cob_field *srcfield)
 	error_not_implemented ();
 }
 
+/* implementation of FUNCTION DISPLAY-OF - alphanumeric for national character
+   FIXME: Not implemented! */
 cob_field *
 cob_intr_display_of (const int offset, const int length,
 		     const int params, ...)
@@ -7053,12 +7068,18 @@ cob_intr_display_of (const int offset, const int length,
 	error_not_implemented ();
 }
 
+/* implementation of FUNCTION EXCEPTION-FILE-N
+   national representation for filename that had an error last
+   FIXME: Not implemented! */
 cob_field *
 cob_intr_exception_file_n (void)
 {
 	error_not_implemented ();
 }
 
+/* implementation of FUNCTION EXCEPTION-LOCATION-N
+   national representation for location that had an error last
+   FIXME: Not implemented! */
 cob_field *
 cob_intr_exception_location_n (void)
 {

@@ -1120,6 +1120,17 @@ struct cob_frame {
 	unsigned int	return_address_num;	/* Return address number */
 };
 
+/* Extended perform stack structure (available since GC 3.2) */
+struct cob_frame_ext {
+	void		*return_address_ptr;	/* Return address pointer */
+	unsigned int	perform_through;	/* Perform number */
+	unsigned int	return_address_num;	/* Return address number */
+	unsigned int	module_stmt;		/* return statement location */
+	const char	*section_name;		/* Return section name, empty on
+	          	                       "first" entry of a module */
+	const char	*paragraph_name;	/* Return paragraph name */
+};
+
 /* Call union structures */
 
 typedef union __cob_content {
@@ -1247,6 +1258,9 @@ typedef struct __cob_module {
 #define COB_XML_XMLNSS		1			/* similar to XMLPARSE(XMLNSS) Micro Focus,
 											   IBM may be different (_very_ likely for error codes);
 											   but the main difference is to "COMPAT" */
+	struct cob_frame_ext *frame_ptr;	/* current frame ptr, note: if set then cob_frame in this
+										   module is of type "struct cob_frame_ext",
+										   otherwise "struct cob_frame" */
 	const char		*section_name;		/* name of current active section */
 	const char		*paragraph_name;		/* name of current active pagagraph */
 	const char		*stmt_name;			/* last statment VERB name */
