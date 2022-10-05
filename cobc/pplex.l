@@ -489,16 +489,16 @@ MAYBE_AREA_A	[ ]?#?
 	return CONTROL_STATEMENT;
 }
 
-^{AREA_A}		{
+<*>^{AREA_A}		{
 	/* Output a special marker that precedes lines starting in area A.  This
-	   is required to detect missing periods.
+	   is required to detect some missing periods.
 
 	   See "(*area-a*)" in `ppinput' function below for the code that emits
 	   the `#'.
 
-	   The optional space before '#' in the rule above is only needed to
-	   properly handle the first line in each buffer, that for some reason
-	   always starts with a space.
+	   The optional space before '#' in the definition of AREA_A is only
+	   needed to properly handle the first line in each buffer, that for
+	   some reason always starts with a space.
 	*/
 	fprintf (ppout, "\n#area_a\n");
 }
@@ -552,7 +552,6 @@ SUBSTITUTION_SECTION_STATE>{
 	  cb_source_line++;
   }
   [,;]?[ ]+		{ /* ignore */ }
-  ^{AREA_A}		{}
 }
 
 <INITIAL,
@@ -992,7 +991,6 @@ ENDIF_DIRECTIVE_STATE>{
 	cb_source_line++;
   }
   [,;]?[ ]+		{ /* ignore */ }
-  ^{AREA_A}		{}
   [_0-9A-Z\x80-\xFF-]+(\.[_0-9A-Z\x80-\xFF-]+)+		{
 	/* special case to allow copybook names with periods
 	   without a literal
@@ -1033,12 +1031,6 @@ ENDIF_DIRECTIVE_STATE>{
 	ECHO;
 	check_listing (yytext, 0);
 	cb_source_line++;
-  }
-
-  ^{AREA_A}		{
-	/* Pseudo-text words that start in area-a retain that property, and
-	   should thus be preceded with the marker. */
-	pplval.s = cobc_plex_strdup ("\n#area_a\n");
   }
 
   [,;]?[ ]+		{
