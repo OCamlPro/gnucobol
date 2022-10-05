@@ -304,7 +304,7 @@ static unsigned int	conf_runtime_error_displayed = 0;
 static unsigned int	last_runtime_error_line = 0;
 static const char	*last_runtime_error_file = NULL;
 
-static char			runtime_err_str[COB_ERRBUF_SIZE] = {0};	/* emergency buffer */
+static char			runtime_err_str[COB_ERRBUF_SIZE] = { 0 };	/* emergency buffer */
 static int			exit_code = 0;	/* exit code when leaving libcob */
 
 #ifndef COB_WITHOUT_JMP
@@ -797,14 +797,23 @@ cob_get_source_line ()
 static char *
 cob_get_strerror (void)
 {
-	char * msg;
-	msg = cob_cache_malloc ((size_t)COB_ERRBUF_SIZE);
+	size_t size;
+	char *ret;
 #ifdef HAVE_STRERROR
-	strncpy (msg, strerror (errno), COB_ERRBUF_SIZE - 1);
+	char *msg = strerror (errno);
+	size = strlen (msg);
 #else
-	snprintf (msg, COB_ERRBUF_SIZE - 1, _("system error %d"), errno);
+	char msg[COB_ERRBUF_SIZE];
+	size = snprintf (msg, COB_ERRBUF_SIZE, _("system error %d"), errno);
+	if (size >= COB_ERRBUF_SIZE) {
+		/* very unlikely, but if that would be a bad msg catalog
+		   we don't want to memcpy from invalid data */
+		size = COB_ERRBUF_SIZE - 1;
+	}
 #endif
-	return msg;
+	ret = cob_cache_malloc (size + 1);
+	memcpy (ret, msg, size + 1);
+	return ret;
 }
 
 #ifdef	HAVE_SIGNAL_H
@@ -2380,7 +2389,7 @@ cob_field_to_string (const cob_field *f, void *str, const size_t maxsize)
 	size_t		i;
 
 	if (unlikely (f == NULL)) {
-		strncpy (str, _("NULL field"), maxsize);
+		snprintf (str, maxsize, "%s", ("NULL field"));
 		return;
 	}
 
@@ -2390,7 +2399,7 @@ cob_field_to_string (const cob_field *f, void *str, const size_t maxsize)
 	}
 	/* check if field has data assigned (may be a BASED / LINKAGE item) */
 	if (unlikely (f->data == NULL)) {
-		strncpy (str, _("field with NULL address"), maxsize);
+		snprintf (str, maxsize, "%s", ("field with NULL address"));
 		return;
 	}
 	for (i = f->size - 1; ; i--) {
@@ -4188,22 +4197,23 @@ check_current_date ()
 		iso_timezone[0] = 'Z';
 	} else if (cobsetptr->cob_date[j] == '+'
 	        || cobsetptr->cob_date[j] == '-') {
-		char *iso_timezone_ptr = (char *)&iso_timezone;
-		strncpy (iso_timezone_ptr, cobsetptr->cob_date + j, 6);
-		iso_timezone[6] = 0;	/* just to keep the analyzer happy */
-		if (strlen (iso_timezone_ptr) == 3) {
-			strcpy (iso_timezone_ptr + 3, "00");
-		} else if (iso_timezone[3] == ':') {
-			strncpy (iso_timezone_ptr + 3, cobsetptr->cob_date + j + 4, 3);
+		int len = snprintf (&iso_timezone[0], 6, "%s", cobsetptr->cob_date + j);
+		if (len == 3) {
+			memcpy (iso_timezone + 3, "00", 3);
+		} else
+		if (len >= 5 && iso_timezone[3] == ':') {
+			snprintf (&iso_timezone[3], 3, cobsetptr->cob_date + j + 4);
+			len--;
 		}
-		for (i=1; iso_timezone[i] != 0; i++) {
+		if (len > 5) {
+			ret = 1;
+		}
+		for (i=1; i < 5 && iso_timezone[i] != 0; i++) {
 			if (!isdigit ((unsigned char)iso_timezone[i])) {
 				break;
 			}
-			if (++i == 4) {
-				break;
-			}
 		}
+		i--;
 		if (i == 4) {
 			offset = COB_D2I (iso_timezone[1]) * 60 * 10
 				+ COB_D2I (iso_timezone[2]) * 60
@@ -7654,7 +7664,7 @@ cob_runtime_error (const char *fmt, ...)
 			if (more_error_procedures) {
 				/* fresh error buffer with guaranteed size */
 				char local_err_str[COB_ERRBUF_SIZE];
-				memcpy (&local_err_str, runtime_err_str, COB_ERRBUF_SIZE);
+				memcpy (local_err_str, runtime_err_str, COB_ERRBUF_SIZE);
 
 				/* ensure that error handlers set their own locations */
 				cob_source_file = NULL;

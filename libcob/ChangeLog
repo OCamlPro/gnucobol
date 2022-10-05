@@ -1,4 +1,9 @@
 
+2022-10-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (check_current_date): improved validation
+	* common.c, intrinsic.c: favor strcpy, snprintf over strncpy
+
 2022-10-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_stack_trace_internal, output_procedure_stack_entry):

@@ -778,11 +778,10 @@ cob_decimal_set_double (cob_decimal *d, const double v)
 static double
 cob_decimal_get_double (cob_decimal *d)
 {
-	double		v;
+	double		v = 0.0;
 	cob_sli_t	n;
 
 	cob_not_finite = 0;
-	v = 0.0;
 	if (unlikely (mpz_size (d->value) == 0)) {
 		return v;
 	}

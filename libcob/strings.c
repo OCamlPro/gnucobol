@@ -434,9 +434,9 @@ inspect_common (cob_field *f1, cob_field *f2, const enum inspect_type type)
 /* an INSPECT is split into multiple parts:
    one-time cob_inspect_init   (setting up memory and markers)
    multiple:
-	cob_inspect_start         (setting inspect_start/end)
-	cob_inspect_before        (optional, adjusting inspect_end)
-	cob_inspect_after         (optional, adjusting inspect_start)
+	cob_inspect_start          (setting inspect_start/end)
+	cob_inspect_before         (optional, adjusting inspect_end)
+	cob_inspect_after          (optional, adjusting inspect_start)
    one of:
 	cob_inspect_characters/cob_inspect_converting (until 3.2)/cob_inspect_all/
 	cob_inspect_leading/cob_inspect_trailing/cob_inspect_first

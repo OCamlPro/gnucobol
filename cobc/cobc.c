@@ -5214,17 +5214,10 @@ set_picture (struct cb_field *field, char *picture, size_t picture_len)
 		strcpy (picture, "X ANY LENGTH");
 		return 1;
 	} else {
-		size_t fpic_len;
 		if (!field->pic) {
 			return 0;
 		}
-		fpic_len = strlen (field->pic->orig);
-		if (fpic_len < picture_len) {
-			memcpy (picture, field->pic->orig, fpic_len + 1);
-		} else {
-			memcpy (picture, field->pic->orig, picture_len - 1);
-			picture [picture_len] = 0;
-		}
+		snprintf (picture, picture_len, "%s", field->pic->orig);
 		return 1;
 	}
 }

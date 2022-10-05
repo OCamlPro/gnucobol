@@ -2531,10 +2531,10 @@ copy_data_to_null_terminated_str (cob_field *f, char * const out_str,
 	out_str[length] = '\0';
 }
 
-static void
+static int
 split_around_t (const char *str, char *first, char *second)
 {
-	int i;
+	int i, ret = 0;
 	size_t first_length;
 	size_t second_length;
 
@@ -2542,29 +2542,33 @@ split_around_t (const char *str, char *first, char *second)
 	for (i = 0; str[i] != '\0' && str[i] != 'T'; ++i);
 
 	/* Copy everything before 'T' into first (if present) */
-	if (i < COB_DATESTR_MAX) {
-		first_length = i;
-	} else {
+	if (i > COB_DATESTR_MAX) {
 		first_length = COB_DATESTR_MAX;
+		ret = COB_DATESTR_MAX + 1;
+	} else {
+		first_length = i;
 	}
 	if (first != NULL) {
-		strncpy (first, str, first_length);
-		first[first_length] = '\0';
+		/* possible overflow checked above,
+		   snprintf ensures terminated buffer */
+		snprintf (first, first_length + 1, "%s", str);
 	}
 
 	/* If there is anything after 'T', copy it into second (if present) */
 	if (second != NULL) {
-		if (strlen (str) - i == 0) {
+		str += i + 1;
+		second_length = strlen (str);
+		if (second_length == 0) {
 			second[0] = '\0';
 		} else {
-			second_length = strlen (str) - i - 1U;
 			if (second_length > COB_TIMESTR_MAX) {
 				second_length = COB_TIMESTR_MAX;
+				ret = COB_TIMESTR_MAX + 1 + i;
 			}
-			strncpy (second, str + i + 1U, second_length);
-			second[second_length] = '\0';
+			snprintf (second, second_length + 1, "%s", str);
 		}
 	}
+	return ret;
 }
 
 static int
@@ -3606,7 +3610,9 @@ cob_valid_datetime_format (const char *format, const char decimal_point)
 	struct date_format	date_format;
 	struct time_format	time_format;
 
-	split_around_t (format, date_format_str, time_format_str);
+	if (split_around_t (format, date_format_str, time_format_str)) {
+		return 0;
+	}
 
 	if (!cob_valid_date_format (date_format_str)
 	 || !cob_valid_time_format (time_format_str, decimal_point)) {
@@ -6700,7 +6706,9 @@ cob_intr_formatted_datetime (const int offset, const int length,
 		goto invalid_args;
 	}
 
-	split_around_t (fmt_str, date_fmt_str, time_fmt_str);
+	if (split_around_t (fmt_str, date_fmt_str, time_fmt_str)) {
+		goto invalid_args;
+	}
 
 	time_fmt = parse_time_format_string (time_fmt_str);
 	if (use_system_offset) {
@@ -6776,24 +6784,26 @@ cob_intr_test_formatted_datetime (cob_field *format_field,
 		goto invalid_args;
 	}
 
-	/* Move date/time to respective variables */
+	/* Move date/time to respective variables;
+	   note: all fields and sizes were validated above */
 	if (date_present && time_present) {
-		split_around_t (datetime_format_str, date_format_str, time_format_str);
+		split_around_t (datetime_format_str,
+			date_format_str, time_format_str);
 	} else if (date_present) {
-		strncpy (date_format_str, datetime_format_str, COB_DATESTR_MAX);
+		strcpy (date_format_str, datetime_format_str);
 	} else { /* time_present */
-		strncpy (time_format_str, datetime_format_str, COB_TIMESTR_MAX);
+		strcpy (time_format_str, datetime_format_str);
 	}
 
+	/* Move format fields respective variables;
+	   note: all fields and sizes were validated during compile */
 	if (date_present && time_present) {
 		split_around_t (formatted_datetime, formatted_date, formatted_time);
 	} else if (date_present) {
-		strncpy (formatted_date, formatted_datetime, COB_DATESTR_MAX);
+		strcpy (formatted_date, formatted_datetime);
 	} else { /* time_present */
-		strncpy (formatted_time, formatted_datetime, COB_TIMESTR_MAX);
+		strcpy (formatted_time, formatted_datetime);
 	}
-	/* silence warnings */
-	formatted_date[COB_DATESTR_MAX] = formatted_time[COB_TIMESTR_MAX] = 0;
 
 	/* Set time offset */
 	if (date_present) {
