@@ -1,4 +1,10 @@
 
+2022-10-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_check_field_debug): fixed bug introduced with last change
+	  and don't create unnecessary long DEBUG-NAME strings
+	* config.c (cb_load_conf_file): check snprintf size fixing compile warning
+
 2022-10-04  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* pplex.l, parser.y: fix AREACHECK in DEFAULT SECTION of CONTROL DIVISON
@@ -14,9 +20,9 @@
 	* codegen.c (output_error_handler), typeck.c (cb_emit_open): use of
 	  cb_open_mode_to_string for improved codegen (using enum values instead
 	  of numeric constants)
-	* tree.c (cb_name_1): replaced strncpy calls by snprintf, calculate length
-	  from known positions instead of strlen; limit scope of some variables,
-	  allowing them to be defined as const
+	* tree.c (cb_name_1): replaced strncpy calls by checked snprintf, calculate
+	  length from known positions instead of strlen; limit scope of some
+	  variables, allowing them to be defined as const
 	* cobc.c (print_88_values, print_fields, xref_88_values, xref_fields):
 	  drop copy of field name to temporary lcl_name as a field name has
 	  a maximum length of COB_MAX_WORDLEN (63) and therefore is always smaller
@@ -28,6 +34,7 @@
 	* typeck.c (cb_build_debug_item): refactored to remove number of casts
 	* field.c (copy_duplicated_field_into_field): extracted
 	  from copy_children, copy_into_field_recursive
+	* tree.c (build_sum_counter): fix reference to sum counter
 
 2022-10-01  Simon Sobisch <simonsobisch@gnu.org>
 

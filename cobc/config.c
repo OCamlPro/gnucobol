@@ -301,9 +301,10 @@ cb_load_conf_file (const char *conf_file, const enum cb_include_type include_typ
 			}
 			if (filename[0] == 0) {
 				/* check for COB_CONFIG_DIR (use default if not in environment) */
-				snprintf (filename, (size_t)COB_NORMAL_MAX, "%s%c%s", cob_config_dir, SLASH_CHAR, conf_file);
-				filename[COB_NORMAL_MAX] = 0;
-				if (access (filename, F_OK) == 0) {	/* and prefixed file exist */
+				const int size = snprintf (filename, (size_t)COB_NORMAL_MAX,
+					"%s%c%s", cob_config_dir, SLASH_CHAR, conf_file);
+				if (size < COB_NORMAL_MAX	/* no overflow - full name available */
+				 && access (filename, F_OK) == 0) {	/* and prefixed file exist */
 					conf_file = filename;		/* Prefix COB_CONFIG_DIR */
 				}
 			}

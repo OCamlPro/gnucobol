@@ -1304,7 +1304,7 @@ cobc_elided_strcpy (char *dest, const char* src,
 			memcpy (dest + max_size - 3, "...", 3 + 1);
 		} else {
 			memcpy (dest, "...", 3);
-			memcpy (dest + 3, src + size - size_to_copy, size_to_copy + 1);
+			memcpy (dest + 3, src + size - size_to_copy, size_to_copy);
 		}
 	}
 	return dest;

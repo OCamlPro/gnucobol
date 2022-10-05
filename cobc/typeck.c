@@ -1213,7 +1213,7 @@ cb_check_field_debug (cb_tree fld)
 	cb_tree		z;
 	size_t		size;
 	size_t		found;
-	char		buff[COB_MINI_BUFF];
+	char		buff[COB_MINI_BUFF]; /* at least DEBUG-NAME + 4 + COB_MAX_NAMELEN...*/
 
 	/* Basic reference check */
 	if (CB_WORD_COUNT (fld) > 0) {
@@ -1264,19 +1264,16 @@ cb_check_field_debug (cb_tree fld)
 
 	/* Set up debug info */
 	size = sprintf (buff, "%s", CB_FIELD (x)->name);
-	l = CB_REFERENCE (fld)->chain;
-	if (l) {
-		for (; l; l = CB_REFERENCE (l)->chain) {
-			z = cb_ref (l);
-			if (z != cb_error_node) {
-				const size_t size_new = strlen (CB_FIELD (z)->name) + 1;
-				if (size + 4 + size_new >= sizeof(buff)) {
-					break;
-				}
-				memcpy (buff + size, " OF ", 4);
-				size += 4;
-				memcpy (buff + size, CB_FIELD (z)->name, size_new);
+	/* DEBUG-NAME's max is fixed-length 30, so no use in writing more */
+	for (l = CB_REFERENCE (fld)->chain; l && size < 30; l = CB_REFERENCE (l)->chain) {
+		z = cb_ref (l);
+		if (z != cb_error_node) {
+			const char		*name = CB_FIELD (z)->name;
+			const size_t	sname = strlen (name) + 1;
+			if (size + 4 + sname >= sizeof(buff)) {
+				break;
 			}
+			size += sprintf (buff + size, " OF %s", name);
 		}
 	}
 	current_statement->debug_nodups =
