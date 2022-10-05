@@ -5677,7 +5677,12 @@ xref_fields (struct cb_field *top)
 		 || (top->flag_internal_register && !top->count)) {
 			continue;
 		}
+#if 0 /* FIXME: at least in the context of RW flag_filler is not set correct in
+                all places (and if done in all places other testcases break) */
 		if (top->flag_filler && !top->validation) {
+#else
+		if (!strcmp (check_filler_name (top), "FILLER") && !top->validation) {
+#endif
 			if (top->children) {
 				found += xref_fields (top->children);
 			}
