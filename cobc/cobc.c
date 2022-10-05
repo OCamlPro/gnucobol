@@ -5677,7 +5677,7 @@ xref_fields (struct cb_field *top)
 		 || (top->flag_internal_register && !top->count)) {
 			continue;
 		}
-		if (!top->flag_filler && !top->validation) {
+		if (top->flag_filler && !top->validation) {
 			if (top->children) {
 				found += xref_fields (top->children);
 			}
