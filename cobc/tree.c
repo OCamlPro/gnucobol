@@ -516,150 +516,230 @@ static size_t
 cb_name_1 (char *s, cb_tree x, const int size)
 {
 	const char			*orig = s;
+	size_t size_real;
 
 	if (!x) {
-		return snprintf (s, size, "%s", "(void pointer)");
+		size_real = snprintf (s, size, "(void pointer)");
+		goto game_over;
 	}
 	switch (CB_TREE_TAG (x)) {
 	case CB_TAG_CONST:
 		if (x == cb_any) {
-			return snprintf (s, size, "%s", "ANY");
+			size_real = snprintf (s, size, "ANY");
 		} else if (x == cb_true) {
-			return snprintf (s, size, "%s", "TRUE");
+			size_real = snprintf (s, size, "TRUE");
 		} else if (x == cb_false) {
-			return snprintf (s, size, "%s", "FALSE");
+			size_real = snprintf (s, size, "FALSE");
 		} else if (x == cb_null) {
-			return snprintf (s, size, "%s", "NULL");
+			size_real = snprintf (s, size, "NULL");
 		} else if (x == cb_zero) {
-			return snprintf (s, size, "%s", "ZERO");
+			size_real = snprintf (s, size, "ZERO");
 		} else if (x == cb_space) {
-			return snprintf (s, size, "%s", "SPACE");
+			size_real = snprintf (s, size, "SPACE");
 		} else if (x == cb_low || x == cb_norm_low) {
-			return snprintf (s, size, "%s", "LOW-VALUE");
+			size_real = snprintf (s, size, "LOW-VALUE");
 		} else if (x == cb_high || x == cb_norm_high) {
-			return snprintf (s, size, "%s", "HIGH-VALUE");
+			size_real = snprintf (s, size, "HIGH-VALUE");
 		} else if (x == cb_quote) {
-			return snprintf (s, size, "%s", "QUOTE");
+			size_real = snprintf (s, size, "QUOTE");
 		} else if (x == cb_error_node) {
-			return snprintf (s, size, "%s", _("internal error node"));
+			size_real = snprintf (s, size, "%s", _("internal error node"));
 		} else {
-			return snprintf (s, size, "%s", _("unknown constant"));
+			size_real = snprintf (s, size, "%s", _("unknown constant"));
 		}
+		break;
 
 	case CB_TAG_LITERAL:
 		/* should only be called for diagnostic messages,
 		   so limit as in scanner.l:  */
 		if (CB_TREE_CLASS (x) == CB_CLASS_NUMERIC) {
-			return snprintf (s, size, "%s", (char *)CB_LITERAL (x)->data);
+			size_real = snprintf (s, size, "%s", (char *)CB_LITERAL (x)->data);
 		} else {
 			char	lit_buff[CB_ERR_LITMAX + 1];
-			return snprintf (s, size, _("literal \"%s\""),
+			size_real = snprintf (s, size, _("literal \"%s\""),
 				literal_for_diagnostic (lit_buff, (char *)CB_LITERAL (x)->data));
 		}
+		break;
 
 	case CB_TAG_FIELD: {
 		const struct cb_field *f = CB_FIELD (x);
 		if (f->flag_filler) {
-			return snprintf (s, size, "%s", "FILLER");
+			size_real = snprintf (s, size, "FILLER");
 		} else {
-			return snprintf (s, size, "%s", f->name);
+			size_real = snprintf (s, size, "%s", f->name);
 		}
+		break;
 	}
 
 	case CB_TAG_REFERENCE: {
 		struct cb_reference *p = CB_REFERENCE (x);
+		char buff[COB_SMALL_BUFF];
+		size_t size_element;
 		if (p->flag_filler_ref) {
-			s += snprintf (s, size, "FILLER");
+			size_real = snprintf (s, size, "FILLER");
 		} else {
-			s += snprintf (s, size, "%s", p->word->name);
+			size_real = snprintf (s, size, "%s", p->word->name);
 		}
+		if (size_real > size) goto game_over;
+		s += size_real;
 		if (p->subs && CB_VALUE(p->subs) != cb_int1) {
-			cb_tree			l;
-			s += snprintf (s, size - (s - orig), " (");
+			cb_tree		l;
+			char	*s_orig = s;
+			if (size_real + 5 > size) {
+				/* drop that " (X[,Y ...]) */
+				return size_real;
+			}
+			size_element = sprintf (s, " (");
+			size_real += size_element;
+			s += size_element;
 			p->subs = cb_list_reverse (p->subs);
 			for (l = p->subs; l; l = CB_CHAIN (l)) {
-				s += cb_name_1 (s, CB_VALUE (l), size - (s - orig));
-				s += snprintf (s, size - (s - orig), CB_CHAIN (l) ? ", " : ")");
+				size_element = cb_name_1 (buff, CB_VALUE (l), COB_SMALL_BUFF);
+				if (size_real + size_element + 2 > size) {
+					/* replacement: "(X[,Y ...])" */
+					size_element = sprintf (s_orig, "(<>");
+					s = s_orig + size_element;
+					break;
+				}
+				size_element = sprintf (s, "%s%s", buff, CB_CHAIN (l) ? ", " : "");
+				size_real += size_element;
+				s += size_element;
 			}
 			p->subs = cb_list_reverse (p->subs);
+			s += sprintf (s, ")");
+			size_real = s - orig;
 		}
 		if (p->offset) {
-			s += snprintf (s, size - (s - orig), " (");
-			s += cb_name_1 (s, p->offset, size - (s - orig));
-			s += snprintf (s, size - (s - orig), ":");
-			if (p->length) {
-				s += cb_name_1 (s, p->length, size - (s - orig));
+			size_t	size_refmod;
+			size_element = cb_name_1 (buff, p->offset, COB_SMALL_BUFF);
+			if (size_real + size_element + 6 >= size) {
+				/* drop that " (X:Y) [in Z]" */
+				return size_real;	
 			}
-			s += snprintf (s, size - (s - orig), ")");
+			if (p->length) {
+				size_refmod = sprintf (s, " (%s:", buff);
+				size_element = cb_name_1 (buff, p->length, COB_SMALL_BUFF);
+				if (size_real + size_refmod + size_element + 1  >= size) {
+					/* replacement: "(X:Y)" (dropping possible "in XYZ") */
+					size_element = sprintf (s, "(<>:)");
+					return size_real + size_element;	
+				}
+				size_refmod += sprintf (s + size_refmod, "%s)", buff);
+				s += size_refmod;
+			} else {
+				size_refmod = sprintf (s, " (%s:)", buff);
+			}
+			size_real += size_refmod;
+			s += size_refmod;
 		}
 		if (p->chain) {
-			s += snprintf (s, size - (s - orig), " in ");
-			s += cb_name_1 (s, p->chain, size - (s - orig));
+			size_element = cb_name_1 (buff, p->chain, COB_SMALL_BUFF);
+			if (size_real + size_element + 4 >= size) {
+				return s - orig;	/* drop that " in XYZ" */
+			}
+			s += sprintf (s, " in %s", buff);
 		}
 		return s - orig;
 	}
 
 	case CB_TAG_LABEL:
-		return snprintf (s, size, "%s", (char *)(CB_LABEL (x)->name));
+		size_real = snprintf (s, size, "%s", (char *)(CB_LABEL (x)->name));
+		break;
 
 	case CB_TAG_ALPHABET_NAME:
-		return snprintf (s, size, "%s", CB_ALPHABET_NAME (x)->name);
+		size_real = snprintf (s, size, "%s", CB_ALPHABET_NAME (x)->name);
+		break;
 
 	case CB_TAG_CLASS_NAME:
-		return snprintf (s, size, "%s", CB_CLASS_NAME (x)->name);
+		size_real = snprintf (s, size, "%s", CB_CLASS_NAME (x)->name);
+		break;
 
 	case CB_TAG_LOCALE_NAME:
-		return snprintf (s, size, "%s", CB_LOCALE_NAME (x)->name);
+		size_real = snprintf (s, size, "%s", CB_LOCALE_NAME (x)->name);
+		break;
 
 	case CB_TAG_BINARY_OP: {
-		const struct cb_binary_op * cbop = CB_BINARY_OP (x);
+		const struct cb_binary_op *cbop = CB_BINARY_OP (x);
+		char	buff [COB_SMALL_BUFF];
+		size_t	size_element;
 		if (cbop->op == '@') {
-			s += snprintf (s, size, "(");
-			s += cb_name_1 (s, cbop->x, size - (s - orig));
-			s += snprintf (s, size - (s - orig), ")");
+			size_element = cb_name_1 (buff, cbop->x, COB_SMALL_BUFF);
+			if (size_element + 3 >= size) {
+				size_real = snprintf (s, size, "<@OP>");
+				goto game_over;
+			}
+			return sprintf (s, "(%s)", buff);
 		} else if (cbop->op == '!') {
-			s += snprintf (s, size, "!");
-			s += cb_name_1 (s, cbop->x, size - (s - orig));
+			size_element = cb_name_1 (buff, cbop->x, COB_SMALL_BUFF);
+			if (size_element + 1 >= size) {
+				size_real = snprintf (s, size, "<!OP>");
+				goto game_over;
+			}
+			return sprintf (s, "!%s", buff);
 		} else {
-			s += snprintf (s, size, "(");
-			s += cb_name_1 (s, cbop->x, size - (s - orig));
-			s += snprintf (s, size - (s - orig), " %c ", cbop->op);
-			s += cb_name_1 (s, cbop->y, size - (s - orig));
-			s += snprintf (s, size - (s - orig), ")");
+			size_element = cb_name_1 (buff, cbop->x, COB_SMALL_BUFF);
+			if (size_element + 6 >= size) {
+				size_real = snprintf (s, size, "<OP %c>", cbop->op);
+				goto game_over;
+			}
+			size_real = sprintf (s, "(%s %c ", buff, cbop->op);
+			size_element = cb_name_1 (buff, cbop->y, COB_SMALL_BUFF);
+			if (size_element + size_real + 1 >= size) {
+				size_real = snprintf (s, size, "<OP %c>", cbop->op);
+				goto game_over;
+			}
+			size_real += sprintf (s + size_real, " %s)", buff);
+			return size_real;
 		}
-		return s - orig;
 	}
 
 	case CB_TAG_FUNCALL: {
 		const struct cb_funcall *cbip = CB_FUNCALL (x);
+		const int i_max = cbip->argc;
 		int i;
-		s += snprintf (s, size, "%s", cbip->name);
-		for (i = 0; i < cbip->argc; i++) {
-			s += snprintf (s, size - (s - orig), (i == 0) ? "(" : ", ");
-			s += cb_name_1 (s, cbip->argv[i], size - (s - orig));
+		size_real = snprintf (s, size, "%s", cbip->name);
+		if (size_real + 4 > size) goto game_over;
+		s += size_real;
+		for (i = 0; i < i_max; i++) {
+			const size_t size_left = size - (s - orig);
+			char *s_orig = s;
+			size_t size_element;
+			size_element = snprintf (s, size_left, (i == 0) ? "(" : ", ");
+			size_element += cb_name_1 (s + size_element, cbip->argv[i], size_left);
+			if (size_element > size_left + 4) {
+				/* if we don't have enough room: go out leaving s unchanged */
+				s_orig[0] = '\0';
+				goto game_over;
+			}
+			size_real += size_element;
+			s += size_element;
 		}
-		s += snprintf (s, size - (s - orig), ")");
-		return s - orig;
+		sprintf (s, ")");
+		size_real++;
+		break;
 	}
 
 	case CB_TAG_INTRINSIC: {
 		const struct cb_intrinsic *cbit = CB_INTRINSIC (x);
 		if (!cbit->isuser) {
-			return snprintf (s, size, "FUNCTION %s", cbit->intr_tab->name);
+			size_real = snprintf (s, size, "FUNCTION %s", cbit->intr_tab->name);
 		} else
 		if (cbit->name && CB_REFERENCE_P (cbit->name)
 		 && CB_REFERENCE(cbit->name)->word) {
-			return snprintf (s, size, "USER FUNCTION %s", CB_REFERENCE (cbit->name)->word->name);
+			size_real = snprintf (s, size, "USER FUNCTION %s", CB_REFERENCE (cbit->name)->word->name);
 		} else {
-			return snprintf (s, size, "USER FUNCTION");
+			size_real = snprintf (s, size, "USER FUNCTION");
 		}
+		break;
 	}
 
 	case CB_TAG_FILE:
-		return snprintf (s, size, "FILE %s", CB_FILE (x)->name);
+		size_real = snprintf (s, size, "FILE %s", CB_FILE (x)->name);
+		break;
 
 	case CB_TAG_REPORT:
-		return snprintf (s, size, "REPORT %s", CB_REPORT_PTR (x)->name);
+		size_real = snprintf (s, size, "REPORT %s", CB_REPORT_PTR (x)->name);
+		break;
 
 	case CB_TAG_REPORT_LINE: {
 		struct cb_reference *p;
@@ -670,11 +750,13 @@ cb_name_1 (char *s, cb_tree x, const int size)
 		p = CB_REFERENCE (x);
 #endif
 		f = CB_FIELD (p->value);
-		return snprintf (s, size, "REPORT LINE %s", f->name);
+		size_real = snprintf (s, size, "REPORT LINE %s", f->name);
+		break;
 	}
 
 	case CB_TAG_CD:
-		return snprintf (s, size, "%s", CB_CD (x)->name);
+		size_real = snprintf (s, size, "%s", CB_CD (x)->name);
+		break;
 
 	/* LCOV_EXCL_START */
 	default:
@@ -682,9 +764,13 @@ cb_name_1 (char *s, cb_tree x, const int size)
 	}
 	/* LCOV_EXCL_STOP */
 
-#if 0	/* currently unused */
-	return strlen (orig);
-#endif
+game_over:
+	/* when called recursive we could be truncated,
+	   don't report more than we actually wr*/
+	if (size_real >= size) {
+		size_real = size - 1;
+	}
+	return size_real;
 }
 
 static cb_tree
@@ -4102,19 +4188,19 @@ build_sum_counter (struct cb_report *r, struct cb_field *f)
 		return;
 	if (f->pic == NULL) {
 		s = CB_FIELD_PTR (CB_VALUE(f->report_sum_list));
-		cb_error_x (CB_TREE(f), _("needs PICTURE clause for SUM %s"),s->name);
+		cb_error_x (CB_TREE(f), _("needs PICTURE clause for SUM %s"), s->name);
 		return;
 	}
 	if (f->pic->category != CB_CATEGORY_NUMERIC
 	 && f->pic->category != CB_CATEGORY_NUMERIC_EDITED) {
 		s = CB_FIELD_PTR (CB_VALUE(f->report_sum_list));
 		cb_warning_x (COBC_WARN_FILLER, CB_TREE(f), 
-					_("non-numeric PICTURE clause for SUM %s"),s->name);
+					_("non-numeric PICTURE clause for SUM %s"), s->name);
 	}
 
 	if (f->flag_filler) {
 		snprintf (buff, (size_t)COB_MINI_MAX, "SUM OF %s",
-					CB_FIELD(CB_VALUE(f->report_sum_list))->name);
+			CB_FIELD_PTR (CB_VALUE (f->report_sum_list))->name);
 	} else {
 		snprintf (buff, (size_t)COB_MINI_MAX, "SUM %s", f->name);
 	}
