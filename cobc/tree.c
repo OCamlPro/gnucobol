@@ -1642,14 +1642,8 @@ static void
 error_numeric_literal (const char *literal)
 {
 	char		lit_out[39];
-
 	/* snip literal for output, if too long */
-	strncpy (lit_out, literal, 38);
-	if (strlen (literal) > 38) {
-		strcpy (lit_out + 35, "...");
-	} else {
-		lit_out[38] = '\0';
-	}
+	cobc_elided_strcpy (lit_out, literal, sizeof (lit_out), 1);
 	cb_error (_("invalid numeric literal: '%s'"), lit_out);
 	cb_error ("%s", err_msg);
 }

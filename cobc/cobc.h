@@ -564,9 +564,11 @@ extern void			*cobc_plex_strdup (const char *);
 extern void			*cobc_check_string (const char *);
 extern void			cobc_err_msg (const char *, ...) COB_A_FORMAT12;
 
+extern char			*cobc_elided_strcpy (char *, const char *, const size_t, const int);
+
 DECLNORET extern void		cobc_abort (const char *,
 					    const int) COB_A_NORETURN;
-DECLNORET extern void		cobc_abort_terminate (int) COB_A_NORETURN;
+DECLNORET extern void		cobc_abort_terminate (const int) COB_A_NORETURN;
 
 
 extern size_t			cobc_check_valid_name (const char *,

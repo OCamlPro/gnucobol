@@ -21,8 +21,10 @@
 	  drop copy of field name to temporary lcl_name as a field name has
 	  a maximum length of COB_MAX_WORDLEN (63) and therefore is always smaller
 	  than the previously compared 80-1 byte
+	* cobc.c (cobc_elided_strcpy), cobc.h: new function to copy a string only
+	  up to max positions and use an eliding "..." at front/end if src was cut
 	* cobc.c, config.c, scanner.l, tree.c, reserved.c: favor strcpy, memcpy,
-	  over strncpy
+	  cobc_elided_strcpy over strncpy
 	* typeck.c (cb_build_debug_item): refactored to remove number of casts
 	* field.c (copy_duplicated_field_into_field): extracted
 	  from copy_children, copy_into_field_recursive
