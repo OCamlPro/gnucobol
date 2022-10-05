@@ -1286,6 +1286,30 @@ cobc_plex_strdup (const char *dupstr)
 	return p;
 }
 
+/* variant of strcpy which copies max 'max_size' bytes from 'src' to 'dest',
+   if the size of 'src' is too long only its last/last bytes are copied and an
+   eliding "..." is placed in front or at end depending on 'elide_at_end' */
+char *
+cobc_elided_strcpy (char *dest, const char* src,
+		const size_t max_size, int elide_at_end)
+{
+	const size_t size = strlen (src);
+
+	if (size < max_size) {
+		memcpy (dest, src, size + 1);
+	} else {
+		size_t size_to_copy = max_size - 3;
+		if (elide_at_end) {
+			memcpy (dest, src, size_to_copy + 1);
+			memcpy (dest + max_size - 3, "...", 3 + 1);
+		} else {
+			memcpy (dest, "...", 3);
+			memcpy (dest + 3, src + size - size_to_copy, size_to_copy + 1);
+		}
+	}
+	return dest;
+}
+
 void *
 cobc_check_string (const char *dupstr)
 {
@@ -2174,8 +2198,7 @@ cobc_terminate (const char *str)
 		set_listing_date ();
 		set_standard_title ();
 		cb_listing_linecount = cb_lines_per_page;
-		strncpy (cb_listing_filename, str, FILENAME_MAX);
-		cb_listing_filename[FILENAME_MAX - 1] = 0;
+		cobc_elided_strcpy (cb_listing_filename, str, sizeof (cb_listing_filename), 0);
 		print_program_header ();
 	}
 	cb_perror (0, "cobc: %s: %s", str, cb_get_strerror ());
@@ -2227,7 +2250,7 @@ cobc_abort_msg (void)
 /* return to OS in case of hard errors after trying to output the error to
    listing file if active */
 void
-cobc_abort_terminate (int should_be_reported)
+cobc_abort_terminate (const int should_be_reported)
 {
 	/* note we returned 99 for aborts earlier but autotest will
 	   "recognize" status 99 as failure (you cannot "expect" the return 99 */
@@ -5098,11 +5121,13 @@ print_program_data (const char *data)
 	fprintf (cb_src_list_file, "%s\n", data);
 }
 
-static char *
-check_filler_name (char *name)
+/* Return 'fld's name or "FILLER */
+static const char *
+check_filler_name (const struct cb_field *fld)
 {
+	const char *name = fld->name;
 	if (strlen (name) >= 6 && memcmp (name, "FILLER", 6) == 0) {
-		name = (char *)"FILLER";
+		return "FILLER";
 	}
 	return name;
 }
@@ -5117,10 +5142,7 @@ set_picture (struct cb_field *field, char *picture, size_t picture_len)
 			strcpy (picture, "INVALID");
 		} else {
 			const char *name = CB_FIELD (field->external_definition)->name;
-			strncpy (picture, name, picture_len);
-			if (strlen (name) > picture_len - 1) {
-				strcpy (picture + picture_len - 3, "...");
-			}
+			cobc_elided_strcpy (picture, name, picture_len, 1);
 		}
 		return 1;
 	}
@@ -5168,12 +5190,22 @@ set_picture (struct cb_field *field, char *picture, size_t picture_len)
 	 || field->usage == CB_USAGE_COMP_N) {
 		const char *picture_usage = cb_get_usage_string (field->usage);
 		const size_t usage_len = strlen (picture_usage);
-		if (field->pic) {
-			strncpy (picture, field->pic->orig, picture_len - 1 - usage_len);
-			picture[CB_LIST_PICSIZE - 1] = 0;
-			strcat (picture, " ");
+		if (usage_len > picture_len) {
+			cobc_elided_strcpy (picture, picture_usage, picture_len, 1);
+			return 1;
 		}
-		strcat (picture, picture_usage);
+		if (field->pic) {
+			const size_t fpic_len = strlen (field->pic->orig);
+			if (fpic_len + 1 + usage_len > picture_len) {
+				const size_t max_len = picture_len - 1 - usage_len;
+				cobc_elided_strcpy (picture, field->pic->orig, max_len, 1);
+				sprintf (picture + max_len, " %s", picture_usage);
+			} else {
+				sprintf (picture, "%s %s", field->pic->orig, picture_usage);
+			}
+			return 1;
+		}
+		memcpy (picture, picture_usage, usage_len + 1);
 		return 1;
 	} else if (field->flag_any_numeric) {
 		strcpy (picture, "9 ANY NUMERIC");
@@ -8606,8 +8638,8 @@ process_file (struct filename *fn, int status)
 
 	if (cb_src_list_file) {
 		cb_listing_page = 0;
-		strncpy (cb_listing_filename, fn->source, FILENAME_MAX - 1);
-		cb_listing_filename[FILENAME_MAX - 1] = 0;
+		cobc_elided_strcpy (cb_listing_filename, fn->source,
+			sizeof (cb_listing_filename), 0);
 		set_listing_header_code ();
 	}
 
