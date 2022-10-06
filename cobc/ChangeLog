@@ -1,4 +1,12 @@
 
+2022-10-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (symbolic_characters_clause, class_name_clause): improved
+	  parsing, adding _alphnat_target and first checks for it
+	* parser.y (_is_locale_name, _in_alphabet, _alphnat_target): fixed
+	  missing return value for "empty" matching
+	* parser.y (figurative_constant): moved out of existing rules
+
 2022-10-05  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (cb_check_field_debug): fixed bug introduced with last change

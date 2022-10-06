@@ -4540,7 +4540,7 @@ alphabet_lits:
 | SPACE				{ $$ = cb_space; }
 | ZERO				{ $$ = cb_zero; }
 | QUOTE				{ $$ = cb_quote; }
-| HIGH_VALUE			{ $$ = cb_norm_high; }
+| HIGH_VALUE		{ $$ = cb_norm_high; /* -> special case, not cb_high */ }
 | LOW_VALUE			{ $$ = cb_norm_low; }
 ;
 
@@ -4549,39 +4549,66 @@ space_or_zero:
 | ZERO				{ $$ = cb_zero; }
 ;
 
+_alphnat_target:
+  /* empty */
+  {
+	$$ = NULL;
+  }
+| _for ALPHANUMERIC
+  {
+	$$ = NULL;
+  }
+| _for NATIONAL
+  {
+	$$ = cb_int0;
+  }
+;
+
+_in_alphabet:
+  /* empty */
+  {
+	$$ = NULL;
+  }
+| IN alphabet_name
+  {
+	$$ = $2;
+  }
+;
+
 
 /* SYMBOLIC characters clause */
 
 symbolic_characters_clause:
-  symbolic_collection _sym_in_word
+  symbolic_collection _in_alphabet
   {
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION,
 			       COBC_HD_CONFIGURATION_SECTION,
 			       COBC_HD_SPECIAL_NAMES, 0);
 	if (current_program->nested_level) {
 		cb_error (_("%s not allowed in nested programs"), "SPECIAL-NAMES");
-	} else if ($1) {
-		CB_CHAIN_PAIR (current_program->symbolic_char_list, $1, $2);
+	} else {
+		cb_tree type = CB_PAIR_X ($1);
+		cb_tree chars_list = CB_PAIR_Y ($1);
+		cb_tree alph = $2;
+		
+		/* TODO: at least add a check that $3 and $6 match by type */
+		if (type && !alph) {
+			cb_error_x (type, _("type does not match alphabet"));
+		} else
+		if (type) {
+			CB_PENDING_X (type, "NATIONAL SYMBOLIC CHARACTER");
+		}
+		CB_CHAIN_PAIR (current_program->symbolic_char_list, chars_list, alph);
 	}
   }
 ;
 
-_sym_in_word:
-  /* empty */
-  {
-	$$ = NULL;
-  }
-| IN WORD
-  {
-	$$ = $2;
-  }
-;
 
 symbolic_collection:
   %prec SHIFT_PREFER
-  SYMBOLIC _characters symbolic_chars_list
+  SYMBOLIC _characters _alphnat_target symbolic_chars_list
   {
-	$$ = $3;
+	$$ = CB_BUILD_PAIR ($3, $4);
   }
 ;
 
@@ -4688,7 +4715,7 @@ symbolic_constant:
 /* CLASS clause */
 
 class_name_clause:
-  CLASS undefined_word _class_type _is class_item_list _in_alphabet
+  CLASS undefined_word _alphnat_target _is class_item_list _in_alphabet
   {
 	cb_tree		x;
 
@@ -4703,6 +4730,16 @@ class_name_clause:
 		if (x) {
 			current_program->class_name_list =
 				cb_list_add (current_program->class_name_list, x);
+		}
+		/* TODO: at least add a check that $3 and $6 match by type */
+		if ($3 && !$6) {
+			cb_error_x ($3, _("type does not match alphabet"));
+		} else
+		if ($3) {
+			CB_PENDING_X ($3, "NATIONAL CLASS");
+		}
+		if ($6) {
+			CB_PENDING_X ($6, _("CLASS IS integer IN alphabet-name"));
 		}
 	}
   }
@@ -4733,28 +4770,6 @@ class_item:
 	} else {
 		$$ = CB_BUILD_PAIR ($3, $1);
 	}
-  }
-;
-
-_class_type:
-  /* empty */
-| _for ALPHANUMERIC
-  {
-	$$ = NULL;
-  }
-| _for NATIONAL
-  {
-	CB_PENDING_X ($2, "NATIONAL CLASS");
-	$$ = cb_int0;
-  }
-;
-
-_in_alphabet:
-  /* empty */
-| IN alphabet_name
-  {
-	CB_PENDING_X ($2, _("CLASS IS integer IN alphabet-name"));
-	$$ = $2;
   }
 ;
 
@@ -7421,13 +7436,13 @@ picture_clause:
   }
   _pic_locale_format_or_depending_on
   {
-	  if ((!current_field->pic || current_field->pic->variable_length) &&
-	      !current_field->flag_picture_l) {
-		  /* Current field with PIC L was not translated */
-		  cb_error_x (CB_TREE (current_field->pic),
+	if ((!current_field->pic || current_field->pic->variable_length) &&
+	    !current_field->flag_picture_l) {
+		/* Current field with PIC L was not translated */
+		cb_error_x (CB_TREE (current_field->pic),
 			      _("%s requires DEPENDING clause"),
 			      _("variable-length PICTURE"));
-	  }
+	}
   }
 ;
 
@@ -7435,34 +7450,37 @@ _pic_locale_format_or_depending_on:
   /* empty */
 | LOCALE _is_locale_name SIZE _is integer
   {
-	  /* $2 -> optional locale-name to be used */
-	  if ((current_field->pic->category != CB_CATEGORY_NUMERIC &&
-	       current_field->pic->category != CB_CATEGORY_NUMERIC_EDITED) ||
-	      strpbrk (current_field->pic->orig, " CRDBL-*") /* the standard seems to forbid also ',' */) {
-		  cb_error_x (CB_TREE (current_field->pic),
+	/* $2 -> optional locale-name to be used */
+	if (  (current_field->pic->category != CB_CATEGORY_NUMERIC
+	    && current_field->pic->category != CB_CATEGORY_NUMERIC_EDITED)
+	   || strpbrk (current_field->pic->orig, " CRDBL-*")) {
+		/* CHECKME: the standard seems to forbid additional ',' */
+		cb_error_x (CB_TREE (current_field->pic),
 			      _("a locale-format PICTURE string must only consist of '9', '.', '+', 'Z' and the currency-sign"));
-	  } else {
-		  /* TODO: check that not we're not within a CONSTANT RECORD */
-		  CB_PENDING_X (CB_TREE (current_field->pic), "locale-format PICTURE");
-	  }
+	} else {
+		/* TODO: check that not we're not within a CONSTANT RECORD */
+		CB_PENDING_X (CB_TREE (current_field->pic), "locale-format PICTURE");
+	}
   }
 | DEPENDING _on reference
   {
-	  cb_tree depending = $3;
-	  if (!current_field->pic->variable_length) {
-		  cb_error_x ($3, _("DEPENDING clause needs either an "
+	cb_tree depending = $3;
+	if (!current_field->pic->variable_length) {
+		cb_error_x ($3, _("DEPENDING clause needs either an "
 				    "OCCURS clause or a variable-length "
 				    "PICTURE"));
-	  } else if (current_field->pic->category != CB_CATEGORY_ALPHABETIC &&
-		     current_field->pic->category != CB_CATEGORY_ALPHANUMERIC) {
-		  cb_error_x ($3, _("only USAGE DISPLAY may specify a "
+	} else
+	if (current_field->pic->category != CB_CATEGORY_ALPHABETIC
+	 && current_field->pic->category != CB_CATEGORY_ALPHANUMERIC) {
+		cb_error_x ($3, _("only USAGE DISPLAY may specify a "
 				    "variable-length PICTURE"));
-	  } else if (current_storage == CB_STORAGE_SCREEN ||
-		     current_storage == CB_STORAGE_REPORT) {
-		  cb_error_x ($3, _("%s not allowed in %s"),
+	} else
+	if (current_storage == CB_STORAGE_SCREEN
+	 || current_storage == CB_STORAGE_REPORT) {
+		cb_error_x ($3, _("%s not allowed in %s"),
 			      _("variable-length PICTURE"),
 			      enum_explain_storage (current_storage));
-	  } else {
+	} else {
 		  /* Implicitly translate `PIC Lc... DEPENDING N` (where
 		     `c` may actually only be `X` or `A`) into a group
 		     with a single sub-field `PIC c OCCURS 1 TO N`. */
@@ -7479,16 +7497,19 @@ _pic_locale_format_or_depending_on:
 		  current_field->children = chld;
 		  cobc_parse_free (current_field->pic);
 		  current_field->pic = NULL;
-	  }
-	  /* Raise this flag in the error cases above, to avoid unrelated
-	     warning or error messages upon tentative validation of
-	     redefines.  */
-	  current_field->flag_picture_l = 1;
+	}
+	/* Raise this flag in the error cases above, to avoid unrelated
+	   warning or error messages upon tentative validation of
+	   redefines.  */
+	current_field->flag_picture_l = 1;
   }
 ;
 
 _is_locale_name:
   /* empty */
+  {
+	$$ = NULL;
+  }
 | _is locale_name
   {
 	$$ = $2;
@@ -8540,7 +8561,7 @@ _report_group_description_list:
 report_group_description_entry:
   level_number _entry_name
   {
-	if (set_current_field($1, $2)) {
+	if (set_current_field ($1, $2)) {
 		YYERROR;
 	}
 	if (!description_field) {
@@ -9073,7 +9094,6 @@ screen_description:
 	if (set_current_field ($1, $2)) {
 		YYERROR;
 	}
-
 	if (current_field->parent) {
 		current_field->screen_foreg = current_field->parent->screen_foreg;
 		current_field->screen_backg = current_field->parent->screen_backg;
@@ -11047,7 +11067,8 @@ field_with_pos_specifier:
 ;
 
 _pos_specifier:
-  /* empty */ | pos_specifier
+  /* empty */
+| pos_specifier
 ;
 
 pos_specifier:
@@ -12206,7 +12227,10 @@ continue_statement:
 ;
 
 _continue_after_phrase:
-  /* empty */	{ $$ = NULL;}
+  /* empty */
+  {
+	$$ = NULL;
+  }
 | AFTER {
 	/* FIXME: hack - fake cs for context-sensitive SECONDS */
 	cobc_cs_check = CB_CS_RETRY;
@@ -12484,7 +12508,7 @@ display_clause:
 _display_upon:
   /* empty */
   {
-	  upon_value = NULL;
+	upon_value = NULL;
   }
 | display_upon
 ;
@@ -14319,11 +14343,14 @@ json_parse_body:
   _json_name_of
   _json_suppress
   _common_exception_phrases
+  {
+	CB_PENDING ("JSON PARSE");
+  }
 ;
 
 _with_detail:
-  /* empty */
-| _with DETAIL
+  /* empty */			{ $$ = NULL; }
+| _with DETAIL			{ $$ = cb_int0; }
 ;
 
 /* MERGE statement */
@@ -14917,7 +14944,7 @@ retry_options:
 ;
 
 _extended_with_lock:
-  /* empty */
+  /* empty */	{ $$ = NULL; }
 | extended_with_lock
 ;
 
@@ -15843,14 +15870,8 @@ stop_returning:
 ;
 
 _status_x:
-  /* empty */
-  {
-	$$ = NULL;
-  }
-| x
-  {
-	$$ = $1;
-  }
+  /* empty */	{ $$ = NULL; }
+| x         	{ $$ = $1; }
 ;
 
 stop_argument:
@@ -15919,7 +15940,7 @@ string_item:
 ;
 
 _string_delimited:
-  /* empty */		{ $$ = NULL; }
+  /* empty */     	{ $$ = NULL; }
 | DELIMITED _by
   string_delimiter	{ $$ = $3; }
 ;
@@ -16101,7 +16122,7 @@ unstring_body:
 ;
 
 _unstring_delimited:
-  /* empty */			{ $$ = NULL; }
+  /* empty */            	{ $$ = NULL; }
 | DELIMITED _by
   unstring_delimited_list	{ $$ = $3; }
 ;
@@ -16133,12 +16154,12 @@ unstring_into_item:
 ;
 
 _unstring_into_delimiter:
-  /* empty */			{ $$ = NULL; }
+  /* empty */             	{ $$ = NULL; }
 | DELIMITER _in identifier	{ $$ = $3; }
 ;
 
 _unstring_tallying:
-  /* empty */			{ $$ = NULL; }
+  /* empty */            	{ $$ = NULL; }
 | TALLYING _in identifier	{ $$ = $3; }
 ;
 
@@ -16537,7 +16558,7 @@ write_body:
 ;
 
 from_option:
-  /* empty */			{ $$ = NULL; }
+  /* empty */        		{ $$ = NULL; }
 | FROM from_parameter		{ $$ = $2; }
 ;
 
@@ -16757,12 +16778,12 @@ json_identifier_is_name:
 _type_of:
   /* empty */
   {
-       $$ = NULL;
+	$$ = NULL;
   }
 | TYPE _of identifier_type_list
   {
-       $$ = $3;
-       	cb_verify (cb_xml_generate_extra_phrases,
+	$$ = $3;
+	cb_verify (cb_xml_generate_extra_phrases,
 		   _("XML GENERATE TYPE OF clause"));
   }
 ;
@@ -16927,13 +16948,14 @@ _with_encoding:
 ;
 
 _returning_national:
-/* empty */				{ $$ = NULL; }
-| RETURNING NATIONAL	{ $$ = cb_true; }
+/* empty */         		{ $$ = NULL; }
+| RETURNING NATIONAL		{ $$ = cb_true; }
 ;
 
 _validating_with:
-/* empty */	{ $$ = NULL; }
-| VALIDATING _with schema_file_or_record_name { $$ = $3; }
+/* empty */                 	{ $$ = NULL; }
+| VALIDATING _with
+  schema_file_or_record_name	{ $$ = $3; }
 ;
 
 schema_file_or_record_name:
@@ -17797,7 +17819,7 @@ entry_name:
 
 procedure_name_list:
   %prec SHIFT_PREFER
-  /* empty */			{ $$ = NULL; }
+  /* empty */   		{ $$ = NULL; }
 | procedure_name_list
   procedure_name		{ $$ = cb_list_add ($1, $2); }
 ;
@@ -17850,8 +17872,8 @@ reference:
 ;
 
 _reference:
-  /* empty */	{$$ = NULL;}
-| reference		{$$ = $1;}
+  /* empty */		{$$ = NULL;}
+| reference  		{$$ = $1;}
 ;
 
 single_reference_list:
@@ -17956,8 +17978,8 @@ target_x:
 ;
 
 _x_list:
-  /* empty */	{ $$ = NULL; }
-| x_list	{ $$ = $1; }
+  /* empty */		{ $$ = NULL; }
+| x_list     		{ $$ = $1; }
 ;
 
 x_list:
@@ -18619,12 +18641,20 @@ class_value:
 	}
 	$$ = $1;
   }
-| SPACE				{ $$ = cb_space; }
+| figurative_constant
+  {
+	$$ = $1;
+  }
+;
+;
+
+figurative_constant:
+  SPACE				{ $$ = cb_space; }
 | ZERO				{ $$ = cb_zero; }
 | QUOTE				{ $$ = cb_quote; }
 | HIGH_VALUE			{ $$ = cb_high; }
 | LOW_VALUE			{ $$ = cb_low; }
-| TOK_NULL			{ $$ = cb_null; }
+| TOK_NULL			{ $$ = cb_null;  /* CHECKME: is that valid in all used cases? */}
 ;
 
 literal:
@@ -18658,15 +18688,7 @@ basic_literal:
   }
 ;
 
-basic_value:
-  LITERAL			{ $$ = $1; }
-| SPACE				{ $$ = cb_space; }
-| ZERO				{ $$ = cb_zero; }
-| QUOTE				{ $$ = cb_quote; }
-| HIGH_VALUE			{ $$ = cb_high; }
-| LOW_VALUE			{ $$ = cb_low; }
-| TOK_NULL			{ $$ = cb_null; }
-;
+basic_value:	LITERAL | figurative_constant ;
 
 zero_spaces_high_low_values:
   SPACE				{ $$ = cb_space; }
@@ -18908,13 +18930,13 @@ not_const_word:
 
 flag_all:
   /* empty */			{ $$ = cb_int0; }
-| ALL				{ $$ = cb_int1; }
+| ALL        			{ $$ = cb_int1; }
 ;
 
 flag_duplicates:
-  /* empty */			{ $$ = NULL; }
+  /* empty */        	{ $$ = NULL; }
 | _with NO DUPLICATES	{ $$ = cb_int0; }
-| _with DUPLICATES	{ $$ = cb_int1; }
+| _with    DUPLICATES	{ $$ = cb_int1; }
 ;
 
 _flag_initialized:
@@ -18948,18 +18970,18 @@ _to_init_val:
 _flag_next:
   %prec SHIFT_PREFER
   /* empty */			{ $$ = cb_int0; }
-| NEXT				{ $$ = cb_int1; }
-| PREVIOUS			{ $$ = cb_int2; }
+| NEXT       			{ $$ = cb_int1; }
+| PREVIOUS   			{ $$ = cb_int2; }
 ;
 
 _flag_not:
   /* empty */			{ $$ = NULL; }
-| NOT				{ $$ = cb_true; }
+| NOT        			{ $$ = cb_true; }
 ;
 
 flag_optional:
   /* empty */			{ $$ = cb_int (cb_flag_optional_file); }
-| OPTIONAL			{ $$ = cb_int1; }
+| OPTIONAL   			{ $$ = cb_int1; }
 | NOT OPTIONAL			{ $$ = cb_int0; }
 ;
 
@@ -19028,7 +19050,7 @@ round_choice:
 ;
 
 flag_separate:
-  /* empty */			{ $$ = NULL; }
+  /* empty */        		{ $$ = NULL; }
 | SEPARATE _character		{ $$ = cb_int1; }
 ;
 
