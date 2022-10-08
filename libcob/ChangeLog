@@ -7,6 +7,19 @@
 	* fileio.c [WITH_DB] (unlock_file): extracted to match other functions
 	* fileio.c [WITH_DB]: added extra parameters to DB_PUT, DB_GET, DB_SEQ,
 	  DB_CPUT to show what is actually used
+	* fileio.c: fixed some memory leaks related to filename handling
+	* fileio.c (cob_file_free): file was not removed from cache which
+	  led to double-free scenarios on cleanup
+	* fileio.c (cob_open): fixed concattenated filenames resetting the static
+	  filename buffer, leading to use-after-free later
+	* fileio.c (do_acu_hyphen_translation, copy_fcd_to_file):
+	  fix read of invalid data
+	* intrinsic.c (split_around_t): fix read of invalid data
+	* mlio.c (copy_data_as_string): new function replacing cob_strndup_void,
+	  doing what the callers expect, fixing read of invalid data;
+	  added missing check for its return value in is_valid_xml_name
+	* mlio.c (cob_xml_generate_new): fixed memory leak when valid namespace
+	  data and invalid namepace prefix is passed
 
 2022-10-05  Simon Sobisch <simonsobisch@gnu.org>
 

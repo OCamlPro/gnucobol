@@ -80,13 +80,16 @@ struct strcache {
 };
 
 /* Compile level */
-#define	CB_LEVEL_PREPROCESS	1
-#define	CB_LEVEL_TRANSLATE	2
-#define	CB_LEVEL_COMPILE	3
-#define	CB_LEVEL_ASSEMBLE	4
-#define	CB_LEVEL_MODULE		5
-#define	CB_LEVEL_LIBRARY	6
-#define	CB_LEVEL_EXECUTABLE	7
+enum compile_level {
+	CB_LEVEL_UNSET  	= 0,
+	CB_LEVEL_PREPROCESS	= 1,
+	CB_LEVEL_TRANSLATE	= 2,
+	CB_LEVEL_COMPILE	= 3,
+	CB_LEVEL_ASSEMBLE	= 4,
+	CB_LEVEL_MODULE		= 5,
+	CB_LEVEL_LIBRARY	= 6,
+	CB_LEVEL_EXECUTABLE	= 7
+};
 
 /* Info display limits */
 #define	CB_IMSG_SIZE		24
@@ -400,7 +403,7 @@ static size_t		cobc_buffer_size;
 
 static struct filename	*file_list;
 
-static unsigned int	cb_compile_level = 0;
+static enum compile_level cb_compile_level = 0;
 
 static int		iargs;
 
@@ -2047,17 +2050,19 @@ clean_up_intermediates (struct filename *fn, const int status)
 	if (save_all_src) {
 		return;
 	}
-	if (fn->need_preprocess &&
-		(status || cb_compile_level > CB_LEVEL_PREPROCESS ||
-		 (cb_compile_level == CB_LEVEL_PREPROCESS && save_temps))) {
+	if (fn->need_preprocess
+	 && (status 
+		||  cb_compile_level > CB_LEVEL_PREPROCESS
+		|| (cb_compile_level == CB_LEVEL_PREPROCESS && save_temps))) {
 		cobc_check_action (fn->preprocess);
 	}
 	if (save_c_src) {
 		return;
 	}
-	if (fn->need_translate &&
-		(status || cb_compile_level > CB_LEVEL_TRANSLATE ||
-		 (cb_compile_level == CB_LEVEL_TRANSLATE && save_temps))) {
+	if (fn->need_translate
+	 && (status
+		||  cb_compile_level > CB_LEVEL_TRANSLATE
+		|| (cb_compile_level == CB_LEVEL_TRANSLATE && save_temps))) {
 		cobc_check_action (fn->translate);
 		cobc_check_action (fn->trstorage);
 		if (fn->localfile) {
@@ -2148,9 +2153,10 @@ cobc_clean_up (const int status)
 	ylex_clear_all ();
 
 	for (fn = file_list; fn; fn = fn->next) {
-		if (fn->need_assemble &&
-		    (status || cb_compile_level > CB_LEVEL_ASSEMBLE ||
-		     (cb_compile_level == CB_LEVEL_ASSEMBLE && save_temps))) {
+		if (fn->need_assemble
+		 && (status
+			||  cb_compile_level > CB_LEVEL_ASSEMBLE
+			|| (cb_compile_level == CB_LEVEL_ASSEMBLE && save_temps))) {
 			cobc_check_action (fn->object);
 		}
 		clean_up_intermediates (fn, status);
@@ -3166,7 +3172,7 @@ process_command_line (const int argc, char **argv)
 
 		case 'E':
 			/* -E : Preprocess */
-			if (cb_compile_level != 0) {
+			if (cb_compile_level != CB_LEVEL_UNSET) {
 				cobc_options_error_nonfinal ();
 			}
 			cb_compile_level = CB_LEVEL_PREPROCESS;
@@ -3174,7 +3180,7 @@ process_command_line (const int argc, char **argv)
 
 		case 'C':
 			/* -C : Generate C code */
-			if (cb_compile_level != 0) {
+			if (cb_compile_level != CB_LEVEL_UNSET) {
 				cobc_options_error_nonfinal ();
 			}
 			save_c_src = 1;
@@ -3183,7 +3189,7 @@ process_command_line (const int argc, char **argv)
 
 		case 'S':
 			/* -S : Generate assembler code */
-			if (cb_compile_level != 0) {
+			if (cb_compile_level != CB_LEVEL_UNSET) {
 				cobc_options_error_nonfinal ();
 			}
 #if defined(__TINYC__) || defined(__OS400__)
@@ -3202,7 +3208,7 @@ process_command_line (const int argc, char **argv)
 
 		case 'c':
 			/* -c : Generate C object code */
-			if (cb_compile_level != 0) {
+			if (cb_compile_level != CB_LEVEL_UNSET) {
 				cobc_options_error_nonfinal ();
 			}
 			cb_compile_level = CB_LEVEL_ASSEMBLE;
@@ -3904,7 +3910,7 @@ process_command_line (const int argc, char **argv)
 	}
 
 	/* set compile_level from output file if not set already */
-	if (cb_compile_level == 0
+	if (cb_compile_level == CB_LEVEL_UNSET
 	 && output_name != NULL) {
 		set_compile_level_from_file_extension (output_name);
 	}
@@ -4100,10 +4106,12 @@ process_filename (const char *filename)
 	/* Set preprocess filename */
 	if (!fn->need_preprocess) {
 		fn->preprocess = cobc_main_strdup (fn->source);
-	} else if (output_name && cb_compile_level == CB_LEVEL_PREPROCESS) {
+	} else
+	if (output_name && cb_compile_level == CB_LEVEL_PREPROCESS) {
 		fn->preprocess = cobc_main_strdup (output_name);
-	} else if (save_all_src || save_temps
-	        || cb_compile_level == CB_LEVEL_PREPROCESS) {
+	} else
+	if (save_all_src || save_temps
+	 || cb_compile_level == CB_LEVEL_PREPROCESS) {
 		fn->preprocess = cobc_main_stradd_dup (fbasename, ".i");
 	} else {
 		fn->preprocess = cobc_main_malloc (COB_FILE_MAX);
@@ -4113,10 +4121,12 @@ process_filename (const char *filename)
 	/* Set translate filename */
 	if (!fn->need_translate) {
 		fn->translate = cobc_main_strdup (fn->source);
-	} else if (output_name && cb_compile_level == CB_LEVEL_TRANSLATE) {
+	} else
+	if (output_name && cb_compile_level == CB_LEVEL_TRANSLATE) {
 		fn->translate = cobc_main_strdup (output_name);
-	} else if (save_all_src || save_temps || save_c_src ||
-		   cb_compile_level == CB_LEVEL_TRANSLATE) {
+	} else
+	if (save_all_src || save_temps || save_c_src
+	 || cb_compile_level == CB_LEVEL_TRANSLATE) {
 		fn->translate = cobc_main_stradd_dup (fbasename, ".c");
 	} else {
 		fn->translate = cobc_main_malloc (COB_FILE_MAX);
@@ -4152,11 +4162,15 @@ process_filename (const char *filename)
 	/* Set object filename */
 	if (!fn->need_assemble) {
 		fn->object = cobc_main_strdup (fn->source);
-	} else if (output_name && cb_compile_level == CB_LEVEL_ASSEMBLE) {
+	} else
+	if (output_name && cb_compile_level == CB_LEVEL_ASSEMBLE) {
 		fn->object = cobc_main_strdup (output_name);
-	} else if (save_temps || cb_compile_level == CB_LEVEL_ASSEMBLE) {
+	} else
+	if (save_temps
+	 || cb_compile_level == CB_LEVEL_ASSEMBLE) {
 		fn->object = cobc_main_stradd_dup (fbasename, "." COB_OBJECT_EXT);
-	} else if (cb_compile_level != CB_LEVEL_MODULE) {
+	} else
+	if (cb_compile_level != CB_LEVEL_MODULE) {
 		/* note: CB_LEVEL_MODULE is compiled without an intermediate object file */
 		fn->object = cobc_main_malloc (COB_FILE_MAX);
 		cob_temp_name ((char *)fn->object, "." COB_OBJECT_EXT);
@@ -4822,7 +4836,8 @@ preprocess (struct filename *fn)
 	int			ret;
 #endif
 
-	if (output_name || cb_compile_level > CB_LEVEL_PREPROCESS) {
+	if (output_name
+	 || cb_compile_level > CB_LEVEL_PREPROCESS) {
 		if (cb_unix_lf) {
 			ppout = fopen(fn->preprocess, "wb");
 		} else {
@@ -5438,14 +5453,13 @@ print_files_and_their_records (cb_tree file_list_p)
 	int dummy = 1;
 
 	for (l = file_list_p; l; l = CB_CHAIN (l)) {
+		const struct cb_file* file = CB_FILE (CB_VALUE (l));
 		snprintf (print_data, CB_PRINT_LEN,
 			"%05d %-14.14s      %s",
-			 CB_FILE (CB_VALUE (l))->record_max,
-			 "FILE",
-			 CB_FILE (CB_VALUE (l))->name);
+			file->record_max, "FILE", file->name);
 		print_program_data (print_data);
-		if (CB_FILE (CB_VALUE (l))->record) {
-			print_fields (CB_FILE (CB_VALUE (l))->record, &dummy);
+		if (file->record) {
+			print_fields (file->record, &dummy);
 			print_program_data ("");
 		}
 	}
@@ -7791,8 +7805,8 @@ process_assemble (struct filename *fn)
 	ret = process (cobc_buffer);
 	return ret;
 #elif defined(__WATCOMC__)
-	if (cb_compile_level == CB_LEVEL_MODULE ||
-	    cb_compile_level == CB_LEVEL_LIBRARY) {
+	if (cb_compile_level == CB_LEVEL_MODULE
+	 || cb_compile_level == CB_LEVEL_LIBRARY) {
 		sprintf (cobc_buffer, "%s -c %s %s %s -fe=\"%s\" \"%s\"",
 			 cobc_cc, cobc_cflags, cobc_include,
 			 COB_PIC_FLAGS, fn->object, fn->translate);
@@ -7804,9 +7818,9 @@ process_assemble (struct filename *fn)
 	ret = process (cobc_buffer);
 	return ret;
 #else
-	if (cb_compile_level == CB_LEVEL_MODULE ||
-	    cb_compile_level == CB_LEVEL_LIBRARY ||
-	    cb_compile_level == CB_LEVEL_ASSEMBLE) {
+	if (cb_compile_level == CB_LEVEL_MODULE
+	 || cb_compile_level == CB_LEVEL_LIBRARY
+	 || cb_compile_level == CB_LEVEL_ASSEMBLE) {
 		sprintf (cobc_buffer, "%s -c %s %s %s -o \"%s\" \"%s\"",
 			 cobc_cc, cobc_cflags, cobc_include,
 			 COB_PIC_FLAGS, fn->object, fn->translate);
@@ -8687,8 +8701,8 @@ process_file (struct filename *fn, int status)
 			print_program_listing ();
 		}
 	}
-	if (cb_compile_level < CB_LEVEL_COMPILE ||
-	    cb_flag_syntax_only || fn->has_error) {
+	if (cb_compile_level < CB_LEVEL_COMPILE
+	 || cb_flag_syntax_only || fn->has_error) {
 		return status;
 	}
 	if (cb_compile_level == CB_LEVEL_COMPILE) {
@@ -8698,14 +8712,15 @@ process_file (struct filename *fn, int status)
 		return status;
 	}
 
-	if (cb_compile_level == CB_LEVEL_MODULE && fn->need_assemble) {
+	if (cb_compile_level == CB_LEVEL_MODULE
+	 && fn->need_assemble) {
 		/* Build module direct */
 		fn->has_error = process_module_direct (fn);
 		status |= fn->has_error;
 	} else {
 		/* Compile to object code */
-		if (cb_compile_level >= CB_LEVEL_ASSEMBLE &&
-		    fn->need_assemble) {
+		if (cb_compile_level >= CB_LEVEL_ASSEMBLE
+		 && fn->need_assemble) {
 			fn->has_error = process_assemble (fn);
 			status |= fn->has_error;
 		}

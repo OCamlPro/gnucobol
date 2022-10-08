@@ -1,4 +1,13 @@
 
+2022-10-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* pplex.l (plex_call_destroy): fixed minor memory leak
+	* cobc.c (compile_level): using enum values instead of numeric constants
+	* parser.y (examine_format_variant): internally use "MOVE ZERO TO TALLY"
+	  instead of "INITIALIZE TALLY"
+	* cobc.c: minor reformatting
+	* flag.def: fixed minor doc issues
+
 2022-10-06  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y (symbolic_characters_clause, class_name_clause): improved

@@ -10914,12 +10914,13 @@ size_overflow_2:
 static cb_tree
 cb_build_memset (cb_tree x, const int c)
 {
+	cb_tree source = cb_int (c);
 	if (cb_field_size (x) == 1) {
-		return CB_BUILD_FUNCALL_2 ("$E", x, cb_int (c));
+		return CB_BUILD_FUNCALL_2 ("$E", x, source);
 	}
 	return CB_BUILD_FUNCALL_3 ("memset",
 				   CB_BUILD_CAST_ADDRESS (x),
-				   cb_int (c), CB_BUILD_CAST_LENGTH (x));
+				   source, CB_BUILD_CAST_LENGTH (x));
 }
 
 static cb_tree

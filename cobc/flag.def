@@ -96,7 +96,7 @@ CB_FLAG_NQ (1, "ebcdic-table", 14, /* cf cconv.h for all available tables */
 	_("  -febcdic-table=[DEFAULT|RESTRICTED-GC|IBM|GCOS]\tdefine EBCDIC translation table:\n"
 	  "                        * default: translation to extended ASCII as per MF\n"
 	  "                        * restricted-gc: translation from restricted ASCII only\n"
-	  "                        * ibm: translation to restricted ASCII as per IBM"
+	  "                        * ibm: translation to restricted ASCII as per IBM\n"
 	  "                        * gcos: translation to extended ASCII as per GCOS7"))
 
 /* Binary flags */
@@ -119,7 +119,7 @@ CB_FLAG (cb_flag_correct_numeric, 0, "correct-numeric",
 CB_FLAG (cb_flag_stack_on_heap, 0, "stack-on-heap",
 	_("  -fstack-on-heap       PERFORM stack allocated on heap"))
 
-CB_FLAG (cb_flag_stack_extended, 0, "stack-extended",
+CB_FLAG (cb_flag_stack_extended, 1, "stack-extended",
 	_("  -fstack-extended      store origin of entrypoints and PERFORM\n"
 	  "                        * turned on by -debug/-dump"))
 

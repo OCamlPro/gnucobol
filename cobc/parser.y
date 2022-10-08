@@ -13973,7 +13973,7 @@ examine_format_variant:
   TALLYING
   {
 	cb_tree tally = cb_build_identifier (cb_build_reference ("TALLY"), 0);
-	cb_emit_initialize (CB_LIST_INIT (tally), NULL, cb_int0, NULL, NULL);
+	cb_emit_move (cb_zero, CB_LIST_INIT (tally));
 	cb_init_tallying ();
 	cb_build_tallying_data (tally);
   }

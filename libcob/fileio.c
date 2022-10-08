@@ -719,8 +719,8 @@ bdb_findkey (cob_file *f, cob_field *kf, int *fullkeylen, int *partlen)
 	*fullkeylen = *partlen = 0;
 	for (k = 0; k < f->nkeys; ++k) {
 		if (f->keys[k].field
-		&&  f->keys[k].count_components <= 1
-		&&  f->keys[k].field->data == kf->data) {
+		 && f->keys[k].count_components <= 1
+		 && f->keys[k].field->data == kf->data) {
 			*fullkeylen = f->keys[k].field->size;
 			*partlen = kf->size;
 			return k;
@@ -1071,12 +1071,18 @@ has_acu_hyphen (char *src)
 static void
 do_acu_hyphen_translation (char *src)
 {
+	size_t len;
 	/* maybe store device type to "adjust locking rules" */
 	/* find first non-space and return it in the original storage  */
 	for (src = src + 3; *src && isspace ((cob_u8_t)*src); src++);
 	
-	strncpy (file_open_buff, src, (size_t)COB_FILE_MAX);
-	file_open_buff[COB_FILE_MAX] = 0;
+	len = strlen (src);
+	if (len >= COB_FILE_MAX) {
+		len = COB_FILE_MAX;
+	}
+	memcpy (file_open_buff, src, len);
+	file_open_buff[len + 1] = 0;
+
 	strncpy (file_open_name, file_open_buff, (size_t)COB_FILE_MAX);
 }
 
@@ -2081,7 +2087,7 @@ open_next (cob_file *f)
 			}
 			f->flag_is_concat = 0;
 			if (f->org_filename) {
-				cob_cache_free (f->org_filename);
+				cob_free (f->org_filename);
 				f->org_filename = NULL;
 			}
 		}
@@ -4254,6 +4260,7 @@ dobuild:
 	}
 
 	p = cob_malloc (sizeof (struct indexed_file));
+	f->file = p;
 	f->curkey = -1;
 	if (bdb_env != NULL) {
 		if (mode == COB_OPEN_OUTPUT
@@ -4264,7 +4271,6 @@ dobuild:
 		} else {
 			lock_mode = DB_LOCK_READ;
 		}
-		f->file = p;
 		ret = lock_file (f, filename, lock_mode);
 		if (ret) {
 			cob_free (p);
@@ -4346,14 +4352,15 @@ dobuild:
 					ret = COB_STATUS_30_PERMANENT_ERROR;
 					break;
 				}
-				/* FIXME: BDB cleanup is missing here */
-				return ret;
+				/* Note: BDB cleanup done below */
 			}
 		}
 #endif
 
 		/* btree info */
-		ret = db_create (&p->db[i], bdb_env, 0);
+		if (!ret) {
+			ret = db_create (&p->db[i], bdb_env, 0);
+		}
 		if (!ret) {
 			handle_created = 1;
 			if (mode == COB_OPEN_OUTPUT) {
@@ -5806,7 +5813,6 @@ cob_file_malloc (cob_file **pfl, cob_file_key **pky,
 void
 cob_file_free (cob_file **pfl, cob_file_key **pky)
 {
-	cob_file	*fl;
 	if (pky != NULL) {
 		if (*pky != NULL) {
 			cob_cache_free (*pky);
@@ -5814,19 +5820,36 @@ cob_file_free (cob_file **pfl, cob_file_key **pky)
 		}
 	}
 	if (pfl != NULL && *pfl != NULL) {
-		fl = *pfl;
+		struct file_list *fc, *prev;
+		cob_file	*fl = *pfl;
 		if (fl->linorkeyptr) {
 			cob_cache_free (fl->linorkeyptr);
 			fl->linorkeyptr = NULL;
 		}
 		if (fl->org_filename) {
-			cob_cache_free (fl->org_filename);
+			cob_free (fl->org_filename);
 			fl->org_filename = NULL;
 		}
 		if (fl->convert_field) {
 			cob_free (fl->convert_field);
 			fl->convert_field = NULL;
 		}
+
+		/* Remove from cache  */
+		prev = file_cache;
+		for (fc = file_cache; fc; fc =fc->next) {
+			if (fc->file == fl) {
+				if (fc == file_cache) {
+					file_cache = fc->next;
+				} else {
+					prev->next = fc->next;
+				}
+				cob_free (fc);
+				break;
+			}
+			prev = fc;
+		}
+
 		cob_cache_free (*pfl);
 		*pfl = NULL;
 	}
@@ -5974,7 +5997,7 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 	  || f->organization == COB_ORG_LINE_SEQUENTIAL) 
 	 && (mode == COB_OPEN_INPUT 
 	  || mode == COB_OPEN_I_O)
-	 && strchr(file_open_name, file_setptr->cob_concat_sep[0]) != NULL
+	 && strchr (file_open_name, file_setptr->cob_concat_sep[0]) != NULL
 	 && file_open_name[0] != '>'
 	 && file_open_name[0] != '<'
 	 && file_open_name[0] != '|') {
@@ -5982,7 +6005,7 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 		f->org_filename = cob_strdup (file_open_name);
 		f->nxt_filename = strchr (f->org_filename, file_setptr->cob_concat_sep[0]);
 		*f->nxt_filename++ = 0;
-		file_open_name = f->org_filename;
+		strcpy (file_open_name, f->org_filename);
 	}
 #else
 	if (cobsetptr->cob_concat_name
@@ -5990,7 +6013,7 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 	  || f->organization == COB_ORG_LINE_SEQUENTIAL) 
 	 && (mode == COB_OPEN_INPUT 
 	  || mode == COB_OPEN_I_O)
-	 && strchr(file_open_name, cobsetptr->cob_concat_sep[0]) != NULL
+	 && strchr (file_open_name, cobsetptr->cob_concat_sep[0]) != NULL
 	 && file_open_name[0] != '>'
 	 && file_open_name[0] != '<'
 	 && file_open_name[0] != '|') {
@@ -5998,7 +6021,7 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 		f->org_filename = cob_strdup (file_open_name);
 		f->nxt_filename = strchr (f->org_filename, cobsetptr->cob_concat_sep[0]);
 		*f->nxt_filename++ = 0;
-		file_open_name = f->org_filename;
+		strcpy (file_open_name, f->org_filename);
 	}
 #endif
 
@@ -8804,7 +8827,7 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f, struct fcd_file *fcd_list_entry)
 		char	*origin = (char*)f->assign->data;
 		/* limit filename to last element after
 		   path separator, when specified */
-		for (k=(int)f->assign->size; k; k--) {
+		for (k=(int)f->assign->size - 1; k; k--) {
 			if (f->assign->data[k] == SLASH_CHAR
 #ifdef	_WIN32
 			 || f->assign->data[k] == '/'

@@ -3607,9 +3607,11 @@ output_param (cb_tree x, int id)
 	case CB_TAG_INTEGER:
 		output_integer (x);
 		break;
-	case CB_TAG_STRING:
-		output_string (CB_STRING (x)->data, (int) CB_STRING (x)->size, 0);
+	case CB_TAG_STRING: {
+		const struct cb_string *str = CB_STRING (x);
+		output_string (str->data, (int) str->size, 0);
 		break;
+	}
 	case CB_TAG_LOCALE_NAME:
 		output_param (CB_LOCALE_NAME(x)->list, id);
 		break;
@@ -5142,7 +5144,7 @@ output_initialize_one (struct cb_initialize *p, cb_tree x)
 		case CB_USAGE_FP_DEC64:
 		case CB_USAGE_FP_DEC128:
 			output_initialize_fp_bindec (x, f);
-			return;
+		return;
 		default:
 			break;
 		}

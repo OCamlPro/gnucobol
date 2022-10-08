@@ -2555,7 +2555,7 @@ split_around_t (const char *str, char *first, char *second)
 	}
 
 	/* If there is anything after 'T', copy it into second (if present) */
-	if (second != NULL) {
+	if (second != NULL && str[i]) {
 		str += i + 1;
 		second_length = strlen (str);
 		if (second_length == 0) {
