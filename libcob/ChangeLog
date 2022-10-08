@@ -1,4 +1,13 @@
 
+2022-10-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c [WITH_DB]: fixed bug #533 multiple file unlocking by
+	  backport of adjusted struct indexed_file with new file_lock_set
+	  from rw-branch together with related changes
+	* fileio.c [WITH_DB] (unlock_file): extracted to match other functions
+	* fileio.c [WITH_DB]: added extra parameters to DB_PUT, DB_GET, DB_SEQ,
+	  DB_CPUT to show what is actually used
+
 2022-10-05  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (check_current_date): improved validation
@@ -468,6 +477,11 @@
 	* fextfh.c->fileio.c: check FCD-CURRENT-REC-LEN being changed on
 	  WRITE/REWRITE
 
+2021-07-07  Ron Norman <rjn@inglenet.com>
+
+	* reportio.c (cob_report_generate): Fix bug #745 - missing invoke of
+	  DECLARATIVES for DETAIL line
+
 2021-07-05  Ron Norman <rjn@inglenet.com>
 
 	* common.h (cob_file): Added flag_is_concat, org_filename and nxt_filename
@@ -484,15 +498,14 @@
 	  for CODE IS to handle all file attributes; backup and restore
 	  original record definition
 
-2021-07-07  Ron Norman <rjn@inglenet.com>
-
-	* reportio.c (cob_report_generate): Fix bug #745 - missing invoke of
-	  DECLARATIVES for DETAIL line
-
 2021-07-02  Ron Norman <rjn@inglenet.com>
 
 	* common.h: Added  FCD2 structure
 	* fextfh.c: Added checks for FCD2 being used
+
+2021-07-01  Ron Norman <rjn@inglenet.com>
+
+	* fbdb.c->fileio.c [WITH_DB]: checks if filename is actually a directory
 
 2021-03-18  Ron Norman <rjn@inglenet.com>
 
@@ -2201,6 +2214,12 @@
 	  missing file, removed some redundant code
 	* fileio.c [WITH_DB]: moved call to join_environment to indexed_open
 
+2016-12-30  Ron Norman <rjn@inglenet.com>
+
+	* fileio.c: [WITH_DB] fixed BDB locking issues by closing BDB cursor as
+	  soon/often as possible as the BDB cursor seems to create some internal
+	  locks
+
 2016-12-27  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.h: added COB_MAX_UNBOUNDED_SIZE
@@ -2226,6 +2245,14 @@
 	* common.c, common.h, coblocal.h, screenio.c: FR #191 added runtime
 	  configuration COB_EXIT_WAIT and COB_EXIT_MSG for waiting if
 	  extended ACCEPT after last extended DISPLAY (if any) is missing
+
+2016-12-24  Ron Norman <rjn@inglenet.com>
+
+	* fileio.c [WITH_DB]: reordered struct indexed_file, adding file_lock_set
+	  and use it to fix multiple unlocking
+	* fileio.c [WITH_DB]: extracted bdb_open_cursor, bdb_close_cursor,
+	  bdb_close_index, lock_file
+	* fileio.c [WITH_DB]: added code for BDB < 4.6
 
 2016-12-23  Simon Sobisch <simonsobisch@gnu.org>
 

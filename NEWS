@@ -82,6 +82,9 @@ NEWS - user visible changes				-*- outline -*-
    the old behaviour can be enforced by compiling GnuCOBOL with
    CPPFLAGS=-DINVALID_NUMVAL_IS_ZERO
 
+** ORGANIZATION INDEXED (with BDB backend): internal changes in record and
+   file locking, fixing some related bugs
+
 * Changes that potentially effects recompilation of existing programs:
 
 ** the reserved word list and intrinsic functions was updated, especially

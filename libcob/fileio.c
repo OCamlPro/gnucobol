@@ -652,9 +652,17 @@ static void		*record_lock_object = NULL;
 static size_t		rlo_size = 0;
 static unsigned int	bdb_lock_id = 0;
 
-#define DB_PUT(db,flags)	db->put (db, NULL, &p->key, &p->data, flags)
-#define DB_GET(db,flags)	db->get (db, NULL, &p->key, &p->data, flags)
-#define DB_SEQ(db,flags)	db->c_get (db, &p->key, &p->data, flags)
+#define DB_PUT(db,key,data,flags)	db->put (db, NULL, key, data, flags)
+#define DB_GET(db,key,data,flags)	db->get (db, NULL, key, data, flags)
+#if (DB_VERSION_MAJOR > 4) || ((DB_VERSION_MAJOR == 4) && (DB_VERSION_MINOR > 6))
+#define DB_SEQ(db,key,data,flags)	db->get (db, key, data, flags)
+#define DB_CPUT(db,key,data,flags)	db->put (db, key, data, flags)
+#define DB_CDEL(db,flags)	db->del (db, flags)
+#else
+#define DB_SEQ(db,key,data,flags)	db->c_get (db, key, data, flags)
+#define DB_CPUT(db,key,data,flags)	db->c_put (db, key, data, flags)
+#define DB_CDEL(db,flags)	db->c_del (db, flags)
+#endif
 #define DB_DEL(db,key,flags)	db->del (db, NULL, key, flags)
 #define DB_CLOSE(db)		db->close (db, 0)
 #define DB_SYNC(db)		db->sync (db, 0)
@@ -691,15 +699,16 @@ struct indexed_file {
 	unsigned char	*savekey;	/* Work area for saving key value */
 	unsigned char	*suppkey;	/* Work area for saving key value */
 	unsigned char	*saverec;	/* For saving copy of record */
-	DBT		key;
-	DBT		data;
-	DB_LOCK		bdb_file_lock;
-	DB_LOCK		bdb_record_lock;
 	int			key_index;
 	unsigned int	bdb_lock_id;
 	int		write_cursor_open;
 	int		record_locked;
 	int		filenamelen;
+	int		file_lock_set;
+	DBT		key;
+	DBT		data;
+	DB_LOCK		bdb_file_lock;
+	DB_LOCK		bdb_record_lock;
 };
 
 static int
@@ -782,10 +791,9 @@ bdb_savekey (cob_file *f, unsigned char *keyarea, unsigned char *record, int idx
 static void
 bdb_setkey (cob_file *f, int idx)
 {
-	struct indexed_file	*p;
+	struct indexed_file	*p = f->file;
 	int	len;
 
-	p = f->file;
 	memset (p->savekey, 0, p->maxkeylen);
 	len = bdb_savekey (f, p->savekey, f->record->data, idx);
 	p->key.data = p->savekey;
@@ -835,18 +843,74 @@ bdb_suppresskey (cob_file *f, int idx)
 {
 	unsigned char ch_sprs;
 	int 	i,len;
-	struct indexed_file	*p;
+	struct indexed_file	*p = f->file;
 
 	if (!f->keys[idx].tf_suppress) {
 		return 0;
 	}
 	ch_sprs = f->keys[idx].char_suppress & 0xFF;
-	p = f->file;
 	len = bdb_savekey(f, p->suppkey, f->record->data, idx);
 	for (i = 0; i < len; i++) {
 		if (p->suppkey[i] != ch_sprs)
 			return 0;
 	}
+	return 1;
+}
+
+/* Open the 'write cursor' if needed and return 0 is already open */
+static int
+bdb_open_cursor (cob_file *f, int for_write)
+{
+	struct indexed_file *p = f->file;
+	int		flags;
+
+	if (p->write_cursor_open) {
+		return 0;		/* It is already open */
+	}
+	if (bdb_env && for_write) {
+		flags = DB_WRITECURSOR;
+	} else {
+		flags = 0;
+	}
+	p->db[0]->cursor (p->db[0], NULL, &p->cursor[0], flags);
+	p->write_cursor_open = 1;
+	return 1;
+}
+
+/* Close the 'write cursor' if needed and return 0 is already closed */
+static int
+bdb_close_cursor (cob_file *f)
+{
+	struct indexed_file *p = f->file;
+
+	p->write_cursor_open = 0;
+	if (p->cursor[0] == NULL) {
+		return 0;		/* It is already closed */
+	}
+#if (DB_VERSION_MAJOR > 4) || ((DB_VERSION_MAJOR == 4) && (DB_VERSION_MINOR > 6))
+	p->cursor[0]->close (p->cursor[0]);
+#else
+	p->cursor[0]->c_close (p->cursor[0]);
+#endif
+	p->cursor[0] = NULL;
+	return 1;
+}
+
+/* Close the 'cursor' on a specific index */
+static int
+bdb_close_index (cob_file *f, int index)
+{
+	struct indexed_file *p = f->file;
+
+	if (p->cursor[index] == NULL) {
+		return 0;		/* It is already closed */
+	}
+#if (DB_VERSION_MAJOR > 4) || ((DB_VERSION_MAJOR == 4) && (DB_VERSION_MINOR > 6))
+	p->cursor[index]->close (p->cursor[index]);
+#else
+	p->cursor[index]->c_close (p->cursor[index]);
+#endif
+	p->cursor[index] = NULL;
 	return 1;
 }
 
@@ -3069,6 +3133,8 @@ fisretsts (const int default_status)
 		return COB_STATUS_30_PERMANENT_ERROR;
 	case ELOCKED:
 		return COB_STATUS_51_RECORD_LOCKED;
+	case EDEADLK:
+		return COB_STATUS_52_DEAD_LOCK;
 	case EFLOCKED:
 		return COB_STATUS_61_FILE_SHARING;
 	case ENOCURR:
@@ -3239,6 +3305,7 @@ join_environment (void)
 	bdb_env->get_data_dirs (bdb_env, &bdb_data_dir);
 #endif
 	bdb_env->lock_id (bdb_env, &bdb_lock_id);
+	bdb_env->set_lk_detect (bdb_env, DB_LOCK_DEFAULT);
 	return 0;
 }
 
@@ -3259,7 +3326,38 @@ set_dbt (struct indexed_file *p, DBT *dbt, const char *key, const unsigned int k
 	dbt->data = record_lock_object;
 }
 
+/* Impose lock on 'file' using BDB locking */
+static int
+lock_file (cob_file *f, char *filename, int lock_mode)
+{
+	struct indexed_file *p = f->file;
+	int			ret;
+	DBT			dbt;
 
+	p->file_lock_set = 0;
+	memset (&dbt, 0, sizeof (dbt));
+	dbt.size = (cob_dbtsize_t)strlen (filename);
+	dbt.data = filename;
+	ret = bdb_env->lock_get (bdb_env, bdb_lock_id, DB_LOCK_NOWAIT,
+		&dbt, lock_mode, &p->bdb_file_lock);
+
+	switch (ret) {
+	case 0:
+		p->file_lock_set = 1;
+		break;
+	case DB_LOCK_DEADLOCK:
+		return COB_STATUS_52_DEAD_LOCK;
+	case DB_LOCK_NOTGRANTED:
+		return COB_STATUS_61_FILE_SHARING;
+	default:
+		cob_runtime_error (_("BDB (%s), error: %d %s"),
+			"file lock_get", ret, db_strerror (ret));
+		return COB_STATUS_30_PERMANENT_ERROR;
+	}
+	return ret;
+}
+
+/* Impose lock on record */
 static int
 lock_record (cob_file *f, const char *key, const unsigned int keylen)
 {
@@ -3272,6 +3370,14 @@ lock_record (cob_file *f, const char *key, const unsigned int keylen)
 				&dbt, DB_LOCK_WRITE, &p->bdb_record_lock);
 	if (!ret) {
 		p->record_locked = 1;
+	}
+	if (ret == DB_LOCK_NOTGRANTED) {
+		return COB_STATUS_51_RECORD_LOCKED;
+	}
+	if (ret) {
+		cob_runtime_error (_("BDB (%s), error: %d %s"),
+			"lock_get", ret, db_strerror (ret));
+		return COB_STATUS_30_PERMANENT_ERROR;
 	}
 	return ret;
 }
@@ -3288,7 +3394,16 @@ test_record_lock (cob_file *f, const char *key, const unsigned int keylen)
 	ret = bdb_env->lock_get (bdb_env, p->bdb_lock_id, DB_LOCK_NOWAIT,
 				&dbt, DB_LOCK_WRITE, &test_lock);
 	if (!ret) {
-		bdb_env->lock_put (bdb_env, &test_lock);
+		/* Release lock just acquired */
+		ret = bdb_env->lock_put (bdb_env, &test_lock);
+	}
+	if (ret == DB_LOCK_NOTGRANTED) {
+		return COB_STATUS_51_RECORD_LOCKED;
+	}
+	if (ret) {
+		cob_runtime_error (_ ("BDB (%s), error: %d %s"),
+			"lock_get", ret, db_strerror (ret));
+		return COB_STATUS_30_PERMANENT_ERROR;
 	}
 	return ret;
 }
@@ -3297,12 +3412,32 @@ static int
 unlock_record (cob_file *f)
 {
 	struct indexed_file	*p = f->file;
+	int ret;
 
 	if (p->record_locked == 0) {
 		return 0;
 	}
 	p->record_locked = 0;
-	return bdb_env->lock_put (bdb_env, &p->bdb_record_lock);
+	ret = bdb_env->lock_put (bdb_env, &p->bdb_record_lock);
+	if (ret) {
+		cob_runtime_error (_ ("BDB (%s), error: %d %s"),
+			"lock_put", ret, db_strerror (ret));
+		return COB_STATUS_30_PERMANENT_ERROR;
+	}
+	return ret;
+}
+
+static int
+unlock_file (cob_file *f)
+{
+	struct indexed_file *p = f->file;
+
+	if (p->file_lock_set) {
+		int ret = bdb_env->lock_put (bdb_env, &p->bdb_file_lock);
+		p->file_lock_set = 0;
+		return ret;
+	}
+	return 0;
 }
 
 /* Get the next number in a set of duplicates */
@@ -3317,13 +3452,12 @@ get_dupno (cob_file *f, const cob_u32_t i)
 	bdb_setkey(f, i);
 	memcpy (p->temp_key, p->key.data, (size_t)p->maxkeylen);
 	p->db[i]->cursor (p->db[i], NULL, &p->cursor[i], 0);
-	ret = DB_SEQ (p->cursor[i], DB_SET_RANGE);
+	ret = DB_SEQ (p->cursor[i], &p->key, &p->data, DB_SET_RANGE);
 	while (ret == 0 && memcmp (p->key.data, p->temp_key, (size_t)p->key.size) == 0) {
 		memcpy (&dupno, (cob_u8_ptr)p->data.data + p->primekeylen, sizeof (unsigned int));
-		ret = DB_SEQ (p->cursor[i], DB_NEXT);
+		ret = DB_SEQ (p->cursor[i], &p->key, &p->data, DB_NEXT);
 	}
-	p->cursor[i]->c_close (p->cursor[i]);
-	p->cursor[i] = NULL;
+	bdb_close_index (f, i);
 	dupno = COB_DUPSWAP(dupno);
 	return ++dupno;
 }
@@ -3339,7 +3473,7 @@ check_alt_keys (cob_file *f, const int rewrite)
 	for (i = 1; i < f->nkeys; ++i) {
 		if (!f->keys[i].tf_duplicates) {
 			bdb_setkey (f, i);
-			if (DB_GET (p->db[i], 0) == 0) {
+			if (DB_GET (p->db[i], &p->key, &p->data, 0) == 0) {
 				if (rewrite) {
 					if (bdb_cmpkey (f, p->data.data, f->record->data, 0, 0)) {
 						return 1;
@@ -3359,48 +3493,35 @@ indexed_write_internal (cob_file *f, const int rewrite, const int opt)
 	struct indexed_file	*p = f->file;
 	cob_u32_t		i, len;
 	unsigned int		dupno;
-	cob_u32_t		flags;
+	cob_u32_t		flags = 0;
 	int			close_cursor, ret;
 
-	if (bdb_env) {
-		flags = DB_WRITECURSOR;
-	} else {
-		flags = 0;
-	}
+	close_cursor = bdb_open_cursor (f, 1);
 	ret = COB_STATUS_00_SUCCESS;
-	if (p->write_cursor_open) {
-		close_cursor = 0;
-	} else {
-		p->db[0]->cursor (p->db[0], NULL, &p->cursor[0], flags);
-		p->write_cursor_open = 1;
-		close_cursor = 1;
-	}
 
 	/* Check duplicate alternate keys */
 	if (f->nkeys > 1 && !rewrite) {
 		if (check_alt_keys (f, 0)) {
+#if 0	/* CHECKME: RW-Branch 1324 dropped that check */
 			if (close_cursor) {
-				p->cursor[0]->c_close (p->cursor[0]);
-				p->cursor[0] = NULL;
-				p->write_cursor_open = 0;
+				bdb_close_cursor (f);
 			}
+#else
+			bdb_close_cursor (f);
+#endif
 			return COB_STATUS_22_KEY_EXISTS;
 		}
 		bdb_setkey (f, 0);
 	}
 
 	/* Write data */
-	if (p->cursor[0]->c_get (p->cursor[0], &p->key, &p->data, DB_SET) == 0) {
-		if (close_cursor) {
-			p->cursor[0]->c_close (p->cursor[0]);
-			p->cursor[0] = NULL;
-			p->write_cursor_open = 0;
-		}
+	if (DB_SEQ (p->cursor[0], &p->key, &p->data, DB_SET) == 0) {
+		bdb_close_cursor (f);
 		return COB_STATUS_22_KEY_EXISTS;
 	}
 	p->data.data = f->record->data;
 	p->data.size = (cob_dbtsize_t) f->record->size;
-	p->cursor[0]->c_put (p->cursor[0], &p->key, &p->data, DB_KEYFIRST);
+	DB_CPUT (p->cursor[0], &p->key, &p->data, DB_KEYFIRST);
 
 	/* Write secondary keys */
 	p->data = p->key;
@@ -3412,6 +3533,7 @@ indexed_write_internal (cob_file *f, const int rewrite, const int opt)
 			continue;
 		}
 		bdb_setkey (f, i);
+		memset ((void*)&p->data, 0, sizeof (DBT));
 		if (f->keys[i].tf_duplicates) {
 			flags =  0;
 			dupno = get_dupno (f, i);
@@ -3419,47 +3541,48 @@ indexed_write_internal (cob_file *f, const int rewrite, const int opt)
 				ret = COB_STATUS_02_SUCCESS_DUPLICATE;
 			}
 			dupno = COB_DUPSWAP (dupno);
-			len = bdb_savekey(f, p->temp_key, f->record->data, 0);
+			len = bdb_savekey (f, p->temp_key, f->record->data, 0);
 			p->data.data = p->temp_key;
-			p->data.size = len;
+			p->data.size = (cob_dbtsize_t)len;
 			memcpy (((char*)(p->data.data)) + p->data.size, &dupno, sizeof (unsigned int));
 			p->data.size += sizeof (unsigned int);
 		} else {
-			len = bdb_savekey(f, p->temp_key, f->record->data, 0);
+			len = bdb_savekey (f, p->temp_key, f->record->data, 0);
 			p->data.data = p->temp_key;
-			p->data.size = len;
+			p->data.size = (cob_dbtsize_t)len;
 			flags = DB_NOOVERWRITE;
 			dupno = 0;
 		}
 		bdb_setkey (f, i);
 
-		if (DB_PUT (p->db[i], flags) != 0) {
+		ret = DB_PUT (p->db[i], &p->key, &p->data, flags);
+#if (DB_VERSION_MAJOR < 6)
+		if (ret == ENOENT) {	/* This is strange, but BDB 5.3 was returning ENOENT sometimes */
+			ret = DB_PUT (p->db[i], &p->key, &p->data, 0);
+		}
+#endif
+		if (ret) {
+#if 0	/* CHECKME: RW-Branch 1324 dropped that check */
 			if (close_cursor) {
-				p->cursor[0]->c_close (p->cursor[0]);
-				p->cursor[0] = NULL;
-				p->write_cursor_open = 0;
+				bdb_close_cursor (f);
 			}
+#else
+			bdb_close_cursor (f);
+#endif
 			return COB_STATUS_22_KEY_EXISTS;
 		}
 	}
-
-	if (opt & COB_WRITE_LOCK) {
-		if (bdb_env != NULL) {
-			bdb_setkey (f, 0);
-			if (lock_record (f, p->key.data, p->key.size)) {
-				if (close_cursor) {
-					p->cursor[0]->c_close (p->cursor[0]);
-					p->cursor[0] = NULL;
-					p->write_cursor_open = 0;
-				}
-				return COB_STATUS_51_RECORD_LOCKED;
-			}
-		}
-	}
+	
 	if (close_cursor) {
-		p->cursor[0]->c_close (p->cursor[0]);
-		p->cursor[0] = NULL;
-		p->write_cursor_open = 0;
+		bdb_close_cursor (f);
+	}
+	if ((opt & COB_WRITE_LOCK) 
+	 && bdb_env != NULL) {
+		bdb_setkey (f, 0);
+		if (lock_record (f, p->key.data, p->key.size)) {
+			bdb_close_cursor (f);
+			return COB_STATUS_51_RECORD_LOCKED;
+		}
 	}
 	return ret;
 }
@@ -3486,18 +3609,18 @@ indexed_start_internal (cob_file *f, const int cond, cob_field *key,
 
 	/* Search */
 	bdb_setkey (f, p->key_index);
-	p->key.size = partlen;		/* may be partial key */
+	p->key.size = (cob_dbtsize_t)partlen;		/* may be partial key */
 	/* The open cursor makes this function atomic */
 	if (p->key_index != 0) {
 		p->db[0]->cursor (p->db[0], NULL, &p->cursor[0], 0);
 	}
 	p->db[p->key_index]->cursor (p->db[p->key_index], NULL, &p->cursor[p->key_index], 0);
 	if (cond == COB_FI) {
-		ret = DB_SEQ (p->cursor[p->key_index], DB_FIRST);
+		ret = DB_SEQ (p->cursor[p->key_index], &p->key, &p->data, DB_FIRST);
 	} else if (cond == COB_LA) {
-		ret = DB_SEQ (p->cursor[p->key_index], DB_LAST);
+		ret = DB_SEQ (p->cursor[p->key_index], &p->key, &p->data, DB_LAST);
 	} else {
-		ret = DB_SEQ (p->cursor[p->key_index], DB_SET_RANGE);
+		ret = DB_SEQ (p->cursor[p->key_index], &p->key, &p->data, DB_SET_RANGE);
 	}
 	switch (cond) {
 	case COB_EQ:
@@ -3507,28 +3630,28 @@ indexed_start_internal (cob_file *f, const int cond, cob_field *key,
 		break;
 	case COB_LT:
 		if (ret != 0) {
-			ret = DB_SEQ (p->cursor[p->key_index], DB_LAST);
+			ret = DB_SEQ (p->cursor[p->key_index], &p->key, &p->data, DB_LAST);
 		} else {
-			ret = DB_SEQ (p->cursor[p->key_index], DB_PREV);
+			ret = DB_SEQ (p->cursor[p->key_index], &p->key, &p->data, DB_PREV);
 		}
 		break;
 	case COB_LE:
 		if (ret != 0) {
-			ret = DB_SEQ (p->cursor[p->key_index], DB_LAST);
+			ret = DB_SEQ (p->cursor[p->key_index], &p->key, &p->data, DB_LAST);
 		} else if (bdb_cmpkey (f, p->key.data, f->record->data, p->key_index, partlen) != 0) {
-			ret = DB_SEQ (p->cursor[p->key_index], DB_PREV);
+			ret = DB_SEQ (p->cursor[p->key_index], &p->key, &p->data, DB_PREV);
 		} else if (f->keys[p->key_index].tf_duplicates) {
-			ret = DB_SEQ (p->cursor[p->key_index], DB_NEXT_NODUP);
+			ret = DB_SEQ (p->cursor[p->key_index], &p->key, &p->data, DB_NEXT_NODUP);
 			if (ret != 0) {
-				ret = DB_SEQ (p->cursor[p->key_index], DB_LAST);
+				ret = DB_SEQ (p->cursor[p->key_index], &p->key, &p->data, DB_LAST);
 			} else {
-				ret = DB_SEQ (p->cursor[p->key_index], DB_PREV);
+				ret = DB_SEQ (p->cursor[p->key_index], &p->key, &p->data, DB_PREV);
 			}
 		}
 		break;
 	case COB_GT:
 		while (ret == 0 && bdb_cmpkey (f, p->key.data, f->record->data, p->key_index, partlen) == 0) {
-			ret = DB_SEQ (p->cursor[p->key_index], DB_NEXT);
+			ret = DB_SEQ (p->cursor[p->key_index], &p->key, &p->data, DB_NEXT);
 		}
 		break;
 	case COB_GE:
@@ -3552,31 +3675,23 @@ indexed_start_internal (cob_file *f, const int cond, cob_field *key,
 		}
 		p->key.data = p->data.data;
 		p->key.size = p->primekeylen;
-		ret = DB_GET (p->db[0], 0);
+		ret = DB_GET (p->db[0], &p->key, &p->data, 0);
 	}
 
 	if (ret == 0 && test_lock) {
 		if (!(read_opts & COB_READ_IGNORE_LOCK)) {
 			ret = test_record_lock (f, p->key.data, p->key.size);
 			if (ret) {
-				p->cursor[p->key_index]->c_close (p->cursor[p->key_index]);
-				p->cursor[p->key_index] = NULL;
-				if (p->key_index != 0) {
-					p->cursor[0]->c_close (p->cursor[0]);
-					p->cursor[0] = NULL;
-				}
+				bdb_close_index (f, p->key_index);
+				bdb_close_cursor (f);
 				return COB_STATUS_51_RECORD_LOCKED;
 			}
 		}
 		if (read_opts & COB_READ_LOCK) {
 			ret = lock_record (f, p->key.data, p->key.size);
 			if (ret) {
-				p->cursor[p->key_index]->c_close (p->cursor[p->key_index]);
-				p->cursor[p->key_index] = NULL;
-				if (p->key_index != 0) {
-					p->cursor[0]->c_close (p->cursor[0]);
-					p->cursor[0] = NULL;
-				}
+				bdb_close_index (f, p->key_index);
+				bdb_close_cursor (f);
 				return COB_STATUS_51_RECORD_LOCKED;
 			}
 		}
@@ -3604,11 +3719,9 @@ indexed_start_internal (cob_file *f, const int cond, cob_field *key,
 		}
 	}
 
-	p->cursor[p->key_index]->c_close (p->cursor[p->key_index]);
-	p->cursor[p->key_index] = NULL;
+	bdb_close_index (f, p->key_index);
 	if (p->key_index != 0) {
-		p->cursor[0]->c_close (p->cursor[0]);
-		p->cursor[0] = NULL;
+		bdb_close_cursor (f);
 	}
 
 	return (ret == 0) ? COB_STATUS_00_SUCCESS : COB_STATUS_23_KEY_NOT_EXISTS;
@@ -3618,12 +3731,24 @@ static int
 indexed_delete_internal (cob_file *f, const int rewrite)
 {
 	struct indexed_file	*p = f->file;
-	int			i,len;
+	int			i, len, ret;
 	DBT			prim_key;
 	cob_u32_t		flags;
 	int			close_cursor;
 
-	if (bdb_env) {
+	if (bdb_env != NULL) {
+		unlock_record (f);
+	}
+	/* Find the primary key */
+	if (f->access_mode != COB_ACCESS_SEQUENTIAL) {
+		bdb_setkey(f, 0);
+	}
+	if (bdb_env != NULL) {
+		ret = test_record_lock (f, p->key.data, p->key.size);
+		if (ret) {
+			bdb_close_cursor (f);
+			return COB_STATUS_51_RECORD_LOCKED;
+		}
 		flags = DB_WRITECURSOR;
 	} else {
 		flags = 0;
@@ -3635,35 +3760,16 @@ indexed_delete_internal (cob_file *f, const int rewrite)
 		p->write_cursor_open = 1;
 		close_cursor = 1;
 	}
-	if (bdb_env != NULL) {
-		unlock_record (f);
-	}
-	/* Find the primary key */
-	if (f->access_mode != COB_ACCESS_SEQUENTIAL) {
-		bdb_setkey(f, 0);
-	}
-	if (DB_SEQ (p->cursor[0], DB_SET) != 0
+	if (DB_SEQ (p->cursor[0], &p->key, &p->data, DB_SET) != 0
 	 && f->access_mode != COB_ACCESS_SEQUENTIAL) {
 		if (close_cursor) {
-			p->cursor[0]->c_close (p->cursor[0]);
-			p->cursor[0] = NULL;
-			p->write_cursor_open = 0;
+			bdb_close_cursor (f);
 		}
 		return COB_STATUS_23_KEY_NOT_EXISTS;
 	}
-	if (bdb_env != NULL) {
-		if (test_record_lock (f, p->key.data, p->key.size)) {
-			if (close_cursor) {
-				p->cursor[0]->c_close (p->cursor[0]);
-				p->cursor[0] = NULL;
-				p->write_cursor_open = 0;
-			}
-			return COB_STATUS_51_RECORD_LOCKED;
-		}
-	}
 	prim_key = p->key;
-	memcpy(p->saverec, p->data.data, p->data.size);		/* Save old record image */
-	memcpy(p->temp_key,prim_key.data,prim_key.size);	/* Save primary key value */
+	memcpy (p->saverec, p->data.data, p->data.size);		/* Save old record image */
+	memcpy (p->temp_key,prim_key.data,prim_key.size);	/* Save primary key value */
 	prim_key.data = p->temp_key;
 
 	/* Delete the secondary keys */
@@ -3685,29 +3791,26 @@ indexed_delete_internal (cob_file *f, const int rewrite)
 			DBT	sec_key = p->key;
 
 			p->db[i]->cursor (p->db[i], NULL, &p->cursor[i], flags);
-			if (DB_SEQ (p->cursor[i], DB_SET_RANGE) == 0) {
+			if (DB_SEQ (p->cursor[i], &p->key, &p->data, DB_SET_RANGE) == 0) {
 				while (sec_key.size == p->key.size
 				&& memcmp (p->key.data, sec_key.data, (size_t)sec_key.size) == 0) {
 					if (memcmp (p->data.data, prim_key.data, (size_t)prim_key.size) == 0) {
-						p->cursor[i]->c_del (p->cursor[i], 0);
+						ret = DB_CDEL(p->cursor[i], 0);
 					}
-					if (DB_SEQ (p->cursor[i], DB_NEXT) != 0) {
+					if (DB_SEQ (p->cursor[i], &p->key, &p->data, DB_NEXT) != 0) {
 						break;
 					}
 				}
 			}
-			p->cursor[i]->c_close (p->cursor[i]);
-			p->cursor[i] = NULL;
+			bdb_close_index (f, i);
 		}
 	}
 
 	/* Delete the record */
-	p->cursor[0]->c_del (p->cursor[0], 0);
+	ret = DB_CDEL(p->cursor[0], 0);
 
 	if (close_cursor) {
-		p->cursor[0]->c_close (p->cursor[0]);
-		p->cursor[0] = NULL;
-		p->write_cursor_open = 0;
+		bdb_close_cursor (f);
 	}
 	return COB_STATUS_00_SUCCESS;
 }
@@ -4106,6 +4209,7 @@ dobuild:
 #if	0	/* RXWRXW - Access check BDB Human */
 	int			checkvalue;
 #endif
+	struct stat	st;
 
 	COB_UNUSED (sharing);
 	if (cobsetptr->bdb_home != NULL
@@ -4129,6 +4233,14 @@ dobuild:
 #endif
 
 	nonexistent = 0;
+	if (stat(filename, &st) != -1
+	 && S_ISDIR(st.st_mode)) {	/* Filename is a directory */
+#if 0	/* not merged yet */
+		return COB_XSTATUS_IS_DIR;
+#else
+		return COB_STATUS_30_PERMANENT_ERROR;
+#endif
+	}
 	if (bdb_nofile (filename)) {
 		nonexistent = 1;
 		if (mode != COB_OPEN_OUTPUT && f->flag_optional == 0) {
@@ -4144,24 +4256,22 @@ dobuild:
 	p = cob_malloc (sizeof (struct indexed_file));
 	f->curkey = -1;
 	if (bdb_env != NULL) {
-		if (mode == COB_OPEN_OUTPUT || mode == COB_OPEN_EXTEND ||
-		    (f->lock_mode & COB_FILE_EXCLUSIVE) ||
-		    (mode == COB_OPEN_I_O && !f->lock_mode)) {
+		if (mode == COB_OPEN_OUTPUT
+		 || mode == COB_OPEN_EXTEND
+		 || (f->lock_mode & COB_FILE_EXCLUSIVE)
+		 || (mode == COB_OPEN_I_O && !f->lock_mode)) {
 			lock_mode = DB_LOCK_WRITE;
 		} else {
 			lock_mode = DB_LOCK_READ;
 		}
-		p->key.size = (cob_dbtsize_t) strlen (filename);
-		p->key.data = filename;
-		ret = bdb_env->lock_get (bdb_env, bdb_lock_id, DB_LOCK_NOWAIT,
-					&p->key, lock_mode, &p->bdb_file_lock);
+		f->file = p;
+		ret = lock_file (f, filename, lock_mode);
 		if (ret) {
 			cob_free (p);
-			if (ret == DB_LOCK_NOTGRANTED) {
-				return COB_STATUS_61_FILE_SHARING;
-			} else {
-				return COB_STATUS_30_PERMANENT_ERROR;
-			}
+			f->file = NULL;
+			return ret;
+		} else {
+			p->file_lock_set = 1;
 		}
 	}
 
@@ -4248,13 +4358,20 @@ dobuild:
 			handle_created = 1;
 			if (mode == COB_OPEN_OUTPUT) {
 				if (bdb_env) {
-					bdb_env->dbremove (bdb_env, NULL, runtime_buffer, NULL, 0);
+					ret = bdb_env->dbremove (bdb_env, NULL, runtime_buffer, NULL, 0);
+					if (ret == ENOENT) {
+						ret = 0;
+					}
 				} else {
 					/* FIXME: test "First READ on empty SEQUENTIAL INDEXED file ..."
 					   on OPEN-OUTPUT results with MinGW & BDB 6 in
 					   BDB1565 DB->pget: method not permitted before handle's open method
 					*/
+					/* CHECKME: the following only "works" if the file is an actual BDB database,
+					   otherwise a message may be returned, like BDB 5.3.21:
+					   BDB0004 fop_read_meta: /path/to/file: unexpected file type or format */
 					p->db[i]->remove (p->db[i], runtime_buffer, NULL, 0);
+					/* consider to use   unlink(runtime_buffer);   instead */
 					ret = db_create (&p->db[i], bdb_env, 0);
 				}
 			}
@@ -4288,15 +4405,15 @@ dobuild:
 			cob_free (p->rewrite_sec_key);
 			cob_free (p->cursor);
 			if (bdb_env != NULL) {
-				bdb_env->lock_put (bdb_env, &p->bdb_file_lock);
+				unlock_file (f);
 			}
 			cob_free (p);
 			switch (ret) {
 			case DB_LOCK_NOTGRANTED:
 				return COB_STATUS_61_FILE_SHARING;
 			case ENOENT:
-				if (mode == COB_OPEN_EXTEND ||
-				    mode == COB_OPEN_OUTPUT) {
+				if (mode == COB_OPEN_EXTEND
+				 || mode == COB_OPEN_OUTPUT) {
 					return COB_STATUS_30_PERMANENT_ERROR;
 				}
 				if (f->flag_optional) {
@@ -4339,11 +4456,10 @@ dobuild:
 		bdb_env->lock_id (bdb_env, &p->bdb_lock_id);
 	}
 
-	bdb_setkey(f, 0);
+	bdb_setkey (f, 0);
 	p->db[0]->cursor (p->db[0], NULL, &p->cursor[0], 0);
-	ret = DB_SEQ (p->cursor[0], DB_FIRST);
-	p->cursor[0]->c_close (p->cursor[0]);
-	p->cursor[0] = NULL;
+	ret = DB_SEQ (p->cursor[0], &p->key, &p->data, DB_FIRST);
+	bdb_close_cursor (f);
 	if (!ret) {
 		memcpy (p->last_readkey[0], p->key.data, (size_t)p->key.size);
 		if (p->data.data != NULL
@@ -4408,16 +4524,15 @@ indexed_close (cob_file *f, const int opt)
 
 #elif	defined(WITH_DB)
 
-	struct indexed_file	*p;
+	struct indexed_file	*p = f->file;
 	int			i;
 
 	COB_UNUSED (opt);
 
-	p = f->file;
 	/* Close DB's */
 	for (i = 0; i < (int)f->nkeys; ++i) {
 		if (p->cursor[i]) {
-			p->cursor[i]->c_close (p->cursor[i]);
+			bdb_close_index (f, i);
 		}
 	}
 	for (i = (int)f->nkeys - 1; i >= 0; --i) {
@@ -4442,8 +4557,10 @@ indexed_close (cob_file *f, const int opt)
 	cob_free (p->filename);
 	cob_free (p->cursor);
 	if (bdb_env != NULL) {
+#if 1	/* CHECMKE: removed in RW-Branch with r1313 */
 		unlock_record (f);
-		bdb_env->lock_put (bdb_env, &p->bdb_file_lock);
+		unlock_file (f);
+#endif
 		bdb_env->lock_id_free (bdb_env, p->bdb_lock_id);
 	}
 	cob_free (p);
@@ -4658,20 +4775,20 @@ indexed_read (cob_file *f, cob_field *key, const int read_opts)
 
 #elif	defined(WITH_DB)
 
-	struct indexed_file	*p;
+	struct indexed_file	*p = f->file;
 	int			ret;
 	int			bdb_opts;
 	int			test_lock;
 
-	p = f->file;
 	test_lock = 0;
 	bdb_opts = read_opts;
 	if (bdb_env != NULL) {
-		if (f->open_mode != COB_OPEN_I_O ||
-		    (f->lock_mode & COB_FILE_EXCLUSIVE)) {
+		if (f->open_mode != COB_OPEN_I_O
+		 ||(f->lock_mode & COB_FILE_EXCLUSIVE)) {
 			bdb_opts &= ~COB_READ_LOCK;
-		} else if ((f->lock_mode & COB_LOCK_AUTOMATIC) &&
-			   !(bdb_opts & COB_READ_NO_LOCK)) {
+		} else
+		if ((f->lock_mode & COB_LOCK_AUTOMATIC)
+		 && !(bdb_opts & COB_READ_NO_LOCK)) {
 			bdb_opts |= COB_READ_LOCK;
 		}
 		unlock_record (f);
@@ -4963,7 +5080,7 @@ indexed_read_next (cob_file *f, const int read_opts)
 
 #elif	defined(WITH_DB)
 
-	struct indexed_file	*p;
+	struct indexed_file	*p = f->file;
 	int			ret;
 	int			read_nextprev;
 	cob_u32_t		nextprev;
@@ -4971,7 +5088,6 @@ indexed_read_next (cob_file *f, const int read_opts)
 	int			bdb_opts;
 	unsigned int		dupno;
 
-	p = f->file;
 	nextprev = DB_NEXT;
 	dupno = 0;
 	file_changed = 0;
@@ -4981,8 +5097,9 @@ indexed_read_next (cob_file *f, const int read_opts)
 		if (f->open_mode != COB_OPEN_I_O
 		 || (f->lock_mode & COB_FILE_EXCLUSIVE)) {
 			bdb_opts &= ~COB_READ_LOCK;
-		} else if ((f->lock_mode & COB_LOCK_AUTOMATIC) 
-			&& !(bdb_opts & COB_READ_NO_LOCK)) {
+		} else
+		if ((f->lock_mode & COB_LOCK_AUTOMATIC) 
+		 && !(bdb_opts & COB_READ_NO_LOCK)) {
 			bdb_opts |= COB_READ_LOCK;
 		}
 		unlock_record (f);
@@ -5009,18 +5126,16 @@ indexed_read_next (cob_file *f, const int read_opts)
 		/* Data is read in indexed_open or indexed_start */
 		if (p->data.data == NULL
 		 || (f->flag_first_read == 2 && nextprev == DB_PREV)) {
-			p->cursor[p->key_index]->c_close (p->cursor[p->key_index]);
-			p->cursor[p->key_index] = NULL;
+			bdb_close_index (f, p->key_index);
 			if (p->key_index != 0) {
-				p->cursor[0]->c_close (p->cursor[0]);
-				p->cursor[0] = NULL;
+				bdb_close_cursor (f);
 			}
 			return COB_STATUS_10_END_OF_FILE;
 		}
 		/* Check if previously read data still exists */
 		p->key.size = (cob_dbtsize_t) bdb_keylen(f,p->key_index);
 		p->key.data = p->last_readkey[p->key_index];
-		ret = DB_SEQ (p->cursor[p->key_index], DB_SET);
+		ret = DB_SEQ (p->cursor[p->key_index], &p->key, &p->data, DB_SET);
 		if (!ret && p->key_index > 0) {
 			if (f->keys[p->key_index].tf_duplicates) {
 				memcpy (&dupno, (cob_u8_ptr)p->data.data + p->primekeylen, sizeof (unsigned int));
@@ -5028,7 +5143,7 @@ indexed_read_next (cob_file *f, const int read_opts)
 				while (ret == 0
 				   && memcmp (p->key.data, p->last_readkey[p->key_index], (size_t)p->key.size) == 0
 				   && dupno < p->last_dupno[p->key_index]) {
-					ret = DB_SEQ (p->cursor[p->key_index], DB_NEXT);
+					ret = DB_SEQ (p->cursor[p->key_index], &p->key, &p->data, DB_NEXT);
 					memcpy (&dupno, (cob_u8_ptr)p->data.data + p->primekeylen, sizeof (unsigned int));
 					dupno = COB_DUPSWAP (dupno);
 				}
@@ -5045,34 +5160,22 @@ indexed_read_next (cob_file *f, const int read_opts)
 			if (!ret) {
 				p->key.size = (cob_dbtsize_t) p->primekeylen;
 				p->key.data = p->last_readkey[p->key_index + f->nkeys];
-				ret = DB_GET (p->db[0], 0);
+				ret = DB_GET (p->db[0], &p->key, &p->data, 0);
 			}
 		}
 		file_changed = ret;
 		if (bdb_env != NULL && !file_changed) {
+			ret = 0;
 			if (!(bdb_opts & COB_READ_IGNORE_LOCK)) {
 				ret = test_record_lock (f, p->key.data, p->key.size);
-				if (ret) {
-					p->cursor[p->key_index]->c_close (p->cursor[p->key_index]);
-					p->cursor[p->key_index] = NULL;
-					if (p->key_index != 0) {
-						p->cursor[0]->c_close (p->cursor[0]);
-						p->cursor[0] = NULL;
-					}
-					return COB_STATUS_51_RECORD_LOCKED;
-				}
-			}
-			if (bdb_opts & COB_READ_LOCK) {
+			} else
+			if (bdb_opts & COB_READ_LOCK) {	/* only set when bdb_env != NULL */
 				ret = lock_record (f, p->key.data, p->key.size);
-				if (ret) {
-					p->cursor[p->key_index]->c_close (p->cursor[p->key_index]);
-					p->cursor[p->key_index] = NULL;
-					if (p->key_index != 0) {
-						p->cursor[0]->c_close (p->cursor[0]);
-						p->cursor[0] = NULL;
-					}
-					return COB_STATUS_51_RECORD_LOCKED;
-				}
+			}
+			if (ret) {
+				bdb_close_index (f, p->key_index);
+				bdb_close_cursor (f);
+				return COB_STATUS_51_RECORD_LOCKED;
 			}
 		}
 	}
@@ -5082,30 +5185,29 @@ indexed_read_next (cob_file *f, const int read_opts)
 		} else {
 			p->key.size = (cob_dbtsize_t) bdb_keylen(f,p->key_index);
 			p->key.data = p->last_readkey[p->key_index];
-			ret = DB_SEQ (p->cursor[p->key_index], DB_SET_RANGE);
+			ret = DB_SEQ (p->cursor[p->key_index], &p->key, &p->data, DB_SET_RANGE);
 			/* ret != 0 possible, records may be deleted since last read */
 			if (ret != 0) {
 				if (nextprev == DB_PREV) {
 					nextprev = DB_LAST;
 					read_nextprev = 1;
 				} else {
-					p->cursor[p->key_index]->c_close (p->cursor[p->key_index]);
-					p->cursor[p->key_index] = NULL;
+					bdb_close_index (f, p->key_index);
 					if (p->key_index != 0) {
-						p->cursor[0]->c_close (p->cursor[0]);
-						p->cursor[0] = NULL;
+						bdb_close_cursor (f);
 					}
 					return COB_STATUS_10_END_OF_FILE;
 				}
 			} else {
 				if (memcmp (p->key.data, p->last_readkey[p->key_index], (size_t)p->key.size) == 0) {
-					if (p->key_index > 0 && f->keys[p->key_index].tf_duplicates) {
+					if (p->key_index > 0
+					 && f->keys[p->key_index].tf_duplicates) {
 						memcpy (&dupno, (cob_u8_ptr)p->data.data + p->primekeylen, sizeof (unsigned int));
 						dupno = COB_DUPSWAP (dupno);
 						while (ret == 0
 						 && memcmp (p->key.data, p->last_readkey[p->key_index], (size_t)p->key.size) == 0
 						 && dupno < p->last_dupno[p->key_index]) {
-							ret = DB_SEQ (p->cursor[p->key_index], DB_NEXT);
+							ret = DB_SEQ (p->cursor[p->key_index], &p->key, &p->data, DB_NEXT);
 							memcpy (&dupno, (cob_u8_ptr)p->data.data + p->primekeylen, sizeof (unsigned int));
 							dupno = COB_DUPSWAP (dupno);
 						}
@@ -5114,17 +5216,15 @@ indexed_read_next (cob_file *f, const int read_opts)
 								nextprev = DB_LAST;
 								read_nextprev = 1;
 							} else {
-								p->cursor[p->key_index]->c_close (p->cursor[p->key_index]);
-								p->cursor[p->key_index] = NULL;
+								bdb_close_index (f, p->key_index);
 								if (p->key_index != 0) {
-									p->cursor[0]->c_close (p->cursor[0]);
-									p->cursor[0] = NULL;
+									bdb_close_cursor (f);
 								}
 								return COB_STATUS_10_END_OF_FILE;
 							}
 						} else {
-							if (memcmp (p->key.data, p->last_readkey[p->key_index], (size_t)p->key.size) == 0 &&
-								dupno == p->last_dupno[p->key_index]) {
+							if (memcmp (p->key.data, p->last_readkey[p->key_index], (size_t)p->key.size) == 0 
+							 && dupno == p->last_dupno[p->key_index]) {
 								read_nextprev = 1;
 							} else {
 								if (nextprev == DB_PREV) {
@@ -5147,13 +5247,11 @@ indexed_read_next (cob_file *f, const int read_opts)
 			}
 		}
 		if (read_nextprev) {
-			ret = DB_SEQ (p->cursor[p->key_index], nextprev);
+			ret = DB_SEQ (p->cursor[p->key_index], &p->key, &p->data, nextprev);
 			if (ret != 0) {
-				p->cursor[p->key_index]->c_close (p->cursor[p->key_index]);
-				p->cursor[p->key_index] = NULL;
+				bdb_close_index (f, p->key_index);
 				if (p->key_index != 0) {
-					p->cursor[0]->c_close (p->cursor[0]);
-					p->cursor[0] = NULL;
+					bdb_close_cursor (f);
 				}
 				return COB_STATUS_10_END_OF_FILE;
 			}
@@ -5168,39 +5266,25 @@ indexed_read_next (cob_file *f, const int read_opts)
 			}
 			p->key.data = p->data.data;
 			p->key.size = p->primekeylen;
-			ret =  DB_GET (p->db[0], 0);
+			ret =  DB_GET (p->db[0], &p->key, &p->data, 0);
 			if (ret != 0) {
-				p->cursor[p->key_index]->c_close (p->cursor[p->key_index]);
-				p->cursor[p->key_index] = NULL;
-				p->cursor[0]->c_close (p->cursor[0]);
-				p->cursor[0] = NULL;
+				bdb_close_index (f, p->key_index);
+				bdb_close_cursor (f);
 				return COB_STATUS_23_KEY_NOT_EXISTS;
 			}
 		}
 		if (bdb_env != NULL) {
+			ret = 0;
 			if (!(bdb_opts & COB_READ_IGNORE_LOCK)) {
 				ret = test_record_lock (f, p->key.data, p->key.size);
-				if (ret) {
-					p->cursor[p->key_index]->c_close (p->cursor[p->key_index]);
-					p->cursor[p->key_index] = NULL;
-					if (p->key_index != 0) {
-						p->cursor[0]->c_close (p->cursor[0]);
-						p->cursor[0] = NULL;
-					}
-					return COB_STATUS_51_RECORD_LOCKED;
-				}
-			}
-			if (bdb_opts & COB_READ_LOCK) {
+			} else
+			if (bdb_opts & COB_READ_LOCK) {	/* only set when bdb_env != NULL */
 				ret = lock_record (f, p->key.data, p->key.size);
-				if (ret) {
-					p->cursor[p->key_index]->c_close (p->cursor[p->key_index]);
-					p->cursor[p->key_index] = NULL;
-					if (p->key_index != 0) {
-						p->cursor[0]->c_close (p->cursor[0]);
-						p->cursor[0] = NULL;
-					}
-					return COB_STATUS_51_RECORD_LOCKED;
-				}
+			}
+			if (ret) {
+				bdb_close_index (f, p->key_index);
+				bdb_close_cursor (f);
+				return COB_STATUS_51_RECORD_LOCKED;
 			}
 		}
 		if (p->key_index == 0) {
@@ -5215,13 +5299,6 @@ indexed_read_next (cob_file *f, const int read_opts)
 		}
 	}
 
-	p->cursor[p->key_index]->c_close (p->cursor[p->key_index]);
-	p->cursor[p->key_index] = NULL;
-	if (p->key_index != 0) {
-		p->cursor[0]->c_close (p->cursor[0]);
-		p->cursor[0] = NULL;
-	}
-
 	f->record->size = p->data.size;
 	if (f->record->size > f->record_max) {
 		f->record->size = f->record_max;
@@ -5230,6 +5307,11 @@ indexed_read_next (cob_file *f, const int read_opts)
 		ret = COB_STATUS_00_SUCCESS;
 	}
 	memcpy (f->record->data, p->data.data, f->record->size);
+
+	bdb_close_index (f, p->key_index);
+	if (p->key_index != 0) {
+		bdb_close_cursor (f);
+	}
 
 	return ret;
 
@@ -5293,14 +5375,14 @@ indexed_write (cob_file *f, const int opt)
 
 #elif	defined(WITH_DB)
 
-	struct indexed_file	*p;
+	struct indexed_file	*p = f->file;
 	int			ret;
 
 	if (f->flag_nonexistent) {
 		return COB_STATUS_48_OUTPUT_DENIED;
 	}
-	p = f->file;
-	if (bdb_env != NULL) {
+	if (bdb_env != NULL
+	 && !(f->lock_mode & COB_LOCK_MULTIPLE)) {
 		unlock_record (f);
 	}
 
@@ -5308,13 +5390,15 @@ indexed_write (cob_file *f, const int opt)
 	bdb_setkey (f, 0);
 	if (!p->last_key) {
 		p->last_key = cob_malloc ((size_t)p->maxkeylen);
-	} else if (f->access_mode == COB_ACCESS_SEQUENTIAL &&
-		   memcmp (p->last_key, p->key.data, (size_t)p->key.size) > 0) {
+	} else
+	if (f->access_mode == COB_ACCESS_SEQUENTIAL
+	 && memcmp (p->last_key, p->key.data, (size_t)p->key.size) > 0) {
 		return COB_STATUS_21_KEY_INVALID;
 	}
 	memcpy (p->last_key, p->key.data, (size_t)p->key.size);
 	
 	ret = indexed_write_internal (f, 0, opt);
+	bdb_close_cursor (f);
 
 	if (f->access_mode == COB_ACCESS_SEQUENTIAL
 	 && f->open_mode == COB_OPEN_OUTPUT
@@ -5514,30 +5598,21 @@ indexed_rewrite (cob_file *f, const int opt)
 
 #elif	defined(WITH_DB)
 
-	struct indexed_file	*p;
 	int			ret;
-	cob_u32_t		flags;
 
 	if (f->flag_nonexistent) {
 		return COB_STATUS_49_I_O_DENIED;
 	}
-	p = f->file;
-	if (bdb_env) {
-		flags = DB_WRITECURSOR;
-	} else {
-		flags = 0;
-	}
-	p->db[0]->cursor (p->db[0], NULL, &p->cursor[0], flags);
-	p->write_cursor_open = 1;
-	if (bdb_env != NULL) {
+	if (bdb_env != NULL
+	 &&	!(f->lock_mode & COB_LOCK_MULTIPLE)) {
 		unlock_record (f);
 	}
 
 	/* Check duplicate alternate keys */
 	if (check_alt_keys (f, 1)) {
-		p->cursor[0]->c_close (p->cursor[0]);
-		p->cursor[0] = NULL;
-		p->write_cursor_open = 0;
+#if 1	/* CHECKME: removed in RW-Branch r1313 */
+		bdb_close_cursor (f);
+#endif
 		return COB_STATUS_22_KEY_EXISTS;
 	}
 
@@ -5545,9 +5620,9 @@ indexed_rewrite (cob_file *f, const int opt)
 	ret = indexed_delete_internal (f, 1);
 
 	if (ret != COB_STATUS_00_SUCCESS) {
-		p->cursor[0]->c_close (p->cursor[0]);
-		p->cursor[0] = NULL;
-		p->write_cursor_open = 0;
+		bdb_close_cursor (f);
+		if (ret == COB_STATUS_23_KEY_NOT_EXISTS)
+			return COB_STATUS_21_KEY_INVALID;
 		return ret;
 	}
 
@@ -5555,9 +5630,33 @@ indexed_rewrite (cob_file *f, const int opt)
 	bdb_setkey(f, 0);
 	ret = indexed_write_internal (f, 1, opt);
 
-	p->cursor[0]->c_close (p->cursor[0]);
-	p->cursor[0] = NULL;
-	p->write_cursor_open = 0;
+	bdb_close_cursor (f);
+	
+	if (bdb_env != NULL) {
+		if (ret == COB_STATUS_00_SUCCESS
+		 || ret == COB_STATUS_02_SUCCESS_DUPLICATE) {
+			if ((f->lock_mode & COB_LOCK_AUTOMATIC)) {
+				if (!(f->lock_mode & COB_LOCK_MULTIPLE)) {
+					unlock_record (f);
+				}
+			} else {
+				if (!(f->lock_mode & COB_LOCK_MULTIPLE)) {
+					if (!(opt & COB_WRITE_LOCK)) {
+						unlock_record (f);
+					}
+				} else
+				if ((opt & COB_WRITE_LOCK)) {
+					unlock_record (f);
+				} else
+				if ((opt & COB_WRITE_NO_LOCK)) {
+					unlock_record (f);
+				}
+			}
+		} else if (ret) {
+			unlock_record (f);
+		}
+	}
+
 	return ret;
 
 #else
@@ -5628,9 +5727,8 @@ cob_file_unlock (cob_file *f)
 			if (f->file) {
 #if	defined(WITH_DB)
 				if (bdb_env != NULL) {
-					struct indexed_file	*p = f->file;
 					unlock_record (f);
-					bdb_env->lock_put (bdb_env, &p->bdb_file_lock);
+					unlock_file (f);
 				}
 #else
 				struct indexfile	*fh = f->file;
@@ -8107,6 +8205,10 @@ cob_exit_fileio (void)
 	}
 #ifdef	WITH_DB
 	if (bdb_env) {
+		DB_LOCKREQ	lckreq[1];
+		memset (lckreq, 0, sizeof (DB_LOCKREQ));
+		lckreq[0].op = DB_LOCK_PUT_ALL;
+		bdb_env->lock_vec (bdb_env, bdb_lock_id, 0, lckreq, 1, NULL);
 		bdb_env->lock_id_free (bdb_env, bdb_lock_id);
 		bdb_env->close (bdb_env, 0);
 		bdb_env = NULL;
@@ -8114,6 +8216,7 @@ cob_exit_fileio (void)
 	if (record_lock_object) {
 		cob_free (record_lock_object);
 		record_lock_object = NULL;
+		rlo_size = 0;
 	}
 	if (bdb_buff) {
 		cob_free (bdb_buff);

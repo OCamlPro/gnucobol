@@ -2366,7 +2366,7 @@ AT_CLEANUP
 
 
 AT_SETUP([INDEXED sample])
-AT_KEYWORDS([runfile optional file status READ WRITE DUPLICATES START COB_SYNC])
+AT_KEYWORDS([runfile optional file status READ WRITE DUPLICATES START UNLOCK COB_SYNC])
 
 # modified version of GC-FAQ: indexing example
 # Author: Brian Tiffin, Date:   17-Feb-2009, 28-Jan-2014
@@ -2516,6 +2516,9 @@ AT_DATA([prog.cob], [
              display "Safety kicked in!" end-display
            end-if
            display line-separator end-display
+
+      *> explicit early file unlock, see bug #533
+           unlock indexed-file
 
       *> and with that we are done with indexing sample
            close indexed-file
