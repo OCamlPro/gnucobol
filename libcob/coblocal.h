@@ -336,6 +336,8 @@ typedef struct __cob_settings {
 
 	char		*cob_dump_filename;	/* Place to write dump of variables */
 	int		cob_dump_width;		/* Max line width for dump */
+	unsigned int	cob_core_on_error;		/* signal handling and possible raise of SIGABRT
+											   / createion of coredumps on runtime errors */
 } cob_settings;
 
 
@@ -423,6 +425,7 @@ COB_HIDDEN void		cob_init_screenio	(cob_global *, cob_settings *);
 COB_HIDDEN void		cob_init_mlio		(cob_global * const);
 
 COB_HIDDEN void		cob_exit_screen		(void);
+COB_HIDDEN void		cob_exit_screen_from_signal	(int);
 COB_HIDDEN void		cob_exit_numeric	(void);
 COB_HIDDEN void		cob_exit_fileio_msg_only	(void);
 COB_HIDDEN void		cob_exit_fileio		(void);
@@ -497,6 +500,8 @@ COB_HIDDEN char		*cob_int_to_formatted_bytestring	(int, char*);
 #endif
 COB_HIDDEN char		*cob_strcat		(char*, char*, int);
 COB_HIDDEN char		*cob_strjoin		(char**, int, char*);
+
+COB_HIDDEN void		cob_runtime_warning_ss (const char *, const char *);
 
 
 DECLNORET COB_HIDDEN void	cob_hard_failure (void) COB_A_NORETURN;

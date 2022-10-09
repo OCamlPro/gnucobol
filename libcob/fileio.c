@@ -8164,6 +8164,7 @@ cob_file_return (cob_file *f)
 char *
 cob_get_filename_print (cob_file* file, const int show_resolved_name)
 {
+	size_t offset = 0, len;
 	/* Obtain the file name */
 	cob_field_to_string (file->assign, file_open_env, (size_t)COB_FILE_MAX);
 	if (show_resolved_name) {
@@ -8172,13 +8173,31 @@ cob_get_filename_print (cob_file* file, const int show_resolved_name)
 		cob_chk_file_mapping ();
 	}
 
+	len = strlen (file->select_name);
+	memcpy (runtime_buffer + offset, file->select_name, len);
+	offset += len;
+
+	len = 3;
+	memcpy (runtime_buffer + offset, " ('", len);
+	offset += len;
+
+	len = strlen (file_open_env);
+	memcpy (runtime_buffer + offset, file_open_env, len);
+	offset += len;
+
 	if (show_resolved_name
 	 && strcmp (file_open_env, file_open_name)) {
-		sprintf (runtime_buffer, "%s ('%s' => %s)",
-			file->select_name, file_open_env, file_open_name);
+		/* environment name is set; format: "%s ('%s' => %s)" */
+		len = 5;
+		memcpy (runtime_buffer + offset, "' => ", len);
+		offset += len;
+		len = strlen (file_open_name);
+		memcpy (runtime_buffer + offset, file_open_name, len);
+		offset += len;
+		memcpy (runtime_buffer + offset, ")", 2);
 	} else {
-		sprintf (runtime_buffer, "%s ('%s')",
-			file->select_name, file_open_env);
+		/* environment name is not set; format: "%s ('%s')" */
+		memcpy (runtime_buffer + offset, "')", 3);
 	}
 	return runtime_buffer;
 }
@@ -8187,6 +8206,8 @@ cob_get_filename_print (cob_file* file, const int show_resolved_name)
    cobsetpr-values with type ENV_PATH or ENV_STR
    like bdb_home and cob_file_path are taken care in cob_exit_common()!
 */
+
+const char *implicit_close_of_msgid = NULL;
 
 void
 cob_exit_fileio_msg_only (void)
@@ -8205,17 +8226,16 @@ cob_exit_fileio_msg_only (void)
 		 && l->file->open_mode != COB_OPEN_LOCKED
 		 && !l->file->flag_nonexistent
 		 && !COB_FILE_SPECIAL (l->file)) {
-			cob_runtime_warning (_("implicit CLOSE of %s"),
+			cob_runtime_warning_ss (implicit_close_of_msgid,
 				cob_get_filename_print (l->file, 0));
 		}
 	}
 }
 
-void
-cob_exit_fileio (void)
+static void
+cob_exit_fileio_closeall (void)
 {
 	struct file_list	*l;
-	struct file_list	*p;
 
 	for (l = file_cache; l; l = l->next) {
 		if (l->file
@@ -8236,6 +8256,23 @@ cob_exit_fileio (void)
 		bdb_env->close (bdb_env, 0);
 		bdb_env = NULL;
 	}
+#elif	defined(WITH_ANY_ISAM)
+#ifndef	WITH_DISAM
+	(void)iscleanup ();
+#endif
+#endif
+}
+
+void
+cob_exit_fileio (void)
+{
+	cob_exit_fileio_closeall ();
+
+#if	defined(WITH_INDEX_EXTFH) || defined(WITH_SEQRA_EXTFH)
+	extfh_cob_exit_fileio ();
+#endif
+
+#ifdef	WITH_DB
 	if (record_lock_object) {
 		cob_free (record_lock_object);
 		record_lock_object = NULL;
@@ -8245,15 +8282,6 @@ cob_exit_fileio (void)
 		cob_free (bdb_buff);
 		bdb_buff = NULL;
 	}
-
-#elif	defined(WITH_ANY_ISAM)
-#ifndef	WITH_DISAM
-	(void)iscleanup ();
-#endif
-#endif
-
-#if	defined(WITH_INDEX_EXTFH) || defined(WITH_SEQRA_EXTFH)
-	extfh_cob_exit_fileio ();
 #endif
 
 	if (runtime_buffer) {
@@ -8263,12 +8291,15 @@ cob_exit_fileio (void)
 
 	free_extfh_fcd ();
 
-	for (l = file_cache; l;) {
-		p = l;
-		l = l->next;
-		cob_free (p);
+	{
+		struct file_list	*l, *p;
+		for (l = file_cache; l;) {
+			p = l;
+			l = l->next;
+			cob_free (p);
+		}
+		file_cache = NULL;
 	}
-	file_cache = NULL;
 }
 
 void
@@ -8294,6 +8325,11 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 	file_open_env = runtime_buffer + COB_FILE_BUFF;
 	file_open_name = runtime_buffer + (2 * COB_FILE_BUFF);
 	file_open_buff = runtime_buffer + (3 * COB_FILE_BUFF);
+
+
+	/* TRANSLATORS: This msgid is concatenated with a filename;
+	   setup translation to allow this to be followed on the right side. */
+	implicit_close_of_msgid = _("implicit CLOSE of ");
 
 #ifdef	WITH_DB
 	bdb_env = NULL;

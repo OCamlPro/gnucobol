@@ -337,6 +337,7 @@ cob_set_cursor_pos (int line, int column)
 	(void) move (line, column);
 }
 
+#if 0 /* currently unused */
 static void
 cob_move_to_beg_of_last_line (void)
 {
@@ -349,6 +350,7 @@ cob_move_to_beg_of_last_line (void)
 
 	COB_UNUSED (max_x);
 }
+#endif
 
 static short
 cob_to_curses_color (cob_field *f, const short default_color)
@@ -3602,12 +3604,20 @@ cob_exit_screen (void)
 			field_accept_from_curpos (NULL, NULL, NULL, NULL, NULL, NULL, NULL, flags);
 		}
 		cobglobptr->cob_screen_initialized = 0;
+#if 0 /* CHECKME: Shouldn't be necessary */
 		clear ();
 		cob_move_to_beg_of_last_line ();
-		delwin (stdscr);
-		endwin ();
+#endif
+		endwin (); /* ends curses' terminal mode */
+		delwin (stdscr);	/* free storage related to screen not active */
 #ifdef	HAVE_CURSES_FREEALL
+		/* cleanup storage that would otherwise be shown
+		   to be "still reachable" with valgrind */
+ #if defined (NCURSES_VERSION)
 		_nc_freeall ();
+ #elif defined (__PDCURSES__)
+		PDC_free_memory_allocations ();
+ #endif
 #endif
 		if (cob_base_inp) {
 			cob_free (cob_base_inp);
@@ -3615,6 +3625,31 @@ cob_exit_screen (void)
 		}
 	}
 	COB_ACCEPT_STATUS = 0;
+}
+
+/* minimal exit from curses screen - without any cleanup */
+void
+cob_exit_screen_from_signal (int ss_only)
+{
+	/* note: we don't care about memory cleanup here, as this may
+	   lead to a lock or otherwise issues when our memory is broken
+	   (=explicit when coming from SIGSEGV / SIGBUS / SIGABRT fom libc) */
+
+	if (!cobglobptr) {
+		return;
+	}
+
+	/* warning: some implementations of curses are not safe to request
+	   exiting from curses mode! (ncurses >6 seems fine,
+	   PDCurses depending on availablity of PDC_free_memory_allocations) */
+#if (!defined (NCURSES_VERSION_MAJOR) || NCURSES_VERSION_MAJOR < 6) && \
+	 !defined (HAVE_PDC_FREE_MEMORY_ALLOCATIONS)
+	if (ss_only) return; 
+#endif
+
+	if (cobglobptr->cob_screen_initialized) {
+		endwin ();
+	}
 }
 
 #else	/* WITH_EXTENDED_SCREENIO */
@@ -3627,6 +3662,12 @@ cob_screen_init (void)
 
 void
 cob_exit_screen (void)
+{
+	/* nothing possible to do here */
+}
+
+void
+cob_exit_screen_from_signal (int signal_safe_only)
 {
 	/* nothing possible to do here */
 }

@@ -131,7 +131,7 @@ AH_TEMPLATE([HAVE_COLOR_SET], [curses has color_set function])
 AH_TEMPLATE([HAVE_DEFINE_KEY], [curses has define_key function])
 AH_TEMPLATE([HAVE_MOUSEINTERVAL], [curses has mouseinterval function])
 AH_TEMPLATE([HAVE_HAS_MOUSE], [curses has has_mouse function])
-AH_TEMPLATE([HAVE_CURSES_FREEALL], [ncurses has _nc_freeall function])
+AH_TEMPLATE([HAVE_CURSES_FREEALL], [curses provides function to free all memory])
 AH_TEMPLATE([HAVE_USE_LEGACY_CODING], [ncurses has use_legacy_coding function])
 AH_TEMPLATE([HAVE_DESIGNATED_INITS], [Has designated initializers])
 AH_TEMPLATE([HAVE_NANO_SLEEP], [Has nanosleep function])
@@ -1308,6 +1308,16 @@ if test "$USE_CURSES" = "ncurses" -o "$USE_CURSES" = "ncursesw"; then
     extern void use_legacy_coding (void);]],
     [[use_legacy_coding ();]])],
     [AC_DEFINE([HAVE_USE_LEGACY_CODING], [1]) AC_MSG_RESULT([yes])],
+    [AC_MSG_RESULT([no])],
+    [])
+fi
+
+if test "$USE_CURSES" = "pdcurses" -o "$USE_CURSES" = "xcurses"; then
+    AC_MSG_CHECKING([for PDCurses PDC_free_memory_allocations() function])
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+    extern void PDC_free_memory_allocations (void);]],
+    [[PDC_free_memory_allocations ();]])],
+    [AC_DEFINE([HAVE_CURSES_FREEALL], [1]) AC_MSG_RESULT([yes])],
     [AC_MSG_RESULT([no])],
     [])
 fi

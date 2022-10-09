@@ -1,4 +1,13 @@
 
+2022-10-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c, coblocal.h: addition of COB_CORE_ON_DUMP to enable
+	  auto-creation of coredumps on error, sending SIGABRT on error
+	  and the option to let the OS handle signals
+	* common.c (create_dumpfile): implemented COB_CORE_ON_DUMP=3
+	* common.c (output_procedure_stack_entry, cob_stack_trace_internal):
+	  replaced use of stdio functions by signal-safe write + memcpy
+
 2022-10-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fileio.c [WITH_DB]: fixed bug #533 multiple file unlocking by
@@ -147,6 +156,15 @@
 	  error status and fatal exception (no runtime exit) along with a
 	  warning if the runtime is not configured for XML / JSON
 
+2022-07-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c [__PDCURSES__] (cob_exit_screen): execute
+	  PDC_free_memory_allocations if available
+	* screenio (cob_exit_screen): fixed order of endwin and delwin,
+	  preventing memory leaks on exit of extended screenio
+	* common.c, coblocal.h, screenio.c (cob_exit_screen_from_signal):
+	  only minimal screenio exit from signal handler
+
 2022-07-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* call.c (cob_cancel): preparation for CANCEL ALL
@@ -155,6 +173,23 @@
 
 	* strings.c (cob_unstring_into): minor performance-tweak
 	  for UNSTRING with a single DELIMITED BY phrase
+
+2022-06-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_init_sig_descriptions): new function with code
+	  previously found cob_get_sig_description and cob_set_sig_description
+	  to pre-set signal description table on initialization,
+	  allowing to access it signal-safe in the signal-handler
+	* common.c (get_signal_entry) extracted from cob_get_sig_name,
+	  cob_get_sig_description
+	* common.c: rename signal_value back to sig (as standard name for
+	  signal handler related functions)
+	* common.c (ss_itoa_u10): new signal-safe function to build string
+	  from integer (base 10), based on implementation by "Shaoquan"
+	* common.c: replaced stdio in functions called by cob_sig_handler
+	  by signal-safe functions; exceptions: dump-routines
+	* fileio.c (cob_get_filename_print): replaced use of stdio functions
+	  by signal-safe functions as we may be called from there
 
 2022-05-30  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -177,6 +212,12 @@
 	  not mark each occurrence, instead gather range, then set the marker
 	  afterwards to reduce the number of expensive small memsets
 	  (TALLYING for 20000 TRAILING spaces -> 1 memset instead of 20000)
+
+2022-05-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_sig_handler): integrated (cob_sig_handler_ex) and fix
+	  re-execution of signal handler to raise, effectively reverting most
+	  of the changes from 2014-03-03
 
 2022-05-11  Simon Sobisch <simonsobisch@gnu.org>
 

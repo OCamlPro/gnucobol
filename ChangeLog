@@ -17,6 +17,10 @@
 	* configure.ac: check for ncursesw first, then ncurses;
 	  in case of ncurses check for ncurses.h again
 
+2022-07-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: check for PDC_free_memory_allocations
+
 2022-07-06  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* configure.ac: Check for __attribute__((pure))

@@ -42,6 +42,10 @@
 
 	* general: added config option device-mnemonics (boolean)
 
+2022-06-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* runtime.cfg: add COB_CORE_ON_ERROR
+
 2022-06-10  Ron Norman <rjn@inglenet.com>
 
 	* general: add 'defaultbyte'
