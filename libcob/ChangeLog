@@ -1,10 +1,10 @@
 
 2022-10-09  Simon Sobisch <simonsobisch@gnu.org>
 
-	* common.c, coblocal.h: addition of COB_CORE_ON_DUMP to enable
+	* common.c, coblocal.h: addition of COB_CORE_ON_ERROR to enable
 	  auto-creation of coredumps on error, sending SIGABRT on error
 	  and the option to let the OS handle signals
-	* common.c (create_dumpfile): implemented COB_CORE_ON_DUMP=3
+	* common.c (create_dumpfile): implemented COB_CORE_ON_ERROR=3
 	* common.c (output_procedure_stack_entry, cob_stack_trace_internal):
 	  replaced use of stdio functions by signal-safe write + memcpy
 

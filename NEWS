@@ -214,6 +214,12 @@ NEWS - user visible changes				-*- outline -*-
    this has been fixed so that all modules compiled with GnuCOBOL 2.2 can be
    executed with GnuCOBOL 3.2
 
+** the internal signal handler could chrash or deadlock the process on hard
+   errors (either in called library functions or when running COBOL without
+   runtime checks); the signal handling is now completely rewritten to fix
+   this issue and all executed code from the signal handler but the COBOL data
+   dump is now signal and thread safe
+
 * Listing changes
 
 ** the timestamp in the header was changed from ANSI date format like
@@ -228,20 +234,32 @@ NEWS - user visible changes				-*- outline -*-
 ** in 64-bit environments, the maximum field size was increased from
    268435456 bytes (999999998 bytes for OCCURS UNBOUNDED) to 2 GB
 
+** in case of any runtime features being used that are not available an error
+   is generated (may be reduced to a warning or be ignored, too) and if
+   the feature is actually used at runtime a related exception status is set
+
+** in case of any runtime features being used that are not available an error
+   is generated during compile (may be reduced to a warning by -Wunsupported
+   or be suppressed by -Wno-unsupported) and if the feature is actually used
+   at runtime a related exception status is set
+
 ** the call-stack on error / in the dump file now contains all parameters given
-   to the program via command line options, if any
+   to the program via command line options, if any;
+   it includes all PERFORMs done if full debugging information is available
 
 ** the dump that is created on abort for all programs that were compiled with
    -fdump can be explicit disabled by setting COB_DUMP_FILE=NONE; it is
    automatically disabled if the process ends upon signals SIGINT/SIGTERM and
    now also disabled upon SIGHUP/SIGPIPE
 
+** additional or instead of the internal COBOL dump a coredump file may be
+   created on runtime errors or from within or after the signal handler;
+   see the new runtime option COB_CORE_ON_ERROR for details (the default
+   is a best match to the old behavior)
+
 ** source references shown in diagnostic messages and for trace at runtime
    as well as during debugging were extended, for example each executed WHEN,
    VARYING and UNTIL phrases are now seen
-
-** in case of any runtime features being used that are not available a warning
-   is generated and related exception status set
 
 ** cobc's parsing time was heavily cut down for big programs
 
@@ -261,6 +279,8 @@ NEWS - user visible changes				-*- outline -*-
 
 
 * Known issues in 3.2 (and 3.1)
+
+** 3.2 only: the testing and documentation for COB_CORE_ON_ERROR is unfinished
 
 ** testsuite:
   * if built with vbisam, cisam or disam, depending on the version used, some
