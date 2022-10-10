@@ -7822,9 +7822,9 @@ cob_setup_runtime_error_str (const char *fmt, va_list ap)
 {
 	const char		*source_file;
 	unsigned int	 source_line;
-	set_source_location (&source_file, &source_line);
 	char *p = runtime_err_str;
 
+	set_source_location (&source_file, &source_line);
 	if (source_file) {
 		if (source_line) {
 			sprintf (runtime_err_str, "%s:%u: ",

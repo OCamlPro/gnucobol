@@ -2593,6 +2593,7 @@ lineseq_rewrite (cob_file *f, const int opt)
 	size_t		psize, slotlen;
 	off_t		curroff;
 
+	COB_UNUSED (opt);
 #if 0 /* pipes are GC4+ only feature */
 	if (f->flag_is_pipe) 
 		return COB_STATUS_30_PERMANENT_ERROR;
@@ -9187,7 +9188,7 @@ cob_extfh_open (
 	COB_UNUSED (sharing);
 
 	fcd = find_fcd(f);
-	f->last_open_mode = mode;
+	f->last_open_mode = (unsigned char)mode;
 	if (mode == COB_OPEN_OUTPUT)
 		STCOMPX2(OP_OPEN_OUTPUT, opcode);
 	else if (mode == COB_OPEN_I_O)

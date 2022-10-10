@@ -3670,6 +3670,7 @@ void
 cob_exit_screen_from_signal (int signal_safe_only)
 {
 	/* nothing possible to do here */
+	COB_UNUSED (cob_exit_screen_from_signal);
 }
 
 void

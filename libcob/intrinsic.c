@@ -3848,7 +3848,7 @@ cob_intr_bit_of (cob_field *srcfield)
 	unsigned char		*byte = srcfield->data;
 	size_t		i, j;
 
-	COB_ATTR_INIT (COB_TYPE_ALPHANUMERIC, size, 0, 0, NULL);
+	COB_ATTR_INIT (COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL);
 	COB_FIELD_INIT (size, NULL, &attr);
 	make_field_entry (&field);
 
@@ -3884,7 +3884,7 @@ cob_intr_bit_to_char (cob_field *srcfield)
 	unsigned char		*byte_val, *char_val;
 	size_t		i;
 
-	COB_ATTR_INIT (COB_TYPE_ALPHANUMERIC, size, 0, 0, NULL);
+	COB_ATTR_INIT (COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL);
 	COB_FIELD_INIT (size, NULL, &attr);
 	make_field_entry (&field);
 
@@ -3914,7 +3914,7 @@ cob_intr_hex_of (cob_field *srcfield)
 	const size_t		size = srcfield->size * 2;
 	size_t		i, j;
 
-	COB_ATTR_INIT (COB_TYPE_ALPHANUMERIC, size, 0, 0, NULL);
+	COB_ATTR_INIT (COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL);
 	COB_FIELD_INIT (size, NULL, &attr);
 	make_field_entry (&field);
 
@@ -3941,7 +3941,7 @@ cob_intr_hex_to_char (cob_field *srcfield)
 		// size--;
 	}
 
-	COB_ATTR_INIT (COB_TYPE_ALPHANUMERIC, size, 0, 0, NULL);
+	COB_ATTR_INIT (COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL);
 	COB_FIELD_INIT (size, NULL, &attr);
 	make_field_entry (&field);
 
@@ -5047,7 +5047,7 @@ cob_intr_numval_f (cob_field *srcfield)
 		case '9':
 			if (e_seen) {
 				exponent *= 10;
-				exponent += (*p & 0x0F);
+				exponent += COB_D2I (*p);
 			} else	{
 				if (decimal_seen) {
 					decimal_digits++;

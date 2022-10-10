@@ -1,4 +1,9 @@
 
+2022-10-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* intrinsic.c (cob_intr_bit_of, cob_intr_bit_to_char,cob_intr_hex_of
+	  cob_intr_hex_to_char): fixed invalid attribute of return field
+
 2022-10-09  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c, coblocal.h: addition of COB_CORE_ON_ERROR to enable

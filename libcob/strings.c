@@ -878,7 +878,7 @@ cob_unstring_into (cob_field *dst, cob_field *dlm, cob_field *cnt)
 		return;
 	}
 
-	if (unstring_offset >= unstring_src->size) {
+	if (unstring_offset >= (int)unstring_src->size) {
 		/* overflow from the last iteration (multiple INTO targets) */
 		return;
 	}
