@@ -43,6 +43,16 @@
 
 #ifdef	HAVE_UNISTD_H
 #include <unistd.h>
+#else
+#ifndef STDIN_FILENO
+#define STDIN_FILENO 0
+#endif
+#ifndef STDOUT_FILENO
+#define STDOUT_FILENO 1
+#endif
+#ifndef STDERR_FILENO
+#define STDERR_FILENO 2
+#endif
 #endif
 #ifdef	HAVE_SYS_TIME_H
 #include <sys/time.h>
@@ -1281,7 +1291,6 @@ cob_set_signal (void)
 		}
 	}
 #else	/* still defined (HAVE_SIGNAL_H) */
-	int k;
 	for (k = 0; k < NUM_SIGNALS; k++) {
 		if (signals[k].for_set) {
 			/* Take direct control of some hard errors */

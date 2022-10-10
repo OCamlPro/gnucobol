@@ -555,7 +555,7 @@ only usable with COB_USE_VC2013_OR_GREATER */
 #endif
 
 /* Macro to prevent compiler warning "conditional expression is constant" */
-#if defined (_MSC_VER) && COB_USE_VC2008_OR_GREATER
+#if defined (_MSC_VER) && _MSC_VER >= 1500 /* COB_USE_VC2008_OR_GREATER */
 #define ONCE_COB \
 	__pragma( warning(push) )		\
 	__pragma( warning(disable:4127) )	\
