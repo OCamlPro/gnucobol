@@ -1,4 +1,8 @@
 
+2022-10-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (main): fixed memory handling for "-j"
+
 2022-10-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* pplex.l (plex_call_destroy): fixed minor memory leak

@@ -8870,7 +8870,7 @@ main (int argc, char **argv)
 			} else {
 				run_name = file_basename (fn->source, NULL);
 			}
-			run_name = cobc_strdup (run_name);
+			run_name = cobc_main_strdup (run_name);
 		}
 		if (iparams > 1 && cb_compile_level == CB_LEVEL_EXECUTABLE) {
 			/* only the first source has the compile_level and main flag set */
@@ -8905,7 +8905,6 @@ main (int argc, char **argv)
 		if (status == 0) {
 			status = process_run (run_name);
 		}
-		cobc_free ((void *)run_name);
 	}
 
 	if (cb_compile_level < CB_LEVEL_LIBRARY
@@ -8938,7 +8937,6 @@ main (int argc, char **argv)
 		if ((statuses == 0) && cobc_flag_run) {
 			status = process_run (run_name);
 		}
-		cobc_free ((void *)run_name);
 	}
 
 	/* We have completed */

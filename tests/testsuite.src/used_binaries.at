@@ -729,14 +729,31 @@ AT_CHECK([$COBCRUN -q -M ThisIsANameThatIsReallyNotAllowedAsProgIdInCOBOL noprog
 AT_CLEANUP
 
 
+AT_SETUP([run job with unsuccessful compilation])
+AT_KEYWORDS([runmisc cobcrun])
+
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           DISPLAY "jobby"
+           EXIT HERE.
+])
+
+AT_CHECK([$COMPILE -j prog.cob], [1], [],
+[prog.cob:6: error: syntax error, unexpected Identifier
+])
+
+AT_CLEANUP
+
+
 AT_SETUP([run job after compilation])
 AT_KEYWORDS([runmisc cobcrun])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
-       DATA             DIVISION.
-       WORKING-STORAGE  SECTION.
        PROCEDURE        DIVISION.
            DISPLAY "job" WITH NO ADVANCING END-DISPLAY
            STOP RUN WITH NORMAL STATUS.
@@ -754,8 +771,6 @@ AT_KEYWORDS([runmisc cobcrun])
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
-       DATA             DIVISION.
-       WORKING-STORAGE  SECTION.
        PROCEDURE        DIVISION.
            DISPLAY "job" WITH NO ADVANCING END-DISPLAY
            STOP RUN WITH NORMAL STATUS.
@@ -796,8 +811,6 @@ AT_KEYWORDS([runmisc cobc cobcrun])
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      a.
-       DATA             DIVISION.
-       WORKING-STORAGE  SECTION.
        PROCEDURE        DIVISION.
            STOP RUN WITH NORMAL STATUS.
 ])
@@ -826,8 +839,6 @@ AT_KEYWORDS([runmisc cobc cobcrun])
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      a.
-       DATA             DIVISION.
-       WORKING-STORAGE  SECTION.
        PROCEDURE        DIVISION.
            DISPLAY "job" WITH NO ADVANCING END-DISPLAY
            STOP RUN WITH NORMAL STATUS.
