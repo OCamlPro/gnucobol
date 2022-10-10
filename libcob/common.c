@@ -533,6 +533,7 @@ static struct signal_table {
 };
 #define NUM_SIGNALS (int)((sizeof (signals) / sizeof (struct signal_table)) - 1)
 const char *signal_msgid = "signal";
+const char *warning_msgid = "warning: ";
 const char *more_stack_frames_msgid = "(more COBOL runtime elements follow...)";
 
 /* Local functions */
@@ -1156,14 +1157,21 @@ get_signal_entry (int sig)
 const char *
 cob_get_sig_name (int sig)
 {
-	struct signal_table	signal_entry = get_signal_entry(sig);
+	struct signal_table	signal_entry = get_signal_entry (sig);
 	return signal_entry.shortname;
 }
 
 const char *
 cob_get_sig_description (int sig)
 {
-	struct signal_table	signal_entry = get_signal_entry(sig);
+	struct signal_table	signal_entry = get_signal_entry (sig);
+	/* LCOV_EXCL_START */
+	if (!signal_entry.description) {
+		/* in theory we could get here before pre-initialization was finished,
+		   and would want to have _anything_ to return then */
+		return "unknown";
+	}
+	/* LCOV_EXCL_STOP */
 	return signal_entry.description;
 }
 
@@ -1250,6 +1258,7 @@ cob_init_sig_descriptions (void)
 #if 0	/* Is there a use in this message ?*/
 	abnormal_termination_msgid = (_("abnormal termination - file contents may be incorrect");
 #endif
+	warning_msgid = _("warning: ");
 }
 
 static void
@@ -1309,7 +1318,6 @@ cob_set_signal (void)
 	}
 #endif
 #endif
-	cob_init_sig_descriptions();
 }
 
 /* ASCII Sign
@@ -7752,7 +7760,6 @@ cob_runtime_warning_ss (const char *msg, const char *addition)
 
 	write (STDERR_FILENO, output, strlen(output));
 	output_source_location ();
-	const char *warning_msgid = _("warning: ");
 	write (STDERR_FILENO, warning_msgid, strlen(warning_msgid));
 
 	/* Body */
@@ -7762,7 +7769,7 @@ cob_runtime_warning_ss (const char *msg, const char *addition)
 	}
 
 	/* Postfix */
-	write (STDERR_FILENO, "\n" , 1);
+	write (STDERR_FILENO, "\n", 1);
 }
 
 void
@@ -9147,6 +9154,7 @@ cob_init (const int argc, char **argv)
 		}
 	}
 #endif
+	cob_init_sig_descriptions ();
 
 	cob_common_init (cobsetptr);
 
