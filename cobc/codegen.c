@@ -6256,8 +6256,8 @@ output_call (struct cb_call *p)
 	}
 	need_brace = 0;
 
-	if (!ret_ptr) {
-		if (p->call_returning && p->call_returning != cb_null) {
+	if (p->call_returning && p->call_returning != cb_null) {
+		if (!ret_ptr) {
 			if (!need_brace) {
 				need_brace = 1;
 				output_block_open ();
@@ -6265,7 +6265,7 @@ output_call (struct cb_call *p)
 			output_line ("int ret;");
 		}
 #ifdef	COB_NON_ALIGNED
-		else if (dynamic_link) {
+		else {
 			if (!need_brace) {
 				need_brace = 1;
 				output_block_open ();

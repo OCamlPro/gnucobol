@@ -6799,6 +6799,63 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([CALL RETURNING POINTER])
+AT_KEYWORDS([run_extensions])
+
+AT_DATA([prog.cob], [
+       identification division.
+       program-id. prog.
+
+       data division.
+       working-storage section.
+
+       01  c-text-pointer usage pointer.
+
+       procedure division.
+
+           call static "cob_getenv"
+                       using "COB_UNIX_LF"
+                       returning c-text-pointer
+           end-call
+
+           IF function content-of(c-text-pointer) <> "1"
+              DISPLAY "unexpected value: "
+                      function content-of(c-text-pointer).
+
+          GOBACK.
+])
+
+AT_DATA([progdyn.cob], [
+       identification division.
+       program-id. progdyn.
+
+       data division.
+       working-storage section.
+
+       01  c-text-pointer usage pointer.
+
+       procedure division.
+
+           call        "cob_getenv"
+                       using "COB_UNIX_LF"
+                       returning c-text-pointer
+           end-call
+
+           IF function content-of(c-text-pointer) <> "1"
+              DISPLAY "unexpected value: "
+                      function content-of(c-text-pointer).
+
+          GOBACK.
+])
+
+AT_CHECK([$COMPILE -fno-gen-c-decl-static-call prog.cob], [0], [], [])
+AT_CHECK([$COMPILE progdyn.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./progdyn], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([ON EXCEPTION clause of DISPLAY])
 AT_KEYWORDS([runmisc exceptions screen])
 
