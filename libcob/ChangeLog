@@ -11,6 +11,9 @@
 	  when called from a signal handler as this isn't signal safe
 	* common.c, coblocal.h: add COB_CORE_FILENAME to allow specifying a
 	  path, changed default to "core.libcob"
+	* common.c: defined macros for use of write to simplify code and to
+	  stop output by returning the function in case of errors fixing
+	   -Wunused-result compiler warnings
 
 2022-10-09  Simon Sobisch <simonsobisch@gnu.org>
 

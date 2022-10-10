@@ -920,6 +920,37 @@ set_source_location (const char **file, unsigned int *line)
 	}
 }
 
+/* write integer to stderr using fixed buffer */
+#define write_to_stderr_or_return_int(i) \
+	if (write (STDERR_FILENO, ss_itoa_buf, ss_itoa_u10 (i)) == -1) return
+/* write char array (constant C string) to stderr */
+#define write_to_stderr_or_return_arr(ch_arr) \
+	if (write (STDERR_FILENO, ch_arr, sizeof (ch_arr) - 1) == -1) return
+/* write string to stderr, byte count computed with strlen,
+   str is evaluated twice */
+#define write_to_stderr_or_return_str(str) \
+	if (write (STDERR_FILENO, str, strlen (str)) == -1) return
+
+/* write integer to fileno using fixed buffer */
+#define write_or_return_int(fileno,i) \
+	if (write (fileno, ss_itoa_buf, ss_itoa_u10 (i)) == -1) return
+/* write char array (constant C string) to fileno */
+#define write_or_return_arr(fileno, ch_arr) \
+	if (write (fileno, ch_arr, sizeof (ch_arr) - 1) == -1) return
+/* write string to fileno, byte count computed with strlen,
+   str is evaluated twice */
+#define write_or_return_str(fileno,str) \
+	if (write (fileno, str, strlen (str)) == -1) return
+
+#if 0 /* unused */
+/* write buffer with given byte count to stderr */
+#define write_to_stderr_or_return_buf(buff,count) \
+	if (write (STDERR_FILENO, buff, count) == -1) return
+/* write buffer with given byte count to fileno */
+#define write_or_return_buf(fileno,buff,count) \
+	if (write (fileno, buff, count) == -1) return
+#endif
+
 static void
 output_source_location (void)
 {
@@ -928,12 +959,12 @@ output_source_location (void)
 	set_source_location (&source_file, &source_line);
 	
 	if (source_file) {
-		write (STDERR_FILENO, source_file, strlen(source_file));
+		write_to_stderr_or_return_str (source_file);
 		if (source_line) {
-			write (STDERR_FILENO, ":" , 1);
-			write (STDERR_FILENO, ss_itoa_buf, ss_itoa_u10 ((int)source_line));
+			write_to_stderr_or_return_arr (":");
+			write_to_stderr_or_return_int ((int)source_line);
 		}
-		write (STDERR_FILENO, ": " , 2);
+		write_to_stderr_or_return_arr (": ");
 	}
 }
 
@@ -1010,10 +1041,9 @@ cob_sig_handler (int sig)
 	if (signal_name == signals[NUM_SIGNALS].shortname) {
 		/* not translated as it is a very unlikely error case */
 		signal_name = signals[NUM_SIGNALS].description;	/* translated unknown */
-		msg = "\ncob_sig_handler caught not handled signal: ";
-		write (STDERR_FILENO, msg, strlen(msg));
-		write (STDERR_FILENO, ss_itoa_buf, ss_itoa_u10 (sig));
-		write (STDERR_FILENO, "\n" , 1);
+		write_to_stderr_or_return_arr ("\ncob_sig_handler caught not handled signal: ");
+		write_to_stderr_or_return_int (sig);
+		write_to_stderr_or_return_arr ("\n");
 	}
 	/* LCOV_EXCL_STOP */
 
@@ -1050,12 +1080,12 @@ cob_sig_handler (int sig)
 #endif
 	cob_exit_screen ();
 
-	write (STDERR_FILENO, "\n" , 1);
+	write_to_stderr_or_return_arr ("\n");
 	cob_get_source_line ();
 	output_source_location ();
 
 	msg = cob_get_sig_description (sig);
-	write (STDERR_FILENO, msg, strlen(msg));
+	write_to_stderr_or_return_str (msg);
 
 	/* setup "signal %s" */
 	str_len = strlen (signal_msgid);
@@ -1063,16 +1093,16 @@ cob_sig_handler (int sig)
 	*(signal_text + str_len++) = ' ';
 	memcpy (signal_text + str_len, signal_name, strlen (signal_name + 1));
 
-	write (STDERR_FILENO, " (" , 2);
-	write (STDERR_FILENO, signal_text, strlen (signal_text));
-	write (STDERR_FILENO, ")\n\n" , 3);
+	write_to_stderr_or_return_arr (" (");
+	write_to_stderr_or_return_str (signal_text);
+	write_to_stderr_or_return_arr (")\n\n");
 
 	if (cob_initialized) {
 		if (abort_reason[0] == 0) {
 			memcpy (abort_reason, signal_text, COB_MINI_BUFF);
 #if 0	/* Is there a use in this message ?*/
-			write (STDERR_FILENO, abnormal_termination_msgid, strlen (abnormal_termination_msgid));
-			write (STDERR_FILENO, "\n" , 1);
+			write_to_stderr_or_return_str (abnormal_termination_msgid);
+			write_to_stderr_or_return_arr ("\n");
 #endif
 		}
 	}
@@ -7787,27 +7817,23 @@ cob_runtime_warning_external (const char *caller_name, const int cob_reference, 
 void
 cob_runtime_warning_ss (const char *msg, const char *addition)
 {
-	const char *output;
-	
 	if (cobsetptr && !cobsetptr->cob_display_warn) {
 		return;
 	}
 
 	/* Prefix */
-	output = "libcob: ";
-
-	write (STDERR_FILENO, output, strlen(output));
+	write_to_stderr_or_return_arr ("libcob: ");
 	output_source_location ();
-	write (STDERR_FILENO, warning_msgid, strlen(warning_msgid));
+	write_to_stderr_or_return_str (warning_msgid);
 
 	/* Body */
-	write (STDERR_FILENO, msg, strlen(msg));
+	write_to_stderr_or_return_str (msg);
 	if (addition) {
-		write (STDERR_FILENO, addition, strlen(addition));
+		write_to_stderr_or_return_str (addition);
 	}
 
 	/* Postfix */
-	write (STDERR_FILENO, "\n", 1);
+	write_to_stderr_or_return_arr ("\n");
 }
 
 void
@@ -9481,32 +9507,25 @@ output_procedure_stack_entry (const int file_no,
 		const char *section, const char *paragraph,
 		const char *source_file, const unsigned int source_line)
 {
-	size_t len;
-
 	if (!section && !paragraph) {
 		return;
 	}
-	write (file_no, "\n\t", 2);
+	write_or_return_arr (file_no, "\n\t");
 	if (section && paragraph) {
-		len = strlen (paragraph);
-		write (file_no, paragraph, len);
-		write (file_no, " OF ", 4);
-		len = strlen (section);
-		write (file_no, section, len);
+		write_or_return_str (file_no, paragraph);
+		write_or_return_arr (file_no, " OF ");
+		write_or_return_str (file_no, section);
 	} else {
 		if (section) {
-			len = strlen (section);
-			write (file_no, section, len);
+			write_or_return_str (file_no, section);
 		} else {
-			len = strlen (paragraph);
-			write (file_no, paragraph, len);
+			write_or_return_str (file_no, paragraph);
 		}
 	}
-	write (file_no, " at ", 4);
-	len = strlen (source_file);
-	write (file_no, source_file, len);
-	write (file_no, ":", 1);
-	write (file_no, ss_itoa_buf, ss_itoa_u10 ((int)source_line));
+	write_or_return_arr (file_no, " at ");
+	write_or_return_str (file_no, source_file);
+	write_or_return_arr (file_no, ":");
+	write_or_return_int (file_no, (int)source_line);
 }
 
 /* internal output the COBOL-view of the stacktrace to the given target */
@@ -9517,9 +9536,6 @@ cob_stack_trace_internal (FILE *target, int verbose, int count)
 	int	first_entry = 0;
 	int i, k;
 	int file_no;
-
-	const char *output;
-	size_t len;
 
 	/* exit early in the case of no module loaded at all,
 	   possible to happen for example when aborted from cob_check_version of first module */
@@ -9548,7 +9564,7 @@ cob_stack_trace_internal (FILE *target, int verbose, int count)
 	}
 
 	if (verbose) {
-		write (file_no, "\n", 1);
+		write_or_return_arr (file_no, "\n");
 	}
 	k = 0;
 	for (mod = COB_MODULE_PTR, i = 0; mod; mod = mod->next, i++) {
@@ -9563,78 +9579,54 @@ cob_stack_trace_internal (FILE *target, int verbose, int count)
 			const unsigned int source_file_num = COB_GET_FILE_NUM (mod->module_stmt);
 			const unsigned int source_line = COB_GET_LINE_NUM (mod->module_stmt);
 			const char *source_file = mod->module_sources[source_file_num];
-			write (file_no, " ", 1);
+			write_or_return_arr (file_no, " ");
 			if (!verbose) {
-				write (file_no, output, len);
-				len = strlen (mod->module_name);
-				write (file_no, mod->module_name, len);
-				write (file_no, " at ", 4);
-				len = strlen (source_file);
-				write (file_no, source_file, len);
-				write (file_no, ":", 1);
-				write (file_no, ss_itoa_buf, ss_itoa_u10 ((int)source_line));
+				write_or_return_str (file_no, mod->module_name);
+				write_or_return_arr (file_no, " at ");
+				write_or_return_str (file_no, source_file);
+				write_or_return_arr (file_no, ":");
+				write_or_return_int (file_no, (int)source_line);
 			} else
 			if (!mod->stmt_name && !mod->section_name && !mod->paragraph_name) {
 				/* GC 3.1 output, now used for "no source location / no trace" case */
-				output = "Last statement of ";
-				len = strlen (output);
-				write (file_no, output, len);
+				write_or_return_arr (file_no, "Last statement of ");
 				if (mod->module_type == COB_MODULE_TYPE_FUNCTION) {
-					write (file_no, "FUNCTION ", 9);
+					write_or_return_arr (file_no, "FUNCTION ");
 				}
-				write (file_no, "\"", 1);
-				len = strlen (mod->module_name);
-				write (file_no, mod->module_name, len);
-				output = "\" was at line ";
-				len = strlen (output);
-				write (file_no, output, len);
-				write (file_no, ss_itoa_buf, ss_itoa_u10 ((int)source_line));
-				write (file_no, " of ", 4);
-				len = strlen (source_file);
-				write (file_no, source_file, len);
+				write_or_return_arr (file_no, "\"");
+				write_or_return_str (file_no, mod->module_name);
+				write_or_return_arr (file_no, "\" was at line ");
+				write_or_return_int (file_no, (int)source_line);
+				write_or_return_arr (file_no, " of ");
+				write_or_return_str (file_no, source_file);
 			} else
 			if (!mod->section_name && !mod->paragraph_name) {
 				/* special case: there _would_ be data,
 				   but there's no procedure defined in the program */
-				output = "Last statement of ";
-				len = strlen (output);
-				write (file_no, output, len);
+				write_or_return_arr (file_no, "Last statement of ");
 				if (mod->module_type == COB_MODULE_TYPE_FUNCTION) {
-					write (file_no, "FUNCTION ", 9);
+					write_or_return_arr (file_no, "FUNCTION ");
 				}
-				write (file_no, "\"", 1);
-				len = strlen (mod->module_name);
-				write (file_no, mod->module_name, len);
-				output = "\" was ";
-				len = strlen (output);
-				write (file_no, output, len);
-				len = strlen (mod->stmt_name);
-				write (file_no, mod->stmt_name, len);
-				output = " at line ";
-				len = strlen (output);
-				write (file_no, output, len);
-				write (file_no, ss_itoa_buf, ss_itoa_u10 ((int)source_line));
-				write (file_no, " of ", 4);
-				len = strlen (source_file);
-				write (file_no, source_file, len);
+				write_or_return_arr (file_no, "\"");
+				write_or_return_str (file_no, mod->module_name);
+				write_or_return_arr (file_no, "\" was ");
+				write_or_return_str (file_no, mod->stmt_name);
+				write_or_return_arr (file_no, " at line ");
+				write_or_return_int (file_no, (int)source_line);
+				write_or_return_arr (file_no, " of ");
+				write_or_return_str (file_no, source_file);
 			} else {
 				/* common case when compiled with runtime checks enabled: statement and
 				   procedure known - the later is printed from the stack entry with the
 				   source location by the following call */
-				output = "Last statement of ";
-				len = strlen (output);
-				write (file_no, output, len);
+				write_or_return_arr (file_no, "Last statement of ");
 				if (mod->module_type == COB_MODULE_TYPE_FUNCTION) {
-					write (file_no, "FUNCTION ", 9);
+					write_or_return_arr (file_no, "FUNCTION ");
 				}
-				write (file_no, "\"", 1);
-				len = strlen (mod->module_name);
-				write (file_no, mod->module_name, len);
-				output = "\" was ";
-				len = strlen (output);
-				write (file_no, output, len);
-				len = strlen (mod->stmt_name);
-				write (file_no, mod->stmt_name, len);
+				write_or_return_arr (file_no, "\"");
+				write_or_return_str (file_no, mod->module_name);
+				write_or_return_arr (file_no, "\" was ");
+				write_or_return_str (file_no, mod->stmt_name);
 			}
 			output_procedure_stack_entry (file_no, mod->section_name, mod->paragraph_name,
 					source_file, source_line);
@@ -9648,16 +9640,12 @@ cob_stack_trace_internal (FILE *target, int verbose, int count)
 					if (perform_ptr->section_name) {
 						/* marker for "root frame" - at ENTRY */
 						if (perform_ptr->section_name[0] == 0) {
-							output = "\n\tENTRY ";
-							len = strlen (output);
-							write (file_no, output, len);
-							len = strlen (perform_ptr->paragraph_name);
-							write (file_no, perform_ptr->paragraph_name, len);
-							write (file_no, " at ", 4);
-							len = strlen (ffile);
-							write (file_no, ffile, len);
-							write (file_no, ":", 1);
-							write (file_no, ss_itoa_buf, ss_itoa_u10 ((int)fline));
+							write_or_return_arr (file_no, "\n\tENTRY ");
+							write_or_return_str (file_no, perform_ptr->paragraph_name);
+							write_or_return_arr (file_no, " at ");
+							write_or_return_str (file_no, ffile);
+							write_or_return_arr (file_no, ":");
+							write_or_return_int (file_no, (int)fline);
 							break;
 						}
 					}
@@ -9669,58 +9657,47 @@ cob_stack_trace_internal (FILE *target, int verbose, int count)
 			}
 		} else {
 			if (verbose) {
-				output = "Last statement of ";
-				len = strlen (output);
-				write (file_no, output, len);
+				write_or_return_arr (file_no, "Last statement of ");
 				if (mod->module_type == COB_MODULE_TYPE_FUNCTION) {
-					write (file_no, "FUNCTION ", 9);
+					write_or_return_arr (file_no, "FUNCTION ");
 				}
-				write (file_no, "\"", 1);
-				len = strlen (mod->module_name);
-				write (file_no, mod->module_name, len);
-				write (file_no, "\" unknown", 9);
+				write_or_return_arr (file_no, "\"");
+				write_or_return_str (file_no, mod->module_name);
+				write_or_return_arr (file_no, "\" unknown");
 			} else {
-				len = strlen (mod->module_name);
-				write (file_no, mod->module_name, len);
-				len = strlen (" at unknown");
-				write (file_no, " at unknown", 10);
+				write_or_return_str (file_no, mod->module_name);
+				write_or_return_arr (file_no, " at unknown");
 			}
 		}
-		write (file_no, "\n", 1);
+		write_or_return_arr (file_no, "\n");
 		if (mod->next == mod) {
 			/* not translated as highly unexpected */
-			output = "FIXME: recursive mod (stack trace)\n";
-			len = strlen (output);
-			write (file_no, output, len);
+			write_or_return_arr (file_no, "FIXME: recursive mod (stack trace)\n");
 			break;
 		}
 		if (k++ == MAX_MODULE_ITERS) {
 			/* not translated as highly unexpected */
-			output = "max module iterations exceeded, possible broken chain\n";
-			len = strlen (output);
-			write (file_no, output, len);
+			write_or_return_arr (file_no,
+				"max module iterations exceeded, possible broken chain\n");
 			break;
 		}
 			
 	}
 	if (mod) {
-		write (file_no, " ", 1);
-		len = strlen (more_stack_frames_msgid);
-		write (file_no, more_stack_frames_msgid, len);
-		write (file_no, "\n", 1);
+		write_or_return_arr (file_no, " ");
+		write_or_return_str (file_no, more_stack_frames_msgid);
+		write_or_return_arr (file_no, "\n");
 	}
 
 	if (verbose && cob_argc != 0) {
 		size_t i;
-		output = " Started by ";
-		len = strlen (output);
-		write (file_no, output, len);
-		write (file_no, cob_argv[0], strlen (cob_argv[0]));
-		write (file_no, "\n", 1);
+		write_or_return_arr (file_no, " Started by ");
+		write_or_return_str (file_no, cob_argv[0]);
+		write_or_return_arr (file_no, "\n");
 		for (i = 1; i < (size_t)cob_argc; ++i) {
-			write (file_no, "\t", 1);
-			write (file_no, cob_argv[i], strlen (cob_argv[i]));
-			write (file_no, "\n", 1);
+			write_or_return_arr (file_no, "\t");
+			write_or_return_str (file_no, cob_argv[i]);
+			write_or_return_arr (file_no, "\n");
 		}
 	}
 }
