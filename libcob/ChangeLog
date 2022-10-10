@@ -588,6 +588,11 @@
 	* fileio.c: Additonal code to inspect the index control blocks
 	            of an ISAM file and save the details
 
+2021-02-11  Ron Norman <rjn@inglenet.com>
+
+	* termio.c (display_alnum_dump): added bounds check to fix invalid reads
+
+
 2021-04-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* termio.c (display_alnum_dump): only consider isprint to decide

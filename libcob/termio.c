@@ -517,21 +517,21 @@ display_alnum_dump (cob_field *f, FILE *fp, unsigned int indent, unsigned int ma
 		for (i = 0; i < f->size; ) {
 			for (j=0; j < colsize && i < f->size; j++,i++) {
 				if (f->data[i] == '\0')
-					fprintf(fp,"\\0"), j++;
+					fprintf (fp,"\\0"), j++;
 				else if (f->data[i] == '\\')
-					fprintf(fp,"\\\\"), j++;
+					fprintf (fp,"\\\\"), j++;
 				else if (f->data[i] == '\r')
-					fprintf(fp,"\\r"), j++;
+					fprintf (fp,"\\r"), j++;
 				else if (f->data[i] == '\n')
-					fprintf(fp,"\\n"), j++;
+					fprintf (fp,"\\n"), j++;
 				else if (f->data[i] == '\t')
-					fprintf(fp,"\\t"), j++;
+					fprintf (fp,"\\t"), j++;
 				else if (f->data[i] == '\b')
-					fprintf(fp,"\\b"), j++;
+					fprintf (fp,"\\b"), j++;
 				else if (f->data[i] == '\f')
-					fprintf(fp,"\\f"), j++;
+					fprintf (fp,"\\f"), j++;
 				else
-					fprintf(fp,"%c",f->data[i]);
+					fprintf (fp,"%c",f->data[i]);
 			}
 			if (i < f->size) {
 				fprintf (fp, "\n%*s%5u : ", indent - 8, " ", i + 1);
@@ -552,10 +552,10 @@ display_alnum_dump (cob_field *f, FILE *fp, unsigned int indent, unsigned int ma
 		if (colsize < MAX_PREV
 		 && i < (f->size - colsize)) {
 			if (i > 0
-			 && memcmp(prev, &f->data[i], colsize/2) == 0) {
+			 && memcmp (prev, &f->data[i], colsize/2) == 0) {
 				duplen = 0;
 				bgn = i;
-				while(memcmp(prev, &f->data[i], colsize/2) == 0
+				while (memcmp (prev, &f->data[i], colsize/2) == 0
 					&& i < (f->size - colsize/2)) {
 					duplen += colsize/2;
 					i += colsize/2;
@@ -565,23 +565,27 @@ display_alnum_dump (cob_field *f, FILE *fp, unsigned int indent, unsigned int ma
 					fprintf (fp, "\n%*s", indent, " ");
 				}
 			}
-			memcpy(prev, &f->data[i], colsize);
+			if (colsize < (f->size - i)) {
+				memcpy (prev, &f->data[i], colsize);
+			} else {
+				memcpy (prev, &f->data[i], f->size - i);
+			}
 		}
 		wrk[0] = 0;
 		pos = i + 1;
 		for (j=0; j < colsize && i < f->size; j+=2,i++) {
 			if (f->data[i] >= ' '
 			 && f->data[i] <= 0x7F) {
-				fprintf(fp," %c",f->data[i]);
+				fprintf (fp," %c",f->data[i]);
 				sprintf (&wrk[j],"%02X",f->data[i]);
 			} else {
-				fprintf(fp,"  ");
+				fprintf (fp,"  ");
 				sprintf (&wrk[j],"%02X",f->data[i]);
 			}
 			if ((j+2) < colsize
 			 && ((i+1) % 4) == 0
 			 && (i+1) < f->size) {
-				fprintf(fp," ");
+				fprintf (fp," ");
 				j++;
 				wrk[j+1] = ' ';
 				wrk[j+2] = 0;
