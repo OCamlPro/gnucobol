@@ -253,9 +253,9 @@ NEWS - user visible changes				-*- outline -*-
    now also disabled upon SIGHUP/SIGPIPE
 
 ** additional or instead of the internal COBOL dump a coredump file may be
-   created on runtime errors or from within or after the signal handler;
-   see the new runtime option COB_CORE_ON_ERROR for details (the default
-   is a best match to the old behavior)
+   created on runtime errors and when configured in the system also after
+   the signal handler; see the new runtime option COB_CORE_ON_ERROR for
+   details (the default is a best match to the old behavior)
 
 ** source references shown in diagnostic messages and for trace at runtime
    as well as during debugging were extended, for example each executed WHEN,

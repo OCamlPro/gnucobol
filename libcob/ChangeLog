@@ -3,6 +3,14 @@
 
 	* intrinsic.c (cob_intr_bit_of, cob_intr_bit_to_char,cob_intr_hex_of
 	  cob_intr_hex_to_char): fixed invalid attribute of return field
+	* common.c, common.h, coblocal.h, fileio.c, numeric.c: changed
+	* common.c (cob_hard_failure_internal), common.h, coblocal.h, fileio.c,
+	  numeric.c: changed to take an optional prefix and be exported to be
+	  used in cobc
+	* common.c: change COB_CORE_ON_ERROR=3 to not manually generate a corefile
+	  when called from a signal handler as this isn't signal safe
+	* common.c, coblocal.h: add COB_CORE_FILENAME to allow specifying a
+	  path, changed default to "core.libcob"
 
 2022-10-09  Simon Sobisch <simonsobisch@gnu.org>
 

@@ -1581,7 +1581,7 @@ cob_print_ieeedec (const cob_field *f, FILE *fp)
 	/* LCOV_EXCL_START */
 	default:
 		cob_runtime_error (_("invalid internal call of %s"), "cob_print_ieeedec");
-		cob_hard_failure_internal ();
+		cob_hard_failure_internal ("libcob");
 	/* LCOV_EXCL_STOP */
 	}
 	cob_decimal_print (&cob_d3, fp);

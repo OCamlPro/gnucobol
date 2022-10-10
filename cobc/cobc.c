@@ -58,7 +58,6 @@
 
 #include <limits.h>
 
-
 #include "cobc.h"
 #include "tree.h"
 #include "cconv.h"
@@ -2272,12 +2271,31 @@ cobc_abort_terminate (const int should_be_reported)
 	cobc_abort_msg ();
 
 	if (should_be_reported) {
-		cobc_err_msg (_("Please report this!"));
+		char *coe = cob_getenv_direct ("COBC_CORE_ON_ERROR");
+		if (coe) {
+			cob_setenv ("COB_CORE_ON_ERROR", coe, 1);
+		} else {
+#if 0
+			coe = cob_getenv_direct ("COB_CORE_ON_ERROR");
+			if (!coe) {
+				cob_setenv ("COB_CORE_ON_ERROR", "3", 1);
+			}
+#else
+			/* if not explicit set - let us SIGABRT;
+				during testing this was set to 3 but that led
+				to a huge corefile "no space left on device" once */
+			cob_setenv ("COB_CORE_ON_ERROR", "2", 1);
+#endif
+		}
+		cob_setenv ("COB_CORE_FILENAME", "./core.cobc", 1);
 		if (cb_src_list_file
 		 && cb_listing_file_struct
 		 && cb_listing_file_struct->name) {
 			print_program_listing ();
 		}
+		/* run into libcob provided internal error handling
+		   handling with providing a coredump (or SIGABRT) */
+		cob_hard_failure_internal ("cobc");
 	}
 	cobc_clean_up (ret_code);
 	exit (ret_code);
@@ -2307,6 +2325,7 @@ cobc_sig_handler (int sig)
 
 	/* LCOV_EXCL_START */
 	if (!ret) {
+		/* FIXME: we should not use stdio functions as currently called below here! */
 		cobc_err_msg (_("Please report this!"));
 	}
 	/* LCOV_EXCL_STOP */

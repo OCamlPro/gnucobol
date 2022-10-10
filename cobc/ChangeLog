@@ -2,6 +2,9 @@
 2022-10-10  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (main): fixed memory handling for "-j"
+	* cobc.c (cobc_abort_terminate): run into libcob provided abort handling
+	  with a default of SIGABRT and a configurable coredump via
+	  COBC_CORE_ON_ERROR overriding COB_CORE_ON_ERROR (currently fixed "2")
 
 2022-10-08  Simon Sobisch <simonsobisch@gnu.org>
 

@@ -399,6 +399,7 @@ static struct config_tbl gc_conf[] = {
 	{"COB_PHYSICAL_CANCEL", "physical_cancel", 	"0", 	NULL, GRP_CALL, ENV_BOOL, SETPOS (cob_physical_cancel)},
 	{"default_cancel_mode", "default_cancel_mode", 	NULL, NULL, GRP_HIDE, ENV_BOOL | ENV_NOT, SETPOS (cob_physical_cancel)},
 	{"LOGICAL_CANCELS", "logical_cancels", 	NULL, NULL, GRP_HIDE, ENV_BOOL | ENV_NOT, SETPOS (cob_physical_cancel)},
+	{"COB_LIBRARY_PATH", "library_path", 	NULL, 	NULL, GRP_CALL, ENV_PATH, SETPOS (cob_library_path)}, /* default value set in cob_init_call() */
 	{"COB_PRE_LOAD", "pre_load", 		NULL, 	NULL, GRP_CALL, ENV_STR, SETPOS (cob_preload_str)},
 	{"COB_BELL", "bell", 			"0", 	beepopts, GRP_SCREEN, ENV_UINT | ENV_ENUMVAL, SETPOS (cob_beep_value)},
 	{"COB_DEBUG_LOG", "debug_log", 		NULL, 	NULL, GRP_HIDE, ENV_FILE, SETPOS (cob_debug_log)},
@@ -419,9 +420,9 @@ static struct config_tbl gc_conf[] = {
 	{"COB_SET_TRACE", "set_trace", 		"0", 	NULL, GRP_MISC, ENV_BOOL, SETPOS (cob_line_trace)},
 	{"COB_TRACE_FILE", "trace_file", 		NULL, 	NULL, GRP_MISC, ENV_FILE, SETPOS (cob_trace_filename)},
 	{"COB_TRACE_FORMAT", "trace_format",	"%P %S Line: %L", NULL, GRP_MISC, ENV_STR, SETPOS (cob_trace_format)},
-	{"COB_LIBRARY_PATH", "library_path", 	NULL, 	NULL, GRP_CALL, ENV_PATH, SETPOS (cob_library_path)}, /* default value set in cob_init_call() */
 	{"COB_STACKTRACE", "stacktrace", 	"1", 	NULL, GRP_MISC, ENV_BOOL, SETPOS (cob_stacktrace)},
 	{"COB_CORE_ON_ERROR", "core_on_error", 	"0", 	coeopts, GRP_MISC, ENV_UINT | ENV_ENUMVAL, SETPOS (cob_core_on_error)},
+	{"COB_CORE_FILENAME", "core_filename", 	"./core.libcob", 	NULL, GRP_MISC, ENV_STR, SETPOS (cob_core_filename)},
 	{"COB_DUMP_FILE", "dump_file",		NULL,	NULL, GRP_MISC, ENV_FILE, SETPOS (cob_dump_filename)},
 	{"COB_DUMP_WIDTH", "dump_width",		"100",	NULL, GRP_MISC, ENV_UINT, SETPOS (cob_dump_width)},
 #ifdef  _WIN32
@@ -936,23 +937,39 @@ output_source_location (void)
 	}
 }
 
-static void
+static int
 create_dumpfile (void)
 {
-	char cmd[COB_MINI_BUFF];
-	int pid_len = ss_itoa_u10 (cob_sys_getpid ());
+	/* Note: this function is not called from a signal handler so may use stdio */
+
+	char cmd [COB_NORMAL_BUFF];
+	const char *default_name = "./core.libcob";
+	const char *envval;
+	size_t content_size;
 	int ret;
 
-	memcpy (cmd, "gcore -a -o libcob ", 19);
-	memcpy (cmd + 19, ss_itoa_buf, pid_len + 1);
+	if (cobsetptr) {
+		envval = cobsetptr->cob_core_filename;
+	} else {
+		envval = cob_getenv_direct ("COB_CORE_FILENAME");
+	}
+	if (envval == NULL) {
+		envval = default_name;
+	}
+
+	content_size = snprintf (cmd, COB_NORMAL_BUFF, "gcore -a -o %s %d", envval, cob_sys_getpid ());
+	/* LCOV_EXCL_START */
+	if (content_size >= COB_NORMAL_BUFF) {
+		/* in unlikely case of "cob_core_filename is too long" use the simple one */
+		sprintf (cmd, "gcore -a -o %s %d", default_name, cob_sys_getpid ());
+	}
+	/* LCOV_EXCL_STOP */
+
 	ret = system (cmd);
 	if (ret) {
-		const char *output = "\nlibcob: requested coredump creation failed with status ";
-		write (STDERR_FILENO, output, strlen (output));
-		write (STDERR_FILENO, ss_itoa_buf, ss_itoa_u10 ((int)ret));
-		write (STDERR_FILENO, "\n" , 1);
-		cobsetptr->cob_core_on_error = 4;
+		fprintf (stderr, "\nlibcob: requested coredump creation failed with status %d\n", ret);
 	}
+	return ret;
 }
 
 
@@ -969,11 +986,8 @@ cob_sig_handler (int sig)
 	struct sigaction	sa;
 #endif
 
-	if (cobsetptr->cob_core_on_error == 4
 #ifdef	HAVE_SIG_ATOMIC_T
-	 || sig_is_handled	
-#endif
-	   ) {
+	 if (sig_is_handled) {
 #ifdef	HAVE_RAISE
 		raise (sig);
 #else
@@ -981,7 +995,6 @@ cob_sig_handler (int sig)
 #endif
 		exit (sig);
 	}
-#ifdef	HAVE_SIG_ATOMIC_T
 	sig_is_handled = 1;
 #endif
 
@@ -1064,9 +1077,10 @@ cob_sig_handler (int sig)
 		}
 	}
 
-	/* early coredump if requested... */
-	if (cobsetptr->cob_core_on_error == 3)  {
-		create_dumpfile ();
+	/* early coredump if requested would be nice,
+	   but that is not signal-safe so do SIGABRT later... */
+	if (cobsetptr && cobsetptr->cob_core_on_error == 3)  {
+		cobsetptr->cob_core_on_error = 4;
 	}
 	switch (sig) {
 	case -1:
@@ -1079,7 +1093,7 @@ cob_sig_handler (int sig)
 #ifdef	SIGABRT
 	case SIGABRT:
 #endif
-		if (cobsetptr->cob_core_on_error != 0)  {
+		if (cobsetptr && cobsetptr->cob_core_on_error != 0)  {
 			ss_terminate_routines ();
 			break;
 		}
@@ -1102,7 +1116,7 @@ cob_sig_handler (int sig)
 #endif
 	/* if an explicit requested coredump could not
 	   be created - raise SIGABRT here */
-	if (cobsetptr->cob_core_on_error == 4) {
+	if (cobsetptr && cobsetptr->cob_core_on_error == 4) {
 		sig = SIGABRT;
 	}
 	signal (sig, SIG_DFL);
@@ -2652,15 +2666,36 @@ cob_stop_error (void)
 	cob_hard_failure ();
 }
 
-void
-cob_hard_failure ()
+static int
+handle_core_on_error ()
 {
 	unsigned int core_on_error = 0;
 	if (cob_initialized) {
-		if (cobsetptr->cob_core_on_error == 3)  {
-			create_dumpfile ();
-		}
 		core_on_error = cobsetptr->cob_core_on_error;
+	} else {
+		char *env_val = cob_getenv_direct ("COB_CORE_ON_ERROR");
+		if (env_val && env_val[0] && env_val [1] == 0
+		 && env_val[0] >= '0' && env_val[0] <= '3') {
+			core_on_error = env_val[0] - '0';
+		}
+	}
+	if (core_on_error == 3) {
+		int ret = create_dumpfile ();
+		if (ret) {
+			if (cob_initialized) {
+				cobsetptr->cob_core_on_error = 4;
+			}
+			core_on_error = 4;
+		}
+	}
+	return core_on_error;
+}
+
+void
+cob_hard_failure ()
+{
+	unsigned int core_on_error = handle_core_on_error ();
+	if (core_on_error != 4) {
 		call_exit_handlers_and_terminate ();
 	}
 	exit_code = -1;
@@ -2680,19 +2715,20 @@ cob_hard_failure ()
 }
 
 void
-cob_hard_failure_internal ()
+cob_hard_failure_internal (const char *prefix)
 {
-	unsigned int core_on_error = 0;
-	if (cob_initialized) {
-		if (cobsetptr->cob_core_on_error == 3)  {
-			create_dumpfile ();
-		}
-		core_on_error = cobsetptr->cob_core_on_error;
+	unsigned int core_on_error;
+	if (prefix) {
+		fprintf (stderr, "\n%s: ", prefix);
+	} else {
+		fprintf (stderr, "\n");
+	}
+	fprintf (stderr, _("Please report this!"));
+	fprintf (stderr, "\n");
+	core_on_error = handle_core_on_error ();
+	if (core_on_error != 4) {
 		call_exit_handlers_and_terminate ();
 	}
-	fputc ('\n', stderr);
-	fputs (_("Please report this!"), stderr);
-	fputc ('\n', stderr);
 	exit_code = -2;
 #ifndef COB_WITHOUT_JMP
 	if (return_jmp_buffer_set) {
@@ -6843,9 +6879,11 @@ cob_expand_env_string (char *strval)
 			}
 			k--;
 		} else if (strval[k] == '$'
-			&& strval[k+1] == '$') {	/* Replace $$ with process-id */
-			j += sprintf(&env[j],"%d",cob_sys_getpid());
+		        && strval[k+1] == '$') {	/* Replace $$ with process-id */
+			j += sprintf (&env[j], "%d", cob_sys_getpid());
 			k++;
+		/* CHECME: possibly add $f /$b as basename of executable [or, when passed to cob_init the first name] 
+		           along with $d date as yyyymmdd and $t as hhmmss */
 		} else if (!isspace ((unsigned char)strval[k])) {
 			env[j++] = strval[k];
 		} else {

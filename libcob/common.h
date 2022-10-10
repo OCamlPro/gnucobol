@@ -1641,6 +1641,7 @@ COB_EXPIMP void	cob_module_free	(cob_module **);
 DECLNORET COB_EXPIMP void	cob_stop_run	(const int) COB_A_NORETURN;
 DECLNORET COB_EXPIMP void	cob_stop_error	(void) COB_A_NORETURN;
 DECLNORET COB_EXPIMP void	cob_fatal_error	(const enum cob_fatal_error) COB_A_NORETURN;
+DECLNORET COB_EXPIMP void	cob_hard_failure_internal (const char *) COB_A_NORETURN;
 
 COB_EXPIMP void	*cob_malloc			(const size_t) COB_A_MALLOC;
 COB_EXPIMP void	*cob_realloc			(void *, const size_t, const size_t) COB_A_MALLOC;
@@ -1656,7 +1657,7 @@ COB_EXPIMP void	cob_set_locale			(cob_field *, const int);
 COB_EXPIMP int 	cob_setenv		(const char *, const char *, int);
 COB_EXPIMP int 	cob_unsetenv		(const char *);
 COB_EXPIMP char	*cob_getenv_direct		(const char *);
-COB_EXPIMP char* cob_expand_env_string	(char*);
+COB_EXPIMP char *cob_expand_env_string	(char *);
 COB_EXPIMP char	*cob_getenv			(const char *);
 COB_EXPIMP int	cob_putenv			(char *);
 

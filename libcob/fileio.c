@@ -813,7 +813,7 @@ bdb_cmpkey (cob_file *f, unsigned char *keyarea, unsigned char *record, int idx,
 		/* LCOV_EXCL_START */
 		if (partlen <= 0) {
 			cob_runtime_error (_("invalid internal call of %s"), "bdb_cmpkey");
-			cob_hard_failure_internal ();
+			cob_hard_failure_internal ("libcob");
 		}
 		/* LCOV_EXCL_STOP */
 	}
@@ -3713,7 +3713,7 @@ indexed_start_internal (cob_file *f, const int cond, cob_field *key,
 			if (partlen <= 0) {
 				cob_runtime_error (_("invalid internal call of %s"),
 					"indexed_start_internal/bdb_keylen");
-				cob_hard_failure_internal ();
+				cob_hard_failure_internal ("libcob");
 			}
 			/* LCOV_EXCL_STOP */
 			memcpy (p->last_readkey[p->key_index],
@@ -9557,7 +9557,7 @@ cob_file_fcd_adrs (cob_file *f, void *pfcd)
 	/* LCOV_EXCL_START */
 	if (f == NULL) {
 		cob_runtime_error (_("invalid internal call of %s"), "cob_file_fcd_adrs");
-		cob_hard_failure_internal ();
+		cob_hard_failure_internal ("libcob");
 	}
 	/* LCOV_EXCL_STOP */
 	if (f->fcd == NULL) {
@@ -9585,7 +9585,7 @@ cob_file_fcdkey_adrs (cob_file *f, void *pkey)
 	/* LCOV_EXCL_START */
 	if (f == NULL) {
 		cob_runtime_error (_("invalid internal call of %s"), "cob_file_fcdkey_adrs");
-		cob_hard_failure_internal ();
+		cob_hard_failure_internal ("libcob");
 	}
 	/* LCOV_EXCL_STOP */
 	cob_file_fcd_adrs (f, &fcd);

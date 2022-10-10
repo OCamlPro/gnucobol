@@ -337,7 +337,8 @@ typedef struct __cob_settings {
 	char		*cob_dump_filename;	/* Place to write dump of variables */
 	int		cob_dump_width;		/* Max line width for dump */
 	unsigned int	cob_core_on_error;		/* signal handling and possible raise of SIGABRT
-											   / createion of coredumps on runtime errors */
+											   / creation of coredumps on runtime errors */
+	char		*cob_core_filename;	/* filename for coredump creation */
 } cob_settings;
 
 
@@ -505,7 +506,6 @@ COB_HIDDEN void		cob_runtime_warning_ss (const char *, const char *);
 
 
 DECLNORET COB_HIDDEN void	cob_hard_failure (void) COB_A_NORETURN;
-DECLNORET COB_HIDDEN void	cob_hard_failure_internal (void) COB_A_NORETURN;
 
 /* static inline of smaller helpers */
 
