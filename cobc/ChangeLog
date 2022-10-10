@@ -1883,6 +1883,8 @@
 
 	* codegen.c: set temp-field.data after all declarations to avoid problems
 	  with C89 compilers
+	* typeck.c: fix for use of cob_pointer_manip
+	* codeoptim.c: adjust cob_pointer_manip to match usage
 
 2019-09-03  Ron Norman <rjn@inglenet.com>
 

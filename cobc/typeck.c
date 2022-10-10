@@ -7093,7 +7093,7 @@ cb_build_add (cb_tree v, cb_tree n, cb_tree round_opt)
 	}
 	if (CB_TREE_CLASS (v) == CB_CLASS_POINTER) {
 		optimize_defs[COB_POINTER_MANIP] = 1;
-		return CB_BUILD_FUNCALL_3 ("cob_pointer_manip", v, n, cb_int0);
+		return CB_BUILD_FUNCALL_3 ("cob_pointer_manip", cb_build_address (v), n, cb_int0);
 	}
 #else
 	if (CB_INDEX_OR_HANDLE_P (v) || CB_TREE_CLASS (v) == CB_CLASS_POINTER) {
@@ -7136,7 +7136,7 @@ cb_build_sub (cb_tree v, cb_tree n, cb_tree round_opt)
 	}
 	if (CB_TREE_CLASS (v) == CB_CLASS_POINTER) {
 		optimize_defs[COB_POINTER_MANIP] = 1;
-		return CB_BUILD_FUNCALL_3 ("cob_pointer_manip", v, n, cb_int1);
+		return CB_BUILD_FUNCALL_3 ("cob_pointer_manip", cb_build_address (v), n, cb_int1);
 	}
 #else
 	if (CB_INDEX_OR_HANDLE_P (v) || CB_TREE_CLASS (v) == CB_CLASS_POINTER) {

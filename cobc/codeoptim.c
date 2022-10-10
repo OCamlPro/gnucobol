@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2006-2012, 2013, 2017-2018, 2022 Free Software Foundation, Inc.
+   Copyright (C) 2006-2012, 2013, 2017-2019, 2022 Free Software Foundation, Inc.
    Written by Roger While, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -116,16 +116,16 @@ cob_gen_optim (const enum cb_optim val)
 
 	case COB_POINTER_MANIP:
 		output_storage ("static void COB_NOINLINE");
-		output_storage ("cob_pointer_manip (cob_field *f1, cob_field *f2, const unsigned int addsub)");
+		output_storage ("cob_pointer_manip (void *f1, cob_field *f2, const unsigned int addsub)");
 		output_storage ("{");
 		output_storage ("	unsigned char   *tmptr;");
-		output_storage ("	memcpy (&tmptr, f1->data, sizeof(void *));");
+		output_storage ("	memcpy (&tmptr, f1, sizeof(unsigned char *));");
 		output_storage ("	if (addsub) {");
 		output_storage ("		tmptr -= cob_get_int (f2);");
 		output_storage ("	} else {");
 		output_storage ("		tmptr += cob_get_int (f2);");
 		output_storage ("	}");
-		output_storage ("	memcpy (f1->data, &tmptr, sizeof(void *));");
+		output_storage ("	memcpy (f1, &tmptr, sizeof(unsigned char *));");
 		output_storage ("}");
 		return;
 
