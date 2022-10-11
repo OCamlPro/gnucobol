@@ -2727,6 +2727,7 @@ lock_record(
 	struct flock	lck;
 
 	lock_type = forwrite ? F_WRLCK : F_RDLCK;
+	f->blockpid = 0;
 	retry = interval = 0;
 	if (f->retry_mode == 0) {
 		/* Nothing else to do */
@@ -2781,6 +2782,7 @@ lock_record(
 				}
 			}
 		}
+		f->blockpid = lck.l_pid;
 		return 0;
 	}
 	if(interval <= 0)
@@ -2814,7 +2816,6 @@ lock_record(
 		if(*errsts == EINTR)		/* Timed out, so return EAGAIN */
 			*errsts = EAGAIN;
 	}
-	return 0;				/* Record is not locked! */
 #else
 	if (retry > 0) {
 		retry = retry * 4;
@@ -2851,8 +2852,9 @@ lock_record(
 			cob_sleep_msec(250);
 		}
 	}
-	return 0;				/* Record is not locked! */
 #endif
+	f->blockpid = lck.l_pid;
+	return 0;				/* Record is not locked! */
 }
 
 /*
@@ -2885,6 +2887,7 @@ unlock_record(cob_file *f, unsigned int recnum)
 	if (fcntl (f->fd, F_SETLK, &lck) != -1) {
 		return 1;					/* Released the lock so all is good */
 	}
+	f->blockpid = 0;
 	return 0;						/* Record is not locked! */
 }
 
@@ -2961,8 +2964,9 @@ set_file_lock(cob_file *f, const char *filename, int open_mode)
 		switch (ret) {
 		case EACCES:
 		case EAGAIN:
-		case EDEADLK:
 			return COB_STATUS_61_FILE_SHARING;
+		case EDEADLK:
+			return COB_STATUS_52_DEAD_LOCK;
 		default:
 			return COB_STATUS_30_PERMANENT_ERROR;
 		}
@@ -3754,6 +3758,7 @@ cob_fd_file_open (cob_file *f, char *filename, const int mode, const int sharing
 
 	/* Note filename points to file_open_name */
 	/* cob_chk_file_mapping manipulates file_open_name directly */
+	f->blockpid = 0;
 
 	if (!f->flag_file_map) {
 		cob_chk_file_mapping (f, NULL);
@@ -4345,10 +4350,7 @@ cob_file_close (cob_file_api *a, cob_file *f, const int opt)
 			lock.l_start = 0;
 			lock.l_len = 0;
 			if (fcntl (f->fd, F_SETLK, &lock) == -1) {
-#if 1 /* CHECKME - What is the correct thing to do here? */
-				/* not translated as "testing only" */
 				cob_runtime_warning ("issue during unlock (%s), errno: %d", "cob_file_close", errno);
-#endif
 			}
 		}
 #endif
@@ -5946,11 +5948,8 @@ cob_file_unlock (cob_file *f)
 					lock.l_start = 0;
 					lock.l_len = 0;
 					if (fcntl (f->fd, F_SETLK, &lock) == -1) {
-#if 1 /* CHECKME - What is the correct thing to do here? */
-						/* not translated as "testing only" */
 						cob_runtime_warning ("issue during unlock (%s), errno: %d",
 							"cob_file_unlock", errno);
-#endif
 					}
 				}
 			}

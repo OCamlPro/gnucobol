@@ -1592,6 +1592,7 @@ typedef struct __cob_file {
 	void				*fileout;		/* output side of bi-directional pipe 'FILE*' */
 	int					fdout;			/* output side of bi-directional pipe 'fd' */
 	int					limitreads;		/* Database should LIMIT rows read */
+	int					blockpid;		/* Process Id blocking the lock */
 	char				*org_filename;	/* Full concatenated file name */
 	char				*nxt_filename;	/* Next position in org_filename */
 } cob_file;

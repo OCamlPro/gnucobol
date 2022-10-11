@@ -152,6 +152,12 @@ static	vb_rtd_t *vbisam_rtd = NULL;
 #endif
 #endif
 
+#if (ISEXTENDED == 1)
+#define ISPID ispid
+#else
+#define ISPID 0
+#endif
+
 #ifndef ISVARLEN
 /* ISAM handler does not support variable length records */
 #define ISVARLEN 0
@@ -776,6 +782,11 @@ isread_retry(cob_file *f, void *data, int mode)
 			cob_sleep_msec(interval);
 		}
 	} while(sts != 0 && retry != 0);
+	if (ISERRNO == ELOCKED
+	 || ISERRNO == EDEADLK
+	 || ISERRNO == EFLOCKED) {
+		f->blockpid = ISPID;
+	}
 	return sts;
 }
 
@@ -1380,6 +1391,7 @@ isam_read (cob_file_api *a, cob_file *f, cob_field *key, const int read_opts)
 	int			lmode;
 
 	fh = f->file;
+	f->blockpid = 0;
 	fh->eofpending = 0;
 	fh->startiscur = 0;
 	fh->wrkhasrec = 0;

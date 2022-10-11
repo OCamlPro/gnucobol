@@ -1,4 +1,9 @@
 
+2022-10-11  Ron Norman <rjn@inglenet.com>
+
+	* Return the process id that is blocking a 
+	  record/file lock in FCD3 field FCD-SESSION-ID.
+
 2022-09-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fbdb.c: manual merge of fileio.c from 2019-08-25 and 2021-01-08

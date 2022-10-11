@@ -110,6 +110,7 @@ update_file_to_fcd (cob_file *f, FCD3 *fcd, unsigned char *fnstatus)
 
 	STCOMPX4(f->record_min, fcd->minRecLen);
 	STCOMPX4(f->record_max, fcd->maxRecLen);
+	STCOMPX4(f->blockpid,	fcd->fsv2SessionId);	/* Blocking Process ID */
 	if (f->record) {
 		STCOMPX4(f->record->size, fcd->curRecLen);
 	} else {
