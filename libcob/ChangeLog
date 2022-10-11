@@ -1,4 +1,10 @@
 
+2022-10-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* intrinsic.c (cob_log_ten): new static field to speedup cob_intr_log10
+	* intrinsic.c: only setup cob_sqrt_two, cob_pi, cob_log_half, cob_log_ten
+	  on first use, to speedup init/teardown when not used
+
 2022-10-10  Simon Sobisch <simonsobisch@gnu.org>
 
 	* intrinsic.c (cob_intr_bit_of, cob_intr_bit_to_char,cob_intr_hex_of
