@@ -553,11 +553,12 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f)
 		f->organization = COB_ORG_RELATIVE;
 		if (f->keys == NULL)
 			f->keys = cob_cache_malloc(sizeof(cob_file_key));
-		if (f->keys[0].field == NULL)
+		if (f->keys[0].field == NULL) {
 			f->keys[0].field = cob_cache_malloc(sizeof(cob_field));
-		f->keys[0].field->data = cob_cache_malloc (4);
-		f->keys[0].field->attr = &compx_attr;
-		f->keys[0].field->size = 4;
+			f->keys[0].field->data = cob_cache_malloc (4);
+			f->keys[0].field->attr = &compx_attr;
+			f->keys[0].field->size = 4;
+		}
 		if (!f->flag_set_type
 		 && COB_MODULE_PTR
 		 && COB_MODULE_PTR->flag_file_format == COB_FILE_IS_MF) {
