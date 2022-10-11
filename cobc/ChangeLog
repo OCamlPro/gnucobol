@@ -1623,6 +1623,12 @@
 	  if it is part of a component; even if this has only a single part
 	  as components are not part of the record "KEYNAM = RECORD-FIELD"
 
+2020-04-26  Ron Norman <rjn@inglenet.com>
+
+	* codeoptim.def (COB_GET_NUMDISPS), codeoptim.c, codegen.c: new routine
+	  to convert signed DISPLAY into binary value;
+	  use of register attribute for cob_get_numdisp + cob_get_numdisps
+
 2020-04-23  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y: added ACCEPT with CURSOR parsing

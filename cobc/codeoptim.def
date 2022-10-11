@@ -1,6 +1,6 @@
 /*
-   Copyright (C) 2009-2013, 2018-2019 Free Software Foundation, Inc.
-   Written by Roger While
+   Copyright (C) 2009-2013, 2018-2020 Free Software Foundation, Inc.
+   Written by Roger While, Ron Norman, Simon Sobisch, Edward Hart
 
    This file is part of GnuCOBOL.
 
@@ -25,6 +25,7 @@ CB_OPTIM_DEF (COB_SET_REPORT)
 CB_OPTIM_DEF (COB_SET_ML_TREE)
 CB_OPTIM_DEF (COB_POINTER_MANIP)
 CB_OPTIM_DEF (COB_GET_NUMDISP)
+CB_OPTIM_DEF (COB_GET_NUMDISPS)
 CB_OPTIM_DEF (COB_CMP_PACKED_INT)
 CB_OPTIM_DEF (COB_GET_PACKED_INT)
 CB_OPTIM_DEF (COB_ADD_PACKED_INT)

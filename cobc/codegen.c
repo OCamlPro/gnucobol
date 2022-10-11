@@ -3047,13 +3047,20 @@ output_integer (cb_tree x)
 			return;
 
 		case CB_USAGE_DISPLAY:
-			if (f->pic && f->pic->scale >= 0 &&
-			    f->size - f->pic->scale > 0 &&
-			    f->size - f->pic->scale <= 9 &&
-			    f->pic->have_sign == 0 &&
-			    !cb_ebcdic_sign) {
-				optimize_defs[COB_GET_NUMDISP] = 1;
-				output ("cob_get_numdisp (");
+			if (f->pic
+			 && f->pic->scale >= 0
+			 && f->size - f->pic->scale > 0
+			 && f->size - f->pic->scale <= 9
+			 && !f->flag_sign_clause
+			 && !f->flag_any_numeric /* ANY NUMERIC format & usage could change */
+			 && !cb_ebcdic_sign) {
+				if (f->pic->have_sign) {
+					optimize_defs[COB_GET_NUMDISPS] = 1;
+					output ("cob_get_numdisps (");
+				} else {
+					optimize_defs[COB_GET_NUMDISP] = 1;
+					output ("cob_get_numdisp (");
+				}
 				output_data (x);
 				output (", %d)", f->size - f->pic->scale);
 				return;
@@ -5137,7 +5144,7 @@ output_initialize_one (struct cb_initialize *p, cb_tree x)
 		case CB_USAGE_DOUBLE:
 		case CB_USAGE_LONG_DOUBLE:
 			output_initialize_fp (x, f);
-			return;
+		return;
 		case CB_USAGE_FP_BIN32:
 		case CB_USAGE_FP_BIN64:
 		case CB_USAGE_FP_BIN128:

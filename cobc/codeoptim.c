@@ -1,6 +1,6 @@
 /*
-   Copyright (C) 2006-2012, 2013, 2017-2019, 2022 Free Software Foundation, Inc.
-   Written by Roger While, Ron Norman
+   Copyright (C) 2006-2012, 2013, 2017-2020, 2022 Free Software Foundation, Inc.
+   Written by Roger While, Ron Norman, Simon Sobisch, Edward Hart
 
    This file is part of GnuCOBOL.
 
@@ -133,16 +133,35 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("static int COB_NOINLINE");
 		output_storage ("cob_get_numdisp (const void *data, const int size)");
 		output_storage ("{");
-		output_storage ("	const unsigned char	*p;");
-		output_storage ("	int			n;");
-		output_storage ("	int 			retval;");
-
+		output_storage ("	register const unsigned char	*p;");
+		output_storage ("	register int	n;");
+		output_storage ("	register int 	retval = 0;");
 		output_storage ("	p = (const unsigned char *)data;");
-		output_storage ("	retval = 0;");
 		output_storage ("	for (n = 0; n < size; ++n, ++p) {");
 		output_storage ("		retval *= 10;");
 		output_storage ("		if (*p > '0' && *p <= '9')");
 		output_storage ("		    retval += (*p - '0');");
+		output_storage ("	}");
+		output_storage ("	return retval;");
+		output_storage ("}");
+		return;
+
+	case COB_GET_NUMDISPS:
+		output_storage ("static int COB_NOINLINE");
+		output_storage ("cob_get_numdisps (const void *data, const int size)");
+		output_storage ("{");
+		output_storage ("	register const unsigned char	*p;");
+		output_storage ("	register int	n;");
+		output_storage ("	register int 	retval = 0;");
+		output_storage ("	p = (const unsigned char *)data;");
+		output_storage ("	for (n = 0; n < size; ++n, ++p) {");
+		output_storage ("		retval *= 10;");
+		output_storage ("		if (*p > '0' && *p <= '9') {");
+		output_storage ("		    retval += (*p - '0');");
+		output_storage ("		} else if ((*p & 0x40) && (n + 1) == size) {");
+		output_storage ("			retval += (*p & 0x0F);");
+		output_storage ("			retval = -retval;");
+		output_storage ("		}");
 		output_storage ("	}");
 		output_storage ("	return retval;");
 		output_storage ("}");
