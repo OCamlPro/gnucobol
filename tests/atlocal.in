@@ -82,6 +82,7 @@ if test "x$PERFSUFFIX" != "x"; then
   # COMPILE_ONLY="${PERF} --output ${LOG_DIR_COMP}/${PERFSUFFIX}.log ${COMPILE_ONLY}"  # more reasonable - checks cobc only, but misses codegen
   # most reasonable: check actual COBOL runtime performance
   COBC="${COBC} -g"
+  mkdir -p "${LOG_DIR_RUN}"
   COBCRUN="${PERF} --output ${LOG_DIR_RUN}/${PERFSUFFIX}.log ${COBCRUN}"
   COBCRUN_DIRECT="${PERF} --output ${LOG_DIR_RUN}/${PERFSUFFIX}.log ${COBCRUN_DIRECT}"
 elif test "x$CGSUFFIX" != "x"; then
@@ -91,7 +92,7 @@ elif test "x$CGSUFFIX" != "x"; then
   LOG_DIR_RUN="${LOG_DIR}"
   CG="valgrind --tool=callgrind --dump-instr=yes --collect-jumps=yes --collect-atstart=no --toggle-collect=_start --fn-skip=_dl_runtime_resolve_xsave --fn-skip=_dl_fixup  --toggle-collect=cob_init"
   if test "x$at_group" = "x"; then
-	at_group="cg"   # default:      use "valgrind"
+    at_group="cg"	# must be set as it is part of CG_PREFIX
   fi
   export at_group
   CG_PREFIX="%q{at_group}_%p"

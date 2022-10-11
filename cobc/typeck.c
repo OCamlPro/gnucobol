@@ -2442,6 +2442,7 @@ cb_build_identifier (cb_tree x, const int subchk)
 				CB_BUILD_STRING0 (
 					CB_REFERENCE(cb_build_name_reference (p, f))->word->name),
 				cb_int1);
+			optimize_defs[COB_CHK_LINKAGE] = 1;
 		} else
 		if (CB_EXCEPTION_ENABLE (COB_EC_DATA_PTR_NULL)
 		 && !current_statement->flag_no_based) {
@@ -2453,6 +2454,7 @@ cb_build_identifier (cb_tree x, const int subchk)
 					cb_build_address (cb_build_field_reference (p, NULL)),
 					CB_BUILD_STRING0 (
 						CB_REFERENCE(cb_build_name_reference (p, f))->word->name));
+				optimize_defs[COB_CHK_BASED] = 1;
 			}
 		}
 	}
@@ -2494,7 +2496,7 @@ cb_build_identifier (cb_tree x, const int subchk)
 			}
 		}
 
-		/* Run-time check for ODO (including all the fields subordinate items) */
+		/* Run-time check for ODO (including all the fields' subordinate items) */
 		if (CB_EXCEPTION_ENABLE (COB_EC_BOUND_SUBSCRIPT) && f->odo_level != 0) {
 			for (p = f; p; p = p->children) {
 				if (CB_VALID_TREE (p->depending)
@@ -2512,6 +2514,7 @@ cb_build_identifier (cb_tree x, const int subchk)
 						 cb_int (p->occurs_max),
 						 CB_BUILD_STRING0 (p->name),
 						 CB_BUILD_STRING0 (CB_FIELD_PTR (p->depending)->name));
+					optimize_defs[COB_CHK_ODO] = 1;
 					r->check = cb_list_add (r->check, e1);
 				}
 			}
@@ -2549,6 +2552,7 @@ cb_build_identifier (cb_tree x, const int subchk)
 							 cb_build_cast_int (p->depending),
 							 CB_BUILD_STRING0 (name),
 							 cb_int1);
+						optimize_defs[COB_CHK_SUBSCRIPT] = 1;
 						r->check = cb_list_add (r->check, e1);
 					} else {
 						if (!CB_LITERAL_P (sub)) {
@@ -2557,6 +2561,7 @@ cb_build_identifier (cb_tree x, const int subchk)
 								 cb_int (p->occurs_max),
 								 CB_BUILD_STRING0 (name),
 								cb_int0);
+							optimize_defs[COB_CHK_SUBSCRIPT] = 1;
 							r->check = cb_list_add (r->check, e1);
 						}
 					}
@@ -2624,6 +2629,7 @@ cb_build_identifier (cb_tree x, const int subchk)
 								 r->length ?
 								  cb_build_cast_int (r->length) :
 								  cb_int1);
+					optimize_defs[COB_CHK_REFMOD_MIN] = 1;
 				} else {
 					/* check upper + size + lower as requested */
 					e1 = CB_BUILD_FUNCALL_6 ("cob_check_ref_mod_detailed",
@@ -2637,6 +2643,7 @@ cb_build_identifier (cb_tree x, const int subchk)
 								 r->length ?
 								  cb_build_cast_int (r->length) :
 								  cb_int1);
+					optimize_defs[COB_CHK_REFMOD] = 1;
 				}
 				r->check = cb_list_add (r->check, e1);
 			}

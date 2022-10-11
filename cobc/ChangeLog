@@ -930,6 +930,14 @@
 2021-02-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.h: remove cb_listing_files ...
+	* codeoptim.def, codeoptim.c, typeck.c (cb_build_identifier), cobc.c:
+	  new entries COB_CHK_LINKAGE, COB_CHK_BASED, COB_CHK_SUBSCRIPT,
+	  COB_CHK_ODO, COB_CHK_REFMOD_MIN, COB_CHK_REFMOD for inline checks of
+	  most-used runtime checks - now only passed to libcob in case of actual
+	  errors; new entry COB_NOP to replace the cob_nop call (frame switch)
+	  by a simple pointer comparison, which also ensures on all tested
+	  compilers that the line is not optimized out, and for those that
+	  optimize the check away the old cob_nop call is still done
 
 2021-02-03  Simon Sobisch <simonsobisch@gnu.org>
 

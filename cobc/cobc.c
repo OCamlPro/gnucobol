@@ -8666,6 +8666,9 @@ process_file (struct filename *fn, int status)
 	cb_ml_tree_id = 1;
 	demangle_name = fn->demangle_source;
 	memset (optimize_defs, 0, sizeof (optimize_defs));
+	if (cb_flag_c_line_directives || cb_flag_c_labels) {
+		optimize_defs[COB_NOP] = 1;
+	}
 
 	if (cb_src_list_file) {
 		cb_listing_page = 0;

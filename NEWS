@@ -235,17 +235,13 @@ NEWS - user visible changes				-*- outline -*-
    268435456 bytes (999999998 bytes for OCCURS UNBOUNDED) to 2 GB
 
 ** in case of any runtime features being used that are not available an error
-   is generated (may be reduced to a warning or be ignored, too) and if
-   the feature is actually used at runtime a related exception status is set
-
-** in case of any runtime features being used that are not available an error
    is generated during compile (may be reduced to a warning by -Wunsupported
    or be suppressed by -Wno-unsupported) and if the feature is actually used
    at runtime a related exception status is set
 
-** the call-stack on error / in the dump file now contains all parameters given
-   to the program via command line options, if any;
-   it includes all PERFORMs done if full debugging information is available
+** the call-stack show on error and/or in the dump file now contains all
+   parameters given to the program via command line options, if any;
+   if full debugging information is available it includes all PERFORMs executed
 
 ** the dump that is created on abort for all programs that were compiled with
    -fdump can be explicit disabled by setting COB_DUMP_FILE=NONE; it is
@@ -268,7 +264,9 @@ NEWS - user visible changes				-*- outline -*-
 
 ** execution times for programs that are new generated with -fsource-location
    (implied with --debug/-fec) are cut down, especially when many "simple"
-   statements or lot of sections/paragraphs are used
+   statements or lot of sections/paragraphs are used; also the runtime checks
+   for use of LINKAGE fields and/or subscripts/reference-modification will be
+   much faster 
 
 * New build features
 
