@@ -229,8 +229,7 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("	p = (const unsigned char *)data;");
 		output_storage ("	for (n = 0; n < size; ++n, ++p) {");
 		output_storage ("		retval *= 10;");
-		output_storage ("		if (*p > '0' && *p <= '9')");
-		output_storage ("		    retval += (*p - '0');");
+		output_storage ("		retval += (*p & 0x0F);");
 		output_storage ("	}");
 		output_storage ("	return retval;");
 		output_storage ("}");
@@ -246,11 +245,11 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("	p = (const unsigned char *)data;");
 		output_storage ("	for (n = 0; n < size; ++n, ++p) {");
 		output_storage ("		retval *= 10;");
-		output_storage ("		if (*p > '0' && *p <= '9') {");
-		output_storage ("		    retval += (*p - '0');");
-		output_storage ("		} else if ((*p & 0x40) && (n + 1) == size) {");
+		output_storage ("		if ((*p & 0x40) && (n + 1) == size) {");
 		output_storage ("			retval += (*p & 0x0F);");
 		output_storage ("			retval = -retval;");
+		output_storage ("		} else {");
+		output_storage ("			retval += (*p & 0x0F);");
 		output_storage ("		}");
 		output_storage ("	}");
 		output_storage ("	return retval;");

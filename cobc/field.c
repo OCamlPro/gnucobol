@@ -373,7 +373,7 @@ cb_get_level (cb_tree x)
 		if (!isdigit ((int)(*p))) {
 			goto level_error;
 		}
-		level = level * 10 + (*p - '0');
+		level = level * 10 + (COB_D2I(*p));
 		if (level > 88) {
 			goto level_error;
 		}

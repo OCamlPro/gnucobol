@@ -82,6 +82,17 @@ NEWS - user visible changes				-*- outline -*-
    the old behaviour can be enforced by compiling GnuCOBOL with
    CPPFLAGS=-DINVALID_NUMVAL_IS_ZERO
 
+** Handling of invalid numeric USAGE DISPLAY data:
+   previously the complete character was inspected and adjusted for conversion,
+   now only the second half-byte is used;
+   this yields in different results, for example both the zero and space
+   character in both ASCII and EBCDIC charset will now result in a numeric
+   zero; previously invalid data could result in huge or negative numbers in
+   internal intermediate items;
+   as this was both adjusted in the runtime and in the the generated modules
+   invalid data may have additional unexpected results if programs are not
+   recompiled
+
 ** ORGANIZATION INDEXED (with BDB backend): internal changes in record and
    file locking, fixing some related bugs
 

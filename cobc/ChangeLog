@@ -926,6 +926,11 @@
 	* tree.c (cb_build_binary_op): add source reference to non-constant
 	  expressions
 	* tree.c (cb_build_perform_varying): add source reference to VARYING clause
+	* codeoptim.c (COB_GET_NUMDISP, copied later to COB_GET_NUMDISPS):
+	  only use the half-byte of the char to resolve the integer value,
+	  preventing overflows leading to huge/negative values and providing
+	  conversion of space to zero and correct conversion of numeric values
+	  from both ASCII and EBCDIC; also gets rid of some checks
 
 2021-02-04  Simon Sobisch <simonsobisch@gnu.org>
 

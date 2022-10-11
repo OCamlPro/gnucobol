@@ -4,6 +4,7 @@
 	* intrinsic.c (cob_log_ten): new static field to speedup cob_intr_log10
 	* intrinsic.c: only setup cob_sqrt_two, cob_pi, cob_log_half, cob_log_ten
 	  on first use, to speedup init/teardown when not used
+	* intrinsic.c, common.c: some more use of COB_D2I
 
 2022-10-10  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -601,7 +602,6 @@
 
 	* termio.c (display_alnum_dump): added bounds check to fix invalid reads
 
-
 2021-04-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* termio.c (display_alnum_dump): only consider isprint to decide
@@ -616,6 +616,16 @@
 	* call.c (add_to_preload, cob_try_preload): extracted from
 	  (cob_init_call handle), additional preparare cob_try_preload to be
 	  callable from debuggers
+
+2021-02-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* coblocal.h (COB_D2I): only use the half-byte of the char to resolve the
+	  integer value, preventing overflows leading to huge/negative values and
+	  providing conversion of space to zero and correct conversion of numeric
+	  character from both ASCII and EBCDIC to integer
+	* move.c: use of COB_D2I for conversions
+	  and restore previous one afterwards
+	* move.c (store_common_region): minor refactoring
 
 2021-01-28  Simon Sobisch <simonsobisch@gnu.org>
 

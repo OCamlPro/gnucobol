@@ -1516,7 +1516,7 @@ calculate_start_end_for_numval (cob_field *srcfield,
 
 	/* skip leading space and zero */
 	while (p != p_end) {
-		if (*p != ' ' && *p != '0') break;
+		if (*p != ' ' && COB_D2I (*p) != 0) break;
 		p++;
 	}
 
@@ -3992,8 +3992,8 @@ cob_intr_hex_to_char (cob_field *srcfield)
 		src = (cob_u8_t)toupper (srcfield->data[j++]);
 		if (src >= 'A' && src <= 'F') {
 			dst = src - 'A' + 10;
-		} else if (src >= '0' && src <= '9') {
-			dst = src - '0';
+		} else if (isdigit (src)) {
+			dst = COB_D2I (src);
 		} else {
 			dst = 0;
 			cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
@@ -4002,8 +4002,8 @@ cob_intr_hex_to_char (cob_field *srcfield)
 		src = (cob_u8_t)toupper (srcfield->data[j++]);
 		if (src >= 'A' && src <= 'F') {
 			dst = dst + src - 'A' + 10;
-		} else if (src >= '0' && src <= '9') {
-			dst = dst + src - '0';
+		} else if (isdigit (src)) {
+			dst = dst + COB_D2I (src);
 		} else {
 			cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
 		}
@@ -5922,7 +5922,7 @@ cob_intr_locale_date (const int offset, const int length,
 		for (len = 0; len < 8; ++len, ++p) {
 			if (isdigit (*p)) {
 				indate *= 10;
-				indate += (*p - '0');
+				indate += COB_D2I (*p);
 			} else {
 				goto derror;
 			}
@@ -6033,7 +6033,7 @@ cob_intr_locale_time (const int offset, const int length,
 		for (len = 0; len < 6; ++len, ++p) {
 			if (isdigit (*p)) {
 				indate *= 10;
-				indate += (*p - '0');
+				indate += COB_D2I (*p);
 			} else {
 				goto derror;
 			}

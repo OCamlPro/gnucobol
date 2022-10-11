@@ -2706,7 +2706,7 @@ handle_core_on_error ()
 		char *env_val = cob_getenv_direct ("COB_CORE_ON_ERROR");
 		if (env_val && env_val[0] && env_val [1] == 0
 		 && env_val[0] >= '0' && env_val[0] <= '3') {
-			core_on_error = env_val[0] - '0';
+			core_on_error = COB_D2I (env_val[0]);
 		}
 	}
 	if (core_on_error == 3) {
@@ -6356,7 +6356,7 @@ cob_sys_getopt_long_long (void *so, void *lo, void *idx, const int long_only, vo
 			j--;
 		}
 		longoptions->name = l->name;
-		longoptions->has_arg = (int) l->has_option - '0';
+		longoptions->has_arg = COB_D2I (l->has_option);
 		memcpy (&longoptions->flag, l->return_value_pointer, sizeof (l->return_value_pointer));
 		memcpy (&longoptions->val, &l->return_value, 4);
 
@@ -7059,7 +7059,7 @@ set_config_val (char *value, int pos)
 			return 1;
 		}
 		for (; *ptr != 0 && (isdigit ((unsigned char)*ptr)); ptr++) {
-			numval = (numval * 10) + ((cob_s64_t)*ptr - '0');
+			numval = (numval * 10) + COB_D2I (*ptr);
 		}
 		if (sign != 0
 		 && ( *ptr == '-'
