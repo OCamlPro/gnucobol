@@ -545,15 +545,6 @@ calc_ref_mod (cob_field *f, const int offset, const int length)
 	}
 }
 
-/* Decimal <-> Decimal */
-
-static COB_INLINE COB_A_INLINE void
-cob_decimal_set (cob_decimal *dst, const cob_decimal *src)
-{
-	mpz_set (dst->value, src->value);
-	dst->scale = src->scale;
-}
-
 /* Trim trailing zeros in decimal places */
 static void
 cob_trim_decimal (cob_decimal *d)
@@ -1793,7 +1784,8 @@ calc_variance_of_args (const int n, va_list numbers, cob_decimal *mean)
 	num_numbers->scale = 0;
 	cob_decimal_div (sum, num_numbers);
 
-	cob_decimal_set (&d1, sum);
+	mpz_set (d1.value, sum->value);
+	d1.scale = sum->scale;
 }
 
 /* Date/time functions */
@@ -3254,7 +3246,8 @@ cob_decimal_pow (cob_decimal *pd1, cob_decimal *pd2)
 				pd1->scale *= n;
 				cob_trim_decimal (pd1);
 			}
-			cob_decimal_set (pd2, pd1);
+			mpz_set (pd2->value, pd1->value);
+			pd2->scale = pd1->scale;
 			mpz_set_ui (pd1->value, 1UL),
 			pd1->scale = 0;
 			cob_decimal_div (pd1, pd2);
@@ -5576,7 +5569,8 @@ cob_intr_random (const int params, ...)
 		calc_mean_of_args (num_args, args);		\
 		va_end (args);					\
 								\
-		cob_decimal_set (&d5, &d1);			\
+		mpz_set (d5.value, d1.value);	\
+		d5.scale = d1.scale;			\
 								\
 		/* Get variance in d1 */			\
 		va_start (args, num_args);			\

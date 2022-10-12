@@ -1308,7 +1308,7 @@ cob_decimal_get_display (cob_decimal *d, cob_field *f, const int opt)
 		/* If the statement has ON SIZE ERROR or NOT ON SIZE ERROR,
 		   then throw an exception */
 		if (opt & COB_STORE_KEEP_ON_OVERFLOW) {
-			cob_gmp_free(p);
+			cob_gmp_free (p);
 			return cobglobptr->cob_exception_code;
 		}
 
@@ -1320,7 +1320,7 @@ cob_decimal_get_display (cob_decimal *d, cob_field *f, const int opt)
 		memcpy (data + diff, p, size);
 	}
 
-	cob_gmp_free(p);
+	cob_gmp_free (p);
 	COB_PUT_SIGN (f, sign);
 
 	return 0;
@@ -1842,8 +1842,11 @@ cob_decimal_sub (cob_decimal *d1, cob_decimal *d2)
 
 /* Decimal <-> Decimal */
 
+/* note: this will be removed in 4.x, only is in for
+   post 3.x decimal patch, not used with 3.2 any more
+   but possibly from old generated modules */
 void
-cob_decimal_copy (cob_decimal *dst, cob_decimal *src)
+cob_decimal_set (cob_decimal *dst, cob_decimal *src)
 {
 	mpz_set (dst->value, src->value);
 	dst->scale = src->scale;

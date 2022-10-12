@@ -1,4 +1,10 @@
 
+2022-10-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* intrinsic.c (cob_decimal_set): removed (integrated where used)
+	* numeric.c, common.h: renamed cob_decimal_copy to cob_decimal_set
+	  and marked it for removal
+
 2022-10-11  Simon Sobisch <simonsobisch@gnu.org>
 
 	* intrinsic.c (cob_log_ten): new static field to speedup cob_intr_log10
@@ -340,9 +346,9 @@
 
 2021-12-31  Ron Norman <rjn@inglenet.com>
 
-	* numeric.c: Speed up cob_decimal_add, cob_decimal_sub, cob_decimal_cmp
-	  Use the powers of 10 table instead of recomputing
-	  Add cob_decimal_copy for use by emitted code
+	* numeric.c: speed up cob_decimal_add, cob_decimal_sub, cob_decimal_cmp
+	  Use the powers of 10 table instead of recomputing;
+	  add cob_decimal_copy for use by emitted code
 
 2021-12-22  Simon Sobisch <simonsobisch@gnu.org>
 
