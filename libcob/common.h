@@ -1245,6 +1245,17 @@ struct cob_frame {
 	unsigned int	return_address_num;	/* Return address number */
 };
 
+/* Extended perform stack structure (available since GC 3.2) */
+struct cob_frame_ext {
+	void		*return_address_ptr;	/* Return address pointer */
+	unsigned int	perform_through;	/* Perform number */
+	unsigned int	return_address_num;	/* Return address number */
+	unsigned int	module_stmt;		/* return statement location */
+	const char	*section_name;		/* Return section name, empty on
+	          	                       "first" entry of a module */
+	const char	*paragraph_name;	/* Return paragraph name */
+};
+
 /* Call union structures */
 
 typedef union __cob_content {
@@ -1382,6 +1393,9 @@ typedef struct __cob_module {
 	cob_field		function_return;	/* Copy of RETURNING field */
 	unsigned int	num_symbols;		/* Number of symbols in table */
 	cob_symbol		*module_symbols;	/* Array of module symbols */
+	struct cob_frame_ext *frame_ptr;	/* current frame ptr, note: if set then cob_frame in this
+										   module is of type "struct cob_frame_ext",
+										   otherwise "struct cob_frame" */
 	int				stmt_num;			/* Position of VERB in cob_verbs table */
 	const char		*stmt_name;			/* Statement VERB name */
 	const char		*section_name;
@@ -1840,6 +1854,9 @@ COB_EXPIMP const char *	cob_relocate_string (const char *str);
 COB_EXPIMP void		cob_set_exception	(const int);
 COB_EXPIMP int		cob_last_exception_is	(const int);
 
+COB_EXPIMP int		cob_last_exit_code	(void);
+COB_EXPIMP const char*	cob_last_runtime_error	(void);
+
 COB_EXPIMP void		cob_runtime_hint	(const char *, ...) COB_A_FORMAT12;
 COB_EXPIMP void		cob_runtime_error	(const char *, ...) COB_A_FORMAT12;
 COB_EXPIMP void		cob_runtime_warning	(const char *, ...) COB_A_FORMAT12;
@@ -1863,6 +1880,8 @@ COB_EXPIMP void	cob_module_free	(cob_module **);
 
 DECLNORET COB_EXPIMP void	cob_stop_run	(const int) COB_A_NORETURN;
 DECLNORET COB_EXPIMP void	cob_fatal_error	(const enum cob_fatal_error) COB_A_NORETURN;
+DECLNORET COB_EXPIMP void	cob_hard_failure_internal (const char *) COB_A_NORETURN;
+DECLNORET COB_EXPIMP void	cob_hard_failure (void) COB_A_NORETURN;
 
 COB_EXPIMP void	*cob_malloc			(const size_t) COB_A_MALLOC;
 COB_EXPIMP void	*cob_realloc			(void *, const size_t, const size_t) COB_A_MALLOC;
@@ -1878,7 +1897,7 @@ COB_EXPIMP void	cob_set_locale			(cob_field *, const int);
 COB_EXPIMP int 	cob_setenv		(const char *, const char *, int);
 COB_EXPIMP int 	cob_unsetenv		(const char *);
 COB_EXPIMP char	*cob_getenv_direct		(const char *);
-COB_EXPIMP char* cob_expand_env_string	(char*);
+COB_EXPIMP char *cob_expand_env_string	(char *);
 COB_EXPIMP char	*cob_getenv			(const char *);
 COB_EXPIMP int	cob_putenv			(char *);
 COB_EXPIMP cob_field	*cob_function_return (cob_field *);
@@ -2151,7 +2170,7 @@ COB_EXPIMP void cob_decimal_set_llint	(cob_decimal *, const cob_s64_t);
 COB_EXPIMP void cob_decimal_set_ullint	(cob_decimal *, const cob_u64_t);
 COB_EXPIMP void	cob_decimal_set_field	(cob_decimal *, cob_field *);
 COB_EXPIMP int	cob_decimal_get_field	(cob_decimal *, cob_field *, const int);
-COB_EXPIMP void	cob_decimal_copy	(cob_decimal *, cob_decimal *);
+COB_EXPIMP void	cob_decimal_set		(cob_decimal *, cob_decimal *);	/* to be removed in 4.x */
 COB_EXPIMP void	cob_decimal_add		(cob_decimal *, cob_decimal *);
 COB_EXPIMP void	cob_decimal_sub		(cob_decimal *, cob_decimal *);
 COB_EXPIMP void	cob_decimal_mul		(cob_decimal *, cob_decimal *);
@@ -2225,6 +2244,7 @@ COB_EXPIMP void		*cob_call_field		(const cob_field *,
 COB_EXPIMP void		cob_cancel_field	(const cob_field *,
 						 const struct cob_call_struct *);
 COB_EXPIMP void		cob_cancel		(const char *);
+COB_EXPIMP int		cob_call_with_exception_check (const char*, const int, void **);
 COB_EXPIMP int		cob_call		(const char *, const int, void **);
 COB_EXPIMP int		cob_func		(const char *, const int, void **);
 
@@ -2972,7 +2992,7 @@ COB_EXPIMP cob_field *cob_intr_content_of		(const int, const int,
 							 const int, ...);
 COB_EXPIMP cob_field *cob_intr_bit_of		(cob_field *);
 COB_EXPIMP cob_field *cob_intr_bit_to_char		(cob_field *);
-COB_EXPIMP cob_field* cob_intr_hex_of (cob_field*);
-COB_EXPIMP cob_field* cob_intr_hex_to_char (cob_field*);
+COB_EXPIMP cob_field *cob_intr_hex_of (cob_field*);
+COB_EXPIMP cob_field *cob_intr_hex_to_char (cob_field*);
 
 #endif	/* COB_COMMON_H */

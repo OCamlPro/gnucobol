@@ -908,6 +908,7 @@ cob_order_keys (cob_file *f)
 				memcpy(&f->keys[k+1], &kx, sizeof(cob_file_key));
 			}
 		}
+		/* LCOV_EXCL_STOP */
 	}
 }
 
@@ -3747,7 +3748,8 @@ write_mf_header(cob_file *f, char *filename)
  *  with just an 'fd' (No FILE *)
  */
 static int
-cob_fd_file_open (cob_file *f, char *filename, const int mode, const int sharing)
+cob_fd_file_open (cob_file *f, char *filename,
+		const int mode, const int sharing)
 {
 	int		fd;
 	int		fdmode;
@@ -3841,6 +3843,11 @@ cob_fd_file_open (cob_file *f, char *filename, const int mode, const int sharing
 		fdmode |= O_CREAT | O_RDWR | O_APPEND;
 		fperms = COB_FILE_MODE;
 		break;
+	/* LCOV_EXCL_START */
+	default:
+		cob_runtime_error (_("invalid internal call of %s"), "cob_fd_file_open");
+		cob_fatal_error (COB_FERROR_CODEGEN);
+	/* LCOV_EXCL_STOP */
 	}
 
 	errno = 0;
@@ -3944,7 +3951,8 @@ cob_fd_file_open (cob_file *f, char *filename, const int mode, const int sharing
 
 #define dMaxArgs 16
 static int
-cob_file_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const int sharing)
+cob_file_open (cob_file_api *a, cob_file *f, char *filename,
+		const int mode, const int sharing)
 {
 	/* Note filename points to file_open_name */
 	/* cob_chk_file_mapping manipulates file_open_name directly */
@@ -4202,6 +4210,7 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename, const int mode, con
 		break;
 	/* LCOV_EXCL_START */
 	default:
+		cob_runtime_error (_("invalid internal call of %s"), "cob_file_open");
 		cob_fatal_error(COB_FERROR_CODEGEN);
 	/* LCOV_EXCL_STOP */
 	}
@@ -4499,7 +4508,6 @@ again:
 
 	if (f->record_min != f->record_max) {
 		/* Read record size */
-
 		bytesread = read (f->fd, recsize.sbuff, f->record_prefix);
 		if (bytesread == 0
 		 && open_next (f))
@@ -5043,7 +5051,7 @@ lineseq_write (cob_file_api *a, cob_file *f, const int opt)
 		f->last_write_mode = COB_LAST_WRITE_BEFORE;
 	}
 	if (f->open_mode == COB_OPEN_I_O)	/* Required on some systems */
-		fflush((FILE*)f->file); 
+		fflush ((FILE*)f->file);
 
 	return COB_STATUS_00_SUCCESS;
 }
@@ -5054,7 +5062,9 @@ lineseq_rewrite (cob_file_api *a, cob_file *f, const int opt)
 	unsigned char	*p;
 	size_t		size, psize, slotlen, rcsz;
 	off_t		curroff, savepos;
+
 	COB_UNUSED (a);
+	COB_UNUSED (opt);
 
 	if (f->flag_is_pipe) 
 		return COB_STATUS_30_PERMANENT_ERROR;
@@ -7776,9 +7786,14 @@ cob_sys_check_file_exist (unsigned char *file_name, unsigned char *file_info)
 		return -1;
 	}
 	if (cob_get_param_size(2) < 16) {
-		cob_runtime_error (_("'%s' - File detail area is too short"),
-			"CBL_CHECK_FILE_EXIST");
-		cob_stop_run (1);
+		cob_free (fn);
+		cob_runtime_error (_("'%s' - File detail area is too short"), "CBL_CHECK_FILE_EXIST");
+#if 0 /* should be handled by the caller,
+		TODO: check for better return code (or the one from MF/ACU) */
+		cob_hard_failure ();
+#else
+		return -1;
+#endif
 	}
 
 	if (stat (fn, &st) < 0) {
@@ -8034,7 +8049,12 @@ cob_sys_file_info (unsigned char *file_name, unsigned char *file_info)
 	}
 	if (cob_get_param_size(2) < 16) {
 		cob_runtime_error (_("'%s' - File detail area is too short"), "C$FILEINFO");
-		cob_stop_run (1);
+#if 0 /* should be handled by the caller,
+		TODO: check for better return code (or the one from ACU) */
+		cob_hard_failure ();
+#else
+		return 128;
+#endif
 	}
 
 	if (stat (fn, &st) < 0) {
@@ -8254,10 +8274,12 @@ cob_get_sort_tempfile (struct cobsort *hp, const int n)
 {
 	if (hp->file[n].fp == NULL) {
 		hp->file[n].fp = cob_create_tmpfile (NULL);
+#if 0 /* error to be handled by the caller */
 		if (hp->file[n].fp == NULL) {
 			cob_runtime_error (_("SORT is unable to acquire temporary file"));
-			cob_stop_run (1);
+			cob_hard_failure ();
 		}
+#endif
 	} else {
 		rewind (hp->file[n].fp);
 	}
@@ -8836,6 +8858,7 @@ cob_file_return (cob_file *f)
 char *
 cob_get_filename_print (cob_file* file, const int show_resolved_name)
 {
+	size_t offset = 0, len;
 	/* Obtain the file name */
 	cob_field_to_string (file->assign, file_open_env, (size_t)COB_FILE_MAX);
 	if (show_resolved_name) {
@@ -8844,13 +8867,31 @@ cob_get_filename_print (cob_file* file, const int show_resolved_name)
 		cob_chk_file_mapping (file, NULL);
 	}
 
+	len = strlen (file->select_name);
+	memcpy (runtime_buffer + offset, file->select_name, len);
+	offset += len;
+
+	len = 3;
+	memcpy (runtime_buffer + offset, " ('", len);
+	offset += len;
+
+	len = strlen (file_open_env);
+	memcpy (runtime_buffer + offset, file_open_env, len);
+	offset += len;
+
 	if (show_resolved_name
 	 && strcmp (file_open_env, file_open_name)) {
-		sprintf (runtime_buffer, "%s ('%s' => %s)",
-			file->select_name, file_open_env, file_open_name);
+		/* environment name is set; format: "%s ('%s' => %s)" */
+		len = 5;
+		memcpy (runtime_buffer + offset, "' => ", len);
+		offset += len;
+		len = strlen (file_open_name);
+		memcpy (runtime_buffer + offset, file_open_name, len);
+		offset += len;
+		memcpy (runtime_buffer + offset, ")", 2);
 	} else {
-		sprintf (runtime_buffer, "%s ('%s')",
-			file->select_name, file_open_env);
+		/* environment name is not set; format: "%s ('%s')" */
+		memcpy (runtime_buffer + offset, "')", 3);
 	}
 	return runtime_buffer;
 }
@@ -8859,6 +8900,8 @@ cob_get_filename_print (cob_file* file, const int show_resolved_name)
    cobsetpr-values with type ENV_PATH or ENV_STR
    like bdb_home and cob_file_path are taken care in cob_exit_common()!
 */
+
+const char *implicit_close_of_msgid = NULL;
 
 void
 cob_exit_fileio_msg_only (void)
@@ -8877,8 +8920,24 @@ cob_exit_fileio_msg_only (void)
 		 && l->file->open_mode != COB_OPEN_LOCKED
 		 && !l->file->flag_nonexistent
 		 && !COB_FILE_SPECIAL (l->file)) {
-			cob_runtime_warning (_("implicit CLOSE of %s"),
+			cob_runtime_warning_ss (implicit_close_of_msgid,
 				cob_get_filename_print (l->file, 0));
+		}
+	}
+}
+
+static void
+cob_exit_fileio_closeall (void)
+{
+	int		k;
+
+	if (qblfd != -1) {
+		cob_close_qbl ( qblfd, qblfilename, 1);
+		qblfd = -1;
+	}
+	for (k=0; k < COB_IO_MAX; k++) {
+		if (fileio_funcs[k] != NULL) {
+			fileio_funcs[k]->ioexit (&file_api);
 		}
 	}
 }
@@ -8886,19 +8945,7 @@ cob_exit_fileio_msg_only (void)
 void
 cob_exit_fileio (void)
 {
-	struct file_list	*l;
-	struct file_list	*p;
-	int		k;
-
-	if (qblfd != -1) {
-		cob_close_qbl ( qblfd, qblfilename, 1);
-		qblfd = -1;
-	}
-	for(k=0; k < COB_IO_MAX; k++) {
-		if(fileio_funcs[k] != NULL) {
-			fileio_funcs[k]->ioexit (&file_api);
-		}
-	}
+	cob_exit_fileio_closeall ();
 
 	if (runtime_buffer) {
 		cob_free (runtime_buffer);
@@ -8915,12 +8962,15 @@ cob_exit_fileio (void)
 
 	free_extfh_fcd ();
 
-	for (l = file_cache; l;) {
-		p = l;
-		l = l->next;
-		cob_free (p);
+	{
+		struct file_list	*l, *p;
+		for (l = file_cache; l;) {
+			p = l;
+			l = l->next;
+			cob_free (p);
+		}
+		file_cache = NULL;
 	}
-	file_cache = NULL;
 }
 
 void
@@ -8933,6 +8983,10 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 	file_open_env = runtime_buffer + COB_FILE_BUFF;
 	file_open_name = runtime_buffer + (2 * COB_FILE_BUFF);
 	file_open_buff = runtime_buffer + (3 * COB_FILE_BUFF);
+
+	/* TRANSLATORS: This msgid is concatenated with a filename;
+	   setup translation to allow this to be followed on the right side. */
+	implicit_close_of_msgid = _("implicit CLOSE of ");
 
 	file_api.glbptr = file_globptr = lptr;
 	file_api.setptr = file_setptr  = sptr;

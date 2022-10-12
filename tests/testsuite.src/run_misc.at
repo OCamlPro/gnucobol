@@ -3929,7 +3929,222 @@ AT_CHECK([$COBCRUN_DIRECT ./caller], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([CALL in from C])
+AT_SETUP([direct CALL in from C w/wo error])
+AT_KEYWORDS([runmisc cobcall cob_call cob_init cob_runtime_hint])
+
+# tests and showcases direct C calls, including:
+# as long as the module comes back the caller has control
+# and its return code; but not in the case for errors or STOP RUN
+
+AT_DATA([callee.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      callee.
+       DATA             DIVISION.
+       LINKAGE          SECTION.
+       01 P1            PIC X.
+       01 P2            PIC X(6).
+       PROCEDURE        DIVISION USING P1 OPTIONAL P2.
+           IF P2 NOT OMITTED
+              DISPLAY 'UNEXPECTED P2: ' P2
+              END-DISPLAY
+           END-IF
+           DISPLAY 'P1: ' P1 WITH NO ADVANCING.
+           GOBACK.
+])
+
+AT_DATA([callee2.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      callee2.
+       DATA             DIVISION.
+       LINKAGE          SECTION.
+       01 P             PIC 99.
+       PROCEDURE        DIVISION USING P.
+           DISPLAY 'P: ' P WITH NO ADVANCING.
+           STOP RUN RETURNING P.
+])
+
+AT_DATA([caller.c], [[
+#include <stdio.h>
+#include <libcob.h>
+
+#ifndef NULL
+#define NULL (void*)0
+#endif
+
+int
+main (int argc, char **argv)
+{
+   /* for storing COBOL return code */
+   int cob_ret;
+
+   /* initialize parameters */
+   void *cob_argv[2];
+
+   cob_argv[0] = argv[2];
+   cob_argv[1] = NULL;
+
+   /* initialize the COBOL run-time library */
+   cob_init(argc, argv);
+
+   /* call COBOL program */
+   cob_ret = cob_call (argv[1], 2, cob_argv);
+
+   cob_runtime_hint("program exited normally, "
+       "without STOP RUN with status %d", cob_ret);
+
+   /* Clean up and terminate - This does not return */
+   cob_stop_run (cob_ret);
+}
+]])
+
+AT_CHECK([$COMPILE caller.c], [0], [], [])
+AT_CHECK([$COMPILE_MODULE callee.cob callee2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./caller callee A], [0], [P1: A],
+[note: program exited normally, without STOP RUN with status 0
+])
+AT_CHECK([$COBCRUN_DIRECT ./caller callee2 42], [42], [P: 42], [])
+AT_CHECK([$COBCRUN_DIRECT ./caller notthere], [1], [],
+[libcob: error: module 'notthere' not found
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([direct CALL in from C w/wo error; no exit])
+AT_KEYWORDS([runmisc cobcall cob_call cob_call_with_exception_check cob_runtime_hint])
+
+# tests and showcases the "functional call" of GnuCOBOL modules;
+# in every case (plain goback, STOP RUN, error) the caller gets control,
+# but the actual return / error code has to be queried with an extra call
+
+AT_DATA([callee.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      callee.
+       DATA             DIVISION.
+       LINKAGE          SECTION.
+       01 P1            PIC X.
+       01 RC            PIC 99.
+       01 P2            PIC X(6).
+       PROCEDURE        DIVISION USING P1 RC OPTIONAL P2.
+           IF P2 NOT OMITTED
+              DISPLAY 'UNEXPECTED P2: ' P2.
+           DISPLAY 'P1: ' P1 WITH NO ADVANCING
+           GOBACK RETURNING RC.
+])
+
+AT_DATA([callee2.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      callee2.
+       PROCEDURE        DIVISION.
+           DISPLAY 'STOP WITH 2' WITH NO ADVANCING
+           STOP RUN RETURNING 2.
+])
+
+AT_DATA([buggy.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      buggy.
+       DATA             DIVISION.
+       LOCAL-STORAGE    SECTION.
+       77 VAR           PIC X.
+       77 VPOS          PIC 9 VALUE 2.
+       PROCEDURE        DIVISION.
+           DISPLAY 'out of bounds - refmod following' WITH NO ADVANCING
+           DISPLAY VAR (VPOS:)
+           DISPLAY 'AFTER ERROR'
+           GOBACK.
+])
+
+AT_DATA([caller.c], [[
+#include <stdio.h>
+#include <libcob.h>
+
+#ifndef NULL
+#define NULL (void*)0
+#endif
+
+int
+main (int argc, char **argv)
+{
+   /* for storing libcob return state */
+   int cob_ret;
+
+   /* initialize parameters */
+   void *cob_argv[3];
+
+   char *p1 = "A";
+   cob_argv[0] = p1;
+   cob_argv[1] = argv[2];
+   cob_argv[2] = NULL;
+
+   /* initialize the COBOL run-time library */
+   cob_init (argc, argv);
+
+   /* call COBOL program */
+   cob_ret = cob_call_with_exception_check (argv[1], 2, cob_argv);
+
+   switch (cob_ret) {
+   case 0:  /* program coming back */
+
+      /* Clean up and terminate runtime */
+      cob_runtime_hint("program exited with return code %d",
+         cob_last_exit_code ());
+      cob_tidy ();
+      break;
+
+   case 1:  /* normal exit */
+      cob_runtime_hint("STOP RUN with return code %d",
+         cob_last_exit_code ());
+      break;
+
+   case -1:  /* error exit */
+      cob_runtime_hint("error exit with return code %d and error \"%s\"",
+         cob_last_exit_code (), cob_last_runtime_error ());
+      break;
+
+   case -2:  /* hard error exit */
+      cob_runtime_hint("hard error exit with return code %d and error \"%s\"",
+         cob_last_exit_code (), cob_last_runtime_error ());
+      break;
+
+   case -3:  /* signal handler  exit */
+      cob_runtime_hint("signal handler exit with signal %d and error \"%s\"",
+         cob_last_exit_code (), cob_last_runtime_error ());
+      break;
+
+   default:
+      cob_runtime_hint("unexpected return from cob_call_with_exception_check, "
+         "last exit code %d, last error \"%s\"",
+         cob_last_exit_code (), cob_last_runtime_error ());
+      break;
+   }
+   return 0;
+}
+]])
+
+AT_CHECK([$COMPILE caller.c], [0], [], [])
+AT_CHECK([$COMPILE_MODULE callee.cob callee2.cob buggy.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./caller callee 00], [0], [P1: A],
+[note: program exited with return code 0
+])
+AT_CHECK([$COBCRUN_DIRECT ./caller callee 42], [0], [P1: A],
+[note: program exited with return code 42
+])
+AT_CHECK([$COBCRUN_DIRECT ./caller callee2], [0], [STOP WITH 2],
+[note: STOP RUN with return code 2
+])
+AT_CHECK([$COBCRUN_DIRECT ./caller buggy], [0], [out of bounds - refmod following],
+[libcob: buggy.cob:10: error: offset of 'VAR' out of bounds: 2, maximum: 1
+note: error exit with return code -1 and error "buggy.cob:10: offset of 'VAR' out of bounds: 2, maximum: 1"
+])
+AT_CHECK([$COBCRUN_DIRECT ./caller notthere], [0], [],
+[libcob: error: module 'notthere' not found
+note: error exit with return code -1 and error "module 'notthere' not found"
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([CALL in from C, cob_call_params explicitly set])
 AT_KEYWORDS([runmisc])
 
 AT_DATA([callee.cob], [
@@ -7383,9 +7598,9 @@ AT_CLEANUP
 
 
 AT_SETUP([stack and dump feature])
-#AT_KEYWORDS([Dump])
+AT_KEYWORDS([stacktrace configuration COB_STACKTRACE COB_DUMP_FILE])
 
-AT_DATA([./cpyabrt], [
+AT_DATA([cpyabrt], [
             MOVE "Quick brown fox jumped over the dog"
               TO TSTTAILX (1:40).
             MOVE CM-COMPANY TO TSTTAILX (42:20).
@@ -7570,7 +7785,7 @@ AT_DATA([prog.cob], [
             MOVE "Quick brown fox jumped over the dog"
               TO TSTLONG, TSTLONG (50:36).
             MOVE "Quicker grey fox jumped the cougar"
-              TO TSTHEX (1:35).
+              TO TSTHEX (1:35). PERFORM MAIN-2.
        MAIN-2.
             MOVE 17 TO HEXV.
             MOVE HEXC TO TSTHEX (39:1).
@@ -7637,14 +7852,14 @@ AT_DATA([sub2.cob], [
        77  DYNAMIC-NUM            PICTURE 9(4).
 
        PROCEDURE DIVISION USING X, TSPFL-RECORD.
-
+       SubwaY SECTION.
            IF ADDRESS OF BASED-RECORD = NULL
               ALLOCATE BASED-RECORD INITIALIZED
            ELSE
               SET ADDRESS OF DYNAMIC-NUM TO ADDRESS OF BASED-RECORD
               ADD 1 TO B-NUM
-           END-IF
-
+           END-IF.
+       DO-CALL.
            IF X = 5440
                CALL "sub1" USING X, OMITTED.
            MOVE ALL "X" TO TSTREC.
@@ -7699,9 +7914,17 @@ X is 000005441
 [libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 
- Last statement of "sub1" was at line 4 of cpyabrt
- Last statement of "sub2" was at line 48 of sub2.cob
- Last statement of "prog" was at line 118 of prog.cob
+ Last statement of "sub1" was MOVE
+	MAIN-2 OF MAIN-1 at cpyabrt:4
+	MAIN-1 at prog.cob:177
+	ENTRY sub1 at prog.cob:158
+ Last statement of "sub2" was CALL
+	DO-CALL OF SubwaY at sub2.cob:48
+	ENTRY sub2 at sub2.cob:38
+ Last statement of "prog" was CALL
+	CALL-IT-OMIT at prog.cob:118
+	MAIN-100 at prog.cob:85
+	ENTRY prog at prog.cob:75
  Started by ./prog
 ])
 
@@ -7716,9 +7939,17 @@ X is 000005441
 [libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 
- Last statement of "sub1" was at line 4 of cpyabrt
- Last statement of "sub2" was at line 48 of sub2.cob
- Last statement of "prog" was at line 118 of prog.cob
+ Last statement of "sub1" was MOVE
+	MAIN-2 OF MAIN-1 at cpyabrt:4
+	MAIN-1 at prog.cob:177
+	ENTRY sub1 at prog.cob:158
+ Last statement of "sub2" was CALL
+	DO-CALL OF SubwaY at sub2.cob:48
+	ENTRY sub2 at sub2.cob:38
+ Last statement of "prog" was CALL
+	CALL-IT-OMIT at prog.cob:118
+	MAIN-100 at prog.cob:85
+	ENTRY prog at prog.cob:75
  Started by ./prog
 ])
 
@@ -7747,9 +7978,17 @@ libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 AT_DATA([reference], [
 Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 
- Last statement of "sub1" was at line 4 of cpyabrt
- Last statement of "sub2" was at line 48 of sub2.cob
- Last statement of "prog" was at line 118 of prog.cob
+ Last statement of "sub1" was MOVE
+	MAIN-2 OF MAIN-1 at cpyabrt:4
+	MAIN-1 at prog.cob:177
+	ENTRY sub1 at prog.cob:158
+ Last statement of "sub2" was CALL
+	DO-CALL OF SubwaY at sub2.cob:48
+	ENTRY sub2 at sub2.cob:38
+ Last statement of "prog" was CALL
+	CALL-IT-OMIT at prog.cob:118
+	MAIN-100 at prog.cob:85
+	ENTRY prog at prog.cob:75
  Started by prog
 
 Dump Program-Id sub1 from prog.cob compiled MMM DD YYYY HH:MM:SS
@@ -7955,9 +8194,17 @@ X is 000005441
 [libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
 
- Last statement of "sub1" was at line 4 of cpyabrt
- Last statement of "sub2" was at line 48 of sub2.cob
- Last statement of "prog" was at line 118 of prog.cob
+ Last statement of "sub1" was MOVE
+	MAIN-2 OF MAIN-1 at cpyabrt:4
+	MAIN-1 at prog.cob:177
+	ENTRY sub1 at prog.cob:158
+ Last statement of "sub2" was CALL
+	DO-CALL OF SubwaY at sub2.cob:48
+	ENTRY sub2 at sub2.cob:38
+ Last statement of "prog" was CALL
+	CALL-IT-OMIT at prog.cob:118
+	MAIN-100 at prog.cob:85
+	ENTRY prog at prog.cob:75
  Started by prog
 
 dump written to tstdump.dump
@@ -7984,9 +8231,17 @@ AT_CAPTURE_FILE(./tstdump_fdls.dump)
 AT_DATA([reference_fdls_tmpl], [
 Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 
- Last statement of "sub1" was at line 4 of cpyabrt
- Last statement of "sub2" was at line 48 of sub2.cob
- Last statement of "prog" was at line 118 of prog.cob
+ Last statement of "sub1" was MOVE
+	MAIN-2 OF MAIN-1 at cpyabrt:4
+	MAIN-1 at prog.cob:177
+	ENTRY sub1 at prog.cob:158
+ Last statement of "sub2" was CALL
+	DO-CALL OF SubwaY at sub2.cob:48
+	ENTRY sub2 at sub2.cob:38
+ Last statement of "prog" was CALL
+	CALL-IT-OMIT at prog.cob:118
+	MAIN-100 at prog.cob:85
+	ENTRY prog at prog.cob:75
  Started by ./prog_fdls
 
 Dump Program-Id sub1 from prog.cob compiled MMM DD YYYY HH:MM:SS
@@ -8068,9 +8323,17 @@ AT_CHECK([gcdiff -I'Started by' -U reference_fdls_tmpl tstdump_allfdls.dump], [0
 #AT_DATA([reference_ls_sticky_tmpl], [
 #Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
 #
-# Last statement of "sub1" was at line 4 of cpyabrt
- Last statement of "sub2" was at line 48 of sub2.cob
-# Last statement of "prog" was at line 118 of prog.cob
+# Last statement of "sub1" was MOVE
+#	MAIN-2 OF MAIN-1 at cpyabrt:4
+#	MAIN-1 at prog.cob:177
+#	ENTRY sub1 at prog.cob:158
+# Last statement of "sub2" was CALL
+#	DO-CALL OF SubwaY at sub2.cob:48
+#	ENTRY sub2 at sub2.cob:38
+# Last statement of "prog" was CALL
+#	CALL-IT-OMIT at prog.cob:118
+#	MAIN-100 at prog.cob:85
+#	ENTRY prog at prog.cob:75
 # Started by ./prog_ls_sticky
 #
 #Dump Program-Id sub1 from prog.cob compiled MMM DD YYYY HH:MM:SS
@@ -8107,7 +8370,7 @@ AT_CLEANUP
 
 
 AT_SETUP([dump feature with NULL address])
-#AT_KEYWORDS([Dump])
+AT_KEYWORDS([stack stacktrace])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -8233,11 +8496,12 @@ AT_CAPTURE_FILE(./dumpall.txt)
 AT_DATA([reference], [
 Module dump due to BASED/LINKAGE item 'A-TABLE' has NULL address
 
- Last statement of "prog" was at line 102 of prog.cob
+ Last statement of "prog" was MOVE at line 102 of prog.cob
+	ENTRY prog at prog.cob:74
  Started by ./prog
-            param 1
-            param
-            param 3
+	param 1
+	param
+	param 3
 
 Dump Program-Id prog from prog.cob compiled MMM DD YYYY HH:MM:SS
 
@@ -8765,7 +9029,7 @@ AT_DATA([prog.cob], [
        END PROGRAM sub2.
 ])
 
-AT_CHECK([$COMPILE -debug -fdump=ALL prog.cob ], [0], [], [])
+AT_CHECK([$COBC -x -debug -fdump=ALL prog.cob ], [0], [], [])
 
 AT_CHECK([COB_DUMP_FILE=dumpall.txt \
 $COBCRUN_DIRECT ./prog], [11], [sub1: X is 000000001 RECORD:Peek a boo!.
@@ -8785,8 +9049,12 @@ AT_CAPTURE_FILE(./dumpall.txt)
 AT_DATA([reference], [
 Module dump due to signal SIGSEGV
 
- Last statement of "sub2" was at line 3 of cpyabrt
- Last statement of "prog" was at line 135 of prog.cob
+ Last statement of "sub2" was MOVE at line 3 of cpyabrt
+	ENTRY sub2 at prog.cob:237
+ Last statement of "prog" was CALL
+	CALL-IT-OMIT at prog.cob:135
+	MAIN-100 at prog.cob:99
+	ENTRY prog at prog.cob:89
  Started by ./prog
 
 Dump Program-Id sub2 from prog.cob compiled MMM DD YYYY HH:MI:SS
@@ -8999,9 +9267,16 @@ AT_CAPTURE_FILE(./dumpall.txt)
 AT_DATA([reference], [
 Module dump due to module '' not found
 
- Last statement of "sub1" was at line 58 of prog.cob    
- Last statement of "prog" was at line 32 of prog.cob    
- Started by ./prog    
+ Last statement of "sub1" was CALL
+	DMP-TIME1 OF MAIN-1 at prog.cob:58
+	DMP-TIME OF MAIN-1 at prog.cob:60
+	MAIN-1 at prog.cob:52
+	ENTRY sub1 at prog.cob:50
+ Last statement of "prog" was CALL
+	CALL-SUB-1 at prog.cob:32
+	MAIN-100 at prog.cob:28
+	ENTRY prog at prog.cob:21
+ Started by ./prog
 
 Dump Program-Id sub1 from prog.cob compiled MMM DD YYYY HH:MI:SS
 
@@ -11722,7 +11997,7 @@ AT_CLEANUP
 
 
 AT_SETUP([FLOAT-DECIMAL w/o SIZE ERROR])
-AT_KEYWORDS([Numeric runmisc
+AT_KEYWORDS([Numeric runmisc overflow
 FLOAT-DECIMAL-16 FLOAT-DECIMAL-34
 DISPLAY COMPUTE])
 
@@ -11896,7 +12171,7 @@ AT_CLEANUP
 
 
 AT_SETUP([FLOAT-SHORT / FLOAT-LONG w/o SIZE ERROR])
-AT_KEYWORDS([Numeric runmisc
+AT_KEYWORDS([Numeric runmisc overflow
 COMP-1 COMP-2
 DISPLAY COMPUTE])
 
@@ -12095,7 +12370,7 @@ AT_CLEANUP
 
 
 AT_SETUP([FLOAT-SHORT with SIZE ERROR])
-AT_KEYWORDS([COMP-1])
+AT_KEYWORDS([COMP-1 overflow])
 
 AT_DATA([prog.cob], [
        identification division.
@@ -12146,7 +12421,7 @@ AT_CLEANUP
 
 
 AT_SETUP([FLOAT-LONG with SIZE ERROR])
-AT_KEYWORDS([COMP-2])
+AT_KEYWORDS([COMP-2 overflow])
 
 AT_DATA([prog.cob], [
        identification division.
@@ -12196,7 +12471,8 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
-# note: the actual value is not checked as this depends on intermediate rounding
+# note: the actual value is not checked as it depends on non-portable
+#       intermediate rounding
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], ignore, [SIZE ERROR raised])
 
 AT_CLEANUP

@@ -455,7 +455,11 @@ ppp_check_needs_quote (const char *envval)
 static void
 ppp_error_invalid_option (const char *directive, const char *option)
 {
-	cb_error (_("invalid %s directive option '%s'"), directive, option);
+	if (option) {
+		cb_error (_("invalid %s directive option '%s'"), directive, option);
+	} else {
+		cb_error (_("invalid %s directive option"), directive);
+	}
 }
 
 /* Global functions */

@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2017, 2020 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2017, 2020, 2022 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch
 ##
 ## This file is part of GnuCOBOL.
@@ -48,7 +48,7 @@ AT_CLEANUP
 #
 
 AT_SETUP([ACCEPT FROM TIME / DATE / DAY / DAY-OF-WEEK (1)])
-AT_KEYWORDS([INSPECT CONVERTING])
+AT_KEYWORDS([INSPECT CONVERTING configuration COB_CURRENT_DATE])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -110,6 +110,29 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+# testing all variants for the offset (to not break anything hard,
+# actual testing of the values need a bigger test in COBOL)
+AT_CHECK([COB_CURRENT_DATE="YYYYMMDDHHMMSS+01:00" \
+$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CHECK([COB_CURRENT_DATE="YYYYMMDDHHMMSS-0115" \
+$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CHECK([COB_CURRENT_DATE="YYYYMMDDHHMMSS+02" \
+$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CHECK([COB_CURRENT_DATE="YYYYMMDDHHMMSSZ" \
+$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CHECK([COB_CURRENT_DATE="YYYYMMDDHHMMSS-011569" \
+$COBCRUN_DIRECT ./prog], [0], [],
+[libcob: warning: COB_CURRENT_DATE 'YYYYMMDDHHMMSS-011569' is invalid
+])
+AT_CHECK([COB_CURRENT_DATE="YYYYMMDDHHMMSS+01:0000" \
+$COBCRUN_DIRECT ./prog], [0], [],
+[libcob: warning: COB_CURRENT_DATE 'YYYYMMDDHHMMSS+01:0000' is invalid
+])
+AT_CHECK([COB_CURRENT_DATE="YYYYMMDDHHMMSS-010A" \
+$COBCRUN_DIRECT ./prog], [0], [],
+[libcob: warning: COB_CURRENT_DATE 'YYYYMMDDHHMMSS-010A' is invalid
+])
 
 AT_CLEANUP
 

@@ -110,11 +110,12 @@ db_cmpkey (cob_file *f, unsigned char *keyarea, unsigned char *record, int idx, 
 
 	if (partlen <= 0) {
 		partlen = db_keylen(f, idx);
+		/* LCOV_EXCL_START */
 		if (partlen <= 0) {
-			cob_runtime_error (_("invalid internal call of %s"), "db_cmpkey");
-			cob_runtime_error (_("Please report this!"));
-			cob_stop_run (1);
+			cob_runtime_error (_("invalid internal call of %s"), "bdb_cmpkey");
+			cob_hard_failure_internal ("libcob");
 		}
+		/* LCOV_EXCL_STOP */
 	}
 	if (f->keys[idx].count_components > 0) {
 		totlen = 0;

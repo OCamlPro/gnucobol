@@ -3,8 +3,8 @@
 #
 # This script is a special variant of the atlocal script for testing
 # with Valgrind.
-
-# Copyright (C) 2003-2012, 2014-2020 Free Software Foundation, Inc.
+#
+# Copyright (C) 2003-2012, 2014-2022 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 #
 # This file is part of GnuCOBOL.
@@ -45,7 +45,7 @@ ABS_COBCRUN="${abs_top_builddir}/bin/cobcrun@COB_EXE_EXT@"
 # To check with valgrind:
 # * ideally: reconfigure with `./configure --enable-debug & make`
 # * temporarily rename atlocal.in to atlocal.bak and atlocal_valgrind to atlocal.in,
-*   then go to top_builddir and `config.status tests/atlocal`;
+#   then go to top_builddir and `config.status tests/atlocal`;
 #   - or as a longer altarnative: diff these parts into your atlocal
 # * set switches you need to the following lines and set the tool accordingly (template has MEMCHECK)
 # * if your system ships with valgrind suppression files (default.supp is always active) you likely
@@ -75,9 +75,9 @@ if test "x$at_group" = "x"; then
 fi
 export at_group  # export needed as valgrind resolves that variable later
 
-VL_LOG_DIR="${abs_builddir}/valgrind"
-mkdir -p $VL_LOG_DIR
-VG_LOG_PREFIX="$VL_LOG_DIR/%q{at_group}_%p"
+VG_LOG_DIR="${abs_builddir}/valgrind"
+mkdir -p "${VG_LOG_DIR}"
+VG_LOG_PREFIX="${VG_LOG_DIR}/%q{at_group}_%p"
 
 VG_COBC_LOG="$VG_LOG_PREFIX-cobc.log"
 VG_COBCRUN_LOG="$VG_LOG_PREFIX-cobcrun.log"
@@ -89,8 +89,13 @@ VG_COBCRUN_DIRECT_LOG="$VG_LOG_PREFIX-cobcrun_direct.log"
 MEMCHECK="valgrind --tool=memcheck --read-var-info=yes --track-origins=yes --leak-check=full --show-leak-kinds=all $VG_SUPPR"
 SGCHECK="valgrind --tool=exp-sgcheck --read-var-info=yes $VG_SUPPR"
 
-COBC="libtool --mode=execute $MEMCHECK --log-file=$VG_COBC_LOG ${COBC}"
-COBCRUN="libtool --mode=execute $MEMCHECK --log-file=$VG_COBCRUN_LOG ${COBCRUN}"
+#LT_EXEC="${abs_top_builddir}/libtool --mode=execute"
+#COBC="${LT_EXEC} $MEMCHECK --log-file=$VG_COBC_LOG ${COBC}"
+#COBCRUN="${LT_EXEC} $MEMCHECK --log-file=$VG_COBCRUN_LOG ${COBCRUN}"
+
+export PATH="${abs_top_builddir}/cobc/.libs:${abs_top_builddir}/bin.libs:${PATH}"
+COBC="$MEMCHECK --log-file=$VG_COBC_LOG ${COBC}"
+COBCRUN="$MEMCHECK --log-file=$VG_COBCRUN_LOG ${COBCRUN}"
 COBCRUN_DIRECT="$MEMCHECK --log-file=$VG_COBCRUN_DIRECT_LOG ${COBCRUN_DIRECT}"
 
 # -- END OF VALGRIND SPECIFIC PARTS ---

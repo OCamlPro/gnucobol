@@ -1,11 +1,74 @@
 
+2022-10-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* intrinsic.c (cob_decimal_set): removed (integrated where used)
+	* numeric.c, common.h: renamed cob_decimal_copy to cob_decimal_set
+	  and marked it for removal
+
+2022-10-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* intrinsic.c (cob_log_ten): new static field to speedup cob_intr_log10
+	* intrinsic.c: only setup cob_sqrt_two, cob_pi, cob_log_half, cob_log_ten
+	  on first use, to speedup init/teardown when not used
+	* intrinsic.c, common.c: some more use of COB_D2I
+
 2022-10-11  Ron Norman <rjn@inglenet.com>
 
 	* fextfh.c: Return the process id that is blocking a 
 	  record/file lock in FCD3 field FCD-SESSION-ID.
 	* fextfh.c: Was reallocing the key field for RELATIVE files
-	           The code that doing now only executes if there 
-			   wsa no RELATAIVE KEY defined at all
+	  The code that doing now only executes if there was no
+	  RELATIVE KEY defined at all
+
+2022-10-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* intrinsic.c (cob_intr_bit_of, cob_intr_bit_to_char,cob_intr_hex_of
+	  cob_intr_hex_to_char): fixed invalid attribute of return field
+	* common.c, common.h, coblocal.h, fileio.c, numeric.c: changed
+	* common.c (cob_hard_failure_internal), common.h, coblocal.h, fileio.c,
+	  numeric.c: changed to take an optional prefix and be exported to be
+	  used in cobc
+	* common.c: change COB_CORE_ON_ERROR=3 to not manually generate a corefile
+	  when called from a signal handler as this isn't signal safe
+	* common.c, coblocal.h: add COB_CORE_FILENAME to allow specifying a
+	  path, changed default to "core.libcob"
+	* common.c: defined macros for use of write to simplify code and to
+	  stop output by returning the function in case of errors fixing
+	   -Wunused-result compiler warnings
+
+2022-10-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c, coblocal.h: addition of COB_CORE_ON_ERROR to enable
+	  auto-creation of coredumps on error, sending SIGABRT on error
+	  and the option to let the OS handle signals
+	* common.c (create_dumpfile): implemented COB_CORE_ON_ERROR=3
+	* common.c (output_procedure_stack_entry, cob_stack_trace_internal):
+	  replaced use of stdio functions by signal-safe write + memcpy
+
+
+2022-10-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (check_current_date): improved validation
+	* common.c, intrinsic.c: favor strcpy, snprintf over strncpy
+
+2022-10-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_stack_trace_internal, output_procedure_stack_entry):
+	  use cob_frame_ext information when available to output PERFORM stack
+	* common.c (cob_set_exception): store strings in a local copy
+	  preventing SIGSEGV after CANCEL
+	* common.c (cob_trace_section): if line is not specified (done for
+	  "exit module" tracing), resolve that from current line, if known
+	  (to provide same output as the version that this was used with)
+	* intrinsic.c: extend internal docs
+	* fileio.c: add some guards against bad function calls
+
+2022-09-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.h (cob_frame_ext): new variant of cob_frame storing the
+	  section/paragraph + location to return to; allowing a full textual
+	  PERFORM stack and used for restoring those on return
+	* common.h (cob_module): fields for current frame_ptr
 
 2022-09-08  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -37,6 +100,15 @@
 	  error status and fatal exception (no runtime exit) along with a
 	  warning if the runtime is not configured for XML / JSON
 
+2022-07-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c [__PDCURSES__] (cob_exit_screen): execute
+	  PDC_free_memory_allocations if available
+	* screenio (cob_exit_screen): fixed order of endwin and delwin,
+	  preventing memory leaks on exit of extended screenio
+	* common.c, coblocal.h, screenio.c (cob_exit_screen_from_signal):
+	  only minimal screenio exit from signal handler
+
 2022-07-04  Ron Norman <rjn@inglenet.com>
 
 	* Updated Copyright date to include 2022
@@ -52,6 +124,23 @@
 	* fileio.c (cob_load_module): try to resolve entrypoint in libcob
 	  if loading in external file did not work
 	* fisam.c: re-arranged defines and checks
+
+2022-06-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_init_sig_descriptions): new function with code
+	  previously found cob_get_sig_description and cob_set_sig_description
+	  to pre-set signal description table on initialization,
+	  allowing to access it signal-safe in the signal-handler
+	* common.c (get_signal_entry) extracted from cob_get_sig_name,
+	  cob_get_sig_description
+	* common.c: rename signal_value back to sig (as standard name for
+	  signal handler related functions)
+	* common.c (ss_itoa_u10): new signal-safe function to build string
+	  from integer (base 10), based on implementation by "Shaoquan"
+	* common.c: replaced stdio in functions called by cob_sig_handler
+	  by signal-safe functions; exceptions: dump-routines
+	* fileio.c (cob_get_filename_print): replaced use of stdio functions
+	  by signal-safe functions as we may be called from there
 
 2022-05-30  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -74,6 +163,12 @@
 	  not mark each occurrence, instead gather range, then set the marker
 	  afterwards to reduce the number of expensive small memsets
 	  (TALLYING for 20000 TRAILING spaces -> 1 memset instead of 20000)
+
+2022-05-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_sig_handler): integrated (cob_sig_handler_ex) and fix
+	  re-execution of signal handler to raise, effectively reverting most
+	  of the changes from 2014-03-03
 
 2022-05-17  Ron Norman <rjn@inglenet.com>
 
@@ -162,6 +257,27 @@
 	* screenio.c (cob_field_display): If no field, use empty field as default
 					This is to handle DISPLAY OMITTED
 
+2022-01-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* call.c (set_resolve_error): distinguish between exceptions
+	  COB_EC_PROGRAM_NOT_FOUND and COB_EC_FUNCTION_NOT_FOUND
+	* fileio.c (indexed_open, join_environment) [WITH_DB]: return
+	  file sharing error if BDB environment cannot be joined
+	* fileio.c (cob_sys_check_file_exist, cob_get_sort_tempfile): return
+	  appropriate error code on errors instead of runtime exit
+	* screenio.c: preparations to later raise exceptions in error cases
+	* common.c (cob_sys_exit_proc): fixes to set / query priority and
+	  return code in case of errors as "per documentation"
+	* common.c, coblocal.h: added cob_hard_failure + cob_hard_failure_internal
+	* call.c, numeric.c, fileio.c, screenio.c: use of cob_hard_failure and
+	  cob_hard_failure_internal instead of internal STOP RUN
+	* common.c: changed runtime error buffer to be static and set
+	  first via new internal function cob_setup_runtime_error_str
+	  when runtime errors occur
+	* common.c (cob_call_with_exception_check, cob_last_exit_code,
+	  cob_last_runtime_error), common.h: added new C API functions that uses
+	  setjmp/longjmp to allow COBOL calls without possible process interruption
+
 2022-01-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_check_trace_file), coblocal.h: externalize function
@@ -223,9 +339,9 @@
 
 2021-12-31  Ron Norman <rjn@inglenet.com>
 
-	* numeric.c: Speed up cob_decimal_add, cob_decimal_sub, cob_decimal_cmp
-				Use the powers of 10 table instead of recomputing
-				Add cob_decimal_copy for use by emitted code
+	* numeric.c: speed up cob_decimal_add, cob_decimal_sub, cob_decimal_cmp
+	  use the powers of 10 table instead of recomputing;
+	  add cob_decimal_copy for use by emitted code
 
 2021-12-30  Ron Norman <rjn@inglenet.com>
 
@@ -281,6 +397,12 @@
 2021-11-10  Ron Norman <rjn@inglenet.com>
 
 	* fileio.c: Test code for bug #604 but not sure if it should be
+
+2020-11-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_terminate_routines): fixed typo in dump skip condition
+	* common.c (cob_strdup): minor performance improvement
+	* common.c (cob_gettmpdir): ensure TMPDIR without trailing slash
 
 2020-11-08  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -744,7 +866,7 @@
 
 	* fileio.c: Added a few more checks with possible error message during
 	  ROLLBACK processing if the QBL file has a problem being read
-	* termio.c: Added bounds check to avoid core dump on Centos 6.8
+	* termio.c (display_alnum_dump): added bounds check to fix invalid reads
 	* fsqlxfd.c: Check for COB_SQL_HIGH_VALUE to hold some hex characters
 	  that should be used to replace HIGH-VALUES for fields used are
 	  part of a WHERE clause (i.e. START statement)
@@ -758,6 +880,16 @@
 
 	* fodbc.c: PostgreSQL requires a SQLCloseCursor just before SQLExecute
 	  if the statement had been used before.
+
+2021-02-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* coblocal.h (COB_D2I): only use the half-byte of the char to resolve the
+	  integer value, preventing overflows leading to huge/negative values and
+	  providing conversion of space to zero and correct conversion of numeric
+	  character from both ASCII and EBCDIC to integer
+	* move.c: use of COB_D2I for conversions
+	  and restore previous one afterwards
+	* move.c (store_common_region): minor refactoring
 
 2021-02-08  Ron Norman <rjn@inglenet.com>
 
@@ -1156,6 +1288,13 @@
 	* common.c: also handle SIGEMT; skip module dump for SIGTERM and SIGINT
 
 2020-08-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (struct exit_handlerlist, cob_sys_exit_proc):
+	  added priority for exit handler,
+	  correct return for install_flag 2 (query) if entry not registered
+	* common.c (cob_sys_exit_proc, cob_sys_error_proc):
+	  fix bad free for re-entry / delete of existing exit/error handler,
+	  added  ACU variant (currently deactivated)
 
 	work on installable error handlers (per MF and ACU)
 	* common.c (cob_runtime_error): remove error handler from the que before

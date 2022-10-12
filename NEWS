@@ -89,31 +89,48 @@ Open Plans:
 
 * New GnuCOBOL features
 
+** New intrinsic functions
+
+  BIT-OF, BIT-TO-CHAR, HEX-OF, HEX-TO-CHAR
+
+** Support for COBOL 2022 directive COBOL-WORDS
+
+** Support for bit operations according to COBOL 2022 with MF compatibility
+
+** Support for additional $SET directives: ODOSLIDE
+
 ** Support for the EXTFH interface was heavily improved, now also supporting
    FH--FCD and FH--KEYDEF, fixed use of different attributes and changing
-   pointers and now supports - for 32-bit builds - an internal conversion between
-   FCD2 and FCD3 for cases where existing programs are coded with FCD2
+   pointers and now supports - for 32-bit builds - an internal conversion
+   between FCD2 and FCD3 for cases where existing programs are coded with FCD2
+
+** OCCURS with multiple VALUEs supported (BS2000 format without FROM/TO)
+
+** new function to call COBOL from C that won't exit the program in case
+   of runtime errors or STOP RUN: cob_call_with_exception_check()
    
 ** Support of GCOS 7 (Bull) dialect
 
 ** TODO - More to add
 
-** New intrinsic functions
+* Changes that potentially effects existing programs:
 
-  BIT-OF, BIT-TO-CHAR, HEX-OF, HEX-TO-CHAR
-
-** Support of COBOL 202x directive COBOL-WORDS
-
-** Support of additional $SET directives: ODOSLIDE
+** Handling of invalid numeric USAGE DISPLAY data:
+   previously the complete character was inspected and adjusted for conversion,
+   now only the second half-byte is used;
+   this yields in different results, for example both the zero and space
+   character in both ASCII and EBCDIC charset will now result in a numeric
+   zero; previously invalid data could result in huge or negative numbers in
+   internal intermediate items;
+   as this was both adjusted in the runtime and in the the generated modules
+   invalid data may have additional unexpected results if programs are not
+   recompiled
 
 * Changes that potentially effects recompilation of existing programs:
 
 ** the reserved word list and intrinsic functions was updated, especially
-   to cater for new features of COBOL 202x; if compiling with any non-strict
+   to cater for new features of COBOL 2022; if compiling with any non-strict
    dialect you may need to unreserve any conflicting words / functions
-
-** in 64-bit environments, the maximum field size was increased from
-   268435456 bytes (999999998 bytes for OCCURS UNBOUNDED) to 2 GB
 
 ** in 64-bit environments, the default size for BY VALUE parameters has changed:
    If no explicit SIZE IS clause is specified,
@@ -128,8 +145,22 @@ Open Plans:
 
 ** the compile flag -fodoslide was moved to a dialect configuration,
    while -fodoslide still works as before it is now implied with
-   -std=ibm/mvs/bs2000, for compatibility to previous behavior compile
-   with -fno-odoslide
+   -std=ibm/mvs/bs2000, if you use those dialects consider to recompile
+   affected programs (with OCCURS DEPENDING ON) or compile with additional
+   -fno-odoslide to get the same results as with older GnuCOBOL versions
+
+** the compile flag -fdefaultbyte was moved to a dialect configuration,
+   while -fdefaultbyte still works as before it is now implied as binary
+   zero with -std=ibm/mvs/bs2000, space for -std=mf/acu/rm/realia, and
+   no defined initialization for -std=cobol85/cobol2002/cobol2014/xopen,
+   it is unchanged for -std=default (initialize to PICTURE/USAGE)
+   for compatibility to previous behavior compile with -fdefaultbyte=init
+
+** the dialect configuration option larger-redefines-ok was changed to
+   a support option larger-redefines; if specified on the command-line
+   it is now -f[no-]larger-redefines instead of -f[no-]larger-redefines-ok,
+   which allows to also raise a warning for those with -flarger-redefines=warn
+   Note: the short one works both in current and older versions of cobc
 
 ** the GnuCOBOL extension of auto-adding the RECURSIVE attribute
    if a program potentially calls its own PROGRAM-ID was moved
@@ -137,6 +168,12 @@ Open Plans:
    (and raises a warning as previously with -Wextra); if you want
    to use this extension for other dialects use the new
    -fself-call-recursive=warning (or "ok")
+
+** the option -g does not longer imply -fsource-location
+
+** new flag -fstack-extended (implied with --debug and --dump) to include
+   the origin of entrypoints and PERFORM, this is used for the internal
+   stack trace on abort and can be used for source level debugging
 
 ** adjustments to warning options:
    -Wconstant-expression was changed to a group warning and includes
@@ -172,8 +209,11 @@ Open Plans:
    this has been fixed so that all modules compiled with GnuCOBOL 2.2 can be
    executed with GnuCOBOL 3.2
 
-** execution times of INSPECT that use big COBOL fields (multiple KB) were
-   heavily cut down
+** the internal signal handler could chrash or deadlock the process on hard
+   errors (either in called library functions or when running COBOL without
+   runtime checks); the signal handling is now completely rewritten to fix
+   this issue and all executed code from the signal handler but the COBOL data
+   dump is now signal and thread safe
 
 * Listing changes
 
@@ -186,13 +226,27 @@ Open Plans:
 
 * More notable changes
 
-** the call-stack on error / in the dump file now contains all parameters given
-   to the program via command line options, if any
+** in 64-bit environments, the maximum field size was increased from
+   268435456 bytes (999999998 bytes for OCCURS UNBOUNDED) to 2 GB
+
+** in case of any runtime features being used that are not available an error
+   is generated during compile (may be reduced to a warning by -Wunsupported
+   or be suppressed by -Wno-unsupported) and if the feature is actually used
+   at runtime a related exception status is set
+
+** the call-stack show on error and/or in the dump file now contains all
+   parameters given to the program via command line options, if any;
+   if full debugging information is available it includes all PERFORMs executed
 
 ** the dump that is created on abort for all programs that were compiled with
    -fdump can be explicit disabled by setting COB_DUMP_FILE=NONE; it is
    automatically disabled if the process ends upon signals SIGINT/SIGTERM and
    now also disabled upon SIGHUP/SIGPIPE
+
+** additional or instead of the internal COBOL dump a coredump file may be
+   created on runtime errors and when configured in the system also after
+   the signal handler; see the new runtime option COB_CORE_ON_ERROR for
+   details (the default is a best match to the old behavior)
 
 ** source references shown in diagnostic messages during runtime, the tracing
    options and during debugging were extended, for example each executed WHEN,
@@ -201,12 +255,26 @@ Open Plans:
 ** in case of any runtime features being used that are not available a warning
    is generated and related exception status set
 
+** execution times of INSPECT that use big COBOL fields (multiple KB) were
+   heavily cut down
+
+** execution times for programs that are new generated with -fsource-location
+   (implied with --debug/-fec) are cut down, especially when many "simple"
+   statements or lot of sections/paragraphs are used; also the runtime checks
+   for use of LINKAGE fields and/or subscripts/reference-modification will be
+   much faster 
+
+* New build features
+
 ** configure now honors BDB_LIBS
+** configure now honors MATH_LIBS
 ** configure now checks for XCurses and allows --with-curses=xcurses
    (experimental)
 
 
 * Known issues in 3.2 (and 3.1)
+
+** 3.2 only: the testing and documentation for COB_CORE_ON_ERROR is unfinished
 
 ** testsuite:
   * if built with vbisam, cisam or disam, depending on the version used, some

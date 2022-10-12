@@ -1530,7 +1530,7 @@ static	cob_report_line		*pl;
 #if 0	/* TODO: if not enabled: ignore, if enabled and PROPAGATE ON (or TRY) active: handle */
 		return 0;
 #else
-		cob_stop_run (1);
+		cob_hard_failure ();
 #endif
 	}
 	if (r->first_generate) {
@@ -1663,7 +1663,7 @@ static	int		maxctl,ln,num,gengrp,last_use,ctlidx;
 #if 0	/* TODO: if not enabled: ignore, if enabled and PROPAGATE ON (or TRY) active: handle */
 		return 0;
 #else
-		cob_stop_run (1);
+		cob_hard_failure ();
 #endif
 	}
 

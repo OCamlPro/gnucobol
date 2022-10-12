@@ -121,22 +121,22 @@ static void
 store_common_region (cob_field *f, const unsigned char *data,
 		     const size_t size, const int scale)
 {
-	const unsigned char	*p;
-	unsigned char		*q;
-	size_t			csize;
-	size_t			cinc;
-	int			lf1 = -scale;
-	int			lf2 = -COB_FIELD_SCALE (f);
-	int			hf1 = (int) size + lf1;
-	int			hf2 = (int) COB_FIELD_SIZE (f) + lf2;
-	int			lcf;
-	int			gcf;
+	const int	lf1 = -scale;
+	const int	lf2 = -COB_FIELD_SCALE (f);
+	const int	lcf = cob_max_int (lf1, lf2);
 
-	lcf = cob_max_int (lf1, lf2);
-	gcf = cob_min_int (hf1, hf2);
+	const int	hf1 = (int) size + lf1;
+	const int	hf2 = (int) COB_FIELD_SIZE (f) + lf2;
+	const int	gcf = cob_min_int (hf1, hf2);
+
 	memset (COB_FIELD_DATA (f), '0', COB_FIELD_SIZE (f));
+
 	if (gcf > lcf) {
-		csize = (size_t)gcf - lcf;
+		const size_t	csize = (size_t)gcf - lcf;
+		size_t			cinc;
+		const unsigned char	*p;
+		unsigned char		*q;
+
 		p = data + hf1 - gcf;
 		q = COB_FIELD_DATA (f) + hf2 - gcf;
 		for (cinc = 0; cinc < csize; ++cinc, ++p, ++q) {
@@ -2501,19 +2501,20 @@ cob_get_s64_pic9 (void *mem, int len)
 
 	while (len-- > 1) {
 		if (isdigit (*p)) {
-			val = val * 10 + (*p - '0');
+			val = val * 10 + COB_D2I (*p);
 		} else if (*p == '-') {
 			sign = -1;
 		}
 		p++;
 	}
 	if (isdigit (*p)) {
-		val = val * 10 + (*p - '0');
+		val = val * 10 + COB_D2I (*p);
 	} else if (*p == '-') {
 		sign = -1;
 	} else if (*p == '+') {
 		sign = 1;
 	} else if (COB_MODULE_PTR->ebcdic_sign) {
+#ifndef	COB_EBCDIC_MACHINE
 		switch(*p) {
 		case '{': val = val * 10 + 0; sign =  1; break;
 		case 'A': val = val * 10 + 1; sign =  1; break;
@@ -2536,8 +2537,16 @@ cob_get_s64_pic9 (void *mem, int len)
 		case 'Q': val = val * 10 + 8; sign = -1; break;
 		case 'R': val = val * 10 + 9; sign = -1; break;
 		}
+#else
+		if (*p & 0xC0) {
+			sign = 1;
+		} else if (*p & 0xD0) {
+			sign = -1;
+		}
+		val = val * 10 + COB_D2I (*p);
+#endif
 	} else if (isdigit (*p & 0x3F)) {
-		val = val * 10 + (*p & 0x0F);
+		val = val * 10 + COB_D2I (*p);
 		if (*p & 0x40) {
 			sign = -1;
 		}
@@ -2567,9 +2576,7 @@ cob_get_u64_pic9 (void *mem, int len)
 	cob_u8_t	*p = mem;
 
 	while (len-- > 0) {
-		if (isdigit (*p)) {
-			val = val * 10 + (*p - '0');
-		}
+		val = val * 10 + COB_D2I (*p);
 		p++;
 	}
 

@@ -1292,11 +1292,12 @@ void
 cob_file_fcd_adrs (cob_file *f, void *pfcd)
 {
 	FCD3	*fcd = NULL;
+	/* LCOV_EXCL_START */
 	if (f == NULL) {
 		cob_runtime_error (_("invalid internal call of %s"), "cob_file_fcd_adrs");
-		cob_runtime_error (_("Please report this!"));
-		cob_stop_run (1);
+		cob_hard_failure_internal ("libcob");
 	}
+	/* LCOV_EXCL_STOP */
 	if (f->fcd == NULL) {
 		f->fcd = find_fcd (f);
 	}
@@ -1319,11 +1320,12 @@ void
 cob_file_fcdkey_adrs (cob_file *f, void *pkey)
 {
 	FCD3	*fcd = NULL;
+	/* LCOV_EXCL_START */
 	if (f == NULL) {
 		cob_runtime_error (_("invalid internal call of %s"), "cob_file_fcdkey_adrs");
-		cob_runtime_error (_("Please report this!"));
-		cob_stop_run (1);
+		cob_hard_failure_internal ("libcob");
 	}
+	/* LCOV_EXCL_STOP */
 	cob_file_fcd_adrs (f, &fcd);
 	memcpy (pkey, &f->fcd->kdbPtr, sizeof(void *));
 	return;

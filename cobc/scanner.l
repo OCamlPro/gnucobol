@@ -886,8 +886,7 @@ H#[0-9A-Za-z]+ {
 
 "SWITCH"[ ]+([0-9][0-9]?|[A-Z])/[ .,;\n] {
 	/* ACUCOBOL extension: switch-names with space and with letter */
-	char suffix[3] = "";
-	char name[10] = "";
+	char name[10];
 
 	/* FIXME: move the code for filling "name" here and first
 	          check with "lookup_system_name (name) != NULL"
@@ -906,19 +905,8 @@ H#[0-9A-Za-z]+ {
 		}
 	} else {
 		 /* we need to return a single word, reverted later in parser.y */
-		if (yytext[yyleng-2] == ' ' && isdigit((unsigned char)yytext[yyleng-1])) {
-			/* SWITCH 0  to SWITCH 9 */
-			suffix[0] = yytext[yyleng-1];
-		} else if (isdigit((unsigned char)yytext[yyleng-2])) {
-			/* SWITCH 00 to SWITCH 99 */
-			suffix[0] = yytext[yyleng-2];
-			suffix[1] = yytext[yyleng-1];
-		} else {
-			suffix[0] = yytext[yyleng-1];
-		}
-		strncpy(name, yytext, 6);
-		strcat(name, "_");
-		strcat(name, suffix);
+		strcpy (name, yytext);
+		name[6] = '_';
 		yylval = cb_build_reference (name);
 	}
 	RETURN_TOK (WORD);
@@ -1275,22 +1263,18 @@ H#[0-9A-Za-z]+ {
 static void
 error_literal (const char *type, const char *literal)
 {
-	char		lit_out[39];
-
 	if (!literal_error) {
+		char		lit_out[CB_ERR_LITMAX + 1];
+		/* snip literal for output, if too long or,
+			unlikely error case, has a line break */
+		literal_for_diagnostic (lit_out, literal);
+
 #if 0 /* national literal, check for different truncation and wcslen
 		 or not show it at all */
 		if (strcmp (type, "national") == 0) {
 			cb_error (_("invalid national literal"), lit_out);
 		} else {
 #endif
-			/* snip literal for output, if too long */
-			strncpy (lit_out, literal, 38);
-			if (strlen (literal) > 38) {
-				strcpy (lit_out + 35, "...");
-			} else {
-				lit_out[38] = '\0';
-			}
 			if (strcmp (type, "") == 0) {
 				cb_error (_("invalid literal: '%s'"), lit_out);
 			} else if (strcmp (type, "hex") == 0) {
@@ -1356,6 +1340,16 @@ read_literal (const char mark, const char *type)
 			plex_buff[cb_lit_length] = 0; /* ensure valid C-string for error message */
 			error_literal ("", plex_buff);
 		}
+	}
+	if (c == EOF
+#if EOF != 0
+	 || c == 0 /* fixes unexpected error case */
+#endif
+		) {
+			snprintf (err_msg, COB_MINI_MAX,
+				_("missing terminating %c character"), mark);
+			plex_buff[cb_lit_length] = 0; /* ensure valid C-string for error message */
+			error_literal ("", plex_buff);
 	}
 
 	/* FIXME: Exact behavior should depend on level of support:
@@ -2002,12 +1996,15 @@ scan_floating_numeric (const char *text)
 		  significand_int, significand_dec);
 	if (n == 0) { /* no integer part, copy after decimal-point */
 		significand_int[0] = 0;
-		strncpy (significand_dec, significand_pos + 1, COB_FLOAT_DIGITS_STR_MAX);
+		strcpy (significand_dec, significand_pos + 1);
+#if 0 /* note: we ignore compiler warnings for possible "missing NULL-terminator 
+               here as we know that sscanf handles the correct with */
 		significand_dec[COB_FLOAT_DIGITS_STR_MAX - 1] = 0;
 	} else {
 	/* silencing some warnings */
 		significand_int[COB_FLOAT_DIGITS_STR_MAX - 1] = 0;
 		significand_dec[COB_FLOAT_DIGITS_STR_MAX - 1] = 0;
+#endif
 	}
 
 	/* Validation and exponent handling */
@@ -2129,7 +2126,7 @@ scan_picture (const char *text)
 		*p = (unsigned char)toupper (*p);
 	}
 
-	yylval = cb_build_picture (text);
+	yylval = CB_TREE (cb_build_picture (text));
 }
 
 static void

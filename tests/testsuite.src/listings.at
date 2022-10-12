@@ -1820,7 +1820,7 @@ prog-2.cob:16: warning: unreachable statement 'ACCEPT'
 # Check once with $COMPILE and once with $COMPILE_ONLY.
 # This tests whether codegen affects the listing.
 
-AT_CHECK([$COMPILE -x -Wunreachable -t prog.lst -Xref -tsymbols prog-1.cob prog-2.cob], [0], [], [ignore])
+AT_CHECK([$COMPILE -Wunreachable -t prog.lst -Xref -tsymbols prog-1.cob prog-2.cob], [0], [], [ignore])
 AT_CHECK([gcdiff expected.lst prog.lst], [0], [], [])
 
 AT_CHECK([$COMPILE_ONLY -Wunreachable -t prog.lst -Xref -tsymbols prog-1.cob prog-2.cob], [0], [], [ignore])

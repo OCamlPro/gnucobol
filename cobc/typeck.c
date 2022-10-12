@@ -1371,7 +1371,7 @@ cb_check_field_debug (cb_tree fld)
 	cb_tree		z;
 	size_t		size;
 	size_t		found;
-	char		buff[COB_MINI_BUFF];
+	char		buff[COB_MINI_BUFF]; /* at least DEBUG-NAME + 4 + COB_MAX_NAMELEN...*/
 
 	/* Basic reference check */
 	if (CB_WORD_COUNT (fld) > 0) {
@@ -1421,22 +1421,17 @@ cb_check_field_debug (cb_tree fld)
 	}
 
 	/* Set up debug info */
-	strncpy (buff, CB_FIELD(x)->name, COB_MAX_WORDLEN);
-	buff[COB_MAX_WORDLEN] = 0;
-	l = CB_REFERENCE (fld)->chain;
-	if (l) {
-		size = strlen (buff);
-		for (; l; l = CB_REFERENCE (l)->chain) {
-			z = cb_ref (l);
-			if (z != cb_error_node) {
-				size += strlen (CB_FIELD (z)->name);
-				size += 4;
-				if (size >= sizeof(buff)) {
-					break;
-				}
-				strcat (buff, " OF ");
-				strcat (buff, CB_FIELD (z)->name);
+	size = sprintf (buff, "%s", CB_FIELD (x)->name);
+	/* DEBUG-NAME's max is fixed-length 30, so no use in writing more */
+	for (l = CB_REFERENCE (fld)->chain; l && size < 30; l = CB_REFERENCE (l)->chain) {
+		z = cb_ref (l);
+		if (z != cb_error_node) {
+			const char		*name = CB_FIELD (z)->name;
+			const size_t	sname = strlen (name) + 1;
+			if (size + 4 + sname >= sizeof(buff)) {
+				break;
 			}
+			size += sprintf (buff + size, " OF %s", name);
 		}
 	}
 	current_statement->debug_nodups =
@@ -1732,7 +1727,7 @@ cb_build_generic_register (const char *name, const char *external_definition,
 		strncpy (temp, p, r - p);
 		temp [r - p] = 0;
 		memset (p, ' ', r - p);
-		picture = CB_PICTURE (cb_build_picture (temp));
+		picture = cb_build_picture (temp);
 	} else {
 		picture = NULL;
 	}
@@ -1807,7 +1802,7 @@ cb_build_register_xml_code (const char *name, const char *definition)
 	tfield = cb_build_field (cb_build_reference (name));
 	field = CB_FIELD (tfield);
 	field->usage = CB_USAGE_BINARY;
-	field->pic = CB_PICTURE (cb_build_picture ("S9(9)"));
+	field->pic = cb_build_picture ("S9(9)");
 	cb_validate_field (field);
 	field->values = CB_LIST_INIT (cb_zero);
 	field->flag_no_init = 1;
@@ -1838,7 +1833,7 @@ cb_build_register_json_code (const char *name, const char *definition)
 	tfield = cb_build_field (cb_build_reference (name));
 	field = CB_FIELD (tfield);
 	field->usage = CB_USAGE_BINARY;
-	field->pic = CB_PICTURE (cb_build_picture ("S9(9)"));
+	field->pic = cb_build_picture ("S9(9)");
 	cb_validate_field (field);
 	field->values = CB_LIST_INIT (cb_zero);
 	field->flag_no_init = 1;
@@ -2362,10 +2357,11 @@ cb_build_identifier (cb_tree x, const int subchk)
 		 && !(p->flag_is_pdiv_opt && CB_EXCEPTION_ENABLE (COB_EC_PROGRAM_ARG_MISMATCH)) {
 #else
 		if (CB_EXCEPTION_ENABLE (COB_EC_PROGRAM_ARG_OMITTED)
-		 && p->storage == CB_STORAGE_LINKAGE 
+		 && p->storage == CB_STORAGE_LINKAGE
 		 && p->flag_is_pdiv_parm) {
 #endif
 			cb_add_null_check ("cob_check_linkage", p, f);
+			optimize_defs[COB_CHK_LINKAGE] = 1;
 		} else
 		if (CB_EXCEPTION_ENABLE (COB_EC_DATA_PTR_NULL)
 		 && !current_statement->flag_no_based) {
@@ -2374,6 +2370,7 @@ cb_build_identifier (cb_tree x, const int subchk)
 			  && !(p->flag_is_pdiv_parm 
 			    || p->flag_is_returning))) {
 				cb_add_null_check ("cob_check_based", p, f);
+				optimize_defs[COB_CHK_BASED] = 1;
 			}
 		}
 	}
@@ -2415,14 +2412,17 @@ cb_build_identifier (cb_tree x, const int subchk)
 			}
 		}
 
-		/* Run-time check for ODO (including all the fields subordinate items) */
+		/* Run-time check for ODO (including all the fields' subordinate items) */
 		if (CB_EXCEPTION_ENABLE (COB_EC_BOUND_SUBSCRIPT) && f->odo_level != 0) {
 			for (p = f; p; p = p->children) {
 				if (p->depending && p->depending != cb_error_node
 				 && !p->flag_unbounded) {
 					e1 = cb_add_check_odo (p);
-					if (e1 != NULL)
+					if (e1 != NULL) {
+
+						optimize_defs[COB_CHK_ODO] = 1;
 						r->check = cb_list_add (r->check, e1);
+					}
 				}
 			}
 		}
@@ -2459,13 +2459,17 @@ cb_build_identifier (cb_tree x, const int subchk)
 				if (CB_EXCEPTION_ENABLE (COB_EC_BOUND_SUBSCRIPT)) {
 					if (p->depending && p->depending != cb_error_node) {
 						e1 = cb_add_check_subscript (p, sub, name, 1);
-						if (e1 != NULL)
+						if (e1 != NULL) {
+							optimize_defs[COB_CHK_SUBSCRIPT] = 1;
 							r->check = cb_list_add (r->check, e1);
+						}
 					} else {
 						if (!CB_LITERAL_P (sub)) {
 							e1 = cb_add_check_subscript (p, sub, name, 0);
-							if (e1 != NULL)
+							if (e1 != NULL) {
+								optimize_defs[COB_CHK_SUBSCRIPT] = 1;
 								r->check = cb_list_add (r->check, e1);
+							}
 						}
 					}
 				}
@@ -2578,6 +2582,7 @@ cb_build_identifier (cb_tree x, const int subchk)
 								 r->length ?
 								  cb_build_cast_int (r->length) :
 								  cb_int1);
+					optimize_defs[COB_CHK_REFMOD_MIN] = 1;
 				} else {
 					/* check upper + size + lower as requested */
 					e1 = CB_BUILD_FUNCALL_6 ("cob_check_ref_mod",
@@ -2593,6 +2598,7 @@ cb_build_identifier (cb_tree x, const int subchk)
 								 r->length ?
 								  cb_build_cast_int (r->length) :
 								  cb_int1);
+					optimize_defs[COB_CHK_REFMOD] = 1;
 				}
 				r->check = cb_list_add (r->check, e1);
 			}
@@ -2892,7 +2898,7 @@ cb_build_const_next (struct cb_field *f)
 cb_tree
 cb_build_length (cb_tree x)
 {
-	struct cb_field		*f;
+	struct cb_field		*f, *ftemp;
 	struct cb_literal	*l;
 	cb_tree			temp,z1,z2;
 	char			buff[32];
@@ -2948,21 +2954,23 @@ cb_build_length (cb_tree x)
 		}
 	}
 	temp = cb_build_index (cb_build_filler (), NULL, 0, NULL);
-	CB_FIELD (cb_ref (temp))->usage = CB_USAGE_LENGTH;
-	CB_FIELD (cb_ref (temp))->count++;
-	CB_FIELD (cb_ref (temp))->pic->have_sign = 0;	/* LENGTH is UNSIGNED */
+	ftemp = CB_FIELD (cb_ref (temp));
+	ftemp->usage = CB_USAGE_LENGTH;
+	ftemp->count++;
+	ftemp->pic->have_sign = 0;	/* LENGTH is UNSIGNED */
 	cb_emit (cb_build_assign (temp, cb_build_length_1 (x)));
 
 	if (cb_pretty_display
 	 && cobc_cs_check == CB_CS_DISPLAY) {
 		z1 = cb_build_filler ();
 		z2 = cb_build_field_tree (NULL, z1, NULL, CB_STORAGE_WORKING, NULL, 1);
-		CB_FIELD (z2)->pic = CB_PICTURE (cb_build_picture ("9(10)"));
-		CB_FIELD (z2)->flag_filler = 1;
-		CB_FIELD (z2)->usage = CB_USAGE_DISPLAY;
-		CB_FIELD (z2)->count++;
-		cb_validate_field (CB_FIELD (z2));
-		cb_emit (CB_BUILD_FUNCALL_2 ("cob_field_int_display",temp,z2));
+		ftemp = CB_FIELD (z2);
+		ftemp->pic = cb_build_picture ("9(10)");
+		ftemp->flag_filler = 1;
+		ftemp->usage = CB_USAGE_DISPLAY;
+		ftemp->count++;
+		cb_validate_field (ftemp);
+		cb_emit (CB_BUILD_FUNCALL_2 ("cob_field_int_display", temp, z2));
 		return z1;
 	}
 	return temp;
@@ -3002,10 +3010,25 @@ get_value (cb_tree x)
 		return 255;
 	} else if (x == cb_null) {
 		return 0;
-	} else if (CB_TREE_CLASS (x) == CB_CLASS_NUMERIC) {
-		return cb_get_int (x) - 1;
+	} else {
+		enum cb_class cls = CB_TREE_CLASS (x);
+		if (cls == CB_CLASS_NUMERIC) {
+			return cb_get_int (x) - 1;
+		} else {
+			struct cb_literal* lit = CB_LITERAL (x);
+			if (cls == CB_CLASS_NATIONAL) {
+				/* actually would need to check BE/LE here to do correct calculation */
+				cob_u32_t i;
+				int ret = lit->data[0];
+				for (i = 1; i < lit->size; ++i) {
+					ret *= 256;
+					ret += lit->data[i];
+				}
+				return ret;
+			}
+			return lit->data[0];
+		}
 	}
-	return CB_LITERAL (x)->data[0];
 }
 
 static int
@@ -3445,6 +3468,7 @@ cb_validate_program_environment (struct cb_program *prog)
 void
 cb_build_debug_item (void)
 {
+	struct cb_field	*f;
 	cb_tree			l;
 	cb_tree			x;
 	cb_tree			lvl01_tree;
@@ -3471,95 +3495,96 @@ cb_build_debug_item (void)
 	l = cb_build_reference ("DEBUG-ITEM");
 	lvl01_tree = cb_build_field_tree (NULL, l, NULL, CB_STORAGE_WORKING,
 				 NULL, 1);
-	CB_FIELD (lvl01_tree)->values = CB_LIST_INIT (cb_space);
+	f = CB_FIELD (lvl01_tree);
+	f->values = CB_LIST_INIT (cb_space);
 	cb_debug_item = l;
 
 	l = cb_build_reference ("DEBUG-LINE");
-	x = cb_build_field_tree (NULL, l, CB_FIELD(lvl01_tree),
-				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = CB_PICTURE (cb_build_picture ("X(6)"));
-	cb_validate_field (CB_FIELD (x));
+	x = cb_build_field_tree (NULL, l, f, CB_STORAGE_WORKING, NULL, 3);
+	f = CB_FIELD (x);
+	f->pic = cb_build_picture ("X(6)");
+	cb_validate_field (f);
 	cb_debug_line = l;
 
 	l = cb_build_filler ();
-	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
-				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = CB_PICTURE (cb_build_picture ("X"));
-	CB_FIELD (x)->flag_filler = 1;
-	cb_validate_field (CB_FIELD (x));
+	x = cb_build_field_tree (NULL, l, f, CB_STORAGE_WORKING, NULL, 3);
+	f = CB_FIELD (x);
+	f->pic = cb_build_picture ("X");
+	f->flag_filler = 1;
+	cb_validate_field (f);
 
 	l = cb_build_reference ("DEBUG-NAME");
-	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
-				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = CB_PICTURE (cb_build_picture ("X(30)"));
-	cb_validate_field (CB_FIELD (x));
+	x = cb_build_field_tree (NULL, l, f, CB_STORAGE_WORKING, NULL, 3);
+	f = CB_FIELD (x);
+	f->pic = cb_build_picture ("X(30)");
+	cb_validate_field (f);
 	cb_debug_name = l;
 
 	l = cb_build_filler ();
-	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
-				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = CB_PICTURE (cb_build_picture ("X"));
-	CB_FIELD (x)->flag_filler = 1;
-	cb_validate_field (CB_FIELD (x));
+	x = cb_build_field_tree (NULL, l, f, CB_STORAGE_WORKING, NULL, 3);
+	f = CB_FIELD (x);
+	f->pic = cb_build_picture ("X");
+	f->flag_filler = 1;
+	cb_validate_field (f);
 
 	l = cb_build_reference ("DEBUG-SUB-1");
-	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
-				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = CB_PICTURE (cb_build_picture ("S9(4)"));
-	CB_FIELD (x)->flag_sign_leading = 1;
-	CB_FIELD (x)->flag_sign_separate = 1;
-	cb_validate_field (CB_FIELD (x));
+	x = cb_build_field_tree (NULL, l, f, CB_STORAGE_WORKING, NULL, 3);
+	f = CB_FIELD (x);
+	f->pic = cb_build_picture ("S9(4)");
+	f->flag_sign_leading = 1;
+	f->flag_sign_separate = 1;
+	cb_validate_field (f);
 	cb_debug_sub_1 = l;
 
 	l = cb_build_filler ();
-	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
-				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = CB_PICTURE (cb_build_picture ("X"));
-	CB_FIELD (x)->flag_filler = 1;
-	cb_validate_field (CB_FIELD (x));
+	x = cb_build_field_tree (NULL, l, f, CB_STORAGE_WORKING, NULL, 3);
+	f = CB_FIELD (x);
+	f->pic = cb_build_picture ("X");
+	f->flag_filler = 1;
+	cb_validate_field (f);
 
 	l = cb_build_reference ("DEBUG-SUB-2");
-	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
-				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = CB_PICTURE (cb_build_picture ("S9(4)"));
-	CB_FIELD (x)->flag_sign_leading = 1;
-	CB_FIELD (x)->flag_sign_separate = 1;
-	cb_validate_field (CB_FIELD (x));
+	x = cb_build_field_tree (NULL, l, f, CB_STORAGE_WORKING, NULL, 3);
+	f = CB_FIELD (x);
+	f->pic = cb_build_picture ("S9(4)");
+	f->flag_sign_leading = 1;
+	f->flag_sign_separate = 1;
+	cb_validate_field (f);
 	cb_debug_sub_2 = l;
 
 	l = cb_build_filler ();
-	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
-				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = CB_PICTURE (cb_build_picture ("X"));
-	CB_FIELD (x)->flag_filler = 1;
-	cb_validate_field (CB_FIELD (x));
+	x = cb_build_field_tree (NULL, l, f, CB_STORAGE_WORKING, NULL, 3);
+	f = CB_FIELD (x);
+	f->pic = cb_build_picture ("X");
+	f->flag_filler = 1;
+	cb_validate_field (f);
 
 	l = cb_build_reference ("DEBUG-SUB-3");
-	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
-				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = CB_PICTURE (cb_build_picture ("S9(4)"));
-	CB_FIELD (x)->flag_sign_leading = 1;
-	CB_FIELD (x)->flag_sign_separate = 1;
-	cb_validate_field (CB_FIELD (x));
+	x = cb_build_field_tree (NULL, l, f, CB_STORAGE_WORKING, NULL, 3);
+	f = CB_FIELD (x);
+	f->pic = cb_build_picture ("S9(4)");
+	f->flag_sign_leading = 1;
+	f->flag_sign_separate = 1;
+	cb_validate_field (f);
 	cb_debug_sub_3 = l;
 
 	l = cb_build_filler ();
-	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
-				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = CB_PICTURE (cb_build_picture ("X"));
-	CB_FIELD (x)->flag_filler = 1;
-	cb_validate_field (CB_FIELD (x));
+	x = cb_build_field_tree (NULL, l, f, CB_STORAGE_WORKING, NULL, 3);
+	f = CB_FIELD (x);
+	f->pic = cb_build_picture ("X");
+	f->flag_filler = 1;
+	cb_validate_field (f);
 
 	l = cb_build_reference ("DEBUG-CONTENTS");
-	x = cb_build_field_tree (NULL, l, CB_FIELD(x),
-				 CB_STORAGE_WORKING, NULL, 3);
-	CB_FIELD (x)->pic = CB_PICTURE (
-		cb_build_picture ("X(" CB_XSTRINGIFY(DFLT_DEBUG_CONTENTS_SIZE) ")"));
-	cb_validate_field (CB_FIELD (x));
+	x = cb_build_field_tree (NULL, l, f, CB_STORAGE_WORKING, NULL, 3);
+	f = CB_FIELD (x);
+	f->pic = cb_build_picture ("X(" CB_XSTRINGIFY(DFLT_DEBUG_CONTENTS_SIZE) ")");
+	cb_validate_field (f);
 	cb_debug_contents = l;
 
-	cb_validate_field (CB_FIELD (lvl01_tree));
-	CB_FIELD_ADD (current_program->working_storage, CB_FIELD (lvl01_tree));
+	f = CB_FIELD (lvl01_tree);
+	cb_validate_field (f);
+	CB_FIELD_ADD (current_program->working_storage, f);
 }
 
 static void
@@ -3939,7 +3964,7 @@ cb_validate_program_data (struct cb_program *prog)
 		if (x == cb_error_node) {
 			p = CB_FIELD (cb_build_field (l));
 			p->usage = CB_USAGE_DISPLAY;
-			p->pic = CB_PICTURE (cb_build_picture ("9(4)"));
+			p->pic = cb_build_picture ("9(4)");
 			cb_validate_field (p);
 			p->flag_no_init = 1;
 			/* Do not initialize/bump ref count here
@@ -8923,10 +8948,12 @@ cb_emit_initialize (cb_tree vars, cb_tree fillinit, cb_tree value,
 		 && CB_REFERENCE (x)->subs == NULL
 		 && CB_REFERENCE (x)->length == NULL) {
 			cb_tree		temp;
+			struct cb_field	*f;
 			temp = cb_build_index (cb_build_filler (), NULL, 0, NULL);
-			CB_FIELD (cb_ref (temp))->usage = CB_USAGE_LENGTH;
-			CB_FIELD (cb_ref (temp))->count++;
-			CB_FIELD (cb_ref (temp))->pic->have_sign = 0;	/* LENGTH is UNSIGNED */
+			f = CB_FIELD (cb_ref (temp));
+			f->usage = CB_USAGE_LENGTH;
+			f->count++;
+			f->pic->have_sign = 0;	/* LENGTH is UNSIGNED */
 			cb_emit (cb_build_assign (temp, cb_build_length_1 (x)));
 			CB_REFERENCE (x)->length = temp;
 		}
@@ -11231,7 +11258,7 @@ cb_emit_move (cb_tree src, cb_tree dsts)
 		if (CB_LITERAL_P (x) || CB_CONST_P (x) ||
 			(r && (CB_LABEL_P (r->value) || CB_PROTOTYPE_P (r->value)))) {
 			cb_error_x (CB_TREE (current_statement),
-				    _("invalid MOVE target: %s"), cb_name_errmsg (x));
+				    _("invalid MOVE target: %s"), cb_name (x));
 			continue;
 		}
 		if (!tempval) {

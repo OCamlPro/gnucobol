@@ -176,8 +176,8 @@
 #endif
 
 /* Convert between a digit and an integer (e.g., '0' <-> 0) */
-#define COB_D2I(x)		((x) - '0')
-#define COB_I2D(x)		(char) ((x) + '0')
+#define COB_D2I(x)		((x) & 0x0F)
+#define COB_I2D(x)		(char) ('0' + (x))
 
 #define	COB_MODULE_PTR		cobglobptr->cob_current_module
 #define	COB_TERM_BUFF		cobglobptr->cob_term_buff
@@ -303,6 +303,9 @@ typedef struct __cob_settings {
 
 	char		*cob_dump_filename;	/* Place to write dump of variables */
 	int		cob_dump_width;		/* Max line width for dump */
+	unsigned int	cob_core_on_error;		/* signal handling and possible raise of SIGABRT
+											   / creation of coredumps on runtime errors */
+	char		*cob_core_filename;	/* filename for coredump creation */
 } cob_settings;
 
 
@@ -404,6 +407,7 @@ COB_HIDDEN void		cob_fcd_file_sync	(cob_file*, char*);
 COB_HIDDEN void		free_extfh_fcd		(void);
 
 COB_HIDDEN void		cob_exit_screen		(void);
+COB_HIDDEN void		cob_exit_screen_from_signal	(int);
 COB_HIDDEN void		cob_exit_numeric	(void);
 COB_HIDDEN void		cob_exit_fileio_msg_only	(void);
 COB_HIDDEN void		cob_exit_fileio		(void);
@@ -450,6 +454,8 @@ COB_HIDDEN FILE			*cob_get_dump_file	(void);
 
 COB_HIDDEN char		*cob_strcat		(char*, char*, int);
 COB_HIDDEN char		*cob_strjoin		(char**, int, char*);
+
+COB_HIDDEN void		cob_runtime_warning_ss (const char *, const char *);
 
 COB_HIDDEN void	cob_set_field_to_uint	(cob_field *, const cob_u32_t);
 COB_EXPIMP int cob_ncase_cmp (char *, const char *, unsigned );

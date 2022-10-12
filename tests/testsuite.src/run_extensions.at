@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2021 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2022 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 ## Ron Norman
 ##
@@ -2749,10 +2749,11 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE -ffilename-mapping prog.cob], [0], [], [])
-AT_CHECK([COB_FILE_PATH=".." $COBCRUN_DIRECT ./prog], [0], [], [])
-AT_CHECK([test -f "../FILENAMEX" && rm -f "../FILENAMEX"], [0], [], [])
-AT_CHECK([COB_FILE_PATH="../" $COBCRUN_DIRECT ./prog], [0], [], [])
-AT_CHECK([test -f "../FILENAMEX" && rm -f "../FILENAMEX"], [0], [], [])
+AT_CHECK([rm -rf "tstdir" && mkdir "tstdir"], [0], [], [])
+AT_CHECK([COB_FILE_PATH="tstdir" $COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CHECK([test -f "tstdir/FILENAMEX" && rm -f "tstdir/FILENAMEX"], [0], [], [])
+AT_CHECK([COB_FILE_PATH="tstdir/" $COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CHECK([test -f "tstdir/FILENAMEX"], [0], [], [])
 
 # FIXME: on OPEN we should also output the full filename (if any) leading to the error
 AT_CHECK([COB_FILE_PATH="./nosubhere" $COBCRUN_DIRECT ./prog], [1], [],
@@ -3764,10 +3765,10 @@ AT_CLEANUP
 
 
 AT_SETUP([REDEFINES: non-referenced ambiguous item])
-AT_KEYWORDS([extensions redefines])
+AT_KEYWORDS([extensions redefines mf])
 
 # bad extension, supported for compatibility to at least MicroFocus
-# the redefines always applies to the item defined before 
+# the redefines always applies to the item defined before
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -5016,12 +5017,12 @@ AT_DATA([prog.cob], [
            CALL "CBL_OC_HOSTED" USING ARGV "argv"
            CALL "CBL_GC_HOSTED" USING CELL "cell"
            CALL "CBL_GC_HOSTED" USING ERRPTR "errno"
-           CALL "CBL_GC_HOSTED" USING ARGC "arg" 
+           CALL "CBL_GC_HOSTED" USING ARGC "arg"
            CALL "CBL_GC_HOSTED" USING NULL "argc"
            SET ADDRESS OF ERRNO TO ERRPTR
-           CALL "CBL_GC_HOSTED" USING TZNAME "tzname" 
-           CALL "CBL_GC_HOSTED" USING TIMEZONE "timezone" 
-           CALL "CBL_GC_HOSTED" USING DAYLIGHT "daylight" 
+           CALL "CBL_GC_HOSTED" USING TZNAME "tzname"
+           CALL "CBL_GC_HOSTED" USING TIMEZONE "timezone"
+           CALL "CBL_GC_HOSTED" USING DAYLIGHT "daylight"
 
       *> prog.cob must be compiled with same C runtime as libcob to match...
            IF ERRPTR NOT EQUAL ADDRESS OF CERRNO
@@ -5047,7 +5048,7 @@ AT_DATA([prog.cob], [
            IF ARGV EQUAL NULL THEN
               DISPLAY "BAD ARGV"
            END-IF
-           
+
            IF CELL LESS THAN 0 OR GREATER THAN 8 THEN
               DISPLAY "UNK CELL " CELL
            END-IF
@@ -5190,11 +5191,122 @@ tests finished
 AT_CLEANUP
 
 
+AT_SETUP([System routine CBL_EXIT_PROC])
+AT_KEYWORDS([extensions])
+
+# tests that exit handlers work including multiple error handlers
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. DemoExtProc IS RECURSIVE.
+       ENVIRONMENT DIVISION.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       77  Ext-Proc-Address            USAGE PROCEDURE-POINTER.
+       77  install-flag                USAGE BINARY-CHAR.
+           88  install-default         VALUE 0.
+           88  uninstall               VALUE 1.
+           88  query-priority          VALUE 2.
+           88  install-priority        VALUE 3.
+       01  exit-params.
+           02  proc-addrs              USAGE PROCEDURE-POINTER.
+           02  ppriority               USAGE BINARY-CHAR.
+       PROCEDURE DIVISION.
+       S1.
+           DISPLAY 'Program is starting'
+      *>   Do this for the ACU test later
+      *>   CALL 'CBL_EXIT_PROC' USING 0, "ExtProc-internal"
+           SET Ext-Proc-Address TO ENTRY 'ExtProc'
+      *>   GC "simple variant"
+           CALL 'CBL_EXIT_PROC' USING 0, Ext-Proc-Address
+      *>   Support for MF variant,
+      *>   storing but otherwise ignoring the priority for now
+           SET install-default  TO TRUE
+           SET proc-addrs       TO ENTRY 'ExtProc-internal'
+           CALL 'CBL_EXIT_PROC' USING install-flag, exit-params
+      *>   Ensure subsequent CALLs with the same one are seen as error (MF!)
+           SET proc-addrs       TO ENTRY 'ExtProc'
+           CALL 'CBL_EXIT_PROC' USING install-flag, exit-params
+           IF RETURN-CODE = 0
+              DISPLAY 'Unexpected RETURN-CODE with subsequent call '
+                       RETURN-CODE.
+           SET install-priority TO TRUE
+           MOVE 127             TO ppriority
+           CALL 'CBL_EXIT_PROC' USING install-flag, exit-params
+           IF RETURN-CODE NOT = 0
+              DISPLAY 'Unexpected RETURN-CODE with subsequent call, '
+                      'different priority ' RETURN-CODE.
+           SET proc-addrs       TO ENTRY 'ExtProc-internal2'
+           CALL 'CBL_EXIT_PROC' USING install-flag, exit-params
+           IF RETURN-CODE NOT = 0
+              DISPLAY 'Unexpected RETURN-CODE with new call '
+                       RETURN-CODE.
+      *>
+           DISPLAY 'Program is stopping'
+           STOP RUN
+           .
+       ENTRY 'ExtProc-internal2'.
+           DISPLAY 'Exit procedure from ' FUNCTION MODULE-ID ()
+           SET Ext-Proc-Address TO ENTRY 'ExtProc'
+           SET query-priority TO TRUE
+           MOVE 0             TO ppriority
+           CALL 'CBL_EXIT_PROC' USING install-flag, exit-params
+           IF RETURN-CODE NOT = ZERO
+              DISPLAY 'Unexpected RETURN-CODE for query '
+                       RETURN-CODE
+           ELSE IF ppriority NOT = 127
+              DISPLAY 'Unexpected priority external ' ppriority.
+           SET proc-addrs       TO ENTRY 'ExtProc-internal'
+           CALL 'CBL_EXIT_PROC' USING install-flag, exit-params
+           IF RETURN-CODE NOT = ZERO
+              DISPLAY 'Unexpected RETURN-CODE for query '
+                       RETURN-CODE
+           ELSE IF ppriority NOT = 64
+              DISPLAY 'Unexpected priority internal ' ppriority.
+           SET uninstall      TO TRUE
+           CALL 'CBL_EXIT_PROC' USING install-flag, exit-params
+           IF RETURN-CODE NOT = 0
+              DISPLAY 'Unexpected RETURN-CODE after uninstall '
+                       RETURN-CODE.
+           CALL 'CBL_EXIT_PROC' USING install-flag, exit-params
+           IF RETURN-CODE = 0
+              DISPLAY 'Unexpected RETURN-CODE after double uninstall '
+                       RETURN-CODE.
+           MOVE 0 TO RETURN-CODE
+           GOBACK
+           .
+       ENTRY 'ExtProc-internal'.
+           DISPLAY 'should have been removed'
+           GOBACK
+           .
+       END PROGRAM DemoExtProc.
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. ExtProc.
+       PROCEDURE DIVISION.
+       000-Main.
+           DISPLAY 'Exit procedure from ' FUNCTION MODULE-ID ()
+           EXIT PROGRAM
+           .
+       END PROGRAM ExtProc.
+])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[Program is starting
+Program is stopping
+Exit procedure from DemoExtProc
+Exit procedure from ExtProc
+], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([System routine CBL_ERROR_PROC (1)])
 AT_KEYWORDS([extensions exceptions error
 EXCEPTION-LOCATION EXCEPTION-STATEMENT EXCEPTION-FILE EXCEPTION-STATUS])
 
-# tests that error handlers work
+# tests that error handlers work (later for ACU: test for re-ordered)
+# including multiple error handlers
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -5209,9 +5321,15 @@ AT_DATA([prog.cob], [
        PROCEDURE DIVISION.
        S1.
            DISPLAY 'Program is starting'
+      *>   Do this for the ACU test, where second call moves top front
+      *>   SET Err-Proc-Address TO ENTRY 'ErrProc-internal'
+      *>   CALL 'CBL_ERROR_PROC' USING 0, Err-Proc-Address
            SET Err-Proc-Address TO ENTRY 'ErrProc'
            CALL 'CBL_ERROR_PROC' USING 0, Err-Proc-Address
            SET Err-Proc-Address TO ENTRY 'ErrProc-internal'
+           CALL 'CBL_ERROR_PROC' USING 0, Err-Proc-Address
+      *>   Ensure subsequent CALLs with the same one are ignored (MF!)
+           SET Err-Proc-Address TO ENTRY 'ErrProc'
            CALL 'CBL_ERROR_PROC' USING 0, Err-Proc-Address
            SET Err-Proc-Address TO NULL
            CALL 'Tilt' *> THIS DOESN'T EXIST!!!!
@@ -5219,14 +5337,14 @@ AT_DATA([prog.cob], [
            STOP RUN
            .
        ENTRY 'ErrProc-internal' USING Err-Message-From-Runtime.
-           DISPLAY 'Error (interal): ' FUNCTION EXCEPTION-LOCATION  '-'
-           DISPLAY '                 ' FUNCTION EXCEPTION-STATEMENT '-'
-           DISPLAY '                 ' FUNCTION EXCEPTION-STATUS    '-'
+           DISPLAY 'Error (internal): ' FUNCTION EXCEPTION-LOCATION  '-'
+           DISPLAY '                  ' FUNCTION EXCEPTION-STATEMENT '-'
+           DISPLAY '                  ' FUNCTION EXCEPTION-STATUS    '-'
            *> NOTE: the error message is *EXPLICIT* specified to end with x'00'
            MOVE 0 TO Err-Message-Len
            INSPECT Err-Message-From-Runtime
               TALLYING Err-Message-Len FOR CHARACTERS BEFORE x'00'
-           DISPLAY 'Error-Message:   ' Err-Message-From-Runtime
+           DISPLAY 'Error-Message:    ' Err-Message-From-Runtime
                                        (1:Err-Message-Len)
            DISPLAY '-*- Returning to Next Error Routine -*-'
            MOVE    1         TO RETURN-CODE
@@ -5250,26 +5368,26 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [1],
 [Program is starting
-Error (interal): DemoErrProc; S1; 19-
-                 CALL                           -
-                 EC-PROGRAM-NOT-FOUND           -
-Error-Message:   prog.cob:19: module 'Tilt' not found
+Error (internal): DemoErrProc; S1; 25-
+                  CALL                           -
+                  EC-PROGRAM-NOT-FOUND           -
+Error-Message:    prog.cob:25: module 'Tilt' not found
 -*- Returning to Next Error Routine -*-
-Error: DemoErrProc; S1; 19-
+Error: DemoErrProc; S1; 25-
        CALL                           -
        EC-PROGRAM-NOT-FOUND           -
 -*- Returning to Standard Error Routine -*-
 ],
-[libcob: prog.cob:19: error: module 'Tilt' not found
+[libcob: prog.cob:25: error: module 'Tilt' not found
 ])
 
 AT_CHECK([$COBC -x -o prog_noloc prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog_noloc], [1],
 [Program is starting
-Error (interal): DemoErrProc; ; 0-
-                                                -
-                 EC-PROGRAM-NOT-FOUND           -
-Error-Message:   module 'Tilt' not found
+Error (internal): DemoErrProc; ; 0-
+                                                 -
+                  EC-PROGRAM-NOT-FOUND           -
+Error-Message:    module 'Tilt' not found
 -*- Returning to Next Error Routine -*-
 Error: DemoErrProc; ; 0-
                                       -

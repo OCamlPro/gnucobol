@@ -2447,19 +2447,20 @@ output_call_parameter_stack_pointers (struct cb_program *prog)
 static void
 output_frame_stack (struct cb_program *prog)
 {
+	const char *frame_type = (cb_flag_stack_extended) ? "cob_frame_ext" : "cob_frame";
 	output_local ("\n/* Perform frame stack */\n");
 	if (cb_perform_osvs && current_prog->prog_type == COB_MODULE_TYPE_PROGRAM) {
-		output_local ("struct cob_frame\t*temp_index;\n");
+		output_local ("struct %s\t*temp_index;\n", frame_type);
 	}
 	if (cb_flag_stack_check) {
-		output_local ("struct cob_frame\t*frame_overflow;\n");
+		output_local ("struct %s\t*frame_overflow;\n", frame_type);
 	}
-	output_local ("struct cob_frame\t*frame_ptr;\n");
+	output_local ("struct %s\t*frame_ptr;\n", frame_type);
 	if (cb_flag_stack_on_heap || prog->flag_recursive) {
-		output_local ("struct cob_frame\t*frame_stack;\n\n");
+		output_local ("struct %s\t*frame_stack;\n\n", frame_type);
 	} else {
-		output_local ("struct cob_frame\tframe_stack[%d];\n\n",
-			      cb_stack_size);
+		output_local ("struct %s\tframe_stack[%d];\n\n",
+			      frame_type, cb_stack_size);
 	}
 }
 
@@ -7772,6 +7773,13 @@ output_perform_call (struct cb_label *lb, struct cb_label *le)
 
 	skip_line_num = 0;
 	output_line ("frame_ptr++;");
+	if (cb_flag_stack_extended) {
+		/* CHECKME: Is there a reference that provides the source position? */
+		output_line ("frame_ptr->module_stmt = module->module_stmt;");
+		output_line ("frame_ptr->section_name = module->section_name;");
+		output_line ("frame_ptr->paragraph_name = module->paragraph_name;");
+		output_line ("module->frame_ptr = frame_ptr;");
+	}
 	if (cb_flag_stack_check) {
 		output_line ("if (frame_ptr == frame_overflow)");
 		output_line ("\tcob_fatal_error (COB_FERROR_STACK);");
@@ -7797,6 +7805,12 @@ output_perform_call (struct cb_label *lb, struct cb_label *le)
 		output_line ("%s%d:", CB_PREFIX_LABEL, cb_id);
 	}
 	output_line ("frame_ptr--;");
+	if (cb_flag_stack_extended) {
+		output_line ("module->module_stmt = module->frame_ptr->module_stmt;");
+		output_line ("module->section_name = module->frame_ptr->section_name;");
+		output_line ("module->paragraph_name = module->frame_ptr->paragraph_name;");
+		output_line ("module->frame_ptr = frame_ptr;");
+	}
 	cb_id++;
 
 	if (current_prog->flag_segments && last_section &&
@@ -12448,28 +12462,28 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 
 	output_line ("/* Set frame stack pointer */");
 	if (cb_flag_stack_on_heap || prog->flag_recursive) {
+		const char *frame_type = (cb_flag_stack_extended) ? "cob_frame_ext" : "cob_frame";
 		if (prog->flag_recursive && cb_stack_size == 255) {
 			i = 63;
 		} else {
 			i = cb_stack_size;
 		}
-		output_line ("frame_stack = cob_malloc (%dU * sizeof(struct cob_frame));",
-			     i);
+		output_line ("frame_stack = cob_malloc (%dU * sizeof(struct %s));",
+			i, frame_type);
 		output_line ("frame_ptr = frame_stack;");
-		if (cb_flag_stack_check) {
-			output_line ("frame_overflow = frame_ptr + %d - 1;",
-				     i);
-		}
 	} else {
 		output_line ("frame_ptr = frame_stack;");
 		output_line ("frame_ptr->perform_through = 0;");
 		if (cb_flag_computed_goto) {
 			output_line ("frame_ptr->return_address_ptr = &&P_cgerror;");
 		}
-		if (cb_flag_stack_check) {
-			output_line ("frame_overflow = frame_ptr + %d - 1;",
-				     cb_stack_size);
-		}
+		i = cb_stack_size;
+	}
+	if (cb_flag_stack_check) {
+		output_line ("frame_overflow = frame_ptr + %d - 1;", i);
+	}
+	if (cb_flag_stack_extended) {
+		output_line ("module->frame_ptr = frame_stack;");
 	}
 
 	/* To Avoid C compiler warning: -Wunused-but-set-variable */
@@ -12751,44 +12765,58 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	}
 
 	/* Entry dispatch */
+	output_line ("/* Entry dispatch */");
+	if (cb_flag_stack_extended) {
+		/* entry marker = first frameptr is the one with
+		   an empty (instead of NULL) section name */;
+		output_line ("module->frame_ptr->section_name = \"\";");
+	}
 	if (cb_list_length (prog->entry_list) > 1) {
-		output_line ("/* Entry dispatch */");
 		output_line ("if (module->next == NULL)");
 		output_line ("  cob_glob_ptr->cob_call_from_c = 1;");
 		output_newline ();
 		output_line ("switch (entry)");
 		output_block_open ();
 		for (i = 0, l = prog->entry_list; l; l = CB_CHAIN (l), i++) {
+			cb_tree lx = CB_PURPOSE (l);
 			using_list = CB_VALUE (CB_VALUE (l));
 			if (using_list) {
 				output_line ("case %d: /* Initialize %d parameters for '%s' */",i,
 						cb_list_length(using_list),CB_LABEL (CB_PURPOSE (l))->name);
-				output_indent_level += 4;
-				output_line ("module->module_name = \"%s\";", CB_LABEL (CB_PURPOSE (l))->name);
+				output_indent_level += 2;
 				for (j=0,l2 = using_list; l2; l2 = CB_CHAIN (l2), j++) {
 					pickup_param (l2, j);
 				}
-				output_indent_level -= 4;
+				output_indent_level -= 2;
 			} else {
 				output_line ("case %d: /* No parameters for '%s' */",i,
 						CB_LABEL (CB_PURPOSE (l))->name);
-				output_indent_level += 4;
-				output_line ("module->module_name = \"%s\";", CB_LABEL (CB_PURPOSE (l))->name);
-				output_indent_level -= 4;
 			}
-			output_line ("cob_glob_ptr->cob_call_params = %u;", 0);
+			if (cb_flag_stack_extended) {
+				output_line ("  module->frame_ptr->paragraph_name = \"%s\";",
+					CB_LABEL (lx)->orig_name);
+				output_line ("  module->frame_ptr->module_stmt = 0x%08X;",
+					COB_SET_LINE_FILE (lx->source_line, lookup_source (lx->source_file)));
+			}
+			output_line ("  cob_glob_ptr->cob_call_params = %u;", 0);
 			output_line ("  goto %s%d;", CB_PREFIX_LABEL,
-				     CB_LABEL (CB_PURPOSE (l))->id);
+				     CB_LABEL (lx)->id);
 		}
 		output_block_close ();
 		output_line ("/* This should never be reached */");
 		output_line ("cob_fatal_error (COB_FERROR_MODULE);");
 	} else {
-		l = prog->entry_list;
-		name_hash = cob_get_name_hash (CB_LABEL (CB_PURPOSE (l))->name);
+		l = CB_PURPOSE (prog->entry_list);
+		if (cb_flag_stack_extended) {
+			output_line ("module->frame_ptr->paragraph_name = \"%s\";",
+				CB_LABEL (l)->orig_name);
+			output_line ("module->frame_ptr->module_stmt = 0x%08X;",
+				COB_SET_LINE_FILE (l->source_line, lookup_source (l->source_file)));
+		}
+		name_hash = cob_get_name_hash (CB_LABEL (l)->name);
 		output_line ("cob_glob_ptr->cob_call_params = %u;", 0);
 		output_line ("goto %s%d;", CB_PREFIX_LABEL,
-			     CB_LABEL (CB_PURPOSE (l))->id);
+			     CB_LABEL (l)->id);
 	}
 	output_newline ();
 
@@ -13201,7 +13229,10 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	for (l = prog->file_list; l; l = CB_CHAIN (l)) {
 		fl = CB_FILE (CB_VALUE (l));
 		if (fl->organization != COB_ORG_SORT) {
-			output_line ("cob_close (%s%s, NULL, COB_CLOSE_NORMAL, 1);",
+			/* CHECKME: Shouldn't we raise a runtime warning when still open? */
+			output_line ("if (%s%s->open_mode != COB_OPEN_CLOSED)",
+					CB_PREFIX_FILE, fl->cname);
+			output_line ("\tcob_close (%s%s, NULL, COB_CLOSE_NORMAL, 1);",
 					CB_PREFIX_FILE, fl->cname);
 			if (!fl->flag_external) {
 				output_line ("cob_file_destroy (&%s%s);",

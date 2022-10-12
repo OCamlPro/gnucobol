@@ -3359,7 +3359,7 @@ prog.cob:15: error: significand of 0 must be positive
 prog.cob:15: error: exponent of 0 must be positive
 prog.cob:16: error: invalid floating-point literal: '1.0E00003'
 prog.cob:16: error: exponent has more than 4 digits
-prog.cob:17: error: invalid floating-point literal: '.1234567890123456789012345678901234...'
+prog.cob:17: error: invalid floating-point literal: '.123456789012345678901234567890123 ...'
 prog.cob:17: error: significand has more than 36 digits
 prog.cob:19: error: invalid floating-point literal: '0.0E3'
 prog.cob:19: error: exponent of 0 must be 0
@@ -3380,7 +3380,7 @@ prog2.cob:19: error: significand of 0 must be positive
 prog2.cob:19: error: exponent of 0 must be positive
 prog2.cob:20: error: invalid floating-point literal: '1,0E00003'
 prog2.cob:20: error: exponent has more than 4 digits
-prog2.cob:21: error: invalid floating-point literal: ',1234567890123456789012345678901234...'
+prog2.cob:21: error: invalid floating-point literal: ',123456789012345678901234567890123 ...'
 prog2.cob:21: error: significand has more than 36 digits
 prog2.cob:23: error: invalid floating-point literal: '0,0E3'
 prog2.cob:23: error: exponent of 0 must be 0
@@ -3518,7 +3518,7 @@ AT_CHECK([$COMPILE_ONLY -std=mf prog.cob], [1], [],
 [prog.cob:9: error: invalid B literal: '23'
 prog.cob:9: error: literal contains invalid character '2'
 prog.cob:9: error: literal contains invalid character '3'
-prog.cob:10: error: invalid B literal: '11111111111111111111111111111111111...'
+prog.cob:10: error: invalid B literal: '1111111111111111111111111111111111 ...'
 prog.cob:10: error: literal length 152 exceeds 64 characters
 ])
 
@@ -3548,7 +3548,7 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:6: error: invalid BX literal: '0123456789ABCDEF0123456789ABCDEF012...'
+[prog.cob:6: error: invalid BX literal: '0123456789ABCDEF0123456789ABCDEF01 ...'
 prog.cob:6: error: literal length 192 exceeds 64 characters
 ])
 
@@ -3619,7 +3619,7 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY -std=acu prog.cob], [1], [],
-[prog.cob:11: error: invalid B# literal: '11111111111111111111111111111111111...'
+[prog.cob:11: error: invalid B# literal: '1111111111111111111111111111111111 ...'
 prog.cob:11: error: literal length 65 exceeds 64 characters
 prog.cob:12: error: invalid O# literal: '11111111111111111111111'
 prog.cob:12: error: literal length 23 exceeds 22 characters
@@ -6636,11 +6636,17 @@ AT_DATA([prog.cob], [
        $SET sourceformat'mis-matched"
 ])
 
+# FIXME: something is broken with the '"#OPTION here,
+#        that should be generated as #OPTION 'mis-matched"
+#        and in a second step not be generated at all
+
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:6: error: invalid SOURCEFORMAT directive option 'hi!'
 prog.cob:7: error: invalid SOURCEFORMAT directive option ''
 prog.cob:8: error: syntax error, unexpected Variable, expecting Literal
-prog.cob:8: error: invalid SOURCEFORMAT directive option '(null)'
+prog.cob:8: error: invalid SOURCEFORMAT directive option
+prog.cob:8: error: invalid literal: '"#OPTION mis-matched ...'
+prog.cob:8: error: missing terminating ' character
 prog.cob:8: error: PROGRAM-ID header missing
 prog.cob:8: error: PROCEDURE DIVISION header missing
 prog.cob:8: error: syntax error, unexpected Literal
@@ -7618,11 +7624,30 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:5: error: invalid MOVE target: literal ' 1  c d e f g h i j k l m n 0 q. 2 ...'
+[prog.cob:5: error: invalid MOVE target: literal " 1  c d e f g h i j k l m n 0 q. 2 ..."
 ])
-# TODO recheck merge state later:
-#[prog.cob:5: error: invalid MOVE target: " 1  c d e f g h i j k l m n 0 q. 2 ..."
-#])
+
+AT_CLEANUP
+
+
+AT_SETUP([literal missing terminating character])
+AT_KEYWORDS([misc literals terminator])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      tutorial.
+       PROCEDURE DIVISION.
+           DISPLAY ' 1  c d e f g h i j k l m n 0 q.
+      -            ' 2  C D E F G H I J K L M N 0 Q.
+])
+
+# FIXME: we should move this from scanner to pplex to preserve the spaces
+# [prog.cob:5: error: invalid literal: ' 1  c d e f g h i j k l m n 0 q. ...'
+AT_CHECK([$COMPILE_ONLY -w prog.cob], [1], [],
+[prog.cob:5: error: invalid literal: ' 1 c d e f g h i j k l m n 0 q. 2  ...'
+prog.cob:5: error: missing terminating ' character
+prog.cob:5: error: syntax error, unexpected end of file
+])
 
 AT_CLEANUP
 

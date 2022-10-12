@@ -1,6 +1,7 @@
 /*
-   Copyright (C) 2003-2012, 2014-2021 Free Software Foundation, Inc.
-   Written by Keisuke Nishida, Roger While, Simon Sobisch
+   Copyright (C) 2003-2012, 2014-2022 Free Software Foundation, Inc.
+   Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
+   Edward Hart
 
    This file is part of GnuCOBOL.
 
@@ -114,17 +115,15 @@ CB_FLAG (cb_flag_alt_ebcdic, 0, "alternate-ebcdic",
 CB_FLAG (cb_flag_extra_brace, 0, "extra-brace",
 	_("  -fextra-brace         generate extra braces in C source"))
 
-CB_FLAG (cb_flag_c_line_directives, 0, "gen-c-line-directives",
-	_("  -fgen-c-line-directives\tgenerate source location directives in C code"))
-
-CB_FLAG (cb_flag_c_labels, 0, "gen-c-labels",
-	_("  -fgen-c-labels       generate extra labels in C sources"))
-
 CB_FLAG (cb_flag_correct_numeric, 0, "correct-numeric",
 	_("  -fcorrect-numeric     attempt correction of invalid numeric display items"))
 
 CB_FLAG (cb_flag_stack_on_heap, 0, "stack-on-heap",
 	_("  -fstack-on-heap       PERFORM stack allocated on heap"))
+
+CB_FLAG (cb_flag_stack_extended, 1, "stack-extended",
+	_("  -fstack-extended      store origin of entrypoints and PERFORM\n"
+	  "                        * turned on by -debug/-dump"))
 
 CB_FLAG_ON (cb_flag_fast_math, 0, "fast-math",
 	_("  -ffast-math           Disables emitting faster arithmetic logic"))
@@ -205,6 +204,12 @@ CB_FLAG (cb_flag_static_call, 1, "static-call",
 CB_FLAG_ON (cb_flag_c_decl_for_static_call, 1, "gen-c-decl-static-call",
 	_("  -fno-gen-c-decl-static-call\tdisable generation of C function declations\n"
 	  "                        for subroutines with static CALL"))
+
+CB_FLAG (cb_flag_c_line_directives, 0, "gen-c-line-directives",
+	_("  -fgen-c-line-directives\tgenerate source location directives in C code"))
+
+CB_FLAG (cb_flag_c_labels, 0, "gen-c-labels",
+	_("  -fgen-c-labels       generate extra labels in C sources"))
 
 CB_FLAG (cb_mf_files, 1, "mf-files",
 	 _("  -fmf-files            Sequential & Relative files will match Micro Focus format"))

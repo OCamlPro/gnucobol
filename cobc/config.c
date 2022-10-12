@@ -270,7 +270,6 @@ static int
 cb_load_conf_file (const char *conf_file, const enum cb_include_type include_type)
 {
 	FILE	*fp;
-	char	buff[COB_SMALL_BUFF];
 	char	filename[COB_NORMAL_BUFF];
 	struct	include_list	*c, *cc;
 	int	i, ret;
@@ -287,13 +286,17 @@ cb_load_conf_file (const char *conf_file, const enum cb_include_type include_typ
 			}
 			filename[0] = 0;
 			if (c && c->name) {
-				strncpy (buff, conf_includes->name, (size_t)COB_SMALL_MAX);
-				buff[COB_SMALL_MAX] = 0;
-				for (i = (int)strlen (buff); i != 0 && buff[i] != SLASH_CHAR; i--);
-				if (i != 0) {
-					buff[i] = 0;
-					snprintf (filename, (size_t)COB_NORMAL_MAX, "%s%c%s", buff, SLASH_CHAR, conf_file);
-					filename[COB_NORMAL_MAX] = 0;
+				const size_t conf_file_namelen = strlen (conf_file);
+				/* check for path separator in include name */
+				for (i = (int)strlen (conf_includes->name);
+					i != 0 && conf_includes->name[i] != SLASH_CHAR;
+					i--);
+
+				/* if there is an actuall path and it isn't too long,
+				   then prefix it to get the filename */
+				if (i != 0 && i < sizeof (filename) - conf_file_namelen - 2) {
+					memcpy (filename, conf_includes->name, i); /* copy with separator */
+					memcpy (filename + i, conf_file, conf_file_namelen + 1); /* copy with trailing NULL */
 					if (access (filename, F_OK) == 0) {	/* and prefixed file exist */
 						conf_file = filename;		/* Prefix last directory */
 					} else {
@@ -303,9 +306,10 @@ cb_load_conf_file (const char *conf_file, const enum cb_include_type include_typ
 			}
 			if (filename[0] == 0) {
 				/* check for COB_CONFIG_DIR (use default if not in environment) */
-				snprintf (filename, (size_t)COB_NORMAL_MAX, "%s%c%s", cob_config_dir, SLASH_CHAR, conf_file);
-				filename[COB_NORMAL_MAX] = 0;
-				if (access (filename, F_OK) == 0) {	/* and prefixed file exist */
+				const int size = snprintf (filename, (size_t)COB_NORMAL_MAX,
+					"%s%c%s", cob_config_dir, SLASH_CHAR, conf_file);
+				if (size < COB_NORMAL_MAX	/* no overflow - full name available */
+				 && access (filename, F_OK) == 0) {	/* and prefixed file exist */
 					conf_file = filename;		/* Prefix COB_CONFIG_DIR */
 				}
 			}
@@ -489,6 +493,8 @@ cb_load_words (void)
 	return ret;
 }
 
+/* set configuration entry 'buff' with 'fname' and 'line' used
+   for error output */
 int
 cb_config_entry (char *buff, const char *fname, const int line)
 {
@@ -590,7 +596,11 @@ cb_config_entry (char *buff, const char *fname, const int line)
 			/* Include another conf file */
 			s = cob_expand_env_string ((char *)val);
 			cobc_main_free ((void *) val);
-			strncpy (buff, s, COB_SMALL_MAX);
+			if (strlen (s) < COB_SMALL_MAX) {
+				strcpy (buff, s);
+			} else {
+				/* otherwise leave unchanged -> likely better to raise a message */
+			}
 			/* special case: use cob_free (libcob) here as the memory
 			   was allocated in cob_expand_env_string -> libcob */
 			cob_free (s);

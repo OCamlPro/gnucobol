@@ -320,11 +320,12 @@ bdb_err_event (DB_ENV *env, u_int32_t event, void *info)
 	default: msg = "unknown"; break;
 	}
 	cob_runtime_error (_("BDB (%s), error: %d %s"), "fatal error", event, msg);
-	cob_stop_run (1);
+	/* FIXME: check if possible to be passed to original caller returning status 39 */
+	cob_hard_failure ();
 }
 #endif
 
-static void
+static int
 join_environment (cob_file_api *a)
 {
 	cob_u32_t	flags;
@@ -338,15 +339,16 @@ join_environment (cob_file_api *a)
 	        || strcasecmp (file_setptr->bdb_home, "false") == 0) {
 		/* This effectively disables record/file locking */
 		/* But prevents the BDB control files from being created */
-		return;
+		return 0;
 	}
-	if(file_setptr->bdb_home)
+	if (file_setptr->bdb_home) {
 		bdb_home_dir = cob_strdup(file_setptr->bdb_home);
+	}
 	ret = db_env_create (&bdb_env, 0);
 	if (ret) {
 		cob_runtime_error (_("cannot join BDB environment (%s), error: %d %s"),
 				   "env_create", ret, db_strerror (ret));
-		cob_stop_run (1);
+		return ret;
 	}
 	bdb_env->set_errfile (bdb_env, stderr);
 #if (DB_VERSION_MAJOR > 4) || ((DB_VERSION_MAJOR == 4) && (DB_VERSION_MINOR > 2))
@@ -366,7 +368,7 @@ join_environment (cob_file_api *a)
 				   "env->open", ret, db_strerror (ret));
 		bdb_env->close (bdb_env, 0);
 		bdb_env = NULL;
-		cob_stop_run (1);
+		return ret;
 	}
 #if (DB_VERSION_MAJOR > 4) || ((DB_VERSION_MAJOR == 4) && (DB_VERSION_MINOR > 1))
 	bdb_env->get_data_dirs (bdb_env, &bdb_data_dir);
@@ -376,6 +378,7 @@ join_environment (cob_file_api *a)
 #if (DB_VERSION_MAJOR > 4)
 	bdb_env->set_event_notify(bdb_env, (void*)bdb_err_event);
 #endif
+	return 0;
 }
 
 /* Impose lock on 'file' using BDB locking */
@@ -964,14 +967,17 @@ ix_bdb_start_internal (cob_file *f, const int cond, cob_field *key,
 			memcpy (p->last_readkey[0], p->key.data, p->primekeylen);
 		} else {
 			int keylen = db_keylen (f, p->key_index);
+			/* LCOV_EXCL_START */
 			if (partlen <= 0) {
-				cob_runtime_error (_("invalid internal call of %s"), "ix_bdb_start_internal/db_keylen");
-				cob_runtime_error (_("Please report this!"));
-				cob_stop_run (1);
+				cob_runtime_error (_("invalid internal call of %s"),
+					"indexed_start_internal/bdb_keylen");
+				cob_hard_failure_internal ("libcob");
 			}
+			/* LCOV_EXCL_STOP */
 			memcpy (p->last_readkey[p->key_index],
 				    p->temp_key, keylen);
-			memcpy (p->last_readkey[p->key_index + f->nkeys], p->key.data, p->primekeylen);
+			memcpy (p->last_readkey[p->key_index + f->nkeys],
+				    p->key.data, p->primekeylen);
 			if (f->keys[p->key_index].tf_duplicates) {
 				p->last_dupno[p->key_index] = dupno;
 			}
@@ -1173,7 +1179,13 @@ ix_bdb_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const
 	COB_UNUSED (sharing);
 
 	if (bdb_join) {			/* Join BDB, on first OPEN of INDEXED file */
-		join_environment (a);
+		if (join_environment (a)) {
+#if 0	/* better return a permanent or sharing error */
+			cob_hard_failure ();
+#else
+			return COB_STATUS_61_FILE_SHARING;
+#endif
+		}
 		bdb_join = 0;
 	}
 
@@ -1226,6 +1238,11 @@ ix_bdb_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const
 	case COB_OPEN_EXTEND:
 		flags |= DB_CREATE;
 		break;
+	/* LCOV_EXCL_START */
+	default:
+		cob_runtime_error (_("invalid internal call of %s"), "indexed_open");
+		cob_fatal_error (COB_FERROR_CODEGEN);
+	/* LCOV_EXCL_STOP */
 	}
 
 	if (mode != COB_OPEN_OUTPUT) {

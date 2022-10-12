@@ -456,9 +456,9 @@ inspect_common (cob_field *f1, cob_field *f2, const enum inspect_type type)
 /* an INSPECT is split into multiple parts:
    one-time cob_inspect_init   (setting up memory and markers)
    multiple:
-	cob_inspect_start         (setting inspect_start/end)
-	cob_inspect_before        (optional, adjusting inspect_end)
-	cob_inspect_after         (optional, adjusting inspect_start)
+	cob_inspect_start          (setting inspect_start/end)
+	cob_inspect_before         (optional, adjusting inspect_end)
+	cob_inspect_after          (optional, adjusting inspect_start)
    one of:
 	cob_inspect_characters/cob_inspect_converting (until 3.2)/cob_inspect_all/
 	cob_inspect_leading/cob_inspect_trailing/cob_inspect_first
@@ -534,15 +534,9 @@ cob_inspect_start (void)
 void
 cob_inspect_before (const cob_field *str)
 {
-	unsigned char	* const end_p = inspect_end - str->size + 1;
-	unsigned char	*p = inspect_start;
-
-	while (p != end_p) {
-		if (memcmp (p, str->data, str->size) == 0) {
-			inspect_end = p;
-			return;
-		}
-		p++;
+	unsigned char *data_pos = inspect_find_data (str);
+	if (data_pos) {
+		inspect_end = data_pos;
 	}
 }
 

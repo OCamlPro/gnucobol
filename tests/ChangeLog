@@ -1,4 +1,22 @@
 
+2022-10-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* atlocal.in, atlocal_valgrind: adjusted perf and valgrind runs
+	  to export PATH to real binaries for calling cobc/cobcrun directly
+	* atlocal.in: for perf run split cobc and cobcrun by log directory
+	  instead of filename only, default COBC to include debug infos
+	* atlocal.in: added callgrind run for in-depth performance checks
+	  which can be activated by setting CGSUFFIX variable
+
+2022-07-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* atlocal.in: option to run part of the testsuite via perf -stat
+	  to check for performance (enabled for runtime only by default),
+	  which can be activated by setting PERFSUFFIX variable
+	* Makefile.am: additional dependencies atlocal and
+	  run_prog_manual.sh where used
+	* testsuite.src: added missing $COBCRUN_DIRECT
+
 2022-05-19   Ron Norman <rjn@inglenet.com>
 
 	* atlocal.in: Check for V-ISAM when setting COB_HAS_ISAM

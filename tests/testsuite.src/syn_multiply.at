@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2018 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2018, 2020 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While
 ## 
 ## This file is part of GnuCOBOL.
@@ -49,8 +49,8 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], ,
 [prog.cob:10: error: '456' is not a numeric name
-prog.cob:11: error: '"a"' is not a numeric value
-prog.cob:12: error: '"b"' is not a numeric name
+prog.cob:11: error: 'literal "a"' is not a numeric value
+prog.cob:12: error: 'literal "b"' is not a numeric name
 prog.cob:13: error: 'X-X' is not a numeric value
 prog.cob:14: error: 'X-09' is not a numeric name
 prog.cob:15: error: 'X-09' is not a numeric value
@@ -85,9 +85,9 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], ,
 [prog.cob:10: error: '789' is not a numeric or numeric-edited name
-prog.cob:11: error: '"a"' is not a numeric value
-prog.cob:11: error: '"b"' is not a numeric value
-prog.cob:12: error: '"c"' is not a numeric or numeric-edited name
+prog.cob:11: error: 'literal "a"' is not a numeric value
+prog.cob:11: error: 'literal "b"' is not a numeric value
+prog.cob:12: error: 'literal "c"' is not a numeric or numeric-edited name
 prog.cob:13: error: 'X-X' is not a numeric value
 prog.cob:14: error: 'X-09' is not a numeric value
 prog.cob:15: error: 'X-X' is not a numeric or numeric-edited name
@@ -121,9 +121,9 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], ,
-[prog.cob:10: error: '"a"' is not a numeric value
-prog.cob:14: error: '"a"' is not a numeric value
-prog.cob:14: error: '"b"' is not a numeric value
+[prog.cob:10: error: 'literal "a"' is not a numeric value
+prog.cob:14: error: 'literal "a"' is not a numeric value
+prog.cob:14: error: 'literal "b"' is not a numeric value
 ])
 
 AT_CLEANUP

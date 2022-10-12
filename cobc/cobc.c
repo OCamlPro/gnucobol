@@ -59,7 +59,6 @@
 
 #include <limits.h>
 
-
 #include "cobc.h"
 #include "tree.h"
 
@@ -153,8 +152,10 @@ int			cb_listing_xref = 0;
 #define			CB_LISTING_DATE_MAX (CB_LISTING_DATE_BUFF - 1)
 char			cb_listing_date[CB_LISTING_DATE_BUFF]; /* Date/Time buffer for listing */
 struct list_files	*cb_current_file = NULL;
-#define			LCL_NAME_LEN 80
-#define			LCL_NAME_MAX (LCL_NAME_LEN - 1)
+
+#if COB_MAX_WORDLEN > 80 - 1
+#error word length > listing data -> adjust one of those
+#endif
 
 /* compilation date/time of current source file */
 struct cob_time		current_compile_time = { 0 };
@@ -1189,6 +1190,30 @@ cobc_plex_strdup (const char *dupstr)
 	return p;
 }
 
+/* variant of strcpy which copies max 'max_size' bytes from 'src' to 'dest',
+   if the size of 'src' is too long only its last/last bytes are copied and an
+   eliding "..." is placed in front or at end depending on 'elide_at_end' */
+char *
+cobc_elided_strcpy (char *dest, const char* src,
+		const size_t max_size, int elide_at_end)
+{
+	const size_t size = strlen (src);
+
+	if (size < max_size) {
+		memcpy (dest, src, size + 1);
+	} else {
+		size_t size_to_copy = max_size - 3;
+		if (elide_at_end) {
+			memcpy (dest, src, size_to_copy + 1);
+			memcpy (dest + max_size - 3, "...", 3 + 1);
+		} else {
+			memcpy (dest, "...", 3);
+			memcpy (dest + 3, src + size - size_to_copy, size_to_copy);
+		}
+	}
+	return dest;
+}
+
 void *
 cobc_check_string (const char *dupstr)
 {
@@ -2085,8 +2110,7 @@ cobc_terminate (const char *str)
 		set_listing_date ();
 		set_standard_title ();
 		cb_listing_linecount = cb_lines_per_page;
-		strncpy (cb_listing_filename, str, FILENAME_MAX);
-		cb_listing_filename[FILENAME_MAX - 1] = 0;
+		cobc_elided_strcpy (cb_listing_filename, str, sizeof (cb_listing_filename), 0);
 		print_program_header ();
 	}
 	cb_perror (0, "cobc: %s: %s", str, cb_get_strerror ());
@@ -2133,7 +2157,7 @@ cobc_abort_msg (void)
 /* return to OS in case of hard errors after trying to output the error to
    listing file if active */
 void
-cobc_abort_terminate (int should_be_reported)
+cobc_abort_terminate (const int should_be_reported)
 {
 	/* note we returned 99 for aborts earlier but autotest will
 	   "recognize" status 99 as failure (you cannot "expect" the return 99 */
@@ -2149,12 +2173,31 @@ cobc_abort_terminate (int should_be_reported)
 	cobc_abort_msg ();
 
 	if (should_be_reported) {
-		cobc_err_msg (_("Please report this!"));
+		char *coe = cob_getenv_direct ("COBC_CORE_ON_ERROR");
+		if (coe) {
+			cob_setenv ("COB_CORE_ON_ERROR", coe, 1);
+		} else {
+#if 0
+			coe = cob_getenv_direct ("COB_CORE_ON_ERROR");
+			if (!coe) {
+				cob_setenv ("COB_CORE_ON_ERROR", "3", 1);
+			}
+#else
+			/* if not explicit set - let us SIGABRT;
+				during testing this was set to 3 but that led
+				to a huge corefile "no space left on device" once */
+			cob_setenv ("COB_CORE_ON_ERROR", "2", 1);
+#endif
+		}
+		cob_setenv ("COB_CORE_FILENAME", "./core.cobc", 1);
 		if (cb_src_list_file
 		 && cb_listing_file_struct
 		 && cb_listing_file_struct->name) {
 			print_program_listing ();
 		}
+		/* run into libcob provided internal error handling
+		   handling with providing a coredump (or SIGABRT) */
+		cob_hard_failure_internal ("cobc");
 	}
 	cobc_clean_up (ret_code);
 	exit (ret_code);
@@ -2184,6 +2227,7 @@ cobc_sig_handler (int sig)
 
 	/* LCOV_EXCL_START */
 	if (!ret) {
+		/* FIXME: we should not use stdio functions as currently called below here! */
 		cobc_err_msg (_("Please report this!"));
 	}
 	/* LCOV_EXCL_STOP */
@@ -2997,6 +3041,7 @@ process_command_line (const int argc, char **argv)
 		case 'd':
 			/* --debug : Turn on all runtime checks */
 			cb_flag_source_location = 1;
+			cb_flag_stack_extended = 1;
 			cb_flag_stack_check = 1;
 			cb_flag_symbols = 1;
 			cobc_wants_debug = 1;
@@ -3039,6 +3084,12 @@ process_command_line (const int argc, char **argv)
 	/* Exit for configuration errors resulting from -std/--conf/default.conf */
 	if (conf_ret != 0) {
 		cobc_early_exit (EXIT_FAILURE);
+	}
+
+	/* dump implies extra information (may still be disabled later) */
+	if (cb_flag_dump != COB_DUMP_NONE) {
+		cb_flag_source_location = 1;
+		cb_flag_stack_extended = 1;	/* for extended stack output */
 	}
 
 	cob_optind = 1;
@@ -3225,6 +3276,12 @@ process_command_line (const int argc, char **argv)
 			/* -g : Generate C debug code */
 			save_all_src = 1;
 			cb_source_debugging = 1;
+			/* note: cb_flag_source_location and cb_flag_stack_extended
+			         are explicit not set here */
+#if 0		/* TO BE MERGED auto-included, may be disabled manually if needed */
+			cb_flag_c_line_directives = 1;
+			cb_flag_c_labels = 1;
+#endif
 			cb_flag_stack_check = 1;
 			cb_flag_source_location = 1;
 			cb_flag_symbols = 1;
@@ -3257,7 +3314,7 @@ process_command_line (const int argc, char **argv)
 			conf_entry = cobc_malloc (COB_MINI_BUFF - 2);
 			snprintf (conf_label, COB_MINI_MAX, "-%s=%s",
 				long_options[idx].name, cob_optarg);
-			strncpy(conf_entry, conf_label + 2, COB_MINI_MAX - 2);
+			strcpy (conf_entry, conf_label + 2);
 			conf_ret |= cb_config_entry (conf_entry, conf_label, 0);
 			cobc_free (conf_entry);
 			break;
@@ -5083,33 +5140,28 @@ print_program_data (const char *data)
 	fprintf (cb_src_list_file, "%s\n", data);
 }
 
-static char *
-check_filler_name (char *name)
+/* Return 'fld's name or "FILLER */
+static const char *
+check_filler_name (const struct cb_field *fld)
 {
+	const char *name = fld->name;
 	if (strlen (name) >= 6 && memcmp (name, "FILLER", 6) == 0) {
-		name = (char *)"FILLER";
+		return "FILLER";
 	}
 	return name;
 }
 
+/* note: picture_len may also be only 24!*/
 static int
 set_picture (struct cb_field *field, char *picture, size_t picture_len)
 {
-	size_t usage_len;
-	char picture_usage[CB_LIST_PICSIZE] = { 0 };
-
-	memset (picture, 0, CB_LIST_PICSIZE);
-
 	/* check for external definition first */
 	if (field->external_definition) {
 		if (field->external_definition == cb_error_node) {
 			strcpy (picture, "INVALID");
 		} else {
 			const char *name = CB_FIELD (field->external_definition)->name;
-			strncpy (picture, name, picture_len);
-			if (strlen (name) > picture_len - 1) {
-				strcpy (picture + picture_len - 3, "...");
-			}
+			cobc_elided_strcpy (picture, name, picture_len, 1);
 		}
 		return 1;
 	}
@@ -5152,11 +5204,7 @@ set_picture (struct cb_field *field, char *picture, size_t picture_len)
 		return 1;
 	}
 
-	/* Get usage for this picture */
-	strcpy (picture_usage, cb_get_usage_string (field->usage));
-	usage_len = strlen (picture_usage);
-
-	/* set picture for the rest */
+	/* set picture for everything, possibly add USAGE */
 	if (field->usage == CB_USAGE_BINARY
 	 || field->usage == CB_USAGE_FLOAT
 	 || field->usage == CB_USAGE_DOUBLE
@@ -5165,35 +5213,47 @@ set_picture (struct cb_field *field, char *picture, size_t picture_len)
 	 || field->usage == CB_USAGE_COMP_6
 	 || field->usage == CB_USAGE_COMP_X
 	 || field->usage == CB_USAGE_COMP_N) {
+		const char *picture_usage = cb_get_usage_string (field->usage);
+		const size_t usage_len = strlen (picture_usage);
+		if (usage_len > picture_len) {
+			cobc_elided_strcpy (picture, picture_usage, picture_len, 1);
+			return 1;
+		}
 		if (field->pic) {
-			strncpy (picture, field->pic->orig, picture_len - 1 - usage_len);
-			picture[CB_LIST_PICSIZE - 1] = 0;
-			strcat (picture, " ");
+			const size_t fpic_len = strlen (field->pic->orig);
+			if (fpic_len + 1 + usage_len > picture_len) {
+				const size_t max_len = picture_len - 1 - usage_len;
+				cobc_elided_strcpy (picture, field->pic->orig, max_len, 1);
+				sprintf (picture + max_len, " %s", picture_usage);
+			} else {
+				sprintf (picture, "%s %s", field->pic->orig, picture_usage);
+			}
+			return 1;
 		}
 		if (cb_list_datamap
 		 && field->usage == CB_USAGE_COMP_X) {
-			if (field->size == 1)
-				strcpy(picture,"X    COMP-X");
-			else
-				sprintf(picture,"X(%d) COMP-X",field->size);
+			if (field->size == 1) {
+				strcpy (picture,"X    COMP-X");
+			} else {
+				sprintf (picture,"X(%d) COMP-X",field->size);
+			}
 			return 1;
 		}
+		memcpy (picture, picture_usage, usage_len + 1);
+		return 1;
 	} else if (field->flag_any_numeric) {
-		strncpy (picture, "9 ANY NUMERIC", 14);
+		strcpy (picture, "9 ANY NUMERIC");
 		return 1;
 	} else if (field->flag_any_length) {
-		strncpy (picture, "X ANY LENGTH", 13);
+		strcpy (picture, "X ANY LENGTH");
 		return 1;
 	} else {
 		if (!field->pic) {
 			return 0;
 		}
-		strncpy (picture, field->pic->orig, picture_len - 1);
+		snprintf (picture, picture_len, "%s", field->pic->orig);
 		return 1;
 	}
-
-	strcat (picture, picture_usage);
-	return 1;
 }
 
 static void
@@ -5284,13 +5344,11 @@ static void
 print_88_values (struct cb_field *field)
 {
 	struct cb_field *f;
-	char lcl_name[LCL_NAME_LEN] = { '\0' };
 
 	for (f = field->validation; f; f = f->sister) {
-		strncpy (lcl_name, (char *)f->name, LCL_NAME_MAX);
 		snprintf (print_data, CB_PRINT_LEN,
 			"      %-14.14s %02d   %s",
-			"CONDITIONAL", f->level, lcl_name);
+			"CONDITIONAL", f->level, f->name);
 		print_program_data (print_data);
 	}
 }
@@ -5305,7 +5363,7 @@ print_fields (struct cb_field *top, int *found)
 	const size_t	picture_len = cb_listing_wide ? 64 : 24;
 	char	type[20];
 	char	picture[CB_LIST_PICSIZE];
-	char	lcl_name[LCL_NAME_LEN];
+	const char	*name_or_filler;
 
 	for (; top; top = top->sister) {
 		if (!top->level) {
@@ -5324,9 +5382,6 @@ print_fields (struct cb_field *top, int *found)
 		 && !first) {
 			print_program_data ("");
 		}
-
-		strncpy (lcl_name, check_filler_name ((char *)top->name),
-			 LCL_NAME_MAX);
 
 		if (top->children) {
 			strcpy (type, "GROUP");
@@ -5353,12 +5408,13 @@ print_fields (struct cb_field *top, int *found)
 
 		pd_off += sprintf (print_data + pd_off, "%-14.14s %02d   ", type, top->level);
 
+		name_or_filler = check_filler_name (top);
 		if (got_picture) {
-			pd_off += sprintf (print_data + pd_off, "%-30.30s %s", lcl_name, picture);
+			pd_off += sprintf (print_data + pd_off, "%-30.30s %s", name_or_filler, picture);
 		} else if (top->flag_occurs) {
-			pd_off += sprintf (print_data + pd_off, "%-30.30s ", lcl_name);
+			pd_off += sprintf (print_data + pd_off, "%-30.30s ", name_or_filler);
 		} else { /* Trailing spaces break testsuite AT_DATA */
-			pd_off += sprintf (print_data + pd_off, "%s", lcl_name);
+			pd_off += sprintf (print_data + pd_off, "%s", name_or_filler);
 		}
 
 		if (top->flag_occurs) {
@@ -5571,8 +5627,8 @@ static void
 xref_print (struct cb_xref *xref, const enum xref_type type, struct cb_xref *xref_parent)
 {
 	struct cb_xref_elem	*elem;
-	int     		cnt;
-	int     		maxcnt = cb_listing_wide ? 10 : 5;
+	int    		cnt;
+	int    		maxcnt = cb_listing_wide ? 10 : 5;
 
 	if (xref->head == NULL) {
 		sprintf (print_data + pd_off, "  ");
@@ -5623,13 +5679,10 @@ static void
 xref_88_values (struct cb_field *field)
 {
 	struct cb_field *f;
-	char lcl_name[LCL_NAME_LEN] = { '\0' };
 
 	for (f = field->validation; f; f = f->sister) {
-		strncpy (lcl_name, (char *)f->name, LCL_NAME_MAX);
-		pd_off = sprintf (print_data,
-			"%-30.30s %-6u ",
-			lcl_name, f->common.source_line);
+		pd_off = sprintf (print_data, "%-30.30s %-6u ",
+			f->name, f->common.source_line);
 		xref_print (&f->xref, XREF_FIELD, NULL);
 	}
 }
@@ -5637,7 +5690,6 @@ xref_88_values (struct cb_field *field)
 static int
 xref_fields (struct cb_field *top)
 {
-	char		lcl_name[LCL_NAME_LEN];
 	int		found = 0;
 
 	for (; top; top = top->sister) {
@@ -5647,10 +5699,12 @@ xref_fields (struct cb_field *top)
 				    && !top->count)) {
 			continue;
 		}
-
-		strncpy (lcl_name, check_filler_name ((char *)top->name), LCL_NAME_MAX);
-		lcl_name[LCL_NAME_MAX] = 0;	/* make sure we always have the trailing NULL */
-		if (!strcmp (lcl_name, "FILLER") && !top->validation) {
+#if 0 /* FIXME: at least in the context of RW flag_filler is not set correct in
+                all places (and if done in all places other testcases break) */
+		if (top->flag_filler && !top->validation) {
+#else
+		if (!strcmp (check_filler_name (top), "FILLER") && !top->validation) {
+#endif
 			if (top->children) {
 				found += xref_fields (top->children);
 			}
@@ -5658,7 +5712,7 @@ xref_fields (struct cb_field *top)
 		}
 		found = 1;
 		pd_off = sprintf (print_data, "%-30.30s %-6u ",
-			 lcl_name, top->common.source_line);
+			 check_filler_name (top), top->common.source_line);
 
 		/* print xref for field */
 		if (top->parent) {
@@ -8593,11 +8647,14 @@ process_file (struct filename *fn, int status)
 	cb_ml_tree_id = 1;
 	demangle_name = fn->demangle_source;
 	memset (optimize_defs, 0, sizeof (optimize_defs));
+	if (cb_flag_c_line_directives || cb_flag_c_labels) {
+		optimize_defs[COB_NOP] = 1;
+	}
 
 	if (cb_src_list_file) {
 		cb_listing_page = 0;
-		strncpy (cb_listing_filename, fn->source, FILENAME_MAX - 1);
-		cb_listing_filename[FILENAME_MAX - 1] = 0;
+		cobc_elided_strcpy (cb_listing_filename, fn->source,
+			sizeof (cb_listing_filename), 0);
 		set_listing_header_code ();
 	}
 
@@ -8816,7 +8873,7 @@ main (int argc, char **argv)
 			} else {
 				run_name = file_basename (fn->source, NULL);
 			}
-			run_name = cobc_strdup (run_name);
+			run_name = cobc_main_strdup (run_name);
 		}
 		if (iparams > 1 && cb_compile_level == CB_LEVEL_EXECUTABLE) {
 			/* only the first source has the compile_level and main flag set */
@@ -8851,7 +8908,6 @@ main (int argc, char **argv)
 		if (status == 0) {
 			status = process_run (run_name);
 		}
-		cobc_free ((void *)run_name);
 	}
 	
 	if (cb_compile_level < CB_LEVEL_LIBRARY
@@ -8884,7 +8940,6 @@ main (int argc, char **argv)
 		if ((statuses == 0) && cobc_flag_run) {
 			status = process_run (run_name);
 		}
-		cobc_free ((void *)run_name);
 	}
 
 	/* We have completed */

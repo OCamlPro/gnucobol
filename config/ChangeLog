@@ -1,11 +1,15 @@
 
+2022-10-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* runtime.cfg: add COB_CORE_FILENAME and adjust COB_CORE_ON_ERROR
+
 2022-07-01  Simon Sobisch <simonsobisch@gnu.org>
 
 	* general: removed alias VALUES=VALUE, now a separate word
 
 2022-06-10  Ron Norman <rjn@inglenet.com>
 
-	*  general: add 'defaultbyte'
+	* general: add 'defaultbyte'
 
 2022-02-07  David Declerck <david.declerck@ocamlpro.com>
 

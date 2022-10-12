@@ -1,7 +1,53 @@
 
+
+2022-10-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codeoptim.c: further optimizations for COB_GET_NUMDISP*
+
 2022-10-12  Ron Norman <rjn@inglenet.com>
 
 	* typeck.c: If STRING item is NOT DISPLAY/NATIONAL then its an error
+
+2022-10-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (main): fixed memory handling for "-j"
+	* cobc.c (cobc_abort_terminate): run into libcob provided abort handling
+	  with a default of SIGABRT and a configurable coredump via
+	  COBC_CORE_ON_ERROR overriding COB_CORE_ON_ERROR (currently fixed "2")
+
+2022-10-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_check_field_debug): fixed bug introduced with last change
+	  and don't create unnecessary long DEBUG-NAME strings
+	* config.c (cb_load_conf_file): check snprintf size fixing compile warning
+
+2022-10-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_internal_function): only close files on CANCEL-callback
+	  when they aren't closed already, preventing a file exception on CANCEL
+	* tree.c (cb_name_1): replaced strncpy calls by checked snprintf, calculate
+	  length from known positions instead of strlen; limit scope of some
+	  variables, allowing them to be defined as const
+	* cobc.c (print_88_values, print_fields, xref_88_values, xref_fields):
+	  drop copy of field name to temporary lcl_name as a field name has
+	  a maximum length of COB_MAX_WORDLEN (63) and therefore is always smaller
+	  than the previously compared 80-1 byte
+	* cobc.c (cobc_elided_strcpy), cobc.h: new function to copy a string only
+	  up to max positions and use an eliding "..." at front/end if src was cut
+	* cobc.c, config.c, scanner.l, tree.c, reserved.c: favor strcpy, memcpy,
+	  cobc_elided_strcpy over strncpy
+	* typeck.c (cb_build_debug_item): refactored to remove number of casts
+	* field.c (copy_duplicated_field_into_field): extracted
+	  from copy_children, copy_into_field_recursive
+	* tree.c (build_sum_counter): fix reference to sum counter
+
+2022-09-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* flag.def (cb_flag_stack_extended), cobc.c: new option "stack-extended"
+	* codegen.c: handle generation for new cb_flag_stack_extended with
+	  cob_frame_ext (attached origin source location, section and paragraph
+	  name) and its addition to the cob_module
+	* codegen.c (output_section_info, output_trace_info): minor refactoring
 
 2022-08-26  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -27,6 +73,11 @@
 	  moved -Wunsupported check for ORGANIZATION INDEXED from codegen
 	  to parsing
 	* tree.c, typeck.c: msgid change for -Wunsupported
+
+2022-07-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.c (cb_build_picture), tree.h: return cb_picture instead of cb_tree
+	  as all but one caller directly use it that way
 
 2022-07-01  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -405,7 +456,7 @@
 	  single difference to the new function get_handler_type_from_statement
 	  which is a bit slower but reduces duplications
 	* reserved.c, parser.y: added parsing for RAISING clause, combining
-	  identical code forEXIT and GOBACK to (goback_exit_body)
+	  identical code for EXIT and GOBACK to (goback_exit_body)
 	* reserved.c, parser.y, scanner.l, tree.h: initial parsing approach for
 	  COBOL 202x Message Control System (MCS) statements SEND and RECEIVE
 	* scanner.l: return WORD token if SUPPRESS is not reserved
@@ -623,6 +674,20 @@
 	  expressions
 	* tree.c (cb_build_perform_varying): add source reference to VARYING clause
 
+2021-02-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.h: remove unused cb_listing_files
+	* codeoptim.def, codeoptim.c, typeck.c (cb_build_identifier), cobc.c:
+	  new entries COB_CHK_LINKAGE, COB_CHK_BASED, COB_CHK_SUBSCRIPT,
+	  COB_CHK_ODO, COB_CHK_REFMOD_MIN, COB_CHK_REFMOD for inline checks of
+	  most-used runtime checks - now only passed to libcob in case of actual
+	  errors; new entry COB_NOP to replace the cob_nop call (frame switch)
+	  by a simple pointer comparison, which also ensures on all tested
+	  compilers that the line is not optimized out, and for those that
+	  optimize the check away the old cob_nop call is still done
+	* codeoptim.c (COB_GET_NUMDISPS, COB_GET_NUMDISPS64):
+	  use intermediate register for comparison
+
 2021-02-03  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c (output_stmt): dont' emit C labels for dummy sections,
@@ -633,12 +698,6 @@
 	* codegen.c (output_stmt): emit cob_nop in C labels to fix
 	  position in the generated assembler which was previously
 	  in the COBOL statement above the label
-
-2021-02-04  Simon Sobisch <simonsobisch@gnu.org>
-
-	* cobc.h: remove unused cb_listing_files
-	* codeoptim.c (COB_GET_NUMDISPS, COB_GET_NUMDISPS64):
-	  use intermediate register for comparison
 
 2021-02-01  Ron Norman <rjn@inglenet.com>
 
@@ -965,7 +1024,12 @@
 
 2020-09-08  Simon Sobisch <simonsobisch@gnu.org>
 
+	* ppparse.y: slightly improved directive errors, still much work to do
 	* typeck.c (cb_validate_program_body): verify ANY LENGTH as formal parameter
+	* pplex.l (ppinput): skip last line if it only contains spaces
+	* tree.c (literal_for_diagnostic), tree.h, scanner.l: extracted
+	  (literal_for_diagnostic) from scanner.l (error_literal), extended and
+	  used in tree.c to provide a single function to resolve literals
 
 2020-09-04  Ron Norman <rjn@inglenet.com>
 
@@ -973,6 +1037,10 @@
 	  for example reference modification or subscript being out of bounds
 	* typeck.c (cb_build_identifier): allow bad subscripts with -frelax-syntax,
 	  don't generate odo-check for UNBOUNDED items
+
+2020-09-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* scanner.l (read_literal): catch and error  missing termination of literal
 
 2020-08-28  Ron Norman <rjn@inglenet.com>
 

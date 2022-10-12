@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2015-2018, 2020 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2015-2018, 2020-2021 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch
 ## 
 ## This file is part of GnuCOBOL.
@@ -444,8 +444,8 @@ prog.cob:46: warning: overlapping MOVE may produce unpredictable results [[-Wove
 prog.cob:48: warning: overlapping MOVE may produce unpredictable results [[-Woverlap]]
 prog.cob:49: warning: overlapping MOVE may produce unpredictable results [[-Woverlap]]
 ])
-# special case: for GnuCOBOL the result is predictable,
-# therefore TODO test in run_misc we have the expected result
+# note: for GnuCOBOL the result actually _is_ predictable,
+#       we verify that in run_fundamental
 # AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
@@ -511,7 +511,7 @@ prog.cob: in paragraph 'MAIN':
 prog.cob:15: error: invalid MOVE target: MAIN
 prog.cob:16: error: invalid MOVE target: repo-prog
 prog.cob:17: error: invalid MOVE target: QUOTE
-prog.cob:18: error: invalid MOVE target: literal 'A'
+prog.cob:18: error: invalid MOVE target: literal "A"
 ])
 
 AT_CLEANUP
