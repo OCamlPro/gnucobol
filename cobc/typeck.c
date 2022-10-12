@@ -495,6 +495,7 @@ static struct cb_field	*check_odo_p = NULL;
 static struct cb_field	*check_subscript_p = NULL;
 static struct cb_field	*check_sub = NULL;
 static int cb_is_integer_expr (cb_tree x);
+static int error_string_not_usage_display_or_national (cb_tree ref);
 
 
 /*
@@ -12742,10 +12743,13 @@ validate_pointer_clause (cb_tree pointer, cb_tree pointee)
 void
 cb_emit_string (cb_tree items, cb_tree into, cb_tree pointer)
 {
+
 	cb_tree start;
-	cb_tree l;
+	cb_tree l, cur;
 	cb_tree end;
 	cb_tree dlm;
+	int		nat,nfld;
+	struct cb_field	*f;
 
 	if (cb_validate_one (into)
 	 || cb_validate_one (pointer)) {
@@ -12777,14 +12781,33 @@ cb_emit_string (cb_tree items, cb_tree into, cb_tree pointer)
 		}
 		cb_emit (CB_BUILD_FUNCALL_1 ("cob_string_delimited", dlm));
 
+		nat = nfld = 0;
 		/* generate cob_string_append for all entries until delimiter */
 		for (l = start; l != end; l = CB_CHAIN (l)) {
-			if (cb_validate_one (CB_VALUE (l))) {
+			cur = CB_VALUE (l);
+			if (cb_validate_one (cur)) {
 				return;
 			}
+			switch (CB_TREE_TAG (cur)) {
+			case CB_TAG_REFERENCE:
+				nfld++;
+				f = CB_FIELD (cb_ref (cur));
+	     		if (f->usage == CB_USAGE_NATIONAL)
+					nat++;
+				error_string_not_usage_display_or_national (cur);
+				break;
+			case CB_TAG_CONST:
+			case CB_TAG_LITERAL:
+				break;
+			default:
+				break;
+			}
 			cb_emit (CB_BUILD_FUNCALL_1 ("cob_string_append",
-						     CB_VALUE (l)));
+							 cur));
 		}
+		if (nat > 0 && nat != nfld)
+			cb_error_x (CB_TREE (current_statement),
+				_("STRING items must be all NATIONAL or none"));
 
 		start = end ? CB_CHAIN (end) : NULL;
 	}
@@ -13318,6 +13341,19 @@ error_if_not_elementary (cb_tree ref, const char *name)
 {
 	if (CB_FIELD (cb_ref (ref))->children) {
 		cb_error_x (ref, _("%s must be elementary"), name);
+		return 1;
+	} else {
+		return 0;
+	}
+}
+
+static int
+error_string_not_usage_display_or_national (cb_tree ref)
+{
+	struct cb_field	*f = CB_FIELD (cb_ref (ref));
+	if (!  (CB_FIELD (cb_ref (ref))->usage == CB_USAGE_DISPLAY
+	     || CB_FIELD (cb_ref (ref))->usage == CB_USAGE_NATIONAL)) {
+		cb_error_x (ref, _("STRING item '%s' must be USAGE DISPLAY or NATIONAL"), f->name);
 		return 1;
 	} else {
 		return 0;

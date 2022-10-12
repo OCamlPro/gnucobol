@@ -1,4 +1,8 @@
 
+2022-10-12  Ron Norman <rjn@inglenet.com>
+
+	* typeck.c: If STRING item is NOT DISPLAY/NATIONAL then its an error
+
 2022-08-26  Simon Sobisch <simonsobisch@gnu.org>
 
 	* scanner.l (copy_literal): inlined into literal handling and added

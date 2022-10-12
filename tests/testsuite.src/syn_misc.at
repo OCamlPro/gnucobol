@@ -4884,6 +4884,43 @@ prog.cob:48: error: 'invalid-ptr-7' is not an elementary item
 ])
 AT_CLEANUP
 
+AT_SETUP([STRING with non-DISPLAY])
+AT_KEYWORDS([Initialize])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       DATA  DIVISION.
+       WORKING-STORAGE SECTION.
+       01  I-X        PIC  9(9) COMP-X VALUE 6.
+       01  I-B        PIC  9(9) BINARY VALUE 6.
+       01  I-P        PIC  9(9) COMP-3 VALUE 6.
+       01  I-D        PIC  9(9) VALUE 6.
+       01  I-F        COMP-1 VALUE 6.
+       01  TSTWRK   PIC X(48).
+
+       PROCEDURE DIVISION.
+       MAIN-10.
+           STRING " ID:" I-D 
+               DELIMITED BY SIZE INTO TSTWRK.
+           STRING " IX:" I-X " IB:" I-B 
+                  " ID:" I-D 
+                  " IP:" I-P " IF:" I-F 
+               DELIMITED BY SIZE INTO TSTWRK.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -x -std=mf -debug -Wall prog.cob ], [1], [],
+[prog.cob: in paragraph 'MAIN-10':
+prog.cob:19: error: STRING item 'I-X' must be USAGE DISPLAY or NATIONAL
+prog.cob:19: error: STRING item 'I-B' must be USAGE DISPLAY or NATIONAL
+prog.cob:21: error: STRING item 'I-P' must be USAGE DISPLAY or NATIONAL
+prog.cob:21: error: STRING item 'I-F' must be USAGE DISPLAY or NATIONAL
+])
+
+AT_CLEANUP
 
 AT_SETUP([UNSTRING COUNT clause])
 AT_KEYWORDS([misc])
