@@ -1,4 +1,9 @@
 
+2022-10-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobfile.c: fixed compiler warnings -Wunused-result
+	* cobfile.c: handle --quiet to output less progress info
+
 2022-01-03  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobcrun.c: include libcob headers relative and tarstamp.h early

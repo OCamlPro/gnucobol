@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2021 Free Software Foundation, Inc.
+   Copyright (C) 2021-2022 Free Software Foundation, Inc.
    Written by Ron Norman
 
    This file is part of GnuCOBOL.
@@ -21,8 +21,8 @@
 /*
      Program:  cobfile.c
 
-     Function: This program is used to create/execute 
-	 			file copy/convert programs.
+     Function: This program is used to create/execute
+               file copy/convert programs.
 */
 
 #include	"config.h"
@@ -31,8 +31,8 @@
 #ifdef	HAVE_UNISTD_H
 #include	<unistd.h>
 #endif
-#include	<string.h> 
-#include	<time.h> 
+#include	<string.h>
+#include	<time.h>
 #ifdef	HAVE_SYS_TIME_H
 #include	<sys/time.h>
 #endif
@@ -289,7 +289,7 @@ getnext:
 			strcpy (ibuf,p);
 			free (p);
 			if (ibuf[0] >= ' '
-			 && ibuf[0] != '*' 
+			 && ibuf[0] != '*'
 			 && ibuf[0] != '#')
 				add_history (ibuf);
 		}
@@ -304,7 +304,7 @@ getnext:
 #endif
 	}
 	trim_line (ibuf);
-	if (ibuf[0] == '*' 
+	if (ibuf[0] == '*'
 	 || ibuf[0] == '#')
 		goto getnext;
 	for (k=0; memcmp(&ibuf[k],"  ",2)==0; k++);
@@ -379,13 +379,13 @@ matchWord (const char *word, char *defs, char *str, int *pos )
 		while (isspace(defs[k])) k++;
 	}
 	if (doend) {
-		for (j = 0; defs[k] != endmark 
+		for (j = 0; defs[k] != endmark
 			&& defs[k] != 0; )
 		str[j++] = defs[k++];
 	} else {
-		for (j = 0; defs[k] > ' ' 
-			&& defs[k] != ',' 
-			&& defs[k] != ';' 
+		for (j = 0; defs[k] > ' '
+			&& defs[k] != ','
+			&& defs[k] != ';'
 			&& defs[k] != endmark
 			&& defs[k] != 0; )
 		str[j++] = defs[k++];
@@ -476,7 +476,7 @@ parseFile (cob_file *fl, const char *select, int rcsz, char *defs, char *copy, c
 	fl->organization = COB_ORG_SEQUENTIAL;
 	fl->access_mode = COB_ACCESS_SEQUENTIAL;
 	for (k=0; defs[k] != 0; k++) {
-		if (k==0 
+		if (k==0
 		|| isspace(defs[k-1])) {
 			if (matchWord ("FILE=", defs, val, &k)) {
 				ln = strlen (val);
@@ -654,7 +654,7 @@ gcd_print_version (void)
 
 	printf ("cobfile (%s) %s.%d\n",
 		PACKAGE_NAME, PACKAGE_VERSION, PATCH_LEVEL);
-	puts ("Copyright (C) 2021 Free Software Foundation, Inc.");
+	puts ("Copyright (C) 2022 Free Software Foundation, Inc.");
 	puts (_("License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>"));
 	puts (_("This is free software; see the source for copying conditions.  There is NO\n"
 		"warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."));
@@ -679,10 +679,10 @@ gcd_usage (char *prog)
 	puts (_("Options:"));
 	puts (_("  -i  cmdfile    Read commands from this file"));
 	puts (_("  -p  progid     Define PROGRAM-ID "));
-	puts (_("  -k, -keep      Keep the generated COBOL code"));
+	puts (_("  -k, --keep     Keep the generated COBOL code"));
 	puts (_("  -D  env=val    Define environment variable"));
-	puts (_("  -h, -help      display this help and exit"));
-	puts (_("  -V, -version   display version and exit"));
+	puts (_("  -h, --help     display this help and exit"));
+	puts (_("  -V, --version  display version and exit"));
 	putchar ('\n');
 	printf (_("Report bugs to: %s or\n"
 		"use the preferred issue tracker via home page"), "bug-gnucobol@gnu.org");
@@ -785,7 +785,7 @@ genCopy (cob_file *fli, cob_file *flo)
 		strcpy(inkeydesc," \tRELATIVE KEY IS IN-RECNUM\n");
 	} else
 	if (fli->organization == COB_ORG_INDEXED) {
-		sprintf (inkeydesc, 
+		sprintf (inkeydesc,
 				"!RECORD KEY IS PRIMARY-KEY-1\n!\tSOURCE IS ~%s\n",
 					addOfRec(inkeys[0],"IN-REC"));
 		for (k=1; inkeys[k] != NULL; k++)
@@ -798,7 +798,7 @@ genCopy (cob_file *fli, cob_file *flo)
 		strcpy(outkeydesc," \tRELATIVE KEY IS IN-RECNUM\n");
 	} else
 	if (flo->organization == COB_ORG_INDEXED) {
-		sprintf (outkeydesc, 
+		sprintf (outkeydesc,
 				"!RECORD KEY IS O-PRIMARY-KEY-1\n!\tSOURCE IS ~%s\n",
 					addOfRec(outkeys[0],"OUT-REC"));
 		for (k=1; outkeys[k] != NULL; k++)
@@ -895,7 +895,7 @@ copyFile (cob_file *fi, cob_file *fo, int skip, int ncopy)
 	}
 	if (recs == written)
 		printf("Copied %d records\n",recs);
-	else 
+	else
 		printf("Read %d records and wrote %d records\n",recs,written);
 
 	/* Close files */
@@ -1042,7 +1042,7 @@ main(
 			} else if (strncasecmp (cmd,"GEN ",4) == 0
 					|| strncasecmp (cmd,"RUN ",4) == 0) {
 				int runit = 0;
-				if (strncasecmp (cmd,"RUN ",4) == 0) 
+				if (strncasecmp (cmd,"RUN ",4) == 0)
 					runit = 1;
 				for (k=4; cmd[k] != 0; k++) {
 					if (isspace(cmd[k-1])) {
@@ -1076,19 +1076,25 @@ main(
 				genCopy (flin, flout);
 				fclose(fo);
 
+				/* CHECKME: maybe execute directly without script
+				            if 'runit' is set; to do so 'setenv' the values here,
+				            then call cobc with additional '-j' option */
 				sprintf (cmd,"cobc -x %s %s",cobcopts,cblout);
-				printf("Compiling: %s\n",cmd);
+				if (!be_quiet)
+					printf("Compiling: %s\n",cmd);
 				k = system (cmd);
 				if (k != 0) {
 					printf("Compile of %s; Error status %d\n",cmd,k);
 				} else {
-					printf("Compile of %s; completed\n",cblout);
+					if (!be_quiet)
+						printf("Compile of %s; completed\n",cblout);
 					sprintf(cblout,"%s.sh",proglwr);
 					fo = fopen (cblout,"w");
 					if (fo == NULL) {
 						printf("Error %s opening '%s' output\n",strerror(errno),cblout);
 						exit(-1);
 					}
+					/* TODO: add variant building and executing .cmd for WIN32 */
 					fprintf(fo,"#!/bin/sh\n");
 					fprintf(fo,"export DD_INFILE=%s\n",flin->assign->data);
 					fprintf(fo,"export IO_INFILE=\"keycheck=no %s\"\n",indef);
@@ -1097,13 +1103,16 @@ main(
 					fprintf(fo,"%s\n",proglwr);
 					fclose(fo);
 					sprintf (cmd,"chmod a+x %s",cblout);
-					system (cmd);
-					if (runit) {
+					k = system (cmd);
+					if (runit && k == 0) {
 						printf("Executing %s;\n",cblout);
 						sprintf (cmd,"./%s",cblout);
-						system (cmd);
+						k = system (cmd);
+						if (k)
+							printf("Execution of %s; Error status %d\n",cmd,k);
 					} else {
-						printf("Script %s; ready\n",cblout);
+						if (!be_quiet)
+							printf("Script %s; ready\n",cblout);
 					}
 				}
 				cmd[0] = fileindef[0] = indef[0] = outdef[0] = 0;
@@ -1128,7 +1137,7 @@ main(
 				}
 			}
 			k = 0;
-		} 
+		}
 	}
 
 	exit (0);
