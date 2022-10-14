@@ -1162,6 +1162,17 @@ typedef cob_s64_t cob_flags_t;
 
 /* End Report attribute defines */
 
+/* Statement enum */
+
+enum cob_statement {
+	STMT_UNKNOWN = 0,
+#define COB_STATEMENT(name, str)	name,
+#include "statement.def"	/* located and installed next to common.h */
+#undef COB_STATEMENT
+	STMT_MAX_ENTRY /* always the last entry */
+};
+
+
 #define COB_JSON_CJSON			1
 #define COB_JSON_JSON_C			2
 
@@ -1396,8 +1407,7 @@ typedef struct __cob_module {
 	struct cob_frame_ext *frame_ptr;	/* current frame ptr, note: if set then cob_frame in this
 										   module is of type "struct cob_frame_ext",
 										   otherwise "struct cob_frame" */
-	int				stmt_num;			/* Position of VERB in cob_verbs table */
-	const char		*stmt_name;			/* Statement VERB name */
+	enum cob_statement	statement;		/* Statement currently executed */
 	const char		*section_name;
 	const char		*paragraph_name;
 
@@ -1766,7 +1776,7 @@ typedef struct __cob_ml_tree {
 typedef struct __cob_global {
 	cob_file		*cob_error_file;	/* Last error file */
 	cob_module		*cob_current_module;	/* Current module */
-	const char		*last_exception_statement;	/* Last exception: Statement */
+	enum cob_statement	last_exception_statement;	/* Last exception: Statement */
 	const char		*last_exception_id;	/* Last exception: PROGRAMM-ID / FUNCTION-ID*/
 	const char		*last_exception_section;	/* Last exception: Section */
 	const char		*last_exception_paragraph;	/* Last exception: Paragraph */
@@ -1989,13 +1999,12 @@ COB_EXPIMP int	cob_sys_extfh		(const void *, void *);
 
 /* Utilities */
 
-COB_EXPIMP void	cob_trace_sect		(const char *name);
-COB_EXPIMP void	cob_trace_para		(const char *name);
-COB_EXPIMP void	cob_trace_entry		(const char *name);
-COB_EXPIMP void	cob_trace_exit		(const char *name);
-COB_EXPIMP void	cob_trace_stmt		(const char *stmt);
-COB_EXPIMP void	cob_trace_stmt_num	(void);
-COB_EXPIMP int	cob_trace_get_stmt	(const char *stmt);
+COB_EXPIMP void	cob_trace_sect		(const char *);
+COB_EXPIMP void	cob_trace_para		(const char *);
+COB_EXPIMP void	cob_trace_entry		(const char *);
+COB_EXPIMP void	cob_trace_exit		(const char *);
+COB_EXPIMP void	cob_trace_stmt		(const char *);	/* compat only */
+COB_EXPIMP void	cob_trace_statement		(const enum cob_statement);
 
 COB_EXPIMP void			*cob_external_addr	(const char *, const int);
 COB_EXPIMP unsigned char	*cob_get_pointer	(const void *);

@@ -971,11 +971,11 @@ cb_validate_one (cb_tree x)
 				f->usage == CB_USAGE_HNDL_LM) {
 				/* valid statements: CALL, MOVE, DISPLAY + expressions
 				   the only statements reaching this are MOVE and DISPLAY */
-				if (strcmp (current_statement->name, "MOVE") != 0 &&
-					strcmp (current_statement->name, "DISPLAY") != 0 &&
-					strcmp (current_statement->name, "DESTROY") != 0 &&
-					strcmp (current_statement->name, "CLOSE WINDOW") != 0) {
-						cb_error_x (x, _("%s item not allowed here: '%s'"),
+				if (current_statement->statement != STMT_MOVE
+				 && current_statement->statement != STMT_DISPLAY
+				 && current_statement->statement != STMT_DESTROY
+				 &&	current_statement->statement != STMT_CLOSE_WINDOW) {
+				 		cb_error_x (x, _("%s item not allowed here: '%s'"),
 							"HANDLE", f->name);
 					return 1;
 				}
@@ -5209,7 +5209,7 @@ decimal_alloc (void)
 	if (current_program->decimal_index >= COB_MAX_DEC_STRUCT) {
 		cobc_err_msg (_("internal decimal structure size exceeded: %d"),
 				COB_MAX_DEC_STRUCT);
-		if (strcmp(current_statement->name, "COMPUTE") == 0) {
+		if (current_statement->statement != STMT_COMPUTE) {
 			cobc_err_msg (_("Try to minimize the number of parentheses "
 							 "or split into multiple computations."));
 		}
@@ -5751,7 +5751,6 @@ static cb_tree
 build_cond_88 (cb_tree x)
 {
 	struct cb_field	*f;
-	const char	*real_statement;	/* bad hack... */
 
 	cb_tree		l;
 	cb_tree		t;
@@ -5773,11 +5772,12 @@ build_cond_88 (cb_tree x)
 		t = CB_VALUE (l);
 		if (CB_PAIR_P (t)) {
 			/* VALUE THRU VALUE */
-			real_statement = current_statement->name;
-			current_statement->name = "VALUE THRU";
+			const enum cob_statement real_stmt = current_statement->statement;
+			/* bad hack... */
+			current_statement->statement = STMT_VALUE_THRU;
 			c2 = cb_build_binary_op (cb_build_binary_op (x, ']', CB_PAIR_X (t)),
 						 '&', cb_build_binary_op (x, '[', CB_PAIR_Y (t)));
-			current_statement->name = real_statement;
+			current_statement->statement = real_stmt;
 		} else {
 			/* VALUE */
 			c2 = cb_build_binary_op (x, '=', t);
@@ -8025,6 +8025,7 @@ cb_emit_display_window (cb_tree type, cb_tree own_handle, cb_tree upon_handle,
 	cb_tree		scroll;
 	cb_tree		size_is;	/* WITH SIZE IS */
 	cob_flags_t		disp_attrs;
+	int ret = 0;
 
 	/* type may be: NULL     --> normal WINDOW,
 	                cb_int0  --> FLOATING WINDOW
@@ -8037,14 +8038,20 @@ cb_emit_display_window (cb_tree type, cb_tree own_handle, cb_tree upon_handle,
 	/* Validate line_column and the attributes */
 	initialize_attrs (attr_ptr, &fgc, &bgc, &scroll, &size_is, &disp_attrs);
 	if (validate_attrs (line_column, fgc, bgc, scroll, size_is)) {
-		return;
+		ret++;
 	}
 
 	if (own_handle && !usage_is_window_handle (own_handle)) {
 		cb_error_x (own_handle, _("HANDLE must be either a generic or a WINDOW HANDLE or X(10)"));
+		ret++;
 	}
 	if (upon_handle && !usage_is_window_handle (upon_handle)) {
 		cb_error_x (upon_handle, _("HANDLE must be either a generic or a WINDOW HANDLE or X(10)"));
+		ret++;
+	}
+	/* all syntax checks done, so leave on error */
+	if (ret) {
+		return;
 	}
 
 #if 0 /* TODO, likely as multiple functions */
@@ -8062,6 +8069,7 @@ cb_emit_close_window (cb_tree handle, cb_tree no_display)
 {
 	if (handle && !usage_is_window_handle (handle)) {
 		cb_error_x (handle, _("HANDLE must be either a generic or a WINDOW HANDLE or X(10)"));
+		return;
 	}
 	if (no_display) {
 		cb_emit (CB_BUILD_FUNCALL_1 ("cob_close_window", handle));
@@ -9617,11 +9625,11 @@ validate_move_from_const (cb_tree src, cb_tree dst, const unsigned int is_value)
 	cb_tree			loc = src->source_line ? src : dst;
 
 	if (src == cb_space || src == cb_low || src == cb_high || src == cb_quote) {
-		if (CB_TREE_CATEGORY (dst) == CB_CATEGORY_NUMERIC
-		    || (CB_TREE_CATEGORY (dst) == CB_CATEGORY_NUMERIC_EDITED && !is_value)
-		    || (CB_TREE_CATEGORY (dst) == CB_CATEGORY_FLOATING_EDITED && !is_value)) {
-			if ((current_statement && strcmp (current_statement->name, "SET") == 0)
-			    || cobc_cs_check == CB_CS_SET) {
+		if ( CB_TREE_CATEGORY (dst) == CB_CATEGORY_NUMERIC
+		 || (CB_TREE_CATEGORY (dst) == CB_CATEGORY_NUMERIC_EDITED && !is_value)
+		 || (CB_TREE_CATEGORY (dst) == CB_CATEGORY_FLOATING_EDITED && !is_value)) {
+			if ((current_statement && current_statement->statement == STMT_SET)
+			   || cobc_cs_check == CB_CS_SET) {
 				return MOVE_INVALID;
 			}
 		}
@@ -10398,7 +10406,7 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 	case MOVE_INVALID:
 		if (is_value) {
 			cb_error_x (loc, _("invalid VALUE clause"));
-		} else if ((current_statement && strcmp (current_statement->name, "SET") == 0)
+		} else if ((current_statement && current_statement->statement == STMT_SET)
 			   || cobc_cs_check == CB_CS_SET) {
 			cb_error_x (loc, _("invalid SET statement"));
 		} else {

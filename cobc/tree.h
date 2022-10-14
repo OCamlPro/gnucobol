@@ -1472,7 +1472,7 @@ enum cb_handler_type {
 
 struct cb_statement {
 	struct cb_tree_common	common;			/* Common values */
-	const char		*name;			/* Statement name */
+	enum cob_statement	statement;		/* Statement */
 	cb_tree			body;			/* Statement body */
 	cb_tree			file;			/* File reference */
 	cb_tree			ex_handler;		/* Exception handler */
@@ -1871,6 +1871,8 @@ extern cb_tree			cb_depend_check;
 
 extern unsigned int		gen_screen_ptr;
 
+extern const char *cb_statement_name[STMT_MAX_ENTRY];
+
 extern char			*cb_name (cb_tree);
 extern char			*cb_name_errmsg (cb_tree);
 extern cb_tree			cb_exhbit_literal (cb_tree);
@@ -2016,7 +2018,7 @@ extern cb_tree			cb_build_perform (const enum cb_perform_type);
 extern cb_tree			cb_build_perform_varying (cb_tree, cb_tree,
 							  cb_tree, cb_tree);
 
-extern struct cb_statement	*cb_build_statement (const char *);
+extern struct cb_statement	*cb_build_statement (enum cob_statement);
 
 extern cb_tree			cb_build_continue (void);
 

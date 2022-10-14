@@ -198,7 +198,7 @@ static int			non_nested_count = 0;
 static int			loop_counter = 0;
 static int			progid = 0;
 static int			last_line = 0;
-static const char *	last_stmt = NULL;
+static enum	cob_statement last_stmt = STMT_UNKNOWN;
 static cob_u32_t		field_iteration = 0;
 static int			screenptr = 0;
 static int			local_mem = 0;
@@ -252,6 +252,18 @@ static const struct system_table	system_tab[] = {
 
 #undef	COB_SYSTEM_GEN
 
+#ifdef	HAVE_DESIGNATED_INITS
+const char	*cb_statement_enum_name[STMT_MAX_ENTRY] = {
+	[STMT_UNKNOWN] = CB_STRINGIFY (STMT_UNKNOWN)
+	/* note: STMT_UNKNOWN left out here */
+#define COB_STATEMENT(ename,str)	, [ename] = CB_STRINGIFY (ename)
+#include "libcob/statement.def"
+#undef COB_STATEMENT
+};
+#else
+const char	*cb_statement_enum_name[STMT_MAX_ENTRY];
+#endif
+
 /* Declarations */
 static void output_occurs (struct cb_field *);
 static void output (const char *, ...)		COB_A_FORMAT12;
@@ -273,7 +285,7 @@ static int	any_source_moves (struct cb_report *r, struct cb_field *f, int first)
 static struct cb_field * real_field_founder (const struct cb_field *f);
 static void add_field_cache (struct cb_field *f01);
 
-static void output_source_reference (cb_tree, const char *);
+static void output_source_reference (cb_tree, const enum cob_statement);
 
 /* Local functions */
 
@@ -1060,7 +1072,7 @@ out_odoslide_grp_size (struct cb_field *p, struct cb_field *fld)
 					if (need_plus_sign) {
 						output ("+");
 					}
-					output ("%d+",add_size);
+					output ("%d+", add_size);
 					add_size = 0;
 					need_plus_sign = 0;
 				}
@@ -2449,7 +2461,7 @@ output_frame_stack (struct cb_program *prog)
 {
 	const char *frame_type = (cb_flag_stack_extended) ? "cob_frame_ext" : "cob_frame";
 	output_local ("\n/* Perform frame stack */\n");
-	if (cb_perform_osvs && current_prog->prog_type == COB_MODULE_TYPE_PROGRAM) {
+	if (cb_perform_osvs && prog->prog_type == COB_MODULE_TYPE_PROGRAM) {
 		output_local ("struct %s\t*temp_index;\n", frame_type);
 	}
 	if (cb_flag_stack_check) {
@@ -8092,7 +8104,7 @@ output_perform_until (struct cb_perform *p, cb_tree l)
 	}
 	/* LCOV_EXCL_STOP */
 #endif
-	output_source_reference (v->until, "UNTIL");
+	output_source_reference (v->until, STMT_UNTIL);
 
 	output_prefix ();
 	output ("if (");
@@ -8106,7 +8118,7 @@ output_perform_until (struct cb_perform *p, cb_tree l)
 	}
 
 	if (v->step) {
-		output_source_reference (v->step, "VARYING");
+		output_source_reference (v->step, STMT_VARYING);
 		output_stmt (v->step);
 	}
 
@@ -8608,67 +8620,45 @@ output_section_info (struct cb_label *lp)
 }
 
 static void
-output_line_and_trace_info (cb_tree x, const char *name)
+output_line_and_trace_info (cb_tree x, const enum cob_statement stmnt)
 {
-	int	num = -1;
-	if (cb_flag_source_location 
-	 && name) {
-		num = cob_trace_get_stmt (name);
-		last_stmt = name;
+	const char *stmnt_enum = cb_statement_enum_name[stmnt];
+	if (cb_flag_source_location) {
+		last_stmt = stmnt;
 	}
 	if (  (cb_flag_c_line_directives 
 		|| cb_flag_source_location 
 		|| cb_cob_line_num)
 	 && x->source_file) {
 		output_cobol_info (x);
-		if (cb_flag_source_location 
-		 && name) {
-			if (num >= 0)
-				output_line ("module->stmt_num = %d;",num);
-			else
-				output_line ("module->stmt_name = %s%d;",
-							CB_PREFIX_STRING, lookup_string (name));
+		if (cb_flag_source_location) {
+			output_line ("module->statement = %s;", stmnt_enum);
 		}
 		if (cb_flag_source_location 
-		 && cb_flag_trace
-		 && name) {
+		 && cb_flag_trace) {
 			output_line ("if ((module->flag_debug_trace & COB_MODULE_READYTRACE))");
-			if (num >= 0)
-				output_line ("   cob_trace_stmt_num ();");
-			else
-				output_line ("   cob_trace_stmt (%s%d);",
-							CB_PREFIX_STRING, lookup_string (name));
+			output_line ("   cob_trace_statement (%s);", stmnt_enum);
 		} else if (cb_flag_c_line_directives) {
 			output_line (";");
 			output_c_info ();
 		}
 	} else {
-		if (cb_flag_source_location 
-		 && name) {
-			if (num >= 0)
-				output_line ("module->stmt_num = %d;",num);
-			else
-				output_line ("module->stmt_name = %s%d;",
-							CB_PREFIX_STRING, lookup_string (name));
+		if (cb_flag_source_location ) {
+			output_line ("module->statement = %s;", stmnt_enum);
 		}
 		if (cb_flag_source_location 
-		 && cb_flag_trace
-		 && name) {
+		 && cb_flag_trace) {
 			output_line ("if ((module->flag_debug_trace & COB_MODULE_READYTRACE))");
-			if (num >= 0)
-				output_line ("   cob_trace_stmt_num ();");
-			else
-				output_line ("   cob_trace_stmt (%s%d);",
-							CB_PREFIX_STRING, lookup_string (name));
+			output_line ("   cob_trace_statement (%s);", stmnt_enum);
 		}
 	}
 }
 
 static void
-output_source_reference (cb_tree tree, const char *stmt_name)
+output_source_reference (cb_tree tree, const enum cob_statement statement)
 {
 	output_prefix ();
-	output ("/* Line: %-10d: %-19s", tree->source_line, stmt_name);
+	output ("/* Line: %-10d: %-19s", tree->source_line, cb_statement_name[statement]);
 	if (tree->source_file) {
 		output (": %s ", tree->source_file);
 	}
@@ -8678,15 +8668,15 @@ output_source_reference (cb_tree tree, const char *stmt_name)
 	if (cb_flag_source_location
 	 || cb_flag_dump) {
 		if (last_line != tree->source_line
-	 	 || last_stmt != stmt_name) {
+	 	 || last_stmt != statement) {
 			output_line ("module->module_stmt = 0x%08X;",
 				COB_SET_LINE_FILE(tree->source_line, lookup_source(tree->source_file)));
 		}
 	}
 	if (last_line != tree->source_line
-	 || last_stmt != stmt_name) {
+	 || last_stmt != statement) {
 		/* Output source location as code */
-		output_line_and_trace_info (tree, stmt_name);
+		output_line_and_trace_info (tree, statement);
 	}
 }
 
@@ -8946,7 +8936,7 @@ output_stmt (cb_tree x)
 			/* Output source location as a comment */
 			skip_line_num = 4;
 			output_line ("/* Line: %-10d: %-19.19s: %s */",
-				     x->source_line, p->name, x->source_file);
+				     x->source_line, cb_statement_name[p->statement], x->source_file);
 			/* Output source location as code */
 			if (cb_flag_source_location
 			 || cb_flag_dump) {
@@ -8956,7 +8946,7 @@ output_stmt (cb_tree x)
 				}
 			}
 			/* Output source location as code */
-			output_line_and_trace_info (x, p->name);
+			output_line_and_trace_info (x, p->statement);
 			/* USE FOR DEBUGGING: pre-fill DEBUG-LINE
 			   FIXME: postpone to actual DEBUGGING procedure,
 			          using module->module_stmt there
@@ -9404,14 +9394,14 @@ output_stmt (cb_tree x)
 						output_line ("/* WHEN */");
 					/* LCOV_EXCL_STOP */
 					} else {
-						output_source_reference (w, "WHEN");
+						output_source_reference (w, STMT_WHEN);
 					}
 				}
 			} else if (ip->test->source_line) {
 				output_line ("/* Line: %-10d: WHEN */", ip->test->source_line);
 				if (last_line != ip->test->source_line) {
 					/* Output source location as code */
-					output_line_and_trace_info (ip->test, "WHEN");
+					output_line_and_trace_info (ip->test, STMT_WHEN);
 				}
 			/* LCOV_EXCL_START TODO - REMOVE when verified that we never reach this */
 			} else {
@@ -14356,3 +14346,15 @@ codegen (struct cb_program *prog, const char *translate_name, const int subseque
 	source_cache = NULL;
 	source_id = 1;
 }
+
+
+#ifndef	HAVE_DESIGNATED_INITS
+void
+cobc_init_codegen (void)
+{
+	cb_statement_enum_name[STMT_UNKNOWN] = CB_STRINGIFY (STMT_UNKNOWN);
+#define COB_STATEMENT(ename,str)	cb_statement_enum_name[ename] = CB_STRINGIFY (ename);
+#include "libcob/statement.def"
+#undef COB_STATEMENT
+}
+#endif

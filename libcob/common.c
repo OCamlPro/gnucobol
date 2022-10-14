@@ -238,93 +238,19 @@ static const unsigned char	*sort_collate = NULL;
 
 static const char		*cob_source_file = NULL;
 static unsigned int		cob_source_line = 0;
-static const char *cob_verbs[] = {
-		"ACCEPT",
-		"ADD",
-		"ALLOCATE",
-		"ALTER",
-		"CALL",
-		"CANCEL",
-		"CHAIN",
-		"CLOSE",
-		"COMMIT",
-		"COMPUTE",
-		"CONTINUE",
-		"DELETE",
-		"DISABLE",
-		"DISPLAY",
-		"DIVIDE",
-		"ELSE",
-		"ENABLE",
-		"END",
-		"END-EVALUATE",
-		"END-IF",
-		"END-INVOKE",
-		"END-PERFORM",
-		"END-SET",
-		"ENTER",
-		"ENTRY",
-		"ENTRY FOR GO TO",
-		"EVALUATE",
-		"EXAMINE",
-		"EXEC",
-		"EXECUTE",
-		"EXHIBIT",
-		"EXIT",
-		"EXIT PARAGRAPH",
-		"EXIT PERFORM",
-		"EXIT PERFORM CYCLE",
-		"EXIT PROGRAM",
-		"EXIT SECTION",
-		"FREE",
-		"GENERATE",
-		"GO",
-		"GO TO",
-		"GOBACK",
-		"IF",
-		"INITIALIZE",
-		"INITIATE",
-		"INSPECT",
-		"INVOKE",
-		"JSON GENERATE",
-		"MERGE",
-		"MOVE",
-		"MULTIPLY",
-		"NEXT",
-		"NOTE",
-		"ON",
-		"OPEN",
-		"OTHERWISE",
-		"PERFORM",
-		"READ",
-		"READY TRACE",
-		"RECEIVE",
-		"RECOVER",
-		"RELEASE",
-		"RESET TRACE",
-		"RETURN",
-		"REWRITE",
-		"ROLLBACK",
-		"SEARCH",
-		"SEARCH ALL",
-		"SEND",
-		"SERVICE",
-		"SET",
-		"SORT",
-		"START",
-		"STOP RUN",
-		"STRING",
-		"SUBTRACT",
-		"SUPPRESS",
-		"TERMINATE",
-		"TRANSFORM",
-		"UNLOCK",
-		"UNSTRING",
-		"WHEN",
-		"WRITE",
-		"XML GENERATE"
-	};
-#define MAX_VERBS (sizeof(cob_verbs) / sizeof(void*))
+
+#ifdef	HAVE_DESIGNATED_INITS
+const char	*cob_statement_name[STMT_MAX_ENTRY] = {
+	[STMT_UNKNOWN] = "UNKNOWN"
+	/* note: STMT_UNKNOWN left out here */
+#define COB_STATEMENT(ename,str)	, [ename] = str
+#include "statement.def"	/* located and installed next to common.h */
+#undef COB_STATEMENT
+};
+#else
+const char	*cob_statement_name[STMT_MAX_ENTRY];
+static void init_statement_list (void);
+#endif
 
 #ifdef COB_DEBUG_LOG
 static int			cob_debug_check_open = 1;
@@ -2661,13 +2587,12 @@ cob_set_exception (const int id)
 	cobglobptr->cob_exception_code = cob_exception_tab_code[id];
 	last_exception_code = cobglobptr->cob_exception_code;
 
-	cobglobptr->last_exception_statement = NULL;
+	cobglobptr->last_exception_statement = STMT_UNKNOWN;
 	cobglobptr->last_exception_id = NULL;
 	cobglobptr->last_exception_section = NULL;
 	cobglobptr->last_exception_paragraph = NULL;
 
 	if (id) {
-		static char excp_stmt[31 + 1];
 		static char excp_mod[COB_MAX_WORDLEN + 1];
 		static char excp_sec[COB_MAX_WORDLEN + 1];
 		static char excp_para[COB_MAX_WORDLEN + 1];
@@ -2691,13 +2616,7 @@ cob_set_exception (const int id)
 				cobglobptr->last_exception_line = COB_GET_LINE_NUM (mod->module_stmt);
 #endif
 			}
-			if (mod->stmt_num >= 0) {
-				mod->stmt_name = cob_verbs [mod->stmt_num];
-			}
-			if (mod->stmt_name) {
-				strcpy (excp_stmt, mod->stmt_name); /* WIP Simon: replace with global enum */
-				cobglobptr->last_exception_statement = excp_stmt;
-			}
+			cobglobptr->last_exception_statement = mod->statement;
 			if (mod->module_name) {
 				strcpy (excp_mod, mod->module_name);
 				cobglobptr->last_exception_id = excp_mod;
@@ -3077,53 +2996,43 @@ cob_trace_exit (const char *name)
 }
 
 void
-cob_trace_stmt (const char *stmt)
+cob_trace_stmt (const char *stmt_name)
 {
-	char	val[60];
+	enum cob_statement stmt;
 
-	COB_MODULE_PTR->stmt_name = stmt;
+	if (!stmt_name) {
+		stmt = STMT_UNKNOWN;
+#define COB_STATEMENT(ename,str) \
+	} else if (strcmp (str, stmt_name) == 0) { \
+		stmt = ename;
+#include "statement.def"	/* located and installed next to common.h */
+#undef COB_STATEMENT
+	}  else {
+		cob_runtime_warning ("not handled statement: %s", stmt_name);
+		stmt = STMT_UNKNOWN;
+	}
+
+	/* compat: add to module structure */
+	COB_MODULE_PTR->module_stmt = stmt;
 
 	/* actual tracing, if activated */
-	if (cobsetptr->cob_line_trace
-	 && (COB_MODULE_PTR->flag_debug_trace & COB_MODULE_TRACEALL)) {
-		if (cob_trace_prep ()) {
-			return;
-		}
-		snprintf (val, sizeof (val), "           %s", stmt ? (char *)stmt : _("unknown"));
-		cob_trace_print (val);
-	}
+	cob_trace_statement (stmt);
 }
 
 void
-cob_trace_stmt_num (void)
+cob_trace_statement (const enum cob_statement stmt)
 {
-	cob_trace_stmt (cob_verbs[COB_MODULE_PTR->stmt_num]);
-}
-
-int
-cob_trace_get_stmt (const char *stmt)
-{
-	int k,n;
-	if (stmt == NULL)
-		return -1;
-	for (k=10; k < MAX_VERBS && strcmp(stmt, cob_verbs[k]) > 0; k += 9) {
-		if (strcmp(stmt, cob_verbs[k]) == 0)
-			return k;
+	/* actual tracing, if activated */
+	if (cobsetptr->cob_line_trace
+	 && (COB_MODULE_PTR->flag_debug_trace & COB_MODULE_TRACEALL)) {
+		char	val[60];
+		if (cob_trace_prep ()) {
+			return;
+		}
+		snprintf (val, sizeof (val), "           %s",
+			stmt != STMT_UNKNOWN ? cob_statement_name[stmt] : _("unknown"));
+		cob_trace_print (val);
 	}
-	for (k=k-10; k < MAX_VERBS && strcmp(stmt, cob_verbs[k]) > 0; k += 3) {
-		if (strcmp(stmt, cob_verbs[k]) == 0)
-			return k;
-	}
-	n = k + 1;
-	k -= 4;
-	if (k < 0) k = 0;
-	for (; k < n && k < MAX_VERBS; k++) {
-		if (cob_verbs[k] == NULL)
-			break;
-		if (strcmp(stmt, cob_verbs[k]) == 0)
-			return k;
-	}
-	return -1;
 }
 
 void
@@ -3427,8 +3336,7 @@ cob_module_global_enter (cob_module **module, cob_global **mglobal,
 	(*module)->next = COB_MODULE_PTR;
 	COB_MODULE_PTR = *module;
 	COB_MODULE_PTR->module_stmt = 0;
-	COB_MODULE_PTR->stmt_num = -1;
-	COB_MODULE_PTR->stmt_name = NULL;
+	COB_MODULE_PTR->statement = STMT_UNKNOWN;
 	cobglobptr->cob_stmt_exception = 0;
 
 	if (cobsetptr->cob_line_trace)
@@ -8708,13 +8616,13 @@ cob_fatal_error (const enum cob_fatal_error fatal_error)
 		}
 		err_cause = cob_get_filename_print (cobglobptr->cob_error_file, 1);
 		/* FIXME: additional check if referenced program has active code location */
-		if (!cobglobptr->last_exception_statement) {
+		if (cobglobptr->last_exception_statement == STMT_UNKNOWN) {
 			cob_runtime_error (_ ("%s (status = %02d) for file %s"),
 				msg, status, err_cause);
 		} else {
 			cob_runtime_error (_("%s (status = %02d) for file %s on %s"),
 				msg, status, err_cause,
-				cobglobptr->last_exception_statement);
+				cob_statement_name[cobglobptr->last_exception_statement]);
 		}
 		break;
 	/* LCOV_EXCL_START */
@@ -9858,6 +9766,10 @@ cob_init (const int argc, char **argv)
 		}
 	}
 
+#ifndef	HAVE_DESIGNATED_INITS
+	init_statement_list ();
+#endif
+
 	/* Get user name if not set via environment already */
 	if (cobsetptr->cob_user_name == NULL) {
 #if defined (_WIN32)
@@ -10192,9 +10104,6 @@ cob_stack_trace_internal (FILE *target, int verbose, int count)
 			const unsigned int source_file_num = COB_GET_FILE_NUM (mod->module_stmt);
 			const unsigned int source_line = COB_GET_LINE_NUM (mod->module_stmt);
 			const char *source_file = mod->module_sources[source_file_num];
-			if (mod->stmt_num >= 0) {
-				mod->stmt_name = cob_verbs [mod->stmt_num];
-			}
 			write_or_return_arr (file_no, " ");
 			if (!verbose) {
 				write_or_return_str (file_no, mod->module_name);
@@ -10203,7 +10112,9 @@ cob_stack_trace_internal (FILE *target, int verbose, int count)
 				write_or_return_arr (file_no, ":");
 				write_or_return_int (file_no, (int)source_line);
 			} else
-			if (!mod->stmt_name && !mod->section_name && !mod->paragraph_name) {
+			if (mod->statement == STMT_UNKNOWN
+			 && !mod->section_name
+			 && !mod->paragraph_name) {
 				/* GC 3.1 output, now used for "no source location / no trace" case */
 				write_or_return_arr (file_no, "Last statement of ");
 				if (mod->module_type == COB_MODULE_TYPE_FUNCTION) {
@@ -10226,7 +10137,7 @@ cob_stack_trace_internal (FILE *target, int verbose, int count)
 				write_or_return_arr (file_no, "\"");
 				write_or_return_str (file_no, mod->module_name);
 				write_or_return_arr (file_no, "\" was ");
-				write_or_return_str (file_no, mod->stmt_name);
+				write_or_return_str (file_no, cob_statement_name[mod->statement]);
 				write_or_return_arr (file_no, " at line ");
 				write_or_return_int (file_no, (int)source_line);
 				write_or_return_arr (file_no, " of ");
@@ -10242,7 +10153,7 @@ cob_stack_trace_internal (FILE *target, int verbose, int count)
 				write_or_return_arr (file_no, "\"");
 				write_or_return_str (file_no, mod->module_name);
 				write_or_return_arr (file_no, "\" was ");
-				write_or_return_str (file_no, mod->stmt_name);
+				write_or_return_str (file_no, cob_statement_name[mod->statement]);
 			}
 			output_procedure_stack_entry (file_no, mod->section_name, mod->paragraph_name,
 					source_file, source_line);
@@ -11031,4 +10942,16 @@ cob_debug_dump (void *pMem, int len)
 int cob_debug_logit (int level, char *module) { return 1; }
 int cob_debug_dump (void *pMem, int len) { return 0; }
 int cob_debug_logger (const char *fmt, ...) { return 0; }
+#endif
+
+
+#ifndef	HAVE_DESIGNATED_INITS
+void
+init_statement_list (void)
+{
+	cob_statement_name[STMT_UNKNOWN] = "UNKNOWN";
+#define COB_STATEMENT(ename,str)	cob_statement_name[ename] = str;
+#include "statement.def"	/* located and installed next to common.h */
+#undef COB_STATEMENT
+}
 #endif

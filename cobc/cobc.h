@@ -578,9 +578,11 @@ extern int		cb_load_conf (const char *, const int);
 extern int		cb_load_words (void);
 
 #ifndef	HAVE_DESIGNATED_INITS
-/* Initialization routines in typeck.c and reserved.c */
+/* "static" initialization routines in several files */
 extern void		cobc_init_typeck (void);
 extern void		cobc_init_reserved (void);
+extern void		cobc_init_tree (void);
+extern void		cobc_init_codegen (void);
 #endif
 
 /* preprocessor (in pplex.l, ppparse.y) */

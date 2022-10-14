@@ -394,6 +394,8 @@ COB_HIDDEN void		cob_init_move		(cob_global *, cob_settings *);
 COB_HIDDEN void		cob_init_screenio	(cob_global *, cob_settings *);
 COB_HIDDEN void		cob_init_mlio		(cob_global * const);
 
+COB_HIDDEN const char *cob_statement_name[STMT_MAX_ENTRY];
+
 COB_HIDDEN void		cob_print_field		(FILE *, cob_field *, int, int);
 COB_HIDDEN void		cob_module_clean	(cob_module *);
 

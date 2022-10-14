@@ -129,7 +129,7 @@ lib_LTLIBRARIES = libcob.la $(lib_ci) $(lib_di) $(lib_vb) $(lib_vc) \
 
 EXTRA_DIST = coblocal.h cobinternal.h system.def sysdefines.h fileio.h fisam.c
 pkgincludedir = $(includedir)/libcob
-pkginclude_HEADERS = common.h cobgetopt.h exception.def cobcapi.h
+pkginclude_HEADERS = common.h cobgetopt.h exception.def statement.def cobcapi.h
 
 # Add rules for code-coverage testing, as provided by AX_CODE_COVERAGE
 include $(top_srcdir)/aminclude_static.am
