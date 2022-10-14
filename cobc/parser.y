@@ -19,7 +19,7 @@
    along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-%require "3.0"
+%require "3.6"
 
 %expect 0
 
@@ -4496,7 +4496,7 @@ alphabet_lits:
 | SPACE				{ $$ = cb_space; }
 | ZERO				{ $$ = cb_zero; }
 | QUOTE				{ $$ = cb_quote; }
-| HIGH_VALUE			{ $$ = cb_norm_high; }
+| HIGH_VALUE		{ $$ = cb_norm_high; /* -> special case, not cb_high */ }
 | LOW_VALUE			{ $$ = cb_norm_low; }
 ;
 
@@ -4505,39 +4505,66 @@ space_or_zero:
 | ZERO				{ $$ = cb_zero; }
 ;
 
+_alphnat_target:
+  /* empty */
+  {
+	$$ = NULL;
+  }
+| _for ALPHANUMERIC
+  {
+	$$ = NULL;
+  }
+| _for NATIONAL
+  {
+	$$ = cb_int0;
+  }
+;
+
+_in_alphabet:
+  /* empty */
+  {
+	$$ = NULL;
+  }
+| IN alphabet_name
+  {
+	$$ = $2;
+  }
+;
+
 
 /* SYMBOLIC characters clause */
 
 symbolic_characters_clause:
-  symbolic_collection _sym_in_word
+  symbolic_collection _in_alphabet
   {
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION,
 			       COBC_HD_CONFIGURATION_SECTION,
 			       COBC_HD_SPECIAL_NAMES, 0);
 	if (current_program->nested_level) {
 		cb_error (_("%s not allowed in nested programs"), "SPECIAL-NAMES");
-	} else if ($1) {
-		CB_CHAIN_PAIR (current_program->symbolic_char_list, $1, $2);
+	} else {
+		cb_tree type = CB_PAIR_X ($1);
+		cb_tree chars_list = CB_PAIR_Y ($1);
+		cb_tree alph = $2;
+		
+		/* TODO: at least add a check that $3 and $6 match by type */
+		if (type && !alph) {
+			cb_error_x (type, _("type does not match alphabet"));
+		} else
+		if (type) {
+			CB_PENDING_X (type, "NATIONAL SYMBOLIC CHARACTER");
+		}
+		CB_CHAIN_PAIR (current_program->symbolic_char_list, chars_list, alph);
 	}
   }
 ;
 
-_sym_in_word:
-  /* empty */
-  {
-	$$ = NULL;
-  }
-| IN WORD
-  {
-	$$ = $2;
-  }
-;
 
 symbolic_collection:
   %prec SHIFT_PREFER
-  SYMBOLIC _characters symbolic_chars_list
+  SYMBOLIC _characters _alphnat_target symbolic_chars_list
   {
-	$$ = $3;
+	$$ = CB_BUILD_PAIR ($3, $4);
   }
 ;
 
@@ -4644,7 +4671,7 @@ symbolic_constant:
 /* CLASS clause */
 
 class_name_clause:
-  CLASS undefined_word _class_type _is class_item_list _in_alphabet
+  CLASS undefined_word _alphnat_target _is class_item_list _in_alphabet
   {
 	cb_tree		x;
 
@@ -4659,6 +4686,16 @@ class_name_clause:
 		if (x) {
 			current_program->class_name_list =
 				cb_list_add (current_program->class_name_list, x);
+		}
+		/* TODO: at least add a check that $3 and $6 match by type */
+		if ($3 && !$6) {
+			cb_error_x ($3, _("type does not match alphabet"));
+		} else
+		if ($3) {
+			CB_PENDING_X ($3, "NATIONAL CLASS");
+		}
+		if ($6) {
+			CB_PENDING_X ($6, _("CLASS IS integer IN alphabet-name"));
 		}
 	}
   }
@@ -4689,29 +4726,6 @@ class_item:
 	} else {
 		$$ = CB_BUILD_PAIR ($3, $1);
 	}
-  }
-;
-
-_class_type:
-  /* empty */
-| _for ALPHANUMERIC
-  {
-	$$ = NULL;
-  }
-| _for NATIONAL
-  {
-	CB_PENDING_X ($2, "NATIONAL CLASS");
-	$$ = cb_int0;
-  }
-;
-
-_in_alphabet:
-  /* empty */
-| IN alphabet_name
-  {
-	/* note: IN is mandatory here */
-	CB_PENDING_X ($2, _("CLASS IS integer IN alphabet-name"));
-	$$ = $2;
   }
 ;
 
@@ -7359,6 +7373,9 @@ _pic_locale_format:
 
 _is_locale_name:
   /* empty */
+  {
+	$$ = NULL;
+  }
 | _is locale_name
   {
 	$$ = $2;
@@ -8590,7 +8607,7 @@ _report_group_description_list:
 report_group_description_entry:
   level_number _entry_name
   {
-	if (set_current_field($1, $2)) {
+	if (set_current_field ($1, $2)) {
 		YYERROR;
 	}
 	if (!description_field) {
@@ -9160,7 +9177,6 @@ screen_description:
 	if (set_current_field ($1, $2)) {
 		YYERROR;
 	}
-
 	if (current_field->parent) {
 		current_field->screen_foreg = current_field->parent->screen_foreg;
 		current_field->screen_backg = current_field->parent->screen_backg;
@@ -11084,7 +11100,8 @@ field_with_pos_specifier:
 ;
 
 _pos_specifier:
-  /* empty */ | pos_specifier
+  /* empty */
+| pos_specifier
 ;
 
 pos_specifier:
@@ -12231,7 +12248,10 @@ continue_statement:
 ;
 
 _continue_after_phrase:
-  /* empty */	{ $$ = NULL;}
+  /* empty */
+  {
+	$$ = NULL;
+  }
 | AFTER {
 	/* FIXME: hack - fake cs for context-sensitive SECONDS */
 	cobc_cs_check = CB_CS_RETRY;
@@ -12502,7 +12522,7 @@ display_clause:
 _display_upon:
   /* empty */
   {
-	  upon_value = NULL;
+	upon_value = NULL;
   }
 | display_upon
 ;
@@ -14205,11 +14225,14 @@ json_parse_body:
   _json_name_of
   _json_suppress
   _common_exception_phrases
+  {
+	CB_PENDING ("JSON PARSE");
+  }
 ;
 
 _with_detail:
-  /* empty */
-| _with DETAIL
+  /* empty */			{ $$ = NULL; }
+| _with DETAIL			{ $$ = cb_int0; }
 ;
 
 /* MERGE statement */
@@ -14829,7 +14852,7 @@ retry_options:
 ;
 
 _extended_with_lock:
-  /* empty */
+  /* empty */	{ $$ = NULL; }
 | extended_with_lock
 ;
 
@@ -15749,14 +15772,8 @@ stop_returning:
 ;
 
 _status_x:
-  /* empty */
-  {
-	$$ = NULL;
-  }
-| x
-  {
-	$$ = $1;
-  }
+  /* empty */	{ $$ = NULL; }
+| x         	{ $$ = $1; }
 ;
 
 stop_argument:
@@ -15825,7 +15842,7 @@ string_item:
 ;
 
 _string_delimited:
-  /* empty */		{ $$ = NULL; }
+  /* empty */     	{ $$ = NULL; }
 | DELIMITED _by
   string_delimiter	{ $$ = $3; }
 ;
@@ -16006,7 +16023,7 @@ unstring_body:
 ;
 
 _unstring_delimited:
-  /* empty */			{ $$ = NULL; }
+  /* empty */            	{ $$ = NULL; }
 | DELIMITED _by
   unstring_delimited_list	{ $$ = $3; }
 ;
@@ -16038,12 +16055,12 @@ unstring_into_item:
 ;
 
 _unstring_into_delimiter:
-  /* empty */			{ $$ = NULL; }
+  /* empty */             	{ $$ = NULL; }
 | DELIMITER _in identifier	{ $$ = $3; }
 ;
 
 _unstring_tallying:
-  /* empty */			{ $$ = NULL; }
+  /* empty */            	{ $$ = NULL; }
 | TALLYING _in identifier	{ $$ = $3; }
 ;
 
@@ -16438,7 +16455,7 @@ write_body:
 ;
 
 from_option:
-  /* empty */			{ $$ = NULL; }
+  /* empty */        		{ $$ = NULL; }
 | FROM from_parameter		{ $$ = $2; }
 ;
 
@@ -16656,12 +16673,12 @@ json_identifier_is_name:
 _type_of:
   /* empty */
   {
-       $$ = NULL;
+	$$ = NULL;
   }
 | TYPE _of identifier_type_list
   {
-       $$ = $3;
-       	cb_verify (cb_xml_generate_extra_phrases,
+	$$ = $3;
+	cb_verify (cb_xml_generate_extra_phrases,
 		   _("XML GENERATE TYPE OF clause"));
   }
 ;
@@ -16802,17 +16819,18 @@ _with_encoding:
 ;
 
 _returning_national:
-/* empty */
-| RETURNING NATIONAL
+/* empty */         		{ $$ = NULL; }
+| RETURNING NATIONAL		{ $$ = cb_true; }
 ;
 
 _validating_with:
-/* empty */
-| VALIDATING _with schema_file_or_record_name
+/* empty */                 	{ $$ = NULL; }
+| VALIDATING _with
+  schema_file_or_record_name	{ $$ = $3; }
 ;
 
 schema_file_or_record_name:
-  record_name
+  record_name  { $$ = $1; }
 | TOK_FILE WORD
   {
 	if (CB_FILE_P (cb_ref ($2))) {
@@ -17731,7 +17749,7 @@ entry_name:
 
 procedure_name_list:
   %prec SHIFT_PREFER
-  /* empty */			{ $$ = NULL; }
+  /* empty */   		{ $$ = NULL; }
 | procedure_name_list
   procedure_name		{ $$ = cb_list_add ($1, $2); }
 ;
@@ -17784,8 +17802,8 @@ reference:
 ;
 
 _reference:
-  /* empty */	{$$ = NULL;}
-| reference		{$$ = $1;}
+  /* empty */		{$$ = NULL;}
+| reference  		{$$ = $1;}
 ;
 
 single_reference_list:
@@ -17890,8 +17908,8 @@ target_x:
 ;
 
 _x_list:
-  /* empty */	{ $$ = NULL; }
-| x_list	{ $$ = $1; }
+  /* empty */		{ $$ = NULL; }
+| x_list     		{ $$ = $1; }
 ;
 
 x_list:
@@ -18555,12 +18573,20 @@ class_value:
 	}
 	$$ = $1;
   }
-| SPACE				{ $$ = cb_space; }
+| figurative_constant
+  {
+	$$ = $1;
+  }
+;
+;
+
+figurative_constant:
+  SPACE				{ $$ = cb_space; }
 | ZERO				{ $$ = cb_zero; }
 | QUOTE				{ $$ = cb_quote; }
 | HIGH_VALUE			{ $$ = cb_high; }
 | LOW_VALUE			{ $$ = cb_low; }
-| TOK_NULL			{ $$ = cb_null; }
+| TOK_NULL			{ $$ = cb_null;  /* CHECKME: is that valid in all used cases? */}
 ;
 
 literal:
@@ -18595,15 +18621,7 @@ basic_literal:
   }
 ;
 
-basic_value:
-  LITERAL			{ $$ = $1; }
-| SPACE				{ $$ = cb_space; }
-| ZERO				{ $$ = cb_zero; }
-| QUOTE				{ $$ = cb_quote; }
-| HIGH_VALUE			{ $$ = cb_high; }
-| LOW_VALUE			{ $$ = cb_low; }
-| TOK_NULL			{ $$ = cb_null; }
-;
+basic_value:	LITERAL | figurative_constant ;
 
 zero_spaces_high_low_values:
   SPACE				{ $$ = cb_space; }
@@ -18844,13 +18862,13 @@ not_const_word:
 
 flag_all:
   /* empty */			{ $$ = cb_int0; }
-| ALL				{ $$ = cb_int1; }
+| ALL        			{ $$ = cb_int1; }
 ;
 
 flag_duplicates:
-  /* empty */			{ $$ = NULL; }
+  /* empty */        	{ $$ = NULL; }
 | _with NO DUPLICATES	{ $$ = cb_int0; }
-| _with DUPLICATES	{ $$ = cb_int1; }
+| _with    DUPLICATES	{ $$ = cb_int1; }
 ;
 
 flag_initialized:
@@ -18883,18 +18901,18 @@ to_init_val:
 _flag_next:
   %prec SHIFT_PREFER
   /* empty */			{ $$ = cb_int0; }
-| NEXT				{ $$ = cb_int1; }
-| PREVIOUS			{ $$ = cb_int2; }
+| NEXT       			{ $$ = cb_int1; }
+| PREVIOUS   			{ $$ = cb_int2; }
 ;
 
 _flag_not:
   /* empty */			{ $$ = NULL; }
-| NOT				{ $$ = cb_true; }
+| NOT        			{ $$ = cb_true; }
 ;
 
 flag_optional:
   /* empty */			{ $$ = cb_int (cb_flag_optional_file); }
-| OPTIONAL			{ $$ = cb_int1; }
+| OPTIONAL   			{ $$ = cb_int1; }
 | NOT OPTIONAL			{ $$ = cb_int0; }
 ;
 
@@ -18963,7 +18981,7 @@ round_choice:
 ;
 
 flag_separate:
-  /* empty */			{ $$ = NULL; }
+  /* empty */        		{ $$ = NULL; }
 | SEPARATE _character		{ $$ = cb_int1; }
 ;
 
