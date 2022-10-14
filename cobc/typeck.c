@@ -513,6 +513,8 @@ static int	cb_check_move		(cb_tree, cb_tree, const int);
 static int	cb_check_set_to		(cb_tree, cb_tree, const int);
 static int	cb_check_arithmetic	(cb_tree, cb_tree, const int);
 
+static int error_string_not_usage_display_or_national (cb_tree ref);
+
 #if 0 /* TODO: merge of fast math */
 static int cb_is_integer_expr (cb_tree x);
 
@@ -841,11 +843,11 @@ cb_validate_one (cb_tree x)
 				f->usage == CB_USAGE_HNDL_LM) {
 				/* valid statements: CALL, MOVE, DISPLAY + expressions
 				   the only statements reaching this are MOVE and DISPLAY */
-				if (strcmp (current_statement->name, "MOVE") != 0 &&
-					strcmp (current_statement->name, "DISPLAY") != 0 &&
-					strcmp (current_statement->name, "DESTROY") != 0 &&
-					strcmp (current_statement->name, "CLOSE WINDOW") != 0) {
-						cb_error_x (x, _("%s item not allowed here: '%s'"),
+				if (current_statement->statement != STMT_MOVE
+				 && current_statement->statement != STMT_DISPLAY
+				 && current_statement->statement != STMT_DESTROY
+				 &&	current_statement->statement != STMT_CLOSE_WINDOW) {
+				 		cb_error_x (x, _("%s item not allowed here: '%s'"),
 							"HANDLE", f->name);
 					return 1;
 				}
@@ -5858,7 +5860,7 @@ decimal_alloc (void)
 	if (current_program->decimal_index >= COB_MAX_DEC_STRUCT) {
 		cobc_err_msg (_("internal decimal structure size exceeded: %d"),
 				COB_MAX_DEC_STRUCT);
-		if (strcmp(current_statement->name, "COMPUTE") == 0) {
+		if (current_statement->statement != STMT_COMPUTE) {
 			cobc_err_msg (_("Try to minimize the number of parentheses "
 							 "or split into multiple computations."));
 		}
@@ -6379,7 +6381,6 @@ static cb_tree
 build_cond_88 (cb_tree x)
 {
 	struct cb_field	*f;
-	const char	*real_statement;	/* bad hack... */
 
 	cb_tree		l;
 	cb_tree		t;
@@ -6401,11 +6402,12 @@ build_cond_88 (cb_tree x)
 		t = CB_VALUE (l);
 		if (CB_PAIR_P (t)) {
 			/* VALUE THRU VALUE */
-			real_statement = current_statement->name;
-			current_statement->name = "VALUE THRU";
+			const enum cob_statement real_stmt = current_statement->statement;
+			/* bad hack... */
+			current_statement->statement = STMT_VALUE_THRU;
 			c2 = cb_build_binary_op (cb_build_binary_op (x, ']', CB_PAIR_X (t)),
 						 '&', cb_build_binary_op (x, '[', CB_PAIR_Y (t)));
-			current_statement->name = real_statement;
+			current_statement->statement = real_stmt;
 		} else {
 			/* VALUE */
 			c2 = cb_build_binary_op (x, '=', t);
@@ -8622,6 +8624,7 @@ cb_emit_display_window (cb_tree type, cb_tree own_handle, cb_tree upon_handle,
 	cb_tree		scroll;
 	cb_tree		size_is;	/* WITH SIZE IS */
 	cob_flags_t		disp_attrs;
+	int ret = 0;
 
 	/* type may be: NULL     --> normal WINDOW,
 	                cb_int0  --> FLOATING WINDOW
@@ -8634,14 +8637,20 @@ cb_emit_display_window (cb_tree type, cb_tree own_handle, cb_tree upon_handle,
 	/* Validate line_column and the attributes */
 	initialize_attrs (attr_ptr, &fgc, &bgc, &scroll, &size_is, &disp_attrs);
 	if (validate_attrs (line_column, fgc, bgc, scroll, size_is)) {
-		return;
+		ret++;
 	}
 
 	if (own_handle && !usage_is_window_handle (own_handle)) {
 		cb_error_x (own_handle, _("HANDLE must be either a generic or a WINDOW HANDLE or X(10)"));
+		ret++;
 	}
 	if (upon_handle && !usage_is_window_handle (upon_handle)) {
 		cb_error_x (upon_handle, _("HANDLE must be either a generic or a WINDOW HANDLE or X(10)"));
+		ret++;
+	}
+	/* all syntax checks done, so leave on error */
+	if (ret) {
+		return;
 	}
 
 #if 0 /* TODO, likely as multiple functions */
@@ -8659,6 +8668,7 @@ cb_emit_close_window (cb_tree handle, cb_tree no_display)
 {
 	if (handle && !usage_is_window_handle (handle)) {
 		cb_error_x (handle, _("HANDLE must be either a generic or a WINDOW HANDLE or X(10)"));
+		return;
 	}
 	if (no_display) {
 		cb_emit (CB_BUILD_FUNCALL_1 ("cob_close_window", handle));
@@ -10233,7 +10243,7 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 			if (CB_TREE_CATEGORY (dst) == CB_CATEGORY_NUMERIC
 			 || (CB_TREE_CATEGORY (dst) == CB_CATEGORY_NUMERIC_EDITED && !is_value)
 			 || (CB_TREE_CATEGORY (dst) == CB_CATEGORY_FLOATING_EDITED && !is_value)) {
-				if ((current_statement && strcmp (current_statement->name, "SET") == 0)
+				if ((current_statement && current_statement->statement == STMT_SET)
 				 || cobc_cs_check == CB_CS_SET) {
 					goto invalid;
 				}
@@ -10858,8 +10868,8 @@ movezero:
 invalid:
 	if (is_value) {
 		cb_error_x (loc, _("invalid VALUE clause"));
-	} else if ((current_statement && strcmp (current_statement->name, "SET") == 0)
-			 || cobc_cs_check == CB_CS_SET) {
+	} else if ((current_statement && current_statement->statement == STMT_SET)
+		     || cobc_cs_check == CB_CS_SET) {
 		cb_error_x (loc, _("invalid SET statement"));
 	} else {
 		cb_error_x (loc, _("invalid MOVE statement"));
@@ -13211,10 +13221,13 @@ validate_pointer_clause (cb_tree pointer, cb_tree pointee)
 void
 cb_emit_string (cb_tree items, cb_tree into, cb_tree pointer)
 {
+
 	cb_tree start;
 	cb_tree l;
 	cb_tree end;
 	cb_tree dlm;
+	int		nat,nfld;
+	struct cb_field	*f;
 
 	if (cb_validate_one (into)
 	 || cb_validate_one (pointer)) {
@@ -13246,14 +13259,33 @@ cb_emit_string (cb_tree items, cb_tree into, cb_tree pointer)
 		}
 		cb_emit (CB_BUILD_FUNCALL_1 ("cob_string_delimited", dlm));
 
+		nat = nfld = 0;
 		/* generate cob_string_append for all entries until delimiter */
 		for (l = start; l != end; l = CB_CHAIN (l)) {
-			if (cb_validate_one (CB_VALUE (l))) {
+			const cb_tree cur = CB_VALUE (l);
+			if (cb_validate_one (cur)) {
 				return;
 			}
-			cb_emit (CB_BUILD_FUNCALL_1 ("cob_string_append",
-						     CB_VALUE (l)));
+			switch (CB_TREE_TAG (cur)) {
+			case CB_TAG_REFERENCE:
+				nfld++;
+				f = CB_FIELD (cb_ref (cur));
+				if (f->usage == CB_USAGE_NATIONAL)
+					nat++;
+				error_string_not_usage_display_or_national (cur);
+				break;
+			case CB_TAG_CONST:
+			case CB_TAG_LITERAL:
+				/* TODO: check for type here */
+				break;
+			default:
+				break;
+			}
+			cb_emit (CB_BUILD_FUNCALL_1 ("cob_string_append", cur));
 		}
+		if (nat > 0 && nat != nfld)
+			cb_error_x (CB_TREE (current_statement),
+				_("STRING items must be all NATIONAL or none"));
 
 		start = end ? CB_CHAIN (end) : NULL;
 	}
@@ -13777,6 +13809,19 @@ error_if_not_elementary (cb_tree ref, const char *name)
 {
 	if (CB_FIELD (cb_ref (ref))->children) {
 		cb_error_x (ref, _("%s must be elementary"), name);
+		return 1;
+	} else {
+		return 0;
+	}
+}
+
+static int
+error_string_not_usage_display_or_national (cb_tree ref)
+{
+	struct cb_field	*f = CB_FIELD (cb_ref (ref));
+	if (f->usage != CB_USAGE_DISPLAY
+	 && f->usage != CB_USAGE_NATIONAL) {
+		cb_error_x (ref, _("STRING item '%s' must be USAGE DISPLAY or NATIONAL"), f->name);
 		return 1;
 	} else {
 		return 0;

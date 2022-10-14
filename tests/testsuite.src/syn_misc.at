@@ -5160,6 +5160,120 @@ prog.cob:43: error: syntax error, unexpected DELIMITED, expecting INTO
 AT_CLEANUP
 
 
+AT_SETUP([STRING / UNSTRING POINTER clause])
+AT_KEYWORDS([misc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION  DIVISION.
+       PROGRAM-ID.     prog.
+
+       DATA            DIVISION.
+       WORKING-STORAGE SECTION.
+       01  valid-ptr     PIC 99.
+       01  valid-ptr-2   BINARY-LONG.
+       01  valid-ptr-3   PIC 99 COMP-3.
+
+       01  invalid-ptr   PIC 9.
+       01  invalid-ptr-2 PIC 99V99.
+       01  invalid-ptr-3 FLOAT-LONG.
+       01  invalid-ptr-4 PIC 99PP.
+       01  invalid-ptr-5 PIC VPP99.
+       01  invalid-ptr-6 PIC X(30).
+       01  invalid-ptr-7.
+           03  n         PIC 99.
+           03  n2        PIC 99.
+
+
+       01  x             PIC X(9).
+       01  y             PIC X(9).
+
+       PROCEDURE       DIVISION.
+           STRING "hello" INTO x POINTER valid-ptr
+           STRING "hello" INTO x POINTER valid-ptr-2
+           STRING "hello" INTO x POINTER valid-ptr-3
+
+           STRING "hello" INTO x POINTER invalid-ptr
+           STRING "hello" INTO x POINTER invalid-ptr-2
+           STRING "hello" INTO x POINTER invalid-ptr-3
+           STRING "hello" INTO x POINTER invalid-ptr-4
+           STRING "hello" INTO x POINTER invalid-ptr-5
+           STRING "hello" INTO x POINTER invalid-ptr-6
+           STRING "hello" INTO x POINTER invalid-ptr-7
+
+           UNSTRING y INTO x POINTER valid-ptr
+           UNSTRING y INTO x POINTER valid-ptr-2
+           UNSTRING y INTO x POINTER valid-ptr-3
+
+           UNSTRING y INTO x POINTER invalid-ptr
+           UNSTRING y INTO x POINTER invalid-ptr-2
+           UNSTRING y INTO x POINTER invalid-ptr-3
+           UNSTRING y INTO x POINTER invalid-ptr-4
+           UNSTRING y INTO x POINTER invalid-ptr-5
+           UNSTRING y INTO x POINTER invalid-ptr-6
+           UNSTRING y INTO x POINTER invalid-ptr-7
+           .
+])
+
+# Note: the following checks (per COBOL standard) added with [r3678] are 4.x only:
+# prog.cob:30: error: 'invalid-ptr' is too small to contain the number 10 (one plus the size of 'x')
+# prog.cob:42: error: 'invalid-ptr' is too small to contain the number 10 (one plus the size of 'y')
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:31: error: POINTER item 'invalid-ptr-2' must be an integer
+prog.cob:32: error: POINTER item 'invalid-ptr-3' must be numeric and an integer
+prog.cob:33: error: POINTER item 'invalid-ptr-4' may not have PICTURE with P in it
+prog.cob:34: error: POINTER item 'invalid-ptr-5' must be an integer
+prog.cob:35: error: POINTER item 'invalid-ptr-6' must be numeric and an integer
+prog.cob:36: error: 'invalid-ptr-7' is not an elementary item
+prog.cob:43: error: POINTER item 'invalid-ptr-2' must be an integer
+prog.cob:44: error: POINTER item 'invalid-ptr-3' must be numeric and an integer
+prog.cob:45: error: POINTER item 'invalid-ptr-4' may not have PICTURE with P in it
+prog.cob:46: error: POINTER item 'invalid-ptr-5' must be an integer
+prog.cob:47: error: POINTER item 'invalid-ptr-6' must be numeric and an integer
+prog.cob:48: error: 'invalid-ptr-7' is not an elementary item
+])
+AT_CLEANUP
+
+
+AT_SETUP([STRING with non-DISPLAY])
+AT_KEYWORDS([Initialize])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       DATA  DIVISION.
+       WORKING-STORAGE SECTION.
+       01  I-X        PIC  9(9) COMP-X VALUE 6.
+       01  I-B        PIC  9(9) BINARY VALUE 6.
+       01  I-P        PIC  9(9) COMP-3 VALUE 6.
+       01  I-D        PIC  9(9) VALUE 6.
+       01  I-F        COMP-1 VALUE 6.
+       01  TSTWRK   PIC X(48).
+
+       PROCEDURE DIVISION.
+       MAIN-10.
+           STRING " ID:" I-D 
+               DELIMITED BY SIZE INTO TSTWRK.
+           STRING " IX:" I-X " IB:" I-B 
+                  " ID:" I-D 
+                  " IP:" I-P " IF:" I-F 
+               DELIMITED BY SIZE INTO TSTWRK.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -x -std=mf -debug -Wall prog.cob ], [1], [],
+[prog.cob: in paragraph 'MAIN-10':
+prog.cob:19: error: STRING item 'I-X' must be USAGE DISPLAY or NATIONAL
+prog.cob:19: error: STRING item 'I-B' must be USAGE DISPLAY or NATIONAL
+prog.cob:21: error: STRING item 'I-P' must be USAGE DISPLAY or NATIONAL
+prog.cob:21: error: STRING item 'I-F' must be USAGE DISPLAY or NATIONAL
+])
+
+AT_CLEANUP
+
+
 AT_SETUP([UNSTRING COUNT clause])
 AT_KEYWORDS([misc])
 

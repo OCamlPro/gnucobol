@@ -4334,12 +4334,13 @@ cob_intr_exception_statement (void)
 	make_field_entry (&field);
 
 	memset (curr_field->data, ' ', (size_t)31);
-	if (cobglobptr->last_exception_statement) {
-		flen = strlen (cobglobptr->last_exception_statement);
+	if (cobglobptr->last_exception_statement != STMT_UNKNOWN) {
+		const char *statement = cob_statement_name[cobglobptr->last_exception_statement];
+		flen = strlen (statement);
 		if (flen > 31) {
 			flen = 31;
 		}
-		memcpy (curr_field->data, cobglobptr->last_exception_statement, flen);
+		memcpy (curr_field->data, statement, flen);
 	}
 	return curr_field;
 }

@@ -1,4 +1,22 @@
 
+2022-10-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.c, tree.h, cobc.h, parser.y, typeck.c, codegen.c: direct setting
+	  and compare of new enum cob_statement instead of passing string constants
+	  around (and partially checking those with strcmp later)
+	* tree.h (cb_statement_name), codegen.c (cb_statement_enum_name), cobc.h,
+	  tree.c: pre-initialized tables to translate new enums to string
+	  representation and enum name for use in codegen instead of integer/string
+	  constants
+
+2022-10-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codeoptim.c: further optimizations for COB_GET_NUMDISP*
+
+2022-10-12  Ron Norman <rjn@inglenet.com>
+
+	* typeck.c: If STRING item is NOT DISPLAY/NATIONAL then its an error
+
 2022-10-10  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (main): fixed memory handling for "-j"

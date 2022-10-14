@@ -1,4 +1,14 @@
 
+2022-10-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* statement.def, Makefile.am: new file containing definitions of
+	  internally used statements and their string representation
+	* common.h (enum cob_statement): use new definitions to create enum
+	* coblocal.h (cob_statement_name), common.c: pre-initialized table
+	  to translate enum cob_statement to text
+	* common.c, common.h, intrinsic.c: adjusted to store the enum value
+	  instead of the string and translate only on necessary output
+
 2022-10-12  Simon Sobisch <simonsobisch@gnu.org>
 
 	* intrinsic.c (cob_decimal_set): removed (integrated where used)

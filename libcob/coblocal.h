@@ -425,6 +425,8 @@ COB_HIDDEN void		cob_init_move		(cob_global *, cob_settings *);
 COB_HIDDEN void		cob_init_screenio	(cob_global *, cob_settings *);
 COB_HIDDEN void		cob_init_mlio		(cob_global * const);
 
+COB_HIDDEN const char *cob_statement_name[STMT_MAX_ENTRY];
+
 COB_HIDDEN void		cob_exit_screen		(void);
 COB_HIDDEN void		cob_exit_screen_from_signal	(int);
 COB_HIDDEN void		cob_exit_numeric	(void);

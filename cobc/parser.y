@@ -338,13 +338,15 @@ check_non_area_a (cb_tree stmt) {
 /* Statements */
 
 static void
-begin_statement (const char *name, const unsigned int term)
+begin_statement (enum cob_statement statement, const unsigned int term)
 {
 	if (check_unreached) {
-		cb_warning (cb_warn_unreachable, _("unreachable statement '%s'"), name);
+		cb_warning (cb_warn_unreachable,
+			_("unreachable statement '%s'"),
+			cb_statement_name[statement]);
 	}
 	current_paragraph->flag_statement = 1;
-	current_statement = cb_build_statement (name);
+	current_statement = cb_build_statement (statement);
 	CB_TREE (current_statement)->source_file = cb_source_file;
 	CB_TREE (current_statement)->source_line = cb_source_line;
 	current_statement->flag_in_debug = in_debugging;
@@ -363,10 +365,10 @@ restore_backup_pos (cb_tree item)
 }
 
 static void
-begin_statement_from_backup_pos (const char *name, const unsigned int term)
+begin_statement_from_backup_pos (enum cob_statement statement, const unsigned int term)
 {
 	current_paragraph->flag_statement = 1;
-	current_statement = cb_build_statement (name);
+	current_statement = cb_build_statement (statement);
 	restore_backup_pos (CB_TREE (current_statement));
 	current_statement->flag_in_debug = in_debugging;
 	emit_statement (CB_TREE (current_statement));
@@ -374,7 +376,9 @@ begin_statement_from_backup_pos (const char *name, const unsigned int term)
 		term_array[term]++;
 	}
 	if (check_unreached) {
-		cb_warning_x (cb_warn_unreachable, CB_TREE (current_statement), _("unreachable statement '%s'"), name);
+		cb_warning_x (cb_warn_unreachable, CB_TREE (current_statement),
+			_("unreachable statement '%s'"),
+			cb_statement_name[statement]);
 	}
 }
 
@@ -384,9 +388,8 @@ static void
 begin_implicit_statement (void)
 {
 	struct cb_statement	*new_statement;
-	new_statement = cb_build_statement (NULL);
+	new_statement = cb_build_statement (current_statement->statement);
 	new_statement->common = current_statement->common;
-	new_statement->name = current_statement->name;
 	new_statement->flag_in_debug = !!in_debugging;
 	new_statement->flag_implicit = 1;
 	current_statement->body = cb_list_add (current_statement->body,
@@ -606,7 +609,7 @@ terminator_clear (cb_tree stmt, const unsigned int termid)
 	/* LCOV_EXCL_START */
 	} else {
 		cobc_err_msg ("call to '%s' without any open term for %s",
-			"terminator_warning", current_statement->name);
+			"terminator_warning", cb_statement_name[current_statement->statement]);
 		COBC_ABORT ();
 	}
 	/* LCOV_EXCL_STOP */
@@ -948,19 +951,24 @@ check_conf_section_order (const cob_flags_t part)
 static enum cb_handler_type
 get_handler_type_from_statement (struct cb_statement *statement)
 {
-	if (!strcmp (statement->name, "DISPLAY")) {
+	if (statement->statement == STMT_DISPLAY) {
 		return DISPLAY_HANDLER;
 	}
-	if (strlen (statement->name) > 3
-	 && !memcmp (statement->name, "XML", 3)) {
+	if (statement->statement == STMT_XML_GENERATE
+	 || statement->statement == STMT_XML_PARSE) {
 		return XML_HANDLER;
 	}
-	if (strlen (statement->name) > 4
-	 && !memcmp (statement->name, "JSON", 4)) {
+	if (statement->statement == STMT_JSON_GENERATE
+	 || statement->statement == STMT_JSON_PARSE) {
 		return JSON_HANDLER;
 	}
-	if (!strcmp (statement->name, "SEND")
-	 || !strcmp (statement->name, "RECEIVE")) {
+#if 0 /* not merged yet */
+	if (statement->statement == STMT_DELETE_FILE) {
+		return DELETE_FILE_HANDLER;
+	}
+#endif
+	if (statement->statement == STMT_SEND
+	 || statement->statement == STMT_RECEIVE) {
 		return MCS_HANDLER;
 	}
 	return NO_HANDLER;
@@ -7213,7 +7221,7 @@ like_clause:
 
 _length_modifier:
   /* empty */	{ $$ = cb_int0; }
-| length_modifier;
+| length_modifier	{ $$ = $1; }
 
 length_modifier:
   TOK_OPEN_PAREN nonzero_numeric_literal TOK_CLOSE_PAREN
@@ -10853,7 +10861,7 @@ statement:
 		cb_tree label;
 		char	name[32];
 
-		begin_statement ("NEXT SENTENCE", 0);
+		begin_statement (STMT_NEXT_SENTENCE, 0);
 		sprintf (name, "L$%d", next_label_id);
 		label = cb_build_reference (name);
 		next_label_list = cb_list_add (next_label_list, label);
@@ -10874,7 +10882,7 @@ statement:
 accept_statement:
   ACCEPT
   {
-	begin_statement ("ACCEPT", TERM_ACCEPT);
+	begin_statement (STMT_ACCEPT, TERM_ACCEPT);
 	cobc_cs_check = CB_CS_ACCEPT;
   }
   accept_body
@@ -11486,7 +11494,7 @@ _end_accept:
 add_statement:
   ADD
   {
-	begin_statement ("ADD", TERM_ADD);
+	begin_statement (STMT_ADD, TERM_ADD);
   }
   add_body
   _end_add
@@ -11537,7 +11545,7 @@ _end_add:
 allocate_statement:
   ALLOCATE
   {
-	begin_statement ("ALLOCATE", 0);
+	begin_statement (STMT_ALLOCATE, 0);
 	cobc_cs_check = CB_CS_ALLOCATE;
 	current_statement->flag_no_based = 1;
   }
@@ -11575,7 +11583,7 @@ _loc:
   }
 
 _allocate_returning:
-  /* empty */			{ $$ = NULL; }
+  /* empty */       		{ $$ = NULL; }
 | RETURNING target_x		{ $$ = $2; }
 ;
 
@@ -11585,7 +11593,7 @@ _allocate_returning:
 alter_statement:
   ALTER
   {
-	begin_statement ("ALTER", 0);
+	begin_statement (STMT_ALTER, 0);
 	cb_verify (cb_alter_statement, "ALTER");
   }
   alter_body
@@ -11611,7 +11619,7 @@ _proceed_to:	| PROCEED TO ;
 call_statement:
   CALL
   {
-	begin_statement ("CALL", TERM_CALL);
+	begin_statement (STMT_CALL, TERM_CALL);
 	cobc_cs_check = CB_CS_CALL;
 	call_nothing = 0;
 	cobc_allow_program_name = 1;
@@ -12068,7 +12076,7 @@ _end_call:
 cancel_statement:
   CANCEL
   {
-	begin_statement ("CANCEL", 0);
+	begin_statement (STMT_CANCEL, 0);
 	cobc_allow_program_name = 1;
   }
   cancel_body
@@ -12111,7 +12119,7 @@ id_or_lit_or_program_name:
 close_statement:
   CLOSE
   {
-	begin_statement ("CLOSE", 0);
+	begin_statement (STMT_CLOSE, 0);
   }
   close_body
 ;
@@ -12148,7 +12156,7 @@ close_window:
   WINDOW
   {
 	CB_PENDING ("GRAPHICAL WINDOW");
-	current_statement->name = "CLOSE WINDOW";
+	current_statement->statement = STMT_CLOSE_WINDOW;
   }
   identifier _close_display_option
   {
@@ -12157,7 +12165,7 @@ close_window:
 ;
 
 _close_display_option:
-  /* empty */			{ $$ = NULL; }
+  /* empty */     		{ $$ = NULL; }
 | _with NO DISPLAY		{ $$ = cb_int0; }
 ;
 
@@ -12167,7 +12175,7 @@ _close_display_option:
 compute_statement:
   COMPUTE
   {
-	begin_statement ("COMPUTE", TERM_COMPUTE);
+	begin_statement (STMT_COMPUTE, TERM_COMPUTE);
   }
   compute_body
   _end_compute
@@ -12197,7 +12205,7 @@ _end_compute:
 commit_statement:
   COMMIT
   {
-	begin_statement ("COMMIT", 0);
+	begin_statement (STMT_COMMIT, 0);
 	cb_emit_commit ();
   }
 ;
@@ -12216,11 +12224,11 @@ continue_statement:
 		/* Do not check unreached for CONTINUE without after phrase */
 		unsigned int	save_unreached = check_unreached;
 		check_unreached = 0;
-		begin_statement_from_backup_pos ("CONTINUE", 0);
+		begin_statement_from_backup_pos (STMT_CONTINUE, 0);
 		cb_emit_continue (NULL);
 		check_unreached = save_unreached;
 	} else {
-		begin_statement_from_backup_pos ("CONTINUE AFTER", 0);
+		begin_statement_from_backup_pos (STMT_CONTINUE_AFTER, 0);
 		cb_emit_continue ($3);
 	}
   }
@@ -12247,7 +12255,7 @@ _continue_after_phrase:
 destroy_statement:
   DESTROY
   {
-	begin_statement ("DESTROY", 0);
+	begin_statement (STMT_DESTROY, 0);
 	CB_PENDING ("GRAPHICAL CONTROL");
   }
   destroy_body
@@ -12273,7 +12281,7 @@ destroy_body:
 delete_statement:
   DELETE
   {
-	begin_statement ("DELETE", TERM_DELETE);
+	begin_statement (STMT_DELETE, TERM_DELETE);
   }
   delete_body
   _end_delete
@@ -12284,7 +12292,10 @@ delete_body:
   {
 	cb_emit_delete ($1);
   }
-| TOK_FILE delete_file_list
+| TOK_FILE delete_file_list _common_exception_phrases
+  {
+	current_statement->statement = STMT_DELETE_FILE;
+  }
 ;
 
 delete_file_list:
@@ -12319,7 +12330,7 @@ _end_delete:
 disable_statement:
   DISABLE
   {
-	begin_statement ("DISABLE", 0);
+	begin_statement (STMT_DISABLE, 0);
   }
   enable_disable_handling
 ;
@@ -12351,7 +12362,7 @@ communication_mode:
 display_statement:
   DISPLAY
   {
-	begin_statement ("DISPLAY", TERM_DISPLAY);
+	begin_statement (STMT_DISPLAY, TERM_DISPLAY);
 	cobc_cs_check = CB_CS_DISPLAY;
 	display_type = UNKNOWN_DISPLAY;
 	is_first_display_item = 1;
@@ -12639,7 +12650,7 @@ display_window:
   sub_or_window
   {
 	CB_PENDING ("GRAPHICAL WINDOW");
-	current_statement->name = "DISPLAY WINDOW";
+	current_statement->statement = STMT_DISPLAY_WINDOW;
   }
   _upon_window_handle
   {
@@ -12664,7 +12675,9 @@ display_floating_window:
   FLOATING _graphical WINDOW
   {
 	CB_PENDING ("GRAPHICAL WINDOW");
-	current_statement->name = "DISPLAY FLOATING WINDOW";
+	current_statement->statement = STMT_DISPLAY_WINDOW;
+	/* current_statement->name = "DISPLAY FLOATING WINDOW"; */
+	current_statement->statement = STMT_DISPLAY_WINDOW;	
   }
   _upon_window_handle
   {
@@ -12688,7 +12701,8 @@ display_initial_window:
   initial_type _graphical WINDOW
   {
 	CB_PENDING ("GRAPHICAL WINDOW");
-	current_statement->name = "DISPLAY INITIAL WINDOW";
+	/* current_statement->name = "DISPLAY INITIAL WINDOW"; */
+	current_statement->statement = STMT_DISPLAY_WINDOW;
 	check_duplicate = 0;
 	check_line_col_duplicate = 0;
 	line_column = NULL;
@@ -12825,9 +12839,9 @@ pop_up_area:
 handle_is_in:
   HANDLE _is_in identifier
   {
-	if (!strcmp (current_statement->name, "DISPLAY WINDOW")) {
+	if (current_statement->statement != STMT_DISPLAY_WINDOW) {
 		cb_error_x ($3, _("HANDLE clause invalid for %s"),
-			current_statement->name);
+			cb_statement_name[current_statement->statement]);
 		upon_value = cb_error_node;
 	} else{
 		if (upon_value) {
@@ -12982,7 +12996,7 @@ _end_display:
 divide_statement:
   DIVIDE
   {
-	begin_statement ("DIVIDE", TERM_DIVIDE);
+	begin_statement (STMT_DIVIDE, TERM_DIVIDE);
   }
   divide_body
   _end_divide
@@ -13028,7 +13042,7 @@ _end_divide:
 enable_statement:
   ENABLE
   {
-	begin_statement ("ENABLE", 0);
+	begin_statement (STMT_ENABLE, 0);
   }
   enable_disable_handling
 ;
@@ -13041,14 +13055,14 @@ entry_statement:
   entry
   {
 	check_unreached = 0;
-	begin_statement ("ENTRY", 0);
+	begin_statement (STMT_ENTRY, 0);
 	backup_current_pos ();
   }
   entry_body
 | entry FOR GO TO
   {
 	check_unreached = 0;
-	begin_statement ("ENTRY FOR GO TO", 0);
+	begin_statement (STMT_ENTRY_FOR_GO_TO, 0);
 	backup_current_pos ();
   }
   entry_goto_body
@@ -13093,7 +13107,7 @@ entry_goto_body:
 evaluate_statement:
   EVALUATE
   {
-	begin_statement ("EVALUATE", TERM_EVALUATE);
+	begin_statement (STMT_EVALUATE, TERM_EVALUATE);
 	eval_level++;
 	if (eval_level >= EVAL_DEPTH) {
 		cb_error (_("maximum evaluate depth exceeded (%d)"),
@@ -13380,7 +13394,7 @@ _end_evaluate:
 exhibit_statement:
   EXHIBIT
   {
-	begin_statement ("EXHIBIT", 0);
+	begin_statement (STMT_EXHIBIT, 0);
 	line_column = NULL;
 	cobc_cs_check = CB_CS_EXHIBIT;
   }
@@ -13466,7 +13480,7 @@ exhibit_target:
 exit_statement:
   EXIT
   {
-	begin_statement ("EXIT", 0);
+	begin_statement (STMT_EXIT, 0);
 	cobc_cs_check = CB_CS_EXIT;
   }
   exit_body
@@ -13495,7 +13509,7 @@ exit_body:
 	} else {
 		check_unreached = 1;
 	}
-	current_statement->name = (const char *)"EXIT PROGRAM";
+	current_statement->statement = STMT_EXIT_PROGRAM;
 	cb_emit_exit (0);
   }
 | FUNCTION
@@ -13509,7 +13523,7 @@ exit_body:
 			    _("EXIT FUNCTION only allowed within a FUNCTION"));
 	}
 	check_unreached = 1;
-	current_statement->name = (const char *)"EXIT FUNCTION";
+	current_statement->statement = STMT_EXIT_FUNCTION;
 	cb_emit_exit (0);
   }
 | PERFORM CYCLE
@@ -13530,7 +13544,7 @@ exit_body:
 			CB_LABEL (plabel)->flag_begin = 1;
 			CB_LABEL (plabel)->flag_dummy_exit = 1;
 		}
-		current_statement->name = (const char *)"EXIT PERFORM CYCLE";
+		current_statement->statement = STMT_EXIT_PERFORM_CYCLE;
 		cb_emit_goto (CB_LIST_INIT (p->cycle_label), NULL);
 		check_unreached = 1;
 	}
@@ -13553,7 +13567,7 @@ exit_body:
 			CB_LABEL (plabel)->flag_begin = 1;
 			CB_LABEL (plabel)->flag_dummy_exit = 1;
 		}
-		current_statement->name = (const char *)"EXIT PERFORM";
+		current_statement->statement = STMT_EXIT_PERFORM;
 		cb_emit_goto (CB_LIST_INIT (p->exit_label), NULL);
 		check_unreached = 1;
 	}
@@ -13574,7 +13588,7 @@ exit_body:
 			CB_LABEL (plabel)->flag_begin = 1;
 			CB_LABEL (plabel)->flag_dummy_exit = 1;
 		}
-		current_statement->name = (const char *)"EXIT SECTION";
+		current_statement->statement = STMT_EXIT_SECTION;
 		cb_emit_goto (CB_LIST_INIT (current_section->exit_label), NULL);
 		check_unreached = 1;
 	}
@@ -13595,7 +13609,7 @@ exit_body:
 			CB_LABEL (plabel)->flag_begin = 1;
 			CB_LABEL (plabel)->flag_dummy_exit = 1;
 		}
-		current_statement->name = (const char *)"EXIT PARAGRAPH";
+		current_statement->statement = STMT_EXIT_PARAGRAPH;
 		cb_emit_goto (CB_LIST_INIT (current_paragraph->exit_label), NULL);
 		check_unreached = 1;
 	}
@@ -13626,7 +13640,7 @@ goback_exit_body:
 free_statement:
   FREE
   {
-	begin_statement ("FREE", 0);
+	begin_statement (STMT_FREE, 0);
 	current_statement->flag_no_based = 1;
   }
   free_body
@@ -13645,7 +13659,7 @@ free_body:
 generate_statement:
   GENERATE
   {
-	begin_statement ("GENERATE", 0);
+	begin_statement (STMT_GENERATE, 0);
   }
   generate_body
 ;
@@ -13671,7 +13685,7 @@ goto_statement:
 	if (!current_paragraph->flag_statement) {
 		current_paragraph->flag_first_is_goto = 1;
 	}
-	begin_statement ("GO TO", 0);
+	begin_statement (STMT_GO_TO, 0);
 	save_debug = start_debug;
 	start_debug = 0;
   }
@@ -13711,7 +13725,7 @@ goto_depending:
 
 goback_statement:
   GOBACK {
-	begin_statement ("GOBACK", 0);
+	begin_statement (STMT_GOBACK, 0);
   }
   goback_exit_body
   {
@@ -13726,7 +13740,7 @@ goback_statement:
 if_statement:
   IF
   {
-	begin_statement ("IF", TERM_IF);
+	begin_statement (STMT_IF, TERM_IF);
   }
   condition _if_then if_else_statements
   _end_if
@@ -13790,7 +13804,7 @@ _end_if:
 initialize_statement:
   INITIALIZE
   {
-	begin_statement ("INITIALIZE", 0);
+	begin_statement (STMT_INITIALIZE, 0);
   }
   initialize_body
 ;
@@ -13877,7 +13891,7 @@ _initialize_default:
 initiate_statement:
   INITIATE
   {
-	begin_statement ("INITIATE", 0);
+	begin_statement (STMT_INITIATE, 0);
   }
   initiate_body
 ;
@@ -13906,7 +13920,7 @@ initiate_body:
 inquire_statement:
   INQUIRE
   {
-	begin_statement ("INQUIRE", 0);
+	begin_statement (STMT_INQUIRE, 0);
 	cobc_cs_check = CB_CS_INQUIRE_MODIFY;
   }
   inquire_body
@@ -13925,7 +13939,7 @@ inquire_body:
 inspect_statement:
   INSPECT
   {
-	begin_statement ("INSPECT", 0);
+	begin_statement (STMT_INSPECT, 0);
 	inspect_keyword = INSPECT_REP_DEFAULT;
   }
   inspect_body
@@ -13963,7 +13977,7 @@ inspect_format_variant:
 examine_statement:
   EXAMINE
   {
-	begin_statement ("EXAMINE", 0);
+	begin_statement (STMT_EXAMINE, 0);
   }
   send_identifier
   examine_format_variant
@@ -14267,7 +14281,7 @@ json: JSON { check_non_area_a ($1); };
 json_generate_statement:
   json GENERATE
   {
-	begin_statement ("JSON GENERATE", TERM_JSON);
+	begin_statement (STMT_JSON_GENERATE, TERM_JSON);
 	cobc_in_json_generate_body = 1;
 	cobc_cs_check = CB_CS_JSON_GENERATE;
 	cobc_xref_set_receiving (current_program->json_code);
@@ -14328,7 +14342,7 @@ _end_json:
 json_parse_statement:
   json PARSE
   {
-	begin_statement ("JSON PARSE", TERM_JSON);
+	begin_statement (STMT_JSON_PARSE, TERM_JSON);
 	CB_PENDING ("JSON PARSE");
 	cobc_xref_set_receiving (current_program->json_code);
 	cobc_xref_set_receiving (current_program->json_status);
@@ -14358,7 +14372,7 @@ _with_detail:
 merge_statement:
   MERGE
   {
-	begin_statement ("MERGE", 0);
+	begin_statement (STMT_MERGE, 0);
 	current_statement->flag_merge = 1;
   }
   sort_body
@@ -14370,7 +14384,7 @@ merge_statement:
 modify_statement:
   MODIFY
   {
-	begin_statement ("MODIFY", TERM_MODIFY);
+	begin_statement (STMT_MODIFY, TERM_MODIFY);
 	cobc_cs_check = CB_CS_INQUIRE_MODIFY;
   }
   modify_body
@@ -14402,7 +14416,7 @@ _end_modify:
 move_statement:
   MOVE
   {
-	begin_statement ("MOVE", 0);
+	begin_statement (STMT_MOVE, 0);
   }
   move_body
 ;
@@ -14424,7 +14438,7 @@ move_body:
 multiply_statement:
   MULTIPLY
   {
-	begin_statement ("MULTIPLY", TERM_MULTIPLY);
+	begin_statement (STMT_MULTIPLY, TERM_MULTIPLY);
   }
   multiply_body
   _end_multiply
@@ -14458,7 +14472,7 @@ _end_multiply:
 open_statement:
   OPEN
   {
-	begin_statement ("OPEN", 0);
+	begin_statement (STMT_OPEN, 0);
 	cobc_cs_check = CB_CS_OPEN;
   }
   open_body
@@ -14596,7 +14610,7 @@ osvs_input_mode:
 perform_statement:
   PERFORM
   {
-	begin_statement ("PERFORM", TERM_PERFORM);
+	begin_statement (STMT_PERFORM, TERM_PERFORM);
 	/* Turn off field debug - PERFORM is special */
 	save_debug = start_debug;
 	start_debug = 0;
@@ -14802,7 +14816,7 @@ _by_phrase:
 purge_statement:
   PURGE
   {
-	begin_statement ("PURGE", 0);
+	begin_statement (STMT_PURGE, 0);
   }
   cd_name
   {
@@ -14814,7 +14828,7 @@ purge_statement:
 raise_statement:
   RAISE
   {
-	begin_statement ("RAISE", 0);
+	begin_statement (STMT_RAISE, 0);
   }
   raise_body
 ;
@@ -14850,7 +14864,7 @@ exception_name:
 read_statement:
   READ
   {
-	begin_statement ("READ", TERM_READ);
+	begin_statement (STMT_READ, TERM_READ);
 	cobc_cs_check = CB_CS_READ;
   }
   read_body
@@ -14991,7 +15005,7 @@ _end_read:
 ready_statement:
   READY_TRACE
   {
-	begin_statement ("READY TRACE", 0);
+	begin_statement (STMT_READY_TRACE, 0);
 	cb_emit_ready_trace ();
   }
 ;
@@ -15001,7 +15015,7 @@ ready_statement:
 receive_statement:
   RECEIVE
   {
-	begin_statement ("RECEIVE", TERM_RECEIVE);
+	begin_statement (STMT_RECEIVE, TERM_RECEIVE);
   }
   receive_body
   _end_receive
@@ -15057,7 +15071,7 @@ _end_receive:
 release_statement:
   RELEASE
   {
-	begin_statement ("RELEASE", 0);
+	begin_statement (STMT_RELEASE, 0);
   }
   release_body
 ;
@@ -15075,7 +15089,7 @@ release_body:
 reset_statement:
   RESET_TRACE
   {
-	begin_statement ("RESET TRACE", 0);
+	begin_statement (STMT_RESET_TRACE, 0);
 	cb_emit_reset_trace ();
   }
 ;
@@ -15085,7 +15099,7 @@ reset_statement:
 return_statement:
   RETURN
   {
-	begin_statement ("RETURN", TERM_RETURN);
+	begin_statement (STMT_RETURN, TERM_RETURN);
   }
   return_body
   _end_return
@@ -15115,7 +15129,7 @@ _end_return:
 rewrite_statement:
   REWRITE
   {
-	begin_statement ("REWRITE", TERM_REWRITE);
+	begin_statement (STMT_REWRITE, TERM_REWRITE);
 	/* Special in debugging mode */
 	save_debug = start_debug;
 	start_debug = 0;
@@ -15168,7 +15182,7 @@ _end_rewrite:
 rollback_statement:
   ROLLBACK
   {
-	begin_statement ("ROLLBACK", 0);
+	begin_statement (STMT_ROLLBACK, 0);
 	cb_emit_rollback ();
   }
 ;
@@ -15180,13 +15194,13 @@ search: SEARCH { check_non_area_a ($1); };
 search_statement:
   search
   {
-	begin_statement ("SEARCH", TERM_SEARCH);
+	begin_statement (STMT_SEARCH, TERM_SEARCH);
   }
   search_body
   _end_search
 | search ALL
   {
-	begin_statement ("SEARCH ALL", TERM_SEARCH);
+	begin_statement (STMT_SEARCH_ALL, TERM_SEARCH);
   }
   search_all_body
   _end_search
@@ -15268,7 +15282,7 @@ _end_search:
 send_statement:
   SEND
   {
-	begin_statement ("SEND", 0);
+	begin_statement (STMT_SEND, 0);
   }
   send_body
 ;
@@ -15362,7 +15376,7 @@ _replacing_line:
 set_statement:
   SET
   {
-	begin_statement ("SET", 0);
+	begin_statement (STMT_SET, 0);
 	set_attr_val_on = 0;
 	set_attr_val_off = 0;
 	cobc_cs_check = CB_CS_SET;
@@ -15547,7 +15561,7 @@ set_thread_priority:
 sort_statement:
   SORT
   {
-	begin_statement ("SORT", 0);
+	begin_statement (STMT_SORT, 0);
   }
   sort_body
 ;
@@ -15712,7 +15726,7 @@ sort_output:
 start_statement:
   START
   {
-	begin_statement ("START", TERM_START);
+	begin_statement (STMT_START, TERM_START);
 	start_tree = cb_int (COB_EQ);
   }
   start_body
@@ -15801,7 +15815,7 @@ stop: STOP { check_non_area_a ($1); };
 stop_statement:
   stop RUN
   {
-	begin_statement ("STOP RUN", 0);
+	begin_statement (STMT_STOP_RUN, 0);
 	cobc_cs_check = CB_CS_STOP;
   }
   stop_returning
@@ -15812,14 +15826,14 @@ stop_statement:
   }
 | stop ERROR /* GCOS */
   {
-	begin_statement ("STOP ERROR", 0);
+	begin_statement (STMT_STOP_ERROR, 0);
 	cb_verify (cb_stop_error_statement, "STOP ERROR");
 	cb_emit_stop_error ();
 	check_unreached = 1;
   }
 | stop stop_argument
   {
-	begin_statement ("STOP", 0);
+	begin_statement (STMT_STOP, 0);
 	cb_emit_display (CB_LIST_INIT ($2), cb_int0, cb_int1, NULL,
 			 NULL, 1, DEVICE_DISPLAY);
 	cb_emit_accept (cb_null, NULL, NULL);
@@ -15827,10 +15841,13 @@ stop_statement:
   }
 | stop thread_reference_optional
   {
-	begin_statement ("STOP THREAD", 0);
+	begin_statement (STMT_STOP_THREAD, 0);
 	cb_emit_stop_thread ($2);
 	cobc_cs_check = 0;
-	cb_warning_x (COBC_WARN_FILLER, $2, _("%s is replaced by %s"), "STOP THREAD", "STOP RUN");
+	cb_warning_x (COBC_WARN_FILLER, $2,
+		_("%s is replaced by %s"),
+		cb_statement_name[STMT_STOP_THREAD],
+		cb_statement_name[STMT_STOP_RUN]);
   }
 ;
 
@@ -15897,7 +15914,7 @@ stop_literal:
 string_statement:
   STRING
   {
-	begin_statement ("STRING", TERM_STRING);
+	begin_statement (STMT_STRING, TERM_STRING);
   }
   string_body
   _end_string
@@ -15972,7 +15989,7 @@ _end_string:
 subtract_statement:
   SUBTRACT
   {
-	begin_statement ("SUBTRACT", TERM_SUBTRACT);
+	begin_statement (STMT_SUBTRACT, TERM_SUBTRACT);
   }
   subtract_body
   _end_subtract
@@ -16016,7 +16033,7 @@ suppress_statement:
   SUPPRESS { check_non_area_a ($1); }
   _printing
   {
-	begin_statement ("SUPPRESS", 0);
+	begin_statement (STMT_SUPPRESS, 0);
 	if (!in_declaratives) {
 		cb_error_x (CB_TREE (current_statement),
 			    _("SUPPRESS statement must be within DECLARATIVES"));
@@ -16034,7 +16051,7 @@ _printing:
 terminate_statement:
   TERMINATE
   {
-	begin_statement ("TERMINATE", 0);
+	begin_statement (STMT_TERMINATE, 0);
   }
   terminate_body
 ;
@@ -16063,7 +16080,7 @@ terminate_body:
 transform_statement:
   TRANSFORM
   {
-	begin_statement ("TRANSFORM", 0);
+	begin_statement (STMT_TRANSFORM, 0);
   }
   transform_body
 ;
@@ -16082,7 +16099,7 @@ transform_body:
 unlock_statement:
   UNLOCK
   {
-	begin_statement ("UNLOCK", 0);
+	begin_statement (STMT_UNLOCK, 0);
   }
   unlock_body
 ;
@@ -16106,7 +16123,7 @@ unlock_body:
 unstring_statement:
   UNSTRING
   {
-	begin_statement ("UNSTRING", TERM_UNSTRING);
+	begin_statement (STMT_UNSTRING, TERM_UNSTRING);
   }
   unstring_body
   _end_unstring
@@ -16179,7 +16196,7 @@ _end_unstring:
 validate_statement:
   VALIDATE
   {
-	begin_statement ("VALIDATE", 0);
+	begin_statement (STMT_VALIDATE, 0);
   }
   validate_fields
   {
@@ -16538,7 +16555,7 @@ use_ex_keyw:
 write_statement:
   WRITE
   {
-	begin_statement ("WRITE", TERM_WRITE);
+	begin_statement (STMT_WRITE, TERM_WRITE);
 	/* Special in debugging mode */
 	save_debug = start_debug;
 	start_debug = 0;
@@ -16609,7 +16626,7 @@ xml: XML { check_non_area_a ($1); };
 xml_generate_statement:
   xml GENERATE
   {
-	begin_statement ("XML GENERATE", TERM_XML);
+	begin_statement (STMT_XML_GENERATE, TERM_XML);
 	cobc_in_xml_generate_body = 1;
 	cobc_cs_check = CB_CS_XML_GENERATE;
 	cobc_xref_set_receiving (current_program->xml_code);
@@ -16897,7 +16914,7 @@ _end_xml:
 xml_parse_statement:
   xml PARSE
   {
-	begin_statement ("XML PARSE", TERM_XML);
+	begin_statement (STMT_XML_PARSE, TERM_XML);
 	CB_PENDING ("XML PARSE");
 	cobc_cs_check = CB_CS_XML_PARSE;
 	cobc_xref_set_receiving (current_program->xml_code);
@@ -17658,7 +17675,7 @@ file_or_record_name:
 		$$ = $1;
 	} else {
 		cb_error_x ($1, _("%s requires a record name as subject"),
-			current_statement->name);
+			cb_statement_name[current_statement->statement]);
 		$$ = cb_error_node;
 	}
   }
@@ -17688,7 +17705,7 @@ table_name:
 		cb_note_x (COB_WARNOPT_NONE, x, _("'%s' defined here"), cb_name (x));
 		$$ = cb_error_node;
 	} else if (CB_FIELD (x)->nkeys == 0
-	        && strcmp(current_statement->name, "SEARCH ALL") == 0) {
+	        && current_statement->statement == STMT_SEARCH_ALL) {
 		cb_error_x ($1, _("SEARCH ALL requires KEY phrase"));
 		cb_note_x (COB_WARNOPT_NONE, x, _("'%s' defined here"), cb_name (x));
 		$$ = cb_error_node;

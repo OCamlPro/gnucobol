@@ -198,6 +198,18 @@ cb_tree cb_standard_error_handler = NULL;
 
 unsigned int	gen_screen_ptr = 0;
 
+#ifdef	HAVE_DESIGNATED_INITS
+const char	*cb_statement_name[STMT_MAX_ENTRY] = {
+	[STMT_UNKNOWN] = "UNKNOWN"
+	/* note: STMT_UNKNOWN left out here */
+#define COB_STATEMENT(ename,str)	, [ename] = str
+#include "libcob/statement.def"
+#undef COB_STATEMENT
+};
+#else
+const char	*cb_statement_name[STMT_MAX_ENTRY];
+#endif
+
 #if 0 /* TODO remove if not needed */
 static	int	save_expr_line = 0;
 static	char	*save_expr_file = NULL;
@@ -5466,7 +5478,7 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 				case ']':
 					/* don't raise a warning for VALUE THRU
 					   (we still can return cb_true here later) */
-					if (strcmp(current_statement->name, "VALUE THRU")
+					if (current_statement->statement != STMT_VALUE_THRU
 					 &&!was_prev_warn (e->source_line, 5)) {
 						cb_warning_x (cb_warn_constant_expr, e,
 							_("unsigned '%s' may always be %s %s"),
@@ -5533,7 +5545,7 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 				case ']':
 					/* don't raise a warning for VALUE THRU
 					   (we still can return cb_true here later) */
-					if (strcmp(current_statement->name, "VALUE THRU")
+					if (current_statement->statement != STMT_VALUE_THRU
 					 && !was_prev_warn (e->source_line, 5)) {
 						cb_warning_x (cb_warn_constant_expr, e,
 							_("'%s' may always be %s %s"),
@@ -5558,7 +5570,7 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 				case '[':
 					/* don't raise a warning for VALUE THRU
 					   (we still can return cb_true here later) */
-					if (strcmp(current_statement->name, "VALUE THRU")
+					if (current_statement->statement != STMT_VALUE_THRU
 					 && !was_prev_warn (e->source_line, 5)) {
 						cb_warning_x (cb_warn_constant_expr, e,
 							_("'%s' may always be %s %s"),
@@ -6553,13 +6565,13 @@ cb_build_perform_varying (cb_tree name, cb_tree from, cb_tree by, cb_tree until)
 /* Statement */
 
 struct cb_statement *
-cb_build_statement (const char *name)
+cb_build_statement (enum cob_statement statement)
 {
 	struct cb_statement *p;
 
 	p = make_tree (CB_TAG_STATEMENT, CB_CATEGORY_UNKNOWN,
 		       sizeof (struct cb_statement));
-	p->name = name;
+	p->statement = statement;
 	return p;
 }
 
@@ -7171,3 +7183,15 @@ cb_build_ml_suppress_checks (struct cb_ml_generate_tree *tree)
 	check->tree = tree;
 	return CB_TREE (check);
 }
+
+
+#ifndef	HAVE_DESIGNATED_INITS
+void
+cobc_init_tree (void)
+{
+	cb_statement_name[STMT_UNKNOWN] = "UNKNOWN";
+#define COB_STATEMENT(ename,str)	cb_statement_name[ename] = str;
+#include "libcob/statement.def"
+#undef COB_STATEMENT
+}
+#endif

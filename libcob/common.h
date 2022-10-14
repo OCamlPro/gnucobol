@@ -1049,6 +1049,17 @@ typedef cob_s64_t cob_flags_t;
 
 /* End Report attribute defines */
 
+/* Statement enum */
+
+enum cob_statement {
+	STMT_UNKNOWN = 0,
+#define COB_STATEMENT(name, str)	name,
+#include "statement.def"	/* located and installed next to common.h */
+#undef COB_STATEMENT
+	STMT_MAX_ENTRY /* always the last entry */
+};
+
+
 #define COB_JSON_CJSON			1
 #define COB_JSON_JSON_C			2
 
@@ -1265,7 +1276,7 @@ typedef struct __cob_module {
 										   otherwise "struct cob_frame" */
 	const char		*section_name;		/* name of current active section */
 	const char		*paragraph_name;		/* name of current active pagagraph */
-	const char		*stmt_name;			/* last statment VERB name */
+	enum cob_statement	statement;		/* statement currently executed */
 
 } cob_module;
 
@@ -1524,7 +1535,7 @@ typedef struct __cob_ml_tree {
 typedef struct __cob_global {
 	cob_file		*cob_error_file;	/* Last error file */
 	cob_module		*cob_current_module;	/* Current module */
-	const char		*last_exception_statement;	/* Last exception: Statement */
+	enum cob_statement	last_exception_statement;	/* Last exception: Statement */
 	const char		*last_exception_id;	/* Last exception: PROGRAMM-ID / FUNCTION-ID*/
 	const char		*last_exception_section;	/* Last exception: Section */
 	const char		*last_exception_paragraph;	/* Last exception: Paragraph */
@@ -1757,6 +1768,9 @@ COB_EXPIMP void	cob_trace_sect		(const char *name);
 COB_EXPIMP void	cob_trace_para		(const char *name);
 COB_EXPIMP void	cob_trace_entry		(const char *name);
 COB_EXPIMP void	cob_trace_exit		(const char *name);
+COB_EXPIMP void	cob_trace_statement		(const enum cob_statement);	/* 3.2 + */
+
+/* compatibility functions up to GnuCOBOL before 3.2 */
 COB_EXPIMP void	cob_trace_stmt		(const char *stmt);
 
 COB_EXPIMP void			*cob_external_addr	(const char *, const int);

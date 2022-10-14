@@ -1,7 +1,7 @@
 #
 # Makefile gnucobol/libcob
 #
-# Copyright (C) 2003-2012, 2014, 2017-2020 Free Software Foundation, Inc.
+# Copyright (C) 2003-2012, 2014, 2017-2020, 2022 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -43,7 +43,7 @@ AM_LDFLAGS = $(COB_FIX_LIB)
 
 EXTRA_DIST = coblocal.h system.def
 pkgincludedir = $(includedir)/libcob
-pkginclude_HEADERS = common.h cobgetopt.h exception.def exception-io.def
+pkginclude_HEADERS = common.h cobgetopt.h exception.def exception-io.def statement.def
 
 # Add rules for code-coverage testing, as provided by AX_CODE_COVERAGE
 include $(top_srcdir)/aminclude_static.am
