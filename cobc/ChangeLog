@@ -1,4 +1,10 @@
 
+2022-10-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.h: new CB_UNSUPPORTED for features not planned to be supported
+	  at all (but parsed to not stumble over those)
+	* cobc.h [!HAVE_UNISTD_H]: include stdio.h
+
 2022-10-14  Simon Sobisch <simonsobisch@gnu.org>
 
 	* tree.c, tree.h, cobc.h, parser.y, typeck.c, codegen.c: direct setting

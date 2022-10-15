@@ -22,9 +22,9 @@
 %expect 0
 
 %defines
-%error-verbose
 %verbose
-%name-prefix="pp" /* recent versions want %api.prefix "pp", older cannot compile this */
+%error-verbose
+%name-prefix="pp"
 
 /* NOTE:
    support without = was added in Bison 2.4 (released 2008-11-02, we currently use 2.3),

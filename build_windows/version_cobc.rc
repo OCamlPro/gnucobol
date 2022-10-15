@@ -3,10 +3,8 @@
 #include "tarstamp.h"
 #include "config.h"
 
-#define COB_WITHOUT_EXCEPTIONS
-#define COB_WITHOUT_JMP
-#include "../libcob/common.h"
-#define VCS_REF 4724
+#include "../libcob/libversion.h"
+#define VCS_REF 4775
 
 #define STRINGIZE_DETAIL_(v) #v
 #define STRINGIZE(v) STRINGIZE_DETAIL_(v)

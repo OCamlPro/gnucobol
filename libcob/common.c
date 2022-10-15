@@ -560,7 +560,7 @@ static int		set_config_val	(char *value, int pos);
 static char		*get_config_val	(char *value, int pos, char *orgvalue);
 
 static void		cob_dump_module (char *reason);
-static char		abort_reason[COB_MINI_BUFF] = "";
+static char		abort_reason[COB_MINI_BUFF] = { 0 };
 static unsigned int 	dump_trace_started;	/* ensures that we dump/stacktrace only once */
 #define 		DUMP_TRACE_DONE_DUMP 		(1U << 0)
 #define 		DUMP_TRACE_DONE_TRACE		(1U << 1)
@@ -5604,9 +5604,9 @@ cob_sys_system (const void *cmdline)
 	COB_CHK_PARMS (SYSTEM, 1);
 
 	if (COB_MODULE_PTR->cob_procedure_params[0]) {
-		const char* cmd = cmdline;
+		const char *cmd = cmdline;
 		size_t		i = COB_MODULE_PTR->cob_procedure_params[0]->size;
-
+		/* FIXME: if caller wasn't COBOL then size must be evaluated by strlen */
 		i--;
 		do {
 			if (cmd[i] != ' ' && cmd[i] != 0) {
@@ -5617,7 +5617,8 @@ cob_sys_system (const void *cmdline)
 			char	*command;
 			/* LCOV_EXCL_START */
 			if (unlikely (i > COB_MEDIUM_MAX)) {
-				cob_runtime_warning (_("parameter to SYSTEM call is larger than %d characters"), COB_MEDIUM_MAX);
+				cob_runtime_warning (_("parameter to SYSTEM call is larger than %d characters"),
+					COB_MEDIUM_MAX);
 				return 1;
 			}
 			/* LCOV_EXCL_STOP */
@@ -5628,17 +5629,19 @@ cob_sys_system (const void *cmdline)
 			   leading and trailing " and if yes simply removes them (!).
 			   Check if this is the case and if it is handled already
 			   by an *extra* pair of quotes, otherwise add these...
+			   This fixes CALL 'SYSTEM' USING '"someprog" "opt"' being
+			   executed as 'someprog" "opt'.
 			*/
 			if (i > 2 && cmd[0] == '"' && cmd[i] == '"'
 			&& (cmd[1] != '"' || cmd[i - 1] != '"')) {
-				command = cob_malloc ((size_t)i + 4);
+				command = cob_malloc (i + 4);
 				command[0] = '"';
-				memcpy (command + 1, cmd, (size_t)i + 1);
+				memcpy (command + 1, cmd, i + 1);
 				command[i + 1] = '"';
 			} else {
 #endif /* _WIN32 */
-				command = cob_malloc ((size_t)i + 2);
-				memcpy (command, cmd, (size_t)i + 1);
+				command = cob_malloc (i + 2);
+				memcpy (command, cmd, i + 1);
 #ifdef _WIN32
 			}
 #endif
@@ -7842,10 +7845,13 @@ cob_runtime_warning_external (const char *caller_name, const int cob_reference, 
 	if (!(caller_name && *caller_name)) caller_name = "unknown caller";
 
 	/* Prefix */
-	fprintf (stderr, "libcob: ");
 	if (cob_reference) {
+		fflush (stderr); /* necessary as we write afterwards */
+		write_to_stderr_or_return_arr ("libcob: ");
 		cob_get_source_line ();
 		output_source_location ();
+	} else {
+		fprintf (stderr, "libcob: ");
 	}
 	fprintf (stderr, _("warning: "));
 	fprintf (stderr, "%s: ", caller_name);
@@ -7891,11 +7897,14 @@ cob_runtime_warning (const char *fmt, ...)
 		return;
 	}
 
+	fflush (stderr);	/* necessary as we write afterwards */
+
 	/* Prefix */
-	fprintf (stderr, "libcob: ");
+	write_to_stderr_or_return_arr ("libcob: ");
 	cob_get_source_line ();
 	output_source_location ();
-	fprintf (stderr, _("warning: "));
+
+	fprintf (stderr, _("warning: "));	/* back to stdio */
 
 	/* Body */
 	va_start (args, fmt);

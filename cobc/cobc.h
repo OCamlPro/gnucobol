@@ -28,6 +28,8 @@
          and include that here */
 #ifdef	HAVE_UNISTD_H
 #include <unistd.h>
+#else
+#include <stdio.h>
 #endif
 #include "../libcob/common.h"
 
@@ -683,6 +685,10 @@ extern size_t		suppress_warn;	/* no warnings for internal generated stuff */
 	do { cb_warning (cb_warn_unfinished, \
 		_("handling of %s is unfinished; implementation is likely to be changed"), s); \
 	} ONCE_COB
+#define CB_UNSUPPORTED(x) \
+	do { cb_error (_("%s is not supported"), x); } ONCE_COB
+#define CB_UNSUPPORTED_X(x,y) \
+	do { cb_error_x (x, _("%s is not supported"), y); } ONCE_COB
 
 extern size_t		cb_msg_style;
 

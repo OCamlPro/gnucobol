@@ -330,6 +330,7 @@
     <None Include="..\..\copy\xfhfcd.cpy" />
     <None Include="..\..\libcob\exception-io.def" />
     <None Include="..\..\libcob\exception.def" />
+    <None Include="..\..\libcob\statement.def" />
     <None Include="..\..\libcob\system.def" />
   </ItemGroup>
   <ItemGroup>

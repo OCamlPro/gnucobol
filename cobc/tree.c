@@ -199,13 +199,13 @@ cb_tree cb_standard_error_handler = NULL;
 unsigned int	gen_screen_ptr = 0;
 
 #ifdef	HAVE_DESIGNATED_INITS
+#define COB_STATEMENT(ename,str)	, [ename] = str
 const char	*cb_statement_name[STMT_MAX_ENTRY] = {
 	[STMT_UNKNOWN] = "UNKNOWN"
-	/* note: STMT_UNKNOWN left out here */
-#define COB_STATEMENT(ename,str)	, [ename] = str
-#include "libcob/statement.def"
-#undef COB_STATEMENT
+	/* note: STMT_MAX_ENTRY left out here */
+#include "../libcob/statement.def"
 };
+#undef COB_STATEMENT
 #else
 const char	*cb_statement_name[STMT_MAX_ENTRY];
 #endif
@@ -7190,8 +7190,9 @@ void
 cobc_init_tree (void)
 {
 	cb_statement_name[STMT_UNKNOWN] = "UNKNOWN";
-#define COB_STATEMENT(ename,str)	cb_statement_name[ename] = str;
-#include "libcob/statement.def"
+#define COB_STATEMENT(ename,str) \
+	cb_statement_name[ename] = str;
+#include "../libcob/statement.def"
 #undef COB_STATEMENT
 }
 #endif

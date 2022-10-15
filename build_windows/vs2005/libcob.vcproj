@@ -270,6 +270,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\libcob\statement.def"
+				>
+			</File>
+			<File
 				RelativePath="..\..\libcob\system.def"
 				>
 			</File>
