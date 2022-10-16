@@ -3,8 +3,8 @@
 #include "tarstamp.h"
 #include "config.h"
 
-#include "../libcob/libversion.h"
-#define VCS_REF 4775
+#include "../libcob/version.h"
+#define VCS_REF 4776
 
 #define STRINGIZE_DETAIL_(v) #v
 #define STRINGIZE(v) STRINGIZE_DETAIL_(v)

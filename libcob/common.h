@@ -1597,7 +1597,7 @@ struct cobjmp_buf {
 #endif
 
 /* version definition and related functions from common.c */
-#include "libversion.h"	/* located and installed next to common.h */
+#include "version.h"	/* located and installed next to common.h */
 
 /*******************************/
 
@@ -1609,8 +1609,6 @@ COB_EXPIMP const char*	cob_get_sig_name (int);
 COB_EXPIMP const char*	cob_get_sig_description (int);
 COB_EXPIMP void		print_info	(void);
 COB_EXPIMP void		print_info_detailed	(const int);
-COB_EXPIMP void		print_version	(void);
-COB_EXPIMP void		print_version_summary (void);
 COB_EXPIMP int		cob_load_config	(void);
 COB_EXPIMP void		print_runtime_conf	(void);
 

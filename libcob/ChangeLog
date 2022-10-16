@@ -1,7 +1,8 @@
 
 2022-10-15  Simon Sobisch <simonsobisch@gnu.org>
 
-	* libversion.h: nre file, moving out version definitions from common.h
+	* version.h, Makefile.am: new file, moving out version
+	  definitions from common.h
 	* common.h: drop COB_WITHOUT_EXCEPTIONS, which was added only for
 	  resource compilers, which should now include libversion.h
 	* common.c (cob_runtime_warning_external, cob_runtime_warning):

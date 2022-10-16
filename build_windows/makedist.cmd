@@ -1,4 +1,4 @@
-:: Copyright (C) 2014-2021 Free Software Foundation, Inc.
+:: Copyright (C) 2014-2022 Free Software Foundation, Inc.
 :: Written by Simon Sobisch, Edward Hart
 ::
 :: This file is part of GnuCOBOL.
@@ -134,7 +134,10 @@ mkdir include
 mkdir include\libcob
 copy "%cob_source_path%libcob.h"		include\	1>nul
 copy "%cob_source_path%libcob\common.h"		include\libcob\	1>nul
+copy "%cob_source_path%libcob\version.h"		include\libcob\	1>nul
+copy "%cob_source_path%libcob\cobgetopt.h"		include\libcob\	1>nul
 copy "%cob_source_path%libcob\exception*.def"	include\libcob\	1>nul
+copy "%cob_source_path%libcob\statement.def"	include\libcob\	1>nul
 
 echo Copying translations...
 mkdir po

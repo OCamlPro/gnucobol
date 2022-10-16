@@ -37,4 +37,7 @@
 COB_EXPIMP const char *libcob_version (void);
 COB_EXPIMP int		set_libcob_version (int *, int *, int *);
 
+COB_EXPIMP void		print_version (void);
+COB_EXPIMP void		print_version_summary (void);
+
 #endif

@@ -4,8 +4,9 @@
 	* added statement.def to all cobc and libcob projects,
 	  new libversion.h to libcob
 	* version_cobc, version_cobcrun, version_libcob: use simple
-	  libversion.h instead of full common.h, preventing
+	  version.h instead of full common.h, preventing
 	  resource compilers to stumble over C definitions
+	* makedist.cmd: cater for new header files
 
 2022-10-01  Simon Sobisch <simonsobisch@gnu.org>
 
