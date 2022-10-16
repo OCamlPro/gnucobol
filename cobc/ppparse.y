@@ -18,13 +18,13 @@
    along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-%require "3.0"
+%require "3.6"
 
 %expect 0
 
 %defines
-%define parse.error verbose
 %verbose
+%define parse.error verbose
 %define api.prefix {pp}
 
 %{

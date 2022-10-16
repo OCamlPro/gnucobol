@@ -746,7 +746,6 @@ enum cob_fatal_error {
 /* Exception identifier enumeration */
 
 #undef	COB_EXCEPTION
-#ifndef COB_WITHOUT_EXCEPTIONS
 #define	COB_EXCEPTION(code,tag,name,critical)	tag,
 
 enum cob_exception_id {
@@ -756,7 +755,6 @@ enum cob_exception_id {
 };
 
 #undef	COB_EXCEPTION
-#endif
 
 #define cob_global_exception    cob_glob_ptr->cob_exception_code
 #define COB_RESET_EXCEPTION(x)  if (x == 0 || cob_global_exception == x) cob_global_exception = 0
@@ -1164,13 +1162,13 @@ typedef cob_s64_t cob_flags_t;
 
 /* Statement enum */
 
+#define COB_STATEMENT(name,str)	name,
 enum cob_statement {
-	STMT_UNKNOWN = 0,
-#define COB_STATEMENT(name, str)	name,
+	STMT_UNKNOWN = 0, 
 #include "statement.def"	/* located and installed next to common.h */
-#undef COB_STATEMENT
 	STMT_MAX_ENTRY /* always the last entry */
 };
+#undef COB_STATEMENT
 
 
 #define COB_JSON_CJSON			1
@@ -1826,15 +1824,8 @@ struct cobjmp_buf {
 };
 #endif
 
-#define __LIBCOB_VERSION	4
-#define __LIBCOB_VERSION_MINOR		0
-#define __LIBCOB_VERSION_PATCHLEVEL	0	/* Note: possibly differs from patchelvel shown with cobc --version! */
-
-#define __LIBCOB_RELEASE (__LIBCOB_VERSION * 10000 + __LIBCOB_VERSION_MINOR * 100 + __LIBCOB_VERSION_PATCHLEVEL)
-
-#ifndef COB_LIBCOB_VER
-#define COB_LIBCOB_VER __LIBCOB_VERSION
-#endif
+/* version definition and related functions from common.c */
+#include "version.h"	/* located and installed next to common.h */
 
 /*******************************/
 
@@ -1846,12 +1837,8 @@ COB_EXPIMP void		cob_set_dump_signal (void *);
 COB_EXPIMP const char*	cob_get_sig_name (int);
 COB_EXPIMP const char*	cob_get_sig_description (int);
 COB_EXPIMP const char*	cob_set_sig_description (int, const char *);
-COB_EXPIMP const char*	libcob_version (void);
-COB_EXPIMP int		set_libcob_version (int *, int *, int *);
 COB_EXPIMP void		print_info	(void);
 COB_EXPIMP void		print_info_detailed	(const int);
-COB_EXPIMP void		print_version	(void);
-COB_EXPIMP void		print_version_summary (void);
 COB_EXPIMP int		cob_load_config	(void);
 COB_EXPIMP void		print_runtime_conf	(void);
 COB_EXPIMP cob_field_attr *cob_alloc_attr(int type, int digits, int scale, int flags);

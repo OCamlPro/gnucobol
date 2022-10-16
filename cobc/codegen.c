@@ -253,13 +253,13 @@ static const struct system_table	system_tab[] = {
 #undef	COB_SYSTEM_GEN
 
 #ifdef	HAVE_DESIGNATED_INITS
+#define COB_STATEMENT(ename,str)	, [ename] = CB_STRINGIFY (ename)
 const char	*cb_statement_enum_name[STMT_MAX_ENTRY] = {
 	[STMT_UNKNOWN] = CB_STRINGIFY (STMT_UNKNOWN)
-	/* note: STMT_UNKNOWN left out here */
-#define COB_STATEMENT(ename,str)	, [ename] = CB_STRINGIFY (ename)
-#include "libcob/statement.def"
-#undef COB_STATEMENT
+#include "../libcob/statement.def"
+	/* note: STMT_MAX_ENTRY left out here */
 };
+#undef COB_STATEMENT
 #else
 const char	*cb_statement_enum_name[STMT_MAX_ENTRY];
 #endif
@@ -14353,8 +14353,9 @@ void
 cobc_init_codegen (void)
 {
 	cb_statement_enum_name[STMT_UNKNOWN] = CB_STRINGIFY (STMT_UNKNOWN);
-#define COB_STATEMENT(ename,str)	cb_statement_enum_name[ename] = CB_STRINGIFY (ename);
-#include "libcob/statement.def"
+#define COB_STATEMENT(ename,str) \
+	cb_statement_enum_name[ename] = CB_STRINGIFY (ename);
+#include "../libcob/statement.def"
 #undef COB_STATEMENT
 }
 #endif

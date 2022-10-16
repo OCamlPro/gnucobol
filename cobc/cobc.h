@@ -28,6 +28,8 @@
          and include that here */
 #ifdef	HAVE_UNISTD_H
 #include <unistd.h>
+#else
+#include <stdio.h>
 #endif
 #include <stdio.h>	/* for FILE* */
 
@@ -648,6 +650,10 @@ extern void		cb_init_codegen (void);
 	} ONCE_COB
 #define CB_PENDING(s)		CB_PENDING_X	(cb_error_node, s)
 #define CB_UNFINISHED(s)	CB_UNFINISHED_X	(cb_error_node, s)
+#define CB_UNSUPPORTED(x) \
+	do { cb_error (_("%s is not supported"), x); } ONCE_COB
+#define CB_UNSUPPORTED_X(x,y) \
+	do { cb_error_x (x, _("%s is not supported"), y); } ONCE_COB
 
 extern size_t		cb_msg_style;
 
