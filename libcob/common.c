@@ -464,7 +464,7 @@ static struct config_tbl gc_conf[] = {
     {"COB_SEQ_CONCAT_NAME","seq_concat_name","0",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_concat_name)},
     {"COB_SEQ_CONCAT_SEP","seq_concat_sep","+",NULL,GRP_FILE,ENV_CHAR,SETPOS(cob_concat_sep),1},
 	{"COB_SORT_CHUNK", "sort_chunk", 		"256K", 	NULL, GRP_FILE, ENV_SIZE, SETPOS (cob_sort_chunk), (128 * 1024), (16 * 1024 * 1024)},
-	{"COB_SORT_MEMORY", "sort_memory", 	"128M", 	NULL, GRP_FILE, ENV_SIZE, SETPOS (cob_sort_memory), (1024*1024), 4294967294 /* max. guaranteed - 1 */},
+	{"COB_SORT_MEMORY", "sort_memory", 	"128M", 	NULL, GRP_FILE, ENV_SIZE, SETPOS (cob_sort_memory), (1024*1024), 4294967294UL /* max. guaranteed - 1 */},
 	{"COB_SYNC", "sync", 			"0", 	syncopts, GRP_FILE, ENV_BOOL, SETPOS (cob_do_sync)},
 #ifdef  WITH_DB
 	{"DB_HOME", "db_home", 			NULL, 	NULL, GRP_FILE, ENV_FILE, SETPOS (bdb_home)},
@@ -7134,7 +7134,7 @@ set_config_val (char *value, int pos)
 				} else {
 					/* use max. guaranteed value for unsigned long
 					   to raise a warning as max value is limit to one less */
-					numval = 4294967295;
+					numval = 4294967295UL;
 				}
 				ptr++;
 				break;
@@ -7144,7 +7144,7 @@ set_config_val (char *value, int pos)
 				} else {
 					/* use max. guaranteed value for unsigned long
 					   to raise a warning as max value is limit to one less */
-					numval = 4294967295;
+					numval = 4294967295UL;
 				}
 				ptr++;
 				break;

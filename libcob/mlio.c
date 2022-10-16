@@ -1106,7 +1106,7 @@ int cob_xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 		}
 	}
 
-	/* user user-initiated exception condition (-1) /*/
+	/* user user-initiated exception condition (-1) */
 	if (xml_code == -1) {
 		/* xml code stays with one */
 		xml_free_parse_memory (state);
