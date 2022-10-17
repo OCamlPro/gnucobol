@@ -8609,10 +8609,6 @@ begin_setup_internal_and_compiler_env (void)
 static void
 finish_setup_internal_env (void)
 {
-#ifndef	HAVE_DESIGNATED_INITS
-	cobc_init_typeck ();
-#endif
-
 	/* Append default extensions */
 	CB_TEXT_LIST_ADD (cb_extension_list, ".CPY");
 	CB_TEXT_LIST_ADD (cb_extension_list, ".CBL");
@@ -8866,6 +8862,13 @@ main (int argc, char **argv)
 		putc ('\n', stderr);
 		fflush (stderr);
 	}
+
+	/* further one-time initialization */
+#ifndef	HAVE_DESIGNATED_INITS
+	cobc_init_typeck ();
+	cobc_init_codegen ();
+	cobc_init_tree ();
+#endif
 
 	/* Process input files */
 
