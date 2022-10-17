@@ -1708,7 +1708,7 @@ cobc_turn_ec (struct cb_text_list *ec_list, const cob_u32_t to_on_off, cb_tree l
 		size_t len = strlen (ec->text);
 		unsigned char *upme = (unsigned char*)ec->text;
 		for (i = 0; i < len; ++i) {
-			upme[i] = (cob_u8_t)toupper (upme[i]);
+			upme[i] = cb_toupper (upme[i]);
 		}
 
 		/* User specified exception (always nonfatal, compared by name) */

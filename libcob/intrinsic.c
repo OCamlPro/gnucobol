@@ -3829,7 +3829,7 @@ cob_intr_upper_case (const int offset, const int length, cob_field *srcfield)
 
 	size = srcfield->size;
 	for (i = 0; i < size; ++i) {
-		curr_field->data[i] = (cob_u8_t)toupper (srcfield->data[i]);
+		curr_field->data[i] = (cob_u8_t)toupper ((unsigned char)srcfield->data[i]);
 	}
 	if (unlikely (offset > 0)) {
 		calc_ref_mod (curr_field, offset, length);
@@ -3982,9 +3982,11 @@ cob_intr_hex_to_char (cob_field *srcfield)
 
 	for (i = j = 0; j < srcfield->size; ++i) {
 		unsigned char src, dst;
-		src = (cob_u8_t)toupper (srcfield->data[j++]);
+		src = (cob_u8_t)srcfield->data[j++];
 		if (src >= 'A' && src <= 'F') {
 			dst = src - 'A' + 10;
+		} else if (src >= 'a' && src <= 'f') {
+			dst = src - 'a' + 10;
 		} else if (isdigit (src)) {
 			dst = COB_D2I (src);
 		} else {
@@ -3992,9 +3994,11 @@ cob_intr_hex_to_char (cob_field *srcfield)
 			cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
 		}
 		dst *= 16;
-		src = (cob_u8_t)toupper (srcfield->data[j++]);
+		src = (cob_u8_t)srcfield->data[j++];
 		if (src >= 'A' && src <= 'F') {
 			dst = dst + src - 'A' + 10;
+		} else if (src >= 'a' && src <= 'f') {
+			dst = dst + src - 'a' + 10;
 		} else if (isdigit (src)) {
 			dst = dst + COB_D2I (src);
 		} else {

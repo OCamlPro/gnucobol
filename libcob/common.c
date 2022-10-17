@@ -2469,12 +2469,14 @@ cob_trace_print (char *val)
 	int	i;
 	int last_pos = (int)(strlen (cobsetptr->cob_trace_format) - 1);
 
-	/* note: only executed after cob_trace_prep(), so
+	/* note: only executed after cob_trace_prep (), so
 	         call to cob_get_source_line () already done */
 	for (i=0; cobsetptr->cob_trace_format[i] != 0; i++) {
 		if (cobsetptr->cob_trace_format[i] == '%') {
 			i++;
-			if (toupper(cobsetptr->cob_trace_format[i]) == 'P') {
+			switch (cobsetptr->cob_trace_format[i]) {
+			case 'P':
+			case 'p':
 				if (COB_MODULE_PTR && COB_MODULE_PTR->module_type == COB_MODULE_TYPE_FUNCTION) {
 					if (i != last_pos) {
 						fprintf (cobsetptr->cob_trace_file, "Function-Id: %-16s", cob_last_progid);
@@ -2488,27 +2490,35 @@ cob_trace_print (char *val)
 						fprintf (cobsetptr->cob_trace_file, "Program-Id:  %s", cob_last_progid);
 					}
 				}
-			} else
-			if (toupper(cobsetptr->cob_trace_format[i]) == 'I') {
+				break;
+			case 'I':
+			case 'i':
 				fprintf (cobsetptr->cob_trace_file, "%s", cob_last_progid);
-			} else
-			if (toupper(cobsetptr->cob_trace_format[i]) == 'L') {
+				break;
+			case 'L':
+			case 'l':
 				fprintf (cobsetptr->cob_trace_file, "%6u", cob_source_line);
-			} else
-			if (toupper(cobsetptr->cob_trace_format[i]) == 'S') {
+				break;
+			case 'S':
+			case 's':
 				if (i != last_pos) {
 					fprintf (cobsetptr->cob_trace_file, "%-42.42s", val);
 				} else {
 					fprintf (cobsetptr->cob_trace_file, "%s", val);
 				}
-			} else
-			if (toupper(cobsetptr->cob_trace_format[i]) == 'F') {
+				break;
+			case 'F':
+			case 'f':
 				if (i != last_pos) {
 					fprintf (cobsetptr->cob_trace_file, "Source: %-*.*s",
 						-COB_MAX_NAMELEN, COB_MAX_NAMELEN, cob_last_sfile);
 				} else {
 					fprintf (cobsetptr->cob_trace_file, "Source: %s", cob_last_sfile);
 				}
+				break;
+			default:
+				fputc ('%', cobsetptr->cob_trace_file);
+				fputc (cobsetptr->cob_trace_format[i], cobsetptr->cob_trace_file);
 			}
 		} else {
 			fputc (cobsetptr->cob_trace_format[i], cobsetptr->cob_trace_file);
@@ -5599,6 +5609,24 @@ cob_sys_error_proc (const void *dispo, const void *pptr)
 }
 
 int
+cob_sys_runtime_error_proc (const void *err_flags, const void *err_msg)
+{
+	const char *msg = (const char*)err_msg;
+
+	COB_CHK_PARMS (CBL_RUNTIME_ERROR, 2);
+	COB_UNUSED (err_flags);
+
+	if (msg && msg[0]) {
+		cob_runtime_error ("%s: %s",
+			_("Program abandoned at user request"), msg);
+	} else {
+		cob_runtime_error ("%s",
+			_("Program abandoned at user request"));
+	}
+	cob_hard_failure ();
+}
+
+int
 cob_sys_system (const void *cmdline)
 {
 	COB_CHK_PARMS (SYSTEM, 1);
@@ -5997,9 +6025,7 @@ cob_sys_toupper (void *p1, const int length)
 
 	if (length > 0) {
 		for (n = 0; n < (size_t)length; ++n) {
-			if (islower (data[n])) {
-				data[n] = (cob_u8_t)toupper (data[n]);
-			}
+			data[n] = (cob_u8_t)toupper (data[n]);
 		}
 	}
 	return 0;
@@ -6015,9 +6041,7 @@ cob_sys_tolower (void *p1, const int length)
 
 	if (length > 0) {
 		for (n = 0; n < (size_t)length; ++n) {
-			if (isupper (data[n])) {
-				data[n] = (cob_u8_t)tolower (data[n]);
-			}
+			data[n] = (cob_u8_t)tolower (data[n]);
 		}
 	}
 	return 0;
@@ -9965,12 +9989,13 @@ cob_debug_open (void)
 
 		/* debugging flags (not include in file name) */
 		if (debug_env[i + 1] == '=') {
-			log_opt = toupper (debug_env[i]);
+			log_opt = debug_env[i];
 			i += 2;
 
 			switch (log_opt) {
 
 			case 'M':	/* module to debug */
+			case 'm':
 				for (j = 0; j < 4; i++) {
 					if (debug_env[i] == ','
 					 || debug_env[i] == ';'
@@ -9993,18 +10018,23 @@ cob_debug_open (void)
 				break;
 
 			case 'L':	/* logging options */
-				log_opt = toupper (debug_env[i]);
+			case 'l':
+				log_opt = debug_env[i];
 				switch (log_opt) {
 				case 'T':	/* trace */
+				case 't':
 					cob_debug_log_time = cob_debug_level = 3;
 					break;
 				case 'W':	/* warnings */
+				case 'w':
 					cob_debug_level = 2;
 					break;
 				case 'N':	/* normal */
+				case 'n':
 					cob_debug_level = 0;
 					break;
 				case 'A':	/* all */
+				case 'a':
 					cob_debug_level = 9;
 					break;
 				default:	/* Unknown log option, just ignored for now */
@@ -10014,6 +10044,7 @@ cob_debug_open (void)
 				break;
 
 			case 'O':	/* output name for logfile */
+			case 'o':
 				for (j = 0; j < COB_SMALL_MAX; i++) {
 					if (debug_env[i] == ','
 					 || debug_env[i] == ';'

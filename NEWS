@@ -42,7 +42,10 @@ NEWS - user visible changes				-*- outline -*-
 ** Initial "testing support" of CODE-SET clause to convert between ASCII and
    EBCDIC on READ/WRITE/REWRITE for sequential and line-sequential files
 
-** TODO - More to add
+** Support to exit the runtime from COBOL as hard error (including possible
+   dump and stacktrace) with "STOP ERROR" statement / CALL "CBL_RUNTIME_ERROR"
+
+** TODO - More to document, possibly after rc-1
 
 * Changes that potentially effects existing programs:
 

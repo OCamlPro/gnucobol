@@ -2076,13 +2076,9 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 
 			/* Handle UPPER/LOWER. */
 			if (s->attr & COB_SCREEN_UPPER) {
-				if (islower (keyp)) {
-					keyp = toupper (keyp);
-				}
+				keyp = toupper ((unsigned char)keyp);
 			} else if (s->attr & COB_SCREEN_LOWER) {
-				if (isupper (keyp)) {
-					keyp = tolower (keyp);
-				}
+				keyp = tolower ((unsigned char)keyp);
 			}
 
 			if (COB_INSERT_MODE) {
@@ -3265,13 +3261,9 @@ field_accept (cob_field *f, const int sline, const int scolumn, cob_field *fgc,
 
 			/* Handle UPPER/LOWER. */
 			if (fattr & COB_SCREEN_UPPER) {
-				if (islower (keyp)) {
-					keyp = toupper (keyp);
-				}
+				keyp = toupper ((unsigned char)keyp);
 			} else if (fattr & COB_SCREEN_LOWER) {
-				if (isupper (keyp)) {
-					keyp = tolower (keyp);
-				}
+				keyp = tolower ((unsigned char)keyp);
 			}
 
 			/* Insert character, if requested. */

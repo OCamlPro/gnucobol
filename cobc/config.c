@@ -245,9 +245,9 @@ split_and_iterate_on_comma_separated_str (
 			         register definitions with VALUE clause:
 			         VALUE "stuff"  /  value N'stuff' */
 			if (transform_case == 1) {
-				word_buff[j++] = (char)toupper ((int)val[i]);
+				word_buff[j++] = (char)cb_toupper ((unsigned char)val[i]);
 			} else if (transform_case == 2) {
-				word_buff[j++] = (char)tolower ((int)val[i]);
+				word_buff[j++] = (char)cb_tolower ((unsigned char)val[i]);
 			} else {;
 				word_buff[j++] = val[i];
 			}
@@ -608,9 +608,7 @@ cb_config_entry (char *buff, const char *fname, const int line)
 			/* store translated to lower case */
 			cob_u8_t *p;
 			for (p = (cob_u8_t *)val; *p; p++) {
-				if (isupper (*p)) {
-					*p = (cob_u8_t)tolower (*p);
-				}
+				*p = cb_tolower (*p);
 			}
 			/* if explicit requested: disable */
 			if (strcmp (val, "default") == 0

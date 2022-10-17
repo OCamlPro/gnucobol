@@ -3884,8 +3884,37 @@ static const unsigned char	cob_lower_tab[256] = {
 	['y'] = 'Y',
 	['z'] = 'Z'
 };
+static const unsigned char	cob_upper_tab[256] = {
+	['A'] = 'a',
+	['B'] = 'b',
+	['C'] = 'c',
+	['D'] = 'd',
+	['E'] = 'e',
+	['F'] = 'f',
+	['G'] = 'g',
+	['H'] = 'h',
+	['I'] = 'i',
+	['J'] = 'j',
+	['K'] = 'k',
+	['L'] = 'l',
+	['M'] = 'm',
+	['N'] = 'n',
+	['O'] = 'o',
+	['P'] = 'p',
+	['Q'] = 'q',
+	['R'] = 'r',
+	['S'] = 's',
+	['T'] = 't',
+	['U'] = 'u',
+	['V'] = 'v',
+	['W'] = 'w',
+	['X'] = 'x',
+	['Y'] = 'y',
+	['Z'] = 'z'
+};
 #else
 static unsigned char		cob_lower_tab[256];
+static unsigned char		cob_upper_tab[256];
 static const unsigned char	pcob_lower_tab[] = "abcdefghijklmnopqrstuvwxyz";
 static const unsigned char	pcob_lower_val[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 #endif
@@ -3897,16 +3926,32 @@ struct list_reserved_line {
 
 /* Local functions */
 
-
 /*
   Upper-casing for reserved words.
-  We use cob_lower_tab instead of toupper for efficiency.
+  We use cob_lower_tab (C locale table) instead of toupper for efficiency.
 */
 static COB_INLINE COB_A_INLINE unsigned char
-cb_toupper (unsigned char c)
+res_toupper (unsigned char c)
 {
 	if (cob_lower_tab[c]) {
 		return cob_lower_tab[c];
+	}
+	return c;
+}
+
+/* Upper-casing for reserved words using efficient C locale table lookup. */
+unsigned char
+cb_toupper (const unsigned char c)
+{
+	return res_toupper (c);
+}
+
+/* Lower-casing for reserved words using efficient C locale table lookup. */
+unsigned char
+cb_tolower (const unsigned char c)
+{
+	if (cob_upper_tab[c]) {
+		return cob_upper_tab[c];
 	}
 	return c;
 }
@@ -3927,7 +3972,7 @@ cb_strcasecmp (const void *s1, const void *s2)
 		return 0;
 	}
 
-	while ((result = cb_toupper (*p1) - cb_toupper (*p2++)) == 0) {
+	while ((result = res_toupper (*p1) - res_toupper (*p2++)) == 0) {
 		if (*p1++ == '\0') {
 			break;
 		}
@@ -4020,7 +4065,7 @@ void
 cb_memcpy_upper (char *dest, const char *source, size_t len)
 {
 	while (len--) {
-		*dest++ = cb_toupper(*source++);
+		*dest++ = res_toupper(*source++);
 	}
 }
 
@@ -4029,7 +4074,7 @@ cb_memcpy_upper (char *dest, const char *source, size_t len)
 static void
 cb_strupr (char *s) {
 	while (*s) {
-		*s = cb_toupper (*s);
+		*s = res_toupper (*s);
 		s++;
 	}
 }
@@ -4083,7 +4128,7 @@ is_invalid_word (const char *word, const int size, const int space_allowed,
 	{
 		size_t i = 0;
 		while (i < size) {
-			const char c = cb_toupper(word[i++]);
+			const char c = res_toupper(word[i++]);
 			if ((c >= 'A' && c <= 'Z')
 			 || (c >= '0' && c <= '9')
 			 ||  c == '-' || c == '_' ) {
@@ -4284,7 +4329,7 @@ hash_word (const cob_c8_t *word, const cob_u32_t mod)
 	/* Perform 32-bit FNV1a hash */
 	for (; *word; ++word) {
 		/* CHECKME: all input should be upper-case already, but isn't */
-		result ^= cb_toupper (*word);
+		result ^= res_toupper (*word);
 		result *= (cob_u32_t) 0x1677619;
 	}
 
@@ -5387,14 +5432,19 @@ cb_list_reserved (void)
 void
 cobc_init_reserved (void)
 {
-	const unsigned char	*p;
-	const unsigned char	*v;
+	const unsigned char	*p, *v;
 
 	memset (cob_lower_tab, 0, sizeof(cob_lower_tab));
 	p = pcob_lower_tab;
 	v = pcob_lower_val;
 	for (; *p; ++p, ++v) {
 		cob_lower_tab[*p] = *v;
+	}
+	memset (cob_upper_tab, 0, sizeof(cob_upper_tab));
+	p = pcob_lower_val;
+	v = pcob_lower_tab;
+	for (; *p; ++p, ++v) {
+		cob_upper_tab[*p] = *v;
 	}
 }
 #endif

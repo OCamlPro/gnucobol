@@ -1705,6 +1705,7 @@ COB_EXPIMP void	cob_temp_name			(char *, const char *);
 /* System routines */
 COB_EXPIMP int	cob_sys_exit_proc	(const void *, const void *);
 COB_EXPIMP int	cob_sys_error_proc	(const void *, const void *);
+COB_EXPIMP int	cob_sys_runtime_error_proc (const void *, const void *);
 COB_EXPIMP int	cob_sys_system		(const void *);
 COB_EXPIMP int	cob_sys_hosted		(void *, const void *);
 COB_EXPIMP int	cob_sys_and		(const void *, void *, const int);

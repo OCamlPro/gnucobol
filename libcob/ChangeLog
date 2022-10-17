@@ -1,4 +1,13 @@
 
+2022-10-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_debug_open, cob_trace_print), intrinsic.c
+	 (cob_intr_hex_to_char): prefer extending switch over use of topupper
+	* call.c, common.c, intrinisic.c, screenio.c: directly call toupper/tolower
+	  without previous check of islower/isupper
+	* system.def, common.c (cob_sys_runtime_error_proc):
+	  implement CBL_RUNTIME_ERROR
+
 2022-10-15  Simon Sobisch <simonsobisch@gnu.org>
 
 	* version.h, Makefile.am: new file, moving out version

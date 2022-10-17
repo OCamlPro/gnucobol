@@ -7,6 +7,11 @@
 	* typeck.c (cb_validate_labels): use ref->statement instead of flag_decl_ok
 	* warning.def, typeck.c (cb_validate_labels): new warnings -Wgoto-section
 	  (enabled by default) and -Wgoto-different-section (enabled by -Wall)
+	* reserved.c: renamed cb_toupper to res_toupper
+	* reserved.c (cb_toupper, cb_tolower), cobc.h: new exported functions
+	* scanner.l, config.c, cobc.c: prefer cb_toupper and cb_tolower over
+	  locale aware toupper/tolower
+	* ppparse.y: directly call toupper/tolower without previous islower/isupper
 
 2022-10-15  Simon Sobisch <simonsobisch@gnu.org>
 
