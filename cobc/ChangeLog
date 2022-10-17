@@ -1,4 +1,13 @@
 
+2022-10-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.h (cb_reference), tree.c (cb_build_reference): added statement
+	  allowing every reference to be checked for its context
+	* tree.h (cb_reference), parser.y (perform_procedure): dropped flag_decl_ok
+	* typeck.c (cb_validate_labels): use ref->statement instead of flag_decl_ok
+	* warning.def, typeck.c (cb_validate_labels): new warnings -Wgoto-section
+	  (enabled by default) and -Wgoto-different-section (enabled by -Wall)
+
 2022-10-15  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.h: new CB_UNSUPPORTED for features not planned to be supported

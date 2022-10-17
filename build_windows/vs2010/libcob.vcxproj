@@ -191,7 +191,7 @@
     <ClInclude Include="..\..\libcob\cobgetopt.h" />
     <ClInclude Include="..\..\libcob\coblocal.h" />
     <ClInclude Include="..\..\libcob\common.h" />
-    <ClInclude Include="..\..\libcob\libversion.h" />
+    <ClInclude Include="..\..\libcob\version.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\version_libcob.rc" />

@@ -192,11 +192,16 @@ NEWS - user visible changes				-*- outline -*-
 ** adjustments to warning options:
    -Wconstant-expression was changed to a group warning and includes
     the new, previously integrated, -Wconstant-numlit-expression
-   -Wlarger-01-redefines as new warning (included with -Wextra) to check for
+   -Wlarger-01-redefines as new warning (enabled by -Wextra) to check for
     the only larger REDEFINES that is explicit allowed by the COBOL standard
    -Wno-unsupported -Wunsupported new option to disable or only warn
     on use of features the runtime is not configured for;
     this new option defaults to an error (= -Werror=unsupported)
+   -Wgoto-different-section as new warning (enabled by -Wall) to check for
+    GO TO that are likely to break the flow of PERFORM some-section
+   -Wgoto-section as new warning (enabled by default) to check for
+    GO TO a section instead of a paragraph; while allowed this is often
+    a coding error
 
 ** new compiler command line option to list the known runtime exception names
    and fatality `cobc --list-exceptions`

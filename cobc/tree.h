@@ -1154,6 +1154,7 @@ struct cb_reference {
 	cb_tree			offset;		/* Reference mod offset */
 	cb_tree			length;		/* Reference mod length */
 	cb_tree			check;		/* Runtime checks */
+	enum cob_statement	statement;	/* statement that uses this reference */
 	struct cb_word		*word;		/* Pointer to word list */
 	struct cb_label		*section;	/* Current section */
 	struct cb_label		*paragraph;	/* Current paragraph */
@@ -1163,7 +1164,6 @@ struct cb_reference {
 	unsigned int		flag_receiving	: 1;	/* Reference target */
 	unsigned int		flag_all	: 1;	/* ALL */
 	unsigned int		flag_in_decl	: 1;	/* In DECLARATIVE */
-	unsigned int		flag_decl_ok	: 1;	/* DECLARATIVE ref OK  */
 	unsigned int		flag_alter_code	: 1;	/* Needs ALTER code */
 	unsigned int		flag_debug_code	: 1;	/* Needs DEBUG code */
 	unsigned int		flag_all_debug	: 1;	/* Needs ALL DEBUG code */
@@ -2129,6 +2129,7 @@ extern enum cb_warn_val		cb_warning_dialect_x (const enum cb_support, cb_tree, c
 extern void		cb_note_x (const enum cb_warn_opt, cb_tree, const char *, ...) COB_A_FORMAT34;
 extern void		cb_note (const enum cb_warn_opt, const int, const char *, ...) COB_A_FORMAT34;
 extern void		cb_inclusion_note (const char *, int);
+extern char		*cb_get_qualified_name (const struct cb_reference *);
 extern enum cb_warn_val	cb_error_x (cb_tree, const char *, ...) COB_A_FORMAT23;
 extern unsigned int	cb_syntax_check (const char *, ...) COB_A_FORMAT12;
 extern unsigned int	cb_syntax_check_x (cb_tree, const char *, ...) COB_A_FORMAT23;

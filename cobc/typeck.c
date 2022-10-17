@@ -4923,53 +4923,78 @@ static void
 cb_validate_labels (struct cb_program *prog)
 {
 	cb_tree			l;
-	cb_tree			x;
 	cb_tree			v;
 
 	for (l = cb_list_reverse (prog->label_list); l; l = CB_CHAIN (l)) {
-		x = CB_VALUE (l);
-		(void)cb_set_ignore_error (CB_REFERENCE (x)->flag_ignored);
+		const cb_tree x = CB_VALUE (l);
+		const struct cb_reference *ref = CB_REFERENCE (x);
+		(void)cb_set_ignore_error (ref->flag_ignored);
 		v = cb_ref (x);
 		/* cb_error_node -> reference not defined, message raised in cb_ref() */
 		if (v == cb_error_node) {
 			continue;
 		}
-		current_section = CB_REFERENCE (x)->section;
-		current_paragraph = CB_REFERENCE (x)->paragraph;
+		current_section = ref->section;
+		current_paragraph = ref->paragraph;
 		/* Check refs in to / out of DECLARATIVES */
 		if (CB_LABEL_P (v)) {
-			if (CB_REFERENCE (x)->flag_in_decl &&
-				!CB_LABEL (v)->flag_declaratives) {
+			struct cb_label *label = CB_LABEL (v);
+
+			label->flag_begin = 1;
+			if (ref->length) {
+				label->flag_return = 1;
+			}
+
+			if (ref->flag_in_decl
+			 && !label->flag_declaratives) {
 				/* verify reference-out-of-declaratives  */
 				switch (cb_reference_out_of_declaratives) {
 				case CB_OK:
 					break;
 				case CB_ERROR:
 					cb_error_x (x, _("'%s' is not in DECLARATIVES"),
-						    CB_LABEL (v)->name);
-					break;
+						    label->name);
+					continue;
 				case CB_WARNING:
+					if (cb_warn_opt_val[cb_warn_dialect] == COBC_WARN_DISABLED) {
+						break;
+					}
 					cb_warning_x (cb_warn_dialect, x,
 						    _("'%s' is not in DECLARATIVES"),
-						    CB_LABEL (v)->name);
-					break;
+							label->name);
+					continue;
 				default:
 					break;
 				}
 			}
 
-			/* GO TO into DECLARATIVES is not allowed */
-			if (CB_LABEL (v)->flag_declaratives &&
-			    !CB_REFERENCE (x)->flag_in_decl &&
-			    !CB_REFERENCE (x)->flag_decl_ok) {
-				cb_error_x (x, _("invalid reference to '%s' (in DECLARATIVES)"),
-					    CB_LABEL (v)->name);
+			/* checks for GO TO */
+			if (ref->statement == STMT_GO_TO) {
+
+				/* GO TO into DECLARATIVES is not allowed */
+				if (label->flag_declaratives
+				 && !ref->flag_in_decl) {
+					cb_error_x (x, _("invalid reference to '%s' (in DECLARATIVES)"),
+						CB_LABEL (v)->name);
+					continue;
+				}
+
+				/* check for warning options "house-rules" relevant for later optimizations */
+				if (label->flag_section) {
+					cb_warning_x (cb_warn_goto_section, x,
+						"GO TO SECTION '%s'", label->name);
+				} else if (label->section != current_section) {
+					char qualified_name[COB_MAX_WORDLEN * 2 + 4 + 1];
+					cb_warning_x (cb_warn_goto_different_section, x,
+						_("GO TO paragraph '%s' which is defined in another SECTION"),
+						label->name);
+					sprintf (qualified_name, "%s IN %s", label->name, label->section->name);
+					cb_note_x (cb_warn_goto_different_section, v,
+						_("'%s' defined here"), qualified_name);
+				}
+
 			}
 
-			CB_LABEL (v)->flag_begin = 1;
-			if (CB_REFERENCE (x)->length) {
-				CB_LABEL (v)->flag_return = 1;
-			}
 		} else {
 			cb_error_x (x, _("'%s' is not a procedure name"), cb_name (x));
 		}
@@ -5027,7 +5052,7 @@ cb_validate_program_body (struct cb_program *prog)
 	if (cb_warn_opt_val[cb_warn_linkage] != COBC_WARN_DISABLED
 	 && prog->linkage_storage) {
 		if (prog->returning
-		 &&	cb_ref (prog->returning) != cb_error_node) {
+		 && cb_ref (prog->returning) != cb_error_node) {
 			ret_fld = CB_FIELD (cb_ref (prog->returning));
 			if (ret_fld->redefines) {
 				/* error, but we check this in parser.y already and just go on here */

@@ -293,10 +293,8 @@ prog.cob:47: error: 'broken' is not defined
 AT_CLEANUP
 
 
-## Same labels in different sections
-
-AT_SETUP([Same labels in different sections])
-AT_KEYWORDS([definition])
+AT_SETUP([Same paragraphs in different sections])
+AT_KEYWORDS([definition procedures label GO TO])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -313,7 +311,61 @@ AT_DATA([prog.cob], [
        L.
 ])
 
+AT_DATA([prog2.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog2.
+       PROCEDURE        DIVISION.
+       S-1 SECTION.
+       L.
+
+       S-2 SECTION.
+       L.
+
+       S-3 SECTION.
+            GO TO L.
+       K.
+])
+
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY prog2.cob], [1], [],
+[prog2.cob: in section 'S-3':
+prog2.cob:12: error: 'L' is ambiguous; needs qualification
+prog2.cob:6: note: 'L IN S-1' defined here
+prog2.cob:9: note: 'L IN S-2' defined here
+])
+AT_CLEANUP
+
+
+AT_SETUP([GO TO sections and foreign paragraphs])
+AT_KEYWORDS([definition procedures])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+       S-1 SECTION.
+           GO TO S-2.
+       E-1.
+
+       S-2 SECTION.
+           GO TO E-3.
+       E-2.
+
+       S-3 SECTION.
+       E-3.
+])
+
+AT_CHECK([$COBC -fsyntax-only prog.cob], [0], [],
+[prog.cob: in section 'S-1':
+prog.cob:6: warning: GO TO SECTION 'S-2' [[-Wgoto-section]]
+])
+AT_CHECK([$COBC -fsyntax-only -Wall -Werror=goto-section prog.cob], [0], [],
+[prog.cob: in section 'S-1':
+prog.cob:6: error: GO TO SECTION 'S-2' [[-Werror=goto-section]]
+prog.cob: in section 'S-2':
+prog.cob:10: warning: GO TO paragraph 'E-3' which is defined in another SECTION [[-Wgoto-different-section]]
+prog.cob:14: note: 'E-3 IN S-3' defined here [[-Wgoto-different-section]]
+])
 AT_CLEANUP
 
 

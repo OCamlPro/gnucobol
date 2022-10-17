@@ -4877,6 +4877,11 @@ cb_build_reference (const char *name)
 	r->section = current_section;
 	r->paragraph = current_paragraph;
 
+	/* statement this reference was used with for later checks */
+	if (current_statement) {
+		r->statement = current_statement->statement;
+	}
+
 	/* Look up / insert word into hash list */
 	lookup_word (r, name);
 

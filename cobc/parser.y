@@ -8036,6 +8036,7 @@ _occurs_indexed:
   /* empty */
 | occurs_indexed
 ;
+
 occurs_indexed:
   INDEXED _by occurs_index_list
   {
@@ -12479,7 +12480,7 @@ disp_list:
   }
 | OMITTED
   {
-	$$ = CB_LIST_INIT(cb_null);
+	$$ = CB_LIST_INIT (cb_null);
   }
 ;
 
@@ -14695,15 +14696,12 @@ perform_procedure:
   {
 	/* Return from $1 */
 	CB_REFERENCE ($1)->length = cb_true;
-	CB_REFERENCE ($1)->flag_decl_ok = 1;
 	$$ = CB_BUILD_PAIR ($1, $1);
   }
 | procedure_name THRU procedure_name
   {
 	/* Return from $3 */
 	CB_REFERENCE ($3)->length = cb_true;
-	CB_REFERENCE ($1)->flag_decl_ok = 1;
-	CB_REFERENCE ($3)->flag_decl_ok = 1;
 	$$ = CB_BUILD_PAIR ($1, $3);
   }
 ;
