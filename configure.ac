@@ -324,6 +324,9 @@ AC_PROG_CC([gcc icc xlc cc])
 dnl no explict usage of CPP var
 dnl AC_PROG_CPP
 
+# save what we have so far as it is quite "constant"
+AC_CACHE_SAVE
+
 AC_USE_SYSTEM_EXTENSIONS
 #
 ## general flags for compiler and linker and tests for those
@@ -436,6 +439,8 @@ AC_PROG_INSTALL
 AC_PROG_MAKE_SET
 AC_LIB_RPATH
 
+# more things to save...
+AC_CACHE_SAVE
 
 # Checks for header files.
 dnl entries only used from external includes -> likely no need to check here
@@ -456,25 +461,25 @@ AC_CHECK_TYPES([sig_atomic_t], [], [], [[#include <signal.h>]])
 
 dnl Note: Don't use AC_C_INLINE here. We need the value.
 
-AC_MSG_CHECKING([for inline keyword])
-for cob_keyw in __inline __inline__ inline
-do
+AC_CACHE_CHECK([for inline keyword], gc_cv_keyword_inline, [
+  for gc_cv_keyword_inline in __inline __inline__ inline ""
+  do
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 		#ifndef __cplusplus
 		typedef int foo_t;
-		static $cob_keyw foo_t foo () { return 0; }
+		static $gc_cv_keyword_inline foo_t foo () { return 0; }
 		#endif]], [[
 		#ifndef __cplusplus
 		return foo ();
 		#else
 		choke me
 		#endif]])],
-		[AC_DEFINE_UNQUOTED([COB_KEYWORD_INLINE], [$cob_keyw]) break],
+		[break],
 		[],
 		[])
-done
-AC_MSG_RESULT([$cob_keyw])
-unset cob_keyw
+  done]
+)
+  AC_DEFINE_UNQUOTED([COB_KEYWORD_INLINE], [$gc_cv_keyword_inline])
 
 
 # Checks for library functions.
@@ -485,22 +490,34 @@ AC_CHECK_FUNCS([memmove memset setlocale fcntl strerror strcasecmp \
 	setenv strcoll flockfile])
 
 # Check for timezone
-AC_MSG_CHECKING([for timezone variable access])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <time.h>]],
+AC_CACHE_CHECK([for timezone variable access], gc_cv_time_timezone, [
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <time.h>]],
 	[[timezone = 3600;]])],
-	[AC_DEFINE([HAVE_TIMEZONE], [1])
-	 AC_MSG_RESULT([yes])],
-	[AC_MSG_RESULT([no])])
+	[gc_cv_time_timezone=yes],
+	[gc_cv_time_timezone=no]
+  )]
+)
+  if test "$gc_cv_time_timezone" = yes; then
+	AC_DEFINE([HAVE_TIMEZONE], [1])
+  fi
 
 # Check for designated initializers
-AC_MSG_CHECKING([for designated initializers])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdio.h>]],
+AC_CACHE_CHECK([for designated initializers], gc_cv_designated_inits, [
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdio.h>]],
 	[[static const unsigned char valid_char[256] = {
 		@<:@'0'@:>@ = 1,
 		@<:@'1'@:>@ = 1 };
 	]])],
-	[AC_DEFINE([HAVE_DESIGNATED_INITS], [1]) AC_MSG_RESULT([yes])],
-	[AC_MSG_RESULT([no])])
+	[gc_cv_designated_inits=yes],
+	[gc_cv_designated_inits=no]
+  )]
+)
+  if test "$gc_cv_designated_inits" = yes; then
+	AC_DEFINE([HAVE_DESIGNATED_INITS], [1])
+  fi
+
+# more things to save...
+AC_CACHE_SAVE
 
 # Check for the compiler used
 dnl COB_USES_GCC="no"
@@ -1208,8 +1225,10 @@ fi
 if test "$USE_CURSES" = "ncursesw" -o "x$ac_cv_lib_ncursesw_initscr" = xyes; then
   AC_CHECK_HEADERS([ncursesw/ncurses.h], [USE_CURSES="ncursesw"],
     [AC_CHECK_HEADERS([ncursesw/curses.h], [USE_CURSES="ncursesw"],
-      [AS_IF([test "$USE_CURSES" != check],
-        [USE_CURSES="missing_header"]) ]) ])
+      dnl note: at least OpenBSD has ncursesw only with only ncurses.h in default header directory
+      [AC_CHECK_HEADERS([ncurses.h], [USE_CURSES="ncursesw"],
+        [AS_IF([test "$USE_CURSES" != check],
+          [USE_CURSES="missing_header"]) ]) ]) ])
   AS_IF([test $USE_CURSES="ncursesw" -a "x$CURSES_LIBS" = x],
     [CURSES_LIBS="-l$USE_CURSES"])
 fi
@@ -1712,21 +1731,30 @@ dnl fi
 # Check if aligned attribute seems to work
 # done:   does not raise an error
 # *TODO*: has same output as omitting it
-AC_MSG_CHECKING([for aligned attribute])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]],
-	[[char testchar[4] __attribute__((aligned));]])],
-	[AC_DEFINE([HAVE_ATTRIBUTE_ALIGNED], [1]) AC_MSG_RESULT([yes])
-	],
-	[AC_MSG_RESULT([no])])
 
-AC_MSG_CHECKING([for pure attribute])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+AC_CACHE_CHECK([for aligned attribute], gc_cv_attribute_alligned, [
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]],
+	[[char testchar[4] __attribute__((aligned));]])],
+	[gc_cv_attribute_alligned=yes],
+	[gc_cv_attribute_alligned=no]
+  ])
+)
+  if test "$gc_cv_attribute_alligned" = yes; then
+	AC_DEFINE([HAVE_ATTRIBUTE_ALIGNED], [1])
+  fi
+
+AC_CACHE_CHECK([for pure attribute], gc_cv_attribute_pure, [
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 	  __attribute__((pure)) int f (void) { return 0; }
 	]],
 	[[]])],
-	[AC_DEFINE([HAVE_ATTRIBUTE_PURE], [1]) AC_MSG_RESULT([yes])
-	],
-	[AC_MSG_RESULT([no])])
+	[gc_cv_attribute_pure=yes],
+	[gc_cv_attribute_pure=no]
+  ])
+)
+  if test "$gc_cv_attribute_pure" = yes; then
+	AC_DEFINE([HAVE_ATTRIBUTE_PURE], [1])
+  fi
 
 dnl  Simon: removed, use --disable-nls instead
 dnl # Disable for Cygwin
@@ -1876,11 +1904,17 @@ AS_IF([test "$enable_hardening" = "yes"], [
 
 AS_IF([test "$COB_USES_GCC" = "yes"], [
 	curr_cflags="$CFLAGS"
-	CFLAGS="$curr_cflags -pipe"
-	AC_MSG_CHECKING([for -pipe option])
+	AC_CACHE_CHECK([for -pipe option], gc_cv_gcc_pipe, [
+	CFLAGS="$CFLAGS -pipe"
 	AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[int testint;]])],
-		[AC_MSG_RESULT([yes])],
-		[CFLAGS="$curr_cflags"; AC_MSG_RESULT([no])])
+		[gc_cv_gcc_pipe=yes],
+		[gc_cv_gcc_pipe=no])
+	])
+	  if test "$gc_cv_gcc_pipe" = yes; then
+		CFLAGS="$curr_cflags -pipe"
+	  else
+		CFLAGS="$curr_cflags"
+	  fi
 ])
 
 # include directory (install dir)
