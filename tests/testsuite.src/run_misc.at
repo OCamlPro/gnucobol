@@ -2022,6 +2022,43 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([INSPECT TALLYING REPLACING BEFORE and AFTER])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  INSP-STRING   PIC X(26) VALUE 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.
+       01  EXPTD-RESULT  CONSTANT AS     'A22222111111111122222222YZ'.
+       01  RES-IDX       PIC 9(04) BINARY VALUE 100.
+       01  RES-IDX-1     PIC 9(04) BINARY VALUE 0.
+       PROCEDURE DIVISION.
+      *>
+           INSPECT INSP-STRING
+                   TALLYING RES-IDX   FOR CHARACTERS BEFORE 'H'
+                            RES-IDX-1 FOR CHARACTERS AFTER  'B'
+             REPLACING
+                   CHARACTERS BY '1' AFTER 'F' BEFORE 'Q'
+                   CHARACTERS BY '2' AFTER 'A' BEFORE 'Y'.
+      *>
+           IF INSP-STRING NOT = EXPTD-RESULT
+               DISPLAY 'Failed <' INSP-STRING '> != <' EXPTD-RESULT '>'.
+           IF RES-IDX NOT = 107
+               DISPLAY 'Failed <' RES-IDX   '> != <107>'.
+           IF RES-IDX-1 NOT = 19
+               DISPLAY 'Failed <' RES-IDX-1 '> != <19>'.
+      *>
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([INSPECT REPLACING figurative constant])
 AT_KEYWORDS([runmisc])
 
@@ -2492,13 +2529,11 @@ AT_DATA([prog.cob], [
        01  X            PIC 9(2) VALUE 0.
        01  Y            PIC 9(2) VALUE 0.
        PROCEDURE        DIVISION.
-           COMPUTE X = 100
-           END-COMPUTE.
-           COMPUTE Y = 99
-           END-COMPUTE.
-           IF Y NOT = 99
-              DISPLAY Y
-           END-IF.
+           COMPUTE X = 100. *> this overflows which does not store a result
+           COMPUTE Y = 99.  *> and once in a time this result was not stored
+           IF X NOT = 0 AND
+              Y NOT = 99
+              DISPLAY Y.
            STOP RUN.
 ])
 
@@ -2545,6 +2580,90 @@ AT_DATA([prog.cob], [
               DISPLAY X(1)
            END-IF.
            STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([STRING WITH POINTER ON OVERFLOW with DELIMITER])
+AT_KEYWORDS([runmisc exceptions])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. StringTest.
+      *>----------------------------------------------------------------
+      *>           Additional test cases for STRING statement
+      *> Testing string  with POINTER clause and with OVERFLOW
+      *> managment associated to POINTER clause
+      *> Testing also String with delimiter
+      *>----------------------------------------------------------------
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+      *>-----------------------
+       01  TRGT-STRING   PIC X(03) VALUE SPACES.
+       01  STR-POINTER   PIC 9(02).
+       01  SRC-DELIM     PIC X(01).
+
+       PROCEDURE DIVISION.
+      *>-------------------
+      *>
+      *> case A: Pointer is between 1 and less than TRGT-STRING LENGTH
+      *>         Should not overflow
+            MOVE 1 to STR-POINTER.
+            STRING 'A' 'B' 'C' DELIMITED BY SIZE
+                   INTO TRGT-STRING
+                   WITH POINTER STR-POINTER
+                   ON OVERFLOW
+                      DISPLAY 'Case A: Should not overflow' END-DISPLAY
+            END-STRING.
+            IF TRGT-STRING NOT = 'ABC'
+                DISPLAY 'A: TRTG-STRING <' TRGT-STRING '> != <ABC>'.
+            IF STR-POINTER NOT = 4
+                DISPLAY 'A: STR-POINTER <' STR-POINTER '> != <04>'.
+      *>
+      *>  case B: Pointer is 0 --> Should  overflow
+            MOVE 0                        TO STR-POINTER.
+            MOVE SPACES                   TO TRGT-STRING.
+            STRING 'A' 'B' 'C'  DELIMITED BY SIZE
+                   INTO TRGT-STRING
+                   WITH POINTER STR-POINTER
+                   NOT ON OVERFLOW
+                      DISPLAY 'Case B: Should overflow' END-DISPLAY
+            END-STRING.
+            IF TRGT-STRING NOT = SPACES
+                DISPLAY 'B: TRTG-STRING <' TRGT-STRING '> != SPACES'.
+            IF STR-POINTER NOT = 0
+                DISPLAY 'B: STR-POINTER <' STR-POINTER '> != <00>'.
+      *>
+      *>  case C: Pointer is 4 --> Should  overflow
+            MOVE 4                        TO STR-POINTER.
+            MOVE SPACES                   TO TRGT-STRING.
+            STRING 'A' 'B' 'C' DELIMITED BY SIZE
+                   INTO TRGT-STRING
+                   WITH POINTER STR-POINTER
+                   NOT ON OVERFLOW
+                      DISPLAY 'Case C: Should overflow' END-DISPLAY
+            END-STRING.
+            IF TRGT-STRING NOT = SPACES
+                DISPLAY 'C: TRTG-STRING <' TRGT-STRING '> != SPACES'.
+            IF STR-POINTER NOT = 4
+                DISPLAY 'C: STR-POINTER <' STR-POINTER '> != <04>'.
+      *>
+      *>  case D: Test with delimiter
+            MOVE 1      TO STR-POINTER.
+            MOVE '|'    TO SRC-DELIM.
+            MOVE SPACES TO TRGT-STRING.
+            STRING '1|2' 'A|B' 'C|D'   DELIMITED BY SRC-DELIM
+                    INTO TRGT-STRING
+                    WITH POINTER STR-POINTER
+            END-STRING.
+            IF TRGT-STRING NOT = '1AC'
+                DISPLAY 'D: TRGT-STRING <' TRGT-STRING '> != <1AC>'.
+      *>
+            GOBACK.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])

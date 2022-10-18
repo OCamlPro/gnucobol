@@ -362,6 +362,111 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 AT_CLEANUP
 
 
+AT_SETUP([MOVE to edited item (3)])
+AT_KEYWORDS([fundamental editing])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID . DisplayToAlphaEdited.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 SRC-FIELD              PIC 9(06).
+      *>                         
+       01 DST-FIELD-1            PIC 0XXXXXX.
+       01 DST-FIELD-2            PIC BXXXXXX.
+       01 DST-FIELD-3            PIC /XXXXXX.
+       01 DST-FIELD-4            PIC XXXXXX0.
+       01 DST-FIELD-5            PIC XXXXXXB.
+       01 DST-FIELD-6            PIC XXXXXX/.
+       01 DST-FIELD-7            PIC XXX0XXX.
+       01 DST-FIELD-8            PIC XXXBXXX.
+       01 DST-FIELD-9            PIC XXX/XXX.
+       01 DST-FIELD-10           PIC XB0XB0/.
+       01 DST-FIELD-11           PIC 0AA.
+       01 DST-FIELD-12           PIC BXA.
+       01 DST-FIELD-13           PIC /99.
+       01 DST-FIELD-14           PIC 990.
+       01 DST-FIELD-15           PIC XAB.
+       01 DST-FIELD-16           PIC XA/.
+      *>
+       01 EXPT-FIELD-1  CONSTANT AS '0123456' .
+       01 EXPT-FIELD-2  CONSTANT AS ' 123456' .
+       01 EXPT-FIELD-3  CONSTANT AS '/123456' .
+       01 EXPT-FIELD-4  CONSTANT AS '1234560' .
+       01 EXPT-FIELD-5  CONSTANT AS '123456 ' .
+       01 EXPT-FIELD-6  CONSTANT AS '123456/' .
+       01 EXPT-FIELD-7  CONSTANT AS '1230456' .
+       01 EXPT-FIELD-8  CONSTANT AS '123 456' .
+       01 EXPT-FIELD-9  CONSTANT AS '123/456' .
+       01 EXPT-FIELD-10 CONSTANT AS '1 02 0/' .
+       01 EXPT-FIELD-11 CONSTANT AS '012' .
+       01 EXPT-FIELD-12 CONSTANT AS ' 12' .
+       01 EXPT-FIELD-13 CONSTANT AS '/00' .
+       01 EXPT-FIELD-14 CONSTANT AS '560' .
+       01 EXPT-FIELD-15 CONSTANT AS '12 ' .
+       01 EXPT-FIELD-16 CONSTANT AS '12/' .
+       PROCEDURE DIVISION.
+       TEST-RUNNER.
+      *> done twice to already check for later compile-time optimization
+           MOVE '123456'
+             TO DST-FIELD-1  DST-FIELD-2  DST-FIELD-3
+                DST-FIELD-4  DST-FIELD-5  DST-FIELD-6
+                DST-FIELD-7  DST-FIELD-8  DST-FIELD-9
+                DST-FIELD-10 DST-FIELD-11 DST-FIELD-12
+                DST-FIELD-12 DST-FIELD-14 DST-FIELD-15
+                DST-FIELD-16 SRC-FIELD
+           PERFORM DO-TEST.
+      *> done twice to already check for later compile-time optimization
+           MOVE SRC-FIELD
+             TO DST-FIELD-1  DST-FIELD-2  DST-FIELD-3
+                DST-FIELD-4  DST-FIELD-5  DST-FIELD-6
+                DST-FIELD-7  DST-FIELD-8  DST-FIELD-9
+                DST-FIELD-10 DST-FIELD-11 DST-FIELD-12
+                DST-FIELD-12 DST-FIELD-14 DST-FIELD-15
+                DST-FIELD-16
+           PERFORM DO-TEST.
+           GOBACK.
+       DO-TEST.
+           IF DST-FIELD-1 NOT =  EXPT-FIELD-1
+              DISPLAY '1: <' DST-FIELD-1 '> != <' EXPT-FIELD-1 '>'.
+           IF DST-FIELD-2 NOT =  EXPT-FIELD-2
+              DISPLAY '2: <' DST-FIELD-2 '> != <' EXPT-FIELD-2 '>'.
+           IF DST-FIELD-3 NOT =  EXPT-FIELD-3
+              DISPLAY '3: <' DST-FIELD-3 '> != <' EXPT-FIELD-3 '>'.
+           IF DST-FIELD-4 NOT =  EXPT-FIELD-4
+              DISPLAY '4: <' DST-FIELD-4 '> != <' EXPT-FIELD-4 '>'.
+           IF DST-FIELD-5 NOT =  EXPT-FIELD-5
+              DISPLAY '5: <' DST-FIELD-5 '> != <' EXPT-FIELD-5 '>'.
+           IF DST-FIELD-6 NOT =  EXPT-FIELD-6
+              DISPLAY '6: <' DST-FIELD-6 '> != <' EXPT-FIELD-6 '>'.
+           IF DST-FIELD-7 NOT =  EXPT-FIELD-7
+              DISPLAY '7: <' DST-FIELD-7 '> != <' EXPT-FIELD-7 '>'.
+           IF DST-FIELD-8 NOT =  EXPT-FIELD-8
+              DISPLAY '8: <' DST-FIELD-8 '> != <' EXPT-FIELD-8 '>'.
+           IF DST-FIELD-9 NOT =  EXPT-FIELD-9
+              DISPLAY '9: <' DST-FIELD-9 '> != <' EXPT-FIELD-9 '>'.
+           IF DST-FIELD-10 NOT =  EXPT-FIELD-10
+              DISPLAY '10: <' DST-FIELD-10 '> != <' EXPT-FIELD-10 '>'.
+           IF DST-FIELD-11 NOT =  EXPT-FIELD-11
+              DISPLAY '11: <' DST-FIELD-11 '> != <' EXPT-FIELD-11 '>'.
+           IF DST-FIELD-12 NOT =  EXPT-FIELD-12
+              DISPLAY '12: <' DST-FIELD-12 '> != <' EXPT-FIELD-12 '>'.
+           IF DST-FIELD-13 NOT =  EXPT-FIELD-13
+              DISPLAY '13: <' DST-FIELD-13 '> != <' EXPT-FIELD-13 '>'.
+           IF DST-FIELD-14 NOT =  EXPT-FIELD-14
+              DISPLAY '14: <' DST-FIELD-14 '> != <' EXPT-FIELD-14 '>'.
+           IF DST-FIELD-15 NOT =  EXPT-FIELD-15
+              DISPLAY '15: <' DST-FIELD-15 '> != <' EXPT-FIELD-15 '>'.
+           IF DST-FIELD-16 NOT =  EXPT-FIELD-16
+              DISPLAY '16: <' DST-FIELD-16 '> != <' EXPT-FIELD-16 '>'.
+])
+
+AT_CHECK([$COMPILE -Wno-truncate prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([MOVE to item with simple and floating insertion])
 AT_KEYWORDS([fundamental edited editing])
 
@@ -1109,9 +1214,9 @@ AT_DATA([prog.cob], [
            GOBACK
            .
        END FUNCTION f2.
-       
+
        PROGRAM-ID.   prog.
-       
+
        ENVIRONMENT DIVISION.
        CONFIGURATION SECTION.
        REPOSITORY.
@@ -1120,18 +1225,18 @@ AT_DATA([prog.cob], [
        SPECIAL-NAMES.
            CURRENCY SIGN IS "Y"
            DECIMAL-POINT IS COMMA.
-       
+
        PROCEDURE DIVISION.
            CALL "prog-nested"
            .
-       
+
        PROGRAM-ID. prog-nested.
-       
+
        DATA DIVISION.
        WORKING-STORAGE SECTION.
        77  n1    BINARY-LONG VALUE 0.
        77  curr  PIC 9.9999,99Y.
-       
+
        PROCEDURE DIVISION.
            MOVE f1()   TO n1
            IF n1 NOT = 1
@@ -1151,7 +1256,7 @@ AT_DATA([prog.cob], [
            END-IF
            MOVE n1 TO curr
            DISPLAY curr
-           
+
            GOBACK
            .
        END PROGRAM prog-nested.
@@ -1192,19 +1297,19 @@ AT_DATA([prog.cob], [
            MOVE FUNCTION LENGTH (argument) TO arg-len
            MOVE argument TO result.
        END FUNCTION reply.
-       
+
        IDENTIFICATION DIVISION.
        PROGRAM-ID. prog.
-       
+
        ENVIRONMENT DIVISION.
        CONFIGURATION SECTION.
        REPOSITORY.
            FUNCTION reply.
-       
+
        DATA DIVISION.
        WORKING-STORAGE SECTION.
        77  arg   pic x(100).
-       
+
        PROCEDURE DIVISION.
       *>
            IF not (FUNCTION         REPLY ("test")  = "test"
@@ -4276,7 +4381,7 @@ AT_DATA([prog.cob], [
               DISPLAY '11 ** 55 <> 1: ' COMPUTE-8
               END-DISPLAY
            END-IF
-           
+
            GOBACK.
 ])
 
@@ -4626,6 +4731,132 @@ AT_DATA([prog.cob], [
            MULTIPLY num BY 4 GIVING result
            MOVE 1.10          TO WS-TEMP.
            MULTIPLY WS-TEMP2  BY WS-TEMP GIVING WS-TEMP.
+      *>
+           IF result  NOT = 20    DISPLAY 'Bad integer: ' result.
+           IF WS-TEMP NOT = 11.55 DISPLAY 'Bad decimal: ' ws-temp.
+      *>
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE prog.cob])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([DIVIDE complex])
+AT_KEYWORDS([decimal constants fundamental])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. DivideExtent.
+       DATA DIVISION.
+      *>----------------------------------------------------------------
+      *>   Cover the cob_div_quotient c FUNCTION
+      *>   and complete all  divide_statement parser rules
+      *>----------------------------------------------------------------
+       WORKING-STORAGE SECTION.
+       01 W01-DIVIDES.
+          05  RES-TAB          PIC S9(09) BINARY  OCCURS 3.
+      *>
+       PROCEDURE DIVISION.
+      *>------------------
+       TEST-FORMAT-1.
+      *>-------------
+      *> DIVIDE Format 1 DIVIDE INTO
+      *> case 1 : should not size error
+           MOVE 100 TO RES-TAB(1).
+           MOVE 200 TO RES-TAB(2).
+           MOVE 300 TO RES-TAB(3).
+           DIVIDE 100 INTO
+                      RES-TAB(1)
+                      RES-TAB(2)
+                      RES-TAB(3)
+                ON SIZE ERROR
+                    DISPLAY '1: Should not raised size error'
+           END-DIVIDE.
+           IF    RES-TAB(1)  NOT = 1
+              OR RES-TAB(2)  NOT = 2
+              OR RES-TAB(3)  NOT = 3
+              DISPLAY 'F1.1: result <' RES-TAB(1) '> <' RES-TAB(2) '> <'
+                                    RES-TAB(3) '> should be 1 2 3'.
+      *> case 2 : should  size error
+           MOVE 0    TO RES-TAB(1).
+           MOVE 100  TO RES-TAB(2).
+           MOVE 200  TO RES-TAB(3).
+           DIVIDE RES-TAB(1) INTO
+                      RES-TAB(2)
+                      RES-TAB(3)
+                 NOT ON SIZE ERROR
+                    DISPLAY 'F1.2: Should raise size error'
+           END-DIVIDE.
+           IF    RES-TAB(1)  NOT = 0
+              OR RES-TAB(2)  NOT = 100
+              OR RES-TAB(3)  NOT = 200
+              DISPLAY 'F1.2: result <' RES-TAB(1) '> <' RES-TAB(2) '> <'
+                                     RES-TAB(3) '> should be 0 100 200'.
+      *> case 3 : not rounded
+           MOVE   100 TO RES-TAB(1).
+           DIVIDE 2.19 INTO  RES-TAB(1)
+                ON SIZE ERROR
+                    DISPLAY 'F1.3: Should not raise size error'
+           END-DIVIDE.
+           IF RES-TAB(1) NOT = 45
+              DISPLAY 'F1.3: result <' RES-TAB(1)  '> should be 45'.
+      *> case 4 : rounded
+           MOVE   100 TO RES-TAB(1).
+           DIVIDE 2.19 INTO  RES-TAB(1) ROUNDED
+                ON SIZE ERROR
+                    DISPLAY 'F1.4: Should not raise size error'
+           END-DIVIDE.
+      *
+           IF RES-TAB(1) NOT = 46
+              DISPLAY 'F1.4: result <' RES-TAB(1)  '> should be 46'.
+      *>
+       TEST-FORMAT-2.
+      *>-------------
+      *> DIVIDE Format 2:
+      *> DIVIDE STATEMENT WITH INTO AND GIVING PHRASE
+           DIVIDE 10.2 INTO 100 GIVING RES-TAB(1)
+                ON SIZE ERROR
+                        DISPLAY 'F2.1: Should not raised size error'
+           END-DIVIDE.
+           IF RES-TAB(1) NOT = 9
+              DISPLAY 'F2.1: result <' RES-TAB(1)  '> should be 9'.
+           DIVIDE 10.5 INTO 100 GIVING RES-TAB(1) ROUNDED
+                ON SIZE ERROR
+                        DISPLAY 'F2.2: Should not raise size error'
+           END-DIVIDE.
+           IF RES-TAB(1) NOT = 10
+              DISPLAY 'F2.2: result <' RES-TAB(1)  '> should be 10'.
+           DIVIDE 10.6 INTO 100 GIVING RES-TAB(1) ROUNDED
+                ON SIZE ERROR
+                        DISPLAY 'F2.3: Should not raise size error'
+           END-DIVIDE.
+           IF RES-TAB(1) NOT = 9
+              DISPLAY 'F2.3: result <' RES-TAB(1)  '> should be 9'.
+      *>
+       TEST-FORMAT-4.
+      *>-------------
+      *> DIVIDE Format 4:
+      *> DIVIDE STATEMENT WITH INTO AND REMAINDER PHRASE
+           DIVIDE 2 INTO 100 GIVING RES-TAB(1) REMAINDER RES-TAB(2).
+           IF RES-TAB(1) NOT = 50 OR RES-TAB(2) NOT = 0
+              DISPLAY 'F4.1: result <' RES-TAB(1) '> <' RES-TAB(2)
+                        '> should be <50> <0>'.
+           DIVIDE 3 INTO 100 GIVING RES-TAB(1) REMAINDER RES-TAB(2).
+           IF RES-TAB(1) NOT = 33 OR RES-TAB(2) NOT = 1
+              DISPLAY 'F4.1: result <' RES-TAB(1) '> <' RES-TAB(2)
+                        '> should be <33> <1>'.
+           MOVE 0 TO RES-TAB(1) RES-TAB(2) RES-TAB(3).
+           DIVIDE RES-TAB(1) INTO 100
+                  GIVING RES-TAB(2)
+                  REMAINDER RES-TAB(3)
+                NOT ON SIZE ERROR
+                    DISPLAY 'F4.3: Should  raised size error'
+           END-DIVIDE.
+      *>
+           GOBACK.
 ])
 
 AT_CHECK([$COMPILE prog.cob])
@@ -5408,7 +5639,7 @@ AT_DATA([prog.cob], [
        DATA            DIVISION.
        WORKING-STORAGE SECTION.
        01  x           USAGE FLOAT-SHORT VALUE 123.456.
-       
+
        PROCEDURE       DIVISION.
            ADD 360 TO x
            IF x <> 483.456
@@ -5421,13 +5652,13 @@ AT_DATA([prog.cob], [
                DISPLAY "SUBTRACT wrong: " x
                MOVE 123.456 TO x
            END-IF
-           
+
            DIVIDE 2 INTO x
            IF x <> 61.728
                DISPLAY "DIVIDE wrong: " x
                MOVE 61.728 TO x
            END-IF
-           
+
            MULTIPLY 2 BY x
            IF x <> 123.456
                DISPLAY "MULTIPLY wrong: " x
@@ -5457,7 +5688,7 @@ AT_DATA([caller.cob], [
        77  SOMEVAR     USAGE INT VALUE 10.
        77  SOMEVAL     USAGE INT-VAL.
        77  SOMEEXT     USAGE EXT-INT.
-       
+
        PROCEDURE       DIVISION.
            IF SOMEVAR <> 10
               DISPLAY "SOMEVAR (INT) wrong: " SOMEVAR
@@ -5478,7 +5709,7 @@ AT_DATA([callee.cob], [
        WORKING-STORAGE SECTION.
        77  EXT-INT     IS TYPEDEF BINARY-LONG EXTERNAL.
        77  SOMEEXT     USAGE EXT-INT.
-       
+
        PROCEDURE       DIVISION.
            IF SOMEEXT <> 42
               DISPLAY "SOMEEXT (EXT-INT) wrong: " SOMEEXT
