@@ -197,10 +197,18 @@ cobcrun_initial_module (char *module_argument)
 	/* LCOV_EXCL_START */
 	if (!module_argument) {
 		/* never reached (getopt ensures that we have an argument),
-		   just in to keep the analyzer happy */
+		   just in to keep the analyzer happy, so msg untranslated */
 		return "missing argument";
-	}
 	/* LCOV_EXCL_STOP */
+	} else if (module_argument[0] == 0) {
+		return "";	/* used as "no further information" */
+	}
+
+#if 0	/* CHECKME: Do we want that validation here or handle it? */
+	if (strchr (module_argument, PATHSEP_CHAR)) {
+		return ("should not contain '%c'", PATHSEP_CHAR);
+	}
+#endif
 
 	/* See if we have a /dir/path/module, or a /dir/path/ or a module (no slash) */
 	cobcrun_split_path_file (&pathname, &filename, module_argument);
@@ -224,7 +232,7 @@ cobcrun_initial_module (char *module_argument)
 		/* TODO: check content, see libcob/common.h */
 		envptr = getenv ("COB_PRE_LOAD");
 		if (envptr
-			&& strlen (envptr) + strlen (filename) + 1 < COB_MEDIUM_MAX) {
+		 && strlen (envptr) + strlen (filename) + 1 < COB_MEDIUM_MAX) {
 			memset (env_space, 0, COB_MEDIUM_BUFF);
 			snprintf (env_space, COB_MEDIUM_MAX, "%s%c%s", filename,
 				PATHSEP_CHAR, envptr);
@@ -275,7 +283,8 @@ process_command_line (int argc, char *argv[])
 		case 'C':
 			/* -c <file>, --config=<file> */
 			/* LCOV_EXCL_START */
-			if (strlen (cob_optarg) > COB_SMALL_MAX) {
+			if (cob_optarg[0] == 0
+			 || strlen (cob_optarg) > COB_SMALL_MAX) {
 				fputs (_("invalid configuration file name"), stderr);
 				putc ('\n', stderr);
 				fflush (stderr);
@@ -344,8 +353,11 @@ process_command_line (int argc, char *argv[])
 			err_msg = cobcrun_initial_module (cob_optarg);
 			if (err_msg != NULL) {
 				fprintf (stderr, _("invalid module argument '%s'"), cob_optarg);
-				putc ('\n', stderr);
-				fputs (err_msg, stderr);
+				if (err_msg[0]) {
+					fprintf (stderr, "; %s\n", err_msg);
+				} else {
+					fputc ('\n', stderr);
+				}
 				fflush (stderr);
 				exit (EXIT_FAILURE);
 			}
