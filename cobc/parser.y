@@ -132,13 +132,12 @@ do { \
 /* Global variables */
 
 struct cb_program		*current_program = NULL;    /* program in parse/syntax check/codegen */
-struct cb_statement		*current_statement = NULL;
 struct cb_label			*current_section = NULL;
 struct cb_label			*current_paragraph = NULL;
+struct cb_statement		*current_statement = NULL;
 cb_tree				defined_prog_list = NULL;
 int				cb_exp_line = 0;
 
-cb_tree				cobc_printer_node = NULL;
 int				functions_are_all = 0;
 int				non_const_word = 0;
 int				suppress_data_exceptions = 0;
@@ -1088,7 +1087,7 @@ begin_scope_of_program_name (struct cb_program *program)
 	}
 
 	/* Otherwise, add the program to the list. */
-	defined_prog_list = cb_list_add (defined_prog_list, CB_TREE(program));
+	defined_prog_list = cb_list_add (defined_prog_list, CB_TREE (program));
 }
 
 static void

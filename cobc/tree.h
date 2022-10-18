@@ -2088,7 +2088,6 @@ extern cb_tree		cb_build_ml_suppress_checks (struct cb_ml_generate_tree *);
 extern int			cb_literal_value (cb_tree);
 
 /* parser.y */
-extern cb_tree		cobc_printer_node;
 extern int		non_const_word;
 extern int		suppress_data_exceptions;
 extern unsigned int	cobc_repeat_last_token;

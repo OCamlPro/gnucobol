@@ -552,6 +552,15 @@ clear_local_codegen_vars (void)
 	string_buffer = NULL;
 	string_cache = NULL;
 	ml_tree_cache = NULL;
+
+	/* local referenced "program under codegen" */
+	current_prog = NULL;
+
+	/* variables defined in the parser */
+	current_program = NULL;
+	current_section = NULL;
+	current_paragraph = NULL;
+	current_statement = NULL;
 }
 
 /* Output routines */
@@ -6594,7 +6603,7 @@ output_call (struct cb_call *p)
 			} else if (p->call_returning) {
 				output ("ret = ");
 			} else if (!(p->convention & CB_CONV_NO_RET_UPD)
-			       &&  current_prog->cb_return_code) {
+			        && current_prog->cb_return_code) {
 				output_integer (current_prog->cb_return_code);
 				output (" = ");
 			} else {
@@ -7407,15 +7416,15 @@ output_file_error (struct cb_file *pfile)
 		output_stmt (cb_build_debug (cb_debug_contents,
 					     "USE PROCEDURE", NULL));
 	}
-	for (l =  current_prog->local_file_list; l; l = CB_CHAIN (l)) {
-		fl = CB_FILE(CB_VALUE (l));
+	for (l = current_prog->local_file_list; l; l = CB_CHAIN (l)) {
+		fl = CB_FILE (CB_VALUE (l));
 		if (!strcmp (pfile->name, fl->name)) {
 			output_perform_call (fl->handler, NULL);
 			return;
 		}
 	}
-	for (l =  current_prog->global_file_list; l; l = CB_CHAIN (l)) {
-		fl = CB_FILE(CB_VALUE (l));
+	for (l = current_prog->global_file_list; l; l = CB_CHAIN (l)) {
+		fl = CB_FILE (CB_VALUE (l));
 		if (!strcmp (pfile->name, fl->name)) {
 			if (fl->handler_prog == current_prog) {
 				output_perform_call (fl->handler, NULL);
@@ -8194,6 +8203,7 @@ output_stmt (cb_tree x)
 
 		/* Output source location, but only if it isn't an implicit statement */
 		if (!p->flag_implicit) {
+			current_statement = (struct cb_statement *)p;
 			/* Output source location as a comment */
 			output_newline ();
 			output_line ("/* Line: %-10d: %-19.19s: %s */",

@@ -1,4 +1,12 @@
 
+2022-10-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (clear_local_codegen_vars): unset additional
+	  "current" references, preventing use-after-free
+	* codegen.c (output_stmt): set current_statement on start of
+	  any statement generation allowing it to be used for context-checks
+	* tree.h, parser.y: removed never-used cobc_printer_node
+
 2022-10-17  Simon Sobisch <simonsobisch@gnu.org>
 
 	* tree.h (cb_reference), tree.c (cb_build_reference): added statement
