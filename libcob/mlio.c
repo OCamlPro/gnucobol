@@ -1307,7 +1307,8 @@ void xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 			cob_free (enc);
 		}
 		if (*state->ctx == NULL) {
-			state->last_xml_code = XML_PARSER_HAD_FATAL_ERROR;
+			state->last_xml_code = XML_PARSE_ERROR_FATAL;
+			state->state = XML_PARSER_HAD_FATAL_ERROR;
 			if (COB_MODULE_PTR->xml_mode == COB_XML_XMLNSS) {
 				set_xml_exception (XML_PARSE_ERROR_FATAL);
 			} else {

@@ -6,6 +6,8 @@
 	* codegen.c (output_stmt): set current_statement on start of
 	  any statement generation allowing it to be used for context-checks
 	* tree.h, parser.y: removed never-used cobc_printer_node
+	* codegen.c (output_perform_call): use statement reference to generate
+	  separate comment for PERFORM procedure or USE procedure
 
 2022-10-17  Simon Sobisch <simonsobisch@gnu.org>
 

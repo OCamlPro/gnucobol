@@ -6967,20 +6967,24 @@ output_perform_call (struct cb_label *lb, struct cb_label *le)
 {
 	struct cb_para_label	*p;
 	struct label_list	*l;
+	const char *name = (const char *)lb->name;
 
 	if (lb == current_prog->all_procedure || lb->flag_is_debug_sect) {
-		output_line ("/* DEBUGGING Callback PERFORM %s */",
-			     (const char *)lb->name);
+		output_line ("/* DEBUGGING Callback PERFORM %s */", name);
 	} else if (le == NULL || lb == le) {
-		output_line ("/* PERFORM %s */", (const char *)lb->name);
+		if (current_statement && current_statement->statement == STMT_PERFORM) {
+			output_line ("/* PERFORM %s */", name);
+		} else {
+			output_line ("/* USE PROCEDURE %s */", name);
+		}
 	} else {
-		output_line ("/* PERFORM %s THRU %s */", (const char *)lb->name,
+		output_line ("/* PERFORM %s THRU %s */", name,
 			     (const char *)le->name);
 	}
 
 	/* Save current independent segment pointers */
-	if (current_prog->flag_segments && last_section &&
-	    last_section->section_id != lb->section_id) {
+	if (current_prog->flag_segments && last_section
+	 && last_section->section_id != lb->section_id) {
 		p = last_section->para_label;
 		for (; p; p = p->next) {
 			if (p->para->segment > 49 &&
@@ -7012,8 +7016,7 @@ output_perform_call (struct cb_label *lb, struct cb_label *le)
 	/* Update debugging name */
 	if (current_prog->flag_gen_debug && lb->flag_real_label &&
 	    (current_prog->all_procedure || lb->flag_debugging_mode)) {
-		output_stmt (cb_build_debug (cb_debug_name,
-					     (const char *)lb->name, NULL));
+		output_stmt (cb_build_debug (cb_debug_name, name, NULL));
 	}
 
 	output_line ("frame_ptr++;");
@@ -7057,8 +7060,8 @@ output_perform_call (struct cb_label *lb, struct cb_label *le)
 	}
 	cb_id++;
 
-	if (current_prog->flag_segments && last_section &&
-	    last_section->section_id != lb->section_id) {
+	if (current_prog->flag_segments && last_section
+	 && last_section->section_id != lb->section_id) {
 		/* Restore current independent segment pointers */
 		p = last_section->para_label;
 		for (; p; p = p->next) {

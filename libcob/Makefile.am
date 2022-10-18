@@ -22,7 +22,7 @@
 lib_LTLIBRARIES = libcob.la
 libcob_la_SOURCES = common.c move.c numeric.c strings.c \
 	fileio.c call.c intrinsic.c termio.c screenio.c reportio.c cobgetopt.c \
-	mlio.c
+	mlio.c coblocal.h system.def
 
 if LOCAL_CJSON
 nodist_libcob_la_SOURCES = cJSON.c
@@ -41,7 +41,6 @@ libcob_la_LIBADD = $(LIBCOB_LIBS) $(CODE_COVERAGE_LIBS)
 libcob_la_LDFLAGS = $(COB_FIX_LIBTOOL) -version-info 5:0:1 -no-undefined
 AM_LDFLAGS = $(COB_FIX_LIB)
 
-EXTRA_DIST = coblocal.h system.def
 pkgincludedir = $(includedir)/libcob
 pkginclude_HEADERS = common.h version.h cobgetopt.h \
 	exception.def exception-io.def statement.def

@@ -4922,12 +4922,13 @@ cb_resolve_debug_refs (struct cb_program *prog, int size)
 static void
 cb_validate_labels (struct cb_program *prog)
 {
-	cb_tree			l;
-	cb_tree			v;
+	cb_tree		l;
 
 	for (l = cb_list_reverse (prog->label_list); l; l = CB_CHAIN (l)) {
 		const cb_tree x = CB_VALUE (l);
 		const struct cb_reference *ref = CB_REFERENCE (x);
+		cb_tree v;   /* note: can't be set here,
+		                because must be done after set_ignore_error */
 		(void)cb_set_ignore_error (ref->flag_ignored);
 		v = cb_ref (x);
 		/* cb_error_node -> reference not defined, message raised in cb_ref() */

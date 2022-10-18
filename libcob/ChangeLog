@@ -1,4 +1,12 @@
 
+2022-10-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am: moved header files that are not installed from EXTRA_DIST
+	  to _SOURCES (per automake manual)
+	* fileio.c (sequential_read): andle variable-sized record-sequential
+	  files when the size was read, but no data found for that afterwards
+	* mlio.c (xml_parse): fix bad assignment leading to compiler warnings
+
 2022-10-17  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_debug_open, cob_trace_print), intrinsic.c

@@ -2170,7 +2170,7 @@ again:
 
 	/* CODE-SET conversion */
 	if (f->sort_collating) {
-		const unsigned char* rec_end = f->record->data + bytesread;
+		const unsigned char *rec_end = f->record->data + bytesread;
 		if (f->nconvert_fields) {
 			/* CODE-SET FOR - convert specific area only */
 			size_t ic;
@@ -2193,6 +2193,12 @@ again:
 	}
 	if (unlikely (bytesread != (int)f->record->size)) {
 		if (bytesread == 0) {
+			if (f->record_min != f->record_max) {
+				/* in the case of variable size we got a defined size
+				   from the record start first, but then could not read it
+				   CHECKME: is that an io-status '30' case? */
+				return COB_STATUS_04_SUCCESS_INCOMPLETE;
+			}
 			return COB_STATUS_10_END_OF_FILE;
 		/* LCOV_EXCL_START */
 		} else if (bytesread < 0) {
@@ -8876,7 +8882,7 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f, struct fcd_file *fcd_list_entry)
 		}
 		/* now copy that until the first space/low-value (max 48) as upper-case */
 		for (k=0; origin[k] && origin[k] > ' ' && k < 48; k++) {
-			fdname[k] = (char)toupper((int)origin[k]);
+			fdname[k] = (char)toupper((unsigned char)origin[k]);
 		}
 		fdname[k] = 0;
 		/* we don't necessarily know later if we built the name ourself,
