@@ -43,7 +43,8 @@ NEWS - user visible changes				-*- outline -*-
    EBCDIC on READ/WRITE/REWRITE for sequential and line-sequential files
 
 ** Support to exit the runtime from COBOL as hard error (including possible
-   dump and stacktrace) with "STOP ERROR" statement / CALL "CBL_RUNTIME_ERROR"
+   [core-]dump and stacktrace) with "STOP ERROR" statement or by
+   CALL "CBL_RUNTIME_ERROR"
 
 ** TODO - More to document, possibly after rc-1
 
@@ -192,6 +193,12 @@ NEWS - user visible changes				-*- outline -*-
    the origin of entrypoints and PERFORM, this is used for the internal
    stack trace on abort and can be used for source level debugging
 
+** new options to ensure structured code-flow:
+   -fsection-exit-check to ensure sections don't "fall through" (are always
+    entered and left by PERFORM)
+   -fimplicit-goback-check to ensure modules are not left by implicit GOBACK
+    at end of PROCEDURE DIVISION
+
 ** adjustments to warning options:
    -Wconstant-expression was changed to a group warning and includes
     the new, previously integrated, -Wconstant-numlit-expression
@@ -205,6 +212,8 @@ NEWS - user visible changes				-*- outline -*-
    -Wgoto-section as new warning (enabled by default) to check for
     GO TO a section instead of a paragraph; while allowed this is often
     a coding error
+   -Wsuspicious-perform-thru (enabled by default) to check for PERFORM ranges
+    that are likely to create unwanted behaviour
 
 ** new compiler command line option to list the known runtime exception names
    and fatality `cobc --list-exceptions`
@@ -233,7 +242,7 @@ NEWS - user visible changes				-*- outline -*-
    this has been fixed so that all modules compiled with GnuCOBOL 2.2 can be
    executed with GnuCOBOL 3.2
 
-** the internal signal handler could chrash or deadlock the process on hard
+** the internal signal handler could crash or deadlock the process on hard
    errors (either in called library functions or when running COBOL without
    runtime checks); the signal handling is now completely rewritten to fix
    this issue and all executed code from the signal handler but the COBOL data
@@ -276,10 +285,10 @@ NEWS - user visible changes				-*- outline -*-
    as well as during debugging were extended, for example each executed WHEN,
    VARYING and UNTIL phrases are now seen
 
-** cobc's parsing time was heavily cut down for big programs
+** cobc's parsing time was significantly reduced for big programs
 
 ** execution times of INSPECT that use big COBOL fields (multiple KB) were
-   heavily cut down
+   significantly reduced
 
 ** execution times for programs that are new generated with -fsource-location
    (implied with --debug/-fec) are cut down, especially when many "simple"
@@ -425,8 +434,8 @@ NEWS - user visible changes				-*- outline -*-
 
    extra information to a warning (or error) is now marked as "note:"
 
-** the internal Xref got a huge speedup, has all references in ascending order
-   now and includes the total amount of direct references
+** the internal Xref performance has improved, has all references in ascending
+   order now and includes the total amount of direct references
 
 ** the internal listing got a speedup and has all error references in
    ascending order now
@@ -517,7 +526,7 @@ NEWS - user visible changes				-*- outline -*-
    session with the environment adjusted to use the uninstalled version.
 
 
-* Too much bug fixes to list here (please check ChangeLogs for full details),
+* Too many bug fixes to list here (please check ChangeLogs for full details),
   includes the following CVEs:
   
 ** compiler (may be triggered with special crafted source files)
@@ -627,7 +636,7 @@ NEWS - user visible changes				-*- outline -*-
 ** new configure option --enable-debug-log to allow *internal* tracing
    of GnuCOBOL (intended for developers of GnuCOBOL only)
 
-* Too much bug fixes to list here (please check ChangeLogs for full details).
+* Too many bug fixes to list here (please check ChangeLogs for full details).
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -635,7 +644,7 @@ NEWS - user visible changes				-*- outline -*-
 
 * Move to GPL/LGPL 3
 
-* New GnuCOBOL features (too much to list)
+* Most noteworthy new GnuCOBOL features (too many to list them all)
 
 ** User Defined Functions, FUNCTION-ID.
 

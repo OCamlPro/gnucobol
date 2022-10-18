@@ -5004,6 +5004,46 @@ cb_validate_labels (struct cb_program *prog)
 	cb_set_ignore_error (0);
 }
 
+/* Validate range of all PERFORM THRU */
+static void
+cb_validate_perform_thru_ranges (struct cb_program *prog)
+{
+	cb_tree		l;
+	if (!cb_flag_section_exit_check
+	 && cb_warn_opt_val[cb_warn_suspicious_perform_thru] == COBC_WARN_DISABLED) {
+		return;
+	}
+	for (l = prog->perform_thru_list; l; l = CB_CHAIN (l)) {
+		const cb_tree v = CB_VALUE (l);
+		const cb_tree x = cb_ref (CB_PAIR_X (v));
+		const cb_tree y = cb_ref (CB_PAIR_Y (v));
+		if (x != y
+		 && x != cb_error_node
+		 && y != cb_error_node) {
+			const struct cb_label *lb = CB_LABEL (x);
+			const struct cb_label *le = CB_LABEL (y);
+			if (le->flag_section) {
+				if (cb_flag_section_exit_check) {
+					cb_warning_x (COBC_WARN_FILLER, v,
+						_("%s and %s are mutually exclusive"),
+						"PERFORM ... THROUGH SECTION", "-fsection-exit-check");
+					/* this code would always raise that check, so disable */
+					cb_flag_section_exit_check = 0;
+				}
+			} else if (le->section != lb->section && le->section != lb) {
+				cb_warning_x (cb_warn_suspicious_perform_thru, v,
+					_("%s and %s are not in the same SECTION"), lb->name, le->name);
+			}
+			if (le->common.source_file == lb->common.source_file
+			 && le->common.source_line < lb->common.source_line) {
+				cb_warning_x (cb_warn_suspicious_perform_thru, v,
+					_("%s is defined before %s"), le->name, lb->name);
+				cb_note_x (cb_warn_suspicious_perform_thru, x, _("'%s' defined here"), lb->name);
+				cb_note_x (cb_warn_suspicious_perform_thru, y, _("'%s' defined here"), le->name);
+			}
+		}
+	}
+}
 
 void
 cb_validate_program_body (struct cb_program *prog)
@@ -5019,31 +5059,28 @@ cb_validate_program_body (struct cb_program *prog)
 	struct cb_field		*f, *ret_fld;
 
 	/* Check reference to ANY LENGTH items */
-	if (prog->linkage_storage) {
-		for (f = prog->linkage_storage; f; f = f->sister) {
+	for (f = prog->linkage_storage; f; f = f->sister) {
+		/* only check fields with ANY LENGTH;
+			RETURNING is already a valid reference */
+		if (!f->flag_any_length
+		  || f->flag_internal_register
+		  || f->flag_is_returning) {
+			continue;
+		}
 
-			/* only check fields with ANY LENGTH;
-			   RETURNING is already a valid reference */
-			if (!f->flag_any_length
-			  || f->flag_internal_register
-			  || f->flag_is_returning) {
-				continue;
-			}
-
-			/* ignore fields that are part of main entry USING */
-			for (l = CB_VALUE (CB_VALUE (prog->entry_list)); l; l = CB_CHAIN (l)) {
-				x = CB_VALUE (l);
-				if (CB_VALID_TREE (x) && cb_ref (x) != cb_error_node) {
-					if (f == CB_FIELD (cb_ref (x))) {
-						break;
-					}
+		/* ignore fields that are part of main entry USING */
+		for (l = CB_VALUE (CB_VALUE (prog->entry_list)); l; l = CB_CHAIN (l)) {
+			x = CB_VALUE (l);
+			if (CB_VALID_TREE (x) && cb_ref (x) != cb_error_node) {
+				if (f == CB_FIELD (cb_ref (x))) {
+					break;
 				}
 			}
-			if (!l) {
-				cb_error_x (CB_TREE (f),
-					_("'%s' ANY LENGTH item must be a formal parameter"),
-					f->name);
-			}
+		}
+		if (!l) {
+			cb_error_x (CB_TREE (f),
+				_("'%s' ANY LENGTH item must be a formal parameter"),
+				f->name);
 		}
 	}
 
@@ -5101,6 +5138,9 @@ cb_validate_program_body (struct cb_program *prog)
 
 	/* Resolve all labels */
 	cb_validate_labels (prog);
+
+	/* check for overlapping PERFORM ranges */
+	cb_validate_perform_thru_ranges (prog);
 
 	if (prog->flag_debugging) {
 		/* Resolve DEBUGGING references and calculate DEBUG-CONTENTS size */

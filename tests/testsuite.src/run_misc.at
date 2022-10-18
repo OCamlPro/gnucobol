@@ -2295,6 +2295,9 @@ AT_CLEANUP
 AT_SETUP([EXIT PARAGRAPH])
 AT_KEYWORDS([runmisc])
 
+# Note: testing EXIT PARAGRPAPH without being PERFORMed
+#       implicit GO TO only
+
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
@@ -2326,6 +2329,9 @@ AT_CLEANUP
 AT_SETUP([EXIT SECTION])
 AT_KEYWORDS([runmisc])
 
+# Note: testing EXIT SECTION without being PERFORMed
+#       implicit GO TO only
+
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
@@ -2348,8 +2354,38 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
+# disabling the check for "something leaves the section" - as this is
+# guaranteed to happen with this EXIT SECTION as GO TO
+AT_CHECK([$COMPILE -fno-section-exit-check prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CHECK([$COMPILE -fsection-exit-check prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
+[libcob: prog.cob:12: error: code execution leaving A01
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([implicit GOBACK at end of PROCEDURE DIVISION])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+       A01 SECTION.
+       A011.
+          CONTINUE.
+])
+
+AT_CHECK([$COMPILE -fno-implicit-goback-check prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CHECK([$COMPILE -fimplicit-goback-check prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
+[libcob: prog.cob:8: error: code execution leaving PROCEDURE DIVISION
+])
 
 AT_CLEANUP
 

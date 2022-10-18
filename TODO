@@ -1,5 +1,9 @@
 GnuCOBOL TODO						-*- outline -*-
 
+The following is only a part of the things to do; many more
+can be found in the issue trackers.
+
+
 1 Pending requests
 
 1.1 Handling of EBCDIC files
@@ -10,14 +14,14 @@ GnuCOBOL TODO						-*- outline -*-
 2.1 New option handling.
 
 A new configuration file, cobc.conf, is described in
-https://sourceforge.net/p/open-cobol/feature-requests/342/
+https://sourceforge.net/p/gnucobol/feature-requests/342/
 Integrate that file with existing command-line parsing,
 allowing for overrides and warning-defeats as outlined in
 that document.  
 
 2.2 New preprocessor support.
 
-https://sourceforge.net/p/open-cobol/feature-requests/341/ defines
+https://sourceforge.net/p/gnucobol/feature-requests/341/ defines
 configuration for preprocessors.  Add support for preprocessors to cobc.
 Modify the -E option to be
 
@@ -47,13 +51,19 @@ Oracle Pro*COBOL
 3.1 Error checking
 
 3.1.1 Strict error checking depending on the standard
-Partially implemented
+Mostly implemented
 
 3.1.2 Use `error' token in the parser for better error recovery
+
+3.1.3 detailed diagnostics with output of offending code (similar to gcc)
 
 3.2 Data representations
 
 3.2.1 Fix handling of 32bit, 64bit, and 128bit floating-point usages
+
+3.2.2 Finish USAGE BINARY for sizes > 18 digits "COB_MAX_BINARY"
+
+3.3 add checks 
 
 4 Optimization
 
@@ -61,6 +71,104 @@ Partially implemented
 
 Done with various binary operands and expressions, open for some
 intrinsic functions (actually using libcob at compile time).
+
+4.2 generating multiple C functions for procedures
+
+Currently, cobc translates a COBOL program into a single huge
+C function.  There are two problems with doing this:
+
+ - The speed of C compilation is very slow, especially when
+   optimization is enabled. Optimizing a single huge C function
+   is much slower than doing that for divided functions of it and
+   need a lot of memory - big COBOL sources break 32bit GCC
+   when compiling without -O0.
+
+ - Debugging the generated COBOL program with gdb is hard
+   because you cannot see performed procedures on the stack and
+   cannot skip PERFORM statement by the 'next' command.
+   Currently PERFORM is implemented by C's goto statement, so you
+   have to go there.
+
+To solve these problems, we could separate COBOL sections into
+multiple C functions, and use C function calls to execute each
+section. As most of the memory is function-local this only works with
+compilers that support nested functions (mostly GCC), with the currently
+4.x only addition of placing the memory into one big block (as that can be
+passed around).
+
+However, this does not work for all cases _easily_.  Consider
+the following example:
+
+  SAMPLE-1 SECTION.
+    PERFORM SAMPLE-2.
+    PERFORM SAMPLE-3.
+  SAMPLE-2 SECTION.
+    GO TO SAMPLE-3.
+  SAMPLE-3 SECTION.
+    EXIT PROGRAM.
+
+You might want to generate three functions SAMPLE_1, SAMPLE_2,
+and SAMPLE_3.  SAMPLE_1 might be defined as follows:
+
+  void SAMPLE_1 ()
+  {
+    SAMPLE_2 ();
+    SAMPLE_3 ();
+  }
+
+But you cannot define SAMPLE_2 because you cannot jump from
+one function to another function.  SAMPLE_1 and SAMPLE_2 must
+be defined within the same function, and thus you cannot call
+them separately.
+A similar problem occurs with "fall through" of paragraphs/sections.
+
+To detect and avoid this kind of problems, we will need control
+flow analysis of COBOL programs - the options -fsection-exit-check,
+-fimplicit-goback-chec and cb_validate_perform_thru_ranges() partially
+take care of this.
+
+If a portion of program is used only through a PERFORM
+statement, and if there is no GO TO statement that jumps
+to outside of the portion, then we can safely separate the
+portion as a C function.
+
+As an alternative we have to have a global jump table (in the GCC
+case we can use computed-goto, otherwise a switch to handle that):
+
+
+prog () { prog_() }
+prog_() {
+
+auto void SAMPLE_1();
+auto void SAMPLE_2();
+auto void SAMPLE_3();
+
+
+l_sample1:
+  void SAMPLE_1() {
+    SAMPLE_2();
+    if (gotoptr) goto gotoptr;
+    SAMPLE_3();                // never executed
+    if (gotoptr) goto gotoptr; // never executed
+  }
+  if (gotoptr) goto gotoptr;   // never executed
+l_sample2:                     // never executed
+  SAMPLE_2() {
+    gotoptr = l_sample3;
+  }
+  if (gotoptr) goto gotoptr;   // never executed
+l_sample3:
+  SAMPLE_3()  {
+    gotoptr = l_exit;
+  }
+  if (gotoptr) goto gotoptr;
+l_exit:
+  // over
+}
+
+As a third alternative we can just add a flag that says
+"assume I never go out of a section".
+
 
 
 5 Debugging support
@@ -74,9 +182,11 @@ that receives a data name and displays its value using the generated
 data hierarchy.  By calling the function from gdb, we can easily
 access the COBOL data at debugging time.
 
+Note: GnuCOBOL 3 implemented this partially, using extensions
+near full GDB support is already possible.
 
 6 Better user manual
 
 Yes, we should, for now: refer to the GnuCOBOL Programmer's Guide
-https://sourceforge.net/p/open-cobol/code/HEAD/tree/external-doc/guide/
+https://sourceforge.net/p/gnucobol/code/HEAD/tree/external-doc/guide/
 

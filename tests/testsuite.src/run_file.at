@@ -3542,7 +3542,9 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
+# disabling the check for "something leaves the section" - as this is
+# guaranteed to happen with this PERFORM THROUGH
+AT_CHECK([$COMPILE -fno-section-exit-check prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP

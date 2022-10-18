@@ -6,6 +6,8 @@
 	* fileio.c (sequential_read): andle variable-sized record-sequential
 	  files when the size was read, but no data found for that afterwards
 	* mlio.c (xml_parse): fix bad assignment leading to compiler warnings
+	* common.c (cob_check_beyond_exit), common.h: new function for implicit
+	  exit/goback checks
 
 2022-10-17  Simon Sobisch <simonsobisch@gnu.org>
 

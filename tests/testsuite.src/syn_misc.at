@@ -8602,6 +8602,54 @@ prog.cob:17: error: syntax error, unexpected ., expecting TIMES
 AT_CLEANUP
 
 
+AT_SETUP([PERFORM THRU syntax checks])
+AT_KEYWORDS([misc warning])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+       MAIN SECTION.
+       MAIN-00.
+           PERFORM SUB1
+           PERFORM SUB1 THRU SUB1-EX
+           PERFORM SUB1-00 THRU SUB1-EX
+           PERFORM SUB1 THRU SUB1
+           PERFORM SUB1 THRU SUB2
+           GOBACK.
+       MAIN-EX. EXIT.
+      *
+       SUB1 SECTION.
+       SUB1-00.
+           PERFORM SUB1-01 THRU SUB1-02.
+       SUB1-01.
+           CONTINUE.
+       SUB1-02.
+           CONTINUE.
+       SUB1-EX. EXIT.
+      *
+       SUB2 SECTION.
+       SUB2-00.
+           PERFORM SUB1-02 THRU SUB1-01.
+       SUB2-01.
+           CONTINUE.
+       SUB2-02.
+           CONTINUE.
+       SUB2-EX. EXIT.
+])
+
+AT_CHECK([$COMPILE_ONLY -Wno-suspicious-perform-thru prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -Wall -fsection-exit-check prog.cob], [0], [],
+[prog.cob: in section 'SUB2':
+prog.cob: in paragraph 'SUB2-00':
+prog.cob:11: warning: PERFORM ... THROUGH SECTION and -fsection-exit-check are mutually exclusive
+prog.cob:26: warning: SUB1-01 is defined before SUB1-02
+prog.cob:20: note: 'SUB1-02' defined here
+prog.cob:18: note: 'SUB1-01' defined here
+])
+AT_CLEANUP
+
+
 AT_SETUP([OCCURS too many VALUEs])
 AT_KEYWORDS([initialize VALUE])
 

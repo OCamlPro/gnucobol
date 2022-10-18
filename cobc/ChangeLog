@@ -8,6 +8,15 @@
 	* tree.h, parser.y: removed never-used cobc_printer_node
 	* codegen.c (output_perform_call): use statement reference to generate
 	  separate comment for PERFORM procedure or USE procedure
+	* flag.def, codegen.c: new -fsection-exit-check
+	  (cb_flag_section_exit_check) and -fimplicit-goback-check 
+	  (cb_flag_implicit_goback_check)
+	* tree.h (cb_progam), parser.y (perform_procedure): add and set
+	   perform_thru_list for internal checks
+	* typeck.c (cb_validate_perform_thru_ranges),
+	  warning.def (cb_warn_suspicious_perform_thru): warning option to check
+	  for PERFORM THRU referencing multiple sections and for its
+	  references to be in non-chronological order
 
 2022-10-17  Simon Sobisch <simonsobisch@gnu.org>
 

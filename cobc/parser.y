@@ -14702,6 +14702,8 @@ perform_procedure:
 	/* Return from $3 */
 	CB_REFERENCE ($3)->length = cb_true;
 	$$ = CB_BUILD_PAIR ($1, $3);
+	current_program->perform_thru_list =
+		cb_list_add (current_program->perform_thru_list, $$);
   }
 ;
 

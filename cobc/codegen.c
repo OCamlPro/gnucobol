@@ -6978,8 +6978,7 @@ output_perform_call (struct cb_label *lb, struct cb_label *le)
 			output_line ("/* USE PROCEDURE %s */", name);
 		}
 	} else {
-		output_line ("/* PERFORM %s THRU %s */", name,
-			     (const char *)le->name);
+		output_line ("/* PERFORM %s THRU %s */", name, (const char *)le->name);
 	}
 
 	/* Save current independent segment pointers */
@@ -8296,9 +8295,23 @@ output_stmt (cb_tree x)
 		break;
 	}
 	case CB_TAG_LABEL: {
-		const struct cb_label * lp = CB_LABEL (x);
+		const struct cb_label *lp = CB_LABEL (x);
 		if (lp->flag_skip_label) {
 			break;
+		}
+		if (cb_flag_section_exit_check
+		 && lp->flag_section
+		 && !lp->flag_dummy_section) {
+			if (last_section
+			 && last_section->flag_declaratives
+			 && !lp->flag_declaratives) {
+				last_section = NULL;
+			}
+			if (last_section != NULL) {
+				output_line ("cob_check_beyond_exit (%s%d);"
+					"\t/* prevent fall-through */", CB_PREFIX_STRING,
+					lookup_string (last_section->name));
+			}
 		}
 		output_label_info (x, lp);
 		if (lp->flag_section) {
@@ -11891,17 +11904,29 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	for (l = prog->exec_list; l; l = CB_CHAIN (l)) {
 		output_stmt (CB_VALUE (l));
 	}
-	output_newline ();
 
 	/* End of program / function */
 
 	/* Output source location as code */
 	if (cb_flag_source_location) {
+		output_newline ();
 		l = CB_TREE (prog);
 		output_line ("module->module_stmt = 0x%08X;",
-			COB_SET_LINE_FILE(prog->last_source_line, lookup_source(l->source_file)));
+			COB_SET_LINE_FILE (prog->last_source_line,
+			  lookup_source (l->source_file)));
 		output_newline ();
 	}
+
+	if (cb_flag_implicit_goback_check && last_section) {
+		if (!cb_flag_source_location) {
+			output_newline ();
+		}
+		output_line ("cob_check_beyond_exit (%s%d);"
+			"\t/* prevent fall-through */", CB_PREFIX_STRING,
+			lookup_string ("PROCEDURE DIVISION"));
+	}
+
+	output_newline ();
 
 	if (current_prog->prog_type == COB_MODULE_TYPE_FUNCTION) {
 		output_line ("/* Function exit */");

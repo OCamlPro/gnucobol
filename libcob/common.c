@@ -3761,6 +3761,14 @@ cob_table_sort (cob_field *f, const int n)
 /* Run-time error checking */
 
 void
+cob_check_beyond_exit (const unsigned char *name)
+{
+	/* possibly allow to lower this to a runtime warning later */
+	cob_runtime_error (_("code execution leaving %s"), name);
+	cob_hard_failure ();
+}
+
+void
 cob_check_based (const unsigned char *x, const char *name)
 {
 	if (!x) {
@@ -8138,11 +8146,10 @@ cob_fatal_error (const enum cob_fatal_error fatal_error)
 		cob_runtime_error (_("stack overflow, possible PERFORM depth exceeded"));
 		break;
 	/* LCOV_EXCL_STOP */
-	/* LCOV_EXCL_START */
+	/* Note: can be simply tested (GO TO DECLARATIVES); therefore no exclusion */
 	case COB_FERROR_GLOBAL:
 		cob_runtime_error (_("invalid entry/exit in GLOBAL USE procedure"));
 		break;
-	/* LCOV_EXCL_STOP */
 	/* LCOV_EXCL_START */
 	case COB_FERROR_MEMORY:
 		cob_runtime_error (_("unable to allocate memory"));

@@ -961,6 +961,8 @@ AT_DATA([prog.cob], [
                    NO ADVANCING
            END-DISPLAY.
            OPEN INPUT TEST-FILE.
+           PERFORM B00-MAIN.
+
        B00-MAIN SECTION.
        B00.
            DISPLAY FUNCTION EXCEPTION-LOCATION
@@ -984,6 +986,8 @@ AT_DATA([caller.cob], [
            END-DISPLAY.
            CALL "sub".
            CANCEL "sub".
+           PERFORM B00-MAIN.
+
        B00-MAIN SECTION.
        B00.
            DISPLAY FUNCTION EXCEPTION-LOCATION

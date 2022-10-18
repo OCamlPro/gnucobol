@@ -1686,6 +1686,7 @@ struct cb_program {
 	cb_tree			locale_list;		/* LOCALE list */
 	cb_tree			global_list;		/* GLOBAL list */
 	cb_tree			report_list;		/* REPORT list */
+	cb_tree			perform_thru_list;		/* list of PERFORM THRU */
 	cb_tree			alter_list;		/* ALTER list */
 	cb_tree			debug_list;		/* DEBUG ref list */
 	cb_tree			cb_return_code;		/* RETURN-CODE */
