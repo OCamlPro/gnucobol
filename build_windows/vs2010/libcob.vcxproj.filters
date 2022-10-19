@@ -83,6 +83,9 @@
     <ClInclude Include="..\config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\libcob.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\libcob\cobgetopt.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -92,7 +95,7 @@
     <ClInclude Include="..\..\libcob\common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\libcob.h">
+    <ClInclude Include="..\..\libcob\version.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\libcob\fileio.h">
@@ -107,6 +110,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\libcob\exception.def">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\libcob\statement.def">
       <Filter>Header Files</Filter>
     </None>
     <None Include="..\..\libcob\system.def">

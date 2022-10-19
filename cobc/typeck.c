@@ -4270,54 +4270,80 @@ cb_resolve_debug_refs (struct cb_program *prog, int size)
 static void
 cb_validate_labels (struct cb_program *prog)
 {
-	cb_tree			l;
-	cb_tree			x;
-	cb_tree			v;
+	cb_tree		l;
 
 	for (l = cb_list_reverse (prog->label_list); l; l = CB_CHAIN (l)) {
-		x = CB_VALUE (l);
-		(void)cb_set_ignore_error (CB_REFERENCE (x)->flag_ignored);
+		const cb_tree x = CB_VALUE (l);
+		const struct cb_reference *ref = CB_REFERENCE (x);
+		cb_tree v;   /* note: can't be set here,
+		                because must be done after set_ignore_error */
+		(void)cb_set_ignore_error (ref->flag_ignored);
 		v = cb_ref (x);
 		/* cb_error_node -> reference not defined, message raised in cb_ref() */
 		if (v == cb_error_node) {
 			continue;
 		}
-		current_section = CB_REFERENCE (x)->section;
-		current_paragraph = CB_REFERENCE (x)->paragraph;
+		current_section = ref->section;
+		current_paragraph = ref->paragraph;
 		/* Check refs in to / out of DECLARATIVES */
 		if (CB_LABEL_P (v)) {
-			if (CB_REFERENCE (x)->flag_in_decl &&
-				!CB_LABEL (v)->flag_declaratives) {
+			struct cb_label *label = CB_LABEL (v);
+
+			label->flag_begin = 1;
+			if (ref->length) {
+				label->flag_return = 1;
+			}
+
+			if (ref->flag_in_decl
+			 && !label->flag_declaratives) {
 				/* verify reference-out-of-declaratives  */
 				switch (cb_reference_out_of_declaratives) {
 				case CB_OK:
 					break;
 				case CB_ERROR:
 					cb_error_x (x, _("'%s' is not in DECLARATIVES"),
-						    CB_LABEL (v)->name);
-					break;
+						    label->name);
+					continue;
 				case CB_WARNING:
+					if (cb_warn_opt_val[cb_warn_dialect] == COBC_WARN_DISABLED) {
+						break;
+					}
 					cb_warning_x (cb_warn_dialect, x,
 						    _("'%s' is not in DECLARATIVES"),
-						    CB_LABEL (v)->name);
-					break;
+							label->name);
+					continue;
 				default:
 					break;
 				}
 			}
 
-			/* GO TO into DECLARATIVES is not allowed */
-			if (CB_LABEL (v)->flag_declaratives &&
-			    !CB_REFERENCE (x)->flag_in_decl &&
-			    !CB_REFERENCE (x)->flag_decl_ok) {
-				cb_error_x (x, _("invalid reference to '%s' (in DECLARATIVES)"),
-					    CB_LABEL (v)->name);
+			/* checks for GO TO */
+			if (ref->statement == STMT_GO_TO) {
+
+				/* GO TO into DECLARATIVES is not allowed */
+				if (label->flag_declaratives
+				 && !ref->flag_in_decl) {
+					cb_error_x (x, _("invalid reference to '%s' (in DECLARATIVES)"),
+						CB_LABEL (v)->name);
+					continue;
+				}
+
+				/* check for warning options "house-rules" relevant for later optimizations */
+				if (label->flag_section) {
+					cb_warning_x (cb_warn_goto_section, x,
+						"GO TO SECTION '%s'", label->name);
+				} else if (label->section != current_section) {
+					char qualified_name[COB_MAX_WORDLEN * 2 + 4 + 1];
+					cb_warning_x (cb_warn_goto_different_section, x,
+						_("GO TO paragraph '%s' which is defined in another SECTION"),
+						label->name);
+					sprintf (qualified_name, "%s IN %s", label->name, label->section->name);
+					cb_note_x (cb_warn_goto_different_section, v,
+						_("'%s' defined here"), qualified_name);
+				}
+
 			}
 
-			CB_LABEL (v)->flag_begin = 1;
-			if (CB_REFERENCE (x)->length) {
-				CB_LABEL (v)->flag_return = 1;
-			}
 		} else {
 			cb_error_x (x, _("'%s' is not a procedure name"), cb_name (x));
 		}
@@ -4326,6 +4352,46 @@ cb_validate_labels (struct cb_program *prog)
 	cb_set_ignore_error (0);
 }
 
+/* Validate range of all PERFORM THRU */
+static void
+cb_validate_perform_thru_ranges (struct cb_program *prog)
+{
+	cb_tree		l;
+	if (!cb_flag_section_exit_check
+	 && cb_warn_opt_val[cb_warn_suspicious_perform_thru] == COBC_WARN_DISABLED) {
+		return;
+	}
+	for (l = prog->perform_thru_list; l; l = CB_CHAIN (l)) {
+		const cb_tree v = CB_VALUE (l);
+		const cb_tree x = cb_ref (CB_PAIR_X (v));
+		const cb_tree y = cb_ref (CB_PAIR_Y (v));
+		if (x != y
+		 && x != cb_error_node
+		 && y != cb_error_node) {
+			const struct cb_label *lb = CB_LABEL (x);
+			const struct cb_label *le = CB_LABEL (y);
+			if (le->flag_section) {
+				if (cb_flag_section_exit_check) {
+					cb_warning_x (COBC_WARN_FILLER, v,
+						_("%s and %s are mutually exclusive"),
+						"PERFORM ... THROUGH SECTION", "-fsection-exit-check");
+					/* this code would always raise that check, so disable */
+					cb_flag_section_exit_check = 0;
+				}
+			} else if (le->section != lb->section && le->section != lb) {
+				cb_warning_x (cb_warn_suspicious_perform_thru, v,
+					_("%s and %s are not in the same SECTION"), lb->name, le->name);
+			}
+			if (le->common.source_file == lb->common.source_file
+			 && le->common.source_line < lb->common.source_line) {
+				cb_warning_x (cb_warn_suspicious_perform_thru, v,
+					_("%s is defined before %s"), le->name, lb->name);
+				cb_note_x (cb_warn_suspicious_perform_thru, x, _("'%s' defined here"), lb->name);
+				cb_note_x (cb_warn_suspicious_perform_thru, y, _("'%s' defined here"), le->name);
+			}
+		}
+	}
+}
 
 void
 cb_validate_program_body (struct cb_program *prog)
@@ -4341,30 +4407,28 @@ cb_validate_program_body (struct cb_program *prog)
 	struct cb_field		*f, *ret_fld;
 
 #if 0	/* Check reference to ANY LENGTH items */
-	if (prog->linkage_storage) {
-		for (f = prog->linkage_storage; f; f = f->sister) {
+	for (f = prog->linkage_storage; f; f = f->sister) {
+		/* only check fields with ANY LENGTH;
+			RETURNING is already a valid reference */
+		if (!f->flag_any_length
+		  || f->flag_internal_register
+		  || f->flag_is_returning) {
+			continue;
+		}
 
-			/* only check fields with ANY LENGTH;
-			   RETURNING is already a valid reference */
-			if (!f->flag_any_length
-			 || f->flag_is_returning) {
-				continue;
-			}
-
-			/* ignore fields that are part of main entry USING */
-			for (l = CB_VALUE (CB_VALUE (prog->entry_list)); l; l = CB_CHAIN (l)) {
-				x = CB_VALUE (l);
-				if (CB_VALID_TREE (x) && cb_ref (x) != cb_error_node) {
-					if (f == CB_FIELD (cb_ref (x))) {
-						break;
-					}
+		/* ignore fields that are part of main entry USING */
+		for (l = CB_VALUE (CB_VALUE (prog->entry_list)); l; l = CB_CHAIN (l)) {
+			x = CB_VALUE (l);
+			if (CB_VALID_TREE (x) && cb_ref (x) != cb_error_node) {
+				if (f == CB_FIELD (cb_ref (x))) {
+					break;
 				}
 			}
-			if (!l) {
-				cb_error_x (CB_TREE (f),
-					_("'%s' ANY LENGTH item must be a formal parameter"),
-					f->name);
-			}
+		}
+		if (!l) {
+			cb_error_x (CB_TREE (f),
+				_("'%s' ANY LENGTH item must be a formal parameter"),
+				f->name);
 		}
 	}
 #endif /* TODO: recheck later */
@@ -4375,7 +4439,7 @@ cb_validate_program_body (struct cb_program *prog)
 	if (cb_warn_opt_val[cb_warn_linkage] != COBC_WARN_DISABLED
 	 && prog->linkage_storage) {
 		if (prog->returning
-		 &&	cb_ref (prog->returning) != cb_error_node) {
+		 && cb_ref (prog->returning) != cb_error_node) {
 			ret_fld = CB_FIELD (cb_ref (prog->returning));
 			if (ret_fld->redefines) {
 				/* error, but we check this in parser.y already and just go on here */
@@ -4421,6 +4485,9 @@ cb_validate_program_body (struct cb_program *prog)
 
 	/* Resolve all labels */
 	cb_validate_labels (prog);
+
+	/* check for overlapping PERFORM ranges */
+	cb_validate_perform_thru_ranges (prog);
 
 	if (prog->flag_debugging) {
 		/* Resolve DEBUGGING references and calculate DEBUG-CONTENTS size */
@@ -8691,8 +8758,13 @@ evaluate_test (cb_tree s, cb_tree o)
 	}
 }
 
+/* creating statements for EVALUATE entries;
+   this may be called recursive for each set of WHEN + statements;
+   parameters: subjects (may include true/false),
+               cases    (1..n WHEN + statements),
+			   internal exit label */
 static void
-build_evaluate (cb_tree subject_list, cb_tree case_list, cb_tree labid)
+build_evaluate (cb_tree subject_list, cb_tree case_list, cb_tree goto_end_label)
 {
 	cb_tree		whens, stmt;
 	cb_tree		c1, c2, c3;
@@ -8710,7 +8782,7 @@ build_evaluate (cb_tree subject_list, cb_tree case_list, cb_tree labid)
 	for (; whens; whens = CB_CHAIN (whens)) {
 		cb_tree		subjs, objs;
 		c2 = NULL;
-		/* Single WHEN test */
+		/* Single WHEN test -> combine all "ALSO" with operator "&&" */
 		for (subjs = subject_list, objs = CB_VALUE (whens);
 		     subjs && objs;
 		     subjs = CB_CHAIN (subjs), objs = CB_CHAIN (objs)) {
@@ -8731,7 +8803,8 @@ build_evaluate (cb_tree subject_list, cb_tree case_list, cb_tree labid)
 		if (subjs || objs) {
 			cb_error_x (whens, _("wrong number of WHEN parameters"));
 		}
-		/* Connect multiple WHEN's */
+		/* Combine multiple WHEN's that share a list of statements
+		   with operator "||" */
 		if (c1 == NULL) {
 			c1 = c2;
 		} else if (c2) {
@@ -8767,11 +8840,11 @@ build_evaluate (cb_tree subject_list, cb_tree case_list, cb_tree labid)
 			c3 = CB_STATEMENT (CB_VALUE (c3))->body;
 			if (c3 && CB_VALUE (c3) && !CB_GOTO_P (CB_VALUE(c3))) {
 				/* Append the jump */
-				c2 = cb_list_add (stmt, labid);
+				c2 = cb_list_add (stmt, goto_end_label);
 			}
 		}
-		cb_emit (cb_build_if (cb_build_cond (c1), c2, NULL, 0));
-		build_evaluate (subject_list, CB_CHAIN (case_list), labid);
+		cb_emit (cb_build_if (cb_build_cond (c1), c2, NULL, STMT_WHEN));
+		build_evaluate (subject_list, CB_CHAIN (case_list), goto_end_label);
 	}
 }
 
@@ -8781,12 +8854,54 @@ cb_emit_evaluate (cb_tree subject_list, cb_tree case_list)
 	cb_tree	x;
 	char	sbuf[16];
 
-	snprintf (sbuf, sizeof(sbuf), "goto %s%d;", CB_PREFIX_LABEL, cb_id);
+#if 0	/* TODO: check for "simple" EVALUATE and use a different codegen
+	         --> if we have a _single_ selection-object and it is either
+			 alphanumeric with size 1 or numeric, then generate a switch ()
+			 instead (this most used case also removes the need for the
+			 temporary selection-value mentioned below). */
+	if (cb_list_length (subject_list) == 1) {
+		const cb_tree sel_obj = CB_VALUE (subject_list);
+		if (is_alphanumeric_lenth_one (sel_obj)
+		 || is_numeric (sel_obj)) {
+			....
+		}
+		return;
+	}
+#endif
+
+	/* code to skipt to internal label of END-EVALUATE */
+	sprintf (sbuf, "goto %s%d;", CB_PREFIX_LABEL, cb_id);
 	x = cb_build_direct (cobc_parse_strdup (sbuf), 0);
+
+	/* FIXME: iterate over subject_list here:
+	      for each of its values that are a reference:
+		      build creation of a temporary field with its value
+			  and replace the reference in the subject_list with this
+
+		This is necessary to follow the standard rule
+		"At the beginning of the execution of the EVALUATE statement,
+		  each selection subject is evaluated and assigned a value"
+	    
+		Currently we do the selection on _each_ WHEN, which is bad
+		because (apart from not being correct per standard) this has
+		side effects when the selection-object is an intrinsic or user
+		function (as bad example: FUNCTION SECONDS-PAST-MIDNIGHT) because
+		the selection changes between the WHENs and user-defined functions
+		may be quite costly / adjust EXTERNAL variables used in the selection;
+		Not doing that correct (one time) also leads to all runtime checks that
+		are assigned to the selection-object being executed for each WHEN
+		and if there _is_ a runtime error it is raised at the first WHEN, while
+		it should be raised at the EVALUATE.
+	*/
 	build_evaluate (subject_list, case_list, x);
-	snprintf (sbuf, sizeof(sbuf), "%s%d:;", CB_PREFIX_LABEL, cb_id);
+
+	/* internal label for END-EVALUATE */
 	cb_emit (cb_build_comment ("End EVALUATE"));
+	sprintf (sbuf, "%s%d:;", CB_PREFIX_LABEL, cb_id);
 	cb_emit (cb_build_direct (cobc_parse_strdup (sbuf), 0));
+
+	/* TODO: drop temporary fields here */
+
 	cb_id++;
 }
 
@@ -8895,7 +9010,7 @@ cb_emit_exit (const unsigned int goback)
 void
 cb_emit_if (cb_tree cond, cb_tree stmt1, cb_tree stmt2)
 {
-	cb_emit (cb_build_if (cond, stmt1, stmt2, 1));
+	cb_emit (cb_build_if (cond, stmt1, stmt2, STMT_IF));
 }
 
 /* SEARCH .. WHEN clause (internal IF statement) */
@@ -8906,7 +9021,7 @@ cb_build_if_check_break (cb_tree cond, cb_tree stmts)
 	cb_tree		stmt_lis;
 
 	stmt_lis = cb_check_needs_break (stmts);
-	return cb_build_if (cond, stmt_lis, NULL, 0);
+	return cb_build_if (cond, stmt_lis, NULL, STMT_WHEN);
 }
 
 /* INITIALIZE statement */
@@ -11983,7 +12098,7 @@ cb_emit_search_all (cb_tree table, cb_tree at_end, cb_tree when, cb_tree stmts)
 	stmt_lis = cb_check_needs_break (stmts);
 	cb_emit (cb_build_search (1, table, NULL,
 				  cb_check_needs_break (at_end),
-				  cb_build_if (x, stmt_lis, NULL, 0)));
+				  cb_build_if (x, stmt_lis, NULL, STMT_WHEN)));
 	cb_search_ready (NULL);
 }
 
@@ -12010,20 +12125,18 @@ cb_emit_set_to (cb_tree vars, cb_tree x)
 	}
 
 	/* Check PROGRAM-POINTERs are the target for SET ... TO ENTRY. */
-	if (CB_CAST_P (x)) {
-		p = CB_CAST (x);
-		if (p->cast_type == CB_CAST_PROGRAM_POINTER) {
-			for (l = vars; l; l = CB_CHAIN (l)) {
-				v = CB_VALUE (l);
-				if (!CB_REFERENCE_P (v)) {
-					cb_error_x (CB_TREE (current_statement),
-						    _("SET targets must be PROGRAM-POINTER"));
-					CB_VALUE (l) = cb_error_node;
-				} else if (CB_FIELD(cb_ref(v))->usage != CB_USAGE_PROGRAM_POINTER) {
-					cb_error_x (CB_TREE (current_statement),
-						    _("SET targets must be PROGRAM-POINTER"));
-					CB_VALUE (l) = cb_error_node;
-				}
+	if (CB_CAST_P (x)
+	 && CB_CAST (x)->cast_type == CB_CAST_PROGRAM_POINTER) {
+		for (l = vars; l; l = CB_CHAIN (l)) {
+			v = CB_VALUE (l);
+			if (!CB_REFERENCE_P (v)) {
+				cb_error_x (CB_TREE (current_statement),
+					    _("SET targets must be PROGRAM-POINTER"));
+				CB_VALUE (l) = cb_error_node;
+			} else if (CB_FIELD(cb_ref(v))->usage != CB_USAGE_PROGRAM_POINTER) {
+				cb_error_x (CB_TREE (current_statement),
+					    _("SET targets must be PROGRAM-POINTER"));
+				CB_VALUE (l) = cb_error_node;
 			}
 		}
 	}
@@ -13167,26 +13280,21 @@ static void
 cb_emit_report_moves (struct cb_report *r, struct cb_field *f, int forterminate)
 {
 	struct cb_field		*p;
+	const int report_footing_flag
+		= (COB_REPORT_FOOTING | COB_REPORT_CONTROL_FOOTING | COB_REPORT_CONTROL_FOOTING_FINAL);
 	for (p = f; p; p = p->sister) {
-		if(p->report_flag & (COB_REPORT_FOOTING|COB_REPORT_CONTROL_FOOTING|COB_REPORT_CONTROL_FOOTING_FINAL)) {
+		if (p->report_flag & report_footing_flag) {
 			report_in_footing = 1;
 		}
-		if(p->report_when) {
-			int  ifwhen = 2;
-			if(p->children)
-				ifwhen = 3;
-			if(forterminate
-			&& report_in_footing) {
-				cb_emit (cb_build_if (p->report_when, NULL, (cb_tree)p, ifwhen));
-			} else
-			if(!forterminate
-			&& !report_in_footing) {
-				cb_emit (cb_build_if (p->report_when, NULL, (cb_tree)p, ifwhen));
+		if (p->report_when) {
+			if ((forterminate  &&  report_in_footing)
+			 || (!forterminate && !report_in_footing)) {
+				cb_emit (cb_build_if (p->report_when, NULL, CB_TREE (p), STMT_PRESENT_WHEN));
 			}
 		}
-		if(p->children) {
-			cb_emit_report_moves(r, p->children, forterminate);
-			if(p->report_flag & (COB_REPORT_FOOTING|COB_REPORT_CONTROL_FOOTING|COB_REPORT_CONTROL_FOOTING_FINAL)) {
+		if (p->children) {
+			cb_emit_report_moves (r, p->children, forterminate);
+			if (p->report_flag & report_footing_flag) {
 				report_in_footing = 0;
 			}
 		}

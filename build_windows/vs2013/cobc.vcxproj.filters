@@ -99,6 +99,9 @@
     <None Include="..\..\libcob\exception.def">
       <Filter>Header Files</Filter>
     </None>
+    <None Include="..\..\libcob\statement.def">
+      <Filter>Header Files</Filter>
+    </None>
     <None Include="..\..\libcob\system.def">
       <Filter>Header Files</Filter>
     </None>
@@ -151,6 +154,15 @@
       <Filter>Auxiliary Compiler Files\dialects</Filter>
     </None>
     <None Include="..\..\config\ibm-strict.conf">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\gcos.conf">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\gcos.words">
+      <Filter>Auxiliary Compiler Files\dialects</Filter>
+    </None>
+    <None Include="..\..\config\gcos-strict.conf">
       <Filter>Auxiliary Compiler Files\dialects</Filter>
     </None>
     <None Include="..\..\config\lax.conf-inc">

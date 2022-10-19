@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2006-2012, 2014, 2016-2019 Free Software Foundation, Inc.
+   Copyright (C) 2006-2012, 2014, 2016-2019, 2022 Free Software Foundation, Inc.
    Written by Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -37,6 +37,7 @@ COB_SYSTEM_GEN ("CBL_DELETE_FILE",	1, 1, cob_sys_delete_file)
 COB_SYSTEM_GEN ("CBL_EQ",		3, 3, cob_sys_eq)
 COB_SYSTEM_GEN ("CBL_ERROR_PROC",	2, 2, cob_sys_error_proc)
 COB_SYSTEM_GEN ("CBL_EXIT_PROC",	2, 2, cob_sys_exit_proc)
+COB_SYSTEM_GEN ("CBL_RUNTIME_ERROR",	2, 2, cob_sys_runtime_error_proc)
 COB_SYSTEM_GEN ("CBL_FLUSH_FILE",	1, 1, cob_sys_flush_file)
 COB_SYSTEM_GEN ("CBL_GET_CSR_POS",	1, 1, cob_sys_get_csr_pos)
 COB_SYSTEM_GEN ("CBL_GET_CURRENT_DIR",	3, 3, cob_sys_get_current_dir)

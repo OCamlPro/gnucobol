@@ -36,7 +36,8 @@ AM_LDFLAGS = $(COB_FIX_LIB) $(COB_FIX_LIBTOOL) -no-undefined
 
 libcob_la_SOURCES = common.c move.c numeric.c strings.c \
 	fileio.c fextfh.c focextfh.c  mlio.c \
-	call.c cobcapi.c intrinsic.c termio.c screenio.c reportio.c cobgetopt.c 
+	call.c cobcapi.c intrinsic.c termio.c screenio.c reportio.c cobgetopt.c \
+	coblocal.h cobinternal.h system.def sysdefines.h fileio.h
 
 # note: currently misses libsupport...
 libcob_la_LIBADD = $(LIBCOB_LIBS) $(CODE_COVERAGE_LIBS)
@@ -127,7 +128,7 @@ endif
 lib_LTLIBRARIES = libcob.la $(lib_ci) $(lib_di) $(lib_vb) $(lib_vc) \
 	$(lib_od) $(lib_oc) $(lib_db) $(lib_lm)
 
-EXTRA_DIST = coblocal.h cobinternal.h system.def sysdefines.h fileio.h fisam.c
+EXTRA_DIST = fisam.c
 pkgincludedir = $(includedir)/libcob
 pkginclude_HEADERS = common.h version.h cobgetopt.h cobcapi.h \
 	exception.def statement.def

@@ -1943,6 +1943,7 @@ COB_EXPIMP void	cob_temp_name			(char *, const char *);
 /* System routines */
 COB_EXPIMP int	cob_sys_exit_proc	(const void *, const void *);
 COB_EXPIMP int	cob_sys_error_proc	(const void *, const void *);
+COB_EXPIMP int	cob_sys_runtime_error_proc (const void *, const void *);
 COB_EXPIMP int	cob_sys_system		(const void *);
 COB_EXPIMP int	cob_sys_hosted		(void *, const void *);
 COB_EXPIMP int	cob_sys_and		(const void *, void *, const int);
@@ -1990,13 +1991,13 @@ COB_EXPIMP void	cob_trace_sect		(const char *);
 COB_EXPIMP void	cob_trace_para		(const char *);
 COB_EXPIMP void	cob_trace_entry		(const char *);
 COB_EXPIMP void	cob_trace_exit		(const char *);
-COB_EXPIMP void	cob_trace_stmt		(const char *);	/* compat only */
 COB_EXPIMP void	cob_trace_statement		(const enum cob_statement);
 
 COB_EXPIMP void			*cob_external_addr	(const char *, const int);
 COB_EXPIMP unsigned char	*cob_get_pointer	(const void *);
 COB_EXPIMP void			cob_ready_trace		(void);
 COB_EXPIMP void			cob_reset_trace		(void);
+COB_EXPIMP void			cob_nop (void);
 
 /* Call from outside to set/read/re-evaluate libcob options */
 enum cob_runtime_option_switch {
@@ -2081,6 +2082,8 @@ COB_EXPIMP void	cob_check_ref_mod	(const char *, const int, const int,
 					 const int, const int, const int);
 COB_EXPIMP void	cob_check_ref_mod_minimal	(const char *,
 					 const int, const int);
+COB_EXPIMP void	cob_check_beyond_exit (const unsigned char *);
+
 
 /* Comparison functions */
 COB_EXPIMP int	cob_numeric_cmp		(cob_field *, cob_field *);

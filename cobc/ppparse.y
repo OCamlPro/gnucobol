@@ -84,9 +84,7 @@ fold_lower (char *name)
 	unsigned char	*p;
 
 	for (p = (unsigned char *)name; *p; p++) {
-		if (isupper (*p)) {
-			*p = (cob_u8_t)tolower (*p);
-		}
+		*p = (cob_u8_t)tolower (*p);
 	}
 	return name;
 }
@@ -97,9 +95,7 @@ fold_upper (char *name)
 	unsigned char	*p;
 
 	for (p = (unsigned char *)name; *p; p++) {
-		if (islower (*p)) {
-			*p = (cob_u8_t)toupper (*p);
-		}
+		*p = (cob_u8_t)toupper (*p);
 	}
 	return name;
 }

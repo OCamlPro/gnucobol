@@ -57,7 +57,8 @@ cobc_print_usage_common_options (void)
 {
 	puts (_("Options:"));
 	puts (_("  -h, --help            display this help and exit"));
-	puts (_("  -V, --version         display compiler version and exit"));
+	puts (_("  -V, --version         display compiler version information and exit"));
+	puts (_("  -dumpversion          display compiler version and exit"));
 	puts (_("  -i, --info            display compiler information (build/environment)\n" 
 	        "                        and exit"));
 	puts (_("  -v, --verbose         verbose mode, display additional information;\n"

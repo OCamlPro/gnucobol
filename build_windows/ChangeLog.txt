@@ -8,7 +8,7 @@
 	* added statement.def to all cobc and libcob projects,
 	  new libversion.h to libcob
 	* version_cobc.rc, version_cobcrun.rc, version_libcob.rc,
-	  version_gcdiff.rc: use simpleversion.h instead of full common.h,
+	  version_gcdiff.rc: use simple version.h instead of full common.h,
 	  preventing resource compilers to stumble over C definitions
 	* makedist.cmd: cater for new header files
 

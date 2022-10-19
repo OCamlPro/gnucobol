@@ -133,16 +133,15 @@ do { \
 
 /* Global variables */
 
-struct cb_program		*current_program = NULL;
-struct cb_statement		*current_statement = NULL;
+struct cb_program		*current_program = NULL;    /* program in parse/syntax check/codegen */
 struct cb_label			*current_section = NULL;
 struct cb_label			*current_paragraph = NULL;
+struct cb_statement		*current_statement = NULL;
 struct cb_field		*external_defined_fields_ws;
 struct cb_field		*external_defined_fields_global;
 cb_tree				defined_prog_list = NULL;
 int				cb_exp_line = 0;
 
-cb_tree				cobc_printer_node = NULL;
 int				functions_are_all = 0;
 int				non_const_word = 0;
 int				suppress_data_exceptions = 0;
@@ -1211,8 +1210,7 @@ begin_scope_of_program_name (struct cb_program *program)
 	}
 
 	/* Otherwise, add the program to the list. */
-	defined_prog_list = cb_list_add (defined_prog_list,
-					 (cb_tree) program);
+	defined_prog_list = cb_list_add (defined_prog_list, CB_TREE (program));
 }
 
 static void
@@ -1231,7 +1229,7 @@ static void
 end_scope_of_program_name (struct cb_program *program, const unsigned char type)
 {
 	struct	cb_list	*prev = NULL;
-	struct	cb_list *l = (struct cb_list *) defined_prog_list;
+	struct	cb_list *l;
 
 	/* create empty entry if the program has no PROCEDURE DIVISION, error for UDF */
 	if (!program->entry_list) {
@@ -1264,12 +1262,12 @@ end_scope_of_program_name (struct cb_program *program, const unsigned char type)
 
 	/* Remove the specified program, if it is not COMMON */
 	if (!program->flag_common) {
-		l = (struct cb_list *) defined_prog_list;
+		l = CB_LIST (defined_prog_list);
 		while (l) {
 			/* The nested_level check is for the pathological case
 			   where two nested programs have the same name */
 			if (0 == strcmp (program->orig_program_id,
-					 CB_PROGRAM (l->value)->orig_program_id)
+			         CB_PROGRAM (l->value)->orig_program_id)
 			    && program->nested_level == CB_PROGRAM (l->value)->nested_level) {
 				remove_program_name (l, prev);
 				if (prev && prev->chain != NULL) {
@@ -7945,6 +7943,7 @@ _occurs_indexed:
   /* empty */
 | occurs_indexed
 ;
+
 occurs_indexed:
   INDEXED _by occurs_index_list
   {
@@ -14579,16 +14578,15 @@ perform_procedure:
   {
 	/* Return from $1 */
 	CB_REFERENCE ($1)->length = cb_true;
-	CB_REFERENCE ($1)->flag_decl_ok = 1;
 	$$ = CB_BUILD_PAIR ($1, $1);
   }
 | procedure_name THRU procedure_name
   {
 	/* Return from $3 */
 	CB_REFERENCE ($3)->length = cb_true;
-	CB_REFERENCE ($1)->flag_decl_ok = 1;
-	CB_REFERENCE ($3)->flag_decl_ok = 1;
 	$$ = CB_BUILD_PAIR ($1, $3);
+	current_program->perform_thru_list =
+		cb_list_add (current_program->perform_thru_list, $$);
   }
 ;
 

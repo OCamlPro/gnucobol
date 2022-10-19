@@ -880,7 +880,7 @@ AT_CLEANUP
 
 
 AT_SETUP([DECLARATIVES invalid procedure reference (1)])
-AT_KEYWORDS([file])
+AT_KEYWORDS([file GOTO GO PERFORM])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -903,8 +903,8 @@ AT_DATA([prog.cob], [
        G01 SECTION.
            USE AFTER ERROR PROCEDURE ON GO-FILE.
        G02.
-           DISPLAY "OK"
-           END-DISPLAY.
+           DISPLAY "OK".
+      *    explicit check both PERFORM and GO TO - silencing its warning
            GO TO GG02.
        P01 SECTION.
            USE AFTER ERROR PROCEDURE ON PERF-FILE.
@@ -931,7 +931,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY -Wno-dialect prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -Wno-dialect -Wno-goto-different-section prog.cob], [0], [], [])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
 [prog.cob: in section 'G01':
@@ -943,7 +943,7 @@ prog.cob:31: warning: 'PPOK' is not in DECLARATIVES
 prog.cob:34: warning: 'PP02' is not in DECLARATIVES
 ])
 
-AT_CHECK([$COMPILE_ONLY -freference-out-of-declaratives=ok prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -freference-out-of-declaratives=ok -Wno-goto-different-section prog.cob], [0], [], [])
 
 AT_CHECK([$COMPILE_ONLY -std=cobol2014 prog.cob], [1], [],
 [prog.cob: in section 'G01':

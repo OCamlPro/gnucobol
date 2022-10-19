@@ -1188,6 +1188,7 @@ struct cb_reference {
 	cb_tree			offset;		/* Reference mod offset */
 	cb_tree			length;		/* Reference mod length */
 	cb_tree			check;		/* Runtime checks */
+	enum cob_statement	statement;	/* statement that uses this reference */
 	struct cb_word		*word;		/* Pointer to word list */
 	struct cb_label		*section;	/* Current section */
 	struct cb_label		*paragraph;	/* Current paragraph */
@@ -1197,7 +1198,6 @@ struct cb_reference {
 	unsigned int		flag_receiving	: 1;	/* Reference target */
 	unsigned int		flag_all	: 1;	/* ALL */
 	unsigned int		flag_in_decl	: 1;	/* In DECLARATIVE */
-	unsigned int		flag_decl_ok	: 1;	/* DECLARATIVE ref OK  */
 	unsigned int		flag_alter_code	: 1;	/* Needs ALTER code */
 	unsigned int		flag_debug_code	: 1;	/* Needs DEBUG code */
 	unsigned int		flag_all_debug	: 1;	/* Needs ALL DEBUG code */
@@ -1407,7 +1407,7 @@ struct cb_if {
 	cb_tree			test;		/* Condition */
 	cb_tree			stmt1;		/* Statement list */
 	cb_tree			stmt2;		/* ELSE/WHEN statement list */
-	unsigned int		is_if;		/* From IF (1), WHEN (0), PRESENT WHEN (3+4) */
+	enum cob_statement statement;	/* statement IF/WHEN/PRESENT WHEN */
 };
 
 #define CB_IF(x)		(CB_TREE_CAST (CB_TAG_IF, struct cb_if, x))
@@ -1673,6 +1673,7 @@ struct cb_program {
 	cb_tree			locale_list;		/* LOCALE list */
 	cb_tree			global_list;		/* GLOBAL list */
 	cb_tree			report_list;		/* REPORT list */
+	cb_tree			perform_thru_list;		/* list of PERFORM THRU */
 	cb_tree			alter_list;		/* ALTER list */
 	cb_tree			debug_list;		/* DEBUG ref list */
 	cb_tree			cb_return_code;		/* RETURN-CODE */
@@ -2012,7 +2013,7 @@ extern cb_tree			cb_build_cancel (const cb_tree);
 extern cb_tree			cb_build_goto (const cb_tree, const cb_tree);
 
 extern cb_tree			cb_build_if (const cb_tree, const cb_tree,
-					     const cb_tree, const unsigned int);
+					     const cb_tree, const enum cob_statement);
 
 extern cb_tree			cb_build_perform (const enum cb_perform_type);
 extern cb_tree			cb_build_perform_varying (cb_tree, cb_tree,
@@ -2074,7 +2075,6 @@ extern cb_tree		cb_build_ml_suppress_checks (struct cb_ml_generate_tree *);
 
 
 /* parser.y */
-extern cb_tree		cobc_printer_node;
 extern int		non_const_word;
 extern int		suppress_data_exceptions;
 extern unsigned int	cobc_repeat_last_token;
@@ -2112,7 +2112,8 @@ extern enum cb_warn_val		cb_warning_x (const enum cb_warn_opt, cb_tree, const ch
 extern enum cb_warn_val		cb_warning_dialect_x (const enum cb_support, cb_tree, const char *, ...) COB_A_FORMAT34;
 extern void		cb_note_x (const enum cb_warn_opt, cb_tree, const char *, ...) COB_A_FORMAT34;
 extern void		cb_inclusion_note (const char *, int);
-extern enum cb_warn_val		cb_error_x (cb_tree, const char *, ...) COB_A_FORMAT23;
+extern char		*cb_get_qualified_name (const struct cb_reference *);
+extern enum cb_warn_val	cb_error_x (cb_tree, const char *, ...) COB_A_FORMAT23;
 extern unsigned int	cb_verify (const enum cb_support, const char *);
 extern unsigned int	cb_verify_x (const cb_tree, const enum cb_support,
 				     const char *);

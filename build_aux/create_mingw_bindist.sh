@@ -1,7 +1,7 @@
 #!/bin/bash
 # build_aux/create_mingw_bindist.sh gnucobol
 #
-# Copyright (C) 2016-2021 Free Software Foundation, Inc.
+# Copyright (C) 2016-2022 Free Software Foundation, Inc.
 # Written by Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -25,9 +25,15 @@
 # AND make sure EXTBUILDDIR exists with the right content.
 
 # Check we're in a MinGW environment
-if test ! -d "/mingw/bin"; then
-	echo "binary mingw dist packages can only be created from MSYS/MinGW"
-	echo "directory /mingw/bin not found"
+if test -d "$MSYSTEM_PREFIX/bin"; then
+	MINGWDIR="$MSYSTEM_PREFIX/bin"
+	echo "generating binary ${MINGW_PREFIX:1} dist package..."
+elif test -d "/mingw/bin"; then
+	MINGWDIR="/mingw/bin"
+	echo "generating binary mingw dist package..."
+else
+	echo "binary mingw dist packages can only be created from MSYS/MinGW or MSYS2"
+	echo "no matching mingw bin directory found"
 	exit 99
 fi
 
@@ -100,15 +106,14 @@ cp -pr "$EXTBUILDDIR/extras" "$target_dir/"
 cp -pr "$EXTSRCDIR/copy"     "$target_dir/"
 cp -pr "$EXTSRCDIR/config"   "$target_dir/"
 
-cp -p "$EXTBUILDDIR/cobc/.libs/cobc.exe" "$target_dir/bin/"
-cp -p "$EXTBUILDDIR/bin/.libs/cobcrun.exe" "$target_dir/bin/"
-cp -p $EXTBUILDDIR/libcob/.libs/libcob*.dll  "$target_dir/bin/"
-cp -p $EXTBUILDDIR/libcob/.libs/libcob.*  "$target_dir/lib/"
+cp -p $EXTBUILDDIR/cobc/.libs/cobc.exe      "$target_dir/bin/"
+cp -p $EXTBUILDDIR/bin/.libs/cobcrun.exe    "$target_dir/bin/"
+cp -p $EXTBUILDDIR/libcob/.libs/libcob*.dll "$target_dir/bin/"
+cp -p $EXTBUILDDIR/libcob/.libs/libcob.*    "$target_dir/lib/"
 mkdir "$target_dir/include/libcob"
-cp -p $EXTSRCDIR/libcob.h    "$target_dir/include/"
-cp -p $EXTSRCDIR/libcob/common.h  "$target_dir/include/libcob"
-cp -p $EXTSRCDIR/libcob/cobcapi.h  "$target_dir/include/libcob"
-cp -p $EXTSRCDIR/libcob/exception*.def  "$target_dir/include/libcob"
+cp -p $EXTSRCDIR/libcob.h      "$target_dir/include/"
+cp -p $EXTSRCDIR/libcob/*.h    "$target_dir/include/libcob"
+cp -p $EXTSRCDIR/libcob/*.def  "$target_dir/include/libcob"
 
 echo && echo copying docs...
 
@@ -165,6 +170,24 @@ fi
 popd 1>/dev/null
 
 cat > "$target_dir/set_env.cmd" << _FEOF
+:: Copyright (C) 2016-2020, 2022 Free Software Foundation, Inc.
+:: Written by Simon Sobisch
+::
+:: This file is part of GnuCOBOL.
+::
+:: The GnuCOBOL compiler is free software: you can redistribute it
+:: and/or modify it under the terms of the GNU General Public License
+:: as published by the Free Software Foundation, either version 3 of the
+:: License, or (at your option) any later version.
+::
+:: GnuCOBOL is distributed in the hope that it will be useful,
+:: but WITHOUT ANY WARRANTY; without even the implied warranty of
+:: MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+:: GNU General Public License for more details.
+::
+:: You should have received a copy of the GNU General Public License
+:: along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+
 @echo off
 
 :: Check if called already
@@ -216,14 +239,14 @@ if not [%1] == [] (
 :: new cmd to stay open if not started directly from cmd.exe window 
 echo %cmdcmdline% | find /i "%~0" >nul
 if %errorlevel% equ 0 (
-  cmd /k "cobc --version && $versinfo_cmds"
+  cmd /k "cobc.exe --version && $versinfo_cmds"
   goto :eof
 )
 
 :: Compiler and package version output
 :cobcver
 echo.
-cobc --version
+cobc.exe --version
 $versinfo_cmds
 
 _FEOF

@@ -2123,7 +2123,7 @@ scan_picture (const char *text)
 			*p = 0;
 			break;
 		}
-		*p = (unsigned char)toupper (*p);
+		*p = cb_toupper (*p);
 	}
 
 	yylval = CB_TREE (cb_build_picture (text));

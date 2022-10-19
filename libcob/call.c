@@ -790,9 +790,7 @@ cob_encode_program_id (const unsigned char *const name,
 	{
 		unsigned char *p;
 		for (p = name_buff; *p; p++) {
-			if (islower (*p)) {
-				*p = (cob_u8_t)toupper (*p);
-			}
+			*p = (cob_u8_t)toupper (*p);
 		}
 		break;
 	}
@@ -800,9 +798,7 @@ cob_encode_program_id (const unsigned char *const name,
 	{
 		unsigned char *p;
 		for (p = name_buff; *p; p++) {
-			if (isupper (*p)) {
-				*p = (cob_u8_t)tolower (*p);
-			}
+			*p = (cob_u8_t)tolower (*p);
 		}
 		break;
 	}
@@ -814,7 +810,7 @@ cob_encode_program_id (const unsigned char *const name,
 }
 
 static void *
-cob_resolve_internal (const char *name, const char *dirent,
+cob_resolve_internal  (const char *name, const char *dirent,
 	const int fold_case, int module_type)
 {
 	const unsigned char	*s;

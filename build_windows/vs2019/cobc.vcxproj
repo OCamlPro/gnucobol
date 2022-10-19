@@ -305,6 +305,9 @@
     <None Include="..\..\config\cobol85.conf" />
     <None Include="..\..\config\cobol85.words" />
     <None Include="..\..\config\default.conf" />
+    <None Include="..\..\config\gcos-strict.conf" />
+    <None Include="..\..\config\gcos.conf" />
+    <None Include="..\..\config\gcos.words" />
     <None Include="..\..\config\ibm-strict.conf" />
     <None Include="..\..\config\ibm.conf" />
     <None Include="..\..\config\ibm.words" />
@@ -328,10 +331,10 @@
     <None Include="..\..\copy\sqlda.cpy" />
     <None Include="..\..\copy\xfhfcd.cpy" />
     <None Include="..\..\libcob\exception.def" />
+    <None Include="..\..\libcob\statement.def" />
     <None Include="..\..\libcob\system.def" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\libcob\sysdefines.h" />
     <ClInclude Include="..\config.h" />
     <ClInclude Include="..\..\libcob.h" />
     <ClInclude Include="..\..\tarstamp.h" />
@@ -341,6 +344,7 @@
     <ClInclude Include="..\..\cobc\ppparse.h" />
     <ClInclude Include="..\..\libcob\cobgetopt.h" />
     <ClInclude Include="..\..\libcob\common.h" />
+    <ClInclude Include="..\..\libcob\sysdefines.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\version_cobc.rc" />

@@ -1,4 +1,53 @@
 
+2022-10-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.h (struct cb_if): changed "is_if" integer flag to "enum
+	  cob_statement statement" providing a clear context
+	* tree.c (cb_build_if), tree.h, typeck.c, codegen.c (output_stmt):
+	  pass and check matching statement entry instead of magic number
+	* typeck.c (cb_emit_report_moves): refactored to combine conditions
+	  and separate report_footing_flag
+	* codegen.c (output_stmt): refactored to combine same code for
+	  PRESENT WHEN field/line
+	* codegen.c: set COBOL source and statement reference correctly for
+	  SEARCH ... VARYING and WHEN - as the overhead from tracing code
+	  preventing this before no longer exists
+	* codegen.c: improved output of source position
+	* typeck.c (cb_emit_evaluate): analysis and spec for necessary changes
+
+2022-10-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (clear_local_codegen_vars): unset additional
+	  "current" references, preventing use-after-free
+	* codegen.c (output_stmt): set current_statement on start of
+	  any statement generation allowing it to be used for context-checks
+	* tree.h, parser.y: removed never-used cobc_printer_node
+	* codegen.c (output_perform_call): use statement reference to generate
+	  separate comment for PERFORM procedure or USE procedure
+	* flag.def, codegen.c: new -fsection-exit-check
+	  (cb_flag_section_exit_check) and -fimplicit-goback-check 
+	  (cb_flag_implicit_goback_check)
+	* tree.h (cb_progam), parser.y (perform_procedure): add and set
+	   perform_thru_list for internal checks
+	* typeck.c (cb_validate_perform_thru_ranges),
+	  warning.def (cb_warn_suspicious_perform_thru): warning option to check
+	  for PERFORM THRU referencing multiple sections and for its
+	  references to be in non-chronological order
+
+2022-10-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.h (cb_reference), tree.c (cb_build_reference): added statement
+	  allowing every reference to be checked for its context
+	* tree.h (cb_reference), parser.y (perform_procedure): dropped flag_decl_ok
+	* typeck.c (cb_validate_labels): use ref->statement instead of flag_decl_ok
+	* warning.def, typeck.c (cb_validate_labels): new warnings -Wgoto-section
+	  (enabled by default) and -Wgoto-different-section (enabled by -Wall)
+	* reserved.c: renamed cb_toupper to res_toupper
+	* reserved.c (cb_toupper, cb_tolower), cobc.h: new exported functions
+	* scanner.l, config.c, cobc.c: prefer cb_toupper and cb_tolower over
+	  locale aware toupper/tolower
+	* ppparse.y: directly call toupper/tolower without previous islower/isupper
+
 2022-10-15  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.h: new CB_UNSUPPORTED for features not planned to be supported
@@ -72,6 +121,11 @@
 	  name) and its addition to the cob_module
 	* codegen.c (output_section_info, output_trace_info): minor refactoring
 
+2022-09-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_perform_call): allow label end to be NULL if
+	  there is no PERFORM THRU, adjusted callers to not pass duplicate labels
+
 2022-08-26  Simon Sobisch <simonsobisch@gnu.org>
 
 	* scanner.l (copy_literal): inlined into literal handling and added
@@ -117,6 +171,10 @@
 	* parser.y: split level 88 VALUE clause to value_clause_condition,
 	  added content_validation format to it (already usable as condition,
 	  preparation for later content validation by VALUE statement)
+
+2022-06-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c, help.c: added -dumpversion
 
 2022-06-10  Ron Norman <rjn@inglenet.com>
 
@@ -705,7 +763,7 @@
 	  COB_CHK_ODO, COB_CHK_REFMOD_MIN, COB_CHK_REFMOD for inline checks of
 	  most-used runtime checks - now only passed to libcob in case of actual
 	  errors; new entry COB_NOP to replace the cob_nop call (frame switch)
-	  by a simple pointer comparison, which also ensures on all tested
+	  by a simple pointer comparision, which also ensures on all tested
 	  compilers that the line is not optimized out, and for those that
 	  optimize the check away the old cob_nop call is still done
 	* codeoptim.c (COB_GET_NUMDISPS, COB_GET_NUMDISPS64):

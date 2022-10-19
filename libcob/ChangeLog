@@ -1,4 +1,27 @@
 
+2022-10-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* statement.def: added STMT_PRESENT_WHEN
+
+2022-10-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am: moved header files that are not installed from EXTRA_DIST
+	  to _SOURCES (per automake manual)
+	* fileio.c (sequential_read): andle variable-sized record-sequential
+	  files when the size was read, but no data found for that afterwards
+	* mlio.c (xml_parse): fix bad assignment leading to compiler warnings
+	* common.c (cob_check_beyond_exit), common.h: new function for implicit
+	  exit/goback checks
+
+2022-10-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_debug_open, cob_trace_print), intrinsic.c
+	 (cob_intr_hex_to_char): prefer extending switch over use of topupper
+	* call.c, common.c, intrinisic.c, screenio.c: directly call toupper/tolower
+	  without previous check of islower/isupper
+	* system.def, common.c (cob_sys_runtime_error_proc):
+	  implement CBL_RUNTIME_ERROR
+
 2022-10-15  Simon Sobisch <simonsobisch@gnu.org>
 
 	* version.h, Makefile.am: new file, moving out version
@@ -1142,6 +1165,12 @@
 	  ptr (!= 0 && == ' ')
 	* call.c, common.c, fileio.c, intrinsic.c, mlio.c, strings.c:
 	  reduced scope of some variables
+
+2020-11-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c, common.h: added externalized cob_nop to have a portable way to
+	  ensure some optimizations on C level not be done (currently: not removing
+	  #line references)
 
 2020-11-26  Ron Norman <rjn@inglenet.com>
 

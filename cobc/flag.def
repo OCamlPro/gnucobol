@@ -167,6 +167,12 @@ CB_FLAG (cb_flag_stack_check, 1, "stack-check",
 	_("  -fstack-check         PERFORM stack checking\n"
 	  "                        * turned on by -debug or -g"))
 
+CB_FLAG (cb_flag_section_exit_check, 1, "section-exit-check",
+	_("  -fsection-exit-check  check that code execution does not leave the scope of SECTIONs"))
+
+CB_FLAG (cb_flag_implicit_goback_check, 1, "implicit-goback-check",
+	_("  -fimplicit-goback-check\tcheck that code execution does not end implicit at end of PROCEDURE DIVISION"))
+
 CB_FLAG (cb_flag_write_after, 1, "write-after",
 	_("  -fwrite-after         use AFTER 1 for WRITE of LINE SEQUENTIAL\n"
 	  "                        * default: BEFORE 1"))

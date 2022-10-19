@@ -358,10 +358,10 @@ isdirvalid (char *filename)
 	if (*filename == ':'
 	 || *filename == '<'
 	 || *filename == '>'
-	 || *filename == '|')
+	 || *filename == '|'
+	 || memcmp (filename, "/dev/", (size_t)5) == 0) {
 		return 1;
-	if (memcmp (filename, "/dev/", (size_t)5) == 0)  
-		return 1;
+	}
 
 	strcpy (tmp, filename);
 	while (--ln > 0) {
@@ -1487,8 +1487,7 @@ cob_chk_file_env (cob_file *f, const char *src)
 		snprintf (file_open_env, (size_t)COB_FILE_MAX, "%s%s", "io_", s);
 		if ((file_open_io_env = cob_get_env (file_open_env, NULL)) == NULL) {
 			for (i = 0; file_open_env[i] != 0; ++i) {	/* Try all Upper Case */
-				if(islower((unsigned char)file_open_env[i]))
-					file_open_env[i] = (char)toupper((unsigned char)file_open_env[i]);
+				file_open_env[i] = (char)toupper((unsigned char)file_open_env[i]);
 			}
 			file_open_io_env = cob_get_env (file_open_env, NULL);
 		}
@@ -1499,8 +1498,7 @@ cob_chk_file_env (cob_file *f, const char *src)
 			snprintf (file_open_env, (size_t)COB_FILE_MAX, "%s%s", "io_", f->select_name);
 			if ((file_open_io_env = cob_get_env (file_open_env, NULL)) == NULL) {
 				for (i = 0; file_open_env[i] != 0; ++i) {	/* Try all Upper Case */
-					if(islower((unsigned char)file_open_env[i]))
-						file_open_env[i] = (unsigned char)toupper((int)file_open_env[i]);
+					file_open_env[i] = (unsigned char)toupper((int)file_open_env[i]);
 				}
 				file_open_io_env = cob_get_env (file_open_env, NULL);
 			}
@@ -1529,9 +1527,7 @@ cob_chk_file_env (cob_file *f, const char *src)
 			snprintf (file_open_env, (size_t)COB_FILE_MAX, "%s%s", prefix[i], s);
 			file_open_env[COB_FILE_MAX] = 0;
 			for (i = 0; file_open_env[i] != 0; ++i) {
-				if (islower ((unsigned char)file_open_env[i])) {
-					file_open_env[i] = (char)toupper((unsigned char)file_open_env[i]);
-				}
+				file_open_env[i] = (char)toupper((unsigned char)file_open_env[i]);
 			}
 			if ((p = cob_get_env (file_open_env, NULL)) != NULL) {
 				break;
@@ -1984,15 +1980,15 @@ cob_set_file_format (cob_file *f, char *defstr, int updt)
 	if (f->record_max > maxrecsz)
 		maxrecsz = f->record_max;
 	nkeys = f->nkeys;
-	if(defstr != NULL) {				/* Special options for this file */
-		for(i=0; defstr[i] != 0; ) {
-			while(isspace(defstr[i])	/* Skip option separators */
+	if (defstr != NULL) {				/* Special options for this file */
+		for (i=0; defstr[i] != 0; ) {
+			while (isspace(defstr[i])	/* Skip option separators */
 			|| defstr[i] == ','
 			|| defstr[i] == ';') i++;
 			if(defstr[i] == 0)
 				break;
 			ivalue = 0;
-			for(j=0; j < sizeof(option)-1 && !isspace(defstr[i])
+			for (j=0; j < sizeof(option)-1 && !isspace(defstr[i])
 				&& defstr[i] != ','
 				&& defstr[i] != ';'
 				&& defstr[i] != '='
@@ -2003,52 +1999,52 @@ cob_set_file_format (cob_file *f, char *defstr, int updt)
 			value[0] = 0;
 			qt = 0;
 			settrue = 1;
-			if(strncasecmp(option,"no-",3) == 0) {
+			if (strncasecmp(option,"no-",3) == 0) {
 				memmove(option,&option[3],j);
 				settrue = 0;
 			} else
-			if(strncasecmp(option,"no_",3) == 0) {
+			if (strncasecmp(option,"no_",3) == 0) {
 				memmove(option,&option[3],j);
 				settrue = 0;
 			} else
-			if(strncasecmp(option,"no",2) == 0) {
+			if (strncasecmp(option,"no",2) == 0) {
 				memmove(option,&option[2],j);
 				settrue = 0;
 			}
 			if(defstr[i] == '=') {
 				i++;
-				while(defstr[i] == ' ') i++;
-				if(defstr[i] == '(') {
+				while (defstr[i] == ' ') i++;
+				if (defstr[i] == '(') {
 					i++;
-					for(j=0; j < sizeof(value)-1 
+					for (j=0; j < sizeof(value)-1 
 						&& defstr[i] != ')'
 						&& defstr[i] != 0; ) {	/* Collect complete option */
 						value[j++] = defstr[i++];
 					}
 					if(defstr[i] == ')') i++;
 					value[j] = 0;
-				} else if(defstr[i] == '"') {
+				} else if (defstr[i] == '"') {
 					qt = '"';
 					i++;
-					for(j=0; j < sizeof(value)-1 
+					for (j=0; j < sizeof(value)-1 
 						&& defstr[i] != '"'
 						&& defstr[i] != 0; ) {	/* Collect complete option */
 						value[j++] = defstr[i++];
 					}
 					value[j] = 0;
 					if(defstr[i] == '"') i++;
-				} else if(defstr[i] == '\'') {
+				} else if (defstr[i] == '\'') {
 					qt = '\'';
 					i++;
-					for(j=0; j < sizeof(value)-1 
+					for (j=0; j < sizeof(value)-1 
 						&& defstr[i] != '\''
 						&& defstr[i] != 0; ) {	/* Collect complete option */
 						value[j++] = defstr[i++];
 					}
 					value[j] = 0;
-					if(defstr[i] == '\'') i++;
+					if (defstr[i] == '\'') i++;
 				} else {
-					for(j=0; j < sizeof(value)-1 && !isspace(defstr[i])
+					for( j=0; j < sizeof(value)-1 && !isspace(defstr[i])
 						&& defstr[i] != ','
 						&& defstr[i] != ';'
 						&& defstr[i] != 0; ) {	/* Collect one option */
@@ -2057,98 +2053,109 @@ cob_set_file_format (cob_file *f, char *defstr, int updt)
 						value[j++] = defstr[i++];
 					}
 					value[j] = 0;
-					if(value[0] == '1'
-					|| toupper((unsigned char)value[0]) == 'T'
-					|| toupper((unsigned char)value[0]) == 'Y'
-					|| strcasecmp(value,"on") == 0)
-						settrue = 1;
-					if(value[0] == '0'
-					|| toupper((unsigned char)value[0]) == 'F'
-					|| toupper((unsigned char)value[0]) == 'N'
-					|| strcasecmp(value,"off") == 0)
-						settrue = 0;
+					switch (value[0]) {
+						case '1':
+						case 'T':
+						case 't':
+						case 'y':
+						case 'Y':
+							settrue = 1;
+							break;
+						case '0':
+						case 'F':
+						case 'f':
+						case 'N':
+						case 'n':
+							settrue = 0;
+							break;
+						default:
+							if (strcasecmp(value,"on") == 0)
+								settrue = 1;
+							else if (strcasecmp(value,"off") == 0)
+								settrue = 0;
+					}
 				}
 			}
 
-			if(strcasecmp(option,"sync") == 0) {
+			if (strcasecmp(option, "sync") == 0) {
 				if(settrue)
 					f->file_features |= COB_FILE_SYNC;
 				else
 					f->file_features &= ~COB_FILE_SYNC;
 				continue;
 			}
-			if(strcasecmp(option,"trace") == 0) {
+			if (strcasecmp(option, "trace") == 0) {
 				f->trace_io = settrue;
 				continue;
 			}
-			if(strcasecmp(option,"stats") == 0) {
+			if (strcasecmp(option, "stats") == 0) {
 				f->io_stats = settrue;
 				continue;
 			}
-			if(strcasecmp(option,"keycheck") == 0) {
+			if (strcasecmp(option, "keycheck") == 0) {
 				f->flag_keycheck = settrue;
 				continue;
 			}
-			if(keycmp(option,"retry_times") == 0) {
+			if (keycmp(option, "retry_times") == 0) {
 				f->dflt_times = atoi(value);
 				f->dflt_retry |= COB_RETRY_TIMES;
 				continue;
 			}
-			if(keycmp(option,"retry_seconds") == 0) {
+			if (keycmp(option, "retry_seconds") == 0) {
 				f->dflt_seconds = atoi(value);
 				f->dflt_retry |= COB_RETRY_SECONDS;
 				continue;
 			}
-			if(strcasecmp(option,"rollback") == 0) {
+			if (strcasecmp(option, "rollback") == 0) {
 				f->flag_do_qbl = settrue;
 				if (settrue)
 					f->lock_mode |= COB_LOCK_ROLLBACK|COB_LOCK_MULTIPLE;
 				continue;
 			}
-			if (strcasecmp(option,"type") == 0) {
+			if (strcasecmp(option, "type") == 0) {
 				if (updt
 				 && (((f->organization == COB_ORG_SEQUENTIAL 
 				   || f->organization == COB_ORG_RELATIVE)
 				  && (f->access_mode == COB_ACCESS_SEQUENTIAL))
 				 || f->organization >= COB_ORG_MAX
 				 || f->flag_updt_file)) {
-					if(strcasecmp(value,"IX") == 0) {
+					if (strcasecmp(value,"IX") == 0) {
 						f->organization = COB_ORG_INDEXED;
 						f->flag_set_isam = 1;
-					} else if(strcasecmp(value,"RL") == 0) {
+					} else if (strcasecmp(value,"RL") == 0) {
 						f->organization = COB_ORG_RELATIVE;
 						f->flag_set_isam = 0;
-					} else if(strcasecmp(value,"DA") == 0) {
+					} else if (strcasecmp(value,"DA") == 0) {
 						f->organization = COB_ORG_RELATIVE;
 						f->flag_set_isam = 0;
-					} else if(strcasecmp(value,"SQ") == 0) {
+					} else if (strcasecmp(value,"SQ") == 0) {
 						f->organization = COB_ORG_SEQUENTIAL;
 						f->flag_line_adv |= COB_SET_SEQUENTIAL;
 						f->flag_line_adv &= ~COB_SET_ADVANCING;
 						f->flag_set_isam = 0;
-					} else if(strcasecmp(value,"SA") == 0) {
+					} else if (strcasecmp(value,"SA") == 0) {
 						f->organization = COB_ORG_SEQUENTIAL;
 						f->flag_set_isam = 0;
 						f->flag_line_adv &= ~COB_SET_SEQUENTIAL;
 						f->flag_line_adv |= COB_SET_ADVANCING;
-					} else if(strcasecmp(value,"LS") == 0) {
+					} else if (strcasecmp(value,"LS") == 0) {
 						f->organization = COB_ORG_LINE_SEQUENTIAL;
 						f->flag_line_adv = 0;
 						f->flag_set_isam = 0;
-					} else if(strcasecmp(value,"LA") == 0) {
+					} else if (strcasecmp(value,"LA") == 0) {
 						f->organization = COB_ORG_LINE_SEQUENTIAL;
 						f->flag_line_adv = COB_LINE_ADVANCE;
 						f->flag_set_isam = 0;
 					}
 					cob_set_file_defaults (f);
-					if(strcasecmp(value,"DA") == 0) {
+					if (strcasecmp(value,"DA") == 0) {
 						f->file_format = COB_FILE_IS_MF;
 						f->flag_set_type = 1;
 					}
 				}
 				continue;
 			}
-			if (strcasecmp(option,"recsz") == 0) {
+			if (strcasecmp(option, "recsz") == 0) {
 				if (!f->flag_updt_file) {
 					if (ivalue <= 0)
 						continue;
@@ -2174,7 +2181,7 @@ cob_set_file_format (cob_file *f, char *defstr, int updt)
 				}
 				continue;
 			}
-			if (strcasecmp(option,"maxsz") == 0) {
+			if (strcasecmp(option, "maxsz") == 0) {
 				if (!f->flag_updt_file) {
 					if (ivalue <= 0)
 						continue;
@@ -2190,7 +2197,7 @@ cob_set_file_format (cob_file *f, char *defstr, int updt)
 				f->flag_redef = 1;
 				continue;
 			}
-			if (strcasecmp(option,"minsz") == 0) {
+			if (strcasecmp(option, "minsz") == 0) {
 				if (!f->flag_updt_file) {
 					if(ivalue <= 0 || ivalue > (int)maxrecsz)
 						continue;
@@ -2201,21 +2208,21 @@ cob_set_file_format (cob_file *f, char *defstr, int updt)
 				f->flag_redef = 1;
 				continue;
 			}
-			if (strcasecmp(option,"limit") == 0) {	/* LIMIT rows read by database */
+			if (strcasecmp(option, "limit") == 0) {	/* LIMIT rows read by database */
 				f->limitreads = ivalue;
 				if (f->limitreads < 0)
 					f->limitreads = 0;
 				continue;
 			}
-			if(strcasecmp(option,"format") == 0) {
+			if (strcasecmp(option, "format") == 0) {
 				for (j=k=0; value[k] != 0; k++) {	/* remove embedded '-' or '_' */
 					if (value[k] != '-'
 					 && value[k] != '_')
 						value[j++] = value[k];
 				}
 				value[j] = 0;
-				for(j=0; j < COB_IO_MAX; j++) {
-					if(strcasecmp(value,io_rtns[j].name) == 0) {
+				for (j=0; j < COB_IO_MAX; j++) {
+					if (strcasecmp(value,io_rtns[j].name) == 0) {
 						if (j == COB_IO_VBISAM) {
 							f->flag_vb_isam = 1;	/* Build in VB-ISAM format */
 						} else {
@@ -2249,37 +2256,37 @@ cob_set_file_format (cob_file *f, char *defstr, int updt)
 						break;
 					}
 				}
-				if(j >= COB_IO_MAX) {
-					if(strcasecmp(value,"auto") == 0) {
+				if (j >= COB_IO_MAX) {
+					if (strcasecmp (value, "auto") == 0) {
 						f->flag_auto_type = 1;
-					} else if (strcasecmp(value,"mf") == 0) {
+					} else if (strcasecmp (value, "mf") == 0) {
 						f->file_format = COB_FILE_IS_MF;
 						f->flag_set_type = 1;
 						cob_set_ls_defaults (f);
-					} else if (strcasecmp(value,"gc") == 0
-							|| strcasecmp(value,"gc3") == 0) {
+					} else if (strcasecmp (value, "gc") == 0
+							|| strcasecmp (value, "gc3") == 0) {
 						f->file_format = COB_FILE_IS_GC;
 						f->flag_set_type = 1;
 						cob_set_ls_defaults (f);
-					} else if (strcasecmp(value,"0") == 0) {
+					} else if (strcasecmp (value, "0") == 0) {
 						f->file_format = COB_FILE_IS_GCVS0;
-					} else if (strcasecmp(value,"1") == 0) {
+					} else if (strcasecmp (value, "1") == 0) {
 						f->file_format = COB_FILE_IS_GCVS1;
-					} else if (strcasecmp(value,"2") == 0) {
+					} else if (strcasecmp (value, "2") == 0) {
 						f->file_format = COB_FILE_IS_GCVS2;
-					} else if (strcasecmp(value,"3") == 0) {
+					} else if (strcasecmp (value, "3") == 0) {
 						f->file_format = COB_FILE_IS_GCVS3;
-					} else if (strcasecmp(value,"b4") == 0
-						|| strcasecmp(value,"b32") == 0) {
+					} else if (strcasecmp (value, "b4") == 0
+					        || strcasecmp (value, "b32") == 0) {
 						f->file_format = COB_FILE_IS_B32;
-					} else if (strcasecmp(value,"l4") == 0
-						|| strcasecmp(value,"l32") == 0) {
+					} else if (strcasecmp (value, "l4") == 0
+					        || strcasecmp (value, "l32") == 0) {
 						f->file_format = COB_FILE_IS_L32;
-					} else if (strcasecmp(value,"b8") == 0
-						|| strcasecmp(value,"b64") == 0) {
+					} else if (strcasecmp (value, "b8") == 0
+					        || strcasecmp (value, "b64") == 0) {
 						f->file_format = COB_FILE_IS_B64;
-					} else if (strcasecmp(value,"l8") == 0
-						|| strcasecmp(value,"l64") == 0) {
+					} else if (strcasecmp (value, "l8") == 0
+					        || strcasecmp (value, "l64") == 0) {
 						f->file_format = COB_FILE_IS_L64;
 					} else {
 						cob_runtime_warning (_("I/O routine %s is not known for %s"),
@@ -2288,21 +2295,21 @@ cob_set_file_format (cob_file *f, char *defstr, int updt)
 				}
 				continue;
 			}
-			if(strcasecmp(option,"dups_ahead") == 0) {
+			if (strcasecmp (option, "dups_ahead") == 0) {
 				f->flag_read_chk_dups = 0;
 				f->flag_read_no_02 = 0;
-				if(strcasecmp(value,"always") == 0) {
+				if (strcasecmp (value, "always") == 0) {
 					f->flag_read_chk_dups = 1;
-				} else if(strcasecmp(value,"never") == 0) {
+				} else if (strcasecmp(value, "never") == 0) {
 					f->flag_read_no_02 = 1;
-				} else if(strcasecmp(value,"default") != 0) {
+				} else if (strcasecmp (value, "default") != 0) {
 					cob_runtime_warning (_("dups_ahead option %s is not valid for %s"),
 											value,file_open_env);
 				}
 				continue;
 			}
-			if(strcasecmp(option,"schema") == 0) {
-				if (isdirname(value)) {
+			if (strcasecmp(option, "schema") == 0) {
+				if (isdirname (value)) {
 					f->xfdschema = cob_strdup (value);
 				} else {
 					f->xfdschema = cob_cache_malloc (strlen(value) + strlen(COB_SCHEMA_DIR) + 8);
@@ -2310,99 +2317,99 @@ cob_set_file_format (cob_file *f, char *defstr, int updt)
 				}
 				continue;
 			}
-			if(strcasecmp(option,"table") == 0) {
+			if (strcasecmp (option, "table") == 0) {
 				f->xfdname = cob_strdup (value);
 				continue;
 			}
-			if(keycmp(option,"big_endian") == 0) {
+			if (keycmp (option, "big_endian") == 0) {
 				f->flag_big_endian = 1;
 				f->flag_little_endian = 0;
 				continue;
 			}
-			if(keycmp(option,"little_endian") == 0) {
+			if (keycmp (option, "little_endian") == 0) {
 				f->flag_big_endian = 0;
 				f->flag_little_endian = 1;
 				continue;
 			}
-			if(keycmp(option,"isnodat") == 0) {
+			if (keycmp (option, "isnodat") == 0) {
 				f->flag_isnodat = settrue;
 				continue;
 			}
-			if(keycmp(option,"retry_forever") == 0) {
+			if (keycmp (option, "retry_forever") == 0) {
 				f->dflt_retry = COB_RETRY_FOREVER;
 				continue;
 			}
-			if(keycmp(option,"retry_never") == 0) {
+			if (keycmp (option, "retry_never") == 0) {
 				f->dflt_retry = COB_RETRY_NEVER;
 				continue;
 			}
-			if(keycmp(option,"ignore_lock") == 0) {
+			if (keycmp (option, "ignore_lock") == 0) {
 				f->dflt_retry |= COB_IGNORE_LOCK;
 				continue;
 			}
-			if(keycmp(option,"advancing_lock") == 0) {
+			if (keycmp (option, "advancing_lock") == 0) {
 				f->dflt_retry |= COB_ADVANCING_LOCK;
 				continue;
 			}
-			if(keycmp(option,"share_all") == 0) {
+			if (keycmp (option, "share_all") == 0) {
 				f->dflt_share = COB_SHARE_ALL_OTHER;
 				f->share_mode = f->dflt_share;
 				continue;
 			}
-			if(keycmp(option,"share_read") == 0) {
+			if (keycmp (option, "share_read") == 0) {
 				f->dflt_share = COB_SHARE_READ_ONLY;
 				f->share_mode = f->dflt_share;
 				continue;
 			}
-			if(keycmp(option,"share_no") == 0) {
+			if (keycmp (option, "share_no") == 0) {
 				f->dflt_share = COB_SHARE_NO_OTHER;
 				f->share_mode = f->dflt_share;
 				continue;
 			}
 			if (f->organization == COB_ORG_LINE_SEQUENTIAL) {
-				if(keycmp(option,"ls_nulls") == 0) {
+				if (keycmp (option, "ls_nulls") == 0) {
 					if(settrue)
 						f->file_features |= COB_FILE_LS_NULLS;
 					else
 						f->file_features &= ~COB_FILE_LS_NULLS;
 					continue;
 				}
-				if(keycmp(option,"ls_fixed") == 0) {
+				if (keycmp (option, "ls_fixed") == 0) {
 					if(settrue)
 						f->file_features |= COB_FILE_LS_FIXED;
 					else
 						f->file_features &= ~COB_FILE_LS_FIXED;
 					continue;
 				}
-				if(keycmp(option,"ls_split") == 0) {
+				if (keycmp (option, "ls_split") == 0) {
 					if(settrue)
 						f->file_features |= COB_FILE_LS_SPLIT;
 					else
 						f->file_features &= ~COB_FILE_LS_SPLIT;
 					continue;
 				}
-				if(keycmp(option,"ls_validate") == 0) {
+				if (keycmp (option, "ls_validate") == 0) {
 					if(settrue)
 						f->file_features |= COB_FILE_LS_VALIDATE;
 					else
 						f->file_features &= ~COB_FILE_LS_VALIDATE;
 					continue;
 				}
-				if(keycmp(option,"ls_instab") == 0) {
+				if (keycmp (option," ls_instab") == 0) {
 					if(settrue)
 						f->flag_ls_instab = 1;
 					else
 						f->flag_ls_instab = 0;
 					continue;
 				}
-				if(strcasecmp(option,"crlf") == 0) {
+				if (strcasecmp (option, "crlf") == 0) {
 					if(settrue)
 						f->file_features |= COB_FILE_LS_CRLF;
 					else
 						f->file_features &= ~COB_FILE_LS_CRLF;
 					continue;
 				}
-				if(strcasecmp(option,"lf") == 0) {
+				if (strcasecmp (option, "lf") == 0) {
 					if(settrue) {
 						f->file_features &= ~COB_FILE_LS_CRLF;
 						f->file_features |= COB_FILE_LS_LF;
@@ -2411,21 +2418,21 @@ cob_set_file_format (cob_file *f, char *defstr, int updt)
 					}
 					continue;
 				}
-				if(strcasecmp(option,"mf") == 0) {	/* LS file like MF would do */
+				if (strcasecmp (option, "mf") == 0) {	/* LS file like MF would do */
 					f->flag_set_type = 1;
 					f->file_format = COB_FILE_IS_MF;
 					cob_set_ls_defaults (f);
 					continue;
 				}
-				if (strcasecmp(option,"gc") == 0
-				 || strcasecmp(option,"gc3") == 0) {	/* LS file like GnuCOBOL used to do */
+				if (strcasecmp (option, "gc") == 0
+				 || strcasecmp (option, "gc3") == 0) {	/* LS file like GnuCOBOL used to do */
 					f->flag_set_type = 1;
 					f->file_format = COB_FILE_IS_GC;
 					cob_set_ls_defaults (f);
 					continue;
 				}
 			}
-			if(strcasecmp(option,"mf") == 0) {
+			if (strcasecmp (option, "mf") == 0) {
 				if(settrue) {
 					f->file_format = COB_FILE_IS_MF;
 					f->flag_set_type = 1;
@@ -2434,8 +2441,8 @@ cob_set_file_format (cob_file *f, char *defstr, int updt)
 				}
 				continue;
 			}
-			if (strcasecmp(option,"gc") == 0
-			 || strcasecmp(option,"gc3") == 0) {
+			if (strcasecmp (option, "gc") == 0
+			 || strcasecmp (option, "gc3") == 0) {
 				if(settrue) {
 					f->file_format = COB_FILE_IS_GC;
 #ifdef WITH_VARSEQ 
@@ -2561,12 +2568,12 @@ cob_set_file_format (cob_file *f, char *defstr, int updt)
 						f->flag_redo_keydef = 1;
 					}
 
-					if (toupper(value[0]) == 'Y'
+					if ((value[0] == 'Y' || value[0] == 'y')
 					 && f->flag_keycheck
 					 && !updt
 					 && !f->keys[idx].tf_duplicates)
 						break;
-					if (toupper(value[0]) == 'Y')
+					if (value[0] == 'Y' || value[0] == 'y')
 						f->keys[idx].tf_duplicates = 1;
 					else
 						f->keys[idx].tf_duplicates = 0;

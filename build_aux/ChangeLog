@@ -1,4 +1,16 @@
 
+2022-06-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* config.guess, config.rpath, install-sh, mkinstalldirs, texinfo.tex:
+	  updated to recent versions from
+	  git.savannah.gnu.org/gitweb/?p=config.git
+
+2022-05-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* create_mingw_bindist.sh: explicit call cobc.exe in the generated
+	  set_env.cmd to allowwrapper scripts cobc.cmd/cobc.bat to call it;
+	  add (untested) option to use this in MSYS2 builds
+
 2022-04-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* bootstrap: handle strange paths, better output for out-of-tree-builds

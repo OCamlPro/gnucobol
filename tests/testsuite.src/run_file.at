@@ -4894,7 +4894,9 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
+# disabling the check for "something leaves the section" - as this is
+# guaranteed to happen with this PERFORM THROUGH
+AT_CHECK([$COMPILE -fno-section-exit-check prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
@@ -10313,7 +10315,7 @@ AFTER READ PREV -> RECORD-5                           .
 AT_CLEANUP
 
 
-AT_SETUP([EXTFH: Multi keys test])
+AT_SETUP([EXTFH: INDEXED with multiple keys])
 AT_KEYWORDS([runfile EXTFH])
 
 AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
@@ -12949,7 +12951,7 @@ AT_CAPTURE_FILE(./trace.txt)
 
 AT_DATA([reference],
 [Source: 'prog.cob'
-Program-Id: prog
+Program-Id:  prog
  Line:    279    Entry: prog
  Line:    281Paragraph: MAINFILE
  Line:    282           OPEN
@@ -14404,7 +14406,7 @@ AT_CAPTURE_FILE(./trace.txt)
 
 AT_DATA([reference],
 [Source: 'prog.cob'
-Program-Id: prog
+Program-Id:  prog
  Line:    290     Entry: prog
  Line:    292 Paragraph: MAINFILE
  Line:    293            OPEN

@@ -465,7 +465,7 @@ static struct config_tbl gc_conf[] = {
 	{"COB_RETRY_TIMES","retry_times",		"0",NULL,GRP_FILE,ENV_UINT,SETPOS(cob_retry_times)},
 	{"COB_RETRY_SECONDS","retry_seconds",	"0",NULL,GRP_FILE,ENV_UINT,SETPOS(cob_retry_seconds)},
 	{"COB_SORT_CHUNK","sort_chunk",		"256K",	NULL,GRP_FILE,ENV_SIZE,SETPOS(cob_sort_chunk),(128 * 1024),(16 * 1024 * 1024)},
-	{"COB_SORT_MEMORY","sort_memory",	"128M",	NULL,GRP_FILE,ENV_SIZE,SETPOS(cob_sort_memory),(1024*1024),4294967294 /* max. guaranteed - 1 */},
+	{"COB_SORT_MEMORY","sort_memory",	"128M",	NULL,GRP_FILE,ENV_SIZE,SETPOS(cob_sort_memory),(1024*1024),4294967294UL /* max. guaranteed - 1 */},
 	{"COB_SYNC","sync",			"false",syncopts,GRP_FILE,ENV_BOOL,SETPOS(cob_do_sync)},
     {"COB_KEYCHECK","keycheck",     "on",NULL,GRP_FILE,ENV_BOOL,SETPOS(cob_keycheck)},
     {"COB_FILE_DICTIONARY","file_dictionary",     "min",dict_opts,GRP_FILE,ENV_UINT|ENV_ENUMVAL,SETPOS(cob_file_dict),0,3},
@@ -2861,7 +2861,7 @@ cob_trace_prep (void)
 		if (COB_MODULE_PTR->module_type == COB_MODULE_TYPE_FUNCTION) {
 			fprintf (cobsetptr->cob_trace_file, "Function-Id: %s\n", cob_last_progid);
 		} else {
-			fprintf (cobsetptr->cob_trace_file, "Program-Id: %s\n", cob_last_progid);
+			fprintf (cobsetptr->cob_trace_file, "Program-Id:  %s\n", cob_last_progid);
 		}
 	}
 	return 0;
@@ -2873,13 +2873,15 @@ cob_trace_print (char *val)
 	int	i;
 	int last_pos = (int)(strlen (cobsetptr->cob_trace_format) - 1);
 
-	cob_get_source_line ();
+	/* note: only executed after cob_trace_prep (), so
+	         call to cob_get_source_line () already done */
 	for (i=0; cobsetptr->cob_trace_format[i] != 0; i++) {
 		if (cobsetptr->cob_trace_format[i] == '%') {
 			i++;
-			if (toupper(cobsetptr->cob_trace_format[i]) == 'P') {
-				if (COB_MODULE_PTR 
-				 && COB_MODULE_PTR->module_type == COB_MODULE_TYPE_FUNCTION) {
+			switch (cobsetptr->cob_trace_format[i]) {
+			case 'P':
+			case 'p':
+				if (COB_MODULE_PTR && COB_MODULE_PTR->module_type == COB_MODULE_TYPE_FUNCTION) {
 					if (i != last_pos) {
 						fprintf (cobsetptr->cob_trace_file, "Function-Id: %-16s", cob_last_progid);
 					} else {
@@ -2887,32 +2889,40 @@ cob_trace_print (char *val)
 					}
 				} else {
 					if (i != last_pos) {
-						fprintf (cobsetptr->cob_trace_file, "Program-Id: %-16s", cob_last_progid);
+						fprintf (cobsetptr->cob_trace_file, "Program-Id:  %-16s", cob_last_progid);
 					} else {
-						fprintf (cobsetptr->cob_trace_file, "Program-Id: %s", cob_last_progid);
+						fprintf (cobsetptr->cob_trace_file, "Program-Id:  %s", cob_last_progid);
 					}
 				}
-			} else
-			if (toupper(cobsetptr->cob_trace_format[i]) == 'I') {
+				break;
+			case 'I':
+			case 'i':
 				fprintf (cobsetptr->cob_trace_file, "%s", cob_last_progid);
-			} else
-			if (toupper(cobsetptr->cob_trace_format[i]) == 'L') {
+				break;
+			case 'L':
+			case 'l':
 				fprintf (cobsetptr->cob_trace_file, "%6u", cob_source_line);
-			} else
-			if (toupper(cobsetptr->cob_trace_format[i]) == 'S') {
+				break;
+			case 'S':
+			case 's':
 				if (i != last_pos) {
 					fprintf (cobsetptr->cob_trace_file, "%-42.42s", val);
 				} else {
 					fprintf (cobsetptr->cob_trace_file, "%s", val);
 				}
-			} else
-			if (toupper(cobsetptr->cob_trace_format[i]) == 'F') {
+				break;
+			case 'F':
+			case 'f':
 				if (i != last_pos) {
 					fprintf (cobsetptr->cob_trace_file, "Source: %-*.*s",
 						-COB_MAX_NAMELEN, COB_MAX_NAMELEN, cob_last_sfile);
 				} else {
 					fprintf (cobsetptr->cob_trace_file, "Source: %s", cob_last_sfile);
 				}
+				break;
+			default:
+				fputc ('%', cobsetptr->cob_trace_file);
+				fputc (cobsetptr->cob_trace_format[i], cobsetptr->cob_trace_file);
 			}
 		} else {
 			fputc (cobsetptr->cob_trace_format[i], cobsetptr->cob_trace_file);
@@ -2996,30 +3006,6 @@ cob_trace_exit (const char *name)
 }
 
 void
-cob_trace_stmt (const char *stmt_name)
-{
-	enum cob_statement stmt;
-
-	if (!stmt_name) {
-		stmt = STMT_UNKNOWN;
-#define COB_STATEMENT(ename,str) \
-	} else if (strcmp (str, stmt_name) == 0) { \
-		stmt = ename;
-#include "statement.def"	/* located and installed next to common.h */
-#undef COB_STATEMENT
-	}  else {
-		cob_runtime_warning ("not handled statement: %s", stmt_name);
-		stmt = STMT_UNKNOWN;
-	}
-
-	/* compat: add to module structure */
-	COB_MODULE_PTR->module_stmt = stmt;
-
-	/* actual tracing, if activated */
-	cob_trace_statement (stmt);
-}
-
-void
 cob_trace_statement (const enum cob_statement stmt)
 {
 	/* actual tracing, if activated */
@@ -3033,6 +3019,15 @@ cob_trace_statement (const enum cob_statement stmt)
 			stmt != STMT_UNKNOWN ? cob_statement_name[stmt] : _("unknown"));
 		cob_trace_print (val);
 	}
+}
+
+void
+cob_nop (void)
+{
+	/* this is only an empty function, a call to it may be inserted by cobc
+	   to force some optimizations in the C compiler to not be triggered in
+	   a quite portable way */
+	;
 }
 
 void
@@ -4159,6 +4154,14 @@ cob_table_sort (cob_field *f, const int n)
 }
 
 /* Run-time error checking */
+
+void
+cob_check_beyond_exit (const unsigned char *name)
+{
+	/* possibly allow to lower this to a runtime warning later */
+	cob_runtime_error (_("code execution leaving %s"), name);
+	cob_hard_failure ();
+}
 
 void
 cob_check_based (const unsigned char *x, const char *name)
@@ -5952,6 +5955,24 @@ cob_sys_error_proc (const void *dispo, const void *pptr)
 }
 
 int
+cob_sys_runtime_error_proc (const void *err_flags, const void *err_msg)
+{
+	const char *msg = (const char*)err_msg;
+
+	COB_CHK_PARMS (CBL_RUNTIME_ERROR, 2);
+	COB_UNUSED (err_flags);
+
+	if (msg && msg[0]) {
+		cob_runtime_error ("%s: %s",
+			_("Program abandoned at user request"), msg);
+	} else {
+		cob_runtime_error ("%s",
+			_("Program abandoned at user request"));
+	}
+	cob_hard_failure ();
+}
+
+int
 cob_sys_system (const void *cmdline)
 {
 	COB_CHK_PARMS (SYSTEM, 1);
@@ -6420,9 +6441,7 @@ cob_sys_toupper (void *p1, const int length)
 
 	if (length > 0) {
 		for (n = 0; n < (size_t)length; ++n) {
-			if (islower (data[n])) {
-				data[n] = (cob_u8_t)toupper (data[n]);
-			}
+			data[n] = (cob_u8_t)toupper (data[n]);
 		}
 	}
 	return 0;
@@ -6440,9 +6459,7 @@ cob_sys_tolower (void *p1, const int length)
 
 	if (length > 0) {
 		for (n = 0; n < (size_t)length; ++n) {
-			if (isupper (data[n])) {
-				data[n] = (cob_u8_t)tolower (data[n]);
-			}
+			data[n] = (cob_u8_t)tolower (data[n]);
 		}
 	}
 	return 0;
@@ -7531,7 +7548,7 @@ set_config_val (char *value, int pos)
 				} else {
 					/* use max. guaranteed value for unsigned long
 					   to raise a warning as max value is limit to one less */
-					numval = 4294967295;
+					numval = 4294967295UL;
 				}
 				ptr++;
 				break;
@@ -7541,7 +7558,7 @@ set_config_val (char *value, int pos)
 				} else {
 					/* use max. guaranteed value for unsigned long
 					   to raise a warning as max value is limit to one less */
-					numval = 4294967295;
+					numval = 4294967295UL;
 				}
 				ptr++;
 				break;
@@ -8506,11 +8523,10 @@ cob_fatal_error (const enum cob_fatal_error fatal_error)
 		cob_runtime_error (_("stack overflow, possible PERFORM depth exceeded"));
 		break;
 	/* LCOV_EXCL_STOP */
-	/* LCOV_EXCL_START */
+	/* Note: can be simply tested (GO TO DECLARATIVES); therefore no exclusion */
 	case COB_FERROR_GLOBAL:
 		cob_runtime_error (_("invalid entry/exit in GLOBAL USE procedure"));
 		break;
-	/* LCOV_EXCL_STOP */
 	/* LCOV_EXCL_START */
 	case COB_FERROR_MEMORY:
 		cob_runtime_error (_("unable to allocate memory"));
@@ -10708,12 +10724,13 @@ cob_debug_open (void)
 
 		/* debugging flags (not include in file name) */
 		if (debug_env[i + 1] == '=') {
-			log_opt = toupper (debug_env[i]);
+			log_opt = debug_env[i];
 			i += 2;
 
 			switch (log_opt) {
 
 			case 'M':	/* module to debug */
+			case 'm':
 				for (j = 0; j < DEBUG_MOD_LEN; i++) {
 					if (debug_env[i] == ','
 					 || debug_env[i] == ';'
@@ -10736,18 +10753,23 @@ cob_debug_open (void)
 				break;
 
 			case 'L':	/* logging options */
-				log_opt = toupper (debug_env[i]);
+			case 'l':
+				log_opt = debug_env[i];
 				switch (log_opt) {
 				case 'T':	/* trace */
+				case 't':
 					cob_debug_log_time = cob_debug_level = 3;
 					break;
 				case 'W':	/* warnings */
+				case 'w':
 					cob_debug_level = 2;
 					break;
 				case 'N':	/* normal */
+				case 'n':
 					cob_debug_level = 0;
 					break;
 				case 'A':	/* all */
+				case 'a':
 					cob_debug_level = 9;
 					break;
 				default:	/* Unknown log option, just ignored for now */
@@ -10757,6 +10779,7 @@ cob_debug_open (void)
 				break;
 
 			case 'O':	/* output name for logfile */
+			case 'o':
 				for (j = 0; j < COB_SMALL_MAX; i++) {
 					if (debug_env[i] == ','
 					 || debug_env[i] == ';'

@@ -105,7 +105,7 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("		cob_field *content, unsigned int is_suppressed,");
 		output_storage ("		cob_ml_tree *children, cob_ml_tree *sibling)");
 		output_storage ("{");
-		output_storage ("       tree->name = name;");
+		output_storage ("	tree->name = name;");
 		output_storage ("	tree->attrs = attrs;");
 		output_storage ("	tree->content = content;");
 		output_storage ("	tree->is_suppressed = is_suppressed;");
@@ -241,7 +241,7 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("{");
 		output_storage ("	register const unsigned char	*p;");
 		output_storage ("	register int	n;");
-		output_storage ("	register int	val = size - 1;");
+		output_storage ("	register int 	val = size - 1;");
 		output_storage ("	p = (const unsigned char *)data;");
 		output_storage ("	for (n = 0; n < val; ++n, ++p) {");
 		output_storage ("		if (*p > '0' && *p <= '9')");

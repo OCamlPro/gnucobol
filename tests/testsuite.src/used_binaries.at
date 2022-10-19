@@ -1,4 +1,4 @@
-## Copyright (C) 2014-2021 Free Software Foundation, Inc.
+## Copyright (C) 2014-2022 Free Software Foundation, Inc.
 ## Written by Simon Sobisch, Brian Tiffin
 ##
 ## This file is part of GnuCOBOL.
@@ -252,13 +252,13 @@ AT_CHECK([$COBC -I sub/copy prog.cob -ext=cpy -o prog.i], [0], [], [])
 AT_CHECK([$COBC -x prog.i -o prog$COB_EXE_EXT], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog$COB_EXE_EXT], [0], [bluBb], [])
 AT_CHECK([$COBC -x prog.i -fgen-c-line-directives -fgen-c-labels -save-temps], [0], [], [])
-AT_CHECK([grep 'prog.i'   prog.c], [0], ignore, [])
-AT_CHECK([grep 'prog.i'   prog.c | grep '#line'], [1], ignore, ignore)
-# TODO revisit later (comparing with 3.1):
-#AT_CHECK([grep 'prog.cob' prog.c | grep '#line'], [0], ignore, [])
-#AT_CHECK([grep 'PROC.cpy' prog.c | grep '#line'], [0], ignore, [])
-AT_CHECK([grep 'ENTRY_PROG:'        prog.c], [0], ignore, [])
-AT_CHECK([grep 'SECTION_END__PROC:' prog.c], [0], ignore, [])
+AT_CHECK([$GREP 'prog.i'   prog.c], [0], ignore, [])
+AT_CHECK([$GREP 'prog.i'   prog.c | $GREP '#line'], [1], ignore, ignore)
+# TODO revisit later (comparing with 3.2):
+#AT_CHECK([$GREP 'prog.cob' prog.c | $GREP '#line'], [0], ignore, [])
+#AT_CHECK([$GREP 'PROC.cpy' prog.c | $GREP '#line'], [0], ignore, [])
+AT_CHECK([$GREP 'ENTRY_PROG:'        prog.c], [0], ignore, [])
+AT_CHECK([$GREP 'SECTION_END__PROC:' prog.c], [0], ignore, [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [bluBb], [])
 AT_CLEANUP
 
@@ -463,6 +463,7 @@ AT_CHECK([$COBCRUN --help], [0], [ignore], [])
 AT_CHECK([$COBCRUN --info], [0], [ignore], [])
 AT_CHECK([$COBCRUN -v --info], [0], [ignore], [])
 AT_CHECK([$COBCRUN -q --info], [0], [ignore], [])
+AT_CHECK([$COBCRUN --dumpversion], [0], [ignore], [])
 AT_CLEANUP
 
 
@@ -509,6 +510,10 @@ AT_CLEANUP
 AT_SETUP([cobcrun -M DSO entry argument])
 AT_KEYWORDS([runmisc preload])
 
+AT_CHECK([$COBCRUN -M "" nope], [1], [],
+[invalid module argument ''
+])
+
 AT_DATA([callee.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      callee.
@@ -550,6 +555,20 @@ AT_DATA([caller.cob], [
        END PROGRAM inside.
 ])
 
+AT_DATA([caller2.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      inside2.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 EXT-VAR       PIC X(5) EXTERNAL.
+       01 CLA-VAR       PIC X(5).
+       PROCEDURE        DIVISION.
+           DISPLAY "Aloha2".
+           CALL "inside".
+           GOBACK. *> never gets here
+       END PROGRAM inside2.
+])
+
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE caller.cob], [0], [], [])
 AT_CHECK([$COBCRUN -M ./caller inside again], [0],
@@ -558,11 +577,19 @@ World
 again
 ], [])
 
+AT_CHECK([$COMPILE_MODULE caller2.cob], [0], [], [])
+AT_CHECK([COB_PRE_LOAD=caller2 $COBCRUN -M ./caller inside2 again], [0],
+[Aloha2
+Aloha
+World
+again
+], [])
+
 AT_CLEANUP
 
 
 ## FIXME: missing tests:
-## * combining $COBCRUN -M with COB_PRE_LOAD / COB_LIBRARY_PATH
+## * combining $COBCRUN -M with COB_PRE_LOAD + COB_LIBRARY_PATH
 ## * $COBCRUN -m
 
 
@@ -811,11 +838,20 @@ AT_DATA([prog.cob], [
            STOP RUN WITH NORMAL STATUS.
 ])
 
-AT_CHECK([cat prog.cob | $COMPILE -], [0], [], [])
+AT_CHECK([cat prog.cob | $COMPILE_MODULE -], [0], [], [],
+# Previous test failed run again with full verbose output
+# leading to an (expected) fail, but with decent messages
+[AT_CHECK([cat prog.cob | $COMPILE_MODULE -vv -], [0], [])]
+)
+AT_CHECK([$COBCRUN a], [0], [], [])
+
+AT_CHECK([cat prog.cob | $COMPILE -], [0], [], [],
+# more to debug ...
+[AT_CHECK([cat prog.cob | $COMPILE -vv -], [0], [])]
+)
 AT_CHECK([$COBCRUN_DIRECT ./a.out], [0], [], [])
 
-AT_CHECK([cat prog.cob | $COMPILE_MODULE -], [0], [], [])
-AT_CHECK([$COBCRUN a], [0], [], [])
+
 
 AT_CLEANUP
 
@@ -831,7 +867,14 @@ AT_DATA([prog.cob], [
            STOP RUN WITH NORMAL STATUS.
 ])
 
-AT_CHECK([cat prog.cob | $COMPILE -j -], [0], [job], [])
-AT_CHECK([cat prog.cob | $COMPILE_MODULE -j -], [0], [job], [])
+AT_CHECK([cat prog.cob | $COMPILE -j -], [0], [job], [],
+# Previous test failed run again with full verbose output
+# leading to an (expected) fail, but with decent messages
+[AT_CHECK([cat prog.cob | $COMPILE -vv -j -], [0], [])]
+)
+AT_CHECK([cat prog.cob | $COMPILE_MODULE -j -], [0], [job], [],
+# more to debug ...
+[AT_CHECK([cat prog.cob | $COMPILE_MODULE -vv -j -], [0], [])]
+)
 
 AT_CLEANUP

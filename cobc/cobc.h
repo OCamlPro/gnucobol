@@ -694,5 +694,7 @@ extern void		deactivate_system_name (const char *, const char *, const int);
 extern void		activate_system_name (const char *, const char *, const int);
 
 extern int		cb_strcasecmp (const void *, const void *);
+extern unsigned char	cb_toupper (const unsigned char);
+extern unsigned char	cb_tolower (const unsigned char);
 
 #endif /* CB_COBC_H */

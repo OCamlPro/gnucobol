@@ -122,6 +122,7 @@ AH_TEMPLATE([USE_LIBDL], [Use system dynamic loader])
 AH_TEMPLATE([HAVE_DLADDR], [Has dladdr function])
 AH_TEMPLATE([WITH_VARSEQ], [Define variable sequential file format])
 AH_TEMPLATE([HAVE_ATTRIBUTE_ALIGNED], [Has __attribute__((aligned))])
+AH_TEMPLATE([HAVE_ATTRIBUTE_PURE], [Has __attribute__((pure))])
 AH_TEMPLATE([HAVE_TIMEZONE], [Has timezone variable])
 AH_TEMPLATE([COB_OBJECT_EXT], [Object extension])
 AH_TEMPLATE([COB_MODULE_EXT], [Module extension])
@@ -352,6 +353,9 @@ AC_PROG_CC([gcc icc xlc cc])
 dnl no explict usage of CPP var
 dnl AC_PROG_CPP
 
+# save what we have so far as it is quite "constant"
+AC_CACHE_SAVE
+
 AC_USE_SYSTEM_EXTENSIONS
 #
 ## general flags for compiler and linker and tests for those
@@ -467,6 +471,8 @@ AC_PROG_INSTALL
 AC_PROG_MAKE_SET
 AC_LIB_RPATH
 
+# more things to save...
+AC_CACHE_SAVE
 
 # Checks for header files.
 dnl entries only used from external includes -> likely no need to check here
@@ -487,25 +493,25 @@ AC_CHECK_TYPES([sig_atomic_t], [], [], [[#include <signal.h>]])
 
 dnl Note: Don't use AC_C_INLINE here. We need the value.
 
-AC_MSG_CHECKING([for inline keyword])
-for cob_keyw in __inline __inline__ inline
-do
+AC_CACHE_CHECK([for inline keyword], gc_cv_keyword_inline, [
+  for gc_cv_keyword_inline in __inline __inline__ inline ""
+  do
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 		#ifndef __cplusplus
 		typedef int foo_t;
-		static $cob_keyw foo_t foo () { return 0; }
+		static $gc_cv_keyword_inline foo_t foo () { return 0; }
 		#endif]], [[
 		#ifndef __cplusplus
 		return foo ();
 		#else
 		choke me
 		#endif]])],
-		[AC_DEFINE_UNQUOTED([COB_KEYWORD_INLINE], [$cob_keyw]) break],
+		[break],
 		[],
 		[])
-done
-AC_MSG_RESULT([$cob_keyw])
-unset cob_keyw
+  done]
+)
+  AC_DEFINE_UNQUOTED([COB_KEYWORD_INLINE], [$gc_cv_keyword_inline])
 
 
 # Checks for library functions.
@@ -516,22 +522,34 @@ AC_CHECK_FUNCS([memmove memset setlocale fcntl strerror strcasecmp \
 	setenv strcoll flockfile])
 
 # Check for timezone
-AC_MSG_CHECKING([for timezone variable access])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <time.h>]],
+AC_CACHE_CHECK([for timezone variable access], gc_cv_time_timezone, [
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <time.h>]],
 	[[timezone = 3600;]])],
-	[AC_DEFINE([HAVE_TIMEZONE], [1])
-	 AC_MSG_RESULT([yes])],
-	[AC_MSG_RESULT([no])])
+	[gc_cv_time_timezone=yes],
+	[gc_cv_time_timezone=no]
+  )]
+)
+  if test "$gc_cv_time_timezone" = yes; then
+	AC_DEFINE([HAVE_TIMEZONE], [1])
+  fi
 
 # Check for designated initializers
-AC_MSG_CHECKING([for designated initializers])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdio.h>]],
+AC_CACHE_CHECK([for designated initializers], gc_cv_designated_inits, [
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdio.h>]],
 	[[static const unsigned char valid_char[256] = {
 		@<:@'0'@:>@ = 1,
 		@<:@'1'@:>@ = 1 };
 	]])],
-	[AC_DEFINE([HAVE_DESIGNATED_INITS], [1]) AC_MSG_RESULT([yes])],
-	[AC_MSG_RESULT([no])])
+	[gc_cv_designated_inits=yes],
+	[gc_cv_designated_inits=no]
+  )]
+)
+  if test "$gc_cv_designated_inits" = yes; then
+	AC_DEFINE([HAVE_DESIGNATED_INITS], [1])
+  fi
+
+# more things to save...
+AC_CACHE_SAVE
 
 # Check for the compiler used
 dnl COB_USES_GCC="no"
@@ -1217,7 +1235,8 @@ AC_ARG_WITH([curses],
   esac],
   [USE_CURSES="check"])
 
-curr_libs="$LIBS" # AC_CHECK_LIB adds anything found into LIBS
+curr_libs="$LIBS" # backup current LIBS for later
+
 if test "x$CURSES_LIBS" != x; then
 	LIBS="$CURSES_LIBS $LIBS"
 	AC_MSG_CHECKING([if linking initscr works with CURSES_LIBS, given as "$CURSES_LIBS"])
@@ -1230,53 +1249,50 @@ if test "x$CURSES_LIBS" != x; then
 	AS_IF([test "$USE_CURSES" = check -o "$USE_CURSES" = no], [
 	  AC_MSG_ERROR([[explicit selection with --with-curses=ARG necessary, as CURSES_LIBS is set]])
 	])
-	curses_def=AS_TR_CPP([HAVE_LIB$USE_CURSES])
-	AC_DEFINE_UNQUOTED($curses_def)
+	LIBS=$"curr_libs"
 fi
 
 dnl note: when switching to $ncurses all checks are done correctly but no generation in config.h is done
-libfound=false
-if test "x$CURSES_LIBS" = x; then
-  if test "$USE_CURSES" = "ncurses" -o "$USE_CURSES" = "check"; then
-    AC_CHECK_LIB([ncurses], [initscr], [libfound=true],
-      [AS_IF([test "$USE_CURSES" != check], [USE_CURSES="missing_lib"])])
-  fi
-fi
-if test "$USE_CURSES" = "ncurses" -o $libfound = true; then
-  AC_CHECK_HEADERS([ncurses/ncurses.h], [USE_CURSES="ncurses"],
-    [AC_CHECK_HEADERS([ncurses/curses.h], [USE_CURSES="ncurses"],
-      [AS_IF([test "$USE_CURSES" != check],
-        [USE_CURSES="missing_header"],
-        [LIBS=$curr_libs]) ]) ])
-  AS_IF([test $USE_CURSES="ncurses" -a "x$CURSES_LIBS" = x],
-    [CURSES_LIBS="-l$USE_CURSES"])
-fi
-
-libfound=false
 if test "x$CURSES_LIBS" = x; then
   if test "$USE_CURSES" = "ncursesw" -o "$USE_CURSES" = "check"; then
-    AC_CHECK_LIB([ncursesw], [initscr], [libfound=true],
+    AC_CHECK_LIB([ncursesw], [initscr], [true],
       [AS_IF([test "$USE_CURSES" != check], [USE_CURSES="missing_lib"])])
   fi
 fi
-if test "$USE_CURSES" = "ncursesw" -o $libfound = true; then
+if test "$USE_CURSES" = "ncursesw" -o "x$ac_cv_lib_ncursesw_initscr" = xyes; then
   AC_CHECK_HEADERS([ncursesw/ncurses.h], [USE_CURSES="ncursesw"],
     [AC_CHECK_HEADERS([ncursesw/curses.h], [USE_CURSES="ncursesw"],
-      [AS_IF([test "$USE_CURSES" != check],
-        [USE_CURSES="missing_header"],
-        [LIBS=$curr_libs]) ]) ])
+      dnl note: at least OpenBSD has ncursesw only with only ncurses.h in default header directory
+      [AC_CHECK_HEADERS([ncurses.h], [USE_CURSES="ncursesw"],
+        [AS_IF([test "$USE_CURSES" != check],
+          [USE_CURSES="missing_header"]) ]) ]) ])
   AS_IF([test $USE_CURSES="ncursesw" -a "x$CURSES_LIBS" = x],
     [CURSES_LIBS="-l$USE_CURSES"])
 fi
 
-libfound=false
 if test "x$CURSES_LIBS" = x; then
-  if test "$USE_CURSES" = "pdcurses" -o "$USE_CURSES" = "check"; then
-    AC_CHECK_LIB([pdcurses], [initscr], [libfound=true],
+  if test "$USE_CURSES" = "ncurses" -o "$USE_CURSES" = "check"; then
+    AC_CHECK_LIB([ncurses], [initscr], [true],
       [AS_IF([test "$USE_CURSES" != check], [USE_CURSES="missing_lib"])])
   fi
 fi
-if test "$USE_CURSES" = "pdcurses" -o $libfound = true; then
+if test "$USE_CURSES" = "ncurses" -o "x$ac_cv_lib_ncurses_initscr" = xyes; then
+  AC_CHECK_HEADERS([ncurses/ncurses.h], [USE_CURSES="ncurses"],
+    [AC_CHECK_HEADERS([ncurses/curses.h], [USE_CURSES="ncurses"],
+      [AC_CHECK_HEADERS([ncurses.h], [USE_CURSES="ncurses"],
+        [AS_IF([test "$USE_CURSES" != check],
+          [USE_CURSES="missing_header"]) ]) ]) ])
+  AS_IF([test $USE_CURSES="ncurses" -a "x$CURSES_LIBS" = x],
+    [CURSES_LIBS="-l$USE_CURSES"])
+fi
+
+if test "x$CURSES_LIBS" = x; then
+  if test "$USE_CURSES" = "pdcurses" -o "$USE_CURSES" = "check"; then
+    AC_CHECK_LIB([pdcurses], [initscr], [true],
+      [AS_IF([test "$USE_CURSES" != check], [USE_CURSES="missing_lib"])])
+  fi
+fi
+if test "$USE_CURSES" = "pdcurses" -o "x$ac_cv_lib_pdcurses_initscr" = xyes; then
   AC_CHECK_HEADERS([pdcurses.h], [USE_CURSES="pdcurses"],
     [AC_CHECK_HEADERS([curses.h], [USE_CURSES="pdcurses"],
       [AS_IF([test "$USE_CURSES" != check], [USE_CURSES="missing_header"]) ]) ])
@@ -1284,16 +1300,15 @@ if test "$USE_CURSES" = "pdcurses" -o $libfound = true; then
     [CURSES_LIBS="-l$USE_CURSES"])
 fi
 
-libfound=false
 if test "x$CURSES_LIBS" = x; then
   if test "$USE_CURSES" = "xcurses" -o "$USE_CURSES" = "check"; then
     # consider using xcurses-config
     # note: the library name is actually with an upper-case XC:
-    AC_CHECK_LIB([XCurses], [initscr], [libfound=true],
+    AC_CHECK_LIB([XCurses], [initscr], [true],
       [AS_IF([test "$USE_CURSES" != check], [USE_CURSES="missing_lib"])])
   fi
 fi
-if test "$USE_CURSES" = "xcurses" -o $libfound = true; then
+if test "$USE_CURSES" = "xcurses" -o "x$ac_cv_lib_XCurses_initscr" = xyes; then
   AC_CHECK_HEADERS([xcurses.h], [USE_CURSES="xcurses"],
     [AC_CHECK_HEADERS([xcurses/curses.h], [USE_CURSES="xcurses"],
       [AS_IF([test "$USE_CURSES" != check], [USE_CURSES="missing_header"]) ]) ])
@@ -1302,14 +1317,13 @@ if test "$USE_CURSES" = "xcurses" -o $libfound = true; then
     [CURSES_LIBS="-lXCurses"])
 fi
 
-libfound=false
 if test "x$CURSES_LIBS" = x; then
   if test "$USE_CURSES" = "curses" -o "$USE_CURSES" = "check"; then
-    AC_CHECK_LIB([curses], [initscr], [],
+    AC_CHECK_LIB([curses], [initscr], [true],
       [AS_IF([test "$USE_CURSES" != check], [USE_CURSES="missing_lib"])])
   fi
 fi
-if test "$USE_CURSES" = "curses" -o $libfound = true; then
+if test "$USE_CURSES" = "curses" -o "x$ac_cv_lib_curses_initscr" = xyes; then
   AC_CHECK_HEADERS([curses.h], [USE_CURSES="pdcurses"],
     [AS_IF([test "$USE_CURSES" != check], [USE_CURSES="missing_header"]) ])
   AS_IF([test $USE_CURSES="curses" -a "x$CURSES_LIBS" = x],
@@ -1336,7 +1350,7 @@ case "$USE_CURSES" in
 	;;
 esac
 
-
+LIBS="$LIBS $CURSES_LIBS"  # adding found curses libraries to look for functions
 if test "$USE_CURSES" = "ncurses" -o "$USE_CURSES" = "ncursesw"; then
     AC_MSG_CHECKING([for ncurses _nc_freeall function])
     AC_LINK_IFELSE([AC_LANG_PROGRAM([[
@@ -2048,12 +2062,30 @@ dnl fi
 # Check if aligned attribute seems to work
 # done:   does not raise an error
 # *TODO*: has same output as omitting it
-AC_MSG_CHECKING([for aligned attribute])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]],
+
+AC_CACHE_CHECK([for aligned attribute], gc_cv_attribute_alligned, [
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]],
 	[[char testchar[4] __attribute__((aligned));]])],
-	[AC_DEFINE([HAVE_ATTRIBUTE_ALIGNED], [1]) AC_MSG_RESULT([yes])
-	],
-	[AC_MSG_RESULT([no])])
+	[gc_cv_attribute_alligned=yes],
+	[gc_cv_attribute_alligned=no]
+  ])
+)
+  if test "$gc_cv_attribute_alligned" = yes; then
+	AC_DEFINE([HAVE_ATTRIBUTE_ALIGNED], [1])
+  fi
+
+AC_CACHE_CHECK([for pure attribute], gc_cv_attribute_pure, [
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+	  __attribute__((pure)) int f (void) { return 0; }
+	]],
+	[[]])],
+	[gc_cv_attribute_pure=yes],
+	[gc_cv_attribute_pure=no]
+  ])
+)
+  if test "$gc_cv_attribute_pure" = yes; then
+	AC_DEFINE([HAVE_ATTRIBUTE_PURE], [1])
+  fi
 
 dnl  Simon: removed, use --disable-nls instead
 dnl # Disable for Cygwin
@@ -2204,11 +2236,17 @@ AS_IF([test "$enable_hardening" = "yes"], [
 
 AS_IF([test "$COB_USES_GCC" = "yes"], [
 	curr_cflags="$CFLAGS"
-	CFLAGS="$curr_cflags -pipe"
-	AC_MSG_CHECKING([for -pipe option])
+	AC_CACHE_CHECK([for -pipe option], gc_cv_gcc_pipe, [
+	CFLAGS="$CFLAGS -pipe"
 	AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[int testint;]])],
-		[AC_MSG_RESULT([yes])],
-		[CFLAGS="$curr_cflags"; AC_MSG_RESULT([no])])
+		[gc_cv_gcc_pipe=yes],
+		[gc_cv_gcc_pipe=no])
+	])
+	  if test "$gc_cv_gcc_pipe" = yes; then
+		CFLAGS="$curr_cflags -pipe"
+	  else
+		CFLAGS="$curr_cflags"
+	  fi
 ])
 
 # include directory (install dir)
