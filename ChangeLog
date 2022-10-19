@@ -5,6 +5,7 @@
 	  via gc_cv_keyword_inline, gc_cv_time_timezone, gc_cv_designated_inits,
 	  gc_cv_attribute_alligned, gc_cv_attribute_pure, gc_cv_gcc_pipe
 	* configure.ac: check ncurses.h also for ncursesw (fixing OpenBSD builds)
+	* Makefile.am (CODE_COVERAGE_IGNORE_PATTERN): ignore generated files
 
 2022-10-04  Simon Sobisch <simonsobisch@gnu.org>
 

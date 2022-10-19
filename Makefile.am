@@ -47,6 +47,7 @@ clean-local: code-coverage-clean
 dist-clean-local: code-coverage-dist-clean
 
 CODE_COVERAGE_BRANCH_COVERAGE=1
+CODE_COVERAGE_IGNORE_PATTERN="*/cobc/pplex.c" "*/cobc/ppparse.c" "*/cobc/scanner.c" "*/cobc/parser.c"
 
 # files shipped with the package that should be 755'ed:
 FILES_TO_BE_EXECUTABLE = $(dist_noinst_SCRIPTS) \

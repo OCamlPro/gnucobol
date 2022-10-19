@@ -11459,7 +11459,7 @@ libcob: prog.cob:16: warning: ' S U B' literal includes leading spaces which are
 AT_CLEANUP
 
 
-AT_SETUP([C-API Test (param based)])
+AT_SETUP([C-API (param based)])
 AT_KEYWORDS([CALL api])
 
 AT_DATA([prog.cob], [
@@ -11694,7 +11694,7 @@ libcob: prog.cob:35: warning: cob_put_picx_param: attempt to over-write constant
 AT_CLEANUP
 
 
-AT_SETUP([C-API Test (field based)])
+AT_SETUP([C-API (field based)])
 AT_KEYWORDS([CALL api])
 
 AT_DATA([prog.cob], [
