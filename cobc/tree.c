@@ -6452,7 +6452,7 @@ cb_build_goto (const cb_tree target, const cb_tree depending)
 
 cb_tree
 cb_build_if (const cb_tree test, const cb_tree stmt1, const cb_tree stmt2,
-	     const unsigned int is_if)
+	     const enum cob_statement generating_statement)
 {
 	struct cb_if *p;
 	struct cb_binary_op	*bop;
@@ -6480,7 +6480,7 @@ cb_build_if (const cb_tree test, const cb_tree stmt1, const cb_tree stmt2,
 			}
 		}
 	}
-	p->is_if = is_if;
+	p->statement = generating_statement;
 	return CB_TREE (p);
 }
 

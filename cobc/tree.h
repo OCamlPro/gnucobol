@@ -1388,7 +1388,7 @@ struct cb_if {
 	cb_tree			test;		/* Condition */
 	cb_tree			stmt1;		/* Statement list */
 	cb_tree			stmt2;		/* ELSE/WHEN statement list */
-	unsigned int		is_if;		/* From IF (1), WHEN (0), PRESENT WHEN (3+4) */
+	enum cob_statement statement;	/* statement IF/WHEN/PRESENT WHEN */
 };
 
 #define CB_IF(x)		(CB_TREE_CAST (CB_TAG_IF, struct cb_if, x))
@@ -2026,7 +2026,7 @@ extern cb_tree			cb_build_cancel (const cb_tree);
 extern cb_tree			cb_build_goto (const cb_tree, const cb_tree);
 
 extern cb_tree			cb_build_if (const cb_tree, const cb_tree,
-					     const cb_tree, const unsigned int);
+					     const cb_tree, const enum cob_statement);
 
 extern cb_tree			cb_build_perform (const enum cb_perform_type);
 extern cb_tree			cb_build_perform_varying (cb_tree, cb_tree,

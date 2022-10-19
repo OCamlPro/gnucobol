@@ -9723,7 +9723,7 @@ AFTER READ PREV -> RECORD-5                           .
 AT_CLEANUP
 
 
-AT_SETUP([EXTFH: Multi keys test])
+AT_SETUP([EXTFH: INDEXED with multiple keys])
 AT_KEYWORDS([runfile EXTFH])
 
 AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
@@ -12024,7 +12024,7 @@ Read Status: 10
 AT_CLEANUP
 
 
-AT_SETUP([LINE SEQUENTIAL data test])
+AT_SETUP([LINE SEQUENTIAL data])
 AT_KEYWORDS([runfile])
 
 AT_DATA([prog.cob], [

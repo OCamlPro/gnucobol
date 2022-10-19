@@ -1,4 +1,8 @@
 
+2022-10-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* statement.def: added STMT_PRESENT_WHEN
+
 2022-10-18  Simon Sobisch <simonsobisch@gnu.org>
 
 	* Makefile.am: moved header files that are not installed from EXTRA_DIST

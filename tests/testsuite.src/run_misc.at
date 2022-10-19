@@ -7896,7 +7896,9 @@ Program-Id:  caller                      ADD                             Line:  
 Program-Id:  caller                      SET                             Line:     50
 Program-Id:  caller                      MOVE                            Line:     51
 Program-Id:  caller                      SEARCH ALL                      Line:     55
-Program-Id:  caller                      WHEN                            Line:     55
+Program-Id:  caller                      SEARCH VARYING                  Line:     55
+Program-Id:  caller                      SEARCH VARYING                  Line:     55
+Program-Id:  caller                      WHEN                            Line:     58
 Program-Id:  caller                      CONTINUE                        Line:     59
 Program-Id:  caller                      STOP RUN                        Line:     62
 ])

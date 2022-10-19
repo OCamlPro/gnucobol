@@ -1,4 +1,20 @@
 
+2022-10-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.h (struct cb_if): changed "is_if" integer flag to "enum
+	  cob_statement statement" providing a clear context
+	* tree.c (cb_build_if), tree.h, typeck.c, codegen.c (output_stmt):
+	  pass and check matching statement entry instead of magic number
+	* typeck.c (cb_emit_report_moves): refactored to combine conditions
+	  and separate report_footing_flag
+	* codegen.c (output_stmt): refactored to combine same code for
+	  PRESENT WHEN field/line
+	* codegen.c: set COBOL source and statement reference correctly for
+	  SEARCH ... VARYING and WHEN - as the overhead from tracing code
+	  preventing this before no longer exists
+	* codegen.c: improved output of source position
+	* typeck.c (cb_emit_evaluate): analysis and spec for necessary changes
+
 2022-10-18  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c (clear_local_codegen_vars): unset additional

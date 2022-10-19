@@ -9346,8 +9346,13 @@ evaluate_test (cb_tree s, cb_tree o)
 	}
 }
 
+/* creating statements for EVALUATE entries;
+   this may be called recursive for each set of WHEN + statements;
+   parameters: subjects (may include true/false),
+               cases    (1..n WHEN + statements),
+			   internal exit label */
 static void
-build_evaluate (cb_tree subject_list, cb_tree case_list, cb_tree labid)
+build_evaluate (cb_tree subject_list, cb_tree case_list, cb_tree goto_end_label)
 {
 	cb_tree		whens, stmt;
 	cb_tree		c1, c2, c3;
@@ -9365,7 +9370,7 @@ build_evaluate (cb_tree subject_list, cb_tree case_list, cb_tree labid)
 	for (; whens; whens = CB_CHAIN (whens)) {
 		cb_tree		subjs, objs;
 		c2 = NULL;
-		/* Single WHEN test */
+		/* Single WHEN test -> combine all "ALSO" with operator "&&" */
 		for (subjs = subject_list, objs = CB_VALUE (whens);
 		     subjs && objs;
 		     subjs = CB_CHAIN (subjs), objs = CB_CHAIN (objs)) {
@@ -9386,7 +9391,8 @@ build_evaluate (cb_tree subject_list, cb_tree case_list, cb_tree labid)
 		if (subjs || objs) {
 			cb_error_x (whens, _("wrong number of WHEN parameters"));
 		}
-		/* Connect multiple WHEN's */
+		/* Combine multiple WHEN's that share a list of statements
+		   with operator "||" */
 		if (c1 == NULL) {
 			c1 = c2;
 		} else if (c2) {
@@ -9422,11 +9428,11 @@ build_evaluate (cb_tree subject_list, cb_tree case_list, cb_tree labid)
 			c3 = CB_STATEMENT (CB_VALUE (c3))->body;
 			if (c3 && CB_VALUE (c3) && !CB_GOTO_P (CB_VALUE(c3))) {
 				/* Append the jump */
-				c2 = cb_list_add (stmt, labid);
+				c2 = cb_list_add (stmt, goto_end_label);
 			}
 		}
-		cb_emit (cb_build_if (cb_build_cond (c1), c2, NULL, 0));
-		build_evaluate (subject_list, CB_CHAIN (case_list), labid);
+		cb_emit (cb_build_if (cb_build_cond (c1), c2, NULL, STMT_WHEN));
+		build_evaluate (subject_list, CB_CHAIN (case_list), goto_end_label);
 	}
 }
 
@@ -9436,12 +9442,54 @@ cb_emit_evaluate (cb_tree subject_list, cb_tree case_list)
 	cb_tree	x;
 	char	sbuf[16];
 
-	snprintf (sbuf, sizeof(sbuf), "goto %s%d;", CB_PREFIX_LABEL, cb_id);
+#if 0	/* TODO: check for "simple" EVALUATE and use a different codegen
+	         --> if we have a _single_ selection-object and it is either
+			 alphanumeric with size 1 or numeric, then generate a switch ()
+			 instead (this most used case also removes the need for the
+			 temporary selection-value mentioned below). */
+	if (cb_list_length (subject_list) == 1) {
+		const cb_tree sel_obj = CB_VALUE (subject_list);
+		if (is_alphanumeric_lenth_one (sel_obj)
+		 || is_numeric (sel_obj)) {
+			....
+		}
+		return;
+	}
+#endif
+
+	/* code to skipt to internal label of END-EVALUATE */
+	sprintf (sbuf, "goto %s%d;", CB_PREFIX_LABEL, cb_id);
 	x = cb_build_direct (cobc_parse_strdup (sbuf), 0);
+
+	/* FIXME: iterate over subject_list here:
+	      for each of its values that are a reference:
+		      build creation of a temporary field with its value
+			  and replace the reference in the subject_list with this
+
+		This is necessary to follow the standard rule
+		"At the beginning of the execution of the EVALUATE statement,
+		  each selection subject is evaluated and assigned a value"
+	    
+		Currently we do the selection on _each_ WHEN, which is bad
+		because (apart from not being correct per standard) this has
+		side effects when the selection-object is an intrinsic or user
+		function (as bad example: FUNCTION SECONDS-PAST-MIDNIGHT) because
+		the selection changes between the WHENs and user-defined functions
+		may be quite costly / adjust EXTERNAL variables used in the selection;
+		Not doing that correct (one time) also leads to all runtime checks that
+		are assigned to the selection-object being executed for each WHEN
+		and if there _is_ a runtime error it is raised at the first WHEN, while
+		it should be raised at the EVALUATE.
+	*/
 	build_evaluate (subject_list, case_list, x);
-	snprintf (sbuf, sizeof(sbuf), "%s%d:;", CB_PREFIX_LABEL, cb_id);
+
+	/* internal label for END-EVALUATE */
 	cb_emit (cb_build_comment ("End EVALUATE"));
+	sprintf (sbuf, "%s%d:;", CB_PREFIX_LABEL, cb_id);
 	cb_emit (cb_build_direct (cobc_parse_strdup (sbuf), 0));
+
+	/* TODO: drop temporary fields here */
+
 	cb_id++;
 }
 
@@ -9549,7 +9597,7 @@ cb_emit_exit (const unsigned int goback)
 void
 cb_emit_if (cb_tree cond, cb_tree stmt1, cb_tree stmt2)
 {
-	cb_emit (cb_build_if (cond, stmt1, stmt2, 1));
+	cb_emit (cb_build_if (cond, stmt1, stmt2, STMT_IF));
 }
 
 /* SEARCH .. WHEN clause (internal IF statement) */
@@ -9560,7 +9608,7 @@ cb_build_if_check_break (cb_tree cond, cb_tree stmts)
 	cb_tree		stmt_lis;
 
 	stmt_lis = cb_check_needs_break (stmts);
-	return cb_build_if (cond, stmt_lis, NULL, 0);
+	return cb_build_if (cond, stmt_lis, NULL, STMT_WHEN);
 }
 
 /* INITIALIZE statement */
@@ -12488,7 +12536,7 @@ cb_emit_search_all (cb_tree table, cb_tree at_end, cb_tree when, cb_tree stmts)
 		cb_check_needs_break (CB_PAIR_Y (at_end));
 	}
 	cb_emit (cb_build_search (1, table, NULL, at_end,
-				  cb_build_if (x, stmt_lis, NULL, 0)));
+				  cb_build_if (x, stmt_lis, NULL, STMT_WHEN)));
 }
 
 /* SET statement */
@@ -13644,36 +13692,28 @@ static void
 cb_emit_report_moves (struct cb_report *r, struct cb_field *f, int forterminate)
 {
 	struct cb_field		*p;
+	const int report_footing_flag
+		= (COB_REPORT_FOOTING | COB_REPORT_CONTROL_FOOTING | COB_REPORT_CONTROL_FOOTING_FINAL);
 	for (p = f; p; p = p->sister) {
-		if(p->report_flag & (COB_REPORT_FOOTING|COB_REPORT_CONTROL_FOOTING|COB_REPORT_CONTROL_FOOTING_FINAL)) {
+		if (p->report_flag & report_footing_flag) {
 			report_in_footing = 1;
 		}
-		if(p->report_from) {
-			if(forterminate
-			&& report_in_footing) {
-				cb_emit_move (p->report_from, CB_LIST_INIT (p->report_source));
-			} else
-			if(!forterminate
-			&& !report_in_footing) {
+		if (p->report_from) {
+			/* note: report-from not in 4.x (any more / yet?) */
+			if ((forterminate  &&  report_in_footing)
+			 || (!forterminate && !report_in_footing)) {
 				cb_emit_move (p->report_from, CB_LIST_INIT (p->report_source));
 			}
 		}
-		if(p->report_when) {
-			int  ifwhen = 2;
-			if(p->children)
-				ifwhen = 3;
-			if(forterminate
-			&& report_in_footing) {
-				cb_emit (cb_build_if (p->report_when, NULL, (cb_tree)p, ifwhen));
-			} else
-			if(!forterminate
-			&& !report_in_footing) {
-				cb_emit (cb_build_if (p->report_when, NULL, (cb_tree)p, ifwhen));
+		if (p->report_when) {
+			if ((forterminate  &&  report_in_footing)
+			 || (!forterminate && !report_in_footing)) {
+				cb_emit (cb_build_if (p->report_when, NULL, CB_TREE (p), STMT_PRESENT_WHEN));
 			}
 		}
-		if(p->children) {
-			cb_emit_report_moves(r, p->children, forterminate);
-			if(p->report_flag & (COB_REPORT_FOOTING|COB_REPORT_CONTROL_FOOTING|COB_REPORT_CONTROL_FOOTING_FINAL)) {
+		if (p->children) {
+			cb_emit_report_moves (r, p->children, forterminate);
+			if (p->report_flag & report_footing_flag) {
 				report_in_footing = 0;
 			}
 		}

@@ -234,7 +234,6 @@ static int			non_nested_count = 0;
 static int			loop_counter = 0;
 static int			progid = 0;
 static int			last_line = 0;
-static enum	cob_statement last_stmt = STMT_UNKNOWN;
 static cob_u32_t		field_iteration = 0;
 static int			screenptr = 0;
 static int			local_mem = 0;
@@ -5651,21 +5650,13 @@ output_search_whens (cb_tree table, struct cb_field *p, cb_tree at_end,
 	output_newline ();
 
 	/* Iteration */
-	{
-		/* Output source location as code,
-		   especially for tracking adjustment of the index */
-		if (var) {
-			output_source_reference (var, STMT_SEARCH_VARYING);
-		} else {
-			/* output_source_reference is correct here but as we don't want
-			   to trace internal code temporary disable source_location
-			   because 3.x includes trace code */
-			int sav_fsl = cb_flag_source_location;
-			cb_flag_source_location = 0;
-			/* output_source_reference (table, "SEARCH VARYING internal"); */
-			output_source_reference (table, STMT_SEARCH_VARYING);
-			cb_flag_source_location = sav_fsl;
-		}
+	/* Output source location as code,
+	   especially for tracking adjustment of the index */
+	if (var) {
+		output_source_reference (var, STMT_SEARCH_VARYING);
+	} else {
+		/* output_source_reference (table, "SEARCH VARYING (internal)"); */
+		output_source_reference (table, STMT_SEARCH_VARYING);
 	}
 	output_prefix ();
 	output_integer (idx);
@@ -5727,17 +5718,20 @@ output_search_all (cb_tree table, struct cb_field *p, cb_tree at_end,
 	output_newline ();
 
 	/* Next index */
+
+	/* Output source location as code,
+	   especially for tracking adjustment of the index */
 	{
-		/* Output source location as code,
-		   especially for tracking adjustment of the index */
-		/* output_source_reference is correct here but as we don't want
-			to trace internal code temporary disable source_location
-			because 3.x includes trace code */
-		int sav_fsl = cb_flag_source_location;
-		cb_flag_source_location = 0;
-		/* output_source_reference (table, "SEARCH VARYING internal"); */
+		const int sav_trc_all = cb_flag_traceall;
+		const int sav_trc_old = cb_old_trace;
+		if (cb_old_trace) {
+			/* old trace did not include that */
+			cb_flag_traceall = cb_old_trace = 0;
+		}
+		/* output_source_reference (table, "SEARCH VARYING (internal)"); */
 		output_source_reference (table, STMT_SEARCH_VARYING);
-		cb_flag_source_location = sav_fsl;
+		cb_flag_traceall = sav_trc_all;
+		cb_old_trace = sav_trc_old;
 	}
 	output_prefix ();
 	output_integer (idx);
@@ -5747,14 +5741,15 @@ output_search_all (cb_tree table, struct cb_field *p, cb_tree at_end,
 
 	/* WHEN test */
 	{
-		/* output_source_reference is correct here but due to 3.x
-		   having source_location including trace code it would
-		   heavily reduce SEARCH ALL performance
-		   --> so temporary disable that here */
-		int sav_fsl = cb_flag_source_location;
-		cb_flag_source_location = 0;
+		/* output_source_reference would be ok here but
+		   we don't want to trace this (already tracing
+		   SEARCH VARYING), so temporarily disable trace all here */
+		const int sav_trc_all = cb_flag_traceall;
+		const int sav_trc_old = cb_old_trace;
+		cb_flag_traceall = cb_old_trace = 0;
 		output_source_reference (when_cond, STMT_WHEN);
-		cb_flag_source_location = sav_fsl;
+		cb_flag_traceall = sav_trc_all;
+		cb_old_trace = sav_trc_old;
 	}
 	output_prefix ();
 	output ("if (");
@@ -5762,11 +5757,12 @@ output_search_all (cb_tree table, struct cb_field *p, cb_tree at_end,
 	output (")");
 	output_newline ();
 	output_block_open ();
-	if (cb_flag_traceall || cb_old_trace) {
+	if (cb_flag_traceall) {
 		/* Output trace info */
-		/* note: this actually belongs only before the condition, but
-		   for the trace code we add it here again */
-		output_trace_info (when_cond, STMT_WHEN);
+		/* note: the _position_ is set before the condition, but
+		   for the trace code we add it here, as with traced VARYING
+		   the _matched_ WHEN is enough */
+		output_source_reference (when_cond, STMT_WHEN);
 	}
 	output_stmt (when_stmts);
 	output_block_close ();
@@ -7787,9 +7783,10 @@ output_module_source_for_tree (cb_tree x)
 		return;
 	}
 	if (last_line != x->source_line) {
-		output_line ("module->module_stmt = 0x%08X;",
+		const unsigned int stmt_ref =
 			COB_SET_LINE_FILE (x->source_line,
-				lookup_source (x->source_file)));
+				lookup_source (x->source_file));
+		output_line ("module->module_stmt = 0x%08X;", stmt_ref);
 		last_line = x->source_line;
 	}
 }
@@ -7882,7 +7879,14 @@ static void
 output_trace_info (cb_tree x, const enum cob_statement stmnt)
 {
 	const char *stmnt_enum = cb_statement_enum_name[stmnt];
-	if (cb_old_trace) {
+
+	output_module_source_for_tree (x);
+
+	if (!cb_old_trace) {
+		if (cb_flag_traceall) {
+			output_line ("cob_trace_statement (%s);", stmnt_enum);
+		}
+	} else {
 		output_prefix ();
 		output ("cob_set_location (%s%d, %d, ",
 			CB_PREFIX_STRING,
@@ -7900,69 +7904,41 @@ output_trace_info (cb_tree x, const enum cob_statement stmnt)
 		} else {
 			output ("NULL, ");
 		}
-		if (stmnt != STMT_UNKNOWN) {
-			output ("%s%d);",
-				CB_PREFIX_STRING, lookup_string (cb_statement_name[stmnt]));
-		} else {
-			output ("NULL);");
-		}
+		output ("%s%d);",
+			CB_PREFIX_STRING, lookup_string (cb_statement_name[stmnt]));
 		output_newline ();
-		return;
-	}
-
-	if (stmnt != STMT_UNKNOWN) {
-		output_module_source_for_tree (x);
-		output_line ("module->statement = %s;", stmnt_enum);
-		if (cb_flag_traceall) {
-			output_line ("cob_trace_statement (%s);", stmnt_enum);
-		}
-	} else {
-		cobc_err_msg ("unexpected unknown statement");
-		COBC_ABORT ();
-	}
-}
-
-static void
-output_line_and_trace_info (cb_tree x, const enum cob_statement stmnt)
-{
-	if (cb_flag_c_line_directives && x->source_file) {
-		output_cobol_info (x);
-		if (cb_flag_source_location) {
-			output_trace_info (x, stmnt);
-		} else {
-			output_line ("cob_nop ();");
-		}
-		output_c_info ();
-	} else {
-		if (cb_flag_source_location) {
-			output_trace_info (x, stmnt);
-		}
 	}
 }
 
 static void
 output_source_reference (cb_tree tree, const enum cob_statement statement)
 {
-	output_prefix ();
-	output ("/* Line: %-10d: %-19s", tree->source_line, cb_statement_name[statement]);
-	if (tree->source_file) {
-		output (": %s ", tree->source_file);
-	}
-	output ("*/");
-	output_newline ();
-	/* Output source location as code */
-	if (cb_flag_source_location) {
-		if (last_line != tree->source_line
-	 	 || last_stmt != statement) {
-			output_line ("module->module_stmt = 0x%08X;",
-				COB_SET_LINE_FILE(tree->source_line, lookup_source(tree->source_file)));
-		}
-	}
-	/* Output source location as code */
-	output_line_and_trace_info (tree, statement);
+	const char *stmnt_enum = cb_statement_enum_name[statement];
 
-	last_line = tree->source_line;
-	last_stmt = statement;
+	/* Output source location as comment */
+	output_line ("/* Line: %-10d: %-19s: %s */",
+			tree->source_line, cb_statement_name[statement],
+			tree->source_file);
+
+	/* Output source location as code */
+	if (cb_flag_c_line_directives && tree->source_file) {
+		output_cobol_info (tree);
+		if (cb_flag_source_location) {
+			output_line ("module->statement = %s;", stmnt_enum);
+		} else {
+			output_line ("cob_nop ();");
+		}
+		output_c_info ();
+	}
+	if (cb_flag_source_location) {
+		if (!(cb_flag_c_line_directives && tree->source_file)) {
+			output_line ("module->statement = %s;", stmnt_enum);
+		}
+		if (statement == STMT_UNTIL) {
+			last_line = -1;	/* force generation of source location */
+		}
+		output_trace_info (tree, statement);
+	}
 }
 
 static void
@@ -8206,23 +8182,9 @@ output_stmt (cb_tree x)
 		/* Output source location, but only if it isn't an implicit statement */
 		if (!p->flag_implicit) {
 			current_statement = (struct cb_statement *)p;
-			/* Output source location as a comment */
 			output_newline ();
-			output_line ("/* Line: %-10d: %-19.19s: %s */",
-				     x->source_line, cb_statement_name[p->statement], x->source_file);
 			/* Output source location as code */
-			if (cb_flag_source_location) {
-				if (last_line != x->source_line) {
-					output_line ("module->module_stmt = 0x%08X;",
-						COB_SET_LINE_FILE (x->source_line, lookup_source (x->source_file)));
-				}
-#if 0 /* CHECKME: Do we need this? If yes: move */
-			} else {
-				lookup_source (x->source_file);
-#endif
-			}
-			/* Output source location as code */
-			output_line_and_trace_info (x, p->statement);
+			output_source_reference (x, p->statement);
 			/* USE FOR DEBUGGING: pre-fill DEBUG-LINE
 			   FIXME: postpone to actual DEBUGGING procedure,
 			          using module->module_stmt there
@@ -8345,14 +8307,30 @@ output_stmt (cb_tree x)
 						 one identical generated paragraph name "per program" */
 				unsigned char buff[COB_MINI_BUFF];
 				unsigned char *ptr = (unsigned char *)&buff;
-				const char *prf;
 				cob_encode_program_id ((unsigned char*)lp->orig_name, ptr,
 					COB_MINI_MAX, COB_FOLD_UPPER);
-				if (lp->flag_section) prf = "SECTION";
-				else if (lp->flag_entry_for_goto) prf = "ENTRY_GOTO";
-				else prf = "ENTRY";
 				if (*ptr == '_') ptr++;
-				output_line ("%s_%s:\t%s;", prf, ptr, "cob_nop ()");
+				if (lp->flag_section) {
+					output_line ("SECTION_%s:\t%s;", ptr, "cob_nop ()");
+				} else if (lp->flag_entry_for_goto) {
+					if (cb_flag_source_location) {
+						const char *stmnt_enum
+							= cb_statement_enum_name[STMT_ENTRY_FOR_GO_TO];
+						output_line ("ENTRY_GOTO_%s:\tmodule->statement = %s;",
+							ptr, stmnt_enum);
+					} else {
+						output_line ("ENTRY_GOTO_%s:\t%s;", ptr, "cob_nop ()");
+					}
+				} else {
+					if (cb_flag_source_location) {
+						const char *stmnt_enum
+							= cb_statement_enum_name[STMT_ENTRY];
+						output_line ("ENTRY_%s:\tmodule->statement = %s;",
+							ptr, stmnt_enum);
+					} else {
+						output_line ("ENTRY_%s:\t%s;", ptr, "cob_nop ()");
+					}
+				}
 				if (cb_flag_c_line_directives) {
 					output_c_info ();
 				}
@@ -8545,14 +8523,14 @@ output_stmt (cb_tree x)
 #endif
 		if (ip->stmt1 == NULL
 		 && ip->stmt2 == NULL) {
-			if (!ip->is_if) {
+			if (ip->statement != STMT_IF) {
 				output_line ("/* WHEN has code omitted */");
 			} else {
 				output_line ("/* IF has code omitted */");
 			}
 			break;
 		}
-		if (!ip->is_if) {
+		if (ip->statement != STMT_IF) {
 			output_newline ();
 			if (ip->test == cb_true
 			 && cb_flag_remove_unreachable) {
@@ -8585,9 +8563,7 @@ output_stmt (cb_tree x)
 					output_line ("/* WHEN */");
 				}
 			} else if (ip->test->source_line) {
-				output_line ("/* Line: %-10d: WHEN */", ip->test->source_line);
-				/* Output source location as code */
-				output_line_and_trace_info (ip->test, STMT_WHEN);
+				output_source_reference (ip->test, STMT_WHEN);
 			} else {
 				output_line ("/* WHEN */");
 			}
@@ -8598,45 +8574,20 @@ output_stmt (cb_tree x)
 		code = 0;
 #endif
 		output_prefix ();
-		/* Really PRESENT WHEN for Report field */
-		if (ip->is_if == 2
+		/* Really PRESENT WHEN for Report field/line */
+		if (ip->statement == STMT_PRESENT_WHEN
 		 && ip->stmt1 == NULL
 		 && ip->stmt2 != NULL) {
 			struct cb_field *p2 = (struct cb_field *)ip->stmt2;
-			if((p2->report_flag & COB_REPORT_LINE)) {
+			const char *target;
+			if (p2->report_flag & COB_REPORT_LINE) {
 				px = (char*)CB_PREFIX_REPORT_LINE;
-				output_line ("/* PRESENT WHEN Line */");
+				target = "Line";
 			} else {
 				px = (char*)CB_PREFIX_REPORT_FIELD;
-				output_line ("/* PRESENT WHEN field */");
+				target = "Field";
 			}
-			output_prefix ();
-			output ("if (");
-			output_cond (ip->test, 0);
-			output (")");
-			output_newline ();
-			output_line ("{");
-			output_line ("\t%s%d.suppress = 0;", px, p2->id);
-			output_line ("} else {");
-			output_line ("\t%s%d.suppress = 1;", px, p2->id);
-			output_line ("}");
-#ifdef COBC_HAS_CUTOFF_FLAG	/* Note: will be removed completely in 4.x */
-			gen_if_level--;
-#endif
-			break;
-		}
-		/* Really PRESENT WHEN for Report line */
-		if (ip->is_if == 3
-		 && ip->stmt1 == NULL
-		 && ip->stmt2 != NULL) {
-			struct cb_field *p2 = (struct cb_field *)ip->stmt2;
-			if((p2->report_flag & COB_REPORT_LINE)) {
-				px = (char*)CB_PREFIX_REPORT_LINE;
-				output_line ("/* PRESENT WHEN line */");
-			} else {
-				px = (char*)CB_PREFIX_REPORT_FIELD;
-				output_line ("/* PRESENT WHEN Field */");
-			}
+			output_line ("/* PRESENT WHEN %s: %d */", target, p2->common.source_line);
 			output_prefix ();
 			output ("if (");
 			output_cond (ip->test, 0);
@@ -8688,7 +8639,7 @@ output_stmt (cb_tree x)
 				output_line ("{");
 				output_indent_level += 2;
 			}
-			if (ip->is_if) {
+			if (ip->statement == STMT_IF) {
 				output_line ("/* ELSE */");
 			} else {
 				output_line ("/* WHEN */");
@@ -8709,7 +8660,7 @@ output_stmt (cb_tree x)
 			}
 			output_line ("{");
 			output_indent_level += 2;
-			if (ip->is_if) {
+			if (ip->statement == STMT_IF) {
 				output_line ("/* ELSE */");
 			} else {
 				output_line ("/* WHEN */");
