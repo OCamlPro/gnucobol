@@ -3878,9 +3878,14 @@ repeat:
 /* REPORT: VARYING */
 
 cb_tree
-cb_build_vary (void)
+cb_build_vary (cb_tree var, cb_tree from, cb_tree by)
 {
-	return make_tree (CB_TAG_VARY, CB_CATEGORY_UNKNOWN, sizeof (struct cb_vary));
+	cb_tree x = make_tree (CB_TAG_VARY, CB_CATEGORY_UNKNOWN, sizeof (struct cb_vary));
+	struct cb_vary *vary = CB_VARY (x);
+	vary->var = var;
+	vary->from = from;
+	vary->by = by;
+	return x;
 }
 
 /* Field */

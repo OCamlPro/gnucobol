@@ -175,8 +175,6 @@ enum key_clause_type {
 
 static cb_tree			current_expr;
 static struct cb_field		*current_field;
-static struct cb_vary		*current_vary;
-static cb_tree				vary_from = NULL, vary_by = NULL;
 static struct cb_field		*control_field;
 static struct cb_field		*description_field;
 static struct cb_file		*current_file;
@@ -6382,7 +6380,7 @@ code_set_clause:
 			CB_PENDING ("CODE-SET");
 			break;
 		default:
-			if (cb_warn_additional) {
+			if (cb_warn_opt_val[cb_warn_additional] != COBC_WARN_DISABLED) {
 				cb_warning_x (cb_warn_additional, $3, _("ignoring CODE-SET '%s'"),
 						  cb_name ($3));
 			} else {
@@ -8883,11 +8881,10 @@ data_varying_list:
 ;
 
 data_varying:
-  WORD var_from var_by 
+  WORD _var_from _var_by 
   {
 	cb_tree x;
 
-	current_vary = CB_VARY (cb_build_vary ());
 	if (CB_WORD_COUNT ($1) == 0) {
 		x = cb_build_field (cb_build_reference (CB_NAME($1)));
 		CB_FIELD (x)->usage = CB_USAGE_INDEX;
@@ -8900,36 +8897,38 @@ data_varying:
 		CB_TREE (x)->category = CB_CATEGORY_NUMERIC;
 		cb_validate_field (CB_FIELD (x));
 		CB_FIELD_ADD (current_program->working_storage, CB_FIELD (x));
-		current_vary->var = CB_TREE (x);
 	} else {
 		struct cb_field *f = CB_FIELD (cb_ref ($1));
 		if (f->usage != CB_USAGE_INDEX
 		 || !f->flag_internal_register)
 			cb_error_x ($1, _("%s is not valid for VARYING"),f->name);
-		current_vary->var = CB_TREE (f);
+		x = CB_TREE (f);
 	}
-	current_vary->from = vary_from;
-	current_vary->by = vary_by;
-	vary_from = NULL;
-	vary_by = NULL;
-	$$ = CB_TREE (current_vary);
+
+	$$ = cb_build_vary (x, $2, $3);
   }
 ;
 
-var_from:
-|
-FROM exp 
-{
-	vary_from = $2;
-}
+_var_from:
+  /* empty */
+  {
+	$$ = NULL;
+  }
+| FROM exp 
+  {
+	$$ = $2;
+  }
 ;
 
-var_by:
-|
-BY exp 
-{
-	vary_by = $2;
-}
+_var_by:
+/* empty */
+  {
+	$$ = NULL;
+  }
+| BY exp 
+  {
+	$$ = $2;
+  }
 ;
 
 line_clause:

@@ -1932,7 +1932,7 @@ extern struct cb_picture	*cb_build_binary_picture (const char *,
 							  const cob_u32_t);
 
 extern cb_tree			cb_build_field (cb_tree);
-extern cb_tree			cb_build_vary (void);
+extern cb_tree			cb_build_vary (cb_tree, cb_tree, cb_tree);
 extern cb_tree			cb_build_implicit_field (cb_tree, const int);
 extern cb_tree			cb_build_constant (cb_tree, cb_tree);
 extern int			cb_build_generic_register (const char *, const char *, struct cb_field **);

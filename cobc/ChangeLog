@@ -1,4 +1,9 @@
 
+2022-10-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y, tree.c (cb_build_vary), tree.h: cleanup to not use
+	  static variables in the parser for creation of the rw vary items
+
 2022-10-19  Simon Sobisch <simonsobisch@gnu.org>
 
 	* tree.h (struct cb_if): changed "is_if" integer flag to "enum
