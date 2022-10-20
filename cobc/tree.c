@@ -731,6 +731,40 @@ cb_name_1 (char *s, cb_tree x, const int size)
 		break;
 	}
 
+	/* LCOV_EXCL_START */
+	case CB_TAG_LIST: {
+		cb_tree l;
+		size_real = snprintf (s, size, "LIST");
+		if (size_real + 4 > size) goto game_over;
+		s += size_real;
+		for (l = x; l; l = CB_CHAIN (l)) {
+			const size_t size_left = size - (s - orig);
+			char *s_orig = s;
+			size_t size_element;
+			size_element = snprintf (s, size_left, (l == x) ? ": " : ", ");
+			size_element += cb_name_1 (s + size_element, CB_VALUE (l), size_left);
+			if (size_element > size_left + 4) {
+				/* if we don't have enough room: go out leaving s unchanged */
+				s_orig[0] = '\0';
+				goto game_over;
+			}
+			size_real += size_element;
+			s += size_element;
+		}
+		sprintf (s, ")");
+		size_real++;
+		break;
+	}
+	/* LCOV_EXCL_STOP */
+
+	/* LCOV_EXCL_START */
+	case CB_TAG_TAB_VALS: {
+		size_real = snprintf (s, size, "VALUE (table-format) ");
+		size_real += cb_name_1 (s + size_real, CB_TAB_VALS (x)->values, size - size_real);
+		break;
+	}
+	/* LCOV_EXCL_STOP */
+
 	case CB_TAG_INTRINSIC: {
 		const struct cb_intrinsic *cbit = CB_INTRINSIC (x);
 		if (!cbit->isuser) {
@@ -2305,6 +2339,10 @@ cb_enum_explain (const enum cb_tag tag)
 		return "ML SUPPRESS CHECKS";
 	case CB_TAG_CD:
 		return "COMMUNICATION DESCRIPTION";
+	case CB_TAG_VARY:
+		return "REPORT VARYING";
+	case CB_TAG_TAB_VALS:
+		return "VALUE list (table-format)";
 	default: 
 		{
 			/* whenever we get here, someone missed to add to the list above... */
@@ -3339,7 +3377,7 @@ get_number_in_parentheses (const unsigned char ** p,
 			return 1;
 		}
 
-		item_value = CB_VALUE (CB_FIELD (item)->values);
+		item_value = CB_FIELD (item)->values;
 		if (!CB_NUMERIC_LITERAL_P (item_value)) {
 			cb_error (_("'%s' is not a numeric literal"), name_buff);
 			*error_detected = 1;
@@ -3859,13 +3897,27 @@ repeat:
 cb_tree
 cb_build_vary (cb_tree var, cb_tree from, cb_tree by)
 {
-	struct cb_vary *vary = make_tree (CB_TAG_VARY, CB_CATEGORY_UNKNOWN, sizeof (struct cb_vary));
+	struct cb_vary *vary
+		= make_tree (CB_TAG_VARY, CB_CATEGORY_UNKNOWN, sizeof (struct cb_vary));
 	vary->var = var;
 	vary->from = from;
 	vary->by = by;
 	return CB_TREE (vary);
 }
 
+/* VALUE: multiple entries (table-format) */
+
+cb_tree
+cb_build_table_values (cb_tree values, cb_tree from, cb_tree to, cb_tree times)
+{
+	struct cb_table_values	*vals
+		= make_tree (CB_TAG_TAB_VALS, CB_CATEGORY_UNKNOWN, sizeof (struct cb_table_values));
+	vals->values = values;
+	vals->from = from;
+	vals->to = to;
+	vals->repeat_times = times;
+	return CB_TREE (vals);
+}
 /* Field */
 
 cb_tree
@@ -3906,7 +3958,7 @@ cb_build_constant (cb_tree name, cb_tree value)
 	x = cb_build_field (name);
 	x->category = cb_tree_category (value);
 	CB_FIELD (x)->storage = CB_STORAGE_CONSTANT;
-	CB_FIELD (x)->values = CB_LIST_INIT (value);
+	CB_FIELD (x)->values = value;
 	return x;
 }
 
@@ -4248,8 +4300,8 @@ build_sum_counter (struct cb_report *r, struct cb_field *f)
 		sprintf(pic,"S9(%d)",dig);
 	}
 	s = CB_FIELD (x);
-	s->pic 	= cb_build_picture (pic);
-	s->values	= CB_LIST_INIT (cb_zero);
+	s->pic		= cb_build_picture (pic);
+	s->values	= cb_zero;
 	s->storage	= CB_STORAGE_WORKING;
 	s->usage	= CB_USAGE_DISPLAY;
 	s->count++;

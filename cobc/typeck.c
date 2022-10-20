@@ -1736,7 +1736,7 @@ cb_build_generic_register (const char *name, const char *external_definition,
 			}
 		}
 		if (lit) {
-			field->values = CB_LIST_INIT (lit);
+			field->values = lit;
 		}
 	}
 
@@ -1824,7 +1824,7 @@ cb_build_register_internal_code (const char* name, const char* definition)
 	field->usage = CB_USAGE_BINARY;
 	field->pic = cb_build_picture ("S9(9)");
 	cb_validate_field (field);
-	field->values = CB_LIST_INIT (cb_zero);
+	field->values = cb_zero;
 	field->flag_no_init = 1;
 	field->flag_is_global = 1;
 	field->flag_internal_register = 1;
@@ -2267,17 +2267,12 @@ cb_tree
 cb_build_index (cb_tree x, cb_tree values, const unsigned int indexed_by,
 		struct cb_field *qual)
 {
-	struct cb_field	*f;
+	struct cb_field	*f = CB_FIELD (cb_build_field (x));
 
-	f = CB_FIELD (cb_build_field (x));
 	f->usage = CB_USAGE_INDEX;
 	cb_validate_field (f);
-	if (values) {
-		f->values = CB_LIST_INIT (values);
-	}
-	if (qual) {
-		f->index_qual = qual;
-	}
+	f->values = values;
+	f->index_qual = qual;
 	f->flag_indexed_by = !!indexed_by;
 	if (f->flag_indexed_by)
 		f->flag_real_binary = 1;
@@ -2653,7 +2648,7 @@ cb_build_identifier (cb_tree x, const int subchk)
 	}
 
 	if (f->storage == CB_STORAGE_CONSTANT) {
-		return CB_VALUE (f->values);
+		return f->values;
 	}
 
 	return x;
@@ -4390,55 +4385,66 @@ validate_file_status (cb_tree fs)
 	struct cb_field	*fs_field;
 	enum cb_category category;
 
+	cb_tree x = cb_ref (fs);
+
 	/* TO-DO: If not defined, implicitly define PIC XX */
-	if (fs == cb_error_node
-	    || cb_ref (fs) == cb_error_node) {
+	if (x == cb_error_node) {
 		return;
 	}
 
-	if (!CB_FIELD_P (cb_ref (fs))) {
-		cb_error (_("FILE STATUS '%s' is not a field"), CB_NAME (fs));
+	if (!CB_FIELD_P (x)
+	 || CB_FIELD (x)->flag_constant) {
+		cb_error_x (fs, _("FILE STATUS '%s' is not a field"), CB_NAME (fs));
+		return;
 	}
 
-	fs_field = CB_FIELD_PTR (fs);
-	category = cb_tree_category (CB_TREE (fs_field));
+	fs_field = CB_FIELD (x);
+	category = cb_tree_category (x);
 	if (category == CB_CATEGORY_ALPHANUMERIC) {
 		/* ok */
 	} else if (category == CB_CATEGORY_NUMERIC) {
 		if (fs_field->pic
 		    && fs_field->pic->scale != 0) {
-			cb_error_x (fs, _("FILE STATUS '%s' may not be a decimal or have a PIC with a P"),
-				    CB_NAME (fs));
+			cb_error_x (fs,
+				_("FILE STATUS '%s' may not be a decimal or have a PIC with a P"),
+				fs_field->name);
+			return;
 		}
-		cb_warning_x (cb_warn_additional, fs, _("FILE STATUS '%s' is a numeric field, but I-O status codes are not numeric in general"),
-			      CB_NAME (fs));
+		cb_warning_x (cb_warn_additional, fs,
+			_("FILE STATUS '%s' is a numeric field, but I-O status codes are not numeric in general"),
+			fs_field->name);
 	} else {
-		cb_error_x (fs, _("FILE STATUS '%s' must be alphanumeric or numeric field"),
-			    CB_NAME (fs));
+		cb_error_x (fs,
+			_("FILE STATUS '%s' must be an alphanumeric or numeric field"),
+			fs_field->name);
 		return;
 	}
 
 	if (fs_field->usage != CB_USAGE_DISPLAY) {
-		cb_error_x (fs, _("FILE STATUS '%s' must be USAGE DISPLAY"),
-			    CB_NAME (fs));
+		cb_error_x (fs,
+			_("FILE STATUS '%s' must be USAGE DISPLAY"),
+			fs_field->name);
 	}
 
 	/* Check file status is two characters long */
 	if (fs_field->size != 2) {
-		cb_error_x (fs, _("FILE STATUS '%s' must be 2 characters long"),
-			    CB_NAME (fs));
+		cb_error_x (fs,
+			_("FILE STATUS '%s' must be 2 characters long"),
+			fs_field->name);
 	}
 
 	if (fs_field->storage != CB_STORAGE_WORKING
-	    && fs_field->storage != CB_STORAGE_LOCAL
-	    && fs_field->storage != CB_STORAGE_LINKAGE) {
-		cb_error_x (fs, _("FILE STATUS '%s' must be in WORKING-STORAGE, LOCAL-STORAGE or LINKAGE"),
-			    CB_NAME (fs));
+	 && fs_field->storage != CB_STORAGE_LOCAL
+	 && fs_field->storage != CB_STORAGE_LINKAGE) {
+		cb_error_x (fs,
+			_("FILE STATUS '%s' must be in WORKING-STORAGE, LOCAL-STORAGE or LINKAGE"),
+			fs_field->name);
 	}
 
 	if (fs_field->flag_odo_relative) {
-		cb_error_x (fs, _("FILE STATUS '%s' may not be located after an OCCURS DEPENDING field"),
-			    CB_NAME (fs));
+		cb_error_x (fs,
+			_("FILE STATUS '%s' may not be located after an OCCURS DEPENDING field"),
+			fs_field->name);
 	}
 }
 
@@ -4528,7 +4534,7 @@ validate_assign_name (struct cb_file * const f,
 	/* If assign is a 78-level, change assign to the 78-level's literal. */
 	p = check_level_78 (CB_NAME (assign));
 	if (p) {
-		char *c = (char *)CB_LITERAL(CB_VALUE(p->values))->data;
+		char *c = (char *)CB_LITERAL (p->values)->data;
 		f->assign = CB_TREE (build_literal (CB_CATEGORY_ALPHANUMERIC, c, strlen (c)));
 		return;
 	}

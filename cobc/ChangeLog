@@ -3,6 +3,15 @@
 
 	* parser.y, tree.c (cb_build_vary), tree.h: cleanup to not use
 	  static variables in the parser for creation of the rw vary items
+	* parser.y, reserved.c: full parsing for COBOL2002 and BS2000
+	  multi VALUE entries via VALUES [ARE]
+	* parser.y, field.c, tree.h, codegen.c, tree.c, scanner.l: new struct
+	  cb_table_values to store the complex parsing result, only embed the VALUE
+	  in a list when actually necessary, and use these adjustments in syntax
+	  and codegen
+	* field.c: check all multi-values for correct type an length;
+	  verify that only up to max amount entries are specified;
+	  TODO: complete handling of FROM/TO/REPEATED clause
 
 2022-10-19  Simon Sobisch <simonsobisch@gnu.org>
 

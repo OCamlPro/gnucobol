@@ -728,16 +728,17 @@ static int
 chk_field_multi_values (struct cb_field *f)
 {
 	struct cb_field		*fc;
+
 	if (f->values
-	 && CB_CHAIN (f->values)) {
+	 && CB_LIST_P (f->values)) {
+	 	/* multi-value entry */
 		return 1;
 	}
-	if (f->values
-	 && CB_VALUE (f->values)) {
+	if (f->values) {
 		/* CHECKME: Why do we return 1 on ALL '0'?
 		   and what about [ALL] ZERO ?*/
-		 if (CB_LITERAL_P (CB_VALUE(f->values))
-		  && CB_LITERAL (CB_VALUE(f->values))->all) {
+		 if (CB_LITERAL_P (f->values)
+		  && CB_LITERAL (f->values)->all) {
 			return 1;
 		}
 		if (f->flag_occurs) {
@@ -4955,7 +4956,20 @@ output_initialize_one (struct cb_initialize *p, cb_tree x)
 
 	/* Initialize by value */
 	if (p->val && f->values) {
-		value = CB_VALUE (f->values);
+		if (!CB_LIST_P (f->values)) {
+			/* common case: simple VALUE */
+			value = f->values;
+		} else {
+			/* multiple VALUE, either from report-format
+			   or from the complex table-format;
+			   get the first one here */
+			value = CB_VALUE (f->values);
+			if (CB_TAB_VALS_P (value)) {
+				/* get the first entry of many */
+				value = CB_TAB_VALS (value)->values;
+				value = CB_VALUE (value);
+			}
+		}
 		/* Check for non-standard OCCURS */
 		if ((f->level == 1 || f->level == 77)
 		 && f->flag_occurs && !p->flag_init_statement) {
@@ -5293,18 +5307,18 @@ output_initialize_occurs (struct cb_initialize *p, cb_tree x)
 		int k;
 		idx_incr = -1;
 		idx_stop = 0;
-		/* TODO: move check to parser and translate msgid */
-		k = cb_list_length (f->values) - total_occurs;
-		if (k > 0) {
-			cb_error_x ((cb_tree)f, "%s has %d more value%s than needed",
-							f->name,k,k>1?"s":"");
-			return;
-		}
 		while (!idx_stop) {
 			pf = pftbl[0];
 			pf->flag_occurs = 0;
 			pf->occurs_max = 0;
-			if (values && CB_CHAIN (values)) {	/* Multiple VALUEs present */
+			if (values && CB_LIST_P (values)) {	/* Multiple VALUEs present */
+				l = CB_VALUE (values);
+				if (CB_TAB_VALS_P (l)) {
+					/* FIXME: handle FROM TO/REPEATED */
+					l = CB_TAB_VALS (l)->values;
+				} else {
+					l = values;
+				}
 				for (idx_clr = 0; l && !idx_stop; idx_clr++, l = CB_CHAIN (l)) {
 					f->values = l;
 					f->offset = get_table_offset ( offset, idx, idxtbl, occtbl, pftbl);
@@ -5511,8 +5525,6 @@ output_initialize (struct cb_initialize *p)
 	 && !p->flag_init_statement) {
 		cb_tree			x;
 		switch (type) {
-		case INITIALIZE_NONE:
-			return;
 		case INITIALIZE_ONE:
 			output_initialize_occurs (p, p->var);
 			output_initialize_chaining (f, p);
@@ -5555,8 +5567,6 @@ output_initialize (struct cb_initialize *p)
 		output_newline ();
 	}
 	switch (type) {
-	case INITIALIZE_NONE:
-		return;
 	case INITIALIZE_ONE:
 		output_initialize_occurs (p, p->var);
 		output_initialize_chaining (f, p);
@@ -9709,7 +9719,17 @@ output_report_def_fields (int bgn, int id, struct cb_field *f, struct cb_report 
 	}
 	output_local (",");
 	if (f->values) {
-		value = CB_VALUE (f->values);
+		value = f->values;
+		if (CB_LIST_P (value)) {
+			/* CHECKME: we get here with an _actual_ list in RW case 
+			   but drop all entries but the first one... */
+			value = CB_VALUE (value);
+			if (CB_TAB_VALS_P (value)) {
+				value = CB_TAB_VALS (value)->values;
+				value = CB_VALUE (value);
+			}
+		}
+
 	} else if (f->report_source
 	        && CB_LITERAL_P (f->report_source)) {
 		value = f->report_source;
@@ -10733,12 +10753,6 @@ output_module_register_init (cb_tree reg, const char *name)
 	if (!reg) {
 		return;
 	}
-
-	/* LCOV_EXCL_START */
-	if (!CB_REF_OR_FIELD_P (reg)) {
-		CB_TREE_TAG_UNEXPECTED_ABORT (reg);
-	}
-	/* LCOV_EXCL_STOP */
 
 	if (CB_REFERENCE_P (reg)) {
 		reg = cb_ref (reg);
