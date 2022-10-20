@@ -1586,11 +1586,10 @@ static void
 validate_blank_when_zero (const struct cb_field * const f)
 {
 	const cb_tree	x = CB_TREE (f);
-	int		i;
 
 	if (f->pic
-	    && f->pic->have_sign
-	    && f->pic->category != CB_CATEGORY_NUMERIC_EDITED) {
+	 && f->pic->have_sign
+	 && f->pic->category != CB_CATEGORY_NUMERIC_EDITED) {
 		cb_error_x (x, _("'%s' cannot have S in PICTURE string and BLANK WHEN ZERO"),
 			    cb_name (x));
 	}
@@ -1601,11 +1600,12 @@ validate_blank_when_zero (const struct cb_field * const f)
 	}
 
 	if (f->pic) {
+		int		i;
 		switch (f->pic->category) {
 		case CB_CATEGORY_NUMERIC:
 			break;
 		case CB_CATEGORY_NUMERIC_EDITED:
-			for (i = 0; f->pic->str[i].symbol != '\0'; ++i) {
+			for (i = 0; i < f->pic->lenstr; ++i) {
 				if (f->pic->str[i].symbol == '*') {
 					cb_error_x (x, _("'%s' cannot have * in PICTURE string and BLANK WHEN ZERO"),
 						    cb_name (x));

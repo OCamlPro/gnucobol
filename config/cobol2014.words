@@ -509,7 +509,7 @@ reserved:	VALID
 reserved:	VALIDATE
 reserved:	VALIDATE-STATUS
 reserved:	VALUE
-reserved:	VALUES=VALUE
+reserved:	VALUES
 reserved:	VARYING
 reserved:	WHEN
 reserved:	WITH

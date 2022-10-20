@@ -46,6 +46,10 @@
 
 	* general: add option picture-l
 
+2022-07-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: removed alias VALUES=VALUE, now a separate word
+
 2022-06-17  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* general: added config option device-mnemonics (boolean)

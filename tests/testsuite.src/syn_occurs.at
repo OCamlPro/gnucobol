@@ -130,6 +130,8 @@ AT_DATA([prog.cob], [
            88  y VALUE "a" OCCURS 10.
 ])
 
+# note: the message is from level-88 content-validation entry format,
+#       which is mixed in the parser (as it may be used as) condition format
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:7: error: syntax error, unexpected OCCURS
 ])

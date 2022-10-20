@@ -447,7 +447,7 @@ reserved:	USE
 reserved:	USING
 reserved:	V*
 reserved:	VALUE
-reserved:	VALUES=VALUE
+reserved:	VALUES
 reserved:	VARBINARY
 reserved:	VARYING
 reserved:	WHEN

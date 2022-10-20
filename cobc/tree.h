@@ -127,7 +127,8 @@ enum cb_tag {
 	CB_TAG_REPORT_LINE,	/* Report line description */
 	CB_TAG_ML_SUPPRESS,	/* JSON/XML GENERATE SUPPRESS clause */
 	CB_TAG_ML_TREE,	/* JSON/XML GENERATE output tree */
-	CB_TAG_ML_SUPPRESS_CHECKS	/* JSON/XML GENERATE SUPPRESS checks */
+	CB_TAG_ML_SUPPRESS_CHECKS,	/* JSON/XML GENERATE SUPPRESS checks */
+	CB_TAG_VARY			/* Report line description */
 	/* When adding a new entry, please remember to add it to
 	   cb_enum_explain in tree.c as well. */
 };
@@ -805,6 +806,18 @@ struct cb_key {
 	int	dir;			/* ASCENDING or DESCENDING */
 };
 
+/* REPORT:  VARYING var FROM exp BY exp */
+
+struct cb_vary {
+	struct cb_tree_common	common;		/* Common values */
+	cb_tree		var;					/* Variable name being VARYed */
+	cb_tree		from;					/* Starting value */
+	cb_tree		by;						/* Increment value */
+};
+
+#define CB_VARY(x)	(CB_TREE_CAST (CB_TAG_VARY, struct cb_const, x))
+#define CB_VARY_P(x)	(CB_TREE_TAG (x) == CB_TAG_VARY)
+
 /* Field */
 
 struct cb_field {
@@ -852,9 +865,7 @@ struct cb_field {
 	cb_tree			report_when;	/* PRESENT WHEN condition */
 	cb_tree			report_column_list;/* List of Column Numbers */
 	/* note: the following rw-specific fields are only set for parsing, no codegen in 3.x yet */
-	cb_tree			report_vary_var;/* VARYING identifier */
-	cb_tree			report_vary_from;/* VARYING FROM arith */
-	cb_tree			report_vary_by;	/* VARYING BY arith */
+	cb_tree			report_vary_list;/* VARYING identifier with FROM arith + BY arith */
 #if 0 /* items from 4.x */
 	const char		*report_source_txt;	/* SOURCE as text string */
 	const char		*report_field_name;	/* Name used for this REPORT field */
@@ -1946,6 +1957,7 @@ extern struct cb_picture	*cb_build_binary_picture (const char *,
 							  const cob_u32_t);
 
 extern cb_tree			cb_build_field (cb_tree);
+extern cb_tree			cb_build_vary (cb_tree, cb_tree, cb_tree);
 extern cb_tree			cb_build_implicit_field (cb_tree, const int);
 extern cb_tree			cb_build_constant (cb_tree, cb_tree);
 extern int			cb_build_generic_register (const char *, const char *, struct cb_field **);

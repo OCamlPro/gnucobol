@@ -4611,7 +4611,7 @@ propagate_table (cb_tree x, int bgn_idx)
 	}
 
 	if (gen_init_working
-	 || (!chk_field_variable_size(f)
+	 || (!chk_field_variable_size (f)
 	  && !f->flag_unbounded
 	  && !f->depending)) {
 		/* Table size is known at compile time */
@@ -4631,8 +4631,8 @@ propagate_table (cb_tree x, int bgn_idx)
 			do {
 				output_prefix ();
 				output ("memcpy (b_ptr + %6ld, b_ptr, %6ld);", len, len);
-				output ("\t/* %s: %5d thru %d */", f->name,
-								j + bgn_idx, j * 2 + bgn_idx - 1);
+				output ("\t/* %s: %5d thru %d */",
+						f->name, j + bgn_idx, j * 2 + bgn_idx - 1);
 				output_newline ();
 				j = j * 2;
 				len = len * 2;
@@ -4666,14 +4666,12 @@ static int
 initialize_uniform_char (const struct cb_field *f,
 			 const struct cb_initialize *p)
 {
-	int	c;
-
 	if (cb_default_byte >= 0 && !p->flag_init_statement) {
 		return cb_default_byte;
 	}
 
 	if (f->children) {
-		c = initialize_uniform_char (f->children, p);
+		const int	c = initialize_uniform_char (f->children, p);
 		for (f = f->children->sister; f; f = f->sister) {
 			if (!f->redefines) {
 				if (c != initialize_uniform_char (f, p)) {
@@ -5295,6 +5293,7 @@ output_initialize_occurs (struct cb_initialize *p, cb_tree x)
 		int k;
 		idx_incr = -1;
 		idx_stop = 0;
+		/* TODO: move check to parser and translate msgid */
 		k = cb_list_length (f->values) - total_occurs;
 		if (k > 0) {
 			cb_error_x ((cb_tree)f, "%s has %d more value%s than needed",
@@ -5369,7 +5368,7 @@ output_initialize_occurs (struct cb_initialize *p, cb_tree x)
 static void
 output_initialize_compound (struct cb_initialize *p, cb_tree x)
 {
-	struct cb_field	*ff = cb_code_field (x);
+	const struct cb_field	* const ff = cb_code_field (x);
 	struct cb_field	*pf, *f;
 	struct cb_field	*last_field;
 
@@ -9501,7 +9500,7 @@ output_report_summed_field (struct cb_field *p)
 		return;
 	}
 
-	if(p->storage == CB_STORAGE_REPORT) {
+	if (p->storage == CB_STORAGE_REPORT) {
 		cb_tree	l, x;
 		struct cb_field *f;
 
@@ -9510,7 +9509,7 @@ output_report_summed_field (struct cb_field *p)
 			f = cb_code_field(x);
 			if (f->storage == CB_STORAGE_WORKING
 			&& !(f->report_flag & COB_REPORT_REF_EMITTED)) {
-				output_emit_field(cb_build_field_reference (f, NULL), NULL);
+				output_emit_field (cb_build_field_reference (f, NULL), NULL);
 			}
 		}
 		if (p->children) {
@@ -13456,8 +13455,10 @@ codegen_finalize (void)
 					comment_gen = 1;
 					output_storage ("\n/* Decimal constants */\n");
 				}
-				output_storage ("static\tcob_decimal\t%s%d;\n", CB_PREFIX_DEC_FIELD, m->id);
-				output_storage ("static\tcob_decimal\t*%s%d = NULL;\n", CB_PREFIX_DEC_CONST, m->id);
+				output_storage ("static\tcob_decimal\t%s%d;\n",
+						CB_PREFIX_DEC_FIELD, m->id);
+				output_storage ("static\tcob_decimal\t*%s%d = NULL;\n",
+						CB_PREFIX_DEC_CONST, m->id);
 			}
 		}
 		if (comment_gen) {

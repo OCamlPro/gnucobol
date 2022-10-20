@@ -3854,6 +3854,18 @@ repeat:
 	return pic;
 }
 
+/* REPORT: VARYING */
+
+cb_tree
+cb_build_vary (cb_tree var, cb_tree from, cb_tree by)
+{
+	struct cb_vary *vary = make_tree (CB_TAG_VARY, CB_CATEGORY_UNKNOWN, sizeof (struct cb_vary));
+	vary->var = var;
+	vary->from = from;
+	vary->by = by;
+	return CB_TREE (vary);
+}
+
 /* Field */
 
 cb_tree
@@ -5256,6 +5268,11 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 	/* LCOV_EXCL_STOP */
 
 	f = CB_FIELD (cb_ref (x));
+	/* ensure the reference was validated as this
+		also calculates the reference' picture and size */
+	if (!f->flag_is_verified) {
+		cb_validate_field (f);
+	}
 	if (f->flag_any_length
 	 || (f->pic == NULL && !f->children)) {
 		return cb_any;

@@ -253,7 +253,7 @@ AT_DATA([prog.cob], [       IDENTIFICATION   DIVISION.
        PROGRAM-ID. prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       01 FAILED        PIC 9(4) COMP-5 VALUE ZERO.
+      *01 FAILED        PIC 9(4) COMP-5 VALUE ZERO.
        01 G.
          02 G2          OCCURS 3.
            03 X         PIC 9 VALUE ZERO.
@@ -267,32 +267,30 @@ AT_DATA([prog.cob], [       IDENTIFICATION   DIVISION.
               DISPLAY "Compile failed: " G "."
               DISPLAY "     should be: "
                       "09Y9Y9Y9Y9YZ09Y9Y9Y9Y9YZ09Y9Y9Y9Y9YZ."
-              ADD 1 TO FAILED
+      *       ADD 1 TO FAILED
            END-IF.
            INITIALIZE G.
            IF G NOT = "00 0 0 0 0  00 0 0 0 0  00 0 0 0 0  "
               DISPLAY "INITIALIZE failed: " G "."
               DISPLAY "        should be: "
                       "00 0 0 0 0  00 0 0 0 0  00 0 0 0 0  ."
-              ADD 1 TO FAILED
+      *       ADD 1 TO FAILED
            END-IF.
            INITIALIZE G ALL TO VALUE.
            IF G NOT = "09Y9Y9Y9Y9YZ09Y9Y9Y9Y9YZ09Y9Y9Y9Y9YZ"
               DISPLAY "INIT VALUE failed: " G "."
               DISPLAY "        should be: "
                       "09Y9Y9Y9Y9YZ09Y9Y9Y9Y9YZ09Y9Y9Y9Y9YZ."
-              ADD 1 TO FAILED
+      *       ADD 1 TO FAILED
            END-IF.
-           IF FAILED = ZERO
-              DISPLAY "All INITILIZE tests passed."
-           END-IF.
+      *    IF FAILED = ZERO
+      *       DISPLAY "All INITIALIZE tests passed." 
+      *    END-IF
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -std=default prog.cob ], [0], [], [])
-
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [All INITILIZE tests passed.
-], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
 

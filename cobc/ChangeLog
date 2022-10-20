@@ -1,4 +1,9 @@
 
+2022-10-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y, tree.c (cb_build_vary), tree.h: cleanup to not use
+	  static variables in the parser for creation of the rw vary items
+
 2022-10-19  Simon Sobisch <simonsobisch@gnu.org>
 
 	* tree.h (struct cb_if): changed "is_if" integer flag to "enum
@@ -466,6 +471,22 @@
 	  as well as floating margin B
 	* pplex.l (check_listing): do not output sequence number of short lines
 
+2022-07-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* field.c (validate_blank_when_zero): iterate over pic->str
+	  depending on pic->lenstr (= won't iterate when zero)
+	* codegen.c: minimal refactoring
+	* tree.c (compare_field_literal): ensure field is verified,
+	  otherwise pic and size related checks will fail
+	* parser.y, reserved.c, cobc.h: added most missing COBOL2002 data clauses
+	  as PENDING and reserved words as necessary
+	* scanner.l: distinguish between INVALID KEY and INVALID
+	* parser.y, reserved.c: distinguish between VALUES and VALUE,
+	  fixing falsely parsed VALUE ARE and VALUES IS
+	* parser.y: split level 88 VALUE clause to value_clause_condition,
+	  added content_validation format to it (already usable as condition,
+	  preparation for later content validation by VALUE statement)
+
 2022-06-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c, help.c: added -dumpversion
@@ -633,6 +654,12 @@
 	  reporting an error when in ppparse.y
 	* ppparse.y (unquote, fix_filename): factorize code for
 	  unquotation of alphanumeric literals
+
+2022-01-17  Ron Norman <rjn@inglenet.com>
+
+	* parser.y: VARYING var FROM exp BY exp partly added
+	* tree.h:	Add CB_VARY and updated cb_field accodingly
+	* codegen.c: Updated to use new CB_VARY
 
 2021-12-30  Simon Sobisch <simonsobisch@gnu.org>
 

@@ -14003,7 +14003,7 @@ name_is_unique_when_qualified_by (struct cb_field * const f,
 	cb_tree	f_ref = cb_build_reference (f->name);
 	CB_REFERENCE (f_ref)->chain = qual_ref;
 
-        return cb_try_ref (f_ref) != cb_error_node;
+	return cb_try_ref (f_ref) != cb_error_node;
 }
 
 static int

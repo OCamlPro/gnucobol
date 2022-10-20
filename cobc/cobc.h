@@ -28,9 +28,9 @@
          and include that here */
 #ifdef	HAVE_UNISTD_H
 #include <unistd.h>
-#else
-#include <stdio.h>
 #endif
+#include <stdio.h>	/* for FILE* */
+
 #include "../libcob/common.h"
 
 #ifdef	ENABLE_NLS
@@ -173,6 +173,8 @@ enum cb_current_date {
 #define	CB_CS_CONVERT			CB_CS_DAY
 #define	CB_CS_MODULE_NAME		CB_CS_DAY
 #define	CB_CS_SPECIAL_NAMES		CB_CS_DAY
+#define	CB_CS_DEFAULT			CB_CS_DAY
+#define	CB_CS_VALIDATE_STATUS	CB_CS_DAY
 
 /* Support for cobc from stdin */
 #define COB_DASH			"-"
