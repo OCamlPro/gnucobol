@@ -2572,6 +2572,9 @@ cob_cmp_numdisp (const unsigned char *data, const size_t size,
 	return (val < n) ? -1 : (val > n);
 }
 
+/* "allocation of cob_decimals (internal structure pointing
+   to initialized GMP storage) - just getting the pointer to
+   one of the pre-allocated ones */
 void
 cob_decimal_alloc (const cob_u32_t params, ...)
 {
@@ -2587,6 +2590,9 @@ cob_decimal_alloc (const cob_u32_t params, ...)
 	va_end (args);
 }
 
+/* real allocation of (temporary) cob_decimals, which is relative slow
+   because of necessary GMP initialization storage;
+   caller must release the decimals with a later call to cob_decial_pop */
 void
 cob_decimal_push (const cob_u32_t params, ...)
 {
@@ -2603,6 +2609,7 @@ cob_decimal_push (const cob_u32_t params, ...)
 	va_end (args);
 }
 
+/* release temporary decimals, allocated with cob_decimal_push */
 void
 cob_decimal_pop (const cob_u32_t params, ...)
 {

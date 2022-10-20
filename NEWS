@@ -100,6 +100,11 @@ NEWS - user visible changes				-*- outline -*-
 ** ORGANIZATION INDEXED (with BDB backend): internal changes in record and
    file locking, fixing some related bugs
 
+** extended screen io: support for color codes 8-15 (implied highlight/blink
+   attribute); only the three lower bits are now considered during evaluation
+   of the color-number, leading to a previous value of 21 (which was ignored
+   until now) being interpreted as 5, see FR #387
+
 * Changes that potentially effects recompilation of existing programs:
 
 ** the reserved word list and intrinsic functions was updated, especially

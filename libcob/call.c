@@ -2061,6 +2061,8 @@ cob_get_field_str (const cob_field *f, char *buffer, size_t size)
 		fp = cob_create_tmpfile ("display");
 #endif
 		if (fp) {
+			/* TODO: at least for numeric items: verify minimal length of buffer
+			         as cob_display_common will not check the size there */
 			unsigned char pretty = COB_MODULE_PTR->flag_pretty_display;
 			COB_MODULE_PTR->flag_pretty_display = 1;
 			cob_display_common (f, fp);

@@ -378,6 +378,15 @@
 	  heavily improving ccomputation and comparison of FLOAT-DECIMAL
 	* numeric.c: actually handle up to COB_MAX_BINARY, not one less
 
+2022-01-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* termio.c: use SIGINT intead of hard-wired "2"
+	* screenio.c (cob_sys_get_csr_pos, cob_sys_set_csr_pos): support
+	  for get/set cursor position with four-byte field instead of two
+	* screenio.c (cob_accept_escape_key): support to get 2byte status
+	* common.c (cob_accept_exception_status): handle special MF values
+	  128, 2, 1 when called with 3byte NUMERIC-DISPLAY
+
 2022-01-03  Simon Sobisch <simonsobisch@gnu.org>
 
 	* coblocal.h, common.h: moved some internal limits to coblocal.h
@@ -498,6 +507,9 @@
 	  (cob_stop_run, cob_tidy)
 	* reportio.c (cob_report_generate): backport of 2021-09-26 change
 	* common.c (cob_gettmpdir): fix to remove trailing slash
+	* screenio.c: FR # 387 supporting color codes 8-15 - using bits 1-3 for
+	  the color value, bit 4 for attribute blink/highlight and ignoring
+	  all higher bits
 
 2021-09-26  Ron Norman <rjn@inglenet.com>
 
@@ -573,6 +585,8 @@
 
 	* intrinsic.c, common.h: implemented (cob_intr_bit_of),
 	  (cob_intr_bit_to_char)
+	* common.c: renamed (cob_memcpy) to (cob_move_intermediate) and
+	  postponed handling of target size to cob_move
 
 2021-08-30  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -665,12 +679,13 @@
 	  (cob_init_call handle), additional preparare cob_try_preload to be
 	  callable from debuggers
 
-2021-02-08  Simon Sobisch <simonsobisch@gnu.org>
+2021-02-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* coblocal.h (COB_D2I): only use the half-byte of the char to resolve the
 	  integer value, preventing overflows leading to huge/negative values and
-	  providing conversion of space to zero and correct conversion of numeric
-	  character from both ASCII and EBCDIC to integer
+	  providing conversion of common invalid data (SPACE/LOW-VALUE) to zero
+	  along with correct conversion of numeric character from both ASCII and
+	  EBCDIC to integer
 	* move.c: use of COB_D2I for conversions
 	  and restore previous one afterwards
 	* move.c (store_common_region): minor refactoring
@@ -683,6 +698,9 @@
 2021-01-27  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_sys_getopt_long_long): fix for EBCDIC
+	* termio.c: check for output errors and early exit; while this is unlikely
+	  to happen with stdscr/stderr, it is when using these functions in dump
+	  code or externally (with real files or with memory mapped io)
 
 2021-01-21  Simon Sobisch <simonsobisch@gnu.org>
 

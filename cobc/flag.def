@@ -199,7 +199,7 @@ CB_FLAG (cb_flag_static_call, 1, "static-call",
 	_("  -fstatic-call         output static function calls for the CALL statement"))
 
 CB_FLAG_ON (cb_flag_c_decl_for_static_call, 1, "gen-c-decl-static-call",
-	_("  -fno-gen-c-decl-static-call\tdisable generation of C function declations\n"
+	_("  -fno-gen-c-decl-static-call\tdisable generation of C function declarations\n"
 	  "                        for subroutines with static CALL"))
 
 CB_FLAG (cb_flag_c_line_directives, 1, "gen-c-line-directives",

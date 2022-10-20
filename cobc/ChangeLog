@@ -102,6 +102,8 @@
 	* typeck.c (cb_check_field_debug): fixed bug introduced with last change
 	  and don't create unnecessary long DEBUG-NAME strings
 	* config.c (cb_load_conf_file): check snprintf size fixing compile warning
+	* typeck.c (validate_occurs): change level 01/77 check back to plain
+	  dialect verification fixing #854
 
 2022-10-04  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 

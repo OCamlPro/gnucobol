@@ -1898,9 +1898,9 @@ COB_EXPIMP void		cob_init_table	(void *, const size_t, const size_t);
 COB_EXPIMP void		cob_set_int	(cob_field *, const int);
 COB_EXPIMP int		cob_get_int	(cob_field *);
 COB_EXPIMP cob_s64_t	cob_get_llint	(cob_field *);
-/**************************************************/
-/* Functions in move.c for C access to COBOL data */
-/**************************************************/
+/*************************************************************************/
+/* Functions in move.c for C access to COBOL data - GnuCOBOL COBOL-C-API */
+/*************************************************************************/
 COB_EXPIMP char *	cob_get_picx( void *cbldata, size_t len, void *charfld, size_t charlen);
 COB_EXPIMP cob_s64_t	cob_get_s64_comp3(void *cbldata, int len);
 COB_EXPIMP cob_s64_t	cob_get_s64_comp5(void *cbldata, int len);
@@ -2018,6 +2018,9 @@ COB_EXPIMP void		*cob_savenv2		(struct cobjmp_buf *, const int);
 COB_EXPIMP void		cob_longjmp		(struct cobjmp_buf *);
 #endif
 
+/*************************************************************************/
+/* Functions in move.c for C access to COBOL data - GnuCOBOL COBOL-C-API */
+/*************************************************************************/
 COB_EXPIMP int		cob_get_num_params ( void );
 COB_EXPIMP int		cob_get_param_constant ( int num_param );
 COB_EXPIMP int		cob_get_param_digits( int num_param );
@@ -2029,11 +2032,11 @@ COB_EXPIMP void *	cob_get_param_data ( int num_param );
 COB_EXPIMP cob_s64_t	cob_get_s64_param  ( int num_param );
 COB_EXPIMP cob_u64_t	cob_get_u64_param  ( int num_param );
 COB_EXPIMP double	cob_get_dbl_param  ( int num_param );
-COB_EXPIMP char *	cob_get_picx_param ( int num_param, void *charfld, size_t charlen );
-COB_EXPIMP void *	cob_get_grp_param  ( int num_param, void *charfld, size_t charlen );
 COB_EXPIMP void		cob_put_dbl_param  ( int num_param, double value );
 COB_EXPIMP void		cob_put_s64_param  ( int num_param, cob_s64_t value );
 COB_EXPIMP void		cob_put_u64_param  ( int num_param, cob_u64_t value );
+COB_EXPIMP char *	cob_get_picx_param ( int num_param, void *charfld, size_t charlen );
+COB_EXPIMP void *	cob_get_grp_param  ( int num_param, void *charfld, size_t charlen );
 COB_EXPIMP void 	cob_put_picx_param ( int num_param, void *charfld );
 COB_EXPIMP void  	cob_put_grp_param  ( int num_param, void *charfld, size_t charlen );
 

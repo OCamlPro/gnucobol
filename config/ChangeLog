@@ -3,6 +3,10 @@
 
 	* runtime.cfg: add COB_CORE_FILENAME and adjust COB_CORE_ON_ERROR
 
+2022-10-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* *.conf: changed top-level-occurs-clause "skip" to "unconformable"
+
 2022-09-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* runtime.cfg: adjustments for LINE SEQUENTIAL docs

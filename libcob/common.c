@@ -1828,17 +1828,15 @@ sort_compare (const void *data1, const void *data2)
 }
 
 static void
-cob_memcpy (cob_field *dst, const void *src, const size_t size)
+cob_move_intermediate (cob_field *dst, const void *src, const size_t size)
 {
-	cob_field	temp;
-
-	if (!dst->size) {
-		return;
-	}
-	temp.size = size;
-	temp.data = (cob_u8_ptr)src;
-	temp.attr = &const_alpha_attr;
-	cob_move (&temp, dst);
+	cob_field	intermediate;
+	intermediate.size = size;
+	intermediate.data = (cob_u8_ptr)src;
+	/* note: if the target is numeric then cob_move will convert
+	         on the fly to numeric as necessary */
+	intermediate.attr = &const_alpha_attr;
+	cob_move (&intermediate, dst);
 }
 
 /* open file using mode according to cob_unix_lf and
@@ -2136,19 +2134,32 @@ cob_add_exception (const int id)
 void
 cob_accept_exception_status (cob_field *f)
 {
-	/* Note: MF set this to a 9(3) item, we may
-	   add a translation here */
-	cob_set_int (f, last_exception_code);
+	int exception = last_exception_code;
+	/* Note: MF set this to a 9(3) item, we do a translation here (only works for USAGE DISPLAY!);
+	   MF: intended for CALL only, 0=ok, 1=ENOMEM, 2=module not found, 128 other CALL failure,
+	   "unpredictable if the last statement was not a CALL, especially: adjusted by fileio" */
+	if (exception
+	 && f->size == 3	/* FIXME: current code works only for DISPLAY, adjust to work for other usages */
+	 && COB_FIELD_TYPE (f) == COB_TYPE_NUMERIC_DISPLAY) {
+		if (exception == cob_exception_tab_code[COB_EC_PROGRAM_RESOURCES]) {
+			exception = 1;
+		} else if (exception == cob_exception_tab_code[COB_EC_PROGRAM_NOT_FOUND]) {
+			exception = 2;
+		} else if (exception || cob_exception_tab_code[COB_EC_PROGRAM]) {
+			exception = 128;
+		}
+	}
+	cob_set_int (f, exception);
 }
 
 void
 cob_accept_user_name (cob_field *f)
 {
 	if (cobsetptr->cob_user_name) {
-		cob_memcpy (f, cobsetptr->cob_user_name,
+		cob_move_intermediate (f, cobsetptr->cob_user_name,
 			    strlen (cobsetptr->cob_user_name));
 	} else {
-		cob_memcpy (f, " ", (size_t)1);
+		cob_move_intermediate (f, " ", (size_t)1);
 	}
 }
 
@@ -2319,8 +2330,9 @@ cob_cache_free (void *ptr)
 	}
 }
 
-/* cob_set_location is kept for backward compatibility
-   (pre 3.0, where it was used for setting and tracing) */
+/* cob_set_location is kept for backward compatibility (pre 3.0);
+   it stored the location for exception handling and related
+   intrinsic functions and did tracing, depending on a global flag */
 void
 cob_set_location (const char *sfile, const unsigned int sline,
 		  const char *csect, const char *cpara,
@@ -4677,7 +4689,7 @@ cob_accept_date (cob_field *field)
 		(cob_u16_t) time.year % 100,
 		(cob_u16_t) time.month,
 		(cob_u16_t) time.day_of_month);
-	cob_memcpy (field, buff, (size_t)6);
+	cob_move_intermediate (field, buff, (size_t)6);
 }
 
 void
@@ -4693,7 +4705,7 @@ cob_accept_date_yyyymmdd (cob_field *field)
 		(cob_u16_t) time.year,
 		(cob_u16_t) time.month,
 		(cob_u16_t) time.day_of_month);
-	cob_memcpy (field, buff, (size_t)8);
+	cob_move_intermediate (field, buff, (size_t)8);
 }
 
 void
@@ -4707,7 +4719,7 @@ cob_accept_day (cob_field *field)
 	snprintf (buff, sizeof (buff), "%2.2d%3.3d",
 		(cob_u16_t) time.year % 100,
 		(cob_u16_t) time.day_of_year);
-	cob_memcpy (field, buff, (size_t)5);
+	cob_move_intermediate (field, buff, (size_t)5);
 }
 
 void
@@ -4721,7 +4733,7 @@ cob_accept_day_yyyyddd (cob_field *field)
 	snprintf (buff, sizeof (buff), "%4.4d%3.3d",
 		(cob_u16_t) time.year,
 		(cob_u16_t) time.day_of_year);
-	cob_memcpy (field, buff, (size_t)7);
+	cob_move_intermediate (field, buff, (size_t)7);
 }
 
 void
@@ -4732,7 +4744,7 @@ cob_accept_day_of_week (cob_field *field)
 
 	time = cob_get_current_date_and_time ();
 	day = (unsigned char)(time.day_of_week + '0');
-	cob_memcpy (field, &day, (size_t)1);
+	cob_move_intermediate (field, &day, (size_t)1);
 }
 
 void
@@ -4749,7 +4761,7 @@ cob_accept_time (cob_field *field)
 		(cob_u16_t) time.second,
 		(cob_u16_t) (time.nanosecond / 10000000));
 
-	cob_memcpy (field, buff, (size_t)8);
+	cob_move_intermediate (field, buff, (size_t)8);
 }
 
 void
@@ -4772,12 +4784,12 @@ cob_accept_command_line (cob_field *f)
 	size_t	len;
 
 	if (commlncnt) {
-		cob_memcpy (f, commlnptr, commlncnt);
+		cob_move_intermediate (f, commlnptr, commlncnt);
 		return;
 	}
 
 	if (cob_argc <= 1) {
-		cob_memcpy (f, " ", (size_t)1);
+		cob_move_intermediate (f, " ", (size_t)1);
 		return;
 	}
 
@@ -4802,7 +4814,7 @@ cob_accept_command_line (cob_field *f)
 			break;
 		}
 	}
-	cob_memcpy (f, buff, size);
+	cob_move_intermediate (f, buff, size);
 	cob_free (buff);
 }
 
@@ -4849,7 +4861,7 @@ cob_accept_arg_value (cob_field *f)
 		cob_set_exception (COB_EC_IMP_ACCEPT);
 		return;
 	}
-	cob_memcpy (f, cob_argv[current_arg],
+	cob_move_intermediate (f, cob_argv[current_arg],
 		    strlen (cob_argv[current_arg]));
 	current_arg++;
 }
@@ -5025,7 +5037,7 @@ cob_get_environment (const cob_field *envname, cob_field *envval)
 		cob_set_exception (COB_EC_IMP_ACCEPT);
 		p = " ";
 	}
-	cob_memcpy (envval, p, strlen (p));
+	cob_move_intermediate (envval, p, strlen (p));
 	cob_free (buff);
 }
 
@@ -5041,7 +5053,7 @@ cob_accept_environment (cob_field *f)
 		cob_set_exception (COB_EC_IMP_ACCEPT);
 		p = " ";
 	}
-	cob_memcpy (f, p, strlen (p));
+	cob_move_intermediate (f, p, strlen (p));
 }
 
 void
@@ -6108,18 +6120,18 @@ internal_nanosleep (cob_s64_t nsecs)
 #else
 
 	unsigned int	msecs;
-#if	defined (__370__) || defined (__OS400__)
-	msecs = (unsigned int)(nsecs / 1000000000);
-	if (msecs > 0) {
-		sleep (msecs);
-	}
-#elif	defined (_WIN32)
+#if	defined (_WIN32)
 	msecs = (unsigned int)(nsecs / 1000000);
 	if (msecs > 0) {
 		Sleep (msecs);
 	}
-#else
-	msecs = (unsigned int)(nsecs / 1000000000);
+#else /* includes "defined (__370__) || defined (__OS400__)" */
+	msecs = (unsigned int)(nsecs / 100000000);
+	if (msecs % 10 > 4) {
+		msecs = (msecs / 10) + 1;
+	} else {
+		msecs = msecs / 10;
+	}
 	if (msecs > 0) {
 		sleep (msecs);
 	}
@@ -8394,9 +8406,6 @@ get_screenio_and_mouse_info (char *version_buffer, size_t size, const int verbos
 #else
 	mouse_support = _("disabled");
 #endif
-	if (verbose) {
-		endwin ();
-	}
 
 #if defined (__PDCURSES__) || defined (NCURSES_VERSION)
 #if defined (__PDCURSES__)
