@@ -5822,8 +5822,7 @@ cb_build_expr (cb_tree list)
 const char *
 explain_operator (const int op)
 {
-	switch (op)
-	{
+	switch (op) {
 	case '>':
 		return "GREATER THAN";
 	case '<':
@@ -11628,8 +11627,8 @@ cb_build_move_field (cb_tree src, cb_tree dst)
 	 && !cb_field_variable_size (dst_f)) {
 		switch (CB_TREE_CATEGORY (src)) {
 		case CB_CATEGORY_ALPHABETIC:
-			if (CB_TREE_CATEGORY (dst) == CB_CATEGORY_ALPHABETIC ||
-			    CB_TREE_CATEGORY (dst) == CB_CATEGORY_ALPHANUMERIC) {
+			if (CB_TREE_CATEGORY (dst) == CB_CATEGORY_ALPHABETIC
+			 || CB_TREE_CATEGORY (dst) == CB_CATEGORY_ALPHANUMERIC) {
 				if (dst_f->flag_justified == 0) {
 					return cb_build_move_copy (src, dst);
 				}
@@ -11643,21 +11642,22 @@ cb_build_move_field (cb_tree src, cb_tree dst)
 			}
 			break;
 		case CB_CATEGORY_NUMERIC:
-			if (CB_TREE_CATEGORY (dst) == CB_CATEGORY_NUMERIC &&
-			    src_f->usage == dst_f->usage &&
-			    src_f->pic->size == dst_f->pic->size &&
-			    src_f->pic->digits == dst_f->pic->digits &&
-			    src_f->pic->scale == dst_f->pic->scale &&
-			    src_f->pic->have_sign == dst_f->pic->have_sign &&
-			    src_f->flag_binary_swap == dst_f->flag_binary_swap &&
-			    src_f->flag_sign_leading == dst_f->flag_sign_leading &&
-			    src_f->flag_sign_separate == dst_f->flag_sign_separate) {
+			if (CB_TREE_CATEGORY (dst) == CB_CATEGORY_NUMERIC
+			 && src_f->usage == dst_f->usage
+			 && src_f->pic->size == dst_f->pic->size
+			 && src_f->pic->digits == dst_f->pic->digits
+			 && src_f->pic->scale == dst_f->pic->scale
+			 && src_f->pic->have_sign == dst_f->pic->have_sign
+			 && src_f->flag_binary_swap == dst_f->flag_binary_swap
+			 && src_f->flag_sign_leading == dst_f->flag_sign_leading
+			 && src_f->flag_sign_separate == dst_f->flag_sign_separate) {
 				return cb_build_move_copy (src, dst);
-			} else if (CB_TREE_CATEGORY (dst) == CB_CATEGORY_ALPHANUMERIC
-				 && src_f->usage == CB_USAGE_DISPLAY
-				 && src_f->pic->have_sign == 0
-				 && !src_f->flag_sign_leading
-				 && !src_f->flag_sign_separate) {
+			}
+			if (CB_TREE_CATEGORY (dst) == CB_CATEGORY_ALPHANUMERIC
+			 && src_f->usage == CB_USAGE_DISPLAY
+			 && src_f->pic->have_sign == 0
+			 && !src_f->flag_sign_leading
+			 && !src_f->flag_sign_separate) {
 				return cb_build_move_copy (src, dst);
 			}
 			break;
@@ -11732,7 +11732,7 @@ cb_build_move (cb_tree src, cb_tree dst)
 		return cb_build_assign (dst, src);
 	}
 
-	if (src_ref && CB_ALPHABET_NAME_P(src_ref->value)) {
+	if (src_ref && CB_ALPHABET_NAME_P (src_ref->value)) {
 		return CB_BUILD_FUNCALL_2 ("cob_move", src, dst);
 	}
 	if (CB_INDEX_OR_HANDLE_P (dst)) {

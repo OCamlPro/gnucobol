@@ -2427,7 +2427,7 @@ cb_int_hex (const int n)
 
 	/* Do not use make_tree here as we want a main_malloc
 	   instead of parse_malloc! */
-	y = cobc_main_malloc (sizeof(struct cb_integer));
+	y = cobc_main_malloc (sizeof (struct cb_integer));
 	y->val = n;
 	y->hexval = 1;
 
@@ -5286,7 +5286,7 @@ display_literal (char *disp, struct cb_literal *l, int offset, int scale)
 		} else if (scale > 0) {
 			snprintf (disp, COB_MAX_DIGITS + 1, "%s%.*s.%.*s",
 				(char *)(l->sign == -1 ? "-" : ""),
-				(l->size - l->scale - offset), (char *)(l->data + offset),
+				(int)(l->size - l->scale - offset), (char *)(l->data + offset),
 				scale, (char *)(l->data + l->size - l->scale));
 		} else {
 			snprintf (disp, COB_MAX_DIGITS + 1, "%s%s",
@@ -5692,6 +5692,12 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 	 && y == NULL
 	 && CB_NUMERIC_LITERAL_P(x) )	/* Parens around a Numeric Literal */
 		return x;
+
+	/* Simon: just ignore here as we already created
+		   an error for that in another place */
+	if (x == cb_error_node
+	 || y == cb_error_node)
+		return cb_error_node;
 
 	/* setting an error tree to point to the correct expression
 	   instead of the literal/var definition / current line */
@@ -6182,7 +6188,6 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 
 	case 0:
 		/* Operation on invalid elements */
-		cb_error_x (e, _("invalid expression"));
 		return cb_error_node;
 
 	/* LCOV_EXCL_START */

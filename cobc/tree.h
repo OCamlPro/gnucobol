@@ -986,7 +986,6 @@ struct cb_field {
 	unsigned int flag_sync_right : 1;	/* SYNCHRONIZED RIGHT */
 	unsigned int flag_internal_register	: 1;	/* Is an internally generated register */
 	unsigned int flag_is_typedef : 1;	/* TYPEDEF  */
-	unsigned int flag_occurs_values: 1;	/* OCCURS and multi VALUEs done */
 	unsigned int flag_picture_l : 1;	/* Is USAGE PICTURE L */
 };
 
@@ -1322,7 +1321,7 @@ struct cb_intrinsic {
 struct cb_initialize {
 	struct cb_tree_common	common;			/* Common values */
 	cb_tree			var;			/* Field */
-	cb_tree			val;			/* Value */
+	cb_tree			val;			/* ALL (cb_true) or category (cb_int) TO VALUE */
 	cb_tree			rep;			/* Replacing */
 	unsigned char		flag_default;		/* Default */
 	unsigned char		flag_init_statement;	/* INITIALIZE statement */

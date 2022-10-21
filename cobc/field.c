@@ -535,13 +535,11 @@ same_level:
 				break;
 			}
 		}
-		if (cb_relax_level_hierarchy
-		 && p /* <- silence warnings */) {
+		/* always generate dummy filler field to prevent
+		   parsing of follow-on fields to fail the same way */
+		if (p) /* <- silence warnings */ {
 			dummy_fill = cb_build_filler ();
 			field_fill = CB_FIELD (cb_build_field (dummy_fill));
-			cb_warning_x (COBC_WARN_FILLER, name,
-				      _("no previous data item of level %02d"),
-				      f->level);
 			field_fill->level = f->level;
 			field_fill->flag_filler = 1;
 			field_fill->storage = storage;
@@ -554,11 +552,15 @@ same_level:
 			field_fill->sister = f;
 			f->parent = field_fill->parent;
 			/* last_field = field_fill; */
+		}
+		if (cb_relax_level_hierarchy) {
+			cb_warning_x (COBC_WARN_FILLER, name,
+				_("no previous data item of level %02d"),
+				f->level);
 		} else {
 			cb_error_x (name,
-				    _("no previous data item of level %02d"),
-				    f->level);
-			return cb_error_node;
+				_("no previous data item of level %02d"),
+				f->level);
 		}
 	}
 
@@ -831,7 +833,7 @@ copy_into_field (struct cb_field *source, struct cb_field *target)
 	cb_tree	external_definition = target->external_definition;
 #endif
 
-	/* note: EXTERNAL is always applied from the typedef (if level (1/77),
+	/* note: EXTERNAL is always applied from the typedef (if level 1/77),
 			 but may be specified on the field */
 	if (target->level == 1 || target->level == 77) {
 		field_attribute_copy (flag_external);
@@ -2964,18 +2966,97 @@ unbounded_again:
 
 	return f->size;
 }
- 
+
+/* Check for default-matching VALUE, and depending on "default init"
+   replace by cb_zero/cb_space and return 1 if the value matches the default. */
+static int
+cleanup_field_value (struct cb_field* f, cb_tree *val)
+{
+	switch (CB_TREE_CATEGORY (f)) {
+	case CB_CATEGORY_NUMERIC:
+		if (CB_LITERAL_P (*val)) {
+			const struct cb_literal* lit = CB_LITERAL (*val);
+			char* p = (char*)lit->data;
+			char* end = p + lit->size - 1;
+			/* note: literal data has no sign or decimal period any more */
+			if (*end == '0') {
+				while (p < end && *p == '0') p++;
+				if (p == end) *val = cb_zero;
+			}
+		}
+		if (*val == cb_zero
+		 && !f->flag_internal_register
+		 && cb_default_byte == -1
+		 && ( f->storage == CB_STORAGE_WORKING
+		   || f->storage == CB_STORAGE_LOCAL)
+		 && !f->flag_sign_separate) {
+			return 1;
+		}
+		break;
+	case CB_CATEGORY_NATIONAL:
+		/* FIXME: Fall-through, but should handle national space */
+	case CB_CATEGORY_ALPHANUMERIC:
+		if (CB_LITERAL_P (*val)) {
+			const struct cb_literal *lit = CB_LITERAL (*val);
+			char *p = (char*)lit->data;
+			char *end = p + lit->size - 1;
+			if (*end == ' ') {
+				while (p < end && *p == ' ') p++;
+				if (p == end) *val = cb_space;
+			}
+		}
+		if (*val == cb_space
+		 && !f->flag_internal_register
+		 && (cb_default_byte == -1 || cb_default_byte == ' ')
+		 && ( f->storage == CB_STORAGE_WORKING
+		   || f->storage == CB_STORAGE_LOCAL)
+		 && !f->children) {
+			return 1;
+		}
+		break;
+	default:
+		break;
+	}
+
+	return 0;
+}
+
 /* validate list of simple VALUEs */
 static int
 validate_field_value_list (cb_tree values, struct cb_field* f)
 {
 	int ret = 0;
+	int ret_single;
+	int no_relevant_value = 1;
 	for (; values; values = CB_CHAIN (values)) {
-		ret += validate_move (CB_VALUE (values), CB_TREE (f), 1, NULL);
+		cb_tree value = CB_VALUE (values);
+		ret_single = validate_move (value, CB_TREE (f), 1, NULL);
+		if (!ret_single) {
+			/* possible cleanup for value */
+			if (!cleanup_field_value (f, &value)) {
+				no_relevant_value = 0;
+			}
+		} else {
+			ret++;
+		}
+	}
+	if (no_relevant_value
+	 && !ret) {
+#if 0 /* this idea was nice, but we need a pointer for
+         INITIALIZE BY VALUE, so don't drop the value; otherwise
+         fails "752. run_misc.at:10849: dump feature with NULL address ..." */
+		/* if deemed that no value is necessary: drop that completely */
+		f->values = NULL;
+#endif
 	}
 	return ret;
 }
 
+/* validate if field's VALUE clause matches
+   the necesary rules;
+   remove VALUE clause if it matches the default setting
+   to improve codegen
+   recursively called for the field's sub-fields */
 static int
 validate_field_value (struct cb_field *f)
 {
@@ -2986,11 +3067,27 @@ validate_field_value (struct cb_field *f)
 				    _("%s and %s are mutually exclusive"),
 				    _("variable-length PICTURE"), "VALUE");
 			f->values = NULL;
+			return 1;
 		} else {
 			cb_tree x = f->values;
+			int ret_single = 0;
 			if (!CB_LIST_P (x)) {
 				/* simple, single VALUE */
-				ret += validate_move (x, CB_TREE (f), 1, NULL);
+				ret_single = validate_move (x, CB_TREE (f), 1, NULL);
+				if (!ret_single) {
+					/* possible cleanup for value */
+					if (cleanup_field_value (f, &x)) {
+#if 0 /* this idea was nice, but we need a pointer for
+         INITIALIZE BY VALUE, so don't drop the value; otherwise
+         fails "752. run_misc.at:10849: dump feature with NULL address ..." */
+						/* if deemed that no value is necessary: drop that completely */
+						f->values = NULL;
+#endif
+					}
+				} else {
+					ret++;
+				}
+
 			} else if (!CB_TAB_VALS_P (CB_VALUE (x))) {
 				/* list of simple VALUEs */ 
 				ret += validate_field_value_list (x, f);

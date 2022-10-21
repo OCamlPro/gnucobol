@@ -1,4 +1,28 @@
 
+2022-10-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c: rewritten codegen for INITIALIZE of table fields,
+	  effectively using the 3.1.2 codegen for that with "check only"
+	  for table-format VALUE, then after everything was initialized
+	  post-setting of the table-format VALUES with
+	  output_initialize_multi_values, a simplified version of the
+	  previously often called output_initialize_occurs (now renamed),
+	  added originally for FR #234: multiple VALUEs for OCCURS
+	* tree.h (cb_field): drop flag_occurs_values
+	* codegen.c (output_initialize_to_value, output_initialize_to_default):
+	  extracted from output_initialize_one (split only)
+	* codegen.c: draft for codegen of better readable init code as
+	  done in other places (not active, inspect and decide later)
+	* codegen.c (output_figurative): fix bug #724 lvl01 OCCURS items to
+	  also correctly INITIALIZE TO VALUE with figurative constants
+	* field.c (cleanup_field_value): new function called from field
+	  value validation code; replaces values that match default by
+	  cb_zero/cb_space for better codegen
+	* tree.c (cb_build_binary_op): don't raise an error in the condition
+	  code when we raised an error - for example on a bad reference - before
+	* field.c (cb_build_field_tree): generate dummy filler for level
+	  mismatch also for non-relaxed parsing to prevent follow-on errors
+
 2022-10-20  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y, tree.c (cb_build_vary), tree.h: cleanup to not use
@@ -9,7 +33,7 @@
 	  cb_table_values to store the complex parsing result, only embed the VALUE
 	  in a list when actually necessary, and use these adjustments in syntax
 	  and codegen
-	* field.c: check all multi-values for correct type an length;
+	* field.c: check all multi-values for correct type and length;
 	  verify that only up to max amount entries are specified;
 	  TODO: complete handling of FROM/TO/REPEATED clause
 

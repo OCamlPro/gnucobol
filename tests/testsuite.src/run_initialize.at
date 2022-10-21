@@ -284,7 +284,7 @@ AT_DATA([prog.cob], [       IDENTIFICATION   DIVISION.
       *       ADD 1 TO FAILED
            END-IF.
       *    IF FAILED = ZERO
-      *       DISPLAY "All INITIALIZE tests passed." 
+      *       DISPLAY "All INITIALIZE tests passed."
       *    END-IF
            STOP RUN.
 ])
@@ -593,17 +593,76 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([OCCURS multi VALUEs])
-AT_KEYWORDS([initialize VALUE])
+AT_SETUP([INITIALIZE big table with VALUE])
+AT_KEYWORDS([VALUE OCCURS nested])
+
+# some versions stumbled over tables like these and initialized
+# every field on its own - which generates ultiple MB C source
+# also most versions took the VALUE definitions "extra", even
+# when they match -fno-defaultbyte
 
 AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION. 
+       IDENTIFICATION DIVISION.
        PROGRAM-ID. prog.
-       ENVIRONMENT DIVISION. 
-       CONFIGURATION SECTION. 
-       DATA DIVISION. 
-       WORKING-STORAGE SECTION. 
-       
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  T01-ALL.
+           05 T01-REC OCCURS 10.
+              10 T01-SOMEBER                PIC X(500) VALUES SPACES.
+              10 T01-ENTRY.
+                 15 T01-TAB OCCURS 3000.
+                    20 T01-NAME             PIC  X(020).
+                    20 T01-DETREC.
+                       25 T01-DETTAB OCCURS 47.
+                          30 T01-SHL        PIC  X(001) value 'A'.
+                          30 T01-LEN        USAGE BINARY-INT VALUE 0.
+                          30 T01-CODE1      PIC S999 COMP-5.
+                          30 T01-CODE2      PIC S999 COMP-5  VALUE 0.
+                          30 T01-CODE3      PIC S999 COMP-5  VALUE 42.
+                          30 T01-PREF       PIC  X(001).
+                          30 T01-TXT1       PIC  X(050) VALUE ALL ' '.
+                          30 T01-TXT2       PIC  X(050).
+                          30 T01-TXT3       PIC  X(050) VALUE ALL '3'.
+                       25 T02-DETTAB OCCURS 53.
+                          30 T02-LEN        USAGE BINARY-INT SIGNED.
+                          30 T02-CODE1      PIC S999 COMP-5.
+                          30 T02-CODE2      PIC S999 COMP-5  VALUE 0.
+                          30 T02-SHL        PIC  X(001) value 'B'.
+                          30 T02-PREF       PIC  X(001).
+                          30 T02-TXT1       PIC  X(050) VALUE SPACES.
+                          30 T02-TXT2       PIC  X(050) VALUE ALL SPACE.
+                          30 T02-TXT3       PIC  X(050) VALUE ALL ZERO.
+       PROCEDURE DIVISION.
+       INIT-RTN.
+         MOVE ALL HIGH-VALUE TO T01-TAB (5,55)
+         MOVE ALL LOW-VALUE  TO T01-TAB (10,400)
+         MOVE SPACES TO T01-REC (2) T01-REC (4)
+         INITIALIZE T01-REC (2) TO DEFAULT
+         INITIALIZE T01-REC (4) WITH FILLER ALL TO VALUE
+         GOBACK.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CHECK([$COMPILE -O2 prog.cob -o progo], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./progo], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([INITIALIZE to table-format VALUES ARE])
+AT_KEYWORDS([VALUE OCCURS extension nested])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
        01  GRP-3.
            05   FILLER  PIC X(3).
            05   FLD-3   OCCURS 3 TIMES.
@@ -627,7 +686,7 @@ AT_DATA([prog.cob], [
                 15   FLD-5-4 PIC XX  VALUE "ey".
            05   FILLER  PIC X(3).
 
-       01  WS. 
+       01  WS.
          05  IX1  PIC 99.
          05  IX2  PIC 99.
          05  IX3  PIC 99.
@@ -657,22 +716,22 @@ AT_DATA([prog.cob], [
              10  PER    PICTURE X VALUE ".".
            07  FLR    PICTURE X(4) VALUES " <A>" " <B>" " <C>" " <D>"
                                           " <E>" " <F>" " <G>" " <*>".
-       
+
        PROCEDURE DIVISION.
-       
-       INIT-RTN. 
+
+       INIT-RTN.
            DISPLAY "Simple OCCURS with multi VALUES".
            PERFORM VARYING IX1 FROM 1 BY 1 UNTIL IX1 > 13
               DISPLAY IX1 ": "
-                      MONTH-IN-YEAR (IX1) " has " 
+                      MONTH-IN-YEAR (IX1) " has "
                       DAYS-IN-MONTH (IX1) " days"
               END-DISPLAY
            END-PERFORM.
            DISPLAY "Complex OCCURS with multi VALUES".
            PERFORM VARYING IX3 FROM 1 BY 1 UNTIL IX3 > 2
              PERFORM VARYING IX2 FROM 1 BY 1 UNTIL IX2 > 4
-                 DISPLAY IX3 "-" IX2 ": " 
-                         DAYX-MONTHX (IX3, IX2) 
+                 DISPLAY IX3 "-" IX2 ": "
+                         DAYX-MONTHX (IX3, IX2)
                  END-DISPLAY
              END-PERFORM
            END-PERFORM.
@@ -697,21 +756,22 @@ AT_DATA([prog.cob], [
 
       *
       * The following gets very complicated because of multiple
-      * VALUES in the sub-fields
-      * Leaving this one for another day (Ron Norman)
+      * VALUES in the sub-fields, still works :-)
       *
-      *    MOVE 1 TO IX3 MOVE 2 TO IX2.
-      *    DISPLAY IX3 "-" IX2 ": " DAYX-MONTHX (IX3, IX2) ".".
-      *    DISPLAY "Initialize VALUE inside OCCURS test".
-      *    MOVE ALL "*" TO DAYX-MONTHX (IX3, IX2).
-      *    INITIALIZE DAYX-MONTHX (IX3, IX2) ALL TO VALUE.
-      *    INITIALIZE DAYX-MONTHX (1, 2) ALL TO VALUE.
-      *    DISPLAY IX3 "-" IX2 ": " DAYX-MONTHX (IX3, IX2) ".".
+           MOVE 1 TO IX3 MOVE 2 TO IX2.
+           DISPLAY IX3 "-" IX2 ": " DAYX-MONTHX (IX3, IX2) ".".
+           MOVE ALL "*" TO DAYX-MONTHX (IX3, IX2).
+           DISPLAY IX3 "-" IX2 ": " DAYX-MONTHX (IX3, IX2) ".".
+           INITIALIZE DAYX-MONTHX (IX3, IX2).
+           DISPLAY IX3 "-" IX2 ": " DAYX-MONTHX (IX3, IX2) ".".
+           DISPLAY "Initialize VALUE inside OCCURS test".
+           INITIALIZE DAYX-MONTHX (IX3, IX2) ALL TO VALUE.
+           DISPLAY IX3 "-" IX2 ": " DAYX-MONTHX (IX3, IX2) ".".
            STOP RUN.
 ])
 
-# Checkme: -std=mf -w needed?
-AT_CHECK([$COMPILE -std=mf -w prog.cob], [0], [], [])
+# CHECKME: which part of -std=mf is used here?
+AT_CHECK([$COMPILE -std=mf prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [Simple OCCURS with multi VALUES
@@ -744,6 +804,11 @@ Group VALUE test
 Initialize VALUE OCCURS DEPENDING test
 GRP-5 with 6:***Mon49eyMon49eyMon49eyMon49eyMon49eyMon49ey***.
 GRP-5 with 4:***Mon49eyMon49eyMon49eyMon49ey***.
+01-02:  Apr, 30. May, 31. Jun, 30. <B>.
+01-02: *******************************.
+01-02:       00       00       00     .
+Initialize VALUE inside OCCURS test
+01-02:  Apr, 30. May, 31. Jun, 30. <B>.
 ], [])
 
 AT_CLEANUP

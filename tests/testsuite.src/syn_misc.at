@@ -538,7 +538,6 @@ prog.cob:60: error: invalid expression
 prog.cob:66: error: invalid expression
 prog.cob:72: error: invalid expression
 prog.cob:76: error: 'NOTDEFINED' is not defined
-prog.cob:76: error: invalid expression
 prog.cob:80: error: invalid expression
 ])
 
