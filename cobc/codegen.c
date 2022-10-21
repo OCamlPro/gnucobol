@@ -8686,6 +8686,7 @@ output_source_reference (cb_tree tree, const enum cob_statement statement)
 	if (last_line != tree->source_line) {
 		/* Output source location as code */
 		output_line_and_trace_info (tree, statement);
+		last_line = tree->source_line;
 	}
 }
 
@@ -8936,16 +8937,6 @@ output_stmt (cb_tree x)
 		if (!p->flag_implicit) {
 			/* Output source location as a comment */
 			skip_line_num = 4;
-			output_line ("/* Line: %-10d: %-19.19s: %s */",
-				     x->source_line, cb_statement_name[p->statement], x->source_file);
-			/* Output source location as code */
-			if (cb_flag_source_location
-			 || cb_flag_dump) {
-				if (last_line != x->source_line) {
-					output_line ("module->module_stmt = 0x%08X;",
-						COB_SET_LINE_FILE(x->source_line, lookup_source(x->source_file)));
-				}
-			}
 			/* Output source location as code */
 			output_source_reference (x, p->statement);
 			/* USE FOR DEBUGGING: pre-fill DEBUG-LINE
@@ -9167,6 +9158,7 @@ output_stmt (cb_tree x)
 		 || cobc_wants_debug) {
 			output_section_info (lp);
 		}
+		last_line = -1;	/* force generation of source location */
 
 		/* Check procedure debugging */
 		if (current_prog->flag_gen_debug && lp->flag_real_label) {
