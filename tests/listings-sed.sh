@@ -2,7 +2,7 @@
 #
 # listings-sed.sh gnucobol/tests
 #
-# Copyright (C) 2016-2017, 2020-2021 Free Software Foundation, Inc.
+# Copyright (C) 2016-2017, 2020-2022 Free Software Foundation, Inc.
 # Written by Simon Sobisch, David Pitts
 #
 # This file is part of GnuCOBOL.
@@ -38,8 +38,8 @@ if test "x$SED" = "x" ; then SED=sed ; fi
 
 if test "$3" = "once"; then
 	$SED \
-	-e 's/GnuCOBOL [0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[-devalphabetarc]*[0-9]*\.[0-9][0-9]*  */GnuCOBOL V.R.P               /g' \
-	-e 's/GnuCOBOL [0-9][0-9]*\.[0-9][0-9]*[-devalphabetarc]*[0-9]*\.[0-9][0-9]*  */GnuCOBOL V.R.P               /g' \
+	-e 's/GnuCOBOL [0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[-devalphabetarcpviw]*[0-9]*\.[0-9][0-9]*  */GnuCOBOL V.R.P               /g' \
+	-e 's/GnuCOBOL [0-9][0-9]*\.[0-9][0-9]*[-devalphabetarcpviw]*[0-9]*\.[0-9][0-9]*  */GnuCOBOL V.R.P               /g' \
 	-e 's/'"$date1"'/DDD MMM dd/g' \
 	-e 's/'"$date2"'/DDD MMM dd/g' \
 	-e 's/'"$year"'/YYYY/g' \
@@ -48,8 +48,8 @@ if test "$3" = "once"; then
 	<"$1" >"$2"
 else
 	$SED \
-	-e 's/GnuCOBOL [0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[-devalphabetarc]*[0-9]*\.[0-9][0-9]*  */GnuCOBOL V.R.P          /g' \
-	-e 's/GnuCOBOL [0-9][0-9]*\.[0-9][0-9]*[-devalphabetarc]*[0-9]*\.[0-9][0-9]*  */GnuCOBOL V.R.P          /g' \
+	-e 's/GnuCOBOL [0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[-devalphabetarcpviw]*[0-9]*\.[0-9][0-9]*  */GnuCOBOL V.R.P          /g' \
+	-e 's/GnuCOBOL [0-9][0-9]*\.[0-9][0-9]*[-devalphabetarcpviw]*[0-9]*\.[0-9][0-9]*  */GnuCOBOL V.R.P          /g' \
 	-e 's/'"$date1"'/DDD MMM dd/g' \
 	-e 's/'"$date2"'/DDD MMM dd/g' \
 	-e 's/'"$year"'/YYYY/g' \

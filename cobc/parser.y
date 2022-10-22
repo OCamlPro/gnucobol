@@ -9219,12 +9219,12 @@ data_varying_list:
 data_varying:
   WORD _var_from _var_by
   {
-	CB_PENDING ("RW VARYING clause");
 	cb_tree x;
+	CB_PENDING ("RW VARYING clause");
 
 	/* TODO: come back to this later, ISO rules are different, possibly needs a dialect option */
 	if (CB_WORD_COUNT ($1) == 0) {
-		x = cb_build_field (cb_build_reference (CB_NAME($1)));
+		x = cb_build_field (cb_build_reference (CB_NAME ($1)));
 		CB_FIELD (x)->usage = CB_USAGE_INDEX;
 		CB_FIELD (x)->index_type = CB_STATIC_INT_INDEX;
 		if ($2) {

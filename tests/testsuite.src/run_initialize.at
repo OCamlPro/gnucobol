@@ -612,7 +612,7 @@ AT_DATA([prog.cob], [
            05 T01-REC OCCURS 10.
               10 T01-SOMEBER                PIC X(500) VALUES SPACES.
               10 T01-ENTRY.
-                 15 T01-TAB OCCURS 3000.
+                 15 T01-TAB OCCURS 2200.
                     20 T01-NAME             PIC  X(020).
                     20 T01-DETREC.
                        25 T01-DETTAB OCCURS 47.
@@ -622,18 +622,18 @@ AT_DATA([prog.cob], [
                           30 T01-CODE2      PIC S999 COMP-5  VALUE 0.
                           30 T01-CODE3      PIC S999 COMP-5  VALUE 42.
                           30 T01-PREF       PIC  X(001).
-                          30 T01-TXT1       PIC  X(050) VALUE ALL ' '.
-                          30 T01-TXT2       PIC  X(050).
-                          30 T01-TXT3       PIC  X(050) VALUE ALL '3'.
-                       25 T02-DETTAB OCCURS 53.
+                          30 T01-TXT1       PIC  X(020) VALUE ALL ' '.
+                          30 T01-TXT2       PIC  X(020).
+                          30 T01-TXT3       PIC  X(020) VALUE ALL '3'.
+                       25 T02-DETTAB OCCURS 33.
                           30 T02-LEN        USAGE BINARY-INT SIGNED.
                           30 T02-CODE1      PIC S999 COMP-5.
                           30 T02-CODE2      PIC S999 COMP-5  VALUE 0.
                           30 T02-SHL        PIC  X(001) value 'B'.
                           30 T02-PREF       PIC  X(001).
-                          30 T02-TXT1       PIC  X(050) VALUE SPACES.
-                          30 T02-TXT2       PIC  X(050) VALUE ALL SPACE.
-                          30 T02-TXT3       PIC  X(050) VALUE ALL ZERO.
+                          30 T02-TXT1       PIC  X(030) VALUE SPACES.
+                          30 T02-TXT2       PIC  X(030) VALUE ALL SPACE.
+                          30 T02-TXT3       PIC  X(030) VALUE ALL ZERO.
        PROCEDURE DIVISION.
        INIT-RTN.
          MOVE ALL HIGH-VALUE TO T01-TAB (5,55)
