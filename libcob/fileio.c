@@ -529,6 +529,7 @@ static int cob_savekey (cob_file *f, int idx, unsigned char *data);
 static int cob_file_write_opt	(cob_file *, const int);
 
 static int sequential_read	(cob_file *, const int);
+static int set_sequential_variable_length (cob_file *);
 static int sequential_write	(cob_file *, const int);
 static int sequential_rewrite	(cob_file *, const int);
 static int lineseq_read		(cob_file *, const int);
@@ -1634,8 +1635,38 @@ cob_fd_file_open (cob_file *f, char *filename,
 
 	switch (errno) {
 	case 0:
+		if (mode != COB_OPEN_OUTPUT
+		 && nonexistent != 1
+		 && f->organization == COB_ORG_SEQUENTIAL
+		 && f->record_min != f->record_max) {
+			int ret;
+			f->fd = fd;
+			ret = set_sequential_variable_length (f);
+			f->fd = -1;
+			if (ret == COB_STATUS_10_END_OF_FILE) {
+				/* empty file, just go on */
+			} else if (ret != 0) {
+				return ret;
+			}
+#if 1 /* an hard error seems more useful, the standard is very explicit
+		 that on READ this is a status 04 which is unlikely to happen,
+		 only "when the operating environment does not check either
+		 the minimum or maximum record length as a fixed file attribute
+		 during OPEN processing" - which we do here on the first record */
+			if (f->record->size < f->record_min
+			 || f->record->size > f->record_max) {
+				close (fd);
+				return COB_STATUS_39_CONFLICT_ATTRIBUTE;
+			}
+#else
+			/* we _may_ want a configuration to specify "no check" (as before),
+			   "simple check" (as done above) or "full check" (iterating over the
+			   complete file in a "read lenght" + "fseek (length,cur)" loop */
+#endif
+			lseek (fd, 0, SEEK_SET);	/* reposition to record length */
+		}
 		if (mode == COB_OPEN_EXTEND && fd >= 0) {
-			lseek (fd, (off_t) 0, SEEK_END);
+			lseek (fd, 0, SEEK_END);
 		}
 		f->open_mode = mode;
 		break;
@@ -2111,8 +2142,11 @@ open_next (cob_file *f)
 
 /* SEQUENTIAL */
 
-static int
-sequential_read (cob_file *f, const int read_opts)
+
+/* Read record size into f->record->size
+  returns -1 if no data was read, zero for success and
+  and an io status otherwise */
+static int set_sequential_variable_length (cob_file *f)
 {
 	int	bytesread;
 	union {
@@ -2120,6 +2154,41 @@ sequential_read (cob_file *f, const int read_opts)
 		unsigned short	sshort[2];
 		unsigned int	sint;
 	} recsize;
+	bytesread = read (f->fd, recsize.sbuff, cob_vsq_len);
+	if (unlikely (bytesread != cob_vsq_len)) {
+		if (bytesread == 0) {
+			return COB_STATUS_10_END_OF_FILE;
+		} else {
+			return COB_STATUS_39_CONFLICT_ATTRIBUTE;
+		}
+	}
+	switch (cobsetptr->cob_varseq_type) {
+	case 0:
+		if (recsize.sbuff[2] || recsize.sbuff[3]) {
+			/* we expect this to be 2 NULLs */
+			return COB_STATUS_39_CONFLICT_ATTRIBUTE;
+		}
+		f->record->size = COB_MAYSWAP_16 (recsize.sshort[0]);
+		break;
+	case 1:
+		f->record->size = COB_MAYSWAP_32 (recsize.sint);
+		break;
+	case 2:
+		f->record->size = recsize.sint;
+		break;
+	default:
+		f->record->size = COB_MAYSWAP_16 (recsize.sshort[0]);
+		break;
+	}
+	return 0;
+}
+
+static int
+sequential_read (cob_file *f, const int read_opts)
+{
+	int	bytesread;
+	int bytes_to_skip = 0;
+	int ret = COB_STATUS_00_SUCCESS;
 
 #ifdef	WITH_SEQRA_EXTFH
 	int	extfh_ret;
@@ -2140,35 +2209,35 @@ again:
 	}
 
 	if (unlikely (f->record_min != f->record_max)) {
-		/* Read record size */
-		bytesread = read (f->fd, recsize.sbuff, cob_vsq_len);
-		if (bytesread == 0
+		int retloc = set_sequential_variable_length (f);
+		if (retloc == COB_STATUS_10_END_OF_FILE
 		 && open_next (f)) {
 			goto again;
 		}
-		if (unlikely (bytesread != cob_vsq_len)) {
-			if (bytesread == 0) {
-				return COB_STATUS_10_END_OF_FILE;
-			} else {
-				return COB_STATUS_30_PERMANENT_ERROR;
-			}
+		if (retloc != 0) {
+			return retloc;
 		}
-		switch (cobsetptr->cob_varseq_type) {
-		case 1:
-			f->record->size = COB_MAYSWAP_32 (recsize.sint);
-			break;
-		case 2:
-			f->record->size = recsize.sint;
-			break;
-		default:
-			f->record->size = COB_MAYSWAP_16 (recsize.sshort[0]);
-			break;
+		if (f->record->size < f->record_min) {
+			bytes_to_skip = f->record->size - f->record_min;
+			/* we'll read less data than the user expected,
+			   but that's what he gets a status 04 for */
+			ret = COB_STATUS_04_SUCCESS_INCOMPLETE;
+		}
+		if (f->record->size > f->record_max) {
+			/* we need to skip the data to get to the next
+			   position of the record length later and return
+			   a status 04, and in any case we should not
+			   read more than then max record size */
+			bytes_to_skip = f->record->size - f->record_max;
+			f->record->size = f->record_max;
+			ret = COB_STATUS_04_SUCCESS_INCOMPLETE;
 		}
 	}
 
 	/* Read record */
 	bytesread = read (f->fd, f->record->data, f->record->size);
 	if (bytesread == 0
+	 && f->record_min == f->record_max /* otherwise checked above */
 	 && open_next (f)) {
 		goto again;
 	}
@@ -2201,19 +2270,34 @@ again:
 			if (f->record_min != f->record_max) {
 				/* in the case of variable size we got a defined size
 				   from the record start first, but then could not read it
-				   CHECKME: is that an io-status '30' case? */
+				   "completely" (we only have the record size set */
+				f->record->size = 0;	/* passed on to variable_record field */
 				return COB_STATUS_04_SUCCESS_INCOMPLETE;
 			}
+			/* in the case of fixed-lenth file we just have no data */
 			return COB_STATUS_10_END_OF_FILE;
 		/* LCOV_EXCL_START */
 		} else if (bytesread < 0) {
 			return COB_STATUS_30_PERMANENT_ERROR;
 		/* LCOV_EXCL_STOP */
-		} else {
-			return COB_STATUS_04_SUCCESS_INCOMPLETE;
 		}
+		f->record->size = bytesread;	/* passed on to variable_record field */
 	}
-	return COB_STATUS_00_SUCCESS;
+
+	if (bytes_to_skip == 0) {
+		/* no record indicator to go to, so just go on */
+	} else if (bytes_to_skip > 0) {
+		/* we truncated the record, on to the next length indicator
+			(a follow-on rewrite will use the stored offset,
+			a follow-on read will get an end of file if this is too far */
+		lseek (f->fd, bytes_to_skip, SEEK_CUR);
+	} else {
+		/* note: we leave the data not read as-is = undefined, we _may_
+				    add a setting to set it to binary zero/space [or even
+					do an implicit init of the rest) */
+	}
+
+	return ret;
 }
 
 static int
@@ -2259,7 +2343,7 @@ sequential_write (cob_file *f, const int opt)
 			recsize.sint = f->record->size;
 			break;
 		default:
-			recsize.sint = 0;
+			recsize.sint = 0;	/* Note: "3" has vsq_len as "2" */
 			recsize.sshort[0] = COB_MAYSWAP_16 (f->record->size);
 			break;
 		}
@@ -2301,6 +2385,7 @@ sequential_rewrite (cob_file *f, const int opt)
 #endif
 		return COB_STATUS_30_PERMANENT_ERROR;
 	}
+	/* note: we checked for correct rcord->size in the caller */
 	COB_CHECKED_WRITE (f->fd, f->record->data, f->record->size);
 	return COB_STATUS_00_SUCCESS;
 }
@@ -2466,6 +2551,8 @@ lineseq_size (cob_file *f)
 	if (f->variable_record) {
 		f->record->size = (size_t)cob_get_int (f->variable_record);
 		if (f->record->size > f->record_max) {
+			/* CHECKME: doing this silently without any feedback (io status)
+			   seems wrong */
 			f->record->size = f->record_max;
 		}
 	}
@@ -6498,12 +6585,13 @@ cob_rewrite (cob_file *f, cob_field *rec, const int opt, cob_field *fnstatus)
 
 	if (f->variable_record) {
 		f->record->size = (size_t)cob_get_int (f->variable_record);
-		if (unlikely(f->record->size > rec->size)) {
-			f->record->size = rec->size;
-		}
 		if (f->record->size < f->record_min || f->record_max < f->record->size) {
 			save_status (f, fnstatus, COB_STATUS_44_RECORD_OVERFLOW);
 			return;
+		}
+		if (unlikely(f->record->size > rec->size)) {
+			/* CHECKME: Shouldn't this get a status? */
+			f->record->size = rec->size;
 		}
 	} else {
 		f->record->size = rec->size;

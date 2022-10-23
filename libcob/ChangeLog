@@ -1,4 +1,17 @@
 
+2022-10-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (set_sequential_variable_length): extracted from sequential_read
+	  and extended to verify COB_VARSEQ_TYPE 0 (default) by its two NULL bytes
+	* fileio.c (sequential_read): return status 04 if variable record length is
+	  outside the record min/max, truncating the record if necessary, while
+	  still position until the next record length - fixing Bug #808
+	* fileio.c (cob_fd_file_open): for variable-length record sequential files
+	  do a pre-validation of the first record length, returning status 39 when
+	  the first record doesn't match the fixed file attributes
+	* common.c (cob_fatal_error): added COB_STATUS_39_CONFLICT_ATTRIBUTE
+	* common.c (cob_sig_handler): fixed uninitialized access
+
 2022-10-19  Simon Sobisch <simonsobisch@gnu.org>
 
 	* statement.def: added STMT_PRESENT_WHEN

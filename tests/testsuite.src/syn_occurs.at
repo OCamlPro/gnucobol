@@ -212,7 +212,7 @@ AT_DATA([prog.cob], [
        PROGRAM-ID. prog.
        DATA  DIVISION.
        WORKING-STORAGE SECTION.
-       01  . *> the "filler" explicit checks bug #776
+       01  . *> the "filler" explicit checks bugs #699 and #776
            05  TAB-ENTRY1
                   OCCURS 5 TIMES
                   ASCENDING KEY IS X1

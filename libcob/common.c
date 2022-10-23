@@ -1023,7 +1023,7 @@ cob_sig_handler (int sig)
 {
 	const char *signal_name;
 	const char *msg;
-	char signal_text[COB_MINI_BUFF];
+	char signal_text[COB_MINI_BUFF] = { 0 };
 	size_t str_len;
 
 #if	defined (HAVE_SIGACTION) && !defined (SA_RESETHAND)
@@ -1102,9 +1102,9 @@ cob_sig_handler (int sig)
 
 	/* setup "signal %s" */
 	str_len = strlen (signal_msgid);
-	memcpy (signal_text, signal_msgid, str_len);
-	*(signal_text + str_len++) = ' ';
-	memcpy (signal_text + str_len, signal_name, strlen (signal_name + 1));
+	memcpy (signal_text, signal_msgid, str_len++);
+	signal_text[str_len] = ' ';
+	memcpy (signal_text + str_len, signal_name, strlen (signal_name));
 
 	write_to_stderr_or_return_arr (" (");
 	write_to_stderr_or_return_str (signal_text);
@@ -2615,7 +2615,7 @@ cob_trace_exit (const char *name)
 }
 
 /* this functin is alltogether a compat-only function for pre 3.2,
-   later versions use cob_trace_statement(enu cob_statement) */
+   later versions use cob_trace_statement(enum cob_statement) */
 void
 cob_trace_stmt (const char *stmt_name)
 {
@@ -2735,8 +2735,8 @@ call_exit_handlers_and_terminate (void)
 		while (h != NULL) {
 			h->proc ();
 			h = h->next;
+			}
 		}
-	}
 	cob_terminate_routines ();
 }
 
@@ -8059,13 +8059,13 @@ cob_runtime_error (const char *fmt, ...)
 		hdlrs = NULL;
 		active_error_handler = 0;
 
-		/* restore error location */
+			/* restore error location */
 		cob_source_file = err_source_file;
 		cob_source_line = err_source_line;
-		COB_MODULE_PTR = err_module_pointer;
-		if (COB_MODULE_PTR) {
-			COB_MODULE_PTR->module_stmt = err_module_statement;
-		}
+			COB_MODULE_PTR = err_module_pointer;
+			if (COB_MODULE_PTR) {
+				COB_MODULE_PTR->module_stmt = err_module_statement;
+			}
 		cobglobptr->cob_call_params = call_params;
 	}
 
@@ -8221,6 +8221,9 @@ cob_fatal_error (const enum cob_fatal_error fatal_error)
 			break;
 		case COB_STATUS_37_PERMISSION_DENIED:
 			msg = _("permission denied");
+			break;
+		case COB_STATUS_39_CONFLICT_ATTRIBUTE:
+			msg = _("mismatch of fixed file attributes");
 			break;
 		case COB_STATUS_41_ALREADY_OPEN:
 			msg = _("file already open");

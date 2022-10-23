@@ -1,6 +1,14 @@
 NEWS - user visible changes				-*- outline -*-
 
- GnuCOBOL 3.2 to be released ... asap
+ GnuCOBOL 3.2rc1 to be released in November 2022
+
+ planned:
+   * changes to CALL handling especially for BY VALUE and stdcall
+   * adjustments for registers and XML PARSE stubs
+   * investigation of code analysis tools and user feedback
+
+
+ GnuCOBOL 3.2 preview (20221022)
 
 * New GnuCOBOL features
 
@@ -46,7 +54,8 @@ NEWS - user visible changes				-*- outline -*-
    [core-]dump and stacktrace) with "STOP ERROR" statement or by
    CALL "CBL_RUNTIME_ERROR"
 
-** TODO - More to document, possibly after rc-1
+** TODO - More to document, hopefully before 3.2rc-1
+
 
 * Changes that potentially effects existing programs:
 
@@ -55,8 +64,21 @@ NEWS - user visible changes				-*- outline -*-
    this isn't done anymore so if you need the memory to be initialized
    specify that explicit in the source and recompile
 
+** variable-length RECORD SEQUENTIAL files, data validation on READ:
+   the length of the record as stored in the file is now checked for correct
+   format and is then compared against the record size defined in the program;
+   if the minimal record size specified is bigger, then the data is only
+   written up to the record length for that record, the other data is
+   undefined and io status 04 returned; if the record length is bigger than
+   the record size the record from the file is truncated, io status 04 set
+   and the following READ will start at the next record;
+   additionally on OPEN the length of the first record is read and if it
+   isn't within the above rulesan io status 39 is returned; as the default
+   format "COB_VARSEQ_TYPE = 0" contains two NULL bytes this will likely
+   make most LINE SEQUENTIAL files not declared as this type fail on OPEN
+
 ** LINE SEQUENTIAL files, data validation: in case of non-printable data
-   a READ may result in status 09 and WRITE may error with status 71;
+   a READ may result in io status 09 and WRITE may error with io status 71;
    to disable this validation see the new runtime option COB_LS_VALIDATE
    to restore old behavior and to increase performance on WRITE;
    if LS_NULLS is active and invalid data (bad encoded or missing encoding)
@@ -330,6 +352,13 @@ NEWS - user visible changes				-*- outline -*-
    (especially when using a different compiler than GCC)
     * function with variable-length RETURNING item
     * USAGE POINTER, which may need to be manually aligned
+
+** all versions of GnuCOBOL so far: EVALUATE evaluates all subjects on *each*
+   WHEN (the standard explicit requests a one-time evaluation of the subjects,
+   then comparing the value); to work around possible issues move more complex
+   subjects like variables with subscripts and reference-modification, as well
+   as calculated subjects and function calls to a temporary variabe and use
+   this as subject for the EVALUATE
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
