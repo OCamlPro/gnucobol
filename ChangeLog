@@ -1,4 +1,8 @@
 
+2022-10-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: version 3.2-preview
+
 2022-10-18  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: cache several checks, also allowing to override its results
