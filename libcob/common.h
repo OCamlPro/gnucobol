@@ -1216,12 +1216,14 @@ typedef struct __cob_symbol {
 #define SYM_ADRS_DATA	0		/* 'adrs' is direct address of field data */
 #define SYM_ADRS_PTR	1		/* 'adrs' is address of address of field data */
 #define SYM_ADRS_FIELD	2		/* 'adrs' is address of complete cob_field */
+#define SYM_ADRS_VARY	3		/* 'adrs' varys due to prior DEPENDING ON */
 	unsigned int	level:7;	/* Level number */
 	unsigned int	section:3;	/* SECTION of program */
 	unsigned int	is_group:1;	/* Field was Group item */
 	unsigned int	is_redef:1;	/* Field has REDEFINES */
 	unsigned int	has_depend:1;/* Field has DEPENDING ON */
 	unsigned int	subscripts:5;/* Field requires N subscripts */
+	unsigned int	unused:11;
 
 	unsigned int	offset;		/* Offset in record, May be ZERO for LINKAGE fields */
 	unsigned int	size;		/* Field size */
