@@ -2185,6 +2185,11 @@ emit_one_sym (struct cb_field *f)
 	fp = real_field_founder (f);
 	is_indirect = SYM_ADRS_PTR;
 	offset = f->offset;
+	if (chk_field_variable_address (f)) {
+		is_indirect = SYM_ADRS_VARY;
+		output (",NULL");
+		offset = 0;
+	} else
 	if (fp->flag_item_based) {
 		output (",&%s%d", CB_PREFIX_BASE, fp->id);
 	} else
@@ -2254,7 +2259,8 @@ emit_one_sym (struct cb_field *f)
 			idx++;
 	}
 	output (",%d",idx);
-	output (",  %d",offset);
+	output (",00");			/* Unused bits */
+	output (", %d",offset);
 	output (",%d",f->size);
 	if (f->depending) {
 		fp = cb_code_field (f->depending);
@@ -2263,7 +2269,10 @@ emit_one_sym (struct cb_field *f)
 		output(",0");
 	}
 	output (",%d",f->occurs_max>1?f->occurs_max:0);
-	output (", %d",f->offset);
+	if (is_indirect == SYM_ADRS_VARY)
+		output (",00");
+	else
+		output (", %d",f->offset);
 	output ("}");
 	sym_comma = 1;
 }
