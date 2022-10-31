@@ -1835,11 +1835,13 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 # fixing the initial setup but now producing a missing newline:
 printf "           CONTINUE." >> prog.cob
 
-AT_CHECK([$COBC -fsyntax-only -Wextra -fixed prog.cob], [0], [],
+AT_CHECK([$COBC -fsyntax-only -Wextra -fixed prog.cob], [1], [],
 [prog.cob:8: warning: line not terminated by a newline [[-Wmissing-newline]]
+prog.cob:9: error: syntax error, unexpected end of file
 ])
-AT_CHECK([$COBC -fsyntax-only -Wextra -free prog.cob], [0], [],
+AT_CHECK([$COBC -fsyntax-only -Wextra -free prog.cob], [1], [],
 [prog.cob:8: warning: line not terminated by a newline [[-Wmissing-newline]]
+prog.cob:9: error: syntax error, unexpected end of file
 ])
 # not yet merged to trunk:
 # should not happen if the data only consists of space characters

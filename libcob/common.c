@@ -1172,6 +1172,8 @@ cob_sig_handler (int sig)
 	   be created - raise SIGABRT here */
 	if (cobsetptr && cobsetptr->cob_core_on_error == 4) {
 		sig = SIGABRT;
+	} else {
+		exit (sig);
 	}
 	signal (sig, SIG_DFL);
 #ifdef	HAVE_RAISE
