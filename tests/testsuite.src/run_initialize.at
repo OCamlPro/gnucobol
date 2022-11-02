@@ -739,8 +739,42 @@ Group VALUE test
    ABC00D99D99D99D99XXABC00D99D99D99D99XXABC00D99D99D99D99XX   End.
    ABC00D99D99D99D99XXABC00D99D99D99D99XXABC00D99 00D99D99XX   End.
 Initialize VALUE OCCURS DEPENDING test
-GRP-5 with 6:***Mon49eyMon49eyMon49eyMon49eyMon49eyMon49ey***.
-GRP-5 with 4:***Mon49eyMon49eyMon49eyMon49ey***.
+GRP-5 with 6:***Mon49eyMon49eyMon49eyMon49eyMon49eyMon49eyMon49eyMon49eyMon49ey***.
+GRP-5 with 4:***Mon49eyMon49eyMon49eyMon49eyMon49eyMon49eyMon49eyMon49eyMon49ey***.
+], [])
+
+AT_CHECK([$COBC -x -std=mf -fodoslide -w prog.cob ], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [Simple OCCURS with multi VALUES
+01: jan has 31 days
+02: feb has 28 days
+03: mar has 31 days
+04: apr has 30 days
+05: may has 31 days
+06: jun has 30 days
+07: jul has 31 days
+08: aug has 31 days
+09: sep has 30 days
+10: oct has 31 days
+11: nov has 30 days
+12: dec has 31 days
+13:     has 00 days
+Complex OCCURS with multi VALUES
+01-01:  Jan, 31. Feb, 28. Mar, 31. <A>
+01-02:  Apr, 30. May, 31. Jun, 30. <B>
+01-03:  Jul, 31. Aug, 31. Sep, 30. <C>
+01-04:  Oct, 31. Nov, 30. Dec, 31. <D>
+02-01:  JAN, 91. FEB, 28. MAR, 91. <E>
+02-02:  APR, 90. MAY, 91. JUN, 90. <F>
+02-03:  JUL, 91. AUG, 91. SEP, 90. <G>
+02-04:  OCT, 91. NOV, 90. DEC, 91. <*>
+Group VALUE test
+   ABC00D99D99D99D99XXABC00D99D99D99D99XXABC00D99D99D99D99XX   End.
+   ABC00D99D99D99D99XXABC00D99D99D99D99XXABC00D99D99D99D99XX   End.
+   ABC00D99D99D99D99XXABC00D99D99D99D99XXABC00D99 00D99D99XX   End.
+Initialize VALUE OCCURS DEPENDING test
+GRP-5 with 6:***Mon49eyMon49eyMon49eyMon49eyMon49eyMon49eyMon.
+GRP-5 with 4:***Mon49eyMon49eyMon49eyMon49eyMon.
 ], [])
 
 AT_CLEANUP

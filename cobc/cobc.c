@@ -8853,6 +8853,9 @@ main (int argc, char **argv)
 		fflush (stderr);
 	}
 
+	if (cb_odoslide && !cb_complex_odo)	/* Assume COMPLEX ODO is allowed */
+		cb_complex_odo = 1;
+
 	/* further one-time initialization */
 #ifndef	HAVE_DESIGNATED_INITS
 	cobc_init_typeck ();

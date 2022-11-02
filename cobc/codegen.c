@@ -184,6 +184,8 @@ static unsigned int		gen_native = 0;
 static unsigned int		gen_custom = 0;
 static unsigned int		gen_figurative = 0;
 static unsigned int		gen_dynamic = 0;
+static unsigned int		xb_odo_last_len = 1;	/* If last field is ODO 
+												then handle as variable length */
 static char			last_line_num[80] = "";
 static int			skip_line_num = 0;
 static int			report_field_id = 0;
@@ -770,14 +772,26 @@ real_field_founder (const struct cb_field *f)
 struct cb_field *
 chk_field_variable_size (struct cb_field *f)
 {
+	struct cb_field		*p;
+	struct cb_field		*fc;
 	if (!f->flag_vsize_done) {
-		struct cb_field		*p;
-		struct cb_field		*fc;
 		f->vsize = NULL;
-		for (fc = f->children; fc; fc = fc->sister) {
+		for (fc = f->children; fc && !fc->redefines; fc = fc->sister) {
 			if (fc->depending) {
-				f->vsize = fc;
-				break;
+				if (cb_odoslide) {
+					f->vsize = fc;
+					break;
+				}
+				if (xb_odo_last_len) {
+					if (f->sister != NULL	/* Parent has sister so NOT vary size */
+					 && f->level == f->sister->level
+					 && !f->sister->redefines)
+						break;
+					if (fc->sister != NULL)	
+						continue;	 /* Group has sister so NOT vary size */
+					f->vsize = fc;
+					break;
+				}
 			} else if ((p = chk_field_variable_size (fc)) != NULL) {
 				f->vsize = p;
 				break;
@@ -787,8 +801,6 @@ chk_field_variable_size (struct cb_field *f)
 	}
 	return f->vsize;
 }
-
-/* TODO: as the following two are only called together: combine */
 
 static int
 chk_field_multi_values (struct cb_field *f)
@@ -800,8 +812,6 @@ chk_field_multi_values (struct cb_field *f)
 	}
 	if (f->values
 	 && CB_VALUE (f->values)) {
-		/* CHECKME: Why do we return 1 on ALL '0'?
-		   and what about [ALL] ZERO ?*/
 		 if (CB_LITERAL_P (CB_VALUE(f->values))
 		  && CB_LITERAL (CB_VALUE(f->values))->all) {
 			return 1;
@@ -837,8 +847,9 @@ chk_field_any_values (struct cb_field *f)
 unsigned int
 chk_field_variable_address (struct cb_field *fld)
 {
+	if (!cb_odoslide)
+		return 0;
 	if (!fld->flag_vaddr_done) {
-		/* CHECKME: only sliding odo may create a varying address, no? */
 		/* Note: this is called _very_ often and takes 15-20% of parse + codegen time,
 		   with about half the time in chk_field_variable_size; so try to not call
 		   this function if not necessary (according to the testsuite: as long as
@@ -847,25 +858,7 @@ chk_field_variable_address (struct cb_field *fld)
 		struct cb_field		*p;
 		for (p = f->parent; p; f = f->parent, p = f->parent) {
 			for (p = p->children; p != f; p = p->sister) {
-#if 0	/* CHECKME: why does this fail the testsuite ? */
-				if (p->flag_vaddr_done) {
-					if (!p->vaddr) {
-						continue;
-					}
-					fld->flag_vaddr_done = 1;
-					fld->vaddr = 1;
-					return 1;
-				}
-#endif
 				if (p->depending || chk_field_variable_size (p)) {
-#if 0	/* only useful with the code above */
-					/* as we have a variable address, all sisters will also;
-					   store this for next check */
-					for (p = p->sister; p; p = p->sister) {
-						p->flag_vaddr_done = 1;
-						p->vaddr = 1;
-					}
-#endif
 					fld->flag_vaddr_done = 1;
 					fld->vaddr = 1;
 					return 1;
@@ -874,17 +867,6 @@ chk_field_variable_address (struct cb_field *fld)
 		}
 		fld->flag_vaddr_done = 1;
 		fld->vaddr = 0;
-#if 0	/* only useful with the code above */
-		/* as we now know that all previous and higher fields have no
-		   varying address we can store this information for the next check */
-		f = fld;
-		for (p = f->parent; p; f = f->parent, p = f->parent) {
-			for (p = p->children; p != f; p = p->sister) {
-				p->flag_vaddr_done = 1;
-				p->vaddr = 0;
-			}
-		}
-#endif
 	}
 	return fld->vaddr;
 }
@@ -4226,6 +4208,7 @@ output_param (cb_tree x, int id)
 	struct cb_alphabet_name	*abp;
 	cb_tree			l;
 	char			fname[12];
+	int				add_comma = 0;
 
 	if (x == NULL) {
 		output ("NULL");
@@ -4390,6 +4373,7 @@ output_param (cb_tree x, int id)
 				if (l == r->check) {
 					output_indent_level = n;
 				}
+				add_comma = 1;
 			}
 		}
 
@@ -4487,6 +4471,10 @@ output_param (cb_tree x, int id)
 
 				f->flag_field = 1;
 				output_target = savetarget;
+			}
+			if (add_comma) {
+				add_comma = 0;
+				output (", ");
 			}
 			if (f->flag_local
 			 && !f->flag_data_set) {
@@ -5252,7 +5240,14 @@ propagate_table (cb_tree x, int bgn_idx)
 		output (", ");
 		output_size (x);
 		output (", ");
-		output_occurs (f);
+		if (f->flag_vsize_done
+		 && f->vsize == NULL
+		 && !f->flag_unbounded
+		 && f->depending) {
+			output ("%d", f->occurs_max);
+		} else {
+			output_occurs (f);
+		}
 		output (");");
 		output_newline ();
 	}

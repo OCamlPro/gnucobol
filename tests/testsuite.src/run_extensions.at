@@ -938,7 +938,7 @@ AT_DATA([prog.cob], [
 
        PROCEDURE DIVISION.
            IF FUNCTION LENGTH (W-TABLE) NOT = 369
-              DISPLAY 'WRONG WS LENGTH: ' FUNCTION LENGTH (A-TABLE)
+              DISPLAY 'WRONG WS LENGTH: ' FUNCTION LENGTH (W-TABLE)
               END-DISPLAY
            END-IF
            IF FUNCTION LENGTH (A-TABLE) NOT = 369
@@ -967,7 +967,7 @@ AT_DATA([prog.cob], [
 
 # note: IBM implies -fodoslide
 AT_CHECK([$COBC -x -std=ibm prog.cob], [0], [], [])
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -std=ibm prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
@@ -1266,7 +1266,7 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [GRP-1:***ABCDE***
 GRP-2:***ABCD ABCD ABCD ABCD ABCD ABCD ABCD ABCD AB***
 GRP-3:***ABC00XXABC00XXABC00XX***
 GRP-4:***AB12YZAB12YZAB12YZAB12YZAB12YZAB12YZAB12YZAB12YZAB12YZAB12YZAB12YZ***
-GRP-5:***Mon49eyMon49eyMon49eyMon49eyMon49eyMon49eyMon49ey***
+GRP-5:***Mon49eyMon49eyMon49eyMon49eyMon49eyMon49eyMon49eyMon
 0000372
 ], [])
 
@@ -1861,6 +1861,157 @@ In subroutine, Fill partial
 
 AT_CLEANUP
 
+
+AT_SETUP([DEPENDING ON without ODOSLIDE])
+AT_KEYWORDS([OCCURS])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID. prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+
+       77  C5    PIC 9(03)  VALUE 6.
+       01  GRP-1.
+           05   FLD-1-0 PIC X(3).
+           05   FLD-1.
+              10   FLD-1-1 OCCURS 0 TO 9 TIMES
+                        DEPENDING ON C5.
+                15   FLD-1-2 PIC X(5) VALUE "Money".
+                15   FLD-1-3 PIC 99  VALUE 1.
+           05   FLD-1-X PIC X(3).
+       01  GRP-2.
+           05   FLD-2-0 PIC X(3).
+           05   FLD-2.
+              10   FLD-2-1 OCCURS 0 TO 9 TIMES
+                        DEPENDING ON C5.
+                15   FLD-2-2 PIC X(5) VALUE "Money".
+                15   FLD-2-3 PIC 99  VALUE 1.
+
+       PROCEDURE DIVISION.
+           MOVE 7       TO C5
+           MOVE ALL "*" TO GRP-1
+           DISPLAY "GRP-1:" GRP-1 ":".
+           MOVE 9       TO C5
+           MOVE ALL "*" TO GRP-1
+           INITIALIZE FLD-1 ALL TO VALUE
+           MOVE 2       TO FLD-1-3 (2)
+           MOVE 3       TO FLD-1-3 (3)
+           MOVE 4       TO FLD-1-3 (4)
+           MOVE 5       TO FLD-1-3 (5)
+           MOVE 6       TO FLD-1-3 (6)
+           MOVE 7       TO FLD-1-3 (7)
+           MOVE 8       TO FLD-1-3 (8)
+           MOVE 9       TO FLD-1-3 (9)
+           MOVE 7       TO C5
+           MOVE ALL "$" TO FLD-1-0 FLD-1-X
+           DISPLAY "GRP-1:" GRP-1 ":".
+
+           MOVE 4       TO C5
+           MOVE ALL "*" TO GRP-2
+           DISPLAY "GRP-2:" GRP-2 ":".
+           MOVE 9       TO C5
+           MOVE ALL "*" TO GRP-2
+           INITIALIZE FLD-2 ALL TO VALUE
+           MOVE 2       TO FLD-2-3 (2)
+           MOVE 3       TO FLD-2-3 (3)
+           MOVE 4       TO FLD-2-3 (4)
+           MOVE 5       TO FLD-2-3 (5)
+           MOVE 6       TO FLD-2-3 (6)
+           MOVE 7       TO FLD-2-3 (7)
+           MOVE 8       TO FLD-2-3 (8)
+           MOVE 9       TO FLD-2-3 (9)
+           MOVE 4       TO C5
+           MOVE ALL "$" TO FLD-2-0
+           DISPLAY "GRP-2:" GRP-2 ":".
+           STOP RUN.
+])
+
+AT_CHECK([$COBC -x -std=mf -w prog.cob ], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [GRP-1:*********************************************************************:
+GRP-1:$$$Money01Money02Money03Money04Money05Money06Money07Money08Money09$$$:
+GRP-2:*******************************:
+GRP-2:$$$Money01Money02Money03Money04:
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([DEPENDING ON with ODOSLIDE])
+AT_KEYWORDS([OCCURS])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID. prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+
+       77  C5    PIC 9(03)  VALUE 6.
+       01  GRP-1.
+           05   FLD-1-0 PIC X(3).
+           05   FLD-1.
+              10   FLD-1-1 OCCURS 0 TO 9 TIMES
+                        DEPENDING ON C5.
+                15   FLD-1-2 PIC X(5) VALUE "Money".
+                15   FLD-1-3 PIC 99  VALUE 1.
+           05   FLD-1-X PIC X(3).
+       01  GRP-2.
+           05   FLD-2-0 PIC X(3).
+           05   FLD-2.
+              10   FLD-2-1 OCCURS 0 TO 9 TIMES
+                        DEPENDING ON C5.
+                15   FLD-2-2 PIC X(5) VALUE "Money".
+                15   FLD-2-3 PIC 99  VALUE 1.
+
+       PROCEDURE DIVISION.
+           MOVE 7       TO C5
+           MOVE ALL "*" TO GRP-1
+           DISPLAY "GRP-1:" GRP-1 ":".
+           MOVE 9       TO C5
+           MOVE ALL "*" TO GRP-1
+           INITIALIZE FLD-1 ALL TO VALUE
+           MOVE 2       TO FLD-1-3 (2)
+           MOVE 3       TO FLD-1-3 (3)
+           MOVE 4       TO FLD-1-3 (4)
+           MOVE 5       TO FLD-1-3 (5)
+           MOVE 6       TO FLD-1-3 (6)
+           MOVE 7       TO FLD-1-3 (7)
+           MOVE 8       TO FLD-1-3 (8)
+           MOVE 9       TO FLD-1-3 (9)
+           MOVE 7       TO C5
+           MOVE ALL "$" TO FLD-1-0 FLD-1-X
+           DISPLAY "GRP-1:" GRP-1 ":".
+
+           MOVE 4       TO C5
+           MOVE ALL "*" TO GRP-2
+           DISPLAY "GRP-2:" GRP-2 ":".
+           MOVE 9       TO C5
+           MOVE ALL "*" TO GRP-2
+           INITIALIZE FLD-2 ALL TO VALUE
+           MOVE 2       TO FLD-2-3 (2)
+           MOVE 3       TO FLD-2-3 (3)
+           MOVE 4       TO FLD-2-3 (4)
+           MOVE 5       TO FLD-2-3 (5)
+           MOVE 6       TO FLD-2-3 (6)
+           MOVE 7       TO FLD-2-3 (7)
+           MOVE 8       TO FLD-2-3 (8)
+           MOVE 9       TO FLD-2-3 (9)
+           MOVE 4       TO C5
+           MOVE ALL "$" TO FLD-2-0
+           DISPLAY "GRP-2:" GRP-2 ":".
+           STOP RUN.
+])
+
+AT_CHECK([$COBC -x -std=mf -w -fodoslide prog.cob ], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [GRP-1:*******************************************************:
+GRP-1:$$$Money01Money02Money03Money04Money05Money06Money07$$$:
+GRP-2:*******************************:
+GRP-2:$$$Money01Money02Money03Money04:
+], [])
+
+AT_CLEANUP
 
 AT_SETUP([INITIALIZE level 01])
 AT_KEYWORDS([initialize])

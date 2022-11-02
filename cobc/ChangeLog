@@ -1,4 +1,12 @@
 
+2022-11-02  Ron Norman <rjn@inglenet.com>
+
+	* cobc.c: If -fodoslide then also set complex_odo true
+	* codegen.c: If not odoslide then group is still variable size
+				if it ends with OCCURS DEPENDING ON
+				If a field follows ODO and not odoslide then it is fixed size
+				(May need a config option for this, add later)
+
 2022-10-20  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y, tree.c (cb_build_vary), tree.h: cleanup to not use
