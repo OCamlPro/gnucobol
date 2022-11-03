@@ -4857,6 +4857,55 @@ output_funcall_typed (struct cb_funcall *p, const char type)
 		break;
 
     case ':':
+		if (CB_TREE_TAG(p->argv[0]) == CB_TAG_REFERENCE
+		 && CB_TREE_TAG(p->argv[2]) == CB_TAG_LITERAL) {
+			struct cb_reference	*r = CB_REFERENCE (p->argv[0]);
+			struct cb_field		*f = CB_FIELD (r->value);
+			char	opcd = (char)(int)(long)(p->argv[1]);
+			if ((opcd == '=' || opcd == '~' 
+				|| opcd == '>' || opcd == '<'
+				|| opcd == '[' || opcd == ']')
+			 && r->subs == NULL
+			 && f->pic
+			 && f->pic->scale == 0
+			 && f->pic->digits < 18
+			 && f->pic->have_sign == 0) {
+				const char	*opstr = "==";
+				if (opcd == '~')
+					opstr = "!=";
+				else if (opcd == '>')
+					opstr = ">";
+				else if (opcd == '<')
+					opstr = "<";
+				else if (opcd == ']')
+					opstr = ">=";
+				else if (opcd == '[')
+					opstr = "<=";
+				if (f->usage == CB_USAGE_DISPLAY) {
+					output ("(memcmp (");
+					output_data (p->argv[0]);
+					output (", \"%0*d\", %d) %s 0)",
+									f->pic->digits,cb_get_int (p->argv[2]),
+									f->pic->digits, opstr);
+					break;
+				}
+				if (f->usage == CB_USAGE_PACKED) {
+					char	digs[32], pack[64];
+					int	i,j;
+					int	len = (f->pic->digits + 2) / 2;
+					len = len * 2;
+					sprintf(digs,"%0*dF",len-1,cb_get_int (p->argv[2]));
+					for (i=j=0; j < len; j += 2, i += 4) {
+						sprintf(&pack[i],"\\x%c%c",digs[j],digs[j+1]);
+					}
+
+					output ("(memcmp (");
+					output_data (p->argv[0]);
+					output (", \"%s\", %d) %s 0)", pack, j / 2, opstr);
+					break;
+				}
+			}
+		}
 		output (" (");
 		output_integer (p->argv[0]);
 		switch ((int)(long)(p->argv[1])) {

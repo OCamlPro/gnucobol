@@ -124,6 +124,7 @@ static int			if_nest = 0;
 static int			if_cond[MAX_NESTED_COND];
 static int			if_stop = 0;
 static int			expr_line = 0;		/* Line holding expression for warnings */
+static int			int_usage = -1;
 static cb_tree			expr_rslt = NULL;	/* Expression result */
 
 static size_t			initialized = 0;
@@ -666,6 +667,9 @@ cb_is_integer_field (struct cb_field *f)
 	 || f->pic->scale != 0)
 		return 0;
 	if (f->usage == CB_USAGE_DISPLAY
+	 && f->size < 16)
+		return 1;
+	if (f->usage == int_usage	/* For check to allow PACKED */
 	 && f->size < 16)
 		return 1;
 	if (f->usage == CB_USAGE_COMP_X
@@ -6238,13 +6242,22 @@ cb_build_cond (cb_tree x)
 				 && cb_fits_long_long (p->y)) {
 					if (CB_REF_OR_FIELD_P (p->x)) {
 						f = CB_FIELD_PTR (p->x);
+						if (p->op == '='
+						 || p->op == '~'
+						 || p->op == '>'
+						 || p->op == '<'
+						 || p->op == ']'
+						 || p->op == '[')
+							int_usage = CB_USAGE_PACKED;
 						if (cb_is_integer_field_and_int (f, p->y)
 						 && cb_fits_int (p->y)) {
 							/* 'native' (short/int/long) on SYNC boundary */
+							int_usage = -1;
 							ret = CB_BUILD_FUNCALL_3 ("$:", p->x, (cb_tree)(long)p->op, p->y);
 							cb_copy_source_reference (ret, x);
 							return ret;
 						}
+						int_usage = -1;
 					}
 					ret = cb_build_optim_cond (p);
 					break;
