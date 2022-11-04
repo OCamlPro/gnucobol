@@ -3,6 +3,7 @@
 
 	* codegen.c: For compare of unsigned numeric DISPLAY, PACKED, or COMP-6
 				field to numeric literal use 'memcmp'
+				Now using config option  odo-last-varlen
 	* typeck.c: Check for compare of unsigned numeric DISPLAY, PACKED or
 				COMP-6 to numeric literal
 				Swap operands if comparing: literal relop field
@@ -13,7 +14,6 @@
 	* codegen.c: If not odoslide then group is still variable size
 				if it ends with OCCURS DEPENDING ON
 				If a field follows ODO and not odoslide then it is fixed size
-				(May need a config option for this, add later)
 
 2022-10-20  Simon Sobisch <simonsobisch@gnu.org>
 

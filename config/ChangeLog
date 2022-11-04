@@ -1,4 +1,10 @@
 
+2022-11-04  Ron Norman <rjn@inglenet.com>
+
+	* all: added odo-last-varlen: ok to all
+			If OCCURS DEPENDING ON is last of record then it is variable
+			length. If find something this does not apply to, change it
+
 2022-10-10  Simon Sobisch <simonsobisch@gnu.org>
 
 	* runtime.cfg: add COB_CORE_FILENAME and adjust COB_CORE_ON_ERROR

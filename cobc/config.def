@@ -283,6 +283,9 @@ CB_CONFIG_SUPPORT (cb_move_fig_quote_to_numeric, "move-figurative-quote-to-numer
 CB_CONFIG_SUPPORT (cb_odo_without_to, "odo-without-to",
 	_("OCCURS DEPENDING ON without to"))
 
+CB_CONFIG_SUPPORT (cb_odo_last_varlen, "odo-last-varlen",
+	_("OCCURS DEPENDING ON last of record then variable lenght"))
+
 CB_CONFIG_SUPPORT (cb_section_segments, "section-segments",
 	_("section segments"))
 

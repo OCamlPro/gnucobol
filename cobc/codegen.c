@@ -184,8 +184,6 @@ static unsigned int		gen_native = 0;
 static unsigned int		gen_custom = 0;
 static unsigned int		gen_figurative = 0;
 static unsigned int		gen_dynamic = 0;
-static unsigned int		xb_odo_last_len = 1;	/* If last field is ODO 
-												then handle as variable length */
 static char			last_line_num[80] = "";
 static int			skip_line_num = 0;
 static int			report_field_id = 0;
@@ -782,7 +780,7 @@ chk_field_variable_size (struct cb_field *f)
 					f->vsize = fc;
 					break;
 				}
-				if (xb_odo_last_len) {
+				if (cb_odo_last_varlen == CB_OK) {
 					if (f->sister != NULL	/* Parent has sister so NOT vary size */
 					 && f->level == f->sister->level
 					 && !f->sister->redefines)
