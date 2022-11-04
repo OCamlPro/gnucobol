@@ -4,6 +4,7 @@
 	* codegen.c: For compare of unsigned numeric DISPLAY, PACKED, or COMP-6
 				field to numeric literal use 'memcmp'
 				Now using config option  odo-last-varlen
+				Fix emitting of trace code if line# or statement type changes
 	* typeck.c: Check for compare of unsigned numeric DISPLAY, PACKED or
 				COMP-6 to numeric literal
 				Swap operands if comparing: literal relop field

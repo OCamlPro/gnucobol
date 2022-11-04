@@ -7723,7 +7723,6 @@ Program-Id:  callrec                     UNTIL                           Line:  
 Program-Id:  callrec                     INITIALIZE                      Line:     29
 Program-Id:  callrec                     SET                             Line:     29
 Program-Id:  callrec                     MOVE                            Line:     31
-Program-Id:  callrec                     MOVE                            Line:     31
 Program-Id:  callrec                     SET                             Line:     32
 Program-Id:  callrec                     GOBACK                          Line:     35
 Program-Id:  callrec               Exit: callrec                         Line:     35
@@ -7745,6 +7744,10 @@ Program-Id:  caller                      ADD                             Line:  
 Program-Id:  caller                      SET                             Line:     50
 Program-Id:  caller                      MOVE                            Line:     51
 Program-Id:  caller                      SEARCH ALL                      Line:     55
+Program-Id:  caller                      SEARCH VARYING                  Line:     55
+Program-Id:  caller                      WHEN                            Line:     58
+Program-Id:  caller                      SEARCH VARYING                  Line:     55
+Program-Id:  caller                      WHEN                            Line:     58
 Program-Id:  caller                      CONTINUE                        Line:     59
 Program-Id:  caller                      STOP RUN                        Line:     62
 ])

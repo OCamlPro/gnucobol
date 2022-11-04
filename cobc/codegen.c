@@ -198,6 +198,7 @@ static int			non_nested_count = 0;
 static int			loop_counter = 0;
 static int			progid = 0;
 static int			last_line = 0;
+static int			last_stmt = 0;
 static cob_u32_t		field_iteration = 0;
 static int			screenptr = 0;
 static int			local_mem = 0;
@@ -6270,6 +6271,7 @@ output_search_whens (cb_tree table, struct cb_field *p, cb_tree stmt,
 
 	/* Start loop */
 	last_line = -1; /* force statement reference output at begin of loop */
+	last_stmt = -1;
 	skip_line_num++;
 	output_prefix ();
 	output ("if ( (");
@@ -6356,6 +6358,7 @@ output_search_all (cb_tree table, struct cb_field *p, cb_tree end_stmt,
 
 	/* Start loop */
 	last_line = -1; /* force statement reference output at begin of loop */
+	last_stmt = -1;
 	output_line ("for (;;)");
 	output_block_open ();
 
@@ -8747,10 +8750,12 @@ output_source_reference (cb_tree tree, const enum cob_statement statement)
 				COB_SET_LINE_FILE(tree->source_line, lookup_source(tree->source_file)));
 		}
 	}
-	if (last_line != tree->source_line) {
+	if (last_line != tree->source_line
+	 || last_stmt != statement) {
 		/* Output source location as code */
 		output_line_and_trace_info (tree, statement);
 		last_line = tree->source_line;
+		last_stmt = statement;
 	}
 }
 
@@ -9494,9 +9499,11 @@ output_stmt (cb_tree x)
 				}
 			} else if (ip->test->source_line) {
 				output_line ("/* Line: %-10d: WHEN */", ip->test->source_line);
-				if (last_line != ip->test->source_line) {
+				if (last_line != ip->test->source_line
+				 || last_stmt != STMT_WHEN) {
 					/* Output source location as code */
 					output_line_and_trace_info (ip->test, STMT_WHEN);
+					last_stmt = STMT_WHEN;
 				}
 			/* LCOV_EXCL_START TODO - REMOVE when verified that we never reach this */
 			} else {
