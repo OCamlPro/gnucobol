@@ -110,10 +110,10 @@ static int			warn_json_done = 0;
 static int			warn_screen_done = 0;
 #endif
 static int			expr_op;		/* Last operator */
-static cb_tree			expr_lh;		/* Last left hand */
+static cb_tree		expr_lh;		/* Last left hand */
 static int			expr_dmax = -1;		/* Max scale for expression result */
 #define MAX_NESTED_EXPR	64
-static cb_tree			expr_x = NULL;
+static cb_tree		expr_x = NULL;
 static cb_tree		sz_shift;
 static int			expr_dec_align = -1;
 static int			expr_nest = 0;
@@ -125,10 +125,10 @@ static int			if_cond[MAX_NESTED_COND];
 static int			if_stop = 0;
 static int			expr_line = 0;		/* Line holding expression for warnings */
 static int			int_usage = -1;
-static cb_tree			expr_rslt = NULL;	/* Expression result */
+static cb_tree		expr_rslt = NULL;	/* Expression result */
 
-static size_t			initialized = 0;
-static size_t			overlapping = 0;
+static size_t		initialized = 0;
+static size_t		overlapping = 0;
 
 static int			expr_index;		/* Stack index */
 static int			expr_stack_size;	/* Stack max size */
@@ -670,7 +670,11 @@ cb_is_integer_field (struct cb_field *f)
 	 && f->size < 16)
 		return 1;
 	if (f->usage == int_usage	/* For check to allow PACKED */
-	 && f->size < 16)
+	 && f->size < 10)
+		return 1;
+	if (int_usage == CB_USAGE_PACKED	/* Check for COMP-6 */
+	 && f->usage == CB_USAGE_COMP_6
+	 && f->size < 10)
 		return 1;
 	if (f->usage == CB_USAGE_COMP_X
 	 && f->size == 1)
@@ -6237,18 +6241,37 @@ cb_build_cond (cb_tree x)
 						cb_int (size1));
 					break;
 				}
+				if (p->op == '='
+				 || p->op == '~'
+				 || p->op == '>'
+				 || p->op == '<'
+				 || p->op == ']'
+				 || p->op == '[') {
+					int_usage = CB_USAGE_PACKED;
+					if (CB_TREE_CLASS (p->x) == CB_CLASS_NUMERIC
+					 && CB_TREE_CLASS (p->y) == CB_CLASS_NUMERIC
+					 && CB_TREE_TAG (p->x) == CB_TAG_LITERAL
+					 && CB_TREE_TAG (p->y) == CB_TAG_REFERENCE) {	/* literal relop field */
+						d1 = p->x;
+						p->x = p->y;	/* Swap operands */
+						p->y = d1;
+						if (p->op == '>')
+							p->op = '<';
+						else if (p->op == '<')
+							p->op = '>';
+						else if (p->op == '[')
+							p->op = ']';
+						else if (p->op == ']')
+							p->op = '[';
+					}
+				} else {
+					int_usage = -1;
+				}
 				if (CB_TREE_CLASS (p->x) == CB_CLASS_NUMERIC
 				 && CB_TREE_CLASS (p->y) == CB_CLASS_NUMERIC
 				 && cb_fits_long_long (p->y)) {
 					if (CB_REF_OR_FIELD_P (p->x)) {
 						f = CB_FIELD_PTR (p->x);
-						if (p->op == '='
-						 || p->op == '~'
-						 || p->op == '>'
-						 || p->op == '<'
-						 || p->op == ']'
-						 || p->op == '[')
-							int_usage = CB_USAGE_PACKED;
 						if (cb_is_integer_field_and_int (f, p->y)
 						 && cb_fits_int (p->y)) {
 							/* 'native' (short/int/long) on SYNC boundary */
@@ -6257,11 +6280,12 @@ cb_build_cond (cb_tree x)
 							cb_copy_source_reference (ret, x);
 							return ret;
 						}
-						int_usage = -1;
 					}
+					int_usage = -1;
 					ret = cb_build_optim_cond (p);
 					break;
 				}
+				int_usage = -1;
 
 				/* Field comparison */
 				if ((CB_REF_OR_FIELD_P (p->x))

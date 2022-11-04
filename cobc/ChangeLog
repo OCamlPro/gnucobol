@@ -1,8 +1,11 @@
 
-2022-11-03  Ron Norman <rjn@inglenet.com>
+2022-11-04  Ron Norman <rjn@inglenet.com>
 
-	* codegen.c: For compare of unsigned DISPLAY or PACKED field use memcmp
-	* typeck.c: Add check for compare of unsigned DISPLAY or PACKED field
+	* codegen.c: For compare of unsigned numeric DISPLAY, PACKED, or COMP-6
+				field to numeric literal use 'memcmp'
+	* typeck.c: Check for compare of unsigned numeric DISPLAY, PACKED or
+				COMP-6 to numeric literal
+				Swap operands if comparing: literal relop field
 
 2022-11-02  Ron Norman <rjn@inglenet.com>
 

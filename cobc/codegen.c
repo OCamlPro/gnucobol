@@ -4870,6 +4870,8 @@ output_funcall_typed (struct cb_funcall *p, const char type)
 			 && f->pic->scale == 0
 			 && f->pic->digits < 18
 			 && f->pic->have_sign == 0) {
+				int		i, j, len;
+				char	digs[32], pack[80];
 				const char	*opstr = "==";
 				if (opcd == '~')
 					opstr = "!=";
@@ -4890,11 +4892,22 @@ output_funcall_typed (struct cb_funcall *p, const char type)
 					break;
 				}
 				if (f->usage == CB_USAGE_PACKED) {
-					char	digs[32], pack[64];
-					int	i,j;
-					int	len = (f->pic->digits + 2) / 2;
+					len = (f->pic->digits + 2) / 2;
 					len = len * 2;
 					sprintf(digs,"%0*dF",len-1,cb_get_int (p->argv[2]));
+					for (i=j=0; j < len; j += 2, i += 4) {
+						sprintf(&pack[i],"\\x%c%c",digs[j],digs[j+1]);
+					}
+
+					output ("(memcmp (");
+					output_data (p->argv[0]);
+					output (", \"%s\", %d) %s 0)", pack, j / 2, opstr);
+					break;
+				}
+				if (f->usage == CB_USAGE_COMP_6) {
+					len = (f->pic->digits + 1) / 2;
+					len = len * 2;
+					sprintf(digs,"%0*d",len,cb_get_int (p->argv[2]));
 					for (i=j=0; j < len; j += 2, i += 4) {
 						sprintf(&pack[i],"\\x%c%c",digs[j],digs[j+1]);
 					}
