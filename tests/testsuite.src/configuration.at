@@ -487,6 +487,7 @@ test.conf: missing definitions:
 	no definition of 'move-figurative-space-to-numeric'
 	no definition of 'move-figurative-quote-to-numeric'
 	no definition of 'odo-without-to'
+	no definition of 'odo-last-varlen'
 	no definition of 'section-segments'
 	no definition of 'alter-statement'
 	no definition of 'call-overflow'
