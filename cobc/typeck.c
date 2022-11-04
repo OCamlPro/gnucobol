@@ -670,11 +670,11 @@ cb_is_integer_field (struct cb_field *f)
 	 && f->size < 16)
 		return 1;
 	if (f->usage == int_usage	/* For check to allow PACKED */
-	 && f->size < 10)
+	 && f->size < 16)
 		return 1;
 	if (int_usage == CB_USAGE_PACKED	/* Check for COMP-6 */
 	 && f->usage == CB_USAGE_COMP_6
-	 && f->size < 10)
+	 && f->size < 16)
 		return 1;
 	if (f->usage == CB_USAGE_COMP_X
 	 && f->size == 1)
