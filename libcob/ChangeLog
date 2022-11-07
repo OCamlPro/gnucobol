@@ -1,5 +1,15 @@
 
+2022-11-07  Ron Norman <rjn@inglenet.com>
+
+	* fileio.c: Preliminary implemenation of support for the
+				COB_FILENAME_SPACES option default TRUE.
+				A check for environment variable is done to disable.
+				If the name in ASSIGN variable has invalid data status 9/004
+				If the name in ASSIGN variable starts with double quote then
+				trailing spaces are included in file name 
+
 2022-10-31  Ron Norman <rjn@inglenet.com>
+
 	* common.c: Only redo 'raise (sig)' if a core dupm is wanted
 	* common.h: Add cob_symbol type of SYM_ADRS_VARY
 
