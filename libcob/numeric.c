@@ -778,11 +778,10 @@ cob_decimal_set_double (cob_decimal *d, const double v)
 static double
 cob_decimal_get_double (cob_decimal *d)
 {
-	double		v;
+	double		v = 0.0;
 	cob_sli_t	n;
 
 	cob_not_finite = 0;
-	v = 0.0;
 	if (unlikely (mpz_size (d->value) == 0)) {
 		return v;
 	}
@@ -1309,7 +1308,7 @@ cob_decimal_get_display (cob_decimal *d, cob_field *f, const int opt)
 		/* If the statement has ON SIZE ERROR or NOT ON SIZE ERROR,
 		   then throw an exception */
 		if (opt & COB_STORE_KEEP_ON_OVERFLOW) {
-			cob_gmp_free(p);
+			cob_gmp_free (p);
 			return cobglobptr->cob_exception_code;
 		}
 
@@ -1321,7 +1320,7 @@ cob_decimal_get_display (cob_decimal *d, cob_field *f, const int opt)
 		memcpy (data + diff, p, size);
 	}
 
-	cob_gmp_free(p);
+	cob_gmp_free (p);
 	COB_PUT_SIGN (f, sign);
 
 	return 0;
@@ -1582,7 +1581,7 @@ cob_print_ieeedec (const cob_field *f, FILE *fp)
 	/* LCOV_EXCL_START */
 	default:
 		cob_runtime_error (_("invalid internal call of %s"), "cob_print_ieeedec");
-		cob_hard_failure_internal ();
+		cob_hard_failure_internal ("libcob");
 	/* LCOV_EXCL_STOP */
 	}
 	cob_decimal_print (&cob_d3, fp);
@@ -1843,8 +1842,11 @@ cob_decimal_sub (cob_decimal *d1, cob_decimal *d2)
 
 /* Decimal <-> Decimal */
 
+/* note: this will be removed in 4.x, only is in for
+   post 3.x decimal patch, not used with 3.2 any more
+   but possibly from old generated modules */
 void
-cob_decimal_copy (cob_decimal *dst, cob_decimal *src)
+cob_decimal_set (cob_decimal *dst, cob_decimal *src)
 {
 	mpz_set (dst->value, src->value);
 	dst->scale = src->scale;
@@ -2570,6 +2572,9 @@ cob_cmp_numdisp (const unsigned char *data, const size_t size,
 	return (val < n) ? -1 : (val > n);
 }
 
+/* "allocation of cob_decimals (internal structure pointing
+   to initialized GMP storage) - just getting the pointer to
+   one of the pre-allocated ones */
 void
 cob_decimal_alloc (const cob_u32_t params, ...)
 {
@@ -2585,6 +2590,9 @@ cob_decimal_alloc (const cob_u32_t params, ...)
 	va_end (args);
 }
 
+/* real allocation of (temporary) cob_decimals, which is relative slow
+   because of necessary GMP initialization storage;
+   caller must release the decimals with a later call to cob_decial_pop */
 void
 cob_decimal_push (const cob_u32_t params, ...)
 {
@@ -2601,6 +2609,7 @@ cob_decimal_push (const cob_u32_t params, ...)
 	va_end (args);
 }
 
+/* release temporary decimals, allocated with cob_decimal_push */
 void
 cob_decimal_pop (const cob_u32_t params, ...)
 {

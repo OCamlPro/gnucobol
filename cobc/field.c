@@ -46,6 +46,7 @@
 
 /* Function prototypes */
 static unsigned int	validate_field_1 (struct cb_field *f);
+static unsigned int validate_multi_value (const struct cb_field * const f);
 
 /* Global variables */
 
@@ -64,7 +65,7 @@ static char			op_prec	[CB_MAX_OPS+1];
 static cob_s64_t	op_val	[CB_MAX_OPS+1];
 static int			op_scale[CB_MAX_OPS+1];
 
-/* Is list of values really an expression */
+/* Is constant expression list in value really an expression? */
 static int
 cb_is_expr (cb_tree ch)
 {
@@ -72,7 +73,7 @@ cb_is_expr (cb_tree ch)
 	int				num;
 
 	if (op_pos >= 0) {
-		for (num=0; num < CB_MAX_OPS; num++) {
+		for (num = 0; num < CB_MAX_OPS; num++) {
 			op_type [num] = ' ';
 			op_prec [num] = 0;
 			op_val	[num] = 0;
@@ -373,7 +374,7 @@ cb_get_level (cb_tree x)
 		if (!isdigit ((int)(*p))) {
 			goto level_error;
 		}
-		level = level * 10 + (*p - '0');
+		level = level * 10 + (COB_D2I(*p));
 		if (level > 88) {
 			goto level_error;
 		}
@@ -534,13 +535,11 @@ same_level:
 				break;
 			}
 		}
-		if (cb_relax_level_hierarchy
-		 && p /* <- silence warnings */) {
+		/* always generate dummy filler field to prevent
+		   parsing of follow-on fields to fail the same way */
+		if (p) /* <- silence warnings */ {
 			dummy_fill = cb_build_filler ();
 			field_fill = CB_FIELD (cb_build_field (dummy_fill));
-			cb_warning_x (COBC_WARN_FILLER, name,
-				      _("no previous data item of level %02d"),
-				      f->level);
 			field_fill->level = f->level;
 			field_fill->flag_filler = 1;
 			field_fill->storage = storage;
@@ -553,11 +552,15 @@ same_level:
 			field_fill->sister = f;
 			f->parent = field_fill->parent;
 			/* last_field = field_fill; */
+		}
+		if (cb_relax_level_hierarchy) {
+			cb_warning_x (COBC_WARN_FILLER, name,
+				_("no previous data item of level %02d"),
+				f->level);
 		} else {
 			cb_error_x (name,
-				    _("no previous data item of level %02d"),
-				    f->level);
-			return cb_error_node;
+				_("no previous data item of level %02d"),
+				f->level);
 		}
 	}
 
@@ -673,11 +676,28 @@ cb_resolve_redefines (struct cb_field *field, cb_tree redefines)
 static void copy_into_field_recursive (struct cb_field *, struct cb_field *, const int);
 
 static void
+copy_duplicated_field_into_field (struct cb_field *field, struct cb_field *target,
+	const int level, const int outer_indexes, const enum cb_storage storage)
+{
+	cb_tree	x;
+	if (!field->flag_filler && field->name) {
+		x = cb_build_field_tree (NULL, cb_build_reference (field->name),
+			target, storage, NULL, level);
+	} else {
+		x = cb_build_field_tree (NULL, cb_build_filler (),
+			target, storage, NULL, level);
+	}
+	if (x == cb_error_node) {
+		return;
+	}
+	copy_into_field_recursive (field, CB_FIELD (x), outer_indexes);
+}
+
+static void
 copy_children (struct cb_field *child, struct cb_field *target,
 	const int level, const int outer_indexes, const enum cb_storage storage)
 {
 	int level_child;
-	cb_tree n, x;
 
 	if (child->level > level) {
 		level_child = child->level;
@@ -690,15 +710,8 @@ copy_children (struct cb_field *child, struct cb_field *target,
 		}
 	}
 
-	if (child->name) {
-		n = cb_build_reference (child->name);
-	} else {
-		n = cb_build_filler ();
-	}
-	x = cb_build_field_tree (NULL, n, target, storage, NULL, level_child);
-	if (x != cb_error_node) {
-		copy_into_field_recursive (child, CB_FIELD (x), outer_indexes);
-	}
+	copy_duplicated_field_into_field (child, target, level_child,
+		outer_indexes, storage);
 }
 
 #define field_attribute_copy(attribute)	\
@@ -782,6 +795,8 @@ copy_into_field_recursive (struct cb_field *source, struct cb_field *target,
 	field_attribute_override (flag_any_numeric);
 	field_attribute_override (flag_invalid);
 
+	/* TODO: add copying of align clause and other boolean/bit stuff once added */
+
 	if (CB_VALID_TREE (source->redefines)) {
 		cb_tree ref = cb_build_reference (source->redefines->name);
 		target->redefines = cb_resolve_redefines (target, ref);
@@ -795,16 +810,8 @@ copy_into_field_recursive (struct cb_field *source, struct cb_field *target,
 
 	if (source->sister) {
 		/* for children: all sister entries need to be copied */
-		cb_tree n, x;
-		if (source->sister->name) {
-			n = cb_build_reference (source->sister->name);
-		} else {
-			n = cb_build_filler ();
-		}
-		x = cb_build_field_tree (NULL, n, target, target->storage, NULL, target->level);
-		if (x != cb_error_node) {
-			copy_into_field_recursive (source->sister, CB_FIELD (x), outer_indexes);
-		}
+		copy_duplicated_field_into_field (source->sister,
+			target, target->level, outer_indexes, target->storage);
 	}
 	/* special case: normally incremented during parse */
 	target->indexes = source->indexes + outer_indexes;
@@ -826,7 +833,7 @@ copy_into_field (struct cb_field *source, struct cb_field *target)
 	cb_tree	external_definition = target->external_definition;
 #endif
 
-	/* note: EXTERNAL is always applied from the typedef (if level (1/77),
+	/* note: EXTERNAL is always applied from the typedef (if level 1/77),
 			 but may be specified on the field */
 	if (target->level == 1 || target->level == 77) {
 		field_attribute_copy (flag_external);
@@ -961,13 +968,31 @@ is_numeric_usage (const enum cb_usage usage)
 	}
 }
 
+static cb_tree
+get_first_value (const struct cb_field * const f)
+{
+	cb_tree x = f->values;
+	if (CB_INVALID_TREE (x))
+		return NULL;	/* no value / error */
+
+	if (!CB_LIST_P (x))
+		return x;		/* simple VALUE */
+
+	x = CB_VALUE (x);
+	if (CB_TAB_VALS_P (x)) {
+		x = CB_TAB_VALS (x)->values;
+		x = CB_VALUE (x);
+	}
+	return x;
+}
+
 /* create an implicit picture for items that miss it but need one,
    return 1 if not possible */
 static unsigned int
 create_implicit_picture (struct cb_field *f)
 {
+	cb_tree first_value = get_first_value (f);
 	cb_tree			x = CB_TREE (f);
-	cb_tree			first_value;
 	char			*pp;
 	struct cb_literal	*lp;
 	int			size_implied = 1;
@@ -975,26 +1000,21 @@ create_implicit_picture (struct cb_field *f)
 	int			ret;
 	char			pic[24];
 
-	if (f->values) {
-		first_value = CB_VALUE (f->values);
-		if (first_value == cb_error_node) {
-			first_value = NULL;
-		} else {
-			if (CB_LITERAL_P (first_value)) {
-				size_implied = (int)CB_LITERAL (first_value)->size;
-				is_numeric = CB_NUMERIC_LITERAL_P (first_value);
-			} else if (CB_CONST_P (first_value)) {
-				size_implied = 1;
-				if (first_value == cb_zero) {
-					is_numeric = 1;
-				} else {
-					is_numeric = 0;
-				}
-			/* LCOV_EXCL_START */
+	if (first_value) {
+		if (CB_LITERAL_P (first_value)) {
+			size_implied = (int)CB_LITERAL (first_value)->size;
+			is_numeric = CB_NUMERIC_LITERAL_P (first_value);
+		} else if (CB_CONST_P (first_value)) {
+			size_implied = 1;
+			if (first_value == cb_zero) {
+				is_numeric = 1;
 			} else {
-				CB_TREE_TAG_UNEXPECTED_ABORT (x);
-			/* LCOV_EXCL_STOP */
+				is_numeric = 0;
 			}
+		/* LCOV_EXCL_START */
+		} else {
+			CB_TREE_TAG_UNEXPECTED_ABORT (x);
+		/* LCOV_EXCL_STOP */
 		}
 	} else {
 		first_value = NULL;
@@ -1141,6 +1161,7 @@ create_implicit_picture (struct cb_field *f)
 	return ret;
 }
 
+/* note: this also adjusts the field! */
 static unsigned int
 validate_any_length_item (struct cb_field *f)
 {
@@ -1239,10 +1260,8 @@ validate_occurs (const struct cb_field * const f)
 	const cb_tree		x = CB_TREE (f);
 	const struct cb_field	*p;
 
-	if ((f->level == 01 || f->level == 77)
-	 && !cb_verify_x (x, cb_top_level_occurs_clause, "01/77 OCCURS")) {
-		cb_error_x (x, _("level %02d item '%s' cannot have a %s clause"),
-			f->level, cb_name (x), "OCCURS");
+	if (f->level == 01 || f->level == 77) {
+		cb_verify_x (x, cb_top_level_occurs_clause, "01/77 OCCURS");
 	}
 
 	/* Validate OCCURS DEPENDING */
@@ -1257,7 +1276,7 @@ validate_occurs (const struct cb_field * const f)
 				if (p->flag_picture_l) continue;
 				if (p->flag_occurs) {
 					cb_error_x (CB_TREE (p),
-						    _("'%s' cannot have the OCCURS clause due to '%s'"),
+						    _("'%s' cannot have an OCCURS clause due to '%s'"),
 						    cb_name (CB_TREE (p)),
 						    cb_name (x));
 					break;
@@ -1276,7 +1295,7 @@ validate_redefines (const struct cb_field * const f)
 	/* Check OCCURS */
 	if (f->redefines->flag_occurs) {
 		cb_warning_x (COBC_WARN_FILLER, x,
-			      _("the original definition '%s' should not have OCCURS clause"),
+			      _("the original definition '%s' should not have an OCCURS clause"),
 			      f->redefines->name);
 	}
 
@@ -1329,6 +1348,10 @@ validate_group (struct cb_field *f)
 		cb_error_x (x, _("SCREEN group item '%s' has invalid clause"),
 			    cb_name (x));
 		ret = 1;
+	}
+	
+	if (f->values && CB_LIST_P (f->values)) {
+		ret |= validate_multi_value (f);
 	}
 
 	for (f = f->children; f; f = f->sister) {
@@ -1584,11 +1607,10 @@ static void
 validate_blank_when_zero (const struct cb_field * const f)
 {
 	const cb_tree	x = CB_TREE (f);
-	int		i;
 
 	if (f->pic
-	    && f->pic->have_sign
-	    && f->pic->category != CB_CATEGORY_NUMERIC_EDITED) {
+	 && f->pic->have_sign
+	 && f->pic->category != CB_CATEGORY_NUMERIC_EDITED) {
 		cb_error_x (x, _("'%s' cannot have S in PICTURE string and BLANK WHEN ZERO"),
 			    cb_name (x));
 	}
@@ -1599,11 +1621,12 @@ validate_blank_when_zero (const struct cb_field * const f)
 	}
 
 	if (f->pic) {
+		int		i;
 		switch (f->pic->category) {
 		case CB_CATEGORY_NUMERIC:
 			break;
 		case CB_CATEGORY_NUMERIC_EDITED:
-			for (i = 0; f->pic->str[i].symbol != '\0'; ++i) {
+			for (i = 0; i < f->pic->lenstr; ++i) {
 				if (f->pic->str[i].symbol == '*') {
 					cb_error_x (x, _("'%s' cannot have * in PICTURE string and BLANK WHEN ZERO"),
 						    cb_name (x));
@@ -1618,23 +1641,67 @@ validate_blank_when_zero (const struct cb_field * const f)
 	}
 }
 
+/* Validate multiple VALUEs */
+static unsigned int
+validate_multi_value (const struct cb_field * const f)
+{
+
+	int num_of_values = 0;
+	int	total_occurs, k;
+
+	if (!CB_TAB_VALS_P (CB_VALUE (f->values))) {
+		/* simple option: list of literals */
+		num_of_values = cb_list_length (f->values);
+	} else {
+		cb_tree vals;
+		int repeated_to_end = 0;
+		for (vals = f->values; vals; vals = CB_CHAIN (vals)) {
+			/* FIXME: this is wrong, works only if "FROM" is 1
+						and there is REPEATED TO END / TO ... */
+			const struct cb_table_values *val_entries = CB_TAB_VALS (CB_VALUE (vals));
+			int entries_in_this_list = cb_list_length (val_entries->values);
+			cb_tree repeated = val_entries->repeat_times;
+			if (repeated == cb_null) {
+				if (repeated_to_end++) {
+					/* TODO: check exact syntax, may only be specified once */
+				}
+				repeated = NULL;
+			}
+			if (repeated) {
+				entries_in_this_list *= cb_get_int (repeated);
+			}
+			/* TODO: Check that there is no overlapping */
+			num_of_values += entries_in_this_list;
+		}
+	}
+
+	{
+		const struct cb_field	*p;
+		total_occurs = 1;
+		for (p = f; p; p = p->parent) {
+			if (p->flag_occurs
+			 && p->occurs_max > 1) {
+				total_occurs *= p->occurs_max;
+			}
+		}
+	}
+	k = num_of_values - total_occurs;
+	if (k > 0) {
+		cb_error_x (CB_TREE (f),
+			_("elements in VALUE clause for '%s' (%d) exceed max amount (%d)"),
+			f->name, num_of_values, total_occurs);
+		return 1;
+	}
+	return 0;
+}
+
 static void
 validate_elem_value (const struct cb_field * const f)
 {
-	const cb_tree		x = CB_TREE (f);
-	const struct cb_field	*p;
-
-	if (f->values != NULL
-	 && (CB_PAIR_P (CB_VALUE (f->values)) || CB_CHAIN (f->values))) {
-		for (p = f; p && !p->flag_occurs; p = p->parent);
-		if (p == NULL
-		 || !p->flag_occurs
-		 || f->children)
-			cb_error_x (x, _("only level 88 items may have multiple values"));
-	}
-
 	/* ISO+IEC+1989-2002: 13.16.42.2-10 */
 	if (cb_warn_opt_val[cb_warn_ignored_initial_val] != COBC_WARN_DISABLED) {
+		const cb_tree		x = CB_TREE (f);
+		const struct cb_field	*p;
 		for (p = f; p; p = p->parent) {
 			if (p->flag_external) {
 				cb_warning_x (cb_warn_ignored_initial_val, x,
@@ -1653,37 +1720,38 @@ static void
 warn_full_on_numeric_items_is_useless (const struct cb_field * const f)
 {
 	if ((f->screen_flag & COB_SCREEN_FULL)
-	    && f->pic && f->pic->category == CB_CATEGORY_NUMERIC) {
+	 && f->pic && f->pic->category == CB_CATEGORY_NUMERIC) {
 		cb_warning_x (cb_warn_additional, CB_TREE (f),
-			      _("FULL has no effect on numeric items; you may want REQUIRED or PIC Z"));
+			_("FULL has no effect on numeric items; you may want REQUIRED or PIC Z"));
 	}
 }
 
 static int
 has_std_needed_screen_clause (const struct cb_field * const f)
 {
-	const cb_tree val = f->values ? CB_VALUE (f->values) : cb_error_node;
-	return ( f->pic
-		 && (f->screen_from
-		  || f->screen_to
-		  || CB_NUMERIC_LITERAL_P (val)))
-		|| ((CB_LITERAL_P (val)
-		  || CB_CONST_P (val))
-		 && (CB_TREE_CATEGORY (val) == CB_CATEGORY_ALPHANUMERIC
-		  || CB_TREE_CATEGORY (val) == CB_CATEGORY_BOOLEAN
-		  || CB_TREE_CATEGORY (val) == CB_CATEGORY_NATIONAL))
-		|| f->screen_flag & COB_SCREEN_BELL
-		|| f->screen_flag & COB_SCREEN_BLANK_LINE
-		|| f->screen_flag & COB_SCREEN_BLANK_SCREEN
-		|| f->screen_flag & COB_SCREEN_ERASE_EOL
-		|| f->screen_flag & COB_SCREEN_ERASE_EOS;
+	cb_tree first_value = get_first_value (f);
+	return (f ->pic
+	     && (f->screen_from
+	      || f->screen_to
+	      || (first_value && CB_NUMERIC_LITERAL_P (first_value))))
+	     || (first_value
+	      && (CB_LITERAL_P (first_value)
+	       || CB_CONST_P   (first_value))
+	      && (CB_TREE_CATEGORY (first_value) == CB_CATEGORY_ALPHANUMERIC
+	       || CB_TREE_CATEGORY (first_value) == CB_CATEGORY_BOOLEAN
+	       || CB_TREE_CATEGORY (first_value) == CB_CATEGORY_NATIONAL))
+	     || f->screen_flag & COB_SCREEN_BELL
+	     || f->screen_flag & COB_SCREEN_BLANK_LINE
+	     || f->screen_flag & COB_SCREEN_BLANK_SCREEN
+	     || f->screen_flag & COB_SCREEN_ERASE_EOL
+	     || f->screen_flag & COB_SCREEN_ERASE_EOS;
 }
 
 static void
 error_value_figurative_constant(const struct cb_field * const f)
 {
-	if (f->values
-	 && cb_is_figurative_constant (CB_VALUE (f->values))) {
+	cb_tree first_value = get_first_value (f);
+	if (first_value && cb_is_figurative_constant (first_value)) {
 		cb_error_x (CB_TREE (f), _("VALUE may not contain a figurative constant"));
 	}
 }
@@ -1716,7 +1784,8 @@ warn_from_to_using_without_pic (const struct cb_field * const f)
 static int
 warn_pic_for_numeric_value_implied (const struct cb_field * const f)
 {
-	if (f->values && CB_NUMERIC_LITERAL_P (CB_VALUE (f->values))) {
+	cb_tree first_value = get_first_value (f);
+	if (first_value && CB_NUMERIC_LITERAL_P (first_value)) {
 		const cb_tree	x = CB_TREE (f);
 		/* TO-DO: Change to dialect option */
 		cb_warning_x (cb_warn_additional, x,
@@ -1748,7 +1817,8 @@ error_pic_without_from_to_using (const struct cb_field * const f)
 static void
 error_pic_for_numeric_value (const struct cb_field * const f)
 {
-	if (f->values && CB_NUMERIC_LITERAL_P (CB_VALUE (f->values))) {
+	cb_tree first_value = get_first_value (f);
+	if (first_value && CB_NUMERIC_LITERAL_P (first_value)) {
 		cb_error_x (CB_TREE (f), _("cannot have numeric VALUE without PIC"));
 	}
 }
@@ -1765,8 +1835,9 @@ error_from_to_using_without_pic (const struct cb_field * const f)
 static void
 error_value_numeric (const struct cb_field * const f)
 {
-	if (f->values
-	 && CB_TREE_CATEGORY (CB_VALUE (f->values)) == CB_CATEGORY_NUMERIC) {
+	cb_tree first_value = get_first_value (f);
+	if (first_value
+	 && CB_TREE_CATEGORY (first_value) == CB_CATEGORY_NUMERIC) {
 		cb_error_x (CB_TREE (f), _("VALUE item may not be numeric"));
 	}
 }
@@ -1982,7 +2053,8 @@ validate_elem_screen (struct cb_field *f)
 	warn_full_on_numeric_items_is_useless (f);
 }
 
-/* Perform validation of a non-66-or-88-level elementary item. */
+/* Perform validation of a non-66-or-88-level elementary item.
+   note: this actually adjusts the field ! */
 static unsigned int
 validate_elementary_item (struct cb_field *f)
 {
@@ -2000,6 +2072,9 @@ validate_elementary_item (struct cb_field *f)
 
 	if (f->values) {
 		validate_elem_value (f);
+		if (CB_LIST_P (f->values)) {
+			ret |= validate_multi_value (f);
+		}
 	}
 	if (!ret && f->storage == CB_STORAGE_SCREEN) {
 		validate_elem_screen (f);
@@ -2892,27 +2967,149 @@ unbounded_again:
 	return f->size;
 }
 
+/* Check for default-matching VALUE, and depending on "default init"
+   replace by cb_zero/cb_space and return 1 if the value matches the default. */
+static int
+cleanup_field_value (struct cb_field* f, cb_tree *val)
+{
+	switch (CB_TREE_CATEGORY (f)) {
+	case CB_CATEGORY_NUMERIC:
+		if (CB_LITERAL_P (*val)) {
+			const struct cb_literal* lit = CB_LITERAL (*val);
+			char* p = (char*)lit->data;
+			char* end = p + lit->size - 1;
+			/* note: literal data has no sign or decimal period any more */
+			if (*end == '0') {
+				while (p < end && *p == '0') p++;
+				if (p == end) *val = cb_zero;
+			}
+		}
+		if (*val == cb_zero
+		 && !f->flag_internal_register
+		 && cb_default_byte == -1
+		 && ( f->storage == CB_STORAGE_WORKING
+		   || f->storage == CB_STORAGE_LOCAL)
+		 && !f->flag_sign_separate) {
+			return 1;
+		}
+		break;
+	case CB_CATEGORY_NATIONAL:
+		/* FIXME: Fall-through, but should handle national space */
+	case CB_CATEGORY_ALPHANUMERIC:
+		if (CB_LITERAL_P (*val)) {
+			const struct cb_literal *lit = CB_LITERAL (*val);
+			char *p = (char*)lit->data;
+			char *end = p + lit->size - 1;
+			if (*end == ' ') {
+				while (p < end && *p == ' ') p++;
+				if (p == end) *val = cb_space;
+			}
+		}
+		if (*val == cb_space
+		 && !f->flag_internal_register
+		 && (cb_default_byte == -1 || cb_default_byte == ' ')
+		 && ( f->storage == CB_STORAGE_WORKING
+		   || f->storage == CB_STORAGE_LOCAL)
+		 && !f->children) {
+			return 1;
+		}
+		break;
+	default:
+		break;
+	}
+
+	return 0;
+}
+
+/* validate list of simple VALUEs */
+static int
+validate_field_value_list (cb_tree values, struct cb_field* f)
+{
+	int ret = 0;
+	int ret_single;
+	int no_relevant_value = 1;
+	for (; values; values = CB_CHAIN (values)) {
+		cb_tree value = CB_VALUE (values);
+		ret_single = validate_move (value, CB_TREE (f), 1, NULL);
+		if (!ret_single) {
+			/* possible cleanup for value */
+			if (!cleanup_field_value (f, &value)) {
+				no_relevant_value = 0;
+			}
+		} else {
+			ret++;
+		}
+	}
+	if (no_relevant_value
+	 && !ret) {
+#if 0 /* this idea was nice, but we need a pointer for
+         INITIALIZE BY VALUE, so don't drop the value; otherwise
+         fails "752. run_misc.at:10849: dump feature with NULL address ..." */
+		/* if deemed that no value is necessary: drop that completely */
+		f->values = NULL;
+#endif
+	}
+	return ret;
+}
+
+/* validate if field's VALUE clause matches
+   the necesary rules;
+   remove VALUE clause if it matches the default setting
+   to improve codegen
+   recursively called for the field's sub-fields */
 static int
 validate_field_value (struct cb_field *f)
 {
+	int ret = 0;
 	if (f->values) {
 		if (f->flag_picture_l) {
 			cb_error_x (CB_TREE (f),
 				    _("%s and %s are mutually exclusive"),
 				    _("variable-length PICTURE"), "VALUE");
 			f->values = NULL;
+			return 1;
 		} else {
-			validate_move (CB_VALUE (f->values), CB_TREE (f), 1, NULL);
+			cb_tree x = f->values;
+			int ret_single = 0;
+			if (!CB_LIST_P (x)) {
+				/* simple, single VALUE */
+				ret_single = validate_move (x, CB_TREE (f), 1, NULL);
+				if (!ret_single) {
+					/* possible cleanup for value */
+					if (cleanup_field_value (f, &x)) {
+#if 0 /* this idea was nice, but we need a pointer for
+         INITIALIZE BY VALUE, so don't drop the value; otherwise
+         fails "752. run_misc.at:10849: dump feature with NULL address ..." */
+						/* if deemed that no value is necessary: drop that completely */
+						f->values = NULL;
+#endif
+					}
+				} else {
+					ret++;
+				}
+
+			} else if (!CB_TAB_VALS_P (CB_VALUE (x))) {
+				/* list of simple VALUEs */ 
+				ret += validate_field_value_list (x, f);
+			} else {
+				/* list of complex entries (table-format) for OCCURS */
+				for (; x; x = CB_CHAIN (x)) {
+					const struct cb_table_values *vals
+						= CB_TAB_VALS (CB_VALUE (x));
+					/* check for the value entry types */
+					ret += validate_field_value_list (vals->values, f);
+				}
+			}
 		}
 	}
 
 	if (f->children) {
 		for (f = f->children; f; f = f->sister) {
-			validate_field_value (f);
+			ret += validate_field_value (f);
 		}
 	}
 
-	return 0;
+	return ret;
 }
 
 void
@@ -2950,7 +3147,11 @@ cb_validate_field (struct cb_field *f)
 		f->redefines->memory_size = f->size * f->occurs_max;
 	}
 
-	validate_field_value (f);
+	if (!f->flag_internal_register) {
+		/* don't check internal ones, these ought to be fine
+		   and would otherwise be checked on each run of cobc */
+		validate_field_value (f);
+	}
 	if (f->flag_is_global) {
 		struct cb_field		*c;
 #if 0 /* CHECKME: Why should we adjust the field count here? */
@@ -3007,8 +3208,8 @@ cb_validate_78_item (struct cb_field *f, const cob_u32_t no78add)
 		prec = 0;
 	}
 
-	if (cb_is_expr (f->values) ) {
-		f->values = CB_LIST_INIT (cb_evaluate_expr (f->values, prec));
+	if (CB_LIST_P (f->values) && cb_is_expr (f->values) ) {
+		f->values = cb_evaluate_expr (f->values, prec);
 	}
 
 	x = CB_TREE (f);
@@ -3016,7 +3217,8 @@ cb_validate_78_item (struct cb_field *f, const cob_u32_t no78add)
 	if (CB_INVALID_TREE (f->values)) {
 		level_require_error (x, "VALUE");
 		noadd = 1;
-	} else if (CB_INVALID_TREE (CB_VALUE (f->values))) {
+	} else if (CB_LIST_P (f->values)
+	        && CB_INVALID_TREE (CB_VALUE (f->values))) {
 		noadd = 1;
 	}
 
@@ -3335,7 +3537,7 @@ cb_is_figurative_constant (const cb_tree x)
 		|| x == cb_norm_high
 		|| x == cb_quote
 		|| (CB_REFERENCE_P (x)
-		    && CB_REFERENCE (x)->flag_all);
+		 && CB_REFERENCE (x)->flag_all);
 }
 
 int

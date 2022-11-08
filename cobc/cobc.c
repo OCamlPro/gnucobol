@@ -58,7 +58,6 @@
 
 #include <limits.h>
 
-
 #include "cobc.h"
 #include "tree.h"
 #include "cconv.h"
@@ -80,13 +79,16 @@ struct strcache {
 };
 
 /* Compile level */
-#define	CB_LEVEL_PREPROCESS	1
-#define	CB_LEVEL_TRANSLATE	2
-#define	CB_LEVEL_COMPILE	3
-#define	CB_LEVEL_ASSEMBLE	4
-#define	CB_LEVEL_MODULE		5
-#define	CB_LEVEL_LIBRARY	6
-#define	CB_LEVEL_EXECUTABLE	7
+enum compile_level {
+	CB_LEVEL_UNSET  	= 0,
+	CB_LEVEL_PREPROCESS	= 1,
+	CB_LEVEL_TRANSLATE	= 2,
+	CB_LEVEL_COMPILE	= 3,
+	CB_LEVEL_ASSEMBLE	= 4,
+	CB_LEVEL_MODULE		= 5,
+	CB_LEVEL_LIBRARY	= 6,
+	CB_LEVEL_EXECUTABLE	= 7
+};
 
 /* Info display limits */
 #define	CB_IMSG_SIZE		24
@@ -243,8 +245,10 @@ int			cb_listing_xref = 0;
 #define			CB_LISTING_DATE_MAX (CB_LISTING_DATE_BUFF - 1)
 char			cb_listing_date[CB_LISTING_DATE_BUFF]; /* Date/Time buffer for listing */
 struct list_files	*cb_current_file = NULL;
-#define			LCL_NAME_LEN 80
-#define			LCL_NAME_MAX (LCL_NAME_LEN - 1)
+
+#if COB_MAX_WORDLEN > 80 - 1
+#error word length > listing data -> adjust one of those
+#endif
 
 /* compilation date/time of current source file */
 struct cob_time		current_compile_time = { 0 };
@@ -398,7 +402,7 @@ static size_t		cobc_buffer_size;
 
 static struct filename	*file_list;
 
-static unsigned int	cb_compile_level = 0;
+static enum compile_level cb_compile_level = 0;
 
 static int		iargs;
 
@@ -1284,6 +1288,30 @@ cobc_plex_strdup (const char *dupstr)
 	return p;
 }
 
+/* variant of strcpy which copies max 'max_size' bytes from 'src' to 'dest',
+   if the size of 'src' is too long only its last/last bytes are copied and an
+   eliding "..." is placed in front or at end depending on 'elide_at_end' */
+char *
+cobc_elided_strcpy (char *dest, const char* src,
+		const size_t max_size, int elide_at_end)
+{
+	const size_t size = strlen (src);
+
+	if (size < max_size) {
+		memcpy (dest, src, size + 1);
+	} else {
+		size_t size_to_copy = max_size - 3;
+		if (elide_at_end) {
+			memcpy (dest, src, size_to_copy + 1);
+			memcpy (dest + max_size - 3, "...", 3 + 1);
+		} else {
+			memcpy (dest, "...", 3);
+			memcpy (dest + 3, src + size - size_to_copy, size_to_copy);
+		}
+	}
+	return dest;
+}
+
 void *
 cobc_check_string (const char *dupstr)
 {
@@ -1680,7 +1708,7 @@ cobc_turn_ec (struct cb_text_list *ec_list, const cob_u32_t to_on_off, cb_tree l
 		size_t len = strlen (ec->text);
 		unsigned char *upme = (unsigned char*)ec->text;
 		for (i = 0; i < len; ++i) {
-			upme[i] = (cob_u8_t)toupper (upme[i]);
+			upme[i] = cb_toupper (upme[i]);
 		}
 
 		/* User specified exception (always nonfatal, compared by name) */
@@ -2021,17 +2049,19 @@ clean_up_intermediates (struct filename *fn, const int status)
 	if (save_all_src) {
 		return;
 	}
-	if (fn->need_preprocess &&
-		(status || cb_compile_level > CB_LEVEL_PREPROCESS ||
-		 (cb_compile_level == CB_LEVEL_PREPROCESS && save_temps))) {
+	if (fn->need_preprocess
+	 && (status 
+		||  cb_compile_level > CB_LEVEL_PREPROCESS
+		|| (cb_compile_level == CB_LEVEL_PREPROCESS && save_temps))) {
 		cobc_check_action (fn->preprocess);
 	}
 	if (save_c_src) {
 		return;
 	}
-	if (fn->need_translate &&
-		(status || cb_compile_level > CB_LEVEL_TRANSLATE ||
-		 (cb_compile_level == CB_LEVEL_TRANSLATE && save_temps))) {
+	if (fn->need_translate
+	 && (status
+		||  cb_compile_level > CB_LEVEL_TRANSLATE
+		|| (cb_compile_level == CB_LEVEL_TRANSLATE && save_temps))) {
 		cobc_check_action (fn->translate);
 		cobc_check_action (fn->trstorage);
 		if (fn->localfile) {
@@ -2122,9 +2152,10 @@ cobc_clean_up (const int status)
 	ylex_clear_all ();
 
 	for (fn = file_list; fn; fn = fn->next) {
-		if (fn->need_assemble &&
-		    (status || cb_compile_level > CB_LEVEL_ASSEMBLE ||
-		     (cb_compile_level == CB_LEVEL_ASSEMBLE && save_temps))) {
+		if (fn->need_assemble
+		 && (status
+			||  cb_compile_level > CB_LEVEL_ASSEMBLE
+			|| (cb_compile_level == CB_LEVEL_ASSEMBLE && save_temps))) {
 			cobc_check_action (fn->object);
 		}
 		clean_up_intermediates (fn, status);
@@ -2172,8 +2203,7 @@ cobc_terminate (const char *str)
 		set_listing_date ();
 		set_standard_title ();
 		cb_listing_linecount = cb_lines_per_page;
-		strncpy (cb_listing_filename, str, FILENAME_MAX);
-		cb_listing_filename[FILENAME_MAX - 1] = 0;
+		cobc_elided_strcpy (cb_listing_filename, str, sizeof (cb_listing_filename), 0);
 		print_program_header ();
 	}
 	cb_perror (0, "cobc: %s: %s", str, cb_get_strerror ());
@@ -2225,7 +2255,7 @@ cobc_abort_msg (void)
 /* return to OS in case of hard errors after trying to output the error to
    listing file if active */
 void
-cobc_abort_terminate (int should_be_reported)
+cobc_abort_terminate (const int should_be_reported)
 {
 	/* note we returned 99 for aborts earlier but autotest will
 	   "recognize" status 99 as failure (you cannot "expect" the return 99 */
@@ -2241,12 +2271,31 @@ cobc_abort_terminate (int should_be_reported)
 	cobc_abort_msg ();
 
 	if (should_be_reported) {
-		cobc_err_msg (_("Please report this!"));
+		char *coe = cob_getenv_direct ("COBC_CORE_ON_ERROR");
+		if (coe) {
+			cob_setenv ("COB_CORE_ON_ERROR", coe, 1);
+		} else {
+#if 0
+			coe = cob_getenv_direct ("COB_CORE_ON_ERROR");
+			if (!coe) {
+				cob_setenv ("COB_CORE_ON_ERROR", "3", 1);
+			}
+#else
+			/* if not explicit set - let us SIGABRT;
+				during testing this was set to 3 but that led
+				to a huge corefile "no space left on device" once */
+			cob_setenv ("COB_CORE_ON_ERROR", "2", 1);
+#endif
+		}
+		cob_setenv ("COB_CORE_FILENAME", "./core.cobc", 1);
 		if (cb_src_list_file
 		 && cb_listing_file_struct
 		 && cb_listing_file_struct->name) {
 			print_program_listing ();
 		}
+		/* run into libcob provided internal error handling
+		   handling with providing a coredump (or SIGABRT) */
+		cob_hard_failure_internal ("cobc");
 	}
 	cobc_clean_up (ret_code);
 	exit (ret_code);
@@ -2276,6 +2325,7 @@ cobc_sig_handler (int sig)
 
 	/* LCOV_EXCL_START */
 	if (!ret) {
+		/* FIXME: we should not use stdio functions as currently called below here! */
 		cobc_err_msg (_("Please report this!"));
 	}
 	/* LCOV_EXCL_STOP */
@@ -3141,7 +3191,7 @@ process_command_line (const int argc, char **argv)
 
 		case 'E':
 			/* -E : Preprocess */
-			if (cb_compile_level != 0) {
+			if (cb_compile_level != CB_LEVEL_UNSET) {
 				cobc_options_error_nonfinal ();
 			}
 			cb_compile_level = CB_LEVEL_PREPROCESS;
@@ -3149,7 +3199,7 @@ process_command_line (const int argc, char **argv)
 
 		case 'C':
 			/* -C : Generate C code */
-			if (cb_compile_level != 0) {
+			if (cb_compile_level != CB_LEVEL_UNSET) {
 				cobc_options_error_nonfinal ();
 			}
 			save_c_src = 1;
@@ -3158,7 +3208,7 @@ process_command_line (const int argc, char **argv)
 
 		case 'S':
 			/* -S : Generate assembler code */
-			if (cb_compile_level != 0) {
+			if (cb_compile_level != CB_LEVEL_UNSET) {
 				cobc_options_error_nonfinal ();
 			}
 #if defined(__TINYC__) || defined(__OS400__)
@@ -3177,7 +3227,7 @@ process_command_line (const int argc, char **argv)
 
 		case 'c':
 			/* -c : Generate C object code */
-			if (cb_compile_level != 0) {
+			if (cb_compile_level != CB_LEVEL_UNSET) {
 				cobc_options_error_nonfinal ();
 			}
 			cb_compile_level = CB_LEVEL_ASSEMBLE;
@@ -3287,7 +3337,7 @@ process_command_line (const int argc, char **argv)
 			conf_entry = cobc_malloc (COB_MINI_BUFF - 2);
 			snprintf (conf_label, COB_MINI_MAX, "-%s=%s",
 				long_options[idx].name, cob_optarg);
-			strncpy(conf_entry, conf_label + 2, COB_MINI_MAX - 2);
+			strcpy (conf_entry, conf_label + 2);
 			conf_ret |= cb_config_entry (conf_entry, conf_label, 0);
 			cobc_free (conf_entry);
 			break;
@@ -3879,7 +3929,7 @@ process_command_line (const int argc, char **argv)
 	}
 
 	/* set compile_level from output file if not set already */
-	if (cb_compile_level == 0
+	if (cb_compile_level == CB_LEVEL_UNSET
 	 && output_name != NULL) {
 		set_compile_level_from_file_extension (output_name);
 	}
@@ -4075,10 +4125,12 @@ process_filename (const char *filename)
 	/* Set preprocess filename */
 	if (!fn->need_preprocess) {
 		fn->preprocess = cobc_main_strdup (fn->source);
-	} else if (output_name && cb_compile_level == CB_LEVEL_PREPROCESS) {
+	} else
+	if (output_name && cb_compile_level == CB_LEVEL_PREPROCESS) {
 		fn->preprocess = cobc_main_strdup (output_name);
-	} else if (save_all_src || save_temps
-	        || cb_compile_level == CB_LEVEL_PREPROCESS) {
+	} else
+	if (save_all_src || save_temps
+	 || cb_compile_level == CB_LEVEL_PREPROCESS) {
 		fn->preprocess = cobc_main_stradd_dup (fbasename, ".i");
 	} else {
 		fn->preprocess = cobc_main_malloc (COB_FILE_MAX);
@@ -4088,10 +4140,12 @@ process_filename (const char *filename)
 	/* Set translate filename */
 	if (!fn->need_translate) {
 		fn->translate = cobc_main_strdup (fn->source);
-	} else if (output_name && cb_compile_level == CB_LEVEL_TRANSLATE) {
+	} else
+	if (output_name && cb_compile_level == CB_LEVEL_TRANSLATE) {
 		fn->translate = cobc_main_strdup (output_name);
-	} else if (save_all_src || save_temps || save_c_src ||
-		   cb_compile_level == CB_LEVEL_TRANSLATE) {
+	} else
+	if (save_all_src || save_temps || save_c_src
+	 || cb_compile_level == CB_LEVEL_TRANSLATE) {
 		fn->translate = cobc_main_stradd_dup (fbasename, ".c");
 	} else {
 		fn->translate = cobc_main_malloc (COB_FILE_MAX);
@@ -4127,11 +4181,15 @@ process_filename (const char *filename)
 	/* Set object filename */
 	if (!fn->need_assemble) {
 		fn->object = cobc_main_strdup (fn->source);
-	} else if (output_name && cb_compile_level == CB_LEVEL_ASSEMBLE) {
+	} else
+	if (output_name && cb_compile_level == CB_LEVEL_ASSEMBLE) {
 		fn->object = cobc_main_strdup (output_name);
-	} else if (save_temps || cb_compile_level == CB_LEVEL_ASSEMBLE) {
+	} else
+	if (save_temps
+	 || cb_compile_level == CB_LEVEL_ASSEMBLE) {
 		fn->object = cobc_main_stradd_dup (fbasename, "." COB_OBJECT_EXT);
-	} else if (cb_compile_level != CB_LEVEL_MODULE) {
+	} else
+	if (cb_compile_level != CB_LEVEL_MODULE) {
 		/* note: CB_LEVEL_MODULE is compiled without an intermediate object file */
 		fn->object = cobc_main_malloc (COB_FILE_MAX);
 		cob_temp_name ((char *)fn->object, "." COB_OBJECT_EXT);
@@ -4797,7 +4855,8 @@ preprocess (struct filename *fn)
 	int			ret;
 #endif
 
-	if (output_name || cb_compile_level > CB_LEVEL_PREPROCESS) {
+	if (output_name
+	 || cb_compile_level > CB_LEVEL_PREPROCESS) {
 		if (cb_unix_lf) {
 			ppout = fopen(fn->preprocess, "wb");
 		} else {
@@ -5096,33 +5155,28 @@ print_program_data (const char *data)
 	fprintf (cb_src_list_file, "%s\n", data);
 }
 
-static char *
-check_filler_name (char *name)
+/* Return 'fld's name or "FILLER */
+static const char *
+check_filler_name (const struct cb_field *fld)
 {
+	const char *name = fld->name;
 	if (strlen (name) >= 6 && memcmp (name, "FILLER", 6) == 0) {
-		name = (char *)"FILLER";
+		return "FILLER";
 	}
 	return name;
 }
 
+/* note: picture_len may also be only 24!*/
 static int
 set_picture (struct cb_field *field, char *picture, size_t picture_len)
 {
-	size_t usage_len;
-	char picture_usage[CB_LIST_PICSIZE] = { 0 };
-
-	memset (picture, 0, CB_LIST_PICSIZE);
-
 	/* check for external definition first */
 	if (field->external_definition) {
 		if (field->external_definition == cb_error_node) {
 			strcpy (picture, "INVALID");
 		} else {
 			const char *name = CB_FIELD (field->external_definition)->name;
-			strncpy (picture, name, picture_len);
-			if (strlen (name) > picture_len - 1) {
-				strcpy (picture + picture_len - 3, "...");
-			}
+			cobc_elided_strcpy (picture, name, picture_len, 1);
 		}
 		return 1;
 	}
@@ -5159,11 +5213,7 @@ set_picture (struct cb_field *field, char *picture, size_t picture_len)
 		return 1;
 	}
 
-	/* Get usage for this picture */
-	strcpy (picture_usage, cb_get_usage_string (field->usage));
-	usage_len = strlen (picture_usage);
-
-	/* set picture for the rest */
+	/* set picture for everything, possibly add USAGE */
 	if (field->usage == CB_USAGE_BINARY
 	 || field->usage == CB_USAGE_FLOAT
 	 || field->usage == CB_USAGE_DOUBLE
@@ -5172,27 +5222,38 @@ set_picture (struct cb_field *field, char *picture, size_t picture_len)
 	 || field->usage == CB_USAGE_COMP_6
 	 || field->usage == CB_USAGE_COMP_X
 	 || field->usage == CB_USAGE_COMP_N) {
-		if (field->pic) {
-			strncpy (picture, field->pic->orig, picture_len - 1 - usage_len);
-			picture[CB_LIST_PICSIZE - 1] = 0;
-			strcat (picture, " ");
+		const char *picture_usage = cb_get_usage_string (field->usage);
+		const size_t usage_len = strlen (picture_usage);
+		if (usage_len > picture_len) {
+			cobc_elided_strcpy (picture, picture_usage, picture_len, 1);
+			return 1;
 		}
+		if (field->pic) {
+			const size_t fpic_len = strlen (field->pic->orig);
+			if (fpic_len + 1 + usage_len > picture_len) {
+				const size_t max_len = picture_len - 1 - usage_len;
+				cobc_elided_strcpy (picture, field->pic->orig, max_len, 1);
+				sprintf (picture + max_len, " %s", picture_usage);
+			} else {
+				sprintf (picture, "%s %s", field->pic->orig, picture_usage);
+			}
+			return 1;
+		}
+		memcpy (picture, picture_usage, usage_len + 1);
+		return 1;
 	} else if (field->flag_any_numeric) {
-		strncpy (picture, "9 ANY NUMERIC", 14);
+		strcpy (picture, "9 ANY NUMERIC");
 		return 1;
 	} else if (field->flag_any_length) {
-		strncpy (picture, "X ANY LENGTH", 13);
+		strcpy (picture, "X ANY LENGTH");
 		return 1;
 	} else {
 		if (!field->pic) {
 			return 0;
 		}
-		strncpy (picture, field->pic->orig, picture_len - 1);
+		snprintf (picture, picture_len, "%s", field->pic->orig);
 		return 1;
 	}
-
-	strcat (picture, picture_usage);
-	return 1;
 }
 
 static void
@@ -5283,13 +5344,11 @@ static void
 print_88_values (struct cb_field *field)
 {
 	struct cb_field *f;
-	char lcl_name[LCL_NAME_LEN] = { '\0' };
 
 	for (f = field->validation; f; f = f->sister) {
-		strncpy (lcl_name, (char *)f->name, LCL_NAME_MAX);
 		snprintf (print_data, CB_PRINT_LEN,
 			"      %-14.14s %02d   %s",
-			"CONDITIONAL", f->level, lcl_name);
+			"CONDITIONAL", f->level, f->name);
 		print_program_data (print_data);
 	}
 }
@@ -5304,7 +5363,7 @@ print_fields (struct cb_field *top, int *found)
 	const size_t	picture_len = cb_listing_wide ? 64 : 24;
 	char	type[20];
 	char	picture[CB_LIST_PICSIZE];
-	char	lcl_name[LCL_NAME_LEN];
+	const char	*name_or_filler;
 
 	for (; top; top = top->sister) {
 		/* hiding internal fields, when not referenced */
@@ -5325,9 +5384,6 @@ print_fields (struct cb_field *top, int *found)
 		 && !first) {
 			print_program_data ("");
 		}
-
-		strncpy (lcl_name, check_filler_name ((char *)top->name),
-			 LCL_NAME_MAX);
 
 		if (top->children) {
 			strcpy (type, "GROUP");
@@ -5354,12 +5410,13 @@ print_fields (struct cb_field *top, int *found)
 
 		pd_off += sprintf (print_data + pd_off, "%-14.14s %02d   ", type, top->level);
 
+		name_or_filler = check_filler_name (top);
 		if (got_picture) {
-			pd_off += sprintf (print_data + pd_off, "%-30.30s %s", lcl_name, picture);
+			pd_off += sprintf (print_data + pd_off, "%-30.30s %s", name_or_filler, picture);
 		} else if (top->flag_occurs) {
-			pd_off += sprintf (print_data + pd_off, "%-30.30s ", lcl_name);
+			pd_off += sprintf (print_data + pd_off, "%-30.30s ", name_or_filler);
 		} else { /* Trailing spaces break testsuite AT_DATA */
-			pd_off += sprintf (print_data + pd_off, "%s", lcl_name);
+			pd_off += sprintf (print_data + pd_off, "%s", name_or_filler);
 		}
 
 		if (top->flag_occurs) {
@@ -5415,14 +5472,13 @@ print_files_and_their_records (cb_tree file_list_p)
 	int dummy = 1;
 
 	for (l = file_list_p; l; l = CB_CHAIN (l)) {
+		const struct cb_file* file = CB_FILE (CB_VALUE (l));
 		snprintf (print_data, CB_PRINT_LEN,
 			"%05d %-14.14s      %s",
-			 CB_FILE (CB_VALUE (l))->record_max,
-			 "FILE",
-			 CB_FILE (CB_VALUE (l))->name);
+			file->record_max, "FILE", file->name);
 		print_program_data (print_data);
-		if (CB_FILE (CB_VALUE (l))->record) {
-			print_fields (CB_FILE (CB_VALUE (l))->record, &dummy);
+		if (file->record) {
+			print_fields (file->record, &dummy);
 			print_program_data ("");
 		}
 	}
@@ -5576,8 +5632,8 @@ static void
 xref_print (struct cb_xref *xref, const enum xref_type type, struct cb_xref *xref_parent)
 {
 	struct cb_xref_elem	*elem;
-	int     		cnt;
-	int     		maxcnt = cb_listing_wide ? 10 : 5;
+	int    		cnt;
+	int    		maxcnt = cb_listing_wide ? 10 : 5;
 
 	if (xref->head == NULL) {
 		sprintf (print_data + pd_off, "  ");
@@ -5628,13 +5684,10 @@ static void
 xref_88_values (struct cb_field *field)
 {
 	struct cb_field *f;
-	char lcl_name[LCL_NAME_LEN] = { '\0' };
 
 	for (f = field->validation; f; f = f->sister) {
-		strncpy (lcl_name, (char *)f->name, LCL_NAME_MAX);
-		pd_off = sprintf (print_data,
-			"%-30.30s %-6u ",
-			lcl_name, f->common.source_line);
+		pd_off = sprintf (print_data, "%-30.30s %-6u ",
+			f->name, f->common.source_line);
 		xref_print (&f->xref, XREF_FIELD, NULL);
 	}
 }
@@ -5642,7 +5695,6 @@ xref_88_values (struct cb_field *field)
 static int
 xref_fields (struct cb_field *top)
 {
-	char		lcl_name[LCL_NAME_LEN];
 	int		found = 0;
 
 	for (; top; top = top->sister) {
@@ -5651,10 +5703,12 @@ xref_fields (struct cb_field *top)
 		 || (top->flag_internal_register && !top->count)) {
 			continue;
 		}
-
-		strncpy (lcl_name, check_filler_name ((char *)top->name), LCL_NAME_MAX);
-		lcl_name[LCL_NAME_MAX] = 0;	/* make sure we always have the trailing NULL */
-		if (!strcmp (lcl_name, "FILLER") && !top->validation) {
+#if 0 /* FIXME: at least in the context of RW flag_filler is not set correct in
+                all places (and if done in all places other testcases break) */
+		if (top->flag_filler && !top->validation) {
+#else
+		if (!strcmp (check_filler_name (top), "FILLER") && !top->validation) {
+#endif
 			if (top->children) {
 				found += xref_fields (top->children);
 			}
@@ -5662,7 +5716,7 @@ xref_fields (struct cb_field *top)
 		}
 		found = 1;
 		pd_off = sprintf (print_data, "%-30.30s %-6u ",
-			 lcl_name, top->common.source_line);
+			 check_filler_name (top), top->common.source_line);
 
 		/* print xref for field */
 		if (top->parent) {
@@ -7770,8 +7824,8 @@ process_assemble (struct filename *fn)
 	ret = process (cobc_buffer);
 	return ret;
 #elif defined(__WATCOMC__)
-	if (cb_compile_level == CB_LEVEL_MODULE ||
-	    cb_compile_level == CB_LEVEL_LIBRARY) {
+	if (cb_compile_level == CB_LEVEL_MODULE
+	 || cb_compile_level == CB_LEVEL_LIBRARY) {
 		sprintf (cobc_buffer, "%s -c %s %s %s -fe=\"%s\" \"%s\"",
 			 cobc_cc, cobc_cflags, cobc_include,
 			 COB_PIC_FLAGS, fn->object, fn->translate);
@@ -7783,9 +7837,9 @@ process_assemble (struct filename *fn)
 	ret = process (cobc_buffer);
 	return ret;
 #else
-	if (cb_compile_level == CB_LEVEL_MODULE ||
-	    cb_compile_level == CB_LEVEL_LIBRARY ||
-	    cb_compile_level == CB_LEVEL_ASSEMBLE) {
+	if (cb_compile_level == CB_LEVEL_MODULE
+	 || cb_compile_level == CB_LEVEL_LIBRARY
+	 || cb_compile_level == CB_LEVEL_ASSEMBLE) {
 		sprintf (cobc_buffer, "%s -c %s %s %s -o \"%s\" \"%s\"",
 			 cobc_cc, cobc_cflags, cobc_include,
 			 COB_PIC_FLAGS, fn->object, fn->translate);
@@ -8555,10 +8609,6 @@ begin_setup_internal_and_compiler_env (void)
 static void
 finish_setup_internal_env (void)
 {
-#ifndef	HAVE_DESIGNATED_INITS
-	cobc_init_typeck ();
-#endif
-
 	/* Append default extensions */
 	CB_TEXT_LIST_ADD (cb_extension_list, ".CPY");
 	CB_TEXT_LIST_ADD (cb_extension_list, ".CBL");
@@ -8612,11 +8662,14 @@ process_file (struct filename *fn, int status)
 	cb_ml_tree_id = 1;
 	demangle_name = fn->demangle_source;
 	memset (optimize_defs, 0, sizeof (optimize_defs));
+	if (cb_flag_c_line_directives || cb_flag_c_labels) {
+		optimize_defs[COB_NOP] = 1;
+	}
 
 	if (cb_src_list_file) {
 		cb_listing_page = 0;
-		strncpy (cb_listing_filename, fn->source, FILENAME_MAX - 1);
-		cb_listing_filename[FILENAME_MAX - 1] = 0;
+		cobc_elided_strcpy (cb_listing_filename, fn->source,
+			sizeof (cb_listing_filename), 0);
 		set_listing_header_code ();
 	}
 
@@ -8666,8 +8719,8 @@ process_file (struct filename *fn, int status)
 			print_program_listing ();
 		}
 	}
-	if (cb_compile_level < CB_LEVEL_COMPILE ||
-	    cb_flag_syntax_only || fn->has_error) {
+	if (cb_compile_level < CB_LEVEL_COMPILE
+	 || cb_flag_syntax_only || fn->has_error) {
 		return status;
 	}
 	if (cb_compile_level == CB_LEVEL_COMPILE) {
@@ -8677,14 +8730,15 @@ process_file (struct filename *fn, int status)
 		return status;
 	}
 
-	if (cb_compile_level == CB_LEVEL_MODULE && fn->need_assemble) {
+	if (cb_compile_level == CB_LEVEL_MODULE
+	 && fn->need_assemble) {
 		/* Build module direct */
 		fn->has_error = process_module_direct (fn);
 		status |= fn->has_error;
 	} else {
 		/* Compile to object code */
-		if (cb_compile_level >= CB_LEVEL_ASSEMBLE &&
-		    fn->need_assemble) {
+		if (cb_compile_level >= CB_LEVEL_ASSEMBLE
+		 && fn->need_assemble) {
 			fn->has_error = process_assemble (fn);
 			status |= fn->has_error;
 		}
@@ -8809,6 +8863,13 @@ main (int argc, char **argv)
 		fflush (stderr);
 	}
 
+	/* further one-time initialization */
+#ifndef	HAVE_DESIGNATED_INITS
+	cobc_init_typeck ();
+	cobc_init_codegen ();
+	cobc_init_tree ();
+#endif
+
 	/* Process input files */
 
 	/* Set up file parameters, if any are missing: abort */
@@ -8834,7 +8895,7 @@ main (int argc, char **argv)
 			} else {
 				run_name = file_basename (fn->source, NULL);
 			}
-			run_name = cobc_strdup (run_name);
+			run_name = cobc_main_strdup (run_name);
 		}
 		if (iparams > 1 && cb_compile_level == CB_LEVEL_EXECUTABLE) {
 			/* only the first source has the compile_level and main flag set */
@@ -8869,7 +8930,6 @@ main (int argc, char **argv)
 		if (status == 0) {
 			status = process_run (run_name);
 		}
-		cobc_free ((void *)run_name);
 	}
 
 	if (cb_compile_level < CB_LEVEL_LIBRARY
@@ -8902,7 +8962,6 @@ main (int argc, char **argv)
 		if ((statuses == 0) && cobc_flag_run) {
 			status = process_run (run_name);
 		}
-		cobc_free ((void *)run_name);
 	}
 
 	/* We have completed */

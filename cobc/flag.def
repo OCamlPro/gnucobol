@@ -96,7 +96,7 @@ CB_FLAG_NQ (1, "ebcdic-table", 14, /* cf cconv.h for all available tables */
 	_("  -febcdic-table=[DEFAULT|RESTRICTED-GC|IBM|GCOS]\tdefine EBCDIC translation table:\n"
 	  "                        * default: translation to extended ASCII as per MF\n"
 	  "                        * restricted-gc: translation from restricted ASCII only\n"
-	  "                        * ibm: translation to restricted ASCII as per IBM"
+	  "                        * ibm: translation to restricted ASCII as per IBM\n"
 	  "                        * gcos: translation to extended ASCII as per GCOS7"))
 
 /* Binary flags */
@@ -119,7 +119,7 @@ CB_FLAG (cb_flag_correct_numeric, 0, "correct-numeric",
 CB_FLAG (cb_flag_stack_on_heap, 0, "stack-on-heap",
 	_("  -fstack-on-heap       PERFORM stack allocated on heap"))
 
-CB_FLAG (cb_flag_stack_extended, 0, "stack-extended",
+CB_FLAG (cb_flag_stack_extended, 1, "stack-extended",
 	_("  -fstack-extended      store origin of entrypoints and PERFORM\n"
 	  "                        * turned on by -debug/-dump"))
 
@@ -158,6 +158,12 @@ CB_FLAG (cb_flag_stack_check, 1, "stack-check",
 	_("  -fstack-check         PERFORM stack checking\n"
 	  "                        * turned on by -debug/-g"))
 
+CB_FLAG (cb_flag_section_exit_check, 1, "section-exit-check",
+	_("  -fsection-exit-check  check that code execution does not leave the scope of SECTIONs"))
+
+CB_FLAG (cb_flag_implicit_goback_check, 1, "implicit-goback-check",
+	_("  -fimplicit-goback-check\tcheck that code execution does not end implicit at end of PROCEDURE DIVISION"))
+
 CB_FLAG (cb_flag_write_after, 1, "write-after",
 	_("  -fwrite-after         use AFTER 1 for WRITE of LINE SEQUENTIAL\n"
 	  "                        * default: BEFORE 1"))
@@ -193,7 +199,7 @@ CB_FLAG (cb_flag_static_call, 1, "static-call",
 	_("  -fstatic-call         output static function calls for the CALL statement"))
 
 CB_FLAG_ON (cb_flag_c_decl_for_static_call, 1, "gen-c-decl-static-call",
-	_("  -fno-gen-c-decl-static-call\tdisable generation of C function declations\n"
+	_("  -fno-gen-c-decl-static-call\tdisable generation of C function declarations\n"
 	  "                        for subroutines with static CALL"))
 
 CB_FLAG (cb_flag_c_line_directives, 1, "gen-c-line-directives",

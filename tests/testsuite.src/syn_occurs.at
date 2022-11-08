@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2015-2019,2021 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2015-2019,2021-2022 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 ##
 ## This file is part of GnuCOBOL.
@@ -43,9 +43,9 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY -std=cobol2014 prog.cob], [1], [],
-[prog.cob:6: error: level 01 item 'X-01' cannot have a OCCURS clause
-prog.cob:7: error: level 01 item 'G' cannot have a OCCURS clause
-prog.cob:11: error: level 77 item 'X-77' cannot have a OCCURS clause
+[prog.cob:6: error: 01/77 OCCURS does not conform to COBOL 2014
+prog.cob:7: error: 01/77 OCCURS does not conform to COBOL 2014
+prog.cob:11: error: 01/77 OCCURS does not conform to COBOL 2014
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
@@ -130,6 +130,8 @@ AT_DATA([prog.cob], [
            88  y VALUE "a" OCCURS 10.
 ])
 
+# note: the message is from level-88 content-validation entry format,
+#       which is mixed in the parser (as it may be used as) condition format
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:7: error: syntax error, unexpected OCCURS
 ])
@@ -182,7 +184,7 @@ AT_DATA([prog3.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:7: error: 'G-2' cannot have the OCCURS clause due to 'X'
+[prog.cob:7: error: 'G-2' cannot have an OCCURS clause due to 'X'
 ])
 
 AT_CHECK([$COMPILE_ONLY -fcomplex-odo prog.cob], [0], [], [])
@@ -193,7 +195,7 @@ AT_CHECK([$COMPILE_ONLY -fcomplex-odo prog2.cob], [1], [],
 
 AT_CHECK([$COMPILE_ONLY -fodoslide prog2.cob], [0], [], [])
 AT_CHECK([$COMPILE_ONLY prog3.cob prog2.cob], [1], [],
-[prog2.cob:7: error: 'G-2' cannot have the OCCURS clause due to 'X'
+[prog2.cob:7: error: 'G-2' cannot have an OCCURS clause due to 'X'
 prog2.cob:8: error: 'X' cannot have nested OCCURS DEPENDING
 ])
 
@@ -210,7 +212,7 @@ AT_DATA([prog.cob], [
        PROGRAM-ID. prog.
        DATA  DIVISION.
        WORKING-STORAGE SECTION.
-       01  . *> the "filler" explicit checks bug #776
+       01  . *> the "filler" explicit checks bugs #699 and #776
            05  TAB-ENTRY1
                   OCCURS 5 TIMES
                   ASCENDING KEY IS X1

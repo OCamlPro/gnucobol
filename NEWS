@@ -1,6 +1,14 @@
 NEWS - user visible changes				-*- outline -*-
 
- GnuCOBOL 3.2 to be released ... asap
+ GnuCOBOL 3.2rc1 to be released in November 2022
+
+ planned:
+   * changes to CALL handling especially for BY VALUE and stdcall
+   * adjustments for registers and XML PARSE stubs
+   * investigation of code analysis tools and user feedback
+
+
+ GnuCOBOL 3.2 preview (20221022)
 
 * New GnuCOBOL features
 
@@ -42,7 +50,12 @@ NEWS - user visible changes				-*- outline -*-
 ** Initial "testing support" of CODE-SET clause to convert between ASCII and
    EBCDIC on READ/WRITE/REWRITE for sequential and line-sequential files
 
-** TODO - More to add
+** Support to exit the runtime from COBOL as hard error (including possible
+   [core-]dump and stacktrace) with "STOP ERROR" statement or by
+   CALL "CBL_RUNTIME_ERROR"
+
+** TODO - More to document, hopefully before 3.2rc-1
+
 
 * Changes that potentially effects existing programs:
 
@@ -51,8 +64,21 @@ NEWS - user visible changes				-*- outline -*-
    this isn't done anymore so if you need the memory to be initialized
    specify that explicit in the source and recompile
 
+** variable-length RECORD SEQUENTIAL files, data validation on READ:
+   the length of the record as stored in the file is now checked for correct
+   format and is then compared against the record size defined in the program;
+   if the minimal record size specified is bigger, then the data is only
+   written up to the record length for that record, the other data is
+   undefined and io status 04 returned; if the record length is bigger than
+   the record size the record from the file is truncated, io status 04 set
+   and the following READ will start at the next record;
+   additionally on OPEN the length of the first record is read and if it
+   isn't within the above rulesan io status 39 is returned; as the default
+   format "COB_VARSEQ_TYPE = 0" contains two NULL bytes this will likely
+   make most LINE SEQUENTIAL files not declared as this type fail on OPEN
+
 ** LINE SEQUENTIAL files, data validation: in case of non-printable data
-   a READ may result in status 09 and WRITE may error with status 71;
+   a READ may result in io status 09 and WRITE may error with io status 71;
    to disable this validation see the new runtime option COB_LS_VALIDATE
    to restore old behavior and to increase performance on WRITE;
    if LS_NULLS is active and invalid data (bad encoded or missing encoding)
@@ -81,6 +107,25 @@ NEWS - user visible changes				-*- outline -*-
    be checked afterwards using the EXCEPTION related functions;
    the old behaviour can be enforced by compiling GnuCOBOL with
    CPPFLAGS=-DINVALID_NUMVAL_IS_ZERO
+
+** Handling of invalid numeric USAGE DISPLAY data:
+   previously the complete character was inspected and adjusted for conversion,
+   now only the second half-byte is used;
+   this yields in different results, for example both the zero and space
+   character in both ASCII and EBCDIC charset will now result in a numeric
+   zero; previously invalid data could result in huge or negative numbers in
+   internal intermediate items;
+   as this was both adjusted in the runtime and in the the generated modules
+   invalid data may have additional unexpected results if programs are not
+   recompiled
+
+** ORGANIZATION INDEXED (with BDB backend): internal changes in record and
+   file locking, fixing some related bugs
+
+** extended screen io: support for color codes 8-15 (implied highlight/blink
+   attribute); only the three lower bits are now considered during evaluation
+   of the color-number, leading to a previous value of 21 (which was ignored
+   until now) being interpreted as 5, see FR #387
 
 * Changes that potentially effects recompilation of existing programs:
 
@@ -175,14 +220,27 @@ NEWS - user visible changes				-*- outline -*-
    the origin of entrypoints and PERFORM, this is used for the internal
    stack trace on abort and can be used for source level debugging
 
+** new options to ensure structured code-flow:
+   -fsection-exit-check to ensure sections don't "fall through" (are always
+    entered and left by PERFORM)
+   -fimplicit-goback-check to ensure modules are not left by implicit GOBACK
+    at end of PROCEDURE DIVISION
+
 ** adjustments to warning options:
    -Wconstant-expression was changed to a group warning and includes
     the new, previously integrated, -Wconstant-numlit-expression
-   -Wlarger-01-redefines as new warning (included with -Wextra) to check for
+   -Wlarger-01-redefines as new warning (enabled by -Wextra) to check for
     the only larger REDEFINES that is explicit allowed by the COBOL standard
    -Wno-unsupported -Wunsupported new option to disable or only warn
     on use of features the runtime is not configured for;
     this new option defaults to an error (= -Werror=unsupported)
+   -Wgoto-different-section as new warning (enabled by -Wall) to check for
+    GO TO that are likely to break the flow of PERFORM some-section
+   -Wgoto-section as new warning (enabled by default) to check for
+    GO TO a section instead of a paragraph; while allowed this is often
+    a coding error
+   -Wsuspicious-perform-thru (enabled by default) to check for PERFORM ranges
+    that are likely to create unwanted behaviour
 
 ** new compiler command line option to list the known runtime exception names
    and fatality `cobc --list-exceptions`
@@ -211,6 +269,12 @@ NEWS - user visible changes				-*- outline -*-
    this has been fixed so that all modules compiled with GnuCOBOL 2.2 can be
    executed with GnuCOBOL 3.2
 
+** the internal signal handler could crash or deadlock the process on hard
+   errors (either in called library functions or when running COBOL without
+   runtime checks); the signal handling is now completely rewritten to fix
+   this issue and all executed code from the signal handler but the COBOL data
+   dump is now signal and thread safe
+
 * Listing changes
 
 ** the timestamp in the header was changed from ANSI date format like
@@ -225,29 +289,39 @@ NEWS - user visible changes				-*- outline -*-
 ** in 64-bit environments, the maximum field size was increased from
    268435456 bytes (999999998 bytes for OCCURS UNBOUNDED) to 2 GB
 
-** the call-stack on error / in the dump file now contains all parameters given
-   to the program via command line options, if any
+** in case of any runtime features being used that are not available an error
+   is generated during compile (may be reduced to a warning by -Wunsupported
+   or be suppressed by -Wno-unsupported) and if the feature is actually used
+   at runtime a related exception status is set
+
+** the call-stack show on error and/or in the dump file now contains all
+   parameters given to the program via command line options, if any;
+   if full debugging information is available it includes all PERFORMs executed
 
 ** the dump that is created on abort for all programs that were compiled with
    -fdump can be explicit disabled by setting COB_DUMP_FILE=NONE; it is
    automatically disabled if the process ends upon signals SIGINT/SIGTERM and
    now also disabled upon SIGHUP/SIGPIPE
 
+** additional or instead of the internal COBOL dump a coredump file may be
+   created on runtime errors and when configured in the system also after
+   the signal handler; see the new runtime option COB_CORE_ON_ERROR for
+   details (the default is a best match to the old behavior)
+
 ** source references shown in diagnostic messages and for trace at runtime
    as well as during debugging were extended, for example each executed WHEN,
    VARYING and UNTIL phrases are now seen
 
-** in case of any runtime features being used that are not available a warning
-   is generated and related exception status set
-
-** cobc's parsing time was heavily cut down for big programs
+** cobc's parsing time was significantly reduced for big programs
 
 ** execution times of INSPECT that use big COBOL fields (multiple KB) were
-   heavily cut down
+   significantly reduced
 
 ** execution times for programs that are new generated with -fsource-location
    (implied with --debug/-fec) are cut down, especially when many "simple"
-   statements or lot of sections/paragraphs are used
+   statements or lot of sections/paragraphs are used; also the runtime checks
+   for use of LINKAGE fields and/or subscripts/reference-modification will be
+   much faster 
 
 * New build features
 
@@ -258,6 +332,8 @@ NEWS - user visible changes				-*- outline -*-
 
 
 * Known issues in 3.2 (and 3.1)
+
+** 3.2 only: the testing and documentation for COB_CORE_ON_ERROR is unfinished
 
 ** testsuite:
   * if built with vbisam, cisam or disam, depending on the version used, some
@@ -276,6 +352,13 @@ NEWS - user visible changes				-*- outline -*-
    (especially when using a different compiler than GCC)
     * function with variable-length RETURNING item
     * USAGE POINTER, which may need to be manually aligned
+
+** all versions of GnuCOBOL so far: EVALUATE evaluates all subjects on *each*
+   WHEN (the standard explicit requests a one-time evaluation of the subjects,
+   then comparing the value); to work around possible issues move more complex
+   subjects like variables with subscripts and reference-modification, as well
+   as calculated subjects and function calls to a temporary variabe and use
+   this as subject for the EVALUATE
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -385,8 +468,8 @@ NEWS - user visible changes				-*- outline -*-
 
    extra information to a warning (or error) is now marked as "note:"
 
-** the internal Xref got a huge speedup, has all references in ascending order
-   now and includes the total amount of direct references
+** the internal Xref performance has improved, has all references in ascending
+   order now and includes the total amount of direct references
 
 ** the internal listing got a speedup and has all error references in
    ascending order now
@@ -477,7 +560,7 @@ NEWS - user visible changes				-*- outline -*-
    session with the environment adjusted to use the uninstalled version.
 
 
-* Too much bug fixes to list here (please check ChangeLogs for full details),
+* Too many bug fixes to list here (please check ChangeLogs for full details),
   includes the following CVEs:
   
 ** compiler (may be triggered with special crafted source files)
@@ -587,7 +670,7 @@ NEWS - user visible changes				-*- outline -*-
 ** new configure option --enable-debug-log to allow *internal* tracing
    of GnuCOBOL (intended for developers of GnuCOBOL only)
 
-* Too much bug fixes to list here (please check ChangeLogs for full details).
+* Too many bug fixes to list here (please check ChangeLogs for full details).
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -595,7 +678,7 @@ NEWS - user visible changes				-*- outline -*-
 
 * Move to GPL/LGPL 3
 
-* New GnuCOBOL features (too much to list)
+* Most noteworthy new GnuCOBOL features (too many to list them all)
 
 ** User Defined Functions, FUNCTION-ID.
 

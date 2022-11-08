@@ -183,15 +183,17 @@
   <ItemGroup>
     <None Include="..\..\libcob\exception-io.def" />
     <None Include="..\..\libcob\exception.def" />
+    <None Include="..\..\libcob\statement.def" />
     <None Include="..\..\libcob\system.def" />
     <None Include="..\..\libcob\ChangeLog" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\libcob.h" />
     <ClInclude Include="..\config.h" />
+    <ClInclude Include="..\..\libcob.h" />
     <ClInclude Include="..\..\libcob\cobgetopt.h" />
     <ClInclude Include="..\..\libcob\coblocal.h" />
     <ClInclude Include="..\..\libcob\common.h" />
+    <ClInclude Include="..\..\libcob\version.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\version_libcob.rc" />

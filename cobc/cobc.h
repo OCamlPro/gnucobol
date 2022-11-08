@@ -29,6 +29,8 @@
 #ifdef	HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#include <stdio.h>	/* for FILE* */
+
 #include "../libcob/common.h"
 
 #ifdef	ENABLE_NLS
@@ -171,6 +173,8 @@ enum cb_current_date {
 #define	CB_CS_CONVERT			CB_CS_DAY
 #define	CB_CS_MODULE_NAME		CB_CS_DAY
 #define	CB_CS_SPECIAL_NAMES		CB_CS_DAY
+#define	CB_CS_DEFAULT			CB_CS_DAY
+#define	CB_CS_VALIDATE_STATUS	CB_CS_DAY
 
 /* Support for cobc from stdin */
 #define COB_DASH			"-"
@@ -564,9 +568,11 @@ extern void			*cobc_plex_strdup (const char *);
 extern void			*cobc_check_string (const char *);
 extern void			cobc_err_msg (const char *, ...) COB_A_FORMAT12;
 
+extern char			*cobc_elided_strcpy (char *, const char *, const size_t, const int);
+
 DECLNORET extern void		cobc_abort (const char *,
 					    const int) COB_A_NORETURN;
-DECLNORET extern void		cobc_abort_terminate (int) COB_A_NORETURN;
+DECLNORET extern void		cobc_abort_terminate (const int) COB_A_NORETURN;
 
 
 extern size_t			cobc_check_valid_name (const char *,
@@ -613,9 +619,11 @@ extern int		cb_load_conf (const char *, const int);
 extern int		cb_load_words (void);
 
 #ifndef	HAVE_DESIGNATED_INITS
-/* Initialization routines in typeck.c and reserved.c */
+/* "static" initialization routines in several files */
 extern void		cobc_init_typeck (void);
 extern void		cobc_init_reserved (void);
+extern void		cobc_init_tree (void);
+extern void		cobc_init_codegen (void);
 #endif
 
 /* preprocessor (in pplex.l, ppparse.y) */
@@ -679,6 +687,10 @@ extern size_t		suppress_warn;	/* no warnings for internal generated stuff */
 	do { cb_warning (cb_warn_unfinished, \
 		_("handling of %s is unfinished; implementation is likely to be changed"), s); \
 	} ONCE_COB
+#define CB_UNSUPPORTED(x) \
+	do { cb_error (_("%s is not supported"), x); } ONCE_COB
+#define CB_UNSUPPORTED_X(x,y) \
+	do { cb_error_x (x, _("%s is not supported"), y); } ONCE_COB
 
 extern size_t		cb_msg_style;
 
@@ -719,5 +731,7 @@ extern void		deactivate_system_name (const char *, const char *, const int);
 extern void		activate_system_name (const char *, const char *, const int);
 
 extern int		cb_strcasecmp (const void *, const void *);
+extern unsigned char	cb_toupper (const unsigned char);
+extern unsigned char	cb_tolower (const unsigned char);
 
 #endif /* CB_COBC_H */

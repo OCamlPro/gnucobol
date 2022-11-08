@@ -1,4 +1,9 @@
 
+2022-10-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tr.po, LINGUAS: added Turkish provided by translation project
+	* sr.po: updated translation from TP
+
 2020-12-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fr.po: updated translation from TP

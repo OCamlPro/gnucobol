@@ -1,4 +1,8 @@
 
+2022-10-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.module.in: added and adjusted clean targets
+
 2022-10-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* Makefile.am, Makefile.module.in: added targets test-local (compile + run

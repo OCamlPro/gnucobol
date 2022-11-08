@@ -532,7 +532,7 @@ reserved:	USAGE
 reserved:	USE
 reserved:	USING
 reserved:	VALUE
-reserved:	VALUES=VALUE
+reserved:	VALUES
 reserved:	VARYING
 reserved:	WHEN
 reserved:	WHEN-COMPILED

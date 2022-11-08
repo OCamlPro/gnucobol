@@ -132,13 +132,12 @@ do { \
 /* Global variables */
 
 struct cb_program		*current_program = NULL;    /* program in parse/syntax check/codegen */
-struct cb_statement		*current_statement = NULL;
 struct cb_label			*current_section = NULL;
 struct cb_label			*current_paragraph = NULL;
+struct cb_statement		*current_statement = NULL;
 cb_tree				defined_prog_list = NULL;
 int				cb_exp_line = 0;
 
-cb_tree				cobc_printer_node = NULL;
 int				functions_are_all = 0;
 int				non_const_word = 0;
 int				suppress_data_exceptions = 0;
@@ -338,13 +337,15 @@ check_non_area_a (cb_tree stmt) {
 /* Statements */
 
 static void
-begin_statement (const char *name, const unsigned int term)
+begin_statement (enum cob_statement statement, const unsigned int term)
 {
 	if (check_unreached) {
-		cb_warning (cb_warn_unreachable, _("unreachable statement '%s'"), name);
+		cb_warning (cb_warn_unreachable,
+			_("unreachable statement '%s'"),
+			cb_statement_name[statement]);
 	}
 	current_paragraph->flag_statement = 1;
-	current_statement = cb_build_statement (name);
+	current_statement = cb_build_statement (statement);
 	CB_TREE (current_statement)->source_file = cb_source_file;
 	CB_TREE (current_statement)->source_line = cb_source_line;
 	current_statement->flag_in_debug = in_debugging;
@@ -363,10 +364,10 @@ restore_backup_pos (cb_tree item)
 }
 
 static void
-begin_statement_from_backup_pos (const char *name, const unsigned int term)
+begin_statement_from_backup_pos (enum cob_statement statement, const unsigned int term)
 {
 	current_paragraph->flag_statement = 1;
-	current_statement = cb_build_statement (name);
+	current_statement = cb_build_statement (statement);
 	restore_backup_pos (CB_TREE (current_statement));
 	current_statement->flag_in_debug = in_debugging;
 	emit_statement (CB_TREE (current_statement));
@@ -374,7 +375,9 @@ begin_statement_from_backup_pos (const char *name, const unsigned int term)
 		term_array[term]++;
 	}
 	if (check_unreached) {
-		cb_warning_x (cb_warn_unreachable, CB_TREE (current_statement), _("unreachable statement '%s'"), name);
+		cb_warning_x (cb_warn_unreachable, CB_TREE (current_statement),
+			_("unreachable statement '%s'"),
+			cb_statement_name[statement]);
 	}
 }
 
@@ -384,9 +387,8 @@ static void
 begin_implicit_statement (void)
 {
 	struct cb_statement	*new_statement;
-	new_statement = cb_build_statement (NULL);
+	new_statement = cb_build_statement (current_statement->statement);
 	new_statement->common = current_statement->common;
-	new_statement->name = current_statement->name;
 	new_statement->flag_in_debug = !!in_debugging;
 	new_statement->flag_implicit = 1;
 	current_statement->body = cb_list_add (current_statement->body,
@@ -606,7 +608,7 @@ terminator_clear (cb_tree stmt, const unsigned int termid)
 	/* LCOV_EXCL_START */
 	} else {
 		cobc_err_msg ("call to '%s' without any open term for %s",
-			"terminator_warning", current_statement->name);
+			"terminator_warning", cb_statement_name[current_statement->statement]);
 		COBC_ABORT ();
 	}
 	/* LCOV_EXCL_STOP */
@@ -948,19 +950,24 @@ check_conf_section_order (const cob_flags_t part)
 static enum cb_handler_type
 get_handler_type_from_statement (struct cb_statement *statement)
 {
-	if (!strcmp (statement->name, "DISPLAY")) {
+	if (statement->statement == STMT_DISPLAY) {
 		return DISPLAY_HANDLER;
 	}
-	if (strlen (statement->name) > 3
-	 && !memcmp (statement->name, "XML", 3)) {
+	if (statement->statement == STMT_XML_GENERATE
+	 || statement->statement == STMT_XML_PARSE) {
 		return XML_HANDLER;
 	}
-	if (strlen (statement->name) > 4
-	 && !memcmp (statement->name, "JSON", 4)) {
+	if (statement->statement == STMT_JSON_GENERATE
+	 || statement->statement == STMT_JSON_PARSE) {
 		return JSON_HANDLER;
 	}
-	if (!strcmp (statement->name, "SEND")
-	 || !strcmp (statement->name, "RECEIVE")) {
+#if 0 /* not merged yet */
+	if (statement->statement == STMT_DELETE_FILE) {
+		return DELETE_FILE_HANDLER;
+	}
+#endif
+	if (statement->statement == STMT_SEND
+	 || statement->statement == STMT_RECEIVE) {
 		return MCS_HANDLER;
 	}
 	return NO_HANDLER;
@@ -1080,7 +1087,7 @@ begin_scope_of_program_name (struct cb_program *program)
 	}
 
 	/* Otherwise, add the program to the list. */
-	defined_prog_list = cb_list_add (defined_prog_list, CB_TREE(program));
+	defined_prog_list = cb_list_add (defined_prog_list, CB_TREE (program));
 }
 
 static void
@@ -2249,6 +2256,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token ACCEPT
 %token ACCESS
 %token ACTIVEX			"ACTIVE-X"
+%token ACTIVE_CLASS		"ACTIVE-CLASS"
 %token ACTION
 %token ACTUAL
 %token ADD
@@ -2256,6 +2264,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token ADJUSTABLE_COLUMNS	"ADJUSTABLE-COLUMNS"
 %token ADVANCING
 %token AFTER
+%token ALIGNED
 %token ALIGNMENT
 %token ALL
 %token ALLOCATE
@@ -2329,6 +2338,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token BLANK
 %token BLINK
 %token BLOCK
+%token BOOLEAN
 %token BOTTOM
 %token BOX
 %token BOXED
@@ -2561,6 +2571,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token EXTERNAL
 %token EXTERNAL_FORM		"EXTERNAL-FORM"
 %token F
+%token FACTORY
 %token FD
 %token FH__FCD		"FH--FCD"
 %token FH__KEYDEF		"FH--KEYDEF"
@@ -2597,6 +2608,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token FOR
 %token FOREGROUND_COLOR		"FOREGROUND-COLOR"
 %token FOREVER
+%token FORMAT
 %token FORMATTED_DATE_FUNC	"FUNCTION FORMATTED-DATE"
 %token FORMATTED_DATETIME_FUNC	"FUNCTION FORMATTED-DATETIME"
 %token FORMATTED_TIME_FUNC	"FUNCTION FORMATTED-TIME"
@@ -2785,9 +2797,10 @@ set_record_size (cb_tree min, cb_tree max)
 %token NO_FOCUS			"NO-FOCUS"
 %token NO_GROUP_TAB		"NO-GROUP-TAB" /* remark: not used here */
 %token NO_KEY_LETTER	"NO-KEY-LETTER"
-%token NOMINAL
 %token NO_SEARCH		"NO-SEARCH"
 %token NO_UPDOWN		"NO-UPDOWN"
+%token NOMINAL
+%token NONE
 %token NONNUMERIC
 %token NORMAL
 %token NOT
@@ -2918,6 +2931,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token REFERENCES
 %token REFRESH
 %token REGION_COLOR		"REGION-COLOR"
+%token RELATION
 %token RELATIVE
 %token RELEASE
 %token REMAINDER
@@ -2925,6 +2939,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token REMOVAL
 %token RENAMES
 %token REORG_CRITERIA		"REORG-CRITERIA"
+%token REPEATED
 %token REPLACE			/* remark: not used here */
 %token REPLACING
 %token REPORT
@@ -3153,10 +3168,14 @@ set_record_size (cb_tree min, cb_tree max)
 %token UTF_8		"UTF-8"
 %token UTF_16		"UTF-16"
 %token V
+%token VALID
 %token VALIDATE
+%token VAL_STATUS		"VAL-STATUS"
+%token VALIDATE_STATUS	"VALIDATE-STATUS"
 %token VALIDATING
 %token VALUE
 %token VALUE_FORMAT		"VALUE-FORMAT"
+%token VALUES
 %token VARIABLE
 %token VARIANT
 %token VARYING
@@ -4540,7 +4559,7 @@ alphabet_lits:
 | SPACE				{ $$ = cb_space; }
 | ZERO				{ $$ = cb_zero; }
 | QUOTE				{ $$ = cb_quote; }
-| HIGH_VALUE			{ $$ = cb_norm_high; }
+| HIGH_VALUE		{ $$ = cb_norm_high; /* -> special case, not cb_high */ }
 | LOW_VALUE			{ $$ = cb_norm_low; }
 ;
 
@@ -4549,39 +4568,67 @@ space_or_zero:
 | ZERO				{ $$ = cb_zero; }
 ;
 
+_alphnat_target:
+  /* empty */
+  {
+	$$ = NULL;
+  }
+| _for ALPHANUMERIC
+  {
+	$$ = NULL;
+  }
+| _for NATIONAL
+  {
+	$$ = cb_int0;
+  }
+;
+
+_in_alphabet:
+  /* empty */
+  {
+	$$ = NULL;
+  }
+| IN alphabet_name
+  {
+	/* note: IN is really mandatory here */
+	$$ = $2;
+  }
+;
+
 
 /* SYMBOLIC characters clause */
 
 symbolic_characters_clause:
-  symbolic_collection _sym_in_word
+  symbolic_collection _in_alphabet
   {
 	check_headers_present (COBC_HD_ENVIRONMENT_DIVISION,
 			       COBC_HD_CONFIGURATION_SECTION,
 			       COBC_HD_SPECIAL_NAMES, 0);
 	if (current_program->nested_level) {
 		cb_error (_("%s not allowed in nested programs"), "SPECIAL-NAMES");
-	} else if ($1) {
-		CB_CHAIN_PAIR (current_program->symbolic_char_list, $1, $2);
+	} else {
+		cb_tree type = CB_PAIR_X ($1);
+		cb_tree chars_list = CB_PAIR_Y ($1);
+		cb_tree alph = $2;
+		
+		/* TODO: at least add a check that $3 and $6 match by type */
+		if (type && !alph) {
+			cb_error_x (type, _("type does not match alphabet"));
+		} else
+		if (type) {
+			CB_PENDING_X (type, "NATIONAL SYMBOLIC CHARACTER");
+		}
+		CB_CHAIN_PAIR (current_program->symbolic_char_list, chars_list, alph);
 	}
   }
 ;
 
-_sym_in_word:
-  /* empty */
-  {
-	$$ = NULL;
-  }
-| IN WORD
-  {
-	$$ = $2;
-  }
-;
 
 symbolic_collection:
   %prec SHIFT_PREFER
-  SYMBOLIC _characters symbolic_chars_list
+  SYMBOLIC _characters _alphnat_target symbolic_chars_list
   {
-	$$ = $3;
+	$$ = CB_BUILD_PAIR ($3, $4);
   }
 ;
 
@@ -4670,15 +4717,13 @@ symbolic_constant:
   user_entry_name _is literal
   {
 	struct cb_field *f;
-	cb_tree v;
 
-	v = CB_LIST_INIT ($3);
-	f = CB_FIELD (cb_build_constant ($1, v));
+	f = CB_FIELD (cb_build_constant ($1, $3));
 	f->flag_item_78 = 1;
 	f->flag_constant = 1;
 	f->flag_is_global = 1;
 	f->level = 1;
-	f->values = v;
+	f->values = $3;
 	cb_needs_01 = 1;
 	/* Ignore return value */
 	(void)cb_validate_78_item (f, 0);
@@ -4688,7 +4733,7 @@ symbolic_constant:
 /* CLASS clause */
 
 class_name_clause:
-  CLASS undefined_word _class_type _is class_item_list _in_alphabet
+  CLASS undefined_word _alphnat_target _is class_item_list _in_alphabet
   {
 	cb_tree		x;
 
@@ -4703,6 +4748,16 @@ class_name_clause:
 		if (x) {
 			current_program->class_name_list =
 				cb_list_add (current_program->class_name_list, x);
+		}
+		/* TODO: at least add a check that $3 and $6 match by type */
+		if ($3 && !$6) {
+			cb_error_x ($3, _("type does not match alphabet"));
+		} else
+		if ($3) {
+			CB_PENDING_X ($3, "NATIONAL CLASS");
+		}
+		if ($6) {
+			CB_PENDING_X ($6, _("CLASS IS integer IN alphabet-name"));
 		}
 	}
   }
@@ -4733,28 +4788,6 @@ class_item:
 	} else {
 		$$ = CB_BUILD_PAIR ($3, $1);
 	}
-  }
-;
-
-_class_type:
-  /* empty */
-| _for ALPHANUMERIC
-  {
-	$$ = NULL;
-  }
-| _for NATIONAL
-  {
-	CB_PENDING_X ($2, "NATIONAL CLASS");
-	$$ = cb_int0;
-  }
-;
-
-_in_alphabet:
-  /* empty */
-| IN alphabet_name
-  {
-	CB_PENDING_X ($2, _("CLASS IS integer IN alphabet-name"));
-	$$ = $2;
   }
 ;
 
@@ -7021,16 +7054,27 @@ _renames_thru:
 ;
 
 condition_name_entry:
-  EIGHTY_EIGHT user_entry_name
+  EIGHTY_EIGHT _user_entry_name
   {
 	if (set_current_field ($1, $2)) {
 		YYERROR;
 	}
   }
-  value_clause
+  value_clause_condition
   {
 	cb_validate_88_item (current_field);
   }
+;
+
+_user_entry_name:
+  /* empty (FILLER not allowed here, just to parse) */
+  {
+	$$ = cb_build_filler ();
+	qualifier = NULL;
+	keys_list = NULL;
+	non_const_word = 0;
+  }
+| user_entry_name
 ;
 
 constant_entry:
@@ -7046,7 +7090,7 @@ constant_entry:
 	if (level != 1) {
 		cb_error (_("CONSTANT item not at 01 level"));
 	} else if ($5) {
-		if (cb_verify(cb_constant_01, "01 CONSTANT")) {
+		if (cb_verify (cb_constant_01, "01 CONSTANT")) {
 			x = cb_build_constant ($2, $5);
 			CB_FIELD (x)->flag_item_78 = 1;
 			CB_FIELD (x)->flag_constant = 1;
@@ -7076,30 +7120,40 @@ constant_entry:
 ;
 
 constant_source:
-  _as value_item_list
+  _as constant_expression_list
   {
-	$$ = $2;
+	/* this can be a list containing an arithmetic expression */
+	if (CB_LIST_P ($2) && !CB_CHAIN ($2)) {
+		$$ = CB_VALUE ($2);
+	} else {
+		$$ = $2;
+	}
   }
 | FROM WORD
   {
-	$$ = CB_LIST_INIT(cb_build_const_from ($2));
+	$$ = cb_build_const_from ($2);
   }
 ;
 
 constant_78_source:
   constant_expression_list
   {
+	/* this can be a list containing an arithmetic expression */
 	if (CB_VALID_TREE (current_field)) {
-		current_field->values = $1;
+		if (CB_LIST_P ($1) && !CB_CHAIN ($1)) {
+			current_field->values = CB_VALUE ($1);
+		} else {
+			current_field->values = $1;
+		}
 	}
   }
 | START _of identifier
   {
-	current_field->values = CB_LIST_INIT (cb_build_const_start (current_field, $3));
+	current_field->values = cb_build_const_start (current_field, $3);
   }
 | NEXT
   {
-	current_field->values = CB_LIST_INIT (cb_build_const_next (current_field));
+	current_field->values = cb_build_const_next (current_field);
   }
 ;
 
@@ -7156,6 +7210,18 @@ data_description_clause:
 | external_form_clause
 | identified_by_clause
 | volatile_clause
+| select_when_clause
+| format_clause
+| validate_status_clause
+| default_clause
+| class_clause
+| present_when_clause
+| invalid_when_clause
+| destination_clause
+| data_varying_clause
+  {
+	CB_PENDING ("VALIDATE");
+  }
 ;
 
 
@@ -7198,7 +7264,7 @@ like_clause:
 
 _length_modifier:
   /* empty */	{ $$ = cb_int0; }
-| length_modifier;
+| length_modifier	{ $$ = $1; }
 
 length_modifier:
   TOK_OPEN_PAREN nonzero_numeric_literal TOK_CLOSE_PAREN
@@ -7225,7 +7291,8 @@ same_as_clause:
 ;
 
 
-/* TYPEDEF clause (COBOL2002+ rule "directly after entry-name" ignored [not true for MF!]) */
+/* TYPEDEF clause (COBOL2002+ rule "directly after entry-name" is ignored
+   as this rule does not exist with MF!]) */
 
 typedef_clause:
   _is TYPEDEF _strong
@@ -7394,6 +7461,39 @@ special_names_target:
   }
 ;
 
+/* SELECT WHEN clause */
+
+select_when_clause:
+  SELECT WHEN
+  {
+	if (current_field->level != 1 && current_field->level != 77) {
+		cb_error (_ ("%s only allowed at 01/77 level"), "SELECT WHEN");
+	}
+	CB_PENDING ("SELECT WHEN");
+  }
+  when_choice
+;
+
+when_choice:
+  condition_no_is
+| OTHER
+;
+
+/* FORMAT clause */
+
+format_clause:
+  FORMAT format_choice _data
+  {
+	CB_PENDING ("FORMAT");
+  }
+;
+
+format_choice:
+  BIT		{ $$ = cb_int0; }
+| CHARACTER	{ $$ = cb_int1; }
+| NUMERIC	{ $$ = cb_int2; }
+;
+
 /* VOLATILE clause */
 
 volatile_clause:
@@ -7421,13 +7521,13 @@ picture_clause:
   }
   _pic_locale_format_or_depending_on
   {
-	  if ((!current_field->pic || current_field->pic->variable_length) &&
-	      !current_field->flag_picture_l) {
-		  /* Current field with PIC L was not translated */
-		  cb_error_x (CB_TREE (current_field->pic),
+	if ((!current_field->pic || current_field->pic->variable_length) &&
+	    !current_field->flag_picture_l) {
+		/* Current field with PIC L was not translated */
+		cb_error_x (CB_TREE (current_field->pic),
 			      _("%s requires DEPENDING clause"),
 			      _("variable-length PICTURE"));
-	  }
+	}
   }
 ;
 
@@ -7435,34 +7535,37 @@ _pic_locale_format_or_depending_on:
   /* empty */
 | LOCALE _is_locale_name SIZE _is integer
   {
-	  /* $2 -> optional locale-name to be used */
-	  if ((current_field->pic->category != CB_CATEGORY_NUMERIC &&
-	       current_field->pic->category != CB_CATEGORY_NUMERIC_EDITED) ||
-	      strpbrk (current_field->pic->orig, " CRDBL-*") /* the standard seems to forbid also ',' */) {
-		  cb_error_x (CB_TREE (current_field->pic),
+	/* $2 -> optional locale-name to be used */
+	if (  (current_field->pic->category != CB_CATEGORY_NUMERIC
+	    && current_field->pic->category != CB_CATEGORY_NUMERIC_EDITED)
+	   || strpbrk (current_field->pic->orig, " CRDBL-*")) {
+		/* CHECKME: the standard seems to forbid additional ',' */
+		cb_error_x (CB_TREE (current_field->pic),
 			      _("a locale-format PICTURE string must only consist of '9', '.', '+', 'Z' and the currency-sign"));
-	  } else {
-		  /* TODO: check that not we're not within a CONSTANT RECORD */
-		  CB_PENDING_X (CB_TREE (current_field->pic), "locale-format PICTURE");
-	  }
+	} else {
+		/* TODO: check that not we're not within a CONSTANT RECORD */
+		CB_PENDING_X (CB_TREE (current_field->pic), "locale-format PICTURE");
+	}
   }
 | DEPENDING _on reference
   {
-	  cb_tree depending = $3;
-	  if (!current_field->pic->variable_length) {
-		  cb_error_x ($3, _("DEPENDING clause needs either an "
+	cb_tree depending = $3;
+	if (!current_field->pic->variable_length) {
+		cb_error_x ($3, _("DEPENDING clause needs either an "
 				    "OCCURS clause or a variable-length "
 				    "PICTURE"));
-	  } else if (current_field->pic->category != CB_CATEGORY_ALPHABETIC &&
-		     current_field->pic->category != CB_CATEGORY_ALPHANUMERIC) {
-		  cb_error_x ($3, _("only USAGE DISPLAY may specify a "
+	} else
+	if (current_field->pic->category != CB_CATEGORY_ALPHABETIC
+	 && current_field->pic->category != CB_CATEGORY_ALPHANUMERIC) {
+		cb_error_x ($3, _("only USAGE DISPLAY may specify a "
 				    "variable-length PICTURE"));
-	  } else if (current_storage == CB_STORAGE_SCREEN ||
-		     current_storage == CB_STORAGE_REPORT) {
-		  cb_error_x ($3, _("%s not allowed in %s"),
+	} else
+	if (current_storage == CB_STORAGE_SCREEN
+	 || current_storage == CB_STORAGE_REPORT) {
+		cb_error_x ($3, _("%s not allowed in %s"),
 			      _("variable-length PICTURE"),
 			      enum_explain_storage (current_storage));
-	  } else {
+	} else {
 		  /* Implicitly translate `PIC Lc... DEPENDING N` (where
 		     `c` may actually only be `X` or `A`) into a group
 		     with a single sub-field `PIC c OCCURS 1 TO N`. */
@@ -7479,16 +7582,19 @@ _pic_locale_format_or_depending_on:
 		  current_field->children = chld;
 		  cobc_parse_free (current_field->pic);
 		  current_field->pic = NULL;
-	  }
-	  /* Raise this flag in the error cases above, to avoid unrelated
-	     warning or error messages upon tentative validation of
-	     redefines.  */
-	  current_field->flag_picture_l = 1;
+	}
+	/* Raise this flag in the error cases above, to avoid unrelated
+	   warning or error messages upon tentative validation of
+	   redefines.  */
+	current_field->flag_picture_l = 1;
   }
 ;
 
 _is_locale_name:
   /* empty */
+  {
+	$$ = NULL;
+  }
 | _is locale_name
   {
 	$$ = $2;
@@ -7522,6 +7628,7 @@ type_to_clause:
 
 usage_clause:
   _usage_is usage
+| USAGE _is conflict_usage
 | USAGE _is WORD	/* MF extension for referencing types, full support would need
                 	   _usage_is, but this leads to shift/reduce conflicts,
                 	   FIXME: handle conflict by returning TYPEDEF_NAME token,
@@ -7573,6 +7680,13 @@ usage:
   }
 | BIT
   {
+	check_and_set_usage (CB_USAGE_BIT);
+	CB_PENDING ("USAGE BIT");
+  }
+| BIT ALIGNED
+  {
+	/* note: ALIGNED actually is a separate clause but at least
+	         for now we simplify it, requesting it after USAGE BIT */
 	check_and_set_usage (CB_USAGE_BIT);
 	CB_PENDING ("USAGE BIT");
   }
@@ -7800,6 +7914,32 @@ usage:
   }
 ;
 
+/* tokens that explicit need USAGE _is (because of reduce/reduce conflicts) */
+conflict_usage:
+  OBJECT REFERENCE _object_reference_type
+  {
+	check_and_set_usage (CB_USAGE_OBJECT);
+	CB_PENDING ("OBJECTS");
+  }
+;
+
+_object_reference_type:
+  /* empty */
+| WORD
+| _factory_of ACTIVE_CLASS
+| _factory_of CLASS_NAME _only
+;
+
+_factory_of:
+  /* empty */
+| FACTORY _of
+;
+
+_only:
+  /* empty */ { $$ = NULL; }
+| ONLY	 { $$ = cb_int0; }
+;
+
 double_usage:
   COMP_2
 | FLOAT_LONG	/* alias from DOUBLE (ACU) in reserved.c */
@@ -7844,7 +7984,7 @@ sign_clause:
 
 report_occurs_clause:
   OCCURS integer _occurs_to_integer _times
-  _occurs_depending _occurs_step
+  _occurs_depending report_occurs_step
   {
 	/* most of the field attributes are set when parsing the phrases */;
 	setup_occurs ();
@@ -7852,7 +7992,7 @@ report_occurs_clause:
   }
 ;
 
-_occurs_step:
+report_occurs_step:
 | STEP integer
   {
 	current_field->step_count = cb_get_int ($2);
@@ -7898,14 +8038,14 @@ occurs_clause:
   }
 ;
 
-_occurs_to_integer:
-  /* empty */			{ $$ = NULL; }
-| TO integer			{ $$ = $2; }
-;
-
 _occurs_from_integer:
   /* empty */			{ $$ = NULL; }
 | FROM integer			{ $$ = $2; }
+;
+
+_occurs_to_integer:
+  /* empty */			{ $$ = NULL; }
+| TO integer			{ $$ = $2; }
 ;
 
 _occurs_integer_to:
@@ -8007,6 +8147,7 @@ _occurs_indexed:
   /* empty */
 | occurs_indexed
 ;
+
 occurs_indexed:
   INDEXED _by occurs_index_list
   {
@@ -8109,12 +8250,130 @@ based_clause:
 /* VALUE clause */
 
 value_clause:
-  VALUE _is_are value_item_list
+  /* normal format for data items: single VALUE, stored as-is */
+  VALUE _is value_item
   {
 	check_repeated ("VALUE", SYN_CLAUSE_12, &check_pic_duplicate);
 	current_field->values = $3;
   }
-  _false_is
+  /* normal format for data items: single VALUE, stored as-is,
+     OSVS extension "VALUES ARE"; for now disabled in favor of
+	 BS2000 table-format without FROM
+| VALUES _are value_item
+  {
+	check_repeated ("VALUE", SYN_CLAUSE_12, &check_pic_duplicate);
+	current_field->values = $3;
+  } */
+  /* COBOL2002 table-format with mandatory FROM, optional TO */
+| VALUES _are value_table_item_list
+  {
+	/* note: "VALUE _is" would also be correct, but we ignore that
+	         because of parser conflicts */
+	check_repeated ("VALUE", SYN_CLAUSE_12, &check_pic_duplicate);
+	current_field->values = $3;
+  }
+/* BS2000 table-format without FROM (implied 1,1,1,1) and optional REPEATED */
+| VALUES _are value_item_list _repeated_phrase
+  {	
+	/* note: "VALUE _is" would also be correct, but we ignore that
+	         because of parser conflicts */
+	cb_tree value_table_item = cb_build_table_values ($3, NULL, NULL, $4);
+	/* note: this format can actually be specified multiple times,
+	         but we expect the part without FROM first */
+	check_repeated ("VALUE", SYN_CLAUSE_12, &check_pic_duplicate);
+	current_field->values = CB_LIST_INIT (value_table_item);
+  }
+/* BS2000 table-format with FROM and optional REPEATED */
+| VALUES from_subscripts _are value_item_list _repeated_phrase
+  {	
+	/* note: "VALUE _is" would also be correct, but we ignore that
+	         because of parser conflicts */
+	cb_tree value_table_item = cb_build_table_values ($4, $2, NULL, $5);
+	/* note: this format can actually be specified multiple times */
+	if (!current_field->values) {
+		check_repeated ("VALUE", SYN_CLAUSE_12, &check_pic_duplicate);
+		current_field->values = CB_LIST_INIT (value_table_item);
+	} else {
+		current_field->values = cb_list_add (current_field->values, value_table_item);
+	}
+  }
+;
+
+value_table_item_list:
+  value_table_item			{ $$ = CB_LIST_INIT ($1); }
+| value_table_item_list value_table_item { $$ = cb_list_add ($1, $2); }
+;
+
+value_table_item:
+value_item_list from_subscripts _to_subscripts
+{
+	/* note: actual matching to amount of subs (OCCURS) is
+	         postponed as this phrase can be specified later
+			 and/or in a higher level */
+
+	cb_tree to_subs = $3;
+	if (to_subs) {
+		if (cb_list_length ($2) != cb_list_length (to_subs)) {
+			cb_error_x (to_subs, _("amount of entries in FROM and TO must match"));
+			to_subs = NULL;
+		} else {
+			cb_tree f = $2, t = to_subs;
+			while (f) {
+				int f_idx = cb_get_int (CB_VALUE (f));
+				int t_idx = cb_get_int (CB_VALUE (t));
+				if (f_idx > t_idx) {
+					cb_error_x ($2,
+						_("entry in FROM (%d) must be <= entry in TO (%d)"),
+						f_idx, t_idx);
+					break;
+				}
+				f = CB_CHAIN (f);
+				t = CB_CHAIN (t);
+			}
+		}
+	}
+	$$ = cb_build_table_values ($1, $2, $3, NULL);
+  }
+;
+
+from_subscripts:
+  FROM from_to_subscripts	{ $$ = $2; }
+;
+
+_to_subscripts:
+  /* empty */				{ $$ = NULL; }
+| TO from_to_subscripts		{ $$ = $2; }
+;
+
+from_to_subscripts:
+  TOK_OPEN_PAREN subscripts TOK_CLOSE_PAREN
+  {
+	$$ = cb_list_reverse ($2);
+  }
+;
+
+_repeated_phrase:
+  /* empty */				{ $$ = NULL; }
+| REPEATED unsigned_pos_integer _times	{ $$ = $2; }
+| REPEATED _to END			{ $$ = cb_null; }
+
+;
+
+subscripts:
+  unsigned_pos_integer %prec SHIFT_PREFER
+  {
+	$$ = CB_LIST_INIT ($1);
+  }
+| subscripts _e_sep unsigned_pos_integer %prec SHIFT_PREFER
+  {
+	$$ = cb_list_add ($1, $3);
+  }
+;
+
+
+value_is_are:
+  VALUE _is
+| VALUES _are
 ;
 
 value_item_list:
@@ -8123,20 +8382,171 @@ value_item_list:
 ;
 
 value_item:
+ constant_expression
+;
+
+
+value_clause_report:
+  value_is_are value_item_list
+  {
+	check_repeated ("VALUE", SYN_CLAUSE_12, &check_pic_duplicate);
+	current_field->values = $2;
+  }
+;
+
+
+value_clause_condition:
+  value_is_are value_item_list_in_alphabet
+  {
+	current_field->values = $2;
+  }
+  _false_or_content_validation
+;
+
+value_item_list_in_alphabet:
+  value_item_condition_list
+/* the following is correct, passes parser, but is matched in places where
+   it shouldn't (record key), therefore disabled for now
+| value_item_list _in alphabet_name
+  {
+	$$ = $1;
+	CB_PENDING ("literal in alphabet");
+  }
+ */
+;
+
+value_item_condition_list:
+  value_item_condition { $$ = CB_LIST_INIT ($1); }
+| value_item_condition_list value_item_condition { $$ = cb_list_add ($1, $2); }
+;
+
+value_item_condition:
   lit_or_length THRU lit_or_length		{ $$ = CB_BUILD_PAIR ($1, $3); }
 | constant_expression
 ;
 
-_false_is:
+
+_false_or_content_validation:
   /* empty */
-| _when_set_to TOK_FALSE _is lit_or_length
+| false_is
+| content_validation
+;
+
+false_is:
+  _when_set_to TOK_FALSE _is lit_or_length
   {
-	if (current_field->level != 88) {
-		cb_error (_("FALSE clause only allowed for 88 level"));
-	}
 	current_field->false_88 = CB_LIST_INIT ($4);
   }
 ;
+
+content_validation:
+  /* a content validation entry may be used for condition-check, too
+     and this will work, the VALIDATE part doesn't
+	 (in theory: IN/ARE should not be used for content-validation entries,
+	  but that's too much parser work) */
+  _is_are valid_or_invalid _when_condition
+  {
+	CB_PENDING ("VALIDATE");
+  }
+;
+
+valid_or_invalid:
+  VALID  	{ $$ = cb_int0; }
+| INVALID	{ $$ = cb_int1; }
+;
+
+_when_condition:
+  /* empty */
+| WHEN condition
+  {
+	/* PENDING, but message already above */
+  }
+;
+
+/* VALIDATE-STATUS clause (content-validation) */
+
+validate_status_clause:
+  VALIDATE_STATUS _is target_x when_error_choice _on_choice
+  FOR validate_for_identifier_list
+  {
+	CB_PENDING ("VALIDATE");
+  }
+;
+
+when_error_choice:
+  _when ERROR		{ $$ = cb_int1; }
+| _when NO ERROR	{ $$ = cb_int0; }
+;
+
+_on_choice:
+  /* empty */	{ $$ = NULL; }
+| ON FORMAT 	{ $$ = cb_int0; }
+| ON CONTENT	{ $$ = cb_int1; }
+| ON RELATION	{ $$ = cb_int2; }
+;
+
+/* DEFAULT clause (content-validation) */
+
+default_clause:
+  DEFAULT _is x_or_none
+  {
+	CB_PENDING ("VALIDATE");
+  }
+;
+
+x_or_none:
+  x
+| NONE	{ $$ = NULL; }
+;
+
+/* CLASS clause (content-validation) */
+
+class_clause:
+  CLASS _is class_option
+  {
+	CB_PENDING ("VALIDATE");
+  }
+;
+
+class_option:
+  NUMERIC
+| ALPHABETIC
+| ALPHABETIC_LOWER
+| ALPHABETIC_UPPER
+| BOOLEAN
+| CLASS_NAME
+| alphabet_name
+;
+
+/* DESTINATION clause (content-validation) */
+
+destination_clause:
+  DESTINATION _is target_x_list
+  {
+	/* FIXME: it _seems_ that reference_list would be
+	          better, but that doesn't handle indices / refmod */
+	CB_PENDING ("VALIDATE");
+  }
+;
+
+/* PRESENT WHEN clause (content-validation) */
+
+present_when_clause:
+  PRESENT WHEN condition_no_is
+  {
+	CB_PENDING ("VALIDATE");
+  }
+;
+
+/* INVALID WHEN clause (content-validation) */
+
+invalid_when_clause:
+  INVALID WHEN condition_no_is
+  {
+	CB_PENDING ("VALIDATE");
+  }
+;
+
 
 /* ANY LENGTH clause */
 
@@ -8540,7 +8950,7 @@ _report_group_description_list:
 report_group_description_entry:
   level_number _entry_name
   {
-	if (set_current_field($1, $2)) {
+	if (set_current_field ($1, $2)) {
 		YYERROR;
 	}
 	if (!description_field) {
@@ -8579,11 +8989,11 @@ report_group_option:
 | blank_clause
 | source_clause
 | sum_clause_list
-| value_clause
+| value_clause_report
 | present_when_condition
 | group_indicate_clause
 | report_occurs_clause
-| report_varying_clause
+| data_varying_clause
 ;
 
 type_is_clause:
@@ -8793,18 +9203,33 @@ page_or_ids:
 | OR
 ;
 
-report_varying_clause:
-  VARYING WORD _var_from _var_by
+data_varying_clause:
+  VARYING data_varying_list
   {
+	current_field->report_vary_list = $2;
+  }
+;
+
+data_varying_list:
+  data_varying			{ $$ = CB_LIST_INIT ($1); }
+| data_varying_list
+  data_varying			{ $$ = cb_list_add ($1, $2); }
+;
+
+data_varying:
+  WORD _var_from _var_by
+  {
+	cb_tree x;
 	CB_PENDING ("RW VARYING clause");
 
 	/* TODO: come back to this later, ISO rules are different, possibly needs a dialect option */
-	if (CB_WORD_COUNT ($2) == 0) {
-		cb_tree x = cb_build_field (cb_build_reference (CB_NAME($2)));
+	if (CB_WORD_COUNT ($1) == 0) {
+		x = cb_build_field (cb_build_reference (CB_NAME ($1)));
 		CB_FIELD (x)->usage = CB_USAGE_INDEX;
 		CB_FIELD (x)->index_type = CB_STATIC_INT_INDEX;
-		if (current_field->report_vary_from) {
-			CB_FIELD (x)->values = CB_LIST_INIT (current_field->report_vary_from);
+		if ($2) {
+			/* Note: this is a hack until we support VARYING here (as done in trunk) */
+			CB_FIELD (x)->values = CB_LIST_INIT ($2);
 		} else {
 			CB_FIELD (x)->values = CB_LIST_INIT (cb_zero);
 		}
@@ -8814,30 +9239,39 @@ report_varying_clause:
 		CB_FIELD (x)->flag_internal_register = 1;
 		CB_TREE (x)->category = CB_CATEGORY_NUMERIC;
 		cb_validate_field (CB_FIELD (x));
-		current_field->report_vary_var = cb_build_field_reference (CB_FIELD (x), NULL);
 		CB_FIELD_ADD (current_program->working_storage, CB_FIELD (x));
 	} else {
-		struct cb_field *f = CB_FIELD (cb_ref ($2));
-		current_field->report_vary_var = $2;
+		struct cb_field *f = CB_FIELD (cb_ref ($1));
 		if (f->usage != CB_USAGE_INDEX
 		 || !f->flag_internal_register)
-			cb_error_x ($2, _("%s is not valid for VARYING"), f->name);
+			cb_error_x ($1, _("%s is not valid for VARYING"),f->name);
+		x = CB_TREE (f);
 	}
+
+	$$ = cb_build_vary (x, $2, $3);
   }
 ;
 
 _var_from:
+  /* empty */
+  {
+	$$ = NULL;
+  }
 | FROM arith_x
-{
-	current_field->report_vary_from = $2;
-}
+  {
+	$$ = $2;
+  }
 ;
 
 _var_by:
+  /* empty */
+  {
+	$$ = NULL;
+  }
 | BY arith_x
-{
-	current_field->report_vary_by = $2;
-}
+  {
+	$$ = $2;
+  }
 ;
 
 line_clause:
@@ -8845,6 +9279,9 @@ line_clause:
   {
 	check_repeated ("LINE", SYN_CLAUSE_21, &check_pic_duplicate);
 	current_field->report_flag |= COB_REPORT_LINE;
+	if (current_field->flag_occurs) {
+		cb_error (_("LINE with OCCURS is not supported"));
+	}
   }
 ;
 
@@ -9073,7 +9510,6 @@ screen_description:
 	if (set_current_field ($1, $2)) {
 		YYERROR;
 	}
-
 	if (current_field->parent) {
 		current_field->screen_foreg = current_field->parent->screen_foreg;
 		current_field->screen_backg = current_field->parent->screen_backg;
@@ -9385,7 +9821,7 @@ screen_value_clause:
 		cb_error (_("missing %s"), "VALUE");
 	}
 	check_repeated ("VALUE", SYN_CLAUSE_12, &check_pic_duplicate);
-	current_field->values = CB_LIST_INIT ($2);
+	current_field->values = $2;
   }
 ;
 
@@ -10833,7 +11269,7 @@ statement:
 		cb_tree label;
 		char	name[32];
 
-		begin_statement ("NEXT SENTENCE", 0);
+		begin_statement (STMT_NEXT_SENTENCE, 0);
 		sprintf (name, "L$%d", next_label_id);
 		label = cb_build_reference (name);
 		next_label_list = cb_list_add (next_label_list, label);
@@ -10854,7 +11290,7 @@ statement:
 accept_statement:
   ACCEPT
   {
-	begin_statement ("ACCEPT", TERM_ACCEPT);
+	begin_statement (STMT_ACCEPT, TERM_ACCEPT);
 	cobc_cs_check = CB_CS_ACCEPT;
   }
   accept_body
@@ -11047,7 +11483,8 @@ field_with_pos_specifier:
 ;
 
 _pos_specifier:
-  /* empty */ | pos_specifier
+  /* empty */
+| pos_specifier
 ;
 
 pos_specifier:
@@ -11465,7 +11902,7 @@ _end_accept:
 add_statement:
   ADD
   {
-	begin_statement ("ADD", TERM_ADD);
+	begin_statement (STMT_ADD, TERM_ADD);
   }
   add_body
   _end_add
@@ -11516,7 +11953,7 @@ _end_add:
 allocate_statement:
   ALLOCATE
   {
-	begin_statement ("ALLOCATE", 0);
+	begin_statement (STMT_ALLOCATE, 0);
 	cobc_cs_check = CB_CS_ALLOCATE;
 	current_statement->flag_no_based = 1;
   }
@@ -11554,7 +11991,7 @@ _loc:
   }
 
 _allocate_returning:
-  /* empty */			{ $$ = NULL; }
+  /* empty */       		{ $$ = NULL; }
 | RETURNING target_x		{ $$ = $2; }
 ;
 
@@ -11564,7 +12001,7 @@ _allocate_returning:
 alter_statement:
   ALTER
   {
-	begin_statement ("ALTER", 0);
+	begin_statement (STMT_ALTER, 0);
 	cb_verify (cb_alter_statement, "ALTER");
   }
   alter_body
@@ -11590,7 +12027,7 @@ _proceed_to:	| PROCEED TO ;
 call_statement:
   CALL
   {
-	begin_statement ("CALL", TERM_CALL);
+	begin_statement (STMT_CALL, TERM_CALL);
 	cobc_cs_check = CB_CS_CALL;
 	call_nothing = 0;
 	cobc_allow_program_name = 1;
@@ -12047,7 +12484,7 @@ _end_call:
 cancel_statement:
   CANCEL
   {
-	begin_statement ("CANCEL", 0);
+	begin_statement (STMT_CANCEL, 0);
 	cobc_allow_program_name = 1;
   }
   cancel_body
@@ -12090,7 +12527,7 @@ id_or_lit_or_program_name:
 close_statement:
   CLOSE
   {
-	begin_statement ("CLOSE", 0);
+	begin_statement (STMT_CLOSE, 0);
   }
   close_body
 ;
@@ -12127,7 +12564,7 @@ close_window:
   WINDOW
   {
 	CB_PENDING ("GRAPHICAL WINDOW");
-	current_statement->name = "CLOSE WINDOW";
+	current_statement->statement = STMT_CLOSE_WINDOW;
   }
   identifier _close_display_option
   {
@@ -12136,7 +12573,7 @@ close_window:
 ;
 
 _close_display_option:
-  /* empty */			{ $$ = NULL; }
+  /* empty */     		{ $$ = NULL; }
 | _with NO DISPLAY		{ $$ = cb_int0; }
 ;
 
@@ -12146,7 +12583,7 @@ _close_display_option:
 compute_statement:
   COMPUTE
   {
-	begin_statement ("COMPUTE", TERM_COMPUTE);
+	begin_statement (STMT_COMPUTE, TERM_COMPUTE);
   }
   compute_body
   _end_compute
@@ -12176,7 +12613,7 @@ _end_compute:
 commit_statement:
   COMMIT
   {
-	begin_statement ("COMMIT", 0);
+	begin_statement (STMT_COMMIT, 0);
 	cb_emit_commit ();
   }
 ;
@@ -12195,18 +12632,21 @@ continue_statement:
 		/* Do not check unreached for CONTINUE without after phrase */
 		unsigned int	save_unreached = check_unreached;
 		check_unreached = 0;
-		begin_statement_from_backup_pos ("CONTINUE", 0);
+		begin_statement_from_backup_pos (STMT_CONTINUE, 0);
 		cb_emit_continue (NULL);
 		check_unreached = save_unreached;
 	} else {
-		begin_statement_from_backup_pos ("CONTINUE AFTER", 0);
+		begin_statement_from_backup_pos (STMT_CONTINUE_AFTER, 0);
 		cb_emit_continue ($3);
 	}
   }
 ;
 
 _continue_after_phrase:
-  /* empty */	{ $$ = NULL;}
+  /* empty */
+  {
+	$$ = NULL;
+  }
 | AFTER {
 	/* FIXME: hack - fake cs for context-sensitive SECONDS */
 	cobc_cs_check = CB_CS_RETRY;
@@ -12223,7 +12663,7 @@ _continue_after_phrase:
 destroy_statement:
   DESTROY
   {
-	begin_statement ("DESTROY", 0);
+	begin_statement (STMT_DESTROY, 0);
 	CB_PENDING ("GRAPHICAL CONTROL");
   }
   destroy_body
@@ -12249,7 +12689,7 @@ destroy_body:
 delete_statement:
   DELETE
   {
-	begin_statement ("DELETE", TERM_DELETE);
+	begin_statement (STMT_DELETE, TERM_DELETE);
   }
   delete_body
   _end_delete
@@ -12260,7 +12700,10 @@ delete_body:
   {
 	cb_emit_delete ($1);
   }
-| TOK_FILE delete_file_list
+| TOK_FILE delete_file_list _common_exception_phrases
+  {
+	current_statement->statement = STMT_DELETE_FILE;
+  }
 ;
 
 delete_file_list:
@@ -12295,7 +12738,7 @@ _end_delete:
 disable_statement:
   DISABLE
   {
-	begin_statement ("DISABLE", 0);
+	begin_statement (STMT_DISABLE, 0);
   }
   enable_disable_handling
 ;
@@ -12327,7 +12770,7 @@ communication_mode:
 display_statement:
   DISPLAY
   {
-	begin_statement ("DISPLAY", TERM_DISPLAY);
+	begin_statement (STMT_DISPLAY, TERM_DISPLAY);
 	cobc_cs_check = CB_CS_DISPLAY;
 	display_type = UNKNOWN_DISPLAY;
 	is_first_display_item = 1;
@@ -12444,7 +12887,7 @@ disp_list:
   }
 | OMITTED
   {
-	$$ = CB_LIST_INIT(cb_null);
+	$$ = CB_LIST_INIT (cb_null);
   }
 ;
 
@@ -12484,7 +12927,7 @@ display_clause:
 _display_upon:
   /* empty */
   {
-	  upon_value = NULL;
+	upon_value = NULL;
   }
 | display_upon
 ;
@@ -12615,7 +13058,7 @@ display_window:
   sub_or_window
   {
 	CB_PENDING ("GRAPHICAL WINDOW");
-	current_statement->name = "DISPLAY WINDOW";
+	current_statement->statement = STMT_DISPLAY_WINDOW;
   }
   _upon_window_handle
   {
@@ -12640,7 +13083,9 @@ display_floating_window:
   FLOATING _graphical WINDOW
   {
 	CB_PENDING ("GRAPHICAL WINDOW");
-	current_statement->name = "DISPLAY FLOATING WINDOW";
+	current_statement->statement = STMT_DISPLAY_WINDOW;
+	/* current_statement->name = "DISPLAY FLOATING WINDOW"; */
+	current_statement->statement = STMT_DISPLAY_WINDOW;	
   }
   _upon_window_handle
   {
@@ -12664,7 +13109,8 @@ display_initial_window:
   initial_type _graphical WINDOW
   {
 	CB_PENDING ("GRAPHICAL WINDOW");
-	current_statement->name = "DISPLAY INITIAL WINDOW";
+	/* current_statement->name = "DISPLAY INITIAL WINDOW"; */
+	current_statement->statement = STMT_DISPLAY_WINDOW;
 	check_duplicate = 0;
 	check_line_col_duplicate = 0;
 	line_column = NULL;
@@ -12801,9 +13247,9 @@ pop_up_area:
 handle_is_in:
   HANDLE _is_in identifier
   {
-	if (!strcmp (current_statement->name, "DISPLAY WINDOW")) {
+	if (current_statement->statement != STMT_DISPLAY_WINDOW) {
 		cb_error_x ($3, _("HANDLE clause invalid for %s"),
-			current_statement->name);
+			cb_statement_name[current_statement->statement]);
 		upon_value = cb_error_node;
 	} else{
 		if (upon_value) {
@@ -12958,7 +13404,7 @@ _end_display:
 divide_statement:
   DIVIDE
   {
-	begin_statement ("DIVIDE", TERM_DIVIDE);
+	begin_statement (STMT_DIVIDE, TERM_DIVIDE);
   }
   divide_body
   _end_divide
@@ -13004,7 +13450,7 @@ _end_divide:
 enable_statement:
   ENABLE
   {
-	begin_statement ("ENABLE", 0);
+	begin_statement (STMT_ENABLE, 0);
   }
   enable_disable_handling
 ;
@@ -13017,14 +13463,14 @@ entry_statement:
   entry
   {
 	check_unreached = 0;
-	begin_statement ("ENTRY", 0);
+	begin_statement (STMT_ENTRY, 0);
 	backup_current_pos ();
   }
   entry_body
 | entry FOR GO TO
   {
 	check_unreached = 0;
-	begin_statement ("ENTRY FOR GO TO", 0);
+	begin_statement (STMT_ENTRY_FOR_GO_TO, 0);
 	backup_current_pos ();
   }
   entry_goto_body
@@ -13069,7 +13515,7 @@ entry_goto_body:
 evaluate_statement:
   EVALUATE
   {
-	begin_statement ("EVALUATE", TERM_EVALUATE);
+	begin_statement (STMT_EVALUATE, TERM_EVALUATE);
 	eval_level++;
 	if (eval_level >= EVAL_DEPTH) {
 		cb_error (_("maximum evaluate depth exceeded (%d)"),
@@ -13356,7 +13802,7 @@ _end_evaluate:
 exhibit_statement:
   EXHIBIT
   {
-	begin_statement ("EXHIBIT", 0);
+	begin_statement (STMT_EXHIBIT, 0);
 	line_column = NULL;
 	cobc_cs_check = CB_CS_EXHIBIT;
   }
@@ -13442,7 +13888,7 @@ exhibit_target:
 exit_statement:
   EXIT
   {
-	begin_statement ("EXIT", 0);
+	begin_statement (STMT_EXIT, 0);
 	cobc_cs_check = CB_CS_EXIT;
   }
   exit_body
@@ -13471,7 +13917,7 @@ exit_body:
 	} else {
 		check_unreached = 1;
 	}
-	current_statement->name = (const char *)"EXIT PROGRAM";
+	current_statement->statement = STMT_EXIT_PROGRAM;
 	cb_emit_exit (0);
   }
 | FUNCTION
@@ -13485,7 +13931,7 @@ exit_body:
 			    _("EXIT FUNCTION only allowed within a FUNCTION"));
 	}
 	check_unreached = 1;
-	current_statement->name = (const char *)"EXIT FUNCTION";
+	current_statement->statement = STMT_EXIT_FUNCTION;
 	cb_emit_exit (0);
   }
 | PERFORM CYCLE
@@ -13506,7 +13952,7 @@ exit_body:
 			CB_LABEL (plabel)->flag_begin = 1;
 			CB_LABEL (plabel)->flag_dummy_exit = 1;
 		}
-		current_statement->name = (const char *)"EXIT PERFORM CYCLE";
+		current_statement->statement = STMT_EXIT_PERFORM_CYCLE;
 		cb_emit_goto (CB_LIST_INIT (p->cycle_label), NULL);
 		check_unreached = 1;
 	}
@@ -13529,7 +13975,7 @@ exit_body:
 			CB_LABEL (plabel)->flag_begin = 1;
 			CB_LABEL (plabel)->flag_dummy_exit = 1;
 		}
-		current_statement->name = (const char *)"EXIT PERFORM";
+		current_statement->statement = STMT_EXIT_PERFORM;
 		cb_emit_goto (CB_LIST_INIT (p->exit_label), NULL);
 		check_unreached = 1;
 	}
@@ -13550,7 +13996,7 @@ exit_body:
 			CB_LABEL (plabel)->flag_begin = 1;
 			CB_LABEL (plabel)->flag_dummy_exit = 1;
 		}
-		current_statement->name = (const char *)"EXIT SECTION";
+		current_statement->statement = STMT_EXIT_SECTION;
 		cb_emit_goto (CB_LIST_INIT (current_section->exit_label), NULL);
 		check_unreached = 1;
 	}
@@ -13571,7 +14017,7 @@ exit_body:
 			CB_LABEL (plabel)->flag_begin = 1;
 			CB_LABEL (plabel)->flag_dummy_exit = 1;
 		}
-		current_statement->name = (const char *)"EXIT PARAGRAPH";
+		current_statement->statement = STMT_EXIT_PARAGRAPH;
 		cb_emit_goto (CB_LIST_INIT (current_paragraph->exit_label), NULL);
 		check_unreached = 1;
 	}
@@ -13602,7 +14048,7 @@ goback_exit_body:
 free_statement:
   FREE
   {
-	begin_statement ("FREE", 0);
+	begin_statement (STMT_FREE, 0);
 	current_statement->flag_no_based = 1;
   }
   free_body
@@ -13621,7 +14067,7 @@ free_body:
 generate_statement:
   GENERATE
   {
-	begin_statement ("GENERATE", 0);
+	begin_statement (STMT_GENERATE, 0);
   }
   generate_body
 ;
@@ -13647,7 +14093,7 @@ goto_statement:
 	if (!current_paragraph->flag_statement) {
 		current_paragraph->flag_first_is_goto = 1;
 	}
-	begin_statement ("GO TO", 0);
+	begin_statement (STMT_GO_TO, 0);
 	save_debug = start_debug;
 	start_debug = 0;
   }
@@ -13687,7 +14133,7 @@ goto_depending:
 
 goback_statement:
   GOBACK {
-	begin_statement ("GOBACK", 0);
+	begin_statement (STMT_GOBACK, 0);
   }
   goback_exit_body
   {
@@ -13702,7 +14148,7 @@ goback_statement:
 if_statement:
   IF
   {
-	begin_statement ("IF", TERM_IF);
+	begin_statement (STMT_IF, TERM_IF);
   }
   condition _if_then if_else_statements
   _end_if
@@ -13766,7 +14212,7 @@ _end_if:
 initialize_statement:
   INITIALIZE
   {
-	begin_statement ("INITIALIZE", 0);
+	begin_statement (STMT_INITIALIZE, 0);
   }
   initialize_body
 ;
@@ -13853,7 +14299,7 @@ _initialize_default:
 initiate_statement:
   INITIATE
   {
-	begin_statement ("INITIATE", 0);
+	begin_statement (STMT_INITIATE, 0);
   }
   initiate_body
 ;
@@ -13882,7 +14328,7 @@ initiate_body:
 inquire_statement:
   INQUIRE
   {
-	begin_statement ("INQUIRE", 0);
+	begin_statement (STMT_INQUIRE, 0);
 	cobc_cs_check = CB_CS_INQUIRE_MODIFY;
   }
   inquire_body
@@ -13901,7 +14347,7 @@ inquire_body:
 inspect_statement:
   INSPECT
   {
-	begin_statement ("INSPECT", 0);
+	begin_statement (STMT_INSPECT, 0);
 	inspect_keyword = INSPECT_REP_DEFAULT;
   }
   inspect_body
@@ -13939,7 +14385,7 @@ inspect_format_variant:
 examine_statement:
   EXAMINE
   {
-	begin_statement ("EXAMINE", 0);
+	begin_statement (STMT_EXAMINE, 0);
   }
   send_identifier
   examine_format_variant
@@ -13949,7 +14395,7 @@ examine_format_variant:
   TALLYING
   {
 	cb_tree tally = cb_build_identifier (cb_build_reference ("TALLY"), 0);
-	cb_emit_initialize (CB_LIST_INIT (tally), NULL, cb_int0, NULL, NULL);
+	cb_emit_move (cb_zero, CB_LIST_INIT (tally));
 	cb_init_tallying ();
 	cb_build_tallying_data (tally);
   }
@@ -14243,7 +14689,7 @@ json: JSON { check_non_area_a ($1); };
 json_generate_statement:
   json GENERATE
   {
-	begin_statement ("JSON GENERATE", TERM_JSON);
+	begin_statement (STMT_JSON_GENERATE, TERM_JSON);
 	cobc_in_json_generate_body = 1;
 	cobc_cs_check = CB_CS_JSON_GENERATE;
 	cobc_xref_set_receiving (current_program->json_code);
@@ -14304,7 +14750,7 @@ _end_json:
 json_parse_statement:
   json PARSE
   {
-	begin_statement ("JSON PARSE", TERM_JSON);
+	begin_statement (STMT_JSON_PARSE, TERM_JSON);
 	CB_PENDING ("JSON PARSE");
 	cobc_xref_set_receiving (current_program->json_code);
 	cobc_xref_set_receiving (current_program->json_status);
@@ -14319,11 +14765,14 @@ json_parse_body:
   _json_name_of
   _json_suppress
   _common_exception_phrases
+  {
+	CB_PENDING ("JSON PARSE");
+  }
 ;
 
 _with_detail:
-  /* empty */
-| _with DETAIL
+  /* empty */			{ $$ = NULL; }
+| _with DETAIL			{ $$ = cb_int0; }
 ;
 
 /* MERGE statement */
@@ -14331,7 +14780,7 @@ _with_detail:
 merge_statement:
   MERGE
   {
-	begin_statement ("MERGE", 0);
+	begin_statement (STMT_MERGE, 0);
 	current_statement->flag_merge = 1;
   }
   sort_body
@@ -14343,7 +14792,7 @@ merge_statement:
 modify_statement:
   MODIFY
   {
-	begin_statement ("MODIFY", TERM_MODIFY);
+	begin_statement (STMT_MODIFY, TERM_MODIFY);
 	cobc_cs_check = CB_CS_INQUIRE_MODIFY;
   }
   modify_body
@@ -14375,7 +14824,7 @@ _end_modify:
 move_statement:
   MOVE
   {
-	begin_statement ("MOVE", 0);
+	begin_statement (STMT_MOVE, 0);
   }
   move_body
 ;
@@ -14397,7 +14846,7 @@ move_body:
 multiply_statement:
   MULTIPLY
   {
-	begin_statement ("MULTIPLY", TERM_MULTIPLY);
+	begin_statement (STMT_MULTIPLY, TERM_MULTIPLY);
   }
   multiply_body
   _end_multiply
@@ -14431,7 +14880,7 @@ _end_multiply:
 open_statement:
   OPEN
   {
-	begin_statement ("OPEN", 0);
+	begin_statement (STMT_OPEN, 0);
 	cobc_cs_check = CB_CS_OPEN;
   }
   open_body
@@ -14569,7 +15018,7 @@ osvs_input_mode:
 perform_statement:
   PERFORM
   {
-	begin_statement ("PERFORM", TERM_PERFORM);
+	begin_statement (STMT_PERFORM, TERM_PERFORM);
 	/* Turn off field debug - PERFORM is special */
 	save_debug = start_debug;
 	start_debug = 0;
@@ -14654,16 +15103,15 @@ perform_procedure:
   {
 	/* Return from $1 */
 	CB_REFERENCE ($1)->length = cb_true;
-	CB_REFERENCE ($1)->flag_decl_ok = 1;
 	$$ = CB_BUILD_PAIR ($1, $1);
   }
 | procedure_name THRU procedure_name
   {
 	/* Return from $3 */
 	CB_REFERENCE ($3)->length = cb_true;
-	CB_REFERENCE ($1)->flag_decl_ok = 1;
-	CB_REFERENCE ($3)->flag_decl_ok = 1;
 	$$ = CB_BUILD_PAIR ($1, $3);
+	current_program->perform_thru_list =
+		cb_list_add (current_program->perform_thru_list, $$);
   }
 ;
 
@@ -14775,7 +15223,7 @@ _by_phrase:
 purge_statement:
   PURGE
   {
-	begin_statement ("PURGE", 0);
+	begin_statement (STMT_PURGE, 0);
   }
   cd_name
   {
@@ -14787,7 +15235,7 @@ purge_statement:
 raise_statement:
   RAISE
   {
-	begin_statement ("RAISE", 0);
+	begin_statement (STMT_RAISE, 0);
   }
   raise_body
 ;
@@ -14823,7 +15271,7 @@ exception_name:
 read_statement:
   READ
   {
-	begin_statement ("READ", TERM_READ);
+	begin_statement (STMT_READ, TERM_READ);
 	cobc_cs_check = CB_CS_READ;
   }
   read_body
@@ -14917,7 +15365,7 @@ retry_options:
 ;
 
 _extended_with_lock:
-  /* empty */
+  /* empty */	{ $$ = NULL; }
 | extended_with_lock
 ;
 
@@ -14964,7 +15412,7 @@ _end_read:
 ready_statement:
   READY_TRACE
   {
-	begin_statement ("READY TRACE", 0);
+	begin_statement (STMT_READY_TRACE, 0);
 	cb_emit_ready_trace ();
   }
 ;
@@ -14974,7 +15422,7 @@ ready_statement:
 receive_statement:
   RECEIVE
   {
-	begin_statement ("RECEIVE", TERM_RECEIVE);
+	begin_statement (STMT_RECEIVE, TERM_RECEIVE);
   }
   receive_body
   _end_receive
@@ -15030,7 +15478,7 @@ _end_receive:
 release_statement:
   RELEASE
   {
-	begin_statement ("RELEASE", 0);
+	begin_statement (STMT_RELEASE, 0);
   }
   release_body
 ;
@@ -15048,7 +15496,7 @@ release_body:
 reset_statement:
   RESET_TRACE
   {
-	begin_statement ("RESET TRACE", 0);
+	begin_statement (STMT_RESET_TRACE, 0);
 	cb_emit_reset_trace ();
   }
 ;
@@ -15058,7 +15506,7 @@ reset_statement:
 return_statement:
   RETURN
   {
-	begin_statement ("RETURN", TERM_RETURN);
+	begin_statement (STMT_RETURN, TERM_RETURN);
   }
   return_body
   _end_return
@@ -15088,7 +15536,7 @@ _end_return:
 rewrite_statement:
   REWRITE
   {
-	begin_statement ("REWRITE", TERM_REWRITE);
+	begin_statement (STMT_REWRITE, TERM_REWRITE);
 	/* Special in debugging mode */
 	save_debug = start_debug;
 	start_debug = 0;
@@ -15141,7 +15589,7 @@ _end_rewrite:
 rollback_statement:
   ROLLBACK
   {
-	begin_statement ("ROLLBACK", 0);
+	begin_statement (STMT_ROLLBACK, 0);
 	cb_emit_rollback ();
   }
 ;
@@ -15153,13 +15601,13 @@ search: SEARCH { check_non_area_a ($1); };
 search_statement:
   search
   {
-	begin_statement ("SEARCH", TERM_SEARCH);
+	begin_statement (STMT_SEARCH, TERM_SEARCH);
   }
   search_body
   _end_search
 | search ALL
   {
-	begin_statement ("SEARCH ALL", TERM_SEARCH);
+	begin_statement (STMT_SEARCH_ALL, TERM_SEARCH);
   }
   search_all_body
   _end_search
@@ -15241,7 +15689,7 @@ _end_search:
 send_statement:
   SEND
   {
-	begin_statement ("SEND", 0);
+	begin_statement (STMT_SEND, 0);
   }
   send_body
 ;
@@ -15335,7 +15783,7 @@ _replacing_line:
 set_statement:
   SET
   {
-	begin_statement ("SET", 0);
+	begin_statement (STMT_SET, 0);
 	set_attr_val_on = 0;
 	set_attr_val_off = 0;
 	cobc_cs_check = CB_CS_SET;
@@ -15520,7 +15968,7 @@ set_thread_priority:
 sort_statement:
   SORT
   {
-	begin_statement ("SORT", 0);
+	begin_statement (STMT_SORT, 0);
   }
   sort_body
 ;
@@ -15685,7 +16133,7 @@ sort_output:
 start_statement:
   START
   {
-	begin_statement ("START", TERM_START);
+	begin_statement (STMT_START, TERM_START);
 	start_tree = cb_int (COB_EQ);
   }
   start_body
@@ -15774,7 +16222,7 @@ stop: STOP { check_non_area_a ($1); };
 stop_statement:
   stop RUN
   {
-	begin_statement ("STOP RUN", 0);
+	begin_statement (STMT_STOP_RUN, 0);
 	cobc_cs_check = CB_CS_STOP;
   }
   stop_returning
@@ -15785,14 +16233,14 @@ stop_statement:
   }
 | stop ERROR /* GCOS */
   {
-	begin_statement ("STOP ERROR", 0);
+	begin_statement (STMT_STOP_ERROR, 0);
 	cb_verify (cb_stop_error_statement, "STOP ERROR");
 	cb_emit_stop_error ();
 	check_unreached = 1;
   }
 | stop stop_argument
   {
-	begin_statement ("STOP", 0);
+	begin_statement (STMT_STOP, 0);
 	cb_emit_display (CB_LIST_INIT ($2), cb_int0, cb_int1, NULL,
 			 NULL, 1, DEVICE_DISPLAY);
 	cb_emit_accept (cb_null, NULL, NULL);
@@ -15800,10 +16248,13 @@ stop_statement:
   }
 | stop thread_reference_optional
   {
-	begin_statement ("STOP THREAD", 0);
+	begin_statement (STMT_STOP_THREAD, 0);
 	cb_emit_stop_thread ($2);
 	cobc_cs_check = 0;
-	cb_warning_x (COBC_WARN_FILLER, $2, _("%s is replaced by %s"), "STOP THREAD", "STOP RUN");
+	cb_warning_x (COBC_WARN_FILLER, $2,
+		_("%s is replaced by %s"),
+		cb_statement_name[STMT_STOP_THREAD],
+		cb_statement_name[STMT_STOP_RUN]);
   }
 ;
 
@@ -15843,14 +16294,8 @@ stop_returning:
 ;
 
 _status_x:
-  /* empty */
-  {
-	$$ = NULL;
-  }
-| x
-  {
-	$$ = $1;
-  }
+  /* empty */	{ $$ = NULL; }
+| x         	{ $$ = $1; }
 ;
 
 stop_argument:
@@ -15876,7 +16321,7 @@ stop_literal:
 string_statement:
   STRING
   {
-	begin_statement ("STRING", TERM_STRING);
+	begin_statement (STMT_STRING, TERM_STRING);
   }
   string_body
   _end_string
@@ -15919,7 +16364,7 @@ string_item:
 ;
 
 _string_delimited:
-  /* empty */		{ $$ = NULL; }
+  /* empty */     	{ $$ = NULL; }
 | DELIMITED _by
   string_delimiter	{ $$ = $3; }
 ;
@@ -15951,7 +16396,7 @@ _end_string:
 subtract_statement:
   SUBTRACT
   {
-	begin_statement ("SUBTRACT", TERM_SUBTRACT);
+	begin_statement (STMT_SUBTRACT, TERM_SUBTRACT);
   }
   subtract_body
   _end_subtract
@@ -15995,7 +16440,7 @@ suppress_statement:
   SUPPRESS { check_non_area_a ($1); }
   _printing
   {
-	begin_statement ("SUPPRESS", 0);
+	begin_statement (STMT_SUPPRESS, 0);
 	if (!in_declaratives) {
 		cb_error_x (CB_TREE (current_statement),
 			    _("SUPPRESS statement must be within DECLARATIVES"));
@@ -16013,7 +16458,7 @@ _printing:
 terminate_statement:
   TERMINATE
   {
-	begin_statement ("TERMINATE", 0);
+	begin_statement (STMT_TERMINATE, 0);
   }
   terminate_body
 ;
@@ -16042,7 +16487,7 @@ terminate_body:
 transform_statement:
   TRANSFORM
   {
-	begin_statement ("TRANSFORM", 0);
+	begin_statement (STMT_TRANSFORM, 0);
   }
   transform_body
 ;
@@ -16061,7 +16506,7 @@ transform_body:
 unlock_statement:
   UNLOCK
   {
-	begin_statement ("UNLOCK", 0);
+	begin_statement (STMT_UNLOCK, 0);
   }
   unlock_body
 ;
@@ -16085,7 +16530,7 @@ unlock_body:
 unstring_statement:
   UNSTRING
   {
-	begin_statement ("UNSTRING", TERM_UNSTRING);
+	begin_statement (STMT_UNSTRING, TERM_UNSTRING);
   }
   unstring_body
   _end_unstring
@@ -16101,7 +16546,7 @@ unstring_body:
 ;
 
 _unstring_delimited:
-  /* empty */			{ $$ = NULL; }
+  /* empty */            	{ $$ = NULL; }
 | DELIMITED _by
   unstring_delimited_list	{ $$ = $3; }
 ;
@@ -16133,12 +16578,12 @@ unstring_into_item:
 ;
 
 _unstring_into_delimiter:
-  /* empty */			{ $$ = NULL; }
+  /* empty */             	{ $$ = NULL; }
 | DELIMITER _in identifier	{ $$ = $3; }
 ;
 
 _unstring_tallying:
-  /* empty */			{ $$ = NULL; }
+  /* empty */            	{ $$ = NULL; }
 | TALLYING _in identifier	{ $$ = $3; }
 ;
 
@@ -16158,7 +16603,7 @@ _end_unstring:
 validate_statement:
   VALIDATE
   {
-	begin_statement ("VALIDATE", 0);
+	begin_statement (STMT_VALIDATE, 0);
   }
   validate_fields
   {
@@ -16517,7 +16962,7 @@ use_ex_keyw:
 write_statement:
   WRITE
   {
-	begin_statement ("WRITE", TERM_WRITE);
+	begin_statement (STMT_WRITE, TERM_WRITE);
 	/* Special in debugging mode */
 	save_debug = start_debug;
 	start_debug = 0;
@@ -16537,7 +16982,7 @@ write_body:
 ;
 
 from_option:
-  /* empty */			{ $$ = NULL; }
+  /* empty */        		{ $$ = NULL; }
 | FROM from_parameter		{ $$ = $2; }
 ;
 
@@ -16588,7 +17033,7 @@ xml: XML { check_non_area_a ($1); };
 xml_generate_statement:
   xml GENERATE
   {
-	begin_statement ("XML GENERATE", TERM_XML);
+	begin_statement (STMT_XML_GENERATE, TERM_XML);
 	cobc_in_xml_generate_body = 1;
 	cobc_cs_check = CB_CS_XML_GENERATE;
 	cobc_xref_set_receiving (current_program->xml_code);
@@ -16757,12 +17202,12 @@ json_identifier_is_name:
 _type_of:
   /* empty */
   {
-       $$ = NULL;
+	$$ = NULL;
   }
 | TYPE _of identifier_type_list
   {
-       $$ = $3;
-       	cb_verify (cb_xml_generate_extra_phrases,
+	$$ = $3;
+	cb_verify (cb_xml_generate_extra_phrases,
 		   _("XML GENERATE TYPE OF clause"));
   }
 ;
@@ -16876,7 +17321,7 @@ _end_xml:
 xml_parse_statement:
   xml PARSE
   {
-	begin_statement ("XML PARSE", TERM_XML);
+	begin_statement (STMT_XML_PARSE, TERM_XML);
 	CB_PENDING ("XML PARSE");
 	cobc_cs_check = CB_CS_XML_PARSE;
 	cobc_xref_set_receiving (current_program->xml_code);
@@ -16927,13 +17372,14 @@ _with_encoding:
 ;
 
 _returning_national:
-/* empty */				{ $$ = NULL; }
-| RETURNING NATIONAL	{ $$ = cb_true; }
+/* empty */         		{ $$ = NULL; }
+| RETURNING NATIONAL		{ $$ = cb_true; }
 ;
 
 _validating_with:
-/* empty */	{ $$ = NULL; }
-| VALIDATING _with schema_file_or_record_name { $$ = $3; }
+/* empty */                 	{ $$ = NULL; }
+| VALIDATING _with
+  schema_file_or_record_name	{ $$ = $3; }
 ;
 
 schema_file_or_record_name:
@@ -17416,6 +17862,69 @@ expr_token:
 | B_SHIFT_RC		{ push_expr ('d', NULL); }
 ;
 
+condition_no_is: /* HACK, FIXME */
+  expr_no_is
+  {
+	$$ = cb_build_cond ($1);
+	cb_end_cond ($$);
+  }
+| error
+  {
+	$$ = cb_error_node;
+	cb_end_cond ($$);
+  }
+;
+
+expr_no_is:
+  partial_expr_no_is
+  {
+	$$ = cb_build_expr ($1);
+  }
+;
+
+partial_expr_no_is:
+  {
+	current_expr = NULL;
+	cb_exp_line = cb_source_line;
+  }
+  expr_tokens_no_is
+  {
+	$$ = cb_list_reverse (current_expr);
+  }
+;
+
+expr_tokens_no_is:
+  expr_token_no_is
+| expr_tokens_no_is expr_token_no_is
+;
+
+expr_token_no_is:
+  x				{ push_expr ('x', $1); }
+| condition_or_class
+| not_expr condition_or_class
+| not_expr ZERO			{ push_expr ('x', cb_zero); }
+/* Parentheses */
+| TOK_OPEN_PAREN		{ push_expr ('(', NULL); }
+| TOK_CLOSE_PAREN		{ push_expr (')', NULL); }
+/* Arithmetic operators */
+| TOK_PLUS			{ push_expr ('+', NULL); }
+| TOK_MINUS			{ push_expr ('-', NULL); }
+| TOK_MUL			{ push_expr ('*', NULL); }
+| TOK_DIV			{ push_expr ('/', NULL); }
+| EXPONENTIATION		{ push_expr ('^', NULL); }
+/* Logical operators */
+| AND				{ push_expr ('&', NULL); }
+| OR				{ push_expr ('|', NULL); }
+| B_AND				{ push_expr ('a', NULL); }
+| B_OR				{ push_expr ('o', NULL); }
+| B_XOR				{ push_expr ('e', NULL); }
+| B_NOT				{ push_expr ('n', NULL); }
+| B_SHIFT_L			{ push_expr ('l', NULL); }
+| B_SHIFT_R			{ push_expr ('r', NULL); }
+| B_SHIFT_LC		{ push_expr ('c', NULL); }
+| B_SHIFT_RC		{ push_expr ('d', NULL); }
+;
+
 _not_expr:
   /* empty */
 | not_expr
@@ -17439,6 +17948,7 @@ condition_or_class:
 | ALPHABETIC			{ push_expr ('A', NULL); }
 | ALPHABETIC_LOWER		{ push_expr ('L', NULL); }
 | ALPHABETIC_UPPER		{ push_expr ('U', NULL); }
+/* CHECKME: seems missing  | BOOLEAN */
 /* Sign condition */
 /* ZERO is defined in 'x' */
 | POSITIVE			{ push_expr ('P', NULL); }
@@ -17636,7 +18146,7 @@ file_or_record_name:
 		$$ = $1;
 	} else {
 		cb_error_x ($1, _("%s requires a record name as subject"),
-			current_statement->name);
+			cb_statement_name[current_statement->statement]);
 		$$ = cb_error_node;
 	}
   }
@@ -17666,7 +18176,7 @@ table_name:
 		cb_note_x (COB_WARNOPT_NONE, x, _("'%s' defined here"), cb_name (x));
 		$$ = cb_error_node;
 	} else if (CB_FIELD (x)->nkeys == 0
-	        && strcmp(current_statement->name, "SEARCH ALL") == 0) {
+	        && current_statement->statement == STMT_SEARCH_ALL) {
 		cb_error_x ($1, _("SEARCH ALL requires KEY phrase"));
 		cb_note_x (COB_WARNOPT_NONE, x, _("'%s' defined here"), cb_name (x));
 		$$ = cb_error_node;
@@ -17797,7 +18307,7 @@ entry_name:
 
 procedure_name_list:
   %prec SHIFT_PREFER
-  /* empty */			{ $$ = NULL; }
+  /* empty */   		{ $$ = NULL; }
 | procedure_name_list
   procedure_name		{ $$ = cb_list_add ($1, $2); }
 ;
@@ -17850,8 +18360,8 @@ reference:
 ;
 
 _reference:
-  /* empty */	{$$ = NULL;}
-| reference		{$$ = $1;}
+  /* empty */		{$$ = NULL;}
+| reference  		{$$ = $1;}
 ;
 
 single_reference_list:
@@ -17956,8 +18466,8 @@ target_x:
 ;
 
 _x_list:
-  /* empty */	{ $$ = NULL; }
-| x_list	{ $$ = $1; }
+  /* empty */		{ $$ = NULL; }
+| x_list     		{ $$ = $1; }
 ;
 
 x_list:
@@ -18395,6 +18905,39 @@ identifier_list:
   }
 ;
 
+validate_for_identifier_list:
+  for_identifier
+  {
+	$$ = CB_LIST_INIT ($1);
+  }
+| validate_for_identifier_list for_identifier
+  {
+	$$ = cb_list_add ($1, $2);
+  }
+;
+
+for_identifier:
+  target_identifier_1
+  {
+	cb_tree target = cb_try_ref ($1);
+	if (CB_FIELD_P (target)) {
+		const struct cb_field *f = CB_FIELD (target);
+		struct cb_reference	*r = CB_REFERENCE ($1);
+		if (r->offset) {
+			cb_error_x ($1, _("'%s' cannot be reference modified"), "VALIDATE FOR");
+		}
+		if (f->flag_occurs && current_field->flag_occurs) {
+			/* HACK, should be done correct later, for now adjusts subscript-check */
+			r->flag_all = 1;
+		}
+		$$ = cb_build_identifier ($1, 0);
+	} else {
+		cb_error_x ($1, _("'%s' is not a field"), cb_name (target));
+	}
+	$$ = target;
+  }
+;
+
 target_identifier:
   target_identifier_1
   {
@@ -18619,12 +19162,20 @@ class_value:
 	}
 	$$ = $1;
   }
-| SPACE				{ $$ = cb_space; }
+| figurative_constant
+  {
+	$$ = $1;
+  }
+;
+;
+
+figurative_constant:
+  SPACE				{ $$ = cb_space; }
 | ZERO				{ $$ = cb_zero; }
 | QUOTE				{ $$ = cb_quote; }
 | HIGH_VALUE			{ $$ = cb_high; }
 | LOW_VALUE			{ $$ = cb_low; }
-| TOK_NULL			{ $$ = cb_null; }
+| TOK_NULL			{ $$ = cb_null;  /* CHECKME: is that valid in all used cases? */}
 ;
 
 literal:
@@ -18658,15 +19209,7 @@ basic_literal:
   }
 ;
 
-basic_value:
-  LITERAL			{ $$ = $1; }
-| SPACE				{ $$ = cb_space; }
-| ZERO				{ $$ = cb_zero; }
-| QUOTE				{ $$ = cb_quote; }
-| HIGH_VALUE			{ $$ = cb_high; }
-| LOW_VALUE			{ $$ = cb_low; }
-| TOK_NULL			{ $$ = cb_null; }
-;
+basic_value:	LITERAL | figurative_constant ;
 
 zero_spaces_high_low_values:
   SPACE				{ $$ = cb_space; }
@@ -18908,13 +19451,13 @@ not_const_word:
 
 flag_all:
   /* empty */			{ $$ = cb_int0; }
-| ALL				{ $$ = cb_int1; }
+| ALL        			{ $$ = cb_int1; }
 ;
 
 flag_duplicates:
-  /* empty */			{ $$ = NULL; }
+  /* empty */        	{ $$ = NULL; }
 | _with NO DUPLICATES	{ $$ = cb_int0; }
-| _with DUPLICATES	{ $$ = cb_int1; }
+| _with    DUPLICATES	{ $$ = cb_int1; }
 ;
 
 _flag_initialized:
@@ -18948,18 +19491,18 @@ _to_init_val:
 _flag_next:
   %prec SHIFT_PREFER
   /* empty */			{ $$ = cb_int0; }
-| NEXT				{ $$ = cb_int1; }
-| PREVIOUS			{ $$ = cb_int2; }
+| NEXT       			{ $$ = cb_int1; }
+| PREVIOUS   			{ $$ = cb_int2; }
 ;
 
 _flag_not:
   /* empty */			{ $$ = NULL; }
-| NOT				{ $$ = cb_true; }
+| NOT        			{ $$ = cb_true; }
 ;
 
 flag_optional:
   /* empty */			{ $$ = cb_int (cb_flag_optional_file); }
-| OPTIONAL			{ $$ = cb_int1; }
+| OPTIONAL   			{ $$ = cb_int1; }
 | NOT OPTIONAL			{ $$ = cb_int0; }
 ;
 
@@ -19028,7 +19571,7 @@ round_choice:
 ;
 
 flag_separate:
-  /* empty */			{ $$ = NULL; }
+  /* empty */        		{ $$ = NULL; }
 | SEPARATE _character		{ $$ = cb_int1; }
 ;
 

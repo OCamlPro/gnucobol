@@ -2022,6 +2022,43 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([INSPECT TALLYING REPLACING BEFORE and AFTER])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  INSP-STRING   PIC X(26) VALUE 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.
+       01  EXPTD-RESULT  CONSTANT AS     'A22222111111111122222222YZ'.
+       01  RES-IDX       PIC 9(04) BINARY VALUE 100.
+       01  RES-IDX-1     PIC 9(04) BINARY VALUE 0.
+       PROCEDURE DIVISION.
+      *>
+           INSPECT INSP-STRING
+                   TALLYING RES-IDX   FOR CHARACTERS BEFORE 'H'
+                            RES-IDX-1 FOR CHARACTERS AFTER  'B'
+             REPLACING
+                   CHARACTERS BY '1' AFTER 'F' BEFORE 'Q'
+                   CHARACTERS BY '2' AFTER 'A' BEFORE 'Y'.
+      *>
+           IF INSP-STRING NOT = EXPTD-RESULT
+               DISPLAY 'Failed <' INSP-STRING '> != <' EXPTD-RESULT '>'.
+           IF RES-IDX NOT = 107
+               DISPLAY 'Failed <' RES-IDX   '> != <107>'.
+           IF RES-IDX-1 NOT = 19
+               DISPLAY 'Failed <' RES-IDX-1 '> != <19>'.
+      *>
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([INSPECT REPLACING figurative constant])
 AT_KEYWORDS([runmisc])
 
@@ -2295,6 +2332,9 @@ AT_CLEANUP
 AT_SETUP([EXIT PARAGRAPH])
 AT_KEYWORDS([runmisc])
 
+# Note: testing EXIT PARAGRPAPH without being PERFORMed
+#       implicit GO TO only
+
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
@@ -2326,6 +2366,9 @@ AT_CLEANUP
 AT_SETUP([EXIT SECTION])
 AT_KEYWORDS([runmisc])
 
+# Note: testing EXIT SECTION without being PERFORMed
+#       implicit GO TO only
+
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
@@ -2348,8 +2391,38 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
+# disabling the check for "something leaves the section" - as this is
+# guaranteed to happen with this EXIT SECTION as GO TO
+AT_CHECK([$COMPILE -fno-section-exit-check prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CHECK([$COMPILE -fsection-exit-check prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
+[libcob: prog.cob:12: error: code execution leaving A01
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([implicit GOBACK at end of PROCEDURE DIVISION])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+       A01 SECTION.
+       A011.
+          CONTINUE.
+])
+
+AT_CHECK([$COMPILE -fno-implicit-goback-check prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CHECK([$COMPILE -fimplicit-goback-check prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
+[libcob: prog.cob:8: error: code execution leaving PROCEDURE DIVISION
+])
 
 AT_CLEANUP
 
@@ -2456,13 +2529,11 @@ AT_DATA([prog.cob], [
        01  X            PIC 9(2) VALUE 0.
        01  Y            PIC 9(2) VALUE 0.
        PROCEDURE        DIVISION.
-           COMPUTE X = 100
-           END-COMPUTE.
-           COMPUTE Y = 99
-           END-COMPUTE.
-           IF Y NOT = 99
-              DISPLAY Y
-           END-IF.
+           COMPUTE X = 100. *> this overflows which does not store a result
+           COMPUTE Y = 99.  *> and once in a time this result was not stored
+           IF X NOT = 0 AND
+              Y NOT = 99
+              DISPLAY Y.
            STOP RUN.
 ])
 
@@ -2509,6 +2580,90 @@ AT_DATA([prog.cob], [
               DISPLAY X(1)
            END-IF.
            STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([STRING WITH POINTER ON OVERFLOW with DELIMITER])
+AT_KEYWORDS([runmisc exceptions])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. StringTest.
+      *>----------------------------------------------------------------
+      *>           Additional test cases for STRING statement
+      *> Testing string  with POINTER clause and with OVERFLOW
+      *> managment associated to POINTER clause
+      *> Testing also String with delimiter
+      *>----------------------------------------------------------------
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+      *>-----------------------
+       01  TRGT-STRING   PIC X(03) VALUE SPACES.
+       01  STR-POINTER   PIC 9(02).
+       01  SRC-DELIM     PIC X(01).
+
+       PROCEDURE DIVISION.
+      *>-------------------
+      *>
+      *> case A: Pointer is between 1 and less than TRGT-STRING LENGTH
+      *>         Should not overflow
+            MOVE 1 to STR-POINTER.
+            STRING 'A' 'B' 'C' DELIMITED BY SIZE
+                   INTO TRGT-STRING
+                   WITH POINTER STR-POINTER
+                   ON OVERFLOW
+                      DISPLAY 'Case A: Should not overflow' END-DISPLAY
+            END-STRING.
+            IF TRGT-STRING NOT = 'ABC'
+                DISPLAY 'A: TRTG-STRING <' TRGT-STRING '> != <ABC>'.
+            IF STR-POINTER NOT = 4
+                DISPLAY 'A: STR-POINTER <' STR-POINTER '> != <04>'.
+      *>
+      *>  case B: Pointer is 0 --> Should  overflow
+            MOVE 0                        TO STR-POINTER.
+            MOVE SPACES                   TO TRGT-STRING.
+            STRING 'A' 'B' 'C'  DELIMITED BY SIZE
+                   INTO TRGT-STRING
+                   WITH POINTER STR-POINTER
+                   NOT ON OVERFLOW
+                      DISPLAY 'Case B: Should overflow' END-DISPLAY
+            END-STRING.
+            IF TRGT-STRING NOT = SPACES
+                DISPLAY 'B: TRTG-STRING <' TRGT-STRING '> != SPACES'.
+            IF STR-POINTER NOT = 0
+                DISPLAY 'B: STR-POINTER <' STR-POINTER '> != <00>'.
+      *>
+      *>  case C: Pointer is 4 --> Should  overflow
+            MOVE 4                        TO STR-POINTER.
+            MOVE SPACES                   TO TRGT-STRING.
+            STRING 'A' 'B' 'C' DELIMITED BY SIZE
+                   INTO TRGT-STRING
+                   WITH POINTER STR-POINTER
+                   NOT ON OVERFLOW
+                      DISPLAY 'Case C: Should overflow' END-DISPLAY
+            END-STRING.
+            IF TRGT-STRING NOT = SPACES
+                DISPLAY 'C: TRTG-STRING <' TRGT-STRING '> != SPACES'.
+            IF STR-POINTER NOT = 4
+                DISPLAY 'C: STR-POINTER <' STR-POINTER '> != <04>'.
+      *>
+      *>  case D: Test with delimiter
+            MOVE 1      TO STR-POINTER.
+            MOVE '|'    TO SRC-DELIM.
+            MOVE SPACES TO TRGT-STRING.
+            STRING '1|2' 'A|B' 'C|D'   DELIMITED BY SRC-DELIM
+                    INTO TRGT-STRING
+                    WITH POINTER STR-POINTER
+            END-STRING.
+            IF TRGT-STRING NOT = '1AC'
+                DISPLAY 'D: TRGT-STRING <' TRGT-STRING '> != <1AC>'.
+      *>
+            GOBACK.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -3998,33 +4153,33 @@ main (int argc, char **argv)
    case 0:  /* program coming back */
 
       /* Clean up and terminate runtime */
-      cob_runtime_hint("program exited with return code %d",
+      cob_runtime_hint ("program exited with return code %d",
          cob_last_exit_code ());
       cob_tidy ();
       break;
 
    case 1:  /* normal exit */
-      cob_runtime_hint("STOP RUN with return code %d",
+      cob_runtime_hint ("STOP RUN with return code %d",
          cob_last_exit_code ());
       break;
 
    case -1:  /* error exit */
-      cob_runtime_hint("error exit with return code %d and error \"%s\"",
+      cob_runtime_hint ("error exit with return code %d and error \"%s\"",
          cob_last_exit_code (), cob_last_runtime_error ());
       break;
 
    case -2:  /* hard error exit */
-      cob_runtime_hint("hard error exit with return code %d and error \"%s\"",
+      cob_runtime_hint ("hard error exit with return code %d and error \"%s\"",
          cob_last_exit_code (), cob_last_runtime_error ());
       break;
 
    case -3:  /* signal handler  exit */
-      cob_runtime_hint("signal handler exit with signal %d and error \"%s\"",
+      cob_runtime_hint ("signal handler exit with signal %d and error \"%s\"",
          cob_last_exit_code (), cob_last_runtime_error ());
       break;
 
    default:
-      cob_runtime_hint("unexpected return from cob_call_with_exception_check, "
+      cob_runtime_hint ("unexpected return from cob_call_with_exception_check, "
          "last exit code %d, last error \"%s\"",
          cob_last_exit_code (), cob_last_runtime_error ());
       break;
@@ -4044,13 +4199,13 @@ AT_CHECK([$COBCRUN_DIRECT ./caller callee 42], [0], [P1: A],
 AT_CHECK([$COBCRUN_DIRECT ./caller callee2], [0], [STOP WITH 2],
 [note: STOP RUN with return code 2
 ])
-AT_CHECK([$COBCRUN_DIRECT ./caller buggy], [0], [out of bounds - refmod following],
-[libcob: buggy.cob:10: error: offset of 'VAR' out of bounds: 2, maximum: 1
-note: error exit with return code -1 and error "buggy.cob:10: offset of 'VAR' out of bounds: 2, maximum: 1"
-])
 AT_CHECK([$COBCRUN_DIRECT ./caller notthere], [0], [],
 [libcob: error: module 'notthere' not found
 note: error exit with return code -1 and error "module 'notthere' not found"
+])
+AT_CHECK([$COBCRUN_DIRECT ./caller buggy], [0], [out of bounds - refmod following],
+[libcob: buggy.cob:10: error: offset of 'VAR' out of bounds: 2, maximum: 1
+note: error exit with return code -1 and error "buggy.cob:10: offset of 'VAR' out of bounds: 2, maximum: 1"
 ])
 
 AT_CLEANUP
@@ -6799,6 +6954,63 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([CALL RETURNING POINTER])
+AT_KEYWORDS([run_extensions])
+
+AT_DATA([prog.cob], [
+       identification division.
+       program-id. prog.
+
+       data division.
+       working-storage section.
+
+       01  c-text-pointer usage pointer.
+
+       procedure division.
+
+           call static "cob_getenv"
+                       using "COB_UNIX_LF"
+                       returning c-text-pointer
+           end-call
+
+           IF function content-of(c-text-pointer) <> "1"
+              DISPLAY "unexpected value: "
+                      function content-of(c-text-pointer).
+
+          GOBACK.
+])
+
+AT_DATA([progdyn.cob], [
+       identification division.
+       program-id. progdyn.
+
+       data division.
+       working-storage section.
+
+       01  c-text-pointer usage pointer.
+
+       procedure division.
+
+           call        "cob_getenv"
+                       using "COB_UNIX_LF"
+                       returning c-text-pointer
+           end-call
+
+           IF function content-of(c-text-pointer) <> "1"
+              DISPLAY "unexpected value: "
+                      function content-of(c-text-pointer).
+
+          GOBACK.
+])
+
+AT_CHECK([$COMPILE -fno-gen-c-decl-static-call prog.cob], [0], [], [])
+AT_CHECK([$COMPILE progdyn.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./progdyn], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([ON EXCEPTION clause of DISPLAY])
 AT_KEYWORDS([runmisc exceptions screen])
 
@@ -7684,7 +7896,9 @@ Program-Id:  caller                      ADD                             Line:  
 Program-Id:  caller                      SET                             Line:     50
 Program-Id:  caller                      MOVE                            Line:     51
 Program-Id:  caller                      SEARCH ALL                      Line:     55
-Program-Id:  caller                      WHEN                            Line:     55
+Program-Id:  caller                      SEARCH VARYING                  Line:     55
+Program-Id:  caller                      SEARCH VARYING                  Line:     55
+Program-Id:  caller                      WHEN                            Line:     58
 Program-Id:  caller                      CONTINUE                        Line:     59
 Program-Id:  caller                      STOP RUN                        Line:     62
 ])
@@ -11247,7 +11461,7 @@ libcob: prog.cob:16: warning: ' S U B' literal includes leading spaces which are
 AT_CLEANUP
 
 
-AT_SETUP([C-API Test (param based)])
+AT_SETUP([C-API (param based)])
 AT_KEYWORDS([CALL api])
 
 AT_DATA([prog.cob], [
@@ -11482,7 +11696,7 @@ libcob: prog.cob:35: warning: cob_put_picx_param: attempt to over-write constant
 AT_CLEANUP
 
 
-AT_SETUP([C-API Test (field based)])
+AT_SETUP([C-API (field based)])
 AT_KEYWORDS([CALL api])
 
 AT_DATA([prog.cob], [

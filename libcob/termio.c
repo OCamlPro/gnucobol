@@ -33,6 +33,13 @@
 #endif
 #include <time.h>
 
+#ifdef	HAVE_SIGNAL_H
+#include <signal.h>
+#endif
+#ifndef SIGINT
+#define SIGINT 2
+#endif
+
 /* Force symbol exports */
 #define	COB_LIB_EXPIMP
 #include "common.h"
@@ -85,7 +92,10 @@ display_numeric (cob_field *f, FILE *fp)
 
 	cob_move (f, &temp);
 	for (i = 0; i < size; ++i) {
-		putc (temp.data[i], fp);
+		unsigned char chr = temp.data[i];
+		if (putc (chr, fp) != chr) {
+			break;
+		}
 	}
 }
 
@@ -155,8 +165,10 @@ pretty_display_numeric (cob_field *f, FILE *fp)
 
 	cob_move (f, &temp);
 	for (i = 0; i < size; ++i) {
-		if(q[i] != 0)
-			putc (q[i], fp);
+		unsigned char chr = q[i];
+		if (putc (chr, fp) != chr) {
+			break;
+		}
 	}
 }
 
@@ -164,9 +176,13 @@ static void
 display_alnum (const cob_field *f, FILE *fp)
 {
 	size_t	i;
+	unsigned char chr;
 
 	for (i = 0; i < f->size; ++i) {
-		putc (f->data[i], fp);
+		chr = f->data[i];
+		if (putc (chr, fp) != chr) {
+			break;
+		}
 	}
 }
 
@@ -426,17 +442,16 @@ display_alnum_dump (cob_field *f, FILE *fp, unsigned int indent, unsigned int ma
 			zerov++;
 			printv++;
 		} else
-		if (f->data[i] >= ' '
-		 && f->data[i] <= 0x7F
-		 && isprint(f->data[i])) {
-			printv++;
-		} else
 		if (f->data[i] == '\b'
 		 || f->data[i] == '\f'
 		 || f->data[i] == '\n'
 		 || f->data[i] == '\r'
 		 || f->data[i] == '\t') {
 			delv++;
+		} else
+		if (f->data[i] >= ' '
+		 && isprint(f->data[i])) {
+			printv++;
 		}
 	}
 
@@ -517,21 +532,21 @@ display_alnum_dump (cob_field *f, FILE *fp, unsigned int indent, unsigned int ma
 		for (i = 0; i < f->size; ) {
 			for (j=0; j < colsize && i < f->size; j++,i++) {
 				if (f->data[i] == '\0')
-					fprintf(fp,"\\0"), j++;
+					fprintf (fp,"\\0"), j++;
 				else if (f->data[i] == '\\')
-					fprintf(fp,"\\\\"), j++;
+					fprintf (fp,"\\\\"), j++;
 				else if (f->data[i] == '\r')
-					fprintf(fp,"\\r"), j++;
+					fprintf (fp,"\\r"), j++;
 				else if (f->data[i] == '\n')
-					fprintf(fp,"\\n"), j++;
+					fprintf (fp,"\\n"), j++;
 				else if (f->data[i] == '\t')
-					fprintf(fp,"\\t"), j++;
+					fprintf (fp,"\\t"), j++;
 				else if (f->data[i] == '\b')
-					fprintf(fp,"\\b"), j++;
+					fprintf (fp,"\\b"), j++;
 				else if (f->data[i] == '\f')
-					fprintf(fp,"\\f"), j++;
+					fprintf (fp,"\\f"), j++;
 				else
-					fprintf(fp,"%c",f->data[i]);
+					fprintf (fp,"%c",f->data[i]);
 			}
 			if (i < f->size) {
 				fprintf (fp, "\n%*s%5u : ", indent - 8, " ", i + 1);
@@ -552,10 +567,10 @@ display_alnum_dump (cob_field *f, FILE *fp, unsigned int indent, unsigned int ma
 		if (colsize < MAX_PREV
 		 && i < (f->size - colsize)) {
 			if (i > 0
-			 && memcmp(prev, &f->data[i], colsize/2) == 0) {
+			 && memcmp (prev, &f->data[i], colsize/2) == 0) {
 				duplen = 0;
 				bgn = i;
-				while(memcmp(prev, &f->data[i], colsize/2) == 0
+				while (memcmp (prev, &f->data[i], colsize/2) == 0
 					&& i < (f->size - colsize/2)) {
 					duplen += colsize/2;
 					i += colsize/2;
@@ -565,23 +580,27 @@ display_alnum_dump (cob_field *f, FILE *fp, unsigned int indent, unsigned int ma
 					fprintf (fp, "\n%*s", indent, " ");
 				}
 			}
-			memcpy(prev, &f->data[i], colsize);
+			if (colsize < (f->size - i)) {
+				memcpy (prev, &f->data[i], colsize);
+			} else {
+				memcpy (prev, &f->data[i], f->size - i);
+			}
 		}
 		wrk[0] = 0;
 		pos = i + 1;
 		for (j=0; j < colsize && i < f->size; j+=2,i++) {
 			if (f->data[i] >= ' '
 			 && f->data[i] <= 0x7F) {
-				fprintf(fp," %c",f->data[i]);
+				fprintf (fp," %c",f->data[i]);
 				sprintf (&wrk[j],"%02X",f->data[i]);
 			} else {
-				fprintf(fp,"  ");
+				fprintf (fp,"  ");
 				sprintf (&wrk[j],"%02X",f->data[i]);
 			}
 			if ((j+2) < colsize
 			 && ((i+1) % 4) == 0
 			 && (i+1) < f->size) {
-				fprintf(fp," ");
+				fprintf (fp," ");
 				j++;
 				wrk[j+1] = ' ';
 				wrk[j+2] = 0;
@@ -844,7 +863,7 @@ dump_field_internal (const int level, const char *name,
 	}
 
 	setup_lvlwrk_and_dump_null_adrs (lvlwrk, level, f->data);
-	name_length =setup_varname_with_indices (vname, subscript, indexes, name, 1);
+	name_length = setup_varname_with_indices (vname, subscript, indexes, name, 1);
 
 	if (dump_null_adrs) {
 		if (level == 1 || level == 77) {
@@ -961,6 +980,10 @@ cob_accept (cob_field *f)
 			memset (COB_MODULE_PTR->crt_status->data, '0', (size_t)4);
 		}
 	}
+
+	/* always flush to ensure buffered output is seen */
+	fflush (stdout);
+
 	/* extension: ACCEPT OMITTED */
 	if (unlikely (!f)) {
 		for (; ; ) {
@@ -968,7 +991,7 @@ cob_accept (cob_field *f)
 			if (ipchr == '\n' || ipchr == EOF) {
 				break;
 			} else if (ipchr == 03) {
-				cob_raise (2);
+				cob_raise (SIGINT);
 			}
 		}
 		return;
@@ -989,7 +1012,7 @@ cob_accept (cob_field *f)
 			}
 			break;
 		} else if (ipchr == 03) {
-			cob_raise (2);
+			cob_raise (SIGINT);
 		} else if (ipchr == '\n') {
 			break;
 		}

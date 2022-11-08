@@ -127,7 +127,9 @@ enum cb_tag {
 	CB_TAG_REPORT_LINE,	/* Report line description */
 	CB_TAG_ML_SUPPRESS,	/* JSON/XML GENERATE SUPPRESS clause */
 	CB_TAG_ML_TREE,	/* JSON/XML GENERATE output tree */
-	CB_TAG_ML_SUPPRESS_CHECKS	/* JSON/XML GENERATE SUPPRESS checks */
+	CB_TAG_ML_SUPPRESS_CHECKS,	/* JSON/XML GENERATE SUPPRESS checks */
+	CB_TAG_VARY,			/* Report line description */
+	CB_TAG_TAB_VALS			/* VALUE entries in table-format */
 	/* When adding a new entry, please remember to add it to
 	   cb_enum_explain in tree.c as well. */
 };
@@ -805,6 +807,32 @@ struct cb_key {
 	int	dir;			/* ASCENDING or DESCENDING */
 };
 
+/* REPORT:  VARYING var FROM exp BY exp */
+
+struct cb_vary {
+	struct cb_tree_common	common;		/* Common values */
+	cb_tree		var;					/* Variable name being VARYed */
+	cb_tree		from;					/* Starting value */
+	cb_tree		by;						/* Increment value */
+};
+
+#define CB_VARY(x)	(CB_TREE_CAST (CB_TAG_VARY, struct cb_vary, x))
+#define CB_VARY_P(x)	(CB_TREE_TAG (x) == CB_TAG_VARY)
+
+/* multi VALUE entries (table-format) */
+
+struct cb_table_values {
+	struct cb_tree_common	common;		/* Common values */
+	cb_tree		values;					/* list of literals*/
+	cb_tree		from;					/* NULL or list of subscripts start */
+	cb_tree		to;  					/* NULL or list of subscripts stop */
+	cb_tree		repeat_times;			/* NULL or integer to repeat the values,
+	       		     					   or cb_null for "repeat to end" */
+};
+
+#define CB_TAB_VALS(x)	(CB_TREE_CAST (CB_TAG_TAB_VALS, struct cb_table_values, x))
+#define CB_TAB_VALS_P(x)	(CB_TREE_TAG (x) == CB_TAG_TAB_VALS)
+
 /* Field */
 
 struct cb_field {
@@ -812,7 +840,10 @@ struct cb_field {
 	const char		*name;		/* Original name */
 	const char		*ename;		/* Externalized name */
 	cb_tree			depending;	/* OCCURS ... DEPENDING ON */
-	cb_tree			values;		/* VALUE */
+	cb_tree			values;		/* VALUES, in the simple case: direct value;
+								   for level 78 _can_ be a list (expression),
+								   for level 88 and RW be either a list or direct value,
+								   for VALUES ARE (table-format) a list of table_values */
 	cb_tree			false_88;	/* 88 FALSE clause */
 	cb_tree			index_list;	/* INDEXED BY */
 	cb_tree			external_form_identifier;	/* target of IDENTIFIED BY
@@ -852,9 +883,7 @@ struct cb_field {
 	cb_tree			report_when;	/* PRESENT WHEN condition */
 	cb_tree			report_column_list;/* List of Column Numbers */
 	/* note: the following rw-specific fields are only set for parsing, no codegen in 3.x yet */
-	cb_tree			report_vary_var;/* VARYING identifier */
-	cb_tree			report_vary_from;/* VARYING FROM arith */
-	cb_tree			report_vary_by;	/* VARYING BY arith */
+	cb_tree			report_vary_list;/* VARYING identifier with FROM arith + BY arith */
 #if 0 /* items from 4.x */
 	const char		*report_source_txt;	/* SOURCE as text string */
 	const char		*report_field_name;	/* Name used for this REPORT field */
@@ -957,7 +986,6 @@ struct cb_field {
 	unsigned int flag_sync_right : 1;	/* SYNCHRONIZED RIGHT */
 	unsigned int flag_internal_register	: 1;	/* Is an internally generated register */
 	unsigned int flag_is_typedef : 1;	/* TYPEDEF  */
-	unsigned int flag_occurs_values: 1;	/* OCCURS and multi VALUEs done */
 	unsigned int flag_picture_l : 1;	/* Is USAGE PICTURE L */
 };
 
@@ -1154,6 +1182,7 @@ struct cb_reference {
 	cb_tree			offset;		/* Reference mod offset */
 	cb_tree			length;		/* Reference mod length */
 	cb_tree			check;		/* Runtime checks */
+	enum cob_statement	statement;	/* statement that uses this reference */
 	struct cb_word		*word;		/* Pointer to word list */
 	struct cb_label		*section;	/* Current section */
 	struct cb_label		*paragraph;	/* Current paragraph */
@@ -1163,7 +1192,6 @@ struct cb_reference {
 	unsigned int		flag_receiving	: 1;	/* Reference target */
 	unsigned int		flag_all	: 1;	/* ALL */
 	unsigned int		flag_in_decl	: 1;	/* In DECLARATIVE */
-	unsigned int		flag_decl_ok	: 1;	/* DECLARATIVE ref OK  */
 	unsigned int		flag_alter_code	: 1;	/* Needs ALTER code */
 	unsigned int		flag_debug_code	: 1;	/* Needs DEBUG code */
 	unsigned int		flag_all_debug	: 1;	/* Needs ALL DEBUG code */
@@ -1293,7 +1321,7 @@ struct cb_intrinsic {
 struct cb_initialize {
 	struct cb_tree_common	common;			/* Common values */
 	cb_tree			var;			/* Field */
-	cb_tree			val;			/* Value */
+	cb_tree			val;			/* ALL (cb_true) or category (cb_int) TO VALUE */
 	cb_tree			rep;			/* Replacing */
 	unsigned char		flag_default;		/* Default */
 	unsigned char		flag_init_statement;	/* INITIALIZE statement */
@@ -1388,7 +1416,7 @@ struct cb_if {
 	cb_tree			test;		/* Condition */
 	cb_tree			stmt1;		/* Statement list */
 	cb_tree			stmt2;		/* ELSE/WHEN statement list */
-	unsigned int		is_if;		/* From IF (1), WHEN (0), PRESENT WHEN (3+4) */
+	enum cob_statement statement;	/* statement IF/WHEN/PRESENT WHEN */
 };
 
 #define CB_IF(x)		(CB_TREE_CAST (CB_TAG_IF, struct cb_if, x))
@@ -1452,7 +1480,7 @@ enum cb_handler_type {
 
 struct cb_statement {
 	struct cb_tree_common	common;			/* Common values */
-	const char		*name;			/* Statement name */
+	enum cob_statement	statement;		/* Statement */
 	cb_tree			body;			/* Statement body */
 	cb_tree			file;			/* File reference */
 	cb_tree			ex_handler;		/* Exception handler */
@@ -1686,6 +1714,7 @@ struct cb_program {
 	cb_tree			locale_list;		/* LOCALE list */
 	cb_tree			global_list;		/* GLOBAL list */
 	cb_tree			report_list;		/* REPORT list */
+	cb_tree			perform_thru_list;		/* list of PERFORM THRU */
 	cb_tree			alter_list;		/* ALTER list */
 	cb_tree			debug_list;		/* DEBUG ref list */
 	cb_tree			cb_return_code;		/* RETURN-CODE */
@@ -1885,6 +1914,8 @@ extern cb_tree			cb_depend_check;
 
 extern unsigned int		gen_screen_ptr;
 
+extern const char *cb_statement_name[STMT_MAX_ENTRY];
+
 extern char			*cb_name (cb_tree);
 extern char			*cb_name_errmsg (cb_tree);
 extern cb_tree			cb_exhbit_literal (cb_tree);
@@ -1943,6 +1974,8 @@ extern struct cb_picture	*cb_build_binary_picture (const char *,
 							  const cob_u32_t);
 
 extern cb_tree			cb_build_field (cb_tree);
+extern cb_tree			cb_build_vary (cb_tree, cb_tree, cb_tree);
+extern cb_tree			cb_build_table_values (cb_tree, cb_tree, cb_tree, cb_tree);
 extern cb_tree			cb_build_implicit_field (cb_tree, const int);
 extern cb_tree			cb_build_constant (cb_tree, cb_tree);
 extern int			cb_build_generic_register (const char *, const char *, struct cb_field **);
@@ -2023,13 +2056,13 @@ extern cb_tree			cb_build_cancel (const cb_tree);
 extern cb_tree			cb_build_goto (const cb_tree, const cb_tree);
 
 extern cb_tree			cb_build_if (const cb_tree, const cb_tree,
-					     const cb_tree, const unsigned int);
+					     const cb_tree, const enum cob_statement);
 
 extern cb_tree			cb_build_perform (const enum cb_perform_type);
 extern cb_tree			cb_build_perform_varying (cb_tree, cb_tree,
 							  cb_tree, cb_tree);
 
-extern struct cb_statement	*cb_build_statement (const char *);
+extern struct cb_statement	*cb_build_statement (enum cob_statement);
 
 extern cb_tree			cb_build_continue (void);
 
@@ -2086,7 +2119,6 @@ extern cb_tree		cb_build_ml_suppress_checks (struct cb_ml_generate_tree *);
 extern int			cb_literal_value (cb_tree);
 
 /* parser.y */
-extern cb_tree		cobc_printer_node;
 extern int		non_const_word;
 extern int		suppress_data_exceptions;
 extern unsigned int	cobc_repeat_last_token;
@@ -2127,6 +2159,7 @@ extern enum cb_warn_val		cb_warning_dialect_x (const enum cb_support, cb_tree, c
 extern void		cb_note_x (const enum cb_warn_opt, cb_tree, const char *, ...) COB_A_FORMAT34;
 extern void		cb_note (const enum cb_warn_opt, const int, const char *, ...) COB_A_FORMAT34;
 extern void		cb_inclusion_note (const char *, int);
+extern char		*cb_get_qualified_name (const struct cb_reference *);
 extern enum cb_warn_val	cb_error_x (cb_tree, const char *, ...) COB_A_FORMAT23;
 extern unsigned int	cb_syntax_check (const char *, ...) COB_A_FORMAT12;
 extern unsigned int	cb_syntax_check_x (cb_tree, const char *, ...) COB_A_FORMAT23;

@@ -111,6 +111,15 @@ CB_NOWARNDEF (cb_warn_unreachable, "unreachable",
 CB_ONWARNDEF (cb_warn_dialect, "dialect",
 	_("  -Wno-dialect          do not warn about dialect specific issues"))
 
+CB_ONWARNDEF (cb_warn_goto_section, "goto-section",
+	_("  -Wno-goto-section     do not warn about GO TO section-name"))
+
+CB_WARNDEF (cb_warn_goto_different_section, "goto-different-section",
+	_("  -Wgoto-different-section\twarn about GO TO a praragraph defined in a different section"))
+
+CB_ONWARNDEF (cb_warn_suspicious_perform_thru, "suspicious-perform-thru",
+	_("  -Wsuspicious-perform-thru\twarn if PERFORM THRU references procedures not in ascending order or multiple sections"))
+
 CB_NOWARNDEF (cb_warn_source_after_code, "dangling-text",
 	_("  -Wdangling-text       warn about source text after program-area"))
 

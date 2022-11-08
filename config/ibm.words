@@ -512,7 +512,7 @@ reserved:	VALIDATING*           # note: not included in IBMs reserved words
          	                      #       list, but as a phrase to be parsed
          	                      #       for XML PARSE
 reserved:	VALUE
-reserved:	VALUES=VALUE
+reserved:	VALUES
 #reserved:	VARBINARY             not included in Language Reference for 4.2 and 6.1
 reserved:	VARYING
 reserved:	VOLATILE              # V6

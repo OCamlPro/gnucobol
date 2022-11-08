@@ -538,7 +538,6 @@ prog.cob:60: error: invalid expression
 prog.cob:66: error: invalid expression
 prog.cob:72: error: invalid expression
 prog.cob:76: error: 'NOTDEFINED' is not defined
-prog.cob:76: error: invalid expression
 prog.cob:80: error: invalid expression
 ])
 
@@ -5160,6 +5159,120 @@ prog.cob:43: error: syntax error, unexpected DELIMITED, expecting INTO
 AT_CLEANUP
 
 
+AT_SETUP([STRING / UNSTRING POINTER clause])
+AT_KEYWORDS([misc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION  DIVISION.
+       PROGRAM-ID.     prog.
+
+       DATA            DIVISION.
+       WORKING-STORAGE SECTION.
+       01  valid-ptr     PIC 99.
+       01  valid-ptr-2   BINARY-LONG.
+       01  valid-ptr-3   PIC 99 COMP-3.
+
+       01  invalid-ptr   PIC 9.
+       01  invalid-ptr-2 PIC 99V99.
+       01  invalid-ptr-3 FLOAT-LONG.
+       01  invalid-ptr-4 PIC 99PP.
+       01  invalid-ptr-5 PIC VPP99.
+       01  invalid-ptr-6 PIC X(30).
+       01  invalid-ptr-7.
+           03  n         PIC 99.
+           03  n2        PIC 99.
+
+
+       01  x             PIC X(9).
+       01  y             PIC X(9).
+
+       PROCEDURE       DIVISION.
+           STRING "hello" INTO x POINTER valid-ptr
+           STRING "hello" INTO x POINTER valid-ptr-2
+           STRING "hello" INTO x POINTER valid-ptr-3
+
+           STRING "hello" INTO x POINTER invalid-ptr
+           STRING "hello" INTO x POINTER invalid-ptr-2
+           STRING "hello" INTO x POINTER invalid-ptr-3
+           STRING "hello" INTO x POINTER invalid-ptr-4
+           STRING "hello" INTO x POINTER invalid-ptr-5
+           STRING "hello" INTO x POINTER invalid-ptr-6
+           STRING "hello" INTO x POINTER invalid-ptr-7
+
+           UNSTRING y INTO x POINTER valid-ptr
+           UNSTRING y INTO x POINTER valid-ptr-2
+           UNSTRING y INTO x POINTER valid-ptr-3
+
+           UNSTRING y INTO x POINTER invalid-ptr
+           UNSTRING y INTO x POINTER invalid-ptr-2
+           UNSTRING y INTO x POINTER invalid-ptr-3
+           UNSTRING y INTO x POINTER invalid-ptr-4
+           UNSTRING y INTO x POINTER invalid-ptr-5
+           UNSTRING y INTO x POINTER invalid-ptr-6
+           UNSTRING y INTO x POINTER invalid-ptr-7
+           .
+])
+
+# Note: the following checks (per COBOL standard) added with [r3678] are 4.x only:
+# prog.cob:30: error: 'invalid-ptr' is too small to contain the number 10 (one plus the size of 'x')
+# prog.cob:42: error: 'invalid-ptr' is too small to contain the number 10 (one plus the size of 'y')
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:31: error: POINTER item 'invalid-ptr-2' must be an integer
+prog.cob:32: error: POINTER item 'invalid-ptr-3' must be numeric and an integer
+prog.cob:33: error: POINTER item 'invalid-ptr-4' may not have PICTURE with P in it
+prog.cob:34: error: POINTER item 'invalid-ptr-5' must be an integer
+prog.cob:35: error: POINTER item 'invalid-ptr-6' must be numeric and an integer
+prog.cob:36: error: 'invalid-ptr-7' is not an elementary item
+prog.cob:43: error: POINTER item 'invalid-ptr-2' must be an integer
+prog.cob:44: error: POINTER item 'invalid-ptr-3' must be numeric and an integer
+prog.cob:45: error: POINTER item 'invalid-ptr-4' may not have PICTURE with P in it
+prog.cob:46: error: POINTER item 'invalid-ptr-5' must be an integer
+prog.cob:47: error: POINTER item 'invalid-ptr-6' must be numeric and an integer
+prog.cob:48: error: 'invalid-ptr-7' is not an elementary item
+])
+AT_CLEANUP
+
+
+AT_SETUP([STRING with non-DISPLAY])
+AT_KEYWORDS([Initialize])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       DATA  DIVISION.
+       WORKING-STORAGE SECTION.
+       01  I-X        PIC  9(9) COMP-X VALUE 6.
+       01  I-B        PIC  9(9) BINARY VALUE 6.
+       01  I-P        PIC  9(9) COMP-3 VALUE 6.
+       01  I-D        PIC  9(9) VALUE 6.
+       01  I-F        COMP-1 VALUE 6.
+       01  TSTWRK   PIC X(48).
+
+       PROCEDURE DIVISION.
+       MAIN-10.
+           STRING " ID:" I-D 
+               DELIMITED BY SIZE INTO TSTWRK.
+           STRING " IX:" I-X " IB:" I-B 
+                  " ID:" I-D 
+                  " IP:" I-P " IF:" I-F 
+               DELIMITED BY SIZE INTO TSTWRK.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -x -std=mf -debug -Wall prog.cob ], [1], [],
+[prog.cob: in paragraph 'MAIN-10':
+prog.cob:19: error: STRING item 'I-X' must be USAGE DISPLAY or NATIONAL
+prog.cob:19: error: STRING item 'I-B' must be USAGE DISPLAY or NATIONAL
+prog.cob:21: error: STRING item 'I-P' must be USAGE DISPLAY or NATIONAL
+prog.cob:21: error: STRING item 'I-F' must be USAGE DISPLAY or NATIONAL
+])
+
+AT_CLEANUP
+
+
 AT_SETUP([UNSTRING COUNT clause])
 AT_KEYWORDS([misc])
 
@@ -8320,6 +8433,8 @@ AT_CLEANUP
 AT_SETUP([error handling in conditional directives])
 AT_KEYWORDS([misc directive])
 
+# TODO: add missing tests for syntax errors in >>IF/ELSE/END
+
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
        PROGRAM-ID.    prog.
@@ -8488,36 +8603,84 @@ prog.cob:17: error: syntax error, unexpected ., expecting TIMES
 AT_CLEANUP
 
 
+AT_SETUP([PERFORM THRU syntax checks])
+AT_KEYWORDS([misc warning])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       PROCEDURE DIVISION.
+       MAIN SECTION.
+       MAIN-00.
+           PERFORM SUB1
+           PERFORM SUB1 THRU SUB1-EX
+           PERFORM SUB1-00 THRU SUB1-EX
+           PERFORM SUB1 THRU SUB1
+           PERFORM SUB1 THRU SUB2
+           GOBACK.
+       MAIN-EX. EXIT.
+      *
+       SUB1 SECTION.
+       SUB1-00.
+           PERFORM SUB1-01 THRU SUB1-02.
+       SUB1-01.
+           CONTINUE.
+       SUB1-02.
+           CONTINUE.
+       SUB1-EX. EXIT.
+      *
+       SUB2 SECTION.
+       SUB2-00.
+           PERFORM SUB1-02 THRU SUB1-01.
+       SUB2-01.
+           CONTINUE.
+       SUB2-02.
+           CONTINUE.
+       SUB2-EX. EXIT.
+])
+
+AT_CHECK([$COMPILE_ONLY -Wno-suspicious-perform-thru prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -Wall -fsection-exit-check prog.cob], [0], [],
+[prog.cob: in section 'SUB2':
+prog.cob: in paragraph 'SUB2-00':
+prog.cob:11: warning: PERFORM ... THROUGH SECTION and -fsection-exit-check are mutually exclusive
+prog.cob:26: warning: SUB1-01 is defined before SUB1-02
+prog.cob:20: note: 'SUB1-02' defined here
+prog.cob:18: note: 'SUB1-01' defined here
+])
+AT_CLEANUP
+
+
 AT_SETUP([OCCURS too many VALUEs])
 AT_KEYWORDS([initialize VALUE])
 
 AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION. 
+       IDENTIFICATION DIVISION.
        PROGRAM-ID. prog.
-       ENVIRONMENT DIVISION. 
-       CONFIGURATION SECTION. 
-       DATA DIVISION. 
-       WORKING-STORAGE SECTION. 
-       
-       01  WS. 
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+       01  WS.
          05  IX1  PIC 99.
          05  IX2  PIC 99.
          05  IX3  PIC 99.
          05  GRP1 OCCURS 3 TIMES.
              10  GRPX  PIC X(99).
          05  MONTH-IN-YEAR OCCURS 13 TIMES PICTURE X(3)
-                         VALUE "jan" "feb" "mar" "apr"
+                         VALUES "jan" "feb" "mar" "apr"
                                "may" "jun" "jul" "aug"
-                               "sep" "oct" "nov" "dec" 
+                               "sep" "oct" "nov" "dec"
                                "Hi" "Bye" "Dog".
-         05  DAYS-IN-MONTH OCCURS 13 TIMES PICTURE 9(2) BINARY 
-                         VALUE 31 28 31 30 31 30 31 31 30 31 30 31.
+         05  DAYS-IN-MONTH OCCURS 13 TIMES PICTURE 9(2) BINARY
+                         VALUES 31 28 31 30 31 30 31 31 30 31 30 31.
          05  DAYS-MONTHS  OCCURS 2 TIMES.
           06  DAYX-MONTHX OCCURS 4 TIMES.
            07  DAY-MONTH  OCCURS 3 TIMES.
              10  XXX1   PICTURE X VALUE " ".
              10  MONTHS PICTURE X(3)
-                         VALUE "Jan" "Feb" "Mar" "Apr"
+                        VALUES "Jan" "Feb" "Mar" "Apr"
                                "May" "Jun" "Jul" "Aug"
                                "Sep" "Oct" "Nov" "Dec"
                                "JAN" "FEB" "MAR" "APR"
@@ -8525,44 +8688,187 @@ AT_DATA([prog.cob], [
                                "SEP" "OCT" "NOV" "DEC" "Bye".
              10  SEPX   PICTURE XX VALUE ", ".
              10  DAYS   PICTURE 99
-                         VALUE 31 28 31 30 31 30 31 31 30 31 30 31
+                        VALUES 31 28 31 30 31 30 31 31 30 31 30 31
                                91 28 91 90 91 90 91 91 90 91 90 91.
              10  PER    PICTURE X VALUE ".".
-           07  FLR    PICTURE X(4) VALUE " <A>" " <B>" " <C>" " <D>"
+           07  FLR    PICTURE X(4) VALUES " <A>" " <B>" " <C>" " <D>"
                                   " <E>" " <F>" " <G>" " <H>" " <*>".
-       
+
        PROCEDURE DIVISION.
-       
-       INIT-RTN. 
+
+       INIT-RTN.
            DISPLAY "Simple OCCURS with multi VALUES".
            PERFORM VARYING IX1 FROM 1 BY 1 UNTIL IX1 > 13
               DISPLAY IX1 ": "
-                      MONTH-IN-YEAR (IX1) " has " 
+                      MONTH-IN-YEAR (IX1) " has "
                       DAYS-IN-MONTH (IX1) " days"
               END-DISPLAY
            END-PERFORM.
            DISPLAY "Complex OCCURS with multi VALUES".
            PERFORM VARYING IX3 FROM 1 BY 1 UNTIL IX3 > 2
              PERFORM VARYING IX2 FROM 1 BY 1 UNTIL IX2 > 4
-                 DISPLAY IX3 "-" IX2 ": " 
-                         DAYX-MONTHX (IX3, IX2) 
+                 DISPLAY IX3 "-" IX2 ": "
+                         DAYX-MONTHX (IX3, IX2)
                  END-DISPLAY
              END-PERFORM
            END-PERFORM.
            STOP RUN.
 ])
 
-# Checkme: -std=mf needed?
-AT_CHECK([$COMPILE -std=mf prog.cob], [1], [],
-[prog.cob:15: error: MONTH-IN-YEAR has 2 more values than needed
-prog.cob:26: error: MONTHS has 1 more value than needed
-prog.cob:38: error: FLR has 1 more value than needed
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:15: error: elements in VALUE clause for 'MONTH-IN-YEAR' (15) exceed max amount (13)
+prog.cob:26: error: elements in VALUE clause for 'MONTHS' (25) exceed max amount (24)
+prog.cob:38: error: elements in VALUE clause for 'FLR' (9) exceed max amount (8)
 ])
 
 AT_CLEANUP
 
 
-# TODO: add missing tests for syntax errors in >>IF/ELSE/END
+AT_SETUP([VALIDATE parsing])
+AT_KEYWORDS([misc 2002 BIT TYPEDEF STRONG VALIDATE-STATUS PRESENT WHEN DESTINATION])
+
+# Note: so far the VALIDATE statement is only partial implemented in the
+#       compiler, but it is planned to completely add it
+# This syntax example also show-cases a bunch of other COBOL 2002 options
+# which would otherwise be not checked elsewhere so far
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA  DIVISION.
+       WORKING-STORAGE SECTION.
+   *> D.22.7.1    Example of validation of USAGE DISPLAY items
+   *>
+   *>*************************************************************
+   *>Description of target record (note: should be possible to define later)
+   *>*************************************************************
+   *>This is set up by the optional DESTINATION clauses defined
+   *>in the input record;
+   *>if a format error is found, a default value is stored instead.
+    01  TARGET-AREA.
+        05  OUT-NAME       PIC X(20).
+        05  OUT-WEEK       PIC 99 COMP   OCCURS 5.
+   *>*************************************************************
+   *>Validated items
+   *>*************************************************************
+    01  INPUT-RECORD.
+   *>PIC 99 checks that IN-TYPE is 2 characters numeric;
+        03  IN-TYPE         PIC 99
+   *>if IN-TYPE fails the PICTURE check, it is assumed to be 1;
+   *>without a DEFAULT clause, the assumed value would here be 0.
+                                DEFAULT 1.
+   *>PRESENT WHEN states the condition for this format to be used.
+        03  IN-REC-FORMAT-1 PRESENT WHEN IN-TYPE = 0 OR 1 OR 2.
+   *>PICTURE A(20) checks for 20 alphabetic (or space) characters.
+            05  IN-NAME       PIC A(20)
+   *>PRESENT WHEN defines when the validation clauses for this data item apply:
+                                 PRESENT WHEN IN-TYPE = 0 OR 1
+   *>CLASS checks each character for a class defined in SPECIAL-NAMES
+   *>or a predefined class
+                                 CLASS IS ALPHABETIC-UPPER 
+   *>DESTINATION moves this item (or spaces if not alpha) to OUT-NAME.
+                                 DESTINATION OUT-NAME.
+   *>PRESENT WHEN checks whether the item is "blank" under this condition
+            05  FILLER REDEFINES IN-NAME  PIC X(20) *> should PIC be optional?
+                                 PRESENT WHEN IN-TYPE = 2
+                                 DESTINATION OUT-NAME.
+                88               VALUE SPACES IS VALID.
+   *>The values of IN-WEEK are checked to be in non-descending order.
+            05  IN-WEEK       PIC 99  OCCURS 5
+                VARYING IN-WEEK-NO FROM 1, IN-NEXT-WEEK-NO FROM 2
+                INVALID WHEN IN-WEEK-NO < 5
+                AND IN-WEEK (IN-WEEK-NO) > IN-WEEK (IN-NEXT-WEEK-NO)
+   *>OUT-WEEK (1) to (5) will hold the values of IN-WEEK (1) to (5),
+   *>or zero for any one that failed the format (PICTURE) test.
+                DESTINATION OUT-WEEK (IN-WEEK-NO).
+   *>The 88-level INVALID entries check for invalid ranges of values.
+               88  VALUES 0, 53 THRU 99 ARE INVALID.
+   *>REDEFINES and another PRESENT WHEN define an alternate format.
+        03  IN-REC-FORMAT-2 REDEFINES IN-REC-FORMAT-1
+                                        PRESENT WHEN IN-TYPE > 2.
+   *>IN-PAY has insertion characters that must be present on input.
+            05  IN-PAY                PIC ZZ,ZZZ.ZZ.
+   *>The 88-level VALID entries check for valid ranges of values;
+   *>the condition-name, if present, may be used in the usual way.
+   *>The following assume that DECIMAL POINT IS COMMA is not specified.
+                 88  IN-PAY-OK  VALUES "10,000.00" THRU "20,000.00" ARE VALID.
+   *>88-level entries may also have a condition attached.
+                 88                    VALUES "20,000.01" THRU "30,000.00" ARE VALID
+                                       WHEN IN-TYPE = 8.
+   *>exceptional cases can be specified using PRESENT WHEN
+            05  IN-CODE                PIC AX(3)9(4) 
+                                       PRESENT WHEN IN-CODE NOT = "UNKNOWN".
+            05  FILLER           PIC X(13).
+   *>
+   *>*************************************************************
+   *> Description of error messages
+   *>*************************************************************
+   *>Error messages or flags are set up or cleared automatically 
+   *>when the VALIDATE statement is executed; the programmer chooses
+   *>where they go and what messages or values they contain;
+   *>they need not be contiguous as they are in this example.
+   01  VALIDATE-MESSAGES.
+       03  PIC X(40)  VALIDATE-STATUS "Unknown Record Type - 1 assumed" 
+                        WHEN ERROR FOR IN-TYPE
+   *> more than one VALIDATE-STATUS clause may be defined in one entry;
+   *> a NO ERROR  phrase produces a message when the item is valid.
+                      VALIDATE-STATUS "Record type Accepted"
+                        WHEN NO ERROR FOR IN-TYPE.
+   *> The VALIDATE-STATUS clause can pinpoint the stage of the failed check.
+       03  PIC X(40)  VALIDATE-STATUS "Name not alphabetic"
+                        WHEN ERROR ON FORMAT FOR IN-NAME
+                      VALIDATE-STATUS "Lower-case not allowed in name"
+                        WHEN ERROR ON CONTENT FOR IN-NAME
+                      VALIDATE-STATUS "Name not allowed in this case"
+                        WHEN ERROR ON RELATION FOR IN-NAME.
+   *> If no message is stored, spaces will be stored in these cases.
+   *> Errors may also be indicated by flags;
+   *> they may also refer to a table of input items.
+       03  W-ERROR-FLAG   PIC 9   COMP  OCCURS 5
+                      VALIDATE-STATUS 1 WHEN ERROR FOR IN-WEEK.
+   *>An EC-VALIDATE (nonfatal) exception is also set if the
+   *>VALIDATE statement detects an invalid condition.
+   
+
+   *> From D.22.7.2    Example of validation of non-display items:
+      01  MIXED-GROUP TYPEDEF STRONG.
+          05  FLD-1             PIC S9(4)  USAGE COMP.
+          05  FLD-2             PIC S9(7)  USAGE PACKED-DECIMAL.
+          05  FLD-3             PIC 1(8)   USAGE BIT ALIGNED.
+          05  PTR-1             USAGE INDEX.
+          05  PTR-2             USAGE OBJECT REFERENCE.
+          05  TXT-1             PIC N(12)  USAGE NATIONAL.
+    01 MY-MIXED-GROUP TYPE MIXED-GROUP.
+   
+   
+   *>
+   *>*************************************************************
+   *>Execution of the VALIDATE statement
+   *>*************************************************************
+    PROCEDURE DIVISION.
+    
+   *>A single VALIDATE statement performs all the actions implied
+   *>in the above data descriptions.
+        VALIDATE INPUT-RECORD
+   *>After this statement has been executed:
+   *>(1) the input record is unchanged;
+   *>(2) input items are moved automatically to the target area;
+   *>(3) error messages are set up wherever specified in the program.
+   *>
+   
+   *> From D.22.7.2    Example of validation of non-display items:
+   *>A declarative section could be used instead of VALIDATE-STATUS clauses
+   *>especially if errors are not expected.
+   *>> TURN EC-VALIDATE CHECKING ON
+        VALIDATE MY-MIXED-GROUP
+        
+     GOBACK.
+])
+
+AT_CHECK([$COMPILE_ONLY -Wno-pending -Wno-unfinished -free prog.cob], [0], [], [])
+
+AT_CLEANUP
+
 
 
 AT_SETUP([field-tree via COBC_GEN_DUMP_COMMENTS])

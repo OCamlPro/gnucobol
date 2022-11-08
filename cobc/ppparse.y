@@ -22,9 +22,9 @@
 %expect 0
 
 %defines
-%error-verbose
 %verbose
-%name-prefix="pp" /* recent versions want %api.prefix "pp", older cannot compile this */
+%error-verbose
+%name-prefix="pp"
 
 /* NOTE:
    support without = was added in Bison 2.4 (released 2008-11-02, we currently use 2.3),
@@ -86,14 +86,20 @@ unquote (char *name)
 }
 #define fix_filename(filename) unquote (filename)
 
+static int
+literal_is_space_keyword (char *lit)
+{
+	return (strcmp ("SPACE",  lit) == 0
+		 || strcmp ("SPACES", lit) == 0);
+}
+
 static char *
 literal_token (char *t, int allow_spaces)
 {
 	if (t[0] == '\'' || t[0] == '"') {
 		(void) ppparse_verify (cb_partial_replacing_with_literal,
 				       _("partial replacing with literal"));
-	} else if (allow_spaces && (strcmp ("SPACE", t) == 0 ||
-				    strcmp ("SPACES", t) == 0)) {
+	} else if (allow_spaces && literal_is_space_keyword (t)) {
 		(void) ppparse_verify (cb_partial_replacing_with_literal,
 				       _("partial replacing with literal"));
 		t[0] = '\0';
@@ -110,9 +116,7 @@ fold_lower (char *name)
 	unsigned char	*p;
 
 	for (p = (unsigned char *)name; *p; p++) {
-		if (isupper (*p)) {
-			*p = (cob_u8_t)tolower (*p);
-		}
+		*p = (cob_u8_t)tolower (*p);
 	}
 	return name;
 }
@@ -123,9 +127,7 @@ fold_upper (char *name)
 	unsigned char	*p;
 
 	for (p = (unsigned char *)name; *p; p++) {
-		if (islower (*p)) {
-			*p = (cob_u8_t)toupper (*p);
-		}
+		*p = (cob_u8_t)toupper (*p);
 	}
 	return name;
 }

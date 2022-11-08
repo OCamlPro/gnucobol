@@ -1152,7 +1152,7 @@ ppopen (const char *name, struct cb_replace_list *replacing_list)
 	char			*s;
 #endif
 	char			*dname;
-	cb_tree			x = NULL;
+	cb_tree x = NULL;
 
 	if (ppin) {
 		for (; newline_count > 0; newline_count--) {
@@ -1169,6 +1169,8 @@ ppopen (const char *name, struct cb_replace_list *replacing_list)
 			*         ideally open first, then check if we have thy physical same file
 			*         (could also fix symlinked files) */
 			if (!strcmp (name, current_copy_info->dname)) {
+				struct cb_tree_common xc;
+				x = &xc;
 				for (current_copy_info = current_copy_info->next; current_copy_info; current_copy_info = current_copy_info->prev) {
 					int		line;
 					if (current_copy_info->prev) {
@@ -1178,11 +1180,9 @@ ppopen (const char *name, struct cb_replace_list *replacing_list)
 					}
 					cb_inclusion_note (current_copy_info->dname, line);
 				}
-				x = cobc_malloc (sizeof (struct cb_tree_common));
 				x->source_file = name;
 				x->source_line = -1;
 				cb_error_x (x, _("recursive inclusion"));
-				cobc_free (x);
 				break;
 			}
 
@@ -1622,6 +1622,9 @@ plex_call_destroy (void)
 	while (copy_stack) {
 		ci = copy_stack;
 		copy_stack = ci->next;
+		if (ci->dname) {
+			cobc_free (ci->dname);
+		}
 		cobc_free (ci);
 	}
 

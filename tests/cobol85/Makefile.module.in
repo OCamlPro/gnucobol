@@ -42,7 +42,8 @@ all-local:
 # targets that are only logical targets instead of files
 # note: this special target is not mandated by POSIX
 .PHONY: test test-local diff test-O test-O-local libs libs-local \
-        $(TESTS) $(TESTS_LOCAL)
+        $(TESTS) $(TESTS_LOCAL) \
+        clean-log clean-db clean-debug clean-bin
 
 # note: we use autotest setup files atconfig and atlocal to use the same
 #       test environment as in the testsuite
@@ -89,8 +90,18 @@ $(TESTS_LOCAL): libs-local
 	@grep `echo $@ | sed -e 's|-.*||g'` ##COB85DIR##/##MODULE##.txt | diff - $@.log
 	@rm -rf $@.log
 
-clean: clean-db
+clean: clean-log clean-db clean-debug clean-bin
+	$(RM) *.txt
+
+clean-log:
 	$(RM) *.log *.out
+
+clean-bin:
+	$(RM) *.so *.dll *.exe
+	$(RM) $(TESTS)
+
+clean-debug:
+	$(RM) *.i *.c *.c.*
 
 clean-db:
 	$(RM) __db.*

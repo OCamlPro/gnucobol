@@ -213,10 +213,8 @@ init_cob_screen_if_needed (void)
 }
 
 static void
-cob_set_crt3_status (cob_field *status_field, int fret)
+get_crt3_status (int fret, char *crtstat)
 {
-	unsigned char	crtstat[3];
-
 	crtstat[0] = '0';
 	crtstat[1] = '\0';
 	crtstat[2] = '\0';
@@ -256,6 +254,13 @@ cob_set_crt3_status (cob_field *status_field, int fret)
 			crtstat[1] = (unsigned char)(fret - 2000);
 		}
 	}
+}
+
+static void
+cob_set_crt3_status (cob_field* status_field, int fret)
+{
+	unsigned char	crtstat[3];
+	get_crt3_status (fret, &crtstat);
 
 	memcpy (status_field->data, crtstat, 3);
 }
@@ -337,6 +342,7 @@ cob_set_cursor_pos (int line, int column)
 	(void) move (line, column);
 }
 
+#if 0 /* currently unused */
 static void
 cob_move_to_beg_of_last_line (void)
 {
@@ -349,6 +355,7 @@ cob_move_to_beg_of_last_line (void)
 
 	COB_UNUSED (max_x);
 }
+#endif
 
 static short
 cob_to_curses_color (cob_field *f, const short default_color)
@@ -356,7 +363,9 @@ cob_to_curses_color (cob_field *f, const short default_color)
 	if (!f) {
 		return default_color;
 	}
-	switch (cob_get_int (f)) {
+	/* compat for MF/ACU/... only use first 3 bits -> 0-7,
+	   bit 4 is "included highlight/blink" */
+	switch (cob_get_int (f) | 7) {
 	case COB_SCREEN_BLACK:
 		return COLOR_BLACK;
 	case COB_SCREEN_BLUE:
@@ -376,6 +385,14 @@ cob_to_curses_color (cob_field *f, const short default_color)
 	default:
 		return default_color;
 	}
+}
+
+/* compat for MF/ACU/... only use first 3 bits are colors -> 0-7,
+   bit 4 is "included highlight/blink" -> an "extended" color */
+static int
+has_extended_color (cob_field* f)
+{
+	return f && (cob_get_int (f) | 8);
 }
 
 static short
@@ -445,13 +462,15 @@ cob_screen_attr (cob_field *fgc, cob_field *bgc, const cob_flags_t attr,
 	if (attr & COB_SCREEN_REVERSE) {
 		styles |= A_REVERSE;
 	}
-	if (attr & COB_SCREEN_HIGHLIGHT) {
+	if (attr & COB_SCREEN_HIGHLIGHT
+	 || has_extended_color (fgc)) {
 		styles |= A_BOLD;
 	}
 	if (attr & COB_SCREEN_LOWLIGHT) {
 		styles |= A_DIM;
 	}
-	if (attr & COB_SCREEN_BLINK) {
+	if (attr & COB_SCREEN_BLINK
+	 || has_extended_color (bgc)) {
 		styles |= A_BLINK;
 	}
 	if (attr & COB_SCREEN_UNDERLINE) {
@@ -2074,13 +2093,9 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 
 			/* Handle UPPER/LOWER. */
 			if (s->attr & COB_SCREEN_UPPER) {
-				if (islower (keyp)) {
-					keyp = toupper (keyp);
-				}
+				keyp = toupper ((unsigned char)keyp);
 			} else if (s->attr & COB_SCREEN_LOWER) {
-				if (isupper (keyp)) {
-					keyp = tolower (keyp);
-				}
+				keyp = tolower ((unsigned char)keyp);
 			}
 
 			if (COB_INSERT_MODE) {
@@ -3263,13 +3278,9 @@ field_accept (cob_field *f, const int sline, const int scolumn, cob_field *fgc,
 
 			/* Handle UPPER/LOWER. */
 			if (fattr & COB_SCREEN_UPPER) {
-				if (islower (keyp)) {
-					keyp = toupper (keyp);
-				}
+				keyp = toupper ((unsigned char)keyp);
 			} else if (fattr & COB_SCREEN_LOWER) {
-				if (isupper (keyp)) {
-					keyp = tolower (keyp);
-				}
+				keyp = tolower ((unsigned char)keyp);
 			}
 
 			/* Insert character, if requested. */
@@ -3602,12 +3613,20 @@ cob_exit_screen (void)
 			field_accept_from_curpos (NULL, NULL, NULL, NULL, NULL, NULL, NULL, flags);
 		}
 		cobglobptr->cob_screen_initialized = 0;
+#if 0 /* CHECKME: Shouldn't be necessary */
 		clear ();
 		cob_move_to_beg_of_last_line ();
-		delwin (stdscr);
-		endwin ();
+#endif
+		endwin (); /* ends curses' terminal mode */
+		delwin (stdscr);	/* free storage related to screen not active */
 #ifdef	HAVE_CURSES_FREEALL
+		/* cleanup storage that would otherwise be shown
+		   to be "still reachable" with valgrind */
+ #if defined (NCURSES_VERSION)
 		_nc_freeall ();
+ #elif defined (__PDCURSES__)
+		PDC_free_memory_allocations ();
+ #endif
 #endif
 		if (cob_base_inp) {
 			cob_free (cob_base_inp);
@@ -3615,6 +3634,31 @@ cob_exit_screen (void)
 		}
 	}
 	COB_ACCEPT_STATUS = 0;
+}
+
+/* minimal exit from curses screen - without any cleanup */
+void
+cob_exit_screen_from_signal (int ss_only)
+{
+	/* note: we don't care about memory cleanup here, as this may
+	   lead to a lock or otherwise issues when our memory is broken
+	   (=explicit when coming from SIGSEGV / SIGBUS / SIGABRT fom libc) */
+
+	if (!cobglobptr) {
+		return;
+	}
+
+	/* warning: some implementations of curses are not safe to request
+	   exiting from curses mode! (ncurses >6 seems fine,
+	   PDCurses depending on availablity of PDC_free_memory_allocations) */
+#if (!defined (NCURSES_VERSION_MAJOR) || NCURSES_VERSION_MAJOR < 6) && \
+	 !defined (HAVE_PDC_FREE_MEMORY_ALLOCATIONS)
+	if (ss_only) return; 
+#endif
+
+	if (cobglobptr->cob_screen_initialized) {
+		endwin ();
+	}
 }
 
 #else	/* WITH_EXTENDED_SCREENIO */
@@ -3629,6 +3673,13 @@ void
 cob_exit_screen (void)
 {
 	/* nothing possible to do here */
+}
+
+void
+cob_exit_screen_from_signal (int signal_safe_only)
+{
+	/* nothing possible to do here */
+	COB_UNUSED (signal_safe_only);
 }
 
 void
@@ -3760,7 +3811,18 @@ cob_sys_sound_bell (void)
 void
 cob_accept_escape_key (cob_field *f)
 {
-	cob_set_int (f, COB_ACCEPT_STATUS);
+	int status = COB_ACCEPT_STATUS;
+	/* Note: MF + ACU set this to a 9(2) item, we do a translation here
+	   (only works for USAGE DISPLAY!); its value is the 2 digits of the termination keys
+	   TESTME (working as planned, same values in MF?) */
+	if (f->size == 2 && status) {
+		unsigned char	crtstat[3];
+		get_crt3_status (status, &crtstat);
+		f->data[0] = crtstat[0];
+		f->data[1] = crtstat[1];
+	} else {
+		cob_set_int (f, status);
+	}
 }
 
 /* get CurSoR position on screen */
@@ -3768,6 +3830,7 @@ int
 cob_sys_get_csr_pos (unsigned char *fld)
 {
 #ifdef	WITH_EXTENDED_SCREENIO
+	const cob_field *f = COB_MODULE_PTR->cob_procedure_params[0];
 	int	cline;
 	int	ccol;
 #endif
@@ -3777,8 +3840,20 @@ cob_sys_get_csr_pos (unsigned char *fld)
 
 #ifdef	WITH_EXTENDED_SCREENIO
 	getyx (stdscr, cline, ccol);
-	fld[0] = (unsigned char)cline;
-	fld[1] = (unsigned char)ccol;
+	if (f && f->size == 4) {
+		/* group with sizes up to 64k (2 * 2 bytes)
+		   as used by Fujitsu (likely with a limit of
+		   254 which does _not_ apply to GnuCOBOL) */
+		const cob_u16_t bline = cline;
+		const cob_u16_t bcol = ccol;
+		memcpy (f->data, &bline, 2);
+		memcpy (f->data + 2, &bcol, 2);
+	} else {
+		/* group with sizes up to 255 (2 * 1 bytes)
+		   as used by MicroFocus [including C wrappers!]) */
+		fld[0] = (unsigned char)cline;
+		fld[1] = (unsigned char)ccol;
+	}
 
 #else
 	fld[0] = 1U;
@@ -3829,11 +3904,13 @@ cob_sys_get_char (unsigned char *fld)
 	return 0;
 }
 
-/* set CurSoR position on screen */
+/* set CurSoR position on screen,
+   expects a group of binary fields: line + col*/
 int
 cob_sys_set_csr_pos (unsigned char *fld)
 {
 #ifdef	WITH_EXTENDED_SCREENIO
+	const cob_field* f = COB_MODULE_PTR->cob_procedure_params[0];
 	int	cline;
 	int	ccol;
 #endif
@@ -3842,8 +3919,21 @@ cob_sys_set_csr_pos (unsigned char *fld)
 	init_cob_screen_if_needed ();
 
 #ifdef	WITH_EXTENDED_SCREENIO
-	cline = fld[0];
-	ccol= fld[1];
+	if (f && f->size == 4) {
+		/* group with sizes up to 64k (2 * 2 bytes)
+		   as used by Fujitsu (likely with a limit of
+		   254 which does _not_ apply to GnuCOBOL) */
+		cob_u16_t bline, bcol;
+		memcpy (&bline, f->data, 2);
+		memcpy (&bcol, f->data + 2, 2);
+		cline = bline;
+		ccol = bcol;
+	} else {
+		/* group with sizes up to 255 (2 * 1 bytes)
+		   as used by MicroFocus [including C wrappers!]) */
+		cline = fld[0];
+		ccol= fld[1];
+	}
 	return move (cline, ccol);
 #else
 	COB_UNUSED (fld);
@@ -3859,6 +3949,7 @@ cob_sys_get_scr_size (unsigned char *line, unsigned char *col)
 	init_cob_screen_if_needed ();
 
 #ifdef	WITH_EXTENDED_SCREENIO
+	/* TODO: when COBOL: set by C routines, to also work for > UCHARMAX values */
 	*line = (unsigned char)LINES;
 	*col = (unsigned char)COLS;
 #else

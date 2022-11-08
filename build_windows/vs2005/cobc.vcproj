@@ -339,6 +339,10 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath="..\config.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\cobc\cconv.h"
 				>
 			</File>
@@ -356,10 +360,6 @@
 			</File>
 			<File
 				RelativePath="..\..\cobc\config.def"
-				>
-			</File>
-			<File
-				RelativePath="..\config.h"
 				>
 			</File>
 			<File
@@ -384,6 +384,10 @@
 			</File>
 			<File
 				RelativePath="..\..\libcob\system.def"
+				>
+			</File>
+			<File
+				RelativePath="..\..\libcob\statement.def"
 				>
 			</File>
 			<File

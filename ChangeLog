@@ -1,4 +1,16 @@
 
+2022-10-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: version 3.2-preview
+
+2022-10-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: cache several checks, also allowing to override its results
+	  via gc_cv_keyword_inline, gc_cv_time_timezone, gc_cv_designated_inits,
+	  gc_cv_attribute_alligned, gc_cv_attribute_pure, gc_cv_gcc_pipe
+	* configure.ac: check ncurses.h also for ncursesw (fixing OpenBSD builds)
+	* Makefile.am (CODE_COVERAGE_IGNORE_PATTERN): ignore generated files
+
 2022-10-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* HACKING: add notes for testing compatibility with GnuCOBOL modules
@@ -24,6 +36,10 @@
 2022-07-20  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* .github/workflows: fix handling of quotes in testuite artifact name
+
+2022-07-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: check for PDC_free_memory_allocations
 
 2022-07-07  Simon Sobisch <simonsobisch@gnu.org>
 

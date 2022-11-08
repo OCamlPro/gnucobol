@@ -1,4 +1,148 @@
 
+2022-10-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c: rewritten codegen for INITIALIZE of table fields,
+	  effectively using the 3.1.2 codegen for that with "check only"
+	  for table-format VALUE, then after everything was initialized
+	  post-setting of the table-format VALUES with
+	  output_initialize_multi_values, a simplified version of the
+	  previously often called output_initialize_occurs (now renamed),
+	  added originally for FR #234: multiple VALUEs for OCCURS
+	* tree.h (cb_field): drop flag_occurs_values
+	* codegen.c (output_initialize_to_value, output_initialize_to_default):
+	  extracted from output_initialize_one (split only)
+	* codegen.c: draft for codegen of better readable init code as
+	  done in other places (not active, inspect and decide later)
+	* codegen.c (output_figurative): fix bug #724 lvl01 OCCURS items to
+	  also correctly INITIALIZE TO VALUE with figurative constants
+	* field.c (cleanup_field_value): new function called from field
+	  value validation code; replaces values that match default by
+	  cb_zero/cb_space for better codegen
+	* tree.c (cb_build_binary_op): don't raise an error in the condition
+	  code when we raised an error - for example on a bad reference - before
+	* field.c (cb_build_field_tree): generate dummy filler for level
+	  mismatch also for non-relaxed parsing to prevent follow-on errors
+
+2022-10-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y, tree.c (cb_build_vary), tree.h: cleanup to not use
+	  static variables in the parser for creation of the rw vary items
+	* parser.y, reserved.c: full parsing for COBOL2002 and BS2000
+	  multi VALUE entries via VALUES [ARE]
+	* parser.y, field.c, tree.h, codegen.c, tree.c, scanner.l: new struct
+	  cb_table_values to store the complex parsing result, only embed the VALUE
+	  in a list when actually necessary, and use these adjustments in syntax
+	  and codegen
+	* field.c: check all multi-values for correct type and length;
+	  verify that only up to max amount entries are specified;
+	  TODO: complete handling of FROM/TO/REPEATED clause
+
+2022-10-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.h (struct cb_if): changed "is_if" integer flag to "enum
+	  cob_statement statement" providing a clear context
+	* tree.c (cb_build_if), tree.h, typeck.c, codegen.c (output_stmt):
+	  pass and check matching statement entry instead of magic number
+	* typeck.c (cb_emit_report_moves): refactored to combine conditions
+	  and separate report_footing_flag
+	* codegen.c (output_stmt): refactored to combine same code for
+	  PRESENT WHEN field/line
+	* codegen.c: set COBOL source and statement reference correctly for
+	  SEARCH ... VARYING and WHEN - as the overhead from tracing code
+	  preventing this before no longer exists
+	* codegen.c: improved output of source position
+	* typeck.c (cb_emit_evaluate): analysis and spec for necessary changes
+
+2022-10-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (clear_local_codegen_vars): unset additional
+	  "current" references, preventing use-after-free
+	* codegen.c (output_stmt): set current_statement on start of
+	  any statement generation allowing it to be used for context-checks
+	* tree.h, parser.y: removed never-used cobc_printer_node
+	* codegen.c (output_perform_call): use statement reference to generate
+	  separate comment for PERFORM procedure or USE procedure
+	* flag.def, codegen.c: new -fsection-exit-check
+	  (cb_flag_section_exit_check) and -fimplicit-goback-check 
+	  (cb_flag_implicit_goback_check)
+	* tree.h (cb_progam), parser.y (perform_procedure): add and set
+	   perform_thru_list for internal checks
+	* typeck.c (cb_validate_perform_thru_ranges),
+	  warning.def (cb_warn_suspicious_perform_thru): warning option to check
+	  for PERFORM THRU referencing multiple sections and for its
+	  references to be in non-chronological order
+
+2022-10-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.h (cb_reference), tree.c (cb_build_reference): added statement
+	  allowing every reference to be checked for its context
+	* tree.h (cb_reference), parser.y (perform_procedure): dropped flag_decl_ok
+	* typeck.c (cb_validate_labels): use ref->statement instead of flag_decl_ok
+	* warning.def, typeck.c (cb_validate_labels): new warnings -Wgoto-section
+	  (enabled by default) and -Wgoto-different-section (enabled by -Wall)
+	* reserved.c: renamed cb_toupper to res_toupper
+	* reserved.c (cb_toupper, cb_tolower), cobc.h: new exported functions
+	* scanner.l, config.c, cobc.c: prefer cb_toupper and cb_tolower over
+	  locale aware toupper/tolower
+	* ppparse.y: directly call toupper/tolower without previous islower/isupper
+
+2022-10-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.h: new CB_UNSUPPORTED for features not planned to be supported
+	  at all (but parsed to not stumble over those)
+	* cobc.h [!HAVE_UNISTD_H]: include stdio.h
+
+2022-10-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.c, tree.h, cobc.h, parser.y, typeck.c, codegen.c: direct setting
+	  and compare of new enum cob_statement instead of passing string constants
+	  around (and partially checking those with strcmp later)
+	* tree.h (cb_statement_name), codegen.c (cb_statement_enum_name), cobc.h,
+	  tree.c: pre-initialized tables to translate new enums to string
+	  representation and enum name for use in codegen instead of integer/string
+	  constants
+
+2022-10-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codeoptim.c: further optimizations for COB_GET_NUMDISP*
+
+2022-10-12  Ron Norman <rjn@inglenet.com>
+
+	* typeck.c: If STRING item is NOT DISPLAY/NATIONAL then its an error
+
+2022-10-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (main): fixed memory handling for "-j"
+	* cobc.c (cobc_abort_terminate): run into libcob provided abort handling
+	  with a default of SIGABRT and a configurable coredump via
+	  COBC_CORE_ON_ERROR overriding COB_CORE_ON_ERROR (currently fixed "2")
+	* codegen.c (output_call) [COB_NON_ALIGNED]: fix CALL RETURNING
+
+2022-10-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* pplex.l (plex_call_destroy): fixed minor memory leak
+	* cobc.c (compile_level): using enum values instead of numeric constants
+	* parser.y (examine_format_variant): internally use "MOVE ZERO TO TALLY"
+	  instead of "INITIALIZE TALLY"
+	* cobc.c: minor reformatting
+	* flag.def: fixed minor doc issues
+
+2022-10-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (symbolic_characters_clause, class_name_clause): improved
+	  parsing, adding _alphnat_target and first checks for it
+	* parser.y (_is_locale_name, _in_alphabet, _alphnat_target): fixed
+	  missing return value for "empty" matching
+	* parser.y (figurative_constant): moved out of existing rules
+
+2022-10-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_check_field_debug): fixed bug introduced with last change
+	  and don't create unnecessary long DEBUG-NAME strings
+	* config.c (cb_load_conf_file): check snprintf size fixing compile warning
+	* typeck.c (validate_occurs): change level 01/77 check back to plain
+	  dialect verification fixing #854
+
 2022-10-04  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* pplex.l, parser.y: fix AREACHECK in DEFAULT SECTION of CONTROL DIVISON
@@ -14,6 +158,21 @@
 	* codegen.c (output_error_handler), typeck.c (cb_emit_open): use of
 	  cb_open_mode_to_string for improved codegen (using enum values instead
 	  of numeric constants)
+	* tree.c (cb_name_1): replaced strncpy calls by checked snprintf, calculate
+	  length from known positions instead of strlen; limit scope of some
+	  variables, allowing them to be defined as const
+	* cobc.c (print_88_values, print_fields, xref_88_values, xref_fields):
+	  drop copy of field name to temporary lcl_name as a field name has
+	  a maximum length of COB_MAX_WORDLEN (63) and therefore is always smaller
+	  than the previously compared 80-1 byte
+	* cobc.c (cobc_elided_strcpy), cobc.h: new function to copy a string only
+	  up to max positions and use an eliding "..." at front/end if src was cut
+	* cobc.c, config.c, scanner.l, tree.c, reserved.c: favor strcpy, memcpy,
+	  cobc_elided_strcpy over strncpy
+	* typeck.c (cb_build_debug_item): refactored to remove number of casts
+	* field.c (copy_duplicated_field_into_field): extracted
+	  from copy_children, copy_into_field_recursive
+	* tree.c (build_sum_counter): fix reference to sum counter
 
 2022-10-01  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -239,7 +398,8 @@
 2022-07-18  Simon Sobisch <simonsobisch@gnu.org>
 
 	* config.c (cb_config_entry): fixed defaultbyte convenience option
-	* field.c (cb_build_full_field_reference): minimal refactoring
+	* field.c (cb_build_full_field_reference): fix bug #699 infinite loop when
+	  processing keyed tables defined as filler
 	* reserved.c (add_register): enabled generic register generation
 	* tree.c (cb_build_intrinsic): minimal verification for FUNCTION SUBSTITUTE
 	* typeck.c: add field level 77 to any generated register (previously was 0),
@@ -344,6 +504,22 @@
 	* pplex.l (ppinput): add support for ACU terminal and X/Open indicators,
 	  as well as floating margin B
 	* pplex.l (check_listing): do not output sequence number of short lines
+
+2022-07-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* field.c (validate_blank_when_zero): iterate over pic->str
+	  depending on pic->lenstr (= won't iterate when zero)
+	* codegen.c: minimal refactoring
+	* tree.c (compare_field_literal): ensure field is verified,
+	  otherwise pic and size related checks will fail
+	* parser.y, reserved.c, cobc.h: added most missing COBOL2002 data clauses
+	  as PENDING and reserved words as necessary
+	* scanner.l: distinguish between INVALID KEY and INVALID
+	* parser.y, reserved.c: distinguish between VALUES and VALUE,
+	  fixing falsely parsed VALUE ARE and VALUES IS
+	* parser.y: split level 88 VALUE clause to value_clause_condition,
+	  added content_validation format to it (already usable as condition,
+	  preparation for later content validation by VALUE statement)
 
 2022-06-28  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -512,6 +688,12 @@
 	  reporting an error when in ppparse.y
 	* ppparse.y (unquote, fix_filename): factorize code for
 	  unquotation of alphanumeric literals
+
+2022-01-17  Ron Norman <rjn@inglenet.com>
+
+	* parser.y: VARYING var FROM exp BY exp partly added
+	* tree.h:	Add CB_VARY and updated cb_field accodingly
+	* codegen.c: Updated to use new CB_VARY
 
 2021-12-30  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -880,10 +1062,23 @@
 	* tree.c (cb_build_binary_op): add source reference to non-constant
 	  expressions
 	* tree.c (cb_build_perform_varying): add source reference to VARYING clause
+	* codeoptim.c (COB_GET_NUMDISP, copied later to COB_GET_NUMDISPS):
+	  only use the half-byte of the char to resolve the integer value,
+	  preventing overflows leading to huge/negative values and providing
+	  conversion of space to zero and correct conversion of numeric values
+	  from both ASCII and EBCDIC; also gets rid of some checks
 
 2021-02-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.h: remove cb_listing_files ...
+	* codeoptim.def, codeoptim.c, typeck.c (cb_build_identifier), cobc.c:
+	  new entries COB_CHK_LINKAGE, COB_CHK_BASED, COB_CHK_SUBSCRIPT,
+	  COB_CHK_ODO, COB_CHK_REFMOD_MIN, COB_CHK_REFMOD for inline checks of
+	  most-used runtime checks - now only passed to libcob in case of actual
+	  errors; new entry COB_NOP to replace the cob_nop call (frame switch)
+	  by a simple pointer comparision, which also ensures on all tested
+	  compilers that the line is not optimized out, and for those that
+	  optimize the check away the old cob_nop call is still done
 
 2021-02-03  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -1577,6 +1772,12 @@
 	  if it is part of a component; even if this has only a single part
 	  as components are not part of the record "KEYNAM = RECORD-FIELD"
 
+2020-04-26  Ron Norman <rjn@inglenet.com>
+
+	* codeoptim.def (COB_GET_NUMDISPS), codeoptim.c, codegen.c: new routine
+	  to convert signed DISPLAY into binary value;
+	  use of register attribute for cob_get_numdisp + cob_get_numdisps
+
 2020-04-23  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y: added ACCEPT with CURSOR parsing
@@ -1838,6 +2039,8 @@
 
 	* codegen.c: set temp-field.data after all declarations to avoid problems
 	  with C89 compilers
+	* typeck.c: fix for use of cob_pointer_manip
+	* codeoptim.c: adjust cob_pointer_manip to match usage
 
 2019-09-03  Ron Norman <rjn@inglenet.com>
 

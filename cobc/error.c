@@ -958,7 +958,8 @@ redefinition_warning (cb_tree x, cb_tree y)
 	}
 
 	w = CB_REFERENCE (x)->word;
-	ret = cb_warning_x (cb_warn_redefinition, x, _("redefinition of '%s'"), w->name);
+	ret = cb_warning_x (cb_warn_redefinition, x,
+			_("redefinition of '%s'"), w->name);
 
 	z = NULL;
 	if (y) {
@@ -968,7 +969,8 @@ redefinition_warning (cb_tree x, cb_tree y)
 	}
 
 	if (z && z->source_line != 0) {
-		cb_note_x (cb_warn_redefinition, z, _("'%s' previously defined here"), w->name);
+		cb_note_x (cb_warn_redefinition, z,
+				_("'%s' previously defined here"), w->name);
 	}
 	return ret;
 }
@@ -1053,7 +1055,8 @@ ambiguous_error (cb_tree x)
 
 	ignore_error_sav = ignore_error;
 	ignore_error = 0;
-	/* FIXME: qualification may not be possible, would need the code below to execute first */
+	/* FIXME: qualification may not be possible,
+	   would need the code below to execute first */
 	cb_error_x (x, _("'%s' is ambiguous; needs qualification"),
 		get_qualified_name (r));
 	ignore_error = ignore_error_sav;
@@ -1083,12 +1086,15 @@ ambiguous_error (cb_tree x)
 		}
 		if (y->source_line == 0) {
 			if (cb_get_register_definition (w->name)) {
-				cb_note_x (COB_WARNOPT_NONE, x, _("'%s' is a special register"), w->name);
+				cb_note_x (COB_WARNOPT_NONE, x,
+						_("'%s' is a special register"), w->name);
 			} else {
-				cb_note_x (COB_WARNOPT_NONE, x, _("'%s' internally defined"), errnamebuff);
+				cb_note_x (COB_WARNOPT_NONE, x,
+						_("'%s' internally defined"), errnamebuff);
 			}
 		} else {
-			cb_note_x (COB_WARNOPT_NONE, y, _("'%s' defined here"), errnamebuff);
+			cb_note_x (COB_WARNOPT_NONE, y,
+					_("'%s' defined here"), errnamebuff);
 		}
 	}
 	return COBC_WARN_AS_ERROR;
@@ -1099,7 +1105,7 @@ void
 flex_fatal_error (const char *msg, const char * filename, const int line_num)
 {
 	/* LCOV_EXCL_START */
-	cobc_err_msg (_ ("fatal error: %s"), msg);
+	cobc_err_msg (_("fatal error: %s"), msg);
 	cobc_abort (filename, line_num);
 	/* LCOV_EXCL_STOP */
 }
@@ -1107,7 +1113,8 @@ flex_fatal_error (const char *msg, const char * filename, const int line_num)
 enum cb_warn_val
 group_error (cb_tree x, const char *clause)
 {
-	return cb_error_x (x, _("group item '%s' cannot have %s clause"),
+	return cb_error_x (x,
+			_("group item '%s' cannot have %s clause"),
 		    cb_name (x), clause);
 }
 
@@ -1121,10 +1128,13 @@ level_require_error (cb_tree x, const char *clause)
 	s = cb_name (x);
 	f = CB_FIELD_PTR (x);
 	if (f->flag_item_78) {
-		return cb_error_x (x, _("constant item '%s' requires a %s clause"), s, clause);
+		return cb_error_x (x,
+				_("constant item '%s' requires a %s clause"),
+				s, clause);
 	} else {
-		return cb_error_x (x, _("level %02d item '%s' requires a %s clause"), f->level,
-			    s, clause);
+		return cb_error_x (x,
+				_("level %02d item '%s' requires a %s clause"),
+				f->level, s, clause);
 	}
 }
 
@@ -1137,9 +1147,12 @@ level_except_error (cb_tree x, const char *clause)
 	s = cb_name (x);
 	f = CB_FIELD_PTR (x);
 	if (f->flag_item_78) {
-		return cb_error_x (x, _("constant item '%s' can only have a %s clause"), s, clause);
+		return cb_error_x (x,
+				_("constant item '%s' can only have a %s clause"),
+				s, clause);
 	} else {
-		return cb_error_x (x, _("level %02d item '%s' can only have a %s clause"), f->level,
-			    s, clause);
+		return cb_error_x (x,
+				_("level %02d item '%s' can only have a %s clause"),
+				f->level, s, clause);
 	}
 }

@@ -1,4 +1,13 @@
 
+2022-10-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* atlocal.in, atlocal_valgrind: adjusted perf and valgrind runs
+	  to export PATH to real binaries for calling cobc/cobcrun directly
+	* atlocal.in: for perf run split cobc and cobcrun by log directory
+	  instead of filename only, default COBC to include debug infos
+	* atlocal.in: added callgrind run for in-depth performance checks
+	  which can be activated by setting CGSUFFIX variable
+
 2022-09-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* testsuite.src/run_extensions.at, testsuite.src/run_file.at: moved

@@ -1,4 +1,8 @@
 
+2022-10-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobcrun.c: minor validation - check for empty parameters
+
 2022-07-15  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobcrun.c: no module name check (done in libcob now)

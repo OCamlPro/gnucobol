@@ -555,7 +555,7 @@ only usable with COB_USE_VC2013_OR_GREATER */
 #endif
 
 /* Macro to prevent compiler warning "conditional expression is constant" */
-#if defined (_MSC_VER) && COB_USE_VC2008_OR_GREATER
+#if defined (_MSC_VER) && _MSC_VER >= 1500 /* COB_USE_VC2008_OR_GREATER */
 #define ONCE_COB \
 	__pragma( warning(push) )		\
 	__pragma( warning(disable:4127) )	\
@@ -769,7 +769,6 @@ enum cob_fatal_error {
 /* Exception identifier enumeration */
 
 #undef	COB_EXCEPTION
-#ifndef COB_WITHOUT_EXCEPTIONS
 #define	COB_EXCEPTION(code,tag,name,critical)	tag,
 
 enum cob_exception_id {
@@ -779,7 +778,6 @@ enum cob_exception_id {
 };
 
 #undef	COB_EXCEPTION
-#endif
 
 /* File attributes */
 
@@ -1049,6 +1047,17 @@ typedef cob_s64_t cob_flags_t;
 
 /* End Report attribute defines */
 
+/* Statement enum */
+
+#define COB_STATEMENT(name,str)	name,
+enum cob_statement {
+	STMT_UNKNOWN = 0, 
+#include "statement.def"	/* located and installed next to common.h */
+	STMT_MAX_ENTRY /* always the last entry */
+};
+#undef COB_STATEMENT
+
+
 #define COB_JSON_CJSON			1
 #define COB_JSON_JSON_C			2
 
@@ -1265,7 +1274,7 @@ typedef struct __cob_module {
 										   otherwise "struct cob_frame" */
 	const char		*section_name;		/* name of current active section */
 	const char		*paragraph_name;		/* name of current active pagagraph */
-	const char		*stmt_name;			/* last statment VERB name */
+	enum cob_statement	statement;		/* statement currently executed */
 
 } cob_module;
 
@@ -1524,7 +1533,7 @@ typedef struct __cob_ml_tree {
 typedef struct __cob_global {
 	cob_file		*cob_error_file;	/* Last error file */
 	cob_module		*cob_current_module;	/* Current module */
-	const char		*last_exception_statement;	/* Last exception: Statement */
+	enum cob_statement	last_exception_statement;	/* Last exception: Statement */
 	const char		*last_exception_id;	/* Last exception: PROGRAMM-ID / FUNCTION-ID*/
 	const char		*last_exception_section;	/* Last exception: Section */
 	const char		*last_exception_paragraph;	/* Last exception: Paragraph */
@@ -1587,12 +1596,8 @@ struct cobjmp_buf {
 };
 #endif
 
-#define __LIBCOB_VERSION	3
-#define __LIBCOB_VERSION_MINOR		2
-#define __LIBCOB_VERSION_PATCHLEVEL	0	/* Note: possibly differs from patchelvel shown with cobc --version! */
-
-#define __LIBCOB_RELEASE (__LIBCOB_VERSION * 10000 + __LIBCOB_VERSION_MINOR * 100 + __LIBCOB_VERSION_PATCHLEVEL)
-
+/* version definition and related functions from common.c */
+#include "version.h"	/* located and installed next to common.h */
 
 /*******************************/
 
@@ -1602,12 +1607,8 @@ struct cobjmp_buf {
 /* Functions in common.c */
 COB_EXPIMP const char*	cob_get_sig_name (int);
 COB_EXPIMP const char*	cob_get_sig_description (int);
-COB_EXPIMP const char*	libcob_version (void);
-COB_EXPIMP int		set_libcob_version (int *, int *, int *);
 COB_EXPIMP void		print_info	(void);
 COB_EXPIMP void		print_info_detailed	(const int);
-COB_EXPIMP void		print_version	(void);
-COB_EXPIMP void		print_version_summary (void);
 COB_EXPIMP int		cob_load_config	(void);
 COB_EXPIMP void		print_runtime_conf	(void);
 
@@ -1641,6 +1642,7 @@ COB_EXPIMP void	cob_module_free	(cob_module **);
 DECLNORET COB_EXPIMP void	cob_stop_run	(const int) COB_A_NORETURN;
 DECLNORET COB_EXPIMP void	cob_stop_error	(void) COB_A_NORETURN;
 DECLNORET COB_EXPIMP void	cob_fatal_error	(const enum cob_fatal_error) COB_A_NORETURN;
+DECLNORET COB_EXPIMP void	cob_hard_failure_internal (const char *) COB_A_NORETURN;
 
 COB_EXPIMP void	*cob_malloc			(const size_t) COB_A_MALLOC;
 COB_EXPIMP void	*cob_realloc			(void *, const size_t, const size_t) COB_A_MALLOC;
@@ -1656,7 +1658,7 @@ COB_EXPIMP void	cob_set_locale			(cob_field *, const int);
 COB_EXPIMP int 	cob_setenv		(const char *, const char *, int);
 COB_EXPIMP int 	cob_unsetenv		(const char *);
 COB_EXPIMP char	*cob_getenv_direct		(const char *);
-COB_EXPIMP char* cob_expand_env_string	(char*);
+COB_EXPIMP char *cob_expand_env_string	(char *);
 COB_EXPIMP char	*cob_getenv			(const char *);
 COB_EXPIMP int	cob_putenv			(char *);
 
@@ -1703,6 +1705,7 @@ COB_EXPIMP void	cob_temp_name			(char *, const char *);
 /* System routines */
 COB_EXPIMP int	cob_sys_exit_proc	(const void *, const void *);
 COB_EXPIMP int	cob_sys_error_proc	(const void *, const void *);
+COB_EXPIMP int	cob_sys_runtime_error_proc (const void *, const void *);
 COB_EXPIMP int	cob_sys_system		(const void *);
 COB_EXPIMP int	cob_sys_hosted		(void *, const void *);
 COB_EXPIMP int	cob_sys_and		(const void *, void *, const int);
@@ -1756,6 +1759,9 @@ COB_EXPIMP void	cob_trace_sect		(const char *name);
 COB_EXPIMP void	cob_trace_para		(const char *name);
 COB_EXPIMP void	cob_trace_entry		(const char *name);
 COB_EXPIMP void	cob_trace_exit		(const char *name);
+COB_EXPIMP void	cob_trace_statement		(const enum cob_statement);	/* 3.2 + */
+
+/* compatibility functions up to GnuCOBOL before 3.2 */
 COB_EXPIMP void	cob_trace_stmt		(const char *stmt);
 
 COB_EXPIMP void			*cob_external_addr	(const char *, const int);
@@ -1849,6 +1855,8 @@ COB_EXPIMP void	cob_check_ref_mod_minimal	(const char *,
 					 const int, const int);
 COB_EXPIMP void	cob_check_ref_mod	(const int, const int,
 					 const int, const char *);
+COB_EXPIMP void	cob_check_beyond_exit (const unsigned char *);
+
 
 /* Comparison functions */
 COB_EXPIMP int	cob_numeric_cmp		(cob_field *, cob_field *);
@@ -1890,9 +1898,9 @@ COB_EXPIMP void		cob_init_table	(void *, const size_t, const size_t);
 COB_EXPIMP void		cob_set_int	(cob_field *, const int);
 COB_EXPIMP int		cob_get_int	(cob_field *);
 COB_EXPIMP cob_s64_t	cob_get_llint	(cob_field *);
-/**************************************************/
-/* Functions in move.c for C access to COBOL data */
-/**************************************************/
+/*************************************************************************/
+/* Functions in move.c for C access to COBOL data - GnuCOBOL COBOL-C-API */
+/*************************************************************************/
 COB_EXPIMP char *	cob_get_picx( void *cbldata, size_t len, void *charfld, size_t charlen);
 COB_EXPIMP cob_s64_t	cob_get_s64_comp3(void *cbldata, int len);
 COB_EXPIMP cob_s64_t	cob_get_s64_comp5(void *cbldata, int len);
@@ -1930,7 +1938,7 @@ COB_EXPIMP void cob_decimal_set_llint	(cob_decimal *, const cob_s64_t);
 COB_EXPIMP void cob_decimal_set_ullint	(cob_decimal *, const cob_u64_t);
 COB_EXPIMP void	cob_decimal_set_field	(cob_decimal *, cob_field *);
 COB_EXPIMP int	cob_decimal_get_field	(cob_decimal *, cob_field *, const int);
-COB_EXPIMP void	cob_decimal_copy	(cob_decimal *, cob_decimal *);
+COB_EXPIMP void	cob_decimal_set		(cob_decimal *, cob_decimal *);	/* to be removed in 4.x */
 COB_EXPIMP void	cob_decimal_add		(cob_decimal *, cob_decimal *);
 COB_EXPIMP void	cob_decimal_sub		(cob_decimal *, cob_decimal *);
 COB_EXPIMP void	cob_decimal_mul		(cob_decimal *, cob_decimal *);
@@ -2010,6 +2018,9 @@ COB_EXPIMP void		*cob_savenv2		(struct cobjmp_buf *, const int);
 COB_EXPIMP void		cob_longjmp		(struct cobjmp_buf *);
 #endif
 
+/*************************************************************************/
+/* Functions in move.c for C access to COBOL data - GnuCOBOL COBOL-C-API */
+/*************************************************************************/
 COB_EXPIMP int		cob_get_num_params ( void );
 COB_EXPIMP int		cob_get_param_constant ( int num_param );
 COB_EXPIMP int		cob_get_param_digits( int num_param );
@@ -2021,11 +2032,11 @@ COB_EXPIMP void *	cob_get_param_data ( int num_param );
 COB_EXPIMP cob_s64_t	cob_get_s64_param  ( int num_param );
 COB_EXPIMP cob_u64_t	cob_get_u64_param  ( int num_param );
 COB_EXPIMP double	cob_get_dbl_param  ( int num_param );
-COB_EXPIMP char *	cob_get_picx_param ( int num_param, void *charfld, size_t charlen );
-COB_EXPIMP void *	cob_get_grp_param  ( int num_param, void *charfld, size_t charlen );
 COB_EXPIMP void		cob_put_dbl_param  ( int num_param, double value );
 COB_EXPIMP void		cob_put_s64_param  ( int num_param, cob_s64_t value );
 COB_EXPIMP void		cob_put_u64_param  ( int num_param, cob_u64_t value );
+COB_EXPIMP char *	cob_get_picx_param ( int num_param, void *charfld, size_t charlen );
+COB_EXPIMP void *	cob_get_grp_param  ( int num_param, void *charfld, size_t charlen );
 COB_EXPIMP void 	cob_put_picx_param ( int num_param, void *charfld );
 COB_EXPIMP void  	cob_put_grp_param  ( int num_param, void *charfld, size_t charlen );
 

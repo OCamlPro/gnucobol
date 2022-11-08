@@ -457,6 +457,7 @@ AT_CHECK([$COBCRUN --info], [0], [ignore], [])
 # we explicit do not want to run this here, as it initializes curses
 # AT_CHECK([$COBCRUN -v --info], [0], [ignore], [])
 AT_CHECK([$COBCRUN -q --info], [0], [ignore], [])
+AT_CHECK([$COBCRUN --dumpversion], [0], [ignore], [])
 AT_CLEANUP
 
 
@@ -503,6 +504,10 @@ AT_CLEANUP
 AT_SETUP([cobcrun -M DSO entry argument])
 AT_KEYWORDS([runmisc preload])
 
+AT_CHECK([$COBCRUN -M "" nope], [1], [],
+[invalid module argument ''
+])
+
 AT_DATA([callee.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      callee.
@@ -544,6 +549,20 @@ AT_DATA([caller.cob], [
        END PROGRAM inside.
 ])
 
+AT_DATA([caller2.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      inside2.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 EXT-VAR       PIC X(5) EXTERNAL.
+       01 CLA-VAR       PIC X(5).
+       PROCEDURE        DIVISION.
+           DISPLAY "Aloha2".
+           CALL "inside".
+           GOBACK. *> never gets here
+       END PROGRAM inside2.
+])
+
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE caller.cob], [0], [], [])
 AT_CHECK([$COBCRUN -M ./caller inside again], [0],
@@ -552,11 +571,19 @@ World
 again
 ], [])
 
+AT_CHECK([$COMPILE_MODULE caller2.cob], [0], [], [])
+AT_CHECK([COB_PRE_LOAD=caller2 $COBCRUN -M ./caller inside2 again], [0],
+[Aloha2
+Aloha
+World
+again
+], [])
+
 AT_CLEANUP
 
 
 ## FIXME: missing tests:
-## * combining $COBCRUN -M with COB_PRE_LOAD / COB_LIBRARY_PATH
+## * combining $COBCRUN -M with COB_PRE_LOAD + COB_LIBRARY_PATH
 ## * $COBCRUN -m
 
 
@@ -729,14 +756,31 @@ AT_CHECK([$COBCRUN -q -M ThisIsANameThatIsReallyNotAllowedAsProgIdInCOBOL noprog
 AT_CLEANUP
 
 
+AT_SETUP([run job with unsuccessful compilation])
+AT_KEYWORDS([runmisc cobcrun])
+
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           DISPLAY "jobby"
+           EXIT HERE.
+])
+
+AT_CHECK([$COMPILE -j prog.cob], [1], [],
+[prog.cob:6: error: syntax error, unexpected Identifier
+])
+
+AT_CLEANUP
+
+
 AT_SETUP([run job after compilation])
 AT_KEYWORDS([runmisc cobcrun])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
-       DATA             DIVISION.
-       WORKING-STORAGE  SECTION.
        PROCEDURE        DIVISION.
            DISPLAY "job" WITH NO ADVANCING END-DISPLAY
            STOP RUN WITH NORMAL STATUS.
@@ -754,8 +798,6 @@ AT_KEYWORDS([runmisc cobcrun])
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
-       DATA             DIVISION.
-       WORKING-STORAGE  SECTION.
        PROCEDURE        DIVISION.
            DISPLAY "job" WITH NO ADVANCING END-DISPLAY
            STOP RUN WITH NORMAL STATUS.
@@ -796,8 +838,6 @@ AT_KEYWORDS([runmisc cobc cobcrun])
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      a.
-       DATA             DIVISION.
-       WORKING-STORAGE  SECTION.
        PROCEDURE        DIVISION.
            STOP RUN WITH NORMAL STATUS.
 ])
@@ -826,8 +866,6 @@ AT_KEYWORDS([runmisc cobc cobcrun])
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      a.
-       DATA             DIVISION.
-       WORKING-STORAGE  SECTION.
        PROCEDURE        DIVISION.
            DISPLAY "job" WITH NO ADVANCING END-DISPLAY
            STOP RUN WITH NORMAL STATUS.
