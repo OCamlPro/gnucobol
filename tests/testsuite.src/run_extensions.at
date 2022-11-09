@@ -5511,8 +5511,12 @@ AT_DATA([prog.cob], [
            3 X-V       PICTURE LX(10) DEPENDING ON LGX.
            3 X-1       PICTURE X VALUE "1".
        1 W-LGS.
-          2 LGX         USAGE COMP-1 VALUE 10.
-          2 LGY         PIC 9 VALUE 9.
+          2 LGX        USAGE COMP-1 VALUE 10.
+          2 LGY        PICTURE 9 VALUE 9.
+       1 W-NESTED2.
+         2 Z-GRP1.
+           3 Z-V       PICTURE LX(2) DEPENDING ON LGZ.
+         2 LGZ         PICTURE 9 VALUE 2.
        1 W-LEN          USAGE COMP-1.
        PROCEDURE        DIVISION.
        MAIN.
@@ -5815,6 +5819,13 @@ AT_DATA([redefines.cob], [
           2 LGY         PIC 9 VALUE 5.
           2 LGZ         PIC 9 VALUE 7.
           2 LGT         PIC 9 VALUE 5.
+       1 W-DATA2.
+          2 W-X.
+             3 W-TAB0.
+                4 W-PREFIX PIC X(5).
+                4          PIC X(5).
+             3 W-TAB1   REDEFINES W-TAB0 PIC LX(10) DEPENDING LG-TAB1.
+          2 LG-TAB1     COMP-1.
        PROCEDURE        DIVISION.
        MAIN.
            MOVE "......." TO Z-DAT
@@ -5849,6 +5860,15 @@ AT_DATA([redefines.cob], [
               DISPLAY "UNEXPECTED T-DAT/Z-DAT AFTER "
                        "'INITIALIZE Z-DAT': " T-DAT "/" Z-DAT "*"
               PERFORM SHOW-VARS
+           END-IF
+      *    Basic manipulation for late DEPENDING var
+           MOVE "aaaaaaaaaa" TO W-TAB0
+           MOVE 5 TO LG-TAB1
+           IF W-TAB1 NOT EQUAL "aaaaa"
+              DISPLAY "UNEXPECTED W-TAB1 WITH LATE L-VAR: *" W-TAB1 "*"
+           END-IF
+           IF W-X NOT EQUAL "aaaaaaaaaa"
+              DISPLAY "UNEXPECTED W-X WITH NESTED LATE L-VAR: *" W-X "*"
            END-IF
            STOP RUN
            .
