@@ -5867,6 +5867,9 @@ AT_DATA([redefines.cob], [
            IF W-TAB1 NOT EQUAL "aaaaa"
               DISPLAY "UNEXPECTED W-TAB1 WITH LATE L-VAR: *" W-TAB1 "*"
            END-IF
+           IF W-X NOT EQUAL "aaaaaaaaaa"
+              DISPLAY "UNEXPECTED W-X WITH NESTED LATE L-VAR: *" W-X "*"
+           END-IF
            STOP RUN
            .
        SHOW-VARS.
