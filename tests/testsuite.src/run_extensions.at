@@ -5490,10 +5490,8 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 AT_CLEANUP
 
 
-AT_SETUP([PICTURE L])
+AT_SETUP([PICTURE L (basic)])
 AT_KEYWORDS([extensions gcos picture-l odo])
-
-# Basic behaviors
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -5513,9 +5511,10 @@ AT_DATA([prog.cob], [
        1 W-LGS.
           2 LGX        USAGE COMP-1 VALUE 10.
           2 LGY        PICTURE 9 VALUE 9.
-       1 W-NESTED2.
-         2 Z-GRP1.
+       1 W-LATE-LVAR.
+         2 Z-GRP.
            3 Z-V       PICTURE LX(2) DEPENDING ON LGZ.
+           3 UNUSED-0  PICTURE X VALUE "1".
          2 LGZ         PICTURE 9 VALUE 2.
        1 W-LEN          USAGE COMP-1.
        PROCEDURE        DIVISION.
@@ -5592,6 +5591,7 @@ AT_DATA([prog.cob], [
                       Y-ALPHA
               PERFORM SHOW-VARS
            END-IF
+           PERFORM CHECK-LATE-LVAR
            STOP RUN
            .
        SHOW-VARS.
@@ -5601,6 +5601,15 @@ AT_DATA([prog.cob], [
            DISPLAY X-GRP "*"
            DISPLAY X-V "*"
            .
+       CHECK-LATE-LVAR.
+           MOVE "aa" TO Z-GRP (1:2)
+           MOVE 1 TO LGZ
+           MOVE SPACES TO Z-V
+           IF Z-GRP NOT EQUAL " a1"
+              DISPLAY "UNEXPECTED Z-GRP WITH NESTED LATE L-VAR: "
+                      "*" Z-GRP "*"
+           END-IF
+           .
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -5608,7 +5617,11 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [])
 AT_CHECK([$COMPILE -fodoslide -o prog-x prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog-x], [0], [])
 
-# under/over shoot
+AT_CLEANUP
+
+
+AT_SETUP([PICTURE L (under/over shoot)])
+AT_KEYWORDS([extensions gcos picture-l odo])
 
 AT_DATA([under.cob], [
        IDENTIFICATION   DIVISION.
@@ -5659,7 +5672,11 @@ AT_CHECK([$COBCRUN_DIRECT ./over-x], [1], [],
 note: maximum subscript for 'FILLER 1': 5
 ])
 
-# MOVE CORRESPONDING
+AT_CLEANUP
+
+
+AT_SETUP([PICTURE L (MOVE CORRESPONDING)])
+AT_KEYWORDS([extensions gcos picture-l odo])
 
 AT_DATA([corr.cob], [
        IDENTIFICATION   DIVISION.
@@ -5733,7 +5750,11 @@ AT_CHECK([$COBCRUN_DIRECT ./corr], [0], [])
 AT_CHECK([$COMPILE -fodoslide -o corr-x corr.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./corr-x], [0], [])
 
-# OCCURS ... PIC L  ...
+AT_CLEANUP
+
+
+AT_SETUP([PICTURE L (OCCURS ... PIC L)])
+AT_KEYWORDS([extensions gcos picture-l odo])
 
 AT_DATA([nested.cob], [
        IDENTIFICATION   DIVISION.
@@ -5798,7 +5819,11 @@ AT_CHECK([$COBCRUN_DIRECT ./nested], [0], [])
 AT_CHECK([$COMPILE -fodoslide -o nested-x nested.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./nested-x], [0], [])
 
-# REDEFINES
+AT_CLEANUP
+
+
+AT_SETUP([PICTURE L (REDEFINES)])
+AT_KEYWORDS([extensions gcos picture-l odo])
 
 AT_DATA([redefines.cob], [
        IDENTIFICATION   DIVISION.
