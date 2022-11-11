@@ -1555,6 +1555,7 @@ cob_chk_file_mapping (cob_file *f, char *filename)
 	unsigned int	dollar, badchar;
 	int		k, qt;
 
+	memset (f->file_status, '0', (size_t)2);
 	if (filename)
 		strcpy(file_open_name, filename);
 	/* Misuse "dollar" here to indicate a separator */
@@ -1577,6 +1578,8 @@ cob_chk_file_mapping (cob_file *f, char *filename)
 				if (qt == '"')
 					memmove (file_open_name, file_open_name + 1, (size_t)(p - file_open_name));
 				badchar = 0;
+				break;
+			} else if (*p == 0 && qt == 255) {
 				break;
 			} else if (*p == 0 || !isprint (*p)) {
 				if (!isprint (*p))
@@ -3151,6 +3154,12 @@ cob_file_save_status (cob_file *f, cob_field *fnstatus, const int status)
 		if ((f->file_features & COB_FILE_SYNC)) {
 			cob_file_sync (f);
 		}
+	} else if (status == 94 && chk_filename_spaces) {	/* File Name error */
+		f->file_status[0] = '9';
+		f->file_status[1] = 4;
+		if (fnstatus) {
+			memcpy (fnstatus->data, f->file_status, (size_t)2);
+		}
 	} else if (f->file_status[0] == '9'
 		 	&& f->file_status[1] == 4) {	/* File name error */
 		if (fnstatus) {
@@ -3810,12 +3819,12 @@ cob_fd_file_open (cob_file *f, char *filename,
 	/* cob_chk_file_mapping manipulates file_open_name directly */
 	f->blockpid = 0;
 
-	if (f->file_status[0] != '0')
-		return (f->file_status[0] << 8) + f->file_status[1];
+	if (f->file_status[0] > '0')
+		return COB_D2I (f->file_status[0]) * 10 + COB_D2I(f->file_status[1]);
 	if (!f->flag_file_map) {
 		cob_chk_file_mapping (f, NULL);
-		if (f->file_status[0] != '0')
-			return (f->file_status[0] << 8) + f->file_status[1];
+		if (f->file_status[0] > '0')
+			return COB_D2I (f->file_status[0]) * 10 + COB_D2I(f->file_status[1]);
 		f->flag_file_map = 1;
 		ret = cob_set_file_format(f, file_open_io_env, 1);		/* Set file format */
 		if (ret) {
@@ -4019,8 +4028,8 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename,
 	f->share_mode = (unsigned char)sharing;
 	if(!f->flag_file_map) {
 		cob_chk_file_mapping (f, NULL);
-		if (f->file_status[0] != '0')
-			return (f->file_status[0] << 8) + f->file_status[1];
+		if (f->file_status[0] > '0')
+			return COB_D2I (f->file_status[0]) * 10 + COB_D2I(f->file_status[1]);
 		f->flag_file_map = 1;
 	}
 	f->flag_is_pipe = 0;
@@ -6427,7 +6436,7 @@ cob_pre_open (cob_file *f)
 
 		f->flag_file_map = 1;
 		cob_chk_file_mapping (f, NULL);
-		if (f->file_status[0] != '0')
+		if (f->file_status[0] > '0')
 			return ;
 
 		cob_set_file_format (f, file_open_io_env, 1);
@@ -7457,8 +7466,9 @@ cob_delete_file (cob_file *f, cob_field *fnstatus, const int override)
 	/* Obtain the file name */
 	cob_field_to_string (f->assign, file_open_name, (size_t)COB_FILE_MAX);
 	cob_chk_file_mapping (f, NULL);
-	if (f->file_status[0] != '0') {
-		cob_file_save_status (f, fnstatus, (f->file_status[0] << 8) + f->file_status[1]);
+	if (f->file_status[0] > '0') {
+		cob_file_save_status (f, fnstatus, 
+				COB_D2I (f->file_status[0]) * 10 + COB_D2I(f->file_status[1]));
 		return;
 	}
 

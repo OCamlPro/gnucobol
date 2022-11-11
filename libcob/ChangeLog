@@ -1,5 +1,5 @@
 
-2022-11-07  Ron Norman <rjn@inglenet.com>
+2022-11-10  Ron Norman <rjn@inglenet.com>
 
 	* fileio.c: Preliminary implemenation of support for the
 				COB_FILENAME_SPACES option default TRUE.
