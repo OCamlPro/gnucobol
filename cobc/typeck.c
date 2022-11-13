@@ -112,6 +112,7 @@ static int			warn_screen_done = 0;
 static int			expr_op;		/* Last operator */
 static cb_tree		expr_lh;		/* Last left hand */
 static int			expr_dmax = -1;		/* Max scale for expression result */
+static int			expr_szmax = -1;	/* Max size for expression result */
 #define MAX_NESTED_EXPR	64
 static cb_tree		expr_x = NULL;
 static cb_tree		sz_shift;
@@ -834,6 +835,10 @@ cb_is_integer_expr (cb_tree x)
 		return cb_is_integer_field (CB_FIELD_PTR (x));
 	}
 	if (CB_NUMERIC_LITERAL_P (x)) {
+		if (CB_LITERAL (x)->scale > expr_dmax)
+			expr_dmax = CB_LITERAL (x)->scale;
+		if (CB_LITERAL (x)->size > expr_szmax)
+			expr_szmax = CB_LITERAL (x)->size;
 	 	if (CB_LITERAL (x)->scale == 0
 		 && cb_fits_int (x))
 			return 1;
@@ -922,6 +927,92 @@ cb_is_integer_field_and_int (struct cb_field *f, cb_tree n)
 	return cb_is_integer_expr (n);
 }
 
+static int
+cb_get_op_size (cb_tree x)
+{
+	if (x == NULL)
+		return 1;
+	if (CB_REF_OR_FIELD_P (x)) {
+		if (CB_FIELD_PTR (x)->pic)
+			return CB_FIELD_PTR (x)->pic->size;
+		return CB_FIELD_PTR (x)->size;
+	}
+	if (CB_NUMERIC_LITERAL_P (x)) {
+		return CB_LITERAL (x)->size;
+	}
+	if (CB_BINARY_OP_P (x)) {
+		if (expr_dmax < 0)
+			expr_dmax = 1;
+		return expr_dmax;
+	}
+	return 1;
+}
+
+static int
+cb_get_op_scale (cb_tree x)
+{
+	struct cb_binary_op	*p;
+	cb_tree	y;
+	struct cb_field         *f;
+	if (x == NULL)
+		return 0;
+	if (CB_REF_OR_FIELD_P (x)) {
+		f = CB_FIELD_PTR (x);
+		if (f->pic)
+			return f->pic->scale;
+	}
+	if (CB_NUMERIC_LITERAL_P (x)) {
+		return CB_LITERAL (x)->scale;
+	}
+	return 0;
+}
+
+/*
+ * Scan expression to get largest numeric field and scale
+ */
+static void
+cb_get_expr_size (cb_tree x)
+{
+	struct cb_binary_op	*p;
+	struct cb_field         *f;
+	int		sz,scl;
+	if (x == NULL)
+		return;
+	if (CB_REF_OR_FIELD_P (x)) {
+		sz = cb_get_op_size (x);
+		if (sz > expr_szmax)
+			expr_szmax = sz;
+		scl = cb_get_op_scale (x);
+		if (scl > expr_dmax)
+			expr_dmax = scl;
+		return;
+	}
+	if (CB_NUMERIC_LITERAL_P (x)) {
+		sz = cb_get_op_size (x);
+		if (sz > expr_szmax)
+			expr_szmax = sz;
+		scl = cb_get_op_scale (x);
+		if (scl > expr_dmax)
+			expr_dmax = scl;
+		return;
+	}
+	if (CB_BINARY_OP_P (x)) {
+		p = CB_BINARY_OP (x);
+		if (p->op == '/') {
+			if (expr_dmax < 0)
+				expr_dmax = 1;
+			expr_dmax++;
+		}
+		if (p->op == '*') {
+			sz = cb_get_op_size (p->x) + cb_get_op_size (p->y) + 1;
+			if (sz > expr_szmax)
+				expr_szmax = sz;
+		}
+		cb_get_expr_size (p->x);
+		cb_get_expr_size (p->y);
+	}
+	return;
+}
 static cb_tree
 cb_check_needs_break (cb_tree stmt)
 {
@@ -5278,6 +5369,8 @@ decimal_alloc (void)
 {
 	cb_tree x;
 
+	if (current_program->decimal_index < 0)
+		current_program->decimal_index = 0;
 	x = cb_build_decimal (current_program->decimal_index);
 	current_program->decimal_index++;
 	/* LCOV_EXCL_START */
@@ -5301,6 +5394,8 @@ static void
 decimal_free (void)
 {
 	current_program->decimal_index--;
+	if (current_program->decimal_index < 0)
+		current_program->decimal_index = 0;
 }
 static void
 push_expr_dec (int dec)
@@ -8774,8 +8869,9 @@ evaluate_test (cb_tree s, cb_tree o)
 		return flag ? CB_BUILD_NEGATION (t) : t;
 	}
 
-	if (CB_REFERENCE_P(x) && CB_FIELD_P(CB_REFERENCE(x)->value) &&
-	    CB_FIELD(CB_REFERENCE(x)->value)->level == 88) {
+	if (CB_REFERENCE_P(x) 
+	 && CB_FIELD_P(CB_REFERENCE(x)->value) 
+	 && CB_FIELD(CB_REFERENCE(x)->value)->level == 88) {
 		cb_error_x (CB_TREE (current_statement),
 			    _("invalid use of 88 level in WHEN expression"));
 		return NULL;
@@ -8889,6 +8985,8 @@ void
 cb_emit_evaluate (cb_tree subject_list, cb_tree case_list)
 {
 	cb_tree	x;
+	cb_tree subjs, c1, d1;
+	int		need_dec, n_whens;
 	char	sbuf[16];
 
 #if 0	/* TODO: check for "simple" EVALUATE and use a different codegen
@@ -8910,7 +9008,9 @@ cb_emit_evaluate (cb_tree subject_list, cb_tree case_list)
 	sprintf (sbuf, "goto %s%d;", CB_PREFIX_LABEL, cb_id);
 	x = cb_build_direct (cobc_parse_strdup (sbuf), 0);
 
-	/* FIXME: iterate over subject_list here:
+	/* Providing there are enough WHENs to warrant it and the EVALUATE
+	 * expression is either an integer or decimal result
+	 * iterate over subject_list here:
 	      for each of its values that are a reference:
 		      build creation of a temporary field with its value
 			  and replace the reference in the subject_list with this
@@ -8930,6 +9030,76 @@ cb_emit_evaluate (cb_tree subject_list, cb_tree case_list)
 		and if there _is_ a runtime error it is raised at the first WHEN, while
 		it should be raised at the EVALUATE.
 	*/
+	n_whens = 0;
+	need_dec = 0;
+	n_whens = cb_list_length (case_list);
+	if (n_whens > 2) {	/* Is it worth creating a temp variable? */
+		for (subjs = subject_list; subjs; subjs = CB_CHAIN (subjs)) {
+			c1 = CB_VALUE (subjs);
+			if (CB_TREE_TAG (c1) == CB_TAG_BINARY_OP) {
+				if (binary_op_is_relational (CB_BINARY_OP (c1))) {
+					need_dec = 0;		/* Skip trying to optimize this one */
+					break;
+				}
+				need_dec++;
+			}
+		}
+		if ((need_dec + current_program->decimal_index) > (COB_MAX_DEC_STRUCT - 4))
+			need_dec = 0;		/* Too many needed so skip this */
+	}
+	d1 = NULL;
+	need_dec = 0;		/* Disable this code and come back to finish it later; Ron Norman */
+	if (need_dec > 0) {
+		for (subjs = subject_list; subjs; subjs = CB_CHAIN (subjs)) {
+			c1 = CB_VALUE (subjs);
+			if (CB_TREE_TAG (c1) == CB_TAG_BINARY_OP) {
+				cb_tree		temp;
+				struct cb_field	*f;
+				if (cb_is_integer_expr (c1)) {
+					temp = cb_build_index (cb_build_filler (), NULL, 0, NULL);
+					temp->source_line = c1->source_line;
+					f = CB_FIELD (cb_ref (temp));
+					f->usage = CB_USAGE_BINARY;
+					f->size = sizeof(long);
+					f->count++;
+					cb_emit (cb_build_comment ("Evaluate Integer Expression"));
+					cb_emit (cb_build_assign (temp, c1));
+					CB_VALUE (subjs) = temp;
+				} else {
+					char		nupic[32], msg[80];
+					expr_dmax = -1;
+					expr_szmax = -1;
+					cb_get_expr_size (c1);
+					if (expr_dmax > 0)
+						sprintf(nupic,"S9(%d)V9(%d)",expr_szmax+expr_dmax,expr_dmax+1);
+					else
+						sprintf(nupic,"S9(%d)",expr_szmax);
+					expr_dmax = -1;
+					expr_szmax = -1;
+					if (d1 == NULL)
+						d1 = decimal_alloc ();
+					decimal_expand (d1, c1);
+					sprintf(msg, "Evaluate decimal Expression into PIC %s",nupic);
+					cb_emit (cb_build_comment (strdup(msg)));
+					cb_emit (cb_list_reverse (decimal_stack));
+					decimal_stack = NULL;
+					temp = cb_build_index (cb_build_filler (), NULL, 0, NULL);
+					temp->source_line = c1->source_line;
+					f = CB_FIELD (cb_ref (temp));
+					f->usage = CB_USAGE_DISPLAY;
+					f->pic = cb_build_picture (nupic);
+					f->size = f->pic->size;
+					f->count++;
+					decimal_assign (temp, d1, cb_int0);
+					cb_emit (cb_list_reverse (decimal_stack));
+					decimal_stack = NULL;
+					CB_VALUE (subjs) = temp;
+				}
+			}
+		}
+	}
+	if (d1 != NULL)
+		decimal_free ();
 	build_evaluate (subject_list, case_list, x);
 
 	/* internal label for END-EVALUATE */
