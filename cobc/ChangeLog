@@ -1,4 +1,9 @@
 
+2022-11-15  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* pplex.l: allow spaces or tab characters after the `$` in MF-style
+	  directives
+
 2022-11-08  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* typeck.c (cb_validate_program_data): DEPENDING var
