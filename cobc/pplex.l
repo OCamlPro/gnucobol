@@ -365,44 +365,44 @@ MAYBE_AREA_A	[ ]?#?
 	BEGIN DISPLAY_DIRECTIVE_STATE;
 }
 
-^{MAYBE_AREA_A}[ ]*"$SET"		{
+^{MAYBE_AREA_A}[ ]*$[ \t]*"SET"		{
 	/* MF extension: SET directive */
 	/* TODO: check position of the $SET directive */
 	BEGIN SET_DIRECTIVE_STATE;
 	return SET_DIRECTIVE;
 }
 
-^{MAYBE_AREA_A}[ ]*"$IF"		{
+^{MAYBE_AREA_A}[ ]*$[ \t]*"IF"		{
 	/* MF extension: conditional compilation */
 	BEGIN IF_DIRECTIVE_STATE;
 	return IF_DIRECTIVE;
 }
-^{MAYBE_AREA_A}[ ]*"$ELIF" |
-^{MAYBE_AREA_A}[ ]*"$ELSE-IF"		{
+^{MAYBE_AREA_A}[ ]*$[ \t]*"ELIF" |
+^{MAYBE_AREA_A}[ ]*$[ \t]*"ELSE-IF"		{
 	/* OpenCOBOL/GnuCOBOL 2.0 extension: conditional compilation combined ELSE IF,
 	   MF style format */
 	BEGIN IF_DIRECTIVE_STATE;
 	return ELIF_DIRECTIVE;
 }
-^{MAYBE_AREA_A}[ ]*"$ELSE"		{
+^{MAYBE_AREA_A}[ ]*$[ \t]*"ELSE"		{
 	/* MF extension: conditional compilation */
 	BEGIN ELSE_DIRECTIVE_STATE;
 	return ELSE_DIRECTIVE;
 }
-^{MAYBE_AREA_A}[ ]*"$END"		|
-^{MAYBE_AREA_A}[ ]*"$END-IF"	{
+^{MAYBE_AREA_A}[ ]*$[ \t]*"END"		|
+^{MAYBE_AREA_A}[ ]*$[ \t]*"END-IF"	{
 	/* MF extension: conditional compilation, second undocumented */
 	BEGIN ENDIF_DIRECTIVE_STATE;
 	return ENDIF_DIRECTIVE;
 }
-^{MAYBE_AREA_A}[ ]*"$REGION"		|
-^{MAYBE_AREA_A}[ ]*"$END-$REGION"	{
+^{MAYBE_AREA_A}[ ]*$[ \t]*"REGION"		|
+^{MAYBE_AREA_A}[ ]*$[ \t]*"END-$REGION"	{
 	/* MF extension for logical marking of a block in the editor */
 	/* _possibly_ check: MF rule "$REGION and $IF statements must not overlap." */
 	skip_to_eol ();
 }
 
-^{MAYBE_AREA_A}[ ]*"$"[_0-9A-Z-]+	{
+^{MAYBE_AREA_A}[ ]*$[ \t]*[_0-9A-Z-]+	{
 	/* unknown MF style directive */
 	char	*s;
 

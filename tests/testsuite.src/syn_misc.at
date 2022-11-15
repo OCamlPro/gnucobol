@@ -2839,27 +2839,27 @@ NOFLOATING
 
 
 AT_CHECK([$COMPILE_ONLY -free prog3.cob], [1], [],
-[prog3.cob:9: error: syntax error, unexpected *
+[prog3.cob:11: warning: ignoring invalid directive: '$       DISPLAY'
+prog3.cob:9: error: syntax error, unexpected *
 prog3.cob:10: error: syntax error, unexpected /
-prog3.cob:11: error: invalid symbol '$' - skipping word
 prog3.cob:12: error: syntax error, unexpected *
 prog3.cob:13: error: syntax error, unexpected /
 prog3.cob:14: error: invalid symbol '|' - skipping word
 prog3.cob:16: error: syntax error, unexpected Identifier
 ])
 AT_CHECK([$COMPILE_ONLY -free -fmfcomment prog3.cob], [1], [],
-[prog3.cob:9: error: syntax error, unexpected *
+[prog3.cob:11: warning: ignoring invalid directive: '$       DISPLAY'
+prog3.cob:9: error: syntax error, unexpected *
 prog3.cob:10: error: syntax error, unexpected /
-prog3.cob:11: error: invalid symbol '$' - skipping word
 prog3.cob:12: error: syntax error, unexpected *
 prog3.cob:13: error: syntax error, unexpected /
 prog3.cob:14: error: invalid symbol '|' - skipping word
 prog3.cob:16: error: syntax error, unexpected Identifier
 ])
 AT_CHECK([$COMPILE_ONLY -free -facucomment prog3.cob], [1], [],
-[prog3.cob:9: error: syntax error, unexpected *
+[prog3.cob:11: warning: ignoring invalid directive: '$       DISPLAY'
+prog3.cob:9: error: syntax error, unexpected *
 prog3.cob:10: error: syntax error, unexpected /
-prog3.cob:11: error: invalid symbol '$' - skipping word
 prog3.cob:12: error: syntax error, unexpected *
 prog3.cob:13: error: syntax error, unexpected /
 prog3.cob:16: error: syntax error, unexpected Identifier
@@ -7133,7 +7133,7 @@ AT_KEYWORDS([misc extensions directives])
 AT_DATA([prog.cob], [
        *> Valid
        $set sourceformat(free)
-       $SET SOURCEFORMAT"FIXED"
+       $  SET SOURCEFORMAT"FIXED"
        *> Invalid
        $SET SOURCEFORMAT"hi!"
        $SET SOURCEFORMAT()
