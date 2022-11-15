@@ -3,6 +3,12 @@
 
 	* pplex.l: allow spaces or tab characters after the `$` in MF-style
 	  directives
+	* pplex.l (cobc_parse_source_format): select X/Open free-form under MF
+	* pplex.l (cobc_set_source_format): X/Open free-form format allows lines
+	  of up to 255 bytes, and may not be subject to Area A enforcement
+	* cobc.c (process_command_line): handling of `-free` is subject to
+	  `-std`: it is an alias of `-fformat=free` with the MF-specific
+	  semantics of "free" when `-std=mf`
 
 2022-11-08  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 

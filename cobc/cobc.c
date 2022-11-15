@@ -3275,12 +3275,12 @@ process_command_line (const int argc, char **argv)
 
 		case 'F':
 			/* --free, alias of `-fformat=free` */
-			cobc_set_source_format (CB_FORMAT_FREE);
+			(void) cobc_deciph_source_format ("FREE");
 			break;
 
 		case 'f':
 			/* --fixed, alias of `-fformat=fixed` */
-			cobc_set_source_format (CB_FORMAT_FIXED);
+			(void) cobc_deciph_source_format ("FIXED");
 			break;
 
 		case 'q':

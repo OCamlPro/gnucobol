@@ -5176,6 +5176,56 @@ AT_CHECK([$COBCRUN_DIRECT ./fit], [0],
 AT_CLEANUP
 
 
+AT_SETUP([MF FREE format (X/Open)])
+AT_KEYWORDS([fundamental xopen extensions directives])
+
+AT_DATA([prog.cob], [
+IDENTIFICATION DIVISION.
+PROGRAM-ID. prog.
+DATA DIVISION.
+WORKING-STORAGE SECTION.
+1 X PIC 99.
+PROCEDURE DIVISION.
+MAIN.
+COMPUTE X = 6
+* 7
+DISPLAY X NO ADVANCING
+STOP RUN.
+])
+
+AT_CHECK([$COMPILE -free -o prog-free prog.cob], [0], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog-free], [0], [42])
+
+AT_CHECK([$COMPILE -std=mf -fformat=free -o prog-mf-fformat-free prog.cob], [0], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog-mf-fformat-free], [0], [06])
+
+AT_CHECK([$COMPILE -std=mf -free -o prog-mf-free prog.cob], [0], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog-mf-free], [0], [06])
+
+AT_DATA([prog2.cob], [
+      $SET SOURCEFORMAT"FREE"
+IDENTIFICATION DIVISION.
+PROGRAM-ID. prog.
+DATA DIVISION.
+WORKING-STORAGE SECTION.
+1 X PIC 99.
+PROCEDURE DIVISION.
+MAIN.
+COMPUTE X = 6
+* 7
+DISPLAY X NO ADVANCING
+STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [42])
+
+AT_CHECK([$COMPILE -std=mf -o prog2-mf prog2.cob], [0], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2-mf], [0], [06])
+
+AT_CLEANUP
+
+
 AT_SETUP([Binary COMP-1 (1)])
 AT_KEYWORDS([extensions])
 

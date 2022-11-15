@@ -1,4 +1,9 @@
 
+2022-11-15  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* gnucobol.texi: X/Open free-form format allows lines of up to 255
+	  bytes, and may not be subject to Area A enforcement
+
 2022-09-23  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* gnucobol.texi: mention Area A enforcement
