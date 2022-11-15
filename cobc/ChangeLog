@@ -1,4 +1,9 @@
 
+2022-11-08  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* typeck.c (cb_validate_program_data): DEPENDING var
+	  for PIC L data-items can come after parent groups
+
 2022-10-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c: rewritten codegen for INITIALIZE of table fields,
