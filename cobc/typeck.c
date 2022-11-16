@@ -112,7 +112,6 @@ static int			warn_screen_done = 0;
 static int			expr_op;		/* Last operator */
 static cb_tree		expr_lh;		/* Last left hand */
 static int			expr_dmax = -1;		/* Max scale for expression result */
-static int			expr_szmax = -1;	/* Max size for expression result */
 #define MAX_NESTED_EXPR	64
 static cb_tree		expr_x = NULL;
 static cb_tree		sz_shift;
@@ -837,8 +836,6 @@ cb_is_integer_expr (cb_tree x)
 	if (CB_NUMERIC_LITERAL_P (x)) {
 		if (CB_LITERAL (x)->scale > expr_dmax)
 			expr_dmax = CB_LITERAL (x)->scale;
-		if (CB_LITERAL (x)->size > expr_szmax)
-			expr_szmax = CB_LITERAL (x)->size;
 	 	if (CB_LITERAL (x)->scale == 0
 		 && cb_fits_int (x))
 			return 1;
@@ -967,52 +964,6 @@ cb_get_op_scale (cb_tree x)
 	return 0;
 }
 
-/*
- * Scan expression to get largest numeric field and scale
- */
-static void
-cb_get_expr_size (cb_tree x)
-{
-	struct cb_binary_op	*p;
-	struct cb_field         *f;
-	int		sz,scl;
-	if (x == NULL)
-		return;
-	if (CB_REF_OR_FIELD_P (x)) {
-		sz = cb_get_op_size (x);
-		if (sz > expr_szmax)
-			expr_szmax = sz;
-		scl = cb_get_op_scale (x);
-		if (scl > expr_dmax)
-			expr_dmax = scl;
-		return;
-	}
-	if (CB_NUMERIC_LITERAL_P (x)) {
-		sz = cb_get_op_size (x);
-		if (sz > expr_szmax)
-			expr_szmax = sz;
-		scl = cb_get_op_scale (x);
-		if (scl > expr_dmax)
-			expr_dmax = scl;
-		return;
-	}
-	if (CB_BINARY_OP_P (x)) {
-		p = CB_BINARY_OP (x);
-		if (p->op == '/') {
-			if (expr_dmax < 0)
-				expr_dmax = 1;
-			expr_dmax++;
-		}
-		if (p->op == '*') {
-			sz = cb_get_op_size (p->x) + cb_get_op_size (p->y) + 1;
-			if (sz > expr_szmax)
-				expr_szmax = sz;
-		}
-		cb_get_expr_size (p->x);
-		cb_get_expr_size (p->y);
-	}
-	return;
-}
 static cb_tree
 cb_check_needs_break (cb_tree stmt)
 {
@@ -6294,6 +6245,21 @@ cb_build_cond (cb_tree x)
 				return cb_error_node;
 			}
 			f = NULL;
+			if (CB_TREE_TAG (p->x) == CB_TAG_DECIMAL) {
+				if (CB_TREE_TAG (p->y) == CB_TAG_LITERAL
+				&&  CB_TREE_CATEGORY (p->y) == CB_CATEGORY_NUMERIC) {
+					d2 = cb_build_decimal_literal (cb_lookup_literal(p->y,1));
+					dpush (CB_BUILD_FUNCALL_2 ("cob_decimal_cmp", p->x, d2));
+				} else {
+					d2 = decimal_alloc ();
+					decimal_expand (d2, p->y);
+					dpush (CB_BUILD_FUNCALL_2 ("cob_decimal_cmp", p->x, d2));
+					decimal_free ();
+				}
+				ret = cb_list_reverse (decimal_stack);
+				decimal_stack = NULL;
+				break;
+			}
 			if (CB_REF_OR_FIELD_P (p->x)) {
 				f = CB_FIELD_PTR (p->x);
 				if(f->flag_any_length)
@@ -6311,10 +6277,10 @@ cb_build_cond (cb_tree x)
 					ret = cb_build_optim_cond (p);
 					break;
 				}
+
 				/* Decimal comparison */
 				d1 = decimal_alloc ();
 				d2 = decimal_alloc ();
-
 				decimal_expand (d1, p->x);
 				decimal_expand (d2, p->y);
 				dpush (CB_BUILD_FUNCALL_2 ("cob_decimal_cmp", d1, d2));
@@ -8985,8 +8951,8 @@ void
 cb_emit_evaluate (cb_tree subject_list, cb_tree case_list)
 {
 	cb_tree	x;
-	cb_tree subjs, c1, d1;
-	int		need_dec, n_whens;
+	cb_tree subjs, whens, c1, d1;
+	int		need_dec, used_dec;
 	char	sbuf[16];
 
 #if 0	/* TODO: check for "simple" EVALUATE and use a different codegen
@@ -9030,10 +8996,8 @@ cb_emit_evaluate (cb_tree subject_list, cb_tree case_list)
 		and if there _is_ a runtime error it is raised at the first WHEN, while
 		it should be raised at the EVALUATE.
 	*/
-	n_whens = 0;
-	need_dec = 0;
-	n_whens = cb_list_length (case_list);
-	if (n_whens > 2) {	/* Is it worth creating a temp variable? */
+	used_dec = need_dec = 0;
+	if (cb_list_length (case_list) > 2) {	/* Is it worth creating a temp variable? */
 		for (subjs = subject_list; subjs; subjs = CB_CHAIN (subjs)) {
 			c1 = CB_VALUE (subjs);
 			if (CB_TREE_TAG (c1) == CB_TAG_BINARY_OP) {
@@ -9042,20 +9006,37 @@ cb_emit_evaluate (cb_tree subject_list, cb_tree case_list)
 					break;
 				}
 				need_dec++;
+			} else if (CB_TREE_TAG (c1) == CB_TAG_INTRINSIC) {
+				need_dec++;
 			}
 		}
 		if ((need_dec + current_program->decimal_index) > (COB_MAX_DEC_STRUCT - 4))
 			need_dec = 0;		/* Too many needed so skip this */
+
+		whens = CB_VALUE (case_list);
+		whens = CB_CHAIN (whens);
+		/* For each WHEN sequence */
+		for (whens = CB_VALUE (whens); whens && need_dec > 0; whens = CB_CHAIN (whens)) {
+			cb_tree		objs;
+			for (objs = CB_VALUE (whens); objs && need_dec > 0; objs = CB_CHAIN (objs)) {
+				c1 = CB_VALUE (objs);
+				if (CB_PAIR_P (c1)) {
+					c1 = CB_PAIR_X (c1);
+				}
+				if (CB_LITERAL_P (c1)
+				 && !CB_NUMERIC_LITERAL_P (c1)) {	/* Non-Numeric literal so skip */
+					need_dec = 0;
+				}
+			}
+		}
 	}
-	d1 = NULL;
-	need_dec = 0;		/* Disable this code and come back to finish it later; Ron Norman */
 	if (need_dec > 0) {
 		for (subjs = subject_list; subjs; subjs = CB_CHAIN (subjs)) {
 			c1 = CB_VALUE (subjs);
 			if (CB_TREE_TAG (c1) == CB_TAG_BINARY_OP) {
-				cb_tree		temp;
-				struct cb_field	*f;
 				if (cb_is_integer_expr (c1)) {
+					cb_tree		temp;
+					struct cb_field	*f;
 					temp = cb_build_index (cb_build_filler (), NULL, 0, NULL);
 					temp->source_line = c1->source_line;
 					f = CB_FIELD (cb_ref (temp));
@@ -9066,46 +9047,36 @@ cb_emit_evaluate (cb_tree subject_list, cb_tree case_list)
 					cb_emit (cb_build_assign (temp, c1));
 					CB_VALUE (subjs) = temp;
 				} else {
-					char		nupic[32], msg[80];
-					expr_dmax = -1;
-					expr_szmax = -1;
-					cb_get_expr_size (c1);
-					if (expr_dmax > 0)
-						sprintf(nupic,"S9(%d)V9(%d)",expr_szmax+expr_dmax,expr_dmax+1);
-					else
-						sprintf(nupic,"S9(%d)",expr_szmax);
-					expr_dmax = -1;
-					expr_szmax = -1;
-					if (d1 == NULL)
-						d1 = decimal_alloc ();
+					used_dec++;
+					d1 = decimal_alloc ();
 					decimal_expand (d1, c1);
-					sprintf(msg, "Evaluate decimal Expression into PIC %s",nupic);
-					cb_emit (cb_build_comment (strdup(msg)));
+					cb_emit (cb_build_comment ("Evaluate decimal Expression"));
 					cb_emit (cb_list_reverse (decimal_stack));
 					decimal_stack = NULL;
-					temp = cb_build_index (cb_build_filler (), NULL, 0, NULL);
-					temp->source_line = c1->source_line;
-					f = CB_FIELD (cb_ref (temp));
-					f->usage = CB_USAGE_DISPLAY;
-					f->pic = cb_build_picture (nupic);
-					f->size = f->pic->size;
-					f->count++;
-					decimal_assign (temp, d1, cb_int0);
-					cb_emit (cb_list_reverse (decimal_stack));
-					decimal_stack = NULL;
-					CB_VALUE (subjs) = temp;
+					CB_VALUE (subjs) = d1;
 				}
+			} else if (CB_TREE_TAG (c1) == CB_TAG_INTRINSIC) {
+				used_dec++;
+				d1 = decimal_alloc ();
+				decimal_expand (d1, c1);
+				cb_emit (cb_build_comment ("Evaluate Expression"));
+				cb_emit (cb_list_reverse (decimal_stack));
+				decimal_stack = NULL;
+				CB_VALUE (subjs) = d1;
 			}
 		}
 	}
-	if (d1 != NULL)
-		decimal_free ();
 	build_evaluate (subject_list, case_list, x);
 
 	/* internal label for END-EVALUATE */
 	cb_emit (cb_build_comment ("End EVALUATE"));
 	sprintf (sbuf, "%s%d:;", CB_PREFIX_LABEL, cb_id);
 	cb_emit (cb_build_direct (cobc_parse_strdup (sbuf), 0));
+
+	while (used_dec > 0) {
+		decimal_free ();
+		used_dec--;
+	}
 
 	/* TODO: drop temporary fields here */
 

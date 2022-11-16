@@ -2,6 +2,7 @@
 2022-11-16  Ron Norman <rjn@inglenet.com>
 
 	* codegen.c: Fix for computing length of ODO fields
+	* typeck.c: EVALUATE when possible compute the expression values once
 
 2022-11-04  Ron Norman <rjn@inglenet.com>
 
