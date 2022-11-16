@@ -784,6 +784,8 @@ chk_field_variable_size (struct cb_field *f)
 				if (cb_odo_last_varlen == CB_OK) {
 					if (f->sister != NULL	/* Parent has sister so NOT vary size */
 					 && f->level == f->sister->level
+					 && f->level != 1
+					 && f->level != 77
 					 && !f->sister->redefines)
 						break;
 					if (fc->sister != NULL)	
