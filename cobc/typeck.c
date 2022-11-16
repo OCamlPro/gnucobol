@@ -9019,10 +9019,22 @@ cb_emit_evaluate (cb_tree subject_list, cb_tree case_list)
 		for (whens = CB_VALUE (whens); whens && need_dec > 0; whens = CB_CHAIN (whens)) {
 			cb_tree		objs;
 			for (objs = CB_VALUE (whens); objs && need_dec > 0; objs = CB_CHAIN (objs)) {
+				if (objs == cb_any
+				 || objs == cb_true
+				 || objs == cb_false) {
+					need_dec = 0;
+					break;
+				} 
 				c1 = CB_VALUE (objs);
 				if (CB_PAIR_P (c1)) {
 					c1 = CB_PAIR_X (c1);
 				}
+				if (c1 == cb_any
+				 || c1 == cb_true
+				 || c1 == cb_false) {
+					need_dec = 0;
+					break;
+				} 
 				if (CB_LITERAL_P (c1)
 				 && !CB_NUMERIC_LITERAL_P (c1)) {	/* Non-Numeric literal so skip */
 					need_dec = 0;
@@ -9030,6 +9042,7 @@ cb_emit_evaluate (cb_tree subject_list, cb_tree case_list)
 			}
 		}
 	}
+	need_dec = 0;
 	if (need_dec > 0) {
 		for (subjs = subject_list; subjs; subjs = CB_CHAIN (subjs)) {
 			c1 = CB_VALUE (subjs);
