@@ -2062,11 +2062,11 @@ start:
 			goto start;
 		}
 
-		if (cb_flag_mfcomment) {
-			if (buff[0] == '*' || buff[0] == '/') {
-				newline_count++;
-				goto start;
-			}
+		if (buff[0] == '*'
+		 && cb_flag_mfcomment
+		 && CB_MFCOMMENT_APPLIES (source_format)) {
+			newline_count++;
+			goto start;
 		}
 
 		/* Check if text is longer than text_column */

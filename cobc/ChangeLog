@@ -1,7 +1,7 @@
 
 2022-11-18  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
-	* cobc.c (print_line): fully honnor -fmfcomment by suppressing lines
+	* cobc.c (print_line): fully honor -fmfcomment by suppressing lines
 	  that start with an asterisk from listings
 
 2022-11-15  Nicolas Berthier <nicolas.berthier@ocamlpro.com>

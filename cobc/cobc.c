@@ -6428,8 +6428,9 @@ print_line (struct list_files *cfile, char *line, int line_num, int in_copy)
 		cfile->listing_on = on_off;
 		/* always print the directive itself */
 		do_print = 1;
-	} else if (cb_flag_mfcomment && CB_SF_FIXED (cfile->source_format) && \
-		   line[0] == '*') {
+	} else if (line[0] == '*'
+		&& cb_flag_mfcomment
+		&& CB_MFCOMMENT_APPLIES (cfile->source_format)) {
 		/* When MFCOMMENT holds, asterisk in column 1 means comment line
 		   with listing suppression in fixed format. */
 		do_print = 0;
