@@ -70,7 +70,7 @@ jobs:
       - name: check
         run: |
           cd _build/tests
-          make check TESTSUITEFLAGS="--jobs=$((${NPROC}+1))"
+          TERM=xterm make check TESTSUITEFLAGS="--jobs=$((${NPROC}+1))"
 
       - name: Upload testsuite.log
         uses: actions/upload-artifact@v3
