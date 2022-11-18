@@ -1504,22 +1504,23 @@ cobc_set_source_format (const enum cb_format sf) {
 		/* This value matches most MF Visual COBOL 4.0 version. */
 		text_column = 250;
 		break;
-	case CB_FORMAT_XOPEN_FFF:
-		text_column = 80;
-		break;
 	case CB_FORMAT_ACUTERM:
 	case CB_FORMAT_ICOBOL_CRT:
 		/* CHECKME:
 		   https://sf.net/p/gnucobol/feature-requests/29/#c2d0/8d2f */
 		text_column = 320;
 		break;
+	case CB_FORMAT_XOPEN_FFF:
 	case CB_FORMAT_COBOLX:
 	case CB_FORMAT_ICOBOL_XCARD:
+		/* For X/Open, this is the number of "bytes" allowed on single
+		   source line as per the X/Open CAE Specification (1991),
+		   Section 7.4 "Limits". */
 		text_column = 255;
 		break;
 	case CB_FORMAT_FREE:
 		/* text-column should be ignored: put an invalid value to catch
-		   some bugs? */
+		   some bugs. */
 		text_column = -1;
 		break;
 	}
@@ -1527,6 +1528,7 @@ cobc_set_source_format (const enum cb_format sf) {
 	switch (source_format) {
 	case CB_FORMAT_FIXED:
 	case CB_FORMAT_FREE:
+	case CB_FORMAT_XOPEN_FFF:
 		emit_area_a_tokens = 0;
 		cobc_areacheck = 0;
 		break;
@@ -1559,7 +1561,11 @@ cobc_parse_source_format (enum cb_format *const out, const char *const sfname) {
 	if (!cb_strcasecmp (sfname, "FIXED")) {
 		format = CB_FORMAT_FIXED;
 	} else if (!cb_strcasecmp (sfname, "FREE")) {
-		format = CB_FORMAT_FREE;
+		/* Note: SOURCEFORMAT"FREE" in MicroFocus dialect actually
+		   selects an X/Open-derived free-form format. */
+		format = (cb_std_define == CB_STD_MF)
+			? CB_FORMAT_XOPEN_FFF
+			: CB_FORMAT_FREE;
 	} else if (!cb_strcasecmp (sfname, "COBOL85")) {
 		format = CB_FORMAT_COBOL85;
 	} else if (!cb_strcasecmp (sfname, "VARIABLE")) {
@@ -2056,11 +2062,11 @@ start:
 			goto start;
 		}
 
-		if (cb_flag_mfcomment) {
-			if (buff[0] == '*' || buff[0] == '/') {
-				newline_count++;
-				goto start;
-			}
+		if (buff[0] == '*'
+		 && cb_flag_mfcomment
+		 && CB_MFCOMMENT_APPLIES (source_format)) {
+			newline_count++;
+			goto start;
 		}
 
 		/* Check if text is longer than text_column */

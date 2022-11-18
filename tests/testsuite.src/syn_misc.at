@@ -2729,14 +2729,12 @@ AT_DATA([prog.cob], [
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
        PROCEDURE        DIVISION.
-      *    DISPLAY 'COMMENT'             END-DISPLAY
-      /    DISPLAY 'COMMENTSLASH'        END-DISPLAY
-*          DISPLAY 'MFCOMMENTASTERISK'   END-DISPLAY
-/          DISPLAY 'MFCOMMENTSLASH'      END-DISPLAY
- *         DISPLAY 'NOMFCOMMENTASTERISK' END-DISPLAY
- /         DISPLAY 'NOMFCOMMENTSLASH'    END-DISPLAY
-        *> DISPLAY 'FLOATING'            END-DISPLAY
- *>        DISPLAY 'NOFLOATING'          END-DISPLAY
+      *    DISPLAY 'COMMENT'      END-DISPLAY
+      /    DISPLAY 'COMMENTSLASH' END-DISPLAY
+*          DISPLAY 'MFCOMMENT'    END-DISPLAY
+ *         DISPLAY 'NOMFCOMMENT'  END-DISPLAY
+        *> DISPLAY 'FLOATING'     END-DISPLAY
+ *>        DISPLAY 'NOFLOATING'   END-DISPLAY
            STOP RUN.
 ])
 
@@ -2748,17 +2746,15 @@ AT_DATA([prog2.cob], [
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
        PROCEDURE        DIVISION.
-      *    DISPLAY 'COMMENT'             END-DISPLAY
-      /    DISPLAY 'COMMENTSLASH'        END-DISPLAY
-      $    DISPLAY 'COMMENTDOLLAR'       END-DISPLAY
-*          DISPLAY 'MFCOMMENTASTERISK'   END-DISPLAY
-/          DISPLAY 'MFCOMMENTSLASH'      END-DISPLAY
- *         DISPLAY 'NOMFCOMMENTASTERISK' END-DISPLAY
- /         DISPLAY 'NOMFCOMMENTSLASH'    END-DISPLAY
-        *> DISPLAY 'FLOATING'            END-DISPLAY
-        |  DISPLAY 'ACUFLOATING'         END-DISPLAY
- |         DISPLAY 'NOACUFLOATING'       END-DISPLAY
- *>        DISPLAY 'NOFLOATING'          END-DISPLAY
+      *    DISPLAY 'COMMENT'       END-DISPLAY
+      /    DISPLAY 'COMMENTSLASH'  END-DISPLAY
+      $    DISPLAY 'COMMENTDOLLAR' END-DISPLAY
+*          DISPLAY 'MFCOMMENT'     END-DISPLAY
+ *         DISPLAY 'NOMFCOMMENT'   END-DISPLAY
+        *> DISPLAY 'FLOATING'      END-DISPLAY
+        |  DISPLAY 'ACUFLOATING'   END-DISPLAY
+ |         DISPLAY 'NOACUFLOATING' END-DISPLAY
+ *>        DISPLAY 'NOFLOATING'    END-DISPLAY
            STOP RUN.
 ])
 
@@ -2770,30 +2766,27 @@ CONFIGURATION SECTION.
 DATA             DIVISION.
 WORKING-STORAGE  SECTION.
 PROCEDURE        DIVISION.
-      * DISPLAY 'NOCOMMENT'           END-DISPLAY
-      / DISPLAY 'NOCOMMENTSLASH'      END-DISPLAY
-$       DISPLAY 'ACUCOMMENTDOLLAR'    END-DISPLAY
-*       DISPLAY 'NOMFCOMMENTASTERISK' END-DISPLAY
-/       DISPLAY 'NOMFCOMMENTSLASH'    END-DISPLAY
- |      DISPLAY 'ACUFLOATING'         END-DISPLAY
- *>     DISPLAY 'FLOATING'            END-DISPLAY
-      x DISPLAY 'WRONGINDICATOR'      END-DISPLAY
+      * DISPLAY 'NOCOMMENT'        END-DISPLAY
+      / DISPLAY 'NOCOMMENTSLASH'   END-DISPLAY
+$       DISPLAY 'ACUCOMMENTDOLLAR' END-DISPLAY
+*       DISPLAY 'NOMFCOMMENT'      END-DISPLAY
+ |      DISPLAY 'ACUFLOATING'      END-DISPLAY
+ *>     DISPLAY 'FLOATING'         END-DISPLAY
+      x DISPLAY 'WRONGINDICATOR'   END-DISPLAY
         STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
-[MFCOMMENTASTERISK
-MFCOMMENTSLASH
-NOMFCOMMENTASTERISK
-NOMFCOMMENTSLASH
+[MFCOMMENT
+NOMFCOMMENT
 NOFLOATING
 ], [])
 
 AT_CHECK([$COMPILE_ONLY prog2.cob], [1], [],
 [prog2.cob:11: error: invalid indicator '$' at column 7
-prog2.cob:17: error: invalid symbol '|' - skipping word
+prog2.cob:15: error: invalid symbol '|' - skipping word
 ])
 
 # note: for checking the result we actually either need to run the program
@@ -2804,24 +2797,21 @@ AT_CHECK([$COMPILE -fmfcomment prog.cob], [0], [],
 [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
-[NOMFCOMMENTASTERISK
-NOMFCOMMENTSLASH
+[NOMFCOMMENT
 NOFLOATING
 ], [])
 
 AT_CHECK([$COMPILE_ONLY -fmfcomment prog2.cob], [1], [],
 [prog2.cob:11: error: invalid indicator '$' at column 7
-prog2.cob:17: error: invalid symbol '|' - skipping word
+prog2.cob:15: error: invalid symbol '|' - skipping word
 ])
 
 # COMPILE needed, see note above
 AT_CHECK([$COMPILE -facucomment prog.cob -o prog1], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog1], [0],
-[MFCOMMENTASTERISK
-MFCOMMENTSLASH
-NOMFCOMMENTASTERISK
-NOMFCOMMENTSLASH
+[MFCOMMENT
+NOMFCOMMENT
 NOFLOATING
 ], [])
 
@@ -2829,10 +2819,8 @@ NOFLOATING
 AT_CHECK([$COMPILE -facucomment prog2.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog2], [0],
-[MFCOMMENTASTERISK
-MFCOMMENTSLASH
-NOMFCOMMENTASTERISK
-NOMFCOMMENTSLASH
+[MFCOMMENT
+NOMFCOMMENT
 NOACUFLOATING
 NOFLOATING
 ], [])
@@ -2843,31 +2831,28 @@ AT_CHECK([$COMPILE_ONLY -free prog3.cob], [1], [],
 prog3.cob:9: error: syntax error, unexpected *
 prog3.cob:10: error: syntax error, unexpected /
 prog3.cob:12: error: syntax error, unexpected *
-prog3.cob:13: error: syntax error, unexpected /
-prog3.cob:14: error: invalid symbol '|' - skipping word
-prog3.cob:16: error: syntax error, unexpected Identifier
+prog3.cob:13: error: invalid symbol '|' - skipping word
+prog3.cob:15: error: syntax error, unexpected Identifier
 ])
 AT_CHECK([$COMPILE_ONLY -free -fmfcomment prog3.cob], [1], [],
 [prog3.cob:11: warning: ignoring invalid directive: '$       DISPLAY'
 prog3.cob:9: error: syntax error, unexpected *
 prog3.cob:10: error: syntax error, unexpected /
 prog3.cob:12: error: syntax error, unexpected *
-prog3.cob:13: error: syntax error, unexpected /
-prog3.cob:14: error: invalid symbol '|' - skipping word
-prog3.cob:16: error: syntax error, unexpected Identifier
+prog3.cob:13: error: invalid symbol '|' - skipping word
+prog3.cob:15: error: syntax error, unexpected Identifier
 ])
 AT_CHECK([$COMPILE_ONLY -free -facucomment prog3.cob], [1], [],
 [prog3.cob:11: warning: ignoring invalid directive: '$       DISPLAY'
 prog3.cob:9: error: syntax error, unexpected *
 prog3.cob:10: error: syntax error, unexpected /
 prog3.cob:12: error: syntax error, unexpected *
-prog3.cob:13: error: syntax error, unexpected /
-prog3.cob:16: error: syntax error, unexpected Identifier
+prog3.cob:15: error: syntax error, unexpected Identifier
 ])
 AT_CHECK([$COMPILE_ONLY -fformat=terminal -facucomment prog3.cob], [1], [],
 [prog3.cob:9: error: syntax error, unexpected *
 prog3.cob:10: error: syntax error, unexpected /
-prog3.cob:16: error: syntax error, unexpected Identifier
+prog3.cob:15: error: syntax error, unexpected Identifier
 ])
 # Check that invalid indicator and doesn't abort preprocessing
 # and that errors in preprocessing doesn't abort compilation
@@ -2878,7 +2863,7 @@ prog3.cob:4: error: invalid indicator 'N' at column 7
 prog3.cob:5: error: invalid indicator 'U' at column 7
 prog3.cob:7: error: invalid indicator 'G' at column 7
 prog3.cob:8: error: invalid indicator 'U' at column 7
-prog3.cob:16: error: invalid indicator 'x' at column 7
+prog3.cob:15: error: invalid indicator 'x' at column 7
 prog3.cob:6: error: PROGRAM-ID header missing
 prog3.cob:6: error: PROCEDURE DIVISION header missing
 prog3.cob:6: error: syntax error, unexpected DIVISION
