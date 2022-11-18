@@ -3566,6 +3566,73 @@ AT_CHECK([diff prog20.lst prog.lis], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([MFCOMMENT])
+AT_KEYWORDS([listing])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+      *    DISPLAY 'COMMENTASTERISK'
+      /    DISPLAY 'COMMENTSLASH'
+*          DISPLAY 'MFCOMMENTASTERISK'
+/          DISPLAY 'MFCOMMENTSLASH'
+           STOP RUN.
+])
+AT_DATA([prog-nomfcomment.lst.expected],
+[GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY
+
+LINE    PG/LN  A...B............................................................
+
+000001
+000002         IDENTIFICATION   DIVISION.
+000003         PROGRAM-ID.      prog.
+000004         PROCEDURE        DIVISION.
+000005        *    DISPLAY 'COMMENTASTERISK'
+
+LINE    PG/LN  A...B............................................................
+
+000006        /    DISPLAY 'COMMENTSLASH'
+000007  *          DISPLAY 'MFCOMMENTASTERISK'
+000008  /          DISPLAY 'MFCOMMENTSLASH'
+000009             STOP RUN.
+
+
+0 warnings in compilation group
+0 errors in compilation group
+])
+AT_DATA([prog-mfcomment.lst.expected],
+[GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY
+
+LINE    PG/LN  A...B............................................................
+
+000001
+000002         IDENTIFICATION   DIVISION.
+000003         PROGRAM-ID.      prog.
+000004         PROCEDURE        DIVISION.
+000005        *    DISPLAY 'COMMENTASTERISK'
+
+LINE    PG/LN  A...B............................................................
+
+000006        /    DISPLAY 'COMMENTSLASH'
+000008  /          DISPLAY 'MFCOMMENTSLASH'
+000009             STOP RUN.
+
+
+0 warnings in compilation group
+0 errors in compilation group
+])
+
+AT_CHECK([$COMPILE_ONLY -t prog-nomfcomment.lst -tlines=0             prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -t   prog-mfcomment.lst -tlines=0 -fmfcomment prog.cob], [0], [], [])
+AT_CHECK([$UNIFY_LISTING prog-nomfcomment.lst prog-nomfcomment.lis once], [0], [], [])
+AT_CHECK([$UNIFY_LISTING   prog-mfcomment.lst   prog-mfcomment.lis once], [0], [], [])
+AT_CHECK([diff prog-nomfcomment.lst.expected prog-nomfcomment.lis], [0], [], [])
+AT_CHECK([diff   prog-mfcomment.lst.expected   prog-mfcomment.lis], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([LISTING directive])
 AT_KEYWORDS([listing])
 

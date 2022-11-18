@@ -169,7 +169,7 @@ CB_FLAG (cb_flag_write_after, 1, "write-after",
 	  "                        * default: BEFORE 1"))
 
 CB_FLAG (cb_flag_mfcomment, 1, "mfcomment",
-	_("  -fmfcomment           '*' or '/' in column 1 treated as comment\n"
+	_("  -fmfcomment           '*' or '/' in column 1 treated as comment with listing suppression\n"
 	  "                        * FIXED format only"))
 
 CB_FLAG (cb_flag_acucomment, 1, "acucomment",

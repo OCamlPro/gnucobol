@@ -2050,7 +2050,7 @@ clean_up_intermediates (struct filename *fn, const int status)
 		return;
 	}
 	if (fn->need_preprocess
-	 && (status 
+	 && (status
 		||  cb_compile_level > CB_LEVEL_PREPROCESS
 		|| (cb_compile_level == CB_LEVEL_PREPROCESS && save_temps))) {
 		cobc_check_action (fn->preprocess);
@@ -6428,6 +6428,11 @@ print_line (struct list_files *cfile, char *line, int line_num, int in_copy)
 		cfile->listing_on = on_off;
 		/* always print the directive itself */
 		do_print = 1;
+	} else if (cb_flag_mfcomment && CB_SF_FIXED (cfile->source_format) && \
+		   line[0] == '*') {
+		/* When MFCOMMENT holds, asterisk in column 1 means comment line
+		   with listing suppression in fixed format. */
+		do_print = 0;
 	} else if (line_has_page_eject (line, cfile->source_format)) {
 		force_new_page_for_next_line ();
 	} else if (line_has_listing_statement (line, cfile->source_format)) {
