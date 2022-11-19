@@ -9757,9 +9757,7 @@ cob_init (const int argc, char **argv)
 
 	/* Internal Debug Log */
 	if (cobsetptr->cob_debug_log) {
-#ifndef COB_DEBUG_LOG
-		cob_runtime_warning (_("compiler was not built with --enable-debug-log; COB_DEBUG_LOG ignored"));
-#else
+#ifdef COB_DEBUG_LOG
 		cob_debug_open ();
 #endif
 	}
