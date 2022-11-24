@@ -924,46 +924,6 @@ cb_is_integer_field_and_int (struct cb_field *f, cb_tree n)
 	return cb_is_integer_expr (n);
 }
 
-static int
-cb_get_op_size (cb_tree x)
-{
-	if (x == NULL)
-		return 1;
-	if (CB_REF_OR_FIELD_P (x)) {
-		if (CB_FIELD_PTR (x)->pic)
-			return CB_FIELD_PTR (x)->pic->size;
-		return CB_FIELD_PTR (x)->size;
-	}
-	if (CB_NUMERIC_LITERAL_P (x)) {
-		return CB_LITERAL (x)->size;
-	}
-	if (CB_BINARY_OP_P (x)) {
-		if (expr_dmax < 0)
-			expr_dmax = 1;
-		return expr_dmax;
-	}
-	return 1;
-}
-
-static int
-cb_get_op_scale (cb_tree x)
-{
-	struct cb_binary_op	*p;
-	cb_tree	y;
-	struct cb_field         *f;
-	if (x == NULL)
-		return 0;
-	if (CB_REF_OR_FIELD_P (x)) {
-		f = CB_FIELD_PTR (x);
-		if (f->pic)
-			return f->pic->scale;
-	}
-	if (CB_NUMERIC_LITERAL_P (x)) {
-		return CB_LITERAL (x)->scale;
-	}
-	return 0;
-}
-
 static cb_tree
 cb_check_needs_break (cb_tree stmt)
 {

@@ -5762,7 +5762,7 @@ cob_sys_exit_proc (const void *dispo, const void *pptr)
 	struct exit_handlerlist *hp;
 	struct exit_handlerlist *h;
 	unsigned char	install_flag;
-	unsigned char	priority;
+	unsigned char	priority = 0;
 	int			(**p)(void);
 
 	COB_CHK_PARMS (CBL_EXIT_PROC, 2);
