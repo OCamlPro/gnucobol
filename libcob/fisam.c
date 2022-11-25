@@ -197,6 +197,7 @@ struct indexfile {
 	int		saveerrno;	/* savefileposition errno */
 	int		lmode;		/* File lock mode for 'isread' */
 	int		startcond;	/* Previous 'start' condition value */
+	int		startfail;	/* Status of Previous 'start' */
 	int		readdir;	/* Read direction: ISPREV or ISNEXT */
 	int		lenkey;		/* Length of savekey area */
 	int		eofpending;	/* End of file pending */
@@ -1300,6 +1301,7 @@ isam_start (cob_file_api *a, cob_file *f, const int cond, cob_field *key)
 	fh->readdone = 0;
 	fh->eofpending = 0;
 	fh->startiscur = 0;
+	fh->startfail = 0;
 	fh->wrkhasrec = 0;
 	if (f->flag_nonexistent) {
 		return COB_STATUS_23_KEY_NOT_EXISTS;
@@ -1307,6 +1309,7 @@ isam_start (cob_file_api *a, cob_file *f, const int cond, cob_field *key)
 	k = indexed_findkey(f, key, &fullkeylen, &partlen);
 	if(k < 0) {
 		f->mapkey = -1;
+		fh->startfail = 1;
 		return COB_STATUS_23_KEY_NOT_EXISTS;
 	}
 	/* Use size of data field; This may indicate a partial key */
@@ -1358,6 +1361,7 @@ isam_start (cob_file_api *a, cob_file *f, const int cond, cob_field *key)
 				fh->startcond = -1;
 				fh->readdir = -1;
 				fh->startiscur = 0;
+				fh->startfail = 1;
 				return fisretsts (COB_STATUS_23_KEY_NOT_EXISTS);
 			} else {
 				savecond = COB_LA;
@@ -1368,8 +1372,24 @@ isam_start (cob_file_api *a, cob_file *f, const int cond, cob_field *key)
 			fh->startcond = -1;
 			fh->readdir = -1;
 			fh->startiscur = 0;
+			fh->startfail = 1;
 			return fisretsts (COB_STATUS_23_KEY_NOT_EXISTS);
 		}
+	}
+	if (COB_MODULE_PTR->flag_file_format == COB_FILE_IS_MF	/* MF format files */
+	 && ISERRNO == 0
+	 && (cond == COB_LE || cond == COB_LT)) {
+		isread (fh->isfd, (void *)fh->recwrk, ISPREV);
+		if (ISERRNO == EENDFILE) {
+			f->curkey = -1;
+			f->mapkey = -1;
+			fh->startcond = -1;
+			fh->readdir = -1;
+			fh->startiscur = 0;
+			fh->startfail = 1;
+			return fisretsts (COB_STATUS_23_KEY_NOT_EXISTS);
+		}
+		isstart (fh->isfd, &fh->key[k], klen, (void *)f->record->data, mode);
 	}
 	fh->startcond = savecond;
 	indexed_savekey(fh, f->record->data, k);
@@ -1509,6 +1529,9 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 	ret = COB_STATUS_00_SUCCESS;
 	switch (read_opts & COB_READ_MASK) {
 	case COB_READ_NEXT:
+		if (fh->startfail) {		/* START failed */
+			return COB_STATUS_46_READ_ERROR;
+		}
 		fh->readdir = ISNEXT;
 		if (fh->eofpending == ISNEXT) {
 			fh->eofpending = 0;
@@ -1589,6 +1612,9 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 		}
 		break;
 	case COB_READ_PREVIOUS:
+		if (fh->startfail) {		/* START failed */
+			return COB_STATUS_46_READ_ERROR;
+		}
 		skip_read = ISPREV;
 		fh->readdir = ISPREV;
 		if (fh->eofpending == ISPREV) {
@@ -1621,12 +1647,17 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 						domoveback = 1;
 					}
 					if (domoveback) {
-						isread (fh->isfd, (void *)f->record->data, ISPREV);
+						isread (fh->isfd, (void *)f->record->data, ISERRNO == 0 ? ISPREV : ISLAST);
 						skip_read = ISPREV;
 					}
 					break;
 				case COB_LT:
 					isread (fh->isfd, (void *)f->record->data, ISPREV);
+					if (ISERRNO == EENDFILE
+					 && COB_MODULE_PTR->flag_file_format == COB_FILE_IS_MF) { /* MF format files */
+						ret = COB_STATUS_23_KEY_NOT_EXISTS;
+						break;
+					}
 					while (ISERRNO == 0
 					&& indexed_cmpkey(fh, f->record->data, f->curkey, 0) >= 0) {
 						isread (fh->isfd, (void *)f->record->data, ISPREV);

@@ -1,4 +1,9 @@
 
+2022-11-24  Ron Norman <rjn@inglenet.com>
+
+	* fisam.c: Updated to better replicate MF COBOL behaviour
+				in relation to START ... READ NEXT/PREVIOUS
+
 2022-11-10  Ron Norman <rjn@inglenet.com>
 
 	* fileio.c: Preliminary implemenation of support for the
