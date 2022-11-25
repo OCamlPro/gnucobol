@@ -1894,6 +1894,8 @@ cob_set_file_defaults (cob_file *f)
 			f->flag_read_chk_dups = 1;
 		} else if (file_setptr->cob_file_dups == COB_DUPS_NEVER) {
 			f->flag_read_no_02 = 1;
+		} else if (COB_MODULE_PTR->flag_file_format == COB_FILE_IS_MF) {/* MF format files */
+			f->flag_read_chk_dups = 1;
 		}
 		if (f->fcd) {
 			if (f->fcd->fileFormat == MF_FF_CISAM)

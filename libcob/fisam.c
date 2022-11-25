@@ -123,8 +123,7 @@ static	cob_settings	*isam_setptr;
 #endif
 #if !defined(COB_WITH_STATUS_02)
 #define COB_WITH_STATUS_02
-#endif               
-
+#endif
 
 /* VBISAM specifics (either "old" one or updated, or VBISAM 2.2) */
 #elif	defined(WITH_VBISAM)
@@ -606,7 +605,8 @@ restorefileposition (cob_file *f)
 				break;
 			}
 		}
-		if (ISRECNUM == fh->saverecnum) {
+		if (ISRECNUM == fh->saverecnum
+		 && fh->saverecnum != fh->duprecnum) {	/* Leave here for read dup check */
 			if (fh->readdir == ISNEXT) {
 				/* Back off by one so next read gets this */
 				isread (fh->isfd, (void *)fh->recwrk, ISPREV);
@@ -630,6 +630,7 @@ savefileposition (cob_file *f)
 
 	fh = f->file;
 	fh->saverecnum = -1;
+	fh->duprecnum = 0;
 	if (f->curkey >= 0 && fh->readdir != -1) {
 		/* Switch back to index */
 		memcpy (fh->recwrk, f->record->data, f->record_max);
@@ -1483,12 +1484,13 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 	struct indexfile	*fh;
 	int			ret;
 	int			lmode, skip_read;
-	int			domoveback;
+	int			domoveback, dupcheck;
 
 	COB_UNUSED (a);
 	fh = f->file;
 	ret = COB_STATUS_00_SUCCESS;
 	lmode = 0;
+	dupcheck = 0;
 
 	if (f->curkey == -1) {
 		/* Switch to primary index */
@@ -1590,11 +1592,14 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 				if (isread_retry (f, (void *)f->record->data, ISCURR | lmode)) {
 					ret = fisretsts (COB_STATUS_10_END_OF_FILE);
 				}
+				dupcheck = 1;
 			}
 			fh->startcond = -1;
 			fh->startiscur = 0;
 		} else if (fh->wrkhasrec == ISNEXT) {
 			memcpy (f->record->data, fh->recwrk, f->record_max);
+			fh->wrkhasrec = 0;
+			dupcheck = 1;
 			if (fh->lmode & ISLOCK) {
 				/* Now lock 'peek ahead' record */
 				if (isread_retry (f, (void *)f->record->data, ISCURR | fh->lmode)) {
@@ -1680,11 +1685,14 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 				if (isread_retry (f, (void *)f->record->data, ISCURR | lmode)) {
 					ret = fisretsts (COB_STATUS_10_END_OF_FILE);
 				}
+				dupcheck = 1;
 			}
 			fh->startcond = -1;
 			fh->startiscur = 0;
 		} else if (fh->wrkhasrec == ISPREV) {
 			memcpy (f->record->data, fh->recwrk, f->record_max);
+			fh->wrkhasrec = 0;
+			dupcheck = 1;
 			if (fh->lmode & ISLOCK) {
 				/* Now lock 'peek ahead' record */
 				if (isread_retry (f, (void *)f->record->data, ISCURR | fh->lmode)) {
@@ -1704,6 +1712,7 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 		break;
 	case COB_READ_FIRST:
 		fh->readdir = ISNEXT;
+		fh->wrkhasrec = 0;
 		if (isread_retry (f, (void *)f->record->data, ISFIRST | lmode)) {
 			ret = fisretsts (COB_STATUS_10_END_OF_FILE);
 		}
@@ -1711,12 +1720,17 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 	case COB_READ_LAST:
 		skip_read = ISPREV;
 		fh->readdir = ISPREV;
+		fh->wrkhasrec = 0;
 		if (isread_retry (f, (void *)f->record->data, ISLAST | lmode)) {
 			ret = fisretsts (COB_STATUS_10_END_OF_FILE);
 		}
 		break;
 	default:
 		fh->readdir = ISNEXT;
+		if (fh->wrkhasrec == ISNEXT) {
+			memcpy (f->record->data, fh->recwrk, f->record_max);
+			fh->wrkhasrec = 0;
+		} else
 		if (isread_retry (f, (void *)f->record->data, ISNEXT | lmode)) {
 			ret = fisretsts (COB_STATUS_10_END_OF_FILE);
 		}
@@ -1748,6 +1762,39 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 	get_isreclen (f);
 
 #ifdef COB_WITH_STATUS_02
+	/* If first read after a START then Read ahead to see if next record has same key value */
+	/* This is required as the ISAM handler does not yet know if reading ascending or desc */
+	if (dupcheck
+	 && skip_read != 0
+	 && f->curkey > 0
+	 && !f->flag_read_no_02
+	 && (fh->key[f->curkey].k_flags & ISDUPS)) {
+		indexed_savekey(fh, f->record->data, f->curkey);
+		fh->saverecnum = ISRECNUM;
+		isread (fh->isfd, (void *)fh->recwrk, skip_read);
+		ret = fisretsts (0);
+
+		if (ret == COB_STATUS_00_SUCCESS) {
+			if (indexed_cmpkey(fh, (void*)fh->recwrk, f->curkey, 0) == 0) {
+				ret = COB_STATUS_02_SUCCESS_DUPLICATE;
+				ISSTAT1 = '0';
+				ISSTAT2 = '2';
+			}
+			fh->duprecnum = fh->saverecnum;
+			restorefileposition (f);
+		} else {
+			if (skip_read == ISNEXT) {
+				isread (fh->isfd, (void *)fh->recwrk, ISLAST);
+			} else {
+				isread (fh->isfd, (void *)fh->recwrk, ISFIRST);
+			}
+			ret = COB_STATUS_00_SUCCESS;
+		}
+		fh->saverecnum = -1;
+		fh->duprecnum = 0;
+		fh->wrkhasrec = 0;
+		memset (fh->savekey, 0, fh->lenkey);
+	}
 	return COB_CHECK_DUP (ret);
 #else
 	/* Read ahead to see if next record has same key value */
@@ -1757,16 +1804,17 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 	 && f->curkey > 0
 	 && (fh->key[f->curkey].k_flags & ISDUPS)) {
 		indexed_savekey(fh, f->record->data, f->curkey);
+		fh->saverecnum = ISRECNUM;
 		isread (fh->isfd, (void *)fh->recwrk, fh->readdir);
 		ret = fisretsts (0);
 		if (ret == COB_STATUS_00_SUCCESS) {
-			if (indexed_cmpkey(fh, (void*)fh->recwrk, f->curkey, 0) == 0)
+			if (indexed_cmpkey(fh, (void*)fh->recwrk, f->curkey, 0) == 0) {
 				ret = COB_STATUS_02_SUCCESS_DUPLICATE;
-			if (fh->readdir == ISNEXT) {
-				isread (fh->isfd, (void *)fh->recwrk, ISPREV);
-			} else {
-				isread (fh->isfd, (void *)fh->recwrk, ISNEXT);
+				ISSTAT1 = '0';
+				ISSTAT2 = '2';
 			}
+			fh->duprecnum = fh->saverecnum;
+			restorefileposition (f);
 		} else {
 			if (fh->readdir == ISNEXT) {
 				isread (fh->isfd, (void *)fh->recwrk, ISLAST);
@@ -1775,6 +1823,9 @@ isam_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 			}
 			ret = COB_STATUS_00_SUCCESS;
 		}
+		fh->saverecnum = -1;
+		fh->duprecnum = 0;
+		fh->wrkhasrec = 0;
 		memset(fh->savekey, 0, fh->lenkey);
 	} else {
 		ret = COB_CHECK_DUP (ret);
@@ -1999,6 +2050,7 @@ isam_rewrite (cob_file_api *a, cob_file *f, const int opt)
 				}
 			}
 		}
+		fh->duprecnum = 0;
 		if (ret == COB_STATUS_00_SUCCESS) {
 			memcpy (fh->recwrk, f->record->data, f->record_max);
 			isstart (fh->isfd, &fh->key[0], 0, (void *)fh->recwrk, ISEQUAL);

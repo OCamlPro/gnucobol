@@ -24441,3 +24441,1051 @@ FILEO  Status: 04
 
 AT_CLEANUP
 
+
+AT_SETUP([MF ISAM File Dups])
+AT_KEYWORDS([FileIo])
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+      
+       PROGRAM-ID. prog.
+      
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+      
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT OPTIONAL TSTDUPS 
+           ASSIGN TO "tstisam"
+           ORGANIZATION INDEXED ACCESS DYNAMIC
+           RECORD KEY IS PRIME-KEY
+           SOURCE IS CM-CUST-NUM
+
+           ALTERNATE RECORD KEY IS CM-TELEPHONE WITH DUPLICATES
+
+           ALTERNATE RECORD KEY IS CM-MACHINE WITH DUPLICATES
+                SUPPRESS WHEN ALL "*"
+           FILE STATUS IS CUST-STAT
+           .
+
+       DATA  DIVISION.
+       FILE SECTION.
+
+       FD  TSTDUPS
+           BLOCK CONTAINS 5 RECORDS.
+      
+       01  TST-REC.
+           05  TSPFL-REC. 
+           10  CM-CUST-NUM                     PICTURE X(8).
+             10  FILLER REDEFINES CM-CUST-NUM.
+               15  FILLER                      PICTURE X(3).
+               15  CM-SEQ                      PICTURE 9(5).
+           10  CM-COMPANY                      PICTURE X(25). 
+           10  CM-TELEPHONE                    PICTURE 9(10). 
+           10  CM-DP-MGR                       PICTURE X(21). 
+           10  CM-MACHINE                      PICTURE X(8). 
+
+       WORKING-STORAGE SECTION.
+      
+       01  CUST-STAT.
+           05  STAT-1 PICTURE 9(4) COMP.
+           05  FILLER REDEFINES STAT-1.
+               10  STAT-X1 PIC X COMP-X.
+               10  STAT-X2 PIC X COMP-X.
+       77  BYTE-1  PICTURE 9(3).
+       77  BYTE-2  PICTURE 9(3).
+       77  MAX-SUB           VALUE  16   PICTURE 9(3).
+       77  DO-REWRITE   PICTURE X VALUE 'N'.
+       77  ENVVAR-IN    PICTURE X(30).
+       77  SAV-KEY      PICTURE X(8).
+       77  ENVVAR-OUT   PICTURE X(60).
+      
+       01  TEST-DATA.
+      
+         02  DATA-CUST-NUM-TBL.
+           05  FILLER PIC X(8) VALUE "ALP00000".
+           05  FILLER PIC X(8) VALUE "BET00000".
+           05  FILLER PIC X(8) VALUE "GAM00000".
+           05  FILLER PIC X(8) VALUE "DEL00000".
+           05  FILLER PIC X(8) VALUE "EPS00000".
+           05  FILLER PIC X(8) VALUE "FOR00000".
+           05  FILLER PIC X(8) VALUE "GIB00000".
+           05  FILLER PIC X(8) VALUE "H&J00000".
+           05  FILLER PIC X(8) VALUE "INC00000".
+           05  FILLER PIC X(8) VALUE "JOH00000".
+           05  FILLER PIC X(8) VALUE "KON00000".
+           05  FILLER PIC X(8) VALUE "LEW00000".
+           05  FILLER PIC X(8) VALUE "MOR00000".
+           05  FILLER PIC X(8) VALUE "NEW00000".
+           05  FILLER PIC X(8) VALUE "OLD00000".
+           05  FILLER PIC X(8) VALUE "PRE00000".
+      
+         02  DATA-CUST-NUM REDEFINES DATA-CUST-NUM-TBL
+                                       PIC X(8) OCCURS 16.
+         02  DATA-COMPANY-TBL.
+           05  FILLER PIC X(25) VALUE "ALPHA ELECTRICAL CO. LTD.".
+           05  FILLER PIC X(25) VALUE "BETA SHOE MFG. INC.      ".
+           05  FILLER PIC X(25) VALUE "GAMMA X-RAY TECHNOLOGY   ".
+           05  FILLER PIC X(25) VALUE "DELTA LUGGAGE REPAIRS    ".
+           05  FILLER PIC X(25) VALUE "EPSILON EQUIPMENT SUPPLY ".
+           05  FILLER PIC X(25) VALUE "FORTUNE COOKIE COMPANY   ".
+           05  FILLER PIC X(25) VALUE "GIBRALTER LIFE INSURANCE ".
+           05  FILLER PIC X(25) VALUE "H & J PLUMBING SUPPLIES  ".
+           05  FILLER PIC X(25) VALUE "INCREMENTAL BACKUP CORP. ".
+           05  FILLER PIC X(25) VALUE "JOHNSON BOATING SUPPLIES ".
+           05  FILLER PIC X(25) VALUE "KONFLAB PLASTIC PRODUCTS.".
+           05  FILLER PIC X(25) VALUE "LEWISTON GRAPHICS LTD.   ".
+           05  FILLER PIC X(25) VALUE "MORNINGSIDE CARPENTRY.   ".
+           05  FILLER PIC X(25) VALUE "NEW WAVE SURF SHOPS INC. ".
+           05  FILLER PIC X(25) VALUE "OLD TYME PIZZA MFG. CO.  ".
+           05  FILLER PIC X(25) VALUE "PRESTIGE OFFICE FURNITURE".
+      
+         02  DATA-COMPANY  REDEFINES DATA-COMPANY-TBL
+                                       PIC X(25) OCCURS 16.
+         02  DATA-TELEPHONE-TBL.
+           05  FILLER PIC 9(10) VALUE 3131234432.
+           05  FILLER PIC 9(10) VALUE 4082938498.
+           05  FILLER PIC 9(10) VALUE 8372487274.
+           05  FILLER PIC 9(10) VALUE 4169898509.
+           05  FILLER PIC 9(10) VALUE 5292398745.
+           05  FILLER PIC 9(10) VALUE 8009329492.
+           05  FILLER PIC 9(10) VALUE 6456445643.
+           05  FILLER PIC 9(10) VALUE 6546456333.
+           05  FILLER PIC 9(10) VALUE 3455445444.
+           05  FILLER PIC 9(10) VALUE 9006445643.
+           05  FILLER PIC 9(10) VALUE 7456434355.
+           05  FILLER PIC 9(10) VALUE 6554456433.
+           05  FILLER PIC 9(10) VALUE 4169898509.
+           05  FILLER PIC 9(10) VALUE 9004587453.
+           05  FILLER PIC 9(10) VALUE 8787458374.
+           05  FILLER PIC 9(10) VALUE 4169898509.
+      
+         02  DATA-TELEPHONE REDEFINES DATA-TELEPHONE-TBL
+                                       PIC 9(10) OCCURS 16.
+         02  DATA-DP-MGR-TBL.
+           05  FILLER PIC X(20) VALUE "MR. DAVE HARRIS     ".
+           05  FILLER PIC X(20) VALUE "MS. JANICE SILCOX   ".
+           05  FILLER PIC X(20) VALUE "MR. ALLAN JONES     ".
+           05  FILLER PIC X(20) VALUE "MR. PETER MACKAY    ".
+           05  FILLER PIC X(20) VALUE "MRS. DONNA BREWER   ".
+           05  FILLER PIC X(20) VALUE "MR. MICHAEL SMYTHE  ".
+           05  FILLER PIC X(20) VALUE "MR. D.A. MORRISON   ".
+           05  FILLER PIC X(20) VALUE "MR. BRIAN PATTERSON ".
+           05  FILLER PIC X(20) VALUE "MR. FRED MILLER     ".
+           05  FILLER PIC X(20) VALUE "MR. DARRYL TOWNSEND ".
+           05  FILLER PIC X(20) VALUE "MR. FRED MILLER     ".
+           05  FILLER PIC X(20) VALUE "MR. DONALD FISCHER  ".
+           05  FILLER PIC X(20) VALUE "MR. FRED MILLER     ".
+           05  FILLER PIC X(20) VALUE "MS. GOLDIE HAWN     ".
+           05  FILLER PIC X(20) VALUE "MS. ALICE WINSTON   ".
+           05  FILLER PIC X(20) VALUE "MR. THOMAS JEFFERSON".
+      
+         02  DATA-DP-MGR    REDEFINES DATA-DP-MGR-TBL
+                                       PIC X(20) OCCURS 16.
+         02  DATA-MACHINE-TBL.
+           05  FILLER PIC X(8) VALUE "UNI-9030".
+           05  FILLER PIC X(8) VALUE "UNI-9040".
+           05  FILLER PIC X(8) VALUE "UNI-80/3".
+           05  FILLER PIC X(8) VALUE "UNI-80/5".
+           05  FILLER PIC X(8) VALUE "UNI-80/6".
+           05  FILLER PIC X(8) VALUE "UNI-80/6".
+           05  FILLER PIC X(8) VALUE "UNI-80/6".
+           05  FILLER PIC X(8) VALUE "UNI-80/8".
+           05  FILLER PIC X(8) VALUE "UNI-80/8".
+           05  FILLER PIC X(8) VALUE "UNI-80/8".
+           05  FILLER PIC X(8) VALUE "UNI-80/8".
+           05  FILLER PIC X(8) VALUE "UNI-80/8".
+           05  FILLER PIC X(8) VALUE "UNI-80/8".
+           05  FILLER PIC X(8) VALUE "UNI-80/8".
+           05  FILLER PIC X(8) VALUE "UNI-9040".
+           05  FILLER PIC X(8) VALUE "UNI-80/8".
+      
+         02  DATA-MACHINE   REDEFINES DATA-MACHINE-TBL
+                                       PIC X(8) OCCURS 16.
+       01  WORK-AREA.
+           05  REC-NUM                         PICTURE 9(4) VALUE 0.
+           05  REC-MAX                         PICTURE 9(4) VALUE 16.
+           05  SUB                             PICTURE 9(3) .
+               88  ODD-RECORD                  VALUE 1 3 5 7 9 10 11.
+               88  NULL-KEY                    VALUE 4 5 8 12 14.
+      
+           05  TSPFL-KEY                       PICTURE X(8).
+      
+       PROCEDURE DIVISION.
+      
+       MAINFILE.
+       MAINTEST.
+           PERFORM LOADASC.
+           PERFORM LISTKEY3.
+           PERFORM LOADDESC.
+           PERFORM LISTKEY3.
+           STOP RUN.
+
+       LOADASC.
+           DISPLAY "Loading data file Ascending."
+                            UPON CONSOLE.
+      
+           OPEN EXCLUSIVE OUTPUT TSTDUPS
+           IF  CUST-STAT NOT = "00"
+           AND CUST-STAT NOT = "05"
+               DIVIDE STAT-1 BY 256 GIVING BYTE-1 REMAINDER BYTE-2
+               DISPLAY "Error " CUST-STAT " " BYTE-1 " " BYTE-2
+                       " opening 'testisam' file" UPON CONSOLE
+               STOP RUN
+           END-IF.
+      
+           MOVE ZERO TO REC-NUM
+           PERFORM 1000-LOAD-RECORD
+                        VARYING SUB FROM 1 BY 1 
+                          UNTIL SUB > MAX-SUB.
+      
+           DISPLAY "Sample data file load complete."
+                            UPON CONSOLE.
+           CLOSE TSTDUPS.
+      
+       LOADDESC.
+           DISPLAY "Loading data file Descending."
+                            UPON CONSOLE.
+      
+           OPEN EXCLUSIVE OUTPUT TSTDUPS
+           IF  CUST-STAT NOT = "00"
+           AND CUST-STAT NOT = "05"
+               DIVIDE STAT-1 BY 256 GIVING BYTE-1 REMAINDER BYTE-2
+               DISPLAY "Error " CUST-STAT " " BYTE-1 " " BYTE-2
+                       " opening 'testisam' file" UPON CONSOLE
+               STOP RUN
+           END-IF.
+      
+           MOVE ZERO TO REC-NUM
+           PERFORM 1000-LOAD-RECORD
+                        VARYING SUB FROM MAX-SUB BY -1 
+                          UNTIL SUB = 0.
+      
+           DISPLAY "Sample data file load complete."
+                            UPON CONSOLE.
+           CLOSE TSTDUPS.
+      
+      *---------------------------------------------------------------*
+      *         LOAD A RECORD FROM DATA TABLES                        *
+      *---------------------------------------------------------------*
+      
+       1000-LOAD-RECORD.
+      
+           MOVE SPACES                       TO TST-REC.
+           MOVE DATA-CUST-NUM      (SUB)     TO CM-CUST-NUM.
+           MOVE CM-CUST-NUM                  TO TSPFL-KEY.
+           ADD 1 TO REC-NUM.
+           MOVE REC-NUM                      TO CM-SEQ.
+           MOVE DATA-COMPANY       (SUB)     TO CM-COMPANY.
+           MOVE DATA-TELEPHONE     (SUB)     TO CM-TELEPHONE.
+           MOVE DATA-DP-MGR        (SUB)     TO CM-DP-MGR.
+           MOVE DATA-MACHINE       (SUB)     TO CM-MACHINE.
+      
+           IF  NULL-KEY
+               MOVE ALL "*" TO CM-MACHINE.
+      
+           WRITE TST-REC.
+           IF  CUST-STAT NOT = "00"
+      *    AND CUST-STAT NOT = "02"
+               DISPLAY "WRITE: " CM-CUST-NUM ", Status: " 
+                       CUST-STAT UPON CONSOLE
+           END-IF. 
+      
+       LISTKEY3.
+           DISPLAY "List ascending by KEY3" UPON CONSOLE.
+           OPEN INPUT TSTDUPS.
+           MOVE ZERO                         TO REC-NUM
+           MOVE SPACES                       TO TST-REC.
+           MOVE "UNI-80/3"                   TO CM-MACHINE.
+           START TSTDUPS KEY GREATER THAN OR EQUAL TO CM-MACHINE
+           IF  CUST-STAT NOT = "00"
+           AND CUST-STAT NOT = "02"
+               DISPLAY "Error " CUST-STAT " starting file"
+                                UPON CONSOLE
+               STOP RUN
+           END-IF.
+           READ  TSTDUPS NEXT RECORD WITH NO LOCK
+           IF  CUST-STAT NOT = "00"
+           AND CUST-STAT NOT = "02"
+               DISPLAY "Error " CUST-STAT " on 1st read prev of file"
+                                UPON CONSOLE
+               STOP RUN
+           END-IF.
+           PERFORM UNTIL (CUST-STAT NOT = "00" 
+                      AND CUST-STAT NOT = "02")
+                      OR REC-NUM > REC-MAX
+               DISPLAY "Key: " CM-CUST-NUM 
+                        "  Key3='" CM-MACHINE
+                        "', Sts '" CUST-STAT "'" UPON CONSOLE
+               READ TSTDUPS NEXT RECORD
+                    AT END
+                        MOVE "99" TO CUST-STAT
+                END-READ
+                ADD 1 TO REC-NUM
+           END-PERFORM.
+           CLOSE TSTDUPS.
+
+           DISPLAY "List ascending GT KEY3" UPON CONSOLE.
+           OPEN INPUT TSTDUPS.
+           MOVE ZERO                         TO REC-NUM
+           MOVE SPACES                       TO TST-REC.
+           MOVE "UNI-80/6"                   TO CM-MACHINE.
+           START TSTDUPS KEY GREATER THAN CM-MACHINE
+           IF  CUST-STAT NOT = "00"
+           AND CUST-STAT NOT = "02"
+               DISPLAY "Error " CUST-STAT " starting file"
+                                UPON CONSOLE
+               STOP RUN
+           END-IF.
+           READ  TSTDUPS NEXT RECORD WITH NO LOCK
+           IF  CUST-STAT NOT = "00"
+           AND CUST-STAT NOT = "02"
+               DISPLAY "Error " CUST-STAT " on 1st read prev of file"
+                                UPON CONSOLE
+               STOP RUN
+           END-IF.
+           PERFORM UNTIL (CUST-STAT NOT = "00" 
+                      AND CUST-STAT NOT = "02")
+                      OR REC-NUM > REC-MAX
+               DISPLAY "Key: " CM-CUST-NUM 
+                        "  Key3='" CM-MACHINE
+                        "', Sts '" CUST-STAT "'" UPON CONSOLE
+               READ TSTDUPS NEXT RECORD
+                    AT END
+                        MOVE "99" TO CUST-STAT
+                END-READ
+                ADD 1 TO REC-NUM
+           END-PERFORM.
+           CLOSE TSTDUPS.
+
+           DISPLAY "List descending LT first KEY3" UPON CONSOLE.
+           OPEN INPUT TSTDUPS.
+           MOVE ZERO                         TO REC-NUM
+           MOVE SPACES                       TO TST-REC.
+           MOVE "UNI-80  "                   TO CM-MACHINE.
+           START TSTDUPS KEY LESS THAN CM-MACHINE
+           IF  CUST-STAT NOT = "00"
+           AND CUST-STAT NOT = "02"
+               DISPLAY "Error " CUST-STAT " start LT begin"
+                                UPON CONSOLE
+           END-IF.
+           READ  TSTDUPS PREVIOUS RECORD WITH NO LOCK
+           IF  CUST-STAT NOT = "00"
+           AND CUST-STAT NOT = "02"
+               DISPLAY "Error " CUST-STAT " on 1st read prev of file"
+                                UPON CONSOLE
+           ELSE
+               DISPLAY "Got: " CM-CUST-NUM 
+                        "  Key3='" CM-MACHINE
+                        "', Sts '" CUST-STAT "'" UPON CONSOLE
+           END-IF.
+
+           DISPLAY "List descending by KEY3" UPON CONSOLE.
+           MOVE SPACES                       TO TST-REC.
+           MOVE "UNI-9040"                   TO CM-MACHINE.
+           START TSTDUPS KEY LESS THAN OR EQUAL TO CM-MACHINE
+           IF  CUST-STAT NOT = "00"
+           AND CUST-STAT NOT = "02"
+               DISPLAY "Error " CUST-STAT " starting file"
+                                UPON CONSOLE
+               STOP RUN
+           END-IF.
+           READ  TSTDUPS PREVIOUS RECORD WITH NO LOCK
+           IF  CUST-STAT NOT = "00"
+           AND CUST-STAT NOT = "02"
+               DISPLAY "Error " CUST-STAT " on 1st read prev of file"
+                                UPON CONSOLE
+               STOP RUN
+           END-IF.
+           MOVE ZERO                         TO REC-NUM
+           PERFORM UNTIL (CUST-STAT NOT = "00" 
+                      AND CUST-STAT NOT = "02")
+                      OR REC-NUM > REC-MAX
+               ADD 1 TO REC-NUM
+               DISPLAY "Key: " CM-CUST-NUM 
+                        "  Key3='" CM-MACHINE
+                        "', Sts '" CUST-STAT "'" UPON CONSOLE
+               READ TSTDUPS PREVIOUS RECORD
+                    AT END
+                        MOVE "99" TO CUST-STAT
+               END-READ
+           END-PERFORM.
+           IF  CUST-STAT NOT = "99"
+               DISPLAY "End Status: '" CUST-STAT "'" UPON CONSOLE.
+           CLOSE TSTDUPS.
+
+           DISPLAY "List descending LT KEY3" UPON CONSOLE.
+           OPEN INPUT TSTDUPS.
+           MOVE ZERO                         TO REC-NUM
+           MOVE SPACES                       TO TST-REC.
+           MOVE "UNI-9040"                   TO CM-MACHINE.
+           START TSTDUPS KEY LESS THAN CM-MACHINE
+           IF  CUST-STAT NOT = "00"
+           AND CUST-STAT NOT = "02"
+               DISPLAY "Error " CUST-STAT " starting file"
+                                UPON CONSOLE
+               STOP RUN
+           END-IF.
+           READ  TSTDUPS PREVIOUS RECORD WITH NO LOCK
+           IF  CUST-STAT NOT = "00"
+           AND CUST-STAT NOT = "02"
+               DISPLAY "Error " CUST-STAT " on 1st read prev of file"
+                                UPON CONSOLE
+               STOP RUN
+           END-IF.
+           PERFORM UNTIL (CUST-STAT NOT = "00" 
+                      AND CUST-STAT NOT = "02")
+                      OR REC-NUM > REC-MAX
+               DISPLAY "Key: " CM-CUST-NUM 
+                        "  Key3='" CM-MACHINE
+                        "', Sts '" CUST-STAT "'" UPON CONSOLE
+               READ TSTDUPS PREVIOUS RECORD
+                    AT END
+                        MOVE "99" TO CUST-STAT
+               END-READ
+               ADD 1 TO REC-NUM
+           END-PERFORM.
+           IF  CUST-STAT NOT = "99"
+               DISPLAY "End Status: '" CUST-STAT "'" UPON CONSOLE.
+           CLOSE TSTDUPS.
+])
+
+AT_CHECK([$COMPILE -x -std=mf -debug -Wall -fmf-files prog.cob ], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [Loading data file Ascending.
+WRITE: GIB00007, Status: 02
+WRITE: JOH00010, Status: 02
+WRITE: KON00011, Status: 02
+WRITE: MOR00013, Status: 02
+WRITE: OLD00015, Status: 02
+WRITE: PRE00016, Status: 02
+Sample data file load complete.
+List ascending by KEY3
+Key: GAM00003  Key3='UNI-80/3', Sts '00'
+Key: FOR00006  Key3='UNI-80/6', Sts '02'
+Key: GIB00007  Key3='UNI-80/6', Sts '00'
+Key: INC00009  Key3='UNI-80/8', Sts '02'
+Key: JOH00010  Key3='UNI-80/8', Sts '02'
+Key: KON00011  Key3='UNI-80/8', Sts '02'
+Key: MOR00013  Key3='UNI-80/8', Sts '02'
+Key: PRE00016  Key3='UNI-80/8', Sts '00'
+Key: ALP00001  Key3='UNI-9030', Sts '00'
+Key: BET00002  Key3='UNI-9040', Sts '02'
+Key: OLD00015  Key3='UNI-9040', Sts '00'
+List ascending GT KEY3
+Key: INC00009  Key3='UNI-80/8', Sts '02'
+Key: JOH00010  Key3='UNI-80/8', Sts '02'
+Key: KON00011  Key3='UNI-80/8', Sts '02'
+Key: MOR00013  Key3='UNI-80/8', Sts '02'
+Key: PRE00016  Key3='UNI-80/8', Sts '00'
+Key: ALP00001  Key3='UNI-9030', Sts '00'
+Key: BET00002  Key3='UNI-9040', Sts '02'
+Key: OLD00015  Key3='UNI-9040', Sts '00'
+List descending LT first KEY3
+Error 23 start LT begin
+Error 46 on 1st read prev of file
+List descending by KEY3
+Key: OLD00015  Key3='UNI-9040', Sts '02'
+Key: BET00002  Key3='UNI-9040', Sts '00'
+Key: ALP00001  Key3='UNI-9030', Sts '00'
+Key: PRE00016  Key3='UNI-80/8', Sts '02'
+Key: MOR00013  Key3='UNI-80/8', Sts '02'
+Key: KON00011  Key3='UNI-80/8', Sts '02'
+Key: JOH00010  Key3='UNI-80/8', Sts '02'
+Key: INC00009  Key3='UNI-80/8', Sts '00'
+Key: GIB00007  Key3='UNI-80/6', Sts '02'
+Key: FOR00006  Key3='UNI-80/6', Sts '00'
+Key: GAM00003  Key3='UNI-80/3', Sts '00'
+List descending LT KEY3
+Key: ALP00001  Key3='UNI-9030', Sts '00'
+Key: PRE00016  Key3='UNI-80/8', Sts '02'
+Key: MOR00013  Key3='UNI-80/8', Sts '02'
+Key: KON00011  Key3='UNI-80/8', Sts '02'
+Key: JOH00010  Key3='UNI-80/8', Sts '02'
+Key: INC00009  Key3='UNI-80/8', Sts '00'
+Key: GIB00007  Key3='UNI-80/6', Sts '02'
+Key: FOR00006  Key3='UNI-80/6', Sts '00'
+Key: GAM00003  Key3='UNI-80/3', Sts '00'
+Loading data file Descending.
+WRITE: MOR00004, Status: 02
+WRITE: KON00006, Status: 02
+WRITE: JOH00007, Status: 02
+WRITE: INC00008, Status: 02
+WRITE: FOR00011, Status: 02
+WRITE: DEL00013, Status: 02
+WRITE: BET00015, Status: 02
+Sample data file load complete.
+List ascending by KEY3
+Key: GAM00014  Key3='UNI-80/3', Sts '00'
+Key: GIB00010  Key3='UNI-80/6', Sts '02'
+Key: FOR00011  Key3='UNI-80/6', Sts '00'
+Key: PRE00001  Key3='UNI-80/8', Sts '02'
+Key: MOR00004  Key3='UNI-80/8', Sts '02'
+Key: KON00006  Key3='UNI-80/8', Sts '02'
+Key: JOH00007  Key3='UNI-80/8', Sts '02'
+Key: INC00008  Key3='UNI-80/8', Sts '00'
+Key: ALP00016  Key3='UNI-9030', Sts '00'
+Key: OLD00002  Key3='UNI-9040', Sts '02'
+Key: BET00015  Key3='UNI-9040', Sts '00'
+List ascending GT KEY3
+Key: PRE00001  Key3='UNI-80/8', Sts '02'
+Key: MOR00004  Key3='UNI-80/8', Sts '02'
+Key: KON00006  Key3='UNI-80/8', Sts '02'
+Key: JOH00007  Key3='UNI-80/8', Sts '02'
+Key: INC00008  Key3='UNI-80/8', Sts '00'
+Key: ALP00016  Key3='UNI-9030', Sts '00'
+Key: OLD00002  Key3='UNI-9040', Sts '02'
+Key: BET00015  Key3='UNI-9040', Sts '00'
+List descending LT first KEY3
+Error 23 start LT begin
+Error 46 on 1st read prev of file
+List descending by KEY3
+Key: BET00015  Key3='UNI-9040', Sts '02'
+Key: OLD00002  Key3='UNI-9040', Sts '00'
+Key: ALP00016  Key3='UNI-9030', Sts '00'
+Key: INC00008  Key3='UNI-80/8', Sts '02'
+Key: JOH00007  Key3='UNI-80/8', Sts '02'
+Key: KON00006  Key3='UNI-80/8', Sts '02'
+Key: MOR00004  Key3='UNI-80/8', Sts '02'
+Key: PRE00001  Key3='UNI-80/8', Sts '00'
+Key: FOR00011  Key3='UNI-80/6', Sts '02'
+Key: GIB00010  Key3='UNI-80/6', Sts '00'
+Key: GAM00014  Key3='UNI-80/3', Sts '00'
+List descending LT KEY3
+Key: ALP00016  Key3='UNI-9030', Sts '00'
+Key: INC00008  Key3='UNI-80/8', Sts '02'
+Key: JOH00007  Key3='UNI-80/8', Sts '02'
+Key: KON00006  Key3='UNI-80/8', Sts '02'
+Key: MOR00004  Key3='UNI-80/8', Sts '02'
+Key: PRE00001  Key3='UNI-80/8', Sts '00'
+Key: FOR00011  Key3='UNI-80/6', Sts '02'
+Key: GIB00010  Key3='UNI-80/6', Sts '00'
+Key: GAM00014  Key3='UNI-80/3', Sts '00'
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([GC ISAM File Dups])
+AT_KEYWORDS([FileIo])
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+      
+       PROGRAM-ID. prog.
+      
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+      
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT OPTIONAL TSTDUPS 
+           ASSIGN TO "tstisam"
+           ORGANIZATION INDEXED ACCESS DYNAMIC
+           RECORD KEY IS PRIME-KEY
+           SOURCE IS CM-CUST-NUM
+
+           ALTERNATE RECORD KEY IS CM-TELEPHONE WITH DUPLICATES
+
+           ALTERNATE RECORD KEY IS CM-MACHINE WITH DUPLICATES
+                SUPPRESS WHEN ALL "*"
+           FILE STATUS IS CUST-STAT
+           .
+
+       DATA  DIVISION.
+       FILE SECTION.
+
+       FD  TSTDUPS
+           BLOCK CONTAINS 5 RECORDS.
+      
+       01  TST-REC.
+           05  TSPFL-REC. 
+           10  CM-CUST-NUM                     PICTURE X(8).
+             10  FILLER REDEFINES CM-CUST-NUM.
+               15  FILLER                      PICTURE X(3).
+               15  CM-SEQ                      PICTURE 9(5).
+           10  CM-COMPANY                      PICTURE X(25). 
+           10  CM-TELEPHONE                    PICTURE 9(10). 
+           10  CM-DP-MGR                       PICTURE X(21). 
+           10  CM-MACHINE                      PICTURE X(8). 
+
+       WORKING-STORAGE SECTION.
+      
+       01  CUST-STAT.
+           05  STAT-1 PICTURE 9(4) COMP.
+           05  FILLER REDEFINES STAT-1.
+               10  STAT-X1 PIC X COMP-X.
+               10  STAT-X2 PIC X COMP-X.
+       77  BYTE-1  PICTURE 9(3).
+       77  BYTE-2  PICTURE 9(3).
+       77  MAX-SUB           VALUE  16   PICTURE 9(3).
+       77  DO-REWRITE   PICTURE X VALUE 'N'.
+       77  ENVVAR-IN    PICTURE X(30).
+       77  SAV-KEY      PICTURE X(8).
+       77  ENVVAR-OUT   PICTURE X(60).
+      
+       01  TEST-DATA.
+      
+         02  DATA-CUST-NUM-TBL.
+           05  FILLER PIC X(8) VALUE "ALP00000".
+           05  FILLER PIC X(8) VALUE "BET00000".
+           05  FILLER PIC X(8) VALUE "GAM00000".
+           05  FILLER PIC X(8) VALUE "DEL00000".
+           05  FILLER PIC X(8) VALUE "EPS00000".
+           05  FILLER PIC X(8) VALUE "FOR00000".
+           05  FILLER PIC X(8) VALUE "GIB00000".
+           05  FILLER PIC X(8) VALUE "H&J00000".
+           05  FILLER PIC X(8) VALUE "INC00000".
+           05  FILLER PIC X(8) VALUE "JOH00000".
+           05  FILLER PIC X(8) VALUE "KON00000".
+           05  FILLER PIC X(8) VALUE "LEW00000".
+           05  FILLER PIC X(8) VALUE "MOR00000".
+           05  FILLER PIC X(8) VALUE "NEW00000".
+           05  FILLER PIC X(8) VALUE "OLD00000".
+           05  FILLER PIC X(8) VALUE "PRE00000".
+      
+         02  DATA-CUST-NUM REDEFINES DATA-CUST-NUM-TBL
+                                       PIC X(8) OCCURS 16.
+         02  DATA-COMPANY-TBL.
+           05  FILLER PIC X(25) VALUE "ALPHA ELECTRICAL CO. LTD.".
+           05  FILLER PIC X(25) VALUE "BETA SHOE MFG. INC.      ".
+           05  FILLER PIC X(25) VALUE "GAMMA X-RAY TECHNOLOGY   ".
+           05  FILLER PIC X(25) VALUE "DELTA LUGGAGE REPAIRS    ".
+           05  FILLER PIC X(25) VALUE "EPSILON EQUIPMENT SUPPLY ".
+           05  FILLER PIC X(25) VALUE "FORTUNE COOKIE COMPANY   ".
+           05  FILLER PIC X(25) VALUE "GIBRALTER LIFE INSURANCE ".
+           05  FILLER PIC X(25) VALUE "H & J PLUMBING SUPPLIES  ".
+           05  FILLER PIC X(25) VALUE "INCREMENTAL BACKUP CORP. ".
+           05  FILLER PIC X(25) VALUE "JOHNSON BOATING SUPPLIES ".
+           05  FILLER PIC X(25) VALUE "KONFLAB PLASTIC PRODUCTS.".
+           05  FILLER PIC X(25) VALUE "LEWISTON GRAPHICS LTD.   ".
+           05  FILLER PIC X(25) VALUE "MORNINGSIDE CARPENTRY.   ".
+           05  FILLER PIC X(25) VALUE "NEW WAVE SURF SHOPS INC. ".
+           05  FILLER PIC X(25) VALUE "OLD TYME PIZZA MFG. CO.  ".
+           05  FILLER PIC X(25) VALUE "PRESTIGE OFFICE FURNITURE".
+      
+         02  DATA-COMPANY  REDEFINES DATA-COMPANY-TBL
+                                       PIC X(25) OCCURS 16.
+         02  DATA-TELEPHONE-TBL.
+           05  FILLER PIC 9(10) VALUE 3131234432.
+           05  FILLER PIC 9(10) VALUE 4082938498.
+           05  FILLER PIC 9(10) VALUE 8372487274.
+           05  FILLER PIC 9(10) VALUE 4169898509.
+           05  FILLER PIC 9(10) VALUE 5292398745.
+           05  FILLER PIC 9(10) VALUE 8009329492.
+           05  FILLER PIC 9(10) VALUE 6456445643.
+           05  FILLER PIC 9(10) VALUE 6546456333.
+           05  FILLER PIC 9(10) VALUE 3455445444.
+           05  FILLER PIC 9(10) VALUE 9006445643.
+           05  FILLER PIC 9(10) VALUE 7456434355.
+           05  FILLER PIC 9(10) VALUE 6554456433.
+           05  FILLER PIC 9(10) VALUE 4169898509.
+           05  FILLER PIC 9(10) VALUE 9004587453.
+           05  FILLER PIC 9(10) VALUE 8787458374.
+           05  FILLER PIC 9(10) VALUE 4169898509.
+      
+         02  DATA-TELEPHONE REDEFINES DATA-TELEPHONE-TBL
+                                       PIC 9(10) OCCURS 16.
+         02  DATA-DP-MGR-TBL.
+           05  FILLER PIC X(20) VALUE "MR. DAVE HARRIS     ".
+           05  FILLER PIC X(20) VALUE "MS. JANICE SILCOX   ".
+           05  FILLER PIC X(20) VALUE "MR. ALLAN JONES     ".
+           05  FILLER PIC X(20) VALUE "MR. PETER MACKAY    ".
+           05  FILLER PIC X(20) VALUE "MRS. DONNA BREWER   ".
+           05  FILLER PIC X(20) VALUE "MR. MICHAEL SMYTHE  ".
+           05  FILLER PIC X(20) VALUE "MR. D.A. MORRISON   ".
+           05  FILLER PIC X(20) VALUE "MR. BRIAN PATTERSON ".
+           05  FILLER PIC X(20) VALUE "MR. FRED MILLER     ".
+           05  FILLER PIC X(20) VALUE "MR. DARRYL TOWNSEND ".
+           05  FILLER PIC X(20) VALUE "MR. FRED MILLER     ".
+           05  FILLER PIC X(20) VALUE "MR. DONALD FISCHER  ".
+           05  FILLER PIC X(20) VALUE "MR. FRED MILLER     ".
+           05  FILLER PIC X(20) VALUE "MS. GOLDIE HAWN     ".
+           05  FILLER PIC X(20) VALUE "MS. ALICE WINSTON   ".
+           05  FILLER PIC X(20) VALUE "MR. THOMAS JEFFERSON".
+      
+         02  DATA-DP-MGR    REDEFINES DATA-DP-MGR-TBL
+                                       PIC X(20) OCCURS 16.
+         02  DATA-MACHINE-TBL.
+           05  FILLER PIC X(8) VALUE "UNI-9030".
+           05  FILLER PIC X(8) VALUE "UNI-9040".
+           05  FILLER PIC X(8) VALUE "UNI-80/3".
+           05  FILLER PIC X(8) VALUE "UNI-80/5".
+           05  FILLER PIC X(8) VALUE "UNI-80/6".
+           05  FILLER PIC X(8) VALUE "UNI-80/6".
+           05  FILLER PIC X(8) VALUE "UNI-80/6".
+           05  FILLER PIC X(8) VALUE "UNI-80/8".
+           05  FILLER PIC X(8) VALUE "UNI-80/8".
+           05  FILLER PIC X(8) VALUE "UNI-80/8".
+           05  FILLER PIC X(8) VALUE "UNI-80/8".
+           05  FILLER PIC X(8) VALUE "UNI-80/8".
+           05  FILLER PIC X(8) VALUE "UNI-80/8".
+           05  FILLER PIC X(8) VALUE "UNI-80/8".
+           05  FILLER PIC X(8) VALUE "UNI-9040".
+           05  FILLER PIC X(8) VALUE "UNI-80/8".
+      
+         02  DATA-MACHINE   REDEFINES DATA-MACHINE-TBL
+                                       PIC X(8) OCCURS 16.
+       01  WORK-AREA.
+           05  REC-NUM                         PICTURE 9(4) VALUE 0.
+           05  REC-MAX                         PICTURE 9(4) VALUE 16.
+           05  SUB                             PICTURE 9(3) .
+               88  ODD-RECORD                  VALUE 1 3 5 7 9 10 11.
+               88  NULL-KEY                    VALUE 4 5 8 12 14.
+      
+           05  TSPFL-KEY                       PICTURE X(8).
+      
+       PROCEDURE DIVISION.
+      
+       MAINFILE.
+       MAINTEST.
+           PERFORM LOADASC.
+           PERFORM LISTKEY3.
+           PERFORM LOADDESC.
+           PERFORM LISTKEY3.
+           STOP RUN.
+
+       LOADASC.
+           DISPLAY "Loading data file Ascending."
+                            UPON CONSOLE.
+      
+           OPEN EXCLUSIVE OUTPUT TSTDUPS
+           IF  CUST-STAT NOT = "00"
+           AND CUST-STAT NOT = "05"
+               DIVIDE STAT-1 BY 256 GIVING BYTE-1 REMAINDER BYTE-2
+               DISPLAY "Error " CUST-STAT " " BYTE-1 " " BYTE-2
+                       " opening 'testisam' file" UPON CONSOLE
+               STOP RUN
+           END-IF.
+      
+           MOVE ZERO TO REC-NUM
+           PERFORM 1000-LOAD-RECORD
+                        VARYING SUB FROM 1 BY 1 
+                          UNTIL SUB > MAX-SUB.
+      
+           DISPLAY "Sample data file load complete."
+                            UPON CONSOLE.
+           CLOSE TSTDUPS.
+      
+       LOADDESC.
+           DISPLAY "Loading data file Descending."
+                            UPON CONSOLE.
+      
+           OPEN EXCLUSIVE OUTPUT TSTDUPS
+           IF  CUST-STAT NOT = "00"
+           AND CUST-STAT NOT = "05"
+               DIVIDE STAT-1 BY 256 GIVING BYTE-1 REMAINDER BYTE-2
+               DISPLAY "Error " CUST-STAT " " BYTE-1 " " BYTE-2
+                       " opening 'testisam' file" UPON CONSOLE
+               STOP RUN
+           END-IF.
+      
+           MOVE ZERO TO REC-NUM
+           PERFORM 1000-LOAD-RECORD
+                        VARYING SUB FROM MAX-SUB BY -1 
+                          UNTIL SUB = 0.
+      
+           DISPLAY "Sample data file load complete."
+                            UPON CONSOLE.
+           CLOSE TSTDUPS.
+      
+      *---------------------------------------------------------------*
+      *         LOAD A RECORD FROM DATA TABLES                        *
+      *---------------------------------------------------------------*
+      
+       1000-LOAD-RECORD.
+      
+           MOVE SPACES                       TO TST-REC.
+           MOVE DATA-CUST-NUM      (SUB)     TO CM-CUST-NUM.
+           MOVE CM-CUST-NUM                  TO TSPFL-KEY.
+           ADD 1 TO REC-NUM.
+           MOVE REC-NUM                      TO CM-SEQ.
+           MOVE DATA-COMPANY       (SUB)     TO CM-COMPANY.
+           MOVE DATA-TELEPHONE     (SUB)     TO CM-TELEPHONE.
+           MOVE DATA-DP-MGR        (SUB)     TO CM-DP-MGR.
+           MOVE DATA-MACHINE       (SUB)     TO CM-MACHINE.
+      
+           IF  NULL-KEY
+               MOVE ALL "*" TO CM-MACHINE.
+      
+           WRITE TST-REC.
+           IF  CUST-STAT NOT = "00"
+      *    AND CUST-STAT NOT = "02"
+               DISPLAY "WRITE: " CM-CUST-NUM ", Status: " 
+                       CUST-STAT UPON CONSOLE
+           END-IF. 
+      
+       LISTKEY3.
+           DISPLAY "List ascending by KEY3" UPON CONSOLE.
+           OPEN INPUT TSTDUPS.
+           MOVE ZERO                         TO REC-NUM
+           MOVE SPACES                       TO TST-REC.
+           MOVE "UNI-80/3"                   TO CM-MACHINE.
+           START TSTDUPS KEY GREATER THAN OR EQUAL TO CM-MACHINE
+           IF  CUST-STAT NOT = "00"
+           AND CUST-STAT NOT = "02"
+               DISPLAY "Error " CUST-STAT " starting file"
+                                UPON CONSOLE
+               STOP RUN
+           END-IF.
+           READ  TSTDUPS NEXT RECORD WITH NO LOCK
+           IF  CUST-STAT NOT = "00"
+           AND CUST-STAT NOT = "02"
+               DISPLAY "Error " CUST-STAT " on 1st read prev of file"
+                                UPON CONSOLE
+               STOP RUN
+           END-IF.
+           PERFORM UNTIL (CUST-STAT NOT = "00" 
+                      AND CUST-STAT NOT = "02")
+                      OR REC-NUM > REC-MAX
+               DISPLAY "Key: " CM-CUST-NUM 
+                        "  Key3='" CM-MACHINE
+                        "', Sts '" CUST-STAT "'" UPON CONSOLE
+               READ TSTDUPS NEXT RECORD
+                    AT END
+                        MOVE "99" TO CUST-STAT
+                END-READ
+                ADD 1 TO REC-NUM
+           END-PERFORM.
+           CLOSE TSTDUPS.
+
+           DISPLAY "List ascending GT KEY3" UPON CONSOLE.
+           OPEN INPUT TSTDUPS.
+           MOVE ZERO                         TO REC-NUM
+           MOVE SPACES                       TO TST-REC.
+           MOVE "UNI-80/6"                   TO CM-MACHINE.
+           START TSTDUPS KEY GREATER THAN CM-MACHINE
+           IF  CUST-STAT NOT = "00"
+           AND CUST-STAT NOT = "02"
+               DISPLAY "Error " CUST-STAT " starting file"
+                                UPON CONSOLE
+               STOP RUN
+           END-IF.
+           READ  TSTDUPS NEXT RECORD WITH NO LOCK
+           IF  CUST-STAT NOT = "00"
+           AND CUST-STAT NOT = "02"
+               DISPLAY "Error " CUST-STAT " on 1st read prev of file"
+                                UPON CONSOLE
+               STOP RUN
+           END-IF.
+           PERFORM UNTIL (CUST-STAT NOT = "00" 
+                      AND CUST-STAT NOT = "02")
+                      OR REC-NUM > REC-MAX
+               DISPLAY "Key: " CM-CUST-NUM 
+                        "  Key3='" CM-MACHINE
+                        "', Sts '" CUST-STAT "'" UPON CONSOLE
+               READ TSTDUPS NEXT RECORD
+                    AT END
+                        MOVE "99" TO CUST-STAT
+                END-READ
+                ADD 1 TO REC-NUM
+           END-PERFORM.
+           CLOSE TSTDUPS.
+
+           DISPLAY "List descending LT first KEY3" UPON CONSOLE.
+           OPEN INPUT TSTDUPS.
+           MOVE ZERO                         TO REC-NUM
+           MOVE SPACES                       TO TST-REC.
+           MOVE "UNI-80  "                   TO CM-MACHINE.
+           START TSTDUPS KEY LESS THAN CM-MACHINE
+           IF  CUST-STAT NOT = "00"
+           AND CUST-STAT NOT = "02"
+               DISPLAY "Error " CUST-STAT " start LT begin"
+                                UPON CONSOLE
+           END-IF.
+           READ  TSTDUPS PREVIOUS RECORD WITH NO LOCK
+           IF  CUST-STAT NOT = "00"
+           AND CUST-STAT NOT = "02"
+               DISPLAY "Error " CUST-STAT " on 1st read prev of file"
+                                UPON CONSOLE
+           ELSE
+               DISPLAY "Got: " CM-CUST-NUM 
+                        "  Key3='" CM-MACHINE
+                        "', Sts '" CUST-STAT "'" UPON CONSOLE
+           END-IF.
+
+           DISPLAY "List descending by KEY3" UPON CONSOLE.
+           MOVE SPACES                       TO TST-REC.
+           MOVE "UNI-9040"                   TO CM-MACHINE.
+           START TSTDUPS KEY LESS THAN OR EQUAL TO CM-MACHINE
+           IF  CUST-STAT NOT = "00"
+           AND CUST-STAT NOT = "02"
+               DISPLAY "Error " CUST-STAT " starting file"
+                                UPON CONSOLE
+               STOP RUN
+           END-IF.
+           READ  TSTDUPS PREVIOUS RECORD WITH NO LOCK
+           IF  CUST-STAT NOT = "00"
+           AND CUST-STAT NOT = "02"
+               DISPLAY "Error " CUST-STAT " on 1st read prev of file"
+                                UPON CONSOLE
+               STOP RUN
+           END-IF.
+           MOVE ZERO                         TO REC-NUM
+           PERFORM UNTIL (CUST-STAT NOT = "00" 
+                      AND CUST-STAT NOT = "02")
+                      OR REC-NUM > REC-MAX
+               ADD 1 TO REC-NUM
+               DISPLAY "Key: " CM-CUST-NUM 
+                        "  Key3='" CM-MACHINE
+                        "', Sts '" CUST-STAT "'" UPON CONSOLE
+               READ TSTDUPS PREVIOUS RECORD
+                    AT END
+                        MOVE "99" TO CUST-STAT
+               END-READ
+           END-PERFORM.
+           IF  CUST-STAT NOT = "99"
+               DISPLAY "End Status: '" CUST-STAT "'" UPON CONSOLE.
+           CLOSE TSTDUPS.
+
+           DISPLAY "List descending LT KEY3" UPON CONSOLE.
+           OPEN INPUT TSTDUPS.
+           MOVE ZERO                         TO REC-NUM
+           MOVE SPACES                       TO TST-REC.
+           MOVE "UNI-9040"                   TO CM-MACHINE.
+           START TSTDUPS KEY LESS THAN CM-MACHINE
+           IF  CUST-STAT NOT = "00"
+           AND CUST-STAT NOT = "02"
+               DISPLAY "Error " CUST-STAT " starting file"
+                                UPON CONSOLE
+               STOP RUN
+           END-IF.
+           READ  TSTDUPS PREVIOUS RECORD WITH NO LOCK
+           IF  CUST-STAT NOT = "00"
+           AND CUST-STAT NOT = "02"
+               DISPLAY "Error " CUST-STAT " on 1st read prev of file"
+                                UPON CONSOLE
+               STOP RUN
+           END-IF.
+           PERFORM UNTIL (CUST-STAT NOT = "00" 
+                      AND CUST-STAT NOT = "02")
+                      OR REC-NUM > REC-MAX
+               DISPLAY "Key: " CM-CUST-NUM 
+                        "  Key3='" CM-MACHINE
+                        "', Sts '" CUST-STAT "'" UPON CONSOLE
+               READ TSTDUPS PREVIOUS RECORD
+                    AT END
+                        MOVE "99" TO CUST-STAT
+               END-READ
+               ADD 1 TO REC-NUM
+           END-PERFORM.
+           IF  CUST-STAT NOT = "99"
+               DISPLAY "End Status: '" CUST-STAT "'" UPON CONSOLE.
+           CLOSE TSTDUPS.
+])
+
+AT_CHECK([$COMPILE -std=default -ffile-format=gc prog.cob ], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [Loading data file Ascending.
+WRITE: GIB00007, Status: 02
+WRITE: JOH00010, Status: 02
+WRITE: KON00011, Status: 02
+WRITE: MOR00013, Status: 02
+WRITE: OLD00015, Status: 02
+WRITE: PRE00016, Status: 02
+Sample data file load complete.
+List ascending by KEY3
+Key: GAM00003  Key3='UNI-80/3', Sts '00'
+Key: FOR00006  Key3='UNI-80/6', Sts '02'
+Key: GIB00007  Key3='UNI-80/6', Sts '00'
+Key: INC00009  Key3='UNI-80/8', Sts '02'
+Key: JOH00010  Key3='UNI-80/8', Sts '02'
+Key: KON00011  Key3='UNI-80/8', Sts '02'
+Key: MOR00013  Key3='UNI-80/8', Sts '02'
+Key: PRE00016  Key3='UNI-80/8', Sts '00'
+Key: ALP00001  Key3='UNI-9030', Sts '00'
+Key: BET00002  Key3='UNI-9040', Sts '02'
+Key: OLD00015  Key3='UNI-9040', Sts '00'
+List ascending GT KEY3
+Key: INC00009  Key3='UNI-80/8', Sts '02'
+Key: JOH00010  Key3='UNI-80/8', Sts '02'
+Key: KON00011  Key3='UNI-80/8', Sts '02'
+Key: MOR00013  Key3='UNI-80/8', Sts '02'
+Key: PRE00016  Key3='UNI-80/8', Sts '00'
+Key: ALP00001  Key3='UNI-9030', Sts '00'
+Key: BET00002  Key3='UNI-9040', Sts '02'
+Key: OLD00015  Key3='UNI-9040', Sts '00'
+List descending LT first KEY3
+Got: GAM00003  Key3='UNI-80/3', Sts '00'
+List descending by KEY3
+Key: OLD00015  Key3='UNI-9040', Sts '02'
+Key: BET00002  Key3='UNI-9040', Sts '00'
+Key: ALP00001  Key3='UNI-9030', Sts '00'
+Key: PRE00016  Key3='UNI-80/8', Sts '02'
+Key: MOR00013  Key3='UNI-80/8', Sts '02'
+Key: KON00011  Key3='UNI-80/8', Sts '02'
+Key: JOH00010  Key3='UNI-80/8', Sts '02'
+Key: INC00009  Key3='UNI-80/8', Sts '00'
+Key: GIB00007  Key3='UNI-80/6', Sts '02'
+Key: FOR00006  Key3='UNI-80/6', Sts '00'
+Key: GAM00003  Key3='UNI-80/3', Sts '00'
+List descending LT KEY3
+Key: ALP00001  Key3='UNI-9030', Sts '00'
+Key: PRE00016  Key3='UNI-80/8', Sts '02'
+Key: MOR00013  Key3='UNI-80/8', Sts '02'
+Key: KON00011  Key3='UNI-80/8', Sts '02'
+Key: JOH00010  Key3='UNI-80/8', Sts '02'
+Key: INC00009  Key3='UNI-80/8', Sts '00'
+Key: GIB00007  Key3='UNI-80/6', Sts '02'
+Key: FOR00006  Key3='UNI-80/6', Sts '00'
+Key: GAM00003  Key3='UNI-80/3', Sts '00'
+Loading data file Descending.
+WRITE: MOR00004, Status: 02
+WRITE: KON00006, Status: 02
+WRITE: JOH00007, Status: 02
+WRITE: INC00008, Status: 02
+WRITE: FOR00011, Status: 02
+WRITE: DEL00013, Status: 02
+WRITE: BET00015, Status: 02
+Sample data file load complete.
+List ascending by KEY3
+Key: GAM00014  Key3='UNI-80/3', Sts '00'
+Key: GIB00010  Key3='UNI-80/6', Sts '02'
+Key: FOR00011  Key3='UNI-80/6', Sts '00'
+Key: PRE00001  Key3='UNI-80/8', Sts '02'
+Key: MOR00004  Key3='UNI-80/8', Sts '02'
+Key: KON00006  Key3='UNI-80/8', Sts '02'
+Key: JOH00007  Key3='UNI-80/8', Sts '02'
+Key: INC00008  Key3='UNI-80/8', Sts '00'
+Key: ALP00016  Key3='UNI-9030', Sts '00'
+Key: OLD00002  Key3='UNI-9040', Sts '02'
+Key: BET00015  Key3='UNI-9040', Sts '00'
+List ascending GT KEY3
+Key: PRE00001  Key3='UNI-80/8', Sts '02'
+Key: MOR00004  Key3='UNI-80/8', Sts '02'
+Key: KON00006  Key3='UNI-80/8', Sts '02'
+Key: JOH00007  Key3='UNI-80/8', Sts '02'
+Key: INC00008  Key3='UNI-80/8', Sts '00'
+Key: ALP00016  Key3='UNI-9030', Sts '00'
+Key: OLD00002  Key3='UNI-9040', Sts '02'
+Key: BET00015  Key3='UNI-9040', Sts '00'
+List descending LT first KEY3
+Got: GAM00014  Key3='UNI-80/3', Sts '00'
+List descending by KEY3
+Key: BET00015  Key3='UNI-9040', Sts '02'
+Key: OLD00002  Key3='UNI-9040', Sts '00'
+Key: ALP00016  Key3='UNI-9030', Sts '00'
+Key: INC00008  Key3='UNI-80/8', Sts '02'
+Key: JOH00007  Key3='UNI-80/8', Sts '02'
+Key: KON00006  Key3='UNI-80/8', Sts '02'
+Key: MOR00004  Key3='UNI-80/8', Sts '02'
+Key: PRE00001  Key3='UNI-80/8', Sts '00'
+Key: FOR00011  Key3='UNI-80/6', Sts '02'
+Key: GIB00010  Key3='UNI-80/6', Sts '00'
+Key: GAM00014  Key3='UNI-80/3', Sts '00'
+List descending LT KEY3
+Key: ALP00016  Key3='UNI-9030', Sts '00'
+Key: INC00008  Key3='UNI-80/8', Sts '02'
+Key: JOH00007  Key3='UNI-80/8', Sts '02'
+Key: KON00006  Key3='UNI-80/8', Sts '02'
+Key: MOR00004  Key3='UNI-80/8', Sts '02'
+Key: PRE00001  Key3='UNI-80/8', Sts '00'
+Key: FOR00011  Key3='UNI-80/6', Sts '02'
+Key: GIB00010  Key3='UNI-80/6', Sts '00'
+Key: GAM00014  Key3='UNI-80/3', Sts '00'
+], [])
+
+AT_CLEANUP
+

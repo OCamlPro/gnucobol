@@ -1,5 +1,5 @@
 
-2022-11-24  Ron Norman <rjn@inglenet.com>
+2022-11-25  Ron Norman <rjn@inglenet.com>
 
 	* fisam.c: Updated to better replicate MF COBOL behaviour
 				in relation to START ... READ NEXT/PREVIOUS
