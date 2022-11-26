@@ -6169,6 +6169,7 @@ cob_file_set_key (
 	cob_field	*kp;
 	va_list     args;
 	int			i;
+	int			cmprs;
 
 	if (keyn > (int)fl->nkeys
 	 || fl->flag_ready)
@@ -6180,7 +6181,9 @@ cob_file_set_key (
 		fl->keys[keyn].offset = (unsigned int)(key->data - fl->record->data);
 	else
 		fl->keys[keyn].offset = 0;
+	cmprs = dups >> 8;
 	fl->keys[keyn].tf_duplicates = dups ? 1 : 0;
+	fl->keys[keyn].tf_compress = cmprs;
 	fl->keys[keyn].tf_ascending = (unsigned char)ascdesc;
 	if (len_suppress < 0
 	 || suppress == NULL) {

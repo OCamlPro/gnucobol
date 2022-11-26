@@ -306,6 +306,14 @@ static void	make_synonym (void);
 	cb_odoslide = (yytext[10] - '0');
 }
 
+<*>^[ ]?"#KEYCOMPRESS "[0-9]\n {
+	if (isdigit (yytext[13]))
+		cb_keycompress_ready = atoi (&yytext[13]);
+	else
+		cb_keycompress_ready = 0;
+	cb_keycompress_pend = cb_source_line;
+}
+
 <*>^[ ]?"#ASSIGN "[0-9]\n {
 	cb_assign_type_default = (enum cb_assign_type)(yytext[8] - '0');
 /* not merged yet
@@ -335,10 +343,7 @@ static void	make_synonym (void);
 		if (p1) {
 			*p1 = 0;
 			cb_source_file = cobc_parse_strdup (p2);
-			/* FIXME: only place where strol is used, replace by cobc internal
-			          function for base 10 (found in cobc.c already) and base 16,
-			          remove from configure.ac */
-			cb_source_line = (int)strtol (yytext + 5, NULL, 10) - 1;
+			cb_source_line = (int)atoi (yytext + 5) - 1;
 		}
 	}
 }

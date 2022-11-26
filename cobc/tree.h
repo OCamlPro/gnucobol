@@ -1070,6 +1070,7 @@ struct cb_alt_key {
 	cb_tree			collating_sequence_key;	/* COLLATING */
 	cb_tree			suppress;			/* Suppress Literal */
 	int			duplicates;		/* DUPLICATES */
+	int			keycompress;	/* KEYCOMPRESS setting */
 	int			offset;			/* Offset from start */
 	int			tf_suppress;		/* !0 for SUPPRESS */
 	int			char_suppress;		/* character to test for suppress */

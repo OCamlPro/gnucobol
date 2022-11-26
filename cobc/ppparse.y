@@ -18,7 +18,7 @@
    along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-%require "3.6"
+%require "3.0"
 
 %expect 0
 
@@ -598,6 +598,8 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %token CONSTANT
 %token DPC_IN_DATA	"DPC-IN-DATA"
 %token FOLDCOPYNAME
+%token KEYCOMPRESS
+%token NOKEYCOMPRESS
 %token MAKESYN
 %token NODPC_IN_DATA	"NODPC-IN-DATA"
 %token NOFOLDCOPYNAME
@@ -856,6 +858,20 @@ set_choice:
 	} else {
 		ppp_error_invalid_option ("FOLD-COPY-NAME", p);
 	}
+  }
+| KEYCOMPRESS LITERAL
+  {
+	char	*p = $2;
+	int		ln;
+	if (*p == '"') p++;
+	ln = (int)strlen(p);
+	if (p[ln-1] == '"') p[ln-1] = 0;
+
+	fprintf (ppout, "#KEYCOMPRESS %s\n", p);
+  }
+| NOKEYCOMPRESS
+  {
+	fprintf (ppout, "#KEYCOMPRESS 0\n");
   }
 | MAKESYN alnum_equality
   {

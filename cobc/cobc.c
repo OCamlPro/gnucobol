@@ -194,6 +194,8 @@ int			fatal_errors_flag = 0;
 int			no_physical_cancel = 0;
 int			cb_source_line = 0;
 int			cb_saveargc = 0;
+int			cb_keycompress_pend = 0;
+int			cb_keycompress_ready = 0; /* Value for cb_keycompress */
 unsigned int	cobc_gen_listing = 0;
 unsigned int	cb_correct_program_order = 0;
 

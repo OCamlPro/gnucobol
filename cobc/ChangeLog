@@ -1,4 +1,13 @@
 
+2022-11-26  Ron Norman <rjn@inglenet.com>
+
+	* cobc.c,cobc.h: Add cb_keycompress flags
+	* codegen.c: Emit keycompress value with cob_file_set_key
+	* tree.h: add 'keycompress' to cb_alt_key
+	* config.def: add 'keycompress' option
+	* pplex.l,scanner.l,ppparse.y: Add code to pas thru KEYCOMPRESS value
+	* parser.y: Pick up KEYCOMPRESS value to cb_alt_key for codegen
+
 2022-11-16  Ron Norman <rjn@inglenet.com>
 
 	* codegen.c: Fix for computing length of ODO fields

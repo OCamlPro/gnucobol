@@ -1468,6 +1468,7 @@ typedef struct __cob_file_key {
 	unsigned char	tf_ascending;	/* ASCENDING/DESCENDING (for SORT)*/
 	unsigned char	tf_suppress;	/* supress keys where all chars = char_suppress */
 	unsigned char	char_suppress;	/* key supression character  */
+	unsigned char	tf_compress;	/* $SET KEYCOMPRESS value */
 	cob_field		*field;			/* Key field (or SPLIT key save area) */
 	unsigned char	*str_suppress;	/* Complete SUPPRESS "string" */
 	cob_field	*component[COB_MAX_KEYCOMP];/* key-components iff split-key   */

@@ -19,7 +19,7 @@
    along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-%require "3.6"
+%require "3.0"
 
 %expect 0
 
@@ -5026,7 +5026,7 @@ file_control_entry:
 	cobc_cs_check = 0;
 	if (CB_VALID_TREE ($3)) {
 		if (current_file->organization == COB_ORG_INDEXED
-		    && key_type == RELATIVE_KEY) {
+		 && key_type == RELATIVE_KEY) {
 			cb_error_x (current_file->key,
 				    _("cannot use RELATIVE KEY clause on INDEXED files"));
 		} else if (current_file->organization == COB_ORG_RELATIVE
@@ -5036,6 +5036,10 @@ file_control_entry:
 		}
 
 		validate_file (current_file, $3);
+		if (cb_keycompress_pend > 0) {
+			cb_keycompress = cb_keycompress_ready;
+			cb_keycompress_pend = 0;
+		}
 	}
   }
 ;
@@ -5078,7 +5082,7 @@ select_clause:
 | track_area_clause
 | track_limit_clause
 | encryption_clause
-/* FXIME: disabled because of shift/reduce conflict
+/* FIXME: disabled because of shift/reduce conflict
   (optional in [alternate] record key, could be moved here
    if the suppress_clause goes here too and both entries verify that
    they directly are invoked after an [alternate] record key)
@@ -5308,8 +5312,15 @@ alternate_record_key_clause:
 	p = cobc_parse_malloc (sizeof (struct cb_alt_key));
 	p->key = $5;
 	p->component_list = NULL;
+	if (cb_keycompress_pend > 0
+	 && cb_keycompress_pend < p->key->source_line) {
+		cb_keycompress = cb_keycompress_ready;
+		cb_keycompress_pend = 0;
+	}
 	if ($7) {
 		p->duplicates = CB_INTEGER ($7)->val;
+		if (p->duplicates)
+			p->keycompress = cb_keycompress;
 	} else {
 		/* note: we may add a compiler configuration here,
 		         as at least ICOBOL defaults to WITH DUPLICATES

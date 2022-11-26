@@ -74,6 +74,9 @@ CB_CONFIG_SINT (cb_default_byte, "defaultbyte", -1, 255, _("<number>"),
 CB_CONFIG_INT (cb_align_record, "align-record", 0, 256, CB_XRANGE(0,256),
 	_("align WORKING-STORAGE/LOCAL-STORAGE record on boundary"))
 
+CB_CONFIG_INT (cb_keycompress, "keycompress", 0, 16, CB_XRANGE(0,16),
+	_("do ISAM indexes with duplicates get compressed"))
+
 CB_CONFIG_BOOLEAN (cb_align_opt, "align-opt",
 	_("align like MF OPT, Default: false (Like MF ALIGN=FIXED)"))
 

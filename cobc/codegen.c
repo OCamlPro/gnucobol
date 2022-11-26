@@ -9898,7 +9898,10 @@ output_file_initialization (struct cb_file *f)
 			output_prefix ();
 			output ("cob_file_set_key (%s, %d, ", file_name, nkeys);
 			output_param (l->key, -1);
-			output (", %d, 0" , l->duplicates);
+			if (l->keycompress)
+				output (", (%d << 8) + %d, 0" , l->keycompress, l->duplicates);
+			else
+				output (", %d, 0" , l->duplicates);
 			if (l->suppress
 			 && CB_LITERAL_P(l->suppress)) {
 				struct cb_literal	*lit = CB_LITERAL (l->suppress);

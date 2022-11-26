@@ -24445,6 +24445,7 @@ AT_CLEANUP
 AT_SETUP([MF ISAM File Dups])
 AT_KEYWORDS([FileIo])
 AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "db"])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -24970,6 +24971,7 @@ AT_CLEANUP
 AT_SETUP([GC ISAM File Dups])
 AT_KEYWORDS([FileIo])
 AT_SKIP_IF([test "$COB_HAS_ISAM" = "no"])
+AT_SKIP_IF([test "$COB_HAS_ISAM" = "db"])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.

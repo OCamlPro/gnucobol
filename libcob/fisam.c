@@ -349,6 +349,15 @@ indexed_keydesc (cob_file *f, struct keydesc *kd, cob_file_key *key)
 
 	memset (kd,0,sizeof (struct keydesc));
 	kd->k_flags = key->tf_duplicates ? ISDUPS : ISNODUPS;
+	if (key->tf_compress		/* MF COBOL #SET KEYCOMPRESS */
+	&& !key->tf_suppress) {		/* Not supported if Suppress Character */
+		if (key->tf_compress & 1)
+			kd->k_flags += DCOMPRESS;
+		if (key->tf_compress & 2)
+			kd->k_flags += LCOMPRESS;
+		if (key->tf_compress & 4)
+			kd->k_flags += TCOMPRESS;
+	}
 
 	/* multi- and single field key as component */
 	/* LCOV_EXCL_START */

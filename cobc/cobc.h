@@ -353,6 +353,8 @@ extern int			cb_text_column;	/* end of area B (in single-byte characters) */
 extern int	cb_mf_ibm_comp;
 extern int	cb_cob_line_num;
 extern int	cb_all_files_xfd;
+extern int	cb_keycompress_ready;
+extern int	cb_keycompress_pend;
 
 extern struct cb_exception	cb_exception_table[];
 
