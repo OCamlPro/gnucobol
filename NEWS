@@ -1,6 +1,7 @@
 NEWS - user visible changes				-*- outline -*-
 
- GnuCOBOL 3.2rc1 to be released in November 2022
+ GnuCOBOL 3.2rc1 to be released asap,
+          3.2 final (depending on feedback) end of 2022
 
  planned:
    * changes to CALL handling especially for BY VALUE and stdcall
@@ -121,6 +122,9 @@ NEWS - user visible changes				-*- outline -*-
 
 ** ORGANIZATION INDEXED (with BDB backend): internal changes in record and
    file locking, fixing some related bugs
+
+** extended screen io with PDCurses (most Win32 builds): blink and bolding
+   are now enabled, when supported
 
 ** extended screen io: support for color codes 8-15 (implied highlight/blink
    attribute); only the three lower bits are now considered during evaluation
@@ -326,7 +330,7 @@ NEWS - user visible changes				-*- outline -*-
 
 * New build features
 
-** configure now honors BDB_LIBS
+** configure now honors BDB_LIBS and BDB_CFLAGS
 ** configure now honors MATH_LIBS
 ** configure now checks for XCurses and allows --with-curses=xcurses
    (experimental)

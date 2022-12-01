@@ -1,4 +1,10 @@
 
+2022-11-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* run_prog_manual.sh.in (_test_with_cmd): fixed escaping for "tr"
+	* Makefile.am: moved $(TESTSUITE) $(TESTSUITE_MANUAL) from EXTRA_DIST
+	  to dist_noinst_SCRIPTS 
+
 2022-10-11  Simon Sobisch <simonsobisch@gnu.org>
 
 	* atlocal.in, atlocal_valgrind: adjusted perf and valgrind runs
@@ -21,7 +27,7 @@
 
 2022-07-19  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
-	* general: fix area A in testsuite
+	* testsuite.src/general: fix area A in testsuite
 
 2022-03-29  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 

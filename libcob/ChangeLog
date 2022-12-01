@@ -1,4 +1,14 @@
 
+2022-11-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c: fixed compiler warnings related to get_crt3_status
+
+2022-11-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c [__PDCURSES__]: drop use of PDC_free_memory_allocations
+	  as testing showed it raising memory errors and the function was
+	  removed in PDCursesMod
+
 2022-10-22  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fileio.c (set_sequential_variable_length): extracted from sequential_read
@@ -356,6 +366,11 @@
 2022-03-11  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* common.c, common.h: add support for the STOP ERROR statement
+
+2022-02-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c [__PDCURSES__]: enabled blinking and bolding, see
+	  Patch #47
 
 2022-02-04  Simon Sobisch <simonsobisch@gnu.org>
 

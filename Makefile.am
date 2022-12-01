@@ -22,15 +22,9 @@
 include_HEADERS = libcob.h
 
 SUBDIRS = . lib libcob bin cobc config copy po extras doc tests
-
-bin: libcob
-cobc: libcob
-libcob: lib tarstamp.h
-extras: cobc
-doc po tests: cobc bin
+BUILT_SOURCES = tarstamp.h
 
 ACLOCAL_AMFLAGS = -I m4 --install
-DISTCLEANFILES = $(BUILT_SOURCES)
 # CLEANFILES = $(bin_SCRIPTS)
 dist_noinst_SCRIPTS = autogen.sh build_aux/bootstrap po/update_linguas.sh \
 	build_aux/create_win_dist.sh build_aux/create_mingw_bindist.sh
@@ -140,12 +134,19 @@ distbin:
 	$(gc__post_remove_bindistdir)
 	$(am__post_remove_distdir)
 
+# working draft for VCSDATE, disabled for now
+#VCSDATE = svn info --show-item last-changed-date $(srcdir) 2>/dev/null
+VCSDATE = false
+
+FILEDATE = (find $(srcdir) -type f \( -name 'NEWS' -o -name 'ChangeLog' -o -name '*.c' -o -name '*.h' -o -name '*.am' -o -name '*.at' \) -printf '%T@ %p\0' | sort -rz  | sed -Ezn '1s/[^ ]* //p' | xargs stat -c %y) 2>/dev/null
+
 $(tarstamps):
 	@echo "Creating $@..."
-	@{								\
-	  echo "#define COB_TAR_DATE    \"`LC_ALL=C date -u +'%b %d %Y %T'` UTC\""; \
-	  echo "#define COB_NUM_TAR_DATE ` LC_ALL=C date -u +'%Y%m%d'`"; \
-	  echo "#define COB_NUM_TAR_TIME ` LC_ALL=C date -u +'%H%M%S'`"; \
+	@LC_ALL=C stamp=$$( $(VCSDATE) || $(FILEDATE) || date -Iseconds ) && \
+	{								\
+	  echo "#define COB_TAR_DATE    \"`LC_ALL=C date -d \"$$stamp\" -u +'%b %d %Y %T'` UTC\""; \
+	  echo "#define COB_NUM_TAR_DATE ` LC_ALL=C date -d \"$$stamp\" -u +'%Y%m%d'`"; \
+	  echo "#define COB_NUM_TAR_TIME ` LC_ALL=C date -d \"$$stamp\" -u +'%H%M%S'`"; \
 	} > $@
 
 # TODO: possibly disable / adjust depending on what

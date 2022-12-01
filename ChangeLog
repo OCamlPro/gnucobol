@@ -1,4 +1,17 @@
 
+2022-12-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am: fixed dependencies, especially for tarstamp.h
+	* Makefile.am: tarstamp.h may now be created on base of FILEDATE or
+	  VSCDATE (currently deactivated), to override specify FILEDATE=false
+
+2022-11-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: support BDB_CFLAGS to specify necessary flags like
+	  non-default include directory
+	* configure.ac: drop check for PDC_free_memory_allocations as that
+	  function was removed from PDCursesMod
+
 2022-10-22  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: version 3.2-preview
