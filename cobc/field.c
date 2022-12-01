@@ -1696,8 +1696,28 @@ validate_multi_value (const struct cb_field * const f)
 }
 
 static void
-validate_elem_value (const struct cb_field * const f)
+validate_elem_value (struct cb_field * const f)
 {
+	/* check for table format VALUES [ARE] in non-occurs field */
+	if (CB_LIST_P (f->values) && CB_TAB_VALS_P (CB_LIST (f->values)->value)) {
+		const struct cb_field	*p;
+		for (p = f; p; p = p->parent) {
+			if (p->flag_occurs) {
+				break;
+			}
+		}
+		if (!p) {
+			const cb_tree		x = CB_TREE (f);
+			const cb_tree		first_tabval = CB_LIST (f->values)->value;
+			const struct cb_table_values *vals = CB_TAB_VALS (first_tabval);
+			cb_error_x (x,
+				_("unexpected VALUES ARE for elementary item"));
+			/* ensure to have an expected "direct" value entry, relying
+			   on now unreferenced parse trees to be freed later on */
+			f->values = CB_LIST (vals->values)->value;
+		}
+	}
+
 	/* ISO+IEC+1989-2002: 13.16.42.2-10 */
 	if (cb_warn_opt_val[cb_warn_ignored_initial_val] != COBC_WARN_DISABLED) {
 		const cb_tree		x = CB_TREE (f);

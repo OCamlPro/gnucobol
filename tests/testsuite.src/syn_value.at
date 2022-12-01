@@ -24,7 +24,125 @@
 
 # Format 1 (data-item): DONE
 
-# Format 2 (table): TODO
+AT_SETUP([bad VALUES / VALUES ARE in format-1])
+AT_KEYWORDS([VALUE])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+      * explicit testing in sub-fields to ensure parsing goes on
+       01  WS.
+           10  SEPX   PICTURE XX VALUES     ", ".
+           10  SEPL   PICTURE X  VALUE      LOW-VALUE.
+           10  BADIS  PICTURE 9  VALUE  ARE 1.
+           10  BADARE PICTURE 9  VALUES IS  2.
+           10  DAYS   PICTURE 99 VALUES ARE 31.
+           10  MONTHS PICTURE 99 VALUE  IS  12.
+           10  NO-OCCURS   PICTURE 99 VALUES ARE 08 15.
+
+       PROCEDURE DIVISION.
+           DISPLAY DAYS SEPX MONTHS SEPL.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:11: error: unexpected VALUES ARE
+prog.cob:13: error: syntax error, unexpected ARE
+prog.cob:14: error: syntax error, unexpected IS
+prog.cob:15: error: unexpected VALUES ARE
+prog.cob:17: error: unexpected VALUES ARE for elementary item
+])
+
+AT_CHECK([$COMPILE_ONLY -frelax-syntax-checks prog.cob], [1], [],
+[prog.cob:11: warning: unexpected VALUES ARE
+prog.cob:13: error: syntax error, unexpected ARE
+prog.cob:14: error: syntax error, unexpected IS
+prog.cob:15: warning: unexpected VALUES ARE
+prog.cob:17: error: unexpected VALUES ARE for elementary item
+])
+
+AT_CLEANUP
+
+
+# Format 2 (table): implemented, more testcases to do
+#                   TODO: codegen-finish
+
+AT_SETUP([OCCURS too many VALUEs])
+AT_KEYWORDS([initialize VALUE])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+       01  WS.
+         05  IX1  PIC 99.
+         05  IX2  PIC 99.
+         05  IX3  PIC 99.
+         05  GRP1 OCCURS 3 TIMES.
+             10  GRPX  PIC X(99).
+         05  MONTH-IN-YEAR OCCURS 13 TIMES PICTURE X(3)
+                         VALUES "jan" "feb" "mar" "apr"
+                               "may" "jun" "jul" "aug"
+                               "sep" "oct" "nov" "dec"
+                               "Hi" "Bye" "Dog".
+         05  DAYS-IN-MONTH OCCURS 13 TIMES PICTURE 9(2) BINARY
+                         VALUES 31 28 31 30 31 30 31 31 30 31 30 31.
+         05  DAYS-MONTHS  OCCURS 2 TIMES.
+          06  DAYX-MONTHX OCCURS 4 TIMES.
+           07  DAY-MONTH  OCCURS 3 TIMES.
+             10  XXX1   PICTURE X VALUE " ".
+             10  MONTHS PICTURE X(3)
+                        VALUES "Jan" "Feb" "Mar" "Apr"
+                               "May" "Jun" "Jul" "Aug"
+                               "Sep" "Oct" "Nov" "Dec"
+                               "JAN" "FEB" "MAR" "APR"
+                               "MAY" "JUN" "JUL" "AUG"
+                               "SEP" "OCT" "NOV" "DEC" "Bye".
+             10  SEPX   PICTURE XX VALUE ", ".
+             10  DAYS   PICTURE 99
+                        VALUES 31 28 31 30 31 30 31 31 30 31 30 31
+                               91 28 91 90 91 90 91 91 90 91 90 91.
+             10  PER    PICTURE X VALUE ".".
+           07  FLR    PICTURE X(4) VALUES " <A>" " <B>" " <C>" " <D>"
+                                  " <E>" " <F>" " <G>" " <H>" " <*>".
+
+       PROCEDURE DIVISION.
+
+       INIT-RTN.
+           DISPLAY "Simple OCCURS with multi VALUES".
+           PERFORM VARYING IX1 FROM 1 BY 1 UNTIL IX1 > 13
+              DISPLAY IX1 ": "
+                      MONTH-IN-YEAR (IX1) " has "
+                      DAYS-IN-MONTH (IX1) " days"
+              END-DISPLAY
+           END-PERFORM.
+           DISPLAY "Complex OCCURS with multi VALUES".
+           PERFORM VARYING IX3 FROM 1 BY 1 UNTIL IX3 > 2
+             PERFORM VARYING IX2 FROM 1 BY 1 UNTIL IX2 > 4
+                 DISPLAY IX3 "-" IX2 ": "
+                         DAYX-MONTHX (IX3, IX2)
+                 END-DISPLAY
+             END-PERFORM
+           END-PERFORM.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:15: error: elements in VALUE clause for 'MONTH-IN-YEAR' (15) exceed max amount (13)
+prog.cob:26: error: elements in VALUE clause for 'MONTHS' (25) exceed max amount (24)
+prog.cob:38: error: elements in VALUE clause for 'FLR' (9) exceed max amount (8)
+])
+
+AT_CLEANUP
 
 # Format 3 (condition-name): TODO
 
