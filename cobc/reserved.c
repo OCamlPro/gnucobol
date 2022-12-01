@@ -4706,7 +4706,7 @@ cb_tree
 get_system_name_translated (cb_tree word)
 {
 	/* note: word never exceeds COB_MAX_WORDLEN */
-	char system_name[COB_MAX_WORDLEN + 1];
+	char system_name[COB_MAX_WORDLEN + 1] = { 0 };
 	cb_tree res;
 
 	strcpy (system_name, CB_NAME (word));
@@ -4714,7 +4714,7 @@ get_system_name_translated (cb_tree word)
 		system_name [6] = ' ';
 	}
 
-	res = get_system_name(system_name);
+	res = get_system_name (system_name);
 	if (!res) {
 		cb_error_x (word, _("invalid system-name '%s'"), system_name);
 	}

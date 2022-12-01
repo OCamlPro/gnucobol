@@ -4292,7 +4292,7 @@ mnemonic_name_clause:
 word_or_terminal:
   WORD     { $$ = $1; }
   /* under GCOS, this reserved name can also be a system name */
-| TERMINAL { $$ = cb_build_reference("TERMINAL"); }
+| TERMINAL { $$ = cb_build_reference ("TERMINAL"); }
 
 mnemonic_choices:
   _is CRT
@@ -8372,7 +8372,7 @@ subscripts:
 
 
 value_is_are:
-  VALUE _is
+  VALUE  _is
 | VALUES _are
 ;
 
@@ -13856,6 +13856,7 @@ exhibit_body:
 
 _changed:	{ $$ = NULL; } | CHANGED	{ $$ = cb_int0; } ;
 _named:		{ $$ = NULL; } | NAMED  	{ $$ = cb_int0; } ;
+_erase:		{ $$ = NULL; } | ERASE		{ $$ = cb_int0; } ;
 
 exhibit_target_list:
   exhibit_target
@@ -17597,8 +17598,13 @@ return_at_end:
   at_end_clause _not_at_end_clause
 | not_at_end_clause at_end_clause
   {
-	cb_verify (cb_not_exception_before_exception, "NOT AT END before AT END");
+	cb_verify (cb_not_exception_before_exception, _("NOT AT END before AT END"));
   }
+/* mandatory - but creates shift/reduce conflict
+| not_at_end_clause
+  {
+	cb_error (_("%s is mandatory for %s"), "AT END", "RETURN");
+  } */
 ;
 
 read_at_end:
@@ -17607,7 +17613,7 @@ read_at_end:
 | not_at_end_clause _at_end_clause
   {
 	if ($2) {
-		cb_verify (cb_not_exception_before_exception, "NOT AT END before AT END");
+		cb_verify (cb_not_exception_before_exception, _("NOT AT END before AT END"));
 	}
   }
 ;
@@ -19802,7 +19808,6 @@ _controls:	| CONTROLS ;
 _control:	| CONTROL ;
 _data:		| DATA ;
 _end_of:	| _to END _of ;
-_erase:		| ERASE ;
 _every:		| EVERY ;
 _file:		| TOK_FILE ;
 _for:		| FOR ;

@@ -8231,6 +8231,8 @@ AT_DATA([prog.cob], [
        77  MYHORSE   PIC X(7) VALUE PONY.
        $SET CONSTANT PONY "White"
       *
+      * ensure to test a numeric, too (not actually used):
+       $SET CONSTANT C-UNUSED-NUM 0
        PROCEDURE DIVISION.
        MAIN.
            DISPLAY "Your Dog's name is " DOGGY ";".
@@ -8240,7 +8242,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-# OpenCOBOL/GnuCOBOL extension: >>SET CONSTANT
+# OpenCOBOL/GnuCOBOL extension (deprecated): >>SET CONSTANT
 AT_DATA([prog2.cob], [
        >>SET CONSTANT DOGGY "Barky"
        >>SET CONSTANT PONY "Blacky"

@@ -502,10 +502,10 @@ literal_for_diagnostic (char *buff, const char *literal_data) {
 		buff[CB_ERR_LITMAX] = '\0';
 	}
 
-	/* this previously happened because of a bug in pplex.l,
-	   as this is a seldom-called function and only
-	   inspect CB_ERR_LITMAX chars max here we leave this in as
-	   initializer for 'bad_pos' and additional security net */
+	/* this previously happened because of a bug in pplex.l;
+	   as this is a seldom-called function and only inspects
+	   up to CB_ERR_LITMAX chars here, we leave this in as
+	   initializer for 'bad_pos' and as additional security net */
 	bad_pos = strchr (buff, '\n');
 
 	if ( size >= CB_ERR_LITMAX
@@ -567,7 +567,7 @@ cb_name_1 (char *s, cb_tree x, const int size)
 		if (CB_TREE_CLASS (x) == CB_CLASS_NUMERIC) {
 			size_real = snprintf (s, size, "%s", (char *)CB_LITERAL (x)->data);
 		} else {
-			char	lit_buff[CB_ERR_LITMAX + 1];
+			char	lit_buff[CB_ERR_LITMAX + 1] = { 0 };
 			size_real = snprintf (s, size, _("literal \"%s\""),
 				literal_for_diagnostic (lit_buff, (char *)CB_LITERAL (x)->data));
 		}
@@ -2783,10 +2783,11 @@ cb_concat_literals (const cb_tree x1, const cb_tree x2)
 		return cb_error_node;
 	}
 
-	if ((x1->category != CB_CATEGORY_ALPHANUMERIC) &&
-		(x1->category != CB_CATEGORY_NATIONAL) &&
-		(x1->category != CB_CATEGORY_BOOLEAN)) {
-		cb_error_x (x1, _("only alphanumeric, national or boolean literals may be concatenated"));
+	if ((x1->category != CB_CATEGORY_ALPHANUMERIC)
+	 && (x1->category != CB_CATEGORY_NATIONAL)
+	 && (x1->category != CB_CATEGORY_BOOLEAN)) {
+		cb_error_x (x1,
+			_("only alphanumeric, national or boolean literals may be concatenated"));
 		return cb_error_node;
 	}
 
@@ -2795,7 +2796,7 @@ cb_concat_literals (const cb_tree x1, const cb_tree x2)
 		return cb_error_node;
 	}
 	if (p->size > cb_lit_length) {
-		char		lit_out[39];
+		char		lit_out[39] = { 0 };
 		literal_for_diagnostic (lit_out, (void *)p->data);
 		cb_error_x (x1, _("invalid literal: '%s'"), lit_out);
 		cb_error_x (x1, _("literal length %d exceeds %d characters"),

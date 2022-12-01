@@ -1,4 +1,12 @@
 
+2022-12-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* scanner.l: fixed double and missing free for internal constants
+	* parser.y (_erase): fixed missing return, breaking (exhibit_body)
+	* tree.c (cb_concat_literals, cb_name_1), scanner.l (error_literal),
+	  reserved.c (get_system_name_translated): fixed missing initialization
+	* parser.y: marked missing translatable string
+
 2022-11-18  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* cobc.c (print_line): fully honor -fmfcomment by suppressing lines
