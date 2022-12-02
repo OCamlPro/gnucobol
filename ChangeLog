@@ -1,9 +1,14 @@
 
+2022-12-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am: tarstamp.h may now be created on base of VSCDATE or
+	  FILEDATE, to override specify FILEDATE=false
+	* Makefile.am: tarstamp.h creation more portable, using fallback
+	  of current date
+
 2022-12-01  Simon Sobisch <simonsobisch@gnu.org>
 
 	* Makefile.am: fixed dependencies, especially for tarstamp.h
-	* Makefile.am: tarstamp.h may now be created on base of FILEDATE or
-	  VSCDATE (currently deactivated), to override specify FILEDATE=false
 
 2022-11-04  Simon Sobisch <simonsobisch@gnu.org>
 

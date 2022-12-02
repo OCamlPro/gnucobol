@@ -134,20 +134,23 @@ distbin:
 	$(gc__post_remove_bindistdir)
 	$(am__post_remove_distdir)
 
-# working draft for VCSDATE, disabled for now
-#VCSDATE = svn info --show-item last-changed-date $(srcdir) 2>/dev/null
-VCSDATE = false
+# date from last svn timestamp according to local checkout
+VCSDATE = LC_ALL=C svn info --show-item last-changed-date $(srcdir) 2>/dev/null
 
-FILEDATE = (find $(srcdir) -type f \( -name 'NEWS' -o -name 'ChangeLog' -o -name '*.c' -o -name '*.h' -o -name '*.am' -o -name '*.at' \) -printf '%T@ %p\0' | sort -rz  | sed -Ezn '1s/[^ ]* //p' | xargs stat -c %y) 2>/dev/null
+# if find -printf is not supported: pass as FILEDATE=false
+FILEDATE_LOOKUP = -name 'NEWS' -o -name 'ChangeLog' -o -name '*.c' -o -name '*.h' -o -name '*.am' -o -name '*.at'
+FILEDATE = (find $(srcdir) -type f \( $(FILEDATE_LOOKUP) \) -printf '%T@ %p\0' | sort -rz  | sed -Ezn '1s/[^ ]* //p' | xargs stat -c %y) 2>/dev/null
+
+# to override, most common as "gdate", if it doesn't support --date, then current date is used
+DATE = date
+TARSTAMP_CONTENT = '\#define COB_TAR_DATE    "%b %d %Y %T UTC"|\#define COB_NUM_TAR_DATE %Y%m%d|\#define COB_NUM_TAR_TIME %H%M%S'
 
 $(tarstamps):
 	@echo "Creating $@..."
-	@LC_ALL=C stamp=$$( $(VCSDATE) || $(FILEDATE) || date -Iseconds ) && \
-	{								\
-	  echo "#define COB_TAR_DATE    \"`LC_ALL=C date -d \"$$stamp\" -u +'%b %d %Y %T'` UTC\""; \
-	  echo "#define COB_NUM_TAR_DATE ` LC_ALL=C date -d \"$$stamp\" -u +'%Y%m%d'`"; \
-	  echo "#define COB_NUM_TAR_TIME ` LC_ALL=C date -d \"$$stamp\" -u +'%H%M%S'`"; \
-	} > $@
+	@($(DATE) --date=241225 -u 2>/dev/null 1>&2 && \
+	 LC_ALL=C stamp=$$( $(VCSDATE) || $(FILEDATE) || $(DATE) -u '+%F %T' ) && \
+	 LC_ALL=C $(DATE) --date="$$stamp" -u +$(TARSTAMP_CONTENT) | tr '|' '\n' > $@) \
+	|| LC_ALL=C $(DATE) -u +$(TARSTAMP_CONTENT) | tr '|' '\n' > $@
 
 # TODO: possibly disable / adjust depending on what
 #       configure.ac founds (currently not checked there)
