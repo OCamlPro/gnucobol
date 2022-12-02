@@ -1,4 +1,9 @@
 
+2022-12-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.h: allow to override COB_DASH_NAME and COB_DASH_OUT,
+	  possibly solving gcc builds on darwin
+
 2022-12-01  Simon Sobisch <simonsobisch@gnu.org>
 
 	* scanner.l: fixed double and missing free for internal constants
@@ -6,6 +11,17 @@
 	* tree.c (cb_concat_literals, cb_name_1), scanner.l (error_literal),
 	  reserved.c (get_system_name_translated): fixed missing initialization
 	* parser.y: marked missing translatable string
+
+2022-11-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (value_clause): handle simple VALUES without any optional
+	  phrases and with only a single value explicit not as table-format but
+	  as if VALUE was specified (raising a warning/error depending on
+	  relax-syntax-checks), as at least MicroFocus has this non-standard
+	  (and undocumented) extension
+	* field.c (validate_elem_value): explicit check that non-occurs item has
+	  only a single value
+	* parser.y (value_clause): improved parsing for table-format
 
 2022-11-18  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 

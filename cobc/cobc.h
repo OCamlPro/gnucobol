@@ -181,9 +181,12 @@ enum cb_current_date {
 
 /* Support for cobc from stdin */
 #define COB_DASH			"-"
+#ifndef COB_DASH_NAME
 #define COB_DASH_NAME			"a.cob"
+#endif
+#ifndef COB_DASH_OUT
 #define COB_DASH_OUT			"a.out"
-
+#endif
 
 /* Operand operation type */
 enum cb_operation_type {
