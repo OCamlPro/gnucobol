@@ -45,7 +45,7 @@ CODE_COVERAGE_IGNORE_PATTERN="*/cobc/pplex.c" "*/cobc/ppparse.c" "*/cobc/scanner
 
 # files shipped with the package that should be 755'ed:
 FILES_TO_BE_EXECUTABLE = $(dist_noinst_SCRIPTS) \
-	configure tests/testsuite tests/listings-sed.sh \
+	configure tests/testsuite tests/testsuite_manual tests/listings-sed.sh \
 	build_aux/config.guess build_aux/config.sub build_aux/config.rpath \
 	build_aux/depcomp build_aux/install-sh build_aux/ltmain.sh build_aux/mdate-sh \
 	build_aux/missing build_aux/mkinstalldirs build_aux/ylwrap
@@ -138,19 +138,19 @@ distbin:
 VCSDATE = LC_ALL=C svn info --show-item last-changed-date $(srcdir) 2>/dev/null
 
 # if find -printf is not supported: pass as FILEDATE=false
-FILEDATE_LOOKUP = -name 'NEWS' -o -name 'ChangeLog' -o -name '*.c' -o -name '*.h' -o -name '*.am' -o -name '*.at'
+FILEDATE_LOOKUP = -name 'NEWS' -o -name 'configure.ac' -o -name 'ChangeLog' -o -name '*.c' -o -name '*.h' -o -name '*.am' -o -name '*.at'
 FILEDATE = (find $(srcdir) -type f \( $(FILEDATE_LOOKUP) \) -printf '%T@ %p\0' | sort -rz  | sed -Ezn '1s/[^ ]* //p' | xargs stat -c %y) 2>/dev/null
 
 # to override, most common as "gdate", if it doesn't support --date, then current date is used
 DATE = date
-TARSTAMP_CONTENT = '\#define COB_TAR_DATE    "%b %d %Y %T UTC"|\#define COB_NUM_TAR_DATE %Y%m%d|\#define COB_NUM_TAR_TIME %H%M%S'
+TARSTAMP_CONTENT = '\#define COB_TAR_DATE    "%b %d %Y %T UTC"%n\#define COB_NUM_TAR_DATE %Y%m%d%n\#define COB_NUM_TAR_TIME %H%M%S'
 
-$(tarstamps):
+$(tarstamps): NEWS configure.ac Makefile.am libcob/version.h
 	@echo "Creating $@..."
 	@($(DATE) --date=241225 -u 2>/dev/null 1>&2 && \
 	 LC_ALL=C stamp=$$( $(VCSDATE) || $(FILEDATE) || $(DATE) -u '+%F %T' ) && \
-	 LC_ALL=C $(DATE) --date="$$stamp" -u +$(TARSTAMP_CONTENT) | tr '|' '\n' > $@) \
-	|| LC_ALL=C $(DATE) -u +$(TARSTAMP_CONTENT) | tr '|' '\n' > $@
+	 LC_ALL=C $(DATE) --date="$$stamp" -u +$(TARSTAMP_CONTENT) > $@) \
+	|| LC_ALL=C $(DATE) -u +$(TARSTAMP_CONTENT) > $@
 
 # TODO: possibly disable / adjust depending on what
 #       configure.ac founds (currently not checked there)
