@@ -8296,13 +8296,13 @@ value_clause:
 /* BS2000 table-format without FROM (implied 1,1,1,1) and REPEATED */
 | VALUE _is value_item_list repeated_phrase
   {
-	check_repeated ("VALUE", SYN_CLAUSE_12, &check_pic_duplicate);
-	/* note: "VALUE _is" with optional repeated would also be correct,
-	         but we ignore that because of parser conflicts */
 	cb_tree value_table_item = cb_build_table_values ($3, NULL, NULL, $4);
 	/* note: this format can actually be specified multiple times,
 	         but we expect the part without FROM first */
 	current_field->values = CB_LIST_INIT (value_table_item);
+	check_repeated ("VALUE", SYN_CLAUSE_12, &check_pic_duplicate);
+	/* note: "VALUE _is" with optional repeated would also be correct,
+	         but we ignore that because of parser conflicts */
   }
 /* BS2000 table-format with FROM and optional REPEATED */
 | value_from_subscripts_is_are value_item_list _repeated_phrase
