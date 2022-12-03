@@ -841,29 +841,64 @@ AT_DATA([prog.cob], [
                VALUE 'to make the text visible.'.
 
            03  LINE + 1.
-               05  COL 1, PIC X(8) VALUE 'Black' FOREGROUND-COLOR 0
-                   BACKGROUND-COLOR 7.
-               05  COL + 2, PIC X(8) VALUE 'Blue' FOREGROUND-COLOR 1.
-               05  COL + 2, PIC X(8) VALUE 'Green' FOREGROUND-COLOR 2.
-               05  COL + 2, PIC X(8) VALUE 'Cyan' FOREGROUND-COLOR 3.
-               05  COL + 2, PIC X(8) VALUE 'Red' FOREGROUND-COLOR 4.
-               05  COL + 2, PIC X(8) VALUE 'Magenta' FOREGROUND-COLOR 5.
-               05  COL + 2, PIC X(15) VALUE 'Brown/Yellow'
-                   FOREGROUND-COLOR 6.
-               05  COL + 2, PIC X(8) VALUE 'White' FOREGROUND-COLOR 7.
+             05  COL 1,   PIC X(08) VALUE 'Black'   FOREGROUND-COLOR 0
+                                                    BACKGROUND-COLOR 7.
+             05  COL + 2, PIC X(08) VALUE 'Blue'    FOREGROUND-COLOR 1.
+             05  COL + 2, PIC X(08) VALUE 'Green'   FOREGROUND-COLOR 2.
+             05  COL + 2, PIC X(08) VALUE 'Cyan'    FOREGROUND-COLOR 3.
+             05  COL + 2, PIC X(08) VALUE 'Red'     FOREGROUND-COLOR 4.
+             05  COL + 2, PIC X(08) VALUE 'Magenta' FOREGROUND-COLOR 5.
+             05  COL + 2, PIC X(15) VALUE 'Brown/Yellow'
+                                                    FOREGROUND-COLOR 6.
+             05  COL + 2, PIC X(08) VALUE 'White'   FOREGROUND-COLOR 7.
 
            03  LINE + 1.
-               05  COL 1, PIC X(8) VALUE 'Black' BACKGROUND-COLOR 0
-                   FOREGROUND-COLOR 7.
-               05  COL + 2, PIC X(8) VALUE 'Blue' BACKGROUND-COLOR 1.
-               05  COL + 2, PIC X(8) VALUE 'Green' BACKGROUND-COLOR 2.
-               05  COL + 2, PIC X(8) VALUE 'Cyan' BACKGROUND-COLOR 3.
-               05  COL + 2, PIC X(8) VALUE 'Red' BACKGROUND-COLOR 4.
-               05  COL + 2, PIC X(8) VALUE 'Magenta' BACKGROUND-COLOR 5.
-               05  COL + 2, PIC X(15) VALUE 'Brown/Yellow'
-                   BACKGROUND-COLOR 6.
-               05  COL + 2, PIC X(8) VALUE 'White' BACKGROUND-COLOR 7
-                   FOREGROUND-COLOR 0.
+             05  COL 1,   PIC X(08) VALUE 'Black'   BACKGROUND-COLOR 0
+                                                    FOREGROUND-COLOR 7.
+             05  COL + 2, PIC X(08) VALUE 'Blue'    BACKGROUND-COLOR 1.
+             05  COL + 2, PIC X(08) VALUE 'Green'   BACKGROUND-COLOR 2.
+             05  COL + 2, PIC X(08) VALUE 'Cyan'    BACKGROUND-COLOR 3.
+             05  COL + 2, PIC X(08) VALUE 'Red'     BACKGROUND-COLOR 4.
+             05  COL + 2, PIC X(08) VALUE 'Magenta' BACKGROUND-COLOR 5.
+             05  COL + 2, PIC X(15) VALUE 'Brown/Yellow'
+                                                    BACKGROUND-COLOR 6.
+             05  COL + 2, PIC X(08) VALUE 'White'   BACKGROUND-COLOR 7
+                                                    FOREGROUND-COLOR 0.
+
+           03  LINE + 2.
+           03  PIC X(80)
+               VALUE 'The following is the same as above, '
+               & 'with "extended" attributes set;'.
+           03  LINE + 1, COL 1, PIC X(80)
+               VALUE 'this should have the same effect as otherwise '
+               & 'highlighted for the first line'.
+           03  LINE + 1, COL 1, PIC X(80)
+               VALUE 'and blinking for the second one.'.
+
+           03  LINE + 1.
+             05  COL 1,   PIC X(08) VALUE 'Black'   FOREGROUND-COLOR 8
+                                                    BACKGROUND-COLOR 0.
+             05  COL + 2, PIC X(08) VALUE 'Blue'    FOREGROUND-COLOR 9.
+             05  COL + 2, PIC X(08) VALUE 'Green'   FOREGROUND-COLOR 10.
+             05  COL + 2, PIC X(08) VALUE 'Cyan'    FOREGROUND-COLOR 11.
+             05  COL + 2, PIC X(08) VALUE 'Red'     FOREGROUND-COLOR 12.
+             05  COL + 2, PIC X(08) VALUE 'Magenta' FOREGROUND-COLOR 13.
+             05  COL + 2, PIC X(15) VALUE 'Brown/Yellow'
+                                                    FOREGROUND-COLOR 14.
+             05  COL + 2, PIC X(08) VALUE 'White'   FOREGROUND-COLOR 15.
+
+           03  LINE + 1.
+             05  COL 1,   PIC X(08) VALUE 'Black'   BACKGROUND-COLOR 8
+                                                    FOREGROUND-COLOR 15.
+             05  COL + 2, PIC X(08) VALUE 'Blue'    BACKGROUND-COLOR 9.
+             05  COL + 2, PIC X(08) VALUE 'Green'   BACKGROUND-COLOR 10.
+             05  COL + 2, PIC X(08) VALUE 'Cyan'    BACKGROUND-COLOR 11.
+             05  COL + 2, PIC X(08) VALUE 'Red'     BACKGROUND-COLOR 12.
+             05  COL + 2, PIC X(08) VALUE 'Magenta' BACKGROUND-COLOR 13.
+             05  COL + 2, PIC X(15) VALUE 'Brown/Yellow'
+                                                    BACKGROUND-COLOR 14.
+             05  COL + 2, PIC X(08) VALUE 'White'   BACKGROUND-COLOR 15
+                                                    FOREGROUND-COLOR 8.
 
            03  success-field LINE + 2, COL 1, PIC X, REQUIRED,
                TO success-flag FROM 'Y'.
@@ -2211,7 +2246,7 @@ AT_DATA([prog1.cob], [
        01 my-cur.
           05 my-row pic  9(3) value 0.
           05 my-col pic  9(3) value 0.
-          
+
        77 loop      pic 99.
        77 cursor-moves-here pic x(20).
 
@@ -2220,17 +2255,17 @@ AT_DATA([prog1.cob], [
        01 screen-example .
           05 message1  value is "row (view only)   is " line 1 col 10.
           05 filler    pic 9(3) from  my-row.
-          
+
           05 message2  value is "col (adjust only) is " line 2 col 10.
           05 filler    pic 9(3) using my-col.
-          
+
           05 filler    pic x(20) using cursor-moves-here line 3 col 14.
 
        procedure division.
 
            perform varying loop from 1 by 1
                   until loop > 10
-              display "screen accept no. " 
+              display "screen accept no. "
                       at line 10 col 4
                       loop "/10"
               display screen-example
@@ -2240,6 +2275,8 @@ AT_DATA([prog1.cob], [
            goback.
 ])
 
+# note: same test, but this time with different specified
+#       special-names reference
 AT_DATA([prog2.cob], [
        identification division.
        program-id. prog.
@@ -2250,7 +2287,7 @@ AT_DATA([prog2.cob], [
        01 my-cur is special-names cursor.
           05 my-row pic  9(3) value 0.
           05 my-col pic  9(3) value 0.
-          
+
        77 loop      pic 99.
        77 cursor-moves-here pic x(20).
 
@@ -2259,17 +2296,17 @@ AT_DATA([prog2.cob], [
        01 screen-example .
           05 message1  value is "row (view only)   is " line 1 col 10.
           05 filler    pic 9(3) from  my-row.
-          
+
           05 message2  value is "col (adjust only) is " line 2 col 10.
           05 filler    pic 9(3) using my-col.
-          
+
           05 filler    pic x(20) using cursor-moves-here line 3 col 14.
 
        procedure division.
 
            perform varying loop from 1 by 1
                   until loop > 10
-              display "screen accept no. " 
+              display "screen accept no. "
                       at line 10 col 4
                       loop "/10"
               display screen-example
@@ -2312,7 +2349,7 @@ AT_DATA([prog1.cob], [
           05 two     pic  X.
           05 three   pic  X.
           05 four    pic  X.
-          
+
        77 loop       pic 99.
        77 test-field pic x(5).
 
@@ -2321,7 +2358,7 @@ AT_DATA([prog1.cob], [
        01 screen-example .
           05 message1  value is "status:     " line 1 col 10.
           05 filler    pic x(4) from  my-status.
-          
+
           05 message2  value is "test-field: " line 2 col 10.
           05 filler    pic x(5) using test-field.
 
@@ -2331,7 +2368,7 @@ AT_DATA([prog1.cob], [
            set environment 'COB_SCREEN_ESC'        to 'TRUE'
            perform varying loop from 1 by 1
                   until loop > 10
-              display "screen accept no. " 
+              display "screen accept no. "
                       at line 10 col 4
                       loop "/10"
               display screen-example
@@ -2341,6 +2378,8 @@ AT_DATA([prog1.cob], [
            goback.
 ])
 
+# note: same test, but this time with different specified
+#       special-names reference
 AT_DATA([prog2.cob], [
        identification division.
        program-id. prog.
@@ -2349,7 +2388,7 @@ AT_DATA([prog2.cob], [
        working-storage section.
 
        77 my-status  pic 9(05) is special-names crt status.
-          
+
        77 loop       pic 99.
        77 test-field pic x(5).
 
@@ -2358,7 +2397,7 @@ AT_DATA([prog2.cob], [
        01 screen-example .
           05 message1  value is "status:     " line 1 col 10.
           05 filler    pic 9(05) from  my-status.
-          
+
           05 message2  value is "test-field: " line 2 col 10.
           05 filler    pic x(5) using test-field.
 
@@ -2368,7 +2407,7 @@ AT_DATA([prog2.cob], [
            set environment 'COB_SCREEN_ESC'        to 'TRUE'
            perform varying loop from 1 by 1
                   until loop > 10
-              display "screen accept no. " 
+              display "screen accept no. "
                       at line 10 col 4
                       loop "/10"
               display screen-example
@@ -2388,6 +2427,7 @@ MANUAL_CHECK([$COBCRUN_DIRECT ./prog1], [0], [], [])
 MANUAL_CHECK([$COBCRUN_DIRECT ./prog2], [0], [], [])
 
 AT_CLEANUP
+
 
 AT_SETUP([CRT STATUS clause])
 AT_KEYWORDS([SPECIAL-NAMES])

@@ -365,7 +365,7 @@ cob_to_curses_color (cob_field *f, const short default_color)
 	}
 	/* compat for MF/ACU/... only use first 3 bits -> 0-7,
 	   bit 4 is "included highlight/blink attribute" */
-	switch (cob_get_int (f) | 7) {
+	switch (cob_get_int (f) & 7) {
 	case COB_SCREEN_BLACK:
 		return COLOR_BLACK;
 	case COB_SCREEN_BLUE:
@@ -392,7 +392,7 @@ cob_to_curses_color (cob_field *f, const short default_color)
 static int
 has_extended_color (cob_field* f)
 {
-	return f && (cob_get_int (f) | 8);
+	return f && (cob_get_int (f) & 8);
 }
 
 static short

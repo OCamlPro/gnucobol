@@ -1,4 +1,8 @@
 
+2022-12-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c: fix mishandled "extended attributes" (bit 4)
+
 2022-11-18  Simon Sobisch <simonsobisch@gnu.org>
 
 	* screenio.c: fixed compiler warnings related to get_crt3_status
