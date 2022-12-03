@@ -1,4 +1,10 @@
 
+2022-12-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* atlocal.in, atlocal_win: do not disable PDCurses screenio
+	  when executed as part of testsuite_manual (make checkmanual)
+	* atlocal_valgrind: drop win32 parts as valgrind does not work there
+
 2022-11-18  Simon Sobisch <simonsobisch@gnu.org>
 
 	* testsuite.src/syn_misc.at, testsuite.src/syn_value.at: moved

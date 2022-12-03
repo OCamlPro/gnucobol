@@ -7,6 +7,16 @@
 
 	* screenio.c: fixed compiler warnings related to get_crt3_status
 
+2022-11-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* intrinsic.c (cob_intr_random): fix a rare bug returning 1
+	* intrinsic.c: switching random number generation to GMP,
+	  providing a good-distributed, portable 
+	* intrinsic.c (get_seconds_past_midnight): extracted from
+	  cob_intr_seconds_past_midnight
+	* intrinsic.c (cob_intr_random): switched initial default-seed from
+	  "system dependent" (mostly always zero) to a random seed
+
 2022-11-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* screenio.c [__PDCURSES__]: drop use of PDC_free_memory_allocations
