@@ -102,26 +102,16 @@ display_numeric (cob_field *f, FILE *fp)
 static void
 pretty_display_numeric (cob_field *f, FILE *fp)
 {
+	const unsigned short	digits = COB_FIELD_DIGITS (f);
+	const signed short	scale = COB_FIELD_SCALE (f);
+	const int		size = digits + !!COB_FIELD_HAVE_SIGN (f) + !!scale;
+	cob_pic_symbol	pic[6] = { 0 };
 	cob_pic_symbol	*p;
-	unsigned char	*q = COB_TERM_BUFF;
-	int		i;
-	unsigned short	digits = COB_FIELD_DIGITS (f);
-	signed short	scale = COB_FIELD_SCALE (f);
-	int		size = digits + !!COB_FIELD_HAVE_SIGN (f) + !!scale;
-	cob_field_attr	attr;
-	cob_field	temp;
-	cob_pic_symbol	pic[6] = {{ '\0' }};
-
 
 	if (size > COB_MEDIUM_MAX) {
 		fputs (_("(Not representable)"), fp);
 		return;
 	}
-	temp.size = size;
-	temp.data = q;
-	temp.attr = &attr;
-	COB_ATTR_INIT (COB_TYPE_NUMERIC_EDITED, digits, scale, 0,
-		       (const cob_pic_symbol *)pic);
 	p = pic;
 
 	if (COB_FIELD_HAVE_SIGN (f)) {
@@ -163,11 +153,23 @@ pretty_display_numeric (cob_field *f, FILE *fp)
 	}
 	p->symbol = '\0';
 
-	cob_move (f, &temp);
-	for (i = 0; i < size; ++i) {
-		unsigned char chr = q[i];
-		if (putc (chr, fp) != chr) {
-			break;
+	{
+		unsigned char	*q = COB_TERM_BUFF;
+		const unsigned char *end = q + size;
+		cob_field_attr	attr;
+		cob_field	temp;
+		temp.size = size;
+		temp.data = q;
+		temp.attr = &attr;
+		COB_ATTR_INIT (COB_TYPE_NUMERIC_EDITED, digits, scale, 0,
+			(const cob_pic_symbol*)pic);
+
+		cob_move (f, &temp);
+		while (q != end) {
+			unsigned int chr = *q++;
+			if (putc (chr, fp) != chr) {
+				break;
+			}
 		}
 	}
 }
@@ -175,11 +177,11 @@ pretty_display_numeric (cob_field *f, FILE *fp)
 static void
 display_alnum (const cob_field *f, FILE *fp)
 {
-	size_t	i;
-	unsigned char chr;
+	const unsigned char *end = f->data + f->size;
+	unsigned char *p = f->data;
 
-	for (i = 0; i < f->size; ++i) {
-		chr = f->data[i];
+	while (p != end) {
+		const int chr = *p++;
 		if (putc (chr, fp) != chr) {
 			break;
 		}
@@ -282,23 +284,32 @@ void
 cob_display (const int to_device, const int newline, const int varcnt, ...)
 {
 	FILE		*fp;
-	cob_field	*f;
-	int		i;
-	int		nlattr, close_fp, pclose_fp;
-	cob_u32_t	disp_redirect;
+	int		close_fp = 0;
+	cob_u32_t	disp_redirect = 0;
 	va_list		args;
-	const char *mode;
-
-	disp_redirect = 0;
-	pclose_fp = close_fp = 0;
 	
 	/* display to device ? */
-	if (to_device == 2) {	/* PRINTER */
+	switch (to_device) {
+	case 0:	/* general (SYSOUT) */
+		fp = stdout;
+		if (cobglobptr->cob_screen_initialized) {
+			if (!COB_DISP_TO_STDERR) {
+				disp_redirect = 1;
+			} else {
+				fp = stderr;
+			}
+		}
+		break;
+	case 1:	/* SYSERR */
+		fp = stderr;
+		break;
+	case 2:	/* PRINTER */
 		/* display to external specified print file handle */
 		if (cobsetptr->cob_display_print_file) {
 			fp = cobsetptr->cob_display_print_file;
 		/* display to configured print file */
 		} else if (cobsetptr->cob_display_print_filename != NULL) {
+			const char *mode;
 			if (!cobsetptr->cob_unix_lf) {
 				mode = "a";
 			} else {
@@ -313,6 +324,7 @@ cob_display (const int to_device, const int newline, const int varcnt, ...)
 #ifdef HAVE_POPEN
 		/* display to configured print command (piped) */
 		} else if (cobsetptr->cob_display_print_pipe != NULL) {
+			const char* mode;
 			if (!cobsetptr->cob_unix_lf) {
 				mode = "w";
 			} else {
@@ -323,7 +335,7 @@ cob_display (const int to_device, const int newline, const int varcnt, ...)
 			if (fp == NULL) {
 				fp = stderr;
 			} else {
-				pclose_fp = 1;
+				close_fp = 2;
 			}
 #endif
 		/* fallback: display to the defined SYSOUT */
@@ -337,12 +349,12 @@ cob_display (const int to_device, const int newline, const int varcnt, ...)
 				}
 			}
 		}
-	} else if (to_device == 1) {	/* SYSERR */
-		fp = stderr;
-	} else if (to_device == 3) {	/* SYSPCH */
+		break;
+	case 3:	/* SYSPCH */
 		/* open if not available but specified */
 		if (!cobsetptr->cob_display_punch_file
 		 && cobsetptr->cob_display_punch_filename != NULL) {
+			const char* mode;
 			if (!cobsetptr->cob_unix_lf) {
 				mode = "w";
 			} else {
@@ -370,41 +382,45 @@ cob_display (const int to_device, const int newline, const int varcnt, ...)
 			}
 			return;
 		}
-	} else {		/* general (SYSOUT) */
-		fp = stdout;
-		if (cobglobptr->cob_screen_initialized) {
-			if (!COB_DISP_TO_STDERR) {
-				disp_redirect = 1;
-			} else {
-				fp = stderr;
-			}
-		}
+		break;
+	/* LCOV_EXCL_START */
+	default:
+		fp = stderr;
 	}
+	/* LCOV_EXCL_STOP */
 
-	nlattr = newline ? COB_SCREEN_EMULATE_NL : 0;
 	va_start (args, varcnt);
-	for (i = 0; i < varcnt; ++i) {
-		f = va_arg (args, cob_field *);
-		if (unlikely (disp_redirect)) {
+	if (disp_redirect) {
+		const int nlattr = newline ? COB_SCREEN_EMULATE_NL : 0;
+		int		i;
+		for (i = 0; i < varcnt; ++i) {
+			cob_field	*f = va_arg (args, cob_field *);
 			cob_field_display (f, NULL, NULL, NULL, NULL,
 					   NULL, NULL, nlattr);
-		} else {
+		}
+	} else {
+		int		i;
+		for (i = 0; i < varcnt; ++i) {
+			cob_field	*f = va_arg (args, cob_field *);
 			cob_display_common (f, fp);
+		}
+		if (newline) {
+			putc ('\n', fp);
+			fflush (fp);
 		}
 	}
 	va_end (args);
 
-	if (newline && !disp_redirect) {
-		putc ('\n', fp);
-		fflush (fp);
-	}
-#ifdef HAVE_POPEN
-	if (pclose_fp) {
-		pclose (fp);
-	}
-#endif
 	if (close_fp) {
+#ifdef HAVE_POPEN
+		if (close_fp == 2) {
+			pclose (fp);
+		} else {
+			fclose (fp);
+		}
+#else
 		fclose (fp);
+#endif
 	}
 }
 

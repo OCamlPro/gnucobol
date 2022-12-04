@@ -2,6 +2,7 @@
 2022-12-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* screenio.c: fix mishandled "extended attributes" (bit 4)
+	* termio.c: several minor performance tweaks for DISPLAY
 
 2022-11-18  Simon Sobisch <simonsobisch@gnu.org>
 
