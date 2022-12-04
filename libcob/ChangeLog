@@ -1,4 +1,15 @@
 
+2022-12-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_set_date_from_epoch), common.h: new function to
+	  parse epoch date
+	* common.c (cob_get_current_datetime), coblocal.h (cob_datetime_res):
+	  new function to get the datetime with adjustable resolution
+	* common.c, intrinsic.c: speedup for date/time lookup by using precision
+	  as necessary
+	* common.c [!TIME_T_IS_NON_ARITHMETIC]: removing the possibly expensive
+	  call to localtime by caching its previous result
+
 2022-12-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* screenio.c: fix mishandled "extended attributes" (bit 4)

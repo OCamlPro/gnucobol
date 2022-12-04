@@ -1,8 +1,12 @@
 
+2022-12-03 Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c: check SOURCE_DATE_EPOCH once, if set parse via libcob
+	  to use as compile timestamp
+
 2022-12-02  Simon Sobisch <simonsobisch@gnu.org>
 
-	* cobc.h: allow to override COB_DASH_NAME and COB_DASH_OUT,
-	  possibly solving gcc builds on darwin
+	* cobc.h: allow to override COB_DASH_NAME and COB_DASH_OUT
 
 2022-12-01  Simon Sobisch <simonsobisch@gnu.org>
 

@@ -1472,7 +1472,7 @@ int_strncasecmp (const void *s1, const void *s2, size_t n)
 
 /* NUMVAL + NUMVAL-C implementation */
 
-static COB_INLINE COB_A_INLINE int
+static COB_INLINE COB_A_INLINE size_t
 space_left (unsigned char * p, unsigned char *p_end)
 {
 	return p_end - p + 1;
@@ -2624,7 +2624,7 @@ get_system_offset_time_ptr (int * const offset_time)
 {
 	struct cob_time	current_time;
 
-	current_time = cob_get_current_date_and_time ();
+	current_time = cob_get_current_datetime (DTR_FULL);
 	if (current_time.offset_known) {
 		*offset_time = current_time.utc_offset;
 		return offset_time;
@@ -3146,7 +3146,7 @@ format_current_date (const struct date_format date_fmt,
 		     const struct time_format time_fmt,
 		     char *formatted_datetime)
 {
-	struct cob_time	time = cob_get_current_date_and_time ();
+	struct cob_time	time = cob_get_current_datetime (DTR_FULL);
 	int		days
 		= integer_of_date (time.year, time.month, time.day_of_month);
 	int		seconds_from_midnight
@@ -4374,7 +4374,11 @@ cob_intr_current_date (const int offset, const int length)
 	COB_FIELD_INIT (21, NULL, &const_alpha_attr);
 	make_field_entry (&field);
 
-	time = cob_get_current_date_and_time ();
+	if (offset == 1 && length <= 14) {
+		time = cob_get_current_datetime (DTR_TIME_NO_NANO);
+	} else {
+		time = cob_get_current_datetime (DTR_FULL);
+	}
 
 	sprintf (buff, "%4.4d%2.2d%2.2d%2.2d%2.2d%2.2d%2.2d",
 		  time.year, time.month, time.day_of_month, time.hour,

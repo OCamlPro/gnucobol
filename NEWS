@@ -334,7 +334,8 @@ NEWS - user visible changes				-*- outline -*-
 ** configure now honors MATH_LIBS
 ** configure now checks for XCurses and allows --with-curses=xcurses
    (experimental)
-
+** cobc handles SOURCE_DATE_EPOCH now, allowing to override timestamps in
+   generated code and listing files, allowing reproducible builds
 
 * Known issues in 3.2 (and 3.1)
 

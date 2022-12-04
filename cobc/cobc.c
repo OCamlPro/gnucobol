@@ -2165,13 +2165,33 @@ cobc_clean_up (const int status)
 }
 
 static void
+set_compile_date (void)
+{
+	static int sde_todo = 0;
+	if (sde_todo == 0) {
+		char  *s = getenv ("SOURCE_DATE_EPOCH");
+		sde_todo = 1;
+		if (s && *s) {
+			if (cob_set_date_from_epoch (&current_compile_time, s) == 0) {
+				return;
+			}
+			cobc_err_msg (_("environment variable '%s' has invalid content"), "SOURCE_DATE_EPOCH");
+			if (!cb_flag_syntax_only) {
+				cb_source_file = NULL;
+				cobc_abort_terminate (0);
+			}
+		}
+	}
+	current_compile_time = cob_get_current_date_and_time ();
+}
+
+static void
 set_listing_date (void)
 {
 	if (!current_compile_time.year) {
-		current_compile_time = cob_get_current_date_and_time();
+		set_compile_date ();
 	}
 
-	/* the following code is likely to get replaced by a self-written format */
 	current_compile_tm.tm_sec = current_compile_time.second;
 	current_compile_tm.tm_min = current_compile_time.minute;
 	current_compile_tm.tm_hour = current_compile_time.hour;
@@ -2517,6 +2537,11 @@ cobc_print_info (void)
 		cobc_var_print ("COB_EXE_EXT", &COB_EXE_EXT[1], 0);
 	} else {
 		cobc_var_print ("COB_EXE_EXT", COB_EXE_EXT, 0);
+	}
+	if ((s = getenv ("SOURCE_DATE_EPOCH")) != NULL) {
+		/* reading and validating + setting print version */
+		set_listing_date ();
+		cobc_var_print ("SOURCE_DATE_EPOCH", cb_listing_date, 1);
 	}
 
 #ifdef COB_64_BIT_POINTER
@@ -8638,7 +8663,9 @@ process_file (struct filename *fn, int status)
 	struct cobc_mem_struct	*mptr;
 	struct cobc_mem_struct	*mptrt;
 
-	current_compile_time = cob_get_current_date_and_time ();
+	if (!cb_flag_syntax_only) {
+		set_compile_date ();
+	}
 
 	/* Initialize listing */
 	if (cb_src_list_file) {
