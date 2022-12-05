@@ -531,11 +531,13 @@ AT_KEYWORDS([copy gcos])
 AT_DATA([copy.inc], [
        01  TEST-VAR PIC X(2) VALUE "OK".
        01  NORM-VAR PIC X(2) VALUE "OK".
+       01  NORM     PIC X(2) VALUE "OK".
 ])
 
 AT_DATA([copy2.inc], [
        01  TEST-FIRST  PIC X(2) VALUE "OK".
        01  TEST-SECOND PIC X(2) VALUE "OK".
+       01  SECOND      PIC X(2) VALUE "OK".
 ])
 
 AT_DATA([prog.cob], [
@@ -550,18 +552,16 @@ AT_DATA([prog.cob], [
             REPLACING TRAILING "FIRST" BY "VAR1"
                       TRAILING "SECOND" BY "VAR2".
        PROCEDURE        DIVISION.
-           DISPLAY FIRST-VAR NO ADVANCING
-           END-DISPLAY.
-           DISPLAY SECOND-VAR NO ADVANCING
-           END-DISPLAY.
-           DISPLAY TEST-VAR1 NO ADVANCING
-           END-DISPLAY.
-           DISPLAY TEST-VAR2 NO ADVANCING
-           END-DISPLAY.
+           DISPLAY FIRST-VAR  NO ADVANCING END-DISPLAY.
+           DISPLAY SECOND-VAR NO ADVANCING END-DISPLAY.
+           DISPLAY SECOND     NO ADVANCING END-DISPLAY.
+           DISPLAY TEST-VAR1  NO ADVANCING END-DISPLAY.
+           DISPLAY TEST-VAR2  NO ADVANCING END-DISPLAY.
+           DISPLAY NORM       NO ADVANCING END-DISPLAY.
            STOP RUN.
 ])
 AT_CHECK([$COMPILE -fpartial-replacing-with-literal=ok prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OKOKOKOK])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OKOKOKOKOKOK])
 AT_CHECK([$COMPILE_ONLY -fpartial-replacing-with-literal=error prog.cob], [1], [],
 [prog.cob:7: error: partial replacing with literal used
 prog.cob:7: error: partial replacing with literal used

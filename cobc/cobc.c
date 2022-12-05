@@ -7103,9 +7103,9 @@ print_replace_text (struct list_files *cfile, FILE *fd,
 #endif
 			ttlen = strlen (ttoken);
 			ttix = 0;
-			if (rep->lead_trail == CB_REPLACE_LEADING) {
+			if (rep->lead_trail_strict >> 1 == CB_REPLACE_LEADING) {
 				subword = 1;
-			} else if (rep->lead_trail == CB_REPLACE_TRAILING) {
+			} else if (rep->lead_trail_strict >> 1 == CB_REPLACE_TRAILING) {
 				if (ttlen >= from_token_len) {
 					subword = 1;
 					ttix = ttlen - from_token_len;
@@ -7123,10 +7123,10 @@ print_replace_text (struct list_files *cfile, FILE *fd,
 					newline = cobc_realloc (newline, newlinelen);
 				}
 				if (subword) {
-					if (rep->lead_trail == CB_REPLACE_LEADING) {
+					if (rep->lead_trail_strict >> 1 == CB_REPLACE_LEADING) {
 						strcat (newline, rep->to);
 						strcat (newline, &ttoken[from_token_len]);
-					} else if (rep->lead_trail == CB_REPLACE_TRAILING) {
+					} else if (rep->lead_trail_strict >> 1 == CB_REPLACE_TRAILING) {
 						strncat (newline, ttoken, ttlen);
 						strcat (newline, rep->to);
 					} else {

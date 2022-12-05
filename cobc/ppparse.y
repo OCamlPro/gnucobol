@@ -134,17 +134,18 @@ fold_upper (char *name)
 
 static struct cb_replace_list *
 ppp_replace_list_add (struct cb_replace_list *list,
-		     const struct cb_text_list *old_text,
-		     const struct cb_text_list *new_text,
-		     const unsigned int lead_or_trail)
+		      struct cb_replace_src *src,
+		      const struct cb_text_list *new_text,
+		      const unsigned int lead_or_trail)
 {
 	struct cb_replace_list *p;
 
 	p = cobc_plex_malloc (sizeof (struct cb_replace_list));
 	p->line_num = cb_source_line;
-	p->old_text = old_text;
+	src->lead_trail = lead_or_trail;
+	if (!lead_or_trail) src->strict = 0; /* reset if not partial */
+	p->src = src;
 	p->new_text = new_text;
-	p->lead_trail = lead_or_trail;
 	if (!list) {
 		p->last = p;
 		return p;
@@ -429,6 +430,17 @@ ppp_list_append (struct cb_text_list *list_1, struct cb_text_list *list_2)
 	return list_1;
 }
 
+static struct cb_replace_src *
+ppp_replace_src (const struct cb_text_list * const text_list,
+		 const unsigned int strict_partial)
+{
+	struct cb_replace_src *s = cobc_plex_malloc (sizeof (struct cb_replace_src));
+	s->lead_trail = 0;	/* unknown yet */
+	s->strict = strict_partial;
+	s->text_list = text_list;
+	return s;
+}
+
 static unsigned int
 ppp_search_comp_vars (const char *name)
 {
@@ -582,12 +594,13 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %}
 
 %union {
-	char			*s;
-	struct cb_text_list	*l;
-	struct cb_replace_list	*r;
-	struct cb_define_struct	*ds;
-	unsigned int		ui;
-	int			si;
+	char				*s;
+	struct cb_text_list		*l;
+	struct cb_replace_src		*p;
+	struct cb_replace_list		*r;
+	struct cb_define_struct		*ds;
+	unsigned int			ui;
+	int				si;
 };
 
 %token TOKEN_EOF 0	"end of file"
@@ -719,9 +732,9 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %type <l>	token_list
 %type <l>	identifier
 %type <l>	subscripts
-%type <l>	text_src
+%type <p>	text_src
 %type <l>	text_dst
-%type <l>	text_partial_src
+%type <p>	text_partial_src
 %type <l>	text_partial_dst
 %type <l>	alnum_list
 %type <l>	alnum_with
@@ -1627,11 +1640,11 @@ replacing_list:
 text_src:
   EQEQ token_list EQEQ
   {
-	$$ = $2;
+	$$ = ppp_replace_src ($2, 0);
   }
 | identifier
   {
-	$$ = $1;
+	$$ = ppp_replace_src ($1, 0);
   }
 ;
 
@@ -1653,11 +1666,12 @@ text_dst:
 text_partial_src:
   EQEQ TOKEN EQEQ
   {
-	$$ = ppp_list_add (NULL, $2);
+	$$ = ppp_replace_src (ppp_list_add (NULL, $2), 0);
   }
 | TOKEN
   {
-	$$ = ppp_list_add (NULL, literal_token ($1, 0));
+	$$ = ppp_replace_src (ppp_list_add (NULL, literal_token ($1, 0)),
+			      ($1[0] == '\'' || $1[0] == '"') ? 1 : 0);
   }
 ;
 

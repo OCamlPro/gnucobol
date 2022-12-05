@@ -274,15 +274,21 @@ struct cb_text_list {
 	const char		*text;
 };
 
+/* Strict/loose source text replacing structure */
+struct cb_replace_src {
+	const struct cb_text_list	*text_list; /* single-cell when strict */
+	unsigned int			lead_trail: 2;
+	unsigned int 			strict: 1;
+};
+
 /* Generic replace list structure */
 struct cb_replace_list {
 	int				line_num;
-	struct cb_replace_list		*next;			/* next pointer */
+	struct cb_replace_list		*next;		/* next pointer */
 	struct cb_replace_list		*last;
 	struct cb_replace_list		*prev;
-	const struct cb_text_list	*old_text;
+	const struct cb_replace_src	*src;
 	const struct cb_text_list	*new_text;
-	unsigned int			lead_trail;
 };
 
 /* Structure for extended filenames */
@@ -354,7 +360,7 @@ struct list_replace {
 	struct list_replace	*next;
 	int			firstline;	/* First line for replace */
 	int			lastline;	/* Last line for replace */
-	int			lead_trail;	/* LEADING/TRAILING flag */
+	int			lead_trail_strict; /* LEADING/TRAILING/STRICT flag */
 	char			*from;		/* Old (from) text */
 	char			*to;		/* New (to) text */
 };
