@@ -733,7 +733,7 @@ cob_decimal_set_mpf_core (cob_decimal *d, const mpf_t src)
 		the string conversion provides us with the scale already) */
 	{
 		char buffer[COB_MAX_INTERMEDIATE_FLOATING_SIZE + 2];
-		mpf_get_str (buffer, &scale, 10, COB_MAX_INTERMEDIATE_FLOATING_SIZE, cob_mpft);
+		mpf_get_str (buffer, &scale, 10, COB_MAX_INTERMEDIATE_FLOATING_SIZE, src);
 		len = (cob_sli_t)strlen (buffer);
 		if (buffer[0] == '-') {
 			mpz_set_str (d->value, buffer + 1, 10);
