@@ -1331,16 +1331,6 @@ if test "$USE_CURSES" = "ncurses" -o "$USE_CURSES" = "ncursesw"; then
     [])
 fi
 
-if test "$USE_CURSES" = "pdcurses" -o "$USE_CURSES" = "xcurses"; then
-    AC_MSG_CHECKING([for PDCurses PDC_free_memory_allocations() function])
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-    extern void PDC_free_memory_allocations (void);]],
-    [[PDC_free_memory_allocations ();]])],
-    [AC_DEFINE([HAVE_CURSES_FREEALL], [1]) AC_MSG_RESULT([yes])],
-    [AC_MSG_RESULT([no])],
-    [])
-fi
-
 if test "$USE_CURSES" != "no" -a "$USE_CURSES" != "not_found"; then
 	AC_MSG_CHECKING([for curses color_set function])
 	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
@@ -1512,11 +1502,16 @@ AS_IF([test "$with_cisam" != "yes" -a "$with_disam" != "yes" -a "$with_vbisam" !
 ])
 
 # Checks for db.
+AC_ARG_VAR([BDB_CFLAGS], [compiler flags necessary to preprocess/compile for Berkeley DB])
 AC_ARG_VAR([BDB_LIBS], [linker flags for Berkeley DB, overriding automatic lookup])
 if test "$with_db" = "yes"; then
 	AC_MSG_NOTICE([Checks for Berkeley DB ...])
 
-	AC_CHECK_HEADERS([db.h], [], AC_MSG_ERROR([Berkeley DB db.h is missing]), [])
+	curr_cppflags="$CPPFLAGS"
+	if test -n "$BDB_CFLAGS"; then
+	   CPPFLAGS="$CPPFLAGS $BDB_CFLAGS"
+	fi
+	AC_CHECK_HEADERS([db.h], [], AC_MSG_ERROR([[Berkeley DB db.h is missing, you may adjust BDB_CFLAGS]]), [])
 
 	# BDB header exists. Extract major/minor number pair
 	COB_BDB_HEADER=''
@@ -1623,6 +1618,10 @@ if test "$with_db" = "yes"; then
 		[LIBCOB_LIBS="$LIBCOB_LIBS -ldb"],
 		AC_MSG_ERROR([BDB library is required as -ldb]), [])
 	fi
+	if test -n "$BDB_CFLAGS"; then
+	   LIBCOB_CPPFLAGS="$LIBCOB_CPPFLAGS $BDB_CFLAGS"
+	fi
+	CPPFLAGS="$curr_cppflags"
 	unset cobdb
 	unset cob_got_db
 	unset COB_BDB_HEADER

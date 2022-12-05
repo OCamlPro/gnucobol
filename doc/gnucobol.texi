@@ -445,25 +445,25 @@ Micro Focus' Variable format.  Identical to the fixed format above
 except for the program-text area which extends up to column 250 instead
 of 72.
 
-@item -fformat=xopen
-X/Open Free-form format.  The program-text area may start in column 1
-unless an indicator is present, and lines may contain up to 80
-characters.  Indicator for debugging lines is @code{D } instead of
-@code{D} or @code{d}.
-
 @item -fformat=xcard
 ICOBOL xCard format.  Variable format with right margin set at column
 255 instead of 250.
 
+@item -fformat=xopen
+X/Open Free-form format.  The program-text area may start in column 1
+unless an indicator is present, and lines may contain up to 255
+characters.  Indicator for debugging lines is @samp{D } (D followed by
+a space) instead of @samp{D} or @samp{d}.
+
 @item -fformat=crt
 ICOBOL Free-form format (CRT).  Similar to the X/Open format above, with
 lines containing up to 320 characters and single-character debugging
-line indicators (@code{D} or @code{d}).
+line indicators (@samp{D} or @samp{d}).
 
 @item -fformat=terminal
 ACUCOBOL-GT Terminal format.  Similar to the CRT format above, with
-indicator for debugging lines being @code{\D} instead of @code{D} or
-@code{d}.  This format is mostly compatible with VAX COBOL terminal
+indicator for debugging lines being @samp{\D} instead of @samp{D} or
+@samp{d}.  This format is mostly compatible with VAX COBOL terminal
 source format.
 
 @item -fformat=cobolx
@@ -486,11 +486,11 @@ developping COBOL programs that are portable to actual mainframe
 environments.
 
 In general, division, section, and paragraph names must start in Area A.
-In the @code{DATA DIVISION}, level numbers @code{01} and @code{77}, must
+In the @code{DATA DIVISION}, level numbers @samp{01} and @samp{77}, must
 also start in Area A.  In the @code{PROCEDURE DIVISION}s, statements and
 separator periods must fit within Area B.  Every source format listed
-above may be subject to Area A enforcement, except @code{FIXED} and
-@code{FREE}.
+above may be subject to Area A enforcement, except @code{FIXED},
+@code{FREE}, and @code{XOPEN}.
 
 Note that Area A enforcement enables recovery from missing periods
 between paragraphs and sections.
@@ -543,10 +543,10 @@ rather than trying to keep going and printing further error messages.
 
 @end table
 @*
-You can request many specific warnings with options beginning with '@code{-W}',
+You can request many specific warnings with options beginning with @samp{-W},
 for example @option{-Wimplicit-define} to request warnings on implicit declarations.
 Each of these specific warning options also has a negative form beginning
-'@code{-Wno}' to turn off warnings; for example, @option{-Wno-implicit-define}.
+@samp{-Wno} to turn off warnings; for example, @option{-Wno-implicit-define}.
 This manual lists only one of the two forms, whichever is not the default.
 
 Some options, such as @option{-Wall} and @option{-Wextra}, turn on other options,
@@ -803,7 +803,7 @@ LINE    PG/LN  A...B...........................................................
 
 The first part of the listing lists the program text.  If the program text is
 a COPY the line number reflects the COPY line number and is appended with
-a '@code{C}'.
+a @samp{C}.
 
 When the wide list option @option{-T} is specified, the @code{SEQUENCE}
 columns (for fixed-form reference-format) are included in the listing.
@@ -837,7 +837,7 @@ SIZE TYPE           LVL  NAME                           PICTURE
 0004 ALPHANUMERIC   05     FLD4                         X(4)
 @end smallexample
 
-If the symbol redefines another variable the @code{TYPE} is marked with '@code{R}'.
+If the symbol redefines another variable the @code{TYPE} is marked with @samp{R}.
 If the symbol is an array the @code{OCCURS} phrase is in the @code{PICTURE} field.
 
 
@@ -879,7 +879,7 @@ Generate trace code (log executed procedures and statements,
 if tracing is enabled).
 
 @item -fdebugging-line
-Enable debugging lines (@code{D} in indicator column; >>D directive).
+Enable debugging lines (@samp{D} in indicator column; @samp{>>D} directive).
 
 @item -O
 Enable optimization of code size and execution speed.
@@ -905,11 +905,11 @@ Do not truncate binary fields according to PICTURE.
 Add default file extension.
 
 @item -fmfcomment
-Treat lines with @code{*} or @code{/} in column 1 as comment
+Treat lines with @samp{*} or @samp{/} in column 1 as comment
 (fixed-form reference-format only).
 
 @item -acucomment
-Treat @code{|} as an inline comment marker.
+Treat @samp{|} as an inline comment marker.
 
 @item -fsign=ASCII
 @comment{TODO: Clarify}
@@ -967,9 +967,9 @@ One way is to compile all the files in one command:
 $ cobc -x -o prog main.cob subr1.cob subr2.cob
 @end example
 
-Another way is to compile each file with the option @code{-c},
+Another way is to compile each file with the option @option{-c},
 and link them at the end.
-The top-level program must be compiled with the option @code{-x}.
+The top-level program must be compiled with the option @option{-x}.
 
 @example
 $ cobc -c subr1.cob
@@ -1009,7 +1009,7 @@ if (func != NULL)
   func (X);
 @end example
 
-With the compiler option @code{-fstatic-call}, more efficient code
+With the compiler option @option{-fstatic-call}, more efficient code
 will be generated:
 
 @example
@@ -1028,7 +1028,7 @@ the main program and subprograms separately.
 
 @subsubsection Driver program
 
-Compile all programs with the option @code{-m}:
+Compile all programs with the option @option{-m}:
 @example
 $ cobc -m main.cob subr.cob
 @end example
@@ -1062,7 +1062,7 @@ The main program is compiled as usual:
 $ cobc -x -o main main.cob
 @end example
 
-Subprograms are compiled with the option @code{-m}:
+Subprograms are compiled with the option @option{-m}:
 @example
 $ cobc -m subr.cob
 @end example
@@ -1456,7 +1456,7 @@ int say(char *hello, char *world)
 This program is equivalent to the program in @file{say.cob} above.
 
 Note that, unlike C, the arguments passed from COBOL programs are not
-terminated by the null character (i.e., @code{'\0'}).
+terminated by the null character (i.e., @samp{\0}).
 
 You can call this function in the same way you call COBOL programs:
 
@@ -1507,7 +1507,7 @@ $ ./hello
 Hello, world!
 @end example
 
-or with most C compilers by passing option @code{-shared} to the C compiler:
+or with most C compilers by passing option @option{-shared} to the C compiler:
 
 @example
 $ cc -shared -o say.so say.c
@@ -1634,7 +1634,7 @@ C compiler as is and used for C level optimization.
 @section Optimize call
 
 When a @code{CALL} statement is executed, the called program is linked at run
-time.  By specifying the compiler option @code{-fstatic-call}, you can
+time.  By specifying the compiler option @option{-fstatic-call}, you can
 statically link the program at compile time and call it efficiently.
 (@pxref{Static linking})
 

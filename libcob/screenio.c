@@ -213,7 +213,7 @@ init_cob_screen_if_needed (void)
 }
 
 static void
-get_crt3_status (int fret, char *crtstat)
+get_crt3_status (int fret, unsigned char *crtstat)
 {
 	crtstat[0] = '0';
 	crtstat[1] = '\0';
@@ -260,7 +260,7 @@ static void
 cob_set_crt3_status (cob_field* status_field, int fret)
 {
 	unsigned char	crtstat[3];
-	get_crt3_status (fret, &crtstat);
+	get_crt3_status (fret, crtstat);
 
 	memcpy (status_field->data, crtstat, 3);
 }
@@ -364,8 +364,8 @@ cob_to_curses_color (cob_field *f, const short default_color)
 		return default_color;
 	}
 	/* compat for MF/ACU/... only use first 3 bits -> 0-7,
-	   bit 4 is "included highlight/blink" */
-	switch (cob_get_int (f) | 7) {
+	   bit 4 is "included highlight/blink attribute" */
+	switch (cob_get_int (f) & 7) {
 	case COB_SCREEN_BLACK:
 		return COLOR_BLACK;
 	case COB_SCREEN_BLUE:
@@ -388,11 +388,11 @@ cob_to_curses_color (cob_field *f, const short default_color)
 }
 
 /* compat for MF/ACU/... only use first 3 bits are colors -> 0-7,
-   bit 4 is "included highlight/blink" -> an "extended" color */
+   bit 4 is "included highlight/blink attribute" -> an "extended" color */
 static int
 has_extended_color (cob_field* f)
 {
-	return f && (cob_get_int (f) | 8);
+	return f && (cob_get_int (f) & 8);
 }
 
 static short
@@ -619,6 +619,12 @@ cob_screen_init (void)
 					}
 				}
 			}
+#if defined (PDC_BUILD) && PDC_BUILD >= 3501
+			if (!cobsetptr->cob_legacy) {
+				PDC_set_blink (1);
+				PDC_set_bold (1);
+			}
+#endif
 #endif
 		}
 	}
@@ -2296,7 +2302,6 @@ static size_t
 cob_prep_input (cob_screen *s)
 {
 	struct cob_inp_struct	*sptr;
-	int			n;
 
 	switch (s->type) {
 	case COB_SCREEN_TYPE_GROUP:
@@ -2323,6 +2328,7 @@ cob_prep_input (cob_screen *s)
 		cob_screen_puts (s, s->value, cobsetptr->cob_legacy,
 				 ACCEPT_STATEMENT);
 		if (s->occurs) {
+			int		n;
 			for (n = 1; n < s->occurs; ++n) {
 				cob_screen_puts (s, s->value, cobsetptr->cob_legacy,
 						 ACCEPT_STATEMENT);
@@ -2343,8 +2349,6 @@ cob_prep_input (cob_screen *s)
 static void
 cob_screen_iterate (cob_screen *s)
 {
-	int	n;
-
 	switch (s->type) {
 	case COB_SCREEN_TYPE_GROUP:
 		cob_screen_moveyx (s);
@@ -2358,6 +2362,7 @@ cob_screen_iterate (cob_screen *s)
 	case COB_SCREEN_TYPE_VALUE:
 		cob_screen_puts (s, s->value, 0, DISPLAY_STATEMENT);
 		if (s->occurs) {
+			int		n;
 			for (n = 1; n < s->occurs; ++n) {
 				cob_screen_puts (s, s->value, 0,
 						 DISPLAY_STATEMENT);
@@ -3622,11 +3627,7 @@ cob_exit_screen (void)
 #ifdef	HAVE_CURSES_FREEALL
 		/* cleanup storage that would otherwise be shown
 		   to be "still reachable" with valgrind */
- #if defined (NCURSES_VERSION)
-		_nc_freeall ();
- #elif defined (__PDCURSES__)
-		PDC_free_memory_allocations ();
- #endif
+ 		_nc_freeall ();
 #endif
 		if (cob_base_inp) {
 			cob_free (cob_base_inp);
@@ -3650,9 +3651,9 @@ cob_exit_screen_from_signal (int ss_only)
 
 	/* warning: some implementations of curses are not safe to request
 	   exiting from curses mode! (ncurses >6 seems fine,
-	   PDCurses depending on availablity of PDC_free_memory_allocations) */
-#if (!defined (NCURSES_VERSION_MAJOR) || NCURSES_VERSION_MAJOR < 6) && \
-	 !defined (HAVE_PDC_FREE_MEMORY_ALLOCATIONS)
+	   PDCurses only with PDCursesMod 4.3.5) */
+#if (!defined (NCURSES_VERSION_MAJOR) || NCURSES_VERSION_MAJOR < 6) \
+ && (!defined (PDC_BUILD) || PDC_BUILD < 4305)
 	if (ss_only) return; 
 #endif
 
@@ -3817,7 +3818,7 @@ cob_accept_escape_key (cob_field *f)
 	   TESTME (working as planned, same values in MF?) */
 	if (f->size == 2 && status) {
 		unsigned char	crtstat[3];
-		get_crt3_status (status, &crtstat);
+		get_crt3_status (status, crtstat);
 		f->data[0] = crtstat[0];
 		f->data[1] = crtstat[1];
 	} else {

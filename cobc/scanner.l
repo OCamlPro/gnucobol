@@ -175,6 +175,7 @@ static void	copy_word_in_quotes (char ** const);
 static void	copy_two_words_in_quotes (char ** const, char ** const);
 static void	add_synonym (const int, const int);
 static void	make_synonym (void);
+static void clear_constants (void);
 
 %}
 
@@ -1242,32 +1243,12 @@ H#[0-9A-Za-z]+ {
 }
 
 <<EOF>> {
-	struct cb_level_78	*p78;
-	struct cb_level_78	*p782;
-
 	/* At EOF - Clear variables */
-	for (p78 = lev_78_ptr; p78; ) {
-		p782 = p78->next;
-		cobc_free (p78);
-		p78 = p782;
-	}
-	for (p78 = glob_lev_78_ptr; p78; ) {
-		p782 = p78->next;
-		cobc_free (p78);
-		p78 = p782;
-	}
-	for (p78 = const_78_ptr; p78; ) {
-		p782 = p78->next;
-		cobc_free (p78);
-		p78 = p782;
-	}
-	top_78_ptr = NULL;
+	clear_constants ();
 	last_token_is_dot = 0;
 	cobc_in_area_a = 0;
 	integer_is_label = 0;
 	inside_bracket = 0;
-	lev_78_ptr = NULL;
-	glob_lev_78_ptr = NULL;
 	cobc_force_literal = 0;
 	yyterminate ();
 }
@@ -1278,7 +1259,7 @@ static void
 error_literal (const char *type, const char *literal, unsigned int literal_error)
 {
 	if (!literal_error) {
-		char		lit_out[CB_ERR_LITMAX + 1];
+		char		lit_out[CB_ERR_LITMAX + 1] = { 0 };
 		/* snip literal for output, if too long or,
 			unlikely error case, has a line break */
 		literal_for_diagnostic (lit_out, literal);
@@ -2422,6 +2403,29 @@ make_synonym (void)
 	cobc_free (word_to_change);
 }
 
+static void
+clear_constants (void)
+{
+	struct cb_level_78	*p78;
+
+	while (lev_78_ptr) {
+		p78 = lev_78_ptr;
+		lev_78_ptr = lev_78_ptr->next;
+		cobc_free (p78);
+	}
+	while (glob_lev_78_ptr) {
+		p78 = glob_lev_78_ptr;
+		glob_lev_78_ptr = glob_lev_78_ptr->next;
+		cobc_free (p78);
+	}
+	while (const_78_ptr) {
+		p78 = const_78_ptr;
+		const_78_ptr = const_78_ptr->next;
+		cobc_free (p78);
+	}
+	top_78_ptr = NULL;
+}
+
 /* Global functions */
 
 void
@@ -2444,8 +2448,12 @@ ylex_clear_all (void)
 	pic1_size = 0;
 	pic2_size = 0;
 
+#if 1
+	clear_constants ();
+#else
 	cb_reset_78 ();
 	cb_reset_global_78 ();
+#endif
 }
 
 void
@@ -2453,7 +2461,9 @@ ylex_call_destroy (void)
 {
 	/* Release flex buffers */
 	(void)yylex_destroy ();
+#if 0
 	const_78_ptr = NULL;
+#endif
 }
 
 void
@@ -2462,52 +2472,50 @@ cb_unput_dot (void)
 	unput ('.');
 }
 
+/* Remove constant (78 level) items for current program */
 void
 cb_reset_78 (void)
 {
 	struct cb_level_78	*p78;
-	struct cb_level_78	*p782;
 
-	/* Remove constant (78 level) items for current program */
-	for (p78 = lev_78_ptr; p78; ) {
-		p782 = p78->next;
+	while (lev_78_ptr) {
+		p78 = lev_78_ptr;
+		lev_78_ptr = lev_78_ptr->next;
 		cobc_free (p78);
-		p78 = p782;
 	}
-	lev_78_ptr = NULL;
-	for (p78 = glob_lev_78_ptr; p78; p78 = p78->next) {
-		p78->not_const = 0;
-	}
+
 	if (glob_lev_78_ptr) {
-		top_78_ptr = glob_lev_78_ptr;
+		top_78_ptr = p78 = glob_lev_78_ptr;
+		while (p78) {
+			p78->not_const = 0;
+			p78 = p78->next;
+		}
 	} else {
 		top_78_ptr = const_78_ptr;
 	}
 }
 
+/* Remove constant (78 level) items for top program */
 void
 cb_reset_global_78 (void)
 {
-	struct cb_level_78	*p78;
-	struct cb_level_78	*p782;
+	struct cb_level_78* p78;
 
-	/* Remove constant (78 level) items for top program */
-	for (p78 = glob_lev_78_ptr; p78; ) {
-		p782 = p78->next;
+	while (glob_lev_78_ptr) {
+		p78 = glob_lev_78_ptr;
+		glob_lev_78_ptr = glob_lev_78_ptr->next;
 		cobc_free (p78);
-		p78 = p782;
 	}
-	glob_lev_78_ptr = NULL;
 	top_78_ptr = const_78_ptr;
 }
 
+/* Add a constant (78 level) item */
 void
 cb_add_78 (struct cb_field *f)
 {
 	struct cb_level_78	*p78;
 
-	/* Add a constant (78 level) item */
-	p78 = cobc_malloc (sizeof(struct cb_level_78));
+	p78	= cobc_malloc (sizeof(struct cb_level_78));
 	p78->fld_78 = f;
 	p78->prog = current_program;
 	p78->name_len = (cob_u32_t)strlen (f->name);

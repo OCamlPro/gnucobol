@@ -176,7 +176,8 @@ export COB_MSG_FORMAT
 	else
 		COB_HAS_CURSES="no"
 	fi
-fi
+
+
 if test "x$MSYSTEM" != "x" -o "$OSTYPE" = "cygwin"; then
 	# running MSYS builds as not-visible child processes result in
 	# "Redirection is not supported" (at least with PDCurses "wincon" port)
@@ -191,9 +192,14 @@ if test "x$MSYSTEM" != "x" -o "$OSTYPE" = "cygwin"; then
 		export TERM
 		# no change here... COB_HAS_CURSES="yes"
 	else
-		COB_HAS_CURSES="no"
+		# manual tests are executed in separate window
+		# and are visible - so no need to handle it there
+		echo "$at_help_all" | grep -q "run_manual_screen" 2>/dev/null
+		if test $? -ne 0; then
+		   COB_HAS_CURSES="no"
+		fi
 	fi
-
+fi
 
 rm -rf info.out
 

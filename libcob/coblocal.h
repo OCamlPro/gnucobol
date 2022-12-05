@@ -470,6 +470,16 @@ COB_HIDDEN void		cob_parameter_check	(const char *, const int);
 COB_HIDDEN cob_settings *cob_get_settings_ptr	(void);
 COB_HIDDEN char	*cob_strndup		(const char *, size_t);
 
+enum cob_datetime_res {
+	DTR_DATE,
+	DTR_TIME_NO_NANO,
+	DTR_FULL
+};
+
+/* internal function with specified internal resolution, used in nearly all places 
+   where the exported cob_get_current_date_and_time was used before */
+COB_EXPIMP struct cob_time cob_get_current_datetime (const enum cob_datetime_res);
+
 /* COB_DEBUG_LOG Macros and routines found in common.c */
 #ifdef COB_DEBUG_LOG
 COB_HIDDEN int	cob_debug_logit		(int level, char *module);

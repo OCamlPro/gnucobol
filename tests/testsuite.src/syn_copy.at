@@ -1,5 +1,7 @@
-## Copyright (C) 2003-2012, 2014-2015, 2017-2018, 2020 Free Software Foundation, Inc.
-## Written by Keisuke Nishida, Roger While, Simon Sobisch
+## Copyright (C) 2003-2012, 2014-2015, 2017-2018, 2020-2022
+## Free Software Foundation, Inc.
+## Written by Keisuke Nishida, Roger While, Simon Sobisch,
+## Nicolas Berthier
 ## 
 ## This file is part of GnuCOBOL.
 ## 
@@ -523,7 +525,7 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OKOK])
 AT_CLEANUP
 
 
-AT_SETUP([COPY: partial replacement with literals])
+AT_SETUP([COPY: partial replacement BY literal])
 AT_KEYWORDS([copy gcos])
 
 AT_DATA([copy.inc], [
@@ -653,8 +655,8 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OK], [])
 AT_CLEANUP
 
 
-AT_SETUP([REPLACE: partial replacement with SPACES figurative constant])
-AT_KEYWORDS([replace gcos acu])
+AT_SETUP([REPLACE: partial replacement BY SPACE])
+AT_KEYWORDS([replace gcos acu figurative constant spaces])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.

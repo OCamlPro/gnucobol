@@ -35,7 +35,7 @@ m4_define([MANUAL_CHECK],
    [$2],
    [$3],
    [$4])
-  ]])
+  ])
 
 
 ## Run screen tests

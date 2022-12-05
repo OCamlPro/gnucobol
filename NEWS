@@ -1,6 +1,7 @@
 NEWS - user visible changes				-*- outline -*-
 
- GnuCOBOL 3.2rc1 to be released in November 2022
+ GnuCOBOL 3.2rc1 to be released asap,
+          3.2 final (depending on feedback) end of 2022
 
  planned:
    * changes to CALL handling especially for BY VALUE and stdcall
@@ -122,6 +123,9 @@ NEWS - user visible changes				-*- outline -*-
 ** ORGANIZATION INDEXED (with BDB backend): internal changes in record and
    file locking, fixing some related bugs
 
+** extended screen io with PDCurses (most Win32 builds): blink and bolding
+   are now enabled, when supported
+
 ** extended screen io: support for color codes 8-15 (implied highlight/blink
    attribute); only the three lower bits are now considered during evaluation
    of the color-number, leading to a previous value of 21 (which was ignored
@@ -156,12 +160,13 @@ NEWS - user visible changes				-*- outline -*-
    XCARD		ICOBOL xCard (extended card) format
    XOPEN		X/Open Free-form format
 
-   These formats come with Area A enforcement, that checks whether
-   division, section, and paragraph names start in Area A (i.e, before
-   margin B), and so do level indicators FD, SD, RD, and CD, and level
-   numbers 01, and 77.  The underlying checks are enabled or disabled
-   by default using dialect option `areacheck`, and then with `$SET
-   AREACHECK` and `$SET NOAREACHECK` compiler directives.
+   These formats come with Area A enforcement (except for XOPEN), that
+   checks whether division, section, and paragraph names start in Area
+   A (i.e, before margin B), and so do level indicators FD, SD, RD,
+   and CD, and level numbers 01, and 77.  The underlying checks are
+   enabled or disabled by default using dialect option `areacheck`,
+   and then with `$SET AREACHECK` and `$SET NOAREACHECK` compiler
+   directives.
 
    As a result of reference format being a dialect option, Area A
    enforcement is available and enabled by default for dialects BS2000
@@ -325,11 +330,12 @@ NEWS - user visible changes				-*- outline -*-
 
 * New build features
 
-** configure now honors BDB_LIBS
+** configure now honors BDB_LIBS and BDB_CFLAGS
 ** configure now honors MATH_LIBS
 ** configure now checks for XCurses and allows --with-curses=xcurses
    (experimental)
-
+** cobc handles SOURCE_DATE_EPOCH now, allowing to override timestamps in
+   generated code and listing files, allowing reproducible builds
 
 * Known issues in 3.2 (and 3.1)
 

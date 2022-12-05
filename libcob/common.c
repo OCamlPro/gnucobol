@@ -1983,7 +1983,7 @@ cob_rescan_env_vals (void)
 	}
 }
 
-static int
+static COB_INLINE int
 one_indexed_day_of_week_from_monday (int zero_indexed_from_sunday)
 {
 	return ((zero_indexed_from_sunday + 6) % 7) + 1;
@@ -4130,11 +4130,51 @@ get_function_ptr_for_precise_time (void)
 
 /* split the timep to cob_time and set the offset from UTC */
 void
-static set_cob_time_from_localtime (time_t curtime, struct cob_time *cb_time) {
+static set_cob_time_from_localtime (time_t curtime,
+		struct cob_time *cb_time, const enum cob_datetime_res res) {
 
 	struct tm	*tmptr;
 #if !defined (_BSD_SOURCE) && !defined (HAVE_TIMEZONE)
 	time_t		utctime, lcltime, difftime;
+#endif
+
+#ifndef TIME_T_IS_NON_ARITHMETIC
+	static time_t last_time = 0;
+	static struct cob_time last_cobtime;
+	
+	// FIXME: on reseting appropriate locale set last_time_no_sec = 0
+	if (curtime == last_time) {
+		memcpy (cb_time, &last_cobtime, sizeof (struct cob_time));
+		return;
+	}
+	if (last_time != 0) {
+		const time_t sec_passed = curtime - last_time;
+		/* most likely we are in the same hour as before - in which case
+		   there is no need to lookup the tz-database via localtime -
+		   instead directly adjust the last value */
+		if (sec_passed > 0 && sec_passed < 3600) {
+			memcpy (cb_time, &last_cobtime, sizeof (struct cob_time));
+			cb_time->second += (int)sec_passed;
+			if (cb_time->second < 60) {
+				memcpy (&last_cobtime, cb_time, sizeof (struct cob_time));
+				last_time = curtime;
+				return;
+			} else {
+				cb_time->minute += cb_time->second / 60;
+				/* note: if the minute is >= 60 then we need to adjust the hour
+				   and may end up with DST issues (or simple day switch),
+				   we may also get into minute == 60 for leap second cases;
+				   do a full recalculation in this case */
+				if (cb_time->minute < 60) {
+					cb_time->second = cb_time->second % 60;
+					memcpy (&last_cobtime, cb_time, sizeof (struct cob_time));
+					last_time = curtime;
+					return;
+				}
+			}
+		}
+	}
+	last_time = curtime;
 #endif
 
 	tmptr = localtime (&curtime);
@@ -4189,11 +4229,16 @@ static set_cob_time_from_localtime (time_t curtime, struct cob_time *cb_time) {
 	}
 	/* LCOV_EXCL_STOP */
 #endif
+
+#ifndef TIME_T_IS_NON_ARITHMETIC
+	/* keep backup for next call */
+	memcpy (&last_cobtime, cb_time, sizeof (struct cob_time));
+#endif
 }
 
 #if defined (_WIN32) /* cygwin does not define _WIN32 */
 static struct cob_time
-cob_get_current_date_and_time_from_os (void)
+cob_get_current_date_and_time_from_os (const enum cob_datetime_res res)
 {
 	SYSTEMTIME	local_time;
 #if defined (_MSC_VER) && COB_USE_VC2008_OR_GREATER
@@ -4205,7 +4250,12 @@ cob_get_current_date_and_time_from_os (void)
 	struct cob_time	cb_time;
 
 	curtime = time (NULL);
-	set_cob_time_from_localtime (curtime, &cb_time);
+	set_cob_time_from_localtime (curtime, &cb_time, res);
+
+	if (res <= DTR_TIME_NO_NANO) {
+		cb_time.nanosecond = 0;
+		return cb_time;
+	}
 
 	/* Get nanoseconds with highest precision possible */
 #if defined (_MSC_VER) && COB_USE_VC2008_OR_GREATER
@@ -4227,7 +4277,7 @@ cob_get_current_date_and_time_from_os (void)
 }
 #else
 static struct cob_time
-cob_get_current_date_and_time_from_os (void)
+cob_get_current_date_and_time_from_os (const enum cob_datetime_res res)
 {
 #if defined (HAVE_CLOCK_GETTIME)
 	struct timespec	time_spec;
@@ -4248,7 +4298,7 @@ cob_get_current_date_and_time_from_os (void)
 	curtime = time (NULL);
 #endif
 
-	set_cob_time_from_localtime (curtime, &cb_time);
+	set_cob_time_from_localtime (curtime, &cb_time, res);
 
 	/* Get nanoseconds or microseconds, if possible */
 #if defined (HAVE_CLOCK_GETTIME)
@@ -4263,29 +4313,23 @@ cob_get_current_date_and_time_from_os (void)
 }
 #endif
 
+/* obsolete function, only used in cobc before 3.2 */
 struct cob_time
 cob_get_current_date_and_time (void)
 {
-	int		needs_calculation = 0;
-	time_t		t;
-	struct tm 	*tmptr;
-	struct cob_time	cb_time = cob_get_current_date_and_time_from_os ();
+	return cob_get_current_datetime (DTR_TIME_NO_NANO);
+}
 
-	/* do we have a constant time? */
+struct cob_time
+cob_get_current_datetime (const enum cob_datetime_res res)
+{
+	struct cob_time	cb_time = cob_get_current_date_and_time_from_os (res);
+
+	/* Do we have a constant time? */
 	if (cobsetptr != NULL
 	 && cobsetptr->cob_time_constant.year != 0) {
-		if (cobsetptr->cob_time_constant.hour != -1) {
-			cb_time.hour = cobsetptr->cob_time_constant.hour;
-		}
-		if (cobsetptr->cob_time_constant.minute != -1) {
-			cb_time.minute = cobsetptr->cob_time_constant.minute;
-		}
-		if (cobsetptr->cob_time_constant.second != -1) {
-			cb_time.second = cobsetptr->cob_time_constant.second;
-		}
-		if (cobsetptr->cob_time_constant.nanosecond != -1) {
-			cb_time.nanosecond = cobsetptr->cob_time_constant.nanosecond;
-		}
+		int		needs_calculation = 0;
+		/* Note: constant time but X not part of constant --> -1 */
 		if (cobsetptr->cob_time_constant.year != -1) {
 			cb_time.year = cobsetptr->cob_time_constant.year;
 			needs_calculation = 1;
@@ -4298,9 +4342,43 @@ cob_get_current_date_and_time (void)
 			cb_time.day_of_month = cobsetptr->cob_time_constant.day_of_month;
 			needs_calculation = 1;
 		}
+		if (cobsetptr->cob_time_constant.hour != -1) {
+			cb_time.hour = cobsetptr->cob_time_constant.hour;
+		}
+		if (cobsetptr->cob_time_constant.minute != -1) {
+			cb_time.minute = cobsetptr->cob_time_constant.minute;
+		}
+		if (cobsetptr->cob_time_constant.second != -1) {
+			cb_time.second = cobsetptr->cob_time_constant.second;
+		}
+		if (cobsetptr->cob_time_constant.nanosecond != -1) {
+			cb_time.nanosecond = cobsetptr->cob_time_constant.nanosecond;
+		}
 		if (cobsetptr->cob_time_constant.offset_known) {
 			cb_time.offset_known = cobsetptr->cob_time_constant.offset_known;
 			cb_time.utc_offset = cobsetptr->cob_time_constant.utc_offset;
+		}
+
+		/* set day_of_week, day_of_year, is_daylight_saving_time, if necessary */
+		if (needs_calculation) {
+			time_t		t;
+			struct tm 	*tmptr;
+			/* allocate tmptr (needs a correct time) */
+			time (&t);
+			tmptr = localtime (&t);
+			tmptr->tm_isdst = -1;
+			tmptr->tm_sec	= cb_time.second;
+			tmptr->tm_min	= cb_time.minute;
+			tmptr->tm_hour	= cb_time.hour;
+			tmptr->tm_year	= cb_time.year - 1900;
+			tmptr->tm_mon	= cb_time.month - 1;
+			tmptr->tm_mday	= cb_time.day_of_month;
+			tmptr->tm_wday	= -1;
+			tmptr->tm_yday	= -1;
+			(void)mktime(tmptr);
+			cb_time.day_of_week = one_indexed_day_of_week_from_monday (tmptr->tm_wday);
+			cb_time.day_of_year = tmptr->tm_yday + 1;
+			cb_time.is_daylight_saving_time = tmptr->tm_isdst;
 		}
 	}
 
@@ -4309,27 +4387,59 @@ cob_get_current_date_and_time (void)
 		cb_time.second = 59;
 	}
 
-	/* set day_of_week, day_of_year, is_daylight_saving_time, if necessary */
-	if (needs_calculation) {
-		/* allocate tmptr (needs a correct time) */
-		time (&t);
-		tmptr = localtime (&t);
-		tmptr->tm_isdst = -1;
-		tmptr->tm_sec	= cb_time.second;
-		tmptr->tm_min	= cb_time.minute;
-		tmptr->tm_hour	= cb_time.hour;
-		tmptr->tm_year	= cb_time.year - 1900;
-		tmptr->tm_mon	= cb_time.month - 1;
-		tmptr->tm_mday	= cb_time.day_of_month;
-		tmptr->tm_wday	= -1;
-		tmptr->tm_yday	= -1;
-		(void)mktime(tmptr);
-		cb_time.day_of_week = one_indexed_day_of_week_from_monday (tmptr->tm_wday);
-		cb_time.day_of_year = tmptr->tm_yday + 1;
-		cb_time.is_daylight_saving_time = tmptr->tm_isdst;
+	return cb_time;
+}
+
+int
+cob_set_date_from_epoch (struct cob_time *cb_time, const char *config)
+{
+	struct tm	*tmptr;
+	time_t		t = 0;
+	long long	seconds = 0;
+	unsigned char *p = (unsigned char *)config;
+
+	while (isdigit (*p)) {
+		seconds = seconds * 10 + *p - '0';
+		p++;
+	}
+	if (*p != 0 || seconds > 253402300799) {
+		/* The value (as a unix timestamp) corresponds to date
+		   "Dec 31 9999 23:59:59 UTC", which is the latest date that __DATE__
+		   and __TIME__ can store.  */
+		return 1;
 	}
 
-	return cb_time;
+	/* allocate tmptr for epoch */
+	tmptr = localtime (&t);
+	/* set seconds, minutes, hours and big days */
+	tmptr->tm_sec = seconds % 60;
+	seconds /= 60;
+	tmptr->tm_min = seconds % 60;
+	seconds /= 60;
+	tmptr->tm_hour = seconds % 24;
+	seconds /= 24;
+	tmptr->tm_mday = (int)seconds;
+	tmptr->tm_isdst = -1;
+
+	/* normalize if needed (definitely for epoch, but also for example 30 Feb
+		to be changed to correct march date),
+		set tm_wday, tm_yday and tm_isdst */
+	if (mktime (tmptr) == -1) {
+		return 1;
+	}
+
+	cb_time->year = tmptr->tm_year + 1900;
+	cb_time->month = tmptr->tm_mon + 1;
+	cb_time->day_of_month = tmptr->tm_mday;
+	cb_time->hour = tmptr->tm_hour;
+	cb_time->minute = tmptr->tm_min;
+	cb_time->second = tmptr->tm_sec;
+	cb_time->nanosecond = -1;
+
+	cb_time->day_of_week = tmptr->tm_wday + 1;
+	cb_time->day_of_year = tmptr->tm_yday + 1;
+	cb_time->is_daylight_saving_time = tmptr->tm_isdst;
+	return 0;
 }
 
 static void
@@ -4340,7 +4450,7 @@ check_current_date ()
 	int		i, j, ret;
 	time_t		t;
 	struct tm	*tmptr;
-	char	iso_timezone[7] = { '\0' };
+	char	iso_timezone[7] = { 0 };
 	char	nanoseconds[10];
 
 	if (cobsetptr == NULL
@@ -4348,15 +4458,27 @@ check_current_date ()
 		return;
 	}
 
-	j = ret = 0;
-	yr = mm = dd = hh = mi = ss = ns = -1;
+	j = 0;
 
-	/* skip non-digits like quotes */
-	while (cobsetptr->cob_date[j] != 0
-	    && cobsetptr->cob_date[j] != 'Y'
-	    && !isdigit((unsigned char)cobsetptr->cob_date[j])) {
+	/* skip quotes and space-characters */
+	while (cobsetptr->cob_date[j] == '\''
+		|| cobsetptr->cob_date[j] == '"'
+	    || isspace((unsigned char)cobsetptr->cob_date[j])) {
 		 j++;
 	}
+
+	/* extract epoch, if specified */
+	if (cobsetptr->cob_date[j] == '@') {
+		/* @sssssssss   seconds since epoch */
+		ret = cob_set_date_from_epoch (&cobsetptr->cob_time_constant, cobsetptr->cob_date + j + 1);
+		if (ret) {
+			cob_runtime_warning (_("COB_CURRENT_DATE '%s' is invalid"), cobsetptr->cob_date);
+		}
+		return;
+	}
+
+	yr = mm = dd = hh = mi = ss = ns = -1;
+	ret = 0;
 
 	/* extract date */
 	if (cobsetptr->cob_date[j] != 0) {
@@ -4528,6 +4650,7 @@ check_current_date ()
 		}
 	}
 
+	/* extract nanoseconds */
 	if (cobsetptr->cob_date[j] != 0
 	 && cobsetptr->cob_date[j] != 'Z'
 	 && cobsetptr->cob_date[j] != '+'
@@ -4591,12 +4714,12 @@ check_current_date ()
 
 	if (ret != 0) {
 		cob_runtime_warning (_("COB_CURRENT_DATE '%s' is invalid"), cobsetptr->cob_date);
+		return;
 	}
 
 	/* get local time, allocate tmptr */
-	time(&t);
+	time (&t);
 	tmptr = localtime (&t);
-
 	/* override given parts in time */
 	if (ss != -1) {
 		tmptr->tm_sec	= ss;
@@ -4616,13 +4739,29 @@ check_current_date ()
 	if (dd != -1) {
 		tmptr->tm_mday	= dd;
 	}
+
 	tmptr->tm_isdst = -1;
 
-	/* normalize if needed (for example 40 October is changed into 9 November),
-	   set tm_wday, tm_yday and tm_isdst */
-	t = mktime (tmptr);
+	/* normalize if needed (for example 30 Feb to be changed to
+	   correct march date), set tm_wday, tm_yday and tm_isdst */
+	(void) mktime (tmptr);
 
 	/* set datetime constant */
+	if (yr != -1) {
+		cobsetptr->cob_time_constant.year = tmptr->tm_year + 1900;
+	} else {
+		cobsetptr->cob_time_constant.year = -1;
+	}
+	if (mm != -1) {
+		cobsetptr->cob_time_constant.month = tmptr->tm_mon + 1;
+	} else {
+		cobsetptr->cob_time_constant.month = -1;
+	}
+	if (dd != -1) {
+		cobsetptr->cob_time_constant.day_of_month = tmptr->tm_mday;
+	} else {
+		cobsetptr->cob_time_constant.day_of_month = -1;
+	}
 
 	if (hh != -1) {
 		cobsetptr->cob_time_constant.hour	= tmptr->tm_hour;
@@ -4639,26 +4778,7 @@ check_current_date ()
 	} else {
 		cobsetptr->cob_time_constant.second	= -1;
 	}
-	if (ns != -1) {
-		cobsetptr->cob_time_constant.nanosecond	= ns;
-	} else {
-		cobsetptr->cob_time_constant.nanosecond	= -1;
-	}
-	if (yr != -1) {
-		cobsetptr->cob_time_constant.year = tmptr->tm_year + 1900;
-	} else {
-		cobsetptr->cob_time_constant.year = -1;
-	}
-	if (mm != -1) {
-		cobsetptr->cob_time_constant.month = tmptr->tm_mon + 1;
-	} else {
-		cobsetptr->cob_time_constant.month = -1;
-	}
-	if (dd != -1) {
-		cobsetptr->cob_time_constant.day_of_month = tmptr->tm_mday;
-	} else {
-		cobsetptr->cob_time_constant.day_of_month = -1;
-	}
+	cobsetptr->cob_time_constant.nanosecond	= ns;
 
 	/* the following are only set in "current" instances, not in the constant */
 	cobsetptr->cob_time_constant.day_of_week = -1;
@@ -4683,7 +4803,7 @@ cob_accept_date (cob_field *field)
 	char		buff[16]; /* 16: make the compiler happy as "unsigned short" *could*
 						         have more digits than we "assume" */
 
-	time = cob_get_current_date_and_time ();
+	time = cob_get_current_datetime (DTR_DATE);
 
 	snprintf(buff, sizeof (buff), "%2.2d%2.2d%2.2d",
 		(cob_u16_t) time.year % 100,
@@ -4699,7 +4819,7 @@ cob_accept_date_yyyymmdd (cob_field *field)
 	char		buff[16]; /* 16: make the compiler happy as "unsigned short" *could*
 						         have more digits than we "assume" */
 
-	time = cob_get_current_date_and_time ();
+	time = cob_get_current_datetime (DTR_DATE);
 
 	snprintf (buff, sizeof (buff), "%4.4d%2.2d%2.2d",
 		(cob_u16_t) time.year,
@@ -4715,7 +4835,7 @@ cob_accept_day (cob_field *field)
 	char		buff[11]; /* 11: make the compiler happy as "unsigned short" *could*
 						         have more digits than we "assume" */
 
-	time = cob_get_current_date_and_time ();
+	time = cob_get_current_datetime (DTR_DATE);
 	snprintf (buff, sizeof (buff), "%2.2d%3.3d",
 		(cob_u16_t) time.year % 100,
 		(cob_u16_t) time.day_of_year);
@@ -4729,7 +4849,7 @@ cob_accept_day_yyyyddd (cob_field *field)
 	char		buff[11]; /* 11: make the compiler happy as "unsigned short" *could*
 						         have more digits than we "assume" */
 
-	time = cob_get_current_date_and_time ();
+	time = cob_get_current_datetime (DTR_DATE);
 	snprintf (buff, sizeof (buff), "%4.4d%3.3d",
 		(cob_u16_t) time.year,
 		(cob_u16_t) time.day_of_year);
@@ -4742,7 +4862,7 @@ cob_accept_day_of_week (cob_field *field)
 	struct cob_time	time;
 	unsigned char		day;
 
-	time = cob_get_current_date_and_time ();
+	time = cob_get_current_datetime (DTR_DATE);
 	day = (unsigned char)(time.day_of_week + '0');
 	cob_move_intermediate (field, &day, (size_t)1);
 }
@@ -4754,7 +4874,11 @@ cob_accept_time (cob_field *field)
 	char		buff[21]; /* 11: make the compiler happy as "unsigned short" *could*
 						         have more digits than we "assume" */
 
-	time = cob_get_current_date_and_time ();
+	if (field->size > 6) {
+		time = cob_get_current_datetime (DTR_FULL);
+	} else {
+		time = cob_get_current_datetime (DTR_TIME_NO_NANO);
+	}
 	snprintf (buff, sizeof (buff), "%2.2d%2.2d%2.2d%2.2d",
 		(cob_u16_t) time.hour,
 		(cob_u16_t) time.minute,
@@ -10155,7 +10279,7 @@ cob_debug_logger (const char *fmt, ...)
 	if (cob_debug_hdr) {
 		cob_get_source_line ();
 		if (cob_debug_log_time) {
-			time = cob_get_current_date_and_time ();
+			time = cob_get_current_datetime (DTR_FULL);
 			fprintf (cob_debug_file, "%02d:%02d:%02d.%02d ", time.hour, time.minute,
 							time.second, time.nanosecond / 10000000);
 		}

@@ -2729,14 +2729,12 @@ AT_DATA([prog.cob], [
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
        PROCEDURE        DIVISION.
-      *    DISPLAY 'COMMENT'             END-DISPLAY
-      /    DISPLAY 'COMMENTSLASH'        END-DISPLAY
-*          DISPLAY 'MFCOMMENTASTERISK'   END-DISPLAY
-/          DISPLAY 'MFCOMMENTSLASH'      END-DISPLAY
- *         DISPLAY 'NOMFCOMMENTASTERISK' END-DISPLAY
- /         DISPLAY 'NOMFCOMMENTSLASH'    END-DISPLAY
-        *> DISPLAY 'FLOATING'            END-DISPLAY
- *>        DISPLAY 'NOFLOATING'          END-DISPLAY
+      *    DISPLAY 'COMMENT'      END-DISPLAY
+      /    DISPLAY 'COMMENTSLASH' END-DISPLAY
+*          DISPLAY 'MFCOMMENT'    END-DISPLAY
+ *         DISPLAY 'NOMFCOMMENT'  END-DISPLAY
+        *> DISPLAY 'FLOATING'     END-DISPLAY
+ *>        DISPLAY 'NOFLOATING'   END-DISPLAY
            STOP RUN.
 ])
 
@@ -2748,17 +2746,15 @@ AT_DATA([prog2.cob], [
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
        PROCEDURE        DIVISION.
-      *    DISPLAY 'COMMENT'             END-DISPLAY
-      /    DISPLAY 'COMMENTSLASH'        END-DISPLAY
-      $    DISPLAY 'COMMENTDOLLAR'       END-DISPLAY
-*          DISPLAY 'MFCOMMENTASTERISK'   END-DISPLAY
-/          DISPLAY 'MFCOMMENTSLASH'      END-DISPLAY
- *         DISPLAY 'NOMFCOMMENTASTERISK' END-DISPLAY
- /         DISPLAY 'NOMFCOMMENTSLASH'    END-DISPLAY
-        *> DISPLAY 'FLOATING'            END-DISPLAY
-        |  DISPLAY 'ACUFLOATING'         END-DISPLAY
- |         DISPLAY 'NOACUFLOATING'       END-DISPLAY
- *>        DISPLAY 'NOFLOATING'          END-DISPLAY
+      *    DISPLAY 'COMMENT'       END-DISPLAY
+      /    DISPLAY 'COMMENTSLASH'  END-DISPLAY
+      $    DISPLAY 'COMMENTDOLLAR' END-DISPLAY
+*          DISPLAY 'MFCOMMENT'     END-DISPLAY
+ *         DISPLAY 'NOMFCOMMENT'   END-DISPLAY
+        *> DISPLAY 'FLOATING'      END-DISPLAY
+        |  DISPLAY 'ACUFLOATING'   END-DISPLAY
+ |         DISPLAY 'NOACUFLOATING' END-DISPLAY
+ *>        DISPLAY 'NOFLOATING'    END-DISPLAY
            STOP RUN.
 ])
 
@@ -2770,30 +2766,27 @@ CONFIGURATION SECTION.
 DATA             DIVISION.
 WORKING-STORAGE  SECTION.
 PROCEDURE        DIVISION.
-      * DISPLAY 'NOCOMMENT'           END-DISPLAY
-      / DISPLAY 'NOCOMMENTSLASH'      END-DISPLAY
-$       DISPLAY 'ACUCOMMENTDOLLAR'    END-DISPLAY
-*       DISPLAY 'NOMFCOMMENTASTERISK' END-DISPLAY
-/       DISPLAY 'NOMFCOMMENTSLASH'    END-DISPLAY
- |      DISPLAY 'ACUFLOATING'         END-DISPLAY
- *>     DISPLAY 'FLOATING'            END-DISPLAY
-      x DISPLAY 'WRONGINDICATOR'      END-DISPLAY
+      * DISPLAY 'NOCOMMENT'        END-DISPLAY
+      / DISPLAY 'NOCOMMENTSLASH'   END-DISPLAY
+$       DISPLAY 'ACUCOMMENTDOLLAR' END-DISPLAY
+*       DISPLAY 'NOMFCOMMENT'      END-DISPLAY
+ |      DISPLAY 'ACUFLOATING'      END-DISPLAY
+ *>     DISPLAY 'FLOATING'         END-DISPLAY
+      x DISPLAY 'WRONGINDICATOR'   END-DISPLAY
         STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
-[MFCOMMENTASTERISK
-MFCOMMENTSLASH
-NOMFCOMMENTASTERISK
-NOMFCOMMENTSLASH
+[MFCOMMENT
+NOMFCOMMENT
 NOFLOATING
 ], [])
 
 AT_CHECK([$COMPILE_ONLY prog2.cob], [1], [],
 [prog2.cob:11: error: invalid indicator '$' at column 7
-prog2.cob:17: error: invalid symbol '|' - skipping word
+prog2.cob:15: error: invalid symbol '|' - skipping word
 ])
 
 # note: for checking the result we actually either need to run the program
@@ -2804,24 +2797,21 @@ AT_CHECK([$COMPILE -fmfcomment prog.cob], [0], [],
 [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
-[NOMFCOMMENTASTERISK
-NOMFCOMMENTSLASH
+[NOMFCOMMENT
 NOFLOATING
 ], [])
 
 AT_CHECK([$COMPILE_ONLY -fmfcomment prog2.cob], [1], [],
 [prog2.cob:11: error: invalid indicator '$' at column 7
-prog2.cob:17: error: invalid symbol '|' - skipping word
+prog2.cob:15: error: invalid symbol '|' - skipping word
 ])
 
 # COMPILE needed, see note above
 AT_CHECK([$COMPILE -facucomment prog.cob -o prog1], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog1], [0],
-[MFCOMMENTASTERISK
-MFCOMMENTSLASH
-NOMFCOMMENTASTERISK
-NOMFCOMMENTSLASH
+[MFCOMMENT
+NOMFCOMMENT
 NOFLOATING
 ], [])
 
@@ -2829,10 +2819,8 @@ NOFLOATING
 AT_CHECK([$COMPILE -facucomment prog2.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog2], [0],
-[MFCOMMENTASTERISK
-MFCOMMENTSLASH
-NOMFCOMMENTASTERISK
-NOMFCOMMENTSLASH
+[MFCOMMENT
+NOMFCOMMENT
 NOACUFLOATING
 NOFLOATING
 ], [])
@@ -2843,31 +2831,28 @@ AT_CHECK([$COMPILE_ONLY -free prog3.cob], [1], [],
 prog3.cob:9: error: syntax error, unexpected *
 prog3.cob:10: error: syntax error, unexpected /
 prog3.cob:12: error: syntax error, unexpected *
-prog3.cob:13: error: syntax error, unexpected /
-prog3.cob:14: error: invalid symbol '|' - skipping word
-prog3.cob:16: error: syntax error, unexpected Identifier
+prog3.cob:13: error: invalid symbol '|' - skipping word
+prog3.cob:15: error: syntax error, unexpected Identifier
 ])
 AT_CHECK([$COMPILE_ONLY -free -fmfcomment prog3.cob], [1], [],
 [prog3.cob:11: warning: ignoring invalid directive: '$       DISPLAY'
 prog3.cob:9: error: syntax error, unexpected *
 prog3.cob:10: error: syntax error, unexpected /
 prog3.cob:12: error: syntax error, unexpected *
-prog3.cob:13: error: syntax error, unexpected /
-prog3.cob:14: error: invalid symbol '|' - skipping word
-prog3.cob:16: error: syntax error, unexpected Identifier
+prog3.cob:13: error: invalid symbol '|' - skipping word
+prog3.cob:15: error: syntax error, unexpected Identifier
 ])
 AT_CHECK([$COMPILE_ONLY -free -facucomment prog3.cob], [1], [],
 [prog3.cob:11: warning: ignoring invalid directive: '$       DISPLAY'
 prog3.cob:9: error: syntax error, unexpected *
 prog3.cob:10: error: syntax error, unexpected /
 prog3.cob:12: error: syntax error, unexpected *
-prog3.cob:13: error: syntax error, unexpected /
-prog3.cob:16: error: syntax error, unexpected Identifier
+prog3.cob:15: error: syntax error, unexpected Identifier
 ])
 AT_CHECK([$COMPILE_ONLY -fformat=terminal -facucomment prog3.cob], [1], [],
 [prog3.cob:9: error: syntax error, unexpected *
 prog3.cob:10: error: syntax error, unexpected /
-prog3.cob:16: error: syntax error, unexpected Identifier
+prog3.cob:15: error: syntax error, unexpected Identifier
 ])
 # Check that invalid indicator and doesn't abort preprocessing
 # and that errors in preprocessing doesn't abort compilation
@@ -2878,7 +2863,7 @@ prog3.cob:4: error: invalid indicator 'N' at column 7
 prog3.cob:5: error: invalid indicator 'U' at column 7
 prog3.cob:7: error: invalid indicator 'G' at column 7
 prog3.cob:8: error: invalid indicator 'U' at column 7
-prog3.cob:16: error: invalid indicator 'x' at column 7
+prog3.cob:15: error: invalid indicator 'x' at column 7
 prog3.cob:6: error: PROGRAM-ID header missing
 prog3.cob:6: error: PROCEDURE DIVISION header missing
 prog3.cob:6: error: syntax error, unexpected DIVISION
@@ -8246,6 +8231,8 @@ AT_DATA([prog.cob], [
        77  MYHORSE   PIC X(7) VALUE PONY.
        $SET CONSTANT PONY "White"
       *
+      * ensure to test a numeric, too (not actually used):
+       $SET CONSTANT C-UNUSED-NUM 0
        PROCEDURE DIVISION.
        MAIN.
            DISPLAY "Your Dog's name is " DOGGY ";".
@@ -8255,7 +8242,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-# OpenCOBOL/GnuCOBOL extension: >>SET CONSTANT
+# OpenCOBOL/GnuCOBOL extension (deprecated): >>SET CONSTANT
 AT_DATA([prog2.cob], [
        >>SET CONSTANT DOGGY "Barky"
        >>SET CONSTANT PONY "Blacky"
@@ -8648,79 +8635,6 @@ prog.cob:26: warning: SUB1-01 is defined before SUB1-02
 prog.cob:20: note: 'SUB1-02' defined here
 prog.cob:18: note: 'SUB1-01' defined here
 ])
-AT_CLEANUP
-
-
-AT_SETUP([OCCURS too many VALUEs])
-AT_KEYWORDS([initialize VALUE])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. prog.
-       ENVIRONMENT DIVISION.
-       CONFIGURATION SECTION.
-       DATA DIVISION.
-       WORKING-STORAGE SECTION.
-
-       01  WS.
-         05  IX1  PIC 99.
-         05  IX2  PIC 99.
-         05  IX3  PIC 99.
-         05  GRP1 OCCURS 3 TIMES.
-             10  GRPX  PIC X(99).
-         05  MONTH-IN-YEAR OCCURS 13 TIMES PICTURE X(3)
-                         VALUES "jan" "feb" "mar" "apr"
-                               "may" "jun" "jul" "aug"
-                               "sep" "oct" "nov" "dec"
-                               "Hi" "Bye" "Dog".
-         05  DAYS-IN-MONTH OCCURS 13 TIMES PICTURE 9(2) BINARY
-                         VALUES 31 28 31 30 31 30 31 31 30 31 30 31.
-         05  DAYS-MONTHS  OCCURS 2 TIMES.
-          06  DAYX-MONTHX OCCURS 4 TIMES.
-           07  DAY-MONTH  OCCURS 3 TIMES.
-             10  XXX1   PICTURE X VALUE " ".
-             10  MONTHS PICTURE X(3)
-                        VALUES "Jan" "Feb" "Mar" "Apr"
-                               "May" "Jun" "Jul" "Aug"
-                               "Sep" "Oct" "Nov" "Dec"
-                               "JAN" "FEB" "MAR" "APR"
-                               "MAY" "JUN" "JUL" "AUG"
-                               "SEP" "OCT" "NOV" "DEC" "Bye".
-             10  SEPX   PICTURE XX VALUE ", ".
-             10  DAYS   PICTURE 99
-                        VALUES 31 28 31 30 31 30 31 31 30 31 30 31
-                               91 28 91 90 91 90 91 91 90 91 90 91.
-             10  PER    PICTURE X VALUE ".".
-           07  FLR    PICTURE X(4) VALUES " <A>" " <B>" " <C>" " <D>"
-                                  " <E>" " <F>" " <G>" " <H>" " <*>".
-
-       PROCEDURE DIVISION.
-
-       INIT-RTN.
-           DISPLAY "Simple OCCURS with multi VALUES".
-           PERFORM VARYING IX1 FROM 1 BY 1 UNTIL IX1 > 13
-              DISPLAY IX1 ": "
-                      MONTH-IN-YEAR (IX1) " has "
-                      DAYS-IN-MONTH (IX1) " days"
-              END-DISPLAY
-           END-PERFORM.
-           DISPLAY "Complex OCCURS with multi VALUES".
-           PERFORM VARYING IX3 FROM 1 BY 1 UNTIL IX3 > 2
-             PERFORM VARYING IX2 FROM 1 BY 1 UNTIL IX2 > 4
-                 DISPLAY IX3 "-" IX2 ": "
-                         DAYX-MONTHX (IX3, IX2)
-                 END-DISPLAY
-             END-PERFORM
-           END-PERFORM.
-           STOP RUN.
-])
-
-AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:15: error: elements in VALUE clause for 'MONTH-IN-YEAR' (15) exceed max amount (13)
-prog.cob:26: error: elements in VALUE clause for 'MONTHS' (25) exceed max amount (24)
-prog.cob:38: error: elements in VALUE clause for 'FLR' (9) exceed max amount (8)
-])
-
 AT_CLEANUP
 
 
