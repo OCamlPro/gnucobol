@@ -360,7 +360,8 @@ struct list_replace {
 	struct list_replace	*next;
 	int			firstline;	/* First line for replace */
 	int			lastline;	/* Last line for replace */
-	int			lead_trail_strict; /* LEADING/TRAILING/STRICT flag */
+	int			lead_trail;     /* LEADING/TRAILING flag */
+	int			strict_partial; /* Partial repl. strictness flag */
 	char			*from;		/* Old (from) text */
 	char			*to;		/* New (to) text */
 };

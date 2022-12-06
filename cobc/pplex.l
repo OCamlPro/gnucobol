@@ -1760,7 +1760,8 @@ set_print_replace_list (struct cb_replace_list *list)
 		const struct cb_replace_src *src = r->src;
 		repl = cobc_malloc (sizeof (struct list_replace));
 		repl->firstline = r->line_num;
-		repl->lead_trail_strict = (src->lead_trail << 1) | src->strict;
+		repl->lead_trail = src->lead_trail;
+		repl->strict_partial = src->strict;
 		repl->lastline = cb_source_line;
 
 		for (l = src->text_list, length = 0; l; l = l->next) {

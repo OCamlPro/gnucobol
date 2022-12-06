@@ -6934,8 +6934,10 @@ print_replace_text (struct list_files *cfile, FILE *fd,
 	for (int i = 0; i < pline_cnt; i++) {
 		fprintf (stdout, "   pline[%2d]: %s\n", i, pline[i]);
 	}
-	fprintf (stdout, "   rep: first = %d, last = %d, lead_trail_strict = %d\n",
-		 rep->firstline, rep->lastline, rep->lead_trail_strict);
+	fprintf (stdout,
+		 "   rep: first = %d, last = %d, lead_trail = %d, strict = %d\n",
+		 rep->firstline, rep->lastline, rep->lead_trail,
+		 rep->strict_partial);
 	fprintf (stdout, "   fromlen: %lu\n", strlen(rfp));
 	fprintf (stdout, "   from: '%80.80s'\n", rfp);
 	fprintf (stdout, "   tolen: %lu\n", strlen(rep->to));
@@ -7104,13 +7106,13 @@ print_replace_text (struct list_files *cfile, FILE *fd,
 #endif
 			ttlen = strlen (ttoken);
 			ttix = 0;
-			if (rep->lead_trail_strict >> 1 == CB_REPLACE_LEADING) {
+			if (rep->lead_trail == CB_REPLACE_LEADING) {
 				subword = 1;
-				strictmatch = rep->lead_trail_strict & 1;
-			} else if (rep->lead_trail_strict >> 1 == CB_REPLACE_TRAILING) {
+				strictmatch = rep->strict_partial;
+			} else if (rep->lead_trail == CB_REPLACE_TRAILING) {
 				if (ttlen >= from_token_len) {
 					subword = 1;
-					strictmatch = rep->lead_trail_strict & 1;
+					strictmatch = rep->strict_partial;
 					ttix = ttlen - from_token_len;
 					ttlen = ttix;
 				}
@@ -7129,10 +7131,10 @@ print_replace_text (struct list_files *cfile, FILE *fd,
 					newline = cobc_realloc (newline, newlinelen);
 				}
 				if (subword) {
-					if (rep->lead_trail_strict >> 1 == CB_REPLACE_LEADING) {
+					if (rep->lead_trail == CB_REPLACE_LEADING) {
 						strcat (newline, rep->to);
 						strcat (newline, &ttoken[from_token_len]);
-					} else if (rep->lead_trail_strict >> 1 == CB_REPLACE_TRAILING) {
+					} else if (rep->lead_trail == CB_REPLACE_TRAILING) {
 						strncat (newline, ttoken, ttlen);
 						strcat (newline, rep->to);
 					} else {
