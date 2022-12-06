@@ -2591,7 +2591,6 @@ lineseq_write (cob_file *f, const int opt)
 	}
 #endif
 
-
 	if (unlikely (f->flag_select_features & COB_SELECT_LINAGE)) {
 		if (f->flag_needs_top) {
 			int i;
@@ -6961,35 +6960,12 @@ cob_sys_read_file (unsigned char *file_handle, unsigned char *file_offset,
 	cob_s64_t	off;
 	int		fd;
 	int		len;
-	int		rc;
-	struct stat	st;
 
 	COB_CHK_PARMS (CBL_READ_FILE, 5);
 
-	memcpy (&fd, file_handle, (size_t)4);
-	memcpy (&off, file_offset, (size_t)8);
-	memcpy (&len, file_len, (size_t)4);
-#ifndef	WORDS_BIGENDIAN
-	off = COB_BSWAP_64 (off);
-	len = COB_BSWAP_32 (len);
-#endif
-	if (lseek (fd, (off_t)off, SEEK_SET) == (off_t)-1) {
-		return -1;
-	}
-
-	if (len > 0) {
-		rc = read (fd, buf, (size_t)len);
-		if (rc < 0) {
-			rc = -1;
-		} else if (rc == 0) {
-			rc = 10;
-		} else {
-			rc = 0;
-		}
-	} else {
-		rc = 0;
-	}
+	memcpy (&fd, file_handle, 4);
 	if ((*flags & 0x80) != 0) {
+		struct stat	st;
 		if (fstat (fd, &st) < 0) {
 			return -1;
 		}
@@ -6997,9 +6973,30 @@ cob_sys_read_file (unsigned char *file_handle, unsigned char *file_offset,
 #ifndef	WORDS_BIGENDIAN
 		off = COB_BSWAP_64 (off);
 #endif
-		memcpy (file_offset, &off, (size_t)8);
+		memcpy (file_offset, &off, 8);
+		return 0;
 	}
-	return rc;
+
+	memcpy (&off, file_offset, 8);
+	memcpy (&len, file_len, 4);
+#ifndef	WORDS_BIGENDIAN
+	off = COB_BSWAP_64 (off);
+	len = COB_BSWAP_32 (len);
+#endif
+	if (lseek (fd, off, SEEK_SET) == -1) {
+		return -1;	/* error in positioning -> bad offset */
+	}
+
+	if (len > 0) {
+		const int	rc = read (fd, buf, (size_t)len);
+		if (rc < 0) {
+			return -1;	/* error in read */
+		} else if (rc == 0) {
+			/* 0 byte read -> "at end" */
+			return COB_STATUS_10_END_OF_FILE;
+		}
+	}
+	return COB_STATUS_00_SUCCESS;
 }
 
 /* entry point and processing for library routine CBL_WRITE_FILE */
@@ -7017,14 +7014,14 @@ cob_sys_write_file (unsigned char *file_handle, unsigned char *file_offset,
 
 	COB_CHK_PARMS (CBL_WRITE_FILE, 5);
 
-	memcpy (&fd, file_handle, (size_t)4);
-	memcpy (&off, file_offset, (size_t)8);
-	memcpy (&len, file_len, (size_t)4);
+	memcpy (&fd, file_handle, 4);
+	memcpy (&off, file_offset, 8);
+	memcpy (&len, file_len, 4);
 #ifndef	WORDS_BIGENDIAN
 	off = COB_BSWAP_64 (off);
 	len = COB_BSWAP_32 (len);
 #endif
-	if (lseek (fd, (off_t)off, SEEK_SET) == (off_t)-1) {
+	if (lseek (fd, off, SEEK_SET) == -1) {
 		return -1;
 	}
 	rc = (int) write (fd, buf, (size_t)len);
@@ -7042,7 +7039,7 @@ cob_sys_close_file (unsigned char *file_handle)
 
 	COB_CHK_PARMS (CBL_CLOSE_FILE, 1);
 
-	memcpy (&fd, file_handle, (size_t)4);
+	memcpy (&fd, file_handle, 4);
 	return close (fd);
 }
 
@@ -8816,12 +8813,14 @@ copy_keys_fcd_to_file (FCD3 *fcd, cob_file *f, int doall)
 			f->keys[k].offset = LDCOMPX4(key->pos);
 		}
 		klen = 0;
-		for (p=0; p < parts; p++) {
-			if (f->keys[k].component[p] == NULL)
-				f->keys[k].component[p] = cob_cache_malloc(sizeof (cob_field));
+		for (p = 0; p < parts; p++) {
+			if (f->keys[k].component[p] == NULL) {
+				f->keys[k].component[p] = cob_cache_malloc (sizeof (cob_field));
+			}
 			if (f->record
-			 && f->record->data)
+			 && f->record->data) {
 				f->keys[k].component[p]->data = f->record->data + LDCOMPX4(key->pos);
+			}
 			f->keys[k].component[p]->attr = &alnum_attr;
 			f->keys[k].component[p]->size = LDCOMPX4(key->len);
 			klen += LDCOMPX4(key->len);

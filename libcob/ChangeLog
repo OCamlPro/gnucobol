@@ -1,4 +1,9 @@
 
+2022-12-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (cob_sys_read_file): if called with flag value 128 only resolve
+	  the file size, instead of re-positioning it first
+
 2022-12-05  Simon Sobisch <simonsobisch@gnu.org>
 
 	* numeric.c, common.c, coblocal.h: moved functions cob_decimal_set_mpf and
