@@ -97,11 +97,13 @@ static char *
 literal_token (char *t, int allow_spaces)
 {
 	if (t[0] == '\'' || t[0] == '"') {
-		(void) ppparse_verify (cb_partial_replacing_with_literal,
-				       _("partial replacing with literal"));
+		if (cb_exact_partial_replacing_when_literal_src != CB_SKIP)
+			(void) ppparse_verify (cb_exact_partial_replacing_when_literal_src,
+					       _("partial replacing with literal"));
 	} else if (allow_spaces && literal_is_space_keyword (t)) {
-		(void) ppparse_verify (cb_partial_replacing_with_literal,
-				       _("partial replacing with literal"));
+		if (cb_exact_partial_replacing_when_literal_src != CB_SKIP)
+			(void) ppparse_verify (cb_exact_partial_replacing_when_literal_src,
+					       _("partial replacing with literal"));
 		t[0] = '\0';
 	} else {
 		ppparse_error (_("unexpected COBOL word in partial replacement "
@@ -1671,7 +1673,8 @@ text_partial_src:
 | TOKEN
   {
 	$$ = ppp_replace_src (ppp_list_add (NULL, literal_token ($1, 0)),
-			      ($1[0] == '\'' || $1[0] == '"') ? 1 : 0);
+			      ($1[0] == '\'' || $1[0] == '"')
+			      ? cb_exact_partial_replacing_when_literal_src == CB_SKIP : 0);
   }
 ;
 

@@ -535,14 +535,15 @@ AT_DATA([copy.inc], [
 ])
 
 AT_DATA([copy2.inc], [
-       01  TEST-FIRST  PIC X(2) VALUE "OK".
-       01  TEST-SECOND PIC X(2) VALUE "OK".
-       01  SECOND      PIC X(2) VALUE "OK".
+       01  TEST-FIRST PIC X(2) VALUE "OK".
+       01  TEST-SECND PIC X(2) VALUE "OK".
+       01  SECND      PIC X(2) VALUE "OK".
 ])
 
-# NORM and SECOND are available as partial replacement with a source
-# literal does not apply when the match is exact (cf GCOS reference
-# manual, pp 537--538, 542).
+# When `-fexact-partial-replacing-when-literal-src' is "skip", NORM
+# and SECND are available as partial replacement with a source literal
+# does not apply when the match is exact (cf GCOS reference manual, pp
+# 537--538, 542).
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
@@ -553,19 +554,23 @@ AT_DATA([prog.cob], [
                       LEADING "NORM" BY "SECOND".
        COPY "copy2.inc"
             REPLACING TRAILING "FIRST" BY "VAR1"
-                      TRAILING "SECOND" BY "VAR2".
+                      TRAILING "SECND" BY "VAR2".
        PROCEDURE        DIVISION.
            DISPLAY FIRST-VAR  NO ADVANCING END-DISPLAY.
            DISPLAY SECOND-VAR NO ADVANCING END-DISPLAY.
-           DISPLAY SECOND     NO ADVANCING END-DISPLAY.
+           DISPLAY NORM       NO ADVANCING END-DISPLAY.
            DISPLAY TEST-VAR1  NO ADVANCING END-DISPLAY.
            DISPLAY TEST-VAR2  NO ADVANCING END-DISPLAY.
-           DISPLAY NORM       NO ADVANCING END-DISPLAY.
+           DISPLAY SECND      NO ADVANCING END-DISPLAY.
            STOP RUN.
 ])
-AT_CHECK([$COMPILE -fpartial-replacing-with-literal=ok prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fexact-partial-replacing-when-literal-src=skip prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OKOKOKOKOKOK])
-AT_CHECK([$COMPILE_ONLY -fpartial-replacing-with-literal=error prog.cob], [1], [],
+AT_CHECK([$COMPILE -fexact-partial-replacing-when-literal-src=ok prog.cob -o prog-skip], [1], [],
+[prog.cob:15: error: 'NORM' is not defined
+prog.cob:18: error: 'SECND' is not defined
+])
+AT_CHECK([$COMPILE_ONLY -fexact-partial-replacing-when-literal-src=error prog.cob], [1], [],
 [prog.cob:7: error: partial replacing with literal used
 prog.cob:7: error: partial replacing with literal used
 prog.cob:8: error: partial replacing with literal used
@@ -574,6 +579,8 @@ prog.cob:10: error: partial replacing with literal used
 prog.cob:10: error: partial replacing with literal used
 prog.cob:11: error: partial replacing with literal used
 prog.cob:11: error: partial replacing with literal used
+prog.cob:15: error: 'NORM' is not defined
+prog.cob:18: error: 'SECND' is not defined
 ])
 
 AT_DATA([prog_err.cob], [
@@ -588,11 +595,11 @@ AT_DATA([prog_err.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY -fpartial-replacing-with-literal=ok prog_err.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY -fexact-partial-replacing-when-literal-src=skip prog_err.cob], [1], [],
 [prog_err.cob:7: error: unexpected COBOL word in partial replacement phrase
 prog_err.cob:8: error: unexpected COBOL word in partial replacement phrase
 ])
-AT_CHECK([$COMPILE_ONLY -fpartial-replacing-with-literal=unconformable prog_err.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY -fexact-partial-replacing-when-literal-src=unconformable prog_err.cob], [1], [],
 [prog_err.cob:7: error: unexpected COBOL word in partial replacement phrase
 prog_err.cob:7: error: partial replacing with literal does not conform to GnuCOBOL
 prog_err.cob:8: error: partial replacing with literal does not conform to GnuCOBOL
@@ -680,8 +687,8 @@ AT_DATA([prog_err.cob], [
        COPY prog REPLACING LEADING SPACES BY "PREFIX-".
 ])
 
-AT_CHECK([$COMPILE_ONLY -fpartial-replacing-with-literal=ok prog.cob], [0], [], [])
-AT_CHECK([$COMPILE_ONLY -fpartial-replacing-with-literal=ok prog_err.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY -fexact-partial-replacing-when-literal-src=ok prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -fexact-partial-replacing-when-literal-src=ok prog_err.cob], [1], [],
 [prog_err.cob:2: error: unexpected COBOL word in partial replacement phrase
 ])
 

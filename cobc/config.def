@@ -206,9 +206,10 @@ CB_CONFIG_SUPPORT (cb_comment_paragraphs, "comment-paragraphs",
 CB_CONFIG_SUPPORT (cb_control_division, "control-division",
 	_("CONTROL DIVISION"))
 
-CB_CONFIG_SUPPORT (cb_partial_replacing_with_literal,
-		   "partial-replacing-with-literal",
-		   _("partial replacing with literal"))
+CB_CONFIG_SUPPORT (cb_exact_partial_replacing_when_literal_src, /* Also enables literals as */
+		   "exact-partial-replacing-when-literal-src",  /* replacement operands. */
+		   _("whether partial replacing with literal source operand "
+		     "applies on exact match"))
 
 CB_CONFIG_SUPPORT (cb_memory_size_clause, "memory-size-clause",
 	_("MEMORY-SIZE clause"))

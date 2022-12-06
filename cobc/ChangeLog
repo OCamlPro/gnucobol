@@ -6,10 +6,11 @@
 	  (struct list_skip, struct list_files): move internal struct and symbol
 	  declarations to tree.h, and adapt some structures for strict partial
 	  text replacement
-	* cobc.c (print_replace_text, print_replace_main),
-	  pplex.l (set_print_replace_list, ppecho),
-	  ppparse.y (ppp_replace_src, ppp_replace_list_add): handle strict
-	  partial text replacement
+	* cobc.c (print_replace_text, print_replace_main), pplex.l
+	  (set_print_replace_list, ppecho), ppparse.y (ppp_replace_src,
+	  ppp_replace_list_add): handle strict partial text replacement, enabled
+	  unless dialect option exact-partial-replacing-when-literal-src (formerly
+	  partial-replacing-with-literal) is "skip"
 
 2022-12-06 Simon Sobisch <simonsobisch@gnu.org>
 
