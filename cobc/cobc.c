@@ -6904,6 +6904,7 @@ print_replace_text (struct list_files *cfile, FILE *fd,
 	int	overread = 0;
 	int	tokmatch = 0;
 	int	subword = 0;
+	int	strictmatch = 0;
 	size_t	ttix, ttlen, from_token_len;
 	size_t	newlinelen;
 	char	lterm[2];
@@ -6933,8 +6934,8 @@ print_replace_text (struct list_files *cfile, FILE *fd,
 	for (int i = 0; i < pline_cnt; i++) {
 		fprintf (stdout, "   pline[%2d]: %s\n", i, pline[i]);
 	}
-	fprintf (stdout, "   rep: first = %d, last = %d, lead_trail = %d\n",
-		 rep->firstline, rep->lastline, rep->lead_trail);
+	fprintf (stdout, "   rep: first = %d, last = %d, lead_trail_strict = %d\n",
+		 rep->firstline, rep->lastline, rep->lead_trail_strict);
 	fprintf (stdout, "   fromlen: %lu\n", strlen(rfp));
 	fprintf (stdout, "   from: '%80.80s'\n", rfp);
 	fprintf (stdout, "   tolen: %lu\n", strlen(rep->to));
@@ -7105,15 +7106,20 @@ print_replace_text (struct list_files *cfile, FILE *fd,
 			ttix = 0;
 			if (rep->lead_trail_strict >> 1 == CB_REPLACE_LEADING) {
 				subword = 1;
+				strictmatch = rep->lead_trail_strict & 1;
 			} else if (rep->lead_trail_strict >> 1 == CB_REPLACE_TRAILING) {
 				if (ttlen >= from_token_len) {
 					subword = 1;
+					strictmatch = rep->lead_trail_strict & 1;
 					ttix = ttlen - from_token_len;
 					ttlen = ttix;
 				}
 			}
 			if (subword) {
-				tokmatch = !strncasecmp (&ttoken[ttix], ftoken, from_token_len);
+				/* When strictmatch, length of word must be
+				   strictly greater than matched token: */
+				tokmatch = (!strictmatch || ttlen > from_token_len)
+					&& !strncasecmp (&ttoken[ttix], ftoken, from_token_len);
 			} else {
 				tokmatch = !strcasecmp (ttoken, ftoken);
 			}

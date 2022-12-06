@@ -540,6 +540,8 @@ AT_DATA([copy2.inc], [
        01  SECOND      PIC X(2) VALUE "OK".
 ])
 
+# NORM and SECOND are available as partial replacement with a source
+# literal does not apply when the match is exact
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.

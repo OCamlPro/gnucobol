@@ -221,6 +221,71 @@ AT_CHECK([diff expected.lst prog.lis], [0], [], [])
 AT_CLEANUP
 
 
+
+AT_SETUP([Partial replacement with literals])
+AT_KEYWORDS([listing gcos])
+
+AT_CAPTURE_FILE([prog.lst])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       1 W-DATA.
+         3 X            PIC X(3) VALUE """X""".
+         3 XX           PIC X(4) VALUE """XX""".
+         3 Z            PIC X(3) VALUE """Z""".
+         3 ZZ           PIC X(4) VALUE """ZZ""".
+       PROCEDURE        DIVISION.
+           REPLACE LEADING "X" BY SPACES
+                   TRAILING "Z" BY SPACES.
+       MAIN.
+           DISPLAY "XX: *" XX "*"
+           DISPLAY "X: *" X "*"
+           DISPLAY "ZZ: *" ZZ "*"
+           DISPLAY "Z: *" Z "*"
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY -fpartial-replacing-with-literal=ok -t prog.lst -tlines=0 prog.cob], [0], [], [])
+
+AT_DATA([expected.lst],
+[GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY
+
+LINE    PG/LN  A...B............................................................
+
+000001
+000002         IDENTIFICATION   DIVISION.
+000003         PROGRAM-ID.      prog.
+000004         DATA             DIVISION.
+000005         WORKING-STORAGE  SECTION.
+000006         1 W-DATA.
+000007           3 X            PIC X(3) VALUE """X""".
+000008           3 XX           PIC X(4) VALUE """XX""".
+000009           3 Z            PIC X(3) VALUE """Z""".
+000010           3 ZZ           PIC X(4) VALUE """ZZ""".
+000011         PROCEDURE        DIVISION.
+000012             REPLACE LEADING "X" BY SPACES
+000013                     TRAILING "Z" BY SPACES.
+000014         MAIN.
+000015             DISPLAY "XX: *" X "*"
+000016             DISPLAY "X: *" X "*"
+000017             DISPLAY "ZZ: *" ZZ "*"
+000018             DISPLAY "Z: *" Z "*"
+000019             STOP RUN.
+
+
+0 warnings in compilation group
+0 errors in compilation group
+])
+
+AT_CHECK([$UNIFY_LISTING prog.lst prog.lis once], [0], [], [])
+AT_CHECK([diff expected.lst prog.lis], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([COPY replacement order])
 AT_KEYWORDS([listing symbols])
 
