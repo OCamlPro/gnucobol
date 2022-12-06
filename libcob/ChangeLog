@@ -1,4 +1,20 @@
 
+2022-12-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (cob_sys_read_file): if called with flag value 128 only resolve
+	  the file size, instead of re-positioning it first
+
+2022-12-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c, common.c, coblocal.h: moved functions cob_decimal_set_mpf and
+	  cob_decimal_get_mpf to numeric.c as they nearly duplicated
+	  cob_decimal_set_double and cob_decimal_get_double using those functions;
+	  moved out definition of COB_MAX_INTERMEDIATE_FLOATING_SIZE
+	* numeric.c (cob_decimal_set_mpf_core): extracted from cob_decimal_set_mpf
+	  and optimized for performance, especially by using a local storage
+	* numeric.c (cob_decimal_set_double): handling of "spaced out double" using
+	  a static buffer instead of setting it each time
+
 2022-12-03  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_set_date_from_epoch), common.h: new function to
@@ -18,6 +34,26 @@
 2022-11-18  Simon Sobisch <simonsobisch@gnu.org>
 
 	* screenio.c: fixed compiler warnings related to get_crt3_status
+
+2022-11-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* intrinsic.c: switching random number generation to GMP,
+	  providing a good-distributed, portable implementation
+	* intrinsic.c (cob_intr_random) [DISABLE_GMP_RANDOM]:
+	  fix a rare bug returning 1
+	* intrinsic.c (get_seconds_past_midnight): extracted from
+	  cob_intr_seconds_past_midnight
+	* intrinsic.c (cob_intr_random) [!DISABLE_GMP_RANDOM]:
+	  switched initial default-seed from "system dependent"
+	  (mostly always zero) to a random seed
+
+2022-11-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_decimal_get_field): optimized intermediate move
+	  from numeric-edited by using a local storage
+	* numeric.c: refactoring of floating-point usages to not use a union
+	  for re-re-definition of float/double where not necessary
+	* numeric.c: refactoring of bit-wise functions for readability
 
 2022-11-04  Simon Sobisch <simonsobisch@gnu.org>
 

@@ -4,6 +4,7 @@ NEWS - user visible changes				-*- outline -*-
           3.2 final (depending on feedback) end of 2022
 
  planned:
+   * configure: minor checking to set TIME_T_IS_NON_ARITHMETIC
    * changes to CALL handling especially for BY VALUE and stdcall
    * adjustments for registers and XML PARSE stubs
    * investigation of code analysis tools and user feedback
@@ -94,6 +95,19 @@ NEWS - user visible changes				-*- outline -*-
    setting COB_LS_SPLIT = false will have the old behaviour of truncating
    the record, but will now set status 04
 
+** FUNCTION RANDOM: the internal randomizer was changed from "C" to "GMP"
+   this means that the sequence of random numbers are different when using
+   the same seed as versions before 3.2
+   while the changed use has the downside of taking longer for each seeding,
+   it provides a much better distributed sequence and increases portability
+   (switching to a different "C" runtime or operating system won't change the
+   sequences); additional the implementor-defined default seeding was changed
+   from "0 in most cases" to a random seed;
+   if you _want_ the return values to be identical you always need to specify
+   a seed (including possibly 0);
+   the old behaviour can be enforced by compiling GnuCOBOL with
+   LIBCOB_CPPFLAGS=-DDISABLE_GMP_RANDOM
+
 ** FUNCTION EXCEPTION-LOCATION: if the source raising an exception was not
    compiled with location information this function previously returned
    a single space; GnuCOBOL now always returns the module name, a procedure-
@@ -107,7 +121,7 @@ NEWS - user visible changes				-*- outline -*-
    FUNCTIONs TEST-NUMVAL, TEST-NUMVAL-C, TEST-NUMVAL-F or the exception can
    be checked afterwards using the EXCEPTION related functions;
    the old behaviour can be enforced by compiling GnuCOBOL with
-   CPPFLAGS=-DINVALID_NUMVAL_IS_ZERO
+   LIBCOB_CPPFLAGS=-DINVALID_NUMVAL_IS_ZERO
 
 ** Handling of invalid numeric USAGE DISPLAY data:
    previously the complete character was inspected and adjusted for conversion,
@@ -274,6 +288,9 @@ NEWS - user visible changes				-*- outline -*-
    this has been fixed so that all modules compiled with GnuCOBOL 2.2 can be
    executed with GnuCOBOL 3.2
 
+** FUNCTION RANDOM could return 1 in rare cases (more often in win32), it now
+   returns, as defined, a value in the range 0 <= x < 1
+
 ** the internal signal handler could crash or deadlock the process on hard
    errors (either in called library functions or when running COBOL without
    runtime checks); the signal handling is now completely rewritten to fix
@@ -337,6 +354,11 @@ NEWS - user visible changes				-*- outline -*-
 ** cobc handles SOURCE_DATE_EPOCH now, allowing to override timestamps in
    generated code and listing files, allowing reproducible builds
 
+* Obsolete features (will be removed in the next version if no explicit user
+  requests are raised)
+
+** use of old non-GMP randomizer for FUNCTION RANDOM
+
 * Known issues in 3.2 (and 3.1)
 
 ** 3.2 only: the testing and documentation for COB_CORE_ON_ERROR is unfinished
@@ -353,6 +375,14 @@ NEWS - user visible changes				-*- outline -*-
 
 ** the recent additions of ">> TURN" and "variable LIKE variable" may not work
    as expected in all cases
+
+** floating-point comparison for equality may return unexpected results as it
+   involves a necessary tolerance; we seek input for a reasonable default for
+   GnuCOBOL 4 (use the mailing list or discussion board to share your comments
+   on this topic, keep in mind that this has to take both mathematical and
+   "C compiler portability" into account); you may adjust the default
+   tolerance of 0.0000001 by compiling GnuCOBOL for example with
+   LIBCOB_CPPFLAGS="-DCOB_FLOAT_DELTA=0.0000000000001"
 
 ** features that are known to not be portable to every environment yet
    (especially when using a different compiler than GCC)

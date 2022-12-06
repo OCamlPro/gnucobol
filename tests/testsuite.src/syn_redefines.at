@@ -18,9 +18,9 @@
 
 ### GnuCOBOL Test Suite
 
-### ISO+IEC+1989-2002 13.16.42 REDEFINES clause
+### ISO+IEC+1989-2022 13.18.44 REDEFINES clause
 
-## 13.16.42.2 Syntax rules
+## 13.18.44.3 Syntax rules
 
 
 # 1) DONE
@@ -139,10 +139,9 @@ AT_CLEANUP
 
 # 3) TODO
 
-# 4) TODO
+# check vs. FORMAT clause
 
-
-# 5) DONE
+# 4) DONE
 
 AT_SETUP([REDEFINES: lower level number])
 AT_KEYWORDS([redefines])
@@ -168,7 +167,7 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 AT_CLEANUP
 
 
-# 6) DONE
+# 5) DONE
 
 AT_SETUP([REDEFINES: with OCCURS])
 AT_KEYWORDS([redefines])
@@ -185,11 +184,14 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
+# TODO: should be a dialect option, currntly it is _always_ a warning
+
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
 [prog.cob:8: warning: the original definition 'X' should not have an OCCURS clause
 ])
 
 AT_CLEANUP
+
 
 AT_SETUP([REDEFINES: with subscript])
 AT_KEYWORDS([redefines])
@@ -212,6 +214,7 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 ])
 
 AT_CLEANUP
+
 
 AT_SETUP([REDEFINES: with variable occurrence])
 AT_KEYWORDS([redefines])
@@ -246,7 +249,7 @@ prog.cob:16: error: the original definition 'X' cannot be variable length
 AT_CLEANUP
 
 
-# 7) DONE
+# 6) DONE
 
 AT_SETUP([REDEFINES: with qualification])
 AT_KEYWORDS([redefines])
@@ -272,7 +275,7 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 AT_CLEANUP
 
 
-# 8) DONE
+# 7) DONE
 
 AT_SETUP([REDEFINES: multiple redefinition])
 AT_KEYWORDS([redefines])
@@ -300,7 +303,7 @@ AT_CHECK([$COMPILE_ONLY -std=mvs prog.cob], [0], [], [])
 AT_CLEANUP
 
 
-# 9) DONE
+# 8) DONE
 
 AT_SETUP([REDEFINES: size exceeds])
 AT_KEYWORDS([redefines])
@@ -337,7 +340,7 @@ prog.cob:13: note: size of 'EXT-X-REDEF' larger than size of 'EXT-X' [-Wdialect]
 prog.cob:17: warning: size of 'FILLER 1' larger than size of 'WRK-X2' [-Wlarger-01-redefines]
 ]])
 
-# of course, other dialects ignore the rules...
+# of course, other dialects ignore the rules, implicit adding a FILLER to the original item...
 AT_CHECK([$COBC -std=mf prog.cob], [0], [], [])
 AT_CHECK([$COBC -flarger-redefines=warning prog.cob], [0], [],
 [[prog.cob:8: warning: larger REDEFINES used [-Wdialect]
@@ -351,7 +354,7 @@ prog.cob:13: note: size of 'EXT-X-REDEF' larger than size of 'EXT-X' [-Wdialect]
 AT_CLEANUP
 
 
-# 10) DONE
+# 9) DONE
 
 AT_SETUP([REDEFINES: with VALUE])
 AT_KEYWORDS([redefines])
@@ -368,6 +371,7 @@ AT_DATA([prog.cob], [
        01 Y             REDEFINES X PIC X.
          88 C           VALUE "A".
        PROCEDURE        DIVISION.
+           INITIALIZE G ALL TO VALUE *> the reason that this extension is useful
            STOP RUN.
 ])
 
@@ -383,7 +387,7 @@ AT_CHECK([$COMPILE -frelax-syntax-checks prog.cob], [0], [], [])
 AT_CLEANUP
 
 
-# 11) DONE
+# 10) DONE
 
 AT_SETUP([REDEFINES: with intervention])
 AT_KEYWORDS([redefines])
@@ -409,10 +413,13 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 prog.cob:12: error: REDEFINES must follow the original definition
 ])
 
+# TODO: several implementations allow to specify those anywhere - add
+#       dialect option, configure accordingly and test here
+
 AT_CLEANUP
 
 
-# 12) DONE
+# 11) DONE
 
 AT_SETUP([REDEFINES: within REDEFINES])
 AT_KEYWORDS([redefines])
@@ -433,6 +440,61 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
 
 AT_CLEANUP
+
+
+# 12) TODO
+
+# not _with_ class pointer, object, ...
+
+
+# 13) TODO
+
+# no redefinition of CONSTANT RECORD
+
+
+# 14) TODO
+
+# not _for_ class pointer, object, ...
+
+
+# 15) TODO
+
+# matchin alignment
+
+
+# 16) DONE
+
+AT_SETUP([REDEFINES: for ANY LENGTH item])
+AT_KEYWORDS([redefines])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       LINKAGE          SECTION.
+       01 X             PIC X ANY LENGTH.
+       01 Y REDEFINES X PIC X.
+       01 N             PIC 9 ANY NUMERIC.
+       01 M REDEFINES N PIC 9.
+       PROCEDURE        DIVISION USING X N.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:7: error: the original definition 'X' should not have an ANY LENGTH clause
+prog.cob:9: error: the original definition 'N' should not have an ANY LENGTH clause
+])
+
+AT_CLEANUP
+
+
+# 17) TODO
+
+# no redefinition of variable-length group or dynamic length item,
+# but allowed below that
+
+
+## additional syntax tests for REDEFINES
 
 
 AT_SETUP([REDEFINES: non-referenced ambiguous item])
@@ -461,11 +523,3 @@ prog.cob:6: note: 'X' previously defined here
 
 AT_CLEANUP
 
-
-# 13) TODO
-
-# 14) TODO
-
-# 15) TODO
-
-# 16) TODO

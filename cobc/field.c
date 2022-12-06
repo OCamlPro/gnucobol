@@ -1298,6 +1298,12 @@ validate_redefines (const struct cb_field * const f)
 			      _("the original definition '%s' should not have an OCCURS clause"),
 			      f->redefines->name);
 	}
+	/* Check ANY LENGTH */
+	if (f->redefines->flag_any_length) {
+		cb_error_x (x,
+			      _("the original definition '%s' should not have an ANY LENGTH clause"),
+			      f->redefines->name);
+	}
 
 	/* Check definition */
 	for (p = f->redefines->sister; p && p != f; p = p->sister) {
