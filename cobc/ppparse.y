@@ -436,7 +436,7 @@ ppp_replace_src (const struct cb_text_list * const text_list,
 {
 	struct cb_replace_src *s = cobc_plex_malloc (sizeof (struct cb_replace_src));
 	s->lead_trail = 0;	/* unknown yet */
-	s->strict = strict_partial;
+	s->strict = strict_partial ? 1 : 0;
 	s->text_list = text_list;
 	return s;
 }
@@ -594,13 +594,13 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %}
 
 %union {
-	char				*s;
-	struct cb_text_list		*l;
-	struct cb_replace_src		*p;
-	struct cb_replace_list		*r;
-	struct cb_define_struct		*ds;
-	unsigned int			ui;
-	int				si;
+	char			*s;
+	struct cb_text_list	*l;
+	struct cb_replace_src	*p;
+	struct cb_replace_list	*r;
+	struct cb_define_struct	*ds;
+	unsigned int		ui;
+	int			si;
 };
 
 %token TOKEN_EOF 0	"end of file"
