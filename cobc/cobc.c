@@ -6935,9 +6935,9 @@ print_replace_text (struct list_files *cfile, FILE *fd,
 	}
 	fprintf (stdout, "   rep: first = %d, last = %d, lead_trail = %d\n",
 		 rep->firstline, rep->lastline, rep->lead_trail);
-	fprintf (stdout, "   fromlen: %d\n", strlen(rfp));
+	fprintf (stdout, "   fromlen: %lu\n", strlen(rfp));
 	fprintf (stdout, "   from: '%80.80s'\n", rfp);
-	fprintf (stdout, "   tolen: %d\n", strlen(rep->to));
+	fprintf (stdout, "   tolen: %lu\n", strlen(rep->to));
 	fprintf (stdout, "   to:   '%80.80s'\n", rep->to);
 #endif
 
@@ -7278,8 +7278,8 @@ print_replace_main (struct list_files *cfile, FILE *fd,
 					if (i == 0)
 						fprintf (stdout, "   replace_list: \n");
 					fprintf (stdout, "      line[%d]: %d\n", i, rep->firstline);
-					fprintf (stdout, "      from[%d]:%d: '%80.80s'\n", i, strlen(rep->from), rep->from);
-					fprintf (stdout, "      to  [%d]:%d: '%80.80s'\n", i, strlen(rep->to), rep->to);
+					fprintf (stdout, "      from[%d]:%lu: '%80.80s'\n", i, strlen(rep->from), rep->from);
+					fprintf (stdout, "      to  [%d]:%lu: '%80.80s'\n", i, strlen(rep->to), rep->to);
 				}
 			}
 #endif
@@ -7370,8 +7370,8 @@ print_program_code (struct list_files *cfile, int in_copy)
 			fprintf (stdout, "   replace_list: \n");
 		}
 		fprintf (stdout, "      line[%d]: %d\n", i, rep->firstline);
-		fprintf (stdout, "      from[%d]:%d: '%80.80s'\n", i, strlen(rep->from), rep->from);
-		fprintf (stdout, "      to  [%d]:%d: '%80.80s'\n", i, strlen(rep->to), rep->to);
+		fprintf (stdout, "      from[%d]:%lu: '%80.80s'\n", i, strlen(rep->from), rep->from);
+		fprintf (stdout, "      to  [%d]:%lu: '%80.80s'\n", i, strlen(rep->to), rep->to);
 	}
 	for (i = 0, err = cfile->err_head; err; i++, err = err->next) {
 		if (i == 0) {

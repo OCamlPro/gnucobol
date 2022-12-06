@@ -1,4 +1,8 @@
 
+2022-12-05  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* cobc.c: replace some incorrect '%d' format indicators with '%lu'
+
 2022-12-06 Simon Sobisch <simonsobisch@gnu.org>
 
 	* field.c (validate_redefines): check for target not to have ANY LENGTH
