@@ -162,6 +162,7 @@ static struct cb_replace_list	*save_current_replace = NULL;
 static struct cb_replace_list	*base_replace_list = NULL;
 
 static struct cb_text_list	*text_queue = NULL;
+static size_t			check_partial_match = 0;
 
 static struct copy_info		*copy_stack = NULL;
 
@@ -172,6 +173,7 @@ static int	ppinput			(char *, const size_t);
 static void	ppecho			(const char *, const cob_u32_t,
 					 const int);
 static void	ppecho_direct			(const char *);
+static int	ppecho_replace		(struct cb_replace_list *);
 static void	switch_to_buffer	(const int, const char *,
 					 const YY_BUFFER_STATE);
 static void	check_listing		(const char *, const unsigned int);
@@ -2463,15 +2465,10 @@ ppecho (const char *text, const cob_u32_t alt_space, const int textlen)
 	   3.8% of this time is spent in fwrite, therefore not much potential
 	   for optimization
 	*/
-	struct cb_replace_list		*r;
 	struct cb_replace_list		*save_ptr;
-	const struct cb_text_list	*lno;
-	struct cb_text_list		*queue;
-	struct cb_text_list		*save_queue;
 	const char			*s;
-	char				*temp_ptr;
-	size_t				size;
-	size_t				size2;
+	struct cb_text_list		*save_ptr_text_queue;
+	int				status, save_status;
 
 	/* ensure nothing is in the stream buffer */
 	fflush (ppout);
@@ -2516,6 +2513,61 @@ ppecho (const char *text, const cob_u32_t alt_space, const int textlen)
 	/* Do replacement */
 	text_queue = pp_text_list_add (text_queue, text, (size_t)textlen);
 
+	save_ptr_text_queue = text_queue;
+	status = ppecho_replace (save_ptr);
+	/* Search another replacement when have a Partial Match	in the last ppecho call */
+	if (check_partial_match && status != -1) {
+		save_status = status;
+		text_queue = save_ptr_text_queue;
+		while (text_queue && check_partial_match) {
+			if (text_queue->text[0] == ' '
+			 || text_queue->text[0] == '\n') {
+				ppecho_direct (text_queue->text);
+				text_queue = text_queue->next;
+				continue;
+			}
+			status = ppecho_replace (save_ptr);
+			if (status > save_status) {
+				save_status = status;
+			}
+			if (text_queue) {
+				/* Write text_queue if is not replaced */
+				if (status != -1 && check_partial_match) {
+					ppecho_direct (text_queue->text);
+				}
+				text_queue = text_queue->next;
+			}
+		}
+		status = save_status;
+	}
+	/* Manage Partial Match */
+	if (status == -1) {
+		check_partial_match = save_ptr_text_queue != NULL;
+		return;
+	}
+	if (!status) {
+		current_replace_list = NULL;
+	} else {
+		save_ptr->next = NULL;
+	}
+
+	/* No match */
+	for (; text_queue; text_queue = text_queue->next) {
+		ppecho_direct (text_queue->text);
+	}
+}
+
+static int
+ppecho_replace (struct cb_replace_list *save_ptr)
+{
+	char				*temp_ptr;
+	size_t				size;
+	size_t				size2;
+	struct cb_text_list		*queue;
+	struct cb_text_list		*save_queue;
+	const struct cb_text_list	*lno;
+	struct cb_replace_list		*r;
+
 	save_queue = NULL;
 	size = 0;
 	size2 = 0;
@@ -2540,7 +2592,7 @@ ppecho (const char *text, const cob_u32_t alt_space, const int textlen)
 				} else {
 					save_ptr->next = NULL;
 				}
-				return;
+				return -1;
 			}
 			if (r->lead_trail == CB_REPLACE_LEADING) {
 				/* Check leading text */
@@ -2592,20 +2644,12 @@ ppecho (const char *text, const cob_u32_t alt_space, const int textlen)
 				/* Non-matched part of original text */
 				ppecho_direct (save_queue->text + size);
 			}
+			check_partial_match = 0;
 			text_queue = queue;
 			continue;
 		}
 	}
-
-	/* No match */
-	for (; text_queue; text_queue = text_queue->next) {
-		ppecho_direct (text_queue->text);
-	}
-	if (!save_ptr) {
-		current_replace_list = NULL;
-	} else {
-		save_ptr->next = NULL;
-	}
+	return (save_ptr ? 1 : 0);
 }
 
 static void
