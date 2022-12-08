@@ -103,7 +103,11 @@ lt_dlerror (void)
 #include <dlfcn.h>
 
 #define lt_dlopen(x)	dlopen(x, RTLD_LAZY | RTLD_GLOBAL)
+#ifdef RTLD_MEMBER
+#define lt_dlopenlcl(x)	dlopen(x, RTLD_MEMBER | RTLD_LAZY | RTLD_LOCAL)
+#else
 #define lt_dlopenlcl(x)	dlopen(x, RTLD_LAZY | RTLD_LOCAL)
+#endif
 #define lt_dlsym(x,y)	dlsym(x, y)
 #define lt_dlclose(x)	dlclose(x)
 #define lt_dlerror()	dlerror()
@@ -1149,6 +1153,16 @@ void *
 cob_load_lib (const char *library, const char *entry, char *reason)
 {
 	void	*p;
+#ifdef RTLD_MEMBER		/* Used on AIX due to shared code inside archive */
+	char	nlibrary[80];
+	int		ln = strlen (library);
+	if (ln == 11
+	 && memcmp (library, "libcob", 6) == 0
+	 && memcmp (&library [ln-3], ".so", 3) == 0) {	/* One of the INDEXED handlers */
+	 	sprintf (nlibrary,"libcob%.2s.a(libcob%.2s.so.1)",&library[6],&library[6]);
+		library = (const char *)nlibrary;
+	}
+#endif
 
 	p = lt_dlopenlcl (library);
 	if (p) {
