@@ -3697,11 +3697,18 @@ output_param (cb_tree x, int id)
 	case CB_TAG_REFERENCE:
 		r = CB_REFERENCE (x);
 		if (CB_LOCALE_NAME_P (r->value)) {
-			output_param (CB_LOCALE_NAME(r->value)->list, id);
+			output_param (CB_LOCALE_NAME (r->value)->list, id);
 			break;
 		}
 		if (CB_REPORT_P (r->value)) {
 			output ("&%s%s", CB_PREFIX_REPORT, CB_REPORT_PTR (r->value)->cname);
+			break;
+		}
+		if (CB_PROTOTYPE_P (r->value)) {
+			const char *name = CB_PROTOTYPE (r->value)->ext_name;
+			const size_t len = strlen (name);
+			cb_tree lit = cb_build_alphanumeric_literal (name, len);
+			output_param (lit, 0);
 			break;
 		}
 		if (r->check) {
@@ -3741,7 +3748,7 @@ output_param (cb_tree x, int id)
 			break;
 		}
 		if (CB_ALPHABET_NAME_P (r->value)) {
-			struct cb_alphabet_name	*rbp = CB_ALPHABET_NAME (r->value);
+			const struct cb_alphabet_name	*rbp = CB_ALPHABET_NAME (r->value);
 			switch (rbp->alphabet_type) {
 			case CB_ALPHABET_ASCII:
 #ifdef	COB_EBCDIC_MACHINE
@@ -3790,7 +3797,7 @@ output_param (cb_tree x, int id)
 		f = CB_FIELD (r->value);
 
 		{
-			struct cb_field	*ff = real_field_founder (f);
+			const struct cb_field	*ff = real_field_founder (f);
 			if (ff->flag_external
 			 || ff->flag_item_based) {
 				f->flag_local = 1;

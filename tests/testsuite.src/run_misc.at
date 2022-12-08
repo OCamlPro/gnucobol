@@ -11393,7 +11393,7 @@ AT_CLEANUP
 
 
 AT_SETUP([PROGRAM-ID / CALL literal/variable with spaces])
-AT_KEYWORDS([CALL])
+AT_KEYWORDS([runmisc])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -11460,8 +11460,66 @@ libcob: prog.cob:16: warning: ' S U B' literal includes leading spaces which are
 AT_CLEANUP
 
 
+AT_SETUP([CALL with directory])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  MYRTN  PIC X(9) VALUE "DIR/SUB".
+
+       PROCEDURE DIVISION.
+      *> doesn't exist there...
+           CALL "SUB" USING '0'
+              ON EXCEPTION CONTINUE.
+      *> go by variable
+           CALL MYRTN     USING 'X'.
+           CALL "DIR/SUB" USING 'Y'.
+      *> as it is already loaded - should work as-is
+           CALL "SUB" USING 'Z'.
+           CANCEL "SUB"
+      *> the following will only show if physical cancel is not off...
+           CALL "SUB" USING '0'
+              ON EXCEPTION CONTINUE.
+           STOP RUN.
+])
+
+AT_DATA([sub.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. "SUB".
+
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01  x  PIC X.
+
+       PROCEDURE DIVISION USING x.
+           DISPLAY "SUB GOT " X.
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([mkdir DIR], [0], [], [])
+AT_CHECK([$COMPILE_MODULE sub.cob -o DIR/SUB.$COB_MODULE_EXT], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[SUB GOT X
+SUB GOT Y
+SUB GOT Z
+SUB GOT 0
+], [])
+AT_CHECK([COB_PHYSICAL_CANCEL=Y $COBCRUN_DIRECT ./prog], [0],
+[SUB GOT X
+SUB GOT Y
+SUB GOT Z
+], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([C-API (param based)])
-AT_KEYWORDS([CALL api])
+AT_KEYWORDS([runmisc CALL api])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -11696,7 +11754,7 @@ AT_CLEANUP
 
 
 AT_SETUP([C-API (field based)])
-AT_KEYWORDS([CALL api])
+AT_KEYWORDS([runmisc CALL api])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.

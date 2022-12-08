@@ -2981,16 +2981,21 @@ cb_build_length (cb_tree x)
 cb_tree
 cb_build_ppointer (cb_tree x)
 {
-	struct cb_field	*f;
-
-	if (x == cb_error_node ||
-	    (CB_REFERENCE_P (x) && cb_ref (x) == cb_error_node)) {
+	if (x == cb_error_node) {
 		return cb_error_node;
 	}
 
 	if (CB_REFERENCE_P (x)) {
-		f = CB_FIELD_PTR (cb_ref(x));
-		f->count++;
+		/* we get here with either a field reference
+		   (then increment use), or by prototpye;
+		   CHECKME, count should be incremented by reference already */
+		cb_tree xf = cb_ref (x);
+		if (xf == cb_error_node) {
+			return cb_error_node;
+		}
+		if (CB_FIELD_P (xf)) {
+			CB_FIELD (xf)->count++;
+		}
 	}
 	return CB_BUILD_CAST_PPOINTER (x);
 }

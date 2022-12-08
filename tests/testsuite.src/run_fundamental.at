@@ -1635,32 +1635,120 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 AT_CLEANUP
 
 
-AT_SETUP([CALL/CANCEL with program-prototype-name])
-AT_KEYWORDS([fundamental])
+AT_SETUP([CALL alphanumeric data-name])
+AT_KEYWORDS([fundamental CANCEL])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION  DIVISION.
+       PROGRAM-ID.     prog.
+       DATA            DIVISION.
+       WORKING-STORAGE SECTION.
+       01  prgm        PIC X(32) VALUE "recursion-test".
+
+       PROCEDURE       DIVISION.
+           CALL prgm
+           DISPLAY "<"
+
+           MOVE "cancel-test" TO prgm
+           CALL prgm
+           CALL prgm
+           CANCEL prgm
+           CALL prgm
+           DISPLAY "<"
+
+           MOVE "dummy-call" TO prgm
+           PERFORM 500000 TIMES
+              CALL prgm
+           END-PERFORM
+           .
+       END PROGRAM     prog.
+
+
+       IDENTIFICATION  DIVISION.
+       PROGRAM-ID.     recursion-test RECURSIVE.
+
+       DATA            DIVISION.
+       WORKING-STORAGE SECTION.
+       01  x           PIC 9 VALUE 0.
+
+       PROCEDURE       DIVISION.
+           ADD 1 TO x
+           DISPLAY x NO ADVANCING
+           IF x = 1
+               CALL "recursion-test"
+           END-IF
+           .
+       END PROGRAM     recursion-test.
+
+
+       IDENTIFICATION  DIVISION.
+       PROGRAM-ID.     cancel-test.
+
+       DATA            DIVISION.
+       WORKING-STORAGE SECTION.
+       01  x           PIC 9 VALUE 1.
+
+       PROCEDURE       DIVISION.
+           DISPLAY x NO ADVANCING
+           ADD 1 TO x
+           .
+       END PROGRAM     cancel-test.
+
+
+       IDENTIFICATION  DIVISION.
+       PROGRAM-ID.     dummy-call.
+
+       PROCEDURE       DIVISION.
+           CONTINUE
+           .
+       END PROGRAM     dummy-call.
+])
+
+AT_CHECK([$COMPILE -fno-program-name-redefinition prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[12<
+121<
+])
+AT_CHECK([COB_PHYSICAL_CANCEL=Y $COBCRUN_DIRECT ./prog], [0],
+[12<
+121<
+])
+AT_CLEANUP
+
+
+AT_SETUP([CALL program-pointer])
+AT_KEYWORDS([fundamental CANCEL SET ADDRESS POINTER])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION  DIVISION.
        PROGRAM-ID.     prog.
 
        ENVIRONMENT     DIVISION.
-       CONFIGURATION   SECTION.
-       REPOSITORY.
-           PROGRAM recursion-test
-           PROGRAM cancel-test
-           .
        DATA            DIVISION.
        WORKING-STORAGE SECTION.
-       01  num         PIC 9 VALUE 0.
+       77  prog-ptr    USAGE PROGRAM-POINTER.
+       77  num         PIC 9 VALUE 0.
 
        PROCEDURE       DIVISION.
-           CALL recursion-test USING num
+           SET  prog-ptr TO ADDRESS OF PROGRAM "recursion-test"
+           CALL prog-ptr USING num
            DISPLAY "<"
 
-           CALL cancel-test
-           CALL cancel-test
-           CANCEL cancel-test
-           CALL cancel-test
+           SET  prog-ptr TO ADDRESS OF PROGRAM "cancel-test"
+           CALL prog-ptr
+           CALL prog-ptr
+           CANCEL "cancel-test"
+      *>   NOTE: the following results in the previous address
+      *>         if physical cancel is not active, otherwise _likely_
+      *>         in a different one
+           SET  prog-ptr TO ADDRESS OF PROGRAM "cancel-test"
+           CALL prog-ptr
            DISPLAY "<"
+
+           SET  prog-ptr TO ADDRESS OF PROGRAM "dummy-call"
+           PERFORM 500000 TIMES
+              CALL prog-ptr
+           END-PERFORM
            .
        END PROGRAM     prog.
 
@@ -1676,7 +1764,123 @@ AT_DATA([prog.cob], [
            ADD 1 TO x
            DISPLAY x NO ADVANCING
            IF x = 1
-               CALL recursion-test USING x
+               CALL "recursion-test" USING x
+           END-IF
+           .
+       END PROGRAM     recursion-test.
+
+
+       IDENTIFICATION  DIVISION.
+       PROGRAM-ID.     cancel-test.
+
+       DATA            DIVISION.
+       WORKING-STORAGE SECTION.
+       77  self-ptr    USAGE PROGRAM-POINTER VALUE NULL.
+       01  x           PIC 9 VALUE 1.
+
+       PROCEDURE       DIVISION.
+           SET self-ptr TO ENTRY "cancel-test"
+           IF  self-ptr = NULL
+               DISPLAY 'self-address not set' UPON SYSERR.
+           DISPLAY x NO ADVANCING
+           ADD 1 TO x
+           .
+       END PROGRAM     cancel-test.
+
+
+       IDENTIFICATION  DIVISION.
+       PROGRAM-ID.     dummy-call.
+
+       PROCEDURE       DIVISION.
+           CONTINUE
+           .
+       END PROGRAM     dummy-call.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[12<
+121<
+])
+AT_CHECK([COB_PHYSICAL_CANCEL=Y $COBCRUN_DIRECT ./prog], [0],
+[12<
+121<
+])
+AT_CLEANUP
+
+
+AT_SETUP([CALL/CANCEL/SET ADDRESS program-prototype-name])
+AT_KEYWORDS([fundamental CALL CANCEL SET])
+
+AT_DATA([prog.cob], [
+      *> simple prototypes
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. recursion-test PROTOTYPE.
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01  n PIC 9.
+       PROCEDURE DIVISION USING n.
+       END PROGRAM recursion-test.
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. cancel-test IS PROTOTYPE.
+       PROCEDURE DIVISION.
+       END PROGRAM cancel-test.
+
+      *> program referencing those prototpyes
+       IDENTIFICATION  DIVISION.
+       PROGRAM-ID.     prog.
+
+       ENVIRONMENT     DIVISION.
+       CONFIGURATION   SECTION.
+       REPOSITORY.
+           PROGRAM recursion-test
+           PROGRAM cancel-test
+           .
+       DATA            DIVISION.
+       WORKING-STORAGE SECTION.
+       77  prog-ptr    USAGE PROGRAM-POINTER VALUE NULL.
+       01  num         PIC 9 VALUE 0.
+
+       PROCEDURE       DIVISION.
+           CALL recursion-test USING num
+           DISPLAY "<"
+
+           CALL cancel-test
+           CALL cancel-test
+           CANCEL cancel-test
+           CALL cancel-test
+           DISPLAY "<"
+           SET prog-ptr TO ADDRESS OF PROGRAM recursion-test
+           IF  prog-ptr = NULL
+               DISPLAY 'address of recursion-prog not set' UPON SYSERR
+           ELSE
+               SET prog-ptr TO NULL
+           END-IF
+           SET prog-ptr TO ADDRESS OF PROGRAM cancel-test
+           IF  prog-ptr = NULL
+               DISPLAY 'address of cancel-prog not set' UPON SYSERR
+           ELSE
+               SET prog-ptr TO NULL
+           END-IF
+           .
+       END PROGRAM     prog.
+
+      *> actual implementation of the prototyped programs
+       IDENTIFICATION  DIVISION.
+       PROGRAM-ID.     recursion-test RECURSIVE.
+
+       DATA            DIVISION.
+       LINKAGE         SECTION.
+       01  x           PIC 9.
+
+       PROCEDURE       DIVISION USING x.
+           ADD 1 TO x
+           DISPLAY x NO ADVANCING
+           IF x = 1
+      *>       CHECKME: Should this work (disabled for now...) ?
+      *>       CALL recursion-test USING x
+               CALL "recursion-test" USING x
            END-IF
            .
        END PROGRAM     recursion-test.
@@ -1696,12 +1900,13 @@ AT_DATA([prog.cob], [
        END PROGRAM     cancel-test.
 ])
 
-# TO-DO: Fix these warnings when program prototypes are added.
-AT_CHECK([$COMPILE -fno-program-name-redefinition prog.cob], [0], [],
-[prog.cob:8: warning: no definition/prototype seen for PROGRAM 'recursion-test'
-prog.cob:9: warning: no definition/prototype seen for PROGRAM 'cancel-test'
-])
+# TODO:
+AT_CHECK([$COMPILE -Wno-unfinished prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[12<
+121<
+])
+AT_CHECK([COB_PHYSICAL_CANCEL=Y $COBCRUN_DIRECT ./prog], [0],
 [12<
 121<
 ])

@@ -9,6 +9,10 @@
 	* typeck.c (cb_validate_program_environment): fixed bad test of warning
 	  option for CLASS check
 	* typeck.c (cb_emit_sort_init): minor refactoring
+	* typeck.c (cb_build_ppointer), tree.c (cb_name_1): added missing
+	  handling for prototype
+	* codegen.c (output_param): added handling for prototype name,
+	  returning its name as literal
 
 2022-12-05  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 

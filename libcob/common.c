@@ -308,6 +308,7 @@ const char	*cob_statement_name[STMT_MAX_ENTRY] = {
 const char	*cob_statement_name[STMT_MAX_ENTRY];
 static void init_statement_list (void);
 #endif
+int 		cob_statement_hash[STMT_MAX_ENTRY] = { 0 };
 
 #ifdef COB_DEBUG_LOG
 static int			cob_debug_log_time = 0;
@@ -2330,6 +2331,31 @@ cob_cache_free (void *ptr)
 	}
 }
 
+static COB_INLINE int
+hash (const char *s)
+{
+	register const char *p = s;
+	register int	val = 0;
+
+	while (*p) {
+		val += *p++;
+	}
+	return val;
+}
+
+static COB_INLINE void
+init_statement_hashlist (void)
+{
+	if (cob_statement_hash[STMT_UNKNOWN] != 0) {
+		return;
+	}
+	cob_statement_hash[STMT_UNKNOWN] = hash("UNKNOWN");
+#define COB_STATEMENT(ename,str)	\
+	cob_statement_hash[ename] = hash(str);
+#include "statement.def"	/* located and installed next to common.h */
+#undef COB_STATEMENT
+}
+
 /* cob_set_location is kept for backward compatibility (pre 3.0);
    it stored the location for exception handling and related
    intrinsic functions and did tracing, depending on a global flag */
@@ -2341,16 +2367,20 @@ cob_set_location (const char *sfile, const unsigned int sline,
 	enum cob_statement stmt;
 	cob_module	*mod = COB_MODULE_PTR;
 	const char	*s;
+	const int	stmt_hash = hash (cstatement);
 
 	mod->section_name = csect;
 	mod->paragraph_name = cpara;
 	cob_source_file = sfile;
 	cob_source_line = sline;
 
+	init_statement_hashlist ();
+
 	if (!cstatement) {
 		stmt = STMT_UNKNOWN;
 #define COB_STATEMENT(ename,str) \
-	} else if (strcmp (str, cstatement) == 0) { \
+	} else if (stmt_hash == cob_statement_hash[ename] \
+	        && strcmp (str, cstatement) == 0) { \
 		stmt = ename;
 #include "statement.def"	/* located and installed next to common.h */
 #undef COB_STATEMENT
@@ -2614,17 +2644,21 @@ cob_trace_exit (const char *name)
 	}
 }
 
-/* this functin is alltogether a compat-only function for pre 3.2,
+/* this function is alltogether a compat-only function for pre 3.2,
    later versions use cob_trace_statement(enum cob_statement) */
 void
 cob_trace_stmt (const char *stmt_name)
 {
 	enum cob_statement stmt;
+	const int stmt_hash = hash (stmt_name);
+
+	init_statement_hashlist ();
 
 	if (!stmt_name) {
 		stmt = STMT_UNKNOWN;
 #define COB_STATEMENT(ename,str) \
-	} else if (strcmp (str, stmt_name) == 0) { \
+	} else if (stmt_hash == cob_statement_hash[ename] \
+	        && strcmp (str, stmt_name) == 0) { \
 		stmt = ename;
 #include "statement.def"	/* located and installed next to common.h */
 #undef COB_STATEMENT
@@ -2690,41 +2724,43 @@ cob_get_pointer (const void *srcptr)
 void
 cob_field_to_string (const cob_field *f, void *str, const size_t maxsize)
 {
-	unsigned char	*s;
-	size_t		count;
-	size_t		i;
+	register unsigned char	*end, *data, *s;
 
 	if (unlikely (f == NULL)) {
 		snprintf (str, maxsize, "%s", ("NULL field"));
 		return;
 	}
 
-	count = 0;
 	if (unlikely (f->size == 0)) {
 		return;
 	}
+	data = f->data;
 	/* check if field has data assigned (may be a BASED / LINKAGE item) */
-	if (unlikely (f->data == NULL)) {
+	if (data == NULL) {
 		snprintf (str, maxsize, "%s", ("field with NULL address"));
 		return;
 	}
-	for (i = f->size - 1; ; i--) {
-		if (f->data[i] && f->data[i] != (unsigned char)' ') {
-			count = i + 1;
+	end = data + f->size - 1;
+	while (end > data) {
+		if (*end != ' ' && *end) {
 			break;
 		}
-		if (!i) {
-			break;
-		}
-	}
-	if (count > maxsize) {
-		count = maxsize;
+		end--;
 	}
 	s = (unsigned char *)str;
-	for (i = 0; i < count; ++i) {
-		s[i] = f->data[i];
+	if (*end == ' ' || *end == 0) {
+		*s = 0;
+		return;
 	}
-	s[i] = 0;
+
+	/* note: the specified max does not contain the low-value */
+	if (end - data > maxsize) {
+		end = data + maxsize;
+	}
+	while (data <= end) {
+		*s++ = *data++;
+	}
+	*s = 0;
 }
 
 static void
@@ -10383,7 +10419,8 @@ void
 init_statement_list (void)
 {
 	cob_statement_name[STMT_UNKNOWN] = "UNKNOWN";
-#define COB_STATEMENT(ename,str)	cob_statement_name[ename] = str;
+#define COB_STATEMENT(ename,str) \
+	cob_statement_name[ename] = str;
 #include "statement.def"	/* located and installed next to common.h */
 #undef COB_STATEMENT
 }

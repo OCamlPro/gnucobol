@@ -2,6 +2,20 @@
 2022-12-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.h (cob_module_type): module type as enum instead of defines only
+	* call.c (cob_call_field, cob_call_init): speedup of first CALL by using
+	  comparing name hash against newly added hash of system routines before
+	  doing an expensive strcmp against their names
+	* call.c [COB_ALT_HASH]: removed
+	* common.c (cob_field_to_string), call.c (cob_chk_call_path): optimized
+	* call.c (hash): optimized, especially for debug builds
+	* common.c: added hashing for resolving the statement from a given string,
+	  instead of heavy use of strcmp; note: this is only used for backward
+	  compatibilty and then reduces the previously overhead to the minimum
+
+2022-12-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* call.c (cob_call_field): speedup of consecutive CALLs by doing the
+	  lookup in called programs before testing the system routines
 
 2022-12-06  Simon Sobisch <simonsobisch@gnu.org>
 

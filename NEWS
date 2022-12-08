@@ -288,8 +288,8 @@ NEWS - user visible changes				-*- outline -*-
    this has been fixed so that all modules compiled with GnuCOBOL 2.2 can be
    executed with GnuCOBOL 3.2
 
-** FUNCTION RANDOM could return 1 in rare cases (more often in win32), it now
-   returns, as defined, a value in the range 0 <= x < 1
+** FUNCTION RANDOM could return 1 in rare cases (more likely on win32),
+   it now returns a value in the range 0 <= x < 1, as defined
 
 ** the internal signal handler could crash or deadlock the process on hard
    errors (either in called library functions or when running COBOL without
@@ -336,8 +336,10 @@ NEWS - user visible changes				-*- outline -*-
 
 ** cobc's parsing time was significantly reduced for big programs
 
-** execution times of INSPECT that use big COBOL fields (multiple KB) were
-   significantly reduced
+** execution times were significantly reduced for the following:
+	INSPECT that use big COBOL fields (multiple KB)
+	CALL data-item, and first time for each CALL
+	ACCEPT DATE/TIME/DAY and datetime related FUNCTIONs
 
 ** execution times for programs that are new generated with -fsource-location
    (implied with --debug/-fec) are cut down, especially when many "simple"
@@ -522,23 +524,24 @@ NEWS - user visible changes				-*- outline -*-
 
 * Changes in the COBOL runtime (libcob)
 
-** Messages from the COBOL runtime are also translated now (if installed).
-   To prevent this disable translations in general with using the configure
-   option --disable-nls (or by deactivating ENABLE_NLS in config.h).
+** messages from the COBOL runtime are also translated now (if installed);
+   to prevent this, disable translations in general with using the configure
+   option --disable-nls (or by deactivating ENABLE_NLS in config.h)
+
+** first-time file-locking under Win32
+
+** handle CRT STATUS either numerically, alphanumerically (4 digits) or as 3
+   bytes according to X/Open standard, depending on format and size
+
+** execution times of INSPECT and INITIALIZE with OCCURS were heavily cut down,
+   to fully benefit from this a recompile is necessary
 
 ** libcob.h does no longer auto-include gmp.h (behavior since 2.x), if you link
    against libcob and need cob_decimal include gmp.h/mpir.h yourself before;
    otherwise you do not need it in your include path anymore
 
-** execution times of INSPECT and INITIALIZE with OCCURS were heavily cut down
-
 ** convenience functions for direct C access to COBOL fields and for debugging
    were added, see new C-API documentation
-
-** first-time file-locking under Win32
-
-** handle CRT STATUS either numerically, alphanumerically (4 digits) or as 3
-    bytes according to X/Open standard, depending on format and size
 
 ** Breaking change: previously the return-code of registered error handlers
    (by CBL_ERROR_PROC) were ignored. This was changed according to the

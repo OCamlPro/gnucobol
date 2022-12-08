@@ -670,6 +670,10 @@ cb_name_1 (char *s, cb_tree x, const int size)
 		size_real = snprintf (s, size, "%s", CB_LOCALE_NAME (x)->name);
 		break;
 
+	case CB_TAG_PROTOTYPE:
+		size_real = snprintf (s, size, "%s", (char*)(CB_PROTOTYPE (x)->name));
+		break;
+
 	case CB_TAG_BINARY_OP: {
 		const struct cb_binary_op *cbop = CB_BINARY_OP (x);
 		char	buff [COB_SMALL_BUFF];
