@@ -1,4 +1,8 @@
 
+2022-12-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.h (cob_module_type): module type as enum instead of defines only
+
 2022-12-06  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fileio.c (cob_sys_read_file): if called with flag value 128 only resolve

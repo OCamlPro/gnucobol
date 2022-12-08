@@ -1,4 +1,15 @@
 
+2022-12-08 Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (items_have_same_data_clauses): fix handling for ANY LENGTH
+	  parameters, fixing bug #851
+	* parser.y: fixes for prototype checking
+	* typeck.c: work on warning messages for prototype checking
+	* typeck.c (error_if_signatures_differ): add check for ENTRY-CONVENTION
+	* typeck.c (cb_validate_program_environment): fixed bad test of warning
+	  option for CLASS check
+	* typeck.c (cb_emit_sort_init): minor refactoring
+
 2022-12-05  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* cobc.c: replace some incorrect '%d' format indicators with '%lu'
@@ -698,7 +709,7 @@
 2022-02-10  Samuel Belondrade <samuel.belondrade@atos.net>
 
 	* pplex.l (ppecho, ppecho_replace): add a loop to check all data queue
-	  after a partial match [bugs:#778]
+	  after a partial match bug #778
 
 2022-02-07  David Declerck <david.declerck@ocamlpro.com>
 

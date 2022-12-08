@@ -1773,7 +1773,7 @@ struct cb_program {
 	unsigned char	decimal_point;			/* '.' or ',' */
 	unsigned char	currency_symbol;		/* '$' or user-specified */
 	unsigned char	numeric_separator;		/* ',' or '.' */
-	unsigned char	prog_type;			/* Program type (program = 0, function = 1) */
+	enum cob_module_type	prog_type;			/* Program type (program = 0, function = 1) */
 	cb_tree			entry_convention;	/* ENTRY convention / PROCEDURE convention */
 
 	unsigned int	flag_main		: 1;	/* Gen main function */

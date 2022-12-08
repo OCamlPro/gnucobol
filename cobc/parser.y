@@ -1244,7 +1244,8 @@ setup_program (cb_tree id, cb_tree as_literal, const unsigned char type, const i
 		= cb_build_program_id (external_name, type == COB_MODULE_TYPE_FUNCTION);
 
 	if (type == COB_MODULE_TYPE_PROGRAM) {
-		if (!main_flag_set) {
+		if (!main_flag_set
+		 && !current_program->flag_prototype) {
 			main_flag_set = 1;
 			current_program->flag_main = !!cobc_flag_main;
 		}
@@ -3345,13 +3346,14 @@ set_record_size (cb_tree min, cb_tree max)
 
 start:
   {
-	backup_source_file = cb_source_file;
 	clear_initial_values ();
-	current_program = NULL;
 	defined_prog_list = NULL;
 	cobc_cs_check = 0;
 	main_flag_set = 0;
+
 	current_program = cb_build_program (NULL, 0);
+
+	backup_source_file = cb_source_file;
 	cb_source_file = "register-definition";
 	cb_set_intr_when_compiled ();
 	cb_build_registers ();
@@ -3482,8 +3484,8 @@ program_prototype:
   {
 	/* Error if program_id_name is a literal */
 
-	/* Check that previous program was also a prototype */
-	if (!current_program->flag_prototype) {
+	/* Check that we either have no previous program or it was also a prototype */
+	if (current_program->next_program && !current_program->flag_prototype) {
 		/* Technically, prototypes must come before all other *source units*.  */
 		cb_error (_("prototypes must be come before any program/function definitions"));
 	}
@@ -3514,6 +3516,11 @@ program_prototype:
 	 */
   }
   _prototype_environment_division
+  {
+	if (!current_program->entry_convention) {
+		current_program->entry_convention = cb_int (CB_CONV_COBOL);
+	}
+  }
   _prototype_data_division
   _prototype_procedure_division_header
   end_program
@@ -3558,6 +3565,11 @@ function_prototype:
 	 */
   }
   _prototype_environment_division
+  {
+	if (!current_program->entry_convention) {
+		current_program->entry_convention = cb_int (CB_CONV_COBOL);
+	}
+  }
   _prototype_data_division
   _prototype_procedure_division_header
   end_function
@@ -10602,8 +10614,6 @@ procedure_division:
 		current_program->entry_convention = cb_int (CB_CONV_COBOL);
 	}
 	header_check |= COBC_HD_PROCEDURE_DIVISION;
-
-	cb_check_definition_matches_prototype (current_program);
   }
   _dot_or_else_area_a
   _procedure_declaratives
@@ -10614,6 +10624,8 @@ procedure_division:
 	}
 
 	emit_main_entry (current_program, $7);
+
+	cb_check_definition_matches_prototype (current_program);
   }
   _procedure_list
   {
