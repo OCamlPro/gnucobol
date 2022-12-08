@@ -232,18 +232,21 @@ AT_DATA([prog.cob], [
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
        1 W-DATA.
-         3 X            PIC X(3) VALUE """X""".
-         3 XX           PIC X(4) VALUE """XX""".
-         3 Z            PIC X(3) VALUE """Z""".
-         3 ZZ           PIC X(4) VALUE """ZZ""".
+         3 X            PIC X(1) VALUE "X".
+         3 XX           PIC X(2) VALUE "XX".
+         3 Z            PIC X(1) VALUE "Z".
+         3 ZZ           PIC X(2) VALUE "ZZ".
+         3 Y            PIC X(1) VALUE "Y".
        PROCEDURE        DIVISION.
            REPLACE LEADING "X" BY SPACES
-                   TRAILING "Z" BY SPACES.
+                   TRAILING "Z" BY SPACES
+                   LEADING "Y" BY "X".
        MAIN.
            DISPLAY "XX: *" XX "*"
            DISPLAY "X: *" X "*"
            DISPLAY "ZZ: *" ZZ "*"
            DISPLAY "Z: *" Z "*"
+           DISPLAY "Y: *" Y "*"
            STOP RUN.
 ])
 
@@ -260,19 +263,22 @@ LINE    PG/LN  A...B............................................................
 000004         DATA             DIVISION.
 000005         WORKING-STORAGE  SECTION.
 000006         1 W-DATA.
-000007           3 X            PIC X(3) VALUE """X""".
-000008           3 XX           PIC X(4) VALUE """XX""".
-000009           3 Z            PIC X(3) VALUE """Z""".
-000010           3 ZZ           PIC X(4) VALUE """ZZ""".
-000011         PROCEDURE        DIVISION.
-000012             REPLACE LEADING "X" BY SPACES
-000013                     TRAILING "Z" BY SPACES.
-000014         MAIN.
-000015             DISPLAY "XX: *" X "*"
-000016             DISPLAY "X: *" X "*"
-000017             DISPLAY "ZZ: *" ZZ "*"
-000018             DISPLAY "Z: *" Z "*"
-000019             STOP RUN.
+000007           3 X            PIC X(1) VALUE "X".
+000008           3 XX           PIC X(2) VALUE "XX".
+000009           3 Z            PIC X(1) VALUE "Z".
+000010           3 ZZ           PIC X(2) VALUE "ZZ".
+000011           3 Y            PIC X(1) VALUE "Y".
+000012         PROCEDURE        DIVISION.
+000013             REPLACE LEADING "X" BY SPACES
+000014                     TRAILING "Z" BY SPACES
+000015                     LEADING "Y" BY "X".
+000016         MAIN.
+000017             DISPLAY "XX: *" X "*"
+000018             DISPLAY "X: *" X "*"
+000019             DISPLAY "ZZ: *" ZZ "*"
+000020             DISPLAY "Z: *" Z "*"
+000021             DISPLAY "Y: *" X "*"
+000022             STOP RUN.
 
 
 0 warnings in compilation group
