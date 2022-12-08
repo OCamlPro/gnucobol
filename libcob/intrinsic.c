@@ -5494,9 +5494,9 @@ cob_intr_random (const int params, ...)
 	va_list		args;
 	double		val;
 #ifdef DISABLE_GMP_RANDOM
-	unsigned int		seed;
+	unsigned int		seed = 0;
 #else
-	unsigned long		seed;
+	unsigned long		seed = 0;
 #endif
 	cob_field_attr	attr;
 	cob_field	field;
@@ -5508,9 +5508,8 @@ cob_intr_random (const int params, ...)
 		specified_seed = cob_get_llint (f);
 		if (specified_seed < 0) {
 			cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-			seed = 0;
 		} else {
-			seed = specified_seed;
+			seed = (unsigned long)specified_seed;
 		}
 		rand_needs_seeding++;
 #ifdef DISABLE_GMP_RANDOM

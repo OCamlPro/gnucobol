@@ -1631,16 +1631,12 @@ static void
 cob_decimal_do_round (cob_decimal *d, cob_field *f, const int opt)
 {
 	cob_uli_t	adj;
-	int		sign;
-	int		scale;
+	const int	sign = mpz_sgn (d->value);
+	const int	scale = COB_FIELD_SCALE (f);
 
-	sign = mpz_sgn (d->value);
-	/* Returns 0 when value is 0 */
-	if (!sign) {
-		return;
-	}
-	scale = COB_FIELD_SCALE(f);
-	if (scale >= d->scale) {
+	/* Nothing to do when value is 0 or when target has >= scale */
+	if (!sign
+	 || scale >= d->scale) {
 		return;
 	}
 

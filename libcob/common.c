@@ -418,7 +418,6 @@ static struct config_tbl gc_conf[] = {
 	{"COB_DEBUG_LOG", "debug_log", 		NULL, 	NULL, GRP_HIDE, ENV_FILE, SETPOS (cob_debug_log)},
 	{"COB_DISABLE_WARNINGS", "disable_warnings", "0", 	NULL, GRP_MISC, ENV_BOOL | ENV_NOT, SETPOS (cob_display_warn)},
 	{"COB_ENV_MANGLE", "env_mangle", 		"0", 	NULL, GRP_MISC, ENV_BOOL, SETPOS (cob_env_mangle)},
-	{"COB_COL_JUST_LRC", "col_just_lrc", "true", 	NULL, GRP_MISC, ENV_BOOL, SETPOS (cob_col_just_lrc)},
 	{"COB_REDIRECT_DISPLAY", "redirect_display", "0", 	NULL, GRP_SCREEN, ENV_BOOL, SETPOS (cob_disp_to_stderr)},
 	{"COB_SCREEN_ESC", "screen_esc", 		"0", 	NULL, GRP_SCREEN, ENV_BOOL, SETPOS (cob_use_esc)},
 	{"COB_SCREEN_EXCEPTIONS", "screen_exceptions", "0", NULL, GRP_SCREEN, ENV_BOOL, SETPOS (cob_extended_status)},
@@ -469,6 +468,7 @@ static struct config_tbl gc_conf[] = {
 #ifdef  WITH_DB
 	{"DB_HOME", "db_home", 			NULL, 	NULL, GRP_FILE, ENV_FILE, SETPOS (bdb_home)},
 #endif
+	{"COB_COL_JUST_LRC", "col_just_lrc", "true", 	NULL, GRP_FILE, ENV_BOOL, SETPOS (cob_col_just_lrc)},
 	{"COB_DISPLAY_PRINT_PIPE", "display_print_pipe",		NULL,	NULL, GRP_SCREEN, ENV_STR, SETPOS (cob_display_print_pipe)},
 	{"COBPRINTER", "printer",		NULL,	NULL, GRP_HIDE, ENV_STR, SETPOS (cob_display_print_pipe)},
 	{"COB_DISPLAY_PRINT_FILE", "display_print_file",		NULL,	NULL, GRP_SCREEN, ENV_STR,SETPOS (cob_display_print_filename)},
@@ -2735,8 +2735,8 @@ call_exit_handlers_and_terminate (void)
 		while (h != NULL) {
 			h->proc ();
 			h = h->next;
-			}
 		}
+	}
 	cob_terminate_routines ();
 }
 
@@ -4131,7 +4131,7 @@ get_function_ptr_for_precise_time (void)
 /* split the timep to cob_time and set the offset from UTC */
 void
 static set_cob_time_from_localtime (time_t curtime,
-		struct cob_time *cb_time, const enum cob_datetime_res res) {
+		struct cob_time *cb_time) {
 
 	struct tm	*tmptr;
 #if !defined (_BSD_SOURCE) && !defined (HAVE_TIMEZONE)
@@ -4250,7 +4250,7 @@ cob_get_current_date_and_time_from_os (const enum cob_datetime_res res)
 	struct cob_time	cb_time;
 
 	curtime = time (NULL);
-	set_cob_time_from_localtime (curtime, &cb_time, res);
+	set_cob_time_from_localtime (curtime, &cb_time);
 
 	if (res <= DTR_TIME_NO_NANO) {
 		cb_time.nanosecond = 0;
@@ -4298,7 +4298,7 @@ cob_get_current_date_and_time_from_os (const enum cob_datetime_res res)
 	curtime = time (NULL);
 #endif
 
-	set_cob_time_from_localtime (curtime, &cb_time, res);
+	set_cob_time_from_localtime (curtime, &cb_time);
 
 	/* Get nanoseconds or microseconds, if possible */
 #if defined (HAVE_CLOCK_GETTIME)
@@ -6680,19 +6680,23 @@ cob_sys_printable (void *p1, ...)
 	} else {
 		dotrep = (unsigned char)'.';
 	}
+#ifdef	HAVE_SETLOCALE
 	if (cobglobptr->cob_locale_ctype) {
 		previous_locale = setlocale (LC_CTYPE, NULL);
 		setlocale (LC_CTYPE, cobglobptr->cob_locale_ctype);
 	}
+#endif
 	data = p1;
 	for (n = 0; n < datalen; ++n) {
 		if (!isprint (data[n])) {
 			data[n] = dotrep;
 		}
 	}
+#ifdef	HAVE_SETLOCALE
 	if (previous_locale) {
 		setlocale (LC_CTYPE, previous_locale);
 	}
+#endif
 	return 0;
 }
 
@@ -9918,13 +9922,13 @@ cob_stack_trace_internal (FILE *target, int verbose, int count)
 	}
 
 	if (verbose && cob_argc != 0) {
-		size_t i;
+		size_t ia;
 		write_or_return_arr (file_no, " Started by ");
 		write_or_return_str (file_no, cob_argv[0]);
 		write_or_return_arr (file_no, "\n");
-		for (i = 1; i < (size_t)cob_argc; ++i) {
+		for (ia = 1; ia < (size_t)cob_argc; ++ia) {
 			write_or_return_arr (file_no, "\t");
-			write_or_return_str (file_no, cob_argv[i]);
+			write_or_return_str (file_no, cob_argv[ia]);
 			write_or_return_arr (file_no, "\n");
 		}
 	}
