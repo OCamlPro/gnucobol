@@ -695,6 +695,11 @@
 	* codegen.c: Fix for setting initial values for WORKING-STORAGE
 				with multiple OCCURS and VALUES
 
+2022-02-10  Samuel Belondrade <samuel.belondrade@atos.net>
+
+	* pplex.l (ppecho, ppecho_replace): add a loop to check all data queue
+	  after a partial match [bugs:#778]
+
 2022-02-07  David Declerck <david.declerck@ocamlpro.com>
 
 	* config.def, parser.y: allow DEPENDING clause in RECORD CONTAINS
