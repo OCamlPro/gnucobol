@@ -540,7 +540,7 @@ AT_DATA([copy2.inc], [
        01  Y          PIC X(2) VALUE "OK".
 ])
 
-# When `-fempty-partial-replacement-when-literal-src' is "skip", X and
+# When `-fpartial-replace-when-literal-src' is "skip", X and
 # Y are available: partial replacement with a source literal does not
 # apply when the replacement does not lead to a valid word (cf GCOS
 # reference manual, pp 537--538, 542).
@@ -566,9 +566,9 @@ AT_DATA([prog.cob], [
            DISPLAY Y          NO ADVANCING END-DISPLAY.
            STOP RUN.
 ])
-AT_CHECK([$COMPILE -fempty-partial-replacement-when-literal-src=skip -o prog-skip prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fpartial-replace-when-literal-src=skip -o prog-skip prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog-skip], [0], [OKOKOKOKOKOK])
-AT_CHECK([$COMPILE -fempty-partial-replacement-when-literal-src=ok -o prog prog.cob], [1], [],
+AT_CHECK([$COMPILE -fpartial-replace-when-literal-src=ok -o prog prog.cob], [1], [],
 [copy.inc:2: error: parentheses must be preceded by a picture symbol
 copy.inc:2: error: PICTURE string must contain at least one of the set A, N, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
 copy.inc:3: error: parentheses must be preceded by a picture symbol
@@ -578,7 +578,7 @@ copy.inc:4: error: PICTURE string must contain at least one of the set A, N, X, 
 prog.cob:17: error: 'X' cannot be used here
 prog.cob:20: error: 'Y' cannot be used here
 ])
-AT_CHECK([$COMPILE_ONLY -fempty-partial-replacement-when-literal-src=error prog.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY -fpartial-replace-when-literal-src=error prog.cob], [1], [],
 [prog.cob:7: error: partial replacing with literal used
 prog.cob:7: error: partial replacing with literal used
 prog.cob:8: error: partial replacing with literal used
@@ -613,11 +613,11 @@ AT_DATA([prog_err.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY -fempty-partial-replacement-when-literal-src=skip prog_err.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY -fpartial-replace-when-literal-src=skip prog_err.cob], [1], [],
 [prog_err.cob:7: error: unexpected COBOL word in partial replacement phrase
 prog_err.cob:8: error: unexpected COBOL word in partial replacement phrase
 ])
-AT_CHECK([$COMPILE_ONLY -fempty-partial-replacement-when-literal-src=unconformable prog_err.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY -fpartial-replace-when-literal-src=unconformable prog_err.cob], [1], [],
 [prog_err.cob:7: error: unexpected COBOL word in partial replacement phrase
 prog_err.cob:7: error: partial replacing with literal does not conform to GnuCOBOL
 prog_err.cob:8: error: partial replacing with literal does not conform to GnuCOBOL
@@ -700,21 +700,21 @@ AT_DATA([prog.cob], [
            DISPLAY "VAR1: " VAR2 NO ADVANCING.
            STOP RUN.
 ])
-AT_CHECK([$COMPILE_ONLY -fempty-partial-replacement-when-literal-src=ok prog.cob], [0], [], [])
-AT_CHECK([$COMPILE_ONLY -fempty-partial-replacement-when-literal-src=skip prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -fpartial-replace-when-literal-src=ok prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -fpartial-replace-when-literal-src=skip prog.cob], [0], [], [])
 
 AT_DATA([prog2.cob], [
        COPY prog REPLACING LEADING "VAR1" BY SPACES.
 ])
-AT_CHECK([$COMPILE_ONLY -fempty-partial-replacement-when-literal-src=ok prog2.cob], [0])
+AT_CHECK([$COMPILE_ONLY -fpartial-replace-when-literal-src=ok prog2.cob], [0])
 
 AT_DATA([prog_err.cob], [
        COPY prog REPLACING LEADING SPACES BY "PREFIX-".
 ])
-AT_CHECK([$COMPILE_ONLY -fempty-partial-replacement-when-literal-src=ok prog_err.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY -fpartial-replace-when-literal-src=ok prog_err.cob], [1], [],
 [prog_err.cob:2: error: unexpected COBOL word in partial replacement phrase
 ])
-AT_CHECK([$COMPILE_ONLY -fempty-partial-replacement-when-literal-src=skip prog_err.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY -fpartial-replace-when-literal-src=skip prog_err.cob], [1], [],
 [prog_err.cob:2: error: unexpected COBOL word in partial replacement phrase
 ])
 
@@ -722,14 +722,14 @@ AT_CHECK([$COMPILE_ONLY -fempty-partial-replacement-when-literal-src=skip prog_e
 AT_DATA([prog_err2.cob], [
        COPY prog REPLACING LEADING "VAR" BY "VAR1 ".
 ])
-AT_CHECK([$COMPILE_ONLY -fempty-partial-replacement-when-literal-src=ok prog_err2.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY -fpartial-replace-when-literal-src=ok prog_err2.cob], [1], [],
 [prog_err2.cob:2: error: invalid partial replacing operand
 ])
 
 AT_DATA([prog_err3.cob], [
        COPY prog REPLACING LEADING "VAR" BY " VAR1".
 ])
-AT_CHECK([$COMPILE_ONLY -fempty-partial-replacement-when-literal-src=ok prog_err3.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY -fpartial-replace-when-literal-src=ok prog_err3.cob], [1], [],
 [prog_err3.cob:2: error: invalid partial replacing operand
 ])
 

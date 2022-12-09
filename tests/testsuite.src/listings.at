@@ -250,7 +250,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY -fempty-partial-replacement-when-literal-src=skip -t prog.lst -tlines=0 prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -fpartial-replace-when-literal-src=skip -t prog.lst -tlines=0 prog.cob], [0], [], [])
 
 AT_DATA([expected.lst],
 [GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY

@@ -97,12 +97,12 @@ static char *
 literal_token (char *t, int allow_spaces)
 {
 	if (t[0] == '\'' || t[0] == '"') {
-		if (cb_empty_partial_replacement_when_literal_src != CB_SKIP)
-			(void) ppparse_verify (cb_empty_partial_replacement_when_literal_src,
+		if (cb_partial_replace_when_literal_src != CB_SKIP)
+			(void) ppparse_verify (cb_partial_replace_when_literal_src,
 					       _("partial replacing with literal"));
 	} else if (allow_spaces && literal_is_space_keyword (t)) {
-		if (cb_empty_partial_replacement_when_literal_src != CB_SKIP)
-			(void) ppparse_verify (cb_empty_partial_replacement_when_literal_src,
+		if (cb_partial_replace_when_literal_src != CB_SKIP)
+			(void) ppparse_verify (cb_partial_replace_when_literal_src,
 					       _("partial replacing with literal"));
 		t[0] = '\0';
 	} else {
@@ -139,8 +139,7 @@ ppp_replace_src (const struct cb_text_list * const text_list,
 		 const unsigned int literal_src)
 {
 	const unsigned int allow_empty_replacement =
-		!literal_src ||
-		cb_empty_partial_replacement_when_literal_src != CB_SKIP;
+		!literal_src || cb_partial_replace_when_literal_src != CB_SKIP;
 	struct cb_replace_src *s = cobc_plex_malloc (sizeof (struct cb_replace_src));
 	/* Note the two next fields are re-assessed in ppp_replace_list_add below */
 	s->lead_trail = CB_REPLACE_ALL;

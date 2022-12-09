@@ -206,8 +206,8 @@ CB_CONFIG_SUPPORT (cb_comment_paragraphs, "comment-paragraphs",
 CB_CONFIG_SUPPORT (cb_control_division, "control-division",
 	_("CONTROL DIVISION"))
 
-CB_CONFIG_SUPPORT (cb_empty_partial_replacement_when_literal_src, /* Also enables literals as */
-		   "empty-partial-replacement-when-literal-src",  /* replacement operands. */
+CB_CONFIG_SUPPORT (cb_partial_replace_when_literal_src,	/* Enables literals as */
+		   "partial-replace-when-literal-src", /* replacement operands. */
 	_("apply partial replacing with literal source operand even when it replaces with spaces only;\n"
 	  "                        * \"skip\" prevents such replacements."))
 

@@ -2,8 +2,8 @@
 2022-12-07  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* general: rename partial-replacing-with-literal into
-	  empty-partial-replacement-when-literal-src, with special semantics of
-	  "skip".
+	  partial-replace-when-literal-src, with special semantics of
+	  "skip"
 
 2022-12-03  Simon Sobisch <simonsobisch@gnu.org>
 
