@@ -531,19 +531,19 @@ AT_KEYWORDS([copy gcos])
 AT_DATA([copy.inc], [
        01  TEST-VAR PIC X(2) VALUE "OK".
        01  NORM-VAR PIC X(2) VALUE "OK".
-       01  NORM     PIC X(2) VALUE "OK".
+       01  X        PIC X(2) VALUE "OK".
 ])
 
 AT_DATA([copy2.inc], [
        01  TEST-FIRST PIC X(2) VALUE "OK".
        01  TEST-SECND PIC X(2) VALUE "OK".
-       01  SECND      PIC X(2) VALUE "OK".
+       01  Y          PIC X(2) VALUE "OK".
 ])
 
-# When `-fexact-partial-replacing-when-literal-src' is "skip", NORM
-# and SECND are available as partial replacement with a source literal
-# does not apply when the match is exact (cf GCOS reference manual, pp
-# 537--538, 542).
+# When `-fempty-partial-replacement-when-literal-src' is "skip", X and
+# Y are available: partial replacement with a source literal does not
+# apply when the replacement does not lead to a valid word (cf GCOS
+# reference manual, pp 537--538, 542).
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
@@ -551,36 +551,54 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE  SECTION.
        COPY "copy.inc"
             REPLACING LEADING "TEST" BY "FIRST"
-                      LEADING "NORM" BY "SECOND".
+                      LEADING "NORM" BY "SECOND"
+                      LEADING "X" BY "".
        COPY "copy2.inc"
             REPLACING TRAILING "FIRST" BY "VAR1"
-                      TRAILING "SECND" BY "VAR2".
+                      TRAILING "SECND" BY "VAR2"
+                      TRAILING "Y" BY "".
        PROCEDURE        DIVISION.
            DISPLAY FIRST-VAR  NO ADVANCING END-DISPLAY.
            DISPLAY SECOND-VAR NO ADVANCING END-DISPLAY.
-           DISPLAY NORM       NO ADVANCING END-DISPLAY.
+           DISPLAY X          NO ADVANCING END-DISPLAY.
            DISPLAY TEST-VAR1  NO ADVANCING END-DISPLAY.
            DISPLAY TEST-VAR2  NO ADVANCING END-DISPLAY.
-           DISPLAY SECND      NO ADVANCING END-DISPLAY.
+           DISPLAY Y          NO ADVANCING END-DISPLAY.
            STOP RUN.
 ])
-AT_CHECK([$COMPILE -fexact-partial-replacing-when-literal-src=skip prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [OKOKOKOKOKOK])
-AT_CHECK([$COMPILE -fexact-partial-replacing-when-literal-src=ok prog.cob -o prog-skip], [1], [],
-[prog.cob:15: error: 'NORM' is not defined
-prog.cob:18: error: 'SECND' is not defined
+AT_CHECK([$COMPILE -fempty-partial-replacement-when-literal-src=skip -o prog-skip prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog-skip], [0], [OKOKOKOKOKOK])
+AT_CHECK([$COMPILE -fempty-partial-replacement-when-literal-src=ok -o prog prog.cob], [1], [],
+[copy.inc:2: error: parentheses must be preceded by a picture symbol
+copy.inc:2: error: PICTURE string must contain at least one of the set A, N, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
+copy.inc:3: error: parentheses must be preceded by a picture symbol
+copy.inc:3: error: PICTURE string must contain at least one of the set A, N, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
+copy.inc:4: error: parentheses must be preceded by a picture symbol
+copy.inc:4: error: PICTURE string must contain at least one of the set A, N, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
+prog.cob:17: error: 'X' cannot be used here
+prog.cob:20: error: 'Y' cannot be used here
 ])
-AT_CHECK([$COMPILE_ONLY -fexact-partial-replacing-when-literal-src=error prog.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY -fempty-partial-replacement-when-literal-src=error prog.cob], [1], [],
 [prog.cob:7: error: partial replacing with literal used
 prog.cob:7: error: partial replacing with literal used
 prog.cob:8: error: partial replacing with literal used
 prog.cob:8: error: partial replacing with literal used
-prog.cob:10: error: partial replacing with literal used
-prog.cob:10: error: partial replacing with literal used
+prog.cob:9: error: partial replacing with literal used
+prog.cob:9: error: partial replacing with literal used
 prog.cob:11: error: partial replacing with literal used
 prog.cob:11: error: partial replacing with literal used
-prog.cob:15: error: 'NORM' is not defined
-prog.cob:18: error: 'SECND' is not defined
+prog.cob:12: error: partial replacing with literal used
+prog.cob:12: error: partial replacing with literal used
+prog.cob:13: error: partial replacing with literal used
+prog.cob:13: error: partial replacing with literal used
+copy.inc:2: error: parentheses must be preceded by a picture symbol
+copy.inc:2: error: PICTURE string must contain at least one of the set A, N, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
+copy.inc:3: error: parentheses must be preceded by a picture symbol
+copy.inc:3: error: PICTURE string must contain at least one of the set A, N, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
+copy.inc:4: error: parentheses must be preceded by a picture symbol
+copy.inc:4: error: PICTURE string must contain at least one of the set A, N, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
+prog.cob:17: error: 'X' cannot be used here
+prog.cob:20: error: 'Y' cannot be used here
 ])
 
 AT_DATA([prog_err.cob], [
@@ -595,11 +613,11 @@ AT_DATA([prog_err.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY -fexact-partial-replacing-when-literal-src=skip prog_err.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY -fempty-partial-replacement-when-literal-src=skip prog_err.cob], [1], [],
 [prog_err.cob:7: error: unexpected COBOL word in partial replacement phrase
 prog_err.cob:8: error: unexpected COBOL word in partial replacement phrase
 ])
-AT_CHECK([$COMPILE_ONLY -fexact-partial-replacing-when-literal-src=unconformable prog_err.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY -fempty-partial-replacement-when-literal-src=unconformable prog_err.cob], [1], [],
 [prog_err.cob:7: error: unexpected COBOL word in partial replacement phrase
 prog_err.cob:7: error: partial replacing with literal does not conform to GnuCOBOL
 prog_err.cob:8: error: partial replacing with literal does not conform to GnuCOBOL
@@ -678,21 +696,45 @@ AT_DATA([prog.cob], [
        01 PREFIX-VAR1 PIC X(2) VALUE "OK".
        01 VAR2-SUFFIX PIC X(2) VALUE "OK".
        PROCEDURE        DIVISION.
-           DISPLAY VAR1 NO ADVANCING.
-           DISPLAY VAR2 NO ADVANCING.
+           DISPLAY "VAR1: " VAR1 NO ADVANCING.
+           DISPLAY "VAR1: " VAR2 NO ADVANCING.
            STOP RUN.
 ])
+AT_CHECK([$COMPILE_ONLY -fempty-partial-replacement-when-literal-src=ok prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -fempty-partial-replacement-when-literal-src=skip prog.cob], [0], [], [])
+
+AT_DATA([prog2.cob], [
+       COPY prog REPLACING LEADING "VAR1" BY SPACES.
+])
+AT_CHECK([$COMPILE_ONLY -fempty-partial-replacement-when-literal-src=ok prog2.cob], [0])
 
 AT_DATA([prog_err.cob], [
        COPY prog REPLACING LEADING SPACES BY "PREFIX-".
 ])
-
-AT_CHECK([$COMPILE_ONLY -fexact-partial-replacing-when-literal-src=ok prog.cob], [0], [], [])
-AT_CHECK([$COMPILE_ONLY -fexact-partial-replacing-when-literal-src=ok prog_err.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY -fempty-partial-replacement-when-literal-src=ok prog_err.cob], [1], [],
+[prog_err.cob:2: error: unexpected COBOL word in partial replacement phrase
+])
+AT_CHECK([$COMPILE_ONLY -fempty-partial-replacement-when-literal-src=skip prog_err.cob], [1], [],
 [prog_err.cob:2: error: unexpected COBOL word in partial replacement phrase
 ])
 
+# Check that partial replacement rejects spaces in right operand:
+AT_DATA([prog_err2.cob], [
+       COPY prog REPLACING LEADING "VAR" BY "VAR1 ".
+])
+AT_CHECK([$COMPILE_ONLY -fempty-partial-replacement-when-literal-src=ok prog_err2.cob], [1], [],
+[prog_err2.cob:2: error: invalid partial replacing operand
+])
+
+AT_DATA([prog_err3.cob], [
+       COPY prog REPLACING LEADING "VAR" BY " VAR1".
+])
+AT_CHECK([$COMPILE_ONLY -fempty-partial-replacement-when-literal-src=ok prog_err3.cob], [1], [],
+[prog_err3.cob:2: error: invalid partial replacing operand
+])
+
 AT_CLEANUP
+
 
 AT_SETUP([COPY: Simple Partial match])
 AT_KEYWORDS([copy])

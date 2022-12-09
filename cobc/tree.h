@@ -1630,7 +1630,7 @@ struct list_replace {
 	int			firstline;	/* First line for replace */
 	int			lastline;	/* Last line for replace */
 	int			lead_trail;     /* LEADING/TRAILING flag */
-	int			strict_partial; /* Partial repl. strictness flag */
+	int			strict_partial;	/* Partial repl. strictness flag */
 	char			*from;		/* Old (from) text */
 	char			*to;		/* New (to) text */
 };

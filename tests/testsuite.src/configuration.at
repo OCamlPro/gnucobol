@@ -460,7 +460,7 @@ test.conf: missing definitions:
 	no definition of 'areacheck'
 	no definition of 'comment-paragraphs'
 	no definition of 'control-division'
-	no definition of 'exact-partial-replacing-when-literal-src'
+	no definition of 'empty-partial-replacement-when-literal-src'
 	no definition of 'memory-size-clause'
 	no definition of 'multiple-file-tape-clause'
 	no definition of 'label-records-clause'

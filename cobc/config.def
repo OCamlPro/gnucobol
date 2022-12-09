@@ -206,10 +206,10 @@ CB_CONFIG_SUPPORT (cb_comment_paragraphs, "comment-paragraphs",
 CB_CONFIG_SUPPORT (cb_control_division, "control-division",
 	_("CONTROL DIVISION"))
 
-CB_CONFIG_SUPPORT (cb_exact_partial_replacing_when_literal_src, /* Also enables literals as */
-		   "exact-partial-replacing-when-literal-src",  /* replacement operands. */
-		   _("whether partial replacing with literal source operand "
-		     "applies on exact match"))
+CB_CONFIG_SUPPORT (cb_empty_partial_replacement_when_literal_src, /* Also enables literals as */
+		   "empty-partial-replacement-when-literal-src",  /* replacement operands. */
+	_("apply partial replacing with literal source operand even when it replaces with spaces only;\n"
+	  "                        * \"skip\" prevents such replacements."))
 
 CB_CONFIG_SUPPORT (cb_memory_size_clause, "memory-size-clause",
 	_("MEMORY-SIZE clause"))
