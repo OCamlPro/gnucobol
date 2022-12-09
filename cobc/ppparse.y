@@ -143,7 +143,7 @@ ppp_replace_src (const struct cb_text_list * const text_list,
 		cb_empty_partial_replacement_when_literal_src != CB_SKIP;
 	struct cb_replace_src *s = cobc_plex_malloc (sizeof (struct cb_replace_src));
 	/* Note the two next fields are re-assessed in ppp_replace_list_add below */
-	s->lead_trail = 0;
+	s->lead_trail = CB_REPLACE_ALL;
 	s->strict = allow_empty_replacement ? 0 : 1;
 	s->text_list = text_list;
 	return s;
@@ -165,7 +165,7 @@ ppp_replace_list_add (struct cb_replace_list *list,
 		   replacements */
 		src->strict = 0;
 	} else {
-		/* Use replacement text to decide stricness of partial match */
+		/* Use replacement text to decide strictness of partial match */
 		const char * c;
 		int has_space = new_text->next != NULL;
 		for (c = new_text->text; !has_space && *c; c++) {

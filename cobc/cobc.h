@@ -125,10 +125,6 @@ enum cb_current_date {
 };
 #endif
 
-/* COPY extended syntax defines */
-#define CB_REPLACE_LEADING		1U
-#define CB_REPLACE_TRAILING		2U
-
 /* Stringify macros */
 #define CB_STRINGIFY(s)			#s
 #define CB_XSTRINGIFY(s)		CB_STRINGIFY(s)

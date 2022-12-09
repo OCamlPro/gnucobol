@@ -1594,11 +1594,18 @@ extern void		plex_action_directive (const enum cb_directive_action,
 
 /* COPY/REPLACING/REPLACE */
 
+/* COPY extended syntax defines */
+enum cb_replace {
+	CB_REPLACE_ALL		= 0,
+	CB_REPLACE_LEADING	= 1,
+	CB_REPLACE_TRAILING	= 2,
+};
+
 /* Strict/loose source text replacement structure */
 struct cb_replace_src {
 	const struct cb_text_list	*text_list; /* single-cell when strict */
-	unsigned int			lead_trail: 2;
-	unsigned int 			strict: 1;
+	enum cb_replace			lead_trail;
+	unsigned int			strict: 1;
 };
 
 /* Generic replace list structure */
@@ -1629,7 +1636,7 @@ struct list_replace {
 	struct list_replace	*next;
 	int			firstline;	/* First line for replace */
 	int			lastline;	/* Last line for replace */
-	int			lead_trail;     /* LEADING/TRAILING flag */
+	enum cb_replace		lead_trail;     /* LEADING/TRAILING flag */
 	int			strict_partial;	/* Partial repl. strictness flag */
 	char			*from;		/* Old (from) text */
 	char			*to;		/* New (to) text */
