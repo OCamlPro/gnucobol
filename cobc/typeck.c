@@ -4047,74 +4047,10 @@ check_class_duplicates (cb_tree class_name)
 	}
 }
 
-/* Known collating sequences/alphabets */
-enum {
-	CB_COLSEQ_NATIVE,
-	CB_COLSEQ_ASCII,
-	CB_COLSEQ_EBCDIC,
-} cb_default_colseq = CB_COLSEQ_NATIVE;
-
-/* Decipher character conversion table names */
-int cb_deciph_default_colseq_name (const char * const name)
-{
-	if (! cb_strcasecmp (name, "ASCII")) {
-		cb_default_colseq = CB_COLSEQ_ASCII;
-	} else if (! cb_strcasecmp (name, "EBCDIC")) {
-		cb_default_colseq = CB_COLSEQ_EBCDIC;
-	} else if (! cb_strcasecmp (name, "NATIVE")) {
-		cb_default_colseq = CB_COLSEQ_NATIVE;
-	} else {
-		return 1;
-	}
-	return 0;
-}
-
-static void
-cb_declare_default_colseq (struct cb_program *prog,
-			   const char *alphabet_name,
-			   int alphabet_type,
-			   int alphabet_target)
-{
-	const cb_tree name = cb_build_reference (alphabet_name);
-	struct cb_alphabet_name * alpha;
-	alpha = CB_ALPHABET_NAME (cb_build_alphabet_name (name));
-	alpha->alphabet_type = alphabet_type;
-	alpha->alphabet_target = alphabet_target;
-	/* CHECKME: check it's already in the list? */
-	prog->alphabet_name_list = cb_list_add (prog->alphabet_name_list,
-						CB_TREE (alpha));
-	prog->collating_sequence = name;
-}
-
-static void
-cb_init_default_colseq (struct cb_program *prog)
-{
-	if (prog->collating_sequence) /* already set */
-		return;
-
-	switch (cb_default_colseq) {
-	case CB_COLSEQ_NATIVE:
-		break;
-	case CB_COLSEQ_ASCII:
-		cb_declare_default_colseq (prog, "ASCII",
-					   CB_ALPHABET_ASCII,
-					   CB_ALPHABET_ALPHANUMERIC);
-		break;
-	case CB_COLSEQ_EBCDIC:
-		cb_declare_default_colseq (prog, "EBCDIC",
-					   CB_ALPHABET_EBCDIC,
-					   CB_ALPHABET_ALPHANUMERIC);
-		break;
-	}
-}
-
 void
 cb_validate_program_environment (struct cb_program *prog)
 {
 	cb_tree			l;
-
-	/* Assign default collating sequence if needed: */
-	cb_init_default_colseq (prog);
 
 	/* Check ALPHABET clauses */
 	/* Complicated by difference between code set and collating sequence */

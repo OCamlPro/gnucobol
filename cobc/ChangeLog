@@ -1,11 +1,12 @@
 
 2022-12-09  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
+	FR 426 Default collation option
 	* flag.def, cobc.c (process_command_line): add new default-colseq flag
-	* tree.h, typeck.c (cb_deciph_default_colseq_name): new helper function
-	* typeck.c (cb_declare_default_colseq, cb_init_default_colseq)
-	  (cb_validate_program_data): initialize default collating sequence for
-	  programs when the default-colseq flag is not NATIVE
+	* tree.h, parser.y (cb_deciph_default_colseq_name): new helper function
+	* parser.y (build_default_colseq, setup_default_colseq, setup_program):
+	  initialize default collating sequence for programs when the
+	  default-colseq flag is not NATIVE
 
 2022-12-05  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
