@@ -1684,24 +1684,30 @@ cob_put_sign_ebcdic (unsigned char *p, const int sign)
 	}
 }
 
+/* compare up to 'size' characters from buffer 'p'
+   against a single character 'c',
+   optionally using collation 'col' */
 static int
-common_cmpc (const unsigned char *s1, const unsigned int c,
+common_cmpc (const unsigned char *p, const unsigned int c,
 	     const size_t size, const unsigned char *col)
 {
-	size_t			i;
+	register const unsigned char *end = p + size;
 	int			ret;
 
 	if (unlikely (col)) {
-		for (i = 0; i < size; ++i) {
-			if ((ret = col[s1[i]] - col[c]) != 0) {
+		const unsigned char c_col = col[c];
+		while (p < end) {
+			if ((ret = col[*p] - c_col) != 0) {
 				return ret;
 			}
+			p++;
 		}
 	} else {
-		for (i = 0; i < size; ++i) {
-			if ((ret = s1[i] - c) != 0) {
+		while (p < end) {
+			if ((ret = *p - c) != 0) {
 				return ret;
 			}
+			p++;
 		}
 	}
 	return 0;
@@ -1711,20 +1717,22 @@ static int
 common_cmps (const unsigned char *s1, const unsigned char *s2,
 	     const size_t size, const unsigned char *col)
 {
-	size_t			i;
+	register const unsigned char *end = s1 + size;
 	int			ret;
 
 	if (unlikely (col)) {
-		for (i = 0; i < size; ++i) {
-			if ((ret = col[s1[i]] - col[s2[i]]) != 0) {
+		while (s1 < end) {
+			if ((ret = col[*s1] - col[*s2]) != 0) {
 				return ret;
 			}
+			s1++, s2++;
 		}
 	} else {
-		for (i = 0; i < size; ++i) {
-			if ((ret = s1[i] - s2[i]) != 0) {
+		while (s1 < end) {
+			if ((ret = *s1 - *s2) != 0) {
 				return ret;
 			}
+			s1++, s2++;
 		}
 	}
 	return 0;
@@ -1733,75 +1741,68 @@ common_cmps (const unsigned char *s1, const unsigned char *s2,
 static int
 cob_cmp_all (cob_field *f1, cob_field *f2)
 {
+	const unsigned char	*s = COB_MODULE_PTR->collating_sequence;
 	unsigned char		*data;
-	const unsigned char	*s;
-	size_t			size;
-	int			ret;
-	int			sign;
+	unsigned char		buff[COB_MAX_DIGITS + 1];
 
-	size = f1->size;
-	data = f1->data;
-	sign = COB_GET_SIGN (f1);
-	s = COB_MODULE_PTR->collating_sequence;
+	if (COB_FIELD_HAVE_SIGN (f1)) {
+		/* drop sign for comparision, using a copy to not change
+		   the field during comparision */
+		/* CHECKME: What should be returned if f1 is negative? */
+		unsigned char *real_data = f1->data;
+		f1->data = data = buff;
+		memcpy (buff, real_data, f1->size);
+		(void)cob_real_get_sign (f1);
+		f1->data = real_data;
+	} else {
+		data = f1->data;
+	}
+
+	/* check for IF VAR = ALL "9" */
 	if (f2->size == 1) {
-		ret = common_cmpc (data, f2->data[0], size, s);
-		goto end;
-	}
-	ret = 0;
-	while (size >= f2->size) {
-		if ((ret = common_cmps (data, f2->data, f2->size, s)) != 0) {
-			goto end;
-		}
-		size -= f2->size;
-		data += f2->size;
-	}
-	if (size > 0) {
-		ret = common_cmps (data, f2->data, size, s);
+		return common_cmpc (data, f2->data[0], f1->size, s);
 	}
 
-end:
-	if (COB_FIELD_TYPE (f1) != COB_TYPE_NUMERIC_PACKED) {
-		COB_PUT_SIGN (f1, sign);
+	/* check for IF VAR = ALL "AB" ... */
+	{
+		size_t		size = f1->size;
+		int			ret;
+
+		while (size >= f2->size) {
+			if ((ret = common_cmps (data, f2->data, f2->size, s)) != 0) {
+				return ret;
+			}
+			size -= f2->size;
+			data += f2->size;
+		}
+		if (size > 0) {
+			return common_cmps (data, f2->data, size, s);
+		}
 	}
-	return ret;
+
+	return 0;
 }
 
 static int
 cob_cmp_alnum (cob_field *f1, cob_field *f2)
 {
-	const unsigned char	*s;
-	size_t			min;
-	int			ret;
-	int			sign1;
-	int			sign2;
-
-	/* FIXME later: must cater for national fields, too */
-
-	sign1 = COB_GET_SIGN (f1);
-	sign2 = COB_GET_SIGN (f2);
-	min = (f1->size < f2->size) ? f1->size : f2->size;
-	s = COB_MODULE_PTR->collating_sequence;
+	const unsigned char	*s = COB_MODULE_PTR->collating_sequence;
+	const size_t	min = (f1->size < f2->size) ? f1->size : f2->size;
+	int		ret;
 
 	/* Compare common substring */
 	if ((ret = common_cmps (f1->data, f2->data, min, s)) != 0) {
-		goto end;
+		return ret;
 	}
 
 	/* Compare the rest (if any) with spaces */
 	if (f1->size > f2->size) {
-		ret = common_cmpc (f1->data + min, ' ', f1->size - min, s);
+		return common_cmpc (f1->data + min, ' ', f1->size - min, s);
 	} else if (f1->size < f2->size) {
-		ret = -common_cmpc (f2->data + min, ' ', f2->size - min, s);
+		return -common_cmpc (f2->data + min, ' ', f2->size - min, s);
 	}
 
-end:
-	if (COB_FIELD_TYPE (f1) != COB_TYPE_NUMERIC_PACKED) {
-		COB_PUT_SIGN (f1, sign1);
-	}
-	if (COB_FIELD_TYPE (f2) != COB_TYPE_NUMERIC_PACKED) {
-		COB_PUT_SIGN (f2, sign2);
-	}
-	return ret;
+	return 0;
 }
 
 static int
@@ -2721,6 +2722,8 @@ cob_get_pointer (const void *srcptr)
 	return (cob_u8_ptr)tmptr;
 }
 
+/* stores the field's rtrimmed string content into the given buffer
+   with maxlength */
 void
 cob_field_to_string (const cob_field *f, void *str, const size_t maxsize)
 {
@@ -3485,6 +3488,15 @@ cob_check_numdisp (const cob_field *f)
 
 /* Sign */
 
+static COB_INLINE COB_A_INLINE unsigned char *
+locate_sign (cob_field *f)
+{
+	if (COB_FIELD_SIGN_LEADING (f)) {
+		return f->data;
+	}
+	return f->data + f->size - 1;
+}
+
 int
 cob_real_get_sign (cob_field *f)
 {
@@ -3492,12 +3504,7 @@ cob_real_get_sign (cob_field *f)
 
 	switch (COB_FIELD_TYPE (f)) {
 	case COB_TYPE_NUMERIC_DISPLAY:
-		/* Locate sign */
-		if (unlikely (COB_FIELD_SIGN_LEADING (f))) {
-			p = f->data;
-		} else {
-			p = f->data + f->size - 1;
-		}
+		p = locate_sign (f);
 
 		/* Get sign */
 		if (unlikely (COB_FIELD_SIGN_SEPARATE (f))) {
@@ -3530,26 +3537,22 @@ void
 cob_real_put_sign (cob_field *f, const int sign)
 {
 	unsigned char	*p;
-	unsigned char	c;
 
 	switch (COB_FIELD_TYPE (f)) {
 	case COB_TYPE_NUMERIC_DISPLAY:
-		/* Locate sign */
-		if (unlikely (COB_FIELD_SIGN_LEADING (f))) {
-			p = f->data;
-		} else {
-			p = f->data + f->size - 1;
-		}
-
-		/* Put sign */
+		/* Note: we only locate the sign if needed,
+		   as the common case will be "nothing to do" */
 		if (unlikely (COB_FIELD_SIGN_SEPARATE (f))) {
-			c = (sign < 0) ? (cob_u8_t)'-' : (cob_u8_t)'+';
+			const unsigned char	c = (sign < 0) ? (cob_u8_t)'-' : (cob_u8_t)'+';
+			p = locate_sign (f);
 			if (*p != c) {
 				*p = c;
 			}
 		} else if (unlikely (COB_MODULE_PTR->ebcdic_sign)) {
+			p = locate_sign (f);
 			cob_put_sign_ebcdic (p, sign);
 		} else if (sign < 0) {
+			p = locate_sign (f);
 			cob_put_sign_ascii (p);
 		}
 		return;
@@ -3604,48 +3607,129 @@ cob_set_switch (const int n, const int flag)
 int
 cob_cmp (cob_field *f1, cob_field *f2)
 {
-	cob_field	temp;
-	cob_field_attr	attr;
-	unsigned char	buff[256];
+	unsigned short		f1_type = COB_FIELD_TYPE (f1);
+	unsigned short		f2_type = COB_FIELD_TYPE (f2);
 
-	if (COB_FIELD_IS_NUMERIC (f1) && COB_FIELD_IS_NUMERIC (f2)) {
+	const int	f1_is_numeric = f1_type & COB_TYPE_NUMERIC;
+	const int	f2_is_numeric = f2_type & COB_TYPE_NUMERIC;
+
+	/* both numeric -> direct compare */
+	if (f1_is_numeric && f2_is_numeric) {
 		return cob_numeric_cmp (f1, f2);
 	}
-	if (COB_FIELD_TYPE (f2) == COB_TYPE_ALPHANUMERIC_ALL) {
-		if (f2->size == 1 && f2->data[0] == '0' &&
-		    COB_FIELD_IS_NUMERIC (f1)) {
+
+	/* one is an internal ALL field (ZERO,LOW-VALUE, ...) */
+	if (f2_type == COB_TYPE_ALPHANUMERIC_ALL) {
+		if (f2->size == 1 && f2->data[0] == '0'
+		 && f1_is_numeric) {
 			return cob_cmp_int (f1, 0);
 		}
 		return cob_cmp_all (f1, f2);
 	}
-	if (COB_FIELD_TYPE (f1) == COB_TYPE_ALPHANUMERIC_ALL) {
-		if (f1->size == 1 && f1->data[0] == '0' &&
-		    COB_FIELD_IS_NUMERIC (f2)) {
+	if (f1_type == COB_TYPE_ALPHANUMERIC_ALL) {
+		if (f1->size == 1 && f1->data[0] == '0'
+		 && f2_is_numeric) {
 			return -cob_cmp_int (f2, 0);
 		}
 		return -cob_cmp_all (f2, f1);
 	}
-	if (COB_FIELD_IS_NUMERIC (f1) &&
-	    COB_FIELD_TYPE (f1) != COB_TYPE_NUMERIC_DISPLAY) {
-		temp.size = COB_FIELD_DIGITS (f1);
-		temp.data = buff;
-		temp.attr = &attr;
-		attr = *f1->attr;
-		attr.type = COB_TYPE_NUMERIC_DISPLAY;
-		attr.flags &= ~COB_FLAG_HAVE_SIGN;
-		cob_move (f1, &temp);
-		f1 = &temp;
+
+#if 0	/* FIXME later: must cater for national fields, too,
+		   at least if that is numeric NATIONAL	*/
+	if (COB_FIELD_IS_NATIONAL (f1)) {
+		...
 	}
-	if (COB_FIELD_IS_NUMERIC (f2) &&
-	    COB_FIELD_TYPE (f2) != COB_TYPE_NUMERIC_DISPLAY) {
-		temp.size = COB_FIELD_DIGITS (f2);
-		temp.data = buff;
-		temp.attr = &attr;
-		attr = *f2->attr;
-		attr.type = COB_TYPE_NUMERIC_DISPLAY;
-		attr.flags &= ~COB_FLAG_HAVE_SIGN;
-		cob_move (f2, &temp);
-		f2 = &temp;
+#endif
+
+	/* all else -> alphanumeric comparision */
+
+	/* if one is numeric (cannot be "both", as checked above), then
+	   convert that to alphanumeric for final test;
+	   note: this is _very_ seldom the case, during "make checkall"
+	   only in test "Alphanumeric and binary numeric" */
+
+	if (f1_is_numeric || f2_is_numeric) {
+		/* CHECKME: What should be returned if field is negative?
+		   We suspicously change -12 to 12 here... */
+		cob_field	temp;
+		cob_field_attr	attr;
+		unsigned char	buff[COB_MAX_DIGITS + 10];
+
+		/* CHECKME: may need to abort if we ever get here with float data */
+
+		/* FIXME: must be converted to COB_TYPE_NUMERIC_EDITED with an
+		   internal PIC of COB_FIELD_DIGITS '9's and leading sign,
+		   otherwise we'll fail as soon as we enable COB_MAX_BINARY */
+		if (f1_is_numeric
+		 && f1_type != COB_TYPE_NUMERIC_DISPLAY) {
+			temp.size = COB_FIELD_DIGITS (f1);
+			temp.data = buff;
+			temp.attr = &attr;
+			attr = *f1->attr;
+			attr.type = COB_TYPE_NUMERIC_DISPLAY;
+			attr.flags &= ~COB_FLAG_HAVE_SIGN;
+			cob_move (f1, &temp);
+			f1 = &temp;
+		}
+		if (f2_is_numeric
+		 && f2_type != COB_TYPE_NUMERIC_DISPLAY) {
+			temp.size = COB_FIELD_DIGITS (f2);
+			temp.data = buff;
+			temp.attr = &attr;
+			attr = *f2->attr;
+			attr.type = COB_TYPE_NUMERIC_DISPLAY;
+			attr.flags &= ~COB_FLAG_HAVE_SIGN;
+			cob_move (f2, &temp);
+			f2 = &temp;
+		}
+
+		if (COB_FIELD_HAVE_SIGN (f1)) {
+			/* Note: if field is numeric then it is always
+			   USAGE DISPLAY here */
+
+			if (f1 != &temp) {				
+				/* drop sign for comparision, using a copy to not change
+				   the field during comparision */
+				unsigned char buff2[COB_MAX_DIGITS + 10];
+				const size_t size = f1->size;
+				int		ret;
+				unsigned char	*real_data = f1->data;
+				memcpy (buff2, real_data, size);
+				f1->data = buff2;
+				(void)cob_real_get_sign (f1);
+				ret = cob_cmp_alnum (f1, f2);
+				f1->data = real_data;
+				return ret;
+			} else {
+				/* we operate on a buffer already, just go on */
+				(void)cob_real_get_sign (f1);
+				return cob_cmp_alnum (f1, f2);
+			}
+		}
+
+		if (COB_FIELD_HAVE_SIGN (f2)) {
+			/* Note: if field is numeric then it is always
+			   USAGE DISPLAY here */
+
+			if (f2 != &temp) {				
+				/* drop sign for comparision, using a copy to not change
+				   the field during comparision */
+				unsigned char buff2[COB_MAX_DIGITS + 10];
+				const size_t size = f2->size;
+				int		ret;
+				unsigned char	*real_data = f2->data;
+				memcpy (buff2, real_data, size);
+				f2->data = buff2;
+				(void)cob_real_get_sign (f2);
+				ret = cob_cmp_alnum (f1, f2);
+				f2->data = real_data;
+				return ret;
+			} else {
+				/* we operate on a buffer already, just go on */
+				(void)cob_real_get_sign (f2);
+				return cob_cmp_alnum (f1, f2);
+			}
+		}
 	}
 	return cob_cmp_alnum (f1, f2);
 }

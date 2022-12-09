@@ -6782,53 +6782,58 @@ cob_savekey (cob_file *f, int idx, unsigned char *data)
 
 /* System routines */
 
+/* stores the field's rtrimmed string content into a fresh allocated
+   string, which later needs to be passed to cob_free */
 static void *
 cob_str_from_fld (const cob_field *f)
 {
-	void		*mptr;
-	unsigned char	*s;
-	size_t		i, n, j;
 #if	0	/* Quotes in file */
-	int		quote_switch;
-
-	quote_switch = 0;
+	register int	quote_switch = 0;
 #endif
+	register unsigned char	*end, *data, *s;
+	void		*mptr;
 
-	if (!f) {
+
+	if (!f || f->size == 0 || !f->data) {
 		return cob_malloc ((size_t)1);
 	}
-	for (i = f->size - 1; i > 0; --i) {
-		if (f->data[i] != ' ' && f->data[i] != 0) {
-			i++;
+
+	data = f->data;
+	end = data + f->size - 1;
+	while (end > data) {
+		if (*end != ' ' && *end) {
 			break;
 		}
+		end--;
 	}
-	/* i is 0 or > 0 */
-	mptr = cob_malloc (i + 1);
-	s = mptr;
-	j = 0;
-	for (n = 0; n < i; ++n) {
-		if (f->data[n] == '"') {
-			continue;
-		}
-		s[j++] = f->data[n];
-#if	0	/* Quotes in file */
-		if (f->data[n] == '"') {
+	s = mptr = cob_fast_malloc (end - data + 1);
+	if (*end == ' ' || *end == 0) {
+		*s = 0;
+		return s;
+	}
+
+	while (data <= end) {
+#if 0	/* Quotes in file */
+		if (*s == '"') {
 			quote_switch = !quote_switch;
+			s++;
 			continue;
 		}
-		s[j] = f->data[n];
-		if (quote_switch) {
-			j++;
-			continue;
-		}
-		if (s[j] == ' ' || s[j] == 0) {
-			s[j] = 0;
+		if (!quote_switch
+		 &&  (*data == ' '
+		   || *data == 0)) {
 			break;
 		}
-		j++;
+#else
+		if (*s == '"') {
+			s++;
+			continue;
+		}
 #endif
+		*s++ = *data++;
 	}
+	*s = 0;
+
 	return mptr;
 }
 
