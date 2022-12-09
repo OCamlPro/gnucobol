@@ -2207,6 +2207,8 @@ extern cb_tree		cb_debug_sub_2;
 extern cb_tree		cb_debug_sub_3;
 extern cb_tree		cb_debug_contents;
 
+extern int		cb_deciph_default_colseq_name (const char *const);
+
 extern struct cb_program	*cb_build_program (struct cb_program *,
 						   const int);
 

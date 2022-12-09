@@ -1,4 +1,12 @@
 
+2022-12-09  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* flag.def, cobc.c (process_command_line): add new default-colseq flag
+	* tree.h, typeck.c (cb_deciph_default_colseq_name): new helper function
+	* typeck.c (cb_declare_default_colseq, cb_init_default_colseq)
+	  (cb_validate_program_data): initialize default collating sequence for
+	  programs when the default-colseq flag is not NATIVE
+
 2022-12-05  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* cobc.c: replace some incorrect '%d' format indicators with '%lu'
