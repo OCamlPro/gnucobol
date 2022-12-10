@@ -90,16 +90,26 @@ popd 1>/dev/null
 
 echo && echo copying MinGW files...
 echo "  bin..."
+if test -f "$MINGWDIR/mingw32/bin"; then
+	cp -pr "$MINGWDIR/mingw32/bin" "$target_dir/"
+fi
 cp -pr "$MINGWDIR/bin"          "$target_dir/"
 echo "  include..."
+if test -f "$MINGWDIR/mingw32/include"; then
+	cp -pr "$MINGWDIR/mingw32/include" "$target_dir/"
+fi
 cp -pr "$MINGWDIR/include"      "$target_dir/"
 echo "  lib..."
+if test -f "$MINGWDIR/mingw32/lib"; then
+	cp -pr "$MINGWDIR/mingw32/lib" "$target_dir/"
+fi
 cp -pr "$MINGWDIR/lib"          "$target_dir/"
 echo "  libexec..."
 cp -pr "$MINGWDIR/libexec"      "$target_dir/"
 echo "  share... (locale and friends)"
 # note: possible copying more of share later
 cp -pr "$MINGWDIR/share/locale" "$target_dir/"
+mkdir -p "$target_dir/share"
 cp -pr "$MINGWDIR/share/gdb"    "$target_dir/share/"
 cp -pr "$MINGWDIR/share/gcc"*   "$target_dir/share/"
 cp -pr "$MINGWDIR/share/man"    "$target_dir/share/"
@@ -256,7 +266,7 @@ if not [%1] == [] (
 )
 
 :: new cmd to stay open if not started directly from cmd.exe window
-echo %cmdcmdline% | find /i "%~0" >nul
+echo %cmdcmdline% | %windir%\system32\find.exe /i "%~0" >nul
 if %errorlevel% equ 0 (
   cmd /k "cobc.exe --version && $versinfo_cmds"
   goto :eof
@@ -299,8 +309,8 @@ same source tarball don't have.
 Important: See BUGS.txt for possible known issues in this distribution!
 
 For running GnuCOBOL simply double-click set_env.cmd found next to this file, or,
-if already in cmd, call setenv.cmd once.
-You can use cobc/cobcrun in the command prompt afterwards.
+if already in cmd, call set_env.cmd once.
+You can use cobc and cobcrun in the command prompt afterwards.
 
 _FEOF
 } >> "$target_dir/README.txt"
@@ -308,24 +318,28 @@ sed -i 's/$/\r/' "$target_dir/README.txt"
 
 
 echo && echo removing some unneeded files
-rm -rf "$target_dir/bin/auto"*
-rm -rf "$target_dir/bin/aclocal"*
+pushd "$target_dir/bin" 1>/dev/null
+rm -rf auto*
+rm -rf aclocal*
 
-rm -rf "$target_dir/bin/"*perl*
-rm -rf "$target_dir/lib/"*perl*
+rm -rf *perl*
+cd ../lib 1>/dev/null
+rm -rf *perl*
 
-rm -rf "$target_dir/lib/"*.la
+rm -rf *.la
 
-rm -rf "$target_dir/lib/terminfo"*
+rm -rf terminfo*
 
-rm -rf "$target_dir/lib/tcl"*
-rm -rf "$target_dir/lib/tkl"*
-rm -rf "$target_dir/lib/tdbc"*
+rm -rf tcl*
+rm -rf tkl*
+rm -rf tdbc*
 
-rm -rf "$target_dir/lib/cmake"*
-rm -rf "$target_dir/lib/pkgconfig"*
+rm -rf cmake*
+rm -rf pkgconfig*
 
-rm -rf "$target_dir/libexec/mingw-get"
+cd .. 1>/dev/null
+rm -rf libexec/mingw-get
+popd 1>/dev/null
 
 
 echo && echo duplicating for debug version...
