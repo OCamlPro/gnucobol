@@ -6806,7 +6806,7 @@ cob_str_from_fld (const cob_field *f)
 		}
 		end--;
 	}
-	s = mptr = cob_fast_malloc (end - data + 1);
+	s = mptr = cob_fast_malloc (end + 1 - data + 1);
 	if (*end == ' ' || *end == 0) {
 		*s = 0;
 		return s;
@@ -6814,9 +6814,9 @@ cob_str_from_fld (const cob_field *f)
 
 	while (data <= end) {
 #if 0	/* Quotes in file */
-		if (*s == '"') {
+		if (*data == '"') {
 			quote_switch = !quote_switch;
-			s++;
+			data++;
 			continue;
 		}
 		if (!quote_switch
@@ -6825,8 +6825,8 @@ cob_str_from_fld (const cob_field *f)
 			break;
 		}
 #else
-		if (*s == '"') {
-			s++;
+		if (*data == '"') {
+			data++;
 			continue;
 		}
 #endif
