@@ -144,7 +144,7 @@ test-local-compat:
 # then remove the rm of the file below
 summary.log:
 	@echo "Computing total test results..."
-	@perl "$(srcdir)/summary.pl" $(MODULES) > $@
+	@$(PERL) "$(srcdir)/summary.pl" $(MODULES) > $@
 
 diff:
 	@echo "Comparing test results for each module"
@@ -228,12 +228,13 @@ $(MODULES_ALL): newcob.val EXEC85$(EXEEXT) $(srcdir)/EXEC85.conf.in Makefile.mod
 		export NEWCOB_VAL=$(abs_srcdir)/newcob.val; \
 	fi; \
 	cd $@ && $(PRE_INST_ENV) ../EXEC85$(EXEEXT)
-	@perl $(srcdir)/expand.pl $@/newcob.tmp $@
+	@$(PERL) $(srcdir)/expand.pl $@/newcob.tmp $@
 #	@$(RM) ./$@/newcob.tmp ./$@/newcob.log ./$@/EXEC85.conf
 	@export CBL_LIST="`ls $@/*.CBL | cut -f2 -d/ | tr '\n' ' '`"  && \
 	 $(SED) -e 's/##MODULE##/'"$@"'/'            \
 	        -e 's|##COB85DIR##|'$(abs_srcdir)'|' \
 	        -e 's|##DIFF_FLAGS##|'"$(DIFF_FLAGS)"'|' \
+	        -e 's|##PERL##|'"$(PERL)"'|' \
 	        -e 's|##TESTS##|'"` echo $$CBL_LIST | $(SED) -e 's/\.CBL//g'`"'|' \
 	        -e 's|##TESTS_LOCAL##|'"`echo $$CBL_LIST | $(SED) -e 's/\.CBL/-local/g'`"'|' \
 	    $(srcdir)/Makefile.module.in > $@/Makefile

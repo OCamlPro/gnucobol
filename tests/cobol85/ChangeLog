@@ -1,4 +1,9 @@
 
+2022-12-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am, Makefile.module.in: use PERL via variable,
+	  default is substituted from configure
+
 2022-10-11  Simon Sobisch <simonsobisch@gnu.org>
 
 	* Makefile.module.in: added and adjusted clean targets

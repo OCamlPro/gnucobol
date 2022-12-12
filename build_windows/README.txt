@@ -57,9 +57,9 @@ How to test the native builds:
 * currently you will need a GNU/Linux-like environment for running the
   testsuite (normally MinGW with MSYS, MSYS2 or Cygwin)
 * if you want to run the NIST testsuite you need a perl binary installed and
-  in PATH
+  either as "perl" (.exe/.cmd/.bat) in PATH or specify it via PERL variable
 * if you've set MAKE_DIST in config.h copy the dist package to the place
-  cobc --info says (for example to C:\GnuCOBOL_3.1)
+  cobc --info says (for example to C:\GnuCOBOL_3.x)
 * start the VS command prompt that matches the version you want to test
 * do the following commands:
   set COB_UNIX_LF=YES

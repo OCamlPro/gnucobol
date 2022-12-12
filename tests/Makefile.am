@@ -110,8 +110,8 @@ checkmanual: prereq-manual
 	prereq-check prereq-testsuite prereq-manual
 
 test: atlocal
-	@echo testing for perl && perl -v 1>/dev/null \
-		|| (echo "Error: no working 'perl' in PATH" && false)
+	@echo testing for perl && $(PERL) -v 1>/dev/null \
+		|| (echo "Error: could not executed $(PERL)" && false)
 	@cd cobol85 && $(MAKE) $(AM_MAKEFLAGS) test
 
 checkall: check test

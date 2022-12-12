@@ -357,6 +357,7 @@ NEWS - user visible changes				-*- outline -*-
 ** configure now honors MATH_LIBS
 ** configure now checks for XCurses and allows --with-curses=xcurses
    (experimental)
+** configure now checks for PERL and passes that as default to make test
 ** cobc handles SOURCE_DATE_EPOCH now, allowing to override timestamps in
    generated code and listing files, allowing reproducible builds
 
