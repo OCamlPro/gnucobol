@@ -221,6 +221,77 @@ AT_CHECK([diff expected.lst prog.lis], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([Partial replacement with literals])
+AT_KEYWORDS([listing gcos])
+
+AT_CAPTURE_FILE([prog.lst])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       1 W-DATA.
+         3 X            PIC X(1) VALUE "X".
+         3 XX           PIC X(2) VALUE "XX".
+         3 Z            PIC X(1) VALUE "Z".
+         3 ZZ           PIC X(2) VALUE "ZZ".
+         3 Y            PIC X(1) VALUE "Y".
+       PROCEDURE        DIVISION.
+           REPLACE LEADING "X" BY SPACES
+                   TRAILING "Z" BY SPACES
+                   LEADING "Y" BY "X".
+       MAIN.
+           DISPLAY "XX: *" XX "*"
+           DISPLAY "X: *" X "*"
+           DISPLAY "ZZ: *" ZZ "*"
+           DISPLAY "Z: *" Z "*"
+           DISPLAY "Y: *" Y "*"
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY -fpartial-replace-when-literal-src=skip -t prog.lst -tlines=0 prog.cob], [0], [], [])
+
+AT_DATA([expected.lst],
+[GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY
+
+LINE    PG/LN  A...B............................................................
+
+000001
+000002         IDENTIFICATION   DIVISION.
+000003         PROGRAM-ID.      prog.
+000004         DATA             DIVISION.
+000005         WORKING-STORAGE  SECTION.
+000006         1 W-DATA.
+000007           3 X            PIC X(1) VALUE "X".
+000008           3 XX           PIC X(2) VALUE "XX".
+000009           3 Z            PIC X(1) VALUE "Z".
+000010           3 ZZ           PIC X(2) VALUE "ZZ".
+000011           3 Y            PIC X(1) VALUE "Y".
+000012         PROCEDURE        DIVISION.
+000013             REPLACE LEADING "X" BY SPACES
+000014                     TRAILING "Z" BY SPACES
+000015                     LEADING "Y" BY "X".
+000016         MAIN.
+000017             DISPLAY "XX: *" X "*"
+000018             DISPLAY "X: *" X "*"
+000019             DISPLAY "ZZ: *" ZZ "*"
+000020             DISPLAY "Z: *" Z "*"
+000021             DISPLAY "Y: *" X "*"
+000022             STOP RUN.
+
+
+0 warnings in compilation group
+0 errors in compilation group
+])
+
+AT_CHECK([$UNIFY_LISTING prog.lst prog.lis once], [0], [], [])
+AT_CHECK([diff expected.lst prog.lis], [0], [], [])
+
+AT_CLEANUP
+
+
+
 AT_SETUP([COPY replacement with partial match])
 AT_KEYWORDS([listing copy])
 AT_XFAIL_IF([true])

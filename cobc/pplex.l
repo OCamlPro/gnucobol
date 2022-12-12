@@ -1759,16 +1759,18 @@ set_print_replace_list (struct cb_replace_list *list)
 	size_t				length;
 
 	for (r = list; r; r = r->next) {
+		const struct cb_replace_src *src = r->src;
 		repl = cobc_malloc (sizeof (struct list_replace));
 		repl->firstline = r->line_num;
-		repl->lead_trail = r->lead_trail;
+		repl->lead_trail = src->lead_trail;
+		repl->strict_partial = src->strict;
 		repl->lastline = cb_source_line;
 
-		for (l = r->old_text, length = 0; l; l = l->next) {
+		for (l = src->text_list, length = 0; l; l = l->next) {
 			length += strlen (l->text);
 		}
 		repl->from = cobc_malloc (length + 2);
-		for (l = r->old_text; l; l = l->next) {
+		for (l = src->text_list; l; l = l->next) {
 			strcat (repl->from, l->text);
 		}
 
@@ -2577,12 +2579,12 @@ ppecho_replace (struct cb_replace_list *save_ptr)
 		/* variables after breaking out of the loop BUT */
 		/* ppparse.y guarantees that we have only one token */
 		/* and therefore only one iteration of this loop */
-		for (lno = r->old_text; lno; lno = lno->next) {
+		for (lno = r->src->text_list; lno; lno = lno->next) {
 			if (lno->text[0] == ' ' || lno->text[0] == '\n') {
 				continue;
 			}
 			while (queue && (queue->text[0] == ' ' ||
-			       queue->text[0] == '\n')) {
+					 queue->text[0] == '\n')) {
 				queue = queue->next;
 			}
 			if (queue == NULL) {
@@ -2594,19 +2596,21 @@ ppecho_replace (struct cb_replace_list *save_ptr)
 				}
 				return -1;
 			}
-			if (r->lead_trail == CB_REPLACE_LEADING) {
+			if (r->src->lead_trail == CB_REPLACE_LEADING) {
 				/* Check leading text */
 				size = strlen (lno->text);
-				if (strncasecmp (lno->text, queue->text, size)) {
+				if ((r->src->strict && strlen (queue->text) == size)
+				 || strncasecmp (lno->text, queue->text, size)) {
 					/* No match */
 					break;
 				}
 				save_queue = queue;
-			} else if (r->lead_trail == CB_REPLACE_TRAILING) {
+			} else if (r->src->lead_trail == CB_REPLACE_TRAILING) {
 				/* Check trailing text */
 				size = strlen (lno->text);
 				size2 = strlen (queue->text);
-				if (size2 < size) {
+				if (size2 < size
+				 || (r->src->strict && size2 == size)) {
 					/* No match */
 					break;
 				}
@@ -2624,7 +2628,7 @@ ppecho_replace (struct cb_replace_list *save_ptr)
 		}
 		if (lno == NULL) {
 			/* Match */
-			if (r->lead_trail == CB_REPLACE_TRAILING
+			if (r->src->lead_trail == CB_REPLACE_TRAILING
 				&& save_queue /* <- silence warnings */) {
 				/* Non-matched part of original text */
 				fprintf (ppout, "%*.*s", (int)size2, (int)size2,
@@ -2639,7 +2643,7 @@ ppecho_replace (struct cb_replace_list *save_ptr)
 			for (lno = r->new_text; lno; lno = lno->next) {
 				ppecho_direct (lno->text);
 			}
-			if (r->lead_trail == CB_REPLACE_LEADING
+			if (r->src->lead_trail == CB_REPLACE_LEADING
 				&& save_queue /* <- silence warnings */) {
 				/* Non-matched part of original text */
 				ppecho_direct (save_queue->text + size);

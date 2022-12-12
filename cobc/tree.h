@@ -1590,7 +1590,94 @@ extern void		ppparse_clear_vars (const struct cb_define_struct *);
 extern struct cb_define_struct *ppp_search_lists (const char *name);
 
 extern void		plex_action_directive (const enum cb_directive_action,
-	const unsigned int);
+					       const unsigned int);
+
+/* COPY/REPLACING/REPLACE */
+
+/* COPY extended syntax defines */
+enum cb_replace {
+	CB_REPLACE_ALL		= 0,
+	CB_REPLACE_LEADING	= 1,
+	CB_REPLACE_TRAILING	= 2,
+};
+
+/* Strict/loose source text replacement structure */
+struct cb_replace_src {
+	const struct cb_text_list	*text_list; /* single-cell when strict */
+	enum cb_replace			lead_trail;
+	unsigned int			strict: 1;
+};
+
+/* Generic replace list structure */
+struct cb_replace_list {
+	int				line_num;
+	struct cb_replace_list		*next;		/* next pointer */
+	struct cb_replace_list		*last;
+	struct cb_replace_list		*prev;
+	const struct cb_replace_src	*src;
+	const struct cb_text_list	*new_text;
+};
+
+extern void		pp_set_replace_list (struct cb_replace_list *,
+					     const cob_u32_t);
+
+/* List of error messages */
+struct list_error {
+	struct list_error	*next;
+	struct list_error	*prev;
+	int			line;		/* Line number for error */
+	char			*file;		/* File name */
+	char			*prefix;	/* Error prefix */
+	char			*msg;		/* Error Message text */
+};
+
+/* List of REPLACE text blocks */
+struct list_replace {
+	struct list_replace	*next;
+	int			firstline;	/* First line for replace */
+	int			lastline;	/* Last line for replace */
+	enum cb_replace		lead_trail;     /* LEADING/TRAILING flag */
+	int			strict_partial;	/* Partial repl. strictness flag */
+	char			*from;		/* Old (from) text */
+	char			*to;		/* New (to) text */
+};
+
+/* List of skipped lines (conditional compilation) */
+struct list_skip {
+	struct list_skip	*next;
+	int			skipline;	/* line number of skipped line */
+};
+
+/* Listing file control structure */
+struct list_files {
+	struct list_files	*next;
+	struct list_files	*copy_head;	/* COPY book list head */
+	struct list_files	*copy_tail;	/* COPY book list tail */
+	struct list_error	*err_head;	/* Error message list head */
+	struct list_replace	*replace_head;	/* REPLACE list head */
+	struct list_replace	*replace_tail;	/* REPLACE list tail */
+	struct list_skip	*skip_head;	/* Skip list head */
+	struct list_skip	*skip_tail;	/* Skip list tail */
+	int 			copy_line;	/* Line start for copy book */
+	int 			listing_on;	/* Listing flag for this file */
+	enum cb_format		source_format;	/* source format for file */
+	const char		*name;		/* Name of this file */
+};
+
+extern struct list_files	*cb_current_file;
+
+/* Directive-specific */
+
+/* >>TURN directive list */
+struct cb_turn_list {
+	struct cb_turn_list	*next;
+	struct cb_text_list	*ec_names;
+	int		line;
+	int		enable;
+	int		with_location;
+};
+
+extern struct cb_turn_list	*cb_turn_list;
 
 /* Report */
 
@@ -2496,6 +2583,9 @@ extern void			cobc_xref_set_receiving (const cb_tree);
 extern unsigned int		cb_correct_program_order;
 
 /* pplex.l */
+extern int		ppopen (const char *, struct cb_replace_list *);
+extern int		ppcopy (const char *, const char *,
+				struct cb_replace_list *);
 extern int		cobc_has_areacheck_directive (const char *directive);
 
 /* Function defines */

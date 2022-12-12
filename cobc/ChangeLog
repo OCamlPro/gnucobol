@@ -14,13 +14,26 @@
 	* codegen.c (output_param): added handling for prototype name,
 	  returning its name as literal
 
-2022-12-05  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+2022-12-06  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
-	* cobc.c: replace some incorrect '%d' format indicators with '%lu'
+	* cobc.h (struct cb_replace_src, struct cb_replace_list, struct
+	  cb_turn_list, cb_turn_list, struct list_error, struct list_replace)
+	  (struct list_skip, struct list_files), tree.h (enum cb_replace): move
+	  internal struct and symbol declarations to tree.h, and adapt some
+	  structures for strict partial text replacement
+	* cobc.c (print_replace_text, print_replace_main), pplex.l
+	  (set_print_replace_list, ppecho), ppparse.y (ppp_replace_src,
+	  ppp_replace_list_add): handle strict partial text replacement, enabled
+	  unless dialect option partial-replace-when-literal-src
+	  (formerly partial-replacing-with-literal) is "skip"
 
 2022-12-06 Simon Sobisch <simonsobisch@gnu.org>
 
 	* field.c (validate_redefines): check for target not to have ANY LENGTH
+
+2022-12-05  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* cobc.c: replace some incorrect '%d' format indicators with '%lu'
 
 2022-12-03 Simon Sobisch <simonsobisch@gnu.org>
 

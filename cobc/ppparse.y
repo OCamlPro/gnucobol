@@ -97,11 +97,13 @@ static char *
 literal_token (char *t, int allow_spaces)
 {
 	if (t[0] == '\'' || t[0] == '"') {
-		(void) ppparse_verify (cb_partial_replacing_with_literal,
-				       _("partial replacing with literal"));
+		if (cb_partial_replace_when_literal_src != CB_SKIP)
+			(void) ppparse_verify (cb_partial_replace_when_literal_src,
+					       _("partial replacing with literal"));
 	} else if (allow_spaces && literal_is_space_keyword (t)) {
-		(void) ppparse_verify (cb_partial_replacing_with_literal,
-				       _("partial replacing with literal"));
+		if (cb_partial_replace_when_literal_src != CB_SKIP)
+			(void) ppparse_verify (cb_partial_replace_when_literal_src,
+					       _("partial replacing with literal"));
 		t[0] = '\0';
 	} else {
 		ppparse_error (_("unexpected COBOL word in partial replacement "
@@ -132,19 +134,52 @@ fold_upper (char *name)
 	return name;
 }
 
+static struct cb_replace_src *
+ppp_replace_src (const struct cb_text_list * const text_list,
+		 const unsigned int literal_src)
+{
+	const unsigned int allow_empty_replacement =
+		!literal_src || cb_partial_replace_when_literal_src != CB_SKIP;
+	struct cb_replace_src *s = cobc_plex_malloc (sizeof (struct cb_replace_src));
+	/* Note the two next fields are re-assessed in ppp_replace_list_add below */
+	s->lead_trail = CB_REPLACE_ALL;
+	s->strict = allow_empty_replacement ? 0 : 1;
+	s->text_list = text_list;
+	return s;
+}
+
 static struct cb_replace_list *
 ppp_replace_list_add (struct cb_replace_list *list,
-		     const struct cb_text_list *old_text,
-		     const struct cb_text_list *new_text,
-		     const unsigned int lead_or_trail)
+		      struct cb_replace_src *src,
+		      const struct cb_text_list *new_text,
+		      const unsigned int lead_or_trail)
 {
 	struct cb_replace_list *p;
 
 	p = cobc_plex_malloc (sizeof (struct cb_replace_list));
 	p->line_num = cb_source_line;
-	p->old_text = old_text;
+	src->lead_trail = lead_or_trail;
+	if (!lead_or_trail) {
+		/* Strictness flag is irrelevant for non-LEADING nor TRAILING
+		   replacements */
+		src->strict = 0;
+	} else {
+		/* Use replacement text to decide strictness of partial match */
+		const char * c;
+		int has_space = new_text->next != NULL;
+		for (c = new_text->text; !has_space && *c; c++) {
+			has_space = isspace(*c);
+		}
+		if (has_space) {
+			/* Note: as it appears, multi-word or spaces in
+			   replacing is forbidden on GCOS. */
+			ppparse_error (_("invalid partial replacing operand"));
+			return NULL;
+		}
+		src->strict = src->strict && *new_text->text == '\0';
+	}
+	p->src = src;
 	p->new_text = new_text;
-	p->lead_trail = lead_or_trail;
 	if (!list) {
 		p->last = p;
 		return p;
@@ -584,6 +619,7 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %union {
 	char			*s;
 	struct cb_text_list	*l;
+	struct cb_replace_src	*p;
 	struct cb_replace_list	*r;
 	struct cb_define_struct	*ds;
 	unsigned int		ui;
@@ -719,9 +755,9 @@ ppparse_clear_vars (const struct cb_define_struct *p)
 %type <l>	token_list
 %type <l>	identifier
 %type <l>	subscripts
-%type <l>	text_src
+%type <p>	text_src
 %type <l>	text_dst
-%type <l>	text_partial_src
+%type <p>	text_partial_src
 %type <l>	text_partial_dst
 %type <l>	alnum_list
 %type <l>	alnum_with
@@ -1627,11 +1663,11 @@ replacing_list:
 text_src:
   EQEQ token_list EQEQ
   {
-	$$ = $2;
+	$$ = ppp_replace_src ($2, 0);
   }
 | identifier
   {
-	$$ = $1;
+	$$ = ppp_replace_src ($1, 0);
   }
 ;
 
@@ -1653,11 +1689,12 @@ text_dst:
 text_partial_src:
   EQEQ TOKEN EQEQ
   {
-	$$ = ppp_list_add (NULL, $2);
+	$$ = ppp_replace_src (ppp_list_add (NULL, $2), 0);
   }
 | TOKEN
   {
-	$$ = ppp_list_add (NULL, literal_token ($1, 0));
+	$$ = ppp_replace_src (ppp_list_add (NULL, literal_token ($1, 0)),
+			      ($1[0] == '\'' || $1[0] == '"'));
   }
 ;
 
