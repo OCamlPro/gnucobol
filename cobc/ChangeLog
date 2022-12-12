@@ -1,4 +1,11 @@
 
+2022-12-12 Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_initialize): added missing generation of runtime checks
+	  for INITIALIZE (again?)
+	* typeck.c (cb_build_move): optimized (=identical) generation for MOVE no
+	  matter if runtime checks are enabled or not (speed + identical behavior)
+
 2022-12-09  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	FR 426 Default collation option

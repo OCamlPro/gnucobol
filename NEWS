@@ -340,12 +340,13 @@ NEWS - user visible changes				-*- outline -*-
 	INSPECT that use big COBOL fields (multiple KB)
 	CALL data-item, and first time for each CALL
 	ACCEPT DATE/TIME/DAY and datetime related FUNCTIONs
+	MOVE with enabled runtime checks (only with re-compile)
 
 ** execution times for programs that are new generated with -fsource-location
    (implied with --debug/-fec) are cut down, especially when many "simple"
    statements or lot of sections/paragraphs are used; also the runtime checks
    for use of LINKAGE fields and/or subscripts/reference-modification will be
-   much faster 
+   much faster
 
 * New build features
 
@@ -411,10 +412,10 @@ NEWS - user visible changes				-*- outline -*-
 
 ** JSON GENERATE statement
    (note: runtime support needs additional library cJSON or JSON-C)
-   
+
 ** CONTINUE AFTER statement (COBOL 2022) implemented, also handle fractions
    of seconds in C$SLEEP now
-   
+
 ** TYPEDEF and SAME AS (COBOL 2002) implemented, including the MicroFocus
    and RM/COBOL variants
 
@@ -446,7 +447,7 @@ NEWS - user visible changes				-*- outline -*-
    still applied;
    File name mapping now applies both to COBOL statements and CALLable
    CBL_ and C$ file routines.
-   
+
 ** Screen I/O: initial mouse support (for details see runtime.cfg),
    use of CURSOR clause in SPECIAL-NAMES for positioning on ACCEPT
 
@@ -462,7 +463,7 @@ NEWS - user visible changes				-*- outline -*-
      extensions [as post-rc1-change this may be set to old behavior by
      defining COB_MULTI_EXTENSION when building GnuCOBOL/cobc]
    * library names are now tested for environment "COB_COPY_LIB_libname",
-     allowing the directory to specified externally (also as no-directory 
+     allowing the directory to specified externally (also as no-directory
      by exporting with empty value) and has a fallback (with a warning) to
      be effectively ignored (as previous versions did this)
 
@@ -601,7 +602,7 @@ NEWS - user visible changes				-*- outline -*-
 
 * Too many bug fixes to list here (please check ChangeLogs for full details),
   includes the following CVEs:
-  
+
 ** compiler (may be triggered with special crafted source files)
    CVE-2019-14468, CVE-2019-14486, CVE-2019-14528, CVE-2019-14541,
    CVE-2019-16396, CVE-2019-16395

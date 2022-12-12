@@ -2493,7 +2493,17 @@ cb_build_identifier (cb_tree x, const int subchk)
 			}
 		}
 
-		/* Run-time check for ODO (including all the fields' subordinate items) */
+		/* Run-time check for ODO (including all the fields' subordinate items),
+		   FIXME: this should only be done "once" per ODO and statement, but
+		   if the statement is a list it is done multiple times:
+			 77 XX PIC 99 VALUE 5.
+			 01 X         PIC X OCCURS 0 TO 10 DEPENDING ON XX.
+			   MOVE ZERO TO X(2) X(4) X(6) X(8) X(10) X(1)
+		   --> currently generated for each of the 6 "X" items, as we (need to)
+		       call this function 6 times from parser (target_identifier)
+		   --> either cache field name here (dropping after each statement)
+		       or remove/skip later during codegen
+		   */
 		if (CB_EXCEPTION_ENABLE (COB_EC_BOUND_SUBSCRIPT) && f->odo_level != 0) {
 			for (p = f; p; p = p->children) {
 				if (CB_VALID_TREE (p->depending)
@@ -11741,6 +11751,8 @@ cb_tree
 cb_build_move (cb_tree src, cb_tree dst)
 {
 	struct cb_reference	*src_ref, *dst_ref, *x;
+	cb_tree	chks = NULL;
+	cb_tree	ret;
 	int	move_zero;
 
 	if (CB_INVALID_TREE(src)
@@ -11819,28 +11831,85 @@ cb_build_move (cb_tree src, cb_tree dst)
 		return CB_BUILD_FUNCALL_2 ("cob_move", src, dst);
 	}
 
+#if 1 /* OPTCHK Simon: optimal copy also with runtime checks enabled */
+	/* TODO: optimize by resolving subscripts as integers once per statement,
+	     77 XX PIC 99 VALUE 5.
+	     01 X         PIC X OCCURS 0 TO 10 DEPENDING ON XX.
+	       MOVE ZERO TO X(2) X(4) X(6) X(8)
+	  current version:
+		cob_check_odo (cob_get_numdisp (b_17, 2), 0, 10, "X", "XX");
+		cob_check_subscript (2, cob_get_numdisp (b_17, 2), "X", 1);
+		*(b_18 + 1) = 48;
+		cob_check_odo (cob_get_numdisp (b_17, 2), 0, 10, "X", "XX");
+		cob_check_subscript (4, cob_get_numdisp (b_17, 2), "X", 1);
+		*(b_18 + 3) = 48;
+		cob_check_odo (cob_get_numdisp (b_17, 2), 0, 10, "X", "XX");
+		cob_check_subscript (6, cob_get_numdisp (b_17, 2), "X", 1);
+		*(b_18 + 5) = 48;
+		cob_check_odo (cob_get_numdisp (b_17, 2), 0, 10, "X", "XX");
+		cob_check_subscript (8, cob_get_numdisp (b_17, 2), "X", 1);
+		*(b_18 + 7) = 48;
+	  much better version (separate issue: the odo-item should
+	  only be checked once, see comment on its addition):
+	  {
+	    const int odo_value = cob_get_numdisp (b_17, 2);
+		cob_check_odo (, 0, 10, "X", "XX");
+		cob_check_subscript (2, odo_value, "X", 1);
+		*(b_18 + 1) = 48;
+		cob_check_odo (odo_value, 0, 10, "X", "XX");
+		cob_check_subscript (4, odo_value, "X", 1);
+		*(b_18 + 3) = 48;
+		cob_check_odo (odo_value, 0, 10, "X", "XX");
+		cob_check_subscript (6, odo_value, "X", 1);
+		*(b_18 + 5) = 48;
+		cob_check_odo (odo_value, 0, 10, "X", "XX");
+		cob_check_subscript (8, odo_value, "X", 1);
+		*(b_18 + 7) = 48;
+	  }
+	*/
+	if (src_ref && src_ref->check) {
+		chks = src_ref->check;
+		src_ref->check = NULL;
+		if (dst_ref && dst_ref->check) {
+			chks = cb_list_add (chks, dst_ref->check);
+			dst_ref->check = NULL;
+		}
+	} else
+	if (dst_ref && dst_ref->check) {
+		chks = dst_ref->check;
+		dst_ref->check = NULL;
+	}
+#else
 	if (src_ref && src_ref->check) {
 		return CB_BUILD_FUNCALL_2 ("cob_move", src, dst);
 	}
 	if (dst_ref && dst_ref->check) {
 		return CB_BUILD_FUNCALL_2 ("cob_move", src, dst);
 	}
+#endif
 
 	/* Output optimal code */
 	if (src == cb_zero) {
-		return cb_build_move_zero (dst);
+		ret = cb_build_move_zero (dst);
 	} else if (src == cb_space) {
-		return cb_build_move_space (dst);
+		ret = cb_build_move_space (dst);
 	} else if (src == cb_high) {
-		return cb_build_move_high (dst);
+		ret = cb_build_move_high (dst);
 	} else if (src == cb_low) {
-		return cb_build_move_low (dst);
+		ret = cb_build_move_low (dst);
 	} else if (src == cb_quote) {
-		return cb_build_move_quote (dst);
+		ret = cb_build_move_quote (dst);
 	} else if (CB_LITERAL_P (src)) {
-		return cb_build_move_literal (src, dst);
+		ret = cb_build_move_literal (src, dst);
+	} else {
+		ret = cb_build_move_field (src, dst);
 	}
-	return cb_build_move_field (src, dst);
+#if 1 /* OPTCHK Simon: optimal copy also with runtime checks enabled */
+	if (chks) {
+		return cb_list_add (chks, ret);
+	}
+#endif
+	return ret;
 }
 
 /* TO-DO: Shouldn't this include validate_move()? */

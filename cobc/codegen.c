@@ -5595,8 +5595,18 @@ output_initialize (struct cb_initialize *p)
 	const enum cobc_init_type	type
 		= deduce_initialize_type (p, f, 1);
 
-	if (type == INITIALIZE_NONE)
+	if (type == INITIALIZE_NONE) {
 		return;
+	}
+
+	/* output runtime checks */
+	if (CB_REFERENCE_P (p->var)
+	 && CB_REFERENCE (p->var)->check) {
+		/* note: should only be when init_flag is set */
+		struct cb_reference *ref = CB_REFERENCE (p->var);
+		output_stmt (ref->check);
+		ref->check = NULL;
+	}
 
 
 	/* TODO: if cb_default_byte >= 0 do a huge memset first, then only
