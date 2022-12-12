@@ -1,4 +1,13 @@
 
+2022-12-09  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	FR 426 Default collation option
+	* flag.def, cobc.c (process_command_line): add new default-colseq flag
+	* tree.h, parser.y (cb_deciph_default_colseq_name): new helper function
+	* parser.y (build_default_colseq, setup_default_colseq, setup_program):
+	  initialize default collating sequence for programs when the
+	  default-colseq flag is not NATIVE
+
 2022-12-08 Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (items_have_same_data_clauses): fix handling for ANY LENGTH

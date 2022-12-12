@@ -272,6 +272,7 @@ static cb_tree			xml_encoding;
 static int			with_xml_dec;
 static int			with_attrs;
 
+static cb_tree			default_collation;
 static cb_tree			alphanumeric_collation;
 static cb_tree			national_collation;
 
@@ -333,6 +334,64 @@ check_non_area_a (cb_tree stmt) {
 			(void) cb_syntax_check (_("start of statement in Area A"));
 	}
 }
+
+/* Collating sequences */
+
+/* Known collating sequences/alphabets */
+enum {
+	CB_COLSEQ_NATIVE,
+	CB_COLSEQ_ASCII,
+	CB_COLSEQ_EBCDIC,
+} cb_default_colseq = CB_COLSEQ_NATIVE;
+
+/* Decipher character conversion table names */
+int cb_deciph_default_colseq_name (const char * const name)
+{
+	if (! cb_strcasecmp (name, "ASCII")) {
+		cb_default_colseq = CB_COLSEQ_ASCII;
+	} else if (! cb_strcasecmp (name, "EBCDIC")) {
+		cb_default_colseq = CB_COLSEQ_EBCDIC;
+	} else if (! cb_strcasecmp (name, "NATIVE")) {
+		cb_default_colseq = CB_COLSEQ_NATIVE;
+	} else {
+		return 1;
+	}
+	return 0;
+}
+
+static void
+build_default_colseq (const char *alphabet_name,
+		      int alphabet_type,
+		      int alphabet_target)
+{
+	const cb_tree name = cb_build_reference (alphabet_name);
+	struct cb_alphabet_name * alpha;
+	alpha = CB_ALPHABET_NAME (cb_build_alphabet_name (name));
+	alpha->alphabet_type = alphabet_type;
+	alpha->alphabet_target = alphabet_target;
+	default_collation = name;
+}
+
+static void
+setup_default_colseq (void)
+{
+	switch (cb_default_colseq) {
+	case CB_COLSEQ_NATIVE:
+		default_collation = NULL;
+		break;
+	case CB_COLSEQ_ASCII:
+		build_default_colseq ("ASCII",
+				      CB_ALPHABET_ASCII,
+				      CB_ALPHABET_ALPHANUMERIC);
+		break;
+	case CB_COLSEQ_EBCDIC:
+		build_default_colseq ("EBCDIC",
+				      CB_ALPHABET_EBCDIC,
+				      CB_ALPHABET_ALPHANUMERIC);
+		break;
+	}
+}
+
 
 /* Statements */
 
@@ -1256,6 +1315,9 @@ setup_program (cb_tree id, cb_tree as_literal, const unsigned char type, const i
 	if (CB_REFERENCE_P (id)) {
 		cb_define (id, CB_TREE (current_program));
 	}
+
+	/* Initalize default COLLATING SEQUENCE */
+	setup_default_colseq ();
 
 	begin_scope_of_program_name (current_program);
 
@@ -5534,7 +5596,7 @@ collating_sequence_clause:
 collating_sequence:
   _collating SEQUENCE
   {
-	alphanumeric_collation = national_collation = NULL;
+	alphanumeric_collation = national_collation = default_collation;
   }
   coll_sequence_values
 ;
@@ -16100,7 +16162,7 @@ _sort_duplicates:
 _sort_collating:
   /* empty */
   {
-	alphanumeric_collation = national_collation = NULL;
+	alphanumeric_collation = national_collation = default_collation;
   }
 | collating_sequence
 ;

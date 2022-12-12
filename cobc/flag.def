@@ -99,6 +99,10 @@ CB_FLAG_NQ (1, "ebcdic-table", 14, /* cf cconv.h for all available tables */
 	  "                        * ibm: translation to restricted ASCII as per IBM\n"
 	  "                        * gcos: translation to extended ASCII as per GCOS7"))
 
+CB_FLAG_NQ (1, "default-colseq", 15,
+	_("  -fdefault-colseq=[ASCII|EBCDIC|NATIVE]\tdefine default collating sequence\n"
+	  "                        * default: NATIVE"))
+
 /* Binary flags */
 
 /* Flags with suppressed help */

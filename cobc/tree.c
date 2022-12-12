@@ -626,7 +626,7 @@ cb_name_1 (char *s, cb_tree x, const int size)
 			size_element = cb_name_1 (buff, p->offset, COB_SMALL_BUFF);
 			if (size_real + size_element + 6 >= size) {
 				/* drop that " (X:Y) [in Z]" */
-				return size_real;	
+				return size_real;
 			}
 			if (p->length) {
 				size_refmod = sprintf (s, " (%s:", buff);
