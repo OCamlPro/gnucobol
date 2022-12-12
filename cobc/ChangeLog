@@ -5,6 +5,10 @@
 	  for INITIALIZE (again?)
 	* typeck.c (cb_build_move): optimized (=identical) generation for MOVE no
 	  matter if runtime checks are enabled or not (speed + identical behavior)
+	* codegen.c (output_initial_values): don't do any init for TYPEDEFs,
+	  as these are only prototypes and otherwise lead to actual storage
+	  (and useless init)
+	* codegen.c (output_display_fields): don't dump TYPEDEFs
 
 2022-12-09  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 

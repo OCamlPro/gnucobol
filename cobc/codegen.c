@@ -10458,14 +10458,16 @@ output_initial_values (struct cb_field *f)
 	cb_tree		x;
 
 	for (p = f; p; p = p->sister) {
-		x = cb_build_field_reference (p, NULL);
-		if (p->flag_item_based) {
+		if (p->flag_item_based
+		 || p->flag_external
+		 || p->flag_is_typedef) {
 			continue;
 		}
 		/* For special registers */
 		if (p->flag_no_init && !p->count) {
 			continue;
 		}
+		x = cb_build_field_reference (p, NULL);
 		output_line ("/* initialize field %s */", p->name);
 		output_stmt (cb_build_initialize (x, cb_true, NULL, 1, 0, 0));
 		output_newline ();
@@ -10647,7 +10649,8 @@ output_display_fields (struct cb_field *f, size_t offset, unsigned int idx)
 	for (; f; f = f->sister) {
 		int has_based_check = 0;
 		/* skip entries we never want to dump */
-		if (f->level == 0 && f->file == NULL) {
+		if ((f->level == 0 && f->file == NULL)
+		 ||  f->flag_is_typedef) {
 			continue;
 		}
 		/* For special registers */

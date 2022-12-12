@@ -5,7 +5,6 @@ NEWS - user visible changes				-*- outline -*-
 
  planned:
    * configure: minor checking to set TIME_T_IS_NON_ARITHMETIC
-   * changes to CALL handling especially for BY VALUE and stdcall
    * adjustments for registers and XML PARSE stubs
    * investigation of code analysis tools and user feedback
 
@@ -296,6 +295,10 @@ NEWS - user visible changes				-*- outline -*-
    runtime checks); the signal handling is now completely rewritten to fix
    this issue and all executed code from the signal handler but the COBOL data
    dump is now signal and thread safe
+
+** TYPEDEF items got storage and attribute assigned, leading to bigger modules,
+   longer loading time and longer compile times; if you use those a recompile
+   is highly suggested
 
 * Listing changes
 
