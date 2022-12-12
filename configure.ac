@@ -1781,6 +1781,10 @@ fi
 dnl currently not directly used: AM_ICONV
 AM_LANGINFO_CODESET
 
+# Check for perl, used for "make test"
+#AM_MISSING_PROG(PERL, perl) --> only use for tools that generate something
+AC_CHECK_PROG(PERL, perl, perl)
+
 # GnuCOBOL Configuration
 
 COB_CONFIG_DIR="$datadir/$PACKAGE_TARNAME/config"
