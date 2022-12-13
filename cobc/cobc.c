@@ -3912,11 +3912,11 @@ process_command_line (const int argc, char **argv)
 	{
 		/* 3.x compat -Wconstant-expression also sets -Wconstant-numlit-expression */
 		/* TODO: handle group warnings */
-		const enum cb_warn_val detail_warn = get_warn_opt_value ((int)cb_warn_constant_numlit_expr);
+		const enum cb_warn_val detail_warn = get_warn_opt_value (cb_warn_constant_numlit_expr);
 		if (detail_warn != COBC_WARN_DISABLED_EXPL
 		 && detail_warn != COBC_WARN_ENABLED_EXPL) {
-			const enum cb_warn_val group_warn = get_warn_opt_value ((int)cb_warn_constant_expr);
-			set_warn_opt_value ((int)cb_warn_constant_numlit_expr, group_warn);
+			const enum cb_warn_val group_warn = get_warn_opt_value (cb_warn_constant_expr);
+			set_warn_opt_value (cb_warn_constant_numlit_expr, group_warn);
 		}
 		/* set all explicit warning options to their later checked variants */
 #define CB_CHECK_WARNING(opt)  \
