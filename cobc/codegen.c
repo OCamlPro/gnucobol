@@ -2858,10 +2858,6 @@ cb_lookup_literal (cb_tree x, int make_decimal)
 static void
 output_integer (cb_tree x)
 {
-	struct cb_binary_op	*p;
-	struct cb_cast		*cp;
-	struct cb_field		*f;
-
 	switch (CB_TREE_TAG (x)) {
 	case CB_TAG_CONST:
 		if (x == cb_zero) {
@@ -2887,8 +2883,8 @@ output_integer (cb_tree x)
 	case CB_TAG_LITERAL:
 		output ("%d", cb_get_int (x));
 		break;
-	case CB_TAG_BINARY_OP:
-		p = CB_BINARY_OP (x);
+	case CB_TAG_BINARY_OP: {
+		const struct cb_binary_op *p = CB_BINARY_OP (x);
 		if (p->flag) {
 			if (!cb_fits_int (p->x) || !cb_fits_int (p->y)) {
 				output ("cob_get_int (");
@@ -2913,7 +2909,7 @@ output_integer (cb_tree x)
 #ifdef	COB_NON_ALIGNED
 			if (CB_TREE_TAG (p->x) == CB_TAG_REFERENCE
 			 && p->x != cb_null) {
-				f = cb_code_field (p->x);
+				const struct cb_field *f = cb_code_field (p->x);
 				/* typecast is required on Sun because pointer
 				 * arithmetic is not allowed on (void *)
 				 */
@@ -2939,7 +2935,7 @@ output_integer (cb_tree x)
 #ifdef	COB_NON_ALIGNED
 			if (CB_TREE_TAG (p->y) == CB_TAG_REFERENCE
 			 && p->y != cb_null) {
-				f = cb_code_field (p->y);
+				const struct cb_field *f = cb_code_field (p->y);
 				/* typecast is required on Sun because pointer
 				 * arithmetic is not allowed on (void *)
 				 */
@@ -2953,8 +2949,9 @@ output_integer (cb_tree x)
 			output (")");
 		}
 		break;
-	case CB_TAG_CAST:
-		cp = CB_CAST (x);
+	}
+	case CB_TAG_CAST: {
+		const struct cb_cast *cp = CB_CAST (x);
 		switch (cp->cast_type) {
 		case CB_CAST_ADDRESS:
 			output ("(");
@@ -2979,8 +2976,9 @@ output_integer (cb_tree x)
 		/* LCOV_EXCL_STOP */
 		}
 		break;
-	case CB_TAG_REFERENCE:
-		f = cb_code_field (x);
+	}
+	case CB_TAG_REFERENCE: {
+		struct cb_field *f = cb_code_field (x);
 		switch (f->usage) {
 		case CB_USAGE_INDEX:
 			if (f->index_type != CB_NORMAL_INDEX) {
@@ -3159,6 +3157,7 @@ output_integer (cb_tree x)
 
 		output_func_1 ("cob_get_int", x);
 		break;
+	}
 	case CB_TAG_INTRINSIC:
 		output ("cob_get_int (");
 		output_param (x, -1);
@@ -3434,21 +3433,12 @@ output_index (cb_tree x)
 		output ("%d", cb_get_int (x) - 1);
 		break;
 	default:
-		output ("(");
-		if (CB_TREE_TAG (x) == CB_TAG_REFERENCE) {
-			struct cb_field	*f = cb_code_field (x);
-			if (f->pic
-			&& f->pic->have_sign == 0) {	/* Avoid ((unsigned int)(0 - 1)) */
-				f->pic->have_sign = 1;	/* Handle subscript as signed */
-				output_integer (x);
-				f->pic->have_sign = 0;	/* Restore to unsigned */
-			} else {
-				output_integer (x);
-			}
-		} else {
-			output_integer (x);
-		}
-		output (" - 1)");
+		/* note: the index may be negative and of big or small type;
+		   as we only support integer values cast to signed integer
+		   to be able to safely subtract 1 to get the C index */
+		output ("((cob_s32_t)(");
+		output_integer (x);
+		output (") - 1)");
 		break;
 	}
 }
