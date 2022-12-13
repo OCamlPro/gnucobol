@@ -2165,33 +2165,8 @@ cobc_clean_up (const int status)
 }
 
 static void
-set_compile_date (void)
+set_compile_date_tm (void)
 {
-	static int sde_todo = 0;
-	if (sde_todo == 0) {
-		char  *s = getenv ("SOURCE_DATE_EPOCH");
-		sde_todo = 1;
-		if (s && *s) {
-			if (cob_set_date_from_epoch (&current_compile_time, s) == 0) {
-				return;
-			}
-			cobc_err_msg (_("environment variable '%s' has invalid content"), "SOURCE_DATE_EPOCH");
-			if (!cb_flag_syntax_only) {
-				cb_source_file = NULL;
-				cobc_abort_terminate (0);
-			}
-		}
-	}
-	current_compile_time = cob_get_current_date_and_time ();
-}
-
-static void
-set_listing_date (void)
-{
-	if (!current_compile_time.year) {
-		set_compile_date ();
-	}
-
 	current_compile_tm.tm_sec = current_compile_time.second;
 	current_compile_tm.tm_min = current_compile_time.minute;
 	current_compile_tm.tm_hour = current_compile_time.hour;
@@ -2205,6 +2180,37 @@ set_listing_date (void)
 	}
 	current_compile_tm.tm_yday = current_compile_time.day_of_year;
 	current_compile_tm.tm_isdst = current_compile_time.is_daylight_saving_time;
+}
+
+static void
+set_compile_date (void)
+{
+	static int sde_todo = 0;
+	if (sde_todo == 0) {
+		char  *s = getenv ("SOURCE_DATE_EPOCH");
+		sde_todo = 1;
+		if (s && *s) {
+			if (cob_set_date_from_epoch (&current_compile_time, s) == 0) {
+				set_compile_date_tm ();
+				return;
+			}
+			cobc_err_msg (_("environment variable '%s' has invalid content"), "SOURCE_DATE_EPOCH");
+			if (!cb_flag_syntax_only) {
+				cb_source_file = NULL;
+				cobc_abort_terminate (0);
+			}
+		}
+	}
+	current_compile_time = cob_get_current_date_and_time ();
+	set_compile_date_tm ();
+}
+
+static void
+set_listing_date (void)
+{
+	if (!current_compile_time.year) {
+		set_compile_date ();
+	}
 
 #ifdef LISTING_TIMESTAMP_ANSI
 	#define LISTING_TIMESTAMP_FORMAT "%a %b %d %H:%M:%S %Y" /* same format as asctime */
