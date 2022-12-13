@@ -1798,7 +1798,7 @@ output_standard_includes (struct cb_program *prog)
 /* GnuCOBOL defines */
 
 static void
-output_gnucobol_defines (const char *formatted_date, struct tm *local_time)
+output_gnucobol_defines (const char *formatted_date)
 {
 	int	i;
 
@@ -1823,19 +1823,14 @@ output_gnucobol_defines (const char *formatted_date, struct tm *local_time)
 	output_line ("#define  COB_PATCH_LEVEL\t\t%d", PATCH_LEVEL);
 	output_line ("#define  COB_MODULE_FORMATTED_DATE\t\"%s\"", formatted_date);
 
-	if (local_time) {
-		i = ((local_time->tm_year + 1900) * 10000) +
-			((local_time->tm_mon + 1) * 100) +
-			local_time->tm_mday;
-		output_line ("#define  COB_MODULE_DATE\t\t%d", i);
-		i = (local_time->tm_hour * 10000) +
-			(local_time->tm_min * 100) +
-			local_time->tm_sec;
-		output_line ("#define  COB_MODULE_TIME\t\t%d", i);
-	} else {
-		output_line ("#define  COB_MODULE_DATE\t\t0");
-		output_line ("#define  COB_MODULE_TIME\t\t0");
-	}
+	i = ((current_compile_tm.tm_year + 1900) * 10000) +
+		((current_compile_tm.tm_mon + 1) * 100) +
+		current_compile_tm.tm_mday;
+	output_line ("#define  COB_MODULE_DATE\t\t%d", i);
+	i = (current_compile_tm.tm_hour * 10000) +
+		(current_compile_tm.tm_min * 100) +
+		current_compile_tm.tm_sec;
+	output_line ("#define  COB_MODULE_TIME\t\t%d", i);
 
 }
 
@@ -3697,11 +3692,18 @@ output_param (cb_tree x, int id)
 	case CB_TAG_REFERENCE:
 		r = CB_REFERENCE (x);
 		if (CB_LOCALE_NAME_P (r->value)) {
-			output_param (CB_LOCALE_NAME(r->value)->list, id);
+			output_param (CB_LOCALE_NAME (r->value)->list, id);
 			break;
 		}
 		if (CB_REPORT_P (r->value)) {
 			output ("&%s%s", CB_PREFIX_REPORT, CB_REPORT_PTR (r->value)->cname);
+			break;
+		}
+		if (CB_PROTOTYPE_P (r->value)) {
+			const char *name = CB_PROTOTYPE (r->value)->ext_name;
+			const size_t len = strlen (name);
+			cb_tree lit = cb_build_alphanumeric_literal (name, len);
+			output_param (lit, 0);
 			break;
 		}
 		if (r->check) {
@@ -3741,7 +3743,7 @@ output_param (cb_tree x, int id)
 			break;
 		}
 		if (CB_ALPHABET_NAME_P (r->value)) {
-			struct cb_alphabet_name	*rbp = CB_ALPHABET_NAME (r->value);
+			const struct cb_alphabet_name	*rbp = CB_ALPHABET_NAME (r->value);
 			switch (rbp->alphabet_type) {
 			case CB_ALPHABET_ASCII:
 #ifdef	COB_EBCDIC_MACHINE
@@ -3790,7 +3792,7 @@ output_param (cb_tree x, int id)
 		f = CB_FIELD (r->value);
 
 		{
-			struct cb_field	*ff = real_field_founder (f);
+			const struct cb_field	*ff = real_field_founder (f);
 			if (ff->flag_external
 			 || ff->flag_item_based) {
 				f->flag_local = 1;
@@ -5588,8 +5590,18 @@ output_initialize (struct cb_initialize *p)
 	const enum cobc_init_type	type
 		= deduce_initialize_type (p, f, 1);
 
-	if (type == INITIALIZE_NONE)
+	if (type == INITIALIZE_NONE) {
 		return;
+	}
+
+	/* output runtime checks */
+	if (CB_REFERENCE_P (p->var)
+	 && CB_REFERENCE (p->var)->check) {
+		/* note: should only be when init_flag is set */
+		struct cb_reference *ref = CB_REFERENCE (p->var);
+		output_stmt (ref->check);
+		ref->check = NULL;
+	}
 
 
 	/* TODO: if cb_default_byte >= 0 do a huge memset first, then only
@@ -10441,14 +10453,16 @@ output_initial_values (struct cb_field *f)
 	cb_tree		x;
 
 	for (p = f; p; p = p->sister) {
-		x = cb_build_field_reference (p, NULL);
-		if (p->flag_item_based) {
+		if (p->flag_item_based
+		 || p->flag_external
+		 || p->flag_is_typedef) {
 			continue;
 		}
 		/* For special registers */
 		if (p->flag_no_init && !p->count) {
 			continue;
 		}
+		x = cb_build_field_reference (p, NULL);
 		output_line ("/* initialize field %s */", p->name);
 		output_stmt (cb_build_initialize (x, cb_true, NULL, 1, 0, 0));
 		output_newline ();
@@ -10630,7 +10644,8 @@ output_display_fields (struct cb_field *f, size_t offset, unsigned int idx)
 	for (; f; f = f->sister) {
 		int has_based_check = 0;
 		/* skip entries we never want to dump */
-		if (f->level == 0 && f->file == NULL) {
+		if ((f->level == 0 && f->file == NULL)
+		 ||  f->flag_is_typedef) {
 			continue;
 		}
 		/* For special registers */
@@ -13246,12 +13261,6 @@ codegen (struct cb_program *prog, const char *translate_name)
 void
 codegen_init (struct cb_program *prog, const char *translate_name)
 {
-	struct tm* loctime;
-	time_t			sectime;
-
-	sectime = time (NULL);
-	loctime = localtime (&sectime);
-
 	current_program = prog;
 	current_section = NULL;
 	current_paragraph = NULL;
@@ -13290,16 +13299,9 @@ codegen_init (struct cb_program *prog, const char *translate_name)
 		string_buffer = cobc_main_malloc ((size_t)COB_MINI_BUFF);
 	}
 
-	if (loctime) {
-		/* Leap seconds ? */
-		if (loctime->tm_sec >= 60) {
-			loctime->tm_sec = 59;
-		}
-		strftime (string_buffer, (size_t)COB_MINI_MAX,
-			"%b %d %Y %H:%M:%S", loctime);
-	} else {
-		string_buffer[0] = 0;
-	}
+	strftime (string_buffer, (size_t)COB_MINI_MAX,
+		"%b %d %Y %H:%M:%S", &current_compile_tm);
+
 	output_target = yyout;
 	output_header (string_buffer, NULL);
 	output_target = cb_storage_file;
@@ -13318,7 +13320,7 @@ codegen_init (struct cb_program *prog, const char *translate_name)
 
 	output_standard_includes (prog);
 	/* string_buffer has formatted date from above */
-	output_gnucobol_defines (string_buffer, loctime);
+	output_gnucobol_defines (string_buffer);
 
 	output_newline ();
 	output_line ("/* Global variables */");

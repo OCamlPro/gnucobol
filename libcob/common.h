@@ -1190,8 +1190,10 @@ typedef struct __cob_screen {
 } cob_screen;
 
 /* Module structure */
-#define COB_MODULE_TYPE_PROGRAM		0
-#define COB_MODULE_TYPE_FUNCTION	1
+enum cob_module_type {
+	COB_MODULE_TYPE_PROGRAM		= 0,
+	COB_MODULE_TYPE_FUNCTION	= 1
+};
 
 /*
   For backwards compatibility of the libcob ABI, the size of existing members

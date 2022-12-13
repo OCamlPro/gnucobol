@@ -308,6 +308,7 @@ const char	*cob_statement_name[STMT_MAX_ENTRY] = {
 const char	*cob_statement_name[STMT_MAX_ENTRY];
 static void init_statement_list (void);
 #endif
+int 		cob_statement_hash[STMT_MAX_ENTRY] = { 0 };
 
 #ifdef COB_DEBUG_LOG
 static int			cob_debug_log_time = 0;
@@ -418,7 +419,6 @@ static struct config_tbl gc_conf[] = {
 	{"COB_DEBUG_LOG", "debug_log", 		NULL, 	NULL, GRP_HIDE, ENV_FILE, SETPOS (cob_debug_log)},
 	{"COB_DISABLE_WARNINGS", "disable_warnings", "0", 	NULL, GRP_MISC, ENV_BOOL | ENV_NOT, SETPOS (cob_display_warn)},
 	{"COB_ENV_MANGLE", "env_mangle", 		"0", 	NULL, GRP_MISC, ENV_BOOL, SETPOS (cob_env_mangle)},
-	{"COB_COL_JUST_LRC", "col_just_lrc", "true", 	NULL, GRP_MISC, ENV_BOOL, SETPOS (cob_col_just_lrc)},
 	{"COB_REDIRECT_DISPLAY", "redirect_display", "0", 	NULL, GRP_SCREEN, ENV_BOOL, SETPOS (cob_disp_to_stderr)},
 	{"COB_SCREEN_ESC", "screen_esc", 		"0", 	NULL, GRP_SCREEN, ENV_BOOL, SETPOS (cob_use_esc)},
 	{"COB_SCREEN_EXCEPTIONS", "screen_exceptions", "0", NULL, GRP_SCREEN, ENV_BOOL, SETPOS (cob_extended_status)},
@@ -469,6 +469,7 @@ static struct config_tbl gc_conf[] = {
 #ifdef  WITH_DB
 	{"DB_HOME", "db_home", 			NULL, 	NULL, GRP_FILE, ENV_FILE, SETPOS (bdb_home)},
 #endif
+	{"COB_COL_JUST_LRC", "col_just_lrc", "true", 	NULL, GRP_FILE, ENV_BOOL, SETPOS (cob_col_just_lrc)},
 	{"COB_DISPLAY_PRINT_PIPE", "display_print_pipe",		NULL,	NULL, GRP_SCREEN, ENV_STR, SETPOS (cob_display_print_pipe)},
 	{"COBPRINTER", "printer",		NULL,	NULL, GRP_HIDE, ENV_STR, SETPOS (cob_display_print_pipe)},
 	{"COB_DISPLAY_PRINT_FILE", "display_print_file",		NULL,	NULL, GRP_SCREEN, ENV_STR,SETPOS (cob_display_print_filename)},
@@ -1683,24 +1684,30 @@ cob_put_sign_ebcdic (unsigned char *p, const int sign)
 	}
 }
 
+/* compare up to 'size' characters from buffer 'p'
+   against a single character 'c',
+   optionally using collation 'col' */
 static int
-common_cmpc (const unsigned char *s1, const unsigned int c,
+common_cmpc (const unsigned char *p, const unsigned int c,
 	     const size_t size, const unsigned char *col)
 {
-	size_t			i;
+	register const unsigned char *end = p + size;
 	int			ret;
 
 	if (unlikely (col)) {
-		for (i = 0; i < size; ++i) {
-			if ((ret = col[s1[i]] - col[c]) != 0) {
+		const unsigned char c_col = col[c];
+		while (p < end) {
+			if ((ret = col[*p] - c_col) != 0) {
 				return ret;
 			}
+			p++;
 		}
 	} else {
-		for (i = 0; i < size; ++i) {
-			if ((ret = s1[i] - c) != 0) {
+		while (p < end) {
+			if ((ret = *p - c) != 0) {
 				return ret;
 			}
+			p++;
 		}
 	}
 	return 0;
@@ -1710,20 +1717,22 @@ static int
 common_cmps (const unsigned char *s1, const unsigned char *s2,
 	     const size_t size, const unsigned char *col)
 {
-	size_t			i;
+	register const unsigned char *end = s1 + size;
 	int			ret;
 
 	if (unlikely (col)) {
-		for (i = 0; i < size; ++i) {
-			if ((ret = col[s1[i]] - col[s2[i]]) != 0) {
+		while (s1 < end) {
+			if ((ret = col[*s1] - col[*s2]) != 0) {
 				return ret;
 			}
+			s1++, s2++;
 		}
 	} else {
-		for (i = 0; i < size; ++i) {
-			if ((ret = s1[i] - s2[i]) != 0) {
+		while (s1 < end) {
+			if ((ret = *s1 - *s2) != 0) {
 				return ret;
 			}
+			s1++, s2++;
 		}
 	}
 	return 0;
@@ -1732,75 +1741,68 @@ common_cmps (const unsigned char *s1, const unsigned char *s2,
 static int
 cob_cmp_all (cob_field *f1, cob_field *f2)
 {
+	const unsigned char	*s = COB_MODULE_PTR->collating_sequence;
 	unsigned char		*data;
-	const unsigned char	*s;
-	size_t			size;
-	int			ret;
-	int			sign;
+	unsigned char		buff[COB_MAX_DIGITS + 1];
 
-	size = f1->size;
-	data = f1->data;
-	sign = COB_GET_SIGN (f1);
-	s = COB_MODULE_PTR->collating_sequence;
+	if (COB_FIELD_HAVE_SIGN (f1)) {
+		/* drop sign for comparision, using a copy to not change
+		   the field during comparision */
+		/* CHECKME: What should be returned if f1 is negative? */
+		unsigned char *real_data = f1->data;
+		f1->data = data = buff;
+		memcpy (buff, real_data, f1->size);
+		(void)cob_real_get_sign (f1);
+		f1->data = real_data;
+	} else {
+		data = f1->data;
+	}
+
+	/* check for IF VAR = ALL "9" */
 	if (f2->size == 1) {
-		ret = common_cmpc (data, f2->data[0], size, s);
-		goto end;
-	}
-	ret = 0;
-	while (size >= f2->size) {
-		if ((ret = common_cmps (data, f2->data, f2->size, s)) != 0) {
-			goto end;
-		}
-		size -= f2->size;
-		data += f2->size;
-	}
-	if (size > 0) {
-		ret = common_cmps (data, f2->data, size, s);
+		return common_cmpc (data, f2->data[0], f1->size, s);
 	}
 
-end:
-	if (COB_FIELD_TYPE (f1) != COB_TYPE_NUMERIC_PACKED) {
-		COB_PUT_SIGN (f1, sign);
+	/* check for IF VAR = ALL "AB" ... */
+	{
+		size_t		size = f1->size;
+		int			ret;
+
+		while (size >= f2->size) {
+			if ((ret = common_cmps (data, f2->data, f2->size, s)) != 0) {
+				return ret;
+			}
+			size -= f2->size;
+			data += f2->size;
+		}
+		if (size > 0) {
+			return common_cmps (data, f2->data, size, s);
+		}
 	}
-	return ret;
+
+	return 0;
 }
 
 static int
 cob_cmp_alnum (cob_field *f1, cob_field *f2)
 {
-	const unsigned char	*s;
-	size_t			min;
-	int			ret;
-	int			sign1;
-	int			sign2;
-
-	/* FIXME later: must cater for national fields, too */
-
-	sign1 = COB_GET_SIGN (f1);
-	sign2 = COB_GET_SIGN (f2);
-	min = (f1->size < f2->size) ? f1->size : f2->size;
-	s = COB_MODULE_PTR->collating_sequence;
+	const unsigned char	*s = COB_MODULE_PTR->collating_sequence;
+	const size_t	min = (f1->size < f2->size) ? f1->size : f2->size;
+	int		ret;
 
 	/* Compare common substring */
 	if ((ret = common_cmps (f1->data, f2->data, min, s)) != 0) {
-		goto end;
+		return ret;
 	}
 
 	/* Compare the rest (if any) with spaces */
 	if (f1->size > f2->size) {
-		ret = common_cmpc (f1->data + min, ' ', f1->size - min, s);
+		return common_cmpc (f1->data + min, ' ', f1->size - min, s);
 	} else if (f1->size < f2->size) {
-		ret = -common_cmpc (f2->data + min, ' ', f2->size - min, s);
+		return -common_cmpc (f2->data + min, ' ', f2->size - min, s);
 	}
 
-end:
-	if (COB_FIELD_TYPE (f1) != COB_TYPE_NUMERIC_PACKED) {
-		COB_PUT_SIGN (f1, sign1);
-	}
-	if (COB_FIELD_TYPE (f2) != COB_TYPE_NUMERIC_PACKED) {
-		COB_PUT_SIGN (f2, sign2);
-	}
-	return ret;
+	return 0;
 }
 
 static int
@@ -2330,6 +2332,31 @@ cob_cache_free (void *ptr)
 	}
 }
 
+static COB_INLINE int
+hash (const char *s)
+{
+	register const char *p = s;
+	register int	val = 0;
+
+	while (*p) {
+		val += *p++;
+	}
+	return val;
+}
+
+static COB_INLINE void
+init_statement_hashlist (void)
+{
+	if (cob_statement_hash[STMT_UNKNOWN] != 0) {
+		return;
+	}
+	cob_statement_hash[STMT_UNKNOWN] = hash("UNKNOWN");
+#define COB_STATEMENT(ename,str)	\
+	cob_statement_hash[ename] = hash(str);
+#include "statement.def"	/* located and installed next to common.h */
+#undef COB_STATEMENT
+}
+
 /* cob_set_location is kept for backward compatibility (pre 3.0);
    it stored the location for exception handling and related
    intrinsic functions and did tracing, depending on a global flag */
@@ -2341,16 +2368,20 @@ cob_set_location (const char *sfile, const unsigned int sline,
 	enum cob_statement stmt;
 	cob_module	*mod = COB_MODULE_PTR;
 	const char	*s;
+	const int	stmt_hash = hash (cstatement);
 
 	mod->section_name = csect;
 	mod->paragraph_name = cpara;
 	cob_source_file = sfile;
 	cob_source_line = sline;
 
+	init_statement_hashlist ();
+
 	if (!cstatement) {
 		stmt = STMT_UNKNOWN;
 #define COB_STATEMENT(ename,str) \
-	} else if (strcmp (str, cstatement) == 0) { \
+	} else if (stmt_hash == cob_statement_hash[ename] \
+	        && strcmp (str, cstatement) == 0) { \
 		stmt = ename;
 #include "statement.def"	/* located and installed next to common.h */
 #undef COB_STATEMENT
@@ -2614,17 +2645,21 @@ cob_trace_exit (const char *name)
 	}
 }
 
-/* this functin is alltogether a compat-only function for pre 3.2,
+/* this function is alltogether a compat-only function for pre 3.2,
    later versions use cob_trace_statement(enum cob_statement) */
 void
 cob_trace_stmt (const char *stmt_name)
 {
 	enum cob_statement stmt;
+	const int stmt_hash = hash (stmt_name);
+
+	init_statement_hashlist ();
 
 	if (!stmt_name) {
 		stmt = STMT_UNKNOWN;
 #define COB_STATEMENT(ename,str) \
-	} else if (strcmp (str, stmt_name) == 0) { \
+	} else if (stmt_hash == cob_statement_hash[ename] \
+	        && strcmp (str, stmt_name) == 0) { \
 		stmt = ename;
 #include "statement.def"	/* located and installed next to common.h */
 #undef COB_STATEMENT
@@ -2687,44 +2722,48 @@ cob_get_pointer (const void *srcptr)
 	return (cob_u8_ptr)tmptr;
 }
 
+/* stores the field's rtrimmed string content into the given buffer
+   with maxlength */
 void
 cob_field_to_string (const cob_field *f, void *str, const size_t maxsize)
 {
-	unsigned char	*s;
-	size_t		count;
-	size_t		i;
+	register unsigned char	*end, *data, *s;
 
 	if (unlikely (f == NULL)) {
 		snprintf (str, maxsize, "%s", ("NULL field"));
 		return;
 	}
 
-	count = 0;
 	if (unlikely (f->size == 0)) {
 		return;
 	}
+	data = f->data;
 	/* check if field has data assigned (may be a BASED / LINKAGE item) */
-	if (unlikely (f->data == NULL)) {
+	if (data == NULL) {
 		snprintf (str, maxsize, "%s", ("field with NULL address"));
 		return;
 	}
-	for (i = f->size - 1; ; i--) {
-		if (f->data[i] && f->data[i] != (unsigned char)' ') {
-			count = i + 1;
+	end = data + f->size - 1;
+	while (end > data) {
+		if (*end != ' ' && *end) {
 			break;
 		}
-		if (!i) {
-			break;
-		}
-	}
-	if (count > maxsize) {
-		count = maxsize;
+		end--;
 	}
 	s = (unsigned char *)str;
-	for (i = 0; i < count; ++i) {
-		s[i] = f->data[i];
+	if (*end == ' ' || *end == 0) {
+		*s = 0;
+		return;
 	}
-	s[i] = 0;
+
+	/* note: the specified max does not contain the low-value */
+	if (end - data > maxsize) {
+		end = data + maxsize;
+	}
+	while (data <= end) {
+		*s++ = *data++;
+	}
+	*s = 0;
 }
 
 static void
@@ -2735,8 +2774,8 @@ call_exit_handlers_and_terminate (void)
 		while (h != NULL) {
 			h->proc ();
 			h = h->next;
-			}
 		}
+	}
 	cob_terminate_routines ();
 }
 
@@ -3449,6 +3488,15 @@ cob_check_numdisp (const cob_field *f)
 
 /* Sign */
 
+static COB_INLINE COB_A_INLINE unsigned char *
+locate_sign (cob_field *f)
+{
+	if (COB_FIELD_SIGN_LEADING (f)) {
+		return f->data;
+	}
+	return f->data + f->size - 1;
+}
+
 int
 cob_real_get_sign (cob_field *f)
 {
@@ -3456,12 +3504,7 @@ cob_real_get_sign (cob_field *f)
 
 	switch (COB_FIELD_TYPE (f)) {
 	case COB_TYPE_NUMERIC_DISPLAY:
-		/* Locate sign */
-		if (unlikely (COB_FIELD_SIGN_LEADING (f))) {
-			p = f->data;
-		} else {
-			p = f->data + f->size - 1;
-		}
+		p = locate_sign (f);
 
 		/* Get sign */
 		if (unlikely (COB_FIELD_SIGN_SEPARATE (f))) {
@@ -3494,26 +3537,22 @@ void
 cob_real_put_sign (cob_field *f, const int sign)
 {
 	unsigned char	*p;
-	unsigned char	c;
 
 	switch (COB_FIELD_TYPE (f)) {
 	case COB_TYPE_NUMERIC_DISPLAY:
-		/* Locate sign */
-		if (unlikely (COB_FIELD_SIGN_LEADING (f))) {
-			p = f->data;
-		} else {
-			p = f->data + f->size - 1;
-		}
-
-		/* Put sign */
+		/* Note: we only locate the sign if needed,
+		   as the common case will be "nothing to do" */
 		if (unlikely (COB_FIELD_SIGN_SEPARATE (f))) {
-			c = (sign < 0) ? (cob_u8_t)'-' : (cob_u8_t)'+';
+			const unsigned char	c = (sign < 0) ? (cob_u8_t)'-' : (cob_u8_t)'+';
+			p = locate_sign (f);
 			if (*p != c) {
 				*p = c;
 			}
 		} else if (unlikely (COB_MODULE_PTR->ebcdic_sign)) {
+			p = locate_sign (f);
 			cob_put_sign_ebcdic (p, sign);
 		} else if (sign < 0) {
+			p = locate_sign (f);
 			cob_put_sign_ascii (p);
 		}
 		return;
@@ -3568,48 +3607,129 @@ cob_set_switch (const int n, const int flag)
 int
 cob_cmp (cob_field *f1, cob_field *f2)
 {
-	cob_field	temp;
-	cob_field_attr	attr;
-	unsigned char	buff[256];
+	unsigned short		f1_type = COB_FIELD_TYPE (f1);
+	unsigned short		f2_type = COB_FIELD_TYPE (f2);
 
-	if (COB_FIELD_IS_NUMERIC (f1) && COB_FIELD_IS_NUMERIC (f2)) {
+	const int	f1_is_numeric = f1_type & COB_TYPE_NUMERIC;
+	const int	f2_is_numeric = f2_type & COB_TYPE_NUMERIC;
+
+	/* both numeric -> direct compare */
+	if (f1_is_numeric && f2_is_numeric) {
 		return cob_numeric_cmp (f1, f2);
 	}
-	if (COB_FIELD_TYPE (f2) == COB_TYPE_ALPHANUMERIC_ALL) {
-		if (f2->size == 1 && f2->data[0] == '0' &&
-		    COB_FIELD_IS_NUMERIC (f1)) {
+
+	/* one is an internal ALL field (ZERO,LOW-VALUE, ...) */
+	if (f2_type == COB_TYPE_ALPHANUMERIC_ALL) {
+		if (f2->size == 1 && f2->data[0] == '0'
+		 && f1_is_numeric) {
 			return cob_cmp_int (f1, 0);
 		}
 		return cob_cmp_all (f1, f2);
 	}
-	if (COB_FIELD_TYPE (f1) == COB_TYPE_ALPHANUMERIC_ALL) {
-		if (f1->size == 1 && f1->data[0] == '0' &&
-		    COB_FIELD_IS_NUMERIC (f2)) {
+	if (f1_type == COB_TYPE_ALPHANUMERIC_ALL) {
+		if (f1->size == 1 && f1->data[0] == '0'
+		 && f2_is_numeric) {
 			return -cob_cmp_int (f2, 0);
 		}
 		return -cob_cmp_all (f2, f1);
 	}
-	if (COB_FIELD_IS_NUMERIC (f1) &&
-	    COB_FIELD_TYPE (f1) != COB_TYPE_NUMERIC_DISPLAY) {
-		temp.size = COB_FIELD_DIGITS (f1);
-		temp.data = buff;
-		temp.attr = &attr;
-		attr = *f1->attr;
-		attr.type = COB_TYPE_NUMERIC_DISPLAY;
-		attr.flags &= ~COB_FLAG_HAVE_SIGN;
-		cob_move (f1, &temp);
-		f1 = &temp;
+
+#if 0	/* FIXME later: must cater for national fields, too,
+		   at least if that is numeric NATIONAL	*/
+	if (COB_FIELD_IS_NATIONAL (f1)) {
+		...
 	}
-	if (COB_FIELD_IS_NUMERIC (f2) &&
-	    COB_FIELD_TYPE (f2) != COB_TYPE_NUMERIC_DISPLAY) {
-		temp.size = COB_FIELD_DIGITS (f2);
-		temp.data = buff;
-		temp.attr = &attr;
-		attr = *f2->attr;
-		attr.type = COB_TYPE_NUMERIC_DISPLAY;
-		attr.flags &= ~COB_FLAG_HAVE_SIGN;
-		cob_move (f2, &temp);
-		f2 = &temp;
+#endif
+
+	/* all else -> alphanumeric comparision */
+
+	/* if one is numeric (cannot be "both", as checked above), then
+	   convert that to alphanumeric for final test;
+	   note: this is _very_ seldom the case, during "make checkall"
+	   only in test "Alphanumeric and binary numeric" */
+
+	if (f1_is_numeric || f2_is_numeric) {
+		/* CHECKME: What should be returned if field is negative?
+		   We suspicously change -12 to 12 here... */
+		cob_field	temp;
+		cob_field_attr	attr;
+		unsigned char	buff[COB_MAX_DIGITS + 10];
+
+		/* CHECKME: may need to abort if we ever get here with float data */
+
+		/* FIXME: must be converted to COB_TYPE_NUMERIC_EDITED with an
+		   internal PIC of COB_FIELD_DIGITS '9's and leading sign,
+		   otherwise we'll fail as soon as we enable COB_MAX_BINARY */
+		if (f1_is_numeric
+		 && f1_type != COB_TYPE_NUMERIC_DISPLAY) {
+			temp.size = COB_FIELD_DIGITS (f1);
+			temp.data = buff;
+			temp.attr = &attr;
+			attr = *f1->attr;
+			attr.type = COB_TYPE_NUMERIC_DISPLAY;
+			attr.flags &= ~COB_FLAG_HAVE_SIGN;
+			cob_move (f1, &temp);
+			f1 = &temp;
+		}
+		if (f2_is_numeric
+		 && f2_type != COB_TYPE_NUMERIC_DISPLAY) {
+			temp.size = COB_FIELD_DIGITS (f2);
+			temp.data = buff;
+			temp.attr = &attr;
+			attr = *f2->attr;
+			attr.type = COB_TYPE_NUMERIC_DISPLAY;
+			attr.flags &= ~COB_FLAG_HAVE_SIGN;
+			cob_move (f2, &temp);
+			f2 = &temp;
+		}
+
+		if (COB_FIELD_HAVE_SIGN (f1)) {
+			/* Note: if field is numeric then it is always
+			   USAGE DISPLAY here */
+
+			if (f1 != &temp) {				
+				/* drop sign for comparision, using a copy to not change
+				   the field during comparision */
+				unsigned char buff2[COB_MAX_DIGITS + 10];
+				const size_t size = f1->size;
+				int		ret;
+				unsigned char	*real_data = f1->data;
+				memcpy (buff2, real_data, size);
+				f1->data = buff2;
+				(void)cob_real_get_sign (f1);
+				ret = cob_cmp_alnum (f1, f2);
+				f1->data = real_data;
+				return ret;
+			} else {
+				/* we operate on a buffer already, just go on */
+				(void)cob_real_get_sign (f1);
+				return cob_cmp_alnum (f1, f2);
+			}
+		}
+
+		if (COB_FIELD_HAVE_SIGN (f2)) {
+			/* Note: if field is numeric then it is always
+			   USAGE DISPLAY here */
+
+			if (f2 != &temp) {				
+				/* drop sign for comparision, using a copy to not change
+				   the field during comparision */
+				unsigned char buff2[COB_MAX_DIGITS + 10];
+				const size_t size = f2->size;
+				int		ret;
+				unsigned char	*real_data = f2->data;
+				memcpy (buff2, real_data, size);
+				f2->data = buff2;
+				(void)cob_real_get_sign (f2);
+				ret = cob_cmp_alnum (f1, f2);
+				f2->data = real_data;
+				return ret;
+			} else {
+				/* we operate on a buffer already, just go on */
+				(void)cob_real_get_sign (f2);
+				return cob_cmp_alnum (f1, f2);
+			}
+		}
 	}
 	return cob_cmp_alnum (f1, f2);
 }
@@ -4131,7 +4251,7 @@ get_function_ptr_for_precise_time (void)
 /* split the timep to cob_time and set the offset from UTC */
 void
 static set_cob_time_from_localtime (time_t curtime,
-		struct cob_time *cb_time, const enum cob_datetime_res res) {
+		struct cob_time *cb_time) {
 
 	struct tm	*tmptr;
 #if !defined (_BSD_SOURCE) && !defined (HAVE_TIMEZONE)
@@ -4250,7 +4370,7 @@ cob_get_current_date_and_time_from_os (const enum cob_datetime_res res)
 	struct cob_time	cb_time;
 
 	curtime = time (NULL);
-	set_cob_time_from_localtime (curtime, &cb_time, res);
+	set_cob_time_from_localtime (curtime, &cb_time);
 
 	if (res <= DTR_TIME_NO_NANO) {
 		cb_time.nanosecond = 0;
@@ -4298,7 +4418,7 @@ cob_get_current_date_and_time_from_os (const enum cob_datetime_res res)
 	curtime = time (NULL);
 #endif
 
-	set_cob_time_from_localtime (curtime, &cb_time, res);
+	set_cob_time_from_localtime (curtime, &cb_time);
 
 	/* Get nanoseconds or microseconds, if possible */
 #if defined (HAVE_CLOCK_GETTIME)
@@ -6680,19 +6800,23 @@ cob_sys_printable (void *p1, ...)
 	} else {
 		dotrep = (unsigned char)'.';
 	}
+#ifdef	HAVE_SETLOCALE
 	if (cobglobptr->cob_locale_ctype) {
 		previous_locale = setlocale (LC_CTYPE, NULL);
 		setlocale (LC_CTYPE, cobglobptr->cob_locale_ctype);
 	}
+#endif
 	data = p1;
 	for (n = 0; n < datalen; ++n) {
 		if (!isprint (data[n])) {
 			data[n] = dotrep;
 		}
 	}
+#ifdef	HAVE_SETLOCALE
 	if (previous_locale) {
 		setlocale (LC_CTYPE, previous_locale);
 	}
+#endif
 	return 0;
 }
 
@@ -9918,13 +10042,13 @@ cob_stack_trace_internal (FILE *target, int verbose, int count)
 	}
 
 	if (verbose && cob_argc != 0) {
-		size_t i;
+		size_t ia;
 		write_or_return_arr (file_no, " Started by ");
 		write_or_return_str (file_no, cob_argv[0]);
 		write_or_return_arr (file_no, "\n");
-		for (i = 1; i < (size_t)cob_argc; ++i) {
+		for (ia = 1; ia < (size_t)cob_argc; ++ia) {
 			write_or_return_arr (file_no, "\t");
-			write_or_return_str (file_no, cob_argv[i]);
+			write_or_return_str (file_no, cob_argv[ia]);
 			write_or_return_arr (file_no, "\n");
 		}
 	}
@@ -10379,7 +10503,8 @@ void
 init_statement_list (void)
 {
 	cob_statement_name[STMT_UNKNOWN] = "UNKNOWN";
-#define COB_STATEMENT(ename,str)	cob_statement_name[ename] = str;
+#define COB_STATEMENT(ename,str) \
+	cob_statement_name[ename] = str;
 #include "statement.def"	/* located and installed next to common.h */
 #undef COB_STATEMENT
 }

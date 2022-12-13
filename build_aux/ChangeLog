@@ -1,4 +1,9 @@
 
+2022-12-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* create_mingw_bindist.sh: optional installation of locales and manpages;
+	  MSYS2 builds now working with use of previously added MINGWDIR
+
 2022-12-01  Simon Sobisch <simonsobisch@gnu.org>
 
 	* bootstrap: drop tarstamp.h generation, done via make
@@ -14,7 +19,7 @@
 2022-05-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* create_mingw_bindist.sh: explicit call cobc.exe in the generated
-	  set_env.cmd to allowwrapper scripts cobc.cmd/cobc.bat to call it;
+	  set_env.cmd to allow wrapper scripts cobc.cmd/cobc.bat to call it;
 	  add (untested) option to use this in MSYS2 builds
 
 2022-03-29  Simon Sobisch <simonsobisch@gnu.org>

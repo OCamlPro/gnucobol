@@ -204,6 +204,7 @@ export COB_STACKTRACE
 if test "$GNUCOBOL_TEST_LOCAL" != "1"; then
 	COB_OBJECT_EXT="@COB_OBJECT_EXT@"
 	COB_EXE_EXT="@COB_EXE_EXT@"
+	COB_MODULE_EXT="@COB_MODULE_EXT@"
 	COB_BIGENDIAN="@COB_BIGENDIAN@"
 	COB_HAS_64_BIT_POINTER="@COB_HAS_64_BIT_POINTER@"
 	COB_HAS_ISAM="@COB_HAS_ISAM@"
@@ -214,6 +215,7 @@ else
 
 	COB_OBJECT_EXT="$(grep COB_OBJECT_EXT info.out | cut -d: -f2 | cut -b2-)"
 	COB_EXE_EXT="$(grep COB_EXE_EXT info.out | cut -d: -f2 | cut -b2-)"
+	COB_MODULE_EXT="$(grep COB_MODULE_EXT info.out | cut -d: -f2 | cut -b2-)"
 
 	if test $(grep -i -c "little-endian" info.out) = 0; then
 		COB_BIGENDIAN="yes"
@@ -282,7 +284,7 @@ rm -rf info.out
 # NIST tests (tests/cobol85) are executed in a separate perl process with a new environment --> export needed
 export COB_HAS_ISAM COB_HAS_XML2 COB_HAS_JSON COB_HAS_CURSES COB_HAS_64_BIT_POINTER
 export COBC COBCRUN COBCRUN_DIRECT RUN_PROG_MANUAL
-export COB_OBJECT_EXT COB_EXE_EXT
+export COB_OBJECT_EXT COB_EXE_EXT COB_MODULE_EXT
 
 # to ensure that no external DB_HOME is polluted: unset
 DB_HOME="" && export DB_HOME

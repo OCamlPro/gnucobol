@@ -5,7 +5,6 @@ NEWS - user visible changes				-*- outline -*-
 
  planned:
    * configure: minor checking to set TIME_T_IS_NON_ARITHMETIC
-   * changes to CALL handling especially for BY VALUE and stdcall
    * adjustments for registers and XML PARSE stubs
    * investigation of code analysis tools and user feedback
 
@@ -288,14 +287,18 @@ NEWS - user visible changes				-*- outline -*-
    this has been fixed so that all modules compiled with GnuCOBOL 2.2 can be
    executed with GnuCOBOL 3.2
 
-** FUNCTION RANDOM could return 1 in rare cases (more often in win32), it now
-   returns, as defined, a value in the range 0 <= x < 1
+** FUNCTION RANDOM could return 1 in rare cases (more likely on win32),
+   it now returns a value in the range 0 <= x < 1, as defined
 
 ** the internal signal handler could crash or deadlock the process on hard
    errors (either in called library functions or when running COBOL without
    runtime checks); the signal handling is now completely rewritten to fix
    this issue and all executed code from the signal handler but the COBOL data
    dump is now signal and thread safe
+
+** TYPEDEF items got storage and attribute assigned, leading to bigger modules,
+   longer loading time and longer compile times; if you use those a recompile
+   is highly suggested
 
 * Listing changes
 
@@ -336,14 +339,17 @@ NEWS - user visible changes				-*- outline -*-
 
 ** cobc's parsing time was significantly reduced for big programs
 
-** execution times of INSPECT that use big COBOL fields (multiple KB) were
-   significantly reduced
+** execution times were significantly reduced for the following:
+	INSPECT that use big COBOL fields (multiple KB)
+	CALL data-item, and first time for each CALL
+	ACCEPT DATE/TIME/DAY and datetime related FUNCTIONs
+	MOVE with enabled runtime checks (only with re-compile)
 
 ** execution times for programs that are new generated with -fsource-location
    (implied with --debug/-fec) are cut down, especially when many "simple"
    statements or lot of sections/paragraphs are used; also the runtime checks
    for use of LINKAGE fields and/or subscripts/reference-modification will be
-   much faster 
+   much faster
 
 * New build features
 
@@ -351,6 +357,7 @@ NEWS - user visible changes				-*- outline -*-
 ** configure now honors MATH_LIBS
 ** configure now checks for XCurses and allows --with-curses=xcurses
    (experimental)
+** configure now checks for PERL and passes that as default to make test
 ** cobc handles SOURCE_DATE_EPOCH now, allowing to override timestamps in
    generated code and listing files, allowing reproducible builds
 
@@ -409,10 +416,10 @@ NEWS - user visible changes				-*- outline -*-
 
 ** JSON GENERATE statement
    (note: runtime support needs additional library cJSON or JSON-C)
-   
+
 ** CONTINUE AFTER statement (COBOL 2022) implemented, also handle fractions
    of seconds in C$SLEEP now
-   
+
 ** TYPEDEF and SAME AS (COBOL 2002) implemented, including the MicroFocus
    and RM/COBOL variants
 
@@ -444,7 +451,7 @@ NEWS - user visible changes				-*- outline -*-
    still applied;
    File name mapping now applies both to COBOL statements and CALLable
    CBL_ and C$ file routines.
-   
+
 ** Screen I/O: initial mouse support (for details see runtime.cfg),
    use of CURSOR clause in SPECIAL-NAMES for positioning on ACCEPT
 
@@ -460,7 +467,7 @@ NEWS - user visible changes				-*- outline -*-
      extensions [as post-rc1-change this may be set to old behavior by
      defining COB_MULTI_EXTENSION when building GnuCOBOL/cobc]
    * library names are now tested for environment "COB_COPY_LIB_libname",
-     allowing the directory to specified externally (also as no-directory 
+     allowing the directory to specified externally (also as no-directory
      by exporting with empty value) and has a fallback (with a warning) to
      be effectively ignored (as previous versions did this)
 
@@ -522,23 +529,24 @@ NEWS - user visible changes				-*- outline -*-
 
 * Changes in the COBOL runtime (libcob)
 
-** Messages from the COBOL runtime are also translated now (if installed).
-   To prevent this disable translations in general with using the configure
-   option --disable-nls (or by deactivating ENABLE_NLS in config.h).
+** messages from the COBOL runtime are also translated now (if installed);
+   to prevent this, disable translations in general with using the configure
+   option --disable-nls (or by deactivating ENABLE_NLS in config.h)
+
+** first-time file-locking under Win32
+
+** handle CRT STATUS either numerically, alphanumerically (4 digits) or as 3
+   bytes according to X/Open standard, depending on format and size
+
+** execution times of INSPECT and INITIALIZE with OCCURS were heavily cut down,
+   to fully benefit from this a recompile is necessary
 
 ** libcob.h does no longer auto-include gmp.h (behavior since 2.x), if you link
    against libcob and need cob_decimal include gmp.h/mpir.h yourself before;
    otherwise you do not need it in your include path anymore
 
-** execution times of INSPECT and INITIALIZE with OCCURS were heavily cut down
-
 ** convenience functions for direct C access to COBOL fields and for debugging
    were added, see new C-API documentation
-
-** first-time file-locking under Win32
-
-** handle CRT STATUS either numerically, alphanumerically (4 digits) or as 3
-    bytes according to X/Open standard, depending on format and size
 
 ** Breaking change: previously the return-code of registered error handlers
    (by CBL_ERROR_PROC) were ignored. This was changed according to the
@@ -598,7 +606,7 @@ NEWS - user visible changes				-*- outline -*-
 
 * Too many bug fixes to list here (please check ChangeLogs for full details),
   includes the following CVEs:
-  
+
 ** compiler (may be triggered with special crafted source files)
    CVE-2019-14468, CVE-2019-14486, CVE-2019-14528, CVE-2019-14541,
    CVE-2019-16396, CVE-2019-16395

@@ -1614,11 +1614,11 @@ cb_build_generic_register (const char *name, const char *external_definition,
 		}
 	}
 	if (p) {
-		const enum cb_warn_val backup = cb_warn_opt_val[cb_warn_unfinished];
+		const enum cb_warn_val backup = get_warn_opt_value (cb_warn_unfinished);
 		(void)extract_next_word_from_buffer (p, word);
-		cb_warn_opt_val[cb_warn_unfinished] = COBC_WARN_DISABLED;
+		set_warn_opt_value (cb_warn_unfinished, COBC_WARN_DISABLED);
 		field->pic = cb_build_picture (word);
-		cb_warn_opt_val[cb_warn_unfinished] = backup;
+		set_warn_opt_value (cb_warn_unfinished, backup);
 		if (field->pic->size == 0) {
 			ret = 1;
 		}
@@ -1766,14 +1766,14 @@ cb_build_generic_register (const char *name, const char *external_definition,
 		field->flag_invalid = 1;
 	} else
 	if (current_program) {
-		const enum cb_warn_val backup = cb_warn_opt_val[cb_warn_unfinished];
+		const enum cb_warn_val backup = get_warn_opt_value (cb_warn_unfinished);
 		/* note: the necessary tree items like cb_zero won't be available
 		   without a program, and therefore full validation is not possible */
 		field->flag_internal_register = 1;
 		field->flag_no_init = 1;
-		cb_warn_opt_val[cb_warn_unfinished] = COBC_WARN_DISABLED;
+		set_warn_opt_value (cb_warn_unfinished, COBC_WARN_DISABLED);
 		cb_validate_field (field);
-		cb_warn_opt_val[cb_warn_unfinished] = backup;
+		set_warn_opt_value (cb_warn_unfinished, backup);
 	}
 
 	if (field->flag_invalid) {
@@ -2493,7 +2493,17 @@ cb_build_identifier (cb_tree x, const int subchk)
 			}
 		}
 
-		/* Run-time check for ODO (including all the fields' subordinate items) */
+		/* Run-time check for ODO (including all the fields' subordinate items),
+		   FIXME: this should only be done "once" per ODO and statement, but
+		   if the statement is a list it is done multiple times:
+			 77 XX PIC 99 VALUE 5.
+			 01 X         PIC X OCCURS 0 TO 10 DEPENDING ON XX.
+			   MOVE ZERO TO X(2) X(4) X(6) X(8) X(10) X(1)
+		   --> currently generated for each of the 6 "X" items, as we (need to)
+		       call this function 6 times from parser (target_identifier)
+		   --> either cache field name here (dropping after each statement)
+		       or remove/skip later during codegen
+		   */
 		if (CB_EXCEPTION_ENABLE (COB_EC_BOUND_SUBSCRIPT) && f->odo_level != 0) {
 			for (p = f; p; p = p->children) {
 				if (CB_VALID_TREE (p->depending)
@@ -2981,16 +2991,21 @@ cb_build_length (cb_tree x)
 cb_tree
 cb_build_ppointer (cb_tree x)
 {
-	struct cb_field	*f;
-
-	if (x == cb_error_node ||
-	    (CB_REFERENCE_P (x) && cb_ref (x) == cb_error_node)) {
+	if (x == cb_error_node) {
 		return cb_error_node;
 	}
 
 	if (CB_REFERENCE_P (x)) {
-		f = CB_FIELD_PTR (cb_ref(x));
-		f->count++;
+		/* we get here with either a field reference
+		   (then increment use), or by prototpye;
+		   CHECKME, count should be incremented by reference already */
+		cb_tree xf = cb_ref (x);
+		if (xf == cb_error_node) {
+			return cb_error_node;
+		}
+		if (CB_FIELD_P (xf)) {
+			CB_FIELD (xf)->count++;
+		}
 	}
 	return CB_BUILD_CAST_PPOINTER (x);
 }
@@ -3174,7 +3189,8 @@ static void
 emit_definition_prototype_error_header (const char *name)
 {
 	/* FIXME: move to error.c and cleanup similar to configuration_error */
-	cb_warning (cb_warn_repository_checks, _("prototype and definition of '%s' do not match"), name);
+	cb_warning (cb_warn_repository_checks,
+		_("prototype and definition of '%s' do not match"), name);
 }
 
 static void
@@ -3187,7 +3203,20 @@ emit_definition_prototype_error (const char *name, const char *error,
 		*prototype_error_header_shown = 1;
 	}
 
-	cb_note (COB_WARNOPT_NONE, 0, "%s", error);
+	cb_note (cb_warn_repository_checks, 0, "%s", error);
+}
+
+static void
+emit_definition_prototype_clause_mismatch (const char *name, const char *clause,
+				 int * const prototype_error_header_shown)
+{
+	/* FIXME: move to error.c and cleanup similar to configuration_error */
+	if (!*prototype_error_header_shown) {
+		emit_definition_prototype_error_header (name);
+		*prototype_error_header_shown = 1;
+	}
+
+	cb_note (cb_warn_repository_checks, 0, "%s clauses differ", clause);
 }
 
 static int
@@ -3195,20 +3224,48 @@ items_have_same_data_clauses (const struct cb_field * const field_1,
 			      const struct cb_field * const field_2,
 			      const int check_any_length)
 {
-	const int	same_pic =
-		((field_1->pic && field_2->pic)
-		 && !strcmp (field_1->pic->orig, field_2->pic->orig))
-		|| (!field_1->pic && !field_2->pic);
 	const int	any_length_check =
 		!check_any_length
 		|| (field_1->flag_any_length == field_2->flag_any_length);
+	int	same_pic;
 
-	return same_pic && any_length_check
+	if (!any_length_check) {
+		return 1;
+	}
+
+	if (field_1->pic && field_2->pic) {
+		if (check_any_length
+		 || field_1->flag_any_length == field_2->flag_any_length) {
+			if (field_1->usage != field_2->usage) {
+				same_pic = 0;
+			} else {
+				same_pic = strcmp (field_1->pic->orig, field_2->pic->orig) == 0;
+			}
+		} else {
+			/* only one has any length -> ensure it is the prototype and
+			   that the othr has the same numeric/nonnumeric type */
+			if (!field_1->flag_any_length) {
+				return 1;
+			}
+			if (field_1->flag_any_numeric) {
+				same_pic = CB_TREE_CATEGORY (field_2) == CB_CATEGORY_NUMERIC;
+			} else {
+				same_pic = field_1->pic->orig[1] == field_2->pic->orig[1];
+			}
+		}
+	} else {
+		if (field_1->pic || field_2->pic) {
+			same_pic = 0;
+		} else {
+			same_pic = field_1->usage == field_2->usage;
+		}
+	}
+
+	return same_pic
 		&& (field_1->flag_blank_zero == field_2->flag_blank_zero)
 		&& (field_1->flag_justified == field_2->flag_justified)
 		&& (field_1->flag_sign_separate == field_2->flag_sign_separate
-		    && field_1->flag_sign_leading == field_2->flag_sign_leading)
-		&& (field_1->usage == field_2->usage);
+		 && field_1->flag_sign_leading == field_2->flag_sign_leading);
 }
 
 static int
@@ -3253,10 +3310,12 @@ error_if_items_differ (const char *element_name,
 
 		/* To-do: Indicate location of the items in error. */
 		if (is_parameter) {
-			cb_note (COB_WARNOPT_NONE, 0, _("parameters #%d ('%s' in the definition and '%s' in the prototype) differ"),
+			cb_note (cb_warn_repository_checks, 0,
+				  _("parameters #%d ('%s' in the definition and '%s' in the prototype) differ"),
 				  parameter_num, def_item->name, proto_item->name);
 		} else { /* RETURNING item */
-			cb_note (COB_WARNOPT_NONE, 0, _("returning items ('%s' in the definition and '%s' in the prototype) differ"),
+			cb_note (cb_warn_repository_checks, 0,
+				  _("returning items ('%s' in the definition and '%s' in the prototype) differ"),
 				  def_item->name, proto_item->name);
 		}
 	}
@@ -3292,25 +3351,37 @@ error_if_signatures_differ (struct cb_program *prog1, struct cb_program *prog2)
 	if (definition->prog_type != prototype->prog_type) {
 		if (definition->prog_type == COB_MODULE_TYPE_PROGRAM) {
 			emit_definition_prototype_error (element_name,
-							 _("definition is a program but the prototype is a function"),
-							 &prototype_error_header_shown);
+					_("definition is a program but the prototype is a function"),
+					&prototype_error_header_shown);
 		} else { /* function */
 			emit_definition_prototype_error (element_name,
-							 _("definition is a function but the prototype is a program"),
-							 &prototype_error_header_shown);
+					_("definition is a function but the prototype is a program"),
+					&prototype_error_header_shown);
 		}
 	}
 
 	if (definition->decimal_point != prototype->decimal_point) {
-		emit_definition_prototype_error (element_name,
-						 _("DECIMAL-POINT IS COMMA clauses differ"),
-						 &prototype_error_header_shown);
+		emit_definition_prototype_clause_mismatch (
+			element_name, "DECIMAL-POINT IS COMMA",
+			&prototype_error_header_shown);
 	}
 
 	if (definition->currency_symbol != prototype->currency_symbol) {
-		emit_definition_prototype_error (element_name,
-						 _("CURRENCY clauses differ"),
-						 &prototype_error_header_shown);
+		emit_definition_prototype_clause_mismatch (
+			element_name, "CURRENCY",
+			&prototype_error_header_shown);
+	}
+
+	/*
+	   prototype is a COBOL 2002 feature, which dropped the ENTRY statement,
+	   we therefore only check the number of its "main" entry point and
+	   also check the call-convention using that
+	 */
+	if (cb_get_int (definition->entry_convention)
+	 != cb_get_int (prototype->entry_convention)) {
+		emit_definition_prototype_clause_mismatch (
+			element_name, "ENTRY-CONVENTION",
+			&prototype_error_header_shown);
 	}
 
 	/*
@@ -3336,17 +3407,19 @@ error_if_signatures_differ (struct cb_program *prog1, struct cb_program *prog2)
 
 				if ((CB_PURPOSE_INT (def_item) != CB_PURPOSE_INT (proto_item))
 				 || (def_field->flag_is_pdiv_opt != proto_field->flag_is_pdiv_opt)) {
-					/* To-do: Improve error message. */
-					cb_note (COB_WARNOPT_NONE, 0, "parameters #%d have different clauses in the procedure division header",
-						  parameter_num);
+					cb_note (cb_warn_repository_checks, 0,
+						_("parameters #%d ('%s' in the definition and '%s' in the prototype) differ"),
+						parameter_num, def_field->name, proto_field->name);
+					emit_definition_prototype_clause_mismatch (
+						element_name, "OPTIONAL", &prototype_error_header_shown);
 				}
 			}
 
 		}
 	} else {
 		emit_definition_prototype_error (element_name,
-						 _("number of parameters differ"),
-						 &prototype_error_header_shown);
+				_("number of parameters differ"),
+				&prototype_error_header_shown);
 	}
 
 	/* Compare returning items. */
@@ -3355,12 +3428,12 @@ error_if_signatures_differ (struct cb_program *prog1, struct cb_program *prog2)
 	    && !(definition->returning && prototype->returning)) {
 		if (definition->returning) {
 			emit_definition_prototype_error (element_name,
-							 _("definition has a RETURNING item but prototype does not"),
-							 &prototype_error_header_shown);
+					_("definition has a RETURNING item but prototype does not"),
+					&prototype_error_header_shown);
 		} else {
 			emit_definition_prototype_error (element_name,
-							 _("definition does not have a RETURNING item but prototype does"),
-							 &prototype_error_header_shown);
+					_("definition does not have a RETURNING item but prototype does"),
+					&prototype_error_header_shown);
 		}
 	} else if (definition->returning && prototype->returning) {
 		error_if_items_differ (element_name,
@@ -3377,7 +3450,7 @@ cb_check_definition_matches_prototype (struct cb_program *prog)
 	cb_tree	l;
 
 	/* if check is explicit disabled: don't care */
-	if (cb_warn_opt_val[cb_warn_repository_checks] == COBC_WARN_DISABLED) {
+	if (get_warn_opt_value (cb_warn_repository_checks) == COBC_WARN_DISABLED) {
 		return;
 	}
 
@@ -3430,12 +3503,14 @@ check_argument_conformance (struct cb_program *program, cb_tree argument_tripple
 	if ((arg_mode == CB_CALL_BY_REFERENCE || arg_mode == CB_CALL_BY_CONTENT)
 	 &&  param_mode != CB_CALL_BY_REFERENCE) {
 		/* TO-DO: Improve name of CB_VALUE (argument_tripple) */
-		cb_warning_x (cb_warn_repository_checks, arg_tree, _("expected argument #%d, %s, to be passed BY VALUE"),
-			    param_num, cb_name (arg_tree));
+		cb_warning_x (cb_warn_repository_checks, arg_tree,
+			_("expected argument #%d, %s, to be passed BY VALUE"),
+			param_num, cb_name (arg_tree));
 	} else if (arg_mode == CB_CALL_BY_VALUE
 	        && param_mode != CB_CALL_BY_VALUE) {
-		cb_warning_x (cb_warn_repository_checks, arg_tree, _("expected argument #%d, %s, to be passed BY REFERENCE/CONTENT"),
-			    param_num, cb_name (arg_tree));
+		cb_warning_x (cb_warn_repository_checks, arg_tree,
+			_("expected argument #%d, %s, to be passed BY REFERENCE/CONTENT"),
+			param_num, cb_name (arg_tree));
 	}
 
 	if (CB_REF_OR_FIELD_P (arg_tree)) {
@@ -3452,7 +3527,8 @@ check_argument_conformance (struct cb_program *program, cb_tree argument_tripple
 	if (arg_mode == CB_CALL_BY_REFERENCE
 	 && arg_tree == cb_null
 	 && !param_field->flag_is_pdiv_opt) {
-		cb_warning_x (cb_warn_repository_checks, arg_tree, _("argument #%d is not optional"), param_num);
+		cb_warning_x (cb_warn_repository_checks, arg_tree,
+			_("argument #%d is not optional"), param_num);
 		return;
 	}
 
@@ -3465,7 +3541,8 @@ check_argument_conformance (struct cb_program *program, cb_tree argument_tripple
 	 || is_alphanum_group (param_field)) {
 		if (param_mode == CB_CALL_BY_REFERENCE) {
 			if (get_size (arg_tree) < param_field->size) {
-				cb_warning_x (cb_warn_repository_checks, arg_tree, _("argument #%d must be at least %d bytes long"),
+				cb_warning_x (cb_warn_repository_checks, arg_tree,
+						_("argument #%d must be at least %d bytes long"),
 						param_num, param_field->size);
 			}
 			return;
@@ -3595,12 +3672,14 @@ cb_check_conformance (cb_tree prog_ref, cb_tree using_list,
 		if (prog_returning_field->flag_any_length
 		    && !call_returning_field->flag_any_length) {
 			/* To-do: Check! */
-			cb_warning_x (cb_warn_repository_checks, returning, _("the RETURNING item is of a fixed size, not ANY LENGTH"));
+			cb_warning_x (cb_warn_repository_checks, returning,
+				_("the RETURNING item is of a fixed size, not ANY LENGTH"));
 		}
 		if (!items_have_same_data_clauses (call_returning_field,
 						   prog_returning_field, 0)) {
 			/* TO-DO: Improve message! */
-			cb_warning_x (cb_warn_repository_checks, returning, _("RETURNING item %s is not a valid type"),
+			cb_warning_x (cb_warn_repository_checks, returning,
+					_("RETURNING item %s is not a valid type"),
 				    cb_name (CB_TREE (call_returning_field)));
 		}
 	} else if (returning && !program->returning) {
@@ -4081,7 +4160,7 @@ cb_validate_program_environment (struct cb_program *prog)
 	}
 
 	/* Check CLASS clauses for duplicates */
-	if (cb_warn_additional) {
+	if (get_warn_opt_value (cb_warn_additional) != COBC_WARN_DISABLED) {
 		for (l = prog->class_name_list; l; l = CB_CHAIN (l)) {
 			check_class_duplicates (CB_VALUE (l));
 		}
@@ -4274,9 +4353,9 @@ validate_record_depending (cb_tree x)
 		{
 			enum cb_support	missing_compiler_config;
 			if (!cb_relaxed_syntax_checks
-			 || cb_warn_opt_val[cb_warn_additional] == COBC_WARN_AS_ERROR) {
+			 || get_warn_opt_value (cb_warn_additional) == COBC_WARN_AS_ERROR) {
 				missing_compiler_config = CB_ERROR;
-			} else if (cb_warn_opt_val[cb_warn_additional] == COBC_WARN_ENABLED) {
+			} else if (get_warn_opt_value (cb_warn_additional) == COBC_WARN_ENABLED) {
 				missing_compiler_config = CB_WARNING;
 			} else {
 				missing_compiler_config = CB_OK;
@@ -4963,7 +5042,7 @@ cb_validate_labels (struct cb_program *prog)
 						    label->name);
 					continue;
 				case CB_WARNING:
-					if (cb_warn_opt_val[cb_warn_dialect] == COBC_WARN_DISABLED) {
+					if (get_warn_opt_value (cb_warn_dialect) == COBC_WARN_DISABLED) {
 						break;
 					}
 					cb_warning_x (cb_warn_dialect, x,
@@ -5016,7 +5095,7 @@ cb_validate_perform_thru_ranges (struct cb_program *prog)
 {
 	cb_tree		l;
 	if (!cb_flag_section_exit_check
-	 && cb_warn_opt_val[cb_warn_suspicious_perform_thru] == COBC_WARN_DISABLED) {
+	 && get_warn_opt_value (cb_warn_suspicious_perform_thru) == COBC_WARN_DISABLED) {
 		return;
 	}
 	for (l = prog->perform_thru_list; l; l = CB_CHAIN (l)) {
@@ -5093,7 +5172,7 @@ cb_validate_program_body (struct cb_program *prog)
 	/* Validate entry points */
 
 	/* Check dangling LINKAGE items */
-	if (cb_warn_opt_val[cb_warn_linkage] != COBC_WARN_DISABLED
+	if (get_warn_opt_value (cb_warn_linkage) != COBC_WARN_DISABLED
 	 && prog->linkage_storage) {
 		if (prog->returning
 		 && cb_ref (prog->returning) != cb_error_node) {
@@ -6877,7 +6956,7 @@ cb_build_cond (cb_tree x)
 				   conditions, with explicit comparision of class alphanumeric (where
 				   all edited items go to) and of class numeric; so likely only do this
 				   with a new warning only enabled with -Wextra. */
-				if (cb_warn_opt_val[cb_warn_strict_typing] != COBC_WARN_DISABLED) {
+				if (get_warn_opt_value (cb_warn_strict_typing) != COBC_WARN_DISABLED) {
 					if cb_tree_class...
 						cb_warning_x (cb_warn_strict_typing, x, _("alphanumeric value is expected"));
 					} else {
@@ -9668,7 +9747,6 @@ cb_emit_initialize (cb_tree vars, cb_tree fillinit, cb_tree value,
 			   PIC L fields are initialized up to length indicated
 			   by DEPENDING var. */
 			cb_tree		temp;
-			struct cb_field	*f;
 			temp = cb_build_index (cb_build_filler (), NULL, 0, NULL);
 			f = CB_FIELD (cb_ref (temp));
 			f->usage = CB_USAGE_LENGTH;
@@ -10046,7 +10124,7 @@ move_warning (cb_tree src, cb_tree dst, const unsigned int value_flag,
 		}
 	} else {
 		/* MOVE or SET statement */
-		if (cb_warn_opt_val[warning_opt] != COBC_WARN_DISABLED) {
+		if (get_warn_opt_value (warning_opt) != COBC_WARN_DISABLED) {
 			cb_warning_x (warning_opt, loc, "%s", msg);
 			if (src_flag) {
 				/* note: src_flag is -1 for numeric literals,
@@ -11673,6 +11751,8 @@ cb_tree
 cb_build_move (cb_tree src, cb_tree dst)
 {
 	struct cb_reference	*src_ref, *dst_ref, *x;
+	cb_tree	chks = NULL;
+	cb_tree	ret;
 	int	move_zero;
 
 	if (CB_INVALID_TREE(src)
@@ -11751,28 +11831,85 @@ cb_build_move (cb_tree src, cb_tree dst)
 		return CB_BUILD_FUNCALL_2 ("cob_move", src, dst);
 	}
 
+#if 1 /* OPTCHK Simon: optimal copy also with runtime checks enabled */
+	/* TODO: optimize by resolving subscripts as integers once per statement,
+	     77 XX PIC 99 VALUE 5.
+	     01 X         PIC X OCCURS 0 TO 10 DEPENDING ON XX.
+	       MOVE ZERO TO X(2) X(4) X(6) X(8)
+	  current version:
+		cob_check_odo (cob_get_numdisp (b_17, 2), 0, 10, "X", "XX");
+		cob_check_subscript (2, cob_get_numdisp (b_17, 2), "X", 1);
+		*(b_18 + 1) = 48;
+		cob_check_odo (cob_get_numdisp (b_17, 2), 0, 10, "X", "XX");
+		cob_check_subscript (4, cob_get_numdisp (b_17, 2), "X", 1);
+		*(b_18 + 3) = 48;
+		cob_check_odo (cob_get_numdisp (b_17, 2), 0, 10, "X", "XX");
+		cob_check_subscript (6, cob_get_numdisp (b_17, 2), "X", 1);
+		*(b_18 + 5) = 48;
+		cob_check_odo (cob_get_numdisp (b_17, 2), 0, 10, "X", "XX");
+		cob_check_subscript (8, cob_get_numdisp (b_17, 2), "X", 1);
+		*(b_18 + 7) = 48;
+	  much better version (separate issue: the odo-item should
+	  only be checked once, see comment on its addition):
+	  {
+	    const int odo_value = cob_get_numdisp (b_17, 2);
+		cob_check_odo (, 0, 10, "X", "XX");
+		cob_check_subscript (2, odo_value, "X", 1);
+		*(b_18 + 1) = 48;
+		cob_check_odo (odo_value, 0, 10, "X", "XX");
+		cob_check_subscript (4, odo_value, "X", 1);
+		*(b_18 + 3) = 48;
+		cob_check_odo (odo_value, 0, 10, "X", "XX");
+		cob_check_subscript (6, odo_value, "X", 1);
+		*(b_18 + 5) = 48;
+		cob_check_odo (odo_value, 0, 10, "X", "XX");
+		cob_check_subscript (8, odo_value, "X", 1);
+		*(b_18 + 7) = 48;
+	  }
+	*/
+	if (src_ref && src_ref->check) {
+		chks = src_ref->check;
+		src_ref->check = NULL;
+		if (dst_ref && dst_ref->check) {
+			chks = cb_list_add (chks, dst_ref->check);
+			dst_ref->check = NULL;
+		}
+	} else
+	if (dst_ref && dst_ref->check) {
+		chks = dst_ref->check;
+		dst_ref->check = NULL;
+	}
+#else
 	if (src_ref && src_ref->check) {
 		return CB_BUILD_FUNCALL_2 ("cob_move", src, dst);
 	}
 	if (dst_ref && dst_ref->check) {
 		return CB_BUILD_FUNCALL_2 ("cob_move", src, dst);
 	}
+#endif
 
 	/* Output optimal code */
 	if (src == cb_zero) {
-		return cb_build_move_zero (dst);
+		ret = cb_build_move_zero (dst);
 	} else if (src == cb_space) {
-		return cb_build_move_space (dst);
+		ret = cb_build_move_space (dst);
 	} else if (src == cb_high) {
-		return cb_build_move_high (dst);
+		ret = cb_build_move_high (dst);
 	} else if (src == cb_low) {
-		return cb_build_move_low (dst);
+		ret = cb_build_move_low (dst);
 	} else if (src == cb_quote) {
-		return cb_build_move_quote (dst);
+		ret = cb_build_move_quote (dst);
 	} else if (CB_LITERAL_P (src)) {
-		return cb_build_move_literal (src, dst);
+		ret = cb_build_move_literal (src, dst);
+	} else {
+		ret = cb_build_move_field (src, dst);
 	}
-	return cb_build_move_field (src, dst);
+#if 1 /* OPTCHK Simon: optimal copy also with runtime checks enabled */
+	if (chks) {
+		return cb_list_add (chks, ret);
+	}
+#endif
+	return ret;
 }
 
 /* TO-DO: Shouldn't this include validate_move()? */
@@ -12955,7 +13092,6 @@ cb_emit_sort_init (cb_tree name, cb_tree keys, cb_tree col, cb_tree nat_col)
 {
 	cb_tree			l;
 	cb_tree			rtree;
-	struct cb_field		*f;
 
 	if (cb_validate_list (keys)) {
 		return;
@@ -13010,6 +13146,7 @@ cb_emit_sort_init (cb_tree name, cb_tree keys, cb_tree col, cb_tree nat_col)
 						     cb_int (CB_FIELD_PTR (CB_VALUE(l))->offset)));
 		}
 	} else {
+		struct cb_field	* const fr = CB_FIELD (rtree);
 		cb_emit (CB_BUILD_FUNCALL_2 ("cob_table_sort_init",
 					     cb_int ((int)cb_list_length (keys)), col));
 		/* TODO: pass key-specific collation to libcob */
@@ -13021,11 +13158,10 @@ cb_emit_sort_init (cb_tree name, cb_tree keys, cb_tree col, cb_tree nat_col)
 						     cb_int(f->offset -
 							    (f->parent ? f->parent->offset : 0))));
 		}
-		f = CB_FIELD (rtree);
 		cb_emit (CB_BUILD_FUNCALL_2 ("cob_table_sort", name,
-					     (f->depending
-					      ? cb_build_cast_int (f->depending)
-					      : cb_int (f->occurs_max))));
+					     (fr->depending
+					      ? cb_build_cast_int (fr->depending)
+					      : cb_int (fr->occurs_max))));
 	}
 }
 

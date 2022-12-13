@@ -180,8 +180,12 @@ inspect_find_data (const cob_field *str)
 	const unsigned char *data = str->data;
 	const size_t	len = str->size;
 
-	unsigned char* const end_p = inspect_end - len + 1;
-	unsigned char* p = inspect_start;
+	register unsigned char *p = inspect_start;
+	unsigned char *const end_p = inspect_end - len + 1;
+
+	if (p > end_p) {
+		return NULL;
+	}
 
 	while (p != end_p) {
 		if (memcmp (p, data, len) == 0) {
@@ -210,8 +214,6 @@ set_inspect_mark (const size_t pos, const size_t length)
 static COB_INLINE COB_A_INLINE int
 is_marked (size_t pos, size_t length)
 {
-	size_t i;
-
 	/* no need to check further if there's no mark or no possible overlap ... */
 	if (inspect_mark[inspect_mark_min] == 0
 	 || inspect_mark_max <  pos
@@ -225,9 +227,13 @@ is_marked (size_t pos, size_t length)
 	}
 
 	/* we have a possible overlap - check if that's also for real */
-	for (i = 0; i < length; ++i) {
-		if (inspect_mark[pos + i] != 0) {
-			return 1;
+	{
+		register size_t i;
+		
+		for (i = 0; i < length; ++i) {
+			if (inspect_mark[pos + i] != 0) {
+				return 1;
+			}
 		}
 	}
 	return 0;
@@ -237,7 +243,7 @@ static void
 inspect_common_no_replace (cob_field *f1, cob_field *f2,
 	const enum inspect_type type, const size_t pos, const size_t inspect_len)
 {
-	size_t		i;
+	register size_t		i;
 	int		n = 0;
 
 	if (type == INSPECT_TRAILING) {
@@ -245,7 +251,7 @@ inspect_common_no_replace (cob_field *f1, cob_field *f2,
 		size_t	first_marker = 0;
 		for (i = i_max; ; --i) {
 			/* Find matching substring */
-			if (memcmp (inspect_start + i, f2->data, f2->size) == 0) {
+			if (memcmp (i + inspect_start, f2->data, f2->size) == 0) {
 				/* when not marked yet: count, mark and skip handled positions */
 				if (!is_marked (pos + i, f2->size)) {
 					n++;
@@ -268,7 +274,7 @@ inspect_common_no_replace (cob_field *f1, cob_field *f2,
 		size_t	last_marker = 0;
 		for (i = 0; i < i_max; ++i) {
 			/* Find matching substring */
-			if (memcmp (inspect_start + i, f2->data, f2->size) == 0) {
+			if (memcmp (i + inspect_start, f2->data, f2->size) == 0) {
 				/* when not marked yet: count, skip handled positions and set mark pos */
 				if (!is_marked (pos + i, f2->size)) {
 					n++;
@@ -289,7 +295,7 @@ inspect_common_no_replace (cob_field *f1, cob_field *f2,
 		const size_t	i_max = inspect_len - f2->size + 1;
 		for (i = 0; i < i_max; ++i) {
 			/* Find matching substring */
-			if (memcmp (inspect_start + i, f2->data, f2->size) == 0) {
+			if (memcmp (i + inspect_start, f2->data, f2->size) == 0) {
 				const size_t checked_pos = pos + i;
 				/* when not marked yet: count, mark and skip handled positions */
 				if (!is_marked (checked_pos, f2->size)) {
@@ -333,13 +339,13 @@ static void
 inspect_common_replacing (cob_field *f1, cob_field *f2,
 	const enum inspect_type type, const size_t pos, const size_t inspect_len)
 {
-	size_t		i;
+	register size_t		i;
 
 	if (type == INSPECT_TRAILING) {
 		const size_t	i_max = inspect_len - f2->size; /* no + 1 here */
 		for (i = i_max; ; --i) {
 			/* Find matching substring */
-			if (memcmp (inspect_start + i, f2->data, f2->size) == 0) {
+			if (memcmp (i + inspect_start, f2->data, f2->size) == 0) {
 				/* when not marked yet: count, mark and skip handled positions */
 				if (do_mark (pos + i, f2->size, f1->data)) {
 					i -= f2->size - 1;
@@ -355,7 +361,7 @@ inspect_common_replacing (cob_field *f1, cob_field *f2,
 		const size_t	i_max = inspect_len - f2->size + 1;
 		for (i = 0; i < i_max; ++i) {
 			/* Find matching substring */
-			if (memcmp (inspect_start + i, f2->data, f2->size) == 0) {
+			if (memcmp (i + inspect_start, f2->data, f2->size) == 0) {
 				/* when not marked yet: count, mark and skip handled positions */
 				if (do_mark (pos + i, f2->size, f1->data)) {
 					i += f2->size - 1;
@@ -370,7 +376,7 @@ inspect_common_replacing (cob_field *f1, cob_field *f2,
 		const size_t	i_max = inspect_len - f2->size + 1;
 		for (i = 0; i < i_max; ++i) {
 			/* Find matching substring */
-			if (memcmp (inspect_start + i, f2->data, f2->size) == 0) {
+			if (memcmp (i + inspect_start, f2->data, f2->size) == 0) {
 				/* when not marked yet: count, mark and skip handled positions */
 				if (do_mark (pos + i, f2->size, f1->data)) {
 					if (type == INSPECT_FIRST) {

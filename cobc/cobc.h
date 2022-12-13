@@ -125,10 +125,6 @@ enum cb_current_date {
 };
 #endif
 
-/* COPY extended syntax defines */
-#define CB_REPLACE_LEADING		1U
-#define CB_REPLACE_TRAILING		2U
-
 /* Stringify macros */
 #define CB_STRINGIFY(s)			#s
 #define CB_XSTRINGIFY(s)		CB_STRINGIFY(s)
@@ -274,17 +270,6 @@ struct cb_text_list {
 	const char		*text;
 };
 
-/* Generic replace list structure */
-struct cb_replace_list {
-	int				line_num;
-	struct cb_replace_list		*next;			/* next pointer */
-	struct cb_replace_list		*last;
-	struct cb_replace_list		*prev;
-	const struct cb_text_list	*old_text;
-	const struct cb_text_list	*new_text;
-	unsigned int			lead_trail;
-};
-
 /* Structure for extended filenames */
 struct local_filename {
 	struct local_filename	*next;			/* next pointer */
@@ -321,15 +306,6 @@ struct cb_exception {
 	int		fatal;			/* If recognizing this should abort */
 };
 
-/* >>TURN directive list */
-struct cb_turn_list {
-	struct cb_turn_list	*next;
-	struct cb_text_list	*ec_names;
-	int		line;
-	int		enable;
-	int		with_location;
-};
-
 /* Type of name to check in cobc_check_valid_name */
 enum cobc_name_type {
 	FILE_BASE_NAME = 0,
@@ -338,50 +314,6 @@ enum cobc_name_type {
 };
 
 /* Listing structures and externals */
-
-/* List of error messages */
-struct list_error {
-	struct list_error	*next;
-	struct list_error	*prev;
-	int			line;		/* Line number for error */
-	char			*file;		/* File name */
-	char			*prefix;	/* Error prefix */
-	char			*msg;		/* Error Message text */
-};
-
-/* List of REPLACE text blocks */
-struct list_replace {
-	struct list_replace	*next;
-	int			firstline;	/* First line for replace */
-	int			lastline;	/* Last line for replace */
-	int			lead_trail;	/* LEADING/TRAILING flag */
-	char			*from;		/* Old (from) text */
-	char			*to;		/* New (to) text */
-};
-
-/* List of skipped lines (conditional compilation) */
-struct list_skip {
-	struct list_skip	*next;
-	int			skipline;	/* line number of skipped line */
-};
-
-/* Listing file control structure */
-struct list_files {
-	struct list_files	*next;
-	struct list_files	*copy_head;	/* COPY book list head */
-	struct list_files	*copy_tail;	/* COPY book list tail */
-	struct list_error	*err_head;	/* Error message list head */
-	struct list_replace	*replace_head;	/* REPLACE list head */
-	struct list_replace	*replace_tail;	/* REPLACE list tail */
-	struct list_skip	*skip_head;	/* Skip list head */
-	struct list_skip	*skip_tail;	/* Skip list tail */
-	int 			copy_line;	/* Line start for copy book */
-	int 			listing_on;	/* Listing flag for this file */
-	enum cb_format		source_format;	/* source format for file */
-	const char		*name;		/* Name of this file */
-};
-
-extern struct list_files	*cb_current_file;
 
 #if 0 /* ancient OSVS registers that need special runtime handling - low priority */
 extern enum cb_current_date	current_date;
@@ -396,8 +328,6 @@ extern const size_t		cb_exception_table_len;
 #define CB_EXCEPTION_CODE(id)	cb_exception_table[id].code
 #define CB_EXCEPTION_ENABLE(id)	cb_exception_table[id].enable
 #define CB_EXCEPTION_FATAL(id)	cb_exception_table[id].fatal
-
-extern struct cb_turn_list	*cb_turn_list;
 
 /* undef macros that are only for internal use with def-files */
 
@@ -466,8 +396,8 @@ enum cb_warn_val {
 	COBC_WARN_AS_ERROR = 4
 };
 
-extern int cb_warn_opt_val[COB_WARNOPT_MAX];	/* note: int as we feed that to getopt */
-
+extern const enum cb_warn_val	get_warn_opt_value (const enum cb_warn_opt);
+extern void		set_warn_opt_value (const enum cb_warn_opt, const enum cb_warn_val);
 
 #define	CB_OPTIM_DEF(x)			x,
 enum cb_optim {
@@ -643,11 +573,6 @@ extern int		pplex (void);
 extern int		ppparse (void);
 #endif
 
-extern int		ppopen (const char *, struct cb_replace_list *);
-extern int		ppcopy (const char *, const char *,
-				struct cb_replace_list *);
-extern void		pp_set_replace_list (struct cb_replace_list *,
-					     const cob_u32_t);
 extern unsigned int	ppparse_verify (const enum cb_support tag,
 					const char *feature);
 extern void		ppparse_error (const char *);

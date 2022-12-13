@@ -166,7 +166,7 @@ pretty_display_numeric (cob_field *f, FILE *fp)
 
 		cob_move (f, &temp);
 		while (q != end) {
-			unsigned int chr = *q++;
+			const int chr = *q++;
 			if (putc (chr, fp) != chr) {
 				break;
 			}

@@ -329,7 +329,9 @@ int cb_mf_ibm_comp = -1;
 /* Flag to emit Old style: cob_set_location, cob_trace_section */
 int	cb_old_trace = 0;
 
-int cb_warn_opt_val[COB_WARNOPT_MAX];	/* note: int as we feed that to getopt */
+/* warning options, internally stored as int as we feed that to getopt_long,
+   otherwise only used via typed getter/setter */
+int warn_opt_val[COB_WARNOPT_MAX];
 
 /* Local variables */
 
@@ -648,17 +650,17 @@ static const struct option long_options[] = {
 	{"fnot-register",	CB_RQ_ARG, NULL, '%'},
 
 #define	CB_WARNDEF(opt,name,doc)			\
-	{"W" name,		CB_NO_ARG, &cb_warn_opt_val[opt], COBC_WARN_ENABLED_EXPL},	\
-	{"Wno-" name,		CB_NO_ARG, &cb_warn_opt_val[opt], COBC_WARN_DISABLED_EXPL},
+	{"W" name,		CB_NO_ARG, &warn_opt_val[opt], COBC_WARN_ENABLED_EXPL},	\
+	{"Wno-" name,		CB_NO_ARG, &warn_opt_val[opt], COBC_WARN_DISABLED_EXPL},
 #define	CB_ONWARNDEF(opt,name,doc)			\
-	{"W" name,		CB_NO_ARG, &cb_warn_opt_val[opt], COBC_WARN_ENABLED_EXPL},	\
-	{"Wno-" name,		CB_NO_ARG, &cb_warn_opt_val[opt], COBC_WARN_DISABLED_EXPL},
+	{"W" name,		CB_NO_ARG, &warn_opt_val[opt], COBC_WARN_ENABLED_EXPL},	\
+	{"Wno-" name,		CB_NO_ARG, &warn_opt_val[opt], COBC_WARN_DISABLED_EXPL},
 #define	CB_NOWARNDEF(opt,name,doc)			\
-	{"W" name,		CB_NO_ARG, &cb_warn_opt_val[opt], COBC_WARN_ENABLED_EXPL},	\
-	{"Wno-" name,		CB_NO_ARG, &cb_warn_opt_val[opt], COBC_WARN_DISABLED_EXPL},
+	{"W" name,		CB_NO_ARG, &warn_opt_val[opt], COBC_WARN_ENABLED_EXPL},	\
+	{"Wno-" name,		CB_NO_ARG, &warn_opt_val[opt], COBC_WARN_DISABLED_EXPL},
 #define	CB_ERRWARNDEF(opt,name,doc)			\
-	{"W" name,		CB_NO_ARG, &cb_warn_opt_val[opt], COBC_WARN_ENABLED_EXPL},	\
-	{"Wno-" name,		CB_NO_ARG, &cb_warn_opt_val[opt], COBC_WARN_DISABLED_EXPL},
+	{"W" name,		CB_NO_ARG, &warn_opt_val[opt], COBC_WARN_ENABLED_EXPL},	\
+	{"Wno-" name,		CB_NO_ARG, &warn_opt_val[opt], COBC_WARN_DISABLED_EXPL},
 #include "warning.def"
 #undef	CB_WARNDEF
 #undef	CB_ONWARNDEF
@@ -843,6 +845,20 @@ cobc_err_msg (const char *fmt, ...)
 	putc ('\n', stderr);
 	fflush (stderr);
 }
+
+/* */
+const enum cb_warn_val
+get_warn_opt_value (const enum cb_warn_opt opt)
+{
+	return (const enum cb_warn_val)warn_opt_val[opt];
+}
+
+void
+set_warn_opt_value (const enum cb_warn_opt opt, const enum cb_warn_val val)
+{
+	warn_opt_val[opt] = val;
+}
+
 
 /* Output cobc source/line where an internal error occurs and exit */
 /* LCOV_EXCL_START */
@@ -2165,33 +2181,8 @@ cobc_clean_up (const int status)
 }
 
 static void
-set_compile_date (void)
+set_compile_date_tm (void)
 {
-	static int sde_todo = 0;
-	if (sde_todo == 0) {
-		char  *s = getenv ("SOURCE_DATE_EPOCH");
-		sde_todo = 1;
-		if (s && *s) {
-			if (cob_set_date_from_epoch (&current_compile_time, s) == 0) {
-				return;
-			}
-			cobc_err_msg (_("environment variable '%s' has invalid content"), "SOURCE_DATE_EPOCH");
-			if (!cb_flag_syntax_only) {
-				cb_source_file = NULL;
-				cobc_abort_terminate (0);
-			}
-		}
-	}
-	current_compile_time = cob_get_current_date_and_time ();
-}
-
-static void
-set_listing_date (void)
-{
-	if (!current_compile_time.year) {
-		set_compile_date ();
-	}
-
 	current_compile_tm.tm_sec = current_compile_time.second;
 	current_compile_tm.tm_min = current_compile_time.minute;
 	current_compile_tm.tm_hour = current_compile_time.hour;
@@ -2205,6 +2196,37 @@ set_listing_date (void)
 	}
 	current_compile_tm.tm_yday = current_compile_time.day_of_year;
 	current_compile_tm.tm_isdst = current_compile_time.is_daylight_saving_time;
+}
+
+static void
+set_compile_date (void)
+{
+	static int sde_todo = 0;
+	if (sde_todo == 0) {
+		char  *s = getenv ("SOURCE_DATE_EPOCH");
+		sde_todo = 1;
+		if (s && *s) {
+			if (cob_set_date_from_epoch (&current_compile_time, s) == 0) {
+				set_compile_date_tm ();
+				return;
+			}
+			cobc_err_msg (_("environment variable '%s' has invalid content"), "SOURCE_DATE_EPOCH");
+			if (!cb_flag_syntax_only) {
+				cb_source_file = NULL;
+				cobc_abort_terminate (0);
+			}
+		}
+	}
+	current_compile_time = cob_get_current_date_and_time ();
+	set_compile_date_tm ();
+}
+
+static void
+set_listing_date (void)
+{
+	if (!current_compile_time.year) {
+		set_compile_date ();
+	}
 
 #ifdef LISTING_TIMESTAMP_ANSI
 	#define LISTING_TIMESTAMP_FORMAT "%a %b %d %H:%M:%S %Y" /* same format as asctime */
@@ -3596,6 +3618,13 @@ process_command_line (const int argc, char **argv)
 			}
 			break;
 
+		case 15:
+			/* -fdefault-colseq=<ASCII/EBCDIC/NATIVE> */
+			if (cb_deciph_default_colseq_name (cob_optarg)) {
+				cobc_err_exit (COBC_INV_PAR, "-fdefault-colseq");
+			}
+			break;
+
 		case 4:
 			/* -ffold-copy=<UPPER/LOWER> : COPY fold case */
 			if (!cb_strcasecmp (cob_optarg, "UPPER")) {
@@ -3680,10 +3709,10 @@ process_command_line (const int argc, char **argv)
 
 		case 'w':
 			/* -w : Turn off all warnings (disables -Wall/-Wextra if passed later) */
-#define	CB_WARNDEF(opt,name,doc)	cb_warn_opt_val[opt] = COBC_WARN_DISABLED;
-#define	CB_ONWARNDEF(opt,name,doc)	cb_warn_opt_val[opt] = COBC_WARN_DISABLED;
-#define	CB_NOWARNDEF(opt,name,doc)	cb_warn_opt_val[opt] = COBC_WARN_DISABLED;
-#define	CB_ERRWARNDEF(opt,name,doc)	cb_warn_opt_val[opt] = COBC_WARN_DISABLED;
+#define	CB_WARNDEF(opt,name,doc)	set_warn_opt_value (opt, COBC_WARN_DISABLED);
+#define	CB_ONWARNDEF(opt,name,doc)	set_warn_opt_value (opt, COBC_WARN_DISABLED);
+#define	CB_NOWARNDEF(opt,name,doc)	set_warn_opt_value (opt, COBC_WARN_DISABLED);
+#define	CB_ERRWARNDEF(opt,name,doc)	set_warn_opt_value (opt, COBC_WARN_DISABLED);
 #include "warning.def"
 #undef	CB_WARNDEF
 #undef	CB_ONWARNDEF
@@ -3693,10 +3722,10 @@ process_command_line (const int argc, char **argv)
 
 		case 'W':
 			/* -Wall : Turn on most warnings */
-#define	CB_WARNDEF(opt,name,doc)	cb_warn_opt_val[opt] = COBC_WARN_ENABLED;
+#define	CB_WARNDEF(opt,name,doc)	set_warn_opt_value (opt, COBC_WARN_ENABLED);
 #define	CB_ONWARNDEF(opt,name,doc)
 #define	CB_NOWARNDEF(opt,name,doc)
-#define	CB_ERRWARNDEF(opt,name,doc)	cb_warn_opt_val[opt] = COBC_WARN_AS_ERROR;
+#define	CB_ERRWARNDEF(opt,name,doc)	set_warn_opt_value (opt, COBC_WARN_AS_ERROR);
 #include "warning.def"
 #undef	CB_WARNDEF
 #undef	CB_ONWARNDEF
@@ -3706,10 +3735,10 @@ process_command_line (const int argc, char **argv)
 
 		case 'Y':
 			/* -Wextra : Turn on every warning that is not dialect related */
-#define	CB_WARNDEF(opt,name,doc)	cb_warn_opt_val[opt] = COBC_WARN_ENABLED;
+#define	CB_WARNDEF(opt,name,doc)	set_warn_opt_value (opt, COBC_WARN_ENABLED);
 #define	CB_ONWARNDEF(opt,name,doc)
-#define	CB_NOWARNDEF(opt,name,doc)	cb_warn_opt_val[opt] = COBC_WARN_ENABLED;
-#define	CB_ERRWARNDEF(opt,name,doc)	cb_warn_opt_val[opt] = COBC_WARN_AS_ERROR;
+#define	CB_NOWARNDEF(opt,name,doc)	set_warn_opt_value (opt, COBC_WARN_ENABLED);
+#define	CB_ERRWARNDEF(opt,name,doc)	set_warn_opt_value (opt, COBC_WARN_AS_ERROR);
 #include "warning.def"
 #undef	CB_WARNDEF
 #undef	CB_ONWARNDEF
@@ -3732,7 +3761,7 @@ process_command_line (const int argc, char **argv)
 			if (cob_optarg) {
 #define CB_CHECK_WARNING(opt,name)  \
 				if (strcmp (cob_optarg, name) == 0) {	\
-					cb_warn_opt_val[opt] = COBC_WARN_AS_ERROR;		\
+					set_warn_opt_value (opt, COBC_WARN_AS_ERROR);		\
 				} else
 #define	CB_WARNDEF(opt,name,doc)	CB_CHECK_WARNING(opt, name)
 #define	CB_ONWARNDEF(opt,name,doc)	CB_CHECK_WARNING(opt, name)
@@ -3759,8 +3788,8 @@ process_command_line (const int argc, char **argv)
 			if (cob_optarg) {
 #define CB_CHECK_WARNING(opt,name)  \
 				if (strcmp (cob_optarg, name) == 0	\
-				 && cb_warn_opt_val[opt] == COBC_WARN_AS_ERROR) {	\
-					cb_warn_opt_val[opt] = COBC_WARN_ENABLED;		\
+				 && get_warn_opt_value (opt) == COBC_WARN_AS_ERROR) {	\
+					set_warn_opt_value (opt, COBC_WARN_ENABLED);		\
 				} else
 #define	CB_WARNDEF(opt,name,doc)	CB_CHECK_WARNING(opt, name)
 #define	CB_ONWARNDEF(opt,name,doc)	CB_CHECK_WARNING(opt, name)
@@ -3865,8 +3894,8 @@ process_command_line (const int argc, char **argv)
 			cb_missing_statement = CB_WARNING;
 		}
 		/* FIXME - the warning was only raised if not relaxed */
-		if (cb_warn_opt_val[(int)cb_warn_ignored_initial_val] != COBC_WARN_ENABLED_EXPL) {
-			cb_warn_opt_val[(int)cb_warn_ignored_initial_val] = COBC_WARN_DISABLED;
+		if (get_warn_opt_value (cb_warn_ignored_initial_val) != COBC_WARN_ENABLED_EXPL) {
+			set_warn_opt_value (cb_warn_ignored_initial_val, COBC_WARN_DISABLED);
 		}
 	}
 #if 0 /* deactivated as -frelaxed-syntax-checks and other compiler configurations
@@ -3883,18 +3912,18 @@ process_command_line (const int argc, char **argv)
 	{
 		/* 3.x compat -Wconstant-expression also sets -Wconstant-numlit-expression */
 		/* TODO: handle group warnings */
-		const enum cb_warn_val detail_warn = cb_warn_opt_val[(int)cb_warn_constant_numlit_expr];
+		const enum cb_warn_val detail_warn = get_warn_opt_value (cb_warn_constant_numlit_expr);
 		if (detail_warn != COBC_WARN_DISABLED_EXPL
 		 && detail_warn != COBC_WARN_ENABLED_EXPL) {
-			const enum cb_warn_val group_warn = cb_warn_opt_val[(int)cb_warn_constant_expr];
-			cb_warn_opt_val[(int)cb_warn_constant_numlit_expr] = group_warn;
+			const enum cb_warn_val group_warn = get_warn_opt_value (cb_warn_constant_expr);
+			set_warn_opt_value (cb_warn_constant_numlit_expr, group_warn);
 		}
 		/* set all explicit warning options to their later checked variants */
 #define CB_CHECK_WARNING(opt)  \
-		if (cb_warn_opt_val[opt] == COBC_WARN_ENABLED_EXPL) {	\
-			cb_warn_opt_val[opt] = COBC_WARN_ENABLED;		\
-		} else if (cb_warn_opt_val[opt] == COBC_WARN_DISABLED_EXPL) {	\
-			cb_warn_opt_val[opt] = COBC_WARN_DISABLED;		\
+		if (get_warn_opt_value (opt) == COBC_WARN_ENABLED_EXPL) {	\
+			set_warn_opt_value (opt, COBC_WARN_ENABLED);		\
+		} else if (get_warn_opt_value (opt) == COBC_WARN_DISABLED_EXPL) {	\
+			set_warn_opt_value (opt, COBC_WARN_DISABLED);		\
 		}
 #define	CB_WARNDEF(opt,name,doc)	CB_CHECK_WARNING(opt)
 #define	CB_ONWARNDEF(opt,name,doc)	CB_CHECK_WARNING(opt)
@@ -3910,8 +3939,8 @@ process_command_line (const int argc, char **argv)
 	/* Set active warnings to errors, if requested */
 	if (error_all_warnings) {
 #define CB_CHECK_WARNING(opt)  \
-		if (cb_warn_opt_val[opt] == COBC_WARN_ENABLED) {	\
-			cb_warn_opt_val[opt] = COBC_WARN_AS_ERROR;		\
+		if (get_warn_opt_value (opt) == COBC_WARN_ENABLED) {	\
+			set_warn_opt_value (opt, COBC_WARN_AS_ERROR);		\
 		}
 #define	CB_WARNDEF(opt,name,doc)	CB_CHECK_WARNING(opt)
 #define	CB_ONWARNDEF(opt,name,doc)	CB_CHECK_WARNING(opt)
@@ -6904,6 +6933,7 @@ print_replace_text (struct list_files *cfile, FILE *fd,
 	int	overread = 0;
 	int	tokmatch = 0;
 	int	subword = 0;
+	int	strictmatch = 0;
 	size_t	ttix, ttlen, from_token_len;
 	size_t	newlinelen;
 	char	lterm[2];
@@ -6933,8 +6963,10 @@ print_replace_text (struct list_files *cfile, FILE *fd,
 	for (int i = 0; i < pline_cnt; i++) {
 		fprintf (stdout, "   pline[%2d]: %s\n", i, pline[i]);
 	}
-	fprintf (stdout, "   rep: first = %d, last = %d, lead_trail = %d\n",
-		 rep->firstline, rep->lastline, rep->lead_trail);
+	fprintf (stdout,
+		 "   rep: first = %d, last = %d, lead_trail = %d, strict = %d\n",
+		 rep->firstline, rep->lastline, rep->lead_trail,
+		 rep->strict_partial);
 	fprintf (stdout, "   fromlen: %lu\n", strlen(rfp));
 	fprintf (stdout, "   from: '%80.80s'\n", rfp);
 	fprintf (stdout, "   tolen: %lu\n", strlen(rep->to));
@@ -7105,15 +7137,20 @@ print_replace_text (struct list_files *cfile, FILE *fd,
 			ttix = 0;
 			if (rep->lead_trail == CB_REPLACE_LEADING) {
 				subword = 1;
+				strictmatch = rep->strict_partial;
 			} else if (rep->lead_trail == CB_REPLACE_TRAILING) {
 				if (ttlen >= from_token_len) {
 					subword = 1;
+					strictmatch = rep->strict_partial;
 					ttix = ttlen - from_token_len;
 					ttlen = ttix;
 				}
 			}
 			if (subword) {
-				tokmatch = !strncasecmp (&ttoken[ttix], ftoken, from_token_len);
+				/* When strictmatch, length of word must be
+				   strictly greater than matched token: */
+				tokmatch = (!strictmatch || ttlen > from_token_len)
+					&& !strncasecmp (&ttoken[ttix], ftoken, from_token_len);
 			} else {
 				tokmatch = !strcasecmp (ttoken, ftoken);
 			}
@@ -8593,10 +8630,10 @@ begin_setup_internal_and_compiler_env (void)
 #endif
 
 	/* initial values for warning options */
-#define	CB_WARNDEF(opt,name,doc)	cb_warn_opt_val[opt] = COBC_WARN_DISABLED;
-#define	CB_ONWARNDEF(opt,name,doc)	cb_warn_opt_val[opt] = COBC_WARN_ENABLED;
-#define	CB_NOWARNDEF(opt,name,doc)	cb_warn_opt_val[opt] = COBC_WARN_DISABLED;
-#define	CB_ERRWARNDEF(opt,name,doc)	cb_warn_opt_val[opt] = COBC_WARN_AS_ERROR;
+#define	CB_WARNDEF(opt,name,doc)	set_warn_opt_value (opt, COBC_WARN_DISABLED);
+#define	CB_ONWARNDEF(opt,name,doc)	set_warn_opt_value (opt, COBC_WARN_ENABLED);
+#define	CB_NOWARNDEF(opt,name,doc)	set_warn_opt_value (opt, COBC_WARN_DISABLED);
+#define	CB_ERRWARNDEF(opt,name,doc)	set_warn_opt_value (opt, COBC_WARN_AS_ERROR);
 #include "warning.def"
 #undef	CB_WARNDEF
 #undef	CB_ONWARNDEF

@@ -272,6 +272,7 @@ static cb_tree			xml_encoding;
 static int			with_xml_dec;
 static int			with_attrs;
 
+static cb_tree			default_collation;
 static cb_tree			alphanumeric_collation;
 static cb_tree			national_collation;
 
@@ -333,6 +334,64 @@ check_non_area_a (cb_tree stmt) {
 			(void) cb_syntax_check (_("start of statement in Area A"));
 	}
 }
+
+/* Collating sequences */
+
+/* Known collating sequences/alphabets */
+enum {
+	CB_COLSEQ_NATIVE,
+	CB_COLSEQ_ASCII,
+	CB_COLSEQ_EBCDIC,
+} cb_default_colseq = CB_COLSEQ_NATIVE;
+
+/* Decipher character conversion table names */
+int cb_deciph_default_colseq_name (const char * const name)
+{
+	if (! cb_strcasecmp (name, "ASCII")) {
+		cb_default_colseq = CB_COLSEQ_ASCII;
+	} else if (! cb_strcasecmp (name, "EBCDIC")) {
+		cb_default_colseq = CB_COLSEQ_EBCDIC;
+	} else if (! cb_strcasecmp (name, "NATIVE")) {
+		cb_default_colseq = CB_COLSEQ_NATIVE;
+	} else {
+		return 1;
+	}
+	return 0;
+}
+
+static void
+build_default_colseq (const char *alphabet_name,
+		      int alphabet_type,
+		      int alphabet_target)
+{
+	const cb_tree name = cb_build_reference (alphabet_name);
+	struct cb_alphabet_name * alpha;
+	alpha = CB_ALPHABET_NAME (cb_build_alphabet_name (name));
+	alpha->alphabet_type = alphabet_type;
+	alpha->alphabet_target = alphabet_target;
+	default_collation = name;
+}
+
+static void
+setup_default_colseq (void)
+{
+	switch (cb_default_colseq) {
+	case CB_COLSEQ_NATIVE:
+		default_collation = NULL;
+		break;
+	case CB_COLSEQ_ASCII:
+		build_default_colseq ("ASCII",
+				      CB_ALPHABET_ASCII,
+				      CB_ALPHABET_ALPHANUMERIC);
+		break;
+	case CB_COLSEQ_EBCDIC:
+		build_default_colseq ("EBCDIC",
+				      CB_ALPHABET_EBCDIC,
+				      CB_ALPHABET_ALPHANUMERIC);
+		break;
+	}
+}
+
 
 /* Statements */
 
@@ -1244,7 +1303,8 @@ setup_program (cb_tree id, cb_tree as_literal, const unsigned char type, const i
 		= cb_build_program_id (external_name, type == COB_MODULE_TYPE_FUNCTION);
 
 	if (type == COB_MODULE_TYPE_PROGRAM) {
-		if (!main_flag_set) {
+		if (!main_flag_set
+		 && !current_program->flag_prototype) {
 			main_flag_set = 1;
 			current_program->flag_main = !!cobc_flag_main;
 		}
@@ -1255,6 +1315,9 @@ setup_program (cb_tree id, cb_tree as_literal, const unsigned char type, const i
 	if (CB_REFERENCE_P (id)) {
 		cb_define (id, CB_TREE (current_program));
 	}
+
+	/* Initalize default COLLATING SEQUENCE */
+	setup_default_colseq ();
 
 	begin_scope_of_program_name (current_program);
 
@@ -3345,13 +3408,14 @@ set_record_size (cb_tree min, cb_tree max)
 
 start:
   {
-	backup_source_file = cb_source_file;
 	clear_initial_values ();
-	current_program = NULL;
 	defined_prog_list = NULL;
 	cobc_cs_check = 0;
 	main_flag_set = 0;
+
 	current_program = cb_build_program (NULL, 0);
+
+	backup_source_file = cb_source_file;
 	cb_source_file = "register-definition";
 	cb_set_intr_when_compiled ();
 	cb_build_registers ();
@@ -3482,8 +3546,8 @@ program_prototype:
   {
 	/* Error if program_id_name is a literal */
 
-	/* Check that previous program was also a prototype */
-	if (!current_program->flag_prototype) {
+	/* Check that we either have no previous program or it was also a prototype */
+	if (current_program->next_program && !current_program->flag_prototype) {
 		/* Technically, prototypes must come before all other *source units*.  */
 		cb_error (_("prototypes must be come before any program/function definitions"));
 	}
@@ -3514,6 +3578,11 @@ program_prototype:
 	 */
   }
   _prototype_environment_division
+  {
+	if (!current_program->entry_convention) {
+		current_program->entry_convention = cb_int (CB_CONV_COBOL);
+	}
+  }
   _prototype_data_division
   _prototype_procedure_division_header
   end_program
@@ -3558,6 +3627,11 @@ function_prototype:
 	 */
   }
   _prototype_environment_division
+  {
+	if (!current_program->entry_convention) {
+		current_program->entry_convention = cb_int (CB_CONV_COBOL);
+	}
+  }
   _prototype_data_division
   _prototype_procedure_division_header
   end_function
@@ -5522,7 +5596,7 @@ collating_sequence_clause:
 collating_sequence:
   _collating SEQUENCE
   {
-	alphanumeric_collation = national_collation = NULL;
+	alphanumeric_collation = national_collation = default_collation;
   }
   coll_sequence_values
 ;
@@ -6528,7 +6602,7 @@ code_set_clause:
 			current_file->code_set = al;
 			break;
 		default:
-			if (cb_warn_opt_val[cb_warn_additional] != COBC_WARN_DISABLED) {
+			if (get_warn_opt_value (cb_warn_additional) != COBC_WARN_DISABLED) {
 				cb_note_x (cb_warn_additional, $3, _("ignoring CODE-SET '%s'"),
 						  cb_name ($3));
 			}
@@ -10602,8 +10676,6 @@ procedure_division:
 		current_program->entry_convention = cb_int (CB_CONV_COBOL);
 	}
 	header_check |= COBC_HD_PROCEDURE_DIVISION;
-
-	cb_check_definition_matches_prototype (current_program);
   }
   _dot_or_else_area_a
   _procedure_declaratives
@@ -10614,6 +10686,8 @@ procedure_division:
 	}
 
 	emit_main_entry (current_program, $7);
+
+	cb_check_definition_matches_prototype (current_program);
   }
   _procedure_list
   {
@@ -15026,7 +15100,7 @@ open_option_sequential:
 	/* FIXME: only allow for sequential / line-sequential files */
 	/* FIXME: only allow with INPUT */
 	/* FIXME: add actual compiler configuration */
-	if (cb_warn_opt_val[cb_warn_obsolete] == COBC_WARN_AS_ERROR) {
+	if (get_warn_opt_value (cb_warn_obsolete) == COBC_WARN_AS_ERROR) {
 		(void)cb_verify (CB_OBSOLETE, "OPEN REVERSED");
 	} else {
 		/* FIXME: set file attribute */
@@ -16088,7 +16162,7 @@ _sort_duplicates:
 _sort_collating:
   /* empty */
   {
-	alphanumeric_collation = national_collation = NULL;
+	alphanumeric_collation = national_collation = default_collation;
   }
 | collating_sequence
 ;

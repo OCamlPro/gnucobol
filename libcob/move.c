@@ -123,30 +123,39 @@ static void
 store_common_region (cob_field *f, const unsigned char *data,
 		     const size_t size, const int scale)
 {
+	const int	fsize = (int) COB_FIELD_SIZE (f);
+	unsigned char *fdata = COB_FIELD_DATA (f);
+
 	const int	lf1 = -scale;
 	const int	lf2 = -COB_FIELD_SCALE (f);
 	const int	lcf = cob_max_int (lf1, lf2);
 
 	const int	hf1 = (int) size + lf1;
-	const int	hf2 = (int) COB_FIELD_SIZE (f) + lf2;
+	const int	hf2 = fsize + lf2;
 	const int	gcf = cob_min_int (hf1, hf2);
 
-	memset (COB_FIELD_DATA (f), '0', COB_FIELD_SIZE (f));
+	/* the target may have leading/trailing additional
+	   zeros are, in rare cases, be out of scale competely;
+	   we pre-set all positions as this saves a bunch of
+	   calculations which outweight the benefits of not
+	   writing over the data two times */
+	memset (fdata, '0', fsize);
 
 	if (gcf > lcf) {
-		const size_t	csize = (size_t)gcf - lcf;
-		size_t			cinc;
-		const unsigned char	*p;
-		unsigned char		*q;
+		unsigned char		*dst = fdata + hf2 - gcf;
+		const unsigned char	*end = dst + gcf - lcf;
+		const unsigned char	*src = data + hf1 - gcf;
 
-		p = data + hf1 - gcf;
-		q = COB_FIELD_DATA (f) + hf2 - gcf;
-		for (cinc = 0; cinc < csize; ++cinc, ++p, ++q) {
-			if (unlikely (*p == ' ' || *p == 0)) {
-				*q = (unsigned char)'0';
-			} else {
-				*q = *p;
-			}
+		while (dst < end) {
+#if 0		/* seems to be the best result, ..." */
+			/* we don't want to set bad data, so
+			   only take the half byte */
+			*dst = COB_I2D (COB_D2I (*src));
+#else		/* but does not match the "expected" MF result, which is: */
+			if (*src == ' ' || *src == 0) /* already set: *dst = '0'; */ ;
+			else *dst = COB_I2D (*src - '0');
+#endif
+			++src, ++dst;
 		}
 	}
 }
