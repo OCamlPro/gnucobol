@@ -1614,11 +1614,11 @@ cb_build_generic_register (const char *name, const char *external_definition,
 		}
 	}
 	if (p) {
-		const enum cb_warn_val backup = cb_warn_opt_val[cb_warn_unfinished];
+		const enum cb_warn_val backup = get_warn_opt_value (cb_warn_unfinished);
 		(void)extract_next_word_from_buffer (p, word);
-		cb_warn_opt_val[cb_warn_unfinished] = COBC_WARN_DISABLED;
+		set_warn_opt_value (cb_warn_unfinished, COBC_WARN_DISABLED);
 		field->pic = cb_build_picture (word);
-		cb_warn_opt_val[cb_warn_unfinished] = backup;
+		set_warn_opt_value (cb_warn_unfinished, backup);
 		if (field->pic->size == 0) {
 			ret = 1;
 		}
@@ -1766,14 +1766,14 @@ cb_build_generic_register (const char *name, const char *external_definition,
 		field->flag_invalid = 1;
 	} else
 	if (current_program) {
-		const enum cb_warn_val backup = cb_warn_opt_val[cb_warn_unfinished];
+		const enum cb_warn_val backup = get_warn_opt_value (cb_warn_unfinished);
 		/* note: the necessary tree items like cb_zero won't be available
 		   without a program, and therefore full validation is not possible */
 		field->flag_internal_register = 1;
 		field->flag_no_init = 1;
-		cb_warn_opt_val[cb_warn_unfinished] = COBC_WARN_DISABLED;
+		set_warn_opt_value (cb_warn_unfinished, COBC_WARN_DISABLED);
 		cb_validate_field (field);
-		cb_warn_opt_val[cb_warn_unfinished] = backup;
+		set_warn_opt_value (cb_warn_unfinished, backup);
 	}
 
 	if (field->flag_invalid) {
@@ -3450,7 +3450,7 @@ cb_check_definition_matches_prototype (struct cb_program *prog)
 	cb_tree	l;
 
 	/* if check is explicit disabled: don't care */
-	if (cb_warn_opt_val[cb_warn_repository_checks] == COBC_WARN_DISABLED) {
+	if (get_warn_opt_value (cb_warn_repository_checks) == COBC_WARN_DISABLED) {
 		return;
 	}
 
@@ -4160,7 +4160,7 @@ cb_validate_program_environment (struct cb_program *prog)
 	}
 
 	/* Check CLASS clauses for duplicates */
-	if (cb_warn_opt_val[cb_warn_additional] != COBC_WARN_DISABLED) {
+	if (get_warn_opt_value (cb_warn_additional) != COBC_WARN_DISABLED) {
 		for (l = prog->class_name_list; l; l = CB_CHAIN (l)) {
 			check_class_duplicates (CB_VALUE (l));
 		}
@@ -4353,9 +4353,9 @@ validate_record_depending (cb_tree x)
 		{
 			enum cb_support	missing_compiler_config;
 			if (!cb_relaxed_syntax_checks
-			 || cb_warn_opt_val[cb_warn_additional] == COBC_WARN_AS_ERROR) {
+			 || get_warn_opt_value (cb_warn_additional) == COBC_WARN_AS_ERROR) {
 				missing_compiler_config = CB_ERROR;
-			} else if (cb_warn_opt_val[cb_warn_additional] == COBC_WARN_ENABLED) {
+			} else if (get_warn_opt_value (cb_warn_additional) == COBC_WARN_ENABLED) {
 				missing_compiler_config = CB_WARNING;
 			} else {
 				missing_compiler_config = CB_OK;
@@ -5042,7 +5042,7 @@ cb_validate_labels (struct cb_program *prog)
 						    label->name);
 					continue;
 				case CB_WARNING:
-					if (cb_warn_opt_val[cb_warn_dialect] == COBC_WARN_DISABLED) {
+					if (get_warn_opt_value (cb_warn_dialect) == COBC_WARN_DISABLED) {
 						break;
 					}
 					cb_warning_x (cb_warn_dialect, x,
@@ -5095,7 +5095,7 @@ cb_validate_perform_thru_ranges (struct cb_program *prog)
 {
 	cb_tree		l;
 	if (!cb_flag_section_exit_check
-	 && cb_warn_opt_val[cb_warn_suspicious_perform_thru] == COBC_WARN_DISABLED) {
+	 && get_warn_opt_value (cb_warn_suspicious_perform_thru) == COBC_WARN_DISABLED) {
 		return;
 	}
 	for (l = prog->perform_thru_list; l; l = CB_CHAIN (l)) {
@@ -5172,7 +5172,7 @@ cb_validate_program_body (struct cb_program *prog)
 	/* Validate entry points */
 
 	/* Check dangling LINKAGE items */
-	if (cb_warn_opt_val[cb_warn_linkage] != COBC_WARN_DISABLED
+	if (get_warn_opt_value (cb_warn_linkage) != COBC_WARN_DISABLED
 	 && prog->linkage_storage) {
 		if (prog->returning
 		 && cb_ref (prog->returning) != cb_error_node) {
@@ -6956,7 +6956,7 @@ cb_build_cond (cb_tree x)
 				   conditions, with explicit comparision of class alphanumeric (where
 				   all edited items go to) and of class numeric; so likely only do this
 				   with a new warning only enabled with -Wextra. */
-				if (cb_warn_opt_val[cb_warn_strict_typing] != COBC_WARN_DISABLED) {
+				if (get_warn_opt_value (cb_warn_strict_typing) != COBC_WARN_DISABLED) {
 					if cb_tree_class...
 						cb_warning_x (cb_warn_strict_typing, x, _("alphanumeric value is expected"));
 					} else {
@@ -10124,7 +10124,7 @@ move_warning (cb_tree src, cb_tree dst, const unsigned int value_flag,
 		}
 	} else {
 		/* MOVE or SET statement */
-		if (cb_warn_opt_val[warning_opt] != COBC_WARN_DISABLED) {
+		if (get_warn_opt_value (warning_opt) != COBC_WARN_DISABLED) {
 			cb_warning_x (warning_opt, loc, "%s", msg);
 			if (src_flag) {
 				/* note: src_flag is -1 for numeric literals,

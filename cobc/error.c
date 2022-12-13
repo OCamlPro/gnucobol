@@ -336,7 +336,7 @@ static char *warning_option_text (const enum cb_warn_opt opt, const enum cb_warn
 static enum cb_warn_val
 cb_warning_internal (const enum cb_warn_opt opt, const char *fmt, va_list ap)
 {
-	const enum cb_warn_val pref = cb_warn_opt_val[opt];
+	const enum cb_warn_val pref = get_warn_opt_value (opt);
 
 	if (pref == COBC_WARN_DISABLED) {
 		return pref;
@@ -395,7 +395,7 @@ static enum cb_warn_val
 cb_error_internal (const char *fmt, va_list ap)
 {
 	const enum cb_warn_opt	opt = cb_warn_ignored_error;
-	const enum cb_warn_val	pref = cb_warn_opt_val[opt];
+	const enum cb_warn_val	pref = get_warn_opt_value (opt);
 	enum cb_warn_val	ret = pref;
 
 	cobc_in_repository = 0;
@@ -464,7 +464,7 @@ void
 cb_plex_warning (const enum cb_warn_opt opt, const size_t sline, const char *fmt, ...)
 {
 	va_list ap;
-	const enum cb_warn_val pref = cb_warn_opt_val[opt];
+	const enum cb_warn_val pref = get_warn_opt_value (opt);
 
 	if (pref == COBC_WARN_DISABLED) {
 		return;
@@ -621,7 +621,7 @@ configuration_error (const char *fname, const int line,
 static enum cb_warn_val
 cb_warning_x_internal (const enum cb_warn_opt opt, cb_tree x, const char *fmt, va_list ap)
 {
-	const enum cb_warn_val pref = cb_warn_opt_val[opt];
+	const enum cb_warn_val pref = get_warn_opt_value (opt);
 
 	if (pref == COBC_WARN_DISABLED) {
 		return pref;
@@ -715,7 +715,7 @@ listprint_restore (void)
 void
 cb_note_x (const enum cb_warn_opt opt, cb_tree x, const char *fmt, ...)
 {
-	const enum cb_warn_val	pref = cb_warn_opt_val[opt];
+	const enum cb_warn_val	pref = get_warn_opt_value (opt);
 	va_list ap;
 
 	if (opt != COB_WARNOPT_NONE && pref == COBC_WARN_DISABLED) {
@@ -740,7 +740,7 @@ cb_note_x (const enum cb_warn_opt opt, cb_tree x, const char *fmt, ...)
 void
 cb_note (const enum cb_warn_opt opt, const int suppress_listing, const char *fmt, ...)
 {
-	const enum cb_warn_val	pref = cb_warn_opt_val[opt];
+	const enum cb_warn_val	pref = get_warn_opt_value (opt);
 	va_list ap;
 
 	if (opt != COB_WARNOPT_NONE && pref == COBC_WARN_DISABLED) {
@@ -768,7 +768,7 @@ static enum cb_warn_val
 cb_error_x_internal (cb_tree x, const char *fmt, va_list ap)
 {
 	const enum cb_warn_opt	opt = cb_warn_ignored_error;
-	const enum cb_warn_val	pref = cb_warn_opt_val[opt];
+	const enum cb_warn_val	pref = get_warn_opt_value (opt);
 	enum cb_warn_val	ret = COBC_WARN_AS_ERROR;
 
 	if (ignore_error && pref == COBC_WARN_DISABLED) {
@@ -951,7 +951,7 @@ redefinition_warning (cb_tree x, cb_tree y)
 	/* early exit if warning disabled */
 	{
 		const enum cb_warn_opt	opt = cb_warn_redefinition;
-		const enum cb_warn_val	pref = cb_warn_opt_val[opt];
+		const enum cb_warn_val	pref = get_warn_opt_value (opt);
 		if (pref == COBC_WARN_DISABLED) {
 			return COBC_WARN_DISABLED;
 		}
@@ -1006,9 +1006,9 @@ undefined_error (cb_tree x)
 
 	/* raise errors for each word only once and early leave for suppressed warnings */
 	if (w->error == 1
-	 || (r->flag_optional && cb_warn_opt_val[opt] == COBC_WARN_DISABLED)
-	 || (ignore_error && cb_warn_opt_val[cb_warn_ignored_error] == COBC_WARN_DISABLED)
-	 || (ignore_error && cb_warn_opt_val[cb_warn_ignored_error] == COBC_WARN_ENABLED && w->error == -1)) {
+	 || (r->flag_optional && get_warn_opt_value (opt) == COBC_WARN_DISABLED)
+	 || (ignore_error && get_warn_opt_value (cb_warn_ignored_error) == COBC_WARN_DISABLED)
+	 || (ignore_error && get_warn_opt_value (cb_warn_ignored_error) == COBC_WARN_ENABLED && w->error == -1)) {
 		return COBC_WARN_DISABLED;
 	}
 

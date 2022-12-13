@@ -6602,7 +6602,7 @@ code_set_clause:
 			current_file->code_set = al;
 			break;
 		default:
-			if (cb_warn_opt_val[cb_warn_additional] != COBC_WARN_DISABLED) {
+			if (get_warn_opt_value (cb_warn_additional) != COBC_WARN_DISABLED) {
 				cb_note_x (cb_warn_additional, $3, _("ignoring CODE-SET '%s'"),
 						  cb_name ($3));
 			}
@@ -15100,7 +15100,7 @@ open_option_sequential:
 	/* FIXME: only allow for sequential / line-sequential files */
 	/* FIXME: only allow with INPUT */
 	/* FIXME: add actual compiler configuration */
-	if (cb_warn_opt_val[cb_warn_obsolete] == COBC_WARN_AS_ERROR) {
+	if (get_warn_opt_value (cb_warn_obsolete) == COBC_WARN_AS_ERROR) {
 		(void)cb_verify (CB_OBSOLETE, "OPEN REVERSED");
 	} else {
 		/* FIXME: set file attribute */
