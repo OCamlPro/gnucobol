@@ -1,4 +1,10 @@
 
+2022-12-13  Simon Sobisch <simonsobisch@gnu.org>
+
+	* strings.c (inspect_find_data): added missing area check bug #865
+	* strings.c (inspect_common_no_replace, inspect_common_replacing,
+	  is_marked): minor refactoring for optimization hints
+
 2022-12-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.h (cob_module_type): module type as enum instead of defines only
@@ -55,6 +61,11 @@
 
 	* screenio.c: fixed compiler warnings related to get_crt3_status
 
+2022-11-26  Simon Sobisch <simonsobisch@gnu.org>
+
+	* call.c, common.c: internal and explicit setting of no-physical-unload
+	* common.c: adjustments for COB_PHYSICAL_CANCEL
+
 2022-11-24  Simon Sobisch <simonsobisch@gnu.org>
 
 	* intrinsic.c: switching random number generation to GMP,
@@ -80,6 +91,7 @@
 	  by checking sign/zero and reduced number of decimal shifting
 	  dynamic allocation
 	* move.c (store_common_region): minor optimization
+	* move.c:
 
 2022-11-04  Simon Sobisch <simonsobisch@gnu.org>
 

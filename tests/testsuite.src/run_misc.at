@@ -1998,14 +1998,14 @@ AT_DATA([prog.cob], [
            INSPECT X TALLYING TAL FOR CHARACTERS
                      BEFORE INITIAL " ".
            IF TAL NOT = 3
-              DISPLAY TAL.
+              DISPLAY "1: should be 3 but is " TAL.
 
            MOVE 0 TO TAL.
            MOVE " ABC" TO X.
            INSPECT X TALLYING TAL FOR CHARACTERS
                      BEFORE INITIAL " ".
            IF TAL NOT = 0
-              DISPLAY TAL.
+              DISPLAY "2: should be 0 but is " TAL.
 
            STOP RUN.
 ])
@@ -2039,6 +2039,42 @@ AT_DATA([prog.cob], [
                      AFTER INITIAL " ".
            IF TAL NOT = 3
               DISPLAY TAL.
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([INSPECT TALLYING BEFORE and AFTER])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X             PIC X(4) VALUE "ABC ".
+       01 TAL           PIC 999 VALUE 0.
+       01 MSG           PIC X(256) VALUE SPACES.
+       PROCEDURE        DIVISION.
+           MOVE 0 TO TAL.
+           INSPECT X TALLYING TAL FOR CHARACTERS
+                     BEFORE INITIAL " "
+                     AFTER   " ".
+           IF TAL NOT = 0
+              DISPLAY "1: should be 0 but is " TAL.
+
+      *> checking for no match, includes bug #865
+           MOVE 0 TO TAL.
+           INSPECT MSG TALLYING TAL FOR CHARACTERS
+               AFTER INITIAL "<"
+               BEFORE INITIAL "</".
+           IF TAL NOT = 0
+              DISPLAY "2: should be 0 but is " TAL.
 
            STOP RUN.
 ])
