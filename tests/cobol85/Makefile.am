@@ -40,7 +40,7 @@ SUMMARY = summarynoix.txt
 endif
 
 URL_NEWCOB_Z = https://www.itl.nist.gov/div897/ctg/suites/newcob.val.Z
-URL_NEWCOB_TAR_GZ = https://sourceforge.net/projects/gnucobol/files/nist/newcob.val.tar.gz/download
+URL_NEWCOB_TAR_GZ = https://gnucobol.sourceforge.io/files/newcob.val.tar.gz
 
 EXTRA_DIST = EXEC85.conf.in expand.pl report.pl summary.pl summary.txt \
 	summarynoix.txt NC.txt SM.txt IC.txt SQ.txt RL.txt IX.txt \

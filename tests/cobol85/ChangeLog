@@ -3,6 +3,9 @@
 
 	* Makefile.am, Makefile.module.in: use PERL via variable,
 	  default is substituted from configure
+	* Makefile.am: adjusted URL_NEWCOB_TAR_GZ as old value (SF download area)
+	  uses javascript-forwarding which does not work with command line tools
+
 
 2022-10-11  Simon Sobisch <simonsobisch@gnu.org>
 
