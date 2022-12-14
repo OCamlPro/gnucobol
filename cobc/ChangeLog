@@ -847,6 +847,11 @@
 	* tree.c: fix bug #772 check for report field missing PIC
 	  when using SUM clause
 
+2021-12-21  Samuel Belondrade <samuel.belondrade@atos.net>
+
+	* codegen.c (output_base): fix undeclared variable with REDEFINE GLOBAL
+	  [bugs:#777]
+
 2021-12-14  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (print_fields), codegen.c (output_field_display): only check for

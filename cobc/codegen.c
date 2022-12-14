@@ -1059,7 +1059,7 @@ output_base (struct cb_field *f, const cob_u32_t no_output)
 				bl = cobc_parse_malloc (sizeof (struct base_list));
 				bl->f = f01;
 				bl->curr_prog = excp_current_program_id;
-				if (f01->flag_is_global ||
+				if (f01->flag_is_global || f->flag_is_global ||
 				    current_prog->flag_file_global) {
 					bl->next = base_cache;
 					base_cache = bl;

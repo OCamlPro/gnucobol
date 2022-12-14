@@ -3043,6 +3043,25 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([REDEFINES: as GLOBAL item])
+AT_KEYWORDS([extensions redefines])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 T0 PIC X VALUE "X".
+       01 T1 REDEFINES T0 PIC X GLOBAL.
+       PROCEDURE DIVISION.
+          DISPLAY T1.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([Obsolete 2002 keywords with COBOL2014])
 AT_KEYWORDS([extensions])
 
