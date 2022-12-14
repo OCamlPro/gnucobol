@@ -1,10 +1,14 @@
 
+2022-12-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (validate_move): fix bug #643 add check for SET literal TO val
+
 2022-12-13  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (cb_warn_opt_val, get_warn_opt_value, set_warn_opt_value), cobc.h:
 	  renamed cb_warn_opt_val to warn_opt_val and keep local, provide typed
-	  functions to get/set the internal option with the "real" type for improved
-	  type checks and internal cobc debugging
+	  functions to get/set the internal option with the "real" type for
+	  improved type checks and internal cobc debugging
 	* cobc.c, error.c, field.c, parser.y, pplex.l, tree.c, typeck.c: adjusted
 	  to use new get_warn_opt_value / set_warn_opt_value functions
 	* codegen.c (output_index): fix bug #832 binary-char unsigned not usable
