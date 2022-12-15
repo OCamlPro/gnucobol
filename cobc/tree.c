@@ -5418,11 +5418,13 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 							display_literal (lit_disp, l, 0, l->scale), f->name);
 				}
 			}
-			switch (op) {
-			case '=':
-				return cb_false;
-			case '~':
-				return cb_true;
+			if (cb_constant_folding) {
+				switch (op) {
+				case '=':
+					return cb_false;
+				case '~':
+					return cb_true;
+				}
 			}
 		}
 		return cb_any;

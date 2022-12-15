@@ -5793,8 +5793,9 @@ AT_DATA([prog.cob], [
       ******************************************************************
        WORKING-STORAGE SECTION.
        01 FLDX     PIC X        VALUE 'X'.
+       01 FLDXX    PIC XX       VALUE SPACES.
        01 FLDX500  PIC X(500)   VALUE 'X5'.
-       01 FLDXX    PIC X(32000) VALUE 'X'.
+       01 FLDX32K  PIC X(32000) VALUE 'X'.
        01 FLD1     PIC X        VALUE '1'.
        01 FLD1X    PIC X(32000) VALUE '1'.
 
@@ -5923,91 +5924,91 @@ AT_DATA([prog.cob], [
            IF "0"        >= FLD1       DISPLAY '  "0" >= "1"!'.
 
       *> check with many bytes, needs another comparison algorithm (function)
-           IF FLDXX      >  SPACE      CONTINUE
+           IF FLDX32K    >  SPACE      CONTINUE
            ELSE                        DISPLAY '! "X " > SPACE'.
-           IF FLDXX      <  SPACE      DISPLAY '  "X " < SPACE!'.
-           IF FLDXX      >= SPACE      CONTINUE
+           IF FLDX32K    <  SPACE      DISPLAY '  "X " < SPACE!'.
+           IF FLDX32K    >= SPACE      CONTINUE
            ELSE                        DISPLAY '! "X " >= SPACE'.
-           IF FLDXX      <= SPACE      DISPLAY '  "X " <= SPACE!'.
+           IF FLDX32K    <= SPACE      DISPLAY '  "X " <= SPACE!'.
 
-           IF SPACE      <  FLDXX      CONTINUE
+           IF SPACE      <  FLDX32K    CONTINUE
            ELSE                        DISPLAY '! SPACE < "X "'.
-           IF SPACE      >  FLDXX      DISPLAY '  SPACE > "X "!'.
-           IF SPACE      <= FLDXX      CONTINUE
+           IF SPACE      >  FLDX32K    DISPLAY '  SPACE > "X "!'.
+           IF SPACE      <= FLDX32K    CONTINUE
            ELSE                        DISPLAY '! SPACE <= "X "'.
-           IF SPACE      >= FLDXX      DISPLAY '  SPACE >= "X "!'.
+           IF SPACE      >= FLDX32K    DISPLAY '  SPACE >= "X "!'.
 
-           IF FLDXX      >  "  "       CONTINUE
+           IF FLDX32K    >  "  "       CONTINUE
            ELSE                        DISPLAY '! "X " > " "'.
-           IF FLDXX      <  "  "       DISPLAY '  "X " < " "!'.
-           IF FLDXX      >= "  "       CONTINUE
+           IF FLDX32K    <  "  "       DISPLAY '  "X " < " "!'.
+           IF FLDX32K    >= "  "       CONTINUE
            ELSE                        DISPLAY '! "X " >= " "'.
-           IF FLDXX      <= "  "       DISPLAY '  "X " <= " "!'.
+           IF FLDX32K    <= "  "       DISPLAY '  "X " <= " "!'.
 
-           IF "  "       <  FLDXX      CONTINUE
-           ELSE                       DISPLAY '! "  " < "X "'.
-           IF "  "       >  FLDXX      DISPLAY '  "  " > "X "!'.
-           IF "  "       <= FLDXX      CONTINUE
+           IF "  "       <  FLDX32K    CONTINUE
+           ELSE                        DISPLAY '! "  " < "X "'.
+           IF "  "       >  FLDX32K    DISPLAY '  "  " > "X "!'.
+           IF "  "       <= FLDX32K    CONTINUE
            ELSE                        DISPLAY '! "  " <= "X "'.
-           IF "  "       >= FLDXX      DISPLAY '  "  " >= "X "!'.
+           IF "  "       >= FLDX32K    DISPLAY '  "  " >= "X "!'.
 
 
-           IF FLDXX      >  LOW-VALUE  CONTINUE
+           IF FLDX32K    >  LOW-VALUE  CONTINUE
            ELSE                        DISPLAY '! "X" > LOW-VALUE'.
-           IF FLDXX      <  LOW-VALUE  DISPLAY '  "X" < LOW-VALUE!'.
-           IF FLDXX      >= LOW-VALUE  CONTINUE
+           IF FLDX32K    <  LOW-VALUE  DISPLAY '  "X" < LOW-VALUE!'.
+           IF FLDX32K    >= LOW-VALUE  CONTINUE
            ELSE                        DISPLAY '! "X" >= LOW-VALUE'.
-           IF FLDXX      <= LOW-VALUE  DISPLAY '  "X" <= LOW-VALUE!'.
+           IF FLDX32K    <= LOW-VALUE  DISPLAY '  "X" <= LOW-VALUE!'.
 
-           IF LOW-VALUE  <  FLDXX      CONTINUE
+           IF LOW-VALUE  <  FLDX32K    CONTINUE
            ELSE                        DISPLAY '! LOW-VALUE < "X"'.
-           IF LOW-VALUE  >  FLDXX      DISPLAY '  LOW-VALUE > "X"!'.
-           IF LOW-VALUE  <= FLDXX      CONTINUE
+           IF LOW-VALUE  >  FLDX32K    DISPLAY '  LOW-VALUE > "X"!'.
+           IF LOW-VALUE  <= FLDX32K    CONTINUE
            ELSE                        DISPLAY '! LOW-VALUE <= "X"'.
-           IF LOW-VALUE  >= FLDXX      DISPLAY '  LOW-VALUE >= "X"!'.
+           IF LOW-VALUE  >= FLDX32K    DISPLAY '  LOW-VALUE >= "X"!'.
 
-           IF FLDXX      >  x"00"      CONTINUE
+           IF FLDX32K    >  x"00"      CONTINUE
            ELSE                        DISPLAY '! "X " > x"00"'.
-           IF FLDXX      <  x"00"      DISPLAY '  "X " < x"00"!'.
-           IF FLDXX      >= x"00"      CONTINUE
+           IF FLDX32K    <  x"00"      DISPLAY '  "X " < x"00"!'.
+           IF FLDX32K    >= x"00"      CONTINUE
            ELSE                        DISPLAY '! "X " >= x"00"'.
-           IF FLDXX      <= x"00"      DISPLAY '  "X " <= x"00"!'.
+           IF FLDX32K    <= x"00"      DISPLAY '  "X " <= x"00"!'.
 
-           IF x"00"      <  FLDXX      CONTINUE
+           IF x"00"      <  FLDX32K    CONTINUE
            ELSE                        DISPLAY '! x"00" < "X "'.
-           IF x"00"      >  FLDXX      DISPLAY '  x"00" > "X "!'.
-           IF x"00"      <= FLDXX      CONTINUE
+           IF x"00"      >  FLDX32K    DISPLAY '  x"00" > "X "!'.
+           IF x"00"      <= FLDX32K    CONTINUE
            ELSE                        DISPLAY '! x"00" <= "X "'.
-           IF x"00"      >= FLDXX      DISPLAY '  x"00" >= "X "!'.
+           IF x"00"      >= FLDX32K    DISPLAY '  x"00" >= "X "!'.
 
 
-           IF FLDXX      <  HIGH-VALUE CONTINUE
+           IF FLDX32K    <  HIGH-VALUE CONTINUE
            ELSE                        DISPLAY '! "X " < HIGH-VALUE'.
-           IF FLDXX      >  HIGH-VALUE DISPLAY '  "X " > HIGH-VALUE!'.
-           IF FLDXX      <= HIGH-VALUE CONTINUE
+           IF FLDX32K    >  HIGH-VALUE DISPLAY '  "X " > HIGH-VALUE!'.
+           IF FLDX32K    <= HIGH-VALUE CONTINUE
            ELSE                        DISPLAY '! "X " <= HIGH-VALUE'.
-           IF FLDXX      >= HIGH-VALUE DISPLAY '  "X " >= HIGH-VALUE!'.
+           IF FLDX32K    >= HIGH-VALUE DISPLAY '  "X " >= HIGH-VALUE!'.
 
-           IF HIGH-VALUE >  FLDXX      CONTINUE
+           IF HIGH-VALUE >  FLDX32K    CONTINUE
            ELSE                        DISPLAY '! HIGH-VALUE > "X "'.
-           IF HIGH-VALUE <  FLDXX      DISPLAY '  HIGH-VALUE < "X "!'.
-           IF HIGH-VALUE >= FLDXX      CONTINUE
+           IF HIGH-VALUE <  FLDX32K    DISPLAY '  HIGH-VALUE < "X "!'.
+           IF HIGH-VALUE >= FLDX32K    CONTINUE
            ELSE                        DISPLAY '! HIGH-VALUE >= "X "'.
-           IF HIGH-VALUE <= FLDXX      DISPLAY '  HIGH-VALUE <= "X "!'.
+           IF HIGH-VALUE <= FLDX32K    DISPLAY '  HIGH-VALUE <= "X "!'.
 
-           IF FLDXX      <  x"FF"      CONTINUE
+           IF FLDX32K    <  x"FF"      CONTINUE
            ELSE                        DISPLAY '! "X " < x"FF"'.
-           IF FLDXX      >  x"FF"      DISPLAY '  "X " > x"FF"!'.
-           IF FLDXX      <= x"FF"      CONTINUE
+           IF FLDX32K    >  x"FF"      DISPLAY '  "X " > x"FF"!'.
+           IF FLDX32K    <= x"FF"      CONTINUE
            ELSE                        DISPLAY '! "X " <= x"FF"'.
-           IF FLDXX      >= x"FF"      DISPLAY '  "X " >= x"FF"!'.
+           IF FLDX32K    >= x"FF"      DISPLAY '  "X " >= x"FF"!'.
 
-           IF x"FF"      >  FLDXX      CONTINUE
+           IF x"FF"      >  FLDX32K    CONTINUE
            ELSE                        DISPLAY '! x"FF" > "X "'.
-           IF x"FF"      <  FLDXX      DISPLAY '  x"FF" < "X "!'.
-           IF x"FF"      >= FLDXX      CONTINUE
+           IF x"FF"      <  FLDX32K    DISPLAY '  x"FF" < "X "!'.
+           IF x"FF"      >= FLDX32K    CONTINUE
            ELSE                        DISPLAY '! x"FF" >= "X "'.
-           IF x"FF"      <= FLDXX      DISPLAY '  x"FF" <= "X "!'.
+           IF x"FF"      <= FLDX32K    DISPLAY '  x"FF" <= "X "!'.
 
 
            IF FLD1X      >  ZERO       CONTINUE
@@ -6038,7 +6039,7 @@ AT_DATA([prog.cob], [
            ELSE                        DISPLAY '! "0" <= "1 "'.
            IF "0"        >= FLD1X      DISPLAY '  "0" >= "1 "!'.
 
-      *> special check for SPACE-optimization
+      *> special check for SPACE-optimization and extra spaces
            IF FLDX500    >  SPACE      CONTINUE
            ELSE                        DISPLAY '! "X5" > SPACE'.
            IF FLDX500    <  SPACE      DISPLAY '  "X5" < SPACE!'.
@@ -6052,9 +6053,33 @@ AT_DATA([prog.cob], [
            IF SPACE      <= FLDX500    CONTINUE
            ELSE                        DISPLAY '! SPACE <= "X5"'.
            IF SPACE      >= FLDX500    DISPLAY '  SPACE >= "X5"!'.
+
+           MOVE SPACES TO FLDXX
+           IF FLDXX      =  "    "     CONTINUE
+           ELSE                        DISPLAY '! "XX" <> "     "'.
+           MOVE ALL "A" TO FLDXX
+           IF FLDXX      =  "AA  "     CONTINUE
+           ELSE                        DISPLAY '! "AA" <> "AA  "'.
+           IF FLDXX      =  "AAA"      DISPLAY '! "AA" = "AAA "'.
+           IF FLDXX      =  ALL "A"    CONTINUE
+           ELSE                        DISPLAY '! "AA" <> ALL "A"'.
+           MOVE "B" TO FLDXX (2:1)
+           IF FLDXX      =  ALL "AB"   CONTINUE
+           ELSE                        DISPLAY '! "AB" <> ALL "AB"'.
+
+           IF FLDX      <=  ALL "XX"   CONTINUE
+           ELSE                        DISPLAY '! "X" > ALL "XX"'.
+           IF ALL "XX" NOT > FLDX      CONTINUE
+           ELSE                        DISPLAY '! ALL "XX" <= "X"'.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE prog.cob -Wno-constant-expression], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CHECK([$COMPILE prog.cob -Wno-constant-expression -fno-constant-folding], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CHECK([$COMPILE prog.cob -Wno-constant-expression -fno-constant-folding -fno-fast-compare], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP

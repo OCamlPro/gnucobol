@@ -4181,6 +4181,13 @@ output_funcall_typed_report (struct cb_funcall *p, const char type)
 	}
 }
 
+
+/*
+TODO: fix strange errors in "Simple Expressions with figurative constants",
+	  seen if the following is defined
+#define GEN_CHAR_AS_CHAR
+*/
+
 static void
 output_funcall_typed (struct cb_funcall *p, const char type)
 {
@@ -4214,7 +4221,18 @@ output_funcall_typed (struct cb_funcall *p, const char type)
 		} else if (p->argv[1] == cb_high) {
 			output (") - 255)");
 		} else if (CB_LITERAL_P (p->argv[1])) {
-			output (") - %d)", *(CB_LITERAL (p->argv[1])->data));
+			const unsigned char c = CB_LITERAL (p->argv[1])->data[0];
+#if !defined (GEN_CHAR_AS_CHAR)	/* old "simple" version */
+			output (") - %u)", c);
+#else	/* "complex" one that we use everywhere else */
+			if (!isprint (c)) {
+				output (") - '\\%03o')", c);
+			} else if (c == '\'' || c == '\\') {
+				output (") - '\\%c')", c);
+			} else {
+				output (") - '%c')", c);
+			}
+#endif
 		} else {
 			output (") - *(");
 			output_data (p->argv[1]);
@@ -4838,7 +4856,7 @@ output_initialize_uniform (cb_tree x, const int c, const int size)
 	if (size == 1) {
 		output ("*(cob_u8_ptr)(");
 		output_data (x);
-#if 1	/* old "simple" version */
+#if !defined (GEN_CHAR_AS_CHAR)	/* old "simple" version */
 		output (") = %u;", cc);
 #else	/* "complex" one that we use everywhere else */
 		if (!isprint (cc)) {
@@ -4852,8 +4870,8 @@ output_initialize_uniform (cb_tree x, const int c, const int size)
 	} else {
 		output ("memset (");
 		output_data (x);
-#if 1	/* old "simple" version */
-			output (", %u, ", cc);
+#if !defined (GEN_CHAR_AS_CHAR)	/* old "simple" version */
+		output (", %u, ", cc);
 #else	/* "complex" one that we use everywhere else */
 		if (!isprint (cc)) {
 			output (", '\\%03o', ", cc);
@@ -5022,7 +5040,7 @@ output_initialize_to_value (struct cb_field *f, cb_tree x,
 		output_prefix ();
 		output ("*(cob_u8_ptr)(");
 		output_data (x);
-#if 1	/* old "simple" version */
+#if !defined (GEN_CHAR_AS_CHAR)	/* old "simple" version */
 		output (") = %u;", c);
 #else	/* "complex" one that we use everywhere else */
 		if (!isprint (c)) {
@@ -5053,15 +5071,15 @@ output_initialize_to_value (struct cb_field *f, cb_tree x,
 		output_prefix ();
 		output ("memset (");
 		output_data (x);
-#if 1	/* old "simple" version */
+#if !defined (GEN_CHAR_AS_CHAR)	/* old "simple" version */
 		output (", %u", c);
 #else	/* "complex" one that we use everywhere else */
 		if (!isprint (c)) {
 			output (", '\\%03o'", c);
 		} else if (c == '\'' || c == '\\') {
-			output (", '\\%c", c;
+			output (", '\\%c", c);
 		} else {
-			output (", '%c'", c;
+			output (", '%c'", c);
 		}
 #endif
 		output (", %u);", (unsigned int)lsize);
@@ -5105,8 +5123,8 @@ output_initialize_to_value (struct cb_field *f, cb_tree x,
 		output_prefix ();
 		output ("memset (");
 		output_data (x);
-#if 1	/* old "simple" version */
-		output (", %u",c);
+#if !defined (GEN_CHAR_AS_CHAR)	/* old "simple" version */
+		output (", %u", c);
 #else	/* "complex" one that we use everywhere else */
 		if (!isprint (c)) {
 			output (", '\\%03o'", c);

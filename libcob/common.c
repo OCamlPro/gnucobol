@@ -1803,7 +1803,11 @@ cob_cmp_all (cob_field *f1, cob_field *f2)
 			return compare_spaces (f1->data, f1->size);
 		}
 		/* check for IF VAR = ALL ... / HIGH-VALUE / ... */
-		return compare_character (f1->data, f1->size, f2->data, f2->size);
+		if (f1->size > f2->size) {
+			return compare_character (f1->data, f1->size, f2->data, f2->size);
+		} else {
+			return compare_character (f1->data, f1->size, f2->data, f1->size);
+		}
 	}
 
 	/* check with collation */
@@ -1850,7 +1854,7 @@ cob_cmp_alnum (cob_field *f1, cob_field *f2)
 			return compare_spaces (f1->data + min, spaces_to_test);
 		} else if (f1->size < f2->size) {
 			const size_t spaces_to_test = f2->size - min;
-			return -compare_spaces (f1->data + min, spaces_to_test);
+			return -compare_spaces (f2->data + min, spaces_to_test);
 		}
 	
 	} else {		/* check with collation */

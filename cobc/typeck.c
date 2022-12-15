@@ -6737,11 +6737,16 @@ cb_check_alpha_cond (cb_tree x)
 	 || CB_CONST_P (x)) {
 		return 1;
 	}
-	if (!CB_REF_OR_FIELD_P (x)) {
-		return 0;
-	}
-	if (CB_TREE_CATEGORY (x) != CB_CATEGORY_ALPHANUMERIC
-	 && CB_TREE_CATEGORY (x) != CB_CATEGORY_ALPHABETIC) {
+	if (CB_REF_OR_FIELD_P (x)) {
+		const enum cb_category cat = CB_TREE_CATEGORY (x);
+		if (cat != CB_CATEGORY_ALPHANUMERIC
+		 && cat != CB_CATEGORY_ALPHABETIC) {
+			/* CHECKME: Shouldn't _EDITED fields lead to
+			            alphanumeric comparision, too ?
+			*/
+			return 0;
+		}
+	} else {
 		return 0;
 	}
 	if (cb_field_variable_size (CB_FIELD_PTR (x))) {
@@ -12679,22 +12684,26 @@ cb_build_search_all (cb_tree table, cb_tree cond)
 	return cb_build_cond (c1);
 }
 
-void
+cb_tree
 cb_emit_search (cb_tree table, cb_tree varying, cb_tree at_end, cb_tree whens)
 {
+	cb_tree		x;
+
 	if (cb_validate_one (table)
 	 || cb_validate_one (varying)
 	 || whens == cb_error_node) {
-		return;
+		return NULL;
 	}
 	whens = cb_list_reverse (whens);
 	if (at_end) {
 		cb_check_needs_break (CB_PAIR_Y (at_end));
 	}
-	cb_emit (cb_build_search (0, table, varying, at_end, whens));
+	x = cb_build_search (0, table, varying, at_end, whens);
+	cb_emit (x);
+	return x;
 }
 
-void
+cb_tree
 cb_emit_search_all (cb_tree table, cb_tree at_end, cb_tree when, cb_tree stmts)
 {
 	cb_tree		x;
@@ -12702,19 +12711,21 @@ cb_emit_search_all (cb_tree table, cb_tree at_end, cb_tree when, cb_tree stmts)
 
 	if (cb_validate_one (table)
 	 || when == cb_error_node) {
-		return;
+		return NULL;
 	}
 	x = cb_build_search_all (table, when);
 	if (!x) {
-		return;
+		return NULL;
 	}
 
 	stmt_lis = cb_check_needs_break (stmts);
 	if (at_end) {
 		cb_check_needs_break (CB_PAIR_Y (at_end));
 	}
-	cb_emit (cb_build_search (1, table, NULL, at_end,
-				  cb_build_if (x, stmt_lis, NULL, STMT_WHEN)));
+	x = cb_build_search (1, table, NULL, at_end,
+			  cb_build_if (x, stmt_lis, NULL, STMT_WHEN));
+	cb_emit (x);
+	return x;
 }
 
 /* SET statement */
