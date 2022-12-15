@@ -5981,3 +5981,29 @@ AT_CHECK([$COMPILE caller.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./caller], [0], [], [])
 AT_CLEANUP
+
+
+AT_SETUP([Alphanumeric VALUE longer than PIC])
+AT_KEYWORDS([fundamental value size])
+
+# FIXME: Recent versions of gcc generate C warnings.
+AT_XFAIL_IF(true)
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X-SPACES      PIC XXX VALUE "    ".
+       01 X-Xs          PIC XX  VALUE "XXX".
+       PROCEDURE        DIVISION.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [],
+[prog.cob:6: warning: value does not fit the picture string
+prog.cob:7: warning: value size exceeds data size
+prog.cob:7: note: value size is 3
+])
+
+AT_CLEANUP
