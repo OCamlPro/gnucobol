@@ -1272,6 +1272,25 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 AT_CLEANUP
 
 
+AT_SETUP([GLOBAL REDEFINES])
+AT_KEYWORDS([fundamental])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 T0 PIC X VALUE "X".
+       01 T1 REDEFINES T0 PIC X GLOBAL.
+       PROCEDURE DIVISION.
+          DISPLAY T1.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([function with variable-length RETURNING item])
 AT_KEYWORDS([fundamental udf])
 
@@ -5061,6 +5080,42 @@ AT_DATA([prog.cob], [
                     DISPLAY 'F4.3: Should  raised size error'
            END-DIVIDE.
       *>
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE prog.cob])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([COMPUTE with decimal constants])
+AT_KEYWORDS([fundamental])
+
+# see bug #798, GC 2.2 may change the precision of decimal contants
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  CNT                    PIC  99     VALUE ZERO.
+       77  CALCER                 PIC s99v99.
+       01  DUMMY-RES              PIC  99.
+      *>
+       PROCEDURE DIVISION.
+      *>  variable setting postponed here to work around "easy"
+      *>  optimization to constant
+           MOVE 3.5 TO CALCER
+           PERFORM 42 TIMES
+             ADD   1 TO CNT
+    >>D      DISPLAY CNT
+      *> directly returns:
+      *>    COMPUTE DUMMY-RES = 2 * (CALCER + 2) + 2
+      *> performs "felt as forever":
+             COMPUTE DUMMY-RES = (CALCER + 2) * 2 + 2
+           END-PERFORM
+
            GOBACK.
 ])
 

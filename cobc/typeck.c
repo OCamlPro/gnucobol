@@ -10398,6 +10398,8 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 	int			most_significant;
 	int			least_significant;
 
+	/* CHECKME: most of the "invalid" checks should possibly be handled in the parser */
+
 	loc = src->source_line ? src : dst;
 	is_numeric_edited = 0;
 	overlapping = 0;
@@ -10406,15 +10408,12 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 	}
 	*move_zero = 0;
 	if (CB_REFERENCE_P (dst)) {
-		cb_tree dstr = CB_REFERENCE(dst)->value;
-		if (CB_ALPHABET_NAME_P(dstr)
+		cb_tree dstr = CB_REFERENCE (dst)->value;
+		if (CB_ALPHABET_NAME_P (dstr)
+		 || CB_CONST_P (dstr)
 		 || CB_FILE_P (dstr)) {
 			goto invalid;
 		}
-	}
-	if (CB_TREE_CATEGORY (dst) == CB_CATEGORY_BOOLEAN) {
-		cb_error_x (loc, _("invalid destination for MOVE"));
-		return -1;
 	}
 
 	if (CB_TREE_CLASS (dst) == CB_CLASS_POINTER) {
@@ -10427,6 +10426,11 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 			}
 			goto invalid;
 		}
+	}
+
+	if (CB_TREE_CATEGORY (dst) == CB_CATEGORY_BOOLEAN
+	 || CB_LITERAL_P (dst)) {
+		goto invalid;
 	}
 
 	fdst = CB_FIELD_PTR (dst);
