@@ -13728,7 +13728,10 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE prog.cob -w], [0], [], [])
+# Note: this program errors without constant folding, but that is
+#       checked in syn_misc.at already; we explicit specify the remove
+#       of folded constants option allowing to run with COBOL_FLAGS=-g
+AT_CHECK([$COMPILE prog.cob -fconstant-folding -fremove-unreachable -w], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [A: OK VAR-LEN > 16 AND VAR-LEN < 200

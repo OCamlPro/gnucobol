@@ -127,7 +127,11 @@ CB_FLAG (cb_flag_stack_extended, 1, "stack-extended",
 	_("  -fstack-extended      store origin of entrypoints and PERFORM\n"
 	  "                        * turned on by -debug/-dump"))
 
+CB_FLAG_ON (cb_flag_fast_compare, 0, "fast-compare",
+	_("  -fno-fast-compare     disables inline comparisions\n"))
+
 /* Normal flags */
+
 CB_FLAG_ON (cb_flag_remove_unreachable, 1, "remove-unreachable",
 	_("  -fno-remove-unreachable\tdisable remove of unreachable code\n"
 	  "                        * turned off by -g"))

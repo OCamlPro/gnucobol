@@ -5783,6 +5783,283 @@ AT_CHECK([COB_SET_DEBUG=1 $COBCRUN_DIRECT ./prog], [0],
 AT_CLEANUP
 
 
+AT_SETUP([Simple Expressions with figurative constants])
+AT_KEYWORDS([expression conditional])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+      ******************************************************************
+       WORKING-STORAGE SECTION.
+       01 FLDX     PIC X        VALUE 'X'.
+       01 FLDX500  PIC X(500)   VALUE 'X5'.
+       01 FLDXX    PIC X(32000) VALUE 'X'.
+       01 FLD1     PIC X        VALUE '1'.
+       01 FLD1X    PIC X(32000) VALUE '1'.
+
+       PROCEDURE DIVISION.
+       MAIN-LINE.
+
+      *>   minimal side-test for performance comparisions
+           PERFORM DO-CHECK 10000 TIMES
+           GOBACK.
+
+       DO-CHECK.
+      *> check with 1 byte, comparison algorithm is a direct comparison
+           IF FLDX       >  SPACE      CONTINUE
+           ELSE                        DISPLAY '! "X" > SPACE'.
+           IF FLDX       <  SPACE      DISPLAY '  "X" < SPACE!'.
+           IF FLDX       >= SPACE      CONTINUE
+           ELSE                        DISPLAY '! "X" >= SPACE'.
+           IF FLDX       <= SPACE      DISPLAY '  "X" <= SPACE!'.
+
+           IF SPACE      <  FLDX       CONTINUE
+           ELSE                        DISPLAY '! SPACE < "X"'.
+           IF SPACE      >  FLDX       DISPLAY '  SPACE > "X"!'.
+           IF SPACE      <= FLDX       CONTINUE
+           ELSE                        DISPLAY '! SPACE <= "X"'.
+           IF SPACE      >= FLDX       DISPLAY '  SPACE >= "X"!'.
+
+           IF FLDX       >  " "        CONTINUE
+           ELSE                        DISPLAY '! "X" > " "'.
+           IF FLDX       <  " "        DISPLAY '  "X" < " "!'.
+           IF FLDX       >= " "        CONTINUE
+           ELSE                        DISPLAY '! "X" >= " "'.
+           IF FLDX       <= " "        DISPLAY '  "X" <= " "!'.
+
+           IF " "        <  FLDX       CONTINUE
+           ELSE                        DISPLAY '! " " < "X"'.
+           IF " "        >  FLDX       DISPLAY '  " " > "X"!'.
+           IF " "        <= FLDX       CONTINUE
+           ELSE                        DISPLAY '! " " <= "X"'.
+           IF " "        >= FLDX       DISPLAY '  " " >= "X"!'.
+
+
+           IF FLDX       >  LOW-VALUE  CONTINUE
+           ELSE                        DISPLAY '! "X" > LOW-VALUE'.
+           IF FLDX       <  LOW-VALUE  DISPLAY '  "X" < LOW-VALUE!'.
+           IF FLDX       >= LOW-VALUE  CONTINUE
+           ELSE                        DISPLAY '! "X" >= LOW-VALUE'.
+           IF FLDX       <= LOW-VALUE  DISPLAY '  "X" <= LOW-VALUE!'.
+
+           IF LOW-VALUE  <  FLDX       CONTINUE
+           ELSE                        DISPLAY '! LOW-VALUE < "X"'.
+           IF LOW-VALUE  >  FLDX       DISPLAY '  LOW-VALUE > "X"!'.
+           IF LOW-VALUE  <= FLDX       CONTINUE
+           ELSE                        DISPLAY '! LOW-VALUE <= "X"'.
+           IF LOW-VALUE  >= FLDX       DISPLAY '  LOW-VALUE >= "X"!'.
+
+           IF FLDX       >  x"00"      CONTINUE
+           ELSE                        DISPLAY '! "X" > x"00"'.
+           IF FLDX       <  x"00"      DISPLAY '  "X" < x"00"!'.
+           IF FLDX       >= x"00"      CONTINUE
+           ELSE                        DISPLAY '! "X" >= x"00"'.
+           IF FLDX       <= x"00"      DISPLAY '  "X" <= x"00"!'.
+
+           IF x"00"      <  FLDX       CONTINUE
+           ELSE                        DISPLAY '! x"00" < "X"'.
+           IF x"00"      >  FLDX       DISPLAY '  x"00" > "X"!'.
+           IF x"00"      <= FLDX       CONTINUE
+           ELSE                        DISPLAY '! x"00" <= "X"'.
+           IF x"00"      >= FLDX       DISPLAY '  x"00" >= "X"!'.
+
+
+           IF FLDX       <  HIGH-VALUE CONTINUE
+           ELSE                        DISPLAY '! "X" < HIGH-VALUE'.
+           IF FLDX       >  HIGH-VALUE DISPLAY '  "X" > HIGH-VALUE!'.
+           IF FLDX       <= HIGH-VALUE CONTINUE
+           ELSE                        DISPLAY '! "X" <= HIGH-VALUE'.
+           IF FLDX       >= HIGH-VALUE DISPLAY '  "X" >= HIGH-VALUE!'.
+
+           IF HIGH-VALUE >  FLDX       CONTINUE
+           ELSE                        DISPLAY '! HIGH-VALUE > "X"'.
+           IF HIGH-VALUE <  FLDX       DISPLAY '  HIGH-VALUE < "X"!'.
+           IF HIGH-VALUE >= FLDX       CONTINUE
+           ELSE                        DISPLAY '! HIGH-VALUE >= "X"'.
+           IF HIGH-VALUE <= FLDX       DISPLAY '  HIGH-VALUE <= "X"!'.
+
+           IF FLDX       <  x"FF"      CONTINUE
+           ELSE                        DISPLAY '! "X" < x"FF"'.
+           IF FLDX       >  x"FF"      DISPLAY '  "X" > x"FF"!'.
+           IF FLDX       <= x"FF"      CONTINUE
+           ELSE                        DISPLAY '! "X" <= x"FF"'.
+           IF FLDX       >= x"FF"      DISPLAY '  "X" >= x"FF"!'.
+
+           IF x"FF"      >  FLDX       CONTINUE
+           ELSE                        DISPLAY '! x"FF" > "X"'.
+           IF x"FF"      <  FLDX       DISPLAY '  x"FF" < "X"!'.
+           IF x"FF"      >= FLDX       CONTINUE
+           ELSE                        DISPLAY '! x"FF" >= "X"'.
+           IF x"FF"      <= FLDX       DISPLAY '  x"FF" <= "X"!'.
+
+
+           IF FLD1       >  ZERO       CONTINUE
+           ELSE                        DISPLAY '! "1" > ZERO'.
+           IF FLD1       <  ZERO       DISPLAY '  "1" < ZERO!'.
+           IF FLD1       >= ZERO       CONTINUE
+           ELSE                        DISPLAY '! "1" >= ZERO'.
+           IF FLD1       <= ZERO       DISPLAY '  "1" <= ZERO!'.
+
+           IF ZERO       <  FLD1       CONTINUE
+           ELSE                        DISPLAY '! ZERO < "1"'.
+           IF ZERO       >  FLD1       DISPLAY '  ZERO > "1"!'.
+           IF ZERO       <= FLD1       CONTINUE
+           ELSE                        DISPLAY '! ZERO <= "1"'.
+           IF ZERO       >= FLD1       DISPLAY '  ZERO >= "1"!'.
+
+           IF FLD1       >  "0"        CONTINUE
+           ELSE                        DISPLAY '! "1" > "0"'.
+           IF FLD1       <  "0"        DISPLAY '  "1" < "0"!'.
+           IF FLD1       >= "0"        CONTINUE
+           ELSE                        DISPLAY '! "1" >= "0"'.
+           IF FLD1       <= "0"        DISPLAY '  "1" <= "0"!'.
+
+           IF "0"        <  FLD1       CONTINUE
+           ELSE                        DISPLAY '! "0" < "1"'.
+           IF "0"        >  FLD1       DISPLAY '  "0" > "1"!'.
+           IF "0"        <= FLD1       CONTINUE
+           ELSE                        DISPLAY '! "0" <= "1"'.
+           IF "0"        >= FLD1       DISPLAY '  "0" >= "1"!'.
+
+      *> check with many bytes, needs another comparison algorithm (function)
+           IF FLDXX      >  SPACE      CONTINUE
+           ELSE                        DISPLAY '! "X " > SPACE'.
+           IF FLDXX      <  SPACE      DISPLAY '  "X " < SPACE!'.
+           IF FLDXX      >= SPACE      CONTINUE
+           ELSE                        DISPLAY '! "X " >= SPACE'.
+           IF FLDXX      <= SPACE      DISPLAY '  "X " <= SPACE!'.
+
+           IF SPACE      <  FLDXX      CONTINUE
+           ELSE                        DISPLAY '! SPACE < "X "'.
+           IF SPACE      >  FLDXX      DISPLAY '  SPACE > "X "!'.
+           IF SPACE      <= FLDXX      CONTINUE
+           ELSE                        DISPLAY '! SPACE <= "X "'.
+           IF SPACE      >= FLDXX      DISPLAY '  SPACE >= "X "!'.
+
+           IF FLDXX      >  "  "       CONTINUE
+           ELSE                        DISPLAY '! "X " > " "'.
+           IF FLDXX      <  "  "       DISPLAY '  "X " < " "!'.
+           IF FLDXX      >= "  "       CONTINUE
+           ELSE                        DISPLAY '! "X " >= " "'.
+           IF FLDXX      <= "  "       DISPLAY '  "X " <= " "!'.
+
+           IF "  "       <  FLDXX      CONTINUE
+           ELSE                       DISPLAY '! "  " < "X "'.
+           IF "  "       >  FLDXX      DISPLAY '  "  " > "X "!'.
+           IF "  "       <= FLDXX      CONTINUE
+           ELSE                        DISPLAY '! "  " <= "X "'.
+           IF "  "       >= FLDXX      DISPLAY '  "  " >= "X "!'.
+
+
+           IF FLDXX      >  LOW-VALUE  CONTINUE
+           ELSE                        DISPLAY '! "X" > LOW-VALUE'.
+           IF FLDXX      <  LOW-VALUE  DISPLAY '  "X" < LOW-VALUE!'.
+           IF FLDXX      >= LOW-VALUE  CONTINUE
+           ELSE                        DISPLAY '! "X" >= LOW-VALUE'.
+           IF FLDXX      <= LOW-VALUE  DISPLAY '  "X" <= LOW-VALUE!'.
+
+           IF LOW-VALUE  <  FLDXX      CONTINUE
+           ELSE                        DISPLAY '! LOW-VALUE < "X"'.
+           IF LOW-VALUE  >  FLDXX      DISPLAY '  LOW-VALUE > "X"!'.
+           IF LOW-VALUE  <= FLDXX      CONTINUE
+           ELSE                        DISPLAY '! LOW-VALUE <= "X"'.
+           IF LOW-VALUE  >= FLDXX      DISPLAY '  LOW-VALUE >= "X"!'.
+
+           IF FLDXX      >  x"00"      CONTINUE
+           ELSE                        DISPLAY '! "X " > x"00"'.
+           IF FLDXX      <  x"00"      DISPLAY '  "X " < x"00"!'.
+           IF FLDXX      >= x"00"      CONTINUE
+           ELSE                        DISPLAY '! "X " >= x"00"'.
+           IF FLDXX      <= x"00"      DISPLAY '  "X " <= x"00"!'.
+
+           IF x"00"      <  FLDXX      CONTINUE
+           ELSE                        DISPLAY '! x"00" < "X "'.
+           IF x"00"      >  FLDXX      DISPLAY '  x"00" > "X "!'.
+           IF x"00"      <= FLDXX      CONTINUE
+           ELSE                        DISPLAY '! x"00" <= "X "'.
+           IF x"00"      >= FLDXX      DISPLAY '  x"00" >= "X "!'.
+
+
+           IF FLDXX      <  HIGH-VALUE CONTINUE
+           ELSE                        DISPLAY '! "X " < HIGH-VALUE'.
+           IF FLDXX      >  HIGH-VALUE DISPLAY '  "X " > HIGH-VALUE!'.
+           IF FLDXX      <= HIGH-VALUE CONTINUE
+           ELSE                        DISPLAY '! "X " <= HIGH-VALUE'.
+           IF FLDXX      >= HIGH-VALUE DISPLAY '  "X " >= HIGH-VALUE!'.
+
+           IF HIGH-VALUE >  FLDXX      CONTINUE
+           ELSE                        DISPLAY '! HIGH-VALUE > "X "'.
+           IF HIGH-VALUE <  FLDXX      DISPLAY '  HIGH-VALUE < "X "!'.
+           IF HIGH-VALUE >= FLDXX      CONTINUE
+           ELSE                        DISPLAY '! HIGH-VALUE >= "X "'.
+           IF HIGH-VALUE <= FLDXX      DISPLAY '  HIGH-VALUE <= "X "!'.
+
+           IF FLDXX      <  x"FF"      CONTINUE
+           ELSE                        DISPLAY '! "X " < x"FF"'.
+           IF FLDXX      >  x"FF"      DISPLAY '  "X " > x"FF"!'.
+           IF FLDXX      <= x"FF"      CONTINUE
+           ELSE                        DISPLAY '! "X " <= x"FF"'.
+           IF FLDXX      >= x"FF"      DISPLAY '  "X " >= x"FF"!'.
+
+           IF x"FF"      >  FLDXX      CONTINUE
+           ELSE                        DISPLAY '! x"FF" > "X "'.
+           IF x"FF"      <  FLDXX      DISPLAY '  x"FF" < "X "!'.
+           IF x"FF"      >= FLDXX      CONTINUE
+           ELSE                        DISPLAY '! x"FF" >= "X "'.
+           IF x"FF"      <= FLDXX      DISPLAY '  x"FF" <= "X "!'.
+
+
+           IF FLD1X      >  ZERO       CONTINUE
+           ELSE                        DISPLAY '! "1 " > ZERO'.
+           IF FLD1X      <  ZERO       DISPLAY '  "1 " < ZERO!'.
+           IF FLD1X      >= ZERO       CONTINUE
+           ELSE                        DISPLAY '! "1 " >= ZERO'.
+           IF FLD1X      <= ZERO       DISPLAY '  "1 " <= ZERO!'.
+
+           IF ZERO       <  FLD1X      CONTINUE
+           ELSE                        DISPLAY '! ZERO < "1 "'.
+           IF ZERO       >  FLD1X      DISPLAY '  ZERO > "1 "!'.
+           IF ZERO       <= FLD1X      CONTINUE
+           ELSE                        DISPLAY '! ZERO <= "1 "'.
+           IF ZERO       >= FLD1X      DISPLAY '  ZERO >= "1 "!'.
+
+           IF FLD1X      >  "0"        CONTINUE
+           ELSE                        DISPLAY '! "1 " > "0"'.
+           IF FLD1X      <  "0"        DISPLAY '  "1 " < "0"!'.
+           IF FLD1X      >= "0"        CONTINUE
+           ELSE                        DISPLAY '! "1 " >= "0"'.
+           IF FLD1X      <= "0"        DISPLAY '  "1 " <= "0"!'.
+
+           IF "0"        <  FLD1X      CONTINUE
+           ELSE                        DISPLAY '! "0" < "1 "'.
+           IF "0"        >  FLD1X      DISPLAY '  "0" > "1 "!'.
+           IF "0"        <= FLD1X      CONTINUE
+           ELSE                        DISPLAY '! "0" <= "1 "'.
+           IF "0"        >= FLD1X      DISPLAY '  "0" >= "1 "!'.
+
+      *> special check for SPACE-optimization
+           IF FLDX500    >  SPACE      CONTINUE
+           ELSE                        DISPLAY '! "X5" > SPACE'.
+           IF FLDX500    <  SPACE      DISPLAY '  "X5" < SPACE!'.
+           IF FLDX500    >= SPACE      CONTINUE
+           ELSE                        DISPLAY '! "X5" >= SPACE'.
+           IF FLDX500    <= SPACE      DISPLAY '  "X5" <= SPACE!'.
+
+           IF SPACE      <  FLDX500    CONTINUE
+           ELSE                        DISPLAY '! SPACE < "X5"'.
+           IF SPACE      >  FLDX500    DISPLAY '  SPACE > "X5"!'.
+           IF SPACE      <= FLDX500    CONTINUE
+           ELSE                        DISPLAY '! SPACE <= "X5"'.
+           IF SPACE      >= FLDX500    DISPLAY '  SPACE >= "X5"!'.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([Abbreviated Expressions])
 AT_KEYWORDS([expression conditional])
 

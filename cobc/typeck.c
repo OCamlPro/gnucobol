@@ -6313,7 +6313,7 @@ decimal_expand (cb_tree d, cb_tree x)
 		decimal_expand (d, p->x);
 
 		if (CB_TREE_TAG (p->y) == CB_TAG_LITERAL
-		&&  CB_TREE_CATEGORY (p->y) == CB_CATEGORY_NUMERIC) {
+		 && CB_TREE_CATEGORY (p->y) == CB_CATEGORY_NUMERIC) {
 			t = cb_build_decimal_literal (cb_lookup_literal(p->y,1));
 			decimal_compute (p->op, d, t);
 		} else {
@@ -6710,26 +6710,21 @@ cb_check_num_cond (cb_tree x, cb_tree y)
 		return 0;
 	}
 	if (CB_TREE_CATEGORY (x) != CB_CATEGORY_NUMERIC
-	 || CB_TREE_CATEGORY (y) != CB_CATEGORY_NUMERIC) {
-		return 0;
-	}
-	if (CB_TREE_CLASS (x) != CB_CLASS_NUMERIC
+	 || CB_TREE_CATEGORY (y) != CB_CATEGORY_NUMERIC
+	 || CB_TREE_CLASS (x) != CB_CLASS_NUMERIC
 	 || CB_TREE_CLASS (y) != CB_CLASS_NUMERIC) {
 		return 0;
 	}
 	fx = CB_FIELD_PTR (x);
 	fy = CB_FIELD_PTR (y);
 	if (fx->usage != CB_USAGE_DISPLAY
-	 || fy->usage != CB_USAGE_DISPLAY) {
+	 || fy->usage != CB_USAGE_DISPLAY
+	 || fx->pic->have_sign
+	 || fy->pic->have_sign) {
 		return 0;
 	}
-	if (fx->pic->have_sign || fy->pic->have_sign) {
-		return 0;
-	}
-	if (fx->size != fy->size) {
-		return 0;
-	}
-	if (fx->pic->scale != fy->pic->scale) {
+	if (fx->size != fy->size
+	 || fx->pic->scale != fy->pic->scale) {
 		return 0;
 	}
 	return 1;
@@ -6738,10 +6733,8 @@ cb_check_num_cond (cb_tree x, cb_tree y)
 static int
 cb_check_alpha_cond (cb_tree x)
 {
-	if (current_program->alphabet_name_list) {
-		return 0;
-	}
-	if (CB_LITERAL_P (x)) {
+	if (CB_LITERAL_P (x)
+	 || CB_CONST_P (x)) {
 		return 1;
 	}
 	if (!CB_REF_OR_FIELD_P (x)) {
@@ -6752,9 +6745,6 @@ cb_check_alpha_cond (cb_tree x)
 		return 0;
 	}
 	if (cb_field_variable_size (CB_FIELD_PTR (x))) {
-		return 0;
-	}
-	if (cb_field_size (x) == FIELD_SIZE_UNKNOWN) {
 		return 0;
 	}
 	return 1;
@@ -6811,16 +6801,116 @@ cb_walk_cond (cb_tree x)
 	}
 }
 
+/* Field comparison */
+static cb_tree
+cb_build_cond_fields (struct cb_binary_op *p,
+	cb_tree left, cb_tree right, const enum cb_class l_class)
+{
+	const enum cb_category	x_cat = CB_TREE_CATEGORY (left);
+	const int	size1 = cb_field_size (left);
+	const int	size2 = cb_field_size (right);
+
+	if ((CB_REF_OR_FIELD_P (left))
+	 && (x_cat == CB_CATEGORY_ALPHANUMERIC
+	  || x_cat == CB_CATEGORY_ALPHABETIC)
+	 && size1 == 1
+	 && (right == cb_space || right == cb_zero
+	  || right == cb_high  || right == cb_low)) {
+		return CB_BUILD_FUNCALL_2 ("$G", left, right);
+	}
+
+	if (size1 == 1 && size2 == 1) {
+		return CB_BUILD_FUNCALL_2 ("$G", left, right);
+	}
+	if (size1 > 0 && size1 == size2) {
+		return CB_BUILD_FUNCALL_3 ("memcmp",
+			CB_BUILD_CAST_ADDRESS (left),
+			CB_BUILD_CAST_ADDRESS (right),
+			cb_int (size1));
+	}
+	if (right == cb_zero && l_class == CB_CLASS_NUMERIC) {
+		return cb_build_optim_cond (p);
+	}
+	return CB_BUILD_FUNCALL_2 ("cob_cmp", left, right);
+}
+
+static cb_tree
+cb_build_cond_default (struct cb_binary_op *p, cb_tree left, cb_tree right)
+{
+	const enum cb_class l_class = CB_TREE_CLASS (left);
+	const enum cb_class r_class = CB_TREE_CLASS (right);
+
+	if (CB_BINARY_OP_P (left)
+	 || CB_BINARY_OP_P (right)) {
+		/* Decimal comparison */
+		cb_tree		ret;
+		cb_tree		d1 = decimal_alloc ();
+		cb_tree		d2 = decimal_alloc ();
+
+		decimal_expand (d1, left);
+		decimal_expand (d2, right);
+		dpush (CB_BUILD_FUNCALL_2 ("cob_decimal_cmp", d1, d2));
+		decimal_free ();
+		decimal_free ();
+		ret = cb_list_reverse (decimal_stack);
+		decimal_stack = NULL;
+		return ret;
+	}
+	
+#if 0	/* possibly add check of classes of the two operands, note that there
+		   are a lot of defined comparisions in the standard 8.8.4.1.1 relation
+		   conditions, with explicit comparision of class alphanumeric (where
+		   all edited items go to) and of class numeric; so likely only do this
+		   with a new warning only enabled with -Wextra. */
+	if (get_warn_opt_value (cb_warn_strict_typing) != COBC_WARN_DISABLED) {
+		if cb_tree_class...
+			cb_warning_x (cb_warn_strict_typing,
+				CB_TREE (p), _("alphanumeric value is expected"));
+	} else {
+		cb_warning_x (cb_warn_strict_typing,
+			CB_TREE(p), _("numeric value is expected"));
+	}
+#endif
+
+	if (CB_INDEX_OR_HANDLE_P (left)
+	 || CB_INDEX_OR_HANDLE_P (right)
+	 || l_class == CB_CLASS_POINTER
+	 || r_class == CB_CLASS_POINTER) {
+		return cb_build_binary_op (left, '-', right);
+	}
+
+	/* DEBUG Bypass optimization for PERFORM and upon request */
+	if (current_program->flag_debugging
+	 || !cb_flag_fast_compare) {
+		return CB_BUILD_FUNCALL_2 ("cob_cmp", left, right);
+	}
+
+	if (cb_check_num_cond (left, right)) {
+		const int	size1 = cb_field_size (left);
+		return CB_BUILD_FUNCALL_3 ("memcmp",
+			CB_BUILD_CAST_ADDRESS (left),
+			CB_BUILD_CAST_ADDRESS (right),
+			cb_int (size1));
+	}
+	if (l_class == CB_CLASS_NUMERIC
+	 && r_class == CB_CLASS_NUMERIC
+	 && cb_fits_long_long (right)) {
+		return cb_build_optim_cond (p);
+	}
+	if (current_program->alphabet_name_list
+	 || !cb_check_alpha_cond (left)
+	 || !cb_check_alpha_cond (right)) {
+		return CB_BUILD_FUNCALL_2 ("cob_cmp", left, right);
+	}
+	return cb_build_cond_fields (p, left, right, l_class);
+}
+
 cb_tree
 cb_build_cond (cb_tree x)
 {
 	struct cb_field		*f;
 	struct cb_binary_op	*p;
-	cb_tree			d1;
-	cb_tree			d2;
 	cb_tree			ret;
-	int			size1;
-	int			size2;
 
 	if (x == cb_error_node) {
 		return cb_error_node;
@@ -6830,8 +6920,8 @@ cb_build_cond (cb_tree x)
 		/* ARITHMETIC-OSVS: Determine largest scale used in condition */
 		if (expr_dmax == -1) {
 			/* FIXME: this is a hack, x should always be a list! */
-			if (CB_LIST_P(x)) {
-				expr_rslt = CB_VALUE(x);
+			if (CB_LIST_P (x)) {
+				expr_rslt = CB_VALUE (x);
 			} else {
 				expr_rslt = x;
 			}
@@ -6881,107 +6971,21 @@ cb_build_cond (cb_tree x)
 		switch (p->op) {
 		case '!':
 			ret = CB_BUILD_NEGATION (cb_build_cond (p->x));
-			goto return_ret;
+			break;
 		case '&':
 		case '|':
 			if (!p->y || p->y == cb_error_node) {
 				return cb_error_node;
 			}
 			ret = cb_build_binary_op (cb_build_cond (p->x), p->op, cb_build_cond (p->y));
-			goto return_ret;
+			break;
 		default:
 			if (!p->y || p->y == cb_error_node) {
 				return cb_error_node;
 			}
-			if (CB_INDEX_OR_HANDLE_P (p->x)
-			 || CB_INDEX_OR_HANDLE_P (p->y)
-			 || CB_TREE_CLASS (p->x) == CB_CLASS_POINTER
-			 || CB_TREE_CLASS (p->y) == CB_CLASS_POINTER) {
-				ret = cb_build_binary_op (p->x, '-', p->y);
-			} else if (CB_BINARY_OP_P (p->x)
-			        || CB_BINARY_OP_P (p->y)) {
-				/* Decimal comparison */
-				d1 = decimal_alloc ();
-				d2 = decimal_alloc ();
-
-				decimal_expand (d1, p->x);
-				decimal_expand (d2, p->y);
-				dpush (CB_BUILD_FUNCALL_2 ("cob_decimal_cmp", d1, d2));
-				decimal_free ();
-				decimal_free ();
-				ret = cb_list_reverse (decimal_stack);
-				decimal_stack = NULL;
-			} else {
-				/* DEBUG Bypass optimization for PERFORM */
-				if (current_program->flag_debugging) {
-					ret = CB_BUILD_FUNCALL_2 ("cob_cmp", p->x, p->y);
-					break;
-				}
-				if (cb_check_num_cond (p->x, p->y)) {
-					size1 = cb_field_size (p->x);
-					ret = CB_BUILD_FUNCALL_3 ("memcmp",
-						CB_BUILD_CAST_ADDRESS (p->x),
-						CB_BUILD_CAST_ADDRESS (p->y),
-						cb_int (size1));
-					break;
-				}
-				if (CB_TREE_CLASS (p->x) == CB_CLASS_NUMERIC
-				 && CB_TREE_CLASS (p->y) == CB_CLASS_NUMERIC
-				 && cb_fits_long_long (p->y)) {
-					ret = cb_build_optim_cond (p);
-					break;
-				}
-
-				/* Field comparison */
-				if ((CB_REF_OR_FIELD_P (p->x))
-				 && (CB_TREE_CATEGORY (p->x) == CB_CATEGORY_ALPHANUMERIC ||
-				     CB_TREE_CATEGORY (p->x) == CB_CATEGORY_ALPHABETIC)
-				 && cb_field_size (p->x) == 1
-				 && !current_program->alphabet_name_list
-				 && (p->y == cb_space || p->y == cb_low ||
-				     p->y == cb_high || p->y == cb_zero)) {
-					ret = CB_BUILD_FUNCALL_2 ("$G", p->x, p->y);
-					break;
-				}
-				if (cb_check_alpha_cond (p->x)
-				 && cb_check_alpha_cond (p->y)) {
-					size1 = cb_field_size (p->x);
-					size2 = cb_field_size (p->y);
-				} else {
-					size1 = 0;
-					size2 = 0;
-				}
-#if 0			/* possibly add check of classes of the two operands, note that there
-				   are a lot of defined comparisions in the standard 8.8.4.1.1 relation
-				   conditions, with explicit comparision of class alphanumeric (where
-				   all edited items go to) and of class numeric; so likely only do this
-				   with a new warning only enabled with -Wextra. */
-				if (get_warn_opt_value (cb_warn_strict_typing) != COBC_WARN_DISABLED) {
-					if cb_tree_class...
-						cb_warning_x (cb_warn_strict_typing, x, _("alphanumeric value is expected"));
-					} else {
-						cb_warning_x (cb_warn_strict_typing, x, _("numeric value is expected"));
-					}
-				}
-#endif
-				if (size1 == 1 && size2 == 1) {
-					ret = CB_BUILD_FUNCALL_2 ("$G", p->x, p->y);
-				} else if (size1 != 0 && size1 == size2) {
-					ret = CB_BUILD_FUNCALL_3 ("memcmp",
-						CB_BUILD_CAST_ADDRESS (p->x),
-						CB_BUILD_CAST_ADDRESS (p->y),
-						cb_int (size1));
-				} else {
-					if (CB_TREE_CLASS (p->x) == CB_CLASS_NUMERIC && p->y == cb_zero) {
-						ret = cb_build_optim_cond (p);
-					} else {
-						ret = CB_BUILD_FUNCALL_2 ("cob_cmp", p->x, p->y);
-					}
-				}
-			}
+			ret = cb_build_cond_default (p, p->x, p->y);
+			ret = cb_build_binary_op (ret, p->op, p->y);
 		}
-		ret = cb_build_binary_op (ret, p->op, p->y);
-return_ret:
 		if (ret != cb_true && ret != cb_false) {
 			cb_copy_source_reference (ret, x);
 		}
