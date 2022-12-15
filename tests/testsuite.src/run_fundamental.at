@@ -1272,6 +1272,25 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 AT_CLEANUP
 
 
+AT_SETUP([GLOBAL REDEFINES])
+AT_KEYWORDS([fundamental])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 T0 PIC X VALUE "X".
+       01 T1 REDEFINES T0 PIC X GLOBAL.
+       PROCEDURE DIVISION.
+          DISPLAY T1.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([function with variable-length RETURNING item])
 AT_KEYWORDS([fundamental udf])
 
