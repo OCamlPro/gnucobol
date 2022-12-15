@@ -1,4 +1,18 @@
 
+2022-12-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c, common.h: new external field + define
+	  COB_SPACES_ALPHABETIC / COB_SPACES_ALPHABETIC_BYTE_LENGTH
+	* common.c: split sort_compare to variant with and without collation,
+	  using direct memcmp for the later
+	* common.c (compare_spaces, compare_character): new function used for
+	  comparison of data without collation using memcmp in doubled areas
+	  instead of looping over every character
+	* common.c (cob_cmp_alnum, cob_cmp_all): use direct memcmp and new
+	  functions if no collation was specified
+	* common.c (common_cmpc, common_cmps): always use collation as all
+	  callers left in pass it (and otherwise call the new functions)
+
 2022-12-13  Simon Sobisch <simonsobisch@gnu.org>
 
 	* strings.c (inspect_find_data): added missing area check bug #865

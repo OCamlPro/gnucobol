@@ -13,6 +13,10 @@
 	  fields with ANY LENGTH
 	* typeck.c (cb_build_cond_default, cb_build_cond_fields): extracted
 	  from cb_build_cond
+	* typeck.c (swap_condition_operands): added and executed in cb_build_cond
+	  if left side is constant or literal
+	* typeck.c (cb_build_cond_fields): optimize comparison between field and
+	  SPACES up to COB_SPACES_ALPHABETIC_BYTE_LENGTH
 
 
 2022-12-14  Simon Sobisch <simonsobisch@gnu.org>

@@ -1892,6 +1892,9 @@ COB_EXPIMP void cob_unstring_into	(cob_field *, cob_field *, cob_field *);
 COB_EXPIMP void cob_unstring_tallying	(cob_field *);
 COB_EXPIMP void cob_unstring_finish	(void);
 
+COB_EXPIMP const char *COB_SPACES_ALPHABETIC;	/* PIC X/A/U SPACES */
+#define COB_SPACES_ALPHABETIC_BYTE_LENGTH 1024
+
 /*******************************/
 /*   Functions in move.c       */
 /*******************************/

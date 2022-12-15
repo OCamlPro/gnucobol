@@ -6831,6 +6831,14 @@ cb_build_cond_fields (struct cb_binary_op *p,
 	if (right == cb_zero && l_class == CB_CLASS_NUMERIC) {
 		return cb_build_optim_cond (p);
 	}
+	if (right == cb_space
+	 && (l_class == CB_CLASS_ALPHANUMERIC || l_class == CB_CLASS_ALPHABETIC)
+	 && (size1 > 0 && size1 <= COB_SPACES_ALPHABETIC_BYTE_LENGTH)) {
+		return CB_BUILD_FUNCALL_3 ("memcmp",
+			CB_BUILD_CAST_ADDRESS (left),
+			cb_build_direct ("COB_SPACES_ALPHABETIC", 0),
+			cb_int (size1));
+	}
 	return CB_BUILD_FUNCALL_2 ("cob_cmp", left, right);
 }
 
@@ -6903,6 +6911,20 @@ cb_build_cond_default (struct cb_binary_op *p, cb_tree left, cb_tree right)
 		return CB_BUILD_FUNCALL_2 ("cob_cmp", left, right);
 	}
 	return cb_build_cond_fields (p, left, right, l_class);
+}
+
+static void
+swap_condition_operands (struct cb_binary_op *p)
+{
+	cb_tree y = p->x;
+
+	p->x = p->y;
+	p->y = y;
+
+	if (p->op == '>') p->op = '<';
+	else if (p->op == '<') p->op = '>';
+	else if (p->op == '[') p->op = ']';
+	else if (p->op == ']') p->op = '[';
 }
 
 cb_tree
@@ -6982,6 +7004,12 @@ cb_build_cond (cb_tree x)
 		default:
 			if (!p->y || p->y == cb_error_node) {
 				return cb_error_node;
+			}
+			/* move figurative constants and literals to the right for comparision */
+			if (cb_flag_fast_compare
+			 &&  (CB_CONST_P (p->x) || CB_LITERAL_P (p->x))
+			 && !(CB_CONST_P (p->y) || CB_LITERAL_P (p->y))) {
+				swap_condition_operands (p);
 			}
 			ret = cb_build_cond_default (p, p->x, p->y);
 			ret = cb_build_binary_op (ret, p->op, p->y);
