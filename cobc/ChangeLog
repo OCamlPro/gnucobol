@@ -1,4 +1,9 @@
 
+2022-12-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_initialize_to_value): fix bad generation for VALUE size
+	  greater than field size, see bug #777
+
 2022-12-14  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (validate_move): fix bug #643 add check for SET literal TO val

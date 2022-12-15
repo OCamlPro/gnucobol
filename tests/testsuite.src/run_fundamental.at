@@ -371,7 +371,7 @@ AT_DATA([prog.cob], [
        DATA DIVISION.
        WORKING-STORAGE SECTION.
        01 SRC-FIELD              PIC 9(06).
-      *>                         
+      *>
        01 DST-FIELD-1            PIC 0XXXXXX.
        01 DST-FIELD-2            PIC BXXXXXX.
        01 DST-FIELD-3            PIC /XXXXXX.
@@ -5886,6 +5886,12 @@ prog.cob:59: warning: expression '5' LESS THAN '6' is always TRUE
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [***FINE***], [])
 
+AT_CHECK([$COMPILE -fno-constant-folding prog.cob], [0], [],
+[prog.cob: in paragraph 'MAIN-LINE':
+prog.cob:47: warning: suggest parentheses around AND within OR
+])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [***FINE***], [])
+
 AT_CLEANUP
 
 
@@ -5980,4 +5986,36 @@ AT_DATA([callee.cob], [
 AT_CHECK([$COMPILE caller.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./caller], [0], [], [])
+AT_CLEANUP
+
+
+AT_SETUP([Alphanumeric VALUE longer than PIC])
+AT_KEYWORDS([fundamental size])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X-SPACES      PIC XXX VALUE "    ".
+       01 X-Xs          PIC XX  VALUE "XXX".
+      *> not longer but goes into similar codegen:
+       01 X-XXX         PIC XXX VALUE "XX".
+       PROCEDURE        DIVISION.
+           IF X-SPACES NOT = ALL SPACE
+             DISPLAY 'BAD SPACE: ' X-SPACES.
+           IF X-Xs NOT = ALL "X"
+             DISPLAY 'BAD X: ' X-Xs.
+           IF X-XXX NOT = "XX "
+             DISPLAY 'BAD XXX: ' X-XXX.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [],
+[prog.cob:6: warning: value does not fit the picture string
+prog.cob:7: warning: value size exceeds data size
+prog.cob:7: note: value size is 3
+])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
 AT_CLEANUP
