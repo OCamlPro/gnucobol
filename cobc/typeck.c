@@ -7638,11 +7638,8 @@ output_screen_from (struct cb_field *p, const unsigned int sisters)
 
 	type = get_screen_type (p);
 	if (type == COB_SCREEN_TYPE_FIELD && p->screen_from) {
-		if (sisters) {
-			// CHECKME: is current_statement set correctly?
-			cobc_xref_set_receiving (CB_TREE(p));
-			// TODO: possibly build a source "sending" reference for screen_from
-		}
+		/* Bump reference count */
+		p->count++;
 		cb_emit (CB_BUILD_FUNCALL_2 ("cob_move", p->screen_from, CB_TREE (p)));
 	}
 }
@@ -7661,13 +7658,8 @@ output_screen_to (struct cb_field *p, const unsigned int sisters)
 
 	type = get_screen_type (p);
 	if (type == COB_SCREEN_TYPE_FIELD && p->screen_to) {
-		if (sisters) {
-			// CHECKME: is current_statement set correctly?
-			cobc_xref_set_receiving (p->screen_to);
-			// TODO: posibly build a source "sending" reference for p
-			/* Bump reference count */
-			p->count++;
-		}
+		/* Bump reference count */
+		p->count++;
 		cb_emit (CB_BUILD_FUNCALL_2 ("cob_move", CB_TREE (p), p->screen_to));
 	}
 }
@@ -12621,7 +12613,7 @@ search_set_keys (struct cb_field *f, cb_tree x)
 
 		for (i = 0; i < f->nkeys; ++i) {
 			if (fldx == CB_FIELD_PTR (f->keys[i].key)) {
-				f->keys[i].ref = p->x;  // detach bound check here  KEY (IDX(other)) ?
+				f->keys[i].ref = p->x;
 				f->keys[i].val = p->y;
 				break;
 			}
