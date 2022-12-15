@@ -7638,10 +7638,12 @@ output_screen_from (struct cb_field *p, const unsigned int sisters)
 
 	type = get_screen_type (p);
 	if (type == COB_SCREEN_TYPE_FIELD && p->screen_from) {
-		/* Bump reference count */
-		p->count++;
-		cb_emit (CB_BUILD_FUNCALL_2 ("cob_move", p->screen_from,
-					     CB_TREE (p)));
+		if (sisters) {
+			// CHECKME: is current_statement set correctly?
+			cobc_xref_set_receiving (CB_TREE(p));
+			// TODO: possibly build a source "sending" reference for screen_from
+		}
+		cb_emit (CB_BUILD_FUNCALL_2 ("cob_move", p->screen_from, CB_TREE (p)));
 	}
 }
 
@@ -7659,8 +7661,13 @@ output_screen_to (struct cb_field *p, const unsigned int sisters)
 
 	type = get_screen_type (p);
 	if (type == COB_SCREEN_TYPE_FIELD && p->screen_to) {
-		/* Bump reference count */
-		p->count++;
+		if (sisters) {
+			// CHECKME: is current_statement set correctly?
+			cobc_xref_set_receiving (p->screen_to);
+			// TODO: posibly build a source "sending" reference for p
+			/* Bump reference count */
+			p->count++;
+		}
 		cb_emit (CB_BUILD_FUNCALL_2 ("cob_move", CB_TREE (p), p->screen_to));
 	}
 }
@@ -12614,7 +12621,7 @@ search_set_keys (struct cb_field *f, cb_tree x)
 
 		for (i = 0; i < f->nkeys; ++i) {
 			if (fldx == CB_FIELD_PTR (f->keys[i].key)) {
-				f->keys[i].ref = p->x;
+				f->keys[i].ref = p->x;  // detach bound check here  KEY (IDX(other)) ?
 				f->keys[i].val = p->y;
 				break;
 			}
@@ -12684,26 +12691,22 @@ cb_build_search_all (cb_tree table, cb_tree cond)
 	return cb_build_cond (c1);
 }
 
-cb_tree
+void
 cb_emit_search (cb_tree table, cb_tree varying, cb_tree at_end, cb_tree whens)
 {
-	cb_tree		x;
-
 	if (cb_validate_one (table)
 	 || cb_validate_one (varying)
 	 || whens == cb_error_node) {
-		return NULL;
+		return;
 	}
 	whens = cb_list_reverse (whens);
 	if (at_end) {
 		cb_check_needs_break (CB_PAIR_Y (at_end));
 	}
-	x = cb_build_search (0, table, varying, at_end, whens);
-	cb_emit (x);
-	return x;
+	cb_emit (cb_build_search (0, table, varying, at_end, whens));
 }
 
-cb_tree
+void
 cb_emit_search_all (cb_tree table, cb_tree at_end, cb_tree when, cb_tree stmts)
 {
 	cb_tree		x;
@@ -12711,21 +12714,19 @@ cb_emit_search_all (cb_tree table, cb_tree at_end, cb_tree when, cb_tree stmts)
 
 	if (cb_validate_one (table)
 	 || when == cb_error_node) {
-		return NULL;
+		return;
 	}
 	x = cb_build_search_all (table, when);
 	if (!x) {
-		return NULL;
+		return;
 	}
 
 	stmt_lis = cb_check_needs_break (stmts);
 	if (at_end) {
 		cb_check_needs_break (CB_PAIR_Y (at_end));
 	}
-	x = cb_build_search (1, table, NULL, at_end,
-			  cb_build_if (x, stmt_lis, NULL, STMT_WHEN));
-	cb_emit (x);
-	return x;
+	cb_emit (cb_build_search (1, table, NULL, at_end,
+				  cb_build_if (x, stmt_lis, NULL, STMT_WHEN)));
 }
 
 /* SET statement */
