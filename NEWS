@@ -232,7 +232,8 @@ NEWS - user visible changes				-*- outline -*-
    to use this extension for other dialects use the new
    -fself-call-recursive=warning (or "ok")
 
-** the option -g does not longer imply -fsource-location
+** the option -g does not longer imply -fsource-location; but it auto-includes
+   references to the COBOL-paragraphs to further ease source level debugging
 
 ** new flag -fstack-extended (implied with --debug and --dump) to include
    the origin of entrypoints and PERFORM, this is used for the internal

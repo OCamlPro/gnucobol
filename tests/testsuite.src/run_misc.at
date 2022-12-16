@@ -7615,6 +7615,10 @@ AT_DATA([caller.cob], [
               WHEN tkey(tidx) = 'C'
                  CONTINUE
            END-SEARCH
+           SEARCH ALL tentry
+              WHEN tkey(tidx) = 'X'
+                 CONTINUE
+           END-SEARCH
       *>
            STOP RUN.
 ])
@@ -7869,7 +7873,9 @@ Program-Id: caller           Statement: MOVE                   Line: 51
 Program-Id: caller           Statement: SEARCH ALL             Line: 55
 Program-Id: caller           Statement: WHEN                   Line: 58
 Program-Id: caller           Statement: CONTINUE               Line: 59
-Program-Id: caller           Statement: STOP RUN               Line: 62
+Program-Id: caller           Statement: SEARCH ALL             Line: 61
+Program-Id: caller           Statement: AT END                 Line: 64
+Program-Id: caller           Statement: STOP RUN               Line: 66
 ])
 
 AT_CHECK([$COBC -ftraceall callee1.cob], [0], [], [])
@@ -7999,7 +8005,11 @@ Program-Id:  caller                      SEARCH VARYING                  Line:  
 Program-Id:  caller                      SEARCH VARYING                  Line:     55
 Program-Id:  caller                      WHEN                            Line:     58
 Program-Id:  caller                      CONTINUE                        Line:     59
-Program-Id:  caller                      STOP RUN                        Line:     62
+Program-Id:  caller                      SEARCH ALL                      Line:     61
+Program-Id:  caller                      SEARCH VARYING                  Line:     61
+Program-Id:  caller                      SEARCH VARYING                  Line:     61
+Program-Id:  caller                      AT END                          Line:     64
+Program-Id:  caller                      STOP RUN                        Line:     66
 ])
 
 AT_CLEANUP

@@ -87,11 +87,6 @@ struct expr_node {
 
 #define dpush(x)		CB_ADD_TO_CHAIN (x, decimal_stack)
 
-#define cb_emit(x) \
-	current_statement->body = cb_list_add (current_statement->body, x)
-#define cb_emit_list(l) \
-	current_statement->body = cb_list_append (current_statement->body, l)
-
 /* Global variables */
 
 cb_tree				cb_debug_item;
@@ -1043,6 +1038,20 @@ invalid:
 invliteral:
 	cb_error_x (x, _("positive numeric integer is required here"));
 	return cb_error_node;
+}
+
+static COB_INLINE COB_A_INLINE cb_tree
+cb_emit (cb_tree x)
+{
+	current_statement->body = cb_list_add (current_statement->body, x);
+	return x;
+}
+
+static COB_INLINE COB_A_INLINE cb_tree
+cb_emit_list (cb_tree l)
+{
+	current_statement->body = cb_list_append (current_statement->body, l);
+	return l;
 }
 
 static void
@@ -12689,22 +12698,22 @@ cb_build_search_all (cb_tree table, cb_tree cond)
 	return cb_build_cond (c1);
 }
 
-void
+cb_tree
 cb_emit_search (cb_tree table, cb_tree varying, cb_tree at_end, cb_tree whens)
 {
 	if (cb_validate_one (table)
 	 || cb_validate_one (varying)
 	 || whens == cb_error_node) {
-		return;
+		return NULL;
 	}
 	whens = cb_list_reverse (whens);
 	if (at_end) {
 		cb_check_needs_break (CB_PAIR_Y (at_end));
 	}
-	cb_emit (cb_build_search (0, table, varying, at_end, whens));
+	return cb_emit (cb_build_search (0, table, varying, at_end, whens));
 }
 
-void
+cb_tree
 cb_emit_search_all (cb_tree table, cb_tree at_end, cb_tree when, cb_tree stmts)
 {
 	cb_tree		x;
@@ -12712,19 +12721,19 @@ cb_emit_search_all (cb_tree table, cb_tree at_end, cb_tree when, cb_tree stmts)
 
 	if (cb_validate_one (table)
 	 || when == cb_error_node) {
-		return;
+		return NULL;
 	}
 	x = cb_build_search_all (table, when);
 	if (!x) {
-		return;
+		return NULL;
 	}
 
 	stmt_lis = cb_check_needs_break (stmts);
 	if (at_end) {
 		cb_check_needs_break (CB_PAIR_Y (at_end));
 	}
-	cb_emit (cb_build_search (1, table, NULL, at_end,
-				  cb_build_if (x, stmt_lis, NULL, STMT_WHEN)));
+	x = cb_build_if (x, stmt_lis, NULL, STMT_WHEN);
+	return cb_emit (cb_build_search (1, table, NULL, at_end, x));
 }
 
 /* SET statement */

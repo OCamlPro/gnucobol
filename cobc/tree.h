@@ -2474,9 +2474,9 @@ extern void		cb_emit_return (cb_tree, cb_tree);
 
 extern void		cb_emit_rollback (void);
 
-extern void		cb_emit_search (cb_tree, cb_tree,
+extern cb_tree		cb_emit_search (cb_tree, cb_tree,
 					cb_tree, cb_tree);
-extern void		cb_emit_search_all (cb_tree, cb_tree,
+extern cb_tree		cb_emit_search_all (cb_tree, cb_tree,
 					    cb_tree, cb_tree);
 
 extern void		cb_emit_setenv (cb_tree, cb_tree);

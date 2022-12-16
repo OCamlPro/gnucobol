@@ -2203,7 +2203,7 @@ static void
 error_if_following_every_clause (void)
 {
 	if (ml_suppress_list
-	    && CB_ML_SUPPRESS (CB_VALUE (ml_suppress_list))->target == CB_ML_SUPPRESS_TYPE) {
+	 && CB_ML_SUPPRESS (CB_VALUE (ml_suppress_list))->target == CB_ML_SUPPRESS_TYPE) {
 		cb_error (_("WHEN clause must follow EVERY clause"));
 	}
 }
@@ -2238,9 +2238,9 @@ add_when_to_ml_suppress_conds (cb_tree when_list)
 	*/
 	if (ml_suppress_list) {
 		last_suppress_clause = CB_ML_SUPPRESS (CB_VALUE (ml_suppress_list));
-		if ((last_suppress_clause->target == CB_ML_SUPPRESS_IDENTIFIER
-		     || last_suppress_clause->target == CB_ML_SUPPRESS_TYPE)
-		    && !last_suppress_clause->when_list) {
+		if ( (last_suppress_clause->target == CB_ML_SUPPRESS_IDENTIFIER
+		   || last_suppress_clause->target == CB_ML_SUPPRESS_TYPE)
+		  && !last_suppress_clause->when_list) {
 			last_suppress_clause->when_list = when_list;
 			return;
 		}
@@ -15719,7 +15719,7 @@ search_body:
   table_name _search_varying _search_at_end
   search_whens
   {
-	cb_emit_search ($1, $2, $3, $4);
+	$$ = cb_emit_search ($1, $2, $3, $4);
   }
 ;
 
@@ -15728,7 +15728,7 @@ search_all_body:
   WHEN expr
   statement_list
   {
-	cb_emit_search_all ($1, $2, $4, $5);
+	$$ = cb_emit_search_all ($1, $2, $4, $5);
   }
 ;
 
@@ -15779,9 +15779,23 @@ _end_search:
   {
 	TERMINATOR_WARNING ($-2, SEARCH);
   }
-| END_SEARCH
+| END_SEARCH end_search_pos_token
   {
+	cb_tree x = $-0;
+	if (x) {
+		struct cb_search *p = CB_SEARCH ($-0);
+		if (p->at_end == NULL) {
+			cb_tree brk = cb_build_direct ("break;", 0);
+			p->at_end = CB_BUILD_PAIR ($2, brk);
+		}
+	}
 	TERMINATOR_CLEAR ($-2, SEARCH);
+  }
+;
+
+end_search_pos_token:
+  {
+	$$ = cb_build_comment ("END-SEARCH");
   }
 ;
 
@@ -17902,6 +17916,12 @@ _count_in:
 ;
 
 /* Expressions */
+
+/* CHECKME: How can we integrate source references here
+   to correctly attach #line directives in the code
+   within codegen.c (output_cond) ?
+   Possibly directly add in push_expr?
+   This may also allows us to drop cb_exp_line */
 
 condition:
   expr

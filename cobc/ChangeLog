@@ -8,6 +8,10 @@
 	  is done and swap the result for return values as used in SEARCH ALL later
 	* codegen.c (output_long_integer): reduce scope of variables as done
 	  in (output_integer)
+	* codegen.c (output_assign, output_if, output_debug_item): extracted
+	  from output_stmt
+	* typeck.c (cb_emit, cb_emit_list): changed from defines to inline
+	  functions, now returning the tree that was emitted
 
 2022-12-15  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -27,6 +31,15 @@
 	  if left side is constant or literal
 	* typeck.c (cb_build_cond_fields): optimize comparison between field and
 	  SPACES up to COB_SPACES_ALPHABETIC_BYTE_LENGTH
+	* codegen.c (output_label, output_label_c): extracted from output_stmt
+	* codegen.c (output_label_c): added output of C labels for paragraphs
+	  using prefix PARAGRAPH and, to make them distinct, its label id as suffix
+	* codegen.c (output_search_all, output_search_whens): if no AT END position
+	  token is available, use the start token instead
+	* typeck.c (cb_emit_search, cb_emit_search_all), tree.h: return created
+	  search tree
+	* parser.y (_end_search): if search has no AT END create an implicit one
+	  at END-SEARCH for better trace and debugging
 
 2022-12-14  Simon Sobisch <simonsobisch@gnu.org>
 
