@@ -677,6 +677,9 @@ cob_move_binary_to_display (cob_field *f1, cob_field *f2)
 
 /* Edited */
 
+/* create numeric edited field, note: non-display fields
+   get "unpacked" first via indirect_move, then be edited
+   from display using this function */ 
 static void
 cob_move_display_to_edited (cob_field *f1, cob_field *f2)
 {
@@ -698,6 +701,7 @@ cob_move_display_to_edited (cob_field *f1, cob_field *f2)
 	int		suppress_zero = 1;
 	int		sign_first = 0;
 	int		p_is_left = 0;
+	int		has_b = 0;
 	int		repeat;
 	int		n;
 	unsigned char	pad = ' ';
@@ -747,71 +751,22 @@ cob_move_display_to_edited (cob_field *f1, cob_field *f2)
 		}
 	}
 
-	src = max - COB_FIELD_SCALE(f1) - count;
+	src = max - COB_FIELD_SCALE (f1) - count;
 	for (p = COB_FIELD_PIC (f2); p->symbol; ++p) {
 		c = p->symbol;
 		n = p->times_repeated;
 		for (; n > 0; n--, ++dst) {
 			switch (c) {
-			case '0':
-			case '/':
-				*dst = c;
-				break;
-
-			case 'B':
-				*dst = suppress_zero ? pad : 'B';
-				break;
-
-			case 'P':
-				if (p_is_left) {
-					++src;
-					--dst;
-				}
-				break;
 
 			case '9':
-				*dst = (min <= src && src < max) ? *src++ : (src++, '0');
-				if (*dst != '0') {
+				x = (min <= src && src < max) ? *src++ : (src++, '0');
+				if (x != '0') {
 					is_zero = suppress_zero = 0;
 				}
 				suppress_zero = 0;
 				trailing_sign = 1;
 				trailing_curr = 1;
-				break;
-
-			case 'V':
-				--dst;
-				decimal_point = dst;
-				break;
-
-			case '.':
-			case ',':
-				if (c == dec_symbol) {
-					*dst = dec_symbol;
-					decimal_point = dst;
-				} else {
-					if (suppress_zero) {
-						*dst = pad;
-					} else {
-						*dst = c;
-					}
-				}
-				break;
-
-			case 'C':
-			case 'D':
-				end = dst;
-				/* Check negative and not zero */
-				if (neg && !is_zero) {
-					if (c == 'C') {
-						memcpy (dst, "CR", (size_t)2);
-					} else {
-						memcpy (dst, "DB", (size_t)2);
-					}
-				} else {
-					memset (dst, ' ', (size_t)2);
-				}
-				dst++;
+				*dst = x;
 				break;
 
 			case 'Z':
@@ -820,10 +775,10 @@ cob_move_display_to_edited (cob_field *f1, cob_field *f2)
 				if (x != '0') {
 					is_zero = suppress_zero = 0;
 				}
-				pad = (c == '*') ? '*' : ' ';
-				*dst = suppress_zero ? pad : x;
 				trailing_sign = 1;
 				trailing_curr = 1;
+				pad = (c == '*') ? '*' : ' ';
+				*dst = suppress_zero ? pad : x;
 				break;
 
 			case '+':
@@ -863,34 +818,95 @@ cob_move_display_to_edited (cob_field *f1, cob_field *f2)
 				}
 				break;
 
-			default:
-				if (c == currency) {
-					x = (min <= src && src < max) ? *src++ : (src++, '0');
-					if (x != '0') {
-						is_zero = suppress_zero = 0;
-					}
-					if (trailing_curr) {
-						*dst = currency;
-						--end;
-					} else if (dst == f2->data || suppress_zero) {
+			case '.':
+			case ',':
+				if (c == dec_symbol) {
+					*dst = dec_symbol;
+					decimal_point = dst;
+				} else {
+					if (suppress_zero) {
 						*dst = pad;
-						curr_symbol = currency;
 					} else {
-						*dst = x;
+						*dst = c;
 					}
-					if (n > 1 || last_fixed_insertion_char == c) {
-						floating_insertion = 1;
-					} else if (!trailing_curr) {
-						if (last_fixed_insertion_pos) {
-							*last_fixed_insertion_pos = last_fixed_insertion_char;
-						}
-						last_fixed_insertion_pos = dst;
-						last_fixed_insertion_char = c;
+				}
+				break;
+
+			case 'V':
+				--dst;
+				decimal_point = dst;
+				break;
+
+			case '0':
+			case '/':
+				*dst = c;
+				break;
+
+			case 'B':
+				if (suppress_zero) {
+					*dst = pad;
+				} else {
+					*dst = 'B';
+					has_b = 1;
+				}
+				break;
+
+			case 'P':
+				if (p_is_left) {
+					++src;
+					--dst;
+				}
+				break;
+
+			case 'C':
+			case 'D':
+				end = dst;
+				/* Check negative and not zero */
+				if (neg && !is_zero) {
+					if (c == 'C') {
+						memcpy (dst, "CR", (size_t)2);
+					} else {
+						memcpy (dst, "DB", (size_t)2);
 					}
+				} else {
+					memset (dst, ' ', (size_t)2);
+				}
+				dst++;
+				break;
+
+			default:
+				/* LCOV_EXCL_START */
+				if (c != currency) {
+					/* should never happen, consider remove [also the reason for not translating that] */
+					cob_runtime_error ("cob_move_display_to_edited: invalid PIC character %c", c);
+					*dst = '?';	/* Invalid PIC */
 					break;
 				}
+				/* LCOV_EXCL_STOP */
 
-				*dst = '?';	/* Invalid PIC */
+				x = (min <= src && src < max) ? *src++ : (src++, '0');
+				if (x != '0') {
+					is_zero = suppress_zero = 0;
+				}
+				if (trailing_curr) {
+					*dst = currency;
+					--end;
+				} else if (dst == f2->data || suppress_zero) {
+					*dst = pad;
+					curr_symbol = currency;
+				} else {
+					*dst = x;
+				}
+				if (n > 1 || last_fixed_insertion_char == c) {
+					floating_insertion = 1;
+				} else if (!trailing_curr) {
+					if (last_fixed_insertion_pos) {
+						*last_fixed_insertion_pos = last_fixed_insertion_char;
+					}
+					last_fixed_insertion_pos = dst;
+					last_fixed_insertion_char = c;
+				}
+				break;
 			}
 		}
 	}
@@ -930,7 +946,12 @@ cob_move_display_to_edited (cob_field *f1, cob_field *f2)
 				case '7':
 				case '8':
 				case '9':
+#if 1	/* CHECKME: Why should we have a comma in here, necessary as shown in NIST NC,
+     	   (TODO: add this to the internal testsuite, must fail if commented out)
+     	   but not skip a period? */
 				case ',':
+				case '.':
+#endif
 				case '+':
 				case '-':
 				case '/':
@@ -976,17 +997,18 @@ cob_move_display_to_edited (cob_field *f1, cob_field *f2)
 			}
 		}
 
-		/* Replace all 'B's by pad */
-		count = 0;
-		for (dst = f2->data; dst < end; ++dst) {
-			if (*dst == 'B') {
-				if (count == 0) {
-					*dst = pad;
+		/* Replace all leading 'B's by pad, others by space */
+		if (has_b) {
+			for (dst = f2->data; dst < end; ++dst) {
+				if (*dst == 'B') {
+					if (has_b) {
+						*dst = pad;
+					} else {
+						*dst = ' ';
+					}
 				} else {
-					*dst = ' ';
+					has_b = 0;	/* non-starting characters seen */
 				}
-			} else {
-				++count;
 			}
 		}
 	}

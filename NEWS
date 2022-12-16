@@ -342,15 +342,15 @@ NEWS - user visible changes				-*- outline -*-
 
 ** execution times were significantly reduced for the following:
 	INSPECT that use big COBOL fields (multiple KB)
+	MOVE and comparisions (especially with enabled runtime checks, to
+	  optimize those a re-compile is needed)
 	CALL data-item, and first time for each CALL
 	ACCEPT DATE/TIME/DAY and datetime related FUNCTIONs
-	MOVE with enabled runtime checks (only with re-compile)
-
-** execution times for programs that are new generated with -fsource-location
-   (implied with --debug/-fec) are cut down, especially when many "simple"
-   statements or lot of sections/paragraphs are used; also the runtime checks
-   for use of LINKAGE fields and/or subscripts/reference-modification will be
-   much faster
+	runtime checks for use of LINKAGE/BASED fields and/or
+	  subscripts/reference-modification (re-compile needed)
+	general: execution of programs generated with -fsource-location
+	  (implied with --debug and -fec), especially when many "simple"
+	  statements or lot of sections/paragraphs are used (re-compile needed)
 
 * New build features
 
@@ -360,7 +360,8 @@ NEWS - user visible changes				-*- outline -*-
    (experimental)
 ** configure now checks for PERL and passes that as default to make test
 ** cobc handles SOURCE_DATE_EPOCH now, allowing to override timestamps in
-   generated code and listing files, allowing reproducible builds
+   generated code and listing files, allowing reproducible builds of both
+   GnuCOBOL (extras folder) and COBOL programs
 
 * Obsolete features (will be removed in the next version if no explicit user
   requests are raised)

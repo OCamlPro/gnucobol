@@ -105,7 +105,8 @@
 	  by checking sign/zero and reduced number of decimal shifting
 	  dynamic allocation
 	* move.c (store_common_region): minor optimization
-	* move.c:
+	* move.c (cob_move_display_to_edited): several optimizations, the
+	  biggest one stays open, needing adjusted function call from cobc
 
 2022-11-04  Simon Sobisch <simonsobisch@gnu.org>
 

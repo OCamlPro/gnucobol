@@ -169,7 +169,11 @@ l_exit:
 As a third alternative we can just add a flag that says
 "assume I never go out of a section".
 
+4.3 optimizing cob_move_display_to_edited
 
+This function is relative often called in production systems and
+re-calculates the picture on runtime, which the compiler already
+did - pass this information along with the call.
 
 5 Debugging support
 
@@ -184,6 +188,9 @@ access the COBOL data at debugging time.
 
 Note: GnuCOBOL 3 implemented this partially, using extensions
 near full GDB support is already possible.
+
+GnuCOBOL 4 provides this quite complete at runtime, too.
+
 
 6 Better user manual
 
