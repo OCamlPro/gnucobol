@@ -1,4 +1,14 @@
 
+2022-12-16  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.h (cb_binary_op, cb_binary_op_flag, cb_binary_op_op): changed struct
+	  cb_binary_op to use new enums for the operation and for "special flags"
+	* tree.h (BOP_OPERANDS_SWAPPED), codegen.c (output_cond), typeck.c
+	  (cb_build_cond, swap_condition_operands): store flag when swap operation
+	  is done and swap the result for return values as used in SEARCH ALL later
+	* codegen.c (output_long_integer): reduce scope of variables as done
+	  in (output_integer)
+
 2022-12-15  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c (output_initialize_to_value): fix bad generation for VALUE size
@@ -17,7 +27,6 @@
 	  if left side is constant or literal
 	* typeck.c (cb_build_cond_fields): optimize comparison between field and
 	  SPACES up to COB_SPACES_ALPHABETIC_BYTE_LENGTH
-
 
 2022-12-14  Simon Sobisch <simonsobisch@gnu.org>
 

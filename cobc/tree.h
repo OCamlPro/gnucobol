@@ -1213,30 +1213,35 @@ struct cb_reference {
 
 /* Binary operation */
 
-/*
-  '+'	x + y
-  '-'	x - y
-  '*'	x * y
-  '/'	x / y
-  '^'	x ** y
-  '='	x = y
-  '>'	x > y
-  '<'	x < y
-  '['	x <= y
-  ']'	x >= y
-  '~'	x != y
-  '!'	not x
-  '&'	x and y
-  '|'	x or y
-  '@'	( x )
-*/
+enum cb_binary_op_op {
+	BOP_PLUS	= '+',	/* x + y */
+	BOP_MINUS	= '-',	/* x - y */
+	BOP_MULT	= '*',	/* x * y */
+	BOP_DIV		= '/',	/* x / y */
+	BOP_POW 	= '^',	/* x ** y */
+	BOP_EQ		= '=',	/* x = y */
+	BOP_GT		= '>',	/* x > y */
+	BOP_LT		= '<',	/* x < y */
+	BOP_LE		= '[',	/* x <= y */
+	BOP_GE		= ']',	/* x >= y */
+	BOP_NE		= '~',	/* x != y */
+	BOP_NOT		= '!',	/* not x */
+	BOP_AND		= '&',	/* x and y */
+	BOP_OR		= '|',	/* x or y */
+	BOP_PARENS	= '@'	/* ( x ) */
+};
+
+enum cb_binary_op_flag {
+	BOP_RESOLVE_AS_INTEGER = 1,
+	BOP_OPERANDS_SWAPPED = 2
+};
 
 struct cb_binary_op {
 	struct cb_tree_common	common;		/* Common values */
 	cb_tree			x;		/* LHS */
 	cb_tree			y;		/* RHS */
-	int			op;		/* Operation */
-	unsigned int		flag;		/* Special usage */
+	enum cb_binary_op_op	op;		/* Operation */
+	enum cb_binary_op_flag 	flag;		/* Special usage */
 };
 
 #define CB_BINARY_OP(x)		(CB_TREE_CAST (CB_TAG_BINARY_OP, struct cb_binary_op, x))

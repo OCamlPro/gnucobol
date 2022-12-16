@@ -2885,7 +2885,7 @@ output_integer (cb_tree x)
 		break;
 	case CB_TAG_BINARY_OP: {
 		const struct cb_binary_op *p = CB_BINARY_OP (x);
-		if (p->flag) {
+		if (p->flag == BOP_RESOLVE_AS_INTEGER) {
 			if (!cb_fits_int (p->x) || !cb_fits_int (p->y)) {
 				output ("cob_get_int (");
 				output_param (x, -1);
@@ -3177,10 +3177,6 @@ output_integer (cb_tree x)
 static void
 output_long_integer (cb_tree x)
 {
-	struct cb_binary_op	*p;
-	struct cb_cast		*cp;
-	struct cb_field		*f;
-
 	switch (CB_TREE_TAG (x)) {
 	case CB_TAG_CONST:
 		if (x == cb_zero) {
@@ -3206,9 +3202,9 @@ output_long_integer (cb_tree x)
 	case CB_TAG_LITERAL:
 		output (CB_FMT_LLD_F, cb_get_long_long (x));
 		break;
-	case CB_TAG_BINARY_OP:
-		p = CB_BINARY_OP (x);
-		if (p->flag) {
+	case CB_TAG_BINARY_OP: {
+		const struct cb_binary_op *p = CB_BINARY_OP (x);
+		if (p->flag == BOP_RESOLVE_AS_INTEGER) {
 			if (!cb_fits_long_long (p->x) ||
 			    !cb_fits_long_long (p->y)) {
 				output ("cob_get_llint (");
@@ -3232,8 +3228,9 @@ output_long_integer (cb_tree x)
 			output (")");
 		}
 		break;
-	case CB_TAG_CAST:
-		cp = CB_CAST (x);
+	}
+	case CB_TAG_CAST: {
+		const struct cb_cast *cp = CB_CAST (x);
 		switch (cp->cast_type) {
 		case CB_CAST_ADDRESS:
 			output ("(");
@@ -3258,8 +3255,9 @@ output_long_integer (cb_tree x)
 		/* LCOV_EXCL_STOP */
 		}
 		break;
-	case CB_TAG_REFERENCE:
-		f = cb_code_field (x);
+	}
+	case CB_TAG_REFERENCE: {
+		struct cb_field *f = cb_code_field (x);
 		switch (f->usage) {
 		case CB_USAGE_INDEX:
 			if (f->index_type != CB_NORMAL_INDEX) {
@@ -3410,6 +3408,7 @@ output_long_integer (cb_tree x)
 
 		output_func_1 ("cob_get_llint", x);
 		break;
+	}
 	case CB_TAG_INTRINSIC:
 		output ("cob_get_llint (");
 		output_param (x, -1);
@@ -4326,12 +4325,13 @@ output_func_1 (const char *name, cb_tree x)
 
 /* Condition */
 
+/* output condition 'x' with optional storage in
+   C field "ret" depending on 'save_flag' */
 static void
 output_cond (cb_tree x, const int save_flag)
 {
-	struct cb_binary_op	*p;
-
 	in_cond = 1;
+
 	switch (CB_TREE_TAG (x)) {
 	case CB_TAG_CONST:
 		if (x == cb_true) {
@@ -4345,8 +4345,8 @@ output_cond (cb_tree x, const int save_flag)
 		}
 		/* LCOV_EXCL_STOP */
 		break;
-	case CB_TAG_BINARY_OP:
-		p = CB_BINARY_OP (x);
+	case CB_TAG_BINARY_OP: {
+		const struct cb_binary_op	*p = CB_BINARY_OP (x);
 		switch (p->op) {
 		case '!':
 			output ("!");
@@ -4372,7 +4372,12 @@ output_cond (cb_tree x, const int save_flag)
 		case ']':
 		case '~':
 			output ("((int)");
-			output_cond (p->x, save_flag);
+			if (save_flag
+				&& p->flag == BOP_OPERANDS_SWAPPED) {
+				output_cond (p->x, 2);
+			} else {
+				output_cond (p->x, save_flag);
+			}
 			switch (p->op) {
 			case '=':
 				output (" == 0");
@@ -4404,9 +4409,15 @@ output_cond (cb_tree x, const int save_flag)
 			break;
 		}
 		break;
+	}
 	case CB_TAG_FUNCALL:
 		if (save_flag) {
-			output ("(ret = ");
+			/* handle original swapped function */
+			if (save_flag == 2) {
+				output ("(ret = -");
+			} else {
+				output ("(ret = ");
+			}
 		}
 		output_funcall (x);
 		if (save_flag) {
@@ -4415,7 +4426,12 @@ output_cond (cb_tree x, const int save_flag)
 		break;
 	case CB_TAG_LIST:
 		if (save_flag) {
-			output ("(ret = ");
+			/* handle original swapped function */
+			if (save_flag == 2) {
+				output ("(ret = -");
+			} else {
+				output ("(ret = ");
+			}
 		}
 		inside_stack[inside_check++] = 0;
 		/* LCOV_EXCL_START */
@@ -4443,6 +4459,7 @@ output_cond (cb_tree x, const int save_flag)
 		CB_TREE_TAG_UNEXPECTED_ABORT (x);
 	/* LCOV_EXCL_STOP */
 	}
+
 	in_cond = 0;
 }
 
