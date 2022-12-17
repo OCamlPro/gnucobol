@@ -18,6 +18,9 @@
     <ClCompile Include="..\..\libcob\call.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\libcob\cconv.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\libcob\cobgetopt.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -86,6 +89,7 @@
       <Filter>Header Files</Filter>
     </None>
     <None Include="..\..\libcob\ChangeLog" />
+    <None Include="..\..\config\runtime.cfg" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\version_libcob.rc">

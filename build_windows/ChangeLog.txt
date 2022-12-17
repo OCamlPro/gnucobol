@@ -1,4 +1,8 @@
 
+2022-12-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general for libcob+cobc: handle move of cconv module
+
 2022-10-15  Simon Sobisch <simonsobisch@gnu.org>
 
 	* added statement.def to all cobc and libcob projects,
@@ -10,7 +14,7 @@
 
 2022-10-01  Simon Sobisch <simonsobisch@gnu.org>
 
-	* general for cobc: include new cconv module;;
+	* general for cobc: include new cconv module;
 	  for cobc.vcxproj: add gcos to auxiliary compiler files;
 	  for cobc.vcproj: have auxiliary compiler files included
 

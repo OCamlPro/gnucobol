@@ -2774,6 +2774,25 @@ COB_EXPIMP cob_field *cob_intr_bit_to_char		(cob_field *);
 COB_EXPIMP cob_field* cob_intr_hex_of (cob_field*);
 COB_EXPIMP cob_field* cob_intr_hex_to_char (cob_field*);
 
+/************************/
+/* Functions in cconv.c */
+/************************/
+
+/* Return the name corresponding to an internal collation id,
+   or NULL if such id is unknown. */
+
+COB_EXPIMP const char *
+cob_get_collation_name (int);
+
+/* Retrieve the EBCDIC and ASCII collating sequences for the given
+   collation name, and return its internal id, or -1 if such name
+   is unknown. The `p_ebcdic_as_ascii' and `p_ascii_as_ebcdic'
+   arguments may be NULL if one (or both) of the tables is not
+   needed (you may only care for the return value). */
+
+COB_EXPIMP int
+cob_get_collation_by_name (const char *, const cob_u8_t **, const cob_u8_t **);
+
 /*******************************/
 
 /*******************************/
@@ -2850,29 +2869,6 @@ typedef	char *		cobchar_t;
 #define cobput_xn_compx(d,n,v)	(void)	cob_put_u64_compx(v, d, n)
 #define cobput_sxn_comp5(d,n,v)	(void)	cob_put_s64_comp5(v, d, n)
 #define cobput_sxn_compx(d,n,v)	(void)	cob_put_s64_compx(v, d, n)
-
-/*******************************/
-
-/************************/
-/* Functions in cconv.c */
-/************************/
-
-/* Return the name corresponding to an internal collation id,
-   or NULL if such id is unknown. */
-
-COB_EXPIMP const char *
-cob_get_collation_name (int col_id);
-
-/* Retrieve the EBCDIC and ASCII collating sequences for the given
-   collation name, and return its internal id, or -1 if such name
-   is unknown. The `p_ebcdic_as_ascii' and `p_ascii_as_ebcdic'
-   arguments may be NULL if one (or both) of the tables is not
-   needed (you may only care for the return value). */
-
-COB_EXPIMP int
-cob_get_collation_by_name (const char *col_name,
-			   const cob_u8_t **p_ebcdic_as_ascii,
-			   const cob_u8_t **p_ascii_as_ebcdic);
 
 /*******************************/
 

@@ -166,6 +166,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\libcob\call.c" />
+    <ClCompile Include="..\..\libcob\cconv.c" />
     <ClCompile Include="..\..\libcob\cobgetopt.c" />
     <ClCompile Include="..\..\libcob\common.c" />
     <ClCompile Include="..\..\libcob\fileio.c" />
@@ -179,6 +180,7 @@
     <ClCompile Include="..\..\libcob\termio.c" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\config\runtime.cfg" />
     <None Include="..\..\libcob\exception-io.def" />
     <None Include="..\..\libcob\exception.def" />
     <None Include="..\..\libcob\statement.def" />

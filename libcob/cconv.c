@@ -18,9 +18,14 @@
    along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include "config.h"
+
+#include <stdio.h>
 #include <stddef.h>
 #include <string.h>
-#include <stdio.h>
+
+/* Force symbol exports */
+#define	COB_LIB_EXPIMP
 #include "common.h"
 #include "coblocal.h"
 
