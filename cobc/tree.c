@@ -59,6 +59,7 @@
 #define PIC_ALPHANUMERIC_EDITED	(PIC_ALPHANUMERIC | PIC_EDITED)
 #define PIC_NUMERIC_EDITED	(PIC_NUMERIC | PIC_EDITED)
 #define PIC_FLOATING_EDITED	(PIC_NUMERIC | PIC_NUMERIC_FLOATING | PIC_EDITED)
+#define PIC_UTF8			(PIC_ALPHANUMERIC)	/* TODO: handle separately */
 #define PIC_NATIONAL_EDITED	(PIC_NATIONAL | PIC_EDITED)
 
 /* Local variables */
@@ -2797,7 +2798,7 @@ cb_concat_literals (const cb_tree x1, const cb_tree x2)
 	 && (x1->category != CB_CATEGORY_NATIONAL)
 	 && (x1->category != CB_CATEGORY_BOOLEAN)) {
 		cb_error_x (x1,
-			_("only alphanumeric, national or boolean literals may be concatenated"));
+			_("only alphanumeric, utf-8, national or boolean literals may be concatenated"));
 		return cb_error_node;
 	}
 
@@ -3052,6 +3053,9 @@ char_to_precedence_idx (const cob_pic_symbol *str,
 	case 'E':
 		return 24;
 
+	case 'U':
+		return 25;
+
 	default:
 		if (current_sym->symbol == (current_program ? current_program->currency_symbol : '$')) {
 			if (!(first_floating_sym <= current_sym
@@ -3143,6 +3147,8 @@ get_char_type_description (const int idx)
 		return "N";
 	case 24:
 		return "E";
+	case 25:
+		return "U";
 	default:
 		return NULL;
 	}
@@ -3576,6 +3582,16 @@ repeat:
 			x_digits += n;
 			break;
 
+		case 'U':
+			/* this is only a hack and wrong,
+			   adding UTF-8 type woll need a separate
+			   PIC, but this will need handling in both
+			   the compiler and the runtime, so fake as
+			   ALPHANUMERIC for now */
+			category |= PIC_UTF8;
+			x_digits += n * 4;
+			break;
+
 		case 'N':
 			if (!(category & PIC_NATIONAL)) {
 				category |= PIC_NATIONAL;
@@ -3791,6 +3807,9 @@ repeat:
 		if (c == 'N') {
 			size += n * (COB_NATIONAL_SIZE - 1);
 		}
+		if (c == 'U') {
+			size += n * (4 - 1);
+		}
 
 		/* Store in the buffer */
 		pic_buff[idx].symbol = c;
@@ -3811,7 +3830,7 @@ repeat:
 		error_detected = 1;
 	}
 	if (digits == 0 && x_digits == 0) {
-		cb_error (_("PICTURE string must contain at least one of the set A, N, X, Z, 1, 9 and *; "
+		cb_error (_("PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; "
 					"or at least two of the set +, - and the currency symbol"));
 		error_detected = 1;
 	}
@@ -6850,7 +6869,7 @@ get_category_from_arguments (const struct cb_intrinsic_table *cbp, cb_tree args,
 			if (result != CB_CATEGORY_NATIONAL) {
 				cb_error (_("FUNCTION %s has invalid argument"),
 					cbp->name);
-				cb_error (_("either all arguments or none should be if type %s"), "NATIONAL");
+				cb_error (_("either all arguments or none should be of type %s"), "NATIONAL");
 				return cbp->category;
 			}
 		} else if (result != CB_CATEGORY_ALPHANUMERIC) {
@@ -6964,10 +6983,13 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 				if (cbp->intr_enum != CB_INTR_BYTE_LENGTH) {
 					/* CHECKME: why don't we just check the category?
 					   Maybe needs to enforce field validation (see cb_build_length) */
-					if ( fld->pic
-					 && (fld->pic->category == CB_CATEGORY_NATIONAL
-					  || fld->pic->category == CB_CATEGORY_NATIONAL_EDITED)) {
-						len /= COB_NATIONAL_SIZE;
+					if (fld->pic) {
+						if (fld->pic->category == CB_CATEGORY_NATIONAL
+						 || fld->pic->category == CB_CATEGORY_NATIONAL_EDITED) {
+							len /= COB_NATIONAL_SIZE;
+						} else if (fld->pic->orig && fld->pic->orig[0] == 'U') {
+							len /= 4;
+						}
 					}
 				}
 				sprintf (buff, "%d", len);

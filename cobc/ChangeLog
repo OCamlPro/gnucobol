@@ -1,4 +1,13 @@
 
+2022-12-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.c: initial support for PIC U, for now handled as alphanumeric with
+	  size * 4
+	* scanner.l: minimal parsing for utf-8 literals
+	* reserved.c, cobc.h (CB_CS_USAGE), parser.y: parsing for USAGE UTF-8
+	  and the related BYTE-LENGTH clause
+	* field.c, tree.c, typeck.c: minimal adjustments for PIC U
+
 2022-12-16  Simon Sobisch <simonsobisch@gnu.org>
 
 	* tree.h (cb_binary_op, cb_binary_op_flag, cb_binary_op_op): changed struct

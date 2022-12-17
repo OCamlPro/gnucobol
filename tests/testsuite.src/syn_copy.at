@@ -570,11 +570,11 @@ AT_CHECK([$COMPILE -fpartial-replace-when-literal-src=skip -o prog-skip prog.cob
 AT_CHECK([$COBCRUN_DIRECT ./prog-skip], [0], [OKOKOKOKOKOK])
 AT_CHECK([$COMPILE -fpartial-replace-when-literal-src=ok -o prog prog.cob], [1], [],
 [copy.inc:2: error: parentheses must be preceded by a picture symbol
-copy.inc:2: error: PICTURE string must contain at least one of the set A, N, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
+copy.inc:2: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
 copy.inc:3: error: parentheses must be preceded by a picture symbol
-copy.inc:3: error: PICTURE string must contain at least one of the set A, N, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
+copy.inc:3: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
 copy.inc:4: error: parentheses must be preceded by a picture symbol
-copy.inc:4: error: PICTURE string must contain at least one of the set A, N, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
+copy.inc:4: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
 prog.cob:17: error: 'X' cannot be used here
 prog.cob:20: error: 'Y' cannot be used here
 ])
@@ -592,11 +592,11 @@ prog.cob:12: error: partial replacing with literal used
 prog.cob:13: error: partial replacing with literal used
 prog.cob:13: error: partial replacing with literal used
 copy.inc:2: error: parentheses must be preceded by a picture symbol
-copy.inc:2: error: PICTURE string must contain at least one of the set A, N, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
+copy.inc:2: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
 copy.inc:3: error: parentheses must be preceded by a picture symbol
-copy.inc:3: error: PICTURE string must contain at least one of the set A, N, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
+copy.inc:3: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
 copy.inc:4: error: parentheses must be preceded by a picture symbol
-copy.inc:4: error: PICTURE string must contain at least one of the set A, N, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
+copy.inc:4: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
 prog.cob:17: error: 'X' cannot be used here
 prog.cob:20: error: 'Y' cannot be used here
 ])

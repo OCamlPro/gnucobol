@@ -7593,7 +7593,7 @@ picture_clause:
 	check_repeated ("PICTURE", SYN_CLAUSE_4, &check_pic_duplicate);
 	current_field->pic = CB_PICTURE ($1);	/* always returned, invalid picture will have size == 0 */
   }
-  _pic_locale_format_or_depending_on
+  _pic_locale_format_or_depending_on_or_byte_length
   {
 	if ((!current_field->pic || current_field->pic->variable_length) &&
 	    !current_field->flag_picture_l) {
@@ -7605,7 +7605,7 @@ picture_clause:
   }
 ;
 
-_pic_locale_format_or_depending_on:
+_pic_locale_format_or_depending_on_or_byte_length:
   /* empty */
 | LOCALE _is_locale_name SIZE _is integer
   {
@@ -7662,6 +7662,7 @@ _pic_locale_format_or_depending_on:
 	   redefines.  */
 	current_field->flag_picture_l = 1;
   }
+| byte_length_clause
 ;
 
 _is_locale_name:
@@ -7986,6 +7987,11 @@ usage:
 	check_repeated ("USAGE", SYN_CLAUSE_5, &check_pic_duplicate);
 	CB_UNFINISHED ("USAGE NATIONAL");
   }
+| UTF_8
+  {
+	check_repeated ("USAGE", SYN_CLAUSE_5, &check_pic_duplicate);
+	CB_UNFINISHED ("USAGE UTF-8");
+  }
 ;
 
 /* tokens that explicit need USAGE _is (because of reduce/reduce conflicts) */
@@ -8053,6 +8059,20 @@ sign_clause:
   }
 ;
 
+/* BYTE-LENGTH clause (UTF-8 data items) */
+
+byte_length_clause:
+  BYTE_LENGTH integer
+  {
+	if (current_field->pic && current_field->pic->orig
+	 && current_field->pic->orig[0] == 'U') {
+		current_field->size = cb_get_int ($2);
+	} else {
+		/* wrong place, but good enough for now */
+		cb_error (_("'%s' is not USAGE UTF-8"), cb_name (CB_TREE(current_field)));
+	}
+  }
+;
 
 /* REPORT (RD) OCCURS clause */
 

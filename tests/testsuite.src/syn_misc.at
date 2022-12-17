@@ -7036,9 +7036,9 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:9: warning: handling of USAGE NATIONAL is unfinished; implementation is likely to be changed
 prog.cob:18: warning: handling of USAGE NATIONAL is unfinished; implementation is likely to be changed
-prog.cob:13: error: 'invalid-1' ANY LENGTH must be PIC X, PIC N or PIC 1
-prog.cob:14: error: 'invalid-2' ANY LENGTH must be PIC X, PIC N or PIC 1
-prog.cob:15: error: 'invalid-3' ANY LENGTH must be PIC X, PIC N or PIC 1
+prog.cob:13: error: 'invalid-1' ANY LENGTH must be PIC X, PIC U, PIC N or PIC 1
+prog.cob:14: error: 'invalid-2' ANY LENGTH must be PIC X, PIC U, PIC N or PIC 1
+prog.cob:15: error: 'invalid-3' ANY LENGTH must be PIC X, PIC U, PIC N or PIC 1
 prog.cob:16: error: 'invalid-4' ANY NUMERIC must be PIC 9
 prog.cob:17: error: 'invalid-5' ANY LENGTH has invalid definition
 prog.cob:18: error: 'invalid-6' ANY LENGTH has invalid definition

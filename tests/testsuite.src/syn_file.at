@@ -1727,11 +1727,11 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:21: error: figurative constants not allowed in FROM clause
-prog.cob:21: error: literal in FROM clause must be alphanumeric, national or boolean
+prog.cob:21: error: literal in FROM clause must be alphanumeric, utf-8, national or boolean
 prog.cob:22: warning: numeric value is expected
 prog.cob:13: note: 'f-rec' defined here as PIC 999999
 prog.cob:24: error: figurative constants not allowed in FROM clause
-prog.cob:24: error: literal in FROM clause must be alphanumeric, national or boolean
+prog.cob:24: error: literal in FROM clause must be alphanumeric, utf-8, national or boolean
 prog.cob:25: warning: numeric value is expected
 prog.cob:13: note: 'f-rec' defined here as PIC 999999
 ])

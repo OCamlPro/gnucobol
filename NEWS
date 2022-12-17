@@ -51,6 +51,8 @@ NEWS - user visible changes				-*- outline -*-
 ** Initial "testing support" of CODE-SET clause to convert between ASCII and
    EBCDIC on READ/WRITE/REWRITE for sequential and line-sequential files
 
+** minimal "parsing support" for USAGE UTF-8 and UTF-8 literals
+
 ** Support to exit the runtime from COBOL as hard error (including possible
    [core-]dump and stacktrace) with "STOP ERROR" statement or by
    CALL "CBL_RUNTIME_ERROR"
@@ -300,6 +302,9 @@ NEWS - user visible changes				-*- outline -*-
 ** TYPEDEF items got storage and attribute assigned, leading to bigger modules,
    longer loading time and longer compile times; if you use those a recompile
    is highly suggested
+
+** several bugs in COPY REPLACING / REPLACING were fixed along with adding
+   support for exensions related to REPLACING LEADING / TRAILING
 
 * Listing changes
 

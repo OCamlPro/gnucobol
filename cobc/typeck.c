@@ -2594,9 +2594,12 @@ cb_build_identifier (cb_tree x, const int subchk)
 	}
 
 	/* Reference modification check */
-	pseudosize = f->size;
 	if (f->usage == CB_USAGE_NATIONAL ) {
-		pseudosize = pseudosize / 2;
+		pseudosize = f->size / 2;
+	} else if (f->pic && f->pic->orig && f->pic->orig[0] == 'U') {
+		pseudosize = f->size / 4;
+	} else {
+		pseudosize = f->size;
 	}
 	if (r->offset) {
 		/* Compile-time check */
@@ -12405,7 +12408,7 @@ error_if_invalid_file_from_clause_literal (cb_tree literal)
 	if (!(category == CB_CATEGORY_ALPHANUMERIC
 	   || category == CB_CATEGORY_NATIONAL
 	   || category == CB_CATEGORY_BOOLEAN)) {
-		cb_error_x (literal, _("literal in FROM clause must be alphanumeric, national or boolean"));
+		cb_error_x (literal, _("literal in FROM clause must be alphanumeric, utf-8, national or boolean"));
 		return 1;
 	}
 
@@ -14023,8 +14026,9 @@ error_if_not_alnum_or_national (cb_tree ref, const char *name)
 {
 	if (!  (CB_TREE_CATEGORY (ref) == CB_CATEGORY_ALPHANUMERIC
 	     || CB_TREE_CATEGORY (ref) == CB_CATEGORY_NATIONAL)) {
+		/* note: at least with Enterprise COBOL utf8 is explicit forbidden here */
 		cb_error_x (ref, _("%s must be alphanumeric or national"), name);
-	        return 1;
+		return 1;
 	} else {
 		return 0;
 	}

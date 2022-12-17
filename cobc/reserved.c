@@ -2997,8 +2997,8 @@ static struct cobc_reserved default_reserved_words[] = {
   { "UPPER",			0, 1, UPPER,			/* Extension */
 				0, CB_CS_ACCEPT
   },
-  { "USAGE",			0, 0, USAGE,			/* 2002 */
-				0, 0
+  { "USAGE",			1, 0, USAGE,			/* 2002 */
+				CB_CS_USAGE, 0
   },
   { "USE",			0, 0, USE,			/* 2002 */
 				0, 0
@@ -3025,7 +3025,7 @@ static struct cobc_reserved default_reserved_words[] = {
 				0, CB_CS_ALPHABET
   },
   { "UTF-8",			0, 1, UTF_8,			/* 2002 (C/S) */
-				0, CB_CS_ALPHABET
+				0, CB_CS_ALPHABET | CB_CS_USAGE
   },
   { "V",			0, 1, V,			/* Extension */
 				0, CB_CS_RECORDING

@@ -174,6 +174,7 @@ enum cb_current_date {
 #define	CB_CS_SPECIAL_NAMES		CB_CS_DAY
 #define	CB_CS_DEFAULT			CB_CS_DAY
 #define	CB_CS_VALIDATE_STATUS	CB_CS_DAY
+#define	CB_CS_USAGE				CB_CS_DAY
 
 /* Support for cobc from stdin */
 #define COB_DASH			"-"

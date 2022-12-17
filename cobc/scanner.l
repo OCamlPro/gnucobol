@@ -405,6 +405,21 @@ NX"\""[^""\n]*"\"" {
 	RETURN_TOK (scan_x (yytext + 3, "NX"));
 }
 
+U[''""] {
+	/* N national string literal */
+	cobc_force_literal = 0;
+	/* TODO: utf8 string - needs different handling */
+	read_literal (yytext [1], "U");
+	RETURN_TOK (LITERAL);
+}
+
+UX"\'"[^''\n]*"\'" |
+UX"\""[^""\n]*"\"" {
+	/* UX string literal */
+	cobc_force_literal = 0;
+	RETURN_TOK (scan_x (yytext + 3, "UX"));
+}
+
 Z"\'"[^''\n]*"\'" |
 Z"\""[^""\n]*"\"" {
 	/* Z string literal */
@@ -1374,6 +1389,9 @@ read_literal (const char mark, const char *type)
 	plex_buff[i] = 0;
 	if (type[0] != 'N') {
 		yylval = cb_build_alphanumeric_literal (plex_buff, i);
+		if (type[0] == 'U') {
+			CB_UNFINISHED (_("UTF-8 literal"));
+		}
 	} else {
 		/* poor-man's conversion iso-8859 -> utf-16 */
 		/* "!a0" = x'21613000' -> nx'00210061003000' */
@@ -1446,7 +1464,7 @@ scan_x (const char *text, const char *type)
 		plex_buff = cobc_malloc (plex_size);
 	}
 	memcpy (plex_buff, text, curr_len);
-	if (likely(type[0] == 'X')) {
+	if (type[0] == 'X' || type [0] == 'U') {
 		result_len = curr_len / 2; /* characters, two half-bytes (hex) = 1 byte */
 	} else if (type[0] == 'B') {
 		result_len = curr_len * 4; /* boolean characters B -> 1110 */
@@ -1466,7 +1484,7 @@ scan_x (const char *text, const char *type)
 			   characters but that leads to not verified data, which is
 			   more important as the compilation will error-exit in any case */
 		}
-	} else {
+	} else /* type N */ {
 		result_len = curr_len / (2 * COB_NATIONAL_SIZE);
 		if (!cb_verify (cb_national_hex_literals, _("hexadecimal-national literal"))) {
 			yylval = cb_build_national_literal ("", 1);
@@ -1558,6 +1576,7 @@ scan_x (const char *text, const char *type)
 			}
 			error_literal (type, plex_buff, literal_error++);
 		}
+		/* TODO: for type U needs additional checks */
 		if (type[0] != 'N') {
 			yylval = cb_build_alphanumeric_literal (plex_buff, (size_t)(dst - plex_buff));
 		} else {
