@@ -92,7 +92,7 @@ CB_FLAG_NQ (1, "callfh", 9,
 	_("  -fcallfh=<name>       specifies <name> to be used for I/O\n"
 	  "                        as external provided EXTFH interface module"))
 
-CB_FLAG_NQ (1, "ebcdic-table", 14, /* cf cconv.h for all available tables */
+CB_FLAG_RQ (cb_ebcdic_table, 1, "ebcdic-table", 0, 14, /* cf cconv.h for all available tables */
 	_("  -febcdic-table=[DEFAULT|RESTRICTED-GC|IBM|GCOS]\tdefine EBCDIC translation table:\n"
 	  "                        * default: translation to extended ASCII as per MF\n"
 	  "                        * restricted-gc: translation from restricted ASCII only\n"

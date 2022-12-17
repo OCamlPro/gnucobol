@@ -13,6 +13,11 @@
 	* common.c (common_cmpc, common_cmps): always use collation as all
 	  callers left in pass it (and otherwise call the new functions)
 
+2022-12-13 David Declerck <david.declerck@ocamlpro.com>
+
+	* conv.c: file moved from cobc to libcob
+	* common.h: declare the new API for collating sequences
+
 2022-12-13  Simon Sobisch <simonsobisch@gnu.org>
 
 	* strings.c (inspect_find_data): added missing area check bug #865

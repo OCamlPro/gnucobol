@@ -542,6 +542,14 @@ cob_max_int (const int x, const int y)
 	return y;
 }
 
+/* All supported conversions */
+enum ebcdic_table {
+	CB_EBCDIC_DEFAULT       = 0,
+	CB_EBCDIC_RESTRICTED_GC = 1,
+	CB_EBCDIC_IBM           = 2,
+	CB_EBCDIC_GCOS          = 3,
+};
+
 #undef	COB_HIDDEN
 
 #endif	/* COB_LOCAL_H */

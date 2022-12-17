@@ -2853,4 +2853,27 @@ typedef	char *		cobchar_t;
 
 /*******************************/
 
+/************************/
+/* Functions in cconv.c */
+/************************/
+
+/* Return the name corresponding to an internal collation id,
+   or NULL if such id is unknown. */
+
+COB_EXPIMP const char *
+cob_get_collation_name (int col_id);
+
+/* Retrieve the EBCDIC and ASCII collating sequences for the given
+   collation name, and return its internal id, or -1 if such name
+   is unknown. The `p_ebcdic_as_ascii' and `p_ascii_as_ebcdic'
+   arguments may be NULL if one (or both) of the tables is not
+   needed (you may only care for the return value). */
+
+COB_EXPIMP int
+cob_get_collation_by_name (const char *col_name,
+			   const cob_u8_t **p_ebcdic_as_ascii,
+			   const cob_u8_t **p_ascii_as_ebcdic);
+
+/*******************************/
+
 #endif	/* COB_COMMON_H */
