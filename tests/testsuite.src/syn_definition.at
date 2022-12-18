@@ -337,7 +337,7 @@ AT_CLEANUP
 
 
 AT_SETUP([GO TO sections and foreign paragraphs])
-AT_KEYWORDS([definition procedures])
+AT_KEYWORDS([definition procedures section paragraph])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -346,6 +346,8 @@ AT_DATA([prog.cob], [
        S-1 SECTION.
            GO TO S-2.
        E-1.
+           IF FUNCTION SECONDS-PAST-MIDNIGHT = 10
+              GO TO S-1.  *> check that go to its own section is not warned
 
        S-2 SECTION.
            GO TO E-3.
@@ -363,8 +365,8 @@ AT_CHECK([$COBC -fsyntax-only -Wall -Werror=goto-section prog.cob], [1], [],
 [prog.cob: in section 'S-1':
 prog.cob:6: error: GO TO SECTION 'S-2' [[-Werror=goto-section]]
 prog.cob: in section 'S-2':
-prog.cob:10: warning: GO TO paragraph 'E-3' which is defined in another SECTION [[-Wgoto-different-section]]
-prog.cob:14: note: 'E-3 IN S-3' defined here [[-Wgoto-different-section]]
+prog.cob:12: warning: GO TO paragraph 'E-3' which is defined in another SECTION [[-Wgoto-different-section]]
+prog.cob:16: note: 'E-3 IN S-3' defined here [[-Wgoto-different-section]]
 ])
 AT_CLEANUP
 

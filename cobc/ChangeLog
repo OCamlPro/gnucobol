@@ -1,4 +1,8 @@
 
+2022-12-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_validate_labels): don't warn on GO TO own SECTION
+
 2022-12-17  Simon Sobisch <simonsobisch@gnu.org>
 
 	* tree.c: initial support for PIC U, for now handled as alphanumeric with

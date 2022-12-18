@@ -5080,8 +5080,10 @@ cb_validate_labels (struct cb_program *prog)
 
 				/* check for warning options "house-rules" relevant for later optimizations */
 				if (label->flag_section) {
-					cb_warning_x (cb_warn_goto_section, x,
-						"GO TO SECTION '%s'", label->name);
+					if (label != current_section) {
+						cb_warning_x (cb_warn_goto_section, x,
+							"GO TO SECTION '%s'", label->name);
+					}
 				} else if (label->section != current_section) {
 					char qualified_name[COB_MAX_WORDLEN * 2 + 4 + 1];
 					cb_warning_x (cb_warn_goto_different_section, x,
