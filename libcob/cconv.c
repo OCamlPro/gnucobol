@@ -391,11 +391,16 @@ const char *
 cob_get_collation_name (int col_id)
 {
 	switch (col_id) {
-	case CB_EBCDIC_DEFAULT: return "DEFAULT";
-	case CB_EBCDIC_RESTRICTED_GC: return "RESTRICTED-GC";
-	case CB_EBCDIC_IBM: return "IBM";
-	case CB_EBCDIC_GCOS: return "GCOS";
-	default: return NULL;
+	case CB_EBCDIC_DEFAULT:
+		return "DEFAULT";
+	case CB_EBCDIC_RESTRICTED_GC:
+		return "RESTRICTED-GC";
+	case CB_EBCDIC_IBM:
+		return "IBM";
+	case CB_EBCDIC_GCOS:
+		return "GCOS";
+	default:
+		return NULL;
 	}
 }
 
@@ -445,6 +450,7 @@ cob_get_collation_by_name (const char *col_name,
 			   const cob_u8_t **p_ascii_as_ebcdic)
 {
 	enum ebcdic_table col_id;
+	int res;
 
 	if (!strcmp (col_name, "DEFAULT")) {
 		col_id = CB_EBCDIC_DEFAULT;
@@ -458,7 +464,7 @@ cob_get_collation_by_name (const char *col_name,
 		return -1;
 	}
 
-	int res = cob_get_collation_by_id (col_id, p_ebcdic_as_ascii, p_ascii_as_ebcdic);
+	res = cob_get_collation_by_id (col_id, p_ebcdic_as_ascii, p_ascii_as_ebcdic);
 	if (res < 0) {
 		return res;
 	}
