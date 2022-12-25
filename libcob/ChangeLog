@@ -24,6 +24,14 @@
 	* strings.c (inspect_common_no_replace, inspect_common_replacing,
 	  is_marked): minor refactoring for optimization hints
 
+2022-12-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (get_config_val, set_config_val, translate_boolean_to_int):
+	  allow "boolean" values to be set to a third value via enum,
+	  new enum "never" used for COB_PHYSICAL_CANCEL (and prepared: "not_set"),
+	  to prevent unloading, which is useful for analysis tools like callgrind
+	  or perf to keep all symbols until end of the COBOL process
+
 2022-12-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.h (cob_module_type): module type as enum instead of defines only
@@ -112,6 +120,13 @@
 	* move.c (store_common_region): minor optimization
 	* move.c (cob_move_display_to_edited): several optimizations, the
 	  biggest one stays open, needing adjusted function call from cobc
+
+2022-11-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_hard_failure, cob_hard_failure_internal),
+	  call.c (cob_exit_call): skip unloading of modules for COB_CORE_ON_ERROR=2
+	  to keep symbols in coredumps using cob_physical_cancel=-1 internally
+	* call.c (close_and_free_module_list): extracted from cob_exit_call
 
 2022-11-04  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -1386,7 +1401,7 @@
 
 2019-11-18  Ron Norman <rjn@inglenet.com>
 
-	* common.h, fileio.c (fextfh.c, fbdb.c): Updates to support 
+	* common.h, fileio.c (fextfh.c, fbdb.c): Updates to support
 	   SET ... TO ADDRESS OF FH--FCD OF file     and
 	   SET ... TO ADDRESS OF FH--KEYDEF OF file
 

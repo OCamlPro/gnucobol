@@ -3,6 +3,9 @@
 
 	* Makefile.am: ensure to not create half-baked module directories,
 	  added "modules" to .PHONY target
+	* Makefile.am: always set COB_UNIX_LF for executing EXEC85 to be
+	  identical to the later testsuite run
+	* expand.pl: minor cleanup
 
 2022-12-12  Simon Sobisch <simonsobisch@gnu.org>
 

@@ -57,7 +57,12 @@ NEWS - user visible changes				-*- outline -*-
    [core-]dump and stacktrace) with "STOP ERROR" statement or by
    CALL "CBL_RUNTIME_ERROR"
 
-** TODO - More to document, hopefully before 3.2rc-1
+** COB_PHYSICAL_CANCEL may now be configured as "never" to prevent unloading,
+   of COBOL modules, both on CANCEL and on process exit, which is useful for
+   analysis tools like callgrind or perf to keep all symbols until the end of
+   the COBOL process
+
+** TODO - More to document before 3.2 final
 
 
 * Changes that potentially effects existing programs:
@@ -373,9 +378,8 @@ NEWS - user visible changes				-*- outline -*-
 
 ** use of old non-GMP randomizer for FUNCTION RANDOM
 
-* Known issues in 3.2 (and 3.1)
 
-** 3.2 only: the testing and documentation for COB_CORE_ON_ERROR is unfinished
+* Known issues in 3.2 (and 3.1)
 
 ** testsuite:
   * if built with vbisam, cisam or disam, depending on the version used, some
@@ -391,12 +395,13 @@ NEWS - user visible changes				-*- outline -*-
    as expected in all cases
 
 ** floating-point comparison for equality may return unexpected results as it
-   involves a necessary tolerance; we seek input for a reasonable default for
-   GnuCOBOL 4 (use the mailing list or discussion board to share your comments
-   on this topic, keep in mind that this has to take both mathematical and
-   "C compiler portability" into account); you may adjust the default
-   tolerance of 0.0000001 by compiling GnuCOBOL for example with
-   LIBCOB_CPPFLAGS="-DCOB_FLOAT_DELTA=0.0000000000001"
+   involves a necessary tolerance; you may adjust the default tolerance of
+   0.0000001 by compiling GnuCOBOL for example with
+   LIBCOB_CPPFLAGS="-DCOB_FLOAT_DELTA=0.0000000000001";
+   we seek input for a reasonable default for GnuCOBOL 4 (use the mailing list
+   or discussion board to share your comments on this topic, keeping in mind
+   that this has to take both mathematical and "C compiler portability" into
+   account)
 
 ** features that are known to not be portable to every environment yet
    (especially when using a different compiler than GCC)

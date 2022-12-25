@@ -230,7 +230,7 @@ $(MODULES_ALL): newcob.val EXEC85$(EXEEXT) $(srcdir)/EXEC85.conf.in Makefile.mod
 	else \
 		export NEWCOB_VAL=$(abs_srcdir)/newcob.val; \
 	fi; \
-	(cd $@ && $(PRE_INST_ENV) ../EXEC85$(EXEEXT)) || ($(RM) $(abs_builddir)/$@ && false)
+	(cd $@ && COB_UNIX_LF=Y $(PRE_INST_ENV) ../EXEC85$(EXEEXT)) || ($(RM) $(abs_builddir)/$@ && false)
 	@$(PERL) $(srcdir)/expand.pl $@/newcob.tmp $@ || ($(RM) $(abs_builddir)/$@ && false)
 #	@$(RM) ./$@/newcob.tmp ./$@/newcob.log ./$@/EXEC85.conf
 	@(export CBL_LIST="`ls $@/*.CBL | cut -f2 -d/ | tr '\n' ' '`" && \

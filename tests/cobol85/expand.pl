@@ -1,7 +1,7 @@
 #
 # gnucobol/tests/cobol85/expand.pl
 #
-# Copyright (C) 2001-2012, 2019-2020 Free Software Foundation, Inc.
+# Copyright (C) 2001-2012, 2019-2020, 2022 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -26,9 +26,9 @@ use strict;
 BEGIN { eval "use warnings;" }
 
 my $input = shift;
-my $moddir = shift;
+my $module = shift;
 if ($input  eq "") {die "missing argument: input file";}
-if ($moddir eq "") {die "missing argument: output directory";}
+if ($module eq "") {die "missing argument: module output directory";}
 open (IN, $input) or die "input file \"$input\" not found";
 
 my $output = '';
@@ -37,7 +37,6 @@ while (<IN>) {
 	if (/^      \*HEADER,([^,]*),([^, ]*)(,([^,]*),([^, ]*))?/) {
 		my ($type, $prog, $subt, $subr) = ($1, $2, $4, $5);
 		$output = $type;
-		my $module = $moddir;
 		my $name = '';
 		if ($subt) {
 			if ($subt eq "SUBPRG") {
