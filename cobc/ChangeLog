@@ -1,4 +1,9 @@
 
+2022-12-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_standard_includes): don't include stdio.h in
+	  generated programs
+
 2022-12-18  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (cb_validate_labels): don't warn on GO TO own SECTION

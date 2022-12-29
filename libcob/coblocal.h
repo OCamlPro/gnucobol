@@ -49,6 +49,8 @@
 #define N_(s)		s
 #endif
 
+#include "common.h"	/* located next to coblocal.h */
+#include <stdio.h>
 
 #if	defined(_WIN32) || defined(__CYGWIN__) || defined(COB_NO_VISIBILITY_ATTRIBUTE)
 #define COB_HIDDEN	extern

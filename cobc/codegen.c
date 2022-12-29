@@ -1767,8 +1767,10 @@ output_standard_includes (struct cb_program *prog)
 	output_line ("#define\t_XOPEN_SOURCE_EXTENDED 1");
 	output_line ("#endif");
 #endif
+#if 0	/* Simon: why should we include that? */
 	output_line ("#include <stdio.h>");
-	output_line ("#include <string.h>");
+#endif
+	output_line ("#include <string.h> /* for memcpy, memcmp and friends */");
 #ifdef	WORDS_BIGENDIAN
 	output_line ("#define  WORDS_BIGENDIAN 1");
 #endif

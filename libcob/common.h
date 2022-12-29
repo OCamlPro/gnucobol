@@ -22,6 +22,8 @@
 #ifndef COB_COMMON_H
 #define COB_COMMON_H
 
+#include <stddef.h>		/* for size_t */
+
 /* Only define cob_decimal if we have the necessary mpz_t from gmp.h/mpir.h
    (or can self-define it from mp.h) */
 #if !defined (__GMP_H__)
@@ -886,7 +888,7 @@ enum cob_open_mode {
 #define COB_READ_MASK		\
 	(COB_READ_NEXT | COB_READ_PREVIOUS | COB_READ_FIRST | COB_READ_LAST)
 
-/* I-O status */
+/* I-O status (will likely be moved to fileio.h in 4.x) */
 
 #define COB_STATUS_00_SUCCESS				0
 #define COB_STATUS_02_SUCCESS_DUPLICATE		2

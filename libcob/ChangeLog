@@ -121,6 +121,11 @@
 	* move.c (cob_move_display_to_edited): several optimizations, the
 	  biggest one stays open, needing adjusted function call from cobc
 
+2022-11-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* coblocal.h: include common.h (for cob_ types) and stdio.h (for FILE)
+	* common.h: include stddef.h for size_t
+
 2022-11-09  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_hard_failure, cob_hard_failure_internal),
