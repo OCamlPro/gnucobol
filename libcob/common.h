@@ -888,7 +888,10 @@ enum cob_open_mode {
 #define COB_READ_MASK		\
 	(COB_READ_NEXT | COB_READ_PREVIOUS | COB_READ_FIRST | COB_READ_LAST)
 
-/* I-O status (will likely be moved to fileio.h in 4.x) */
+/* I-O status - TODO: these should have internal only values; and then
+   map later to an i-o status "per dialect", inluding alphanumeric 0x
+   and 9/123 status values,
+   will be move to fileio.h in 4.x on remove of OC extfh */ 
 
 #define COB_STATUS_00_SUCCESS				0
 #define COB_STATUS_02_SUCCESS_DUPLICATE		2
@@ -896,6 +899,9 @@ enum cob_open_mode {
 #define COB_STATUS_05_SUCCESS_OPTIONAL		5
 #define COB_STATUS_06_READ_TRUNCATE			6
 #define COB_STATUS_07_SUCCESS_NO_UNIT		7
+#ifdef COB_EXPERIMENTAL
+#define COB_STATUS_0P_NOT_PRINTABLE			8
+#endif
 #define COB_STATUS_09_READ_DATA_BAD			9
 #define COB_STATUS_10_END_OF_FILE			10
 #define COB_STATUS_14_OUT_OF_KEY_RANGE		14

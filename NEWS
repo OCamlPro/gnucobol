@@ -1,7 +1,7 @@
 NEWS - user visible changes				-*- outline -*-
 
  GnuCOBOL 3.2rc1 to be released asap,
-          3.2 final (depending on feedback) end of 2022
+          3.2 final (depending on feedback) January 2023
 
  planned:
    * configure: minor checking to set TIME_T_IS_NON_ARITHMETIC
@@ -85,10 +85,11 @@ NEWS - user visible changes				-*- outline -*-
    format "COB_VARSEQ_TYPE = 0" contains two NULL bytes this will likely
    make most LINE SEQUENTIAL files not declared as this type fail on OPEN
 
-** LINE SEQUENTIAL files, data validation: in case of non-printable data
-   a READ may result in io status 09 and WRITE may error with io status 71;
-   to disable this validation see the new runtime option COB_LS_VALIDATE
-   to restore old behavior and to increase performance on WRITE;
+** LINE SEQUENTIAL files, data validation: in case of bad printable data
+   (less than SPACE) a READ may result in io status 09 and WRITE may error
+   with io status 71; see the new runtime option COB_LS_VALIDATE to disable
+   this validation (= old behavior) and to increase performance on line
+   sequential file io;
    if LS_NULLS is active and invalid data (bad encoded or missing encoding)
    is found io status 71 is returned
 
