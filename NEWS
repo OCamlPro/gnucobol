@@ -272,6 +272,12 @@ NEWS - user visible changes				-*- outline -*-
 ** new compiler command line option to list the known runtime exception names
    and fatality `cobc --list-exceptions`
 
+** the command line options -MT and -MF, which are used for creating a
+   dependency list (used copybooks) to be used for inclusion in Makefiles
+   or other processes, and which were removed in GnuCOBOL 2 are back in their
+   original version; note: their use will be adjusted where they don't match
+   GCC's same options in later versions, including addition of -M and -MD
+
 ** New -std options:
 
    gcos            GCOS compatibility

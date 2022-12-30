@@ -215,6 +215,7 @@ const char		*demangle_name = NULL;
 const char		*cb_storage_file_name = NULL;
 const char		*cb_call_extfh = NULL;
 struct cb_text_list	*cb_include_list = NULL;
+struct cb_text_list	*cb_depend_list = NULL;
 struct cb_text_list	*cb_intrinsic_list = NULL;
 struct cb_text_list	*cb_extension_list = NULL;
 struct cb_text_list	*cb_static_call_list = NULL;
@@ -223,6 +224,7 @@ char			**cb_saveargv = NULL;
 const char		*cob_config_dir = NULL;
 FILE			*cb_storage_file = NULL;
 FILE			*cb_listing_file = NULL;
+FILE			*cb_depend_file = NULL;
 
 /* Listing structures and externals */
 
@@ -355,6 +357,7 @@ static char		*cobc_libs;		/* -l... */
 static char		*cobc_lib_paths;	/* -L... */
 static char		*cobc_include;		/* -I... */
 static char		*cobc_ldflags;		/* -Q / COB_LDFLAGS */
+static char		*cb_depend_target;	/* -MT <target>... */
 
 static size_t		cobc_cflags_size;
 static size_t		cobc_libs_size;
@@ -575,6 +578,8 @@ static const struct option long_options[] = {
 	{"j",			CB_OP_ARG, NULL, 'j'},
 	{"Q",			CB_RQ_ARG, NULL, 'Q'},
 	{"A",			CB_RQ_ARG, NULL, 'A'},
+	{"MT",			CB_RQ_ARG, NULL, '!'},
+	{"MF",			CB_RQ_ARG, NULL, '@'},
 	{"P",			CB_OP_ARG, NULL, 'P'},
 	{"Xref",		CB_NO_ARG, NULL, 'X'},
 	{"use-extfh",		CB_RQ_ARG, NULL, 9},	/* this is used by COBOL-IT; Same is -fcallfh= */
@@ -3492,6 +3497,30 @@ process_command_line (const int argc, char **argv)
 			cb_define_list = p;
 			break;
 
+		case '!':
+			/* -MT <target> */
+			if (!cb_depend_target) {
+				cb_depend_target = cobc_strdup (cob_optarg);
+			} else {
+				/* multiple invocations add to the list */
+				const size_t orig_len	= strlen (cb_depend_target);
+				const size_t new_len	= strlen (cob_optarg);
+				const size_t buff_len	= orig_len + 1 + new_len + 1;
+				cb_depend_target = cobc_realloc (cb_depend_target, buff_len);
+				memset (cb_depend_target + orig_len, ' ', 1);
+				memcpy (cb_depend_target + orig_len + 1, cob_optarg, new_len);
+				memset (cb_depend_target + orig_len + 1 + new_len, 0, 1);
+			}
+			break;
+
+		case '@':
+			/* -MF <file> */
+			cb_depend_file = fopen (cob_optarg, "w");
+			if (!cb_depend_file) {
+				cb_perror (0, "cobc: %s: %s", cob_optarg, cb_get_strerror ());
+			}
+			break;
+
 		case 'I':
 			/* -I <xx> : Include/copy directory */
 			if (strlen (cob_optarg) > COB_SMALL_MAX) {
@@ -3876,6 +3905,18 @@ process_command_line (const int argc, char **argv)
 		}
 		cobc_main_free (output_name);
 		cobc_main_free (output_name_buff);
+	}
+	
+#if 0	/* TODO: */
+	if (cb_compile_level == CB_LEVEL_PREPROCESS && output_name && strcmp (output_name, COB_DASH) != 0)) {
+		cb_depend_file = output_file;
+	}
+#endif
+	/* TODO: add -M and -MD (breaking change "per GCC" already announced) */
+	if (cb_depend_file && !cb_depend_target) {
+		cobc_err_exit (_("-MT must be given to specify target file"));
+		fclose (cb_depend_file);
+		cb_depend_file = NULL;
 	}
 
 	/* debug: Turn on all exception conditions
@@ -8987,6 +9028,19 @@ main (int argc, char **argv)
 	if (cobc_list_file) {
 		fclose (cb_listing_file);
 		cb_listing_file = NULL;
+	}
+
+	/* Output dependency list */
+	if (cb_depend_file) {
+		struct cb_text_list	*l;
+		fprintf (cb_depend_file, "%s: \\\n", cb_depend_target);
+		for (l = cb_depend_list; l; l = l->next) {
+			fprintf (cb_depend_file, " %s%s\n", l->text, l->next ? " \\" : "\n");
+		}
+		for (l = cb_depend_list; l; l = l->next) {
+			fprintf (cb_depend_file, "%s:\n", l->text);
+		}
+		fclose (cb_depend_file);
 	}
 
 	/* Clear rest of preprocess stuff */

@@ -217,7 +217,7 @@ AT_CLEANUP
 
 
 AT_SETUP([compiler outputs (file specified)])
-AT_KEYWORDS([runmisc cobc gen-c-line-directives gen-c-labels gen line labels])
+AT_KEYWORDS([runmisc cobc gen-c-line-directives gen-c-labels gen line labels copy])
 
 AT_DATA([prog.cob],[
         IDENTIFICATION DIVISION.
@@ -227,29 +227,35 @@ AT_DATA([prog.cob],[
         01 BLA PIC X(5) VALUE 'bluBb'.
         PROCEDURE DIVISION.
         MAIN-PROC SECTION.
+        00.
         COPY PROC.
         END-PROC  SECTION.
-        STOP RUN.
+        COPY PROCE in "sub".
+        EX.
+            STOP RUN.
 ])
 
 AT_CHECK([mkdir -p sub/copy], [0], [], [])
 
 AT_DATA([sub/copy/PROC.cpy],[
-        DISPLAY BLA NO ADVANCING.
+           DISPLAY BLA NO ADVANCING.
+])
+AT_DATA([sub/PROCE.cpy],[
+           DISPLAY ' END' NO ADVANCING.
 ])
 
 AT_CHECK([$COBC -I sub/copy prog.cob -o prog.c], [0], [], [])
 AT_CHECK([$COBC -I sub/copy prog.c -o prog.$COB_OBJECT_EXT], [0], [], [])
 AT_CHECK([$COBC -I sub/copy prog.$COB_OBJECT_EXT -o prog.$COB_MODULE_EXT])
-AT_CHECK([$COBCRUN prog], [0], [bluBb], [])
+AT_CHECK([$COBCRUN prog], [0], [bluBb END], [])
 AT_CHECK([$COBC -I sub/copy -x prog.cob -o prog.c], [0], [], [])
 AT_CHECK([$COBC -I sub/copy -x prog.c -o prog.$COB_OBJECT_EXT], [0], [], [])
 AT_CHECK([$COBC -I sub/copy -x prog.$COB_OBJECT_EXT -o progo$COB_EXE_EXT], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./progo], [0], [bluBb], [])
+AT_CHECK([$COBCRUN_DIRECT ./progo], [0], [bluBb END], [])
 # making the extension explicit here to not let case-insensitive file-systems catch a .CPY...
 AT_CHECK([$COBC -I sub/copy prog.cob -ext=cpy -o prog.i], [0], [], [])
 AT_CHECK([$COBC -x prog.i -o prog$COB_EXE_EXT], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog$COB_EXE_EXT], [0], [bluBb], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog$COB_EXE_EXT], [0], [bluBb END], [])
 AT_CHECK([$COBC -x prog.i -fgen-c-line-directives -fgen-c-labels -save-temps], [0], [], [])
 AT_CHECK([$GREP 'prog.i'   prog.c], [0], ignore, [])
 AT_CHECK([$GREP 'prog.i'   prog.c | $GREP '#line'], [1], ignore, ignore)
@@ -257,7 +263,15 @@ AT_CHECK([$GREP 'prog.cob' prog.c | $GREP '#line'], [0], ignore, [])
 AT_CHECK([$GREP 'PROC.cpy' prog.c | $GREP '#line'], [0], ignore, [])
 AT_CHECK([$GREP 'ENTRY_PROG:'        prog.c], [0], ignore, [])
 AT_CHECK([$GREP 'SECTION_END__PROC:' prog.c], [0], ignore, [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [bluBb], [])
+AT_CHECK([$GREP 'PARAGRAPH_00_l_4:'        prog.c], [0], ignore, [])
+AT_CHECK([$GREP 'PARAGRAPH_EX_l_7:'        prog.c], [0], ignore, [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [bluBb END], [])
+AT_CHECK([$COBC -I sub/copy prog.cob -ext=cpy -o prog.i -MF prog.d -MT "prog.c prog.h" -MT prog$COB_EXE_EXT -MT prog.$COB_OBJECT_EXT -MT prog.i  -fsyntax-only], [0], [], [])
+AT_CHECK([$GREP 'prog.c prog.h '        prog.d], [0], ignore, [])
+AT_CHECK([$GREP ' prog.i:'        prog.d], [0], ignore, [])
+AT_CHECK([$GREP 'sub/copy/PROC.cpy'        prog.d], [0], ignore, [])
+AT_CHECK([$GREP 'sub/PROCE.cpy'        prog.d], [0], ignore, [])
+
 AT_CLEANUP
 
 

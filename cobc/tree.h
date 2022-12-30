@@ -2572,7 +2572,7 @@ extern void		cb_check_definition_matches_prototype (struct cb_program *);
 extern void		ylex_clear_all (void);
 extern void		ylex_call_destroy (void);
 
-/* cobc.c */
+/* cobc.c, help.c */
 #ifndef COB_EXTERNAL_XREF
 #define COB_INTERNAL_XREF
 #endif

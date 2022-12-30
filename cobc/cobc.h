@@ -463,6 +463,8 @@ extern int			cb_saveargc;
 
 extern FILE			*cb_listing_file;
 extern FILE			*cb_src_list_file;
+extern FILE			*cb_depend_file;
+extern struct cb_text_list	*cb_depend_list;
 extern struct cb_text_list	*cb_include_list;
 extern struct cb_text_list	*cb_intrinsic_list;
 extern struct cb_text_list	*cb_extension_list;

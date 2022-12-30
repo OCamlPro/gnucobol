@@ -1296,8 +1296,7 @@
 2003-04-19  Keisuke Nishida  <knishida@netlab.jp>
 
 	* cob.pc.in: Removed.
-
-	* cobpp: Removed.
+	* cobpp: integrated into cobc (ChangeLog entries moved there)
 
 2002-03-01  Keisuke Nishida  <knishida@netlab.jp>
 
@@ -1452,6 +1451,10 @@
 2002-05-29  Keisuke Nishida  <knishida@netlab.jp>
 
 	* configure.ac, Makefile.am: Rename 'COB_LDADD' to 'COB_LIBS'
+
+2002-05-23  Keisuke Nishida  <knishida@netlab.jp>
+
+	* configure.ac.c: additions for use of gettext
 
 2002-05-19  Keisuke Nishida  <knishida@netlab.jp>
 

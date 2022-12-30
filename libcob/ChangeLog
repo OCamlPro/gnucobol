@@ -5448,6 +5448,10 @@
 	* call.c (dynamic_reloading): Renamed from cob_dynamic_reloading.
 	  (cob_init_call): Initialize 'dynamic_reloading'.
 
+2002-05-23  Keisuke Nishida  <knishida@netlab.jp>
+
+	* call.c, common.c, move.c, Makefile.am: gettextized
+
 
 Copyright 2002-2022 Free Software Foundation, Inc.
 
