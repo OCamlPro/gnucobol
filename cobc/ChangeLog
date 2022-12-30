@@ -6,6 +6,13 @@
 	* cobc.c (process_command_line): handle multiple -MT options like GCC
 	* ChangeLog: integrated cobpp ChangeLog entries and added some
 	  historic changes from VCS log/diff
+	fixing bug #794:
+	* typeck (cb_build_index): attach the index to storage of qualifier,
+	  if specified
+	* parser.y (_local_storage_section _linkage_section _screen_section): add
+	  fields to appropriate instead of setting it, to not overwrite internal
+	  additions as in cb_build_index
+	* parser.y (occurs_index): use CB_INT_INDEX for LOCAL-STORAGE indexes
 
 2022-12-29  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -24,8 +31,9 @@
 	* typeck.c (swap_condition_operands): toogle BOP_OPERANDS_SWAPPED flag
 	* tree.c (compare_field_literal): don't warn if the >= / <= is the result
 	  of an internal swap
-	* tree.c, tree.h, typeck.c: set and handle cb_binary_op_flag to pass this
-	  without changing hundreds of code lines
+	* tree.c, tree.h, typeck.c (cb_build_cond, expr_reduce): set and handle
+	  cb_binary_op_flag to pass this without changing hundreds of code lines
+	* parser.y: preparation of internal WINAPI call-convention name
 
 2022-12-18  Simon Sobisch <simonsobisch@gnu.org>
 

@@ -2278,6 +2278,7 @@ cb_tree
 cb_build_index (cb_tree x, cb_tree values, const unsigned int indexed_by,
 		struct cb_field *qual)
 {
+	enum cb_storage		storage = CB_STORAGE_WORKING;
 	struct cb_field	*f = CB_FIELD (cb_build_field (x));
 
 	f->usage = CB_USAGE_INDEX;
@@ -2285,9 +2286,33 @@ cb_build_index (cb_tree x, cb_tree values, const unsigned int indexed_by,
 	f->values = values;
 	f->index_qual = qual;
 	f->flag_indexed_by = !!indexed_by;
-	if (f->flag_indexed_by)
+	if (f->flag_indexed_by) {
 		f->flag_real_binary = 1;
-	CB_FIELD_ADD (current_program->working_storage, f);
+	}
+	if (qual) {
+		storage = qual->storage;
+	}
+	switch (storage) {
+	case CB_STORAGE_FILE:
+	case CB_STORAGE_LINKAGE:	/* explicit: not passed -> program local -> WS */
+	case CB_STORAGE_WORKING:
+		CB_FIELD_ADD (current_program->working_storage, f);
+		break;
+	case CB_STORAGE_SCREEN:
+		CB_FIELD_ADD (current_program->screen_storage, f);
+		break;
+	case CB_STORAGE_REPORT:
+		CB_FIELD_ADD (current_program->report_storage, f);
+		break;
+	case CB_STORAGE_LOCAL:
+		CB_FIELD_ADD (current_program->local_storage, f);
+		break;
+	/* LCOV_EXCL_START */
+	default:
+		cobc_err_msg ("unexpected register storage: %d", storage);
+		return cb_error_node;
+	/* LCOV_EXCL_STOP */		
+	}
 	return x;
 }
 
@@ -3495,9 +3520,11 @@ get_size (cb_tree x)
 		return CB_FIELD (x)->size;
 	case CB_TAG_REFERENCE:
 		return get_size (cb_ref (x));
+	/* LCOV_EXCL_START */
 	default:
 		cobc_err_msg (_("unexpected tree tag: %d"), CB_TREE_TAG (x));
 		return 0;
+	/* LCOV_EXCL_STOP */
 	}
 }
 
