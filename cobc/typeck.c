@@ -74,6 +74,8 @@ struct expr_node {
 	 *  '+', '-', '*', '/', '^'      - arithmetic operators
 	 *  '=', '~', '<', '>', '[', ']' - relational operators
 	 *  '!', '&', '|'                - logical operators
+	 *  'n', 'a', 'o', 'e',          - bitwise operators
+	 *  'l', 'r', 'c', 'd'           - bitshift operators
 	 *  '(', ')'                     - parentheses
 	 */
 	int		token;
@@ -5412,21 +5414,25 @@ expr_reduce (int token)
 	 * token: 'x' '*' 'x' '+' ...
 	 */
 
-	int	op;
-
 	while (expr_prio[TOKEN (-2)] <= expr_prio[token]) {
-		/* Reduce the expression depending on the last operator */
-		op = TOKEN (-2);
-		switch (op) {
+		enum cb_binary_op_op op;
+
+		switch (TOKEN (-2)) {
 		case 'x':
+		case '(':
+		case ')':
+			/* no binary op, nothing more to do */
 			return 0;
+		default:
+			op = TOKEN (-2);
+			break;
+		}
+
+		/* Reduce the expression depending on the last operator */
+		switch (op) {
 
 		case 'a': case 'o': case 'e': case 'l': case 'r': /* BIT-WISE */
-		case '+':
-		case '-':
-		case '*':
-		case '/':
-		case '^':
+		case '+': case '-': case '*': case '/': case '^':
 			/* Arithmetic operators: 'x' op 'x' */
 			if (TOKEN (-1) != 'x' || TOKEN (-3) != 'x') {
 				return -1;
@@ -5436,8 +5442,8 @@ expr_reduce (int token)
 			expr_index -= 2;
 			break;
 
-		case 'n':  /* BIT-WISE */
 		case '!':
+		case 'n':  /* BIT-WISE */
 			/* Negation: '!' 'x' */
 			if (TOKEN (-1) != 'x') {
 				return -1;
@@ -5474,68 +5480,100 @@ expr_reduce (int token)
 			expr_index -= 2;
 			break;
 
-		case '(':
-		case ')':
-			return 0;
-
 		default:
-			/* Relational operators */
-			if (TOKEN (-1) != 'x') {
-				return -1;
-			}
-			switch (TOKEN (-3)) {
-			case 'x':
-				/* Simple condition: 'x' op 'x' */
-				if (VALUE (-3) == cb_error_node ||
-				    VALUE (-1) == cb_error_node) {
-					VALUE (-3) = cb_error_node;
-				} else {
-					expr_lh = VALUE (-3);
-					if (expr_chk_cond (expr_lh, VALUE (-1))) {
+			{
+				cb_tree lhs;
+				/* Relational operators */
+				if (TOKEN (-1) != 'x') {
+					return -1;
+				}
+				lhs = VALUE (-1);
+
+				if (TOKEN (-3) == '!') {
+					enum cb_binary_op_op new_token = 0;
+					/* '!' '=' --> '~', etc. */
+					switch (op) {
+					case '=':
+						new_token = '~';
+						break;
+					case '~':
+						new_token = '=';
+						break;
+					case '<':
+						new_token = ']';
+						break;
+					case '>':
+						new_token = '[';
+						break;
+					case '[':
+						new_token = '>';
+						break;
+					case ']':
+						new_token = '<';
+						break;
+					default:
+						break;
+					}
+					if (new_token != 0) {
+						op = new_token;
+						expr_index -= 1;
+					}
+				}
+				/* Fall-through */
+				switch (TOKEN (-3)) {
+				case 'x':
+					/* Simple condition: 'x' op 'x' */
+					if (VALUE (-3) == cb_error_node ||
+						lhs == cb_error_node) {
 						VALUE (-3) = cb_error_node;
-						return 1;
-					}
-					expr_op = op;
-					TOKEN (-3) = 'x';
-					if (CB_TREE_CLASS (VALUE (-1)) != CB_CLASS_BOOLEAN) {
-						VALUE (-3) = cb_build_binary_op (expr_lh, op, VALUE (-1));
-#if 0					/* Note:   We loose the source reference here if
-						           the result is true/false, for example because of
-						           comparing 'A' = 'B'. As we now have cb_false
-						           in VALUE (-3) we should not add the reference there.
-						  CHECKME: Should we store the value as PAIR with a new
-						           cb_tree containing the reference and unpack it
-						           everywhere or is there a better option to find?
-					     See:     Test syn_misc.at - Constant Expressions (2)
-						*/
-						cb_copy_source_reference (VALUE (-3), expr_lh);
+					} else {
+						expr_lh = VALUE (-3);
+						if (expr_chk_cond (expr_lh, lhs)) {
+							VALUE (-3) = cb_error_node;
+							return 1;
+						}
+						expr_op = op;
+						TOKEN (-3) = 'x';
+						if (CB_TREE_CLASS (lhs) != CB_CLASS_BOOLEAN) {
+							VALUE (-3) = cb_build_binary_op (expr_lh, op, lhs);
+#if 0						/* Note:   We loose the source reference here if
+									   the result is true/false, for example because of
+									   comparing 'A' = 'B'. As we now have cb_false
+									   in VALUE (-3) we should not add the reference there.
+							  CHECKME: Should we store the value as PAIR with a new
+									   cb_tree containing the reference and unpack it
+									   everywhere or is there a better option to find?
+							 See:     Test syn_misc.at - Constant Expressions (2)
+							*/
+							cb_copy_source_reference (VALUE (-3), expr_lh);
 #endif
-					} else {
-						VALUE (-3) = VALUE (-1);
+						} else {
+							VALUE (-3) = lhs;
+						}
 					}
-				}
-				expr_index -= 2;
-				break;
-			case '&':
-			case '|':
-				/* Complex condition: 'x' '=' 'x' '|' op 'x' */
-				if (VALUE (-1) == cb_error_node) {
-					VALUE (-2) = cb_error_node;
-				} else {
-					expr_op = op;
-					TOKEN (-2) = 'x';
-					if (CB_TREE_CLASS (VALUE (-1)) != CB_CLASS_BOOLEAN && expr_lh) {
-						VALUE (-2) = cb_build_binary_op (expr_lh, op, VALUE (-1));
+					expr_index -= 2;
+					break;
+				case '&':
+				case '|':
+					/* Complex condition: 'x' '=' 'x' '|' op 'x' */
+					if (lhs == cb_error_node) {
+						VALUE (-2) = cb_error_node;
 					} else {
-						VALUE (-2) = VALUE (-1);
+						expr_op = op;
+						TOKEN (-2) = 'x';
+						if (CB_TREE_CLASS (lhs) != CB_CLASS_BOOLEAN && expr_lh) {
+							VALUE (-2) = cb_build_binary_op (expr_lh, op, lhs);
+						} else {
+							VALUE (-2) = lhs;
+						}
 					}
+					expr_index -= 1;
+					break;
+				default:
+					return -1;
 				}
-				expr_index -= 1;
 				break;
-			default:
-				return -1;
 			}
-			break;
 		}
 	}
 
@@ -5682,38 +5720,6 @@ cb_expr_shift (int token, cb_tree value)
 		    (TOKEN (-2) == '<' || TOKEN (-2) == '>')) {
 			token = (TOKEN (-2) == '<') ? '[' : ']';
 			expr_index -= 2;
-		}
-
-		/* '!' '=' --> '~', etc. */
-		if (TOKEN (-1) == '!') {
-			switch (token) {
-			case '=':
-				token = '~';
-				expr_index--;
-				break;
-			case '~':
-				token = '=';
-				expr_index--;
-				break;
-			case '<':
-				token = ']';
-				expr_index--;
-				break;
-			case '>':
-				token = '[';
-				expr_index--;
-				break;
-			case '[':
-				token = '>';
-				expr_index--;
-				break;
-			case ']':
-				token = '<';
-				expr_index--;
-				break;
-			default:
-				break;
-			}
 		}
 		break;
 	}
@@ -5914,7 +5920,7 @@ cb_build_expr (cb_tree list)
 }
 
 const char *
-explain_operator (const int op)
+explain_operator (const enum cb_binary_op_op op)
 {
 	switch (op) {
 	case '>':
@@ -6838,7 +6844,6 @@ cb_build_cond_fields (struct cb_binary_op *p,
 	  || right == cb_high  || right == cb_low)) {
 		return CB_BUILD_FUNCALL_2 ("$G", left, right);
 	}
-
 	if (size1 == 1 && size2 == 1) {
 		return CB_BUILD_FUNCALL_2 ("$G", left, right);
 	}
@@ -6859,6 +6864,31 @@ cb_build_cond_fields (struct cb_binary_op *p,
 			cb_build_direct ("COB_SPACES_ALPHABETIC", 0),
 			cb_int (size1));
 	}
+	
+#if 0	/* TODO: if at least one is a literal and smaller:
+		   possibly extend by building a new literal correctly
+		   left/right padded with system SPACE allowing direct memcmp;
+		   not useful for PIC X(12000) and a 2 byte literal,
+		   but likely useful for PIC X(10) or X(32) or ??? */
+#define COB_SPACES_ALPHABETIC_EXPAND_LENGTH 32
+	if (CB_LITERAL_P (right)
+	 && (l_class == CB_CLASS_ALPHANUMERIC || l_class == CB_CLASS_ALPHABETIC)
+	 && size1 > 0 && size1 <= COB_SPACES_ALPHABETIC_EXPAND_LENGTH
+	 && size2 <= COB_SPACES_ALPHABETIC_EXPAND_LENGTH) {
+		cb_tree new_lit, lit;
+		char data [COB_SPACES_ALPHABETIC_EXPAND_LENGTH + 1];
+		memcpy (data, CB_LITERAL (right)->data, size2);
+		if (size2 < COB_SPACES_ALPHABETIC_EXPAND_LENGTH) {
+			memset (data, ' ', size1 - size2);
+		}
+		new_lit = cb_build_alphanumeric_literal (data, size1);
+		lit = cb_lookup_literal (new_lit, 0);
+		return CB_BUILD_FUNCALL_3 ("memcmp",
+			CB_BUILD_CAST_ADDRESS (left),
+			CB_BUILD_CAST_ADDRESS (lit),
+			cb_int (size1));
+	}
+#endif
 	return CB_BUILD_FUNCALL_2 ("cob_cmp", left, right);
 }
 
@@ -6938,7 +6968,7 @@ swap_condition_operands (struct cb_binary_op *p)
 {
 	cb_tree y = p->x;
 
-	p->flag = BOP_OPERANDS_SWAPPED;
+	p->flag = p->flag == 0 ? BOP_OPERANDS_SWAPPED : 0;
 
 	p->x = p->y;
 	p->y = y;
@@ -12633,6 +12663,7 @@ search_set_keys (struct cb_field *f, cb_tree x)
 
 		for (i = 0; i < f->nkeys; ++i) {
 			if (fldx == CB_FIELD_PTR (f->keys[i].key)) {
+				/* TODO: detach bound check here, but not for  KEY (IDX(other)) */
 				f->keys[i].ref = p->x;
 				f->keys[i].val = p->y;
 				break;

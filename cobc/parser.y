@@ -4386,17 +4386,18 @@ mnemonic_choices:
 		if (CB_SYSTEM_NAME(save_tree)->token != CB_FEATURE_CONVENTION) {
 			cb_error_x (save_tree, _("invalid %s clause"), "SPECIAL NAMES");
 		} else if (CB_VALID_TREE ($3)) {
+			const char *name = CB_NAME ($3);
 			CB_SYSTEM_NAME(save_tree)->value = $1;
 			cb_define ($3, save_tree);
 			CB_CHAIN_PAIR (current_program->mnemonic_spec_list,
 					$3, save_tree);
 			/* remove non-standard context-sensitive words when identical to mnemonic */
-			if (cb_strcasecmp (CB_NAME($3), "EXTERN" ) == 0
-			 || cb_strcasecmp (CB_NAME($3), "STDCALL") == 0
-			 || cb_strcasecmp (CB_NAME($3), "STATIC" ) == 0
-			 || cb_strcasecmp (CB_NAME($3), "C"      ) == 0
-			 || cb_strcasecmp (CB_NAME($3), "PASCAL" ) == 0) {
-				remove_context_sensitivity (CB_NAME($3), CB_CS_CALL);
+			if (cb_strcasecmp (name, "EXTERN" ) == 0
+			 || cb_strcasecmp (name, "STDCALL") == 0
+			 || cb_strcasecmp (name, "STATIC" ) == 0
+			 || cb_strcasecmp (name, "C"      ) == 0
+			 || cb_strcasecmp (name, "PASCAL" ) == 0) {
+				remove_context_sensitivity (name, CB_CS_CALL);
 			}
 		}
 	}

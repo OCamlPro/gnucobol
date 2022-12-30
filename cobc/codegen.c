@@ -11601,7 +11601,6 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	}
 #endif
 
-	output_line ("/* Set frame stack pointer */");
 	if (cb_flag_stack_on_heap || prog->flag_recursive) {
 		const char *frame_type = (cb_flag_stack_extended) ? "cob_frame_ext" : "cob_frame";
 		if (prog->flag_recursive && cb_stack_size == 255) {
@@ -11609,10 +11608,12 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 		} else {
 			i = cb_stack_size;
 		}
+		output_line ("/* Set recursive frame stack pointer */");
 		output_line ("frame_stack = cob_malloc (%dU * sizeof(struct %s));",
 			i, frame_type);
 		output_line ("frame_ptr = frame_stack;");
 	} else {
+		output_line ("/* Set frame stack pointer */");
 		output_line ("frame_ptr = frame_stack;");
 		output_line ("frame_ptr->perform_through = 0;");
 		if (cb_flag_computed_goto) {

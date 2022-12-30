@@ -12,6 +12,16 @@
 	* codegen.c (output_standard_includes): don't include stdio.h in
 	  generated programs
 
+2022-12-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.c (compare_field_literal): suppress some optimizations if constant
+	  folding is disabled
+	* tree.h (cb_binary_op_op): added all binary operators
+	* typeck.c (explain_operator), tree.h: switched argument to cb_binary_op_op
+	* typeck.c (expr_reduce): refactored, also moved token swapping from
+	  cb_expr_shift here
+	* typeck.c (swap_condition_operands): toogle BOP_OPERANDS_SWAPPED flag
+
 2022-12-18  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (cb_validate_labels): don't warn on GO TO own SECTION
@@ -9056,8 +9066,34 @@
 	  place dependency list (copybooks) into dependency file for make
 	* cobc.c: cleanup for passing arguments to cobpp
 
+2001-12-29  Keisuke Nishida  <knishida@netlab.jp>
 
-Copyright 2002-2022 Free Software Foundation, Inc.
+	* pplex.l <- cobpp/scanner.l: handle line continuation (only in fixed format)
+	* cobc.c, cobpp.c, cobpp.h, pplex.l <- cobpp/scanner.l, scanner.h,
+	  ppparse.y <- cobpp/parser.y: implement -I for copybook lookup
+
+2001-12-14  Keisuke Nishida  <knishida@netlab.jp>
+
+	* pplex.l <- cobpp/scanner.l, ppparse.y <- cobpp/parser.y: work on
+	  COPY REPLACING
+
+2001-12-06  Keisuke Nishida  <knishida@netlab.jp>
+
+	* cobpp.c, cobpp.h, pplex.l <- cobpp/scanner.l, cobc.c: added tab-expansion
+	  to rewritten cobpp
+
+2001-11-29  Keisuke Nishida  <knishida@netlab.jp>
+
+	* pplex.l <- cobpp/scanner.l: activate debugging code (D in col 7)
+
+2001-11-27  Keisuke Nishida  <knishida@netlab.jp>
+
+	* cobpp.c, cobpp.h, pplex.l <- cobpp/scanner.l, scanner.h (new file),
+	  ppparse.y <- cobpp/parser.y, cobc.c: re-implement cobpp,
+	  dropping some options for now
+
+
+Copyright 2001-2022 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

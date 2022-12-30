@@ -1214,6 +1214,7 @@ struct cb_reference {
 /* Binary operation */
 
 enum cb_binary_op_op {
+	BOP_INVALID = 0,	/* operation on invalid elements */
 	BOP_PLUS	= '+',	/* x + y */
 	BOP_MINUS	= '-',	/* x - y */
 	BOP_MULT	= '*',	/* x * y */
@@ -1228,7 +1229,15 @@ enum cb_binary_op_op {
 	BOP_NOT		= '!',	/* not x */
 	BOP_AND		= '&',	/* x and y */
 	BOP_OR		= '|',	/* x or y */
-	BOP_PARENS	= '@'	/* ( x ) */
+	BOP_PARENS	= '@',	/* ( x ) */
+	BOP_BITWISE_NOT	= 'n',	/* ~ ( x ) */
+	BOP_BITWISE_AND	= 'a',	/* ( x & y ) */
+	BOP_BITWISE_OR	= 'o',	/* ( x | y ) */
+	BOP_BITWISE_XOR	= 'e',	/* ( x ^ y ) */
+	BOP_SHIFT_L 	= 'l',	/* ( x << y ) */
+	BOP_SHIFT_R 	= 'r',	/* ( x >> y ) */
+	BOP_SHIFT_LC	= 'c',	/* ( x << y circular-shift) */
+	BOP_SHIFT_RC	= 'd',	/* ( x >> y circular-shift ) */
 };
 
 enum cb_binary_op_flag {
@@ -2347,7 +2356,7 @@ extern void		cb_terminate_cond (void);
 extern void		cb_true_side (void);
 extern void		cb_false_side (void);
 extern void		cb_end_statement (void);
-extern const char		*explain_operator (const int);
+extern const char		*explain_operator (const enum cb_binary_op_op);
 extern const char		*enum_explain_storage (const enum cb_storage storage);
 
 extern void		cb_emit_arithmetic (cb_tree, const int, cb_tree);
