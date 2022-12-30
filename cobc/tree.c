@@ -5335,10 +5335,16 @@ display_literal (char *disp, struct cb_literal *l, int offset, int scale)
 	return disp;
 }
 
+enum cb_binary_op_flag		cb_next_binary_op_flag = 0;
+
 /* Check if comparing field to literal is always TRUE or FALSE */
 static cb_tree
-compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal *l)
+compare_field_literal (cb_tree e, int swap, cb_tree x,
+		enum cb_binary_op_op op, struct cb_literal *l)
 {
+	enum cb_binary_op_flag flag = cb_next_binary_op_flag;
+	cb_next_binary_op_flag = 0;
+
 	int	i, j, scale, fscale;
 	int	alph_lit, zero_val;
 	int	lit_start, lit_length, refmod_length;
@@ -5539,6 +5545,7 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 		default:
 			break;
 		}
+		flag = flag == 0 ? BOP_OPERANDS_SWAPPED : 0;
 	}
 
 	/* check for digits in literal vs. field size */
@@ -5606,9 +5613,11 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 					break;
 				case ']':
 					/* don't raise a warning for VALUE THRU
-					   (we still can return cb_true here later) */
-					if (current_statement->statement != STMT_VALUE_THRU
-					 &&!was_prev_warn (e->source_line, 5)) {
+					   (we still can return cb_true here later),
+					   and don't raise a warning if the bop was switched */
+					if (flag != BOP_OPERANDS_SWAPPED
+					 && current_statement->statement != STMT_VALUE_THRU
+					 && !was_prev_warn (e->source_line, 5)) {
 						cb_warning_x (cb_warn_constant_expr, e,
 							_("unsigned '%s' may always be %s %s"),
 							f->name, explain_operator (op), "ZERO");
@@ -5621,6 +5630,10 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 			} else if (l->sign < 0) {
 				switch (op) {
 				case '[':
+					if (flag == BOP_OPERANDS_SWAPPED) {
+						break;
+					}
+					/* fall through */
 				case '<':
 					if (!was_prev_warn (e->source_line, 5)) {
 						cb_warning_x (cb_warn_constant_expr, e,
@@ -5630,6 +5643,10 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 					}
 					break;
 				case ']':
+					if (flag == BOP_OPERANDS_SWAPPED) {
+						break;
+					}
+					/* fall through */
 				case '>':
 					if (!was_prev_warn (e->source_line, 5)) {
 						cb_warning_x (cb_warn_constant_expr, e,
@@ -5663,6 +5680,10 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 			} else if (l->sign < 0) {
 				switch (op) {
 				case '[':
+					if (flag == BOP_OPERANDS_SWAPPED) {
+						break;
+					}
+					/* fall through */
 				case '<':
 					if (!was_prev_warn (e->source_line, 5)) {
 						cb_warning_x (cb_warn_constant_expr, e,
@@ -5674,7 +5695,8 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 				case ']':
 					/* don't raise a warning for VALUE THRU
 					   (we still can return cb_true here later) */
-					if (current_statement->statement != STMT_VALUE_THRU
+					if (flag != BOP_OPERANDS_SWAPPED
+					 && current_statement->statement != STMT_VALUE_THRU
 					 && !was_prev_warn (e->source_line, 5)) {
 						cb_warning_x (cb_warn_constant_expr, e,
 							_("'%s' may always be %s %s"),
@@ -5688,6 +5710,10 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 			} else {
 				switch (op) {
 				case ']':
+					if (flag == BOP_OPERANDS_SWAPPED) {
+						break;
+					}
+					/* fall through */
 				case '>':
 					if (!was_prev_warn (e->source_line, 5)) {
 						cb_warning_x (cb_warn_constant_expr, e,
@@ -5699,7 +5725,8 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 				case '[':
 					/* don't raise a warning for VALUE THRU
 					   (we still can return cb_true here later) */
-					if (current_statement->statement != STMT_VALUE_THRU
+					if (flag != BOP_OPERANDS_SWAPPED
+					 && current_statement->statement != STMT_VALUE_THRU
 					 && !was_prev_warn (e->source_line, 5)) {
 						cb_warning_x (cb_warn_constant_expr, e,
 							_("'%s' may always be %s %s"),
@@ -5732,7 +5759,7 @@ get_warnopt_for_constant (cb_tree x, cb_tree y)
 }
 
 cb_tree
-cb_build_binary_op (cb_tree x, const int op, cb_tree y)
+cb_build_binary_op (cb_tree x, const enum cb_binary_op_op op, cb_tree y)
 {
 	struct cb_binary_op	*p;
 	enum cb_category	category = CB_CATEGORY_UNKNOWN;
@@ -6014,8 +6041,8 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 		    (f->usage == CB_USAGE_DISPLAY
 		  || (cb_binary_truncate
 		   && (f->usage == CB_USAGE_COMP_5
-	        || f->usage == CB_USAGE_COMP_X
-	        || f->usage == CB_USAGE_BINARY))
+		    || f->usage == CB_USAGE_COMP_X
+		    || f->usage == CB_USAGE_BINARY))
 
 			Shouldn't it?
 		*/

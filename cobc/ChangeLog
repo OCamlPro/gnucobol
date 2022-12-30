@@ -17,10 +17,15 @@
 	* tree.c (compare_field_literal): suppress some optimizations if constant
 	  folding is disabled
 	* tree.h (cb_binary_op_op): added all binary operators
-	* typeck.c (explain_operator), tree.h: switched argument to cb_binary_op_op
+	* typeck.c (explain_operator), tree.c (cb_build_binary_op), tree.h:
+	  switched argument to cb_binary_op_op
 	* typeck.c (expr_reduce): refactored, also moved token swapping from
 	  cb_expr_shift here
 	* typeck.c (swap_condition_operands): toogle BOP_OPERANDS_SWAPPED flag
+	* tree.c (compare_field_literal): don't warn if the >= / <= is the result
+	  of an internal swap
+	* tree.c, tree.h, typeck.c: set and handle cb_binary_op_flag to pass this
+	  without changing hundreds of code lines
 
 2022-12-18  Simon Sobisch <simonsobisch@gnu.org>
 

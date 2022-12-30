@@ -3258,6 +3258,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token WHEN_XML			"WHEN"
 %token WIDTH
 %token WIDTH_IN_CELLS		"WIDTH-IN-CELLS"
+%token WINAPI
 %token WINDOW
 %token WITH
 %token WORD			"Identifier"
@@ -4394,6 +4395,7 @@ mnemonic_choices:
 			/* remove non-standard context-sensitive words when identical to mnemonic */
 			if (cb_strcasecmp (name, "EXTERN" ) == 0
 			 || cb_strcasecmp (name, "STDCALL") == 0
+			 || cb_strcasecmp (name, "WINAPI") == 0
 			 || cb_strcasecmp (name, "STATIC" ) == 0
 			 || cb_strcasecmp (name, "C"      ) == 0
 			 || cb_strcasecmp (name, "PASCAL" ) == 0) {
@@ -12304,6 +12306,10 @@ mnemonic_conv:
 | STDCALL	/* not active for ENTRY-CONVENTION via PROCEDURE DIVISION */
   {
 	$$ = cb_int (CB_CONV_STDCALL);
+  }
+| WINAPI	/* not active for ENTRY-CONVENTION via PROCEDURE DIVISION */
+  {
+	$$ = cb_int (CB_CONV_STDCALL | CB_CONV_STATIC_LINK);
   }
 | C	/* not active for ENTRY-CONVENTION via PROCEDURE DIVISION */
   {

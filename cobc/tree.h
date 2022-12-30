@@ -1948,7 +1948,8 @@ struct cb_ml_suppress_clause {
 	enum cb_ml_suppress_category	category;
 };
 
-#define CB_ML_SUPPRESS(x)	(CB_TREE_CAST (CB_TAG_ML_SUPPRESS, struct cb_ml_suppress_clause, x))
+#define CB_ML_SUPPRESS(x)	\
+	(CB_TREE_CAST (CB_TAG_ML_SUPPRESS, struct cb_ml_suppress_clause, x))
 #define CB_ML_SUPPRESS_P(x)	(CB_TREE_TAG (x) == CB_TAG_ML_SUPPRESS)
 
 struct cb_ml_suppress_checks {
@@ -1956,7 +1957,8 @@ struct cb_ml_suppress_checks {
 	struct cb_ml_generate_tree	*tree;
 };
 
-#define CB_ML_SUPPRESS_CHECKS(x)	(CB_TREE_CAST (CB_TAG_ML_SUPPRESS_CHECKS, struct cb_ml_suppress_checks, x))
+#define CB_ML_SUPPRESS_CHECKS(x)	\
+	(CB_TREE_CAST (CB_TAG_ML_SUPPRESS_CHECKS, struct cb_ml_suppress_checks, x))
 #define CB_ML_SUPPRESS_CHECKS_P(x)	(CB_TREE_TAG (x) == CB_TAG_ML_SUPPRESS_CHECKS)
 
 /* DISPLAY type */
@@ -2115,8 +2117,10 @@ extern void			cb_set_system_names (void);
 extern cb_tree			cb_ref (cb_tree);
 extern cb_tree			cb_try_ref (cb_tree);
 
-extern cb_tree			cb_build_binary_op (cb_tree, const int,
-						    cb_tree);
+extern enum cb_binary_op_flag		cb_next_binary_op_flag;	/* hack for cb_build_binary_op */
+
+extern cb_tree			cb_build_binary_op (cb_tree,
+						    const enum cb_binary_op_op, cb_tree);
 extern cb_tree			cb_build_binary_list (cb_tree, const int);
 
 extern cb_tree			cb_build_funcall (const char *, const int,
