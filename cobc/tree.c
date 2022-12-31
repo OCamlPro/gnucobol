@@ -5342,9 +5342,6 @@ static cb_tree
 compare_field_literal (cb_tree e, int swap, cb_tree x,
 		enum cb_binary_op_op op, struct cb_literal *l)
 {
-	enum cb_binary_op_flag flag = cb_next_binary_op_flag;
-	cb_next_binary_op_flag = 0;
-
 	int	i, j, scale, fscale;
 	int	alph_lit, zero_val;
 	int	lit_start, lit_length, refmod_length;
@@ -5353,6 +5350,10 @@ compare_field_literal (cb_tree e, int swap, cb_tree x,
 	enum cb_category	category;
 	cob_u32_t		have_sign;
 	struct cb_reference	*rl;
+
+	enum cb_binary_op_flag flag = cb_next_binary_op_flag;
+
+	cb_next_binary_op_flag = 0;
 
 	/* LCOV_EXCL_START */
 	if (!CB_REFERENCE_P (x)) {
