@@ -7735,8 +7735,7 @@ output_if (const struct cb_if *ip)
 			&& cb_flag_remove_unreachable) {
 			output_line ("/* WHEN is always FALSE */");
 		} else
-		if (ip->test
-		 && CB_TREE_TAG (ip->test) == CB_TAG_BINARY_OP) {
+		if (CB_TREE_TAG (ip->test) == CB_TAG_BINARY_OP) {
 			const struct cb_binary_op	*bop = CB_BINARY_OP (ip->test);
 			cb_tree		w = NULL;
 			if (bop->op == '!') {

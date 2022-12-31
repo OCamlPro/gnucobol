@@ -3536,12 +3536,12 @@ repeat:
 				case 'X':
 				case 'A':
 					if (paren_num + delta > INT_MAX) {
-						paren_num = INT_MAX - delta;
+						paren_num = (cob_s64_t)INT_MAX - delta;
 					}
 					break;
 				case 'N':
 					if (paren_num * 2 + delta > INT_MAX) {
-						paren_num = (INT_MAX - delta) / 2;
+						paren_num = ((cob_s64_t)INT_MAX - delta) / 2;
 					}
 					break;
 				default:

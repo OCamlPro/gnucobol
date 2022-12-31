@@ -2795,8 +2795,9 @@ unbounded_again:
 
 			if (c->sister == NULL
 			 && c->storage == CB_STORAGE_REPORT) {	/* To set parent size */
-				if((c->offset + c->size) > size_check)
-					size_check = (cob_s64_t)c->offset + c->size;
+				cob_s64_t calc = (cob_s64_t)c->offset + c->size;
+				if (calc > size_check)
+					size_check = calc;
 			}
 		}
 

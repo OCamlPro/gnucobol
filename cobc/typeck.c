@@ -4077,7 +4077,8 @@ validate_alphabet (cb_tree alphabet)
 		if (count == 256) {
 			ap->high_val_char = lastval;
 		} else if (values[255] != -1) {
-			for (n = 254; n >= 0; n--) {
+			ap->high_val_char = 0;
+			for (n = 254; n > 0; n--) {
 				if (values[n] == -1) {
 					ap->high_val_char = n;
 					break;

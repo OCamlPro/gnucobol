@@ -3105,6 +3105,11 @@ static struct cobc_reserved default_reserved_words[] = {
   { "WIDTH-IN-CELLS",		0, 1, WIDTH_IN_CELLS,		/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
   },
+#if 0 /* deactivated for now, as stdcall prototypes have several pending issues */
+  { "WINAPI",			0, 1, WINAPI,			/* Extension: implicit defined CALL-CONVENTION */
+				0, CB_CS_CALL | CB_CS_OPTIONS
+  },
+#endif
   { "WINDOW",			0, 0, WINDOW,			/* ACU extension */
 				0, 0
   },

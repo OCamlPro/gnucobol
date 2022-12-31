@@ -2323,7 +2323,8 @@ cob_cmp_uint (cob_field *f1, const unsigned int n)
 	cob_decimal_set_field (&cob_d1, f1);
 	sign = mpz_sgn (cob_d1.value);
 	if (sign == 0) {
-		return -n;
+		if (n > INT_MAX) return INT_MIN;
+		return -(int)n;
 	} else if (sign == 1) {
 		if (n <= 0) return 1;
 	} else {
@@ -2345,7 +2346,9 @@ cob_cmp_llint (cob_field *f1, const cob_s64_t n)
 	cob_decimal_set_field (&cob_d1, f1);
 	sign = mpz_sgn (cob_d1.value);
 	if (sign == 0) {
-		return -n;
+		if (n > INT_MAX) return INT_MIN;
+		if (n < INT_MIN) return INT_MAX;
+		return -(int)n;
 	} else if (sign == 1) {
 		if (n <= 0) return 1;
 	} else {
