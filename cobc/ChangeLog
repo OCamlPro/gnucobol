@@ -1,4 +1,9 @@
 
+2022-12-31  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (short_options): removed -R which was only dropped from evaluation
+	  in 2016-09-24; fixing bug #758
+
 2022-12-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c, cobc.h, pplex.l (ppopen), help.c: restored -MT and -MF options
