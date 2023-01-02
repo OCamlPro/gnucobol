@@ -594,7 +594,7 @@ static const struct option long_options[] = {
 	{"Werror",		CB_OP_ARG, NULL, 'Z'},
 	{"Wno-error",		CB_OP_ARG, NULL, 'z'},
 	{"tlines",		CB_RQ_ARG, NULL, '*'},
-	{"tsymbols",		CB_NO_ARG, &cb_listing_symbols, 1},	/* kept for backwards-compatibility in 3.x */
+	{"tsymbols",		CB_NO_ARG, &cb_listing_symbols, 1},	/* TODO: remove, kept for backwards-compatibility in 3.x */
 
 #define	CB_FLAG(var,print_help,name,doc)			\
 	{"f" name,		CB_NO_ARG, &var, 1},	\
@@ -691,6 +691,7 @@ static void	print_program_header	(void);
 static void	print_program_data	(const char *);
 static void	print_program_trailer	(void);
 static void	print_program_listing	(void);
+static void print_with_overflow (char *, char *);
 static int	process			(const char *);
 
 /* cobc functions */
@@ -6047,7 +6048,30 @@ print_program_trailer (void)
 	}
 
 	set_listing_header_none();
-	print_program_data ("");
+	if (cb_listing_cmd) {
+		char cmd_line [COB_MEDIUM_BUFF];
+		int i;
+
+		pd_off = 0;
+		for (i = 0; i < cb_saveargc; i++) {
+			int offset = snprintf (cmd_line + pd_off, COB_MEDIUM_MAX - pd_off,
+				"%s ", cb_saveargv[i]);
+			if (offset < COB_MEDIUM_MAX
+			 && offset >= 0) {	/* snprintf returns -1 in MSVC and on HPUX if max is reached */
+				pd_off += offset;
+			} else {
+				pd_off = COB_MEDIUM_MAX + 1;
+				break;
+			}
+		}
+		cmd_line[pd_off - 1] = 0;
+		force_new_page_for_next_line ();
+		print_program_data (_("command line:"));
+		print_with_overflow ((char *)"  ", cmd_line);
+		print_break = 0;
+	} else {
+		print_program_data ("");
+	}
 	if (print_break) {
 		print_program_data ("");
 	}
@@ -6055,7 +6079,11 @@ print_program_trailer (void)
 	/* Print error/warning summary (this note may be always included later)
 	   and/or be replaced to be the secondary title of the listing */
 	if (cb_listing_error_head && cb_listing_with_messages) {
-		force_new_page_for_next_line ();
+		if (!cb_listing_cmd) {
+			force_new_page_for_next_line ();
+		} else {
+			print_program_data ("");
+		}
 		print_program_data (_("Error/Warning summary:"));
 		print_program_data ("");
 	}
@@ -6479,35 +6507,45 @@ print_free_line (const int line_num, char pch, char *line)
 }
 
 static void
+print_with_overflow (char *prefix, char *content)
+{
+	const unsigned int	max_chars_on_line = cb_listing_wide ? 120 : 80;
+	int offset;
+
+	offset = snprintf (print_data, max_chars_on_line, "%s%s", prefix, content);
+	if (offset >= 0) {	/* snprintf returns -1 in MS and on HPUX if max is reached */
+		pd_off = offset;
+	} else {
+		pd_off = max_chars_on_line;
+		print_data[max_chars_on_line - 1] = 0;
+	}
+	if (pd_off >= max_chars_on_line) {
+		size_t prefix_offset;
+		/* trim "current line" on last space */
+		pd_off = strlen (print_data) - 1;
+		while (pd_off && !isspace ((unsigned char)print_data[pd_off])) {
+			pd_off--;
+		}
+		print_data[pd_off] = '\0';
+		print_program_data (print_data);
+		prefix_offset = strlen (prefix);
+		pd_off = strlen (print_data) - prefix_offset;
+		if (prefix_offset < 2) prefix_offset = 2;
+		memset (print_data, ' ', prefix_offset - 1);
+		snprintf (print_data + prefix_offset - 2, max_chars_on_line, "%c%s", '+', content + pd_off);
+	}
+	print_program_data (print_data);
+}
+
+static void
 print_errors_for_line (const struct list_error * const first_error,
 		       const int line_num)
 {
 	const struct list_error	*err;
-	const unsigned int	max_chars_on_line = cb_listing_wide ? 120 : 80;
-	size_t msg_off;
 
 	for (err = first_error; err && err->line <= line_num; err = err->next) {
 		if (err->line == line_num) {
-			pd_off = snprintf (print_data, max_chars_on_line, "%s%s", err->prefix, err->msg);
-			if (pd_off == -1) {	/* snprintf returns -1 in MS and on HPUX if max is reached */
-				pd_off = max_chars_on_line;
-				print_data[max_chars_on_line - 1] = 0;
-			}
-			if (pd_off >= max_chars_on_line) {
-				/* trim on last space */
-				pd_off = strlen (print_data) - 1;
-				while (pd_off && !isspace ((unsigned char)print_data[pd_off])) {
-					pd_off--;
-				}
-				print_data[pd_off] = '\0';
-				print_program_data (print_data);
-				msg_off = strlen (err->prefix);
-				pd_off = strlen (print_data) - msg_off;
-				if (msg_off < 2) msg_off = 2;
-				memset (print_data, ' ', msg_off - 1);
-				snprintf (print_data + msg_off - 2, max_chars_on_line, "%c%s", '+', err->msg + pd_off);
-			}
-			print_program_data (print_data);
+			print_with_overflow (err->prefix, err->msg);
 		}
 	}
 }

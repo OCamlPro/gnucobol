@@ -272,6 +272,9 @@ NEWS - user visible changes				-*- outline -*-
 ** new compiler command line option to list the known runtime exception names
    and fatality `cobc --list-exceptions`
 
+** new compiler command line option -ftcmd to enable printing of the command
+   line in the source listing
+
 ** the command line options -MT and -MF, which are used for creating a
    dependency list (used copybooks) to be used for inclusion in Makefiles
    or other processes, and which were removed in GnuCOBOL 2 are back in their
@@ -384,6 +387,8 @@ NEWS - user visible changes				-*- outline -*-
   requests are raised)
 
 ** use of old non-GMP randomizer for FUNCTION RANDOM
+
+** undocumented option -tsymbols, which was replaced by -ftsymbols in 3.0
 
 
 * Known issues in 3.2 (and 3.1)

@@ -105,9 +105,6 @@ cobc_print_usage_common_options (void)
 	puts (_("  -T <file>             generate and place a wide program listing into <file>"));
 	puts (_("  -t <file>             generate and place a program listing into <file>"));
 	puts (_("  --tlines=<lines>      specify lines per page in listing, default = 55"));
-#if 0 /* to be hidden later, use -f[no-]tsymbols instead */
-	puts (_("  --tsymbols            specify symbols in listing, use -ftsymbols instead"));
-#endif
 	puts (_("  -P[=<dir or file>]    generate preprocessed program listing (.lst)"));
 #ifndef COB_INTERNAL_XREF
 	puts (_("  -X, --Xref            generate cross reference through 'cobxref'\n"

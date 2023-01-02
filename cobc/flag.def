@@ -231,6 +231,9 @@ CB_FLAG_ON (cb_listing_with_messages, 1, "tmessages",
 CB_FLAG (cb_listing_symbols, 1, "tsymbols",
 	_("  -ftsymbols            specify symbols in listing"))
 
+CB_FLAG (cb_listing_cmd, 1, "tcmd",
+	_("  -ftcmd                specify command line in listing"))
+
 CB_FLAG_ON (cb_diagnostic_show_option, 1, "diagnostics-show-option",
 	_("  -fno-diagnostics-show-option\tsuppress output of option that directly\n"
 	  "                        controls the diagnostic"))
