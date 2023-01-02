@@ -51,6 +51,8 @@ NEWS - user visible changes				-*- outline -*-
 ** Initial "testing support" of CODE-SET clause to convert between ASCII and
    EBCDIC on READ/WRITE/REWRITE for sequential and line-sequential files
 
+** Initial "testing support" of FLOAT-EXTENDED (long double type)
+
 ** minimal "parsing support" for USAGE UTF-8 and UTF-8 literals
 
 ** Support to exit the runtime from COBOL as hard error (including possible

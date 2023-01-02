@@ -1654,8 +1654,8 @@ output_attr (const cb_tree x)
 				case CB_USAGE_COMP_6:
 					flags |= COB_FLAG_NO_SIGN_NIBBLE;
 					break;
-				case CB_USAGE_DOUBLE:
 				case CB_USAGE_FLOAT:
+				case CB_USAGE_DOUBLE:
 				case CB_USAGE_LONG_DOUBLE:
 				case CB_USAGE_FP_BIN32:
 				case CB_USAGE_FP_BIN64:
@@ -5567,7 +5567,7 @@ output_initialize (struct cb_initialize *p)
 	   && CB_REFERENCE (p->var)->length)
 	 && ( type != INITIALIZE_DEFAULT
 	   || initialize_uniform_char (f, p) == -1)) {
-	 	i_len_used = 1;
+		i_len_used = 1;
 		output_prefix ();
 		output ("i_len = ");
 		output_integer (CB_REFERENCE (p->var)->length);
@@ -8720,6 +8720,11 @@ output_stmt (cb_tree x)
 				output_newline ();
 			}
 			last_line = x->source_line;
+#if 0		/* pass reference; needs adjustment in error.c to
+			   say "codegen" instead of "compile" */
+			cb_source_file = x->source_file;
+			cb_source_line = x->source_line;
+#endif
 		}
 
 		if (!p->file && (p->ex_handler || p->not_ex_handler)) {
@@ -12512,7 +12517,7 @@ cancel_end:
 				seen = 1;
 				output_line ("/* Clear Decimal Constant values */");
 			}
-			output_line ("cob_decimal_clear(%s%d);", CB_PREFIX_DEC_CONST, m->id);
+			output_line ("cob_decimal_clear (%s%d);", CB_PREFIX_DEC_CONST, m->id);
 			output_line ("%s%d = NULL;", CB_PREFIX_DEC_CONST, m->id);
 		}
 	}

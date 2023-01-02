@@ -1560,11 +1560,11 @@ cb_tree_type (const cb_tree x, const struct cb_field *f)
 			return COB_TYPE_NUMERIC_FLOAT;
 		case CB_USAGE_DOUBLE:
 			return COB_TYPE_NUMERIC_DOUBLE;
+		case CB_USAGE_LONG_DOUBLE:
+			return COB_TYPE_NUMERIC_L_DOUBLE;
 		case CB_USAGE_PACKED:
 		case CB_USAGE_COMP_6:
 			return COB_TYPE_NUMERIC_PACKED;
-		case CB_USAGE_LONG_DOUBLE:
-			return COB_TYPE_NUMERIC_L_DOUBLE;
 		case CB_USAGE_FP_BIN32:
 			return COB_TYPE_NUMERIC_FP_BIN32;
 		case CB_USAGE_FP_BIN64:

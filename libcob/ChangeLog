@@ -1,4 +1,11 @@
 
+2023-01-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_is_numeric), move.c (cob_move, cob_move_fp_to_fp),
+	  numeric.c: more additions for COB_TYPE_NUMERIC_L_DOUBLE, basic use now
+	  works as expected
+	* common.c (print_version): welcome 2023
+
 2022-12-29  Simon Sobisch <simonsobisch@gnu.org>
 
 	* fileio.c [!COB_EXPERIMENTAL]: disable "new" status 0P via preprocessor
@@ -88,6 +95,11 @@
 
 	* screenio.c: fix mishandled "extended attributes" (bit 4)
 	* termio.c: several minor performance tweaks for DISPLAY
+
+2022-11-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c, termio.c (cob_display_common): more additions for
+	  currently inactive COB_TYPE_NUMERIC_L_DOUBLE
 
 2022-11-18  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -5453,7 +5465,7 @@
 	* call.c, common.c, move.c, Makefile.am: gettextized
 
 
-Copyright 2002-2022 Free Software Foundation, Inc.
+Copyright 2002-2023 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

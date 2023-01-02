@@ -6021,7 +6021,9 @@ build_store_option (cb_tree x, cb_tree round_opt)
 	f = CB_FIELD_PTR (x);
 	usage = f->usage;
 #if	0	/* RXWRXW - FP */
-	if (usage == CB_USAGE_DOUBLE || usage == CB_USAGE_FLOAT) {
+	if (usage == CB_USAGE_LONG_DOUBLE
+	 || usage == CB_USAGE_DOUBLE
+	 || usage == CB_USAGE_FLOAT) {
 		/* Rounding on FP is useless */
 		opt = 0;
 	} else {

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
    Edward Hart
 
@@ -7033,6 +7033,14 @@ con_source:
   {
 	$$ = cb_int ((int)sizeof(double));
   }
+| long_double
+  {
+#if 1 /* fixed-sized as in field.c */
+	$$ = cb_int (16);
+#else
+	$$ = cb_int ((int)sizeof(long double));
+#endif
+  }
 | fp32_usage
   {
 	$$ = cb_int4;
@@ -7068,7 +7076,6 @@ fp64_usage:
 fp128_usage:
   FLOAT_BINARY_128
 | FLOAT_DECIMAL_34
-| FLOAT_EXTENDED
 ;
 
 pointer_len:
@@ -7790,6 +7797,11 @@ usage:
   {
 	check_and_set_usage (CB_USAGE_DOUBLE);
   }
+| long_double
+  {
+	check_and_set_usage (CB_USAGE_LONG_DOUBLE);
+	CB_UNFINISHED ("FLOAT-EXTENDED");
+  }
 | COMP_3
   {
 	check_and_set_usage (CB_USAGE_PACKED);
@@ -8025,7 +8037,11 @@ _only:
 
 double_usage:
   COMP_2
-| FLOAT_LONG	/* alias from DOUBLE (ACU) in reserved.c */
+| FLOAT_LONG	/* noted: aliased to DOUBLE (ACU) in reserved.c */
+;
+
+long_double:
+  FLOAT_EXTENDED
 ;
 
 _font_name:

@@ -541,20 +541,32 @@ cob_move_packed_to_display (cob_field *f1, cob_field *f2)
 static void
 cob_move_fp_to_fp (cob_field *src, cob_field *dst)
 {
+	const int src_type = COB_FIELD_TYPE (src);
+	const int dst_type = COB_FIELD_TYPE (dst);
+
+	long double	lfp;
 	double	dfp;
 	float	ffp;
 
-	if (COB_FIELD_TYPE (src) == COB_TYPE_NUMERIC_FLOAT) {
-		memmove ((void *)&ffp, src->data, sizeof(float));
+	if (src_type == COB_TYPE_NUMERIC_FLOAT) {
+		memmove ((void *)&ffp, src->data, sizeof (float));
 		dfp = (double)ffp;
+		lfp = ffp;
+	} else if (src_type == COB_TYPE_NUMERIC_DOUBLE) {
+		memmove ((void *)&dfp, src->data, sizeof (double));
+		ffp = (float)dfp;
+		lfp = dfp;
 	} else {
-		memmove ((void *)&dfp, src->data, sizeof(double));
+		memmove ((void*)&lfp, src->data, sizeof (long double));
+		dfp = (double)lfp;
 		ffp = (float)dfp;
 	}
-	if (COB_FIELD_TYPE (dst) == COB_TYPE_NUMERIC_FLOAT) {
-		memmove (dst->data, (void *)&ffp, sizeof(float));
-	} else {
-		memmove (dst->data, (void *)&dfp, sizeof(double));
+	if (dst_type == COB_TYPE_NUMERIC_FLOAT) {
+		memmove (dst->data, (void *)&ffp, sizeof (float));
+	} else if (dst_type == COB_TYPE_NUMERIC_DOUBLE) {
+		memmove (dst->data, (void *)&dfp, sizeof (double));
+	} else{
+		memmove (dst->data, (void *)&lfp, sizeof (long double));
 	}
 }
 
@@ -1422,12 +1434,13 @@ cob_move (cob_field *src, cob_field *dst)
 			return;
 		}
 
-	case COB_TYPE_NUMERIC_DOUBLE:
+	case COB_TYPE_NUMERIC_FLOAT:
 		switch (COB_FIELD_TYPE (dst)) {
-		case COB_TYPE_NUMERIC_DOUBLE:
-			memmove (dst->data, src->data, sizeof(double));
-			return;
 		case COB_TYPE_NUMERIC_FLOAT:
+			memmove (dst->data, src->data, sizeof(float));
+			return;
+		case COB_TYPE_NUMERIC_DOUBLE:
+		case COB_TYPE_NUMERIC_L_DOUBLE:
 			cob_move_fp_to_fp (src, dst);
 			return;
 		case COB_TYPE_NUMERIC_BINARY:
@@ -1436,7 +1449,6 @@ cob_move (cob_field *src, cob_field *dst)
 			return;
 		case COB_TYPE_NUMERIC_PACKED:
 		case COB_TYPE_NUMERIC_DISPLAY:
-		case COB_TYPE_NUMERIC_L_DOUBLE:
 		case COB_TYPE_NUMERIC_FP_BIN32:
 		case COB_TYPE_NUMERIC_FP_BIN64:
 		case COB_TYPE_NUMERIC_FP_BIN128:
@@ -1449,12 +1461,13 @@ cob_move (cob_field *src, cob_field *dst)
 			return;
 		}
 
-	case COB_TYPE_NUMERIC_FLOAT:
+	case COB_TYPE_NUMERIC_DOUBLE:
 		switch (COB_FIELD_TYPE (dst)) {
-		case COB_TYPE_NUMERIC_FLOAT:
-			memmove (dst->data, src->data, sizeof(float));
-			return;
 		case COB_TYPE_NUMERIC_DOUBLE:
+			memmove (dst->data, src->data, sizeof(double));
+			return;
+		case COB_TYPE_NUMERIC_FLOAT:
+		case COB_TYPE_NUMERIC_L_DOUBLE:
 			cob_move_fp_to_fp (src, dst);
 			return;
 		case COB_TYPE_NUMERIC_BINARY:
@@ -1463,7 +1476,33 @@ cob_move (cob_field *src, cob_field *dst)
 			return;
 		case COB_TYPE_NUMERIC_PACKED:
 		case COB_TYPE_NUMERIC_DISPLAY:
+		case COB_TYPE_NUMERIC_FP_BIN32:
+		case COB_TYPE_NUMERIC_FP_BIN64:
+		case COB_TYPE_NUMERIC_FP_BIN128:
+		case COB_TYPE_NUMERIC_FP_DEC64:
+		case COB_TYPE_NUMERIC_FP_DEC128:
+			cob_decimal_setget_fld (src, dst, 0);
+			return;
+		default:
+			cob_decimal_move_temp (src, dst);
+			return;
+		}
+
+	case COB_TYPE_NUMERIC_L_DOUBLE:
+		switch (COB_FIELD_TYPE (dst)) {
 		case COB_TYPE_NUMERIC_L_DOUBLE:
+			memmove (dst->data, src->data, sizeof(double));
+			return;
+		case COB_TYPE_NUMERIC_DOUBLE:
+		case COB_TYPE_NUMERIC_FLOAT:
+			cob_move_fp_to_fp (src, dst);
+			return;
+		case COB_TYPE_NUMERIC_BINARY:
+		case COB_TYPE_NUMERIC_COMP5:
+			cob_decimal_setget_fld (src, dst, opt);
+			return;
+		case COB_TYPE_NUMERIC_PACKED:
+		case COB_TYPE_NUMERIC_DISPLAY:
 		case COB_TYPE_NUMERIC_FP_BIN32:
 		case COB_TYPE_NUMERIC_FP_BIN64:
 		case COB_TYPE_NUMERIC_FP_BIN128:
@@ -1487,9 +1526,9 @@ cob_move (cob_field *src, cob_field *dst)
 			return;
 		case COB_TYPE_NUMERIC_FLOAT:
 		case COB_TYPE_NUMERIC_DOUBLE:
+		case COB_TYPE_NUMERIC_L_DOUBLE:
 		case COB_TYPE_NUMERIC_PACKED:
 		case COB_TYPE_NUMERIC_DISPLAY:
-		case COB_TYPE_NUMERIC_L_DOUBLE:
 		case COB_TYPE_NUMERIC_FP_BIN32:
 		case COB_TYPE_NUMERIC_FP_BIN128:
 		case COB_TYPE_NUMERIC_FP_DEC128:
@@ -1510,9 +1549,9 @@ cob_move (cob_field *src, cob_field *dst)
 			return;
 		case COB_TYPE_NUMERIC_FLOAT:
 		case COB_TYPE_NUMERIC_DOUBLE:
+		case COB_TYPE_NUMERIC_L_DOUBLE:
 		case COB_TYPE_NUMERIC_PACKED:
 		case COB_TYPE_NUMERIC_DISPLAY:
-		case COB_TYPE_NUMERIC_L_DOUBLE:
 		case COB_TYPE_NUMERIC_FP_BIN32:
 		case COB_TYPE_NUMERIC_FP_BIN64:
 		case COB_TYPE_NUMERIC_FP_BIN128:

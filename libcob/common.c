@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -3868,57 +3868,67 @@ cob_is_omitted (const cob_field *f)
 int
 cob_is_numeric (const cob_field *f)
 {
-	size_t		i;
-	union {
-		float		fpf;
-		double		fpd;
-	} fval;
-	int		sign;
 
 	switch (COB_FIELD_TYPE (f)) {
 	case COB_TYPE_NUMERIC_BINARY:
 		return 1;
 	case COB_TYPE_NUMERIC_FLOAT:
-		memcpy (&fval.fpf, f->data, sizeof (float));
-		return !ISFINITE ((double)fval.fpf);
+		{
+			float		fval;
+			memcpy (&fval, f->data, sizeof (float));
+			return !ISFINITE ((double)fval);
+		}
 	case COB_TYPE_NUMERIC_DOUBLE:
-		memcpy (&fval.fpd, f->data, sizeof (double));
-		return !ISFINITE (fval.fpd);
+		{
+			double		dval;
+			memcpy (&dval, f->data, sizeof (double));
+			return !ISFINITE (dval);
+		}
+	case COB_TYPE_NUMERIC_L_DOUBLE:
+		{
+			long double lval;
+			memcpy (&lval, f->data, sizeof (long double));
+			return !ISFINITE ((double)lval);
+		}
 	case COB_TYPE_NUMERIC_PACKED:
-		/* Check digits */
-		for (i = 0; i < f->size - 1; ++i) {
-			if ((f->data[i] & 0xF0) > 0x90 ||
-			    (f->data[i] & 0x0F) > 0x09) {
+		{
+			size_t		i;
+			int		sign;
+			/* Check digits */
+			for (i = 0; i < f->size - 1; ++i) {
+				if ((f->data[i] & 0xF0) > 0x90 ||
+					(f->data[i] & 0x0F) > 0x09) {
+					return 0;
+				}
+			}
+			/* Check high nibble of last byte */
+			if ((f->data[i] & 0xF0) > 0x90) {
 				return 0;
 			}
-		}
-		/* Check high nibble of last byte */
-		if ((f->data[i] & 0xF0) > 0x90) {
+
+			if (COB_FIELD_NO_SIGN_NIBBLE (f)) {
+				/* COMP-6 - Check last nibble */
+				if ((f->data[i] & 0x0F) > 0x09) {
+					return 0;
+				}
+				return 1;
+			}
+
+			/* Check sign */
+			sign = f->data[i] & 0x0F;
+			if (COB_FIELD_HAVE_SIGN (f)) {
+				if (sign == 0x0C || sign == 0x0D) {
+					return 1;
+				}
+				if (COB_MODULE_PTR->flag_host_sign &&
+					sign == 0x0F) {
+					return 1;
+				}
+			} else if (sign == 0x0F) {
+				return 1;
+			}
 			return 0;
 		}
-
-		if (COB_FIELD_NO_SIGN_NIBBLE (f)) {
-			/* COMP-6 - Check last nibble */
-			if ((f->data[i] & 0x0F) > 0x09) {
-				return 0;
-			}
-			return 1;
-		}
-
-		/* Check sign */
-		sign = f->data[i] & 0x0F;
-		if (COB_FIELD_HAVE_SIGN (f)) {
-			if (sign == 0x0C || sign == 0x0D) {
-				return 1;
-			}
-			if (COB_MODULE_PTR->flag_host_sign &&
-			    sign == 0x0F) {
-				return 1;
-			}
-		} else if (sign == 0x0F) {
-			return 1;
-		}
-		return 0;
 	case COB_TYPE_NUMERIC_DISPLAY:
 		return cob_check_numdisp (f);
 	case COB_TYPE_NUMERIC_FP_DEC64:
@@ -3934,12 +3944,15 @@ cob_is_numeric (const cob_field *f)
 		return (f->data[15] & 0x78U) != 0x78U;
 #endif
 	default:
-		for (i = 0; i < f->size; ++i) {
-			if (!isdigit (f->data[i])) {
-				return 0;
+		{
+			size_t		i;
+			for (i = 0; i < f->size; ++i) {
+				if (!isdigit (f->data[i])) {
+					return 0;
+				}
 			}
+			return 1;
 		}
-		return 1;
 	}
 }
 
@@ -4074,9 +4087,9 @@ explain_field_type (const cob_field *f)
 	case COB_TYPE_NUMERIC_FLOAT:
 		return "FLOAT";
 	case COB_TYPE_NUMERIC_DOUBLE:
-		return "DOUBLE";
+		return "DOUBLE";	/* FLOAT-LONG */
 	case COB_TYPE_NUMERIC_L_DOUBLE:
-		return "LONG DOUBLE";
+		return "LONG DOUBLE";	/* FLOAT-EXTENDED */
 	case COB_TYPE_NUMERIC_FP_DEC64:
 		return "FP DECIMAL 64";
 	case COB_TYPE_NUMERIC_FP_DEC128:
@@ -9115,7 +9128,7 @@ print_version (void)
 
 	printf ("libcob (%s) %s.%d\n",
 		PACKAGE_NAME, PACKAGE_VERSION, PATCH_LEVEL);
-	puts ("Copyright (C) 2022 Free Software Foundation, Inc.");
+	puts ("Copyright (C) 2023 Free Software Foundation, Inc.");
 	printf (_("License LGPLv3+: GNU LGPL version 3 or later <%s>"), "https://gnu.org/licenses/lgpl.html");
 	putchar ('\n');
 	puts (_("This is free software; see the source for copying conditions.  There is NO\n"

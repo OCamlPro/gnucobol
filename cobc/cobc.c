@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2022 Free Software Foundation, Inc.
+   Copyright (C) 2001-2023 Free Software Foundation, Inc.
 
    Authors:
    Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch, Brian Tiffin,
@@ -2390,7 +2390,7 @@ static void
 cobc_print_version (void)
 {
 	printf ("cobc (%s) %s.%d\n", PACKAGE_NAME, PACKAGE_VERSION, PATCH_LEVEL);
-	puts ("Copyright (C) 2022 Free Software Foundation, Inc.");
+	puts ("Copyright (C) 2023 Free Software Foundation, Inc.");
 	printf (_("License GPLv3+: GNU GPL version 3 or later <%s>"), "https://gnu.org/licenses/gpl.html");
 	putchar ('\n');
 	puts (_("This is free software; see the source for copying conditions.  There is NO\n"
@@ -5285,7 +5285,6 @@ set_picture (struct cb_field *field, char *picture, size_t picture_len)
 	case CB_USAGE_OBJECT:
 	case CB_USAGE_POINTER:
 	case CB_USAGE_PROGRAM_POINTER:
-	case CB_USAGE_LONG_DOUBLE:
 	case CB_USAGE_FP_BIN32:
 	case CB_USAGE_FP_BIN64:
 	case CB_USAGE_FP_BIN128:
@@ -5312,8 +5311,9 @@ set_picture (struct cb_field *field, char *picture, size_t picture_len)
 
 	/* set picture for everything, possibly add USAGE */
 	if (field->usage == CB_USAGE_BINARY
-	 || field->usage == CB_USAGE_FLOAT
-	 || field->usage == CB_USAGE_DOUBLE
+	 || field->usage == CB_USAGE_FLOAT		/* calculated pic */
+	 || field->usage == CB_USAGE_DOUBLE		/* calculated pic */
+	 || field->usage == CB_USAGE_LONG_DOUBLE	/* calculated pic */
 	 || field->usage == CB_USAGE_PACKED
 	 || field->usage == CB_USAGE_COMP_5
 	 || field->usage == CB_USAGE_COMP_6

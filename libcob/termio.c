@@ -217,31 +217,40 @@ clean_double (char *wrk)
 void
 cob_display_common (const cob_field *f, FILE *fp)
 {
-	unsigned char	*p;
-	union {
-		double		f1doub;
-		float		f1float;
-	} un;
-	int		n;
-	char	wrk[48];
+
 
 	if (f->size == 0) {
 		return;
 	}
 
 	switch (COB_FIELD_TYPE (f)) {
-	case COB_TYPE_NUMERIC_DOUBLE:
-		memcpy (&un.f1doub, f->data, sizeof (double));
-		sprintf (wrk, "%-.16G", un.f1doub);
+	case COB_TYPE_NUMERIC_L_DOUBLE: {
+		char	wrk[48];
+		long double		lval;
+		memcpy (&lval, f->data, sizeof (long double));
+		sprintf (wrk, "%-.32LG", lval);
 		clean_double (wrk);
 		fprintf (fp, "%s", wrk);
 		return;
-	case COB_TYPE_NUMERIC_FLOAT:
-		memcpy (&un.f1float, f->data, sizeof (float));
-		sprintf (wrk, "%-.8G", (double)un.f1float);
+	}
+	case COB_TYPE_NUMERIC_DOUBLE: {
+		char	wrk[48];
+		double		dval;
+		memcpy (&dval, f->data, sizeof (double));
+		sprintf (wrk, "%-.16G", dval);
 		clean_double (wrk);
 		fprintf (fp, "%s", wrk);
 		return;
+	}
+	case COB_TYPE_NUMERIC_FLOAT: {
+		char	wrk[48];
+		float		fval;
+		memcpy (&fval, f->data, sizeof (float));
+		sprintf (wrk, "%-.8G", (double)fval);
+		clean_double (wrk);
+		fprintf (fp, "%s", wrk);
+		return;
+	}
 	case COB_TYPE_NUMERIC_FP_DEC64:
 	case COB_TYPE_NUMERIC_FP_DEC128:
 		cob_print_ieeedec (f, fp);
@@ -250,6 +259,8 @@ cob_display_common (const cob_field *f, FILE *fp)
 		break;
 	}
 	if (COB_FIELD_IS_POINTER (f)) {
+		unsigned char	*p;
+		int		n;
 		fprintf (fp, "0x");
 #ifdef	WORDS_BIGENDIAN
 		p = f->data;

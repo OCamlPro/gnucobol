@@ -1592,6 +1592,15 @@ cob_decimal_set_field (cob_decimal *dec, cob_field *field)
 			cob_decimal_set_double (dec, dval);
 			break;
 		}
+	case COB_TYPE_NUMERIC_L_DOUBLE:
+		{
+			long double lval;
+			double	dval;
+			memcpy ((void *)&lval, field->data, sizeof(long double));
+			dval = (double)lval;	/* need internal switching to mpfr ... */
+			cob_decimal_set_double (dec, dval);
+			break;
+		}
 	case COB_TYPE_NUMERIC_FP_DEC64:
 		cob_decimal_set_ieee64dec (dec, field);
 		break;
@@ -1628,6 +1637,15 @@ cob_print_ieeedec (const cob_field *f, FILE *fp)
 		{
 			double	dval;
 			memcpy ((void *)&dval, f->data, sizeof(double));
+			cob_decimal_set_double (&cob_d3, dval);
+			break;
+		}
+	case COB_TYPE_NUMERIC_L_DOUBLE:
+		{
+			long double lval;
+			double	dval;
+			memcpy ((void *)&lval, f->data, sizeof(long double));
+			dval = (double)lval;
 			cob_decimal_set_double (&cob_d3, dval);
 			break;
 		}
@@ -1818,7 +1836,7 @@ cob_decimal_get_field (cob_decimal *d, cob_field *f, const int opt)
 		{
 			const double val = cob_decimal_get_double (d);
 			if ((opt & COB_STORE_KEEP_ON_OVERFLOW)
-			 && (isinf (val) || isnan(val))) {
+			 && (isinf (val) || isnan (val))) {
 				cob_set_exception (COB_EC_SIZE_OVERFLOW);
 				return cobglobptr->cob_exception_code;
 			}
@@ -1828,6 +1846,23 @@ cob_decimal_get_field (cob_decimal *d, cob_field *f, const int opt)
 				return cobglobptr->cob_exception_code;
 			}
 			memcpy (f->data, &val, sizeof (double));
+			return 0;
+		}
+	case COB_TYPE_NUMERIC_L_DOUBLE:
+		{
+			const double val = cob_decimal_get_double (d);
+			const long double lval = val;
+			if ((opt & COB_STORE_KEEP_ON_OVERFLOW)
+			 && (isinf (val) || isnan (val))) {
+				cob_set_exception (COB_EC_SIZE_OVERFLOW);
+				return cobglobptr->cob_exception_code;
+			}
+			if ((opt & COB_STORE_KEEP_ON_OVERFLOW)
+			 && cob_not_finite) {
+				cob_set_exception (COB_EC_SIZE_OVERFLOW);
+				return cobglobptr->cob_exception_code;
+			}
+			memcpy (f->data, &lval, sizeof (long double));
 			return 0;
 		}
 	case COB_TYPE_NUMERIC_FP_DEC64:
@@ -2398,22 +2433,32 @@ int
 cob_cmp_float (cob_field *f1, cob_field *f2)
 {
 	double	d1,d2;
-	if (COB_FIELD_TYPE (f1) == COB_TYPE_NUMERIC_DOUBLE) {
-		memcpy (&d1, f1->data, sizeof(double));
-	} else if (COB_FIELD_TYPE (f1) == COB_TYPE_NUMERIC_FLOAT) {
+	const int f1_type = COB_FIELD_TYPE (f1);
+	const int f2_type = COB_FIELD_TYPE (f2);
+	if (f1_type == COB_TYPE_NUMERIC_FLOAT) {
 		float	fl;
-		memcpy (&fl, f1->data, sizeof(float));
+		memcpy (&fl, f1->data, sizeof (float));
 		d1 = fl;
+	} else if (f1_type == COB_TYPE_NUMERIC_DOUBLE) {
+		memcpy (&d1, f1->data, sizeof (double));
+	} else if (f1_type == COB_TYPE_NUMERIC_L_DOUBLE) {
+		long double ld;
+		memcpy (&ld ,f1->data, sizeof (long double));
+		d1 = (double) ld; /* TODO: real compare, likely with mpfr */
 	} else {
 		cob_decimal_set_field (&cob_d1, f1);
 		d1 = cob_decimal_get_double (&cob_d1);
 	}
-	if (COB_FIELD_TYPE (f2) == COB_TYPE_NUMERIC_DOUBLE) {
-		memcpy (&d2, f2->data, sizeof(double));
-	} else if (COB_FIELD_TYPE (f2) == COB_TYPE_NUMERIC_FLOAT) {
+	if (f2_type == COB_TYPE_NUMERIC_FLOAT) {
 		float	fl;
-		memcpy (&fl, f2->data, sizeof(float));
+		memcpy (&fl, f2->data, sizeof (float));
 		d2 = fl;
+	} else if (f2_type == COB_TYPE_NUMERIC_DOUBLE) {
+		memcpy (&d2, f2->data, sizeof (double));
+	} else if (f2_type == COB_TYPE_NUMERIC_L_DOUBLE) {
+		long double ld;
+		memcpy (&ld, f2->data, sizeof (long double));
+		d2 = (double) ld; /* TODO: real compare, likely with mpfr */
 	} else {
 		cob_decimal_set_field (&cob_d1, f2);
 		d2 = cob_decimal_get_double (&cob_d1);
@@ -2431,10 +2476,14 @@ cob_cmp_float (cob_field *f1, cob_field *f2)
 int
 cob_numeric_cmp (cob_field *f1, cob_field *f2)
 {
-	if (COB_FIELD_TYPE (f1) == COB_TYPE_NUMERIC_FLOAT
-	 || COB_FIELD_TYPE (f1) == COB_TYPE_NUMERIC_DOUBLE
-	 || COB_FIELD_TYPE (f2) == COB_TYPE_NUMERIC_FLOAT
-	 || COB_FIELD_TYPE (f2) == COB_TYPE_NUMERIC_DOUBLE) {
+	const int f1_type = COB_FIELD_TYPE (f1);
+	const int f2_type = COB_FIELD_TYPE (f2);
+	if (f1_type == COB_TYPE_NUMERIC_FLOAT
+	 || f1_type == COB_TYPE_NUMERIC_DOUBLE
+	 || f1_type == COB_TYPE_NUMERIC_L_DOUBLE
+	 || f2_type == COB_TYPE_NUMERIC_FLOAT
+	 || f2_type == COB_TYPE_NUMERIC_DOUBLE
+	 || f2_type == COB_TYPE_NUMERIC_L_DOUBLE) {
 		return cob_cmp_float (f1, f2);
 	}
 	cob_decimal_set_field (&cob_d1, f1);

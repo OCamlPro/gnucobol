@@ -1,4 +1,11 @@
 
+2023-01-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c, field.c, parser.y, reserved.c: adjustment for FLOAT-EXTENDED /
+	  CB_USAGE_LONG_DOUBLE, basic use now works as expected,
+	  enabled as UNFINISHED
+	* cobc.c (cobc_print_version): welcome 2023
+
 2022-12-31  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (short_options): removed -R which was only dropped from evaluation
@@ -9111,7 +9118,7 @@
 	  dropping some options for now
 
 
-Copyright 2001-2022 Free Software Foundation, Inc.
+Copyright 2001-2023 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

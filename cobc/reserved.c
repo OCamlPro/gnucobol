@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 
    This file is part of GnuCOBOL.
@@ -1369,7 +1369,7 @@ static struct cobc_reserved default_reserved_words[] = {
 #endif
   /* note: may be set as alias for FLOAT-LONG to enable compilation,
            the actual precision seems to be compiler (version) specific */
-  { "FLOAT-EXTENDED",		0, 0, -1,			/* 2002 */
+  { "FLOAT-EXTENDED",		0, 0, FLOAT_EXTENDED,		/* 2002 */
 				0, 0
   },
   { "FLOAT-INFINITY",		0, 0, -1,			/* 2014 */
