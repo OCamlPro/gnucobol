@@ -1198,6 +1198,11 @@
 	  as register and in this case unreserve overlapping reserved words
 	* tree.c (cb_build_intrinsic), tree.h, reserved.c:
 	  implement BIT-OF and BIT-TO-CHAR functions
+	* parser.y, reserved.c: implemented ACCEPT FROM MICROSECOND-TIME (ACU)
+	* typeck.c (cb_emit_accept_time), tree.h: codegen of
+	  cob_accept_microsecond_time upon request and for std == ACU with
+	  big enough fields
+
 
 2021-08-28  Simon Sobisch <simonsobisch@gnu.org>
 

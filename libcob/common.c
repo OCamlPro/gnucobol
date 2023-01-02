@@ -4722,7 +4722,7 @@ check_current_date ()
 
 	/* skip quotes and space-characters */
 	while (cobsetptr->cob_date[j] == '\''
-		|| cobsetptr->cob_date[j] == '"'
+	    || cobsetptr->cob_date[j] == '"'
 	    || isspace((unsigned char)cobsetptr->cob_date[j])) {
 		 j++;
 	}
@@ -4755,6 +4755,7 @@ check_current_date ()
 			}
 		}
 		if (i != 2 && i != 4) {
+			/* possible template with partial system lookup */
 			if (cobsetptr->cob_date[j] == 'Y') {
 				while (cobsetptr->cob_date[j] == 'Y') j++;
 			} else {
@@ -4764,8 +4765,8 @@ check_current_date ()
 		} else if (yr < 100) {
 			yr += 2000;
 		}
-		while (cobsetptr->cob_date[j] == '/'
-		    || cobsetptr->cob_date[j] == '-') {
+		if (cobsetptr->cob_date[j] == '/'
+		 || cobsetptr->cob_date[j] == '-') {
 			j++;
 		}
 	}
@@ -4783,6 +4784,7 @@ check_current_date ()
 			}
 		}
 		if (i != 2) {
+			/* possible template with partial system lookup */
 			if (cobsetptr->cob_date[j] == 'M') {
 				while (cobsetptr->cob_date[j] == 'M') j++;
 			} else {
@@ -4792,8 +4794,8 @@ check_current_date ()
 		} else if (mm < 1 || mm > 12) {
 			ret = 1;
 		}
-		while (cobsetptr->cob_date[j] == '/'
-		    || cobsetptr->cob_date[j] == '-') {
+		if (cobsetptr->cob_date[j] == '/'
+		 || cobsetptr->cob_date[j] == '-') {
 			j++;
 		}
 	}
@@ -4811,6 +4813,7 @@ check_current_date ()
 			}
 		}
 		if (i != 2) {
+			/* possible template with partial system lookup */
 			if (cobsetptr->cob_date[j] == 'D') {
 				while (cobsetptr->cob_date[j] == 'D') j++;
 			} else {
@@ -4839,6 +4842,7 @@ check_current_date ()
 		}
 
 		if (i != 2) {
+			/* possible template with partial system lookup */
 			if (cobsetptr->cob_date[j] == 'H') {
 				while (cobsetptr->cob_date[j] == 'H') j++;
 			} else {
@@ -4848,8 +4852,8 @@ check_current_date ()
 		} else if (hh > 23) {
 			ret = 1;
 		}
-		while (cobsetptr->cob_date[j] == ':'
-		    || cobsetptr->cob_date[j] == '-')
+		if (cobsetptr->cob_date[j] == ':'
+		 || cobsetptr->cob_date[j] == '-')
 			j++;
 	}
 	if (cobsetptr->cob_date[j] != 0) {
@@ -4866,6 +4870,7 @@ check_current_date ()
 			}
 		}
 		if (i != 2) {
+			/* possible template with partial system lookup */
 			if (cobsetptr->cob_date[j] == 'M') {
 				while (cobsetptr->cob_date[j] == 'M') j++;
 			} else {
@@ -4875,8 +4880,8 @@ check_current_date ()
 		} else if (mi > 59) {
 			ret = 1;
 		}
-		while (cobsetptr->cob_date[j] == ':'
-		    || cobsetptr->cob_date[j] == '-') {
+		if (cobsetptr->cob_date[j] == ':'
+		 || cobsetptr->cob_date[j] == '-') {
 			j++;
 		}
 	}
@@ -4898,6 +4903,7 @@ check_current_date ()
 			}
 		}
 		if (i != 2) {
+			/* possible template with partial system lookup */
 			if (cobsetptr->cob_date[j] == 'S') {
 				while (cobsetptr->cob_date[j] == 'S') j++;
 			} else {
@@ -5131,21 +5137,40 @@ void
 cob_accept_time (cob_field *field)
 {
 	struct cob_time	time;
-	char		buff[21]; /* 11: make the compiler happy as "unsigned short" *could*
-						         have more digits than we "assume" */
+	char		buff[21] = { 0 };
+	/* we only need 9, but make the compiler happy as "unsigned short"
+	   *could* have more digits than we "assume" */
 
 	if (field->size > 6) {
 		time = cob_get_current_datetime (DTR_FULL);
 	} else {
 		time = cob_get_current_datetime (DTR_TIME_NO_NANO);
 	}
-	snprintf (buff, sizeof (buff), "%2.2d%2.2d%2.2d%2.2d",
+	snprintf (buff, sizeof (buff), "%2.2u%2.2u%2.2u%2.2u",
 		(cob_u16_t) time.hour,
 		(cob_u16_t) time.minute,
 		(cob_u16_t) time.second,
 		(cob_u16_t) (time.nanosecond / 10000000));
 
 	cob_move_intermediate (field, buff, (size_t)8);
+}
+
+void
+cob_accept_microsecond_time (cob_field *field)
+{
+	struct cob_time	time;
+	char		buff[26] = { 0 };
+	/* we only need 13, but make the compiler happy as "unsigned short"
+	   *could* have more digits than we "assume" */
+
+	time = cob_get_current_datetime (DTR_FULL);
+	snprintf (buff, sizeof (buff), "%2.2u%2.2u%2.2u%6.6u",
+		(cob_u16_t) time.hour,
+		(cob_u16_t) time.minute,
+		(cob_u16_t) time.second,
+		(cob_u32_t) (time.nanosecond / 1000));
+
+	cob_move_intermediate (field, buff, (size_t)12);
 }
 
 void

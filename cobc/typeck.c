@@ -8134,7 +8134,7 @@ cb_emit_accept_day_of_week (cb_tree var)
 }
 
 void
-cb_emit_accept_time (cb_tree var)
+cb_emit_accept_time (cb_tree var, int with_microseconds)
 {
 	if (cb_validate_one (var)) {
 		return;
@@ -8142,7 +8142,19 @@ cb_emit_accept_time (cb_tree var)
 	if (cb_listing_xref) {
 		cobc_xref_set_receiving (var);
 	}
-	cb_emit (CB_BUILD_FUNCALL_1 ("cob_accept_time", var));
+
+	if (!with_microseconds && cb_std_define == CB_STD_ACU) {
+		/* for ACU: automatically use high-precision with big enough fields */
+		const struct cb_field	*f = CB_FIELD_PTR (var);
+		if (f->size >= 12) {	/* FIXME: should also work with binary -> digits/scale */
+			with_microseconds = 1;
+		}
+	}
+	if (with_microseconds) {
+		cb_emit (CB_BUILD_FUNCALL_1 ("cob_accept_microsecond_time", var));
+	} else {
+		cb_emit (CB_BUILD_FUNCALL_1 ("cob_accept_time", var));
+	}
 }
 
 void

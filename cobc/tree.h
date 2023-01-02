@@ -2385,7 +2385,7 @@ extern void		cb_emit_accept_date_yyyymmdd (cb_tree);
 extern void		cb_emit_accept_day (cb_tree);
 extern void		cb_emit_accept_day_yyyyddd (cb_tree);
 extern void		cb_emit_accept_day_of_week (cb_tree);
-extern void		cb_emit_accept_time (cb_tree);
+extern void		cb_emit_accept_time (cb_tree, int);
 extern void		cb_emit_accept_command_line (cb_tree);
 extern void		cb_emit_accept_environment (cb_tree);
 extern void		cb_emit_accept_mnemonic (cb_tree, cb_tree);

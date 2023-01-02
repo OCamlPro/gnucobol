@@ -1867,6 +1867,9 @@ static struct cobc_reserved default_reserved_words[] = {
   { "METHOD-ID",		0, 0, -1,			/* 2002 */
 				0, 0
   },
+  { "MICROSECOND-TIME",		0, 1, MICROSECOND_TIME,		/* ACU extension */
+				0, CB_CS_ACCEPT 
+  },
   { "MIN-VAL",		0, 1, MIN_VAL,		/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
   },

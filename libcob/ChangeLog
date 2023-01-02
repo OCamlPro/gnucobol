@@ -5,6 +5,7 @@
 	  numeric.c: more additions for COB_TYPE_NUMERIC_L_DOUBLE, basic use now
 	  works as expected
 	* common.c (print_version): welcome 2023
+	* common.c (check_current_date): only skip one - or / in COB_CURRENT_DATE
 
 2022-12-29  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -776,6 +777,7 @@
 	  (cob_intr_bit_to_char)
 	* common.c: renamed (cob_memcpy) to (cob_move_intermediate) and
 	  postponed handling of target size to cob_move
+	* common.c, common.h: implemented (cob_accept_microsecond_time)
 
 2021-08-30  Simon Sobisch <simonsobisch@gnu.org>
 

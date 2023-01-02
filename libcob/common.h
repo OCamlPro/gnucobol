@@ -1082,7 +1082,7 @@ typedef struct __cob_pic_symbol {
 /* Field attribute structure */
 
 typedef struct __cob_field_attr {
-	unsigned short		type;		/* Field type */
+	unsigned short		type;		/* Field type [TODO GC4: enum] */
 	unsigned short		digits;		/* Digit count */
 	signed short		scale;		/* Field scale */
 	unsigned short		flags;		/* Field flags */
@@ -1690,6 +1690,7 @@ COB_EXPIMP void	cob_accept_day_of_week		(cob_field *);
 COB_EXPIMP void	cob_accept_environment		(cob_field *);
 COB_EXPIMP void	cob_accept_exception_status	(cob_field *);
 COB_EXPIMP void	cob_accept_time			(cob_field *);
+COB_EXPIMP void	cob_accept_microsecond_time (cob_field *);
 COB_EXPIMP void	cob_accept_user_name		(cob_field *);
 COB_EXPIMP void	cob_display_command_line	(cob_field *);
 COB_EXPIMP void	cob_display_environment		(const cob_field *);

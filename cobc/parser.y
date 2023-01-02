@@ -2819,6 +2819,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token MENU
 %token MERGE
 %token MESSAGE
+%token MICROSECOND_TIME	"MICROSECOND-TIME"
 %token MINUS
 %token MIN_VAL			"MIN-VAL"
 %token MNEMONIC_NAME		"Mnemonic name"
@@ -11558,7 +11559,11 @@ accept_body:
   }
 | identifier FROM TIME
   {
-	cb_emit_accept_time ($1);
+	cb_emit_accept_time ($1, 0);
+  }
+| identifier FROM MICROSECOND_TIME
+  {
+	cb_emit_accept_time ($1, 1);
   }
 | identifier FROM USER NAME
   {

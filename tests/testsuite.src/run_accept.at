@@ -1,4 +1,5 @@
-## Copyright (C) 2003-2012, 2014-2017, 2020, 2022 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2017, 2020, 2022-2023 Free Software
+## Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch
 ##
 ## This file is part of GnuCOBOL.
@@ -138,7 +139,7 @@ AT_CLEANUP
 
 
 AT_SETUP([ACCEPT FROM TIME / DATE / DAY / DAY-OF-WEEK (2)])
-AT_KEYWORDS([configuration COB_CURRENT_DATE])
+AT_KEYWORDS([configuration COB_CURRENT_DATE MICROSECOND MICROSECOND-TIME extensions ACU])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -174,9 +175,13 @@ AT_DATA([prog.cob], [
            05  FILLER                  PIC X(01) VALUE ':'.
            05  WS-TIME-SS              PIC 9(02) VALUE 0.
 
+       01  WS-MICROSECOND-TIME.
+           05 WS-TIME-MICRO            PIC 9(14).
+
        PROCEDURE DIVISION.
            ACCEPT WS-DATE-TODAY FROM DATE
            ACCEPT WS-TIME-NOW   FROM TIME
+           ACCEPT WS-TIME-MICRO FROM MICROSECOND-TIME
            MOVE WS-TODAYS-YY TO WS-DATE-YY
            MOVE WS-TODAYS-MM TO WS-DATE-MM
            MOVE WS-TODAYS-DD TO WS-DATE-DD
@@ -184,36 +189,51 @@ AT_DATA([prog.cob], [
            MOVE WS-NOW-MM    TO WS-TIME-MM
            MOVE WS-NOW-SS    TO WS-TIME-SS
            DISPLAY 'PROCESS DATE/TIME : ' WS-DATE ' ' WS-TIME
-                   WITH NO ADVANCING
+                   WITH NO ADVANCING UPON SYSOUT
            END-DISPLAY
+           DISPLAY ' MICROSECOND-TIME '
+                   WITH NO ADVANCING UPON SYSOUT
+           END-DISPLAY
+           DISPLAY WS-MICROSECOND-TIME UPON SYSOUT.
+      *>   Bigger fields return 8/12 depending on std
+      *>   CHECKME: we may should limit to 6 depending on std, too
+           ACCEPT WS-TIME-MICRO FROM TIME
+           DISPLAY 'PROCESS BIG TIME : '
+                   WITH NO ADVANCING UPON SYSOUT
+           DISPLAY WS-MICROSECOND-TIME UPON SYSOUT.
            ACCEPT WS-YYYYMMDD   FROM DATE YYYYMMDD
            IF WS-YYYYMMDD not = "20150405"
               DISPLAY 'Wrong date DATE YYYYMMDD: ' WS-YYYYMMDD
                       ' expected: 20150405'
-                      UPON SYSERR
-              END-DISPLAY
-           END-IF
+                      UPON SYSERR.
            ACCEPT WS-YYYYDDD    FROM DAY  YYYYDDD
            IF WS-YYYYDDD  not = "2015095"
               DISPLAY 'Wrong date YYYYDDD:  '      WS-YYYYDDD
                       ' expected: 2015095'
-                      UPON SYSERR
-              END-DISPLAY
-           END-IF
+                      UPON SYSERR.
            ACCEPT WS-DAYOFWEEK    FROM DAY-OF-WEEK
            IF WS-DAYOFWEEK  not = "7"
               DISPLAY 'Wrong date DAYOFWEEK: '     WS-DAYOFWEEK
                       ' expected: 7'
-                      UPON SYSERR
-              END-DISPLAY
-           END-IF
+                      UPON SYSERR.
            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
-AT_CHECK([COB_CURRENT_DATE='2015/04/05 18:45:22' \
-$COBCRUN_DIRECT ./prog], [0], [PROCESS DATE/TIME : 04/05/15 18:45:22], [])
+AT_CHECK([COB_CURRENT_DATE='2015/04/05 18:45:22.123400056' \
+$COBCRUN_DIRECT ./prog], [0],
+[PROCESS DATE/TIME : 04/05/15 18:45:22 MICROSECOND-TIME 00184522123400
+PROCESS BIG TIME : 00000018452212
+], [])
+
+AT_CHECK([$COMPILE -std=acu -o proga prog.cob], [0], [], [])
+
+AT_CHECK([COB_CURRENT_DATE='2015/04/05 18:45:22.123400056' \
+$COBCRUN_DIRECT ./proga], [0],
+[PROCESS DATE/TIME : 04/05/15 18:45:22 MICROSECOND-TIME 00184522123400
+PROCESS BIG TIME : 00184522123400
+], [])
 
 AT_CLEANUP
 
