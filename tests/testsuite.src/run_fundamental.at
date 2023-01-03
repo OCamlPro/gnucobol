@@ -5380,7 +5380,7 @@ AT_CLEANUP
 
 
 AT_SETUP([USE FOR DEBUGGING (no DEBUGGING MODE)])
-AT_KEYWORDS([fundamental])
+AT_KEYWORDS([fundamental configuration])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -5425,7 +5425,7 @@ AT_CLEANUP
 
 
 AT_SETUP([USE FOR DEBUGGING (COB_SET_DEBUG deactivated)])
-AT_KEYWORDS([fundamental])
+AT_KEYWORDS([fundamental configuration])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -5569,7 +5569,7 @@ AT_CLEANUP
 
 
 AT_SETUP([USE FOR DEBUGGING (COB_SET_DEBUG switched)])
-AT_KEYWORDS([fundamental])
+AT_KEYWORDS([fundamental configuration SET ENVIRONMENT])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.

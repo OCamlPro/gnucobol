@@ -5,6 +5,7 @@
 	  CB_USAGE_LONG_DOUBLE, basic use now works as expected,
 	  enabled as UNFINISHED
 	* cobc.c (cobc_print_version): welcome 2023
+	* reserved.c: integrated changes originally done 2020-06-20 (!)
 
 2022-12-31  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -1911,6 +1912,11 @@
 	  reuse it for every key definition
 	* field.c, tree.h, parser.y (occurs_key_field): new function in field.c:
 	  cb_build_full_field_reference, extracted and simplified from parser.y
+
+2020-06-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* reserved.c: moved switches A-Z from 1-26 to 11-36 to allow them to
+	  be used together with 0-7 (mf compat)
 
 2020-06-17  Simon Sobisch <simonsobisch@gnu.org>
 

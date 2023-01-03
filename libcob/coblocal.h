@@ -377,7 +377,7 @@ struct config_tbl {
 #define ENV_ENUMVAL	(1 << 10)		/* Value must in 'enum' list as match or value */
 #define ENV_FILE 	(1 << 11)		/* a pointer to a directory/file [single path] */
 
-#define ENV_RESETS 	(1 << 14)		/* Value setting needs additional code */
+/* reserved for future use ENV_SOMETHING 	(1 << 14) */
 
 #define STS_ENVSET	(1 << 15)		/* value set via Env Var */
 #define STS_CNFSET	(1 << 16)		/* value set via config file */

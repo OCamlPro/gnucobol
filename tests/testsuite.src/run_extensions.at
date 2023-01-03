@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2022 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2023 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 ## Ron Norman
 ##
@@ -2946,7 +2946,7 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE -fsystem-name="sw1, SwItCh\ b, SWITCH\ 25" \
 -fsystem-name=SWITCH-32 -fsystem-name="SWITCH\ Z" -fsystem-name=USW-31 prog.cob], [0], [], [])
-AT_CHECK([COB_SWITCH_2=1 COB_SWITCH_26=1 COB_SWITCH_31=1 COB_SWITCH_32=1 ./prog], [0],
+AT_CHECK([COB_SWITCH_12=1 COB_SWITCH_36=1 COB_SWITCH_31=1 COB_SWITCH_32=1 ./prog], [0],
 [OFF ON OFF OFF ON ON ON], [])
 
 AT_CLEANUP
@@ -4730,6 +4730,22 @@ Error-Message:   prog.cob:20: module 'Tilt' not found
 #],
 #[libcob: error: recursive CALL from 'DemoErrProc' to 'DemoErrProc' which is NOT RECURSIVE
 #])
+
+AT_CLEANUP
+
+
+AT_SETUP([System routine x'91' function NN])
+AT_KEYWORDS([extensions])
+
+# to be done after 3.2rc1
+AT_SKIP_IF([true])
+
+AT_DATA([prog.cob], [
+])
+AT_CHECK([$COMPILE -std=mf prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [1],
+[
+], [])
 
 AT_CLEANUP
 

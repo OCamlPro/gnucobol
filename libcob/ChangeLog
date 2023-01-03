@@ -6,6 +6,11 @@
 	  works as expected
 	* common.c (print_version): welcome 2023
 	* common.c (check_current_date): only skip one - or / in COB_CURRENT_DATE
+	* common.c (cob_sys_x91, set_config_val): integrated changes originally
+	  done 2020-06-20 (!)
+	* common.c, common.h: dropped ENV_RESETS and compare data pointer instead
+	  of the name for all configurations that need additional setup
+	* common.c (cob_sys_x91): activated function 35
 
 2022-12-29  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -1236,7 +1241,7 @@
 	   4. entering sign jumps to sign;
 	   5. create (hopefully) nice insert behaviour for numbers: cursor on
 	      integral digits inserts to right, cursor on decimal digits inserts
-              to left.
+	      to left.
 
 2020-07-19  Edward Hart <edward.dan.hart@gmail.com>
 
@@ -1298,6 +1303,19 @@
 	  sparse indexes
 	* fileio.c<-fisam.c,fbdb.c: Fix to return status 21 instead of 22
 	  when OPEN OUTPUT
+
+2020-06-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_sys_x91): implemented / prepared all documented MF function
+	  codes for x'91' library
+	  * 11+12: allow accessing debug switch along to "programmable 0-7"
+	  * 13+14: allow accessing "runtime switches 1-26" (as A-Z),
+	    in case of A/N/T: set related runtime setting
+	  * 15: prepared for program lookup
+	  * 35: prepared for DOS EXEC call
+	  * 46-49: prepared for file specific setting LS_NULLS/LS_TABS
+	  * 69: prepared for directory search
+	* common.c (set_config_val): set switches D/N/T depending on other settings
 
 2020-06-16  Ron Norman <rjn@inglenet.com>
 

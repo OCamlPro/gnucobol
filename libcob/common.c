@@ -380,7 +380,7 @@ static const int		cob_exception_tab_code[] = {
 #define EXCEPTION_TAB_SIZE	sizeof (cob_exception_tab_code) / sizeof (int)
 
 /* Switches */
-#define	COB_SWITCH_MAX	36  /* (must match cobc/tree.h)*/
+#define	COB_SWITCH_MAX	36  /* maximum switches, must match cobc/tree.h! */
 
 static int		cob_switch[COB_SWITCH_MAX + 1];
 
@@ -444,7 +444,7 @@ static struct config_tbl gc_conf[] = {
 #ifdef HAVE_MOUSEINTERVAL	/* possibly add an internal option for mouse support, too */
 	{"COB_MOUSE_INTERVAL", "mouse_interval", "100", NULL, GRP_SCREEN, ENV_UINT, SETPOS (cob_mouse_interval), 0, 166},
 #endif
-	{"COB_SET_DEBUG", "debugging_mode", 		"0", 	NULL, GRP_MISC, ENV_BOOL | ENV_RESETS, SETPOS (cob_debugging_mode)},
+	{"COB_SET_DEBUG", "debugging_mode", 		"0", 	NULL, GRP_MISC, ENV_BOOL, SETPOS (cob_debugging_mode)},
 	{"COB_SET_TRACE", "set_trace", 		"0", 	NULL, GRP_MISC, ENV_BOOL, SETPOS (cob_line_trace)},
 	{"COB_TRACE_FILE", "trace_file", 		NULL, 	NULL, GRP_MISC, ENV_FILE, SETPOS (cob_trace_filename)},
 	{"COB_TRACE_FORMAT", "trace_format",	"%P %S Line: %L", NULL, GRP_MISC, ENV_STR, SETPOS (cob_trace_format)},
@@ -6383,10 +6383,10 @@ cob_sys_xf5 (const void *p1, void *p2)
 	return 0;
 }
 
-/* COBOL routine for different functions, including functions for
+/* COBOL (only) routine for different functions, including functions for
    the programmable COBOL SWITCHES:
-   11: set  COBOL switches 0-7
-   12: read COBOL switches 0-7
+   11: set  COBOL switches 0-7 and debug switch
+   12: read COBOL switches 0-7 and debug switch
    16: return number of CALL USING parameters
 */
 int
@@ -6400,7 +6400,7 @@ cob_sys_x91 (void *p1, const void *p2, void *p3)
 
 	switch (*func) {
 
-	/* Set switches (0-7) */
+	/* Set switches (0-7) + DEBUG module */
 	case 11:
 		p = parm;
 		for (i = 0; i < 8; ++i, ++p) {
@@ -6410,7 +6410,11 @@ cob_sys_x91 (void *p1, const void *p2, void *p3)
 				cob_switch[i] = 1;
 			}
 		}
-		/* INSPECT: MF additionally sets the ANSI DEBUG module switch */
+		/* MF additionally sets the ANSI DEBUG module switch */
+		if (COB_MODULE_PTR->cob_procedure_params[0]->size >= 9) {
+			p++;
+			cobsetptr->cob_debugging_mode = (*p == 1);
+		}
 		*result = 0;
 		break;
 
@@ -6420,23 +6424,135 @@ cob_sys_x91 (void *p1, const void *p2, void *p3)
 		for (i = 0; i < 8; ++i, ++p) {
 			*p = (unsigned char)cob_switch[i];
 		}
-		/* INSPECT: MF additionally reads the ANSI DEBUG module switch */
+		/* MF additionally passes the ANSI DEBUG module switch */
+		if (COB_MODULE_PTR->cob_procedure_params[0]->size >= 9) {
+			p++;
+			*p = (unsigned char)cobsetptr->cob_debugging_mode;
+		}
 		*result = 0;
 		break;
+
+	/* Set switches (A-Z -> 11-36) */
+	case 13:
+		p = parm;
+		for (i = 11; i < 36; ++i, ++p) {
+			if (*p == 0) {
+				cob_switch[i] = 0;
+			} else if (*p == 1) {
+				cob_switch[i] = 1;
+			}
+
+			if (i == 'D' - 'A' + 11) {
+				cobsetptr->cob_debugging_mode = cob_switch[i];
+			} else if (i == 'N' - 'A' + 11) {
+				cobsetptr->cob_ls_nulls = cob_switch[i];
+#if 0	/* TODO add in trunk*/
+			} else if (i == 'T' - 'A' + 11) {
+				cobsetptr->cob_ls_tabs = cob_switch[i];
+#endif
+			}
+		}
+		*result = 0;
+		break;
+
+	/* Get switches (A-Z -> 11-36) */
+	case 14:
+		p = parm;
+		for (i = 1; i < 27; ++i, ++p) {
+			*p = (unsigned char)cob_switch[i];
+		}
+		*result = 0;
+		break;
+
+#if 0	/* program lookup 
+		   may be implemented as soon as some legacy code
+		   shows its exact use and a test case */
+	case 15:
+		p = parm + 1;
+		{
+			char name[256];
+			strncpy (name, p, *parm);
+			void * func = cob_resolve (name);
+			/* TODO: the full name should be copied back into p */
+			return (func != NULL);
+		}
+		break;
+#endif
 
 	/* Return number of call parameters
 		according to the docs this is only set for programs CALLed from COBOL
 		NOT for main programs in contrast to C$NARG (cob_sys_return_args)
-	*/
+	   MF deprecated it in favor of CBL_GET_PROGRAM_INFO function 8 */
 	case 16:
 		*parm = (unsigned char)COB_MODULE_PTR->module_num_params;
 		*result = 0;
 		break;
 
-	/* unimplemented function,
-	   note: 46-49 may be implemented after fileio-specific merge of rw-branch
-	         35 (EXEC) and 15 (program lookup) may be implemented as soon as some legacy code
-			                                   shows its exact use and a test case */
+#if 1	/* EXEC call "like DOS 4B call"
+		   working prototype, may be finalized as soon as some legacy code
+		   shows its exact use and a test case; CHECKME: what is the return
+		   code with MF on UNIX where this is "not supported"? */
+	case 35:
+		p = parm + 1;
+		/* zero = just [re-]execute */
+		if (*parm != 0) {
+			/* note: we can't check for existence
+			   as "pause" and similar inbuilts must also work;
+			   CHECKME: possibly start via cmd.exe wrapper ? */
+			/* put on command line here */
+			{
+				cob_field field;
+				COB_FIELD_INIT (*parm, p, NULL);
+				cob_display_command_line (&field);
+			}
+		}
+		{
+			/* execute the command line */
+			int ret = system ((const char *)commlnptr);
+			*result = (unsigned char)ret;
+		}
+		break;
+#endif
+
+
+#if 0	/* note: 46-49 should be implemented in 4.x with file-specific settings */
+	/* enable/disable LS_NULLs for a specific FD */
+	case 46:
+	case 47:
+	/* enable/disable LS_TABs for a specific FD */
+	case 48:
+	case 49:
+		{
+			*result = 0;
+			cob_file *f = get_file (p3);
+			if (f == NULL
+			 || f->open_mode == COB_OPEN_CLOSED
+			 || f->open_mode == COB_OPEN_LOCKED) {
+				*result = 1;
+			} else if (*func == 46) {
+				f->ls_nulls = 1;
+			} else if (*func == 47) {
+				f->ls_nulls = 0;
+			} else if (*func == 48) {
+				f->ls_tabss = 1;
+			} else if (*func == 49) {
+				f->ls_tabs = 0;
+			}
+		}
+		break;
+#endif
+
+#if 0	/* directory search
+		   may be implemented when CBL_DIR_SCAN / C$LISTDIR is added and
+		   likely only finalized as soon as some legacy code
+		   shows its exact use and a test case
+	   MF deprecated it in favor of CBL_DIR_SCAN */
+	case 69:
+		*result = 1;
+		break;
+#endif
+
+	/* unimplemented function */
 	default:
 		*result = 1;
 		break;
@@ -7500,17 +7616,15 @@ translate_boolean_to_int (const char* ptr)
 static int					/* returns 1 if any error, else 0 */
 set_config_val (char *value, int pos)
 {
-	char 	*data;
 	char	*ptr = value, *str;
 	cob_s64_t	numval = 0;
-	int 	i, data_type, data_len, slen;
-	size_t	data_loc;
+	int 	i, slen;
 
-	data_type = gc_conf[pos].data_type;
-	data_loc  = gc_conf[pos].data_loc;
-	data_len  = gc_conf[pos].data_len;
+	const int 	data_type = gc_conf[pos].data_type;
+	const size_t	data_loc = gc_conf[pos].data_loc;
+	const int 	data_len = gc_conf[pos].data_len;
 
-	data = ((char *)cobsetptr) + data_loc;
+	char 	*data = ((char *)cobsetptr) + data_loc;
 
 	if (gc_conf[pos].enums) {		/* Translate 'word' into alternate 'value' */
 
@@ -7558,19 +7672,26 @@ set_config_val (char *value, int pos)
 			numval = !numval;
 		}
 		set_value (data, data_len, numval);
-		if ((data_type & ENV_RESETS)) {	/* Additional setup needed */
-			if (strcmp(gc_conf[pos].env_name, "COB_SET_DEBUG") == 0) {
-				/* Copy variables from settings (internal) to global structure, each time */
-				cobglobptr->cob_debugging_mode = cobsetptr->cob_debugging_mode;
-			}
-		}
-		if (strcmp (gc_conf[pos].env_name, "COB_INSERT_MODE") == 0) {
+
+		/* call internal routines that do post-processing */
+		if (data == (char *)&cobsetptr->cob_debugging_mode) {
+			/* Copy variables from settings (internal) to global structure, each time */
+			cobglobptr->cob_debugging_mode = cobsetptr->cob_debugging_mode;
+		} else if (data == (char *)&cobsetptr->cob_insert_mode) {
 			cob_settings_screenio ();
+		} else if (data == (char *)&cobsetptr->cob_debugging_mode) {
+			cob_switch[11 + 'D' - 'A'] = numval;
+		} else if (data == (char *)&cobsetptr->cob_ls_nulls) {
+			cob_switch[11 + 'N' - 'A'] = numval;
+#if 0	/* TODO add in trunk */
+		} else if (data == (char *)&cobsetptr->cob_ls_tabs) {
+			cob_switch[11 + 'T' - 'A'] = numval;
+#endif
 		}
 
 	} else if ((data_type & ENV_UINT) 				/* Integer data, unsigned */
-	 || (data_type & ENV_SINT) 				/* Integer data, signed */
-	 || (data_type & ENV_SIZE) ) {				/* Size: integer with K, M, G */
+	        || (data_type & ENV_SINT) 				/* Integer data, signed */
+	        || (data_type & ENV_SIZE) ) {			/* Size: integer with K, M, G */
 		char sign = 0;
 		for (; *ptr == ' '; ptr++);	/* skip leading space */
 		if (*ptr == '-'
@@ -7653,11 +7774,13 @@ set_config_val (char *value, int pos)
 			return 1;
 		}
 		set_value (data, data_len, numval);
-		if (strcmp (gc_conf[pos].env_name, "COB_MOUSE_FLAGS") == 0
+
+		/* call internal routines that do post-processing */
+		if (data == (char *)&cobsetptr->cob_mouse_flags
 #ifdef HAVE_MOUSEINTERVAL	/* possibly add an internal option for mouse support, too */
-		 || strcmp (gc_conf[pos].env_name, "COB_MOUSE_INTERVAL") == 0
+		 || data == (char *)&cobsetptr->cob_mouse_interval
 #endif
-			) {
+		    ) {
 			cob_settings_screenio ();
 		}
 
@@ -7681,7 +7804,7 @@ set_config_val (char *value, int pos)
 		}
 
 		/* call internal routines that do post-processing */
-		if (strcmp (gc_conf[pos].env_name, "COB_TRACE_FILE") == 0
+		if (data == (char *)cobsetptr->cob_trace_filename
 		 && cobsetptr->cob_trace_file != NULL) {
 			cob_new_trace_file ();
 		}
@@ -7698,7 +7821,7 @@ set_config_val (char *value, int pos)
 		}
 
 		/* call internal routines that do post-processing */
-		if (strcmp (gc_conf[pos].env_name, "COB_CURRENT_DATE") == 0) {
+		if (data == (char *)cobsetptr->cob_date) {
 			check_current_date ();
 		}
 

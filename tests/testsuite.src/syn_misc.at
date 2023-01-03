@@ -7130,7 +7130,6 @@ prog.cob:8: error: PROCEDURE DIVISION header missing
 prog.cob:8: error: syntax error, unexpected Literal
 ])
 AT_CLEANUP
-# " (close unclosed quotation above)
 
 
 # normal register extension,

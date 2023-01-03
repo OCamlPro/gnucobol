@@ -64,6 +64,8 @@ NEWS - user visible changes				-*- outline -*-
    analysis tools like callgrind or perf to keep all symbols until the end of
    the COBOL process
 
+** the system function x'91' was extended to support more functions
+
 ** TODO - More to document before 3.2 final
 
 
@@ -153,6 +155,11 @@ NEWS - user visible changes				-*- outline -*-
    attribute); only the three lower bits are now considered during evaluation
    of the color-number, leading to a previous value of 21 (which was ignored
    until now) being interpreted as 5, see FR #387
+
+** the programmable runtime switches "SWITCH A" through "SWITCH Z" internally
+   used 1-26 and now use 11-36 to be able to combine then with switches 0-7;
+   if you set those via COB_SWITCH environment variables you need to adjust
+   their numbers
 
 * Changes that potentially effects recompilation of existing programs:
 
