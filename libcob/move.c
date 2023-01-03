@@ -673,7 +673,8 @@ cob_move_binary_to_display (cob_field *f1, cob_field *f2)
 		val = cob_binary_mget_uint64 (f1);
 	}
 
-	/* Convert to string */
+	/* Convert to string; note: we do this on ourself as this has proven
+	   to be much faster than calling "sprintf (buff, CB_FMT_LLU, val)" */
 	i = 20;
 	while (val > 0) {
 		buff[--i] = (char) COB_I2D (val % 10);
@@ -682,7 +683,7 @@ cob_move_binary_to_display (cob_field *f1, cob_field *f2)
 
 	/* Store */
 	store_common_region (f2, (cob_u8_ptr)buff + i, (size_t)20 - i,
-		COB_FIELD_SCALE(f1));
+		COB_FIELD_SCALE (f1));
 
 	COB_PUT_SIGN (f2, sign);
 }

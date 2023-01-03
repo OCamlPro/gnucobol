@@ -1,4 +1,20 @@
 
+2023-01-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_accept_date, cob_accept_date_yyyymmdd, cob_accept_day,
+	  cob_accept_day_yyyyddd, cob_accept_time, cob_accept_microsecond_time):
+	  use binary intermediate field instead of numeric edited, replacing
+	  "expensive" sprintf calls and multiple de-editing/editing to max. one
+	  minimal editing (via move.c)
+	* common.c (cob_move_to_group_as_alnum): new function to handle MOVE to
+	  group as MOVE to alphanumeric field, used in functions above
+	* common.c (cob_display_arg_number, cob_accept_arg_number, cob_cmp):
+	  minor refactoring to use COB_FIELD_INIT
+	* common.c (check_current_date, cob_get_current_datetime),
+	  coblocal.h (cob_settings->cob_time_constant_is_calculated):
+	  skip expensive call to localtime + mktime if COB_CURRENT_DATE is
+	  set and "complete", by doing it already for the constant
+
 2023-01-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_is_numeric), move.c (cob_move, cob_move_fp_to_fp),

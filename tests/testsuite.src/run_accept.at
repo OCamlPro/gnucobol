@@ -154,6 +154,7 @@ AT_DATA([prog.cob], [
            05  WS-TODAYS-YY            PIC 9(02) VALUE 0.
            05  WS-TODAYS-MM            PIC 9(02) VALUE 0.
            05  WS-TODAYS-DD            PIC 9(02) VALUE 0.
+       01  WS-DATE-TODAY-9  REDEFINES WS-DATE-TODAY PIC 9(06).
 
        01  WS-DATE.
            05  WS-DATE-MM              PIC 9(02) VALUE 0.
@@ -167,6 +168,7 @@ AT_DATA([prog.cob], [
            05  WS-NOW-MM               PIC 9(02) VALUE 0.
            05  WS-NOW-SS               PIC 9(02) VALUE 0.
            05  WS-NOW-HS               PIC 9(02) VALUE 0.
+       01  WS-TIME-NOW-9  REDEFINES WS-TIME-NOW PIC 9(08).
 
        01  WS-TIME.
            05  WS-TIME-HH              PIC 9(02) VALUE 0.
@@ -179,9 +181,13 @@ AT_DATA([prog.cob], [
            05 WS-TIME-MICRO            PIC 9(14).
 
        PROCEDURE DIVISION.
-           ACCEPT WS-DATE-TODAY FROM DATE
-           ACCEPT WS-TIME-NOW   FROM TIME
-           ACCEPT WS-TIME-MICRO FROM MICROSECOND-TIME
+      *>   included performance check
+           PERFORM 50000 TIMES
+              ACCEPT WS-DATE-TODAY-9      FROM DATE
+              ACCEPT WS-TIME-NOW-9        FROM TIME
+              ACCEPT WS-TIME-MICRO        FROM MICROSECOND-TIME
+           END-PERFORM
+      *>   actual verification
            MOVE WS-TODAYS-YY TO WS-DATE-YY
            MOVE WS-TODAYS-MM TO WS-DATE-MM
            MOVE WS-TODAYS-DD TO WS-DATE-DD
@@ -194,7 +200,10 @@ AT_DATA([prog.cob], [
            DISPLAY ' MICROSECOND-TIME '
                    WITH NO ADVANCING UPON SYSOUT
            END-DISPLAY
-           DISPLAY WS-MICROSECOND-TIME UPON SYSOUT.
+           DISPLAY WS-MICROSECOND-TIME
+                   WITH NO ADVANCING UPON SYSOUT
+           END-DISPLAY
+           DISPLAY '.' UPON SYSOUT.
       *>   Bigger fields return 8/12 depending on std
       *>   CHECKME: we may should limit to 6 depending on std, too
            ACCEPT WS-TIME-MICRO FROM TIME
@@ -216,6 +225,29 @@ AT_DATA([prog.cob], [
               DISPLAY 'Wrong date DAYOFWEEK: '     WS-DAYOFWEEK
                       ' expected: 7'
                       UPON SYSERR.
+       *>
+           PERFORM 500 TIMES
+              ACCEPT WS-DATE-TODAY        FROM DATE
+              ACCEPT WS-TIME-NOW          FROM TIME
+              ACCEPT WS-MICROSECOND-TIME  FROM MICROSECOND-TIME
+           END-PERFORM
+           MOVE WS-TODAYS-YY TO WS-DATE-YY
+           MOVE WS-TODAYS-MM TO WS-DATE-MM
+           MOVE WS-TODAYS-DD TO WS-DATE-DD
+           MOVE WS-NOW-HH    TO WS-TIME-HH
+           MOVE WS-NOW-MM    TO WS-TIME-MM
+           MOVE WS-NOW-SS    TO WS-TIME-SS
+           DISPLAY 'PROCESS DATE/TIME : ' WS-DATE ' ' WS-TIME
+                   WITH NO ADVANCING UPON SYSOUT
+           END-DISPLAY
+           DISPLAY ' MICROSECOND-TIME '
+                   WITH NO ADVANCING UPON SYSOUT
+           END-DISPLAY
+           DISPLAY WS-MICROSECOND-TIME
+                   WITH NO ADVANCING UPON SYSOUT
+           END-DISPLAY
+           DISPLAY '.' UPON SYSOUT.
+
            STOP RUN.
 ])
 
@@ -223,16 +255,18 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
 AT_CHECK([COB_CURRENT_DATE='2015/04/05 18:45:22.123400056' \
 $COBCRUN_DIRECT ./prog], [0],
-[PROCESS DATE/TIME : 04/05/15 18:45:22 MICROSECOND-TIME 00184522123400
+[PROCESS DATE/TIME : 04/05/15 18:45:22 MICROSECOND-TIME 00184522123400.
 PROCESS BIG TIME : 00000018452212
+PROCESS DATE/TIME : 04/05/15 18:45:22 MICROSECOND-TIME 184522123400  .
 ], [])
 
 AT_CHECK([$COMPILE -std=acu -o proga prog.cob], [0], [], [])
 
 AT_CHECK([COB_CURRENT_DATE='2015/04/05 18:45:22.123400056' \
 $COBCRUN_DIRECT ./proga], [0],
-[PROCESS DATE/TIME : 04/05/15 18:45:22 MICROSECOND-TIME 00184522123400
+[PROCESS DATE/TIME : 04/05/15 18:45:22 MICROSECOND-TIME 00184522123400.
 PROCESS BIG TIME : 00184522123400
+PROCESS DATE/TIME : 04/05/15 18:45:22 MICROSECOND-TIME 184522123400  .
 ], [])
 
 AT_CLEANUP

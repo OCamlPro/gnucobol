@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2007-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2007-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -269,7 +269,8 @@ typedef struct __cob_settings {
 	char		*cob_debug_log;
 	char		*cob_date;		/* Date override for testing purposes / UTC hint */
 	unsigned int		cob_stacktrace;		/* generate a stack trace on abort */
-	struct cob_time	cob_time_constant;
+	struct cob_time	cob_time_constant;		/* prepared time from COB_CURRENT_DATE */
+	unsigned int	cob_time_constant_is_calculated;	/* constant contains full date vars */
 
 	/* call.c */
 	unsigned int	cob_physical_cancel;

@@ -1934,6 +1934,8 @@ sort_compare_collate (const void *data1, const void *data2)
 	return 0;
 }
 
+/* intermediate move using USAGE DISPLAY field to 'dst' using
+   buffer 'src' with given 'size' as source */
 static void
 cob_move_intermediate (cob_field *dst, const void *src, const size_t size)
 {
@@ -1944,6 +1946,23 @@ cob_move_intermediate (cob_field *dst, const void *src, const size_t size)
 	         on the fly to numeric as necessary */
 	intermediate.attr = &const_alpha_attr;
 	cob_move (&intermediate, dst);
+}
+
+/* intermediate move from 'src' to 'dst'
+   as if it would be of COB_TYPE_ALPANUMERIC */
+static void
+cob_move_to_group_as_alnum (cob_field *src, cob_field *dst)
+{
+	cob_field	intermediate;
+	cob_field_attr	attr;
+	/* group moves are defined as memcpy + fill, so move shaddow field with
+	   same attributes and data storage but type alnum instead, which will
+	   lead to "unpacked" numeric data in the group */
+	intermediate = *dst;
+	intermediate.attr = &attr;
+	attr = *dst->attr;
+	attr.type = COB_TYPE_ALPHANUMERIC;
+	cob_move (src, &intermediate);
 }
 
 /* open file using mode according to cob_unix_lf and
@@ -3774,7 +3793,7 @@ cob_cmp (cob_field *f1, cob_field *f2)
 	if (f1_is_numeric || f2_is_numeric) {
 		/* CHECKME: What should be returned if field is negative?
 		   We suspicously change -12 to 12 here... */
-		cob_field	temp;
+		cob_field	field;
 		cob_field_attr	attr;
 		unsigned char	buff[COB_MAX_DIGITS + 10];
 
@@ -3785,32 +3804,28 @@ cob_cmp (cob_field *f1, cob_field *f2)
 		   otherwise we'll fail as soon as we enable COB_MAX_BINARY */
 		if (f1_is_numeric
 		 && f1_type != COB_TYPE_NUMERIC_DISPLAY) {
-			temp.size = COB_FIELD_DIGITS (f1);
-			temp.data = buff;
-			temp.attr = &attr;
+			COB_FIELD_INIT (COB_FIELD_DIGITS (f1), buff, &attr);
 			attr = *f1->attr;
 			attr.type = COB_TYPE_NUMERIC_DISPLAY;
 			attr.flags &= ~COB_FLAG_HAVE_SIGN;
-			cob_move (f1, &temp);
-			f1 = &temp;
+			cob_move (f1, &field);
+			f1 = &field;
 		}
 		if (f2_is_numeric
 		 && f2_type != COB_TYPE_NUMERIC_DISPLAY) {
-			temp.size = COB_FIELD_DIGITS (f2);
-			temp.data = buff;
-			temp.attr = &attr;
+			COB_FIELD_INIT (COB_FIELD_DIGITS (f2), buff, &attr);
 			attr = *f2->attr;
 			attr.type = COB_TYPE_NUMERIC_DISPLAY;
 			attr.flags &= ~COB_FLAG_HAVE_SIGN;
-			cob_move (f2, &temp);
-			f2 = &temp;
+			cob_move (f2, &field);
+			f2 = &field;
 		}
 
 		if (COB_FIELD_HAVE_SIGN (f1)) {
 			/* Note: if field is numeric then it is always
 			   USAGE DISPLAY here */
 
-			if (f1 != &temp) {				
+			if (f1 != &field) {				
 				/* drop sign for comparision, using a copy to not change
 				   the field during comparision */
 				unsigned char buff2[COB_MAX_DIGITS + 10];
@@ -3834,7 +3849,7 @@ cob_cmp (cob_field *f1, cob_field *f2)
 			/* Note: if field is numeric then it is always
 			   USAGE DISPLAY here */
 
-			if (f2 != &temp) {				
+			if (f2 != &field) {
 				/* drop sign for comparision, using a copy to not change
 				   the field during comparision */
 				unsigned char buff2[COB_MAX_DIGITS + 10];
@@ -4402,7 +4417,7 @@ static set_cob_time_from_localtime (time_t curtime,
 	static time_t last_time = 0;
 	static struct cob_time last_cobtime;
 	
-	// FIXME: on reseting appropriate locale set last_time_no_sec = 0
+	/* FIXME: on reseting appropriate locale set last_time_no_sec = 0 */
 	if (curtime == last_time) {
 		memcpy (cb_time, &last_cobtime, sizeof (struct cob_time));
 		return;
@@ -4588,20 +4603,6 @@ cob_get_current_datetime (const enum cob_datetime_res res)
 	/* Do we have a constant time? */
 	if (cobsetptr != NULL
 	 && cobsetptr->cob_time_constant.year != 0) {
-		int		needs_calculation = 0;
-		/* Note: constant time but X not part of constant --> -1 */
-		if (cobsetptr->cob_time_constant.year != -1) {
-			cb_time.year = cobsetptr->cob_time_constant.year;
-			needs_calculation = 1;
-		}
-		if (cobsetptr->cob_time_constant.month != -1) {
-			cb_time.month = cobsetptr->cob_time_constant.month;
-			needs_calculation = 1;
-		}
-		if (cobsetptr->cob_time_constant.day_of_month != -1) {
-			cb_time.day_of_month = cobsetptr->cob_time_constant.day_of_month;
-			needs_calculation = 1;
-		}
 		if (cobsetptr->cob_time_constant.hour != -1) {
 			cb_time.hour = cobsetptr->cob_time_constant.hour;
 		}
@@ -4619,26 +4620,49 @@ cob_get_current_datetime (const enum cob_datetime_res res)
 			cb_time.utc_offset = cobsetptr->cob_time_constant.utc_offset;
 		}
 
-		/* set day_of_week, day_of_year, is_daylight_saving_time, if necessary */
-		if (needs_calculation) {
-			time_t		t;
-			struct tm 	*tmptr;
-			/* allocate tmptr (needs a correct time) */
-			time (&t);
-			tmptr = localtime (&t);
-			tmptr->tm_isdst = -1;
-			tmptr->tm_sec	= cb_time.second;
-			tmptr->tm_min	= cb_time.minute;
-			tmptr->tm_hour	= cb_time.hour;
-			tmptr->tm_year	= cb_time.year - 1900;
-			tmptr->tm_mon	= cb_time.month - 1;
-			tmptr->tm_mday	= cb_time.day_of_month;
-			tmptr->tm_wday	= -1;
-			tmptr->tm_yday	= -1;
-			(void)mktime(tmptr);
-			cb_time.day_of_week = one_indexed_day_of_week_from_monday (tmptr->tm_wday);
-			cb_time.day_of_year = tmptr->tm_yday + 1;
-			cb_time.is_daylight_saving_time = tmptr->tm_isdst;
+		if (cobsetptr->cob_time_constant_is_calculated) {
+			cb_time.year = cobsetptr->cob_time_constant.year;
+			cb_time.month = cobsetptr->cob_time_constant.month;
+			cb_time.day_of_month = cobsetptr->cob_time_constant.day_of_month;
+			cb_time.day_of_week = cobsetptr->cob_time_constant.day_of_week;
+			cb_time.day_of_year = cobsetptr->cob_time_constant.day_of_year;
+			cb_time.is_daylight_saving_time = cobsetptr->cob_time_constant.is_daylight_saving_time;
+		} else {
+			int		needs_calculation = 0;
+			/* Note: constant time but X not part of constant --> -1 */
+			if (cobsetptr->cob_time_constant.year != -1) {
+				cb_time.year = cobsetptr->cob_time_constant.year;
+				needs_calculation = 1;
+			}
+			if (cobsetptr->cob_time_constant.month != -1) {
+				cb_time.month = cobsetptr->cob_time_constant.month;
+				needs_calculation = 1;
+			}
+			if (cobsetptr->cob_time_constant.day_of_month != -1) {
+				cb_time.day_of_month = cobsetptr->cob_time_constant.day_of_month;
+				needs_calculation = 1;
+			}
+			/* set day_of_week, day_of_year, is_daylight_saving_time, if necessary */
+			if (needs_calculation) {
+				time_t		t;
+				struct tm 	*tmptr;
+				/* allocate tmptr (needs a correct time) */
+				time (&t);
+				tmptr = localtime (&t);
+				tmptr->tm_isdst = -1;
+				tmptr->tm_sec	= cb_time.second;
+				tmptr->tm_min	= cb_time.minute;
+				tmptr->tm_hour	= cb_time.hour;
+				tmptr->tm_year	= cb_time.year - 1900;
+				tmptr->tm_mon	= cb_time.month - 1;
+				tmptr->tm_mday	= cb_time.day_of_month;
+				tmptr->tm_wday	= -1;
+				tmptr->tm_yday	= -1;
+				(void)mktime(tmptr);
+				cb_time.day_of_week = one_indexed_day_of_week_from_monday (tmptr->tm_wday);
+				cb_time.day_of_year = tmptr->tm_yday + 1;
+				cb_time.is_daylight_saving_time = tmptr->tm_isdst;
+			}
 		}
 	}
 
@@ -5046,10 +5070,19 @@ check_current_date ()
 	}
 	cobsetptr->cob_time_constant.nanosecond	= ns;
 
-	/* the following are only set in "current" instances, not in the constant */
-	cobsetptr->cob_time_constant.day_of_week = -1;
-	cobsetptr->cob_time_constant.day_of_year = -1;
-	cobsetptr->cob_time_constant.is_daylight_saving_time = -1;
+	/* the following are only set in the constant, if the complete date is set,
+	   otherwise in the "current" instances */
+	if (yr != -1 && mm != -1 && dd != -1) {
+		cobsetptr->cob_time_constant_is_calculated = 1;
+		cobsetptr->cob_time_constant.day_of_week = one_indexed_day_of_week_from_monday (tmptr->tm_wday);
+		cobsetptr->cob_time_constant.day_of_year = tmptr->tm_yday + 1;
+		cobsetptr->cob_time_constant.is_daylight_saving_time = tmptr->tm_isdst;
+	} else {
+		cobsetptr->cob_time_constant_is_calculated = 0;
+		cobsetptr->cob_time_constant.day_of_week = -1;
+		cobsetptr->cob_time_constant.day_of_year = -1;
+		cobsetptr->cob_time_constant.is_daylight_saving_time = -1;
+	}
 
 	if (iso_timezone[0] != '\0') {
 		cobsetptr->cob_time_constant.offset_known = 1;
@@ -5060,117 +5093,148 @@ check_current_date ()
 	}
 }
 
-/* Extended ACCEPT/DISPLAY */
+/* ACCEPT FROM system-name / DISPLAY UPON system-name  */
 
+/* get date as YYMMDD */
 void
-cob_accept_date (cob_field *field)
+cob_accept_date (cob_field *f)
 {
-	struct cob_time	time;
-	char		buff[16]; /* 16: make the compiler happy as "unsigned short" *could*
-						         have more digits than we "assume" */
+	const struct cob_time	time = cob_get_current_datetime (DTR_DATE);
+	const cob_u32_t	val = time.day_of_month
+		+ time.month * 100
+		+ (time.year % 100) * 10000;
+	cob_field	field;
+	cob_field_attr	attr;
+	const size_t	digits = 6;
 
-	time = cob_get_current_datetime (DTR_DATE);
+	COB_FIELD_INIT (sizeof (cob_u32_t), (unsigned char *)&val, &attr);
+	COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, digits, 0, 0, NULL);
 
-	snprintf(buff, sizeof (buff), "%2.2d%2.2d%2.2d",
-		(cob_u16_t) time.year % 100,
-		(cob_u16_t) time.month,
-		(cob_u16_t) time.day_of_month);
-	cob_move_intermediate (field, buff, (size_t)6);
-}
-
-void
-cob_accept_date_yyyymmdd (cob_field *field)
-{
-	struct cob_time	time;
-	char		buff[16]; /* 16: make the compiler happy as "unsigned short" *could*
-						         have more digits than we "assume" */
-
-	time = cob_get_current_datetime (DTR_DATE);
-
-	snprintf (buff, sizeof (buff), "%4.4d%2.2d%2.2d",
-		(cob_u16_t) time.year,
-		(cob_u16_t) time.month,
-		(cob_u16_t) time.day_of_month);
-	cob_move_intermediate (field, buff, (size_t)8);
-}
-
-void
-cob_accept_day (cob_field *field)
-{
-	struct cob_time	time;
-	char		buff[11]; /* 11: make the compiler happy as "unsigned short" *could*
-						         have more digits than we "assume" */
-
-	time = cob_get_current_datetime (DTR_DATE);
-	snprintf (buff, sizeof (buff), "%2.2d%3.3d",
-		(cob_u16_t) time.year % 100,
-		(cob_u16_t) time.day_of_year);
-	cob_move_intermediate (field, buff, (size_t)5);
-}
-
-void
-cob_accept_day_yyyyddd (cob_field *field)
-{
-	struct cob_time	time;
-	char		buff[11]; /* 11: make the compiler happy as "unsigned short" *could*
-						         have more digits than we "assume" */
-
-	time = cob_get_current_datetime (DTR_DATE);
-	snprintf (buff, sizeof (buff), "%4.4d%3.3d",
-		(cob_u16_t) time.year,
-		(cob_u16_t) time.day_of_year);
-	cob_move_intermediate (field, buff, (size_t)7);
-}
-
-void
-cob_accept_day_of_week (cob_field *field)
-{
-	struct cob_time	time;
-	unsigned char		day;
-
-	time = cob_get_current_datetime (DTR_DATE);
-	day = (unsigned char)(time.day_of_week + '0');
-	cob_move_intermediate (field, &day, (size_t)1);
-}
-
-void
-cob_accept_time (cob_field *field)
-{
-	struct cob_time	time;
-	char		buff[21] = { 0 };
-	/* we only need 9, but make the compiler happy as "unsigned short"
-	   *could* have more digits than we "assume" */
-
-	if (field->size > 6) {
-		time = cob_get_current_datetime (DTR_FULL);
+	if (COB_FIELD_TYPE (f) != COB_TYPE_GROUP) {
+		cob_move (&field, f);
 	} else {
-		time = cob_get_current_datetime (DTR_TIME_NO_NANO);
+		cob_move_to_group_as_alnum (&field, f);
 	}
-	snprintf (buff, sizeof (buff), "%2.2u%2.2u%2.2u%2.2u",
-		(cob_u16_t) time.hour,
-		(cob_u16_t) time.minute,
-		(cob_u16_t) time.second,
-		(cob_u16_t) (time.nanosecond / 10000000));
-
-	cob_move_intermediate (field, buff, (size_t)8);
 }
 
+/* get date as YYYYMMDD */
 void
-cob_accept_microsecond_time (cob_field *field)
+cob_accept_date_yyyymmdd (cob_field *f)
 {
-	struct cob_time	time;
-	char		buff[26] = { 0 };
-	/* we only need 13, but make the compiler happy as "unsigned short"
-	   *could* have more digits than we "assume" */
+	const struct cob_time	time = cob_get_current_datetime (DTR_DATE);
+	const cob_u32_t	val = time.day_of_month
+		+ time.month * 100
+		+ time.year  * 10000;
+	cob_field	field;
+	cob_field_attr	attr;
+	const size_t	digits = 8;
 
-	time = cob_get_current_datetime (DTR_FULL);
-	snprintf (buff, sizeof (buff), "%2.2u%2.2u%2.2u%6.6u",
-		(cob_u16_t) time.hour,
-		(cob_u16_t) time.minute,
-		(cob_u16_t) time.second,
-		(cob_u32_t) (time.nanosecond / 1000));
+	COB_FIELD_INIT (sizeof (cob_u32_t), (unsigned char *)&val, &attr);
+	COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, digits, 0, 0, NULL);
 
-	cob_move_intermediate (field, buff, (size_t)12);
+	if (COB_FIELD_TYPE (f) != COB_TYPE_GROUP) {
+		cob_move (&field, f);
+	} else {
+		cob_move_to_group_as_alnum (&field, f);
+	}
+}
+
+/* get day as YYDDD */
+void
+cob_accept_day (cob_field *f)
+{
+	const struct cob_time	time = cob_get_current_datetime (DTR_DATE);
+	const cob_u32_t	val = time.day_of_year + (time.year % 100) * 1000;
+	cob_field	field;
+	cob_field_attr	attr;
+	const size_t	digits = 5;
+
+	COB_FIELD_INIT (sizeof (cob_u32_t), (unsigned char *)&val, &attr);
+	COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, digits, 0, 0, NULL);
+
+	if (COB_FIELD_TYPE (f) != COB_TYPE_GROUP) {
+		cob_move (&field, f);
+	} else {
+		cob_move_to_group_as_alnum (&field, f);
+	}
+}
+
+/* get day as YYYYDDD */
+void
+cob_accept_day_yyyyddd (cob_field *f)
+{
+	const struct cob_time	time = cob_get_current_datetime (DTR_DATE);
+	const cob_u32_t	val = time.day_of_year + time.year * 1000;
+	cob_field	field;
+	cob_field_attr	attr;
+	const size_t	digits = 7;
+
+	COB_FIELD_INIT (sizeof (cob_u32_t), (unsigned char *)&val, &attr);
+	COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, digits, 0, 0, NULL);
+
+	if (COB_FIELD_TYPE (f) != COB_TYPE_GROUP) {
+		cob_move (&field, f);
+	} else {
+		cob_move_to_group_as_alnum (&field, f);
+	}
+}
+
+/* get day of week as 1 (monday) - 7 (sunday) */
+void
+cob_accept_day_of_week (cob_field *f)
+{
+	const struct cob_time		time = cob_get_current_datetime (DTR_DATE);
+	const unsigned char		day = (unsigned char)(time.day_of_week + '0');
+	const size_t		digits = 1;
+	cob_move_intermediate (f, &day, digits);
+}
+
+/* get time as HHMMSS[ss] */
+void
+cob_accept_time (cob_field *f)
+{
+	const struct cob_time	time = f->size > 6
+		? cob_get_current_datetime (DTR_FULL)
+		: cob_get_current_datetime (DTR_TIME_NO_NANO);
+	const cob_u32_t	val = (time.nanosecond / 10000000)
+		+ time.second * 100
+		+ time.minute * 10000
+		+ time.hour   * 1000000;
+	cob_field	field;
+	cob_field_attr	attr;
+	const size_t	digits = 8;
+
+	COB_FIELD_INIT (sizeof (cob_u32_t), (unsigned char *)&val, &attr);
+	COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, digits, 0, 0, NULL);
+
+	if (COB_FIELD_TYPE (f) != COB_TYPE_GROUP) {
+		cob_move (&field, f);
+	} else {
+		cob_move_to_group_as_alnum (&field, f);
+	}
+}
+
+/* get time as HHMMSSssssss */
+void
+cob_accept_microsecond_time (cob_field *f)
+{
+	const struct cob_time	time = cob_get_current_datetime (DTR_FULL);
+	const cob_u64_t	val = (cob_u64_t)(time.nanosecond / 1000)
+		+ (cob_u64_t)time.second * 1000000
+		+ (cob_u64_t)time.minute * 100000000
+		+ (cob_u64_t)time.hour   * 10000000000;
+	cob_field	field;
+	cob_field_attr	attr;
+	const size_t	digits = 12;
+
+	COB_FIELD_INIT (sizeof (cob_u64_t), (unsigned char *)&val, &attr);
+	COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, digits, 0, 0, NULL);
+
+	if (COB_FIELD_TYPE (f) != COB_TYPE_GROUP) {
+		cob_move (&field, f);
+	} else {
+		cob_move_to_group_as_alnum (&field, f);
+	}
 }
 
 void
@@ -5233,14 +5297,13 @@ void
 cob_display_arg_number (cob_field *f)
 {
 	int		n;
+	cob_field	field;
 	cob_field_attr	attr;
-	cob_field	temp;
+	const size_t	digits = 9;
 
-	temp.size = 4;
-	temp.data = (unsigned char *)&n;
-	temp.attr = &attr;
-	COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, 9, 0, 0, NULL);
-	cob_move (f, &temp);
+	COB_FIELD_INIT (4, (unsigned char *)&n, &attr);
+	COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, digits, 0, 0, NULL);
+	cob_move (f, &field);
 	if (n < 0 || n >= cob_argc) {
 		cob_set_exception (COB_EC_IMP_DISPLAY);
 		return;
@@ -5251,16 +5314,14 @@ cob_display_arg_number (cob_field *f)
 void
 cob_accept_arg_number (cob_field *f)
 {
-	int		n;
+	const cob_u32_t		n = cob_argc - 1;
+	cob_field	field;
 	cob_field_attr	attr;
-	cob_field	temp;
+	const size_t	digits = 9;
 
-	n = cob_argc - 1;
-	temp.size = 4;
-	temp.data = (unsigned char *)&n;
-	temp.attr = &attr;
-	COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, 9, 0, 0, NULL);
-	cob_move (&temp, f);
+	COB_FIELD_INIT (sizeof (cob_u32_t), (unsigned char *)&n, &attr);
+	COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, digits, 0, 0, NULL);
+	cob_move (&field, f);
 }
 
 void
@@ -7698,7 +7759,8 @@ set_config_val (char *value, int pos)
 		 || *ptr == '+') {
 			if ((data_type & ENV_SINT) == 0) {
 				conf_runtime_error_value (ptr, pos);
-				conf_runtime_error (1, _("should be unsigned")); // cob_runtime_warning
+				/* CHECKME: likely cob_runtime_warning would be more reasonable */
+				conf_runtime_error (1, _("should be unsigned"));
 				return 1;
 			}
 			sign = *ptr;

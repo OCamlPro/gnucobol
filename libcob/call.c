@@ -2074,7 +2074,7 @@ const char *
 cob_get_field_str_buffered (const cob_field *f)
 {
 	char	*buff = NULL;
-	size_t	size = cob_get_field_size (f) + 1;
+	size_t	size = (size_t)cob_get_field_size (f) + 1;
 
 	if (size > 0) {
 		if (size < 32) {
