@@ -8,12 +8,15 @@
 	  minimal editing (via move.c)
 	* common.c (cob_move_to_group_as_alnum): new function to handle MOVE to
 	  group as MOVE to alphanumeric field, used in functions above
-	* common.c (cob_display_arg_number, cob_accept_arg_number, cob_cmp):
-	  minor refactoring to use COB_FIELD_INIT
+	* common.c (cob_display_arg_number, cob_accept_arg_number, cob_cmp),
+	  move.c (indirect_move, cob_set_int, cob_set_llint, cob_get_int,
+	  cob_get_llint): minor refactoring to use COB_FIELD_INIT
 	* common.c (check_current_date, cob_get_current_datetime),
 	  coblocal.h (cob_settings->cob_time_constant_is_calculated):
 	  skip expensive call to localtime + mktime if COB_CURRENT_DATE is
 	  set and "complete", by doing it already for the constant
+	* move.c: integration of changes from 2022-04-08
+	* move.c (cob_get_int, cob_get_llint): use of constant binary attributes
 
 2023-01-02  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -537,6 +540,10 @@
 	  check and marker range before checking all marker bytes in range
 	* strings.c: increase use of direct pointer comparisons instead of
 	  accessing char arrays or its positions for INSPECT
+	* move.c: add const_bin_attr, add COB_FLAG_REAL_BINARY to const_binll_attr
+	* move.c, common.h: new function cob_set_llint
+	* move.c (cob_set_int): use const_bin_attr instead of setting it up
+	  each time as this function is used quite often in generated code
 
 2022-04-29  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -901,6 +908,8 @@
 	* move.c: use of COB_D2I for conversions
 	  and restore previous one afterwards
 	* move.c (store_common_region): minor refactoring
+	* numeric.c, common.c: clear use and separation of "sign" (GMP view) vs.
+	  "flag_sign" (field attribute) vs. "has_negative_sign"
 
 2021-01-28  Simon Sobisch <simonsobisch@gnu.org>
 

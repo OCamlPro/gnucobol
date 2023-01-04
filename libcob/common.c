@@ -5348,11 +5348,11 @@ static COB_INLINE COB_A_INLINE int
 setenv (const char *name, const char *value, int overwrite) {
 	/* remark: _putenv_s does always overwrite, add a check for overwrite = 1 if necessary later */
 	COB_UNUSED (overwrite);
-	return _putenv_s (name,value);
+	return _putenv_s (name, value);
 }
 static COB_INLINE COB_A_INLINE int
 unsetenv (const char *name) {
-	return _putenv_s (name,"");
+	return _putenv_s (name, "");
 }
 #endif
 
