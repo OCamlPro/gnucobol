@@ -3868,7 +3868,11 @@ cob_cmp (cob_field *f1, cob_field *f2)
 				return cob_cmp_alnum (f1, f2);
 			}
 		}
+		/* done here to have the data for non-signed numeric vs. non-numeric in scope */
+		return cob_cmp_alnum (f1, f2);
 	}
+
+	/* both data not numeric: compare as string */
 	return cob_cmp_alnum (f1, f2);
 }
 

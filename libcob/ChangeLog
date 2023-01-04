@@ -1,4 +1,9 @@
 
+2023-01-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_cmp): fix stack-use-after-scope for comparisons of unsigned
+	  numeric with non-numeric field
+
 2023-01-03  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_accept_date, cob_accept_date_yyyymmdd, cob_accept_day,
