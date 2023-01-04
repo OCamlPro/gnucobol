@@ -191,22 +191,20 @@ cobcrun_initial_module (char *module_argument)
 {
 	char	*pathname, *filename;
 	char	env_space[COB_MEDIUM_BUFF], *envptr;
+
 	/* FIXME: split in two functions (one setting module, one setting path)
 	          after allowing module with path in COB_PRE_LOAD */
 
-	/* LCOV_EXCL_START */
-	if (!module_argument || !module_argument[0]) {
-		/* never reached (getopt ensures that we have an argument),
-		   just in to keep the analyzer happy, so msg untranslated */
-		return "missing argument";
-	/* LCOV_EXCL_STOP */
-	} else if (module_argument[0] == 0) {
+	/* note: getopt ensures that we have an argument, but it may be empty */
+	if (module_argument[0] == 0) {
 		return "";	/* used as "no further information" */
 	}
 
 #if 0	/* CHECKME: Do we want that validation here or handle it? */
 	if (strchr (module_argument, PATHSEP_CHAR)) {
-		return ("should not contain '%c'", PATHSEP_CHAR);
+		static char [COB_MINI_BUFF] buff;
+		snprintf (buff, COB_MINI_MAX, _("should not contain '%c'"), PATHSEP_CHAR);
+		return buff;
 	}
 #endif
 
