@@ -1,4 +1,12 @@
 
+2023-01-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c, flag.def, help.c: added option --coverage internally setting
+	  -fgen-c-line-directive, ensuring to write object file with original name,
+	  passing appropriate flags to C compiler (GCC, LLVM, MSVC, Sun Solaris)
+	* codegen.c (output_initialize_uniform): siwtched to take an unsigned char
+	* tree.c: minor refactoring
+
 2023-01-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c, field.c, parser.y, reserved.c: adjustment for FLOAT-EXTENDED /

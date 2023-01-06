@@ -411,15 +411,17 @@ static enum compile_level cb_compile_level = 0;
 
 static int		iargs;
 
-static size_t		cobc_flag_module = 0;
-static size_t		cobc_flag_library = 0;
-static size_t		cobc_flag_run = 0;
+static int		cobc_flag_module = 0;
+static int		cobc_flag_library = 0;
+static int		cobc_flag_run = 0;
 static char		*cobc_run_args = NULL;
-static size_t		save_temps = 0;
-static size_t		save_all_src = 0;
-static size_t		save_c_src = 0;
+static int		save_temps = 0;
+static int		save_all_src = 0;
+static signed int	save_c_src = 0;
 static signed int	verbose_output = 0;
-static size_t		cob_optimize = 0;
+static int		cb_coverage_enabled = 0;
+static int		cob_optimize = 0;
+
 
 static unsigned int		cb_listing_linecount;
 static int		cb_listing_eject = 0;
@@ -580,6 +582,7 @@ static const struct option long_options[] = {
 	{"A",			CB_RQ_ARG, NULL, 'A'},
 	{"MT",			CB_RQ_ARG, NULL, '!'},
 	{"MF",			CB_RQ_ARG, NULL, '@'},
+	{"coverage",	CB_NO_ARG, &cb_coverage_enabled, 1},
 	{"P",			CB_OP_ARG, NULL, 'P'},
 	{"Xref",		CB_NO_ARG, NULL, 'X'},
 	{"use-extfh",		CB_RQ_ARG, NULL, 9},	/* this is used by COBOL-IT; Same is -fcallfh= */
@@ -2077,9 +2080,13 @@ clean_up_intermediates (struct filename *fn, const int status)
 		|| (cb_compile_level == CB_LEVEL_PREPROCESS && save_temps))) {
 		cobc_check_action (fn->preprocess);
 	}
+	/* CHECKME: we had reports of unexpected intermediate
+	   files on the dist - it is very likely rooted in this
+	   early exit --> recheck its use */
 	if (save_c_src) {
 		return;
 	}
+
 	if (fn->need_translate
 	 && (status
 		||  cb_compile_level > CB_LEVEL_TRANSLATE
@@ -3204,6 +3211,12 @@ process_command_line (const int argc, char **argv)
 		}
 	}
 
+    /* enabled coverage includes specifying COBOL source lines,
+	   may be disabled manually if needed */
+	if (cb_coverage_enabled) {
+		cb_flag_c_line_directives = 1;
+	}
+
 	/* dump implies extra information (may still be disabled later) */
 	if (cb_flag_dump != COB_DUMP_NONE) {
 		cb_flag_source_location = 1;
@@ -4282,7 +4295,7 @@ process_filename (const char *filename)
 	if (output_name && cb_compile_level == CB_LEVEL_ASSEMBLE) {
 		fn->object = cobc_main_strdup (output_name);
 	} else
-	if (save_temps
+	if (save_temps || cb_coverage_enabled
 	 || cb_compile_level == CB_LEVEL_ASSEMBLE) {
 		fn->object = cobc_main_stradd_dup (fbasename, "." COB_OBJECT_EXT);
 	} else
@@ -8088,10 +8101,18 @@ process_module_direct (struct filename *fn)
 #endif
 	ret = process (cobc_buffer);
 #ifdef	COB_STRIP_CMD
-	if (strip_output && ret == 0) {
-		cobc_chk_buff_size (strlen (COB_STRIP_CMD) + 4 + strlen (name));
-		sprintf (cobc_buffer, "%s \"%s\"", COB_STRIP_CMD, name);
-		ret = process (cobc_buffer);
+	if (ret == 0) {
+#ifdef __SUNPRO_C
+		if (cb_coverage_enabled) {
+			sprintf (cobc_buffer, "uncover \"%s\"", name);
+			ret = process (cobc_buffer);
+		}
+#endif
+		if (strip_output) {
+			cobc_chk_buff_size (strlen (COB_STRIP_CMD) + 4 + strlen (name));
+			sprintf (cobc_buffer, "%s \"%s\"", COB_STRIP_CMD, name);
+			ret = process (cobc_buffer);
+		}
 	}
 #endif
 #else	/* _MSC_VER */
@@ -8612,7 +8633,14 @@ finish_setup_compiler_env (void)
 		}
 #endif
 	}
+	if (cb_coverage_enabled) {
+		COBC_ADD_STR (cobc_cflags, " --coverage", NULL, NULL);
+		COBC_ADD_STR (cobc_ldflags, " --coverage", NULL, NULL);
+	}
 #elif defined(_MSC_VER)
+	if (cb_coverage_enabled) {
+		COBC_ADD_STR (cobc_cflags, " /Zi", NULL, NULL);
+	}
 	/* MSC stuff reliant upon verbose option */
 	switch (verbose_output) {
 	case 0:
@@ -8735,8 +8763,8 @@ begin_setup_internal_and_compiler_env (void)
 	/* Initialize variables */
 	begin_setup_compiler_env ();
 
-	set_const_cobc_build_stamp();
-	set_cobc_defaults();
+	set_const_cobc_build_stamp ();
+	set_cobc_defaults ();
 
 	output_name = NULL;
 
@@ -8746,7 +8774,7 @@ begin_setup_internal_and_compiler_env (void)
 #endif
 
 	/* Enable default I/O exceptions without source locations */
-	cobc_deciph_ec("EC-I-O", 1U);
+	cobc_deciph_ec ("EC-I-O", 1U);
 	cb_flag_source_location = 0;
 
 #ifndef	HAVE_DESIGNATED_INITS

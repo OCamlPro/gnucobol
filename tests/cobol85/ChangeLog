@@ -1,4 +1,8 @@
 
+2023-01-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am: pass appropriate flags to cobc for compiling
+
 2022-12-22  Simon Sobisch <simonsobisch@gnu.org>
 
 	* Makefile.am: ensure to not create half-baked module directories,
@@ -379,7 +383,7 @@
 	* SQ.txt, summary.txt : We now pass the LINAGE tests
 
 
-Copyright 2005-2010,2015-2020,2022 Free Software Foundation, Inc.
+Copyright 2005-2010,2015-2020,2022-2023 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

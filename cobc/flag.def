@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2003-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -212,7 +212,7 @@ CB_FLAG_ON (cb_flag_c_decl_for_static_call, 1, "gen-c-decl-static-call",
 
 CB_FLAG (cb_flag_c_line_directives, 1, "gen-c-line-directives",
 	_("  -fgen-c-line-directives\tgenerate source location directives in C code;\n"
-	  "                        * turned on by -g"))
+	  "                        * turned on by -g/--coverage"))
 
 CB_FLAG (cb_flag_c_labels, 1, "gen-c-labels",
 	_("  -fgen-c-labels        generate extra labels in C sources;\n"

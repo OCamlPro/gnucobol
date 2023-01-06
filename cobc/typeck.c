@@ -10409,7 +10409,7 @@ cb_check_overlapping (struct cb_field *src_f, struct cb_field *dst_f,
 		/* Check for same parent field */
 #ifdef _MSC_VER
 #pragma warning(push)
-#pragma warning(disable: 6011) // cb_field_founder always returns a valid pointer
+#pragma warning(disable: 6011)  /* cb_field_founder always returns a valid pointer */
 #endif
 		ff1 = cb_field_founder (src_f);
 		ff2 = cb_field_founder (dst_f);

@@ -2,7 +2,7 @@ dnl
 dnl Configure template for GnuCOBOL
 dnl Process this file with autoconf to produce a configure script.
 dnl
-dnl Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
+dnl Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
 dnl Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
 dnl Edward Hart
 dnl
@@ -32,7 +32,7 @@ AC_INIT([GnuCOBOL],
 AC_REVISION([GnuCOBOL snapshot $Revision$])
 AC_COPYRIGHT([This file is part of GnuCOBOL.
 
-Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
+Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
 Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
 Edward Hart
 ])
@@ -603,15 +603,13 @@ if test "x$LDFLAGS" != x; then
 	fi
 fi
 
-
-# some math functions (fabs, isnan, isinf) are used in libcob
-# where math.h is included (especially numeric.c)
+# some math functions (fabs, isnan, isinf) are used in numeric.c
 # (all other computations are used from GMP)
 #
 AC_MSG_NOTICE([Checks for math library ...])
 # FIXME - Check for necessary math lib - in most cases they are part of the C library
 # for now: explicit pass them to configure via MATH_LIBS
-dnl if test "x$MATH_LIBS" = x; then
+dnl if test "x$MATH_LIBS" = "x"; then
 dnl 	if test "$COB_USES_ICC_ONLY" = "yes"; then
 dnl 		MATH_LIBS="-limf -lm"
 dnl 	else
@@ -853,6 +851,9 @@ AS_IF([test "$with_xml2" = "yes" -o "$with_xml2" = "check"], [
 	  XML2_LIBS="-lxml2"
 	fi
 	LIBS="$LIBS $XML2_LIBS"
+	# note: the include part is likely wrong, as PKG_CONFIG and xml2_config
+	#       normally include _with_ "libxml", so only the header name should be
+	#       used then - needs adjustments in both configure and libcob!
 	for header in xmlversion uri xmlwriter
 	do
 		AC_CHECK_HEADER([libxml/$header.h], [],
@@ -1868,7 +1869,11 @@ AS_IF([test "$COB_USES_GCC" = "yes"], [
 ])
 
 if test "$enable_debug" = "yes"; then
-	CFLAGS="$curr_cflags $COB_DEBUG_FLAGS"
+	if test "x$curr_cflags" != "x"; then
+		CFLAGS="$curr_cflags $COB_DEBUG_FLAGS"
+	else
+		CFLAGS="$COB_DEBUG_FLAGS"
+	fi
 else
 	CFLAGS="$curr_cflags"
 fi
@@ -2288,6 +2293,7 @@ AC_MSG_NOTICE([GnuCOBOL Configuration:])
 AC_MSG_NOTICE([ CC                ${CC}])
 AC_MSG_NOTICE([ CFLAGS            ${CFLAGS}])
 AC_MSG_NOTICE([ LDFLAGS           ${LDFLAGS}])
+AC_MSG_NOTICE([ LIBCOB_LIBS       ${LIBCOB_LIBS}])
 if test "x$PROGRAMS_LIBS" != x; then
   AC_MSG_NOTICE([ PROGRAMS_LIBS         ${PROGRAMS_LIBS}])
 fi

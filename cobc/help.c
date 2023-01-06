@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2022 Free Software Foundation, Inc.
+   Copyright (C) 2001-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
    Brian Tiffin, Edward Hart, Dave Pitts
 
@@ -115,10 +115,11 @@ cobc_print_usage_common_options (void)
 	puts (_("  -I <directory>        add <directory> to copy/include search path"));
 	puts (_("  -L <directory>        add <directory> to library search path"));
 	puts (_("  -l <lib>              link the library <lib>"));
+	puts (_("  -D <define>           define <define> for COBOL compilation"));
 	puts (_("  -A <options>          add <options> to the C compile phase"));
 	puts (_("  -Q <options>          add <options> to the C link phase"));
-	puts (_("  -D <define>           define <define> for COBOL compilation"));
-	puts (_("  -K <entry>            generate CALL to <entry> as static"));
+	puts (_("  -Q <options>          add <options> to the C link phase"));
+	puts (_("  --coverage            instrument generated binaries for coverage"));
 	puts (_("  --conf=<file>         user-defined dialect configuration; see -std"));
 	puts (_("  --list-reserved       display reserved words"));
 	puts (_("  --list-intrinsics     display intrinsic functions"));

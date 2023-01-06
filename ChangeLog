@@ -1,4 +1,9 @@
 
+2023-01-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am (CODE_COVERAGE_IGNORE_PATTERN): add some .def files
+	  that have shown to be not useful for code coverage
+
 2022-12-12  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: check for and substitute PERL/perl
@@ -1481,7 +1486,7 @@
 	* Version 0.9 released.
 
 
-Copyright 2002-2022 Free Software Foundation, Inc.
+Copyright 2002-2023 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

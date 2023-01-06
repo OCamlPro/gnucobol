@@ -4741,14 +4741,13 @@ output_initialize_fp (cb_tree x, struct cb_field *f)
 }
 
 static void
-output_initialize_uniform (cb_tree x, const int c, const int size)
+output_initialize_uniform (cb_tree x, const unsigned char cc, const int size)
 {
 	struct cb_field		*f = cb_code_field (x);
-	const unsigned char cc = c;
 
 	/* REPORT lines are cleared to SPACES */
 	if (f->storage == CB_STORAGE_REPORT
-	 && c == ' ') {
+	 && cc == ' ') {
 		return;
 	}
 
@@ -5347,7 +5346,7 @@ output_initialize_compound (struct cb_initialize *p, cb_tree x)
 					} else {
 						size = ff->offset + ff->size - last_field->offset;
 					}
-					output_initialize_uniform (c, last_char, size);
+					output_initialize_uniform (c, (unsigned char)last_char, size);
 				}
 				break;
 			}
@@ -5401,7 +5400,6 @@ output_initialize_compound (struct cb_initialize *p, cb_tree x)
 						init = ' ';
 					}
 					if (init != -1) {
-						cb_tree c = cb_build_field_reference (f, NULL);
 						cb_tree stmt = CB_BUILD_FUNCALL_3 ("memset",
 							CB_BUILD_CAST_ADDRESS (c),
 							cb_int (init), cb_int (f->size * f->occurs_max));
@@ -5539,7 +5537,7 @@ output_initialize (struct cb_initialize *p)
 		case INITIALIZE_DEFAULT:
 			c = initialize_uniform_char (f, p);
 			if (c != -1) {
-				output_initialize_uniform (p->var, c, f->occurs_max);
+				output_initialize_uniform (p->var, (unsigned char)c, f->occurs_max);
 				output_initialize_chaining (f, p);
 				return;
 			}
@@ -5584,7 +5582,7 @@ output_initialize (struct cb_initialize *p)
 	case INITIALIZE_DEFAULT:
 		c = initialize_uniform_char (f, p);
 		if (c != -1) {
-			output_initialize_uniform (p->var, c, f->size);
+			output_initialize_uniform (p->var, (unsigned char)c, f->size);
 			output_initialize_chaining (f, p);
 			return;
 		}
