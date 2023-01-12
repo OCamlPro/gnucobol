@@ -1072,7 +1072,7 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 	if (sign < 0) {
 		mpz_neg (d->value, d->value);
 	}
-	d->scale = COB_FIELD_SCALE(f);
+	d->scale = COB_FIELD_SCALE (f);
 }
 
 /* get the numeric value from the given decimal and store it in the

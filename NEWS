@@ -284,6 +284,9 @@ NEWS - user visible changes				-*- outline -*-
 ** new compiler command line option -ftcmd to enable printing of the command
    line in the source listing
 
+** new compiler command line option --coverage to instrument binaries
+   for coverage checks
+
 ** the command line options -MT and -MF, which are used for creating a
    dependency list (used copybooks) to be used for inclusion in Makefiles
    or other processes, and which were removed in GnuCOBOL 2 are back in their
@@ -374,7 +377,8 @@ NEWS - user visible changes				-*- outline -*-
 	MOVE and comparisions (especially with enabled runtime checks, to
 	  optimize those a re-compile is needed)
 	CALL data-item, and first time for each CALL
-	ACCEPT DATE/TIME/DAY and datetime related FUNCTIONs
+	ACCEPT DATE/TIME/DAY, most if numeric items are accepted
+	datetime related FUNCTIONs
 	runtime checks for use of LINKAGE/BASED fields and/or
 	  subscripts/reference-modification (re-compile needed)
 	general: execution of programs generated with -fsource-location

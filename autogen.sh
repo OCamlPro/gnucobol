@@ -3,7 +3,7 @@
 # Bootstrap gnucobol package from checked-out sources
 # Note:  call as ./autogen.sh if you don't have readlink -f
 #
-# Copyright (C) 2019,2022 Free Software Foundation, Inc.
+# Copyright (C) 2019,2022,2023 Free Software Foundation, Inc.
 # Written by Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -32,7 +32,7 @@ else
   GCMAINPATH="$MAINPATH"
 fi
 if test ! -f $MAINPATH/$me; then
-  echo; echo "ERROR - cannot set main directory [checked $MAINPATH/build_aux/$me] - aborting $me" && exit 1
+  echo; echo "ERROR - cannot set main directory [checked $MAINPATH/$me] - aborting $me" && exit 1
 fi
 
 olddir_autogen=`pwd`

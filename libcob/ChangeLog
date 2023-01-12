@@ -1,4 +1,8 @@
 
+2023-01-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* intrinsic.c: minor refactoring to reduce duplicated code
+
 2023-01-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_cmp): fix stack-use-after-scope for comparisons of unsigned
