@@ -1,8 +1,4 @@
 
-2023-01-14  Ron Norman <rjn@inglenet.com>
-
-	* field.c (cb_build_full_field_reference): fix infinite loop
-
 2022-11-26  Ron Norman <rjn@inglenet.com>
 
 	* cobc.c,cobc.h: Add cb_keycompress flags
