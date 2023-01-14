@@ -1,4 +1,8 @@
 
+2023-01-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: fix to use pdcurses when libcurses was verified
+
 2023-01-05  Simon Sobisch <simonsobisch@gnu.org>
 
 	* Makefile.am (CODE_COVERAGE_IGNORE_PATTERN): add some .def files
