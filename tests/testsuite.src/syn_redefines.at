@@ -451,3 +451,185 @@ AT_CLEANUP
 # 15) TODO
 
 # 16) TODO
+
+AT_SETUP([Field qualification with FILLER])
+AT_KEYWORDS([FILLER])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+            SELECT UNSORTED-NAMES ASSIGN TO "CLIENTS.DAT"
+                         ORGANIZATION IS LINE SEQUENTIAL.
+       
+            SELECT WORK-FILE ASSIGN TO "TEMP.DAT".
+       
+            SELECT SORTED-NAMES ASSIGN TO "SCLIENTS.DAT"
+                         ORGANIZATION IS LINE SEQUENTIAL.
+       
+            SELECT ERROR-FILE ASSIGN TO "ERROR.DAT"
+                         ORGANIZATION IS LINE SEQUENTIAL.
+       
+       DATA DIVISION.
+       FILE SECTION.
+       
+       FD  UNSORTED-NAMES.
+       01  UNSORTED-REC           PIC X(99).
+       
+       SD  WORK-FILE.
+       01  WORK-REC.
+            02 CLIENT-NAME         PIC X(35).
+            02 CLIENT-ADDRESS      PIC X(60).
+            02 COUNTY-NO           PIC 99.
+            02 CLIENT-NO           PIC 9999.
+       
+       FD  SORTED-NAMES.
+       01  SORTED-REC             PIC X(101).
+       
+       FD  ERROR-FILE.
+       01  ERROR-REC              PIC X(99).
+       
+       WORKING-STORAGE SECTION.
+       01  COUNTY-TABLE.
+            02 COUNTY-VALUES.
+               03    FILLER        PIC X(11) VALUE "ANTRIM".
+               03    FILLER        PIC X(11) VALUE "ARMAGH".
+               03    FILLER        PIC X(11) VALUE "CARLOW".
+               03    FILLER        PIC X(11) VALUE "CAVAN".
+               03    FILLER        PIC X(11) VALUE "CLARE".
+               03    FILLER        PIC X(11) VALUE "CORK".
+               03    FILLER        PIC X(11) VALUE "DERRY".
+               03    FILLER        PIC X(11) VALUE "DONEGAL".
+               03    FILLER        PIC X(11) VALUE "DOWN".
+               03    FILLER        PIC X(11) VALUE "DUBLIN".
+               03    FILLER        PIC X(11) VALUE "FERMANAGH".
+               03    FILLER        PIC X(11) VALUE "GALWAY".
+               03    FILLER        PIC X(11) VALUE "KERRY".
+               03    FILLER        PIC X(11) VALUE "KILDARE".
+               03    FILLER        PIC X(11) VALUE "KILKENNY".
+               03    FILLER        PIC X(11) VALUE "LAOIS".
+               03    FILLER        PIC X(11) VALUE "LEITRIM".
+               03    FILLER        PIC X(11) VALUE "LIMERICK".
+               03    FILLER        PIC X(11) VALUE "LONGFORD".
+               03    FILLER        PIC X(11) VALUE "LOUTH".
+               03    FILLER        PIC X(11) VALUE "MAYO".
+               03    FILLER        PIC X(11) VALUE "MEATH".
+               03    FILLER        PIC X(11) VALUE "MONAGHAN".
+               03    FILLER        PIC X(11) VALUE "OFFALY".
+               03    FILLER        PIC X(11) VALUE "ROSCOMMON".
+               03    FILLER        PIC X(11) VALUE "SLIGO".
+               03    FILLER        PIC X(11) VALUE "TIPPERARY".
+               03    FILLER        PIC X(11) VALUE "TYRONE".
+               03    FILLER        PIC X(11) VALUE "WATERFORD".
+               03    FILLER        PIC X(11) VALUE "WESTMEATH".
+               03    FILLER        PIC X(11) VALUE "WEXFORD".
+               03    FILLER        PIC X(11) VALUE "WICKLOW".
+            02 FILLER      REDEFINES COUNTY-VALUES.
+               03    COUNTY-NAME OCCURS 32 TIMES
+                        ASCENDING KEY COUNTY-NAME
+                        INDEXED BY COUNTY-NUM
+                        PIC X(11).
+       
+       01  FILLER                 PIC 9 VALUE 0.
+            88 END-OF-FILE         VALUE 1.
+       
+       01  LOWER-CASE             PIC X(26)
+                VALUE "abcdefghijklmnopqrstuvwxyz".
+       
+       01  UPPER-CASE             PIC X(26)
+                VALUE "ABCDEFGHIJKLMNOPQRSTUVWXYZ".
+       
+       01  HOLD-ITEMS.
+            02 HOLD-CLIENT         PIC X(35).
+            02 HOLD-NAME           PIC X(35).
+            02 HOLD-COUNTY         PIC X(11).
+            02 HOLD-CLIENT-NO      PIC X(4).
+       
+       01  PTR-ITEMS.
+            02 UNSTR-PTR           PIC 99.
+               88 END-OF-ADDRESS   VALUE 61.
+               88 END-OF-NAME      VALUE 36.
+            02 STR-PTR             PIC 99.
+            02 NAME-END            PIC 99.
+       
+       PROCEDURE DIVISION.
+       CONVERT-FILE.
+            SORT WORK-FILE ON ASCENDING COUNTY-NO, CLIENT-NAME
+                INPUT PROCEDURE IS CONVERT-RECORDS
+                GIVING SORTED-NAMES.
+            STOP RUN.
+       
+       CONVERT-RECORDS.
+            OPEN INPUT UNSORTED-NAMES
+            OPEN OUTPUT ERROR-FILE
+            READ UNSORTED-NAMES
+                AT END SET END-OF-FILE TO TRUE
+            END-READ
+            PERFORM UNPACK-RECORDS UNTIL END-OF-FILE
+            CLOSE ERROR-FILE
+            CLOSE UNSORTED-NAMES.
+       
+       UNPACK-RECORDS.
+            MOVE SPACES TO WORK-REC
+            MOVE 1 TO UNSTR-PTR.
+       
+            UNSTRING UNSORTED-REC
+                DELIMITED BY ","
+                INTO HOLD-CLIENT, CLIENT-ADDRESS, HOLD-CLIENT-NO
+            MOVE HOLD-CLIENT-NO TO CLIENT-NO.
+       
+            PERFORM UNTIL END-OF-ADDRESS
+                UNSTRING CLIENT-ADDRESS DELIMITED BY ALL SPACES
+                    INTO HOLD-COUNTY
+                    WITH POINTER UNSTR-PTR
+       
+            END-PERFORM
+       
+            INSPECT HOLD-COUNTY CONVERTING LOWER-CASE TO UPPER-CASE.
+            SEARCH ALL COUNTY-NAME
+                AT END WRITE ERROR-REC FROM UNSORTED-REC
+                WHEN COUNTY-NAME(COUNTY-NUM) = HOLD-COUNTY
+                    SET COUNTY-NO TO COUNTY-NUM
+                    PERFORM RESTRUCTURE-NAME
+                    RELEASE WORK-REC
+            END-SEARCH
+            MOVE SPACES TO UNSORTED-REC
+            READ UNSORTED-NAMES
+                AT END SET END-OF-FILE TO TRUE
+            END-READ.
+       
+       RESTRUCTURE-NAME.
+            MOVE 1 TO UNSTR-PTR, STR-PTR.
+            PERFORM UNTIL END-OF-NAME
+                MOVE UNSTR-PTR TO NAME-END
+                UNSTRING HOLD-CLIENT DELIMITED BY ALL SPACES
+                    INTO HOLD-NAME
+                    WITH POINTER UNSTR-PTR
+            END-PERFORM
+       
+            STRING HOLD-NAME DELIMITED BY SPACES
+                SPACE DELIMITED BY SIZE
+                INTO CLIENT-NAME
+                WITH POINTER STR-PTR.
+       
+            MOVE 1 TO UNSTR-PTR
+            PERFORM UNTIL UNSTR-PTR >= NAME-END
+                UNSTRING HOLD-CLIENT DELIMITED BY SPACES
+                    INTO HOLD-NAME
+                    WITH POINTER UNSTR-PTR
+                STRING HOLD-NAME DELIMITED BY SPACES
+                    SPACE DELIMITED BY SIZE
+                    INTO CLIENT-NAME
+                    WITH POINTER STR-PTR
+            END-PERFORM.
+       
+])
+
+AT_CHECK([$COMPILE_ONLY -std=default prog.cob ], [0], [],
+[])
+
+AT_CLEANUP
+
