@@ -1,4 +1,8 @@
 
+2023-01-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: fix to use pdcurses when libcurses was verified
+
 2022-12-02  Simon Sobisch <simonsobisch@gnu.org>
 
 	* Makefile.am: tarstamp.h may now be created on base of VCSDATE or
@@ -1581,7 +1585,7 @@
 	* Version 0.9 released.
 
 
-Copyright 2002-2022 Free Software Foundation, Inc.
+Copyright 2002-2023 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.
