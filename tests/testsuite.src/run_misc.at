@@ -893,7 +893,7 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY -std=cobol2014 prog.cob], [1], [],
-[prog.cob:6: error: level 01 item 'X' cannot have a OCCURS clause
+[prog.cob:6: error: 01/77 OCCURS does not conform to COBOL 2014
 ])
 
 AT_CLEANUP
@@ -7615,7 +7615,7 @@ AT_CHECK([$COBC callee2.cob], [0], [], [])
 AT_CHECK([$COBC -ftrace preload.cob], [0], [], [])
 AT_CHECK([$COBC -ftraceall preload2.cob], [0], [], [])
 AT_CHECK([$COBC -fsource-location callee2c.cob], [0], [], [])
-AT_CHECK([$COBC -x -o prog -ftraceall caller.cob], [0], [], [])
+AT_CHECK([$COMPILE -o prog -ftraceall caller.cob], [0], [], [])
 AT_CHECK([COB_PHYSICAL_CANCEL=1 COB_PRE_LOAD="preload"$PATHSEP"preload2" \
  $COBCRUN_DIRECT ./prog], [0], [],
 [Source: 'caller.cob'
@@ -9187,7 +9187,7 @@ AT_DATA([prog.cob], [
        END PROGRAM sub2.
 ])
 
-AT_CHECK([$COBC -x -debug -fdump=ALL prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE -debug -fdump=ALL prog.cob ], [0], [], [])
 
 AT_CHECK([COB_DUMP_FILE=dumpall.txt \
 $COBCRUN_DIRECT ./prog], [11], [sub1: X is 000000001 RECORD:Peek a boo!.
@@ -11635,7 +11635,7 @@ AT_DATA([prog.cob], [
            MOVE SPACES TO D-RND.
 ])
 
-AT_CHECK([$COBC -x -std=ibm -farithmetic-osvs -w prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -std=ibm -farithmetic-osvs -w prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [-- TEST COMPUTE WITH ROUNDING --
  AMOUNT:  123.45  PERCENT: 24
@@ -11656,7 +11656,7 @@ Complex  RSLT    IS 188 RSLTv9  IS 188.0
 -- TEST FINISHED --
 ], [])
 
-AT_CHECK([$COBC -x -std=ibm -w -fno-arithmetic-osvs prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -std=ibm -w -fno-arithmetic-osvs prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [-- TEST COMPUTE WITH ROUNDING --
  AMOUNT:  123.45  PERCENT: 24
@@ -13046,7 +13046,7 @@ AT_DATA([prog.cob], [
        STOP RUN RETURNING 0.
 ])
 
-AT_CHECK([cobc -x -std=mf -w prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -std=mf -w prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [0001
 0002
@@ -13095,7 +13095,7 @@ AT_DATA([prog.cob], [
          STOP RUN.
 ])
 
-AT_CHECK([cobc -x -std=mf -w prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -std=mf -w prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [Pointer test was good
 ], [])
@@ -13282,7 +13282,7 @@ COBCSUB(int y, unsigned char x[15])
 
 ]])
 
-AT_CHECK([cobc -x -std=ibm -debug -Wall prog.cob cmod.c], [0], [], [])
+AT_CHECK([$COMPILE -std=ibm -debug -Wall prog.cob cmod.c], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [00000001 'Fun and games for you'
 00000002 'More Fun and games for all'
@@ -14048,12 +14048,15 @@ AT_DATA([prog.cob], [
 
 ])
 
-AT_CHECK([cobc -x -std=cobol2002 -w prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -std=cobol2002 -w prog.cob], [0], [], [])
 
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [23 tests & 00 failed
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[23 tests & 00 failed
 ], [])
 
 AT_CLEANUP
+
+
 AT_SETUP([NO Subscript])
 AT_KEYWORDS([LENGTH])
 
@@ -16849,7 +16852,7 @@ AT_DATA([prog.cob], [
            
 ])
 
-AT_CHECK([$COBC -x -std=mf -w prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE -std=mf -w prog.cob ], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [x12xxx123x123x*****
 ], [])
@@ -16896,7 +16899,7 @@ AT_DATA([prog.cob], [
            
 ])
 
-AT_CHECK([$COBC -x -std=mf -w -fibmcomp prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE -std=mf -w -fibmcomp prog.cob ], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [x12xxx1234xx1234x*****
 ], [])

@@ -63,7 +63,7 @@ int				current_call_convention;
 /* Local variables */
 
 static struct cb_define_struct	*ppp_setvar_list = NULL;
-static unsigned int		current_cmd = 0;
+static enum cb_directive_action		current_cmd = PLEX_ACT_IF;
 
 /* Local functions */
 
@@ -128,55 +128,57 @@ ppp_set_value (struct cb_define_struct *p, const char *value)
 	const char	*s;
 	size_t		size;
 	unsigned int	dotseen;
-	int		sign;
-	int		int_part;
-	int		dec_part;
-
-	if (!value) {
-		p->deftype = PLEX_DEF_NONE;
-		p->value = NULL;
-		p->sign = 0;
-		p->int_part = 0;
-		p->dec_part = 0;
-		return 0;
-	}
-
-	if (*value == '"' || *value == '\'') {
-		sign = *value;
-		p->value = cobc_plex_strdup (value + 1);
-		size = strlen (p->value) - 1;
-		if (sign != p->value[size]) {
-			p->value = NULL;
-			p->deftype = PLEX_DEF_NONE;
-			return 1;
-		}
-		p->value[size] = 0;
-		p->deftype = PLEX_DEF_LIT;
-		p->sign = 0;
-		p->int_part = 0;
-		p->dec_part = 0;
-		return 0;
-	}
-
-	p->value = cobc_plex_strdup (value);
-	p->deftype = PLEX_DEF_NUM;
+	
+	p->value = NULL;
 	p->sign = 0;
 	p->int_part = 0;
 	p->dec_part = 0;
 
-	sign = 0;
-	if (*value == '+') {
-		value++;
-	} else if (*value == '-') {
-		value++;
-		sign = 1;
+	if (!value) {
+		p->deftype = PLEX_DEF_NONE;
+		return 0;
 	}
-	int_part = 0;
-	dec_part = 0;
-	size = 0;
+
+	if (*value == '"' || *value == '\'') {
+		s = value + 1;
+		size = strlen (s) - 1;
+		if (s[size] != *value) {
+			p->deftype = PLEX_DEF_NONE;
+			return 1;
+		}
+		p->deftype = PLEX_DEF_LIT;
+		p->value = cobc_plex_strdup (s);
+		p->value[size] = 0;
+		return 0;
+	}
+
+	if (*value == '(') {
+		/* actual MicroFocus Format for numeric values: (numlit) */
+		s = value + 1;
+		size = strlen (s) - 1;
+		if (s[size] != ')') {
+			p->deftype = PLEX_DEF_NONE;
+			return 1;
+		}
+		p->deftype = PLEX_DEF_NUM;
+		p->value = cobc_plex_strdup (s);
+		p->value[size] = 0;
+	} else {
+		/* compatibility because this was supported since OpenCOBOL 2.0 */
+		p->deftype = PLEX_DEF_NUM;
+		p->value = cobc_plex_strdup (value);
+	}
+
+	p->sign = 0;
+	s = p->value;
+	if (*s == '+') {
+		s++;
+	} else if (*s == '-') {
+		s++;
+		p->sign = 1;
+	}
 	dotseen = 0;
-	s = value;
-	for ( ; *s; ++s, ++size) {
+	for ( ; *s; ++s) {
 		if (*s == '.') {
 			if (dotseen) {
 				p->deftype = PLEX_DEF_NONE;
@@ -190,18 +192,15 @@ ppp_set_value (struct cb_define_struct *p, const char *value)
 			return 1;
 		}
 		if (!dotseen) {
-			int_part = (int_part * 10) + (*s - '0');
+			p->int_part = (p->int_part * 10) + (*s - '0');
 		} else {
-			dec_part = (dec_part * 10) + (*s - '0');
+			p->dec_part = (p->dec_part * 10) + (*s - '0');
 		}
 	}
 
-	if (!int_part && !dec_part) {
-		sign = 0;
+	if (!p->int_part && !p->dec_part) {
+		p->sign = 0;	/* zero is unsigned */
 	}
-	p->sign = sign;
-	p->int_part = int_part;
-	p->dec_part = dec_part;
 	return 0;
 }
 
@@ -297,7 +296,7 @@ ppp_define_add (struct cb_define_struct *list, const char *name,
 				l->value = NULL;
 			}
 			if (ppp_set_value (l, text)) {
-				cb_error (_("invalid constant in DEFINE directive"));
+				cb_error (_("invalid constant %s in DEFINE directive"), text);
 				return NULL;
 			}
 			return list;
@@ -307,7 +306,7 @@ ppp_define_add (struct cb_define_struct *list, const char *name,
 	p = cobc_plex_malloc (sizeof (struct cb_define_struct));
 	p->name = cobc_plex_strdup (name);
 	if (ppp_set_value (p, text)) {
-		cb_error (_("invalid constant in DEFINE directive"));
+		cb_error (_ ("invalid constant %s in DEFINE directive"), text);
 		return NULL;
 	}
 
@@ -746,7 +745,12 @@ set_choice:
 	p = ppp_define_add (ppp_setvar_list, $2, $3, 1);
 	if (p) {
 		ppp_setvar_list = p;
-		fprintf (ppout, "#DEFLIT %s %s\n", $2, $3);
+		p = p->last;
+		if (p->deftype == PLEX_DEF_NUM) {
+			fprintf (ppout, "#DEFLIT %s %s\n", $2, p->value);
+		} else {
+			fprintf (ppout, "#DEFLIT %s \"%s\"\n", $2, p->value);
+		}
 	}
   }
 | VARIABLE_NAME set_options

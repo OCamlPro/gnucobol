@@ -1029,8 +1029,8 @@ ix_bdb_delete_internal (cob_file *f, const int rewrite, int bdb_opts)
 		return COB_STATUS_23_KEY_NOT_EXISTS;
 	}
 	prim_key = p->key;
-	memcpy(p->saverec, p->data.data, p->data.size);		/* Save old record image */
-	memcpy(p->temp_key,prim_key.data,prim_key.size);	/* Save primary key value */
+	memcpy (p->saverec, p->data.data, p->data.size);		/* Save old record image */
+	memcpy (p->temp_key,prim_key.data,prim_key.size);	/* Save primary key value */
 	prim_key.data = p->temp_key;
 
 	/* Delete the secondary keys */
@@ -1312,7 +1312,11 @@ ix_bdb_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const
 					   on OPEN-OUTPUT results with MinGW & BDB 6 in
 					   BDB1565 DB->pget: method not permitted before handle's open method
 					*/
+					/* the following only "works" if the file is an actual BDB database,
+					   otherwise a message may be returned, like BDB 5.3.21:
+					   BDB0004 fop_read_meta: /path/to/file: unexpected file type or format */
 					p->db[i]->remove (p->db[i], runtime_buffer, NULL, 0);
+					/* consider to use   unlink(runtime_buffer);   instead */
 					ret = db_create (&p->db[i], bdb_env, 0);
 				}
 			}
@@ -1434,13 +1438,12 @@ ix_bdb_open (cob_file_api *a, cob_file *f, char *filename, const int mode, const
 static int
 ix_bdb_close (cob_file_api *a, cob_file *f, const int opt)
 {
-	struct indexed_file	*p;
+	struct indexed_file	*p = f->file;
 	int			i;
 
 	COB_UNUSED (a);
 	COB_UNUSED (opt);
 
-	p = f->file;
 	if (bdb_env != NULL) {
 		bdb_unlock_all (f);
 		if (p->file_lock_set) {
@@ -1568,16 +1571,15 @@ ix_bdb_read (cob_file_api *a, cob_file *f, cob_field *key, const int read_opts)
 static int
 ix_bdb_read_next (cob_file_api *a, cob_file *f, const int read_opts)
 {
-	struct indexed_file	*p;
+	struct indexed_file	*p = f->file;
 	int			ret;
-	int			read_nextprev,skip_lock;
+	int			read_nextprev, skip_lock;
 	cob_u32_t		nextprev;
 	int			file_changed;
 	int			bdb_opts;
 	unsigned int		dupno;
 
 	COB_UNUSED (a);
-	p = f->file;
 	nextprev = DB_NEXT;
 	dupno = 0;
 	file_changed = 0;
@@ -1881,10 +1883,11 @@ ix_bdb_write (cob_file_api *a, cob_file *f, const int opt)
 	bdb_setkey (f, 0);
 	if (!p->last_key) {
 		p->last_key = cob_malloc ((size_t)p->maxkeylen);
-	} else if (f->access_mode == COB_ACCESS_SEQUENTIAL
-			 && f->open_mode == COB_OPEN_OUTPUT
-			 && !f->flag_set_isam
-			 && memcmp (p->last_key, p->key.data, (size_t)p->key.size) > 0) {
+	} else
+	if (f->access_mode == COB_ACCESS_SEQUENTIAL
+	 && f->open_mode == COB_OPEN_OUTPUT
+	 && !f->flag_set_isam
+	 && memcmp (p->last_key, p->key.data, (size_t)p->key.size) > 0) {
 		return COB_STATUS_21_KEY_INVALID;
 	}
 	memcpy (p->last_key, p->key.data, (size_t)p->key.size);

@@ -56,6 +56,21 @@
    a recent version (for older version define manually): */
 #define PDC_NCMOUSE		/* use ncurses compatible mouse API */
 #include <pdcurses.h>
+#elif defined (HAVE_PDCURSES_CURSES_H)
+/* will internally define NCURSES_MOUSE_VERSION with
+   a recent version (for older version define manually): */
+#define PDC_NCMOUSE		/* use ncurses compatible mouse API */
+#include <pdcurses/curses.h>
+#elif defined (HAVE_XCURSES_H)
+/* will internally define NCURSES_MOUSE_VERSION with
+   a recent version (for older version define manually): */
+#define PDC_NCMOUSE		/* use ncurses compatible mouse API */
+#include <xcurses.h>
+#elif defined (HAVE_XCURSES_CURSES_H)
+/* will internally define NCURSES_MOUSE_VERSION with
+   a recent version (for older version define manually): */
+#define PDC_NCMOUSE		/* use ncurses compatible mouse API */
+#include <xcurses/curses.h>
 #elif defined (HAVE_CURSES_H)
 #define PDC_NCMOUSE	/* see comment above */
 #include <curses.h>
@@ -131,7 +146,7 @@ static int			pending_accept;
 static int			got_sys_char;
 static unsigned int	curr_setting_insert_mode = INT_MAX;
 #ifdef NCURSES_MOUSE_VERSION
-static int	curr_setting_mouse_flags = INT_MAX;
+static unsigned int	curr_setting_mouse_flags = UINT_MAX;
 #endif
 #endif
 
@@ -169,10 +184,8 @@ init_cob_screen_if_needed (void)
 }
 
 static void
-cob_set_crt3_status (cob_field *status_field, int fret)
+get_crt3_status (int fret, unsigned char *crtstat)
 {
-	unsigned char	crtstat[3];
-
 	crtstat[0] = '0';
 	crtstat[1] = '\0';
 	crtstat[2] = '\0';
@@ -212,6 +225,13 @@ cob_set_crt3_status (cob_field *status_field, int fret)
 			crtstat[1] = (unsigned char)(fret - 2000);
 		}
 	}
+}
+
+static void
+cob_set_crt3_status (cob_field* status_field, int fret)
+{
+	unsigned char	crtstat[3];
+	get_crt3_status (fret, crtstat);
 
 	memcpy (status_field->data, crtstat, 3);
 }
@@ -314,7 +334,9 @@ cob_to_curses_color (cob_field *f, const short default_color)
 	if (!f) {
 		return default_color;
 	}
-	switch (cob_get_int (f)) {
+	/* compat for MF/ACU/... only use first 3 bits -> 0-7,
+	   bit 4 is "included highlight/blink attribute" */
+	switch (cob_get_int (f) & 7) {
 	case COB_SCREEN_BLACK:
 		return COLOR_BLACK;
 	case COB_SCREEN_BLUE:
@@ -336,6 +358,14 @@ cob_to_curses_color (cob_field *f, const short default_color)
 	}
 }
 
+/* compat for MF/ACU/... only use first 3 bits are colors -> 0-7,
+   bit 4 is "included highlight/blink attribute" -> an "extended" color */
+static int
+has_extended_color (cob_field* f)
+{
+	return f && (cob_get_int (f) & 8);
+}
+
 static short
 cob_get_color_pair (const short fg_color, const short bg_color)
 {
@@ -349,10 +379,13 @@ cob_get_color_pair (const short fg_color, const short bg_color)
 	}
 	
 	{
+		/* some implementations (especially PDCursesMod 64-bit CHTYPE)
+		   provide more color pairs than we currently support, limit appropriate */
+		const short	max_pairs = COLOR_PAIRS < SHRT_MAX ? COLOR_PAIRS : SHRT_MAX - 1;
 		short	color_pair_number;
 		short	fg_defined, bg_defined;
 
-		for (color_pair_number = 2; color_pair_number < COLOR_PAIRS; color_pair_number++) {
+		for (color_pair_number = 2; color_pair_number < max_pairs; color_pair_number++) {
 
 			pair_content (color_pair_number, &fg_defined, &bg_defined);
 
@@ -400,13 +433,15 @@ cob_screen_attr (cob_field *fgc, cob_field *bgc, const cob_flags_t attr,
 	if (attr & COB_SCREEN_REVERSE) {
 		styles |= A_REVERSE;
 	}
-	if (attr & COB_SCREEN_HIGHLIGHT) {
+	if (attr & COB_SCREEN_HIGHLIGHT
+	 || has_extended_color (fgc)) {
 		styles |= A_BOLD;
 	}
 	if (attr & COB_SCREEN_LOWLIGHT) {
 		styles |= A_DIM;
 	}
-	if (attr & COB_SCREEN_BLINK) {
+	if (attr & COB_SCREEN_BLINK
+	 || has_extended_color (bgc)) {
 		styles |= A_BLINK;
 	}
 	if (attr & COB_SCREEN_UNDERLINE) {
@@ -534,23 +569,33 @@ cob_screen_init (void)
 			}
 			init_pair ((short)0, fore_color, back_color);
 		}
-		if (COLOR_PAIRS) {
+		if (COLOR_PAIRS > 1) {
 			cob_has_color = 1;
 			/* explicit reserve pair 1 as all zero as we take this as "initialized" later on */
 			init_pair ((short)1, 0, 0);
-#ifdef	HAVE_LIBPDCURSES
-			/* pdcurses sets *ALL* pairs to default fg/bg, while ncurses initialize the to zero
-			   set all to zero here, allowing us to adjust them later */
+#ifdef __PDCURSES__
+			/* pdcurses wincon + vt sets *ALL* pairs to default fg/bg of the terminal,
+			   while ncurses initializes them to zero;
+			   set all to zero here, allowing us to adjust them later as necessary */
 			{
+				/* some implementations (especially PDCursesMod 64-bit CHTYPE)
+				   provide more color pairs than we currently support, limit appropriate */
+				const short	max_pairs = COLOR_PAIRS < SHRT_MAX ? COLOR_PAIRS : SHRT_MAX - 1;
 				short	color_pair_number;
 	
-				for (color_pair_number = 2; color_pair_number < COLOR_PAIRS; ++color_pair_number) {
+				for (color_pair_number = 2; color_pair_number < max_pairs; ++color_pair_number) {
 					init_pair (color_pair_number, 0, 0);
 					if (color_pair_number == SHRT_MAX) {
 						break;
 					}
 				}
 			}
+#if defined (PDC_BUILD) && PDC_BUILD >= 3501
+			if (!cobsetptr->cob_legacy) {
+				PDC_set_blink (1);
+				PDC_set_bold (1);
+			}
+#endif
 #endif
 		}
 	}
@@ -1059,7 +1104,7 @@ cob_screen_puts (cob_screen *s, cob_field *f, const cob_u32_t is_input,
 		for (size = 0; size < f->size; size++, p++) {
 			if (s->attr & COB_SCREEN_SECURE) {
 				cob_addch_no_trunc_check (COB_CH_AS);
-			} else if (*p <= ' ') {
+			} else if (*p <= ' ' && stmt == ACCEPT_STATEMENT) {
 				cob_addch_no_trunc_check (default_prompt_char);
 			} else {
 				cob_addch_no_trunc_check ((const chtype)*p);
@@ -1381,7 +1426,7 @@ find_field_by_pos (const int initial_curs, const int line, const int column) {
 		if (line == sline
 		 && column >= scolumn
 		 && column <= right_pos) {
-			return idx;
+			return (int)idx;
 		}
 	}
 	return -1;
@@ -1496,6 +1541,8 @@ shift_left (cob_screen * const s, const int cline, const int ccolumn,
 {
 	int		offset;
 	unsigned char	move_char;
+
+	COB_UNUSED (right_pos);
 	
 	for (offset = 0; offset < ccolumn - scolumn; offset++) {
 		move_char = s->field->data[offset + 1];
@@ -2225,7 +2272,6 @@ static size_t
 cob_prep_input (cob_screen *s)
 {
 	struct cob_inp_struct	*sptr;
-	int			n;
 
 	switch (s->type) {
 	case COB_SCREEN_TYPE_GROUP:
@@ -2252,6 +2298,7 @@ cob_prep_input (cob_screen *s)
 		cob_screen_puts (s, s->value, cobsetptr->cob_legacy,
 				 ACCEPT_STATEMENT);
 		if (s->occurs) {
+			int		n;
 			for (n = 1; n < s->occurs; ++n) {
 				cob_screen_puts (s, s->value, cobsetptr->cob_legacy,
 						 ACCEPT_STATEMENT);
@@ -2272,8 +2319,6 @@ cob_prep_input (cob_screen *s)
 static void
 cob_screen_iterate (cob_screen *s)
 {
-	int	n;
-
 	switch (s->type) {
 	case COB_SCREEN_TYPE_GROUP:
 		cob_screen_moveyx (s);
@@ -2287,6 +2332,7 @@ cob_screen_iterate (cob_screen *s)
 	case COB_SCREEN_TYPE_VALUE:
 		cob_screen_puts (s, s->value, 0, DISPLAY_STATEMENT);
 		if (s->occurs) {
+			int		n;
 			for (n = 1; n < s->occurs; ++n) {
 				cob_screen_puts (s, s->value, 0,
 						 DISPLAY_STATEMENT);
@@ -3543,6 +3589,11 @@ cob_exit_screen (void)
 				cob_display_text (" ");
 			}
 			flags = COB_SCREEN_NO_ECHO;
+			if (COB_MOUSE_FLAGS & 1024) {
+				/* disable mouse movement to exit the following ACCEPT OMITTED */
+				COB_MOUSE_FLAGS &= ~1024;
+				cob_settings_screenio ();
+			}
 			field_accept_from_curpos (NULL, NULL, NULL, NULL, NULL, NULL, NULL, flags);
 		}
 		cobglobptr->cob_screen_initialized = 0;
@@ -3555,11 +3606,7 @@ cob_exit_screen (void)
 #ifdef	HAVE_CURSES_FREEALL
 		/* cleanup storage that would otherwise be shown
 		   to be "still reachable" with valgrind */
- #if defined (NCURSES_VERSION)
 		_nc_freeall ();
- #elif defined (__PDCURSES__)
-		PDC_free_memory_allocations ();
- #endif
 #endif
 		if (cob_base_inp) {
 			cob_free (cob_base_inp);
@@ -3583,9 +3630,9 @@ cob_exit_screen_from_signal (int ss_only)
 
 	/* warning: some implementations of curses are not safe to request
 	   exiting from curses mode! (ncurses >6 seems fine,
-	   PDCurses depending on availablity of PDC_free_memory_allocations) */
-#if (!defined (NCURSES_VERSION_MAJOR) || NCURSES_VERSION_MAJOR < 6) && \
-	 !defined (HAVE_PDC_FREE_MEMORY_ALLOCATIONS)
+	   PDCurses only with PDCursesMod 4.3.5) */
+#if (!defined (NCURSES_VERSION_MAJOR) || NCURSES_VERSION_MAJOR < 6) \
+ && (!defined (PDC_BUILD) || PDC_BUILD < 4305)
 	if (ss_only) return; 
 #endif
 
@@ -3747,7 +3794,18 @@ cob_sys_sound_bell (void)
 void
 cob_accept_escape_key (cob_field *f)
 {
-	cob_set_int (f, COB_ACCEPT_STATUS);
+	int status = COB_ACCEPT_STATUS;
+	/* Note: MF + ACU set this to a 9(2) item, we do a translation here
+	   (only works for USAGE DISPLAY!); its value is the 2 digits of the termination keys
+	   TESTME (working as planned, same values in MF?) */
+	if (f->size == 2 && status) {
+		unsigned char	crtstat[3];
+		get_crt3_status (status, crtstat);
+		f->data[0] = crtstat[0];
+		f->data[1] = crtstat[1];
+	} else {
+		cob_set_int (f, status);
+	}
 }
 
 /* get CurSoR position on screen */
@@ -3755,6 +3813,7 @@ int
 cob_sys_get_csr_pos (unsigned char *fld)
 {
 #ifdef	WITH_EXTENDED_SCREENIO
+	const cob_field *f = COB_MODULE_PTR->cob_procedure_params[0];
 	int	cline;
 	int	ccol;
 #endif
@@ -3764,8 +3823,20 @@ cob_sys_get_csr_pos (unsigned char *fld)
 
 #ifdef	WITH_EXTENDED_SCREENIO
 	getyx (stdscr, cline, ccol);
-	fld[0] = (unsigned char)cline;
-	fld[1] = (unsigned char)ccol;
+	if (f && f->size == 4) {
+		/* group with sizes up to 64k (2 * 2 bytes)
+		   as used by Fujitsu (likely with a limit of
+		   254 which does _not_ apply to GnuCOBOL) */
+		const cob_u16_t bline = cline;
+		const cob_u16_t bcol = ccol;
+		memcpy (f->data, &bline, 2);
+		memcpy (f->data + 2, &bcol, 2);
+	} else {
+		/* group with sizes up to 255 (2 * 1 bytes)
+		   as used by MicroFocus [including C wrappers!]) */
+		fld[0] = (unsigned char)cline;
+		fld[1] = (unsigned char)ccol;
+	}
 
 #else
 	fld[0] = 1U;
@@ -3818,11 +3889,13 @@ cob_sys_get_char (unsigned char *fld)
 	return 0;
 }
 
-/* set CurSoR position on screen */
+/* set CurSoR position on screen,
+   expects a group of binary fields: line + col*/
 int
 cob_sys_set_csr_pos (unsigned char *fld)
 {
 #ifdef	WITH_EXTENDED_SCREENIO
+	const cob_field* f = COB_MODULE_PTR->cob_procedure_params[0];
 	int	cline;
 	int	ccol;
 #endif
@@ -3831,8 +3904,21 @@ cob_sys_set_csr_pos (unsigned char *fld)
 	init_cob_screen_if_needed ();
 
 #ifdef	WITH_EXTENDED_SCREENIO
-	cline = fld[0];
-	ccol= fld[1];
+	if (f && f->size == 4) {
+		/* group with sizes up to 64k (2 * 2 bytes)
+		   as used by Fujitsu (likely with a limit of
+		   254 which does _not_ apply to GnuCOBOL) */
+		cob_u16_t bline, bcol;
+		memcpy (&bline, f->data, 2);
+		memcpy (&bcol, f->data + 2, 2);
+		cline = bline;
+		ccol = bcol;
+	} else {
+		/* group with sizes up to 255 (2 * 1 bytes)
+		   as used by MicroFocus [including C wrappers!]) */
+		cline = fld[0];
+		ccol= fld[1];
+	}
 	return move (cline, ccol);
 #else
 	COB_UNUSED (fld);
@@ -3849,6 +3935,7 @@ cob_sys_get_scr_size (unsigned char *line, unsigned char *col)
 	init_cob_screen_if_needed ();
 
 #ifdef	WITH_EXTENDED_SCREENIO
+	/* TODO: when COBOL: set by C routines, to also work for > UCHARMAX values */
 	*line = (unsigned char)LINES;
 	*col = (unsigned char)COLS;
 #else
@@ -3913,7 +4000,7 @@ cob_settings_screenio (void)
 	mouseinterval (COB_MOUSE_INTERVAL);
 #endif
 #ifdef NCURSES_MOUSE_VERSION
-	if ((int)curr_setting_mouse_flags != (int)COB_MOUSE_FLAGS) {
+	if (curr_setting_mouse_flags != COB_MOUSE_FLAGS) {
 		mmask_t 	mask_applied = cob_mask_routine;
 		if (COB_MOUSE_FLAGS) {
 			/* COB_MOUSE_FLAGS & 1 --> auto-handling active

@@ -1,4 +1,10 @@
 
+2022-12-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* bootstrap: drop tarstamp.h generation, done via make
+	* config.guess, config.sub: updated to recent versions from
+	  git.savannah.gnu.org/gitweb/?p=config.git
+
 2022-06-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* config.guess, config.rpath, install-sh, mkinstalldirs, texinfo.tex:

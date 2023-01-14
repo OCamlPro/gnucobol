@@ -15,9 +15,9 @@
 ## 
 ## You should have received a copy of the GNU General Public License
 ## along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
- 
+
 ### GnuCOBOL Test Suite
- 
+
 ### ISO+IEC+1989-2014 REPORT WRITER module
 
 AT_SETUP([Report Line Order])

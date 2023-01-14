@@ -78,14 +78,16 @@ NEWS - user visible changes				-*- outline -*-
 
 Open Plans:
 
+* changes to CALL handling especially for BY VALUE and stdcall
 * delay-load xml, json and curses
 * start of C standardization
 * codegen: split of functions (big modules into multiple C functions)
-* possible "indent" run
+* "indent" run
 * ...
 
 
  GnuCOBOL 3.2
+ GnuCOBOL 3.2 preview (20221022)
 
 * New GnuCOBOL features
 
@@ -184,6 +186,14 @@ Open Plans:
 
 ** ORGANIZATION INDEXED (with BDB backend): internal changes in record and
    file locking, fixing some related bugs
+
+** extended screen io with PDCurses (most Win32 builds): blink and bolding
+   are now enabled, when supported
+
+** extended screen io: support for color codes 8-15 (implied highlight/blink
+   attribute); only the three lower bits are now considered during evaluation
+   of the color-number, leading to a previous value of 21 (which was ignored
+   until now) being interpreted as 5, see FR #387
 
 * Changes that potentially effects recompilation of existing programs:
 
@@ -383,7 +393,7 @@ Open Plans:
 
 * New build features
 
-** configure now honors BDB_LIBS
+** configure now honors BDB_LIBS and BDB_CFLAGS
 ** configure now honors MATH_LIBS
 ** configure now checks for XCurses and allows --with-curses=xcurses
    (experimental)

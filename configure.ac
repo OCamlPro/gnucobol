@@ -2,7 +2,7 @@ dnl
 dnl Configure template for GnuCOBOL
 dnl Process this file with autoconf to produce a configure script.
 dnl
-dnl Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
+dnl Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
 dnl Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
 dnl Edward Hart
 dnl
@@ -29,10 +29,10 @@ AC_INIT([GnuCOBOL],
 	[bug-gnucobol@gnu.org],
 	[gnucobol],
 	[https://www.gnu.org/software/gnucobol/])
-AC_REVISION([GnuCOBOL snapshot $Revision: 4629 $])
+AC_REVISION([GnuCOBOL snapshot $Revision: 4925 $])
 AC_COPYRIGHT([This file is part of GnuCOBOL.
 
-Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
+Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
 Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
 Edward Hart
 ])
@@ -119,7 +119,7 @@ AH_TEMPLATE([COB_DEBUG_FLAGS], [Compile/link option for debugging])
 AH_TEMPLATE([COB_SHARED_OPT], [Compile/link option for shared code])
 AH_TEMPLATE([COB_STRIP_CMD], [Strip command])
 AH_TEMPLATE([USE_LIBDL], [Use system dynamic loader])
-AH_TEMPLATE([HAVE_DLADDR], [Has dladdr function])
+#AH_TEMPLATE([HAVE_DLADDR], [Has dladdr function])
 AH_TEMPLATE([WITH_VARSEQ], [Define variable sequential file format])
 AH_TEMPLATE([HAVE_ATTRIBUTE_ALIGNED], [Has __attribute__((aligned))])
 AH_TEMPLATE([HAVE_ATTRIBUTE_PURE], [Has __attribute__((pure))])
@@ -756,7 +756,7 @@ AS_IF([test "$USE_MATH" = "mpir" -o "$USE_MATH" = "check"], [
 	  CPPFLAGS="$CPPFLAGS $MPIR_CFLAGS"
 	fi
 	if test -z "${MPIR_LIBS+x}"; then
-	  GMP_LIBS="-lmpir"
+	  MPIR_LIBS="-lmpir"
 	fi
 	LIBS="$LIBS $MPIR_LIBS"
 	AC_CHECK_HEADERS([mpir.h], [
@@ -769,12 +769,12 @@ AS_IF([test "$USE_MATH" = "mpir" -o "$USE_MATH" = "check"], [
 		   USE_MATH=mpir],
 		  [AC_MSG_RESULT([no])
 		   if test "$USE_MATH" = "mpir"; then
-		     AC_MSG_ERROR([[MPIR is required for --with-math=mpir, you may adjust GMP_LIBS]])
+		     AC_MSG_ERROR([[MPIR is required for --with-math=mpir, you may adjust MPIR_LIBS]])
 		   fi
 		   LIBS="$curr_libs"; CPPFLAGS="$curr_cppflags"]
 		)
 	], [if test "$USE_MATH" = "mpir"; then
-		    AC_MSG_ERROR([mpir.h is required for --with-math=mpir, you may adjust GMP_CFLAGS])
+		    AC_MSG_ERROR([mpir.h is required for --with-math=mpir, you may adjust MPIR_CFLAGS])
 		 fi
 		 LIBS="$curr_libs"; CPPFLAGS="$curr_cppflags"
 	])
@@ -971,10 +971,10 @@ AS_IF([test "$USE_JSON" = "cjson" -o "$USE_JSON" = "local" -o "$USE_JSON" = "che
 	   LIBS="$LIBS $COMMON_LIBS"
 	   AC_LINK_IFELSE([
 		AC_LANG_PROGRAM([[#include "cJSON.c"]],
-	                   [[#if (CJSON_VERSION_MAJOR * 100 + CJSON_VERSION_MINOR) < 103
-                        	#error Needs at least cJSON 1.3.0
-					     #endif
-						 cJSON_CreateNull ();]])],
+		               [[#if (CJSON_VERSION_MAJOR * 100 + CJSON_VERSION_MINOR) < 103
+		                    #error Needs at least cJSON 1.3.0
+		                 #endif
+		                 cJSON_CreateNull ();]])],
 	   [AC_MSG_RESULT([yes])
 	    AC_DEFINE([WITH_CJSON], [1])
 	    with_cjson_local="yes (in ./libcob)"],
@@ -989,10 +989,10 @@ AS_IF([test "$USE_JSON" = "cjson" -o "$USE_JSON" = "local" -o "$USE_JSON" = "che
 	     LIBS="$LIBS $COMMON_LIBS"
 	     AC_LINK_IFELSE([
 		  AC_LANG_PROGRAM([[#include "cJSON.c"]],
-	                     [[#if (CJSON_VERSION_MAJOR * 100 + CJSON_VERSION_MINOR) < 103
-                         	  #error Needs at least cJSON 1.3.0
-					       #endif
-						   cJSON_CreateNull ();]])],
+		                 [[#if (CJSON_VERSION_MAJOR * 100 + CJSON_VERSION_MINOR) < 103
+		                       #error Needs at least cJSON 1.3.0
+		                   #endif
+		                   cJSON_CreateNull ();]])],
 	     [AC_MSG_RESULT([yes])
 	      AC_DEFINE([WITH_CJSON], [1])
 	      with_cjson_local="yes (in \"$srcdir/libcob\")"],
@@ -1368,16 +1368,6 @@ if test "$USE_CURSES" = "ncurses" -o "$USE_CURSES" = "ncursesw"; then
     [])
 fi
 
-if test "$USE_CURSES" = "pdcurses" -o "$USE_CURSES" = "xcurses"; then
-    AC_MSG_CHECKING([for PDCurses PDC_free_memory_allocations() function])
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-    extern void PDC_free_memory_allocations (void);]],
-    [[PDC_free_memory_allocations ();]])],
-    [AC_DEFINE([HAVE_CURSES_FREEALL], [1]) AC_MSG_RESULT([yes])],
-    [AC_MSG_RESULT([no])],
-    [])
-fi
-
 if test "$USE_CURSES" != "no" -a "$USE_CURSES" != "not_found"; then
 	AC_MSG_CHECKING([for curses color_set function])
 	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
@@ -1463,7 +1453,7 @@ if test "$USE_CURSES" != "no" -a "$USE_CURSES" != "not_found"; then
 	[AC_MSG_RESULT([no])],
 	[])
 fi
-LIBS="$curr_libs" # removing curses
+LIBS="$curr_libs"  # clean for next checks
 
 #
 ## Checks for indexed handlers
@@ -1599,7 +1589,7 @@ AS_IF([test "$with_vbisam" = "yes" -o "$with_vbisam" = "check"], [
 	fi
 	AC_CHECK_HEADERS([vbisam.h], [],
 			[if test "$with_vbisam" = "yes"; then
-				AC_MSG_ERROR([vbisam.h is required for VB-ISAM])
+				AC_MSG_ERROR([vbisam.h is required for VBISAM])
 			else
 			   with_vbisam=not_found
 			   break
@@ -1756,11 +1746,16 @@ AC_ARG_WITH([oci],
 [])
 
 # Checks for db.
+AC_ARG_VAR([BDB_CFLAGS], [compiler flags necessary to preprocess/compile for Berkeley DB])
 AC_ARG_VAR([BDB_LIBS], [linker flags for Berkeley DB, overriding automatic lookup])
 if test "$with_db" = "yes" -o "$with_db" = "check"; then
 	AC_MSG_NOTICE([Checks for Berkeley DB ...])
 
-	AC_CHECK_HEADERS([db.h], [], AC_MSG_ERROR([Berkeley DB db.h is missing]), [])
+	curr_cppflags="$CPPFLAGS"
+	if test -n "$BDB_CFLAGS"; then
+	   CPPFLAGS="$CPPFLAGS $BDB_CFLAGS"
+	fi
+	AC_CHECK_HEADERS([db.h], [], AC_MSG_ERROR([[Berkeley DB db.h is missing, you may adjust BDB_CFLAGS]]), [])
 
 	# BDB header exists. Extract major/minor number pair
 	COB_BDB_HEADER=''
@@ -2331,8 +2326,8 @@ fi
 
 cob_temp_flags=$(echo x$cob_temp_flags |		\
 	$SED -e 's/^x//'				\
-	     -e 's/-g\(db\)\{0,1\}[[0-9 ]]//g'				\
-	     -e 's/-g\(db\)\{0,1\}$//'				\
+	     -e 's/-g\(gdb\)\{0,1\}[[0-9 ]]//g'				\
+	     -e 's/-g\(gdb\)\{0,1\}$//'				\
 	     -e 's/-Ofast//g'			\
 	     -e 's/[[+-]]O[[0-9sz]]* //g'		\
 	     -e 's/[[+-]]O[[0-9sz]]*$//g'		\

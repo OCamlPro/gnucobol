@@ -69,7 +69,7 @@ _test_with_screen () {
 
 _test_with_cmd () {
   # run cmd to start a detached cmd (via cmd's start), and execute the tests there
-  cmd.exe /c "start \"$TITLE\" /wait cmd /v:on /c \"$COBCRUN_DIRECT $(echo $* | tr / \\) 2>syserr.log & echo !errorlevel! >result\""
+  cmd.exe /c "start \"$TITLE\" /wait cmd /v:on /c \"$COBCRUN_DIRECT $(echo $* | tr '/' '\\') 2>syserr.log & echo !errorlevel! >result\""
   #if test -f ./syserr.log; then
   #  dos2unix -q ./syserr.log
   #fi

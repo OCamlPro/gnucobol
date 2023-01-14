@@ -5522,8 +5522,7 @@ decimal_expand (cb_tree d, cb_tree x)
 			COBC_ABORT ();
 		}
 		/* LCOV_EXCL_STOP */
-		dpush (CB_BUILD_FUNCALL_2 ("cob_decimal_set_llint", d,
-			cb_int0));
+		dpush (CB_BUILD_FUNCALL_2 ("cob_decimal_set_llint", d, cb_int0));
 		break;
 	case CB_TAG_LITERAL:
 		/* Set d, N */
@@ -5534,7 +5533,7 @@ decimal_expand (cb_tree d, cb_tree x)
 				cb_build_cast_llint (x)));
 		} else {
 			dpush (CB_BUILD_FUNCALL_2 ("cob_decimal_set_field", d, x));
-			push_expr_dec (l->scale);
+			push_expr_dec (l->scale);	/* CHECKME: Why is this here in this branch? */
 		}
 		break;
 	case CB_TAG_REFERENCE:
@@ -5726,9 +5725,9 @@ build_decimal_assign (cb_tree vars, const int op, cb_tree val)
 	} else {
 		t = decimal_alloc ();
 		for (l = vars; l; l = CB_CHAIN (l)) {
-			/* Set t, VAR
+			/* Set t(emporary) <- VAR
 			 * OP t, d
-			 * set VAR, t
+			 * set VAR <- t, with appropriate rounding
 			 */
 			decimal_expand (t, CB_VALUE (l));
 			decimal_compute (op, t, d);

@@ -2132,9 +2132,9 @@ COB_EXPIMP void		cob_set_llcon   (cob_field *, cob_s64_t);
 COB_EXPIMP void		cob_set_compx   (cob_field *, cob_s64_t);
 COB_EXPIMP cob_s64_t	cob_get_llint	(cob_field *);
 COB_EXPIMP void		cob_alloc_move(cob_field *, cob_field *, const int);
-/**************************************************/
-/* Functions in move.c for C access to COBOL data */
-/**************************************************/
+/*************************************************************************/
+/* Functions in move.c for C access to COBOL data - GnuCOBOL COBOL-C-API */
+/*************************************************************************/
 COB_EXPIMP char *	cob_get_picx( void *cbldata, size_t len, void *charfld, size_t charlen);
 COB_EXPIMP cob_s64_t	cob_get_s64_comp3(void *cbldata, int len);
 COB_EXPIMP cob_s64_t	cob_get_s64_comp5(void *cbldata, int len);

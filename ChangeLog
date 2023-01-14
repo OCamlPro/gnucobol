@@ -1,4 +1,27 @@
 
+2022-12-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am: tarstamp.h may now be created on base of VCSDATE or
+	  FILEDATE, to override specify VCSDATE/FILEDATE=false or with an
+	  actual value
+	* Makefile.am: tarstamp.h creation more portable, using fallback
+	  of current date
+
+2022-12-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am: fixed dependencies, especially for tarstamp.h
+
+2022-11-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: support BDB_CFLAGS to specify necessary flags like
+	  non-default include directory
+	* configure.ac: drop check for PDC_free_memory_allocations as that
+	  function was removed from PDCursesMod
+
+2022-10-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: version 3.2-preview
+
 2022-10-18  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: cache several checks, also allowing to override its results
@@ -16,6 +39,15 @@
 
 	* configure.ac: dropped extra check for GCC as done internally
 
+2022-09-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: cleanup curses library check
+
+2022-07-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: check for ncursesw first, then ncurses;
+	  in case of ncurses check for ncurses.h again
+
 2022-07-10  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: check for PDC_free_memory_allocations
@@ -25,6 +57,10 @@
 	* configure.ac: always build INDEXED handlers as separate libraries,
 	  dropped support for static handlers "included in libcob"
 	* configure.ac: spelling correction for DISAM and VBISAM
+
+2022-06-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac (COB_CFLAGS): handle -ggdb options correctly
 
 2022-05-31  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -197,8 +233,13 @@
 	  which is for VB-ISAM 2.2 build in C-ISAM mode
 
 
+2020-12-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: fixed use of MPIR_LIBS
+
 2020-12-08  Simon Sobisch <simonsobisch@gnu.org>
 
+	* configure.ac: version 3.1.1
 	* Makefile.am [EXTRA_DIST]: added README.md and DEPENDENCIES.md
 
 2020-12-07  Simon Sobisch <simonsobisch@gnu.org>

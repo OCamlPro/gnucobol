@@ -3,6 +3,10 @@
 
 	* call.c: For AIX, use RTLD_MEMBER to dlopen shared code from archive
 
+2022-12-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c: fix mishandled "extended attributes" (bit 4)
+
 2022-11-26  Ron Norman <rjn@inglenet.com>
 
 	* fileio.c,fisam.c: Add code to handle ISAM index compression settings
@@ -12,14 +16,23 @@
 	* fisam.c: Updated to better replicate MF COBOL behaviour
 				in relation to START ... READ NEXT/PREVIOUS
 
+2022-11-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c: fixed compiler warnings related to get_crt3_status
+
 2022-11-10  Ron Norman <rjn@inglenet.com>
 
 	* fileio.c: Preliminary implemenation of support for the
-				COB_FILENAME_SPACES option default TRUE.
-				A check for environment variable is done to disable.
-				If the name in ASSIGN variable has invalid data status 9/004
-				If the name in ASSIGN variable starts with double quote then
-				trailing spaces are included in file name 
+	  COB_FILENAME_SPACES option (default TRUE, checking option to disable).
+	  If the name in ASSIGN variable starts with double quote then
+	  trailing spaces are included in file name 
+	  If the name in ASSIGN variable has invalid data status 9/004
+
+2022-11-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c [__PDCURSES__]: drop use of PDC_free_memory_allocations
+	  as testing showed it raising memory errors and the function was
+	  removed in PDCursesMod
 
 2022-10-31  Ron Norman <rjn@inglenet.com>
 
@@ -114,7 +127,6 @@
 	* common.c (output_procedure_stack_entry, cob_stack_trace_internal):
 	  replaced use of stdio functions by signal-safe write + memcpy
 
-
 2022-10-05  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (check_current_date): improved validation
@@ -144,7 +156,15 @@
 	* fbdb.c: manual merge of fileio.c from 2019-08-25 and 2021-01-08
 	  including clean-up and bugfix of that
 	* fbdb.c: for retry lock: only set loc object dbt once,
-	  not in each iteration
+	* screenio.c (cob_get_color_pair, cob_screen_init): fix overflow
+	  when COLOR_PAIRS is bigger than SHRT_MAX
+	* screenio.c (cob_screen_init) [__PDCURSES__]: fix missing initialization
+	  because of preprocessor symbols dropped
+
+2022-09-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c (cob_exit_screen): ensure to not end COB_EXIT_MESSAGE
+	  on mouse-move
 
 2022-07-25  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -279,7 +299,7 @@
 2022-04-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* strings.c (do_mark, is_marked): extracted from inspect_common
-	* strings.c (set_inspect_mark): new function to remember actual min/ma
+	* strings.c (set_inspect_mark): new function to remember actual min/max
 	  positions of the marker bytes to remove the need to initialize huge
 	  areas when we commonly have set only markers in the first n bytes
 	  (or nothing), especially for INSPECT LEADING/TRAILING
@@ -290,6 +310,9 @@
 	  check and marker range before checking all marker bytes in range
 	* strings.c: increase use of direct pointer comparisons instead of
 	  accessing char arrays or its positions for INSPECT
+2022-04-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c: adjustments for XCurses defines
 
 2022-04-04  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -392,6 +415,15 @@
 	* reportio.c: Updates for SUM expression-list
 			Multiple fields become and expression
 			To compute the expression values a call back is done
+
+2022-01-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* termio.c: use SIGINT intead of hard-wired "2"
+	* screenio.c (cob_sys_get_csr_pos, cob_sys_set_csr_pos): support
+	  for get/set cursor position with four-byte field instead of two
+	* screenio.c (cob_accept_escape_key): support to get 2byte status
+	* common.c (cob_accept_exception_status): handle special MF values
+	  128, 2, 1 when called with 3byte NUMERIC-DISPLAY
 
 2022-01-04  Ron Norman <rjn@inglenet.com>
 
@@ -595,6 +627,9 @@
 	  (cob_stop_run, cob_tidy)
 	* reportio.c (cob_report_generate): backport of 2021-09-26 change
 	* common.c (cob_gettmpdir): fix to remove trailing slash
+	* screenio.c: FR # 387 supporting color codes 8-15 - using bits 1-3 for
+	  the color value, bit 4 for attribute blink/highlight and ignoring
+	  all higher bits
 
 2021-09-26  Ron Norman <rjn@inglenet.com>
 
@@ -660,6 +695,8 @@
 
 	* intrinsic.c, common.h: implemented (cob_intr_bit_of),
 	  (cob_intr_bit_to_char)
+	* common.c: renamed (cob_memcpy) to (cob_move_intermediate) and
+	  postponed handling of target size to cob_move
 
 2021-08-30  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -950,12 +987,13 @@
 	* fodbc.c: PostgreSQL requires a SQLCloseCursor just before SQLExecute
 	  if the statement had been used before.
 
-2021-02-08  Simon Sobisch <simonsobisch@gnu.org>
+2021-02-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* coblocal.h (COB_D2I): only use the half-byte of the char to resolve the
 	  integer value, preventing overflows leading to huge/negative values and
-	  providing conversion of space to zero and correct conversion of numeric
-	  character from both ASCII and EBCDIC to integer
+	  providing conversion of common invalid data (SPACE/LOW-VALUE) to zero
+	  along with correct conversion of numeric character from both ASCII and
+	  EBCDIC to integer
 	* move.c: use of COB_D2I for conversions
 	  and restore previous one afterwards
 	* move.c (store_common_region): minor refactoring
@@ -1007,6 +1045,12 @@
 	* common.c: Add check for COB_DEBUG_LOG not defined
 	* fodbc.c, fsqlxfd.c: set db->no_for_update for SQLite
 	* fileio.c: report any error from loading a module that should be present
+
+2021-01-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* termio.c: check for output errors and early exit; while this is unlikely
+	  to happen with stdscr/stderr, it is when using these functions in dump
+	  code or externally (with real files or with memory mapped io)
 
 2021-01-22  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -2373,12 +2417,13 @@
 	* coblocal.h, numeric.c (cob_decimal_init2): fixed compiler warning
 
 2018-07-31  Ron Norman <rjn@inglenet.com>
-	* termio.c: Improved pretty display for LENGTH/FUNCTION values
-	            Added cob_field_int_display
-	* common.h: added cob_field_int_display
+
+	* termio.c (cob_field_int_display), common.h: new function for improved
+	  pretty display for LENGTH/FUNCTION values
 	* intrinsic.c: Improved for pretty_display
 
 2018-07-29  Ron Norman <rjn@inglenet.com>
+
 	* fileio.c: Added code to set COB_STATUS_53_MAX_LOCKS
 
 2018-07-29  Simon Sobisch <simonsobisch@gnu.org>

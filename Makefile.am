@@ -22,18 +22,11 @@
 include_HEADERS = libcob.h
 
 SUBDIRS = . lib libcob bin cobc config copy po extras doc tests
-
-bin: libcob
-cobc: libcob
-libcob: lib tarstamp.h
-extras: cobc
-doc po tests: cobc bin
+BUILT_SOURCES = tarstamp.h
 
 ACLOCAL_AMFLAGS = -I m4 --install
-DISTCLEANFILES = $(BUILT_SOURCES)
 # CLEANFILES = $(bin_SCRIPTS)
-dist_noinst_SCRIPTS = autogen.sh po/update_linguas.sh \
-	build_aux/bootstrap \
+dist_noinst_SCRIPTS = autogen.sh build_aux/bootstrap po/update_linguas.sh \
 	build_aux/create_win_dist.sh build_aux/create_mingw_bindist.sh
 
 # wrapper for the build environment
@@ -52,7 +45,7 @@ CODE_COVERAGE_IGNORE_PATTERN="*/cobc/pplex.c" "*/cobc/ppparse.c" "*/cobc/scanner
 
 # files shipped with the package that should be 755'ed:
 FILES_TO_BE_EXECUTABLE = $(dist_noinst_SCRIPTS) \
-	configure tests/testsuite \
+	configure tests/testsuite tests/testsuite_manual \
 	build_aux/config.guess build_aux/config.sub build_aux/config.rpath \
 	build_aux/depcomp build_aux/install-sh build_aux/ltmain.sh build_aux/mdate-sh \
 	build_aux/missing build_aux/mkinstalldirs build_aux/ylwrap
@@ -167,13 +160,23 @@ release:
 	@echo gnuCobol4${PLATFORM}.tar.Z created
 	cd ${abs_builddir}; rm -rf ${releasedir}
 
-$(tarstamps):
+# date from last svn timestamp according to local checkout
+VCSDATE = LC_ALL=C svn info --show-item last-changed-date $(srcdir) 2>/dev/null
+
+# if find -printf is not supported: pass as FILEDATE=false
+FILEDATE_LOOKUP = -name 'NEWS' -o -name 'configure.ac' -o -name 'ChangeLog' -o -name '*.c' -o -name '*.h' -o -name '*.am' -o -name '*.at'
+FILEDATE = (find $(srcdir) -type f \( $(FILEDATE_LOOKUP) \) -printf '%T@ %p\0' | sort -rz  | sed -Ezn '1s/[^ ]* //p' | xargs stat -c %y) 2>/dev/null
+
+# to override, most common as "gdate", if it doesn't support --date, then current date is used
+DATE = date
+TARSTAMP_CONTENT = '\#define COB_TAR_DATE    "%b %d %Y %T UTC"%n\#define COB_NUM_TAR_DATE %Y%m%d%n\#define COB_NUM_TAR_TIME %H%M%S'
+
+$(tarstamps): NEWS configure.ac Makefile.am libcob/version.h
 	@echo "Creating $@..."
-	@{								\
-	  echo "#define COB_TAR_DATE    \"`LC_ALL=C date -u +'%b %d %Y %T'` UTC\""; \
-	  echo "#define COB_NUM_TAR_DATE ` LC_ALL=C date -u +'%Y%m%d'`"; \
-	  echo "#define COB_NUM_TAR_TIME ` LC_ALL=C date -u +'%H%M%S'`"; \
-	} > $@
+	@($(DATE) --date=241225 -u 2>/dev/null 1>&2 && \
+	 LC_ALL=C stamp=$$( $(VCSDATE) || $(FILEDATE) || $(DATE) -u '+%F %T' ) && \
+	 LC_ALL=C $(DATE) --date="$$stamp" -u +$(TARSTAMP_CONTENT) > $@) \
+	|| LC_ALL=C $(DATE) -u +$(TARSTAMP_CONTENT) > $@
 
 # TODO: possibly disable / adjust depending on what
 #       configure.ac founds (currently not checked there)

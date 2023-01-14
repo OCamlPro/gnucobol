@@ -293,6 +293,9 @@ struct sql_date {
 	|| defined (HAVE_NCURSES_H) \
 	|| defined (HAVE_NCURSES_NCURSES_H) \
 	|| defined (HAVE_PDCURSES_H) \
+	|| defined (HAVE_PDCURSES_CURSES_H) \
+	|| defined (HAVE_XCURSES_H) \
+	|| defined (HAVE_XCURSES_CURSES_H) \
 	|| defined (HAVE_CURSES_H)
 #define WITH_EXTENDED_SCREENIO
 #endif

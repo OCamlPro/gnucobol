@@ -1,4 +1,9 @@
 
+2022-12-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am: adjusted URL_NEWCOB_TAR_GZ as old value (SF download area)
+	  uses javascript-forwarding which does not work with command line tools
+
 2022-10-11  Simon Sobisch <simonsobisch@gnu.org>
 
 	* Makefile.module.in: added and adjusted clean targets

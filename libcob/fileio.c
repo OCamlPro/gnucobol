@@ -2760,11 +2760,7 @@ static void catch_alarm(int sig) { }
  * Issue File/Record lock
  */
 static int
-lock_record(
-	cob_file *f, 
-	unsigned int recnum, 
-	int 	forwrite, 
-	int 	*errsts)
+lock_record (cob_file *f, unsigned int recnum, int forwrite, int *errsts)
 {
 #if defined(HAVE_SIGACTION) && defined(SIGALRM)
 	struct sigaction sigact, prvact;
@@ -2794,7 +2790,7 @@ lock_record(
 			(file_setptr->cob_retry_times>0?file_setptr->cob_retry_times:1);
 		interval = file_setptr->cob_retry_seconds>0?file_setptr->cob_retry_seconds:1;
 	}
-	if(recnum == 0) {			/* Lock entire file */
+	if (recnum == 0) {			/* Lock entire file */
 		pos = 0;
 		rcsz = 0;
 		f->flag_file_lock = 0;
@@ -2819,8 +2815,8 @@ lock_record(
 		return 1;			/* Got the lock so all is good */
 	}
 	*errsts = errno;
-	if(retry == 0)	{			/* No RETRY, so return with no lock */
-		if(errno == EAGAIN) {
+	if (retry == 0)	{			/* No RETRY, so return with no lock */
+		if (errno == EAGAIN) {
 			lck.l_type = lock_type;
 			lck.l_whence = SEEK_SET;
 			lck.l_start = pos;
@@ -2834,11 +2830,11 @@ lock_record(
 		f->blockpid = lck.l_pid;
 		return 0;
 	}
-	if(interval <= 0)
+	if (interval <= 0)
 		interval = COB_RETRY_PER_SECOND ;
 
 #if defined(HAVE_SIGACTION) && defined(SIGALRM)
-	if(retry > 0) {				/* Negative means wait forever */
+	if (retry > 0) {				/* Negative means wait forever */
 		memset(&prvact,0,sizeof(sigact));
 		prvact.sa_handler = SIG_DFL;
 		memset(&sigact,0,sizeof(sigact));
@@ -2848,18 +2844,18 @@ lock_record(
 		alarm(wait_time);
 	}
 	if (fcntl (f->fd, F_SETLKW, &lck) != -1) {
-		if(retry > 0) {
+		if (retry > 0) {
 			sigaction(SIGALRM, &prvact, NULL);
 			alarm(0);
 		}
 		*errsts = 0;
-		if(recnum == 0
-		&& forwrite) 			/* File locked for Exclusive use */
+		if (recnum == 0
+		 && forwrite) 			/* File locked for Exclusive use */
 			f->flag_file_lock = 1;	
 		return 1;			/* Got the lock so all is good */
 	}
 	*errsts = errno;
-	if(retry > 0) {
+	if (retry > 0) {
 		sigaction(SIGALRM, &prvact, NULL);
 		alarm(0);
 		if(*errsts == EINTR)		/* Timed out, so return EAGAIN */
@@ -2869,7 +2865,7 @@ lock_record(
 	if (retry > 0) {
 		retry = retry * 4;
 		interval = (interval * 1000) / 4;	
-		while(retry-- > 0) {
+		while (retry-- > 0) {
 			lck.l_type = lock_type;
 			lck.l_whence = SEEK_SET;
 			lck.l_start = pos;
@@ -2885,7 +2881,7 @@ lock_record(
 			cob_sleep_msec(interval);
 		}
 	} else {
-		while(1) {
+		while (1) {
 			lck.l_type = lock_type;
 			lck.l_whence = SEEK_SET;
 			lck.l_start = pos;
@@ -2910,7 +2906,7 @@ lock_record(
  * Un-Lock 'recnum' with system
  */
 static int
-unlock_record(cob_file *f, unsigned int recnum)
+unlock_record (cob_file *f, unsigned int recnum)
 {
 	unsigned long pos;
 	unsigned int rcsz;
@@ -2944,11 +2940,7 @@ unlock_record(cob_file *f, unsigned int recnum)
 	/* System does not even have 'fcntl' so no explicit Record/File lock is used */
 	/* TODO: check later for possible fall-back [at least WIN32]*/
 static int
-lock_record(
-	cob_file *f, 
-	unsigned int recnum, 
-	int 	forwrite, 
-	int 	*errsts)
+lock_record(cob_file *f, unsigned int recnum, int forwrite, int *errsts)
 {
 	COB_UNUSED (f);
 	COB_UNUSED (recnum);
@@ -2971,7 +2963,7 @@ unlock_record(cob_file *f, unsigned int recnum)
  * Determine if file should be locked 
  */
 static int
-set_file_lock(cob_file *f, const char *filename, int open_mode) 
+set_file_lock (cob_file *f, const char *filename, int open_mode) 
 {
 	int	lock_mode, ret;
 
@@ -3033,7 +3025,7 @@ set_file_lock(cob_file *f, const char *filename, int open_mode)
  * Determine if current record should be locked and if previous lock to be released
  */
 static void
-set_lock_opts(cob_file *f, unsigned int read_opts) 
+set_lock_opts (cob_file *f, unsigned int read_opts) 
 {
 	f->flag_lock_mode = 0;		/* READ lock */
 	if (f->retry_mode == 0 
@@ -4276,7 +4268,7 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename,
 	/* LCOV_EXCL_START */
 	default:
 		cob_runtime_error (_("invalid internal call of %s"), "cob_file_open");
-		cob_fatal_error(COB_FERROR_CODEGEN);
+		cob_fatal_error (COB_FERROR_CODEGEN);
 	/* LCOV_EXCL_STOP */
 	}
 
@@ -4319,6 +4311,10 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename,
 	case EACCES:
 	case EROFS:
 		return COB_STATUS_37_PERMISSION_DENIED;
+	/* CHECKME: Where does this happen?
+	   Linux manpages and MSVC docs don't list that for fopen.
+	   Possibly that means "out of [lock] memory" or "out of file handles"
+	   for system/process/user? */
 	case EAGAIN:
 		return COB_STATUS_61_FILE_SHARING;
 	case EISDIR:
@@ -4357,7 +4353,7 @@ cob_file_open (cob_file_api *a, cob_file *f, char *filename,
 		&& f->share_mode == 0)
 			return 0;
 	}
-	if ((ret=set_file_lock(f, filename, mode)) != 0) {
+	if ((ret = set_file_lock (f, filename, mode)) != 0) {
 		return ret;
 	}
 	if (f->flag_optional && nonexistent) {
@@ -5527,7 +5523,7 @@ relative_read (cob_file_api *a, cob_file *f, cob_field *k, const int read_opts)
 		return COB_STATUS_23_KEY_NOT_EXISTS;
 	}
 	set_lock_opts (f, read_opts);
-	if(f->flag_lock_rec) {
+	if (f->flag_lock_rec) {
 		lock_record (f, relnum+1, f->flag_lock_mode, &errsts);
 		if (errsts != 0) {
 			switch (errsts) {

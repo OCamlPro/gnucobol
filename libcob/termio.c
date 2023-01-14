@@ -33,6 +33,13 @@
 #endif
 #include <time.h>
 
+#ifdef	HAVE_SIGNAL_H
+#include <signal.h>
+#endif
+#ifndef SIGINT
+#define SIGINT 2
+#endif
+
 /* Force symbol exports */
 #define	COB_LIB_EXPIMP
 #include "common.h"
@@ -85,7 +92,10 @@ display_numeric (cob_field *f, FILE *fp)
 
 	cob_move (f, &temp);
 	for (i = 0; i < size; ++i) {
-		putc (temp.data[i], fp);
+		unsigned char chr = temp.data[i];
+		if (putc (chr, fp) != chr) {
+			break;
+		}
 	}
 }
 
@@ -162,8 +172,11 @@ pretty_display_numeric (cob_field *f, FILE *fp)
 
 	cob_move (f, &temp);
 	for (i = 0; i < size; ++i) {
-		if(q[i] != 0)
-			putc (q[i], fp);
+		unsigned char chr = q[i];
+		if (chr == 0	/* pretty-display stops here */
+		 || putc (chr, fp) != chr) {
+			break;
+		}
 	}
 }
 
@@ -171,9 +184,13 @@ static void
 display_alnum (const cob_field *f, FILE *fp)
 {
 	size_t	i;
+	unsigned char chr;
 
 	for (i = 0; i < f->size; ++i) {
-		putc (f->data[i], fp);
+		chr = f->data[i];
+		if (putc (chr, fp) != chr) {
+			break;
+		}
 	}
 }
 
@@ -433,17 +450,16 @@ display_alnum_dump (cob_field *f, FILE *fp, unsigned int indent, unsigned int ma
 			zerov++;
 			printv++;
 		} else
-		if (f->data[i] >= ' '
-		 && f->data[i] <= 0x7F
-		 && isprint(f->data[i])) {
-			printv++;
-		} else
 		if (f->data[i] == '\b'
 		 || f->data[i] == '\f'
 		 || f->data[i] == '\n'
 		 || f->data[i] == '\r'
 		 || f->data[i] == '\t') {
 			delv++;
+		} else
+		if (f->data[i] >= ' '
+		 && isprint(f->data[i])) {
+			printv++;
 		}
 	}
 
@@ -944,6 +960,7 @@ cob_accept (cob_field *f)
 			memset (COB_MODULE_PTR->crt_status->data, '0', (size_t)4);
 		}
 	}
+
 	/* always flush to ensure buffered output is seen */
 	fflush (stdout);
 
@@ -954,7 +971,7 @@ cob_accept (cob_field *f)
 			if (ipchr == '\n' || ipchr == EOF) {
 				break;
 			} else if (ipchr == 03) {
-				cob_raise (2);
+				cob_raise (SIGINT);
 			}
 		}
 		return;
@@ -975,7 +992,7 @@ cob_accept (cob_field *f)
 			}
 			break;
 		} else if (ipchr == 03) {
-			cob_raise (2);
+			cob_raise (SIGINT);
 		} else if (ipchr == '\n') {
 			break;
 		}

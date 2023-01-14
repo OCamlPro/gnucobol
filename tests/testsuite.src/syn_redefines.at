@@ -186,7 +186,7 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
-[prog.cob:8: warning: the original definition 'X' should not have OCCURS clause
+[prog.cob:8: warning: the original definition 'X' should not have an OCCURS clause
 ])
 
 AT_CLEANUP

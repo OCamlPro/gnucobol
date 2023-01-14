@@ -248,23 +248,6 @@ else
 		COB_HAS_CURSES="no"
 	fi
 fi
-if test "x$MSYSTEM" != "x" -o "$OSTYPE" = "cygwin"; then
-	# running MSYS builds as not-visible child processes result in
-	# "Redirection is not supported" (at least old PDCurses)
-	# --> disabling the tests for this feature
-	# ncurses is known to work as long as TERM is appropriate
-	if test $(grep -i -c "ncurses" info.out) != 0; then
-		if test "x$MSYSTEM" != "x"; then
-			TERM=""
-		else
-			TERM="xterm"
-		fi
-		export TERM
-		# no change here... COB_HAS_CURSES="yes"
-	else
-		COB_HAS_CURSES="no"
-	fi
-fi
 
 rm -rf info.out
 

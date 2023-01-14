@@ -802,6 +802,8 @@ copy_into_field_recursive (struct cb_field *source, struct cb_field *target,
 	field_attribute_override (flag_any_numeric);
 	field_attribute_override (flag_invalid);
 
+	/* TODO: add copying of align clause and other boolean/bit stuff once added */
+
 	if (CB_VALID_TREE (source->redefines)) {
 		cb_tree ref = cb_build_reference (source->redefines->name);
 		target->redefines = cb_resolve_redefines (target, ref);
@@ -1283,10 +1285,8 @@ validate_occurs (const struct cb_field * const f)
 	const cb_tree		x = CB_TREE (f);
 	const struct cb_field	*p;
 
-	if ((f->level == 01 || f->level == 77)
-	 && !cb_verify_x (x, cb_top_level_occurs_clause, "01/77 OCCURS")) {
-		cb_error_x (x, _("level %02d item '%s' cannot have a %s clause"),
-			f->level, cb_name (x), "OCCURS");
+	if (f->level == 01 || f->level == 77) {
+		cb_verify_x (x, cb_top_level_occurs_clause, "01/77 OCCURS");
 	}
 
 	/* Validate OCCURS DEPENDING */
@@ -1300,7 +1300,7 @@ validate_occurs (const struct cb_field * const f)
 			for (p = f->parent; p; p = p->parent) {
 				if (p->flag_occurs) {
 					cb_error_x (CB_TREE (p),
-						    _("'%s' cannot have the OCCURS clause due to '%s'"),
+						    _("'%s' cannot have an OCCURS clause due to '%s'"),
 						    cb_name (CB_TREE (p)),
 						    cb_name (x));
 					break;
@@ -1319,7 +1319,7 @@ validate_redefines (const struct cb_field * const f)
 	/* Check OCCURS */
 	if (f->redefines->flag_occurs) {
 		cb_warning_x (COBC_WARN_FILLER, x,
-			      _("the original definition '%s' should not have OCCURS clause"),
+			      _("the original definition '%s' should not have an OCCURS clause"),
 			      f->redefines->name);
 	}
 

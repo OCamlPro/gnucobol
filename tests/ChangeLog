@@ -1,4 +1,16 @@
 
+2022-12-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* atlocal.in, atlocal_win: do not disable PDCurses screenio
+	  when executed as part of testsuite_manual (make checkmanual)
+	* atlocal_valgrind: drop win32 parts as valgrind does not work there
+
+2022-11-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* run_prog_manual.sh.in (_test_with_cmd): fixed escaping for "tr"
+	* Makefile.am: moved $(TESTSUITE) $(TESTSUITE_MANUAL) from EXTRA_DIST
+	  to dist_noinst_SCRIPTS 
+
 2022-10-11  Simon Sobisch <simonsobisch@gnu.org>
 
 	* atlocal.in, atlocal_valgrind: adjusted perf and valgrind runs

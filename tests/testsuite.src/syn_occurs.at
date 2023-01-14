@@ -43,9 +43,9 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY -std=cobol2014 prog.cob], [1], [],
-[prog.cob:6: error: level 01 item 'X-01' cannot have a OCCURS clause
-prog.cob:7: error: level 01 item 'G' cannot have a OCCURS clause
-prog.cob:11: error: level 77 item 'X-77' cannot have a OCCURS clause
+[prog.cob:6: error: 01/77 OCCURS does not conform to COBOL 2014
+prog.cob:7: error: 01/77 OCCURS does not conform to COBOL 2014
+prog.cob:11: error: 01/77 OCCURS does not conform to COBOL 2014
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
@@ -184,7 +184,7 @@ AT_DATA([prog3.cob], [
 ])
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
-[prog.cob:7: error: 'G-2' cannot have the OCCURS clause due to 'X'
+[prog.cob:7: error: 'G-2' cannot have an OCCURS clause due to 'X'
 ])
 
 AT_CHECK([$COMPILE_ONLY -fcomplex-odo prog.cob], [0], [], [])
@@ -195,7 +195,7 @@ AT_CHECK([$COMPILE_ONLY -fcomplex-odo prog2.cob], [1], [],
 
 AT_CHECK([$COMPILE_ONLY -fodoslide prog2.cob], [0], [], [])
 AT_CHECK([$COMPILE_ONLY prog3.cob prog2.cob], [1], [],
-[prog2.cob:7: error: 'G-2' cannot have the OCCURS clause due to 'X'
+[prog2.cob:7: error: 'G-2' cannot have an OCCURS clause due to 'X'
 prog2.cob:8: error: 'X' cannot have nested OCCURS DEPENDING
 ])
 
