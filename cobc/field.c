@@ -592,17 +592,17 @@ cb_build_full_field_reference (struct cb_field* field)
 {
 	cb_tree ret = NULL;
 	cb_tree ref = NULL;
-	cb_tree rchain = NULL;
 
 	while (field) {
-		if (field->flag_filler) continue;
-		rchain = cb_build_reference (field->name);
-		if (ref) {
-			CB_REFERENCE (ref)->chain = rchain;
-		} else {
-			ret = rchain;
+		if (!field->flag_filler) {
+			cb_tree rchain = cb_build_reference (field->name);
+			if (ref) {
+				CB_REFERENCE (ref)->chain = rchain;
+			} else {
+				ret = rchain;
+			}
+			ref = rchain;
 		}
-		ref = rchain;
 		field = field->parent;
 	}
 
@@ -759,18 +759,16 @@ copy_into_field_recursive (struct cb_field *source, struct cb_field *target,
 	}
 	field_attribute_override (nkeys);
 	if (source->keys) {
-		cb_tree ref = NULL;
-		cb_tree rchain = NULL;
 		int	i;
 
-		/* create reference chaing all the way up
+		/* create reference chain all the way up
 		   as later fields may have same name */
-		rchain = cb_build_full_field_reference (target);
+		const cb_tree rchain = cb_build_full_field_reference (target);
 
 		target->keys = cobc_parse_malloc (sizeof (struct cb_key) * target->nkeys);
 		for (i = 0; i < target->nkeys; i++) {
 			const struct cb_reference* r = CB_REFERENCE (source->keys[i].key);
-			ref = cb_build_reference (r->word->name);
+			const cb_tree ref = cb_build_reference (r->word->name);
 			CB_REFERENCE (ref)->chain = rchain;
 			target->keys[i].key = ref;
 			CB_ADD_TO_CHAIN (ref, current_program->reference_list);
