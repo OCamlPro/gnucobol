@@ -123,6 +123,7 @@
 	  about potentially undefined macros; 
 	* configure.ac: copyright notice in generated script
 	* m4/libtool.m4: updated from libtool, with additions for netbsd from Debian
+	  (Debian 993872) and Johan Anderholm (patch #39)
 
 2021-10-11  Simon Sobisch <simonsobisch@gnu.org>
 

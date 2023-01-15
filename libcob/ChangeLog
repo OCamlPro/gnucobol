@@ -1,4 +1,9 @@
 
+2023-01-15  Ron Norman <rjn@inglenet.com>
+
+	* screenio.c: renamed max_pairs_available as this is defined on HPUX
+	* common.c (check_current_date): fixed bad snprintf size
+
 2023-01-12  Simon Sobisch <simonsobisch@gnu.org>
 
 	* intrinsic.c: minor refactoring to reduce duplicated code
@@ -553,8 +558,6 @@
 	* move.c, common.h: new function cob_set_llint
 	* move.c (cob_set_int): use const_bin_attr instead of setting it up
 	  each time as this function is used quite often in generated code
-	* strings.c: use size_t and cob_get_llint/cob_set_llint for all memory
-	  sizes, even with the (current) limit field->size < INT_MAX
 
 2022-04-29  Simon Sobisch <simonsobisch@gnu.org>
 
