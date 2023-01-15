@@ -4721,7 +4721,7 @@ check_current_date ()
 	while (cobsetptr->cob_date[j] != 0
 	    && cobsetptr->cob_date[j] != 'Y'
 	    && !isdigit((unsigned char)cobsetptr->cob_date[j])) {
-		 j++;
+		j++;
 	}
 
 	/* extract date */
@@ -4924,7 +4924,7 @@ check_current_date ()
 		iso_timezone[0] = 'Z';
 	} else if (cobsetptr->cob_date[j] == '+'
 	        || cobsetptr->cob_date[j] == '-') {
-		int len = snprintf (&iso_timezone[0], 6, "%s", cobsetptr->cob_date + j);
+		int len = snprintf (&iso_timezone[0], 7, "%s", cobsetptr->cob_date + j);
 		if (len == 3) {
 			memcpy (iso_timezone + 3, "00", 3);
 		} else

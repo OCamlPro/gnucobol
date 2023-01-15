@@ -1,4 +1,9 @@
 
+2023-01-15  Ron Norman <rjn@inglenet.com>
+
+	* screenio.c: renamed max_pairs_available as this is defined on HPUX
+	* common.c (check_current_date): fixed bad snprintf size
+
 2022-12-08  Ron Norman <rjn@inglenet.com>
 
 	* call.c: For AIX, use RTLD_MEMBER to dlopen shared code from archive
