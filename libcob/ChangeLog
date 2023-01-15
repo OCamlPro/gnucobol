@@ -553,6 +553,8 @@
 	* move.c, common.h: new function cob_set_llint
 	* move.c (cob_set_int): use const_bin_attr instead of setting it up
 	  each time as this function is used quite often in generated code
+	* strings.c: use size_t and cob_get_llint/cob_set_llint for all memory
+	  sizes, even with the (current) limit field->size < INT_MAX
 
 2022-04-29  Simon Sobisch <simonsobisch@gnu.org>
 
