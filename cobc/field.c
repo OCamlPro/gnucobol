@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2022 Free Software Foundation, Inc.
+   Copyright (C) 2001-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -854,6 +854,10 @@ copy_into_field (struct cb_field *source, struct cb_field *target)
 		field_attribute_copy (flag_external);
 	}
 	target->usage = source->usage;
+	if (target->flag_external
+	 && target->ename == NULL) {	/* External Name is required */
+		target->ename = target->name;
+	}    
 	if (source->values) {
 		if (target->values) {
 			duplicate_clause_message (target->values, "VALUE");

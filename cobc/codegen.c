@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2022 Free Software Foundation, Inc.
+   Copyright (C) 2003-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
    Edward Hart
 
@@ -13128,12 +13128,11 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	gen_init_working = 1;		/* Disable use of DEPENDING ON fields */
 	/* Initialize WORKING-STORAGE EXTERNAL items */
 	for (f = prog->working_storage; f; f = f->sister) {
-		if (f->redefines) {
+		if (f->redefines
+		 || f->flag_filler
+		 || !f->flag_external
+		 || f->ename == NULL)
 			continue;
-		}
-		if (!f->flag_external) {
-			continue;
-		}
 		output_prefix ();
 		output_base (f, 0);
 		output (" = cob_external_addr (\"%s\", %d);",

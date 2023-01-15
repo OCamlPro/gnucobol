@@ -1,4 +1,10 @@
 
+2023-01-15  Ron Norman <rjn@inglenet.com>
+
+	* cobc.c: Make sure the 'schema' directory is created for -fsql
+	* codegen.c: Verify that EXTERNAL variables have 'ename'
+	* field.c (copy_into_field): If EXTERNAL set 'ename'
+
 2022-11-26  Ron Norman <rjn@inglenet.com>
 
 	* cobc.c,cobc.h: Add cb_keycompress flags

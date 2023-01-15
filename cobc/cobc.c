@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2022 Free Software Foundation, Inc.
+   Copyright (C) 2001-2023 Free Software Foundation, Inc.
 
    Authors:
    Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch, Brian Tiffin,
@@ -8366,6 +8366,15 @@ set_cobc_defaults (void)
 		if (p) {
 			cob_schema_dir = cobc_main_strdup (p);
 		}
+	}
+	if (cob_schema_dir != NULL) {	/* Make sure this directory exists */
+#ifdef _WIN32
+		_mkdir (cob_schema_dir);
+		_chmod (cob_schema_dir, _S_IREAD | _S_IWRITE);
+#else
+		mkdir (cob_schema_dir, 0777);
+		chmod (cob_schema_dir, 0777);
+#endif
 	}
 
 	p = cobc_getenv ("COB_CFLAGS");
