@@ -5,7 +5,7 @@
 # a not POSIX build (OrangeC or Visual Studio build for example)
 # in a POSIX environment (like MinGW or Cygwin, possibly WSL).
 #
-# Copyright (C) 2003-2012, 2014-2021 Free Software Foundation, Inc.
+# Copyright (C) 2003-2012, 2014-2023 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 #
 # This file is part of GnuCOBOL.
@@ -49,10 +49,10 @@ unset LANG
 
 # workaround to adjust the testsuite later:
 # FLAGS="-debug -Wall ${COBOL_FLAGS}"
-FLAGS="-debug -Wall ${COBOL_FLAGS} -fno-diagnostics-show-option"
 COBC="${COBC} -std=default"
+FLAGS="-debug -Wall ${COBOL_FLAGS} -fno-diagnostics-show-option"
 COMPILE="${COBC} -x ${FLAGS}"
-COMPILE_ONLY="${COBC} -fsyntax-only ${FLAGS}"
+COMPILE_ONLY="${COBC} -fsyntax-only ${FLAGS} -Wno-unsupported"
 COMPILE_MODULE="${COBC} -m ${FLAGS}"
 
 # test runner for manual tests, content may be changed by the user
@@ -65,6 +65,7 @@ _unset_option () {
 	     -a "$1" != "COB_RUNTIME_CONFIG" \
 	     -a "$1" != "COB_LIBRARY_PATH" \
 	     -a "$1" != "COB_CFLAGS" \
+	     -a "$1" != "COB_LDFLAGS" \
 	     -a "$1" != "COB_LIBS" \
 	     -a "$1" != "COB_UNIX_LF"; then
 		unset $1
@@ -92,11 +93,15 @@ _return_path () {
 PATHSEP=";"
 export PATHSEP
 
+#COB_CFLAGS="-I\"${abs_top_srcdir}\" -I\"${abs_top_srcdir}/build_windows\" @COB_CFLAGS@"
+#COB_LDFLAGS="-L\"${abs_top_srcdir}/build_windows/\" @COB_LDFLAGS@"
+#COB_LIBS="@COB_LIBS@"
+#export COB_CFLAGS COB_LDFLAGS COB_LIBS
+
 COB_CONFIG_DIR="$(_return_path "${abs_top_srcdir}/config")"
 COB_COPY_DIR="$(_return_path "${abs_top_srcdir}/copy")"
 COB_LIBRARY_PATH="$(_return_path "${abs_top_builddir}/extras")${PATHSEP}$(_return_path "${COB_WIN_BUILDPATH}")"
 
-export COB_CFLAGS COB_LIBS
 export COB_CONFIG_DIR COB_COPY_DIR
 #export LD_LIBRARY_PATH DYLD_LIBRARY_PATH SHLIB_PATH LIBPATH
 export COB_LIBRARY_PATH
@@ -150,6 +155,7 @@ export COB_MSG_FORMAT
 	" VBISAM"*)	COB_HAS_ISAM="vbisam";;
 	" D-ISAM")	COB_HAS_ISAM="disam";;
 	" C-ISAM")	COB_HAS_ISAM="cisam";;
+	" V-ISAM")	COB_HAS_ISAM="visam";;
 	" EXTFH")	COB_HAS_ISAM="index_extfh";;
 	*)		echo "unknown entry for indexed handler: '"$cob_indexed"' please report" && exit 1;;
 	esac

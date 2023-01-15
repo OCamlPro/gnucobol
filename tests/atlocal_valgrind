@@ -4,7 +4,7 @@
 # This script is a special variant of the atlocal script for testing
 # with Valgrind.
 #
-# Copyright (C) 2003-2012, 2014-2022 Free Software Foundation, Inc.
+# Copyright (C) 2003-2012, 2014-2023 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 #
 # This file is part of GnuCOBOL.
@@ -128,6 +128,7 @@ _unset_option () {
 	     -a "$1" != "COB_RUNTIME_CONFIG" \
 	     -a "$1" != "COB_LIBRARY_PATH" \
 	     -a "$1" != "COB_CFLAGS" \
+	     -a "$1" != "COB_LDFLAGS" \
 	     -a "$1" != "COB_LIBS" \
 	     -a "$1" != "COB_UNIX_LF"; then
 		unset $1
@@ -157,6 +158,7 @@ exec_prefix="@exec_prefix@"
 # options that are also used in pre-inst-env (always add to both)
 # but not directly in the testsuite
 COB_CFLAGS="-I${abs_top_srcdir} @COB_CFLAGS@"
+COB_LDFLAGS="-L\"${abs_top_builddir}/libcob/.libs\" @COB_LDFLAGS@"
 COB_LIBS="-L${abs_top_builddir}/libcob/.libs @COB_LIBS@"
 COB_CONFIG_DIR="${abs_top_srcdir}/config"
 COB_COPY_DIR="${abs_top_srcdir}/copy"
@@ -227,6 +229,7 @@ else
 	" VBISAM"*)	COB_HAS_ISAM="vbisam";;
 	" D-ISAM")	COB_HAS_ISAM="disam";;
 	" C-ISAM")	COB_HAS_ISAM="cisam";;
+	" V-ISAM")	COB_HAS_ISAM="visam";;
 	" EXTFH")	COB_HAS_ISAM="index_extfh";;
 	*)		echo "unknown entry for indexed handler: '"$cob_indexed"' please report" && exit 1;;
 	esac

@@ -1,7 +1,7 @@
 #
 # atlocal gnucobol/tests
 #
-# Copyright (C) 2003-2012, 2014-2022 Free Software Foundation, Inc.
+# Copyright (C) 2003-2012, 2014-2023 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 #
 # This file is part of GnuCOBOL.
@@ -153,7 +153,7 @@ exec_prefix="@exec_prefix@"
 # but not directly in the testsuite
 if test "$GNUCOBOL_ENV_SETUP" != "1" -a "$GNUCOBOL_TEST_LOCAL" != "1"; then
 	COB_CFLAGS="-I\"${abs_top_srcdir}\" @COB_CFLAGS@"
-	COB_LDFLAGS="-L\"${abs_top_builddir}/libcob/.libs\""
+	COB_LDFLAGS="-L\"${abs_top_builddir}/libcob/.libs\" @COB_LDFLAGS@"
 	COB_LIBS="@COB_LIBS@"
 	COB_CONFIG_DIR="${abs_top_srcdir}/config"
 	COB_COPY_DIR="${abs_top_srcdir}/copy"
