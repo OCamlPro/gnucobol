@@ -626,7 +626,8 @@ only usable with COB_USE_VC2013_OR_GREATER */
 /* Maximum length of COBOL program names */
 #define	COB_MAX_NAMELEN		31
 
-/* Maximum number of subscripts */
+/* Maximum number of subscripts;
+   TODO: add compiler configuration for limiting this */
 #define COB_MAX_SUBSCRIPTS	16
 
 /* Memory size for sorting */

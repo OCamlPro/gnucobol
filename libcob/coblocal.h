@@ -398,9 +398,10 @@ struct config_tbl {
 
 /* max sizes */
 
-/* Maximum bytes in a single/group field,
-   which doesn't contain UNBOUNDED items */
-   /* TODO: add compiler configuration for limiting this */
+/* Maximum bytes in a single/group field and for OCCURS,
+   which doesn't contain UNBOUNDED items,
+   along with maximum number of OCCURS;
+   TODO: add compiler configuration for limiting this */
 #ifndef COB_64_BIT_POINTER
 #define	COB_MAX_FIELD_SIZE	268435456
 #else

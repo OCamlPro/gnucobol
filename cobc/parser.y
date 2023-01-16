@@ -38,6 +38,7 @@
 #define	COB_IN_PARSER	1
 #include "cobc.h"
 #include "tree.h"
+#include "libcob/coblocal.h"
 
 #define _PARSER_H	/* work around bad Windows SDK header */
 
@@ -789,9 +790,10 @@ setup_occurs_min_max (cb_tree occurs_min, cb_tree occurs_max)
 			}
 			if (current_field->occurs_max <= current_field->occurs_min) {
 				cb_error (_("OCCURS TO must be greater than OCCURS FROM"));
+				current_field->occurs_max = current_field->occurs_min;
 			}
 		} else {
-			current_field->occurs_max = 0;
+			current_field->occurs_max = 0;	/* UNBOUNDED */
 		}
 	} else {
 		current_field->occurs_min = 1; /* CHECKME: why using 1 ? */
@@ -800,6 +802,17 @@ setup_occurs_min_max (cb_tree occurs_min, cb_tree occurs_max)
 			cb_verify (cb_odo_without_to, _("OCCURS DEPENDING ON without TO phrase"));
 		}
 	}
+	/* LCOV_EXCL_START */
+	if (current_field->occurs_max > COB_MAX_FIELD_SIZE) {
+		/* testing here to give an early error; unlikely to be reached
+		   with 64bit compilers so no own msgid for now; should be added
+		   when the maximum field size is changed to be configurable */
+		cb_error_x (CB_TREE (current_field),
+			_("'%s' cannot be larger than %d bytes"),
+			current_field->name, COB_MAX_FIELD_SIZE);
+		current_field->occurs_min = current_field->occurs_max = 1;
+	}
+	/* LCOV_EXCL_STOP */
 }
 
 static void
@@ -7837,6 +7850,7 @@ usage:
   }
 | INDEX
   {
+	/* TODO: second type which is 0-based, depending on dialect option */
 	check_and_set_usage (CB_USAGE_INDEX);
   }
 | PACKED_DECIMAL
@@ -8279,7 +8293,9 @@ occurs_index:
   unqualified_word
   {
 	const enum cb_storage	storage = current_field->storage;
-	$$ = cb_build_index ($1, cb_int1, 1U, current_field);
+	const cb_tree init_val = cb_default_byte == CB_DEFAULT_BYTE_INIT
+	                       ? cb_int1 : NULL;
+	$$ = cb_build_index ($1, init_val, 1U, current_field);
 	if (storage == CB_STORAGE_LOCAL) {
 		CB_FIELD_PTR ($$)->index_type = CB_INT_INDEX;
 	} else {

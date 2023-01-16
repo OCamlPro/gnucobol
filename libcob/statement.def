@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2022 Free Software Foundation, Inc.
+   Copyright (C) 2022-2023 Free Software Foundation, Inc.
    Written by Simon Sobisch
 
    This file is part of GnuCOBOL.
@@ -20,9 +20,10 @@
 
 /* COB_STATEMENT (name, string representation)
    
-   the order of these definitions may not change and
-   new entries must always be added to the end, as
-   those are used as enum entries and indexes
+   the order of these definitions may not change and new entries
+   must always be added to the end, as those are used both as enums
+   (cobc + libcob intern) _and_ as their integer values in generated
+   modules: cob_trace_statement (STMT_ADD) -> cob_trace_statement (1)
 */
 
 COB_STATEMENT (STMT_ADD, "ADD")
@@ -164,3 +165,6 @@ COB_STATEMENT (STMT_JSON_PARSE, "JSON GENERATE")
 
 COB_STATEMENT (STMT_XML_GENERATE, "XML GENERATE")
 COB_STATEMENT (STMT_XML_PARSE, "XML GENERATE")
+
+/* codegen intern only */
+COB_STATEMENT (STMT_INIT_STORAGE, "INIT STORAGE")

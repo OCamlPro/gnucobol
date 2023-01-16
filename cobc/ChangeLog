@@ -1,4 +1,21 @@
 
+2023-01-16  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (occurs_index): only set VALUE 1 for defaultbyte == INIT
+	* tree.h (CB_DEFAULT_BYTE_INIT, CB_DEFAULT_BYTE_NONE), config.c, field.c,
+	  codegen.c: explicit defines instead of "only magic numbers"
+	* tree.c (cb_build_initialize), tree.h (struct cb_initialize), codegen.c
+	  (output_initialize_to_value): replaced flag_init_statement with statement
+	* parser.y (setup_occurs_min_max): validate occurs_max limit
+	* codegen.c (output_initialize_uniform): pass code-field instead of
+	  re-evaluating it
+	* codegen.c (output_initialize_multi_values): removed variable
+	  "total_occurs" fixing Wunused-but-set-variable
+	* codegen.c (output_stmt): dropped unused msgid
+	* typeck.c (cb_build_index): add internal index variables in LINKAGE to
+	  internal WORKING-STORAGE or internal LOCAL-STORAGE items depending on
+	  program->flag_recursive
+
 2023-01-05  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c, flag.def, help.c: added option --coverage internally setting

@@ -5620,12 +5620,10 @@ cob_allocate (unsigned char **dataptr, cob_field *retptr,
 void
 cob_free_alloc (unsigned char **ptr1, unsigned char *ptr2)
 {
-	struct cob_alloc_cache	*cache_ptr;
-	struct cob_alloc_cache	*prev_ptr;
+	struct cob_alloc_cache	*cache_ptr = cob_alloc_base;
+	struct cob_alloc_cache	*prev_ptr = cob_alloc_base;
 
 	cobglobptr->cob_exception_code = 0;
-	cache_ptr = cob_alloc_base;
-	prev_ptr = cob_alloc_base;
 	if (ptr1 && *ptr1) {
 		void	*vptr1;
 		vptr1 = *ptr1;

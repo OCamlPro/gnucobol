@@ -1,4 +1,8 @@
 
+2023-01-16  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: adjusted hack for AIX 64bit OBJECT_MODE
+
 2023-01-14  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: fix to use pdcurses when libcurses was verified

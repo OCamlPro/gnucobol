@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -997,6 +997,10 @@ struct cb_field {
 #define CB_FIELD_PTR(x)		\
 	(CB_REFERENCE_P (x) ? CB_FIELD (cb_ref (x)) : CB_FIELD (x))
 
+/* special values for cb_default_byte */
+#define CB_DEFAULT_BYTE_INIT	-1	/* init by PICTURE/USAGE; INDEXED BY as 1 */
+#define CB_DEFAULT_BYTE_NONE	-2	/* no explicit init at all */
+
 /* Index */
 
 #define CB_INDEX_OR_HANDLE_P(x)		cb_check_index_or_handle_p (x)
@@ -1337,8 +1341,8 @@ struct cb_initialize {
 	cb_tree			var;			/* Field */
 	cb_tree			val;			/* ALL (cb_true) or category (cb_int) TO VALUE */
 	cb_tree			rep;			/* Replacing */
+	enum cob_statement	statement;	/* INITIALIZE statement */
 	unsigned char		flag_default;		/* Default */
-	unsigned char		flag_init_statement;	/* INITIALIZE statement */
 	unsigned char		flag_no_filler_init;	/* No FILLER initialize */
 	unsigned char		padding;		/* Padding */
 };
@@ -2198,7 +2202,7 @@ extern cb_tree		cb_build_schema_name (cb_tree);
 extern cb_tree		cb_build_initialize (const cb_tree, const cb_tree,
 					   const cb_tree,
 					   const unsigned int,
-					   const unsigned int,
+					   const enum cob_statement,
 					   const unsigned int);
 
 struct cb_literal	*build_literal (enum cb_category,

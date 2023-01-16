@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2022 Free Software Foundation, Inc.
+   Copyright (C) 2003-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
    Edward Hart
 
@@ -2324,7 +2324,7 @@ output_local_field_cache (struct cb_program *prog)
 		f = field->f;
 		if (!f->flag_local
 		 && !f->flag_external) {
-			if (f->storage ==  CB_STORAGE_REPORT
+			if (f->storage == CB_STORAGE_REPORT
 			 && f->flag_occurs
 			 && f->occurs_max > 1) {
 				/* generate sub-fields and a comment each */
@@ -2363,7 +2363,7 @@ output_local_field_cache (struct cb_program *prog)
 			for (f = rep->records; f; f = f->sister) {
 				if (f->storage == CB_STORAGE_WORKING
 				&& !(f->report_flag & COB_REPORT_REF_EMITTED)) {
-					output_emit_field(cb_build_field_reference (f, NULL), NULL);
+					output_emit_field (cb_build_field_reference (f, NULL), NULL);
 				}
 			}
 		}
@@ -4380,11 +4380,11 @@ deduce_initialize_type (struct cb_initialize *p, struct cb_field *f,
 		return INITIALIZE_ONE;
 	}
 
-	if (f->flag_external && !p->flag_init_statement) {
+	if (f->flag_external && p->statement == STMT_INIT_STORAGE) {
 		return INITIALIZE_NONE;
 	}
 
-	if (f->redefines && (!topfield || !p->flag_init_statement)) {
+	if (f->redefines && (!topfield || p->statement != STMT_INITIALIZE)) {
 		return INITIALIZE_NONE;
 	}
 
@@ -4425,7 +4425,7 @@ deduce_initialize_type (struct cb_initialize *p, struct cb_field *f,
 	}
 
 	if (p->flag_default) {
-		if (cb_default_byte >= 0 && !p->flag_init_statement) {
+		if (p->statement == STMT_INIT_STORAGE && cb_default_byte >= 0) {
 			return INITIALIZE_DEFAULT;
 		}
 		switch (f->usage) {
@@ -4531,7 +4531,7 @@ static int
 initialize_uniform_char (const struct cb_field *f,
 			 const struct cb_initialize *p)
 {
-	if (cb_default_byte >= 0 && !p->flag_init_statement) {
+	if (p->statement == STMT_INIT_STORAGE && cb_default_byte >= 0) {
 		return cb_default_byte;
 	}
 
@@ -4741,10 +4741,9 @@ output_initialize_fp (cb_tree x, struct cb_field *f)
 }
 
 static void
-output_initialize_uniform (cb_tree x, const unsigned char cc, const int size)
+output_initialize_uniform (cb_tree x, struct cb_field *f,
+	const unsigned char cc, const int size)
 {
-	struct cb_field		*f = cb_code_field (x);
-
 	/* REPORT lines are cleared to SPACES */
 	if (f->storage == CB_STORAGE_REPORT
 	 && cc == ' ') {
@@ -4805,7 +4804,7 @@ static void
 output_initialize_chaining (struct cb_field *f, struct cb_initialize *p)
 {
 	/* only handle CHAINING for program initialization */
-	if (p->flag_init_statement) {
+	if (p->statement == STMT_INITIALIZE) {
 		return;
 	}
 	/* Note: CHAINING must be an extra initialization step as parameters not passed
@@ -4821,7 +4820,7 @@ output_initialize_chaining (struct cb_field *f, struct cb_initialize *p)
 
 static void
 output_initialize_to_value (struct cb_field *f, cb_tree x,
-		const int flag_init_statement)
+		const enum cob_statement statement)
 {
 	cb_tree			value;
 	struct cb_literal *l;
@@ -4850,7 +4849,7 @@ output_initialize_to_value (struct cb_field *f, cb_tree x,
 	}
 	/* Check for non-standard OCCURS */
 	if ((f->level == 1 || f->level == 77)
-	 && f->flag_occurs && !flag_init_statement) {
+	 && f->flag_occurs && statement == STMT_INIT_STORAGE) {
 		init_occurs = 1;
 	} else {
 		init_occurs = 0;
@@ -5125,13 +5124,11 @@ output_initialize_to_default (struct cb_field *f, cb_tree x)
 static void
 output_initialize_one (struct cb_initialize *p, cb_tree x)
 {
-	struct cb_field		*f;
-
-	f = cb_code_field (x);
+	struct cb_field	*f = cb_code_field (x);
 
 	/* Initialize TO VALUE */
 	if (p->val && f->values) {
-		output_initialize_to_value (f, x, p->flag_init_statement);
+		output_initialize_to_value (f, x, p->statement);
 		return;
 	}
 
@@ -5214,7 +5211,7 @@ output_initialize_multi_values (struct cb_initialize *p, cb_tree x, struct cb_fi
 	struct cb_field	*pftbl[COB_MAX_SUBSCRIPTS+1] = { NULL };
 	int			idxtbl[COB_MAX_SUBSCRIPTS+1] = { 0 };
 	int			occtbl[COB_MAX_SUBSCRIPTS+1] = { 0 };
-	int			idx, idx_clr, total_occurs;
+	int			idx, idx_clr;
 
 #if 0 /* CHECKME: the init above should be fine */
 	for (idx=0; idx <= COB_MAX_SUBSCRIPTS; idx++) {
@@ -5222,14 +5219,12 @@ output_initialize_multi_values (struct cb_initialize *p, cb_tree x, struct cb_fi
 		pftbl[idx] = NULL;
 	}
 #endif
-	total_occurs = 1;
 	idx_clr = 0;
 	for (idx = 0, pf = f; pf; pf = pf->parent) {
 		if (pf->flag_occurs
 		 && pf->occurs_max > 1) {
 			pftbl [idx] = pf;
 			occtbl[idx] = pf->occurs_max;
-			total_occurs *= pf->occurs_max;
 			idx++;
 		}
 	}
@@ -5346,7 +5341,7 @@ output_initialize_compound (struct cb_initialize *p, cb_tree x)
 					} else {
 						size = ff->offset + ff->size - last_field->offset;
 					}
-					output_initialize_uniform (c, (unsigned char)last_char, size);
+					output_initialize_uniform (c, last_field, (unsigned char)last_char, size);
 				}
 				break;
 			}
@@ -5472,7 +5467,7 @@ static void
 output_initialize_values_table_format (struct cb_initialize *p)
 {
 	if (needs_table_format_value
-	 && (!p->flag_init_statement || p->val == cb_true)) {
+	 && (p->statement == STMT_INIT_STORAGE || p->val == cb_true)) {
 		struct cb_field		*f = cb_code_field (p->var);
 		const cb_tree		c = cb_build_field_reference (f, NULL);
 
@@ -5495,7 +5490,7 @@ output_initialize_values_table_format (struct cb_initialize *p)
 static void
 output_initialize (struct cb_initialize *p)
 {
-	struct cb_field		*f = cb_code_field (p->var);
+	struct cb_field	*f = cb_code_field (p->var);
 	int			c;
 
 	const enum cobc_init_type	type
@@ -5518,15 +5513,15 @@ output_initialize (struct cb_initialize *p)
 	/* TODO: if cb_default_byte >= 0 do a huge memset first, then only
 	         emit setting for fields that need it (VALUE clause or
 	         special category - in general: not matching cb_default_byte);
-	         similar for cb_default_byte == -2 (just without the
-	         initial huge memset) */
+	         similar for cb_default_byte == CB_DEFAULT_BYTE_NONE (-2),
+			 just without the initial huge memset */
 
 	needs_table_format_value = 0;
 
 	/* Check for non-standard OCCURS */
 	if ((f->level == 1 || f->level == 77)
 	 && f->flag_occurs
-	 && !p->flag_init_statement) {
+	 && p->statement == STMT_INIT_STORAGE) {
 		cb_tree			x;
 		switch (type) {
 		case INITIALIZE_ONE:
@@ -5537,7 +5532,7 @@ output_initialize (struct cb_initialize *p)
 		case INITIALIZE_DEFAULT:
 			c = initialize_uniform_char (f, p);
 			if (c != -1) {
-				output_initialize_uniform (p->var, (unsigned char)c, f->occurs_max);
+				output_initialize_uniform (p->var, f, (unsigned char)c, f->size * f->occurs_max);
 				output_initialize_chaining (f, p);
 				return;
 			}
@@ -5582,7 +5577,7 @@ output_initialize (struct cb_initialize *p)
 	case INITIALIZE_DEFAULT:
 		c = initialize_uniform_char (f, p);
 		if (c != -1) {
-			output_initialize_uniform (p->var, (unsigned char)c, f->size);
+			output_initialize_uniform (p->var, f, (unsigned char)c, f->size);
 			output_initialize_chaining (f, p);
 			return;
 		}
@@ -8200,7 +8195,7 @@ output_source_reference (cb_tree tree, const enum cob_statement statement)
 			tree->source_file);
 
 	/* Output source location as code */
-	if (cb_flag_c_line_directives && tree->source_file) {
+	if (cb_flag_c_line_directives && tree->source_line) {
 		output_cobol_info (tree);
 		if (cb_flag_source_location) {
 			output_line ("module->statement = %s;", stmnt_enum);
@@ -8210,7 +8205,7 @@ output_source_reference (cb_tree tree, const enum cob_statement statement)
 		output_c_info ();
 	}
 	if (cb_flag_source_location) {
-		if (!(cb_flag_c_line_directives && tree->source_file)) {
+		if (!(cb_flag_c_line_directives && tree->source_line)) {
 			output_line ("module->statement = %s;", stmnt_enum);
 		}
 		if (statement == STMT_UNTIL) {
@@ -8674,7 +8669,8 @@ output_stmt (cb_tree x)
 	}
 	/* LCOV_EXCL_START */
 	if (unlikely(x == cb_error_node)) {
-		cobc_err_msg (_("unexpected error_node parameter"));
+		/* untranslated as unexpected */
+		cobc_err_msg ("unexpected error_node parameter");
 		COBC_ABORT ();
 	}
 	/* LCOV_EXCL_STOP */
@@ -9529,7 +9525,7 @@ output_report_data (struct cb_field *p)
 				report_col_pos = p->report_column + p->size;
 			}
 		}
-		output_emit_field(cb_build_field_reference (p, NULL), NULL);
+		output_emit_field (cb_build_field_reference (p, NULL), NULL);
 		if (p->report_sum_counter) {
 			output_emit_field (p->report_sum_counter, "SUM");
 		}
@@ -10441,9 +10437,22 @@ output_initial_values (struct cb_field *f)
 		if (p->flag_no_init && !p->count) {
 			continue;
 		}
+		/* note: the initial value of INDEXED BY items is undefined per standard,
+		   but earlier versions always set this explict to 1 on first entry;
+		   we now make this depending on its value, set depending on cb_init_indexed_by
+		   and on cb_implicit_init */
+		if (p->flag_indexed_by && cb_default_byte == CB_DEFAULT_BYTE_NONE) {
+			continue;
+		}
 		x = cb_build_field_reference (p, NULL);
+		/* output comment and source location for each 01/77 */
 		output_line ("/* initialize field %s */", p->name);
-		output_stmt (cb_build_initialize (x, cb_true, NULL, 1, 0, 0));
+		if (cb_flag_c_line_directives && p->common.source_line) {
+			output_cobol_info (CB_TREE (p));
+			output_line ("cob_nop ();");
+			output_c_info ();
+		}
+		output_stmt (cb_build_initialize (x, cb_true, NULL, 1, STMT_INIT_STORAGE, 0));
 		output_newline ();
 	}
 }
@@ -12311,7 +12320,7 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 			}
 			output_line ("%s%d = &%s%d;", CB_PREFIX_DEC_CONST, m->id,
 				     CB_PREFIX_DEC_FIELD, m->id);
-			output_line ("cob_decimal_init(%s%d);", CB_PREFIX_DEC_CONST, m->id);
+			output_line ("cob_decimal_init (%s%d);", CB_PREFIX_DEC_CONST, m->id);
 			output_line ("cob_decimal_set_field (%s%d, (cob_field *)&%s%d);",
 				     CB_PREFIX_DEC_CONST, m->id,
 				     CB_PREFIX_CONST, m->id);

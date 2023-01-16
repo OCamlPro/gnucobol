@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2022 Free Software Foundation, Inc.
+   Copyright (C) 2001-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -2281,6 +2281,8 @@ cb_build_index (cb_tree x, cb_tree values, const unsigned int indexed_by,
 	enum cb_storage		storage = CB_STORAGE_WORKING;
 	struct cb_field	*f = CB_FIELD (cb_build_field (x));
 
+	/* TODO: possibly second type which is 0-based, depending on dialect option,
+	   see FR #428 */
 	f->usage = CB_USAGE_INDEX;
 	cb_validate_field (f);
 	f->values = values;
@@ -2294,9 +2296,16 @@ cb_build_index (cb_tree x, cb_tree values, const unsigned int indexed_by,
 	}
 	switch (storage) {
 	case CB_STORAGE_FILE:
-	case CB_STORAGE_LINKAGE:	/* explicit: not passed -> program local -> WS */
 	case CB_STORAGE_WORKING:
 		CB_FIELD_ADD (current_program->working_storage, f);
+		break;
+	case CB_STORAGE_LINKAGE:
+		/* explicit: not passed -> program local -> WS / LO */
+		if (current_program->flag_recursive) {
+			CB_FIELD_ADD (current_program->local_storage, f);
+		} else {
+			CB_FIELD_ADD (current_program->working_storage, f);
+		}
 		break;
 	case CB_STORAGE_SCREEN:
 		CB_FIELD_ADD (current_program->screen_storage, f);
@@ -8344,7 +8353,7 @@ cb_emit_allocate_identifier (cb_tree allocate_identifier, cb_tree returning, con
 	   INITIALIZE identifier WITH FILLER ALL TO VALUE THEN TO DEFAULT */
 	if (init_flag) {
 		current_statement->not_ex_handler =
-			cb_build_initialize (allocate_identifier, cb_true, NULL, 1, 0, 0);
+			cb_build_initialize (allocate_identifier, cb_true, NULL, 1, STMT_ALLOCATE, 0);
 	}
 }
 
@@ -9886,7 +9895,7 @@ cb_emit_initialize (cb_tree vars, cb_tree fillinit, cb_tree value,
 			CB_REFERENCE (x)->length = temp;
 		}
 		cb_emit (cb_build_initialize (x , value, replacing,
-					      def_init, 1, no_fill_init));
+					      def_init, STMT_INITIALIZE, no_fill_init));
 	}
 }
 

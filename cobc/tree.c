@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2022 Free Software Foundation, Inc.
+   Copyright (C) 2001-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -6464,7 +6464,7 @@ cb_build_assign (const cb_tree var, const cb_tree val)
 cb_tree
 cb_build_initialize (const cb_tree var, const cb_tree val, const cb_tree rep,
 		     const unsigned int def,
-		     const unsigned int is_statement,
+		     const enum cob_statement statement,
 		     const unsigned int no_filler_init)
 {
 	struct cb_initialize *p;
@@ -6475,7 +6475,7 @@ cb_build_initialize (const cb_tree var, const cb_tree val, const cb_tree rep,
 	p->val = val;
 	p->rep = rep;
 	p->flag_default = (cob_u8_t)def;
-	p->flag_init_statement = (cob_u8_t)is_statement;
+	p->statement = statement;
 	p->flag_no_filler_init = (cob_u8_t)no_filler_init;
 	return CB_TREE (p);
 }

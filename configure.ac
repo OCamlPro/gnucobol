@@ -54,25 +54,49 @@ AC_CONFIG_FILES([tests/atlocal], [chmod +x tests/atlocal])
 AC_CONFIG_FILES([tests/run_prog_manual.sh],
   [chmod +x tests/run_prog_manual.sh])
 
+# In general: don't export/setenv but pass as option to configure
+#             this has the benefit that re-runs will take the same and "sudo"
+#             or later "make" (possibly as different user) will use the same
+#             set of tools
 # Note for SUN Solaris (gcc)
-#  option to configure/export/setenv: CC=gcc -m64 --libdir=/usr/local/lib/sparcv9
+#  options to configure: CC="gcc -m64" --libdir=/usr/local/lib/sparcv9
 # or:
-#  option to configure/export/setenv: CFLAGS=-m64 and LDFLAGS="-m64 -L/usr/local/lib/sparcv9"
+#  options to configure: CFLAGS=-m64 LDFLAGS="-m64 -L/usr/local/lib/sparcv9"
 #
 # Hack for AIX 64 bit (gcc)
 # Required -
-#  option to configure/export/setenv: CC=gcc -maix64
+#  options to configure: CC="gcc -maix64" / CC="xlc -q64"
 # or:
-#  option to configure/export/setenv: CFLAGS=-maix64 and LDFLAGS=-maix64
+#  options to configure: CFLAGS=-maix64 and LDFLAGS=-maix64
 # Note: AIX commonly uses -Lpath like GNU/Linux would use -Lpath -Rpath
 
-if echo "$CC$CFLAGS" | grep 'aix64' 1>/dev/null 2>&1; then
-	if test -f /usr/ccs/bin/ar; then
-		AR="/usr/ccs/bin/ar -X64"
-	else
-		AR="ar -X64"
+if test "x$OBJECT_MODE" = x; then
+	echo "$CC $CFLAGS" | grep ' -maix64' 1>/dev/null 2>&1
+	check1=$$
+	echo "$CC $CFLAGS" | grep ' -q64'    1>/dev/null 2>&1
+	check2=$$
+	if test check1 = 0 -o check2 = 0; then
+		OBJECT_MODE=64 # for libtool
 	fi
-	NM="/usr/ccs/bin/nm -X64 -B"
+	unset check1
+	unset check2
+fi
+
+if test "$OBJECT_MODE" = "64"; then
+	if test "x$AR" = x; then
+		if test -f /usr/ccs/bin/ar; then
+			AR="/usr/ccs/bin/ar -X64"
+		else
+			AR="ar -X64"
+		fi
+	fi
+	if test "x$NM" = x; then
+		if test -f /usr/ccs/bin/nm; then
+			NM="/usr/ccs/bin/nm -X64 -B"
+		else
+			NM="nm -X64 -B"
+		fi
+	fi
 fi
 
 dnl We don't want to have the full list of automatic defines from automake,
