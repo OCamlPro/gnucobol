@@ -3716,7 +3716,7 @@ output_param (cb_tree x, int id)
 					output_prefix ();
 				}
 			}
-			output ("COB_SET_FLD(f%d, ", stack_id++);
+			output ("COB_SET_FLD (f%d, ", stack_id++);
 			output_size (x);
 			output (", ");
 			output_data (x);
@@ -5122,12 +5122,49 @@ output_initialize_to_default (struct cb_field *f, cb_tree x)
 }
 
 static void
+output_c_info (void)
+{
+	output ("#line %d \"%s\"", output_line_number + 1, output_name);
+	output_newline ();
+}
+
+static void
+output_cobol_info (cb_tree x)
+{
+	const char	*p = x->source_file;
+	output ("#line %d \"", x->source_line);
+	while (*p) {
+		if (*p == '\\') {
+			output ("%c",'\\');
+		}
+		output ("%c",*p++);
+	}
+	output ("\"");
+	output_newline ();
+}
+
+static void
+output_init_comment_and_source_ref (struct cb_field *f)
+{
+	/* output comment and source location for each field */
+	output_line ("/* initialize field %s */", f->name);
+	if (cb_flag_c_line_directives && f->common.source_line) {
+		output_cobol_info (CB_TREE (f));
+		output_line ("cob_nop ();");
+		output_c_info ();
+	}
+}
+
+static void
 output_initialize_one (struct cb_initialize *p, cb_tree x)
 {
 	struct cb_field	*f = cb_code_field (x);
 
 	/* Initialize TO VALUE */
 	if (p->val && f->values) {
+		if (p->statement == STMT_INIT_STORAGE) {
+			output_init_comment_and_source_ref (f);
+		}
 		output_initialize_to_value (f, x, p->statement);
 		return;
 	}
@@ -5145,6 +5182,9 @@ output_initialize_one (struct cb_initialize *p, cb_tree x)
 
 	/* Initialize TO DEFAULT */
 	if (p->flag_default) {
+		if (p->statement == STMT_INIT_STORAGE) {
+			output_init_comment_and_source_ref (f);
+		}
 		output_initialize_to_default (f, x);
 	}
 }
@@ -5341,6 +5381,9 @@ output_initialize_compound (struct cb_initialize *p, cb_tree x)
 					} else {
 						size = ff->offset + ff->size - last_field->offset;
 					}
+					if (p->statement == STMT_INIT_STORAGE) {
+						output_init_comment_and_source_ref (last_field);
+					}
 					output_initialize_uniform (c, last_field, (unsigned char)last_char, size);
 				}
 				break;
@@ -5398,6 +5441,9 @@ output_initialize_compound (struct cb_initialize *p, cb_tree x)
 						cb_tree stmt = CB_BUILD_FUNCALL_3 ("memset",
 							CB_BUILD_CAST_ADDRESS (c),
 							cb_int (init), cb_int (f->size * f->occurs_max));
+						if (p->statement == STMT_INIT_STORAGE) {
+							output_init_comment_and_source_ref (f);
+						}
 						output_stmt (stmt);
 						continue;
 						/* direct initialization possible
@@ -5532,6 +5578,9 @@ output_initialize (struct cb_initialize *p)
 		case INITIALIZE_DEFAULT:
 			c = initialize_uniform_char (f, p);
 			if (c != -1) {
+				if (p->statement == STMT_INIT_STORAGE) {
+					output_init_comment_and_source_ref (f);
+				}
 				output_initialize_uniform (p->var, f, (unsigned char)c, f->size * f->occurs_max);
 				output_initialize_chaining (f, p);
 				return;
@@ -5577,6 +5626,9 @@ output_initialize (struct cb_initialize *p)
 	case INITIALIZE_DEFAULT:
 		c = initialize_uniform_char (f, p);
 		if (c != -1) {
+			if (p->statement == STMT_INIT_STORAGE) {
+				output_init_comment_and_source_ref (f);
+			}
 			output_initialize_uniform (p->var, f, (unsigned char)c, f->size);
 			output_initialize_chaining (f, p);
 			return;
@@ -8029,28 +8081,6 @@ output_ferror_stmt (const struct cb_statement *stmt)
 }
 
 static void
-output_c_info (void)
-{
-	output ("#line %d \"%s\"", output_line_number + 1, output_name);
-	output_newline ();
-}
-
-static void
-output_cobol_info (cb_tree x)
-{
-	const char	*p = x->source_file;
-	output ("#line %d \"", x->source_line);
-	while (*p) {
-		if (*p == '\\') {
-			output ("%c",'\\');
-		}
-		output ("%c",*p++);
-	}
-	output ("\"");
-	output_newline ();
-}
-
-static void
 output_module_source_for_tree (cb_tree x)
 {
 	if (!x->source_file) {
@@ -10445,12 +10475,8 @@ output_initial_values (struct cb_field *f)
 			continue;
 		}
 		x = cb_build_field_reference (p, NULL);
-		/* output comment and source location for each 01/77 */
-		output_line ("/* initialize field %s */", p->name);
-		if (cb_flag_c_line_directives && p->common.source_line) {
-			output_cobol_info (CB_TREE (p));
-			output_line ("cob_nop ();");
-			output_c_info ();
+		if (p->statement != STMT_INIT_STORAGE) {
+			output_line ("/* initialize field %s */", p->name);
 		}
 		output_stmt (cb_build_initialize (x, cb_true, NULL, 1, STMT_INIT_STORAGE, 0));
 		output_newline ();
@@ -10497,7 +10523,7 @@ output_field_display (struct cb_field *f, size_t offset,
 	 && f->storage != CB_STORAGE_LINKAGE) {
 		output_param (x, 0);
 	} else {
-		output ("COB_SET_FLD(%s, ", "f0");
+		output ("COB_SET_FLD (%s, ", "f0");
 		output_size (x);
 		output (", ");
 		output_data (x);
@@ -10679,7 +10705,7 @@ output_display_fields (struct cb_field *f, size_t offset, unsigned int idx)
 			 && f->storage != CB_STORAGE_LINKAGE) {
 				output ("%s%d",	CB_PREFIX_FIELD, f->id);
 			} else {
-				output ("COB_SET_FLD(%s, %d, NULL, ", "f0", f->size);
+				output ("COB_SET_FLD (%s, %d, NULL, ", "f0", f->size);
 				output_attr (cb_build_field_reference (f, NULL));
 				output (")");
 			}
@@ -11102,13 +11128,13 @@ output_dump_code (struct cb_program *prog, cb_tree parameter_list)
 		if (cb_flag_dump & COB_DUMP_WS) {
 			has_dump = 1;
 			output_line ("/* Dump WORKING-STORAGE */");
-			output_line ("cob_dump_output(\"WORKING-STORAGE\");");
+			output_line ("cob_dump_output (\"WORKING-STORAGE\");");
 			output_display_fields (prog->working_storage, 0, 0);
 			output_newline ();
 		} else if (cb_wants_dump_comments) {
 			has_dump = has_dump ? has_dump : -1;
 			output_line ("/* Dump WORKING-STORAGE (informational) */");
-			output_line ("/* cob_dump_output(\"WORKING-STORAGE\"); */");
+			output_line ("/* cob_dump_output (\"WORKING-STORAGE\"); */");
 			output_as_comment++;
 			output_display_fields (prog->working_storage, 0, 0);
 			output_as_comment--;
@@ -11119,13 +11145,13 @@ output_dump_code (struct cb_program *prog, cb_tree parameter_list)
 		if (cb_flag_dump & COB_DUMP_SC) {
 			has_dump = 1;
 			output_line ("/* Dump SCREEN SECTION */");
-			output_line ("cob_dump_output(\"SCREEN\");");
+			output_line ("cob_dump_output (\"SCREEN\");");
 			output_display_fields (prog->screen_storage, 0, 0);
 			output_newline ();
 		} else if (cb_wants_dump_comments) {
 			has_dump = has_dump ? has_dump : -1;
 			output_line ("/* Dump SCREEN SECTION (informational) */");
-			output_line ("/* cob_dump_output(\"SCREEN\"); */");
+			output_line ("/* cob_dump_output (\"SCREEN\"); */");
 			output_as_comment++;
 			output_display_fields (prog->screen_storage, 0, 0);
 			output_as_comment--;
@@ -11136,13 +11162,13 @@ output_dump_code (struct cb_program *prog, cb_tree parameter_list)
 		if (cb_flag_dump & COB_DUMP_RD) {
 			has_dump = 1;
 			output_line ("/* Dump REPORT SECTION */");
-			output_line ("cob_dump_output(\"REPORT\");");
+			output_line ("cob_dump_output (\"REPORT\");");
 			output_display_fields (prog->report_storage, 0, 0);
 			output_newline ();
 		} else if (cb_wants_dump_comments) {
 			has_dump = has_dump ? has_dump : -1;
 			output_line ("/* Dump REPORT SECTION (informational) */");
-			output_line ("/* cob_dump_output(\"REPORT\"); */");
+			output_line ("/* cob_dump_output (\"REPORT\"); */");
 			output_as_comment++;
 			output_display_fields (prog->report_storage, 0, 0);
 			output_as_comment--;
@@ -11154,7 +11180,7 @@ output_dump_code (struct cb_program *prog, cb_tree parameter_list)
 			if (has_field_to_dump (prog->local_storage)) {
 				has_dump = 1;
 				output_line ("/* Dump LOCAL-STORAGE SECTION */");
-				output_line ("cob_dump_output(\"LOCAL-STORAGE\");");
+				output_line ("cob_dump_output (\"LOCAL-STORAGE\");");
 				output_display_fields (prog->local_storage, 0, 0);
 				output_newline ();
 			}
@@ -11162,7 +11188,7 @@ output_dump_code (struct cb_program *prog, cb_tree parameter_list)
 			if (has_field_to_dump (prog->local_storage)) {
 				has_dump = has_dump ? has_dump : -1;
 				output_line ("/* Dump LOCAL-STORAGE SECTION (informational) */");
-				output_line ("/* cob_dump_output(\"LOCAL-STORAGE\"); */");
+				output_line ("/* cob_dump_output (\"LOCAL-STORAGE\"); */");
 				output_as_comment++;
 				output_display_fields (prog->local_storage, 0, 0);
 				output_as_comment--;
@@ -11194,7 +11220,7 @@ output_dump_code (struct cb_program *prog, cb_tree parameter_list)
 						output_newline ();
 					}
 				}
-				output_line ("cob_dump_output(\"LINKAGE\");");
+				output_line ("cob_dump_output (\"LINKAGE\");");
 				output_display_fields (prog->linkage_storage, 0, 0);
 				output_newline ();
 			}
@@ -11202,7 +11228,7 @@ output_dump_code (struct cb_program *prog, cb_tree parameter_list)
 			if (has_field_to_dump (prog->linkage_storage)) {
 				has_dump = has_dump ? has_dump : -1;
 				output_line ("/* Dump LINKAGE SECTION (informational) */");
-				output_line ("/* cob_dump_output(\"LINKAGE\"); */");
+				output_line ("/* cob_dump_output (\"LINKAGE\"); */");
 				output_as_comment++;
 				output_display_fields (prog->linkage_storage, 0, 0);
 				output_as_comment--;
@@ -11215,10 +11241,10 @@ output_dump_code (struct cb_program *prog, cb_tree parameter_list)
 	}
 	if (has_dump) {
 		if (has_dump == 1) {
-			output_line ("cob_dump_output(\"END OF DUMP - %s\");",
+			output_line ("cob_dump_output (\"END OF DUMP - %s\");",
 				prog->program_name);
 		} else {
-			output_line ("/* cob_dump_output(\"END OF DUMP - %s\"); */",
+			output_line ("/* cob_dump_output (\"END OF DUMP - %s\"); */",
 				prog->program_name);
 		}
 	}
@@ -12643,7 +12669,7 @@ output_function_entry_function (struct cb_program *prog, cb_tree entry,
 	output_newline ();
 
 #if 0 /* TODO for 4.0: set the attributes from the field given outside on the stack */
-	output_line ("COB_SET_FLD(cob_fret, ret_fld->size, ret_fld, ret_fld->attr;");
+	output_line ("COB_SET_FLD (cob_fret, ret_fld->size, ret_fld, ret_fld->attr;");
 #else
 	output_line ("**cob_fret = *floc->ret_fld;");
 #endif

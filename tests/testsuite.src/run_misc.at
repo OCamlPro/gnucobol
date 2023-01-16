@@ -12290,7 +12290,7 @@ AT_DATA([prog.cob], [
 
        PROCEDURE DIVISION.
        MAIN.
-      *>   "the initial value of an index-name  at runtime is undefined"
+      *>   "the initial value of an index-name at runtime is undefined"
       *>   Old OpenCOBOL/GnuCOBOL did that as "1"
            SET REC-NAME-IDX          TO 1.
            MOVE 'A-F-GEN-LEDGER-ZGL' TO REC-NAME.

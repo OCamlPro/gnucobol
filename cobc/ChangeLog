@@ -15,6 +15,9 @@
 	* typeck.c (cb_build_index): add internal index variables in LINKAGE to
 	  internal WORKING-STORAGE or internal LOCAL-STORAGE items depending on
 	  program->flag_recursive
+	* codegen.c (output_init_comment_and_source_ref): new function, called
+	  by one-time init code to add source reference to initial setup, bringing
+	  in missing copybook references into GDB source list
 
 2023-01-05  Simon Sobisch <simonsobisch@gnu.org>
 
