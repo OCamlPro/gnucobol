@@ -5560,7 +5560,7 @@ output_initialize (struct cb_initialize *p)
 	         emit setting for fields that need it (VALUE clause or
 	         special category - in general: not matching cb_default_byte);
 	         similar for cb_default_byte == CB_DEFAULT_BYTE_NONE (-2),
-			 just without the initial huge memset */
+	         just without the initial huge memset */
 
 	needs_table_format_value = 0;
 
@@ -5581,7 +5581,7 @@ output_initialize (struct cb_initialize *p)
 				if (p->statement == STMT_INIT_STORAGE) {
 					output_init_comment_and_source_ref (f);
 				}
-				output_initialize_uniform (p->var, f, (unsigned char)c, f->size * f->occurs_max);
+				output_initialize_uniform (p->var, f, (unsigned char)c, f->occurs_max);
 				output_initialize_chaining (f, p);
 				return;
 			}
@@ -10475,9 +10475,7 @@ output_initial_values (struct cb_field *f)
 			continue;
 		}
 		x = cb_build_field_reference (p, NULL);
-		if (p->statement != STMT_INIT_STORAGE) {
-			output_line ("/* initialize field %s */", p->name);
-		}
+		output_line ("/* initialize field %s */", p->name);
 		output_stmt (cb_build_initialize (x, cb_true, NULL, 1, STMT_INIT_STORAGE, 0));
 		output_newline ();
 	}
