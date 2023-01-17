@@ -10475,7 +10475,7 @@ output_initial_values (struct cb_field *f)
 			continue;
 		}
 		x = cb_build_field_reference (p, NULL);
-		output_line ("/* initialize field %s */", p->name);
+		output_line ("/* initialize field %s */", f->name);
 		output_stmt (cb_build_initialize (x, cb_true, NULL, 1, STMT_INIT_STORAGE, 0));
 		output_newline ();
 	}
