@@ -3910,7 +3910,7 @@ int
 cob_sys_set_csr_pos (unsigned char *fld)
 {
 #ifdef	WITH_EXTENDED_SCREENIO
-	const cob_field* f = COB_MODULE_PTR->cob_procedure_params[0];
+	const cob_field *f = COB_MODULE_PTR->cob_procedure_params[0];
 	int	cline;
 	int	ccol;
 #endif

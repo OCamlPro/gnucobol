@@ -1,4 +1,19 @@
 
+2023-01-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_decimal_set_packed): speedup (of ~8%) by handling
+	  fields with less than 20 digits via integer computation instead
+	  of GMP
+	* numeric.c (cob_decimal_set_display): minor speedup by switching
+	  to pointer arithmetic
+	* numeric.c: applied 2022-05-30 changes for sign and shift_decimal
+	* numeric.c (cob_mul_by_pow_10, cob_div_by_pow_10): extracted identical
+	  code to inline functions
+	* numeric.c (cob_mul_by_pow_10, cob_div_by_pow_10, cob_pow_10_u64)
+	  [!PREFER_MPZ_MUL]: use integer multiplication for scaling, as this
+	  has proven to be a bit faster than multiplication on pre-calculated mpz
+	* numeric.c (cob_s32_pow, cob_s64_pow): use of register type
+
 2023-01-16  Simon Sobisch <simonsobisch@gnu.org>
 
 	* statement.def (STMT_INIT_STORAGE): new internal statement
@@ -493,6 +508,12 @@
 
 	* numeric.c (num_byte_memcpy): removed, callers adjusted to
 	  use memcpy instead
+	* numeric.c: adjusted to distinguish "field_sign" (a flag) from
+	  "sign" (a GMP return to show negative/zero/positive), and check
+	  the later with explicit -1 / 1
+	* numeric.c: check for "gmp sign == 0" and skip some computations early
+	* numeric.c (shift_decimal): moved checks for "shift by zero" out to
+	  callers as already done in many places
 
 2022-05-24  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -3454,8 +3475,9 @@
 
 2014-03-03  Simon Sobisch <simonsobisch@gnu.org>
 
-	* common.c, common.h: Rewriting cob_sig_handler, printing caught signal to
-	  stderr, adding cob_reg_sighnd for registration of external signal handling
+	* common.c, common.h: Rewriting cob_sig_handler, printing signal caught
+	  to stderr, adding cob_reg_sighnd for registration of external signal
+	  handling
 
 2014-01-17  Ron Norman <rjn@inglenet.com>
 

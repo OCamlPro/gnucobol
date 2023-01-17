@@ -3077,7 +3077,7 @@ AT_CLEANUP
 
 
 AT_SETUP([Numeric operations (1)])
-AT_KEYWORDS([fundamental add subtract])
+AT_KEYWORDS([fundamental ADD SUBTRACT])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -3090,27 +3090,19 @@ AT_DATA([prog.cob], [
            MOVE -0.1  TO X.
            ADD 1      TO X.
            IF X NOT = 0.9
-              DISPLAY X
-              END-DISPLAY
-           END-IF.
+              DISPLAY X.
            MOVE  0.1  TO X.
            SUBTRACT 1 FROM X.
            IF X NOT = -0.9
-              DISPLAY X
-              END-DISPLAY
-           END-IF.
+              DISPLAY X.
            MOVE -0.1 TO Y.
            ADD 1     TO Y.
            IF Y NOT = 0.9
-              DISPLAY Y
-              END-DISPLAY
-           END-IF.
+              DISPLAY Y.
            MOVE  0.1  TO Y.
            SUBTRACT 1 FROM Y.
            IF Y NOT = -0.9
-              DISPLAY Y
-              END-DISPLAY
-           END-IF.
+              DISPLAY Y.
            STOP RUN.
 ])
 
@@ -3120,7 +3112,7 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([Numeric operations (2)])
+AT_SETUP([Numeric operations (2) DISPLAY])
 AT_KEYWORDS([fundamental add subtract])
 
 AT_DATA([prog.cob], [
@@ -3132,302 +3124,223 @@ AT_DATA([prog.cob], [
        01  FELD2        PIC S9(5)V9(5).
        01  FELD3        PIC 9(1)V9(1).
        01  FELD4        PIC S9(1).
+
        PROCEDURE        DIVISION.
-           MOVE 0.2 TO FIELD
-           ADD 1 TO FIELD
-           IF FIELD  NOT = 1.2
-              DISPLAY "Test  1 " FIELD
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FIELD
-           ADD -1 TO FIELD
-           IF FIELD  NOT = -0.8
-              DISPLAY "Test  2 " FIELD
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FIELD
-           ADD 1 TO FIELD
-           IF FIELD  NOT = 0.8
-              DISPLAY "Test  3 " FIELD
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FIELD
-           ADD -1 TO FIELD
-           IF FIELD  NOT = -1.2
-              DISPLAY "Test  4 " FIELD
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FIELD
-           SUBTRACT 1 FROM FIELD
-           IF FIELD  NOT = -0.8
-              DISPLAY "Test  5 " FIELD
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FIELD
-           SUBTRACT -1 FROM FIELD
-           IF FIELD  NOT = 1.2
-              DISPLAY "Test  6 " FIELD
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FIELD
-           SUBTRACT 1 FROM FIELD
-           IF FIELD  NOT = -1.2
-              DISPLAY "Test  7 " FIELD
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FIELD
-           SUBTRACT -1 FROM FIELD
-           IF FIELD  NOT = 0.8
-              DISPLAY "Test  8 " FIELD
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FELD2
-           ADD 1 TO FELD2
-           IF FELD2  NOT = 1.2
-              DISPLAY "Test  9 " FELD2
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FELD2
-           ADD -1 TO FELD2
-           IF FELD2  NOT = -0.8
-              DISPLAY "Test 10 " FELD2
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FELD2
-           ADD 1 TO FELD2
-           IF FELD2  NOT = 0.8
-              DISPLAY "Test 11 " FELD2
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FELD2
-           ADD -1 TO FELD2
-           IF FELD2  NOT = -1.2
-              DISPLAY "Test 12 " FELD2
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FELD2
-           SUBTRACT 1 FROM FELD2
-           IF FELD2  NOT = -0.8
-              DISPLAY "Test 13 " FELD2
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FELD2
-           SUBTRACT -1 FROM FELD2
-           IF FELD2  NOT = 1.2
-              DISPLAY "Test 14 " FELD2
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FELD2
-           SUBTRACT 1 FROM FELD2
-           IF FELD2  NOT = -1.2
-              DISPLAY "Test 15 " FELD2
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FELD2
-           SUBTRACT -1 FROM FELD2
-           IF FELD2  NOT = 0.8
-              DISPLAY "Test 16 " FELD2
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FELD3
-           ADD 1 TO FELD3
-           IF FELD3  NOT = 1.2
-              DISPLAY "Test 17 " FELD3
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FELD3
-           ADD -1 TO FELD3
-           IF FELD3  NOT = 0.8
-              DISPLAY "Test 18 " FELD3
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FELD3
-           ADD 1 TO FELD3
-           IF FELD3  NOT = 1.2
-              DISPLAY "Test 19 " FELD3
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FELD3
-           ADD -1 TO FELD3
-           IF FELD3  NOT = 0.8
-              DISPLAY "Test 20 " FELD3
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FELD3
-           SUBTRACT 1 FROM FELD3
-           IF FELD3  NOT = 0.8
-              DISPLAY "Test 21 " FELD3
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FELD3
-           SUBTRACT -1 FROM FELD3
-           IF FELD3  NOT = 1.2
-              DISPLAY "Test 22 " FELD3
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FELD3
-           SUBTRACT 1 FROM FELD3
-           IF FELD3  NOT = 0.8
-              DISPLAY "Test 23 " FELD3
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FELD3
-           SUBTRACT -1 FROM FELD3
-           IF FELD3  NOT = 1.2
-              DISPLAY "Test 24 " FELD3
-              END-DISPLAY
-           END-IF.
-
-           MOVE 2 TO FELD4
-           ADD 1 TO FELD4
-           IF FELD4  NOT = 3
-              DISPLAY "Test 25 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE 2 TO FELD4
-           ADD -1 TO FELD4
-           IF FELD4  NOT = 1
-              DISPLAY "Test 26 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE -2 TO FELD4
-           ADD 1 TO FELD4
-           IF FELD4  NOT = -1
-              DISPLAY "Test 27 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE -2 TO FELD4
-           ADD -1 TO FELD4
-           IF FELD4  NOT = -3
-              DISPLAY "Test 28 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE 2 TO FELD4
-           SUBTRACT 1 FROM FELD4
-           IF FELD4  NOT = 1
-              DISPLAY "Test 29 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE 2 TO FELD4
-           SUBTRACT -1 FROM FELD4
-           IF FELD4  NOT = 3
-              DISPLAY "Test 30 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE -2 TO FELD4
-           SUBTRACT 1 FROM FELD4
-           IF FELD4  NOT = -3
-              DISPLAY "Test 31 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE -2 TO FELD4
-           SUBTRACT -1 FROM FELD4
-           IF FELD4  NOT = -1
-              DISPLAY "Test 32 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE 1 TO FELD4
-           ADD 2 TO FELD4
-           IF FELD4  NOT = 3
-              DISPLAY "Test 33 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE 1 TO FELD4
-           ADD -2 TO FELD4
-           IF FELD4  NOT = -1
-              DISPLAY "Test 34 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE -1 TO FELD4
-           ADD 2 TO FELD4
-           IF FELD4  NOT = 1
-              DISPLAY "Test 35 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE -1 TO FELD4
-           ADD -2 TO FELD4
-           IF FELD4  NOT = -3
-              DISPLAY "Test 36 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE 1 TO FELD4
-           SUBTRACT 2 FROM FELD4
-           IF FELD4  NOT = -1
-              DISPLAY "Test 37 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE 1 TO FELD4
-           SUBTRACT -2 FROM FELD4
-           IF FELD4  NOT = 3
-              DISPLAY "Test 38 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE -1 TO FELD4
-           SUBTRACT 2 FROM FELD4
-           IF FELD4  NOT = -3
-              DISPLAY "Test 39 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE -1 TO FELD4
-           SUBTRACT -2 FROM FELD4
-           IF FELD4  NOT = 1
-              DISPLAY "Test 40 " FELD4
-              END-DISPLAY
-           END-IF.
+       MAIN.
+      *    some performance checks on the way...
+           PERFORM TESTING 20000 TIMES.
            GOBACK.
+
+       TESTING.
+           MOVE 0.2 TO FIELD
+           ADD 1 TO FIELD
+           IF FIELD  NOT = 1.2
+              DISPLAY "Test  1 " FIELD.
+
+           MOVE 0.2 TO FIELD
+           ADD -1 TO FIELD
+           IF FIELD  NOT = -0.8
+              DISPLAY "Test  2 " FIELD.
+
+           MOVE -0.2 TO FIELD
+           ADD 1 TO FIELD
+           IF FIELD  NOT = 0.8
+              DISPLAY "Test  3 " FIELD.
+
+           MOVE -0.2 TO FIELD
+           ADD -1 TO FIELD
+           IF FIELD  NOT = -1.2
+              DISPLAY "Test  4 " FIELD.
+
+           MOVE 0.2 TO FIELD
+           SUBTRACT 1 FROM FIELD
+           IF FIELD  NOT = -0.8
+              DISPLAY "Test  5 " FIELD.
+
+           MOVE 0.2 TO FIELD
+           SUBTRACT -1 FROM FIELD
+           IF FIELD  NOT = 1.2
+              DISPLAY "Test  6 " FIELD.
+
+           MOVE -0.2 TO FIELD
+           SUBTRACT 1 FROM FIELD
+           IF FIELD  NOT = -1.2
+              DISPLAY "Test  7 " FIELD.
+
+           MOVE -0.2 TO FIELD
+           SUBTRACT -1 FROM FIELD
+           IF FIELD  NOT = 0.8
+              DISPLAY "Test  8 " FIELD.
+
+           MOVE 0.2 TO FELD2
+           ADD 1 TO FELD2
+           IF FELD2  NOT = 1.2
+              DISPLAY "Test  9 " FELD2.
+
+           MOVE 0.2 TO FELD2
+           ADD -1 TO FELD2
+           IF FELD2  NOT = -0.8
+              DISPLAY "Test 10 " FELD2.
+
+           MOVE -0.2 TO FELD2
+           ADD 1 TO FELD2
+           IF FELD2  NOT = 0.8
+              DISPLAY "Test 11 " FELD2.
+
+           MOVE -0.2 TO FELD2
+           ADD -1 TO FELD2
+           IF FELD2  NOT = -1.2
+              DISPLAY "Test 12 " FELD2.
+
+           MOVE 0.2 TO FELD2
+           SUBTRACT 1 FROM FELD2
+           IF FELD2  NOT = -0.8
+              DISPLAY "Test 13 " FELD2.
+
+           MOVE 0.2 TO FELD2
+           SUBTRACT -1 FROM FELD2
+           IF FELD2  NOT = 1.2
+              DISPLAY "Test 14 " FELD2.
+
+           MOVE -0.2 TO FELD2
+           SUBTRACT 1 FROM FELD2
+           IF FELD2  NOT = -1.2
+              DISPLAY "Test 15 " FELD2.
+
+           MOVE -0.2 TO FELD2
+           SUBTRACT -1 FROM FELD2
+           IF FELD2  NOT = 0.8
+              DISPLAY "Test 16 " FELD2.
+
+           MOVE 0.2 TO FELD3
+           ADD 1 TO FELD3
+           IF FELD3  NOT = 1.2
+              DISPLAY "Test 17 " FELD3.
+
+           MOVE 0.2 TO FELD3
+           ADD -1 TO FELD3
+           IF FELD3  NOT = 0.8
+              DISPLAY "Test 18 " FELD3.
+
+           MOVE -0.2 TO FELD3
+           ADD 1 TO FELD3
+           IF FELD3  NOT = 1.2
+              DISPLAY "Test 19 " FELD3.
+
+           MOVE -0.2 TO FELD3
+           ADD -1 TO FELD3
+           IF FELD3  NOT = 0.8
+              DISPLAY "Test 20 " FELD3.
+
+           MOVE 0.2 TO FELD3
+           SUBTRACT 1 FROM FELD3
+           IF FELD3  NOT = 0.8
+              DISPLAY "Test 21 " FELD3.
+
+           MOVE 0.2 TO FELD3
+           SUBTRACT -1 FROM FELD3
+           IF FELD3  NOT = 1.2
+              DISPLAY "Test 22 " FELD3.
+
+           MOVE -0.2 TO FELD3
+           SUBTRACT 1 FROM FELD3
+           IF FELD3  NOT = 0.8
+              DISPLAY "Test 23 " FELD3.
+
+           MOVE -0.2 TO FELD3
+           SUBTRACT -1 FROM FELD3
+           IF FELD3  NOT = 1.2
+              DISPLAY "Test 24 " FELD3.
+
+           MOVE 2 TO FELD4
+           ADD 1 TO FELD4
+           IF FELD4  NOT = 3
+              DISPLAY "Test 25 " FELD4.
+
+           MOVE 2 TO FELD4
+           ADD -1 TO FELD4
+           IF FELD4  NOT = 1
+              DISPLAY "Test 26 " FELD4.
+
+           MOVE -2 TO FELD4
+           ADD 1 TO FELD4
+           IF FELD4  NOT = -1
+              DISPLAY "Test 27 " FELD4.
+
+           MOVE -2 TO FELD4
+           ADD -1 TO FELD4
+           IF FELD4  NOT = -3
+              DISPLAY "Test 28 " FELD4.
+
+           MOVE 2 TO FELD4
+           SUBTRACT 1 FROM FELD4
+           IF FELD4  NOT = 1
+              DISPLAY "Test 29 " FELD4.
+
+           MOVE 2 TO FELD4
+           SUBTRACT -1 FROM FELD4
+           IF FELD4  NOT = 3
+              DISPLAY "Test 30 " FELD4.
+
+           MOVE -2 TO FELD4
+           SUBTRACT 1 FROM FELD4
+           IF FELD4  NOT = -3
+              DISPLAY "Test 31 " FELD4.
+
+           MOVE -2 TO FELD4
+           SUBTRACT -1 FROM FELD4
+           IF FELD4  NOT = -1
+              DISPLAY "Test 32 " FELD4.
+
+           MOVE 1 TO FELD4
+           ADD 2 TO FELD4
+           IF FELD4  NOT = 3
+              DISPLAY "Test 33 " FELD4.
+
+           MOVE 1 TO FELD4
+           ADD -2 TO FELD4
+           IF FELD4  NOT = -1
+              DISPLAY "Test 34 " FELD4.
+
+           MOVE -1 TO FELD4
+           ADD 2 TO FELD4
+           IF FELD4  NOT = 1
+              DISPLAY "Test 35 " FELD4.
+
+           MOVE -1 TO FELD4
+           ADD -2 TO FELD4
+           IF FELD4  NOT = -3
+              DISPLAY "Test 36 " FELD4.
+
+           MOVE 1 TO FELD4
+           SUBTRACT 2 FROM FELD4
+           IF FELD4  NOT = -1
+              DISPLAY "Test 37 " FELD4.
+
+           MOVE 1 TO FELD4
+           SUBTRACT -2 FROM FELD4
+           IF FELD4  NOT = 3
+              DISPLAY "Test 38 " FELD4.
+
+           MOVE -1 TO FELD4
+           SUBTRACT 2 FROM FELD4
+           IF FELD4  NOT = -3
+              DISPLAY "Test 39 " FELD4.
+
+           MOVE -1 TO FELD4
+           SUBTRACT -2 FROM FELD4
+           IF FELD4  NOT = 1
+              DISPLAY "Test 40 " FELD4.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [],
-[prog.cob:137: warning: ignoring sign
-prog.cob:144: warning: ignoring sign
-prog.cob:165: warning: ignoring sign
-prog.cob:172: warning: ignoring sign
-])
+AT_CHECK([$COMPILE -Wno-truncate prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
 
 
-AT_SETUP([Numeric operations (3)])
-AT_KEYWORDS([fundamental add subtract])
+AT_SETUP([Numeric operations (3) PACKED-DECIMAL])
+AT_KEYWORDS([fundamental add subtract COMP-3])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -3438,302 +3351,238 @@ AT_DATA([prog.cob], [
        01  FELD2        PIC S9(5)V9(5) COMP-3.
        01  FELD3        PIC 9(1)V9(1)  COMP-3.
        01  FELD4        PIC S9(1)      COMP-3.
+       01  FELD5        PIC 9(10)v9(9) COMP-3.
+       01  FELD6        PIC 9(8)v9(20) COMP-3.
+
        PROCEDURE        DIVISION.
-           MOVE 0.2 TO FIELD
-           ADD 1 TO FIELD
-           IF FIELD  NOT = 1.2
-              DISPLAY "Test  1 " FIELD
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FIELD
-           ADD -1 TO FIELD
-           IF FIELD  NOT = -0.8
-              DISPLAY "Test  2 " FIELD
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FIELD
-           ADD 1 TO FIELD
-           IF FIELD  NOT = 0.8
-              DISPLAY "Test  3 " FIELD
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FIELD
-           ADD -1 TO FIELD
-           IF FIELD  NOT = -1.2
-              DISPLAY "Test  4 " FIELD
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FIELD
-           SUBTRACT 1 FROM FIELD
-           IF FIELD  NOT = -0.8
-              DISPLAY "Test  5 " FIELD
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FIELD
-           SUBTRACT -1 FROM FIELD
-           IF FIELD  NOT = 1.2
-              DISPLAY "Test  6 " FIELD
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FIELD
-           SUBTRACT 1 FROM FIELD
-           IF FIELD  NOT = -1.2
-              DISPLAY "Test  7 " FIELD
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FIELD
-           SUBTRACT -1 FROM FIELD
-           IF FIELD  NOT = 0.8
-              DISPLAY "Test  8 " FIELD
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FELD2
-           ADD 1 TO FELD2
-           IF FELD2  NOT = 1.2
-              DISPLAY "Test  9 " FELD2
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FELD2
-           ADD -1 TO FELD2
-           IF FELD2  NOT = -0.8
-              DISPLAY "Test 10 " FELD2
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FELD2
-           ADD 1 TO FELD2
-           IF FELD2  NOT = 0.8
-              DISPLAY "Test 11 " FELD2
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FELD2
-           ADD -1 TO FELD2
-           IF FELD2  NOT = -1.2
-              DISPLAY "Test 12 " FELD2
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FELD2
-           SUBTRACT 1 FROM FELD2
-           IF FELD2  NOT = -0.8
-              DISPLAY "Test 13 " FELD2
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FELD2
-           SUBTRACT -1 FROM FELD2
-           IF FELD2  NOT = 1.2
-              DISPLAY "Test 14 " FELD2
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FELD2
-           SUBTRACT 1 FROM FELD2
-           IF FELD2  NOT = -1.2
-              DISPLAY "Test 15 " FELD2
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FELD2
-           SUBTRACT -1 FROM FELD2
-           IF FELD2  NOT = 0.8
-              DISPLAY "Test 16 " FELD2
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FELD3
-           ADD 1 TO FELD3
-           IF FELD3  NOT = 1.2
-              DISPLAY "Test 17 " FELD3
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FELD3
-           ADD -1 TO FELD3
-           IF FELD3  NOT = 0.8
-              DISPLAY "Test 18 " FELD3
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FELD3
-           ADD 1 TO FELD3
-           IF FELD3  NOT = 1.2
-              DISPLAY "Test 19 " FELD3
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FELD3
-           ADD -1 TO FELD3
-           IF FELD3  NOT = 0.8
-              DISPLAY "Test 20 " FELD3
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FELD3
-           SUBTRACT 1 FROM FELD3
-           IF FELD3  NOT = 0.8
-              DISPLAY "Test 21 " FELD3
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FELD3
-           SUBTRACT -1 FROM FELD3
-           IF FELD3  NOT = 1.2
-              DISPLAY "Test 22 " FELD3
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FELD3
-           SUBTRACT 1 FROM FELD3
-           IF FELD3  NOT = 0.8
-              DISPLAY "Test 23 " FELD3
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FELD3
-           SUBTRACT -1 FROM FELD3
-           IF FELD3  NOT = 1.2
-              DISPLAY "Test 24 " FELD3
-              END-DISPLAY
-           END-IF.
-
-           MOVE 2 TO FELD4
-           ADD 1 TO FELD4
-           IF FELD4  NOT = 3
-              DISPLAY "Test 25 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE 2 TO FELD4
-           ADD -1 TO FELD4
-           IF FELD4  NOT = 1
-              DISPLAY "Test 26 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE -2 TO FELD4
-           ADD 1 TO FELD4
-           IF FELD4  NOT = -1
-              DISPLAY "Test 27 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE -2 TO FELD4
-           ADD -1 TO FELD4
-           IF FELD4  NOT = -3
-              DISPLAY "Test 28 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE 2 TO FELD4
-           SUBTRACT 1 FROM FELD4
-           IF FELD4  NOT = 1
-              DISPLAY "Test 29 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE 2 TO FELD4
-           SUBTRACT -1 FROM FELD4
-           IF FELD4  NOT = 3
-              DISPLAY "Test 30 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE -2 TO FELD4
-           SUBTRACT 1 FROM FELD4
-           IF FELD4  NOT = -3
-              DISPLAY "Test 31 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE -2 TO FELD4
-           SUBTRACT -1 FROM FELD4
-           IF FELD4  NOT = -1
-              DISPLAY "Test 32 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE 1 TO FELD4
-           ADD 2 TO FELD4
-           IF FELD4  NOT = 3
-              DISPLAY "Test 33 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE 1 TO FELD4
-           ADD -2 TO FELD4
-           IF FELD4  NOT = -1
-              DISPLAY "Test 34 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE -1 TO FELD4
-           ADD 2 TO FELD4
-           IF FELD4  NOT = 1
-              DISPLAY "Test 35 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE -1 TO FELD4
-           ADD -2 TO FELD4
-           IF FELD4  NOT = -3
-              DISPLAY "Test 36 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE 1 TO FELD4
-           SUBTRACT 2 FROM FELD4
-           IF FELD4  NOT = -1
-              DISPLAY "Test 37 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE 1 TO FELD4
-           SUBTRACT -2 FROM FELD4
-           IF FELD4  NOT = 3
-              DISPLAY "Test 38 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE -1 TO FELD4
-           SUBTRACT 2 FROM FELD4
-           IF FELD4  NOT = -3
-              DISPLAY "Test 39 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE -1 TO FELD4
-           SUBTRACT -2 FROM FELD4
-           IF FELD4  NOT = 1
-              DISPLAY "Test 40 " FELD4
-              END-DISPLAY
-           END-IF.
+       MAIN.
+      *    some performance checks on the way...
+           PERFORM TESTING 20000 TIMES.
            GOBACK.
+
+       TESTING.
+           MOVE 0.2 TO FIELD
+           ADD 1 TO FIELD
+           IF FIELD  NOT = 1.2
+              DISPLAY "Test  1 " FIELD.
+
+           MOVE 0.2 TO FIELD
+           ADD -1 TO FIELD
+           IF FIELD  NOT = -0.8
+              DISPLAY "Test  2 " FIELD.
+
+           MOVE -0.2 TO FIELD
+           ADD 1 TO FIELD
+           IF FIELD  NOT = 0.8
+              DISPLAY "Test  3 " FIELD.
+
+           MOVE -0.2 TO FIELD
+           ADD -1 TO FIELD
+           IF FIELD  NOT = -1.2
+              DISPLAY "Test  4 " FIELD.
+
+           MOVE 0.2 TO FIELD
+           SUBTRACT 1 FROM FIELD
+           IF FIELD  NOT = -0.8
+              DISPLAY "Test  5 " FIELD.
+
+           MOVE 0.2 TO FIELD
+           SUBTRACT -1 FROM FIELD
+           IF FIELD  NOT = 1.2
+              DISPLAY "Test  6 " FIELD.
+
+           MOVE -0.2 TO FIELD
+           SUBTRACT 1 FROM FIELD
+           IF FIELD  NOT = -1.2
+              DISPLAY "Test  7 " FIELD.
+
+           MOVE -0.2 TO FIELD
+           SUBTRACT -1 FROM FIELD
+           IF FIELD  NOT = 0.8
+              DISPLAY "Test  8 " FIELD.
+
+           MOVE 0.2 TO FELD2
+           ADD 1 TO FELD2
+           IF FELD2  NOT = 1.2
+              DISPLAY "Test  9 " FELD2.
+
+           MOVE 0.2 TO FELD2
+           ADD -1 TO FELD2
+           IF FELD2  NOT = -0.8
+              DISPLAY "Test 10 " FELD2.
+
+           MOVE -0.2 TO FELD2
+           ADD 1 TO FELD2
+           IF FELD2  NOT = 0.8
+              DISPLAY "Test 11 " FELD2.
+
+           MOVE -0.2 TO FELD2
+           ADD -1 TO FELD2
+           IF FELD2  NOT = -1.2
+              DISPLAY "Test 12 " FELD2.
+
+           MOVE 0.2 TO FELD2
+           SUBTRACT 1 FROM FELD2
+           IF FELD2  NOT = -0.8
+              DISPLAY "Test 13 " FELD2.
+
+           MOVE 0.2 TO FELD2
+           SUBTRACT -1 FROM FELD2
+           IF FELD2  NOT = 1.2
+              DISPLAY "Test 14 " FELD2.
+
+           MOVE -0.2 TO FELD2
+           SUBTRACT 1 FROM FELD2
+           IF FELD2  NOT = -1.2
+              DISPLAY "Test 15 " FELD2.
+
+           MOVE -0.2 TO FELD2
+           SUBTRACT -1 FROM FELD2
+           IF FELD2  NOT = 0.8
+              DISPLAY "Test 16 " FELD2.
+
+           MOVE 0.2 TO FELD3
+           ADD 1 TO FELD3
+           IF FELD3  NOT = 1.2
+              DISPLAY "Test 17 " FELD3.
+
+           MOVE 0.2 TO FELD3
+           ADD -1 TO FELD3
+           IF FELD3  NOT = 0.8
+              DISPLAY "Test 18 " FELD3.
+
+      *    unsigned, so ends as 0.2
+           MOVE -0.2 TO FELD3
+           ADD 1 TO FELD3
+           IF FELD3  NOT = 1.2
+              DISPLAY "Test 19 " FELD3.
+
+      *    unsigned, so ends as 0.2 - 1 -> -0.8 -> 0.8
+           MOVE -0.2 TO FELD3
+           ADD -1 TO FELD3
+           IF FELD3  NOT = 0.8
+              DISPLAY "Test 20 " FELD3.
+
+           MOVE 0.2 TO FELD3
+           SUBTRACT 1 FROM FELD3
+           IF FELD3  NOT = 0.8
+              DISPLAY "Test 21 " FELD3.
+
+           MOVE 0.2 TO FELD3
+           SUBTRACT -1 FROM FELD3
+           IF FELD3  NOT = 1.2
+              DISPLAY "Test 22 " FELD3.
+
+           MOVE -0.2 TO FELD3
+           SUBTRACT 1 FROM FELD3
+           IF FELD3  NOT = 0.8
+              DISPLAY "Test 23 " FELD3.
+
+           MOVE -0.2 TO FELD3
+           SUBTRACT -1 FROM FELD3
+           IF FELD3  NOT = 1.2
+              DISPLAY "Test 24 " FELD3.
+
+           MOVE 2 TO FELD4
+           ADD 1 TO FELD4
+           IF FELD4  NOT = 3
+              DISPLAY "Test 25 " FELD4.
+
+           MOVE 2 TO FELD4
+           ADD -1 TO FELD4
+           IF FELD4  NOT = 1
+              DISPLAY "Test 26 " FELD4.
+
+           MOVE -2 TO FELD4
+           ADD 1 TO FELD4
+           IF FELD4  NOT = -1
+              DISPLAY "Test 27 " FELD4.
+
+           MOVE -2 TO FELD4
+           ADD -1 TO FELD4
+           IF FELD4  NOT = -3
+              DISPLAY "Test 28 " FELD4.
+
+           MOVE 2 TO FELD4
+           SUBTRACT 1 FROM FELD4
+           IF FELD4  NOT = 1
+              DISPLAY "Test 29 " FELD4.
+
+           MOVE 2 TO FELD4
+           SUBTRACT -1 FROM FELD4
+           IF FELD4  NOT = 3
+              DISPLAY "Test 30 " FELD4.
+
+           MOVE -2 TO FELD4
+           SUBTRACT 1 FROM FELD4
+           IF FELD4  NOT = -3
+              DISPLAY "Test 31 " FELD4.
+
+           MOVE -2 TO FELD4
+           SUBTRACT -1 FROM FELD4
+           IF FELD4  NOT = -1
+              DISPLAY "Test 32 " FELD4.
+
+           MOVE 1 TO FELD4
+           ADD 2 TO FELD4
+           IF FELD4  NOT = 3
+              DISPLAY "Test 33 " FELD4.
+
+           MOVE 1 TO FELD4
+           ADD -2 TO FELD4
+           IF FELD4  NOT = -1
+              DISPLAY "Test 34 " FELD4.
+
+           MOVE -1 TO FELD4
+           ADD 2 TO FELD4
+           IF FELD4  NOT = 1
+              DISPLAY "Test 35 " FELD4.
+
+           MOVE -1 TO FELD4
+           ADD -2 TO FELD4
+           IF FELD4  NOT = -3
+              DISPLAY "Test 36 " FELD4.
+
+           MOVE 1 TO FELD4
+           SUBTRACT 2 FROM FELD4
+           IF FELD4  NOT = -1
+              DISPLAY "Test 37 " FELD4.
+
+           MOVE 1 TO FELD4
+           SUBTRACT -2 FROM FELD4
+           IF FELD4  NOT = 3
+              DISPLAY "Test 38 " FELD4.
+
+           MOVE -1 TO FELD4
+           SUBTRACT 2 FROM FELD4
+           IF FELD4  NOT = -3
+              DISPLAY "Test 39 " FELD4.
+
+           MOVE -1 TO FELD4
+           SUBTRACT -2 FROM FELD4
+           IF FELD4  NOT = 1
+              DISPLAY "Test 40 " FELD4.
+
+           MOVE 123456789.01234569 TO FELD5
+           SUBTRACT -2 FROM FELD5
+           IF FELD5  NOT = 123456791.01234569
+              DISPLAY "Test 41 " FELD5.
+
+           MOVE 12345678.123456901234 TO FELD6
+           ADD -2.1 TO FELD6
+           IF FELD6  NOT = 12345676.023456901234
+              DISPLAY "Test 42 " FELD6.
+
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [],
-[prog.cob:137: warning: ignoring sign
-prog.cob:144: warning: ignoring sign
-prog.cob:165: warning: ignoring sign
-prog.cob:172: warning: ignoring sign
-])
+AT_CHECK([$COMPILE -Wno-truncate prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
 
 
-AT_SETUP([Numeric operations (4)])
-AT_KEYWORDS([fundamental add subtract])
+AT_SETUP([Numeric operations (4) BINARY])
+AT_KEYWORDS([fundamental ADD SUBTRACT COMP])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -3744,302 +3593,223 @@ AT_DATA([prog.cob], [
        01  FELD2        PIC S9(5)V9(5) COMP.
        01  FELD3        PIC 9(1)V9(1)  COMP.
        01  FELD4        PIC S9(1)      COMP.
+
        PROCEDURE        DIVISION.
-           MOVE 0.2 TO FIELD
-           ADD 1 TO FIELD
-           IF FIELD  NOT = 1.2
-              DISPLAY "Test  1 " FIELD
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FIELD
-           ADD -1 TO FIELD
-           IF FIELD  NOT = -0.8
-              DISPLAY "Test  2 " FIELD
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FIELD
-           ADD 1 TO FIELD
-           IF FIELD  NOT = 0.8
-              DISPLAY "Test  3 " FIELD
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FIELD
-           ADD -1 TO FIELD
-           IF FIELD  NOT = -1.2
-              DISPLAY "Test  4 " FIELD
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FIELD
-           SUBTRACT 1 FROM FIELD
-           IF FIELD  NOT = -0.8
-              DISPLAY "Test  5 " FIELD
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FIELD
-           SUBTRACT -1 FROM FIELD
-           IF FIELD  NOT = 1.2
-              DISPLAY "Test  6 " FIELD
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FIELD
-           SUBTRACT 1 FROM FIELD
-           IF FIELD  NOT = -1.2
-              DISPLAY "Test  7 " FIELD
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FIELD
-           SUBTRACT -1 FROM FIELD
-           IF FIELD  NOT = 0.8
-              DISPLAY "Test  8 " FIELD
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FELD2
-           ADD 1 TO FELD2
-           IF FELD2  NOT = 1.2
-              DISPLAY "Test  9 " FELD2
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FELD2
-           ADD -1 TO FELD2
-           IF FELD2  NOT = -0.8
-              DISPLAY "Test 10 " FELD2
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FELD2
-           ADD 1 TO FELD2
-           IF FELD2  NOT = 0.8
-              DISPLAY "Test 11 " FELD2
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FELD2
-           ADD -1 TO FELD2
-           IF FELD2  NOT = -1.2
-              DISPLAY "Test 12 " FELD2
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FELD2
-           SUBTRACT 1 FROM FELD2
-           IF FELD2  NOT = -0.8
-              DISPLAY "Test 13 " FELD2
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FELD2
-           SUBTRACT -1 FROM FELD2
-           IF FELD2  NOT = 1.2
-              DISPLAY "Test 14 " FELD2
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FELD2
-           SUBTRACT 1 FROM FELD2
-           IF FELD2  NOT = -1.2
-              DISPLAY "Test 15 " FELD2
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FELD2
-           SUBTRACT -1 FROM FELD2
-           IF FELD2  NOT = 0.8
-              DISPLAY "Test 16 " FELD2
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FELD3
-           ADD 1 TO FELD3
-           IF FELD3  NOT = 1.2
-              DISPLAY "Test 17 " FELD3
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FELD3
-           ADD -1 TO FELD3
-           IF FELD3  NOT = 0.8
-              DISPLAY "Test 18 " FELD3
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FELD3
-           ADD 1 TO FELD3
-           IF FELD3  NOT = 1.2
-              DISPLAY "Test 19 " FELD3
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FELD3
-           ADD -1 TO FELD3
-           IF FELD3  NOT = 0.8
-              DISPLAY "Test 20 " FELD3
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FELD3
-           SUBTRACT 1 FROM FELD3
-           IF FELD3  NOT = 0.8
-              DISPLAY "Test 21 " FELD3
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FELD3
-           SUBTRACT -1 FROM FELD3
-           IF FELD3  NOT = 1.2
-              DISPLAY "Test 22 " FELD3
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FELD3
-           SUBTRACT 1 FROM FELD3
-           IF FELD3  NOT = 0.8
-              DISPLAY "Test 23 " FELD3
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FELD3
-           SUBTRACT -1 FROM FELD3
-           IF FELD3  NOT = 1.2
-              DISPLAY "Test 24 " FELD3
-              END-DISPLAY
-           END-IF.
-
-           MOVE 2 TO FELD4
-           ADD 1 TO FELD4
-           IF FELD4  NOT = 3
-              DISPLAY "Test 25 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE 2 TO FELD4
-           ADD -1 TO FELD4
-           IF FELD4  NOT = 1
-              DISPLAY "Test 26 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE -2 TO FELD4
-           ADD 1 TO FELD4
-           IF FELD4  NOT = -1
-              DISPLAY "Test 27 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE -2 TO FELD4
-           ADD -1 TO FELD4
-           IF FELD4  NOT = -3
-              DISPLAY "Test 28 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE 2 TO FELD4
-           SUBTRACT 1 FROM FELD4
-           IF FELD4  NOT = 1
-              DISPLAY "Test 29 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE 2 TO FELD4
-           SUBTRACT -1 FROM FELD4
-           IF FELD4  NOT = 3
-              DISPLAY "Test 30 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE -2 TO FELD4
-           SUBTRACT 1 FROM FELD4
-           IF FELD4  NOT = -3
-              DISPLAY "Test 31 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE -2 TO FELD4
-           SUBTRACT -1 FROM FELD4
-           IF FELD4  NOT = -1
-              DISPLAY "Test 32 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE 1 TO FELD4
-           ADD 2 TO FELD4
-           IF FELD4  NOT = 3
-              DISPLAY "Test 33 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE 1 TO FELD4
-           ADD -2 TO FELD4
-           IF FELD4  NOT = -1
-              DISPLAY "Test 34 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE -1 TO FELD4
-           ADD 2 TO FELD4
-           IF FELD4  NOT = 1
-              DISPLAY "Test 35 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE -1 TO FELD4
-           ADD -2 TO FELD4
-           IF FELD4  NOT = -3
-              DISPLAY "Test 36 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE 1 TO FELD4
-           SUBTRACT 2 FROM FELD4
-           IF FELD4  NOT = -1
-              DISPLAY "Test 37 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE 1 TO FELD4
-           SUBTRACT -2 FROM FELD4
-           IF FELD4  NOT = 3
-              DISPLAY "Test 38 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE -1 TO FELD4
-           SUBTRACT 2 FROM FELD4
-           IF FELD4  NOT = -3
-              DISPLAY "Test 39 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE -1 TO FELD4
-           SUBTRACT -2 FROM FELD4
-           IF FELD4  NOT = 1
-              DISPLAY "Test 40 " FELD4
-              END-DISPLAY
-           END-IF.
+       MAIN.
+      *    some performance checks on the way...
+           PERFORM TESTING 20000 TIMES.
            GOBACK.
+
+       TESTING.
+           MOVE 0.2 TO FIELD
+           ADD 1 TO FIELD
+           IF FIELD  NOT = 1.2
+              DISPLAY "Test  1 " FIELD.
+
+           MOVE 0.2 TO FIELD
+           ADD -1 TO FIELD
+           IF FIELD  NOT = -0.8
+              DISPLAY "Test  2 " FIELD.
+
+           MOVE -0.2 TO FIELD
+           ADD 1 TO FIELD
+           IF FIELD  NOT = 0.8
+              DISPLAY "Test  3 " FIELD.
+
+           MOVE -0.2 TO FIELD
+           ADD -1 TO FIELD
+           IF FIELD  NOT = -1.2
+              DISPLAY "Test  4 " FIELD.
+
+           MOVE 0.2 TO FIELD
+           SUBTRACT 1 FROM FIELD
+           IF FIELD  NOT = -0.8
+              DISPLAY "Test  5 " FIELD.
+
+           MOVE 0.2 TO FIELD
+           SUBTRACT -1 FROM FIELD
+           IF FIELD  NOT = 1.2
+              DISPLAY "Test  6 " FIELD.
+
+           MOVE -0.2 TO FIELD
+           SUBTRACT 1 FROM FIELD
+           IF FIELD  NOT = -1.2
+              DISPLAY "Test  7 " FIELD.
+
+           MOVE -0.2 TO FIELD
+           SUBTRACT -1 FROM FIELD
+           IF FIELD  NOT = 0.8
+              DISPLAY "Test  8 " FIELD.
+
+           MOVE 0.2 TO FELD2
+           ADD 1 TO FELD2
+           IF FELD2  NOT = 1.2
+              DISPLAY "Test  9 " FELD2.
+
+           MOVE 0.2 TO FELD2
+           ADD -1 TO FELD2
+           IF FELD2  NOT = -0.8
+              DISPLAY "Test 10 " FELD2.
+
+           MOVE -0.2 TO FELD2
+           ADD 1 TO FELD2
+           IF FELD2  NOT = 0.8
+              DISPLAY "Test 11 " FELD2.
+
+           MOVE -0.2 TO FELD2
+           ADD -1 TO FELD2
+           IF FELD2  NOT = -1.2
+              DISPLAY "Test 12 " FELD2.
+
+           MOVE 0.2 TO FELD2
+           SUBTRACT 1 FROM FELD2
+           IF FELD2  NOT = -0.8
+              DISPLAY "Test 13 " FELD2.
+
+           MOVE 0.2 TO FELD2
+           SUBTRACT -1 FROM FELD2
+           IF FELD2  NOT = 1.2
+              DISPLAY "Test 14 " FELD2.
+
+           MOVE -0.2 TO FELD2
+           SUBTRACT 1 FROM FELD2
+           IF FELD2  NOT = -1.2
+              DISPLAY "Test 15 " FELD2.
+
+           MOVE -0.2 TO FELD2
+           SUBTRACT -1 FROM FELD2
+           IF FELD2  NOT = 0.8
+              DISPLAY "Test 16 " FELD2.
+
+           MOVE 0.2 TO FELD3
+           ADD 1 TO FELD3
+           IF FELD3  NOT = 1.2
+              DISPLAY "Test 17 " FELD3.
+
+           MOVE 0.2 TO FELD3
+           ADD -1 TO FELD3
+           IF FELD3  NOT = 0.8
+              DISPLAY "Test 18 " FELD3.
+
+           MOVE -0.2 TO FELD3
+           ADD 1 TO FELD3
+           IF FELD3  NOT = 1.2
+              DISPLAY "Test 19 " FELD3.
+
+           MOVE -0.2 TO FELD3
+           ADD -1 TO FELD3
+           IF FELD3  NOT = 0.8
+              DISPLAY "Test 20 " FELD3.
+
+           MOVE 0.2 TO FELD3
+           SUBTRACT 1 FROM FELD3
+           IF FELD3  NOT = 0.8
+              DISPLAY "Test 21 " FELD3.
+
+           MOVE 0.2 TO FELD3
+           SUBTRACT -1 FROM FELD3
+           IF FELD3  NOT = 1.2
+              DISPLAY "Test 22 " FELD3.
+
+           MOVE -0.2 TO FELD3
+           SUBTRACT 1 FROM FELD3
+           IF FELD3  NOT = 0.8
+              DISPLAY "Test 23 " FELD3.
+
+           MOVE -0.2 TO FELD3
+           SUBTRACT -1 FROM FELD3
+           IF FELD3  NOT = 1.2
+              DISPLAY "Test 24 " FELD3.
+
+           MOVE 2 TO FELD4
+           ADD 1 TO FELD4
+           IF FELD4  NOT = 3
+              DISPLAY "Test 25 " FELD4.
+
+           MOVE 2 TO FELD4
+           ADD -1 TO FELD4
+           IF FELD4  NOT = 1
+              DISPLAY "Test 26 " FELD4.
+
+           MOVE -2 TO FELD4
+           ADD 1 TO FELD4
+           IF FELD4  NOT = -1
+              DISPLAY "Test 27 " FELD4.
+
+           MOVE -2 TO FELD4
+           ADD -1 TO FELD4
+           IF FELD4  NOT = -3
+              DISPLAY "Test 28 " FELD4.
+
+           MOVE 2 TO FELD4
+           SUBTRACT 1 FROM FELD4
+           IF FELD4  NOT = 1
+              DISPLAY "Test 29 " FELD4.
+
+           MOVE 2 TO FELD4
+           SUBTRACT -1 FROM FELD4
+           IF FELD4  NOT = 3
+              DISPLAY "Test 30 " FELD4.
+
+           MOVE -2 TO FELD4
+           SUBTRACT 1 FROM FELD4
+           IF FELD4  NOT = -3
+              DISPLAY "Test 31 " FELD4.
+
+           MOVE -2 TO FELD4
+           SUBTRACT -1 FROM FELD4
+           IF FELD4  NOT = -1
+              DISPLAY "Test 32 " FELD4.
+
+           MOVE 1 TO FELD4
+           ADD 2 TO FELD4
+           IF FELD4  NOT = 3
+              DISPLAY "Test 33 " FELD4.
+
+           MOVE 1 TO FELD4
+           ADD -2 TO FELD4
+           IF FELD4  NOT = -1
+              DISPLAY "Test 34 " FELD4.
+
+           MOVE -1 TO FELD4
+           ADD 2 TO FELD4
+           IF FELD4  NOT = 1
+              DISPLAY "Test 35 " FELD4.
+
+           MOVE -1 TO FELD4
+           ADD -2 TO FELD4
+           IF FELD4  NOT = -3
+              DISPLAY "Test 36 " FELD4.
+
+           MOVE 1 TO FELD4
+           SUBTRACT 2 FROM FELD4
+           IF FELD4  NOT = -1
+              DISPLAY "Test 37 " FELD4.
+
+           MOVE 1 TO FELD4
+           SUBTRACT -2 FROM FELD4
+           IF FELD4  NOT = 3
+              DISPLAY "Test 38 " FELD4.
+
+           MOVE -1 TO FELD4
+           SUBTRACT 2 FROM FELD4
+           IF FELD4  NOT = -3
+              DISPLAY "Test 39 " FELD4.
+
+           MOVE -1 TO FELD4
+           SUBTRACT -2 FROM FELD4
+           IF FELD4  NOT = 1
+              DISPLAY "Test 40 " FELD4.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [],
-[prog.cob:137: warning: ignoring sign
-prog.cob:144: warning: ignoring sign
-prog.cob:165: warning: ignoring sign
-prog.cob:172: warning: ignoring sign
-])
+AT_CHECK([$COMPILE -Wno-truncate prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
 
 
-AT_SETUP([Numeric operations (5)])
-AT_KEYWORDS([fundamental add subtract])
+AT_SETUP([Numeric operations (5) COMP-5])
+AT_KEYWORDS([fundamental ADD SUBTRACT])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -4050,302 +3820,223 @@ AT_DATA([prog.cob], [
        01  FELD2        PIC S9(5)V9(5) COMP-5.
        01  FELD3        PIC 9(1)V9(1)  COMP-5.
        01  FELD4        PIC S9(1)      COMP-5.
+
        PROCEDURE        DIVISION.
-           MOVE 0.2 TO FIELD
-           ADD 1 TO FIELD
-           IF FIELD  NOT = 1.2
-              DISPLAY "Test  1 " FIELD
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FIELD
-           ADD -1 TO FIELD
-           IF FIELD  NOT = -0.8
-              DISPLAY "Test  2 " FIELD
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FIELD
-           ADD 1 TO FIELD
-           IF FIELD  NOT = 0.8
-              DISPLAY "Test  3 " FIELD
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FIELD
-           ADD -1 TO FIELD
-           IF FIELD  NOT = -1.2
-              DISPLAY "Test  4 " FIELD
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FIELD
-           SUBTRACT 1 FROM FIELD
-           IF FIELD  NOT = -0.8
-              DISPLAY "Test  5 " FIELD
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FIELD
-           SUBTRACT -1 FROM FIELD
-           IF FIELD  NOT = 1.2
-              DISPLAY "Test  6 " FIELD
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FIELD
-           SUBTRACT 1 FROM FIELD
-           IF FIELD  NOT = -1.2
-              DISPLAY "Test  7 " FIELD
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FIELD
-           SUBTRACT -1 FROM FIELD
-           IF FIELD  NOT = 0.8
-              DISPLAY "Test  8 " FIELD
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FELD2
-           ADD 1 TO FELD2
-           IF FELD2  NOT = 1.2
-              DISPLAY "Test  9 " FELD2
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FELD2
-           ADD -1 TO FELD2
-           IF FELD2  NOT = -0.8
-              DISPLAY "Test 10 " FELD2
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FELD2
-           ADD 1 TO FELD2
-           IF FELD2  NOT = 0.8
-              DISPLAY "Test 11 " FELD2
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FELD2
-           ADD -1 TO FELD2
-           IF FELD2  NOT = -1.2
-              DISPLAY "Test 12 " FELD2
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FELD2
-           SUBTRACT 1 FROM FELD2
-           IF FELD2  NOT = -0.8
-              DISPLAY "Test 13 " FELD2
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FELD2
-           SUBTRACT -1 FROM FELD2
-           IF FELD2  NOT = 1.2
-              DISPLAY "Test 14 " FELD2
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FELD2
-           SUBTRACT 1 FROM FELD2
-           IF FELD2  NOT = -1.2
-              DISPLAY "Test 15 " FELD2
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FELD2
-           SUBTRACT -1 FROM FELD2
-           IF FELD2  NOT = 0.8
-              DISPLAY "Test 16 " FELD2
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FELD3
-           ADD 1 TO FELD3
-           IF FELD3  NOT = 1.2
-              DISPLAY "Test 17 " FELD3
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FELD3
-           ADD -1 TO FELD3
-           IF FELD3  NOT = 0.8
-              DISPLAY "Test 18 " FELD3
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FELD3
-           ADD 1 TO FELD3
-           IF FELD3  NOT = 1.2
-              DISPLAY "Test 19 " FELD3
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FELD3
-           ADD -1 TO FELD3
-           IF FELD3  NOT = 0.8
-              DISPLAY "Test 20 " FELD3
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FELD3
-           SUBTRACT 1 FROM FELD3
-           IF FELD3  NOT = 0.8
-              DISPLAY "Test 21 " FELD3
-              END-DISPLAY
-           END-IF.
-
-           MOVE 0.2 TO FELD3
-           SUBTRACT -1 FROM FELD3
-           IF FELD3  NOT = 1.2
-              DISPLAY "Test 22 " FELD3
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FELD3
-           SUBTRACT 1 FROM FELD3
-           IF FELD3  NOT = 0.8
-              DISPLAY "Test 23 " FELD3
-              END-DISPLAY
-           END-IF.
-
-           MOVE -0.2 TO FELD3
-           SUBTRACT -1 FROM FELD3
-           IF FELD3  NOT = 1.2
-              DISPLAY "Test 24 " FELD3
-              END-DISPLAY
-           END-IF.
-
-           MOVE 2 TO FELD4
-           ADD 1 TO FELD4
-           IF FELD4  NOT = 3
-              DISPLAY "Test 25 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE 2 TO FELD4
-           ADD -1 TO FELD4
-           IF FELD4  NOT = 1
-              DISPLAY "Test 26 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE -2 TO FELD4
-           ADD 1 TO FELD4
-           IF FELD4  NOT = -1
-              DISPLAY "Test 27 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE -2 TO FELD4
-           ADD -1 TO FELD4
-           IF FELD4  NOT = -3
-              DISPLAY "Test 28 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE 2 TO FELD4
-           SUBTRACT 1 FROM FELD4
-           IF FELD4  NOT = 1
-              DISPLAY "Test 29 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE 2 TO FELD4
-           SUBTRACT -1 FROM FELD4
-           IF FELD4  NOT = 3
-              DISPLAY "Test 30 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE -2 TO FELD4
-           SUBTRACT 1 FROM FELD4
-           IF FELD4  NOT = -3
-              DISPLAY "Test 31 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE -2 TO FELD4
-           SUBTRACT -1 FROM FELD4
-           IF FELD4  NOT = -1
-              DISPLAY "Test 32 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE 1 TO FELD4
-           ADD 2 TO FELD4
-           IF FELD4  NOT = 3
-              DISPLAY "Test 33 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE 1 TO FELD4
-           ADD -2 TO FELD4
-           IF FELD4  NOT = -1
-              DISPLAY "Test 34 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE -1 TO FELD4
-           ADD 2 TO FELD4
-           IF FELD4  NOT = 1
-              DISPLAY "Test 35 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE -1 TO FELD4
-           ADD -2 TO FELD4
-           IF FELD4  NOT = -3
-              DISPLAY "Test 36 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE 1 TO FELD4
-           SUBTRACT 2 FROM FELD4
-           IF FELD4  NOT = -1
-              DISPLAY "Test 37 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE 1 TO FELD4
-           SUBTRACT -2 FROM FELD4
-           IF FELD4  NOT = 3
-              DISPLAY "Test 38 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE -1 TO FELD4
-           SUBTRACT 2 FROM FELD4
-           IF FELD4  NOT = -3
-              DISPLAY "Test 39 " FELD4
-              END-DISPLAY
-           END-IF.
-
-           MOVE -1 TO FELD4
-           SUBTRACT -2 FROM FELD4
-           IF FELD4  NOT = 1
-              DISPLAY "Test 40 " FELD4
-              END-DISPLAY
-           END-IF.
+       MAIN.
+      *    some performance checks on the way...
+           PERFORM TESTING 20000 TIMES.
            GOBACK.
+
+       TESTING.
+           MOVE 0.2 TO FIELD
+           ADD 1 TO FIELD
+           IF FIELD  NOT = 1.2
+              DISPLAY "Test  1 " FIELD.
+
+           MOVE 0.2 TO FIELD
+           ADD -1 TO FIELD
+           IF FIELD  NOT = -0.8
+              DISPLAY "Test  2 " FIELD.
+
+           MOVE -0.2 TO FIELD
+           ADD 1 TO FIELD
+           IF FIELD  NOT = 0.8
+              DISPLAY "Test  3 " FIELD.
+
+           MOVE -0.2 TO FIELD
+           ADD -1 TO FIELD
+           IF FIELD  NOT = -1.2
+              DISPLAY "Test  4 " FIELD.
+
+           MOVE 0.2 TO FIELD
+           SUBTRACT 1 FROM FIELD
+           IF FIELD  NOT = -0.8
+              DISPLAY "Test  5 " FIELD.
+
+           MOVE 0.2 TO FIELD
+           SUBTRACT -1 FROM FIELD
+           IF FIELD  NOT = 1.2
+              DISPLAY "Test  6 " FIELD.
+
+           MOVE -0.2 TO FIELD
+           SUBTRACT 1 FROM FIELD
+           IF FIELD  NOT = -1.2
+              DISPLAY "Test  7 " FIELD.
+
+           MOVE -0.2 TO FIELD
+           SUBTRACT -1 FROM FIELD
+           IF FIELD  NOT = 0.8
+              DISPLAY "Test  8 " FIELD.
+
+           MOVE 0.2 TO FELD2
+           ADD 1 TO FELD2
+           IF FELD2  NOT = 1.2
+              DISPLAY "Test  9 " FELD2.
+
+           MOVE 0.2 TO FELD2
+           ADD -1 TO FELD2
+           IF FELD2  NOT = -0.8
+              DISPLAY "Test 10 " FELD2.
+
+           MOVE -0.2 TO FELD2
+           ADD 1 TO FELD2
+           IF FELD2  NOT = 0.8
+              DISPLAY "Test 11 " FELD2.
+
+           MOVE -0.2 TO FELD2
+           ADD -1 TO FELD2
+           IF FELD2  NOT = -1.2
+              DISPLAY "Test 12 " FELD2.
+
+           MOVE 0.2 TO FELD2
+           SUBTRACT 1 FROM FELD2
+           IF FELD2  NOT = -0.8
+              DISPLAY "Test 13 " FELD2.
+
+           MOVE 0.2 TO FELD2
+           SUBTRACT -1 FROM FELD2
+           IF FELD2  NOT = 1.2
+              DISPLAY "Test 14 " FELD2.
+
+           MOVE -0.2 TO FELD2
+           SUBTRACT 1 FROM FELD2
+           IF FELD2  NOT = -1.2
+              DISPLAY "Test 15 " FELD2.
+
+           MOVE -0.2 TO FELD2
+           SUBTRACT -1 FROM FELD2
+           IF FELD2  NOT = 0.8
+              DISPLAY "Test 16 " FELD2.
+
+           MOVE 0.2 TO FELD3
+           ADD 1 TO FELD3
+           IF FELD3  NOT = 1.2
+              DISPLAY "Test 17 " FELD3.
+
+           MOVE 0.2 TO FELD3
+           ADD -1 TO FELD3
+           IF FELD3  NOT = 0.8
+              DISPLAY "Test 18 " FELD3.
+
+           MOVE -0.2 TO FELD3
+           ADD 1 TO FELD3
+           IF FELD3  NOT = 1.2
+              DISPLAY "Test 19 " FELD3.
+
+           MOVE -0.2 TO FELD3
+           ADD -1 TO FELD3
+           IF FELD3  NOT = 0.8
+              DISPLAY "Test 20 " FELD3.
+
+           MOVE 0.2 TO FELD3
+           SUBTRACT 1 FROM FELD3
+           IF FELD3  NOT = 0.8
+              DISPLAY "Test 21 " FELD3.
+
+           MOVE 0.2 TO FELD3
+           SUBTRACT -1 FROM FELD3
+           IF FELD3  NOT = 1.2
+              DISPLAY "Test 22 " FELD3.
+
+           MOVE -0.2 TO FELD3
+           SUBTRACT 1 FROM FELD3
+           IF FELD3  NOT = 0.8
+              DISPLAY "Test 23 " FELD3.
+
+           MOVE -0.2 TO FELD3
+           SUBTRACT -1 FROM FELD3
+           IF FELD3  NOT = 1.2
+              DISPLAY "Test 24 " FELD3.
+
+           MOVE 2 TO FELD4
+           ADD 1 TO FELD4
+           IF FELD4  NOT = 3
+              DISPLAY "Test 25 " FELD4.
+
+           MOVE 2 TO FELD4
+           ADD -1 TO FELD4
+           IF FELD4  NOT = 1
+              DISPLAY "Test 26 " FELD4.
+
+           MOVE -2 TO FELD4
+           ADD 1 TO FELD4
+           IF FELD4  NOT = -1
+              DISPLAY "Test 27 " FELD4.
+
+           MOVE -2 TO FELD4
+           ADD -1 TO FELD4
+           IF FELD4  NOT = -3
+              DISPLAY "Test 28 " FELD4.
+
+           MOVE 2 TO FELD4
+           SUBTRACT 1 FROM FELD4
+           IF FELD4  NOT = 1
+              DISPLAY "Test 29 " FELD4.
+
+           MOVE 2 TO FELD4
+           SUBTRACT -1 FROM FELD4
+           IF FELD4  NOT = 3
+              DISPLAY "Test 30 " FELD4.
+
+           MOVE -2 TO FELD4
+           SUBTRACT 1 FROM FELD4
+           IF FELD4  NOT = -3
+              DISPLAY "Test 31 " FELD4.
+
+           MOVE -2 TO FELD4
+           SUBTRACT -1 FROM FELD4
+           IF FELD4  NOT = -1
+              DISPLAY "Test 32 " FELD4.
+
+           MOVE 1 TO FELD4
+           ADD 2 TO FELD4
+           IF FELD4  NOT = 3
+              DISPLAY "Test 33 " FELD4.
+
+           MOVE 1 TO FELD4
+           ADD -2 TO FELD4
+           IF FELD4  NOT = -1
+              DISPLAY "Test 34 " FELD4.
+
+           MOVE -1 TO FELD4
+           ADD 2 TO FELD4
+           IF FELD4  NOT = 1
+              DISPLAY "Test 35 " FELD4.
+
+           MOVE -1 TO FELD4
+           ADD -2 TO FELD4
+           IF FELD4  NOT = -3
+              DISPLAY "Test 36 " FELD4.
+
+           MOVE 1 TO FELD4
+           SUBTRACT 2 FROM FELD4
+           IF FELD4  NOT = -1
+              DISPLAY "Test 37 " FELD4.
+
+           MOVE 1 TO FELD4
+           SUBTRACT -2 FROM FELD4
+           IF FELD4  NOT = 3
+              DISPLAY "Test 38 " FELD4.
+
+           MOVE -1 TO FELD4
+           SUBTRACT 2 FROM FELD4
+           IF FELD4  NOT = -3
+              DISPLAY "Test 39 " FELD4.
+
+           MOVE -1 TO FELD4
+           SUBTRACT -2 FROM FELD4
+           IF FELD4  NOT = 1
+              DISPLAY "Test 40 " FELD4.
 ])
 
-AT_CHECK([$COMPILE prog.cob], [0], [],
-[prog.cob:137: warning: ignoring sign
-prog.cob:144: warning: ignoring sign
-prog.cob:165: warning: ignoring sign
-prog.cob:172: warning: ignoring sign
-])
+AT_CHECK([$COMPILE -Wno-truncate prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
 
 
 AT_SETUP([Numeric operations (6)])
-AT_KEYWORDS([fundamental add])
+AT_KEYWORDS([fundamental ADD])
 
 AT_DATA([dump.c], [
 #include <stdio.h>
@@ -4414,7 +4105,7 @@ AT_CLEANUP
 
 
 AT_SETUP([Numeric operations (7)])
-AT_KEYWORDS([fundamental add compute literal])
+AT_KEYWORDS([fundamental ADD COMPUTE literal])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -4558,9 +4249,8 @@ AT_DATA([prog.cob], [
            END-ADD.
            IF FIELD NOT = 8385.2
               MOVE FIELD TO FIELD-DISP
-              DISPLAY 'ADD with wrong result: ' FIELD-DISP
-              END-DISPLAY
-           END-IF.
+              DISPLAY 'ADD with wrong result: ' FIELD-DISP.
+
            COMPUTE FIELD = (0.2
                          + 2
                          + 3
@@ -4693,9 +4383,8 @@ AT_DATA([prog.cob], [
            END-COMPUTE.
            IF FIELD NOT = -4670.31
               MOVE FIELD TO FIELD-DISP
-              DISPLAY 'COMPUTE with wrong result: ' FIELD-DISP
-              END-DISPLAY
-           END-IF.
+              DISPLAY 'COMPUTE with wrong result: ' FIELD-DISP.
+
            GOBACK.
 ])
 
@@ -4706,7 +4395,7 @@ AT_CLEANUP
 
 
 AT_SETUP([Numeric operations (8)])
-AT_KEYWORDS([fundamental compute literal])
+AT_KEYWORDS([fundamental COMPUTE literal])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
