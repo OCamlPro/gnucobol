@@ -1,6 +1,6 @@
 # GnuCOBOL compiler - list of reserved words
 #
-# Copyright (C) 2016-2017,2021,2023 Free Software Foundation, Inc.
+# Copyright (C) 2016-2017,2021-2023 Free Software Foundation, Inc.
 # Written by Simon Sobisch, Edward Hart
 #
 # This file is part of GnuCOBOL.
@@ -36,6 +36,7 @@ reserved:	ACCEPT
 reserved:	ACCESS
 reserved:	ACTIVE-CLASS
 reserved:	ADD
+reserved:	ADDR		# BS2000 intrinsic function, not known to GnuCOBOL
 reserved:	ADDRESS
 reserved:	ADVANCING
 reserved:	AFTER
@@ -545,13 +546,6 @@ reserved:	WORDS
 reserved:	WORKING-STORAGE
 reserved:	WRITE
 reserved:	XML
-reserved:	XML-EVENT # note: this is a register, move as soon as supported
-reserved:	XML-NAMESPACE # note: this is a register, move as soon as supported
-reserved:	XML-NAMESPACE-PREFIX # note: this is a register, move as soon as supported
-reserved:	XML-NNAMESPACE # note: this is a register, move as soon as supported
-reserved:	XML-NNAMESPACE-PREFIX # note: this is a register, move as soon as supported
-reserved:	XML-NTEXT # note: this is a register, move as soon as supported
-reserved:	XML-TEXT # note: this is a register, move as soon as supported
 reserved:	YYYYDDD*
 reserved:	YYYYMMDD*
 reserved:	ZERO
@@ -577,13 +571,13 @@ register:	RETURN-CODE
 register:	SORT-RETURN
 register:	TALLY
 register:	XML-CODE
-# register:	XML-EVENT
-# register:	XML-NAMESPACE
-# register:	XML-NAMESPACE-PREFIX
-# register:	XML-NNAMESPACE
-# register:	XML-NNAMESPACE-PREFIX
-# register:	XML-NTEXT
-# register:	XML-TEXT
+register:	XML-EVENT
+register:	XML-NAMESPACE
+register:	XML-NAMESPACE-PREFIX
+register:	XML-NNAMESPACE
+register:	XML-NNAMESPACE-PREFIX
+register:	XML-NTEXT
+register:	XML-TEXT
 
 # TO-DO: Add all printer mnemonics and special variables
 # (e.g. DATE-ISO4, CPU-TIME).

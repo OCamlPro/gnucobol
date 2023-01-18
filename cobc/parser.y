@@ -1024,6 +1024,25 @@ check_conf_section_order (const cob_flags_t part)
 
 #undef MESSAGE_LEN
 
+/* check if a given register is available; if it is,
+   enforce code generation and add a
+   "receiving" entry for it when xref is requested */
+static void
+cb_set_register_receiving (struct cb_field *reg_field, int mandatory)
+{
+	if (!reg_field) {
+		if (mandatory) {
+			cb_error ("missing register definition");
+		}
+		return;
+	}
+	reg_field->count++;
+
+	if (cb_listing_xref) {
+		cobc_xref_set_receiving (CB_TREE (reg_field));
+	}
+}
+
 static enum cb_handler_type
 get_handler_type_from_statement (struct cb_statement *statement)
 {
@@ -14890,7 +14909,7 @@ json_generate_statement:
 	begin_statement (STMT_JSON_GENERATE, TERM_JSON);
 	cobc_in_json_generate_body = 1;
 	cobc_cs_check = CB_CS_JSON_GENERATE;
-	cobc_xref_set_receiving (current_program->json_code);
+	cb_set_register_receiving (current_program->json_code, 1);
   }
   json_generate_body
   _end_json
@@ -14950,8 +14969,8 @@ json_parse_statement:
   {
 	begin_statement (STMT_JSON_PARSE, TERM_JSON);
 	CB_PENDING ("JSON PARSE");
-	cobc_xref_set_receiving (current_program->json_code);
-	cobc_xref_set_receiving (current_program->json_status);
+	cb_set_register_receiving (current_program->json_code, 1);
+	cb_set_register_receiving (current_program->json_status, 1);
   }
   json_parse_body
   _end_json
@@ -17248,7 +17267,7 @@ xml_generate_statement:
 	begin_statement (STMT_XML_GENERATE, TERM_XML);
 	cobc_in_xml_generate_body = 1;
 	cobc_cs_check = CB_CS_XML_GENERATE;
-	cobc_xref_set_receiving (current_program->xml_code);
+	cb_set_register_receiving (current_program->xml_code, 1);
   }
   xml_generate_body
   _end_xml
@@ -17536,16 +17555,18 @@ xml_parse_statement:
 	begin_statement (STMT_XML_PARSE, TERM_XML);
 	CB_PENDING ("XML PARSE");
 	cobc_cs_check = CB_CS_XML_PARSE;
-	cobc_xref_set_receiving (current_program->xml_code);
-	cobc_xref_set_receiving (current_program->xml_event);
-	cobc_xref_set_receiving (current_program->xml_text);
-	cobc_xref_set_receiving (current_program->xml_ntext);
+	cb_set_register_receiving (current_program->xml_code, 1);
+	cb_set_register_receiving (current_program->xml_event, 1);
+	cb_set_register_receiving (current_program->xml_text, 1);
+	cb_set_register_receiving (current_program->xml_ntext, 0);
 	if (cb_xml_parse_xmlss) {
-		cobc_xref_set_receiving (current_program->xml_information);
-		cobc_xref_set_receiving (current_program->xml_namespace);
-		cobc_xref_set_receiving (current_program->xml_namespace_prefix);
-		cobc_xref_set_receiving (current_program->xml_nnamespace);
-		cobc_xref_set_receiving (current_program->xml_nnamespace_prefix);
+		cb_set_register_receiving (current_program->xml_namespace, 1);
+		cb_set_register_receiving (current_program->xml_namespace_prefix, 1);
+		cb_set_register_receiving (current_program->xml_nnamespace, 1);
+		cb_set_register_receiving (current_program->xml_nnamespace_prefix, 1);
+	}
+	if (cb_xml_parse_xmlss) {
+		cb_set_register_receiving (current_program->xml_information, 0);
 	}
   }
   xml_parse_body

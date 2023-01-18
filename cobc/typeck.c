@@ -1812,7 +1812,15 @@ cb_build_generic_register (const char *name, const char *external_definition,
 	return 0;
 }
 
-static cb_tree
+static COB_INLINE COB_A_INLINE struct cb_field *
+cb_build_generic_register_field (const char *name, const char *external_definition)
+{
+	struct cb_field *field = NULL;
+	cb_build_generic_register (name, external_definition, &field);
+	return field;
+}
+
+static struct cb_field *
 cb_build_register_internal_code (const char* name, const char* definition)
 {
 	cb_tree tfield;
@@ -1841,7 +1849,7 @@ cb_build_register_internal_code (const char* name, const char* definition)
 	field->flag_internal_register = 1;
 	field->level = 77;
 
-	return tfield;
+	return field;
 }
 
 
@@ -1879,87 +1887,47 @@ cb_build_single_register (const char *name, const char *definition)
 		return;
 	}
 	if (!cb_strcasecmp (name, "XML-CODE")) {
-		cb_tree tfield = cb_build_register_internal_code (name, definition);
-		if (tfield) {
-			current_program->xml_code = tfield;
-		}
+		current_program->xml_code = cb_build_register_internal_code (name, definition);
 		return;
 	}
 	if (!cb_strcasecmp (name, "XML-EVENT")) {
-		struct cb_field *field = NULL;
-		cb_build_generic_register (name, definition, &field);
-		if (field) {
-			current_program->xml_event = CB_TREE (field);
-		}
+		current_program->xml_event = cb_build_generic_register_field (name, definition);
 		return;
 	}
 	if (!cb_strcasecmp (name, "XML-INFORMATION")) {
-		cb_tree tfield = cb_build_register_internal_code (name, definition);
-		if (tfield) {
-			current_program->xml_information = tfield;
-		}
+		current_program->xml_information = cb_build_register_internal_code (name, definition);
 		return;
 	}
 	if (!cb_strcasecmp (name, "XML-TEXT")) {
-		struct cb_field *field = NULL;
-		cb_build_generic_register (name, definition, &field);
-		if (field) {
-			current_program->xml_text = CB_TREE (field);
-		}
+		current_program->xml_text = cb_build_generic_register_field (name, definition);
 		return;
 	}
 	if (!cb_strcasecmp (name, "XML-NTEXT")) {
-		struct cb_field *field = NULL;
-		cb_build_generic_register (name, definition, &field);
-		if (field) {
-			current_program->xml_ntext = CB_TREE (field);
-		}
+		current_program->xml_ntext = cb_build_generic_register_field (name, definition);
 		return;
 	}
 	if (!cb_strcasecmp (name, "XML-NAMESPACE")) {
-		struct cb_field *field = NULL;
-		cb_build_generic_register (name, definition, &field);
-		if (field) {
-			current_program->xml_namespace = CB_TREE (field);
-		}
+		current_program->xml_namespace = cb_build_generic_register_field (name, definition);
 		return;
 	}
 	if (!cb_strcasecmp (name, "XML-NNAMESPACE")) {
-		struct cb_field *field = NULL;
-		cb_build_generic_register (name, definition, &field);
-		if (field) {
-			current_program->xml_nnamespace = CB_TREE (field);
-		}
+		current_program->xml_nnamespace = cb_build_generic_register_field (name, definition);
 		return;
 	}
 	if (!cb_strcasecmp (name, "XML-NAMESPACE-PREFIX")) {
-		struct cb_field *field = NULL;
-		cb_build_generic_register (name, definition, &field);
-		if (field) {
-			current_program->xml_namespace_prefix = CB_TREE (field);
-		}
+		current_program->xml_namespace_prefix = cb_build_generic_register_field (name, definition);
 		return;
 	}
 	if (!cb_strcasecmp (name, "XML-NNAMESPACE-PREFIX")) {
-		struct cb_field *field = NULL;
-		cb_build_generic_register (name, definition, &field);
-		if (field) {
-			current_program->xml_nnamespace_prefix = CB_TREE (field);
-		}
+		current_program->xml_nnamespace_prefix = cb_build_generic_register_field (name, definition);
 		return;
 	}
 	if (!cb_strcasecmp (name, "JSON-CODE")) {
-		cb_tree tfield = cb_build_register_internal_code (name, definition);
-		if (tfield) {
-			current_program->json_code = tfield;
-		}
+		current_program->json_code =  cb_build_register_internal_code (name, definition);
 		return;
 	}
 	if (!cb_strcasecmp (name, "JSON-STATUS")) {
-		cb_tree tfield = cb_build_register_internal_code (name, definition);
-		if (tfield) {
-			current_program->json_status = tfield;
-		}
+		current_program->json_status = cb_build_register_internal_code (name, definition);
 		return;
 	}
 
@@ -4750,6 +4718,8 @@ cb_validate_program_data (struct cb_program *prog)
 			cb_error_x (prog->cursor_pos, _("'%s' CURSOR must be 4 or 6 characters long"),
 				    cb_name (prog->cursor_pos));
 			prog->cursor_pos = NULL;
+		} else {
+			prog->cursor_pos = x;
 		}
 	}
 	if (prog->crt_status) {
@@ -14732,8 +14702,9 @@ cb_emit_xml_parse (cb_tree data, cb_tree proc,
 	ref = cb_ref (data);
 	if (CB_FIELD_P (ref)) {
 		struct cb_field * field = CB_FIELD (ref);
-		/* type checks here */
-		cb_emit (cb_build_xml_parse (data, proc, returning_national,
+		/* TODO: type checks here */
+		cb_emit (cb_build_xml_parse (data, proc,
+			returning_national | (field->usage == CB_USAGE_NATIONAL),
 			encoding, validation));
 	} else {
 	}

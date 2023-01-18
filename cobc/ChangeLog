@@ -248,6 +248,12 @@
 	  only a single value
 	* parser.y (value_clause): improved parsing for table-format
 
+2022-11-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.h, typeck.c, parser.y, codegen.c: module-locale registers
+	  referenced as cb_field
+	* codegen.c: pass XML mode to module
+
 2022-11-18  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* cobc.c (print_line): fully honor -fmfcomment by suppressing lines

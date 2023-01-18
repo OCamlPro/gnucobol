@@ -34,7 +34,6 @@ typedef __mpz_struct mpz_t[1];
 #endif
 #endif
 
-
 /* General type defines */
 #define	cob_c8_t		char
 #define	cob_s8_t		signed char
@@ -1069,6 +1068,9 @@ enum cob_statement {
 
 #define COB_JSON_CJSON			1
 #define COB_JSON_JSON_C			2
+
+#define COB_XML_PARSE_XMLNSS	(1U << 0)
+#define COB_XML_PARSE_NATIONAL	(1U << 1)
 
 /* Structure/union declarations */
 

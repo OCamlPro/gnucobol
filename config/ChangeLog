@@ -20,9 +20,13 @@
 
 2022-11-18  Simon Sobisch <simonsobisch@gnu.org>
 
-	* ibm.words, mvs.words: removed words only reserved with EXEC SQL coprocessor,
-	  fixing bug #810
+	* ibm.words, mvs.words: removed words only reserved with EXEC SQL
+	  coprocessor, fixing bug #810
 	* ibm.words: update for Enterprise COBOL 6.4 (added FUNCTION-ID)
+
+2022-11-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* ibm.words, acu.words, bs2000.words: enabled JSON + XML registers
 
 2022-10-10  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -141,7 +145,7 @@
 
 2021-09-14  Simon Sobisch <simonsobisch@gnu.org>
 
-	* general: added odoslide, active in bs200, ibm, mvs (previously a
+	* general: added odoslide, active in bs2000, ibm, mvs (previously a
 	  compile flag only)
 	* bs2000-strict.conf: adjusted complex-odo to "yes"
 

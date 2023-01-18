@@ -6947,11 +6947,19 @@ output_set_attribute (const struct cb_field *f, cob_flags_t val_on,
 static void
 output_xml_parse (struct cb_xml_parse *p)
 {
+	int flags = 0;
+	if (cb_xml_parse_xmlss) {
+		flags &= COB_XML_PARSE_XMLNSS;
+	}
+	if (p->returning_national && current_prog->xml_ntext) {
+		flags &= COB_XML_PARSE_NATIONAL;
+	}
+
 	output_block_open ();
 	output_line ("void *xml_state = NULL;");
 	output_prefix ();
 	output ("cob_set_int ("),
-	output_param (current_program->xml_code, 0);
+	output_param (CB_TREE (current_program->xml_code), 0);
 	output (", 0);");
 	output_newline ();
 
@@ -6967,7 +6975,7 @@ output_xml_parse (struct cb_xml_parse *p)
 	output_param (p->encoding, 1);
 	output (", ");
 	output_param (p->validating, 2);
-	output (", %d, &xml_state)) break;", p->returning_national);
+	output (", %d, &xml_state)) break;", flags);
 
 	/* COBOL callback function -> PROCESSING PROCEDURE */
 	/* note: automatic source reference */
@@ -10868,21 +10876,18 @@ static void
 output_module_register_init (cb_tree reg, const char *name)
 {
 	if (!reg) {
+		output_line ("module->%s = NULL;", name);
 		return;
 	}
 
 	if (CB_REFERENCE_P (reg)) {
 		reg = cb_ref (reg);
-		if (CB_FIELD_P (reg) && !CB_FIELD (reg)->count) {
-			return;
-		}
-	} else {
-		struct cb_field *field = CB_FIELD (reg);
-		if (!field->count) {
-			return;
-		}
-		reg = cb_build_field_reference (field, NULL);
 	}
+	if (CB_FIELD_P (reg) && !CB_FIELD (reg)->count) {
+		output_line ("module->%s = NULL;", name);
+		return;
+	}
+
 	output_prefix ();
 	output ("module->%s = ", name);
 	output_param (reg, -1);
@@ -11023,18 +11028,18 @@ output_module_init_non_static (struct cb_program *prog)
 	   of module local registers to cob_module structure */
 	output_module_register_init (prog->cursor_pos, "cursor_pos");
 
-	output_module_register_init (prog->xml_code, "xml_code");
-	output_module_register_init (prog->xml_event, "xml_event");
-	output_module_register_init (prog->xml_information, "xml_information");
-	output_module_register_init (prog->xml_namespace, "xml_namespace");
-	output_module_register_init (prog->xml_namespace_prefix, "xml_namespace_prefix");
-	output_module_register_init (prog->xml_nnamespace, "xml_nnamespace");
-	output_module_register_init (prog->xml_nnamespace_prefix, "xml_nnamespace_prefix");
-	output_module_register_init (prog->xml_ntext, "xml_ntext");
-	output_module_register_init (prog->xml_text, "xml_text");
+	output_module_register_init (CB_TREE (prog->xml_code), "xml_code");
+	output_module_register_init (CB_TREE (prog->xml_event), "xml_event");
+	output_module_register_init (CB_TREE (prog->xml_information), "xml_information");
+	output_module_register_init (CB_TREE (prog->xml_namespace), "xml_namespace");
+	output_module_register_init (CB_TREE (prog->xml_namespace_prefix), "xml_namespace_prefix");
+	output_module_register_init (CB_TREE (prog->xml_nnamespace), "xml_nnamespace");
+	output_module_register_init (CB_TREE (prog->xml_nnamespace_prefix), "xml_nnamespace_prefix");
+	output_module_register_init (CB_TREE (prog->xml_ntext), "xml_ntext");
+	output_module_register_init (CB_TREE (prog->xml_text), "xml_text");
 
-	output_module_register_init (prog->json_code, "json_code");
-	output_module_register_init (prog->json_status, "json_status");
+	output_module_register_init (CB_TREE (prog->json_code), "json_code");
+	output_module_register_init (CB_TREE (prog->json_status), "json_status");
 }
 
 static void

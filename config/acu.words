@@ -1,6 +1,6 @@
 # GnuCOBOL compiler - list of reserved words
 #
-# Copyright (C) 2016-2017,2021 Free Software Foundation, Inc.
+# Copyright (C) 2016-2017,2023 Free Software Foundation, Inc.
 # Written by Simon Sobisch, Edward Hart
 #
 # This file is part of GnuCOBOL.
@@ -425,8 +425,6 @@ reserved:	ITEM-TO-EMPTY*
 reserved:	ITEM-VALUE*
 reserved:	INTERVAL-TIMER   # actually a function not supported in GC
 reserved:	JSON
-reserved:	JSON-CODE        # note: this is a register, move as soon as supported
-reserved:	JSON-STATUS      # note: this is a register, move as soon as supported
 reserved:	JUST=JUSTIFIED
 reserved:	JUSTIFIED
 reserved:	KEPT
@@ -831,8 +829,6 @@ reserved:	WRAP
 reserved:	WRITE
 reserved:	WRITERS
 reserved:	XML
-reserved:	XML-EVENT # note: this is a register, move as soon as supported
-reserved:	XML-TEXT  # note: this is a register, move as soon as supported
 reserved:	X*
 reserved:	Y*
 reserved:	YYYYDDD
@@ -850,8 +846,8 @@ register:	"ADDRESS\ OF"
 # register:	ENVIRONMENT-NAME
 # register:	FILE-PREFIX
 register:	"LENGTH\ OF"
-# register:	JSON-CODE
-# register:	JSON-STATUS
+register:	JSON-CODE
+register:	JSON-STATUS
 register:	RETURN-CODE
 # register:	RETURN-UNSIGNED
 # SORT-RETURN is only available in IBM mode
@@ -860,8 +856,8 @@ register:	RETURN-CODE
 # TIME-OF-DAY is only available in HPUX mode, not yet recognized by GnuCOBOL
 # WHEN-COMPILED is only available in HPUX mode
 register:	XML-CODE
-# register:	XML-EVENT
-# register:	XML-TEXT
+register:	XML-EVENT
+register:	XML-TEXT
 
 
 # list of (non-standard) system names:

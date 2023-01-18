@@ -170,6 +170,8 @@
 2022-11-18  Simon Sobisch <simonsobisch@gnu.org>
 
 	* screenio.c: fixed compiler warnings related to get_crt3_status
+	* common.h: XML mode defines
+	* mlio.c: adjustments for register handling in XML parse stubs
 
 2022-11-26  Simon Sobisch <simonsobisch@gnu.org>
 
