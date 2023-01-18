@@ -1080,7 +1080,7 @@ do_acu_hyphen_translation (char *src)
 	/* maybe store device type to "adjust locking rules" */
 	/* find first non-space and return it in the original storage  */
 	for (src = src + 3; *src && isspace ((cob_u8_t)*src); src++);
-	
+
 	len = strlen (src);
 	if (len >= COB_FILE_MAX) {
 		len = COB_FILE_MAX;
@@ -1127,7 +1127,7 @@ cob_chk_file_mapping (void)
 		/* If not found, use as is, possibly including the dollar character */
 		if ((p = cob_chk_file_env (src)) != NULL) {
 			strncpy (file_open_name, p, (size_t)COB_FILE_MAX);
-			/* Note: ACU specifies: "repeated until variable can't be resolved" 
+			/* Note: ACU specifies: "repeated until variable can't be resolved"
 			   we don't apply this and will not in the future
 			   [recursion is only one of the problems] */
 			if (looks_absolute (src)) {
@@ -1335,7 +1335,7 @@ cob_cache_file (cob_file *f)
 		}
 		cob_free (old_keys);
 	}
-	
+
 }
 
 static void
@@ -1849,14 +1849,14 @@ cob_file_open (cob_file *f, char *filename,
 #endif
 		}
 	}
-	
+
 	f->file = NULL;
 	f->fd = -1;
-	
+
 	if (f->organization != COB_ORG_LINE_SEQUENTIAL) {
 		return cob_fd_file_open (f, filename, mode, sharing, nonexistent);
 	}
-	
+
 	fmode = NULL;
 	/* Open the file */
 	switch (mode) {
@@ -2144,7 +2144,7 @@ open_next (cob_file *f)
 		if (f->fd != -1) {
 			if (f->open_mode == COB_OPEN_INPUT) {
 				f->file = (void*)fdopen(f->fd, "r");
-			} else { 
+			} else {
 				f->file = (void*)fdopen(f->fd, "r+");
 			}
 			return 1;
@@ -2506,7 +2506,7 @@ again:
 			if (n == 0) {
 				n = getc (fp);
 				/* NULL-Encoded -> should be less than a space */
-				if (n == EOF || (unsigned char)n >= ' ') {		
+				if (n == EOF || (unsigned char)n >= ' ') {
 					sts = COB_STATUS_71_BAD_CHAR;
 					goto End;
 				}
@@ -2563,7 +2563,7 @@ again:
 #else
 				if (cobsetptr->cob_ls_validate
 				 && !f->flag_line_adv) {
-#endif				
+#endif
 					if (IS_BAD_CHAR (n)) {
 						sts = COB_STATUS_09_READ_DATA_BAD;
 #if defined (COB_EXPERIMENTAL) && defined (HAVE_SETLOCALE)
@@ -2713,7 +2713,7 @@ lineseq_write (cob_file *f, const int opt)
 		}
 	}
 
-	if ((opt == 0) 
+	if ((opt == 0)
 	&& !(f->flag_select_features & COB_SELECT_LINAGE)
 #if 0 /* TODO: activate on merge of file_features from trunk */
 	&& ((f->file_features & COB_FILE_LS_LF)
@@ -2752,7 +2752,7 @@ lineseq_rewrite (cob_file *f, const int opt)
 
 	COB_UNUSED (opt);
 #if 0 /* pipes are GC4+ only feature */
-	if (f->flag_is_pipe) 
+	if (f->flag_is_pipe)
 		return COB_STATUS_30_PERMANENT_ERROR;
 #endif
 
@@ -3736,11 +3736,11 @@ indexed_write_internal (cob_file *f, const int rewrite, const int opt)
 			return COB_STATUS_22_KEY_EXISTS;
 		}
 	}
-	
+
 	if (close_cursor) {
 		bdb_close_cursor (f);
 	}
-	if ((opt & COB_WRITE_LOCK) 
+	if ((opt & COB_WRITE_LOCK)
 	 && bdb_env != NULL) {
 		bdb_setkey (f, 0);
 		if (lock_record (f, p->key.data, p->key.size)) {
@@ -4637,7 +4637,7 @@ dobuild:
 	}
 
 	f->open_mode = mode;
-	if (f->flag_optional 
+	if (f->flag_optional
 	 && nonexistent
 	 && mode != COB_OPEN_OUTPUT) {
 		return COB_STATUS_05_SUCCESS_OPTIONAL;
@@ -5263,7 +5263,7 @@ indexed_read_next (cob_file *f, const int read_opts)
 		 || (f->lock_mode & COB_FILE_EXCLUSIVE)) {
 			bdb_opts &= ~COB_READ_LOCK;
 		} else
-		if ((f->lock_mode & COB_LOCK_AUTOMATIC) 
+		if ((f->lock_mode & COB_LOCK_AUTOMATIC)
 		 && !(bdb_opts & COB_READ_NO_LOCK)) {
 			bdb_opts |= COB_READ_LOCK;
 		}
@@ -5388,7 +5388,7 @@ indexed_read_next (cob_file *f, const int read_opts)
 								return COB_STATUS_10_END_OF_FILE;
 							}
 						} else {
-							if (memcmp (p->key.data, p->last_readkey[p->key_index], (size_t)p->key.size) == 0 
+							if (memcmp (p->key.data, p->last_readkey[p->key_index], (size_t)p->key.size) == 0
 							 && dupno == p->last_dupno[p->key_index]) {
 								read_nextprev = 1;
 							} else {
@@ -5561,7 +5561,7 @@ indexed_write (cob_file *f, const int opt)
 		return COB_STATUS_21_KEY_INVALID;
 	}
 	memcpy (p->last_key, p->key.data, (size_t)p->key.size);
-	
+
 	ret = indexed_write_internal (f, 0, opt);
 	bdb_close_cursor (f);
 
@@ -5796,7 +5796,7 @@ indexed_rewrite (cob_file *f, const int opt)
 	ret = indexed_write_internal (f, 1, opt);
 
 	bdb_close_cursor (f);
-	
+
 	if (bdb_env != NULL) {
 		if (ret == COB_STATUS_00_SUCCESS
 		 || ret == COB_STATUS_02_SUCCESS_DUPLICATE) {
@@ -5926,7 +5926,7 @@ cob_file_external_addr (const char *exname,
 		/* external pointer available - get the address stored
 		   and set / check keys */
 		cob_file	*fl = *pfl = *epfl;
-		/* already allocated, just pass on */		
+		/* already allocated, just pass on */
 		if (pky != NULL) {
 			*pky = fl->keys;
 		}
@@ -6034,7 +6034,7 @@ cob_pre_open (cob_file *f)
 	f->flag_operation = 0;
 
 	/* Obtain the file name */
-	if (f->fcd && f->fcd->fnamePtr && f->fcd->fnamePtr[0]) {	
+	if (f->fcd && f->fcd->fnamePtr && f->fcd->fnamePtr[0]) {
 		/* copy fieldname and cut at last space */
 		/* CHECKME: at least in the open case we directly copied
 		            the assign field before and could use the code below */
@@ -6152,8 +6152,8 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 #if 0 /* Note: file specific features are 4.x only ... */
 	if (file_setptr->cob_concat_name
 	 && (f->organization == COB_ORG_SEQUENTIAL
-	  || f->organization == COB_ORG_LINE_SEQUENTIAL) 
-	 && (mode == COB_OPEN_INPUT 
+	  || f->organization == COB_ORG_LINE_SEQUENTIAL)
+	 && (mode == COB_OPEN_INPUT
 	  || mode == COB_OPEN_I_O)
 	 && strchr (file_open_name, file_setptr->cob_concat_sep[0]) != NULL
 	 && file_open_name[0] != '>'
@@ -6168,8 +6168,8 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 #else
 	if (cobsetptr->cob_concat_name
 	 && (f->organization == COB_ORG_SEQUENTIAL
-	  || f->organization == COB_ORG_LINE_SEQUENTIAL) 
-	 && (mode == COB_OPEN_INPUT 
+	  || f->organization == COB_ORG_LINE_SEQUENTIAL)
+	 && (mode == COB_OPEN_INPUT
 	  || mode == COB_OPEN_I_O)
 	 && strchr (file_open_name, cobsetptr->cob_concat_sep[0]) != NULL
 	 && file_open_name[0] != '>'
@@ -6416,7 +6416,7 @@ is_suppressed_key_value (cob_file *f, const int idx)
 		for (pos = 0;
 			 pos < (int)f->keys[idx].field->size
 		  && f->keys[idx].field->data[pos] == (unsigned char)f->keys[idx].char_suppress;
-			 pos++); 
+			 pos++);
 		/* All SUPPRESS char ? */
 		if (pos == f->keys[idx].field->size) {
 			return 1;
@@ -6597,15 +6597,14 @@ cob_write (cob_file *f, cob_field *rec, const int opt, cob_field *fnstatus,
 						return;
 					}
 				}
+#if defined (COB_EXPERIMENTAL)
 			} else {
-#if !defined (COB_EXPERIMENTAL)
 				for (i = 0; i < size; ++i, ++p) {
 					if (IS_BAD_CHAR (*p)) {
 						save_status (f, fnstatus, COB_STATUS_71_BAD_CHAR);
 						return;
 					}
 				}
-#else
 				int sts = 0;
 				for (i = 0; i < size; ++i, ++p) {
 					if (IS_BAD_CHAR (*p)) {
@@ -9758,7 +9757,7 @@ cob_sys_extfh (const void *opcode_ptr, void *fcd_ptr)
 	return EXTFH3 ((unsigned char *)opcode_ptr, fcd);
 }
 
-/* 
+/*
  * Sync FCD3 values to cob_file values
  */
 static void
@@ -9768,7 +9767,7 @@ cob_fcd_file_sync (cob_file *f, char *external_file_open_name)
 	copy_fcd_to_file (f->fcd, f, NULL);
 }
 
-/* 
+/*
  * Sync cob_file values to FCD3 values
  */
 static void
@@ -9782,7 +9781,7 @@ cob_file_fcd_sync (cob_file *f)
 	}
 	return;
 }
-/* 
+/*
  * Return address of FH--FCD for the given file
  * Create the FCD3 as needed
  */
@@ -9810,7 +9809,7 @@ cob_file_fcd_adrs (cob_file *f, void *pfcd)
 	return;
 }
 
-/* 
+/*
  * Return address of FH--KEYDEF for the given file
  * Create the FCD3 is needed
  */
@@ -9925,7 +9924,7 @@ org_handling:
 	switch (fcd->fileOrg) {
 	case ORG_INDEXED:
 		k = LDCOMPX2(fcd->refKey);
-		if (k >= 0 
+		if (k >= 0
 		 && k <= (int)f->nkeys
 		 && f->keys[k].field) {
 			key->size = f->keys[k].field->size;
@@ -10266,7 +10265,7 @@ org_handling:
 			f->record->size = rec->size;
 		}
 		if (rec->size < f->record_min) {
-			rec->size = f->record_min; 
+			rec->size = f->record_min;
 		}
 		eop = LDCOMPX2(fcd->eop);
 		opts = LDCOMPX4(fcd->opt);
@@ -10281,7 +10280,7 @@ org_handling:
 			f->record->size = rec->size;
 		}
 		if (rec->size < f->record_min) {
-			rec->size = f->record_min; 
+			rec->size = f->record_min;
 		}
 		opts = LDCOMPX4(fcd->opt);
 		cob_rewrite (f, rec, opts, fs);
