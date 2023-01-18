@@ -445,7 +445,7 @@ const cob_uli_t cob_pow_10_uli_val[MAX_LI_DIGITS_PLUS_1] = {
 	, 1000000
 	, 10000000
 	, 100000000
-	, 1000000000
+	, 1000000000UL
 #ifdef	COB_LI_IS_LL
 	, 10000000000
 	, 100000000000
@@ -456,7 +456,7 @@ const cob_uli_t cob_pow_10_uli_val[MAX_LI_DIGITS_PLUS_1] = {
 	, 10000000000000000
 	, 100000000000000000
 	, 1000000000000000000
-	, 10000000000000000000
+	, 10000000000000000000UL
 #endif
 };
   #define	cob_pow_10_uli(n)	cob_pow_10_uli_val[n]
