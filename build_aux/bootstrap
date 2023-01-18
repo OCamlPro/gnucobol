@@ -67,7 +67,7 @@ AC_OPTS="--verbose --force --include=m4"
 if test "$1" = "install"; then AC_OPTS="$AC_OPTS --install"; fi
 
 # ensure the configure and Makefile parts are up-to-date:
-if test "x$TMPDIR" = x ; then TMPDIR=/tmp
+if test "x$TMPDIR" = x ; then TMPDIR=/tmp; fi
 msgs=$TMPDIR/autoreconf
 echo autoreconf $AC_OPTS $MAINPATH
 autoreconf $AC_OPTS $MAINPATH > $msgs 2>&1; ret=$?
