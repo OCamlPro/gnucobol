@@ -1394,8 +1394,9 @@ cob_set_signal (void)
 }
 
 /* ASCII Sign
- * positive: 0123456789
- * negative: pqrstuvwxy
+ *   positive: 0123456789
+ *   negative: pqrstuvwxy
+ * returns one of: 1 = positive (non-negative), -1 = negative
  */
 
 static int
@@ -1517,8 +1518,9 @@ cob_put_sign_ascii (unsigned char *p)
 }
 
 /* EBCDIC Sign
- * positive: {ABCDEFGHI
- * negative: }JKLMNOPQR
+ *   positive: {ABCDEFGHI
+ *   negative: }JKLMNOPQR
+ * returns one of: 1 = positive (non-negative), -1 = negative
  */
 
 static int
@@ -1598,7 +1600,7 @@ cob_get_sign_ebcdic (unsigned char *p)
 static void
 cob_put_sign_ebcdic (unsigned char *p, const int sign)
 {
-	if (sign < 0) {
+	if (sign == -1) {
 		switch (*p) {
 		case '0':
 			*p = (unsigned char)'}';
@@ -3639,6 +3641,9 @@ locate_sign (cob_field *f)
 	return f->data + f->size - 1;
 }
 
+/* get sign from DISPLAY/PACKED fields
+   returns one of: 1 = positive (non-negative), -1 = negative,
+                   0 = neither DISPLAY nor PACKED */
 int
 cob_real_get_sign (cob_field *f)
 {
@@ -3675,6 +3680,7 @@ cob_real_get_sign (cob_field *f)
 	return 0;
 }
 
+/* store sign to DISPLAY/PACKED fields */
 void
 cob_real_put_sign (cob_field *f, const int sign)
 {
@@ -3685,7 +3691,7 @@ cob_real_put_sign (cob_field *f, const int sign)
 		/* Note: we only locate the sign if needed,
 		   as the common case will be "nothing to do" */
 		if (unlikely (COB_FIELD_SIGN_SEPARATE (f))) {
-			const unsigned char	c = (sign < 0) ? (cob_u8_t)'-' : (cob_u8_t)'+';
+			const unsigned char	c = (sign == -1) ? (cob_u8_t)'-' : (cob_u8_t)'+';
 			p = locate_sign (f);
 			if (*p != c) {
 				*p = c;
@@ -3693,7 +3699,7 @@ cob_real_put_sign (cob_field *f, const int sign)
 		} else if (unlikely (COB_MODULE_PTR->ebcdic_sign)) {
 			p = locate_sign (f);
 			cob_put_sign_ebcdic (p, sign);
-		} else if (sign < 0) {
+		} else if (sign == -1) {
 			p = locate_sign (f);
 			cob_put_sign_ascii (p);
 		}
@@ -3703,7 +3709,7 @@ cob_real_put_sign (cob_field *f, const int sign)
 			return;
 		}
 		p = f->data + f->size - 1;
-		if (sign < 0) {
+		if (sign == -1) {
 			*p = (*p & 0xF0) | 0x0D;
 		} else {
 			*p = (*p & 0xF0) | 0x0C;
@@ -3714,7 +3720,7 @@ cob_real_put_sign (cob_field *f, const int sign)
 
 /* Registration of external handlers */
 void
-cob_reg_sighnd	(void (*sighnd) (int))
+cob_reg_sighnd (void (*sighnd) (int))
 {
 	if (!cob_initialized) {
 		cob_set_signal ();

@@ -4485,7 +4485,7 @@ propagate_table (cb_tree x, int bgn_idx)
 			output_block_open ();
 			output_prefix ();
 			output ("cob_u8_ptr b_ptr = ");
-			output_data(x);
+			output_data (x);
 			if (bgn_idx > 1) {
 				output (" + %ld",len * (bgn_idx - 1));
 				maxlen -= len * (bgn_idx - 1);

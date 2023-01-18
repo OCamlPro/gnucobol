@@ -4078,7 +4078,8 @@ cob_init_screenio (cob_global *lptr, cob_settings *sptr)
 	cobglobptr = lptr;
 	cobsetptr  = sptr;
 	if (!cobsetptr->cob_exit_msg || !cobsetptr->cob_exit_msg[0]) {
-		cobsetptr->cob_exit_msg = cob_strdup (_("end of program, please press a key to exit"));
+		cobsetptr->cob_exit_msg =
+			cob_strdup (_("end of program, please press a key to exit"));
 	}
 
 	cob_settings_screenio ();

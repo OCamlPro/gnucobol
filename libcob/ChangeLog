@@ -14,7 +14,8 @@
 	  of GMP
 	* numeric.c (cob_decimal_set_display): minor speedup by switching
 	  to pointer arithmetic
-	* numeric.c: applied 2022-05-30 changes for sign and shift_decimal
+	* numeric.c, common.c: applied 2022-05-30 changes for sign
+	* numeric.c: applied 2022-05-30 changes for shift_decimal
 	* numeric.c (cob_mul_by_pow_10, cob_div_by_pow_10): extracted identical
 	  code to inline functions
 	* numeric.c (cob_s32_pow, cob_s64_pow): use of register type
@@ -516,6 +517,7 @@
 	* numeric.c: adjusted to distinguish "field_sign" (a flag) from
 	  "sign" (a GMP return to show negative/zero/positive), and check
 	  the later with explicit -1 / 1
+	* common.c: adjusted to check for sign as explicit -1/1
 	* numeric.c: check for "gmp sign == 0" and skip some computations early
 	* numeric.c (shift_decimal): moved checks for "shift by zero" out to
 	  callers as already done in many places
@@ -580,7 +582,7 @@
 	* strings.c (cob_inspect_init, cob_inspect_characters, is_marked): use of
 	  the now definitive check "did we mark anything" instead of checking all
 	  marker bytes by testing for "inspect_mark[inspect_mark_min] != 0"
-	* strings.c (is_marked): check for possible/definitel overlap of
+	* strings.c (is_marked): check for possible/definite overlap of
 	  check and marker range before checking all marker bytes in range
 	* strings.c: increase use of direct pointer comparisons instead of
 	  accessing char arrays or its positions for INSPECT
