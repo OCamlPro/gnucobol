@@ -1,6 +1,6 @@
 # GnuCOBOL compiler - list of reserved words
 #
-# Copyright (C) 2016-2018,2021-2022 Free Software Foundation, Inc.
+# Copyright (C) 2016-2018,2021-2023 Free Software Foundation, Inc.
 # Written by Simon Sobisch, Edward Hart
 #
 # This file is part of GnuCOBOL.
@@ -272,7 +272,7 @@ reserved:	JNIENVPTR        # note: this is a register, move as soon as supported
 reserved:	JSON
 reserved:	JSON-CODE        # note: this is a register, move as soon as supported
 reserved:	JSON-STATUS      # note: this is a register, move as soon as supported
-reserved:	JUST
+reserved:	JUST=JUSTIFIED
 reserved:	JUSTIFIED
 reserved:	KANJI
 reserved:	KEY

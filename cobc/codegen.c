@@ -1542,11 +1542,11 @@ lookup_attr (const int type, const cob_u32_t digits, const int scale,
 
 	/* Search attribute cache */
 	for (l = attr_cache; l; l = l->next) {
-		if (type == l->type &&
-		    digits == l->digits &&
-		    scale == l->scale &&
-		    flags == l->flags &&
-		    pic_id == l->pic_id) {
+		if (type == l->type
+		 && digits == l->digits
+		 && scale == l->scale
+		 && flags == l->flags
+		 && pic_id == l->pic_id) {
 			return l->id;
 		}
 	}

@@ -3572,11 +3572,13 @@ AT_DATA([prog.cob], [
            03 X         PIC X.
        PROCEDURE        DIVISION.
            MOVE Z TO G.
+      *    alphabet-name as collation:
            SORT TBL ASCENDING KEY X SEQUENCE ALPHA.
            IF G NOT = "abcde12345"
               DISPLAY G.
            MOVE Z TO G.
-           SORT TBL DESCENDING KEY X SEQUENCE ALPHA.
+      *    code-name as collation:
+           SORT TBL DESCENDING KEY X SEQUENCE EBCDIC.
            IF G NOT = "54321edcba"
               DISPLAY G.
            STOP RUN.

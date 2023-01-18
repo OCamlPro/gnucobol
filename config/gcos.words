@@ -1,6 +1,6 @@
 # GnuCOBOL compiler - list of reserved words
 #
-# Copyright (C) 2016-2017,2021-2022 Free Software Foundation, Inc.
+# Copyright (C) 2016-2017,2021-2023 Free Software Foundation, Inc.
 # Written by Simon Sobisch, Edward Hart, David Declerck, Fabrice Le
 # Fessant, Nicolas Berthier
 #
@@ -31,13 +31,19 @@
 # use the correct representations (which should be FLOAT_BINARY_*) as
 # at the moment their support is limited in cobc.
 
+
+# Reserved word list based on https://support.bull.com/ols/product/system/
+# gcos7/gcos7-com/g7-dps7000/doc-com/docf/g/47X257TN23-mar2005/doc/05ula04.pdf
+
 reserved:	ACCEPT
 reserved:	ACCESS
 reserved:	ACTUAL
+#reserved:	AD			# SBS only
 reserved:	ADD
 reserved:	ADDRESS
 reserved:	ADVANCING
 reserved:	AFTER
+reserved:	ALIAS
 reserved:	ALL
 reserved:	ALPHABET
 reserved:	ALPHABETIC
@@ -47,6 +53,7 @@ reserved:	ALPHANUMERIC
 reserved:	ALPHANUMERIC-EDITED
 reserved:	ALSO
 reserved:	ALTER
+reserved:	ALTERING
 reserved:	ALTERNATE
 reserved:	AND
 reserved:	ANSI
@@ -55,33 +62,43 @@ reserved:	APPLY			# not supported yet
 reserved:	ARE
 reserved:	AREA
 reserved:	AREAS
+#reserved:	ARITHMETIC		# JOD only
 reserved:	ASA
 reserved:	ASCENDING
-reserved:	ASCII
+reserved:	ASCII*
 reserved:	ASSIGN
 reserved:	AT
 reserved:	AUTHOR
 reserved:	B-AND
+reserved:	B-EXOR			# not supported yet
+#reserved:	B-LESS			# JOD only
 reserved:	B-NOT
 reserved:	B-OR
+reserved:	BECOMES			# not supported yet
 reserved:	BEFORE
+reserved:	BEGINNING		# not supported yet
 reserved:	BINARY
 reserved:	BIT
+reserved:	BITS			# not supported yet
 reserved:	BLANK
 reserved:	BLOCK
 reserved:	BOOLEAN
 reserved:	BOTTOM
-reserved:	BSN
+reserved:	BSN 			# not supported yet
 reserved:	BY
 reserved:	CALL
 reserved:	CANCEL
+reserved:	CATALOGUE-NAME	# not supported yet
+reserved:	CATALOGUED		# not supported yet
 reserved:	CD
 reserved:	CF
 reserved:	CH
 reserved:	CHARACTER
 reserved:	CHARACTERS
+reserved:	CHECK			# not supported yet
+reserved:	CHECKPOINT-FILE	# not supported yet
 reserved:	CLASS
-reserved:	CLOCK-UNITS
+reserved:	CLOCK-UNITS		# not supported yet
 reserved:	CLOSE
 reserved:	COBOL
 reserved:	CODE
@@ -89,41 +106,62 @@ reserved:	CODE-SET
 reserved:	COLLATING
 reserved:	COLUMN
 reserved:	COMMA
+#reserved:	COMMIT			# JOD only
 reserved:	COMMON
 reserved:	COMMUNICATION
 reserved:	COMP=COMP-3
 reserved:	COMP-1=BINARY-SHORT
 reserved:	COMP-2=BINARY-LONG
 reserved:	COMP-3
-reserved:	COMP-5=PACKED-DECIMAL
+reserved:	COMP-4					# CHECKME: Does GCs COMP-4 match?
+reserved:	COMP-5=PACKED-DECIMAL	# CHECKME: How to use "native integer" then?
+reserved:	COMP-6					# CHECKME: GCs COMP-6 likely does not match.
+reserved:	COMP-7				# not supported yet
 reserved:	COMP-8=PACKED-DECIMAL
-reserved:	COMP-9			# single precision
-reserved:	COMP-10			# double precision
-reserved:	COMP-15			# quadruple precision
+reserved:	COMP-9=FLOAT		# single precision
+reserved:	COMP-10=FLOAT-LONG		# double precision
+reserved:	COMP-11				# not supported yet
+reserved:	COMP-12				# not supported yet
+reserved:	COMP-13				# not supported yet
+reserved:	COMP-14				# not supported yet
+reserved:	COMP-15=FLOAT-EXTENDED	# quadruple precision
+reserved:	COMPLE #=COMPLEMENTARY	# not supported yet
+reserved:	COMPLEMENTARY			# not supported yet
 reserved:	COMPUTATIONAL=COMP-3
 reserved:	COMPUTATIONAL-1=BINARY-SHORT
 reserved:	COMPUTATIONAL-2=BINARY-LONG
-reserved:	COMPUTATIONAL-3
+reserved:	COMPUTATIONAL-3=COMP-3
+reserved:	COMPUTATIONAL-4=COMP-4		# CHECKME
 reserved:	COMPUTATIONAL-5=PACKED-DECIMAL
+reserved:	COMPUTATIONAL-6=COMP-6		# CHECKME
+reserved:	COMPUTATIONAL-7  #=COMP-7 	# not supported yet
 reserved:	COMPUTATIONAL-8=PACKED-DECIMAL
-reserved:	COMPUTATIONAL-9=COMP-9
-reserved:	COMPUTATIONAL-10=COMP-10
-reserved:	COMPUTATIONAL-15=COMP-15
+reserved:	COMPUTATIONAL-9=FLOAT
+reserved:	COMPUTATIONAL-10=FLOAT-LONG
+reserved:	COMPUTATIONAL-11 #=COMP-11	# not supported yet
+reserved:	COMPUTATIONAL-12 #=COMP-12	# not supported yet
+reserved:	COMPUTATIONAL-13 #=COMP-13	# not supported yet
+reserved:	COMPUTATIONAL-14 #=COMP-14	# not supported yet
+reserved:	COMPUTATIONAL-15=FLOAT-EXTENDED #=COMP-15
 reserved:	COMPUTE
 reserved:	CONFIGURATION
+reserved:	CONNECT*
 reserved:	CONSTANT		# COBOL 2002 != GCOS (unsupported)
 reserved:	CONTAINS
 reserved:	CONTENT
 reserved:	CONTINUE
 reserved:	CONTROL
 reserved:	CONTROLS
-reserved:	CONVERSION		# not supported yet
+reserved:	CONVERSION
 reserved:	CONVERTING
 reserved:	COPY
-reserved:	CORR
+reserved:	CORR=CORRESPONDING
 reserved:	CORRESPONDING
 reserved:	COUNT
+reserved:	CS-BASIC
+reserved:	CS-GENERAL
 reserved:	CURRENCY
+reserved:	CURRENT*
 reserved:	DATA
 reserved:	DATE
 reserved:	DATE-COMPILED
@@ -131,6 +169,17 @@ reserved:	DATE-WRITTEN
 reserved:	DAY
 reserved:	DAY-OF-WEEK
 reserved:	DE
+# note: the following are part of the register DEBUG-ITEM,
+#       they are automatically unreserved if the register is
+#       created, which happens on USE FOR DEBUGGING
+reserved:	DEBUG-CONTENTS
+reserved:	DEBUG-ITEM
+reserved:	DEBUG-LINE
+reserved:	DEBUG-NAME
+reserved:	DEBUG-SUB-1
+reserved:	DEBUG-SUB-2
+reserved:	DEBUG-SUB-3
+# debug-item end
 reserved:	DEBUGGING
 reserved:	DECIMAL-POINT
 reserved:	DECLARATIVES
@@ -143,13 +192,18 @@ reserved:	DESCENDING
 reserved:	DESTINATION
 reserved:	DETAIL
 reserved:	DISABLE
+reserved:	DISCONNECT*
 reserved:	DISPLAY
+reserved:	DISPLAY-1		# not supported
+reserved:	DISPLAY-2		# not supported
+reserved:	DISPLAY-3		# not supported
+reserved:	DISPLAY-4		# not supported
 reserved:	DIVIDE
 reserved:	DIVISION
 reserved:	DOWN
 reserved:	DUPLICATES
 reserved:	DYNAMIC
-reserved:	EBCDIC
+reserved:	EBCDIC*
 reserved:	EGI
 reserved:	ELSE
 reserved:	EMI
@@ -175,18 +229,22 @@ reserved:	END-STRING
 reserved:	END-SUBTRACT
 reserved:	END-UNSTRING
 reserved:	END-WRITE
+reserved:	ENDING
 reserved:	ENTER
 reserved:	ENVIRONMENT
 reserved:	EOP
 reserved:	EQUAL
 reserved:	EQUALS=EQUAL
+reserved:	ERASE*
 reserved:	ERROR
+reserved:	ESCAPE
 reserved:	ESI
 reserved:	EVALUATE
 reserved:	EVERY
 reserved:	EXAMINE
 reserved:	EXCEEDS=GREATER
 reserved:	EXCEPTION
+reserved:	EXCLUSIVE*
 reserved:	EXIT
 reserved:	EXTEND
 reserved:	EXTERNAL
@@ -194,6 +252,8 @@ reserved:	FALSE
 reserved:	FD
 reserved:	FILE
 reserved:	FILE-CONTROL
+reserved:	FILE-ID
+reserved:	FILES
 reserved:	FILLER
 reserved:	FINAL
 reserved:	FIRST
@@ -202,6 +262,7 @@ reserved:	FOOTING
 reserved:	FOR
 reserved:	FROM
 reserved:	FUNCTION
+reserved:	GCOS*
 reserved:	GENERATE
 reserved:	GIVING
 reserved:	GLOBAL
@@ -214,9 +275,12 @@ reserved:	HIGH-VALUES=HIGH-VALUE
 reserved:	I-O
 reserved:	I-O-CONTROL
 reserved:	IDENTIFICATION
+reserved:	IDS-II
 reserved:	IF
 reserved:	IN
 reserved:	INDEX
+reserved:	INDEX-1
+reserved:	INDEX-2
 reserved:	INDEXED
 reserved:	INDICATE
 reserved:	INITIAL
@@ -228,10 +292,13 @@ reserved:	INSPECT
 reserved:	INSTALLATION
 reserved:	INTO
 reserved:	INVALID
+reserved:	INVOKING
 reserved:	IS
-reserved:	JUST
+reserved:	JUST=JUSTIFIED
 reserved:	JUSTIFIED
 reserved:	KEY
+reserved:	KEY-LOCATION
+reserved:	KEYED
 reserved:	LABEL
 reserved:	LAST
 reserved:	LEADING
@@ -245,8 +312,10 @@ reserved:	LINAGE-COUNTER
 reserved:	LINE
 reserved:	LINE-COUNTER
 reserved:	LINES
+reserved:	LINES-PER-PAGE
 reserved:	LINKAGE
 reserved:	LOCK
+reserved:	LOCKS
 reserved:	LOW-VALUE
 reserved:	LOW-VALUES=LOW-VALUE
 reserved:	MEMORY
@@ -268,12 +337,14 @@ reserved:	NUMERIC
 reserved:	NUMERIC-EDITED
 reserved:	OBJECT			# COBOL 2002 != GCOS (unsupported)
 reserved:	OBJECT-COMPUTER
+reserved:	OBJECT-PROGRAM
 reserved:	OCCURS
 reserved:	OF
 reserved:	OFF
 reserved:	OMITTED
 reserved:	ON
 reserved:	OPEN
+reserved:	OPERATIONAL
 reserved:	OPTIONAL
 reserved:	OR
 reserved:	ORDER
@@ -281,7 +352,7 @@ reserved:	ORGANIZATION
 reserved:	OTHER
 reserved:	OUTPUT
 reserved:	OVERFLOW
-reserved:	OVERRIDING
+reserved:	OVERRIDING*
 reserved:	PACKED-DECIMAL
 reserved:	PADDING
 reserved:	PAGE
@@ -296,17 +367,19 @@ reserved:	POINTER
 reserved:	POSITION
 reserved:	POSITIVE
 reserved:	PREVIOUS*
+reserved:	PRIMARY
 reserved:	PRINTING
 reserved:	PROCEDURE
 reserved:	PROCEDURES
 reserved:	PROCEED
+reserved:	PROCESS-AREA
 reserved:	PROGRAM
 reserved:	PROGRAM-ID
 reserved:	PURGE
 reserved:	QUEUE
-reserved:	QUEUED
+reserved:	QUEUED*
 reserved:	QUOTE
-reserved:	QUOTES
+reserved:	QUOTES=QUOTE
 reserved:	RANDOM
 reserved:	RD
 reserved:	READ
@@ -330,6 +403,7 @@ reserved:	REPORTS
 reserved:	RERUN
 reserved:	RESERVE
 reserved:	RESET
+reserved:	RETENTION
 reserved:	RETURN
 reserved:	REVERSED
 reserved:	REWIND
@@ -337,17 +411,20 @@ reserved:	REWRITE
 reserved:	RF
 reserved:	RH
 reserved:	RIGHT
+reserved:	ROLLBACK*
 reserved:	ROUNDED
 reserved:	RUN
 reserved:	SAME
 reserved:	SARF
 reserved:	SD
 reserved:	SEARCH
+reserved:	SECONDARY
 reserved:	SECTION
 reserved:	SECURITY
 reserved:	SEGMENT
 reserved:	SEGMENT-LIMIT
 reserved:	SELECT
+reserved:	SELECTION
 reserved:	SEND
 reserved:	SENTENCE
 reserved:	SEPARATE
@@ -368,37 +445,42 @@ reserved:	STANDARD
 reserved:	STANDARD-1
 reserved:	STANDARD-2
 reserved:	START
+reserved:	STATION
 reserved:	STATUS
 reserved:	STOP
 reserved:	STRING
 reserved:	SUB-QUEUE-1
 reserved:	SUB-QUEUE-2
 reserved:	SUB-QUEUE-3
+reserved:	SUB-SCHEMA
 reserved:	SUBTRACT
 reserved:	SUM
 reserved:	SUPPRESS
 reserved:	SYMBOLIC
-reserved:	SYNC
+reserved:	SYNC=SYNCHRONIZED
 reserved:	SYNCHRONIZED
+reserved:	SYSTEM
 reserved:	TABLE
 reserved:	TALLYING
 reserved:	TAPE
+#reserved:	TERMINAL	# standard system-name in GnuCOBOL
 reserved:	TERMINATE
 reserved:	TEST
 reserved:	TEXT
 reserved:	THAN
 reserved:	THEN
-reserved:	THROUGH
+reserved:	THROUGH=THRU
 reserved:	THRU
 reserved:	TIME
 reserved:	TIMES
+reserved:	TITLE
 reserved:	TO
 reserved:	TOP
 reserved:	TRAILING
 reserved:	TRANSFORM
 reserved:	TRUE
 reserved:	TYPE
-reserved:	UFF
+reserved:	UNSEQUAL
 reserved:	UNIT
 reserved:	UNSTRING
 reserved:	UNTIL
@@ -410,6 +492,8 @@ reserved:	USING
 reserved:	VALUE
 reserved:	VALUES=VALUE
 reserved:	VARYING
+reserved:	VIA
+reserved:	VIRTUAL
 reserved:	VLR
 reserved:	WHEN
 reserved:	WITH
@@ -424,9 +508,41 @@ reserved:	ZEROS=ZERO
 # Internal registers
 
 not-register:	DIALECT-ALL
-register:	TALLY
 register:	"ADDRESS\ OF"
 register:	DEBUG-ITEM
+register:	TALLY
+# list of (non-standard) system names:
+# TODO: deactivate all, only activate what is supported
+#not-system-name:	DIALECT-ALL-SWITCHES
+#system-name:	CONSOLE
+#system-name:	ALTERNATE-CONSOLE
+#system-name:	SYSIN
+#system-name:	SYSOUT
+#...
+#
+# unsupported - handle as reserved for better error handling
+
+reserved:	CONSOLE-0
+reserved:	CONSOLE-1
+reserved:	CONSOLE-2
+reserved:	CONSOLE-3
+reserved:	SYSIN-X
+reserved:	SYSIN-0
+reserved:	SYSIN-1
+reserved:	SYSIN-2
+reserved:	SYSIN-3
+reserved:	SYSOUT-X
+reserved:	SYSOUT-0
+reserved:	SYSOUT-1
+reserved:	SYSOUT-2
+reserved:	SYSOUT-3
+reserved:	TEMP
+reserved:	TERMINAL-X
+reserved:	TERMINAL-0
+reserved:	TERMINAL-1
+reserved:	TERMINAL-2
+reserved:	TERMINAL-3
+reserved:	UFF
 
 
 # Intrinsics functions

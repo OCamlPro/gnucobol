@@ -339,11 +339,12 @@ check_non_area_a (cb_tree stmt) {
 /* Collating sequences */
 
 /* Known collating sequences/alphabets */
-enum {
+enum cb_colseq {
 	CB_COLSEQ_NATIVE,
 	CB_COLSEQ_ASCII,
 	CB_COLSEQ_EBCDIC,
-} cb_default_colseq = CB_COLSEQ_NATIVE;
+};
+enum cb_colseq cb_default_colseq = CB_COLSEQ_NATIVE;
 
 /* Decipher character conversion table names */
 int cb_deciph_default_colseq_name (const char * const name)
@@ -360,8 +361,8 @@ int cb_deciph_default_colseq_name (const char * const name)
 	return 0;
 }
 
-static void
-build_default_colseq (const char *alphabet_name,
+static cb_tree
+build_colseq_tree (const char *alphabet_name,
 		      int alphabet_type,
 		      int alphabet_target)
 {
@@ -370,27 +371,31 @@ build_default_colseq (const char *alphabet_name,
 	alpha = CB_ALPHABET_NAME (cb_build_alphabet_name (name));
 	alpha->alphabet_type = alphabet_type;
 	alpha->alphabet_target = alphabet_target;
-	default_collation = name;
+	return name;
 }
 
-static void
-setup_default_colseq (void)
+static cb_tree
+build_colseq (enum cb_colseq colseq)
 {
-	switch (cb_default_colseq) {
+	switch (colseq) {
 	case CB_COLSEQ_NATIVE:
-		default_collation = NULL;
-		break;
+		return NULL;
 	case CB_COLSEQ_ASCII:
-		build_default_colseq ("ASCII",
+		return build_colseq_tree ("ASCII",
 				      CB_ALPHABET_ASCII,
 				      CB_ALPHABET_ALPHANUMERIC);
-		break;
 	case CB_COLSEQ_EBCDIC:
-		build_default_colseq ("EBCDIC",
+		return build_colseq_tree ("EBCDIC",
 				      CB_ALPHABET_EBCDIC,
 				      CB_ALPHABET_ALPHANUMERIC);
-		break;
+	/* LCOV_EXCL_START */
+	default:
+		cobc_err_msg (_("call to '%s' with invalid parameter '%s'"),
+			"build_colseq", "colseq");
+		COBC_ABORT ();
 	}
+	/* LCOV_EXCL_STOP */
+
 }
 
 
@@ -1330,7 +1335,7 @@ setup_program (cb_tree id, cb_tree as_literal, const unsigned char type, const i
 	}
 
 	/* Initalize default COLLATING SEQUENCE */
-	setup_default_colseq ();
+	default_collation = build_colseq (cb_default_colseq);
 
 	begin_scope_of_program_name (current_program);
 
@@ -5675,6 +5680,22 @@ alphabet_name:
 			cb_name ($1));
 		$$ = cb_error_node;
 	}
+  }
+| STANDARD_1
+  {
+	$$ = build_colseq (CB_COLSEQ_NATIVE);
+  }
+| STANDARD_2
+  {
+	$$ = build_colseq (CB_COLSEQ_ASCII);
+  }
+| EBCDIC
+  {
+	$$ = build_colseq (CB_COLSEQ_EBCDIC);
+  }
+| ASCII	/* concerning the standard: a code-name */
+  {
+	$$ = build_colseq (CB_COLSEQ_ASCII);
   }
 ;
 
@@ -15900,12 +15921,12 @@ send_body_mcs:
    FIXME - workaround end */
   RETURNING message_tag_data_item
   {
-	CB_PENDING ("COBOL 202x MCS");
+	CB_PENDING ("COBOL 2023 MCS");
   }
 /* FIXME later: too many conflicts here
 | _to message_tag_data_item from_identifier _send_raising _common_exception_phrases
   {
-	CB_PENDING ("COBOL 202x MCS");
+	CB_PENDING ("COBOL 2023 MCS");
   }
    FIXME - workaround end */
 ;

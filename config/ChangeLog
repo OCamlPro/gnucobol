@@ -1,4 +1,9 @@
 
+2023-01-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* gcos.words: complete update
+	* general: added  missing alias JUST=JUSTIFIED
+
 2023-01-16  Simon Sobisch <simonsobisch@gnu.org>
 
 	* realia-strict.conf: change defaultbyte from space to zero

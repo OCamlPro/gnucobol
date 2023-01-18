@@ -5526,7 +5526,7 @@ AT_DATA([prog.cob], [
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
        01 FLOATS.
-         03 FLOAT-BINARY-32  USAGE COMPUTATIONAL-9 VALUE -4.2E+1.
+         03 FLOAT-BINARY-32  USAGE COMPUTATIONAL-9  VALUE -4.2E+1.
          03 FLOAT-BINARY-64  USAGE COMPUTATIONAL-10 VALUE 0.0.
          03 FLOAT-BINARY-128 USAGE COMPUTATIONAL-15 VALUE 1.0.
 
@@ -5540,12 +5540,12 @@ AT_DATA([prog.cob], [
            DISPLAY FLOAT-BINARY-64
 
         *> NOTE: FLOAT-BINARY-128 is only syntax-checked as support for
-        *> 128bit floating-point is still partial
+        *> 128bit floating-point is still partial / "processor dependent"
 
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -std=gcos-strict prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -std=gcos-strict prog.cob -Wno-unfinished], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [-42
 0
