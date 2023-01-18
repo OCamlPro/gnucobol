@@ -6,6 +6,8 @@
 	  has proven to be a bit faster than multiplication on pre-calculated mpz
 	* numeric.c (cob_cmp_packed): optimized for speed
 	* intrinsic.c (at_cr_or_db): fixed to do case-insensitive check
+	* intrinsic.c (cob_intr_hex_to_char): minor speedup by switch to pointer
+	  arithmetic (fixing compiler warning)
 
 2023-01-17  Simon Sobisch <simonsobisch@gnu.org>
 

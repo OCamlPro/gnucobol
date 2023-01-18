@@ -427,7 +427,7 @@ reserved:	INTERVAL-TIMER   # actually a function not supported in GC
 reserved:	JSON
 reserved:	JSON-CODE        # note: this is a register, move as soon as supported
 reserved:	JSON-STATUS      # note: this is a register, move as soon as supported
-reserved:	JUST
+reserved:	JUST=JUSTIFIED
 reserved:	JUSTIFIED
 reserved:	KEPT
 reserved:	KEY
