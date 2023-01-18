@@ -1434,11 +1434,12 @@ space_left (unsigned char * p, unsigned char *p_end)
 	return p_end - p + 1;
 }
 
+/* checks for CR / DB at current position, case-insensitive */
 static COB_INLINE COB_A_INLINE int
 at_cr_or_db (const unsigned char *p)
 {
-	return memcmp (p, "CR", 2) == 0
-		|| memcmp (p, "DB", 2) == 0;
+	return (toupper (p[0]) == 'C' && toupper (p[1]) == 'R')
+	    || (toupper (p[0]) == 'D' && toupper (p[1]) == 'B');
 }
 
 /* get first and last position of possible numeric data */
