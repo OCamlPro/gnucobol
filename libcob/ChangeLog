@@ -1,4 +1,11 @@
 
+2023-01-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_mul_by_pow_10, cob_div_by_pow_10, cob_pow_10_uli)
+	  [!PREFER_MPZ_MUL]: use integer multiplication for scaling, as this
+	  has proven to be a bit faster than multiplication on pre-calculated mpz
+	* numeric.c (cob_cmp_packed): optimized for speed
+
 2023-01-17  Simon Sobisch <simonsobisch@gnu.org>
 
 	* numeric.c (cob_decimal_set_packed): speedup (of ~8%) by handling
@@ -9,9 +16,6 @@
 	* numeric.c: applied 2022-05-30 changes for sign and shift_decimal
 	* numeric.c (cob_mul_by_pow_10, cob_div_by_pow_10): extracted identical
 	  code to inline functions
-	* numeric.c (cob_mul_by_pow_10, cob_div_by_pow_10, cob_pow_10_u64)
-	  [!PREFER_MPZ_MUL]: use integer multiplication for scaling, as this
-	  has proven to be a bit faster than multiplication on pre-calculated mpz
 	* numeric.c (cob_s32_pow, cob_s64_pow): use of register type
 
 2023-01-16  Simon Sobisch <simonsobisch@gnu.org>

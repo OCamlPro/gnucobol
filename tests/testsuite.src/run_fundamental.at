@@ -3124,14 +3124,21 @@ AT_DATA([prog.cob], [
        01  FELD2        PIC S9(5)V9(5).
        01  FELD3        PIC 9(1)V9(1).
        01  FELD4        PIC S9(1).
+       01  FILLER       USAGE BINARY-INT VALUE 0.
+           88 DO-DISP   VALUE 0.
+           88 NO-DISP   VALUE 1.
+       REPLACE ==DISPLAY== BY ==IF DO-DISP  DISPLAY==.
 
        PROCEDURE        DIVISION.
        MAIN.
+      *    Test with DISPLAY on error
+           PERFORM DO-CHECK.
+           SET  NO-DISP    TO TRUE
       *    some performance checks on the way...
-           PERFORM TESTING 20000 TIMES.
+           PERFORM DO-CHECK 20000 TIMES.
            GOBACK.
 
-       TESTING.
+       DO-CHECK.
            MOVE 0.2 TO FIELD
            ADD 1 TO FIELD
            IF FIELD  NOT = 1.2
@@ -3353,14 +3360,20 @@ AT_DATA([prog.cob], [
        01  FELD4        PIC S9(1)      COMP-3.
        01  FELD5        PIC 9(10)v9(9) COMP-3.
        01  FELD6        PIC 9(8)v9(20) COMP-3.
+       01  FILLER       USAGE BINARY-INT VALUE 0.
+           88 DO-DISP   VALUE 0.
+           88 NO-DISP   VALUE 1.
+       REPLACE ==DISPLAY== BY ==IF DO-DISP  DISPLAY==.
 
        PROCEDURE        DIVISION.
-       MAIN.
+      *    Test with DISPLAY on error
+           PERFORM DO-CHECK.
+           SET  NO-DISP    TO TRUE
       *    some performance checks on the way...
-           PERFORM TESTING 20000 TIMES.
+           PERFORM DO-CHECK 20000 TIMES.
            GOBACK.
 
-       TESTING.
+       DO-CHECK.
            MOVE 0.2 TO FIELD
            ADD 1 TO FIELD
            IF FIELD  NOT = 1.2
@@ -3563,16 +3576,26 @@ AT_DATA([prog.cob], [
            IF FELD4  NOT = 1
               DISPLAY "Test 40 " FELD4.
 
-           MOVE 123456789.01234569 TO FELD5
+      *>   test with 19 digits (last implied zero by field)
+      *>   -> maximum cob_u64_t for separate code branch
+           MOVE 123456789.01234567 TO FELD5
            SUBTRACT -2 FROM FELD5
-           IF FELD5  NOT = 123456791.01234569
+           IF FELD5  NOT = 123456791.01234567
               DISPLAY "Test 41 " FELD5.
 
+      *>   tests with more than 19 digits for separate code branch
+      *>   -> last 8 digits with implied zero by field
            MOVE 12345678.123456901234 TO FELD6
            ADD -2.1 TO FELD6
            IF FELD6  NOT = 12345676.023456901234
-              DISPLAY "Test 42 " FELD6.
+              DISPLAY "Test 42a " FELD6.
 
+      *>   -> first 8 digits with implied zero by field,
+      *>      last 4 digits truncated
+           MOVE .123456789012345678901234 TO FELD6
+           ADD 1.8 TO FELD6
+           IF FELD6  NOT = 1.9234567890123456789
+              DISPLAY "Test 42b " FELD6.
 ])
 
 AT_CHECK([$COMPILE -Wno-truncate prog.cob], [0], [], [])
@@ -3593,14 +3616,20 @@ AT_DATA([prog.cob], [
        01  FELD2        PIC S9(5)V9(5) COMP.
        01  FELD3        PIC 9(1)V9(1)  COMP.
        01  FELD4        PIC S9(1)      COMP.
+       01  FILLER       USAGE BINARY-INT VALUE 0.
+           88 DO-DISP   VALUE 0.
+           88 NO-DISP   VALUE 1.
+       REPLACE ==DISPLAY== BY ==IF DO-DISP  DISPLAY==.
 
        PROCEDURE        DIVISION.
-       MAIN.
+      *    Test with DISPLAY on error
+           PERFORM DO-CHECK.
+           SET  NO-DISP    TO TRUE
       *    some performance checks on the way...
-           PERFORM TESTING 20000 TIMES.
+           PERFORM DO-CHECK 20000 TIMES.
            GOBACK.
 
-       TESTING.
+       DO-CHECK.
            MOVE 0.2 TO FIELD
            ADD 1 TO FIELD
            IF FIELD  NOT = 1.2
@@ -3820,14 +3849,20 @@ AT_DATA([prog.cob], [
        01  FELD2        PIC S9(5)V9(5) COMP-5.
        01  FELD3        PIC 9(1)V9(1)  COMP-5.
        01  FELD4        PIC S9(1)      COMP-5.
+       01  FILLER       USAGE BINARY-INT VALUE 0.
+           88 DO-DISP   VALUE 0.
+           88 NO-DISP   VALUE 1.
+       REPLACE ==DISPLAY== BY ==IF DO-DISP  DISPLAY==.
 
        PROCEDURE        DIVISION.
-       MAIN.
+      *    Test with DISPLAY on error
+           PERFORM DO-CHECK.
+           SET  NO-DISP    TO TRUE
       *    some performance checks on the way...
-           PERFORM TESTING 20000 TIMES.
+           PERFORM DO-CHECK 20000 TIMES.
            GOBACK.
 
-       TESTING.
+       DO-CHECK.
            MOVE 0.2 TO FIELD
            ADD 1 TO FIELD
            IF FIELD  NOT = 1.2
@@ -4063,38 +4098,29 @@ AT_DATA([prog.cob], [
         PROCEDURE DIVISION.
 
         MOVE 5000 TO P-FIELD1.
-        ADD 5 TO P-FIELD1 END-ADD
+        ADD  5 TO P-FIELD1
         IF P-FIELD1 NOT = 5000
-            DISPLAY "Error: Add 5 to PIC 99PPP."
-            END-DISPLAY
-        END-IF
-        CALL "dump" USING P-FIELD1 END-CALL
+            DISPLAY "Error: Add 5 to PIC 99PPP.".
+        CALL "dump" USING P-FIELD1.
 
-        ADD 5000 TO P-FIELD1 END-ADD
+        ADD  5000 TO P-FIELD1
         IF P-FIELD1 NOT = 10000
-            DISPLAY "Error: Add 5000 to PIC 99PPP."
-            END-DISPLAY
-        END-IF
-        CALL "dump" USING P-FIELD1 END-CALL
+            DISPLAY "Error: Add 5000 to PIC 99PPP.".
+        CALL "dump" USING P-FIELD1.
 
-        MOVE 0.00055 TO P-FIELD2.
-        ADD 0.00033 TO P-FIELD2 END-ADD
+        MOVE 0.00055 TO P-FIELD2
+        ADD  0.00033 TO P-FIELD2
         IF P-FIELD2 NOT = 0.00088
-            DISPLAY "Error: Add 0.00033 to PIC PPP99."
-            END-DISPLAY
-        END-IF
-        CALL "dump" USING P-FIELD2 END-CALL
+            DISPLAY "Error: Add 0.00033 to PIC PPP99.".
+        CALL "dump" USING P-FIELD2.
 
-        MOVE 0.00055 TO P-FIELD2.
-        ADD 0.00300 TO P-FIELD2 END-ADD
+        MOVE 0.00055 TO P-FIELD2
+        ADD  0.00300 TO P-FIELD2
         IF P-FIELD2 NOT = 0.00055
-            DISPLAY "Error: Add 0.00300 to PIC PPP99."
-            END-DISPLAY
-        END-IF
-        CALL "dump" USING P-FIELD2 END-CALL
+            DISPLAY "Error: Add 0.00300 to PIC PPP99.".
+        CALL "dump" USING P-FIELD2.
 
         STOP RUN.
-
 ])
 
 AT_CHECK([$COMPILE_MODULE dump.c])
@@ -5539,7 +5565,7 @@ AT_DATA([prog.cob], [
            SET ADDRESS OF DATA-FIELD TO PTR   *> first expected output -> is NULL
            ALLOCATE DATA-FIELD INITIALIZED    *> output with data as specified
            FREE DATA-FIELD                    *> No data any more
-           ALLOCATE DATA-FIELD2 INITIALIZED   *> testing MF extension - otherwise identical
+           ALLOCATE DATA-FIELD2 INITIALIZED   *> DO-CHECK MF extension - otherwise identical
            SET PTR TO ADDRESS OF DATA-FIELD2
            FREE PTR
            SET ADDRESS OF DATA-FIELD2 TO NULL
@@ -5617,18 +5643,24 @@ AT_DATA([prog.cob], [
        DATA DIVISION.
       ******************************************************************
        WORKING-STORAGE SECTION.
-       01 FLDX     PIC X        VALUE 'X'.
-       01 FLDXX    PIC XX       VALUE SPACES.
-       01 FLDX500  PIC X(500)   VALUE 'X5'.
-       01 FLDX32K  PIC X(32000) VALUE 'X'.
-       01 FLD1     PIC X        VALUE '1'.
-       01 FLD1X    PIC X(32000) VALUE '1'.
+       01  FLDX     PIC X        VALUE 'X'.
+       01  FLDXX    PIC XX       VALUE SPACES.
+       01  FLDX500  PIC X(500)   VALUE 'X5'.
+       01  FLDX32K  PIC X(32000) VALUE 'X'.
+       01  FLD1     PIC X        VALUE '1'.
+       01  FLD1X    PIC X(32000) VALUE '1'.
+       01  FILLER       USAGE BINARY-INT VALUE 0.
+           88 DO-DISP   VALUE 0.
+           88 NO-DISP   VALUE 1.
+       REPLACE ==DISPLAY== BY ==IF DO-DISP  DISPLAY==.
 
        PROCEDURE DIVISION.
        MAIN-LINE.
 
+      *>   Test with DISPLAY on error
+           SET  NO-DISP    TO TRUE
       *>   minimal side-test for performance comparisions
-           PERFORM DO-CHECK 10000 TIMES
+           PERFORM DO-CHECK 20000 TIMES
            GOBACK.
 
        DO-CHECK.

@@ -411,6 +411,13 @@ cob_decimal_print (cob_decimal *d, FILE *fp)
 	cob_gmp_free (mza);
 }
 
+#define MAX_LLI_DIGITS_PLUS_1 20
+#ifdef	COB_LI_IS_LL
+#define MAX_LI_DIGITS_PLUS_1  20
+#else
+#define MAX_LI_DIGITS_PLUS_1  10
+#endif
+
 /* Get power of 10 as mpz_t */
 static COB_INLINE COB_A_INLINE void
 cob_pow_10 (mpz_t mexp, int n)
@@ -427,35 +434,37 @@ cob_pow_10 (mpz_t mexp, int n)
    using integer multiplication / division (on 2 test machines);
    if needed define PREFER_MPZ_MUL to use "old" code */
 #ifndef PREFER_MPZ_MUL
- #ifdef	HAVE_DESIGNATED_INITS_
-const cob_u64_t cob_pow_10_u64_val[20] = {
-	1,
-	10,
-	100,
-	1000,
-	10000,
-	100000,
-	1000000,
-	10000000,
-	100000000,
-	1000000000,
-	10000000000,
-	100000000000,
-	1000000000000,
-	10000000000000,
-	100000000000000,
-	1000000000000000,
-	10000000000000000,
-	100000000000000000,
-	1000000000000000000,
-	10000000000000000000
+ #ifdef	HAVE_DESIGNATED_INITS
+const cob_uli_t cob_pow_10_uli_val[MAX_LI_DIGITS_PLUS_1] = {
+	  1
+	, 10
+	, 100
+	, 1000
+	, 10000
+	, 100000
+	, 1000000
+	, 10000000
+	, 100000000
+	, 1000000000
+#ifdef	COB_LI_IS_LL
+	, 10000000000
+	, 100000000000
+	, 1000000000000
+	, 10000000000000
+	, 100000000000000
+	, 1000000000000000
+	, 10000000000000000
+	, 100000000000000000
+	, 1000000000000000000
+	, 10000000000000000000
+#endif
 };
-  #define	cob_pow_10_u64(n)	cob_pow_10_u64_val[n]
+  #define	cob_pow_10_uli(n)	cob_pow_10_uli_val[n]
  #else
-static COB_INLINE COB_A_INLINE cob_u64_t
-cob_pow_10_u64 (unsigned int n)
+static COB_INLINE COB_A_INLINE cob_uli_t
+cob_pow_10_uli (unsigned int n)
 {
-	register cob_u64_t ret = 1;
+	register cob_uli_t ret = 1;
 	while (n > 0) {
 		ret *= 10;
 		--n;
@@ -470,9 +479,9 @@ cob_pow_10_u64 (unsigned int n)
 static COB_INLINE COB_A_INLINE void
 cob_mul_by_pow_10 (mpz_t mexp, unsigned int n)
 {
-#ifndef PREFER_MPZ_MUL	/* slower on two machines ... */
-	if (n < 20) {
-		mpz_mul_ui (mexp, mexp, cob_pow_10_u64 (n));
+#ifndef PREFER_MPZ_MUL
+	if (n < MAX_LI_DIGITS_PLUS_1) {
+		mpz_mul_ui (mexp, mexp, cob_pow_10_uli (n));
 		return;
 	}
 #endif
@@ -485,8 +494,8 @@ static COB_INLINE COB_A_INLINE void
 cob_div_by_pow_10 (mpz_t mexp, unsigned int n)
 {
 #ifndef PREFER_MPZ_MUL
-	if (n < 20) {
-		mpz_tdiv_q_ui (mexp, mexp, cob_pow_10_u64 (n));
+	if (n < MAX_LI_DIGITS_PLUS_1) {
+		mpz_tdiv_q_ui (mexp, mexp, cob_pow_10_uli (n));
 		return;
 	}
 #endif
@@ -1109,7 +1118,7 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 	} else {
 		byteval = 0;
 	}
-	if (digits < 20) {
+	if (digits < MAX_LLI_DIGITS_PLUS_1) {
 		register cob_u64_t val = byteval;
 	
 		for (; p < endp; p++) {
@@ -1127,7 +1136,7 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 
 	} else {
 		/* note: an implementation similar to display - expanding to string,
-		   then convert to mpz from there was tested and found to be slower */
+		   then convert to mpz from there - was tested and found to be slower */
 
 		unsigned int	nonzero = !!byteval;
 		mpz_set_ui (d->value, byteval);
@@ -1352,11 +1361,7 @@ cob_decimal_set_display (cob_decimal *d, cob_field *f)
 
 	/* Set value */
 
-#ifdef	COB_LI_IS_LL
-	if (size < 20) {
-#else
-	if (size < 10) {
-#endif
+	if (size < MAX_LI_DIGITS_PLUS_1) {
 		/* note: we skipped leading zeros above, so n > 0 afterwards */
 		n = COB_D2I (*data);
 		data++;
@@ -2620,12 +2625,12 @@ cob_numeric_cmp (cob_field *f1, cob_field *f2)
 int
 cob_cmp_packed (cob_field *f, const cob_s64_t val)
 {
+	unsigned char		val1[MAX_LLI_DIGITS_PLUS_1];
+	size_t	first_post;
 	unsigned char		*p;
 	cob_u64_t		n;
-	size_t			size;
-	size_t			inc;
 	int			sign;
-	unsigned char		val1[20];
+	register size_t			size;
 
 	sign = cob_packed_get_sign (f);
 	/* Field positive, value negative */
@@ -2642,25 +2647,25 @@ cob_cmp_packed (cob_field *f, const cob_s64_t val)
 	} else {
 		n = (cob_u64_t)val;
 	}
-	inc = 0;
+
+	/* 1) re-pack field-data to 20 bytes -> val1 */
 	p = f->data;
-	for (size = 0; size < 20; size++) {
-		if (size < 20 - f->size) {
-			val1[size] = 0;
-		} else {
-			val1[size] = p[inc++];
-		}
+	first_post = sizeof(val1)  - f->size;
+	memset (val1, 0, sizeof(val1));
+	for (size = first_post; size < sizeof(val1); size++) {
+		val1[size] = *p++;
 	}
 	if (COB_FIELD_NO_SIGN_NIBBLE (f)) {
 		if ((COB_FIELD_DIGITS(f) % 2) == 1) {
-			val1[20 - f->size] &= 0x0F;
+			val1[first_post] &= 0x0F;
 		}
 	} else {
 		val1[19] &= 0xF0;
 		if ((COB_FIELD_DIGITS(f) % 2) == 0) {
-			val1[20 - f->size] &= 0x0F;
+			val1[first_post] &= 0x0F;
 		}
 	}
+	/* 2) pack "n" to 20 bytes -> packed_value */
 	if (n != last_packed_val) {
 		/* otherwise we just leave the already packed value as-is */
 		last_packed_val = n;
@@ -2680,7 +2685,8 @@ cob_cmp_packed (cob_field *f, const cob_s64_t val)
 			}
 		}
 	}
-	for (size = 0; size < 20; size++) {
+	/* 3) byte-wise compare of val1 + packed_value */
+	for (size = 0; size < sizeof(val1); size++) {
 		if (val1[size] != packed_value[size]) {
 			if (sign == -1) {
 				return packed_value[size] - val1[size];
