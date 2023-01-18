@@ -1,4 +1,8 @@
 
+2023-01-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac, NEWS, gnucobol.spec: updated for 3.2rc-1
+
 2023-01-16  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: adjusted hack for AIX 64bit OBJECT_MODE

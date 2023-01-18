@@ -1,15 +1,13 @@
 NEWS - user visible changes				-*- outline -*-
 
- GnuCOBOL 3.2rc1 to be released asap,
-          3.2 final (depending on feedback) January 2023
+ GnuCOBOL 3.2rc1  (20230118)
+          3.2 final (depending on feedback) February 2023
 
- planned:
+ planned for final:
+   * extending testsuite and documentation
    * configure: minor checking to set TIME_T_IS_NON_ARITHMETIC
-   * adjustments for registers and XML PARSE stubs
    * investigation of code analysis tools and user feedback
 
-
- GnuCOBOL 3.2 preview (20221022)
 
 * New GnuCOBOL features
 
