@@ -1,4 +1,8 @@
 
+2023-01-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* bootstrap: use of $TMPDIR instead of /tmp
+
 2022-12-09  Simon Sobisch <simonsobisch@gnu.org>
 
 	* create_mingw_bindist.sh: optional installation of locales and manpages;
@@ -166,7 +170,7 @@
 	  without uname(1) [removed 2014-01-25] from old version
 
 
-Copyright 2015-2022 Free Software Foundation, Inc.
+Copyright 2015-2023 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.
