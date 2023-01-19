@@ -2,7 +2,7 @@ dnl
 dnl Configure template for GnuCOBOL
 dnl Process this file with autoconf to produce a configure script.
 dnl
-dnl Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
+dnl Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
 dnl Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
 dnl Edward Hart
 dnl
@@ -32,7 +32,7 @@ AC_INIT([GnuCOBOL],
 AC_REVISION([GnuCOBOL snapshot $Revision$])
 AC_COPYRIGHT([This file is part of GnuCOBOL.
 
-Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
+Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
 Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
 Edward Hart
 ])
@@ -54,25 +54,49 @@ AC_CONFIG_FILES([tests/atlocal], [chmod +x tests/atlocal])
 AC_CONFIG_FILES([tests/run_prog_manual.sh],
   [chmod +x tests/run_prog_manual.sh])
 
+# In general: don't export/setenv but pass as option to configure
+#             this has the benefit that re-runs will take the same and "sudo"
+#             or later "make" (possibly as different user) will use the same
+#             set of tools
 # Note for SUN Solaris (gcc)
-#  option to configure/export/setenv: CC=gcc -m64 --libdir=/usr/local/lib/sparcv9
+#  options to configure: CC="gcc -m64" --libdir=/usr/local/lib/sparcv9
 # or:
-#  option to configure/export/setenv: CFLAGS=-m64 and LDFLAGS="-m64 -L/usr/local/lib/sparcv9"
+#  options to configure: CFLAGS=-m64 LDFLAGS="-m64 -L/usr/local/lib/sparcv9"
 #
 # Hack for AIX 64 bit (gcc)
 # Required -
-#  option to configure/export/setenv: CC=gcc -maix64
+#  options to configure: CC="gcc -maix64" / CC="xlc -q64"
 # or:
-#  option to configure/export/setenv: CFLAGS=-maix64 and LDFLAGS=-maix64
+#  options to configure: CFLAGS=-maix64 and LDFLAGS=-maix64
 # Note: AIX commonly uses -Lpath like GNU/Linux would use -Lpath -Rpath
 
-if echo "$CC$CFLAGS" | grep 'aix64' 1>/dev/null 2>&1; then
-	if test -f /usr/ccs/bin/ar; then
-		AR="/usr/ccs/bin/ar -X64"
-	else
-		AR="ar -X64"
+if test "x$OBJECT_MODE" = x; then
+	echo "$CC $CFLAGS" | grep ' -maix64' 1>/dev/null 2>&1
+	check1=$$
+	echo "$CC $CFLAGS" | grep ' -q64'    1>/dev/null 2>&1
+	check2=$$
+	if test check1 = 0 -o check2 = 0; then
+		OBJECT_MODE=64 # for libtool
 	fi
-	NM="/usr/ccs/bin/nm -X64 -B"
+	unset check1
+	unset check2
+fi
+
+if test "$OBJECT_MODE" = "64"; then
+	if test "x$AR" = x; then
+		if test -f /usr/ccs/bin/ar; then
+			AR="/usr/ccs/bin/ar -X64"
+		else
+			AR="ar -X64"
+		fi
+	fi
+	if test "x$NM" = x; then
+		if test -f /usr/ccs/bin/nm; then
+			NM="/usr/ccs/bin/nm -X64 -B"
+		else
+			NM="nm -X64 -B"
+		fi
+	fi
 fi
 
 dnl We don't want to have the full list of automatic defines from automake,
@@ -603,15 +627,13 @@ if test "x$LDFLAGS" != x; then
 	fi
 fi
 
-
-# some math functions (fabs, isnan, isinf) are used in libcob
-# where math.h is included (especially numeric.c)
+# some math functions (fabs, isnan, isinf) are used in numeric.c
 # (all other computations are used from GMP)
 #
 AC_MSG_NOTICE([Checks for math library ...])
 # FIXME - Check for necessary math lib - in most cases they are part of the C library
 # for now: explicit pass them to configure via MATH_LIBS
-dnl if test "x$MATH_LIBS" = x; then
+dnl if test "x$MATH_LIBS" = "x"; then
 dnl 	if test "$COB_USES_ICC_ONLY" = "yes"; then
 dnl 		MATH_LIBS="-limf -lm"
 dnl 	else
@@ -853,6 +875,9 @@ AS_IF([test "$with_xml2" = "yes" -o "$with_xml2" = "check"], [
 	  XML2_LIBS="-lxml2"
 	fi
 	LIBS="$LIBS $XML2_LIBS"
+	# note: the include part is likely wrong, as PKG_CONFIG and xml2_config
+	#       normally include _with_ "libxml", so only the header name should be
+	#       used then - needs adjustments in both configure and libcob!
 	for header in xmlversion uri xmlwriter
 	do
 		AC_CHECK_HEADER([libxml/$header.h], [],
@@ -1287,7 +1312,7 @@ if test "x$CURSES_LIBS" = x; then
   fi
 fi
 if test "$USE_CURSES" = "curses" -o "x$ac_cv_lib_curses_initscr" = xyes; then
-  AC_CHECK_HEADERS([curses.h], [USE_CURSES="pdcurses"],
+  AC_CHECK_HEADERS([curses.h], [USE_CURSES="curses"],
     [AS_IF([test "$USE_CURSES" != check], [USE_CURSES="missing_header"]) ])
   AS_IF([test $USE_CURSES="curses" -a "x$CURSES_LIBS" = x],
     [CURSES_LIBS="-l$USE_CURSES"])
@@ -1868,7 +1893,11 @@ AS_IF([test "$COB_USES_GCC" = "yes"], [
 ])
 
 if test "$enable_debug" = "yes"; then
-	CFLAGS="$curr_cflags $COB_DEBUG_FLAGS"
+	if test "x$curr_cflags" != "x"; then
+		CFLAGS="$curr_cflags $COB_DEBUG_FLAGS"
+	else
+		CFLAGS="$COB_DEBUG_FLAGS"
+	fi
 else
 	CFLAGS="$curr_cflags"
 fi
@@ -2288,6 +2317,7 @@ AC_MSG_NOTICE([GnuCOBOL Configuration:])
 AC_MSG_NOTICE([ CC                ${CC}])
 AC_MSG_NOTICE([ CFLAGS            ${CFLAGS}])
 AC_MSG_NOTICE([ LDFLAGS           ${LDFLAGS}])
+AC_MSG_NOTICE([ LIBCOB_LIBS       ${LIBCOB_LIBS}])
 if test "x$PROGRAMS_LIBS" != x; then
   AC_MSG_NOTICE([ PROGRAMS_LIBS         ${PROGRAMS_LIBS}])
 fi

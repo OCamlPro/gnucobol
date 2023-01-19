@@ -1,4 +1,4 @@
-## Copyright (C) 2014-2022 Free Software Foundation, Inc.
+## Copyright (C) 2014-2023 Free Software Foundation, Inc.
 ## Written by Simon Sobisch
 ##
 ## This file is part of GnuCOBOL.
@@ -888,11 +888,11 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COBC -febcdic-table=default prog.cob], [0], [], [])
-AT_CHECK([$COBC -febcdic-table=restricted-gc prog.cob], [0], [], [])
-AT_CHECK([$COBC -febcdic-table=ibm prog.cob], [0], [], [])
-AT_CHECK([$COBC -febcdic-table=gcos prog.cob], [0], [], [])
-AT_CHECK([$COBC -febcdic-table=unknown prog.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY -febcdic-table=DEFAULT prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -febcdic-table=RESTRICTED-GC prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -febcdic-table=IBM prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -febcdic-table=GCOS prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -febcdic-table=unknown prog.cob], [1], [],
 [cobc: error: invalid parameter: -febcdic-table
 ])
 

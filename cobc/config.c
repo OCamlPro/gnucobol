@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2012, 2014-2017, 2019-2022 Free Software Foundation, Inc.
+   Copyright (C) 2003-2012, 2014-2017, 2019-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch
 
    This file is part of GnuCOBOL.
@@ -773,11 +773,11 @@ cb_config_entry (char *buff, const char *fname, const int line)
 		} else if (strcmp (name, "defaultbyte") == 0) {
 			if (strcmp (val, "init") == 0) {
 				/* generate default initialization per INITIALIZE rules */
-				cb_default_byte = -1;
+				cb_default_byte = CB_DEFAULT_BYTE_INIT;
 				break;
 			}
 			if (strcmp (val, "none") == 0) {
-				cb_default_byte = -2;
+				cb_default_byte = CB_DEFAULT_BYTE_NONE;
 #if 1			/* TODO: do not generate any default initialization for fields without VALUE,
 				   only the storage (best performance, least reproducibility); for now warn
 				   if specified on command line (allowing config files be correct already) */

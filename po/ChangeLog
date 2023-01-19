@@ -99,6 +99,10 @@
 
 	* ja.po: New file.
 
+2002-05-23  Keisuke Nishida  <knishida@netlab.jp>
+
+	* new folder - created with gettextize
+
 
 Copyright 2002,2010,2011,2014-2018 Free Software Foundation, Inc.
 

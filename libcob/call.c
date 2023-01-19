@@ -473,12 +473,14 @@ do_cancel_module (struct call_hash *p, struct call_hash **base_hash,
 		return;
 	}
 
-	lt_dlclose (p->handle);
+	if (cobsetptr->cob_physical_cancel != -1) {
+		lt_dlclose (p->handle);
 
-	dynptr = base_dynload_ptr;
-	for (; dynptr; dynptr = dynptr->next) {
-		if (dynptr->handle == p->handle) {
-			dynptr->handle = NULL;
+		dynptr = base_dynload_ptr;
+		for (; dynptr; dynptr = dynptr->next) {
+			if (dynptr->handle == p->handle) {
+				dynptr->handle = NULL;
+			}
 		}
 	}
 
@@ -1471,12 +1473,29 @@ cob_longjmp (struct cobjmp_buf *jbuf)
 }
 #endif
 
+static void
+close_and_free_module_list (struct struct_handle ** module_list_ptr)
+{
+	struct struct_handle	*h = *module_list_ptr;
+
+	while (h) {
+		struct struct_handle *j = h;
+		if (h->path) {
+			cob_free ((void*)h->path);
+		}
+		if (h->handle
+		 && cobsetptr->cob_physical_cancel != -1) {
+			lt_dlclose (h->handle);
+		}
+		h = h->next;
+		cob_free (j);
+	}
+	*module_list_ptr = NULL;
+}
+
 void
 cob_exit_call (void)
 {
-	struct struct_handle	*h;
-	struct struct_handle	*j;
-
 	if (call_filename_buff) {
 		cob_free (call_filename_buff);
 		call_filename_buff = NULL;
@@ -1522,34 +1541,13 @@ cob_exit_call (void)
 		}
 		call_table = NULL;
 	}
-
-	for (h = base_preload_ptr; h;) {
-		j = h;
-		if (h->path) {
-			cob_free ((void *)h->path);
-		}
-		if (h->handle) {
-			lt_dlclose (h->handle);
-		}
-		h = h->next;
-		cob_free (j);
-	}
-	base_preload_ptr = NULL;
-	for (h = base_dynload_ptr; h;) {
-		j = h;
-		if (h->path) {
-			cob_free ((void *)h->path);
-		}
-		if (h->handle) {
-			lt_dlclose (h->handle);
-		}
-		h = h->next;
-		cob_free (j);
-	}
-	base_dynload_ptr = NULL;
+	close_and_free_module_list (&base_preload_ptr);
+	close_and_free_module_list (&base_dynload_ptr);
 
 #if	!defined(_WIN32) && !defined(USE_LIBDL)
-	lt_dlexit ();
+	if (cobsetptr->cob_physical_cancel != -1) {
+		lt_dlexit ();
+	}
 #if	0	/* RXWRXW - ltdl leak */
 #ifndef	COB_BORKED_DLOPEN
 	/* Weird - ltdl leaks mainhandle - This appears to work but .. */
@@ -2076,7 +2074,7 @@ const char *
 cob_get_field_str_buffered (const cob_field *f)
 {
 	char	*buff = NULL;
-	size_t	size = cob_get_field_size (f) + 1;
+	size_t	size = (size_t)cob_get_field_size (f) + 1;
 
 	if (size > 0) {
 		if (size < 32) {

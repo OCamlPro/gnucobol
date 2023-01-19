@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2005-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2005-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Roger While, Simon Sobisch, Edward Hart, Brian Tiffin
 
    This file is part of GnuCOBOL.
@@ -1872,7 +1872,7 @@ locale_time (const int hours, const int minutes, const int seconds,
 
 /* offset and length are for reference modification */
 static void
-cob_alloc_set_field_str (char *str, const int offset, const int length)
+cob_alloc_set_field_str (const char *str, const int offset, const int length)
 {
 	const size_t	str_len = strlen (str);
 	cob_field	field;
@@ -3830,15 +3830,13 @@ cob_intr_reverse (const int offset, const int length, cob_field *srcfield)
 cob_field *
 cob_intr_bit_of (cob_field *srcfield)
 {
-	cob_field_attr	attr;
 	cob_field	field;
 	/* FIXME later: srcfield may be of category national - or later bit... */
 	const size_t		size = srcfield->size * 8;
 	unsigned char		*byte = srcfield->data;
 	size_t		i, j;
 
-	COB_ATTR_INIT (COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL);
-	COB_FIELD_INIT (size, NULL, &attr);
+	COB_FIELD_INIT (size, NULL, &const_alpha_attr);
 	make_field_entry (&field);
 
 	for (i = j = 0; i < srcfield->size; ++i) {
@@ -3867,14 +3865,12 @@ has_bit_checked (const unsigned char byte) {
 cob_field *
 cob_intr_bit_to_char (cob_field *srcfield)
 {
-	cob_field_attr	attr;
 	cob_field	field;
 	const size_t		size = srcfield->size / 8;
 	unsigned char		*byte_val, *char_val;
 	size_t		i;
 
-	COB_ATTR_INIT (COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL);
-	COB_FIELD_INIT (size, NULL, &attr);
+	COB_FIELD_INIT (size, NULL, &const_alpha_attr);
 	make_field_entry (&field);
 
 	byte_val = srcfield->data;
@@ -3897,14 +3893,12 @@ cob_intr_bit_to_char (cob_field *srcfield)
 cob_field *
 cob_intr_hex_of (cob_field *srcfield)
 {
-	cob_field_attr	attr;
 	cob_field	field;
 	/* FIXME later: srcfield may be of category national - or later bit... */
 	const size_t		size = srcfield->size * 2;
 	size_t		i, j;
 
-	COB_ATTR_INIT (COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL);
-	COB_FIELD_INIT (size, NULL, &attr);
+	COB_FIELD_INIT (size, NULL, &const_alpha_attr);
 	make_field_entry (&field);
 
 	for (i = j = 0; i < srcfield->size; ++i) {
@@ -3919,19 +3913,17 @@ cob_intr_hex_of (cob_field *srcfield)
 cob_field *
 cob_intr_hex_to_char (cob_field *srcfield)
 {
-	cob_field_attr	attr;
 	cob_field	field;
 	const size_t		size = srcfield->size / 2;
 	size_t		i, j;
 	unsigned char *hex_char;
 
 	if (size * 2 != srcfield->size) {
-		/* posibly raise nonfatal exception here -> we only process the valid ones */
+		/* possibly raise nonfatal exception here -> we only process the valid ones */
 		// size--;
 	}
 
-	COB_ATTR_INIT (COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL);
-	COB_FIELD_INIT (size, NULL, &attr);
+	COB_FIELD_INIT (size, NULL, &const_alpha_attr);
 	make_field_entry (&field);
 
 	hex_char = curr_field->data;
@@ -3998,83 +3990,52 @@ cob_intr_module_time (void)
 cob_field *
 cob_intr_module_id (void)
 {
-	size_t		calcsize;
-	cob_field	field;
-
-	calcsize = strlen (COB_MODULE_PTR->module_name);
-	COB_FIELD_INIT (calcsize, NULL, &const_alpha_attr);
-	make_field_entry (&field);
-	memcpy (curr_field->data, COB_MODULE_PTR->module_name, calcsize);
+	cob_alloc_set_field_str (COB_MODULE_PTR->module_name, 0, 0);
 	return curr_field;
 }
 
 cob_field *
 cob_intr_module_caller_id (void)
 {
-	size_t		calcsize;
-	cob_field	field;
-
 	if (!COB_MODULE_PTR->next) {
+		cob_field	field;
 		COB_FIELD_INIT (1, NULL, &const_alpha_attr);
 		make_field_entry (&field);
 		curr_field->size = 0;
 		curr_field->data[0] = ' ';
 		return curr_field;
 	}
-	calcsize = strlen (COB_MODULE_PTR->next->module_name);
-	COB_FIELD_INIT (calcsize, NULL, &const_alpha_attr);
-	make_field_entry (&field);
-	memcpy (curr_field->data, COB_MODULE_PTR->next->module_name,
-		calcsize);
+	cob_alloc_set_field_str (COB_MODULE_PTR->next->module_name, 0, 0);
 	return curr_field;
 }
 
 cob_field *
 cob_intr_module_formatted_date (void)
 {
-	size_t		calcsize;
-	cob_field	field;
-
-	calcsize = strlen (COB_MODULE_PTR->module_formatted_date);
-	COB_FIELD_INIT (calcsize, NULL, &const_alpha_attr);
-	make_field_entry (&field);
-	memcpy (curr_field->data, COB_MODULE_PTR->module_formatted_date,
-		calcsize);
+	cob_alloc_set_field_str (COB_MODULE_PTR->module_formatted_date, 0, 0);
 	return curr_field;
 }
 
 cob_field *
 cob_intr_module_source (void)
 {
-	size_t		calcsize;
-	cob_field	field;
-
-	calcsize = strlen (COB_MODULE_PTR->module_source);
-	COB_FIELD_INIT (calcsize, NULL, &const_alpha_attr);
-	make_field_entry (&field);
-	memcpy (curr_field->data, COB_MODULE_PTR->module_source, calcsize);
+	cob_alloc_set_field_str (COB_MODULE_PTR->module_source, 0, 0);
 	return curr_field;
 }
 
 cob_field *
 cob_intr_module_path (void)
 {
-	size_t		calcsize;
-	cob_field	field;
-
-	if (!COB_MODULE_PTR->module_path ||
-	    !*(COB_MODULE_PTR->module_path)) {
+	if (!COB_MODULE_PTR->module_path
+	 || !(*COB_MODULE_PTR->module_path)) {
+		cob_field	field;
 		COB_FIELD_INIT (1, NULL, &const_alpha_attr);
 		make_field_entry (&field);
 		curr_field->size = 0;
 		curr_field->data[0] = ' ';
 		return curr_field;
 	}
-	calcsize = strlen (*(COB_MODULE_PTR->module_path));
-	COB_FIELD_INIT (calcsize, NULL, &const_alpha_attr);
-	make_field_entry (&field);
-	memcpy (curr_field->data, *(COB_MODULE_PTR->module_path),
-		calcsize);
+	cob_alloc_set_field_str (*COB_MODULE_PTR->module_path, 0, 0);
 	return curr_field;
 }
 
@@ -4219,44 +4180,39 @@ cob_intr_exception_file (void)
 cob_field *
 cob_intr_exception_location (void)
 {
-	char		*buff;
-	cob_field	field;
-
-	COB_FIELD_INIT (0, NULL, &const_alpha_attr);
 	/* check if last-exception is active and if LOCATION is available */
 	if (!cobglobptr->last_exception_id) {
+		cob_field	field;
+		COB_FIELD_INIT (0, NULL, &const_alpha_attr);
 		field.size = 1;
 		make_field_entry (&field);
 		*(curr_field->data) = ' ';
-		return curr_field;
-	}
-	buff = cob_malloc ((size_t)COB_SMALL_BUFF);
-	if (cobglobptr->last_exception_section && cobglobptr->last_exception_paragraph) {
-		snprintf (buff, (size_t)COB_SMALL_MAX, "%s; %s OF %s; %u",
-			  cobglobptr->last_exception_id,
-			  cobglobptr->last_exception_paragraph,
-			  cobglobptr->last_exception_section,
-			  cobglobptr->last_exception_line);
-	} else if (cobglobptr->last_exception_section) {
-		snprintf (buff, (size_t)COB_SMALL_MAX, "%s; %s; %u",
-			  cobglobptr->last_exception_id,
-			  cobglobptr->last_exception_section,
-			  cobglobptr->last_exception_line);
-	} else if (cobglobptr->last_exception_paragraph) {
-		snprintf (buff, (size_t)COB_SMALL_MAX, "%s; %s; %u",
-			  cobglobptr->last_exception_id,
-			  cobglobptr->last_exception_paragraph,
-			  cobglobptr->last_exception_line);
 	} else {
-		snprintf (buff, (size_t)COB_SMALL_MAX, "%s; ; %u",
-			  cobglobptr->last_exception_id,
-			  cobglobptr->last_exception_line);
+		char buff[COB_SMALL_BUFF];
+		if (cobglobptr->last_exception_section && cobglobptr->last_exception_paragraph) {
+			snprintf (buff, (size_t)COB_SMALL_MAX, "%s; %s OF %s; %u",
+				  cobglobptr->last_exception_id,
+				  cobglobptr->last_exception_paragraph,
+				  cobglobptr->last_exception_section,
+				  cobglobptr->last_exception_line);
+		} else if (cobglobptr->last_exception_section) {
+			snprintf (buff, (size_t)COB_SMALL_MAX, "%s; %s; %u",
+				  cobglobptr->last_exception_id,
+				  cobglobptr->last_exception_section,
+				  cobglobptr->last_exception_line);
+		} else if (cobglobptr->last_exception_paragraph) {
+			snprintf (buff, (size_t)COB_SMALL_MAX, "%s; %s; %u",
+				  cobglobptr->last_exception_id,
+				  cobglobptr->last_exception_paragraph,
+				  cobglobptr->last_exception_line);
+		} else {
+			snprintf (buff, (size_t)COB_SMALL_MAX, "%s; ; %u",
+				  cobglobptr->last_exception_id,
+				  cobglobptr->last_exception_line);
+		}
+		buff[COB_SMALL_MAX] = 0; /* silence warnings */
+		cob_alloc_set_field_str (buff, 0, 0);
 	}
-	buff[COB_SMALL_MAX] = 0; /* silence warnings */
-	field.size = strlen (buff);
-	make_field_entry (&field);
-	memcpy (curr_field->data, buff, field.size);
-	cob_free (buff);
 	return curr_field;
 }
 

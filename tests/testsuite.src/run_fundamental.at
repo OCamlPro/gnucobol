@@ -1,4 +1,5 @@
-## Copyright (C) 2003-2012, 2014-2015, 2017-2020, 2022 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2015, 2017-2020, 2022-2023 Free Software
+## Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 ## Ron Norman
 ##
@@ -371,7 +372,7 @@ AT_DATA([prog.cob], [
        DATA DIVISION.
        WORKING-STORAGE SECTION.
        01 SRC-FIELD              PIC 9(06).
-      *>                         
+      *>
        01 DST-FIELD-1            PIC 0XXXXXX.
        01 DST-FIELD-2            PIC BXXXXXX.
        01 DST-FIELD-3            PIC /XXXXXX.
@@ -641,15 +642,15 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            MOVE SRC1 TO DST1.
            IF DST1 not = 11.55
-               DISPLAY 'error: move/compare FLOAT-LONG to FLOAT-SHORT fa
-      -                'iled ' DST1
+               DISPLAY 'error 1: move/compare FLOAT-LONG to FLOAT-SHORT
+      -                'failed ' DST1
                END-DISPLAY
            END-IF.
 
            MOVE SRC1 TO DST2.
            IF DST1 not = 11.55
-               DISPLAY 'error: move/compare FLOAT-LONG to FLOAT-LONG fai
-      -                'led ' DST2
+               DISPLAY 'error 2: move/compare FLOAT-LONG to FLOAT-LONG f
+      -                'ailed ' DST2
                END-DISPLAY
            END-IF.
 
@@ -658,15 +659,15 @@ AT_DATA([prog.cob], [
 
            MOVE SRC2 TO DST1.
            IF DST1 not = 11.55
-               DISPLAY 'error: move/compare FLOAT-SHORT to FLOAT-SHORT f
-      -                'ailed: ' DST1
+               DISPLAY 'error 3: move/compare FLOAT-SHORT to FLOAT-SHORT
+      -                ' failed: ' DST1
                END-DISPLAY
            END-IF.
 
            MOVE SRC2 TO DST2.
            IF DST2 not = 11.55
-               DISPLAY 'error: move/compare FLOAT-SHORT to FLOAT-LONG fa
-      -                'iled: ' DST2
+               DISPLAY 'error 4: move/compare FLOAT-SHORT to FLOAT-LONG
+      -                'failed: ' DST2
                END-DISPLAY
            END-IF.
 
@@ -743,6 +744,137 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([Check for equality of FLOAT-SHORT / FLOAT-EXTENDED])
+AT_KEYWORDS([fundamental])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  SRC1          FLOAT-EXTENDED VALUE 11.55.
+       01  DST1          FLOAT-SHORT.
+       01  SRC2          FLOAT-SHORT VALUE 11.55.
+       01  DST2          FLOAT-EXTENDED.
+
+       PROCEDURE        DIVISION.
+           MOVE SRC1 TO DST1.
+           IF DST1 not = 11.55
+               DISPLAY 'error 1: move/compare FLOAT-EXTENDED to FLOAT-SH
+      -                'ORT failed ' DST1
+               END-DISPLAY
+           END-IF.
+
+           MOVE SRC1 TO DST2.
+           IF DST1 not = 11.55
+               DISPLAY 'error 2: move/compare FLOAT-EXTENDED to FLOAT-SH
+      -                'ORT failed ' DST2
+               END-DISPLAY
+           END-IF.
+
+           MOVE ZERO TO DST1.
+           MOVE ZERO TO DST2.
+
+           MOVE SRC2 TO DST1.
+           IF DST1 not = 11.55
+               DISPLAY 'error 3: move/compare FLOAT-EXTENDED to FLOAT-SH
+      -                'ORT failed ' DST1
+               END-DISPLAY
+           END-IF.
+
+           MOVE SRC2 TO DST2.
+           IF DST2 not = 11.55
+               DISPLAY 'error 4: move/compare FLOAT-EXTENDED to FLOAT-SHOR
+      -                'T failed ' DST2
+               END-DISPLAY
+           END-IF.
+
+           MOVE ZERO TO DST1.
+           IF not (DST1 = 0 AND 0.0)
+               DISPLAY "Zero compare failed: " DST1 END-DISPLAY
+           END-IF.
+
+           MOVE -0.0 TO DST1.
+           IF not (DST1 = 0 AND 0.0)
+               DISPLAY "Negative Zero compare failed: " DST1
+               END-DISPLAY
+           END-IF.
+
+           MOVE 1.1234567 TO DST1.
+           MOVE DST1 TO DST2.
+           IF DST2 not = 1.1234567
+               DISPLAY "move/compare number to FLOAT to DOUBLE failed: "
+                       DST1 " - " DST2
+               END-DISPLAY
+           END-IF.
+
+      * Check for Tolerance
+           MOVE 1.1234567 TO DST1.
+           MOVE 1.1234568 TO DST2.
+           IF DST1 not = DST2 THEN
+               DISPLAY 'move/compare of very near numbers failed (not id
+      -                'entical): ' DST1 " - " DST2
+               END-DISPLAY
+           END-IF.
+           MOVE 1.1234567 TO DST1.
+           MOVE 0.1234568 TO DST2.
+           ADD  1.0       TO DST2.
+           IF DST1 not = DST2 THEN
+               DISPLAY 'move/compare of very near numbers failed (not id
+      -                'entical) [added]: ' DST1 " - " DST2
+               END-DISPLAY
+           END-IF.
+
+      * Within tolerance by definition, therefore not checked
+      *     MULTIPLY 10000000000 BY DST1 DST2 END-MULTIPLY.
+      *     IF DST1 = DST2 THEN
+      *         DISPLAY "compare of very near numbers computed failed (id
+      *-                "entical): " DST1 " - " DST2
+      *         END-DISPLAY
+      *     END-IF.
+
+           MOVE 1.1234567 TO DST1.
+           MOVE 1.1234569 TO DST2.
+           IF DST1 = DST2 THEN
+               DISPLAY 'move/compare of near equal numbers failed (ident
+      -                'ical): ' DST1 " - " DST2
+               END-DISPLAY
+           END-IF.
+
+           MOVE 0.0001 TO DST1.
+           MOVE 0.0000 TO DST2.
+           IF DST1 = DST2 THEN
+               DISPLAY 'move/compare of nearly equal very small numbers
+      -                'failed  (identical): ' DST1 " - " DST2
+               END-DISPLAY
+           END-IF.
+
+           MOVE 1000001.0 TO DST1.
+           MOVE 1000000.0 TO DST2.
+           IF DST1 = DST2 THEN
+               DISPLAY 'move/compare of nearly equal big numbers failed
+      -                '(identical): ' DST1 " - " DST2
+               END-DISPLAY
+           END-IF.
+
+      * Within tolerance by definition, therefore not checked
+      *     MOVE 1000000000.0 TO DST1.
+      *     MOVE 1000000001.0 TO DST2.
+      *     IF DST1 = DST2 THEN
+      *         DISPLAY 'move/compare of nearly equal very big numbers fa
+      *-                'iled (identical): ' DST1 " - " DST2
+      *         END-DISPLAY
+      *     END-IF.
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -Wno-unfinished prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
@@ -1729,6 +1861,10 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 121<
 ])
 AT_CHECK([COB_PHYSICAL_CANCEL=Y $COBCRUN_DIRECT ./prog], [0],
+[12<
+121<
+])
+AT_CHECK([COB_PHYSICAL_CANCEL=NEVER $COBCRUN_DIRECT ./prog], [0],
 [12<
 121<
 ])
@@ -5244,7 +5380,7 @@ AT_CLEANUP
 
 
 AT_SETUP([USE FOR DEBUGGING (no DEBUGGING MODE)])
-AT_KEYWORDS([fundamental])
+AT_KEYWORDS([fundamental configuration])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -5289,7 +5425,7 @@ AT_CLEANUP
 
 
 AT_SETUP([USE FOR DEBUGGING (COB_SET_DEBUG deactivated)])
-AT_KEYWORDS([fundamental])
+AT_KEYWORDS([fundamental configuration])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -5433,7 +5569,7 @@ AT_CLEANUP
 
 
 AT_SETUP([USE FOR DEBUGGING (COB_SET_DEBUG switched)])
-AT_KEYWORDS([fundamental])
+AT_KEYWORDS([fundamental configuration SET ENVIRONMENT])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -5783,6 +5919,308 @@ AT_CHECK([COB_SET_DEBUG=1 $COBCRUN_DIRECT ./prog], [0],
 AT_CLEANUP
 
 
+AT_SETUP([Simple Expressions with figurative constants])
+AT_KEYWORDS([expression conditional])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+      ******************************************************************
+       WORKING-STORAGE SECTION.
+       01 FLDX     PIC X        VALUE 'X'.
+       01 FLDXX    PIC XX       VALUE SPACES.
+       01 FLDX500  PIC X(500)   VALUE 'X5'.
+       01 FLDX32K  PIC X(32000) VALUE 'X'.
+       01 FLD1     PIC X        VALUE '1'.
+       01 FLD1X    PIC X(32000) VALUE '1'.
+
+       PROCEDURE DIVISION.
+       MAIN-LINE.
+
+      *>   minimal side-test for performance comparisions
+           PERFORM DO-CHECK 10000 TIMES
+           GOBACK.
+
+       DO-CHECK.
+      *> check with 1 byte, comparison algorithm is a direct comparison
+           IF FLDX       >  SPACE      CONTINUE
+           ELSE                        DISPLAY '! "X" > SPACE'.
+           IF FLDX       <  SPACE      DISPLAY '  "X" < SPACE!'.
+           IF FLDX       >= SPACE      CONTINUE
+           ELSE                        DISPLAY '! "X" >= SPACE'.
+           IF FLDX       <= SPACE      DISPLAY '  "X" <= SPACE!'.
+
+           IF SPACE      <  FLDX       CONTINUE
+           ELSE                        DISPLAY '! SPACE < "X"'.
+           IF SPACE      >  FLDX       DISPLAY '  SPACE > "X"!'.
+           IF SPACE      <= FLDX       CONTINUE
+           ELSE                        DISPLAY '! SPACE <= "X"'.
+           IF SPACE      >= FLDX       DISPLAY '  SPACE >= "X"!'.
+
+           IF FLDX       >  " "        CONTINUE
+           ELSE                        DISPLAY '! "X" > " "'.
+           IF FLDX       <  " "        DISPLAY '  "X" < " "!'.
+           IF FLDX       >= " "        CONTINUE
+           ELSE                        DISPLAY '! "X" >= " "'.
+           IF FLDX       <= " "        DISPLAY '  "X" <= " "!'.
+
+           IF " "        <  FLDX       CONTINUE
+           ELSE                        DISPLAY '! " " < "X"'.
+           IF " "        >  FLDX       DISPLAY '  " " > "X"!'.
+           IF " "        <= FLDX       CONTINUE
+           ELSE                        DISPLAY '! " " <= "X"'.
+           IF " "        >= FLDX       DISPLAY '  " " >= "X"!'.
+
+
+           IF FLDX       >  LOW-VALUE  CONTINUE
+           ELSE                        DISPLAY '! "X" > LOW-VALUE'.
+           IF FLDX       <  LOW-VALUE  DISPLAY '  "X" < LOW-VALUE!'.
+           IF FLDX       >= LOW-VALUE  CONTINUE
+           ELSE                        DISPLAY '! "X" >= LOW-VALUE'.
+           IF FLDX       <= LOW-VALUE  DISPLAY '  "X" <= LOW-VALUE!'.
+
+           IF LOW-VALUE  <  FLDX       CONTINUE
+           ELSE                        DISPLAY '! LOW-VALUE < "X"'.
+           IF LOW-VALUE  >  FLDX       DISPLAY '  LOW-VALUE > "X"!'.
+           IF LOW-VALUE  <= FLDX       CONTINUE
+           ELSE                        DISPLAY '! LOW-VALUE <= "X"'.
+           IF LOW-VALUE  >= FLDX       DISPLAY '  LOW-VALUE >= "X"!'.
+
+           IF FLDX       >  x"00"      CONTINUE
+           ELSE                        DISPLAY '! "X" > x"00"'.
+           IF FLDX       <  x"00"      DISPLAY '  "X" < x"00"!'.
+           IF FLDX       >= x"00"      CONTINUE
+           ELSE                        DISPLAY '! "X" >= x"00"'.
+           IF FLDX       <= x"00"      DISPLAY '  "X" <= x"00"!'.
+
+           IF x"00"      <  FLDX       CONTINUE
+           ELSE                        DISPLAY '! x"00" < "X"'.
+           IF x"00"      >  FLDX       DISPLAY '  x"00" > "X"!'.
+           IF x"00"      <= FLDX       CONTINUE
+           ELSE                        DISPLAY '! x"00" <= "X"'.
+           IF x"00"      >= FLDX       DISPLAY '  x"00" >= "X"!'.
+
+
+           IF FLDX       <  HIGH-VALUE CONTINUE
+           ELSE                        DISPLAY '! "X" < HIGH-VALUE'.
+           IF FLDX       >  HIGH-VALUE DISPLAY '  "X" > HIGH-VALUE!'.
+           IF FLDX       <= HIGH-VALUE CONTINUE
+           ELSE                        DISPLAY '! "X" <= HIGH-VALUE'.
+           IF FLDX       >= HIGH-VALUE DISPLAY '  "X" >= HIGH-VALUE!'.
+
+           IF HIGH-VALUE >  FLDX       CONTINUE
+           ELSE                        DISPLAY '! HIGH-VALUE > "X"'.
+           IF HIGH-VALUE <  FLDX       DISPLAY '  HIGH-VALUE < "X"!'.
+           IF HIGH-VALUE >= FLDX       CONTINUE
+           ELSE                        DISPLAY '! HIGH-VALUE >= "X"'.
+           IF HIGH-VALUE <= FLDX       DISPLAY '  HIGH-VALUE <= "X"!'.
+
+           IF FLDX       <  x"FF"      CONTINUE
+           ELSE                        DISPLAY '! "X" < x"FF"'.
+           IF FLDX       >  x"FF"      DISPLAY '  "X" > x"FF"!'.
+           IF FLDX       <= x"FF"      CONTINUE
+           ELSE                        DISPLAY '! "X" <= x"FF"'.
+           IF FLDX       >= x"FF"      DISPLAY '  "X" >= x"FF"!'.
+
+           IF x"FF"      >  FLDX       CONTINUE
+           ELSE                        DISPLAY '! x"FF" > "X"'.
+           IF x"FF"      <  FLDX       DISPLAY '  x"FF" < "X"!'.
+           IF x"FF"      >= FLDX       CONTINUE
+           ELSE                        DISPLAY '! x"FF" >= "X"'.
+           IF x"FF"      <= FLDX       DISPLAY '  x"FF" <= "X"!'.
+
+
+           IF FLD1       >  ZERO       CONTINUE
+           ELSE                        DISPLAY '! "1" > ZERO'.
+           IF FLD1       <  ZERO       DISPLAY '  "1" < ZERO!'.
+           IF FLD1       >= ZERO       CONTINUE
+           ELSE                        DISPLAY '! "1" >= ZERO'.
+           IF FLD1       <= ZERO       DISPLAY '  "1" <= ZERO!'.
+
+           IF ZERO       <  FLD1       CONTINUE
+           ELSE                        DISPLAY '! ZERO < "1"'.
+           IF ZERO       >  FLD1       DISPLAY '  ZERO > "1"!'.
+           IF ZERO       <= FLD1       CONTINUE
+           ELSE                        DISPLAY '! ZERO <= "1"'.
+           IF ZERO       >= FLD1       DISPLAY '  ZERO >= "1"!'.
+
+           IF FLD1       >  "0"        CONTINUE
+           ELSE                        DISPLAY '! "1" > "0"'.
+           IF FLD1       <  "0"        DISPLAY '  "1" < "0"!'.
+           IF FLD1       >= "0"        CONTINUE
+           ELSE                        DISPLAY '! "1" >= "0"'.
+           IF FLD1       <= "0"        DISPLAY '  "1" <= "0"!'.
+
+           IF "0"        <  FLD1       CONTINUE
+           ELSE                        DISPLAY '! "0" < "1"'.
+           IF "0"        >  FLD1       DISPLAY '  "0" > "1"!'.
+           IF "0"        <= FLD1       CONTINUE
+           ELSE                        DISPLAY '! "0" <= "1"'.
+           IF "0"        >= FLD1       DISPLAY '  "0" >= "1"!'.
+
+      *> check with many bytes, needs another comparison algorithm (function)
+           IF FLDX32K    >  SPACE      CONTINUE
+           ELSE                        DISPLAY '! "X " > SPACE'.
+           IF FLDX32K    <  SPACE      DISPLAY '  "X " < SPACE!'.
+           IF FLDX32K    >= SPACE      CONTINUE
+           ELSE                        DISPLAY '! "X " >= SPACE'.
+           IF FLDX32K    <= SPACE      DISPLAY '  "X " <= SPACE!'.
+
+           IF SPACE      <  FLDX32K    CONTINUE
+           ELSE                        DISPLAY '! SPACE < "X "'.
+           IF SPACE      >  FLDX32K    DISPLAY '  SPACE > "X "!'.
+           IF SPACE      <= FLDX32K    CONTINUE
+           ELSE                        DISPLAY '! SPACE <= "X "'.
+           IF SPACE      >= FLDX32K    DISPLAY '  SPACE >= "X "!'.
+
+           IF FLDX32K    >  "  "       CONTINUE
+           ELSE                        DISPLAY '! "X " > " "'.
+           IF FLDX32K    <  "  "       DISPLAY '  "X " < " "!'.
+           IF FLDX32K    >= "  "       CONTINUE
+           ELSE                        DISPLAY '! "X " >= " "'.
+           IF FLDX32K    <= "  "       DISPLAY '  "X " <= " "!'.
+
+           IF "  "       <  FLDX32K    CONTINUE
+           ELSE                        DISPLAY '! "  " < "X "'.
+           IF "  "       >  FLDX32K    DISPLAY '  "  " > "X "!'.
+           IF "  "       <= FLDX32K    CONTINUE
+           ELSE                        DISPLAY '! "  " <= "X "'.
+           IF "  "       >= FLDX32K    DISPLAY '  "  " >= "X "!'.
+
+
+           IF FLDX32K    >  LOW-VALUE  CONTINUE
+           ELSE                        DISPLAY '! "X" > LOW-VALUE'.
+           IF FLDX32K    <  LOW-VALUE  DISPLAY '  "X" < LOW-VALUE!'.
+           IF FLDX32K    >= LOW-VALUE  CONTINUE
+           ELSE                        DISPLAY '! "X" >= LOW-VALUE'.
+           IF FLDX32K    <= LOW-VALUE  DISPLAY '  "X" <= LOW-VALUE!'.
+
+           IF LOW-VALUE  <  FLDX32K    CONTINUE
+           ELSE                        DISPLAY '! LOW-VALUE < "X"'.
+           IF LOW-VALUE  >  FLDX32K    DISPLAY '  LOW-VALUE > "X"!'.
+           IF LOW-VALUE  <= FLDX32K    CONTINUE
+           ELSE                        DISPLAY '! LOW-VALUE <= "X"'.
+           IF LOW-VALUE  >= FLDX32K    DISPLAY '  LOW-VALUE >= "X"!'.
+
+           IF FLDX32K    >  x"00"      CONTINUE
+           ELSE                        DISPLAY '! "X " > x"00"'.
+           IF FLDX32K    <  x"00"      DISPLAY '  "X " < x"00"!'.
+           IF FLDX32K    >= x"00"      CONTINUE
+           ELSE                        DISPLAY '! "X " >= x"00"'.
+           IF FLDX32K    <= x"00"      DISPLAY '  "X " <= x"00"!'.
+
+           IF x"00"      <  FLDX32K    CONTINUE
+           ELSE                        DISPLAY '! x"00" < "X "'.
+           IF x"00"      >  FLDX32K    DISPLAY '  x"00" > "X "!'.
+           IF x"00"      <= FLDX32K    CONTINUE
+           ELSE                        DISPLAY '! x"00" <= "X "'.
+           IF x"00"      >= FLDX32K    DISPLAY '  x"00" >= "X "!'.
+
+
+           IF FLDX32K    <  HIGH-VALUE CONTINUE
+           ELSE                        DISPLAY '! "X " < HIGH-VALUE'.
+           IF FLDX32K    >  HIGH-VALUE DISPLAY '  "X " > HIGH-VALUE!'.
+           IF FLDX32K    <= HIGH-VALUE CONTINUE
+           ELSE                        DISPLAY '! "X " <= HIGH-VALUE'.
+           IF FLDX32K    >= HIGH-VALUE DISPLAY '  "X " >= HIGH-VALUE!'.
+
+           IF HIGH-VALUE >  FLDX32K    CONTINUE
+           ELSE                        DISPLAY '! HIGH-VALUE > "X "'.
+           IF HIGH-VALUE <  FLDX32K    DISPLAY '  HIGH-VALUE < "X "!'.
+           IF HIGH-VALUE >= FLDX32K    CONTINUE
+           ELSE                        DISPLAY '! HIGH-VALUE >= "X "'.
+           IF HIGH-VALUE <= FLDX32K    DISPLAY '  HIGH-VALUE <= "X "!'.
+
+           IF FLDX32K    <  x"FF"      CONTINUE
+           ELSE                        DISPLAY '! "X " < x"FF"'.
+           IF FLDX32K    >  x"FF"      DISPLAY '  "X " > x"FF"!'.
+           IF FLDX32K    <= x"FF"      CONTINUE
+           ELSE                        DISPLAY '! "X " <= x"FF"'.
+           IF FLDX32K    >= x"FF"      DISPLAY '  "X " >= x"FF"!'.
+
+           IF x"FF"      >  FLDX32K    CONTINUE
+           ELSE                        DISPLAY '! x"FF" > "X "'.
+           IF x"FF"      <  FLDX32K    DISPLAY '  x"FF" < "X "!'.
+           IF x"FF"      >= FLDX32K    CONTINUE
+           ELSE                        DISPLAY '! x"FF" >= "X "'.
+           IF x"FF"      <= FLDX32K    DISPLAY '  x"FF" <= "X "!'.
+
+
+           IF FLD1X      >  ZERO       CONTINUE
+           ELSE                        DISPLAY '! "1 " > ZERO'.
+           IF FLD1X      <  ZERO       DISPLAY '  "1 " < ZERO!'.
+           IF FLD1X      >= ZERO       CONTINUE
+           ELSE                        DISPLAY '! "1 " >= ZERO'.
+           IF FLD1X      <= ZERO       DISPLAY '  "1 " <= ZERO!'.
+
+           IF ZERO       <  FLD1X      CONTINUE
+           ELSE                        DISPLAY '! ZERO < "1 "'.
+           IF ZERO       >  FLD1X      DISPLAY '  ZERO > "1 "!'.
+           IF ZERO       <= FLD1X      CONTINUE
+           ELSE                        DISPLAY '! ZERO <= "1 "'.
+           IF ZERO       >= FLD1X      DISPLAY '  ZERO >= "1 "!'.
+
+           IF FLD1X      >  "0"        CONTINUE
+           ELSE                        DISPLAY '! "1 " > "0"'.
+           IF FLD1X      <  "0"        DISPLAY '  "1 " < "0"!'.
+           IF FLD1X      >= "0"        CONTINUE
+           ELSE                        DISPLAY '! "1 " >= "0"'.
+           IF FLD1X      <= "0"        DISPLAY '  "1 " <= "0"!'.
+
+           IF "0"        <  FLD1X      CONTINUE
+           ELSE                        DISPLAY '! "0" < "1 "'.
+           IF "0"        >  FLD1X      DISPLAY '  "0" > "1 "!'.
+           IF "0"        <= FLD1X      CONTINUE
+           ELSE                        DISPLAY '! "0" <= "1 "'.
+           IF "0"        >= FLD1X      DISPLAY '  "0" >= "1 "!'.
+
+      *> special check for SPACE-optimization and extra spaces
+           IF FLDX500    >  SPACE      CONTINUE
+           ELSE                        DISPLAY '! "X5" > SPACE'.
+           IF FLDX500    <  SPACE      DISPLAY '  "X5" < SPACE!'.
+           IF FLDX500    >= SPACE      CONTINUE
+           ELSE                        DISPLAY '! "X5" >= SPACE'.
+           IF FLDX500    <= SPACE      DISPLAY '  "X5" <= SPACE!'.
+
+           IF SPACE      <  FLDX500    CONTINUE
+           ELSE                        DISPLAY '! SPACE < "X5"'.
+           IF SPACE      >  FLDX500    DISPLAY '  SPACE > "X5"!'.
+           IF SPACE      <= FLDX500    CONTINUE
+           ELSE                        DISPLAY '! SPACE <= "X5"'.
+           IF SPACE      >= FLDX500    DISPLAY '  SPACE >= "X5"!'.
+
+           MOVE SPACES TO FLDXX
+           IF FLDXX      =  "    "     CONTINUE
+           ELSE                        DISPLAY '! "XX" <> "     "'.
+           MOVE ALL "A" TO FLDXX
+           IF FLDXX      =  "AA  "     CONTINUE
+           ELSE                        DISPLAY '! "AA" <> "AA  "'.
+           IF FLDXX      =  "AAA"      DISPLAY '! "AA" = "AAA "'.
+           IF FLDXX      =  ALL "A"    CONTINUE
+           ELSE                        DISPLAY '! "AA" <> ALL "A"'.
+           MOVE "B" TO FLDXX (2:1)
+           IF FLDXX      =  ALL "AB"   CONTINUE
+           ELSE                        DISPLAY '! "AB" <> ALL "AB"'.
+
+           IF FLDX      <=  ALL "XX"   CONTINUE
+           ELSE                        DISPLAY '! "X" > ALL "XX"'.
+           IF ALL "XX" NOT > FLDX      CONTINUE
+           ELSE                        DISPLAY '! ALL "XX" <= "X"'.
+])
+
+AT_CHECK([$COMPILE prog.cob -Wno-constant-expression], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CHECK([$COMPILE prog.cob -Wno-constant-expression -fno-constant-folding], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CHECK([$COMPILE prog.cob -Wno-constant-expression -fno-constant-folding -fno-fast-compare], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([Abbreviated Expressions])
 AT_KEYWORDS([expression conditional])
 
@@ -5886,6 +6324,12 @@ prog.cob:59: warning: expression '5' LESS THAN '6' is always TRUE
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [***FINE***], [])
 
+AT_CHECK([$COMPILE -fno-constant-folding prog.cob], [0], [],
+[prog.cob: in paragraph 'MAIN-LINE':
+prog.cob:47: warning: suggest parentheses around AND within OR
+])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [***FINE***], [])
+
 AT_CLEANUP
 
 
@@ -5980,4 +6424,36 @@ AT_DATA([callee.cob], [
 AT_CHECK([$COMPILE caller.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./caller], [0], [], [])
+AT_CLEANUP
+
+
+AT_SETUP([Alphanumeric VALUE longer than PIC])
+AT_KEYWORDS([fundamental size])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X-SPACES      PIC XXX VALUE "    ".
+       01 X-Xs          PIC XX  VALUE "XXX".
+      *> not longer but goes into similar codegen:
+       01 X-XXX         PIC XXX VALUE "XX".
+       PROCEDURE        DIVISION.
+           IF X-SPACES NOT = ALL SPACE
+             DISPLAY 'BAD SPACE: ' X-SPACES.
+           IF X-Xs NOT = ALL "X"
+             DISPLAY 'BAD X: ' X-Xs.
+           IF X-XXX NOT = "XX "
+             DISPLAY 'BAD XXX: ' X-XXX.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [],
+[prog.cob:6: warning: value does not fit the picture string
+prog.cob:7: warning: value size exceeds data size
+prog.cob:7: note: value size is 3
+])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
 AT_CLEANUP

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2022 Free Software Foundation, Inc.
+   Copyright (C) 2001-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
    Brian Tiffin, Edward Hart, Dave Pitts
 
@@ -25,6 +25,7 @@
 #include <string.h>
 
 #include "cobc.h"
+#include "tree.h"	/* for COB_INTERNAL_XREF */
 
 void
 cobc_print_usage (char * prog)
@@ -104,9 +105,6 @@ cobc_print_usage_common_options (void)
 	puts (_("  -T <file>             generate and place a wide program listing into <file>"));
 	puts (_("  -t <file>             generate and place a program listing into <file>"));
 	puts (_("  --tlines=<lines>      specify lines per page in listing, default = 55"));
-#if 0 /* to be hidden later, use -f[no-]tsymbols instead */
-	puts (_("  --tsymbols            specify symbols in listing, use -ftsymbols instead"));
-#endif
 	puts (_("  -P[=<dir or file>]    generate preprocessed program listing (.lst)"));
 #ifndef COB_INTERNAL_XREF
 	puts (_("  -X, --Xref            generate cross reference through 'cobxref'\n"
@@ -117,10 +115,11 @@ cobc_print_usage_common_options (void)
 	puts (_("  -I <directory>        add <directory> to copy/include search path"));
 	puts (_("  -L <directory>        add <directory> to library search path"));
 	puts (_("  -l <lib>              link the library <lib>"));
+	puts (_("  -D <define>           define <define> for COBOL compilation"));
 	puts (_("  -A <options>          add <options> to the C compile phase"));
 	puts (_("  -Q <options>          add <options> to the C link phase"));
-	puts (_("  -D <define>           define <define> for COBOL compilation"));
-	puts (_("  -K <entry>            generate CALL to <entry> as static"));
+	puts (_("  -Q <options>          add <options> to the C link phase"));
+	puts (_("  --coverage            instrument generated binaries for coverage"));
 	puts (_("  --conf=<file>         user-defined dialect configuration; see -std"));
 	puts (_("  --list-reserved       display reserved words"));
 	puts (_("  --list-intrinsics     display intrinsic functions"));
@@ -129,6 +128,8 @@ cobc_print_usage_common_options (void)
 	puts (_("  --list-system         display system routines"));
 	puts (_("  --save-temps[=<dir>]  save intermediate files\n"
 	        "                        * default: current directory"));
+	puts (_("  -MT <target>          set/add target file used in dependency list"));
+	puts (_("  -MF <file>            place dependency list into <file>"));
 	puts (_("  -ext <extension>      add file extension for resolving COPY"));
 	putchar ('\n');
 }

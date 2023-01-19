@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -232,6 +232,17 @@
 #define COB_MAX_ALLOC_SIZE COB_MAX_FIELD_SIZE
 #endif
 
+/* Global variables */
+#define SPACE_16	"                "
+#define SPACE_64	SPACE_16 SPACE_16 SPACE_16 SPACE_16
+#define SPACE_256	SPACE_64 SPACE_64 SPACE_64 SPACE_64
+#define SPACE_1024	SPACE_256 SPACE_256 SPACE_256 SPACE_256
+const char *COB_SPACES_ALPHABETIC = SPACE_1024;
+#undef SPACE_16
+#undef SPACE_64
+#undef SPACE_256
+#undef SPACE_1024
+
 struct cob_alloc_cache {
 	struct cob_alloc_cache	*next;		/* Pointer to next */
 	void			*cob_pointer;	/* Pointer to malloced space */
@@ -369,7 +380,7 @@ static const int		cob_exception_tab_code[] = {
 #define EXCEPTION_TAB_SIZE	sizeof (cob_exception_tab_code) / sizeof (int)
 
 /* Switches */
-#define	COB_SWITCH_MAX	36  /* (must match cobc/tree.h)*/
+#define	COB_SWITCH_MAX	36  /* maximum switches, must match cobc/tree.h! */
 
 static int		cob_switch[COB_SWITCH_MAX + 1];
 
@@ -392,6 +403,10 @@ static const char *setting_group[] = {" hidden setting ", "CALL configuration",
 					"System configuration"};
 
 static struct config_enum lwrupr[] = {{"LOWER", "1"}, {"UPPER", "2"}, {"not set", "0"}, {NULL, NULL}};
+#if 0	/* boolean "not set" - used for file specific settings (4.x feature) */
+static struct config_enum notset[] = {{"not set", "!"}, {NULL, NULL}};
+#endif
+static struct config_enum never[] = {{"never", "!"}, {NULL, NULL}};
 static struct config_enum beepopts[] = {{"FLASH", "1"}, {"SPEAKER", "2"}, {"FALSE", "9"}, {"BEEP", "0"}, {NULL, NULL}};
 static struct config_enum timeopts[] = {{"0", "1000"}, {"1", "100"}, {"2", "10"}, {"3", "1"}, {NULL, NULL}};
 static struct config_enum syncopts[] = {{"P", "1"}, {NULL, NULL}};
@@ -410,7 +425,7 @@ static const char *not_set;
  */
 static struct config_tbl gc_conf[] = {
 	{"COB_LOAD_CASE", "load_case", 		"0", 	lwrupr, GRP_CALL, ENV_UINT | ENV_ENUMVAL, SETPOS (name_convert)},
-	{"COB_PHYSICAL_CANCEL", "physical_cancel", 	"0", 	NULL, GRP_CALL, ENV_BOOL, SETPOS (cob_physical_cancel)},
+	{"COB_PHYSICAL_CANCEL", "physical_cancel", 	"0", 	never, GRP_CALL, ENV_BOOL | ENV_ENUMVAL, SETPOS (cob_physical_cancel)},
 	{"default_cancel_mode", "default_cancel_mode", 	NULL, NULL, GRP_HIDE, ENV_BOOL | ENV_NOT, SETPOS (cob_physical_cancel)},
 	{"LOGICAL_CANCELS", "logical_cancels", 	NULL, NULL, GRP_HIDE, ENV_BOOL | ENV_NOT, SETPOS (cob_physical_cancel)},
 	{"COB_LIBRARY_PATH", "library_path", 	NULL, 	NULL, GRP_CALL, ENV_PATH, SETPOS (cob_library_path)}, /* default value set in cob_init_call() */
@@ -429,7 +444,7 @@ static struct config_tbl gc_conf[] = {
 #ifdef HAVE_MOUSEINTERVAL	/* possibly add an internal option for mouse support, too */
 	{"COB_MOUSE_INTERVAL", "mouse_interval", "100", NULL, GRP_SCREEN, ENV_UINT, SETPOS (cob_mouse_interval), 0, 166},
 #endif
-	{"COB_SET_DEBUG", "debugging_mode", 		"0", 	NULL, GRP_MISC, ENV_BOOL | ENV_RESETS, SETPOS (cob_debugging_mode)},
+	{"COB_SET_DEBUG", "debugging_mode", 		"0", 	NULL, GRP_MISC, ENV_BOOL, SETPOS (cob_debugging_mode)},
 	{"COB_SET_TRACE", "set_trace", 		"0", 	NULL, GRP_MISC, ENV_BOOL, SETPOS (cob_line_trace)},
 	{"COB_TRACE_FILE", "trace_file", 		NULL, 	NULL, GRP_MISC, ENV_FILE, SETPOS (cob_trace_filename)},
 	{"COB_TRACE_FORMAT", "trace_format",	"%P %S Line: %L", NULL, GRP_MISC, ENV_STR, SETPOS (cob_trace_format)},
@@ -1685,8 +1700,8 @@ cob_put_sign_ebcdic (unsigned char *p, const int sign)
 }
 
 /* compare up to 'size' characters from buffer 'p'
-   against a single character 'c',
-   optionally using collation 'col' */
+   to a single character 'c',
+   using collation 'col' */
 static int
 common_cmpc (const unsigned char *p, const unsigned int c,
 	     const size_t size, const unsigned char *col)
@@ -1694,54 +1709,80 @@ common_cmpc (const unsigned char *p, const unsigned int c,
 	register const unsigned char *end = p + size;
 	int			ret;
 
-	if (unlikely (col)) {
-		const unsigned char c_col = col[c];
-		while (p < end) {
-			if ((ret = col[*p] - c_col) != 0) {
-				return ret;
-			}
-			p++;
+	const unsigned char c_col = col[c];
+	while (p < end) {
+		if ((ret = col[*p] - c_col) != 0) {
+			return ret;
 		}
-	} else {
-		while (p < end) {
-			if ((ret = *p - c) != 0) {
-				return ret;
-			}
-			p++;
-		}
+		p++;
 	}
 	return 0;
 }
 
+/* compare up to 'size' characters in 's1' to 's2'
+   using collation 'col' */
 static int
 common_cmps (const unsigned char *s1, const unsigned char *s2,
 	     const size_t size, const unsigned char *col)
 {
 	register const unsigned char *end = s1 + size;
 	int			ret;
-
-	if (unlikely (col)) {
-		while (s1 < end) {
-			if ((ret = col[*s1] - col[*s2]) != 0) {
-				return ret;
-			}
-			s1++, s2++;
+	while (s1 < end) {
+		if ((ret = col[*s1] - col[*s2]) != 0) {
+			return ret;
 		}
-	} else {
-		while (s1 < end) {
-			if ((ret = *s1 - *s2) != 0) {
-				return ret;
-			}
-			s1++, s2++;
-		}
+		s1++, s2++;
 	}
 	return 0;
 }
 
+/* compare up to 'size' characters in 'data' to characters
+   in 'c' with size 'compare_size' */
+static int
+compare_character (const unsigned char *data, size_t size,
+	const unsigned char *c, size_t compare_size)
+{
+	const unsigned char	*p;
+	int 		ret;
+	if ((ret = memcmp (data, c, compare_size)) != 0) {
+		return ret;
+	}
+
+	p = data;
+	size = size - compare_size;
+
+	while (size > compare_size) {
+		p = data + compare_size;
+		if ((ret = memcmp (p, data, compare_size)) != 0) {
+			return ret;
+		}
+		size = size - compare_size;
+		compare_size *= 2;
+	}
+	if (size > 0) {
+		return memcmp (p, data, size);
+	}
+	return 0;
+}
+
+/* compare up to 'size' characters in 'data' to spaces */
+static int
+compare_spaces (const unsigned char *data, size_t size)
+{
+	if (size <= COB_SPACES_ALPHABETIC_BYTE_LENGTH) {
+		return memcmp (data, COB_SPACES_ALPHABETIC, size);
+	}
+	return compare_character (data, size,
+		(const unsigned char *)COB_SPACES_ALPHABETIC,
+		COB_SPACES_ALPHABETIC_BYTE_LENGTH);
+
+}
+
+/* compare content of field 'f1' to repeated content of 'f2' */
 static int
 cob_cmp_all (cob_field *f1, cob_field *f2)
 {
-	const unsigned char	*s = COB_MODULE_PTR->collating_sequence;
+	const unsigned char	*col = COB_MODULE_PTR->collating_sequence;
 	unsigned char		*data;
 	unsigned char		buff[COB_MAX_DIGITS + 1];
 
@@ -1758,55 +1799,119 @@ cob_cmp_all (cob_field *f1, cob_field *f2)
 		data = f1->data;
 	}
 
-	/* check for IF VAR = ALL "9" */
-	if (f2->size == 1) {
-		return common_cmpc (data, f2->data[0], f1->size, s);
+	/* check without collation */
+	if (col == NULL) {
+		if (f2->size == 1
+		 && f2->data[0] == ' ') {
+			/* check for IF VAR = [ALL] SPACES */
+			return compare_spaces (f1->data, f1->size);
+		}
+		/* check for IF VAR = ALL ... / HIGH-VALUE / ... */
+		if (f1->size > f2->size) {
+			return compare_character (f1->data, f1->size, f2->data, f2->size);
+		} else {
+			return compare_character (f1->data, f1->size, f2->data, f1->size);
+		}
 	}
 
-	/* check for IF VAR = ALL "AB" ... */
-	{
+	/* check with collation */
+	if (f2->size == 1) {
+		/* check for IF VAR = ALL "9" */
+		return common_cmpc (data, f2->data[0], f1->size, col);
+	} else {
+		/* check for IF VAR = ALL "AB" ... */
 		size_t		size = f1->size;
-		int			ret;
-
+		int 		ret;
 		while (size >= f2->size) {
-			if ((ret = common_cmps (data, f2->data, f2->size, s)) != 0) {
+			if ((ret = common_cmps (data, f2->data, f2->size, col)) != 0) {
 				return ret;
 			}
 			size -= f2->size;
 			data += f2->size;
 		}
 		if (size > 0) {
-			return common_cmps (data, f2->data, size, s);
+			return common_cmps (data, f2->data, size, col);
 		}
 	}
-
 	return 0;
 }
 
+/* compare content of field 'f1' to content of 'f2', space padded,
+   using the optional collating sequence of the program */
 static int
 cob_cmp_alnum (cob_field *f1, cob_field *f2)
 {
-	const unsigned char	*s = COB_MODULE_PTR->collating_sequence;
+	const unsigned char	*col = COB_MODULE_PTR->collating_sequence;
 	const size_t	min = (f1->size < f2->size) ? f1->size : f2->size;
 	int		ret;
 
-	/* Compare common substring */
-	if ((ret = common_cmps (f1->data, f2->data, min, s)) != 0) {
-		return ret;
-	}
+	if (col == NULL) {		/* check without collation */
 
-	/* Compare the rest (if any) with spaces */
-	if (f1->size > f2->size) {
-		return common_cmpc (f1->data + min, ' ', f1->size - min, s);
-	} else if (f1->size < f2->size) {
-		return -common_cmpc (f2->data + min, ' ', f2->size - min, s);
+		/* Compare common substring */
+		if ((ret = memcmp (f1->data, f2->data, min)) != 0) {
+			return ret;
+		}
+
+		/* Compare the rest (if any) with spaces */
+		if (f1->size > f2->size) {
+			const size_t spaces_to_test = f1->size - min;
+			return compare_spaces (f1->data + min, spaces_to_test);
+		} else if (f1->size < f2->size) {
+			const size_t spaces_to_test = f2->size - min;
+			return -compare_spaces (f2->data + min, spaces_to_test);
+		}
+	
+	} else {		/* check with collation */
+
+		/* Compare common substring */
+		if ((ret = common_cmps (f1->data, f2->data, min, col)) != 0) {
+			return ret;
+		}
+
+		/* Compare the rest (if any) with spaces */
+		if (f1->size > f2->size) {
+			const size_t spaces_to_test = f1->size - min;
+			return common_cmpc (f1->data + min, ' ', spaces_to_test, col);
+		} else if (f1->size < f2->size) {
+			const size_t spaces_to_test = f2->size - min;
+			return -common_cmpc (f2->data + min, ' ', spaces_to_test, col);
+		}
+
 	}
 
 	return 0;
 }
 
+/* comparision of all key fields for SORT (without explicit collation)
+   in records pointed to by 'data1' and 'data2' */
 static int
 sort_compare (const void *data1, const void *data2)
+{
+	size_t		i;
+	int		res;
+	cob_field	f1;
+	cob_field	f2;
+
+	for (i = 0; i < sort_nkeys; ++i) {
+		f1 = f2 = *sort_keys[i].field;
+		f1.data = (unsigned char *)data1 + sort_keys[i].offset;
+		f2.data = (unsigned char *)data2 + sort_keys[i].offset;
+		if (COB_FIELD_IS_NUMERIC (&f1)) {
+			res = cob_numeric_cmp (&f1, &f2);
+		} else {
+			res = memcmp (f1.data, f2.data, f1.size);
+		}
+		if (res != 0) {
+			return (sort_keys[i].flag == COB_ASCENDING) ? res : -res;
+		}
+	}
+	return 0;
+}
+
+/* comparision of all key fields for SORT (with explicit collation)
+   in records pointed to by 'data1' and 'data2' */
+static int
+sort_compare_collate (const void *data1, const void *data2)
 {
 	size_t		i;
 	int		res;
@@ -1829,6 +1934,8 @@ sort_compare (const void *data1, const void *data2)
 	return 0;
 }
 
+/* intermediate move using USAGE DISPLAY field to 'dst' using
+   buffer 'src' with given 'size' as source */
 static void
 cob_move_intermediate (cob_field *dst, const void *src, const size_t size)
 {
@@ -1839,6 +1946,23 @@ cob_move_intermediate (cob_field *dst, const void *src, const size_t size)
 	         on the fly to numeric as necessary */
 	intermediate.attr = &const_alpha_attr;
 	cob_move (&intermediate, dst);
+}
+
+/* intermediate move from 'src' to 'dst'
+   as if it would be of COB_TYPE_ALPANUMERIC */
+static void
+cob_move_to_group_as_alnum (cob_field *src, cob_field *dst)
+{
+	cob_field	intermediate;
+	cob_field_attr	attr;
+	/* group moves are defined as memcpy + fill, so move shaddow field with
+	   same attributes and data storage but type alnum instead, which will
+	   lead to "unpacked" numeric data in the group */
+	intermediate = *dst;
+	intermediate.attr = &attr;
+	attr = *dst->attr;
+	attr.type = COB_TYPE_ALPHANUMERIC;
+	cob_move (src, &intermediate);
 }
 
 /* open file using mode according to cob_unix_lf and
@@ -2815,9 +2939,11 @@ handle_core_on_error ()
 			core_on_error = COB_D2I (env_val[0]);
 		}
 	}
+	/* explicit create a coredump file */
 	if (core_on_error == 3) {
 		int ret = create_dumpfile ();
 		if (ret) {
+			/* creation did not work, set to "internally 4" */
 			if (cob_initialized) {
 				cobsetptr->cob_core_on_error = 4;
 			}
@@ -2832,6 +2958,10 @@ cob_hard_failure ()
 {
 	unsigned int core_on_error = handle_core_on_error ();
 	if (core_on_error != 4) {
+		if (core_on_error == 2 && cob_initialized) {
+			/* prevent unloading modules */
+			cobsetptr->cob_physical_cancel = -1;
+		}
 		call_exit_handlers_and_terminate ();
 	}
 	exit_code = -1;
@@ -2863,6 +2993,10 @@ cob_hard_failure_internal (const char *prefix)
 	fprintf (stderr, "\n");
 	core_on_error = handle_core_on_error ();
 	if (core_on_error != 4) {
+		if (core_on_error == 2 && cob_initialized) {
+			/* prevent unloading modules */
+			cobsetptr->cob_physical_cancel = -1;
+		}
 		call_exit_handlers_and_terminate ();
 	}
 	exit_code = -2;
@@ -2945,12 +3079,12 @@ cob_module_global_enter (cob_module **module, cob_global **mglobal,
 	}
 #else
 	/* LCOV_EXCL_LINE */
-	COB_UNUSED(name_hash);
+	COB_UNUSED (name_hash);
 #endif
 
 	/* Check module pointer */
 	if (!*module) {
-		struct cob_alloc_module* mod_ptr;
+		struct cob_alloc_module *mod_ptr;
 
 		*module = cob_cache_malloc (sizeof (cob_module));
 		/* Add to list of all modules activated */
@@ -2965,10 +3099,13 @@ cob_module_global_enter (cob_module **module, cob_global **mglobal,
 #else
 	} else if (entry == 0) {
 #endif
-		int		k = 0;
-		cob_module	*mod;
+		register int		k = 0;
+		register cob_module	*mod;
 		for (mod = COB_MODULE_PTR; mod; mod = mod->next) {
 			if (*module == mod) {
+				/* CHECKME: can we move this in 4.x to the generated program
+				   to be done _before_ executing cob_module_global_enter using
+				   a _static_ variable ? */
 				if (cobglobptr->cob_stmt_exception) {
 					/* CALL has ON EXCEPTION so return to caller */
 					cob_set_exception (COB_EC_PROGRAM_RECURSIVE_CALL);
@@ -2978,11 +3115,13 @@ cob_module_global_enter (cob_module **module, cob_global **mglobal,
 				cob_module_err = mod;
 				cob_fatal_error (COB_FERROR_RECURSIVE);
 			}
-			if (k++ == MAX_MODULE_ITERS) {
+			/* LCOV_EXCL_START */
+			if (k++ == MAX_MODULE_ITERS) {	/* prevent endless loop in case of broken list */
 				/* not translated as highly unexpected */
 				cob_runtime_warning ("max module iterations exceeded, possible broken chain");
 				break;
 			}
+			/* LCOV_EXCL_STOP */
 		}
 	}
 
@@ -3026,6 +3165,9 @@ cob_module_free (cob_module **module)
 		return;
 	}
 
+	/* TODO: consider storing the last entry and a prev pointer
+	   to optimize for the likely case of "program added last is removed"
+	   instead of checking _all_ previous entries */
 	prv = NULL;
 	/* Remove from list of all modules activated */
 	for (ptr = cob_module_list; ptr; ptr = ptr->next) {
@@ -3651,7 +3793,7 @@ cob_cmp (cob_field *f1, cob_field *f2)
 	if (f1_is_numeric || f2_is_numeric) {
 		/* CHECKME: What should be returned if field is negative?
 		   We suspicously change -12 to 12 here... */
-		cob_field	temp;
+		cob_field	field;
 		cob_field_attr	attr;
 		unsigned char	buff[COB_MAX_DIGITS + 10];
 
@@ -3662,32 +3804,28 @@ cob_cmp (cob_field *f1, cob_field *f2)
 		   otherwise we'll fail as soon as we enable COB_MAX_BINARY */
 		if (f1_is_numeric
 		 && f1_type != COB_TYPE_NUMERIC_DISPLAY) {
-			temp.size = COB_FIELD_DIGITS (f1);
-			temp.data = buff;
-			temp.attr = &attr;
+			COB_FIELD_INIT (COB_FIELD_DIGITS (f1), buff, &attr);
 			attr = *f1->attr;
 			attr.type = COB_TYPE_NUMERIC_DISPLAY;
 			attr.flags &= ~COB_FLAG_HAVE_SIGN;
-			cob_move (f1, &temp);
-			f1 = &temp;
+			cob_move (f1, &field);
+			f1 = &field;
 		}
 		if (f2_is_numeric
 		 && f2_type != COB_TYPE_NUMERIC_DISPLAY) {
-			temp.size = COB_FIELD_DIGITS (f2);
-			temp.data = buff;
-			temp.attr = &attr;
+			COB_FIELD_INIT (COB_FIELD_DIGITS (f2), buff, &attr);
 			attr = *f2->attr;
 			attr.type = COB_TYPE_NUMERIC_DISPLAY;
 			attr.flags &= ~COB_FLAG_HAVE_SIGN;
-			cob_move (f2, &temp);
-			f2 = &temp;
+			cob_move (f2, &field);
+			f2 = &field;
 		}
 
 		if (COB_FIELD_HAVE_SIGN (f1)) {
 			/* Note: if field is numeric then it is always
 			   USAGE DISPLAY here */
 
-			if (f1 != &temp) {				
+			if (f1 != &field) {				
 				/* drop sign for comparision, using a copy to not change
 				   the field during comparision */
 				unsigned char buff2[COB_MAX_DIGITS + 10];
@@ -3711,7 +3849,7 @@ cob_cmp (cob_field *f1, cob_field *f2)
 			/* Note: if field is numeric then it is always
 			   USAGE DISPLAY here */
 
-			if (f2 != &temp) {				
+			if (f2 != &field) {
 				/* drop sign for comparision, using a copy to not change
 				   the field during comparision */
 				unsigned char buff2[COB_MAX_DIGITS + 10];
@@ -3730,7 +3868,11 @@ cob_cmp (cob_field *f1, cob_field *f2)
 				return cob_cmp_alnum (f1, f2);
 			}
 		}
+		/* done here to have the data for non-signed numeric vs. non-numeric in scope */
+		return cob_cmp_alnum (f1, f2);
 	}
+
+	/* both data not numeric: compare as string */
 	return cob_cmp_alnum (f1, f2);
 }
 
@@ -3745,57 +3887,67 @@ cob_is_omitted (const cob_field *f)
 int
 cob_is_numeric (const cob_field *f)
 {
-	size_t		i;
-	union {
-		float		fpf;
-		double		fpd;
-	} fval;
-	int		sign;
 
 	switch (COB_FIELD_TYPE (f)) {
 	case COB_TYPE_NUMERIC_BINARY:
 		return 1;
 	case COB_TYPE_NUMERIC_FLOAT:
-		memcpy (&fval.fpf, f->data, sizeof (float));
-		return !ISFINITE ((double)fval.fpf);
+		{
+			float		fval;
+			memcpy (&fval, f->data, sizeof (float));
+			return !ISFINITE ((double)fval);
+		}
 	case COB_TYPE_NUMERIC_DOUBLE:
-		memcpy (&fval.fpd, f->data, sizeof (double));
-		return !ISFINITE (fval.fpd);
+		{
+			double		dval;
+			memcpy (&dval, f->data, sizeof (double));
+			return !ISFINITE (dval);
+		}
+	case COB_TYPE_NUMERIC_L_DOUBLE:
+		{
+			long double lval;
+			memcpy (&lval, f->data, sizeof (long double));
+			return !ISFINITE ((double)lval);
+		}
 	case COB_TYPE_NUMERIC_PACKED:
-		/* Check digits */
-		for (i = 0; i < f->size - 1; ++i) {
-			if ((f->data[i] & 0xF0) > 0x90 ||
-			    (f->data[i] & 0x0F) > 0x09) {
+		{
+			size_t		i;
+			int		sign;
+			/* Check digits */
+			for (i = 0; i < f->size - 1; ++i) {
+				if ((f->data[i] & 0xF0) > 0x90 ||
+					(f->data[i] & 0x0F) > 0x09) {
+					return 0;
+				}
+			}
+			/* Check high nibble of last byte */
+			if ((f->data[i] & 0xF0) > 0x90) {
 				return 0;
 			}
-		}
-		/* Check high nibble of last byte */
-		if ((f->data[i] & 0xF0) > 0x90) {
+
+			if (COB_FIELD_NO_SIGN_NIBBLE (f)) {
+				/* COMP-6 - Check last nibble */
+				if ((f->data[i] & 0x0F) > 0x09) {
+					return 0;
+				}
+				return 1;
+			}
+
+			/* Check sign */
+			sign = f->data[i] & 0x0F;
+			if (COB_FIELD_HAVE_SIGN (f)) {
+				if (sign == 0x0C || sign == 0x0D) {
+					return 1;
+				}
+				if (COB_MODULE_PTR->flag_host_sign &&
+					sign == 0x0F) {
+					return 1;
+				}
+			} else if (sign == 0x0F) {
+				return 1;
+			}
 			return 0;
 		}
-
-		if (COB_FIELD_NO_SIGN_NIBBLE (f)) {
-			/* COMP-6 - Check last nibble */
-			if ((f->data[i] & 0x0F) > 0x09) {
-				return 0;
-			}
-			return 1;
-		}
-
-		/* Check sign */
-		sign = f->data[i] & 0x0F;
-		if (COB_FIELD_HAVE_SIGN (f)) {
-			if (sign == 0x0C || sign == 0x0D) {
-				return 1;
-			}
-			if (COB_MODULE_PTR->flag_host_sign &&
-			    sign == 0x0F) {
-				return 1;
-			}
-		} else if (sign == 0x0F) {
-			return 1;
-		}
-		return 0;
 	case COB_TYPE_NUMERIC_DISPLAY:
 		return cob_check_numdisp (f);
 	case COB_TYPE_NUMERIC_FP_DEC64:
@@ -3811,12 +3963,15 @@ cob_is_numeric (const cob_field *f)
 		return (f->data[15] & 0x78U) != 0x78U;
 #endif
 	default:
-		for (i = 0; i < f->size; ++i) {
-			if (!isdigit (f->data[i])) {
-				return 0;
+		{
+			size_t		i;
+			for (i = 0; i < f->size; ++i) {
+				if (!isdigit (f->data[i])) {
+					return 0;
+				}
 			}
+			return 1;
 		}
-		return 1;
 	}
 }
 
@@ -3886,7 +4041,11 @@ cob_table_sort_init_key (cob_field *field, const int flag,
 void
 cob_table_sort (cob_field *f, const int n)
 {
-	qsort (f->data, (size_t) n, f->size, sort_compare);
+	if (sort_collate) {
+		qsort (f->data, (size_t) n, f->size, sort_compare_collate);
+	} else {
+		qsort (f->data, (size_t) n, f->size, sort_compare);
+	}
 	cob_free (sort_keys);
 }
 
@@ -3947,9 +4106,9 @@ explain_field_type (const cob_field *f)
 	case COB_TYPE_NUMERIC_FLOAT:
 		return "FLOAT";
 	case COB_TYPE_NUMERIC_DOUBLE:
-		return "DOUBLE";
+		return "DOUBLE";	/* FLOAT-LONG */
 	case COB_TYPE_NUMERIC_L_DOUBLE:
-		return "LONG DOUBLE";
+		return "LONG DOUBLE";	/* FLOAT-EXTENDED */
 	case COB_TYPE_NUMERIC_FP_DEC64:
 		return "FP DECIMAL 64";
 	case COB_TYPE_NUMERIC_FP_DEC128:
@@ -4262,7 +4421,7 @@ static set_cob_time_from_localtime (time_t curtime,
 	static time_t last_time = 0;
 	static struct cob_time last_cobtime;
 	
-	// FIXME: on reseting appropriate locale set last_time_no_sec = 0
+	/* FIXME: on reseting appropriate locale set last_time_no_sec = 0 */
 	if (curtime == last_time) {
 		memcpy (cb_time, &last_cobtime, sizeof (struct cob_time));
 		return;
@@ -4448,20 +4607,6 @@ cob_get_current_datetime (const enum cob_datetime_res res)
 	/* Do we have a constant time? */
 	if (cobsetptr != NULL
 	 && cobsetptr->cob_time_constant.year != 0) {
-		int		needs_calculation = 0;
-		/* Note: constant time but X not part of constant --> -1 */
-		if (cobsetptr->cob_time_constant.year != -1) {
-			cb_time.year = cobsetptr->cob_time_constant.year;
-			needs_calculation = 1;
-		}
-		if (cobsetptr->cob_time_constant.month != -1) {
-			cb_time.month = cobsetptr->cob_time_constant.month;
-			needs_calculation = 1;
-		}
-		if (cobsetptr->cob_time_constant.day_of_month != -1) {
-			cb_time.day_of_month = cobsetptr->cob_time_constant.day_of_month;
-			needs_calculation = 1;
-		}
 		if (cobsetptr->cob_time_constant.hour != -1) {
 			cb_time.hour = cobsetptr->cob_time_constant.hour;
 		}
@@ -4479,26 +4624,49 @@ cob_get_current_datetime (const enum cob_datetime_res res)
 			cb_time.utc_offset = cobsetptr->cob_time_constant.utc_offset;
 		}
 
-		/* set day_of_week, day_of_year, is_daylight_saving_time, if necessary */
-		if (needs_calculation) {
-			time_t		t;
-			struct tm 	*tmptr;
-			/* allocate tmptr (needs a correct time) */
-			time (&t);
-			tmptr = localtime (&t);
-			tmptr->tm_isdst = -1;
-			tmptr->tm_sec	= cb_time.second;
-			tmptr->tm_min	= cb_time.minute;
-			tmptr->tm_hour	= cb_time.hour;
-			tmptr->tm_year	= cb_time.year - 1900;
-			tmptr->tm_mon	= cb_time.month - 1;
-			tmptr->tm_mday	= cb_time.day_of_month;
-			tmptr->tm_wday	= -1;
-			tmptr->tm_yday	= -1;
-			(void)mktime(tmptr);
-			cb_time.day_of_week = one_indexed_day_of_week_from_monday (tmptr->tm_wday);
-			cb_time.day_of_year = tmptr->tm_yday + 1;
-			cb_time.is_daylight_saving_time = tmptr->tm_isdst;
+		if (cobsetptr->cob_time_constant_is_calculated) {
+			cb_time.year = cobsetptr->cob_time_constant.year;
+			cb_time.month = cobsetptr->cob_time_constant.month;
+			cb_time.day_of_month = cobsetptr->cob_time_constant.day_of_month;
+			cb_time.day_of_week = cobsetptr->cob_time_constant.day_of_week;
+			cb_time.day_of_year = cobsetptr->cob_time_constant.day_of_year;
+			cb_time.is_daylight_saving_time = cobsetptr->cob_time_constant.is_daylight_saving_time;
+		} else {
+			int		needs_calculation = 0;
+			/* Note: constant time but X not part of constant --> -1 */
+			if (cobsetptr->cob_time_constant.year != -1) {
+				cb_time.year = cobsetptr->cob_time_constant.year;
+				needs_calculation = 1;
+			}
+			if (cobsetptr->cob_time_constant.month != -1) {
+				cb_time.month = cobsetptr->cob_time_constant.month;
+				needs_calculation = 1;
+			}
+			if (cobsetptr->cob_time_constant.day_of_month != -1) {
+				cb_time.day_of_month = cobsetptr->cob_time_constant.day_of_month;
+				needs_calculation = 1;
+			}
+			/* set day_of_week, day_of_year, is_daylight_saving_time, if necessary */
+			if (needs_calculation) {
+				time_t		t;
+				struct tm 	*tmptr;
+				/* allocate tmptr (needs a correct time) */
+				time (&t);
+				tmptr = localtime (&t);
+				tmptr->tm_isdst = -1;
+				tmptr->tm_sec	= cb_time.second;
+				tmptr->tm_min	= cb_time.minute;
+				tmptr->tm_hour	= cb_time.hour;
+				tmptr->tm_year	= cb_time.year - 1900;
+				tmptr->tm_mon	= cb_time.month - 1;
+				tmptr->tm_mday	= cb_time.day_of_month;
+				tmptr->tm_wday	= -1;
+				tmptr->tm_yday	= -1;
+				(void)mktime(tmptr);
+				cb_time.day_of_week = one_indexed_day_of_week_from_monday (tmptr->tm_wday);
+				cb_time.day_of_year = tmptr->tm_yday + 1;
+				cb_time.is_daylight_saving_time = tmptr->tm_isdst;
+			}
 		}
 	}
 
@@ -4582,9 +4750,9 @@ check_current_date ()
 
 	/* skip quotes and space-characters */
 	while (cobsetptr->cob_date[j] == '\''
-		|| cobsetptr->cob_date[j] == '"'
+	    || cobsetptr->cob_date[j] == '"'
 	    || isspace((unsigned char)cobsetptr->cob_date[j])) {
-		 j++;
+		j++;
 	}
 
 	/* extract epoch, if specified */
@@ -4615,6 +4783,7 @@ check_current_date ()
 			}
 		}
 		if (i != 2 && i != 4) {
+			/* possible template with partial system lookup */
 			if (cobsetptr->cob_date[j] == 'Y') {
 				while (cobsetptr->cob_date[j] == 'Y') j++;
 			} else {
@@ -4624,8 +4793,8 @@ check_current_date ()
 		} else if (yr < 100) {
 			yr += 2000;
 		}
-		while (cobsetptr->cob_date[j] == '/'
-		    || cobsetptr->cob_date[j] == '-') {
+		if (cobsetptr->cob_date[j] == '/'
+		 || cobsetptr->cob_date[j] == '-') {
 			j++;
 		}
 	}
@@ -4643,6 +4812,7 @@ check_current_date ()
 			}
 		}
 		if (i != 2) {
+			/* possible template with partial system lookup */
 			if (cobsetptr->cob_date[j] == 'M') {
 				while (cobsetptr->cob_date[j] == 'M') j++;
 			} else {
@@ -4652,8 +4822,8 @@ check_current_date ()
 		} else if (mm < 1 || mm > 12) {
 			ret = 1;
 		}
-		while (cobsetptr->cob_date[j] == '/'
-		    || cobsetptr->cob_date[j] == '-') {
+		if (cobsetptr->cob_date[j] == '/'
+		 || cobsetptr->cob_date[j] == '-') {
 			j++;
 		}
 	}
@@ -4671,6 +4841,7 @@ check_current_date ()
 			}
 		}
 		if (i != 2) {
+			/* possible template with partial system lookup */
 			if (cobsetptr->cob_date[j] == 'D') {
 				while (cobsetptr->cob_date[j] == 'D') j++;
 			} else {
@@ -4699,6 +4870,7 @@ check_current_date ()
 		}
 
 		if (i != 2) {
+			/* possible template with partial system lookup */
 			if (cobsetptr->cob_date[j] == 'H') {
 				while (cobsetptr->cob_date[j] == 'H') j++;
 			} else {
@@ -4708,8 +4880,8 @@ check_current_date ()
 		} else if (hh > 23) {
 			ret = 1;
 		}
-		while (cobsetptr->cob_date[j] == ':'
-		    || cobsetptr->cob_date[j] == '-')
+		if (cobsetptr->cob_date[j] == ':'
+		 || cobsetptr->cob_date[j] == '-')
 			j++;
 	}
 	if (cobsetptr->cob_date[j] != 0) {
@@ -4726,6 +4898,7 @@ check_current_date ()
 			}
 		}
 		if (i != 2) {
+			/* possible template with partial system lookup */
 			if (cobsetptr->cob_date[j] == 'M') {
 				while (cobsetptr->cob_date[j] == 'M') j++;
 			} else {
@@ -4735,8 +4908,8 @@ check_current_date ()
 		} else if (mi > 59) {
 			ret = 1;
 		}
-		while (cobsetptr->cob_date[j] == ':'
-		    || cobsetptr->cob_date[j] == '-') {
+		if (cobsetptr->cob_date[j] == ':'
+		 || cobsetptr->cob_date[j] == '-') {
 			j++;
 		}
 	}
@@ -4758,6 +4931,7 @@ check_current_date ()
 			}
 		}
 		if (i != 2) {
+			/* possible template with partial system lookup */
 			if (cobsetptr->cob_date[j] == 'S') {
 				while (cobsetptr->cob_date[j] == 'S') j++;
 			} else {
@@ -4801,7 +4975,7 @@ check_current_date ()
 		iso_timezone[0] = 'Z';
 	} else if (cobsetptr->cob_date[j] == '+'
 	        || cobsetptr->cob_date[j] == '-') {
-		int len = snprintf (&iso_timezone[0], 6, "%s", cobsetptr->cob_date + j);
+		int len = snprintf (&iso_timezone[0], 7, "%s", cobsetptr->cob_date + j);
 		if (len == 3) {
 			memcpy (iso_timezone + 3, "00", 3);
 		} else
@@ -4900,10 +5074,19 @@ check_current_date ()
 	}
 	cobsetptr->cob_time_constant.nanosecond	= ns;
 
-	/* the following are only set in "current" instances, not in the constant */
-	cobsetptr->cob_time_constant.day_of_week = -1;
-	cobsetptr->cob_time_constant.day_of_year = -1;
-	cobsetptr->cob_time_constant.is_daylight_saving_time = -1;
+	/* the following are only set in the constant, if the complete date is set,
+	   otherwise in the "current" instances */
+	if (yr != -1 && mm != -1 && dd != -1) {
+		cobsetptr->cob_time_constant_is_calculated = 1;
+		cobsetptr->cob_time_constant.day_of_week = one_indexed_day_of_week_from_monday (tmptr->tm_wday);
+		cobsetptr->cob_time_constant.day_of_year = tmptr->tm_yday + 1;
+		cobsetptr->cob_time_constant.is_daylight_saving_time = tmptr->tm_isdst;
+	} else {
+		cobsetptr->cob_time_constant_is_calculated = 0;
+		cobsetptr->cob_time_constant.day_of_week = -1;
+		cobsetptr->cob_time_constant.day_of_year = -1;
+		cobsetptr->cob_time_constant.is_daylight_saving_time = -1;
+	}
 
 	if (iso_timezone[0] != '\0') {
 		cobsetptr->cob_time_constant.offset_known = 1;
@@ -4914,98 +5097,148 @@ check_current_date ()
 	}
 }
 
-/* Extended ACCEPT/DISPLAY */
+/* ACCEPT FROM system-name / DISPLAY UPON system-name  */
 
+/* get date as YYMMDD */
 void
-cob_accept_date (cob_field *field)
+cob_accept_date (cob_field *f)
 {
-	struct cob_time	time;
-	char		buff[16]; /* 16: make the compiler happy as "unsigned short" *could*
-						         have more digits than we "assume" */
+	const struct cob_time	time = cob_get_current_datetime (DTR_DATE);
+	const cob_u32_t	val = time.day_of_month
+		+ time.month * 100
+		+ (time.year % 100) * 10000;
+	cob_field	field;
+	cob_field_attr	attr;
+	const size_t	digits = 6;
 
-	time = cob_get_current_datetime (DTR_DATE);
+	COB_FIELD_INIT (sizeof (cob_u32_t), (unsigned char *)&val, &attr);
+	COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, digits, 0, 0, NULL);
 
-	snprintf(buff, sizeof (buff), "%2.2d%2.2d%2.2d",
-		(cob_u16_t) time.year % 100,
-		(cob_u16_t) time.month,
-		(cob_u16_t) time.day_of_month);
-	cob_move_intermediate (field, buff, (size_t)6);
-}
-
-void
-cob_accept_date_yyyymmdd (cob_field *field)
-{
-	struct cob_time	time;
-	char		buff[16]; /* 16: make the compiler happy as "unsigned short" *could*
-						         have more digits than we "assume" */
-
-	time = cob_get_current_datetime (DTR_DATE);
-
-	snprintf (buff, sizeof (buff), "%4.4d%2.2d%2.2d",
-		(cob_u16_t) time.year,
-		(cob_u16_t) time.month,
-		(cob_u16_t) time.day_of_month);
-	cob_move_intermediate (field, buff, (size_t)8);
-}
-
-void
-cob_accept_day (cob_field *field)
-{
-	struct cob_time	time;
-	char		buff[11]; /* 11: make the compiler happy as "unsigned short" *could*
-						         have more digits than we "assume" */
-
-	time = cob_get_current_datetime (DTR_DATE);
-	snprintf (buff, sizeof (buff), "%2.2d%3.3d",
-		(cob_u16_t) time.year % 100,
-		(cob_u16_t) time.day_of_year);
-	cob_move_intermediate (field, buff, (size_t)5);
-}
-
-void
-cob_accept_day_yyyyddd (cob_field *field)
-{
-	struct cob_time	time;
-	char		buff[11]; /* 11: make the compiler happy as "unsigned short" *could*
-						         have more digits than we "assume" */
-
-	time = cob_get_current_datetime (DTR_DATE);
-	snprintf (buff, sizeof (buff), "%4.4d%3.3d",
-		(cob_u16_t) time.year,
-		(cob_u16_t) time.day_of_year);
-	cob_move_intermediate (field, buff, (size_t)7);
-}
-
-void
-cob_accept_day_of_week (cob_field *field)
-{
-	struct cob_time	time;
-	unsigned char		day;
-
-	time = cob_get_current_datetime (DTR_DATE);
-	day = (unsigned char)(time.day_of_week + '0');
-	cob_move_intermediate (field, &day, (size_t)1);
-}
-
-void
-cob_accept_time (cob_field *field)
-{
-	struct cob_time	time;
-	char		buff[21]; /* 11: make the compiler happy as "unsigned short" *could*
-						         have more digits than we "assume" */
-
-	if (field->size > 6) {
-		time = cob_get_current_datetime (DTR_FULL);
+	if (COB_FIELD_TYPE (f) != COB_TYPE_GROUP) {
+		cob_move (&field, f);
 	} else {
-		time = cob_get_current_datetime (DTR_TIME_NO_NANO);
+		cob_move_to_group_as_alnum (&field, f);
 	}
-	snprintf (buff, sizeof (buff), "%2.2d%2.2d%2.2d%2.2d",
-		(cob_u16_t) time.hour,
-		(cob_u16_t) time.minute,
-		(cob_u16_t) time.second,
-		(cob_u16_t) (time.nanosecond / 10000000));
+}
 
-	cob_move_intermediate (field, buff, (size_t)8);
+/* get date as YYYYMMDD */
+void
+cob_accept_date_yyyymmdd (cob_field *f)
+{
+	const struct cob_time	time = cob_get_current_datetime (DTR_DATE);
+	const cob_u32_t	val = time.day_of_month
+		+ time.month * 100
+		+ time.year  * 10000;
+	cob_field	field;
+	cob_field_attr	attr;
+	const size_t	digits = 8;
+
+	COB_FIELD_INIT (sizeof (cob_u32_t), (unsigned char *)&val, &attr);
+	COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, digits, 0, 0, NULL);
+
+	if (COB_FIELD_TYPE (f) != COB_TYPE_GROUP) {
+		cob_move (&field, f);
+	} else {
+		cob_move_to_group_as_alnum (&field, f);
+	}
+}
+
+/* get day as YYDDD */
+void
+cob_accept_day (cob_field *f)
+{
+	const struct cob_time	time = cob_get_current_datetime (DTR_DATE);
+	const cob_u32_t	val = time.day_of_year + (time.year % 100) * 1000;
+	cob_field	field;
+	cob_field_attr	attr;
+	const size_t	digits = 5;
+
+	COB_FIELD_INIT (sizeof (cob_u32_t), (unsigned char *)&val, &attr);
+	COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, digits, 0, 0, NULL);
+
+	if (COB_FIELD_TYPE (f) != COB_TYPE_GROUP) {
+		cob_move (&field, f);
+	} else {
+		cob_move_to_group_as_alnum (&field, f);
+	}
+}
+
+/* get day as YYYYDDD */
+void
+cob_accept_day_yyyyddd (cob_field *f)
+{
+	const struct cob_time	time = cob_get_current_datetime (DTR_DATE);
+	const cob_u32_t	val = time.day_of_year + time.year * 1000;
+	cob_field	field;
+	cob_field_attr	attr;
+	const size_t	digits = 7;
+
+	COB_FIELD_INIT (sizeof (cob_u32_t), (unsigned char *)&val, &attr);
+	COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, digits, 0, 0, NULL);
+
+	if (COB_FIELD_TYPE (f) != COB_TYPE_GROUP) {
+		cob_move (&field, f);
+	} else {
+		cob_move_to_group_as_alnum (&field, f);
+	}
+}
+
+/* get day of week as 1 (monday) - 7 (sunday) */
+void
+cob_accept_day_of_week (cob_field *f)
+{
+	const struct cob_time		time = cob_get_current_datetime (DTR_DATE);
+	const unsigned char		day = (unsigned char)(time.day_of_week + '0');
+	const size_t		digits = 1;
+	cob_move_intermediate (f, &day, digits);
+}
+
+/* get time as HHMMSS[ss] */
+void
+cob_accept_time (cob_field *f)
+{
+	const struct cob_time	time = f->size > 6
+		? cob_get_current_datetime (DTR_FULL)
+		: cob_get_current_datetime (DTR_TIME_NO_NANO);
+	const cob_u32_t	val = (time.nanosecond / 10000000)
+		+ time.second * 100
+		+ time.minute * 10000
+		+ time.hour   * 1000000;
+	cob_field	field;
+	cob_field_attr	attr;
+	const size_t	digits = 8;
+
+	COB_FIELD_INIT (sizeof (cob_u32_t), (unsigned char *)&val, &attr);
+	COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, digits, 0, 0, NULL);
+
+	if (COB_FIELD_TYPE (f) != COB_TYPE_GROUP) {
+		cob_move (&field, f);
+	} else {
+		cob_move_to_group_as_alnum (&field, f);
+	}
+}
+
+/* get time as HHMMSSssssss */
+void
+cob_accept_microsecond_time (cob_field *f)
+{
+	const struct cob_time	time = cob_get_current_datetime (DTR_FULL);
+	const cob_u64_t	val = (cob_u64_t)(time.nanosecond / 1000)
+		+ (cob_u64_t)time.second * 1000000
+		+ (cob_u64_t)time.minute * 100000000
+		+ (cob_u64_t)time.hour   * 10000000000;
+	cob_field	field;
+	cob_field_attr	attr;
+	const size_t	digits = 12;
+
+	COB_FIELD_INIT (sizeof (cob_u64_t), (unsigned char *)&val, &attr);
+	COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, digits, 0, 0, NULL);
+
+	if (COB_FIELD_TYPE (f) != COB_TYPE_GROUP) {
+		cob_move (&field, f);
+	} else {
+		cob_move_to_group_as_alnum (&field, f);
+	}
 }
 
 void
@@ -5068,14 +5301,13 @@ void
 cob_display_arg_number (cob_field *f)
 {
 	int		n;
+	cob_field	field;
 	cob_field_attr	attr;
-	cob_field	temp;
+	const size_t	digits = 9;
 
-	temp.size = 4;
-	temp.data = (unsigned char *)&n;
-	temp.attr = &attr;
-	COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, 9, 0, 0, NULL);
-	cob_move (f, &temp);
+	COB_FIELD_INIT (4, (unsigned char *)&n, &attr);
+	COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, digits, 0, 0, NULL);
+	cob_move (f, &field);
 	if (n < 0 || n >= cob_argc) {
 		cob_set_exception (COB_EC_IMP_DISPLAY);
 		return;
@@ -5086,16 +5318,14 @@ cob_display_arg_number (cob_field *f)
 void
 cob_accept_arg_number (cob_field *f)
 {
-	int		n;
+	const cob_u32_t		n = cob_argc - 1;
+	cob_field	field;
 	cob_field_attr	attr;
-	cob_field	temp;
+	const size_t	digits = 9;
 
-	n = cob_argc - 1;
-	temp.size = 4;
-	temp.data = (unsigned char *)&n;
-	temp.attr = &attr;
-	COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, 9, 0, 0, NULL);
-	cob_move (&temp, f);
+	COB_FIELD_INIT (sizeof (cob_u32_t), (unsigned char *)&n, &attr);
+	COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, digits, 0, 0, NULL);
+	cob_move (&field, f);
 }
 
 void
@@ -5122,11 +5352,11 @@ static COB_INLINE COB_A_INLINE int
 setenv (const char *name, const char *value, int overwrite) {
 	/* remark: _putenv_s does always overwrite, add a check for overwrite = 1 if necessary later */
 	COB_UNUSED (overwrite);
-	return _putenv_s (name,value);
+	return _putenv_s (name, value);
 }
 static COB_INLINE COB_A_INLINE int
 unsetenv (const char *name) {
-	return _putenv_s (name,"");
+	return _putenv_s (name, "");
 }
 #endif
 
@@ -5390,12 +5620,10 @@ cob_allocate (unsigned char **dataptr, cob_field *retptr,
 void
 cob_free_alloc (unsigned char **ptr1, unsigned char *ptr2)
 {
-	struct cob_alloc_cache	*cache_ptr;
-	struct cob_alloc_cache	*prev_ptr;
+	struct cob_alloc_cache	*cache_ptr = cob_alloc_base;
+	struct cob_alloc_cache	*prev_ptr = cob_alloc_base;
 
 	cobglobptr->cob_exception_code = 0;
-	cache_ptr = cob_alloc_base;
-	prev_ptr = cob_alloc_base;
 	if (ptr1 && *ptr1) {
 		void	*vptr1;
 		vptr1 = *ptr1;
@@ -6218,10 +6446,10 @@ cob_sys_xf5 (const void *p1, void *p2)
 	return 0;
 }
 
-/* COBOL routine for different functions, including functions for
+/* COBOL (only) routine for different functions, including functions for
    the programmable COBOL SWITCHES:
-   11: set  COBOL switches 0-7
-   12: read COBOL switches 0-7
+   11: set  COBOL switches 0-7 and debug switch
+   12: read COBOL switches 0-7 and debug switch
    16: return number of CALL USING parameters
 */
 int
@@ -6235,7 +6463,7 @@ cob_sys_x91 (void *p1, const void *p2, void *p3)
 
 	switch (*func) {
 
-	/* Set switches (0-7) */
+	/* Set switches (0-7) + DEBUG module */
 	case 11:
 		p = parm;
 		for (i = 0; i < 8; ++i, ++p) {
@@ -6245,7 +6473,11 @@ cob_sys_x91 (void *p1, const void *p2, void *p3)
 				cob_switch[i] = 1;
 			}
 		}
-		/* INSPECT: MF additionally sets the ANSI DEBUG module switch */
+		/* MF additionally sets the ANSI DEBUG module switch */
+		if (COB_MODULE_PTR->cob_procedure_params[0]->size >= 9) {
+			p++;
+			cobsetptr->cob_debugging_mode = (*p == 1);
+		}
 		*result = 0;
 		break;
 
@@ -6255,23 +6487,135 @@ cob_sys_x91 (void *p1, const void *p2, void *p3)
 		for (i = 0; i < 8; ++i, ++p) {
 			*p = (unsigned char)cob_switch[i];
 		}
-		/* INSPECT: MF additionally reads the ANSI DEBUG module switch */
+		/* MF additionally passes the ANSI DEBUG module switch */
+		if (COB_MODULE_PTR->cob_procedure_params[0]->size >= 9) {
+			p++;
+			*p = (unsigned char)cobsetptr->cob_debugging_mode;
+		}
 		*result = 0;
 		break;
+
+	/* Set switches (A-Z -> 11-36) */
+	case 13:
+		p = parm;
+		for (i = 11; i < 36; ++i, ++p) {
+			if (*p == 0) {
+				cob_switch[i] = 0;
+			} else if (*p == 1) {
+				cob_switch[i] = 1;
+			}
+
+			if (i == 'D' - 'A' + 11) {
+				cobsetptr->cob_debugging_mode = cob_switch[i];
+			} else if (i == 'N' - 'A' + 11) {
+				cobsetptr->cob_ls_nulls = cob_switch[i];
+#if 0	/* TODO add in trunk*/
+			} else if (i == 'T' - 'A' + 11) {
+				cobsetptr->cob_ls_tabs = cob_switch[i];
+#endif
+			}
+		}
+		*result = 0;
+		break;
+
+	/* Get switches (A-Z -> 11-36) */
+	case 14:
+		p = parm;
+		for (i = 1; i < 27; ++i, ++p) {
+			*p = (unsigned char)cob_switch[i];
+		}
+		*result = 0;
+		break;
+
+#if 0	/* program lookup 
+		   may be implemented as soon as some legacy code
+		   shows its exact use and a test case */
+	case 15:
+		p = parm + 1;
+		{
+			char name[256];
+			strncpy (name, p, *parm);
+			void * func = cob_resolve (name);
+			/* TODO: the full name should be copied back into p */
+			return (func != NULL);
+		}
+		break;
+#endif
 
 	/* Return number of call parameters
 		according to the docs this is only set for programs CALLed from COBOL
 		NOT for main programs in contrast to C$NARG (cob_sys_return_args)
-	*/
+	   MF deprecated it in favor of CBL_GET_PROGRAM_INFO function 8 */
 	case 16:
 		*parm = (unsigned char)COB_MODULE_PTR->module_num_params;
 		*result = 0;
 		break;
 
-	/* unimplemented function,
-	   note: 46-49 may be implemented after fileio-specific merge of rw-branch
-	         35 (EXEC) and 15 (program lookup) may be implemented as soon as some legacy code
-			                                   shows its exact use and a test case */
+#if 1	/* EXEC call "like DOS 4B call"
+		   working prototype, may be finalized as soon as some legacy code
+		   shows its exact use and a test case; CHECKME: what is the return
+		   code with MF on UNIX where this is "not supported"? */
+	case 35:
+		p = parm + 1;
+		/* zero = just [re-]execute */
+		if (*parm != 0) {
+			/* note: we can't check for existence
+			   as "pause" and similar inbuilts must also work;
+			   CHECKME: possibly start via cmd.exe wrapper ? */
+			/* put on command line here */
+			{
+				cob_field field;
+				COB_FIELD_INIT (*parm, p, NULL);
+				cob_display_command_line (&field);
+			}
+		}
+		{
+			/* execute the command line */
+			int ret = system ((const char *)commlnptr);
+			*result = (unsigned char)ret;
+		}
+		break;
+#endif
+
+
+#if 0	/* note: 46-49 should be implemented in 4.x with file-specific settings */
+	/* enable/disable LS_NULLs for a specific FD */
+	case 46:
+	case 47:
+	/* enable/disable LS_TABs for a specific FD */
+	case 48:
+	case 49:
+		{
+			*result = 0;
+			cob_file *f = get_file (p3);
+			if (f == NULL
+			 || f->open_mode == COB_OPEN_CLOSED
+			 || f->open_mode == COB_OPEN_LOCKED) {
+				*result = 1;
+			} else if (*func == 46) {
+				f->ls_nulls = 1;
+			} else if (*func == 47) {
+				f->ls_nulls = 0;
+			} else if (*func == 48) {
+				f->ls_tabss = 1;
+			} else if (*func == 49) {
+				f->ls_tabs = 0;
+			}
+		}
+		break;
+#endif
+
+#if 0	/* directory search
+		   may be implemented when CBL_DIR_SCAN / C$LISTDIR is added and
+		   likely only finalized as soon as some legacy code
+		   shows its exact use and a test case
+	   MF deprecated it in favor of CBL_DIR_SCAN */
+	case 69:
+		*result = 1;
+		break;
+#endif
+
+	/* unimplemented function */
 	default:
 		*result = 1;
 		break;
@@ -7310,11 +7654,10 @@ translate_boolean_to_int (const char* ptr)
 	if (*(ptr + 1) == 0 && isdigit ((unsigned char)*ptr)) {
 		return atoi (ptr);		/* 0 or 1 */
 	} else
-#if 0 /* boolean "not set" - used for file specific settings (4.x feature) */
-	if (strcasecmp (ptr, "not set") == 0) {
+	/* pre-translated boolean "never" - not set" */
+	if (strcmp (ptr, "!") == 0) {
 		return -1;
 	} else
-#endif
 	if (strcasecmp (ptr, "true") == 0
 	 || strcasecmp (ptr, "t") == 0
 	 || strcasecmp (ptr, "on") == 0
@@ -7336,17 +7679,15 @@ translate_boolean_to_int (const char* ptr)
 static int					/* returns 1 if any error, else 0 */
 set_config_val (char *value, int pos)
 {
-	char 	*data;
 	char	*ptr = value, *str;
 	cob_s64_t	numval = 0;
-	int 	i, data_type, data_len, slen;
-	size_t	data_loc;
+	int 	i, slen;
 
-	data_type = gc_conf[pos].data_type;
-	data_loc  = gc_conf[pos].data_loc;
-	data_len  = gc_conf[pos].data_len;
+	const int 	data_type = gc_conf[pos].data_type;
+	const size_t	data_loc = gc_conf[pos].data_loc;
+	const int 	data_len = gc_conf[pos].data_len;
 
-	data = ((char *)cobsetptr) + data_loc;
+	char 	*data = ((char *)cobsetptr) + data_loc;
 
 	if (gc_conf[pos].enums) {		/* Translate 'word' into alternate 'value' */
 
@@ -7360,7 +7701,8 @@ set_config_val (char *value, int pos)
 			}
 		}
 		if ((data_type & ENV_ENUM || data_type & ENV_ENUMVAL)	/* Must be one of the 'enum' values */
-		 && gc_conf[pos].enums[i].match == NULL) {
+		 && gc_conf[pos].enums[i].match == NULL
+		 && (!(data_type & ENV_BOOL))) {
 			conf_runtime_error_value (ptr, pos);
 			fprintf (stderr, _("should be one of the following values: %s"), "");
 			for (i = 0; gc_conf[pos].enums[i].match != NULL; i++) {
@@ -7379,16 +7721,48 @@ set_config_val (char *value, int pos)
 		}
 	}
 
-	if ((data_type & ENV_UINT) 				/* Integer data, unsigned */
-	 || (data_type & ENV_SINT) 				/* Integer data, signed */
-	 || (data_type & ENV_SIZE) ) {				/* Size: integer with K, M, G */
+	if ((data_type & ENV_BOOL)) {	/* Boolean: Yes/No, True/False,... */
+		numval = translate_boolean_to_int (ptr);
+
+		if (numval != -1
+		 && numval != 1
+		 && numval != 0) {
+			conf_runtime_error_value (ptr, pos);
+			conf_runtime_error (1, _("should be one of the following values: %s"), "true, false");
+			return 1;
+		}
+		if ((data_type & ENV_NOT)) {	/* Negate logic for actual setting */
+			numval = !numval;
+		}
+		set_value (data, data_len, numval);
+
+		/* call internal routines that do post-processing */
+		if (data == (char *)&cobsetptr->cob_debugging_mode) {
+			/* Copy variables from settings (internal) to global structure, each time */
+			cobglobptr->cob_debugging_mode = cobsetptr->cob_debugging_mode;
+		} else if (data == (char *)&cobsetptr->cob_insert_mode) {
+			cob_settings_screenio ();
+		} else if (data == (char *)&cobsetptr->cob_debugging_mode) {
+			cob_switch[11 + 'D' - 'A'] = numval;
+		} else if (data == (char *)&cobsetptr->cob_ls_nulls) {
+			cob_switch[11 + 'N' - 'A'] = numval;
+#if 0	/* TODO add in trunk */
+		} else if (data == (char *)&cobsetptr->cob_ls_tabs) {
+			cob_switch[11 + 'T' - 'A'] = numval;
+#endif
+		}
+
+	} else if ((data_type & ENV_UINT) 				/* Integer data, unsigned */
+	        || (data_type & ENV_SINT) 				/* Integer data, signed */
+	        || (data_type & ENV_SIZE) ) {			/* Size: integer with K, M, G */
 		char sign = 0;
 		for (; *ptr == ' '; ptr++);	/* skip leading space */
 		if (*ptr == '-'
 		 || *ptr == '+') {
 			if ((data_type & ENV_SINT) == 0) {
 				conf_runtime_error_value (ptr, pos);
-				conf_runtime_error (1, _("should be unsigned")); // cob_runtime_warning
+				/* CHECKME: likely cob_runtime_warning would be more reasonable */
+				conf_runtime_error (1, _("should be unsigned"));
 				return 1;
 			}
 			sign = *ptr;
@@ -7464,35 +7838,13 @@ set_config_val (char *value, int pos)
 			return 1;
 		}
 		set_value (data, data_len, numval);
-		if (strcmp (gc_conf[pos].env_name, "COB_MOUSE_FLAGS") == 0
+
+		/* call internal routines that do post-processing */
+		if (data == (char *)&cobsetptr->cob_mouse_flags
 #ifdef HAVE_MOUSEINTERVAL	/* possibly add an internal option for mouse support, too */
-		 || strcmp (gc_conf[pos].env_name, "COB_MOUSE_INTERVAL") == 0
+		 || data == (char *)&cobsetptr->cob_mouse_interval
 #endif
-			) {
-			cob_settings_screenio ();
-		}
-
-	} else if ((data_type & ENV_BOOL)) {	/* Boolean: Yes/No, True/False,... */
-		numval = translate_boolean_to_int (ptr);
-
-		if (numval != -1
-		 && numval != 1
-		 && numval != 0) {
-			conf_runtime_error_value (ptr, pos);
-			conf_runtime_error (1, _("should be one of the following values: %s"), "true, false");
-			return 1;
-		}
-		if ((data_type & ENV_NOT)) {	/* Negate logic for actual setting */
-			numval = !numval;
-		}
-		set_value (data, data_len, numval);
-		if ((data_type & ENV_RESETS)) {	/* Additional setup needed */
-			if (strcmp(gc_conf[pos].env_name, "COB_SET_DEBUG") == 0) {
-				/* Copy variables from settings (internal) to global structure, each time */
-				cobglobptr->cob_debugging_mode = cobsetptr->cob_debugging_mode;
-			}
-		}
-		if (strcmp (gc_conf[pos].env_name, "COB_INSERT_MODE") == 0) {
+		    ) {
 			cob_settings_screenio ();
 		}
 
@@ -7516,7 +7868,7 @@ set_config_val (char *value, int pos)
 		}
 
 		/* call internal routines that do post-processing */
-		if (strcmp (gc_conf[pos].env_name, "COB_TRACE_FILE") == 0
+		if (data == (char *)cobsetptr->cob_trace_filename
 		 && cobsetptr->cob_trace_file != NULL) {
 			cob_new_trace_file ();
 		}
@@ -7533,7 +7885,7 @@ set_config_val (char *value, int pos)
 		}
 
 		/* call internal routines that do post-processing */
-		if (strcmp (gc_conf[pos].env_name, "COB_CURRENT_DATE") == 0) {
+		if (data == (char *)cobsetptr->cob_date) {
 			check_current_date ();
 		}
 
@@ -7598,7 +7950,31 @@ get_config_val (char *value, int pos, char *orgvalue)
 
 	strcpy (value, _("unknown"));
 	orgvalue[0] = 0;
-	if (data_type & ENV_UINT) {				/* Integer data, unsigned */
+
+	if ((data_type & ENV_BOOL)) {	/* Boolean: Yes/No, True/False,... */
+		numval = get_value (data, data_len);
+		if (numval == -1) {
+#if 0		/* boolean "not set" - used for file specific settings (4.x feature) */
+			if (gc_conf[pos].enums == never) {
+				strcpy (value, "never");
+			} else {
+				strcpy (value, _("not set"));
+			}
+#else
+			strcpy (value, "never");
+#endif
+		} else {
+			if (data_type & ENV_NOT) {
+				numval = !numval;
+			}
+			if (numval) {
+				strcpy (value, _("yes"));
+			} else {
+				strcpy (value, _("no"));
+			}
+		}
+
+	} else if (data_type & ENV_UINT) {				/* Integer data, unsigned */
 		numval = get_value (data, data_len);
 		sprintf (value, CB_FMT_LLU, numval);
 
@@ -7630,25 +8006,6 @@ get_config_val (char *value, int pos, char *orgvalue)
 		} else {
 			sprintf (value, CB_FMT_LLD, numval);
 		}
-
-	} else if ((data_type & ENV_BOOL)) {	/* Boolean: Yes/No, True/False,... */
-		numval = get_value (data, data_len);
-#if 0 /* boolean "not set" - used for file specific settings (4.x feature) */
-		if (numval == -1) {
-			strcpy (value, _("not set"));
-		} else {
-#endif
-			if (data_type & ENV_NOT) {
-				numval = !numval;
-			}
-			if (numval) {
-				strcpy (value, _("yes"));
-			} else {
-				strcpy (value, _("no"));
-			}
-#if 0
-		}
-#endif
 
 	/* TO-DO: Consolidate copy-and-pasted code! */
 	} else if (data_type & ENV_STR) {	/* String stored as a string */
@@ -8983,7 +9340,7 @@ print_version (void)
 
 	printf ("libcob (%s) %s.%d\n",
 		PACKAGE_NAME, PACKAGE_VERSION, PATCH_LEVEL);
-	puts ("Copyright (C) 2022 Free Software Foundation, Inc.");
+	puts ("Copyright (C) 2023 Free Software Foundation, Inc.");
 	printf (_("License LGPLv3+: GNU LGPL version 3 or later <%s>"), "https://gnu.org/licenses/lgpl.html");
 	putchar ('\n');
 	puts (_("This is free software; see the source for copying conditions.  There is NO\n"
@@ -9019,7 +9376,7 @@ print_info_detailed (const int verbose)
 	   may interfer with other output */
 #if defined (COB_GEN_SCREENIO)
 	mouse_support = get_screenio_and_mouse_info
-	((char*)&screenio_info, sizeof (screenio_info), verbose);
+		((char*)&screenio_info, sizeof (screenio_info), verbose);
 #else
 	snprintf ((char *)&screenio_info, sizeof(screenio_info) - 1,
 		"%s", _("disabled"));
@@ -9984,7 +10341,7 @@ cob_stack_trace_internal (FILE *target, int verbose, int count)
 					source_file, source_line);
 			if (mod->frame_ptr) {
 				struct cob_frame_ext *perform_ptr = mod->frame_ptr;
-				int frame_max = 512; /* from -fstack-size */
+				int frame_max = 512; /* max from -fstack-size */
 				while (frame_max--) {
 					const unsigned int ffile_num = COB_GET_FILE_NUM (perform_ptr->module_stmt);
 					const unsigned int fline = COB_GET_LINE_NUM (perform_ptr->module_stmt);

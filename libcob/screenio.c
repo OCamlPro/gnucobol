@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 
    This file is part of GnuCOBOL.
@@ -410,11 +410,11 @@ cob_get_color_pair (const short fg_color, const short bg_color)
 	{
 		/* some implementations (especially PDCursesMod 64-bit CHTYPE)
 		   provide more color pairs than we currently support, limit appropriate */
-		const short	max_pairs = COLOR_PAIRS < SHRT_MAX ? COLOR_PAIRS : SHRT_MAX - 1;
+		const short	max_clr_pairs = COLOR_PAIRS < SHRT_MAX ? COLOR_PAIRS : SHRT_MAX - 1;
 		short	color_pair_number;
 		short	fg_defined, bg_defined;
 
-		for (color_pair_number = 2; color_pair_number < max_pairs; color_pair_number++) {
+		for (color_pair_number = 2; color_pair_number < max_clr_pairs; color_pair_number++) {
 
 			pair_content (color_pair_number, &fg_defined, &bg_defined);
 
@@ -609,10 +609,10 @@ cob_screen_init (void)
 			{
 				/* some implementations (especially PDCursesMod 64-bit CHTYPE)
 				   provide more color pairs than we currently support, limit appropriate */
-				const short	max_pairs = COLOR_PAIRS < SHRT_MAX ? COLOR_PAIRS : SHRT_MAX - 1;
+				const short	max_clr_pairs = COLOR_PAIRS < SHRT_MAX ? COLOR_PAIRS : SHRT_MAX - 1;
 				short	color_pair_number;
 	
-				for (color_pair_number = 2; color_pair_number < max_pairs; ++color_pair_number) {
+				for (color_pair_number = 2; color_pair_number < max_clr_pairs; ++color_pair_number) {
 					init_pair (color_pair_number, 0, 0);
 					if (color_pair_number == SHRT_MAX) {
 						break;
@@ -822,7 +822,6 @@ cob_convert_key (int *keyp, const cob_u32_t field_accept)
 		break;
 	}
 }
-
 
 /* update field for the programs SPECIAL-NAMES CURSOR clause */
 static void
@@ -3627,7 +3626,7 @@ cob_exit_screen (void)
 #ifdef	HAVE_CURSES_FREEALL
 		/* cleanup storage that would otherwise be shown
 		   to be "still reachable" with valgrind */
- 		_nc_freeall ();
+		_nc_freeall ();
 #endif
 		if (cob_base_inp) {
 			cob_free (cob_base_inp);

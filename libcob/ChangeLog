@@ -1,9 +1,91 @@
 
+2023-01-16  Simon Sobisch <simonsobisch@gnu.org>
+
+	* statement.def (STMT_INIT_STORAGE): new internal statement
+
+2023-01-15  Ron Norman <rjn@inglenet.com>
+
+	* screenio.c: renamed max_pairs_available as this is defined on HPUX
+	* common.c (check_current_date): fixed bad snprintf size
+
+2023-01-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* intrinsic.c: minor refactoring to reduce duplicated code
+
+2023-01-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_cmp): fix stack-use-after-scope for comparisons of unsigned
+	  numeric with non-numeric field
+
+2023-01-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_accept_date, cob_accept_date_yyyymmdd, cob_accept_day,
+	  cob_accept_day_yyyyddd, cob_accept_time, cob_accept_microsecond_time):
+	  use binary intermediate field instead of numeric edited, replacing
+	  "expensive" sprintf calls and multiple de-editing/editing to max. one
+	  minimal editing (via move.c)
+	* common.c (cob_move_to_group_as_alnum): new function to handle MOVE to
+	  group as MOVE to alphanumeric field, used in functions above
+	* common.c (cob_display_arg_number, cob_accept_arg_number, cob_cmp),
+	  move.c (indirect_move, cob_set_int, cob_set_llint, cob_get_int,
+	  cob_get_llint): minor refactoring to use COB_FIELD_INIT
+	* common.c (check_current_date, cob_get_current_datetime),
+	  coblocal.h (cob_settings->cob_time_constant_is_calculated):
+	  skip expensive call to localtime + mktime if COB_CURRENT_DATE is
+	  set and "complete", by doing it already for the constant
+	* move.c: integration of changes from 2022-04-08
+	* move.c (cob_get_int, cob_get_llint): use of constant binary attributes
+
+2023-01-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_is_numeric), move.c (cob_move, cob_move_fp_to_fp),
+	  numeric.c: more additions for COB_TYPE_NUMERIC_L_DOUBLE, basic use now
+	  works as expected
+	* common.c (print_version): welcome 2023
+	* common.c (check_current_date): only skip one - or / in COB_CURRENT_DATE
+	* common.c (cob_sys_x91, set_config_val): integrated changes originally
+	  done 2020-06-20 (!)
+	* common.c, common.h: dropped ENV_RESETS and compare data pointer instead
+	  of the name for all configurations that need additional setup
+	* common.c (cob_sys_x91): activated function 35
+
+2022-12-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c [!COB_EXPERIMENTAL]: disable "new" status 0P via preprocessor
+	  to inspect later for either include as COB_LS_VALIDATE=PRINT or drop
+
+2022-12-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c, common.h: new external field + define
+	  COB_SPACES_ALPHABETIC / COB_SPACES_ALPHABETIC_BYTE_LENGTH
+	* common.c: split sort_compare to variant with and without collation,
+	  using direct memcmp for the later
+	* common.c (compare_spaces, compare_character): new function used for
+	  comparison of data without collation using memcmp in doubled areas
+	  instead of looping over every character
+	* common.c (cob_cmp_alnum, cob_cmp_all): use direct memcmp and new
+	  functions if no collation was specified
+	* common.c (common_cmpc, common_cmps): always use collation as all
+	  callers left in pass it (and otherwise call the new functions)
+
+2022-12-13 David Declerck <david.declerck@ocamlpro.com>
+
+	* conv.c: file moved from cobc to libcob
+	* common.h: declare the new API for collating sequences
+
 2022-12-13  Simon Sobisch <simonsobisch@gnu.org>
 
 	* strings.c (inspect_find_data): added missing area check bug #865
 	* strings.c (inspect_common_no_replace, inspect_common_replacing,
 	  is_marked): minor refactoring for optimization hints
+
+2022-12-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (get_config_val, set_config_val, translate_boolean_to_int):
+	  allow "boolean" values to be set to a third value via enum,
+	  new enum "never" used for COB_PHYSICAL_CANCEL (and prepared: "not_set"),
+	  to prevent unloading, which is useful for analysis tools like callgrind
+	  or perf to keep all symbols until end of the COBOL process
 
 2022-12-08  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -57,6 +139,11 @@
 	* screenio.c: fix mishandled "extended attributes" (bit 4)
 	* termio.c: several minor performance tweaks for DISPLAY
 
+2022-11-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c, termio.c (cob_display_common): more additions for
+	  currently inactive COB_TYPE_NUMERIC_L_DOUBLE
+
 2022-11-18  Simon Sobisch <simonsobisch@gnu.org>
 
 	* screenio.c: fixed compiler warnings related to get_crt3_status
@@ -91,7 +178,29 @@
 	  by checking sign/zero and reduced number of decimal shifting
 	  dynamic allocation
 	* move.c (store_common_region): minor optimization
-	* move.c:
+	* move.c (cob_move_display_to_edited): several optimizations, the
+	  biggest one stays open, needing adjusted function call from cobc
+
+2022-11-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* coblocal.h: include common.h (for cob_ types) and stdio.h (for FILE)
+	* common.h: include stddef.h for size_t
+	* fileo.c (save_status): rewritten to care for any sucessful completion
+	  (status 0x) instead of only on status 00 to not set an exception and
+	  to sync if COB_SYNC is active
+
+2022-11-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_hard_failure, cob_hard_failure_internal),
+	  call.c (cob_exit_call): skip unloading of modules for COB_CORE_ON_ERROR=2
+	  to keep symbols in coredumps using cob_physical_cancel=-1 internally
+	* call.c (close_and_free_module_list): extracted from cob_exit_call
+	* fileio.c (lineseq_read): use the locale setup for printable check in
+	  sequential data verification instead of libcob's internal one
+	* fileio.c: for line sequential data verification only call isprint when
+	  cob_ls_validate > 1 (not configurable), use new macro IS_NOT_PRINTABLE
+	  for this check and execute it on both read and (re)write, resulting in
+	  status 0P now, fixed call of isprint on EBCDIC machines
 
 2022-11-04  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -449,6 +558,10 @@
 	  check and marker range before checking all marker bytes in range
 	* strings.c: increase use of direct pointer comparisons instead of
 	  accessing char arrays or its positions for INSPECT
+	* move.c: add const_bin_attr, add COB_FLAG_REAL_BINARY to const_binll_attr
+	* move.c, common.h: new function cob_set_llint
+	* move.c (cob_set_int): use const_bin_attr instead of setting it up
+	  each time as this function is used quite often in generated code
 
 2022-04-29  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -710,6 +823,7 @@
 	  (cob_intr_bit_to_char)
 	* common.c: renamed (cob_memcpy) to (cob_move_intermediate) and
 	  postponed handling of target size to cob_move
+	* common.c, common.h: implemented (cob_accept_microsecond_time)
 
 2021-08-30  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -812,6 +926,8 @@
 	* move.c: use of COB_D2I for conversions
 	  and restore previous one afterwards
 	* move.c (store_common_region): minor refactoring
+	* numeric.c, common.c: clear use and separation of "sign" (GMP view) vs.
+	  "flag_sign" (field attribute) vs. "has_negative_sign"
 
 2021-01-28  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -1168,7 +1284,7 @@
 	   4. entering sign jumps to sign;
 	   5. create (hopefully) nice insert behaviour for numbers: cursor on
 	      integral digits inserts to right, cursor on decimal digits inserts
-              to left.
+	      to left.
 
 2020-07-19  Edward Hart <edward.dan.hart@gmail.com>
 
@@ -1230,6 +1346,19 @@
 	  sparse indexes
 	* fileio.c<-fisam.c,fbdb.c: Fix to return status 21 instead of 22
 	  when OPEN OUTPUT
+
+2020-06-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_sys_x91): implemented / prepared all documented MF function
+	  codes for x'91' library
+	  * 11+12: allow accessing debug switch along to "programmable 0-7"
+	  * 13+14: allow accessing "runtime switches 1-26" (as A-Z),
+	    in case of A/N/T: set related runtime setting
+	  * 15: prepared for program lookup
+	  * 35: prepared for DOS EXEC call
+	  * 46-49: prepared for file specific setting LS_NULLS/LS_TABS
+	  * 69: prepared for directory search
+	* common.c (set_config_val): set switches D/N/T depending on other settings
 
 2020-06-16  Ron Norman <rjn@inglenet.com>
 
@@ -1366,7 +1495,7 @@
 
 2019-11-18  Ron Norman <rjn@inglenet.com>
 
-	* common.h, fileio.c (fextfh.c, fbdb.c): Updates to support 
+	* common.h, fileio.c (fextfh.c, fbdb.c): Updates to support
 	   SET ... TO ADDRESS OF FH--FCD OF file     and
 	   SET ... TO ADDRESS OF FH--KEYDEF OF file
 
@@ -5394,8 +5523,12 @@
 	* call.c (dynamic_reloading): Renamed from cob_dynamic_reloading.
 	  (cob_init_call): Initialize 'dynamic_reloading'.
 
+2002-05-23  Keisuke Nishida  <knishida@netlab.jp>
 
-Copyright 2002-2022 Free Software Foundation, Inc.
+	* call.c, common.c, move.c, Makefile.am: gettextized
+
+
+Copyright 2002-2023 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

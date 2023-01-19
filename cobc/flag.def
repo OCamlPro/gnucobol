@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2003-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2003-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -92,7 +92,7 @@ CB_FLAG_NQ (1, "callfh", 9,
 	_("  -fcallfh=<name>       specifies <name> to be used for I/O\n"
 	  "                        as external provided EXTFH interface module"))
 
-CB_FLAG_NQ (1, "ebcdic-table", 14, /* cf cconv.h for all available tables */
+CB_FLAG_RQ (cb_ebcdic_table, 1, "ebcdic-table", 0, 14, /* cf cconv.h for all available tables */
 	_("  -febcdic-table=[DEFAULT|RESTRICTED-GC|IBM|GCOS]\tdefine EBCDIC translation table:\n"
 	  "                        * default: translation to extended ASCII as per MF\n"
 	  "                        * restricted-gc: translation from restricted ASCII only\n"
@@ -127,7 +127,11 @@ CB_FLAG (cb_flag_stack_extended, 1, "stack-extended",
 	_("  -fstack-extended      store origin of entrypoints and PERFORM\n"
 	  "                        * turned on by -debug/-dump"))
 
+CB_FLAG_ON (cb_flag_fast_compare, 0, "fast-compare",
+	_("  -fno-fast-compare     disables inline comparisions\n"))
+
 /* Normal flags */
+
 CB_FLAG_ON (cb_flag_remove_unreachable, 1, "remove-unreachable",
 	_("  -fno-remove-unreachable\tdisable remove of unreachable code\n"
 	  "                        * turned off by -g"))
@@ -208,7 +212,7 @@ CB_FLAG_ON (cb_flag_c_decl_for_static_call, 1, "gen-c-decl-static-call",
 
 CB_FLAG (cb_flag_c_line_directives, 1, "gen-c-line-directives",
 	_("  -fgen-c-line-directives\tgenerate source location directives in C code;\n"
-	  "                        * turned on by -g"))
+	  "                        * turned on by -g/--coverage"))
 
 CB_FLAG (cb_flag_c_labels, 1, "gen-c-labels",
 	_("  -fgen-c-labels        generate extra labels in C sources;\n"
@@ -226,6 +230,9 @@ CB_FLAG_ON (cb_listing_with_messages, 1, "tmessages",
 
 CB_FLAG (cb_listing_symbols, 1, "tsymbols",
 	_("  -ftsymbols            specify symbols in listing"))
+
+CB_FLAG (cb_listing_cmd, 1, "tcmd",
+	_("  -ftcmd                specify command line in listing"))
 
 CB_FLAG_ON (cb_diagnostic_show_option, 1, "diagnostics-show-option",
 	_("  -fno-diagnostics-show-option\tsuppress output of option that directly\n"

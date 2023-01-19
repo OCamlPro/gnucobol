@@ -1,11 +1,20 @@
 
+2023-01-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am: pass appropriate flags to cobc for compiling
+
+2022-12-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am: ensure to not create half-baked module directories,
+	  added "modules" to .PHONY target; always set COB_UNIX_LF for
+	  executing EXEC85 to be identical to the later testsuite run
+
 2022-12-12  Simon Sobisch <simonsobisch@gnu.org>
 
 	* Makefile.am, Makefile.module.in: use PERL via variable,
 	  default is substituted from configure
 	* Makefile.am: adjusted URL_NEWCOB_TAR_GZ as old value (SF download area)
 	  uses javascript-forwarding which does not work with command line tools
-
 
 2022-10-11  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -374,7 +383,7 @@
 	* SQ.txt, summary.txt : We now pass the LINAGE tests
 
 
-Copyright 2005-2010,2015-2020,2022 Free Software Foundation, Inc.
+Copyright 2005-2010,2015-2020,2022-2023 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

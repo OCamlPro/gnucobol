@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2022 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2023 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 ## Ron Norman
 ##
@@ -341,6 +341,90 @@ AT_CHECK([$COMPILE_MODULE callee2.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
 AT_CHECK([$COMPILE -o prog caller.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [abc000], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([LOCAL-STORAGE (3)])
+AT_KEYWORDS([runmisc OCCURS INDEX INDEXED])
+
+# Note: this tests undefined behaviour, because the initial value
+#       of index-names are undefined per standard; where they are
+#       explicit defined to be "... treated as a static item [for WS]
+#       and as an automatic item [for LS]"; see bug #794
+#       for GnuCOBOL that is defined depending on dialect options
+#       init-indexed-by and defaultbyte
+
+AT_DATA([callee.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      callee.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 DISP-VALS.
+          05 DISP-VAL   PIC 9 VALUE 0.
+          05 DISP-IDX   PIC 9 VALUE 0.
+       01 WRK-X.
+          05 WRK-VAR    PIC 9 VALUE 0 OCCURS 1 INDEXED BY WRK-IDX.
+       LOCAL-STORAGE    SECTION.
+       01 LCL-X.
+          05 LCL-VAR    PIC 9 VALUE 0 OCCURS 1 INDEXED BY LCL-IDX.
+       PROCEDURE        DIVISION.
+           DISPLAY SPACE WITH NO ADVANCING UPON SYSOUT.
+           ADD  1 TO WRK-VAR(1) LCL-VAR(1)
+           SET  WRK-IDX, LCL-IDX UP BY 1
+           SET  DISP-IDX TO WRK-IDX.
+           MOVE WRK-VAR(1) TO DISP-VAL.
+           DISPLAY DISP-VALS WITH NO ADVANCING UPON SYSOUT.
+           SET  DISP-IDX TO LCL-IDX.
+           MOVE LCL-VAR(1) TO DISP-VAL.
+           DISPLAY DISP-VALS WITH NO ADVANCING UPON SYSOUT.
+           GOBACK.
+])
+
+AT_DATA([caller.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      caller.
+       PROCEDURE        DIVISION.
+           CALL "callee".
+           CALL "callee".
+           CALL "callee".
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
+AT_CHECK([$COMPILE -o prog caller.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [ 1212 2312 3412], [])
+AT_CHECK([$COMPILE_MODULE -fdefaultbyte=0 callee.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [ 1111 2211 3311], [])
+
+# note: this is the tested MF result (INDEXED BY are USAGE COMP 9(08), 0-based !):
+#AT_CHECK([$COMPILE_MODULE -std=mf-strict callee.cob], [0], [], [])
+#AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [ 1018 2117 3216], [])
+
+AT_DATA([callee.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      callee.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 DISP-VALS.
+          05 DISP-VAL   PIC 9 VALUE 0.
+          05 DISP-IDX   PIC 9 VALUE 0.
+       01 WRK-X.
+          05 WRK-VAR    PIC 9 VALUE 0 OCCURS 1 INDEXED BY WRK-IDX.
+       PROCEDURE        DIVISION.
+           DISPLAY SPACE WITH NO ADVANCING UPON SYSOUT.
+           ADD  1 TO WRK-VAR(1)
+           SET  WRK-IDX UP BY 1
+           SET  DISP-IDX TO WRK-IDX.
+           MOVE WRK-VAR(1) TO DISP-VAL.
+           DISPLAY DISP-VALS WITH NO ADVANCING UPON SYSOUT.
+           GOBACK.
+])
+
+
+AT_CHECK([$COMPILE_MODULE -std=acu-strict callee.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [ 19 20 31], [])
+# note: tested result with 2 byte: AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [ 15 26 37], [])
 
 AT_CLEANUP
 
@@ -1731,17 +1815,17 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [Converted: "A#O2018 |!"], [])
 
 # For characters above IBM (with irregularities) and GCOS should match:
-AT_CHECK([$COMPILE prog.cob -febcdic-table=ibm -o prog-ibm], [0], [], [])
+AT_CHECK([$COMPILE prog.cob -febcdic-table=IBM -o prog-ibm], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog-ibm], [0],
 [Converted: "A#O2018 |@:>@"], []) # prefix is actually "|]" (escaped for m4 preproc)
 
-AT_CHECK([$COMPILE prog.cob -febcdic-table=gcos -o prog-gcos], [0], [], [])
+AT_CHECK([$COMPILE prog.cob -febcdic-table=GCOS -o prog-gcos], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog-gcos], [0],
 [Converted: "A#O2018 |@:>@"], []) # prefix is actually "|]" (escaped for m4 preproc)
 
 # FIXME: This really does not convert to anything close to ASCII;
 # what's this table supposed to encode?
-# AT_CHECK([$COMPILE prog.cob -febcdic-table=restricted-gc -o prog-rgc], [0], [], [])
+# AT_CHECK([$COMPILE prog.cob -febcdic-table=RESTRICTED-GC -o prog-rgc], [0], [], [])
 # AT_CHECK([$COBCRUN_DIRECT ./prog-rgc], [0], [])
 
 AT_CLEANUP
@@ -7615,6 +7699,10 @@ AT_DATA([caller.cob], [
               WHEN tkey(tidx) = 'C'
                  CONTINUE
            END-SEARCH
+           SEARCH ALL tentry
+              WHEN tkey(tidx) = 'X'
+                 CONTINUE
+           END-SEARCH
       *>
            STOP RUN.
 ])
@@ -7869,7 +7957,9 @@ Program-Id: caller           Statement: MOVE                   Line: 51
 Program-Id: caller           Statement: SEARCH ALL             Line: 55
 Program-Id: caller           Statement: WHEN                   Line: 58
 Program-Id: caller           Statement: CONTINUE               Line: 59
-Program-Id: caller           Statement: STOP RUN               Line: 62
+Program-Id: caller           Statement: SEARCH ALL             Line: 61
+Program-Id: caller           Statement: AT END                 Line: 64
+Program-Id: caller           Statement: STOP RUN               Line: 66
 ])
 
 AT_CHECK([$COBC -ftraceall callee1.cob], [0], [], [])
@@ -7999,7 +8089,11 @@ Program-Id:  caller                      SEARCH VARYING                  Line:  
 Program-Id:  caller                      SEARCH VARYING                  Line:     55
 Program-Id:  caller                      WHEN                            Line:     58
 Program-Id:  caller                      CONTINUE                        Line:     59
-Program-Id:  caller                      STOP RUN                        Line:     62
+Program-Id:  caller                      SEARCH ALL                      Line:     61
+Program-Id:  caller                      SEARCH VARYING                  Line:     61
+Program-Id:  caller                      SEARCH VARYING                  Line:     61
+Program-Id:  caller                      AT END                          Line:     64
+Program-Id:  caller                      STOP RUN                        Line:     66
 ])
 
 AT_CLEANUP
@@ -11047,6 +11141,10 @@ AT_DATA([prog.cob], [
            MOVE "$$"    TO FLD-5-4 (5)
            MOVE "Something else!" TO FLD-1-X (5).
       *
+      *    "the initial value of an index-name at runtime is undefined"
+      *    Old OpenCOBOL/GnuCOBOL did that as "1"
+           SET TAB-ADR-IND           TO 1.
+      *
            SET P2 TO NULL
            SET ADDRESS OF A-TABLE TO NULL
            MOVE ALL ZEROES TO A-TABLE (1: (LENGTH OF A-TABLE)).
@@ -11062,7 +11160,7 @@ $COBCRUN_DIRECT ./prog "param 1" param 'param 3'], [1],
 GRP-3:***ABC00D99D99D99D99XXABC00D99D99D99D99XXABC00D99 00D99D99XX***
 GRP-5:***Mon49eyMon49eyMon49eyMon49eyMon49eyMon49eyMon49ey
 ],
-[libcob: prog.cob:102: error: BASED/LINKAGE item 'A-TABLE' has NULL address
+[libcob: prog.cob:106: error: BASED/LINKAGE item 'A-TABLE' has NULL address
 
 dump written to dumpall.txt
 ])
@@ -11072,7 +11170,7 @@ AT_CAPTURE_FILE(./dumpall.txt)
 AT_DATA([reference_tmpl], [
 Module dump due to BASED/LINKAGE item 'A-TABLE' has NULL address
 
- Last statement of "prog" was MOVE at line 102 of prog.cob
+ Last statement of "prog" was MOVE at line 106 of prog.cob
 	ENTRY prog at prog.cob:75
  Started by ./prog
 	param 1
@@ -11264,11 +11362,31 @@ AT_DATA([prog.cob], [
        END PROGRAM c.
 ])
 
-AT_CHECK([$COMPILE -o prog prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN prog], [0],
 [Hello!
 Hello again!
+], [])
+
+AT_DATA([caller.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. caller.
+
+       PROCEDURE DIVISION.
+       MAIN-LINE.
+
+      *>   minimal side-test for performance comparisions
+           PERFORM DO-CHECK 10000 TIMES
+           DISPLAY 'DONE' UPON SYSERR WITH NO ADVANCING
+           GOBACK.
+
+       DO-CHECK.
+           CALL "prog"
+           .
 ])
+
+AT_CHECK([$COMPILE caller.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./caller], [0], ignore, [DONE])
 AT_CLEANUP
 
 
@@ -12172,6 +12290,9 @@ AT_DATA([prog.cob], [
 
        PROCEDURE DIVISION.
        MAIN.
+      *>   "the initial value of an index-name  at runtime is undefined"
+      *>   Old OpenCOBOL/GnuCOBOL did that as "1"
+           SET REC-NAME-IDX          TO 1.
            MOVE 'A-F-GEN-LEDGER-ZGL' TO REC-NAME.
            PERFORM FINDIT.
            MOVE 'JUNK' TO REC-NAME.
@@ -13728,7 +13849,10 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE prog.cob -w], [0], [], [])
+# Note: this program errors without constant folding, but that is
+#       checked in syn_misc.at already; we explicit specify the remove
+#       of folded constants option allowing to run with COBOL_FLAGS=-g
+AT_CHECK([$COMPILE prog.cob -fconstant-folding -fremove-unreachable -w], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [A: OK VAR-LEN > 16 AND VAR-LEN < 200

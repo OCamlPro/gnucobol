@@ -1,4 +1,17 @@
 
+2023-01-16  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: adjusted hack for AIX 64bit OBJECT_MODE
+
+2023-01-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: fix to use pdcurses when libcurses was verified
+
+2023-01-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* Makefile.am (CODE_COVERAGE_IGNORE_PATTERN): add some .def files
+	  that have shown to be not useful for code coverage
+
 2022-12-12  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: check for and substitute PERL/perl
@@ -130,6 +143,7 @@
 	  about potentially undefined macros; 
 	* configure.ac: copyright notice in generated script
 	* m4/libtool.m4: updated from libtool, with additions for netbsd from Debian
+	  (Debian 993872) and Johan Anderholm (patch #39)
 
 2021-10-11  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -1312,8 +1326,7 @@
 2003-04-19  Keisuke Nishida  <knishida@netlab.jp>
 
 	* cob.pc.in: Removed.
-
-	* cobpp: Removed.
+	* cobpp: integrated into cobc (ChangeLog entries moved there)
 
 2002-03-01  Keisuke Nishida  <knishida@netlab.jp>
 
@@ -1469,6 +1482,10 @@
 
 	* configure.ac, Makefile.am: Rename 'COB_LDADD' to 'COB_LIBS'
 
+2002-05-23  Keisuke Nishida  <knishida@netlab.jp>
+
+	* configure.ac.c: additions for use of gettext
+
 2002-05-19  Keisuke Nishida  <knishida@netlab.jp>
 
 	* Version 0.9.5 released.
@@ -1494,7 +1511,7 @@
 	* Version 0.9 released.
 
 
-Copyright 2002-2022 Free Software Foundation, Inc.
+Copyright 2002-2023 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

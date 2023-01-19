@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -997,6 +997,10 @@ struct cb_field {
 #define CB_FIELD_PTR(x)		\
 	(CB_REFERENCE_P (x) ? CB_FIELD (cb_ref (x)) : CB_FIELD (x))
 
+/* special values for cb_default_byte */
+#define CB_DEFAULT_BYTE_INIT	-1	/* init by PICTURE/USAGE; INDEXED BY as 1 */
+#define CB_DEFAULT_BYTE_NONE	-2	/* no explicit init at all */
+
 /* Index */
 
 #define CB_INDEX_OR_HANDLE_P(x)		cb_check_index_or_handle_p (x)
@@ -1213,30 +1217,44 @@ struct cb_reference {
 
 /* Binary operation */
 
-/*
-  '+'	x + y
-  '-'	x - y
-  '*'	x * y
-  '/'	x / y
-  '^'	x ** y
-  '='	x = y
-  '>'	x > y
-  '<'	x < y
-  '['	x <= y
-  ']'	x >= y
-  '~'	x != y
-  '!'	not x
-  '&'	x and y
-  '|'	x or y
-  '@'	( x )
-*/
+enum cb_binary_op_op {
+	BOP_INVALID = 0,	/* operation on invalid elements */
+	BOP_PLUS	= '+',	/* x + y */
+	BOP_MINUS	= '-',	/* x - y */
+	BOP_MULT	= '*',	/* x * y */
+	BOP_DIV		= '/',	/* x / y */
+	BOP_POW 	= '^',	/* x ** y */
+	BOP_EQ		= '=',	/* x = y */
+	BOP_GT		= '>',	/* x > y */
+	BOP_LT		= '<',	/* x < y */
+	BOP_LE		= '[',	/* x <= y */
+	BOP_GE		= ']',	/* x >= y */
+	BOP_NE		= '~',	/* x != y */
+	BOP_NOT		= '!',	/* not x */
+	BOP_AND		= '&',	/* x and y */
+	BOP_OR		= '|',	/* x or y */
+	BOP_PARENS	= '@',	/* ( x ) */
+	BOP_BITWISE_NOT	= 'n',	/* ~ ( x ) */
+	BOP_BITWISE_AND	= 'a',	/* ( x & y ) */
+	BOP_BITWISE_OR	= 'o',	/* ( x | y ) */
+	BOP_BITWISE_XOR	= 'e',	/* ( x ^ y ) */
+	BOP_SHIFT_L 	= 'l',	/* ( x << y ) */
+	BOP_SHIFT_R 	= 'r',	/* ( x >> y ) */
+	BOP_SHIFT_LC	= 'c',	/* ( x << y circular-shift) */
+	BOP_SHIFT_RC	= 'd',	/* ( x >> y circular-shift ) */
+};
+
+enum cb_binary_op_flag {
+	BOP_RESOLVE_AS_INTEGER = 1,
+	BOP_OPERANDS_SWAPPED = 2
+};
 
 struct cb_binary_op {
 	struct cb_tree_common	common;		/* Common values */
 	cb_tree			x;		/* LHS */
 	cb_tree			y;		/* RHS */
-	int			op;		/* Operation */
-	unsigned int		flag;		/* Special usage */
+	enum cb_binary_op_op	op;		/* Operation */
+	enum cb_binary_op_flag 	flag;		/* Special usage */
 };
 
 #define CB_BINARY_OP(x)		(CB_TREE_CAST (CB_TAG_BINARY_OP, struct cb_binary_op, x))
@@ -1323,8 +1341,8 @@ struct cb_initialize {
 	cb_tree			var;			/* Field */
 	cb_tree			val;			/* ALL (cb_true) or category (cb_int) TO VALUE */
 	cb_tree			rep;			/* Replacing */
+	enum cob_statement	statement;	/* INITIALIZE statement */
 	unsigned char		flag_default;		/* Default */
-	unsigned char		flag_init_statement;	/* INITIALIZE statement */
 	unsigned char		flag_no_filler_init;	/* No FILLER initialize */
 	unsigned char		padding;		/* Padding */
 };
@@ -1934,7 +1952,8 @@ struct cb_ml_suppress_clause {
 	enum cb_ml_suppress_category	category;
 };
 
-#define CB_ML_SUPPRESS(x)	(CB_TREE_CAST (CB_TAG_ML_SUPPRESS, struct cb_ml_suppress_clause, x))
+#define CB_ML_SUPPRESS(x)	\
+	(CB_TREE_CAST (CB_TAG_ML_SUPPRESS, struct cb_ml_suppress_clause, x))
 #define CB_ML_SUPPRESS_P(x)	(CB_TREE_TAG (x) == CB_TAG_ML_SUPPRESS)
 
 struct cb_ml_suppress_checks {
@@ -1942,7 +1961,8 @@ struct cb_ml_suppress_checks {
 	struct cb_ml_generate_tree	*tree;
 };
 
-#define CB_ML_SUPPRESS_CHECKS(x)	(CB_TREE_CAST (CB_TAG_ML_SUPPRESS_CHECKS, struct cb_ml_suppress_checks, x))
+#define CB_ML_SUPPRESS_CHECKS(x)	\
+	(CB_TREE_CAST (CB_TAG_ML_SUPPRESS_CHECKS, struct cb_ml_suppress_checks, x))
 #define CB_ML_SUPPRESS_CHECKS_P(x)	(CB_TREE_TAG (x) == CB_TAG_ML_SUPPRESS_CHECKS)
 
 /* DISPLAY type */
@@ -2101,8 +2121,10 @@ extern void			cb_set_system_names (void);
 extern cb_tree			cb_ref (cb_tree);
 extern cb_tree			cb_try_ref (cb_tree);
 
-extern cb_tree			cb_build_binary_op (cb_tree, const int,
-						    cb_tree);
+extern enum cb_binary_op_flag		cb_next_binary_op_flag;	/* hack for cb_build_binary_op */
+
+extern cb_tree			cb_build_binary_op (cb_tree,
+						    const enum cb_binary_op_op, cb_tree);
 extern cb_tree			cb_build_binary_list (cb_tree, const int);
 
 extern cb_tree			cb_build_funcall (const char *, const int,
@@ -2180,7 +2202,7 @@ extern cb_tree		cb_build_schema_name (cb_tree);
 extern cb_tree		cb_build_initialize (const cb_tree, const cb_tree,
 					   const cb_tree,
 					   const unsigned int,
-					   const unsigned int,
+					   const enum cob_statement,
 					   const unsigned int);
 
 struct cb_literal	*build_literal (enum cb_category,
@@ -2342,7 +2364,7 @@ extern void		cb_terminate_cond (void);
 extern void		cb_true_side (void);
 extern void		cb_false_side (void);
 extern void		cb_end_statement (void);
-extern const char		*explain_operator (const int);
+extern const char		*explain_operator (const enum cb_binary_op_op);
 extern const char		*enum_explain_storage (const enum cb_storage storage);
 
 extern void		cb_emit_arithmetic (cb_tree, const int, cb_tree);
@@ -2367,7 +2389,7 @@ extern void		cb_emit_accept_date_yyyymmdd (cb_tree);
 extern void		cb_emit_accept_day (cb_tree);
 extern void		cb_emit_accept_day_yyyyddd (cb_tree);
 extern void		cb_emit_accept_day_of_week (cb_tree);
-extern void		cb_emit_accept_time (cb_tree);
+extern void		cb_emit_accept_time (cb_tree, int);
 extern void		cb_emit_accept_command_line (cb_tree);
 extern void		cb_emit_accept_environment (cb_tree);
 extern void		cb_emit_accept_mnemonic (cb_tree, cb_tree);
@@ -2469,9 +2491,9 @@ extern void		cb_emit_return (cb_tree, cb_tree);
 
 extern void		cb_emit_rollback (void);
 
-extern void		cb_emit_search (cb_tree, cb_tree,
+extern cb_tree		cb_emit_search (cb_tree, cb_tree,
 					cb_tree, cb_tree);
-extern void		cb_emit_search_all (cb_tree, cb_tree,
+extern cb_tree		cb_emit_search_all (cb_tree, cb_tree,
 					    cb_tree, cb_tree);
 
 extern void		cb_emit_setenv (cb_tree, cb_tree);
@@ -2567,7 +2589,7 @@ extern void		cb_check_definition_matches_prototype (struct cb_program *);
 extern void		ylex_clear_all (void);
 extern void		ylex_call_destroy (void);
 
-/* cobc.c */
+/* cobc.c, help.c */
 #ifndef COB_EXTERNAL_XREF
 #define COB_INTERNAL_XREF
 #endif

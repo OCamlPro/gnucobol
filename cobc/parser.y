@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Ron Norman, Simon Sobisch,
    Edward Hart
 
@@ -38,6 +38,7 @@
 #define	COB_IN_PARSER	1
 #include "cobc.h"
 #include "tree.h"
+#include "libcob/coblocal.h"
 
 #define _PARSER_H	/* work around bad Windows SDK header */
 
@@ -789,9 +790,10 @@ setup_occurs_min_max (cb_tree occurs_min, cb_tree occurs_max)
 			}
 			if (current_field->occurs_max <= current_field->occurs_min) {
 				cb_error (_("OCCURS TO must be greater than OCCURS FROM"));
+				current_field->occurs_max = current_field->occurs_min;
 			}
 		} else {
-			current_field->occurs_max = 0;
+			current_field->occurs_max = 0;	/* UNBOUNDED */
 		}
 	} else {
 		current_field->occurs_min = 1; /* CHECKME: why using 1 ? */
@@ -800,6 +802,17 @@ setup_occurs_min_max (cb_tree occurs_min, cb_tree occurs_max)
 			cb_verify (cb_odo_without_to, _("OCCURS DEPENDING ON without TO phrase"));
 		}
 	}
+	/* LCOV_EXCL_START */
+	if (current_field->occurs_max > COB_MAX_FIELD_SIZE) {
+		/* testing here to give an early error; unlikely to be reached
+		   with 64bit compilers so no own msgid for now; should be added
+		   when the maximum field size is changed to be configurable */
+		cb_error_x (CB_TREE (current_field),
+			_("'%s' cannot be larger than %d bytes"),
+			current_field->name, COB_MAX_FIELD_SIZE);
+		current_field->occurs_min = current_field->occurs_max = 1;
+	}
+	/* LCOV_EXCL_STOP */
 }
 
 static void
@@ -2203,7 +2216,7 @@ static void
 error_if_following_every_clause (void)
 {
 	if (ml_suppress_list
-	    && CB_ML_SUPPRESS (CB_VALUE (ml_suppress_list))->target == CB_ML_SUPPRESS_TYPE) {
+	 && CB_ML_SUPPRESS (CB_VALUE (ml_suppress_list))->target == CB_ML_SUPPRESS_TYPE) {
 		cb_error (_("WHEN clause must follow EVERY clause"));
 	}
 }
@@ -2238,9 +2251,9 @@ add_when_to_ml_suppress_conds (cb_tree when_list)
 	*/
 	if (ml_suppress_list) {
 		last_suppress_clause = CB_ML_SUPPRESS (CB_VALUE (ml_suppress_list));
-		if ((last_suppress_clause->target == CB_ML_SUPPRESS_IDENTIFIER
-		     || last_suppress_clause->target == CB_ML_SUPPRESS_TYPE)
-		    && !last_suppress_clause->when_list) {
+		if ( (last_suppress_clause->target == CB_ML_SUPPRESS_IDENTIFIER
+		   || last_suppress_clause->target == CB_ML_SUPPRESS_TYPE)
+		  && !last_suppress_clause->when_list) {
 			last_suppress_clause->when_list = when_list;
 			return;
 		}
@@ -2819,6 +2832,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token MENU
 %token MERGE
 %token MESSAGE
+%token MICROSECOND_TIME	"MICROSECOND-TIME"
 %token MINUS
 %token MIN_VAL			"MIN-VAL"
 %token MNEMONIC_NAME		"Mnemonic name"
@@ -3258,6 +3272,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token WHEN_XML			"WHEN"
 %token WIDTH
 %token WIDTH_IN_CELLS		"WIDTH-IN-CELLS"
+%token WINAPI
 %token WINDOW
 %token WITH
 %token WORD			"Identifier"
@@ -4386,17 +4401,19 @@ mnemonic_choices:
 		if (CB_SYSTEM_NAME(save_tree)->token != CB_FEATURE_CONVENTION) {
 			cb_error_x (save_tree, _("invalid %s clause"), "SPECIAL NAMES");
 		} else if (CB_VALID_TREE ($3)) {
+			const char *name = CB_NAME ($3);
 			CB_SYSTEM_NAME(save_tree)->value = $1;
 			cb_define ($3, save_tree);
 			CB_CHAIN_PAIR (current_program->mnemonic_spec_list,
 					$3, save_tree);
 			/* remove non-standard context-sensitive words when identical to mnemonic */
-			if (cb_strcasecmp (CB_NAME($3), "EXTERN" ) == 0
-			 || cb_strcasecmp (CB_NAME($3), "STDCALL") == 0
-			 || cb_strcasecmp (CB_NAME($3), "STATIC" ) == 0
-			 || cb_strcasecmp (CB_NAME($3), "C"      ) == 0
-			 || cb_strcasecmp (CB_NAME($3), "PASCAL" ) == 0) {
-				remove_context_sensitivity (CB_NAME($3), CB_CS_CALL);
+			if (cb_strcasecmp (name, "EXTERN" ) == 0
+			 || cb_strcasecmp (name, "STDCALL") == 0
+			 || cb_strcasecmp (name, "WINAPI") == 0
+			 || cb_strcasecmp (name, "STATIC" ) == 0
+			 || cb_strcasecmp (name, "C"      ) == 0
+			 || cb_strcasecmp (name, "PASCAL" ) == 0) {
+				remove_context_sensitivity (name, CB_CS_CALL);
 			}
 		}
 	}
@@ -7030,6 +7047,14 @@ con_source:
   {
 	$$ = cb_int ((int)sizeof(double));
   }
+| long_double
+  {
+#if 1 /* fixed-sized as in field.c */
+	$$ = cb_int (16);
+#else
+	$$ = cb_int ((int)sizeof(long double));
+#endif
+  }
 | fp32_usage
   {
 	$$ = cb_int4;
@@ -7065,7 +7090,6 @@ fp64_usage:
 fp128_usage:
   FLOAT_BINARY_128
 | FLOAT_DECIMAL_34
-| FLOAT_EXTENDED
 ;
 
 pointer_len:
@@ -7593,7 +7617,7 @@ picture_clause:
 	check_repeated ("PICTURE", SYN_CLAUSE_4, &check_pic_duplicate);
 	current_field->pic = CB_PICTURE ($1);	/* always returned, invalid picture will have size == 0 */
   }
-  _pic_locale_format_or_depending_on
+  _pic_locale_format_or_depending_on_or_byte_length
   {
 	if ((!current_field->pic || current_field->pic->variable_length) &&
 	    !current_field->flag_picture_l) {
@@ -7605,7 +7629,7 @@ picture_clause:
   }
 ;
 
-_pic_locale_format_or_depending_on:
+_pic_locale_format_or_depending_on_or_byte_length:
   /* empty */
 | LOCALE _is_locale_name SIZE _is integer
   {
@@ -7662,6 +7686,7 @@ _pic_locale_format_or_depending_on:
 	   redefines.  */
 	current_field->flag_picture_l = 1;
   }
+| byte_length_clause
 ;
 
 _is_locale_name:
@@ -7786,6 +7811,11 @@ usage:
   {
 	check_and_set_usage (CB_USAGE_DOUBLE);
   }
+| long_double
+  {
+	check_and_set_usage (CB_USAGE_LONG_DOUBLE);
+	CB_UNFINISHED ("FLOAT-EXTENDED");
+  }
 | COMP_3
   {
 	check_and_set_usage (CB_USAGE_PACKED);
@@ -7820,6 +7850,7 @@ usage:
   }
 | INDEX
   {
+	/* TODO: second type which is 0-based, depending on dialect option */
 	check_and_set_usage (CB_USAGE_INDEX);
   }
 | PACKED_DECIMAL
@@ -7986,6 +8017,11 @@ usage:
 	check_repeated ("USAGE", SYN_CLAUSE_5, &check_pic_duplicate);
 	CB_UNFINISHED ("USAGE NATIONAL");
   }
+| UTF_8
+  {
+	check_repeated ("USAGE", SYN_CLAUSE_5, &check_pic_duplicate);
+	CB_UNFINISHED ("USAGE UTF-8");
+  }
 ;
 
 /* tokens that explicit need USAGE _is (because of reduce/reduce conflicts) */
@@ -8016,7 +8052,11 @@ _only:
 
 double_usage:
   COMP_2
-| FLOAT_LONG	/* alias from DOUBLE (ACU) in reserved.c */
+| FLOAT_LONG	/* noted: aliased to DOUBLE (ACU) in reserved.c */
+;
+
+long_double:
+  FLOAT_EXTENDED
 ;
 
 _font_name:
@@ -8053,6 +8093,20 @@ sign_clause:
   }
 ;
 
+/* BYTE-LENGTH clause (UTF-8 data items) */
+
+byte_length_clause:
+  BYTE_LENGTH integer
+  {
+	if (current_field->pic && current_field->pic->orig
+	 && current_field->pic->orig[0] == 'U') {
+		current_field->size = cb_get_int ($2);
+	} else {
+		/* wrong place, but good enough for now */
+		cb_error (_("'%s' is not USAGE UTF-8"), cb_name (CB_TREE(current_field)));
+	}
+  }
+;
 
 /* REPORT (RD) OCCURS clause */
 
@@ -8238,8 +8292,15 @@ occurs_index_list:
 occurs_index:
   unqualified_word
   {
-	$$ = cb_build_index ($1, cb_int1, 1U, current_field);
-	CB_FIELD_PTR ($$)->index_type = CB_STATIC_INT_INDEX;
+	const enum cb_storage	storage = current_field->storage;
+	const cb_tree init_val = cb_default_byte == CB_DEFAULT_BYTE_INIT
+	                       ? cb_int1 : NULL;
+	$$ = cb_build_index ($1, init_val, 1U, current_field);
+	if (storage == CB_STORAGE_LOCAL) {
+		CB_FIELD_PTR ($$)->index_type = CB_INT_INDEX;
+	} else {
+		CB_FIELD_PTR ($$)->index_type = CB_STATIC_INT_INDEX;
+	}
   }
 ;
 
@@ -8734,7 +8795,9 @@ _local_storage_section:
   _record_description_list
   {
 	if ($5) {
-		current_program->local_storage = CB_FIELD ($5);
+		/* note: we may added internal items like INDEXES already,
+		   so ADD, not SET */
+		CB_FIELD_ADD (current_program->local_storage, CB_FIELD ($5));
 	}
   }
 ;
@@ -8753,7 +8816,9 @@ _linkage_section:
   _record_description_list
   {
 	if ($5) {
-		current_program->linkage_storage = CB_FIELD ($5);
+		/* note: we may added internal items like INDEXES already,
+		   so ADD, not SET */
+		CB_FIELD_ADD (current_program->linkage_storage, CB_FIELD ($5));
 	}
   }
 ;
@@ -9537,7 +9602,9 @@ _screen_section:
   {
 	if (description_field) {
 		get_finalized_description_tree ();
-		current_program->screen_storage = description_field;
+		/* note: we may added internal items like INDEXES already,
+		   so ADD, not SET */
+		CB_FIELD_ADD (current_program->screen_storage, description_field);
 		current_program->flag_screen = 1;
 	}
 	cobc_cs_check = 0;
@@ -11508,7 +11575,11 @@ accept_body:
   }
 | identifier FROM TIME
   {
-	cb_emit_accept_time ($1);
+	cb_emit_accept_time ($1, 0);
+  }
+| identifier FROM MICROSECOND_TIME
+  {
+	cb_emit_accept_time ($1, 1);
   }
 | identifier FROM USER NAME
   {
@@ -12283,6 +12354,10 @@ mnemonic_conv:
 | STDCALL	/* not active for ENTRY-CONVENTION via PROCEDURE DIVISION */
   {
 	$$ = cb_int (CB_CONV_STDCALL);
+  }
+| WINAPI	/* not active for ENTRY-CONVENTION via PROCEDURE DIVISION */
+  {
+	$$ = cb_int (CB_CONV_STDCALL | CB_CONV_STATIC_LINK);
   }
 | C	/* not active for ENTRY-CONVENTION via PROCEDURE DIVISION */
   {
@@ -15719,7 +15794,7 @@ search_body:
   table_name _search_varying _search_at_end
   search_whens
   {
-	cb_emit_search ($1, $2, $3, $4);
+	$$ = cb_emit_search ($1, $2, $3, $4);
   }
 ;
 
@@ -15728,7 +15803,7 @@ search_all_body:
   WHEN expr
   statement_list
   {
-	cb_emit_search_all ($1, $2, $4, $5);
+	$$ = cb_emit_search_all ($1, $2, $4, $5);
   }
 ;
 
@@ -15779,9 +15854,23 @@ _end_search:
   {
 	TERMINATOR_WARNING ($-2, SEARCH);
   }
-| END_SEARCH
+| END_SEARCH end_search_pos_token
   {
+	cb_tree x = $-0;
+	if (x) {
+		struct cb_search *p = CB_SEARCH ($-0);
+		if (p->at_end == NULL) {
+			cb_tree brk = cb_build_direct ("break;", 0);
+			p->at_end = CB_BUILD_PAIR ($2, brk);
+		}
+	}
 	TERMINATOR_CLEAR ($-2, SEARCH);
+  }
+;
+
+end_search_pos_token:
+  {
+	$$ = cb_build_comment ("END-SEARCH");
   }
 ;
 
@@ -17902,6 +17991,12 @@ _count_in:
 ;
 
 /* Expressions */
+
+/* CHECKME: How can we integrate source references here
+   to correctly attach #line directives in the code
+   within codegen.c (output_cond) ?
+   Possibly directly add in push_expr?
+   This may also allows us to drop cb_exp_line */
 
 condition:
   expr

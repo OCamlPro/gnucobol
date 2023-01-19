@@ -174,6 +174,7 @@ enum cb_current_date {
 #define	CB_CS_SPECIAL_NAMES		CB_CS_DAY
 #define	CB_CS_DEFAULT			CB_CS_DAY
 #define	CB_CS_VALIDATE_STATUS	CB_CS_DAY
+#define	CB_CS_USAGE				CB_CS_DAY
 
 /* Support for cobc from stdin */
 #define COB_DASH			"-"
@@ -462,6 +463,8 @@ extern int			cb_saveargc;
 
 extern FILE			*cb_listing_file;
 extern FILE			*cb_src_list_file;
+extern FILE			*cb_depend_file;
+extern struct cb_text_list	*cb_depend_list;
 extern struct cb_text_list	*cb_include_list;
 extern struct cb_text_list	*cb_intrinsic_list;
 extern struct cb_text_list	*cb_extension_list;

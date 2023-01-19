@@ -50,9 +50,12 @@ static unsigned char	cob_lc_thou;
 
 static const cob_field_attr	const_alpha_attr =
 				{COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL};
+static const cob_field_attr	const_bin_attr =
+				{COB_TYPE_NUMERIC_BINARY, 9, 0,
+				 COB_FLAG_HAVE_SIGN | COB_FLAG_REAL_BINARY, NULL};
 static const cob_field_attr	const_binll_attr =
 				{COB_TYPE_NUMERIC_BINARY, 20, 0,
-				 COB_FLAG_HAVE_SIGN, NULL};
+				 COB_FLAG_HAVE_SIGN | COB_FLAG_REAL_BINARY, NULL};
 static const cob_field_attr	all_display_attr =
 				{COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL};
 static const cob_field_attr	all_numeric_display_attr =
@@ -541,20 +544,32 @@ cob_move_packed_to_display (cob_field *f1, cob_field *f2)
 static void
 cob_move_fp_to_fp (cob_field *src, cob_field *dst)
 {
+	const int src_type = COB_FIELD_TYPE (src);
+	const int dst_type = COB_FIELD_TYPE (dst);
+
+	long double	lfp;
 	double	dfp;
 	float	ffp;
 
-	if (COB_FIELD_TYPE (src) == COB_TYPE_NUMERIC_FLOAT) {
-		memmove ((void *)&ffp, src->data, sizeof(float));
+	if (src_type == COB_TYPE_NUMERIC_FLOAT) {
+		memmove ((void *)&ffp, src->data, sizeof (float));
 		dfp = (double)ffp;
+		lfp = ffp;
+	} else if (src_type == COB_TYPE_NUMERIC_DOUBLE) {
+		memmove ((void *)&dfp, src->data, sizeof (double));
+		ffp = (float)dfp;
+		lfp = dfp;
 	} else {
-		memmove ((void *)&dfp, src->data, sizeof(double));
+		memmove ((void*)&lfp, src->data, sizeof (long double));
+		dfp = (double)lfp;
 		ffp = (float)dfp;
 	}
-	if (COB_FIELD_TYPE (dst) == COB_TYPE_NUMERIC_FLOAT) {
-		memmove (dst->data, (void *)&ffp, sizeof(float));
-	} else {
-		memmove (dst->data, (void *)&dfp, sizeof(double));
+	if (dst_type == COB_TYPE_NUMERIC_FLOAT) {
+		memmove (dst->data, (void *)&ffp, sizeof (float));
+	} else if (dst_type == COB_TYPE_NUMERIC_DOUBLE) {
+		memmove (dst->data, (void *)&dfp, sizeof (double));
+	} else{
+		memmove (dst->data, (void *)&lfp, sizeof (long double));
 	}
 }
 
@@ -661,7 +676,8 @@ cob_move_binary_to_display (cob_field *f1, cob_field *f2)
 		val = cob_binary_mget_uint64 (f1);
 	}
 
-	/* Convert to string */
+	/* Convert to string; note: we do this on ourself as this has proven
+	   to be much faster than calling "sprintf (buff, CB_FMT_LLU, val)" */
 	i = 20;
 	while (val > 0) {
 		buff[--i] = (char) COB_I2D (val % 10);
@@ -670,13 +686,16 @@ cob_move_binary_to_display (cob_field *f1, cob_field *f2)
 
 	/* Store */
 	store_common_region (f2, (cob_u8_ptr)buff + i, (size_t)20 - i,
-		COB_FIELD_SCALE(f1));
+		COB_FIELD_SCALE (f1));
 
 	COB_PUT_SIGN (f2, sign);
 }
 
 /* Edited */
 
+/* create numeric edited field, note: non-display fields
+   get "unpacked" first via indirect_move, then be edited
+   from display using this function */ 
 static void
 cob_move_display_to_edited (cob_field *f1, cob_field *f2)
 {
@@ -698,6 +717,7 @@ cob_move_display_to_edited (cob_field *f1, cob_field *f2)
 	int		suppress_zero = 1;
 	int		sign_first = 0;
 	int		p_is_left = 0;
+	int		has_b = 0;
 	int		repeat;
 	int		n;
 	unsigned char	pad = ' ';
@@ -747,71 +767,22 @@ cob_move_display_to_edited (cob_field *f1, cob_field *f2)
 		}
 	}
 
-	src = max - COB_FIELD_SCALE(f1) - count;
+	src = max - COB_FIELD_SCALE (f1) - count;
 	for (p = COB_FIELD_PIC (f2); p->symbol; ++p) {
 		c = p->symbol;
 		n = p->times_repeated;
 		for (; n > 0; n--, ++dst) {
 			switch (c) {
-			case '0':
-			case '/':
-				*dst = c;
-				break;
-
-			case 'B':
-				*dst = suppress_zero ? pad : 'B';
-				break;
-
-			case 'P':
-				if (p_is_left) {
-					++src;
-					--dst;
-				}
-				break;
 
 			case '9':
-				*dst = (min <= src && src < max) ? *src++ : (src++, '0');
-				if (*dst != '0') {
+				x = (min <= src && src < max) ? *src++ : (src++, '0');
+				if (x != '0') {
 					is_zero = suppress_zero = 0;
 				}
 				suppress_zero = 0;
 				trailing_sign = 1;
 				trailing_curr = 1;
-				break;
-
-			case 'V':
-				--dst;
-				decimal_point = dst;
-				break;
-
-			case '.':
-			case ',':
-				if (c == dec_symbol) {
-					*dst = dec_symbol;
-					decimal_point = dst;
-				} else {
-					if (suppress_zero) {
-						*dst = pad;
-					} else {
-						*dst = c;
-					}
-				}
-				break;
-
-			case 'C':
-			case 'D':
-				end = dst;
-				/* Check negative and not zero */
-				if (neg && !is_zero) {
-					if (c == 'C') {
-						memcpy (dst, "CR", (size_t)2);
-					} else {
-						memcpy (dst, "DB", (size_t)2);
-					}
-				} else {
-					memset (dst, ' ', (size_t)2);
-				}
-				dst++;
+				*dst = x;
 				break;
 
 			case 'Z':
@@ -820,10 +791,10 @@ cob_move_display_to_edited (cob_field *f1, cob_field *f2)
 				if (x != '0') {
 					is_zero = suppress_zero = 0;
 				}
-				pad = (c == '*') ? '*' : ' ';
-				*dst = suppress_zero ? pad : x;
 				trailing_sign = 1;
 				trailing_curr = 1;
+				pad = (c == '*') ? '*' : ' ';
+				*dst = suppress_zero ? pad : x;
 				break;
 
 			case '+':
@@ -863,34 +834,95 @@ cob_move_display_to_edited (cob_field *f1, cob_field *f2)
 				}
 				break;
 
-			default:
-				if (c == currency) {
-					x = (min <= src && src < max) ? *src++ : (src++, '0');
-					if (x != '0') {
-						is_zero = suppress_zero = 0;
-					}
-					if (trailing_curr) {
-						*dst = currency;
-						--end;
-					} else if (dst == f2->data || suppress_zero) {
+			case '.':
+			case ',':
+				if (c == dec_symbol) {
+					*dst = dec_symbol;
+					decimal_point = dst;
+				} else {
+					if (suppress_zero) {
 						*dst = pad;
-						curr_symbol = currency;
 					} else {
-						*dst = x;
+						*dst = c;
 					}
-					if (n > 1 || last_fixed_insertion_char == c) {
-						floating_insertion = 1;
-					} else if (!trailing_curr) {
-						if (last_fixed_insertion_pos) {
-							*last_fixed_insertion_pos = last_fixed_insertion_char;
-						}
-						last_fixed_insertion_pos = dst;
-						last_fixed_insertion_char = c;
+				}
+				break;
+
+			case 'V':
+				--dst;
+				decimal_point = dst;
+				break;
+
+			case '0':
+			case '/':
+				*dst = c;
+				break;
+
+			case 'B':
+				if (suppress_zero) {
+					*dst = pad;
+				} else {
+					*dst = 'B';
+					has_b = 1;
+				}
+				break;
+
+			case 'P':
+				if (p_is_left) {
+					++src;
+					--dst;
+				}
+				break;
+
+			case 'C':
+			case 'D':
+				end = dst;
+				/* Check negative and not zero */
+				if (neg && !is_zero) {
+					if (c == 'C') {
+						memcpy (dst, "CR", (size_t)2);
+					} else {
+						memcpy (dst, "DB", (size_t)2);
 					}
+				} else {
+					memset (dst, ' ', (size_t)2);
+				}
+				dst++;
+				break;
+
+			default:
+				/* LCOV_EXCL_START */
+				if (c != currency) {
+					/* should never happen, consider remove [also the reason for not translating that] */
+					cob_runtime_error ("cob_move_display_to_edited: invalid PIC character %c", c);
+					*dst = '?';	/* Invalid PIC */
 					break;
 				}
+				/* LCOV_EXCL_STOP */
 
-				*dst = '?';	/* Invalid PIC */
+				x = (min <= src && src < max) ? *src++ : (src++, '0');
+				if (x != '0') {
+					is_zero = suppress_zero = 0;
+				}
+				if (trailing_curr) {
+					*dst = currency;
+					--end;
+				} else if (dst == f2->data || suppress_zero) {
+					*dst = pad;
+					curr_symbol = currency;
+				} else {
+					*dst = x;
+				}
+				if (n > 1 || last_fixed_insertion_char == c) {
+					floating_insertion = 1;
+				} else if (!trailing_curr) {
+					if (last_fixed_insertion_pos) {
+						*last_fixed_insertion_pos = last_fixed_insertion_char;
+					}
+					last_fixed_insertion_pos = dst;
+					last_fixed_insertion_char = c;
+				}
+				break;
 			}
 		}
 	}
@@ -930,7 +962,12 @@ cob_move_display_to_edited (cob_field *f1, cob_field *f2)
 				case '7':
 				case '8':
 				case '9':
+#if 1	/* CHECKME: Why should we have a comma in here, necessary as shown in NIST NC,
+     	   (TODO: add this to the internal testsuite, must fail if commented out)
+     	   but not skip a period? */
 				case ',':
+				case '.':
+#endif
 				case '+':
 				case '-':
 				case '/':
@@ -976,17 +1013,18 @@ cob_move_display_to_edited (cob_field *f1, cob_field *f2)
 			}
 		}
 
-		/* Replace all 'B's by pad */
-		count = 0;
-		for (dst = f2->data; dst < end; ++dst) {
-			if (*dst == 'B') {
-				if (count == 0) {
-					*dst = pad;
+		/* Replace all leading 'B's by pad, others by space */
+		if (has_b) {
+			for (dst = f2->data; dst < end; ++dst) {
+				if (*dst == 'B') {
+					if (has_b) {
+						*dst = pad;
+					} else {
+						*dst = ' ';
+					}
 				} else {
-					*dst = ' ';
+					has_b = 0;	/* non-starting characters seen */
 				}
-			} else {
-				++count;
 			}
 		}
 	}
@@ -1122,17 +1160,15 @@ indirect_move (void (*func) (cob_field *src, cob_field *dst),
 	       cob_field *src, cob_field *dst,
 	       const size_t size, const int scale)
 {
-	cob_field	temp;
+	cob_field	field;
 	cob_field_attr	attr;
 
+	COB_FIELD_INIT (size, cob_malloc (size), &attr);
 	COB_ATTR_INIT (COB_TYPE_NUMERIC_DISPLAY, (unsigned short) size, (short) scale,
 			COB_FLAG_HAVE_SIGN, NULL);
-	temp.size = size;
-	temp.data = cob_malloc (size);
-	temp.attr = &attr;
-	func (src, &temp);
-	cob_move (&temp, dst);
-	cob_free (temp.data);
+	func (src, &field);
+	cob_move (&field, dst);
+	cob_free (field.data);
 }
 
 static void
@@ -1400,12 +1436,13 @@ cob_move (cob_field *src, cob_field *dst)
 			return;
 		}
 
-	case COB_TYPE_NUMERIC_DOUBLE:
+	case COB_TYPE_NUMERIC_FLOAT:
 		switch (COB_FIELD_TYPE (dst)) {
-		case COB_TYPE_NUMERIC_DOUBLE:
-			memmove (dst->data, src->data, sizeof(double));
-			return;
 		case COB_TYPE_NUMERIC_FLOAT:
+			memmove (dst->data, src->data, sizeof(float));
+			return;
+		case COB_TYPE_NUMERIC_DOUBLE:
+		case COB_TYPE_NUMERIC_L_DOUBLE:
 			cob_move_fp_to_fp (src, dst);
 			return;
 		case COB_TYPE_NUMERIC_BINARY:
@@ -1414,7 +1451,6 @@ cob_move (cob_field *src, cob_field *dst)
 			return;
 		case COB_TYPE_NUMERIC_PACKED:
 		case COB_TYPE_NUMERIC_DISPLAY:
-		case COB_TYPE_NUMERIC_L_DOUBLE:
 		case COB_TYPE_NUMERIC_FP_BIN32:
 		case COB_TYPE_NUMERIC_FP_BIN64:
 		case COB_TYPE_NUMERIC_FP_BIN128:
@@ -1427,12 +1463,13 @@ cob_move (cob_field *src, cob_field *dst)
 			return;
 		}
 
-	case COB_TYPE_NUMERIC_FLOAT:
+	case COB_TYPE_NUMERIC_DOUBLE:
 		switch (COB_FIELD_TYPE (dst)) {
-		case COB_TYPE_NUMERIC_FLOAT:
-			memmove (dst->data, src->data, sizeof(float));
-			return;
 		case COB_TYPE_NUMERIC_DOUBLE:
+			memmove (dst->data, src->data, sizeof(double));
+			return;
+		case COB_TYPE_NUMERIC_FLOAT:
+		case COB_TYPE_NUMERIC_L_DOUBLE:
 			cob_move_fp_to_fp (src, dst);
 			return;
 		case COB_TYPE_NUMERIC_BINARY:
@@ -1441,7 +1478,33 @@ cob_move (cob_field *src, cob_field *dst)
 			return;
 		case COB_TYPE_NUMERIC_PACKED:
 		case COB_TYPE_NUMERIC_DISPLAY:
+		case COB_TYPE_NUMERIC_FP_BIN32:
+		case COB_TYPE_NUMERIC_FP_BIN64:
+		case COB_TYPE_NUMERIC_FP_BIN128:
+		case COB_TYPE_NUMERIC_FP_DEC64:
+		case COB_TYPE_NUMERIC_FP_DEC128:
+			cob_decimal_setget_fld (src, dst, 0);
+			return;
+		default:
+			cob_decimal_move_temp (src, dst);
+			return;
+		}
+
+	case COB_TYPE_NUMERIC_L_DOUBLE:
+		switch (COB_FIELD_TYPE (dst)) {
 		case COB_TYPE_NUMERIC_L_DOUBLE:
+			memmove (dst->data, src->data, sizeof(double));
+			return;
+		case COB_TYPE_NUMERIC_DOUBLE:
+		case COB_TYPE_NUMERIC_FLOAT:
+			cob_move_fp_to_fp (src, dst);
+			return;
+		case COB_TYPE_NUMERIC_BINARY:
+		case COB_TYPE_NUMERIC_COMP5:
+			cob_decimal_setget_fld (src, dst, opt);
+			return;
+		case COB_TYPE_NUMERIC_PACKED:
+		case COB_TYPE_NUMERIC_DISPLAY:
 		case COB_TYPE_NUMERIC_FP_BIN32:
 		case COB_TYPE_NUMERIC_FP_BIN64:
 		case COB_TYPE_NUMERIC_FP_BIN128:
@@ -1465,9 +1528,9 @@ cob_move (cob_field *src, cob_field *dst)
 			return;
 		case COB_TYPE_NUMERIC_FLOAT:
 		case COB_TYPE_NUMERIC_DOUBLE:
+		case COB_TYPE_NUMERIC_L_DOUBLE:
 		case COB_TYPE_NUMERIC_PACKED:
 		case COB_TYPE_NUMERIC_DISPLAY:
-		case COB_TYPE_NUMERIC_L_DOUBLE:
 		case COB_TYPE_NUMERIC_FP_BIN32:
 		case COB_TYPE_NUMERIC_FP_BIN128:
 		case COB_TYPE_NUMERIC_FP_DEC128:
@@ -1488,9 +1551,9 @@ cob_move (cob_field *src, cob_field *dst)
 			return;
 		case COB_TYPE_NUMERIC_FLOAT:
 		case COB_TYPE_NUMERIC_DOUBLE:
+		case COB_TYPE_NUMERIC_L_DOUBLE:
 		case COB_TYPE_NUMERIC_PACKED:
 		case COB_TYPE_NUMERIC_DISPLAY:
-		case COB_TYPE_NUMERIC_L_DOUBLE:
 		case COB_TYPE_NUMERIC_FP_BIN32:
 		case COB_TYPE_NUMERIC_FP_BIN64:
 		case COB_TYPE_NUMERIC_FP_BIN128:
@@ -1679,24 +1742,14 @@ cob_display_get_long_long (cob_field *f)
 void
 cob_set_int (cob_field *f, const int n)
 {
-	cob_field	temp;
-	cob_field_attr	attr;
-
-	COB_ATTR_INIT  (COB_TYPE_NUMERIC_BINARY, 9, 0,
-			COB_FLAG_HAVE_SIGN | COB_FLAG_REAL_BINARY, NULL);
-	temp.size = 4;
-	temp.data = (unsigned char *)&n;
-	temp.attr = &attr;
-	cob_move (&temp, f);
+	cob_field	field;
+	COB_FIELD_INIT (sizeof (int), (unsigned char *)&n, &const_bin_attr);
+	cob_move (&field, f);
 }
 
 int
 cob_get_int (cob_field *f)
 {
-	int		n;
-	cob_s64_t	val;
-	cob_field	temp;
-	cob_field_attr	attr;
 
 	switch (COB_FIELD_TYPE (f)) {
 	case COB_TYPE_NUMERIC_DISPLAY:
@@ -1705,29 +1758,36 @@ cob_get_int (cob_field *f)
 		return cob_packed_get_int (f);
 	case COB_TYPE_NUMERIC_BINARY:
 	case COB_TYPE_NUMERIC_COMP5:
-		val = cob_binary_mget_sint64 (f);
-		for (n = COB_FIELD_SCALE (f); n > 0 && val; --n) {
-			val /= 10;
+		{
+			cob_s64_t	val = cob_binary_mget_sint64 (f);
+			int		inc;
+			for (inc = COB_FIELD_SCALE (f); inc > 0 && val; --inc) {
+				val /= 10;
+			}
+			return (int)val;
 		}
-		return (int)val;
 	default:
-		COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, 9, 0,
-				COB_FLAG_HAVE_SIGN, NULL);
-		temp.size = 4;
-		temp.data = (unsigned char *)&n;
-		temp.attr = &attr;
-		cob_move (f, &temp);
-		return n;
+		{
+			cob_field	field;
+			int		val;
+			COB_FIELD_INIT (sizeof (int), (unsigned char *)&val, &const_bin_attr);
+			cob_move (f, &field);
+			return val;
+		}
 	}
+}
+
+void
+cob_set_llint (cob_field *f, const cob_s64_t n)
+{
+	cob_field	field;
+	COB_FIELD_INIT (sizeof (cob_s64_t), (unsigned char *)&n, &const_binll_attr);
+	cob_move (&field, f);
 }
 
 cob_s64_t
 cob_get_llint (cob_field *f)
 {
-	cob_s64_t	n;
-	int		inc;
-	cob_field	temp;
-
 	switch (COB_FIELD_TYPE (f)) {
 	case COB_TYPE_NUMERIC_DISPLAY:
 		return cob_display_get_long_long (f);
@@ -1735,17 +1795,22 @@ cob_get_llint (cob_field *f)
 		return cob_packed_get_long_long (f);
 	case COB_TYPE_NUMERIC_BINARY:
 	case COB_TYPE_NUMERIC_COMP5:
-		n = cob_binary_mget_sint64 (f);
-		for (inc = COB_FIELD_SCALE (f); inc > 0 && n; --inc) {
-			n /= 10;
+		{
+			cob_s64_t	val = cob_binary_mget_sint64 (f);
+			int		inc;
+			for (inc = COB_FIELD_SCALE (f); inc > 0 && val; --inc) {
+				val /= 10;
+			}
+			return val;
 		}
-		return n;
 	default:
-		temp.size = 8;
-		temp.data = (unsigned char *)&n;
-		temp.attr = &const_binll_attr;
-		cob_move (f, &temp);
-		return n;
+		{
+			cob_field	field;
+			cob_s64_t	val;
+			COB_FIELD_INIT (sizeof (cob_s64_t), (unsigned char *)&val, &const_binll_attr);
+			cob_move (f, &field);
+			return val;
+		}
 	}
 }
 

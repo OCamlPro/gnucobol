@@ -1,7 +1,7 @@
 #
 # Makefile gnucobol/tests/cobol85
 #
-# Copyright (C) 2002-2012, 2015-2022 Free Software Foundation, Inc.
+# Copyright (C) 2002-2012, 2015-2023 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -49,17 +49,21 @@ EXTRA_DIST = EXEC85.conf.in expand.pl report.pl summary.pl summary.txt \
 #CLEANFILES = EXEC85$(EXEEXT) summary.log
 
 COBC = $(PRE_INST_ENV) cobc$(EXEEXT)
+COBC_FLAGS = -std=cobol85 -debug $(COBOL_FLAGS)
+
 CURL_FLAGS = 
 WGET_FLAGS = -t1 -T5
 DIFF_FLAGS = @DIFF_FLAGS@
-COBC_FLAGS = -std=cobol85 -debug
 
 PRE_INST_ENV = "$(abs_top_builddir)/pre-inst-env"
 
 # MAKEFLAGS = --no-print-directory
 
 # targets that are only logical targets instead of files
-.PHONY: test test-local diff-summary diff summary.log $(MODULES_RUN) unpack-Z unpack-gz
+.PHONY: test test-local test-local-compat \
+	diff-summary diff summary.log \
+	modules $(MODULES_RUN) \
+	unpack-Z unpack-gz
 
 NC_RUN: NC
 	@cd NC && $(MAKE) -k $(SINGLE_TARGET)
@@ -227,17 +231,17 @@ $(MODULES_ALL): newcob.val EXEC85$(EXEEXT) $(srcdir)/EXEC85.conf.in Makefile.mod
 	else \
 		export NEWCOB_VAL=$(abs_srcdir)/newcob.val; \
 	fi; \
-	cd $@ && $(PRE_INST_ENV) ../EXEC85$(EXEEXT)
-	@$(PERL) $(srcdir)/expand.pl $@/newcob.tmp $@
+	(cd $@ && COB_UNIX_LF=Y $(PRE_INST_ENV) ../EXEC85$(EXEEXT)) || ($(RM) $(abs_builddir)/$@ && false)
+	@$(PERL) $(srcdir)/expand.pl $@/newcob.tmp $@ || ($(RM) $(abs_builddir)/$@ && false)
 #	@$(RM) ./$@/newcob.tmp ./$@/newcob.log ./$@/EXEC85.conf
-	@export CBL_LIST="`ls $@/*.CBL | cut -f2 -d/ | tr '\n' ' '`"  && \
+	@(export CBL_LIST="`ls $@/*.CBL | cut -f2 -d/ | tr '\n' ' '`" && \
 	 $(SED) -e 's/##MODULE##/'"$@"'/'            \
 	        -e 's|##COB85DIR##|'$(abs_srcdir)'|' \
 	        -e 's|##DIFF_FLAGS##|'"$(DIFF_FLAGS)"'|' \
 	        -e 's|##PERL##|'"$(PERL)"'|' \
 	        -e 's|##TESTS##|'"` echo $$CBL_LIST | $(SED) -e 's/\.CBL//g'`"'|' \
 	        -e 's|##TESTS_LOCAL##|'"`echo $$CBL_LIST | $(SED) -e 's/\.CBL/-local/g'`"'|' \
-	    $(srcdir)/Makefile.module.in > $@/Makefile
+	    $(srcdir)/Makefile.module.in > $@/Makefile) || ($(RM) $(abs_builddir)/$@ && false)
 	@echo "Finished module directory $@."
 
 EXEC85.cob: newcob.val
@@ -263,4 +267,4 @@ EXEC85.cob: newcob.val
 EXEC85$(EXEEXT): EXEC85.cob
 	@echo "Compiling EXEC85 program"
 	@if test -f "EXEC85.cob"; then EXEC_SRC="EXEC85.cob"; else EXEC_SRC="$(srcdir)/EXEC85.cob"; fi; \
-	 $(COBC) $(COBOL_FLAGS) -x "$$EXEC_SRC"
+	 $(COBC) $(COBC_FLAGS) -x "$$EXEC_SRC"

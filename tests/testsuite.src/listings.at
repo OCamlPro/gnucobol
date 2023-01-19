@@ -180,7 +180,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -tsymbols prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -ftsymbols prog.cob], [0], [], [])
 
 AT_DATA([expected.lst],
 [GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY
@@ -453,7 +453,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -tsymbols prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -ftsymbols prog.cob], [0], [], [])
 
 AT_DATA([prog3.lst],
 [GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY
@@ -490,7 +490,7 @@ AT_CHECK([$UNIFY_LISTING prog.lst prog.lis once], [0], [], [])
 AT_CHECK([diff prog3.lst prog.lis], [0], [], [])
 
 AT_CHECK([$COBC $FLAGS -E -o prog.i prog.cob], [0], [], [])
-AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -tsymbols prog.i], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -ftsymbols prog.i], [0], [], [])
 
 AT_DATA([prog4.lst],
 [GnuCOBOL V.R.P               prog.i                     DDD MMM dd HH:MM:SS YYYY
@@ -558,7 +558,7 @@ AT_DATA([prog.cob], [
            STOP RUN.                                                     PROG013
 ])
 
-AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -tsymbols prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -ftsymbols prog.cob], [0], [], [])
 
 AT_DATA([prog4.lst],
 [GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY
@@ -625,7 +625,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -tsymbols prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -ftsymbols prog.cob], [0], [], [])
 
 AT_DATA([prog5.lst],
 [GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY
@@ -715,7 +715,7 @@ AT_DATA([prog1.cob], [
        end program copytest.
 ])
 
-AT_CHECK([$COMPILE_ONLY -t prog1.lst -tlines=0 -tsymbols prog1.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -t prog1.lst -tlines=0 -ftsymbols prog1.cob], [0], [], [])
 
 AT_DATA([prog6.lst],
 [GnuCOBOL V.R.P               prog1.cob                  DDD MMM dd HH:MM:SS YYYY
@@ -841,7 +841,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -tsymbols prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -ftsymbols prog.cob], [0], [], [])
 
 AT_DATA([progl.lst],
 [GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY
@@ -912,7 +912,7 @@ AT_DATA([prog.cob], [
 ])
 
 
-AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -tsymbols prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -ftsymbols prog.cob], [0], [], [])
 
 AT_DATA([progr.lst],
 [GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY
@@ -982,7 +982,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -tsymbols prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -ftsymbols prog.cob], [0], [], [])
 
 AT_DATA([prog6.lst],
 [GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY
@@ -1115,7 +1115,7 @@ AT_DATA([tstcpybk.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -tsymbols tstcpybk.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -ftsymbols tstcpybk.cob], [0], [], [])
 
 AT_DATA([prog3.lst],
 [GnuCOBOL V.R.P               tstcpybk.cob               DDD MMM dd HH:MM:SS YYYY
@@ -1380,7 +1380,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY -t prog.lst -tsymbols prog.cob], [0], [], [ignore])
+AT_CHECK([$COMPILE_ONLY -t prog.lst -ftsymbols prog.cob], [0], [], [ignore])
 
 AT_DATA([prog14.lst],
 [GnuCOBOL V.R.P          prog.cob             DDD MMM dd HH:MM:SS YYYY  Page 0001
@@ -1459,7 +1459,7 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COBC $FLAGS -E -o prog.i prog.cob], [0], [], [])
-AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -tsymbols prog.i], [0], [], [ignore])
+AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -ftsymbols prog.i], [0], [], [ignore])
 
 AT_DATA([prog17.lst],
 [GnuCOBOL V.R.P               prog.i                     DDD MMM dd HH:MM:SS YYYY
@@ -1732,10 +1732,10 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 
 # Check once with $COMPILE and once with $COMPILE_ONLY.
 # This tests whether codegen affects the listing.
-AT_CHECK([$COMPILE -t prog.lst -tsymbols prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -t prog.lst -ftsymbols prog.cob], [0], [], [])
 AT_CHECK([$UNIFY_LISTING prog.lst prog.lis], [0], [], [])
 AT_CHECK([diff prog20.lst prog.lis], [0], [], [])
-AT_CHECK([$COMPILE_ONLY -t prog2.lst -tsymbols prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -t prog2.lst -ftsymbols prog.cob], [0], [], [])
 AT_CHECK([$UNIFY_LISTING prog2.lst prog.lis], [0], [], [])
 AT_CHECK([diff prog20.lst prog.lis], [0], [], [])
 
@@ -1801,10 +1801,10 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 
 # Check once with $COMPILE and once with $COMPILE_ONLY.
 # This tests whether codegen affects the listing.
-AT_CHECK([$COMPILE -t prog.lst -tsymbols progb.cob], [0], [], [])
+AT_CHECK([$COMPILE -t prog.lst -ftsymbols progb.cob], [0], [], [])
 AT_CHECK([$UNIFY_LISTING prog.lst prog.lis], [0], [], [])
 AT_CHECK([diff prog20b.lst prog.lis], [0], [], [])
-AT_CHECK([$COMPILE_ONLY -t prog2.lst -tsymbols progb.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -t prog2.lst -ftsymbols progb.cob], [0], [], [])
 AT_CHECK([$UNIFY_LISTING prog2.lst prog.lis], [0], [], [])
 AT_CHECK([diff prog20b.lst prog.lis], [0], [], [])
 
@@ -1877,10 +1877,10 @@ progc.cob:13: error: syntax error, unexpected ., expecting DIVISION
 
 # Check once with $COMPILE and once with $COMPILE_ONLY.
 # This tests whether codegen affects the listing.
-AT_CHECK([$COMPILE -t prog.lst -tsymbols progc.cob], [1], [], [ignore])
+AT_CHECK([$COMPILE -t prog.lst -ftsymbols progc.cob], [1], [], [ignore])
 AT_CHECK([$UNIFY_LISTING prog.lst prog.lis], [0], [], [])
 AT_CHECK([diff prog20c.lst prog.lis], [0], [], [])
-AT_CHECK([$COMPILE_ONLY -t prog2.lst -tsymbols progc.cob], [1], [], [ignore])
+AT_CHECK([$COMPILE_ONLY -t prog2.lst -ftsymbols progc.cob], [1], [], [ignore])
 AT_CHECK([$UNIFY_LISTING prog2.lst prog.lis], [0], [], [])
 AT_CHECK([diff prog20c.lst prog.lis], [0], [], [])
 
@@ -2056,13 +2056,99 @@ prog-2.cob:16: warning: unreachable statement 'ACCEPT'
 # Check once with $COMPILE and once with $COMPILE_ONLY.
 # This tests whether codegen affects the listing.
 
-AT_CHECK([$COMPILE -Wunreachable -t prog.lst -Xref -tsymbols prog-1.cob prog-2.cob], [0], [], [ignore])
+AT_CHECK([$COMPILE -Wunreachable -t prog.lst -Xref -ftsymbols prog-1.cob prog-2.cob], [0], [], [ignore])
 AT_CHECK([$UNIFY_LISTING prog.lst prog.lis], [0], [], [])
 AT_CHECK([diff expected.lst prog.lis], [0], [], [])
 
-AT_CHECK([$COMPILE_ONLY -Wunreachable -t prog.lst -Xref -tsymbols prog-1.cob prog-2.cob], [0], [], [ignore])
+AT_CHECK([$COMPILE_ONLY -Wunreachable -t prog.lst -Xref -ftsymbols prog-1.cob prog-2.cob], [0], [], [ignore])
 AT_CHECK([$UNIFY_LISTING prog.lst prog.lis], [0], [], [])
 AT_CHECK([diff expected.lst prog.lis], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([command line])
+AT_KEYWORDS([listing])
+
+AT_CAPTURE_FILE([prog.lst])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       FUNCTION-ID.     WITHPAR.
+       DATA             DIVISION.
+       LINKAGE          SECTION.
+       01 PAR-IN        PIC 9.
+       01 PAR-OUT       PIC 9.
+       PROCEDURE DIVISION USING PAR-IN RETURNING PAR-OUT.
+           ADD 1 TO PAR-IN GIVING PAR-OUT END-ADD.
+           GOBACK.
+       END FUNCTION WITHPAR.
+])
+
+AT_CHECK([$COBC -q -fsyntax-only -t prog.lst -fno-theader -ftcmd prog.cob], [0], [], [])
+
+AT_DATA([reference.lst],
+[
+000001
+000002         IDENTIFICATION   DIVISION.
+000003         FUNCTION-ID.     WITHPAR.
+000004         DATA             DIVISION.
+000005         LINKAGE          SECTION.
+000006         01 PAR-IN        PIC 9.
+000007         01 PAR-OUT       PIC 9.
+000008         PROCEDURE DIVISION USING PAR-IN RETURNING PAR-OUT.
+000009             ADD 1 TO PAR-IN GIVING PAR-OUT END-ADD.
+000010             GOBACK.
+000011         END FUNCTION WITHPAR.
+
+
+command line:
+  cobc -q -fsyntax-only -t prog.lst -fno-theader -ftcmd prog.cob
+
+0 warnings in compilation group
+0 errors in compilation group
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       FUNCTION-ID.     WITHPAR.
+       DATA             DIVISION.
+       LINKAGE          SECTION.
+       01 PAR-IN        PIC 9.
+       01 PAR-OUT       PIC 9.
+       PROCEDURE DIVISION USING PAR-IN RETURNING PAR-OUT.
+           ADD 1 TO PAR-IN GIVING PAR-OUT END-ADD.
+           GOBACK.
+       END FUNCTION WITHPAR.
+])
+
+AT_CHECK([$COBC -q -std=default -Wall -fno-tmessages -fsyntax-only -t prog.lst -fno-tsymbols -ftcmd prog.cob], [0], [], [])
+
+AT_DATA([reference.lst],
+[GnuCOBOL V.R.P          prog.cob             DDD MMM dd HH:MM:SS YYYY  Page 0001
+
+LINE    PG/LN  A...B............................................................
+
+000001
+000002         IDENTIFICATION   DIVISION.
+000003         FUNCTION-ID.     WITHPAR.
+000004         DATA             DIVISION.
+000005         LINKAGE          SECTION.
+000006         01 PAR-IN        PIC 9.
+000007         01 PAR-OUT       PIC 9.
+000008         PROCEDURE DIVISION USING PAR-IN RETURNING PAR-OUT.
+000009             ADD 1 TO PAR-IN GIVING PAR-OUT END-ADD.
+000010             GOBACK.
+000011         END FUNCTION WITHPAR.
+GnuCOBOL V.R.P          prog.cob             DDD MMM dd HH:MM:SS YYYY  Page 0002
+
+command line:
+  cobc -q -std=default -Wall -fno-tmessages -fsyntax-only -t prog.lst
++ -fno-tsymbols -ftcmd prog.cob
+])
+
+AT_CHECK([$UNIFY_LISTING prog.lst prog.lis], [0], [], [])
+AT_CHECK([diff reference.lst prog.lis], [0], [], [])
 
 AT_CLEANUP
 
@@ -2176,7 +2262,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -fno-tmessages -tsymbols prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -fno-tmessages -ftsymbols prog.cob], [0], [], [])
 
 AT_DATA([prog15.lst],
 [GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY
@@ -2234,7 +2320,7 @@ AT_DATA([prog2.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -fno-tmessages -fno-tsource -tsymbols prog2.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -fno-tmessages -fno-tsource -ftsymbols prog2.cob], [0], [], [])
 
 AT_DATA([prog16.lst],
 [GnuCOBOL V.R.P               prog2.cob                  DDD MMM dd HH:MM:SS YYYY
@@ -2271,7 +2357,7 @@ AT_DATA([prog3.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -fno-tsource -fno-tmessages -tsymbols prog3.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -fno-tsource -fno-tmessages -ftsymbols prog3.cob], [0], [], [])
 
 AT_DATA([prog15-1.lst],
 [GnuCOBOL V.R.P          prog3.cob                  DDD MMM dd HH:MM:SS YYYY
@@ -2301,7 +2387,7 @@ AT_CHECK([$UNIFY_LISTING prog.lst prog.lis], [0], [], [])
 AT_CHECK([diff prog15-1.lst prog.lis], [0], [], [])
 
 # verify that the symbol listing is identical if full codegen was done
-AT_CHECK([$COMPILE -t prog.lst -tlines=0 -fno-tsource -fno-tmessages -tsymbols prog3.cob], [0], [], [])
+AT_CHECK([$COMPILE -t prog.lst -tlines=0 -fno-tsource -fno-tmessages -ftsymbols prog3.cob], [0], [], [])
 
 AT_CHECK([$UNIFY_LISTING prog.lst compiled.lis], [0], [], [])
 AT_CHECK([diff prog15-1.lst compiled.lis], [0], [], [])
@@ -2361,7 +2447,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -tsymbols prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -ftsymbols prog.cob], [0], [], [])
 
 AT_CHECK([$UNIFY_LISTING prog.lst prog.lis once], [0], [], [])
 
@@ -2636,7 +2722,7 @@ AT_DATA([prog.cob], [
        END PROGRAM prog.
 ])
 
-AT_CHECK([$COMPILE_ONLY -t prog.lst -tsymbols prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -t prog.lst -ftsymbols prog.cob], [0], [], [])
 
 AT_DATA([prog18.lst],
 [GnuCOBOL V.R.P          prog.cob             DDD MMM dd HH:MM:SS YYYY  Page 0001
@@ -2754,7 +2840,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY -fcomplex-odo -t prog.lst -tsymbols prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -fcomplex-odo -t prog.lst -ftsymbols prog.cob], [0], [], [])
 
 AT_DATA([prog19.lst],
 [GnuCOBOL V.R.P          prog.cob             DDD MMM dd HH:MM:SS YYYY  Page 0001
@@ -3058,7 +3144,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -tsymbols prog.cob], [1], [], [ignore])
+AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -ftsymbols prog.cob], [1], [], [ignore])
 
 
 AT_DATA([prog18.lst],
@@ -3389,7 +3475,7 @@ AT_DATA([prog.cob], [
                OCCURS 8 TIMES            PIC 1(8) BIT.
 ])
 
-AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -tsymbols -Wno-pending -Wno-unfinished -fword-continuation=ok prog.cob], [1], [], [ignore])
+AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -ftsymbols -Wno-pending -Wno-unfinished -fword-continuation=ok prog.cob], [1], [], [ignore])
 
 AT_DATA([prog19.lst],
 [GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY
@@ -3512,13 +3598,13 @@ error: P must be at start or end of PICTURE string
 error: V cannot follow a P which is after the decimal point
 000058         01  missing-symbols.
 000059             03  PIC B(5).
-error: PICTURE string must contain at least one of the set A, N, X, Z, 1, 9
+error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9
      + and *; or at least two of the set +, - and the currency symbol
 000060             03  PIC +.
-error: PICTURE string must contain at least one of the set A, N, X, Z, 1, 9
+error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9
      + and *; or at least two of the set +, - and the currency symbol
 000061             03  PIC $.
-error: PICTURE string must contain at least one of the set A, N, X, Z, 1, 9
+error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9
      + and *; or at least two of the set +, - and the currency symbol
 000062
 000063         01  str-constant CONSTANT "hello".
@@ -3712,9 +3798,9 @@ prog.cob:55: error: a leading currency symbol cannot follow 9
 prog.cob:56: error: a leading currency symbol cannot follow B, 0 or /
 prog.cob:57: error: P must be at start or end of PICTURE string
 prog.cob:57: error: V cannot follow a P which is after the decimal point
-prog.cob:59: error: PICTURE string must contain at least one of the set A, N, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
-prog.cob:60: error: PICTURE string must contain at least one of the set A, N, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
-prog.cob:61: error: PICTURE string must contain at least one of the set A, N, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
+prog.cob:59: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
+prog.cob:60: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
+prog.cob:61: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
 prog.cob:67: error: 'STR-CONSTANT' is not a numeric literal
 prog.cob:68: error: 'FLOAT-CONSTANT' is not an integer
 prog.cob:69: error: 'SIGNED-CONSTANT' is not unsigned
@@ -3732,7 +3818,7 @@ AT_CLEANUP
 
 
 AT_SETUP([Variable format])
-AT_KEYWORDS([listing])
+AT_KEYWORDS([listing overflow])
 
 AT_CAPTURE_FILE([prog.lst])
 
@@ -3879,7 +3965,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -tsymbols prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -ftsymbols prog.cob], [0], [], [])
 
 AT_DATA([prog17.lst],
 [GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY
@@ -4542,7 +4628,7 @@ AT_DATA([EDITOR.cob], [
        END PROGRAM EDITOR.                                              EDIT0343
 ])
 
-AT_CHECK([$COMPILE_ONLY -Xref -t prog.lst -tlines=0 -tsymbols EDITOR.cob], [1], [], [ignore])
+AT_CHECK([$COMPILE_ONLY -Xref -t prog.lst -tlines=0 -ftsymbols EDITOR.cob], [1], [], [ignore])
 
 
 AT_DATA([prog18.lst],
@@ -5129,7 +5215,7 @@ EDITOR.cob:254: warning: ALTER is obsolete in GnuCOBOL
 AT_CHECK([$UNIFY_LISTING prog.lst prog.lis once], [0], [], [])
 AT_CHECK([diff prog18.lst prog.lis], [0], [], [])
 
-AT_CHECK([$COMPILE_ONLY -Xref -T prog.lst -tlines=0 -tsymbols EDITOR.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY -Xref -T prog.lst -tlines=0 -ftsymbols EDITOR.cob], [1], [],
 [EDITOR.cob:42: warning: LABEL RECORDS is obsolete in GnuCOBOL
 EDITOR.cob:44: warning: DATA RECORDS is obsolete in GnuCOBOL
 EDITOR.cob:51: warning: LABEL RECORDS is obsolete in GnuCOBOL
@@ -5832,7 +5918,7 @@ AT_DATA([prog.cob], [
            EXIT.
 ])
 
-AT_CHECK([$COMPILE_ONLY -t prog.lst -tsymbols -Xref -tlines=0 prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -t prog.lst -ftsymbols -Xref -tlines=0 prog.cob], [0], [], [])
 
 AT_DATA([prog1.lst],
 [GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY
@@ -6951,7 +7037,7 @@ AT_CLEANUP
 
 
 AT_SETUP([Long concatenated literal])
-AT_KEYWORDS([])
+AT_KEYWORDS([listing overflow])
 
 AT_DATA([prog.cob], [
        >>SOURCE FORMAT IS FREE
@@ -6979,7 +7065,7 @@ PROCEDURE DIVISION.
 
 AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 prog.cob], [0], [], [])
 
-AT_DATA([prog2.lst],
+AT_DATA([reference.lst],
 [GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY
 
 LINE    PG/LN  A...B............................................................
@@ -7023,8 +7109,5 @@ LINE    PG/LN  A...B............................................................
 0 warnings in compilation group
 0 errors in compilation group
 ])
-
-AT_CHECK([$UNIFY_LISTING prog.lst prog.lis once], [0], [], [])
-AT_CHECK([diff prog2.lst prog.lis], [0], [], [])
 
 AT_CLEANUP

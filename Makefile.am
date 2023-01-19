@@ -1,7 +1,7 @@
 #
 # Makefile gnucobol
 #
-# Copyright (C) 2003-2012, 2014-2020, 2022 Free Software Foundation, Inc.
+# Copyright (C) 2003-2012, 2014-2020, 2023 Free Software Foundation, Inc.
 # Written by Keisuke Nishida, Roger While, Simon Sobisch
 #
 # This file is part of GnuCOBOL.
@@ -41,7 +41,10 @@ clean-local: code-coverage-clean
 dist-clean-local: code-coverage-dist-clean
 
 CODE_COVERAGE_BRANCH_COVERAGE=1
-CODE_COVERAGE_IGNORE_PATTERN="*/cobc/pplex.c" "*/cobc/ppparse.c" "*/cobc/scanner.c" "*/cobc/parser.c"
+CODE_COVERAGE_IGNORE_PATTERN= \
+	"*/cobc/pplex.c" "*/cobc/ppparse.c" "*/cobc/scanner.c" "*/cobc/parser.c" \
+	"*/cobc/config.def" "*/cobc/warning.def" \
+	"*/libcob/statement.def"
 
 # files shipped with the package that should be 755'ed:
 FILES_TO_BE_EXECUTABLE = $(dist_noinst_SCRIPTS) \

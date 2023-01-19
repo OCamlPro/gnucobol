@@ -32,12 +32,14 @@
 				<FILE NAME="..\..\libcob\exception.def" TITLE="exception.def" CLEAN="0"/>
 				<FILE NAME="..\..\libcob\system.def" TITLE="system.def" CLEAN="0"/>
 				<FILE NAME="..\..\tarstamp.h" TITLE="tarstamp.h" CLEAN="0"/>
+				<FILE NAME="..\..\version.h" TITLE="version.h" CLEAN="0"/>
 			</FOLDER>
 			<FOLDER TITLE="Resource Files">
 				<FILE NAME="..\version_libcob.rc" TITLE="version_libcob.rc" CLEAN="0"/>
 			</FOLDER>
 			<FOLDER TITLE="Source Files">
 				<FILE NAME="..\..\libcob\call.c" TITLE="call.c" CLEAN="0"/>
+				<FILE NAME="..\..\libcob\cconv.c" TITLE="cconv.c" CLEAN="0"/>
 				<FILE NAME="..\..\libcob\cobgetopt.c" TITLE="cobgetopt.c" CLEAN="0"/>
 				<FILE NAME="..\..\libcob\common.c" TITLE="common.c" CLEAN="0"/>
 				<FILE NAME="..\..\libcob\fileio.c" TITLE="fileio.c" CLEAN="0"/>

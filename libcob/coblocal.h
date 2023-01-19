@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2007-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2007-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -49,6 +49,8 @@
 #define N_(s)		s
 #endif
 
+#include "common.h"	/* located next to coblocal.h */
+#include <stdio.h>
 
 #if	defined(_WIN32) || defined(__CYGWIN__) || defined(COB_NO_VISIBILITY_ATTRIBUTE)
 #define COB_HIDDEN	extern
@@ -267,7 +269,8 @@ typedef struct __cob_settings {
 	char		*cob_debug_log;
 	char		*cob_date;		/* Date override for testing purposes / UTC hint */
 	unsigned int		cob_stacktrace;		/* generate a stack trace on abort */
-	struct cob_time	cob_time_constant;
+	struct cob_time	cob_time_constant;		/* prepared time from COB_CURRENT_DATE */
+	unsigned int	cob_time_constant_is_calculated;	/* constant contains full date vars */
 
 	/* call.c */
 	unsigned int	cob_physical_cancel;
@@ -375,7 +378,7 @@ struct config_tbl {
 #define ENV_ENUMVAL	(1 << 10)		/* Value must in 'enum' list as match or value */
 #define ENV_FILE 	(1 << 11)		/* a pointer to a directory/file [single path] */
 
-#define ENV_RESETS 	(1 << 14)		/* Value setting needs additional code */
+/* reserved for future use ENV_SOMETHING 	(1 << 14) */
 
 #define STS_ENVSET	(1 << 15)		/* value set via Env Var */
 #define STS_CNFSET	(1 << 16)		/* value set via config file */
@@ -395,9 +398,10 @@ struct config_tbl {
 
 /* max sizes */
 
-/* Maximum bytes in a single/group field,
-   which doesn't contain UNBOUNDED items */
-   /* TODO: add compiler configuration for limiting this */
+/* Maximum bytes in a single/group field and for OCCURS,
+   which doesn't contain UNBOUNDED items,
+   along with maximum number of OCCURS;
+   TODO: add compiler configuration for limiting this */
 #ifndef COB_64_BIT_POINTER
 #define	COB_MAX_FIELD_SIZE	268435456
 #else
@@ -541,6 +545,14 @@ cob_max_int (const int x, const int y)
 	if (x > y) return x;
 	return y;
 }
+
+/* All supported conversions */
+enum ebcdic_table {
+	CB_EBCDIC_DEFAULT       = 0,
+	CB_EBCDIC_RESTRICTED_GC = 1,
+	CB_EBCDIC_IBM           = 2,
+	CB_EBCDIC_GCOS          = 3,
+};
 
 #undef	COB_HIDDEN
 

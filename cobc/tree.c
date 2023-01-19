@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2022 Free Software Foundation, Inc.
+   Copyright (C) 2001-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -59,6 +59,7 @@
 #define PIC_ALPHANUMERIC_EDITED	(PIC_ALPHANUMERIC | PIC_EDITED)
 #define PIC_NUMERIC_EDITED	(PIC_NUMERIC | PIC_EDITED)
 #define PIC_FLOATING_EDITED	(PIC_NUMERIC | PIC_NUMERIC_FLOATING | PIC_EDITED)
+#define PIC_UTF8			(PIC_ALPHANUMERIC)	/* TODO: handle separately */
 #define PIC_NATIONAL_EDITED	(PIC_NATIONAL | PIC_EDITED)
 
 /* Local variables */
@@ -1441,10 +1442,6 @@ cb_tree_category (cb_tree x)
 		if (f->children) {
 			/* CHECKME: may should be alphabetic/national/... depending on the content */
 			x->category = CB_CATEGORY_ALPHANUMERIC;
-		} else if (f->usage == CB_USAGE_POINTER && f->level != 88) {
-			x->category = CB_CATEGORY_DATA_POINTER;
-		} else if (f->usage == CB_USAGE_PROGRAM_POINTER && f->level != 88) {
-			x->category = CB_CATEGORY_PROGRAM_POINTER;
 		} else {
 			switch (f->level) {
 			case 66:
@@ -1459,7 +1456,11 @@ cb_tree_category (cb_tree x)
 				x->category = CB_CATEGORY_BOOLEAN;
 				break;
 			default:
-				if (f->pic) {
+				if (f->usage == CB_USAGE_POINTER) {
+					x->category = CB_CATEGORY_DATA_POINTER;
+				} else if (f->usage == CB_USAGE_PROGRAM_POINTER) {
+					x->category = CB_CATEGORY_PROGRAM_POINTER;
+				} else if (f->pic) {
 					x->category = f->pic->category;
 				/* FIXME: Hack for CGI to not abort */
 				} else if (f->flag_is_external_form) {
@@ -1559,11 +1560,11 @@ cb_tree_type (const cb_tree x, const struct cb_field *f)
 			return COB_TYPE_NUMERIC_FLOAT;
 		case CB_USAGE_DOUBLE:
 			return COB_TYPE_NUMERIC_DOUBLE;
+		case CB_USAGE_LONG_DOUBLE:
+			return COB_TYPE_NUMERIC_L_DOUBLE;
 		case CB_USAGE_PACKED:
 		case CB_USAGE_COMP_6:
 			return COB_TYPE_NUMERIC_PACKED;
-		case CB_USAGE_LONG_DOUBLE:
-			return COB_TYPE_NUMERIC_L_DOUBLE;
 		case CB_USAGE_FP_BIN32:
 			return COB_TYPE_NUMERIC_FP_BIN32;
 		case CB_USAGE_FP_BIN64:
@@ -1635,7 +1636,7 @@ cb_fits_int (const cb_tree x)
 		} else {
 			s = "2147483647";
 		}
-		if (memcmp (p, s, (size_t)10) > 0) {
+		if (memcmp (p, s, 10U) > 0) {
 			return 0;
 		}
 		return 1;
@@ -1685,6 +1686,9 @@ cb_fits_int (const cb_tree x)
 	case CB_TAG_INTEGER:
 		return 1;
 	default:
+		if (x == cb_zero) {
+			return 1;
+		}
 		return 0;
 	}
 }
@@ -1721,7 +1725,7 @@ cb_fits_long_long (const cb_tree x)
 		} else {
 			s = "9223372036854775807";
 		}
-		if (memcmp (p, s, (size_t)19) > 0) {
+		if (memcmp (p, s, 19U) > 0) {
 			return 0;
 		}
 		return 1;
@@ -1770,6 +1774,9 @@ cb_fits_long_long (const cb_tree x)
 	case CB_TAG_INTEGER:
 		return 1;
 	default:
+		if (x == cb_zero) {
+			return 1;
+		}
 		return 0;
 	}
 }
@@ -1834,7 +1841,7 @@ cb_get_int (const cb_tree x)
 	if (l->scale < 0) {
 		size = size - l->scale;
 	}
-	check_lit_length(size, (const char *)l->data + i);
+	check_lit_length (size, (const char *)l->data + i);
 
 	/* Check numeric literal length matching requested output type */
 #if INT_MAX >= 9223372036854775807
@@ -1844,7 +1851,7 @@ cb_get_int (const cb_tree x)
 		} else {
 			s = "9223372036854775807";
 		}
-		if (size > 19U || memcmp (&l->data[i], s, (size_t)19) > 0) {
+		if (size > 19U || memcmp (&l->data[i], s, 19U) > 0) {
 			cb_error (_("numeric literal '%s' exceeds limit '%s'"), &l->data[i], s);
 			return INT_MAX;
 		}
@@ -1856,7 +1863,7 @@ cb_get_int (const cb_tree x)
 		} else {
 			s = "2147483647";
 		}
-		if (size > 10U || memcmp (&l->data[i], s, (size_t)10) > 0) {
+		if (size > 10U || memcmp (&l->data[i], s, 10U) > 0) {
 			cb_error (_("numeric literal '%s' exceeds limit '%s'"), &l->data[i], s);
 			return INT_MAX;
 		}
@@ -1913,7 +1920,7 @@ cb_get_long_long (const cb_tree x)
 		} else {
 			s = "9223372036854775807";
 		}
-		if (size > 19U || memcmp (&(l->data[i]), s, (size_t)19) > 0) {
+		if (size > 19U || memcmp (&(l->data[i]), s, 19U) > 0) {
 			cb_error (_("numeric literal '%s' exceeds limit '%s'"), &l->data[i], s);
 			return LLONG_MAX;
 		}
@@ -1963,7 +1970,7 @@ cb_get_u_long_long (const cb_tree x)
 	/* Check numeric literal length matching requested output type */
 	if (unlikely(size >= 20U)) {
 		s = "18446744073709551615";
-		if (size > 20U || memcmp (&(l->data[i]), s, (size_t)20) > 0) {
+		if (size > 20U || memcmp (&(l->data[i]), s, 20U) > 0) {
 			cb_error (_("numeric literal '%s' exceeds limit '%s'"), &l->data[i], s);
 			return ULLONG_MAX;
 		}
@@ -2791,7 +2798,7 @@ cb_concat_literals (const cb_tree x1, const cb_tree x2)
 	 && (x1->category != CB_CATEGORY_NATIONAL)
 	 && (x1->category != CB_CATEGORY_BOOLEAN)) {
 		cb_error_x (x1,
-			_("only alphanumeric, national or boolean literals may be concatenated"));
+			_("only alphanumeric, utf-8, national or boolean literals may be concatenated"));
 		return cb_error_node;
 	}
 
@@ -3046,6 +3053,9 @@ char_to_precedence_idx (const cob_pic_symbol *str,
 	case 'E':
 		return 24;
 
+	case 'U':
+		return 25;
+
 	default:
 		if (current_sym->symbol == (current_program ? current_program->currency_symbol : '$')) {
 			if (!(first_floating_sym <= current_sym
@@ -3137,6 +3147,8 @@ get_char_type_description (const int idx)
 		return "N";
 	case 24:
 		return "E";
+	case 25:
+		return "U";
 	default:
 		return NULL;
 	}
@@ -3524,12 +3536,12 @@ repeat:
 				case 'X':
 				case 'A':
 					if (paren_num + delta > INT_MAX) {
-						paren_num = INT_MAX - delta;
+						paren_num = (cob_s64_t)INT_MAX - delta;
 					}
 					break;
 				case 'N':
 					if (paren_num * 2 + delta > INT_MAX) {
-						paren_num = (INT_MAX - delta) / 2;
+						paren_num = ((cob_s64_t)INT_MAX - delta) / 2;
 					}
 					break;
 				default:
@@ -3568,6 +3580,16 @@ repeat:
 		case 'X':
 			category |= PIC_ALPHANUMERIC;
 			x_digits += n;
+			break;
+
+		case 'U':
+			/* this is only a hack and wrong,
+			   adding UTF-8 type woll need a separate
+			   PIC, but this will need handling in both
+			   the compiler and the runtime, so fake as
+			   ALPHANUMERIC for now */
+			category |= PIC_UTF8;
+			x_digits += n * 4;
 			break;
 
 		case 'N':
@@ -3785,6 +3807,9 @@ repeat:
 		if (c == 'N') {
 			size += n * (COB_NATIONAL_SIZE - 1);
 		}
+		if (c == 'U') {
+			size += n * (4 - 1);
+		}
 
 		/* Store in the buffer */
 		pic_buff[idx].symbol = c;
@@ -3805,7 +3830,7 @@ repeat:
 		error_detected = 1;
 	}
 	if (digits == 0 && x_digits == 0) {
-		cb_error (_("PICTURE string must contain at least one of the set A, N, X, Z, 1, 9 and *; "
+		cb_error (_("PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; "
 					"or at least two of the set +, - and the currency symbol"));
 		error_detected = 1;
 	}
@@ -4052,17 +4077,20 @@ cb_field_add (struct cb_field *f, struct cb_field *p)
 int
 cb_field_size (const cb_tree x)
 {
-	struct cb_reference	*r;
-	struct cb_field		*f;
 
 	switch (CB_TREE_TAG (x)) {
 	case CB_TAG_LITERAL:
 		return CB_LITERAL (x)->size;
-	case CB_TAG_FIELD:
-		return CB_FIELD (x)->size;
-	case CB_TAG_REFERENCE:
-		r = CB_REFERENCE (x);
-		f = CB_FIELD (r->value);
+	case CB_TAG_FIELD: {
+		const struct cb_field *f = CB_FIELD (x);
+		if (f->flag_any_length) {
+			return FIELD_SIZE_UNKNOWN;
+		}
+		return f->size;
+	}
+	case CB_TAG_REFERENCE: {
+		const struct cb_reference	*r = CB_REFERENCE (x);
+		const struct cb_field		*f = CB_FIELD (r->value);
 		if (r->length) {
 			if (CB_LITERAL_P (r->length)) {
 				return cb_get_int (r->length);
@@ -4076,10 +4104,14 @@ cb_field_size (const cb_tree x)
 				return FIELD_SIZE_UNKNOWN;
 			}
 		} else if (f->flag_any_length) {
-			return -1;
+			return FIELD_SIZE_UNKNOWN;
 		} else {
 			return f->size;
 		}
+	}
+	case CB_TAG_CONST:
+		/* depends on its actual usage */
+		return FIELD_SIZE_UNKNOWN;
 
 	/* LCOV_EXCL_START */
 	default:
@@ -5303,9 +5335,12 @@ display_literal (char *disp, struct cb_literal *l, int offset, int scale)
 	return disp;
 }
 
+enum cb_binary_op_flag		cb_next_binary_op_flag = 0;
+
 /* Check if comparing field to literal is always TRUE or FALSE */
 static cb_tree
-compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal *l)
+compare_field_literal (cb_tree e, int swap, cb_tree x,
+		enum cb_binary_op_op op, struct cb_literal *l)
 {
 	int	i, j, scale, fscale;
 	int	alph_lit, zero_val;
@@ -5316,8 +5351,12 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 	cob_u32_t		have_sign;
 	struct cb_reference	*rl;
 
+	enum cb_binary_op_flag flag = cb_next_binary_op_flag;
+
+	cb_next_binary_op_flag = 0;
+
 	/* LCOV_EXCL_START */
-	if (!CB_REFERENCE_P(x)) {
+	if (!CB_REFERENCE_P (x)) {
 		cobc_err_msg (_("call to '%s' with invalid parameter '%s'"),
 			"compare_field_literal", "x");
 		COBC_ABORT ();
@@ -5378,9 +5417,9 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 			alph_lit = 1;
 			/* note: zero_val not checked in this case */
 			break;
-				}
+		}
 		if (l->data[j] != '0') {
-				zero_val = 0;
+			zero_val = 0;
 		}
 	}
 
@@ -5394,7 +5433,7 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 		 if (lit_length > refmod_length) {
 			copy_file_line (e, CB_TREE(l), NULL);
 			if (get_warn_opt_value (cb_warn_constant_expr)
-			&& !was_prev_warn (e->source_line, 2)) {
+			 && !was_prev_warn (e->source_line, 2)) {
 				if (lit_length > f->size) {
 					cb_warning_x (cb_warn_constant_expr, e,
 							_("literal '%.38s' is longer than '%s'"),
@@ -5405,11 +5444,16 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 							display_literal (lit_disp, l, 0, l->scale), f->name);
 				}
 			}
-			switch (op) {
-			case '=':
-				return cb_false;
-			case '~':
-				return cb_true;
+			if (cb_constant_folding) {
+				switch (op) {
+				case '=':
+					return cb_false;
+				case '~':
+					return cb_true;
+				default:
+					/* nothing to do for constant folding */
+					break;
+				}
 			}
 		}
 		return cb_any;
@@ -5466,16 +5510,21 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 	 && fscale < scale) {
 		copy_file_line (e, CB_TREE(l), NULL);
 		if (get_warn_opt_value (cb_warn_constant_expr)
-		&& !was_prev_warn (e->source_line, 4)) {
+		 && !was_prev_warn (e->source_line, 4)) {
 			cb_warning_x (cb_warn_constant_expr, e,
 						_("literal '%s' has more decimals than '%s'"),
 						display_literal (lit_disp, l, lit_start, l->scale), f->name);
 		}
-		switch (op) {
-		case '=':
-			return cb_false;
-		case '~':
-			return cb_true;
+		if (cb_constant_folding) {
+			switch (op) {
+			case '=':
+				return cb_false;
+			case '~':
+				return cb_true;
+			default:
+				/* nothing to do for constant folding */
+				break;
+			}
 		}
 	}
 
@@ -5497,6 +5546,7 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 		default:
 			break;
 		}
+		flag = flag == 0 ? BOP_OPERANDS_SWAPPED : 0;
 	}
 
 	/* check for digits in literal vs. field size */
@@ -5513,20 +5563,28 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 				_("literal '%s' has more digits than '%s'"),
 				display_literal (lit_disp, l, lit_start, l->scale), f->name);
 		}
-		switch (op) {
-		case '=':
-			return cb_false;
-		case '~':
-			return cb_true;
-		}
-		if (category == CB_CATEGORY_NUMERIC) {
+		if (cb_constant_folding) {
 			switch (op) {
-			case '>':
-			case ']':
+			case '=':
 				return cb_false;
-			case '<':
-			case '[':
+			case '~':
 				return cb_true;
+			default:
+				/* nothing to do for constant folding */
+				break;
+			}
+			if (category == CB_CATEGORY_NUMERIC) {
+				switch (op) {
+				case '>':
+				case ']':
+					return cb_false;
+				case '<':
+				case '[':
+					return cb_true;
+				default:
+					/* nothing to do for constant folding */
+					break;
+				}
 			}
 		}
 
@@ -5539,7 +5597,7 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 	 *       be dependent on compiler configuration flags;
 	 *       therefore we don't set cb_true/cb_false here
 	 */
-	if (get_warn_opt_value (cb_warn_constant_expr)
+	if (get_warn_opt_value (cb_warn_constant_expr) != COBC_WARN_DISABLED
 	 && (op == '<' || op == '[' || op == '>' || op == ']')) {
 		copy_file_line (e, CB_TREE(l), NULL);
 
@@ -5556,9 +5614,11 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 					break;
 				case ']':
 					/* don't raise a warning for VALUE THRU
-					   (we still can return cb_true here later) */
-					if (current_statement->statement != STMT_VALUE_THRU
-					 &&!was_prev_warn (e->source_line, 5)) {
+					   (we still can return cb_true here later),
+					   and don't raise a warning if the bop was switched */
+					if (flag != BOP_OPERANDS_SWAPPED
+					 && current_statement->statement != STMT_VALUE_THRU
+					 && !was_prev_warn (e->source_line, 5)) {
 						cb_warning_x (cb_warn_constant_expr, e,
 							_("unsigned '%s' may always be %s %s"),
 							f->name, explain_operator (op), "ZERO");
@@ -5567,11 +5627,15 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 				default:
 					break;
 				}
-				/* comparison with negative literal */
+			/* comparison with negative literal */
 			} else if (l->sign < 0) {
 				switch (op) {
-				case '<':
 				case '[':
+					if (flag == BOP_OPERANDS_SWAPPED) {
+						break;
+					}
+					/* fall through */
+				case '<':
 					if (!was_prev_warn (e->source_line, 5)) {
 						cb_warning_x (cb_warn_constant_expr, e,
 							_("unsigned '%s' may not be %s %s"),
@@ -5579,8 +5643,12 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 							display_literal (lit_disp, l, lit_start, l->scale));
 					}
 					break;
-				case '>':
 				case ']':
+					if (flag == BOP_OPERANDS_SWAPPED) {
+						break;
+					}
+					/* fall through */
+				case '>':
 					if (!was_prev_warn (e->source_line, 5)) {
 						cb_warning_x (cb_warn_constant_expr, e,
 							_("unsigned '%s' may always be %s %s"),
@@ -5612,8 +5680,12 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 				/* all fine */
 			} else if (l->sign < 0) {
 				switch (op) {
-				case '<':
 				case '[':
+					if (flag == BOP_OPERANDS_SWAPPED) {
+						break;
+					}
+					/* fall through */
+				case '<':
 					if (!was_prev_warn (e->source_line, 5)) {
 						cb_warning_x (cb_warn_constant_expr, e,
 							_("'%s' may not be %s %s"),
@@ -5624,7 +5696,8 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 				case ']':
 					/* don't raise a warning for VALUE THRU
 					   (we still can return cb_true here later) */
-					if (current_statement->statement != STMT_VALUE_THRU
+					if (flag != BOP_OPERANDS_SWAPPED
+					 && current_statement->statement != STMT_VALUE_THRU
 					 && !was_prev_warn (e->source_line, 5)) {
 						cb_warning_x (cb_warn_constant_expr, e,
 							_("'%s' may always be %s %s"),
@@ -5637,8 +5710,12 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 				}
 			} else {
 				switch (op) {
-				case '>':
 				case ']':
+					if (flag == BOP_OPERANDS_SWAPPED) {
+						break;
+					}
+					/* fall through */
+				case '>':
 					if (!was_prev_warn (e->source_line, 5)) {
 						cb_warning_x (cb_warn_constant_expr, e,
 							_("'%s' may not be %s %s"),
@@ -5649,7 +5726,8 @@ compare_field_literal (cb_tree e, int swap, cb_tree x, int op, struct cb_literal
 				case '[':
 					/* don't raise a warning for VALUE THRU
 					   (we still can return cb_true here later) */
-					if (current_statement->statement != STMT_VALUE_THRU
+					if (flag != BOP_OPERANDS_SWAPPED
+					 && current_statement->statement != STMT_VALUE_THRU
 					 && !was_prev_warn (e->source_line, 5)) {
 						cb_warning_x (cb_warn_constant_expr, e,
 							_("'%s' may always be %s %s"),
@@ -5682,7 +5760,7 @@ get_warnopt_for_constant (cb_tree x, cb_tree y)
 }
 
 cb_tree
-cb_build_binary_op (cb_tree x, const int op, cb_tree y)
+cb_build_binary_op (cb_tree x, const enum cb_binary_op_op op, cb_tree y)
 {
 	struct cb_binary_op	*p;
 	enum cb_category	category = CB_CATEGORY_UNKNOWN;
@@ -5695,7 +5773,7 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 
 	if (op == '@'
 	 && y == NULL
-	 && CB_NUMERIC_LITERAL_P(x) )	/* Parens around a Numeric Literal */
+	 && CB_NUMERIC_LITERAL_P (x) )	/* Parens around a Numeric Literal */
 		return x;
 
 	/* Simon: just ignore here as we already created
@@ -5734,21 +5812,25 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 		 * then resolve the value here at compile time -> "constant folding"
 		 */
 		if (cb_constant_folding
-		&&  CB_NUMERIC_LITERAL_P(x)
-		&&  CB_NUMERIC_LITERAL_P(y)) {
-			xl = CB_LITERAL(x);
-			yl = CB_LITERAL(y);
+		 && CB_NUMERIC_LITERAL_P (x)
+		 && CB_NUMERIC_LITERAL_P (y)) {
+			xl = CB_LITERAL (x);
+			yl = CB_LITERAL (y);
 
-			if(xl->llit == 0
-			   && xl->size >= (unsigned int)xl->scale
-			   && yl->llit == 0
-			   && yl->size >= (unsigned int)yl->scale
-			   && xl->all == 0
-			   && yl->all == 0) {
+			if (xl->llit == 0
+			 && xl->size >= (unsigned int)xl->scale
+			 && yl->llit == 0
+			 && yl->size >= (unsigned int)yl->scale
+			 && xl->all == 0
+			 && yl->all == 0) {
 				xval = atoll((const char*)xl->data);
-				if(xl->sign == -1) xval = -xval;
+				if (xl->sign == -1) {
+					xval = -xval;
+				}
 				yval = atoll((const char*)yl->data);
-				if(yl->sign == -1) yval = -yval;
+				if (yl->sign == -1) {
+					yval = -yval;
+				}
 				xscale = xl->scale;
 				cb_set_dmax (xscale);
 				yscale = yl->scale;
@@ -5778,7 +5860,7 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 						yscale--;
 					}
 					rscale = xscale;
-					if((xval % yval) == 0) {
+					if ((xval % yval) == 0) {
 						rslt = xval / yval;
 					}
 				}
@@ -5807,7 +5889,7 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 					/* only calculate simple integer numerics */
 					if (xl->scale != 0 || yl->scale != 0)
 						break;
-					if((xval % yval) == 0) {
+					if ((xval % yval) == 0) {
 						sprintf(result, CB_FMT_LLD, xval / yval);
 						return cb_build_numeric_literal (0, result, rscale);
 					}
@@ -5818,8 +5900,8 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 					 || yl->scale != 0
 					 || yval < 0)
 						break;
-					if(yval == 0
-					|| xval == 1) {
+					if (yval == 0
+					 || xval == 1) {
 						strcpy(result,"1");
 					} else {
 						rslt = xval;
@@ -5835,8 +5917,8 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 			}
 		} else
 		if (cb_constant_folding
-		 && CB_NUMERIC_LITERAL_P(y)) {
-			yl = CB_LITERAL(y);
+		 && CB_NUMERIC_LITERAL_P (y)) {
+			yl = CB_LITERAL (y);
 			if (yl->scale == 0) {
 				yval = atoll((const char*)yl->data);
 				if ((op == '+' || op == '-') 
@@ -5892,8 +5974,8 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 			return cb_error_node;
 		}
 		if (cb_constant_folding
-		&&  CB_NUMERIC_LITERAL_P(x)
-		&&  CB_NUMERIC_LITERAL_P(y)) {
+		&&  CB_NUMERIC_LITERAL_P (x)
+		&&  CB_NUMERIC_LITERAL_P (y)) {
 			xl = CB_LITERAL(x);
 			yl = CB_LITERAL(y);
 			if (xl->scale == 0
@@ -5927,13 +6009,13 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 	case ']':
 		/* Relational operators */
 		rel_bin_op = 1;
-		if ((CB_REF_OR_FIELD_P (x)) &&
-		    CB_FIELD_PTR (x)->level == 88) {
+		if ((CB_REF_OR_FIELD_P (x))
+		 && CB_FIELD_PTR (x)->level == 88) {
 			cb_error_x (e, _("invalid expression"));
 			return cb_error_node;
 		}
-		if ((CB_REF_OR_FIELD_P (y)) &&
-		    CB_FIELD_PTR (y)->level == 88) {
+		if ((CB_REF_OR_FIELD_P (y))
+		 && CB_FIELD_PTR (y)->level == 88) {
 			cb_error_x (e, _("invalid expression"));
 			return cb_error_node;
 		}
@@ -5941,16 +6023,16 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 		if (x == cb_zero) {
 			xl = CB_LITERAL(cb_zero_lit);
 			xl->common.source_line = prev_expr_line = cb_exp_line;
-		} else if (CB_LITERAL_P(x)) {
-			xl = CB_LITERAL(x);
+		} else if (CB_LITERAL_P (x)) {
+			xl = CB_LITERAL (x);
 		} else {
 			xl = NULL;
 		}
 		if (y == cb_zero) {
 			yl = CB_LITERAL(cb_zero_lit);
 			yl->common.source_line = prev_expr_line = cb_exp_line;
-		} else if (CB_LITERAL_P(y)) {
-			yl = CB_LITERAL(y);
+		} else if (CB_LITERAL_P (y)) {
+			yl = CB_LITERAL (y);
 		} else {
 			yl = NULL;
 		}
@@ -5960,20 +6042,20 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 		    (f->usage == CB_USAGE_DISPLAY
 		  || (cb_binary_truncate
 		   && (f->usage == CB_USAGE_COMP_5
-	        || f->usage == CB_USAGE_COMP_X
-	        || f->usage == CB_USAGE_BINARY))
+		    || f->usage == CB_USAGE_COMP_X
+		    || f->usage == CB_USAGE_BINARY))
 
 			Shouldn't it?
 		*/
 
 		if (CB_REF_OR_FIELD_P (y)
 		 && CB_FIELD_PTR (y)->usage == CB_USAGE_DISPLAY
-		 && (CB_LITERAL_P(x) || x == cb_zero)
+		 && (CB_LITERAL_P (x) || x == cb_zero)
 		 && xl->all == 0) {
 			relop = compare_field_literal (e, 1, y, op, xl);
 		} else if (CB_REF_OR_FIELD_P (x)
 		 && CB_FIELD_PTR (x)->usage == CB_USAGE_DISPLAY
-		 && (CB_LITERAL_P(y) || y == cb_zero)
+		 && (CB_LITERAL_P (y) || y == cb_zero)
 		 && yl->all == 0) {
 			relop = compare_field_literal (e, 0, x, op, yl);
 		/*
@@ -6057,10 +6139,10 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 		 * then resolve the value here at compile time -> "constant folding"
 		 */
 		} else if (cb_constant_folding
-		 && CB_LITERAL_P(x)
-		 && CB_LITERAL_P(y)
-		 && !CB_NUMERIC_LITERAL_P(x)
-		 && !CB_NUMERIC_LITERAL_P(y)) {
+		 && CB_LITERAL_P (x)
+		 && CB_LITERAL_P (y)
+		 && !CB_NUMERIC_LITERAL_P (x)
+		 && !CB_NUMERIC_LITERAL_P (y)) {
 			copy_file_line (e, y, x);
 			xl = CB_LITERAL(x);
 			yl = CB_LITERAL(y);
@@ -6071,12 +6153,12 @@ cb_build_binary_op (cb_tree x, const int op, cb_tree y)
 					break;
 				}
 			}
-			if(xl->data[i] == 0
-			&& yl->data[j] == ' ') {
+			if (xl->data[i] == 0
+			 && yl->data[j] == ' ') {
 				while (yl->data[j] == ' ') j++;
 			} else
-			if(xl->data[i] == ' '
-			&& yl->data[j] == 0) {
+			if (xl->data[i] == ' '
+			 && yl->data[j] == 0) {
 				while (xl->data[i] == ' ') i++;
 			}
 			switch (op) {
@@ -6382,7 +6464,7 @@ cb_build_assign (const cb_tree var, const cb_tree val)
 cb_tree
 cb_build_initialize (const cb_tree var, const cb_tree val, const cb_tree rep,
 		     const unsigned int def,
-		     const unsigned int is_statement,
+		     const enum cob_statement statement,
 		     const unsigned int no_filler_init)
 {
 	struct cb_initialize *p;
@@ -6393,7 +6475,7 @@ cb_build_initialize (const cb_tree var, const cb_tree val, const cb_tree rep,
 	p->val = val;
 	p->rep = rep;
 	p->flag_default = (cob_u8_t)def;
-	p->flag_init_statement = (cob_u8_t)is_statement;
+	p->statement = statement;
 	p->flag_no_filler_init = (cob_u8_t)no_filler_init;
 	return CB_TREE (p);
 }
@@ -6835,7 +6917,7 @@ get_category_from_arguments (const struct cb_intrinsic_table *cbp, cb_tree args,
 			if (result != CB_CATEGORY_NATIONAL) {
 				cb_error (_("FUNCTION %s has invalid argument"),
 					cbp->name);
-				cb_error (_("either all arguments or none should be if type %s"), "NATIONAL");
+				cb_error (_("either all arguments or none should be of type %s"), "NATIONAL");
 				return cbp->category;
 			}
 		} else if (result != CB_CATEGORY_ALPHANUMERIC) {
@@ -6949,10 +7031,13 @@ cb_build_intrinsic (cb_tree func, cb_tree args, cb_tree refmod,
 				if (cbp->intr_enum != CB_INTR_BYTE_LENGTH) {
 					/* CHECKME: why don't we just check the category?
 					   Maybe needs to enforce field validation (see cb_build_length) */
-					if ( fld->pic
-					 && (fld->pic->category == CB_CATEGORY_NATIONAL
-					  || fld->pic->category == CB_CATEGORY_NATIONAL_EDITED)) {
-						len /= COB_NATIONAL_SIZE;
+					if (fld->pic) {
+						if (fld->pic->category == CB_CATEGORY_NATIONAL
+						 || fld->pic->category == CB_CATEGORY_NATIONAL_EDITED) {
+							len /= COB_NATIONAL_SIZE;
+						} else if (fld->pic->orig && fld->pic->orig[0] == 'U') {
+							len /= 4;
+						}
 					}
 				}
 				sprintf (buff, "%d", len);

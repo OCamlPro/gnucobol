@@ -22,6 +22,8 @@
 #ifndef COB_COMMON_H
 #define COB_COMMON_H
 
+#include <stddef.h>		/* for size_t */
+
 /* Only define cob_decimal if we have the necessary mpz_t from gmp.h/mpir.h
    (or can self-define it from mp.h) */
 #if !defined (__GMP_H__)
@@ -624,7 +626,8 @@ only usable with COB_USE_VC2013_OR_GREATER */
 /* Maximum length of COBOL program names */
 #define	COB_MAX_NAMELEN		31
 
-/* Maximum number of subscripts */
+/* Maximum number of subscripts;
+   TODO: add compiler configuration for limiting this */
 #define COB_MAX_SUBSCRIPTS	16
 
 /* Memory size for sorting */
@@ -886,7 +889,10 @@ enum cob_open_mode {
 #define COB_READ_MASK		\
 	(COB_READ_NEXT | COB_READ_PREVIOUS | COB_READ_FIRST | COB_READ_LAST)
 
-/* I-O status */
+/* I-O status - TODO: these should have internal only values; and then
+   map later to an i-o status "per dialect", inluding alphanumeric 0x
+   and 9/123 status values,
+   will be move to fileio.h in 4.x on remove of OC extfh */ 
 
 #define COB_STATUS_00_SUCCESS				0
 #define COB_STATUS_02_SUCCESS_DUPLICATE		2
@@ -894,6 +900,9 @@ enum cob_open_mode {
 #define COB_STATUS_05_SUCCESS_OPTIONAL		5
 #define COB_STATUS_06_READ_TRUNCATE			6
 #define COB_STATUS_07_SUCCESS_NO_UNIT		7
+#ifdef COB_EXPERIMENTAL
+#define COB_STATUS_0P_NOT_PRINTABLE			8
+#endif
 #define COB_STATUS_09_READ_DATA_BAD			9
 #define COB_STATUS_10_END_OF_FILE			10
 #define COB_STATUS_14_OUT_OF_KEY_RANGE		14
@@ -1074,7 +1083,7 @@ typedef struct __cob_pic_symbol {
 /* Field attribute structure */
 
 typedef struct __cob_field_attr {
-	unsigned short		type;		/* Field type */
+	unsigned short		type;		/* Field type [TODO GC4: enum] */
 	unsigned short		digits;		/* Digit count */
 	signed short		scale;		/* Field scale */
 	unsigned short		flags;		/* Field flags */
@@ -1682,6 +1691,7 @@ COB_EXPIMP void	cob_accept_day_of_week		(cob_field *);
 COB_EXPIMP void	cob_accept_environment		(cob_field *);
 COB_EXPIMP void	cob_accept_exception_status	(cob_field *);
 COB_EXPIMP void	cob_accept_time			(cob_field *);
+COB_EXPIMP void	cob_accept_microsecond_time (cob_field *);
 COB_EXPIMP void	cob_accept_user_name		(cob_field *);
 COB_EXPIMP void	cob_display_command_line	(cob_field *);
 COB_EXPIMP void	cob_display_environment		(const cob_field *);
@@ -1892,6 +1902,9 @@ COB_EXPIMP void cob_unstring_into	(cob_field *, cob_field *, cob_field *);
 COB_EXPIMP void cob_unstring_tallying	(cob_field *);
 COB_EXPIMP void cob_unstring_finish	(void);
 
+COB_EXPIMP const char *COB_SPACES_ALPHABETIC;	/* PIC X/A/U SPACES */
+#define COB_SPACES_ALPHABETIC_BYTE_LENGTH 1024
+
 /*******************************/
 /*   Functions in move.c       */
 /*******************************/
@@ -1901,6 +1914,7 @@ COB_EXPIMP void		cob_move_ibm	(void *, void *, const int);
 COB_EXPIMP void		cob_init_table	(void *, const size_t, const size_t);
 COB_EXPIMP void		cob_set_int	(cob_field *, const int);
 COB_EXPIMP int		cob_get_int	(cob_field *);
+COB_EXPIMP void		cob_set_llint	(cob_field *, const cob_s64_t);
 COB_EXPIMP cob_s64_t	cob_get_llint	(cob_field *);
 /*************************************************************************/
 /* Functions in move.c for C access to COBOL data - GnuCOBOL COBOL-C-API */
@@ -2770,6 +2784,25 @@ COB_EXPIMP cob_field *cob_intr_bit_of		(cob_field *);
 COB_EXPIMP cob_field *cob_intr_bit_to_char		(cob_field *);
 COB_EXPIMP cob_field* cob_intr_hex_of (cob_field*);
 COB_EXPIMP cob_field* cob_intr_hex_to_char (cob_field*);
+
+/************************/
+/* Functions in cconv.c */
+/************************/
+
+/* Return the name corresponding to an internal collation id,
+   or NULL if such id is unknown. */
+
+COB_EXPIMP const char *
+cob_get_collation_name (int);
+
+/* Retrieve the EBCDIC and ASCII collating sequences for the given
+   collation name, and return its internal id, or -1 if such name
+   is unknown. The `p_ebcdic_as_ascii' and `p_ascii_as_ebcdic'
+   arguments may be NULL if one (or both) of the tables is not
+   needed (you may only care for the return value). */
+
+COB_EXPIMP int
+cob_get_collation_by_name (const char *, const cob_u8_t **, const cob_u8_t **);
 
 /*******************************/
 
