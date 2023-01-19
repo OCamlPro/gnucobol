@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2022 Free Software Foundation, Inc.
+   Copyright (C) 2001-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -2425,11 +2425,11 @@ cb_build_identifier (cb_tree x, const int subchk)
 		/* Run-time check for ODO (including all the fields' subordinate items) */
 		if (CB_EXCEPTION_ENABLE (COB_EC_BOUND_SUBSCRIPT) && f->odo_level != 0) {
 			for (p = f; p; p = p->children) {
-				if (p->depending && p->depending != cb_error_node
+				if (p->depending 
+				 && p->depending != cb_error_node
 				 && !p->flag_unbounded) {
 					e1 = cb_add_check_odo (p);
 					if (e1 != NULL) {
-
 						optimize_defs[COB_CHK_ODO] = 1;
 						r->check = cb_list_add (r->check, e1);
 					}
@@ -2467,6 +2467,12 @@ cb_build_identifier (cb_tree x, const int subchk)
 
 				/* Run-time check for all non-literals */
 				if (CB_EXCEPTION_ENABLE (COB_EC_BOUND_SUBSCRIPT)) {
+					if (cb_flag_optimize_check
+					 && CB_REF_OR_FIELD_P (sub)) {
+						/* Skip check_subscript; Now done on SET/PERFORM */
+						if (CB_FIELD_PTR (sub)->flag_indexed_by)
+							continue;	
+					}
 					if (p->depending && p->depending != cb_error_node) {
 						e1 = cb_add_check_subscript (p, sub, name, 1);
 						if (e1 != NULL) {
@@ -12261,6 +12267,51 @@ cb_emit_setenv (cb_tree x, cb_tree y)
 }
 
 void
+cb_emit_check_index (cb_tree vars, int hasval, int setval)
+{
+	cb_tree		l, v;
+	struct cb_field *f, *p;
+	for (l = vars; l; l = CB_CHAIN (l)) {
+		v = CB_VALUE (l);
+		if (!CB_REF_OR_FIELD_P (v)) continue;
+		f = CB_FIELD_PTR (v);
+		if (!f->flag_indexed_by) continue;
+		if (!f->index_qual) continue;
+		p = f->index_qual;
+		if (p->depending) {
+			if (hasval) {
+				if (setval > p->occurs_max
+				 || setval < p->occurs_min) {
+					cb_warning_x (COBC_WARN_FILLER, l,
+							_("SET %s TO %d is out of bounds"),f->name,setval);
+					cb_emit (CB_BUILD_FUNCALL_1("cob_set_exception",cb_int(COB_EC_RANGE_INDEX)));
+				}
+				if (setval >= p->occurs_min) continue;
+			}
+#if 0 /* COBOL standard says do not check for SET */
+			cb_emit (CB_BUILD_FUNCALL_4 ("cob_check_subscript",
+				 cb_build_cast_int (v), cb_build_cast_int (p->depending),
+				 CB_BUILD_STRING0 (f->name), cb_int1));
+#endif
+		} else if (hasval
+				&& setval >= p->occurs_min
+				&& setval <= p->occurs_max) {
+			continue;	/* Checks OK at compile time */
+		} else {
+			if (hasval) {
+				cb_warning_x (COBC_WARN_FILLER, l,
+						_("SET %s TO %d is out of bounds"),f->name,setval);
+			}
+#if 0 /* COBOL standard says do not check for SET */
+			cb_emit (CB_BUILD_FUNCALL_4 ("cob_check_subscript",
+				 cb_build_cast_int (v), cb_int (p->occurs_max),
+				 CB_BUILD_STRING0 (f->name), cb_int0));
+#endif
+		}
+	}
+}
+
+void
 cb_emit_set_to (cb_tree vars, cb_tree x)
 {
 	cb_tree		l;
@@ -12268,6 +12319,7 @@ cb_emit_set_to (cb_tree vars, cb_tree x)
 	cb_tree		rtree;
 	struct cb_cast	*p;
 	enum cb_class	tree_class;
+	int			hasval, setval;
 
 	if (cb_validate_one (x)
 	 || cb_validate_list (vars)) {
@@ -12340,6 +12392,21 @@ cb_emit_set_to (cb_tree vars, cb_tree x)
 			}
 			break;
 		}
+	}
+	hasval = setval = 0;
+	if (CB_LITERAL_P (x)) {
+		if (CB_NUMERIC_LITERAL_P (x)) {
+			if (CB_LITERAL(x)->scale != 0) {
+				cb_warning_x (COBC_WARN_FILLER, x, _("SET TO should be an integer"));
+			}
+			setval = cb_get_int (x);
+			hasval = 1;
+		}
+	} else if (x == cb_zero) {
+		hasval = 1;
+	}
+	if (CB_EXCEPTION_ENABLE (COB_EC_BOUND_SUBSCRIPT)) {
+		cb_emit_check_index (vars, hasval, setval);
 	}
 }
 
@@ -12481,6 +12548,7 @@ cb_emit_set_to_fcdkey (cb_tree vars, cb_tree x)
 void
 cb_emit_set_up_down (cb_tree l, cb_tree flag, cb_tree x)
 {
+	cb_tree vars = l;
 	if (cb_validate_one (x)
 	 || cb_validate_list (l)) {
 		return;
@@ -12492,6 +12560,9 @@ cb_emit_set_up_down (cb_tree l, cb_tree flag, cb_tree x)
 		} else {
 			cb_emit (cb_build_sub (CB_VALUE (l), x, cb_int0));
 		}
+	}
+	if (CB_EXCEPTION_ENABLE (COB_EC_RANGE_INDEX)) {
+		cb_emit_check_index (vars, 0, 0);
 	}
 }
 

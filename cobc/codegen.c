@@ -8202,6 +8202,30 @@ output_perform_until (struct cb_perform *p, cb_tree l)
 	output (")");
 	output_newline ();
 	output_line ("  break;");
+	if (CB_EXCEPTION_ENABLE (COB_EC_BOUND_SUBSCRIPT)
+	 && next) {
+		cb_tree	xn;
+		/* Check all INDEXED BY variables used in VARYING */
+		for (xn = l; xn; xn = CB_CHAIN (xn)) {
+			struct cb_field		*q;
+			f = CB_FIELD_PTR (CB_PERFORM_VARYING(CB_VALUE (xn))->name);
+			if (!f->flag_indexed_by) continue;
+			if (!f->index_qual) continue;
+			q = f->index_qual;
+			output_prefix ();
+			output ("cob_check_subscript (");
+			output_integer (CB_PERFORM_VARYING(CB_VALUE (xn))->name);
+			output (", ");
+			if (q->depending) {
+				output_integer (q->depending);
+				output (", \"%s\", 1",f->name);
+			} else {
+				output ("%d, \"%s\", 0",q->occurs_max,f->name);
+			}
+			output (");");
+			output_newline ();
+		}
+	}
 
 	if (p->test == CB_BEFORE) {
 		output_perform_until (p, next);

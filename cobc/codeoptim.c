@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2006-2012, 2013, 2017-2022 Free Software Foundation, Inc.
+   Copyright (C) 2006-2012, 2013, 2017-2023 Free Software Foundation, Inc.
    Written by Roger While, Ron Norman, Simon Sobisch, Edward Hart
 
    This file is part of GnuCOBOL.
@@ -146,7 +146,7 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("cob_check_subscript_inline (const int i, const int max,");
 		output_storage ("			const char* name, const int odo_item)");
 		output_storage ("{");
-		output_storage ("	if (i == 0 || i > max) {");
+		output_storage ("	if (i < 1 || i > max) {");
 		output_storage ("		cob_check_subscript (i, max, name, odo_item);");
 		output_storage ("	}");
 		output_storage ("}");

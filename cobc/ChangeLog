@@ -1,4 +1,11 @@
 
+2023-01-19  Ron Norman <rjn@inglenet.com>
+
+	* codegen.c: Verify INDEXED BY variables in PERFORM VARYING
+	* typeck.c: Add cb_emit_check_index to warn if SET constant value is 
+	            out of bounds
+	* codeoptim.c: Fix cob_check_subscript_inline for min subscript value
+
 2023-01-15  Ron Norman <rjn@inglenet.com>
 
 	* cobc.c: Make sure the 'schema' directory is created for -fsql
