@@ -213,6 +213,14 @@ static unsigned int		need_save_exception = 0;
 static unsigned int		gen_nested_tab = 0;
 static unsigned int		gen_ascii_ebcdic = 0;
 static unsigned int		gen_ebcdic_ascii = 0;
+static unsigned int		gen_colseq_native_ebcdic = 0;
+static unsigned int		gen_colseq_native_ascii = 0;
+static unsigned int		gen_convert_ebcdic_ascii = 0;
+static unsigned int		gen_convert_ascii_ebcdic = 0;
+static unsigned int		gen_codeset_ascii_native = 0;
+static unsigned int		gen_codeset_native_ascii = 0;
+static unsigned int		gen_codeset_ebcdic_native = 0;
+static unsigned int		gen_codeset_native_ebcdic = 0;
 static unsigned int		gen_native = 0;
 static unsigned int		gen_custom = 0;
 static unsigned int		gen_figurative = 0;
@@ -2540,6 +2548,60 @@ output_literals_figuratives_and_constants (void)
 
 /* Collating tables */
 
+static int
+use_colseq_charsets(void)
+{
+	if (cb_native_charset != NULL && cb_target_charset != NULL &&
+	    strcasecmp(cb_native_charset, cb_target_charset) != 0) {
+		return 1;
+	} else {
+		return 0;
+	}
+}
+
+static int
+use_convert_charsets(void)
+{
+	if (cb_convert_ascii != NULL && cb_convert_ebcdic != NULL) {
+		return 1;
+	} else {
+		return 0;
+	}
+}
+
+static int
+use_codeset_charsets(int alphabet_type)
+{
+	if (cb_native_charset != NULL &&
+	    ((alphabet_type == CB_ALPHABET_ASCII && cb_codeset_ascii != NULL &&
+	      strcasecmp(cb_native_charset, cb_codeset_ascii) != 0) ||
+	     (alphabet_type == CB_ALPHABET_EBCDIC && cb_codeset_ebcdic != NULL &&
+	      strcasecmp(cb_native_charset, cb_codeset_ebcdic) != 0))) {
+		return 1;
+	} else {
+		return 0;
+	}
+}
+
+static int
+need_codeset_conversion(int alphabet_type)
+{
+	if (use_codeset_charsets(alphabet_type)) {
+		return 1;
+	} else {
+		switch (alphabet_type) {
+#ifdef	COB_EBCDIC_MACHINE
+		case CB_ALPHABET_ASCII:
+#else
+		case CB_ALPHABET_EBCDIC:
+#endif
+			return 1;
+		default:
+			return 0;
+		}
+	}
+}
+
 /* Outputs conversion from given table, or a native conversion (identity) when
    omitted (if table == NULL). */
 static void
@@ -2547,13 +2609,25 @@ output_colseq_table (const char * const table_name,
 		     const cob_u8_t table[256])
 {
 	int i;
-	output_storage ("static const unsigned char\t%s[256] = {", table_name);
+	output_storage ("static const cob_u8_t\t%s[256] = {", table_name);
 	for (i = 0; i < 256; i++) {
 		output_storage ("%s%#04x,",
 				i % 8 == 0 ? "\n\t" : " ",
 				table ? table[i] : i);
 	}
 	output_storage ("\n};\n");
+}
+
+static void
+output_colseq_table_empty (const char * const table_name)
+{
+	output_storage ("static cob_u8_t\t%s[256];\n", table_name);
+}
+
+static void
+output_colseq_table_ptr (const char * const table_name)
+{
+	output_storage ("static const cob_u8_t *\t%s = NULL;\n", table_name);
 }
 
 static void
@@ -2567,6 +2641,7 @@ output_colseq_table_field (const char * field_name, const char * table_name)
 static void
 output_collating_tables (void)
 {
+	/* Generic conversion tables */
 	if (gen_native) {
 		output_storage ("\n/* NATIVE table */\n");
 		output_colseq_table ("cob_native", NULL);
@@ -2575,22 +2650,68 @@ output_collating_tables (void)
 		}
 		output_storage ("\n");
 	}
-
 	if (gen_ascii_ebcdic) {
 		output_storage ("\n/* ASCII to EBCDIC table */\n");
-		output_storage ("static const cob_u8_t *\tcob_ascii_ebcdic = NULL;\n");
+		output_colseq_table_ptr ("cob_ascii_ebcdic");
 		if (gen_ascii_ebcdic > 1) {
 			output_colseq_table_field("f_ascii_ebcdic", "NULL");
 		}
 		output_storage ("\n");
 	}
-
 	if (gen_ebcdic_ascii) {
 		output_storage ("\n/* EBCDIC to ASCII table */\n");
-		output_storage ("static const cob_u8_t *\tcob_ebcdic_ascii = NULL;\n");
+		output_colseq_table_ptr ("cob_ebcdic_ascii");
 		if (gen_ebcdic_ascii > 1) {
 			output_colseq_table_field("f_ebcdic_ascii", "NULL");
 		}
+		output_storage ("\n");
+	}
+
+	/* Charset-aware conversion tables for COLLATING SEQUENCE */
+	if (gen_colseq_native_ebcdic) {
+		output_storage ("\n/* Native to EBCDIC table for COLLATING SEQUENCE */\n");
+		output_colseq_table_empty ("cob_colseq_native_ebcdic");
+		output_storage ("\n");
+	}
+	if (gen_colseq_native_ascii) {
+		output_storage ("\n/* Native to ASCII table for COLLATING SEQUENCE */\n");
+		output_colseq_table_empty ("cob_colseq_native_ascii");
+		output_storage ("\n");
+	}
+
+	/* Charset-aware conversion tables for CONVERT */
+	if (gen_convert_ebcdic_ascii) {
+		output_storage ("\n/* EBCDIC to ASCII table for CONVERT */\n");
+		output_colseq_table_empty ("cob_convert_ebcdic_ascii");
+		output_colseq_table_field("f_convert_ebcdic_ascii", "cob_convert_ebcdic_ascii");
+		output_storage ("\n");
+	}
+	if (gen_convert_ascii_ebcdic) {
+		output_storage ("\n/* ASCII to EBCDIC table for CONVERT */\n");
+		output_colseq_table_empty ("cob_convert_ascii_ebcdic");
+		output_colseq_table_field("f_convert_ascii_ebcdic", "cob_convert_ascii_ebcdic");
+		output_storage ("\n");
+	}
+
+	/* Charset-aware conversion tables for CODE-SET */
+	if (gen_codeset_ascii_native) {
+		output_storage ("\n/* ASCII to Native table for CODE-SET */\n");
+		output_colseq_table_empty ("cob_codeset_ascii_native");
+		output_storage ("\n");
+	}
+	if (gen_codeset_native_ascii) {
+		output_storage ("\n/* Native to ASCII table for CODE-SET */\n");
+		output_colseq_table_empty ("cob_codeset_native_ascii");
+		output_storage ("\n");
+	}
+	if (gen_codeset_ebcdic_native) {
+		output_storage ("\n/* EBCDIC to Native table for CODE-SET */\n");
+		output_colseq_table_empty ("cob_codeset_ebcdic_native");
+		output_storage ("\n");
+	}
+	if (gen_codeset_native_ebcdic) {
+		output_storage ("\n/* Native to EBCDIC table for CODE-SET */\n");
+		output_colseq_table_empty ("cob_codeset_native_ebcdic");
 		output_storage ("\n");
 	}
 }
@@ -2598,17 +2719,49 @@ output_collating_tables (void)
 static void
 output_init_collating_tables (void)
 {
-	if ((gen_ascii_ebcdic > 0) || (gen_ebcdic_ascii > 0)) {
+	/* Generic conversion tables */
+	if (gen_ascii_ebcdic > 0 || gen_ebcdic_ascii > 0) {
 		output_line ("cob_get_collation_by_name(\"%s\", %s, %s);",
-				cob_get_collation_name(cb_ebcdic_table),
-				(gen_ebcdic_ascii > 0) ? "&cob_ebcdic_ascii" : "NULL",
-				(gen_ascii_ebcdic > 0) ? "&cob_ascii_ebcdic" : "NULL");
-		if (gen_ascii_ebcdic > 1) {
-			output_line("f_ascii_ebcdic.data = (cob_u8_ptr)cob_ascii_ebcdic;");
-		}
+			     cob_get_collation_name(cb_ebcdic_table),
+			     gen_ebcdic_ascii > 0 ? "&cob_ebcdic_ascii" : "NULL",
+			     gen_ascii_ebcdic > 0 ? "&cob_ascii_ebcdic" : "NULL");
 		if (gen_ebcdic_ascii > 1) {
 			output_line("f_ebcdic_ascii.data = (cob_u8_ptr)cob_ebcdic_ascii;");
 		}
+		if (gen_ascii_ebcdic > 1) {
+			output_line("f_ascii_ebcdic.data = (cob_u8_ptr)cob_ascii_ebcdic;");
+		}
+	}
+
+	/* Charset-aware conversion tables for COLLATING SEQUENCE */
+	if (gen_colseq_native_ebcdic > 0 || gen_colseq_native_ascii > 0) {
+		output_line ("cob_build_collation(\"%s\", \"%s\", \"%s\", %s, %s);",
+			     cob_get_collation_name(cb_ebcdic_table),
+			     cb_native_charset, cb_target_charset,
+			     gen_colseq_native_ascii > 0 ? "cob_colseq_native_ascii" : "NULL",
+			     gen_colseq_native_ebcdic > 0 ? "cob_colseq_native_ebcdic" : "NULL");
+	}
+
+	/* Charset-aware conversion tables for CONVERT */
+	if (gen_convert_ascii_ebcdic > 0 || gen_convert_ebcdic_ascii > 0) {
+		output_line ("cob_build_conversion(\"%s\", \"%s\", %s, %s);",
+			     cb_convert_ebcdic, cb_convert_ascii,
+			     gen_convert_ebcdic_ascii > 0 ? "cob_convert_ebcdic_ascii" : "NULL",
+			     gen_convert_ascii_ebcdic > 0 ? "cob_convert_ascii_ebcdic" : "NULL");
+	}
+
+	/* Charset-aware conversion tables for CODE-SET */
+	if (gen_codeset_ascii_native > 0 || gen_codeset_native_ascii > 0) {
+		output_line ("cob_build_conversion(\"%s\", \"%s\", %s, %s);",
+			     cb_native_charset, cb_codeset_ascii,
+			     gen_codeset_native_ascii > 0 ? "cob_codeset_native_ascii" : "NULL",
+			     gen_codeset_ascii_native > 0? "cob_codeset_ascii_native" : "NULL");
+	}
+	if (gen_codeset_ebcdic_native > 0 || gen_codeset_native_ebcdic > 0) {
+		output_line ("cob_build_conversion(\"%s\", \"%s\", %s, %s);",
+			     cb_native_charset, cb_codeset_ebcdic,
+			     gen_codeset_native_ebcdic > 0 ? "cob_codeset_native_ebcdic" : "NULL",
+			     gen_codeset_ebcdic_native > 0? "cob_codeset_ebcdic_native" : "NULL");
 	}
 }
 
@@ -3465,33 +3618,57 @@ output_param (cb_tree x, int id)
 	case CB_TAG_ALPHABET_NAME:
 		abp = CB_ALPHABET_NAME (x);
 		switch (abp->alphabet_type) {
-		case CB_ALPHABET_ASCII:
-#ifdef	COB_EBCDIC_MACHINE
-			gen_ebcdic_ascii = 1;
-			output ("cob_ebcdic_ascii");
-			break;
-#endif
-			/* Fall through for ASCII */
 		case CB_ALPHABET_NATIVE:
-			if (current_prog->collating_sequence) {
-				gen_native = 1;
+			if (use_colseq_charsets()) {
+#ifdef	COB_EBCDIC_MACHINE
+				gen_colseq_native_ebcdic |= 1;
+				output ("cob_colseq_native_ebcdic");
+#else
+				gen_colseq_native_ascii |= 1;
+				output ("cob_colseq_native_ascii");
+#endif
+			} else if (current_prog->collating_sequence) {
+				gen_native |= 1;
 				output ("cob_native");
 			} else {
 				output ("NULL");
+			}
+			break;
+		case CB_ALPHABET_ASCII:
+			if (use_colseq_charsets()) {
+				gen_colseq_native_ascii |= 1;
+				output ("cob_colseq_native_ascii");
+			} else {
+#ifdef	COB_EBCDIC_MACHINE
+				gen_ebcdic_ascii |= 1;
+				output ("cob_ebcdic_ascii");
+#else
+				if (current_prog->collating_sequence) {
+					gen_native |= 1;
+					output ("cob_native");
+				} else {
+					output ("NULL");
+				}
+#endif
 			}
 			break;
 		case CB_ALPHABET_EBCDIC:
-#ifdef	COB_EBCDIC_MACHINE
-			if (current_prog->collating_sequence) {
-				gen_native = 1;
-				output ("cob_native");
+			if (use_colseq_charsets()) {
+				gen_colseq_native_ebcdic |= 1;
+				output ("cob_colseq_native_ebcdic");
 			} else {
-				output ("NULL");
-			}
+#ifdef	COB_EBCDIC_MACHINE
+				if (current_prog->collating_sequence) {
+					gen_native |= 1;
+					output ("cob_native");
+				} else {
+					output ("NULL");
+				}
 #else
-			output ("cob_ascii_ebcdic");
-			gen_ascii_ebcdic |= 1;
+				gen_ascii_ebcdic |= 1;
+				output ("cob_ascii_ebcdic");
 #endif
+			}
 			break;
 		case CB_ALPHABET_CUSTOM:
 			gen_custom = 1;
@@ -3616,28 +3793,44 @@ output_param (cb_tree x, int id)
 		if (CB_ALPHABET_NAME_P (r->value)) {
 			const struct cb_alphabet_name	*rbp = CB_ALPHABET_NAME (r->value);
 			switch (rbp->alphabet_type) {
+
+			case CB_ALPHABET_NATIVE:
+				gen_native |= 2;
+				output ("&f_native");
+				break;
+
 			case CB_ALPHABET_ASCII:
 #ifdef	COB_EBCDIC_MACHINE
-				gen_ebcdic_ascii = 2;
-				output ("&f_ebcdic_ascii");
-				break;
-#endif
-			/* Fall through for ASCII */
-			case CB_ALPHABET_NATIVE:
-				gen_native = 2;
+				if (use_convert_charsets()) {
+					gen_convert_ebcdic_ascii |= 2;
+					output ("&f_convert_ebcdic_ascii");
+				} else {
+					gen_ebcdic_ascii |= 2;
+					output ("&f_ebcdic_ascii");
+				}
+#else
+				gen_native |= 2;
 				output ("&f_native");
+#endif
 				break;
+
+
 			case CB_ALPHABET_EBCDIC:
 #ifdef	COB_EBCDIC_MACHINE
-				gen_native = 2;
+				gen_native |= 2;
 				output ("&f_native");
 #else
-				output ("&f_ascii_ebcdic");
-				gen_ascii_ebcdic |= 2;
+				if (use_convert_charsets()) {
+					gen_convert_ascii_ebcdic |= 2;
+					output ("&f_convert_ascii_ebcdic");
+				} else {
+					output ("&f_ascii_ebcdic");
+					gen_ascii_ebcdic |= 2;
+				}
 #endif
 				break;
 			case CB_ALPHABET_CUSTOM:
-				gen_custom = 1;
+				gen_custom |= 1;
 				output ("&%s%s", CB_PREFIX_FIELD, rbp->cname);
 				break;
 			default:
@@ -9141,22 +9334,36 @@ output_file_initialization (struct cb_file *f)
 		output_line ("lingptr->lin_bot = 0;");
 	}
 
-	if (f->organization != COB_ORG_SORT
-	 && f->code_set) {
+	if (f->organization != COB_ORG_SORT && f->code_set &&
+	    need_codeset_conversion(f->code_set->alphabet_type)) {
 		/* pass CODE-SET as collation */
 		const char *alph_write, *alph_read;
 		switch (f->code_set->alphabet_type) {
 		case CB_ALPHABET_ASCII:
-			alph_read = "cob_ascii_ebcdic";
-			alph_write = "cob_ebcdic_ascii";
-			gen_ebcdic_ascii = 1;
-			gen_ascii_ebcdic |= 1;
+			if (use_codeset_charsets(CB_ALPHABET_ASCII)) {
+				alph_read = "cob_codeset_ascii_native";
+				alph_write = "cob_codeset_native_ascii";
+				gen_codeset_ascii_native |= 1;
+				gen_codeset_native_ascii |= 1;
+			} else {
+				alph_read = "cob_ascii_ebcdic";
+				alph_write = "cob_ebcdic_ascii";
+				gen_ebcdic_ascii |= 1;
+				gen_ascii_ebcdic |= 1;
+			}
 			break;
 		case CB_ALPHABET_EBCDIC:
-			alph_read = "cob_ebcdic_ascii";
-			alph_write = "cob_ascii_ebcdic";
-			gen_ebcdic_ascii = 1;
-			gen_ascii_ebcdic |= 1;
+			if (use_codeset_charsets(CB_ALPHABET_EBCDIC)) {
+				alph_read = "cob_codeset_ebcdic_native";
+				alph_write = "cob_codeset_native_ebcdic";
+				gen_codeset_ebcdic_native |= 1;
+				gen_codeset_native_ebcdic |= 1;
+			} else {
+				alph_read = "cob_ebcdic_ascii";
+				alph_write = "cob_ascii_ebcdic";
+				gen_ebcdic_ascii |= 1;
+				gen_ascii_ebcdic |= 1;
+			}
 			break;
 		/* case CB_ALPHABET_CUSTOM: */
 		default:
@@ -13275,6 +13482,14 @@ codegen_init (struct cb_program *prog, const char *translate_name)
 	}
 	gen_ascii_ebcdic = 0;
 	gen_ebcdic_ascii = 0;
+	gen_colseq_native_ebcdic = 0;
+	gen_colseq_native_ascii = 0;
+	gen_convert_ascii_ebcdic = 0;
+	gen_convert_ebcdic_ascii = 0;
+	gen_codeset_ascii_native = 0;
+	gen_codeset_native_ascii = 0;
+	gen_codeset_ebcdic_native = 0;
+	gen_codeset_native_ebcdic = 0;
 	gen_native = 0;
 	gen_figurative = 0;
 	non_nested_count = 0;

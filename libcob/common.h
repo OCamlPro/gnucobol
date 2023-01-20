@@ -2804,6 +2804,25 @@ cob_get_collation_name (int);
 COB_EXPIMP int
 cob_get_collation_by_name (const char *, const cob_u8_t **, const cob_u8_t **);
 
+/* Build EBCDIC and ASCII collating sequences from the given collation
+   name, adding a conversion step from the specified `native` and `target`
+   encodings. These encodings must be recognize by `iconv`.
+   The `native_ascii` and `native_ebcdic` arguments must point to arrays
+   of at least 256 characters, or may be NULL if a table is not needed.
+   Return 0 on success and -1 on failure. */
+
+COB_EXPIMP int
+cob_build_collation(const char *, const char *, const char *, cob_u8_t *, cob_u8_t *);
+
+/* Build a pair of conversion tables between the two specified encodings.
+   These encodings must be recognize by `iconv`.
+   The `code1_code2` and `code2_code1` arguments must point to arrays
+   of at least 256 characters, or may be NULL if a table is not needed.
+   Return 0 on success and -1 on failure. */
+
+COB_EXPIMP int
+cob_build_conversion(const char *, const char *, cob_u8_t *, cob_u8_t *);
+
 /*******************************/
 
 /*******************************/

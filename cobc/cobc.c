@@ -225,6 +225,12 @@ const char		*cob_config_dir = NULL;
 FILE			*cb_storage_file = NULL;
 FILE			*cb_listing_file = NULL;
 FILE			*cb_depend_file = NULL;
+const char		*cb_native_charset = NULL;
+const char		*cb_target_charset = NULL;
+const char		*cb_convert_ascii = NULL;
+const char		*cb_convert_ebcdic = NULL;
+const char		*cb_codeset_ascii = NULL;
+const char		*cb_codeset_ebcdic = NULL;
 
 /* Listing structures and externals */
 
@@ -3667,6 +3673,36 @@ process_command_line (const int argc, char **argv)
 			if (cb_deciph_default_colseq_name (cob_optarg)) {
 				cobc_err_exit (COBC_INV_PAR, "-fdefault-colseq");
 			}
+			break;
+
+		case 16:
+			/* -native-charset=<charset-name> */
+			cb_native_charset = cobc_main_strdup (cob_optarg);
+			break;
+
+		case 17:
+			/* -target-charset=<charset-name> */
+			cb_target_charset = cobc_main_strdup (cob_optarg);
+			break;
+
+		case 18:
+			/* -fconvert-ascii=<charset-name> */
+			cb_convert_ascii = cobc_main_strdup (cob_optarg);
+			break;
+
+		case 19:
+			/* -fconvert-ebcdic=<charset-name> */
+			cb_convert_ebcdic = cobc_main_strdup (cob_optarg);
+			break;
+
+		case 20:
+			/* -fcodeset-ascii=<charset-name> */
+			cb_codeset_ascii = cobc_main_strdup (cob_optarg);
+			break;
+
+		case 21:
+			/* -codeset-ebcdic=<charset-name> */
+			cb_codeset_ebcdic = cobc_main_strdup (cob_optarg);
 			break;
 
 		case 4:

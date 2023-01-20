@@ -471,3 +471,129 @@ cob_get_collation_by_name (const char *col_name,
 
 	return col_id;
 }
+
+
+#include <stdlib.h>
+#include <errno.h>
+#include <iconv.h>
+
+static int
+cob_code_conv(const char *from, const char *to, cob_u8_t *src, cob_u8_t *dst, size_t size)
+{
+	size_t src_size = size;
+	size_t dst_size = size;
+	iconv_t cd;
+	size_t n;
+
+	cd = iconv_open(to, from);
+	if (cd == (iconv_t)-1) {
+		return -1;
+	}
+
+	n = iconv(cd, (char **)&src, &src_size, (char **)&dst, &dst_size);
+
+	iconv_close(cd);
+
+	if (n == -1) {
+		return -1;
+	}
+
+	return 0;
+}
+
+static int
+cob_code_is_ebcdic(const char *code)
+{
+	cob_u8_t ascii[4] = { 0x20, 0x61, 0x41, 0x30 }; // Space, a, A, 0
+	cob_u8_t buf[4] = { 0x00, 0x00, 0x00, 0x00 };
+	int res;
+
+	res = cob_code_conv("ASCII", code, ascii, buf, 4);
+	if (res < 0) {
+		return res;
+	}
+
+	return	(buf[0] == 0x40) && (buf[1] == 0x81) &&
+		(buf[2] == 0xC1) && (buf[3] == 0xF0);
+}
+
+#define CHARSET_SIZE 256
+
+int cob_build_collation(const char *col_name,
+			const char *native,
+			const char *target,
+			cob_u8_t *native_ascii,
+			cob_u8_t *native_ebcdic) // add native_target + targnat
+{
+	const cob_u8_t *ebcdic_ascii;
+	const cob_u8_t *ascii_ebcdic;
+	cob_u8_t source[CHARSET_SIZE];
+	cob_u8_t dest[CHARSET_SIZE];
+	int i, res;
+
+	res = cob_get_collation_by_name(col_name, &ebcdic_ascii, &ascii_ebcdic);
+	if (res < 0) {
+		return res;
+	}
+
+	for (i = 0; i < CHARSET_SIZE; ++i) {
+		source[i] = i;
+		dest[i] = 0;
+	}
+
+	res = cob_code_conv(native, target, source, dest, CHARSET_SIZE);
+	if (res < 0) {
+		return res;
+	}
+
+	if (cob_code_is_ebcdic(target)) {
+		if (native_ascii != NULL) {
+			for (i = 0; i < CHARSET_SIZE; ++i) {
+				native_ascii[i] = ebcdic_ascii[dest[i]];
+			}
+		}
+		if (native_ebcdic != NULL) {
+			memcpy(native_ebcdic, dest, CHARSET_SIZE);
+		}
+	} else {
+		if (native_ascii != NULL) {
+			memcpy(native_ascii, dest, CHARSET_SIZE);
+		}
+		if (native_ebcdic != NULL) {
+			for (i = 0; i < CHARSET_SIZE; ++i) {
+				native_ebcdic[i] = ascii_ebcdic[dest[i]];
+			}
+		}
+	}
+
+	return 0;
+}
+
+int cob_build_conversion(const char *code1,
+			 const char *code2,
+			 cob_u8_t *code1_code2,
+			 cob_u8_t *code2_code1)
+{
+	cob_u8_t source[CHARSET_SIZE];
+	int i, res;
+
+	for (i = 0; i < CHARSET_SIZE; ++i) {
+		source[i] = i;
+	}
+
+	if (code1_code2 != NULL) {
+		res = cob_code_conv(code1, code2, source, code1_code2, CHARSET_SIZE);
+		if (res < 0) {
+			return res;
+		}
+	}
+
+	if (code2_code1 != NULL) {
+		res = cob_code_conv(code2, code1, source, code2_code1, CHARSET_SIZE);
+		if (res < 0) {
+			return res;
+		}
+	}
+
+	return 0;
+}

@@ -480,6 +480,13 @@ extern int			functions_are_all;
 extern struct cb_tree_common	*defined_prog_list;
 extern int			current_call_convention;
 
+extern const char		*cb_native_charset;
+extern const char		*cb_target_charset;
+extern const char		*cb_convert_ascii;
+extern const char		*cb_convert_ebcdic;
+extern const char		*cb_codeset_ascii;
+extern const char		*cb_codeset_ebcdic;
+
 /* Functions */
 
 /* cobc.c */

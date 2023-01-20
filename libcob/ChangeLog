@@ -1,4 +1,11 @@
 
+2023-01-20 David Declerck <david.declerck@ocamlpro.com>
+
+	* cconv.c: new cob_build_collation and cob_build_conversion functions
+	  allowing to create collating sequence and character conversion tables
+	  that take character encodings into account
+	* common.h: declare the API for cob_build_collation and cob_build_conversion
+
 2023-01-16  Simon Sobisch <simonsobisch@gnu.org>
 
 	* statement.def (STMT_INIT_STORAGE): new internal statement
@@ -70,7 +77,7 @@
 
 2022-12-13 David Declerck <david.declerck@ocamlpro.com>
 
-	* conv.c: file moved from cobc to libcob
+	* cconv.c: file moved from cobc to libcob
 	* common.h: declare the new API for collating sequences
 
 2022-12-13  Simon Sobisch <simonsobisch@gnu.org>
