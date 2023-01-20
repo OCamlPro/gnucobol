@@ -553,7 +553,8 @@ AT_CLEANUP
 AT_SETUP([Check Subscripts])
 AT_KEYWORDS([SUBSCRIPT])
 
-AT_DATA([prog.cob], [       IDENTIFICATION DIVISION.
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
        PROGRAM-ID. prog.
        DATA DIVISION.
        WORKING-STORAGE SECTION.
@@ -612,7 +613,7 @@ AT_DATA([prog.cob], [       IDENTIFICATION DIVISION.
            MOVE 400 TO IB1.
       *    MOVE -1 TO NIDX
       *    DISPLAY NIDX ": " MYNAME (NIDX) " ... The Begin!".
-           PERFORM VARYING IB1 FROM 1 BY 1 UNTIL IB1 > 4
+           PERFORM VARYING IB1 FROM 1 BY 1 UNTIL IB1 > MAXIDX
                SET IB2   TO IB1
                SET NIDX  TO IB1
                SET MYIDX TO IB1
@@ -621,10 +622,10 @@ AT_DATA([prog.cob], [       IDENTIFICATION DIVISION.
                   MOVE "Freddy" TO MYNAME (NIDX)
                END-IF
            END-PERFORM.
-           SET NIDX  TO IB1
-           DISPLAY NIDX ": " MYNAME (IB1) " ... The End!".
+      *    SET NIDX  TO IB1
+      *    DISPLAY NIDX ": " MYNAME (IB1) " ... The End!".
 
-           PERFORM VARYING IB2 FROM 1 BY 1 UNTIL IB2 > MAXIDX
+           PERFORM VARYING IB2 FROM 1 BY 1 UNTIL IB2 > 4
                SET IB1   TO IB2
       * MF: Using wrong INDEX is warning and does not work
       *        DISPLAY MYMRK (IB1) MYNAME (IB1)
@@ -649,14 +650,14 @@ AT_DATA([prog.cob], [       IDENTIFICATION DIVISION.
        END PROGRAM SUBN.
 ])
 
-AT_CHECK([$COMPILE -x -std=mf -debug -Wall -debug -O prog.cob ], [0], [], [prog.cob:24: warning: SET TO should be an integer
-prog.cob:25: warning: source is non-numeric - substituting zero
-prog.cob:26: warning: SET IB2 TO 10 is out of bounds
-prog.cob:55: warning: SET IB1 TO -9 is out of bounds
-prog.cob:56: warning: SET IB1 TO 300 is out of bounds
+AT_CHECK([$COMPILE -x -std=mf -debug -Wall -debug -O prog.cob ], [0], [], [prog.cob:25: warning: SET TO should be an integer
+prog.cob:26: warning: source is non-numeric - substituting zero
+prog.cob:27: warning: SET IB2 TO 10 is out of bounds
+prog.cob:56: warning: SET IB1 TO -9 is out of bounds
+prog.cob:57: warning: SET IB1 TO 300 is out of bounds
 ])
 
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [Initial value: +01
+AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [Initial value: +01
 Number is +0000000042
 Number is +0000000002
 Number is +0000000001
@@ -664,12 +665,12 @@ Number is +0000000003
 +01: A: Fred    .
 +02: B: Barney  .
 +03: C: Wilma   .
-+04: D: Betty   .
-+05: A: B: C: ... The End!
 +01: A: Freddy  .
 +02: B: Barney  .
 +03: C: Wilma   .
-], [])
+], [libcob: prog.cob:80: error: subscript of 'MYMRK' out of bounds: 4
+note: current maximum subscript for 'MYMRK': 3
+])
 
 AT_CLEANUP
 

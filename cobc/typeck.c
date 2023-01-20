@@ -2467,12 +2467,6 @@ cb_build_identifier (cb_tree x, const int subchk)
 
 				/* Run-time check for all non-literals */
 				if (CB_EXCEPTION_ENABLE (COB_EC_BOUND_SUBSCRIPT)) {
-					if (cb_flag_optimize_check
-					 && CB_REF_OR_FIELD_P (sub)) {
-						/* Skip check_subscript; Now done on SET/PERFORM */
-						if (CB_FIELD_PTR (sub)->flag_indexed_by)
-							continue;	
-					}
 					if (p->depending && p->depending != cb_error_node) {
 						e1 = cb_add_check_subscript (p, sub, name, 1);
 						if (e1 != NULL) {
@@ -12288,11 +12282,6 @@ cb_emit_check_index (cb_tree vars, int hasval, int setval)
 				}
 				if (setval >= p->occurs_min) continue;
 			}
-#if 0 /* COBOL standard says do not check for SET */
-			cb_emit (CB_BUILD_FUNCALL_4 ("cob_check_subscript",
-				 cb_build_cast_int (v), cb_build_cast_int (p->depending),
-				 CB_BUILD_STRING0 (f->name), cb_int1));
-#endif
 		} else if (hasval
 				&& setval >= p->occurs_min
 				&& setval <= p->occurs_max) {
@@ -12302,11 +12291,6 @@ cb_emit_check_index (cb_tree vars, int hasval, int setval)
 				cb_warning_x (COBC_WARN_FILLER, l,
 						_("SET %s TO %d is out of bounds"),f->name,setval);
 			}
-#if 0 /* COBOL standard says do not check for SET */
-			cb_emit (CB_BUILD_FUNCALL_4 ("cob_check_subscript",
-				 cb_build_cast_int (v), cb_int (p->occurs_max),
-				 CB_BUILD_STRING0 (f->name), cb_int0));
-#endif
 		}
 	}
 }
