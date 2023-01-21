@@ -12260,7 +12260,7 @@ cb_emit_setenv (cb_tree x, cb_tree y)
 	cb_emit (CB_BUILD_FUNCALL_2 ("cob_set_environment", x, y));
 }
 
-void
+static void
 cb_emit_check_index (cb_tree vars, int hasval, int setval)
 {
 	cb_tree		l, v;
@@ -12277,8 +12277,8 @@ cb_emit_check_index (cb_tree vars, int hasval, int setval)
 				if (setval > p->occurs_max
 				 || setval < p->occurs_min) {
 					cb_warning_x (COBC_WARN_FILLER, l,
-							_("SET %s TO %d is out of bounds"),f->name,setval);
-					cb_emit (CB_BUILD_FUNCALL_1("cob_set_exception",cb_int(COB_EC_RANGE_INDEX)));
+							_("SET %s TO %d is out of bounds"), f->name, setval);
+					cb_emit (CB_BUILD_FUNCALL_1("cob_set_exception", cb_int(COB_EC_RANGE_INDEX)));
 				}
 				if (setval >= p->occurs_min) continue;
 			}
@@ -12289,7 +12289,7 @@ cb_emit_check_index (cb_tree vars, int hasval, int setval)
 		} else {
 			if (hasval) {
 				cb_warning_x (COBC_WARN_FILLER, l,
-						_("SET %s TO %d is out of bounds"),f->name,setval);
+						_("SET %s TO %d is out of bounds"), f->name, setval);
 			}
 		}
 	}
