@@ -1,4 +1,9 @@
 
+2023-01-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* atlocal.in: don't quote include and lib path as this breaks
+	  MSYS builds
+
 2023-01-15  Simon Sobisch <simonsobisch@gnu.org>
 
 	* atlocal.in: fix COB_LDFLAGS to not be reset but prefixed
@@ -1121,7 +1126,7 @@
 	* redef.at, subref.at, runtime.at: New files.
 
 
-Copyright 2002-2022 Free Software Foundation, Inc.
+Copyright 2002-2023 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.

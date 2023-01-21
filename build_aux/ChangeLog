@@ -1,4 +1,9 @@
 
+2023-01-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* pre-inst-env.in: don't quote include and lib path as this breaks
+	  MSYS builds
+
 2022-12-01  Simon Sobisch <simonsobisch@gnu.org>
 
 	* bootstrap: drop tarstamp.h generation, done via make
@@ -166,7 +171,7 @@
 	  without uname(1) [removed 2014-01-25] from old version
 
 
-Copyright 2015-2022 Free Software Foundation, Inc.
+Copyright 2015-2023 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.
