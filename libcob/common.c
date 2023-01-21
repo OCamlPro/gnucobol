@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -6523,6 +6523,7 @@ get_sleep_nanoseconds_from_seconds (cob_field *decimal_seconds) {
 	}
 }
 
+/* note: nsecs, while signed, is always >= 0 here */
 static void
 internal_nanosleep (cob_s64_t nsecs, int round_to_minmal)
 {
@@ -6534,7 +6535,7 @@ internal_nanosleep (cob_s64_t nsecs, int round_to_minmal)
 	nanosleep (&tsec, NULL);
 
 #elif	defined (_WIN32)
-	const unsigned int	(unsigned int)(nsecs / 1000000);
+	const unsigned int	msecs = (unsigned int)(nsecs / 1000000);
 	if (msecs > 0) {
 		Sleep (msecs);
 	}

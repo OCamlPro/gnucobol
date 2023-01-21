@@ -1,4 +1,8 @@
 
+2023-01-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (internal_nanosleep): fix missing identifier (broken merge)
+
 2023-01-15  Ron Norman <rjn@inglenet.com>
 
 	* screenio.c: renamed max_pairs_available as this is defined on HPUX
@@ -19,7 +23,7 @@
 2022-11-25  Ron Norman <rjn@inglenet.com>
 
 	* fisam.c: Updated to better replicate MF COBOL behaviour
-				in relation to START ... READ NEXT/PREVIOUS
+	  in relation to START ... READ NEXT/PREVIOUS
 
 2022-11-18  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -6221,7 +6225,7 @@
 	  (cob_init_call): Initialize 'dynamic_reloading'.
 
 
-Copyright 2002-2022 Free Software Foundation, Inc.
+Copyright 2002-2023 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification, are
 permitted provided the copyright notice and this notice are preserved.
