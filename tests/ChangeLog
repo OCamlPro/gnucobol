@@ -1,6 +1,7 @@
 
 2023-01-21  Simon Sobisch <simonsobisch@gnu.org>
 
+	* atlocal.in: prefer config.status replacement over environment var
 	* atlocal.in: don't quote include and lib path as this breaks
 	  MSYS builds
 

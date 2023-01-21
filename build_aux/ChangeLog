@@ -1,6 +1,7 @@
 
 2023-01-21  Simon Sobisch <simonsobisch@gnu.org>
 
+	* pre-inst-env.in: prefer config.status replacement over environment var
 	* pre-inst-env.in: don't quote include and lib path as this breaks
 	  MSYS builds
 
