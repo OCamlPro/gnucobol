@@ -1,4 +1,10 @@
 
+2023-01-23 David Declerck <david.declerck@ocamlpro.com>
+
+	* flag.def: "ebcdic-table" can now take a filename as argument
+	* cobc.c, cobc.h: handle external table for "ebcdic-table"
+	* codegen.c: generate code to use the external table
+
 2023-01-16  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y (occurs_index): only set VALUE 1 for defaultbyte == INIT
@@ -134,7 +140,7 @@
 
 2022-12-13 David Declerck <david.declerck@ocamlpro.com>
 
-	* conv.c, conv.h: files moved from cobc to libcob
+	* cconv.c, cconv.h: files moved from cobc to libcob
 	* codegen.c: use the new libcob API for collating sequences
 	* flag.def: change "ebcdic-table" to a flag with associated variable
 

@@ -2567,6 +2567,18 @@ output_colseq_table_field (const char * field_name, const char * table_name)
 static void
 output_collating_tables (void)
 {
+	cob_u8_t ebcdic_to_ascii[256];
+	cob_u8_t ascii_to_ebcdic[256];
+
+	/* Load the collating tables if needed */
+	if (gen_ascii_ebcdic || gen_ebcdic_ascii) {
+		if (cob_load_collation (cb_ebcdic_table,
+					gen_ebcdic_ascii ? ebcdic_to_ascii : NULL,
+					gen_ascii_ebcdic ? ascii_to_ebcdic : NULL) < 0) {
+			cobc_err_exit (_("invalid parameter: -febcdic-table"));
+		}
+	}
+
 	if (gen_native) {
 		output_storage ("\n/* NATIVE table */\n");
 		output_colseq_table ("cob_native", NULL);
@@ -2578,37 +2590,20 @@ output_collating_tables (void)
 
 	if (gen_ascii_ebcdic) {
 		output_storage ("\n/* ASCII to EBCDIC table */\n");
-		output_storage ("static const cob_u8_t *\tcob_ascii_ebcdic = NULL;\n");
+		output_colseq_table ("cob_ascii_ebcdic", ascii_to_ebcdic);
 		if (gen_ascii_ebcdic > 1) {
-			output_colseq_table_field("f_ascii_ebcdic", "NULL");
+			output_colseq_table_field("f_ascii_ebcdic", "cob_ascii_ebcdic");
 		}
 		output_storage ("\n");
 	}
 
 	if (gen_ebcdic_ascii) {
 		output_storage ("\n/* EBCDIC to ASCII table */\n");
-		output_storage ("static const cob_u8_t *\tcob_ebcdic_ascii = NULL;\n");
+		output_colseq_table ("cob_ebcdic_ascii", ebcdic_to_ascii);
 		if (gen_ebcdic_ascii > 1) {
-			output_colseq_table_field("f_ebcdic_ascii", "NULL");
+			output_colseq_table_field("f_ebcdic_ascii", "cob_ebcdic_ascii");
 		}
 		output_storage ("\n");
-	}
-}
-
-static void
-output_init_collating_tables (void)
-{
-	if ((gen_ascii_ebcdic > 0) || (gen_ebcdic_ascii > 0)) {
-		output_line ("cob_get_collation_by_name(\"%s\", %s, %s);",
-				cob_get_collation_name(cb_ebcdic_table),
-				(gen_ebcdic_ascii > 0) ? "&cob_ebcdic_ascii" : "NULL",
-				(gen_ascii_ebcdic > 0) ? "&cob_ascii_ebcdic" : "NULL");
-		if (gen_ascii_ebcdic > 1) {
-			output_line("f_ascii_ebcdic.data = (cob_u8_ptr)cob_ascii_ebcdic;");
-		}
-		if (gen_ebcdic_ascii > 1) {
-			output_line("f_ebcdic_ascii.data = (cob_u8_ptr)cob_ebcdic_ascii;");
-		}
 	}
 }
 
@@ -3467,14 +3462,14 @@ output_param (cb_tree x, int id)
 		switch (abp->alphabet_type) {
 		case CB_ALPHABET_ASCII:
 #ifdef	COB_EBCDIC_MACHINE
-			gen_ebcdic_ascii = 1;
+			gen_ebcdic_ascii |= 1;
 			output ("cob_ebcdic_ascii");
 			break;
 #endif
 			/* Fall through for ASCII */
 		case CB_ALPHABET_NATIVE:
 			if (current_prog->collating_sequence) {
-				gen_native = 1;
+				gen_native |= 1;
 				output ("cob_native");
 			} else {
 				output ("NULL");
@@ -3483,7 +3478,7 @@ output_param (cb_tree x, int id)
 		case CB_ALPHABET_EBCDIC:
 #ifdef	COB_EBCDIC_MACHINE
 			if (current_prog->collating_sequence) {
-				gen_native = 1;
+				gen_native |= 1;
 				output ("cob_native");
 			} else {
 				output ("NULL");
@@ -3618,18 +3613,18 @@ output_param (cb_tree x, int id)
 			switch (rbp->alphabet_type) {
 			case CB_ALPHABET_ASCII:
 #ifdef	COB_EBCDIC_MACHINE
-				gen_ebcdic_ascii = 2;
+				gen_ebcdic_ascii |= 2;
 				output ("&f_ebcdic_ascii");
 				break;
 #endif
 			/* Fall through for ASCII */
 			case CB_ALPHABET_NATIVE:
-				gen_native = 2;
+				gen_native |= 2;
 				output ("&f_native");
 				break;
 			case CB_ALPHABET_EBCDIC:
 #ifdef	COB_EBCDIC_MACHINE
-				gen_native = 2;
+				gen_native |= 2;
 				output ("&f_native");
 #else
 				output ("&f_ascii_ebcdic");
@@ -9149,13 +9144,13 @@ output_file_initialization (struct cb_file *f)
 		case CB_ALPHABET_ASCII:
 			alph_read = "cob_ascii_ebcdic";
 			alph_write = "cob_ebcdic_ascii";
-			gen_ebcdic_ascii = 1;
+			gen_ebcdic_ascii |= 1;
 			gen_ascii_ebcdic |= 1;
 			break;
 		case CB_ALPHABET_EBCDIC:
 			alph_read = "cob_ebcdic_ascii";
 			alph_write = "cob_ascii_ebcdic";
-			gen_ebcdic_ascii = 1;
+			gen_ebcdic_ascii |= 1;
 			gen_ascii_ebcdic |= 1;
 			break;
 		/* case CB_ALPHABET_CUSTOM: */
@@ -10972,8 +10967,6 @@ output_module_init_function (struct cb_program *prog)
 	} else {
 		output_line ("module->module_sources = NULL;");
 	}
-
-        output_init_collating_tables();
 
 	output_block_close ();
 	output_newline ();

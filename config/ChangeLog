@@ -1,4 +1,16 @@
 
+2023-01-23 David Declerck <david.declerck@ocamlpro.com>
+
+	* ebcdic500_latin1: new translation table from EBCDIC 500 to Latin-1
+	* ebcdic500_ascii7bit: translation table from EBCDIC 500 to 7-bit ASCII
+	  as per IBM, extracted from libcob/cconv.c (cob_ibmebcdic_ascii)
+	* ebcdic500_ascii8bit: translation table from EBCDIC 500 to 7-bit ASCII
+	  as per GCOS7, extracted from libcob/cconv.c (cob_gcos7ebcdic_ascii)
+	* default: the original GnuCOBOL translation table,
+	  extracted from libcob/cconv.c (cob_ebcdic_ascii)
+	* alternate: the original GnuCOBOL "alternate" translation table,
+	  extracted from libcob/cconv.c (cob_ebcdic_ascii_alt)
+
 2023-01-16  Simon Sobisch <simonsobisch@gnu.org>
 
 	* realia-strict.conf: change defaultbyte from space to zero

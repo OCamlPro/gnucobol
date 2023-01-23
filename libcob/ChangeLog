@@ -1,4 +1,12 @@
 
+2023-01-23 David Declerck <david.declerck@ocamlpro.com>
+
+	* cconv.c: add a cob_load_collation function to load collating sequences
+	  from files ; cobc uses this function to create tables that are embedded
+	  in the generated code, and we also we make it available in libcob so
+	  that external tools that make use of the library can use this feature
+	* common.h: declare the API for loading collating sequences from files
+
 2023-01-16  Simon Sobisch <simonsobisch@gnu.org>
 
 	* statement.def (STMT_INIT_STORAGE): new internal statement
@@ -70,7 +78,7 @@
 
 2022-12-13 David Declerck <david.declerck@ocamlpro.com>
 
-	* conv.c: file moved from cobc to libcob
+	* cconv.c: file moved from cobc to libcob
 	* common.h: declare the new API for collating sequences
 
 2022-12-13  Simon Sobisch <simonsobisch@gnu.org>

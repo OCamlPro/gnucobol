@@ -1,4 +1,9 @@
 
+2023-01-23 David Declerck <david.declerck@ocamlpro.com>
+
+	* testsuite.src/configuration.at: test reading translation
+	  tables from an external file
+
 2022-12-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* atlocal.in, atlocal_win, atlocal_valgrind: added COB_MODULE_EXT
