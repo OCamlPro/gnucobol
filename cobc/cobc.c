@@ -344,6 +344,7 @@ static struct cobc_mem_struct	*cobc_parsemem_base = NULL;
 static struct cobc_mem_struct	*cobc_plexmem_base = NULL;
 
 static const char	*cobc_cc;		/* C compiler */
+static const char	*cobc_pp;               /* COBOL preprocessor */
 static char		*cobc_cflags;		/* C compiler flags */
 #ifdef COB_DEBUG_FLAGS
 static const char		*cobc_debug_flags;		/* C debgging flags */
@@ -422,6 +423,7 @@ static signed int	verbose_output = 0;
 static int		cb_coverage_enabled = 0;
 static int		cob_optimize = 0;
 
+static int              cobc_free_format = 0;
 
 static unsigned int		cb_listing_linecount;
 static int		cb_listing_eject = 0;
@@ -584,6 +586,7 @@ static const struct option long_options[] = {
 	{"MF",			CB_RQ_ARG, NULL, '@'},
 	{"coverage",	CB_NO_ARG, &cb_coverage_enabled, 1},
 	{"P",			CB_OP_ARG, NULL, 'P'},
+	{"pp",		CB_RQ_ARG, NULL, '^'},
 	{"Xref",		CB_NO_ARG, NULL, 'X'},
 	{"use-extfh",		CB_RQ_ARG, NULL, 9},	/* this is used by COBOL-IT; Same is -fcallfh= */
 	{"Wall",		CB_NO_ARG, NULL, 'W'},
@@ -2838,6 +2841,24 @@ file_extension (const char *filename)
 	return "";
 }
 
+static void set_save_temps (const char *cob_optarg){
+	save_temps = 1;
+	if (cob_optarg) {
+		struct stat		st;
+		if (save_temps_dir) {
+			cobc_free (save_temps_dir);
+			save_temps_dir = NULL;
+		}
+		if (stat (cob_optarg, &st) != 0 ||
+		    !(S_ISDIR (st.st_mode))) {
+			cobc_err_msg (_("warning: '%s' is not a directory, defaulting to current directory"),
+				      cob_optarg);
+		} else {
+			save_temps_dir = cobc_strdup (cob_optarg);
+		}
+	}
+}
+
 /* set compile_level from output file if not set already */
 static void
 set_compile_level_from_file_extension (const char *filename)
@@ -3341,6 +3362,7 @@ process_command_line (const int argc, char **argv)
 
 		case 'F':
 			/* --free, alias of `-fformat=free` */
+			cobc_free_format = 1;
 			(void) cobc_deciph_source_format ("FREE");
 			break;
 
@@ -3415,21 +3437,7 @@ process_command_line (const int argc, char **argv)
 
 		case '_':
 			/* --save-temps : Save intermediary files */
-			save_temps = 1;
-			if (cob_optarg) {
-				struct stat		st;
-				if (save_temps_dir) {
-					cobc_free (save_temps_dir);
-					save_temps_dir = NULL;
-				}
-				if (stat (cob_optarg, &st) != 0 ||
-				    !(S_ISDIR (st.st_mode))) {
-					cobc_err_msg (_("warning: '%s' is not a directory, defaulting to current directory"),
-						cob_optarg);
-				} else {
-					save_temps_dir = cobc_strdup (cob_optarg);
-				}
-			}
+			set_save_temps (cob_optarg);
 			break;
 
 		case 'T':
@@ -3477,6 +3485,13 @@ process_command_line (const int argc, char **argv)
 			}
 			if (!cobc_gen_listing) {
 				cobc_gen_listing = 1;
+			}
+			break;
+
+		case '^':
+			/* -pp 'cobc_pp' */
+			if (cob_optarg){
+				cobc_pp = cobc_strdup (cob_optarg);
 			}
 			break;
 
@@ -7889,6 +7904,38 @@ process_translate (struct filename *fn)
 	return !!errorcount;
 }
 
+/* Create preprocessed file from source code */
+
+static int
+process_preprocess (struct filename *fn)
+{
+	size_t	bufflen;
+
+	bufflen = strlen( cobc_pp ) + 30
+		+ strlen( fn->preprocess )
+		+ strlen( fn->source )
+		+ cobc_include_len
+		;
+
+	cobc_chk_buff_size (bufflen);
+
+	/* We expect an external preprocessor to accept the following
+	   arguments:
+	   --free  : expect free format
+	   -o FILE : file to generate
+	   -I DIR  : include directory
+	   FILE : file to preprocess
+	   Note: the external preprocessor should generate cobc internal
+	   format, i.e. with #area_a and other idiosyncrasies.
+	*/
+	sprintf (cobc_buffer, "%s%s %s -o %s %s",
+		 cobc_pp,
+		 cobc_free_format ? " --free" : "",
+		 cobc_include,
+		 fn->preprocess, fn->source);
+	return process (cobc_buffer);
+}
+
 /* Create single-element assembly source */
 
 static int
@@ -8523,6 +8570,13 @@ set_cobc_defaults (void)
 {
 	char			*p;
 
+	cobc_pp = cobc_getenv_path ("COB_PP");
+	p = cobc_getenv ("COB_SAVE_TEMPS");
+	if (p){
+		if( *p == 0 ) p = NULL;
+		set_save_temps (p);
+	}
+
 	cobc_cc = cobc_getenv_path ("COB_CC");
 	if (cobc_cc == NULL ) {
 		cobc_cc = COB_CC;
@@ -8855,7 +8909,10 @@ process_file (struct filename *fn, int status)
 	if (cb_compile_level >= CB_LEVEL_PREPROCESS
 	 && fn->need_preprocess) {
 		/* Preprocess */
-		fn->has_error = preprocess (fn);
+		if( cobc_pp && *cobc_pp != 0 )
+			fn->has_error = process_preprocess (fn);
+		else
+			fn->has_error = preprocess (fn);
 		status |= fn->has_error;
 		/* If preprocessing raised errors go on but only check syntax */
 		if (fn->has_error) {
