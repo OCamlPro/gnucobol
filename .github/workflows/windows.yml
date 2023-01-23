@@ -79,7 +79,6 @@ jobs:
           path: _build/install.log
 
       - name: check
-        continue-on-error: true
         run: |
           cd _build/tests
           make check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))" || (echo "not all tests passed")
