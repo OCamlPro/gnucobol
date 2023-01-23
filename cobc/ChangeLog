@@ -1,4 +1,11 @@
 
+2023-01-20 David Declerck <david.declerck@ocamlpro.com>
+
+	* flag.def, cobc.c, cobc.h: new flags to deal with collating sequences
+	  and character encodings: -fnative-charset, -ftarget-charset,
+	  -fconvert-ascii, -fconvert-ebcdic, -fcodeset-ascii and -fcodeset-ebcdic
+	* codegen.c, parser.y: handle new character encoding options
+
 2023-01-16  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y (occurs_index): only set VALUE 1 for defaultbyte == INIT

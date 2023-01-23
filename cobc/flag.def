@@ -103,6 +103,24 @@ CB_FLAG_NQ (1, "default-colseq", 15,
 	_("  -fdefault-colseq=[ASCII|EBCDIC|NATIVE]\tdefine default collating sequence\n"
 	  "                        * default: NATIVE"))
 
+CB_FLAG_NQ (1, "native-charset", 16,
+	_("  -fnative-charset=<charset-name>\tset the charset of the execution environment"))
+
+CB_FLAG_NQ (1, "target-charset", 17,
+	_("  -ftarget-charset=<charset-name>\tset the charset of the simulated environment"))
+
+CB_FLAG_NQ (1, "convert-ascii", 18,
+	_("  -fconvert-ascii=<charset-name>\tset the ASCII charset to use in CONVERT clauses"))
+
+CB_FLAG_NQ (1, "convert-ebcdic", 19,
+	_("  -fconvert-ebcdic=<charset-name>\tset the EBCDIC charset to use in CONVERT clauses"))
+
+CB_FLAG_NQ ( 1, "codeset-ascii", 20,
+	_("  -fcodeset-ascii=<charset-name>\tset the ASCII charset to use in CODE-SET clauses"))
+
+CB_FLAG_NQ (1, "codeset-ebcdic", 21,
+	_("  -fcodeset-ebcdic=<charset-name>\tset the EBCDIC charset to use in CODE-SET clauses"))
+
 /* Binary flags */
 
 /* Flags with suppressed help */

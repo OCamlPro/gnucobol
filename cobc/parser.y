@@ -6610,14 +6610,24 @@ code_set_clause:
 			CB_PENDING ("custom CODE-SET");
 			current_file->code_set = al;
 			break;
-#ifdef	COB_EBCDIC_MACHINE
 		case CB_ALPHABET_ASCII:
-#else
 		case CB_ALPHABET_EBCDIC:
+			if ((cb_native_charset != NULL &&
+			     ((al->alphabet_type == CB_ALPHABET_ASCII && cb_codeset_ascii != NULL
+			       && strcasecmp(cb_native_charset, cb_codeset_ascii) != 0) ||
+			      (al->alphabet_type == CB_ALPHABET_EBCDIC && cb_codeset_ebcdic != NULL
+			       && strcasecmp(cb_native_charset, cb_codeset_ebcdic) != 0))) ||
+#ifdef	COB_EBCDIC_MACHINE
+			    al->alphabet_type == CB_ALPHABET_ASCII
+#else
+			    al->alphabet_type == CB_ALPHABET_EBCDIC
 #endif
-			CB_UNFINISHED ("CODE-SET");
-			current_file->code_set = al;
-			break;
+			   ) {
+				CB_UNFINISHED ("CODE-SET");
+				current_file->code_set = al;
+				break;
+			}
+		/* fall through */
 		default:
 			if (get_warn_opt_value (cb_warn_additional) != COBC_WARN_DISABLED) {
 				cb_note_x (cb_warn_additional, $3, _("ignoring CODE-SET '%s'"),
