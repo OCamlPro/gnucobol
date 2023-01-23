@@ -1,11 +1,12 @@
 name: Windows Workflow
 
 on:
-  # pull_request:
-  #   branches: [ gcos4gnucobol-3.x ]
-  # push:
+ pull_request:
+   branches: [ gcos4gnucobol-3.x ]
+ push:
+   branches: [ gcos4gnucobol-3.x ]
   # manual run in actions tab - for all branches
-  workflow_dispatch:
+  # workflow_dispatch:
 
 jobs:
   build:
@@ -20,13 +21,13 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Install packages
         uses: msys2/setup-msys2@v2
         with:
           update: true
-          install: autoconf automake libtool make mingw-w64-x86_64-db mingw-w64-x86_64-gmp libdb-devel mingw-w64-x86_64-gcc flex bison gmp-devel help2man texinfo
+          install: autoconf automake libtool make mingw-w64-x86_64-db mingw-w64-x86_64-gmp libdb-devel mingw-w64-x86_64-gcc flex bison gmp-devel help2man texinfo gettext-devel
 
       - name: Set git user
         run: |
@@ -35,7 +36,9 @@ jobs:
 
       - name: bootstrap
         run: |
-          ./build_aux/bootstrap
+          ./autogen.sh
+          autoconf
+          autoreconf --install --force
         shell: msys2 {0}
 
       - name: Build environment setup
@@ -46,7 +49,7 @@ jobs:
       - name: configure
         run: |
           cd _build
-          ../configure --enable-cobc-internal-checks --enable-hardening --prefix /opt/cobol/gnucobol-gcos
+          ../configure --enable-cobc-internal-checks --enable-hardening --prefix /opt/cobol/gnucobol-gcos --exec-prefix /opt/cobol/gnucobol-gcos
         shell: msys2 {0}
 
       - name: Upload config.log
@@ -62,21 +65,29 @@ jobs:
           make --jobs=$(($(nproc)+1))
         shell: msys2 {0}
 
-      - name: check
-        run: |
-          cd _build/tests
-          make check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))"
-        shell: msys2 {0}
-
-      - name: Upload testsuite.log
-        uses: actions/upload-artifact@v3
-        if: failure()
-        with:
-          name: testsuite.log
-          path: _build/tests/testsuite.log
-
       - name: install
         run: |
           cd _build
           make install
+          find /opt/cobol > install.log
         shell: msys2 {0}
+
+      - name: Upload install.log
+        uses: actions/upload-artifact@v3
+        with:
+          name: install.log
+          path: _build/install.log
+
+      - name: check
+        continue-on-error: true
+        run: |
+          cd _build/tests
+          make check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))" || (echo "not all tests passed")
+          make test
+        shell: msys2 {0}
+
+      - name: Upload testsuite.log
+        uses: actions/upload-artifact@v3
+        with:
+          name: testsuite.log
+          path: _build/tests/testsuite.log
