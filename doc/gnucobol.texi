@@ -558,7 +558,8 @@ one takes effect.
 @ignore
 @comment{TODO - add in cobc this way, ideally until GC 3.1 is out...}
 When an unrecognized warning option is requested (e.g., @option{-Wunknown-warning}),
-@command{cobc} emits a diagnostic stating that the option is not recognized, as long as the verbose mode @option{--verbose} is active.
+@command{cobc} emits a diagnostic stating that the option is not recognized,
+as long as the verbose mode @option{--verbose} is active.
 
 @comment{TODO - add in cobc this way}
 However, if the @option{-Wno-} form is used, the behavior is slightly different: no
@@ -708,8 +709,10 @@ Compiler uses the given @var{dialect} to determine the reserved words.
 @item -conf=<file>
 User-defined dialect configuration.
 
-@item -febcdic-table=<cconv-table>/<file>
-EBCDIC/ASCII translation table to use; either a file, or a known table from the configuration directory (see cobc --info) without the .ttbl extension. See the default.ttbl file for detailed information about the format.
+@item -febcdic-table=@var{cconv-table}/@var{file}
+EBCDIC/ASCII translation table to use; either read from @var{file}, or one of the existing @var{cconv-table}
+from the configuration directory (see @code{cobc --info}) which have a .ttbl extension, for example @option{-febcdic-table=alternate}.@*
+See the @file{default.ttbl} file for detailed information about the format.
 
 @end table
 
