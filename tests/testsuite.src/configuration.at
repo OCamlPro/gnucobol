@@ -948,8 +948,8 @@ B57E737475767778797AA1BFD0DDDEAEA2A3A5B7A9A7B6BCBDBEAC7CAFA8B4D77B41424344454647
 
 AT_CHECK([$COMPILE -C -febcdic-table=./invalid.ttbl prog.cob], [1], [],
 [libcob: error: errors in translation table './invalid.ttbl':
-libcob: error: invalid hex byte on line 1: '2X'
-libcob: error: invalid hex byte on line 1: 'YA'
+libcob: error: invalid hex byte on line 4: '2X'
+libcob: error: invalid hex byte on line 5: 'YA'
 cobc: error: invalid parameter: -febcdic-table
 ])
 
