@@ -2575,7 +2575,7 @@ output_collating_tables (void)
 		if (cob_load_collation (cb_ebcdic_table,
 					gen_ebcdic_ascii ? ebcdic_to_ascii : NULL,
 					gen_ascii_ebcdic ? ascii_to_ebcdic : NULL) < 0) {
-			cobc_err_exit (_("invalid parameter: -febcdic-table"));
+			cobc_err_exit (_("invalid parameter: %s"), "-febcdic-table");
 		}
 	}
 
@@ -2583,7 +2583,7 @@ output_collating_tables (void)
 		output_storage ("\n/* NATIVE table */\n");
 		output_colseq_table ("cob_native", NULL);
 		if (gen_native > 1) {
-			output_colseq_table_field("f_native", "cob_native");
+			output_colseq_table_field ("f_native", "cob_native");
 		}
 		output_storage ("\n");
 	}
@@ -2592,7 +2592,7 @@ output_collating_tables (void)
 		output_storage ("\n/* ASCII to EBCDIC table */\n");
 		output_colseq_table ("cob_ascii_ebcdic", ascii_to_ebcdic);
 		if (gen_ascii_ebcdic > 1) {
-			output_colseq_table_field("f_ascii_ebcdic", "cob_ascii_ebcdic");
+			output_colseq_table_field ("f_ascii_ebcdic", "cob_ascii_ebcdic");
 		}
 		output_storage ("\n");
 	}
@@ -2601,7 +2601,7 @@ output_collating_tables (void)
 		output_storage ("\n/* EBCDIC to ASCII table */\n");
 		output_colseq_table ("cob_ebcdic_ascii", ebcdic_to_ascii);
 		if (gen_ebcdic_ascii > 1) {
-			output_colseq_table_field("f_ebcdic_ascii", "cob_ebcdic_ascii");
+			output_colseq_table_field ("f_ebcdic_ascii", "cob_ebcdic_ascii");
 		}
 		output_storage ("\n");
 	}
