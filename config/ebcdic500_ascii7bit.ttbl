@@ -1,3 +1,23 @@
+# GnuCOBOL EBCDIC/ASCII translation tables
+#
+# Copyright (C) 2022,2023 Free Software Foundation, Inc.
+#  Written by Nicolas Berthier, Simon Sobisch, David Declerck
+#
+# This file is part of the GnuCOBOL runtime.
+#
+# The GnuCOBOL runtime is free software: you can redistribute it
+# and/or modify it under the terms of the GNU Lesser General Public License
+# as published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# GnuCOBOL is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+
 # EBCDIC 500 to 7-bit ASCII conversion table (IBM)
 #
 # cf https://www.ibm.com/docs/en/iis/11.3?topic=tables-ebcdic-ascii
