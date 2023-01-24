@@ -1,9 +1,9 @@
 
 2023-01-23 David Declerck <david.declerck@ocamlpro.com>
 
-	* flag.def: "ebcdic-table" can now take a filename as argument
-	* cobc.c, cobc.h: handle external table for "ebcdic-table"
-	* codegen.c: generate code to use the external table
+	FR #429: option to specify conversion table via translation table file
+	* cobc.c, flag.def, cobc.h: handle external table for "ebcdic-table"
+	* codegen.c: generate code using the external table
 
 2023-01-16  Simon Sobisch <simonsobisch@gnu.org>
 

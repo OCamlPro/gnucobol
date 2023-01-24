@@ -55,10 +55,10 @@ cob_convert_hex_byte (const char *h)
 static const char *
 cob_skip_blanks(const char *s)
 {
-  while (*s != '\0' && (isblank(*s) || *s == '\n')) {
-    ++s;
-  }
-  return s;
+	while (*s != '\0' && (isblank(*s) || *s == '\n')) {
+		++s;
+	}
+	return s;
 }
 
 /* Note: cobc uses this function to create tables that are embedded in the
@@ -71,56 +71,55 @@ cob_load_collation (const char *col_name,
 {
 	cob_u8_t table[512];
 	char hex[COB_SMALL_BUFF];
-        const char *hexptr;
+	const char *hexptr;
 	int i, n, line;
 	FILE *f;
-        const char *config_dir;
+	const char *config_dir;
 	char filename[COB_FILE_BUFF];
-	const char *last_col_name = NULL;
+	const char *last_err_name = NULL;
 
 	if (col_name[0] == '.' || col_name[0] == SLASH_CHAR
 #ifdef _WIN32
- || col_name[0] != '\0' && col_name[1] == ':'
+	 || col_name[0] != '\0' && col_name[1] == ':'
 #endif
 	   ) {
-		/* If it's a path, use it as-is */
-		n = strlen(col_name);
-		if (n >= sizeof(filename)) {
+		/* If it's a path, use it as-is, including trailing NUL */
+		n = strlen (col_name) + 1;
+		if (n >= sizeof (filename)) {
 			return -1;
 		}
 		memcpy (filename, col_name, n);
-		filename[n] = '\0';
 	} else {
 		/* Otherwise, prepend the config dir and append the .ttbl suffix */
 		config_dir = getenv ("COB_CONFIG_DIR");
 		if (config_dir == NULL) {
 			config_dir = COB_CONFIG_DIR;
 		}
-		n = strlen(config_dir) + strlen(col_name) + 6; /* slash + .ttbl */
-		if (n >= sizeof(filename)) {
+		n = strlen (config_dir) + strlen (col_name) + 7; /* slash + .ttbl + NUL */
+		if (n >= sizeof (filename)) {
 			return -1;
 		}
-		snprintf (filename, n+1, "%s%c%s.ttbl", /* +1 for NUL */
-			  config_dir, SLASH_CHAR, col_name);
+		sprintf (filename, "%s%c%s.ttbl", config_dir, SLASH_CHAR, col_name);
 	}
 
-	f = fopen(filename, "r");
+	/* FIXME: use conf_runtime_error / adjusted cob_load_config_file later */
+	f = fopen (filename, "r");
 	if (f == NULL) {
 		cob_runtime_error (_("can't open translation table '%s'"), col_name);
 		return -1;
 	}
 
-        i = 0;
-        line = 0;
-	while (fgets(hex, COB_SMALL_BUFF, f) != NULL) {
+	i = 0;
+	line = 0;
+	while (fgets (hex, COB_SMALL_BUFF, f) != NULL) {
 		++line;
-		hexptr = cob_skip_blanks(hex);
+		hexptr = cob_skip_blanks (hex);
 		while (*hexptr != '\0' && *hexptr != '#') {
 			n = cob_convert_hex_byte (hexptr);
 			if (n < 0) {
-				if (col_name != last_col_name) {
+				if (col_name != last_err_name) {
 					cob_runtime_error (_("errors in translation table '%s':"), col_name);
-					last_col_name = col_name;
+					last_err_name = col_name;
 				}
 				cob_runtime_error (_("invalid hex byte on line %d: '%c%c'"), line, hexptr[0], hexptr[1]);
 			}
@@ -128,36 +127,36 @@ cob_load_collation (const char *col_name,
 				table[i++] = n;
 			} else {
 				cob_runtime_error (_("too much data in translation table '%s'"), col_name);
-				fclose(f);
+				fclose (f);
 				return -1;
 			}
-                        hexptr = cob_skip_blanks(hexptr + 2);
+			hexptr = cob_skip_blanks (hexptr + 2);
 		}
 	}
 
-	if (ferror(f)) {
+	if (ferror (f)) {
 		cob_runtime_error (_("error reading translation table '%s'"), col_name);
-		fclose(f);
+		fclose (f);
 		return -1;
-	} else if (feof(f) && i != 256 && i != 512) {
+	} else if (feof (f) && i != 256 && i != 512) {
 		if (i < 256) {
 			cob_runtime_error (_("not enough data in translation table '%s'"), col_name);
 		} else {
 			cob_runtime_error (_("either not enough or too much data in translation table '%s'"), col_name);
 		}
-		fclose(f);
+		fclose (f);
 		return -1;
 	}
 
 	fclose(f);
 
 	if (ebcdic_to_ascii != NULL) {
-		memcpy(ebcdic_to_ascii, table, 256);
+		memcpy (ebcdic_to_ascii, table, 256);
 	}
 
 	if (ascii_to_ebcdic != NULL) {
 		if (i == 512) {
-			memcpy(ascii_to_ebcdic, table+256, 256);
+			memcpy (ascii_to_ebcdic, table + 256, 256);
 		} else {
 			for (i = 0; i < 256; ++i) {
 				ascii_to_ebcdic[table[i]] = (cob_u8_t)i;
