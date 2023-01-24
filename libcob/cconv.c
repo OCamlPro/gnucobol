@@ -148,7 +148,7 @@ cob_load_collation (const char *col_name,
 		return -1;
 	}
 
-	fclose(f);
+	fclose (f);
 
 	if (ebcdic_to_ascii != NULL) {
 		memcpy (ebcdic_to_ascii, table, 256);
@@ -164,7 +164,7 @@ cob_load_collation (const char *col_name,
 		}
 	}
 
-	if (last_col_name != NULL) {
+	if (last_err_name != NULL) {
 		return -1;
 	}
 
