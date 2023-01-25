@@ -210,16 +210,18 @@ NEWS - user visible changes				-*- outline -*-
 
 ** the new -febcdic-table option enables one to specify the
    translation table used when dealing with EBCDIC codeset;
-   available tables are:
+   these translation tables are stored as new configuration files with
+   an extension of ".ttbl", currently available tables are:
 
-   DEFAULT		translation to extended ASCII as per MF
-   RESTRICTED-GC	translation from restricted ASCII only
-   IBM			translation to restricted ASCII as per IBM
-   GCOS			translation to extended ASCII as per GCOS7
+   default    translation to extended ASCII as per MF
+   alternate  translation from restricted ASCII only
+   ebcdic500_ascii7bit   EBCDIC 500 <-> 7-bit ASCII as per IBM
+   ebcdic500_ascii8bit   EBCDIC 500 <-> 8-bit ASCII as per GCOS7
+   ebcdic500_latin1      EBCDIC 500 <-> latin-1 as per iconv
 
    This option supersedes the -falternate-ebcdic flag (still available
    for backwards compatibility), which is equivalent to
-   -febcdic-table=restricted-gc.
+   -febcdic-table=alternate.
 
 ** the compile flag -fodoslide was moved to a dialect configuration,
    while -fodoslide still works as before it is now implied with

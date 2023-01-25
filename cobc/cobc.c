@@ -225,6 +225,7 @@ const char		*cob_config_dir = NULL;
 FILE			*cb_storage_file = NULL;
 FILE			*cb_listing_file = NULL;
 FILE			*cb_depend_file = NULL;
+const char		*cb_ebcdic_table = NULL;
 
 /* Listing structures and externals */
 
@@ -285,6 +286,8 @@ unsigned int	cobc_gen_listing = 0;
 unsigned int	cb_correct_program_order = 0;
 
 cob_u32_t		optimize_defs[COB_OPTIM_MAX] = { 0 };
+
+int cb_flag_alt_ebcdic = 0;
 
 
 /* Basic memory structure */
@@ -625,8 +628,8 @@ static const struct option long_options[] = {
 	{"fno-notrunc",		CB_NO_ARG, &cb_flag_trunc, 1},
 
 	/* alias for backwards-compatibility, removed with 4.x: */
-	{"falternate-ebcdic",		CB_NO_ARG, (int*)&cb_ebcdic_table, CB_EBCDIC_RESTRICTED_GC},
-	{"fno-alternate-ebcdic",	CB_NO_ARG, (int*)&cb_ebcdic_table, CB_EBCDIC_DEFAULT},
+	{"falternate-ebcdic",		CB_NO_ARG, (int*)&cb_flag_alt_ebcdic, 1},
+	{"fno-alternate-ebcdic",	CB_NO_ARG, (int*)&cb_flag_alt_ebcdic, 0},
 
 #define	CB_CONFIG_ANY(type,var,name,doc)	\
 	{"f" name,		CB_RQ_ARG, NULL, '%'},
@@ -686,7 +689,6 @@ static const struct option long_options[] = {
 
 /* Prototype */
 DECLNORET static void COB_A_NORETURN	cobc_early_exit (int);
-DECLNORET static void COB_A_NORETURN	cobc_err_exit (const char *, ...) COB_A_FORMAT12;
 static void	free_list_file		(struct list_files *);
 static void	print_program	(struct list_files *, int);
 static void	set_standard_title	(void);
@@ -1898,7 +1900,7 @@ cobc_early_exit (int ret_code)
 	exit (ret_code);
 }
 
-DECLNORET static void COB_A_NORETURN
+DECLNORET void COB_A_NORETURN
 cobc_err_exit (const char *fmt, ...)
 {
 	va_list		ap;
@@ -3655,11 +3657,7 @@ process_command_line (const int argc, char **argv)
 			break;
 
 		case 14:
-			/* -febcdic-table=<cconv-table> */
-			cb_ebcdic_table = cob_get_collation_by_name (cob_optarg, NULL, NULL);
-			if (cb_ebcdic_table < 0) {
-				cobc_err_exit (COBC_INV_PAR, "-febcdic-table");
-			}
+			cb_ebcdic_table = cobc_main_strdup (cob_optarg);
 			break;
 
 		case 15:
@@ -3903,6 +3901,12 @@ process_command_line (const int argc, char **argv)
 			cobc_early_exit (EXIT_FAILURE);
 		}
 		cobc_early_exit (EXIT_SUCCESS);
+	}
+
+	/* Set the default collating table if not specified */
+	if (cb_ebcdic_table == NULL) {
+		cb_ebcdic_table = cobc_main_strdup (
+			cb_flag_alt_ebcdic ? "alternate" : "default");
 	}
 
 	/* Exit on missing options */

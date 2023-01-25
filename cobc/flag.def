@@ -92,12 +92,9 @@ CB_FLAG_NQ (1, "callfh", 9,
 	_("  -fcallfh=<name>       specifies <name> to be used for I/O\n"
 	  "                        as external provided EXTFH interface module"))
 
-CB_FLAG_RQ (cb_ebcdic_table, 1, "ebcdic-table", 0, 14, /* cf cconv.h for all available tables */
-	_("  -febcdic-table=[DEFAULT|RESTRICTED-GC|IBM|GCOS]\tdefine EBCDIC translation table:\n"
-	  "                        * default: translation to extended ASCII as per MF\n"
-	  "                        * restricted-gc: translation from restricted ASCII only\n"
-	  "                        * ibm: translation to restricted ASCII as per IBM\n"
-	  "                        * gcos: translation to extended ASCII as per GCOS7"))
+CB_FLAG_NQ (1, "ebcdic-table", 14,
+	_("  -febcdic-table=<cconv-table>/<file>\tEBCDIC/ASCII translation table\n"
+	  "                        * e.g. default, ebcdic500_latin1..."))
 
 CB_FLAG_NQ (1, "default-colseq", 15,
 	_("  -fdefault-colseq=[ASCII|EBCDIC|NATIVE]\tdefine default collating sequence\n"

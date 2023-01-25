@@ -1,0 +1,81 @@
+# GnuCOBOL EBCDIC/ASCII translation tables
+#
+# Copyright (C) 2022,2023 Free Software Foundation, Inc.
+#  Written by Nicolas Berthier, Simon Sobisch, David Declerck
+#
+# This file is part of the GnuCOBOL runtime.
+#
+# The GnuCOBOL runtime is free software: you can redistribute it
+# and/or modify it under the terms of the GNU Lesser General Public License
+# as published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# GnuCOBOL is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+
+# EBCDIC 500 to 7-bit ASCII conversion table (IBM)
+#
+# cf https://www.ibm.com/docs/en/iis/11.3?topic=tables-ebcdic-ascii
+#
+# Note 1: the character at position 61 is / in every EBCDIC code pages,
+# which corresponds to ASCII 2F in every mappings we know of ; yet
+# this documentation maps it to the ASCII subtitution character (1A),
+# making 2F the only unused ASCII character. Morover, the documentation
+# for the ASCII to EBCDIC convertion does map ASCII 2F to EBCDIC 61.
+# For all these reasons, we preferred to map EBCDIC 61 to ASCII 2F,
+# as we believe it ought to be.
+#
+# Note 2: the only differences with a "plain" EBCDIC 500 to 7-bit ASCII table
+# are that EBCDIC 6A (broken bar) is translated to ASCII 7C (vertical bar)
+# and EBCDIC BB (vertical bar) is translated to ASCII 1A (subtitution char).
+# This seems to be the "usual" way of translating these characters.
+
+00 01 02 03 1A 09 1A 7F 1A 1A 1A 0B 0C 0D 0E 0F
+10 11 12 13 1A 1A 08 1A 18 19 1A 1A 1C 1D 1E 1F
+1A 1A 1A 1A 1A 0A 17 1B 1A 1A 1A 1A 1A 05 06 07
+1A 1A 16 1A 1A 1A 1A 04 1A 1A 1A 1A 14 15 1A 1A
+20 1A 1A 1A 1A 1A 1A 1A 1A 1A 5B 2E 3C 28 2B 21
+26 1A 1A 1A 1A 1A 1A 1A 1A 1A 5D 24 2A 29 3B 5E
+2D 2F 1A 1A 1A 1A 1A 1A 1A 1A 7C 2C 25 5F 3E 3F
+1A 1A 1A 1A 1A 1A 1A 1A 1A 60 3A 23 40 27 3D 22
+1A 61 62 63 64 65 66 67 68 69 1A 1A 1A 1A 1A 1A
+1A 6A 6B 6C 6D 6E 6F 70 71 72 1A 1A 1A 1A 1A 1A
+1A 7E 73 74 75 76 77 78 79 7A 1A 1A 1A 1A 1A 1A
+1A 1A 1A 1A 1A 1A 1A 1A 1A 1A 1A 1A 1A 1A 1A 1A
+7B 41 42 43 44 45 46 47 48 49 1A 1A 1A 1A 1A 1A
+7D 4A 4B 4C 4D 4E 4F 50 51 52 1A 1A 1A 1A 1A 1A
+5C 1A 53 54 55 56 57 58 59 5A 1A 1A 1A 1A 1A 1A
+30 31 32 33 34 35 36 37 38 39 1A 1A 1A 1A 1A 1A
+
+# 7-bit ASCII to EBCDIC 500 conversion table (IBM)
+#
+# cf https://www.ibm.com/docs/en/iis/11.3?topic=tables-ascii-ebcdic
+#
+# Note: the first 16 characters in the documentation are erroneous,
+# they are a copy of the first 16 characters in the above table,
+# i.e 00 01 02 03 1A 09 1A 7F 1A 1A 1A 0B 0C 0D 0E 0F
+#
+# Here, we fixed these errors by using the inverse of the
+# previous table for these very specific characters.
+
+00 01 02 03 37 2D 2E 2F 16 05 25 0B 0C 0D 0E 0F
+10 11 12 13 3C 3D 32 26 18 19 3F 27 1C 1D 1E 1F
+40 4F 7F 7B 5B 6C 50 7D 4D 5D 5C 4E 6B 60 4B 61
+F0 F1 F2 F3 F4 F5 F6 F7 F8 F9 7A 5E 4C 7E 6E 6F
+7C C1 C2 C3 C4 C5 C6 C7 C8 C9 D1 D2 D3 D4 D5 D6
+D7 D8 D9 E2 E3 E4 E5 E6 E7 E8 E9 4A E0 5A 5F 6D
+79 81 82 83 84 85 86 87 88 89 91 92 93 94 95 96
+97 98 99 A2 A3 A4 A5 A6 A7 A8 A9 C0 6A D0 A1 07
+3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F
+3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F
+3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F
+3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F
+3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F
+3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F
+3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F
+3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F 3F

@@ -1,4 +1,10 @@
 
+2023-01-23 David Declerck <david.declerck@ocamlpro.com>
+
+	FR #429: option to specify conversion table via translation table file
+	* cobc.c, flag.def, cobc.h: handle external table for "ebcdic-table"
+	* codegen.c: generate code using the external table
+
 2023-01-18  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y (cb_default_colseq, build_default_colseq, setup_default_colseq):
@@ -145,7 +151,7 @@
 
 2022-12-13 David Declerck <david.declerck@ocamlpro.com>
 
-	* conv.c, conv.h: files moved from cobc to libcob
+	* cconv.c, cconv.h: files moved from cobc to libcob
 	* codegen.c: use the new libcob API for collating sequences
 	* flag.def: change "ebcdic-table" to a flag with associated variable
 

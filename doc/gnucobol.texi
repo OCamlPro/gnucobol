@@ -66,7 +66,7 @@ together with a designated C compiler and linker.
 This manual corresponds to GnuCOBOL @value{VERSION}.
 @page
 @vskip 0pt plus 1filll
-Copyright @copyright{} 2002-2012, 2014-2022 Free Software Foundation, Inc.@*
+Copyright @copyright{} 2002-2012, 2014-2023 Free Software Foundation, Inc.@*
 Written by Keisuke Nishida, Roger While, Brian Tiffin, Simon Sobisch.
 
 @insertcopying
@@ -558,7 +558,8 @@ one takes effect.
 @ignore
 @comment{TODO - add in cobc this way, ideally until GC 3.1 is out...}
 When an unrecognized warning option is requested (e.g., @option{-Wunknown-warning}),
-@command{cobc} emits a diagnostic stating that the option is not recognized, as long as the verbose mode @option{--verbose} is active.
+@command{cobc} emits a diagnostic stating that the option is not recognized,
+as long as the verbose mode @option{--verbose} is active.
 
 @comment{TODO - add in cobc this way}
 However, if the @option{-Wno-} form is used, the behavior is slightly different: no
@@ -707,6 +708,11 @@ Compiler uses the given @var{dialect} to determine the reserved words.
 
 @item -conf=<file>
 User-defined dialect configuration.
+
+@item -febcdic-table=@var{cconv-table}/@var{file}
+EBCDIC/ASCII translation table to use; either read from @var{file}, or one of the existing @var{cconv-table}
+from the configuration directory (see @code{cobc --info}) which have a .ttbl extension, for example @option{-febcdic-table=alternate}.@*
+See the @file{default.ttbl} file for detailed information about the format.
 
 @end table
 
@@ -903,20 +909,6 @@ Do not truncate binary fields according to PICTURE.
 @item -ext <extension>
 @comment{TODO: Clarify}
 Add default file extension.
-
-@item -fmfcomment
-Treat lines with @samp{*} or @samp{/} in column 1 as comment
-(fixed-form reference-format only).
-
-@item -acucomment
-Treat @samp{|} as an inline comment marker.
-
-@item -fsign=ASCII
-@comment{TODO: Clarify}
-Numeric display sign ASCII (default on ASCII machines).
-
-@item -fsign=EBCDIC
-Numeric display sign EBCDIC (default on EBCDIC machines).
 
 @item -fintrinsics=[ALL|intrinsic function name(,name,...)]
 Allow use of all or specific intrinsic functions without @code{FUNCTION}
@@ -1127,6 +1119,7 @@ This chapter describes how to combine C programs with COBOL programs.
 * Static COBOL to C::
 * Dynamic COBOL to C::
 * Interface functions for C::
+* Loading translation tables::
 @end menu
 
 @node Main C program
@@ -1559,6 +1552,19 @@ Another routine can be used to return the current value of the option.
 @example
 COB_EXPIMP  void *
 cob_get_runtime_option (enum cob_runtime_option_switch opt);
+@end example
+
+@node Loading translation tables
+@subsection Loading EBCDIC/ASCII translation tables (collating sequences)
+
+When an EBCDIC/ASCII translation table is needed (for instance when calling
+sort functions), you can can call the @code{cob_load_collation} function to
+retrieve such tables:
+@example
+COB_EXPIMP int
+cob_load_collation (const char *col_name,
+                    cob_u8_t *ebcdic_to_ascii,
+                    cob_u8_t *ascii_to_ebcdic)
 @end example
 
 @node Customize, Optimize, Compile, Top
