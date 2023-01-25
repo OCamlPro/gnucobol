@@ -2635,7 +2635,7 @@ cb_build_identifier (cb_tree x, const int subchk)
 		} else if (r->length && CB_LITERAL_P (r->length)) {
 			length = cb_get_int (r->length);
 			/* FIXME: needs to be supported for zero length literals */
-			if (length < 1 || length > pseudosize) {
+			if (length < 1 || (!f->flag_any_length && length > pseudosize)) {
 				cb_error_x (x, _("length of '%s' out of bounds: %d"),
 					    name, length);
 			}
@@ -4715,7 +4715,8 @@ cb_validate_program_data (struct cb_program *prog)
 		if (x == cb_error_node) {
 			prog->cursor_pos = NULL;
 		} else if (CB_FIELD(x)->size != 6 && CB_FIELD(x)->size != 4) {
-			cb_error_x (prog->cursor_pos, _("'%s' CURSOR must be 4 or 6 characters long"),
+			cb_error_x (prog->cursor_pos,
+					_("'%s' CURSOR must be 4 or 6 characters long"),
 				    cb_name (prog->cursor_pos));
 			prog->cursor_pos = NULL;
 		} else {
@@ -4793,7 +4794,7 @@ cb_validate_program_data (struct cb_program *prog)
 					xerr = x;
 					cb_error_x (x,
 					    _("'%s' OCCURS DEPENDING ON field item invalid here"),
-						    p->sister->name);
+						p->sister->name);
 				}
 				if (!p->sister->redefines) {
 					if (!cb_odoslide
@@ -12069,6 +12070,7 @@ cb_emit_move (cb_tree src, cb_tree dsts)
 	}
 
 	cb_emit_incompat_data_checks (src);
+	/* CHECKME: this is way to much to cater for sum field */
 	src = cb_check_sum_field (src);
 
 	tempval = 0;
@@ -12115,7 +12117,7 @@ cb_emit_move (cb_tree src, cb_tree dsts)
 					if (CB_REFERENCE (x)->offset != NULL
 					 && CB_LITERAL_P (CB_REFERENCE (x)->offset)) {
 						lt = CB_LITERAL (CB_REFERENCE (x)->offset);
-						bgnpos = atoi((const char*)lt->data);
+						bgnpos = atoi ((const char *)lt->data);
 					}
 					if (bgnpos >= 1
 					 && p->storage != CB_STORAGE_LINKAGE
