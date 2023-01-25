@@ -4555,7 +4555,7 @@ AT_CLEANUP
 AT_SETUP([UDF with recursion])
 AT_KEYWORDS([functions LOCAL-STORAGE])
 
-AT_SKIP_IF(true)	# see bug #222 and r2291 - postponed
+AT_SKIP_IF([true])	# see bug #222 and r2291 - postponed
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.

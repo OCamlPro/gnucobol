@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2018-2020, 2022 Free Software Foundation, Inc.
+   Copyright (C) 2018-2020, 2022-2023 Free Software Foundation, Inc.
    Written by Edward Hart, Simon Sobisch
 
    This file is part of GnuCOBOL.
@@ -1298,13 +1298,14 @@ void xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 	}
 
 	if (state->ctx == NULL) {
+		char	*enc = NULL;
+
 		state->ctx = cob_malloc (sizeof (xmlParserCtxtPtr));
 		/*
 		 * just copied without knowledge from the sample, possibly totally dumb...
 		 * The document being in memory, it have no base per RFC 2396,
 		 * and the "noname.xml" argument will serve as its base.
 		*/
-		char	*enc = NULL;
 		if (encoding) {
 			/* CHECKME: is there a reasonable array size to use instead? */
 			enc = cob_get_picx (encoding->data, encoding->size, NULL, 0);

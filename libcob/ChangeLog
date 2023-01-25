@@ -1,4 +1,11 @@
 
+2023-01-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cconv.c (cob_skip_blanks): prefer isspace over isblank, which is not
+	  available in every system
+	* common.c (conf_runtime_error, conf_runtime_error_value): as static
+	* mlio.c (xml_parse): c89 fix
+
 2023-01-23 David Declerck <david.declerck@ocamlpro.com>
 
 	* cconv.c: add a cob_load_collation function to load collating sequences
@@ -6,6 +13,14 @@
 	  in the generated code, and we also we make it available in libcob so
 	  that external tools that make use of the library can use this feature
 	* common.h: declare the API for loading collating sequences from files
+
+2023-01-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c: include limits.h for INT_MAX
+	* numeric.c (cob_decimal_add, cob_decimal_sub): only check for zero if
+	  scale differs
+	* numeric.c (cob_decimal_mul): removed check for zero as mpz_mul does this
+	  on its own
 
 2023-01-18  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -2305,7 +2320,7 @@
 
 	* common.h: add flag_debug_trace to the cob_module
 	* common.c: check flag_debug_trace to verify module
-	  was compiled with -debug and/or -ftrace[all] and only
+	  was compiled with --debug and/or -ftrace[all] and only
 	  record trace information if compiled with the option
 
 2017-10-11  Simon Sobisch <simonsobisch@gnu.org>

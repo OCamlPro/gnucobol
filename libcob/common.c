@@ -586,8 +586,8 @@ static void		cob_stack_trace_internal (FILE *target, int verbose, int count);
 #ifdef COB_DEBUG_LOG
 static void		cob_debug_open	(void);
 #endif
-void		conf_runtime_error_value	(const char *value, const int conf_pos);
-void		conf_runtime_error	(const int finish_error, const char *fmt, ...);
+static void		conf_runtime_error_value	(const char *value, const int conf_pos);
+static void		conf_runtime_error	(const int finish_error, const char *fmt, ...);
 
 static void
 cob_exit_common (void)
@@ -8379,13 +8379,13 @@ cob_load_config_file (const char *config_file, int isoptional)
 	ret = 0;
 	line = 0;
 	while ((conf_fd != NULL)
-	&& 	(fgets (buff, COB_SMALL_BUFF, conf_fd) != NULL) ) {
+	   &&  (fgets (buff, COB_SMALL_BUFF, conf_fd) != NULL) ) {
 		line++;
 		for (i = 0; isspace ((unsigned char)buff[i]); i++);
 		if (buff[i] == 0
-		||  buff[i] == '#'
-		||  buff[i] == '\r'
-		||  buff[i] == '\n')
+		 || buff[i] == '#'
+		 || buff[i] == '\r'
+		 || buff[i] == '\n')
 			continue;	/* Skip comments and blank lines */
 
 		/* Evaluate config line */
@@ -8670,13 +8670,13 @@ cob_runtime_error (const char *fmt, ...)
 		hdlrs = NULL;
 		active_error_handler = 0;
 
-			/* restore error location */
+		/* restore error location */
 		cob_source_file = err_source_file;
 		cob_source_line = err_source_line;
-			COB_MODULE_PTR = err_module_pointer;
-			if (COB_MODULE_PTR) {
-				COB_MODULE_PTR->module_stmt = err_module_statement;
-			}
+		COB_MODULE_PTR = err_module_pointer;
+		if (COB_MODULE_PTR) {
+			COB_MODULE_PTR->module_stmt = err_module_statement;
+		}
 		cobglobptr->cob_call_params = call_params;
 	}
 
@@ -8913,7 +8913,7 @@ cob_fatal_error (const enum cob_fatal_error fatal_error)
 	cob_hard_failure ();
 }
 
-void
+static void
 conf_runtime_error_value (const char *value, const int pos)
 {
 	const char *name = NULL;
@@ -8926,7 +8926,7 @@ conf_runtime_error_value (const char *value, const int pos)
 	conf_runtime_error (0, _("invalid value '%s' for configuration tag '%s'"), value, name);
 }
 
-void
+static void
 conf_runtime_error (const int finish_error, const char *fmt, ...)
 {
 	va_list args;

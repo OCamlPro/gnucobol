@@ -1,6 +1,6 @@
 /*
-   Copyright (C) 2005,2006,2022 Free Software Foundation, Inc.
-   Written by Roger While, Nicolas Berthier, Simon Sobisch
+   Copyright (C) 2005,2006,2022-2023 Free Software Foundation, Inc.
+   Written by Roger While, Nicolas Berthier, Simon Sobisch, David Declerck
 
    This file is part of GnuCOBOL.
 
@@ -53,9 +53,9 @@ cob_convert_hex_byte (const char *h)
 }
 
 static const char *
-cob_skip_blanks(const char *s)
+cob_skip_blanks (const char *s)
 {
-	while (*s != '\0' && (isblank(*s) || *s == '\n')) {
+	while (isspace((unsigned char)*s)) {
 		++s;
 	}
 	return s;

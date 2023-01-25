@@ -26,6 +26,7 @@
 #endif
 
 #include <stdio.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdarg.h>
@@ -2001,15 +2002,15 @@ void
 cob_decimal_add (cob_decimal *d1, cob_decimal *d2)
 {
 	DECIMAL_CHECK (d1, d2);
-	if (mpz_sgn (d2->value) == 0) {
-		return;
-	}
-	if (mpz_sgn (d1->value) == 0) {
-		mpz_set (d1->value, d2->value);
-		d1->scale = d2->scale;
-		return;
-	}
 	if (d1->scale != d2->scale) {
+		if (mpz_sgn (d2->value) == 0) {
+			return;
+		}
+		if (mpz_sgn (d1->value) == 0) {
+			mpz_set (d1->value, d2->value);
+			d1->scale = d2->scale;
+			return;
+		}
 		mpz_set (cob_t2.value, d2->value);
 		cob_t2.scale = d2->scale;
 		align_decimal (d1, &cob_t2);
@@ -2023,10 +2024,10 @@ void
 cob_decimal_sub (cob_decimal *d1, cob_decimal *d2)
 {
 	DECIMAL_CHECK (d1, d2);
-	if (mpz_sgn (d2->value) == 0) {
-		return;
-	}
 	if (d1->scale != d2->scale) {
+		if (mpz_sgn (d2->value) == 0) {
+			return;
+		}
 		mpz_set (cob_t2.value, d2->value);
 		cob_t2.scale = d2->scale;
 		align_decimal (d1, &cob_t2);
@@ -2052,14 +2053,8 @@ void
 cob_decimal_mul (cob_decimal *d1, cob_decimal *d2)
 {
 	DECIMAL_CHECK (d1, d2);
-	if (mpz_sgn (d1->value) == 0
-	 || mpz_sgn (d2->value) == 0) {
-		d1->scale = 0;
-		mpz_set_ui (d1->value, 0);
-	} else {
-		d1->scale += d2->scale;
-		mpz_mul (d1->value, d1->value, d2->value);
-	}
+	d1->scale += d2->scale;
+	mpz_mul (d1->value, d1->value, d2->value);
 }
 
 void

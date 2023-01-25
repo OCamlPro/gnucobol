@@ -1709,8 +1709,8 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([INSPECT No repeat conversion check])
-AT_KEYWORDS([runmisc])
+AT_SETUP([INSPECT: no repeat conversion])
+AT_KEYWORDS([runmisc INSPECT])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -2805,7 +2805,7 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([STRING / UNSTRING [NOT] ON OVERFLOW])
+AT_SETUP([STRING / UNSTRING [[NOT]] ON OVERFLOW])
 AT_KEYWORDS([runmisc exceptions])
 
 AT_DATA([prog.cob], [
@@ -3280,8 +3280,8 @@ PRM(4) is rolling stone   :
 AT_CLEANUP
 
 
-AT_SETUP([SORT: table sort])
-AT_KEYWORDS([runmisc])
+AT_SETUP([SORT: table])
+AT_KEYWORDS([runmisc SORT])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -3314,8 +3314,8 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([SORT: table sort (2)])
-AT_KEYWORDS([runmisc])
+AT_SETUP([SORT: table (2)])
+AT_KEYWORDS([runmisc SORT])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -3439,9 +3439,8 @@ MULTY KEY SORT
 AT_CLEANUP
 
 
-AT_SETUP([SORT: table sort (3)])
-
-AT_KEYWORDS([runmisc])
+AT_SETUP([SORT: table (3)])
+AT_KEYWORDS([runmisc SORT])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -3532,8 +3531,8 @@ AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [0004030201], [])
 AT_CLEANUP
 
 
-AT_SETUP([SORT: table sort (toplevel)])
-AT_KEYWORDS([runmisc])
+AT_SETUP([SORT: table (toplevel)])
+AT_KEYWORDS([runmisc SORT])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -3554,8 +3553,8 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([SORT: EBCDIC table sort])
-AT_KEYWORDS([runmisc ALPHABET OBJECT-COMPUTER])
+AT_SETUP([SORT: EBCDIC table])
+AT_KEYWORDS([runmisc SORT ALPHABET OBJECT-COMPUTER])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -3619,8 +3618,8 @@ AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([SORT: table sort with default COLLATING SEQUENCE])
-AT_KEYWORDS([runmisc EBCDIC ASCII default-colseq])
+AT_SETUP([SORT: table with default COLLATING SEQUENCE])
+AT_KEYWORDS([runmisc SORT EBCDIC ASCII default-colseq])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -8462,7 +8461,7 @@ ReWrite: FOR00000 got 00/02 as expected
 ], [])
 
 
-AT_CAPTURE_FILE(./trace.txt)
+AT_CAPTURE_FILE([trace.txt])
 
 # variant with file trace:
 #AT_DATA([reference],
@@ -9854,7 +9853,7 @@ Paragraph: 1000-LOAD-RECORD                -    358
 Paragraph: LISTFILE                        -    387
 ])
 
-AT_CAPTURE_FILE(./trace_append.txt)
+AT_CAPTURE_FILE([trace_append.txt])
 
 AT_CHECK([diff reference_append trace_append.txt], [0], [], [])
 
@@ -10165,57 +10164,7 @@ AT_DATA([sub2.cob], [
        END PROGRAM sub2.
 ])
 
-AT_CHECK([$COMPILE prog.cob sub2.cob], [0], [], [])
-
-AT_CAPTURE_FILE(./tstdump.dump)
-
-# also checking that a dump file without anything to dump does not do anything
-AT_CHECK([COB_STACKTRACE=1 COB_DUMP_FILE=tstdump.dump \
-$COBCRUN_DIRECT ./prog], [1],
-[X is 000000001
-X is 000005441
-],
-[libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
-libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
-
- Last statement of "sub1" was MOVE
-	MAIN-2 OF MAIN-1 at cpyabrt:4
-	MAIN-1 at prog.cob:177
-	ENTRY sub1 at prog.cob:159
- Last statement of "sub2" was CALL
-	DO-CALL OF SubwaY at sub2.cob:48
-	ENTRY sub2 at sub2.cob:39
- Last statement of "prog" was CALL
-	CALL-IT-OMIT at prog.cob:118
-	MAIN-100 at prog.cob:85
-	ENTRY prog at prog.cob:77
- Started by ./prog
-])
-
-AT_CHECK([$COMPILE -fdump=ALL -fno-dump prog.cob sub2.cob], [0], [], [])
-
-# also checking that a dump file without anything to dump does not do anything
-AT_CHECK([COB_STACKTRACE=1 COB_DUMP_FILE=tstdump.dump \
-$COBCRUN_DIRECT ./prog], [1],
-[X is 000000001
-X is 000005441
-],
-[libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
-libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
-
- Last statement of "sub1" was MOVE
-	MAIN-2 OF MAIN-1 at cpyabrt:4
-	MAIN-1 at prog.cob:177
-	ENTRY sub1 at prog.cob:159
- Last statement of "sub2" was CALL
-	DO-CALL OF SubwaY at sub2.cob:48
-	ENTRY sub2 at sub2.cob:39
- Last statement of "prog" was CALL
-	CALL-IT-OMIT at prog.cob:118
-	MAIN-100 at prog.cob:85
-	ENTRY prog at prog.cob:77
- Started by ./prog
-])
+AT_CAPTURE_FILE([tstdump.dump])
 
 AT_CHECK([$COMPILE_MODULE -fdump=ALL prog.cob sub2.cob], [0], [], [])
 
@@ -10508,6 +10457,58 @@ tstdump.dump > tstdump.sed], [0], [], [])
 
 AT_CHECK([diff reference tstdump.sed], [0], [], [])
 
+
+
+AT_CHECK([$COMPILE prog.cob sub2.cob], [0], [], [])
+
+# also checking that a dump file without anything to dump does not do anything
+AT_CHECK([COB_STACKTRACE=1 COB_DUMP_FILE=tstdump.dump \
+$COBCRUN_DIRECT ./prog], [1],
+[X is 000000001
+X is 000005441
+],
+[libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
+libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
+
+ Last statement of "sub1" was MOVE
+	MAIN-2 OF MAIN-1 at cpyabrt:4
+	MAIN-1 at prog.cob:177
+	ENTRY sub1 at prog.cob:159
+ Last statement of "sub2" was CALL
+	DO-CALL OF SubwaY at sub2.cob:48
+	ENTRY sub2 at sub2.cob:39
+ Last statement of "prog" was CALL
+	CALL-IT-OMIT at prog.cob:118
+	MAIN-100 at prog.cob:85
+	ENTRY prog at prog.cob:77
+ Started by ./prog
+])
+
+AT_CHECK([$COMPILE -fdump=ALL -fno-dump prog.cob sub2.cob], [0], [], [])
+
+# also checking that a dump file without anything to dump does not do anything
+AT_CHECK([COB_STACKTRACE=1 COB_DUMP_FILE=tstdump.dump \
+$COBCRUN_DIRECT ./prog], [1],
+[X is 000000001
+X is 000005441
+],
+[libcob: cpyabrt:4: error: LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
+libcob: cpyabrt:4: warning: implicit CLOSE of FLATFILE ('RELFIX')
+
+ Last statement of "sub1" was MOVE
+	MAIN-2 OF MAIN-1 at cpyabrt:4
+	MAIN-1 at prog.cob:177
+	ENTRY sub1 at prog.cob:159
+ Last statement of "sub2" was CALL
+	DO-CALL OF SubwaY at sub2.cob:48
+	ENTRY sub2 at sub2.cob:39
+ Last statement of "prog" was CALL
+	CALL-IT-OMIT at prog.cob:118
+	MAIN-100 at prog.cob:85
+	ENTRY prog at prog.cob:77
+ Started by ./prog
+])
+
 AT_CHECK([$COMPILE -fdump=FD,LS prog.cob sub2.cob -o prog_fdls], [0], [], [])
 
 AT_CHECK([COB_DUMP_FILE=tstdump_fdls.dump \
@@ -10522,7 +10523,7 @@ dump written to tstdump_fdls.dump
 ])
 
 
-AT_CAPTURE_FILE(./tstdump_fdls.dump)
+AT_CAPTURE_FILE([tstdump_fdls.dump])
 
 AT_DATA([reference_fdls_tmpl], [
 Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
@@ -10625,7 +10626,7 @@ AT_CHECK([diff reference_all tstdump.sed], [0], [], [])
 #])
 #
 #
-#AT_CAPTURE_FILE(./tstdump_ls_sticky.dump)
+#AT_CAPTURE_FILE([tstdump_ls_sticky.dump])
 #
 #AT_DATA([reference_ls_sticky_tmpl], [
 #Module dump due to LINKAGE item 'TSPFL-RECORD' (accessed by 'CM-COMPANY') not passed by caller
@@ -10802,7 +10803,7 @@ GRP-5:***Mon49eyMon49eyMon49eyMon49eyMon49eyMon49eyMon49ey
 dump written to dumpall.txt
 ])
 
-AT_CAPTURE_FILE(./dumpall.txt)
+AT_CAPTURE_FILE([dumpall.txt])
 
 AT_DATA([reference_tmpl], [
 Module dump due to BASED/LINKAGE item 'A-TABLE' has NULL address
@@ -12828,7 +12829,7 @@ This is also sent to CONSOLE PRINT
 This is also sent to SYSERR  PRINT
 ])
 
-AT_CAPTURE_FILE(./prt.log)
+AT_CAPTURE_FILE([prt.log])
 
 AT_DATA([reference],
 [This is sent to PRINTER PIPE.
@@ -12845,7 +12846,7 @@ AT_CHECK([$SED -e 's/PIPE.\r/PIPE./g' prt.log > prt2.log], [0], [], [])
 AT_CHECK([diff reference prt2.log], [0], [], [])
 )
 
-AT_CAPTURE_FILE(./punch.out)
+AT_CAPTURE_FILE([punch.out])
 
 AT_DATA([reference],
 [This is sent to SYSPUNCH PRINT

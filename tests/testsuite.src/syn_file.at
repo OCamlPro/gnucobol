@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014, 2016-2022 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014, 2016-2023 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Joe Robbins,
 ## Edward Hart
 ##
@@ -1128,7 +1128,7 @@ AT_DATA([prog.cob], [
        01  i-rec PIC X(10).
 ])
 
-/* FIXME: this test will false-positive fail on EBCDIC machines */
+# FIXME: this test will false-positive fail on EBCDIC machines
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:19: note: ignoring CODE-SET 'A'
@@ -1262,7 +1262,7 @@ prog.cob:8: error: missing file description for FILE testfile
 AT_CLEANUP
 
 
-AT_SETUP([RELATIVE KEY type checks])
+AT_SETUP([RELATIVE KEY type validation])
 AT_KEYWORDS([RELATIVE FILE])
 
 AT_DATA([prog.cob], [

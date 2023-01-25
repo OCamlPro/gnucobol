@@ -879,7 +879,7 @@ AT_CLEANUP
 
 
 AT_SETUP([cobc configuration: ebcdic-table])
-AT_KEYWORDS([configuration misc ebcdic])
+AT_KEYWORDS([configuration misc ebcdic COLLATING SEQUENCE ALPHABET collation])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.

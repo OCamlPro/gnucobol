@@ -1,4 +1,4 @@
-## Copyright (C) 2014-2022 Free Software Foundation, Inc.
+## Copyright (C) 2014-2023 Free Software Foundation, Inc.
 ## Written by Simon Sobisch, Brian Tiffin
 ##
 ## This file is part of GnuCOBOL.
@@ -244,6 +244,9 @@ AT_DATA([sub/PROCE.cpy],[
            DISPLAY ' END' NO ADVANCING.
 ])
 
+AT_CAPTURE_FILE([prog.i])
+AT_CAPTURE_FILE([prog.c])
+
 AT_CHECK([$COBC -I sub/copy prog.cob -o prog.c], [0], [], [])
 AT_CHECK([$COBC -I sub/copy prog.c -o prog.$COB_OBJECT_EXT], [0], [], [])
 AT_CHECK([$COBC -I sub/copy prog.$COB_OBJECT_EXT -o prog.$COB_MODULE_EXT])
@@ -261,16 +264,23 @@ AT_CHECK([$GREP 'prog.i'   prog.c], [0], ignore, [])
 AT_CHECK([$GREP 'prog.i'   prog.c | $GREP '#line'], [1], ignore, ignore)
 AT_CHECK([$GREP 'prog.cob' prog.c | $GREP '#line'], [0], ignore, [])
 AT_CHECK([$GREP 'PROC.cpy' prog.c | $GREP '#line'], [0], ignore, [])
-AT_CHECK([$GREP 'ENTRY_PROG:'        prog.c], [0], ignore, [])
-AT_CHECK([$GREP 'SECTION_END__PROC:' prog.c], [0], ignore, [])
-AT_CHECK([$GREP 'PARAGRAPH_00_l_4:'        prog.c], [0], ignore, [])
-AT_CHECK([$GREP 'PARAGRAPH_EX_l_7:'        prog.c], [0], ignore, [])
+AT_CHECK([$GREP 'ENTRY_PROG:'          prog.c], [0], ignore, [])
+AT_CHECK([$GREP 'SECTION_END__PROC:'   prog.c], [0], ignore, [])
+AT_CHECK([$GREP 'PARAGRAPH_00_l_4:'    prog.c], [0], ignore, [])
+AT_CHECK([$GREP 'PARAGRAPH_EX_l_7:'    prog.c], [0], ignore, [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [bluBb END], [])
+
+AT_CAPTURE_FILE([prog.d])
 AT_CHECK([$COBC -I sub/copy prog.cob -ext=cpy -o prog.i -MF prog.d -MT "prog.c prog.h" -MT prog$COB_EXE_EXT -MT prog.$COB_OBJECT_EXT -MT prog.i  -fsyntax-only], [0], [], [])
-AT_CHECK([$GREP 'prog.c prog.h '        prog.d], [0], ignore, [])
-AT_CHECK([$GREP ' prog.i:'        prog.d], [0], ignore, [])
-AT_CHECK([$GREP 'sub/copy/PROC.cpy'        prog.d], [0], ignore, [])
+AT_CHECK([$GREP 'prog.c prog.h '       prog.d], [0], ignore, [])
+AT_CHECK([$GREP ' prog.i:'             prog.d], [0], ignore, [])
+AT_CHECK([$GREP 'sub/copy/PROC.cpy'    prog.d], [0], ignore, [],
+  # Previous test "failed" --> no entry with slash available, check backslash
+  AT_CHECK([$GREP 'sub\copy\PROC.cpy'  prog.d], [0], ignore, []))
 AT_CHECK([$GREP 'sub/PROCE.cpy'        prog.d], [0], ignore, [])
+AT_CHECK([$GREP 'sub/PROCE.cpy'        prog.d], [0], ignore, [],
+  # Previous test "failed" --> no entry with slash available, check backslash
+  AT_CHECK([$GREP 'sub\PROCE'          prog.d], [0], ignore, []))
 
 AT_CLEANUP
 
