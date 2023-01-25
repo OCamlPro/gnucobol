@@ -1,4 +1,8 @@
 
+2023-01-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* ibm.words, mvs.words: re-add BINARY
+
 2023-01-23 David Declerck <david.declerck@ocamlpro.com>
 
 	* ebcdic500_latin1: new translation table from EBCDIC 500 to Latin-1

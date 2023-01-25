@@ -138,11 +138,13 @@ AT_KEYWORDS([refmod])
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
-       DATA             DIVISION
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  POS          PIC 9(4).
        LINKAGE SECTION.
        01  TESTME PIC X ANY LENGTH.
        PROCEDURE        DIVISION USING TESTME.
-      *
+       main.
            evaluate true
            when TESTME(POS:2) = ", "
                 continue

@@ -65,7 +65,7 @@ reserved:	AUTHOR
 reserved:	BASIS
 reserved:	BEFORE
 reserved:	BEGINNING
-#reserved:	BINARY*          # note: only with EXEC SQL coprocessor
+reserved:	BINARY
 reserved:	BLANK
 #reserved:	BLOB*            # note: only with EXEC SQL coprocessor
 #reserved:	BLOB-FILE*       # note: only with EXEC SQL coprocessor
