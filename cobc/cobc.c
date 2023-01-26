@@ -3547,6 +3547,11 @@ process_command_line (const int argc, char **argv)
 				struct stat		st;
 				if (stat (cob_optarg, &st) != 0
 				 || !(S_ISDIR (st.st_mode))) {
+					if (verbose_output) {
+						cobc_err_msg (COBC_INV_PAR, "-I");
+						cobc_err_msg (_("ignoring nonexistent directory \"%s\""),
+							cob_optarg);
+					}
 					break;
 				}
 			}
@@ -3570,7 +3575,11 @@ process_command_line (const int argc, char **argv)
 				struct stat		st;
 				if (stat (cob_optarg, &st) != 0
 				 || !(S_ISDIR (st.st_mode))) {
-					break;
+					if (verbose_output) {
+						cobc_err_msg (COBC_INV_PAR, "-L");
+						cobc_err_msg (_("ignoring nonexistent directory \"%s\""),
+							cob_optarg);
+					}
 				}
 			}
 #ifdef	_MSC_VER
@@ -4091,6 +4100,7 @@ process_env_copy_path (const char *env)
 	char		*value;
 	char		*token;
 	struct stat	st;
+	int	had_error = 0;
 
 	if (p == NULL || !*p || *p == ' ') {
 		return;
@@ -4112,7 +4122,11 @@ process_env_copy_path (const char *env)
 		if (!stat (path, &st) && (S_ISDIR (st.st_mode))) {
 			CB_TEXT_LIST_CHK (cb_include_list, path);
 		} else if (verbose_output) {
-			cobc_err_msg (_("ignoring entry '%s' from environment variable '%s'"), path, env);
+			if (!had_error) {
+				cobc_err_msg (COBC_INV_PAR, env);
+			}
+			had_error = 1;
+			cobc_err_msg (_("ignoring nonexistent directory \"%s\""), path);
 		}
 		token = strtok (NULL, PATHSEP_STR);
 	}
