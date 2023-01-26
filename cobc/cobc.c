@@ -3083,7 +3083,7 @@ process_command_line (const int argc, char **argv)
 			if (cob_optarg) {
 				n = cobc_deciph_optarg (cob_optarg, 0);
 				if (n == -1) {
-					cobc_err_exit (COBC_INV_PAR, "-verbose");
+					cobc_err_exit (COBC_INV_PAR, "--verbose");
 				}
 				verbose_output = n;
 			} else {
@@ -3093,10 +3093,10 @@ process_command_line (const int argc, char **argv)
 
 		case '$':
 			/* -std=<xx> : Specify dialect */
-			if (strlen (cob_optarg) > COB_MINI_MAX) {
+			if (strlen (cob_optarg) > (COB_MINI_MAX - 6)) {
 				cobc_err_exit (COBC_INV_PAR, "-std");
 			}
-			snprintf (ext, (size_t)COB_MINI_MAX, "%s.conf", cob_optarg);
+			sprintf (ext, "%s.conf", cob_optarg);
 			conf_ret |= cb_load_std (ext);
 			break;
 
@@ -3411,7 +3411,7 @@ process_command_line (const int argc, char **argv)
 			break;
 
 		case 'd':
-			/* -debug : Turn on all runtime checks */
+			/* --debug : Turn on all runtime checks */
 			/* This options was processed in the first getopt-run */
 			break;
 
@@ -3503,6 +3503,7 @@ process_command_line (const int argc, char **argv)
 				cobc_err_exit (COBC_INV_PAR, "-D");
 			}
 			if (!cb_strcasecmp (cob_optarg, "ebug")) {
+				/* note: we explicit leave the "typo" -debug in here as that's too similar to -Debug */
 				cobc_err_msg (_("warning: assuming '%s' is a DEFINE - did you intend to use -debug?"),
 						cob_optarg);
 			}
@@ -3940,7 +3941,7 @@ process_command_line (const int argc, char **argv)
 	/* debug: Turn on all exception conditions
 	   -> drop note about this after hanling exit_option and general problems */
 	if (cobc_wants_debug && verbose_output > 1) {
-		fputs (_ ("all runtime checks are enabled"), stderr);
+		fputs (_("all runtime checks are enabled"), stderr);
 		fputc ('\n', stderr);
 	}
 
@@ -4084,8 +4085,9 @@ restore_program_list_order (void)
 }
 
 static void
-process_env_copy_path (const char *p)
+process_env_copy_path (const char *env)
 {
+	const char	*p = getenv (env);
 	char		*value;
 	char		*token;
 	struct stat	st;
@@ -4100,13 +4102,17 @@ process_env_copy_path (const char *p)
 	/* Tokenize for path sep. */
 	token = strtok (value, PATHSEP_STR);
 	while (token) {
-		const char* path = token;
-		/* special case (MF-compat): empty evaluates to "." */
+		const char *path = token;
+		/* special case (MF-compat): empty evaluates to "."
+		   TODO: recheck if this is only a "relative to the source"
+		         issue, if yes then drop this after its implementation */
 		if (*path == 0) {
 			path = ".";
 		}
 		if (!stat (path, &st) && (S_ISDIR (st.st_mode))) {
 			CB_TEXT_LIST_CHK (cb_include_list, path);
+		} else if (verbose_output) {
+			cobc_err_msg (_("ignoring entry '%s' from environment variable '%s'"), path, env);
 		}
 		token = strtok (NULL, PATHSEP_STR);
 	}
@@ -4957,6 +4963,7 @@ preprocess (struct filename *fn)
 {
 	const char		*sourcename;
 	struct cb_exception	save_exception_table[COB_EC_MAX];
+	const size_t exception_table_size = sizeof (struct cb_exception) * COB_EC_MAX;
 	int			save_source_format, save_fold_copy, save_fold_call,
 		save_ref_mod_zero_length;
 
@@ -5015,7 +5022,7 @@ preprocess (struct filename *fn)
 	ppparse_clear_vars (cb_define_list);
 
 	/* Save default exceptions and flags in case program directives change them */
-	memcpy(save_exception_table, cb_exception_table, sizeof(struct cb_exception) * COB_EC_MAX);
+	memcpy (save_exception_table, cb_exception_table, exception_table_size);
 	save_source_format = cobc_get_source_format ();
 	save_fold_copy = cb_fold_copy;
 	save_fold_call = cb_fold_call;
@@ -5025,7 +5032,7 @@ preprocess (struct filename *fn)
 	ppparse ();
 
 	/* Restore default exceptions and flags */
-	memcpy(cb_exception_table, save_exception_table, sizeof(struct cb_exception) * COB_EC_MAX);
+	memcpy (cb_exception_table, save_exception_table, exception_table_size);
 	cobc_set_source_format (save_source_format);
 	cb_fold_copy = save_fold_copy;
 	cb_fold_call = save_fold_call;
@@ -8800,8 +8807,8 @@ finish_setup_internal_env (void)
 	CB_TEXT_LIST_ADD (cb_extension_list, "");
 
 	/* Process COB_COPY_DIR and COBCPY environment variables */
-	process_env_copy_path (getenv ("COB_COPY_DIR"));
-	process_env_copy_path (getenv ("COBCPY"));
+	process_env_copy_path ("COB_COPY_DIR");
+	process_env_copy_path ("COBCPY");
 
 	/* Add default COB_COPY_DIR directory */
 	CB_TEXT_LIST_CHK (cb_include_list, COB_COPY_DIR);

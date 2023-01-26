@@ -1,5 +1,12 @@
 
-2023-01-23 David Declerck <david.declerck@ocamlpro.com>
+2023-01-26  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c: generate field offsets and indexes as long long to
+	  fix overflow in (actually unsupported) access to huge tables
+	* cobc.c (process_env_copy_path): changed to do getenv itself and
+	  to output ignored entries when running verbose
+
+2023-01-23  David Declerck <david.declerck@ocamlpro.com>
 
 	FR #429: option to specify conversion table via translation table file
 	* cobc.c, flag.def, cobc.h: handle external table for "ebcdic-table"
