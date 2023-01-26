@@ -1434,11 +1434,12 @@ space_left (unsigned char * p, unsigned char *p_end)
 	return p_end - p + 1;
 }
 
+/* checks for CR / DB at current position, case-insensitive */
 static COB_INLINE COB_A_INLINE int
 at_cr_or_db (const unsigned char *p)
 {
-	return memcmp (p, "CR", 2) == 0
-		|| memcmp (p, "DB", 2) == 0;
+	return (toupper (p[0]) == 'C' && toupper (p[1]) == 'R')
+	    || (toupper (p[0]) == 'D' && toupper (p[1]) == 'B');
 }
 
 /* get first and last position of possible numeric data */
@@ -3915,12 +3916,11 @@ cob_intr_hex_to_char (cob_field *srcfield)
 {
 	cob_field	field;
 	const size_t		size = srcfield->size / 2;
-	size_t		i, j;
-	unsigned char *hex_char;
+	const unsigned char *end = srcfield->data + size * 2;
+	unsigned char *hex_char, *p;
 
 	if (size * 2 != srcfield->size) {
 		/* possibly raise nonfatal exception here -> we only process the valid ones */
-		// size--;
 	}
 
 	COB_FIELD_INIT (size, NULL, &const_alpha_attr);
@@ -3928,9 +3928,10 @@ cob_intr_hex_to_char (cob_field *srcfield)
 
 	hex_char = curr_field->data;
 
-	for (i = j = 0; j < srcfield->size; ++i) {
+	p = srcfield->data;
+	while (p < end) {
 		unsigned char src, dst;
-		src = (cob_u8_t)srcfield->data[j++];
+		src = *p++;
 		if (src >= 'A' && src <= 'F') {
 			dst = src - 'A' + 10;
 		} else if (src >= 'a' && src <= 'f') {
@@ -3942,7 +3943,7 @@ cob_intr_hex_to_char (cob_field *srcfield)
 			cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
 		}
 		dst *= 16;
-		src = (cob_u8_t)srcfield->data[j++];
+		src = *p++;
 		if (src >= 'A' && src <= 'F') {
 			dst = dst + src - 'A' + 10;
 		} else if (src >= 'a' && src <= 'f') {

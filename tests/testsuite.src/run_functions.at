@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2022 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2023 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 ##
 ## This file is part of GnuCOBOL.
@@ -2566,6 +2566,9 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE  SECTION.
        01  X1     PIC   X(12) VALUE " -9876.1234 ".
        01  X2     PIC   X(18) VALUE " 19876.1234 CR".
+       01  X2b    PIC   X(18) VALUE " 19876.1234 cR".
+       01  X2c    PIC   X(18) VALUE " 19876.1234 cr".
+       01  X2d    PIC   X(18) VALUE " 19876.1234 Cr".
        01  X3     PIC   X(09) VALUE "-042.3240".
        01  X4     PIC   X(09) VALUE "+04232400".
        01  X5     PIC   X(09) VALUE " 00.00430".
@@ -2582,7 +2585,14 @@ AT_DATA([prog.cob], [
               DISPLAY "X1 '" X1 "' : " N.
            MOVE FUNCTION NUMVAL ( X2 ) TO N
            IF N <> -19876.1234
-              DISPLAY "X2 '" X2 "' : " N.
+              DISPLAY "X2 '" X2 "' : " N
+           ELSE IF N
+            <> FUNCTION NUMVAL ( X2b )
+           OR  N
+            <> FUNCTION NUMVAL ( X2c )
+           OR  N
+            <> FUNCTION NUMVAL ( X2d )
+              DISPLAY "NUMVAL not case-insensitive!".
            MOVE FUNCTION NUMVAL ( X3 ) TO N
            IF N <> -42.324
               DISPLAY "X3 '" X3 "' : " N.
@@ -2629,6 +2639,9 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE  SECTION.
        01  X1     PIC   X(14) VALUE " % -9876.1234 ".
        01  X2     PIC   X(18) VALUE " % 19,876.1234 DB".
+       01  X2b    PIC   X(18) VALUE " % 19,876.1234 db".
+       01  X2c    PIC   X(18) VALUE " % 19,876.1234 Db".
+       01  X2d    PIC   X(18) VALUE " % 19,876.1234 dB".
        01  X3     PIC   X(12) VALUE "% -9876.1234".
        01  X4     PIC   X(12) VALUE "019,876.1234".
        01  BAD1   PIC   X(18) VALUE " -19,876.1234 %".
@@ -2641,7 +2654,14 @@ AT_DATA([prog.cob], [
               DISPLAY "X1 '" X1 "' : " N.
            MOVE FUNCTION NUMVAL-C ( X2 , "%" ) TO N
            IF N NOT = -19876.1234
-              DISPLAY "X2 '" X2 "' : " N.
+              DISPLAY "X2 '" X2 "' : " N
+           ELSE IF N
+            <> FUNCTION NUMVAL ( X2b )
+           OR  N
+            <> FUNCTION NUMVAL ( X2c )
+           OR  N
+            <> FUNCTION NUMVAL ( X2d )
+              DISPLAY "NUMVAL not case-insensitive!".
            MOVE FUNCTION NUMVAL-C ( X3 , "%" ) TO N
            IF N NOT = -9876.1234
               DISPLAY "X3 '" X3 "' : " N.
@@ -4535,7 +4555,7 @@ AT_CLEANUP
 AT_SETUP([UDF with recursion])
 AT_KEYWORDS([functions LOCAL-STORAGE])
 
-AT_SKIP_IF(true)	# see bug #222 and r2291 - postponed
+AT_SKIP_IF([true])	# see bug #222 and r2291 - postponed
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.

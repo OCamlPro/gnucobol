@@ -109,7 +109,7 @@ CB_CONFIG_BOOLEAN (cb_binary_truncate, "binary-truncate",
 	_("numeric truncation according to ANSI"))
 
 CB_CONFIG_BOOLEAN (cb_complex_odo, "complex-odo",
-	_("allow complex OCCURS DEPENDING ON"))
+	_("allow non-standard OCCURS DEPENDING ON syntax"))
 
 CB_CONFIG_BOOLEAN (cb_odoslide, "odoslide",
 	_("adjust items following OCCURS DEPENDING (implies complex-odo)"))

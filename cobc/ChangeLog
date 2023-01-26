@@ -1,4 +1,25 @@
 
+2023-01-23 David Declerck <david.declerck@ocamlpro.com>
+
+	FR #429: option to specify conversion table via translation table file
+	* cobc.c, flag.def, cobc.h: handle external table for "ebcdic-table"
+	* codegen.c: generate code using the external table
+
+2023-01-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	fixed bug #704: ANY LENGTH cannot have ref-mod, POS not context-sensitive
+	* typeck.c (cb_build_identifier): skip compile-time check for length
+	  on ANY LENGTH items
+	* reserved.c (POS): now C/S to DISPLAY + ACCEPT with default wordlist
+
+2023-01-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (cb_default_colseq, build_default_colseq, setup_default_colseq):
+	  adjusted for general use, fixing Bug #861
+	* parser.y (alphabet_name): added code-set names, building a collation
+	* reserved.c (SEQUENCE): setting CB_CS_ALPHABET to allow code-name parsing
+	* parser.y, reserved.c: changed reference from 202x to 2023
+
 2023-01-16  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y (occurs_index): only set VALUE 1 for defaultbyte == INIT
@@ -15,6 +36,9 @@
 	* typeck.c (cb_build_index): add internal index variables in LINKAGE to
 	  internal WORKING-STORAGE or internal LOCAL-STORAGE items depending on
 	  program->flag_recursive
+	* codegen.c (output_init_comment_and_source_ref): new function, called
+	  by one-time init code to add source reference to initial setup, bringing
+	  in missing copybook references into GDB source list
 
 2023-01-05  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -134,7 +158,7 @@
 
 2022-12-13 David Declerck <david.declerck@ocamlpro.com>
 
-	* conv.c, conv.h: files moved from cobc to libcob
+	* cconv.c, cconv.h: files moved from cobc to libcob
 	* codegen.c: use the new libcob API for collating sequences
 	* flag.def: change "ebcdic-table" to a flag with associated variable
 
@@ -236,6 +260,12 @@
 	* field.c (validate_elem_value): explicit check that non-occurs item has
 	  only a single value
 	* parser.y (value_clause): improved parsing for table-format
+
+2022-11-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.h, typeck.c, parser.y, codegen.c: module-locale registers
+	  referenced as cb_field
+	* codegen.c: pass XML mode to module
 
 2022-11-18  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 

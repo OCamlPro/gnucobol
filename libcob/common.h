@@ -34,7 +34,6 @@ typedef __mpz_struct mpz_t[1];
 #endif
 #endif
 
-
 /* General type defines */
 #define	cob_c8_t		char
 #define	cob_s8_t		signed char
@@ -1069,6 +1068,9 @@ enum cob_statement {
 
 #define COB_JSON_CJSON			1
 #define COB_JSON_JSON_C			2
+
+#define COB_XML_PARSE_XMLNSS	(1U << 0)
+#define COB_XML_PARSE_NATIONAL	(1U << 1)
 
 /* Structure/union declarations */
 
@@ -2789,20 +2791,14 @@ COB_EXPIMP cob_field* cob_intr_hex_to_char (cob_field*);
 /* Functions in cconv.c */
 /************************/
 
-/* Return the name corresponding to an internal collation id,
-   or NULL if such id is unknown. */
-
-COB_EXPIMP const char *
-cob_get_collation_name (int);
-
-/* Retrieve the EBCDIC and ASCII collating sequences for the given
-   collation name, and return its internal id, or -1 if such name
-   is unknown. The `p_ebcdic_as_ascii' and `p_ascii_as_ebcdic'
-   arguments may be NULL if one (or both) of the tables is not
-   needed (you may only care for the return value). */
+/* Load a file that contains a mapping from EBCDIC to ASCII characters
+   and fill the given conversion tables accordingly. Return 0 on
+   success or -1 on error (file unknown or containing invalid data).
+   The `ebcdic_to_ascii' and `ascii_to_ebcdic' arguments may be NULL
+   if one (or both) of the tables is not needed. */
 
 COB_EXPIMP int
-cob_get_collation_by_name (const char *, const cob_u8_t **, const cob_u8_t **);
+cob_load_collation (const char *, cob_u8_t *, cob_u8_t *);
 
 /*******************************/
 

@@ -1,4 +1,5 @@
-## Copyright (C) 2003-2012, 2014-2015, 2017-2018, 2020-2021 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2015, 2017-2018, 2020-2021, 2023
+## Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch
 ##
 ## This file is part of GnuCOBOL.
@@ -127,5 +128,32 @@ prog.cob:19: warning: CONVERTING operands differ in size [[-Wignored-error]]
 ])
 AT_CHECK([$COMPILE_ONLY  -Wno-constant-numlit-expression  -fno-constant-folding prog.cob],
 [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([no static bound check for ANY LENGTH])
+AT_KEYWORDS([refmod])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  POS          PIC 9(4).
+       LINKAGE SECTION.
+       01  TESTME PIC X ANY LENGTH.
+       PROCEDURE        DIVISION USING TESTME.
+       main.
+           evaluate true
+           when TESTME(POS:2) = ", "
+                continue
+           when TESTME(POS:1) = "," and TESTME(1 + POS:1) = " "
+                display 'TESTME' pos 1525
+           end-evaluate
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY prog.cob], [0], [], [])
 
 AT_CLEANUP

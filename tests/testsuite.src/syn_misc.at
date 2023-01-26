@@ -1,4 +1,4 @@
-## Copyright (C) 2007-2012, 2014-2022 Free Software Foundation, Inc.
+## Copyright (C) 2007-2012, 2014-2023 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
 ## Ron Norman
 ##
@@ -3708,7 +3708,7 @@ AT_CLEANUP
 
 AT_SETUP([ACUCOBOL 32bit literal size])
 # ACUCOBOL literal max - the result is system dependent on size of unsigned long int
-AT_SKIP_IF(true)
+AT_SKIP_IF([true])
 
 AT_KEYWORDS([extensions literals])
 
@@ -7085,7 +7085,7 @@ AT_DATA([prog.cob], [
        LINKAGE SECTION.
        01  XMYREC.
           05  XFLD1   PIC 9(2) VOLATILE.
-       SCREEN SECTION.
+      *SCREEN SECTION.
       *01  WRONG-SCREEN.
       *   05  WRONG-FIELD   PIC X VOLATILE.
       *
@@ -7097,6 +7097,7 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE_ONLY -Wno-unfinished prog.cob], [0], [],
 [prog.cob:18: warning: initial VALUE clause ignored for EXTERNAL item 'STEP'
 ])
+AT_CHECK([$COMPILE_ONLY -std=ibm-strict -w prog.cob], [0], [], [])
 
 AT_CLEANUP
 
@@ -8880,83 +8881,83 @@ AT_CHECK([COBC_GEN_DUMP_COMMENTS=1 \
 AT_CHECK([($GREP -A 200 "P_dump:" prog.c | $GREP -B 200 "END OF DUMP") || exit 77], [0],
 [  P_dump:
   /* Dump WORKING-STORAGE */
-  cob_dump_output("WORKING-STORAGE");
-  cob_dump_field_ext (77, "RETURN-CODE", COB_SET_FLD(f0, 4, (cob_u8_t *)&b_2, &a_46), 0, 0);
-  cob_dump_field_ext ( 1, "numeric-data", COB_SET_FLD(f0, 93, b_17, &a_47), 0, 0);
-  cob_dump_field_ext ( 5, "disp", COB_SET_FLD(f0, 5, b_17, &a_2), 0, 0);
-  cob_dump_field_ext ( 5, "disp-u", COB_SET_FLD(f0, 5, b_17 + 5, &a_4), 0, 0);
-  cob_dump_field_ext ( 5, "dispp", COB_SET_FLD(f0, 4, b_17 + 10, &a_6), 0, 0);
-  cob_dump_field_ext ( 5, "dispp-u", COB_SET_FLD(f0, 4, b_17 + 14, &a_8), 0, 0);
-  cob_dump_field_ext ( 5, "disppp", COB_SET_FLD(f0, 4, b_17 + 18, &a_10), 0, 0);
-  cob_dump_field_ext ( 5, "disppp-u", COB_SET_FLD(f0, 4, b_17 + 22, &a_12), 0, 0);
-  cob_dump_field_ext ( 5, "bin", COB_SET_FLD(f0, 4, b_17 + 26, &a_13), 0, 0);
-  cob_dump_field_ext ( 5, "bin-u", COB_SET_FLD(f0, 4, b_17 + 30, &a_14), 0, 0);
-  cob_dump_field_ext ( 5, "cmp3", COB_SET_FLD(f0, 3, b_17 + 34, &a_15), 0, 0);
-  cob_dump_field_ext ( 5, "cmp3-u", COB_SET_FLD(f0, 3, b_17 + 37, &a_16), 0, 0);
-  cob_dump_field_ext ( 5, "cmp5", COB_SET_FLD(f0, 4, b_17 + 40, &a_17), 0, 0);
-  cob_dump_field_ext ( 5, "cmp5-u", COB_SET_FLD(f0, 4, b_17 + 44, &a_18), 0, 0);
-  cob_dump_field_ext ( 5, "cmp6", COB_SET_FLD(f0, 3, b_17 + 48, &a_19), 0, 0);
-  cob_dump_field_ext ( 5, "cmpx", COB_SET_FLD(f0, 3, b_17 + 51, &a_20), 0, 0);
-  cob_dump_field_ext ( 5, "cmpx-u", COB_SET_FLD(f0, 3, b_17 + 54, &a_21), 0, 0);
-  cob_dump_field_ext ( 5, "cmpn", COB_SET_FLD(f0, 3, b_17 + 57, &a_20), 0, 0);
-  cob_dump_field_ext ( 5, "cmpn-u", COB_SET_FLD(f0, 3, b_17 + 60, &a_21), 0, 0);
+  cob_dump_output ("WORKING-STORAGE");
+  cob_dump_field_ext (77, "RETURN-CODE", COB_SET_FLD (f0, 4, (cob_u8_t *)&b_2, &a_46), 0, 0);
+  cob_dump_field_ext ( 1, "numeric-data", COB_SET_FLD (f0, 93, b_17, &a_47), 0, 0);
+  cob_dump_field_ext ( 5, "disp", COB_SET_FLD (f0, 5, b_17, &a_2), 0, 0);
+  cob_dump_field_ext ( 5, "disp-u", COB_SET_FLD (f0, 5, b_17 + 5, &a_4), 0, 0);
+  cob_dump_field_ext ( 5, "dispp", COB_SET_FLD (f0, 4, b_17 + 10, &a_6), 0, 0);
+  cob_dump_field_ext ( 5, "dispp-u", COB_SET_FLD (f0, 4, b_17 + 14, &a_8), 0, 0);
+  cob_dump_field_ext ( 5, "disppp", COB_SET_FLD (f0, 4, b_17 + 18, &a_10), 0, 0);
+  cob_dump_field_ext ( 5, "disppp-u", COB_SET_FLD (f0, 4, b_17 + 22, &a_12), 0, 0);
+  cob_dump_field_ext ( 5, "bin", COB_SET_FLD (f0, 4, b_17 + 26, &a_13), 0, 0);
+  cob_dump_field_ext ( 5, "bin-u", COB_SET_FLD (f0, 4, b_17 + 30, &a_14), 0, 0);
+  cob_dump_field_ext ( 5, "cmp3", COB_SET_FLD (f0, 3, b_17 + 34, &a_15), 0, 0);
+  cob_dump_field_ext ( 5, "cmp3-u", COB_SET_FLD (f0, 3, b_17 + 37, &a_16), 0, 0);
+  cob_dump_field_ext ( 5, "cmp5", COB_SET_FLD (f0, 4, b_17 + 40, &a_17), 0, 0);
+  cob_dump_field_ext ( 5, "cmp5-u", COB_SET_FLD (f0, 4, b_17 + 44, &a_18), 0, 0);
+  cob_dump_field_ext ( 5, "cmp6", COB_SET_FLD (f0, 3, b_17 + 48, &a_19), 0, 0);
+  cob_dump_field_ext ( 5, "cmpx", COB_SET_FLD (f0, 3, b_17 + 51, &a_20), 0, 0);
+  cob_dump_field_ext ( 5, "cmpx-u", COB_SET_FLD (f0, 3, b_17 + 54, &a_21), 0, 0);
+  cob_dump_field_ext ( 5, "cmpn", COB_SET_FLD (f0, 3, b_17 + 57, &a_20), 0, 0);
+  cob_dump_field_ext ( 5, "cmpn-u", COB_SET_FLD (f0, 3, b_17 + 60, &a_21), 0, 0);
   cob_dump_field_ext ( 5, "chr", &f_35, 0, 0);
-  cob_dump_field_ext ( 5, "chr-u", COB_SET_FLD(f0, 1, b_17 + 64, &a_25), 0, 0);
-  cob_dump_field_ext ( 5, "shrt", COB_SET_FLD(f0, 2, b_17 + 65, &a_27), 0, 0);
-  cob_dump_field_ext ( 5, "shrt-u", COB_SET_FLD(f0, 2, b_17 + 67, &a_29), 0, 0);
-  cob_dump_field_ext ( 5, "long", COB_SET_FLD(f0, 4, b_17 + 69, &a_31), 0, 0);
-  cob_dump_field_ext ( 5, "long-u", COB_SET_FLD(f0, 4, b_17 + 73, &a_33), 0, 0);
-  cob_dump_field_ext ( 5, "dble", COB_SET_FLD(f0, 8, b_17 + 77, &a_34), 0, 0);
-  cob_dump_field_ext ( 5, "dble-u", COB_SET_FLD(f0, 8, b_17 + 85, &a_35), 0, 0);
-  cob_dump_field_ext ( 1, "floating-data", COB_SET_FLD(f0, 12, b_43, &a_47), 0, 0);
-  cob_dump_field_ext ( 5, "dbl", COB_SET_FLD(f0, 8, b_43, &a_37), 0, 0);
-  cob_dump_field_ext ( 5, "flt", COB_SET_FLD(f0, 4, b_43 + 8, &a_39), 0, 0);
-  cob_dump_field_ext ( 1, "special-data", COB_SET_FLD(f0, 1, b_47, &a_47), 0, 0);
-  cob_dump_field_ext ( 5, "r2d2", COB_SET_FLD(f0, 1, b_47, &a_41), 0, 0);
-  cob_dump_field_ext ( 1, "alphanumeric-data", COB_SET_FLD(f0, 101, b_49, &a_47), 0, 0);
-  cob_dump_field_ext ( 5, "alpnum", COB_SET_FLD(f0, 36, b_49, &a_48), 0, 0);
-  cob_dump_field_ext ( 5, "alpha", COB_SET_FLD(f0, 36, b_49 + 36, &a_48), 0, 0);
-  cob_dump_field_ext ( 5, "edit-num1", COB_SET_FLD(f0, 7, b_49 + 72, &a_42), 0, 0);
-  cob_dump_field_ext ( 5, "edit-num2", COB_SET_FLD(f0, 7, b_49 + 79, &a_43), 0, 0);
-  cob_dump_field_ext ( 5, "edit-num3", COB_SET_FLD(f0, 7, b_49 + 86, &a_44), 0, 0);
-  cob_dump_field_ext ( 5, "edit-num4", COB_SET_FLD(f0, 8, b_49 + 93, &a_45), 0, 0);
-  cob_dump_field_ext ( 1, "national-data", COB_SET_FLD(f0, 116, b_56, &a_47), 0, 0);
-  cob_dump_field_ext ( 5, "nat", COB_SET_FLD(f0, 72, b_56, &a_49), 0, 0);
-  cob_dump_field_ext ( 5, "nat-num", COB_SET_FLD(f0, 15, b_56 + 72, &a_50), 0, 0);
-  cob_dump_field_ext ( 5, "net-num1", COB_SET_FLD(f0, 7, b_56 + 87, &a_42), 0, 0);
-  cob_dump_field_ext ( 5, "net-num2", COB_SET_FLD(f0, 7, b_56 + 94, &a_43), 0, 0);
-  cob_dump_field_ext ( 5, "net-num3", COB_SET_FLD(f0, 7, b_56 + 101, &a_44), 0, 0);
-  cob_dump_field_ext ( 5, "net-num4", COB_SET_FLD(f0, 8, b_56 + 108, &a_45), 0, 0);
-  cob_dump_field_ext ( 0, "x-idx", COB_SET_FLD(f0, 4, (cob_u8_t *)&b_64, &a_46), 0, 0);
+  cob_dump_field_ext ( 5, "chr-u", COB_SET_FLD (f0, 1, b_17 + 64, &a_25), 0, 0);
+  cob_dump_field_ext ( 5, "shrt", COB_SET_FLD (f0, 2, b_17 + 65, &a_27), 0, 0);
+  cob_dump_field_ext ( 5, "shrt-u", COB_SET_FLD (f0, 2, b_17 + 67, &a_29), 0, 0);
+  cob_dump_field_ext ( 5, "long", COB_SET_FLD (f0, 4, b_17 + 69, &a_31), 0, 0);
+  cob_dump_field_ext ( 5, "long-u", COB_SET_FLD (f0, 4, b_17 + 73, &a_33), 0, 0);
+  cob_dump_field_ext ( 5, "dble", COB_SET_FLD (f0, 8, b_17 + 77, &a_34), 0, 0);
+  cob_dump_field_ext ( 5, "dble-u", COB_SET_FLD (f0, 8, b_17 + 85, &a_35), 0, 0);
+  cob_dump_field_ext ( 1, "floating-data", COB_SET_FLD (f0, 12, b_43, &a_47), 0, 0);
+  cob_dump_field_ext ( 5, "dbl", COB_SET_FLD (f0, 8, b_43, &a_37), 0, 0);
+  cob_dump_field_ext ( 5, "flt", COB_SET_FLD (f0, 4, b_43 + 8, &a_39), 0, 0);
+  cob_dump_field_ext ( 1, "special-data", COB_SET_FLD (f0, 1, b_47, &a_47), 0, 0);
+  cob_dump_field_ext ( 5, "r2d2", COB_SET_FLD (f0, 1, b_47, &a_41), 0, 0);
+  cob_dump_field_ext ( 1, "alphanumeric-data", COB_SET_FLD (f0, 101, b_49, &a_47), 0, 0);
+  cob_dump_field_ext ( 5, "alpnum", COB_SET_FLD (f0, 36, b_49, &a_48), 0, 0);
+  cob_dump_field_ext ( 5, "alpha", COB_SET_FLD (f0, 36, b_49 + 36, &a_48), 0, 0);
+  cob_dump_field_ext ( 5, "edit-num1", COB_SET_FLD (f0, 7, b_49 + 72, &a_42), 0, 0);
+  cob_dump_field_ext ( 5, "edit-num2", COB_SET_FLD (f0, 7, b_49 + 79, &a_43), 0, 0);
+  cob_dump_field_ext ( 5, "edit-num3", COB_SET_FLD (f0, 7, b_49 + 86, &a_44), 0, 0);
+  cob_dump_field_ext ( 5, "edit-num4", COB_SET_FLD (f0, 8, b_49 + 93, &a_45), 0, 0);
+  cob_dump_field_ext ( 1, "national-data", COB_SET_FLD (f0, 116, b_56, &a_47), 0, 0);
+  cob_dump_field_ext ( 5, "nat", COB_SET_FLD (f0, 72, b_56, &a_49), 0, 0);
+  cob_dump_field_ext ( 5, "nat-num", COB_SET_FLD (f0, 15, b_56 + 72, &a_50), 0, 0);
+  cob_dump_field_ext ( 5, "net-num1", COB_SET_FLD (f0, 7, b_56 + 87, &a_42), 0, 0);
+  cob_dump_field_ext ( 5, "net-num2", COB_SET_FLD (f0, 7, b_56 + 94, &a_43), 0, 0);
+  cob_dump_field_ext ( 5, "net-num3", COB_SET_FLD (f0, 7, b_56 + 101, &a_44), 0, 0);
+  cob_dump_field_ext ( 5, "net-num4", COB_SET_FLD (f0, 8, b_56 + 108, &a_45), 0, 0);
+  cob_dump_field_ext ( 0, "x-idx", COB_SET_FLD (f0, 4, (cob_u8_t *)&b_64, &a_46), 0, 0);
   {
     int i_1;
     int max_1 = (*(cob_s8_ptr) (b_17 + 63));
     if (max_1 > 5) max_1 = 5;
     for (i_1=0; i_1 < max_1; i_1++)
     {
-      cob_dump_field_ext ( 1, "FILLER", COB_SET_FLD(f0, 3, b_63, &a_47), 0, 1, i_1, 3UL); /* OCCURS 2 5 */
-      cob_dump_field_ext ( 3, "x-basis", COB_SET_FLD(f0, 3, b_63, &a_47), 0, 1, i_1, 3UL);
-      cob_dump_field_ext ( 5, "x-a", COB_SET_FLD(f0, 1, b_63, &a_48), 0, 1, i_1, 3UL);
-      cob_dump_field_ext ( 5, "x-b", COB_SET_FLD(f0, 1, b_63 + 1, &a_48), 0, 1, i_1, 3UL);
-      cob_dump_field_ext ( 5, "x-c", COB_SET_FLD(f0, 1, b_63 + 2, &a_48), 0, 1, i_1, 3UL);
-      /* cob_dump_field_ext ( 3, "FILLER", COB_SET_FLD(f0, 3, b_63, &a_48), 0, 1, i_1, 3UL); REDEFINES */
-      /* cob_dump_field_ext (88, "sw-x-basis-full", COB_SET_FLD(f0, 3, b_63, &a_48), 0, 1, i_1, 3UL); VALUE (cob_field *)&c_18 */
+      cob_dump_field_ext ( 1, "FILLER", COB_SET_FLD (f0, 3, b_63, &a_47), 0, 1, i_1, 3UL); /* OCCURS 2 5 */
+      cob_dump_field_ext ( 3, "x-basis", COB_SET_FLD (f0, 3, b_63, &a_47), 0, 1, i_1, 3UL);
+      cob_dump_field_ext ( 5, "x-a", COB_SET_FLD (f0, 1, b_63, &a_48), 0, 1, i_1, 3UL);
+      cob_dump_field_ext ( 5, "x-b", COB_SET_FLD (f0, 1, b_63 + 1, &a_48), 0, 1, i_1, 3UL);
+      cob_dump_field_ext ( 5, "x-c", COB_SET_FLD (f0, 1, b_63 + 2, &a_48), 0, 1, i_1, 3UL);
+      /* cob_dump_field_ext ( 3, "FILLER", COB_SET_FLD (f0, 3, b_63, &a_48), 0, 1, i_1, 3UL); REDEFINES */
+      /* cob_dump_field_ext (88, "sw-x-basis-full", COB_SET_FLD (f0, 3, b_63, &a_48), 0, 1, i_1, 3UL); VALUE (cob_field *)&c_18 */
     }
   }
-  cob_dump_field_ext ( 1, "x-rms", COB_SET_FLD(f0, 1, b_71, &a_47), 0, 0);
-  cob_dump_field_ext ( 5, "x-rms-a", COB_SET_FLD(f0, 1, b_71, &a_48), 0, 0);
-  /* cob_dump_field_ext ( 1, "FILLER", COB_SET_FLD(f0, 1, b_71, &a_48), 0, 0); REDEFINES */
-  /* cob_dump_field_ext (88, "sw-x-rms-full", COB_SET_FLD(f0, 1, b_71, &a_48), 0, 0); VALUE (cob_field *)&c_19 OR (cob_field *)&c_20 OR (cob_field *)&c_21 THRU (cob_field *)&c_22 OR (cob_field *)&c_20 OR &cob_all_quote */
+  cob_dump_field_ext ( 1, "x-rms", COB_SET_FLD (f0, 1, b_71, &a_47), 0, 0);
+  cob_dump_field_ext ( 5, "x-rms-a", COB_SET_FLD (f0, 1, b_71, &a_48), 0, 0);
+  /* cob_dump_field_ext ( 1, "FILLER", COB_SET_FLD (f0, 1, b_71, &a_48), 0, 0); REDEFINES */
+  /* cob_dump_field_ext (88, "sw-x-rms-full", COB_SET_FLD (f0, 1, b_71, &a_48), 0, 0); VALUE (cob_field *)&c_19 OR (cob_field *)&c_20 OR (cob_field *)&c_21 THRU (cob_field *)&c_22 OR (cob_field *)&c_20 OR &cob_all_quote */
 
   /* Dump LOCAL-STORAGE SECTION */
-  cob_dump_output("LOCAL-STORAGE");
-  cob_dump_field_ext ( 1, "var1", COB_SET_FLD(f0, 1, cob_local_ptr, &a_48), 0, 0);
-  cob_dump_field_ext ( 1, "var2", COB_SET_FLD(f0, 2, cob_local_ptr + 16, &a_47), 0, 0);
-  cob_dump_field_ext ( 3, "var2a", COB_SET_FLD(f0, 1, cob_local_ptr + 16, &a_48), 0, 0);
-  cob_dump_field_ext ( 3, "var2b", COB_SET_FLD(f0, 1, cob_local_ptr + 16 + 1, &a_52), 0, 0);
-  /* cob_dump_field_ext (88, "yay", COB_SET_FLD(f0, 1, cob_local_ptr + 16 + 1, &a_52), 0, 0); VALUE &cob_all_zero OR (cob_field *)&c_23 THRU (cob_field *)&c_24 OR (cob_field *)&c_25 */
+  cob_dump_output ("LOCAL-STORAGE");
+  cob_dump_field_ext ( 1, "var1", COB_SET_FLD (f0, 1, cob_local_ptr, &a_48), 0, 0);
+  cob_dump_field_ext ( 1, "var2", COB_SET_FLD (f0, 2, cob_local_ptr + 16, &a_47), 0, 0);
+  cob_dump_field_ext ( 3, "var2a", COB_SET_FLD (f0, 1, cob_local_ptr + 16, &a_48), 0, 0);
+  cob_dump_field_ext ( 3, "var2b", COB_SET_FLD (f0, 1, cob_local_ptr + 16 + 1, &a_52), 0, 0);
+  /* cob_dump_field_ext (88, "yay", COB_SET_FLD (f0, 1, cob_local_ptr + 16 + 1, &a_52), 0, 0); VALUE &cob_all_zero OR (cob_field *)&c_23 THRU (cob_field *)&c_24 OR (cob_field *)&c_25 */
 
-  cob_dump_output("END OF DUMP - debugme");
+  cob_dump_output ("END OF DUMP - debugme");
 ])
 
 AT_CHECK([COBC_GEN_DUMP_COMMENTS=1 \
@@ -8965,80 +8966,80 @@ AT_CHECK([COBC_GEN_DUMP_COMMENTS=1 \
 AT_CHECK([($GREP -A 200 "P_dump:" prog.c | $GREP -B 200 "END OF DUMP") || exit 77], [0],
 [  P_dump:
   /* Dump WORKING-STORAGE (informational) */
-  /* cob_dump_output("WORKING-STORAGE"); */
-  /* cob_dump_field_ext (77, "RETURN-CODE", COB_SET_FLD(f0, 4, (cob_u8_t *)&b_2, &a_46), 0, 0); */
-  /* cob_dump_field_ext ( 1, "numeric-data", COB_SET_FLD(f0, 93, b_17, &a_47), 0, 0); */
-  /* cob_dump_field_ext ( 5, "disp", COB_SET_FLD(f0, 5, b_17, &a_2), 0, 0); */
-  /* cob_dump_field_ext ( 5, "disp-u", COB_SET_FLD(f0, 5, b_17 + 5, &a_4), 0, 0); */
-  /* cob_dump_field_ext ( 5, "dispp", COB_SET_FLD(f0, 4, b_17 + 10, &a_6), 0, 0); */
-  /* cob_dump_field_ext ( 5, "dispp-u", COB_SET_FLD(f0, 4, b_17 + 14, &a_8), 0, 0); */
-  /* cob_dump_field_ext ( 5, "disppp", COB_SET_FLD(f0, 4, b_17 + 18, &a_10), 0, 0); */
-  /* cob_dump_field_ext ( 5, "disppp-u", COB_SET_FLD(f0, 4, b_17 + 22, &a_12), 0, 0); */
-  /* cob_dump_field_ext ( 5, "bin", COB_SET_FLD(f0, 4, b_17 + 26, &a_13), 0, 0); */
-  /* cob_dump_field_ext ( 5, "bin-u", COB_SET_FLD(f0, 4, b_17 + 30, &a_14), 0, 0); */
-  /* cob_dump_field_ext ( 5, "cmp3", COB_SET_FLD(f0, 3, b_17 + 34, &a_15), 0, 0); */
-  /* cob_dump_field_ext ( 5, "cmp3-u", COB_SET_FLD(f0, 3, b_17 + 37, &a_16), 0, 0); */
-  /* cob_dump_field_ext ( 5, "cmp5", COB_SET_FLD(f0, 4, b_17 + 40, &a_17), 0, 0); */
-  /* cob_dump_field_ext ( 5, "cmp5-u", COB_SET_FLD(f0, 4, b_17 + 44, &a_18), 0, 0); */
-  /* cob_dump_field_ext ( 5, "cmp6", COB_SET_FLD(f0, 3, b_17 + 48, &a_19), 0, 0); */
-  /* cob_dump_field_ext ( 5, "cmpx", COB_SET_FLD(f0, 3, b_17 + 51, &a_20), 0, 0); */
-  /* cob_dump_field_ext ( 5, "cmpx-u", COB_SET_FLD(f0, 3, b_17 + 54, &a_21), 0, 0); */
-  /* cob_dump_field_ext ( 5, "cmpn", COB_SET_FLD(f0, 3, b_17 + 57, &a_20), 0, 0); */
-  /* cob_dump_field_ext ( 5, "cmpn-u", COB_SET_FLD(f0, 3, b_17 + 60, &a_21), 0, 0); */
+  /* cob_dump_output ("WORKING-STORAGE"); */
+  /* cob_dump_field_ext (77, "RETURN-CODE", COB_SET_FLD (f0, 4, (cob_u8_t *)&b_2, &a_46), 0, 0); */
+  /* cob_dump_field_ext ( 1, "numeric-data", COB_SET_FLD (f0, 93, b_17, &a_47), 0, 0); */
+  /* cob_dump_field_ext ( 5, "disp", COB_SET_FLD (f0, 5, b_17, &a_2), 0, 0); */
+  /* cob_dump_field_ext ( 5, "disp-u", COB_SET_FLD (f0, 5, b_17 + 5, &a_4), 0, 0); */
+  /* cob_dump_field_ext ( 5, "dispp", COB_SET_FLD (f0, 4, b_17 + 10, &a_6), 0, 0); */
+  /* cob_dump_field_ext ( 5, "dispp-u", COB_SET_FLD (f0, 4, b_17 + 14, &a_8), 0, 0); */
+  /* cob_dump_field_ext ( 5, "disppp", COB_SET_FLD (f0, 4, b_17 + 18, &a_10), 0, 0); */
+  /* cob_dump_field_ext ( 5, "disppp-u", COB_SET_FLD (f0, 4, b_17 + 22, &a_12), 0, 0); */
+  /* cob_dump_field_ext ( 5, "bin", COB_SET_FLD (f0, 4, b_17 + 26, &a_13), 0, 0); */
+  /* cob_dump_field_ext ( 5, "bin-u", COB_SET_FLD (f0, 4, b_17 + 30, &a_14), 0, 0); */
+  /* cob_dump_field_ext ( 5, "cmp3", COB_SET_FLD (f0, 3, b_17 + 34, &a_15), 0, 0); */
+  /* cob_dump_field_ext ( 5, "cmp3-u", COB_SET_FLD (f0, 3, b_17 + 37, &a_16), 0, 0); */
+  /* cob_dump_field_ext ( 5, "cmp5", COB_SET_FLD (f0, 4, b_17 + 40, &a_17), 0, 0); */
+  /* cob_dump_field_ext ( 5, "cmp5-u", COB_SET_FLD (f0, 4, b_17 + 44, &a_18), 0, 0); */
+  /* cob_dump_field_ext ( 5, "cmp6", COB_SET_FLD (f0, 3, b_17 + 48, &a_19), 0, 0); */
+  /* cob_dump_field_ext ( 5, "cmpx", COB_SET_FLD (f0, 3, b_17 + 51, &a_20), 0, 0); */
+  /* cob_dump_field_ext ( 5, "cmpx-u", COB_SET_FLD (f0, 3, b_17 + 54, &a_21), 0, 0); */
+  /* cob_dump_field_ext ( 5, "cmpn", COB_SET_FLD (f0, 3, b_17 + 57, &a_20), 0, 0); */
+  /* cob_dump_field_ext ( 5, "cmpn-u", COB_SET_FLD (f0, 3, b_17 + 60, &a_21), 0, 0); */
   /* cob_dump_field_ext ( 5, "chr", &f_35, 0, 0); */
-  /* cob_dump_field_ext ( 5, "chr-u", COB_SET_FLD(f0, 1, b_17 + 64, &a_25), 0, 0); */
-  /* cob_dump_field_ext ( 5, "shrt", COB_SET_FLD(f0, 2, b_17 + 65, &a_27), 0, 0); */
-  /* cob_dump_field_ext ( 5, "shrt-u", COB_SET_FLD(f0, 2, b_17 + 67, &a_29), 0, 0); */
-  /* cob_dump_field_ext ( 5, "long", COB_SET_FLD(f0, 4, b_17 + 69, &a_31), 0, 0); */
-  /* cob_dump_field_ext ( 5, "long-u", COB_SET_FLD(f0, 4, b_17 + 73, &a_33), 0, 0); */
-  /* cob_dump_field_ext ( 5, "dble", COB_SET_FLD(f0, 8, b_17 + 77, &a_34), 0, 0); */
-  /* cob_dump_field_ext ( 5, "dble-u", COB_SET_FLD(f0, 8, b_17 + 85, &a_35), 0, 0); */
-  /* cob_dump_field_ext ( 1, "floating-data", COB_SET_FLD(f0, 12, b_43, &a_47), 0, 0); */
-  /* cob_dump_field_ext ( 5, "dbl", COB_SET_FLD(f0, 8, b_43, &a_37), 0, 0); */
-  /* cob_dump_field_ext ( 5, "flt", COB_SET_FLD(f0, 4, b_43 + 8, &a_39), 0, 0); */
-  /* cob_dump_field_ext ( 1, "special-data", COB_SET_FLD(f0, 1, b_47, &a_47), 0, 0); */
-  /* cob_dump_field_ext ( 5, "r2d2", COB_SET_FLD(f0, 1, b_47, &a_41), 0, 0); */
-  /* cob_dump_field_ext ( 1, "alphanumeric-data", COB_SET_FLD(f0, 101, b_49, &a_47), 0, 0); */
-  /* cob_dump_field_ext ( 5, "alpnum", COB_SET_FLD(f0, 36, b_49, &a_48), 0, 0); */
-  /* cob_dump_field_ext ( 5, "alpha", COB_SET_FLD(f0, 36, b_49 + 36, &a_48), 0, 0); */
-  /* cob_dump_field_ext ( 5, "edit-num1", COB_SET_FLD(f0, 7, b_49 + 72, &a_42), 0, 0); */
-  /* cob_dump_field_ext ( 5, "edit-num2", COB_SET_FLD(f0, 7, b_49 + 79, &a_43), 0, 0); */
-  /* cob_dump_field_ext ( 5, "edit-num3", COB_SET_FLD(f0, 7, b_49 + 86, &a_44), 0, 0); */
-  /* cob_dump_field_ext ( 5, "edit-num4", COB_SET_FLD(f0, 8, b_49 + 93, &a_45), 0, 0); */
-  /* cob_dump_field_ext ( 1, "national-data", COB_SET_FLD(f0, 116, b_56, &a_47), 0, 0); */
-  /* cob_dump_field_ext ( 5, "nat", COB_SET_FLD(f0, 72, b_56, &a_49), 0, 0); */
-  /* cob_dump_field_ext ( 5, "nat-num", COB_SET_FLD(f0, 15, b_56 + 72, &a_50), 0, 0); */
-  /* cob_dump_field_ext ( 5, "net-num1", COB_SET_FLD(f0, 7, b_56 + 87, &a_42), 0, 0); */
-  /* cob_dump_field_ext ( 5, "net-num2", COB_SET_FLD(f0, 7, b_56 + 94, &a_43), 0, 0); */
-  /* cob_dump_field_ext ( 5, "net-num3", COB_SET_FLD(f0, 7, b_56 + 101, &a_44), 0, 0); */
-  /* cob_dump_field_ext ( 5, "net-num4", COB_SET_FLD(f0, 8, b_56 + 108, &a_45), 0, 0); */
-  /* cob_dump_field_ext ( 0, "x-idx", COB_SET_FLD(f0, 4, (cob_u8_t *)&b_64, &a_46), 0, 0); */
+  /* cob_dump_field_ext ( 5, "chr-u", COB_SET_FLD (f0, 1, b_17 + 64, &a_25), 0, 0); */
+  /* cob_dump_field_ext ( 5, "shrt", COB_SET_FLD (f0, 2, b_17 + 65, &a_27), 0, 0); */
+  /* cob_dump_field_ext ( 5, "shrt-u", COB_SET_FLD (f0, 2, b_17 + 67, &a_29), 0, 0); */
+  /* cob_dump_field_ext ( 5, "long", COB_SET_FLD (f0, 4, b_17 + 69, &a_31), 0, 0); */
+  /* cob_dump_field_ext ( 5, "long-u", COB_SET_FLD (f0, 4, b_17 + 73, &a_33), 0, 0); */
+  /* cob_dump_field_ext ( 5, "dble", COB_SET_FLD (f0, 8, b_17 + 77, &a_34), 0, 0); */
+  /* cob_dump_field_ext ( 5, "dble-u", COB_SET_FLD (f0, 8, b_17 + 85, &a_35), 0, 0); */
+  /* cob_dump_field_ext ( 1, "floating-data", COB_SET_FLD (f0, 12, b_43, &a_47), 0, 0); */
+  /* cob_dump_field_ext ( 5, "dbl", COB_SET_FLD (f0, 8, b_43, &a_37), 0, 0); */
+  /* cob_dump_field_ext ( 5, "flt", COB_SET_FLD (f0, 4, b_43 + 8, &a_39), 0, 0); */
+  /* cob_dump_field_ext ( 1, "special-data", COB_SET_FLD (f0, 1, b_47, &a_47), 0, 0); */
+  /* cob_dump_field_ext ( 5, "r2d2", COB_SET_FLD (f0, 1, b_47, &a_41), 0, 0); */
+  /* cob_dump_field_ext ( 1, "alphanumeric-data", COB_SET_FLD (f0, 101, b_49, &a_47), 0, 0); */
+  /* cob_dump_field_ext ( 5, "alpnum", COB_SET_FLD (f0, 36, b_49, &a_48), 0, 0); */
+  /* cob_dump_field_ext ( 5, "alpha", COB_SET_FLD (f0, 36, b_49 + 36, &a_48), 0, 0); */
+  /* cob_dump_field_ext ( 5, "edit-num1", COB_SET_FLD (f0, 7, b_49 + 72, &a_42), 0, 0); */
+  /* cob_dump_field_ext ( 5, "edit-num2", COB_SET_FLD (f0, 7, b_49 + 79, &a_43), 0, 0); */
+  /* cob_dump_field_ext ( 5, "edit-num3", COB_SET_FLD (f0, 7, b_49 + 86, &a_44), 0, 0); */
+  /* cob_dump_field_ext ( 5, "edit-num4", COB_SET_FLD (f0, 8, b_49 + 93, &a_45), 0, 0); */
+  /* cob_dump_field_ext ( 1, "national-data", COB_SET_FLD (f0, 116, b_56, &a_47), 0, 0); */
+  /* cob_dump_field_ext ( 5, "nat", COB_SET_FLD (f0, 72, b_56, &a_49), 0, 0); */
+  /* cob_dump_field_ext ( 5, "nat-num", COB_SET_FLD (f0, 15, b_56 + 72, &a_50), 0, 0); */
+  /* cob_dump_field_ext ( 5, "net-num1", COB_SET_FLD (f0, 7, b_56 + 87, &a_42), 0, 0); */
+  /* cob_dump_field_ext ( 5, "net-num2", COB_SET_FLD (f0, 7, b_56 + 94, &a_43), 0, 0); */
+  /* cob_dump_field_ext ( 5, "net-num3", COB_SET_FLD (f0, 7, b_56 + 101, &a_44), 0, 0); */
+  /* cob_dump_field_ext ( 5, "net-num4", COB_SET_FLD (f0, 8, b_56 + 108, &a_45), 0, 0); */
+  /* cob_dump_field_ext ( 0, "x-idx", COB_SET_FLD (f0, 4, (cob_u8_t *)&b_64, &a_46), 0, 0); */
   {
     /* int max_1 = (*(cob_s8_ptr) (b_17 + 63)); */
     {
-      /* cob_dump_field_ext ( 1, "FILLER", COB_SET_FLD(f0, 3, b_63, &a_47), 0, 1, i_1, 3UL); OCCURS 2 5 */
-      /* cob_dump_field_ext ( 3, "x-basis", COB_SET_FLD(f0, 3, b_63, &a_47), 0, 1, i_1, 3UL); */
-      /* cob_dump_field_ext ( 5, "x-a", COB_SET_FLD(f0, 1, b_63, &a_48), 0, 1, i_1, 3UL); */
-      /* cob_dump_field_ext ( 5, "x-b", COB_SET_FLD(f0, 1, b_63 + 1, &a_48), 0, 1, i_1, 3UL); */
-      /* cob_dump_field_ext ( 5, "x-c", COB_SET_FLD(f0, 1, b_63 + 2, &a_48), 0, 1, i_1, 3UL); */
-      /* cob_dump_field_ext ( 3, "FILLER", COB_SET_FLD(f0, 3, b_63, &a_48), 0, 1, i_1, 3UL); REDEFINES */
-      /* cob_dump_field_ext (88, "sw-x-basis-full", COB_SET_FLD(f0, 3, b_63, &a_48), 0, 1, i_1, 3UL); VALUE (cob_field *)&c_18 */
+      /* cob_dump_field_ext ( 1, "FILLER", COB_SET_FLD (f0, 3, b_63, &a_47), 0, 1, i_1, 3UL); OCCURS 2 5 */
+      /* cob_dump_field_ext ( 3, "x-basis", COB_SET_FLD (f0, 3, b_63, &a_47), 0, 1, i_1, 3UL); */
+      /* cob_dump_field_ext ( 5, "x-a", COB_SET_FLD (f0, 1, b_63, &a_48), 0, 1, i_1, 3UL); */
+      /* cob_dump_field_ext ( 5, "x-b", COB_SET_FLD (f0, 1, b_63 + 1, &a_48), 0, 1, i_1, 3UL); */
+      /* cob_dump_field_ext ( 5, "x-c", COB_SET_FLD (f0, 1, b_63 + 2, &a_48), 0, 1, i_1, 3UL); */
+      /* cob_dump_field_ext ( 3, "FILLER", COB_SET_FLD (f0, 3, b_63, &a_48), 0, 1, i_1, 3UL); REDEFINES */
+      /* cob_dump_field_ext (88, "sw-x-basis-full", COB_SET_FLD (f0, 3, b_63, &a_48), 0, 1, i_1, 3UL); VALUE (cob_field *)&c_18 */
     }
   }
-  /* cob_dump_field_ext ( 1, "x-rms", COB_SET_FLD(f0, 1, b_71, &a_47), 0, 0); */
-  /* cob_dump_field_ext ( 5, "x-rms-a", COB_SET_FLD(f0, 1, b_71, &a_48), 0, 0); */
-  /* cob_dump_field_ext ( 1, "FILLER", COB_SET_FLD(f0, 1, b_71, &a_48), 0, 0); REDEFINES */
-  /* cob_dump_field_ext (88, "sw-x-rms-full", COB_SET_FLD(f0, 1, b_71, &a_48), 0, 0); VALUE (cob_field *)&c_19 OR (cob_field *)&c_20 OR (cob_field *)&c_21 THRU (cob_field *)&c_22 OR (cob_field *)&c_20 OR &cob_all_quote */
+  /* cob_dump_field_ext ( 1, "x-rms", COB_SET_FLD (f0, 1, b_71, &a_47), 0, 0); */
+  /* cob_dump_field_ext ( 5, "x-rms-a", COB_SET_FLD (f0, 1, b_71, &a_48), 0, 0); */
+  /* cob_dump_field_ext ( 1, "FILLER", COB_SET_FLD (f0, 1, b_71, &a_48), 0, 0); REDEFINES */
+  /* cob_dump_field_ext (88, "sw-x-rms-full", COB_SET_FLD (f0, 1, b_71, &a_48), 0, 0); VALUE (cob_field *)&c_19 OR (cob_field *)&c_20 OR (cob_field *)&c_21 THRU (cob_field *)&c_22 OR (cob_field *)&c_20 OR &cob_all_quote */
 
   /* Dump LOCAL-STORAGE SECTION (informational) */
-  /* cob_dump_output("LOCAL-STORAGE"); */
-  /* cob_dump_field_ext ( 1, "var1", COB_SET_FLD(f0, 1, cob_local_ptr, &a_48), 0, 0); */
-  /* cob_dump_field_ext ( 1, "var2", COB_SET_FLD(f0, 2, cob_local_ptr + 16, &a_47), 0, 0); */
-  /* cob_dump_field_ext ( 3, "var2a", COB_SET_FLD(f0, 1, cob_local_ptr + 16, &a_48), 0, 0); */
-  /* cob_dump_field_ext ( 3, "var2b", COB_SET_FLD(f0, 1, cob_local_ptr + 16 + 1, &a_52), 0, 0); */
-  /* cob_dump_field_ext (88, "yay", COB_SET_FLD(f0, 1, cob_local_ptr + 16 + 1, &a_52), 0, 0); VALUE &cob_all_zero OR (cob_field *)&c_23 THRU (cob_field *)&c_24 OR (cob_field *)&c_25 */
+  /* cob_dump_output ("LOCAL-STORAGE"); */
+  /* cob_dump_field_ext ( 1, "var1", COB_SET_FLD (f0, 1, cob_local_ptr, &a_48), 0, 0); */
+  /* cob_dump_field_ext ( 1, "var2", COB_SET_FLD (f0, 2, cob_local_ptr + 16, &a_47), 0, 0); */
+  /* cob_dump_field_ext ( 3, "var2a", COB_SET_FLD (f0, 1, cob_local_ptr + 16, &a_48), 0, 0); */
+  /* cob_dump_field_ext ( 3, "var2b", COB_SET_FLD (f0, 1, cob_local_ptr + 16 + 1, &a_52), 0, 0); */
+  /* cob_dump_field_ext (88, "yay", COB_SET_FLD (f0, 1, cob_local_ptr + 16 + 1, &a_52), 0, 0); VALUE &cob_all_zero OR (cob_field *)&c_23 THRU (cob_field *)&c_24 OR (cob_field *)&c_25 */
 
-  /* cob_dump_output("END OF DUMP - debugme"); */
+  /* cob_dump_output ("END OF DUMP - debugme"); */
 ])
 
 AT_CHECK([$COMPILE -C -w prog.cob], [0], [])

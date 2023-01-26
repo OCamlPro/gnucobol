@@ -586,8 +586,8 @@ static void		cob_stack_trace_internal (FILE *target, int verbose, int count);
 #ifdef COB_DEBUG_LOG
 static void		cob_debug_open	(void);
 #endif
-void		conf_runtime_error_value	(const char *value, const int conf_pos);
-void		conf_runtime_error	(const int finish_error, const char *fmt, ...);
+static void		conf_runtime_error_value	(const char *value, const int conf_pos);
+static void		conf_runtime_error	(const int finish_error, const char *fmt, ...);
 
 static void
 cob_exit_common (void)
@@ -1394,8 +1394,9 @@ cob_set_signal (void)
 }
 
 /* ASCII Sign
- * positive: 0123456789
- * negative: pqrstuvwxy
+ *   positive: 0123456789
+ *   negative: pqrstuvwxy
+ * returns one of: 1 = positive (non-negative), -1 = negative
  */
 
 static int
@@ -1517,8 +1518,9 @@ cob_put_sign_ascii (unsigned char *p)
 }
 
 /* EBCDIC Sign
- * positive: {ABCDEFGHI
- * negative: }JKLMNOPQR
+ *   positive: {ABCDEFGHI
+ *   negative: }JKLMNOPQR
+ * returns one of: 1 = positive (non-negative), -1 = negative
  */
 
 static int
@@ -1598,7 +1600,7 @@ cob_get_sign_ebcdic (unsigned char *p)
 static void
 cob_put_sign_ebcdic (unsigned char *p, const int sign)
 {
-	if (sign < 0) {
+	if (sign == -1) {
 		switch (*p) {
 		case '0':
 			*p = (unsigned char)'}';
@@ -3639,6 +3641,9 @@ locate_sign (cob_field *f)
 	return f->data + f->size - 1;
 }
 
+/* get sign from DISPLAY/PACKED fields
+   returns one of: 1 = positive (non-negative), -1 = negative,
+                   0 = neither DISPLAY nor PACKED */
 int
 cob_real_get_sign (cob_field *f)
 {
@@ -3675,6 +3680,7 @@ cob_real_get_sign (cob_field *f)
 	return 0;
 }
 
+/* store sign to DISPLAY/PACKED fields */
 void
 cob_real_put_sign (cob_field *f, const int sign)
 {
@@ -3685,7 +3691,7 @@ cob_real_put_sign (cob_field *f, const int sign)
 		/* Note: we only locate the sign if needed,
 		   as the common case will be "nothing to do" */
 		if (unlikely (COB_FIELD_SIGN_SEPARATE (f))) {
-			const unsigned char	c = (sign < 0) ? (cob_u8_t)'-' : (cob_u8_t)'+';
+			const unsigned char	c = (sign == -1) ? (cob_u8_t)'-' : (cob_u8_t)'+';
 			p = locate_sign (f);
 			if (*p != c) {
 				*p = c;
@@ -3693,7 +3699,7 @@ cob_real_put_sign (cob_field *f, const int sign)
 		} else if (unlikely (COB_MODULE_PTR->ebcdic_sign)) {
 			p = locate_sign (f);
 			cob_put_sign_ebcdic (p, sign);
-		} else if (sign < 0) {
+		} else if (sign == -1) {
 			p = locate_sign (f);
 			cob_put_sign_ascii (p);
 		}
@@ -3703,7 +3709,7 @@ cob_real_put_sign (cob_field *f, const int sign)
 			return;
 		}
 		p = f->data + f->size - 1;
-		if (sign < 0) {
+		if (sign == -1) {
 			*p = (*p & 0xF0) | 0x0D;
 		} else {
 			*p = (*p & 0xF0) | 0x0C;
@@ -3714,7 +3720,7 @@ cob_real_put_sign (cob_field *f, const int sign)
 
 /* Registration of external handlers */
 void
-cob_reg_sighnd	(void (*sighnd) (int))
+cob_reg_sighnd (void (*sighnd) (int))
 {
 	if (!cob_initialized) {
 		cob_set_signal ();
@@ -8373,13 +8379,13 @@ cob_load_config_file (const char *config_file, int isoptional)
 	ret = 0;
 	line = 0;
 	while ((conf_fd != NULL)
-	&& 	(fgets (buff, COB_SMALL_BUFF, conf_fd) != NULL) ) {
+	   &&  (fgets (buff, COB_SMALL_BUFF, conf_fd) != NULL) ) {
 		line++;
 		for (i = 0; isspace ((unsigned char)buff[i]); i++);
 		if (buff[i] == 0
-		||  buff[i] == '#'
-		||  buff[i] == '\r'
-		||  buff[i] == '\n')
+		 || buff[i] == '#'
+		 || buff[i] == '\r'
+		 || buff[i] == '\n')
 			continue;	/* Skip comments and blank lines */
 
 		/* Evaluate config line */
@@ -8664,13 +8670,13 @@ cob_runtime_error (const char *fmt, ...)
 		hdlrs = NULL;
 		active_error_handler = 0;
 
-			/* restore error location */
+		/* restore error location */
 		cob_source_file = err_source_file;
 		cob_source_line = err_source_line;
-			COB_MODULE_PTR = err_module_pointer;
-			if (COB_MODULE_PTR) {
-				COB_MODULE_PTR->module_stmt = err_module_statement;
-			}
+		COB_MODULE_PTR = err_module_pointer;
+		if (COB_MODULE_PTR) {
+			COB_MODULE_PTR->module_stmt = err_module_statement;
+		}
 		cobglobptr->cob_call_params = call_params;
 	}
 
@@ -8907,7 +8913,7 @@ cob_fatal_error (const enum cob_fatal_error fatal_error)
 	cob_hard_failure ();
 }
 
-void
+static void
 conf_runtime_error_value (const char *value, const int pos)
 {
 	const char *name = NULL;
@@ -8920,7 +8926,7 @@ conf_runtime_error_value (const char *value, const int pos)
 	conf_runtime_error (0, _("invalid value '%s' for configuration tag '%s'"), value, name);
 }
 
-void
+static void
 conf_runtime_error (const int finish_error, const char *fmt, ...)
 {
 	va_list args;

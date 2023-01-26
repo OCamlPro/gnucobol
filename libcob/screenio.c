@@ -2070,7 +2070,7 @@ cob_screen_get_all (const int initial_curs, const int accept_timeout)
 			mevent.bstate &= cob_mask_accept;
 			if (mevent.bstate != 0) {
 				global_return = mouse_to_exception_code (mevent.bstate);
-				cob_move_cursor (mline, mcolumn);	// move cursor to pass position
+				cob_move_cursor (mline, mcolumn);	/* move cursor to pass position */
 				goto screen_return;
 			}
 			continue;
@@ -3012,7 +3012,7 @@ field_accept (cob_field *f, const int sline, const int scolumn, cob_field *fgc,
 				mevent.bstate &= cob_mask_accept;
 				if (mevent.bstate != 0) {
 					fret = mouse_to_exception_code (mevent.bstate);
-					cob_move_cursor (mline, mcolumn);	// move cursor to pass position
+					cob_move_cursor (mline, mcolumn);	/* move cursor to pass position */
 					goto field_return;
 				}
 			}
@@ -3254,7 +3254,7 @@ field_accept (cob_field *f, const int sline, const int scolumn, cob_field *fgc,
 			mevent.bstate &= cob_mask_accept;
 			if (mevent.bstate != 0) {
 				fret = mouse_to_exception_code (mevent.bstate);
-				cob_move_cursor (mline, mcolumn);	// move cursor to pass position
+				cob_move_cursor (mline, mcolumn);	/* move cursor to pass position */
 				goto field_return;
 			}
 			continue;
@@ -3910,7 +3910,7 @@ int
 cob_sys_set_csr_pos (unsigned char *fld)
 {
 #ifdef	WITH_EXTENDED_SCREENIO
-	const cob_field* f = COB_MODULE_PTR->cob_procedure_params[0];
+	const cob_field *f = COB_MODULE_PTR->cob_procedure_params[0];
 	int	cline;
 	int	ccol;
 #endif
@@ -4078,7 +4078,8 @@ cob_init_screenio (cob_global *lptr, cob_settings *sptr)
 	cobglobptr = lptr;
 	cobsetptr  = sptr;
 	if (!cobsetptr->cob_exit_msg || !cobsetptr->cob_exit_msg[0]) {
-		cobsetptr->cob_exit_msg = cob_strdup (_("end of program, please press a key to exit"));
+		cobsetptr->cob_exit_msg =
+			cob_strdup (_("end of program, please press a key to exit"));
 	}
 
 	cob_settings_screenio ();
