@@ -8572,7 +8572,8 @@ output_label (const struct cb_label *lp)
 			CB_PREFIX_LABEL, CB_LABEL (lp->exit_label)->id);
 	}
 
-	if (cb_flag_source_location
+	if ((cb_old_trace && cobc_wants_debug)	/* CHECKME: was that really the case? */
+	 || (!cb_old_trace && cb_flag_source_location)
 	 || cb_flag_trace) {
 		output_section_info (lp);
 	}
