@@ -130,7 +130,7 @@ AT_KEYWORDS([extensions])
 # FIXME: the type of octal literals must be context-sensitive, see below
 # currently hard-wired as numeric (may be switched in scanner.l to alphanumeric)
 
-AT_XFAIL_IF(true)
+AT_XFAIL_IF([true])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -1043,7 +1043,7 @@ AT_DATA([ALLOC.cob], [
 AT_CHECK([$COMPILE -std=ibm-strict -w ALLOC.cob], [0], [], [])
 
 # compiler limits ODO-item wrong, merge of rw-branch needed
-AT_XFAIL_IF(true)
+AT_XFAIL_IF([true])
 
 AT_CHECK([$COBCRUN_DIRECT ./ALLOC], [0],
 [First allocation, using 00322 bytes.
@@ -1431,7 +1431,7 @@ Read SEQ 04, DEP-X = 03 & DEP-Y = 10, TSTREC len:101
 ], [])
 
 
-AT_CAPTURE_FILE(./SEQODO)
+AT_CAPTURE_FILE([SEQODO])
 
 AT_DATA([reference],
 [010205Howdy 1 2<>  01***Abcde. 344502***Abcde. 4556<>
@@ -2666,7 +2666,7 @@ AT_KEYWORDS([extensions])
 # We should add an according test and change the test here after cleanup,
 # officially documenting the "ASSIGN clause not necessary for SORT FILES"
 # extension and enable it only with a conf entry (set only in default.conf).
-AT_XFAIL_IF(true)
+AT_XFAIL_IF([true])
 
 AT_DATA([TEST-FILE],
 [9

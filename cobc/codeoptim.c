@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2006-2012, 2013, 2017-2020, 2022 Free Software Foundation, Inc.
+   Copyright (C) 2006-2012, 2013, 2017-2020, 2022-2023 Free Software Foundation, Inc.
    Written by Roger While, Ron Norman, Simon Sobisch, Edward Hart
 
    This file is part of GnuCOBOL.
@@ -223,10 +223,10 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("static int COB_INLINE COB_A_INLINE");
 		output_storage ("cob_get_numdisp (const void *data, const int size)");
 		output_storage ("{");
-		output_storage ("	register const unsigned char	*p;");
+		output_storage ("	register const unsigned char	*p = (const unsigned char *)data;");
 		output_storage ("	register int	n;");
 		output_storage ("	register int	val = 0;");
-		output_storage ("	p = (const unsigned char *)data;");
+
 		output_storage ("	for (n = 0; n < size; ++n, ++p) {");
 		output_storage ("		val = (val * 10)");
 		output_storage ("		    + (*p & 0x0F);");
@@ -239,10 +239,10 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("static int COB_INLINE COB_A_INLINE");
 		output_storage ("cob_get_numdisps (const void *data, const int size)");
 		output_storage ("{");
-		output_storage ("	register const unsigned char	*p;");
+		output_storage ("	register const unsigned char	*p = (const unsigned char *)data;");
 		output_storage ("	register int	n;");
 		output_storage ("	register int 	val = 0;");
-		output_storage ("	p = (const unsigned char *)data;");
+
 		output_storage ("	for (n = 0; n < val; ++n, ++p) {");
 		output_storage ("		if (*p > '0' && *p <= '9')");
 		output_storage ("			break;");
@@ -264,17 +264,15 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("static int COB_NOINLINE");
 		output_storage ("cob_cmp_packed_int (const cob_field *f, const cob_s64_t n)");
 		output_storage ("{");
-		output_storage ("	unsigned char	*p;");
-		output_storage ("	size_t		size;");
-		output_storage ("	cob_s64_t	val;");
+		output_storage ("	register unsigned char		*p = f->data;");
+		output_storage ("	const register unsigned char	*p_end = p + f->size - 1;");
+		output_storage ("	register cob_s64_t	val = 0;");
 
-		output_storage ("	val = 0;");
-		output_storage ("	p = f->data;");
-		output_storage ("	for (size = 0; size < f->size - 1; ++size, ++p) {");
-		output_storage ("		val *= 10;");
-		output_storage ("		val += *p >> 4;");
-		output_storage ("		val *= 10;");
-		output_storage ("		val += *p & 0x0f;");
+		output_storage ("	while (p < p_end) {");
+		output_storage ("		val = val * 10");
+		output_storage ("		    + (*p >> 4);");
+		output_storage ("		val = val * 10");
+		output_storage ("		    + (*p++ & 0x0f);");
 		output_storage ("	}");
 		output_storage ("	val *= 10;");
 		output_storage ("	val += *p >> 4;");
@@ -289,16 +287,15 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("static int COB_NOINLINE");
 		output_storage ("cob_get_packed_int (const cob_field *f)");
 		output_storage ("{");
-		output_storage ("	unsigned char	*p;");
-		output_storage ("	size_t		size;");
-		output_storage ("	int		val = 0;");
+		output_storage ("	register unsigned char		*p = f->data;");
+		output_storage ("	const register unsigned char	*p_end = p + f->size - 1;");
+		output_storage ("	register int	val = 0;");
 
-		output_storage ("	p = f->data;");
-		output_storage ("	for (size = 0; size < f->size - 1; ++size, ++p) {");
-		output_storage ("		val *= 10;");
-		output_storage ("		val += *p >> 4;");
-		output_storage ("		val *= 10;");
-		output_storage ("		val += *p & 0x0f;");
+		output_storage ("	while (p < p_end) {");
+		output_storage ("		val = val * 10");
+		output_storage ("		    + (*p >> 4);");
+		output_storage ("		val = val * 10");
+		output_storage ("		    + (*p++ & 0x0f);");
 		output_storage ("	}");
 		output_storage ("	val *= 10;");
 		output_storage ("	val += *p >> 4;");
@@ -313,7 +310,7 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("static int COB_NOINLINE");
 		output_storage ("cob_add_packed_int (cob_field *f, const int val)");
 		output_storage ("{");
-		output_storage ("	unsigned char	*p;");
+		output_storage ("	register unsigned char	*p;");
 		output_storage ("	size_t		size;");
 		output_storage ("	int		carry = 0;");
 		output_storage ("	int		n;");

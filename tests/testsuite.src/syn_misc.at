@@ -5338,7 +5338,7 @@ AT_CLEANUP
 AT_SETUP([checking prototypes and definitions match])
 AT_KEYWORDS([misc prototype])
 
-AT_XFAIL_IF(true)
+AT_XFAIL_IF([true])
 # patch #32 was not fully included and the current implementation
 # needs updating
 
@@ -6044,7 +6044,7 @@ AT_KEYWORDS([misc DEBUG-ITEM DEBUG-LINE])
 # 11 References to the special register DEBUG-ITEM are restricted to
 # references from within a debugging section.
 
-AT_XFAIL_IF(true)
+AT_XFAIL_IF([true])
 # we currently fail to detect references into DECLARATIVES and
 # references to debugging-procedures other than PERFORM --> both in prog2
 
@@ -6957,7 +6957,7 @@ AT_KEYWORDS([condition expression EVALUATE WHEN])
 # this test to pass - and likely need a different option
 # than frelax-syntax-checks..
 
-AT_XFAIL_IF(true)
+AT_XFAIL_IF([true])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -8440,7 +8440,7 @@ AT_KEYWORDS([misc extensions directive])
 # MicroFocus format; checks that level 78 are applied
 
 # FIXME - not done yet:
-AT_XFAIL_IF(true)
+AT_XFAIL_IF([true])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION  DIVISION.
@@ -8475,7 +8475,7 @@ AT_KEYWORDS([misc extensions directive])
 # MicroFocus format; checks that level 78 are applied with correct values
 
 # FIXME - not done yet:
-AT_XFAIL_IF(true)
+AT_XFAIL_IF([true])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION  DIVISION.

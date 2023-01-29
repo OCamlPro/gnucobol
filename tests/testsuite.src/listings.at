@@ -1,4 +1,4 @@
-## Copyright (C) 2015-2022 Free Software Foundation, Inc.
+## Copyright (C) 2015-2023 Free Software Foundation, Inc.
 ## Written by Dave Pitts, Simon Sobisch, Edward Hart
 ##
 ## This file is part of GnuCOBOL.
@@ -21,7 +21,7 @@
 AT_SETUP([Minimal lines per listing pages])
 AT_KEYWORDS([listing symbols options])
 
-# note: 2.2 did not use a minmal length,
+# note: 2.2 did not use a minimal length,
 # a typo like -tlines=2 loops forever
 
 AT_CAPTURE_FILE([prog.lst])
@@ -302,10 +302,10 @@ AT_DATA([copy.inc], [
 ])
 
 AT_DATA([prog.cob], [
-       IDENTIFICATION   DIVISION. 
+       IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
        DATA             DIVISION.
-       WORKING-STORAGE  SECTION. 
+       WORKING-STORAGE  SECTION.
        01 GET-VALUE.
        COPY "copy.inc" REPLACING ==TEST-VAR==     BY ==TEST-AVR==
                                  == 02 TEST-EE == BY == 02 TEST-FF ==.
@@ -334,10 +334,10 @@ AT_DATA([copy.inc], [
 ])
 
 AT_DATA([prog.cob], [
-       IDENTIFICATION   DIVISION. 
+       IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
        DATA             DIVISION.
-       WORKING-STORAGE  SECTION. 
+       WORKING-STORAGE  SECTION.
        01 GET-VALUE.
        COPY "copy.inc" REPLACING
           LEADING ==TEST-VAR==     BY ==TEST-AVR==
@@ -368,10 +368,10 @@ AT_DATA([copy2.inc], [
 ])
 
 AT_DATA([prog2.cob], [
-       IDENTIFICATION DIVISION. 
+       IDENTIFICATION DIVISION.
        PROGRAM-ID. prog2.
        DATA DIVISION.
-       WORKING-STORAGE SECTION. 
+       WORKING-STORAGE SECTION.
        01 GET-VALUE.
        COPY "copy2.inc"
            REPLACING LEADING ==TEST-VAR== BY ==TEST-AVR==
@@ -402,10 +402,10 @@ AT_DATA([copy3.inc], [
 ])
 
 AT_DATA([prog3.cob], [
-       IDENTIFICATION DIVISION. 
+       IDENTIFICATION DIVISION.
        PROGRAM-ID. prog3.
        DATA DIVISION.
-       WORKING-STORAGE SECTION. 
+       WORKING-STORAGE SECTION.
        01 GET-VALUE.
        COPY "copy3.inc"
            REPLACING LEADING ==TEST-VAR== BY ==TEST-AVR==
@@ -6244,7 +6244,7 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 prog.cob], [0], [], [])
 
 AT_DATA([prog1.lst],
-[GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY 
+[GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY
 
 LINE    PG/LN  A...B............................................................
 

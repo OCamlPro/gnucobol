@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2016-2022 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2016-2023 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Edward Hart, Simon Sobisch
 ##
 ## This file is part of GnuCOBOL.
@@ -1025,7 +1025,7 @@ AT_SETUP([Redefinition of label and variable names])
 AT_KEYWORDS([definition])
 
 # currently failing, see FR #260
-AT_XFAIL_IF(true)
+AT_XFAIL_IF([true])
 
 AT_DATA([prog.cob], [
        identification division.
@@ -1294,7 +1294,7 @@ AT_KEYWORDS([definition])
 # be either handled as an "internal" function call with c/s reserved words or
 # new codegen branch for "set variable on use" which would allow register handling
 
-AT_XFAIL_IF(true)
+AT_XFAIL_IF([true])
 
 AT_DATA([prog1.cob], [
        IDENTIFICATION   DIVISION.
@@ -2406,7 +2406,7 @@ AT_SETUP([LIKE clause])
 AT_KEYWORDS([definition EXTERNAL GLOBAL])
 
 # work in progress
-AT_XFAIL_IF(true)
+AT_XFAIL_IF([true])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.

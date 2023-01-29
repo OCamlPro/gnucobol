@@ -126,7 +126,7 @@ AT_SETUP([COPY: relative copybooks])
 AT_KEYWORDS([copy cobc])
 
 # TODO - the source for the COPY statement is currently completely ignored
-AT_XFAIL_IF(true)
+AT_XFAIL_IF([true])
 
 AT_CHECK([mkdir -p SUB/SUB2/SUB3], [0], [], [])
 
@@ -933,7 +933,7 @@ AT_KEYWORDS([copy])
 # continue the loop with the - potential partially replaced -
 # new content.
 
-AT_XFAIL_IF(true)
+AT_XFAIL_IF([true])
 
 AT_DATA([copy.inc], [
        01 VAR-:TEST: PIC X(2) VALUE "OK".

@@ -222,7 +222,7 @@ AT_SETUP([CURRENCY SIGN WITH PICTURE SYMBOL])
 AT_KEYWORDS([misc fundamental])
 
 # FIXME - see FR #246
-AT_XFAIL_IF(true)
+AT_XFAIL_IF([true])
 
 AT_DATA([prog.cob], [
        PROGRAM-ID.   prog.
@@ -574,7 +574,7 @@ AT_CHECK([$COMPILE smaller.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./smaller], [1], [], ignore)
 
 # FIXME - messages should be adjusted, see Bug #445
-AT_XFAIL_IF(true)
+AT_XFAIL_IF([true])
 
 AT_CHECK([$COBCRUN_DIRECT ./bigger], [0], [],
 [libcob: callee.cob:6: warning: EXTERNAL item 'WRK-VAR' previously allocated with size 10, requested size is 8
@@ -11768,6 +11768,7 @@ CAPI (void *p1, ...)
 }
 ]])
 
+# unfinished because of national
 AT_CHECK([$COMPILE -Wno-unfinished prog.cob cmod.c], [0], [],
 [prog.cob:31: warning: BY CONTENT assumed for alphanumeric item 'CHRX'
 prog.cob:32: warning: BY CONTENT assumed for alphanumeric item 'CHRX'

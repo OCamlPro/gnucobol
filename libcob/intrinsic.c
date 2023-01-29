@@ -1462,9 +1462,9 @@ calculate_start_end_for_numval (cob_field *srcfield,
 		p_end--;
 	}
 
-	/* skip leading space and zero */
+	/* skip leading space and zero (but not low-value) */
 	while (p != p_end) {
-		if (*p != ' ' && COB_D2I (*p) != 0) break;
+		if (*p != ' ' && *p != '0') break;
 		p++;
 	}
 
