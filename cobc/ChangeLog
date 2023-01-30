@@ -1,4 +1,9 @@
 
+2023-01-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codeoptim.c: adjusted inline functions (cob_cmp_packed_int,
+	  cob_get_packed_int) to use register types and less intermediate values
+
 2023-01-26  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c: generate field offsets and indexes as long long to

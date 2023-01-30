@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2020, 2022 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2020, 2022-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edwart Hard
 
@@ -150,15 +150,16 @@ store_common_region (cob_field *f, const unsigned char *data,
 		const unsigned char	*src = data + hf1 - gcf;
 
 		while (dst < end) {
+			const char src_data = *src++;
 #if 0		/* seems to be the best result, ..." */
 			/* we don't want to set bad data, so
 			   only take the half byte */
-			*dst = COB_I2D (COB_D2I (*src));
+			*dst = COB_I2D (COB_D2I (src_data));
 #else		/* but does not match the "expected" MF result, which is: */
-			if (*src == ' ' || *src == 0) /* already set: *dst = '0'; */ ;
-			else *dst = COB_I2D (*src - '0');
+			if (src_data == ' ' || src_data == 0) /* already set: *dst = '0'; */ ;
+			else *dst = COB_I2D (src_data - '0');
 #endif
-			++src, ++dst;
+			++dst;
 		}
 	}
 }
@@ -509,33 +510,34 @@ cob_move_display_to_packed (cob_field *f1, cob_field *f2)
 static void
 cob_move_packed_to_display (cob_field *f1, cob_field *f2)
 {
-	unsigned char	*data;
-	size_t		i;
+	const size_t		digits = COB_FIELD_DIGITS (f1);
+	register unsigned char	*b, *d, *d_end;
 	size_t		offset;
 	int		sign;
-	unsigned char	buff[256];
+	unsigned char	buff[COB_MAX_DIGITS + 1];
 
-	/* Unpack string */
-	data = f1->data;
-	offset = COB_FIELD_DIGITS(f1) % 2;
+	/* Unpack to string */
+	offset = digits % 2;
 	if (COB_FIELD_NO_SIGN_NIBBLE (f1)) {
 		sign = 0;
 	} else {
 		sign = cob_packed_get_sign (f1);
 		offset = 1 - offset;
 	}
-	for (i = offset; i < COB_FIELD_DIGITS(f1) + offset; ++i) {
-		if (i % 2 == 0) {
-			buff[i - offset] = COB_I2D (data[i / 2] >> 4);
-		} else {
-			buff[i - offset] = COB_I2D (data[i / 2] & 0x0F);
-		}
+	d = f1->data + (offset / 2);
+	d_end = f1->data + f1->size;
+
+	b = buff;
+	if (offset % 2 == 1) {
+		*b++ = COB_I2D (*d++ & 0x0F);
+	}
+	while (d < d_end) {
+		*b++ = COB_I2D (*d >> 4);
+		*b++ = COB_I2D (*d++ & 0x0F);
 	}
 
 	/* Store */
-	store_common_region (f2, buff, (size_t)COB_FIELD_DIGITS (f1),
-			     COB_FIELD_SCALE (f1));
-
+	store_common_region (f2, buff, digits, COB_FIELD_SCALE (f1));
 	COB_PUT_SIGN (f2, sign);
 }
 
@@ -1600,27 +1602,32 @@ cob_move (cob_field *src, cob_field *dst)
 static int
 cob_packed_get_int (cob_field *f1)
 {
-	unsigned char	*data;
-	size_t		i;
+	register unsigned char	*d, *d_end;
 	size_t		offset;
-	int		val = 0;
 	int		sign;
+	register int		val;
 
-	data = f1->data;
-	offset = COB_FIELD_DIGITS(f1) % 2;
+	/* Unpack to integer */
+	offset = COB_FIELD_DIGITS (f1) % 2;
 	if (COB_FIELD_NO_SIGN_NIBBLE (f1)) {
 		sign = 0;
 	} else {
 		sign = cob_packed_get_sign (f1);
 		offset = 1 - offset;
 	}
-	for (i = offset; i < COB_FIELD_DIGITS(f1) - COB_FIELD_SCALE(f1) + offset; ++i) {
-		val *= 10;
-		if (i % 2 == 0) {
-			val += data[i / 2] >> 4;
-		} else {
-			val += data[i / 2] & 0x0F;
-		}
+	d = f1->data + (offset / 2);
+	d_end = f1->data + f1->size;
+
+	if (offset % 2 == 1) {
+		val = *d++ & 0x0F;
+	} else {
+		val = 0;
+	}
+	while (d < d_end) {
+		val = val * 10
+			+ (*d >> 4);
+		val = val * 10
+		    + (*d++ & 0x0F);
 	}
 	if (sign < 0) {
 		val = -val;
@@ -1631,29 +1638,32 @@ cob_packed_get_int (cob_field *f1)
 static cob_s64_t
 cob_packed_get_long_long (cob_field *f1)
 {
-	unsigned char	*data;
-	size_t		i;
+	register unsigned char	*d, *d_end;
 	size_t		offset;
-	size_t		field_data;
-	cob_s64_t	val = 0;
 	int		sign;
+	register cob_s64_t		val;
 
-	data = f1->data;
-	offset = COB_FIELD_DIGITS(f1) % 2;
+	/* Unpack to integer */
+	offset = COB_FIELD_DIGITS (f1) % 2;
 	if (COB_FIELD_NO_SIGN_NIBBLE (f1)) {
 		sign = 0;
 	} else {
 		sign = cob_packed_get_sign (f1);
 		offset = 1 - offset;
 	}
-	field_data = COB_FIELD_DIGITS(f1) - COB_FIELD_SCALE(f1);
-	for (i = offset; i < field_data + offset; ++i) {
-		val *= 10;
-		if (i % 2 == 0) {
-			val += data[i / 2] >> 4;
-		} else {
-			val += data[i / 2] & 0x0F;
-		}
+	d = f1->data + (offset / 2);
+	d_end = f1->data + f1->size;
+
+	if (offset % 2 == 1) {
+		val = *d++ & 0x0F;
+	} else {
+		val = 0;
+	}
+	while (d < d_end) {
+		val = val * 10
+		    + (*d >> 4);
+		val = val * 10
+		    + (*d++ & 0x0F);
 	}
 	if (sign < 0) {
 		val = -val;
@@ -1673,7 +1683,7 @@ cob_display_get_int (cob_field *f)
 	size = COB_FIELD_SIZE (f);
 	data = COB_FIELD_DATA (f);
 	sign = COB_GET_SIGN (f);
-	/* Skip preceding zeros */
+	/* Skip preceding zeros (and zero-like-data like space/low-value) */
 	for (i = 0; i < size; ++i) {
 		if (COB_D2I (data[i]) != 0) {
 			break;

@@ -1,4 +1,19 @@
 
+2023-01-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_packed_get_sign): move check for COB_FIELD_NO_SIGN_NIBBLE
+	  to callers, minor refactoring
+	* numeric.c (cob_decimal_set_packed, cob_decimal_set_display): minor
+	  performance improvements
+	* numeric.c (cob_decimal_get_packed, cob_decimal_get_display): rewritten
+	  to use local buffer and remainder instead of allocating huge string to
+	  just peak at the end
+	* common.c (cob_move_packed_to_display, cob_packed_get_int,
+	  cob_packed_get_long_long): minor performance improvements and similar
+	  code to numeric.c
+	* intrinisic.c (calculate_start_end_for_numval): only skip leading spaces
+	  and zeros, but not leading low-values
+
 2023-01-25  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cconv.c (cob_skip_blanks): prefer isspace over isblank, which is not
@@ -6,7 +21,7 @@
 	* common.c (conf_runtime_error, conf_runtime_error_value): as static
 	* mlio.c (xml_parse): c89 fix
 
-2023-01-23 David Declerck <david.declerck@ocamlpro.com>
+2023-01-23  David Declerck <david.declerck@ocamlpro.com>
 
 	* cconv.c: add a cob_load_collation function to load collating sequences
 	  from files ; cobc uses this function to create tables that are embedded
@@ -114,7 +129,7 @@
 	* common.c (common_cmpc, common_cmps): always use collation as all
 	  callers left in pass it (and otherwise call the new functions)
 
-2022-12-13 David Declerck <david.declerck@ocamlpro.com>
+2022-12-13  David Declerck <david.declerck@ocamlpro.com>
 
 	* cconv.c: file moved from cobc to libcob
 	* common.h: declare the new API for collating sequences

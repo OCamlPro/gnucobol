@@ -5460,7 +5460,7 @@ AT_KEYWORDS([fundamental DEBUGGING])
 #        which is generally fine, but not for "nested" statements
 #        where DEBUG-ITEM contains wrong data and the
 #        debugging procedure is called too late
-AT_XFAIL_IF(true)
+AT_XFAIL_IF([true])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.

@@ -1,18 +1,18 @@
-## Copyright (C) 2003-2012, 2014-2019 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2019,2023 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
-## 
+##
 ## This file is part of GnuCOBOL.
-## 
+##
 ## The GnuCOBOL compiler is free software: you can redistribute it
 ## and/or modify it under the terms of the GNU General Public License
 ## as published by the Free Software Foundation, either version 3 of the
 ## License, or (at your option) any later version.
-## 
+##
 ## GnuCOBOL is distributed in the hope that it will be useful,
 ## but WITHOUT ANY WARRANTY; without even the implied warranty of
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ## GNU General Public License for more details.
-## 
+##
 ## You should have received a copy of the GNU General Public License
 ## along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 
@@ -38,7 +38,7 @@ dump (unsigned char *data)
 }
 ])
 
-sed -e 's/@USAGE@/BINARY/' "${TEMPLATE}/numeric-dump.cob" > prog.cob
+AT_CHECK([sed -e 's/@USAGE@/BINARY/' "${TEMPLATE}/numeric-dump.cob" > prog.cob])
 
 AT_CHECK([$COMPILE_MODULE dump.c], [0], [], [])
 AT_CHECK([$COMPILE -fbinary-size=2-4-8 \
@@ -154,7 +154,7 @@ fe4964b459cf0cb2
 0000000000000000
 ])
 
-sed -e 's/@USAGE@/BINARY/' "${TEMPLATE}/numeric-display.cob" > prog.cob
+AT_CHECK([sed -e 's/@USAGE@/BINARY/' "${TEMPLATE}/numeric-display.cob" > prog.cob])
 
 AT_CHECK([$COMPILE -fbinary-size=2-4-8 \
                    -fbinary-byteorder=big-endian prog.cob -o prog2], [0], [], [])
@@ -225,7 +225,7 @@ dump (unsigned char *data)
 }
 ])
 
-sed -e 's/@USAGE@/BINARY/' "${TEMPLATE}/numeric-dump.cob" > prog.cob
+AT_CHECK([sed -e 's/@USAGE@/BINARY/' "${TEMPLATE}/numeric-dump.cob" > prog.cob])
 
 AT_CHECK([$COMPILE_MODULE dump.c], [0], [], [])
 AT_CHECK([$COMPILE -fbinary-size=2-4-8 \
@@ -341,7 +341,7 @@ b20ccf59b46449fe
 0000000000000000
 ])
 
-sed -e 's/@USAGE@/BINARY/' "${TEMPLATE}/numeric-display.cob" > prog.cob
+AT_CHECK([sed -e 's/@USAGE@/BINARY/' "${TEMPLATE}/numeric-display.cob" > prog.cob])
 
 AT_CHECK([$COMPILE -fbinary-size=2-4-8 \
                    -fbinary-byteorder=native prog.cob -o prog2], [0], [], [])
@@ -408,7 +408,7 @@ dump (unsigned char *data)
 }
 ])
 
-sed -e 's/@USAGE@/BINARY/' "${TEMPLATE}/numeric-dump.cob" > prog.cob
+AT_CHECK([sed -e 's/@USAGE@/BINARY/' "${TEMPLATE}/numeric-dump.cob" > prog.cob])
 
 AT_CHECK([$COMPILE_MODULE dump.c], [0], [], [])
 AT_CHECK([$COMPILE -fbinary-size=1-2-4-8 \
@@ -524,7 +524,7 @@ fe4964b459cf0cb2
 0000000000000000
 ])
 
-sed -e 's/@USAGE@/BINARY/' "${TEMPLATE}/numeric-display.cob" > prog.cob
+AT_CHECK([sed -e 's/@USAGE@/BINARY/' "${TEMPLATE}/numeric-display.cob" > prog.cob])
 
 AT_CHECK([$COMPILE -fbinary-size=1-2-4-8 \
                    -fbinary-byteorder=big-endian prog.cob -o prog2], [0], [], [])
@@ -594,7 +594,7 @@ dump (unsigned char *data)
 }
 ])
 
-sed -e 's/@USAGE@/BINARY/' "${TEMPLATE}/numeric-dump.cob" > prog.cob
+AT_CHECK([sed -e 's/@USAGE@/BINARY/' "${TEMPLATE}/numeric-dump.cob" > prog.cob])
 
 AT_CHECK([$COMPILE_MODULE dump.c], [0], [], [])
 AT_CHECK([$COMPILE -fbinary-size=1-2-4-8 \
@@ -710,7 +710,7 @@ b20ccf59b46449fe
 0000000000000000
 ])
 
-sed -e 's/@USAGE@/BINARY/' "${TEMPLATE}/numeric-display.cob" > prog.cob
+AT_CHECK([sed -e 's/@USAGE@/BINARY/' "${TEMPLATE}/numeric-display.cob" > prog.cob])
 
 AT_CHECK([$COMPILE -fbinary-size=1-2-4-8 \
                    -fbinary-byteorder=native prog.cob -o prog2], [0], [], [])
@@ -778,7 +778,7 @@ dump (unsigned char *data)
 }
 ])
 
-sed -e 's/@USAGE@/BINARY/' "${TEMPLATE}/numeric-dump.cob" > prog.cob
+AT_CHECK([sed -e 's/@USAGE@/BINARY/' "${TEMPLATE}/numeric-dump.cob" > prog.cob])
 
 AT_CHECK([$COMPILE_MODULE dump.c], [0], [], [])
 AT_CHECK([$COMPILE -fbinary-size=1--8 \
@@ -894,7 +894,7 @@ fe4964b459cf0cb2
 0000000000000000
 ])
 
-sed -e 's/@USAGE@/BINARY/' "${TEMPLATE}/numeric-display.cob" > prog.cob
+AT_CHECK([sed -e 's/@USAGE@/BINARY/' "${TEMPLATE}/numeric-display.cob" > prog.cob])
 
 AT_CHECK([$COMPILE -fbinary-size=1--8 \
                    -fbinary-byteorder=big-endian prog.cob -o prog2], [0], [], [])
@@ -964,7 +964,7 @@ dump (unsigned char *data)
 }
 ])
 
-sed -e 's/@USAGE@/BINARY/' "${TEMPLATE}/numeric-dump.cob" > prog.cob
+AT_CHECK([sed -e 's/@USAGE@/BINARY/' "${TEMPLATE}/numeric-dump.cob" > prog.cob])
 
 AT_CHECK([$COMPILE_MODULE dump.c], [0], [], [])
 AT_CHECK([$COMPILE -fbinary-size=1--8 \
@@ -1080,7 +1080,7 @@ b20ccf59b46449fe
 0000000000000000
 ])
 
-sed -e 's/@USAGE@/BINARY/' "${TEMPLATE}/numeric-display.cob" > prog.cob
+AT_CHECK([sed -e 's/@USAGE@/BINARY/' "${TEMPLATE}/numeric-display.cob" > prog.cob])
 
 AT_CHECK([$COMPILE -fbinary-size=1--8 \
                    -fbinary-byteorder=native prog.cob -o prog2], [0], [], [])
@@ -1134,7 +1134,7 @@ AT_SETUP([BINARY: full-print])
 AT_KEYWORDS([binary])
 
 
-sed -e 's/@USAGE@/BINARY/' "${TEMPLATE}/numeric-display.cob" > prog.cob
+AT_CHECK([sed -e 's/@USAGE@/BINARY/' "${TEMPLATE}/numeric-display.cob" > prog.cob])
 
 AT_CHECK([$COMPILE -fbinary-size=1--8 \
                    -fno-pretty-display prog.cob], [0], [], [])

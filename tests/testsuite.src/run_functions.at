@@ -44,7 +44,7 @@ AT_CLEANUP
 
 
 AT_SETUP([FUNCTION ACOS])
-AT_KEYWORDS([functions])
+AT_KEYWORDS([functions PACKED-DECIMAL COMP-3 COMP-6])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -52,12 +52,22 @@ AT_DATA([prog.cob], [
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
        01  Z   PIC   S9V9(35).
+       01  P   PIC   S9V9(35) PACKED-DECIMAL.
+       01  S   PIC    9V9(35) COMP-6.
+      *01  N   PIC   S9V9(35) COMP-5.  big binary support pending
        PROCEDURE        DIVISION.
            MOVE FUNCTION ACOS ( -0.2345 ) TO Z.
            IF Z NOT = 1.80750052110824343510150043852321026
-              DISPLAY Z
-              END-DISPLAY
-           END-IF.
+              DISPLAY "DISPLAY: " Z.
+           MOVE FUNCTION ACOS ( -0.2345 ) TO P.
+           IF P NOT = 1.80750052110824343510150043852321026
+              DISPLAY "PACKED: " P.
+           MOVE FUNCTION ACOS ( -0.2345 ) TO S.
+           IF S NOT = 1.80750052110824343510150043852321026
+              DISPLAY "COMP-6: " S.
+      *    MOVE FUNCTION ACOS ( -0.2345 ) TO N.
+      *    IF N NOT = 1.80750052110824343510150043852321026
+      *       DISPLAY "PACKED: " N.
            STOP RUN.
 ])
 
@@ -79,9 +89,7 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            MOVE FUNCTION ANNUITY ( 3, 5 ) TO Z.
            IF Z NOT = 3.00293255131964809384164222873900293
-              DISPLAY Z
-              END-DISPLAY
-           END-IF.
+              DISPLAY Z.
            STOP RUN.
 ])
 
@@ -92,7 +100,7 @@ AT_CLEANUP
 
 
 AT_SETUP([FUNCTION ASIN])
-AT_KEYWORDS([functions])
+AT_KEYWORDS([functions PACKED-DECIMAL COMP-3 COMP-6])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -100,14 +108,26 @@ AT_DATA([prog.cob], [
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
        01  Y   PIC   S9V9(35).
+       01  P   PIC   S9V9(35) PACKED-DECIMAL.
+       01  S   PIC    9V9(35) COMP-6.
+      *>01  N   PIC   S9V9(35) COMP-5.  big binary support pending
        PROCEDURE        DIVISION.
            MOVE FUNCTION ASIN ( -0.2345 ) TO Y.
            IF Y NOT = -0.23670419431334681587017874688345882
-              DISPLAY Y.
+              DISPLAY "DISPLAY: " Y.
+           MOVE FUNCTION ASIN ( -0.2345 ) TO P.
+           IF P NOT = -0.23670419431334681587017874688345882
+              DISPLAY "PACKED:  " P.
+           MOVE FUNCTION ASIN ( -0.2345 ) TO S.
+           IF S NOT = 0.23670419431334681587017874688345882
+              DISPLAY "COMP-6:  " S.
+      *>    MOVE FUNCTION ASIN ( -0.2345 ) TO N.
+      *>    IF N NOT = -0.23670419431334681587017874688345882
+      *>       DISPLAY "DISPLAY: " N.
       *>   cheating: we compare a huge internal field
       *>             (96 digits) here for the testsuite
            IF FUNCTION ASIN ( -00000.2345 ) NOT =
-              FUNCTION ASIN ( -.234500000 ) 
+              FUNCTION ASIN ( -.234500000 )
               DISPLAY "ASIN IS NOT ITSELF".
            STOP RUN.
 ])
@@ -157,49 +177,35 @@ AT_DATA([prog.cob], [
            MOVE FUNCTION BYTE-LENGTH ( X )
              TO TEST-FLD.
            IF TEST-FLD NOT = 4
-              DISPLAY 'BYTE-LENGTH X(4) wrong: ' TEST-FLD
-              END-DISPLAY
-           END-IF
+              DISPLAY 'BYTE-LENGTH X(4) wrong: ' TEST-FLD.
            MOVE FUNCTION BYTE-LENGTH ( Z )
              TO TEST-FLD
            IF TEST-FLD NOT = 8
-              DISPLAY 'BYTE-LENGTH N(4) wrong: ' TEST-FLD
-              END-DISPLAY
-           END-IF
+              DISPLAY 'BYTE-LENGTH N(4) wrong: ' TEST-FLD.
 
            MOVE FUNCTION BYTE-LENGTH ( '00128' )
              TO TEST-FLD
            IF TEST-FLD NOT = 5
-              DISPLAY 'BYTE-LENGTH "00128" wrong: ' TEST-FLD
-              END-DISPLAY
-           END-IF
+              DISPLAY 'BYTE-LENGTH "00128" wrong: ' TEST-FLD.
       *    note: we currently do not support items of category boolean...
       *>   MOVE FUNCTION BYTE-LENGTH ( b'100' )
       *>     TO TEST-FLD
       *>   IF TEST-FLD NOT = 3
-      *>      DISPLAY 'BYTE-LENGTH b"100" wrong: ' TEST-FLD
-      *>      END-DISPLAY
-      *>   END-IF
+      *>      DISPLAY 'BYTE-LENGTH b"100" wrong: ' TEST-FLD.
            MOVE FUNCTION BYTE-LENGTH ( x'a0' )
              TO TEST-FLD
            IF TEST-FLD NOT = 1
-              DISPLAY 'BYTE-LENGTH x"a0" wrong: ' TEST-FLD
-              END-DISPLAY
-           END-IF
+              DISPLAY 'BYTE-LENGTH x"a0" wrong: ' TEST-FLD.
            MOVE FUNCTION BYTE-LENGTH ( z'a0' )
              TO TEST-FLD
            IF TEST-FLD NOT = 3
-              DISPLAY 'BYTE-LENGTH z"a0" wrong: ' TEST-FLD
-              END-DISPLAY
-           END-IF
+              DISPLAY 'BYTE-LENGTH z"a0" wrong: ' TEST-FLD.
       *    we currently generate national constants as
       *    alphanumeric constants...
       *    MOVE FUNCTION BYTE-LENGTH ( n'a0' )
       *      TO TEST-FLD
       *    IF TEST-FLD NOT = 4
-      *       DISPLAY 'BYTE-LENGTH n"a0" wrong: ' TEST-FLD
-      *       END-DISPLAY
-      *    END-IF
+      *       DISPLAY 'BYTE-LENGTH n"a0" wrong: ' TEST-FLD.
 
            STOP RUN.
 ])
@@ -394,7 +400,7 @@ AT_DATA([prog.cob], [
            SET  BITX-FILLER TO TRUE
            STRING FUNCTION BIT-TO-CHAR ("0011000100110010")
                   DELIMITED BY SIZE INTO BITX.
-           IF NOT (BITX (1:2) = x"3132" AND 
+           IF NOT (BITX (1:2) = x"3132" AND
                    BITX (3: ) = "--------------------------------")
               DISPLAY "UNEXPECTED CHAR VALUE, expected 12-* got: " BITX.
 
@@ -528,7 +534,7 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE  SECTION.
        01  P            USAGE    POINTER.
        01  X            PIC      X(4) VALUE Z"ABC".
-       01  TEST-FLD     USAGE    BINARY-LONG.       
+       01  TEST-FLD     USAGE    BINARY-LONG.
        PROCEDURE        DIVISION.
            MOVE FUNCTION CONTENT-LENGTH ( P )
              TO TEST-FLD.
@@ -636,7 +642,7 @@ AT_DATA([prog.cob], [
 
        PROCEDURE DIVISION.
        PROG-MAIN.
-           CALL "subprog" USING BY CONTENT 
+           CALL "subprog" USING BY CONTENT
                                 FUNCTION CONCATENATE("Abc" "D")
            STOP RUN.
            END PROGRAM prog.
@@ -4218,7 +4224,7 @@ AT_DATA([prog.cob], [
                    END-DISPLAY
                END-IF
            END-IF.
-           
+
            STOP RUN.
 ])
 
@@ -4476,7 +4482,7 @@ AT_DATA([prog.cob], [
        DATA DIVISION.
        LINKAGE SECTION.
        01  num PIC 999.
-       
+
        PROCEDURE DIVISION RETURNING num.
            MOVE 100 TO num
            .
@@ -4489,11 +4495,11 @@ AT_DATA([prog.cob], [
        CONFIGURATION SECTION.
        REPOSITORY.
            FUNCTION func.
-           
+
        DATA DIVISION.
        WORKING-STORAGE SECTION.
        01  x PIC 999.
-       
+
        PROCEDURE DIVISION.
            COMPUTE x = 101 + FUNCTION func
            DISPLAY x
@@ -4537,8 +4543,8 @@ AT_DATA([prog.cob], [
            FUNCTION SUBSTITUTE
            .
        PROCEDURE DIVISION.
-           DISPLAY '"' FUNCTION SUBSTITUTE(" % C%O%B%O%L % ", "_") '"' 
-           DISPLAY '"' FUNCTION SUBSTITUTE(" % C%O%B%O%L % ", "-") '"' 
+           DISPLAY '"' FUNCTION SUBSTITUTE(" % C%O%B%O%L % ", "_") '"'
+           DISPLAY '"' FUNCTION SUBSTITUTE(" % C%O%B%O%L % ", "-") '"'
            .
        END PROGRAM prog.
 ])

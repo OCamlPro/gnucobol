@@ -9346,7 +9346,7 @@ AT_SETUP([Varying and Nested OCCURS])
 AT_KEYWORDS([REPORT])
 
 # FIXME - needs bigger changes -> 4.x
-AT_XFAIL_IF(true)
+AT_XFAIL_IF([true])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
