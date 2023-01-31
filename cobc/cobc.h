@@ -105,6 +105,7 @@ enum cb_format {
 	CB_FORMAT_ICOBOL_CRT,	/* ICOBOL Free-form format (CRT) */
 	CB_FORMAT_ACUTERM,	/* ACU Terminal format, named "TERMINAL" */
 	CB_FORMAT_COBOLX,	/* GCOS's COBOLX */
+	CB_FORMAT_AUTO, 	/* Auto-detect format */
 };
 #define CB_SF_FREE(sf) (sf == CB_FORMAT_FREE)
 #define CB_SF_FIXED(sf) (sf == CB_FORMAT_FIXED || sf == CB_FORMAT_COBOL85)
@@ -650,6 +651,8 @@ extern char *		cb_get_strerror (void);
 extern void		cb_add_error_to_listing (const char *, int, const char *, char *);
 DECLNORET extern void		flex_fatal_error (const char *, const char *,
 					 const int) COB_A_NORETURN;
+
+extern void		cobc_set_listing_header_code ();
 
 /* reserved.c */
 extern struct reserved_word_list	*cobc_user_res_list;

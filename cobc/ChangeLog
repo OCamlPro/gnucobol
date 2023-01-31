@@ -4,6 +4,15 @@
 	* codeoptim.c: adjusted inline functions (cob_cmp_packed_int,
 	  cob_get_packed_int) to use register types and less intermediate values
 
+2023-01-28  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* cobc.c (main): initialize cb_config_text_column to 72 to avoid a
+	  race condition in config files.
+	* pplex.l (ppopen): try to autodetect the format of a file after
+	  checking the BOM of a file
+	* pplex.l (cobc_set_source_format): add new format name "AUTO" to
+	  activate auto-detection of file format
+
 2023-01-26  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c: generate field offsets and indexes as long long to

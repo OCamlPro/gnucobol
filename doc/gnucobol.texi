@@ -420,9 +420,11 @@ Place the output into @var{file}.
 
 GnuCOBOL supports fixed, free, Micro Focus' Variable, X/Open Free-form,
 ICOBOL xCard and Free-form, ACUCOBOL-GT Terminal, and COBOLX source
-formats.  The default format is the fixed format.  This can be
+formats.  By default, the compiler tries to autodetect the format using
+the indicator on the first line, using the fixed format for correct
+indicators and the free format for incorrect ones.  This can be
 overridden either by the @code{>>SOURCE [FORMAT] [IS]
-@{FIXED|FREE|COBOL85|VARIABLE|XOPEN|XCARD|CRT|TERMINAL|COBOLX@}}
+@{FIXED|FREE|COBOL85|VARIABLE|XOPEN|XCARD|CRT|TERMINAL|COBOLX|AUTO@}}
 directive, or by one of the following options:
 
 @table @code
@@ -471,6 +473,11 @@ COBOLX format.  This format is similar to the CRT format above, except
 that the indicator area is always present in column 1; the program-text
 area starts in column 2 and extends up to the end of the record.  Lines
 may contain up to 255 characters.
+
+@item -fformat=auto
+Autodetection of format.  The compiler will use the first line of the file
+to detect whether the file is in fixed format (with a correct indicator
+at position 7), or in free format.
 
 @end table
 

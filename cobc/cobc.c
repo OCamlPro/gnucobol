@@ -5009,6 +5009,7 @@ preprocess (struct filename *fn)
 	} else {
 		sourcename = fn->source;
 	}
+	save_source_format = cobc_get_source_format ();
 	if (ppopen (sourcename, NULL) != 0) {
 		cobc_terminate (sourcename);
 	}
@@ -5037,7 +5038,6 @@ preprocess (struct filename *fn)
 
 	/* Save default exceptions and flags in case program directives change them */
 	memcpy (save_exception_table, cb_exception_table, exception_table_size);
-	save_source_format = cobc_get_source_format ();
 	save_fold_copy = cb_fold_copy;
 	save_fold_call = cb_fold_call;
 	save_ref_mod_zero_length = cb_ref_mod_zero_length;
@@ -5124,8 +5124,8 @@ preprocess (struct filename *fn)
 /* Routines to generate program listing */
 
 
-static void
-set_listing_header_code (void)
+void
+cobc_set_listing_header_code (void)
 {
 	strcpy (cb_listing_header, "LINE    ");
 	if (! CB_SF_FREE (cb_listing_file_struct->source_format)) {
@@ -8874,7 +8874,6 @@ process_file (struct filename *fn, int status)
 		cb_listing_page = 0;
 		cobc_elided_strcpy (cb_listing_filename, fn->source,
 			sizeof (cb_listing_filename), 0);
-		set_listing_header_code ();
 	}
 
 	if (cb_compile_level >= CB_LEVEL_PREPROCESS
@@ -8887,7 +8886,10 @@ process_file (struct filename *fn, int status)
 			cb_flag_syntax_only = 1;
 			cb_flag_fast_compare = 0;
 		}
-	}
+	} else
+		if (cb_src_list_file) {
+			cobc_set_listing_header_code ();
+		}
 
 	if (cobc_list_file) {
 		putc ('\n', cb_listing_file);
@@ -8977,6 +8979,12 @@ main (int argc, char **argv)
 
 	cb_saveargc = argc;
 	cb_saveargv = argv;
+
+	/* This value is used when setting the format in FIXED mode in
+	   pplex, but it might happen that the value has not yet been 
+	   initialized in the configuration file.
+	*/
+	cb_config_text_column = 72;
 
 	/* Process command line arguments */
 	iargs = process_command_line (argc, argv);

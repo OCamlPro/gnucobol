@@ -145,7 +145,7 @@ static int			quotation_mark = 0;
 static int			listing_line = 0;
 static int			requires_listing_line;
 static int			requires_new_line = 0;
-static enum cb_format		source_format;
+static enum cb_format		source_format = CB_FORMAT_AUTO;
 static int	indicator_column = 7;
 static int	text_column = 72;	   /* end of area B (in single-byte
 					      characters) */
@@ -1148,6 +1148,23 @@ pp_set_replace_list (struct cb_replace_list *list, const cob_u32_t is_pushpop)
 	}
 }
 
+static int
+is_fixed_indicator (char c){
+	switch (c){ /* same indicators as in ppinput() */
+	case ' ':
+	case '-':
+	case 'd':
+	case 'D':
+	case '*':
+	case '/':
+	case '\\':
+	case '$':
+		return 1;
+	default:
+		return 0;
+	}
+}
+
 /* open file (source or coypbook) for further processing */
 int
 ppopen (const char *name, struct cb_replace_list *replacing_list)
@@ -1208,19 +1225,47 @@ ppopen (const char *name, struct cb_replace_list *replacing_list)
 	/* Check for BOM - *not* for input from stdin as rewind() clears the input
 	  buffer if used on stdin and output in console has normally no BOM at all */
 	if (ppin && strcmp (name, COB_DASH) != 0) {
-		unsigned char		bom[4];
-		if (fread (bom, 3, 1, ppin) == 1) {
-			if (bom[0] != 0xEF || bom[1] != 0xBB || bom[2] != 0xBF) {
-				rewind (ppin);
-			}
-		} else {
-			rewind (ppin);
+		int fseek_to = 0 ;
+#define COBC_LOOKAHEAD 20
+		unsigned char buffer[COBC_LOOKAHEAD];
+		int nread = fread (buffer, 1, COBC_LOOKAHEAD, ppin);
+		int pos = 0;
+		if (nread >= 3 && buffer[0] == 0xEF && buffer[1] == 0xBB && buffer[2] == 0xBF) {
+			fseek_to = 3;
+			pos = 3;
 		}
+		if (source_format == CB_FORMAT_AUTO){
+			/* If indicator is wrong on first line, switch to free format */
+			/* skip empty lines */
+			int amount_of_0a_seen = 0;
+			while (nread-pos > 7 && (buffer[pos] == '\r' || buffer[pos] == '\n')){
+				if (buffer[pos] == '\n') amount_of_0a_seen++;
+				pos++;
+			}
+			/* check tab or indicator */
+			if ( nread-pos > 7 && buffer[pos] != '\t' && !is_fixed_indicator (buffer[pos+6]) ){
+				struct cb_tree_common	loc;
+				loc.source_file = name;
+				loc.source_line = 1 + amount_of_0a_seen;
+				loc.source_column = 7;
+				cb_note_x (COB_WARNOPT_NONE, &loc, _("free format detected"));
+				(void) cobc_deciph_source_format ("FREE");
+			}
+		}
+		fseek(ppin, fseek_to, SEEK_SET);
 	}
 
-	/* Save name for listing */
-	if (cb_current_file && !cb_current_file->name) {
-		cb_current_file->name = cobc_strdup (name);
+	if (source_format==CB_FORMAT_AUTO)
+		cobc_set_source_format (CB_FORMAT_FIXED);
+
+	if (cb_current_file){
+		if (cb_current_file->source_format==CB_FORMAT_AUTO)
+			cb_current_file->source_format=cobc_get_source_format ();
+		/* This is delayed until after format detection */
+		cobc_set_listing_header_code ();
+		/* Save name for listing */
+		if (!cb_current_file->name)
+			cb_current_file->name = cobc_strdup (name);
 	}
 
 	/* Add to dependency list */
@@ -1473,7 +1518,8 @@ ppparse_error (const char *err_msg)
 int
 cobc_has_areacheck_directive (const char * directive) {
 	if (source_format != CB_FORMAT_FIXED &&
-	    source_format != CB_FORMAT_FREE) {
+	    source_format != CB_FORMAT_FREE &&
+	    source_format != CB_FORMAT_AUTO ) {
 		return 1;
 	} else {
 		cb_plex_warning (COBC_WARN_FILLER, newline_count,
@@ -1508,6 +1554,7 @@ cobc_set_source_format (const enum cb_format sf) {
 
 	switch (source_format) {
 	case CB_FORMAT_FIXED:
+	case CB_FORMAT_AUTO:
 	case CB_FORMAT_COBOL85:
 		text_column = cb_config_text_column; /* 72 by default */
 		break;
@@ -1539,6 +1586,7 @@ cobc_set_source_format (const enum cb_format sf) {
 	switch (source_format) {
 	case CB_FORMAT_FIXED:
 	case CB_FORMAT_FREE:
+	case CB_FORMAT_AUTO:
 	case CB_FORMAT_XOPEN_FFF:
 		emit_area_a_tokens = 0;
 		cobc_areacheck = 0;
@@ -1591,6 +1639,8 @@ cobc_parse_source_format (enum cb_format *const out, const char *const sfname) {
 		format = CB_FORMAT_ACUTERM;
 	} else if (!cb_strcasecmp (sfname, "COBOLX")) {
 		format = CB_FORMAT_COBOLX;
+	} else if (!cb_strcasecmp (sfname, "AUTO")) {
+		format = CB_FORMAT_AUTO;
 	} else {
 		return 1;	/* invalid argument */
 	}
