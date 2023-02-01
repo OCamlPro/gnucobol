@@ -2858,7 +2858,7 @@ prog3.cob:15: error: syntax error, unexpected Identifier
 ])
 # Check that invalid indicator and doesn't abort preprocessing
 # and that errors in preprocessing doesn't abort compilation
-AT_CHECK([$COMPILE_ONLY prog3.cob], [1], [],
+AT_CHECK([$COMPILE_ONLY -fixed prog3.cob], [1], [],
 [prog3.cob:2: error: invalid indicator 'F' at column 7
 prog3.cob:3: error: invalid indicator 'M' at column 7
 prog3.cob:4: error: invalid indicator 'N' at column 7
@@ -9572,3 +9572,76 @@ pgm1.cob:18: error: start of statement in Area A
 
 AT_CLEANUP
 
+AT_SETUP([autodetect format])
+AT_KEYWORDS([cobc free fixed format])
+
+AT_DATA([free.cob], [
+  IDENTIFICATION   DIVISION.
+  PROGRAM-ID.      prog.
+  PROCEDURE        DIVISION.
+     DISPLAY "OK" NO ADVANCING
+     END-DISPLAY.
+     STOP RUN.
+])
+
+AT_DATA([fixed1.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+      * this is a comment
+       PROCEDURE        DIVISION.
+          DISPLAY "OK" NO ADVANCING
+          END-DISPLAY.
+          STOP RUN.
+])
+
+AT_DATA([fixed2.cob], [
+      * this is a comment
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+          DISPLAY "OK" NO ADVANCING
+          END-DISPLAY.
+          STOP RUN.
+])
+
+# Generate source files with DOM
+AT_CHECK([printf '\xEF\xBB\xBF' > header.dom])
+AT_CHECK([cat header.dom free.cob >> domfree.cob])
+AT_CHECK([cat header.dom fixed1.cob >> domfixed.cob])
+
+AT_CHECK([$COMPILE_ONLY -fformat=auto free.cob fixed1.cob fixed2.cob], [0], [],
+[free.cob:2: note: free format detected
+])
+AT_CHECK([$COMPILE_ONLY -fformat=auto domfree.cob domfixed.cob], [0], [],
+[domfree.cob:2: note: free format detected
+])
+
+# In case we decide to have a disabled warning at some point
+# AT_CHECK([$COMPILE_ONLY -fformat=auto -w free.cob fixed1.cob fixed2.cob], [0], [], [])
+# AT_CHECK([$COMPILE_ONLY -fformat=auto -w domfree.cob domfixed.cob], [0], [], [])
+
+AT_CHECK([$COMPILE_ONLY -fformat=fixed free.cob], [1], [],
+[free.cob:2: error: invalid indicator 'T' at column 7
+free.cob:3: error: invalid indicator 'R' at column 7
+free.cob:4: error: invalid indicator 'E' at column 7
+free.cob:5: error: invalid indicator 'I' at column 7
+free.cob:6: error: invalid indicator 'N' at column 7
+free.cob:7: error: invalid indicator 'T' at column 7
+free.cob:8: error: PROGRAM-ID header missing
+])
+
+AT_CHECK([$COMPILE_ONLY -fformat=fixed domfree.cob], [1], [],
+[domfree.cob:2: error: invalid indicator 'T' at column 7
+domfree.cob:3: error: invalid indicator 'R' at column 7
+domfree.cob:4: error: invalid indicator 'E' at column 7
+domfree.cob:5: error: invalid indicator 'I' at column 7
+domfree.cob:6: error: invalid indicator 'N' at column 7
+domfree.cob:7: error: invalid indicator 'T' at column 7
+domfree.cob:8: error: PROGRAM-ID header missing
+])
+
+AT_CHECK([$COMPILE_ONLY -fformat=fixed fixed1.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -fformat=fixed fixed2.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -fformat=fixed domfixed.cob], [0], [], [])
+
+AT_CLEANUP

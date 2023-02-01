@@ -208,6 +208,11 @@ NEWS - user visible changes				-*- outline -*-
    be reported and recovered from.  This is configurable with option
    `missing-period`.
 
+   If not specified, the compiler tries to automatically recognize the format,
+   using either fixed or free, depending on column 7 in the first non-space
+   line. This feature can be disabled by setting the format manually
+   with `-free`, `-fixed` or `-fformat`.
+
 ** the new -febcdic-table option enables one to specify the
    translation table used when dealing with EBCDIC codeset;
    these translation tables are stored as new configuration files with
