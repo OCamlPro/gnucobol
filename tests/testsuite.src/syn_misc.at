@@ -9605,7 +9605,7 @@ AT_DATA([fixed2.cob], [
 ])
 
 # Generate source files with DOM
-AT_CHECK([printf '\xEF\xBB\xBF' > header.dom])
+AT_CHECK([printf '\357\273\277' > header.dom])
 AT_CHECK([cat header.dom free.cob >> domfree.cob])
 AT_CHECK([cat header.dom fixed1.cob >> domfixed.cob])
 
