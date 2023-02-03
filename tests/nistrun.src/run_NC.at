@@ -1,0 +1,2296 @@
+AT_SETUP([NC101A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC101A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC101A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC101A.CBL], [0], [], [])
+AT_CHECK([./NC101A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [093OF093TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC102A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC102A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC102A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC102A.CBL], [0], [], [NC102A.CBL: in section 'CCVS-EXIT':
+NC102A.CBL: in paragraph 'CCVS-999999':
+NC102A.CBL:912: warning: PFM-B-F1-7 and PFM-D-F1-7 are not in the same SECTION
+NC102A.CBL:916: warning: PFM-A-F1-7 and PFM-D-F1-7 are not in the same SECTION
+NC102A.CBL:947: warning: PFM-B-F2-4 and PFM-D-F2-4 are not in the same SECTION
+NC102A.CBL:951: warning: PFM-A-F2-4 and PFM-D-F2-4 are not in the same SECTION
+NC102A.CBL:953: warning: PFM-B-F2-4 and PFM-D-F2-4 are not in the same SECTION
+NC102A.CBL:1066: warning: PFM-G-F1-10 and PFM-B-F1-10 are not in the same SECTION
+NC102A.CBL:1066: warning: PFM-B-F1-10 is defined before PFM-G-F1-10
+NC102A.CBL:1088: note: 'PFM-G-F1-10' defined here
+NC102A.CBL:1074: note: 'PFM-B-F1-10' defined here
+])
+AT_CHECK([./NC102A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [042OF042TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC103A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC103A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC103A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC103A.CBL], [0], [], [NC103A.CBL: in section 'SECT-NC103A-001':
+NC103A.CBL: in paragraph 'IF--INIT-GF-14':
+NC103A.CBL:690: warning: alphanumeric value is expected
+NC103A.CBL:271: note: 'IF-D20' defined here as a group of length 10
+NC103A.CBL:691: warning: alphanumeric value is expected
+NC103A.CBL:276: note: 'IF-D21' defined here as a group of length 10
+NC103A.CBL: in paragraph 'IF--INIT-GF-32':
+NC103A.CBL:952: warning: alphanumeric value is expected
+NC103A.CBL:271: note: 'IF-D20' defined here as a group of length 10
+NC103A.CBL:953: warning: alphanumeric value is expected
+NC103A.CBL:276: note: 'IF-D21' defined here as a group of length 10
+NC103A.CBL: in paragraph 'IF--INIT-GF-40':
+NC103A.CBL:1071: warning: alphanumeric value is expected
+NC103A.CBL:271: note: 'IF-D20' defined here as a group of length 10
+NC103A.CBL:1072: warning: alphanumeric value is expected
+NC103A.CBL:276: note: 'IF-D21' defined here as a group of length 10
+NC103A.CBL: in paragraph 'IF--INIT-GF-44':
+NC103A.CBL:1130: warning: alphanumeric value is expected
+NC103A.CBL:271: note: 'IF-D20' defined here as a group of length 10
+NC103A.CBL:1131: warning: alphanumeric value is expected
+NC103A.CBL:276: note: 'IF-D21' defined here as a group of length 10
+NC103A.CBL: in paragraph 'IF--INIT-GF-48':
+NC103A.CBL:1189: warning: alphanumeric value is expected
+NC103A.CBL:271: note: 'IF-D20' defined here as a group of length 10
+NC103A.CBL:1190: warning: alphanumeric value is expected
+NC103A.CBL:276: note: 'IF-D21' defined here as a group of length 10
+NC103A.CBL: in paragraph 'IF--INIT-GF-66':
+NC103A.CBL:1466: warning: alphanumeric value is expected
+NC103A.CBL:240: note: 'TWOS-XN-00002' defined here as PIC XX
+NC103A.CBL: in paragraph 'IF--TEST-GF-71':
+NC103A.CBL:1556: warning: literal '88.9' has more decimals than 'A99-DS-02V00'
+NC103A.CBL:1556: warning: NEXT SENTENCE is archaic in COBOL 85
+NC103A.CBL: in paragraph 'IF--TEST-GF-72':
+NC103A.CBL:1573: warning: NEXT SENTENCE is archaic in COBOL 85
+NC103A.CBL: in paragraph 'IF--TEST-GF-73':
+NC103A.CBL:1591: warning: NEXT SENTENCE is archaic in COBOL 85
+NC103A.CBL: in paragraph 'IF--TEST-GF-74':
+NC103A.CBL:1609: warning: NEXT SENTENCE is archaic in COBOL 85
+NC103A.CBL: in paragraph 'IF--TEST-GF-76':
+NC103A.CBL:1646: warning: NEXT SENTENCE is archaic in COBOL 85
+NC103A.CBL: in paragraph 'IF--TEST-GF-77':
+NC103A.CBL:1662: warning: NEXT SENTENCE is archaic in COBOL 85
+NC103A.CBL: in paragraph 'IF--TEST-GF-78':
+NC103A.CBL:1676: warning: literal '1.0000000001' has more decimals than 'A01ONE-DS-P0801'
+NC103A.CBL: in paragraph 'IF--TEST-GF-97':
+NC103A.CBL:2026: warning: literal 'AA' is alphanumeric but 'A02TWOS-DU-02V00' is numeric
+NC103A.CBL:2028: warning: literal 'AA' is alphanumeric but 'A02TWOS-DU-02V00' is numeric
+])
+AT_CHECK([./NC103A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [102OF102TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC104A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC104A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC104A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC104A.CBL], [0], [], [NC104A.CBL:42: warning: LABEL RECORDS is obsolete in COBOL 85
+NC104A.CBL:43: warning: DATA RECORDS is obsolete in COBOL 85
+NC104A.CBL: in section 'NUMERIC-OPERAND-LIMITS-TESTS':
+NC104A.CBL: in paragraph 'MOVE-INIT-DELETE-F1-57-1':
+NC104A.CBL:1622: warning: value size exceeds data size
+NC104A.CBL:1622: note: value size is 32
+NC104A.CBL:171: note: 'PAR-NAME' defined here as a group of length 22
+NC104A.CBL: in paragraph 'MOVE-TEST-F1-60-0':
+NC104A.CBL:2547: warning: value size exceeds data size
+NC104A.CBL:2547: note: value size is 21
+NC104A.CBL:101: note: 'ANDATA1' defined here as PIC X
+NC104A.CBL:2547: warning: value size exceeds data size
+NC104A.CBL:2547: note: value size is 21
+NC104A.CBL:102: note: 'ANDATA2' defined here as PIC XX
+NC104A.CBL:2547: warning: value size exceeds data size
+NC104A.CBL:2547: note: value size is 21
+NC104A.CBL:103: note: 'ANDATA3' defined here as PIC XXX
+NC104A.CBL:2547: warning: value size exceeds data size
+NC104A.CBL:2548: note: value size is 21
+NC104A.CBL:104: note: 'ANDATA4' defined here as PIC X(4)
+NC104A.CBL:2547: warning: value size exceeds data size
+NC104A.CBL:2548: note: value size is 21
+NC104A.CBL:105: note: 'ANDATA5' defined here as PIC X(5)
+NC104A.CBL:2547: warning: value size exceeds data size
+NC104A.CBL:2548: note: value size is 21
+NC104A.CBL:106: note: 'ANDATA6' defined here as PIC X(6)
+NC104A.CBL:2547: warning: value size exceeds data size
+NC104A.CBL:2548: note: value size is 21
+NC104A.CBL:107: note: 'ANDATA7' defined here as PIC X(7)
+NC104A.CBL:2547: warning: value size exceeds data size
+NC104A.CBL:2548: note: value size is 21
+NC104A.CBL:108: note: 'ANDATA8' defined here as PIC X(8)
+NC104A.CBL:2547: warning: value size exceeds data size
+NC104A.CBL:2548: note: value size is 21
+NC104A.CBL:109: note: 'ANDATA9' defined here as PIC X(9)
+NC104A.CBL:2547: warning: value size exceeds data size
+NC104A.CBL:2549: note: value size is 21
+NC104A.CBL:110: note: 'ANDATA10' defined here as PIC X(10)
+NC104A.CBL:2547: warning: value size exceeds data size
+NC104A.CBL:2549: note: value size is 21
+NC104A.CBL:111: note: 'ANDATA11' defined here as PIC X(11)
+NC104A.CBL:2547: warning: value size exceeds data size
+NC104A.CBL:2549: note: value size is 21
+NC104A.CBL:112: note: 'ANDATA12' defined here as PIC X(12)
+NC104A.CBL:2547: warning: value size exceeds data size
+NC104A.CBL:2549: note: value size is 21
+NC104A.CBL:113: note: 'ANDATA13' defined here as PIC X(13)
+NC104A.CBL:2547: warning: value size exceeds data size
+NC104A.CBL:2549: note: value size is 21
+NC104A.CBL:114: note: 'ANDATA14' defined here as PIC X(14)
+NC104A.CBL:2547: warning: value size exceeds data size
+NC104A.CBL:2550: note: value size is 21
+NC104A.CBL:115: note: 'ANDATA15' defined here as PIC X(15)
+NC104A.CBL:2547: warning: value size exceeds data size
+NC104A.CBL:2550: note: value size is 21
+NC104A.CBL:116: note: 'ANDATA16' defined here as PIC X(16)
+NC104A.CBL:2547: warning: value size exceeds data size
+NC104A.CBL:2550: note: value size is 21
+NC104A.CBL:117: note: 'ANDATA17' defined here as PIC X(17)
+NC104A.CBL:2547: warning: value size exceeds data size
+NC104A.CBL:2550: note: value size is 21
+NC104A.CBL:118: note: 'ANDATA18' defined here as PIC X(18)
+NC104A.CBL:2547: warning: value size exceeds data size
+NC104A.CBL:2550: note: value size is 21
+NC104A.CBL:119: note: 'ANDATA19' defined here as PIC X(19)
+NC104A.CBL:2547: warning: value size exceeds data size
+NC104A.CBL:2551: note: value size is 21
+NC104A.CBL:120: note: 'ANDATA20' defined here as PIC X(20)
+])
+AT_CHECK([./NC104A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [141OF141TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC105A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC105A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC105A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC105A.CBL], [0], [], [NC105A.CBL:41: warning: LABEL RECORDS is obsolete in COBOL 85
+NC105A.CBL:42: warning: DATA RECORDS is obsolete in COBOL 85
+NC105A.CBL:69: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+NC105A.CBL:71: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+NC105A.CBL: in section 'SECT-NC105A-001':
+NC105A.CBL: in paragraph 'MOVE-TEST-F1-1-0':
+NC105A.CBL:488: warning: value size exceeds data size
+NC105A.CBL:488: note: value is 12345
+NC105A.CBL:184: note: 'MOVE40' defined here as PIC 9999V9
+NC105A.CBL: in paragraph 'MOVE-TEST-F1-2-0':
+NC105A.CBL:508: warning: value size exceeds data size
+NC105A.CBL:508: note: value is 12345
+NC105A.CBL:164: note: 'MOVE5' defined here as PIC 99V999
+NC105A.CBL: in paragraph 'MOVE-TEST-F1-4-0':
+NC105A.CBL:547: warning: value size exceeds data size
+NC105A.CBL:547: note: value size is 5
+NC105A.CBL:168: note: 'MOVE20' defined here as PIC X(4)
+NC105A.CBL: in paragraph 'MOVE-INIT-F1-37':
+NC105A.CBL:1262: warning: alphanumeric value is expected
+NC105A.CBL:93: note: 'GRP-NUMERIC' defined here as a group of length 10
+NC105A.CBL: in paragraph 'MOVE-INIT-F1-38':
+NC105A.CBL:1281: warning: alphanumeric value is expected
+NC105A.CBL:93: note: 'GRP-NUMERIC' defined here as a group of length 10
+NC105A.CBL: in paragraph 'MOVE-TEST-F1-46-0':
+NC105A.CBL:1460: warning: value size exceeds data size
+NC105A.CBL:1460: note: value size is 28
+NC105A.CBL:110: note: 'WRK-DU-10V00' defined here as PIC 9(10)
+NC105A.CBL: in paragraph 'MOVE-TEST-F1-79-0':
+NC105A.CBL:2115: warning: value size exceeds data size
+NC105A.CBL:2115: note: value size is 10
+NC105A.CBL:120: note: 'AE-0002' defined here as PIC XX0XXBXXX
+NC105A.CBL: in paragraph 'MOVE-TEST-F1-82-0':
+NC105A.CBL:2170: warning: alphanumeric value is expected
+NC105A.CBL:109: note: 'GRP-WRK-DU-10V00' defined here as a group of length 10
+NC105A.CBL: in paragraph 'MOVE-TEST-F1-83-0':
+NC105A.CBL:2188: warning: alphanumeric value is expected
+NC105A.CBL:112: note: 'WRK-XN-00049' defined here as PIC X(49)
+NC105A.CBL: in paragraph 'MOVE-TEST-F1-84-0':
+NC105A.CBL:2210: warning: alphanumeric value is expected
+NC105A.CBL:120: note: 'AE-0002' defined here as PIC XX0XXBXXX
+NC105A.CBL: in paragraph 'MOVE-TEST-F1-88-1':
+NC105A.CBL:2289: warning: alphanumeric value is expected
+NC105A.CBL:255: note: 'CORRECT-A' defined here as PIC X(20)
+NC105A.CBL: in paragraph 'MOVE-TEST-F1-89-1':
+NC105A.CBL:2306: warning: alphanumeric value is expected
+NC105A.CBL:255: note: 'CORRECT-A' defined here as PIC X(20)
+NC105A.CBL: in paragraph 'MOVE-TEST-F1-90-1':
+NC105A.CBL:2323: warning: alphanumeric value is expected
+NC105A.CBL:255: note: 'CORRECT-A' defined here as PIC X(20)
+NC105A.CBL: in paragraph 'MOVE-TEST-F1-110-0':
+NC105A.CBL:2655: warning: alphanumeric value is expected
+NC105A.CBL:215: note: 'MOVE71' defined here as PIC X(20)
+])
+AT_CHECK([./NC105A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [129OF132TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+003TEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC106A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC106A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC106A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC106A.CBL], [0], [], [NC106A.CBL:208: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+])
+AT_CHECK([./NC106A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [126OF126TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC107A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC107A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC107A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC107A.CBL], [0], [], [NC107A.CBL:75: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+NC107A.CBL:183: warning: size of 'REDEF11' larger than size of 'REDEF10'
+NC107A.CBL:187: warning: size of 'REDEF12' larger than size of 'REDEF10'
+NC107A.CBL: in section 'SEP-TEST-5':
+NC107A.CBL: in paragraph 'JUST-TEST-02-2-0':
+NC107A.CBL:1008: warning: value size exceeds data size
+NC107A.CBL:1008: note: value size is 9
+NC107A.CBL:268: note: 'XJ-00005' defined here as PIC X(5)
+NC107A.CBL: in paragraph 'RDF-TEST-7':
+NC107A.CBL:1589: warning: alphanumeric value is expected
+NC107A.CBL:313: note: 'CORRECT-A' defined here as PIC X(20)
+NC107A.CBL: in paragraph 'RDF-TEST-10':
+NC107A.CBL:1640: warning: alphanumeric value is expected
+NC107A.CBL:313: note: 'CORRECT-A' defined here as PIC X(20)
+NC107A.CBL: in paragraph 'VALUE-INIT-1':
+NC107A.CBL:1791: warning: value size exceeds data size
+NC107A.CBL:1791: note: value size is 22
+NC107A.CBL:284: note: 'FEATURE' defined here as PIC X(20)
+NC107A.CBL: in section 'NUM-EXIT-SECT':
+NC107A.CBL: in paragraph 'COMPARE-TEST-5':
+NC107A.CBL:1980: warning: alphanumeric value is expected
+NC107A.CBL:313: note: 'CORRECT-A' defined here as PIC X(20)
+NC107A.CBL: in section 'CCVS-EXIT':
+NC107A.CBL: in paragraph 'CCVS-999999':
+NC107A.CBL:1912: warning: 000000000000000000000000001 and 00000000000000000000000000001 are not in the same SECTION
+])
+AT_CHECK([./NC107A], [0], [], [])
+AT_CHECK([$GREP INFORMATION REPORT], [0], [*** INFORMATION ***         000000000000000000      ZERO                IV-11 4.2.2.2.3                                 
+*** INFORMATION ***                                 SPACE               IV-11 4.2.2.2.3                                 
+*** INFORMATION ***        """"""""""""""""""""     QUOTE               IV-11 4.2.2.2.3                                 
+*** INFORMATION ***        ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ     HIGH-VALUE          IV-11 4.2.2.2.3                                 
+*** INFORMATION ***                                 LOW-VALUE           IV-11 4.2.2.2.3                                 
+], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [172OF177TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+005TEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC108M])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC108M])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC108M.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC108M.CBL], [0], [], [NC108M.CBL:85: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+NC108M.CBL:117: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+NC108M.CBL:121: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+NC108M.CBL:125: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+NC108M.CBL:129: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+])
+AT_CHECK([./NC108M], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [014OF014TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+OFFICIALCOBOLCOMPILERVALIDATIONSYSTEM
+
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC109M])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC109M])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC109M.CBL .], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC109M.DAT .], [0], [], [])
+AT_CHECK([$COMPILE85 NC109M.CBL], [0], [], [NC109M.CBL: in section 'SECT-NC109M-001':
+NC109M.CBL: in paragraph 'DISP-TEST-GF-4':
+NC109M.CBL:740: warning: alphanumeric value is expected
+NC109M.CBL:96: note: 'DIS-PLAYER' defined here as a group of length 119
+])
+AT_CHECK([./NC109M < NC109M.DAT], [0], [                                                                                                                       
+ALPHABETIC
+                                                                                                                       
+                                                                                                                       
+ALPHABETIC LITERAL
+                                                                                                                       
+                                                                                                                       
+0123456789
+                                                                                                                       
+                                                                                                                       
+9876543210
+                                                                                                                       
+                                                                                                                       
+A1B2C3D4E5
+                                                                                                                       
+                                                                                                                       
+12345 ///// ALPHANUMERIC LITERAL
+                                                                                                                       
+                                                                                                                       
+ALPHABETIC0123456789A1B2C3D4E5 SERIES
+                                                                                                                       
+                                                                                                                       
+0 "
+                                                                                                                       
+                                                                                                                       
+REDEFINE-INFO
+                                                                                                                       
+                                                                                                                       
+*001*002*003*004*005*006*007*008*009*010*011*012*013*014*015*016*017*018*019*020*021*022*023*024*025*026*027*028*029*030*031*032*033*034*035*036*037*038*039*040*041*042*043*044*045*046*047*048*049*050
+                                                                                                                       
+                                                                                                                       
+UTSRQPONMLKJIHGFEDCBA
+                                                                                                                       
+                                                                                                                       
+ABCDEFGHIJKLMNOPQRSTU
+                                                                                                                       
+                                                                                                                       
+QUOTE " ASTERISK * NUMERIC LITERALS 21 35 IDENTIFIER DATA A B C D E 0102030405 (TOTAL 21 OPERANDS) END OF DATA
+                                                                                                                       
+                                                                                                                       
+ABCD
+                                                                                                                       
+], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [011OF011TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC110M])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC110M])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC110M.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC110M.CBL], [0], [], [])
+AT_CHECK([./NC110M], [0], [ 
+ FOR OFFICIAL USE ONLY                                    
+     OFFICIAL COBOL COMPILER TEST SYSTEM.     
+                TEST RESULTS SET- NC110M                  
+                                                          
+ FOR OFFICIAL USE ONLY                                                          
+COPYRIGHT  1985
+                                                          
+ FEATURE     RESULTS AND                                  
+ TESTED      REMARKS                                      
+                                                          
+ ---------------------------------------------------------
+ GO TO       THIS TEST PASSES UNLESS FAIL APPEARS BELOW.  
+ PERFORM     THIS TEST FAILS UNLESS PASS APPEARS BELOW.   
+             PASS
+ ---------------------------------------------------------
+ 
+                  END OF TEST - NC110M                    
+                  CHECK FOR ERRORS                        
+                                                          
+ FOR OFFICIAL USE ONLY 
+COPYRIGHT  1985
+       NTIS DISTRIBUTION COBOL 1985               
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC111A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC111A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC111A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC111A.CBL], [0], [], [])
+AT_CHECK([./NC111A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [007OF007TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC112A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC112A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC112A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC112A.CBL], [0], [], [NC112A.CBL: in section 'SECT-NC112A-001':
+NC112A.CBL: in paragraph 'ADD-TEST-F1-1-1':
+NC112A.CBL:345: warning: alphanumeric value is expected
+NC112A.CBL:87: note: 'CORRECT-A' defined here as PIC X(20)
+NC112A.CBL: in paragraph 'ADD-TEST-F1-2-1':
+NC112A.CBL:384: warning: alphanumeric value is expected
+NC112A.CBL:87: note: 'CORRECT-A' defined here as PIC X(20)
+NC112A.CBL: in paragraph 'ADD-TEST-F2-1-1':
+NC112A.CBL:421: warning: alphanumeric value is expected
+NC112A.CBL:87: note: 'CORRECT-A' defined here as PIC X(20)
+NC112A.CBL: in paragraph 'ADD-TEST-F2-2-1':
+NC112A.CBL:459: warning: alphanumeric value is expected
+NC112A.CBL:87: note: 'CORRECT-A' defined here as PIC X(20)
+NC112A.CBL: in paragraph 'SUB-TEST-F1-1-1':
+NC112A.CBL:565: warning: alphanumeric value is expected
+NC112A.CBL:87: note: 'CORRECT-A' defined here as PIC X(20)
+NC112A.CBL: in paragraph 'SUB-TEST-F2-1-1':
+NC112A.CBL:605: warning: alphanumeric value is expected
+NC112A.CBL:87: note: 'CORRECT-A' defined here as PIC X(20)
+NC112A.CBL: in paragraph 'SUB-TEST-F2-3':
+NC112A.CBL:664: warning: alphanumeric value is expected
+NC112A.CBL:87: note: 'CORRECT-A' defined here as PIC X(20)
+NC112A.CBL: in paragraph 'SUB-TEST-F1-2-1':
+NC112A.CBL:694: warning: alphanumeric value is expected
+NC112A.CBL:87: note: 'CORRECT-A' defined here as PIC X(20)
+NC112A.CBL: in paragraph 'SUB-TEST-F2-4-1':
+NC112A.CBL:723: warning: alphanumeric value is expected
+NC112A.CBL:87: note: 'CORRECT-A' defined here as PIC X(20)
+])
+AT_CHECK([./NC112A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [032OF032TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC113M])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC113M])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC113M.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC113M.CBL], [0], [], [])
+AT_CHECK([./NC113M], [0], [], [])
+AT_CHECK([$GREP MARGIN REPORT], [0], [ MARGIN TESTING             MAR-TEST-1                                                      ANSWERS MUST BE             
+ MARGIN TESTING             MAR-TEST-2                                                      VISUALLY CHECKED            
+ MARGIN TESTING             MAR-TEST-3                                                      FOR CORRECTNESS             
+ MARGIN TESTING             MAR-TEST-4                                                                                  
+ MARGIN TESTING             MAR-TEST-5                                                      TESTS MUST BE SEQUENTIAL    
+ MARGIN TESTING             MAR-TEST-6                                                                                  
+ MARGIN TESTING             MAR-TEST-7                                                                                  
+ MARGIN TESTING             MAR-TEST-8                                                                                  
+ MARGIN TESTING             MAR-TEST-9                                                                                  
+ MARGIN TESTING             MAR-TEST-10                                                                                 
+ MARGIN TESTING             MAR-TEST-11                                                                                 
+ MARGIN TESTING             MAR-TEST-12                                                                                 
+ MARGIN TESTING             MAR-TEST-13                                                                                 
+ MARGIN TESTING             MAR-TEST-14                                                                                 
+ MARGIN TESTING             MAR-TEST-15                                                                                 
+], [])
+AT_CHECK([$GREP VISUAL REPORT | tr -d ' '], [0], [MARGINTESTINGMAR-TEST-2VISUALLYCHECKED
+15TESTSREQUIREVISUALINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC114M])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC114M])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC114M.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC114M.CBL], [0], [], [NC114M.CBL: in section 'SECT-NC114-1':
+NC114M.CBL: in paragraph 'ALPHA-EDIT-TEST-4':
+NC114M.CBL:354: warning: NEXT SENTENCE is archaic in COBOL 85
+NC114M.CBL: in paragraph 'ELEM-MOVE-FAIL-17':
+NC114M.CBL:429: warning: value size exceeds data size
+NC114M.CBL:429: note: value size is 24
+NC114M.CBL:111: note: 'CORRECT-A' defined here as PIC X(20)
+])
+AT_CHECK([./NC114M], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [005OF006TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+001TEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC115A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC115A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC115A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC115A.CBL], [0], [], [])
+AT_CHECK([./NC115A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [031OF031TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC116A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC116A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC116A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC116A.CBL], [0], [], [NC116A.CBL: in section 'SECT-NC116A-001':
+NC116A.CBL: in paragraph 'SIG-INIT-GF-1':
+NC116A.CBL:417: warning: value size exceeds data size
+NC116A.CBL:417: note: value size is 21
+NC116A.CBL:155: note: 'FEATURE' defined here as PIC X(20)
+NC116A.CBL: in paragraph 'SIG-INIT-GF-17':
+NC116A.CBL:1444: warning: value size exceeds data size
+NC116A.CBL:1444: note: value size is 37
+NC116A.CBL:155: note: 'FEATURE' defined here as PIC X(20)
+NC116A.CBL: in paragraph 'SIG-INIT-GF-18':
+NC116A.CBL:1467: warning: value size exceeds data size
+NC116A.CBL:1467: note: value size is 37
+NC116A.CBL:155: note: 'FEATURE' defined here as PIC X(20)
+])
+AT_CHECK([./NC116A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [066OF066TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC117A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC117A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC117A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC117A.CBL], [0], [], [])
+AT_CHECK([./NC117A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [040OF040TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC118A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC118A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC118A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC118A.CBL], [0], [], [NC118A.CBL:135: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+NC118A.CBL: in section 'SECT-NC118A-001':
+NC118A.CBL: in paragraph 'SIG-TEST-GF-19-2':
+NC118A.CBL:946: warning: alphanumeric value is expected
+NC118A.CBL:222: note: 'COMPUTED-A' defined here as PIC X(20)
+NC118A.CBL: in paragraph 'SIG-TEST-GF-20-2':
+NC118A.CBL:986: warning: alphanumeric value is expected
+NC118A.CBL:222: note: 'COMPUTED-A' defined here as PIC X(20)
+])
+AT_CHECK([./NC118A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [029OF029TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC119A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC119A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC119A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC119A.CBL], [0], [], [NC119A.CBL:135: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+NC119A.CBL: in section 'SECT-NC119A-001':
+NC119A.CBL: in paragraph 'SUB-TEST-GF-25-2':
+NC119A.CBL:1121: warning: alphanumeric value is expected
+NC119A.CBL:222: note: 'COMPUTED-A' defined here as PIC X(20)
+NC119A.CBL: in paragraph 'SUB-INIT-GF-26':
+NC119A.CBL:1138: warning: value size exceeds data size
+NC119A.CBL:1138: note: value is 1
+NC119A.CBL:200: note: 'EVEN-NAME2' defined here as PIC SV9(18)
+NC119A.CBL: in paragraph 'SUB-TEST-GF-26-2':
+NC119A.CBL:1162: warning: alphanumeric value is expected
+NC119A.CBL:222: note: 'COMPUTED-A' defined here as PIC X(20)
+])
+AT_CHECK([./NC119A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [036OF036TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC120A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC120A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC120A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC120A.CBL], [0], [], [])
+AT_CHECK([./NC120A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [039OF039TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC121M])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC121M])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC121M.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC121M.CBL], [0], [], [])
+AT_CHECK([./NC121M], [0], [  
+LITERAL-01
+0123456789
+], [])
+AT_CHECK([$GREP INFORMATION REPORT | tr -d ' '], [0], [***INFORMATION***LITERAL-01IV-214.3.8.2.3/4
+***INFORMATION***0123456789IV-214.3.8.2.3/4
+], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [039OF041TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+002TEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC122A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC122A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC122A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC122A.CBL], [0], [], [])
+AT_CHECK([./NC122A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [024OF024TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC123A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC123A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC123A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC123A.CBL], [0], [], [NC123A.CBL: in section 'CCVS1':
+NC123A.CBL: in paragraph 'IND-INIT-GF-17':
+NC123A.CBL:755: warning: value size exceeds data size
+NC123A.CBL:755: note: value size is 22
+NC123A.CBL:69: note: 'FEATURE' defined here as PIC X(20)
+NC123A.CBL: in paragraph 'IND-INIT-GF-20':
+NC123A.CBL:837: warning: value size exceeds data size
+NC123A.CBL:837: note: value size is 22
+NC123A.CBL:69: note: 'FEATURE' defined here as PIC X(20)
+])
+AT_CHECK([./NC123A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [034OF034TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC124A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC124A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC124A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC124A.CBL], [0], [], [])
+AT_CHECK([./NC124A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [169OF169TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC125A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC125A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC125A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC125A.CBL], [0], [], [])
+AT_CHECK([./NC125A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [110OF110TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC126A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC126A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC126A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC126A.CBL], [0], [], [NC126A.CBL: in section 'SECT-NC126A-001':
+NC126A.CBL: in paragraph 'LEV-INIT-GF-3-1':
+NC126A.CBL:1881: warning: value size exceeds data size
+NC126A.CBL:1881: note: value is 12345678902
+NC126A.CBL:45: note: 'GP-2' defined here as PIC 9(9).99
+NC126A.CBL:1884: warning: value size exceeds data size
+NC126A.CBL:1884: note: value is 6645143
+NC126A.CBL:51: note: 'GP-5' defined here as PIC $$$,$99.99
+NC126A.CBL:1894: warning: value size exceeds data size
+NC126A.CBL:1894: note: value is 12345678902
+NC126A.CBL:71: note: 'GP-15' defined here as PIC 9(10)
+])
+AT_CHECK([./NC126A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [145OF145TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC127A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC127A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC127A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC127A.CBL], [0], [], [])
+AT_CHECK([./NC127A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [002OF002TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC131A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC131A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC131A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC131A.CBL], [0], [], [])
+AT_CHECK([./NC131A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [010OF010TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC132A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC132A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC132A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC132A.CBL], [0], [], [])
+AT_CHECK([./NC132A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [025OF025TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC133A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC133A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC133A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC133A.CBL], [0], [], [NC133A.CBL: in section 'SECT-TH133A-001':
+NC133A.CBL: in paragraph 'IDX-TEST-2':
+NC133A.CBL:360: warning: alphanumeric value is expected
+NC133A.CBL:97: note: 'CORRECT-A' defined here as PIC X(20)
+NC133A.CBL: in paragraph 'IDX-TEST-3':
+NC133A.CBL:375: warning: alphanumeric value is expected
+NC133A.CBL:97: note: 'CORRECT-A' defined here as PIC X(20)
+NC133A.CBL: in paragraph 'IDX-TEST-4':
+NC133A.CBL:389: warning: alphanumeric value is expected
+NC133A.CBL:97: note: 'CORRECT-A' defined here as PIC X(20)
+NC133A.CBL: in paragraph 'IDX-TEST-5':
+NC133A.CBL:404: warning: alphanumeric value is expected
+NC133A.CBL:97: note: 'CORRECT-A' defined here as PIC X(20)
+NC133A.CBL: in paragraph 'IDX-TEST-6':
+NC133A.CBL:420: warning: alphanumeric value is expected
+NC133A.CBL:97: note: 'CORRECT-A' defined here as PIC X(20)
+NC133A.CBL: in paragraph 'IDX-TEST-7':
+NC133A.CBL:434: warning: alphanumeric value is expected
+NC133A.CBL:97: note: 'CORRECT-A' defined here as PIC X(20)
+NC133A.CBL: in paragraph 'IDX-TEST-8':
+NC133A.CBL:450: warning: alphanumeric value is expected
+NC133A.CBL:97: note: 'CORRECT-A' defined here as PIC X(20)
+NC133A.CBL: in paragraph 'IDX-TEST-9':
+NC133A.CBL:466: warning: alphanumeric value is expected
+NC133A.CBL:97: note: 'CORRECT-A' defined here as PIC X(20)
+NC133A.CBL: in paragraph 'IDX-TEST-11':
+NC133A.CBL:499: warning: alphanumeric value is expected
+NC133A.CBL:97: note: 'CORRECT-A' defined here as PIC X(20)
+NC133A.CBL: in paragraph 'IDX-TEST-12':
+NC133A.CBL:513: warning: alphanumeric value is expected
+NC133A.CBL:97: note: 'CORRECT-A' defined here as PIC X(20)
+NC133A.CBL: in paragraph 'IDX-TEST-13':
+NC133A.CBL:527: warning: alphanumeric value is expected
+NC133A.CBL:97: note: 'CORRECT-A' defined here as PIC X(20)
+NC133A.CBL: in paragraph 'IDX-TEST-14':
+NC133A.CBL:541: warning: alphanumeric value is expected
+NC133A.CBL:97: note: 'CORRECT-A' defined here as PIC X(20)
+NC133A.CBL: in paragraph 'IDX-TEST-15':
+NC133A.CBL:555: warning: alphanumeric value is expected
+NC133A.CBL:97: note: 'CORRECT-A' defined here as PIC X(20)
+])
+AT_CHECK([./NC133A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [025OF025TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC134A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC134A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC134A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC134A.CBL], [0], [], [])
+AT_CHECK([./NC134A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [020OF020TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC135A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC135A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC135A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC135A.CBL], [0], [], [NC135A.CBL: in section 'SECTION-NAME-2':
+NC135A.CBL: in paragraph 'INDEX-TEST-1':
+NC135A.CBL:362: warning: alphanumeric value is expected
+NC135A.CBL:95: note: 'CORRECT-A' defined here as PIC X(20)
+])
+AT_CHECK([./NC135A], [0], [], [])
+AT_CHECK([$GREP -A 15 SPACES REPORT | tr -d ' '], [0], [NOTETHISSECTIONWRITESA20X15TABLEOFTHREE-DIGITNUMBERS001TO300---THERESHOULDBETWOSPACESBETWEENEACHNUMBERONALINE---THENUMBERS001THRU020SHOULDFORMTHEFIRSTLINE---THEVALUESINTHISTABLEWEREGENERATEDINSECTION-NAME-1SECTION.
+001002003004005006007008009010011012013014015016017018019020
+021022023024025026027028029030031032033034035036037038039040
+041042043044045046047048049050051052053054055056057058059060
+061062063064065066067068069070071072073074075076077078079080
+081082083084085086087088089090091092093094095096097098099100
+101102103104105106107108109110111112113114115116117118119120
+121122123124125126127128129130131132133134135136137138139140
+141142143144145146147148149150151152153154155156157158159160
+161162163164165166167168169170171172173174175176177178179180
+181182183184185186187188189190191192193194195196197198199200
+201202203204205206207208209210211212213214215216217218219220
+221222223224225226227228229230231232233234235236237238239240
+241242243244245246247248249250251252253254255256257258259260
+261262263264265266267268269270271272273274275276277278279280
+281282283284285286287288289290291292293294295296297298299300
+], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [007OF008TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+001TEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC136A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC136A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC136A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC136A.CBL], [0], [], [])
+AT_CHECK([./NC136A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [008OF008TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC137A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC137A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC137A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC137A.CBL], [0], [], [])
+AT_CHECK([./NC137A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [008OF008TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC138A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC138A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC138A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC138A.CBL], [0], [], [NC138A.CBL:51: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+])
+AT_CHECK([./NC138A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [036OF036TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC139A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC139A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC139A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC139A.CBL], [0], [], [])
+AT_CHECK([./NC139A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [041OF041TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC140A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC140A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC140A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC140A.CBL], [0], [], [])
+AT_CHECK([./NC140A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [070OF070TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC141A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC141A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC141A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC141A.CBL], [0], [], [])
+AT_CHECK([./NC141A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [009OF009TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC170A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC170A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC170A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC170A.CBL], [0], [], [])
+AT_CHECK([./NC170A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [096OF096TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC171A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC171A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC171A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC171A.CBL], [0], [], [])
+AT_CHECK([./NC171A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [108OF108TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC172A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC172A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC172A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC172A.CBL], [0], [], [])
+AT_CHECK([./NC172A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [101OF101TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC173A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC173A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC173A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC173A.CBL], [0], [], [NC173A.CBL: in section 'SECT-NC173A-001':
+NC173A.CBL: in paragraph 'DIV-INIT-F3-26':
+NC173A.CBL:1743: warning: alphanumeric value is expected
+NC173A.CBL:53: note: 'WRK-XN-00001' defined here as PIC X
+])
+AT_CHECK([./NC173A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [102OF102TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC174A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC174A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC174A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC174A.CBL], [0], [], [NC174A.CBL: in section 'SECT-NC174A-001':
+NC174A.CBL: in paragraph 'NEXT-TEST-GF-1':
+NC174A.CBL:532: warning: NEXT SENTENCE is archaic in COBOL 85
+NC174A.CBL:534: warning: NEXT SENTENCE is archaic in COBOL 85
+NC174A.CBL: in paragraph 'RELAT-CHECK-GF-1':
+NC174A.CBL:789: warning: alphanumeric value is expected
+NC174A.CBL:295: note: 'CORRECT-A' defined here as PIC X(20)
+NC174A.CBL: in paragraph 'RELAT-CHECK-GF-2':
+NC174A.CBL:813: warning: alphanumeric value is expected
+NC174A.CBL:295: note: 'CORRECT-A' defined here as PIC X(20)
+NC174A.CBL: in paragraph 'RELAT-CHECK-GF-3':
+NC174A.CBL:838: warning: alphanumeric value is expected
+NC174A.CBL:295: note: 'CORRECT-A' defined here as PIC X(20)
+NC174A.CBL: in paragraph 'RELAT-CHECK-GF-5':
+NC174A.CBL:888: warning: alphanumeric value is expected
+NC174A.CBL:295: note: 'CORRECT-A' defined here as PIC X(20)
+NC174A.CBL: in paragraph 'RELAT-CHECK-GF-6':
+NC174A.CBL:914: warning: alphanumeric value is expected
+NC174A.CBL:295: note: 'CORRECT-A' defined here as PIC X(20)
+NC174A.CBL: in paragraph 'RELAT-TEST-GF-13':
+NC174A.CBL:1017: warning: 'DATA-99999' may not be GREATER THAN 99999
+NC174A.CBL: in paragraph 'CLASS-TEST-GF-35':
+NC174A.CBL:1549: warning: value size exceeds data size
+NC174A.CBL:1549: note: value size is 23
+NC174A.CBL:295: note: 'CORRECT-A' defined here as PIC X(20)
+])
+AT_CHECK([./NC174A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [077OF077TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC175A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC175A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC175A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC175A.CBL], [0], [], [NC175A.CBL:159: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+NC175A.CBL: in section 'SECT-NC175A-001':
+NC175A.CBL: in paragraph 'SUB-TEST-F2-16-2':
+NC175A.CBL:884: warning: alphanumeric value is expected
+NC175A.CBL:244: note: 'COMPUTED-A' defined here as PIC X(20)
+NC175A.CBL: in paragraph 'SUB-TEST-F2-17-2':
+NC175A.CBL:916: warning: alphanumeric value is expected
+NC175A.CBL:244: note: 'COMPUTED-A' defined here as PIC X(20)
+])
+AT_CHECK([./NC175A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [097OF097TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC176A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC176A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC176A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC176A.CBL], [0], [], [NC176A.CBL:182: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+NC176A.CBL: in section 'SECT-NC176A-001':
+NC176A.CBL: in paragraph 'ADD-INIT-DELETE':
+NC176A.CBL:1029: warning: value size exceeds data size
+NC176A.CBL:1029: note: value size is 23
+NC176A.CBL:256: note: 'PAR-NAME' defined here as a group of length 22
+])
+AT_CHECK([./NC176A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [124OF124TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC177A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC177A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC177A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC177A.CBL], [0], [], [NC177A.CBL:137: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+NC177A.CBL: in section 'SECT-NC177A-001':
+NC177A.CBL: in paragraph 'ADD-TEST-F2-15-2':
+NC177A.CBL:815: warning: alphanumeric value is expected
+NC177A.CBL:222: note: 'COMPUTED-A' defined here as PIC X(20)
+NC177A.CBL: in paragraph 'ADD-TEST-F2-16-2':
+NC177A.CBL:846: warning: alphanumeric value is expected
+NC177A.CBL:222: note: 'COMPUTED-A' defined here as PIC X(20)
+])
+AT_CHECK([./NC177A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [108OF108TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC201A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC201A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC201A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC201A.CBL], [0], [], [NC201A.CBL:185: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+])
+AT_CHECK([./NC201A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [059OF059TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC202A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC202A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC202A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC202A.CBL], [0], [], [NC202A.CBL: in section 'SECT-NC202A-001':
+NC202A.CBL: in paragraph 'ADD-FAIL-F3-3-2':
+NC202A.CBL:625: warning: alphanumeric value is expected
+NC202A.CBL:303: note: 'CORRECT-A' defined here as PIC X(20)
+NC202A.CBL: in paragraph 'ADD-FAIL-F3-6':
+NC202A.CBL:753: warning: alphanumeric value is expected
+NC202A.CBL:303: note: 'CORRECT-A' defined here as PIC X(20)
+NC202A.CBL: in paragraph 'ADD-INIT-F3-7':
+NC202A.CBL:765: warning: alphanumeric value is expected
+NC202A.CBL:188: note: 'CORR-DATA-2' defined here as a group of length 12
+NC202A.CBL: in paragraph 'ADD-INIT-F3-8':
+NC202A.CBL:865: warning: alphanumeric value is expected
+NC202A.CBL:188: note: 'CORR-DATA-2' defined here as a group of length 12
+NC202A.CBL: in paragraph 'ADD-TEST-F3-8-1':
+NC202A.CBL:870: warning: alphanumeric value is expected
+NC202A.CBL:53: note: 'WRK-AN-00001' defined here as PIC X
+NC202A.CBL: in paragraph 'ADD-INIT-F3-9-1':
+NC202A.CBL:908: warning: alphanumeric value is expected
+NC202A.CBL:181: note: 'CORR-DATA-1' defined here as a group of length 12
+])
+AT_CHECK([./NC202A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [077OF077TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+FEATUREPASSPARAGRAPH-NAMEREMARKS
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC203A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC203A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC203A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC203A.CBL], [0], [], [NC203A.CBL:99: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+NC203A.CBL:102: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+NC203A.CBL:104: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+NC203A.CBL:105: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+NC203A.CBL:107: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+NC203A.CBL:109: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+NC203A.CBL:137: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+NC203A.CBL: in section 'SECT-NC203A-001':
+NC203A.CBL: in paragraph 'DIV-FAIL-F4-8-1':
+NC203A.CBL:738: warning: alphanumeric value is expected
+NC203A.CBL:184: note: 'CORRECT-A' defined here as PIC X(20)
+])
+AT_CHECK([./NC203A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [057OF057TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC204M])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC204M])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC204M.CBL .], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC204M.DAT .], [0], [], [])
+AT_CHECK([$COMPILE85 NC204M.CBL], [0], [], [])
+AT_CHECK([./NC204M < NC204M.DAT], [0], [                                                                                                                       
+ALPHABETIC
+                                                                                                                       
+                                                                                                                       
+ALPHABETIC LITERAL
+                                                                                                                       
+                                                                                                                       
+0123456789
+                                                                                                                       
+                                                                                                                       
+9876543210
+                                                                                                                       
+                                                                                                                       
+A1B2C3D4E5
+                                                                                                                       
+                                                                                                                       
+A1B2C3D4E5 ALPHANUMERIC LITERAL
+                                                                                                                       
+                                                                                                                       
+ALPHABETIC0123456789A1B2C3D4E5 SERIES
+                                                                                                                       
+                                                                                                                       
+0 "
+                                                                                                                       
+                                                                                                                       
+REDEFINE-INFO
+                                                                                                                       
+                                                                                                                       
+D001*002*003*004*005*006*007*008*009*010*011*012*013*014*015*016*017*018*019*020*021*022*023*024*025*026*027*028*029*030*031*032*033*034*035*036*037*038*039*040*041*042*043*044*045*046*047*048*049*050
+                                                                                                                       
+                                                                                                                       
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+0123456789
+ABCDEFGHIJKLMNOPQRSTUVWXYZ+-<>=l,:.()/* 0123456789 
+                                                                                                                       
+                                                                                                                       
+UTSRQPONMLKJIHGFEDCBA
+                                                                                                                       
+                                                                                                                       
+ABCDEFGHIJKLMNOPQRSTU
+                                                                                                                       
+                                                                                                                       
+QUOTE " ASTERISK * NUMERIC LITERALS 21 1325 IDENTIFIER DATA A B C D E 1 2 3 4 5 (TOTAL 21 OPERANDS) END OF DATA
+                                                                                                                       
+                                                                                                                       
+9876543210                                                                                                                       
+                                                                                                                       
+ALPHABETIC0123456789A1B2C3D4E5 SERIES                                                                                                                       
+], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [015OF015TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC205A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC205A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC205A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC205A.CBL], [0], [], [NC205A.CBL: in section 'SECT-NC205A-001':
+NC205A.CBL: in paragraph 'CON-TEST-GF-3':
+NC205A.CBL:462: warning: suggest parentheses around OR within AND
+NC205A.CBL: in paragraph 'CON-FAIL-GF-5':
+NC205A.CBL:623: warning: alphanumeric value is expected
+NC205A.CBL:173: note: 'CORRECT-A' defined here as PIC X(20)
+NC205A.CBL: in paragraph 'CON-INIT-GF-10':
+NC205A.CBL:783: warning: value size exceeds data size
+NC205A.CBL:783: note: value size is 24
+NC205A.CBL:144: note: 'FEATURE' defined here as PIC X(20)
+])
+AT_CHECK([./NC205A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [010OF010TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC206A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC206A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC206A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC206A.CBL], [0], [], [NC206A.CBL: in section 'SECT-NC206A-001':
+NC206A.CBL: in paragraph 'SUB-FAIL-F1-1':
+NC206A.CBL:1620: warning: alphanumeric value is expected
+NC206A.CBL:248: note: 'CORRECT-A' defined here as PIC X(20)
+NC206A.CBL: in paragraph 'SUB-INIT-F1-2':
+NC206A.CBL:1629: warning: alphanumeric value is expected
+NC206A.CBL:213: note: 'CX' defined here as a group of length 1
+NC206A.CBL: in paragraph 'SUB-INIT-F1-3':
+NC206A.CBL:1650: warning: alphanumeric value is expected
+NC206A.CBL:213: note: 'CX' defined here as a group of length 1
+NC206A.CBL: in paragraph 'SUB-INIT-F1-4':
+NC206A.CBL:1673: warning: alphanumeric value is expected
+NC206A.CBL:213: note: 'CX' defined here as a group of length 1
+NC206A.CBL:1674: warning: alphanumeric value is expected
+NC206A.CBL:210: note: 'AX-1' defined here as a group of length 2
+])
+AT_CHECK([./NC206A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [053OF053TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC207A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC207A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC207A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC207A.CBL], [0], [], [])
+AT_CHECK([./NC207A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [085OF085TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC208A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC208A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC208A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC208A.CBL], [0], [], [NC208A.CBL: in section 'MOVE-CORR-ROUTINE':
+NC208A.CBL: in paragraph 'MOV-FAIL-F1-1-1':
+NC208A.CBL:899: warning: alphanumeric value is expected
+NC208A.CBL:329: note: 'CORRECT-A' defined here as PIC X(20)
+NC208A.CBL: in paragraph 'MOV-INIT-F1-3':
+NC208A.CBL:1021: warning: alphanumeric value is expected
+NC208A.CBL:199: note: 'CORR-DATA-3' defined here as a group of length 12
+NC208A.CBL: in paragraph 'MOV-TEST-F1-3':
+NC208A.CBL:1025: warning: NEXT SENTENCE is archaic in COBOL 85
+NC208A.CBL:1028: warning: NEXT SENTENCE is archaic in COBOL 85
+])
+AT_CHECK([./NC208A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [024OF024TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC209A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC209A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC209A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC209A.CBL], [0], [], [NC209A.CBL: in section 'SECT-NC209A-001':
+NC209A.CBL: in paragraph 'MOV-INIT-F2-3':
+NC209A.CBL:573: warning: no CORRESPONDING items found
+])
+AT_CHECK([./NC209A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [032OF032TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC210A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC210A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC210A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC210A.CBL], [0], [], [])
+AT_CHECK([./NC210A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [085OF085TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC211A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC211A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC211A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC211A.CBL], [0], [], [NC211A.CBL:192: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+NC211A.CBL: in section 'SECT-NC211A-001':
+NC211A.CBL: in paragraph 'CC--TEST-GF-15':
+NC211A.CBL:852: warning: suggest parentheses around OR within AND
+NC211A.CBL: in paragraph 'CC--TEST-GF-16':
+NC211A.CBL:874: warning: suggest parentheses around AND within OR
+NC211A.CBL: in paragraph 'CC--TEST-GF-21':
+NC211A.CBL:997: warning: NEXT SENTENCE is archaic in COBOL 85
+NC211A.CBL: in paragraph 'CC--TEST-GF-22':
+NC211A.CBL:1018: warning: NEXT SENTENCE is archaic in COBOL 85
+NC211A.CBL: in paragraph 'CC--TEST-GF-32':
+NC211A.CBL:1309: warning: literal '6.00000000000000001' has more decimals than 'SIX'
+NC211A.CBL:1309: warning: expression is always TRUE
+NC211A.CBL: in paragraph 'CC--TEST-GF-38':
+NC211A.CBL:1485: warning: suggest parentheses around OR within AND
+NC211A.CBL: in paragraph 'CC--INIT-GF-42':
+NC211A.CBL:1601: warning: alphanumeric value is expected
+NC211A.CBL:135: note: 'CLASS-1' defined here as PIC X(5)
+NC211A.CBL:1602: warning: alphanumeric value is expected
+NC211A.CBL:136: note: 'CLASS-2' defined here as PIC X(5)
+NC211A.CBL:1603: warning: alphanumeric value is expected
+NC211A.CBL:137: note: 'CLASS-3' defined here as PIC X(5)
+NC211A.CBL: in paragraph 'CC--TEST-GF-47':
+NC211A.CBL:1751: warning: suggest parentheses around AND within OR
+NC211A.CBL: in paragraph 'CC--TEST-GF-48':
+NC211A.CBL:1785: warning: literal '2.5' has more decimals than 'FOUR'
+NC211A.CBL:1785: warning: suggest parentheses around OR within AND
+NC211A.CBL:1785: warning: suggest parentheses around OR within AND
+NC211A.CBL:1785: warning: suggest parentheses around AND within OR
+])
+AT_CHECK([./NC211A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [051OF051TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC214M])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC214M])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC214M.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC214M.CBL], [0], [], [NC214M.CBL: in section 'SECT-NC214M-001':
+NC214M.CBL: in paragraph 'ACC-TEST-F2-4':
+NC214M.CBL:398: warning: value size exceeds data size
+NC214M.CBL:398: note: value size is 37
+NC214M.CBL:118: note: 'CORRECT-A' defined here as PIC X(20)
+])
+AT_CHECK([./NC214M], [0], [], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC215A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC215A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC215A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC215A.CBL], [0], [], [NC215A.CBL: in section 'SECT-NC215A-001':
+NC215A.CBL: in paragraph 'SEQ-FAIL-GF-2':
+NC215A.CBL:366: warning: value size exceeds data size
+NC215A.CBL:366: note: value size is 21
+NC215A.CBL:92: note: 'COMPUTED-A' defined here as PIC X(20)
+])
+AT_CHECK([./NC215A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [007OF007TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC216A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC216A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC216A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC216A.CBL], [0], [], [])
+AT_CHECK([./NC216A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [057OF057TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC217A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC217A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC217A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC217A.CBL], [0], [], [])
+AT_CHECK([./NC217A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [082OF082TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC218A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC218A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC218A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC218A.CBL], [0], [], [NC218A.CBL: in section 'SECT-NC218A-001':
+NC218A.CBL: in paragraph 'UST-FAIL-GF-18-6':
+NC218A.CBL:1970: warning: alphanumeric value is expected
+NC218A.CBL:121: note: 'CORRECT-A' defined here as PIC X(20)
+])
+AT_CHECK([./NC218A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [125OF125TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC219A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC219A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC219A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC219A.CBL], [0], [], [])
+AT_CHECK([./NC219A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [009OF009TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC220M])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC220M])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC220M.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC220M.CBL], [0], [], [])
+AT_CHECK([./NC220M], [0], [   
+LITERAL-02
+9876543210
+], [])
+AT_CHECK([$GREP INFORMATION REPORT | tr -d ' '], [0], [***INFORMATION***LITERAL-02IV-214.3.8.2
+***INFORMATION***9876543210IV-214.3.8.2
+], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [023OF025TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+002TEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC221A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC221A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC221A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC221A.CBL], [0], [], [])
+AT_CHECK([./NC221A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [017OF017TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC222A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC222A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC222A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC222A.CBL], [0], [], [])
+AT_CHECK([./NC222A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [008OF008TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC223A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC223A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC223A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC223A.CBL], [0], [], [])
+AT_CHECK([./NC223A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [094OF094TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC224A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC224A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC224A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC224A.CBL], [0], [], [NC224A.CBL: in section 'SECT-NC224A-001':
+NC224A.CBL: in paragraph 'REF-INIT-GF-1':
+NC224A.CBL:320: warning: value size exceeds data size
+NC224A.CBL:320: note: value size is 22
+NC224A.CBL:63: note: 'FEATURE' defined here as PIC X(20)
+])
+AT_CHECK([./NC224A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [014OF014TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC225A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC225A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC225A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC225A.CBL], [0], [], [NC225A.CBL: in section 'SECT-NC225A-001-1':
+NC225A.CBL: in paragraph 'EVA-INIT-GF-17':
+NC225A.CBL:1037: warning: alphanumeric value is expected
+NC225A.CBL:47: note: 'WRK-XN-00001-1' defined here as PIC X
+NC225A.CBL: in paragraph 'EVA-INIT-GF-29':
+NC225A.CBL:1496: warning: alphanumeric value is expected
+NC225A.CBL:47: note: 'WRK-XN-00001-1' defined here as PIC X
+])
+AT_CHECK([./NC225A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [063OF063TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC231A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC231A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC231A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC231A.CBL], [0], [], [NC231A.CBL: in section 'SECT-NC231A-001':
+NC231A.CBL: in paragraph 'CHECK-ENTRIES':
+NC231A.CBL:416: warning: NEXT SENTENCE is archaic in COBOL 85
+NC231A.CBL: in paragraph 'LEVEL-1-TEST-2':
+NC231A.CBL:441: warning: NEXT SENTENCE is archaic in COBOL 85
+NC231A.CBL: in paragraph 'LEVEL-1-TEST-3':
+NC231A.CBL:453: warning: NEXT SENTENCE is archaic in COBOL 85
+NC231A.CBL: in paragraph 'LEVEL-2-TEST-1':
+NC231A.CBL:481: warning: NEXT SENTENCE is archaic in COBOL 85
+NC231A.CBL: in paragraph 'LEVEL-2-TEST-2':
+NC231A.CBL:497: warning: NEXT SENTENCE is archaic in COBOL 85
+NC231A.CBL: in paragraph 'LEVEL-2-TEST-3':
+NC231A.CBL:512: warning: NEXT SENTENCE is archaic in COBOL 85
+NC231A.CBL: in paragraph 'LEVEL-3-TEST-2':
+NC231A.CBL:575: warning: NEXT SENTENCE is archaic in COBOL 85
+NC231A.CBL: in paragraph 'LEVEL-3-TEST-3':
+NC231A.CBL:590: warning: NEXT SENTENCE is archaic in COBOL 85
+NC231A.CBL: in paragraph 'LEVEL-3-TEST-4':
+NC231A.CBL:607: warning: NEXT SENTENCE is archaic in COBOL 85
+NC231A.CBL: in paragraph 'MULT-SEARCH-TEST-1':
+NC231A.CBL:631: warning: NEXT SENTENCE is archaic in COBOL 85
+NC231A.CBL:634: warning: NEXT SENTENCE is archaic in COBOL 85
+NC231A.CBL: in paragraph 'MULT-SEARCH-TEST-2':
+NC231A.CBL:671: warning: NEXT SENTENCE is archaic in COBOL 85
+NC231A.CBL:674: warning: NEXT SENTENCE is archaic in COBOL 85
+NC231A.CBL:677: warning: NEXT SENTENCE is archaic in COBOL 85
+NC231A.CBL: in paragraph 'MULT-SEARCH-7-TEST-3':
+NC231A.CBL:742: warning: NEXT SENTENCE is archaic in COBOL 85
+NC231A.CBL:746: warning: NEXT SENTENCE is archaic in COBOL 85
+NC231A.CBL:750: warning: NEXT SENTENCE is archaic in COBOL 85
+NC231A.CBL:754: warning: NEXT SENTENCE is archaic in COBOL 85
+NC231A.CBL:758: warning: NEXT SENTENCE is archaic in COBOL 85
+NC231A.CBL:762: warning: NEXT SENTENCE is archaic in COBOL 85
+NC231A.CBL:766: warning: NEXT SENTENCE is archaic in COBOL 85
+NC231A.CBL: in paragraph 'SPECIAL-2-LEVEL-SEARCH':
+NC231A.CBL:884: warning: NEXT SENTENCE is archaic in COBOL 85
+NC231A.CBL: in paragraph 'SPECIAL-3-LEVEL-SEARCH':
+NC231A.CBL:929: warning: NEXT SENTENCE is archaic in COBOL 85
+NC231A.CBL:934: warning: NEXT SENTENCE is archaic in COBOL 85
+])
+AT_CHECK([./NC231A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [024OF024TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC232A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC232A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC232A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC232A.CBL], [0], [], [NC232A.CBL: in section 'SECT-NC232A-001':
+NC232A.CBL: in paragraph 'CHECK-ENTRIES':
+NC232A.CBL:392: warning: NEXT SENTENCE is archaic in COBOL 85
+NC232A.CBL: in paragraph 'TH1-TEST-F1-2':
+NC232A.CBL:419: warning: NEXT SENTENCE is archaic in COBOL 85
+NC232A.CBL: in paragraph 'TH1-TEST-F1-3':
+NC232A.CBL:440: warning: NEXT SENTENCE is archaic in COBOL 85
+NC232A.CBL: in paragraph 'TH2-TEST-F1-1':
+NC232A.CBL:486: warning: NEXT SENTENCE is archaic in COBOL 85
+NC232A.CBL: in paragraph 'TH2-TEST-F1-2':
+NC232A.CBL:511: warning: NEXT SENTENCE is archaic in COBOL 85
+NC232A.CBL: in paragraph 'TH2-TEST-F1-3':
+NC232A.CBL:535: warning: NEXT SENTENCE is archaic in COBOL 85
+NC232A.CBL: in paragraph 'TH3-TEST-F1-2':
+NC232A.CBL:622: warning: NEXT SENTENCE is archaic in COBOL 85
+NC232A.CBL: in paragraph 'TH3-TEST-F1-3':
+NC232A.CBL:646: warning: NEXT SENTENCE is archaic in COBOL 85
+NC232A.CBL: in paragraph 'TH3-TEST-F1-4':
+NC232A.CBL:673: warning: NEXT SENTENCE is archaic in COBOL 85
+NC232A.CBL: in paragraph 'SCH-TEST-F1-1':
+NC232A.CBL:706: warning: NEXT SENTENCE is archaic in COBOL 85
+NC232A.CBL:709: warning: NEXT SENTENCE is archaic in COBOL 85
+NC232A.CBL: in paragraph 'SCH-TEST-F1-2':
+NC232A.CBL:754: warning: NEXT SENTENCE is archaic in COBOL 85
+NC232A.CBL:760: warning: NEXT SENTENCE is archaic in COBOL 85
+NC232A.CBL:766: warning: NEXT SENTENCE is archaic in COBOL 85
+NC232A.CBL: in paragraph 'SPC-TEST-F1-2':
+NC232A.CBL:840: warning: NEXT SENTENCE is archaic in COBOL 85
+NC232A.CBL: in paragraph 'SPC-TEST-F1-3':
+NC232A.CBL:877: warning: NEXT SENTENCE is archaic in COBOL 85
+NC232A.CBL:883: warning: NEXT SENTENCE is archaic in COBOL 85
+])
+AT_CHECK([./NC232A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [017OF017TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC233A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC233A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC233A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC233A.CBL], [0], [], [NC233A.CBL: in section 'SECT-NC233A-001':
+NC233A.CBL: in paragraph 'CHECK-ENTRIES':
+NC233A.CBL:457: warning: NEXT SENTENCE is archaic in COBOL 85
+NC233A.CBL: in paragraph 'LEVEL-1-TEST-2':
+NC233A.CBL:481: warning: NEXT SENTENCE is archaic in COBOL 85
+NC233A.CBL: in paragraph 'LEVEL-1-TEST-3':
+NC233A.CBL:492: warning: NEXT SENTENCE is archaic in COBOL 85
+NC233A.CBL: in paragraph 'LEVEL-2-TEST-1':
+NC233A.CBL:517: warning: NEXT SENTENCE is archaic in COBOL 85
+NC233A.CBL: in paragraph 'LEVEL-2-TEST-2':
+NC233A.CBL:531: warning: NEXT SENTENCE is archaic in COBOL 85
+NC233A.CBL: in paragraph 'LEVEL-2-TEST-3':
+NC233A.CBL:544: warning: NEXT SENTENCE is archaic in COBOL 85
+NC233A.CBL: in paragraph 'LEVEL-3-TEST-2':
+NC233A.CBL:603: warning: NEXT SENTENCE is archaic in COBOL 85
+NC233A.CBL: in paragraph 'LEVEL-3-TEST-3':
+NC233A.CBL:617: warning: NEXT SENTENCE is archaic in COBOL 85
+NC233A.CBL: in paragraph 'LEVEL-3-TEST-4':
+NC233A.CBL:633: warning: NEXT SENTENCE is archaic in COBOL 85
+NC233A.CBL: in paragraph 'MULT-SEARCH-TEST-1':
+NC233A.CBL:656: warning: NEXT SENTENCE is archaic in COBOL 85
+NC233A.CBL:658: warning: NEXT SENTENCE is archaic in COBOL 85
+NC233A.CBL: in paragraph 'MULT-SEARCH-7-TEST-3':
+NC233A.CBL:730: warning: NEXT SENTENCE is archaic in COBOL 85
+NC233A.CBL:735: warning: NEXT SENTENCE is archaic in COBOL 85
+NC233A.CBL:741: warning: NEXT SENTENCE is archaic in COBOL 85
+NC233A.CBL:747: warning: NEXT SENTENCE is archaic in COBOL 85
+NC233A.CBL:753: warning: NEXT SENTENCE is archaic in COBOL 85
+NC233A.CBL:759: warning: NEXT SENTENCE is archaic in COBOL 85
+NC233A.CBL:765: warning: NEXT SENTENCE is archaic in COBOL 85
+])
+AT_CHECK([./NC233A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [014OF014TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC234A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC234A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC234A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC234A.CBL], [0], [], [NC234A.CBL: in section 'SECT-NC234A-001':
+NC234A.CBL: in paragraph 'TH1-TEST-F1-2':
+NC234A.CBL:418: warning: NEXT SENTENCE is archaic in COBOL 85
+NC234A.CBL: in paragraph 'TH1-TEST-F1-3':
+NC234A.CBL:439: warning: NEXT SENTENCE is archaic in COBOL 85
+NC234A.CBL: in paragraph 'TH2-TEST-F1-1':
+NC234A.CBL:483: warning: NEXT SENTENCE is archaic in COBOL 85
+NC234A.CBL: in paragraph 'TH2-TEST-F1-2':
+NC234A.CBL:508: warning: NEXT SENTENCE is archaic in COBOL 85
+NC234A.CBL: in paragraph 'TH2-TEST-F1-3':
+NC234A.CBL:531: warning: NEXT SENTENCE is archaic in COBOL 85
+NC234A.CBL: in paragraph 'TH3-TEST-F1-2':
+NC234A.CBL:615: warning: NEXT SENTENCE is archaic in COBOL 85
+NC234A.CBL: in paragraph 'TH3-TEST-F1-3':
+NC234A.CBL:639: warning: NEXT SENTENCE is archaic in COBOL 85
+NC234A.CBL: in paragraph 'TH3-TEST-F1-4':
+NC234A.CBL:666: warning: NEXT SENTENCE is archaic in COBOL 85
+NC234A.CBL: in paragraph 'MLT-TEST-F1-1':
+NC234A.CBL:699: warning: NEXT SENTENCE is archaic in COBOL 85
+NC234A.CBL:703: warning: NEXT SENTENCE is archaic in COBOL 85
+NC234A.CBL: in paragraph 'MLT-TEST-F1-2':
+NC234A.CBL:746: warning: NEXT SENTENCE is archaic in COBOL 85
+NC234A.CBL:749: warning: NEXT SENTENCE is archaic in COBOL 85
+NC234A.CBL:753: warning: NEXT SENTENCE is archaic in COBOL 85
+NC234A.CBL: in paragraph 'SP2-TEST-F1-1':
+NC234A.CBL:827: warning: NEXT SENTENCE is archaic in COBOL 85
+NC234A.CBL: in paragraph 'SP3-TEST-F1-1':
+NC234A.CBL:866: warning: NEXT SENTENCE is archaic in COBOL 85
+NC234A.CBL:873: warning: NEXT SENTENCE is archaic in COBOL 85
+])
+AT_CHECK([./NC234A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [017OF017TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC235A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC235A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC235A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC235A.CBL], [0], [], [NC235A.CBL: in section 'SECT-NC235A-001':
+NC235A.CBL: in paragraph 'IDX-TEST-F2-1':
+NC235A.CBL:340: warning: NEXT SENTENCE is archaic in COBOL 85
+])
+AT_CHECK([./NC235A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [013OF013TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC236A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC236A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC236A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC236A.CBL], [0], [], [])
+AT_CHECK([./NC236A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [010OF010TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC237A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC237A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC237A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC237A.CBL], [0], [], [])
+AT_CHECK([./NC237A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [013OF013TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC238A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC238A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC238A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC238A.CBL], [0], [], [NC238A.CBL: in section 'SECT-NC238A-001':
+NC238A.CBL: in paragraph 'SCH-TEST-F2-6':
+NC238A.CBL:536: warning: alphanumeric value is expected
+NC238A.CBL:57: note: 'LEVEL-HOLD' defined here as PIC X(4)
+NC238A.CBL: in paragraph 'SCH-TEST-F2-7':
+NC238A.CBL:562: warning: alphanumeric value is expected
+NC238A.CBL:57: note: 'LEVEL-HOLD' defined here as PIC X(4)
+NC238A.CBL: in paragraph 'SCH-TEST-F2-10':
+NC238A.CBL:639: warning: alphanumeric value is expected
+NC238A.CBL:57: note: 'LEVEL-HOLD' defined here as PIC X(4)
+])
+AT_CHECK([./NC238A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [010OF010TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC239A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC239A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC239A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC239A.CBL], [0], [], [])
+AT_CHECK([./NC239A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [008OF008TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC240A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC240A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC240A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC240A.CBL], [0], [], [])
+AT_CHECK([./NC240A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [011OF011TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC241A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC241A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC241A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC241A.CBL], [0], [], [])
+AT_CHECK([./NC241A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [011OF011TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC242A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC242A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC242A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC242A.CBL], [0], [], [])
+AT_CHECK([./NC242A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [012OF012TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC243A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC243A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC243A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC243A.CBL], [0], [], [])
+AT_CHECK([./NC243A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [016OF016TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC244A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC244A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC244A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC244A.CBL], [0], [], [NC244A.CBL: in section 'TABLE-CHECKING':
+NC244A.CBL: in paragraph 'IDX-DELETE-F2-5':
+NC244A.CBL:472: warning: value size exceeds data size
+NC244A.CBL:472: note: value size is 21
+NC244A.CBL:69: note: 'FEATURE' defined here as PIC X(20)
+])
+AT_CHECK([./NC244A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [006OF006TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC245A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC245A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC245A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC245A.CBL], [0], [], [])
+AT_CHECK([./NC245A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [028OF028TESTSWEREEXECUTEDSUCCESSFULLY
+FEATUREPASSPARAGRAPH-NAMEREMARKS
+TESTEDFAIL
+
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC246A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC246A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC246A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC246A.CBL], [0], [], [])
+AT_CHECK([./NC246A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [049OF049TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC247A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC247A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC247A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC247A.CBL], [0], [], [])
+AT_CHECK([./NC247A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [020OF021TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+001TEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC248A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC248A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC248A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC248A.CBL], [0], [], [])
+AT_CHECK([./NC248A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [011OF011TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC250A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC250A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC250A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC250A.CBL], [0], [], [NC250A.CBL:182: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+NC250A.CBL: in section 'SECT-NC201A-001':
+NC250A.CBL: in paragraph 'IF--TEST-19':
+NC250A.CBL:787: warning: unsigned 'IF-D16' may not be LESS THAN ZERO
+NC250A.CBL: in paragraph 'IF--INIT-80':
+NC250A.CBL:1415: warning: alphanumeric value is expected
+NC250A.CBL:319: note: 'TABLE-80' defined here as a group of length 3
+NC250A.CBL: in paragraph 'IF-TEST-122':
+NC250A.CBL:1912: warning: NEXT SENTENCE is archaic in COBOL 85
+NC250A.CBL: in paragraph 'IF-TEST-124':
+NC250A.CBL:1960: warning: value size exceeds data size
+NC250A.CBL:1960: note: value size is 21
+NC250A.CBL:359: note: 'COMPUTED-A' defined here as PIC X(20)
+])
+AT_CHECK([./NC250A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [115OF115TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC251A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC251A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC251A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC251A.CBL], [0], [], [NC251A.CBL:101: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+NC251A.CBL:104: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+NC251A.CBL:106: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+NC251A.CBL:107: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+NC251A.CBL:109: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+NC251A.CBL:111: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+NC251A.CBL:135: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+])
+AT_CHECK([./NC251A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [059OF059TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC252A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC252A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC252A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC252A.CBL], [0], [], [NC252A.CBL:229: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+NC252A.CBL:193: warning: size of 'REDEF11' larger than size of 'REDEF10'
+NC252A.CBL:206: warning: size of 'REDEF12' larger than size of 'REDEF10'
+NC252A.CBL:217: warning: size of 'GRP-REDEF125' larger than size of 'REDEF10'
+NC252A.CBL: in section 'SECT-NC252A-001':
+NC252A.CBL: in paragraph 'RDF-TEST-1':
+NC252A.CBL:511: warning: alphanumeric value is expected
+NC252A.CBL:282: note: 'CORRECT-A' defined here as PIC X(20)
+NC252A.CBL: in paragraph 'RDF-TEST-2':
+NC252A.CBL:528: warning: alphanumeric value is expected
+NC252A.CBL:282: note: 'CORRECT-A' defined here as PIC X(20)
+NC252A.CBL: in paragraph 'RDF-TEST-7':
+NC252A.CBL:600: warning: alphanumeric value is expected
+NC252A.CBL:282: note: 'CORRECT-A' defined here as PIC X(20)
+NC252A.CBL: in paragraph 'RDF-TEST-10':
+NC252A.CBL:647: warning: alphanumeric value is expected
+NC252A.CBL:282: note: 'CORRECT-A' defined here as PIC X(20)
+NC252A.CBL: in paragraph 'RENAM-TEST-4':
+NC252A.CBL:787: warning: alphanumeric value is expected
+NC252A.CBL:282: note: 'CORRECT-A' defined here as PIC X(20)
+NC252A.CBL: in paragraph 'RENAM-TEST-13':
+NC252A.CBL:930: warning: value size exceeds data size
+NC252A.CBL:930: note: value size is 9
+NC252A.CBL:173: note: 'RENAME-10' defined here as a group of length 8
+NC252A.CBL: in paragraph 'RENAM-TEST-14':
+NC252A.CBL:947: warning: alphanumeric value is expected
+NC252A.CBL:173: note: 'RENAME-10' defined here as a group of length 8
+NC252A.CBL: in paragraph 'RENAM-TEST-18':
+NC252A.CBL:1012: warning: value size exceeds data size
+NC252A.CBL:1012: note: value size is 16
+NC252A.CBL:158: note: 'RENAME-5' defined here as a group of length 11
+NC252A.CBL: in section 'COMPUTING':
+NC252A.CBL: in paragraph 'COMP-TEST-1':
+NC252A.CBL:1047: warning: literal '654.20038' has more decimals than 'COMPUTE-1'
+NC252A.CBL:1048: warning: literal '654.17422' has more decimals than 'COMPUTE-1'
+NC252A.CBL: in paragraph 'COMP-TEST-2':
+NC252A.CBL:1062: warning: literal '2233.94468' has more decimals than 'COMPUTE-2'
+NC252A.CBL:1063: warning: literal '2233.85532' has more decimals than 'COMPUTE-2'
+NC252A.CBL: in paragraph 'COMP-TEST-3':
+NC252A.CBL:1077: warning: literal '52.39105' has more decimals than 'COMPUTE-3'
+NC252A.CBL:1078: warning: literal '52.38895' has more decimals than 'COMPUTE-3'
+NC252A.CBL: in paragraph 'COMP-TEST-5':
+NC252A.CBL:1106: warning: literal '400.71801' has more decimals than 'COMPUTE-5'
+NC252A.CBL:1107: warning: literal '400.70199' has more decimals than 'COMPUTE-5'
+NC252A.CBL: in paragraph 'COMP-TEST-6':
+NC252A.CBL:1121: warning: literal '62.40125' has more decimals than 'COMPUTE-6'
+NC252A.CBL:1122: warning: literal '62.39875' has more decimals than 'COMPUTE-6'
+NC252A.CBL: in paragraph 'COMP-TEST-9':
+NC252A.CBL:1164: warning: literal '2621.05242' has more decimals than 'COMPUTE-9'
+NC252A.CBL:1165: warning: literal '2620.94758' has more decimals than 'COMPUTE-9'
+NC252A.CBL: in paragraph 'COMP-TEST-11':
+NC252A.CBL:1192: warning: literal '2.00002' has more decimals than 'COMPUTE-10'
+NC252A.CBL:1193: warning: literal '-2.00002' has more decimals than 'COMPUTE-10'
+NC252A.CBL:1193: warning: unsigned 'COMPUTE-10' may not be LESS THAN -2.00002
+NC252A.CBL: in paragraph 'COMP-TEST-12':
+NC252A.CBL:1207: warning: literal '718.51437' has more decimals than 'COMPUTE-11'
+NC252A.CBL:1208: warning: literal '718.48563' has more decimals than 'COMPUTE-11'
+NC252A.CBL: in paragraph 'COMP-TEST-13':
+NC252A.CBL:1222: warning: literal '6.09012' has more decimals than 'COMPUTE-12'
+NC252A.CBL:1223: warning: literal '6.08988' has more decimals than 'COMPUTE-12'
+NC252A.CBL: in section 'COMPUTE-ROUTINE':
+NC252A.CBL: in paragraph 'COMP-TEST-14':
+NC252A.CBL:1248: warning: alphanumeric value is expected
+NC252A.CBL:282: note: 'CORRECT-A' defined here as PIC X(20)
+NC252A.CBL: in paragraph 'COMP-TEST-16':
+NC252A.CBL:1273: warning: literal '-20.00040' has more decimals than 'W-11'
+NC252A.CBL:1274: warning: literal '-19.99960' has more decimals than 'W-11'
+NC252A.CBL: in paragraph 'COMP-TEST-23':
+NC252A.CBL:1379: warning: alphanumeric value is expected
+NC252A.CBL:72: note: 'XRAY' defined here as PIC X
+NC252A.CBL: in paragraph 'COMP-TEST-25':
+NC252A.CBL:1410: warning: literal '2.20004' has more decimals than 'W-11'
+NC252A.CBL:1411: warning: literal '2.19996' has more decimals than 'W-11'
+NC252A.CBL: in paragraph 'COMP-TEST-26':
+NC252A.CBL:1426: warning: literal '2.50005' has more decimals than 'W-11'
+NC252A.CBL:1427: warning: literal '2.49995' has more decimals than 'W-11'
+NC252A.CBL: in paragraph 'COMP-TEST-43':
+NC252A.CBL:1640: warning: literal '10.0002' has more decimals than 'WHOLE-FIELD'
+NC252A.CBL:1641: warning: literal '9.9998' has more decimals than 'WHOLE-FIELD'
+NC252A.CBL: in paragraph 'COMP-TEST-045-2':
+NC252A.CBL:1687: warning: literal '10.9002180' has more decimals than 'WRK-DS-04V01-0005'
+NC252A.CBL:1688: warning: literal '10.8997820' has more decimals than 'WRK-DS-04V01-0005'
+NC252A.CBL: in paragraph 'COMP-TEST-045-3':
+NC252A.CBL:1695: warning: literal '10.87521750' has more decimals than 'WRK-DS-03V04-0003F-0014'
+NC252A.CBL:1696: warning: literal '10.87479250' has more decimals than 'WRK-DS-03V04-0003F-0014'
+])
+AT_CHECK([./NC252A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [075OF075TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC253A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC253A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC253A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC253A.CBL], [0], [], [NC253A.CBL: in section 'SECT-NC253A-001':
+NC253A.CBL: in paragraph 'SUB-FAIL-F3-4':
+NC253A.CBL:689: warning: alphanumeric value is expected
+NC253A.CBL:304: note: 'CORRECT-A' defined here as PIC X(20)
+NC253A.CBL: in paragraph 'SUB-INIT-F3-5':
+NC253A.CBL:697: warning: alphanumeric value is expected
+NC253A.CBL:182: note: 'CORR-DATA-1' defined here as a group of length 12
+NC253A.CBL:698: warning: alphanumeric value is expected
+NC253A.CBL:218: note: 'CORR-DATA-6' defined here as a group of length 12
+NC253A.CBL: in paragraph 'SUB-FAIL-F3-5':
+NC253A.CBL:709: warning: alphanumeric value is expected
+NC253A.CBL:304: note: 'CORRECT-A' defined here as PIC X(20)
+NC253A.CBL: in paragraph 'SUB-FAIL-F3-6':
+NC253A.CBL:728: warning: alphanumeric value is expected
+NC253A.CBL:304: note: 'CORRECT-A' defined here as PIC X(20)
+NC253A.CBL: in paragraph 'SUB-INIT-F3-7':
+NC253A.CBL:736: warning: alphanumeric value is expected
+NC253A.CBL:210: note: 'CORR-DATA-5' defined here as a group of length 14
+NC253A.CBL:737: warning: alphanumeric value is expected
+NC253A.CBL:182: note: 'CORR-DATA-1' defined here as a group of length 12
+])
+AT_CHECK([./NC253A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [061OF061TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC254A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC254A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC254A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC254A.CBL], [0], [], [NC254A.CBL: in section 'SECT-NC254A-001':
+NC254A.CBL: in paragraph 'NEXT-TEST-GF-1':
+NC254A.CBL:530: warning: NEXT SENTENCE is archaic in COBOL 85
+NC254A.CBL:532: warning: NEXT SENTENCE is archaic in COBOL 85
+])
+AT_CHECK([./NC254A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [009OF009TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC302M])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([NC NC302M])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC302M.CBL .], [0], [], [])
+AT_DATA([NC302M.DAT],[
+])
+AT_CHECK([$COMPILE85 NC302M.CBL], [0], [], [NC302M.CBL:6: warning: AUTHOR is obsolete in COBOL 85
+NC302M.CBL:8: warning: INSTALLATION is obsolete in COBOL 85
+NC302M.CBL:10: warning: DATE-WRITTEN is obsolete in COBOL 85
+NC302M.CBL:12: warning: SECURITY is obsolete in COBOL 85
+NC302M.CBL:22: warning: MEMORY SIZE is obsolete in COBOL 85
+NC302M.CBL: in paragraph 'NC302M-ALTER':
+NC302M.CBL:34: warning: ALTER is obsolete in COBOL 85
+NC302M.CBL: in paragraph 'NC302M-STOP':
+NC302M.CBL:47: warning: STOP literal is obsolete in COBOL 85
+])
+AT_CHECK([./NC302M < NC302M.DAT], [0], [DUMMY PROCEDURE
+FNC302
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC303M])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC303M])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC303M.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC303M.CBL], [0], [], [NC303M.CBL:6: warning: DATE-COMPILED is obsolete in COBOL 85
+NC303M.CBL: in paragraph 'NC303M-CONTROL':
+NC303M.CBL:19: warning: ALTER is obsolete in COBOL 85
+NC303M.CBL: in paragraph 'NC303M-GOTO':
+NC303M.CBL:25: warning: GO TO without procedure-name is obsolete in COBOL 85
+NC303M.CBL: in paragraph 'NC303M-GOTO-2':
+NC303M.CBL:29: warning: GO TO without procedure-name is obsolete in COBOL 85
+])
+AT_CHECK([./NC303M], [0], [], [])
+
+AT_CLEANUP
+
+AT_SETUP([NC401M])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([NC NC401M])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/NC/NC401M.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 NC401M.CBL], [0], [], [NC401M.CBL:8: warning: DATE-COMPILED is obsolete in COBOL 85
+NC401M.CBL: in paragraph 'NC401M-CONTROL':
+NC401M.CBL:169: warning: ALTER is obsolete in COBOL 85
+NC401M.CBL: in paragraph 'NC401M-SIGCOND':
+NC401M.CBL:209: warning: unsigned 'BOX-A' may not be LESS THAN ZERO
+NC401M.CBL: in paragraph 'NC401M-GOTO':
+NC401M.CBL:263: warning: GO TO without procedure-name is obsolete in COBOL 85
+NC401M.CBL: in paragraph 'NC401M-GOTO-2':
+NC401M.CBL:267: warning: GO TO without procedure-name is obsolete in COBOL 85
+NC401M.CBL: in paragraph 'NC401M-SEARCH':
+NC401M.CBL:309: warning: NEXT SENTENCE is archaic in COBOL 85
+])
+
+AT_CLEANUP
+

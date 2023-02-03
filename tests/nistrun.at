@@ -1,0 +1,63 @@
+## Copyright (C) 2023 Free Software Foundation, Inc.
+## Written by Fabrice LE FESSANT
+##
+## This file is part of GnuCOBOL.
+##
+## The GnuCOBOL compiler is free software: you can redistribute it
+## and/or modify it under the terms of the GNU General Public License
+## as published by the Free Software Foundation, either version 3 of the
+## License, or (at your option) any later version.
+##
+## GnuCOBOL is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
+
+AT_COPYRIGHT([Test cases from NIST])
+
+### GnuCOBOL Test Suite
+
+AT_INIT([GnuCOBOL NIST Tests])
+AT_COLOR_TESTS
+
+AT_TESTED([cobc cobcrun])
+
+## General tests of used binaries
+AT_BANNER([NC Tests])
+m4_include([run_NC.at])
+
+AT_BANNER([SM Tests])
+m4_include([run_SM.at])
+
+AT_BANNER([IC Tests])
+m4_include([run_IC.at])
+
+AT_BANNER([SQ Tests])
+m4_include([run_SQ.at])
+
+AT_BANNER([RL Tests])
+m4_include([run_RL.at])
+
+AT_BANNER([ST Tests])
+m4_include([run_ST.at])
+
+AT_BANNER([SG Tests])
+m4_include([run_SG.at])
+
+AT_BANNER([OB Tests])
+m4_include([run_OB.at])
+
+AT_BANNER([IF Tests])
+m4_include([run_IF.at])
+
+AT_BANNER([RW Tests])
+m4_include([run_RW.at])
+
+AT_BANNER([DB Tests])
+m4_include([run_DB.at])
+
+AT_BANNER([IX Tests])
+m4_include([run_IX.at])

@@ -1,0 +1,397 @@
+AT_SETUP([DB101A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([DB DB101A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/DB/DB101A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 DB101A.CBL], [0], [], [DB101A.CBL:4: warning: AUTHOR is obsolete in COBOL 85
+DB101A.CBL:6: warning: INSTALLATION is obsolete in COBOL 85
+DB101A.CBL:16: warning: DATE-WRITTEN is obsolete in COBOL 85
+DB101A.CBL:20: warning: SECURITY is obsolete in COBOL 85
+DB101A.CBL:64: warning: LABEL RECORDS is obsolete in COBOL 85
+DB101A.CBL:65: warning: DATA RECORDS is obsolete in COBOL 85
+DB101A.CBL: in section 'START-UP':
+DB101A.CBL:222: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+DB101A.CBL: in section 'FALL-THROUGH-AND-SERIES':
+DB101A.CBL:231: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+DB101A.CBL: in section 'GO-TO':
+DB101A.CBL:236: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+DB101A.CBL: in section 'ALTER-PARAGRAPH':
+DB101A.CBL:241: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+DB101A.CBL: in section 'LOOP-ITERATION':
+DB101A.CBL:246: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+DB101A.CBL: in section 'PERFORM-THRU':
+DB101A.CBL:251: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+DB101A.CBL: in section 'CCVS1':
+DB101A.CBL: in paragraph 'ALTER-TEST-INIT':
+DB101A.CBL:533: warning: ALTER is obsolete in COBOL 85
+])
+AT_CHECK([./DB101A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [005OF014TESTSWEREEXECUTEDSUCCESSFULLY
+009TEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([DB102A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([DB DB102A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/DB/DB102A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 DB102A.CBL], [0], [], [DB102A.CBL:4: warning: AUTHOR is obsolete in COBOL 85
+DB102A.CBL:6: warning: INSTALLATION is obsolete in COBOL 85
+DB102A.CBL:16: warning: DATE-WRITTEN is obsolete in COBOL 85
+DB102A.CBL:20: warning: SECURITY is obsolete in COBOL 85
+DB102A.CBL:58: warning: LABEL RECORDS is obsolete in COBOL 85
+DB102A.CBL:59: warning: DATA RECORDS is obsolete in COBOL 85
+DB102A.CBL: in section 'START-UP':
+DB102A.CBL:216: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+DB102A.CBL: in section 'FALL-THROUGH-AND-SERIES':
+DB102A.CBL:225: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+DB102A.CBL: in section 'GO-TO':
+DB102A.CBL:230: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+DB102A.CBL: in section 'ALTER-PARAGRAPH':
+DB102A.CBL:235: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+DB102A.CBL: in section 'LOOP-ITERATION':
+DB102A.CBL:240: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+DB102A.CBL: in section 'PERFORM-THRU':
+DB102A.CBL:245: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+DB102A.CBL: in section 'CCVS1':
+DB102A.CBL: in paragraph 'ALTER-TEST-INIT':
+DB102A.CBL:466: warning: ALTER is obsolete in COBOL 85
+])
+AT_CHECK([./DB102A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [014OF014TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([DB103M])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([DB DB103M])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/DB/DB103M.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 DB103M.CBL], [0], [], [DB103M.CBL:4: warning: AUTHOR is obsolete in COBOL 85
+DB103M.CBL:6: warning: INSTALLATION is obsolete in COBOL 85
+DB103M.CBL:16: warning: DATE-WRITTEN is obsolete in COBOL 85
+DB103M.CBL:20: warning: SECURITY is obsolete in COBOL 85
+DB103M.CBL:56: warning: LABEL RECORDS is obsolete in COBOL 85
+DB103M.CBL:57: warning: DATA RECORDS is obsolete in COBOL 85
+DB103M.CBL: in section 'START-UP':
+DB103M.CBL:214: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+DB103M.CBL: in section 'FALL-THROUGH-AND-SERIES':
+DB103M.CBL:223: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+DB103M.CBL: in section 'GO-TO':
+DB103M.CBL:228: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+DB103M.CBL: in section 'ALTER-PARAGRAPH':
+DB103M.CBL:233: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+DB103M.CBL: in section 'LOOP-ITERATION':
+DB103M.CBL:238: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+DB103M.CBL: in section 'PERFORM-THRU':
+DB103M.CBL:243: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+DB103M.CBL: in section 'CCVS1':
+DB103M.CBL: in paragraph 'ALTER-TEST-INIT':
+DB103M.CBL:464: warning: ALTER is obsolete in COBOL 85
+])
+AT_CHECK([./DB103M], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [014OF014TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([DB104A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([DB DB104A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/DB/DB104A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 DB104A.CBL], [0], [], [DB104A.CBL:4: warning: AUTHOR is obsolete in COBOL 85
+DB104A.CBL:6: warning: INSTALLATION is obsolete in COBOL 85
+DB104A.CBL:16: warning: DATE-WRITTEN is obsolete in COBOL 85
+DB104A.CBL:20: warning: SECURITY is obsolete in COBOL 85
+DB104A.CBL:74: warning: LABEL RECORDS is obsolete in COBOL 85
+DB104A.CBL:75: warning: DATA RECORDS is obsolete in COBOL 85
+DB104A.CBL:82: warning: LABEL RECORDS is obsolete in COBOL 85
+DB104A.CBL: in section 'SORT-IN-PROC':
+DB104A.CBL:282: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+DB104A.CBL: in section 'SORT-OUT-PROC':
+DB104A.CBL:290: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+DB104A.CBL: in section 'USE-PROC':
+DB104A.CBL:295: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+DB104A.CBL: in section 'CCVS1':
+DB104A.CBL: in paragraph 'BEGIN-FILE-GENERATION':
+DB104A.CBL:413: warning: value size exceeds data size
+DB104A.CBL:413: note: value size is 6
+DB104A.CBL:124: note: 'XPROGRAM-NAME' defined here as PIC X(5)
+])
+AT_CHECK([./DB104A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [000OF003TESTSWEREEXECUTEDSUCCESSFULLY
+003TEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([DB105A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([DB DB105A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/DB/DB105A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 DB105A.CBL], [0], [], [DB105A.CBL:4: warning: AUTHOR is obsolete in COBOL 85
+DB105A.CBL:6: warning: INSTALLATION is obsolete in COBOL 85
+DB105A.CBL:16: warning: DATE-WRITTEN is obsolete in COBOL 85
+DB105A.CBL:20: warning: SECURITY is obsolete in COBOL 85
+DB105A.CBL:93: warning: LABEL RECORDS is obsolete in COBOL 85
+DB105A.CBL:94: warning: DATA RECORDS is obsolete in COBOL 85
+DB105A.CBL: in section 'DEBUG-ALL-PROCS':
+DB105A.CBL:512: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+DB105A.CBL: in section 'CCVS1':
+DB105A.CBL: in paragraph 'DE-LETE':
+DB105A.CBL:546: warning: value size exceeds data size
+DB105A.CBL:546: note: value size is 20
+DB105A.CBL:412: note: 'RE-MARK' defined here as PIC XXX
+DB105A.CBL: in section 'PROC-021-GO--PASS-4':
+DB105A.CBL: in paragraph 'PROC-025-ALTER-TEST-1':
+DB105A.CBL:742: warning: ALTER is obsolete in COBOL 85
+DB105A.CBL: in paragraph 'PROC-030-ALTER-TEST-3':
+DB105A.CBL:762: warning: ALTER is obsolete in COBOL 85
+DB105A.CBL: in paragraph 'PROC-032-ALTER-I':
+DB105A.CBL:781: warning: ALTER is obsolete in COBOL 85
+DB105A.CBL: in paragraph 'PROC-040-PFM-TEST-1':
+DB105A.CBL:805: warning: NEXT SENTENCE is archaic in COBOL 85
+DB105A.CBL: in paragraph 'PROC-045-PFM-B':
+DB105A.CBL:836: warning: NEXT SENTENCE is archaic in COBOL 85
+DB105A.CBL: in paragraph 'PROC-047-PFM-TEST-3':
+DB105A.CBL:848: warning: NEXT SENTENCE is archaic in COBOL 85
+DB105A.CBL: in paragraph 'PROC-055-PFM-TEST-4':
+DB105A.CBL:863: warning: NEXT SENTENCE is archaic in COBOL 85
+DB105A.CBL: in paragraph 'PROC-061-PFM-TEST-5':
+DB105A.CBL:878: warning: NEXT SENTENCE is archaic in COBOL 85
+DB105A.CBL: in section 'PROC-211-PFM-A-15':
+DB105A.CBL: in paragraph 'PROC-000-PFM-C-15':
+DB105A.CBL:1163: warning: value size exceeds data size
+DB105A.CBL:1163: note: value size is 21
+DB105A.CBL:412: note: 'RE-MARK' defined here as PIC XXX
+DB105A.CBL: in paragraph 'PROC-000-PFM-D-15':
+DB105A.CBL:1168: warning: value size exceeds data size
+DB105A.CBL:1168: note: value size is 26
+DB105A.CBL:412: note: 'RE-MARK' defined here as PIC XXX
+DB105A.CBL: in section 'PROC-000-PFM-J-15':
+DB105A.CBL: in paragraph 'PROC-000-PFM-K-15':
+DB105A.CBL:1187: warning: value size exceeds data size
+DB105A.CBL:1187: note: value size is 25
+DB105A.CBL:412: note: 'RE-MARK' defined here as PIC XXX
+DB105A.CBL: in section 'CCVS-EXIT':
+DB105A.CBL: in paragraph 'CCVS-999999':
+DB105A.CBL:975: warning: PROC-118-PFM-B-10 and PROC-120-PFM-D-10 are not in the same SECTION
+DB105A.CBL:981: warning: PROC-117-PFM-A-10 and PROC-120-PFM-D-10 are not in the same SECTION
+DB105A.CBL:1015: warning: PROC-140-PFM-B-11 and PROC-140-PFM-D-11 are not in the same SECTION
+DB105A.CBL:1021: warning: PROC-139-PFM-A-11 and PROC-140-PFM-D-11 are not in the same SECTION
+DB105A.CBL:1151: warning: PROC-213-PFM-G-15 and PROC-217-PFM-B-15 are not in the same SECTION
+DB105A.CBL:1151: warning: PROC-217-PFM-B-15 is defined before PROC-213-PFM-G-15
+DB105A.CBL:1176: note: 'PROC-213-PFM-G-15' defined here
+DB105A.CBL:1157: note: 'PROC-217-PFM-B-15' defined here
+])
+AT_CHECK([./DB105A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [000OF227TESTSWEREEXECUTEDSUCCESSFULLY
+227TEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([DB201A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([DB DB201A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/DB/DB201A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 DB201A.CBL], [0], [], [DB201A.CBL:4: warning: AUTHOR is obsolete in COBOL 85
+DB201A.CBL:6: warning: INSTALLATION is obsolete in COBOL 85
+DB201A.CBL:16: warning: DATE-WRITTEN is obsolete in COBOL 85
+DB201A.CBL:20: warning: SECURITY is obsolete in COBOL 85
+DB201A.CBL:64: warning: LABEL RECORDS is obsolete in COBOL 85
+DB201A.CBL:65: warning: DATA RECORDS is obsolete in COBOL 85
+DB201A.CBL: in section 'GO-TO-DEPENDING-PROC-1':
+DB201A.CBL:233: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+DB201A.CBL: in section 'GO-TO-DEPENDING-PROC-2':
+DB201A.CBL:244: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+DB201A.CBL: in section 'GO-TO-DEPENDING-PROC-3':
+DB201A.CBL:257: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+DB201A.CBL: in section 'PERFORM-PROC-1':
+DB201A.CBL:261: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+DB201A.CBL: in section 'TABLE-PROC-1':
+DB201A.CBL:267: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+DB201A.CBL: in section 'QUAL-PROC-1':
+DB201A.CBL:279: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+DB201A.CBL: in section 'QUAL-SUBC-PROC-1':
+DB201A.CBL:284: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+])
+AT_CHECK([./DB201A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [007OF069TESTSWEREEXECUTEDSUCCESSFULLY
+017TEST(S)FAILED
+045TEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([DB202A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([DB DB202A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/DB/DB202A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 DB202A.CBL], [0], [], [DB202A.CBL:4: warning: AUTHOR is obsolete in COBOL 85
+DB202A.CBL:6: warning: INSTALLATION is obsolete in COBOL 85
+DB202A.CBL:16: warning: DATE-WRITTEN is obsolete in COBOL 85
+DB202A.CBL:20: warning: SECURITY is obsolete in COBOL 85
+DB202A.CBL:58: warning: LABEL RECORDS is obsolete in COBOL 85
+DB202A.CBL:59: warning: DATA RECORDS is obsolete in COBOL 85
+DB202A.CBL:66: warning: LABEL RECORDS is obsolete in COBOL 85
+DB202A.CBL: in section 'FILENAME-PROC':
+DB202A.CBL:254: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+DB202A.CBL: in section 'WRITE-PROC':
+DB202A.CBL:264: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+])
+AT_CHECK([./DB202A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [002OF024TESTSWEREEXECUTEDSUCCESSFULLY
+006TEST(S)FAILED
+016TEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([DB203A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([DB DB203A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/DB/DB203A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 DB203A.CBL], [0], [], [DB203A.CBL:4: warning: AUTHOR is obsolete in COBOL 85
+DB203A.CBL:6: warning: INSTALLATION is obsolete in COBOL 85
+DB203A.CBL:16: warning: DATE-WRITTEN is obsolete in COBOL 85
+DB203A.CBL:20: warning: SECURITY is obsolete in COBOL 85
+DB203A.CBL:67: warning: LABEL RECORDS is obsolete in COBOL 85
+DB203A.CBL:68: warning: DATA RECORDS is obsolete in COBOL 85
+DB203A.CBL:75: warning: LABEL RECORDS is obsolete in COBOL 85
+DB203A.CBL: in section 'FILENAME-PROC':
+DB203A.CBL:271: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+])
+AT_CHECK([./DB203A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [000OF019TESTSWEREEXECUTEDSUCCESSFULLY
+011TEST(S)FAILED
+008TEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([DB204A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([DB DB204A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/DB/DB204A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 DB204A.CBL], [0], [], [DB204A.CBL:4: warning: AUTHOR is obsolete in COBOL 85
+DB204A.CBL:6: warning: INSTALLATION is obsolete in COBOL 85
+DB204A.CBL:16: warning: DATE-WRITTEN is obsolete in COBOL 85
+DB204A.CBL:20: warning: SECURITY is obsolete in COBOL 85
+DB204A.CBL:63: warning: LABEL RECORDS is obsolete in COBOL 85
+DB204A.CBL:64: warning: DATA RECORDS is obsolete in COBOL 85
+DB204A.CBL:71: warning: LABEL RECORDS is obsolete in COBOL 85
+DB204A.CBL:77: warning: LABEL RECORDS is obsolete in COBOL 85
+DB204A.CBL:83: warning: LABEL RECORDS is obsolete in COBOL 85
+DB204A.CBL: in section 'MERGE-PROC':
+DB204A.CBL:273: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+])
+AT_CHECK([./DB204A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [000OF004TESTSWEREEXECUTEDSUCCESSFULLY
+001TEST(S)FAILED
+003TEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([DB205A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([DB DB205A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/DB/DB205A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 DB205A.CBL], [0], [], [DB205A.CBL:4: warning: AUTHOR is obsolete in COBOL 85
+DB205A.CBL:6: warning: INSTALLATION is obsolete in COBOL 85
+DB205A.CBL:16: warning: DATE-WRITTEN is obsolete in COBOL 85
+DB205A.CBL:20: warning: SECURITY is obsolete in COBOL 85
+DB205A.CBL:38: warning: LABEL RECORDS is obsolete in COBOL 85
+DB205A.CBL:39: warning: DATA RECORDS is obsolete in COBOL 85
+DB205A.CBL:172: warning: COMMUNICATION SECTION is obsolete in COBOL 85
+DB205A.CBL:172: warning: COMMUNICATION SECTION is not implemented
+DB205A.CBL: in section 'DEBUG-PROCEDURE':
+DB205A.CBL:188: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+DB205A.CBL: in section 'BEGIN-DB205A-TESTS':
+DB205A.CBL: in paragraph 'ACCEPT-TEST-1':
+DB205A.CBL:394: warning: ACCEPT MESSAGE COUNT is not implemented
+])
+
+AT_CLEANUP
+
+AT_SETUP([DB301M])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([DB DB301M])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/DB/DB301M.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 DB301M.CBL], [0], [], [DB301M.CBL: in section 'BUGGING-2':
+DB301M.CBL:33: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+])
+AT_CHECK([./DB301M], [0], [THIS IS A DUMMY PROCEDURE
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([DB302M])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([DB DB302M])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/DB/DB302M.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 DB302M.CBL], [0], [], [DB302M.CBL: in section 'BUGGING':
+DB302M.CBL:33: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+])
+AT_CHECK([./DB302M], [0], [THIS IS A DUMMY PROCEDURE
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([DB303M])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([DB DB303M])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/DB/DB303M.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 DB303M.CBL], [0], [], [DB303M.CBL: in section 'BUGGING-2':
+DB303M.CBL:33: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+DB303M.CBL: in section 'BUGGING-3':
+DB303M.CBL:41: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+])
+AT_CHECK([./DB303M], [0], [THIS IS A DUMMY PROCEDURE
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([DB304M])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([DB DB304M])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/DB/DB304M.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 DB304M.CBL], [0], [], [DB304M.CBL:15: warning: COMMUNICATION SECTION is obsolete in COBOL 85
+DB304M.CBL:15: warning: COMMUNICATION SECTION is not implemented
+DB304M.CBL: in section 'BUGGING':
+DB304M.CBL:28: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+])
+AT_CHECK([./DB304M], [0], [THIS IS A DUMMY PROCEDURE
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([DB305M])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([DB DB305M])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/DB/DB305M.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 DB305M.CBL], [0], [], [DB305M.CBL: in section 'BUGGING':
+DB305M.CBL:33: warning: USE FOR DEBUGGING is obsolete in COBOL 85
+])
+AT_CHECK([./DB305M], [0], [THIS IS A DUMMY PROCEDURE
+], [])
+
+AT_CLEANUP
+

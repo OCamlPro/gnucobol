@@ -1,0 +1,966 @@
+AT_SETUP([SG101A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([SG SG101A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SG/SG101A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 SG101A.CBL], [0], [], [SG101A.CBL:4: warning: AUTHOR is obsolete in COBOL 85
+SG101A.CBL:6: warning: INSTALLATION is obsolete in COBOL 85
+SG101A.CBL:16: warning: DATE-WRITTEN is obsolete in COBOL 85
+SG101A.CBL:20: warning: SECURITY is obsolete in COBOL 85
+SG101A.CBL:42: warning: LABEL RECORDS is obsolete in COBOL 85
+SG101A.CBL:43: warning: DATA RECORDS is obsolete in COBOL 85
+SG101A.CBL: in section 'SECT-SG-01-001':
+SG101A.CBL:276: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '00':
+SG101A.CBL:280: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '01':
+SG101A.CBL:1785: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '02':
+SG101A.CBL:1788: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '03':
+SG101A.CBL:1791: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '04':
+SG101A.CBL:1794: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '05':
+SG101A.CBL:1797: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '06':
+SG101A.CBL:1800: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '07':
+SG101A.CBL:1803: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '08':
+SG101A.CBL:1806: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '09':
+SG101A.CBL:1809: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '10':
+SG101A.CBL:1812: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '11':
+SG101A.CBL:1815: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '12':
+SG101A.CBL:1818: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '13':
+SG101A.CBL:1821: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '14':
+SG101A.CBL:1824: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '15':
+SG101A.CBL:1827: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '16':
+SG101A.CBL:1830: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '17':
+SG101A.CBL:1833: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '18':
+SG101A.CBL:1836: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '19':
+SG101A.CBL:1839: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '20':
+SG101A.CBL:1842: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '21':
+SG101A.CBL:1845: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '22':
+SG101A.CBL:1848: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '23':
+SG101A.CBL:1851: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '24':
+SG101A.CBL:1854: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '25':
+SG101A.CBL:1857: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '26':
+SG101A.CBL:1860: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '27':
+SG101A.CBL:1863: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '28':
+SG101A.CBL:1866: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '29':
+SG101A.CBL:1869: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '30':
+SG101A.CBL:1872: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '31':
+SG101A.CBL:1875: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '32':
+SG101A.CBL:1878: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '33':
+SG101A.CBL:1881: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '34':
+SG101A.CBL:1884: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '35':
+SG101A.CBL:1887: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '36':
+SG101A.CBL:1890: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '37':
+SG101A.CBL:1893: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '38':
+SG101A.CBL:1896: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '39':
+SG101A.CBL:1899: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '40':
+SG101A.CBL:1902: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '41':
+SG101A.CBL:1905: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '42':
+SG101A.CBL:1908: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '43':
+SG101A.CBL:1911: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '44':
+SG101A.CBL:1914: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '45':
+SG101A.CBL:1917: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '46':
+SG101A.CBL:1920: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '47':
+SG101A.CBL:1923: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '48':
+SG101A.CBL:1926: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '49':
+SG101A.CBL:1929: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section 'SECOND-HALF':
+SG101A.CBL:1932: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '50':
+SG101A.CBL:2698: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '51':
+SG101A.CBL:2701: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '52':
+SG101A.CBL:2704: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '53':
+SG101A.CBL:2707: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '54':
+SG101A.CBL:2710: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '55':
+SG101A.CBL:2713: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '56':
+SG101A.CBL:2716: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '57':
+SG101A.CBL:2719: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '58':
+SG101A.CBL:2722: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '59':
+SG101A.CBL:2725: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '60':
+SG101A.CBL:2728: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '61':
+SG101A.CBL:2731: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '62':
+SG101A.CBL:2734: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '63':
+SG101A.CBL:2737: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '64':
+SG101A.CBL:2740: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '65':
+SG101A.CBL:2743: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '66':
+SG101A.CBL:2746: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '67':
+SG101A.CBL:2749: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '68':
+SG101A.CBL:2752: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '69':
+SG101A.CBL:2755: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '70':
+SG101A.CBL:2758: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '71':
+SG101A.CBL:2761: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '72':
+SG101A.CBL:2764: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '73':
+SG101A.CBL:2767: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '74':
+SG101A.CBL:2770: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '75':
+SG101A.CBL:2773: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '76':
+SG101A.CBL:2776: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '77':
+SG101A.CBL:2779: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '78':
+SG101A.CBL:2782: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '79':
+SG101A.CBL:2785: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '80':
+SG101A.CBL:2788: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '81':
+SG101A.CBL:2791: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '82':
+SG101A.CBL:2794: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '83':
+SG101A.CBL:2797: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '84':
+SG101A.CBL:2800: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '85':
+SG101A.CBL:2803: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '86':
+SG101A.CBL:2806: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '87':
+SG101A.CBL:2809: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '88':
+SG101A.CBL:2812: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '89':
+SG101A.CBL:2815: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '90':
+SG101A.CBL:2818: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '91':
+SG101A.CBL:2821: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '92':
+SG101A.CBL:2824: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '93':
+SG101A.CBL:2827: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '94':
+SG101A.CBL:2830: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '95':
+SG101A.CBL:2833: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '96':
+SG101A.CBL:2836: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '97':
+SG101A.CBL:2839: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '98':
+SG101A.CBL:2842: warning: section segments is obsolete in COBOL 85
+SG101A.CBL: in section '99':
+SG101A.CBL:2845: warning: section segments is obsolete in COBOL 85
+])
+AT_CHECK([./SG101A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [151OF151TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([SG102A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([SG SG102A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SG/SG102A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 SG102A.CBL], [0], [], [SG102A.CBL:4: warning: AUTHOR is obsolete in COBOL 85
+SG102A.CBL:6: warning: INSTALLATION is obsolete in COBOL 85
+SG102A.CBL:16: warning: DATE-WRITTEN is obsolete in COBOL 85
+SG102A.CBL:20: warning: SECURITY is obsolete in COBOL 85
+SG102A.CBL:41: warning: LABEL RECORDS is obsolete in COBOL 85
+SG102A.CBL:42: warning: DATA RECORDS is obsolete in COBOL 85
+SG102A.CBL: in section 'SECT-SG-02-001':
+SG102A.CBL:173: warning: section segments is obsolete in COBOL 85
+SG102A.CBL: in section 'TEST-1':
+SG102A.CBL:282: warning: section segments is obsolete in COBOL 85
+SG102A.CBL: in paragraph 'TEST-1C':
+SG102A.CBL:291: warning: ALTER is obsolete in COBOL 85
+SG102A.CBL: in section 'SEG-TEST2':
+SG102A.CBL:296: warning: section segments is obsolete in COBOL 85
+SG102A.CBL: in paragraph 'SEG-TEST-2':
+SG102A.CBL:300: warning: ALTER is obsolete in COBOL 85
+SG102A.CBL:302: warning: alphanumeric value is expected
+SG102A.CBL:49: note: 'RANGE-X' defined here as PIC X
+SG102A.CBL:305: warning: ALTER is obsolete in COBOL 85
+SG102A.CBL: in section 'TEST-6-1':
+SG102A.CBL:321: warning: section segments is obsolete in COBOL 85
+SG102A.CBL: in paragraph 'TEST-6A':
+SG102A.CBL:323: warning: ALTER is obsolete in COBOL 85
+SG102A.CBL: in section 'TEST-6-2':
+SG102A.CBL:324: warning: section segments is obsolete in COBOL 85
+SG102A.CBL: in section 'TEST-6-3':
+SG102A.CBL:327: warning: section segments is obsolete in COBOL 85
+SG102A.CBL: in section 'TEST-6-4':
+SG102A.CBL:332: warning: section segments is obsolete in COBOL 85
+SG102A.CBL: in paragraph 'TEST-6D':
+SG102A.CBL:334: warning: ALTER is obsolete in COBOL 85
+SG102A.CBL: in section 'TEST-6-5':
+SG102A.CBL:335: warning: section segments is obsolete in COBOL 85
+SG102A.CBL: in paragraph 'TEST-6E':
+SG102A.CBL:338: warning: alphanumeric value is expected
+SG102A.CBL:49: note: 'RANGE-X' defined here as PIC X
+SG102A.CBL: in section 'START-TESTING':
+SG102A.CBL:341: warning: section segments is obsolete in COBOL 85
+SG102A.CBL: in paragraph 'SEG-TEST-1':
+SG102A.CBL:346: warning: alphanumeric value is expected
+SG102A.CBL:49: note: 'RANGE-X' defined here as PIC X
+SG102A.CBL:348: warning: ALTER is obsolete in COBOL 85
+SG102A.CBL: in section 'TEST-8-BRANCH':
+SG102A.CBL:368: warning: section segments is obsolete in COBOL 85
+SG102A.CBL: in section 'TEST-6-6':
+SG102A.CBL:371: warning: section segments is obsolete in COBOL 85
+SG102A.CBL: in section 'TEST-6-7':
+SG102A.CBL:376: warning: section segments is obsolete in COBOL 85
+SG102A.CBL: in paragraph 'TEST-6G':
+SG102A.CBL:378: warning: ALTER is obsolete in COBOL 85
+SG102A.CBL: in section 'TEST-6-8':
+SG102A.CBL:380: warning: section segments is obsolete in COBOL 85
+SG102A.CBL: in section 'TEST-6-9':
+SG102A.CBL:385: warning: section segments is obsolete in COBOL 85
+SG102A.CBL: in section 'TEST22':
+SG102A.CBL:388: warning: section segments is obsolete in COBOL 85
+SG102A.CBL: in paragraph 'PARA-2-22':
+SG102A.CBL:395: warning: ALTER is obsolete in COBOL 85
+SG102A.CBL: in section 'TEST-4':
+SG102A.CBL:398: warning: section segments is obsolete in COBOL 85
+SG102A.CBL: in paragraph 'TEST-4C':
+SG102A.CBL:409: warning: ALTER is obsolete in COBOL 85
+SG102A.CBL: in section 'SEG-TEST5':
+SG102A.CBL:413: warning: section segments is obsolete in COBOL 85
+SG102A.CBL: in section 'SEG-TEST7':
+SG102A.CBL:439: warning: section segments is obsolete in COBOL 85
+SG102A.CBL: in paragraph 'SEG-TEST-7':
+SG102A.CBL:446: warning: ALTER is obsolete in COBOL 85
+SG102A.CBL: in section 'TEST-7-1':
+SG102A.CBL:463: warning: section segments is obsolete in COBOL 85
+SG102A.CBL: in section 'TEST-7-2':
+SG102A.CBL:466: warning: section segments is obsolete in COBOL 85
+SG102A.CBL: in paragraph 'TEST-7B':
+SG102A.CBL:468: warning: ALTER is obsolete in COBOL 85
+SG102A.CBL: in section 'TEST-7-3':
+SG102A.CBL:469: warning: section segments is obsolete in COBOL 85
+SG102A.CBL: in section 'TEST-7-4':
+SG102A.CBL:479: warning: section segments is obsolete in COBOL 85
+SG102A.CBL: in paragraph 'TEST-7F':
+SG102A.CBL:483: warning: ALTER is obsolete in COBOL 85
+SG102A.CBL: in section 'SEG-TEST3':
+SG102A.CBL:486: warning: section segments is obsolete in COBOL 85
+SG102A.CBL: in paragraph 'SEG-TEST-3':
+SG102A.CBL:490: warning: alphanumeric value is expected
+SG102A.CBL:49: note: 'RANGE-X' defined here as PIC X
+SG102A.CBL:494: warning: ALTER is obsolete in COBOL 85
+SG102A.CBL:495: warning: ALTER is obsolete in COBOL 85
+SG102A.CBL: in section 'TEST-3':
+SG102A.CBL:506: warning: section segments is obsolete in COBOL 85
+SG102A.CBL: in section 'SEG-TEST4':
+SG102A.CBL:529: warning: section segments is obsolete in COBOL 85
+SG102A.CBL: in paragraph 'SEG-TEST-4':
+SG102A.CBL:534: warning: alphanumeric value is expected
+SG102A.CBL:49: note: 'RANGE-X' defined here as PIC X
+SG102A.CBL: in section 'SEG-TEST6':
+SG102A.CBL:550: warning: section segments is obsolete in COBOL 85
+SG102A.CBL: in section 'SEG-TEST8':
+SG102A.CBL:572: warning: section segments is obsolete in COBOL 85
+SG102A.CBL: in paragraph 'SEG-TEST-8':
+SG102A.CBL:574: warning: ALTER is obsolete in COBOL 85
+SG102A.CBL: in section 'SEG-TEST-8A':
+SG102A.CBL:580: warning: section segments is obsolete in COBOL 85
+SG102A.CBL: in section 'TEST-5':
+SG102A.CBL:588: warning: section segments is obsolete in COBOL 85
+SG102A.CBL: in paragraph 'TEST-5B':
+SG102A.CBL:592: warning: ALTER is obsolete in COBOL 85
+SG102A.CBL:593: warning: ALTER is obsolete in COBOL 85
+SG102A.CBL: in section 'SEG':
+SG102A.CBL:598: warning: section segments is obsolete in COBOL 85
+SG102A.CBL: in paragraph 'SEG-99B':
+SG102A.CBL:602: warning: ALTER is obsolete in COBOL 85
+SG102A.CBL:603: warning: ALTER is obsolete in COBOL 85
+SG102A.CBL:557: warning: TEST-6A and TEST-6I are not in the same SECTION
+])
+AT_CHECK([./SG102A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [008OF008TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([SG103A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([SG SG103A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SG/SG103A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 SG103A.CBL], [0], [], [SG103A.CBL:4: warning: AUTHOR is obsolete in COBOL 85
+SG103A.CBL:6: warning: INSTALLATION is obsolete in COBOL 85
+SG103A.CBL:16: warning: DATE-WRITTEN is obsolete in COBOL 85
+SG103A.CBL:20: warning: SECURITY is obsolete in COBOL 85
+SG103A.CBL:40: warning: LABEL RECORDS is obsolete in COBOL 85
+SG103A.CBL:41: warning: DATA RECORDS is obsolete in COBOL 85
+SG103A.CBL: in section 'SECT-SG-03-001':
+SG103A.CBL:291: warning: section segments is obsolete in COBOL 85
+SG103A.CBL: in section 'SEC20':
+SG103A.CBL:296: warning: section segments is obsolete in COBOL 85
+SG103A.CBL: in section 'SEC51':
+SG103A.CBL:381: warning: section segments is obsolete in COBOL 85
+SG103A.CBL: in paragraph 'P5103':
+SG103A.CBL:399: warning: ALTER is obsolete in COBOL 85
+SG103A.CBL: in section 'SEC60':
+SG103A.CBL:443: warning: section segments is obsolete in COBOL 85
+SG103A.CBL: in section 'SEC80':
+SG103A.CBL:447: warning: section segments is obsolete in COBOL 85
+SG103A.CBL: in paragraph 'P8002':
+SG103A.CBL:451: warning: ALTER is obsolete in COBOL 85
+SG103A.CBL: in section 'SEC93':
+SG103A.CBL:458: warning: section segments is obsolete in COBOL 85
+SG103A.CBL: in section 'SEC95':
+SG103A.CBL:468: warning: section segments is obsolete in COBOL 85
+SG103A.CBL: in paragraph 'P9501':
+SG103A.CBL:471: warning: ALTER is obsolete in COBOL 85
+SG103A.CBL: in section 'SEC99':
+SG103A.CBL:472: warning: section segments is obsolete in COBOL 85
+SG103A.CBL: in paragraph 'P9902':
+SG103A.CBL:476: warning: ALTER is obsolete in COBOL 85
+])
+AT_CHECK([./SG103A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [007OF007TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([SG104A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([SG SG104A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SG/SG104A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 SG104A.CBL], [0], [], [SG104A.CBL:4: warning: AUTHOR is obsolete in COBOL 85
+SG104A.CBL:6: warning: INSTALLATION is obsolete in COBOL 85
+SG104A.CBL:16: warning: DATE-WRITTEN is obsolete in COBOL 85
+SG104A.CBL:20: warning: SECURITY is obsolete in COBOL 85
+SG104A.CBL:60: warning: LABEL RECORDS is obsolete in COBOL 85
+SG104A.CBL:61: warning: DATA RECORDS is obsolete in COBOL 85
+SG104A.CBL:65: warning: DATA RECORDS is obsolete in COBOL 85
+SG104A.CBL: in section 'SORT-PARA':
+SG104A.CBL:203: warning: section segments is obsolete in COBOL 85
+SG104A.CBL: in section 'INPROC':
+SG104A.CBL:217: warning: section segments is obsolete in COBOL 85
+SG104A.CBL: in paragraph 'BUILD-FILE':
+SG104A.CBL:238: warning: ignoring sign
+SG104A.CBL: in paragraph 'BUILD-RECORD':
+SG104A.CBL:251: warning: ignoring sign
+SG104A.CBL: in section 'OUTPROC':
+SG104A.CBL:259: warning: section segments is obsolete in COBOL 85
+SG104A.CBL: in section 'B-IS-LESS-THAN-SPACE':
+SG104A.CBL:267: warning: section segments is obsolete in COBOL 85
+SG104A.CBL: in section 'SPACE-IS-LESS-THAN-B':
+SG104A.CBL:372: warning: section segments is obsolete in COBOL 85
+SG104A.CBL: in section 'CONTINUE-TESTING':
+SG104A.CBL:473: warning: section segments is obsolete in COBOL 85
+SG104A.CBL: in section 'OUTPROC-EXIT':
+SG104A.CBL:588: warning: section segments is obsolete in COBOL 85
+])
+AT_CHECK([./SG104A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [009OF009TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([SG105A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([SG SG105A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SG/SG105A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 SG105A.CBL], [0], [], [SG105A.CBL:4: warning: AUTHOR is obsolete in COBOL 85
+SG105A.CBL:6: warning: INSTALLATION is obsolete in COBOL 85
+SG105A.CBL:16: warning: DATE-WRITTEN is obsolete in COBOL 85
+SG105A.CBL:20: warning: SECURITY is obsolete in COBOL 85
+SG105A.CBL:60: warning: LABEL RECORDS is obsolete in COBOL 85
+SG105A.CBL:61: warning: DATA RECORDS is obsolete in COBOL 85
+SG105A.CBL:65: warning: DATA RECORDS is obsolete in COBOL 85
+SG105A.CBL: in section 'SORT-PARA':
+SG105A.CBL:203: warning: section segments is obsolete in COBOL 85
+SG105A.CBL: in section 'INPROC':
+SG105A.CBL:217: warning: section segments is obsolete in COBOL 85
+SG105A.CBL: in paragraph 'BUILD-FILE':
+SG105A.CBL:238: warning: ignoring sign
+SG105A.CBL: in paragraph 'BUILD-RECORD':
+SG105A.CBL:251: warning: ignoring sign
+SG105A.CBL: in section 'OUTPROC':
+SG105A.CBL:259: warning: section segments is obsolete in COBOL 85
+SG105A.CBL: in section 'B-IS-LESS-THAN-SPACE':
+SG105A.CBL:267: warning: section segments is obsolete in COBOL 85
+SG105A.CBL: in section 'SPACE-IS-LESS-THAN-B':
+SG105A.CBL:372: warning: section segments is obsolete in COBOL 85
+SG105A.CBL: in paragraph 'SORT-FAIL-15':
+SG105A.CBL:458: warning: value size exceeds data size
+SG105A.CBL:458: note: value is 6000000000000000
+SG105A.CBL:116: note: 'CORRECT-18V0' defined here as PIC -9(18)
+SG105A.CBL: in section 'CONTINUE-TESTING':
+SG105A.CBL:473: warning: section segments is obsolete in COBOL 85
+SG105A.CBL: in section 'OUTPROC-EXIT':
+SG105A.CBL:588: warning: section segments is obsolete in COBOL 85
+])
+AT_CHECK([./SG105A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [009OF009TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([SG106A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([SG SG106A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SG/SG106A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 SG106A.CBL], [0], [], [SG106A.CBL:4: warning: AUTHOR is obsolete in COBOL 85
+SG106A.CBL:6: warning: INSTALLATION is obsolete in COBOL 85
+SG106A.CBL:16: warning: DATE-WRITTEN is obsolete in COBOL 85
+SG106A.CBL:20: warning: SECURITY is obsolete in COBOL 85
+SG106A.CBL:60: warning: LABEL RECORDS is obsolete in COBOL 85
+SG106A.CBL:61: warning: DATA RECORDS is obsolete in COBOL 85
+SG106A.CBL:65: warning: DATA RECORDS is obsolete in COBOL 85
+SG106A.CBL: in section 'SORT-PARA':
+SG106A.CBL:203: warning: section segments is obsolete in COBOL 85
+SG106A.CBL: in section 'INPROC':
+SG106A.CBL:217: warning: section segments is obsolete in COBOL 85
+SG106A.CBL: in paragraph 'BUILD-FILE':
+SG106A.CBL:238: warning: ignoring sign
+SG106A.CBL: in paragraph 'BUILD-RECORD':
+SG106A.CBL:251: warning: ignoring sign
+SG106A.CBL: in section 'OUTPROC':
+SG106A.CBL:259: warning: section segments is obsolete in COBOL 85
+SG106A.CBL: in section 'B-IS-LESS-THAN-SPACE':
+SG106A.CBL:267: warning: section segments is obsolete in COBOL 85
+SG106A.CBL: in section 'SPACE-IS-LESS-THAN-B':
+SG106A.CBL:372: warning: section segments is obsolete in COBOL 85
+SG106A.CBL: in section 'CONTINUE-TESTING':
+SG106A.CBL:473: warning: section segments is obsolete in COBOL 85
+SG106A.CBL: in section 'OUTPROC-EXIT':
+SG106A.CBL:588: warning: section segments is obsolete in COBOL 85
+])
+AT_CHECK([./SG106A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [009OF009TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([SG201A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([SG SG201A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SG/SG201A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 SG201A.CBL], [0], [], [SG201A.CBL:4: warning: AUTHOR is obsolete in COBOL 85
+SG201A.CBL:6: warning: INSTALLATION is obsolete in COBOL 85
+SG201A.CBL:16: warning: DATE-WRITTEN is obsolete in COBOL 85
+SG201A.CBL:20: warning: SECURITY is obsolete in COBOL 85
+SG201A.CBL:37: warning: SEGMENT LIMIT is obsolete in COBOL 85
+SG201A.CBL:46: warning: LABEL RECORDS is obsolete in COBOL 85
+SG201A.CBL:47: warning: DATA RECORDS is obsolete in COBOL 85
+SG201A.CBL: in section 'HOUSEKEEPING':
+SG201A.CBL:175: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in section 'SECOND-HALF':
+SG201A.CBL:1504: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in section '00':
+SG201A.CBL:1596: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in section '01':
+SG201A.CBL:1599: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in section '02':
+SG201A.CBL:1602: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in section '03':
+SG201A.CBL:1605: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in section '04':
+SG201A.CBL:1608: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in section '05':
+SG201A.CBL:1611: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in section '06':
+SG201A.CBL:1614: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in section '30':
+SG201A.CBL:1617: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in paragraph 'PARA-30C':
+SG201A.CBL:1625: warning: ALTER is obsolete in COBOL 85
+SG201A.CBL: in section '31':
+SG201A.CBL:1628: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in paragraph 'PARA-31C':
+SG201A.CBL:1636: warning: ALTER is obsolete in COBOL 85
+SG201A.CBL: in section '32':
+SG201A.CBL:1639: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in paragraph 'PARA-32C':
+SG201A.CBL:1647: warning: ALTER is obsolete in COBOL 85
+SG201A.CBL: in section '33':
+SG201A.CBL:1650: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in paragraph 'PARA-33C':
+SG201A.CBL:1658: warning: ALTER is obsolete in COBOL 85
+SG201A.CBL: in section '34':
+SG201A.CBL:1661: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in paragraph 'PARA-34C':
+SG201A.CBL:1669: warning: ALTER is obsolete in COBOL 85
+SG201A.CBL: in section '35':
+SG201A.CBL:1672: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in paragraph 'PARA-35C':
+SG201A.CBL:1680: warning: ALTER is obsolete in COBOL 85
+SG201A.CBL: in section '36':
+SG201A.CBL:1683: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in paragraph 'PARA-36C':
+SG201A.CBL:1691: warning: ALTER is obsolete in COBOL 85
+SG201A.CBL: in section '37':
+SG201A.CBL:1694: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in paragraph 'PARA-37C':
+SG201A.CBL:1702: warning: ALTER is obsolete in COBOL 85
+SG201A.CBL: in section '38':
+SG201A.CBL:1705: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in paragraph 'PARA-38C':
+SG201A.CBL:1713: warning: ALTER is obsolete in COBOL 85
+SG201A.CBL: in section '39':
+SG201A.CBL:1716: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in paragraph 'PARA-39C':
+SG201A.CBL:1724: warning: ALTER is obsolete in COBOL 85
+SG201A.CBL: in section '40':
+SG201A.CBL:1727: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in paragraph 'PARA-40C':
+SG201A.CBL:1735: warning: ALTER is obsolete in COBOL 85
+SG201A.CBL: in section '41':
+SG201A.CBL:1738: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in paragraph 'PARA-41C':
+SG201A.CBL:1746: warning: ALTER is obsolete in COBOL 85
+SG201A.CBL: in section '42':
+SG201A.CBL:1749: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in paragraph 'PARA-42C':
+SG201A.CBL:1757: warning: ALTER is obsolete in COBOL 85
+SG201A.CBL: in section '43':
+SG201A.CBL:1760: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in paragraph 'PARA-43C':
+SG201A.CBL:1768: warning: ALTER is obsolete in COBOL 85
+SG201A.CBL: in section '44':
+SG201A.CBL:1771: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in paragraph 'PARA-44C':
+SG201A.CBL:1779: warning: ALTER is obsolete in COBOL 85
+SG201A.CBL: in section '45':
+SG201A.CBL:1782: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in paragraph 'PARA-45C':
+SG201A.CBL:1790: warning: ALTER is obsolete in COBOL 85
+SG201A.CBL: in section '46':
+SG201A.CBL:1793: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in paragraph 'PARA-46C':
+SG201A.CBL:1801: warning: ALTER is obsolete in COBOL 85
+SG201A.CBL: in section '47':
+SG201A.CBL:1804: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in paragraph 'PARA-47C':
+SG201A.CBL:1812: warning: ALTER is obsolete in COBOL 85
+SG201A.CBL: in section '48':
+SG201A.CBL:1815: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in paragraph 'PARA-48C':
+SG201A.CBL:1823: warning: ALTER is obsolete in COBOL 85
+SG201A.CBL: in section '49':
+SG201A.CBL:1826: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in paragraph 'PARA-49C':
+SG201A.CBL:1834: warning: ALTER is obsolete in COBOL 85
+SG201A.CBL: in section '50':
+SG201A.CBL:1837: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in paragraph 'PARA-50B':
+SG201A.CBL:1843: warning: ALTER is obsolete in COBOL 85
+SG201A.CBL: in section '51':
+SG201A.CBL:1846: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in paragraph 'PARA-51B':
+SG201A.CBL:1852: warning: ALTER is obsolete in COBOL 85
+SG201A.CBL: in section '52':
+SG201A.CBL:1855: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in paragraph 'PARA-52B':
+SG201A.CBL:1861: warning: ALTER is obsolete in COBOL 85
+SG201A.CBL: in section '53':
+SG201A.CBL:1864: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in paragraph 'PARA-53B':
+SG201A.CBL:1870: warning: ALTER is obsolete in COBOL 85
+SG201A.CBL: in section '54':
+SG201A.CBL:1873: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in paragraph 'PARA-54B':
+SG201A.CBL:1879: warning: ALTER is obsolete in COBOL 85
+SG201A.CBL: in section '55':
+SG201A.CBL:1882: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in paragraph 'PARA-55B':
+SG201A.CBL:1888: warning: ALTER is obsolete in COBOL 85
+SG201A.CBL: in section '56':
+SG201A.CBL:1891: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in paragraph 'PARA-56B':
+SG201A.CBL:1897: warning: ALTER is obsolete in COBOL 85
+SG201A.CBL: in section '57':
+SG201A.CBL:1900: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in paragraph 'PARA-57B':
+SG201A.CBL:1906: warning: ALTER is obsolete in COBOL 85
+SG201A.CBL: in section '58':
+SG201A.CBL:1909: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in paragraph 'PARA-58B':
+SG201A.CBL:1915: warning: ALTER is obsolete in COBOL 85
+SG201A.CBL: in section '59':
+SG201A.CBL:1918: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in paragraph 'PARA-59B':
+SG201A.CBL:1924: warning: ALTER is obsolete in COBOL 85
+SG201A.CBL: in section '60':
+SG201A.CBL:1927: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in paragraph 'PARA-60B':
+SG201A.CBL:1933: warning: ALTER is obsolete in COBOL 85
+SG201A.CBL: in section '99':
+SG201A.CBL:1936: warning: section segments is obsolete in COBOL 85
+SG201A.CBL: in paragraph 'PARA-99A':
+SG201A.CBL:1940: warning: ALTER is obsolete in COBOL 85
+])
+AT_CHECK([./SG201A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [079OF079TESTSWEREEXECUTEDSUCCESSFULLY
+FEATUREPASSPARAGRAPH-NAMEREMARKS
+TESTEDFAIL
+
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([SG202A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([SG SG202A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SG/SG202A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 SG202A.CBL], [0], [], [SG202A.CBL:4: warning: AUTHOR is obsolete in COBOL 85
+SG202A.CBL:6: warning: INSTALLATION is obsolete in COBOL 85
+SG202A.CBL:16: warning: DATE-WRITTEN is obsolete in COBOL 85
+SG202A.CBL:20: warning: SECURITY is obsolete in COBOL 85
+SG202A.CBL:35: warning: SEGMENT LIMIT is obsolete in COBOL 85
+SG202A.CBL:44: warning: LABEL RECORDS is obsolete in COBOL 85
+SG202A.CBL:45: warning: DATA RECORDS is obsolete in COBOL 85
+SG202A.CBL: in section 'SECT-SG-02-001':
+SG202A.CBL:293: warning: section segments is obsolete in COBOL 85
+SG202A.CBL: in paragraph 'TEST-2':
+SG202A.CBL:329: warning: ALTER is obsolete in COBOL 85
+SG202A.CBL: in section 'SEC28':
+SG202A.CBL:383: warning: section segments is obsolete in COBOL 85
+SG202A.CBL: in section 'SEC39':
+SG202A.CBL:399: warning: section segments is obsolete in COBOL 85
+SG202A.CBL: in paragraph 'P3902':
+SG202A.CBL:403: warning: ALTER is obsolete in COBOL 85
+SG202A.CBL: in paragraph 'P3903':
+SG202A.CBL:407: warning: ALTER is obsolete in COBOL 85
+SG202A.CBL: in section 'SEC40':
+SG202A.CBL:411: warning: section segments is obsolete in COBOL 85
+SG202A.CBL: in section 'SEC45':
+SG202A.CBL:421: warning: section segments is obsolete in COBOL 85
+SG202A.CBL: in section 'SEC48':
+SG202A.CBL:426: warning: section segments is obsolete in COBOL 85
+SG202A.CBL: in section 'SEC45':
+SG202A.CBL: in paragraph 'P4502':
+SG202A.CBL:347: warning: P4501 and P0003 are not in the same SECTION
+SG202A.CBL:347: warning: P0003 is defined before P4501
+SG202A.CBL:422: note: 'P4501' defined here
+SG202A.CBL:295: note: 'P0003' defined here
+SG202A.CBL:365: warning: P0004 and P4802 are not in the same SECTION
+])
+AT_CHECK([./SG202A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [005OF005TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([SG203A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([SG SG203A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SG/SG203A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 SG203A.CBL], [0], [], [SG203A.CBL:4: warning: AUTHOR is obsolete in COBOL 85
+SG203A.CBL:6: warning: INSTALLATION is obsolete in COBOL 85
+SG203A.CBL:16: warning: DATE-WRITTEN is obsolete in COBOL 85
+SG203A.CBL:20: warning: SECURITY is obsolete in COBOL 85
+SG203A.CBL:33: warning: SEGMENT LIMIT is obsolete in COBOL 85
+SG203A.CBL:42: warning: LABEL RECORDS is obsolete in COBOL 85
+SG203A.CBL:43: warning: DATA RECORDS is obsolete in COBOL 85
+SG203A.CBL: in section 'SECT-SG-03-001':
+SG203A.CBL:172: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in section '50':
+SG203A.CBL:281: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in section '29':
+SG203A.CBL:284: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in section '67':
+SG203A.CBL:288: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in section '30':
+SG203A.CBL:305: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in section '51':
+SG203A.CBL:308: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in section '52':
+SG203A.CBL:311: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in section '31':
+SG203A.CBL:314: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in section '53':
+SG203A.CBL:330: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in section '99':
+SG203A.CBL:333: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in paragraph 'WRITE-99':
+SG203A.CBL:351: warning: ALTER is obsolete in COBOL 85
+SG203A.CBL: in section '54':
+SG203A.CBL:353: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in paragraph 'PARA-54A':
+SG203A.CBL:357: warning: ALTER is obsolete in COBOL 85
+SG203A.CBL: in paragraph 'PARA-54B':
+SG203A.CBL:360: warning: ALTER is obsolete in COBOL 85
+SG203A.CBL: in section '32':
+SG203A.CBL:362: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in paragraph 'PARA-32A':
+SG203A.CBL:366: warning: ALTER is obsolete in COBOL 85
+SG203A.CBL: in section '33':
+SG203A.CBL:372: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in section '34':
+SG203A.CBL:375: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in paragraph 'PARA-34A':
+SG203A.CBL:379: warning: ALTER is obsolete in COBOL 85
+SG203A.CBL: in section '55':
+SG203A.CBL:381: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in section '56':
+SG203A.CBL:398: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in paragraph 'PARA-56':
+SG203A.CBL:400: warning: ALTER is obsolete in COBOL 85
+SG203A.CBL: in section '57':
+SG203A.CBL:418: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in paragraph 'PARA-57':
+SG203A.CBL:421: warning: ALTER is obsolete in COBOL 85
+SG203A.CBL: in section '59':
+SG203A.CBL:430: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in section '01':
+SG203A.CBL:437: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in section '02':
+SG203A.CBL:454: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in section '35':
+SG203A.CBL:473: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in paragraph 'PARA-35':
+SG203A.CBL:475: warning: ALTER is obsolete in COBOL 85
+SG203A.CBL: in section '36':
+SG203A.CBL:494: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in paragraph 'PARA-36A':
+SG203A.CBL:498: warning: ALTER is obsolete in COBOL 85
+SG203A.CBL: in section '85':
+SG203A.CBL:518: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in section '98':
+SG203A.CBL:522: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in section '58':
+SG203A.CBL:526: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in paragraph 'PARA-58D':
+SG203A.CBL:538: warning: ALTER is obsolete in COBOL 85
+SG203A.CBL: in section '37':
+SG203A.CBL:541: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in section '38':
+SG203A.CBL:559: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in section '03':
+SG203A.CBL:577: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in section '39':
+SG203A.CBL:597: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in paragraph 'PARA-39D':
+SG203A.CBL:607: warning: ALTER is obsolete in COBOL 85
+SG203A.CBL: in section '04':
+SG203A.CBL:610: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in section '40':
+SG203A.CBL:628: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in section '68':
+SG203A.CBL:657: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in paragraph 'PARA-68A':
+SG203A.CBL:661: warning: ALTER is obsolete in COBOL 85
+SG203A.CBL: in section '41':
+SG203A.CBL:686: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in paragraph 'PARA-41A':
+SG203A.CBL:691: warning: ALTER is obsolete in COBOL 85
+SG203A.CBL: in section 'TEST-16':
+SG203A.CBL:708: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in paragraph 'PARA-41D':
+SG203A.CBL:716: warning: ALTER is obsolete in COBOL 85
+SG203A.CBL: in section 'TEST-16A':
+SG203A.CBL:723: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in section '45':
+SG203A.CBL:726: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in section '45A':
+SG203A.CBL:739: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in section '45B':
+SG203A.CBL:742: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in paragraph 'PARA-45C':
+SG203A.CBL:744: warning: ALTER is obsolete in COBOL 85
+SG203A.CBL: in paragraph 'PARA-45E':
+SG203A.CBL:750: warning: ALTER is obsolete in COBOL 85
+SG203A.CBL: in section '46':
+SG203A.CBL:759: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in section 'TEST-18':
+SG203A.CBL:771: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in paragraph 'PARA-47':
+SG203A.CBL:775: warning: ALTER is obsolete in COBOL 85
+SG203A.CBL: in section '05':
+SG203A.CBL:777: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in paragraph 'PARA-05':
+SG203A.CBL:779: warning: GO TO without procedure-name is obsolete in COBOL 85
+SG203A.CBL: in section '69':
+SG203A.CBL:784: warning: section segments is obsolete in COBOL 85
+SG203A.CBL: in paragraph 'WRITE-69':
+SG203A.CBL:335: warning: PARA-32 and PARA-33 are not in the same SECTION
+])
+AT_CHECK([./SG203A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [018OF018TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([SG204A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([SG SG204A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SG/SG204A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 SG204A.CBL], [0], [], [SG204A.CBL:4: warning: AUTHOR is obsolete in COBOL 85
+SG204A.CBL:6: warning: INSTALLATION is obsolete in COBOL 85
+SG204A.CBL:16: warning: DATE-WRITTEN is obsolete in COBOL 85
+SG204A.CBL:20: warning: SECURITY is obsolete in COBOL 85
+SG204A.CBL:70: warning: LABEL RECORDS is obsolete in COBOL 85
+SG204A.CBL:71: warning: DATA RECORDS is obsolete in COBOL 85
+SG204A.CBL:75: warning: LABEL RECORDS is obsolete in COBOL 85
+SG204A.CBL:79: warning: VALUE OF is obsolete in COBOL 85
+SG204A.CBL:81: warning: DATA RECORDS is obsolete in COBOL 85
+SG204A.CBL:85: warning: LABEL RECORDS is obsolete in COBOL 85
+SG204A.CBL:89: warning: VALUE OF is obsolete in COBOL 85
+SG204A.CBL:91: warning: DATA RECORDS is obsolete in COBOL 85
+SG204A.CBL:100: warning: LABEL RECORDS is obsolete in COBOL 85
+SG204A.CBL:104: warning: VALUE OF is obsolete in COBOL 85
+SG204A.CBL:105: warning: DATA RECORDS is obsolete in COBOL 85
+SG204A.CBL:115: warning: DATA RECORDS is obsolete in COBOL 85
+SG204A.CBL:123: warning: DATA RECORDS is obsolete in COBOL 85
+SG204A.CBL:132: warning: DATA RECORDS is obsolete in COBOL 85
+SG204A.CBL: in section 'SRT-1':
+SG204A.CBL:419: warning: section segments is obsolete in COBOL 85
+SG204A.CBL: in section 'SRT-2':
+SG204A.CBL:428: warning: section segments is obsolete in COBOL 85
+SG204A.CBL: in section 'SRT-2-INPUT':
+SG204A.CBL:438: warning: section segments is obsolete in COBOL 85
+SG204A.CBL: in section 'SRT3-INPUT':
+SG204A.CBL:588: warning: section segments is obsolete in COBOL 85
+SG204A.CBL: in section 'SRT3-OUTPUT-1':
+SG204A.CBL:728: warning: section segments is obsolete in COBOL 85
+SG204A.CBL: in section 'SRT3-OUTPUT-2':
+SG204A.CBL:835: warning: section segments is obsolete in COBOL 85
+SG204A.CBL: in section 'END-CCVS':
+SG204A.CBL:875: warning: section segments is obsolete in COBOL 85
+])
+AT_CHECK([./SG204A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [015OF015TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([SG302M])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([SG SG302M])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SG/SG302M.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 SG302M.CBL], [0], [], [SG302M.CBL: in section 'BEANO':
+SG302M.CBL:16: warning: section segments is obsolete in COBOL 85
+])
+AT_CHECK([./SG302M], [0], [THIS IS A DUMMY PARAGRAPH
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([SG303M])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([SG SG303M])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SG/SG303M.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 SG303M.CBL], [0], [], [SG303M.CBL:12: warning: SEGMENT LIMIT is obsolete in COBOL 85
+SG303M.CBL: in section 'NUMBER1':
+SG303M.CBL:17: warning: section segments is obsolete in COBOL 85
+SG303M.CBL: in section 'NUMBER2':
+SG303M.CBL:23: warning: section segments is obsolete in COBOL 85
+SG303M.CBL: in section 'NUMBER3':
+SG303M.CBL:29: warning: section segments is obsolete in COBOL 85
+])
+AT_CHECK([./SG303M], [0], [THIS IS A DUMMY PARAGRAPH
+THIS IS A DUMMY PARAGRAPH TOO!
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([SG401M])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([SG SG401M])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SG/SG401M.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 SG401M.CBL], [0], [], [SG401M.CBL:12: warning: SEGMENT LIMIT is obsolete in COBOL 85
+SG401M.CBL: in section 'NUMBER1':
+SG401M.CBL:19: warning: section segments is obsolete in COBOL 85
+SG401M.CBL: in section 'NUMBER2':
+SG401M.CBL:24: warning: section segments is obsolete in COBOL 85
+SG401M.CBL: in section 'NUMBER3':
+SG401M.CBL:29: warning: section segments is obsolete in COBOL 85
+])
+AT_CHECK([./SG401M], [0], [THIS IS A DUMMY PARAGRAPH
+THIS IS A DUMMY PARAGRAPH TOO!
+], [])
+
+AT_CLEANUP
+
