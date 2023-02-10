@@ -4893,7 +4893,7 @@ AT_CLEANUP
 AT_SETUP([ANY LENGTH (4)])
 AT_KEYWORDS([runmisc IF CALL])
 
-# comparision of any length was done only for first character - see bug 511
+# comparison of any length was done only for first character - see bug 511
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -5175,7 +5175,7 @@ AT_CLEANUP
 AT_SETUP([Computing of different USAGEs w/o decimal point])
 AT_KEYWORDS([runmisc
 BINARY-C-LONG BINARY-CHAR BINARY-DOUBLE BINARY-LONG
-COMP COMP-1 COMP-2 COMP-3 COMP-5 COMP-6 COMP-X COMP-N
+COMP COMP-1 COMP-2 COMP-3 PACKED-DECIMAL COMP-5 COMP-6 COMP-X COMP-N
 FLOAT-DECIMAL-16 FLOAT-DECIMAL-34 FLOAT-LONG FLOAT-SHORT])
 
 AT_DATA([prog.cob], [
@@ -5692,7 +5692,7 @@ AT_CLEANUP
 AT_SETUP([Computing of different USAGEs w/- decimal point])
 AT_KEYWORDS([runmisc
 BINARY-C-LONG BINARY-CHAR BINARY-DOUBLE BINARY-LONG
-COMP COMP-1 COMP-2 COMP-3 COMP-5 COMP-6 COMP-N COMP-X
+COMP COMP-1 COMP-2 COMP-3 PACKED-DECIMAL COMP-5 COMP-6 COMP-N COMP-X
 FLOAT-DECIMAL-16 FLOAT-DECIMAL-34 FLOAT-LONG FLOAT-SHORT])
 
 AT_DATA([prog.cob], [
@@ -6700,41 +6700,45 @@ COST IS $18,536.23
 AT_CLEANUP
 
 
-AT_SETUP([COMP-3 Index])
-AT_KEYWORDS([numeric])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. prog.
-       DATA DIVISION.
-       WORKING-STORAGE SECTION.
-       01 WS-PAGE-NUMBER PIC 9(4) COMP-3 VALUE ZERO.
-       01 WS-LINE-NUMBER PIC 9(3) VALUE ZERO.
-       PROCEDURE DIVISION.
-       PERFORM VARYING WS-LINE-NUMBER FROM 1 BY 1
-                 UNTIL WS-LINE-NUMBER > 10
-       ADD 1 TO WS-PAGE-NUMBER
-       DISPLAY WS-PAGE-NUMBER
-       END-PERFORM.
-       STOP RUN RETURNING 0.
-])
-
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
-[0001
-0002
-0003
-0004
-0005
-0006
-0007
-0008
-0009
-0010
-], [])
-
-AT_CLEANUP
+# Simon added the test with r4592 as "COMP-3 Index", but
+# the revision and the ones before had no relation to this at all
+# and as the tests seem to be done in other places... disabld 
+# the test
+#AT_SETUP([PACKED-DECIMAL in PERFORM VARYING])
+#AT_KEYWORDS([numeric COMP-3])
+#
+#AT_DATA([prog.cob], [
+#       IDENTIFICATION DIVISION.
+#       PROGRAM-ID. prog.
+#       DATA DIVISION.
+#       WORKING-STORAGE SECTION.
+#       01 WS-PAGE-NUMBER PIC 9(4) COMP-3 VALUE ZERO.
+#       01 WS-LINE-NUMBER PIC 9(3) VALUE ZERO.
+#       PROCEDURE DIVISION.
+#       PERFORM VARYING WS-LINE-NUMBER FROM 1 BY 1
+#                 UNTIL WS-LINE-NUMBER > 10
+#         ADD 1 TO WS-PAGE-NUMBER
+#         DISPLAY WS-PAGE-NUMBER
+#       END-PERFORM.
+#       STOP RUN RETURNING 0.
+#])
+#
+#AT_CHECK([$COMPILE prog.cob], [0], [], [])
+#
+#AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+#[0001
+#0002
+#0003
+#0004
+#0005
+#0006
+#0007
+#0008
+#0009
+#0010
+#], [])
+#
+#AT_CLEANUP
 
 
 AT_SETUP([POINTER])
@@ -11026,7 +11030,7 @@ AT_DATA([caller.cob], [
        PROCEDURE DIVISION.
        MAIN-LINE.
 
-      *>   minimal side-test for performance comparisions
+      *>   minimal side-test for performance comparisons
            PERFORM DO-CHECK 10000 TIMES
            DISPLAY 'DONE' UPON SYSERR WITH NO ADVANCING
            GOBACK.
@@ -11607,15 +11611,15 @@ BINFLD5S is now +01030;
 CHRX     is now Hello!   ;
 NE       is now   514.07-;
 ],
-[libcob: prog.cob:21: warning: cob_put_s64_param: attempt to over-write constant parameter 1 with 2563
-libcob: prog.cob:21: warning: cob_put_s64_param: attempt to over-write constant parameter 2 with 19
+[libcob: prog.cob:21: warning: cob_put_s64_param: attempt to over-write constant parameter 1 with '2563'
+libcob: prog.cob:21: warning: cob_put_s64_param: attempt to over-write constant parameter 2 with '19'
 libcob: prog.cob:27: warning: cob_put_s64_param: parameter 7 is not within range of 4
 libcob: prog.cob:28: warning: cob_put_s64_param: parameter 7 is not within range of 3
 libcob: prog.cob:31: warning: cob_put_picx_param: attempt to over-write constant parameter 2 with 'Bye!'
 libcob: prog.cob:32: warning: cob_put_picx_param: attempt to over-write constant parameter 2 with 'Bye!'
-libcob: prog.cob:33: warning: cob_put_s64_param: attempt to over-write constant parameter 1 with 21
+libcob: prog.cob:33: warning: cob_put_s64_param: attempt to over-write constant parameter 1 with '21'
 libcob: prog.cob:34: warning: cob_put_grp_param: attempt to over-write constant parameter 1
-libcob: prog.cob:34: warning: cob_put_s64_param: attempt to over-write constant parameter 2 with 21
+libcob: prog.cob:34: warning: cob_put_s64_param: attempt to over-write constant parameter 2 with '21'
 libcob: prog.cob:35: warning: cob_put_picx_param: attempt to over-write constant parameter 1 with 'Bye!'
 ])
 
@@ -13829,7 +13833,7 @@ AT_CLEANUP
 AT_SETUP([assorted math])
 AT_KEYWORDS([runmisc expression])
 
-# this is a test containing differnt small reproducers from
+# this is a test containing different small reproducers from
 # bug reports
 
 AT_DATA([prog.cob], [
@@ -13838,26 +13842,27 @@ AT_DATA([prog.cob], [
        DATA DIVISION.
        WORKING-STORAGE SECTION.
        01 n pic 99 value 89.
+       01 m pic 99 value 0.
        01 variable usage signed-int value 0.
           88 a-one value 1.
           88 a-two value 2.
        LINKAGE SECTION.
        PROCEDURE DIVISION.
       *> bug #702, "pow"-call in generated program
-           display n(n**0+ 1:).
+           display n(n**0+ 1:) with no advancing.
+           display "-"         with no advancing.
+           display n(n**m+ 1:) with no advancing.
       *> bug #631 arithmetic handling (optimize code)
            if not a-one and not a-two
               display 'succeeded'
            else
-              display 'failed'
-           end-if.
+              display 'failed'.
            GOBACK.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
-[9
-succeeded
+[9-9succeeded
 ], [])
 
 AT_CLEANUP
