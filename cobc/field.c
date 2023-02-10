@@ -725,10 +725,10 @@ copy_into_field_recursive (struct cb_field *source, struct cb_field *target,
 {
 	field_attribute_override (usage);
 
-	/* checkme: how to handle DEPENDING and INDICES here ? */
 	field_attribute_override (occurs_min);
 	field_attribute_override (occurs_max);
 	field_attribute_override (flag_occurs);
+
 	if (CB_VALID_TREE (source->depending)) {
 #if 0	/* TODO: check if DEPENDING field is part of the original TYPEDEF,
 		   if yes then full-qualify the reference */
@@ -794,6 +794,8 @@ copy_into_field_recursive (struct cb_field *source, struct cb_field *target,
 	field_attribute_override (flag_any_length);
 	field_attribute_override (flag_any_numeric);
 	field_attribute_override (flag_invalid);
+	field_attribute_override (flag_is_pointer);
+	/* Note: attributes must be handled both here and in copy_into_field */
 
 	/* TODO: add copying of align clause and other boolean/bit stuff once added */
 
@@ -855,6 +857,9 @@ copy_into_field (struct cb_field *source, struct cb_field *target)
 	field_attribute_copy (flag_item_based);
 	field_attribute_override (flag_any_length);
 	field_attribute_override (flag_any_numeric);
+	field_attribute_override (flag_invalid);
+	field_attribute_override (flag_is_pointer);
+	/* Note: attributes must be handled both here and in copy_into_field_recursive */
 
 	if (unlikely (!target->like_modifier)) {
 		if (source->children) {
@@ -2909,6 +2914,10 @@ unbounded_again:
 			if (f->pic->have_sign && f->flag_sign_separate) {
 				f->size++;
 			}
+			break;
+		case CB_USAGE_NATIONAL:
+			if (f->pic != NULL)
+				f->size = f->pic->size * COB_NATIONAL_SIZE;
 			break;
 		case CB_USAGE_PACKED:
 			if (f->pic != NULL)

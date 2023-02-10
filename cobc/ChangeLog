@@ -1,6 +1,30 @@
 
+2023-02-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (rep_name_list): elide PICTURE string in symbol listing
+	  when too long (also fixing a possible SIGSEGV on WIN32)
+	* cobc.h: fixed prototype for cobc_set_listing_header_code,
+	  cobc_get_margin_a, cobc_get_margin_b
+	* cobc.c: remove trailing slash from -I and -L as those break some
+	  tab-completed command lines and -MD generation
+	* cobc.c [_WIN32, DOS]: replace forward slash to backslash for -I
+	  fixing -MD generation on mingws/msys environments
+	* pplex.l (ppcopy_find_file, ppcopy): replace slash to match system and
+	  always place name in buffer to allow this
+
+2023-02-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (rep_name_list): fixed error handling loop
+
 2023-01-30  Simon Sobisch <simonsobisch@gnu.org>
 
+	* field.c (copy_into_field, copy_into_field_recursive): fix missing set
+	  of flag_is_pointer, fixing TYPEDEF + SAME AS with pointer types
+	* parser.y, reserved.c: add DISPLAY-1 as PENDING,
+	  actually pass NATIONAL usage if specified
+	* field.c (compute_size), tree.c (cb_tree_type): handle CB_USAGE_NATIONAL
+	* parser.y, reserved.c: add DATA-POINTER and FUNCTION-POINTER as PENDING
+	* cobc.c (set_picture): output pointer-type in listing if specified
 	* parser.y (usage_clause_screen_report), typeck.c (validate_usage): have
 	  REPORT and SCREEN section only expecting the possibly USAGEs instead all
 	  removing the need to check for bad USAGE later

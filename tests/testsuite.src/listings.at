@@ -3653,7 +3653,7 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 
 00000 ALPHANUMERIC   01   empty-pic                      INVALID
 
-00077 ALPHANUMERIC   01   too-long-pic                   XXXXXXXXXXXXXXXXXXXXXXX
+00077 ALPHANUMERIC   01   too-long-pic                   XXXXXXXXXXXXXXXXXXXX...
 
 00000 ALPHANUMERIC   01   too-long-pic2                  INVALID
 
@@ -3729,7 +3729,7 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 00005 NUMERIC        03   FILLER                         +(5)P(3)
 00005 NUMERIC        03   FILLER                         ++.++
 00005 NUMERIC        03   FILLER                         $(INTEGER-CONSTANT)
-00049 NUMERIC        03   FILLER                         $$$$$$$$$$$$$$$$$$$$$$$
+00049 NUMERIC        03   FILLER                         $$$$$$$$$$$$$$$$$$$$...
 
 00008 GROUP          01   PC-COLOR-BACKGROUND-TABLE
 00001 NUMERIC        05   BIT-BACKGROUND-BLACK           1(8)

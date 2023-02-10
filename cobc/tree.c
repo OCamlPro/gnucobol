@@ -1576,8 +1576,15 @@ cb_tree_type (const cb_tree x, const struct cb_field *f)
 			return COB_TYPE_NUMERIC_FP_DEC64;
 		case CB_USAGE_FP_DEC128:
 			return COB_TYPE_NUMERIC_FP_DEC128;
-		case CB_USAGE_BIT:	/* FIXME: is neither numeric nor "cobc"-boolean */
+		/* FIXME: is neither numeric nor "cobc"-boolean */
+		case CB_USAGE_BIT:
 			return COB_TYPE_BOOLEAN;
+		case CB_USAGE_NATIONAL:
+#if 0	/* FIXME: both are wrong... but numeric possibly best for "unfinished" */
+			return COB_TYPE_NATIONAL_EDITED;
+#else
+			return COB_TYPE_NUMERIC_DISPLAY;
+#endif
 		/* LCOV_EXCL_START */
 		default:
 			cobc_err_msg (_("unexpected numeric USAGE: %d"),

@@ -8921,13 +8921,13 @@ AT_CHECK([($GREP -A 200 "P_dump:" prog.c | $GREP -B 200 "END OF DUMP") || exit 7
   cob_dump_field_ext ( 5, "edit-num2", COB_SET_FLD (f0, 7, b_49 + 79, &a_43), 0, 0);
   cob_dump_field_ext ( 5, "edit-num3", COB_SET_FLD (f0, 7, b_49 + 86, &a_44), 0, 0);
   cob_dump_field_ext ( 5, "edit-num4", COB_SET_FLD (f0, 8, b_49 + 93, &a_45), 0, 0);
-  cob_dump_field_ext ( 1, "national-data", COB_SET_FLD (f0, 116, b_56, &a_47), 0, 0);
+  cob_dump_field_ext ( 1, "national-data", COB_SET_FLD (f0, 160, b_56, &a_47), 0, 0);
   cob_dump_field_ext ( 5, "nat", COB_SET_FLD (f0, 72, b_56, &a_49), 0, 0);
-  cob_dump_field_ext ( 5, "nat-num", COB_SET_FLD (f0, 15, b_56 + 72, &a_50), 0, 0);
-  cob_dump_field_ext ( 5, "net-num1", COB_SET_FLD (f0, 7, b_56 + 87, &a_42), 0, 0);
-  cob_dump_field_ext ( 5, "net-num2", COB_SET_FLD (f0, 7, b_56 + 94, &a_43), 0, 0);
-  cob_dump_field_ext ( 5, "net-num3", COB_SET_FLD (f0, 7, b_56 + 101, &a_44), 0, 0);
-  cob_dump_field_ext ( 5, "net-num4", COB_SET_FLD (f0, 8, b_56 + 108, &a_45), 0, 0);
+  cob_dump_field_ext ( 5, "nat-num", COB_SET_FLD (f0, 30, b_56 + 72, &a_50), 0, 0);
+  cob_dump_field_ext ( 5, "net-num1", COB_SET_FLD (f0, 14, b_56 + 102, &a_42), 0, 0);
+  cob_dump_field_ext ( 5, "net-num2", COB_SET_FLD (f0, 14, b_56 + 116, &a_43), 0, 0);
+  cob_dump_field_ext ( 5, "net-num3", COB_SET_FLD (f0, 14, b_56 + 130, &a_44), 0, 0);
+  cob_dump_field_ext ( 5, "net-num4", COB_SET_FLD (f0, 16, b_56 + 144, &a_45), 0, 0);
   cob_dump_field_ext ( 0, "x-idx", COB_SET_FLD (f0, 4, (cob_u8_t *)&b_64, &a_46), 0, 0);
   {
     int i_1;
@@ -9006,13 +9006,13 @@ AT_CHECK([($GREP -A 200 "P_dump:" prog.c | $GREP -B 200 "END OF DUMP") || exit 7
   /* cob_dump_field_ext ( 5, "edit-num2", COB_SET_FLD (f0, 7, b_49 + 79, &a_43), 0, 0); */
   /* cob_dump_field_ext ( 5, "edit-num3", COB_SET_FLD (f0, 7, b_49 + 86, &a_44), 0, 0); */
   /* cob_dump_field_ext ( 5, "edit-num4", COB_SET_FLD (f0, 8, b_49 + 93, &a_45), 0, 0); */
-  /* cob_dump_field_ext ( 1, "national-data", COB_SET_FLD (f0, 116, b_56, &a_47), 0, 0); */
+  /* cob_dump_field_ext ( 1, "national-data", COB_SET_FLD (f0, 160, b_56, &a_47), 0, 0); */
   /* cob_dump_field_ext ( 5, "nat", COB_SET_FLD (f0, 72, b_56, &a_49), 0, 0); */
-  /* cob_dump_field_ext ( 5, "nat-num", COB_SET_FLD (f0, 15, b_56 + 72, &a_50), 0, 0); */
-  /* cob_dump_field_ext ( 5, "net-num1", COB_SET_FLD (f0, 7, b_56 + 87, &a_42), 0, 0); */
-  /* cob_dump_field_ext ( 5, "net-num2", COB_SET_FLD (f0, 7, b_56 + 94, &a_43), 0, 0); */
-  /* cob_dump_field_ext ( 5, "net-num3", COB_SET_FLD (f0, 7, b_56 + 101, &a_44), 0, 0); */
-  /* cob_dump_field_ext ( 5, "net-num4", COB_SET_FLD (f0, 8, b_56 + 108, &a_45), 0, 0); */
+  /* cob_dump_field_ext ( 5, "nat-num", COB_SET_FLD (f0, 30, b_56 + 72, &a_50), 0, 0); */
+  /* cob_dump_field_ext ( 5, "net-num1", COB_SET_FLD (f0, 14, b_56 + 102, &a_42), 0, 0); */
+  /* cob_dump_field_ext ( 5, "net-num2", COB_SET_FLD (f0, 14, b_56 + 116, &a_43), 0, 0); */
+  /* cob_dump_field_ext ( 5, "net-num3", COB_SET_FLD (f0, 14, b_56 + 130, &a_44), 0, 0); */
+  /* cob_dump_field_ext ( 5, "net-num4", COB_SET_FLD (f0, 16, b_56 + 144, &a_45), 0, 0); */
   /* cob_dump_field_ext ( 0, "x-idx", COB_SET_FLD (f0, 4, (cob_u8_t *)&b_64, &a_46), 0, 0); */
   {
     /* int max_1 = (*(cob_s8_ptr) (b_17 + 63)); */

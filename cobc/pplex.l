@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Dave Pitts
 
    This file is part of GnuCOBOL.
@@ -1377,9 +1377,25 @@ ppcopy_try_open (const char *dir, const char *name, int has_ext)
    1 - as is
    2 - all known copybook directories */
 static const char *
-ppcopy_find_file (const char *name, int has_ext)
+ppcopy_find_file (char *name, int has_ext)
 {
-	const char* filename;
+	const char *filename;
+	{
+		const size_t len = strlen (name);
+		size_t i;
+#if defined (_WIN32) || defined (__DJGPP__)
+		const char from = '/';
+		const char to   = '\\';
+#else
+		const char from = '\\';
+		const char to   = '/';
+#endif
+		for (i = 0; i < len; i++) {
+			if (name[i] == from) {
+				name[i] = to;
+			}
+		}
+	}
 
 	/* try name as is + extensions ... */
 	filename = ppcopy_try_open (NULL, name, has_ext);
@@ -1390,10 +1406,10 @@ ppcopy_find_file (const char *name, int has_ext)
 	/* ... if not found, try in copybook directories  */
 	if (*name != SLASH_CHAR
 #if defined (_WIN32) || defined (__DJGPP__)
-	 && *name != '/' && *(name + 1) != ':'
+	 && *(name + 1) != ':'	/* note: the name is at least 2 bytes... */
 #endif
 		) {
-		struct cb_text_list* il;
+		struct cb_text_list *il;
 		for (il = cb_include_list; il; il = il->next) {
 			filename = ppcopy_try_open (il->text, name, has_ext);
 			if (filename) {
@@ -1409,7 +1425,6 @@ ppcopy_find_file (const char *name, int has_ext)
 int
 ppcopy (const char *name, const char *lib, struct cb_replace_list *replace_list)
 {
-	const char		*s;
 	const char		*filename = NULL;
 	const int 		has_ext = (strchr (name, '.') != NULL);
 
@@ -1423,7 +1438,6 @@ ppcopy (const char *name, const char *lib, struct cb_replace_list *replace_list)
 	/* Locate and open COPY file */
 	if (lib) {
 		const char *lib_env = NULL;
-		s = plexbuff1;
 
 		/* check for library-name with directory-name via environment
 		   (as emulation of specifying a library-name via JCL) */
@@ -1441,9 +1455,10 @@ ppcopy (const char *name, const char *lib, struct cb_replace_list *replace_list)
 					snprintf (plexbuff1, (size_t)COB_SMALL_MAX, "%s%c%s",
 						lib_env, SLASH_CHAR, name);
 					plexbuff1[COB_SMALL_MAX] = 0;
-					filename = ppcopy_find_file (s, has_ext);
+					filename = ppcopy_find_file (plexbuff1, has_ext);
 				} else {
-					filename = ppcopy_find_file (name, has_ext);
+					strcpy (plexbuff1, name);
+					filename = ppcopy_find_file (plexbuff1, has_ext);
 				}
 			}
 		}
@@ -1454,12 +1469,13 @@ ppcopy (const char *name, const char *lib, struct cb_replace_list *replace_list)
 			snprintf (plexbuff1, (size_t)COB_SMALL_MAX, "%s%c%s",
 				lib, SLASH_CHAR, name);
 			plexbuff1[COB_SMALL_MAX] = 0;
-			filename = ppcopy_find_file (s, has_ext);
+			filename = ppcopy_find_file (plexbuff1, has_ext);
 		}
 
 		/* try without library name, if not resolved by env */
 		if (!filename && !lib_env) {
-			filename = ppcopy_find_file (name, has_ext);
+			strcpy (plexbuff1, name);
+			filename = ppcopy_find_file (plexbuff1, has_ext);
 			if (filename) {
 				cb_plex_warning (COBC_WARN_FILLER, 0,
 					_("copybook not found in library '%s', library-name ignored"),
@@ -1474,24 +1490,22 @@ ppcopy (const char *name, const char *lib, struct cb_replace_list *replace_list)
 			plexbuff1[COB_SMALL_MAX] = 0;
 		}
 	} else {
-		s = name;
-		filename = ppcopy_find_file (s, has_ext);
+		strcpy (plexbuff1, name);
+		filename = ppcopy_find_file (plexbuff1, has_ext);
 	}
 
 	/* expected case: filename found */
 	if (likely (filename)) {
-		int ret;
-		ret = ppopen (filename, replace_list);
+		if (ppopen (filename, replace_list) == 0) {
 		/* expected case: copybook could be processed */
-		if (likely (ret == 0)) {
 			return 0;
 		}
 		/* otherwise fall-trough to error handling */
 	} else {
 		/* ensure to have errno from name as specified, not from another file */
-		(void)access (s, R_OK);
+		(void)access (plexbuff1, R_OK);
 		/* pass file error as we have no more places to check */
-		cb_error ("%s: %s", s, cb_get_strerror ());
+		cb_error ("%s: %s", plexbuff1, cb_get_strerror ());
 	}
 
 	/* On COPY, open error restore old file */
@@ -1597,19 +1611,19 @@ cobc_set_source_format (const enum cb_format sf) {
 	}
 }
 
-COB_A_PURE enum cb_format cobc_get_source_format (void) { return source_format; }
-COB_A_PURE int cobc_get_indicator_column (void) { return indicator_column; }
-COB_A_PURE int cobc_get_text_column (void) { return text_column; }
+enum cb_format cobc_get_source_format (void) { return source_format; }
+int cobc_get_indicator_column (void) { return indicator_column; }
+int cobc_get_text_column (void) { return text_column; }
 
 /* The three functions below return indexes on the lines (starting from 0), not
    character positions (counted from 1). */
-COB_A_PURE int cobc_get_indicator (void) {
+int cobc_get_indicator (void) {
 	return indicator_column - 1;
 }
-COB_A_PURE int cobc_get_margin_a (const int indicator_width) {
+int cobc_get_margin_a (const int indicator_width) {
 	return indicator_column + indicator_width - 1;
 }
-COB_A_PURE int cobc_get_margin_b (const int indicator_width) {
+int cobc_get_margin_b (const int indicator_width) {
 	/* careful, for COBOL 2002 there is no margin B */
 	return indicator_column + indicator_width + 3;
 }
@@ -1648,7 +1662,7 @@ cobc_parse_source_format (enum cb_format *const out, const char *const sfname) {
 	return 0;
 }
 
-int cobc_deciph_source_format (const char* const sfname) {
+int cobc_deciph_source_format (const char *sfname) {
 	enum cb_format format;
 	if (cobc_parse_source_format (&format, sfname) == 0) {
 		cobc_set_source_format (format);
@@ -1863,6 +1877,12 @@ switch_to_buffer (const int line, const char *file, const YY_BUFFER_STATE buffer
 }
 
 static COB_INLINE COB_A_INLINE int
+is_space_or_nl (const char c)
+{
+	return c == ' ' || c == '\n';
+}
+
+static COB_INLINE COB_A_INLINE int
 is_cobol_word_char (const char c)
 {
 	return c == '-' || c == '_' || isalnum (c);
@@ -1880,7 +1900,7 @@ get_word (const char *str, char *word_buff)
 		ret = word_buff;
 		while (is_cobol_word_char(*str)
 		    && length--) {
-			*word_buff++ = toupper((unsigned char)*str++);
+			*word_buff++ = (unsigned char)toupper((unsigned char)*str++);
 		}
 		if (length != 0) {
 			*word_buff = 0;
@@ -2062,7 +2082,7 @@ start:
 		}
 		if (likely (line_overflow == 0)) {
 			buff[n++] = (char)ipchar;
-		} else if ((char)ipchar != ' ' && (char)ipchar != '\n') {
+		} else if (!is_space_or_nl ((char)ipchar)) {
 			line_overflow = 2;
 		}
 	}
@@ -2141,7 +2161,7 @@ start:
 			*/
 			if (get_warn_opt_value (cb_warn_column_overflow) && line_overflow == 0) {
 				for (coln = text_column; coln < n; ++coln) {
-					if (buff[coln] != ' ' && buff[coln] != '\n') {
+					if (!is_space_or_nl (buff[coln])) {
 						line_overflow = coln;
 						break;
 					}
@@ -2520,12 +2540,13 @@ pp_text_list_add (struct cb_text_list *list, const char *text,
 static void
 ppecho (const char *text, const cob_u32_t alt_space, const int textlen)
 {
-	/* performance note: while this function used 5% (according to callgrind)
+	/* performance note (last verified with GnuCOBOL 2.2):
+	   while this function used 5% (according to callgrind)
 	   of the complete time spent in a sample run with
-	   -fsyntax-only on 880 production code files (2,500,000 LOC)
+	   -fsyntax-only on 880 production code files (2,500,000 LOC),
 	   3.8% of this time is spent in fwrite, therefore not much potential
-	   for optimization
-	*/
+	   for optimization */
+
 	struct cb_replace_list		*save_ptr;
 	const char			*s;
 	struct cb_text_list		*save_ptr_text_queue;
@@ -2581,8 +2602,7 @@ ppecho (const char *text, const cob_u32_t alt_space, const int textlen)
 		save_status = status;
 		text_queue = save_ptr_text_queue;
 		while (text_queue && check_partial_match) {
-			if (text_queue->text[0] == ' '
-			 || text_queue->text[0] == '\n') {
+			if (is_space_or_nl (text_queue->text[0])) {
 				ppecho_direct (text_queue->text);
 				text_queue = text_queue->next;
 				continue;
@@ -2618,6 +2638,7 @@ ppecho (const char *text, const cob_u32_t alt_space, const int textlen)
 	}
 }
 
+/* handle all kinds of COPY REPLACING and REPLACE */
 static int
 ppecho_replace (struct cb_replace_list *save_ptr)
 {
@@ -2639,11 +2660,10 @@ ppecho_replace (struct cb_replace_list *save_ptr)
 		/* ppparse.y guarantees that we have only one token */
 		/* and therefore only one iteration of this loop */
 		for (lno = r->src->text_list; lno; lno = lno->next) {
-			if (lno->text[0] == ' ' || lno->text[0] == '\n') {
+			if (is_space_or_nl (lno->text[0])) {
 				continue;
 			}
-			while (queue && (queue->text[0] == ' ' ||
-					 queue->text[0] == '\n')) {
+			while (queue && is_space_or_nl (queue->text[0])) {
 				queue = queue->next;
 			}
 			if (queue == NULL) {
@@ -2688,7 +2708,7 @@ ppecho_replace (struct cb_replace_list *save_ptr)
 		if (lno == NULL) {
 			/* Match */
 			if (r->src->lead_trail == CB_REPLACE_TRAILING
-				&& save_queue /* <- silence warnings */) {
+			 && save_queue /* <- silence warnings */) {
 				/* Non-matched part of original text */
 				fprintf (ppout, "%*.*s", (int)size2, (int)size2,
 					 save_queue->text);
@@ -2703,7 +2723,7 @@ ppecho_replace (struct cb_replace_list *save_ptr)
 				ppecho_direct (lno->text);
 			}
 			if (r->src->lead_trail == CB_REPLACE_LEADING
-				&& save_queue /* <- silence warnings */) {
+			 && save_queue /* <- silence warnings */) {
 				/* Non-matched part of original text */
 				ppecho_direct (save_queue->text + size);
 			}
@@ -2797,9 +2817,9 @@ check_listing (const char *text, const unsigned int comment)
 		fprintf (cb_listing_file, "%6d%c", ++listing_line, c);
 	}
 
-	if (requires_listing_line &&
-	    source_format != CB_FORMAT_FREE &&
-	    strlen (text) >= indicator_column) {
+	if (requires_listing_line
+	 && source_format != CB_FORMAT_FREE
+	 && strlen (text) >= (size_t)indicator_column) {
 		s = &text[indicator_column - 1];
 	} else {
 		s = "";		/* do not output sequence area */

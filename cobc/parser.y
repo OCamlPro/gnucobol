@@ -2551,6 +2551,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token DASHED
 %token DATA
 %token DATA_COLUMNS		"DATA-COLUMNS"
+%token DATA_POINTER		"DATA-POINTER"
 %token DATA_TYPES		"DATA-TYPES"
 %token DATE
 %token DATE_COMPILED	"DATE-COMPILED"	/* remark: not used here */
@@ -2579,6 +2580,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token DISK
 %token DISP
 %token DISPLAY
+%token DISPLAY_1			"DISPLAY-1"
 %token DISPLAY_COLUMNS		"DISPLAY-COLUMNS"
 %token DISPLAY_FORMAT		"DISPLAY-FORMAT"
 %token DISPLAY_OF_FUNC		"FUNCTION DISPLAY-OF" /* remark: not used here */
@@ -2722,6 +2724,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token FUNCTION
 %token FUNCTION_ID		"FUNCTION-ID"
 %token FUNCTION_NAME		"intrinsic function name"
+%token FUNCTION_POINTER		"FUNCTION-POINTER"
 %token GENERATE
 %token GIVING
 %token GLOBAL
@@ -6705,7 +6708,7 @@ report_keyword:
 ;
 
 rep_name_list:
-  undefined_word
+  undefined_word_but_no_error
   {
 	if (CB_VALID_TREE ($1)) {
 		current_report = build_report ($1);
@@ -6719,7 +6722,7 @@ rep_name_list:
 		report_count++;
 	}
   }
-| rep_name_list undefined_word
+| rep_name_list undefined_word_but_no_error
   {
 	if (CB_VALID_TREE ($2)) {
 		current_report = build_report ($2);
@@ -6727,9 +6730,12 @@ rep_name_list:
 		current_program->report_list =
 			cb_list_add (current_program->report_list,
 				     CB_TREE (current_report));
+#if 0	/* not possible, as long as we don't have this code
+     	   twice instead of in a function */
 		if (report_count == 0) {
 			report_instance = current_report;
 		}
+#endif
 		report_count++;
 	}
   }
@@ -7825,6 +7831,11 @@ usage_screen_report:
   {
 	check_and_set_usage (CB_USAGE_DISPLAY);
   }
+| DISPLAY_1
+  {
+	check_and_set_usage (CB_USAGE_NATIONAL);
+	CB_PENDING ("DBCS");
+  }
 | NATIONAL
   {
 	check_and_set_usage (CB_USAGE_NATIONAL);
@@ -7922,14 +7933,26 @@ usage:
   {
 	check_and_set_usage (CB_USAGE_PACKED);
   }
-| POINTER
+| POINTER _to_type_name
   {
 	check_and_set_usage (CB_USAGE_POINTER);
+	if ($2) {
+		CB_PENDING ("POINTER TO type-name");
+	}
 	current_field->flag_is_pointer = 1;
   }
-| PROGRAM_POINTER
+| FUNCTION_POINTER _to FUNCTION_NAME
   {
 	check_and_set_usage (CB_USAGE_PROGRAM_POINTER);
+	CB_PENDING ("POINTER TO prototype");	/* and function pointers... */
+	current_field->flag_is_pointer = 1;
+  }
+| PROGRAM_POINTER _to_program_type
+  {
+	check_and_set_usage (CB_USAGE_PROGRAM_POINTER);
+	if ($2) {
+		CB_PENDING ("POINTER TO prototype");
+	}
 	current_field->flag_is_pointer = 1;
   }
 | HANDLE
@@ -8077,6 +8100,11 @@ usage:
   {
 	check_and_set_usage (CB_USAGE_FP_DEC128);
   }
+| DISPLAY_1
+  {
+	check_and_set_usage (CB_USAGE_NATIONAL);
+	CB_PENDING ("DBCS");
+  }
 | NATIONAL
   {
 	check_and_set_usage (CB_USAGE_NATIONAL);
@@ -8087,6 +8115,16 @@ usage:
 	check_and_set_usage (CB_USAGE_DISPLAY);
 	CB_UNFINISHED ("USAGE UTF-8");
   }
+;
+
+_to_program_type:
+  /* empty */		{ $$ = NULL; }
+| _to PROGRAM_NAME	{ $$ = $2;   }
+;
+
+_to_type_name:
+  /* empty */	{ $$ = NULL; }
+| _to type_name { $$ = $2;   }
 ;
 
 /* tokens that explicit need USAGE _is (because of reduce/reduce conflicts) */
@@ -18692,6 +18730,18 @@ undefined_word:
 	yyclearin;
 	yyerrok;
 	$$ = cb_error_node;
+  }
+;
+
+undefined_word_but_no_error:
+  WORD
+  {
+	if (CB_WORD_COUNT ($1) > 0) {
+		redefinition_error ($1);
+		$$ = cb_error_node;
+	} else {
+		$$ = $1;
+	}
   }
 ;
 
