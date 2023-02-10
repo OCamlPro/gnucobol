@@ -6799,6 +6799,18 @@ AT_DATA([prog.cob], [
           GOBACK.
 ])
 
+AT_DATA([calldyn.c], [
+#include <libcob.h>
+
+/* wrapper function as C functions are not
+   accessible without explicit loading on all systems */
+COB_EXT_EXPORT char *
+calldyn (unsigned char *env_name)
+{
+  return cob_getenv (env_name);
+}
+])
+
 AT_DATA([progdyn.cob], [
        identification division.
        program-id. progdyn.
@@ -6810,7 +6822,7 @@ AT_DATA([progdyn.cob], [
 
        procedure division.
 
-           call        "cob_getenv"
+           call        "calldyn"
                        using "COB_UNIX_LF"
                        returning c-text-pointer
            end-call
@@ -6823,8 +6835,9 @@ AT_DATA([progdyn.cob], [
 ])
 
 AT_CHECK([$COMPILE -fno-gen-c-decl-static-call prog.cob], [0], [], [])
-AT_CHECK([$COMPILE progdyn.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+AT_CHECK([$COMPILE_MODULE calldyn.c], [0], [], [])
+AT_CHECK([$COMPILE progdyn.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./progdyn], [0], [], [])
 
 AT_CLEANUP

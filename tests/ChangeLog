@@ -6,6 +6,8 @@
 	* atlocal_valgrind, atlocal_win: added notes for things we
 	  explicit don't want to do
 	* testsuite.src/run_file.at: skip OS recognition on cygwin
+	* testsuite.src/run_misc.at: fix linking/dlopen issue happening
+	  on some systems (mostly win32) in test CALL RETURNING POINTER
 
 2023-01-23 David Declerck <david.declerck@ocamlpro.com>
 
