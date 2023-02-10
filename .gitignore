@@ -79,3 +79,4 @@ Makefile.in
 /tests/testsuite.dir/
 /tests/testsuite.log
 /tests/testsuite_manual
+/build_aux/ar-lib
