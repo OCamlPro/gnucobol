@@ -143,7 +143,13 @@
 #error CJSON without necessary header
 #endif
 #elif defined (WITH_JSON_C)
+#if defined (HAVE_JSON_C_JSON_H)
+#include <json-c/json_c_version.h>
+#elif defined (HAVE_JSON_H)
 #include <json_c_version.h>
+#else
+#error JSON-C without necessary header
+#endif
 #endif
 
 /* end of library headers */

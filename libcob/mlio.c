@@ -48,7 +48,13 @@
 #error CJSON without necessary header
 #endif
 #elif defined (WITH_JSON_C)
+#if defined (HAVE_JSON_C_JSON_H)
+#include <json-c/json.h>
+#elif defined (HAVE_JSON_H)
 #include <json.h>
+#else
+#error JSON-C without necessary header
+#endif
 #endif
 
 /* Local variables */

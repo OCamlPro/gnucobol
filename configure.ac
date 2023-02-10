@@ -1007,12 +1007,12 @@ AS_IF([test "$USE_JSON" = "cjson" -o "$USE_JSON" = "local" -o "$USE_JSON" = "che
 		AC_CHECK_HEADERS([cJSON.h], [],
 			[AC_CHECK_HEADERS([cjson/cJSON.h], [],
 			[if test "$with_json" = "cjson"; then
-			    AC_MSG_ERROR([Headers for libcjson are required for --with-json, you may adjust CJSON_CFLAGS])
+			    AC_MSG_ERROR([Headers for libcjson are required for --with-json=cjson, you may adjust CJSON_CFLAGS])
 			 else
 				AC_MSG_WARN([Headers for libcjson missing, you may adjust CJSON_CFLAGS or put cJSON sources in "libcob"])
 			 fi]
 		)])
-		if test "x$ac_cv_header_cJSON_h" = "xyes" -o "x$ac_cv_header_cjson_cJSON_h" = "xyes"; then
+		AS_IF([test "x$ac_cv_header_cJSON_h" = "xyes" -o "x$ac_cv_header_cjson_cJSON_h" = "xyes"], [
 			AC_MSG_CHECKING([if linking against libcjson with "$CJSON_LIBS" works])
 			AC_LINK_IFELSE([AC_LANG_PROGRAM([
 			 [#if defined HAVE_CJSON_CJSON_H
@@ -1035,7 +1035,7 @@ AS_IF([test "$USE_JSON" = "cjson" -o "$USE_JSON" = "local" -o "$USE_JSON" = "che
 			   else
 			     AC_MSG_WARN([cJSON library not found, you may adjust CJSON_LIBS])
 			   fi])
-		fi
+		])
 	], [
 		AC_MSG_NOTICE([using local cJSON: $with_cjson_local])
 		USE_JSON="local"
@@ -1044,7 +1044,7 @@ AS_IF([test "$USE_JSON" = "cjson" -o "$USE_JSON" = "local" -o "$USE_JSON" = "che
 	LIBS="$curr_libs"; CPPFLAGS="$curr_cppflags"
 ])
 
-AS_IF([test "$USE_JSON" = "json-c" -o "$USE_JSON" = "check"],  [
+AS_IF([test "$USE_JSON" = "json-c" -o "$USE_JSON" = "check"], [
 	CPPFLAGS="$curr_cppflags"
 	PKG_CHECK_MODULES([JSON_C], [json-c], [], [#
 	])
@@ -1057,14 +1057,26 @@ AS_IF([test "$USE_JSON" = "json-c" -o "$USE_JSON" = "check"],  [
 	  JSON_C_LIBS="-ljson-c"
 	fi
 	LIBS="$LIBS $JSON_C_LIBS"
-	AC_CHECK_HEADER([json.h], [
+	AC_CHECK_HEADERS([json.h], [],
+		[AC_CHECK_HEADERS([json-c/json.h], [],
+		[if test "$with_json" = "json-c"; then
+		    AC_MSG_ERROR([Headers for libjson-c are required for --with-json=json-c, you may adjust JSON_C_CFLAGS])
+		 else
+			AC_MSG_WARN([Headers for libjson-c missing, you may adjust JSON_C_CFLAGS])
+		 fi]
+	)])
+	AS_IF([test "x$ac_cv_header_json_h" = "xyes" -o "x$ac_cv_header_json_c_json_h" = "xyes"], [
 	 AC_MSG_CHECKING([if linking against libjson-c with "$JSON_C_LIBS" works])
 	 AC_LINK_IFELSE([AC_LANG_PROGRAM([
-	 [#include <json.h>]],
-	  [[#if (JSON_C_MAJOR_VERSION * 100 + JSON_C_MINOR_VERSION) < 12
-           	#error Needs at least json-c 0.12
-		#endif
-		json_c_version ();]])],
+	  [#if defined (HAVE_JSON_C_JSON_H)
+	   #include <json-c/json.h>
+	   #elif defined (HAVE_JSON_H)
+	   #include <json.h>
+	   #endif
+	   #if (JSON_C_MAJOR_VERSION * 100 + JSON_C_MINOR_VERSION) < 12
+	   	#error Needs at least json-c 0.12
+	   #endif]],
+	   [[json_c_version ();]])],
 	  [AC_MSG_RESULT([yes])
 	   AC_DEFINE([WITH_JSON_C], [1])
 	   USE_JSON=json-c
