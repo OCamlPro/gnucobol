@@ -1,4 +1,25 @@
 
+2023-02-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_decimal_get_packed, cob_decimal_get_display):
+	  fix use of mpz_cmp to compare >= 0 (also fixing use on MPIR)
+	* numeric.c (cob_set_packed_int): fix negative sign
+	* move.c (packed_get_long_long): fix sign regression introduced 2023-01-28
+	* move.c (own_byte_memcpy): removed and replaced replaced by memcpy
+	* move.c (cob_packed_get_sign): removed, inlined code in callers
+	* move.c (cob_decimal_get_display): rewritten
+	* move.c (store_common_region): requesting use of registers
+	* move.c (cob_move_packed_to_display): rewritten for performance
+	* move.c (cob_move): prevent conversion to and from cob_decimal for
+	  unscaled COB_TYPE_NUMERIC_PACKED, by direct write from integer
+	  to packed using (cob_set_packed_int)
+	* move.c (packed_get_long_long): performance improvements
+	* move.c (cob_packed_get_int): minor performance improvements
+	* move.c (packed_get_long_long, display_get_long_long): dropped "cob_"
+	  prefix as those are local-only functions
+	* move.c (cob_get_int, cob_get_llint): handle negative scale for binary
+	  fields
+
 2023-01-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* numeric.c (cob_packed_get_sign): move check for COB_FIELD_NO_SIGN_NIBBLE

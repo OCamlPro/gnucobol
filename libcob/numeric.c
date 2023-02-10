@@ -18,7 +18,6 @@
    along with GnuCOBOL.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-
 #include "config.h"
 
 #ifndef	_GNU_SOURCE
@@ -910,7 +909,7 @@ cob_decimal_get_double (cob_decimal *d)
 
 /* PACKED-DECIMAL */
 
-static int
+static COB_INLINE COB_A_INLINE int
 cob_packed_get_sign (const cob_field *f)
 {
 	if (COB_FIELD_HAVE_SIGN (f)) {
@@ -1120,14 +1119,14 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 	}
 	if (digits < MAX_LLI_DIGITS_PLUS_1) {
 		register cob_u64_t val = byteval;
-	
+
 		for (; p < endp; p++) {
 			val = val * 10
 			    + (*p >> 4);
 			val = val * 10
 			    + (*p & 0x0F);
 		}
-	
+
 		if (!nibtest) {
 			val = val * 10
 			    + (*p >> 4);
@@ -1155,7 +1154,7 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 				nonzero = 1;
 			}
 		}
-	
+
 		if (!nibtest) {
 			if (nonzero) {
 				mpz_mul_ui (d->value, d->value, 10);
@@ -1197,7 +1196,7 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 	/* Build string, note: we can't check the decimal size with
 	   mpz_sizeinbase, as its result is "either exact or one too big" */
 	digits = COB_FIELD_DIGITS (f);
-	
+
 #if 0	/* huge data, currently not used, as that only happens
 	for internal operations like intrinsic functions
 	which are either huge DISPLAY or native integer fields */
@@ -1230,7 +1229,7 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 		/* get divisor that would overflow */
 		cob_pow_10 (cob_mexp, digits);
 		/* check if it is >= what we have */
-		if (mpz_cmp (d->value, cob_mexp) != -1) {
+		if (mpz_cmp (d->value, cob_mexp) >= 0) {
 			/* Overflow */
 			cob_set_exception (COB_EC_SIZE_OVERFLOW);
 
@@ -1300,7 +1299,7 @@ void
 cob_set_packed_int (cob_field *f, const int val)
 {
 	unsigned char	*p;
-	size_t		sign;
+	int		sign;
 	cob_u32_t	n;
 
 	if (val == 0) {
@@ -1350,7 +1349,7 @@ cob_decimal_set_display (cob_decimal *d, cob_field *f)
 	register unsigned char	*data = COB_FIELD_DATA (f);
 	register size_t		size = COB_FIELD_SIZE (f);
 	int		sign;
-	
+
 	/* TODO: document special cases here */
 	if (unlikely (*data == 255)) {
 		cob_pow_10 (d->value, size);
@@ -1487,7 +1486,7 @@ cob_decimal_get_display (cob_decimal *d, cob_field *f, const int opt)
 	/* get divisor that would overflow */
 	cob_pow_10 (cob_mexp, fsize);
 	/* check if it is >= what we have */
-	if (mpz_cmp (d->value, cob_mexp) != -1) {
+	if (mpz_cmp (d->value, cob_mexp) >= 0) {
 		/* Overflow */
 		cob_set_exception (COB_EC_SIZE_OVERFLOW);
 
@@ -1750,7 +1749,7 @@ cob_decimal_set_field (cob_decimal *dec, cob_field *field)
 }
 
 /* note: currently (GC3.1) only called by display/dump
-   code from termio.c, with field type 
+   code from termio.c, with field type
    COB_TYPE_NUMERIC_FP_DEC64/COB_TYPE_NUMERIC_FP_DEC128 */
 void
 cob_print_ieeedec (const cob_field *f, FILE *fp)
@@ -2571,7 +2570,7 @@ cob_cmp_llint (cob_field *f1, const cob_s64_t n)
 	{
 		cob_u64_t	uval;
 		cob_u32_t	negative;
-	
+
 		if (n < 0) {
 			negative = 1;
 			uval = (cob_u64_t)-n;
