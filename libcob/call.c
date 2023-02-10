@@ -1865,7 +1865,7 @@ cob_get_s64_param (int n)
 		return -1;
 	}
 	cbl_data = f->data;
-	size = f->size;
+	size     = (int)f->size;
 
 	switch (f->attr->type) {
 	case COB_TYPE_NUMERIC_DISPLAY:
@@ -1914,7 +1914,7 @@ cob_get_u64_param (int n)
 	}
 
 	cbl_data = f->data;
-	size    = f->size;
+	size     = (int)f->size;
 	switch (COB_MODULE_PTR->cob_procedure_params[n - 1]->attr->type) {
 	case COB_TYPE_NUMERIC_DISPLAY:
 		return cob_get_u64_pic9 (cbl_data, size);
@@ -2146,7 +2146,7 @@ cob_put_s64_param (int n, cob_s64_t val)
 		return;
 	}
 	cbl_data = f->data;
-	size = f->size;
+	size     = (int)f->size;
 	switch (f->attr->type) {
 	case COB_TYPE_NUMERIC_DISPLAY:
 		cob_put_s64_pic9 (val, cbl_data, size);
@@ -2204,7 +2204,7 @@ cob_put_u64_param (int n, cob_u64_t val)
 		return;
 	}
 	cbl_data = f->data;
-	size = f->size;
+	size     = (int)f->size;
 	switch (f->attr->type) {
 	case COB_TYPE_NUMERIC_DISPLAY:
 		cob_put_u64_pic9 (val, cbl_data, size);

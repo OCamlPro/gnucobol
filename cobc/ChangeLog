@@ -1,4 +1,13 @@
 
+2023-02-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (validate_alphabet): slightly rewritten to fix compiler warnings
+	* config.c, pparse.y (ppp_replace_list_add), reserved.c (is_invalid_word),
+	  tree.c, tree.h, typeck.c: minor adjustments to fix compiler warnings
+	* field.c (validate_multi_value, validate_elem_value),
+	  parser.y (setup_external_definition): fixed analyzer warnings by switching
+	  "for" (hint at "possibly NULL" at start) to "while"
+
 2023-02-08  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (rep_name_list): elide PICTURE string in symbol listing

@@ -3181,10 +3181,10 @@ is_alphanum_group (const struct cb_field *f)
 
 /* get numbered USING parameter tree */
 static cb_tree
-find_nth_parameter (const struct cb_program *prog, const int n)
+find_nth_parameter (const struct cb_program *prog, const unsigned int n)
 {
 	cb_tree		entry_param;
-	int parmnum = 1;
+	unsigned int parmnum = 1;
 	for (entry_param = CB_VALUE (CB_VALUE (prog->entry_list)); entry_param;
 	     entry_param = CB_CHAIN (entry_param)) {
 		if (n == parmnum++) {
@@ -3341,8 +3341,8 @@ error_if_signatures_differ (struct cb_program *prog1, struct cb_program *prog2)
 	const char		*element_name = prog1->orig_program_id;
 	cb_tree		def_item, proto_item;
 	const struct cb_field	*def_field, *proto_field;
+	unsigned int	parameter_num;
 	int	prototype_error_header_shown = 0;
-	int	parameter_num;
 
 	/* We assume one of the parameters is a prototype */
 	if (prog1->flag_prototype) {
@@ -3419,7 +3419,7 @@ error_if_signatures_differ (struct cb_program *prog1, struct cb_program *prog2)
 				 || (def_field->flag_is_pdiv_opt != proto_field->flag_is_pdiv_opt)) {
 					cb_note (cb_warn_repository_checks, 0,
 						_("parameters #%d ('%s' in the definition and '%s' in the prototype) differ"),
-						parameter_num, def_field->name, proto_field->name);
+						(int)parameter_num, def_field->name, proto_field->name);
 					emit_definition_prototype_clause_mismatch (
 						element_name, "OPTIONAL", &prototype_error_header_shown);
 				}
@@ -3456,7 +3456,7 @@ error_if_signatures_differ (struct cb_program *prog1, struct cb_program *prog2)
 void
 cb_check_definition_matches_prototype (struct cb_program *prog)
 {
-	struct cb_program *prog2;
+	struct cb_program *prog2 = prog;	/* work around bad anaylzer warning */
 	cb_tree	l;
 
 	/* if check is explicit disabled: don't care */
@@ -3468,7 +3468,7 @@ cb_check_definition_matches_prototype (struct cb_program *prog)
 	for (l = defined_prog_list; l; l = CB_CHAIN (l)) {
 		prog2 = CB_PROGRAM (CB_VALUE (l));
 		if (prog != prog2
-		&& !strcmp (prog2->orig_program_id, prog->orig_program_id)) {
+		 && !strcmp (prog2->orig_program_id, prog->orig_program_id)) {
 			break;
 		}
 	}
@@ -3617,8 +3617,7 @@ cb_check_conformance (cb_tree prog_ref, cb_tree using_list,
 	cb_tree			l;
 	cb_tree			last_arg = NULL;
 	cb_tree			param;
-	int			param_num;
-	int			num_params;
+	unsigned int	param_num, num_params;
 	const struct cb_field	*prog_returning_field;
 	const struct cb_field	*call_returning_field;
 
@@ -3653,7 +3652,7 @@ cb_check_conformance (cb_tree prog_ref, cb_tree using_list,
 		/* CHECKME: is that an actual error or should we only warn? */
 		cb_warning_x (cb_warn_repository_checks, CB_VALUE (last_arg),
 			    _("expecting up to %d arguments, but found %d"),
-			    program->num_proc_params, num_params);
+			    (int)program->num_proc_params, (int)num_params);
 	}
 
 	/*
@@ -3667,10 +3666,10 @@ cb_check_conformance (cb_tree prog_ref, cb_tree using_list,
 			if (last_arg) {
 				cb_warning_x (cb_warn_repository_checks, CB_VALUE (last_arg),
 				    _("argument #%d is not optional"),
-				    param_num);
+					(int)param_num);
 			} else {
 				cb_warning (cb_warn_repository_checks, _("argument #%d is not optional"),
-				    param_num);
+					(int)param_num);
 			}
 		}
 	}
@@ -3836,14 +3835,14 @@ validate_alphabet (cb_tree alphabet)
 		ap->low_val_char = 0;
 		ap->high_val_char = 255;
 		for (l = ap->custom_list; l; l = CB_CHAIN (l)) {
+			x = CB_VALUE (l);
 			pos++;
-			if (count > 255) {
+			if (count > 255
+			 || x == NULL) {
 				unvals = pos;
 				break;
 			}
-			x = CB_VALUE (l);
-			if (CB_PAIR_P (x)) {
-				/* X THRU Y */
+			if (CB_PAIR_P (x)) {		/* X THRU Y */
 				int lower = get_value (CB_PAIR_X (x));
 				int upper = get_value (CB_PAIR_Y (x));
 				lastval = upper;
@@ -3886,24 +3885,24 @@ validate_alphabet (cb_tree alphabet)
 						count++;
 					}
 				}
-			} else if (CB_LIST_P (x)) {
+			} else if (CB_LIST_P (x)) {		/* X ALSO Y ... */
 				cb_tree			ls;
-				/* X ALSO Y ... */
 				if (!count) {
 					ap->low_val_char = get_value (CB_VALUE (x));
 				}
 				for (ls = x; ls; ls = CB_CHAIN (ls)) {
-					n = get_value (CB_VALUE (ls));
+					int val = get_value (CB_VALUE (ls));
 					if (!CB_CHAIN (ls)) {
-						lastval = n;
+						lastval = val;
 					}
 					/* regression in NATIONAL literals as
 					   those are unfinished; would be fine
 					   with national alphabet in general */
-					if (n < 0 || n > 255) {
+					if (val < 0 || val > 255) {
 						unvals = pos;
 						continue;
 					}
+					n = (unsigned char)val;
 					if (values[n] != -1) {
 						dupvals[n] = n;
 						dupls = 1;
@@ -3917,91 +3916,88 @@ validate_alphabet (cb_tree alphabet)
 					count++;
 				}
 				tableval++;
-			} else {
-				/* Literal */
-				if (CB_NUMERIC_LITERAL_P (x)) {
-					n = get_value (x);
-					lastval = n;
-					if (!count) {
-						ap->low_val_char = n;
+			} else if (CB_NUMERIC_LITERAL_P (x)) {	/* Numeric Literal */
+				lastval = get_value (x);
+				if (!count) {
+					ap->low_val_char = lastval;
+				}
+				if (lastval < 0 || lastval > 255) {
+					unvals = pos;
+					continue;
+				}
+				n = (unsigned char)lastval;
+				if (values[n] != -1) {
+					dupvals[n] = n;
+					dupls = 1;
+				}
+				values[n] = n;
+				charvals[n] = n;
+				ap->alphachr[tableval] = n;
+				ap->values[n] = tableval++;
+				count++;
+			} else if (CB_LITERAL_P (x)) {		/* Non-numeric Literal */
+				int size = (int)CB_LITERAL (x)->size;
+				unsigned char *data = CB_LITERAL (x)->data;
+				if (!count) {
+					ap->low_val_char = data[0];
+				}
+				lastval = data[size - 1];
+				if (CB_TREE_CATEGORY (x) != CB_CATEGORY_NATIONAL) {
+					for (i = 0; i < size; i++) {
+						n = data[i];
+						if (values[n] != -1) {
+							dupvals[n] = n;
+							dupls = 1;
+						}
+						values[n] = n;
+						charvals[n] = n;
+						ap->alphachr[tableval] = n;
+						ap->values[n] = tableval++;
+						count++;
 					}
-					if (n < 0 || n > 255) {
-						unvals = pos;
-						continue;
-					}
-					if (values[n] != -1) {
-						dupvals[n] = n;
-						dupls = 1;
-					}
-					values[n] = n;
-					charvals[n] = n;
-					ap->alphachr[tableval] = n;
-					ap->values[n] = tableval++;
-					count++;
-				} else if (CB_LITERAL_P (x)) {
-					int size = (int)CB_LITERAL (x)->size;
-					unsigned char* data = CB_LITERAL (x)->data;
-					if (!count) {
-						ap->low_val_char = data[0];
-					}
-					lastval = data[size - 1];
-					if (CB_TREE_CATEGORY (x) != CB_CATEGORY_NATIONAL) {
-						for (i = 0; i < size; i++) {
-							n = data[i];
+				} else {
+					for (i = 0; i < size; i++) {
+						/* assuming we have UTF16BE here */
+						if (data[i] == 0) {
+						/* only checking lower entries, all others,
+							which are currently only possible with
+							national-hex literals are not checked
+							TODO: add a list of values for those and
+							iterate over the list */
+							n = data[++i];
 							if (values[n] != -1) {
 								dupvals[n] = n;
 								dupls = 1;
 							}
 							values[n] = n;
 							charvals[n] = n;
-							ap->alphachr[tableval] = n;
-							ap->values[n] = tableval++;
-							count++;
+							ap->values[n] = tableval;
+						} else {
+							n = data[i++];
+							n = n * 255 + data[i];
 						}
-					} else {
-						for (i = 0; i < size; i++) {
-							/* assuming we have UTF16BE here */
-							if (data[i] == 0) {
-							/* only checking lower entries, all others,
-							   which are currently only possible with
-							   national-hex literals are not checked
-							   TODO: add a list of values for those and
-							   iterate over the list */
-								n = data[++i];
-								if (values[n] != -1) {
-									dupvals[n] = n;
-									dupls = 1;
-								}
-								values[n] = n;
-								charvals[n] = n;
-								ap->values[n] = tableval;
-							} else {
-								n = data[i++];
-								n = n * 255 + data[i];
-							}
-							ap->alphachr[tableval++] = n;
-							count++;
-						}
+						ap->alphachr[tableval++] = n;
+						count++;
 					}
-				} else {
-					n = get_value (x);
-					lastval = n;
-					if (!count) {
-						ap->low_val_char = n;
-					}
-					if (n < 0 || n > 255) {
-						unvals = pos;
-						continue;
-					}
-					if (values[n] != -1) {
-						dupls = 1;
-					}
-					values[n] = n;
-					charvals[n] = n;
-					ap->alphachr[tableval] = n;
-					ap->values[n] = tableval++;
-					count++;
 				}
+			} else {	/* CHECKME and doc here */
+				lastval = get_value (x);
+				if (!count) {
+					ap->low_val_char = lastval;
+				}
+				if (lastval < 0 || lastval > 255) {
+					unvals = pos;
+					continue;
+				}
+				n = (unsigned char) lastval;
+				if (values[n] != -1) {
+					dupls = 1;
+				}
+				values[n] = n;
+				charvals[n] = n;
+				ap->alphachr[tableval] = n;
+				ap->values[n] = tableval++;
+				count++;
 			}
 		}
 		if (dupls || unvals) {
@@ -6925,7 +6921,7 @@ cb_build_cond_default (struct cb_binary_op *p, cb_tree left, cb_tree right)
 		   all edited items go to) and of class numeric; so likely only do this
 		   with a new warning only enabled with -Wextra. */
 	if (get_warn_opt_value (cb_warn_strict_typing) != COBC_WARN_DISABLED) {
-		if cb_tree_class...
+		if (cb_tree_class_are_something (left, right)) {
 			cb_warning_x (cb_warn_strict_typing,
 				CB_TREE (p), _("alphanumeric value is expected"));
 	} else {
@@ -7185,23 +7181,22 @@ cb_end_statement (void)
 static cb_tree
 cb_build_optim_add (cb_tree v, cb_tree n)
 {
-	size_t		z;
-	const char	*s;
-	struct cb_field	*f;
 
 	if (CB_REF_OR_FIELD_P (v)) {
-		f = CB_FIELD_PTR (v);
-		if (!f->pic) {
+		const struct cb_field	*f = CB_FIELD_PTR (v);
+		if (!f->pic
+		 ||  f->pic->scale ) {
 			return CB_BUILD_FUNCALL_3 ("cob_add_int", v,
 						   cb_build_cast_int (n),
 						   cb_int0);
 		}
-		if ( !f->pic->scale
-		 && (f->usage == CB_USAGE_BINARY
-		  || f->usage == CB_USAGE_COMP_5
-		  || f->usage == CB_USAGE_COMP_X
-		  || f->usage == CB_USAGE_COMP_N)) {
-			z = ((size_t)f->size - 1)
+		if (f->usage == CB_USAGE_BINARY
+		 || f->usage == CB_USAGE_COMP_5
+		 || f->usage == CB_USAGE_COMP_X
+		 || f->usage == CB_USAGE_COMP_N) {
+			const char	*s;
+			const size_t	z
+			  = ((size_t)f->size - 1)
 			  + (8 * (f->pic->have_sign ? 1 : 0))
 			  + (16 * (f->flag_binary_swap ? 1 : 0));
 #if	defined(COB_NON_ALIGNED) && !defined(_MSC_VER) && defined(COB_ALLOW_UNALIGNED)
@@ -7251,8 +7246,9 @@ cb_build_optim_add (cb_tree v, cb_tree n)
 					CB_BUILD_CAST_ADDRESS (v),
 					cb_build_cast_int (n));
 			}
-		} else if (!f->pic->scale && f->usage == CB_USAGE_PACKED &&
-			   f->pic->digits < 10) {
+		} else if (!f->pic->scale
+		         && f->usage == CB_USAGE_PACKED
+		         && f->pic->digits < 10) {
 			optimize_defs[COB_ADD_PACKED_INT] = 1;
 			return CB_BUILD_FUNCALL_2 ("cob_add_packed_int",
 				v, cb_build_cast_int (n));
@@ -7265,18 +7261,21 @@ cb_build_optim_add (cb_tree v, cb_tree n)
 static cb_tree
 cb_build_optim_sub (cb_tree v, cb_tree n)
 {
-	size_t		z;
-	const char	*s;
-	struct cb_field	*f;
 
 	if (CB_REF_OR_FIELD_P (v)) {
-		f = CB_FIELD_PTR (v);
-		if ( !f->pic->scale
-		 && (f->usage == CB_USAGE_BINARY
-		  || f->usage == CB_USAGE_COMP_5
-		  || f->usage == CB_USAGE_COMP_X
-		  || f->usage == CB_USAGE_COMP_N)) {
-			z = ((size_t)f->size - 1)
+		const struct cb_field	*f = CB_FIELD_PTR (v);
+		if (!f->pic
+		 ||  f->pic->scale) {
+			return CB_BUILD_FUNCALL_3 ("cob_sub_int", v,
+						   cb_build_cast_int (n), cb_int0);
+		}
+		if (f->usage == CB_USAGE_BINARY
+		 || f->usage == CB_USAGE_COMP_5
+		 || f->usage == CB_USAGE_COMP_X
+		 || f->usage == CB_USAGE_COMP_N) {
+			const char	*s;
+			const size_t z
+			  = ((size_t)f->size - 1)
 			  + (8 * (f->pic->have_sign ? 1 : 0))
 			  +	(16 * (f->flag_binary_swap ? 1 : 0));
 #if	defined(COB_NON_ALIGNED) && !defined(_MSC_VER) && defined(COB_ALLOW_UNALIGNED)
@@ -11591,10 +11590,13 @@ cb_build_move_literal (cb_tree src, cb_tree dst)
 		return CB_BUILD_FUNCALL_2 ("cob_move", src, dst);
 	}
 
-	if ((cat == CB_CATEGORY_NUMERIC && f->usage == CB_USAGE_DISPLAY
-	     && f->pic->scale == l->scale && !f->flag_sign_leading
-	     && !f->flag_sign_separate && !f->flag_blank_zero)
-	    || ((cat == CB_CATEGORY_ALPHABETIC || cat == CB_CATEGORY_ALPHANUMERIC)
+	if ((  cat == CB_CATEGORY_NUMERIC
+	    && f->usage == CB_USAGE_DISPLAY
+	    && f->pic->scale == l->scale
+	    && !f->flag_sign_leading
+	    && !f->flag_sign_separate
+	    && !f->flag_blank_zero)
+	 || ( (cat == CB_CATEGORY_ALPHABETIC || cat == CB_CATEGORY_ALPHANUMERIC)
 		&& f->size < (int) (l->size + 16)
 		&& !cb_field_variable_size (f))) {
 		buff = cobc_parse_malloc ((size_t)f->size);
@@ -11735,8 +11737,8 @@ cb_build_move_literal (cb_tree src, cb_tree dst)
 		return CB_BUILD_FUNCALL_2 ("cob_move", src, dst);
 	}
 
-	if ((f->usage == CB_USAGE_PACKED || f->usage == CB_USAGE_COMP_6) &&
-	    cb_fits_int (src)) {
+	if ((f->usage == CB_USAGE_PACKED || f->usage == CB_USAGE_COMP_6)
+	 && cb_fits_int (src)) {
 		if (f->pic->scale < 0) {
 			return CB_BUILD_FUNCALL_2 ("cob_move", src, dst);
 		}

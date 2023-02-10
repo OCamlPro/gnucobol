@@ -1673,14 +1673,15 @@ setup_external_definition (cb_tree x, const int type)
 				x = cb_error_node;
 			}
 		} else {
-			struct cb_field *p;
-			for (p = current_field; p; p = p->parent) {
+			struct cb_field *p = current_field;
+			do {
 				if (p == f) {
-					cb_error (_("item may not reference itself"));
+					cb_error (_ ("item may not reference itself"));
 					x = cb_error_node;
 					break;
 				}
-			}
+				p = p->parent;
+			} while (p);
 			for (p = f->parent; p; p = p->parent) {
 				if (p->usage != CB_USAGE_DISPLAY) {
 					cb_error (_("item may not be subordinate to any item with USAGE clause"));

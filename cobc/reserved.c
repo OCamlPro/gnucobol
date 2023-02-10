@@ -4144,7 +4144,7 @@ is_invalid_word (const char *word, const int size, const int space_allowed,
 
 	{
 		size_t i = 0;
-		while (i < size) {
+		while (i < (size_t)size) {
 			const char c = res_toupper(word[i++]);
 			if ((c >= 'A' && c <= 'Z')
 			 || (c >= '0' && c <= '9')
@@ -4152,7 +4152,7 @@ is_invalid_word (const char *word, const int size, const int space_allowed,
 				continue;
 			}
 			if (c == ' ' && space_allowed) {
-				if (i == 1 || word[i-2] != ' ') {
+				if (i == 1 || word[i - 2] != ' ') {
 					continue;
 				}
 			}

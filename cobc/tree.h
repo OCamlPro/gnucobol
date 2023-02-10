@@ -2259,7 +2259,7 @@ extern void			cb_list_exceptions (void);
 extern void			cb_list_registers (void);
 extern void			cb_list_system_routines (void);
 extern int			cb_list_map (cb_tree (*) (cb_tree), cb_tree);
-extern void			cb_memcpy_upper (char *, const char * const, size_t);
+extern void			cb_memcpy_upper (char *, const char *, size_t);
 
 /* error.c */
 extern cb_tree			get_cb_error_node (void);

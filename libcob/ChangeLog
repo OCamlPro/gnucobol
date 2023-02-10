@@ -2,6 +2,12 @@
 2023-02-09  Simon Sobisch <simonsobisch@gnu.org>
 
 	* mlio.c, common.c: handle HAVE_JSON_C_JSON_H
+	* intrinsic.c (split_around_t): explicit terminate snprintf
+	* termio.c (pretty_display_numeric): fix GCC warning with {{ 0 }}
+	* termio.c (display_alnum_dump): slightly rewritten to fix compiler
+	  warnings
+	* cconv.c (cob_load_collation), common.c, intrinisic.c (cob_intr_random),
+	  termio.c: minor adjustments to fix compiler warnings
 
 2023-02-06  Simon Sobisch <simonsobisch@gnu.org>
 

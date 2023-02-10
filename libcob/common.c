@@ -2889,7 +2889,7 @@ cob_field_to_string (const cob_field *f, void *str, const size_t maxsize)
 	}
 
 	/* note: the specified max does not contain the low-value */
-	if (end - data > maxsize) {
+	if ((size_t)(end - data) > maxsize) {
 		end = data + maxsize;
 	}
 	while (data <= end) {
@@ -5414,10 +5414,9 @@ cob_getenv_direct (const char *name) {
 char *
 cob_getenv (const char *name)
 {
-	char	*p;
 
 	if (name) {
-		p = getenv (name);
+		char	*p = getenv (name);
 		if (p) {
 			return cob_strdup (p);
 		}
@@ -7755,12 +7754,12 @@ set_config_val (char *value, int pos)
 		} else if (data == (char *)&cobsetptr->cob_insert_mode) {
 			cob_settings_screenio ();
 		} else if (data == (char *)&cobsetptr->cob_debugging_mode) {
-			cob_switch[11 + 'D' - 'A'] = numval;
+			cob_switch[11 + 'D' - 'A'] = (int)numval;
 		} else if (data == (char *)&cobsetptr->cob_ls_nulls) {
-			cob_switch[11 + 'N' - 'A'] = numval;
+			cob_switch[11 + 'N' - 'A'] = (int)numval;
 #if 0	/* TODO add in trunk */
 		} else if (data == (char *)&cobsetptr->cob_ls_tabs) {
-			cob_switch[11 + 'T' - 'A'] = numval;
+			cob_switch[11 + 'T' - 'A'] = (int)numval;
 #endif
 		}
 

@@ -2541,6 +2541,7 @@ split_around_t (const char *str, char *first, char *second)
 		/* possible overflow checked above,
 		   snprintf ensures terminated buffer */
 		snprintf (first, first_length + 1, "%s", str);
+		first[first_length] = 0;	/* win32 fun... */
 	}
 
 	/* If there is anything after 'T', copy it into second (if present) */
@@ -2555,6 +2556,7 @@ split_around_t (const char *str, char *first, char *second)
 				ret = COB_TIMESTR_MAX + 1 + i;
 			}
 			snprintf (second, second_length + 1, "%s", str);
+			second[second_length] = 0;	/* win32 fun... */
 		}
 	}
 	return ret;
@@ -3584,8 +3586,8 @@ cob_valid_time_format (const char *format, const char decimal_point)
 
 	/* Check for trailing garbage */
 	if (strlen (format) > (size_t) format_offset
-	    && !rest_is_z (format + format_offset)
-	    && !rest_is_offset_format (format + format_offset, with_colons)) {
+	 && !rest_is_z (format + format_offset)
+	 && !rest_is_offset_format (format + format_offset, with_colons)) {
 		return 0;
 	}
 
@@ -5474,8 +5476,16 @@ cob_intr_random (const int params, ...)
 		rand_needs_seeding = 0;
 #else
 	} else if (rand_needs_seeding) {
-		/* first invocation without explicit seed, use a random one */
-		seed = get_seconds_past_midnight () * (long)COB_MODULE_PTR;
+		/* first invocation without explicit seed, use a random one;
+		   note: we need an explicit integer cast to get around some warnings,
+		   but then need a matching size to get around others...*/
+ #ifdef COB_64_BIT_POINTER
+		seed = get_seconds_past_midnight ()
+		     * (((cob_s64_t)COB_MODULE_PTR) && 0xFFFFF);
+ #else
+		seed = get_seconds_past_midnight ()
+			* (((cob_s32_t)COB_MODULE_PTR) && 0xFFFF);
+ #endif
 		rand_needs_seeding = 2;
 #endif
 	}

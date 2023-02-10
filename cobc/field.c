@@ -883,7 +883,7 @@ copy_into_field (struct cb_field *source, struct cb_field *target)
 					} else {
 						newsize = pic_digits[target->pic->size - 1];
 					}
-					newsize += modifier;
+					newsize += (unsigned char)modifier;
 					if (newsize > 36) {
 						newsize = 36;
 					}
@@ -1681,14 +1681,15 @@ validate_multi_value (const struct cb_field * const f)
 	}
 
 	{
-		const struct cb_field	*p;
+		const struct cb_field	*p = f;
 		total_occurs = 1;
-		for (p = f; p; p = p->parent) {
+		do {
 			if (p->flag_occurs
-			 && p->occurs_max > 1) {
+				&& p->occurs_max > 1) {
 				total_occurs *= p->occurs_max;
 			}
-		}
+			p = p->parent;
+		} while (p);
 	}
 	k = num_of_values - total_occurs;
 	if (k > 0) {
@@ -1705,12 +1706,13 @@ validate_elem_value (struct cb_field * const f)
 {
 	/* check for table format VALUES [ARE] in non-occurs field */
 	if (CB_LIST_P (f->values) && CB_TAB_VALS_P (CB_LIST (f->values)->value)) {
-		const struct cb_field	*p;
-		for (p = f; p; p = p->parent) {
+		const struct cb_field	*p = f;
+		do {
 			if (p->flag_occurs) {
 				break;
 			}
-		}
+			p = p->parent;
+		} while (p);
 		if (!p) {
 			const cb_tree		x = CB_TREE (f);
 			const cb_tree		first_tabval = CB_LIST (f->values)->value;

@@ -3241,7 +3241,7 @@ valid_char_order (const cob_pic_symbol *str, const int s_char_seen)
 	for (s = str; s->symbol != '\0'; ++s) {
 		/* Perform the check twice if a character is repeated, e.g. to detect 9VV. */
 		repeated = s->times_repeated > 1;
-		for (i = 0; i < 1 + repeated; ++i) {
+		for (i = 0; i <= repeated; ++i) {
 			idx = char_to_precedence_idx (str, s,
 						      first_floating_sym,
 						      last_floating_sym,
@@ -3249,8 +3249,9 @@ valid_char_order (const cob_pic_symbol *str, const int s_char_seen)
 						      non_p_digits_seen);
 			if (idx == -1) {
 				continue;
-			} else if (CB_FIRST_NON_P_DIGIT_CHAR_TYPE <= idx &&
-				   idx <= CB_LAST_NON_P_DIGIT_CHAR_TYPE) {
+			}
+			if (idx >= CB_FIRST_NON_P_DIGIT_CHAR_TYPE
+			 && idx <= CB_LAST_NON_P_DIGIT_CHAR_TYPE) {
 				non_p_digits_seen = 1;
 			}
 
@@ -3261,9 +3262,9 @@ valid_char_order (const cob_pic_symbol *str, const int s_char_seen)
 			*/
 			for (j = 0; j < CB_PIC_CHAR_TYPES; ++j) {
 				if (chars_seen[j]
-				    && !precedence_table[idx][j]
-				    && !error_emitted[idx][j]) {
-				        emit_precedence_error (j, idx);
+				 && !precedence_table[idx][j]
+				 && !error_emitted[idx][j]) {
+					emit_precedence_error (j, idx);
 					error_emitted[idx][j] = 1;
 					error_detected = 1;
 				}
@@ -3558,7 +3559,7 @@ repeat:
 					paren_num = 99999;
 				}
 			}
-			n += paren_num - 1;
+			n += (int)paren_num - 1;
 		}
 		if (category & PIC_NUMERIC_FLOATING) {
 			if (c != '9') {
