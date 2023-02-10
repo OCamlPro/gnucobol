@@ -1,4 +1,4 @@
-## Copyright (C) 2014-2015, 2017-2021 Free Software Foundation, Inc.
+## Copyright (C) 2014-2015, 2017-2021, 2023 Free Software Foundation, Inc.
 ## Written by Simon Sobisch, Edward Hart, Ron Norman
 ##
 ## This file is part of GnuCOBOL.
@@ -548,7 +548,7 @@ AT_DATA([prog.cob], [
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:19: error: duplicate HEADING clause
 prog.cob:19: error: duplicate LINE LIMIT clause
-prog.cob:22: error: Cannot specify HEADING without number of lines on page
+prog.cob:22: error: cannot specify HEADING without number of lines on page
 ])
 AT_CLEANUP
 
@@ -609,7 +609,7 @@ AT_DATA([prog.cob], [
 ])
 
 # no compile_only here as we check the C generation
-AT_CHECK([$COMPILE prog.cob ], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
 
 AT_CLEANUP
 
@@ -645,9 +645,9 @@ AT_DATA([prog.cob], [
        01  rp-detail TYPE DE.
          02  LINE PLUS 1.
             03  FILLER   SOURCE foo  PIC X(30).
-            03  FILLER                PIC X(6) SOURCE "<--->".
-            03  THING1                PIC 9(3) BINARY VALUE 12.
-            03  THING2                COMP-2          VALUE 12.
+            03  FILLER               PIC X(6) SOURCE "<--->".
+            03  THING1               PIC 9(3) BINARY VALUE 12.
+            03  THING2               COMP-2          VALUE 12.
 
        01 CF-A TYPE CONTROL FOOTING WSI-A.
            02 LINE PLUS 1.
@@ -671,11 +671,11 @@ AT_DATA([prog.cob], [
            END PROGRAM prog.
 ])
 
-AT_CHECK([$COMPILE_ONLY -std=default prog.cob ], [1], [],
-[prog.cob:36: error: needs PICTURE clause for SUM WSI-V
+AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
+[prog.cob:30: error: syntax error, unexpected BINARY, expecting DISPLAY or NATIONAL or UTF-8
+prog.cob:31: error: syntax error, unexpected COMP-2, expecting DISPLAY or NATIONAL or UTF-8
+prog.cob:36: error: needs PICTURE clause for SUM WSI-V
 prog.cob:37: warning: non-numeric PICTURE clause for SUM WSI-V
-prog.cob:30: error: REPORT SECTION item 'THING1' should be USAGE DISPLAY
-prog.cob:31: error: REPORT SECTION item 'THING2' should be USAGE DISPLAY
 ])
 
 AT_CLEANUP

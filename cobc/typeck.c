@@ -935,7 +935,7 @@ cb_check_numeric_edited_name (cb_tree x)
 cb_tree
 cb_check_sum_field (cb_tree x)
 {
-	struct cb_field		*f, *sc;
+	struct cb_field		*f;
 
 	if (CB_TREE_CATEGORY (x) != CB_CATEGORY_NUMERIC_EDITED) {
 		return x;
@@ -943,7 +943,7 @@ cb_check_sum_field (cb_tree x)
 
 	f = CB_FIELD (cb_ref(x));
 	if (f->report) {		/* If part of a REPORT, check if it is a SUM */
-		sc = get_sum_data_field(f->report, f);
+		struct cb_field	*sc = get_sum_data_field (f->report, f);
 		if (sc) {	/* Use the SUM variable instead of the print variable */
 			return cb_build_field_reference (sc, NULL);
 		}
@@ -954,37 +954,30 @@ cb_check_sum_field (cb_tree x)
 cb_tree
 cb_check_numeric_value (cb_tree x)
 {
-	struct cb_field	*f, *sc;
-	enum cb_category cat;
+	const enum cb_category cat = CB_TREE_CATEGORY (x);
 
 	if (cb_validate_one (x)) {
 		return cb_error_node;
 	}
 
-	cat = CB_TREE_CATEGORY (x);
-	if (cat == CB_CATEGORY_NUMERIC) {
-		return x;
-	}
-
 	switch (cat) {
-	case CB_CATEGORY_ALPHABETIC:
-		cb_error_x (x, _("'%s' is Alpha, instead of a numeric value"), cb_name (x));
-		break;
-	case CB_CATEGORY_ALPHANUMERIC_EDITED:
-		cb_error_x (x, _("'%s' is Alpha Edited, instead of a numeric value"), cb_name (x));
-		break;
+	case CB_CATEGORY_NUMERIC:
+		return x;
 	case CB_CATEGORY_NUMERIC_EDITED:
 	case CB_CATEGORY_FLOATING_EDITED:
-		f = CB_FIELD (cb_ref(x));
+	{
+		struct cb_field	*f = CB_FIELD (cb_ref(x));
 		if (f->report) {
-			sc = get_sum_data_field (f->report, f);
+			struct cb_field	*sc = get_sum_data_field (f->report, f);
 			if (sc) {	/* Use the SUM variable instead of the print variable */
+				/* FIXME: this is not directly a check */
 				return cb_build_field_reference (sc, NULL);
 			}
 		}
 		/* Fall-through as we only allow this for RW: SUM */
+	}
 	default:
-		cb_error_x (x, _("'%s' is not a numeric value"), cb_name (x));
+		cb_error_x (x, _("'%s' is not numeric"), cb_name (x));
 	}
 	return cb_error_node;
 }
@@ -1034,7 +1027,7 @@ cb_check_integer_value (cb_tree x)
 		return x;
 	default:
 invalid:
-		cb_error_x (x, _("'%s' is not an integer value"), cb_name (x));
+		cb_error_x (x, _("'%s' is not an integer"), cb_name (x));
 		return cb_error_node;
 	}
 invliteral:
@@ -3758,7 +3751,7 @@ cb_validate_collating (cb_tree collating_sequence)
 
 	x = cb_ref (collating_sequence);
 	if (!CB_ALPHABET_NAME_P (x)) {
-		cb_error_x (collating_sequence, _("'%s' is not an alphabet name"),
+		cb_error_x (collating_sequence, _("'%s' is not an alphabet-name"),
 			    cb_name (collating_sequence));
 		return 1;
 	}
@@ -4585,7 +4578,7 @@ process_undefined_assign_name (struct cb_file * const f,
 	  name.
 	*/
 	if (cb_implicit_assign_dynamic_var) {
-		cb_verify_x (CB_TREE (f), cb_assign_variable, _("ASSIGN variable"));
+		cb_verify_x (CB_TREE (f), cb_assign_variable, _("ASSIGN [TO] variable in SELECT"));
 		create_implicit_assign_dynamic_var (prog, assign);
 	} else {
 		/* Remove reference */
@@ -9738,39 +9731,16 @@ cb_emit_goto (cb_tree target, cb_tree depending)
 	if (target == NULL) {
 		cb_verify (cb_goto_statement_without_name, _("GO TO without procedure-name"));
 	} else if (depending) {
-		/* GO TO procedure-name ... DEPENDING ON identifier */
-		if (cb_check_numeric_value (depending) == cb_error_node) {
-			return;
-		}
+		/* GO TO procedure-name ...   DEPENDING ON numeric-identifier  and
+		   GO TO ENTRY entry-name ... DEPENDING ON numeric-identifier */
 		cb_emit_incompat_data_checks (depending);
 		cb_emit (cb_build_goto (target, depending));
 	} else if (CB_CHAIN (target)) {
 			cb_error_x (CB_TREE (current_statement),
 				    _("GO TO with multiple procedure-names"));
 	} else {
-		/* GO TO procedure-name */
-		cb_emit (cb_build_goto (CB_VALUE (target), NULL));
-	}
-}
-
-void
-cb_emit_goto_entry (cb_tree target, cb_tree depending)
-{
-	if (target == cb_error_node) {
-		return;
-	}
-	if (depending) {
-		/* GO TO ENTRY entry-name ... DEPENDING ON identifier */
-		if (cb_check_numeric_value (depending) == cb_error_node) {
-			return;
-		}
-		cb_emit_incompat_data_checks (depending);
-		cb_emit (cb_build_goto (target, depending));
-	} else if (CB_CHAIN (target)) {
-			cb_error_x (CB_TREE (current_statement),
-				    _("GO TO ENTRY with multiple entry-names"));
-	} else {
-		/* GO TO ENTRY entry-name */
+		/* GO TO procedure-name   and
+		   GO TO ENTRY entry-name */
 		cb_emit (cb_build_goto (CB_VALUE (target), NULL));
 	}
 }
@@ -13553,8 +13523,8 @@ error_if_not_int_field_or_has_pic_p (const char *clause, cb_tree f)
 
 	usage = CB_FIELD_PTR (f)->usage;
 	if (CB_TREE_CATEGORY (f) != CB_CATEGORY_NUMERIC
-	    || is_floating_point_usage (usage)) {
-		cb_error_x (f, _("%s item '%s' must be numeric and an integer"),
+	 || is_floating_point_usage (usage)) {
+		cb_error_x (f, _("%s item '%s' must be an integer"),
 			    clause, CB_NAME (f));
 		error = 1;
 	} else if (CB_FIELD_PTR (f)->pic) {

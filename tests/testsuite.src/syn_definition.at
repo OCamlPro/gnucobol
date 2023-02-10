@@ -1617,9 +1617,9 @@ prog.cob:57: error: V cannot follow a P which is after the decimal point
 prog.cob:59: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
 prog.cob:60: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
 prog.cob:61: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
-prog.cob:67: error: 'STR-CONSTANT' is not a numeric literal
-prog.cob:68: error: 'FLOAT-CONSTANT' is not an integer
-prog.cob:69: error: 'SIGNED-CONSTANT' is not unsigned
+prog.cob:67: error: 'STR-CONSTANT' is not an unsigned positive integer
+prog.cob:68: error: 'FLOAT-CONSTANT' is not an unsigned positive integer
+prog.cob:69: error: 'SIGNED-CONSTANT' is not an unsigned positive integer
 prog.cob:70: error: 'UNSEEN-CONSTANT' is not defined
 prog.cob:81: warning: uncommon parentheses
 prog.cob:86: warning: USAGE BIT is not implemented
@@ -1695,9 +1695,9 @@ prog.cob:57: error: V cannot follow a P which is after the decimal point
 prog.cob:59: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
 prog.cob:60: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
 prog.cob:61: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
-prog.cob:67: error: 'STR-CONSTANT' is not a numeric literal
-prog.cob:68: error: 'FLOAT-CONSTANT' is not an integer
-prog.cob:69: error: 'SIGNED-CONSTANT' is not unsigned
+prog.cob:67: error: 'STR-CONSTANT' is not an unsigned positive integer
+prog.cob:68: error: 'FLOAT-CONSTANT' is not an unsigned positive integer
+prog.cob:69: error: 'SIGNED-CONSTANT' is not an unsigned positive integer
 prog.cob:70: error: 'UNSEEN-CONSTANT' is not defined
 prog.cob:81: warning: uncommon parentheses
 prog.cob:86: warning: USAGE BIT is not implemented
@@ -1993,7 +1993,7 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 ])
 AT_CHECK([$COMPILE_ONLY prog2.cob], [1], [],
 [prog2.cob:8: error: 'TESTNO' is not defined
-prog2.cob:8: error: 'TESTNO' is not an alphabet name
+prog2.cob:8: error: 'TESTNO' is not an alphabet-name
 ])
 AT_CHECK([$COMPILE_ONLY -Wno-unfinished prog3.cob], [0], [],
 [prog3.cob:9: warning: NATIONAL COLLATING SEQUENCE is not implemented

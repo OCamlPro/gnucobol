@@ -260,9 +260,13 @@ NEWS - user visible changes				-*- outline -*-
 ** the option -g does not longer imply -fsource-location; but it auto-includes
    references to the COBOL-paragraphs to further ease source level debugging
 
+** -fsource-location generates source references to copyboooks in DATA
+   DIVISION, enabling to inspect the initial VALUE setting as well as
+   "list"ing those copybooks with a source level debugger
+
 ** new flag -fstack-extended (implied with --debug and --dump) to include
    the origin of entrypoints and PERFORM, this is used for the internal
-   stack trace on abort and can be used for source level debugging
+   stack trace on abort and can be used for improved source level debugging
 
 ** new options to ensure structured code-flow:
    -fsection-exit-check to ensure sections don't "fall through" (are always
@@ -378,12 +382,14 @@ NEWS - user visible changes				-*- outline -*-
    as well as during debugging were extended, for example each executed WHEN,
    VARYING and UNTIL phrases are now seen
 
+** condition-names are made available for source-level debugging
+
 ** cobc's parsing time was significantly reduced for big programs
 
 ** execution times were significantly reduced for the following:
 	INSPECT that use big COBOL fields (multiple KB)
-	MOVE and comparisions (especially with enabled runtime checks, to
-	  optimize those a re-compile is needed)
+	MOVE and comparisions in general (especially with enabled runtime
+	   checks, to optimize those a re-compile is needed)
 	CALL data-item, and first time for each CALL
 	ACCEPT DATE/TIME/DAY, most if numeric items are accepted
 	datetime related FUNCTIONs

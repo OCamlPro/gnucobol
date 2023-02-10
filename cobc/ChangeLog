@@ -1,4 +1,10 @@
 
+2023-01-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (usage_clause_screen_report), typeck.c (validate_usage): have
+	  REPORT and SCREEN section only expecting the possibly USAGEs instead all
+	  removing the need to check for bad USAGE later
+
 2023-01-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codeoptim.c: adjusted inline functions (cob_cmp_packed_int,
@@ -34,6 +40,23 @@
 	* typeck.c (cb_build_identifier): skip compile-time check for length
 	  on ANY LENGTH items
 	* reserved.c (POS): now C/S to DISPLAY + ACCEPT with default wordlist
+
+2023-01-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* help.c (cobc_print_usage): fixed msgid to match bin/cobcrun.c
+	* flag.def: use correct option names in help output
+	* config.def: fixed typos and spacing in msgids
+	* flag.def: removed duplicated msgid - those are printed in help.c only
+	* typeck.c (cb_emit_goto_entry), tree.h, parser.y: dropped duplicated
+	  function and msgid, using cb_emit_goto instead
+	* parser.y (_goto_depending), typeck.c (cb_emit_goto): check via use of
+	  numeric_identifier in the parser instead of postponed checking
+	* parser.y (assign_clause),  typeck.c (cb_check_numeric_value,
+	  cb_validate_collating, validate_assign_name,
+	  cb_check_integer_value, error_if_not_int_field_or_has_pic_p):
+	  dropped very similar msgids using standard ones for the checks
+	* tree.c (get_category_from_arguments, get_number_in_parentheses): msgid
+	  related changes
 
 2023-01-18  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -6670,12 +6693,6 @@
 2013-11-20  Ron Norman <rjn@inglenet.com>
 
 	* Report Writer module
-
-201?-??-??  Sergey Kashyrin <ska@kiska.net>
-
-	* codeoptim.c : Fixed bug in COB_ADD_PACKED_INT.
-	  Computing COMP-3 failed in MSVC-build versions,
-	  in output_storage() calls '%' should be '%%'.
 
 2012-05-09  Simon Sobisch <simonsobisch@gnu.org>
 

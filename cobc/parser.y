@@ -748,7 +748,7 @@ static void
 error_if_no_page_lines_limit (const char *phrase)
 {
 	if (!current_report->lines && !current_report->t_lines) {
-		cb_error (_("Cannot specify %s without number of lines on page"),
+		cb_error (_("cannot specify %s without number of lines on page"),
 			  phrase);
 	}
 }
@@ -5349,7 +5349,7 @@ assign_clause:
 	if (ext_dyn_specified) {
 		cb_error (_("EXTERNAL/DYNAMIC cannot be used with USING/VARYING"));
 	}
-        cb_verify (cb_assign_using_variable, "ASSIGN USING/VARYING variable");
+	cb_verify (cb_assign_using_variable, "ASSIGN USING/VARYING variable");
 
 	current_file->assign_type = CB_ASSIGN_VARIABLE_REQUIRED;
 	current_file->assign = cb_build_assignment_name (current_file, $6);
@@ -5360,7 +5360,7 @@ assign_clause:
 	if (ext_dyn_specified) {
 		cb_error (_("EXTERNAL/DYNAMIC cannot be used with DISK FROM"));
 	}
-	cb_verify (cb_assign_disk_from, _("ASSIGN DISK FROM"));
+	cb_verify (cb_assign_disk_from, "ASSIGN DISK FROM");
 
 	current_file->assign_type = CB_ASSIGN_VARIABLE_REQUIRED;
 	current_file->assign = cb_build_assignment_name (current_file, $6);
@@ -7808,8 +7808,33 @@ usage_clause:
   }
 ;
 
+usage_clause_screen_report:
+  _usage_is usage_screen_report
+| USAGE _is error
+  {
+	check_and_set_usage (CB_USAGE_ERROR);
+  }
+;
+
 _usage_is:
 | USAGE _is
+;
+
+usage_screen_report:
+  DISPLAY
+  {
+	check_and_set_usage (CB_USAGE_DISPLAY);
+  }
+| NATIONAL
+  {
+	check_and_set_usage (CB_USAGE_NATIONAL);
+	CB_UNFINISHED ("USAGE NATIONAL");
+  }
+| UTF_8
+  {
+	check_and_set_usage (CB_USAGE_DISPLAY);
+	CB_UNFINISHED ("USAGE UTF-8");
+  }
 ;
 
 usage:
@@ -8054,12 +8079,12 @@ usage:
   }
 | NATIONAL
   {
-	check_repeated ("USAGE", SYN_CLAUSE_5, &check_pic_duplicate);
+	check_and_set_usage (CB_USAGE_NATIONAL);
 	CB_UNFINISHED ("USAGE NATIONAL");
   }
 | UTF_8
   {
-	check_repeated ("USAGE", SYN_CLAUSE_5, &check_pic_duplicate);
+	check_and_set_usage (CB_USAGE_DISPLAY);
 	CB_UNFINISHED ("USAGE UTF-8");
   }
 ;
@@ -9187,7 +9212,7 @@ report_group_option:
 | next_group_clause
 | line_clause
 | picture_clause
-| usage_clause
+| usage_clause_screen_report
 | type_to_clause
 | sign_clause
 | justified_clause
@@ -9985,7 +10010,7 @@ screen_option:
 	check_repeated ("BACKGROUND-COLOR", SYN_CLAUSE_19, &check_pic_duplicate);
 	current_field->screen_backg = $3;
   }
-| usage_clause
+| usage_clause_screen_report
 /* FIXME shift/reduce conflict with control_attributes
 | type_to_clause
 */
@@ -14318,27 +14343,27 @@ goto_statement:
 ;
 
 go_body:
-  _to procedure_name_list goto_depending
+  _to procedure_name_list _goto_depending
   {
 	cb_emit_goto ($2, $3);
 	start_debug = save_debug;
   }
-| _to ENTRY entry_name_list goto_depending
+| _to ENTRY entry_name_list _goto_depending
   {
 	if (cb_verify (cb_goto_entry, "ENTRY FOR GO TO")) {
-		cb_emit_goto_entry ($3, $4);
+		cb_emit_goto ($3, $4);
 	}
 	start_debug = save_debug;
   }
 ;
 
-goto_depending:
+_goto_depending:
   /* empty */
   {
 	check_unreached = 1;
 	$$ = NULL;
   }
-| DEPENDING _on identifier
+| DEPENDING _on numeric_identifier
   {
 	check_unreached = 0;
 	$$ = $3;
@@ -19024,7 +19049,7 @@ numeric_identifier:
   identifier
   {
 	if ($1 != cb_error_node
-	    && cb_tree_category ($1) != CB_CATEGORY_NUMERIC) {
+	 && cb_tree_category ($1) != CB_CATEGORY_NUMERIC) {
 		cb_error_x ($1, _("'%s' is not numeric"), cb_name ($1));
 	}
   }

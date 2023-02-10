@@ -1532,15 +1532,8 @@ validate_usage (struct cb_field * const f)
 {
 	cb_tree	x = CB_TREE (f);
 
-	if ((f->storage == CB_STORAGE_SCREEN
-	  || f->storage == CB_STORAGE_REPORT)
-	 &&  f->usage   != CB_USAGE_DISPLAY
-	 &&  f->usage   != CB_USAGE_NATIONAL) {
-		cb_error_x (CB_TREE(f),
-			_("%s item '%s' should be USAGE DISPLAY"),
-			enum_explain_storage (f->storage), cb_name (x));
-		return 1;
-	}
+	/* note: we check for "only accaptable USAGE" for SCREEN and REPORT SECTION
+	   indirectly in the parser (we used to check for DISPLAY here) */
 
 	switch (f->usage) {
 	case CB_USAGE_BINARY:
@@ -1606,7 +1599,7 @@ validate_justified_right (const struct cb_field * const f)
 	    && f->pic->category != CB_CATEGORY_ALPHANUMERIC
 	    && f->pic->category != CB_CATEGORY_BOOLEAN
 	    && f->pic->category != CB_CATEGORY_NATIONAL) {
-		cb_error_x (x, _("'%s' cannot have JUSTIFIED RIGHT"), cb_name (x));
+		cb_error_x (x, _("'%s' cannot have JUSTIFIED RIGHT clause"), cb_name (x));
 	}
 }
 
@@ -1779,7 +1772,8 @@ error_value_figurative_constant(const struct cb_field * const f)
 {
 	cb_tree first_value = get_first_value (f);
 	if (first_value && cb_is_figurative_constant (first_value)) {
-		cb_error_x (CB_TREE (f), _("VALUE may not contain a figurative constant"));
+		cb_error_x (CB_TREE (f),
+			_("VALUE may not contain a figurative constant"));
 	}
 }
 
@@ -1787,7 +1781,8 @@ static void
 error_both_full_and_justified (const struct cb_field * const f)
 {
 	if ((f->screen_flag & COB_SCREEN_FULL) && f->flag_justified) {
-		cb_error_x (CB_TREE (f), _("cannot specify both FULL and JUSTIFIED"));
+		cb_error_x (CB_TREE (f),
+			_("cannot specify both %s and %s"), "FULL", "JUSTIFIED");
 	}
 }
 
@@ -1799,8 +1794,8 @@ warn_from_to_using_without_pic (const struct cb_field * const f)
 		const cb_tree	x = CB_TREE (f);
 		/* TO-DO: Change to dialect option */
 		cb_warning_x (cb_warn_additional, x,
-			      _("'%s' has FROM, TO or USING without PIC; PIC will be implied"),
-			      cb_name (x));
+			_("'%s' has FROM, TO or USING without PIC; PIC will be implied"),
+			cb_name (x));
 		/* TO-DO: Add setting of PIC below here or move warnings to the code which sets the PIC */
 		return 1;
 	} else {
@@ -1816,8 +1811,8 @@ warn_pic_for_numeric_value_implied (const struct cb_field * const f)
 		const cb_tree	x = CB_TREE (f);
 		/* TO-DO: Change to dialect option */
 		cb_warning_x (cb_warn_additional, x,
-			      _("'%s' has numeric VALUE without PIC; PIC will be implied"),
-			      cb_name (x));
+			_("'%s' has numeric VALUE without PIC; PIC will be implied"),
+			cb_name (x));
 		/* TO-DO: Add setting of PIC below here or move warnings to the code which sets the PIC */
 		return 1;
 	} else {
@@ -1829,7 +1824,7 @@ static void
 error_both_pic_and_value (const struct cb_field * const f)
 {
 	if (f->pic && f->values) {
-		cb_error_x (CB_TREE (f), _("cannot specify both PIC and VALUE"));
+		cb_error_x (CB_TREE (f), _("cannot specify both %s and %s"), "PIC", "VALUE");
 	}
 }
 
@@ -2969,8 +2964,9 @@ unbounded_again:
 			break;
 		/* LCOV_EXCL_START */
 		default:
-			cobc_err_msg (_("unexpected USAGE: %d"),
-					(int)f->usage);
+			/* as this is an unexpected message, only for requested reports,
+			   leave untranslated */
+			cobc_err_msg ("unexpected USAGE: %d", (int)f->usage);
 			COBC_ABORT ();
 		/* LCOV_EXCL_STOP */
 		}
@@ -3552,7 +3548,9 @@ cb_get_usage_string (const enum cb_usage usage)
 		return "HANDLE OF LAYOUT-MANAGER";
 	/* LCOV_EXCL_START */
 	default:
-		cb_error (_("unexpected USAGE: %d"), usage);
+		/* as this is an unexpected message, only for requested reports,
+		   leave untranslated */
+		cb_error ("unexpected USAGE: %d", usage);
 		COBC_ABORT ();
 	/* LCOV_EXCL_STOP */
 	}

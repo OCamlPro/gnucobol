@@ -2558,7 +2558,7 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 0 errors in compilation group
 ])
 
-[AT_CHECK([diff prog17-32.lst prog.lis], [0], [], [])]
+AT_CHECK([diff prog17-32.lst prog.lis], [0], [], [])
 
 ,
 
@@ -2667,7 +2667,7 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 0 errors in compilation group
 ])
 
-[AT_CHECK([diff prog17-64.lst prog.lis], [0], [], [])]
+AT_CHECK([diff prog17-64.lst prog.lis], [0], [], [])
 
 )
 
@@ -3612,11 +3612,11 @@ error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9
 000065         01  signed-constant CONSTANT -1.
 000066         01  invalid-constant.
 000067             03  PIC X(str-constant).
-error: 'STR-CONSTANT' is not a numeric literal
+error: 'STR-CONSTANT' is not an unsigned positive integer
 000068             03  PIC X(float-constant).
-error: 'FLOAT-CONSTANT' is not an integer
+error: 'FLOAT-CONSTANT' is not an unsigned positive integer
 000069             03  PIC X(signed-constant).
-error: 'SIGNED-CONSTANT' is not unsigned
+error: 'SIGNED-CONSTANT' is not an unsigned positive integer
 000070             03  PIC X(unseen-constant).
 error: 'UNSEEN-CONSTANT' is not defined
 000071
@@ -3801,9 +3801,9 @@ prog.cob:57: error: V cannot follow a P which is after the decimal point
 prog.cob:59: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
 prog.cob:60: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
 prog.cob:61: error: PICTURE string must contain at least one of the set A, N, U, X, Z, 1, 9 and *; or at least two of the set +, - and the currency symbol
-prog.cob:67: error: 'STR-CONSTANT' is not a numeric literal
-prog.cob:68: error: 'FLOAT-CONSTANT' is not an integer
-prog.cob:69: error: 'SIGNED-CONSTANT' is not unsigned
+prog.cob:67: error: 'STR-CONSTANT' is not an unsigned positive integer
+prog.cob:68: error: 'FLOAT-CONSTANT' is not an unsigned positive integer
+prog.cob:69: error: 'SIGNED-CONSTANT' is not an unsigned positive integer
 prog.cob:70: error: 'UNSEEN-CONSTANT' is not defined
 prog.cob:81: warning: uncommon parentheses
 

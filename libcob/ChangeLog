@@ -37,6 +37,11 @@
 	* numeric.c (cob_decimal_mul): removed check for zero as mpz_mul does this
 	  on its own
 
+2023-01-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* call.c (cob_put_s64_param, cob_put_u64_param): switched to common msgid
+	* common.c (cob_sys_getopt_long_long): lower-case msgid
+
 2023-01-18  Simon Sobisch <simonsobisch@gnu.org>
 
 	* numeric.c (cob_mul_by_pow_10, cob_div_by_pow_10, cob_pow_10_uli)

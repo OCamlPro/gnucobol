@@ -2438,7 +2438,6 @@ extern void		cb_emit_divide (cb_tree, cb_tree,
 extern void		cb_emit_evaluate (cb_tree, cb_tree);
 
 extern void		cb_emit_goto (cb_tree, cb_tree);
-extern void		cb_emit_goto_entry (cb_tree, cb_tree);
 extern void		cb_emit_exit (const unsigned int);
 
 extern void		cb_emit_if (cb_tree, cb_tree, cb_tree);

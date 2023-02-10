@@ -7015,12 +7015,12 @@ cob_sys_getopt_long_long (void *so, void *lo, void *idx, const int long_only, vo
 		lo_amount = (int)lo_size / sizeof (longoption_def);
 		longoptions_root = (struct option*) cob_malloc (sizeof (struct option) * ((size_t)lo_amount + 1U));
 	} else {
-		cob_runtime_error (_("Call to CBL_GC_GETOPT with wrong longoption size."));
+		cob_runtime_error (_("call to CBL_GC_GETOPT with wrong longoption size"));
 		cob_hard_failure ();
 	}
 
 	if (!COB_MODULE_PTR->cob_procedure_params[2]) {
-		cob_runtime_error (_("Call to CBL_GC_GETOPT with missing longind."));
+		cob_runtime_error (_("call to CBL_GC_GETOPT with missing longind"));
 		cob_hard_failure ();
 	}
 	longind = cob_get_int (COB_MODULE_PTR->cob_procedure_params[2]);
