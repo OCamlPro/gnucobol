@@ -1371,7 +1371,9 @@ save_status (cob_file *f, cob_field *fnstatus, const int status)
 #endif
 			eop_status = 0;
 		}
-		if (cobsetptr->cob_do_sync) {
+		if (cobsetptr->cob_do_sync
+		 && !last_operation_open
+		 && f->open_mode != COB_OPEN_CLOSED) {
 			cob_sync (f);
 		}
 	} else {
@@ -1754,22 +1756,24 @@ cob_fd_file_open (cob_file *f, char *filename,
 #endif
 	f->fd = fd;
 	f->record_off = -1;
-#if 0	/* Simon: disabled, this function is expected to not use a file */
+#if 0	/* Simon: disabled, this function is expected to not use a FILE* */
 	{
-		const char *fmode;
+		const char *fopen_flags;
 		if (mode == COB_OPEN_INPUT) {
-			fmode = "r";
+			fopen_flags = "r";
 		} else if (mode == COB_OPEN_I_O) {
 			if (nonexistent)
-				fmode = "w+";
+				fopen_flags = "w+";
 			else
-				fmode = "r+";
+				fopen_flags = "r+";
 		} else if (mode == COB_OPEN_EXTEND) {
-			fmode = "";
+			fopen_flags = "";
 		} else {
-			fmode = "w";
+			fopen_flags = "w";
 		}
-		f->file = (void*)fdopen(f->fd, fmode);
+		/* note: _if_ this is activated (which likely needs adjustments in
+		         other places) then also handle cobsetptr->cob_unix_lf */
+		f->file = (void*)fdopen(f->fd, fopen_flags);
 	}
 #endif
 	if (f->flag_optional && nonexistent) {
@@ -1857,7 +1861,6 @@ cob_file_open (cob_file *f, char *filename,
 		return cob_fd_file_open (f, filename, mode, sharing, nonexistent);
 	}
 
-	fmode = NULL;
 	/* Open the file */
 	switch (mode) {
 	case COB_OPEN_INPUT:
@@ -1875,7 +1878,11 @@ cob_file_open (cob_file *f, char *filename,
 		}
 		break;
 	case COB_OPEN_I_O:
-		fmode = "r+";
+		if (!cobsetptr->cob_unix_lf) {
+			fmode = "r+";
+		} else {
+			fmode = "rb+";
+		}
 		break;
 	case COB_OPEN_EXTEND:
 		/* Problem on WIN32 (tested _MSC_VER 1500 and GCC build) if file isn't there: */
@@ -1893,6 +1900,7 @@ cob_file_open (cob_file *f, char *filename,
 		break;
 	/* LCOV_EXCL_START */
 	default:
+		fmode = NULL;
 		cob_runtime_error (_("invalid internal call of %s"), "cob_file_open");
 		cob_fatal_error (COB_FERROR_CODEGEN);
 	/* LCOV_EXCL_STOP */
@@ -2044,9 +2052,9 @@ cob_file_close (cob_file *f, const int opt)
 				COB_CHECKED_WRITE (f->fd, "\n", 1);
 			}
 		}
-#ifdef	HAVE_FCNTL
 		/* Unlock the file */
 		if (f->fd >= 0) {
+#ifdef	HAVE_FCNTL
 			struct flock lock;
 			memset ((void *)&lock, 0, sizeof (struct flock));
 			lock.l_type = F_UNLCK;
@@ -2060,16 +2068,15 @@ cob_file_close (cob_file *f, const int opt)
 				cob_runtime_warning ("issue during unlock (%s), errno: %d", "cob_file_close", errno);
 #endif
 			}
-		}
 #elif defined _WIN32
-		{
-			HANDLE osHandle = (HANDLE)_get_osfhandle (f->fd);
-			if (osHandle != INVALID_HANDLE_VALUE) {
+			{
+				HANDLE osHandle = (HANDLE)_get_osfhandle (f->fd);
 				/* CHECKME: Should this use UnlockFileEx ? */
-				if (!UnlockFile (osHandle, 0, 0, MAXDWORD, MAXDWORD)) {
+				if (osHandle != INVALID_HANDLE_VALUE
+				 && !UnlockFile (osHandle, 0, 0, MAXDWORD, MAXDWORD)) {
 					const DWORD last_error = GetLastError ();
 					if (last_error != 158) {	/* no locked region */
-#if 1 /* CHECKME - What is the correct thing to do here? */
+#if 1					/* CHECKME - What is the correct thing to do here? */
 						/* not translated as "testing only" */
 						cob_runtime_warning ("issue during UnLockFile (%s), lastError: " CB_FMT_LLU,
 							"cob_file_close", (cob_u64_t)last_error);
@@ -2077,13 +2084,17 @@ cob_file_close (cob_file *f, const int opt)
 					}
 				}
 			}
-		}
 #endif
+		}
 		/* Close the file */
 		if (f->organization == COB_ORG_LINE_SEQUENTIAL) {
 			if (f->file) {
 				fclose ((FILE *)f->file);
 				f->file = NULL;
+#ifdef _WIN32
+				/* at least on MSVC that closes the underlying file descriptor, too */
+				f->fd = -1;
+#endif
 			}
 		} else {
 			if (f->fd >= 0) {
@@ -2111,42 +2122,60 @@ open_next (cob_file *f)
 	if (f->flag_is_concat
 	 && *f->nxt_filename != 0) {
 #if 0 /* Note: file specific features are 4.x only .... */
-		char	*nx = strchr(f->nxt_filename,file_setptr->cob_concat_sep[0]);
+		char	*nx = strchr (f->nxt_filename,file_setptr->cob_concat_sep[0]);
 #else
-		char	*nx = strchr(f->nxt_filename,cobsetptr->cob_concat_sep[0]);
+		char	*nx = strchr (f->nxt_filename,cobsetptr->cob_concat_sep[0]);
 #endif
+		int fmode = O_BINARY;	/* without this ftell does not work on some systems */
+
+#ifdef _WIN32	/* win32 seems to resolve the file descriptor from the file handler
+             	   on fclose - and then aborts because it was closed directly before */
+		if (f->file) {
+			fclose (f->file);
+		} else {
+			close (f->fd);
+		}
+#else
 		close (f->fd);
 		if (f->file) {
 			fclose (f->file);
 		}
-		f->fd = -1;
-		f->file = NULL;
+#endif
+		if (f->open_mode == COB_OPEN_I_O) {
+			fmode |= O_RDWR;
+		} else {
+			fmode |= O_RDONLY;
+		}
 		if (nx) {
 			*nx = 0;
-			if (f->open_mode == COB_OPEN_I_O) {
-				f->fd = open (f->nxt_filename, O_RDWR);
-			} else {
-				f->fd = open (f->nxt_filename, O_RDONLY);
-			}
+			f->fd = open (f->nxt_filename, fmode);
 			f->nxt_filename = nx + 1;
 		} else {
-			if (f->open_mode == COB_OPEN_I_O) {
-				f->fd = open (f->nxt_filename, O_RDWR);
-			} else {
-				f->fd = open (f->nxt_filename, O_RDONLY);
-			}
+			f->fd = open (f->nxt_filename, fmode);
 			f->flag_is_concat = 0;
 			if (f->org_filename) {
 				cob_free (f->org_filename);
 				f->org_filename = NULL;
 			}
 		}
-		if (f->fd != -1) {
-			if (f->open_mode == COB_OPEN_INPUT) {
-				f->file = (void*)fdopen(f->fd, "r");
+		if (f->fd == -1) {
+			f->file = NULL;
+		} else {
+			const char *fopen_flags;
+			if (cobsetptr->cob_unix_lf) {
+				if (f->open_mode == COB_OPEN_INPUT) {
+					fopen_flags = "rb";
+				} else {
+					fopen_flags = "rb+";
+				}
 			} else {
-				f->file = (void*)fdopen(f->fd, "r+");
+				if (f->open_mode == COB_OPEN_INPUT) {
+					fopen_flags = "r";
+				} else {
+					fopen_flags = "r+";
+				}
 			}
+			f->file = (void*)fdopen(f->fd, fopen_flags);
 			return 1;
 		}
 	}
@@ -2454,6 +2483,9 @@ lineseq_read (cob_file *f, const int read_opts)
 again:
 	fp = (FILE *)f->file;
 	f->record_off = ftell (fp);	/* Save position at start of line */
+	/* Note: at least on Win32 the offset resolved does only return the right values
+	   when file was opened in binary mode -> cob_unix_lf; as an alternative
+	   we could increment the record_off field on each read/write */
 	for (; ;) {
 		n = getc (fp);
 		if (unlikely (n == EOF)) {
@@ -2768,6 +2800,7 @@ lineseq_rewrite (cob_file *f, const int opt)
 	if ((f->file_features & COB_FILE_LS_NULLS)) {
 #else
 	if (cobsetptr->cob_ls_uses_cr) {
+		/* CHECKME: likely also needed if not opened with unix-lf */
 		slotlen--;
 	}
 	if (cobsetptr->cob_ls_nulls) {
@@ -8562,7 +8595,8 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 
 
 	/* TRANSLATORS: This msgid is concatenated with a filename;
-	   setup translation to allow this to be followed on the right side. */
+	   setup translation to allow this to be followed on the right side,
+	   if necessary use a colon or hyphen */
 	implicit_close_of_msgid = _("implicit CLOSE of ");
 
 #ifdef	WITH_DB
@@ -9038,10 +9072,12 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f, struct fcd_file *fcd_list_entry)
 #endif
 	} else if(fcd->fileOrg == ORG_RELATIVE) {
 		f->organization = COB_ORG_RELATIVE;
-		if (f->keys == NULL)
+		if (f->keys == NULL) {
 			f->keys = cob_cache_malloc(sizeof (cob_file_key));
-		if (f->keys[0].field == NULL)
+		}
+		if (f->keys[0].field == NULL) {
 			f->keys[0].field = cob_cache_malloc(sizeof (cob_field));
+		}
 		f->keys[0].field->data = cob_cache_malloc (4);
 		f->keys[0].field->attr = &compx_attr;
 		f->keys[0].field->size = 4;
@@ -9095,25 +9131,29 @@ copy_fcd_to_file (FCD3* fcd, cob_file *f, struct fcd_file *fcd_list_entry)
 	/* build select name from assign value, if missing */
 	if (f->select_name == NULL
 	 && f->assign != NULL) {
+		const int	max_size = ((int)f->assign->size > 48)
+		         	         ? 48 : (int)f->assign->size;
 		char	fdname[49];
 		char	*origin = (char*)f->assign->data;
 		/* limit filename to last element after
 		   path separator, when specified */
-		for (k=(int)f->assign->size - 1; k; k--) {
+		for (k = max_size - 1; k; k--) {
 			if (f->assign->data[k] == SLASH_CHAR
 #ifdef	_WIN32
 			 || f->assign->data[k] == '/'
 #endif
 			) {
-				origin = (char*)&f->assign->data[k+1];
+				origin = (char *)f->assign->data + k + 1;
 				break;
 			}
 		}
-		/* now copy that until the first space/low-value (max 48) as upper-case */
-		for (k=0; origin[k] && origin[k] > ' ' && k < 48; k++) {
+		/* now copy that until the first space/low-value up to
+		   max_size as upper-case */
+		for (k = 0; origin[k] && origin[k] > ' ' && k < max_size; k++) {
 			fdname[k] = (char)toupper((unsigned char)origin[k]);
 		}
 		fdname[k] = 0;
+		k++;	/* copy with trailing NUL */
 		/* we don't necessarily know later if we built the name ourself,
 		   so we need to cache the storage */
 		f->select_name = cob_cache_malloc (k);
@@ -9875,7 +9915,7 @@ EXTFH3 (unsigned char *opcode, FCD3 *fcd)
 
 	int	opcd,sts,opts,eop,k;
 	unsigned char	fnstatus[2];	/* storage for local file status field */
-	unsigned char	keywrk[80];
+	unsigned char	keywrk[80]; 	/* key data used for IDX, if not passed */
 	/* different cob_fields as some ABI functions operate on those */
 	cob_field fs[1];
 	cob_field key[1];
@@ -9905,7 +9945,7 @@ EXTFH3 (unsigned char *opcode, FCD3 *fcd)
 		COB_MODULE_PTR = cob_malloc( sizeof (cob_module) );
 		COB_MODULE_PTR->module_name = "GnuCOBOL-fileio";
 		COB_MODULE_PTR->module_source = "GnuCOBOL-fileio";
-		COB_MODULE_PTR->module_formatted_date = "2021/09/21 12:01:20";
+		COB_MODULE_PTR->module_formatted_date = "2023/02/06 12:01:20";
 	}
 
 	if (*opcode == 0xFA) {
@@ -9957,10 +9997,12 @@ org_handling:
 		if (opcd == OP_GETINFO) {
 			if (fcd->fnamePtr) {
 				k = strlen (fcd->fnamePtr);
-				if (k > LDCOMPX2 (fcd->fnameLen))
+				if (k > LDCOMPX2 (fcd->fnameLen)) {
 					k = LDCOMPX2 (fcd->fnameLen);
-				while (k > 0 && fcd->fnamePtr[k-1] == ' ')
+				}
+				while (k > 0 && fcd->fnamePtr[k-1] == ' ') {
 					--k;
+				}
 				STCOMPX2(k,fcd->fnameLen);
 				memcpy (file_open_name, fcd->fnamePtr, k);
 				file_open_name[k] = 0;
