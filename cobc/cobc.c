@@ -2073,7 +2073,7 @@ clean_up_intermediates (struct filename *fn, const int status)
 			lf->local_fp = NULL;
 		}
 	}
-	if (save_all_src) {
+	if (save_all_src && !save_temps_dir) {
 		return;
 	}
 	if (fn->need_preprocess

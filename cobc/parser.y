@@ -1613,12 +1613,10 @@ error_if_record_delimiter_incompatible (const int organization,
 }
 
 static int
-set_current_field (cb_tree level, cb_tree name)
+set_current_field (int level, cb_tree name)
 {
 	cb_tree	x  = cb_build_field_tree (level, name, current_field,
 					  current_storage, current_file, 0);
-	/* Free tree associated with level number */
-	cobc_parse_free (level);
 
 	if (CB_INVALID_TREE (x)) {
 		return 1;
@@ -1720,7 +1718,7 @@ setup_external_definition_type (cb_tree x)
    inherits the definition of the original field specified
    by SAME AS or by type_name */
 static void
-inherit_external_definition (cb_tree lvl)
+inherit_external_definition (const int lvl)
 {
 	/* note: REDEFINES (clause 1) is allowed with RM/COBOL but not COBOL 2002+ */
 	static const cob_flags_t	allowed_clauses =
@@ -1735,11 +1733,11 @@ inherit_external_definition (cb_tree lvl)
 		current_field->flag_invalid = 1;
 	} else {
 		struct cb_field *fld = CB_FIELD (current_field->external_definition);
-		int new_level = lvl ? cb_get_level (lvl) : 0;
+		int new_level = lvl;
 		int old_level = current_field->level;
 		copy_into_field (fld, current_field);
 		if (new_level > 1 && new_level < 66 && new_level > old_level) {
-			cb_error_x (lvl, _("entry following %s may not be subordinate to it"),
+			cb_error (_("entry following %s may not be subordinate to it"),
 				fld->flag_is_typedef ? "TYPE TO" : "SAME AS");
 		}
 	}
@@ -1752,7 +1750,7 @@ get_finalized_description_tree (void)
 
 	/* finalize last field if target of SAME AS / TYPEDEF */
 	if (current_field && !CB_INVALID_TREE (current_field->external_definition)) {
-		inherit_external_definition (NULL);
+		inherit_external_definition (0);
 	}
 
 	/* validate the complete current "block" */
@@ -6940,11 +6938,12 @@ data_description:
 | condition_name_entry
 | level_number _entry_name
   {
+	const int level = cb_get_level ($1);
 	if (current_field && !CB_INVALID_TREE (current_field->external_definition)) {
 		/* finalize last field if target of SAME AS / type-name */
-		inherit_external_definition ($1);
+		inherit_external_definition (level);
 	}
-	if (set_current_field ($1, $2)) {
+	if (set_current_field (level, $2)) {
 		YYERROR;
 	}
 	save_tree = NULL;
@@ -6960,10 +6959,6 @@ data_description:
   }
 | level_number error TOK_DOT
   {
-#if 0 /* works fine without, leads to invalid free otherwise [COB_TREE_DEBUG] */
-	/* Free tree associated with level number */
-	cobc_parse_free ($1);
-#endif
 	yyerrok;
 	cb_unput_dot ();
 	check_pic_duplicate = 0;
@@ -6977,7 +6972,7 @@ data_description:
 level_number:
   not_const_word LEVEL_NUMBER
   {
-	int level = cb_get_level ($2);
+	const int	level = cb_get_level ($2);
 	switch (level) {
 	case 1:
 	case 77:
@@ -7154,7 +7149,7 @@ renames_entry:
 
 	non_const_word = 0;
 
-	if (set_current_field ($1, $2)) {
+	if (set_current_field (66, $2)) {
 		/* error in the definition, no further checks possible */
 	} else if (renames_target == cb_error_node) {
 		/* error in the target, skip further checks */
@@ -7201,7 +7196,7 @@ _renames_thru:
 condition_name_entry:
   EIGHTY_EIGHT _user_entry_name
   {
-	if (set_current_field ($1, $2)) {
+	if (set_current_field (88, $2)) {
 		YYERROR;
 	}
   }
@@ -7226,12 +7221,9 @@ constant_entry:
   level_number user_entry_name CONSTANT _const_global constant_source
   {
 	cb_tree x;
-	int	level;
+	const int level = cb_get_level ($1);
 
 	cobc_cs_check = 0;
-	level = cb_get_level ($1);
-	/* Free tree associated with level number */
-	cobc_parse_free ($1);
 	if (level != 1) {
 		cb_error (_("CONSTANT item not at 01 level"));
 	} else if ($5) {
@@ -7252,7 +7244,7 @@ constant_entry:
   }
 | SEVENTY_EIGHT user_entry_name
   {
-	if (set_current_field ($1, $2)) {
+	if (set_current_field (78, $2)) {
 		YYERROR;
 	}
   }
@@ -9220,7 +9212,8 @@ _report_group_description_list:
 report_group_description_entry:
   level_number _entry_name
   {
-	if (set_current_field ($1, $2)) {
+	const int level = cb_get_level ($1);
+	if (set_current_field (level, $2)) {
 		YYERROR;
 	}
 	if (!description_field) {
@@ -9233,8 +9226,6 @@ report_group_description_entry:
   }
 | level_number error _dot_or_else_end_of_report_group_description
   {
-	/* Free tree associated with level number */
-	cobc_parse_free ($1);
 	yyerrok;
 	check_pic_duplicate = 0;
 	check_duplicate = 0;
@@ -9729,7 +9720,8 @@ screen_description:
   /* normal screen definition */
 | level_number _entry_name
   {
-	if (set_current_field ($1, $2)) {
+	const int level = cb_get_level ($1);
+	if (set_current_field (level, $2)) {
 		YYERROR;
 	}
 	if (current_field->parent) {
@@ -9779,7 +9771,8 @@ screen_description:
   /* ACUCOBOL-GT control definition */
 | level_number _entry_name
   {
-	if (set_current_field ($1, $2)) {
+	const int level = cb_get_level ($1);
+	if (set_current_field (level, $2)) {
 		YYERROR;
 	}
 	if (current_field->parent) {

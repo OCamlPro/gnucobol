@@ -403,7 +403,7 @@ level_error:
 }
 
 cb_tree
-cb_build_field_tree (cb_tree level, cb_tree name, struct cb_field *last_field,
+cb_build_field_tree (const int level, cb_tree name, struct cb_field *last_field,
 		     enum cb_storage storage, struct cb_file *fn,
 		     const int expl_level)
 {
@@ -423,7 +423,7 @@ cb_build_field_tree (cb_tree level, cb_tree name, struct cb_field *last_field,
 			return cb_error_node;
 		}
 		/* Check the level number */
-		lv = cb_get_level (level);
+		lv = level;
 #if 0 /*level is always valid --> 01 thru 49, 77, 66, 78, 88 */
 		if (!lv) {
 			return cb_error_node;
@@ -681,10 +681,10 @@ copy_duplicated_field_into_field (struct cb_field *field, struct cb_field *targe
 {
 	cb_tree	x;
 	if (!field->flag_filler && field->name) {
-		x = cb_build_field_tree (NULL, cb_build_reference (field->name),
+		x = cb_build_field_tree (0, cb_build_reference (field->name),
 			target, storage, NULL, level);
 	} else {
-		x = cb_build_field_tree (NULL, cb_build_filler (),
+		x = cb_build_field_tree (0, cb_build_filler (),
 			target, storage, NULL, level);
 	}
 	if (x == cb_error_node) {

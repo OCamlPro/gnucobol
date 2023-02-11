@@ -1,4 +1,11 @@
 
+2023-02-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (clean_up_intermediates): fix missing move of temporary files
+	  when --save-temps=dir is used in combination with -g
+	* field.c (cb_build_field_tree), tree.h, parser.y: pass level number as
+	  integer, not as cb_tree
+
 2023-02-09  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (validate_alphabet): slightly rewritten to fix compiler warnings

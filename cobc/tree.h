@@ -2294,7 +2294,7 @@ extern int		cb_set_ignore_error (int state);
 /* field.c */
 extern size_t		cb_needs_01;
 extern int		cb_get_level (cb_tree);
-extern cb_tree		cb_build_field_tree (cb_tree, cb_tree, struct cb_field *,
+extern cb_tree		cb_build_field_tree (const int, cb_tree, struct cb_field *,
 					     enum cb_storage, struct cb_file *,
 					     const int);
 extern cb_tree		cb_build_full_field_reference (struct cb_field *);
