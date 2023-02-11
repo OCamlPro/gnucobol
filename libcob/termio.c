@@ -105,7 +105,9 @@ pretty_display_numeric (cob_field *f, FILE *fp)
 	const unsigned short	digits = COB_FIELD_DIGITS (f);
 	const signed short	scale = COB_FIELD_SCALE (f);
 	const int		size = digits + !!COB_FIELD_HAVE_SIGN (f) + !!scale;
-	cob_pic_symbol	pic[6] = { 0 };
+	/* Note: while we only need one pair, the double one works around a bug in
+	         old GCC versions https://gcc.gnu.org/bugzilla/show_bug.cgi?id=53119 */
+	cob_pic_symbol	pic[6] = {{ 0 }};
 	cob_pic_symbol	*p;
 
 	if (size > COB_MEDIUM_MAX) {
@@ -130,7 +132,7 @@ pretty_display_numeric (cob_field *f, FILE *fp)
 			p->times_repeated = digits - scale;
 			++p;
 		}
-		
+
 		p->symbol = COB_MODULE_PTR->decimal_point;
 		p->times_repeated = 1;
 		++p;
@@ -275,9 +277,9 @@ cob_display_common (const cob_field *f, FILE *fp)
 	} else if (COB_FIELD_TYPE(f) == COB_TYPE_NUMERIC_COMP5) {
 		cob_print_realbin (f, fp, f->attr->digits);
 		return;
-	} else if (COB_FIELD_REAL_BINARY(f) 
-			|| (COB_FIELD_TYPE(f) == COB_TYPE_NUMERIC_BINARY 
-			 && !COB_MODULE_PTR->flag_pretty_display)) {
+	} else if (COB_FIELD_REAL_BINARY(f)
+	        || (COB_FIELD_TYPE(f) == COB_TYPE_NUMERIC_BINARY
+	         && !COB_MODULE_PTR->flag_pretty_display)) {
 		cob_print_realbin (f, fp, bin_digits[f->size]);
 		return;
 	} else if (COB_FIELD_IS_NUMERIC (f)) {
@@ -298,7 +300,7 @@ cob_display (const int to_device, const int newline, const int varcnt, ...)
 	int		close_fp = 0;
 	cob_u32_t	disp_redirect = 0;
 	va_list		args;
-	
+
 	/* display to device ? */
 	switch (to_device) {
 	case 0:	/* general (SYSOUT) */
@@ -450,13 +452,14 @@ is_field_display (cob_field *f)
 static void
 display_alnum_dump (cob_field *f, FILE *fp, unsigned int indent, unsigned int max_width)
 {
-	unsigned int	i, j, pos, lowv, highv, spacev, zerov, printv, delv, len, colsize;
-	unsigned int	bgn, duplen;
+	const unsigned int fsize = (unsigned int)f->size;
+	unsigned int	i, j, pos, len, colsize, bgn, duplen;
+	size_t	lowv, highv, spacev, zerov, printv, delv;
 	char	wrk[200], prev[MAX_PREV];
 
 	lowv = highv = spacev = zerov = printv = delv = 0;
 	colsize = max_width - indent - 2;
-	for (i = 0; i < f->size; i++) {
+	for (i = 0; i < fsize; i++) {
 		if (f->data[i] == 0x00) {
 			lowv++;
 			delv++;
@@ -482,46 +485,46 @@ display_alnum_dump (cob_field *f, FILE *fp, unsigned int indent, unsigned int ma
 		}
 	}
 
-	if (spacev == f->size) {
+	if (spacev == fsize) {
 		fprintf (fp, "ALL SPACES");
 		return;
 	}
-	if (zerov == f->size) {
+	if (zerov == fsize) {
 		fprintf (fp, "ALL ZEROES");
 		return;
 	}
 
-	if (lowv == f->size) {
+	if (lowv == fsize) {
 		fprintf (fp, "ALL LOW-VALUES");
 		return;
 	}
-	if (highv == f->size) {
+	if (highv == fsize) {
 		fprintf (fp, "ALL HIGH-VALUES");
 		return;
 	}
 
 	/* remove trailing LOW-VALUES with note */
-	if (lowv > 0
-	 && ((size_t)lowv+printv) == f->size) {
-		for (len = f->size; len > 0 && f->data[len-1] == 0x00; len--);
-		if (((size_t)len+lowv) == f->size) {
-			for (i=0; len > colsize; i+=colsize,len-=colsize) {
-				fprintf(fp,"'%.*s'\n%*s",colsize,&f->data[i],indent," ");
+	if (lowv != 0
+	 && (lowv + printv) == fsize) {
+		for (len = fsize; len != 0 && f->data[len-1] == 0x00; len--);
+		if (len + lowv == fsize) {
+			for (i = 0; len > colsize; i += colsize, len -= colsize) {
+				fprintf (fp, "'%.*s'\n%*s", colsize, &f->data[i], indent, " ");
 			}
 			if (len <= colsize) {
-				fprintf(fp,"'%.*s'",len,&f->data[i]);
+				fprintf (fp, "'%.*s'", len, &f->data[i]);
 			}
-			fprintf(fp,"\n%*s trailing LOW-VALUES",indent-8," ");
+			fprintf (fp, "\n%*s trailing LOW-VALUES", indent -8 ," ");
 			return;
 		}
 	}
 
 	/* always _ignore_ trailing SPACES */
-	for (len = f->size; len > 0 && f->data[len-1] == ' '; len--);
+	for (len = fsize; len != 0 && f->data[len-1] == ' '; len--);
 
-	if (printv == f->size) {
+	if (printv == fsize) {
 		duplen = bgn = 0;
-		for (i=0; len > colsize; i+=colsize,len-=colsize) {
+		for (i = 0; len > colsize; i += colsize, len -= colsize) {
 			if (colsize < MAX_PREV) {
 				if (i == 0) {
 					memcpy (prev, f->data, colsize);
@@ -534,48 +537,56 @@ display_alnum_dump (cob_field *f, FILE *fp, unsigned int indent, unsigned int ma
 						i += colsize;
 						len -= colsize;
 					}
-					i -= colsize;
+					if (colsize > i) {
+						i -= colsize;
+					} else {
+						i = 0;	/* safe-guard, fixing analyzer warning */
+					}
 					len += colsize;
-					fprintf (fp, "%5u thru %u same as above\n%*s", 
+					fprintf (fp, "%5u thru %u same as above\n%*s",
 								bgn, bgn+duplen, indent-6, " ");
 					memcpy (prev, &f->data[i], colsize);
 					continue;
 				}
 				memcpy (prev, &f->data[i], colsize);
 			}
-			if (i != 0)
+			if (i != 0) {
 				fprintf (fp, "%5u:", i);
+			}
 			fprintf (fp, "'%.*s'\n%*s", colsize, &f->data[i], indent-6, " ");
 		}
-		if (i != 0)
+		if (i != 0) {
 			fprintf (fp, "%5u:", i);
+		}
 		if (len <= colsize) {
 			fprintf (fp, "'%.*s'", len, &f->data[i]);
 			return;
 		}
 	}
 
-	if (((size_t)delv + printv) == f->size) {
-		for (i = 0; i < f->size; ) {
-			for (j=0; j < colsize && i < f->size; j++,i++) {
-				if (f->data[i] == '\0')
-					fprintf (fp,"\\0"), j++;
-				else if (f->data[i] == '\\')
-					fprintf (fp,"\\\\"), j++;
-				else if (f->data[i] == '\r')
-					fprintf (fp,"\\r"), j++;
-				else if (f->data[i] == '\n')
-					fprintf (fp,"\\n"), j++;
-				else if (f->data[i] == '\t')
-					fprintf (fp,"\\t"), j++;
-				else if (f->data[i] == '\b')
-					fprintf (fp,"\\b"), j++;
-				else if (f->data[i] == '\f')
-					fprintf (fp,"\\f"), j++;
-				else
-					fprintf (fp,"%c",f->data[i]);
+	if ((delv + printv) == fsize) {
+		for (i = 0; i < fsize; ) {
+			for (j = 0; j < colsize && i < fsize; j++, i++) {
+				switch (f->data[i]) {
+				case '\0':
+					fprintf (fp, "\\0"), j++; break;
+				case '\\':
+					fprintf (fp, "\\\\"), j++; break;
+				case '\r':
+					fprintf (fp, "\\r"), j++; break;
+				case '\n':
+					fprintf (fp, "\\n"), j++; break;
+				case '\t':
+					fprintf (fp, "\\t"), j++; break;
+				case '\b':
+					fprintf (fp, "\\b"), j++; break;
+				case '\f':
+					fprintf (fp, "\\f"), j++; break;
+				default:
+					fprintf (fp, "%c", f->data[i]);
+				}
 			}
-			if (i < f->size) {
+			if (i < fsize) {
 				fprintf (fp, "\n%*s%5u : ", indent - 8, " ", i + 1);
 			}
 		}
@@ -590,51 +601,51 @@ display_alnum_dump (cob_field *f, FILE *fp, unsigned int indent, unsigned int ma
 	}
 
 	colsize = (colsize / 4) * 4;
-	for (i = 0; i < f->size; ) {
+	for (i = 0; i < fsize; ) {
 		if (colsize < MAX_PREV
-		 && i < (f->size - colsize)) {
-			if (i > 0
+		 && i < (fsize - colsize)) {
+			if (i != 0
 			 && memcmp (prev, &f->data[i], colsize/2) == 0) {
 				duplen = 0;
 				bgn = i;
 				while (memcmp (prev, &f->data[i], colsize/2) == 0
-					&& i < (f->size - colsize/2)) {
+				    && i < (fsize - colsize/2)) {
 					duplen += colsize/2;
 					i += colsize/2;
 				}
 				fprintf (fp, "--- %u thru %u same as above ---", bgn+1, bgn+duplen);
-				if (i < f->size) {
+				if (i < fsize) {
 					fprintf (fp, "\n%*s", indent, " ");
 				}
 			}
-			if (colsize < (f->size - i)) {
+			if (colsize < (fsize - i)) {
 				memcpy (prev, &f->data[i], colsize);
 			} else {
-				memcpy (prev, &f->data[i], f->size - i);
+				memcpy (prev, &f->data[i], fsize - i);
 			}
 		}
 		wrk[0] = 0;
 		pos = i + 1;
-		for (j=0; j < colsize && i < f->size; j+=2,i++) {
+		for (j = 0; j < colsize && i < fsize; j += 2, i++) {
 			if (f->data[i] >= ' '
 			 && f->data[i] <= 0x7F) {
-				fprintf (fp," %c",f->data[i]);
-				sprintf (&wrk[j],"%02X",f->data[i]);
+				fprintf (fp, " %c", f->data[i]);
+				sprintf (&wrk[j], "%02X", f->data[i]);
 			} else {
-				fprintf (fp,"  ");
-				sprintf (&wrk[j],"%02X",f->data[i]);
+				fprintf (fp, "  ");
+				sprintf (&wrk[j], "%02X", f->data[i]);
 			}
 			if ((j+2) < colsize
 			 && ((i+1) % 4) == 0
-			 && (i+1) < f->size) {
+			 && (i+1) < fsize) {
 				fprintf (fp," ");
 				j++;
 				wrk[j+1] = ' ';
 				wrk[j+2] = 0;
 			}
 		}
-		fprintf (fp, "\n%*s%5u x %s", indent-8, " ", pos, wrk);
-		if (i < f->size) {
+		fprintf (fp, "\n%*s%5u x %s", indent - 8, " ", pos, wrk);
+		if (i < fsize) {
 			fprintf (fp, "\n%*s", indent, " ");
 		}
 	}
@@ -714,8 +725,8 @@ setup_varname_with_indices (char *buffer, cob_u32_t	*subscript,
 		if (closing_paren) {
 			buffer[pos++] = ')';
 		}
-		buffer[pos] = 0;
-		return pos - 1;
+		buffer[pos--] = 0;
+		return pos;
 	} else {
 		size_t len = strlen (name);
 		memcpy (buffer, name, len + 1);
@@ -821,7 +832,7 @@ dump_field_internal (const int level, const char *name,
 	/* copy field pointer to allow access to its data pointer and size
 	   and for the actual dump also its attributes */
 	memcpy (f, f_addr, sizeof (cob_field));
-	
+
 	if (!dump_compat) {
 		unsigned int calc_dump_index = indexes;
 		if (calc_dump_index != 0) {
@@ -928,7 +939,7 @@ dump_field_internal (const int level, const char *name,
 		 || f->size > 39) {
 			display_alnum_dump (f, fp, 41, cobsetptr->cob_dump_width);
 		} else {
-			fprintf (fp, " "); 
+			fprintf (fp, " ");
 			cob_display_common (f, fp);
 		}
 		fprintf (fp, "\n");

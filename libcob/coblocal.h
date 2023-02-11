@@ -198,19 +198,23 @@ Note: also defined together with __clang__ in both frontends:
 #define	COB_128_OR_EXTEND	COB_U64_C(0x0002000000000000)
 
 /* Field/attribute initializers */
-#define COB_FIELD_INIT(x,y,z)	do { \
+#define COB_FIELD_INIT_F(field,x,y,z)	do { \
 	field.size = x; \
 	field.data = y; \
 	field.attr = z; \
 	} ONCE_COB
+#define COB_FIELD_INIT(x,y,z)	\
+	COB_FIELD_INIT_F(field,x,y,z)
 
-#define COB_ATTR_INIT(u,v,x,y,z)	do { \
+#define COB_ATTR_INIT_A(attr,u,v,x,y,z)	do { \
 	attr.type = u; \
 	attr.digits = v; \
 	attr.scale = x; \
 	attr.flags = y; \
 	attr.pic = z; \
 	} ONCE_COB
+#define COB_ATTR_INIT(u,v,x,y,z) \
+	COB_ATTR_INIT_A(attr,u,v,x,y,z)
 
 #define COB_GET_SIGN(f)		\
 	(COB_FIELD_HAVE_SIGN (f) ? cob_real_get_sign (f) : 0)
@@ -532,14 +536,14 @@ DECLNORET COB_HIDDEN void	cob_hard_failure (void) COB_A_NORETURN;
 
 /* static inline of smaller helpers */
 
-static COB_INLINE int
+static COB_INLINE COB_A_INLINE int
 cob_min_int (const int x, const int y)
 {
 	if (x < y) return x;
 	return y;
 }
 
-static COB_INLINE int
+static COB_INLINE COB_A_INLINE int
 cob_max_int (const int x, const int y)
 {
 	if (x > y) return x;

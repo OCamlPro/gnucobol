@@ -252,15 +252,16 @@ typedef __mpz_struct mpz_t[1];
 
 #endif
 
-#elif defined(_MSC_VER)
-
+#elif 0 && defined(_MSC_VER)	
+/* shown to not work correctly in some cases, so fall-back
+   to our generic inline version, which works */ 
 #define COB_BSWAP_16(val) (_byteswap_ushort (val))
 #define COB_BSWAP_32(val) (_byteswap_ulong (val))
 #define COB_BSWAP_64(val) (_byteswap_uint64 (val))
 
 #elif defined(__ORANGEC__)
 
-#define COB_BSWAP_16(val) (COB_BSWAP_16_CONSTANT (val))
+#define COB_BSWAP_16(val) (__builtin_bswap16 (val))
 #define COB_BSWAP_32(val) (__builtin_bswap32 (val))
 #define COB_BSWAP_64(val) (__builtin_bswap64 (val))
 
@@ -1876,6 +1877,7 @@ COB_EXPIMP void	cob_check_beyond_exit (const unsigned char *);
 
 /* Comparison functions */
 COB_EXPIMP int	cob_numeric_cmp		(cob_field *, cob_field *);
+COB_EXPIMP int	cob_bcd_cmp		(cob_field *, cob_field *);
 
 /*******************************/
 /* Functions in strings.c */
@@ -2412,7 +2414,7 @@ typedef struct __fcd2 {
 #define fileDef		_fileDef.ptr_name		/* EXTFH: pointer to filedef */
 #define dfSortPtr	_dfSortPtr.ptr_name		/* EXTFH: pointer to DFSORT */
 
-#define LSUCHAR(f)	((unsigned char*)(f))
+#define LSUCHAR(f)	((unsigned char *)(f))
 /* xxCOMPXn : Big Endian Binary data */
 #define LDCOMPX2(f)	((((f)[0] << 8 ) & 0xFF00) | ((f)[1] & 0xFF))
 #define LDCOMPX4(f)	((((f)[0] << 24 ) & 0xFF000000) | (((f)[1] << 16 ) & 0xFF0000) | (((f)[2] << 8 ) & 0xFF00) | ((f)[3] & 0xFF))

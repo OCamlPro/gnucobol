@@ -2911,14 +2911,6 @@ output_integer (cb_tree x)
 			}
 			break;
 
-		case CB_USAGE_PACKED:
-			if (f->pic->scale == 0 && f->pic->digits < 10) {
-				optimize_defs[COB_GET_PACKED_INT] = 1;
-				output_func_1 ("cob_get_packed_int", x);
-				return;
-			}
-			break;
-
 		case CB_USAGE_BINARY:
 		case CB_USAGE_COMP_5:
 		case CB_USAGE_COMP_X:
@@ -3026,6 +3018,16 @@ output_integer (cb_tree x)
 				output ("(unsigned int)");
 			}
 			break;
+
+#if 0	/* libcob's optimized version is not slower, so drop that */
+		case CB_USAGE_PACKED:
+			if (f->pic->scale == 0 && f->pic->digits < 10) {
+				optimize_defs[COB_GET_PACKED_INT] = 1;
+				output_func_1 ("cob_get_packed_int", x);
+				return;
+			}
+			break;
+#endif
 
 		default:
 			break;
@@ -3278,6 +3280,16 @@ output_long_integer (cb_tree x)
 #endif
 			break;
 
+#if 0	/* libcob's optimized version is not slower, so drop that */
+		case CB_USAGE_PACKED:
+			if (f->pic->scale == 0 && f->pic->digits < 19) {
+				optimize_defs[COB_GET_PACKED_INT64] = 1;
+				output_func_1 ("cob_get_packed_int64", x);
+				return;
+			}
+			break;
+#endif
+
 		default:
 			break;
 		}
@@ -3522,6 +3534,16 @@ output_param (cb_tree x, int id)
 			break;
 		case CB_CAST_PROGRAM_POINTER:
 			output_param (cp->val, id);
+			break;
+		case CB_CAST_NEGATIVE_INTEGER:
+			output ("-(");
+			output_integer (cp->val);
+			output (")");
+			break;
+		case CB_CAST_NEGATIVE_LONG_INT:
+			output ("-(");
+			output_long_integer (cp->val);
+			output (")");
 			break;
 		default:
 			break;

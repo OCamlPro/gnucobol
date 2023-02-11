@@ -282,16 +282,17 @@ cb_load_conf_file (const char *conf_file, const enum cb_include_type include_typ
 			filename[0] = 0;
 			if (c && c->name) {
 				const size_t conf_file_namelen = strlen (conf_file);
+				size_t i2;
 				/* check for path separator in include name */
-				for (i = (int)strlen (conf_includes->name);
-					i != 0 && conf_includes->name[i] != SLASH_CHAR;
-					i--);
+				for (i2 = strlen (conf_includes->name);
+					i2 != 0 && conf_includes->name[i2] != SLASH_CHAR;
+					i2--);
 
 				/* if there is an actuall path and it isn't too long,
 				   then prefix it to get the filename */
-				if (i != 0 && i < sizeof (filename) - conf_file_namelen - 2) {
-					memcpy (filename, conf_includes->name, i); /* copy with separator */
-					memcpy (filename + i, conf_file, conf_file_namelen + 1); /* copy with trailing NULL */
+				if (i2 != 0 && i2 < sizeof (filename) - conf_file_namelen - 2) {
+					memcpy (filename, conf_includes->name, i2); /* copy with separator */
+					memcpy (filename + i2, conf_file, conf_file_namelen + 1); /* copy with trailing NULL */
 					if (access (filename, F_OK) == 0) {	/* and prefixed file exist */
 						conf_file = filename;		/* Prefix last directory */
 					} else {

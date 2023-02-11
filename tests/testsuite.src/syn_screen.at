@@ -1,4 +1,4 @@
-## Copyright (C) 2014-2022 Free Software Foundation, Inc.
+## Copyright (C) 2014-2023 Free Software Foundation, Inc.
 ## Written by Simon Sobisch, Edward Hart, Ron Norman
 ##
 ## This file is part of GnuCOBOL.
@@ -262,7 +262,8 @@ AT_DATA([prog.cob], [
            05 SI2    LINE 2 COL 1 PIC X FROM SPACE.
            05 SI2-2  LINE 2 COL 5 PIC X(03) FROM ALL SPACES.
            05 BAD1   LINE 4 COL 1 PIC 9 BINARY FROM ZERO.
-           05 FILLER LINE 4 COL 10 PIC 9 COMP-5 FROM ZERO.
+           05 BAD2   LINE 4 COL 1 PIC 9 USAGE BINARY FROM ZERO.
+           05 FILLER LINE 4 COL 8 PIC 9 COMP-5 FROM ZERO.
            05 BAD3   LINE 4 COL 5 COMP-2 FROM ALL ZEROES.
        PROCEDURE        DIVISION.
            DISPLAY SG END-DISPLAY.
@@ -270,9 +271,10 @@ AT_DATA([prog.cob], [
 ])
 
 AT_CHECK([$COMPILE prog.cob], [1], [],
-[prog.cob:12: error: SCREEN SECTION item 'BAD1' should be USAGE DISPLAY
-prog.cob:13: error: SCREEN SECTION item 'FILLER' should be USAGE DISPLAY
-prog.cob:14: error: SCREEN SECTION item 'BAD3' should be USAGE DISPLAY
+[prog.cob:12: error: syntax error, unexpected BINARY
+prog.cob:13: error: syntax error, unexpected BINARY, expecting DISPLAY or DISPLAY-1 or NATIONAL or UTF-8
+prog.cob:14: error: syntax error, unexpected COMP-5
+prog.cob:15: error: syntax error, unexpected COMP-2
 ])
 
 AT_CLEANUP
@@ -309,7 +311,7 @@ prog.cob:15: error: unsigned integer value expected
 AT_CLEANUP
 
 
-# ToDo: Add all clauses, maybe split into multiple tests
+# ToDo: add all clauses, maybe split into multiple tests
 AT_SETUP([Screen clauses])
 AT_KEYWORDS([screen])
 

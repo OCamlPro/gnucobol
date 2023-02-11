@@ -748,7 +748,7 @@ static void
 error_if_no_page_lines_limit (const char *phrase)
 {
 	if (!current_report->lines && !current_report->t_lines) {
-		cb_error (_("Cannot specify %s without number of lines on page"),
+		cb_error (_("cannot specify %s without number of lines on page"),
 			  phrase);
 	}
 }
@@ -1613,12 +1613,10 @@ error_if_record_delimiter_incompatible (const int organization,
 }
 
 static int
-set_current_field (cb_tree level, cb_tree name)
+set_current_field (int level, cb_tree name)
 {
 	cb_tree	x  = cb_build_field_tree (level, name, current_field,
 					  current_storage, current_file, 0);
-	/* Free tree associated with level number */
-	cobc_parse_free (level);
 
 	if (CB_INVALID_TREE (x)) {
 		return 1;
@@ -1673,14 +1671,15 @@ setup_external_definition (cb_tree x, const int type)
 				x = cb_error_node;
 			}
 		} else {
-			struct cb_field *p;
-			for (p = current_field; p; p = p->parent) {
+			struct cb_field *p = current_field;
+			do {
 				if (p == f) {
-					cb_error (_("item may not reference itself"));
+					cb_error (_ ("item may not reference itself"));
 					x = cb_error_node;
 					break;
 				}
-			}
+				p = p->parent;
+			} while (p);
 			for (p = f->parent; p; p = p->parent) {
 				if (p->usage != CB_USAGE_DISPLAY) {
 					cb_error (_("item may not be subordinate to any item with USAGE clause"));
@@ -1719,7 +1718,7 @@ setup_external_definition_type (cb_tree x)
    inherits the definition of the original field specified
    by SAME AS or by type_name */
 static void
-inherit_external_definition (cb_tree lvl)
+inherit_external_definition (const int lvl)
 {
 	/* note: REDEFINES (clause 1) is allowed with RM/COBOL but not COBOL 2002+ */
 	static const cob_flags_t	allowed_clauses =
@@ -1734,11 +1733,11 @@ inherit_external_definition (cb_tree lvl)
 		current_field->flag_invalid = 1;
 	} else {
 		struct cb_field *fld = CB_FIELD (current_field->external_definition);
-		int new_level = lvl ? cb_get_level (lvl) : 0;
+		int new_level = lvl;
 		int old_level = current_field->level;
 		copy_into_field (fld, current_field);
 		if (new_level > 1 && new_level < 66 && new_level > old_level) {
-			cb_error_x (lvl, _("entry following %s may not be subordinate to it"),
+			cb_error (_("entry following %s may not be subordinate to it"),
 				fld->flag_is_typedef ? "TYPE TO" : "SAME AS");
 		}
 	}
@@ -1751,7 +1750,7 @@ get_finalized_description_tree (void)
 
 	/* finalize last field if target of SAME AS / TYPEDEF */
 	if (current_field && !CB_INVALID_TREE (current_field->external_definition)) {
-		inherit_external_definition (NULL);
+		inherit_external_definition (0);
 	}
 
 	/* validate the complete current "block" */
@@ -2551,6 +2550,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token DASHED
 %token DATA
 %token DATA_COLUMNS		"DATA-COLUMNS"
+%token DATA_POINTER		"DATA-POINTER"
 %token DATA_TYPES		"DATA-TYPES"
 %token DATE
 %token DATE_COMPILED	"DATE-COMPILED"	/* remark: not used here */
@@ -2579,6 +2579,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token DISK
 %token DISP
 %token DISPLAY
+%token DISPLAY_1			"DISPLAY-1"
 %token DISPLAY_COLUMNS		"DISPLAY-COLUMNS"
 %token DISPLAY_FORMAT		"DISPLAY-FORMAT"
 %token DISPLAY_OF_FUNC		"FUNCTION DISPLAY-OF" /* remark: not used here */
@@ -2722,6 +2723,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token FUNCTION
 %token FUNCTION_ID		"FUNCTION-ID"
 %token FUNCTION_NAME		"intrinsic function name"
+%token FUNCTION_POINTER		"FUNCTION-POINTER"
 %token GENERATE
 %token GIVING
 %token GLOBAL
@@ -5349,7 +5351,7 @@ assign_clause:
 	if (ext_dyn_specified) {
 		cb_error (_("EXTERNAL/DYNAMIC cannot be used with USING/VARYING"));
 	}
-        cb_verify (cb_assign_using_variable, "ASSIGN USING/VARYING variable");
+	cb_verify (cb_assign_using_variable, "ASSIGN USING/VARYING variable");
 
 	current_file->assign_type = CB_ASSIGN_VARIABLE_REQUIRED;
 	current_file->assign = cb_build_assignment_name (current_file, $6);
@@ -5360,7 +5362,7 @@ assign_clause:
 	if (ext_dyn_specified) {
 		cb_error (_("EXTERNAL/DYNAMIC cannot be used with DISK FROM"));
 	}
-	cb_verify (cb_assign_disk_from, _("ASSIGN DISK FROM"));
+	cb_verify (cb_assign_disk_from, "ASSIGN DISK FROM");
 
 	current_file->assign_type = CB_ASSIGN_VARIABLE_REQUIRED;
 	current_file->assign = cb_build_assignment_name (current_file, $6);
@@ -6705,7 +6707,7 @@ report_keyword:
 ;
 
 rep_name_list:
-  undefined_word
+  undefined_word_but_no_error
   {
 	if (CB_VALID_TREE ($1)) {
 		current_report = build_report ($1);
@@ -6719,7 +6721,7 @@ rep_name_list:
 		report_count++;
 	}
   }
-| rep_name_list undefined_word
+| rep_name_list undefined_word_but_no_error
   {
 	if (CB_VALID_TREE ($2)) {
 		current_report = build_report ($2);
@@ -6727,9 +6729,12 @@ rep_name_list:
 		current_program->report_list =
 			cb_list_add (current_program->report_list,
 				     CB_TREE (current_report));
+#if 0	/* not possible, as long as we don't have this code
+     	   twice instead of in a function */
 		if (report_count == 0) {
 			report_instance = current_report;
 		}
+#endif
 		report_count++;
 	}
   }
@@ -6933,11 +6938,12 @@ data_description:
 | condition_name_entry
 | level_number _entry_name
   {
+	const int level = cb_get_level ($1);
 	if (current_field && !CB_INVALID_TREE (current_field->external_definition)) {
 		/* finalize last field if target of SAME AS / type-name */
-		inherit_external_definition ($1);
+		inherit_external_definition (level);
 	}
-	if (set_current_field ($1, $2)) {
+	if (set_current_field (level, $2)) {
 		YYERROR;
 	}
 	save_tree = NULL;
@@ -6953,10 +6959,6 @@ data_description:
   }
 | level_number error TOK_DOT
   {
-#if 0 /* works fine without, leads to invalid free otherwise [COB_TREE_DEBUG] */
-	/* Free tree associated with level number */
-	cobc_parse_free ($1);
-#endif
 	yyerrok;
 	cb_unput_dot ();
 	check_pic_duplicate = 0;
@@ -6970,7 +6972,7 @@ data_description:
 level_number:
   not_const_word LEVEL_NUMBER
   {
-	int level = cb_get_level ($2);
+	const int	level = cb_get_level ($2);
 	switch (level) {
 	case 1:
 	case 77:
@@ -7147,7 +7149,7 @@ renames_entry:
 
 	non_const_word = 0;
 
-	if (set_current_field ($1, $2)) {
+	if (set_current_field (66, $2)) {
 		/* error in the definition, no further checks possible */
 	} else if (renames_target == cb_error_node) {
 		/* error in the target, skip further checks */
@@ -7194,7 +7196,7 @@ _renames_thru:
 condition_name_entry:
   EIGHTY_EIGHT _user_entry_name
   {
-	if (set_current_field ($1, $2)) {
+	if (set_current_field (88, $2)) {
 		YYERROR;
 	}
   }
@@ -7219,12 +7221,9 @@ constant_entry:
   level_number user_entry_name CONSTANT _const_global constant_source
   {
 	cb_tree x;
-	int	level;
+	const int level = cb_get_level ($1);
 
 	cobc_cs_check = 0;
-	level = cb_get_level ($1);
-	/* Free tree associated with level number */
-	cobc_parse_free ($1);
 	if (level != 1) {
 		cb_error (_("CONSTANT item not at 01 level"));
 	} else if ($5) {
@@ -7245,7 +7244,7 @@ constant_entry:
   }
 | SEVENTY_EIGHT user_entry_name
   {
-	if (set_current_field ($1, $2)) {
+	if (set_current_field (78, $2)) {
 		YYERROR;
 	}
   }
@@ -7808,8 +7807,38 @@ usage_clause:
   }
 ;
 
+usage_clause_screen_report:
+  _usage_is usage_screen_report
+| USAGE _is error
+  {
+	check_and_set_usage (CB_USAGE_ERROR);
+  }
+;
+
 _usage_is:
 | USAGE _is
+;
+
+usage_screen_report:
+  DISPLAY
+  {
+	check_and_set_usage (CB_USAGE_DISPLAY);
+  }
+| DISPLAY_1
+  {
+	check_and_set_usage (CB_USAGE_NATIONAL);
+	CB_PENDING ("DBCS");
+  }
+| NATIONAL
+  {
+	check_and_set_usage (CB_USAGE_NATIONAL);
+	CB_UNFINISHED ("USAGE NATIONAL");
+  }
+| UTF_8
+  {
+	check_and_set_usage (CB_USAGE_DISPLAY);
+	CB_UNFINISHED ("USAGE UTF-8");
+  }
 ;
 
 usage:
@@ -7897,14 +7926,26 @@ usage:
   {
 	check_and_set_usage (CB_USAGE_PACKED);
   }
-| POINTER
+| POINTER _to_type_name
   {
 	check_and_set_usage (CB_USAGE_POINTER);
+	if ($2) {
+		CB_PENDING ("POINTER TO type-name");
+	}
 	current_field->flag_is_pointer = 1;
   }
-| PROGRAM_POINTER
+| FUNCTION_POINTER _to FUNCTION_NAME
   {
 	check_and_set_usage (CB_USAGE_PROGRAM_POINTER);
+	CB_PENDING ("POINTER TO prototype");	/* and function pointers... */
+	current_field->flag_is_pointer = 1;
+  }
+| PROGRAM_POINTER _to_program_type
+  {
+	check_and_set_usage (CB_USAGE_PROGRAM_POINTER);
+	if ($2) {
+		CB_PENDING ("POINTER TO prototype");
+	}
 	current_field->flag_is_pointer = 1;
   }
 | HANDLE
@@ -8052,16 +8093,31 @@ usage:
   {
 	check_and_set_usage (CB_USAGE_FP_DEC128);
   }
+| DISPLAY_1
+  {
+	check_and_set_usage (CB_USAGE_NATIONAL);
+	CB_PENDING ("DBCS");
+  }
 | NATIONAL
   {
-	check_repeated ("USAGE", SYN_CLAUSE_5, &check_pic_duplicate);
+	check_and_set_usage (CB_USAGE_NATIONAL);
 	CB_UNFINISHED ("USAGE NATIONAL");
   }
 | UTF_8
   {
-	check_repeated ("USAGE", SYN_CLAUSE_5, &check_pic_duplicate);
+	check_and_set_usage (CB_USAGE_DISPLAY);
 	CB_UNFINISHED ("USAGE UTF-8");
   }
+;
+
+_to_program_type:
+  /* empty */		{ $$ = NULL; }
+| _to PROGRAM_NAME	{ $$ = $2;   }
+;
+
+_to_type_name:
+  /* empty */	{ $$ = NULL; }
+| _to type_name { $$ = $2;   }
 ;
 
 /* tokens that explicit need USAGE _is (because of reduce/reduce conflicts) */
@@ -9156,7 +9212,8 @@ _report_group_description_list:
 report_group_description_entry:
   level_number _entry_name
   {
-	if (set_current_field ($1, $2)) {
+	const int level = cb_get_level ($1);
+	if (set_current_field (level, $2)) {
 		YYERROR;
 	}
 	if (!description_field) {
@@ -9169,8 +9226,6 @@ report_group_description_entry:
   }
 | level_number error _dot_or_else_end_of_report_group_description
   {
-	/* Free tree associated with level number */
-	cobc_parse_free ($1);
 	yyerrok;
 	check_pic_duplicate = 0;
 	check_duplicate = 0;
@@ -9187,7 +9242,7 @@ report_group_option:
 | next_group_clause
 | line_clause
 | picture_clause
-| usage_clause
+| usage_clause_screen_report
 | type_to_clause
 | sign_clause
 | justified_clause
@@ -9665,7 +9720,8 @@ screen_description:
   /* normal screen definition */
 | level_number _entry_name
   {
-	if (set_current_field ($1, $2)) {
+	const int level = cb_get_level ($1);
+	if (set_current_field (level, $2)) {
 		YYERROR;
 	}
 	if (current_field->parent) {
@@ -9715,7 +9771,8 @@ screen_description:
   /* ACUCOBOL-GT control definition */
 | level_number _entry_name
   {
-	if (set_current_field ($1, $2)) {
+	const int level = cb_get_level ($1);
+	if (set_current_field (level, $2)) {
 		YYERROR;
 	}
 	if (current_field->parent) {
@@ -9985,7 +10042,7 @@ screen_option:
 	check_repeated ("BACKGROUND-COLOR", SYN_CLAUSE_19, &check_pic_duplicate);
 	current_field->screen_backg = $3;
   }
-| usage_clause
+| usage_clause_screen_report
 /* FIXME shift/reduce conflict with control_attributes
 | type_to_clause
 */
@@ -14318,27 +14375,27 @@ goto_statement:
 ;
 
 go_body:
-  _to procedure_name_list goto_depending
+  _to procedure_name_list _goto_depending
   {
 	cb_emit_goto ($2, $3);
 	start_debug = save_debug;
   }
-| _to ENTRY entry_name_list goto_depending
+| _to ENTRY entry_name_list _goto_depending
   {
 	if (cb_verify (cb_goto_entry, "ENTRY FOR GO TO")) {
-		cb_emit_goto_entry ($3, $4);
+		cb_emit_goto ($3, $4);
 	}
 	start_debug = save_debug;
   }
 ;
 
-goto_depending:
+_goto_depending:
   /* empty */
   {
 	check_unreached = 1;
 	$$ = NULL;
   }
-| DEPENDING _on identifier
+| DEPENDING _on numeric_identifier
   {
 	check_unreached = 0;
 	$$ = $3;
@@ -18670,6 +18727,18 @@ undefined_word:
   }
 ;
 
+undefined_word_but_no_error:
+  WORD
+  {
+	if (CB_WORD_COUNT ($1) > 0) {
+		redefinition_error ($1);
+		$$ = cb_error_node;
+	} else {
+		$$ = $1;
+	}
+  }
+;
+
 /* Unique word */
 
 unique_word:
@@ -19024,7 +19093,7 @@ numeric_identifier:
   identifier
   {
 	if ($1 != cb_error_node
-	    && cb_tree_category ($1) != CB_CATEGORY_NUMERIC) {
+	 && cb_tree_category ($1) != CB_CATEGORY_NUMERIC) {
 		cb_error_x ($1, _("'%s' is not numeric"), cb_name ($1));
 	}
   }

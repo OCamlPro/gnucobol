@@ -165,9 +165,9 @@ ppp_replace_list_add (struct cb_replace_list *list,
 		src->strict = 0;
 	} else {
 		/* Use replacement text to decide strictness of partial match */
-		const char * c;
+		const unsigned char *c;
 		int has_space = new_text->next != NULL;
-		for (c = new_text->text; !has_space && *c; c++) {
+		for (c = (unsigned char *) new_text->text; !has_space && *c; c++) {
 			has_space = isspace(*c);
 		}
 		if (has_space) {

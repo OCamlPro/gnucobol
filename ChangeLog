@@ -1,4 +1,15 @@
 
+2023-02-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: fixed adjusted hack for AIX 64bit OBJECT_MODE
+	  and added 32bit pendant
+	* configure.ac, NEWS: updated for 3.2rc-2
+
+2023-02-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: : search for json-c header in its common
+	  default directory json-c/json.h
+
 2023-01-18  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac, NEWS, gnucobol.spec: updated for 3.2rc-1

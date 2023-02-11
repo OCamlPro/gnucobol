@@ -1195,13 +1195,18 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            MOVE 18446744073709551615 TO BDU-1 BDU-2
            IF BDU-1 NOT EQUAL BDU-2 THEN
-           DISPLAY "FAIL"
-           END-DISPLAY.
+              DISPLAY "FAIL".
            STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+# also check "not optimized during codegen",
+# which leads to other code-paths
+AT_CHECK([$COMPILE -fno-fast-compare -C -o progalt.c prog.cob], [0], [], [])
+AT_CHECK([$COMPILE progalt.c], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./progalt], [0], [], [])
 
 AT_CLEANUP
 
@@ -1218,12 +1223,9 @@ AT_DATA([prog.cob], [
        01 WORK-UDWORD-1 PIC 9(18) COMP.
        PROCEDURE        DIVISION.
            MOVE 18446744073709551615 TO WORK-UDWORD-1.
-           DISPLAY WORK-UDWORD-1
-           END-DISPLAY.
-           COMPUTE  WORK-UDWORD-1 = WORK-UDWORD-1 / 2
-           END-COMPUTE.
-           DISPLAY WORK-UDWORD-1
-           END-DISPLAY.
+           DISPLAY WORK-UDWORD-1.
+           COMPUTE  WORK-UDWORD-1 = WORK-UDWORD-1 / 2.
+           DISPLAY WORK-UDWORD-1.
            STOP RUN.
 ])
 
@@ -1247,8 +1249,7 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE SECTION.
        01 WORK-DWORD-1  PIC S9(18) COMP-5 VALUE -9223372036854775808.
        PROCEDURE        DIVISION.
-           DISPLAY WORK-DWORD-1 WITH NO ADVANCING
-           END-DISPLAY.
+           DISPLAY WORK-DWORD-1 WITH NO ADVANCING.
            STOP RUN.
 ])
 
@@ -1259,7 +1260,7 @@ AT_CLEANUP
 
 
 AT_SETUP([COMP-4 Truncate])
-AT_KEYWORDS([Numeric])
+AT_KEYWORDS([binary numeric])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -1320,7 +1321,7 @@ AT_CLEANUP
 
 
 AT_SETUP([COMP-4 No Truncate])
-AT_KEYWORDS([Numeric])
+AT_KEYWORDS([binary numeric])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -1332,23 +1333,41 @@ AT_DATA([prog.cob], [
        01  RANDOM-TARGET-B                     PIC V99  COMP-4.
        01  RANDOM-ORIGIN-D                     PIC 9V99 DISPLAY.
        01  RANDOM-TARGET-D                     PIC V99  DISPLAY.
+       01  FILLER       USAGE BINARY-INT VALUE 0.
+           88 DO-DISP   VALUE 0.
+           88 NO-DISP   VALUE 1.
+       REPLACE ==DISPLAY== BY ==IF DO-DISP  DISPLAY==,
+               ==END-DISPLAY== BY ==END-DISPLAY END-IF==.
+       PROCEDURE        DIVISION.
+       MAIN.
+      *    Test with DISPLAY on error
+           PERFORM DO-CHECK.
+           SET  NO-DISP    TO TRUE
+      *    some performance checks on the way...
+           PERFORM DO-CHECK 30000 TIMES.
+           GOBACK.
 
-       PROCEDURE DIVISION.
+       DO-CHECK.
            MOVE 0.12            TO RANDOM-ORIGIN-D
            MOVE RANDOM-ORIGIN-D TO RANDOM-TARGET-D
            MOVE 0.12            TO RANDOM-ORIGIN-B
            MOVE RANDOM-ORIGIN-B TO RANDOM-TARGET-B
            IF RANDOM-ORIGIN-D <> RANDOM-ORIGIN-B
              DISPLAY "ORIGIN 0.12 WRONG"
+             END-DISPLAY
              DISPLAY "DISPLAY: " RANDOM-ORIGIN-D
                 " !=  BINARY : " RANDOM-ORIGIN-B
+             END-DISPLAY
            END-IF.
            IF RANDOM-TARGET-D <> RANDOM-TARGET-B
              DISPLAY "TARGET  .12 WRONG"
+             END-DISPLAY
              DISPLAY "DISPLAY: " RANDOM-TARGET-D
                 " !=  BINARY : " RANDOM-TARGET-B
+             END-DISPLAY
            ELSE
              DISPLAY "Ok with " RANDOM-TARGET-D " == " RANDOM-TARGET-B
+             END-DISPLAY
            END-IF.
 
            MOVE 9.85            TO RANDOM-ORIGIN-D
@@ -1357,17 +1376,21 @@ AT_DATA([prog.cob], [
            MOVE RANDOM-ORIGIN-B TO RANDOM-TARGET-B
            IF RANDOM-ORIGIN-D <> RANDOM-ORIGIN-B
              DISPLAY "ORIGIN 9.85 WRONG"
+             END-DISPLAY
              DISPLAY "DISPLAY: " RANDOM-ORIGIN-D
                 " !=  BINARY : " RANDOM-ORIGIN-B
+             END-DISPLAY
            END-IF.
            IF RANDOM-TARGET-D <> RANDOM-TARGET-B
              DISPLAY "TARGET  .85 WRONG"
+             END-DISPLAY
              DISPLAY "DISPLAY: " RANDOM-TARGET-D
                 " !=  BINARY : " RANDOM-TARGET-B
+             END-DISPLAY
            ELSE
              DISPLAY "Ok with " RANDOM-TARGET-D " == " RANDOM-TARGET-B
+             END-DISPLAY
            END-IF.
-           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE -w -fnotrunc prog.cob], [0], [], [])

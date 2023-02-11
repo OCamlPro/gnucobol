@@ -403,7 +403,7 @@ level_error:
 }
 
 cb_tree
-cb_build_field_tree (cb_tree level, cb_tree name, struct cb_field *last_field,
+cb_build_field_tree (const int level, cb_tree name, struct cb_field *last_field,
 		     enum cb_storage storage, struct cb_file *fn,
 		     const int expl_level)
 {
@@ -423,7 +423,7 @@ cb_build_field_tree (cb_tree level, cb_tree name, struct cb_field *last_field,
 			return cb_error_node;
 		}
 		/* Check the level number */
-		lv = cb_get_level (level);
+		lv = level;
 #if 0 /*level is always valid --> 01 thru 49, 77, 66, 78, 88 */
 		if (!lv) {
 			return cb_error_node;
@@ -681,10 +681,10 @@ copy_duplicated_field_into_field (struct cb_field *field, struct cb_field *targe
 {
 	cb_tree	x;
 	if (!field->flag_filler && field->name) {
-		x = cb_build_field_tree (NULL, cb_build_reference (field->name),
+		x = cb_build_field_tree (0, cb_build_reference (field->name),
 			target, storage, NULL, level);
 	} else {
-		x = cb_build_field_tree (NULL, cb_build_filler (),
+		x = cb_build_field_tree (0, cb_build_filler (),
 			target, storage, NULL, level);
 	}
 	if (x == cb_error_node) {
@@ -725,10 +725,10 @@ copy_into_field_recursive (struct cb_field *source, struct cb_field *target,
 {
 	field_attribute_override (usage);
 
-	/* checkme: how to handle DEPENDING and INDICES here ? */
 	field_attribute_override (occurs_min);
 	field_attribute_override (occurs_max);
 	field_attribute_override (flag_occurs);
+
 	if (CB_VALID_TREE (source->depending)) {
 #if 0	/* TODO: check if DEPENDING field is part of the original TYPEDEF,
 		   if yes then full-qualify the reference */
@@ -794,6 +794,8 @@ copy_into_field_recursive (struct cb_field *source, struct cb_field *target,
 	field_attribute_override (flag_any_length);
 	field_attribute_override (flag_any_numeric);
 	field_attribute_override (flag_invalid);
+	field_attribute_override (flag_is_pointer);
+	/* Note: attributes must be handled both here and in copy_into_field */
 
 	/* TODO: add copying of align clause and other boolean/bit stuff once added */
 
@@ -855,6 +857,9 @@ copy_into_field (struct cb_field *source, struct cb_field *target)
 	field_attribute_copy (flag_item_based);
 	field_attribute_override (flag_any_length);
 	field_attribute_override (flag_any_numeric);
+	field_attribute_override (flag_invalid);
+	field_attribute_override (flag_is_pointer);
+	/* Note: attributes must be handled both here and in copy_into_field_recursive */
 
 	if (unlikely (!target->like_modifier)) {
 		if (source->children) {
@@ -878,7 +883,7 @@ copy_into_field (struct cb_field *source, struct cb_field *target)
 					} else {
 						newsize = pic_digits[target->pic->size - 1];
 					}
-					newsize += modifier;
+					newsize += (unsigned char)modifier;
 					if (newsize > 36) {
 						newsize = 36;
 					}
@@ -1532,15 +1537,8 @@ validate_usage (struct cb_field * const f)
 {
 	cb_tree	x = CB_TREE (f);
 
-	if ((f->storage == CB_STORAGE_SCREEN
-	  || f->storage == CB_STORAGE_REPORT)
-	 &&  f->usage   != CB_USAGE_DISPLAY
-	 &&  f->usage   != CB_USAGE_NATIONAL) {
-		cb_error_x (CB_TREE(f),
-			_("%s item '%s' should be USAGE DISPLAY"),
-			enum_explain_storage (f->storage), cb_name (x));
-		return 1;
-	}
+	/* note: we check for "only accaptable USAGE" for SCREEN and REPORT SECTION
+	   indirectly in the parser (we used to check for DISPLAY here) */
 
 	switch (f->usage) {
 	case CB_USAGE_BINARY:
@@ -1606,7 +1604,7 @@ validate_justified_right (const struct cb_field * const f)
 	    && f->pic->category != CB_CATEGORY_ALPHANUMERIC
 	    && f->pic->category != CB_CATEGORY_BOOLEAN
 	    && f->pic->category != CB_CATEGORY_NATIONAL) {
-		cb_error_x (x, _("'%s' cannot have JUSTIFIED RIGHT"), cb_name (x));
+		cb_error_x (x, _("'%s' cannot have JUSTIFIED RIGHT clause"), cb_name (x));
 	}
 }
 
@@ -1683,14 +1681,15 @@ validate_multi_value (const struct cb_field * const f)
 	}
 
 	{
-		const struct cb_field	*p;
+		const struct cb_field	*p = f;
 		total_occurs = 1;
-		for (p = f; p; p = p->parent) {
+		do {
 			if (p->flag_occurs
-			 && p->occurs_max > 1) {
+				&& p->occurs_max > 1) {
 				total_occurs *= p->occurs_max;
 			}
-		}
+			p = p->parent;
+		} while (p);
 	}
 	k = num_of_values - total_occurs;
 	if (k > 0) {
@@ -1707,12 +1706,13 @@ validate_elem_value (struct cb_field * const f)
 {
 	/* check for table format VALUES [ARE] in non-occurs field */
 	if (CB_LIST_P (f->values) && CB_TAB_VALS_P (CB_LIST (f->values)->value)) {
-		const struct cb_field	*p;
-		for (p = f; p; p = p->parent) {
+		const struct cb_field	*p = f;
+		do {
 			if (p->flag_occurs) {
 				break;
 			}
-		}
+			p = p->parent;
+		} while (p);
 		if (!p) {
 			const cb_tree		x = CB_TREE (f);
 			const cb_tree		first_tabval = CB_LIST (f->values)->value;
@@ -1779,7 +1779,8 @@ error_value_figurative_constant(const struct cb_field * const f)
 {
 	cb_tree first_value = get_first_value (f);
 	if (first_value && cb_is_figurative_constant (first_value)) {
-		cb_error_x (CB_TREE (f), _("VALUE may not contain a figurative constant"));
+		cb_error_x (CB_TREE (f),
+			_("VALUE may not contain a figurative constant"));
 	}
 }
 
@@ -1787,7 +1788,8 @@ static void
 error_both_full_and_justified (const struct cb_field * const f)
 {
 	if ((f->screen_flag & COB_SCREEN_FULL) && f->flag_justified) {
-		cb_error_x (CB_TREE (f), _("cannot specify both FULL and JUSTIFIED"));
+		cb_error_x (CB_TREE (f),
+			_("cannot specify both %s and %s"), "FULL", "JUSTIFIED");
 	}
 }
 
@@ -1799,8 +1801,8 @@ warn_from_to_using_without_pic (const struct cb_field * const f)
 		const cb_tree	x = CB_TREE (f);
 		/* TO-DO: Change to dialect option */
 		cb_warning_x (cb_warn_additional, x,
-			      _("'%s' has FROM, TO or USING without PIC; PIC will be implied"),
-			      cb_name (x));
+			_("'%s' has FROM, TO or USING without PIC; PIC will be implied"),
+			cb_name (x));
 		/* TO-DO: Add setting of PIC below here or move warnings to the code which sets the PIC */
 		return 1;
 	} else {
@@ -1816,8 +1818,8 @@ warn_pic_for_numeric_value_implied (const struct cb_field * const f)
 		const cb_tree	x = CB_TREE (f);
 		/* TO-DO: Change to dialect option */
 		cb_warning_x (cb_warn_additional, x,
-			      _("'%s' has numeric VALUE without PIC; PIC will be implied"),
-			      cb_name (x));
+			_("'%s' has numeric VALUE without PIC; PIC will be implied"),
+			cb_name (x));
 		/* TO-DO: Add setting of PIC below here or move warnings to the code which sets the PIC */
 		return 1;
 	} else {
@@ -1829,7 +1831,7 @@ static void
 error_both_pic_and_value (const struct cb_field * const f)
 {
 	if (f->pic && f->values) {
-		cb_error_x (CB_TREE (f), _("cannot specify both PIC and VALUE"));
+		cb_error_x (CB_TREE (f), _("cannot specify both %s and %s"), "PIC", "VALUE");
 	}
 }
 
@@ -2915,6 +2917,10 @@ unbounded_again:
 				f->size++;
 			}
 			break;
+		case CB_USAGE_NATIONAL:
+			if (f->pic != NULL)
+				f->size = f->pic->size * COB_NATIONAL_SIZE;
+			break;
 		case CB_USAGE_PACKED:
 			if (f->pic != NULL)
 				f->size = f->pic->size / 2 + 1;
@@ -2969,8 +2975,9 @@ unbounded_again:
 			break;
 		/* LCOV_EXCL_START */
 		default:
-			cobc_err_msg (_("unexpected USAGE: %d"),
-					(int)f->usage);
+			/* as this is an unexpected message, only for requested reports,
+			   leave untranslated */
+			cobc_err_msg ("unexpected USAGE: %d", (int)f->usage);
 			COBC_ABORT ();
 		/* LCOV_EXCL_STOP */
 		}
@@ -3552,7 +3559,9 @@ cb_get_usage_string (const enum cb_usage usage)
 		return "HANDLE OF LAYOUT-MANAGER";
 	/* LCOV_EXCL_START */
 	default:
-		cb_error (_("unexpected USAGE: %d"), usage);
+		/* as this is an unexpected message, only for requested reports,
+		   leave untranslated */
+		cb_error ("unexpected USAGE: %d", usage);
 		COBC_ABORT ();
 	/* LCOV_EXCL_STOP */
 	}

@@ -1,4 +1,70 @@
 
+2023-02-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (clean_up_intermediates): fix missing move of temporary files
+	  when --save-temps=dir is used in combination with -g
+	* field.c (cb_build_field_tree), tree.h, parser.y: pass level number as
+	  integer, not as cb_tree
+
+2023-02-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (validate_alphabet): slightly rewritten to fix compiler warnings
+	* config.c, pparse.y (ppp_replace_list_add), reserved.c (is_invalid_word),
+	  tree.c, tree.h, typeck.c: minor adjustments to fix compiler warnings
+	* field.c (validate_multi_value, validate_elem_value),
+	  parser.y (setup_external_definition): fixed analyzer warnings by switching
+	  "for" (hint at "possibly NULL" at start) to "while"
+
+2023-02-08  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (rep_name_list): elide PICTURE string in symbol listing
+	  when too long (also fixing a possible SIGSEGV on WIN32)
+	* cobc.h: fixed prototype for cobc_set_listing_header_code,
+	  cobc_get_margin_a, cobc_get_margin_b
+	* cobc.c: remove trailing slash from -I and -L as those break some
+	  tab-completed command lines and -MD generation
+	* cobc.c [_WIN32, DOS]: replace forward slash to backslash for -I
+	  fixing -MD generation on mingws/msys environments
+	* pplex.l (ppcopy_find_file, ppcopy): replace slash to match system and
+	  always place name in buffer to allow this
+
+2023-02-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_optim_cond): generate cob_bcd_cmp call for COMP-3/COMP-6
+	* typeck.c (cb_build_optim_cond). codeoptim.def, codeoptim.c, codegen.c:
+	  disabled "local" functions for COB_CMP_PACKED_INT, COB_GET_PACKED_INT,
+	  COB_GET_PACKED_INT64 as the updated libcob variants are not slower, so
+	  generate calls to these instead
+
+2023-02-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_optim_add), codeoptim.def, codeoptim.c, codegen.c:
+	  added COB_GET_PACKED_INT64, COB_ADD_PACKED_INT64 for fast-resolving/
+	  adding PACKED-DECIMAL fields with 9-18 digits
+	* typeck.c (cb_build_optim_sub), codegen.c, tree.h
+	  (CB_CAST_NEGATIVE_INTEGER, CB_CAST_NEGATIVE_LONG_INT): wrap subtractions
+	  on PACKED-DECIMAL fields in a negative value used with optimized
+	  packed_add
+	* typeck.c (cb_check_num_cond, cb_build_optim_cond): generate memcmp for
+	  COMP-6 fields with same scale
+
+2023-02-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (rep_name_list): fixed error handling loop
+
+2023-01-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* field.c (copy_into_field, copy_into_field_recursive): fix missing set
+	  of flag_is_pointer, fixing TYPEDEF + SAME AS with pointer types
+	* parser.y, reserved.c: add DISPLAY-1 as PENDING,
+	  actually pass NATIONAL usage if specified
+	* field.c (compute_size), tree.c (cb_tree_type): handle CB_USAGE_NATIONAL
+	* parser.y, reserved.c: add DATA-POINTER and FUNCTION-POINTER as PENDING
+	* cobc.c (set_picture): output pointer-type in listing if specified
+	* parser.y (usage_clause_screen_report), typeck.c (validate_usage): have
+	  REPORT and SCREEN section only expecting the possibly USAGEs instead all
+	  removing the need to check for bad USAGE later
+
 2023-01-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codeoptim.c: adjusted inline functions (cob_cmp_packed_int,
@@ -34,6 +100,23 @@
 	* typeck.c (cb_build_identifier): skip compile-time check for length
 	  on ANY LENGTH items
 	* reserved.c (POS): now C/S to DISPLAY + ACCEPT with default wordlist
+
+2023-01-19  Simon Sobisch <simonsobisch@gnu.org>
+
+	* help.c (cobc_print_usage): fixed msgid to match bin/cobcrun.c
+	* flag.def: use correct option names in help output
+	* config.def: fixed typos and spacing in msgids
+	* flag.def: removed duplicated msgid - those are printed in help.c only
+	* typeck.c (cb_emit_goto_entry), tree.h, parser.y: dropped duplicated
+	  function and msgid, using cb_emit_goto instead
+	* parser.y (_goto_depending), typeck.c (cb_emit_goto): check via use of
+	  numeric_identifier in the parser instead of postponed checking
+	* parser.y (assign_clause),  typeck.c (cb_check_numeric_value,
+	  cb_validate_collating, validate_assign_name,
+	  cb_check_integer_value, error_if_not_int_field_or_has_pic_p):
+	  dropped very similar msgids using standard ones for the checks
+	* tree.c (get_category_from_arguments, get_number_in_parentheses): msgid
+	  related changes
 
 2023-01-18  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -6670,12 +6753,6 @@
 2013-11-20  Ron Norman <rjn@inglenet.com>
 
 	* Report Writer module
-
-201?-??-??  Sergey Kashyrin <ska@kiska.net>
-
-	* codeoptim.c : Fixed bug in COB_ADD_PACKED_INT.
-	  Computing COMP-3 failed in MSVC-build versions,
-	  in output_storage() calls '%' should be '%%'.
 
 2012-05-09  Simon Sobisch <simonsobisch@gnu.org>
 

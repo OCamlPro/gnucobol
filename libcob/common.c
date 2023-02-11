@@ -143,7 +143,13 @@
 #error CJSON without necessary header
 #endif
 #elif defined (WITH_JSON_C)
+#if defined (HAVE_JSON_C_JSON_H)
+#include <json-c/json_c_version.h>
+#elif defined (HAVE_JSON_H)
 #include <json_c_version.h>
+#else
+#error JSON-C without necessary header
+#endif
 #endif
 
 /* end of library headers */
@@ -2883,7 +2889,7 @@ cob_field_to_string (const cob_field *f, void *str, const size_t maxsize)
 	}
 
 	/* note: the specified max does not contain the low-value */
-	if (end - data > maxsize) {
+	if ((size_t)(end - data) > maxsize) {
 		end = data + maxsize;
 	}
 	while (data <= end) {
@@ -5408,10 +5414,9 @@ cob_getenv_direct (const char *name) {
 char *
 cob_getenv (const char *name)
 {
-	char	*p;
 
 	if (name) {
-		p = getenv (name);
+		char	*p = getenv (name);
 		if (p) {
 			return cob_strdup (p);
 		}
@@ -7015,12 +7020,12 @@ cob_sys_getopt_long_long (void *so, void *lo, void *idx, const int long_only, vo
 		lo_amount = (int)lo_size / sizeof (longoption_def);
 		longoptions_root = (struct option*) cob_malloc (sizeof (struct option) * ((size_t)lo_amount + 1U));
 	} else {
-		cob_runtime_error (_("Call to CBL_GC_GETOPT with wrong longoption size."));
+		cob_runtime_error (_("call to CBL_GC_GETOPT with wrong longoption size"));
 		cob_hard_failure ();
 	}
 
 	if (!COB_MODULE_PTR->cob_procedure_params[2]) {
-		cob_runtime_error (_("Call to CBL_GC_GETOPT with missing longind."));
+		cob_runtime_error (_("call to CBL_GC_GETOPT with missing longind"));
 		cob_hard_failure ();
 	}
 	longind = cob_get_int (COB_MODULE_PTR->cob_procedure_params[2]);
@@ -7749,12 +7754,12 @@ set_config_val (char *value, int pos)
 		} else if (data == (char *)&cobsetptr->cob_insert_mode) {
 			cob_settings_screenio ();
 		} else if (data == (char *)&cobsetptr->cob_debugging_mode) {
-			cob_switch[11 + 'D' - 'A'] = numval;
+			cob_switch[11 + 'D' - 'A'] = (int)numval;
 		} else if (data == (char *)&cobsetptr->cob_ls_nulls) {
-			cob_switch[11 + 'N' - 'A'] = numval;
+			cob_switch[11 + 'N' - 'A'] = (int)numval;
 #if 0	/* TODO add in trunk */
 		} else if (data == (char *)&cobsetptr->cob_ls_tabs) {
-			cob_switch[11 + 'T' - 'A'] = numval;
+			cob_switch[11 + 'T' - 'A'] = (int)numval;
 #endif
 		}
 

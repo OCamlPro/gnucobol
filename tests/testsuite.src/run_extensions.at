@@ -4077,7 +4077,7 @@ AT_CHECK([$COBCRUN_DIRECT ./prog4 --static --dynamic --usage=boringandtoolongtex
 # Return code 1 is sufficient as proof of hard return (as wanted).
 AT_CHECK([$COMPILE prog5.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog5 --static], [1], [],
-[libcob: prog5.cob:37: error: Call to CBL_GC_GETOPT with wrong longoption size.
+[libcob: prog5.cob:37: error: call to CBL_GC_GETOPT with wrong longoption size
 ])
 
 AT_CLEANUP

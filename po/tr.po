@@ -1,18 +1,18 @@
 # GnuCOBOL Turkish translations
 # Copyright (C) 2022 Free Software Foundation, Inc.
 # This file is distributed under the same license as the gnucobol package.
-# Emir SARI <emir_sari@icloud.com>, 2022
+# Emir SARI <emir_sari@icloud.com>, 2022, 2023.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: gnucobol 3.1.2\n"
+"Project-Id-Version: gnucobol 3.2-rc1\n"
 "Report-Msgid-Bugs-To: gnucobol-messages@gnu.org\n"
 "POT-Creation-Date: 2022-10-23 03:06+0200\n"
-"PO-Revision-Date: 2022-10-13 12:00+0300\n"
+"PO-Revision-Date: 2023-01-26 12:00+0300\n"
 "Last-Translator: Emir SARI <emir_sari@icloud.com>\n"
 "Language-Team: Turkish <gnome-turk@gnome.org>\n"
-"Language: tr\n"
+"Language: Turkish\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -157,10 +157,9 @@ msgid "aborting compile of %s at line %d (%s: %s)"
 msgstr "%s derlenmesi %d satırında iptal ediliyor (%s: %s)"
 
 #: cobc/cobc.c:2243
-#, fuzzy, c-format
-#| msgid "aborting compile of %s at line %d (%s: %s)"
+#, c-format
 msgid "aborting codegen for %s, last statement at line %d (%s: %s)"
-msgstr "%s derlenmesi %d satırında iptal ediliyor (%s: %s)"
+msgstr "%s için kod oluşturması iptal ediliyor, son ifade %d. satırda (%s: %s)"
 
 #: cobc/cobc.c:2246
 #, c-format
@@ -171,16 +170,16 @@ msgstr "%s için kod oluşturması iptal ediliyor (%s: %s)"
 msgid "aborting"
 msgstr "iptal ediliyor"
 
-#: cobc/cobc.c:2329 libcob/common.c:2823 libcob/common.c:8149 bin/cobcrun.c:375
+#: cobc/cobc.c:2329 libcob/common.c:2823 libcob/common.c:8149
+#: bin/cobcrun.c:375
 #, c-format
 msgid "Please report this!"
 msgstr "Lütfen bunu bildirin!"
 
 #: cobc/cobc.c:2346 bin/cobcrun.c:100
-#, fuzzy, c-format
-#| msgid "License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>"
+#, c-format
 msgid "License GPLv3+: GNU GPL version 3 or later <%s>"
-msgstr "GPLv3+ lisansı: GNU GPL sürüm 3 veya sonrası <https://gnu.org/licenses/gpl.html>"
+msgstr "GPLv3+ lisansı: GNU GPL sürüm 3 veya sonrası <%s>"
 
 #: cobc/cobc.c:2348 libcob/common.c:8741 bin/cobcrun.c:102
 msgid ""
@@ -192,16 +191,15 @@ msgstr ""
 "olmak üzere herhangi bir garantisi YOKTUR."
 
 #: cobc/cobc.c:2350 libcob/common.c:8743 bin/cobcrun.c:104
-#, fuzzy, c-format
-#| msgid "Written by %s\n"
+#, c-format
 msgid "Written by %s"
-msgstr "%s tarafından yazıldı\n"
+msgstr "%s tarafından yazıldı"
 
 #. TRANSLATORS: This msgid is intended as the "Packaged" msgid, %s expands to date and time
 #: cobc/cobc.c:2352 cobc/cobc.c:2365 libcob/common.c:8747 bin/cobcrun.c:106
 #, c-format
 msgid "Built     %s"
-msgstr "Yapım    %s"
+msgstr "Yapım     %s"
 
 #. TRANSLATORS: This msgid is intended as the "Built" msgid, %s expands to date and time
 #: cobc/cobc.c:2354 cobc/cobc.c:2367 libcob/common.c:8750 bin/cobcrun.c:108
@@ -353,7 +351,7 @@ msgstr "standart yapılandırma dosyası 'default.conf' yükleniyor"
 
 #: cobc/cobc.c:3217
 msgid "the used C compiler is known to not be able to generate assembler code"
-msgstr ""
+msgstr "kullanılan C derleyicisinin Assembler kodu üretemediği biliniyor"
 
 #: cobc/cobc.c:3299
 msgid "invalid output file name"
@@ -480,10 +478,9 @@ msgid "Too many errors in compilation group: %d maximum errors"
 msgstr "Derleme grubunda pek fazla hata: %d en çok hata"
 
 #: cobc/cobc.c:6632
-#, fuzzy, c-format
-#| msgid "%s: %d: Too many continuation lines"
+#, c-format
 msgid "%s:%d: too many continuation lines"
-msgstr "%s: %d: Pek fazla sürdürme satırı"
+msgstr "%s:%d: Pek çok sürdürüm satırı"
 
 #: cobc/cobc.c:7552
 msgid "parsing:"
@@ -511,7 +508,8 @@ msgstr "komut satırı:"
 msgid "unexpected CONSTANT item"
 msgstr "beklenmedik CONSTANT ögesi"
 
-#: cobc/codegen.c:2981 cobc/codegen.c:3261 cobc/codegen.c:8523 cobc/tree.c:1413
+#: cobc/codegen.c:2981 cobc/codegen.c:3261 cobc/codegen.c:8523
+#: cobc/tree.c:1413
 #, c-format
 msgid "unexpected cast type: %d"
 msgstr "beklenmedik rol verme türü: %d"
@@ -647,14 +645,12 @@ msgid "use of complete/fixed reserved words"
 msgstr "tam/düzeltilmiş rezerve sözcüklerin kullanımı"
 
 #: cobc/config.def:52
-#, fuzzy
-#| msgid "set number of spaces that are assumed for tabs"
 msgid "number of spaces that are assumed for tabs"
-msgstr "sekmeler için varsayılan boşluk sayısını ayarla"
+msgstr "sekmeler için varsayılan boşluk sayısı"
 
 #: cobc/config.def:55
 msgid "right margin column number for fixed-form reference-format"
-msgstr ""
+msgstr "sabit biçimli başvuru biçimi için sağ kenar boşluğu sütunu"
 
 #: cobc/config.def:57 cobc/config.def:63
 msgid "<number>"
@@ -685,10 +681,16 @@ msgid ""
 "                        * \"none\" to do no explicit initialization\n"
 "                        * default: \"init\""
 msgstr ""
+"VALUE içermeyen alanlar için öntanımlı ilklendirme, şunlardan biri olabilir\n"
+"                        * tırnak içinde karakter\n"
+"                        * bir karakteri simgeleyen 0..255 arası ondalık\n"
+"                        * PICTURE/USAGE'a ilklendirmek için \"init\" \n"
+"                        * açıkça ilklendirme yapmamak için \"none\"\n"
+"                        * öntanımlı: \"init\""
 
 #: cobc/config.def:83
 msgid "default reference-format, may be one of: "
-msgstr ""
+msgstr "öntanımlı başvuru biçimi, şunlardan biri olabilir:"
 
 #: cobc/config.def:86
 msgid "binary byte size - defines the allocated bytes according to PIC, may be one of: 2-4-8, 1-2-4-8, 1--8"
@@ -728,7 +730,7 @@ msgstr "karmaşık OCCURS DEPENDING ON'a izin ver"
 
 #: cobc/config.def:115
 msgid "adjust items following OCCURS DEPENDING (implies complex-odo)"
-msgstr ""
+msgstr "OCCURS DEPENDING sonrası ögeleri düzenle (complex-odo ima eder)"
 
 #: cobc/config.def:118
 msgid "allow REDEFINES to other than last equal level number"
@@ -823,10 +825,8 @@ msgid "implicitly define a variable if an ASSIGN DYNAMIC does not match any data
 msgstr "eğer bir ASSIGN DYNAMIC herhangi bir veri ögesiyle eşleşmiyorsa dolaylı olarak bir değişken tanımla"
 
 #: cobc/config.def:187
-#, fuzzy
-#| msgid "specifying call-convention by mnemonic"
 msgid "specifying device by mnemonic"
-msgstr "çağrı kuralı belletenle belirleniyor"
+msgstr "aygıt belletenle belirtiliyor"
 
 #: cobc/config.def:193
 msgid ""
@@ -844,11 +844,11 @@ msgstr "IDENTIFICATION DIVISION (AUTHOR, DATE-WRITTEN, ...) içinde yorum paragr
 
 #: cobc/config.def:207
 msgid "CONTROL DIVISION"
-msgstr ""
+msgstr "CONTROL DIVISION"
 
 #: cobc/config.def:211 cobc/ppparse.y:101 cobc/ppparse.y:104
 msgid "partial replacing with literal"
-msgstr ""
+msgstr "düz veri ile değiştirilen kısımsal"
 
 #: cobc/config.def:214
 msgid "MEMORY-SIZE clause"
@@ -891,10 +891,8 @@ msgid "SYNCHRONIZED clause"
 msgstr "SYNCHRONIZED yantümcesi"
 
 #: cobc/config.def:244 cobc/parser.y:8193
-#, fuzzy
-#| msgid "SYNCHRONIZED clause"
 msgid "LEFT/RIGHT phrases in SYNCHRONIZED clause"
-msgstr "SYNCHRONIZED yantümcesi"
+msgstr "SYNCHRONIZED yantümcesinde LEFT/RIGHT deyişleri"
 
 #: cobc/config.def:247
 msgid "SPECIAL-NAMES clause"
@@ -913,10 +911,8 @@ msgid "STOP-identifier statement"
 msgstr "STOP tanımlayıcı ifadesi"
 
 #: cobc/config.def:259
-#, fuzzy
-#| msgid "ALTER statement"
 msgid "STOP ERROR statement"
-msgstr "ALTER ifadesi"
+msgstr "STOP ERROR ifadesi"
 
 #: cobc/config.def:262
 msgid "DEBUGGING MODE and debugging indicator"
@@ -1074,8 +1070,8 @@ msgstr "REDEFINES yantümcesi, tanımda girdi adını izlemiyor"
 msgid "record sizes does not match RECORD clause"
 msgstr "kayıt boyutları, RECORD yantümcesi ile eşleşmiyor"
 
-#: cobc/config.def:383 cobc/parser.y:5736 cobc/parser.y:5750 cobc/parser.y:5763
-#: cobc/parser.y:5774
+#: cobc/config.def:383 cobc/parser.y:5736 cobc/parser.y:5750
+#: cobc/parser.y:5763 cobc/parser.y:5774
 msgid "RECORD DELIMITER clause"
 msgstr "RECORD DELIMITER yantümcesi"
 
@@ -1093,7 +1089,7 @@ msgstr "eksik ifade (örn. boş IF/PERFORM)"
 
 #: cobc/config.def:395
 msgid "missing period in PROCEDURE DIVISION (when reference format supports Area A enforcement)"
-msgstr ""
+msgstr "PROCEDURE DIVISION içinde eksik nokta (başvuru biçimi Area A zorunluluğunu desteklediğinde)"
 
 #: cobc/config.def:398
 msgid "zero-length literals, e.g. '' and \"\""
@@ -1132,18 +1128,16 @@ msgid "VSAM status in FILE STATUS"
 msgstr "FILE STATUS içinde VSAM durumu"
 
 #: cobc/config.def:425
-#, fuzzy
-#| msgid "LOCAL-STORAGE SECTION implies RECURSIVE attribute"
 msgid "CALL to own PROGRAM-ID implies RECURSIVE attribute"
-msgstr "LOCAL-STORAGE SECTION, RECURSIVE özniteliğini ima eder"
+msgstr "öz PROGRAM-ID'sine olan CALL, RECURSIVE özniteliğini ima eder"
 
 #: cobc/config.def:428
 msgid "DEPENDING clause in RECORD CONTAINS"
-msgstr ""
+msgstr "RECORD CONTAINS içinde DEPENDING yantümcesi"
 
 #: cobc/config.def:431 cobc/tree.c:3584
 msgid "PICTURE string with 'L' character"
-msgstr ""
+msgstr "'L' karakteriyle PICTURE dizisi"
 
 #: cobc/error.c:83
 #, c-format
@@ -1207,7 +1201,7 @@ msgstr "%s, %s ögesine uymuyor"
 
 #: cobc/error.c:553
 msgid "configuration warning:"
-msgstr "yapılandırma hatası:"
+msgstr "yapılandırma uyarısı:"
 
 #: cobc/error.c:728 cobc/error.c:731 cobc/error.c:755 cobc/error.c:758
 #: libcob/common.c:7969
@@ -1222,7 +1216,7 @@ msgstr "'%s' yeniden tanımı"
 #: cobc/error.c:939 cobc/error.c:973
 #, c-format
 msgid "'%s' previously defined here"
-msgstr "'%s', daha önceder burada tanımlanmış"
+msgstr "'%s', daha önceden burada tanımlanmış"
 
 #: cobc/error.c:1017 cobc/error.c:1023
 #, c-format
@@ -1232,7 +1226,7 @@ msgstr "'%s' tanımlanmamış"
 #: cobc/error.c:1019
 #, c-format
 msgid "'%s' cannot be used here"
-msgstr "'%s' burada kullanılamaz"
+msgstr "'%s', burada kullanılamaz"
 
 #: cobc/error.c:1021 cobc/parser.y:7658
 #, c-format
@@ -1247,19 +1241,18 @@ msgstr "'%s' belirsiz; nitelik gerek"
 #: cobc/error.c:1090
 #, c-format
 msgid "'%s' is a special register"
-msgstr ""
+msgstr "'%s', özel bir yazmaç değil"
 
 #: cobc/error.c:1093
-#, fuzzy, c-format
-#| msgid "'%s' is not defined"
+#, c-format
 msgid "'%s' internally defined"
-msgstr "'%s' tanımlanmamış"
+msgstr "'%s', içsel olarak tanımlanmış"
 
-#: cobc/error.c:1097 cobc/parser.y:18176 cobc/parser.y:18181 cobc/typeck.c:5000
-#: cobc/typeck.c:5047 cobc/typeck.c:5048
+#: cobc/error.c:1097 cobc/parser.y:18176 cobc/parser.y:18181
+#: cobc/typeck.c:5000 cobc/typeck.c:5047 cobc/typeck.c:5048
 #, c-format
 msgid "'%s' defined here"
-msgstr "'%s' burada tanımlanmış"
+msgstr "'%s', burada tanımlanmış"
 
 #: cobc/error.c:1108
 #, c-format
@@ -1462,10 +1455,9 @@ msgid "'%s' BASED only allowed at the 01 and 77 levels"
 msgstr "'%s' BASED'e yalnızca 01 ve 77 düzeylerinde izin veriliyor"
 
 #: cobc/field.c:1279
-#, fuzzy, c-format
-#| msgid "'%s' cannot have the OCCURS clause due to '%s'"
+#, c-format
 msgid "'%s' cannot have an OCCURS clause due to '%s'"
-msgstr "'%s', '%s' dolayısıyla OCCURS yantümcesini alamaz"
+msgstr "'%s', '%s' dolayısıyla bir OCCURS yantümcesi alamaz"
 
 #: cobc/field.c:1298
 #, fuzzy, c-format
@@ -1488,16 +1480,15 @@ msgid "the original definition '%s' cannot be variable length"
 msgstr "özgün '%s' tanımı, değişken uzunluğu olamaz"
 
 #: cobc/field.c:1335
-#, fuzzy, c-format
-#| msgid "'%s' cannot have JUSTIFIED RIGHT"
+#, c-format
 msgid "'%s' cannot have JUSTIFIED RIGHT clause"
-msgstr "'%s', JUSTIFIED RIGHT alamaz"
+msgstr "'%s', JUSTIFIED RIGHT yantümcesi alamaz"
 
 #: cobc/field.c:1342
 #, fuzzy, c-format
-#| msgid "'%s' cannot have PICTURE clause"
+#| msgid "cannot have BLANK WHEN ZERO without PIC"
 msgid "'%s' cannot have BLANK WHEN ZERO clause"
-msgstr "'%s', PICTURE yantümcesi alamaz"
+msgstr "PIC olmadan BLANK WHEN ZERO olamaz"
 
 #: cobc/field.c:1348
 #, c-format
@@ -1505,10 +1496,9 @@ msgid "SCREEN group item '%s' has invalid clause"
 msgstr "SCREEN grup ögesi '%s' içinde geçersiz yantümce var"
 
 #: cobc/field.c:1436
-#, fuzzy, c-format
-#| msgid "%s clause not compatible with USAGE %s"
+#, c-format
 msgid "%s USAGE %s incompatible with %s USAGE %s"
-msgstr "%s yantümcesi, USAGE %s ile uyumlu değil"
+msgstr "%s USAGE %s, %s USAGE %s ile uyumsuz"
 
 #: cobc/field.c:1516
 #, c-format
@@ -1561,7 +1551,7 @@ msgstr "'%s' sayısal değil, dolayısıyla BLANK WHEN ZERO alamaz"
 #: cobc/field.c:1691
 #, c-format
 msgid "elements in VALUE clause for '%s' (%d) exceed max amount (%d)"
-msgstr ""
+msgstr "'%s' için VALUE yantümcesindeki ögeler (%d) en büyük tutarı aşıyor (%d)"
 
 #: cobc/field.c:1708 cobc/field.c:1712
 #, c-format
@@ -1599,10 +1589,8 @@ msgid "cannot have PIC without FROM, TO or USING"
 msgstr "FROM, TO veya USING olmadan PIC alınamaz"
 
 #: cobc/field.c:1822
-#, fuzzy
-#| msgid "cannot have FROM, TO or USING without PIC"
 msgid "cannot have numeric VALUE without PIC"
-msgstr "PIC olmadan FROM, TO veya USING alınamaz"
+msgstr "PIC olmadan sayısal VALUE alınamaz"
 
 #: cobc/field.c:1831
 msgid "cannot have FROM, TO or USING without PIC"
@@ -1629,93 +1617,91 @@ msgstr "'%s' için bir PIC, FROM, TO, USING, VALUE, BELL, BLANK veya ERASE yant�
 
 #: cobc/field.c:1912
 msgid "cannot use AUTO, FULL, PROMPT, REQUIRED or SECURE on elementary item without TO or USING"
-msgstr ""
+msgstr "TO veya USING olmadan temel öge üzerinde AUTO, FULL, PROMPT, REQUIRED veya SECURE kullanılamaz"
 
 #: cobc/field.c:1919
 msgid "cannot use BLANK WHEN ZERO, JUSTIFIED, OCCURS or SIGN on item without FROM, TO or USING"
-msgstr ""
+msgstr "FROM, TO veya USING olmadan öge üzerinde BLANK WHEN ZERO, JUSTIFIED, OCCURS veya SIGN kullanılamaz"
 
 #: cobc/field.c:1938
 msgid "cannot use AUTO, FULL, REQUIRED or SECURE on elementary item without FROM, TO or USING"
-msgstr ""
+msgstr "FROM, TO veya USING olmadan temel öge üzerinde AUTO, FULL, REQUIRED veya SECURE kullanılamaz"
 
 #: cobc/field.c:1943
 msgid "cannot use BLANK WHEN ZERO, JUSTIFIED or SIGN without FROM, TO or USING"
-msgstr ""
+msgstr "FROM, TO veya USING olmadan BLANK WHEN ZERO, JUSTIFIED veya SIGN kullanılamaz"
 
 #: cobc/field.c:1960
 msgid "cannot have BLANK WHEN ZERO without PIC"
-msgstr ""
+msgstr "PIC olmadan BLANK WHEN ZERO olamaz"
 
 #: cobc/field.c:1963
 msgid "cannot have JUSTIFIED without PIC"
-msgstr ""
+msgstr "PIC olmadan JUSTIFIED olamaz"
 
 #: cobc/field.c:1983
 msgid "cannot have AUTO without FROM, TO or USING"
-msgstr ""
+msgstr "FROM, TO veya USING olmadan AUTO olamaz"
 
 #: cobc/field.c:1988
 msgid "cannot use FULL or REQUIRED on item without TO or USING"
-msgstr ""
+msgstr "TO veya USING olmadan öge üzerinde FULL veya REQUIRED kullanılamaz"
 
 #: cobc/field.c:1995
 msgid "SECURE can be used with TO only"
-msgstr ""
+msgstr "SECURE, yalnızca TO ile kullanılabilir"
 
 #: cobc/field.c:1997
 msgid "SECURE must be used with TO"
-msgstr ""
+msgstr "SECURE, TO ile kullanılmalıdır"
 
 #: cobc/field.c:2016
 #, c-format
 msgid "'%s' does nothing"
-msgstr ""
+msgstr "'%s', bir şey yapmaz"
 
 #: cobc/field.c:2235
 #, c-format
 msgid "'%s' 77 level is not allowed here"
-msgstr ""
+msgstr "'%s' düzey 77'ye burada izin verilmiyor"
 
 #: cobc/field.c:2627
 msgid "OCCURS and multi COLUMNs is not allowed"
-msgstr ""
+msgstr "OCCURS veya birden çok COLUMN'lara izin verilmiyor"
 
 #: cobc/field.c:2655
 #, c-format
 msgid "duplicate LINE %d ignored"
-msgstr ""
+msgstr "yinelenmiş LINE %d yok sayıldı"
 
 #: cobc/field.c:2672
 #, c-format
 msgid "ignoring SYNCHRONIZED for group item '%s'"
-msgstr ""
+msgstr "'%s' grup ögesi için SYNCHRONIZED yok sayılıyor"
 
 #: cobc/field.c:2686 cobc/field.c:2954
-#, fuzzy
-#| msgid "allow larger REDEFINES items"
 msgid "larger REDEFINES"
-msgstr "daha büyük REDEFINES ögelerine izin ver"
+msgstr "daha büyük REDEFINES"
 
 #: cobc/field.c:2699 cobc/field.c:2957 cobc/field.c:2962
 #, c-format
 msgid "size of '%s' larger than size of '%s'"
-msgstr ""
+msgstr "'%s' boyutu, '%s' boyutundan daha büyük"
 
 #: cobc/field.c:2812 cobc/field.c:2879
 #, c-format
 msgid "'%s' cannot be larger than %d bytes"
-msgstr ""
+msgstr "'%s', %d bayttan daha büyük olamaz"
 
 #: cobc/field.c:2850 cobc/field.c:2858
 #, c-format
 msgid "'%s' binary field cannot be larger than %d digits"
-msgstr ""
+msgstr "'%s' ikili alanı, %d basamaktan daha büyük olamaz"
 
 #: cobc/field.c:2940 cobc/field.c:3522
 #, c-format
 msgid "unexpected USAGE: %d"
-msgstr ""
+msgstr "beklenmedik USAGE: %d"
 
 #: cobc/field.c:3067 cobc/parser.y:710 cobc/parser.y:712 cobc/parser.y:6274
 #: cobc/parser.y:6284 cobc/parser.y:7344 cobc/parser.y:7347 cobc/parser.y:7349
@@ -1725,94 +1711,104 @@ msgstr ""
 #: cobc/parser.y:14902 cobc/typeck.c:5034
 #, c-format
 msgid "%s and %s are mutually exclusive"
-msgstr ""
+msgstr "%s ve %s birlikte kullanılamaz"
 
 #: cobc/field.c:3068 cobc/parser.y:7529 cobc/parser.y:7566
 msgid "variable-length PICTURE"
-msgstr ""
+msgstr "değişken uzunluklu PICTURE"
 
 #: cobc/field.c:3187
 msgid "literal type does not match numeric data type"
-msgstr ""
+msgstr "düz veri türü, nümerik veri türüyle eşleşmiyor"
 
 #: cobc/field.c:3261
 #, c-format
 msgid "THRU item '%s' may not come before '%s'"
-msgstr ""
+msgstr "THRU ögesi '%s', '%s' öncesinde gelemez"
 
 #: cobc/field.c:3284
 #, c-format
 msgid "RENAMES cannot start/end at the OCCURS item '%s'"
-msgstr ""
+msgstr "RENAMES, OCCURS ögesi '%s' konumunda başlayamaz/bitemez"
 
 #: cobc/field.c:3292
 #, c-format
 msgid "cannot use RENAMES on part of the table '%s'"
-msgstr ""
+msgstr "'%s' tablosunun bir kısmında RENAMES kullanılamaz"
 
 #: cobc/field.c:3330
 #, c-format
 msgid "RENAMES may not contain '%s' as it is a pointer or object reference"
-msgstr ""
+msgstr "RENAMES, bir işaretçi veya nesne başvurusu olmadığından '%s' içeremez"
 
 #: cobc/field.c:3335
 #, c-format
 msgid "RENAMES may not contain '%s' as it is an OCCURS DEPENDING table"
-msgstr ""
+msgstr "RENAMES, bir OCCURS DEPENDING tablosu olduğundan '%s' içeremez"
 
 #: cobc/field.c:3359
 msgid "RENAMES may not reference a level 88"
-msgstr ""
+msgstr "RENAMES, bir düzey 88'e başvuramaz"
 
 #: cobc/field.c:3383
 #, c-format
 msgid "'%s' must immediately follow the record '%s'"
-msgstr ""
+msgstr "'%s', derhal '%s' kaydını izlemeli"
 
 #: cobc/field.c:3391
 #, c-format
 msgid "THRU item must be different to '%s'"
-msgstr ""
+msgstr "THRU ögesi, '%s' ögesinden farklı olmalı"
 
 #: cobc/field.c:3397
 #, c-format
 msgid "'%s' and '%s' must be in the same record"
-msgstr ""
+msgstr "'%s' ve '%s' aynı kayıtta olmalı"
 
 #: cobc/field.c:3408
 #, c-format
 msgid "THRU item '%s' may not be subordinate to '%s'"
-msgstr ""
+msgstr "THRU ögesi '%s', '%s' astı olamaz"
 
 #: cobc/flag.def:44
 msgid ""
 "  -fstack-size=<number>\tdefine PERFORM stack size\n"
 "                       * default: 255"
 msgstr ""
+"  -fstack-size=<sayı>       PERFORM yığın boyutunu tanımla\n"
+"                            * öntanımlı: 255"
 
 #: cobc/flag.def:49
 msgid ""
 "  -fif-cutoff=<number>  define cutoff depth for IF statements\n"
 "                        * default: 3"
 msgstr ""
+"  -fif-cutoff=<sayı>        IF ifadeleri için kesme derinliğini tanımla\n"
+"                            * öntanımlı: 3"
 
 #: cobc/flag.def:54
 msgid ""
 "  -fsign=[ASCII|EBCDIC]\tdefine display sign representation\n"
 "                        * default: machine native"
 msgstr ""
+"  -fsign=[ASCII|EBCDIC]     ekran imza temsilini tanımla\n"
+"                            * öntanımlı: makine ayarı"
 
 #: cobc/flag.def:58
 msgid ""
 "  -ffold-copy=[UPPER|LOWER]\tfold COPY subject to value\n"
 "                        * default: no transformation"
 msgstr ""
+"  -ffold-copy=[UPPER|LOWER] COPY öznesini değere kopyala\n"
+"                            * öntanımlı: dönüşüm yok"
 
 #: cobc/flag.def:62
 msgid ""
 "  -ffold-call=[UPPER|LOWER]\tfold PROGRAM-ID, CALL, CANCEL subject to value\n"
 "                        * default: no transformation"
 msgstr ""
+"  -ffold-call=[UPPER|LOWER] PROGRAM-ID, CALL, CANCEL öznesini değere katla\n"
+"                            * öntanımlı: dönüşüm yok"
 
 #: cobc/flag.def:66
 msgid ""
@@ -1820,40 +1816,55 @@ msgid ""
 "                        compilation is aborted\n"
 "                        * default: 128"
 msgstr ""
+"  -fmax-errors=<sayı>       derleme iptal edilmeden önceki en çok hata sayısı\n"
+"                            * öntanımlı: 128"
 
 #: cobc/flag.def:73
 msgid ""
 "  -fintrinsics=[ALL|intrinsic function name(,name,...)]\n"
 "                        intrinsics to be used without FUNCTION keyword"
 msgstr ""
+"  -fintrinsics=[ALL|yapıiçi işlev adı(,ad,...)]\n"
+"                            FUNCTION anahtar sözcüğü olmadan kullanılacak\n"
+"                              yapıiçiler"
 
 #: cobc/flag.def:78
 msgid ""
 "  -fec=<exception-name>\tenable code generation for <exception-name>,\n"
 "                        sets -fsource-location"
 msgstr ""
+"  -fec=<istisna-adı>        <istisna-adı> için kod üretimini etkinleştir,\n"
+"                              -fsource-location ayarlar"
 
 #: cobc/flag.def:81 cobc/help.c:96
 msgid "  -fno-ec=<exception-name>\tdisable code generation for <exception-name>"
-msgstr ""
+msgstr "  -fno-ec=<istisna-adı>\t<istisna-adı> için kod üretimini kapat"
 
 #: cobc/flag.def:84
 msgid ""
 "  -fdump=<scope>        dump data fields on abort, <scope> may be\n"
 "                        a combination of: ALL, WS, LS, RD, FD, SC, LO"
 msgstr ""
+"  -fdump=<kapsam>           iptalde veri alanlarını dök; <kapsam>, şunların\n"
+"                              bir kombinasyonu olabilir: ALL, WS, LS, RD, FD,\n"
+"                              SC, LO"
 
 #: cobc/flag.def:87
 msgid ""
 "  -fno-dump=<scope>     exclude data fields from dumping on abort, <scope> may\n"
 "                        be a combination of: ALL, WS, LS, RD, FD, SC, LO"
 msgstr ""
+"  -fno-dump=<kapsam>        iptalde veri alanlarını dökmeyi dışarıda tut;\n"
+"                              <kapsam>, şunların bir kombinasyonu olabilir:\n"
+"                              ALL, WS, LS, RD, FD, SC, LO"
 
 #: cobc/flag.def:92
 msgid ""
 "  -fcallfh=<name>       specifies <name> to be used for I/O\n"
 "                        as external provided EXTFH interface module"
 msgstr ""
+"  -fcallfh=<ad>             <ad>'ın, G-Ç için bir dışarıdan sağlanmış EXTFH\n"
+"                              arayüz modülü olarak kullanılacağını belirtir"
 
 #: cobc/flag.def:96
 msgid ""
@@ -1869,78 +1880,120 @@ msgid ""
 "  -fwinmain             generate WinMain instead of main when compiling\n"
 "                        as executable"
 msgstr ""
+"  -fwinmain                 yürütülebilir olarak derlerken, main yerine\n"
+"                              WinMain üret"
 
 #: cobc/flag.def:111
+#, fuzzy
+#| msgid "-fcomputed-goto       generate computed goto C statements"
 msgid "  -fcomputed-goto       generate computed goto C statements"
-msgstr ""
+msgstr "-fcomputed-goto             hesaplanmış C goto ifadeleri üret"
 
 #: cobc/flag.def:114
+#, fuzzy
+#| msgid "-fextra-brace         generate extra braces in C source"
 msgid "  -fextra-brace         generate extra braces in C source"
-msgstr ""
+msgstr "-fextra-brace               C kaynağında ek ayraçlar üret"
 
 #: cobc/flag.def:117
+#, fuzzy
+#| msgid "-fcorrect-numeric     attempt correction of invalid numeric display items"
 msgid "  -fcorrect-numeric     attempt correction of invalid numeric display items"
-msgstr ""
+msgstr "-fcorrect-numeric           geçersiz nümerik ekran ögelerini düzeltmeye çalış"
 
 #: cobc/flag.def:120
+#, fuzzy
+#| msgid "-fstack-on-heap       PERFORM stack allocated on heap"
 msgid "  -fstack-on-heap       PERFORM stack allocated on heap"
-msgstr ""
+msgstr "-fstack-on-heap             alt yığın üzerinde ayrılmış yığın PERFORM yap"
 
 #: cobc/flag.def:123
+#, fuzzy
+#| msgid ""
+#| "  -fstack-check         PERFORM stack checking\n"
+#| "                        * turned on by -debug or -g"
 msgid ""
 "  -fstack-extended      store origin of entrypoints and PERFORM\n"
 "                        * turned on by -debug/-dump"
 msgstr ""
+"  -fstack-check             yığın denetimini PERFORM yap\n"
+"                            * -debug veya -g ile açılır"
 
 #: cobc/flag.def:128
 msgid ""
 "  -fno-remove-unreachable\tdisable remove of unreachable code\n"
 "                        * turned off by -g"
 msgstr ""
+"  -fno-remove-unreachable   erişilemeyen kodun kaldırılmasını devre dışı bırak\n"
+"                            * -g ile kapatılır"
 
 #: cobc/flag.def:132
 msgid ""
 "  -ftrace               generate trace code\n"
 "                        * scope: executed SECTION/PARAGRAPH"
 msgstr ""
+"  -ftrace                   iz kodu üret\n"
+"                            * kapsam: yürütülmüş SECTION/PARAGRAPH"
 
 #: cobc/flag.def:136
 msgid ""
 "  -ftraceall            generate trace code\n"
 "                        * scope: executed SECTION/PARAGRAPH/STATEMENTS"
 msgstr ""
+"  -ftraceall                iz kodu üret\n"
+"                            * kapsam: yürütülmüş SECTION/PARAGRAPH/STATEMENTS"
 
 #: cobc/flag.def:140
+#, fuzzy
+#| msgid "-fsyntax-only         syntax error checking only; don't emit any output"
 msgid "  -fsyntax-only         syntax error checking only; don't emit any output"
-msgstr ""
+msgstr "-fsyntax-only               yalnızca sözdizim hata denetimi; çıktı yayma"
 
 #: cobc/flag.def:143
 msgid ""
 "  -fdebugging-line      enable debugging lines\n"
 "                        * 'D' in indicator column or floating >>D"
 msgstr ""
+"  -fdebugging-line          hata ayıklama satırlarını etkinleştir\n"
+"                            * gösterge sütununda 'D' veya yüzen >>D"
 
 #: cobc/flag.def:147
+#, fuzzy
+#| msgid ""
+#| "  -fsource-location     generate source location code\n"
+#| "                        * turned on by -debug/-g/-ftraceall/-fec"
 msgid ""
 "  -fsource-location     generate source location code\n"
 "                        * turned on by -debug/-ftraceall/-fec/-dump"
 msgstr ""
+"  -fsource-location         kaynak konumlama kodu üret\n"
+"                            * -debug/-g/-ftraceall/-fec ile açılır"
 
 #: cobc/flag.def:151
+#, fuzzy
+#| msgid "-fimplicit-init       automatic initialization of the COBOL runtime system"
 msgid "  -fimplicit-init       automatic initialization of the COBOL runtime system"
-msgstr ""
+msgstr "-fimplicit-init             COBOL çalışma zamanının otomatik ilklendirmesi"
 
 #: cobc/flag.def:154
 msgid ""
 "  -fno-recursive-check  disable check of recursive program call;\n"
 "                        effectively compiling as RECURSIVE program"
 msgstr ""
+"  -fno-recursive-check      özyineli program çağrısı denetimini devre dışı\n"
+"                              bırak, RECURSIVE program olarak derler"
 
 #: cobc/flag.def:158
+#, fuzzy
+#| msgid ""
+#| "  -fstack-check         PERFORM stack checking\n"
+#| "                        * turned on by -debug or -g"
 msgid ""
 "  -fstack-check         PERFORM stack checking\n"
 "                        * turned on by -debug/-g"
 msgstr ""
+"  -fstack-check             yığın denetimini PERFORM yap\n"
+"                            * -debug veya -g ile açılır"
 
 #: cobc/flag.def:162
 msgid "  -fsection-exit-check  check that code execution does not leave the scope of SECTIONs"
@@ -1955,64 +2008,95 @@ msgid ""
 "  -fwrite-after         use AFTER 1 for WRITE of LINE SEQUENTIAL\n"
 "                        * default: BEFORE 1"
 msgstr ""
+"  -fwrite-after             LINE SEQUENTIAL'ın WRITE'ı için AFTER 1 kullan\n"
+"                            * öntanımlı: BEFORE 1"
 
 #: cobc/flag.def:172
 msgid ""
 "  -fmfcomment           '*' or '/' in column 1 treated as comment\n"
 "                        * FIXED format only"
 msgstr ""
+"  -fmfcomment               1. sütundaki '*' veya '/', yorum olarak derlenir\n"
+"                            * yalnızca FIXED biçim"
 
 #: cobc/flag.def:176
 msgid ""
 "  -facucomment          '$' in indicator area treated as '*',\n"
 "                        '|' treated as floating comment"
 msgstr ""
+"  -facucomment              gösterge alanındaki '$', '*' olarak,\n"
+"                              '|' ise yüzen yorum olarak derlenir"
 
 #: cobc/flag.def:181
+#, fuzzy
+#| msgid ""
+#| "  -fnotrunc             allow numeric field overflow\n"
+#| "                        * non-ANSI behaviour"
 msgid ""
 "  -fno-trunc            allow numeric field overflow\n"
 "                        * non-ANSI behaviour"
 msgstr ""
+"  -fnotrunc                 nümerik alan taşmasına izin ver\n"
+"                            * ANSI dışı davranış"
 
 #: cobc/flag.def:185
 msgid ""
 "  -fsingle-quote        use a single quote (apostrophe) for QUOTE\n"
 "                        * default: double quote"
 msgstr ""
+"  -fsingle-quote            QUOTE için bir tek tırnak (kesme imi) kullan\n"
+"                            * öntanımlı: çift tırnak"
 
 #: cobc/flag.def:195
 msgid ""
 "  -foptional-file       treat all files as OPTIONAL\n"
 "                        * unless NOT OPTIONAL specified"
 msgstr ""
+"  -foptional-file           tüm dosyalara OPTIONAL olarak davran\n"
+"                            * NOT OPTIONAL belirtilmemişse"
 
 #: cobc/flag.def:199
+#, fuzzy
+#| msgid "-fstatic-call         output static function calls for the CALL statement"
 msgid "  -fstatic-call         output static function calls for the CALL statement"
-msgstr ""
+msgstr "-fstatic-call               CALL ifadesi için durgun işlev çağrıları çıktıla"
 
 #: cobc/flag.def:202
+#, fuzzy
+#| msgid ""
+#| "  -fno-gen-c-decl-static-call\tdisable generation of C function declations\n"
+#| "                        for subroutines with static CALL"
 msgid ""
 "  -fno-gen-c-decl-static-call\tdisable generation of C function declarations\n"
 "                        for subroutines with static CALL"
 msgstr ""
+"  -fno-gen-c-decl-static-call\n"
+"                            durgun CALL içeren alt yordamlar için C işlev\n"
+"                              beyanları üretmeyi devre dışı bırak"
 
 #: cobc/flag.def:206
 msgid ""
 "  -fgen-c-line-directives\tgenerate source location directives in C code;\n"
 "                        * turned on by -g"
 msgstr ""
+"  -fgen-c-line-directives   C kodunda kaynak konumu yönergeleri üret\n"
+"                            * -g ile açılır"
 
 #: cobc/flag.def:210
 msgid ""
 "  -fgen-c-labels        generate extra labels in C sources;\n"
 "                        * turned on by -g"
 msgstr ""
+"  -fgen-c-labels            C kaynaklarında ek etiketler üret\n"
+"                            * -g ile açılır"
 
 #: cobc/flag.def:214
 msgid ""
 "  -fno-theaders         suppress all headers and output of compilation\n"
 "                        options from listing while keeping page breaks"
 msgstr ""
+"  -fno-theaders             tüm üstbilgiyi ve derleme seçeneklerinin\n"
+"                              çıktısını sustur; sayfa sonlarını tut"
 
 #: cobc/flag.def:218
 msgid "  -fno-tsource          suppress source from listing"
@@ -2160,11 +2244,17 @@ msgid ""
 msgstr ""
 
 #: cobc/help.c:93
+#, fuzzy
+#| msgid ""
+#| "  -fec=<exception-name>\tenable code generation for <exception-name>,\n"
+#| "                        sets -fsource-location"
 msgid ""
 "  -fec=<exception-name>\tenable code generation for <exception-name>,\n"
 "                        see --list-exceptions for the possible values,\n"
 "                        sets -fsource-location"
 msgstr ""
+"  -fec=<istisna-adı>        <istisna-adı> için kod üretimini etkinleştir,\n"
+"                              -fsource-location ayarlar"
 
 #: cobc/help.c:97
 msgid "  -o <file>             place the output into <file>"
@@ -2345,10 +2435,12 @@ msgid ""
 msgstr ""
 
 #: cobc/help.c:201
+#, fuzzy
+#| msgid "-falternate-ebcdic    use restricted ASCII to EBCDIC translate"
 msgid ""
 "  -falternate-ebcdic    use restricted ASCII to EBCDIC translate\n"
 "  -fno-alternate-ebcdic use extended ASCII to EBCDIC translate"
-msgstr ""
+msgstr "-falternate-ebcdic          kısıtlanmış ASCII'den EBCDIC'ye çevirme kullan"
 
 #: cobc/help.c:230
 msgid "Compiler dialect configuration options:"
@@ -2757,8 +2849,10 @@ msgid "invalid %s clause"
 msgstr ""
 
 #: cobc/parser.y:4616 cobc/parser.y:4754
+#, fuzzy
+#| msgid "literal type does not match numeric data type"
 msgid "type does not match alphabet"
-msgstr ""
+msgstr "düz veri türü, nümerik veri türüyle eşleşmiyor"
 
 #: cobc/parser.y:4760
 msgid "CLASS IS integer IN alphabet-name"
@@ -2863,8 +2957,8 @@ msgstr ""
 msgid "duplicate file description for %s"
 msgstr ""
 
-#: cobc/parser.y:6288 cobc/parser.y:6893 cobc/parser.y:7389 cobc/parser.y:13485
-#: cobc/parser.y:16686
+#: cobc/parser.y:6288 cobc/parser.y:6893 cobc/parser.y:7389
+#: cobc/parser.y:13485 cobc/parser.y:16686
 #, c-format
 msgid "%s is invalid in a user FUNCTION"
 msgstr ""
@@ -5267,9 +5361,10 @@ msgid "'%s' is not a procedure name"
 msgstr ""
 
 #: cobc/typeck.c:5041
-#, c-format
+#, fuzzy, c-format
+#| msgid "'%s' and '%s' must be in the same record"
 msgid "%s and %s are not in the same SECTION"
-msgstr ""
+msgstr "'%s' ve '%s' aynı kayıtta olmalı"
 
 #: cobc/typeck.c:5046
 #, fuzzy, c-format
@@ -6977,7 +7072,7 @@ msgstr "GnuCOBOL modülü yükleyici"
 #: bin/cobcrun.c:148
 #, c-format
 msgid "General help using GNU software: <%s>"
-msgstr ""
+msgstr "GNU yazılımları kullanımı için genel yardım: <%s>"
 
 #: bin/cobcrun.c:288
 msgid "invalid configuration file name"
@@ -6997,24 +7092,3 @@ msgstr "%s: PROGRAM adı eksik"
 #, c-format
 msgid "Try '%s --help' for more information."
 msgstr "Daha fazla bilgi için '%s --help' yazın."
-
-#~ msgid "set right margin for source (fixed format only)"
-#~ msgstr "kaynak için sağ kenar boşluğunu ayarla (yalnızca sabit biçim)"
-
-#, c-format
-#~ msgid "level %02d item '%s' cannot have a %s clause"
-#~ msgstr "düzey %02d ögesi '%s', bir %s yantümcesi alamaz"
-
-#~ msgid "only level 88 items may have multiple values"
-#~ msgstr "yalnızca düzey 88 ögelerde çoklu değerler olabilir"
-
-#~ msgid "field with NULL address"
-#~ msgstr "NULL adresli alan"
-
-#, c-format
-#~ msgid " Last statement of %s was at line %d of %s"
-#~ msgstr " %s son ifadesi, şunun %d. satırındaydı: %s"
-
-#, c-format
-#~ msgid " Last statement of %s unknown"
-#~ msgstr " %s son ifadesi bilinmiyor"

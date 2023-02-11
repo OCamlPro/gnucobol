@@ -1319,8 +1319,8 @@ cobc_plex_strdup (const char *dupstr)
    if the size of 'src' is too long only its last/last bytes are copied and an
    eliding "..." is placed in front or at end depending on 'elide_at_end' */
 char *
-cobc_elided_strcpy (char *dest, const char* src,
-		const size_t max_size, int elide_at_end)
+cobc_elided_strcpy (char *dest, const char *src,
+		const size_t max_size, const int elide_at_end)
 {
 	const size_t size = strlen (src);
 
@@ -2073,7 +2073,7 @@ clean_up_intermediates (struct filename *fn, const int status)
 			lf->local_fp = NULL;
 		}
 	}
-	if (save_all_src) {
+	if (save_all_src && !save_temps_dir) {
 		return;
 	}
 	if (fn->need_preprocess
@@ -2872,9 +2872,6 @@ set_compile_level_from_file_extension (const char *filename)
 	}
 }
 
-#ifdef	_MSC_VER
-/* MSC has issues with trailing slashes, which are auto-added in shell/cmd,
-   we're removing them here to provide the same behaviour */
 static void
 remove_trailing_slash (char *data)
 {
@@ -2883,7 +2880,6 @@ remove_trailing_slash (char *data)
 		*path_end = 0;
 	}
 }
-#endif
 
 /* process command line options */
 static int
@@ -3540,6 +3536,7 @@ process_command_line (const int argc, char **argv)
 
 		case 'I':
 			/* -I <xx> : Include/copy directory */
+			remove_trailing_slash (cob_optarg);
 			if (strlen (cob_optarg) > COB_SMALL_MAX) {
 				cobc_err_exit (COBC_INV_PAR, "-I");
 			}
@@ -3556,18 +3553,31 @@ process_command_line (const int argc, char **argv)
 				}
 			}
 #ifdef	_MSC_VER
-			remove_trailing_slash (cob_optarg);
 			COBC_ADD_STR (cobc_include, " /I \"", cob_optarg, "\"");
 #elif	defined (__WATCOMC__)
 			COBC_ADD_STR (cobc_include, " -i\"", cob_optarg, "\"");
 #else
 			COBC_ADD_STR (cobc_include, " -I\"", cob_optarg, "\"");
 #endif
+#if defined (_WIN32) || defined (__DJGPP__)
+			{
+				const size_t len = strlen (cob_optarg);
+				size_t o;
+				const char from = '/';
+				const char to = '\\';
+				for (o = 0; o < len; o++) {
+					if (cob_optarg[o] == from) {
+						cob_optarg[o] = to;
+					}
+				}
+			}
+#endif
 			CB_TEXT_LIST_ADD (cb_include_list, cob_optarg);
 			break;
 
 		case 'L':
 			/* -L <xx> : Directory for library search */
+			remove_trailing_slash (cob_optarg);
 			if (strlen (cob_optarg) > COB_SMALL_MAX) {
 				cobc_err_exit (COBC_INV_PAR, "-L");
 			}
@@ -3583,7 +3593,6 @@ process_command_line (const int argc, char **argv)
 				}
 			}
 #ifdef	_MSC_VER
-			remove_trailing_slash (cob_optarg);
 			COBC_ADD_STR (cobc_lib_paths, " /LIBPATH:\"", cob_optarg, "\"");
 #else
 			COBC_ADD_STR (cobc_lib_paths, " -L\"", cob_optarg, "\"");
@@ -3942,9 +3951,9 @@ process_command_line (const int argc, char **argv)
 #endif
 	/* TODO: add -M and -MD (breaking change "per GCC" already announced) */
 	if (cb_depend_file && !cb_depend_target) {
-		cobc_err_exit (_("-MT must be given to specify target file"));
 		fclose (cb_depend_file);
 		cb_depend_file = NULL;
+		cobc_err_exit (_("-MT must be given to specify target file"));
 	}
 
 	/* debug: Turn on all exception conditions
@@ -4495,7 +4504,9 @@ process_run (const char *name)
 	const char	*buffer;
 
 	if (cb_compile_level < CB_LEVEL_MODULE) {
+		fputs ("cobc: ", stderr);
 		fputs (_("nothing for -j to run"), stderr);
+		fputc ('\n', stderr);
 		fflush (stderr);
 		return 0;
 	}
@@ -5322,7 +5333,9 @@ set_picture (struct cb_field *field, char *picture, size_t picture_len)
 	case CB_USAGE_LENGTH:
 	case CB_USAGE_OBJECT:
 	case CB_USAGE_POINTER:
-	case CB_USAGE_PROGRAM_POINTER:
+	/* case CB_USAGE_DATA_POINTER: */
+	/* case CB_USAGE_FUNCTION_POINTER: */
+	/* case CB_USAGE_PROGRAM_POINTER: */
 	case CB_USAGE_FP_BIN32:
 	case CB_USAGE_FP_BIN64:
 	case CB_USAGE_FP_BIN128:
@@ -5376,6 +5389,18 @@ set_picture (struct cb_field *field, char *picture, size_t picture_len)
 		}
 		memcpy (picture, picture_usage, usage_len + 1);
 		return 1;
+	} else if (field->flag_is_pointer) {
+#if 0	/* TODO: ADD */
+		if (field->usage == CB_USAGE_DATA_POINTER) {
+			strcpy (picture, "DATA-POINTER");
+		} else if (field->usage == CB_USAGE_FUNCTION_POINTER) {
+			strcpy (picture, "FUNCTION-POINTER");
+		} else
+#endif
+		if (field->usage == CB_USAGE_PROGRAM_POINTER) {
+			strcpy (picture, "PROGRAM-POINTER");
+		}
+		return 1;
 	} else if (field->flag_any_numeric) {
 		strcpy (picture, "9 ANY NUMERIC");
 		return 1;
@@ -5386,7 +5411,7 @@ set_picture (struct cb_field *field, char *picture, size_t picture_len)
 		if (!field->pic) {
 			return 0;
 		}
-		snprintf (picture, picture_len, "%s", field->pic->orig);
+		cobc_elided_strcpy (picture, field->pic->orig, picture_len - 1, 1);
 		return 1;
 	}
 }

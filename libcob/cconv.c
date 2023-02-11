@@ -69,14 +69,15 @@ cob_load_collation (const char *col_name,
 		    cob_u8_t *ebcdic_to_ascii,
 		    cob_u8_t *ascii_to_ebcdic)
 {
-	cob_u8_t table[512];
-	char hex[COB_SMALL_BUFF];
-	const char *hexptr;
-	int i, n, line;
-	FILE *f;
-	const char *config_dir;
-	char filename[COB_FILE_BUFF];
-	const char *last_err_name = NULL;
+	cob_u8_t	table[512];
+	char		hex[COB_SMALL_BUFF];
+	const char	*hexptr;
+	int			line;
+	size_t		n, i;
+	FILE		*f;
+	const char	*config_dir;
+	char		filename[COB_FILE_BUFF];
+	const char	*last_err_name = NULL;
 
 	if (col_name[0] == '.' || col_name[0] == SLASH_CHAR
 #ifdef _WIN32
@@ -115,8 +116,8 @@ cob_load_collation (const char *col_name,
 		++line;
 		hexptr = cob_skip_blanks (hex);
 		while (*hexptr != '\0' && *hexptr != '#') {
-			n = cob_convert_hex_byte (hexptr);
-			if (n < 0) {
+			int c = cob_convert_hex_byte (hexptr);
+			if (c < 0) {
 				if (col_name != last_err_name) {
 					cob_runtime_error (_("errors in translation table '%s':"), col_name);
 					last_err_name = col_name;
@@ -124,7 +125,7 @@ cob_load_collation (const char *col_name,
 				cob_runtime_error (_("invalid hex byte on line %d: '%c%c'"), line, hexptr[0], hexptr[1]);
 			}
 			if (i < 512) {
-				table[i++] = n;
+				table[i++] = (unsigned char)c;
 			} else {
 				cob_runtime_error (_("too much data in translation table '%s'"), col_name);
 				fclose (f);
