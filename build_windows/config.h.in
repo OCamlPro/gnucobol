@@ -544,11 +544,11 @@
 #if CONFIGURED_JSON == JSON_C
 #define HAVE_JSON_C_JSON_H 1
 #else
- */#undef HAVE_JSON_C_JSON_H */
+/* #undef HAVE_JSON_C_JSON_H */
 #endif
 
 /* Define to 1 if you have the <json.h> header file. */
- */#undef HAVE_JSON_H */
+/* #undef HAVE_JSON_H */
 
 /* Define if you have <langinfo.h> and nl_langinfo(CODESET). */
 /* #undef HAVE_LANGINFO_CODESET */
