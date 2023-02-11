@@ -21,6 +21,26 @@
 	* pplex.l (ppcopy_find_file, ppcopy): replace slash to match system and
 	  always place name in buffer to allow this
 
+2023-02-07  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_optim_cond): generate cob_bcd_cmp call for COMP-3/COMP-6
+	* typeck.c (cb_build_optim_cond). codeoptim.def, codeoptim.c, codegen.c:
+	  disabled "local" functions for COB_CMP_PACKED_INT, COB_GET_PACKED_INT,
+	  COB_GET_PACKED_INT64 as the updated libcob variants are not slower, so
+	  generate calls to these instead
+
+2023-02-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_optim_add), codeoptim.def, codeoptim.c, codegen.c:
+	  added COB_GET_PACKED_INT64, COB_ADD_PACKED_INT64 for fast-resolving/
+	  adding PACKED-DECIMAL fields with 9-18 digits
+	* typeck.c (cb_build_optim_sub), codegen.c, tree.h
+	  (CB_CAST_NEGATIVE_INTEGER, CB_CAST_NEGATIVE_LONG_INT): wrap subtractions
+	  on PACKED-DECIMAL fields in a negative value used with optimized
+	  packed_add
+	* typeck.c (cb_check_num_cond, cb_build_optim_cond): generate memcmp for
+	  COMP-6 fields with same scale
+
 2023-02-01  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y (rep_name_list): fixed error handling loop

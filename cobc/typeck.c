@@ -6595,76 +6595,122 @@ build_cond_88 (cb_tree x)
 static cb_tree
 cb_build_optim_cond (struct cb_binary_op *p)
 {
-	struct cb_field	*f;
 	const char	*s;
 	size_t		n;
+	const cb_tree left = p->x;
+	const cb_tree right = p->y;
+	struct cb_field	*f = CB_REF_OR_FIELD_P (left)
+	               	   ? CB_FIELD_PTR (left) : NULL;
 
 #if	0	/* RXWRXW - US */
-	struct cb_field	*fy;
-	if (CB_REF_OR_FIELD_P (p->y)) {
-		fy = CB_FIELD_PTR (p->y);
+	if (CB_REF_OR_FIELD_P (right)) {
+		const struct cb_field	*fy = CB_FIELD_PTR (right);
 		if (!fy->pic->have_sign
 		 && (fy->usage == CB_USAGE_BINARY
 		  || fy->usage == CB_USAGE_COMP_5
 		  || fy->usage == CB_USAGE_COMP_X
 		  || fy->usage == CB_USAGE_COMP_N)) {
-			return CB_BUILD_FUNCALL_2 ("cob_cmp_uint", p->x,
-						   cb_build_cast_int (p->y));
+			return CB_BUILD_FUNCALL_2 ("cob_cmp_uint", left,
+						   cb_build_cast_int (right));
 		}
 	}
 #endif
 
-	if (!CB_REF_OR_FIELD_P (p->x)) {
-		return CB_BUILD_FUNCALL_2 ("cob_cmp_llint", p->x,
-					    cb_build_cast_llint (p->y));
+	if (f == NULL) {
+		if (!cb_fits_long_long (right)) {
+			return NULL;
+		}
+		return CB_BUILD_FUNCALL_2 ("cob_cmp_llint", left,
+					    cb_build_cast_llint (right));
 	}
 
-	f = CB_FIELD_PTR (p->x);
-#if 0 /* CHECKME, if needed */
-	if (cb_listing_xref) {
-		cobc_xref_link (&f->xref, current_statement->common.source_line);
+#if 0	/* TODO: if the right side is a literal: then build an ideal
+		   memcmp as if it was a field of same attributes as left-side,
+		   with the value of the literal */
+	if (CB_LITERAL_P (right) || right == cb_zero) {
+		if (f->usage == CB_USAGE_PACKED
+		 || f->usage == CB_USAGE_COMP_6) {
+			return CB_BUILD_FUNCALL_3 ("memcmp",
+				CB_BUILD_CAST_ADDRESS (left),
+				cb_build_direct (get_hex_encoded_packed_literal (right), 0),
+				cb_int (f->size));
+		}
 	}
 #endif
+	if (f->usage == CB_USAGE_PACKED
+	 || f->usage == CB_USAGE_COMP_6) {
+		if (CB_REF_OR_FIELD_P (right)) {
+			const struct cb_field	*fy = CB_FIELD_PTR (right);
+			if (fy->usage == CB_USAGE_PACKED
+			 || fy->usage == CB_USAGE_COMP_6) {
+				if (f->pic->scale
+				 || f->pic->digits >= 19
+				 || fy->pic->scale
+				 || fy->pic->digits >= 19
+					) {
+					if (f->pic->scale >= 0 && fy->pic->scale >= 0) {
+						/* for now skip negative scale, until this is added and tested */
+						return CB_BUILD_FUNCALL_2 ("cob_bcd_cmp", left, right);
+					}
+				}
+			}
+		}
+	}
+
+	if (!cb_fits_long_long (right)) {
+		return NULL;
+	}
+
 #if	0	/* RXWRXW - SI */
 	if (f->index_type) {
-		return CB_BUILD_FUNCALL_2 ("cob_cmp_special",
-			cb_build_cast_int (p->x),
-			cb_build_cast_int (p->y));
+		return CB_BUILD_FUNCALL_2 ("c",
+			cb_build_cast_int (left),
+			cb_build_cast_int (right));
 	}
 #endif
 	if (f->pic->scale || f->flag_any_numeric) {
-		return CB_BUILD_FUNCALL_2 ("cob_cmp_llint", p->x,
-					    cb_build_cast_llint (p->y));
+		return CB_BUILD_FUNCALL_2 ("cob_cmp_llint", left,
+					    cb_build_cast_llint (right));
 	}
+#if 0	/* libcob's optimized version "cob_cmp_packed" is not slower,
+     	   so drop these specific local optimization functions */
 	if (f->usage == CB_USAGE_PACKED) {
 		if (f->pic->digits < 19) {
 			optimize_defs[COB_CMP_PACKED_INT] = 1;
 			return CB_BUILD_FUNCALL_2 ("cob_cmp_packed_int",
-				p->x,
-				cb_build_cast_llint (p->y));
+				left,
+				cb_build_cast_llint (right));
 		} else {
 			return CB_BUILD_FUNCALL_2 ("cob_cmp_packed",
-				p->x,
-				cb_build_cast_llint (p->y));
+				left,
+				cb_build_cast_llint (right));
 		}
 	}
 	if (f->usage == CB_USAGE_COMP_6) {
 		return CB_BUILD_FUNCALL_2 ("cob_cmp_packed",
-			p->x,
-			cb_build_cast_llint (p->y));
+			left,
+			cb_build_cast_llint (right));
 	}
+#else
+	if (f->usage == CB_USAGE_PACKED
+	 || f->usage == CB_USAGE_COMP_6) {
+		return CB_BUILD_FUNCALL_2 ("cob_cmp_packed",
+			left,
+			cb_build_cast_llint (right));
+	}
+#endif
 	if (f->usage == CB_USAGE_DISPLAY
 	 && !f->flag_sign_leading
 	 && !f->flag_sign_separate) {
-		if (cb_fits_long_long (p->x)) {
+		if (cb_fits_long_long (left)) {
 			return CB_BUILD_FUNCALL_4 ("cob_cmp_numdisp",
-				CB_BUILD_CAST_ADDRESS (p->x),
+				CB_BUILD_CAST_ADDRESS (left),
 				cb_int (f->size),
-				cb_build_cast_llint (p->y),
+				cb_build_cast_llint (right),
 				cb_int (f->pic->have_sign ? 1 : 0));
 		}
-		return CB_BUILD_FUNCALL_2 ("cob_cmp_llint", p->x,
-					    cb_build_cast_llint (p->y));
+		return CB_BUILD_FUNCALL_2 ("cob_cmp_llint", left,
+					    cb_build_cast_llint (right));
 	}
 	if (f->usage == CB_USAGE_BINARY
 	 || f->usage == CB_USAGE_COMP_5
@@ -6680,8 +6726,8 @@ cb_build_optim_cond (struct cb_binary_op *p)
 	 || f->usage == CB_USAGE_COMP_X
 	 || f->usage == CB_USAGE_COMP_N) {
 		n = ((size_t)f->size - 1)
-		  + (8 * (f->pic->have_sign ? 1 : 0))
-		  +	(16 * (f->flag_binary_swap ? 1 : 0));
+		  + ((f->pic->have_sign   ? 1 : 0) * 8)
+		  + ((f->flag_binary_swap ? 1 : 0) * 16);
 #if	defined(COB_NON_ALIGNED) && !defined(_MSC_VER) && defined(COB_ALLOW_UNALIGNED)
 		switch (f->size) {
 		case 2:
@@ -6692,8 +6738,9 @@ cb_build_optim_cond (struct cb_binary_op *p)
 #endif
 		case 4:
 		case 8:
-			if (f->storage != CB_STORAGE_LINKAGE &&
-			    f->indexes == 0 && (f->offset % f->size) == 0) {
+			if (f->storage != CB_STORAGE_LINKAGE
+			 && f->indexes == 0
+			 && (f->offset % f->size) == 0) {
 				optimize_defs[align_bin_compare_funcs[n].optim_val] = 1;
 				s = align_bin_compare_funcs[n].optim_name;
 			} else {
@@ -6712,12 +6759,12 @@ cb_build_optim_cond (struct cb_binary_op *p)
 #endif
 		if (s) {
 			return CB_BUILD_FUNCALL_2 (s,
-				CB_BUILD_CAST_ADDRESS (p->x),
-				cb_build_cast_llint (p->y));
+				CB_BUILD_CAST_ADDRESS (left),
+				cb_build_cast_llint (right));
 		}
 	}
-	return CB_BUILD_FUNCALL_2 ("cob_cmp_llint", p->x,
-				   cb_build_cast_llint (p->y));
+	return CB_BUILD_FUNCALL_2 ("cob_cmp_llint", left,
+				   cb_build_cast_llint (right));
 }
 
 static int
@@ -6738,14 +6785,38 @@ cb_check_num_cond (cb_tree x, cb_tree y)
 	}
 	fx = CB_FIELD_PTR (x);
 	fy = CB_FIELD_PTR (y);
-	if (fx->usage != CB_USAGE_DISPLAY
-	 || fy->usage != CB_USAGE_DISPLAY
-	 || fx->pic->have_sign
-	 || fy->pic->have_sign) {
+	if (fx->usage != fy->usage) {
 		return 0;
 	}
-	if (fx->size != fy->size
-	 || fx->pic->scale != fy->pic->scale) {
+	if (fx->usage == CB_USAGE_DISPLAY) {
+		if (fx->pic->have_sign
+		 || fy->pic->have_sign) {
+			return 0;
+		}
+#if 0	/* possibly add this with an optimizing flag
+		   which isn't active by default; previously we
+		   did what MF also does: only consider a
+		   sign nibble of 0x0d as negative, and the rest
+		   as positive -> 0x195f == 0x195c (and even 0x1950)
+		*/
+	} else if (fx->usage == CB_USAGE_PACKED) {
+		if (fx->pic->have_sign != fy->pic->have_sign) {
+			return 0;
+		}
+		/* needs following attribute check to decide */;
+#endif
+	/* no sign nibble so directly comparable;
+	   note: previous versions of GnuCOBOL did handle
+	   invalid data with padding nibble different,
+	   PIC 9 COMP-6 with 0x11 == 0x01, which isn't done now
+	   any more (note: this is identical to at least MicroFocus) */
+	} else if (fx->usage == CB_USAGE_COMP_6) {
+		/* needs following attribute check to decide */;
+	} else {
+		return 0;
+	}
+	if (fx->pic->digits != fy->pic->digits /* digits instead of size to cater for packed */
+	 || fx->pic->scale  != fy->pic->scale) {
 		return 0;
 	}
 	return 1;
@@ -6951,9 +7022,11 @@ cb_build_cond_default (struct cb_binary_op *p, cb_tree left, cb_tree right)
 			cb_int (size1));
 	}
 	if (l_class == CB_CLASS_NUMERIC
-	 && r_class == CB_CLASS_NUMERIC
-	 && cb_fits_long_long (right)) {
-		return cb_build_optim_cond (p);
+	 && r_class == CB_CLASS_NUMERIC) {
+		cb_tree ret = cb_build_optim_cond (p);
+		if (ret) {
+			return ret;
+		}
 	}
 	if (current_program->alphabet_name_list
 	 || !cb_check_alpha_cond (left)
@@ -7246,12 +7319,16 @@ cb_build_optim_add (cb_tree v, cb_tree n)
 					CB_BUILD_CAST_ADDRESS (v),
 					cb_build_cast_int (n));
 			}
-		} else if (!f->pic->scale
-		         && f->usage == CB_USAGE_PACKED
-		         && f->pic->digits < 10) {
-			optimize_defs[COB_ADD_PACKED_INT] = 1;
-			return CB_BUILD_FUNCALL_2 ("cob_add_packed_int",
-				v, cb_build_cast_int (n));
+		} else if (f->usage == CB_USAGE_PACKED) {
+		    if (f->pic->digits < 10) {
+				optimize_defs[COB_ADD_PACKED_INT] = 1;
+				return CB_BUILD_FUNCALL_2 ("cob_add_packed_int",
+					v, cb_build_cast_int (n));
+			} else if (f->pic->digits < 19) {
+				optimize_defs[COB_ADD_PACKED_INT64] = 1;
+				return CB_BUILD_FUNCALL_2 ("cob_add_packed_int64",
+					v, cb_build_cast_llint (n));
+			}
 		}
 	}
 	return CB_BUILD_FUNCALL_3 ("cob_add_int", v,
@@ -7323,6 +7400,20 @@ cb_build_optim_sub (cb_tree v, cb_tree n)
 				return CB_BUILD_FUNCALL_2 (s,
 					CB_BUILD_CAST_ADDRESS (v),
 					cb_build_cast_int (n));
+			}
+		} else if (f->usage == CB_USAGE_PACKED) {
+		    if (f->pic->digits < 10) {
+				cb_tree n_negative = cb_build_cast_int (n);
+				CB_CAST (n_negative)->cast_type = CB_CAST_NEGATIVE_INTEGER;
+				optimize_defs[COB_ADD_PACKED_INT] = 1;
+				return CB_BUILD_FUNCALL_2 ("cob_add_packed_int",
+					v, n_negative);
+			} else if (f->pic->digits < 19) {
+				cb_tree n_negative = cb_build_cast_llint (n);
+				CB_CAST (n_negative)->cast_type = CB_CAST_NEGATIVE_LONG_INT;
+				optimize_defs[COB_ADD_PACKED_INT64] = 1;
+				return CB_BUILD_FUNCALL_2 ("cob_add_packed_int64",
+					v, n_negative);
 			}
 		}
 	}

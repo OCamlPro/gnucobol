@@ -1,4 +1,9 @@
 
+2023-02-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_bcd_cmp, packed_is_negative, decimal_convert_scale,
+	  insert_packed_aligned): finished
+
 2023-02-09  Simon Sobisch <simonsobisch@gnu.org>
 
 	* mlio.c, common.c: handle HAVE_JSON_C_JSON_H
@@ -29,6 +34,22 @@
 	  prefix as those are local-only functions
 	* move.c (cob_get_int, cob_get_llint): handle negative scale for binary
 	  fields
+
+2023-02-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (packed_is_negative): new function to ignore any sign nibbles
+	  but "negative 0x0d"; only handle as negative if non-zero
+	* numeric.c (cob_cmp_packed): refactored (partially moved code out to
+	  cmp_packed_intern) and performance-improved
+	* numeric.c (cob_bcd_cmp, decimal_convert_scale, insert_packed_aligned),
+	  common.h: new functions for direct compare of BCD fields without the
+	  overhead to convert to integer
+	* numeric.c (cob_numeric_cmp), coblocal.h (COB_ATTR_INIT_A,
+	  COB_FIELD_INIT_F): use best possible comparison instead of expensive
+	  fallback to cob_decimal; note: this also applies to num. keys in SORT
+	* coblocal.h: request to always inline cob_min_int / cob_max_int
+	* common.h [_MSC_VER]: disabled "internal" byteswap routines, instead use
+	  generic ones as they work as expected
 
 2023-01-28  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -273,7 +294,7 @@
 	* numeric.c: refactoring of bit-wise functions for readability
 	* numeric.c (cob_decimal_set_display): prefer local buffer over
 	  dynamic allocation
-	* numeric.c (cob_cmp_int, cob_cmp_uint, cob_cmp_llint): pre-comparision
+	* numeric.c (cob_cmp_int, cob_cmp_uint, cob_cmp_llint): pre-comparison
 	  by checking sign/zero and reduced number of decimal shifting
 	  dynamic allocation
 	* move.c (store_common_region): minor optimization

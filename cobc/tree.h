@@ -364,11 +364,13 @@ enum cb_usage {
 /* Cast type */
 enum cb_cast_type {
 	CB_CAST_INTEGER = 0,		/* 0 */
-	CB_CAST_LONG_INT,		/* 1 */
-	CB_CAST_ADDRESS,		/* 2 */
-	CB_CAST_ADDR_OF_ADDR,		/* 3 */
-	CB_CAST_LENGTH,			/* 4 */
-	CB_CAST_PROGRAM_POINTER		/* 5 */
+	CB_CAST_NEGATIVE_INTEGER,		/* 1 */
+	CB_CAST_LONG_INT,		/* 2 */
+	CB_CAST_NEGATIVE_LONG_INT,		/* 3 */
+	CB_CAST_ADDRESS,		/* 4 */
+	CB_CAST_ADDR_OF_ADDR,		/* 5 */
+	CB_CAST_LENGTH,			/* 6 */
+	CB_CAST_PROGRAM_POINTER		/* 7 */
 };
 
 /* Intrinsic functions */
