@@ -540,6 +540,16 @@
 /* #undef HAVE_ISFINITE */
 #endif
 
+/* Define to 1 if you have the <json-c/json.h> header file. */
+#if CONFIGURED_JSON == JSON_C
+#define HAVE_JSON_C_JSON_H 1
+#else
+ */#undef HAVE_JSON_C_JSON_H */
+#endif
+
+/* Define to 1 if you have the <json.h> header file. */
+ */#undef HAVE_JSON_H */
+
 /* Define if you have <langinfo.h> and nl_langinfo(CODESET). */
 /* #undef HAVE_LANGINFO_CODESET */
 
@@ -557,9 +567,6 @@
 
 /* Define to 1 if you have the <ltdl.h> header file. */
 /* #undef HAVE_LTDL_H */
-
-/* Define to 1 if you have the <malloc.h> header file. */
-#define HAVE_MALLOC_H 1
 
 /* Define to 1 if you have the `memmove' function. */
 #define HAVE_MEMMOVE 1
@@ -595,6 +602,9 @@
 
 /* Define to 1 if you have the <ncursesw/ncurses.h> header file. */
 /* #undef HAVE_NCURSESW_NCURSES_H */
+
+/* Define to 1 if you have the <ncurses/curses.h> header file. */
+/* #undef HAVE_NCURSES_CURSES_H */
 
 /* Define to 1 if you have the <ncurses.h> header file. */
 /* #undef HAVE_NCURSES_H */
@@ -707,13 +717,6 @@
 /* Define to 1 if you have the <sys/types.h> header file. */
 #define HAVE_SYS_TYPES_H 1
 
-/* Define to 1 if you have the <sys/wait.h> header file. */
-#if defined(__ORANGEC__)
-#define HAVE_SYS_WAIT_H 1
-#else
-/* #undef HAVE_SYS_WAIT_H */
-#endif
-
 /* Has timezone variable */
 /* note: MSC and ORANGEC have it as _timezone */
 #define HAVE_TIMEZONE 1
@@ -737,6 +740,9 @@
 
 /* Define to 1 if you have the `vprintf' function. */
 #define HAVE_VPRINTF 1
+
+/* Define to 1 if you have the <xcurses/curses.h> header file. */
+/* #undef HAVE_XCURSES_CURSES_H */
 
 /* Define to 1 if you have the <wchar.h> header file. */
 #define HAVE_WCHAR_H 1

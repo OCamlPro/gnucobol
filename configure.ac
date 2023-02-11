@@ -71,11 +71,18 @@ AC_CONFIG_FILES([tests/run_prog_manual.sh],
 # Note: AIX commonly uses -Lpath like GNU/Linux would use -Lpath -Rpath
 
 if test "x$OBJECT_MODE" = x; then
+	echo "$CC $CFLAGS" | grep ' -maix32' 1>/dev/null 2>&1
+	check1=$?
+	echo "$CC $CFLAGS" | grep ' -q32'    1>/dev/null 2>&1
+	check2=$?
+	if test $check1 -eq 0 -o $check2 -eq 0; then
+		OBJECT_MODE=32 # for libtool
+	fi
 	echo "$CC $CFLAGS" | grep ' -maix64' 1>/dev/null 2>&1
-	check1=$$
+	check1=$?
 	echo "$CC $CFLAGS" | grep ' -q64'    1>/dev/null 2>&1
-	check2=$$
-	if test check1 = 0 -o check2 = 0; then
+	check2=$?
+	if test $check1 -eq 0 -o $check2 -eq 0; then
 		OBJECT_MODE=64 # for libtool
 	fi
 	unset check1
@@ -95,6 +102,21 @@ if test "$OBJECT_MODE" = "64"; then
 			NM="/usr/ccs/bin/nm -X64 -B"
 		else
 			NM="nm -X64 -B"
+		fi
+	fi
+elif test "$OBJECT_MODE" = "32"; then
+	if test "x$AR" = x; then
+		if test -f /usr/ccs/bin/ar; then
+			AR="/usr/ccs/bin/ar -X32"
+		else
+			AR="ar -X32"
+		fi
+	fi
+	if test "x$NM" = x; then
+		if test -f /usr/ccs/bin/nm; then
+			NM="/usr/ccs/bin/nm -X32 -B"
+		else
+			NM="nm -X32 -B"
 		fi
 	fi
 fi
