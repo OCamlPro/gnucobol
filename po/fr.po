@@ -1,14 +1,14 @@
-# French translations for GnuCOBOL package
-# Copyright (C) 2002-2020 Free Software Foundation, Inc.
+# French translation of gnucobol
+# Copyright (C) 2023 Free Software Foundation, Inc.
 # This file is distributed under the same license as the gnucobol package.
 #
-# Frédéric Marchal <fmarchal@perso.be>, 2020.
+# Frédéric Marchal <fmarchal@perso.be>, 2023.
 msgid ""
 msgstr ""
-"Project-Id-Version: gnucobol 3.1.2\n"
+"Project-Id-Version: gnucobol 3.2-rc1\n"
 "Report-Msgid-Bugs-To: gnucobol-messages@gnu.org\n"
 "POT-Creation-Date: 2022-10-23 03:06+0200\n"
-"PO-Revision-Date: 2020-12-25 13:25+0100\n"
+"PO-Revision-Date: 2023-01-23 21:53+0100\n"
 "Last-Translator: Frédéric Marchal <fmarchal@perso.be>\n"
 "Language-Team: French <traduc@traduc.org>\n"
 "Language: fr\n"
@@ -157,10 +157,9 @@ msgid "aborting compile of %s at line %d (%s: %s)"
 msgstr "interruption de la compilation de %s à la ligne %d (%s: %s)"
 
 #: cobc/cobc.c:2243
-#, fuzzy, c-format
-#| msgid "aborting compile of %s at line %d (%s: %s)"
+#, c-format
 msgid "aborting codegen for %s, last statement at line %d (%s: %s)"
-msgstr "interruption de la compilation de %s à la ligne %d (%s: %s)"
+msgstr "interruption de la génération de code pour %s, dernière instruction à la ligne %d (%s: %s)"
 
 #: cobc/cobc.c:2246
 #, c-format
@@ -171,16 +170,16 @@ msgstr "interruption de codegen pour %s (%s: %s)"
 msgid "aborting"
 msgstr "interruption"
 
-#: cobc/cobc.c:2329 libcob/common.c:2823 libcob/common.c:8149 bin/cobcrun.c:375
+#: cobc/cobc.c:2329 libcob/common.c:2823 libcob/common.c:8149
+#: bin/cobcrun.c:375
 #, c-format
 msgid "Please report this!"
 msgstr "Merci de signaler ceci !"
 
 #: cobc/cobc.c:2346 bin/cobcrun.c:100
-#, fuzzy, c-format
-#| msgid "License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>"
+#, c-format
 msgid "License GPLv3+: GNU GPL version 3 or later <%s>"
-msgstr "Licence GPLv3+ : GNU GPL version 3 ou ultérieure <https://gnu.org/licenses/gpl.fr.html>"
+msgstr "Licence GPLv3+ : GNU GPL version 3 ou ultérieure <%s>"
 
 #: cobc/cobc.c:2348 libcob/common.c:8741 bin/cobcrun.c:102
 msgid ""
@@ -192,10 +191,9 @@ msgstr ""
 "BESOIN PARTICULIER."
 
 #: cobc/cobc.c:2350 libcob/common.c:8743 bin/cobcrun.c:104
-#, fuzzy, c-format
-#| msgid "Written by %s\n"
+#, c-format
 msgid "Written by %s"
-msgstr "Écrit par %s\n"
+msgstr "Écrit par %s"
 
 #. TRANSLATORS: This msgid is intended as the "Packaged" msgid, %s expands to date and time
 #: cobc/cobc.c:2352 cobc/cobc.c:2365 libcob/common.c:8747 bin/cobcrun.c:106
@@ -353,7 +351,7 @@ msgstr "chargement du fichier de configuration standard « default.conf »"
 
 #: cobc/cobc.c:3217
 msgid "the used C compiler is known to not be able to generate assembler code"
-msgstr ""
+msgstr "le compilateur C utilisé est connu pour être incapable de générer du code assembleur"
 
 #: cobc/cobc.c:3299
 msgid "invalid output file name"
@@ -480,10 +478,9 @@ msgid "Too many errors in compilation group: %d maximum errors"
 msgstr "Trop d'erreurs dans le groupe de compilation : %d erreurs maximum"
 
 #: cobc/cobc.c:6632
-#, fuzzy, c-format
-#| msgid "%s: %d: Too many continuation lines"
+#, c-format
 msgid "%s:%d: too many continuation lines"
-msgstr "%s: %d: Trop de lignes de continuation"
+msgstr "%s:%d: trop de lignes de continuation"
 
 #: cobc/cobc.c:7552
 msgid "parsing:"
@@ -511,7 +508,8 @@ msgstr "ligne de commande :"
 msgid "unexpected CONSTANT item"
 msgstr "élément CONSTANT inattendu"
 
-#: cobc/codegen.c:2981 cobc/codegen.c:3261 cobc/codegen.c:8523 cobc/tree.c:1413
+#: cobc/codegen.c:2981 cobc/codegen.c:3261 cobc/codegen.c:8523
+#: cobc/tree.c:1413
 #, c-format
 msgid "unexpected cast type: %d"
 msgstr "type de transtypage inattendu : %d"
@@ -647,14 +645,12 @@ msgid "use of complete/fixed reserved words"
 msgstr "utilisation des mots réservés complet/fixé"
 
 #: cobc/config.def:52
-#, fuzzy
-#| msgid "set number of spaces that are assumed for tabs"
 msgid "number of spaces that are assumed for tabs"
-msgstr "défini le nombre d'espaces à utiliser avec les tabulations"
+msgstr "nombre d'espaces à utiliser avec les tabulations"
 
 #: cobc/config.def:55
 msgid "right margin column number for fixed-form reference-format"
-msgstr ""
+msgstr "numéro de colonne pour la marge de droite du format de référence avec la forme fixe"
 
 #: cobc/config.def:57 cobc/config.def:63
 msgid "<number>"
@@ -685,10 +681,16 @@ msgid ""
 "                        * \"none\" to do no explicit initialization\n"
 "                        * default: \"init\""
 msgstr ""
+"initialisation par défaut pour les champs sans VALUE, peut être\n"
+"                        * caractère entre guillemets\n"
+"                        * décimal 0..255 représentant un caractère\n"
+"                        * « init » pour l'initialisation de PICTURE/USAGE\n"
+"                        * « none » pour ne rien initialiser explicitement\n"
+"                        * par défaut : « init »"
 
 #: cobc/config.def:83
 msgid "default reference-format, may be one of: "
-msgstr ""
+msgstr "format de référence par défaut, peut être : "
 
 #: cobc/config.def:86
 msgid "binary byte size - defines the allocated bytes according to PIC, may be one of: 2-4-8, 1-2-4-8, 1--8"
@@ -727,14 +729,8 @@ msgid "allow complex OCCURS DEPENDING ON"
 msgstr "autoriser des OCCURS DEPENDING ON complexes"
 
 #: cobc/config.def:115
-#, fuzzy
-#| msgid ""
-#| "adjust items following OCCURS DEPENDING\n"
-#| "\t\t\t- requires implicit/explicit relaxed syntax"
 msgid "adjust items following OCCURS DEPENDING (implies complex-odo)"
-msgstr ""
-"ajuster les éléments suivants OCCURS DEPENDING\n"
-"\t\t\t- requière la syntaxe relaxée implicite/explicite"
+msgstr "ajuster les éléments suivants OCCURS DEPENDING (implique complex-odo)"
 
 #: cobc/config.def:118
 msgid "allow REDEFINES to other than last equal level number"
@@ -829,10 +825,8 @@ msgid "implicitly define a variable if an ASSIGN DYNAMIC does not match any data
 msgstr "définir implicitement une variable si un ASSIGN DYNAMIC ne correspond à aucun élément de donnée"
 
 #: cobc/config.def:187
-#, fuzzy
-#| msgid "specifying call-convention by mnemonic"
 msgid "specifying device by mnemonic"
-msgstr "spécifie l'appel par convention avec une mnémonique"
+msgstr "spécifie le périphérique avec une mnémonique"
 
 #: cobc/config.def:193
 msgid ""
@@ -843,6 +837,12 @@ msgid ""
 "                        * statements must not start in Area A; and\n"
 "                        * separator periods must not be within Area A."
 msgstr ""
+"vérifie le contenu de Area A (lorsque le format de référence supporte l'application de Area A),\n"
+"                        les vérifications activées incluent :\n"
+"                        * division, section, noms de paragraphes, indicateurs de niveau (FD, SD, RD et CD),\n"
+"                          et les nombres de haut niveau (01 et 77) doivent démarrer dans Area A ;\n"
+"                        * les instructions ne peuvent pas démarrer dans Area A et\n"
+"                        * les points séparateurs ne peuvent pas être dans Area A."
 
 #: cobc/config.def:203
 msgid "comment paragraphs in IDENTIFICATION DIVISION (AUTHOR, DATE-WRITTEN, ...)"
@@ -850,13 +850,11 @@ msgstr "commenter les paragraphes dans DENTIFICATION DIVISION (AUTHOR, DATE-WRIT
 
 #: cobc/config.def:207
 msgid "CONTROL DIVISION"
-msgstr ""
+msgstr "CONTRÔLE DE LA DIVISION"
 
 #: cobc/config.def:211 cobc/ppparse.y:101 cobc/ppparse.y:104
-#, fuzzy
-#| msgid "zero-length literal"
 msgid "partial replacing with literal"
-msgstr "littéral de longueur nulle"
+msgstr "partiel remplacé par un littéral"
 
 #: cobc/config.def:214
 msgid "MEMORY-SIZE clause"
@@ -899,10 +897,8 @@ msgid "SYNCHRONIZED clause"
 msgstr "clause SYNCHRONIZED"
 
 #: cobc/config.def:244 cobc/parser.y:8193
-#, fuzzy
-#| msgid "SYNCHRONIZED clause"
 msgid "LEFT/RIGHT phrases in SYNCHRONIZED clause"
-msgstr "clause SYNCHRONIZED"
+msgstr "phrases LEFT/RIGHT dans une clause SYNCHRONIZED"
 
 #: cobc/config.def:247
 msgid "SPECIAL-NAMES clause"
@@ -921,10 +917,8 @@ msgid "STOP-identifier statement"
 msgstr "instruction identificateur STOP"
 
 #: cobc/config.def:259
-#, fuzzy
-#| msgid "ALTER statement"
 msgid "STOP ERROR statement"
-msgstr "instruction ALTER"
+msgstr "instruction STOP ERROR"
 
 #: cobc/config.def:262
 msgid "DEBUGGING MODE and debugging indicator"
@@ -1083,8 +1077,8 @@ msgstr "la clause REDEFINES ne suit pas le nom d'entrée dans la définition"
 msgid "record sizes does not match RECORD clause"
 msgstr "la taille des enregistrements ne correspond pas à la clause RECORD"
 
-#: cobc/config.def:383 cobc/parser.y:5736 cobc/parser.y:5750 cobc/parser.y:5763
-#: cobc/parser.y:5774
+#: cobc/config.def:383 cobc/parser.y:5736 cobc/parser.y:5750
+#: cobc/parser.y:5763 cobc/parser.y:5774
 msgid "RECORD DELIMITER clause"
 msgstr "clause RECORD DELIMITER"
 
@@ -1102,7 +1096,7 @@ msgstr "instruction manquante (par exemple, IF / PERFORM vide)"
 
 #: cobc/config.def:395
 msgid "missing period in PROCEDURE DIVISION (when reference format supports Area A enforcement)"
-msgstr ""
+msgstr "point manquant dans PROCEDURE DIVISION (quand le format de référence supporte l'application de Area A)"
 
 #: cobc/config.def:398
 msgid "zero-length literals, e.g. '' and \"\""
@@ -1141,18 +1135,16 @@ msgid "VSAM status in FILE STATUS"
 msgstr "statut VSAM dans FILE STATUS"
 
 #: cobc/config.def:425
-#, fuzzy
-#| msgid "LOCAL-STORAGE SECTION implies RECURSIVE attribute"
 msgid "CALL to own PROGRAM-ID implies RECURSIVE attribute"
-msgstr "LOCAL-STORAGE SECTION implique l'attribut RECURSIVE"
+msgstr "un appel à son propre PROGRAM-ID implique l'attribut RECURSIVE"
 
 #: cobc/config.def:428
 msgid "DEPENDING clause in RECORD CONTAINS"
-msgstr ""
+msgstr "clause DEPENDING dans RECORD CONTAINS"
 
 #: cobc/config.def:431 cobc/tree.c:3584
 msgid "PICTURE string with 'L' character"
-msgstr ""
+msgstr "chaîne de caractères PICTURE avec le caractère « L »"
 
 #: cobc/error.c:83
 #, c-format
@@ -1254,19 +1246,17 @@ msgid "'%s' is ambiguous; needs qualification"
 msgstr "« %s » est ambigu; qualification requise"
 
 #: cobc/error.c:1090
-#, fuzzy, c-format
-#| msgid "'%s' is not an integer"
+#, c-format
 msgid "'%s' is a special register"
-msgstr "« %s » n'est pas un entier"
+msgstr "« %s » est un registre spécial"
 
 #: cobc/error.c:1093
-#, fuzzy, c-format
-#| msgid "'%s' is not defined"
+#, c-format
 msgid "'%s' internally defined"
-msgstr "« %s » n'est pas défini"
+msgstr "« %s » défini en interne"
 
-#: cobc/error.c:1097 cobc/parser.y:18176 cobc/parser.y:18181 cobc/typeck.c:5000
-#: cobc/typeck.c:5047 cobc/typeck.c:5048
+#: cobc/error.c:1097 cobc/parser.y:18176 cobc/parser.y:18181
+#: cobc/typeck.c:5000 cobc/typeck.c:5047 cobc/typeck.c:5048
 #, c-format
 msgid "'%s' defined here"
 msgstr "« %s » défini ici"
@@ -1472,14 +1462,12 @@ msgid "'%s' BASED only allowed at the 01 and 77 levels"
 msgstr "« %s » BASED uniquement permis aux niveaux 01 et 77"
 
 #: cobc/field.c:1279
-#, fuzzy, c-format
-#| msgid "'%s' cannot have the OCCURS clause due to '%s'"
+#, c-format
 msgid "'%s' cannot have an OCCURS clause due to '%s'"
-msgstr "« %s » ne peut pas avoir la clause OCCURS à cause de « %s »"
+msgstr "« %s » ne peut pas avoir une clause OCCURS à cause de « %s »"
 
 #: cobc/field.c:1298
-#, fuzzy, c-format
-#| msgid "the original definition '%s' should not have OCCURS clause"
+#, c-format
 msgid "the original definition '%s' should not have an OCCURS clause"
 msgstr "la définition originale « %s » ne devrait pas avoir de clause OCCURS"
 
@@ -1498,16 +1486,14 @@ msgid "the original definition '%s' cannot be variable length"
 msgstr "la définition originale « %s » ne peut pas être de longueur variable"
 
 #: cobc/field.c:1335
-#, fuzzy, c-format
-#| msgid "'%s' cannot have JUSTIFIED RIGHT"
+#, c-format
 msgid "'%s' cannot have JUSTIFIED RIGHT clause"
-msgstr "« %s » ne peut pas avoir JUSTIFIED RIGHT"
+msgstr "« %s » ne peut pas avoir de clause JUSTIFIED RIGHT"
 
 #: cobc/field.c:1342
-#, fuzzy, c-format
-#| msgid "cannot have BLANK WHEN ZERO without PIC"
+#, c-format
 msgid "'%s' cannot have BLANK WHEN ZERO clause"
-msgstr "BLANK WHEN ZERO ne peut pas être utilisé sans PIC"
+msgstr "« %s » ne peut pas avoir de clause BLANK WHEN ZERO"
 
 #: cobc/field.c:1348
 #, c-format
@@ -1515,10 +1501,9 @@ msgid "SCREEN group item '%s' has invalid clause"
 msgstr "l'élément de groupe SCREEN « %s » a une clause invalide"
 
 #: cobc/field.c:1436
-#, fuzzy, c-format
-#| msgid "%s clause not compatible with USAGE %s"
+#, c-format
 msgid "%s USAGE %s incompatible with %s USAGE %s"
-msgstr "la clause %s n'est pas compatible avec USAGE %s"
+msgstr "%s USAGE %s n'est pas compatible avec %s USAGE %s"
 
 #: cobc/field.c:1516
 #, c-format
@@ -1571,7 +1556,7 @@ msgstr "« %s » n'est pas numérique, il ne peut donc pas avoir BLANK WHEN ZE
 #: cobc/field.c:1691
 #, c-format
 msgid "elements in VALUE clause for '%s' (%d) exceed max amount (%d)"
-msgstr ""
+msgstr "les éléments dans la clause VALUE pour « %s » (%d) dépasse la quantité maximale (%d)"
 
 #: cobc/field.c:1708 cobc/field.c:1712
 #, c-format
@@ -1609,10 +1594,8 @@ msgid "cannot have PIC without FROM, TO or USING"
 msgstr "ne peut avoir PIC sans FROM, TO ou USING"
 
 #: cobc/field.c:1822
-#, fuzzy
-#| msgid "cannot have JUSTIFIED without PIC"
 msgid "cannot have numeric VALUE without PIC"
-msgstr "JUSTIFIED ne peut pas être utilisé sans PIC"
+msgstr "impossible d'avoir une VALUE numérique sans PIC"
 
 #: cobc/field.c:1831
 msgid "cannot have FROM, TO or USING without PIC"
@@ -1702,10 +1685,8 @@ msgid "ignoring SYNCHRONIZED for group item '%s'"
 msgstr "ignore SYNCHRONIZED pour les élément de groupe « %s »"
 
 #: cobc/field.c:2686 cobc/field.c:2954
-#, fuzzy
-#| msgid "allow larger REDEFINES items"
 msgid "larger REDEFINES"
-msgstr "autoriser de plus grands éléments avec REDEFINES"
+msgstr "plus grand REDEFINES"
 
 #: cobc/field.c:2699 cobc/field.c:2957 cobc/field.c:2962
 #, c-format
@@ -1739,7 +1720,7 @@ msgstr "%s et %s sont mutuellement exclusifs"
 
 #: cobc/field.c:3068 cobc/parser.y:7529 cobc/parser.y:7566
 msgid "variable-length PICTURE"
-msgstr ""
+msgstr "PICTURE de longueur variable"
 
 #: cobc/field.c:3187
 msgid "literal type does not match numeric data type"
@@ -1896,6 +1877,11 @@ msgid ""
 "                        * ibm: translation to restricted ASCII as per IBM\n"
 "                        * gcos: translation to extended ASCII as per GCOS7"
 msgstr ""
+"  -febcdic-table=[DEFAULT|RESTRICTED-GC|IBM|GCOS]\tdéfinir la table de traduction EBCDIC :\n"
+"                        * par défaut : traduction vers ASCII étendu selon MF\n"
+"                        * restricted-gc : traduction uniquement depuis ASCII restreint\n"
+"                        * ibm : traduction vers ASCII restreint selon IBM\n"
+"                        * gcos : traduction vers ASCII étendu selon GCOS7"
 
 #: cobc/flag.def:107
 msgid ""
@@ -1922,16 +1908,12 @@ msgid "  -fstack-on-heap       PERFORM stack allocated on heap"
 msgstr "  -fstack-on-heap       appliquer PERFORM d'une pile allouée sur le tas"
 
 #: cobc/flag.def:123
-#, fuzzy
-#| msgid ""
-#| "  -fstack-check         PERFORM stack checking\n"
-#| "                        * turned on by -debug or -g"
 msgid ""
 "  -fstack-extended      store origin of entrypoints and PERFORM\n"
 "                        * turned on by -debug/-dump"
 msgstr ""
-"  -fstack-check         vérification de pile PERFORM\n"
-"                        * activé par -debug ou -g"
+"  -fstack-extended      stocker l'origine des points d'entrées et PERFORM\n"
+"                        * activé par -debug/-dump"
 
 #: cobc/flag.def:128
 msgid ""
@@ -1970,16 +1952,12 @@ msgstr ""
 "                        * « D » dans la colonne indicateur ou >>D flottant"
 
 #: cobc/flag.def:147
-#, fuzzy
-#| msgid ""
-#| "  -fsource-location     generate source location code\n"
-#| "                        * turned on by -debug/-g/-ftraceall/-fec"
 msgid ""
 "  -fsource-location     generate source location code\n"
 "                        * turned on by -debug/-ftraceall/-fec/-dump"
 msgstr ""
 "  -fsource-location     générer le code de localisation des sources\n"
-"                        * activé par -debug/-g/-ftraceall/-fec"
+"                        * activé par -debug/-ftraceall/-fec/-dump"
 
 #: cobc/flag.def:151
 msgid "  -fimplicit-init       automatic initialization of the COBOL runtime system"
@@ -1994,24 +1972,20 @@ msgstr ""
 "                        compile effectivement comme un programme RECURSIVE"
 
 #: cobc/flag.def:158
-#, fuzzy
-#| msgid ""
-#| "  -fstack-check         PERFORM stack checking\n"
-#| "                        * turned on by -debug or -g"
 msgid ""
 "  -fstack-check         PERFORM stack checking\n"
 "                        * turned on by -debug/-g"
 msgstr ""
 "  -fstack-check         vérification de pile PERFORM\n"
-"                        * activé par -debug ou -g"
+"                        * activé par -debug/-g"
 
 #: cobc/flag.def:162
 msgid "  -fsection-exit-check  check that code execution does not leave the scope of SECTIONs"
-msgstr ""
+msgstr "  -fsection-exit-check  vérifier que l'exécution du code ne quitte pas la portée des SECTION"
 
 #: cobc/flag.def:165
 msgid "  -fimplicit-goback-check\tcheck that code execution does not end implicit at end of PROCEDURE DIVISION"
-msgstr ""
+msgstr "  -fimplicit-goback-check\tvérifier que l'exécution du code ne se termine pas de manière implicite à la fin de PROCEDURE DIVISION"
 
 #: cobc/flag.def:168
 msgid ""
@@ -2038,15 +2012,11 @@ msgstr ""
 "                        « | » traité comme commentaire flottant"
 
 #: cobc/flag.def:181
-#, fuzzy
-#| msgid ""
-#| "  -fnotrunc             allow numeric field overflow\n"
-#| "                        * non-ANSI behaviour"
 msgid ""
 "  -fno-trunc            allow numeric field overflow\n"
 "                        * non-ANSI behaviour"
 msgstr ""
-"  -fnotrunc             autoriser le débordement de champ numérique\n"
+"  -fno-trunc            autoriser le débordement de champs numériques\n"
 "                        * comportement non-ANSI"
 
 #: cobc/flag.def:185
@@ -2070,16 +2040,12 @@ msgid "  -fstatic-call         output static function calls for the CALL stateme
 msgstr "  -fstatic-call         sortir les appels de fonctions statiques pour l'instruction CALL"
 
 #: cobc/flag.def:202
-#, fuzzy
-#| msgid ""
-#| "  -fno-gen-c-decl-static-call\tdisable generation of C function declations\n"
-#| "                        for subroutines with static CALL"
 msgid ""
 "  -fno-gen-c-decl-static-call\tdisable generation of C function declarations\n"
 "                        for subroutines with static CALL"
 msgstr ""
 "  -fno-gen-c-decl-static-call\tdésactiver la génération des déclarations de\n"
-"                        fonctions C pour les sous-routines sans CALL statique"
+"                        fonctions C pour les sous-routines avec CALL statique"
 
 #: cobc/flag.def:206
 msgid ""
@@ -2156,45 +2122,26 @@ msgid "Options:"
 msgstr "Options :"
 
 #: cobc/help.c:59
-#, fuzzy
-#| msgid "  -h, -help             display this help and exit"
 msgid "  -h, --help            display this help and exit"
-msgstr "  -h, -help             afficher cette aide et terminer"
+msgstr "  -h, --help            afficher cette aide et terminer"
 
 #: cobc/help.c:60
-#, fuzzy
-#| msgid "  -V, -version          display compiler version and exit"
 msgid "  -V, --version         display compiler version information and exit"
-msgstr "  -V, -version          afficher la version du compilateur et terminer"
+msgstr "  -V, --version         afficher les informations de version du compilateur et terminer"
 
 #: cobc/help.c:61
-#, fuzzy
-#| msgid "  -V, -version          display compiler version and exit"
 msgid "  -dumpversion          display compiler version and exit"
-msgstr "  -V, -version          afficher la version du compilateur et terminer"
+msgstr "  -dumpversion          afficher la version du compilateur et terminer"
 
 #: cobc/help.c:62
-#, fuzzy
-#| msgid ""
-#| "  -i, -info             display compiler information (build/environment)\n"
-#| "                        and exit"
 msgid ""
 "  -i, --info            display compiler information (build/environment)\n"
 "                        and exit"
 msgstr ""
-"  -i, -info             afficher les informations du compilateur (compilation/environnement)\n"
+"  -i, --info            afficher les informations du compilateur (compilation/environnement)\n"
 "                        et terminer"
 
 #: cobc/help.c:64
-#, fuzzy
-#| msgid ""
-#| "  -v, -verbose          verbose mode, display additional information;\n"
-#| "                        multiple -v options increase the verbosity,\n"
-#| "                        the maximum is 3 as follows:\n"
-#| "                        (1) display compiler version and the commands\n"
-#| "                        invoked by the compiler,\n"
-#| "                        (2) pass verbose option to assembler/compiler\n"
-#| "                        (3) pass verbose option to linker"
 msgid ""
 "  -v, --verbose         verbose mode, display additional information;\n"
 "                        multiple -v options increase the verbosity,\n"
@@ -2204,7 +2151,7 @@ msgid ""
 "                        (2) pass verbose option to assembler/compiler\n"
 "                        (3) pass verbose option to linker"
 msgstr ""
-"  -v, -verbose          mode verbeux, affiche des informations supplémentaires ;\n"
+"  -v, --verbose         mode verbeux, affiche des informations supplémentaires ;\n"
 "                        plusieurs options -v augmentent la verbosité,\n"
 "                        le maximum est 3 comme suit :\n"
 "                        (1) affiche la version du compilateur et les commandes\n"
@@ -2213,10 +2160,8 @@ msgstr ""
 "                        (3) passe l'option verbeuse à l'éditeur de liens"
 
 #: cobc/help.c:71
-#, fuzzy
-#| msgid "  -q, -brief            reduced displays, commands invoked not shown"
 msgid "  -q, --brief           reduced displays, commands invoked not shown"
-msgstr "  -q, -brief            affichage réduit, commandes appelées pas montrées"
+msgstr "  -q, --brief           affichage réduit, commandes appelées pas montrées"
 
 #: cobc/help.c:72
 msgid "  -###                  like -v but commands not executed"
@@ -2231,21 +2176,10 @@ msgid "  -m                    build a dynamically loadable module (default)"
 msgstr "  -m                    compiler un module chargé dynamiquement (défaut)"
 
 #: cobc/help.c:75
-#, fuzzy
-#| msgid "  -j [<args>], -job[=<args>]\trun program after build, passing <args>"
 msgid "  -j [<args>], --job[=<args>]\trun program after build, passing <args>"
-msgstr "  -j [<args>], -job[=<args>]\texécuter le programme après la compilation en lui passant <args>"
+msgstr "  -j [<args>], --job[=<args>]\texécuter le programme après la compilation en lui passant <args>"
 
 #: cobc/help.c:76
-#, fuzzy
-#| msgid ""
-#| "  -std=<dialect>        warnings/features for a specific dialect\n"
-#| "                        <dialect> can be one of:\n"
-#| "                        default, cobol2014, cobol2002, cobol85, xopen,\n"
-#| "                        ibm-strict, ibm, mvs-strict, mvs,\n"
-#| "                        mf-strict, mf, bs2000-strict, bs2000,\n"
-#| "                        acu-strict, acu, rm-strict, rm;\n"
-#| "                        see configuration files in directory config"
 msgid ""
 "  -std=<dialect>        warnings/features for a specific dialect\n"
 "                        <dialect> can be one of:\n"
@@ -2261,22 +2195,21 @@ msgstr ""
 "                        default, cobol2014, cobol2002, cobol85, xopen,\n"
 "                        ibm-strict, ibm, mvs-strict, mvs,\n"
 "                        mf-strict, mf, bs2000-strict, bs2000,\n"
-"                        acu-strict, acu, rm-strict, rm;\n"
+"                        acu-strict, acu, rm-strict, rm, gcos-strict,\n"
+"                        gcos;\n"
 "                        voyez les fichiers de configuration dans le répertoire de configuration"
 
 #: cobc/help.c:84
-#, fuzzy
-#| msgid "  -F, -free             use free source format"
 msgid "  -F, --free            use free source format (alias for -fformat=free)"
-msgstr "  -F, -free             utiliser le format source libre"
+msgstr "  -F, --free            utiliser le format source libre (synonyme de -fformat=free)"
 
 #: cobc/help.c:85
-#, fuzzy
-#| msgid "  -fixed                use fixed source format (default)"
 msgid ""
 "  --fixed               use fixed source format (default; alias for\n"
 "                        -fformat=fixed)"
-msgstr "  -fixed                utiliser le format source fixe (défaut)"
+msgstr ""
+"  --fixed               utiliser le format source fixe (défaut ; synonyme de\n"
+"                        -fformat=fixed)"
 
 #: cobc/help.c:87
 msgid "  -O, -O2, -O3, -Os     enable optimization"
@@ -2291,28 +2224,21 @@ msgid "  -g                    enable C compiler debug and stack check"
 msgstr "  -g                    activer le débogage et le contrôle de pile du compilateur C"
 
 #: cobc/help.c:90
-#, fuzzy
-#| msgid ""
-#| "  -d, -debug            enable all run-time error checking,\n"
-#| "                        equal to -fstack-check -fec=EC-ALL"
 msgid ""
 "  -d, --debug           enable all run-time error checking,\n"
 "                        equal to -fstack-check -fec=EC-ALL"
 msgstr ""
-"  -d, -debug            activer tous les contrôles d'erreurs à l'exécution,\n"
+"  -d, --debug           activer tous les contrôles d'erreurs à l'exécution,\n"
 "                        identique à -fstack-check -fec=EC-ALL"
 
 #: cobc/help.c:93
-#, fuzzy
-#| msgid ""
-#| "  -fec=<exception-name>\tenable code generation for <exception-name>,\n"
-#| "                        sets -fsource-location"
 msgid ""
 "  -fec=<exception-name>\tenable code generation for <exception-name>,\n"
 "                        see --list-exceptions for the possible values,\n"
 "                        sets -fsource-location"
 msgstr ""
 "  -fec=<nom-exception>\tactiver la génération de code pour <nom-exception>,\n"
+"                        consultez --list-exceptions pour les valeurs possibles,\n"
 "                        défini -fsource-location"
 
 #: cobc/help.c:97
@@ -2364,22 +2290,16 @@ msgid "  -P[=<dir or file>]    generate preprocessed program listing (.lst)"
 msgstr "  -P[=<rép ou fichier>] générer le listing du programme pré-traité (.lst)"
 
 #: cobc/help.c:112
-#, fuzzy
-#| msgid ""
-#| "  -Xref                 generate cross reference through 'cobxref'\n"
-#| "                        (V. Coen's 'cobxref' must be in path)"
 msgid ""
 "  -X, --Xref            generate cross reference through 'cobxref'\n"
 "                        (V. Coen's 'cobxref' must be in path)"
 msgstr ""
-"  -Xref                 générer la référence croisée via « cobxref »\n"
+"  -X, --Xref            générer la référence croisée via « cobxref »\n"
 "                        (« cobxref » de V. Coen doit être dans le path)"
 
 #: cobc/help.c:115
-#, fuzzy
-#| msgid "  -Xref                 specify cross reference in listing"
 msgid "  -X, --Xref            specify cross reference in listing"
-msgstr "  -Xref                 spécifier la référence croisée dans le listing"
+msgstr "  -X, --Xref            spécifier la référence croisée dans le listing"
 
 #: cobc/help.c:117
 msgid "  -I <directory>        add <directory> to copy/include search path"
@@ -2410,51 +2330,35 @@ msgid "  -K <entry>            generate CALL to <entry> as static"
 msgstr "  -K <entrée>           générer CALL à <entrée> comme statique"
 
 #: cobc/help.c:124
-#, fuzzy
-#| msgid "  -conf=<file>          user-defined dialect configuration; see -std"
 msgid "  --conf=<file>         user-defined dialect configuration; see -std"
-msgstr "  -conf=<fichier>       configuration du dialecte définie par l'utilisateur; voyez -std"
+msgstr "  --conf=<fichier>      configuration du dialecte définie par l'utilisateur; voyez -std"
 
 #: cobc/help.c:125
-#, fuzzy
-#| msgid "  -list-reserved        display reserved words"
 msgid "  --list-reserved       display reserved words"
-msgstr "  -list-reserved        afficher les mots réservés"
+msgstr "  --list-reserved       afficher les mots réservés"
 
 #: cobc/help.c:126
-#, fuzzy
-#| msgid "  -list-intrinsics      display intrinsic functions"
 msgid "  --list-intrinsics     display intrinsic functions"
-msgstr "  -list-intrinsics      afficher les fonctions intrinsèques"
+msgstr "  --list-intrinsics     afficher les fonctions intrinsèques"
 
 #: cobc/help.c:127
-#, fuzzy
-#| msgid "  -list-mnemonics       display mnemonic names"
 msgid "  --list-mnemonics      display mnemonic names"
-msgstr "  -list-mnemonics       afficher les noms des mnémoniques"
+msgstr "  --list-mnemonics      afficher les noms des mnémoniques"
 
 #: cobc/help.c:128
-#, fuzzy
-#| msgid "  -list-mnemonics       display mnemonic names"
 msgid "  --list-exceptions     display exception names"
-msgstr "  -list-mnemonics       afficher les noms des mnémoniques"
+msgstr "  --list-exceptions     afficher les noms des exceptions"
 
 #: cobc/help.c:129
-#, fuzzy
-#| msgid "  -list-system          display system routines"
 msgid "  --list-system         display system routines"
-msgstr "  -list-system          afficher les routines systèmes"
+msgstr "  --list-system         afficher les routines systèmes"
 
 #: cobc/help.c:130
-#, fuzzy
-#| msgid ""
-#| "  -save-temps[=<dir>]   save intermediate files\n"
-#| "                        * default: current directory"
 msgid ""
 "  --save-temps[=<dir>]  save intermediate files\n"
 "                        * default: current directory"
 msgstr ""
-"  -save-temps[=<rép>]   enregistrer les fichiers intermédiaires\n"
+"  --save-temps[=<rép>]  enregistrer les fichiers intermédiaires\n"
 "                        * défaut : répertoire courant"
 
 #: cobc/help.c:132
@@ -2520,12 +2424,12 @@ msgstr ""
 "  -fno-ibmcomp          défini -fbinary-size=1--8  -fsynchronized-clause=ignore"
 
 #: cobc/help.c:201
-#, fuzzy
-#| msgid "  -falternate-ebcdic    use restricted ASCII to EBCDIC translate"
 msgid ""
 "  -falternate-ebcdic    use restricted ASCII to EBCDIC translate\n"
 "  -fno-alternate-ebcdic use extended ASCII to EBCDIC translate"
-msgstr "  -falternate-ebcdic    utiliser une traduction restreinte de ASCII vers EBCDIC"
+msgstr ""
+"  -falternate-ebcdic    utiliser une traduction restreinte de ASCII vers EBCDIC\n"
+"  -fno-alternate-ebcdic utiliser la traduction étendue de ASCII vers EBCDIC"
 
 #: cobc/help.c:230
 msgid "Compiler dialect configuration options:"
@@ -2582,16 +2486,16 @@ msgstr "le registre spécial à activer"
 
 #: cobc/help.c:282
 msgid "<word> or <word>:<definition>, where definition uses backslash escaped spaces"
-msgstr ""
+msgstr "<mot> ou <mot>:<définition>, où les définitions utilisent des espaces échappées par une barre oblique inverse"
 
 #: cobc/parser.y:315 cobc/parser.y:323
 #, c-format
 msgid "'%s' should start in Area A"
-msgstr ""
+msgstr "« %s » devrait démarrer dans Area A"
 
 #: cobc/parser.y:331 cobc/parser.y:333
 msgid "start of statement in Area A"
-msgstr ""
+msgstr "début d'instruction dans Area A"
 
 #: cobc/parser.y:344 cobc/parser.y:379
 #, c-format
@@ -2633,10 +2537,9 @@ msgid "cannot specify both %s and %s"
 msgstr "ne peut spécifier à la fois %s et %s"
 
 #: cobc/parser.y:677
-#, fuzzy, c-format
-#| msgid "%s ignored"
+#, c-format
 msgid "%s is ignored"
-msgstr "%s ignoré"
+msgstr "%s est ignoré"
 
 #: cobc/parser.y:686
 #, c-format
@@ -2675,10 +2578,9 @@ msgid "%s header missing"
 msgstr "en-tête %s manquant"
 
 #: cobc/parser.y:807
-#, fuzzy, c-format
-#| msgid "%s header missing - assumed"
+#, c-format
 msgid "%s header assumed"
-msgstr "en-tête %s manquant - présumé"
+msgstr "en-tête %s présumé"
 
 #: cobc/parser.y:939
 #, c-format
@@ -2900,7 +2802,7 @@ msgstr "exécutable demandé mais pas de programme trouvé"
 
 #: cobc/parser.y:3488
 msgid "prototypes must be come before any program/function definitions"
-msgstr ""
+msgstr "les prototypes doivent venir avant toute définition de programme/fonction"
 
 #: cobc/parser.y:3691
 msgid "COMMON may only be used in a contained program"
@@ -2937,10 +2839,8 @@ msgid "invalid %s clause"
 msgstr "clause %s invalide"
 
 #: cobc/parser.y:4616 cobc/parser.y:4754
-#, fuzzy
-#| msgid "literal type does not match numeric data type"
 msgid "type does not match alphabet"
-msgstr "le type littéral ne correspond pas au type de donnée numérique"
+msgstr "le type ne correspond pas à l'alphabet"
 
 #: cobc/parser.y:4760
 msgid "CLASS IS integer IN alphabet-name"
@@ -3045,8 +2945,8 @@ msgstr "description RECORD manquante ou invalide"
 msgid "duplicate file description for %s"
 msgstr "description de fichier dupliquée pour %s"
 
-#: cobc/parser.y:6288 cobc/parser.y:6893 cobc/parser.y:7389 cobc/parser.y:13485
-#: cobc/parser.y:16686
+#: cobc/parser.y:6288 cobc/parser.y:6893 cobc/parser.y:7389
+#: cobc/parser.y:13485 cobc/parser.y:16686
 #, c-format
 msgid "%s is invalid in a user FUNCTION"
 msgstr "%s est invalide dans une FUNCTION utilisateur"
@@ -3112,10 +3012,9 @@ msgid "%s not allowed here"
 msgstr "%s pas permis ici"
 
 #: cobc/parser.y:7528
-#, fuzzy, c-format
-#| msgid "%s FILE requires a FROM clause"
+#, c-format
 msgid "%s requires DEPENDING clause"
-msgstr "FILE %s requiert une clause FROM"
+msgstr "%s requiert une clause DEPENDING"
 
 #: cobc/parser.y:7544
 msgid "a locale-format PICTURE string must only consist of '9', '.', '+', 'Z' and the currency-sign"
@@ -3123,11 +3022,11 @@ msgstr "une chaîne PICTURE au format internationalisable doit consister uniquem
 
 #: cobc/parser.y:7554
 msgid "DEPENDING clause needs either an OCCURS clause or a variable-length PICTURE"
-msgstr ""
+msgstr "la clause DEPENDING exige soit une clause OCCURS ou un PICTURE de longueur variable"
 
 #: cobc/parser.y:7560
 msgid "only USAGE DISPLAY may specify a variable-length PICTURE"
-msgstr ""
+msgstr "seul USAGE DISPLAY peut spécifier un PICTURE de longueur variable"
 
 #: cobc/parser.y:7610 cobc/typeck.c:4752
 #, c-format
@@ -3155,12 +3054,12 @@ msgstr "INDEXED devrait suivre ASCENDING/DESCENDING"
 
 #: cobc/parser.y:8317
 msgid "amount of entries in FROM and TO must match"
-msgstr ""
+msgstr "le nombre d'entrées dans FROM et TO doit être le même"
 
 #: cobc/parser.y:8326
 #, c-format
 msgid "entry in FROM (%d) must be <= entry in TO (%d)"
-msgstr ""
+msgstr "l'entrée dans FROM (%d) doit être <= à l'entrée dans TO (%d)"
 
 #: cobc/parser.y:8585
 #, c-format
@@ -3177,16 +3076,13 @@ msgid "GLOBAL is not allowed with RD"
 msgstr "GLOBAL n'est pas permis avec RD"
 
 #: cobc/parser.y:9247
-#, fuzzy, c-format
-#| msgid "'%s' is not a valid USAGE"
+#, c-format
 msgid "%s is not valid for VARYING"
-msgstr "« %s » n'est pas USAGE valide"
+msgstr "%s n'est pas valide pour VARYING"
 
 #: cobc/parser.y:9283
-#, fuzzy
-#| msgid "Nested OCCURS in report"
 msgid "LINE with OCCURS is not supported"
-msgstr "OCCURS imbriqués dans le rapport"
+msgstr "LINE avec OCCURS n'est pas supporté"
 
 #: cobc/parser.y:9323
 msgid "PLUS is not recommended with LEFT, RIGHT or CENTER"
@@ -3221,10 +3117,9 @@ msgid "screen positions from data-item"
 msgstr "positions écran depuis un élément de donnée"
 
 #: cobc/parser.y:9821
-#, fuzzy, c-format
-#| msgid "missing definitions:"
+#, c-format
 msgid "missing %s"
-msgstr "définitions manquantes :"
+msgstr "%s manquant"
 
 #: cobc/parser.y:10508
 msgid "OCCURS screen items"
@@ -3375,13 +3270,11 @@ msgstr "le mode d'adressage doit être soit 24 ou 31 bits"
 
 #: cobc/parser.y:12061
 msgid "CALL to own PROGRAM-ID"
-msgstr ""
+msgstr "appel CALL à son propre PROGRAM-ID"
 
 #: cobc/parser.y:12062
-#, fuzzy
-#| msgid "recursive program call - assuming RECURSIVE attribute"
 msgid "assuming RECURSIVE attribute"
-msgstr "appel de programme récursif – suppose l'attribut RECURSIVE"
+msgstr "suppose l'attribut RECURSIVE"
 
 #: cobc/parser.y:12082
 msgid "STATIC CALL convention ignored because of ON EXCEPTION"
@@ -3404,10 +3297,9 @@ msgid "NESTED phrase is only valid with literal"
 msgstr "phrase NESTED est uniquement valide dans un littéral"
 
 #: cobc/parser.y:12296
-#, fuzzy, c-format
-#| msgid "OMITTED only allowed when arguments are passed BY REFERENCE"
+#, c-format
 msgid "%s only allowed when arguments are passed %s"
-msgstr "OMITTED uniquement permis quand les arguments sont passés BY REFERENCE"
+msgstr "%s uniquement permis quand les arguments sont passés avec %s"
 
 #: cobc/parser.y:12385
 msgid "RETURNING item must have level 01 or 77"
@@ -3496,7 +3388,7 @@ msgstr "IF sans instruction impérative"
 
 #: cobc/parser.y:14497 cobc/parser.y:14506
 msgid "single-character literal or data item expected"
-msgstr ""
+msgstr "littéral sur un caractère ou élément de donnée attendu"
 
 #: cobc/parser.y:14524
 msgid "TALLYING clause is incomplete"
@@ -3672,10 +3564,9 @@ msgid "XML GENERATE SUPPRESS clause"
 msgstr "clause XML GENERATE SUPPRESS"
 
 #: cobc/parser.y:17392
-#, fuzzy, c-format
-#| msgid "'%s' is not a locale name"
+#, c-format
 msgid "'%s' is not a schema name"
-msgstr "« %s » n'est pas un nom d'environnement linguistique"
+msgstr "« %s » n'est pas un nom de schéma"
 
 #: cobc/parser.y:17510
 msgid "NOT SIZE ERROR before SIZE ERROR"
@@ -3739,10 +3630,8 @@ msgid "'%s' not indexed"
 msgstr "« %s » pas indexé"
 
 #: cobc/parser.y:18180
-#, fuzzy
-#| msgid "table SORT requires KEY phrase"
 msgid "SEARCH ALL requires KEY phrase"
-msgstr "le tri de la table requiert la phrase KEY"
+msgstr "SEARCH ALL requiert la phrase KEY"
 
 #: cobc/parser.y:18204 cobc/parser.y:18229
 #, c-format
@@ -3837,7 +3726,7 @@ msgstr "ne peut spécifier le décalage et SYSTEM-OFFSET en même temps"
 #: cobc/parser.y:19731 cobc/parser.y:19751 cobc/parser.y:19771
 #: cobc/parser.y:19777
 msgid "optional period"
-msgstr ""
+msgstr "point optionnel"
 
 #: cobc/pplex.l:257 cobc/pplex.l:2219 cobc/pplex.l:2233
 msgid "debugging indicator"
@@ -3875,10 +3764,9 @@ msgid "copybook not found in library '%s', library-name ignored"
 msgstr "copybook pas trouvé dans la bibliothèque « %s », le nom de la bibliothèque est ignoré"
 
 #: cobc/pplex.l:1469
-#, fuzzy, c-format
-#| msgid "ignoring invalid directive: '%s'"
+#, c-format
 msgid "ignoring %s directive because of %s"
-msgstr "directive invalide ignorée : « %s »"
+msgstr "directive %s ignorée à cause de %s"
 
 #: cobc/pplex.l:1645
 #, c-format
@@ -3924,16 +3812,14 @@ msgid "invalid continuation in comment entry"
 msgstr "continuation invalide dans une entrée commentaire"
 
 #: cobc/pplex.l:2241
-#, fuzzy, c-format
-#| msgid "invalid indicator '%c' at column 7"
+#, c-format
 msgid "invalid indicator '\\' at column %d"
-msgstr "indicateur « %c » invalide à la colonne 7"
+msgstr "indicateur « \\ » invalide à la colonne %d"
 
 #: cobc/pplex.l:2253
-#, fuzzy, c-format
-#| msgid "invalid indicator '%c' at column 7"
+#, c-format
 msgid "invalid indicator '%c' at column %d"
-msgstr "indicateur « %c » invalide à la colonne 7"
+msgstr "indicateur « %c » invalide à la colonne %d"
 
 #: cobc/pplex.l:2312 cobc/pplex.l:2323
 msgid "invalid line continuation"
@@ -3950,7 +3836,7 @@ msgstr "texte source après la zone de texte de programme (colonne %d)"
 
 #: cobc/ppparse.y:107
 msgid "unexpected COBOL word in partial replacement phrase"
-msgstr ""
+msgstr "mot COBOL inattendu dans la phrase de remplacement partiel"
 
 #: cobc/ppparse.y:256
 msgid "directive comparison on different types"
@@ -3962,10 +3848,9 @@ msgid "duplicate DEFINE directive '%s'"
 msgstr "directive DEFINE « %s » dupliquée"
 
 #: cobc/ppparse.y:331 cobc/ppparse.y:341
-#, fuzzy, c-format
-#| msgid "invalid constant in DEFINE directive"
+#, c-format
 msgid "invalid constant %s in DEFINE directive"
-msgstr "constante invalide dans la directive DEFINE"
+msgstr "constante %s invalide dans la directive DEFINE"
 
 #: cobc/ppparse.y:439
 #, c-format
@@ -4008,16 +3893,14 @@ msgid "feature name"
 msgstr "nom de fonctionnalité"
 
 #: cobc/reserved.c:4129
-#, fuzzy, c-format
-#| msgid "reserved word must have less than %d characters"
+#, c-format
 msgid "reserved word (%s) must have less than %d characters"
-msgstr "les mots réservés doivent avoir moins de %d caractères"
+msgstr "le mot réservé (%s) doit avoir moins de %d caractères"
 
 #: cobc/reserved.c:4149
-#, fuzzy, c-format
-#| msgid "should not contain '%c'"
+#, c-format
 msgid "reserved word (%s) may not contain '%c'"
-msgstr "ne devrait pas contenir « %c »"
+msgstr "le mot réservé (%s) ne peut pas contenir « %c »"
 
 #: cobc/reserved.c:4166
 msgid "ignored asterisk at end of alias target"
@@ -4070,25 +3953,22 @@ msgstr "Illimité"
 
 #: cobc/reserved.c:5046
 msgid "Exception Name"
-msgstr ""
+msgstr "Nom d'exception"
 
 #: cobc/reserved.c:5148
-#, fuzzy, c-format
-#| msgid "special register %s is unknown, needs a definition"
+#, c-format
 msgid "special register '%s' is unknown, needs a definition"
-msgstr "le registre spécial %s est inconnu, on a besoin d'une définition"
+msgstr "le registre spécial « %s » est inconnu, on a besoin d'une définition"
 
 #: cobc/reserved.c:5155
-#, fuzzy, c-format
-#| msgid "special register %s is unknown, needs a definition"
+#, c-format
 msgid "special register '%s' has a bad definition: %s"
-msgstr "le registre spécial %s est inconnu, on a besoin d'une définition"
+msgstr "le registre spécial « %s » a une mauvaise définition : %s"
 
 #: cobc/reserved.c:5159
-#, fuzzy, c-format
-#| msgid "special register %s is unknown"
+#, c-format
 msgid "special register '%s' is unknown"
-msgstr "le registre spécial %s est inconnu"
+msgstr "le registre spécial « %s » est inconnu"
 
 #: cobc/reserved.c:5249
 msgid "Internal registers"
@@ -4120,14 +4000,13 @@ msgid "No (Context sensitive)"
 msgstr "Non (Sensible au contexte)"
 
 #: cobc/scanner.l:272
-#, fuzzy, c-format
-#| msgid "'%s' is not a default reserved word, so cannot be aliased"
+#, c-format
 msgid "'%s' is not a reserved word, so cannot be removed"
-msgstr "« %s » n'est pas un mot réservé par défaut, donc, il ne peut pas avoir d'alias"
+msgstr "« %s » n'est pas un mot réservé, donc, il ne peut pas être supprimé"
 
 #: cobc/scanner.l:320
 msgid "separator period in Area A"
-msgstr ""
+msgstr "point comme séparateur dans Area A"
 
 #: cobc/scanner.l:1067
 #, c-format
@@ -4173,10 +4052,9 @@ msgid "invalid %s literal: '%s'"
 msgstr "littéral %s invalide : « %s »"
 
 #: cobc/scanner.l:1350
-#, fuzzy, c-format
-#| msgid "literal length exceeds %d characters"
+#, c-format
 msgid "literal length exceeds %u characters"
-msgstr "la longueur du littéral dépasse %d caractères"
+msgstr "la longueur du littéral dépasse %u caractères"
 
 #: cobc/scanner.l:1365
 #, c-format
@@ -4214,10 +4092,9 @@ msgstr "littéral booléen-hexadécimal"
 
 #: cobc/scanner.l:1480 cobc/scanner.l:1499 cobc/scanner.l:1608
 #: cobc/scanner.l:1659 cobc/scanner.l:1754 cobc/scanner.l:1824
-#, fuzzy, c-format
-#| msgid "literal length %d exceeds %d characters"
+#, c-format
 msgid "literal length %lu exceeds %u characters"
-msgstr "la longueur %d du littéral dépasse %d caractères"
+msgstr "la longueur %lu du littéral dépasse %u caractères"
 
 #: cobc/scanner.l:1490
 msgid "hexadecimal-national literal"
@@ -4265,16 +4142,14 @@ msgid "HP COBOL octal literal"
 msgstr "littéral octal HP COBOL"
 
 #: cobc/scanner.l:1921
-#, fuzzy, c-format
-#| msgid "literal length %d exceeds maximum of %d digits"
+#, c-format
 msgid "literal length %lu exceeds maximum of %u digits"
-msgstr "la longueur %d du littéral dépasse le maximum de %d chiffres"
+msgstr "la longueur %lu du littéral dépasse le maximum de %u chiffres"
 
 #: cobc/scanner.l:1927
-#, fuzzy, c-format
-#| msgid "literal length %d exceeds %d digits"
+#, c-format
 msgid "literal length %lu exceeds %u digits"
-msgstr "la longueur %d du littéral dépasse %d chiffres"
+msgstr "la longueur %lu du littéral dépasse %u chiffres"
 
 #: cobc/scanner.l:2039 cobc/tree.c:3845
 #, c-format
@@ -4337,28 +4212,22 @@ msgid "'%s' is not a default reserved word, so cannot be aliased"
 msgstr "« %s » n'est pas un mot réservé par défaut, donc, il ne peut pas avoir d'alias"
 
 #: cobc/scanner.l:2387
-#, fuzzy, c-format
-#| msgid "'%s' is already reserved; you may want MAKESYN instead"
+#, c-format
 msgid "'%s' is already reserved"
-msgstr "« %s » est déjà réservé ; vous voulez peut-être MAKESYN à la place"
+msgstr "« %s » est déjà réservé"
 
 #: cobc/scanner.l:2389
-#, fuzzy
-#| msgid "'%s' is already reserved; you may want MAKESYN instead"
 msgid "you may want MAKESYN instead"
-msgstr "« %s » est déjà réservé ; vous voulez peut-être MAKESYN à la place"
+msgstr "vous voulez peut-être MAKESYN à la place"
 
 #: cobc/scanner.l:2414
-#, fuzzy, c-format
-#| msgid "alias target '%s' is not a default reserved word"
+#, c-format
 msgid "'%s' is not a reserved word"
-msgstr "la cible du synonyme « %s » n'est pas un mot réservé par défaut"
+msgstr "« %s » n'est pas un mot réservé"
 
 #: cobc/scanner.l:2415
-#, fuzzy
-#| msgid "'%s' is not a reserved word; you may want ADDSYN or OVERRIDE instead"
 msgid "you may want ADDSYN or OVERRIDE instead"
-msgstr "« %s » n'est pas un mot réservé ; vous voulez peut-être ADDSYN ou OVERRIDE à la place"
+msgstr "vous voulez peut-être ADDSYN ou OVERRIDE à la place"
 
 #: cobc/tree.c:391
 #, c-format
@@ -4553,10 +4422,9 @@ msgid "number or constant in parentheses is not an unsigned integer"
 msgstr "le nombre ou la constante entre parenthèses n'est pas un entier non signé"
 
 #: cobc/tree.c:3280
-#, fuzzy, c-format
-#| msgid "only up to 9 significant digits are permitted within parentheses"
+#, c-format
 msgid "only up to %d significant digits are permitted within parentheses"
-msgstr "au maximum 9 chiffres significatifs sont permis entre parenthèses"
+msgstr "au maximum %d chiffres significatifs sont permis entre parenthèses"
 
 #: cobc/tree.c:3288
 msgid "number or constant in parentheses must be greater than zero"
@@ -4615,10 +4483,8 @@ msgid "exponent"
 msgstr "exposant"
 
 #: cobc/tree.c:3586
-#, fuzzy
-#| msgid "S must be at start of PICTURE string"
 msgid "L must be at start of PICTURE string"
-msgstr "S doit être au début de la chaîne de PICTURE"
+msgstr "L doit être au début de la chaîne de PICTURE"
 
 #: cobc/tree.c:3604
 msgid "S must be at start of PICTURE string"
@@ -4652,16 +4518,14 @@ msgid "numeric field cannot be larger than %d digits"
 msgstr "le champ numérique ne peut pas être plus grand que %d chiffres"
 
 #: cobc/tree.c:4267
-#, fuzzy, c-format
-#| msgid "PICTURE clause required for '%s'"
+#, c-format
 msgid "needs PICTURE clause for SUM %s"
-msgstr "clause PICTURE requise pour « %s »"
+msgstr "clause PICTURE requise pour SUM %s"
 
 #: cobc/tree.c:4274
-#, fuzzy, c-format
-#| msgid "PICTURE clause required for '%s'"
+#, c-format
 msgid "non-numeric PICTURE clause for SUM %s"
-msgstr "clause PICTURE requise pour « %s »"
+msgstr "clause PICTURE non numérique requise pour SUM %s"
 
 #: cobc/tree.c:4346 cobc/tree.c:4359
 #, c-format
@@ -4734,10 +4598,9 @@ msgstr "clause %s ignorée"
 #: cobc/tree.c:4890 cobc/typeck.c:7695 cobc/typeck.c:14389 cobc/typeck.c:14441
 #: cobc/typeck.c:14477 libcob/fileio.c:4598 libcob/screenio.c:3720
 #: libcob/screenio.c:3750
-#, fuzzy, c-format
-#| msgid "compiler is not configured to support %s"
+#, c-format
 msgid "runtime is not configured to support %s"
-msgstr "le compilateur n'est pas configurée pour supporter %s"
+msgstr "le système d'exécution n'est pas configurée pour supporter %s"
 
 #: cobc/tree.c:5395
 #, c-format
@@ -4791,7 +4654,7 @@ msgstr "division par la constante ZÉRO"
 #: cobc/tree.c:5879 cobc/tree.c:5886
 #, c-format
 msgid "%s should be COMP-X/COMP-5 for logical operator"
-msgstr ""
+msgstr "%s devrait être COMP-X/COMP-5 pour un opérateur logique"
 
 #: cobc/tree.c:5927 cobc/tree.c:5932 cobc/tree.c:6151 cobc/typeck.c:5675
 #: cobc/typeck.c:5684 cobc/typeck.c:5691 cobc/typeck.c:6772 cobc/typeck.c:6913
@@ -4921,7 +4784,7 @@ msgstr "FUNCTION « %s » a un premier argument invalide"
 #: cobc/typeck.c:584
 #, c-format
 msgid "%s should be COMP-5/COMP-X for logical operator"
-msgstr ""
+msgstr "%s devrait être COMP-5/COMP-X pour un opérateur logique"
 
 #: cobc/typeck.c:850
 #, c-format
@@ -5117,52 +4980,47 @@ msgid "'%s' USING item duplicates RETURNING item"
 msgstr "l'élément USING « %s » duplique l'élément RETURNING"
 
 #: cobc/typeck.c:3177
-#, fuzzy, c-format
-#| msgid "redefinition of '%s'"
+#, c-format
 msgid "prototype and definition of '%s' do not match"
-msgstr "redéfinition de « %s »"
+msgstr "le prototype et la définition de « %s » ne correspondent pas"
 
 #: cobc/typeck.c:3256
 #, c-format
 msgid "parameters #%d ('%s' in the definition and '%s' in the prototype) differ"
-msgstr ""
+msgstr "les paramètres #%d (« %s » dans la définition et « %s » dans le prototype) diffèrent"
 
 #: cobc/typeck.c:3259
 #, c-format
 msgid "returning items ('%s' in the definition and '%s' in the prototype) differ"
-msgstr ""
+msgstr "les éléments retournés (« %s » dans la définition et « %s » dans le prototype) diffèrent"
 
 #: cobc/typeck.c:3295
-#, fuzzy
-#| msgid "no definition/prototype seen for function '%s'"
 msgid "definition is a program but the prototype is a function"
-msgstr "pas de définition/prototype vu pour la fonction « %s »"
+msgstr "la définition est un programme alors que le prototype est une fonction"
 
 #: cobc/typeck.c:3299
 msgid "definition is a function but the prototype is a program"
-msgstr ""
+msgstr "la définition est une fonction alors que le prototype est un programme"
 
 #: cobc/typeck.c:3306
 msgid "DECIMAL-POINT IS COMMA clauses differ"
-msgstr ""
+msgstr "les clauses DECIMAL-POINT IS COMMA diffèrent"
 
 #: cobc/typeck.c:3312
 msgid "CURRENCY clauses differ"
-msgstr ""
+msgstr "les clauses CURRENCY diffèrent"
 
 #: cobc/typeck.c:3348
-#, fuzzy
-#| msgid "wrong number of WHEN parameters"
 msgid "number of parameters differ"
-msgstr "mauvais nombre de paramètres à WHEN"
+msgstr "les nombres de paramètres diffèrent"
 
 #: cobc/typeck.c:3358
 msgid "definition has a RETURNING item but prototype does not"
-msgstr ""
+msgstr "la définition a un élément RETURNING alors que le prototype n'en a pas"
 
 #: cobc/typeck.c:3362
 msgid "definition does not have a RETURNING item but prototype does"
-msgstr ""
+msgstr "la définition n'a pas d'élément RETURNING alors que le prototype en a"
 
 #: cobc/typeck.c:3411
 #, c-format
@@ -5170,68 +5028,61 @@ msgid "unexpected tree tag: %d"
 msgstr "balise d'arbre inattendue : %d"
 
 #: cobc/typeck.c:3433
-#, fuzzy, c-format
-#| msgid "parameters passed BY VALUE"
+#, c-format
 msgid "expected argument #%d, %s, to be passed BY VALUE"
-msgstr "paramètres passés BY VALUE"
+msgstr "l'argument #%d, %s, est attendu comme étant passé BY VALUE"
 
 #: cobc/typeck.c:3437
 #, c-format
 msgid "expected argument #%d, %s, to be passed BY REFERENCE/CONTENT"
-msgstr ""
+msgstr "l'argument #%d, %s, est attendu comme étant passé BY REFERENCE/CONTENT"
 
 #: cobc/typeck.c:3455 cobc/typeck.c:3580 cobc/typeck.c:3583
-#, fuzzy, c-format
-#| msgid "parameter %d is not within range of %d"
+#, c-format
 msgid "argument #%d is not optional"
-msgstr "le paramètre %d n'est pas dans la plage de %d"
+msgstr "l'argument #%d n'est pas optionnel"
 
 #: cobc/typeck.c:3468
 #, c-format
 msgid "argument #%d must be at least %d bytes long"
-msgstr ""
+msgstr "l'argument #%d doit contenir au moins %d octets"
 
 #: cobc/typeck.c:3483
 #, c-format
 msgid "argument #%d is a different type of pointer than the parameter"
-msgstr ""
+msgstr "l'argument #%d est un type de pointeur différent que le paramètre"
 
 #: cobc/typeck.c:3490
 #, c-format
 msgid "argument #%d is ANY LENGTH, but expecting a fixed size item"
-msgstr ""
+msgstr "l'argument #%d est ANY LENGTH mais un élément de taille fixe est attendu"
 
 #: cobc/typeck.c:3518
 #, c-format
 msgid "argument #%d, %s, does not conform to the parameter definition"
-msgstr ""
+msgstr "l'argument #%d, %s, n'est pas conforme à la définition du paramètre"
 
 #: cobc/typeck.c:3566
 #, c-format
 msgid "expecting up to %d arguments, but found %d"
-msgstr ""
+msgstr "jusqu'à %d arguments attendus mais %d trouvés"
 
 #: cobc/typeck.c:3598
-#, fuzzy
-#| msgid "function RETURNING item may not be ANY LENGTH"
 msgid "the RETURNING item is of a fixed size, not ANY LENGTH"
-msgstr "une fonction avec RETURNING d'un élément ne peut pas être ANY LENGTH"
+msgstr "l'élément de RETURNING a une taille fixe au lieu de ANY LENGTH"
 
 #: cobc/typeck.c:3603
-#, fuzzy, c-format
-#| msgid "RETURNING item must have level 01"
+#, c-format
 msgid "RETURNING item %s is not a valid type"
-msgstr "RETURNING un élément doit avoir le niveau 01"
+msgstr "l'élément %s de RETURNING n'est pas d'un type valide"
 
 #: cobc/typeck.c:3609
-#, fuzzy
-#| msgid "unexpected CONSTANT item"
 msgid "unexpected RETURNING item"
-msgstr "élément CONSTANT inattendu"
+msgstr "élément RETURNING inattendu"
 
 #: cobc/typeck.c:3612
 msgid "expecting a RETURNING item, but none provided"
-msgstr ""
+msgstr "un élément est attendu pour RETURNING mais aucun n'est fourni"
 
 #: cobc/typeck.c:3663
 #, c-format
@@ -5316,16 +5167,14 @@ msgid "CRT STATUS item '%s' should be defined in WORKING-STORAGE or LOCAL-STORAG
 msgstr "l'élément CRT STATUS « %s » devrait être défini dans WORKING-STORAGE ou LOCAL-STORAGE"
 
 #: cobc/typeck.c:4369
-#, fuzzy, c-format
-#| msgid "'%s' CRT STATUS must have at least 4 digits"
+#, c-format
 msgid "'%s' numeric CRT STATUS must have at least 4 digits"
-msgstr "le CRT STATUS « %s » doit avoir au moins 4 chiffres"
+msgstr "le numérique de CRT STATUS « %s » doit avoir au moins 4 chiffres"
 
 #: cobc/typeck.c:4375
-#, fuzzy, c-format
-#| msgid "'%s' CRT STATUS must be 4 characters long"
+#, c-format
 msgid "'%s' CRT STATUS must be 3 or 4 characters long"
-msgstr "le CRT STATUS « %s » doit avoir une longueur de 4 caractères"
+msgstr "le CRT STATUS « %s » doit avoir 3 ou 4 caractères"
 
 #: cobc/typeck.c:4397
 #, c-format
@@ -5343,8 +5192,7 @@ msgid "FILE STATUS '%s' is a numeric field, but I-O status codes are not numeric
 msgstr "FILE STATUS « %s » est un champ numérique, mais les codes de statut E/S ne sont pas numériques en général"
 
 #: cobc/typeck.c:4418
-#, fuzzy, c-format
-#| msgid "FILE STATUS '%s' must be alphanumeric or numeric field"
+#, c-format
 msgid "FILE STATUS '%s' must be an alphanumeric or numeric field"
 msgstr "FILE STATUS « %s » doit être un champ alphanumérique ou numérique"
 
@@ -5477,7 +5325,7 @@ msgstr "référence invalide à « %s » (dans DECLARATIVES)"
 #: cobc/typeck.c:4996
 #, c-format
 msgid "GO TO paragraph '%s' which is defined in another SECTION"
-msgstr ""
+msgstr "GO TO vers le paragraphe « %s » qui est défini dans une autre SECTION"
 
 #: cobc/typeck.c:5006
 #, c-format
@@ -5485,16 +5333,14 @@ msgid "'%s' is not a procedure name"
 msgstr "« %s » n'est pas un nom de procédure"
 
 #: cobc/typeck.c:5041
-#, fuzzy, c-format
-#| msgid "'%s' and '%s' must be in the same record"
+#, c-format
 msgid "%s and %s are not in the same SECTION"
-msgstr "« %s » et « %s » doivent être dans le même enregistrement"
+msgstr "%s et %s ne sont pas dans la même SECTION"
 
 #: cobc/typeck.c:5046
-#, fuzzy, c-format
-#| msgid "'%s' defined here"
+#, c-format
 msgid "%s is defined before %s"
-msgstr "« %s » défini ici"
+msgstr "%s est défini avant %s"
 
 #: cobc/typeck.c:5088
 #, c-format
@@ -5633,10 +5479,8 @@ msgid "cannot change address of '%s', which is not BASED or a LINKAGE item"
 msgstr "impossible de changer l'adresse de « %s » qui n'est pas BASED ni un élément LINKAGE"
 
 #: cobc/typeck.c:8121
-#, fuzzy
-#| msgid "target of ALLOCATE is not a BASED item"
 msgid "target of ALLOCATE must have BASED clause"
-msgstr "la cible de ALLOCATE n'est pas un élément BASED"
+msgstr "la cible de ALLOCATE doit avoir une clause BASED"
 
 #: cobc/typeck.c:8155 cobc/typeck.c:8571
 msgid "amount must be specified as a numeric expression"
@@ -5960,16 +5804,14 @@ msgid "cannot change address of '%s', which is not level 1 or 77"
 msgstr "impossible de changer l'adresse de « %s » qui n'est pas de niveau 1 ou 77"
 
 #: cobc/typeck.c:12721
-#, fuzzy, c-format
-#| msgid "SET target '%s' is not numeric, an INDEX or a POINTER"
+#, c-format
 msgid "SET target '%s' is not a POINTER for FCD"
-msgstr "la cible « %s » de SET n'est pas numérique, un INDEX ou un POINTER"
+msgstr "la cible « %s » de SET n'est pas un POINTER pour FCD"
 
 #: cobc/typeck.c:12789
-#, fuzzy, c-format
-#| msgid "SET target '%s' is not numeric, an INDEX or a POINTER"
+#, c-format
 msgid "SET target '%s' is not a POINTER for FCD-KEYDEF"
-msgstr "la cible « %s » de SET n'est pas numérique, un INDEX ou un POINTER"
+msgstr "la cible « %s » de SET n'est pas un POINTER pour FCD-KEYDEF"
 
 #: cobc/typeck.c:12882
 msgid "field does not have a FALSE clause"
@@ -6032,10 +5874,8 @@ msgid "'%s' is not an elementary item"
 msgstr "« %s » n'est pas un élément élémentaire"
 
 #: cobc/typeck.c:13407
-#, fuzzy
-#| msgid "RETURNING item must have level 01 or 77"
 msgid "STRING items must be all NATIONAL or none"
-msgstr "un élément avec RETURNING doit avoir le niveau 01 ou 77"
+msgstr "les éléments STRING doivent tous être NATIONAL ou rien"
 
 #: cobc/typeck.c:13555
 msgid "LOCK clause invalid here"
@@ -6075,10 +5915,9 @@ msgid "%s must be elementary"
 msgstr "%s doit être élémentaire"
 
 #: cobc/typeck.c:13935
-#, fuzzy, c-format
-#| msgid "%s must be USAGE DISPLAY or NATIONAL"
+#, c-format
 msgid "STRING item '%s' must be USAGE DISPLAY or NATIONAL"
-msgstr "%s doit être USAGE DISPLAY ou NATIONAL"
+msgstr "l'élément STRING « %s » doit être USAGE DISPLAY ou NATIONAL"
 
 #: cobc/typeck.c:13947
 #, c-format
@@ -6186,18 +6025,14 @@ msgid "  -Wno-unfinished       do not warn if unfinished features are used"
 msgstr "  -Wno-unfinished       ne pas avertir si des fonctionnalités incomplètes sont utilisées"
 
 #: cobc/warning.def:37
-#, fuzzy
-#| msgid "  -Wno-pending          do not warn if pending features are mentioned"
 msgid "  -Wno-pending          do not warn if pending features are used"
-msgstr "  -Wno-pending          ne pas avertir si des fonctionnalités en attentes sont mentionnées"
+msgstr "  -Wno-pending          ne pas avertir si des fonctionnalités en attentes sont utilisées"
 
 #: cobc/warning.def:40
 msgid "  -Wno-repository-checks\tdo not warn/check for program/function/external signature mismatch"
-msgstr ""
+msgstr "  -Wno-repository-checks\tne pas avertir/vérifier les désaccords dans le programme/fonction/signature externe"
 
 #: cobc/warning.def:43
-#, fuzzy
-#| msgid "  -Wno-ignored-error    do not warn about errors in unreachable code parts and so normally ignored"
 msgid "  -Wno-ignored-error    do not warn about errors in code parts which are unreachable and so normally ignored"
 msgstr "  -Wno-ignored-error    ne pas avertir à propos d'erreurs dans des parties du code qui sont inatteignables et sont normalement ignorées"
 
@@ -6230,20 +6065,16 @@ msgid "  -Wpossible-overlap    warn about MOVE of items that may overlap dependi
 msgstr "  -Wpossible-overlap    avertir au sujet d'éléments manipulés avec MOVE qui peuvent avoir un recouvrement dépendant des variables"
 
 #: cobc/warning.def:67
-#, fuzzy
-#| msgid "  -Wparentheses         warn about lack of parentheses around AND within OR"
 msgid "  -Wparentheses         warn if parentheses are omitted around AND within OR"
-msgstr "  -Wparentheses         avertir si il manque des parenthèses autours de AND à l'intérieur de OR"
+msgstr "  -Wparentheses         avertir s'il manque des parenthèses autours de AND à l'intérieur de OR"
 
 #: cobc/warning.def:70
 msgid "  -Wstrict-typing       warn strictly about type mismatch"
 msgstr "  -Wstrict-typing       avertir de manière stricte à propos des désaccords de types"
 
 #: cobc/warning.def:73
-#, fuzzy
-#| msgid "  -Wimplicit-define     warn about implicitly defined data items"
 msgid "  -Wimplicit-define     warn whenever data items are implicitly defined"
-msgstr "  -Wimplicit-define     avertir au sujet des éléments de données définis implicitement"
+msgstr "  -Wimplicit-define     avertir quand des éléments de données sont définis implicitement"
 
 #: cobc/warning.def:76
 msgid "  -Wno-corresponding    do not warn about CORRESPONDING with no matching items"
@@ -6270,14 +6101,12 @@ msgid "  -Wconstant-expression  warn about expressions that always resolve to tr
 msgstr "  -Wconstant-expression  avertir au sujet des expressions qui aboutissent toujours à vrai/faux"
 
 #: cobc/warning.def:94
-#, fuzzy
-#| msgid "  -Wconstant-expression  warn about expressions that always resolve to true/false"
 msgid "  -Wconstant-numlit-expression\twarn about numeric expressions that always resolve to true/false"
-msgstr "  -Wconstant-expression  avertir au sujet des expressions qui aboutissent toujours à vrai/faux"
+msgstr "  -Wconstant-numlit-expression\tavertir au sujet des expressions numériques qui aboutissent toujours à vrai/faux"
 
 #: cobc/warning.def:97
 msgid "  -Wlarger-01-redefines  warn about larger redefines allowed by COBOL standards"
-msgstr ""
+msgstr "  -Wlarger-01-redefines  avertir au sujet des plus grosses redéfinitions autorisées par les standards COBOL"
 
 #: cobc/warning.def:100
 msgid "  -Wcolumn-overflow     warn about text after program-text area, FIXED format"
@@ -6300,40 +6129,32 @@ msgid "  -Wno-dialect          do not warn about dialect specific issues"
 msgstr "  -Wno-dialect          ne pas avertir au sujet de problèmes spécifiques au dialecte"
 
 #: cobc/warning.def:115
-#, fuzzy
-#| msgid "  -Wno-others           do not warn about different issues"
 msgid "  -Wno-goto-section     do not warn about GO TO section-name"
-msgstr "  -Wno-others           ne pas avertir à propos de problèmes différents"
+msgstr "  -Wno-goto-section     ne pas avertir à propos de nom de section de GO TO"
 
 #: cobc/warning.def:118
 msgid "  -Wgoto-different-section\twarn about GO TO a praragraph defined in a different section"
-msgstr ""
+msgstr "  -Wgoto-different-section\tavertir à propos de GO TO allant vers un paragraphe défini dans une section différente"
 
 #: cobc/warning.def:121
 msgid "  -Wsuspicious-perform-thru\twarn if PERFORM THRU references procedures not in ascending order or multiple sections"
-msgstr ""
+msgstr "  -Wsuspicious-perform-thru\tavertir si PERFORM THRU référence des procédures pas dans l'ordre croissant ou des sections multiples"
 
 #: cobc/warning.def:124
-#, fuzzy
-#| msgid "  -Wdangling-text       warn source text after program-area"
 msgid "  -Wdangling-text       warn about source text after program-area"
 msgstr "  -Wdangling-text       avertir au sujet de texte source après la zone du programme"
 
 #: cobc/warning.def:127
-#, fuzzy
-#| msgid "  -Wno-dialect          do not warn about dialect specific issues"
 msgid "  -Wno-missing-newline  do not warn about missing newlines"
-msgstr "  -Wno-dialect          ne pas avertir au sujet de problèmes spécifiques au dialecte"
+msgstr "  -Wno-missing-newline  ne pas avertir au sujet de sauts de ligne manquants"
 
 #: cobc/warning.def:130
 msgid "  -Wno-others           do not warn about different issues"
 msgstr "  -Wno-others           ne pas avertir à propos de problèmes différents"
 
 #: cobc/warning.def:133
-#, fuzzy
-#| msgid "  -Wno-unfinished       do not warn if unfinished features are used"
 msgid "  -Wno-unsupported      do not warn if runtime does not support a feature used"
-msgstr "  -Wno-unfinished       ne pas avertir si des fonctionnalités incomplètes sont utilisées"
+msgstr "  -Wno-unsupported      ne pas avertir si le système d'exécution ne supporte pas une fonctionnalité utilisée"
 
 #: libcob/call.c:94
 #, c-format
@@ -6346,10 +6167,9 @@ msgid "%s: PROGRAM name exceeds %d characters"
 msgstr "%s : le nom du programme dépasse %d caractères"
 
 #: libcob/call.c:842
-#, fuzzy, c-format
-#| msgid "%s: PROGRAM name exceeds %d characters"
+#, c-format
 msgid "%s: FUNCTION name exceeds %d characters"
-msgstr "%s : le nom du programme dépasse %d caractères"
+msgstr "%s : le nom du la fonction dépasse %d caractères"
 
 #: libcob/call.c:1067
 msgid "indeterminable error in resolve of COBOL CALL"
@@ -6456,41 +6276,35 @@ msgstr "erreur arithmétique fatale"
 
 #: libcob/common.c:1245
 msgid "interrupt from keyboard"
-msgstr ""
+msgstr "interruption depuis le clavier"
 
 #: libcob/common.c:1249
 msgid "hangup"
-msgstr ""
+msgstr "raccroché"
 
 #: libcob/common.c:1253
 msgid "quit"
-msgstr ""
+msgstr "quitté"
 
 #: libcob/common.c:1257
-#, fuzzy
-#| msgid "Definition"
 msgid "termination"
-msgstr "Définition"
+msgstr "fin"
 
 #: libcob/common.c:1261
 msgid "emt termination"
-msgstr ""
+msgstr "fin emt"
 
 #: libcob/common.c:1265
 msgid "broken pipe"
-msgstr ""
+msgstr "pipe interrompu"
 
 #: libcob/common.c:1269
-#, fuzzy
-#| msgid "signal %s"
 msgid "I/O signal"
-msgstr "signal %s"
+msgstr "signal E/S"
 
 #: libcob/common.c:1273
-#, fuzzy
-#| msgid "attempt to reference unallocated memory"
 msgid "attempt to reference invalid memory address"
-msgstr "tentative de référencer une mémoire non allouée"
+msgstr "tentative de référencer une adresse mémoire invalide"
 
 #: libcob/common.c:1277
 msgid "bus error"
@@ -6498,45 +6312,37 @@ msgstr "erreur de bus"
 
 #: libcob/common.c:1281
 msgid "illegal instruction"
-msgstr ""
+msgstr "instruction illégale"
 
 #: libcob/common.c:1285
-#, fuzzy
-#| msgid "aborting"
 msgid "abort"
 msgstr "interruption"
 
 #: libcob/common.c:1289
 msgid "process killed"
-msgstr ""
+msgstr "processus tué"
 
 #: libcob/common.c:1293
-#, fuzzy
-#| msgid "caught signal"
 msgid "alarm signal"
-msgstr "signal intercepté"
+msgstr "signal d'alarme"
 
 #: libcob/common.c:1297
-#, fuzzy
-#| msgid "preprocessing:"
 msgid "stop process"
-msgstr "pré-traitement :"
+msgstr "arrêt du processus"
 
 #: libcob/common.c:1301 libcob/common.c:1305
 msgid "child process stopped"
-msgstr ""
+msgstr "processus enfant stoppé"
 
 #. TRANSLATORS: This msgid is used for an OS signal like SIGABRT.
 #: libcob/common.c:1312
-#, fuzzy
-#| msgid "signal %s"
 msgid "signal"
-msgstr "signal %s"
+msgstr "signal"
 
 #. TRANSLATORS: This msgid is shown for a requested but not complete stack trace.
 #: libcob/common.c:1314
 msgid "(more COBOL runtime elements follow...)"
-msgstr ""
+msgstr "(plus d'éléments du système d'exécution COBOL suivent…)"
 
 #: libcob/common.c:1316 libcob/common.c:8101
 #, c-format
@@ -6561,7 +6367,7 @@ msgstr "CALL à %s requiert %d arguments"
 #: libcob/common.c:3779
 #, c-format
 msgid "code execution leaving %s"
-msgstr ""
+msgstr "exécution du code sortant de %s"
 
 #: libcob/common.c:3789
 #, c-format
@@ -6625,7 +6431,7 @@ msgstr "COB_CURRENT_DATE « %s » est invalide"
 
 #: libcob/common.c:5641 libcob/common.c:5644
 msgid "Program abandoned at user request"
-msgstr ""
+msgstr "Programme abandonné à la demande de l'utilisateur"
 
 #: libcob/common.c:5668
 #, c-format
@@ -6781,7 +6587,7 @@ msgstr "permission refusée"
 
 #: libcob/common.c:8226
 msgid "mismatch of fixed file attributes"
-msgstr ""
+msgstr "désaccord des attributs du fichier"
 
 #: libcob/common.c:8229
 msgid "file already open"
@@ -6829,7 +6635,7 @@ msgstr "confit de partage de fichier"
 
 #: libcob/common.c:8262
 msgid "invalid data in LINE SEQUENTIAL file"
-msgstr ""
+msgstr "donnée invalide dans le fichier LINE SEQUENTIAL"
 
 #: libcob/common.c:8266
 msgid "runtime library is not configured for this operation"
@@ -6884,10 +6690,9 @@ msgid "%s, version %s"
 msgstr "%s, version %s"
 
 #: libcob/common.c:8739
-#, fuzzy, c-format
-#| msgid "License LGPLv3+: GNU LGPL version 3 or later <http://gnu.org/licenses/lgpl.html>"
+#, c-format
 msgid "License LGPLv3+: GNU LGPL version 3 or later <%s>"
-msgstr "Licence LGPLv3+ : GNU LGPL version 3 ou ultérieure <http://gnu.org/licenses/lgpl.fr.html>"
+msgstr "Licence LGPLv3+ : GNU LGPL version 3 ou ultérieure <%s>"
 
 #: libcob/common.c:8803 libcob/common.c:8805
 msgid "dynamic loading"
@@ -6950,10 +6755,8 @@ msgstr "%s appelé avec l'option inconnue : %d"
 
 #. TRANSLATORS: This msgid is shown for a requested but empty stack trace.
 #: libcob/common.c:9597
-#, fuzzy
-#| msgid "%s COBOL runtime is not initialized"
 msgid "No COBOL runtime elements on stack."
-msgstr "%s l'environnement d'exécution COBOL n'est pas initialisé"
+msgstr "Pas d'éléments du système d'exécution COBOL sur la pile."
 
 #: libcob/common.c:9915
 #, c-format
@@ -6994,10 +6797,9 @@ msgstr "impossible de joindre l'environnement BDB (%s), erreur : %d %s"
 
 #: libcob/fileio.c:3458 libcob/fileio.c:3483 libcob/fileio.c:3509
 #: libcob/fileio.c:3528
-#, fuzzy, c-format
-#| msgid "BDB error: %s %s"
+#, c-format
 msgid "BDB (%s), error: %d %s"
-msgstr "erreur BDB : %s %s"
+msgstr "BOB (%s), erreur : %d %s"
 
 #: libcob/fileio.c:6071
 #, c-format
@@ -7031,10 +6833,8 @@ msgstr "SORT est incapable d'acquérir un fichier temporaire"
 #. TRANSLATORS: This msgid is concatenated with a filename;
 #. setup translation to allow this to be followed on the right side.
 #: libcob/fileio.c:8432
-#, fuzzy
-#| msgid "implicit CLOSE of %s"
 msgid "implicit CLOSE of "
-msgstr "CLOSE implicite de %s"
+msgstr "CLOSE implicite de "
 
 #: libcob/fileio.c:9617 libcob/fileio.c:9752
 #, c-format
@@ -7047,22 +6847,19 @@ msgid "ERROR: EXTFH called with wrong file organization %d"
 msgstr "ERREUR : EXTFH appelé avec la mauvaise organisation de fichier %d"
 
 #: libcob/fileio.c:9893
-#, fuzzy, c-format
-#| msgid "ERROR: EXTFH called with FCD version %d"
+#, c-format
 msgid "ERROR: EXTFH called with no %s pointer"
-msgstr "ERREUR : EXTFH appelé avec FCD version %d"
+msgstr "ERREUR : EXTFH appelé avec aucun pointeur %s"
 
 #: libcob/fileio.c:10029
-#, fuzzy, c-format
-#| msgid "ERROR: EXTFH called with FCD version %d"
+#, c-format
 msgid "ERROR: EXTFH called with no %s pointer; Function %d"
-msgstr "ERREUR : EXTFH appelé avec FCD version %d"
+msgstr "ERREUR : EXTFH appelé avec aucun pointeur %s ; Fonction %d"
 
 #: libcob/fileio.c:10208
-#, fuzzy, c-format
-#| msgid "ERROR: EXTFH called with FCD version %d"
+#, c-format
 msgid "ERROR: EXTFH called with unknown Function %d"
-msgstr "ERREUR : EXTFH appelé avec FCD version %d"
+msgstr "ERREUR : EXTFH appelé avec la Fonction %d inconnue"
 
 #: libcob/reportio.c:630
 #, c-format
@@ -7140,67 +6937,42 @@ msgid "  or:  %s options"
 msgstr " ou : %s options"
 
 #: bin/cobcrun.c:126
-#, fuzzy
-#| msgid "  -h, -help                      display this help and exit"
 msgid "  -h, --help                      display this help and exit"
-msgstr "  -h, -help                      afficher cette aide et terminer"
+msgstr "  -h, --help                      afficher cette aide et terminer"
 
 #: bin/cobcrun.c:127
-#, fuzzy
-#| msgid "  -V, -version                   display cobcrun and runtime version and exit"
 msgid "  -V, --version                   display version information for cobcrun + runtime and exit"
-msgstr "  -V, -version                   afficher la version de cobcrun et du runtime et terminer"
+msgstr "  -V, --version                   afficher les informations de version de cobcrun et du système d'exécution et terminer"
 
 #: bin/cobcrun.c:128
-#, fuzzy
-#| msgid "  -V, -version                   display cobcrun and runtime version and exit"
 msgid "  -dumpversion                    display runtime version and exit"
-msgstr "  -V, -version                   afficher la version de cobcrun et du runtime et terminer"
+msgstr "  -dumpversion                    afficher la version du système d'exécution et terminer"
 
 #: bin/cobcrun.c:129
-#, fuzzy
-#| msgid "  -i, -info                      display runtime information (build/environment)"
 msgid "  -i, --info                      display runtime information (build/environment)"
-msgstr "  -i, -info                      afficher les informations d'exécution (compilation/environnement"
+msgstr "  -i, --info                      afficher les informations d'exécution (compilation/environnement"
 
 #: bin/cobcrun.c:130
-#, fuzzy
-#| msgid "  -v, -verbose                   display extended output with --info"
 msgid "  -v, --verbose                   display extended output with --info"
-msgstr "  -v, --verbose                  afficher la sortie étendue avec --info"
+msgstr "  -v, --verbose                   afficher la sortie étendue avec --info"
 
 #: bin/cobcrun.c:132
-#, fuzzy
-#| msgid "  -q, -brief                     reduced displays"
 msgid "  -q, --brief                     reduced displays"
-msgstr "  -q, -brief                     réduire l'affichage"
+msgstr "  -q, --brief                     réduire l'affichage"
 
 #: bin/cobcrun.c:134
-#, fuzzy
-#| msgid "  -c <file>, -config=<file>      set runtime configuration from <file>"
 msgid "  -c <file>, --config=<file>      set runtime configuration from <file>"
-msgstr "  -c <fichier>, -config=<fichier> définir la configuration de l'exécution depuis <fichier>"
+msgstr "  -c <fichier>, --config=<fichier> définir la configuration de l'exécution depuis <fichier>"
 
 #: bin/cobcrun.c:135
-#, fuzzy
-#| msgid ""
-#| "  -r, -runtime-config            display current runtime configuration\n"
-#| "                                 (value and origin for all settings)"
 msgid ""
 "  -r, --runtime-config            display current runtime configuration\n"
 "                                  (value and origin for all settings)"
 msgstr ""
-"  -r, -runtime-config            afficher la configuration d'exécution actuelle\n"
-"                                 (valeur et origine de chaque paramètre)"
+"  -r, --runtime-config            afficher la configuration d'exécution actuelle\n"
+"                                  (valeur et origine de chaque paramètre)"
 
 #: bin/cobcrun.c:137
-#, fuzzy
-#| msgid ""
-#| "  -M <module>, -module=<module>  set entry point module name and/or load path\n"
-#| "                                 where -M module prepends any directory to the\n"
-#| "                                 dynamic link loader library search path\n"
-#| "                                 and any basename to the module preload list\n"
-#| "                                 (COB_LIBRARY_PATH and/or COB_PRELOAD)"
 msgid ""
 "  -M <module>, --module=<module>  set entry point module name and/or load path\n"
 "                                  where -M module prepends any directory to the\n"
@@ -7208,23 +6980,21 @@ msgid ""
 "                                  and any basename to the module preload list\n"
 "                                  (COB_LIBRARY_PATH and/or COB_PRELOAD)"
 msgstr ""
-"  -M <module>, -module=<module>  définir le nom du point d'entrée du module ou du chemin de chargement\n"
-"                                 où -M module ajoute tout répertoire au chemin de recherche\n"
-"                                 de la bibliothèque de chargement dynamique et tout nom de\n"
-"                                 base à la liste de modules préchargés\n"
-"                                 (COB_LIBRARY_PATH ou COB_PRELOAD)"
+"  -M <module>, --module=<module>  définir le nom du point d'entrée du module ou du chemin de chargement\n"
+"                                  où -M module ajoute tout répertoire au chemin de recherche\n"
+"                                  de la bibliothèque de chargement dynamique et tout nom de\n"
+"                                  base à la liste de modules préchargés\n"
+"                                  (COB_LIBRARY_PATH ou COB_PRELOAD)"
 
 #: bin/cobcrun.c:146
-#, fuzzy, c-format
-#| msgid "GnuCOBOL module loader"
+#, c-format
 msgid "GnuCOBOL home page: <%s>"
-msgstr "chargeur de module GnuCOBOL"
+msgstr "Page d'accueil de GnuCOBOL : <%s>"
 
 #: bin/cobcrun.c:148
-#, fuzzy, c-format
-#| msgid "General help using GNU software: <https://www.gnu.org/gethelp/>"
+#, c-format
 msgid "General help using GNU software: <%s>"
-msgstr "Aide générale sur l'utilisation de logiciel GNU: <https://www.gnu.org/software/gethelp.fr.html>"
+msgstr "Aide générale sur l'utilisation de logiciel GNU : <%s>"
 
 #: bin/cobcrun.c:288
 msgid "invalid configuration file name"
@@ -7248,7 +7018,6 @@ msgstr "Essayez « %s --help » pour plus d'informations."
 #~ msgid "set right margin for source (fixed format only)"
 #~ msgstr "défini la marge de droite pour les sources (format fixe uniquement)"
 
-#, c-format
 #~ msgid "level %02d item '%s' cannot have a %s clause"
 #~ msgstr "l'élément de niveau %02d « %s » ne peut pas avoir une clause %s"
 
@@ -7271,7 +7040,6 @@ msgstr "Essayez « %s --help » pour plus d'informations."
 #~ "  -fodoslide            ajuster les éléments suivant OCCURS DEPENDING\n"
 #~ "                        * implique -fcomplex-odo"
 
-#, c-format
 #~ msgid "cannot specify both %s and %s; %s is ignored"
 #~ msgstr "ne peut spécifier à la fois %s et %s; %s est ignoré"
 
@@ -7284,7 +7052,6 @@ msgstr "Essayez « %s --help » pour plus d'informations."
 #~ msgid "JSON PARSE"
 #~ msgstr "analyse JSON"
 
-#, c-format
 #~ msgid "'%s' is not a report group"
 #~ msgstr "« %s » n'est pas un groupe de rapport"
 
@@ -7303,11 +7070,9 @@ msgstr "Essayez « %s --help » pour plus d'informations."
 #~ msgid "field with NULL address"
 #~ msgstr "champ avec une adresse NULL"
 
-#, c-format
 #~ msgid " Last statement of %s was at line %d of %s"
 #~ msgstr "La dernière instruction de %s était à la ligne %d de %s"
 
-#, c-format
 #~ msgid " Last statement of %s unknown"
 #~ msgstr " La dernière instruction de %s est inconnue"
 

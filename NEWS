@@ -1,7 +1,8 @@
 NEWS - user visible changes				-*- outline -*-
 
  GnuCOBOL 3.2rc1  (20230118)
-          3.2 final (depending on feedback) February 2023
+ GnuCOBOL 3.2rc2  (20230210)
+          3.2 final (depending on feedback) around 2023/02/25
 
  planned for final:
    * extending testsuite and documentation

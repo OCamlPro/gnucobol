@@ -25,7 +25,7 @@ dnl
 AC_PREREQ([2.67])  # note: 2.67 is the one found in old msys, 2.69 is commonly available
 
 AC_INIT([GnuCOBOL],
-	[3.2-dev],
+	[3.2-rc2],
 	[bug-gnucobol@gnu.org],
 	[gnucobol],
 	[https://www.gnu.org/software/gnucobol/])
