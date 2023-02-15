@@ -589,6 +589,7 @@ static const struct option long_options[] = {
 	{"P",			CB_OP_ARG, NULL, 'P'},
 	{"Xref",		CB_NO_ARG, NULL, 'X'},
 	{"use-extfh",		CB_RQ_ARG, NULL, 9},	/* this is used by COBOL-IT; Same is -fcallfh= */
+	{"fdiagnostics-plain-output",	CB_NO_ARG, NULL, '/'},
 	{"Wall",		CB_NO_ARG, NULL, 'W'},
 	{"Wextra",		CB_NO_ARG, NULL, 'Y'},		/* this option used to be called -W */
 #if 1
@@ -3457,6 +3458,12 @@ process_command_line (const int argc, char **argv)
 						cb_lines_per_page, 20);
 				cb_lines_per_page = 20;
 			}
+			break;
+
+		case '/':
+			/* -fdiagnostics-plain-output */
+			cb_diagnostics_show_caret = 0 ;
+			cb_diagnostics_show_line_numbers = 0;
 			break;
 
 		case 'P':

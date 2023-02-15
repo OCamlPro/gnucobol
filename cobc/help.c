@@ -162,6 +162,7 @@ cobc_print_usage_warnings (void)
 #undef	CB_ONWARNDEF
 #undef	CB_NOWARNDEF
 #undef	CB_ERRWARNDEF
+	puts (_("  -fdiagnostics-plain-output\tmake diagnostic output as plain as possible"));
 	puts (_("  -Werror               treat all warnings as errors"));
 	puts (_("  -Wno-error            don't treat warnings as errors"));
 	puts (_("  -Werror=<warning>     treat specified <warning> as error"));
