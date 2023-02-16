@@ -6048,12 +6048,12 @@ cb_build_binary_op (cb_tree x, const enum cb_binary_op_op op, cb_tree y)
 		rel_bin_op = 1;
 		if ((CB_REF_OR_FIELD_P (x))
 		 && CB_FIELD_PTR (x)->level == 88) {
-			cb_error_x (e, _("invalid expression"));
+			cb_error_x (e, _("invalid expression: conditional on the left of numeric operator"));
 			return cb_error_node;
 		}
 		if ((CB_REF_OR_FIELD_P (y))
 		 && CB_FIELD_PTR (y)->level == 88) {
-			cb_error_x (e, _("invalid expression"));
+			cb_error_x (e, _("invalid expression: conditional on the right of numeric operator"));
 			return cb_error_node;
 		}
 
@@ -6281,7 +6281,7 @@ cb_build_binary_op (cb_tree x, const enum cb_binary_op_op op, cb_tree y)
 				cb_error_x (e, _("invalid expression: %s %s %s"),
 					llit, explain_operator (op), rlit);
 			} else {
-				cb_error_x (e, _("invalid expression"));
+				cb_error_x (e, _("invalid expression: boolean expected with logical operator"));
 			}
 			return cb_error_node;
 		}

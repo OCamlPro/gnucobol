@@ -5801,22 +5801,23 @@ build_expr_finish (void)
 	/* Reduce all (prio of token 0 is smaller than all other ones) */
 	(void)build_expr_reduce (0);
 
+	expr_stack[TOPSTACK].value->source_file = cb_source_file;
+	expr_stack[TOPSTACK].value->source_line = cb_exp_line;
+
+	if (expr_index != TOPSTACK+1) {
+		cb_error_x (expr_stack[TOPSTACK].value, _("invalid expression: unfinished expression"));
+		return cb_error_node;
+	}
+
 	if (!expr_stack[TOPSTACK].value) {
 		/* TODO: Add test case for this to syn_misc.at invalid expression */
 		cb_error (_("invalid expression"));
 		return cb_error_node;
 	}
 
-	expr_stack[TOPSTACK].value->source_file = cb_source_file;
-	expr_stack[TOPSTACK].value->source_line = cb_exp_line;
-
-	if (expr_index != TOPSTACK+1) {
-		cb_error_x (expr_stack[TOPSTACK].value, _("invalid expression"));
-		return cb_error_node;
-	}
-
 	build_expr_expand (&expr_stack[TOPSTACK].value);
 	if (expr_stack[TOPSTACK].token != 'x') {
+		/* TODO: add a test case, for now, no idea how to reach this */
 		cb_error_x (expr_stack[TOPSTACK].value, _("invalid expression"));
 		return cb_error_node;
 	}
@@ -5883,8 +5884,22 @@ cb_build_expr (cb_tree list)
 			has_rel = 1;
 			break;
 		default:
+			if(TOKEN (-1) == '!'){
+/* switch `NOT` relation, e.g. the two expression tokens `NOT` and `>`
+ * are reduced to a single token `<=` */
+				switch(op){
+				case '=': TOKEN (-1) = '~'; continue;
+				case '>': TOKEN (-1) = '['; continue;
+				case '<': TOKEN (-1) = ']'; continue;
+				case ']': TOKEN (-1) = '<'; continue;
+				case '[': TOKEN (-1) = '>'; continue;
+				}
+			}
 			v = CB_VALUE (l);
 			if (op == 'x') {
+                                if( has_var && v == cb_zero ){
+                                        has_rel = 1;
+                                }
 				has_var = 1;
 				if (CB_TREE_TAG (v) == CB_TAG_BINARY_OP) {
 					has_rel = 1;
@@ -6269,7 +6284,7 @@ decimal_compute (const int op, cb_tree x, cb_tree y)
 /**
  * expand tree x to the previously allocated decimal tree d
  */
-static void
+static cb_tree
 decimal_expand (cb_tree d, cb_tree x)
 {
 	struct cb_literal	*l;
@@ -6280,14 +6295,14 @@ decimal_expand (cb_tree d, cb_tree x)
 	/* skip if the actual statement can't be generated any more
 	   to prevent multiple errors here */
 	if (error_statement == current_statement) {
-		return;
+		return d;
 	}
 	switch (CB_TREE_TAG (x)) {
 	case CB_TAG_CONST:
 		/* LCOV_EXCL_START */
 		if (x != cb_zero) {
 			cobc_err_msg (_("unexpected constant expansion"));
-			COBC_ABORT ();
+			return cb_error_node;
 		}
 		/* LCOV_EXCL_STOP */
 		dpush (CB_BUILD_FUNCALL_2 ("cob_decimal_set_llint", d, cb_int0));
@@ -6354,13 +6369,21 @@ decimal_expand (cb_tree d, cb_tree x)
 		 * Set t, Y
 		 * OP d, t */
 		p = CB_BINARY_OP (x);
-		if ((p->op == 'c' || p->op == 'd')		/* Circular Shift */
-		 && CB_REF_OR_FIELD_P (p->x)) {
-			sz_shift = cb_int (CB_FIELD_PTR (p->x)->size);
-		} else {
-			sz_shift = cb_int1;
+
+		switch (p->op){
+		case '=': case '~': case '<': case '>': case '[': case ']':
+		case '!': case '&': case '|':
+			cb_error_x (x, _("condition expression found where decimal expression was expected"));
+			return cb_error_node;
+		case 'c':
+		case 'd':
+			if (CB_REF_OR_FIELD_P (p->x)) {
+				sz_shift = cb_int (CB_FIELD_PTR (p->x)->size);
+				break;
+			}
+		default: sz_shift = cb_int1;
 		}
-		decimal_expand (d, p->x);
+		d = decimal_expand (d, p->x);
 
 		if (CB_TREE_TAG (p->y) == CB_TAG_LITERAL
 		 && CB_TREE_CATEGORY (p->y) == CB_CATEGORY_NUMERIC) {
@@ -6368,7 +6391,7 @@ decimal_expand (cb_tree d, cb_tree x)
 			decimal_compute (p->op, d, t);
 		} else {
 			t = decimal_alloc ();
-			decimal_expand (t, p->y);
+			t = decimal_expand (t, p->y);
 			decimal_compute (p->op, d, t);
 			decimal_free ();
 		}
@@ -6383,6 +6406,7 @@ decimal_expand (cb_tree d, cb_tree x)
 		CB_TREE_TAG_UNEXPECTED_ABORT (x);
 	/* LCOV_EXCL_STOP */
 	}
+	return d;
 }
 
 static void
@@ -6469,7 +6493,7 @@ build_decimal_assign (cb_tree vars, const int op, cb_tree val)
 	d = decimal_alloc ();
 
 	/* Set d, VAL */
-	decimal_expand (d, val);
+	d = decimal_expand (d, val);
 
 	s1 = NULL;
 	if (op == 0) {
@@ -6491,7 +6515,7 @@ build_decimal_assign (cb_tree vars, const int op, cb_tree val)
 			 * OP t, d
 			 * set VAR <- t, with appropriate rounding
 			 */
-			decimal_expand (t, CB_VALUE (l));
+			t = decimal_expand (t, CB_VALUE (l));
 			decimal_compute (op, t, d);
 			decimal_assign (CB_VALUE (l), t, CB_PURPOSE (l));
 			s2 = cb_list_reverse (decimal_stack);
@@ -7015,8 +7039,8 @@ cb_build_cond_default (struct cb_binary_op *p, cb_tree left, cb_tree right)
 		cb_tree		d1 = decimal_alloc ();
 		cb_tree		d2 = decimal_alloc ();
 
-		decimal_expand (d1, left);
-		decimal_expand (d2, right);
+		d1 = decimal_expand (d1, left);
+		d2 = decimal_expand (d2, right);
 		dpush (CB_BUILD_FUNCALL_2 ("cob_decimal_cmp", d1, d2));
 		decimal_free ();
 		decimal_free ();
@@ -7130,7 +7154,7 @@ cb_build_cond (cb_tree x)
 		if (x != cb_any && x != cb_true && x != cb_false) {
 			/* TODO: Add test case for this to syn_misc.at invalid expression */
 			cb_error_x (CB_TREE(current_statement),
-				    _("invalid expression"));
+				    _("invalid expression: condition expected"));
 			return cb_error_node;
 		}
 		return x;
@@ -7198,7 +7222,7 @@ cb_build_cond (cb_tree x)
 	default:
 		break;
 	}
-	cb_error_x (x, _("invalid expression"));
+	cb_error_x (x, _("incomplete expression"));
 	return cb_error_node;
 }
 
