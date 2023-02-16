@@ -1,4 +1,9 @@
 
+2023-06-20  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* typeck.c (cb_build_expr): remove cb_ prefix from static functions
+	and comment algorithm
+
 2023-06-13  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* codegen.c (codegen): correctly set and unset `has_global_file`
