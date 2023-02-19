@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -572,9 +572,6 @@ only usable with COB_USE_VC2013_OR_GREATER */
 
 /* Maximum number of field digits */
 #define	COB_MAX_DIGITS		38
-
-/* Maximum bytes in COMP-X field */
-#define	COB_MAX_COMPX		8
 
 /* Maximum digits in binary field */
 #define	COB_MAX_BINARY		39

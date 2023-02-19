@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -121,93 +121,6 @@ static mpf_t		cob_mpft_get;
 static unsigned char	packed_value[20];
 static cob_u64_t	last_packed_val;
 static int		cob_not_finite = 0;
-
-
-#ifdef	COB_EXPERIMENTAL
-
-#if GMP_NAIL_BITS != 0
-#error NAILS not supported
-#endif
-
-#define COB_MAX_LL	COB_S64_C(9223372036854775807)
-
-static void
-mpz_set_ull (mpz_ptr dest, const cob_u64_t val)
-{
-	size_t			size;
-
-	size = (val != 0);
-	dest->_mp_d[0] = val & GMP_NUMB_MASK;
-#if	GMP_LIMB_BITS < 64
-	if (val > GMP_NUMB_MAX) {
-		dest->_mp_d[1] = val >> GMP_NUMB_BITS;
-		size = 2;
-	}
-#endif
-	dest->_mp_size = size;
-}
-
-static void
-mpz_set_sll (mpz_ptr dest, const cob_s64_t val)
-{
-	cob_u64_t		vtmp;
-	size_t			size;
-
-	vtmp = (cob_u64_t)(val >= 0 ? (cob_u64_t)val : -(cob_u64_t)val);
-	size = (vtmp != 0);
-	dest->_mp_d[0] = vtmp & GMP_NUMB_MASK;
-#if	GMP_LIMB_BITS < 64
-	if (vtmp > GMP_NUMB_MAX) {
-		dest->_mp_d[1] = vtmp >> GMP_NUMB_BITS;
-		size = 2;
-	}
-#endif
-	dest->_mp_size = (val >= 0) ? size : -size;
-}
-
-static cob_u64_t
-mpz_get_ull (const mpz_ptr src)
-{
-	size_t			size;
-
-	size = mpz_size (src);
-	if (!size) {
-		return 0;
-	}
-#if	GMP_LIMB_BITS > 32
-	return (cob_u64_t)src->_mp_d[0];
-#else
-	if (size < 2) {
-		return (cob_u64_t)src->_mp_d[0];
-	}
-	return (cob_u64_t)src->_mp_d[0] |
-		((cob_u64_t)src->_mp_d[1] << GMP_NUMB_BITS);
-#endif
-}
-
-static cob_s64_t
-mpz_get_sll (const mpz_ptr src)
-{
-	int			size;
-	cob_u64_t		vtmp;
-
-	size = src->_mp_size;
-	if (!size) {
-		return 0;
-	}
-	vtmp = (cob_u64_t)src->_mp_d[0];
-#if	GMP_LIMB_BITS < 64
-	if (mpz_size (src) > 1) {
-		vtmp |= (cob_u64_t)src->_mp_d[1] << GMP_NUMB_BITS;
-	}
-#endif
-	if (size > 0) {
-		return (cob_s64_t) vtmp & COB_MAX_LL;
-	}
-	return ~(((cob_s64_t) vtmp - 1LL) & COB_MAX_LL);
-}
-
-#endif	/* COB_EXPERIMENTAL */
 
 
 void
@@ -1327,46 +1240,48 @@ cob_decimal_get_display (cob_decimal *d, cob_field *f, const int opt)
 static void
 cob_decimal_set_binary (cob_decimal *d, cob_field *f)
 {
-#ifdef	COB_EXPERIMENTAL
-#if	1	/* RXWRXW - set_usll */
-	size_t		size;
-	size_t		sizeb;
-	size_t		idx;
-	int		order;
-	unsigned char	buff[COB_MAX_BINARY + 1];
+	if (f->size > sizeof(cob_u64_t)) {
+		size_t	size;
+		size_t	sizeb;
+		int		idx, adj, order;
+		cob_u64_t	data[2];
+		unsigned char	*p;
 
-	size = f->size;
+		size = f->size;
 #ifndef WORDS_BIGENDIAN
-	if (!COB_FIELD_BINARY_SWAP (f)) {
-		sizeb = size - 1;
-		order = -1;
-	} else {
+		if (!COB_FIELD_BINARY_SWAP (f)) {
+			sizeb = size - 1;
+			order = -1;			/* Little Endian */
+			adj = 0;
+		} else {
+			sizeb = 0;
+			order = 1;			/* Big Endian */
+			adj = (sizeof (cob_u64_t) * 2) - size;
+		}
+#else
 		sizeb = 0;
 		order = 1;
-	}
-#else
-	sizeb = 0;
-	order = 1;
+		adj = 0;
 #endif
-	if (COB_FIELD_HAVE_SIGN (f) && (f->data[sizeb] & 0x80U)) {
-		for (idx = 0; idx < size; ++idx) {
-			buff[idx] = ~f->data[idx];
+		p = (unsigned char *)data;
+		data[0] = data[1] = 0;
+		if (COB_FIELD_HAVE_SIGN (f) 
+		 && (f->data[sizeb] & 0x80U)) {
+			for (idx = 0; idx < size; ++idx) {
+				p[idx+adj] = ~f->data[idx];
+			}
+			p[sizeb] &= 0x7F;
+			mpz_import (d->value, 2, order, sizeof(cob_u64_t), order, 0, p);
+			mpz_neg (d->value, d->value);
+		} else {
+			memcpy (p+adj, f->data, (size_t)f->size);
+			mpz_import (d->value, 2, order, sizeof(cob_u64_t), order, 0, data);
 		}
-		mpz_import (d->value, 1, order, size, order, 0, buff);
-		mpz_com (d->value, d->value);
-	} else {
-		mpz_import (d->value, 1, order, size, order, 0, f->data);
+		d->scale = COB_FIELD_SCALE(f);
+		return;
 	}
 
-#else
-	if (COB_FIELD_HAVE_SIGN (f)) {
-		mpz_set_sll (d->value, cob_binary_get_sint64 (f));
-	} else {
-		mpz_set_ull (d->value, cob_binary_get_uint64 (f));
-	}
-#endif
-
-#elif	defined(COB_LI_IS_LL)
+#if	defined(COB_LI_IS_LL)
 	if (COB_FIELD_HAVE_SIGN (f)) {
 		mpz_set_si (d->value, cob_binary_get_sint64 (f));
 	} else {
@@ -1410,12 +1325,12 @@ cob_decimal_set_binary (cob_decimal *d, cob_field *f)
 static int
 cob_decimal_get_binary (cob_decimal *d, cob_field *f, const int opt)
 {
-	size_t			overflow;
-	size_t			sign;
-	size_t			bitnum;
-	size_t			digits;
+	size_t		overflow;
+	int			sign, neg;
+	int			bitnum;
+	int			digits;
 
-#if	!defined(COB_EXPERIMENTAL) && !defined(COB_LI_IS_LL)
+#if	!defined(COB_LI_IS_LL)
 	cob_s64_t		llval;
 	cob_u64_t		ullval;
 	unsigned int		lo;
@@ -1436,6 +1351,53 @@ cob_decimal_get_binary (cob_decimal *d, cob_field *f, const int opt)
 		}
 	}
 	bitnum = (f->size * 8) - sign;
+	if (f->size > sizeof(cob_u64_t)) {
+		size_t	size;
+		size_t	sizeb;
+		size_t	count;
+		int		idx, adj, order;
+		cob_s64_t	data[2];
+		unsigned char	*p;
+		data[0] = data[1] = 0;
+		size = f->size;
+#ifndef WORDS_BIGENDIAN
+		if (!COB_FIELD_BINARY_SWAP (f)) {
+			sizeb = size - 1;
+			order = -1;
+			adj = 0;
+		} else {
+			sizeb = 0;
+			order = 1;
+			adj = (sizeof (cob_u64_t) * 2) - size;
+		}
+#else
+		sizeb = 0;
+		order = 1;
+		adj = 0;
+#endif
+		neg = (int)mpz_sgn (d->value);
+		/* Returns 0 when value is 0 */
+		if (!neg) {
+			memset (f->data, 0, (size_t)f->size);
+			return 0;
+		}
+		mpz_export (data, &count, order, sizeof(cob_s64_t), order, (size_t)0, d->value);
+		if (count == 1
+		 && order == 1) {
+			data[1] = data[0];
+			data[0] = 0;
+		}
+		p = (unsigned char *)data;
+		p += adj;
+		memcpy (f->data, p, (size_t)f->size);
+		if (neg  == -1) {
+			for (idx = 0; idx < f->size; ++idx) {
+				f->data[idx] = ~f->data[idx];
+			}
+			f->data[sizeb] |= 0x80;
+		}
+		return 0;
+	}
 	if (mpz_sizeinbase (d->value, 2) > bitnum) {
 		if (opt & COB_STORE_KEEP_ON_OVERFLOW) {
 			goto overflow;
@@ -1445,9 +1407,6 @@ cob_decimal_get_binary (cob_decimal *d, cob_field *f, const int opt)
 		if (opt & COB_STORE_TRUNC_ON_OVERFLOW) {
 			mpz_tdiv_r (d->value, d->value, cob_mpze10[digits]);
 		} else {
-#if	0	/* RXWRXW - Fdiv sign */
-			mpz_fdiv_r_2exp (d->value, d->value, (f->size * 8) - sign);
-#endif
 			mpz_fdiv_r_2exp (d->value, d->value, (f->size * 8));
 		}
 	} else if (opt && COB_FIELD_BINARY_TRUNC (f)) {
@@ -1471,12 +1430,6 @@ cob_decimal_get_binary (cob_decimal *d, cob_field *f, const int opt)
 		cob_binary_set_uint64 (f, mpz_get_ui (d->value));
 	} else {
 		cob_binary_set_int64 (f, mpz_get_si (d->value));
-	}
-#elif	defined(COB_EXPERIMENTAL)
-	if (!sign || (overflow && !(opt & COB_STORE_TRUNC_ON_OVERFLOW))) {
-		cob_binary_set_uint64 (f, mpz_get_ull (d->value));
-	} else {
-		cob_binary_set_int64 (f, mpz_get_sll (d->value));
 	}
 #else
 	if (f->size <= 4) {
@@ -1606,6 +1559,12 @@ cob_print_realbin (const cob_field *f, FILE *fp, const int size)
 		cob_u64_t	uval;
 		cob_s64_t	val;
 	} llval;
+
+	if (f->size > sizeof(cob_u64_t)) {
+		cob_decimal_set_binary (&cob_d3, f);
+		cob_decimal_print (&cob_d3, fp);
+		return;
+	}
 
 	if (COB_FIELD_HAVE_SIGN (f)) {
 		llval.val = cob_binary_get_sint64 (f);
@@ -2016,7 +1975,7 @@ void
 cob_decimal_setget_fld (cob_field *src, cob_field *dst, const int opt)
 {
 	cob_decimal_set_field (&cob_d1, src);
-	(void)cob_decimal_get_field (&cob_d1, dst, opt);
+	(void) cob_decimal_get_field (&cob_d1, dst, opt);
 }
 
 #if	0	/* RXWRXW - Buggy */

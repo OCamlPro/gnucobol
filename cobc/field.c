@@ -58,7 +58,8 @@ size_t			cb_needs_01 = 0;
 
 static struct cb_field	*last_real_field = NULL;
 static int		occur_align_size = 0;
-static const unsigned char	pic_digits[] = { 3, 5, 8, 10, 13, 15, 17, 19 };
+static const unsigned char	pic_digits[] = 
+	{ 3, 5, 8, 10, 13, 15, 17, 19, 22, 25, 27, 29, 32, 34, 37, 39 };
 #define CB_MAX_OPS	32
 static int			op_pos = 1, op_val_pos;
 static char			op_type	[CB_MAX_OPS+1];
@@ -892,7 +893,7 @@ copy_into_field (struct cb_field *source, struct cb_field *target)
 				if (target->pic->category == CB_CATEGORY_ALPHANUMERIC) {
 					char		pic[8];
 					unsigned char		newsize;
-					if (target->pic->size > 8) {
+					if (target->pic->size > cb_max_compx) {
 						newsize = 36;
 					} else {
 						newsize = pic_digits[target->pic->size - 1];
@@ -2271,14 +2272,14 @@ validate_elementary_item (struct cb_field *f)
 static void
 check_compx (struct cb_field *f)
 {
-	if (f->compx_size > COB_MAX_COMPX
-	 || f->memory_size > COB_MAX_COMPX) {
+	if (f->compx_size > cb_max_compx
+	 || f->memory_size > cb_max_compx) {
 		cb_error_x (CB_TREE (f),
 				_("'%s' %s field cannot be larger than %d bytes"),
-				f->name, cb_get_usage_string (f->usage), COB_MAX_COMPX);
-		f->size = COB_MAX_COMPX;
-		f->compx_size = COB_MAX_COMPX;
-		f->memory_size = COB_MAX_COMPX;
+				f->name, cb_get_usage_string (f->usage), cb_max_compx);
+		f->size = cb_max_compx;
+		f->compx_size = cb_max_compx;
+		f->memory_size = cb_max_compx;
 	}
 }
 
@@ -2425,6 +2426,7 @@ setup_parameters (struct cb_field *f)
 		 && f->pic->orig
 		 && f->pic->orig[0] == 'X') {
 			f->usage = CB_USAGE_COMP_X;
+			f->pic->have_sign = 0;
 		}
 		f->flag_real_binary = 1;
 		/* Fall-through */
@@ -2434,10 +2436,11 @@ setup_parameters (struct cb_field *f)
 			if (f->pic->category == CB_CATEGORY_NUMERIC) {
 				if (f->compx_size == 0)
 					f->compx_size = f->size;
+				f->pic->have_sign = 0;
 			} else
 			if (f->pic->category == CB_CATEGORY_ALPHANUMERIC) {
 				f->compx_size = f->size = f->pic->size;
-				if (f->pic->size > 8) {
+				if (f->pic->size > cb_max_compx) {
 					f->pic = cb_build_picture ("9(36)");
 				} else {
 					char		pic[8];
@@ -2453,9 +2456,11 @@ setup_parameters (struct cb_field *f)
 		 && cb_binary_byteorder == CB_BYTEORDER_BIG_ENDIAN) {
 			f->flag_binary_swap = 1;
 		}
+#if 0 /* RJN COMP-N should be native order */
 		if (f->usage == CB_USAGE_COMP_N) {
 			f->flag_binary_swap = 1;
 		}
+#endif
 #endif
 		break;
 
@@ -2636,11 +2641,6 @@ compute_binary_size (struct cb_field *f, const int size)
 			return;
 		}
 		return;
-#if 0	/* how should this happen ... */
-	default:
-		f->size = size;
-		return;
-#endif
 	}
 }
 
@@ -2893,6 +2893,21 @@ unbounded_again:
 
 		switch (f->usage) {
 		case CB_USAGE_COMP_X:
+			if (f->pic
+			 && f->pic->category == CB_CATEGORY_NUMERIC
+			 && f->compx_size == 0) {
+				size = f->pic->size;
+				f->size = ((size <= 2) ? 1 : (size <= 4) ? 2 :
+					   (size <= 7) ? 3 : (size <= 9) ? 4 :
+					   (size <= 12) ? 5 : (size <= 14) ? 6 :
+					   (size <= 16) ? 7 : (size <= 19) ? 8 :
+					   (size <= 21) ? 9 : (size <= 24) ? 10 :
+					   (size <= 26) ? 11 : (size <= 28) ? 12 :
+					   (size <= 31) ? 13 : (size <= 33) ? 14 :
+					   (size <= 36) ? 15 : 16);
+				f->compx_size = f->size;
+				f->memory_size = f->size;
+			}
 			if(f->compx_size > 0) {
 				check_compx (f);
 				size = f->compx_size;
@@ -2916,23 +2931,13 @@ unbounded_again:
 		case CB_USAGE_BINARY:
 		case CB_USAGE_COMP_5:
 			size = f->pic->size;
-#if	0	/* RXWRXW - Max binary */
-			if (size > COB_MAX_BINARY) {
+			if (size > cb_max_binary) {
 				f->flag_binary_swap = 0;
-				size = 38;
+				size = cb_max_binary;
 				cb_error_x (CB_TREE (f),
 					    _("'%s' binary field cannot be larger than %d digits"),
-					    f->name, COB_MAX_BINARY);
+					    f->name, cb_max_binary);
 			}
-#else
-			if (size > 18) {
-				f->flag_binary_swap = 0;
-				size = 18;
-				cb_error_x (CB_TREE (f),
-					    _("'%s' binary field cannot be larger than %d digits"),
-					    f->name, 18);
-			}
-#endif
 			compute_binary_size (f, size);
 			break;
 		case CB_USAGE_DISPLAY:
@@ -3119,8 +3124,8 @@ cb_validate_field (struct cb_field *f)
 		f->redefines->memory_size = f->size * f->occurs_max;
 	}
 	if (f->usage == CB_USAGE_COMP_X
-	 && (f->compx_size  > COB_MAX_COMPX
-	  || f->memory_size > COB_MAX_COMPX)) {
+	 && (f->compx_size  > cb_max_compx
+	  || f->memory_size > cb_max_compx)) {
 		check_compx (f);
 	}
 

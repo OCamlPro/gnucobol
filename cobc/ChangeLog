@@ -1,4 +1,13 @@
 
+2023-02-19  Ron Norman <rjn@inglenet.com>
+
+	* cobc.c,cobc.h: Added cb_max_binary to hold max digits allowed in binary
+					data field and cb_max_compx for max length of COMP-X
+	* field.c: Change to use cb_max_binary & cb_max_compx instead of constants 
+				For COMP-N it has data in 'native' byte order
+	* tree.c: Change to use cb_max_binary instead of constant 
+	* typeck.c: Change to use cb_max_binary instead of constant 
+
 2023-01-20  Ron Norman <rjn@inglenet.com>
 
 	* codegen.c: Verify INDEXED BY variables in PERFORM VARYING

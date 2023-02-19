@@ -3256,6 +3256,233 @@ TSTB-34:9999999999999999999999990000000000, Length: 34
 
 AT_CLEANUP
 
+AT_SETUP([Large BINARY, COMP-X])
+AT_KEYWORDS([Numeric])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA  DIVISION.
+       WORKING-STORAGE SECTION.
+       01  TST3-38  PIC S9(38) COMP-3.
+       01  TST4-18  PIC  9(18) COMP-4.
+       01  TST4-22  PIC  9(22) COMP-4.
+       01  TST4-38  PIC S9(38) COMP-4.
+       01  TST5-2   PIC 9(2)   COMP-5.
+       01  TST5-38  PIC S9(38) COMP-5.
+       01  TST5-3   PIC S9(3)  COMP-5.
+       01  TST5-6   PIC S9(6)  COMP-5.
+       01  TST5-8   PIC 9(8)   COMP-5.
+       01  TSTN-34  PIC S9(34) COMP-N.
+       01  TSTX-12  PIC X(12)  COMP-X.
+       01  TSTX-14  PIC X(14)  COMP-X.
+       01  TSTX-38  PIC 9(38)  COMP-X.
+       01  TSTX-4   PIC X(4)   COMP-X.
+       01  TSTX-8   PIC X(8)   COMP-X.
+       01  TSTX-9   PIC X(9)   COMP-X.
+
+       PROCEDURE DIVISION.
+           MOVE 4096 TO TST5-2.
+           DISPLAY "TST5-2 :" TST5-2 ", Length: " LENGTH OF TST5-2.
+           MOVE -4096 TO TST5-3.
+           DISPLAY "TST5-3 :" TST5-3 ", Length: " LENGTH OF TST5-3.
+           MOVE -4096 TO TST5-6.
+           DISPLAY "TST5-6 :" TST5-6 ", Length: " LENGTH OF TST5-6.
+           MOVE 4096 TO TST5-8.
+           DISPLAY "TST5-8 :" TST5-8 ", Length: " LENGTH OF TST5-8.
+           MOVE 4294967295 TO TSTX-4.
+           DISPLAY "TSTX-4 :" TSTX-4 ", Length: " LENGTH OF TSTX-4.
+           MOVE 8192       TO TSTX-4.
+           DISPLAY "TSTX-4 :" TSTX-4 ", Length: " LENGTH OF TSTX-4.
+           CALL "dumpln" USING TSTX-4 BY VALUE LENGTH OF TSTX-4.
+           MOVE 987654321001234567 TO TSTX-8.
+           DISPLAY "TSTX-8 :" TSTX-8 ", Length: " LENGTH OF TSTX-8.
+           MOVE 8193 TO TSTX-9.
+           DISPLAY "TSTX-9:8193 check"
+           DISPLAY "TSTX-9:" TSTX-9 ", Length: " LENGTH OF TSTX-9.
+           CALL "dumpln" USING TSTX-9 BY VALUE LENGTH OF TSTX-9.
+           DISPLAY "***************+++*****".
+           MOVE 12345678900987654321001234567 TO TSTX-12.
+           DISPLAY "TSTX-12:12345678900987654321001234567 check"
+           DISPLAY "TSTX-12:" TSTX-12 ", Length: " LENGTH OF TSTX-12.
+           CALL "dumpln" USING TSTX-12 BY VALUE LENGTH OF TSTX-12.
+           DISPLAY "***************+++*****".
+           MOVE 987654321001234567899876543210012 TO TSTX-14.
+           DISPLAY "TSTX-14:987654321001234567899876543210012 check"
+           DISPLAY "TSTX-14:" TSTX-14 ", Length: " LENGTH OF TSTX-14.
+           CALL "dumpln" USING TSTX-14 BY VALUE LENGTH OF TSTX-14.
+           DISPLAY "***************+++*****".
+           MOVE 8193 TO TSTX-38.
+           DISPLAY "TSTX-38:8193 check"
+           DISPLAY "TSTX-38:" TSTX-38 ", Length: " LENGTH OF TSTX-38.
+           CALL "dumpln" USING TSTX-38 BY VALUE LENGTH OF TSTX-38.
+           DISPLAY "***************+++*****".
+           COMPUTE TSTX-38 = TSTX-38 * 256.
+           DISPLAY "TSTX-38:" TSTX-38 ", Length: " LENGTH OF TSTX-38.
+           CALL "dumpln" USING TSTX-38 BY VALUE LENGTH OF TSTX-38.
+           DISPLAY "***************+++*****".
+           MOVE 8193 TO TSTN-34.
+           DISPLAY "TSTN-34:8193 check"
+           DISPLAY "TSTN-34:" TSTN-34 ", Length: " LENGTH OF TSTN-34.
+           CALL "dumpln" USING TSTN-34 BY VALUE LENGTH OF TSTN-34.
+           DISPLAY "***************+++*****".
+           COMPUTE TSTN-34 = TSTN-34 * 256.
+           DISPLAY "TSTN-34:" TSTN-34 ", Length: " LENGTH OF TSTN-34.
+           CALL "dumpln" USING TSTN-34 BY VALUE LENGTH OF TSTN-34.
+           DISPLAY "***************+++*****".
+           MOVE -8193 TO TSTN-34.
+           DISPLAY "TSTN-34:-8193 check"
+           DISPLAY "TSTN-34:" TSTN-34 ", Length: " LENGTH OF TSTN-34.
+           CALL "dumpln" USING TSTN-34 BY VALUE LENGTH OF TSTN-34.
+           DISPLAY "***************+++*****".
+           MOVE 98765432100123456789987654321001234567 TO TSTX-38.
+           DISPLAY "TSTX-38:" TSTX-38 ", Length: " LENGTH OF TSTX-38.
+           CALL "dumpln" USING TSTX-38 BY VALUE LENGTH OF TSTX-38.
+           DISPLAY "***************+++*****".
+           MOVE -98765432100123456789987654321001234567 TO TSTX-38.
+           DISPLAY "TSTX-38:" TSTX-38 ", Length: " LENGTH OF TSTX-38.
+           CALL "dumpln" USING TSTX-38 BY VALUE LENGTH OF TSTX-38.
+           DISPLAY "***************+++*****".
+           MOVE -98765432100123456789987654321001234567 TO TST5-38.
+           DISPLAY "TST5-38:" TST5-38 ", Length: " LENGTH OF TST5-38.
+           CALL "dumpln" USING TST5-38 BY VALUE LENGTH OF TST5-38.
+           DISPLAY "***************".
+
+           MOVE -98765432100123456789987654321001234567 TO TST3-38.
+           DISPLAY "TST3-38:" TST3-38 ", Length: " LENGTH OF TST3-38.
+           CALL "dumpln" USING TST3-38 BY VALUE LENGTH OF TST3-38.
+           DISPLAY "***************".
+           MOVE 9876543210012345678998765432100123456 TO TST3-38.
+           DISPLAY "TST3-38:" TST3-38 ", Length: " LENGTH OF TST3-38.
+           CALL "dumpln" USING TST3-38 BY VALUE LENGTH OF TST3-38.
+           DISPLAY "***************".
+           COMPUTE TST3-38 = TST3-38 * 10.
+           DISPLAY "TST3-38:" TST3-38 ", Length: " LENGTH OF TST3-38.
+           CALL "dumpln" USING TST3-38 BY VALUE LENGTH OF TST3-38.
+           DISPLAY "***************".
+           MOVE -98765432100123456789987654321001234563 TO TST4-38.
+           DISPLAY "TST4-38:" TST4-38 ", Length: " LENGTH OF TST4-38.
+           CALL "dumpln" USING TST4-38 BY VALUE LENGTH OF TST4-38.
+           DISPLAY "***************".
+           MOVE 12345678909876543 TO TST4-18.
+           DISPLAY "TST4-18:" TST4-18 ", Length: " LENGTH OF TST4-18.
+           CALL "dumpln" USING TST4-18 BY VALUE LENGTH OF TST4-18.
+           DISPLAY "***************".
+           MOVE 12345678909876543210 TO TST4-22.
+           DISPLAY "TST4-22:" TST4-22 ", Length: " LENGTH OF TST4-22.
+           CALL "dumpln" USING TST4-22 BY VALUE LENGTH OF TST4-22.
+           DISPLAY "***************".
+           MOVE -8765432 TO TST4-38.
+           DISPLAY "TST4-38:" TST4-38 ", Length: " LENGTH OF TST4-38.
+           CALL "dumpln" USING TST4-38 BY VALUE LENGTH OF TST4-38.
+           DISPLAY "***************".
+           MOVE -8765432 TO TST5-38.
+           DISPLAY "TST5-38:" TST5-38 ", Length: " LENGTH OF TST5-38.
+           CALL "dumpln" USING TST5-38 BY VALUE LENGTH OF TST5-38.
+           DISPLAY "***************".
+           STOP RUN.
+])
+
+AT_DATA([cmod.c], [[
+#include <stdio.h>
+int dump (unsigned char *data)
+{
+  int i;
+  for (i = 0; i < 4; i++)
+    printf ("%02X", data[i]);
+  puts (" ");
+  return 0;
+}
+
+int dumpln (unsigned char *data, int len)
+{
+  int i;
+  printf ("%2d: ",len);
+  for (i = 0; i < 32 && i < len; i++)
+    printf ("%02X", data[i]);
+  puts (":");
+  return 0;
+}
+]])
+
+AT_CHECK([$COMPILE -x -std=mf -debug -Wall -fibmcomp prog.cob cmod.c ], [0], [], [prog.cob:81: warning: ignoring sign
+])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [TST5-2 :04096, Length: 2
+TST5-3 :-04096, Length: 2
+TST5-6 :-0000004096, Length: 4
+TST5-8 :0000004096, Length: 4
+TSTX-4 :4294967295, Length: 4
+TSTX-4 :0000008192, Length: 4
+ 4: 00002000:
+TSTX-8 :0987654321001234567, Length: 8
+TSTX-9:8193 check
+TSTX-9:0000000000000000008193, Length: 9
+ 9: 000000000000002001:
+***************+++*****
+TSTX-12:12345678900987654321001234567 check
+TSTX-12:12345678900987654321001234567, Length: 12
+12: 27E41B324351931C34788087:
+***************+++*****
+TSTX-14:987654321001234567899876543210012 check
+TSTX-14:0987654321001234567899876543210012, Length: 14
+14: 30B1F33A3C87B6DA1B9EFA60A21C:
+***************+++*****
+TSTX-38:8193 check
+TSTX-38:00000000000000000000000000000000008193, Length: 16
+16: 00000000000000000000000000002001:
+***************+++*****
+TSTX-38:00000000000000000000000000000002097408, Length: 16
+16: 00000000000000000000000000200100:
+***************+++*****
+TSTN-34:8193 check
+TSTN-34:8193, Length: 15
+15: 012000000000000000000000000000:
+***************+++*****
+TSTN-34:2097408, Length: 15
+15: 000120000000000000000000000000:
+***************+++*****
+TSTN-34:-8193 check
+TSTN-34:-8193, Length: 15
+15: FEDFFFFFFFFFFFFFFFFFFFFFFFFFFF:
+***************+++*****
+TSTX-38:98765432100123456789987654321001234567, Length: 16
+16: 4A4D87C2BC9C95628E6574CBB35C8087:
+***************+++*****
+TSTX-38:98765432100123456789987654321001234567, Length: 16
+16: 4A4D87C2BC9C95628E6574CBB35C8087:
+***************+++*****
+TST5-38:-98765432100123456789987654321001234567, Length: 16
+16: 787FA34C348B9A719D6A63433D78B2B5:
+***************
+TST3-38:-98765432100123456789987654321001234567, Length: 20
+20: 098765432100123456789987654321001234567D:
+***************
+TST3-38:+09876543210012345678998765432100123456, Length: 20
+20: 009876543210012345678998765432100123456C:
+***************
+TST3-38:+98765432100123456789987654321001234560, Length: 20
+20: 098765432100123456789987654321001234560C:
+***************
+TST4-38:-98765432100123456789987654321001234563, Length: 16
+16: B5B2783D43636A9D719A8B344CA37F7C:
+***************
+TST4-18:012345678909876543, Length: 8
+ 8: 002BDC545DEF293F:
+***************
+TST4-22:0012345678909876543210, Length: 16
+16: 0000000000000000AB54A98EEE391EEA:
+***************
+TST4-38:-00000000000000000000000000000008765432, Length: 16
+16: FFFFFFFFFFFFFFFFFFFFFFFFFF7A4007:
+***************
+TST5-38:-8765432, Length: 16
+16: 07407AFFFFFFFFFFFFFFFFFFFFFFFFFF:
+***************
+], [])
+
+AT_CLEANUP
+
 
 AT_SETUP([SORT: table sort])
 AT_KEYWORDS([runmisc])

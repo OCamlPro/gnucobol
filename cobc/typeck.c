@@ -10063,7 +10063,7 @@ validate_move_from_num_lit (cb_tree src, cb_tree dst, const unsigned int is_valu
 	if (fdst->flag_real_binary
 	    || (  !cb_binary_truncate
 		  && fdst->pic->scale == 0
-		  && (   fdst->usage == CB_USAGE_COMP_5
+		  && (  fdst->usage == CB_USAGE_COMP_5
 			 || fdst->usage == CB_USAGE_COMP_X
 			 || fdst->usage == CB_USAGE_COMP_N
 			 || fdst->usage == CB_USAGE_BINARY))) {
@@ -10093,13 +10093,13 @@ validate_move_from_num_lit (cb_tree src, cb_tree dst, const unsigned int is_valu
 		}
 		switch (binln) {
 		case 1:
-			if (i > 18) {
+			if (i > cb_max_binary) {
 				return MOVE_NUMERIC_LIT_OVERFLOW;
 			}
 			val = cb_get_long_long (src);
 			if (fdst->pic->have_sign) {
-				if (val < COB_S64_C(-128) ||
-				    val > COB_S64_C(127)) {
+				if (val < COB_S64_C(-128) 
+				 || val > COB_S64_C(127)) {
 					return MOVE_NUMERIC_LIT_OVERFLOW;
 				}
 			} else {
@@ -10109,7 +10109,7 @@ validate_move_from_num_lit (cb_tree src, cb_tree dst, const unsigned int is_valu
 			}
 			break;
 		case 2:
-			if (i > 18) {
+			if (i > cb_max_binary) {
 				return MOVE_NUMERIC_LIT_OVERFLOW;
 			}
 			val = cb_get_long_long (src);
@@ -10125,13 +10125,13 @@ validate_move_from_num_lit (cb_tree src, cb_tree dst, const unsigned int is_valu
 			}
 			break;
 		case 3:
-			if (i > 18) {
+			if (i > cb_max_binary) {
 				return MOVE_NUMERIC_LIT_OVERFLOW;
 			}
 			val = cb_get_long_long (src);
 			if (fdst->pic->have_sign) {
-				if (val < COB_S64_C(-8388608) ||
-				    val > COB_S64_C(8388607)) {
+				if (val < COB_S64_C(-8388608) 
+				 || val > COB_S64_C(8388607)) {
 					return MOVE_NUMERIC_LIT_OVERFLOW;
 				}
 			} else {
@@ -10141,13 +10141,13 @@ validate_move_from_num_lit (cb_tree src, cb_tree dst, const unsigned int is_valu
 			}
 			break;
 		case 4:
-			if (i > 18) {
+			if (i > cb_max_binary) {
 				return MOVE_NUMERIC_LIT_OVERFLOW;
 			}
 			val = cb_get_long_long (src);
 			if (fdst->pic->have_sign) {
-				if (val < COB_S64_C(-2147483648) ||
-				    val > COB_S64_C(2147483647)) {
+				if (val < COB_S64_C(-2147483648) 
+				 || val > COB_S64_C(2147483647)) {
 					return MOVE_NUMERIC_LIT_OVERFLOW;
 				}
 			} else {
@@ -10157,13 +10157,13 @@ validate_move_from_num_lit (cb_tree src, cb_tree dst, const unsigned int is_valu
 			}
 			break;
 		case 5:
-			if (i > 18) {
+			if (i > cb_max_binary) {
 				return MOVE_NUMERIC_LIT_OVERFLOW;
 			}
 			val = cb_get_long_long (src);
 			if (fdst->pic->have_sign) {
-				if (val < COB_S64_C(-549755813888) ||
-				    val > COB_S64_C(549755813887)) {
+				if (val < COB_S64_C(-549755813888) 
+				 || val > COB_S64_C(549755813887)) {
 					return MOVE_NUMERIC_LIT_OVERFLOW;
 				}
 			} else {
@@ -10173,13 +10173,13 @@ validate_move_from_num_lit (cb_tree src, cb_tree dst, const unsigned int is_valu
 			}
 			break;
 		case 6:
-			if (i > 18) {
+			if (i > cb_max_binary) {
 				return MOVE_NUMERIC_LIT_OVERFLOW;
 			}
 			val = cb_get_long_long (src);
 			if (fdst->pic->have_sign) {
-				if (val < COB_S64_C(-140737488355328) ||
-				    val > COB_S64_C(140737488355327)) {
+				if (val < COB_S64_C(-140737488355328) 
+				 || val > COB_S64_C(140737488355327)) {
 					return MOVE_NUMERIC_LIT_OVERFLOW;
 				}
 			} else {
@@ -10189,13 +10189,13 @@ validate_move_from_num_lit (cb_tree src, cb_tree dst, const unsigned int is_valu
 			}
 			break;
 		case 7:
-			if (i > 18) {
+			if (i > cb_max_binary) {
 				return MOVE_NUMERIC_LIT_OVERFLOW;
 			}
 			val = cb_get_long_long (src);
 			if (fdst->pic->have_sign) {
-				if (val < COB_S64_C(-36028797018963968) ||
-				    val > COB_S64_C(36028797018963967)) {
+				if (val < COB_S64_C(-36028797018963968) 
+				 || val > COB_S64_C(36028797018963967)) {
 					return MOVE_NUMERIC_LIT_OVERFLOW;
 				}
 			} else {
@@ -10206,25 +10206,27 @@ validate_move_from_num_lit (cb_tree src, cb_tree dst, const unsigned int is_valu
 			break;
 		default:
 			if (fdst->pic->have_sign) {
-				if (i < 19) {
+				if (i <= cb_max_binary) {
 					break;
 				}
-				if (i > 19) {
+				if (i > cb_max_binary) {
 					return MOVE_NUMERIC_LIT_OVERFLOW;
 				}
-				if (memcmp (p, l->sign ? "9223372036854775808" :
+				if (i == 19
+				 && memcmp (p, l->sign ? "9223372036854775808" :
 					    "9223372036854775807",
 					    (size_t)19) > 0) {
 					return MOVE_NUMERIC_LIT_OVERFLOW;
 				}
 			} else {
-				if (i < 20) {
+				if (i <= cb_max_binary) {
 					break;
 				}
-				if (i > 20) {
+				if (i > cb_max_binary) {
 					return MOVE_NUMERIC_LIT_OVERFLOW;
 				}
-				if (memcmp (p, "18446744073709551615", (size_t)20) > 0) {
+				if (i == 20
+				 && memcmp (p, "18446744073709551615", (size_t)20) > 0) {
 					return MOVE_NUMERIC_LIT_OVERFLOW;
 				}
 			}

@@ -234,6 +234,8 @@ struct cb_exception cb_exception_table[] = {
 int cb_mf_ibm_comp = -1;
 int cb_cob_line_num = 0;
 int cb_all_files_xfd = 0;
+int cb_max_binary = COB_MAX_BINARY > COB_MAX_DIGITS ? COB_MAX_BINARY : COB_MAX_DIGITS;
+int cb_max_compx = 16;
 
 int cb_warn_opt_val[COB_WARNOPT_MAX];	/* note: int as we feed that to getopt */
 

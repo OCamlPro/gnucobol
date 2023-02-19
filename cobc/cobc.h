@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch,
    Edward Hart, Ron Norman, Dave Pitts
 
@@ -331,6 +331,8 @@ extern int	cb_cob_line_num;
 extern int	cb_all_files_xfd;
 extern int	cb_keycompress_ready;
 extern int	cb_keycompress_pend;
+extern int	cb_max_binary;
+extern int	cb_max_compx;
 
 extern struct cb_exception	cb_exception_table[];
 

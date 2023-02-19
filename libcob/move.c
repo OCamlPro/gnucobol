@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2020, 2022 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2020, 2022-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edwart Hard
 
@@ -625,6 +625,11 @@ cob_move_display_to_binary (cob_field *f1, cob_field *f2)
 	/* Get value */
 	val = 0;
 	size = size1 - COB_FIELD_SCALE(f1) + COB_FIELD_SCALE(f2);
+	if (f1->size > 18
+	 || f2->size > sizeof (val)) {	/* Large Binary field */
+	 	cob_decimal_setget_fld (f1, f2, 0);
+		return;
+	}
 	for (i = 0; i < size; ++i) {
 		if (val) {
 			val *= 10;
@@ -656,12 +661,17 @@ cob_move_display_to_binary (cob_field *f1, cob_field *f2)
 static void
 cob_move_binary_to_display (cob_field *f1, cob_field *f2)
 {
-	cob_u64_t		val;
+	cob_u64_t	val;
 	int			i;
 	int			sign;
-	char			buff[32];
+	char		buff[32];
 
 	sign = 1;
+	if (f2->size > 18
+	 || f1->size > sizeof (val)) {	/* Large Binary field */
+	 	cob_decimal_setget_fld (f1, f2, 0);
+		return;
+	}
 	/* Get value */
 	if (COB_FIELD_HAVE_SIGN (f1)) {
 		cob_s64_t		val2 = cob_binary_mget_sint64 (f1);

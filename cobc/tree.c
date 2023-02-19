@@ -3809,7 +3809,7 @@ repeat:
 	switch (category) {
 	case PIC_NUMERIC:
 		pic->category = CB_CATEGORY_NUMERIC;
-		if (digits > COB_MAX_DIGITS) {
+		if (digits > cb_max_binary) {
 			cb_error (_("numeric field cannot be larger than %d digits"), COB_MAX_DIGITS);
 		}
 		break;

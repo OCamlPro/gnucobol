@@ -1,4 +1,11 @@
 
+2023-02-19  Ron Norman <rjn@inglenet.com>
+
+	* move.c: For large fields use 'cob_decimal_setget_fld'
+	* numeric.c: Added support for large BINARY/COMP-X/COMP-N 
+	* termio.c: Updated 'bin_digits' table for larger fields
+	* common.h: Removed  define  COB_MAX_COMPX
+
 2023-01-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (internal_nanosleep): fix missing identifier (broken merge)
