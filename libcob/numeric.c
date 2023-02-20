@@ -1093,12 +1093,6 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 	cob_uli_t	byteval;
 	int		digits, sign, nibtest;
 
-#if	0	/* RXWRXW - P Fix */
-	if (digits > (f->size * 2) - 1) {
-		digits = (f->size * 2) - 1;
-	}
-#endif
-
 	p = f->data;
 	if (unlikely (COB_FIELD_NO_SIGN_NIBBLE (f))) {
 		sign = 0;
@@ -1112,10 +1106,23 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 
 	digits = COB_FIELD_DIGITS (f);
 	if (digits % 2 == nibtest) {
-		byteval = *p & 0x0F;
-		p++;
+		byteval = *p++ & 0x0F;
+		if (byteval == 0) {
+			/* Skip leading ZEROs */
+			while (p < endp
+			 && *p == 0x00) {
+				digits -= 2;
+				p++;
+			}
+		}
 	} else {
 		byteval = 0;
+		/* Skip leading ZEROs */
+		while (p < endp
+		 && *p == 0x00) {
+			digits -= 2;
+			p++;
+		}
 	}
 	if (digits < MAX_LLI_DIGITS_PLUS_1) {
 		register cob_u64_t val = byteval;
@@ -1145,6 +1152,18 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 		mpz_set_ui (d->value, byteval);
 
 		for (; p < endp; p++) {
+			/* when possible take 4 digits at once to reduce GMP calls */
+			if ( (endp - p) > 2) {
+				mpz_mul_ui (d->value, d->value, 10000UL);
+				mpz_add_ui (d->value, d->value,
+					    ((cob_uli_t)(*p >> 4U) * 1000) 
+						+ ((*p & 0x0FU) * 100) 
+						+ ((cob_uli_t)(*(p + 1) >> 4U) * 10) 
+						+ (*(p + 1) & 0x0FU));
+				p++;
+				nonzero = 1;
+				continue;
+			}
 			if (nonzero) {
 				mpz_mul_ui (d->value, d->value, 100);
 			}
@@ -2705,9 +2724,7 @@ insert_packed_aligned (
 		*(ptr_byte1 + len1 - 1) &= 0xF0;	/* clear sign nibble */
 	}
 
-	if (nibble_cntr == 0) {
-		compare_len = len1 + byte_cntr;
-	} else {
+	if (nibble_cntr != 0) {
 
 		/* shift the complete filled buffer one nibble left */
 #ifdef ALTERNATIVE_PACKED_SWAP	/* should work portably, but is around 20% slower */
@@ -2757,6 +2774,8 @@ insert_packed_aligned (
 
 #endif
 		compare_len = len1 + byte_cntr + nibble_cntr;
+	} else {
+		compare_len = len1 + byte_cntr;
 	}
 
 	/* insert data2 into initialized buffer at the end */
