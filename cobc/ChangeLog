@@ -1,4 +1,9 @@
 
+2022-02-20  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* scanner.l (read_literal): refactor to use `enum cb_literal_type`
+	  instead of a char* for the type of literal
+
 2023-02-20  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* pplex.l: allow REPLACE between Gcos `CONTROL DIVISION` and
