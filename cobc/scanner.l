@@ -141,6 +141,13 @@ struct cb_top_level_78 {
 	struct cb_level_78	*lev_78_ptr;
 };
 
+enum cb_literal_type {
+	CB_LITERAL_DEFAULT,
+	CB_LITERAL_U,  /* UTF-8, work-in-progress */
+	CB_LITERAL_N,
+	CB_LITERAL_NC,
+};
+
 /* Local variables */
 static cb_tree			last_yylval;
 static int			last_token;
@@ -160,7 +167,7 @@ static unsigned int		inside_bracket = 0;
 static char			err_msg[COB_MINI_BUFF];
 
 /* Function declarations */
-static void	read_literal (const char, const char *);
+static void	read_literal (const char, const enum cb_literal_type);
 static int	scan_x (const char *, const char *);
 static int	scan_z (const char *, const char *);
 static int	scan_h (const char *, const char *);
@@ -370,7 +377,7 @@ AREA_A		\n"#AREA_A"\n
 [''""] {
 	/* String literal */
 	cobc_force_literal = 0;
-	read_literal (yytext[0], "");
+	read_literal (yytext[0], CB_LITERAL_DEFAULT);
 	RETURN_TOK (LITERAL);
 }
 
@@ -385,7 +392,7 @@ N[''""] {
 	/* N national string literal */
 	cobc_force_literal = 0;
 	/* TODO: national string - needs different handling */
-	read_literal (yytext [1], "N");
+	read_literal (yytext [1], CB_LITERAL_N);
 	RETURN_TOK (LITERAL);
 }
 
@@ -394,7 +401,7 @@ NC[''""] {
 	   same handling as COBOL 2002 national string literal) */
 	cobc_force_literal = 0;
 	/* TODO: national string - needs different handling */
-	read_literal (yytext [2], "NC");
+	read_literal (yytext [2], CB_LITERAL_NC);
 	RETURN_TOK (LITERAL);
 }
 
@@ -409,7 +416,7 @@ U[''""] {
 	/* N national string literal */
 	cobc_force_literal = 0;
 	/* TODO: utf8 string - needs different handling */
-	read_literal (yytext [1], "U");
+	read_literal (yytext [1], CB_LITERAL_U);
 	RETURN_TOK (LITERAL);
 }
 
@@ -1304,7 +1311,7 @@ error_literal (const char *type, const char *literal, unsigned int literal_error
 }
 
 static void
-read_literal (const char mark, const char *type)
+read_literal (const char mark, const enum cb_literal_type type)
 {
 	size_t		i;
 	int		c;
@@ -1377,7 +1384,7 @@ read_literal (const char mark, const char *type)
 	if (!i) {
 		cb_verify (cb_zero_length_lit, _("zero-length literal"));
 		cb_warning (COBC_WARN_FILLER,
-			    type[0] == 'N' ?
+ 			    ( type == CB_LITERAL_N || type == CB_LITERAL_NC ) ?
 			    _("national literal has zero length; a SPACE will be assumed") :
 			    _("alphanumeric literal has zero length; a SPACE will be assumed"));
 		plex_buff[i++] = ' ';
@@ -1387,9 +1394,9 @@ read_literal (const char mark, const char *type)
 
 	/* build literal with given size */
 	plex_buff[i] = 0;
-	if (type[0] != 'N') {
+	if ( type != CB_LITERAL_N && type != CB_LITERAL_NC ) {
 		yylval = cb_build_alphanumeric_literal (plex_buff, i);
-		if (type[0] == 'U') {
+		if (type == CB_LITERAL_U) {
 			CB_UNFINISHED (_("UTF-8 literal"));
 		}
 	} else {
@@ -1407,7 +1414,7 @@ read_literal (const char mark, const char *type)
 			plex_buff[i * 2] = 0;
 		}
 		i = new_size;
-		if (type[1] != 'C') {
+		if (type != CB_LITERAL_NC) {
 			if (cb_verify (cb_national_literals, _("national literal"))) {
 				CB_UNFINISHED (_("national literal"));
 			}
