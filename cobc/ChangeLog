@@ -1,4 +1,14 @@
 
+2022-02-20  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* scanner.l (read_literal): refactor to use `enum cb_literal_type`
+	  instead of a char* for the type of literal
+
+2023-02-20  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* pplex.l: allow REPLACE between Gcos `CONTROL DIVISION` and
+	  the`IDENTIFICATION DIVISION`
+
 2023-02-10  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (clean_up_intermediates): fix missing move of temporary files

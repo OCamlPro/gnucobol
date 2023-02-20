@@ -531,11 +531,14 @@ MAYBE_AREA_A	[ ]?#?
   }
 }
 
-<SUBSTITUTION_SECTION_STATE>{
+<SUBSTITUTION_SECTION_STATE,
+CONTROL_DIVISION_STATE>{
   "REPLACE"	       {
 	  yy_push_state (COPY_STATE);
 	  return REPLACE;
   }
+}
+<SUBSTITUTION_SECTION_STATE>{
   \. 			{
 	  /* Intercept dots within the SUBSTITUTION SECTION */
 	  return DOT;
