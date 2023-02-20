@@ -122,7 +122,6 @@ static unsigned char	packed_value[20];
 static cob_u64_t	last_packed_val;
 static int		cob_not_finite = 0;
 
-
 void
 cob_gmp_free (void * ptr) {
 /* mpir/gmp free functions */
@@ -913,11 +912,6 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 
 	p = f->data;
 	digits = COB_FIELD_DIGITS (f);
-#if	0	/* RXWRXW - P Fix */
-	if (digits > (f->size * 2) - 1) {
-		digits = (f->size * 2) - 1;
-	}
-#endif
 	sign = cob_packed_get_sign (f);
 
 	if (COB_FIELD_NO_SIGN_NIBBLE (f)) {
@@ -935,8 +929,22 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 	}
 	mpz_set_ui (d->value, (cob_uli_t)byteval);
 	nonzero = !!byteval;
+	while (p < endp 
+	 && *p == 0x00)	/* Skip leading ZEROs */
+		p++;
 
 	for (; p < endp; p++) {
+		if ( (endp - p) > 2) {		/* Take 4 digits at once */
+			mpz_mul_ui (d->value, d->value, 10000UL);
+			mpz_add_ui (d->value, d->value,
+				    ((cob_uli_t)(*p >> 4U) * 1000) 
+					+ ((*p & 0x0FU) * 100) 
+					+ ((cob_uli_t)(p[1] >> 4U) * 10) 
+					+ (p[1] & 0x0FU));
+			nonzero = 1;
+			p++;
+			continue;
+		}
 		if (nonzero) {
 			mpz_mul_ui (d->value, d->value, 100UL);
 		}
@@ -974,10 +982,7 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 	int		sign;
 	int		digits;
 	unsigned int	x;
-
-#if	0	/* RXWRXW stack */
 	char		buff[1024];
-#endif
 
 	/* Build string */
 	sign = mpz_sgn (d->value);
@@ -990,26 +995,17 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 		mpz_abs (d->value, d->value);
 	}
 
-#if	0	/* RXWRXW stack */
-	if (mpz_sizeinbase (d->value, 10) > sizeof(buff) - 1) {
-#endif
+	if (mpz_sizeinbase (d->value, 10) > sizeof(buff) - 2) {
 		mza = mpz_get_str (NULL, 10, d->value);
-#if	0	/* RXWRXW stack */
 	} else {
 		mza = buff;
 		(void)mpz_get_str (buff, 10, d->value);
 	}
-#endif
 	size = strlen (mza);
 
 	/* Store number */
 	data = f->data;
 	digits = COB_FIELD_DIGITS (f);
-#if	0	/* RXWRXW - P Fix */
-	if (digits > (f->size * 2) - 1) {
-		digits = (f->size * 2) - 1;
-	}
-#endif
 	q = (unsigned char *)mza;
 	diff = (int)(digits - size);
 	if (diff < 0) {
@@ -1019,14 +1015,9 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 		/* If the statement has SIZE ERROR
 		   then throw an exception */
 		if (opt & COB_STORE_KEEP_ON_OVERFLOW) {
-#if	0	/* RXWRXW stack */
 			if (mza != buff) {
-#endif
 				cob_gmp_free(mza);
-
-#if	0	/* RXWRXW stack */
 			}
-#endif
 			return cobglobptr->cob_exception_code;
 		}
 		q += size - digits;
@@ -1049,14 +1040,9 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 		}
 	}
 
-#if	0	/* RXWRXW stack */
 	if (mza != buff) {
-#endif
 		cob_gmp_free(mza);
-
-#if	0	/* RXWRXW stack */
 	}
-#endif
 
 	if (COB_FIELD_NO_SIGN_NIBBLE (f)) {
 		return 0;
