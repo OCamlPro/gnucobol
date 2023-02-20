@@ -9086,6 +9086,23 @@ AT_CHECK([$COMPILE replace.cob], [1], [],
 [replace.cob:2: error: CONTROL DIVISION does not conform to GnuCOBOL
 ])
 
+AT_DATA([replace.cob], [
+       CONTROL          DIVISION.
+       REPLACE ==TEST-VAR== BY ==VAR==.
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      replace.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 TEST-VAR PIC X(2) VALUE "OK".
+       PROCEDURE        DIVISION.
+           DISPLAY VAR NO ADVANCING
+           END-DISPLAY.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fcontrol-division=ok replace.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./replace], [0], [OK], [])
+
 AT_CLEANUP
 
 
