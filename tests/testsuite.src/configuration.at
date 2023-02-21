@@ -499,6 +499,7 @@ test.conf: missing definitions:
 	no definition of 'national-character-literals'
 	no definition of 'hp-octal-literals'
 	no definition of 'acu-literals'
+	no definition of 'ebcdic-symbolic-characters'
 	no definition of 'word-continuation'
 	no definition of 'not-exception-before-exception'
 	no definition of 'accept-display-extensions'
