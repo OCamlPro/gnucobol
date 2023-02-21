@@ -1,3 +1,10 @@
+2022-02-20  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* scanner.l, config.def: Add support for EBCDIC symbolic characters in
+	  alphanumeric literals, which is a GCOS-specific extension; add new
+	  configuration option ebcdic-symbolic-characters
+	* scanner.l, pplex.l: detect and issue a warning when EBCDIC
+	  symbolic character strings include extraneous separators
 
 2023-02-21  Simon Sobisch <simonsobisch@gnu.org>
 
