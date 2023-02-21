@@ -1,4 +1,8 @@
 
+2023-01-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobfile.c, gcdiff.c: fixed some warnings about signed char
+
 2022-10-18  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobcrun.c: minor validation - check for empty parameters

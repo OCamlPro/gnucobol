@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2017, 2020 Free Software Foundation, Inc.
+   Copyright (C) 2017, 2020, 2023 Free Software Foundation, Inc.
    Written by Ron Norman, Simon Sobisch
 
    This file is part of GnuCOBOL.
@@ -221,7 +221,7 @@ print_template(const char *opt, const char *what, int type)
 }
 
 static int
-num_val( char *s, int len)
+num_val (char *s, int len)
 {
 	int		i, val;
 	for (i=val=0; i < len; i++) {
@@ -388,9 +388,9 @@ trim_line(char *buf)
  * Compare 'ref' to 'rslt'
  */
 static int
-compare_file(FILE *ref, FILE *rslt, FILE *rpt)
+compare_file (FILE *ref, FILE *rslt, FILE *rpt)
 {
-	char	rbuf[4096], nbuf[4096];
+	unsigned char	rbuf[4096], nbuf[4096];
 	const char *tagout, *tagin;
 	int		i, j, k, n, t, val, numdiff, linenum;
 	int		nx, rx;
@@ -777,7 +777,7 @@ main(
 {
 	int		opt,idx,i,k;
 	FILE	*ref,*rslt;
-	char	buf[1024], conffile[512];
+	unsigned char	buf[1024], conffile[512];
 
 #ifdef	HAVE_SETLOCALE
 	setlocale (LC_ALL, "");

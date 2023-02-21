@@ -351,7 +351,7 @@ dropField (cob_field *f)
 
 /* Does the 'word' match within the string */
 static int
-matchWord (const char *word, char *defs, char *str, int *pos )
+matchWord (const char *word, unsigned char *defs, char *str, int *pos )
 {
 	int	j, k, doeq, doend;
 	int	ln = strlen (word);
@@ -462,7 +462,8 @@ getRecsz (cob_file *fl, char *def)
 
 /* Parse out the file definition */
 static void
-parseFile (cob_file *fl, const char *select, int rcsz, char *defs, char *copy, char *keys[])
+parseFile (cob_file *fl, const char *select, int rcsz,
+		unsigned char *defs, char *copy, char *keys[])
 {
 	char	val[1024], both[1024+18], filename[1024];
 	int		j, k, ln, idx;
@@ -477,7 +478,7 @@ parseFile (cob_file *fl, const char *select, int rcsz, char *defs, char *copy, c
 	fl->access_mode = COB_ACCESS_SEQUENTIAL;
 	for (k=0; defs[k] != 0; k++) {
 		if (k==0
-		|| isspace(defs[k-1])) {
+		 || isspace(defs[k-1])) {
 			if (matchWord ("FILE=", defs, val, &k)) {
 				ln = strlen (val);
 				dropField (fl->assign);
@@ -917,9 +918,9 @@ main(
 	int		opt,idx,i,j,k,skip,ncopy;
 	FILE	*ref;
 	cob_file flin[1], flout[1];
-	char	*env, *p;
-	char	buf[1024], conffile[256], val[128];
-	char	cmd[2560], indef[2560], outdef[2560];
+	unsigned char	*env, *p;
+	unsigned char	buf[1024], conffile[256], val[128];
+	unsigned char	cmd[2560], indef[2560], outdef[2560];
 
 #ifdef	HAVE_SETLOCALE
 	setlocale (LC_ALL, "");
