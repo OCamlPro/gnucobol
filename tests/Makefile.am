@@ -34,6 +34,7 @@ testsuite_sources = \
 	testsuite.src/syn_definition.at \
 	testsuite.src/syn_file.at \
 	testsuite.src/syn_functions.at \
+	testsuite.src/syn_literals.at \
 	testsuite.src/syn_misc.at \
 	testsuite.src/syn_move.at \
 	testsuite.src/syn_multiply.at \
