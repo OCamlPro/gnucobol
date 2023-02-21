@@ -1,4 +1,9 @@
 
+2023-02-21  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* testsuite.src/syn_literals.at: move syntax checks on literals
+	  from syn_misc.at to a new file syn_literals.at
+
 2023-02-06  Simon Sobisch <simonsobisch@gnu.org>
 
 	* atlocal.in, atlocal_valgrind, atlocal_win: do not unset OS
