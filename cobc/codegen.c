@@ -7924,9 +7924,8 @@ output_if (const struct cb_if *ip)
 			output_indent_level -= 2;
 			output_line ("}");
 		} else {
-			output_line ("l_%d:;", CB_PREFIX_LABEL, code);
+			output_line ("%s%d:;", CB_PREFIX_LABEL, code);
 		}
-	}
 #else /* ifdef COBC_HAS_CUTOFF_FLAG */
 		if (!skip_else) {
 			output_line ("else");

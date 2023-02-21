@@ -8013,8 +8013,8 @@ cb_emit_accept (cb_tree var, cb_tree pos, struct cb_attr_struct *attr_ptr)
 	}
 
 #if	0	/* RXWRXW - Screen */
-	if ((CB_REF_OR_FIELD_P (var)) &&
-	     CB_FIELD (cb_ref (var))->storage == CB_STORAGE_SCREEN) {
+	if (CB_REF_OR_FIELD_P (var)
+	 && CB_FIELD_PTR (var)->storage == CB_STORAGE_SCREEN) {
 		current_program->flag_screen = 1;
 	}
 #endif
@@ -8028,7 +8028,7 @@ cb_emit_accept (cb_tree var, cb_tree pos, struct cb_attr_struct *attr_ptr)
 				cobc_xref_set_receiving (current_program->crt_status);
 			}
 		}
-		if ((CB_REF_OR_FIELD_P (var))
+		if (CB_REF_OR_FIELD_P (var)
 		 && CB_FIELD_PTR (var)->storage == CB_STORAGE_SCREEN) {
 			output_screen_from (CB_FIELD_PTR (var), 0);
 			gen_screen_ptr = 1;

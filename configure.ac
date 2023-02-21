@@ -1629,8 +1629,7 @@ if test "$with_db" = "yes"; then
 			return 1;]])],
 			[AC_DEFINE([WITH_DB], [1])
 			cob_got_db=yes
-			LIBCOB_LIBS="$LIBCOB_LIBS $BDB_LIBS"
-			break],
+			LIBCOB_LIBS="$LIBCOB_LIBS $BDB_LIBS"],
 			[],
 			[])
 		else
@@ -1638,7 +1637,8 @@ if test "$with_db" = "yes"; then
 			# prefer library with version number included as some systems link against wrong version
 			# of the library and to not break when a newer BDB version is installed, see bug #100
 			COB_BDB_HEADER_CLEAN=$(echo "$COB_BDB_HEADER" | sed -e 's/\.//' -e 's/\-//')
-			for cobdb in db-$COB_BDB_HEADER db-$COB_BDB_HEADER_CLEAN db \
+			for cobdb in db-$COB_BDB_HEADER db-$COB_BDB_HEADER_CLEAN db$COB_BDB_HEADER_CLEAN \
+				db-$COB_BDB_HEADER_MAJOR db$COB_BDB_HEADER_MAJOR db \
 				libdb$COB_BDB_HEADER libdb$COB_BDB_HEADER_CLEAN  # for common Win32 versions...
 			do
 				LIBS="$test_libs -l$cobdb"
@@ -1684,6 +1684,8 @@ if test "$with_db" = "yes"; then
 	unset cobdb
 	unset cob_got_db
 	unset COB_BDB_HEADER
+	unset COB_BDB_HEADER_MAJOR
+	unset COB_BDB_HEADER_MINOR
 fi
 
 # Checks for dl/ltdl.

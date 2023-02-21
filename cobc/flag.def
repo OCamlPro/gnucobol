@@ -44,8 +44,8 @@ CB_FLAG_RQ (cb_stack_size, 0, "stack-size", 255, 1,
 	_("  -fstack-size=<number>\tdefine PERFORM stack size\n"
 	  "                       * default: 255"))
 
-#ifdef COBC_HAS_CUTOFF_FLAG	/* CHECKME: likely will be removed completely in 3.1 */
-CB_FLAG_RQ (cb_if_cutoff, 0, "if-cutoff", 3, 2,
+#ifdef COBC_HAS_CUTOFF_FLAG	/* Note: will be removed completely in 4.x */
+CB_FLAG_RQ (cb_if_cutoff, 1, "if-cutoff", 3, 2,
 	_("  -fif-cutoff=<number>  define cutoff depth for IF statements\n"
 	  "                        * default: 3"))
 #endif
