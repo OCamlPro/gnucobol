@@ -1511,3 +1511,41 @@ prog.cob:5: error: missing terminating ' character
 ])
 
 AT_CLEANUP
+
+
+AT_SETUP([GCOS literals with EBCDIC symbols (syntax)])
+AT_KEYWORDS([extensions gcos ebcdic])
+AT_DATA([prog.cob],[
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           DISPLAY ""135,151,151"bar"195,194,0""
+           DISPLAY ""135,257""
+           DISPLAY ""135,x,194,1""
+           DISPLAY ""135,,155,""
+           DISPLAY ""135  155 " "
+
+           STOP RUN.
+])
+AT_CHECK([$COMPILE -febcdic-symbolic-characters prog.cob], [1], [],
+[prog.cob:5: error: character code 0 out of encoding range (1..256)
+prog.cob:6: error: character code 257 out of encoding range (1..256)
+prog.cob:7: error: invalid character 'x' in sequence of symbolic EBCDIC characters
+prog.cob:8: error: extraneous character ',' in sequence of symbolic EBCDIC characters
+prog.cob:8: error: extraneous separator ',' at end of symbolic EBCDIC characters
+])
+AT_DATA([prog2.cob],[
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       PROCEDURE        DIVISION.
+           DISPLAY ""135,151,151"bar"195,194,234" = foobarBAZ"
+           STOP RUN.
+])
+AT_CHECK([$COMPILE -febcdic-symbolic-characters prog2.cob], [0], [], [])
+AT_CHECK([$COMPILE prog2.cob], [0], [], [prog2.cob:5: warning: alphanumeric literal has zero length; a SPACE will be assumed
+])
+AT_CHECK([$COMPILE -febcdic-symbolic-characters -febcdic-table=dummyNotThere prog2.cob], [1], [], [libcob: error: can't open translation table 'dummyNotThere'
+prog2.cob:5: error: invalid parameter: -febcdic-table
+])
+
+AT_CLEANUP
