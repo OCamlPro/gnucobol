@@ -1742,6 +1742,7 @@ AT_CHECK([test -e TESTFILE], [0], [], [])
 
 AT_CLEANUP
 
+
 AT_SETUP([CALL unusual PROGRAM-ID.])
 AT_KEYWORDS([extensions])
 
@@ -1806,6 +1807,7 @@ AT_CHECK([$COBCRUN_DIRECT ./caller], [0], [P1P2P3P4])
 
 AT_CLEANUP
 
+
 AT_SETUP([CALL / GOBACK with LOCAL-STORAGE])
 AT_KEYWORDS([extensions])
 
@@ -1848,7 +1850,8 @@ AT_DATA([prog_b.cob], [
 
 AT_CHECK([$COMPILE prog_a.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE prog_b.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog_a], [0], [entered prog_b
+AT_CHECK([$COBCRUN_DIRECT ./prog_a], [0],
+[entered prog_b
 exiting prog_b
 back in prog_a
 ], [])
@@ -6199,7 +6202,7 @@ AT_CLEANUP
 
 
 AT_SETUP([GCOS literals with EBCDIC symbols (run)])
-AT_KEYWORDS([extensions gcos ebcdic])
+AT_KEYWORDS([extensions])
 
 AT_DATA([prog.cob], [[
        IDENTIFICATION   DIVISION.

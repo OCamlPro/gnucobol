@@ -816,7 +816,7 @@ AT_CLEANUP
 
 
 
-AT_SETUP([Numeric literals])
+AT_SETUP([numeric literals])
 AT_KEYWORDS([misc numeric-literal-length])
 
 AT_DATA([prog.cob], [
@@ -1369,7 +1369,9 @@ AT_CLEANUP
 
 
 AT_SETUP([ACUCOBOL 32bit literal size])
+
 # ACUCOBOL literal max - the result is system dependent on size of unsigned long int
+# FIXME: do not skip when expecting we pass
 AT_SKIP_IF([true])
 
 AT_KEYWORDS([extensions literals])
@@ -1514,7 +1516,7 @@ AT_CLEANUP
 
 
 AT_SETUP([GCOS literals with EBCDIC symbols (syntax)])
-AT_KEYWORDS([extensions gcos ebcdic])
+AT_KEYWORDS([extensions])
 AT_DATA([prog.cob],[
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
@@ -1542,9 +1544,11 @@ AT_DATA([prog2.cob],[
            STOP RUN.
 ])
 AT_CHECK([$COMPILE -febcdic-symbolic-characters prog2.cob], [0], [], [])
-AT_CHECK([$COMPILE prog2.cob], [0], [], [prog2.cob:5: warning: alphanumeric literal has zero length; a SPACE will be assumed
+AT_CHECK([$COMPILE prog2.cob], [0], [],
+[prog2.cob:5: warning: alphanumeric literal has zero length; a SPACE will be assumed
 ])
-AT_CHECK([$COMPILE -febcdic-symbolic-characters -febcdic-table=dummyNotThere prog2.cob], [1], [], [libcob: error: can't open translation table 'dummyNotThere'
+AT_CHECK([$COMPILE -febcdic-symbolic-characters -febcdic-table=dummyNotThere prog2.cob], [1], [],
+[libcob: error: can't open translation table 'dummyNotThere'
 prog2.cob:5: error: invalid parameter: -febcdic-table
 ])
 
