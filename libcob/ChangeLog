@@ -5,6 +5,12 @@
 	  from 4.x by Ron - now skipping initial zeros and for huge fields handle
 	  4 digits at once
 
+2023-02-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* intrinsic.c, numeric.c: explicit check result of mpz_sgn to 0/!0/1/-1
+	* intrinsic.c (cob_intr_random): fix binary end for implicit seed
+	* intrinsic.c (numval): minor optimization for invalid numeric
+
 2023-02-10  Simon Sobisch <simonsobisch@gnu.org>
 
 	* numeric.c (cob_bcd_cmp, packed_is_negative, decimal_convert_scale,
