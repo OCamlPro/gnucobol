@@ -953,7 +953,7 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 		register cob_u64_t val = byteval;
 
 		for (; p < endp; p++) {
-			val = val * 10 + pack_to_bin [*p];
+			val = val * 100 + pack_to_bin [*p];
 		}
 
 		if (!nibtest) {
