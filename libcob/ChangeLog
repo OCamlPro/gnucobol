@@ -1,7 +1,8 @@
 
-2023-02-20  Ron Norman <rjn@inglenet.com>
+2023-02-23  Ron Norman <rjn@inglenet.com> and
+2023-02-23  Simon Sobisch <simonsobisch@gnu.org>
 
-	* numeric.c: Changes for a small speed up of COMP-3 handling
+	* numeric.c: Changes to speed up COMP-3 handling
 
 2023-02-19  Ron Norman <rjn@inglenet.com>
 

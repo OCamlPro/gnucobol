@@ -722,7 +722,7 @@ cob_decimal_get_double (cob_decimal *d)
 
 /* PACKED-DECIMAL */
 
-static int
+static COB_INLINE COB_A_INLINE int
 cob_packed_get_sign (const cob_field *f)
 {
 	unsigned char *p;
@@ -899,130 +899,166 @@ cob_set_packed_zero (cob_field *f)
 	}
 }
 
+static short pack_to_bin [256] = {
+ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 0, 0, 0, 0, 0,
+10,11,12,13,14,15,16,17,18,19, 0, 0, 0, 0, 0, 0,
+20,21,22,23,24,25,26,27,28,29, 0, 0, 0, 0, 0, 0,
+30,31,32,33,34,35,36,37,38,39, 0, 0, 0, 0, 0, 0,
+40,41,42,43,44,45,46,47,48,49, 0, 0, 0, 0, 0, 0,
+50,51,52,53,54,55,56,57,58,59, 0, 0, 0, 0, 0, 0,
+60,61,62,63,64,65,66,67,68,69, 0, 0, 0, 0, 0, 0,
+70,71,72,73,74,75,76,77,78,79, 0, 0, 0, 0, 0, 0,
+80,81,82,83,84,85,86,87,88,89, 0, 0, 0, 0, 0, 0,
+90,91,92,93,94,95,96,97,98,99, 0, 0, 0, 0, 0, 0,
+ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+};
+
+/* get the numeric value and scale from the given field and store it in the
+   specified decimal */
 static void
 cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 {
-	unsigned char	*p;
-	unsigned char	*endp;
-	int		digits;
-	int		sign;
-	int		nibtest;
-	unsigned int	byteval;
-	unsigned int	nonzero;
+	register unsigned char	*p, *endp;
+	int		digits, sign, nibtest;
+	cob_uli_t	byteval = 0;
 
 	p = f->data;
-	digits = COB_FIELD_DIGITS (f);
-	sign = cob_packed_get_sign (f);
-
 	if (COB_FIELD_NO_SIGN_NIBBLE (f)) {
-		endp = f->data + f->size;
+		sign = 0;
+		endp = p + f->size;
 		nibtest = 1;
 	} else {
-		endp = f->data + f->size - 1;
+		sign = cob_packed_get_sign (f);
+		endp = p + f->size - 1;
 		nibtest = 0;
 	}
 
-	byteval = 0;
+	digits = COB_FIELD_DIGITS (f);
 	if (digits % 2 == nibtest) {
-		byteval = *p & 0x0FU;
-		p++;
+		byteval = *p++ & 0x0F;
 	}
-	mpz_set_ui (d->value, (cob_uli_t)byteval);
-	nonzero = !!byteval;
-	while (p < endp 
-	 && *p == 0x00)	/* Skip leading ZEROs */
-		p++;
-
-	for (; p < endp; p++) {
-		if ( (endp - p) > 2) {		/* Take 4 digits at once */
-			mpz_mul_ui (d->value, d->value, 10000UL);
-			mpz_add_ui (d->value, d->value,
-				    ((cob_uli_t)(*p >> 4U) * 1000) 
-					+ ((*p & 0x0FU) * 100) 
-					+ ((cob_uli_t)(p[1] >> 4U) * 10) 
-					+ (p[1] & 0x0FU));
-			nonzero = 1;
+	if (byteval == 0) {
+		while (p < endp
+		 && *p == 0x00) {	/* Skip leading ZEROs */
+			digits -= 2;
 			p++;
-			continue;
 		}
-		if (nonzero) {
-			mpz_mul_ui (d->value, d->value, 100UL);
+	}
+	if (digits < 20) {
+		register cob_u64_t val = byteval;
+
+		for (; p < endp; p++) {
+			val = val * 10 + pack_to_bin [*p];
 		}
-		if (*p) {
-			mpz_add_ui (d->value, d->value,
-				    ((cob_uli_t)(*p >> 4U) * 10) + (*p & 0x0FU));
-			nonzero = 1;
+
+		if (!nibtest) {
+			val = val * 10
+			    + (*p >> 4);
+		}
+#ifdef	COB_LI_IS_LL
+		mpz_set_ui (d->value, (cob_uli_t)val);
+#else
+		cob_decimal_set_ullint (d, val);
+#endif
+
+	} else {
+		/* note: an implementation similar to display - expanding to string,
+		   then convert to mpz from there - was tested and found to be slower */
+
+		unsigned int	nonzero = !!byteval;
+		mpz_set_ui (d->value, byteval);
+
+		for (; p < endp; p++) {
+			/* when possible take 4 digits at once to reduce GMP calls */
+			if ( (endp - p) > 2) {
+				mpz_mul_ui (d->value, d->value, 10000UL);
+				mpz_add_ui (d->value, d->value,
+							pack_to_bin [*p] * 100 + pack_to_bin [*(p + 1)]);
+				p++;
+				nonzero = 1;
+				continue;
+			}
+			if (nonzero) {
+				mpz_mul_ui (d->value, d->value, 100);
+			}
+			if (*p) {
+				mpz_add_ui (d->value, d->value, pack_to_bin [*p]);
+				nonzero = 1;
+			}
+		}
+
+		if (!nibtest) {
+			if (nonzero) {
+				mpz_mul_ui (d->value, d->value, 10);
+			}
+			mpz_add_ui (d->value, d->value, (cob_uli_t)(*p >> 4));
 		}
 	}
 
-	if (!nibtest) {
-		if (nonzero) {
-			mpz_mul_ui (d->value, d->value, 10UL);
-		}
-		mpz_add_ui (d->value, d->value, (cob_uli_t)(*p >> 4U));
-	}
-
-	if (sign < 0) {
+	if (sign == -1) {
 		mpz_neg (d->value, d->value);
 	}
-	d->scale = COB_FIELD_SCALE(f);
+	d->scale = COB_FIELD_SCALE (f);
 }
 
+
+/* get the numeric value from the given decimal and store it in the
+   specified field (or, depending on opt, set overflow exception and return
+   with the field unchanged) */
 static int
 cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 {
+	char	buff[COB_MAX_BINARY * 2];
+	register unsigned char	*p, *q;
 	unsigned char	*data;
-	unsigned char	*p;
-	unsigned char	*q;
-	char		*mza;
-	size_t		size;
-	size_t		n;
-	size_t		i;
-	int		diff;
-	int		sign;
-	int		digits;
-	unsigned int	x;
-	char		buff[1024];
-
-	/* Build string */
+	size_t	size;
+	int 	i, diff, sign, digits, last;
 	sign = mpz_sgn (d->value);
-	if (!sign) {
-		/* Value is 0 */
+
+	/* check for value zero (allows early exit) and handle sign */
+	if (sign == 0) {
 		cob_set_packed_zero (f);
 		return 0;
 	}
 	if (sign < 0) {
 		mpz_abs (d->value, d->value);
 	}
-
-	if (mpz_sizeinbase (d->value, 10) > sizeof(buff) - 2) {
-		mza = mpz_get_str (NULL, 10, d->value);
-	} else {
-		mza = buff;
-		(void)mpz_get_str (buff, 10, d->value);
-	}
-	size = strlen (mza);
-
-	/* Store number */
-	data = f->data;
+	/* Build string, note: we can't check the decimal size with
+	   mpz_sizeinbase, as its result is "either exact or one too big" */
 	digits = COB_FIELD_DIGITS (f);
-	q = (unsigned char *)mza;
-	diff = (int)(digits - size);
-	if (diff < 0) {
+
+	/* get divisor that would overflow */
+	cob_pow_10 (cob_mexp, digits);
+	/* check if it is >= what we have */
+	if (mpz_cmp (d->value, cob_mexp) >= 0) {
 		/* Overflow */
 		cob_set_exception (COB_EC_SIZE_OVERFLOW);
 
-		/* If the statement has SIZE ERROR
+		/* If the statement has ON SIZE ERROR or NOT ON SIZE ERROR,
 		   then throw an exception */
 		if (opt & COB_STORE_KEEP_ON_OVERFLOW) {
-			if (mza != buff) {
-				cob_gmp_free(mza);
-			}
 			return cobglobptr->cob_exception_code;
 		}
-		q += size - digits;
+		/* Other size, truncate digits, using the remainder */
+		mpz_tdiv_r (cob_mexp, d->value, cob_mexp);
+		(void) mpz_get_str (buff, 10, cob_mexp);
 		size = digits;
+		diff = 0;
+	} else {
+		/* No overflow, so get string data and fill with zero */
+		(void) mpz_get_str (buff, 10, d->value);
+		size = strlen (buff);
+		diff = (int)(digits - size);
 	}
+	q = (unsigned char *)buff;
+
+	/* Store number */
+	data = f->data;
 	memset (data, 0, f->size);
 	if (COB_FIELD_NO_SIGN_NIBBLE (f)) {
 		p = data + ((digits - 1) / 2) - ((size - 1) / 2);
@@ -1031,17 +1067,13 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 		p = data + (digits / 2) - (size / 2);
 		diff = 1 - (int)(size % 2);
 	}
-	for (i = diff, n = 0; i < size + diff; i++, n++) {
-		x = COB_D2I (q[n]);
+	last = (int)(size + diff);
+	for (i = diff; i < last; i++) {
 		if (i % 2 == 0) {
-			*p = (unsigned char) x << 4;
+			*p = (unsigned char) (COB_D2I(*q++) << 4);
 		} else {
-			*p++ |= x;
+			*p++ |= COB_D2I(*q++);
 		}
-	}
-
-	if (mza != buff) {
-		cob_gmp_free(mza);
 	}
 
 	if (COB_FIELD_NO_SIGN_NIBBLE (f)) {
