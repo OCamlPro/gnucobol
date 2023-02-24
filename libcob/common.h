@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -1872,7 +1872,7 @@ COB_EXPIMP void	cob_check_ref_mod_minimal	(const char *,
 					 const int, const int);
 COB_EXPIMP void	cob_check_ref_mod	(const int, const int,
 					 const int, const char *);
-COB_EXPIMP void	cob_check_beyond_exit (const unsigned char *);
+COB_EXPIMP void	cob_check_beyond_exit (const char *);
 
 
 /* Comparison functions */
