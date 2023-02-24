@@ -839,6 +839,14 @@ copy_into_field (struct cb_field *source, struct cb_field *target)
 			 but may be specified on the field */
 	if (target->level == 1 || target->level == 77) {
 		field_attribute_copy (flag_external);
+		if (target->flag_external
+		 && !target->ename) {
+#if 1	/* CHECKME: Which one to use? Possibly depending on AS clause? */
+			target->ename = source->ename;
+#else
+			target->ename = cb_to_cname (target->name);
+#endif
+		}
 	}
 	target->usage = source->usage;
 	if (source->values) {

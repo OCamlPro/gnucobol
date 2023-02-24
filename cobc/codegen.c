@@ -10505,7 +10505,6 @@ output_initial_values (struct cb_field *f)
 			continue;
 		}
 		x = cb_build_field_reference (p, NULL);
-		output_line ("/* initialize field %s */", f->name);
 		output_stmt (cb_build_initialize (x, cb_true, NULL, 1, STMT_INIT_STORAGE, 0));
 		output_newline ();
 	}
@@ -12323,10 +12322,8 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	gen_init_working = 1;		/* Disable use of DEPENDING ON fields */
 	/* Initialize WORKING-STORAGE EXTERNAL items */
 	for (f = prog->working_storage; f; f = f->sister) {
-		if (f->redefines) {
-			continue;
-		}
-		if (!f->flag_external) {
+		if (!f->flag_external
+		 || f->redefines) {
 			continue;
 		}
 		output_prefix ();

@@ -192,7 +192,7 @@ static void clear_constants (void);
 
 %}
 
-AREA_A		\n"#AREA_A"\n
+AREA_A		"#AREA_A"\n
 
 %s DECIMAL_IS_PERIOD DECIMAL_IS_COMMA
 %x PICTURE_STATE FUNCTION_STATE
@@ -211,7 +211,7 @@ AREA_A		\n"#AREA_A"\n
 	if (cobc_repeat_last_token) {
 		cobc_repeat_last_token = 0;
 		yylval = last_yylval;
-	        return last_token;
+		return last_token;
 	}
 
 	/* We treat integer literals immediately after '.' as labels;
@@ -2252,7 +2252,7 @@ scan_picture (const char *text)
 static void
 count_lines (const char *text)
 {
-	const char	*p;
+	register const char	*p;
 
 	/* Count newlines in text */
 	for (p = text; *p; p++) {
