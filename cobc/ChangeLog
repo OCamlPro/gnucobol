@@ -1,4 +1,14 @@
-2022-02-20  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+2023-02-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_initial_values): drop wrong init comment
+	* field.c (copy_into_field): set EXTERNAL name if missing
+	* pplex.l, scanner.l: dropped extra line breaks before area_a token
+	* pplex.l (ppinput): insert "preparse area_a token" in column 1 instead
+	  of column 2 to fix terminal-format support and insert it before
+	  newlines are added to the beginning of the buffer
+
+2023-02-20  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* scanner.l, config.def: Add support for EBCDIC symbolic characters in
 	  alphanumeric literals, which is a GCOS-specific extension; add new
@@ -692,7 +702,7 @@
 	FR #360 AREACHECK
 	FR #309 raise warnings/errors when some periods are missing
 	* config.def: add dialect options areacheck and missing-period
-	* pplex.l, scanner.l, parser.y: check for empty Area A, and use a
+	* pplex.l, scanner.l, parser.y: check for empty Area A, and use a set of
 	  dedicated *_IN_AREA_A tokens to detect missing periods and incorrect
 	  use of Area A
 	* pplex.l, scanner.l, parser.y: support AREACHECK and NOAREACHECK
