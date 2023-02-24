@@ -4064,7 +4064,7 @@ cob_table_sort (cob_field *f, const int n)
 /* Run-time error checking */
 
 void
-cob_check_beyond_exit (const unsigned char *name)
+cob_check_beyond_exit (const char *name)
 {
 	/* possibly allow to lower this to a runtime warning later */
 	cob_runtime_error (_("code execution leaving %s"), name);

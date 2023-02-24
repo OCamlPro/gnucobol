@@ -1,4 +1,14 @@
 
+2023-02-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_check_beyond_exit), common.h: fix prototype to match strings
+	* numeric.c (cob_decimal_get_packed): removed code for "huge packed" fields
+	  as we don't have packed fields with more than 38 digits
+
+2023-02-24  Ron Norman <rjn@inglenet.com>
+
+	* move.c (cob_get_s64_pic9) [COB_EBCDIC_MACHINE]: fix negative sign lookup
+
 2023-02-22  Simon Sobisch <simonsobisch@gnu.org>
 
 	fix bug #874 DISPLAY of 9P fields (P to the left of the decimal point)
