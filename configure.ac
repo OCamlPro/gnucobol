@@ -25,7 +25,7 @@ dnl
 AC_PREREQ([2.67])  # note: 2.67 is the one found in old msys, 2.69 is commonly available
 
 AC_INIT([GnuCOBOL],
-	[4.0-early-dev],
+	[4.0],
 	[bug-gnucobol@gnu.org],
 	[gnucobol],
 	[https://www.gnu.org/software/gnucobol/])
@@ -481,7 +481,7 @@ dnl AC_CHECK_HEADERS([stdint.h whcar.h malloc.h])
 AC_CHECK_HEADERS([sys/types.h signal.h stddef.h], [],
 	[AC_MSG_ERROR([mandatory header could not be found or included])])
 # optional:
-AC_CHECK_HEADERS([locale.h fcntl.h dlfcn.h sys/wait.h sys/sysmacros.h])
+AC_CHECK_HEADERS([sys/time.h locale.h fcntl.h dlfcn.h sys/wait.h sys/sysmacros.h])
 
 
 # Checks for typedefs, structures, and compiler characteristics.

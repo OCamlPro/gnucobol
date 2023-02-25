@@ -1,4 +1,8 @@
 
+2023-02-25  Ron Norman <rjn@inglenet.com> 
+
+	* configure.ac: Add check for  sys/time.h
+
 2023-01-14  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: fix to use pdcurses when libcurses was verified
