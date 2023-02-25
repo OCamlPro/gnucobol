@@ -227,6 +227,7 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("	register int	n;");
 		output_storage ("	register int 	val = 0;");
 		output_storage ("	p = (const unsigned char *)data;");
+			/* Improve performance by skipping leading ZEROs */
 		output_storage ("	for (n = 0; n < size; ++n, ++p) {");
 		output_storage ("		if (*p > '0' && *p <= '9')");
 		output_storage ("	       break;");
@@ -273,6 +274,7 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("	register int	n;");
 		output_storage ("	register cob_s64_t 	val = 0;");
 		output_storage ("	p = (const unsigned char *)data;");
+			/* Improve performance by skipping leading ZEROs */
 		output_storage ("	for (n = 0; n < size; ++n, ++p) {");
 		output_storage ("		if (*p > '0' && *p <= '9')");
 		output_storage ("	       break;");
@@ -293,7 +295,8 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("	register cob_s64_t	n;");
 		output_storage ("	register cob_s64_t	val = size - 1;");
 		output_storage ("	p = (const unsigned char *)data;");
-		output_storage ("	for (n = 0; n < val; ++n, ++p) {");	/* can't we get rid of that pre-loop? */
+			/* Improve performance by skipping leading ZEROs */
+		output_storage ("	for (n = 0; n < val; ++n, ++p) {");
 		output_storage ("		if (*p > '0' && *p <= '9')");
 		output_storage ("			break;");
 		output_storage ("	}");

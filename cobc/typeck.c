@@ -6548,6 +6548,14 @@ cb_build_optim_add (cb_tree v, cb_tree n)
 			return CB_BUILD_FUNCALL_2 ("cob_add_packed_int",
 					v, cb_build_cast_int (n));
 		}
+		if (CB_NUMERIC_LITERAL_P (n)
+		 && (f->usage == CB_USAGE_PACKED || f->usage == CB_USAGE_DISPLAY)
+		 && (f->pic && f->pic->scale == 0)
+		 && CB_LITERAL (n)->scale == 0
+		 && CB_LITERAL (n)->size == 1) {
+			return CB_BUILD_FUNCALL_3 ("cob_add_int", v,
+						   cb_build_cast_int (n), cb_int0);
+		}
 		if (cb_is_integer_field(f)
 		 && cb_is_integer_expr (n)) {
 			return cb_build_assign (v, cb_build_binary_op (v, '+', n));
@@ -6625,6 +6633,14 @@ cb_build_optim_sub (cb_tree v, cb_tree n)
 					CB_BUILD_CAST_ADDRESS (v),
 					cb_build_cast_int (n));
 			}
+		}
+		if (CB_NUMERIC_LITERAL_P (n)
+		 && (f->usage == CB_USAGE_PACKED || f->usage == CB_USAGE_DISPLAY)
+		 && (f->pic && f->pic->scale == 0)
+		 && CB_LITERAL (n)->scale == 0
+		 && CB_LITERAL (n)->size == 1) {
+			return CB_BUILD_FUNCALL_3 ("cob_sub_int", v,
+						   cb_build_cast_int (n), cb_int0);
 		}
 		if (cb_is_integer_field(f)
 		 && cb_is_integer_expr (n)) {

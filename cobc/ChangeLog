@@ -1,4 +1,9 @@
 
+2023-02-25  Ron Norman <rjn@inglenet.com>
+
+	* typeck.c: Check for small integer for add/subtruct and use
+			cob_add_int/cob_sub_int as the speed in this case was improved
+
 2023-02-19  Ron Norman <rjn@inglenet.com>
 
 	* cobc.c,cobc.h: Added cb_max_binary to hold max digits allowed in binary

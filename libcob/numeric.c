@@ -99,6 +99,25 @@ static const unsigned char packed_bytes[] = {
 	0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99
 };
 
+static short pack_to_bin [256] = {
+ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 0, 0, 0, 0, 0,
+10,11,12,13,14,15,16,17,18,19, 0, 0, 0, 0, 0, 0,
+20,21,22,23,24,25,26,27,28,29, 0, 0, 0, 0, 0, 0,
+30,31,32,33,34,35,36,37,38,39, 0, 0, 0, 0, 0, 0,
+40,41,42,43,44,45,46,47,48,49, 0, 0, 0, 0, 0, 0,
+50,51,52,53,54,55,56,57,58,59, 0, 0, 0, 0, 0, 0,
+60,61,62,63,64,65,66,67,68,69, 0, 0, 0, 0, 0, 0,
+70,71,72,73,74,75,76,77,78,79, 0, 0, 0, 0, 0, 0,
+80,81,82,83,84,85,86,87,88,89, 0, 0, 0, 0, 0, 0,
+90,91,92,93,94,95,96,97,98,99, 0, 0, 0, 0, 0, 0,
+ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+};
+
 static cob_decimal	cob_d1;
 static cob_decimal	cob_d2;
 static cob_decimal	cob_d3;
@@ -788,7 +807,7 @@ cob_add_packed (cob_field *f, int val, const int opt)
 	unsigned int	subtr = 0;
 	unsigned int	zeroes = 0;
 	unsigned int	origdigs;
-	unsigned char	savedata[256];
+	unsigned char	savedata[48];
 
 	ndigs = COB_FIELD_DIGITS(f) - COB_FIELD_SCALE(f);
 	if (ndigs <= 0) {
@@ -803,8 +822,10 @@ cob_add_packed (cob_field *f, int val, const int opt)
 
 	if (COB_FIELD_NO_SIGN_NIBBLE (f)) {
 		msn = COB_FIELD_SCALE(f) % 2;
+		tval = msn;
 	} else {
 		msn = 1 - (COB_FIELD_SCALE(f) % 2);
+		tval = 1 - (COB_FIELD_SCALE(f) % 2);
 	}
 
 	/* -x +v = -(x - v), -x -v = -(x + v) */
@@ -815,7 +836,7 @@ cob_add_packed (cob_field *f, int val, const int opt)
 		val = -val;
 		subtr = 1;
 	}
-	p = f->data + (ndigs / 2) - (1 - msn);
+	p = f->data + (ndigs / 2) - (1 - tval);
 	origdigs = ndigs;
 	while (ndigs--) {
 		if (val) {
@@ -898,25 +919,6 @@ cob_set_packed_zero (cob_field *f)
 		*(f->data + f->size - 1) = 0x0C;
 	}
 }
-
-static short pack_to_bin [256] = {
- 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 0, 0, 0, 0, 0,
-10,11,12,13,14,15,16,17,18,19, 0, 0, 0, 0, 0, 0,
-20,21,22,23,24,25,26,27,28,29, 0, 0, 0, 0, 0, 0,
-30,31,32,33,34,35,36,37,38,39, 0, 0, 0, 0, 0, 0,
-40,41,42,43,44,45,46,47,48,49, 0, 0, 0, 0, 0, 0,
-50,51,52,53,54,55,56,57,58,59, 0, 0, 0, 0, 0, 0,
-60,61,62,63,64,65,66,67,68,69, 0, 0, 0, 0, 0, 0,
-70,71,72,73,74,75,76,77,78,79, 0, 0, 0, 0, 0, 0,
-80,81,82,83,84,85,86,87,88,89, 0, 0, 0, 0, 0, 0,
-90,91,92,93,94,95,96,97,98,99, 0, 0, 0, 0, 0, 0,
- 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
- 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
- 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
- 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
- 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
- 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-};
 
 /* get the numeric value and scale from the given field and store it in the
    specified decimal */
@@ -2182,8 +2184,9 @@ cob_display_add_int (cob_field *f, int n, const int opt)
 int
 cob_add_int (cob_field *f, const int n, const int opt)
 {
-	int	scale;
-	int	val;
+	int		scale;
+	register int		val, carry;
+	register unsigned char *p = f->data + f->size - 1;
 
 	if (n == 0) {
 		return 0;
@@ -2195,6 +2198,92 @@ cob_add_int (cob_field *f, const int n, const int opt)
 		return cob_display_add_int (f, n, opt);
 	}
 #endif
+	/* n is single digit value added to positive field */
+	if (n > -10 
+	 && n < 10
+	 && COB_FIELD_SCALE (f) == 0) {
+		if (COB_FIELD_TYPE (f) == COB_TYPE_NUMERIC_PACKED
+		 && cob_packed_get_sign (f) >= 0
+		 && *(f->data) == 0x00) {
+			if (!COB_FIELD_NO_SIGN_NIBBLE (f)) {
+				val = (*p >> 4) + n;
+				if (val > 9) {
+					carry = 1;
+					*p = (*p & 0x0F) | ((val - 10) << 4);
+				} else if (val < 0) {
+					carry = -1;
+					*p = (*p & 0x0F) | ((val + 10) << 4);
+				} else {
+					*p = (*p & 0x0F) | (val << 4);
+					return 0;
+				}
+				p--;
+			} else {
+				carry = n;
+			}
+			while (carry != 0) {
+				val = (*p & 0x0F) + carry;
+				if (val > 9) {
+					carry = 1;
+					*p = (*p & 0xF0) | (val - 10);
+				} else if (val < 0) {
+					carry = -1;
+					*p = (*p & 0xF0) | (val + 10);
+				} else {
+					*p = (*p & 0xF0) | val;
+					return 0;
+				}
+				val = ((*p & 0xF0) >> 4) + carry;
+				if (val > 9) {
+					carry = 1;
+					*p = (*p & 0x0F) | ((val - 10) << 4);
+				} else if (val < 0) {
+					carry = -1;
+					*p = (*p & 0x0F) | ((val + 10) << 4);
+				} else {
+					*p = (*p & 0x0F) | (val << 4);
+					return 0;
+				}
+				if (p == f->data) {
+					if (carry == -1) {	/* Set field to -1 */
+						memset (f->data, 0, f->size);
+						f->data [f->size - 1] = 0x1D;
+					}
+					break;
+				}
+				p--;
+			}
+			return 0;
+		}
+		if (COB_FIELD_TYPE (f) == COB_TYPE_NUMERIC_DISPLAY
+		 && (!COB_FIELD_HAVE_SIGN (f)
+		 	|| ((*p & 0x40) != 0x40))
+		 && *(f->data) == '0') {
+			carry = n;
+			while (carry != 0) {
+				val = COB_D2I(*p) + carry;
+				if (val > 9) {
+					*p = COB_I2D (val - 10);
+					carry = 1;
+				} else if (val < 0) {
+					*p = COB_I2D (val + 10);
+					carry = -1;
+				} else {
+					*p = COB_I2D (val);
+					return 0;
+				}
+				if (p == f->data) {
+					if (carry == -1) {	/* Set field to -1 */
+						memset (f->data, '0', f->size);
+						f->data [f->size - 1] = 0x71;
+					}
+					break;
+				}
+				p--;
+			}
+			return 0;
+		}
+	}
 
 	/* Not optimized */
 	cob_decimal_set_field (&cob_d1, f);
