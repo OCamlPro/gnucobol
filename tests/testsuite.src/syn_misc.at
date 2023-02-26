@@ -7945,7 +7945,7 @@ AT_DATA([prog.cob], [
        01  TSTX-4   PIC X(4)  COMP-5.
        01  TSTX-8   PIC X(8)  COMP-X.
        01  TSTX-24  PIC X(24) COMP-X.
-       01  TST9-12  PIC 9(12) COMP-X.
+       01  TST9-12  PIC S9(12) COMP-X.
        01  TST9-19  PIC 9(19) COMP-X.
        01  TST9-40  PIC 9(40) COMP-X.
        01  TST9-42  PIC 9(42) COMP-X.
@@ -7975,6 +7975,7 @@ AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:13: error: numeric field cannot be larger than 38 digits
 prog.cob:14: error: numeric field cannot be larger than 38 digits
 prog.cob:10: error: 'TSTX-24' COMP-X field cannot be larger than 16 bytes
+prog.cob:11: warning: ignoring Sign for TST9-12 S9(12) COMP-X
 ])
 
 AT_CLEANUP

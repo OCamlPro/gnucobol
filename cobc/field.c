@@ -2434,6 +2434,11 @@ setup_parameters (struct cb_field *f)
 		if (f->pic
 		 && f->usage == CB_USAGE_COMP_X) {
 			if (f->pic->category == CB_CATEGORY_NUMERIC) {
+				if (f->pic->have_sign) {
+					cb_warning_x (cb_warn_additional, CB_TREE (f),
+						_("ignoring Sign for %s %s COMP-X"),
+						cb_name (CB_TREE (f)), f->pic->orig);
+				}
 				if (f->compx_size == 0)
 					f->compx_size = f->size;
 				f->pic->have_sign = 0;
