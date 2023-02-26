@@ -358,7 +358,7 @@ AT_DATA([prog.cob], [
        01  num-edited              PIC 99.99 VALUE "01.00".
        01  leading-zeroes          PIC 9(5) VALUE 5.
        01  decimal-num             PIC 99V999 PACKED-DECIMAL VALUE 0.12.
-       01  signed-decimal-num      PIC S999 COMP-X VALUE -1.
+       01  signed-decimal-num      PIC S999 COMP-5 VALUE -1.
        01  comp-5-item             PIC 9(10) COMP-5 VALUE 5.
        01  index-item              INDEX.
        01  float-short-item        FLOAT-SHORT VALUE 100.
@@ -737,7 +737,7 @@ AT_DATA([prog.cob], [
        01  decimal-nums.
            03  decimal-num         PIC 99V999 PACKED-DECIMAL VALUE 0.12.
            03  decimal-num-2       PIC 99V9 VALUE 0.1.
-       01  signed-decimal-num      PIC S999 COMP-X VALUE -1.
+       01  signed-decimal-num      PIC S999 COMP-5 VALUE -1.
        01  comp-5-item             PIC 9(10) COMP-5 VALUE 5.
        01  index-item              INDEX.
        01  float-short-item        FLOAT-SHORT VALUE 100.
