@@ -1,4 +1,9 @@
 
+2023-02-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: fixed duplicate note about JSON_C_C_FLAGS,
+	  changed messages as per autoconf docs
+
 2023-02-19  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: minor adjustment for bdb library lookup
