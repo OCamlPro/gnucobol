@@ -1,4 +1,17 @@
 
+2023-03-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_cond_fields): optimize comparison between field and
+	  ZEROES up to COB_ZEROES_ALPHABETIC_BYTE_LENGTH
+
+2023-02-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_emit_set_to): generate runtime check for SET source
+	  at most one time
+	* cobc.c (process_filename) [_WIN32 __GNUC__]: pass .dll input files
+	  to linker (GCC MinGW extension to drop need of link libraries)
+	* cobc.c (xref_files_and_their_records, xref_labels): minor refactoring
+
 2023-02-24  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c (output_initial_values): drop wrong init comment

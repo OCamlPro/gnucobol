@@ -420,12 +420,19 @@ cob_decimal_print (cob_decimal *d, FILE *fp)
 
 /* Get power of 10 as mpz_t */
 static COB_INLINE COB_A_INLINE void
-cob_pow_10 (mpz_t mexp, int n)
+cob_pow_10 (mpz_t mexp, unsigned int n)
 {
-	if (n >= 0 && n <= COB_MAX_BINARY) {
+	if (n <= COB_MAX_BINARY) {
 		mpz_set (mexp, cob_mpze10[n]);
 	} else {
-		mpz_ui_pow_ui (mexp, 10UL, (cob_uli_t)n);
+	/* needed, for example in FUNCTION RANDOM test (999)
+	   and with extreme huge value (6499) for test
+	   "FLOAT-DECIMALL w/o SIZE ERROR" to get huge
+	   FD32 values with the right scale */
+	/* TODO: add artificial limit with raising ON SIZE ERROR
+	   as we otherwise run into an abort directly in GMP
+	   for _real huge_ numbers */
+		mpz_ui_pow_ui (mexp, 10UL, n);
 	}
 }
 

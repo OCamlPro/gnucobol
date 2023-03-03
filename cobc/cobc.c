@@ -4244,9 +4244,12 @@ process_filename (const char *filename)
 #if	defined(__OS400__)
 	    extension[0] == 0
 #else
-		cb_strcasecmp (extension, COB_OBJECT_EXT) == 0
+	    cb_strcasecmp (extension, COB_OBJECT_EXT) == 0
 #if	defined(_WIN32)
 	 || cb_strcasecmp (extension, "lib") == 0
+#if defined (__GNUC__)
+	|| cb_strcasecmp (extension, "dll") == 0
+#endif
 #endif
 #if	!defined(_WIN32) || defined(__MINGW32__) || defined(__MINGW64__)
 	 || cb_strcasecmp (extension, "a") == 0
@@ -5904,12 +5907,12 @@ xref_files_and_their_records (cb_tree file_list_p)
 	cb_tree	l;
 
 	for (l = file_list_p; l; l = CB_CHAIN (l)) {
+		struct cb_file *file = CB_FILE (CB_VALUE (l));
 		pd_off = sprintf (print_data, "%-30.30s %-6u ",
-			 CB_FILE (CB_VALUE (l))->name,
-			 CB_FILE (CB_VALUE (l))->common.source_line);
-		xref_print (&CB_FILE (CB_VALUE (l))->xref, XREF_FILE, NULL);
-		if (CB_FILE (CB_VALUE (l))->record) {
-			(void)xref_fields (CB_FILE (CB_VALUE (l))->record);
+			 file->name, file->common.source_line);
+		xref_print (&file->xref, XREF_FILE, NULL);
+		if (file->record) {
+			(void)xref_fields (file->record);
 		}
 		print_program_data ("");
 	}
@@ -5930,15 +5933,14 @@ xref_fields_in_section (struct cb_field *first_field_in_section)
 }
 
 static int
-xref_labels (cb_tree label_list_p)
+xref_labels (cb_tree statements)
 {
-	cb_tree	l;
 	char	label_type = ' ';
-	struct cb_label *lab;
-
-	for (l = label_list_p; l; l = CB_CHAIN (l)) {
-		if (CB_LABEL_P(CB_VALUE(l))) {
-			lab = CB_LABEL (CB_VALUE (l));
+	cb_tree	l;
+	for (l = statements; l; l = CB_CHAIN (l)) {
+		cb_tree stmt = CB_VALUE (l);
+		if (CB_LABEL_P (stmt)) {
+			struct cb_label *lab = CB_LABEL (stmt);
 			if (lab->xref.skip) {
 				continue;
 			}
