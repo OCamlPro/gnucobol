@@ -1054,13 +1054,11 @@ cb_emit_incompat_data_checks (cb_tree x)
 {
 	struct cb_field		*f;
 
-	/* TO-DO: Check for EC-DATA-INCOMPATIBLE checking */
-
 	if (!x || x == cb_error_node) {
 		return;
 	}
-	if (!CB_REF_OR_FIELD_P (x) ||
-	    CB_TREE_CATEGORY (x) != CB_CATEGORY_NUMERIC) {
+	if (!CB_REF_OR_FIELD_P (x)
+	 || CB_TREE_CATEGORY (x) != CB_CATEGORY_NUMERIC) {
 		return;
 	}
 	f = CB_FIELD_PTR (x);
@@ -1068,9 +1066,9 @@ cb_emit_incompat_data_checks (cb_tree x)
 		cb_emit (CB_BUILD_FUNCALL_1 ("cob_correct_numeric", x));
 	}
 	if (CB_EXCEPTION_ENABLE (COB_EC_DATA_INCOMPATIBLE)) {
-		if (f->usage == CB_USAGE_DISPLAY ||
-		    f->usage == CB_USAGE_PACKED ||
-		    f->usage == CB_USAGE_COMP_6) {
+		if (f->usage == CB_USAGE_DISPLAY
+		 || f->usage == CB_USAGE_PACKED
+		 || f->usage == CB_USAGE_COMP_6) {
 			cb_emit (CB_BUILD_FUNCALL_2 ("cob_check_numeric",
 					x,
 					CB_BUILD_STRING0 (f->name)));
@@ -5983,12 +5981,10 @@ enum_explain_storage (const enum cb_storage storage)
 static cb_tree
 build_store_option (cb_tree x, cb_tree round_opt)
 {
-	struct cb_field	*f;
+	const struct cb_field	*f = CB_FIELD_PTR (x);
+	const enum cb_usage	usage = f->usage;
 	int		opt;
-	enum cb_usage	usage;
 
-	f = CB_FIELD_PTR (x);
-	usage = f->usage;
 #if	0	/* RXWRXW - FP */
 	if (usage == CB_USAGE_LONG_DOUBLE
 	 || usage == CB_USAGE_DOUBLE
@@ -6523,19 +6519,21 @@ cb_emit_arithmetic (cb_tree vars, const int op, cb_tree val)
 		cb_tree l;
 		cb_emit_incompat_data_checks (x);
 		for (l = vars; l; l = CB_CHAIN (l)) {
-			cb_emit_incompat_data_checks (CB_VALUE (l));
+			const cb_tree	target = CB_VALUE(l);
+			const cb_tree	round_and_trunc = CB_PURPOSE(l);
+			cb_emit_incompat_data_checks (target);
 			switch (op) {
 			case '+':
-				CB_VALUE (l) = cb_build_add (CB_VALUE (l), x, CB_PURPOSE (l));
+				CB_VALUE (l) = cb_build_add (target, x, round_and_trunc);
 				break;
 			case '-':
-				CB_VALUE (l) = cb_build_sub (CB_VALUE (l), x, CB_PURPOSE (l));
+				CB_VALUE (l) = cb_build_sub (target, x, round_and_trunc);
 				break;
 			case '*':
-				CB_VALUE (l) = cb_build_mul (CB_VALUE (l), x, CB_PURPOSE (l));
+				CB_VALUE (l) = cb_build_mul (target, x, round_and_trunc);
 				break;
 			case '/':
-				CB_VALUE (l) = cb_build_div (CB_VALUE (l), x, CB_PURPOSE (l));
+				CB_VALUE (l) = cb_build_div (target, x, round_and_trunc);
 				break;
 			}
 		}
@@ -6933,6 +6931,14 @@ cb_build_cond_fields (struct cb_binary_op *p,
 		return CB_BUILD_FUNCALL_3 ("memcmp",
 			CB_BUILD_CAST_ADDRESS (left),
 			cb_build_direct ("COB_SPACES_ALPHABETIC", 0),
+			cb_int (size1));
+	}
+	if (right == cb_zero
+	 && (l_class == CB_CLASS_ALPHANUMERIC || l_class == CB_CLASS_ALPHABETIC)
+	 && (size1 > 0 && size1 <= COB_ZEROES_ALPHABETIC_BYTE_LENGTH)) {
+		return CB_BUILD_FUNCALL_3 ("memcmp",
+			CB_BUILD_CAST_ADDRESS (left),
+			cb_build_direct ("COB_ZEROES_ALPHABETIC", 0),
 			cb_int (size1));
 	}
 	
@@ -9733,7 +9739,7 @@ cb_emit_evaluate (cb_tree subject_list, cb_tree case_list)
 	}
 #endif
 
-	/* code to skipt to internal label of END-EVALUATE */
+	/* code to skip to internal label of END-EVALUATE */
 	sprintf (sbuf, "goto %s%d;", CB_PREFIX_LABEL, cb_id);
 	x = cb_build_direct (cobc_parse_strdup (sbuf), 0);
 
@@ -11932,8 +11938,8 @@ cb_build_move (cb_tree src, cb_tree dst)
 	cb_tree	ret;
 	int	move_zero;
 
-	if (CB_INVALID_TREE(src)
-	 || CB_INVALID_TREE(dst)) {
+	if (CB_INVALID_TREE (src)
+	 || CB_INVALID_TREE (dst)) {
 		return cb_error_node;
 	}
 
@@ -11951,8 +11957,8 @@ cb_build_move (cb_tree src, cb_tree dst)
 	} else if (CB_LITERAL_P (src)) {
 		/* FIXME: don't do this for a DYNAMIC LENGTH target */
 		const struct cb_literal* lit = CB_LITERAL (src);
-		char* p = (char*)lit->data;
-		char* end = p + lit->size - 1;
+		char *p = (char*)lit->data;
+		char *end = p + lit->size - 1;
 		if (*end == ' ') {
 			while (p < end && *p == ' ') p++;
 			if (p == end) src = cb_space;
@@ -12132,8 +12138,10 @@ cb_emit_move (cb_tree src, cb_tree dsts)
 		return;
 	}
 
+	/* Validate source, if requested. */
 	cb_emit_incompat_data_checks (src);
-	/* CHECKME: this is way to much to cater for sum field */
+
+	/* FIXME: this is way to much to cater for sum field */
 	src = cb_check_sum_field (src);
 
 	tempval = 0;
@@ -12958,18 +12966,21 @@ cb_check_set_to (cb_tree vars, cb_tree x, const int emit_error)
 }
 
 void
-cb_emit_set_to (cb_tree vars, cb_tree x)
+cb_emit_set_to (cb_tree vars, cb_tree src)
 {
 	cb_tree	l;
 
-	if (cb_check_set_to (vars, x, 1)) {
+	/* Emit statements only if targets have the correct class. */
+	if (cb_check_set_to (vars, src, 1)) {
 		return;
 	}
 
-	/* Emit statements if targets have the correct class. */
+	/* Validate source, if requested. */
+	cb_emit_incompat_data_checks (src);
+
+	/* Emit statements. */
 	for (l = vars; l; l = CB_CHAIN (l)) {
-		cb_emit_incompat_data_checks (x);
-		cb_emit (cb_build_move (x, CB_VALUE (l)));
+		cb_emit (cb_build_move (src, CB_VALUE (l)));
 	}
 }
 

@@ -879,13 +879,13 @@ AC_ARG_WITH([xml2],
 AS_IF([test "$with_xml2" = yes -o "$with_xml2" = check], [
 	PKG_CHECK_MODULES([XML2], [libxml-2.0], [], [
 	if test -z "${XML2_CFLAGS+x}" -o -z "${XML2_LIBS+x}"; then
-	  AC_CHECK_PROG(xml2_config_found, xml2-config, yes)
-	  if test "$xml2_config_found" = yes; then
-	    if test -z "${XML2_CFLAGS+x}"; then
-	      XML2_CFLAGS="$(xml2-config --cflags)"
+	  AC_PATH_PROG(XML2_CONFIG, xml2-config)
+	  if test -n "$XML2_CONFIG"; then
+	    if test -z "$XML2_CFLAGS"; then
+	      XML2_CFLAGS="$($XML2_CONFIG --cflags)"
 	    fi
-	    if test -z "${XML2_LIBS+x}"; then
-	      XML2_LIBS="$(xml2-config --libs)"
+	    if test -z "$XML2_LIBS"; then
+	      XML2_LIBS="$($XML2_CONFIG --libs)"
 	    fi
 	  fi
 	fi])
@@ -897,18 +897,17 @@ AS_IF([test "$with_xml2" = yes -o "$with_xml2" = check], [
 	  XML2_LIBS="-lxml2"
 	fi
 	LIBS="$LIBS $XML2_LIBS"
-	# note: the include part is likely wrong, as PKG_CONFIG and xml2_config
-	#       normally include _with_ "libxml", so only the header name should be
-	#       used then - needs adjustments in both configure and libcob!
-	for header in xmlversion uri xmlwriter
-	do
+	# note: PKG_CONFIG and xml2-config set -I /path/to/libxml2 which contains a "libxml" folder where
+	#       all the files we look for are included
+	for header in xmlwriter xmlversion uri parser tree; do
 		AC_CHECK_HEADER([libxml/$header.h], [],
 			[if test "$with_xml2" = yes; then
 			   AC_MSG_ERROR([headers for libxml2 are required for --with-xml2, you may adjust XML2_CFLAGS])
-			else
+			 else
+			   AC_MSG_WARN([headers for libxml2 are missing, you may adjust XML2_CFLAGS])
 			   with_xml2=not_found
 			   break
-			fi]
+			 fi]
 		)
 	done
 	if test "$with_xml2" != "not_found"; then
@@ -1026,14 +1025,13 @@ AS_IF([test "$USE_JSON" = "cjson" -o "$USE_JSON" = "local" -o "$USE_JSON" = chec
 		  CJSON_LIBS="-lcjson"
 		fi
 		LIBS="$LIBS $CJSON_LIBS"
-		AC_CHECK_HEADERS([cJSON.h], [],
-			[AC_CHECK_HEADERS([cjson/cJSON.h], [],
+		AC_CHECK_HEADERS([cJSON.h cjson/cJSON.h], [break],
 			[if test "$with_json" = "cjson"; then
 			    AC_MSG_ERROR([header for libcjson is required for --with-json=cjson, you may adjust CJSON_CFLAGS])
 			 else
 				AC_MSG_WARN([header for libcjson missing, you may adjust CJSON_CFLAGS or put cJSON sources in "libcob"])
 			 fi]
-		)])
+		)
 		AS_IF([test "x$ac_cv_header_cJSON_h" = xyes -o "x$ac_cv_header_cjson_cJSON_h" = xyes], [
 			AC_MSG_CHECKING([whether linking against libcjson with "$CJSON_LIBS" works])
 			AC_LINK_IFELSE([AC_LANG_PROGRAM([
@@ -1077,14 +1075,13 @@ AS_IF([test "$USE_JSON" = "json-c" -o "$USE_JSON" = check], [
 	  JSON_C_LIBS="-ljson-c"
 	fi
 	LIBS="$LIBS $JSON_C_LIBS"
-	AC_CHECK_HEADERS([json.h], [],
-		[AC_CHECK_HEADERS([json-c/json.h], [],
+	AC_CHECK_HEADERS([json.h json-c/json.h], [break],
 		[if test "$with_json" = "json-c"; then
 		    AC_MSG_ERROR([header for libjson-c is required for --with-json=json-c, you may adjust JSON_C_CFLAGS])
 		 else
 			AC_MSG_WARN([header for libjson-c missing, you may adjust JSON_C_CFLAGS])
 		 fi]
-	)])
+	)
 	AS_IF([test "x$ac_cv_header_json_h" = xyes -o "x$ac_cv_header_json_c_json_h" = xyes], [
 	 AC_MSG_CHECKING([whether linking against libjson-c with "$JSON_C_LIBS" works])
 	 AC_LINK_IFELSE([AC_LANG_PROGRAM([
@@ -1275,12 +1272,12 @@ if test "x$CURSES_LIBS" = x; then
   fi
 fi
 if test "$USE_CURSES" = "ncursesw" -o "x$ac_cv_lib_ncursesw_initscr" = xyes; then
-  AC_CHECK_HEADERS([ncursesw/ncurses.h], [USE_CURSES="ncursesw"],
-    [AC_CHECK_HEADERS([ncursesw/curses.h], [USE_CURSES="ncursesw"],
-      dnl note: at least OpenBSD has ncursesw only with only ncurses.h in default header directory
-      [AC_CHECK_HEADERS([ncurses.h], [USE_CURSES="ncursesw"],
-        [AS_IF([test "$USE_CURSES" != check],
-          [USE_CURSES="missing_header"]) ]) ]) ])
+  dnl note: at least OpenBSD has ncursesw only with only ncurses.h in default header directory
+  AC_CHECK_HEADERS([ncursesw/ncurses.h ncursesw/curses.h ncurses.h],
+    [USE_CURSES="ncursesw"
+     break],
+    [AS_IF([test "$USE_CURSES" != check],
+       [USE_CURSES="missing_header"]) ])
   AS_IF([test $USE_CURSES="ncursesw" -a "x$CURSES_LIBS" = x],
     [CURSES_LIBS="-l$USE_CURSES"])
 fi
@@ -1292,11 +1289,11 @@ if test "x$CURSES_LIBS" = x; then
   fi
 fi
 if test "$USE_CURSES" = "ncurses" -o "x$ac_cv_lib_ncurses_initscr" = xyes; then
-  AC_CHECK_HEADERS([ncurses/ncurses.h], [USE_CURSES="ncurses"],
-    [AC_CHECK_HEADERS([ncurses/curses.h], [USE_CURSES="ncurses"],
-      [AC_CHECK_HEADERS([ncurses.h], [USE_CURSES="ncurses"],
-        [AS_IF([test "$USE_CURSES" != check],
-          [USE_CURSES="missing_header"]) ]) ]) ])
+  AC_CHECK_HEADERS([ncurses/ncurses.h ncurses/curses.h ncurses.h],
+    [USE_CURSES="ncurses"
+     break],
+    [AS_IF([test "$USE_CURSES" != check],
+       [USE_CURSES="missing_header"]) ])
   AS_IF([test $USE_CURSES="ncurses" -a "x$CURSES_LIBS" = x],
     [CURSES_LIBS="-l$USE_CURSES"])
 fi
@@ -1308,9 +1305,11 @@ if test "x$CURSES_LIBS" = x; then
   fi
 fi
 if test "$USE_CURSES" = "pdcurses" -o "x$ac_cv_lib_pdcurses_initscr" = xyes; then
-  AC_CHECK_HEADERS([pdcurses.h], [USE_CURSES="pdcurses"],
-    [AC_CHECK_HEADERS([curses.h], [USE_CURSES="pdcurses"],
-      [AS_IF([test "$USE_CURSES" != check], [USE_CURSES="missing_header"]) ]) ])
+  AC_CHECK_HEADERS([pdcurses.g curses.h],
+    [USE_CURSES="pdcurses"
+     break],
+    [AS_IF([test "$USE_CURSES" != check],
+       [USE_CURSES="missing_header"]) ])
   AS_IF([test $USE_CURSES="pdcurses" -a "x$CURSES_LIBS" = x],
     [CURSES_LIBS="-l$USE_CURSES"])
 fi
@@ -1324,9 +1323,11 @@ if test "x$CURSES_LIBS" = x; then
   fi
 fi
 if test "$USE_CURSES" = "xcurses" -o "x$ac_cv_lib_XCurses_initscr" = xyes; then
-  AC_CHECK_HEADERS([xcurses.h], [USE_CURSES="xcurses"],
-    [AC_CHECK_HEADERS([xcurses/curses.h], [USE_CURSES="xcurses"],
-      [AS_IF([test "$USE_CURSES" != check], [USE_CURSES="missing_header"]) ]) ])
+  AC_CHECK_HEADERS([xcurses/curses.h xcurses.h],
+    [USE_CURSES="xcurses"
+     break],
+    [AS_IF([test "$USE_CURSES" != check],
+       [USE_CURSES="missing_header"]) ])
   AS_IF([test $USE_CURSES="xcurses" -a "x$CURSES_LIBS" = x],
     # note: the library name is actually with an upper-case XC:
     [CURSES_LIBS="-lXCurses"])

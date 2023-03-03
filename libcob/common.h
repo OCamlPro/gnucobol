@@ -1909,6 +1909,9 @@ COB_EXPIMP void cob_unstring_finish	(void);
 COB_EXPIMP const char *COB_SPACES_ALPHABETIC;	/* PIC X/A/U SPACES */
 #define COB_SPACES_ALPHABETIC_BYTE_LENGTH 1024
 
+COB_EXPIMP const char *COB_ZEROES_ALPHABETIC;	/* PIC X/A/U ZEROES */
+#define COB_ZEROES_ALPHABETIC_BYTE_LENGTH 256
+
 /*******************************/
 /*   Functions in move.c       */
 /*******************************/

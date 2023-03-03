@@ -5142,7 +5142,7 @@ cb_ref_internal (cb_tree x, const int emit_error)
 		c = r->chain;
 		switch (CB_TREE_TAG (v)) {
 		case CB_TAG_FIELD: {
-			struct cb_field* fld = CB_FIELD (v);
+			struct cb_field *fld = CB_FIELD (v);
 			/* ignore sub-items of typedefs */
 			if (fld->parent != NULL && cb_field_founder (fld)->flag_is_typedef) {
 				continue;
@@ -5162,8 +5162,9 @@ cb_ref_internal (cb_tree x, const int emit_error)
 			}
 
 			/* Resolve by file or CD */
-			if (c && CB_REFERENCE (c)->chain == NULL
-			    && CB_WORD_COUNT (c) == 1) {
+			if (c
+			 && CB_REFERENCE (c)->chain == NULL
+			 && CB_WORD_COUNT (c) == 1) {
 				cb_tree tree = cb_ref (c);
 				if (field_is_in_file_record (tree, fld)
 				 || field_is_in_cd_record (tree, fld)) {

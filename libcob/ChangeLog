@@ -1,9 +1,22 @@
 
+2023-03-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c, common.h: new external field + define COB_ZEROES_ALPHABETIC /
+	  COB_ZEROES_ALPHABETIC_BYTE_LENGTH
+	* common.c (compare_zeroes): new function for common comparison to ZERO
+	* common.c (compare_character): fix issue with not comparing last bytes
+
+2023-02-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c (field_accept): minor refactoring to not update
+	  COB_TERM_BUFF for ACCEPT OMITTED
+
 2023-02-24  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (cob_check_beyond_exit), common.h: fix prototype to match strings
 	* numeric.c (cob_decimal_get_packed): removed code for "huge packed" fields
 	  as we don't have packed fields with more than 38 digits
+	* numeric.c (cob_pow_10): unsigned parameter, fixing some overflows in GMP
 
 2023-02-24  Ron Norman <rjn@inglenet.com>
 

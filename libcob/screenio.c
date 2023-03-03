@@ -2707,20 +2707,17 @@ field_accept (cob_field *f, const int sline, const int scolumn, cob_field *fgc,
 	int		status;
 	chtype		prompt_char;    /* prompt character */
 	chtype		default_prompt_char;
-	size_t		size_accept = 0;	/* final size to accept */
-	cob_field	temp_field;
-#if	0	/* RXWRXW - Screen update */
-	cob_field	char_temp;
-	unsigned char	space_buff[4];
-#endif
 #ifdef NCURSES_MOUSE_VERSION
 	MEVENT		mevent;
 #endif
 
-	memset (COB_TERM_BUFF, ' ', (size_t)COB_MEDIUM_MAX);
-	temp_field.data = COB_TERM_BUFF;
-	temp_field.attr = &const_alpha_attr;
+	size_t		size_accept = 0;	/* final size to accept */
+	cob_field	temp_field;
+
 #if	0	/* RXWRXW - Screen update */
+	cob_field	char_temp;
+	unsigned char	space_buff[4];
+
 	char_temp.data = space_buff;
 	char_temp.attr = &const_alpha_attr;
 	char_temp.size = 1;
@@ -2775,9 +2772,13 @@ field_accept (cob_field *f, const int sline, const int scolumn, cob_field *fgc,
 		}
 
 		p = COB_TERM_BUFF;
+		temp_field.data = COB_TERM_BUFF;
+		temp_field.attr = &const_alpha_attr;
 		temp_field.size = size_accept;
 		if (fattr & COB_SCREEN_UPDATE) {
-			cob_move (f, &temp_field);
+			cob_move (f, &temp_field);	/* updates COB_TERM_BUFF */
+		} else {
+			memset (COB_TERM_BUFF, ' ', size_accept);
 		}
 
 		raise_ec_on_truncation (size_accept);
@@ -3359,12 +3360,16 @@ field_accept (cob_field *f, const int sline, const int scolumn, cob_field *fgc,
 		(void)flushinp ();
 		cob_beep ();
 	}
+
  field_return:
 	pass_cursor_to_program ();
 	handle_status (fret, ACCEPT_STATEMENT);
 	if (f) {
 		cob_move (&temp_field, f);
 		cob_move_cursor (sline, right_pos + 1);
+#if 0	/* possible cleanup to not "leak" input data */
+		memset (COB_TERM_BUFF, ' ', size_accept);
+#endif
 	}
 	refresh ();
 }
