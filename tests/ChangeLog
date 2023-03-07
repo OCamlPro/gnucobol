@@ -1,4 +1,11 @@
 
+2023-03-07  Samuel Belondrade <samuel.belondrade@atos.net>
+
+	* testsuite.src/run_reportwriter.at: add test if the variable exist
+	  for report section (bug: #863)
+	* testsuite.src/listing.at: add test for the copy replacing in
+	  listing mode (bug: #831)
+
 2023-02-21  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* testsuite.src/syn_literals.at: move syntax checks on literals

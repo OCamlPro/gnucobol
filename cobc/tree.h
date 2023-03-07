@@ -1651,6 +1651,17 @@ struct list_error {
 	char			*msg;		/* Error Message text */
 };
 
+typedef struct s_line_file {
+	char				*line;
+	struct s_line_file	*next;
+}				t_line_file;
+
+typedef struct s_data_replace {
+	t_line_file	*firstline_replace;
+	t_line_file	*lastline_replace;
+	int			last_char;
+}				t_data_replace;
+
 /* List of REPLACE text blocks */
 struct list_replace {
 	struct list_replace	*next;
