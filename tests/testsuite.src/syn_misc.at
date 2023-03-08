@@ -8178,3 +8178,25 @@ AT_CHECK([$COMPILE_ONLY -fformat=fixed fixed2.cob], [0], [], [])
 AT_CHECK([$COMPILE_ONLY -fformat=fixed domfixed.cob], [0], [], [])
 
 AT_CLEANUP
+
+AT_SETUP([context sensitive alias])
+AT_KEYWORDS([misc context alias])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  XX  PIC 9.
+       01  X            CONSTANT AS XX OF XX.
+       PROCEDURE        DIVISION.
+           MOVE X TO XX.
+           DISPLAY XX NO ADVANCING
+           END-DISPLAY.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -freserved="XX*=BYTE-LENGTH" prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [1])
+
+AT_CLEANUP

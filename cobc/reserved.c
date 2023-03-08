@@ -4234,6 +4234,11 @@ get_user_specified_reserved_word (struct amendment_list user_reserved)
 		p = find_default_reserved_word (user_reserved.alias_for, 0);
 		if (p) {
 			cobc_reserved.token = p->token;
+            if (user_reserved.is_context_sensitive) {
+                cobc_reserved.context_sens =
+                    !!user_reserved.is_context_sensitive;
+                cobc_reserved.context_test = p->context_test;
+            }
 		} else {
 			/* FIXME: can we point to the fname originally defining the word? */
 			configuration_error (NULL, 0, 1,
