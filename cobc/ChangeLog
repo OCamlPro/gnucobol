@@ -1,4 +1,9 @@
 
+2023-03-08  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* reserved.c (get_user_specified_reserved_word): add check for
+	  context sensitivity in aliases
+
 2023-03-03  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (cb_build_cond_fields): optimize comparison between field and
