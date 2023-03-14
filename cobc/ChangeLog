@@ -1,4 +1,9 @@
 
+2023-03-14  Samuel Belondrade <samuel.belondrade@atos.net>
+
+	* codegen.c (output_report_control): add a loop to check if the variable
+	  exist (bug: #863)
+
 2023-02-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c, flag.def [COBC_HAS_CUTOFF_FLAG]: fix compile errors,
