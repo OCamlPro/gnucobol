@@ -865,13 +865,13 @@ AT_DATA([wide.cob], [
 AT_CHECK([$COMPILE_ONLY -fformat=fixed wide.cob], [1], [],
 [wide.cob:10: error: continuation character expected
 wide.cob:9: error: invalid literal: '  ...'
-wide.cob:9: error: missing terminating ' character
+wide.cob:9: note: missing terminating ' character
 wide.cob:9: warning: optional period used
 ])
 AT_CHECK([$COMPILE_ONLY -fformat=cobol85 wide.cob], [1], [],
 [wide.cob:10: error: continuation character expected
 wide.cob:9: error: invalid literal: '  ...'
-wide.cob:9: error: missing terminating ' character
+wide.cob:9: note: missing terminating ' character
 wide.cob:9: warning: optional period used
 ])
 AT_CHECK([$COMPILE_ONLY -ftext-column=80 wide.cob], [0], [], [])
