@@ -5731,7 +5731,7 @@ AT_CLEANUP
 
 
 AT_SETUP([SET SOURCEFORMAT syntax checks])
-AT_KEYWORDS([misc extensions directives])
+AT_KEYWORDS([misc extensions source directives])
 
 AT_DATA([prog.cob], [
        *> Valid
@@ -5753,7 +5753,7 @@ prog.cob:7: error: invalid SOURCEFORMAT directive option ''
 prog.cob:8: error: syntax error, unexpected Variable, expecting Literal
 prog.cob:8: error: invalid SOURCEFORMAT directive option
 prog.cob:8: error: invalid literal: '"#OPTION mis-matched ...'
-prog.cob:8: error: missing terminating ' character
+prog.cob:8: note: missing terminating ' character
 prog.cob:8: error: PROGRAM-ID header missing
 prog.cob:8: error: PROCEDURE DIVISION header missing
 prog.cob:8: error: syntax error, unexpected Literal
