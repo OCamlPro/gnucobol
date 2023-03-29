@@ -512,10 +512,10 @@ enum cb_index_type {
 struct cobc_reserved {
 	const char	*name;		/* Word */
 	unsigned short	nodegen;	/* Statement with END-xxx */
-	unsigned short	context_sens;	/* Context sensitive */
+	unsigned short	context_sens;	/* Context sensitive (needed for user-amendmends) */
 	int		token;		/* Token */
-	unsigned int	context_set;	/* Set context sensitive */
-	unsigned int	context_test;	/* Test context sensitive */
+	unsigned int	context_set;	/* context sensitive value set */
+	unsigned int	context_test;	/* context sensitive value tested */
 };
 
 /* Basic common tree structure */

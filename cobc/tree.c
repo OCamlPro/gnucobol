@@ -1615,15 +1615,11 @@ cb_tree_type (const cb_tree x, const struct cb_field *f)
 int
 cb_fits_int (const cb_tree x)
 {
-	struct cb_literal	*l;
-	struct cb_field		*f;
-	const char		*s;
-	const unsigned char	*p;
-	size_t			size;
-
 	switch (CB_TREE_TAG (x)) {
-	case CB_TAG_LITERAL:
-		l = CB_LITERAL (x);
+	case CB_TAG_LITERAL: {
+		const struct cb_literal	*l = CB_LITERAL (x);
+		const unsigned char	*p;
+		size_t			size;
 		if (l->scale > 0) {
 			return 0;
 		}
@@ -1638,18 +1634,21 @@ cb_fits_int (const cb_tree x)
 		}
 		if (size > 10) {
 			return 0;
-		}
-		if (l->sign < 0) {
-			s = "2147483648";
-		} else {
-			s = "2147483647";
-		}
-		if (memcmp (p, s, 10U) > 0) {
-			return 0;
+		} else {	/* size exactly 10 */
+			const char		*s;
+			if (l->sign < 0) {
+				s = "2147483648";
+			} else {
+				s = "2147483647";
+			}
+			if (memcmp (p, s, 10U) > 0) {
+				return 0;
+			}
 		}
 		return 1;
-	case CB_TAG_FIELD:
-		f = CB_FIELD (x);
+	}
+	case CB_TAG_FIELD: {
+		const struct cb_field	*f = CB_FIELD (x);
 		if (f->children) {
 			return 0;
 		}
@@ -1689,10 +1688,13 @@ cb_fits_int (const cb_tree x)
 		default:
 			return 0;
 		}
+	}
 	case CB_TAG_REFERENCE:
 		return cb_fits_int (CB_REFERENCE (x)->value);
 	case CB_TAG_INTEGER:
 		return 1;
+	case CB_TAG_CAST:
+		return cb_fits_int (CB_CAST (x)->val);
 	default:
 		if (x == cb_zero) {
 			return 1;
@@ -1704,14 +1706,11 @@ cb_fits_int (const cb_tree x)
 int
 cb_fits_long_long (const cb_tree x)
 {
-	struct cb_literal	*l;
-	struct cb_field		*f;
-	const char		*s;
-	const unsigned char	*p;
-	size_t			size;
-
 	switch (CB_TREE_TAG (x)) {
-	case CB_TAG_LITERAL:
+	case CB_TAG_LITERAL: {
+		const struct cb_literal *l = CB_LITERAL (x);
+		const unsigned char *p;
+		size_t			size;
 		l = CB_LITERAL (x);
 		if (l->scale > 0) {
 			return 0;
@@ -1727,18 +1726,21 @@ cb_fits_long_long (const cb_tree x)
 		}
 		if (size > 19) {
 			return 0;
-		}
-		if (l->sign < 0) {
-			s = "9223372036854775808";
-		} else {
-			s = "9223372036854775807";
-		}
-		if (memcmp (p, s, 19U) > 0) {
-			return 0;
+		} else {	/* size exactly 19 */
+			const char *s;
+			if (l->sign < 0) {
+				s = "9223372036854775808";
+			} else {
+				s = "9223372036854775807";
+			}
+			if (memcmp (p, s, 19U) > 0) {
+				return 0;
+			}
 		}
 		return 1;
-	case CB_TAG_FIELD:
-		f = CB_FIELD (x);
+	}
+	case CB_TAG_FIELD: {
+		const struct cb_field	*f = CB_FIELD (x);
 		if (f->children) {
 			return 0;
 		}
@@ -1777,10 +1779,13 @@ cb_fits_long_long (const cb_tree x)
 		default:
 			return 0;
 		}
+	}
 	case CB_TAG_REFERENCE:
 		return cb_fits_long_long (CB_REFERENCE (x)->value);
 	case CB_TAG_INTEGER:
 		return 1;
+	case CB_TAG_CAST:
+		return cb_fits_long_long (CB_CAST (x)->val);
 	default:
 		if (x == cb_zero) {
 			return 1;
@@ -2818,7 +2823,7 @@ cb_concat_literals (const cb_tree x1, const cb_tree x2)
 		char		lit_out[39] = { 0 };
 		literal_for_diagnostic (lit_out, (void *)p->data);
 		cb_error_x (x1, _("invalid literal: '%s'"), lit_out);
-		cb_error_x (x1, _("literal length %d exceeds %d characters"),
+		cb_note_x (COB_WARNOPT_NONE, x1, _("literal length %d exceeds %d characters"),
 			p->size, cb_lit_length);
 		return cb_error_node;
 	}
@@ -4153,11 +4158,13 @@ cb_field_variable_size (const struct cb_field *f)
 	struct cb_field		*fc;
 
 	for (fc = f->children; fc; fc = fc->sister) {
+		if (fc->flag_picture_l) {
+			continue;	/* seen as fixed-size */
+		}
 		if (fc->depending) {
 			return fc;
-		} else if (fc->flag_picture_l) {
-			continue;
-		} else if ((p = cb_field_variable_size (fc)) != NULL) {
+		} 
+		if ((p = cb_field_variable_size (fc)) != NULL) {
 			return p;
 		}
 	}
@@ -5885,7 +5892,7 @@ cb_build_binary_op (cb_tree x, const enum cb_binary_op_op op, cb_tree y)
 				case '+':
 				case '-':
 				case '*':
-					sprintf(result, CB_FMT_LLD, rslt);
+					sprintf (result, CB_FMT_LLD, rslt);
 					return cb_build_numeric_literal (0, result, rscale);
 					break;
 				case '/':
@@ -5894,14 +5901,14 @@ cb_build_binary_op (cb_tree x, const enum cb_binary_op_op op, cb_tree y)
 						break;
 					}
 					if (rslt != 0) {
-						sprintf(result, CB_FMT_LLD, rslt);
+						sprintf (result, CB_FMT_LLD, rslt);
 						return cb_build_numeric_literal (0, result, rscale);
 					}
 					/* only calculate simple integer numerics */
 					if (xl->scale != 0 || yl->scale != 0)
 						break;
 					if ((xval % yval) == 0) {
-						sprintf(result, CB_FMT_LLD, xval / yval);
+						sprintf (result, CB_FMT_LLD, xval / yval);
 						return cb_build_numeric_literal (0, result, rscale);
 					}
 					break;

@@ -1305,7 +1305,7 @@ if test "x$CURSES_LIBS" = x; then
   fi
 fi
 if test "$USE_CURSES" = "pdcurses" -o "x$ac_cv_lib_pdcurses_initscr" = xyes; then
-  AC_CHECK_HEADERS([pdcurses.g curses.h],
+  AC_CHECK_HEADERS([pdcurses.h curses.h],
     [USE_CURSES="pdcurses"
      break],
     [AS_IF([test "$USE_CURSES" != check],

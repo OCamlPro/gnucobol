@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Edwart Hart,
    Ron Norman
 
@@ -1313,7 +1313,7 @@ error_literal (const char *type, const char *literal, unsigned int literal_error
 		}
 #endif
 	}
-	cb_error ("%s", err_msg);
+	cb_note (COB_WARNOPT_NONE, 0, "%s", err_msg);
 }
 
 /* Scans a symbolic EBCDIC character given as a sequence of decimal digits
@@ -1479,6 +1479,7 @@ read_literal (const char mark, const enum cb_literal_type type)
 			    _("national literal has zero length; a SPACE will be assumed") :
 			    _("alphanumeric literal has zero length; a SPACE will be assumed")
 			);
+		/* note: space gets UTF-16 converted down below */
 		plex_buff[i++] = ' ';
 	} else if (i > cb_lit_length) {
 		i = cb_lit_length;
@@ -1494,7 +1495,7 @@ read_literal (const char mark, const enum cb_literal_type type)
 	} else {
 		/* poor-man's conversion iso-8859 -> utf-16 */
 		/* "!a0" = x'21613000' -> nx'00210061003000' */
-		size_t new_size = i * 2;
+		size_t new_size = i * COB_NATIONAL_SIZE;
 		if (new_size + 1 > plex_size) {
 			plex_size = new_size + 1;
 			plex_buff = cobc_realloc (plex_buff, plex_size);
@@ -1505,7 +1506,6 @@ read_literal (const char mark, const enum cb_literal_type type)
 			plex_buff[i * 2 + 1] = plex_buff [i];
 			plex_buff[i * 2] = 0;
 		}
-		i = new_size;
 		if (type != CB_LITERAL_NC) {
 			if (cb_verify (cb_national_literals, _("national literal"))) {
 				CB_UNFINISHED (_("national literal"));
@@ -1515,7 +1515,7 @@ read_literal (const char mark, const enum cb_literal_type type)
 				CB_UNFINISHED (_("national literal"));
 			}
 		}
-		yylval = cb_build_national_literal (plex_buff, i);
+		yylval = cb_build_national_literal (plex_buff, new_size);
 	}
 }
 
@@ -1539,16 +1539,19 @@ scan_x (const char *text, const char *type)
 	curr_len = strlen (text);
 	curr_len--;
 	if (curr_len == 0) {
-		cb_verify (cb_zero_length_lit, _("zero-length literal"));
-		memset (plex_buff, 0, 5);
+		/* CHECKME: should this always be active or only with x"" ? */
+		(void)cb_verify (cb_zero_length_lit, _("zero-length literal"));
 		cb_warning (COBC_WARN_FILLER,
-			    _("hexadecimal literal has zero length; X'00' will be assumed"));
+				_("hexadecimal literal has zero length; X'00' will be assumed"));
+		memset (plex_buff, 0, 5);
 		if (type[0] == 'B') {
 			yylval = cb_build_numeric_literal (0, "0", 0);
+			(void)cb_verify (cb_hexadecimal_boolean, _("hexadecimal-boolean literal"));
 		} else if (type[0] != 'N') {
 			yylval = cb_build_alphanumeric_literal (plex_buff, 1);
-		} else {
-			yylval = cb_build_national_literal (plex_buff, 1);
+		} else /* type N */ {
+			(void)cb_verify (cb_national_hex_literals, _("hexadecimal-national literal"));
+			yylval = cb_build_national_literal (plex_buff, COB_NATIONAL_SIZE);
 		}
 		RETURN_TOK (LITERAL);
 	}
@@ -1579,14 +1582,15 @@ scan_x (const char *text, const char *type)
 				  (unsigned long) result_len, 64);
 			error_literal (type, plex_buff, literal_error++);
 			/* we'll get an overflow below, but that's no problem,
-			   an alternative would be to incement *text to only parse 64 / 4
+			   an alternative would be to increment *text to only parse 64 / 4
 			   characters but that leads to not verified data, which is
 			   more important as the compilation will error-exit in any case */
 		}
 	} else /* type N */ {
 		result_len = curr_len / (2 * COB_NATIONAL_SIZE);
 		if (!cb_verify (cb_national_hex_literals, _("hexadecimal-national literal"))) {
-			yylval = cb_build_national_literal ("", 1);
+			memset (plex_buff, 0, 5);
+			yylval = cb_build_national_literal (plex_buff, COB_NATIONAL_SIZE);
 			RETURN_TOK (LITERAL);
 		} else {
 			CB_UNFINISHED (_("national literal"));
@@ -1694,7 +1698,7 @@ scan_z (const char *text, const char *type)
 
 	if (curr_len == 1) {
 		curr_len--;
-	    snprintf (err_msg, COB_MINI_MAX,
+		snprintf (err_msg, COB_MINI_MAX,
 			_("%s literals must contain at least one character"),
 			type);
 		error_literal (type, "", 0);
@@ -1747,7 +1751,10 @@ scan_h (const char *text, const char *type)
 	if (type[1] != '#') {
 		curr_len--;
 		if (curr_len == 0) {
-			cb_error (_("H literals must contain at least one character"));
+			snprintf (err_msg, COB_MINI_MAX,
+				_("%s literals must contain at least one character"),
+				"H");
+			error_literal ("H", "", 0);
 			yylval = cb_build_numeric_literal (0, "0", 0);
 			RETURN_TOK (LITERAL);
 		}
@@ -1827,7 +1834,7 @@ scan_b (const char *text, const char *type)
 		if (curr_len == 1) {
 			cb_verify (cb_zero_length_lit, _("zero-length literal"));
 			cb_warning (COBC_WARN_FILLER,
-				    _("Boolean literal has zero length; B'0' will be assumed"));
+				    _("boolean literal has zero length; B'0' will be assumed"));
 		}
 		if (curr_len <= 1) {
 			/* FIXME: we should really build a boolean literal... */
@@ -1854,7 +1861,7 @@ scan_b (const char *text, const char *type)
 			  (unsigned long) curr_len, 64);
 		error_literal (type, plex_buff, literal_error++);
 		/* we'll get an overflow below, but that's no problem,
-		   an alternative would be to incement *text to only parse 64 / 4
+		   an alternative would be to increment *text to only parse 64 / 4
 		   characters but that leads to not verified data, which is
 		   more important as the compilation will error-exit in any case */
 	}
