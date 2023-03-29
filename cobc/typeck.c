@@ -899,6 +899,10 @@ cb_check_numeric_name (cb_tree x)
 	}
 #endif
 
+	if (CB_CAST_P (x)) {
+		x = CB_CAST (x)->val;
+	}
+
 	if (CB_REFERENCE_P (x)
 	 && CB_FIELD_P (cb_ref (x))
 	 && CB_TREE_CATEGORY (x) == CB_CATEGORY_NUMERIC) {
@@ -966,7 +970,7 @@ cb_check_numeric_value (cb_tree x)
 	case CB_CATEGORY_NUMERIC_EDITED:
 	case CB_CATEGORY_FLOATING_EDITED:
 	{
-		struct cb_field	*f = CB_FIELD (cb_ref(x));
+		struct cb_field	*f = CB_FIELD_PTR (x);
 		if (f->report) {
 			struct cb_field	*sc = get_sum_data_field (f->report, f);
 			if (sc) {	/* Use the SUM variable instead of the print variable */
@@ -1086,8 +1090,8 @@ cb_check_lit_subs (struct cb_reference *r, const int numsubs,
 	int			size;
 
 	/* Check for DPC and non-standard separator usage */
-	if (!cb_relaxed_syntax_checks ||
-	    current_program->decimal_point != ',') {
+	if (!cb_relaxed_syntax_checks
+	 || current_program->decimal_point != ',') {
 		return;
 	}
 	if (numsubs > numindex) {
@@ -1243,8 +1247,8 @@ cb_check_field_debug (cb_tree fld)
 			continue;
 		}
 		if (x == CB_PURPOSE (l)) {
-			if (CB_REFERENCE (fld)->flag_target ||
-			    CB_REFERENCE (CB_VALUE (l))->flag_all_debug) {
+			if (CB_REFERENCE (fld)->flag_target
+			 || CB_REFERENCE (CB_VALUE (l))->flag_all_debug) {
 				found = 1;
 			}
 			break;
@@ -7670,7 +7674,7 @@ emit_accept_external_form (cb_tree x)
 		if (f->flag_occurs) {
 			for (i = 1; i <= f->occurs_max; i++) {
 				sprintf (buff, "%d", i);
-				index_lit = cb_build_numeric_literal(0, buff, 0);
+				index_lit = cb_build_numeric_literal (0, buff, 0);
 
 				f_ref_2 = cb_build_field_reference (f, x);
 				CB_REFERENCE (f_ref_2)->subs = CB_LIST_INIT (index_lit);
@@ -8360,8 +8364,11 @@ check_allocate_returning (cb_tree returning)
 	if (!returning) {
 		return 0;
 	}
-	if (!(CB_REFERENCE_P(returning) &&
-		    CB_TREE_CLASS (returning) == CB_CLASS_POINTER)) {
+	if (cb_validate_one (returning)) {
+		return 1;
+	}
+	if (! ( CB_REFERENCE_P (returning)
+		 && CB_TREE_CLASS (returning) == CB_CLASS_POINTER)) {
 		cb_error_x (CB_TREE(current_statement),
 			_("target of RETURNING is not a data pointer"));
 		return 1;
@@ -10324,15 +10331,18 @@ move_warning (cb_tree src, cb_tree dst, const unsigned int value_flag,
 	return;
 }
 
+/* Count number of free places in an edited field;
+   note that PICTURE is pre-validated so national fields
+   won't include A + X, alhanumeric won't include N */
 static int
-count_pic_alphanumeric_edited (struct cb_field *field)
+count_pic_edited (struct cb_field *field)
 {
 	cob_pic_symbol	*s;
 	int		count = 0;
 
-	/* Count number of free places in an alphanumeric edited field */
 	for (s = field->pic->str; s->symbol != '\0'; ++s) {
-		if (s->symbol == '9' || s->symbol == 'A' || s->symbol == 'X') {
+		const char sym = s->symbol;
+		if (sym == '9' || sym == 'A' || sym == 'X' || sym == 'N') {
 			count += s->times_repeated;
 		}
 	}
@@ -10677,7 +10687,8 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 		break;
 	case CB_TAG_LITERAL:
 		l = CB_LITERAL (src);
-		if (CB_TREE_CLASS (src) == CB_CLASS_NUMERIC) {
+		switch (CB_TREE_CLASS (src)) {
+		case CB_CLASS_NUMERIC:
 			/* Numeric literal */
 			if (l->all) {
 				goto invalid;
@@ -10706,18 +10717,23 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 				}
 			}
 			if (i != l->size) {
-				least_significant = (int) (-l->scale + i);
+				least_significant = (int)i - l->scale;
 			}
 
 			/* Value check */
 			switch (CB_TREE_CATEGORY (dst)) {
 			case CB_CATEGORY_ALPHANUMERIC:
 			case CB_CATEGORY_ALPHANUMERIC_EDITED:
-				if (is_value) {
+				if (is_value
+				 || l->scale == 0) {
 					goto expect_alphanumeric;
 				}
-				if (l->scale == 0) {
-					goto expect_alphanumeric;
+				goto invalid;
+			case CB_CATEGORY_NATIONAL:
+			case CB_CATEGORY_NATIONAL_EDITED:
+				if (is_value
+				 || l->scale == 0) {
+					goto expect_national;
 				}
 				goto non_integer_move;
 			case CB_CATEGORY_NUMERIC_EDITED:
@@ -10937,8 +10953,96 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 				size = -1;
 				goto size_overflow;
 			}
-		} else {
-			/* Alphanumeric literal */
+			break;
+
+		case CB_CLASS_NATIONAL:	/* National literal */
+
+			if (l->size % COB_NATIONAL_SIZE != 0) {
+				goto invalid;
+			}
+			/* Value check */
+			switch (CB_TREE_CATEGORY (dst)) {
+			case CB_CATEGORY_NATIONAL:
+				break;
+			case CB_CATEGORY_NUMERIC:
+				if (is_value) {
+					goto expect_numeric;
+				} else {
+					for (i = 0; i < l->size; i++) {
+						if (l->data[i++] != 0x00) {
+							goto expect_numeric;
+						}
+						if (!isdigit (l->data[i])) {
+							goto expect_numeric;
+						}
+					}
+				}
+				break;
+			case CB_CATEGORY_NUMERIC_EDITED:
+				if (!is_value) {
+					for (i = 0; i < l->size; i++) {
+						if (l->data[i++] != 0x00) {
+							goto expect_numeric;
+						}
+						if (!isdigit (l->data[i])
+						 && l->data[i] != '.'
+						 && l->data[i] != ','
+						 && l->data[i] != '+'
+						 && l->data[i] != '-'
+						 && l->data[i] != ' ') {
+							goto expect_numeric;
+						}
+					}
+				} else {
+					/* TODO: validate the value for VALUE - needed? */
+				}
+				break;
+			default:
+				goto invalid;
+			}
+
+			/* Size check */
+			size = cb_field_size (dst);
+			if (CB_TREE_CATEGORY (dst) == CB_CATEGORY_NATIONAL) {
+				size /= COB_NATIONAL_SIZE;
+			}
+			if (size > 0
+			 && l->size > 0
+			 && !fdst->flag_any_length) {
+				/* check the real size */
+				fdst = CB_FIELD_PTR (dst);
+				if (fdst->flag_justified) {
+					/* right justified: trim left */
+					for (i = 0; i != l->size; i += 2) {
+						if (l->data[i] != 0x00
+						 || l->data[i + 1] != ' ') {
+							break;
+						}
+					}
+					i = l->size - i;
+				} else {
+					/* normal field: trim right */
+					for (i = l->size - 1; i != 0; i -= 2) {
+						if (l->data[i] != ' '
+						 || l->data[i - 1] != 0x00) {
+							break;
+						}
+					}
+					i++;
+				}
+				i /= COB_NATIONAL_SIZE;
+				if ((int)i > size) {
+					size = (signed int)i;
+					goto size_overflow;
+				}
+				/* for VALUE: additional check without trim */
+				if (is_value && (int)(l->size / COB_NATIONAL_SIZE) > size) {
+					goto value_mismatch;
+				}
+			}
+			break;
+
+		default: /* Alphanumeric literal */
 
 			/* Value check */
 			switch (CB_TREE_CATEGORY (dst)) {
@@ -10954,14 +11058,17 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 				/* TODO: add check (maybe a configuration)
 				         for numeric data in alphanumeric literal
 				         note - we did this in versions before 3.0 */
-				for (i = 0; i < l->size; i++) {
-					if (!isdigit (l->data[i])) {
-						/* no check for +-,. as MF seems to not do this here */
-						if (cb_move_nonnumlit_to_numeric_is_zero
-						 && !is_value) {
-							goto movezero;
+				if (is_value) {
+					goto expect_numeric;
+				} else {
+					for (i = 0; i < l->size; i++) {
+						if (!isdigit (l->data[i])) {
+							/* no check for +-,. as MF seems to not do this here */
+							if (cb_move_nonnumlit_to_numeric_is_zero) {
+								goto movezero;
+							}
+							goto expect_numeric;
 						}
-						goto expect_numeric;
 					}
 				}
 				break;
@@ -11017,9 +11124,12 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 
 			/* Size check */
 			size = cb_field_size (dst);
+			if (CB_TREE_CATEGORY (dst) == CB_CATEGORY_NATIONAL) {
+				size /= COB_NATIONAL_SIZE;
+			}
 			if (size > 0
-			    && l->size > 0
-			    && !fdst->flag_any_length) {
+			 && l->size > 0
+			 && !fdst->flag_any_length) {
 				/* check the real size */
 				fdst = CB_FIELD_PTR (dst);
 				if (fdst->flag_justified) {
@@ -11044,23 +11154,31 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 					goto size_overflow;
 				}
 				/* for VALUE: additional check without trim */
-				if (is_value && l->size > (unsigned int)fdst->size) {
+				if (is_value && (int)l->size > size) {
 					goto value_mismatch;
 				}
 			}
+			if (is_value
+			 && CB_TREE_CATEGORY (dst) == CB_CATEGORY_NATIONAL) {
+				goto expect_national;
+			}
+			break;
 		}
 		break;
 	case CB_TAG_FIELD:
 	case CB_TAG_REFERENCE:
-		if (CB_REFERENCE_P(src) &&
-		    CB_ALPHABET_NAME_P(CB_REFERENCE(src)->value)) {
-			break;
+		if (CB_REFERENCE_P (src)) {
+			cb_tree val = CB_REFERENCE (src)->value;
+			if (CB_ALPHABET_NAME_P (val)) {
+				break;
+			}
+			if (!CB_FIELD_P (val)) {
+				goto invalid;
+			}
+			fsrc = CB_FIELD (val);
+		} else {
+			fsrc = CB_FIELD (src);
 		}
-		if (CB_REFERENCE_P(src) &&
-		    CB_FILE_P(CB_REFERENCE(src)->value)) {
-			goto invalid;
-		}
-		fsrc = CB_FIELD_PTR (src);
 
 		if (cb_move_ibm) {
 			/* This MOVE result is exactly as on IBM, ignore overlapping */
@@ -11095,7 +11213,13 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 		}
 
 		size = cb_field_size (src);
+		if (CB_TREE_CATEGORY (src) == CB_CATEGORY_NATIONAL) {
+			size /= COB_NATIONAL_SIZE;
+		}
 		dst_size_mod = cb_field_size (dst);
+		if (CB_TREE_CATEGORY (dst) == CB_CATEGORY_NATIONAL) {
+			dst_size_mod /= COB_NATIONAL_SIZE;
+		}
 
 		/* Non-elementary move */
 		if (fsrc->children || fdst->children) {
@@ -11119,11 +11243,20 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 				}
 				break;
 			case CB_CATEGORY_ALPHANUMERIC_EDITED:
+			case CB_CATEGORY_NATIONAL_EDITED:
 			case CB_CATEGORY_FLOATING_EDITED:
 				if (dst_size_mod == FIELD_SIZE_UNKNOWN) {
 					break;
 				}
-				if (size > count_pic_alphanumeric_edited (fdst)) {
+				if (size > count_pic_edited (fdst)) {
+					goto size_overflow_1;
+				}
+				break;
+			case CB_CATEGORY_NATIONAL:
+				if (dst_size_mod == FIELD_SIZE_UNKNOWN) {
+					break;
+				}
+				if (size > fdst->size / COB_NATIONAL_SIZE) {
 					goto size_overflow_1;
 				}
 				break;
@@ -11137,6 +11270,52 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 				break;
 			}
 			break;
+		case CB_CATEGORY_NATIONAL:
+			switch (CB_TREE_CATEGORY (dst)) {
+			case CB_CATEGORY_NUMERIC:
+			case CB_CATEGORY_NUMERIC_EDITED:
+				if (size > (int)fdst->pic->digits) {
+					goto size_overflow_2;
+				}
+				break;
+			case CB_CATEGORY_NATIONAL:
+				if (dst_size_mod == FIELD_SIZE_UNKNOWN) {
+					break;
+				}
+				if (size > fdst->size / COB_NATIONAL_SIZE) {
+					goto size_overflow_1;
+				}
+				break;
+			case CB_CATEGORY_NATIONAL_EDITED:
+				if (dst_size_mod == FIELD_SIZE_UNKNOWN) {
+					break;
+				}
+				if (size > count_pic_edited (fdst)) {
+					goto size_overflow_1;
+				}
+				break;
+			case CB_CATEGORY_BOOLEAN:
+				/* TODO: add checks */
+				break;
+			default:
+				goto invalid;
+			}
+			break;
+		case CB_CATEGORY_NATIONAL_EDITED:
+			switch (CB_TREE_CATEGORY (dst)) {
+			case CB_CATEGORY_NATIONAL:
+			case CB_CATEGORY_NATIONAL_EDITED:
+				if (dst_size_mod == FIELD_SIZE_UNKNOWN) {
+					break;
+				}
+				if (size > fdst->size / COB_NATIONAL_SIZE) {
+					goto size_overflow_1;
+				}
+				break;
+			default:
+				goto invalid;
+			}
+			break;
 		case CB_CATEGORY_ALPHABETIC:
 		case CB_CATEGORY_ALPHANUMERIC_EDITED:
 			switch (CB_TREE_CATEGORY (dst)) {
@@ -11145,10 +11324,19 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 			case CB_CATEGORY_FLOATING_EDITED:
 				goto invalid;
 			case CB_CATEGORY_ALPHANUMERIC_EDITED:
+			case CB_CATEGORY_NATIONAL_EDITED:
 				if (dst_size_mod == FIELD_SIZE_UNKNOWN) {
 					break;
 				}
-				if (size > count_pic_alphanumeric_edited(fdst)) {
+				if (size > count_pic_edited (fdst)) {
+					goto size_overflow_1;
+				}
+				break;
+			case CB_CATEGORY_NATIONAL:
+				if (dst_size_mod == FIELD_SIZE_UNKNOWN) {
+					break;
+				}
+				if (size > fdst->size / COB_NATIONAL_SIZE) {
 					goto size_overflow_1;
 				}
 				break;
@@ -11169,9 +11357,11 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 			case CB_CATEGORY_ALPHABETIC:
 				goto invalid;
 			case CB_CATEGORY_ALPHANUMERIC_EDITED:
+			case CB_CATEGORY_NATIONAL_EDITED:
 				is_numeric_edited = 1;
-				/* Drop through */
+				/* Fall through */
 			case CB_CATEGORY_ALPHANUMERIC:
+			case CB_CATEGORY_NATIONAL:
 				if (!fsrc->pic) {
 					return -1;
 				}
@@ -11183,7 +11373,7 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 					break;
 				}
 				if (is_numeric_edited) {
-					dst_size_mod = count_pic_alphanumeric_edited (fdst);
+					dst_size_mod = count_pic_edited (fdst);
 				} else {
 					dst_size_mod = fdst->size;
 				}
@@ -11280,6 +11470,11 @@ expect_numeric:
 expect_alphanumeric:
 	move_warning (src, dst, is_value, cb_warn_strict_typing, 0,
 		    _("alphanumeric value is expected"));
+	return 0;
+
+expect_national:
+	move_warning (src, dst, is_value, cb_warn_strict_typing, 0,
+		    _("national value is expected"));
 	return 0;
 
 value_mismatch:
@@ -13105,15 +13300,16 @@ cb_emit_set_to_fcdkey (cb_tree vars, cb_tree x)
 
 	/* Emit statements if targets have the correct class. */
 	for (l = vars; l; l = CB_CHAIN (l)) {
-		tree_class = cb_tree_class (CB_VALUE (l));
+		cb_tree target = CB_VALUE (l);
+		tree_class = cb_tree_class (target);
 		switch (tree_class) {
 		case CB_CLASS_POINTER:
-			cb_emit (CB_BUILD_FUNCALL_2 ("cob_file_fcdkey_adrs", file, cb_build_address (CB_VALUE (l))));
+			cb_emit (CB_BUILD_FUNCALL_2 ("cob_file_fcdkey_adrs", file, cb_build_address (target)));
 			break;
 		default:
 			if (CB_VALUE (l) != cb_error_node) {
 				cb_error_x (CB_TREE (current_statement),
-					    _("SET target '%s' is not a POINTER for FCD-KEYDEF"), cb_name (CB_VALUE(l)));
+					    _("SET target '%s' is not a POINTER for FCD-KEYDEF"), cb_name (target));
 			}
 			break;
 		}
@@ -13127,10 +13323,11 @@ cb_emit_set_up_down (cb_tree l, cb_tree flag, cb_tree x)
 		return;
 	}
 	for (; l; l = CB_CHAIN (l)) {
+		cb_tree target = CB_VALUE (l);
 		if (flag == cb_int0) {
-			cb_emit (cb_build_add (CB_VALUE (l), x, cb_int0));
+			cb_emit (cb_build_add (target, x, cb_int0));
 		} else {
-			cb_emit (cb_build_sub (CB_VALUE (l), x, cb_int0));
+			cb_emit (cb_build_sub (target, x, cb_int0));
 		}
 	}
 }
@@ -13185,10 +13382,10 @@ cb_emit_set_true (cb_tree l)
 void
 cb_emit_set_false (cb_tree l)
 {
-	cb_tree		x;
 	struct cb_field *f;
 	cb_tree		ref;
 	cb_tree		val;
+	cb_tree		x;
 
 	for (; l; l = CB_CHAIN (l)) {
 		x = CB_VALUE (l);
@@ -13905,8 +14102,8 @@ cb_emit_write (cb_tree record, cb_tree from, cb_tree opt, cb_tree lockopt)
 			opt = cb_int_hex (COB_WRITE_BEFORE | COB_WRITE_LINES | 1);
 		}
 	}
-	if (current_statement->handler_type == EOP_HANDLER &&
-	    current_statement->ex_handler) {
+	if (current_statement->handler_type == EOP_HANDLER
+	 && current_statement->ex_handler) {
 		check_eop = cb_int1;
 	} else {
 		check_eop = cb_int0;

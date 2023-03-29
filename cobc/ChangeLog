@@ -1,4 +1,13 @@
 
+2023-03-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (count_pic_edited): renamed from count_pic_alphanumeric_edited
+	  and adjusted for general use
+	* typeck.c (validate_move): handle national target and source, including
+	  national literals
+	* typeck.c (validate_move): don't permit alphanumeric literals in VALUE
+	  clause for numeric items
+
 2023-03-08  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
 
 	* reserved.c (get_user_specified_reserved_word): add check for
