@@ -12078,6 +12078,22 @@ cb_build_move_field (cb_tree src, cb_tree dst)
 	}
 	src_size = cb_field_size (src);
 	dst_size = cb_field_size (dst);
+	if (src_size == -1
+	 && dst_size == -1
+	 && CB_REFERENCE_P (src)
+	 && CB_REFERENCE_P (dst)) {
+		/* check for same length, allowing us to do an optimized copy
+		   case:  MOVE VAR1 (POS1:LEN) TO VAR2 (POS2:LEN) */
+		const struct cb_reference *r_src = CB_REFERENCE (src);
+		const struct cb_reference *r_dst = CB_REFERENCE (dst);
+		if (r_src->length && r_dst->length
+		 && CB_REFERENCE_P (r_src->length)
+		 && CB_REFERENCE_P (r_dst->length)
+		 && CB_REFERENCE (r_src->length)->value
+		 == CB_REFERENCE (r_dst->length)->value) {
+			src_size = dst_size = 1;
+		}
+	}
 	if (src_size > 0 && dst_size > 0 && src_size >= dst_size
 	 && !cb_field_variable_size (src_f)
 	 && !cb_field_variable_size (dst_f)) {
@@ -12161,6 +12177,7 @@ cb_build_move (cb_tree src, cb_tree dst)
 	}
 
 	if (current_program->flag_report) {
+		/* FIXME: too much for SUM field */
 		src = cb_check_sum_field (src);
 		dst = cb_check_sum_field (dst);
 	}

@@ -7,6 +7,30 @@
 	  national literals
 	* typeck.c (validate_move): don't permit alphanumeric literals in VALUE
 	  clause for numeric items
+	* field.c (cleanup_field_value): cleanup for national space
+	* scanner.l (scan_x): build "implied for empty" N / NX literal with
+	  correct size
+	* scanner.l, tree.c (cb_concat_literals): output explanations of literal
+	  errors as "note" instead of "error"
+	* tree.c: minor refactoring
+
+2023-03-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_search_all): dropped unnecessary check
+	* codegen.c (output_search): add missing ODO runtime check
+	* codegen.c (output_search_whens): generate access to ODO value only once,
+	  instead of on every internal SEARCH VARYING
+	* codegen.c (output_param): reduce scope of variables
+
+2023-03-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c: minor speedup in freeing memory
+	* reserved.c (get_user_specified_reserved_word): minor refactoring
+
+2023-03-23  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_move_field): generate optimized code for
+	  reference-modification with same ref-mod length
 
 2023-03-08  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
 
