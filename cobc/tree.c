@@ -3705,8 +3705,9 @@ repeat:
 			if (at_beginning) {
 				/* Implicit V */
 				v_count++;
+			} else {
+				digits += n;
 			}
-			digits += n;
 			if (v_count) {
 				scale += n;
 			} else {

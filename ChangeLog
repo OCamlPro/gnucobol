@@ -1,4 +1,10 @@
 
+2023-04-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: pass --enable-debug to autoconf generated files as
+	  COB_ENABLE_DEBUG, currently used for running extra test cycles in
+	  the test suite
+
 2023-03-03  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: allow specification of XML2_CONFIG (only used if

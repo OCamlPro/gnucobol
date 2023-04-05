@@ -1,4 +1,10 @@
 
+2023-04-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* tree.c (cb_build_picture): don't include leading Ps in digit count
+	* typeck.c (validate_move): adjust checks for move from literal, fixing
+	  PPP edge cases; rewrote calculation for most and least significant places
+
 2023-03-29  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (count_pic_edited): renamed from count_pic_alphanumeric_edited

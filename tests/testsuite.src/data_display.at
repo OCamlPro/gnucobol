@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2014-2015 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2014-2015, 2013 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Brian Tiffin
 ## 
 ## This file is part of GnuCOBOL.
@@ -218,5 +218,312 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 2147483647
 2147483648
 ])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE DISPLAY to DISPLAY])
+AT_KEYWORDS([fundamental PPP])
+
+# note: for changes mind the nearly identical test in data_binary.at
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  D-S99V99     PIC S99V99 DISPLAY VALUE  1.23.
+       01  D-N99V99     PIC S99V99 DISPLAY VALUE -1.32.
+       01  D-9V99       PIC   9V99 DISPLAY VALUE  1.1.
+       01  D-S99        PIC S99    DISPLAY VALUE  12.
+       01  D-99         PIC  99    DISPLAY VALUE  2.
+       01  D-P99        PIC P99    DISPLAY VALUE  0.02.
+       01  D-9PP        PIC 9PP    DISPLAY VALUE  200.
+       01  T-S99V99     PIC S99V99 DISPLAY.
+       01  T-99V9       PIC  99V9  DISPLAY.
+       01  T-S999       PIC S999   DISPLAY.
+       01  T-99         PIC  99    DISPLAY.
+       01  T-P9         PIC  P9    DISPLAY.
+       01  T-9P         PIC  9P    DISPLAY.
+       01  FILLER       USAGE BINARY-INT VALUE 0.
+           88 DO-DISP   VALUE 0.
+           88 NO-DISP   VALUE 1.
+       REPLACE ==DISPLAY== BY ==IF DO-DISP  DISPLAY==.
+
+       PROCEDURE        DIVISION.
+       MAIN.
+      *    Test with DISPLAY on error
+           PERFORM DO-CHECK.
+       >> IF CHECK-PERF IS DEFINED
+           SET  NO-DISP    TO TRUE
+      *    some performance checks on the way...
+           PERFORM DO-CHECK 20000 TIMES.
+       >> END-IF
+           GOBACK.
+
+       DO-CHECK.
+
+           MOVE D-S99V99 TO T-S99V99
+           IF T-S99V99 NOT = 1.23
+              DISPLAY "T-S99V99 1: " T-S99V99.
+           MOVE D-N99V99 TO T-S99V99
+           IF T-S99V99 NOT = -1.32
+              DISPLAY "T-S99V99 2: " T-S99V99.
+           MOVE D-9V99   TO T-S99V99
+           IF T-S99V99 NOT = 1.1
+              DISPLAY "T-S99V99 3: " T-S99V99.
+           MOVE D-S99    TO T-S99V99
+           IF T-S99V99 NOT = 12
+              DISPLAY "T-S99V99 4: " T-S99V99.
+           MOVE D-99     TO T-S99V99
+           IF T-S99V99 NOT = 2
+              DISPLAY "T-S99V99 5: " T-S99V99.
+           MOVE D-P99    TO T-S99V99
+           IF T-S99V99 NOT = 0.02
+              DISPLAY "T-S99V99 6: " T-S99V99.
+           MOVE D-9PP    TO T-S99V99
+           IF T-S99V99 NOT = 0
+              DISPLAY "T-S99V99 7: " T-S99V99.
+
+           MOVE D-S99V99 TO T-99V9 
+           IF T-99V9  NOT = 1.2
+              DISPLAY "T-99V9   1: " T-99V9  .
+           MOVE D-N99V99 TO T-99V9 
+           IF T-99V9  NOT = 1.3
+              DISPLAY "T-99V9   2: " T-99V9  .
+           MOVE D-9V99   TO T-99V9 
+           IF T-99V9  NOT = 1.1
+              DISPLAY "T-99V9   3: " T-99V9  .
+           MOVE D-S99    TO T-99V9 
+           IF T-99V9  NOT = 12
+              DISPLAY "T-99V9   4: " T-99V9  .
+           MOVE D-99     TO T-99V9 
+           IF T-99V9  NOT = 2
+              DISPLAY "T-99V9   5: " T-99V9  .
+           MOVE D-P99    TO T-99V9 
+           IF T-99V9  NOT = 0
+              DISPLAY "T-99V9   6: " T-99V9  .
+           MOVE D-9PP    TO T-99V9 
+           IF T-99V9  NOT = 0
+              DISPLAY "T-99V9   7: " T-99V9  .
+
+           MOVE D-S99V99 TO T-S999
+           IF T-S999   NOT = 1
+              DISPLAY "T-S999   1: " T-S999  .
+           MOVE D-N99V99 TO T-S999
+           IF T-S999   NOT = -1
+              DISPLAY "T-S999   2: " T-S999  .
+           MOVE D-9V99   TO T-S999
+           IF T-S999   NOT = 1
+              DISPLAY "T-S999   3: " T-S999  .
+           MOVE D-S99    TO T-S999
+           IF T-S999   NOT = 12
+              DISPLAY "T-S999   4: " T-S999  .
+           MOVE D-99     TO T-S999
+           IF T-S999   NOT = 2
+              DISPLAY "T-S999   5: " T-S999  .
+           MOVE D-P99    TO T-S999
+           IF T-S999   NOT = 0
+              DISPLAY "T-S999   6: " T-S999  .
+           MOVE D-9PP    TO T-S999
+           IF T-S999   NOT = 200
+              DISPLAY "T-S999   7: " T-S999  .
+
+           MOVE D-S99V99 TO T-99
+           IF T-99     NOT = 1
+              DISPLAY "T-99     1: " T-99    .
+           MOVE D-N99V99 TO T-99
+           IF T-99     NOT = 1
+              DISPLAY "T-99     2: " T-99    .
+           MOVE D-9V99   TO T-99
+           IF T-99     NOT = 1
+              DISPLAY "T-99     3: " T-99    .
+           MOVE D-S99    TO T-99
+           IF T-99     NOT = 12
+              DISPLAY "T-99     4: " T-99    .
+           MOVE D-99     TO T-99
+           IF T-99     NOT = 2
+              DISPLAY "T-99     5: " T-99    .
+           MOVE D-P99    TO T-99
+           IF T-99     NOT = 0
+              DISPLAY "T-99     6: " T-99    .
+           MOVE D-9PP    TO T-99
+           IF T-99     NOT = 0
+              DISPLAY "T-99     7: " T-99    .
+
+           MOVE D-S99V99 TO T-P9
+           IF T-P9     NOT = 0.03
+              DISPLAY "T-P9     1: " T-P9    .
+           MOVE D-N99V99 TO T-P9
+           IF T-P9     NOT = 0.02
+              DISPLAY "T-P9     2: " T-P9    .
+           MOVE D-9V99   TO T-P9
+           IF T-P9     NOT = 0
+              DISPLAY "T-P9     3: " T-P9    .
+           MOVE D-S99    TO T-P9
+           IF T-P9     NOT = 0
+              DISPLAY "T-P9     4: " T-P9    .
+           MOVE D-99     TO T-P9
+           IF T-P9     NOT = 0
+              DISPLAY "T-P9     5: " T-P9    .
+           MOVE D-P99    TO T-P9
+           IF T-P9     NOT = 0.02
+              DISPLAY "T-P9     6: " T-P9    .
+           MOVE D-9PP    TO T-P9
+           IF T-P9     NOT = 0
+              DISPLAY "T-P9     7: " T-P9    .
+
+           MOVE D-S99V99 TO T-9P
+           IF T-9P     NOT = 0
+              DISPLAY "T-9P     1: " T-9P    .
+           MOVE D-N99V99 TO T-9P
+           IF T-9P     NOT = 0
+              DISPLAY "T-9P     2: " T-9P    .
+           MOVE D-9V99   TO T-9P
+           IF T-9P     NOT = 0
+              DISPLAY "T-9P     3: " T-9P    .
+           MOVE D-S99    TO T-9P
+           IF T-9P     NOT = 10
+              DISPLAY "T-9P     4: " T-9P    .
+           MOVE D-99     TO T-9P
+           IF T-9P     NOT = 0
+              DISPLAY "T-9P     5: " T-9P    .
+           MOVE D-P99    TO T-9P
+           IF T-9P     NOT = 0
+              DISPLAY "T-9P     6: " T-9P    .
+           MOVE D-9PP    TO T-9P
+           IF T-9P     NOT = 0
+              DISPLAY "T-9P     7: " T-9P    .
+
+           CONTINUE.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([PPP DISPLAY])
+AT_KEYWORDS([fundamental MOVE ADD SUBTRACT MULTIPLY DIVIDE])
+
+# note: for changes mind the nearly identical test in data_binary.at
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID. prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 XS.
+         05 X-1  PIC 999PPP DISPLAY  VALUE 91000.
+         05 X-2  PIC 999PPP DISPLAY  VALUE 92000.
+         05 X-3  PIC X VALUE "$".
+         05 X-4  PIC VPPP999 DISPLAY VALUE 0.000128.
+       01 D-1    PIC 999PPP  DISPLAY VALUE 95000.
+       01 D-2    PIC 9999PP  DISPLAY VALUE 193000.
+       PROCEDURE        DIVISION.
+       MAIN.
+           DISPLAY "INIT X-1 : " X-1 " .".
+           DISPLAY "INIT X-2 : " X-2 " .".
+           DISPLAY "INIT X-4 : " X-4 " .".
+           DISPLAY "INIT D-1 : " D-1 " .".
+           MOVE D-1 TO X-2 X-1
+           MOVE X-2 TO D-1.
+           DISPLAY "MOVE X-1 : " X-1 " .".
+           DISPLAY "MOVE X-2 : " X-2 " .".
+           MOVE 0.000256 TO X-4
+           DISPLAY "MOVE X-4 : " X-4 " .".
+           DISPLAY "MOVE D-1 : " D-1 " .".
+           MOVE D-2 TO X-2 X-1
+           DISPLAY "MOVE X-1 : " X-1 ":" D-2 " .".
+           DISPLAY "MOVE X-2 : " X-2 ":" D-2 " .".
+           MOVE 98000   TO X-1.
+           IF X-1 NOT = 98000
+             DISPLAY "MOVE 98000 failed: " X-1.
+           MOVE 98000   TO D-1
+           IF D-1 NOT = 98000
+             DISPLAY "MOVE 98000 failed: " D-1.
+           ADD 1000 TO X-1
+           IF X-1 NOT = 99000
+             DISPLAY "+ 1000 failed: " X-1.
+           SUBTRACT 4000 FROM X-1.
+           IF X-1 NOT = 95000
+             DISPLAY "- 4000 failed: " X-1.
+           DIVIDE 3 INTO X-1.
+           IF X-1 NOT = 31000
+             DISPLAY "/ 3 failed: " X-1.
+           MULTIPLY 2 BY X-1 GIVING X-1.
+           IF X-1 NOT = 62000
+             DISPLAY "* 2 failed: " X-1.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[INIT X-1 : 091000 .
+INIT X-2 : 092000 .
+INIT X-4 : .000128 .
+INIT D-1 : 095000 .
+MOVE X-1 : 095000 .
+MOVE X-2 : 095000 .
+MOVE X-4 : .000256 .
+MOVE D-1 : 095000 .
+MOVE X-1 : 193000:193000 .
+MOVE X-2 : 193000:193000 .
+], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([arithmetic truncation with USAGE DISPLAY])
+AT_KEYWORDS([fundamental COMPUTE])
+
+# note: for changes mind the nearly identical test in data_binary.at
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID. prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       77 RESULT        PIC 9(03).
+       PROCEDURE        DIVISION.
+       MAIN.
+      * internal arithmetic to DISPLAY
+           MOVE 1 TO RESULT
+           COMPUTE RESULT = 15 + RESULT - 2 / RESULT
+           IF RESULT NOT = 14
+              DISPLAY "NOT 14: " RESULT.
+
+      * internal arithmetic to DISPLAY, with sign drop
+           MOVE 1 TO RESULT
+           COMPUTE RESULT = 15 + RESULT - 20 / RESULT
+           IF RESULT NOT = 4
+              DISPLAY "NOT [-] 4: " RESULT.
+
+      * internal arithmetic to DISPLAY with truncation of decimal-part
+           MOVE 1 TO RESULT
+           COMPUTE RESULT = 15 + RESULT / 2
+           IF RESULT NOT = 15
+              DISPLAY "NOT 15: " RESULT.
+
+      * internal arithmetic to DISPLAY with truncation of integer-part
+           MOVE 1 TO RESULT
+           COMPUTE RESULT = 15 + RESULT - 2000 / RESULT
+           IF RESULT NOT = 984
+              DISPLAY "NOT [-1] 984: " RESULT.
+
+      * internal arithmetic to DISPLAY with truncation of integer-part
+      * with leading zeros after truncation
+           MOVE 1 TO RESULT
+           COMPUTE RESULT = 15 + RESULT + 2000 / RESULT
+           IF RESULT NOT = 16
+              DISPLAY "NOT [+20] 16: " RESULT.
+
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP

@@ -181,12 +181,20 @@ AT_DATA([prog.cob], [
            05 WS-TIME-MICRO            PIC 9(14).
 
        PROCEDURE DIVISION.
+           PERFORM RUN-TEST.
+           PERFORM RUN-VALIDATION.
+       >> IF CHECK-PERF IS DEFINED
       *>   included performance check
-           PERFORM 50000 TIMES
-              ACCEPT WS-DATE-TODAY-9      FROM DATE
-              ACCEPT WS-TIME-NOW-9        FROM TIME
-              ACCEPT WS-TIME-MICRO        FROM MICROSECOND-TIME
-           END-PERFORM
+           PERFORM RUN-TEST 50000 TIMES
+       >> END-IF
+           GOBACK.
+
+        RUN-TEST.
+            ACCEPT WS-DATE-TODAY-9      FROM DATE.
+            ACCEPT WS-TIME-NOW-9        FROM TIME.
+            ACCEPT WS-TIME-MICRO        FROM MICROSECOND-TIME.
+
+        RUN-VALIDATION.
       *>   actual verification
            MOVE WS-TODAYS-YY TO WS-DATE-YY
            MOVE WS-TODAYS-MM TO WS-DATE-MM
@@ -247,8 +255,6 @@ AT_DATA([prog.cob], [
                    WITH NO ADVANCING UPON SYSOUT
            END-DISPLAY
            DISPLAY '.' UPON SYSOUT.
-
-           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])

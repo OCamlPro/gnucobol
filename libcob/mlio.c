@@ -364,6 +364,8 @@ get_num (cob_field * const f, void * (*strndup_func)(const char *, size_t),
 	char		*dp_pos;
 	void		*num;
 
+	/* TODO: add test cases with PPP99 and 9PPP to verify it works "as expected" */
+
 	/* Initialize attribute for nicely edited version of f */
 	attr.type = COB_TYPE_NUMERIC_EDITED;
 	attr.flags = COB_FLAG_JUSTIFIED;

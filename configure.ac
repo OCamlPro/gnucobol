@@ -2316,6 +2316,7 @@ AC_SUBST([COBC_CPPFLAGS])
 AC_SUBST([PROGRAMS_LIBS])
 AC_SUBST([LIBCOB_LIBS])
 AC_SUBST([LIBCOB_CPPFLAGS])
+AC_SUBST([COB_ENABLE_DEBUG], [$enable_debug]) # needed for tests/atlocal
 
 dnl was used in bin/Makefile.am - seems not to be needed
 dnl AC_SUBST([COB_EXPORT_DYN])

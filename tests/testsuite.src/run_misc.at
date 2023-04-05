@@ -5270,9 +5270,11 @@ AT_DATA([prog.cob], [
        MAIN.
       *    Test with DISPLAY on error
            PERFORM DO-CHECK.
+       >> IF CHECK-PERF IS DEFINED
            SET  NO-DISP    TO TRUE
       *    some performance checks on the way...
            PERFORM DO-CHECK 20000 TIMES.
+       >> END-IF
            GOBACK.
 
        DO-CHECK.
@@ -5682,6 +5684,12 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CHECK([$COMPILE -fno-fast-compare prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+#AT_CHECK([$COMPILE -fno-fast-math prog.cob], [0], [], [])
+#AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CHECK([$COMPILE -fnotrunc prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
@@ -6165,6 +6173,12 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CHECK([$COMPILE -fno-fast-compare prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+#AT_CHECK([$COMPILE -fno-fast-math prog.cob], [0], [], [])
+#AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CHECK([$COMPILE -fnotrunc prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
@@ -11030,8 +11044,11 @@ AT_DATA([caller.cob], [
        PROCEDURE DIVISION.
        MAIN-LINE.
 
+           PERFORM DO-CHECK
+       >> IF CHECK-PERF IS DEFINED
       *>   minimal side-test for performance comparisons
            PERFORM DO-CHECK 10000 TIMES
+       >> END-IF
            DISPLAY 'DONE' UPON SYSERR WITH NO ADVANCING
            GOBACK.
 
@@ -11155,7 +11172,7 @@ AT_CLEANUP
 
 
 AT_SETUP([Numeric MOVE with/without -fbinary-truncate])
-AT_KEYWORDS([runmisc size])
+AT_KEYWORDS([runmisc size binary-truncate])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION  DIVISION.
@@ -11163,7 +11180,7 @@ AT_DATA([prog.cob], [
 
        DATA            DIVISION.
        WORKING-STORAGE SECTION.
-       01  x PIC 9(4) COMP.
+       01  x PIC 9(4)  COMP.
 
        PROCEDURE       DIVISION.
            MOVE 30000 TO x
@@ -11180,6 +11197,9 @@ AT_DATA([prog.cob], [
            .
        check-x-val     SECTION.
            EVALUATE x
+               WHEN 30000
+                   DISPLAY "x IS 30000"
+
                WHEN >= 10000
                    DISPLAY "x >= 10000"
 
@@ -11206,9 +11226,16 @@ x IS ZERO
 
 AT_CHECK([$COMPILE -fno-binary-truncate prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
-[x >= 10000
-x >= 10000
-x >= 10000
+[x IS 30000
+x IS 30000
+x IS 30000
+])
+
+AT_CHECK([$COMPILE -fno-binary-truncate -fno-fast-compare prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[x IS 30000
+x IS 30000
+x IS 30000
 ])
 
 AT_CLEANUP
@@ -13846,7 +13873,6 @@ AT_DATA([prog.cob], [
        01 variable usage signed-int value 0.
           88 a-one value 1.
           88 a-two value 2.
-       LINKAGE SECTION.
        PROCEDURE DIVISION.
       *> bug #702, "pow"-call in generated program
            display n(n**0+ 1:) with no advancing.
@@ -13864,5 +13890,146 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [9-9succeeded
 ], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([compare numeric DISPLAY SPACE with ZERO])
+AT_KEYWORDS([runmisc expression])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  TST-VARS.
+           03 TST-NUMBER         PIC  9(6).
+           03 TST-NUMBER-SIGNED  PIC S9(6).
+           03 TST-DECIMAL        PIC  9(2)V9(4).
+           03 TST-DECIMAL-SIGNED PIC S9(2)V9(4).
+       77     ZERO-DECIMAL       PIC  9(2)V9(4) VALUE ZERO.
+       77     ZERO-NUMBER        PIC  9(6)      VALUE ZERO.
+           
+       PROCEDURE DIVISION.
+           MOVE SPACES TO TST-VARS
+
+           IF TST-NUMBER > 0
+              DISPLAY "TST-NUMBER IS > 0".
+           IF TST-NUMBER NOT = 0
+              DISPLAY "TST-NUMBER IS NOT 0".
+           IF TST-NUMBER < 0
+              DISPLAY "TST-NUMBER IS < 0".
+
+           IF TST-NUMBER-SIGNED > 0
+              DISPLAY "TST-NUMBER-SIGNED IS > 0".
+           IF TST-NUMBER-SIGNED NOT = 0
+              DISPLAY "TST-NUMBER-SIGNED IS NOT 0".
+           IF TST-NUMBER-SIGNED < 0
+              DISPLAY "TST-NUMBER-SIGNED IS < 0".
+
+           IF TST-DECIMAL > 0
+              DISPLAY "TST-DECIMAL IS > 0".
+           IF TST-DECIMAL NOT = 0
+              DISPLAY "TST-DECIMAL IS NOT 0".
+           IF TST-DECIMAL < 0
+              DISPLAY "TST-DECIMAL IS < 0".
+
+           IF TST-DECIMAL-SIGNED > 0
+              DISPLAY "TST-DECIMAL-SIGNED IS > 0".
+           IF TST-DECIMAL-SIGNED NOT = 0
+              DISPLAY "TST-DECIMAL-SIGNED IS NOT 0".
+           IF TST-DECIMAL-SIGNED < 0
+              DISPLAY "TST-DECIMAL-SIGNED IS < 0".
+
+           IF TST-NUMBER > ZERO-NUMBER
+              DISPLAY "TST-NUMBER IS > ZERO-NUMBER".
+           IF TST-NUMBER NOT = ZERO-NUMBER
+              DISPLAY "TST-NUMBER IS NOT ZERO-NUMBER".
+           IF TST-NUMBER < ZERO-NUMBER
+              DISPLAY "TST-NUMBER IS < ZERO-NUMBER".
+
+           IF TST-NUMBER-SIGNED > ZERO-NUMBER
+              DISPLAY "TST-NUMBER-SIGNED IS > ZERO-NUMBER".
+           IF TST-NUMBER-SIGNED NOT = ZERO-NUMBER
+              DISPLAY "TST-NUMBER-SIGNED IS NOT ZERO-NUMBER".
+           IF TST-NUMBER-SIGNED < ZERO-NUMBER
+              DISPLAY "TST-NUMBER-SIGNED IS < ZERO-NUMBER".
+
+           IF TST-DECIMAL > ZERO-NUMBER
+              DISPLAY "TST-DECIMAL IS > ZERO-NUMBER".
+           IF TST-DECIMAL NOT = ZERO-NUMBER
+              DISPLAY "TST-DECIMAL IS NOT ZERO-NUMBER".
+           IF TST-DECIMAL < ZERO-NUMBER
+              DISPLAY "TST-DECIMAL IS < ZERO-NUMBER".
+
+           IF TST-DECIMAL-SIGNED > ZERO-NUMBER
+              DISPLAY "TST-DECIMAL-SIGNED IS > ZERO-NUMBER".
+           IF TST-DECIMAL-SIGNED NOT = ZERO-NUMBER
+              DISPLAY "TST-DECIMAL-SIGNED IS NOT ZERO-NUMBER".
+           IF TST-DECIMAL-SIGNED < ZERO-NUMBER
+              DISPLAY "TST-DECIMAL-SIGNED IS < ZERO-NUMBER".
+
+           IF TST-NUMBER > ZERO-DECIMAL
+              DISPLAY "TST-NUMBER IS > ZERO-DECIMAL".
+           IF TST-NUMBER NOT = ZERO-DECIMAL
+              DISPLAY "TST-NUMBER IS NOT ZERO-DECIMAL".
+           IF TST-NUMBER < ZERO-DECIMAL
+              DISPLAY "TST-NUMBER IS < ZERO-DECIMAL".
+
+           IF TST-NUMBER-SIGNED > ZERO-DECIMAL
+              DISPLAY "TST-NUMBER-SIGNED IS > ZERO-DECIMAL".
+           IF TST-NUMBER-SIGNED NOT = ZERO-DECIMAL
+              DISPLAY "TST-NUMBER-SIGNED IS NOT ZERO-DECIMAL".
+           IF TST-NUMBER-SIGNED < ZERO-DECIMAL
+              DISPLAY "TST-NUMBER-SIGNED IS < ZERO-DECIMAL".
+
+           IF TST-DECIMAL > ZERO-DECIMAL
+              DISPLAY "TST-DECIMAL IS > ZERO-DECIMAL".
+           IF TST-DECIMAL NOT = ZERO-DECIMAL
+              DISPLAY "TST-DECIMAL IS NOT ZERO-DECIMAL".
+           IF TST-DECIMAL < ZERO-DECIMAL
+              DISPLAY "TST-DECIMAL IS < ZERO-DECIMAL".
+
+           IF TST-DECIMAL-SIGNED > ZERO-DECIMAL
+              DISPLAY "TST-DECIMAL-SIGNED IS > ZERO-DECIMAL".
+           IF TST-DECIMAL-SIGNED NOT = ZERO-DECIMAL
+              DISPLAY "TST-DECIMAL-SIGNED IS NOT ZERO-DECIMAL".
+           IF TST-DECIMAL-SIGNED < ZERO-DECIMAL
+              DISPLAY "TST-DECIMAL-SIGNED IS < ZERO-DECIMAL".
+
+           GOBACK.
+])
+
+# dropping "fast compare" does an internal numeric compare, where invalid data
+# in USAGE DISPLAY is converted (onlysecond half-byte used) and leading SPACE
+# is skipped in general
+AT_CHECK([$COMPILE -Wno-constant-expression -fno-fast-compare prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+# with "fast compare" enabled, the same PIC+USAGE leads to memcmp, therefore the
+# result differs with invalid data; note: the exact "difference" is unportable
+AT_CHECK([$COMPILE -Wno-constant-expression prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[TST-NUMBER IS NOT ZERO-NUMBER
+TST-NUMBER IS < ZERO-NUMBER
+TST-DECIMAL IS NOT ZERO-DECIMAL
+TST-DECIMAL IS < ZERO-DECIMAL
+], [])
+
+# result with MF would be:
+# TST-NUMBER IS NOT 0
+# TST-NUMBER IS < 0
+# TST-NUMBER-SIGNED IS NOT 0
+# TST-NUMBER-SIGNED IS < 0
+# TST-NUMBER IS NOT ZERO-NUMBER
+# TST-NUMBER IS < ZERO-NUMBER
+# TST-NUMBER-SIGNED IS NOT ZERO-NUMBER
+# TST-NUMBER-SIGNED IS < ZERO-NUMBER
+# TST-DECIMAL IS NOT ZERO-DECIMAL
+# TST-DECIMAL IS < ZERO-DECIMAL
+# TST-DECIMAL-SIGNED IS NOT ZERO-DECIMAL
+# TST-DECIMAL-SIGNED IS < ZERO-DECIMAL
+# CHECKME: Do we want to mimic that with -std=mf?
+
 
 AT_CLEANUP

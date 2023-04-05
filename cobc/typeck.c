@@ -10571,7 +10571,6 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 	struct cb_field		*fdst;
 	struct cb_field		*fsrc;
 	struct cb_literal	*l;
-	unsigned char		*p;
 	cb_tree			loc;
 	cob_s64_t		val;
 	size_t			i;
@@ -10581,8 +10580,6 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 	int			dst_size_mod;
 	signed int			size;	/* -1 as special value */
 	int			m_zero;
-	int			most_significant;
-	int			least_significant;
 
 	/* CHECKME: most of the "invalid" checks should possibly be handled in the parser */
 
@@ -10689,6 +10686,9 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 		l = CB_LITERAL (src);
 		switch (CB_TREE_CLASS (src)) {
 		case CB_CLASS_NUMERIC:
+		{
+			int 	leftmost_significant, most_significant, least_significant;
+
 			/* Numeric literal */
 			if (l->all) {
 				goto invalid;
@@ -10697,27 +10697,33 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 				/* TODO: add check for exponent size */
 				break;
 			}
-			most_significant = -999;
-			least_significant = 999;
 
-			/* Compute the most significant figure place */
-			for (i = 0; i < l->size; i++) {
+			/* Compute the most significant figure place
+			   in relatation to the decimal point (negative = decimal position) */
+			for (leftmost_significant = 0; leftmost_significant < l->size; leftmost_significant++) {
+				if (l->data[leftmost_significant] != '0') {
+					break;
+				}
+			}
+			if (leftmost_significant == l->size) {
+				most_significant = -999;
+			} else {
+				most_significant = l->size - l->scale - leftmost_significant;
+				if (most_significant < 1) most_significant--;
+			}
+
+			/* Compute the least significant figure place
+			   in relatation to the decimal point (negative = decimal position) */
+			for (i = l->size - 1; i != 0; i--) {
 				if (l->data[i] != '0') {
 					break;
 				}
 			}
-			if (i != l->size) {
-				most_significant = (int) (l->size - l->scale - i - 1);
-			}
-
-			/* Compute the least significant figure place */
-			for (i = 0; i < l->size; i++) {
-				if (l->data[l->size - i - 1] != '0') {
-					break;
-				}
-			}
-			if (i != l->size) {
-				least_significant = (int)i - l->scale;
+			if (i == 0) {
+				least_significant = 999;
+			} else {
+				least_significant = (l->size - l->scale) - i;
+				if (least_significant < 1) least_significant--;
 			}
 
 			/* Value check */
@@ -10744,18 +10750,23 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 				}
 				/* Fall-through */
 			case CB_CATEGORY_NUMERIC:
-				if (fdst->pic->scale < 0) {
+			{
+				const struct cb_picture *pic = fdst->pic;
+				if (pic->scale < 0) {
 					/* Check for PIC 9(n)P(m) */
-					if (least_significant < -fdst->pic->scale) {
+					if (least_significant <= -pic->scale) {
+						/* 12300 (3) <= 99PPP (- -3) */
 						goto value_mismatch;
 					}
-				} else if (fdst->pic->scale > fdst->pic->size) {
+				} else if (pic->scale > pic->digits) {
 					/* Check for PIC P(n)9(m) */
-					if (most_significant >= fdst->pic->size - fdst->pic->scale) {
+					if (most_significant > pic->digits - pic->scale - 1) {
+						/* .00123 (-3) > PPP99 (-4 [2 - 5 - 1]) */
 						goto value_mismatch;
 					}
 				}
 				break;
+			}
 			case CB_CATEGORY_ALPHABETIC:
 				if (is_value) {
 					goto expect_alphanumeric;
@@ -10786,128 +10797,109 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 			/* Size check */
 			if (fdst->flag_real_binary
 			  || (  !cb_binary_truncate
-				 && fdst->pic->scale == 0
+				 && fdst->pic->scale <= 0
 			     && (   fdst->usage == CB_USAGE_COMP_5
 			         || fdst->usage == CB_USAGE_COMP_X
 			         || fdst->usage == CB_USAGE_COMP_N
 			         || fdst->usage == CB_USAGE_BINARY))) {
-				p = l->data;
-				for (i = 0; i < l->size; i++) {
-					if (l->data[i] != '0') {
-						p = &l->data[i];
-						break;
+				i = l->size - leftmost_significant;
+				if (i < 19) {
+					val = cb_get_long_long (src);
+				} else if (fdst->size < 8) {
+					goto numlit_overflow;
+				} else {
+					val = 0;
+				}
+				/* handle negative scale aka 999PPP */
+				if (fdst->pic->scale < 0) {
+					int j = fdst->pic->scale;
+					i += j;
+					while (j != 0) {
+						val /= 10;
+						j++;
 					}
 				}
-				i = l->size - i;
 				switch (fdst->size) {
 				case 1:
-					if (i > 18) {
-						goto numlit_overflow;
-					}
-					val = cb_get_long_long (src);
 					if (fdst->pic->have_sign) {
-						if (val < COB_S64_C(-128) ||
-						    val > COB_S64_C(127)) {
+						if (val < COB_S64_C (-128)
+						 || val > COB_S64_C (127)) {
 							goto numlit_overflow;
 						}
 					} else {
-						if (val > COB_S64_C(255)) {
+						if (val > COB_S64_C (255)) {
 							goto numlit_overflow;
 						}
 					}
 					break;
 				case 2:
-					if (i > 18) {
-						goto numlit_overflow;
-					}
-					val = cb_get_long_long (src);
 					if (fdst->pic->have_sign) {
-						if (val < COB_S64_C(-32768) ||
-						    val > COB_S64_C(32767)) {
+						if (val < COB_S64_C (-32768)
+						 || val > COB_S64_C (32767)) {
 							goto numlit_overflow;
 						}
 					} else {
-						if (val > COB_S64_C(65535)) {
+						if (val > COB_S64_C (65535)) {
 							goto numlit_overflow;
 						}
 					}
 					break;
 				case 3:
-					if (i > 18) {
-						goto numlit_overflow;
-					}
-					val = cb_get_long_long (src);
 					if (fdst->pic->have_sign) {
-						if (val < COB_S64_C(-8388608) ||
-						    val > COB_S64_C(8388607)) {
+						if (val < COB_S64_C (-8388608)
+						 || val > COB_S64_C (8388607)) {
 							goto numlit_overflow;
 						}
 					} else {
-						if (val > COB_S64_C(16777215)) {
+						if (val > COB_S64_C (16777215)) {
 							goto numlit_overflow;
 						}
 					}
 					break;
 				case 4:
-					if (i > 18) {
-						goto numlit_overflow;
-					}
-					val = cb_get_long_long (src);
 					if (fdst->pic->have_sign) {
-						if (val < COB_S64_C(-2147483648) ||
-						    val > COB_S64_C(2147483647)) {
+						if (val < COB_S64_C (-2147483648)
+						 || val > COB_S64_C (2147483647)) {
 							goto numlit_overflow;
 						}
 					} else {
-						if (val > COB_S64_C(4294967295)) {
+						if (val > COB_S64_C (4294967295)) {
 							goto numlit_overflow;
 						}
 					}
 					break;
 				case 5:
-					if (i > 18) {
-						goto numlit_overflow;
-					}
-					val = cb_get_long_long (src);
 					if (fdst->pic->have_sign) {
-						if (val < COB_S64_C(-549755813888) ||
-						    val > COB_S64_C(549755813887)) {
+						if (val < COB_S64_C (-549755813888)
+						 || val > COB_S64_C (549755813887)) {
 							goto numlit_overflow;
 						}
 					} else {
-						if (val > COB_S64_C(1099511627775)) {
+						if (val > COB_S64_C (1099511627775)) {
 							goto numlit_overflow;
 						}
 					}
 					break;
 				case 6:
-					if (i > 18) {
-						goto numlit_overflow;
-					}
-					val = cb_get_long_long (src);
 					if (fdst->pic->have_sign) {
-						if (val < COB_S64_C(-140737488355328) ||
-						    val > COB_S64_C(140737488355327)) {
+						if (val < COB_S64_C (-140737488355328)
+						 || val > COB_S64_C (140737488355327)) {
 							goto numlit_overflow;
 						}
 					} else {
-						if (val > COB_S64_C(281474976710655)) {
+						if (val > COB_S64_C (281474976710655)) {
 							goto numlit_overflow;
 						}
 					}
 					break;
 				case 7:
-					if (i > 18) {
-						goto numlit_overflow;
-					}
-					val = cb_get_long_long (src);
 					if (fdst->pic->have_sign) {
-						if (val < COB_S64_C(-36028797018963968) ||
-						    val > COB_S64_C(36028797018963967)) {
+						if (val < COB_S64_C (-36028797018963968)
+						 || val > COB_S64_C (36028797018963967)) {
 							goto numlit_overflow;
 						}
 					} else {
-						if (val > COB_S64_C(72057594037927935)) {
+						if (val > COB_S64_C (72057594037927935)) {
 							goto numlit_overflow;
 						}
 					}
@@ -10920,9 +10912,10 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 						if (i > 19) {
 							goto numlit_overflow;
 						}
-						if (memcmp (p, l->sign ? "9223372036854775808" :
-									 "9223372036854775807",
-									 (size_t)19) > 0) {
+						if (memcmp (l->data + leftmost_significant,
+							 l->sign ? "9223372036854775808" :
+							           "9223372036854775807",
+							 19) > 0) {
 							goto numlit_overflow;
 						}
 					} else {
@@ -10932,7 +10925,9 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 						if (i > 20) {
 							goto numlit_overflow;
 						}
-						if (memcmp (p, "18446744073709551615", (size_t)20) > 0) {
+						if (memcmp (l->data + leftmost_significant,
+							 "18446744073709551615",
+							 20) > 0) {
 							goto numlit_overflow;
 						}
 					}
@@ -10949,11 +10944,12 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 			} else {
 				size = fdst->pic->digits;
 			}
-			if (most_significant >= size) {
+			if (most_significant > size) {
 				size = -1;
 				goto size_overflow;
 			}
 			break;
+		}
 
 		case CB_CLASS_NATIONAL:	/* National literal */
 
