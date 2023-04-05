@@ -110,17 +110,28 @@ display_numeric (cob_field *f, FILE *fp)
 static void
 pretty_display_numeric (cob_field *f, FILE *fp)
 {
-	const unsigned short	digits = COB_FIELD_DIGITS (f);
+	unsigned short	digits;
 	const signed short	scale = COB_FIELD_SCALE (f);
 	const int		has_sign = COB_FIELD_HAVE_SIGN (f) ? 1 : 0;
-	const int		size
-		= digits
-		+ ((scale > 0) ? 1 : 0)	/* no decimal point -> no space for negative scales */
-		+ has_sign;
+	int		size;
 	/* Note: while we only need one pair, the double one works around a bug in
 	         old GCC versions https://gcc.gnu.org/bugzilla/show_bug.cgi?id=53119 */
 	cob_pic_symbol	pic[6] = {{ 0 }};
 	cob_pic_symbol	*p = pic;
+
+	digits = COB_FIELD_DIGITS (f);
+	if (scale == 0) {		/* PIC 999 */
+		size = digits + has_sign;
+	} else if (scale < 0) {	/* PIC P99 */
+		size = digits + has_sign;
+	} else {
+		if (digits < scale) {
+			digits = scale;	/* PIC PP9*/
+		} else {
+			/* PIC 9v99 */
+		}
+		size = digits + has_sign + 1;
+	}
 
 	if (size > COB_MEDIUM_MAX) {
 		fputs (_("(Not representable)"), fp);
@@ -234,8 +245,6 @@ clean_double (char *wrk)
 void
 cob_display_common (const cob_field *f, FILE *fp)
 {
-
-
 	if (f->size == 0) {
 		return;
 	}
@@ -289,20 +298,24 @@ cob_display_common (const cob_field *f, FILE *fp)
 			fprintf (fp, "%x%x", *p >> 4, *p & 0xF);
 		}
 		return;
-	} else if (COB_FIELD_TYPE(f) == COB_TYPE_NUMERIC_COMP5) {
-		cob_print_realbin (f, fp, f->attr->digits);
-		return;
-	} else if (COB_FIELD_REAL_BINARY(f)
-	        || (COB_FIELD_TYPE(f) == COB_TYPE_NUMERIC_BINARY
-	         && !COB_MODULE_PTR->flag_pretty_display)) {
-		cob_print_realbin (f, fp, bin_digits[f->size]);
-		return;
-	} else if (COB_FIELD_IS_NUMERIC (f)) {
+	}
+	if (COB_FIELD_IS_NUMERIC (f)) {
+		/* CHECKME: consider to check for pretty-printing first */
+		if (COB_FIELD_TYPE (f) == COB_TYPE_NUMERIC_COMP5) {
+			cob_print_realbin (f, fp, f->attr->digits);
+			return;
+		}
+		if ( COB_FIELD_REAL_BINARY (f)
+		 || (COB_FIELD_TYPE(f) == COB_TYPE_NUMERIC_BINARY
+		   && !COB_MODULE_PTR->flag_pretty_display)) {
+			cob_print_realbin (f, fp, bin_digits[f->size]);
+			return;
+		}
 		if (COB_MODULE_PTR->flag_pretty_display) {
 			pretty_display_numeric ((cob_field *)f, fp);
-		} else {
-			display_numeric ((cob_field *)f, fp);
+			return;
 		}
+		display_numeric ((cob_field *)f, fp);
 		return;
 	}
 	display_alnum (f, fp);

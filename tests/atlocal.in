@@ -63,9 +63,15 @@ LC_ALL=C
 export LC_ALL
 unset LANG
 
+# define for performance checks (running code several thousand times)
+if test "x$PERFSUFFIX" != "x" -o "x$CGSUFFIX" != "x" -o "@COB_ENABLE_DEBUG@" == yes; then
+   COBOL_FLAGS="-DCHECK-PERF ${COBOL_FLAGS}"
+fi
+
 # workaround to adjust the testsuite later:
 # FLAGS="-debug -Wall ${COBOL_FLAGS}"
 FLAGS="-debug -Wall ${COBOL_FLAGS} -fno-diagnostics-show-option"
+
 COMPILE="${COBC} -x ${FLAGS}"
 COMPILE_ONLY="${COBC} -fsyntax-only ${FLAGS} -Wno-unsupported"
 COMPILE_MODULE="${COBC} -m ${FLAGS}"

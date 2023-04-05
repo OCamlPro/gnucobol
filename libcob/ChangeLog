@@ -1,4 +1,46 @@
 
+2023-04-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* move.c (cob_move, cob_move_display_to_packed, cob_move_packed_to_display,
+	  cob_move_binary_to_binary, cob_move_display_to_binary),
+	  numeric.c (cob_decimal_set_packed, cob_decimal_get_packed,
+	  cob_decimal_get_binary),
+	  termio.c (pretty_display_numeric): fix digit and size calculation of
+	  fields with a PICTURE containing leading / trailing P
+	* termio.c (cob_display_common): minor refactoring
+
+2023-04-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* move.c (indirect_move): prefer local buffer for most cases
+	* move.c (cob_move): speedup handling for binary fields to fields
+	  with different scale (to binary / packed)
+	* move.c (cob_move_alphanum_to_edited, packed_get_long_long,
+	  cob_display_get_int, display_get_long_long,
+	  cob_move_alphanum_to_edited): minor refactoring
+	* move.c (cob_move_display_to_binary): skip leading zeros;
+	  pre-truncate by offset instead of post-truncate by calculation
+	* move.c (cob_move_display_to_binary): switch to GMP for > 19 digits,
+	  fixing wrong value in binary
+	* numeric.c (cob_set_packed_int, cob_decimal_get_packed): minor performance
+	  tuning
+
+2023-03-23  Simon Sobisch <simonsobisch@gnu.org>
+
+	changes for improved performance
+	* move.c (store_common_region): skipping leading zeroes, adjusted copy-code
+	* move.c (cob_move_display_to_packed), numeric.c (cob_decimal_get_packed):
+	  rewrite to not do division and modulo for each half-byte
+	* move.c (cob_move_edited_to_display): prefer pointer arithmetic to arrays
+	* move.c (cob_get_int, cob_get_llint): speedup for binary, tuned
+	  for "no decimal" then for "comma"
+	* numeric.c (cob_cmp_numdisp): prefer pointer arithmetic to arrays
+	* numeric.c (cob_get_long_ebcdic_sign, cob_get_long_ascii_sign): only set
+	  sign, not change the value
+
+2023-03-06  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_decimal_get_display): fix truncation with leading zeros
+
 2023-03-03  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c, common.h: new external field + define COB_ZEROES_ALPHABETIC /
