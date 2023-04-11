@@ -24,6 +24,12 @@
 	* numeric.c (cob_set_packed_int, cob_decimal_get_packed): minor performance
 	  tuning
 
+2023-03-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* (cob_open): check for bad quotes, early returning status 31
+	* (cob_chk_file_env, cob_chk_file_mapping, looks_absolute,
+	   do_acu_hyphen_translation): drop / ignore surrounding quotes of filenames
+
 2023-03-23  Simon Sobisch <simonsobisch@gnu.org>
 
 	changes for improved performance
@@ -85,6 +91,10 @@
 	* termio.c (display_numeric, pretty_display_numeric): use common
 	  COB_FIELD_INIT instead of manually init of field named "temp";
 	  minor speedup in output
+	* fileio.c (lineseq_read, lineseq_write): fixed performance regression
+	  by only keeping track of record offset on OPEN INPUT/OUTPUT
+	* fileio.c (lineseq_write, lineseq_rewrite): minor performance improvement
+	  by using pointer arithmetic instead of of char arrays + request register
 
 2023-02-10  Simon Sobisch <simonsobisch@gnu.org>
 
