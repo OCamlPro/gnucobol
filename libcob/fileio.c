@@ -1002,6 +1002,7 @@ cob_chk_file_env (const char *src)
 
 	q = cob_strdup (src);
 	s = q;
+
 	if (unlikely (cobsetptr->cob_env_mangle)) {
 		for (i = 0; i < strlen (s); ++i) {
 			if (!isalnum ((int)s[i])) {
@@ -1022,6 +1023,18 @@ cob_chk_file_env (const char *src)
 		file_open_env[COB_FILE_MAX] = 0;
 		p = getenv (file_open_env);
 		if (p && *p) {
+			/* Drop surrounding quotes, some implementations need those to
+			   support filename with embedded spaces (like MF),
+			   while others (like GC before 3.2) don't like them */
+			if (p[0] == '"'
+			 || p[0] == '\'') {
+				const size_t len = strlen (p) - 1;
+				if (len
+				 && p[len] == p[0]) {
+					p[len] = 0;
+					p++;
+				}
+			}
 			break;
 		}
 		p = NULL;
@@ -1042,10 +1055,17 @@ has_directory_separator (char *src)
 	return 0;
 }
 
-/* checks if 'src' looks like starting with  name */
+/* checks if 'src' looks like starting with name */
 static int
 looks_absolute (char *src)
 {
+	/* Ignore surrounding quotes, some implementations need those to
+	   support filename with embedded spaces (like MF),
+	   while others (like GC before 3.2) don't like them */
+	if (src[0] == '"' || src[0] == '\'') {
+		src++;
+	}
+
 	/* no file path adjustment if filename is absolute
 	   because it begins with a slash (or win-disk-drive) */
 	if (src[0] == '/'
@@ -1085,6 +1105,15 @@ do_acu_hyphen_translation (char *src)
 	if (len >= COB_FILE_MAX) {
 		len = COB_FILE_MAX;
 	}
+
+	/* Drop surrounding quotes, some implementations need those to
+	   support filename with embedded spaces (like MF),
+	   while others (like GC before 3.2) don't like them */
+	if ((src[0] == '"' || src[0] == '\'')
+	 && (src[0] == src[len - 1])) {
+		src++;
+		len -= 2;
+	}
 	memcpy (file_open_buff, src, len);
 	file_open_buff[len + 1] = 0;
 
@@ -1116,10 +1145,23 @@ cob_chk_file_mapping (void)
 	src = file_open_name;
 
 	/* Simple case - No separators [note: this is also the ACU and Fujitsu way] */
-	if (!looks_absolute(src)
-	 && !has_directory_separator(src)) {
+	if (!looks_absolute (src)
+	 && !has_directory_separator (src)) {
+		
+		/* Drop surrounding quotes, some implementations need those to
+		   support filename with embedded spaces (like MF),
+		   while others (like GC before 3.2) don't like them */
+		if (src[0] == '"'
+		 || src[0] == '\'') {
+			const size_t len = strlen (src) - 1;
+			if (src[len] == src[0]) {
+				src[len] = 0;
+				src++;
+			}
+		}
+
 		/* Ignore leading dollar */
-		if (*src == '$') {
+		if (src[0] == '$') {
 			src++;
 		}
 		/* Check for DD_xx, dd_xx, xx environment variables */
@@ -1130,20 +1172,22 @@ cob_chk_file_mapping (void)
 			/* Note: ACU specifies: "repeated until variable can't be resolved"
 			   we don't apply this and will not in the future
 			   [recursion is only one of the problems] */
-			if (looks_absolute (src)) {
+			if (looks_absolute (file_open_name)) {
 				return;
 			}
 			if (has_acu_hyphen (file_open_name)) {
 				do_acu_hyphen_translation (file_open_name);
-				return ;
+				return;
 			}
 		}
+		src = file_open_name;	/* ensure it points to the beginning */
+
 		/* apply COB_FILE_PATH if set (similar to ACUCOBOL's FILE-PREFIX)
-		   MF and Fujistu simply don't have that - not set by default,
+		   MF and Fujitsu simply don't have that - not set by default,
 		   so no compatilibity issue here */
 		if (cobsetptr->cob_file_path) {
 			snprintf (file_open_buff, (size_t)COB_FILE_MAX, "%s%c%s",
-				  cobsetptr->cob_file_path, SLASH_CHAR, file_open_name);
+				  cobsetptr->cob_file_path, SLASH_CHAR, src);
 			file_open_buff[COB_FILE_MAX] = 0;
 			strncpy (file_open_name, file_open_buff,
 				 (size_t)COB_FILE_MAX);
@@ -1166,7 +1210,19 @@ cob_chk_file_mapping (void)
 	dst = file_open_buff;
 	*dst = 0;
 
-	if (*src != '$') {
+	/* Drop surrounding quotes, some implementations need those to
+	   support filename with embedded spaces (like MF),
+	   while others (like GC before 3.2) don't like them */
+	if (src[0] == '"'
+	 || src[0] == '\'') {
+		const size_t len = strlen (src) - 1;
+		if (src[len] == src[0]) {
+			src[len] = 0;
+			src++;
+		}
+	}
+
+	if (src[0] != '$') {
 		dollar = 0;
 	} else {
 		dollar = 1;
@@ -1409,21 +1465,21 @@ errno_cob_sts (const int default_status)
 }
 
 #define COB_CHECKED_FPUTC(char_to_write,fstream)	do { \
-		const int character = (int)char_to_write; \
+		const int character = (int)(char_to_write); \
 		if (unlikely (putc (character, fstream) != character)) { \
 			return errno_cob_sts (COB_STATUS_30_PERMANENT_ERROR); \
 		} \
 	} ONCE_COB /* LCOV_EXCL_LINE */
 
 #define COB_CHECKED_WRITE(fd,string,length_to_write)	do { \
-		const size_t length = (size_t)length_to_write; \
+		const size_t length = (size_t)(length_to_write); \
 		if (unlikely (write (fd, string, length) != length)) { \
 			return errno_cob_sts (COB_STATUS_30_PERMANENT_ERROR); \
 		} \
 	} ONCE_COB /* LCOV_EXCL_LINE */
 
 #define COB_CHECKED_FWRITE(fstream,string,length_to_write)	do { \
-		const size_t length = (size_t)length_to_write; \
+		const size_t length = (size_t)(length_to_write); \
 		if (unlikely (fwrite (string, 1, length, fstream) != length)) { \
 			return errno_cob_sts (COB_STATUS_30_PERMANENT_ERROR); \
 		} \
@@ -2482,10 +2538,14 @@ lineseq_read (cob_file *f, const int read_opts)
 	dataptr = f->record->data;
 again:
 	fp = (FILE *)f->file;
-	f->record_off = ftell (fp);	/* Save position at start of line */
-	/* Note: at least on Win32 the offset resolved does only return the right values
-	   when file was opened in binary mode -> cob_unix_lf; as an alternative
-	   we could increment the record_off field on each read/write */
+	/* save last position at start of line; needed for REWRITE (I-O only) */ 
+	if (f->open_mode == COB_OPEN_I_O) {
+		f->record_off = ftell (fp);
+		/* Note: at least on Win32 the offset resolved does only return the right values
+		   when file was opened in binary mode -> cob_unix_lf; as an alternative
+		   we could increment the record_off field on each read/write; this would
+		   possibly improve performance, too */
+	}
 	for (; ;) {
 		n = getc (fp);
 		if (unlikely (n == EOF)) {
@@ -2669,8 +2729,6 @@ static int
 lineseq_write (cob_file *f, const int opt)
 {
 	FILE	*fp = (FILE *)f->file;
-	unsigned char		*p;
-	cob_linage		*lingptr;
 	const size_t		size = f->record->size;
 	int			ret;
 
@@ -2685,10 +2743,10 @@ lineseq_write (cob_file *f, const int opt)
 
 	if (unlikely (f->flag_select_features & COB_SELECT_LINAGE)) {
 		if (f->flag_needs_top) {
-			int i;
+			const cob_linage		*lingptr = f->linorkeyptr;
+			register int i = lingptr->lin_top;
 			f->flag_needs_top = 0;
-			lingptr = f->linorkeyptr;
-			for (i = 0; i < lingptr->lin_top; ++i) {
+			while (i-- > 0) {
 				COB_CHECKED_FPUTC ('\n', fp);
 			}
 		}
@@ -2702,10 +2760,17 @@ lineseq_write (cob_file *f, const int opt)
 		f->flag_needs_nl = 1;
 	}
 
-	f->record_off = ftell (fp);	/* Save file position at start of line */
+	/* save last position at start of line; needed for REWRITE (I-O only) */ 
+	if (f->open_mode == COB_OPEN_I_O) {
+		f->record_off = ftell (fp);
+		/* Note: at least on Win32 the offset resolved does only return the right values
+		   when file was opened in binary mode -> cob_unix_lf; as an alternative
+		   we could increment the record_off field on each read/write; this would
+		   possibly improve performance, too */
+	}
+
 	/* Write to the file */
 	if (size) {
-		size_t i;
 		errno = 0;
 #if 0 /* Note: file specific features are 4.x only ... */
 		if ((f->file_features & COB_FILE_LS_VALIDATE)) {
@@ -2714,20 +2779,22 @@ lineseq_write (cob_file *f, const int opt)
 		 && !f->flag_line_adv
 		 && !f->sort_collating /* pre-validated */) {
 #endif
-			p = f->record->data;
-			for (i = 0; i < size; ++i, ++p) {
-				if (IS_BAD_CHAR (*p)) {
+			register unsigned char	*p = f->record->data;
+			const unsigned char *p_max = p + size;
+			while (p < p_max) {
+				if (IS_BAD_CHAR (*p++)) {
 					return COB_STATUS_71_BAD_CHAR;
 				}
 			}
 			COB_CHECKED_FWRITE (fp, f->record->data, size);
 		} else if (cobsetptr->cob_ls_nulls) {
-			p = f->record->data;
-			for (i = 0; i < size; ++i, ++p) {
+			register unsigned char	*p = f->record->data;
+			const unsigned char *p_max = p + size;
+			while (p < p_max) {
 				if (*p < ' ') {
 					COB_CHECKED_FPUTC (0, fp);
 				}
-				COB_CHECKED_FPUTC ((*p), fp);
+				COB_CHECKED_FPUTC (*p++, fp);
 			}
 		} else {
 			COB_CHECKED_FWRITE (fp, f->record->data, size);
@@ -2777,7 +2844,6 @@ static int
 lineseq_rewrite (cob_file *f, const int opt)
 {
 	FILE	*fp = (FILE *)f->file;
-	unsigned char	*p;
 	const size_t		size = f->record->size;
 	size_t		psize, slotlen;
 	off_t		curroff;
@@ -2790,7 +2856,6 @@ lineseq_rewrite (cob_file *f, const int opt)
 
 	curroff = ftell (fp);	/* Current file position */
 
-	p = f->record->data;
 	psize = size;
 	slotlen = curroff - f->record_off - 1;
 #if 0 /* Note: file specific features are 4.x only ... */
@@ -2805,9 +2870,10 @@ lineseq_rewrite (cob_file *f, const int opt)
 	}
 	if (cobsetptr->cob_ls_nulls) {
 #endif
-		size_t j;
-		for (j = 0; j < size; j++) {
-			if (p[j] < ' ') {
+		register unsigned char	*p = f->record->data;
+		const unsigned char *p_max = p + size;
+		while (p < p_max) {
+			if (*p++ < ' ') {
 				psize++;
 			}
 		}
@@ -2829,10 +2895,10 @@ lineseq_rewrite (cob_file *f, const int opt)
 		if (cobsetptr->cob_ls_validate
 		 && !f->flag_line_adv) {
 #endif
-			size_t i;
-			p = f->record->data;
-			for (i = 0; i < size; ++i, ++p) {
-				if (IS_BAD_CHAR (*p)) {
+			register unsigned char	*p = f->record->data;
+			const unsigned char *p_max = p + size;
+			while (p < p_max) {
+				if (IS_BAD_CHAR (*p++)) {
 					return COB_STATUS_71_BAD_CHAR;
 				}
 			}
@@ -2843,27 +2909,30 @@ lineseq_rewrite (cob_file *f, const int opt)
 #else
 		if (cobsetptr->cob_ls_nulls) {
 #endif
-			size_t i, j;
-			p = f->record->data;
-			for (i=j=0; j < size; j++) {
-				if (p[j] < ' ') {
-					if (j - i > 0) {
-						COB_CHECKED_FWRITE (fp, &p[i], j - i);
+			register unsigned char	*p = f->record->data;
+			const unsigned char *p_max = p + size;
+			unsigned char *last_p = p;
+			while (p < p_max) {
+				if (*p < ' ') {
+					if (p > last_p) {
+						COB_CHECKED_FWRITE (fp, last_p, p_max - last_p);
 					}
-					i = j + 1;
 					COB_CHECKED_FPUTC (0x00, fp);
-					COB_CHECKED_FPUTC (p[j], fp);
+					COB_CHECKED_FPUTC (*p++, fp);
+					last_p = p;
+				} else {
+					p++;
 				}
 			}
-			if (i < size) {
-				COB_CHECKED_FWRITE (fp, &p[i],(int)size - i);
+			if (last_p < p_max) {
+				COB_CHECKED_FWRITE (fp, last_p, p_max - last_p);
 			}
 		} else {
 			COB_CHECKED_FWRITE (fp, f->record->data, size);
 		}
 		if (psize < slotlen) {
 			/* In case new record was shorter, pad with spaces */
-			size_t i;
+			register size_t i;
 			for (i = psize; i < slotlen; i++) {
 				COB_CHECKED_FPUTC (' ', fp);
 			}
@@ -6172,6 +6241,16 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 #endif
 		save_status (f, fnstatus, COB_STATUS_31_INCONSISTENT_FILENAME);
 		return;
+	}
+
+	/* Check for _bad_ quotes */
+	if (file_open_name[0] == '"'
+	 || file_open_name[0] == '\'') {
+		const size_t len = strlen (file_open_name) - 1;
+		if (len == 0 || file_open_name[len] != file_open_name[0]) {
+			save_status (f, fnstatus, COB_STATUS_31_INCONSISTENT_FILENAME);
+			return;
+		}
 	}
 
 	if (file_open_name[0] == 0) {
