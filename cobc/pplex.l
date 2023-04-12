@@ -190,7 +190,9 @@ static struct cb_text_list	*pp_text_list_add (struct cb_text_list *,
 
 WORD		[_0-9A-Z\x80-\xFF-]+
 NUMRIC_LITERAL	[+-]?[0-9,.]*[0-9]
-ALNUM_LITERAL	"\""[^""\n]*"\""|"\'"[^''\n]*"\'"
+ALNUM_LITERAL_Q	"\""([^""\n]|("\""[0-9][0-9, ]*"\""))*"\""
+ALNUM_LITERAL_A	"\'"([^''\n]|("\'"[0-9][0-9, ]+"\'"))*"\'"
+ALNUM_LITERAL	{ALNUM_LITERAL_Q}|{ALNUM_LITERAL_A}
 SET_PAREN_LIT	\([^()\n]*\)
 DEFNUM_LITERAL	[+-]?[0-9]*[\.]*[0-9]+
 
@@ -505,7 +507,7 @@ MAYBE_AREA_A	[ ]?#?
 	   needed to properly handle the first line in each buffer, that for
 	   some reason always starts with a space.
 	*/
-	fprintf (ppout, "\n#area_a\n");
+	fprintf (ppout, "#area_a\n");
 }
 
 "CONTROL"[ ,;\n]+"DIVISION" {
@@ -2499,11 +2501,6 @@ start:
 	} else {
 		/* Insert newlines at the start of the buffer */
 		gotcr = strlen (buff);
-		if (newline_count != 0) {
-			memmove (buff + newline_count, buff, gotcr + 1);
-			memset (buff, '\n', newline_count);
-			gotcr += newline_count;
-		}
 		if (in_area_a) {
 			/* (*area-a*): prepend special marker `#', indicating
 			   the current non-continuation line starts in area A
@@ -2512,8 +2509,13 @@ start:
 
 			   Assumes `buff' is large enough for one extra char. */
 			memmove (buff + 1, buff, gotcr + 1);
-			buff[1] = '#';
+			buff[0] = '#';
 			gotcr += 1;
+		}
+		if (newline_count != 0) {
+			memmove (buff + newline_count, buff, gotcr + 1);
+			memset (buff, '\n', newline_count);
+			gotcr += newline_count;
 		}
 		newline_count = 1;
 	}

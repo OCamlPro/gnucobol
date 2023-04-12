@@ -1,4 +1,39 @@
 
+2023-03-08  Emilien Lemaire <emilien.lemaire@ocamlpro.com>
+
+	* reserved.c (get_user_specified_reserved_word): add check for
+	  context sensitivity in aliases
+
+2023-03-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_cond_fields): optimize comparison between field and
+	  ZEROES up to COB_ZEROES_ALPHABETIC_BYTE_LENGTH
+
+2023-02-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_emit_set_to): generate runtime check for SET source
+	  at most one time
+	* cobc.c (process_filename) [_WIN32 __GNUC__]: pass .dll input files
+	  to linker (GCC MinGW extension to drop need of link libraries)
+	* cobc.c (xref_files_and_their_records, xref_labels): minor refactoring
+
+2023-02-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_initial_values): drop wrong init comment
+	* field.c (copy_into_field): set EXTERNAL name if missing
+	* pplex.l, scanner.l: dropped extra line breaks before area_a token
+	* pplex.l (ppinput): insert "preparse area_a token" in column 1 instead
+	  of column 2 to fix terminal-format support and insert it before
+	  newlines are added to the beginning of the buffer
+
+2023-02-20  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
+
+	* scanner.l, config.def: Add support for EBCDIC symbolic characters in
+	  alphanumeric literals, which is a GCOS-specific extension; add new
+	  configuration option ebcdic-symbolic-characters
+	* scanner.l, pplex.l: detect and issue a warning when EBCDIC
+	  symbolic character strings include extraneous separators
+
 2023-02-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c, flag.def [COBC_HAS_CUTOFF_FLAG]: fix compile errors,
@@ -685,7 +720,7 @@
 	FR #360 AREACHECK
 	FR #309 raise warnings/errors when some periods are missing
 	* config.def: add dialect options areacheck and missing-period
-	* pplex.l, scanner.l, parser.y: check for empty Area A, and use a
+	* pplex.l, scanner.l, parser.y: check for empty Area A, and use a set of
 	  dedicated *_IN_AREA_A tokens to detect missing periods and incorrect
 	  use of Area A
 	* pplex.l, scanner.l, parser.y: support AREACHECK and NOAREACHECK

@@ -357,7 +357,7 @@ reserved:	PLUS
 reserved:	POINTER
 #reserved:	POINTER-24       # potentially reserved
 #reserved:	POINTER-31       # potentially reserved
-reserved:	POINTER-32 X
+reserved:	POINTER-32
 #reserved:	POINTER-64       # potentially reserved
 reserved:	POSITION
 reserved:	POSITIVE

@@ -148,6 +148,12 @@ enum cb_literal_type {
 	CB_LITERAL_NC,
 };
 
+enum cb_sym_ebcdic_state {
+	CB_SYM_EBCDIC_INACTIVE, /* Outside */
+	CB_SYM_EBCDIC_ACTIVE,   /* Inside, before or after number */
+	CB_SYM_EBCDIC_AFTER_SEP /* Inside, just after a separator */
+};
+
 /* Local variables */
 static cb_tree			last_yylval;
 static int			last_token;
@@ -186,7 +192,7 @@ static void clear_constants (void);
 
 %}
 
-AREA_A		\n"#AREA_A"\n
+AREA_A		"#AREA_A"\n
 
 %s DECIMAL_IS_PERIOD DECIMAL_IS_COMMA
 %x PICTURE_STATE FUNCTION_STATE
@@ -205,7 +211,7 @@ AREA_A		\n"#AREA_A"\n
 	if (cobc_repeat_last_token) {
 		cobc_repeat_last_token = 0;
 		yylval = last_yylval;
-	        return last_token;
+		return last_token;
 	}
 
 	/* We treat integer literals immediately after '.' as labels;
@@ -1310,12 +1316,58 @@ error_literal (const char *type, const char *literal, unsigned int literal_error
 	cb_error ("%s", err_msg);
 }
 
+/* Scans a symbolic EBCDIC character given as a sequence of decimal digits
+   starting with `c`, and returns the corresponding code as per the machine
+   character set (ASCII or EBCDIC).  */
+static cob_u8_t
+scan_ebcdic_char (int c)
+{
+	char buff[10];	       /* Arbitrary limit, mostly for error-reporting */
+#ifndef COB_EBCDIC_MACHINE
+	static  cob_u8_t ebcdic_to_ascii[256] ;
+	static  int ebcdic_to_ascii_initialized = 0 ;
+#endif
+	unsigned int j = 0;
+	do {
+		buff[j++] = c;
+	} while ((c = input ()) != EOF && '0' <= c && c <= '9' && j < 10);
+	unput (c);
+	buff[j++] = 0;
+	c = atoi (buff);
+	if (c < 1 || c > 256) {
+		cb_error (_("character code %s out of encoding range %s"),
+			  buff, "(1..256)");
+		return '?';
+	}
+        c--; // in ordinal, i.e. 1..256 -> 0..255
+#ifdef COB_EBCDIC_MACHINE
+	return (cob_u8_t) c;
+#else
+	if (!ebcdic_to_ascii_initialized ){
+		if (cob_load_collation (cb_ebcdic_table,
+                                        ebcdic_to_ascii,
+                                        NULL) < 0) {
+                        cb_error (_("invalid parameter: %s"), "-febcdic-table");
+			ebcdic_to_ascii_initialized = -1;
+                } else {
+			ebcdic_to_ascii_initialized = 1;
+		}
+	}
+
+	if (ebcdic_to_ascii_initialized > 0)
+		return ebcdic_to_ascii[c];
+	else
+		return '?';
+#endif
+}
+
 static void
 read_literal (const char mark, const enum cb_literal_type type)
 {
 	size_t		i;
 	int		c;
 	unsigned int	literal_error = 0;
+	enum cb_sym_ebcdic_state ebcdic_flag = CB_SYM_EBCDIC_INACTIVE;
 
 	i = 0;
 	/* read until a not-escaped mark is found (see break)
@@ -1335,11 +1387,50 @@ read_literal (const char mark, const enum cb_literal_type type)
 			}
 			plex_buff[i] = (cob_u8_t)c;
 		}
+
+		if (ebcdic_flag != CB_SYM_EBCDIC_INACTIVE) {
+			/* While scanning symbolic EBCDIC character: */
+			if (c == mark) {
+				if (ebcdic_flag == CB_SYM_EBCDIC_AFTER_SEP) {
+					cb_error (
+						    _("extraneous separator ',' at end "
+						      "of symbolic EBCDIC characters"));
+				}
+				ebcdic_flag = CB_SYM_EBCDIC_INACTIVE;
+			} else if ('0' <= c && c <= '9') {
+				plex_buff[i++] = scan_ebcdic_char (c);
+				ebcdic_flag = CB_SYM_EBCDIC_ACTIVE;
+			} else if (c == ' ') {
+				/* spaces are ok everywhere */
+			} else if (c == ',') {
+				/* extra commas are not allowed */
+				if (ebcdic_flag == CB_SYM_EBCDIC_AFTER_SEP)
+					cb_error (
+					    _("extraneous character ',' in sequence "
+					      "of symbolic EBCDIC characters"));
+				ebcdic_flag = CB_SYM_EBCDIC_AFTER_SEP;
+			} else {
+				/* other chars are invalid */
+				cb_error (_("invalid character '%c' in sequence "
+					    "of symbolic EBCDIC characters"), c);
+				ebcdic_flag = CB_SYM_EBCDIC_ACTIVE;
+			} 
+			continue;
+		}
+
 		if (c == mark && (c = input ()) != (int)mark) {
 			if (c == '-') {
 				/* Free format continuation ("a"- 'b'- ) */
 				/* Hack it as concatenation */
 				unput ('&');
+			} else if (type == CB_LITERAL_DEFAULT &&
+				   cb_gcos_ebcdic_literals &&
+				   '0' <= c && c <= '9') {
+				/* GCOS 7: symbolic EBCDIC character in
+				   literals */
+				unput (c);
+				ebcdic_flag = CB_SYM_EBCDIC_ACTIVE;
+				continue;
 			} else {
 				if (c == EOF || c == 0) break;
 				unput (c);
@@ -1386,7 +1477,8 @@ read_literal (const char mark, const enum cb_literal_type type)
 		cb_warning (COBC_WARN_FILLER,
  			    ( type == CB_LITERAL_N || type == CB_LITERAL_NC ) ?
 			    _("national literal has zero length; a SPACE will be assumed") :
-			    _("alphanumeric literal has zero length; a SPACE will be assumed"));
+			    _("alphanumeric literal has zero length; a SPACE will be assumed")
+			);
 		plex_buff[i++] = ' ';
 	} else if (i > cb_lit_length) {
 		i = cb_lit_length;
@@ -2160,7 +2252,7 @@ scan_picture (const char *text)
 static void
 count_lines (const char *text)
 {
-	const char	*p;
+	register const char	*p;
 
 	/* Count newlines in text */
 	for (p = text; *p; p++) {

@@ -29,36 +29,21 @@ AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
        PROCEDURE        DIVISION.
-           DISPLAY "abc"
-           END-DISPLAY.
-           DISPLAY  123
-           END-DISPLAY.
-           DISPLAY +123
-           END-DISPLAY.
-           DISPLAY -123
-           END-DISPLAY.
-           DISPLAY  12.3
-           END-DISPLAY.
-           DISPLAY +12.3
-           END-DISPLAY.
-           DISPLAY -12.3
-           END-DISPLAY.
-           DISPLAY 1.23E0
-           END-DISPLAY.
-           DISPLAY +1.23E0
-           END-DISPLAY.
-           DISPLAY -1.23E0
-           END-DISPLAY.
-           DISPLAY 12.3E-2
-           END-DISPLAY.
-           DISPLAY +12.3E-2
-           END-DISPLAY.
-           DISPLAY -12.3E-2
-           END-DISPLAY.
-           DISPLAY B'0101'
-           END-DISPLAY.
-           DISPLAY BX'EC'
-           END-DISPLAY.
+           DISPLAY "abc".
+           DISPLAY  123.
+           DISPLAY +123.
+           DISPLAY -123.
+           DISPLAY  12.3.
+           DISPLAY +12.3.
+           DISPLAY -12.3.
+           DISPLAY 1.23E0.
+           DISPLAY +1.23E0.
+           DISPLAY -1.23E0.
+           DISPLAY 12.3E-2.
+           DISPLAY +12.3E-2.
+           DISPLAY -12.3E-2.
+           DISPLAY B'0101'.
+           DISPLAY BX'EC'.
            STOP RUN.
 ])
 
@@ -95,18 +80,12 @@ AT_DATA([prog.cob], [
        SPECIAL-NAMES.
            DECIMAL-POINT    IS COMMA.
        PROCEDURE        DIVISION.
-           DISPLAY  12,3
-           END-DISPLAY.
-           DISPLAY +12,3
-           END-DISPLAY.
-           DISPLAY -12,3
-           END-DISPLAY.
-           DISPLAY 1,23E0
-           END-DISPLAY.
-           DISPLAY +1,23E0
-           END-DISPLAY.
-           DISPLAY -1,23E0
-           END-DISPLAY.
+           DISPLAY  12,3.
+           DISPLAY +12,3.
+           DISPLAY -12,3.
+           DISPLAY 1,23E0.
+           DISPLAY +1,23E0.
+           DISPLAY -1,23E0.
            STOP RUN.
 ])
 
@@ -5689,7 +5668,8 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE SECTION.
        01  FLDX     PIC X        VALUE 'X'.
        01  FLDXX    PIC XX       VALUE SPACES.
-       01  FLDX500  PIC X(500)   VALUE 'X5'.
+       01  FLDX50   PIC X(50)    VALUE 'X50'.
+       01  FLDX500  PIC X(500)   VALUE 'X500'.
        01  FLDX32K  PIC X(32000) VALUE 'X'.
        01  FLD1     PIC X        VALUE '1'.
        01  FLD1X    PIC X(32000) VALUE '1'.
@@ -5972,15 +5952,46 @@ AT_DATA([prog.cob], [
            ELSE                        DISPLAY '! "X" > ALL "XX"'.
            IF ALL "XX" NOT > FLDX      CONTINUE
            ELSE                        DISPLAY '! ALL "XX" <= "X"'.
+
+      *> special check for ZERO-optimization and extra spaces
+           MOVE ALL ZERO TO FLDX500 FLDX50
+           MOVE "1"      TO FLDX500 (500:1) FLDX50(50:1)
+           IF FLDX50     >  ZERO       CONTINUE
+           ELSE                        DISPLAY '! "000...01" > ZERO'.
+           IF FLDX50     <  ZERO       DISPLAY '  "000...01" < ZERO!'.
+           IF FLDX50     >= ZERO       CONTINUE
+           ELSE                        DISPLAY '! "000...01" >= ZERO'.
+           IF FLDX50     <= ZERO       DISPLAY '  "000...01" <= ZERO!'.
+
+           IF ZERO       <  FLDX50     CONTINUE
+           ELSE                        DISPLAY '! ZERO < "000...01"'.
+           IF ZERO       >  FLDX50     DISPLAY '  ZERO > "000...01"!'.
+           IF ZERO       <= FLDX50     CONTINUE
+           ELSE                        DISPLAY '! ZERO <= "000...01"'.
+           IF ZERO       >= FLDX50     DISPLAY '  ZERO >= "000...01"!'.
+
+           IF FLDX500    >  ZERO       CONTINUE
+           ELSE                        DISPLAY '! "000...01" > ZERO'.
+           IF FLDX500    <  ZERO       DISPLAY '  "000...01" < ZERO!'.
+           IF FLDX500    >= ZERO       CONTINUE
+           ELSE                        DISPLAY '! "000...01" >= ZERO'.
+           IF FLDX500    <= ZERO       DISPLAY '  "000...01" <= ZERO!'.
+
+           IF ZERO       <  FLDX500    CONTINUE
+           ELSE                        DISPLAY '! ZERO < "000...01"'.
+           IF ZERO       >  FLDX500    DISPLAY '  ZERO > "000...01"!'.
+           IF ZERO       <= FLDX500    CONTINUE
+           ELSE                        DISPLAY '! ZERO <= "000...01"'.
+           IF ZERO       >= FLDX500    DISPLAY '  ZERO >= "000...01"!'.
 ])
 
 AT_CHECK([$COMPILE prog.cob -Wno-constant-expression], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
-AT_CHECK([$COMPILE prog.cob -Wno-constant-expression -fno-constant-folding], [0], [], [])
+AT_CHECK([$COMPILE prog.cob -Wno-constant-expression -fno-constant-folding -fno-fast-compare], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
-AT_CHECK([$COMPILE prog.cob -Wno-constant-expression -fno-constant-folding -fno-fast-compare], [0], [], [])
+AT_CHECK([$COMPILE prog.cob -Wno-constant-expression -fno-constant-folding], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
@@ -6220,5 +6231,53 @@ prog.cob:7: warning: value size exceeds data size
 prog.cob:7: note: value size is 3
 ])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([DISPLAY with P fields])
+AT_KEYWORDS([runmisc pretty-display pretty-printing pretty])
+
+# this test verifies that the size is correctly printed, which was buggy
+# with "P on the left side of the decimal point", see bug #874
+# me make a general DISPLAY with implied digits out of this test
+# and also verify no-pretty-printing result to be reasonable
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 P1 PIC  999  value 1.
+       01 P2 PIC  9P   value 0.
+       01 P3 PIC  V999 value .123.
+       01 P4 PIC  VP9  value 0.
+       01 P5 PIC  VPP9 value 0.
+       01 P6 PIC  9P   value 10.
+       PROCEDURE DIVISION.
+           display '00=' P2 '; 001=' P1 '; 00=' P2 ';'
+           display '.00=' P4 '; .000=' P5 '; .123=' P3 '; '
+                   '.00=' P4 '; .000=' P5 ';'
+           move P1 to P2
+           move P3 to P4, P5
+           display '00=' P2 '; .02=' P4 '; .003=' P5 ';'
+           display '10=' P6 ';'
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[00=00; 001=001; 00=00;
+.00=.00; .000=.000; .123=.123; .00=.00; .000=.000;
+00=00; .02=.02; .003=.003;
+10=10;
+], [])
+AT_CHECK([$COMPILE -fno-pretty-display prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[00=0; 001=001; 00=0;
+.00=00; .000=000; .123=123; .00=00; .000=000;
+00=0; .02=02; .003=003;
+10=1;
+], [])
 
 AT_CLEANUP

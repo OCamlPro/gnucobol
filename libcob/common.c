@@ -248,6 +248,13 @@ const char *COB_SPACES_ALPHABETIC = SPACE_1024;
 #undef SPACE_64
 #undef SPACE_256
 #undef SPACE_1024
+#define ZERO_16 	"0000000000000000"
+#define ZERO_64 	ZERO_16 ZERO_16 ZERO_16 ZERO_16
+#define ZERO_256	ZERO_64 ZERO_64 ZERO_64 ZERO_64
+const char *COB_ZEROES_ALPHABETIC = ZERO_256;
+#undef ZERO_16
+#undef ZERO_64
+#undef ZERO_256
 
 struct cob_alloc_cache {
 	struct cob_alloc_cache	*next;		/* Pointer to next */
@@ -1750,26 +1757,34 @@ static int
 compare_character (const unsigned char *data, size_t size,
 	const unsigned char *c, size_t compare_size)
 {
-	const unsigned char	*p;
 	int 		ret;
+
+	/* compare date with compare-data up to max compare-size */
 	if ((ret = memcmp (data, c, compare_size)) != 0) {
 		return ret;
 	}
 
-	p = data;
-	size = size - compare_size;
+	/* first bytes in "data" are identical to "compare-data",
+	   so use first bytes of "data" for next comparisons,
+	   increasing it up to the complete data-size */
+	{
+		register const unsigned char	*p;	/* position to compare from */
+		size -= compare_size;
 
-	while (size > compare_size) {
-		p = data + compare_size;
-		if ((ret = memcmp (p, data, compare_size)) != 0) {
-			return ret;
+		while (size > compare_size) {
+			p = data + compare_size;
+			if ((ret = memcmp (p, data, compare_size)) != 0) {
+				return ret;
+			}
+			size -= compare_size;
+			compare_size *= 2;
 		}
-		size = size - compare_size;
-		compare_size *= 2;
+		if (size > 0) {
+			p = data + compare_size;
+			return memcmp (p, data, size);
+		}
 	}
-	if (size > 0) {
-		return memcmp (p, data, size);
-	}
+
 	return 0;
 }
 
@@ -1783,7 +1798,18 @@ compare_spaces (const unsigned char *data, size_t size)
 	return compare_character (data, size,
 		(const unsigned char *)COB_SPACES_ALPHABETIC,
 		COB_SPACES_ALPHABETIC_BYTE_LENGTH);
+}
 
+/* compare up to 'size' characters in 'data' to zeroes */
+static int
+compare_zeroes (const unsigned char *data, size_t size)
+{
+	if (size <= COB_ZEROES_ALPHABETIC_BYTE_LENGTH) {
+		return memcmp (data, COB_ZEROES_ALPHABETIC, size);
+	}
+	return compare_character (data, size,
+		(const unsigned char *)COB_ZEROES_ALPHABETIC,
+		COB_ZEROES_ALPHABETIC_BYTE_LENGTH);
 }
 
 /* compare content of field 'f1' to repeated content of 'f2' */
@@ -1809,10 +1835,15 @@ cob_cmp_all (cob_field *f1, cob_field *f2)
 
 	/* check without collation */
 	if (col == NULL) {
-		if (f2->size == 1
-		 && f2->data[0] == ' ') {
-			/* check for IF VAR = [ALL] SPACES */
-			return compare_spaces (f1->data, f1->size);
+		if (f2->size == 1) {
+			if (f2->data[0] == ' ') {
+				/* check for IF VAR = [ALL] SPACE[S] */
+				return compare_spaces (f1->data, f1->size);
+			}
+			if (f2->data[0] == '0') {
+				/* check for IF VAR = [ALL] ZERO[ES] */
+				return compare_zeroes (f1->data, f1->size);
+			}
 		}
 		/* check for IF VAR = ALL ... / HIGH-VALUE / ... */
 		if (f1->size > f2->size) {
@@ -1824,7 +1855,7 @@ cob_cmp_all (cob_field *f1, cob_field *f2)
 
 	/* check with collation */
 	if (f2->size == 1) {
-		/* check for IF VAR = ALL "9" */
+		/* check for IF VAR = ALL "9" / IF VAR = ZERO */
 		return common_cmpc (data, f2->data[0], f1->size, col);
 	} else {
 		/* check for IF VAR = ALL "AB" ... */
@@ -4064,7 +4095,7 @@ cob_table_sort (cob_field *f, const int n)
 /* Run-time error checking */
 
 void
-cob_check_beyond_exit (const unsigned char *name)
+cob_check_beyond_exit (const char *name)
 {
 	/* possibly allow to lower this to a runtime warning later */
 	cob_runtime_error (_("code execution leaving %s"), name);

@@ -1,9 +1,48 @@
 
+2023-03-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c, common.h: new external field + define COB_ZEROES_ALPHABETIC /
+	  COB_ZEROES_ALPHABETIC_BYTE_LENGTH
+	* common.c (compare_zeroes): new function for common comparison to ZERO
+	* common.c (compare_character): fix issue with not comparing last bytes
+
+2023-02-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c (field_accept): minor refactoring to not update
+	  COB_TERM_BUFF for ACCEPT OMITTED
+
+2023-02-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (cob_check_beyond_exit), common.h: fix prototype to match strings
+	* numeric.c (cob_decimal_get_packed): removed code for "huge packed" fields
+	  as we don't have packed fields with more than 38 digits
+	* numeric.c (cob_pow_10): unsigned parameter, fixing some overflows in GMP
+
+2023-02-24  Ron Norman <rjn@inglenet.com>
+
+	* move.c (cob_get_s64_pic9) [COB_EBCDIC_MACHINE]: fix negative sign lookup
+
+2023-02-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	fix bug #874 DISPLAY of 9P fields (P to the left of the decimal point)
+	* termio.c (pretty_display_numeric): fix printing one byte after
+	  actual data
+	* termio.c (display_numeric): fix printing amount of P as leading zeroes
+
 2023-02-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* numeric.c (cob_decimal_set_packed): backport and extend optimization
 	  from 4.x by Ron - now skipping initial zeros and for huge fields handle
 	  4 digits at once
+
+2023-02-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* intrinsic.c, numeric.c: explicit check result of mpz_sgn to 0/!0/1/-1
+	* intrinsic.c (cob_intr_random): fix binary end for implicit seed
+	* intrinsic.c (numval): minor optimization for invalid numeric
+	* termio.c (display_numeric, pretty_display_numeric): use common
+	  COB_FIELD_INIT instead of manually init of field named "temp";
+	  minor speedup in output
 
 2023-02-10  Simon Sobisch <simonsobisch@gnu.org>
 
