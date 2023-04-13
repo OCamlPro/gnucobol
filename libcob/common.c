@@ -2198,7 +2198,7 @@ cob_get_last_exception_name (void)
 	}
 	for (n = EXCEPTION_TAB_SIZE - 1; n != 0; --n) {
 		if ((last_exception_code & cob_exception_tab_code[n])
-			== cob_exception_tab_code[n]) {
+		 == cob_exception_tab_code[n]) {
 			return cob_exception_tab_name[n];
 		}
 	}
@@ -2270,7 +2270,6 @@ cob_set_exception (const int id)
 			}
 			return;
 		}
-		/* if no current module is available fall-through */
 	} else {
 		cobglobptr->cob_got_exception = 0;
 #if 0	/* consider addition for 4.x */
@@ -2510,14 +2509,82 @@ hash (const char *s)
 static COB_INLINE void
 init_statement_hashlist (void)
 {
-	if (cob_statement_hash[STMT_UNKNOWN] != 0) {
-		return;
-	}
 	cob_statement_hash[STMT_UNKNOWN] = hash("UNKNOWN");
 #define COB_STATEMENT(ename,str)	\
 	cob_statement_hash[ename] = hash(str);
 #include "statement.def"	/* located and installed next to common.h */
 #undef COB_STATEMENT
+}
+
+/* this function is a compat-only function for pre 3.2 */
+static enum cob_statement
+get_stmt_from_name (const char *stmt_name)
+{
+	/* Note: When called from the same module then we commonly will
+	   get the same pointer for the same statement name;
+	   this allows us to use that for a pre-lookup instead of doing
+	   the more expensive hash + compare each time */
+#define STMT_CACHE_NUM 10
+	static const char		*last_stmt_name[STMT_CACHE_NUM] = { 0 };
+	static enum cob_statement	last_stmt[STMT_CACHE_NUM] = { 0 };
+	static unsigned int 		last_stmt_entry = STMT_CACHE_NUM - 1;
+	static unsigned int 		last_stmt_i = 0;
+
+	/* nothing to resolve */
+	if (!stmt_name) {
+		return STMT_UNKNOWN;
+	}
+
+	/* check if stmt_name was previously resolved, then
+	   just go with the old result */
+	if (stmt_name == last_stmt_name[last_stmt_i]) {
+		return last_stmt[last_stmt_i];
+	} else {
+		unsigned int i;
+		for (i = 0; i < STMT_CACHE_NUM; i++) {
+			if (stmt_name == last_stmt_name[i]) {
+				last_stmt_i = i;
+				return last_stmt[i];
+			}
+		}
+	}
+	
+	/* statement name not resolved - build hash and compare using
+	   hash + strcmp; then add to previously resolved list */
+	{
+		const int stmt_hash = hash (stmt_name);
+		enum cob_statement stmt;
+
+		if (cob_statement_hash[STMT_UNKNOWN] == 0) {
+			init_statement_hashlist ();
+		}
+
+		/* overwrite */
+		if (last_stmt_entry == STMT_CACHE_NUM - 1) {
+			last_stmt_entry = 0;
+		} else {
+			last_stmt_entry++;
+		}
+		last_stmt_i = last_stmt_entry;
+
+#define COB_STATEMENT(ename,str)                   \
+		if (stmt_hash == cob_statement_hash[ename] \
+		        && strcmp (str, stmt_name) == 0) { \
+			stmt = ename;                          \
+		} else
+#include "statement.def"	/* located and installed next to common.h */
+#undef COB_STATEMENT
+			cob_runtime_warning ("not handled statement: %s", stmt_name);
+			return STMT_UNKNOWN;
+		}
+		
+		last_stmt_name[last_stmt_i] = stmt_name;
+		last_stmt[last_stmt_i] = stmt;
+		return stmt;
+	}
+
+#undef STMT_CACHE_NUM
+
 }
 
 /* cob_set_location is kept for backward compatibility (pre 3.0);
@@ -2528,35 +2595,19 @@ cob_set_location (const char *sfile, const unsigned int sline,
 		  const char *csect, const char *cpara,
 		  const char *cstatement)
 {
-	enum cob_statement stmt;
+	const enum cob_statement stmt = get_stmt_from_name (cstatement);
 	cob_module	*mod = COB_MODULE_PTR;
-	const char	*s;
-	const int	stmt_hash = hash (cstatement);
 
 	mod->section_name = csect;
 	mod->paragraph_name = cpara;
 	cob_source_file = sfile;
 	cob_source_line = sline;
 
-	init_statement_hashlist ();
-
-	if (!cstatement) {
-		stmt = STMT_UNKNOWN;
-#define COB_STATEMENT(ename,str) \
-	} else if (stmt_hash == cob_statement_hash[ename] \
-	        && strcmp (str, cstatement) == 0) { \
-		stmt = ename;
-#include "statement.def"	/* located and installed next to common.h */
-#undef COB_STATEMENT
-	}  else {
-		cob_runtime_warning ("not handled statement: %s", cstatement);
-		stmt = STMT_UNKNOWN;
-	}
-
 	/* compat: add to module structure */
 	mod->statement = stmt;
 
 	if (cobsetptr->cob_line_trace) {
+		const char	*s;
 		if (!cobsetptr->cob_trace_file) {
 			cob_check_trace_file ();
 #if _MSC_VER /* fix dumb warning */
@@ -2808,34 +2859,34 @@ cob_trace_exit (const char *name)
 	}
 }
 
-/* this function is alltogether a compat-only function for pre 3.2,
+static void
+do_trace_statement (const enum cob_statement stmt)
+{
+	char	val[60];
+	if (cob_trace_prep ()) {
+		return;
+	}
+	snprintf (val, sizeof (val), "           %s",
+		stmt != STMT_UNKNOWN ? cob_statement_name[stmt] : _("unknown"));
+	cob_trace_print (val);
+}
+
+
+/* this function is altogether a compat-only function for pre 3.2,
    later versions use cob_trace_statement(enum cob_statement) */
 void
 cob_trace_stmt (const char *stmt_name)
 {
-	enum cob_statement stmt;
-	const int stmt_hash = hash (stmt_name);
-
-	init_statement_hashlist ();
-
-	if (!stmt_name) {
-		stmt = STMT_UNKNOWN;
-#define COB_STATEMENT(ename,str) \
-	} else if (stmt_hash == cob_statement_hash[ename] \
-	        && strcmp (str, stmt_name) == 0) { \
-		stmt = ename;
-#include "statement.def"	/* located and installed next to common.h */
-#undef COB_STATEMENT
-	}  else {
-		cob_runtime_warning ("not handled statement: %s", stmt_name);
-		stmt = STMT_UNKNOWN;
-	}
+	const enum cob_statement stmt = get_stmt_from_name (stmt_name);
 
 	/* compat: add to module structure */
 	COB_MODULE_PTR->statement = stmt;
 
 	/* actual tracing, if activated */
-	cob_trace_statement (stmt);
+	if (cobsetptr->cob_line_trace
+	 && (COB_MODULE_PTR->flag_debug_trace & COB_MODULE_TRACEALL)) {
+		do_trace_statement (stmt);
+	}
 }
 
 void
@@ -2844,14 +2895,7 @@ cob_trace_statement (const enum cob_statement stmt)
 	/* actual tracing, if activated */
 	if (cobsetptr->cob_line_trace
 	 && (COB_MODULE_PTR->flag_debug_trace & COB_MODULE_TRACEALL)) {
-		char	val[60];
-		if (cob_trace_prep ()) {
-			return;
-		}
-		snprintf (val, sizeof (val), "           %s",
-			stmt != STMT_UNKNOWN ? cob_statement_name[stmt] : _("unknown"));
-		cob_trace_print (val);
-		return;
+		do_trace_statement (stmt);
 	}
 }
 
@@ -3958,8 +4002,8 @@ cob_is_numeric (const cob_field *f)
 			int		sign;
 			/* Check digits */
 			for (i = 0; i < f->size - 1; ++i) {
-				if ((f->data[i] & 0xF0) > 0x90 ||
-					(f->data[i] & 0x0F) > 0x09) {
+				if ((f->data[i] & 0xF0) > 0x90
+				 || (f->data[i] & 0x0F) > 0x09) {
 					return 0;
 				}
 			}
@@ -3982,8 +4026,8 @@ cob_is_numeric (const cob_field *f)
 				if (sign == 0x0C || sign == 0x0D) {
 					return 1;
 				}
-				if (COB_MODULE_PTR->flag_host_sign &&
-					sign == 0x0F) {
+				if (COB_MODULE_PTR->flag_host_sign
+				 && sign == 0x0F) {
 					return 1;
 				}
 			} else if (sign == 0x0F) {
