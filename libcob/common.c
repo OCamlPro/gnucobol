@@ -2574,6 +2574,7 @@ get_stmt_from_name (const char *stmt_name)
 		} else
 #include "statement.def"	/* located and installed next to common.h */
 #undef COB_STATEMENT
+		{
 			cob_runtime_warning ("not handled statement: %s", stmt_name);
 			return STMT_UNKNOWN;
 		}
