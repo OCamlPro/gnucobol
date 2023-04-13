@@ -6247,7 +6247,8 @@ cob_open (cob_file *f, const int mode, const int sharing, cob_field *fnstatus)
 	if (file_open_name[0] == '"'
 	 || file_open_name[0] == '\'') {
 		const size_t len = strlen (file_open_name) - 1;
-		if (len == 0 || file_open_name[len] != file_open_name[0]) {
+		if (len == 0
+		 || file_open_name[len] != file_open_name[0]) {
 			save_status (f, fnstatus, COB_STATUS_31_INCONSISTENT_FILENAME);
 			return;
 		}

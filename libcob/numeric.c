@@ -425,7 +425,8 @@ cob_pow_10 (mpz_t mexp, unsigned int n)
 	if (n <= COB_MAX_BINARY) {
 		mpz_set (mexp, cob_mpze10[n]);
 	} else {
-	/* needed, for example in FUNCTION RANDOM test (999)
+	/* bigger values are needed,
+	   for example in FUNCTION RANDOM test (999)
 	   and with extreme huge value (6499) for test
 	   "FLOAT-DECIMALL w/o SIZE ERROR" to get huge
 	   FD32 values with the right scale */
@@ -584,8 +585,9 @@ cob_decimal_get_ieee64dec (cob_decimal *d, cob_field *f, const int opt)
 			return cobglobptr->cob_exception_code;
 		}
 		for ( ; ; ) {
-			if (d->scale < -369)
+			if (d->scale < -369) {
 				break;
+			}
 			mpz_tdiv_q_ui (d->value, d->value, 10UL);
 			d->scale--;
 			if (mpz_cmpabs (d->value, cob_mpz_ten16m1) < 0) {
@@ -701,8 +703,9 @@ cob_decimal_get_ieee128dec (cob_decimal *d, cob_field *f, const int opt)
 			return cobglobptr->cob_exception_code;
 		}
 		for ( ; ; ) {
-			if (d->scale < -6111)
+			if (d->scale < -6111) {
 				break;
+			}
 			mpz_tdiv_q_ui (d->value, d->value, 10UL);
 			d->scale--;
 			if (mpz_cmpabs (d->value, cob_mpz_ten34m1) < 0) {
@@ -825,11 +828,12 @@ cob_decimal_set_mpf_core (cob_decimal *d, const mpf_t src)
 	}
 
 	len -= scale;
+
 	if (len >= 0) {
 		d->scale = len;
 	} else {
-		cob_mul_by_pow_10 (d->value, -len);
 		d->scale = 0;
+		cob_mul_by_pow_10 (d->value, -len);
 	}
 }
 
@@ -847,10 +851,10 @@ cob_decimal_set_mpf (cob_decimal *d, const mpf_t src)
 void
 cob_decimal_get_mpf (mpf_t dst, const cob_decimal *d)
 {
-	cob_sli_t	scale;
+	const cob_sli_t	scale = d->scale;
 
 	mpf_set_z (dst, d->value);
-	scale = d->scale;
+
 	if (scale < 0) {
 		cob_pow_10 (cob_mexp, (cob_uli_t)-scale);
 		mpf_set_z (cob_mpft_get, cob_mexp);
@@ -1253,7 +1257,7 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 		mpz_tdiv_r (cob_mexp, d->value, cob_mexp);
 		(void) mpz_get_str (buff, 10, cob_mexp);
 		/* note: truncation may lead to 100012 be changed to 00012
-		         in which case mpz_get_string provides us with 12 */
+		         in which case mpz_get_str provides us with 12 */
 	} else {
 		/* No overflow, so get string data as-is */
 		(void) mpz_get_str (buff, 10, d->value);
@@ -1284,9 +1288,9 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 		register unsigned int	i = diff;
 		while (i < size) {
 			if ((i++ & 1) == 0) {	/* -> i % 2 == 0 */
-				*p = (unsigned char) (*q++ - '0') << 4;
+				*p = (unsigned char) COB_D2I (*q++) << 4;
 			} else {
-				*p++ |= (*q++ - '0');
+				*p++ |= COB_D2I (*q++);
 			}
 		}
 	}
@@ -1535,7 +1539,8 @@ cob_decimal_get_display (cob_decimal *d, cob_field *f, const int opt)
 		/* Other size, truncate digits, using the remainder */
 		mpz_tdiv_r (cob_mexp, d->value, cob_mexp);
 		(void) mpz_get_str (buff, 10, cob_mexp);
-		memcpy (data, buff, fsize);
+		/* note: truncation may lead to 100012 be changed to 00012
+		         in which case mpz_get_str provides us with 12 */
 	} else {
 		/* No overflow, so get string data and fill with zero */
 		(void) mpz_get_str (buff, 10, d->value);

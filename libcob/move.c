@@ -245,23 +245,17 @@ cob_binary_mset_uint64 (cob_field *f, cob_u64_t n)
 static void
 cob_move_alphanum_to_display (cob_field *f1, cob_field *f2)
 {
-	unsigned char	*p;
-	unsigned char	*s1;
-	unsigned char	*s2;
-	unsigned char	*e1;
-	unsigned char	*e2;
+	register unsigned char	*s1 = f1->data;
+	register unsigned char	*s2 = COB_FIELD_DATA (f2);
+	const unsigned char	*e1 = s1 + f1->size;
+	const unsigned char	*e2 = s2 + COB_FIELD_SIZE (f2);
+	const unsigned char	dec_pt = COB_MODULE_PTR->decimal_point;
+	const unsigned char	num_sep = COB_MODULE_PTR->numeric_separator;
 	int		sign;
 	int		count;
 	int		size;
-	unsigned char	c;
-	unsigned char	dec_pt;
-	unsigned char	num_sep;
 
 	/* Initialize */
-	s1 = f1->data;
-	e1 = s1 + f1->size;
-	s2 = COB_FIELD_DATA (f2);
-	e2 = s2 + COB_FIELD_SIZE (f2);
 	memset (f2->data, '0', f2->size);
 
 	/* Skip white spaces */
@@ -279,14 +273,16 @@ cob_move_alphanum_to_display (cob_field *f1, cob_field *f2)
 		}
 	}
 
-	dec_pt = COB_MODULE_PTR->decimal_point;
-	num_sep = COB_MODULE_PTR->numeric_separator;
-
 	/* Count the number of digits before decimal point */
 	count = 0;
-	for (p = s1; p < e1 && *p != dec_pt; ++p) {
-		if (isdigit (*p)) {
-			++count;
+	{
+		register unsigned char	*p;
+		for (p = s1; p < e1 && *p != dec_pt; ++p) {
+			/* note: as isdigit is locale-aware (slower and not what we want),
+			   we use a range check instead */
+			if (*p >= '0' && *p <= '9') {
+				++count;
+			}
 		}
 	}
 
@@ -296,23 +292,23 @@ cob_move_alphanum_to_display (cob_field *f1, cob_field *f2)
 		s2 += size - count;
 	} else {
 		while (count-- > size) {
-			while (!isdigit (*s1++)) {
-				;
+			while (*s1 < '0' || *s1 > '9') {
+				s1++;
 			}
+			s1++;
 		}
 	}
 
 	/* Move */
 	count = 0;
 	for (; s1 < e1 && s2 < e2; ++s1) {
-		c = *s1;
-		if (isdigit (c)) {
-			*s2++ = c;
-		} else if (c == dec_pt) {
+		if (*s1 >= '0' && *s1 <= '9') {
+			*s2++ = *s1;
+		} else if (*s1 == dec_pt) {
 			if (count++ > 0) {
 				goto error;
 			}
-		} else if (!(isspace (c) || c == num_sep)) {
+		} else if (!(isspace (*s1) || *s1 == num_sep)) {
 			goto error;
 		}
 	}
@@ -522,6 +518,7 @@ cob_move_packed_to_display (cob_field *f1, cob_field *f2)
 	unsigned char	*d_end = d + f1->size - 1;
 	const short	scale = COB_FIELD_SCALE (f1);
 	unsigned short		digits;
+
 	if (scale >= 0) {
 		digits = COB_FIELD_DIGITS (f1);
 	} else {
@@ -1947,7 +1944,7 @@ cob_get_int (cob_field *f)
 			cob_s64_t	val = cob_binary_mget_sint64 (f);
 			const short	scale = COB_FIELD_SCALE (f);
 			if (scale == 0) {
-				return (int)val;
+				return (int)val;		/* 999 */
 			}
 			if (scale > 0) {
 				return (int)(val / cob_exp10_ll[scale]);	/* 999v9 */
@@ -1987,7 +1984,7 @@ cob_get_llint (cob_field *f)
 			cob_s64_t	val = cob_binary_mget_sint64 (f);
 			const short	scale = COB_FIELD_SCALE (f);
 			if (scale == 0) {
-				return val;
+				return val;		/* 999 */
 			}
 			if (scale > 0) {
 				return val / cob_exp10_ll[scale];	/* 999v9 */
@@ -2562,14 +2559,16 @@ cob_get_s64_pic9 (void *mem, int len)
 	int		sign = 1;
 
 	while (len-- > 1) {
-		if (isdigit (*p)) {
+		/* note: as isdigit is locale-aware (slower and not what we want),
+		   we use a range check instead */
+		if (*p >= '0' && *p <= '9') {
 			val = val * 10 + COB_D2I (*p);
 		} else if (*p == '-') {
 			sign = -1;
 		}
 		p++;
 	}
-	if (isdigit (*p)) {
+	if (*p >= '0' && *p <= '9') {
 		val = val * 10 + COB_D2I (*p);
 	} else if (*p == '-') {
 		sign = -1;
@@ -2607,8 +2606,11 @@ cob_get_s64_pic9 (void *mem, int len)
 		}
 		val = val * 10 + COB_D2I (*p);
 #endif
-	} else if (isdigit (*p & 0x3F)) {
-		val = val * 10 + COB_D2I (*p);
+	} else {
+		cob_u8_t	dig_part = *p & 0x3F;
+		if (dig_part >= '0' && dig_part <= '9') {
+			val = val * 10 + COB_D2I (dig_part);
+		}
 		if (*p & 0x40) {
 			sign = -1;
 		}
