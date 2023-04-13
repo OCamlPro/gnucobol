@@ -1,6 +1,7 @@
 
 2023-04-13  Simon Sobisch <simonsobisch@gnu.org>
 
+	performance adjustments for HEX-OF and HEX-TO-CHAR
 	* intrinsic.c (test_digit, cob_intr_hex_to_char, cob_intr_locale_date,
 	  cob_intr_locale_time), move.c (cob_move_alphanum_to_display,
 	  cob_get_s64_pic9): prefer range check over isdigit for improved speed
@@ -8,6 +9,13 @@
 	* intrinsic.c (cob_intr_hex_to_char): minor refactoring for speedup
 	* intrinsic.c (cob_intr_hex_of): rewritten to use hex value table instead
 	  of sprintf, saving around 80% of cpu instructions
+
+	performance adjustments for location code compatibility for old modules
+	* common.c (get_stmt_from_name): extracted from cob_set_location and
+	  cob_trace_stmt to remove duplication
+	* common.c (get_stmt_from_name): rewritten to store the last statements,
+	  which heavily reduces the use of strcmp and the hashing function
+	* common.c (do_trace_statement): extracted from cob_trace_statement
 
 2023-04-04  Simon Sobisch <simonsobisch@gnu.org>
 
