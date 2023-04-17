@@ -1,4 +1,26 @@
 
+2023-04-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* scanner.l: dropped last_token_is_dot and integer_is_label by checking
+	  last_token instead
+	* scanner.l, parser.y, reserved.c, tree.h: dropped cobc_force_literal by
+	  introducing second_last_token and checking the tokens instead
+	* scanner.l: early consume spaces after comma and semicolon
+	* scanner.l: simplify check for redundant periods by splitting its rule
+	* cobc.c (file_basename): directly use filename,
+	  only handle backslash on win32
+	* codegen.c: minor refactoring to drop global string_buffer
+	* codegen.c: generate COB_EXT_IMPORT and COB_EXT_EXPORT instead of extern
+	* codegen.c (codegen): minor refactoring
+	* parser.y (setup_registers): extracted
+	* parser.y: minor refactoring
+
+2023-04-14  Simon Sobisch <simonsobisch@gnu.org>
+
+	* pplex.l (ppopen_get_file): extracted from ppopen and minor refactor
+	* pplex.l (ppecho): disabled performance-dropping fflush until found
+	  necessary
+
 2023-04-04  Simon Sobisch <simonsobisch@gnu.org>
 
 	* tree.c (cb_build_picture): don't include leading Ps in digit count
@@ -47,6 +69,8 @@
 
 	* typeck.c (cb_build_cond_fields): optimize comparison between field and
 	  ZEROES up to COB_ZEROES_ALPHABETIC_BYTE_LENGTH
+	* pplex.l (ppopen): fixes for auto-detection of reference-format FR #45
+	  handling tabs, dos eol and empty lines correctly
 
 2023-02-28  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -78,7 +102,7 @@
 	* codegen.c, flag.def [COBC_HAS_CUTOFF_FLAG]: fix compile errors,
 	  output -fif-cutoff to help when available
 
-2022-02-20  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+2023-02-20  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* scanner.l (read_literal): refactor to use enum cb_literal_type
 	  instead of a char* for the type of literal
@@ -158,6 +182,7 @@
 
 2023-01-28  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
+	FR #45: auto-detection of reference-format
 	* cobc.c (main): initialize cb_config_text_column to 72 to avoid a
 	  race condition in config files.
 	* pplex.l (ppopen): try to autodetect the format of a file after
@@ -179,6 +204,10 @@
 	FR #429: option to specify conversion table via translation table file
 	* cobc.c, flag.def, cobc.h: handle external table for "ebcdic-table"
 	* codegen.c: generate code using the external table
+
+2023-01-20  Ron Norman <rjn@inglenet.com>
+
+	* codeoptim.c: fix cob_check_subscript_inline for min subscript value
 
 2023-01-20  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -1164,6 +1193,7 @@
 
 2022-01-25  Nicolas Berthier <nicolas.berther@ocamlpro.com>
 
+	FR #137: relax syntax for partial replace
 	* pplex.l, ppparse.y, config.h: support COPY and REPLACE
 	  statements with partial REPLACING operands specified using
 	  literals
