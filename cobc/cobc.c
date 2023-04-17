@@ -2778,7 +2778,6 @@ file_stripext (char *buff)
 static char *
 file_basename (const char *filename, const char *strip_ext)
 {
-	const char	*p;
 	const char	*startp;
 	const char	*endp;
 	size_t		len;
@@ -2792,19 +2791,23 @@ file_basename (const char *filename, const char *strip_ext)
 	/* LCOV_EXCL_STOP */
 
 	/* Remove directory name */
-	startp = NULL;
-	for (p = filename; *p; p++) {
-		if (*p == '/' || *p == '\\') {
-			startp = p;
+	startp = strrchr (filename, '/');
+#if defined(_WIN32) || defined(__CYGWIN__)
+	{
+		const char *slash = strrchr (filename, '\\');
+		if (slash
+		 && (!startp || startp < slash)) {
+			startp = slash;
 		}
 	}
+#endif
 	if (startp) {
 		startp++;
 	} else {
 		startp = filename;
 	}
 
-	/* Remove extension */
+	/* Remove extension (= after last '.') */
 	if (!strip_ext || strcmp (strip_ext, COB_BASENAME_KEEP_EXT)) {
 		endp = strrchr (filename, '.');
 	} else {

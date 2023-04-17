@@ -4935,14 +4935,12 @@ lookup_reserved_word (const char *name)
 
 	if (p->token == FUNCTION_ID) {
 		cobc_cs_check = 0;
-		cobc_force_literal = 1;
 	} else if (p->token == INTRINSIC) {
 		if (!cobc_in_repository) {
 			return NULL;
 		}
 	} else if (p->token == PROGRAM_ID) {
 		cobc_cs_check = CB_CS_PROGRAM_ID;
-		cobc_force_literal = 1;
 	} else if (p->token == REPOSITORY) {
 		cobc_in_repository = 1;
 	}
