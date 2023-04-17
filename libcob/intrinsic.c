@@ -6322,15 +6322,11 @@ cob_intr_lowest_algebraic (cob_field *srcfield)
 		|| !COB_FIELD_BINARY_TRUNC (srcfield)) {
 			expo = (cob_uli_t)((COB_FIELD_SIZE (srcfield) * 8U) - 1U);
 			mpz_ui_pow_ui (d1.value, 2UL, expo);
-			mpz_neg (d1.value, d1.value);
-			d1.scale = COB_FIELD_SCALE (srcfield);
-			cob_alloc_field (&d1);
-			(void)cob_decimal_get_field (&d1, curr_field, 0);
-			break;
+		} else {
+			expo = (cob_uli_t)COB_FIELD_DIGITS (srcfield);
+			mpz_ui_pow_ui (d1.value, 10UL, expo);
+			mpz_sub_ui (d1.value, d1.value, 1UL);
 		}
-		expo = (cob_uli_t)COB_FIELD_DIGITS (srcfield);
-		mpz_ui_pow_ui (d1.value, 10UL, expo);
-		mpz_sub_ui (d1.value, d1.value, 1UL);
 		mpz_neg (d1.value, d1.value);
 		d1.scale = COB_FIELD_SCALE (srcfield);
 		cob_alloc_field (&d1);
@@ -6400,14 +6396,10 @@ cob_intr_highest_algebraic (cob_field *srcfield)
 				expo--;
 			}
 			mpz_ui_pow_ui (d1.value, 2UL, expo);
-			mpz_sub_ui (d1.value, d1.value, 1UL);
-			d1.scale = COB_FIELD_SCALE (srcfield);
-			cob_alloc_field (&d1);
-			(void)cob_decimal_get_field (&d1, curr_field, 0);
-			break;
+		} else {
+			expo = (cob_uli_t)COB_FIELD_DIGITS (srcfield);
+			mpz_ui_pow_ui (d1.value, 10UL, expo);
 		}
-		expo = (cob_uli_t)COB_FIELD_DIGITS (srcfield);
-		mpz_ui_pow_ui (d1.value, 10UL, expo);
 		mpz_sub_ui (d1.value, d1.value, 1UL);
 		d1.scale = COB_FIELD_SCALE (srcfield);
 		cob_alloc_field (&d1);

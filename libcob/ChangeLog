@@ -1,4 +1,16 @@
 
+2023-04-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_decimal_setget_fld, cob_decimal_get_packed,
+	  cob_decimal_get_display), common.h: new option COB_STORE_NO_SIZE_ERROR
+	  to prevent arithmetic exception being raised during internal MOVE
+	* intrinsic.c (cob_intr_lowest_algebraic, cob_intr_highest_algebraic):
+	  refactored code for COMP-5
+	* move.c (cob_move_display_to_packed), numeric.c (cob_decimal_get_packed):
+	  minor adjustment to use optimal code for internal DISPLAY to PACKED,
+	  even without C compiler optimizations active
+	* move.c (cob_move_ibm): speedup by using pointer arithmetic
+
 2023-04-13  Simon Sobisch <simonsobisch@gnu.org>
 
 	performance adjustments for HEX-OF and HEX-TO-CHAR

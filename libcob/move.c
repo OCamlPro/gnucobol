@@ -474,9 +474,9 @@ cob_move_display_to_packed (cob_field *f1, cob_field *f2)
 		const unsigned char *p_end = data1 + digits1;
 		for (; i < i_end && p < p_end; ++i) {
 			if ((i & 1) == 0) {	/* -> i % 2 == 0 */
-				*q = COB_D2I (*p++) << 4;
+				*q = (unsigned char)(*p++ << 4);	/* -> dropping the higher bits = no use in COB_D2I */
 			} else {
-				*q++ |= COB_D2I (*p++);
+				*q++ += COB_D2I (*p++);
 			}
 		}
 	}
@@ -1300,13 +1300,11 @@ cob_move_all (cob_field *src, cob_field *dst)
 void
 cob_move_ibm (void *dst, void *src, const int len)
 {
-	char	*dest = dst;
-	char	*srce = src;
-	int		i = len;
-	while(i-- > 0) {
-		*dest = *srce;
-		dest++;
-		srce++;
+	register char	*dest = dst;
+	register char	*srce = src;
+	const char	*end = src + len;
+	while (srce != end) {
+		*dest++ = *srce++;
 	}
 }
 
@@ -1324,12 +1322,12 @@ cob_init_table (void *tbl, const size_t len, const size_t occ)
 		return;
 	do {
 		j = j * 2;
-		memcpy((void*)m, tbl, i);
+		memcpy ((void*)m, tbl, i);
 		m = m + i;
 		i = i * 2;
 	} while ((j * 2) < occ);
 	if (j < occ) {
-		memcpy((void*)m, tbl, len * (occ - j));
+		memcpy ((void*)m, tbl, len * (occ - j));
 	}
 }
 

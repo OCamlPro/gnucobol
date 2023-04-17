@@ -1246,12 +1246,13 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 	/* check if it is >= what we have */
 	if (mpz_cmp (d->value, cob_mexp) >= 0) {
 		/* Overflow */
-		cob_set_exception (COB_EC_SIZE_OVERFLOW);
-
-		/* If the statement has ON SIZE ERROR, then throw
-		   an exception, leaving the target unchanged */
-		if (opt & COB_STORE_KEEP_ON_OVERFLOW) {
-			return cobglobptr->cob_exception_code;
+		if ((opt & COB_STORE_NO_SIZE_ERROR) == 0) {
+			cob_set_exception (COB_EC_SIZE_OVERFLOW);
+			/* If the statement has ON SIZE ERROR, then throw
+			   an exception, leaving the target unchanged */
+			if (opt & COB_STORE_KEEP_ON_OVERFLOW) {
+				return cobglobptr->cob_exception_code;
+			}
 		}
 		/* Other size, truncate digits, using the remainder */
 		mpz_tdiv_r (cob_mexp, d->value, cob_mexp);
@@ -1288,9 +1289,9 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 		register unsigned int	i = diff;
 		while (i < size) {
 			if ((i++ & 1) == 0) {	/* -> i % 2 == 0 */
-				*p = (unsigned char) COB_D2I (*q++) << 4;
+				*p = (unsigned char) (*q++ << 4);	/* -> dropping the higher bits = no use in COB_D2I */
 			} else {
-				*p++ |= COB_D2I (*q++);
+				*p++ += COB_D2I (*q++);
 			}
 		}
 	}
@@ -1502,13 +1503,15 @@ cob_decimal_get_display (cob_decimal *d, cob_field *f, const int opt)
 		const size_t diff = (size_t)fsize - size;
 		if (diff < 0) {
 			/* Overflow */
-			cob_set_exception (COB_EC_SIZE_OVERFLOW);
+			if ((opt & COB_STORE_NO_SIZE_ERROR) == 0) {
+				cob_set_exception (COB_EC_SIZE_OVERFLOW);
 
-			/* If the statement has ON SIZE ERROR, then throw
-			   an exception, leaving the target unchanged */
-			if (opt & COB_STORE_KEEP_ON_OVERFLOW) {
-				cob_gmp_free (p);
-				return cobglobptr->cob_exception_code;
+				/* If the statement has ON SIZE ERROR, then throw
+				   an exception, leaving the target unchanged */
+				if (opt & COB_STORE_KEEP_ON_OVERFLOW) {
+					cob_gmp_free (p);
+					return cobglobptr->cob_exception_code;
+				}
 			}
 
 			/* Other size, truncate digits */
@@ -1529,12 +1532,14 @@ cob_decimal_get_display (cob_decimal *d, cob_field *f, const int opt)
 	/* check if it is >= what we have */
 	if (mpz_cmp (d->value, cob_mexp) >= 0) {
 		/* Overflow */
-		cob_set_exception (COB_EC_SIZE_OVERFLOW);
+		if ((opt & COB_STORE_NO_SIZE_ERROR) == 0) {
+			cob_set_exception (COB_EC_SIZE_OVERFLOW);
 
-		/* If the statement has ON SIZE ERROR, then throw
-		   an exception, leaving the target unchanged */
-		if (opt & COB_STORE_KEEP_ON_OVERFLOW) {
-			return cobglobptr->cob_exception_code;
+			/* If the statement has ON SIZE ERROR, then throw
+			   an exception, leaving the target unchanged */
+			if (opt & COB_STORE_KEEP_ON_OVERFLOW) {
+				return cobglobptr->cob_exception_code;
+			}
 		}
 		/* Other size, truncate digits, using the remainder */
 		mpz_tdiv_r (cob_mexp, d->value, cob_mexp);
@@ -2305,7 +2310,7 @@ void
 cob_decimal_setget_fld (cob_field *src, cob_field *dst, const int opt)
 {
 	cob_decimal_set_field (&cob_d1, src);
-	(void)cob_decimal_get_field (&cob_d1, dst, opt);
+	(void)cob_decimal_get_field (&cob_d1, dst, opt | COB_STORE_NO_SIZE_ERROR);
 }
 
 #if	0	/* RXWRXW - Buggy */
