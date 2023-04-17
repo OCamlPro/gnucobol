@@ -956,6 +956,8 @@ enum cob_open_mode {
 #define COB_STORE_TOWARD_LESSER		(1 << 10)
 #define COB_STORE_TRUNCATION		(1 << 11)
 
+#define COB_STORE_NO_SIZE_ERROR		(1 << 15)
+
 #define COB_STORE_MASK					\
 	(COB_STORE_ROUND | COB_STORE_KEEP_ON_OVERFLOW |	\
 	 COB_STORE_TRUNC_ON_OVERFLOW)
