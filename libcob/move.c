@@ -1438,6 +1438,12 @@ cob_move (cob_field *src, cob_field *dst)
 #endif
 			return;
 		case COB_TYPE_NUMERIC_PACKED:
+			/* TODO: add handling of negative scales to cob_move_bcd */
+			if (COB_FIELD_SCALE (src) >= 0
+			 && COB_FIELD_SCALE (dst) >= 0) {
+				cob_move_bcd (src, dst);
+				return;
+			}
 		case COB_TYPE_NUMERIC_DOUBLE:
 		case COB_TYPE_NUMERIC_FLOAT:
 		case COB_TYPE_NUMERIC_L_DOUBLE:

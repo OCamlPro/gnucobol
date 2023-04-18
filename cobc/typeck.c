@@ -2423,24 +2423,23 @@ cb_build_identifier (cb_tree x, const int subchk)
 
 	/* CHECKME: do we need the field founder to decide?  LINKAGE and flag_item_based
 	            should be available in 'f' already ... */
-	if (current_statement && !suppress_data_exceptions &&
-	    (CB_EXCEPTION_ENABLE (COB_EC_DATA_PTR_NULL) ||
-	     CB_EXCEPTION_ENABLE (COB_EC_PROGRAM_ARG_OMITTED))) {
+	if (current_statement && !suppress_data_exceptions
+	 && ( CB_EXCEPTION_ENABLE (COB_EC_DATA_PTR_NULL)
+	   || CB_EXCEPTION_ENABLE (COB_EC_PROGRAM_ARG_OMITTED))) {
 		p = cb_field_founder (f);
 		if (p->redefines) {
 			p = p->redefines;
 		}
+		if (CB_EXCEPTION_ENABLE (COB_EC_PROGRAM_ARG_OMITTED)
+		 && p->storage == CB_STORAGE_LINKAGE
+		 && p->flag_is_pdiv_parm
 #if 0
 		/* note: we can only ignore the check for fields with flag_is_pdiv_opt
 		   when we check for COB_EC_PROGRAM_ARG_MISMATCH in all entry points
 		   and this check is currently completely missing... */
-		if (CB_EXCEPTION_ENABLE (COB_EC_PROGRAM_ARG_OMITTED)
-		 && p->storage == CB_STORAGE_LINKAGE && p->flag_is_pdiv_parm
-		 && !(p->flag_is_pdiv_opt && CB_EXCEPTION_ENABLE (COB_EC_PROGRAM_ARG_MISMATCH)) {
-#else
-		if (CB_EXCEPTION_ENABLE (COB_EC_PROGRAM_ARG_OMITTED)
-		 && p->storage == CB_STORAGE_LINKAGE && p->flag_is_pdiv_parm) {
+		 && !(p->flag_is_pdiv_opt && CB_EXCEPTION_ENABLE (COB_EC_PROGRAM_ARG_MISMATCH)
 #endif
+		 ) {
 			current_statement->null_check = CB_BUILD_FUNCALL_3 (
 				"cob_check_linkage",
 				cb_build_address (cb_build_field_reference (p, NULL)),
@@ -5787,7 +5786,6 @@ cb_expr_finish (void)
 
 	expr_expand (&expr_stack[3].value);
 	if (expr_stack[3].token != 'x') {
-		/* TODO: Add test case for this to syn_misc.at invalid expression */
 		cb_error_x (expr_stack[3].value, _("invalid expression"));
 		return cb_error_node;
 	}
@@ -7065,8 +7063,6 @@ swap_condition_operands (struct cb_binary_op *p)
 cb_tree
 cb_build_cond (cb_tree x)
 {
-	struct cb_field		*f;
-	struct cb_binary_op	*p;
 	cb_tree			ret;
 
 	if (x == cb_error_node) {
@@ -7102,16 +7098,16 @@ cb_build_cond (cb_tree x)
 	case CB_TAG_FUNCALL:
 		return x;
 	case CB_TAG_REFERENCE:
-		if (!CB_FIELD_P (cb_ref (x))) {
-			ret = cb_build_cond (cb_ref (x));
+	{
+		cb_tree r = cb_ref (x);
+		if (!CB_FIELD_P (r)) {
+			ret = cb_build_cond (r);
 			cb_copy_source_reference (ret, x);
 			return ret;
 		}
 
-		f = CB_FIELD_PTR (x);
-
 		/* Level 88 condition */
-		if (f->level == 88) {
+		if (CB_FIELD_PTR (x)->level == 88) {
 			/* Build an 88 condition at every occurrence */
 			/* as it may be subscripted */
 			ret = cb_build_cond (build_cond_88 (x));
@@ -7120,8 +7116,10 @@ cb_build_cond (cb_tree x)
 		}
 
 		break;
+	}
 	case CB_TAG_BINARY_OP:
-		p = CB_BINARY_OP (x);
+	{
+		struct cb_binary_op	*p = CB_BINARY_OP (x);
 		if (!p->x || p->x == cb_error_node) {
 			return cb_error_node;
 		}
@@ -7157,6 +7155,7 @@ cb_build_cond (cb_tree x)
 			cb_copy_source_reference (ret, x);
 		}
 		return ret;
+	}
 	default:
 		break;
 	}
@@ -7264,7 +7263,6 @@ cb_end_statement (void)
 static cb_tree
 cb_build_optim_add (cb_tree v, cb_tree n)
 {
-
 	if (CB_REF_OR_FIELD_P (v)) {
 		const struct cb_field	*f = CB_FIELD_PTR (v);
 		if (!f->pic
@@ -7348,7 +7346,6 @@ cb_build_optim_add (cb_tree v, cb_tree n)
 static cb_tree
 cb_build_optim_sub (cb_tree v, cb_tree n)
 {
-
 	if (CB_REF_OR_FIELD_P (v)) {
 		const struct cb_field	*f = CB_FIELD_PTR (v);
 		if (!f->pic
@@ -9536,7 +9533,8 @@ cb_build_display_name (cb_tree x)
 	return cb_error_node;
 }
 
-/* DIVIDE statement */
+/* DIVIDE statement - with REMAINDER
+   other variants are handled in cb_emit_arithmetic -> cb_build_div */
 
 void
 cb_emit_divide (cb_tree dividend, cb_tree divisor, cb_tree quotient,
@@ -9545,14 +9543,12 @@ cb_emit_divide (cb_tree dividend, cb_tree divisor, cb_tree quotient,
 	cb_tree quotient_field, remainder_field;
 
 	if (cb_validate_one (dividend)
-	 || cb_validate_one (divisor)) {
-		return;
-	}
-
-	if (cb_validate_one (CB_VALUE(quotient))
+	 || cb_validate_one (divisor)
+	 || cb_validate_one (CB_VALUE(quotient))
 	 || cb_validate_one (CB_VALUE(remainder))) {
 		return;
 	}
+
 	quotient_field = cb_check_numeric_edited_name (CB_VALUE(quotient));
 	remainder_field = cb_check_numeric_edited_name (CB_VALUE(remainder));
 
@@ -12030,11 +12026,11 @@ cb_build_move_literal (cb_tree src, cb_tree dst)
 		if (f->pic->scale < 0) {
 			return CB_BUILD_FUNCALL_2 ("cob_move", src, dst);
 		}
-		val = cb_get_int (src);
 		n = f->pic->scale - l->scale;
 		if ((l->size + n) > 9) {
 			return CB_BUILD_FUNCALL_2 ("cob_move", src, dst);
 		}
+		val = cb_get_int (src);
 		for (; n > 0; n--) {
 			val *= 10;
 		}
@@ -12061,13 +12057,10 @@ cb_build_move_literal (cb_tree src, cb_tree dst)
 static cb_tree
 cb_build_move_field (cb_tree src, cb_tree dst)
 {
-	struct cb_field	*src_f;
-	struct cb_field	*dst_f;
+	const struct cb_field	*src_f = CB_FIELD_PTR (src);
+	const struct cb_field	*dst_f = CB_FIELD_PTR (dst);
 	int		src_size;
 	int		dst_size;
-
-	src_f = CB_FIELD_PTR (src);
-	dst_f = CB_FIELD_PTR (dst);
 
 	if (dst_f->flag_any_length || src_f->flag_any_length) {
 		return CB_BUILD_FUNCALL_2 ("cob_move", src, dst);
@@ -12134,6 +12127,17 @@ cb_build_move_field (cb_tree src, cb_tree dst)
 		}
 	}
 
+	if ( (src_f->usage == CB_USAGE_PACKED
+	   || src_f->usage == CB_USAGE_COMP_6)
+	  && (dst_f->usage == CB_USAGE_PACKED
+	   || dst_f->usage == CB_USAGE_COMP_6)) {
+		/* TODO: add handling of negative scales to cob_move_bcd */
+		if (src_f->pic->scale >= 0
+		 && dst_f->pic->scale >= 0) {
+			return CB_BUILD_FUNCALL_2 ("cob_move_bcd", src, dst);
+		}
+	}
+
 	return CB_BUILD_FUNCALL_2 ("cob_move", src, dst);
 }
 
@@ -12173,7 +12177,7 @@ cb_build_move (cb_tree src, cb_tree dst)
 	}
 
 	if (current_program->flag_report) {
-		/* FIXME: too much for SUM field */
+		/* FIXME: way too much for SUM field */
 		src = cb_check_sum_field (src);
 		dst = cb_check_sum_field (dst);
 	}
