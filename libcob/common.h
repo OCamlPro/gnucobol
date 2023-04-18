@@ -2004,6 +2004,8 @@ COB_EXPIMP int	cob_cmp_float		(cob_field *, cob_field *);
 COB_EXPIMP void	cob_set_packed_zero	(cob_field *);
 COB_EXPIMP void	cob_set_packed_int	(cob_field *, const int);
 
+COB_EXPIMP void	cob_move_bcd		(cob_field *, cob_field *);
+
 COB_EXPIMP void	cob_decimal_alloc	(const cob_u32_t, ...);
 COB_EXPIMP void	cob_decimal_push	(const cob_u32_t, ...);
 COB_EXPIMP void	cob_decimal_pop		(const cob_u32_t, ...);

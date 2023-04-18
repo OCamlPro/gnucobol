@@ -1,6 +1,7 @@
 /*
    Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
-   Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
+   Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
+   Chuck Haatveet
 
    This file is part of GnuCOBOL.
 
@@ -2313,6 +2314,289 @@ cob_decimal_setget_fld (cob_field *src, cob_field *dst, const int opt)
 	(void)cob_decimal_get_field (&cob_d1, dst, opt | COB_STORE_NO_SIZE_ERROR);
 }
 
+/* shift the complete filled buffer one nibble left
+   with 'ptr_buff' pointing to the start of a fixed-size 48byte buffer to
+   accomodate 3 64bit integers for use of register shifting
+   note: the longest decimal field is 20 bytes long but we need the
+         extra 4 bytes to allow the use of register to do the shifting */
+static void
+cob_shift_left_nibble (unsigned char *ptr_buff, unsigned char *ptr_start_data_byte)
+{
+	/* this logic is copied from the insert_packed_aligned function so that
+	   any changes to that function should probaby require that this function
+	   be examined for */
+
+# ifndef  WORDS_BIGENDIAN
+	cob_u64_t chunk;
+# endif
+	register cob_u64_t *ptr_long;
+	unsigned char carry_nibble, move_nibble;
+	register int shift_cntr;
+	int len1;
+
+	/* calculate the length of data to be shifted */
+	len1 = 48 - (ptr_start_data_byte - ptr_buff);
+
+	shift_cntr = len1 + 1; /* add one to ensure the carry nibble is moved */
+	move_nibble = 0xFF;
+
+	/* point at the last byte in buffer as we will shift from right to left !! */
+
+	ptr_long = (cob_u64_t *)(ptr_buff + 48 - 8);
+	do {
+# ifdef WORDS_BIGENDIAN
+		/* shift and include old nibble */
+		carry_nibble = (unsigned char)(*ptr_long >> 60);
+		*ptr_long = (*ptr_long << 4);
+		if (shift_cntr < len1) {
+			*ptr_long |= move_nibble;
+		}
+# else
+		/* load data to chunk, swap as necessary */
+		chunk = COB_BSWAP_64 (*ptr_long);
+		/* shift and include old nibble */
+		carry_nibble = (unsigned char)(chunk >> 60);
+		chunk = (chunk << 4);
+		if (shift_cntr < len1) {
+			chunk |= move_nibble;
+		}
+		/* swap as necessary, place in memory */
+		*ptr_long = COB_BSWAP_64 (chunk);
+# endif
+		/* prepare for next round */
+		move_nibble = carry_nibble;
+		shift_cntr -= 8;
+		ptr_long--;
+	} while (shift_cntr > 0);
+}
+
+
+/* shift the complete filled buffer one nibble right
+   with 'ptr_buff' pointing to the start of a fixed-size 48byte buffer to
+   accomodate 3 64bit integers for use of register shifting
+   for more details see cob_shift_left_nibble;
+   note: the difference in this routine is that it will shift from left to right
+         so we need to start a the byte BEFORE the start data byte */
+static void
+cob_shift_right_nibble (unsigned char *ptr_buff, unsigned char *ptr_start_data_byte)
+{
+	/* this logic is copied from the insert_packed_aligned function so that
+	   any changes to that function should probaby require that this function
+	   be examined for */
+
+# ifndef WORDS_BIGENDIAN
+	cob_u64_t chunk;
+# endif
+	register cob_u64_t *ptr_long;
+
+	/* note that the carry & move nibbles have to be 64 bit because we need
+	    to use binary OR the high order bits when shifting to the right !! */
+	cob_u64_t carry_nibble, move_nibble;
+	register int shift_cntr;
+	int len1;
+
+	/* calculate the length of data to be shifted */
+	len1 = 48 - (ptr_start_data_byte - ptr_buff);
+
+	shift_cntr = len1;
+	move_nibble = 0xFF;
+
+	/* point at the last byte in buffer as we will shift from right to left !! */
+	ptr_long = (cob_u64_t *)(ptr_buff + 48);
+
+	/* note that ptr_long is pointing at the position after the end of the buffer,
+	   so since we are shifting from left to right we need to back up to the first
+	   64 bit area containing the high order 64 bit integer which contains the
+	   starting position of the data to be shifted */
+	do {
+		ptr_long--;
+	} while ((unsigned char *)ptr_long > ptr_start_data_byte);
+
+	do {
+# ifdef WORDS_BIGENDIAN
+		/* shift and include old nibble */
+		carry_nibble = *ptr_long << 60;
+		*ptr_long = (*ptr_long >> 4);
+		if (shift_cntr < len1) {
+			*ptr_long |= move_nibble;
+		}
+# else
+		/* load data to chunk, swap as necessary */
+		chunk = COB_BSWAP_64 (*ptr_long);
+		/* shift and include old nibble */
+		carry_nibble = chunk << 60;
+		chunk = (chunk >> 4);
+		if (shift_cntr < len1) {
+			chunk |= move_nibble;
+		}
+		/* swap as necessary, place in memory */
+		*ptr_long = COB_BSWAP_64 (chunk);
+# endif
+		/* prepare for next round */
+		move_nibble = carry_nibble;
+		shift_cntr -= 8;
+		ptr_long++;
+	} while (shift_cntr > 0);
+}
+
+
+/* optimized MOVE between any BCD fields, no matter their attributes;
+   TODO: add handling of negative scales to cob_move_bcd */
+void
+cob_move_bcd (cob_field *f1, cob_field *f2)
+{
+	/************************************************************/
+	/*                                                          */
+	/*  Note that this routine will first check to see if data  */
+	/*  shifting is required to meet the format of the          */
+	/*  receiving field. If not then the data will be moved     */
+	/*  directly from the input field to the receiving field    */
+	/*  without the use of an intermediate buffer. If shifting  */
+	/*  is required in either direction, then a 48 byte buffer  */
+	/*  will be allocated to do the shifting. Note that 48      */
+	/*  bytes is more than needed but the addition function     */
+	/*  requires 48 bytes to do its shifting so this way we     */
+	/*  can use the same functions.                             */
+	/*                                                          */
+	/*  When moving data to the left we need to strip the sign  */
+	/*  when moving as it would be in the middle of the         */
+	/*  receiving field.                                        */
+	/*                                                          */
+	/************************************************************/
+
+	unsigned char	*fld1 = COB_FIELD_DATA (f1);
+	unsigned char	*fld2 = COB_FIELD_DATA (f2);
+	const size_t	fld1_size =  f1->size;
+	const size_t	fld2_size =  f2->size;
+	const int 	f2_has_no_sign_nibble = COB_FIELD_NO_SIGN_NIBBLE (f2);
+
+	signed short		fld1_scale, fld2_scale, diff, offset;
+	unsigned char	fld1_sign;
+	int		move_left;
+
+	if (COB_FIELD_NO_SIGN_NIBBLE (f1)) {
+		fld1_sign = 0x00;
+	} else {
+		fld1_sign = *(fld1 + fld1_size - 1) & 0X0F;
+	}
+
+	/************************************************************/
+	/*  Note that the scale is increased by 1 because the sign nibble will */
+	/*  be converted to a zero during the process of moving the data. The sign */
+	/*  will be added at the end of the process.                */
+	/************************************************************/
+
+	fld1_scale = !fld1_sign
+		? COB_FIELD_SCALE (f1) :
+		COB_FIELD_SCALE (f1) + 1;
+
+	fld2_scale = f2_has_no_sign_nibble
+		? COB_FIELD_SCALE (f2) :
+		COB_FIELD_SCALE (f2) + 1;
+
+	if (fld1_scale > fld2_scale) {
+		move_left = 0;
+		diff = fld1_scale - fld2_scale;
+	} else {
+		move_left = 1;
+		diff = fld2_scale - fld1_scale;
+	}
+
+
+	/************************************************************/
+	/*  Note that when the scale difference is a multiple of 2  */
+	/*  then there is NO SHIFTING required. So we can move the  */
+	/*  sending field directly into the receiving field.        */
+	/************************************************************/
+
+	if (!(diff & 1)) {	 /* -> diff % 2 == 0 */
+		offset = diff >> 1;
+		memset (fld2, 0, fld2_size);
+		if (move_left) {
+			const size_t llen = fld2_size - offset;
+			if (fld1_size <= llen) {
+				memcpy (fld2 + llen - fld1_size, fld1, fld1_size);
+				if (fld1_sign) {
+					*(fld2 + fld2_size - offset - 1) &= 0xF0;
+				}
+			} else {
+				memcpy (fld2, fld1 + fld1_size - llen, llen);
+				if (fld1_sign) {
+					*(fld2 + llen - 1) &= 0xF0;
+				}
+			}
+		} else {
+			const size_t llen = fld1_size - offset;
+			if (llen <= fld2_size) {
+				memcpy (fld2 + fld2_size - llen, fld1, llen);
+			} else {
+				memcpy (fld2, fld1 + fld1_size - offset - fld2_size, fld2_size);
+			}
+		}
+
+	} else {
+
+		/************************************************************/
+		/*  Note that when the scale difference is NOT a multiple   */
+		/*  of 2 then SHIFTING of 1 nibble is required. To          */
+		/*  accomplish this we will move the data to a 48 byte      */
+		/*  buffer to do the actual shifting of the data before     */
+		/*  moving to the receiving field                           */
+		/************************************************************/
+
+		unsigned char buff[48] = { 0 };
+		offset = diff >> 1;
+
+		if (move_left) {
+			const size_t llen = 48 - offset;
+			unsigned char *pos = buff + llen - fld1_size;
+			memcpy (pos, fld1, fld1_size);
+			if (fld1_sign) {
+				*(buff + llen - 1) &= 0xF0;
+			}
+			cob_shift_left_nibble (buff, pos);
+		} else {
+			const size_t llen = fld1_size - offset;
+			unsigned char *pos = buff + 48 - llen;
+			memcpy (pos, fld1, llen);
+			if (fld1_sign) {
+				*(buff + llen - 1) &= 0xF0;
+			}
+			cob_shift_right_nibble (buff, pos);
+		}
+
+		memcpy (fld2, buff + 48 - fld2_size, fld2_size);
+	}
+
+	if (f2_has_no_sign_nibble) {
+		/************************************************************/
+		/*  The following will clear the "pad" nibble if present    */
+		/************************************************************/
+		if (COB_FIELD_DIGITS (f2) & 1 /* -> digits % 2 == 1 */) {
+			*fld2 &= 0x0F;
+		}
+	} else {
+		unsigned char *pos = fld2 + fld2_size - 1;
+		if (COB_FIELD_HAVE_SIGN (f2)) {
+			if (!fld1_sign) {
+				*pos &= 0xF0;
+				*pos |= 0x0C;
+			} else {
+				*pos &= 0xF0;
+				*pos |= fld1_sign;
+			}
+		} else {
+			*pos &= 0xF0;
+			*pos |= 0x0F;
+		}
+		if (!(COB_FIELD_DIGITS (f2) & 1) /* -> digits % 2 == 0 */) {
+			*fld2 &= 0x0F;
+		}
+	}
+
+}
+
+
 #if	0	/* RXWRXW - Buggy */
 
 /* Optimized arithmetic for DISPLAY */
@@ -2905,7 +3189,7 @@ cob_bcd_cmp (cob_field *f1, cob_field *f2)
 		 && no_sign_nibble_f1 == no_sign_nibble_f2
 		 && scale1 == scale2) {
 			/* Note: we explicit do not drop the higher bit for even digits (COMP-3) /
-			   odd digits (COMP-6) - as at least MF compares those, too */
+			   odd digits (COMP-6) - as at least MF compares those, too (but sometimes not?) */
 			const unsigned char	*data1 = COB_FIELD_DATA (f1);
 			const unsigned char	*data2 = COB_FIELD_DATA (f2);
 			if (no_sign_nibble_f1) {

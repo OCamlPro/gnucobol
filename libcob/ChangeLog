@@ -1,4 +1,12 @@
 
+2023-04-18  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c: integrated changes of Chuck Haatveet 2023-03-28 with tuning
+	  for even more speed by using best matching types and refactoring
+	* common.h: added cob_move_bcd as external function declaration
+	* move.c (cob_move): add call to cob_move_bcd for fields without negative
+	  scale
+
 2023-04-17  Simon Sobisch <simonsobisch@gnu.org>
 
 	* numeric.c (cob_decimal_setget_fld, cob_decimal_get_packed,
@@ -53,6 +61,13 @@
 	  fixing wrong value in binary
 	* numeric.c (cob_set_packed_int, cob_decimal_get_packed): minor performance
 	  tuning
+
+2023-03-28  Chuck Haatvedt <chuck.haatvedt@gmail.com>
+
+	* numeric.c (cob_shift_left_nibble, cob_shift_right_nibble): variants of
+	  insert_packed_aligned for cob_move_bcd
+	* numeric.c (cob_move_bcd): added for highly improved BCD MOVE,
+	  saving more than 50% cpu cycles
 
 2023-03-28  Simon Sobisch <simonsobisch@gnu.org>
 
