@@ -6,6 +6,16 @@
 	* common.h: added cob_move_bcd as external function declaration
 	* move.c (cob_move): add call to cob_move_bcd for fields without negative
 	  scale
+	* common.c (cob_is_numeric, cob_is_alpha, cob_is_upper, cob_is_lower,
+	  cob_check_numeric, cob_check_numdisp, cob_correct_numeric):
+	  prefer pointer arithmetic to arrays
+	* common.c (cob_is_numeric, cob_check_numdisp, cob_set_date_from_epoch,
+	  set_config_val, translate_boolean_to_int): prefer range check over
+	  isdigit and COB_D2I over atoi
+	* numeric.c (cob_decimal_get_packed): set by optimized integer routine
+	  when possible
+	* numeric.c (cob_shift_right_nibble): drop duplicate calculation for start
+	  position
 
 2023-04-17  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -71,8 +81,8 @@
 
 2023-03-28  Simon Sobisch <simonsobisch@gnu.org>
 
-	* (cob_open): check for bad quotes, early returning status 31
-	* (cob_chk_file_env, cob_chk_file_mapping, looks_absolute,
+	* fileio.c (cob_open): check for bad quotes, early returning status 31
+	* fileio.c (cob_chk_file_env, cob_chk_file_mapping, looks_absolute,
 	   do_acu_hyphen_translation): drop / ignore surrounding quotes of filenames
 
 2023-03-23  Simon Sobisch <simonsobisch@gnu.org>

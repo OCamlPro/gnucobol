@@ -1257,10 +1257,24 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 		}
 		/* Other size, truncate digits, using the remainder */
 		mpz_tdiv_r (cob_mexp, d->value, cob_mexp);
+		/* integer setting, if possible */
+		if (mpz_fits_sint_p (cob_mexp)) {
+			const signed int val = mpz_get_si (cob_mexp) * sign;
+			cob_set_packed_int (f, val);
+			return 0;
+		}
+		/* get truncated digits as string */
 		(void) mpz_get_str (buff, 10, cob_mexp);
 		/* note: truncation may lead to 100012 be changed to 00012
 		         in which case mpz_get_str provides us with 12 */
 	} else {
+		/* integer setting, if possible */
+		if (mpz_fits_sint_p (d->value)) {
+			const signed int val = mpz_get_si (d->value) * sign;
+			cob_set_packed_int (f, val);
+			return 0;
+		}
+
 		/* No overflow, so get string data as-is */
 		(void) mpz_get_str (buff, 10, d->value);
 	}
@@ -1283,9 +1297,6 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 	size += diff;
 	/* set data starting from first half-byte with data until end */
 	{
-		/* TODO: check performance difference when not setting half-bytes
-		   but getting "n" with data for byte, then packed_bytes[n] as
-		   done in (cob_set_packed_int) */
 		register unsigned char *q = (unsigned char *)buff;
 		register unsigned int	i = diff;
 		while (i < size) {
@@ -2307,6 +2318,11 @@ cob_div_remainder (cob_field *fld_remainder, const int opt)
 	(void)cob_decimal_get_field (&cob_d_remainder, fld_remainder, opt);
 }
 
+/* internal MOVE handling by converting 'src' to cob_decimal,
+   then converting that back to 'dst'
+   with optional truncation as specified in 'opt';
+   while this is quite expensive it converts between every numeric data type
+   with every attribute possible */
 void
 cob_decimal_setget_fld (cob_field *src, cob_field *dst, const int opt)
 {
@@ -2401,16 +2417,11 @@ cob_shift_right_nibble (unsigned char *ptr_buff, unsigned char *ptr_start_data_b
 	shift_cntr = len1;
 	move_nibble = 0xFF;
 
-	/* point at the last byte in buffer as we will shift from right to left !! */
-	ptr_long = (cob_u64_t *)(ptr_buff + 48);
-
-	/* note that ptr_long is pointing at the position after the end of the buffer,
-	   so since we are shifting from left to right we need to back up to the first
-	   64 bit area containing the high order 64 bit integer which contains the
-	   starting position of the data to be shifted */
-	do {
-		ptr_long--;
-	} while ((unsigned char *)ptr_long > ptr_start_data_byte);
+	/* note that since we are shifting from left to right we have to start in the
+	   first 64 bit area containing the high order 64 bit integer which contains
+	   the starting position of the data to be shifted */
+	ptr_long = (cob_u64_t *)ptr_start_data_byte;
+	
 
 	do {
 # ifdef WORDS_BIGENDIAN

@@ -3429,31 +3429,27 @@ cob_parameter_check (const char *func_name, const int num_arguments)
 void
 cob_correct_numeric (cob_field *f)
 {
-	unsigned char	*p;
-	unsigned char	*data;
-	size_t		size;
-	size_t		i;
+	register unsigned char *p = f->data;
+	unsigned char	*end = p + f->size;
+	unsigned char	*c;
 
 	if (!COB_FIELD_IS_NUMDISP (f)) {
 		return;
 	}
-	size = f->size;
-	data = f->data;
+
 	if (COB_FIELD_HAVE_SIGN (f)) {
 		/* Adjust for sign byte */
-		size--;
 		if (unlikely (COB_FIELD_SIGN_LEADING (f))) {
-			p = f->data;
-			data = p + 1;
+			c = p++;
 		} else {
-			p = f->data + f->size - 1;
+			c = --end;
 		}
 		if (unlikely (COB_FIELD_SIGN_SEPARATE (f))) {
-			if (*p != '+' && *p != '-') {
-				*p = '+';
+			if (*c != '+' && *c != '-') {
+				*c = '+';
 			}
 		} else if (unlikely (COB_MODULE_PTR->ebcdic_sign)) {
-			switch (*p) {
+			switch (*c) {
 			case '{':
 			case 'A':
 			case 'B':
@@ -3476,56 +3472,40 @@ cob_correct_numeric (cob_field *f)
 			case 'R':
 				break;
 			case '0':
-				*p = '{';
+				*c = '{';
 				break;
 			case '1':
-				*p = 'A';
-				break;
 			case '2':
-				*p = 'B';
-				break;
 			case '3':
-				*p = 'C';
-				break;
 			case '4':
-				*p = 'D';
-				break;
 			case '5':
-				*p = 'E';
-				break;
 			case '6':
-				*p = 'F';
-				break;
 			case '7':
-				*p = 'G';
-				break;
 			case '8':
-				*p = 'H';
-				break;
 			case '9':
-				*p = 'I';
+				*c = 'A' + (*c - '1');
 				break;
 			case 0:
 			case ' ':
-				*p = '{';
+				*c = '{';
 				break;
 			default:
 				break;
 			}
 		} else {
-			if (!*p || *p == ' ') {
-				*p = '0';
+			if (!*c || *c == ' ') {
+				*c = '0';
 			}
 		}
 	} else {
-		p = f->data + f->size - 1;
+		c = end - 1;
 		if (unlikely (COB_MODULE_PTR->ebcdic_sign)) {
-			switch (*p) {
+			switch (*c) {
 			case 0:
 			case ' ':
 			case '{':
 			case '}':
-				*p = '0';
+				*c = '0';
 				break;
 			case 'A':
 			case 'B':
@@ -3536,7 +3516,7 @@ cob_correct_numeric (cob_field *f)
 			case 'G':
 			case 'H':
 			case 'I':
-				*p = '1' + (*p - 'A');
+				*c = '1' + (*c - 'A');
 				break;
 			case 'J':
 			case 'K':
@@ -3547,51 +3527,35 @@ cob_correct_numeric (cob_field *f)
 			case 'P':
 			case 'Q':
 			case 'R':
-				*p = '1' + (*p - 'J');
+				*c = '1' + (*c - 'J');
 				break;
 			default:
 				break;
 			}
 		} else {
-			switch (*p) {
+			switch (*c) {
 			case 0:
 			case ' ':
 			case 'p':
-				*p = '0';
+				*c = '0';
 				break;
 			case 'q':
-				*p = '1';
-				break;
 			case 'r':
-				*p = '2';
-				break;
 			case 's':
-				*p = '3';
-				break;
 			case 't':
-				*p = '4';
-				break;
 			case 'u':
-				*p = '5';
-				break;
 			case 'v':
-				*p = '6';
-				break;
 			case 'w':
-				*p = '7';
-				break;
 			case 'x':
-				*p = '8';
-				break;
 			case 'y':
-				*p = '9';
+				*c = *c - 'p';
 				break;
 			default:
 				break;
 			}
 		}
 	}
-	for (i = 0, p = data; i < size; ++i, ++p) {
+	while (p < end) {
 		switch (*p) {
 		case '0':
 		case '1':
@@ -3614,34 +3578,30 @@ cob_correct_numeric (cob_field *f)
 			}
 			break;
 		}
+		p++;
 	}
 }
 
 static int
 cob_check_numdisp (const cob_field *f)
 {
-	unsigned char	*p;
-	unsigned char	*data;
-	size_t		size;
-	size_t		i;
+	register const unsigned char	*p = f->data;
+	const unsigned char		*end = p + f->size;
 
-	size = f->size;
-	data = f->data;
 	if (COB_FIELD_HAVE_SIGN (f)) {
 		/* Adjust for sign byte */
-		size--;
+		unsigned char c;
 		if (unlikely (COB_FIELD_SIGN_LEADING (f))) {
-			p = f->data;
-			data = p + 1;
+			c = *p++;
 		} else {
-			p = f->data + f->size - 1;
+			c = *(--end);
 		}
 		if (unlikely (COB_FIELD_SIGN_SEPARATE (f))) {
-			if (*p != '+' && *p != '-') {
+			if (c != '+' && c != '-') {
 				return 0;
 			}
 		} else if (unlikely (COB_MODULE_PTR->ebcdic_sign)) {
-			switch (*p) {
+			switch (c) {
 			case '0':
 			case '1':
 			case '2':
@@ -3677,7 +3637,7 @@ cob_check_numdisp (const cob_field *f)
 				return 0;
 			}
 		} else {
-			switch (*p) {
+			switch (c) {
 			case '0':
 			case '1':
 			case '2':
@@ -3704,8 +3664,12 @@ cob_check_numdisp (const cob_field *f)
 			}
 		}
 	}
-	for (i = 0; i < size; ++i) {
-		if (!isdigit (data[i])) {
+
+	while (p < end) {
+		if (*p >= '0'
+		 && *p <= '9') {
+			p++;
+		} else {
 			return 0;
 		}
 	}
@@ -3739,12 +3703,12 @@ cob_real_get_sign (cob_field *f)
 		if (unlikely (COB_FIELD_SIGN_SEPARATE (f))) {
 			return (*p == '-') ? -1 : 1;
 		}
-		if (*p >= (unsigned char)'0' && *p <= (unsigned char)'9') {
+		if (*p >= '0' && *p <= '9') {
 			return 1;
 		}
 		if (*p == ' ') {
 #if	0	/* RXWRXW - Space sign */
-			*p = (unsigned char)'0';
+			*p = '0';
 #endif
 			return 1;
 		}
@@ -3773,7 +3737,7 @@ cob_real_put_sign (cob_field *f, const int sign)
 		/* Note: we only locate the sign if needed,
 		   as the common case will be "nothing to do" */
 		if (unlikely (COB_FIELD_SIGN_SEPARATE (f))) {
-			const unsigned char	c = (sign == -1) ? (cob_u8_t)'-' : (cob_u8_t)'+';
+			const unsigned char	c = (sign == -1) ? '-' : '+';
 			p = locate_sign (f);
 			if (*p != c) {
 				*p = c;
@@ -3999,42 +3963,47 @@ cob_is_numeric (const cob_field *f)
 		}
 	case COB_TYPE_NUMERIC_PACKED:
 		{
-			size_t		i;
-			int		sign;
-			/* Check digits */
-			for (i = 0; i < f->size - 1; ++i) {
-				if ((f->data[i] & 0xF0) > 0x90
-				 || (f->data[i] & 0x0F) > 0x09) {
+			register const unsigned char *p = f->data;
+			const unsigned char *end = p + f->size - 1;
+
+			/* Check sign */			
+			{
+				const char sign = *end & 0x0F;
+				if (COB_FIELD_NO_SIGN_NIBBLE (f)) {
+					/* COMP-6 - Check last nibble */
+					if (sign > 0x09) {
+						return 0;
+					}
+				} else if (COB_FIELD_HAVE_SIGN (f)) {
+					if (COB_MODULE_PTR->flag_host_sign
+					 && sign == 0x0F) {
+						/* all fine, go on */
+					} else
+					if (sign != 0x0C
+					 && sign != 0x0D) {
+						return 0;
+					}
+				} else if (sign != 0x0F) {
 					return 0;
 				}
 			}
+
 			/* Check high nibble of last byte */
-			if ((f->data[i] & 0xF0) > 0x90) {
+			if ((*end & 0xF0) > 0x90) {
 				return 0;
 			}
 
-			if (COB_FIELD_NO_SIGN_NIBBLE (f)) {
-				/* COMP-6 - Check last nibble */
-				if ((f->data[i] & 0x0F) > 0x09) {
+			/* Check digits */
+			while (p < end) {
+				if (*p < 0x9A
+				 && (*p & 0x0F) < 0x0A) {
+					p++;
+				} else {
 					return 0;
 				}
-				return 1;
 			}
 
-			/* Check sign */
-			sign = f->data[i] & 0x0F;
-			if (COB_FIELD_HAVE_SIGN (f)) {
-				if (sign == 0x0C || sign == 0x0D) {
-					return 1;
-				}
-				if (COB_MODULE_PTR->flag_host_sign
-				 && sign == 0x0F) {
-					return 1;
-				}
-			} else if (sign == 0x0F) {
-				return 1;
-			}
-			return 0;
+			return 1;
 		}
 	case COB_TYPE_NUMERIC_DISPLAY:
 		return cob_check_numdisp (f);
@@ -4052,9 +4021,13 @@ cob_is_numeric (const cob_field *f)
 #endif
 	default:
 		{
-			size_t		i;
-			for (i = 0; i < f->size; ++i) {
-				if (!isdigit (f->data[i])) {
+			register const unsigned char *p = f->data;
+			const unsigned char *end = p + f->size;
+
+			while (p < end) {
+				if (*p >= '0' && *p <= '9') {
+					p++;
+				} else {
 					return 0;
 				}
 			}
@@ -4066,10 +4039,14 @@ cob_is_numeric (const cob_field *f)
 int
 cob_is_alpha (const cob_field *f)
 {
-	size_t	i;
+	register const unsigned char *p = f->data;
+	const unsigned char *end = p + f->size;
 
-	for (i = 0; i < f->size; ++i) {
-		if (!isalpha (f->data[i]) && f->data[i] != (unsigned char)' ') {
+	while (p < end) {
+		if (*p == (unsigned char)' '
+		 || isalpha (*p)) {
+			p++;
+		} else {
 			return 0;
 		}
 	}
@@ -4079,10 +4056,14 @@ cob_is_alpha (const cob_field *f)
 int
 cob_is_upper (const cob_field *f)
 {
-	size_t	i;
+	register const unsigned char *p = f->data;
+	const unsigned char *end = p + f->size;
 
-	for (i = 0; i < f->size; ++i) {
-		if (!isupper (f->data[i]) && f->data[i] != (unsigned char)' ') {
+	while (p < end) {
+		if (*p == (unsigned char)' '
+		 || isupper (*p)) {
+			p++;
+		} else {
 			return 0;
 		}
 	}
@@ -4092,10 +4073,14 @@ cob_is_upper (const cob_field *f)
 int
 cob_is_lower (const cob_field *f)
 {
-	size_t	i;
+	register const unsigned char *p = f->data;
+	const unsigned char *end = p + f->size;
 
-	for (i = 0; i < f->size; ++i) {
-		if (!islower (f->data[i]) && f->data[i] != (unsigned char)' ') {
+	while (p < end) {
+		if (*p == (unsigned char)' '
+		 || islower (*p)) {
+			p++;
+		} else {
 			return 0;
 		}
 	}
@@ -4231,28 +4216,27 @@ explain_field_type (const cob_field *f)
 void
 cob_check_numeric (const cob_field *f, const char *name)
 {
-	unsigned char	*data;
-	char		*p;
-	char		*buff;
-	size_t		i;
-
 	if (!cob_is_numeric (f)) {
+		register unsigned char	*data = f->data;
+		unsigned char *end = data + f->size;
+		char		*p;
+		char		*buff;
+
 		cob_set_exception (COB_EC_DATA_INCOMPATIBLE);
 		buff = cob_fast_malloc ((size_t)COB_SMALL_BUFF);
 		p = buff;
-		data = f->data;
 		if (COB_FIELD_IS_NUMDISP(f) || COB_FIELD_IS_ANY_ALNUM(f)) {
-			for (i = 0; i < f->size; ++i) {
-				if (isprint (data[i])) {
-					*p++ = data[i];
+			while (data < end) {
+				if (isprint (*data)) {
+					*p++ = *data++;
 				} else {
-					p += sprintf (p, "\\%03o", data[i]);
+					p += sprintf (p, "\\%03o", *data++);
 				}
 			}
 		} else {
 			p += sprintf (p, "0x");
-			for (i = 0; i < f->size; ++i) {
-				p += sprintf (p, "%02x", data[i]);
+			while (data < end) {
+				p += sprintf (p, "%02x", *data++);
 			}
 		}
 		*p = '\0';
@@ -4774,8 +4758,8 @@ cob_set_date_from_epoch (struct cob_time *cb_time, const char *config)
 	long long	seconds = 0;
 	unsigned char *p = (unsigned char *)config;
 
-	while (isdigit (*p)) {
-		seconds = seconds * 10 + *p - '0';
+	while (*p >= '0' && *p <= '9') {
+		seconds = seconds * 10 + COB_D2I (*p);
 		p++;
 	}
 	if (*p != 0 || seconds > 253402300799) {
@@ -7738,8 +7722,9 @@ translate_boolean_to_int (const char* ptr)
 		return 2;
 	}
 
-	if (*(ptr + 1) == 0 && isdigit ((unsigned char)*ptr)) {
-		return atoi (ptr);		/* 0 or 1 */
+	if (*(ptr + 1) == 0
+	 && (*ptr == '0' || *ptr == '1')) {
+		return COB_D2I (*ptr);		/* 0 or 1 */
 	} else
 	/* pre-translated boolean "never" - not set" */
 	if (strcmp (ptr, "!") == 0) {
@@ -7766,7 +7751,8 @@ translate_boolean_to_int (const char* ptr)
 static int					/* returns 1 if any error, else 0 */
 set_config_val (char *value, int pos)
 {
-	char	*ptr = value, *str;
+	register char	*ptr = value;
+	char	*str;
 	cob_s64_t	numval = 0;
 	int 	i, slen;
 
@@ -7855,13 +7841,15 @@ set_config_val (char *value, int pos)
 			sign = *ptr;
 			ptr++;
 		}
-		if (!isdigit ((unsigned char)*ptr)) {
+		if ((unsigned char)*ptr > '9'
+		 || (unsigned char)*ptr < '0') {
 			conf_runtime_error_value (ptr, pos);
 			conf_runtime_error (1, _("should be numeric"));
 			return 1;
 		}
-		for (; *ptr != 0 && (isdigit ((unsigned char)*ptr)); ptr++) {
-			numval = (numval * 10) + COB_D2I (*ptr);
+		while ((unsigned char)*ptr >= '0'
+		    && (unsigned char)*ptr <= '9') {
+			numval = (numval * 10) + COB_D2I (*ptr++);
 		}
 		if (sign != 0
 		 && ( *ptr == '-'
