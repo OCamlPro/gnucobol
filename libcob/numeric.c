@@ -2420,8 +2420,10 @@ cob_shift_right_nibble (unsigned char *ptr_buff, unsigned char *ptr_start_data_b
 	/* note that since we are shifting from left to right we have to start in the
 	   first 64 bit area containing the high order 64 bit integer which contains
 	   the starting position of the data to be shifted */
-	ptr_long = (cob_u64_t *)ptr_start_data_byte;
-	
+	ptr_long = (cob_u64_t *)(ptr_buff + 48);
+	do {
+		ptr_long--;
+	} while (ptr_long > (cob_u64_t *)ptr_start_data_byte);	/* we want to be there - or before! */
 
 	do {
 # ifdef WORDS_BIGENDIAN
