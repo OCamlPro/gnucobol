@@ -14,8 +14,6 @@
 	  isdigit and COB_D2I over atoi
 	* numeric.c (cob_decimal_get_packed): set by optimized integer routine
 	  when possible
-	* numeric.c (cob_shift_right_nibble): drop duplicate calculation for start
-	  position
 
 2023-04-17  Simon Sobisch <simonsobisch@gnu.org>
 
