@@ -1,6 +1,7 @@
 /*
    Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
-   Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
+   Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
+   Chuck Haatveet
 
    This file is part of GnuCOBOL.
 
@@ -425,7 +426,8 @@ cob_pow_10 (mpz_t mexp, unsigned int n)
 	if (n <= COB_MAX_BINARY) {
 		mpz_set (mexp, cob_mpze10[n]);
 	} else {
-	/* needed, for example in FUNCTION RANDOM test (999)
+	/* bigger values are needed,
+	   for example in FUNCTION RANDOM test (999)
 	   and with extreme huge value (6499) for test
 	   "FLOAT-DECIMALL w/o SIZE ERROR" to get huge
 	   FD32 values with the right scale */
@@ -584,8 +586,9 @@ cob_decimal_get_ieee64dec (cob_decimal *d, cob_field *f, const int opt)
 			return cobglobptr->cob_exception_code;
 		}
 		for ( ; ; ) {
-			if (d->scale < -369)
+			if (d->scale < -369) {
 				break;
+			}
 			mpz_tdiv_q_ui (d->value, d->value, 10UL);
 			d->scale--;
 			if (mpz_cmpabs (d->value, cob_mpz_ten16m1) < 0) {
@@ -701,8 +704,9 @@ cob_decimal_get_ieee128dec (cob_decimal *d, cob_field *f, const int opt)
 			return cobglobptr->cob_exception_code;
 		}
 		for ( ; ; ) {
-			if (d->scale < -6111)
+			if (d->scale < -6111) {
 				break;
+			}
 			mpz_tdiv_q_ui (d->value, d->value, 10UL);
 			d->scale--;
 			if (mpz_cmpabs (d->value, cob_mpz_ten34m1) < 0) {
@@ -825,11 +829,12 @@ cob_decimal_set_mpf_core (cob_decimal *d, const mpf_t src)
 	}
 
 	len -= scale;
+
 	if (len >= 0) {
 		d->scale = len;
 	} else {
-		cob_mul_by_pow_10 (d->value, -len);
 		d->scale = 0;
+		cob_mul_by_pow_10 (d->value, -len);
 	}
 }
 
@@ -847,10 +852,10 @@ cob_decimal_set_mpf (cob_decimal *d, const mpf_t src)
 void
 cob_decimal_get_mpf (mpf_t dst, const cob_decimal *d)
 {
-	cob_sli_t	scale;
+	const cob_sli_t	scale = d->scale;
 
 	mpf_set_z (dst, d->value);
-	scale = d->scale;
+
 	if (scale < 0) {
 		cob_pow_10 (cob_mexp, (cob_uli_t)-scale);
 		mpf_set_z (cob_mpft_get, cob_mexp);
@@ -1097,6 +1102,7 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 	register unsigned char	*p, *endp;
 	cob_uli_t	byteval;
 	int		digits, sign, nibtest;
+	const short scale = COB_FIELD_SCALE (f);
 
 	p = f->data;
 	if (unlikely (COB_FIELD_NO_SIGN_NIBBLE (f))) {
@@ -1109,7 +1115,12 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 		nibtest = 0;
 	}
 
-	digits = COB_FIELD_DIGITS (f);
+	if (scale >= 0) {
+		digits = COB_FIELD_DIGITS (f);
+	} else {
+		/* 99P -> 3 digits, scale -1 */
+		digits = COB_FIELD_DIGITS (f) + scale;
+	}
 	if (digits % 2 == nibtest) {
 		byteval = *p++ & 0x0F;
 		if (byteval == 0) {
@@ -1195,16 +1206,17 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 
 /* get the numeric value from the given decimal and store it in the
    specified field (or, depending on opt, set overflow exception and return
-   with the field unchanged) */
+   with the field unchanged);
+   note: the scale is ignored so has to be aligned up-front */
 static int
 cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 {
 	char	buff[COB_MAX_BINARY + 1];
-	register unsigned char	*p, *q;
+	register unsigned char	*p;
 	unsigned char	*data;
 	const int		sign = mpz_sgn (d->value);
-	size_t		size, diff, i;
-	int 		digits;
+	unsigned int	size, diff;	/* packed fields are 38 digits max */
+	unsigned short		digits;
 
 	/* check for value zero (allows early exit) and handle sign */
 	if (sign == 0) {
@@ -1214,51 +1226,85 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 	if (sign == -1) {
 		mpz_abs (d->value, d->value);
 	}
-	/* Build string, note: we can't check the decimal size with
-	   mpz_sizeinbase, as its result is "either exact or one too big" */
-	digits = COB_FIELD_DIGITS (f);
+
+	{
+		const short	scale = COB_FIELD_SCALE (f);
+		if (scale >= 0) {
+			digits = COB_FIELD_DIGITS (f);
+		} else {
+			/* 99P -> 3 digits, scale -1 --> real digits are less */
+			digits = COB_FIELD_DIGITS (f) + scale;
+		}
+	}
+
+	/* Build string, note: we can't check the decimal size with mpz_sizeinbase,
+	   as its result is "either exact or one too big" (for base != 2);
+	   using gmp_snprintf to get both the string and the length was also
+	   tested - and found to be much slower than the following code */
 
 	/* get divisor that would overflow */
 	cob_pow_10 (cob_mexp, digits);
 	/* check if it is >= what we have */
 	if (mpz_cmp (d->value, cob_mexp) >= 0) {
 		/* Overflow */
-		cob_set_exception (COB_EC_SIZE_OVERFLOW);
-
-		/* If the statement has ON SIZE ERROR or NOT ON SIZE ERROR,
-		   then throw an exception */
-		if (opt & COB_STORE_KEEP_ON_OVERFLOW) {
-			return cobglobptr->cob_exception_code;
+		if ((opt & COB_STORE_NO_SIZE_ERROR) == 0) {
+			cob_set_exception (COB_EC_SIZE_OVERFLOW);
+			/* If the statement has ON SIZE ERROR, then throw
+			   an exception, leaving the target unchanged */
+			if (opt & COB_STORE_KEEP_ON_OVERFLOW) {
+				return cobglobptr->cob_exception_code;
+			}
 		}
 		/* Other size, truncate digits, using the remainder */
 		mpz_tdiv_r (cob_mexp, d->value, cob_mexp);
+		/* integer setting, if possible */
+		if (mpz_fits_sint_p (cob_mexp)) {
+			const signed int val = mpz_get_si (cob_mexp) * sign;
+			cob_set_packed_int (f, val);
+			return 0;
+		}
+		/* get truncated digits as string */
 		(void) mpz_get_str (buff, 10, cob_mexp);
-		size = digits;
-		diff = 0;
+		/* note: truncation may lead to 100012 be changed to 00012
+		         in which case mpz_get_str provides us with 12 */
 	} else {
-		/* No overflow, so get string data and fill with zero */
-		(void) mpz_get_str (buff, 10, d->value);
-		size = strlen (buff);
-		diff = (size_t)digits - size;
-	}
-	q = (unsigned char *)buff;
+		/* integer setting, if possible */
+		if (mpz_fits_sint_p (d->value)) {
+			const signed int val = mpz_get_si (d->value) * sign;
+			cob_set_packed_int (f, val);
+			return 0;
+		}
 
-	/* Store number */
+		/* No overflow, so get string data as-is */
+		(void) mpz_get_str (buff, 10, d->value);
+	}
+
+	/* zero-out memory, necessary as we skip leading zeroes */
 	data = f->data;
 	memset (data, 0, f->size);
+
+	/* calculate starting half-byte */
+	size = (unsigned int)strlen (buff);
+	diff = (unsigned int) digits - size;
+
 	if (COB_FIELD_NO_SIGN_NIBBLE (f)) {
 		p = data + ((digits - 1) / 2) - ((size - 1) / 2);
-		diff = (int)(size % 2);
+		diff = (size % 2);
 	} else {
 		p = data + (digits / 2) - (size / 2);
-		diff = 1 - (int)(size % 2);
+		diff = 1 - (size % 2);
 	}
-	for (i = diff; i < size + diff; i++) {
-		const unsigned int	x = (*q++ - '0');
-		if (i % 2 == 0) {
-			*p = (unsigned char) x << 4;
-		} else {
-			*p++ |= x;
+	size += diff;
+	/* set data starting from first half-byte with data until end */
+	{
+		register unsigned char *q = (unsigned char *)buff;
+		register unsigned int	i = diff;
+		while (i < size) {
+			if ((i++ & 1) == 0) {	/* -> i % 2 == 0 */
+				*p = (unsigned char) (*q++ << 4);	/* -> dropping the higher bits = no use in COB_D2I */
+			} else {
+				*p++ += COB_D2I (*q++);
+			}
 		}
 	}
 
@@ -1266,29 +1312,34 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 		return 0;
 	}
 
-	p = f->data + f->size - 1;
+	/* add half-byte for sign,
+	   note: we can directly use |= as it was zeroed out above */
+	p = data + f->size - 1;
 	if (!COB_FIELD_HAVE_SIGN (f)) {
-		*p = (*p & 0xF0U) | 0x0FU;
+		*p |= 0x0FU;
 	} else if (sign == -1) {
-		*p = (*p & 0xF0U) | 0x0DU;
+		*p |= 0x0DU;
 	} else {
-		*p = (*p & 0xF0U) | 0x0CU;
+		*p |= 0x0CU;
 	}
 
 	return 0;
 }
 
+/* set the specified field 'f' to the given integer 'val';
+   note: the scale is ignored so has to be aligned up-front */
 void
 cob_set_packed_int (cob_field *f, const int val)
 {
-	unsigned char	*p;
+	register unsigned char	*p;
+	register cob_u32_t	n;
 	int		sign;
-	cob_u32_t	n;
 
 	if (val == 0) {
 		cob_set_packed_zero (f);
 		return;
 	}
+
 	if (val < 0) {
 		n = (cob_u32_t)-val;
 		sign = -1;
@@ -1296,7 +1347,11 @@ cob_set_packed_int (cob_field *f, const int val)
 		n = (cob_u32_t)val;
 		sign = 1;
 	}
+
+	/* zero out storage; necessary as we stop below when reaching leading zero */
 	memset (f->data, 0, f->size);
+
+	/* set last byte (half-byte digit, half-byte sign */
 	p = f->data + f->size - 1;
 	if (!COB_FIELD_NO_SIGN_NIBBLE (f)) {
 		*p = (n % 10) << 4;
@@ -1310,18 +1365,34 @@ cob_set_packed_int (cob_field *f, const int val)
 		n /= 10;
 		p--;
 	}
+
+	/* set packed digits from end to front */
 	for (; n && p >= f->data; n /= 100, p--) {
 		*p = packed_bytes[n % 100];
 	}
-	if (COB_FIELD_NO_SIGN_NIBBLE (f)) {
-		if ((COB_FIELD_DIGITS(f) % 2) == 1) {
+
+#if 0	/* clean first half-byte;
+		   would only be necessay if not zeroe'd out above */
+	{
+		const short	scale = COB_FIELD_SCALE (f);
+		short	digits;
+		if (scale >= 0) {
+			digits = COB_FIELD_DIGITS (f);
+		} else {
+			/* 99P -> 3 digits, scale -1 --> real digits are less */
+			digits = COB_FIELD_DIGITS (f) + scale;
+		}
+		if (COB_FIELD_NO_SIGN_NIBBLE (f)) {
+			if ((digits % 2) == 1) {
+				*(f->data) &= 0x0FU;
+			}
+			return;
+		}
+		if ((digits % 2) == 0) {
 			*(f->data) &= 0x0FU;
 		}
-		return;
 	}
-	if ((COB_FIELD_DIGITS(f) % 2) == 0) {
-		*(f->data) &= 0x0FU;
-	}
+#endif
 }
 
 /* DISPLAY */
@@ -1444,13 +1515,15 @@ cob_decimal_get_display (cob_decimal *d, cob_field *f, const int opt)
 		const size_t diff = (size_t)fsize - size;
 		if (diff < 0) {
 			/* Overflow */
-			cob_set_exception (COB_EC_SIZE_OVERFLOW);
+			if ((opt & COB_STORE_NO_SIZE_ERROR) == 0) {
+				cob_set_exception (COB_EC_SIZE_OVERFLOW);
 
-			/* If the statement has ON SIZE ERROR or NOT ON SIZE ERROR,
-			   then throw an exception */
-			if (opt & COB_STORE_KEEP_ON_OVERFLOW) {
-				cob_gmp_free (p);
-				return cobglobptr->cob_exception_code;
+				/* If the statement has ON SIZE ERROR, then throw
+				   an exception, leaving the target unchanged */
+				if (opt & COB_STORE_KEEP_ON_OVERFLOW) {
+					cob_gmp_free (p);
+					return cobglobptr->cob_exception_code;
+				}
 			}
 
 			/* Other size, truncate digits */
@@ -1471,21 +1544,27 @@ cob_decimal_get_display (cob_decimal *d, cob_field *f, const int opt)
 	/* check if it is >= what we have */
 	if (mpz_cmp (d->value, cob_mexp) >= 0) {
 		/* Overflow */
-		cob_set_exception (COB_EC_SIZE_OVERFLOW);
+		if ((opt & COB_STORE_NO_SIZE_ERROR) == 0) {
+			cob_set_exception (COB_EC_SIZE_OVERFLOW);
 
-		/* If the statement has ON SIZE ERROR or NOT ON SIZE ERROR,
-		   then throw an exception */
-		if (opt & COB_STORE_KEEP_ON_OVERFLOW) {
-			return cobglobptr->cob_exception_code;
+			/* If the statement has ON SIZE ERROR, then throw
+			   an exception, leaving the target unchanged */
+			if (opt & COB_STORE_KEEP_ON_OVERFLOW) {
+				return cobglobptr->cob_exception_code;
+			}
 		}
 		/* Other size, truncate digits, using the remainder */
 		mpz_tdiv_r (cob_mexp, d->value, cob_mexp);
 		(void) mpz_get_str (buff, 10, cob_mexp);
-		memcpy (data, buff, fsize);
+		/* note: truncation may lead to 100012 be changed to 00012
+		         in which case mpz_get_str provides us with 12 */
 	} else {
 		/* No overflow, so get string data and fill with zero */
-		size_t		size, diff;
 		(void) mpz_get_str (buff, 10, d->value);
+	}
+	/* copy and fill left with zero */
+	{
+		size_t		size, diff;
 		size = strlen (buff);
 		diff = (size_t)fsize - size;
 		memset (data, '0', diff);
@@ -1583,10 +1662,9 @@ cob_decimal_set_binary (cob_decimal *d, cob_field *f)
 static int
 cob_decimal_get_binary (cob_decimal *d, cob_field *f, const int opt)
 {
+	const int	field_sign = COB_FIELD_HAVE_SIGN (f);
+	const size_t	bitnum = (f->size * 8) - field_sign;
 	size_t			overflow;
-	size_t			field_sign;
-	size_t			bitnum;
-	size_t			digits;
 
 #if	!defined(COB_EXPERIMENTAL) && !defined(COB_LI_IS_LL)
 	cob_s64_t		llval;
@@ -1599,16 +1677,10 @@ cob_decimal_get_binary (cob_decimal *d, cob_field *f, const int opt)
 		return 0;
 	}
 	overflow = 0;
-	digits = COB_FIELD_DIGITS(f);
-	if (COB_FIELD_HAVE_SIGN (f)) {
-		field_sign = 1;
-	} else {
-		field_sign = 0;
-		if (mpz_sgn (d->value) == -1) {
-			mpz_abs (d->value, d->value);
-		}
+	if (!field_sign
+	 && mpz_sgn (d->value) == -1) {
+		mpz_abs (d->value, d->value);
 	}
-	bitnum = (f->size * 8) - field_sign;
 	if (unlikely (mpz_sizeinbase (d->value, 2) > bitnum)) {
 		if (opt & COB_STORE_KEEP_ON_OVERFLOW) {
 			goto overflow;
@@ -1616,6 +1688,14 @@ cob_decimal_get_binary (cob_decimal *d, cob_field *f, const int opt)
 		overflow = 1;
 		/* Check if truncation to PIC digits is needed */
 		if (opt & COB_STORE_TRUNC_ON_OVERFLOW) {
+			const short	scale = COB_FIELD_SCALE (f);
+			unsigned short	digits;
+			if (scale >= 0) {
+				digits = COB_FIELD_DIGITS (f);
+			} else {
+				/* 99P -> 3 digits, scale -1 --> real digits are less */
+				digits = COB_FIELD_DIGITS (f) + scale;
+			}
 			mpz_tdiv_r (d->value, d->value, cob_mpze10[digits]);
 		} else {
 #if	0	/* RXWRXW - Fdiv sign */
@@ -1624,6 +1704,14 @@ cob_decimal_get_binary (cob_decimal *d, cob_field *f, const int opt)
 			mpz_fdiv_r_2exp (d->value, d->value, (f->size * 8));
 		}
 	} else if (opt && COB_FIELD_BINARY_TRUNC (f)) {
+		const short	scale = COB_FIELD_SCALE (f);
+		unsigned short	digits;
+		if (scale >= 0) {
+			digits = COB_FIELD_DIGITS (f);
+		} else {
+			/* 99P -> 3 digits, scale -1 --> real digits are less */
+			digits = COB_FIELD_DIGITS (f) + scale;
+		}
 		if (mpz_cmpabs (d->value, cob_mpze10[digits]) >= 0) {
 			/* Overflow */
 			if (opt & COB_STORE_KEEP_ON_OVERFLOW) {
@@ -2230,12 +2318,297 @@ cob_div_remainder (cob_field *fld_remainder, const int opt)
 	(void)cob_decimal_get_field (&cob_d_remainder, fld_remainder, opt);
 }
 
+/* internal MOVE handling by converting 'src' to cob_decimal,
+   then converting that back to 'dst'
+   with optional truncation as specified in 'opt';
+   while this is quite expensive it converts between every numeric data type
+   with every attribute possible */
 void
 cob_decimal_setget_fld (cob_field *src, cob_field *dst, const int opt)
 {
 	cob_decimal_set_field (&cob_d1, src);
-	(void)cob_decimal_get_field (&cob_d1, dst, opt);
+	(void)cob_decimal_get_field (&cob_d1, dst, opt | COB_STORE_NO_SIZE_ERROR);
 }
+
+/* shift the complete filled buffer one nibble left
+   with 'ptr_buff' pointing to the start of a fixed-size 48byte buffer to
+   accomodate 3 64bit integers for use of register shifting
+   note: the longest decimal field is 20 bytes long but we need the
+         extra 4 bytes to allow the use of register to do the shifting */
+static void
+cob_shift_left_nibble (unsigned char *ptr_buff, unsigned char *ptr_start_data_byte)
+{
+	/* this logic is copied from the insert_packed_aligned function so that
+	   any changes to that function should probaby require that this function
+	   be examined for */
+
+# ifndef  WORDS_BIGENDIAN
+	cob_u64_t chunk;
+# endif
+	register cob_u64_t *ptr_long;
+	unsigned char carry_nibble, move_nibble;
+	register int shift_cntr;
+	int len1;
+
+	/* calculate the length of data to be shifted */
+	len1 = 48 - (ptr_start_data_byte - ptr_buff);
+
+	shift_cntr = len1 + 1; /* add one to ensure the carry nibble is moved */
+	move_nibble = 0xFF;
+
+	/* point at the last byte in buffer as we will shift from right to left !! */
+
+	ptr_long = (cob_u64_t *)(ptr_buff + 48 - 8);
+	do {
+# ifdef WORDS_BIGENDIAN
+		/* shift and include old nibble */
+		carry_nibble = (unsigned char)(*ptr_long >> 60);
+		*ptr_long = (*ptr_long << 4);
+		if (shift_cntr < len1) {
+			*ptr_long |= move_nibble;
+		}
+# else
+		/* load data to chunk, swap as necessary */
+		chunk = COB_BSWAP_64 (*ptr_long);
+		/* shift and include old nibble */
+		carry_nibble = (unsigned char)(chunk >> 60);
+		chunk = (chunk << 4);
+		if (shift_cntr < len1) {
+			chunk |= move_nibble;
+		}
+		/* swap as necessary, place in memory */
+		*ptr_long = COB_BSWAP_64 (chunk);
+# endif
+		/* prepare for next round */
+		move_nibble = carry_nibble;
+		shift_cntr -= 8;
+		ptr_long--;
+	} while (shift_cntr > 0);
+}
+
+
+/* shift the complete filled buffer one nibble right
+   with 'ptr_buff' pointing to the start of a fixed-size 48byte buffer to
+   accomodate 3 64bit integers for use of register shifting
+   for more details see cob_shift_left_nibble;
+   note: the difference in this routine is that it will shift from left to right
+         so we need to start a the byte BEFORE the start data byte */
+static void
+cob_shift_right_nibble (unsigned char *ptr_buff, unsigned char *ptr_start_data_byte)
+{
+	/* this logic is copied from the insert_packed_aligned function so that
+	   any changes to that function should probaby require that this function
+	   be examined for */
+
+# ifndef WORDS_BIGENDIAN
+	cob_u64_t chunk;
+# endif
+	register cob_u64_t *ptr_long;
+
+	/* note that the carry & move nibbles have to be 64 bit because we need
+	    to use binary OR the high order bits when shifting to the right !! */
+	cob_u64_t carry_nibble, move_nibble;
+	register int shift_cntr;
+	int len1;
+
+	/* calculate the length of data to be shifted */
+	len1 = 48 - (ptr_start_data_byte - ptr_buff);
+
+	shift_cntr = len1;
+	move_nibble = 0xFF;
+
+	/* note that since we are shifting from left to right we have to start in the
+	   first 64 bit area containing the high order 64 bit integer which contains
+	   the starting position of the data to be shifted */
+	ptr_long = (cob_u64_t *)(ptr_buff + 48);
+	do {
+		ptr_long--;
+	} while (ptr_long > (cob_u64_t *)ptr_start_data_byte);	/* we want to be there - or before! */
+
+	do {
+# ifdef WORDS_BIGENDIAN
+		/* shift and include old nibble */
+		carry_nibble = *ptr_long << 60;
+		*ptr_long = (*ptr_long >> 4);
+		if (shift_cntr < len1) {
+			*ptr_long |= move_nibble;
+		}
+# else
+		/* load data to chunk, swap as necessary */
+		chunk = COB_BSWAP_64 (*ptr_long);
+		/* shift and include old nibble */
+		carry_nibble = chunk << 60;
+		chunk = (chunk >> 4);
+		if (shift_cntr < len1) {
+			chunk |= move_nibble;
+		}
+		/* swap as necessary, place in memory */
+		*ptr_long = COB_BSWAP_64 (chunk);
+# endif
+		/* prepare for next round */
+		move_nibble = carry_nibble;
+		shift_cntr -= 8;
+		ptr_long++;
+	} while (shift_cntr > 0);
+}
+
+
+/* optimized MOVE between any BCD fields, no matter their attributes;
+   TODO: add handling of negative scales to cob_move_bcd */
+void
+cob_move_bcd (cob_field *f1, cob_field *f2)
+{
+	/************************************************************/
+	/*                                                          */
+	/*  Note that this routine will first check to see if data  */
+	/*  shifting is required to meet the format of the          */
+	/*  receiving field. If not then the data will be moved     */
+	/*  directly from the input field to the receiving field    */
+	/*  without the use of an intermediate buffer. If shifting  */
+	/*  is required in either direction, then a 48 byte buffer  */
+	/*  will be allocated to do the shifting. Note that 48      */
+	/*  bytes is more than needed but the addition function     */
+	/*  requires 48 bytes to do its shifting so this way we     */
+	/*  can use the same functions.                             */
+	/*                                                          */
+	/*  When moving data to the left we need to strip the sign  */
+	/*  when moving as it would be in the middle of the         */
+	/*  receiving field.                                        */
+	/*                                                          */
+	/************************************************************/
+
+	unsigned char	*fld1 = COB_FIELD_DATA (f1);
+	unsigned char	*fld2 = COB_FIELD_DATA (f2);
+	const size_t	fld1_size =  f1->size;
+	const size_t	fld2_size =  f2->size;
+	const int 	f2_has_no_sign_nibble = COB_FIELD_NO_SIGN_NIBBLE (f2);
+
+	signed short		fld1_scale, fld2_scale, diff, offset;
+	unsigned char	fld1_sign;
+	int		move_left;
+
+	if (COB_FIELD_NO_SIGN_NIBBLE (f1)) {
+		fld1_sign = 0x00;
+	} else {
+		fld1_sign = *(fld1 + fld1_size - 1) & 0X0F;
+	}
+
+	/************************************************************/
+	/*  Note that the scale is increased by 1 because the sign nibble will */
+	/*  be converted to a zero during the process of moving the data. The sign */
+	/*  will be added at the end of the process.                */
+	/************************************************************/
+
+	fld1_scale = !fld1_sign
+		? COB_FIELD_SCALE (f1) :
+		COB_FIELD_SCALE (f1) + 1;
+
+	fld2_scale = f2_has_no_sign_nibble
+		? COB_FIELD_SCALE (f2) :
+		COB_FIELD_SCALE (f2) + 1;
+
+	if (fld1_scale > fld2_scale) {
+		move_left = 0;
+		diff = fld1_scale - fld2_scale;
+	} else {
+		move_left = 1;
+		diff = fld2_scale - fld1_scale;
+	}
+
+
+	/************************************************************/
+	/*  Note that when the scale difference is a multiple of 2  */
+	/*  then there is NO SHIFTING required. So we can move the  */
+	/*  sending field directly into the receiving field.        */
+	/************************************************************/
+
+	if (!(diff & 1)) {	 /* -> diff % 2 == 0 */
+		offset = diff >> 1;
+		memset (fld2, 0, fld2_size);
+		if (move_left) {
+			const size_t llen = fld2_size - offset;
+			if (fld1_size <= llen) {
+				memcpy (fld2 + llen - fld1_size, fld1, fld1_size);
+				if (fld1_sign) {
+					*(fld2 + fld2_size - offset - 1) &= 0xF0;
+				}
+			} else {
+				memcpy (fld2, fld1 + fld1_size - llen, llen);
+				if (fld1_sign) {
+					*(fld2 + llen - 1) &= 0xF0;
+				}
+			}
+		} else {
+			const size_t llen = fld1_size - offset;
+			if (llen <= fld2_size) {
+				memcpy (fld2 + fld2_size - llen, fld1, llen);
+			} else {
+				memcpy (fld2, fld1 + fld1_size - offset - fld2_size, fld2_size);
+			}
+		}
+
+	} else {
+
+		/************************************************************/
+		/*  Note that when the scale difference is NOT a multiple   */
+		/*  of 2 then SHIFTING of 1 nibble is required. To          */
+		/*  accomplish this we will move the data to a 48 byte      */
+		/*  buffer to do the actual shifting of the data before     */
+		/*  moving to the receiving field                           */
+		/************************************************************/
+
+		unsigned char buff[48] = { 0 };
+		offset = diff >> 1;
+
+		if (move_left) {
+			const size_t llen = 48 - offset;
+			unsigned char *pos = buff + llen - fld1_size;
+			memcpy (pos, fld1, fld1_size);
+			if (fld1_sign) {
+				*(buff + llen - 1) &= 0xF0;
+			}
+			cob_shift_left_nibble (buff, pos);
+		} else {
+			const size_t llen = fld1_size - offset;
+			unsigned char *pos = buff + 48 - llen;
+			memcpy (pos, fld1, llen);
+			if (fld1_sign) {
+				*(buff + llen - 1) &= 0xF0;
+			}
+			cob_shift_right_nibble (buff, pos);
+		}
+
+		memcpy (fld2, buff + 48 - fld2_size, fld2_size);
+	}
+
+	if (f2_has_no_sign_nibble) {
+		/************************************************************/
+		/*  The following will clear the "pad" nibble if present    */
+		/************************************************************/
+		if (COB_FIELD_DIGITS (f2) & 1 /* -> digits % 2 == 1 */) {
+			*fld2 &= 0x0F;
+		}
+	} else {
+		unsigned char *pos = fld2 + fld2_size - 1;
+		if (COB_FIELD_HAVE_SIGN (f2)) {
+			if (!fld1_sign) {
+				*pos &= 0xF0;
+				*pos |= 0x0C;
+			} else {
+				*pos &= 0xF0;
+				*pos |= fld1_sign;
+			}
+		} else {
+			*pos &= 0xF0;
+			*pos |= 0x0F;
+		}
+		if (!(COB_FIELD_DIGITS (f2) & 1) /* -> digits % 2 == 0 */) {
+			*fld2 &= 0x0F;
+		}
+	}
+
+}
+
 
 #if	0	/* RXWRXW - Buggy */
 
@@ -2829,7 +3202,7 @@ cob_bcd_cmp (cob_field *f1, cob_field *f2)
 		 && no_sign_nibble_f1 == no_sign_nibble_f2
 		 && scale1 == scale2) {
 			/* Note: we explicit do not drop the higher bit for even digits (COMP-3) /
-			   odd digits (COMP-6) - as at least MF compares those, too */
+			   odd digits (COMP-6) - as at least MF compares those, too (but sometimes not?) */
 			const unsigned char	*data1 = COB_FIELD_DATA (f1);
 			const unsigned char	*data2 = COB_FIELD_DATA (f2);
 			if (no_sign_nibble_f1) {
@@ -3030,37 +3403,37 @@ cob_cmp_packed (cob_field *f, const cob_s64_t val)
 
 #ifdef	COB_EBCDIC_MACHINE
 static unsigned int
-cob_get_long_ascii_sign (const unsigned char *p, cob_s64_t *val)
+cob_get_long_ascii_sign (const unsigned char *p, int *val)
 {
 	switch (*p) {
 	case 'p':
 		return 1;
 	case 'q':
-		*val += 1;
+		*val = 1;
 		return 1;
 	case 'r':
-		*val += 2;
+		*val = 2;
 		return 1;
 	case 's':
-		*val += 3;
+		*val = 3;
 		return 1;
 	case 't':
-		*val += 4;
+		*val = 4;
 		return 1;
 	case 'u':
-		*val += 5;
+		*val = 5;
 		return 1;
 	case 'v':
-		*val += 6;
+		*val = 6;
 		return 1;
 	case 'w':
-		*val += 7;
+		*val = 7;
 		return 1;
 	case 'x':
-		*val += 8;
+		*val = 8;
 		return 1;
 	case 'y':
-		*val += 9;
+		*val = 9;
 		return 1;
 	}
 	return 0;
@@ -3068,66 +3441,66 @@ cob_get_long_ascii_sign (const unsigned char *p, cob_s64_t *val)
 #endif
 
 static unsigned int
-cob_get_long_ebcdic_sign (const unsigned char *p, cob_s64_t *val)
+cob_get_long_ebcdic_sign (const unsigned char *p, int *val)
 {
 	switch (*p) {
 	case '{':
 		return 0;
 	case 'A':
-		*val += 1;
+		*val = 1;
 		return 0;
 	case 'B':
-		*val += 2;
+		*val = 2;
 		return 0;
 	case 'C':
-		*val += 3;
+		*val = 3;
 		return 0;
 	case 'D':
-		*val += 4;
+		*val = 4;
 		return 0;
 	case 'E':
-		*val += 5;
+		*val = 5;
 		return 0;
 	case 'F':
-		*val += 6;
+		*val = 6;
 		return 0;
 	case 'G':
-		*val += 7;
+		*val = 7;
 		return 0;
 	case 'H':
-		*val += 8;
+		*val = 8;
 		return 0;
 	case 'I':
-		*val += 9;
+		*val = 9;
 		return 0;
 	case '}':
 		return 1;
 	case 'J':
-		*val += 1;
+		*val = 1;
 		return 1;
 	case 'K':
-		*val += 2;
+		*val = 2;
 		return 1;
 	case 'L':
-		*val += 3;
+		*val = 3;
 		return 1;
 	case 'M':
-		*val += 4;
+		*val = 4;
 		return 1;
 	case 'N':
-		*val += 5;
+		*val = 5;
 		return 1;
 	case 'O':
-		*val += 6;
+		*val = 6;
 		return 1;
 	case 'P':
-		*val += 7;
+		*val = 7;
 		return 1;
 	case 'Q':
-		*val += 8;
+		*val = 8;
 		return 1;
 	case 'R':
-		*val += 9;
+		*val = 9;
 		return 1;
 	}
 	return 0;
@@ -3137,34 +3510,46 @@ int
 cob_cmp_numdisp (const unsigned char *data, const size_t size,
 		 const cob_s64_t n, const cob_u32_t has_sign)
 {
-	const unsigned char	*p;
-	cob_s64_t		val = 0;
-	size_t			inc;
+	register const unsigned char	*p = data;
+	const unsigned char	*p_end;
+	register cob_s64_t		val = 0;
 
-	p = data;
 	if (!has_sign) {
 		if (unlikely (n < 0)) {
 			return 1;
 		}
-		for (inc = 0; inc < size; inc++, p++) {
-			val = (val * 10) + COB_D2I (*p);
+		p_end = p + size;
+		while (p != p_end) {
+			val = val * 10 + COB_D2I (*p++);
 		}
 		return (val < n) ? -1 : (val > n);
 	}
-	for (inc = 0; inc < size - 1; inc++, p++) {
-		val = (val * 10) + COB_D2I (*p);
+	
+	/* safe-guard, should never happen */
+	if (!size) {
+		return 0;
+	}
+	p_end = p + size - 1;
+	while (p != p_end) {
+		val = val * 10 + COB_D2I (*p++);
 	}
 	val *= 10;
 	if (*p >= (unsigned char)'0' && *p <= (unsigned char)'9') {
 		val += COB_D2I (*p);
 	} else {
 		if (unlikely (COB_MODULE_PTR->ebcdic_sign)) {
-			if (cob_get_long_ebcdic_sign (p, &val)) {
+			int sign_val = 0;
+			int sign = cob_get_long_ebcdic_sign (p, &sign_val);
+			val += sign_val;
+			if (sign) {
 				val = -val;
 			}
 		} else {
 #ifdef	COB_EBCDIC_MACHINE
-			if (cob_get_long_ascii_sign (p, &val)) {
+			int sign_val = 0;
+			int sign = cob_get_long_ascii_sign (p, &sign_val);
+			val += sign_val;
+			if (sign) {
 				val = -val;
 			}
 #else

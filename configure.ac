@@ -1305,7 +1305,7 @@ if test "x$CURSES_LIBS" = x; then
   fi
 fi
 if test "$USE_CURSES" = "pdcurses" -o "x$ac_cv_lib_pdcurses_initscr" = xyes; then
-  AC_CHECK_HEADERS([pdcurses.g curses.h],
+  AC_CHECK_HEADERS([pdcurses.h curses.h],
     [USE_CURSES="pdcurses"
      break],
     [AS_IF([test "$USE_CURSES" != check],
@@ -2316,6 +2316,7 @@ AC_SUBST([COBC_CPPFLAGS])
 AC_SUBST([PROGRAMS_LIBS])
 AC_SUBST([LIBCOB_LIBS])
 AC_SUBST([LIBCOB_CPPFLAGS])
+AC_SUBST([COB_ENABLE_DEBUG], [$enable_debug]) # needed for tests/atlocal
 
 dnl was used in bin/Makefile.am - seems not to be needed
 dnl AC_SUBST([COB_EXPORT_DYN])

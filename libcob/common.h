@@ -956,6 +956,8 @@ enum cob_open_mode {
 #define COB_STORE_TOWARD_LESSER		(1 << 10)
 #define COB_STORE_TRUNCATION		(1 << 11)
 
+#define COB_STORE_NO_SIZE_ERROR		(1 << 15)
+
 #define COB_STORE_MASK					\
 	(COB_STORE_ROUND | COB_STORE_KEEP_ON_OVERFLOW |	\
 	 COB_STORE_TRUNC_ON_OVERFLOW)
@@ -2001,6 +2003,8 @@ COB_EXPIMP int	cob_cmp_numdisp		(const unsigned char *,
 COB_EXPIMP int	cob_cmp_float		(cob_field *, cob_field *);
 COB_EXPIMP void	cob_set_packed_zero	(cob_field *);
 COB_EXPIMP void	cob_set_packed_int	(cob_field *, const int);
+
+COB_EXPIMP void	cob_move_bcd		(cob_field *, cob_field *);
 
 COB_EXPIMP void	cob_decimal_alloc	(const cob_u32_t, ...);
 COB_EXPIMP void	cob_decimal_push	(const cob_u32_t, ...);

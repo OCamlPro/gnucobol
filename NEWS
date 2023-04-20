@@ -2,7 +2,8 @@ NEWS - user visible changes				-*- outline -*-
 
  GnuCOBOL 3.2rc1  (20230118)
  GnuCOBOL 3.2rc2  (20230210)
-          3.2 final (depending on feedback) around 2023/02/25
+ GnuCOBOL 3.2rc3  ASAP
+          3.2 final (depending on feedback) around 2023/04/25
 
  planned for final:
    * extending testsuite and documentation
@@ -13,7 +14,8 @@ NEWS - user visible changes				-*- outline -*-
 * New GnuCOBOL features
 
 ** Support for LINE SEQUENTIAL file type as per COBOL 2022
-  * OPEN INPUT-OUTPTUT and REWRITE are allowed
+  * OPEN INPUT-OUTPUT and REWRITE are allowed (note that INPUT-OUTPUT
+    leads to slower IO for LINE SEQUENTIAL files)
   * validation of data on (RE-)WRITE and READ, active by default,
     can be adjusted with the new runtime option COB_LS_VALIDATE
 
@@ -346,6 +348,10 @@ NEWS - user visible changes				-*- outline -*-
 ** several bugs in COPY REPLACING / REPLACING were fixed along with adding
    support for exensions related to REPLACING LEADING / TRAILING
 
+** for PICTURE P several fixes were made, so results may vary compared with
+   previous versions; sources with *leading* P never worked correct before,
+   and *must* be recompiled after upgrading
+
 * Listing changes
 
 ** the timestamp in the header was changed from ANSI date format like
@@ -359,6 +365,9 @@ NEWS - user visible changes				-*- outline -*-
 
 ** in 64-bit environments, the maximum field size was increased from
    268435456 bytes (999999998 bytes for OCCURS UNBOUNDED) to 2 GB
+
+** quotes around filenames and parts that are resolved by environment variables
+   are internally ignored
 
 ** in case of any runtime features being used that are not available an error
    is generated during compile (may be reduced to a warning by -Wunsupported
@@ -442,6 +451,11 @@ NEWS - user visible changes				-*- outline -*-
    or discussion board to share your comments on this topic, keeping in mind
    that this has to take both mathematical and "C compiler portability" into
    account)
+
+** variables containing PICTURE symbol P may lead to wrong results in rare
+   cases (especially screenio) - please send a bug report if you catch a case;
+   since GC 3.2 rc3 all arithmetic operations and MOVE are believed to be
+   correct
 
 ** features that are known to not be portable to every environment yet
    (especially when using a different compiler than GCC)

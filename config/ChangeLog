@@ -1,4 +1,9 @@
 
+2023-03-22  Simon Sobisch <simonsobisch@gnu.org>
+
+	* rm-strict.conf: enable line-col-zero-default per RM-COBOL Language
+	  Reference for POSITION with implied zero
+
 2023-02-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* rm-strict.conf: enable indirect-redefines as this was added
