@@ -1,4 +1,9 @@
 
+2023-06-13  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* codegen.c (codegen): correctly set and unset `has_global_file`
+	  when entering/leaving nested sub-programs
+
 2023-06-09  Simon Sobisch <simonsobisch@gnu.org>
 
 	* error.c (print_error, diagnostics_show_caret): fix for C89 compat
