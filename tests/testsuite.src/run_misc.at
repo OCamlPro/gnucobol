@@ -1152,7 +1152,7 @@ AT_CHECK([$COBCRUN_DIRECT ./unchecked_prog], [0],
 [test over
 ], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
-[libcob: prog.cob:20: error: 'X-NUM' (Type: NUMERIC DISPLAY) not numeric: '0\000\001123'
+[libcob: prog.cob:16: error: 'X-NUM' (Type: NUMERIC DISPLAY) not numeric: '0\000\001123'
 ])
 
 AT_CHECK([$COMPILE prog2.cob], [0], [], [])
@@ -1161,7 +1161,7 @@ AT_CHECK([$COBCRUN_DIRECT ./unchecked_prog2], [0],
 [test over
 ], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog2], [1], [],
-[libcob: prog2.cob:15: error: 'X-NUM' (Type: PACKED-DECIMAL) not numeric: '0x000a123f'
+[libcob: prog2.cob:13: error: 'X-NUM' (Type: PACKED-DECIMAL) not numeric: '0x000a123f'
 ])
 
 AT_CLEANUP
