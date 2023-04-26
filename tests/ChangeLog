@@ -1,8 +1,6 @@
 
-2023-03-07  Samuel Belondrade <samuel.belondrade@atos.net>
+2023-04-26  Samuel Belondrade <samuel.belondrade@atos.net>
 
-	* testsuite.src/run_reportwriter.at: add test if the variable exist
-	  for report section (bug: #863)
 	* testsuite.src/listing.at: add test for the copy replacing in
 	  listing mode (bug: #831)
 
@@ -760,7 +758,7 @@
 	* testsuite.src/*.at: Added check for cobc's exit code and stderr
 		where missing
 
-2014-14-04  Philipp Böhme <phi.boehme@googlemail.com>
+2014-14-04  Philipp Bï¿½hme <phi.boehme@googlemail.com>
 
 	* testsuite.src/run_extensions.at: Added tests for getopt.
 
