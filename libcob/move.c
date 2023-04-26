@@ -1180,7 +1180,7 @@ cob_move_edited_to_display (cob_field *f1, cob_field *f2)
 	}
 
 	/* Store */
-	store_common_region (f2, buff, (size_t)(p - buff), scale);
+	store_common_region (f2, buff, (size_t)(p - buff), scale, 0);
 
 	COB_PUT_SIGN (f2, sign);
 	cob_free (buff);
