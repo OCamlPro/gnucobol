@@ -34,8 +34,7 @@
 #endif
 #include <math.h>
 
-/* Force symbol exports, include decimal definitions */
-#define	COB_LIB_EXPIMP
+/* include decimal definitions, allowing their use in common.h later */
 #ifdef	HAVE_GMP_H
 #include <gmp.h>
 #elif defined HAVE_MPIR_H
@@ -43,7 +42,9 @@
 #else
 #error either HAVE_GMP_H or HAVE_MPIR_H needs to be defined
 #endif
-#include "common.h"
+
+/* include internal and external libcob definitions, forcing exports */
+#define	COB_LIB_EXPIMP
 #include "coblocal.h"
 
 /* Note we include the Cygwin version of windows.h here */

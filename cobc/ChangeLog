@@ -1,4 +1,11 @@
 
+2023-04-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c (output_so_load_version_check): new function to generate
+	  libcob version check in shared object constructor / DllMain, allowing
+	  better error messages if the generated COBOL functions cannot be loaded
+	  into memory because of newer ABI
+
 2023-04-18  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c (cb_build_move_field): emit call to cob_move_bcd for two
@@ -4035,7 +4042,7 @@
 
 2017-10-18  Ron Norman <rjn@inglenet.com>
 
-	* codegen.c (output_internal_function): Fixed problem with braces in
+	* codegen.c (output_internal_function): fixed problem with braces in
 	  variable dump code
 
 2017-10-17  Ron Norman <rjn@inglenet.com>

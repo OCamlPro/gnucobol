@@ -53,8 +53,7 @@
 #endif
 #endif
 
-/* Force symbol exports, include decimal definitions */
-#define	COB_LIB_EXPIMP
+/* include decimal definitions, allowing their use in common.h later */
 #ifdef	HAVE_GMP_H
 #include <gmp.h>
 #elif defined HAVE_MPIR_H
@@ -62,7 +61,9 @@
 #else
 #error either HAVE_GMP_H or HAVE_MPIR_H needs to be defined
 #endif
-#include "common.h"
+
+/* include internal and external libcob definitions, forcing exports */
+#define	COB_LIB_EXPIMP
 #include "coblocal.h"
 
 
@@ -1205,7 +1206,7 @@ cob_decimal_set_packed (cob_decimal *d, cob_field *f)
 }
 
 /* get the numeric value from the given decimal and store it in the
-   specified field (or, depending on opt, set overflow exception and return
+   specified BCD field (or, depending on opt, set overflow exception and return
    with the field unchanged);
    note: the scale is ignored so has to be aligned up-front */
 static int
@@ -1326,7 +1327,7 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 	return 0;
 }
 
-/* set the specified field 'f' to the given integer 'val';
+/* set the specified BCD field 'f' to the given integer 'val';
    note: the scale is ignored so has to be aligned up-front */
 void
 cob_set_packed_int (cob_field *f, const int val)
@@ -1356,11 +1357,11 @@ cob_set_packed_int (cob_field *f, const int val)
 	if (!COB_FIELD_NO_SIGN_NIBBLE (f)) {
 		*p = (n % 10) << 4;
 		if (!COB_FIELD_HAVE_SIGN (f)) {
-			*p |= 0x0FU;
+			*p |= 0x0F;
 		} else if (sign == -1) {
-			*p |= 0x0DU;
+			*p |= 0x0D;
 		} else {
-			*p |= 0x0CU;
+			*p |= 0x0C;
 		}
 		n /= 10;
 		p--;
@@ -2024,7 +2025,7 @@ cob_decimal_get_field (cob_decimal *d, cob_field *f, const int opt)
 		cob_decimal_do_round (d, f, opt);
 	}
 	if (!COB_FIELD_IS_FP (f)) {
-		/* Append or truncate decimal digits */
+		/* Append or truncate decimal digits - useless for floating point */
 		int n = COB_FIELD_SCALE (f) - d->scale;
 		if (n != 0) {
 			if (mpz_sgn (d->value) == 0) {

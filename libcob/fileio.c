@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -160,9 +160,8 @@ static	vb_rtd_t *vbisam_rtd = NULL;
 
 #endif
 
-/* Force symbol exports */
+/* include internal and external libcob definitions, forcing exports */
 #define	COB_LIB_EXPIMP
-#include "common.h"
 #include "coblocal.h"
 
 #ifdef	WITH_ANY_ISAM
@@ -9581,9 +9580,9 @@ cob_extfh_close (
 
 	COB_UNUSED (remfil);
 
-	fcd = find_fcd(f);
-	STCOMPX4(opt, fcd->opt);
-	STCOMPX2(OP_CLOSE, opcode);
+	fcd = find_fcd (f);
+	STCOMPX4 (opt, fcd->opt);
+	STCOMPX2 (OP_CLOSE, opcode);
 
 	/* Keep table of 'fcd' created */
 	(void)callfh (opcode, fcd);
@@ -9962,7 +9961,7 @@ EXTFH (unsigned char *opcode, FCD3 *fcd)
 	}
 #if !COB_64_BIT_POINTER
 	if (fcd->fcdVer == FCD2_VER) {
-		int		rtnsts;
+		int		rtnsts, opcd;
 		FCD2 *fcd2 = (FCD2 *) fcd;
 
 		fcd = fcd2_to_fcd3 (fcd2);
@@ -9975,7 +9974,13 @@ EXTFH (unsigned char *opcode, FCD3 *fcd)
 		/* Convert FCD3 back to FCD2 format */
 		fcd3_to_fcd2 (fcd, fcd2);
 
-		if (opcode[1] == OP_CLOSE) {
+		if (*opcode == 0xFA) {
+			opcd = 0xFA00 + opcode[1];
+		} else {
+			opcd = opcode[1];
+		}
+
+		if (opcd == OP_CLOSE) {
 			free_fcd2 (fcd2);
 		}
 
