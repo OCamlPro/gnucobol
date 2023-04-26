@@ -1,4 +1,12 @@
 
+2023-04-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: try to error on warnings during checks, cleanup of resulting
+	  unexpected test failures
+	* configure.ac: drop deprecated-non-prototype warning in clang
+	* configure.ac: add LIBCOB_LIBS while checking for libraries
+	* configure.ac: added check for HAVE_ATTRIBUTE_CONSTRUCTOR
+
 2023-04-05  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: pass --enable-debug to autoconf generated files as

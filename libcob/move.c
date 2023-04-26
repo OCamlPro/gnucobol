@@ -35,9 +35,8 @@
 #include <locale.h>
 #endif
 
-/* Force symbol exports */
+/* include internal and external libcob definitions, forcing exports */
 #define	COB_LIB_EXPIMP
-#include "common.h"
 #include "coblocal.h"
 
 static cob_global	*cobglobptr;
@@ -105,7 +104,7 @@ static const cob_s64_t	cob_exp10_ll[19] = {
 
 static void
 store_common_region (cob_field *f, const unsigned char *data,
-		     const size_t size, const int scale)
+		     const size_t size, const int scale, const int verified_data)
 {
 	const int	fsize = (int) COB_FIELD_SIZE (f);
 	unsigned char *fdata = COB_FIELD_DATA (f);
@@ -125,22 +124,29 @@ store_common_region (cob_field *f, const unsigned char *data,
 	   writing over the data two times */
 	memset (fdata, '0', fsize);
 
-	if (gcf > lcf) {
-		register unsigned char		*dst = fdata + hf2 - gcf;
-		register const unsigned char	*end = dst + gcf - lcf;
-		register const unsigned char	*src = data + hf1 - gcf;
+	/* note: skipping zeroes in the source data was tested but
+	   has shown to be slower than copying those along */
 
-		while (dst < end) {
-			const char src_data = *src++;
+	if (gcf > lcf) {
+		if (verified_data) {
+			memcpy (fdata + hf2 - gcf, data + hf1 - gcf, gcf - lcf);
+		} else {
+			register const unsigned char	*src = data + hf1 - gcf;
+			register unsigned char		*dst = fdata + hf2 - gcf;
+			register const unsigned char	*end = dst + gcf - lcf;
+
+			while (dst < end) {
+				const char src_data = *src++;
 #if 0		/* seems to be the best result, ..." */
-			/* we don't want to set bad data, so
-			   only take the half byte */
-			*dst = COB_I2D (COB_D2I (src_data));
+				/* we don't want to set bad data, so
+				   only take the half byte */
+				*dst = COB_I2D (COB_D2I (src_data));
 #else		/* but does not match the "expected" MF result, which is: */
-			if (src_data == ' ' || src_data == 0) /* already set: *dst = '0'; */ ;
-			else *dst = COB_I2D (src_data - '0');
+				if (src_data == ' ' || src_data == 0) /* already set: *dst = '0'; */ ;
+				else *dst = COB_I2D (src_data - '0');
 #endif
-			++dst;
+				++dst;
+			}
 		}
 	}
 }
@@ -328,7 +334,7 @@ cob_move_display_to_display (cob_field *f1, cob_field *f2)
 
 	sign = COB_GET_SIGN (f1);
 	store_common_region (f2, COB_FIELD_DATA (f1), COB_FIELD_SIZE (f1),
-			     COB_FIELD_SCALE (f1));
+			     COB_FIELD_SCALE (f1), 0);
 
 	COB_PUT_SIGN (f1, sign);
 	COB_PUT_SIGN (f2, sign);
@@ -428,7 +434,7 @@ cob_move_alphanum_to_alphanum (cob_field *f1, cob_field *f2)
 	}
 }
 
-/* Packed decimal */
+/* Binary Coded Decimal (BCD) - PACKED-DECIMAL (COMP-3) and COMP-6 */
 
 static void
 cob_move_display_to_packed (cob_field *f1, cob_field *f2)
@@ -471,7 +477,7 @@ cob_move_display_to_packed (cob_field *f1, cob_field *f2)
 	{
 		register unsigned char	*q = f2->data + i / 2;
 		const unsigned int i_end = digits2 + i;
-		const unsigned char *p_end = data1 + digits1;
+		const unsigned char *p_end = data1 + digits1;	/* FIXME: get rid of that, adjust i_end accordingly */
 		for (; i < i_end && p < p_end; ++i) {
 			if ((i & 1) == 0) {	/* -> i % 2 == 0 */
 				*q = (unsigned char)(*p++ << 4);	/* -> dropping the higher bits = no use in COB_D2I */
@@ -492,16 +498,16 @@ cob_move_display_to_packed (cob_field *f1, cob_field *f2)
 	/* add half-byte for sign,
 	   note: we can directly use |= as it was zeroed out above */
 	if (!COB_FIELD_HAVE_SIGN (f2)) {
-		*p |= 0x0FU;
+		*p |= 0x0F;
 	} else if (sign == -1) {
-		*p |= 0x0DU;
+		*p |= 0x0D;
 	} else {
-		*p |= 0x0CU;
+		*p |= 0x0C;
 	}
 #else
 	if (!COB_FIELD_HAVE_SIGN (f2)) {
 		*p = (*p & 0xF0) | 0x0F;
-	} else if (sign < 0) {
+	} else if (sign == -1) {
 		*p = (*p & 0xF0) | 0x0D;
 	} else {
 		*p = (*p & 0xF0) | 0x0C;
@@ -538,7 +544,7 @@ cob_move_packed_to_display (cob_field *f1, cob_field *f2)
 		}
 
 		/* Store */
-		store_common_region (f2, buff, digits, COB_FIELD_SCALE (f1));
+		store_common_region (f2, buff, digits, COB_FIELD_SCALE (f1), 1);
 		COB_PUT_SIGN (f2, 0);
 	} else {
 		/* Unpack PACKED-DECIMAL / COMP-3 to integer */
@@ -555,7 +561,7 @@ cob_move_packed_to_display (cob_field *f1, cob_field *f2)
 		sign = ((*d & 0x0F) == 0x0D) ? -1 : 1;
 
 		/* Store */
-		store_common_region (f2, buff, digits, COB_FIELD_SCALE (f1));
+		store_common_region (f2, buff, digits, COB_FIELD_SCALE (f1), 1);
 		COB_PUT_SIGN (f2, sign);
 	}
 
@@ -754,13 +760,12 @@ cob_move_binary_to_display (cob_field *f1, cob_field *f2)
 	   to be much faster than calling "sprintf (buff, CB_FMT_LLU, val)" */
 	i = 20;
 	while (val > 0) {
-		buff[--i] = (char) COB_I2D (val % 10);
+		buff[--i] = COB_I2D (val % 10);
 		val /= 10;
 	}
 
 	/* Store */
-	store_common_region (f2, (cob_u8_ptr)buff + i, (size_t)20 - i,
-		COB_FIELD_SCALE (f1));
+	store_common_region (f2, buff + i, (size_t)20 - i, COB_FIELD_SCALE (f1), 1);
 
 	COB_PUT_SIGN (f2, sign);
 }
@@ -1222,17 +1227,17 @@ indirect_move (void (*func) (cob_field *src, cob_field *dst),
 	       cob_field *src, cob_field *dst,
 	       const size_t size, const int scale)
 {
-	unsigned char buff[2 * COB_MAX_DIGITS] = { 0 };
 	cob_field	field;
 	cob_field_attr	attr;
 
 	if (size <= 2 * COB_MAX_DIGITS) {
+		unsigned char buff[2 * COB_MAX_DIGITS] = { 0 };
 		COB_FIELD_INIT (size, buff, &attr);
 		COB_ATTR_INIT (COB_TYPE_NUMERIC_DISPLAY, (unsigned short) size, (short) scale,
 				COB_FLAG_HAVE_SIGN, NULL);
 		func (src, &field);
 		cob_move (&field, dst);
-	} else {;
+	} else {
 		COB_FIELD_INIT (size, cob_malloc (size), &attr);
 		COB_ATTR_INIT (COB_TYPE_NUMERIC_DISPLAY, (unsigned short) size, (short) scale,
 				COB_FLAG_HAVE_SIGN, NULL);
@@ -1302,7 +1307,7 @@ cob_move_ibm (void *dst, void *src, const int len)
 {
 	register char	*dest = dst;
 	register char	*srce = src;
-	const char	*end = src + len;
+	const char	*end = srce + len;
 	while (srce != end) {
 		*dest++ = *srce++;
 	}

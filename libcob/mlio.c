@@ -26,9 +26,8 @@
 #include <ctype.h>
 #include <stdio.h>
 
-/* Force symbol exports */
+/* include internal and external libcob definitions, forcing exports */
 #define	COB_LIB_EXPIMP
-#include "common.h"
 #include "coblocal.h"
 
 #if defined (WITH_XML2)

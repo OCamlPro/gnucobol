@@ -1,4 +1,17 @@
 
+2023-04-26  Simon Sobisch <simonsobisch@gnu.org>
+
+	* general: only include coblocal.h which includes common.h already
+	* common.c (cob_continue_after): raise nonfatal exception
+	  COB_EC_CONTINUE_LESS_THAN_ZERO for negative waits
+	* common.c [TIME_T_IS_NON_ARITHMETIC]: dropped checking for this define as
+	  POSIX requires time_t to be an arithmetic type
+	* cconv.c (cob_load_collation): minro cleanup
+	* fileio.c (EXTFH) [!COB_64_BIT_POINTER]: fix check for opcode OP_CLOSE
+	* move.c (store_common_region): speedup by not re-validating data if caller
+	  already provides that; adjusted callers to specify that
+	* common.c (cob_sys_hosted): prefer memcmp over strncmp with known size
+
 2023-04-18  Simon Sobisch <simonsobisch@gnu.org>
 
 	* numeric.c: integrated changes of Chuck Haatveet 2023-03-28 with tuning
@@ -83,6 +96,10 @@
 	* fileio.c (cob_chk_file_env, cob_chk_file_mapping, looks_absolute,
 	   do_acu_hyphen_translation): drop / ignore surrounding quotes of filenames
 
+2023-03-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c, intrinsic.c: handling of size errors ... NAN...
+
 2023-03-23  Simon Sobisch <simonsobisch@gnu.org>
 
 	changes for improved performance
@@ -96,9 +113,18 @@
 	* numeric.c (cob_get_long_ebcdic_sign, cob_get_long_ascii_sign): only set
 	  sign, not change the value
 
+2023-03-20  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c, coblocal.h: fix requesting huge memory for
+	  mpf to cob_decimal conversions
+
 2023-03-06  Simon Sobisch <simonsobisch@gnu.org>
 
 	* numeric.c (cob_decimal_get_display): fix truncation with leading zeros
+
+2023-03-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c, common.h: add COB_FERROR_FATAL_EXCEPTION
 
 2023-03-03  Simon Sobisch <simonsobisch@gnu.org>
 

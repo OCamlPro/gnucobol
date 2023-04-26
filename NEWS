@@ -7,7 +7,6 @@ NEWS - user visible changes				-*- outline -*-
 
  planned for final:
    * extending testsuite and documentation
-   * configure: minor checking to set TIME_T_IS_NON_ARITHMETIC
    * investigation of code analysis tools and user feedback
 
 

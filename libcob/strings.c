@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2014, 2016-2020, 2022 Free Software Foundation, Inc.
+   Copyright (C) 2002-2014, 2016-2020, 2022-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Edward Hart, Simon Sobisch
 
    This file is part of GnuCOBOL.
@@ -29,9 +29,8 @@
 #include <errno.h>
 #include <sys/types.h>
 
-/* Force symbol exports */
+/* include internal and external libcob definitions, forcing exports */
 #define	COB_LIB_EXPIMP
-#include "common.h"
 #include "coblocal.h"
 
 enum inspect_type {

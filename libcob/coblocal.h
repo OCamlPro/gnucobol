@@ -277,7 +277,7 @@ typedef struct __cob_settings {
 	unsigned int	cob_time_constant_is_calculated;	/* constant contains full date vars */
 
 	/* call.c */
-	unsigned int	cob_physical_cancel;
+	int	cob_physical_cancel;	/* 0 "= "logical only" (default), 1 "also unload", -1 "never unload" */
 	unsigned int	name_convert;
 	char		*cob_preload_str;
 	char		*cob_library_path;

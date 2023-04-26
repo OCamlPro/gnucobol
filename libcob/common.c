@@ -154,9 +154,8 @@
 
 /* end of library headers */
 
-/* Force symbol exports */
+/* include internal and external libcob definitions, forcing exports */
 #define	COB_LIB_EXPIMP
-#include "common.h"
 #include "coblocal.h"
 
 #include "cobgetopt.h"
@@ -908,40 +907,40 @@ static char ss_itoa_buf[12];
 static size_t
 ss_itoa_u10 (int value)
 {
-    const unsigned int radix = 10;
-    char *p, *p2;
-    unsigned int digit;
-    unsigned int u;
+	const unsigned int radix = 10;
+	char *p, *p2;
+	unsigned int digit;
+	unsigned int u;
 	size_t len;
 
 	p = ss_itoa_buf;
 
-    if (value < 0) {
-        *p++ = '-';
-        value = 0 - value;
-    }
-    u = (unsigned int)value;
+	if (value < 0) {
+		*p++ = '-';
+		value = 0 - value;
+	}
+	u = (unsigned int)value;
 
-    p2 = p;
+	p2 = p;
 
-    do {
-        digit = u % radix;
-        u /= radix;
+	do {
+		digit = u % radix;
+		u /= radix;
 
-        *p++ = '0' + digit;
+		*p++ = COB_I2D (digit);
 
-    } while (u > 0);
+	} while (u > 0);
 
 	len = p - ss_itoa_buf;
-    *p-- = 0;
+	*p-- = 0;
 
-    /* swap around */
-    do {
-    	char temp = *p;
-        *p-- = *p2;
-        *p2++ = temp;
+	/* swap around */
+	do {
+		char temp = *p;
+		*p-- = *p2;
+		*p2++ = temp;
 
-    } while (p2 < p);
+	} while (p2 < p);
 
 	return len;
 }
@@ -2086,22 +2085,17 @@ cob_new_trace_file (void)
 int
 cob_check_env_true (char * s)
 {
-	if (s) {
-		if (strlen (s) == 1 && (*s == 'Y' || *s == 'y' || *s == '1')) return 1;
-		if (strcasecmp (s, "YES") == 0 || strcasecmp (s, "ON") == 0 ||
-			strcasecmp (s, "TRUE") == 0) {
-			return 1;
-		}
-	}
-	return 0;
+	return s && ((strlen (s) == 1 && (*s == 'Y' || *s == 'y' || *s == '1'))
+	          || strcasecmp (s, "YES") == 0 || strcasecmp (s, "ON") == 0
+	          || strcasecmp (s, "TRUE") == 0);
 }
 
 int
 cob_check_env_false (char * s)
 {
 	return s && ((strlen (s) == 1 && (*s == 'N' || *s == 'n' || *s == '0'))
-	          || (strcasecmp (s, "NO") == 0 || strcasecmp (s, "NONE") == 0
-	          || strcasecmp (s, "OFF") == 0 || strcasecmp (s, "FALSE") == 0));
+	          || strcasecmp (s, "NO") == 0 || strcasecmp (s, "NONE") == 0
+	          || strcasecmp (s, "OFF") == 0 || strcasecmp (s, "FALSE") == 0);
 }
 
 static void
@@ -4489,11 +4483,10 @@ static set_cob_time_from_localtime (time_t curtime,
 	time_t		utctime, lcltime, difftime;
 #endif
 
-#ifndef TIME_T_IS_NON_ARITHMETIC
 	static time_t last_time = 0;
 	static struct cob_time last_cobtime;
 	
-	/* FIXME: on reseting appropriate locale set last_time_no_sec = 0 */
+	/* FIXME: on setting related locale set last_time = 0 */
 	if (curtime == last_time) {
 		memcpy (cb_time, &last_cobtime, sizeof (struct cob_time));
 		return;
@@ -4526,7 +4519,6 @@ static set_cob_time_from_localtime (time_t curtime,
 		}
 	}
 	last_time = curtime;
-#endif
 
 	tmptr = localtime (&curtime);
 
@@ -4581,10 +4573,8 @@ static set_cob_time_from_localtime (time_t curtime,
 	/* LCOV_EXCL_STOP */
 #endif
 
-#ifndef TIME_T_IS_NON_ARITHMETIC
 	/* keep backup for next call */
 	memcpy (&last_cobtime, cb_time, sizeof (struct cob_time));
-#endif
 }
 
 #if defined (_WIN32) /* cygwin does not define _WIN32 */
@@ -5625,8 +5615,7 @@ cob_continue_after (cob_field *decimal_seconds)
 	cob_s64_t	nanoseconds = get_sleep_nanoseconds_from_seconds (decimal_seconds);
 
 	if (nanoseconds < 0) {
-		/* TODO: current COBOL 20xx change proposal
-		   specifies EC-CONTINUE-LESS-THAN-ZERO (NF) here... */
+		cob_set_exception (COB_EC_CONTINUE_LESS_THAN_ZERO);
 		return;
 	}
 	internal_nanosleep (nanoseconds);
@@ -6290,41 +6279,41 @@ cob_sys_hosted (void *p, const void *var)
 
 	if (COB_MODULE_PTR->cob_procedure_params[1]) {
 		i = (int)COB_MODULE_PTR->cob_procedure_params[1]->size;
-		if ((i == 4) && !strncmp (name, "argc", 4)) {
+		if ((i == 4) && !memcmp (name, "argc", 4)) {
 			*((int *)data) = cob_argc;
 			return 0;
 		}
-		if ((i == 4) && !strncmp (name, "argv", 4)) {
+		if ((i == 4) && !memcmp (name, "argv", 4)) {
 			*((char ***)data) = cob_argv;
 			return 0;
 		}
-		if ((i == 5) && !strncmp (name, "stdin", 5)) {
+		if ((i == 5) && !memcmp (name, "stdin", 5)) {
 			*((FILE **)data) = stdin;
 			return 0;
 		}
-		if ((i == 6) && !strncmp (name, "stdout", 6)) {
+		if ((i == 6) && !memcmp (name, "stdout", 6)) {
 			*((FILE **)data) = stdout;
 			return 0;
 		}
-		if ((i == 6) && !strncmp (name, "stderr", 6)) {
+		if ((i == 6) && !memcmp (name, "stderr", 6)) {
 			*((FILE **)data) = stderr;
 			return 0;
 		}
-		if ((i == 5) && !strncmp (name, "errno", 5)) {
+		if ((i == 5) && !memcmp (name, "errno", 5)) {
 			*((int **)data) = &errno;
 			return 0;
 		}
 #if defined (HAVE_TIMEZONE)
-		if ((i == 6) && !strncmp (name, "tzname", 6)) {
+		if ((i == 6) && !memcmp (name, "tzname", 6)) {
 			/* Recheck: bcc raises "suspicious pointer conversion */
 			*((char ***)data) = tzname;
 			return 0;
 		}
-		if ((i == 8) && !strncmp (name, "timezone", 8)) {
+		if ((i == 8) && !memcmp (name, "timezone", 8)) {
 			*((long *)data) = timezone;
 			return 0;
 		}
-		if ((i == 8) && !strncmp (name, "daylight", 8)) {
+		if ((i == 8) && !memcmp (name, "daylight", 8)) {
 			*((int *)data) = daylight;
 			return 0;
 		}
@@ -10072,10 +10061,6 @@ cob_init (const int argc, char **argv)
 		}
 #endif
 	}
-
-#if defined(_MSC_VER) && COB_USE_VC2008_OR_GREATER
-	get_function_ptr_for_precise_time ();
-#endif
 
 	/* This must be last in this function as we do early return */
 	/* from certain ifdef's */
