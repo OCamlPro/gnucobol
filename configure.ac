@@ -471,7 +471,7 @@ AS_IF([test "x$COBC_CPPFLAGS" != x], [
 	curr_cppflags="$CPPFLAGS"
 	CPPFLAGS="$CPPFLAGS $COBC_CPPFLAGS"
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],
-		[[static int i = 1;]])],
+		[[return 0;]])],
 		[AC_MSG_RESULT([yes])],
 		[AC_MSG_RESULT([no])
 		AC_MSG_FAILURE([cannot compile with COBC_CPPFLAGS="$COBC_CPPFLAGS"])])
@@ -483,7 +483,7 @@ AS_IF([test "x$LIBCOB_CPPFLAGS" != x], [
 	curr_cppflags="$CPPFLAGS"
 	CPPFLAGS="$CPPFLAGS $LIBCOB_CPPFLAGS"
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],
-		[[static int i = 1;]])],
+		[[return 0;]])],
 		[AC_MSG_RESULT([yes])],
 		[AC_MSG_RESULT([no])
 		AC_MSG_FAILURE([cannot compile with LIBCOB_CPPFLAGS="$LIBCOB_CPPFLAGS"])])
