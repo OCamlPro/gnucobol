@@ -6639,6 +6639,89 @@ line_has_listing_statement (char *line, const enum cb_format source_format)
 	return 1;
 }
 
+static char *
+get_word (char *str)
+{
+	int i = 0;
+
+	if (!str) {
+		return NULL;
+	}
+	while (str[i] && isspace (str[i])) {
+		++i;
+	}
+	if (str[i]) {
+		return str + i;
+	}
+	return NULL;
+}
+
+static char *
+get_next_word (char *str)
+{
+	int i = 0;
+
+	if (!str) {
+		return NULL;
+	}
+	while (str[i] && !isspace (str[i])) {
+		++i;
+	}
+	while (str[i] && isspace (str[i])) {
+		++i;
+	}
+	if (str[i]) {
+		return str + i;
+	}
+	return NULL;
+}
+
+
+static COB_INLINE COB_A_INLINE int
+is_debug_line (char *line, int fixed, int acudebug)
+{
+	if (line == NULL || line[0] == 0) {
+		return 0;
+	}
+	return !cb_flag_debugging_line
+		&& ((fixed && line[cobc_get_indicator ()] == 'D')
+		    || (!fixed && (acudebug
+				   ? !strncasecmp (line, "\\D", 2)
+				   : !strncasecmp (line, "D ", 2))));
+}
+
+static COB_INLINE COB_A_INLINE int
+is_comment_line (char *line, int fixed)
+{
+	if (line == NULL || line[0] == 0) {
+		return 0;
+	} else {
+		const int indicator = cobc_get_indicator ();
+		return fixed
+			? line[indicator] == '*' || line[indicator] == '/'
+			: !strncmp (line, "*>", 2);
+	}
+}
+
+static COB_INLINE COB_A_INLINE void
+abort_if_too_many_continuation_lines (int pline_cnt, const char *filename, int line_num)
+{
+	if (pline_cnt >= CB_READ_AHEAD) {
+		cobc_err_msg (_("%s:%d: too many continuation lines"),
+				filename, line_num);
+		cobc_abort_terminate (0);
+	}
+}
+
+static COB_INLINE COB_A_INLINE void
+cleanup_copybook_reference (struct list_files *cur)
+{
+	if (cur->name) {
+		cobc_free ((void *)cur->name);
+	}
+	cobc_free (cur);
+}
+
 static void
 print_fixed_line (const int line_num, char pch, char *line)
 {
@@ -7024,42 +7107,6 @@ compare_prepare (char *cmp_line, char *pline[CB_READ_AHEAD],
 
 #undef RET_IF_OVERFLOW
 
-static COB_INLINE COB_A_INLINE int
-is_debug_line (char *line, int fixed, int acudebug)
-{
-	if (line == NULL || line[0] == 0) {
-		return 0;
-	}
-	return !cb_flag_debugging_line
-		&& ((fixed && line[cobc_get_indicator ()] == 'D')
-		    || (!fixed && (acudebug
-				   ? !strncasecmp (line, "\\D", 2)
-				   : !strncasecmp (line, "D ", 2))));
-}
-
-static COB_INLINE COB_A_INLINE int
-is_comment_line (char *line, int fixed)
-{
-	if (line == NULL || line[0] == 0) {
-		return 0;
-	} else {
-		const int indicator = cobc_get_indicator ();
-		return fixed
-			? line[indicator] == '*' || line[indicator] == '/'
-			: !strncmp (line, "*>", 2);
-	}
-}
-
-static COB_INLINE COB_A_INLINE void
-abort_if_too_many_continuation_lines (int pline_cnt, const char *filename, int line_num)
-{
-	if (pline_cnt >= CB_READ_AHEAD) {
-		cobc_err_msg (_("%s:%d: too many continuation lines"),
-				filename, line_num);
-		cobc_abort_terminate (0);
-	}
-}
-
 /* 
 	strncpy with skip multiple space for the listing mode
 	in_copy = margin_a for the margin
@@ -7416,53 +7463,6 @@ deep_copy_list_replace (struct list_replace *src, struct list_files *dst_file)
 	dst_file->replace_tail = copy;
 }
 
-static COB_INLINE COB_A_INLINE void
-cleanup_copybook_reference (struct list_files *cur)
-{
-	if (cur->name) {
-		cobc_free ((void *)cur->name);
-	}
-	cobc_free (cur);
-}
-
-static
-char *get_word (char *str)
-{
-	int i = 0;
-
-	if (!str) {
-		return NULL;
-	}
-	while (isspace (str[i])) {
-		++i;
-	}
-	if (str + i) {
-		return str + i;
-	}
-	return NULL;
-}
-
-static
-char *get_next_word (char *str)
-{
-	int i = 0;
-
-	if (!str) {
-		return NULL;
-	}
-	while (!isspace (str[i])) {
-		++i;
-	}
-	while (isspace (str[i])) {
-		++i;
-	}
-	if (str + i) {
-		return str + i;
-	}
-	return NULL;
-}
-
-
 /* TO-DO: Modularise! */
 /*
   Applies active REPLACE statements to the source lines in pline. Returns the
@@ -7736,7 +7736,6 @@ print_program_code (struct list_files *cfile, int in_copy)
 				line_file = head_line_file;
 				search_end_replace (line_file, cfile);
 			}
-
 			line_file = head_line_file;
 
 			line_num = 1;
@@ -7775,7 +7774,6 @@ print_program_code (struct list_files *cfile, int in_copy)
 				}
 				pline_cnt = 0;
 			}
-
 			line_file = head_line_file;
 			/* free pline_replace */
 			while (line_file) {
