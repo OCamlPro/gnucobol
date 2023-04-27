@@ -1,4 +1,9 @@
 
+2023-04-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* move.c (cob_move_display_to_packed), numeric.c (cob_decimal_get_packed):
+	  simplify code, following idea by of Chuck Haatveet
+
 2023-04-26  Simon Sobisch <simonsobisch@gnu.org>
 
 	* general: only include coblocal.h which includes common.h already

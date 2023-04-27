@@ -477,13 +477,20 @@ cob_move_display_to_packed (cob_field *f1, cob_field *f2)
 	{
 		register unsigned char	*q = f2->data + i / 2;
 		const unsigned int i_end = digits2 + i;
-		const unsigned char *p_end = data1 + digits1;	/* FIXME: get rid of that, adjust i_end accordingly */
-		for (; i < i_end && p < p_end; ++i) {
-			if ((i & 1) == 0) {	/* -> i % 2 == 0 */
-				*q = (unsigned char)(*p++ << 4);	/* -> dropping the higher bits = no use in COB_D2I */
-			} else {
-				*q++ += COB_D2I (*p++);
-			}
+		/* FIXME: get rid of that, adjust i_end accordingly and always end at sign byte */
+		const unsigned char *p_end = data1 + digits1;
+
+		if ((i % 2) == 1) {
+			*q++ = COB_D2I (*p++);
+			i++;
+		}
+		/* note: for performance reasons we write "full bytes" only, this means that for COMP-3
+		   we'll read 1 byte "too much = after" from the DISPLAY data;
+		   it is believed that this won't raise a SIGBUS anywhere, but we will need to "clean"
+		   the half-byte before setting the sign */
+		for (; i < i_end && p < p_end; ++i, q++, p += 2) {
+			*q = (unsigned char) (*p << 4)	/* -> dropping the higher bits = no use in COB_D2I */
+			    + COB_D2I (*(p + 1));
 		}
 	}
 
@@ -492,27 +499,14 @@ cob_move_display_to_packed (cob_field *f1, cob_field *f2)
 		return;
 	}
 
-	p = f2->data + f2->size - 1;
-#if 0	/* FIXME: this should work, but in some cases (seen in ACOS test)
-     	   we do have written one half-byte too much, which we need to drop. */
-	/* add half-byte for sign,
-	   note: we can directly use |= as it was zeroed out above */
+	p = f2->data + f2->size - 1;	/* TODO: ending at the sign byte means we can drop that */
 	if (!COB_FIELD_HAVE_SIGN (f2)) {
 		*p |= 0x0F;
-	} else if (sign == -1) {
-		*p |= 0x0D;
-	} else {
-		*p |= 0x0C;
-	}
-#else
-	if (!COB_FIELD_HAVE_SIGN (f2)) {
-		*p = (*p & 0xF0) | 0x0F;
 	} else if (sign == -1) {
 		*p = (*p & 0xF0) | 0x0D;
 	} else {
 		*p = (*p & 0xF0) | 0x0C;
 	}
-#endif
 }
 
 static void
@@ -740,7 +734,7 @@ cob_move_binary_to_display (cob_field *f1, cob_field *f2)
 	cob_u64_t		val;
 	int			i;
 	int			sign;
-	char			buff[32];
+	unsigned char	buff[32];
 
 	sign = 1;
 	/* Get value */

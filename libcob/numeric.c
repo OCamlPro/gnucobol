@@ -1285,7 +1285,7 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 	memset (data, 0, f->size);
 
 	/* calculate starting half-byte */
-	size = (unsigned int)strlen (buff);
+	size = (unsigned int) strlen (buff);
 	diff = (unsigned int) digits - size;
 
 	if (COB_FIELD_NO_SIGN_NIBBLE (f)) {
@@ -1300,12 +1300,15 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 	{
 		register unsigned char *q = (unsigned char *)buff;
 		register unsigned int	i = diff;
+
+		if ((i % 2) == 1) {
+			*p++ += COB_D2I (*q++);
+			i++;
+		}
 		while (i < size) {
-			if ((i++ & 1) == 0) {	/* -> i % 2 == 0 */
-				*p = (unsigned char) (*q++ << 4);	/* -> dropping the higher bits = no use in COB_D2I */
-			} else {
-				*p++ += COB_D2I (*q++);
-			}
+			*p++ = (unsigned char) (*q << 4)	/* -> dropping the higher bits = no use in COB_D2I */
+			   + COB_D2I (*(q + 1));
+			q += 2; i += 2;
 		}
 	}
 
@@ -1314,7 +1317,8 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 	}
 
 	/* add half-byte for sign,
-	   note: we can directly use |= as it was zeroed out above */
+	   note: we can directly use |= as we set the last half-bte to the trailing low-value
+	   we got from mpz_get_str above */
 	p = data + f->size - 1;
 	if (!COB_FIELD_HAVE_SIGN (f)) {
 		*p |= 0x0FU;
