@@ -146,7 +146,7 @@ cob_gen_optim (const enum cb_optim val)
 		output_storage ("cob_check_subscript_inline (const int i, const int max,");
 		output_storage ("			const char* name, const int odo_item)");
 		output_storage ("{");
-		output_storage ("	if (i == 0 || i > max) {");
+		output_storage ("	if (i < 1 || i > max) {");
 		output_storage ("		cob_check_subscript (i, max, name, odo_item);");
 		output_storage ("	}");
 		output_storage ("}");

@@ -839,6 +839,14 @@ copy_into_field (struct cb_field *source, struct cb_field *target)
 			 but may be specified on the field */
 	if (target->level == 1 || target->level == 77) {
 		field_attribute_copy (flag_external);
+		if (target->flag_external
+		 && !target->ename) {
+#if 1	/* CHECKME: Which one to use? Possibly depending on AS clause? */
+			target->ename = source->ename;
+#else
+			target->ename = cb_to_cname (target->name);
+#endif
+		}
 	}
 	target->usage = source->usage;
 	if (source->values) {
@@ -3033,7 +3041,27 @@ cleanup_field_value (struct cb_field* f, cb_tree *val)
 		}
 		break;
 	case CB_CATEGORY_NATIONAL:
-		/* FIXME: Fall-through, but should handle national space */
+		if (CB_LITERAL_P (*val)) {
+			const struct cb_literal *lit = CB_LITERAL (*val);
+			char *p = (char*)lit->data;
+			char *end = p + lit->size - 1;
+			if (lit->size % COB_NATIONAL_SIZE != 0) {
+				break;
+			}
+			if (*end == ' ') {
+				while (p < end && p[0] == 0x00 && p[1] == ' ') p += 2;
+				if (p == end) *val = cb_space;
+			}
+		}
+		if (*val == cb_space
+		 && !f->flag_internal_register
+		 && ( cb_default_byte == CB_DEFAULT_BYTE_INIT)
+		 && ( f->storage == CB_STORAGE_WORKING
+		   || f->storage == CB_STORAGE_LOCAL)
+		 && !f->children) {
+			return 1;
+		}
+		break;
 	case CB_CATEGORY_ALPHANUMERIC:
 		if (CB_LITERAL_P (*val)) {
 			const struct cb_literal *lit = CB_LITERAL (*val);
@@ -3579,6 +3607,7 @@ cb_is_figurative_constant (const cb_tree x)
 		|| x == cb_norm_high
 		|| x == cb_quote
 		|| (CB_REFERENCE_P (x)
+		 && CB_REFERENCE (x)->subs == NULL
 		 && CB_REFERENCE (x)->flag_all);
 }
 

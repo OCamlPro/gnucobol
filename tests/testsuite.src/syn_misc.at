@@ -5731,7 +5731,7 @@ AT_CLEANUP
 
 
 AT_SETUP([SET SOURCEFORMAT syntax checks])
-AT_KEYWORDS([misc extensions directives])
+AT_KEYWORDS([misc extensions source directives])
 
 AT_DATA([prog.cob], [
        *> Valid
@@ -5753,7 +5753,7 @@ prog.cob:7: error: invalid SOURCEFORMAT directive option ''
 prog.cob:8: error: syntax error, unexpected Variable, expecting Literal
 prog.cob:8: error: invalid SOURCEFORMAT directive option
 prog.cob:8: error: invalid literal: '"#OPTION mis-matched ...'
-prog.cob:8: error: missing terminating ' character
+prog.cob:8: note: missing terminating ' character
 prog.cob:8: error: PROGRAM-ID header missing
 prog.cob:8: error: PROCEDURE DIVISION header missing
 prog.cob:8: error: syntax error, unexpected Literal
@@ -8176,5 +8176,27 @@ domfree.cob:8: error: PROGRAM-ID header missing
 AT_CHECK([$COMPILE_ONLY -fformat=fixed fixed1.cob], [0], [], [])
 AT_CHECK([$COMPILE_ONLY -fformat=fixed fixed2.cob], [0], [], [])
 AT_CHECK([$COMPILE_ONLY -fformat=fixed domfixed.cob], [0], [], [])
+
+AT_CLEANUP
+
+AT_SETUP([context sensitive alias])
+AT_KEYWORDS([misc context alias])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  XX  PIC 9.
+       01  X            CONSTANT AS XX OF XX.
+       PROCEDURE        DIVISION.
+           MOVE X TO XX.
+           DISPLAY XX NO ADVANCING
+           END-DISPLAY.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -freserved="XX*=BYTE-LENGTH" prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [1])
 
 AT_CLEANUP

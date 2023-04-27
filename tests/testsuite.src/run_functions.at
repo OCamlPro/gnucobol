@@ -414,14 +414,16 @@ AT_CLEANUP
 
 
 AT_SETUP([FUNCTION HEX-OF and HEX-TO-CHAR])
-AT_KEYWORDS([functions literal ibm])
+AT_KEYWORDS([functions literal ibm national])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
-       01  X      PIC   9(4) VALUE 12.
+       01  X.
+         03       PIC     X  VALUE SPACE.
+         03       PIC   9(3) VALUE 12.
        01  Y      PIC   X(4) VALUE "HI.".
        01  BIN    PIC   9(9) BINARY VALUE 12.
        01  PAC    PIC   9(5) COMP-3 VALUE 1234.
@@ -429,14 +431,30 @@ AT_DATA([prog.cob], [
        01  NX     PIC   N(2) VALUE N"!".
        01  HEXX   PIC   X(10).
            88 HEXX-FILLER VALUE ALL "-".
+       01  FILLER       USAGE BINARY-INT VALUE 0.
+           88 DO-DISP   VALUE 0.
+           88 NO-DISP   VALUE 1.
+       REPLACE ==DISPLAY== BY ==IF DO-DISP  DISPLAY==,
+               ==END-DISPLAY== BY ==END-DISPLAY END-IF==.
        PROCEDURE        DIVISION.
+       MAIN.
+      *    Test with DISPLAY on error
+           PERFORM DO-CHECK.
+       >> IF CHECK-PERF IS DEFINED
+           SET  NO-DISP    TO TRUE
+      *    some performance checks on the way...
+           PERFORM DO-CHECK 300000 TIMES.
+       >> END-IF
+           GOBACK.
+
+       DO-CHECK.
            SET  HEXX-FILLER TO TRUE
            STRING FUNCTION HEX-OF (X) DELIMITED BY SIZE INTO HEXX.
       *> Discover if running ASCII or EBCDIC
        >>IF   CHARSET = 'ASCII'
-           IF HEXX NOT = "30303132--"
+           IF HEXX NOT = "20303132--"
        >>ELIF CHARSET = 'EBCDIC'
-           IF HEXX NOT = "F0F0F1F2--"
+           IF HEXX NOT = "40F0F1F2--"
        >>ELSE
            IF 1 = 1 DISPLAY 'CHARSET UNKNOWN! PLEASE REPORT!'
        >>END-IF
@@ -472,7 +490,11 @@ AT_DATA([prog.cob], [
 
            SET  HEXX-FILLER TO TRUE
            STRING FUNCTION HEX-OF (' ') DELIMITED BY SIZE INTO HEXX.
+       >>IF   CHARSET = 'ASCII'
            IF HEXX NOT = "20--------"
+       >> ELSE
+           IF HEXX NOT = "40--------"
+       >> END-IF
               DISPLAY "UNEXPECTED HEX-VALUE OF ' ': " HEXX.
 
            SET  HEXX-FILLER TO TRUE
@@ -514,8 +536,6 @@ AT_DATA([prog.cob], [
                   DELIMITED BY SIZE INTO HEXX.
            IF NOT (HEXX (1:2) = x"3132" AND HEXX (3:) = "--------")
               DISPLAY "UNEXPECTED CHAR VALUE, expected 12-* got: " HEXX.
-
-           STOP RUN.
 ])
 
 AT_CHECK([$COMPILE -Wno-unfinished prog.cob], [0], [], [])
@@ -3090,6 +3110,7 @@ AT_DATA([prog.cob], [
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
        01  Z            USAGE BINARY-LONG SIGNED.
+       01  F            USAGE FLOAT-LONG.
        PROCEDURE        DIVISION.
            MOVE FUNCTION SIGN ( 3.12345 ) TO Z.
            IF Z NOT = 1
@@ -3103,6 +3124,18 @@ AT_DATA([prog.cob], [
            MOVE FUNCTION SIGN ( -3.12345 ) TO Z.
            IF Z NOT = -1
               DISPLAY "Sign 4 " Z.
+           MOVE 3.12345 TO F
+           MOVE FUNCTION SIGN ( F ) TO Z.
+           IF Z NOT = 1
+              DISPLAY "Sign 5 " Z.
+           MOVE -0.0 TO F
+           MOVE FUNCTION SIGN ( F ) TO Z.
+           IF Z NOT = 0
+              DISPLAY "Sign 6 " Z.
+           MOVE -3.12345 TO F
+           MOVE FUNCTION SIGN ( F ) TO Z.
+           IF Z NOT = -1
+              DISPLAY "Sign 7 " Z.
            STOP RUN.
 ])
 

@@ -1,4 +1,24 @@
 
+2023-04-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: pass --enable-debug to autoconf generated files as
+	  COB_ENABLE_DEBUG, currently used for running extra test cycles in
+	  the test suite
+
+2023-03-03  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: allow specification of XML2_CONFIG (only used if
+	  pkg-config module libxml-2.0 is not available)
+	* configure.ac: check all used headers of libxml-2.0,
+	  warn user if not found
+	* improve multiple header header check via AC_CHECK_HEADERS according
+	  to docs (cJSON, json-c and curses)
+
+2023-02-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* configure.ac: fixed duplicate note about JSON_C_C_FLAGS,
+	  changed messages as per autoconf docs
+
 2023-02-19  Simon Sobisch <simonsobisch@gnu.org>
 
 	* configure.ac: minor adjustment for bdb library lookup

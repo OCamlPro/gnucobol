@@ -188,7 +188,6 @@ static struct base_list		*globext_cache = NULL;
 static struct base_list		*local_base_cache = NULL;
 static struct string_list	*string_cache = NULL;
 static struct string_list	*source_cache = NULL;
-static char			*string_buffer = NULL;
 static struct label_list	*label_cache = NULL;
 static struct ml_tree_list	*ml_tree_cache = NULL;
 
@@ -544,7 +543,6 @@ clear_local_codegen_vars (void)
 	local_base_cache = NULL;
 	local_field_cache = NULL;
 	static_call_cache = NULL;
-	string_buffer = NULL;
 	string_cache = NULL;
 	ml_tree_cache = NULL;
 
@@ -3041,6 +3039,11 @@ output_integer (cb_tree x)
 		output_param (x, -1);
 		output (")");
 		break;
+
+	case CB_TAG_FUNCALL:
+		output_funcall (x);
+		break;
+
 	/* LCOV_EXCL_START */
 	default:
 		CB_TREE_TAG_UNEXPECTED_ABORT (x);
@@ -3433,12 +3436,7 @@ create_field (struct cb_field *f, cb_tree x)
 static void
 output_param (cb_tree x, int id)
 {
-	struct cb_reference	*r;
 	struct cb_field		*f;
-	struct cb_cast		*cp;
-	struct cb_binary_op	*bp;
-	struct cb_intrinsic	*ip;
-	struct cb_alphabet_name	*abp;
 	cb_tree			l;
 
 	if (x == NULL) {
@@ -3474,8 +3472,8 @@ output_param (cb_tree x, int id)
 	case CB_TAG_LOCALE_NAME:
 		output_param (CB_LOCALE_NAME(x)->list, id);
 		break;
-	case CB_TAG_ALPHABET_NAME:
-		abp = CB_ALPHABET_NAME (x);
+	case CB_TAG_ALPHABET_NAME: {
+		const struct cb_alphabet_name	*abp = CB_ALPHABET_NAME (x);
 		switch (abp->alphabet_type) {
 		case CB_ALPHABET_ASCII:
 #ifdef	COB_EBCDIC_MACHINE
@@ -3513,8 +3511,9 @@ output_param (cb_tree x, int id)
 			break;
 		}
 		break;
-	case CB_TAG_CAST:
-		cp = CB_CAST (x);
+	}
+	case CB_TAG_CAST: {
+		const struct cb_cast	*cp = CB_CAST (x);
 		switch (cp->cast_type) {
 		case CB_CAST_INTEGER:
 			output_integer (cp->val);
@@ -3549,6 +3548,7 @@ output_param (cb_tree x, int id)
 			break;
 		}
 		break;
+	}
 	case CB_TAG_DECIMAL:
 		output ("%s%d", CB_PREFIX_DECIMAL, CB_DECIMAL (x)->id);
 		break;
@@ -3561,16 +3561,18 @@ output_param (cb_tree x, int id)
 	case CB_TAG_REPORT:
 		output ("&%s%s", CB_PREFIX_REPORT, CB_REPORT_PTR (x)->cname);
 		break;
-	case CB_TAG_REPORT_LINE:
+	case CB_TAG_REPORT_LINE: {
+		const struct cb_reference	*r
 		/* NOTE: do not use CB_REFERENCE_P because 'x' has a tag of CB_TAG_REPORT_LINE */
 #if 1 /* FIXME: Should have expected type! */
-		r = (struct cb_reference *)x;
+			= (struct cb_reference *)x;
 #else
-		r = CB_REFERENCE (x);
+			= CB_REFERENCE (x);
 #endif
 		f = CB_FIELD (r->value);
 		output ("&%s%d", CB_PREFIX_REPORT_LINE, f->id);
 		break;
+	}
 	case CB_TAG_LITERAL:
 		if (nolitcast) {
 			output ("&%s%d", CB_PREFIX_CONST, cb_lookup_literal (x, 0));
@@ -3582,8 +3584,8 @@ output_param (cb_tree x, int id)
 	case CB_TAG_FIELD:
 		x = cb_build_field_reference (CB_FIELD (x), NULL);
 		/* Fall through */
-	case CB_TAG_REFERENCE:
-		r = CB_REFERENCE (x);
+	case CB_TAG_REFERENCE: {
+		const struct cb_reference	*r = CB_REFERENCE (x);
 		if (CB_LOCALE_NAME_P (r->value)) {
 			output_param (CB_LOCALE_NAME (r->value)->list, id);
 			break;
@@ -3754,8 +3756,9 @@ output_param (cb_tree x, int id)
 			output (" )");
 		}
 		break;
-	case CB_TAG_BINARY_OP:
-		bp = CB_BINARY_OP (x);
+	}
+	case CB_TAG_BINARY_OP: {
+		const struct cb_binary_op	*bp = CB_BINARY_OP (x);
 		output ("cob_intr_binop (");
 		output_param (bp->x, id);
 		output (", ");
@@ -3770,8 +3773,9 @@ output_param (cb_tree x, int id)
 		output_param (bp->y, id);
 		output (")");
 		break;
-	case CB_TAG_INTRINSIC:
-		ip = CB_INTRINSIC (x);
+	}
+	case CB_TAG_INTRINSIC: {
+		const struct cb_intrinsic	*ip = CB_INTRINSIC (x);
 		if (ip->isuser) {
 			char			*func;
 			l = cb_ref (ip->name);
@@ -3857,6 +3861,7 @@ output_param (cb_tree x, int id)
 		}
 		output (")");
 		break;
+	}
 	case CB_TAG_ML_TREE:
 		output ("&%s%d", CB_PREFIX_ML_TREE, CB_ML_TREE (x)->id);
 		break;
@@ -4278,7 +4283,7 @@ output_cond (cb_tree x, const int save_flag)
 		case '~':
 			output ("((int)");
 			if (save_flag
-				&& p->flag == BOP_OPERANDS_SWAPPED) {
+			 && p->flag == BOP_OPERANDS_SWAPPED) {
 				output_cond (p->x, 2);
 			} else {
 				output_cond (p->x, save_flag);
@@ -5707,20 +5712,24 @@ output_search_whens (cb_tree table, struct cb_field *p, cb_tree at_end,
 		idx = CB_VALUE (p->index_list);
 	}
 
+	output_block_open ();
+	output_prefix ();
+	output ("const int max = ");
+	output_occurs (p);
+	output (";");
+	output_newline ();
+
 	/* Start loop */
 	last_line = -1; /* force statement reference output at begin of loop */
-	output_line ("for (;;) {");
-	output_indent_level += 2;
+	output_line ("for (;;)");
+	output_block_open ();
 
 	/* End test */
 	output_prefix ();
 	output ("if (");
 	output_integer (idx);
-	output (" > ");
-	output_occurs (p);
-	output (")");
+	output (" > max)");
 	output_newline ();
-	output_line ("/* Table end */");
 	output_block_open ();
 	if (at_end) {
 		output_source_reference (CB_PAIR_X (at_end), STMT_AT_END);
@@ -5756,10 +5765,15 @@ output_search_whens (cb_tree table, struct cb_field *p, cb_tree at_end,
 		output_move (idx, var);
 	}
 	/* End loop */
-	output_indent_level -= 2;
-	output_line ("}");
+	output_block_close ();
+
+	output_block_close ();
 }
 
+/* generate code for SEARCH ALL,
+   setup head (starting with 0) and tail (starting with max),
+   using the mid as index, then compare,
+   switching head/tail to the current index until match found */
 static void
 output_search_all (cb_tree table, struct cb_field *p, cb_tree at_end,
 					cb_tree when_cond, cb_tree when_stmts)
@@ -5777,12 +5791,6 @@ output_search_all (cb_tree table, struct cb_field *p, cb_tree at_end,
 	output (" + 1;");
 	output_newline ();
 
-	/* Check for at least one entry */
-	output_prefix ();
-	output ("if (");
-	output_occurs (p);
-	output (" == 0) head = tail;");
-	output_newline ();
 	output_newline ();
 
 	/* Start loop */
@@ -5790,13 +5798,12 @@ output_search_all (cb_tree table, struct cb_field *p, cb_tree at_end,
 	output_line ("for (;;)");
 	output_block_open ();
 
-	/* End test */
+	/* End test, note: if ODO is 0 then "if 0 >= 0+1 -1" -> direct exit */
 	output_line ("if (head >= tail - 1)");
-	output_line ("/* Table end */");
 	output_block_open ();
 	if (at_end) {
 		output_source_reference (CB_PAIR_X (at_end), STMT_AT_END);
-		output_stmt (CB_PAIR_Y (at_end));
+		output_stmt (CB_PAIR_Y (at_end));	/* this is a CB_LIST ending with "break" */
 	} else {
 		/* position to table here, otherwise we likely land in the
 		   WHEN (Note: if there's an explicit END-SEARCH there's always
@@ -5829,7 +5836,7 @@ output_search_all (cb_tree table, struct cb_field *p, cb_tree at_end,
 	output_newline ();
 	output_newline ();
 
-	/* WHEN test */
+	/* (single) WHEN test */
 	{
 		/* output_source_reference would be ok here but
 		   we don't want to trace this (already tracing
@@ -5880,12 +5887,30 @@ output_search (struct cb_search *p)
 {
 	struct cb_field *fp = cb_code_field (p->table);
 
-	/* TODO: Add run-time checks for the table, including ODO */
+	/* output ODO run-time check for the table */
+	if (CB_EXCEPTION_ENABLE (COB_EC_BOUND_SUBSCRIPT) && fp->odo_level != 0) {
+		struct cb_field *f;
+		for (f = fp; f; f = f->children) {
+			if (CB_VALID_TREE (f->depending)
+			 && !f->flag_unbounded) {
+				cb_tree check = CB_BUILD_FUNCALL_5 ("cob_check_odo",
+					cb_build_cast_int (f->depending),
+					cb_int (f->occurs_min),
+					cb_int (f->occurs_max),
+					CB_BUILD_STRING0 (f->name),
+					CB_BUILD_STRING0 (CB_FIELD_PTR (f->depending)->name));
+				optimize_defs[COB_CHK_ODO] = 1;
+				output_stmt (check);
+			}
+		}
+	}
 
 	if (p->flag_all) {
+		/* note: no runtime check for index, because set by this code */
 		output_search_all (p->table, fp, p->at_end,
 				   CB_IF (p->whens)->test, CB_IF (p->whens)->stmt1);
 	} else {
+		/* note: no runtime check for index, because if too big -> AT END */
 		output_search_whens (p->table, fp, p->at_end, p->var, p->whens);
 	}
 }
@@ -8134,6 +8159,7 @@ output_section_info (const struct cb_label *lp)
 		return;
 	}
 	if (cb_old_trace) {		/* Old code retained for testing */
+		char	string_buffer[COB_MINI_BUFF];
 		if (lp->flag_section) {
 			if (!lp->flag_dummy_section) {
 				sprintf (string_buffer, "Section:   %s", lp->orig_name);
@@ -9903,27 +9929,27 @@ output_report_def_fields (int bgn, int id, struct cb_field *f, struct cb_report 
 			}
 		}
 		val[i] = 0;
-		output_local("\"%s\",%d,", val, (int)ref_size);
-		cobc_free((void*) val);
+		output_local ("\"%s\",%d,", val, (int)ref_size);
+		cobc_free ((void*) val);
 	/* CHECKME: What about CB_CONST_P (ZERO/SPACE/QUOTE) ? */
 	} else {
-		output_local("NULL,0,");
+		output_local ("NULL,0,");
 	}
-	if(f->step_count < f->size)
+	if (f->step_count < f->size)
 		f->step_count = f->size;
-	if(f->report_column <= 0)	/* No COLUMN was given */
+	if (f->report_column <= 0)	/* No COLUMN was given */
 		f->report_column = 1;
-	if(f->children)
+	if (f->children)
 		f->report_flag |= COB_REPORT_GROUP_ITEM;
-	if(f->report_when)
+	if (f->report_when)
 		f->report_flag |= COB_REPORT_HAD_WHEN;
-	if((f->report_flag&~(COB_REPORT_EMITTED|COB_REPORT_COLUMN_PLUS)) == 0) {
-		output_local("0,%d",f->report_line);
-	}else
-	if(subscript > 0) {
-		output_local("0x%X,%d",f->report_flag&~(COB_REPORT_EMITTED|COB_REPORT_GROUP_ITEM),f->report_line);
+	if ((f->report_flag&~(COB_REPORT_EMITTED|COB_REPORT_COLUMN_PLUS)) == 0) {
+		output_local ("0,%d", f->report_line);
+	} else
+	if (subscript > 0) {
+		output_local ("0x%X,%d", f->report_flag&~(COB_REPORT_EMITTED|COB_REPORT_GROUP_ITEM), f->report_line);
 	} else {
-		output_local("0x%X,%d",f->report_flag&~COB_REPORT_EMITTED,f->report_line);
+		output_local ("0x%X,%d", f->report_flag&~COB_REPORT_EMITTED, f->report_line);
 	}
 	if(subscript > 1) {
 		idx = 1;
@@ -9936,19 +9962,19 @@ output_report_def_fields (int bgn, int id, struct cb_field *f, struct cb_report 
 		}
 		if(l) {
 			x = CB_VALUE (l);
-			output_local(",%d",cb_get_int(x));
+			output_local (",%d", cb_get_int (x));
 		} else
 		if(idx > 2) {
-			output_local(",%d",colnum + (f->step_count * (subscript - idx + 1)));
+			output_local (",%d", colnum + (f->step_count * (subscript - idx + 1)));
 		} else {
-			output_local(",%d",f->report_column + (f->step_count * (subscript-1)));
+			output_local (",%d", f->report_column + (f->step_count * (subscript - 1)));
 		}
 	} else {
-		output_local(",%d",f->report_column);
+		output_local (",%d",f->report_column);
 	}
-	output_local(",%d,%d",f->step_count,f->next_group_line);
-	output_local(",%d",f->level);
-	output_local(",0,0"); /* reportio flags: group_indicate & suppress */
+	output_local (",%d,%d", f->step_count, f->next_group_line);
+	output_local (",%d", f->level);
+	output_local (",0,0"); /* reportio flags: group_indicate & suppress */
 	output_local ("};\n");
 }
 
@@ -10249,7 +10275,7 @@ output_report_definition (struct cb_report *p, struct cb_report *n)
 	cb_tree	l;
 
 	output_local("\n");
-	for(i= p->num_lines-1; i >= 0; i--) {
+	for(i= p->num_lines - 1; i >= 0; i--) {
 		if(p->line_ids[i]->level == 1)
 			output_report_define_lines(1,p->line_ids[i], p);
 	}
@@ -10263,7 +10289,7 @@ output_report_definition (struct cb_report *p, struct cb_report *n)
 		output_local ("\n");
 	}
 	sum_prv = 0;
-	for (i= p->num_lines-1; i >= 0; i--) {
+	for (i= p->num_lines - 1; i >= 0; i--) {
 		if (p->line_ids[i]->level == 1) {
 			output_report_sum_counters (1, p->line_ids[i], p);
 		}
@@ -10505,7 +10531,6 @@ output_initial_values (struct cb_field *f)
 			continue;
 		}
 		x = cb_build_field_reference (p, NULL);
-		output_line ("/* initialize field %s */", f->name);
 		output_stmt (cb_build_initialize (x, cb_true, NULL, 1, STMT_INIT_STORAGE, 0));
 		output_newline ();
 	}
@@ -10551,7 +10576,7 @@ output_field_display (struct cb_field *f, size_t offset,
 	 && f->storage != CB_STORAGE_LINKAGE) {
 		output_param (x, 0);
 	} else {
-		output ("COB_SET_FLD (%s, ", "f0");
+		output ("COB_SET_FLD (f0, ");
 		output_size (x);
 		output (", ");
 		output_data (x);
@@ -10621,7 +10646,7 @@ output_field_display (struct cb_field *f, size_t offset,
 		if (f->level == 88) {
 			cb_tree l;
 			int param = 0;
-			/* Build condition */
+			/* output condition */
 			for (l = f->values; l; l = CB_CHAIN (l)) {
 				cb_tree t = CB_VALUE (l);
 				if (!param) {
@@ -10733,7 +10758,7 @@ output_display_fields (struct cb_field *f, size_t offset, unsigned int idx)
 			 && f->storage != CB_STORAGE_LINKAGE) {
 				output ("%s%d",	CB_PREFIX_FIELD, f->id);
 			} else {
-				output ("COB_SET_FLD (%s, %d, NULL, ", "f0", f->size);
+				output ("COB_SET_FLD (f0, %d, NULL, ", f->size);
 				output_attr (cb_build_field_reference (f, NULL));
 				output (")");
 			}
@@ -12128,6 +12153,7 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	if (cb_flag_trace) {
 		output_line ("/* Trace program exit */");
 		if (cb_old_trace) {
+			char	string_buffer[COB_MINI_BUFF];
 			/* Old code retained for testing; this epecially helps when running the test
 			   READY TRACE / RESET TRACE generated with 2.2 and compared with 3.x */
 			sprintf (string_buffer, "Exit:      %s", excp_current_program_id);
@@ -12308,6 +12334,7 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	for (l = prog->file_list; l; l = CB_CHAIN (l)) {
 		f = CB_FILE (CB_VALUE (l))->record;
 		if (f->flag_external) {
+			char	string_buffer[COB_MINI_BUFF];
 			strcpy (string_buffer, f->name);
 			for (p = string_buffer; *p; p++) {
 				if (*p == '-' || *p == ' ') {
@@ -12323,10 +12350,8 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 	gen_init_working = 1;		/* Disable use of DEPENDING ON fields */
 	/* Initialize WORKING-STORAGE EXTERNAL items */
 	for (f = prog->working_storage; f; f = f->sister) {
-		if (f->redefines) {
-			continue;
-		}
-		if (!f->flag_external) {
+		if (!f->flag_external
+		 || f->redefines) {
 			continue;
 		}
 		output_prefix ();
@@ -12790,9 +12815,9 @@ static void
 output_entry_function (struct cb_program *prog, cb_tree entry,
 		       cb_tree parameter_list, const int gencode)
 {
-	const char		*entry_name;
-	cb_tree			using_list;
-	cb_tree			l;
+	const char		*entry_name = CB_LABEL (CB_PURPOSE (entry))->name;
+	cb_tree			using_list = CB_VALUE (CB_VALUE (entry));
+	cb_tree			l = CB_PURPOSE (CB_VALUE (entry));	/* entry convention */
 	cb_tree			l1;
 	cb_tree			l2;
 	struct cb_field		*f;
@@ -12808,11 +12833,6 @@ output_entry_function (struct cb_program *prog, cb_tree entry,
 	int			sticky_nonp[MAX_CALL_FIELD_PARAMS] = { 0 };
 	int			entry_convention = 0;
 
-	entry_name = CB_LABEL (CB_PURPOSE (entry))->name;
-	using_list = CB_VALUE (CB_VALUE (entry));
-
-	/* entry convention */
-	l = CB_PURPOSE (CB_VALUE (entry));
 	/* LCOV_EXCL_START */
 	if (!l || !(CB_INTEGER_P (l) || CB_NUMERIC_LITERAL_P (l))) {
 		/* not translated as it is a highly unlikely internal abort */
@@ -12820,6 +12840,7 @@ output_entry_function (struct cb_program *prog, cb_tree entry,
 		COBC_ABORT ();
 	}
 	/* LCOV_EXCL_STOP */
+
 	if (CB_INTEGER_P (l)) {
 		entry_convention = CB_INTEGER (l)->val;
 	} else if (CB_NUMERIC_LITERAL_P (l)) {
@@ -12829,18 +12850,16 @@ output_entry_function (struct cb_program *prog, cb_tree entry,
 	if (gencode) {
 		output_line ("/* ENTRY '%s' */", entry_name);
 		output_newline ();
-#if	(defined(_WIN32) || defined(__CYGWIN__)) && !defined(__clang__)
 	} else {
 		if (!prog->nested_level) {
-			output ("__declspec(dllexport) ");
+			output ("COB_EXT_EXPORT ");
 		}
-#endif
 	}
 
 	/* Output return type. */
-	if ((prog->nested_level && !prog->flag_void)
-	    || (prog->flag_main && !prog->flag_recursive
-		&& !strcmp(prog->program_id, entry_name))) {
+	if ( (prog->nested_level && !prog->flag_void)
+	 ||  (prog->flag_main && !prog->flag_recursive
+	   && !strcmp (prog->program_id, entry_name))) {
 		output ("static ");
 	}
 	if (prog->flag_void) {
@@ -13188,7 +13207,7 @@ output_function_prototypes (struct cb_program *prog)
 						  may use the same but not-default function */
 				if (strcmp (prog->extfh, extfh_value) != 0
 				 && strcmp ("EXTFH", extfh_value) != 0) {
-					output_line ("extern int %s (unsigned char *opcode, FCD3 *fcd);",
+					output_line ("COB_EXT_IMPORT int %s (unsigned char *opcode, FCD3 *fcd);",
 						extfh_value);
 				}
 			}
@@ -13202,14 +13221,14 @@ output_function_prototypes (struct cb_program *prog)
 		} else {
 			output_line ("static void\t\t%s_%d_module_init (cob_module *module);",
 				cp->program_id, cp->toplev_count);
-	}
+		}
 
 	}
 
 	/* prototype for general EXTFH function */
 	if (prog->file_list && prog->extfh
 	 && strcmp ("EXTFH", prog->extfh) != 0) {
-		output ("extern int %s (unsigned char *opcode, FCD3 *fcd);", prog->extfh);
+		output ("COB_EXT_IMPORT int %s (unsigned char *opcode, FCD3 *fcd);", prog->extfh);
 		output_newline ();
 	}
 
@@ -13269,31 +13288,30 @@ output_header (const char *locbuff, const struct cb_program *cp)
 void
 codegen (struct cb_program *prog, const char *translate_name)
 {
+	const int set_xref = cb_listing_xref;
 	int subsequent_call = 0;
 
 	codegen_init (prog, translate_name);
 
+	/* Temporarily disable cross-reference during C generation */
+	cb_listing_xref = 0;
+
 	for (;;) {
-		/* Temporarily disable cross-reference during C generation */
-		if (cb_listing_xref) {
-			cb_listing_xref = 0;
-			codegen_internal (current_program, subsequent_call);
-			cb_listing_xref = 1;
-		} else {
-			codegen_internal (current_program, subsequent_call);
-		}
+		codegen_internal (current_program, subsequent_call);
 		if (!current_program->next_program) {
 			break;
 		}
-		if (current_program->flag_file_global && current_program->next_program->nested_level) {
+		subsequent_call = 1;
+		if (current_program->flag_file_global
+		 && current_program->next_program->nested_level) {
 			has_global_file = 1;
 		} else {
 			has_global_file = 0;
 		}
 		current_program = current_program->next_program;
-		subsequent_call = 1;
 	}
 	current_program = prog;
+	cb_listing_xref = set_xref;
 
 	codegen_finalize ();
 }
@@ -13301,6 +13319,8 @@ codegen (struct cb_program *prog, const char *translate_name)
 void
 codegen_init (struct cb_program *prog, const char *translate_name)
 {
+	char timestamp_buffer[COB_MINI_BUFF];
+
 	current_program = prog;
 	current_section = NULL;
 	current_paragraph = NULL;
@@ -13309,6 +13329,7 @@ codegen_init (struct cb_program *prog, const char *translate_name)
 
 	output_line_number = 1;
 	output_name = (char*)translate_name;
+	/* escape output name for C string */
 	if (strchr (output_name, '\\')) {
 		char buff[COB_MEDIUM_BUFF];
 		int pos = 0;
@@ -13332,32 +13353,28 @@ codegen_init (struct cb_program *prog, const char *translate_name)
 	base_cache = NULL;
 	globext_cache = NULL;
 	field_cache = NULL;
-	if (!string_buffer) {
-		string_buffer = cobc_main_malloc ((size_t)COB_MINI_BUFF);
-	}
 
-	strftime (string_buffer, (size_t)COB_MINI_MAX,
+	strftime (timestamp_buffer, (size_t)COB_MINI_MAX,
 		"%b %d %Y %H:%M:%S", &current_compile_tm);
 
 	output_target = yyout;
-	output_header (string_buffer, NULL);
+	output_header (timestamp_buffer, NULL);
 	output_target = cb_storage_file;
-	output_header (string_buffer, NULL);
+	output_header (timestamp_buffer, NULL);
 	{
-		struct cb_program* cp;
+		struct cb_program *cp;
 		for (cp = prog; cp; cp = cp->next_program) {
 			if (cp->flag_prototype) {
 				continue;
 			}
 			output_target = cp->local_include->local_fp;
-			output_header (string_buffer, cp);
+			output_header (timestamp_buffer, cp);
 		}
 	}
 	output_target = yyout;
 
 	output_standard_includes (prog);
-	/* string_buffer has formatted date from above */
-	output_gnucobol_defines (string_buffer);
+	output_gnucobol_defines (timestamp_buffer);
 
 	output_newline ();
 	output_line ("/* Global variables */");

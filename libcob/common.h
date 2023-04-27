@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman,
    Edward Hart
 
@@ -956,6 +956,8 @@ enum cob_open_mode {
 #define COB_STORE_TOWARD_LESSER		(1 << 10)
 #define COB_STORE_TRUNCATION		(1 << 11)
 
+#define COB_STORE_NO_SIZE_ERROR		(1 << 15)
+
 #define COB_STORE_MASK					\
 	(COB_STORE_ROUND | COB_STORE_KEEP_ON_OVERFLOW |	\
 	 COB_STORE_TRUNC_ON_OVERFLOW)
@@ -1872,7 +1874,7 @@ COB_EXPIMP void	cob_check_ref_mod_minimal	(const char *,
 					 const int, const int);
 COB_EXPIMP void	cob_check_ref_mod	(const int, const int,
 					 const int, const char *);
-COB_EXPIMP void	cob_check_beyond_exit (const unsigned char *);
+COB_EXPIMP void	cob_check_beyond_exit (const char *);
 
 
 /* Comparison functions */
@@ -1908,6 +1910,9 @@ COB_EXPIMP void cob_unstring_finish	(void);
 
 COB_EXPIMP const char *COB_SPACES_ALPHABETIC;	/* PIC X/A/U SPACES */
 #define COB_SPACES_ALPHABETIC_BYTE_LENGTH 1024
+
+COB_EXPIMP const char *COB_ZEROES_ALPHABETIC;	/* PIC X/A/U ZEROES */
+#define COB_ZEROES_ALPHABETIC_BYTE_LENGTH 256
 
 /*******************************/
 /*   Functions in move.c       */
@@ -1998,6 +2003,8 @@ COB_EXPIMP int	cob_cmp_numdisp		(const unsigned char *,
 COB_EXPIMP int	cob_cmp_float		(cob_field *, cob_field *);
 COB_EXPIMP void	cob_set_packed_zero	(cob_field *);
 COB_EXPIMP void	cob_set_packed_int	(cob_field *, const int);
+
+COB_EXPIMP void	cob_move_bcd		(cob_field *, cob_field *);
 
 COB_EXPIMP void	cob_decimal_alloc	(const cob_u32_t, ...);
 COB_EXPIMP void	cob_decimal_push	(const cob_u32_t, ...);

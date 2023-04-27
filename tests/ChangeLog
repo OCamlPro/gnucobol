@@ -4,6 +4,15 @@
 	* testsuite.src/listing.at: add test for the copy replacing in
 	  listing mode (bug: #831)
 
+2023-04-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* atlocal.in: to allow running some test parts thousands of time for 
+	  performance checks without burning energy on every build, add define
+	  "CHECK-PERF" of one of PERFSUFFIX or CGSUFFIX are set,
+	  or if --enable-debug was specified during configure
+	* testsuite.src: adjusted several tests to use that option
+
+
 2023-02-21  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* testsuite.src/syn_literals.at: move syntax checks on literals

@@ -241,6 +241,7 @@ static struct system_name_struct *lookup_system_name (const char *, const int);
 
 /* Reserved word table, note: this list is sorted on startup in
    (initialize_reserved_words_if_needed), no need to care for EBCDIC */
+
 /* Description */
 
 /* Word # Statement has terminator # Is context sensitive (only for printing)
@@ -601,7 +602,7 @@ static struct cobc_reserved default_reserved_words[] = {
 	/* FIXME + Check: 2014 Context-sensitive to COLUMN clause */
   },
   { "CENTERED",		0, 1, CENTERED,		/* ACU extension */
-	  0, CB_CS_DISPLAY
+				0, CB_CS_DISPLAY
   },
   { "CENTERED-HEADINGS",		0, 1, CENTERED_HEADINGS,		/* ACU extension */
 				0, CB_CS_GRAPHICAL_CONTROL | CB_CS_INQUIRE_MODIFY
@@ -3937,7 +3938,7 @@ static const unsigned char	pcob_lower_val[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 #endif
 
 struct list_reserved_line {
-        char *word_and_status;
+	char *word_and_status;
 	char *aliases;
 };
 
@@ -4190,7 +4191,7 @@ search_reserved_list (const char * const word, const int needs_uppercasing,
 	static char		upper_word[COB_MAX_WORDLEN + 1];
 	size_t			word_len;
 	const char		*sought_word;
-	struct cobc_reserved    to_find;
+	struct cobc_reserved	to_find;
 
 	if (needs_uppercasing) {
 		word_len = strlen (word) + 1;
@@ -4221,19 +4222,21 @@ find_default_reserved_word (const char * const word, const int needs_uppercasing
 static struct cobc_reserved
 get_user_specified_reserved_word (struct amendment_list user_reserved)
 {
-	struct cobc_reserved	cobc_reserved = create_dummy_reserved (NULL);
-	struct cobc_reserved	*p;
-
-	cobc_reserved.name = cobc_main_malloc (strlen (user_reserved.word) + 1);
-	strcpy ((char *) cobc_reserved.name, user_reserved.word);
+	struct cobc_reserved	compiler_reserved = create_dummy_reserved (NULL);
+	compiler_reserved.name = cobc_main_strdup (user_reserved.word);
 
 	if (!user_reserved.alias_for) {
-		cobc_reserved.context_sens
+		compiler_reserved.context_sens
 			= !!user_reserved.is_context_sensitive;
 	} else {
-		p = find_default_reserved_word (user_reserved.alias_for, 0);
+		struct cobc_reserved	*p = find_default_reserved_word (user_reserved.alias_for, 0);
 		if (p) {
-			cobc_reserved.token = p->token;
+			compiler_reserved.token = p->token;
+			if (user_reserved.is_context_sensitive) {
+				compiler_reserved.context_sens =
+					!!user_reserved.is_context_sensitive;
+				compiler_reserved.context_test = p->context_test;
+			}
 		} else {
 			/* FIXME: can we point to the fname originally defining the word? */
 			configuration_error (NULL, 0, 1,
@@ -4242,7 +4245,7 @@ get_user_specified_reserved_word (struct amendment_list user_reserved)
 		}
 	}
 
-	return cobc_reserved;
+	return compiler_reserved;
 }
 
 static int
@@ -4565,7 +4568,7 @@ get_reserved_words_with_amendments (void)
 		add_reserved_word_to_map (reserved, 0);
 
 		free_amendment_content (amendment_map[i]);
-	        free_amendment_with_key (i);
+		free_amendment_with_key (i);
 	}
 }
 
@@ -4932,14 +4935,12 @@ lookup_reserved_word (const char *name)
 
 	if (p->token == FUNCTION_ID) {
 		cobc_cs_check = 0;
-		cobc_force_literal = 1;
 	} else if (p->token == INTRINSIC) {
 		if (!cobc_in_repository) {
 			return NULL;
 		}
 	} else if (p->token == PROGRAM_ID) {
 		cobc_cs_check = CB_CS_PROGRAM_ID;
-		cobc_force_literal = 1;
 	} else if (p->token == REPOSITORY) {
 		cobc_in_repository = 1;
 	}

@@ -574,7 +574,7 @@ static const struct option long_options[] = {
 	{"std",			CB_RQ_ARG, NULL, '$'},
 	{"conf",		CB_RQ_ARG, NULL, '&'},
 	{"debug",		CB_NO_ARG, NULL, 'd'},
-	{"ext",			CB_RQ_ARG, NULL, 'e'},
+	{"ext",			CB_RQ_ARG, NULL, 'e'},	/* note: kept *undocumented* until GC4, will be changed to '.' */
 	{"free",		CB_NO_ARG, NULL, 'F'},	/* note: not assigned directly as this is only valid for */
 	{"fixed",		CB_NO_ARG, NULL, 'f'},	/*       `int` and sizeof(enum) isn't always sizeof (int) */
 	{"static",		CB_NO_ARG, &cb_flag_static_call, 1},
@@ -1087,9 +1087,9 @@ cobc_main_stradd_dup (const char *str1, const char *str2)
 void *
 cobc_main_realloc (void *prevptr, const size_t size)
 {
+	register struct cobc_mem_struct	*curr;
+	register struct cobc_mem_struct	*prev;
 	struct cobc_mem_struct	*m;
-	struct cobc_mem_struct	*curr;
-	struct cobc_mem_struct	*prev;
 
 	m = calloc ((size_t)1, COBC_MEM_SIZE + size);
 	/* LCOV_EXCL_START */
@@ -1131,8 +1131,8 @@ cobc_main_realloc (void *prevptr, const size_t size)
 void
 cobc_main_free (void *prevptr)
 {
-	struct cobc_mem_struct	*curr;
-	struct cobc_mem_struct	*prev;
+	register struct cobc_mem_struct	*curr;
+	register struct cobc_mem_struct	*prev;
 
 	prev = NULL;
 	for (curr = cobc_mainmem_base; curr; curr = curr->next) {
@@ -1203,9 +1203,9 @@ cobc_parse_strdup (const char *dupstr)
 void *
 cobc_parse_realloc (void *prevptr, const size_t size)
 {
+	register struct cobc_mem_struct	*curr;
+	register struct cobc_mem_struct	*prev;
 	struct cobc_mem_struct	*m;
-	struct cobc_mem_struct	*curr;
-	struct cobc_mem_struct	*prev;
 
 	m = calloc ((size_t)1, COBC_MEM_SIZE + size);
 	/* LCOV_EXCL_START */
@@ -1247,8 +1247,8 @@ cobc_parse_realloc (void *prevptr, const size_t size)
 void
 cobc_parse_free (void *prevptr)
 {
-	struct cobc_mem_struct	*curr;
-	struct cobc_mem_struct	*prev;
+	register struct cobc_mem_struct	*curr;
+	register struct cobc_mem_struct	*prev;
 
 	prev = NULL;
 	for (curr = cobc_parsemem_base; curr; curr = curr->next) {
@@ -2778,7 +2778,6 @@ file_stripext (char *buff)
 static char *
 file_basename (const char *filename, const char *strip_ext)
 {
-	const char	*p;
 	const char	*startp;
 	const char	*endp;
 	size_t		len;
@@ -2792,19 +2791,23 @@ file_basename (const char *filename, const char *strip_ext)
 	/* LCOV_EXCL_STOP */
 
 	/* Remove directory name */
-	startp = NULL;
-	for (p = filename; *p; p++) {
-		if (*p == '/' || *p == '\\') {
-			startp = p;
+	startp = strrchr (filename, '/');
+#if defined(_WIN32) || defined(__CYGWIN__)
+	{
+		const char *slash = strrchr (filename, '\\');
+		if (slash
+		 && (!startp || startp < slash)) {
+			startp = slash;
 		}
 	}
+#endif
 	if (startp) {
 		startp++;
 	} else {
 		startp = filename;
 	}
 
-	/* Remove extension */
+	/* Remove extension (= after last '.') */
 	if (!strip_ext || strcmp (strip_ext, COB_BASENAME_KEEP_EXT)) {
 		endp = strrchr (filename, '.');
 	} else {
@@ -3616,7 +3619,8 @@ process_command_line (const int argc, char **argv)
 #endif
 			break;
 
-		case 'e':
+		case 'e':	/* until GC 4 we keep (undocumented) 'e',
+			     	   but that's reserved for possible --error-log */
 			/* -ext <xx> : Add an extension suffix */
 			if (strlen (cob_optarg) > 15U) {
 				cobc_err_exit (COBC_INV_PAR, "--ext");
@@ -4244,9 +4248,12 @@ process_filename (const char *filename)
 #if	defined(__OS400__)
 	    extension[0] == 0
 #else
-		cb_strcasecmp (extension, COB_OBJECT_EXT) == 0
+	    cb_strcasecmp (extension, COB_OBJECT_EXT) == 0
 #if	defined(_WIN32)
 	 || cb_strcasecmp (extension, "lib") == 0
+#if defined (__GNUC__)
+	|| cb_strcasecmp (extension, "dll") == 0
+#endif
 #endif
 #if	!defined(_WIN32) || defined(__MINGW32__) || defined(__MINGW64__)
 	 || cb_strcasecmp (extension, "a") == 0
@@ -5904,12 +5911,12 @@ xref_files_and_their_records (cb_tree file_list_p)
 	cb_tree	l;
 
 	for (l = file_list_p; l; l = CB_CHAIN (l)) {
+		struct cb_file *file = CB_FILE (CB_VALUE (l));
 		pd_off = sprintf (print_data, "%-30.30s %-6u ",
-			 CB_FILE (CB_VALUE (l))->name,
-			 CB_FILE (CB_VALUE (l))->common.source_line);
-		xref_print (&CB_FILE (CB_VALUE (l))->xref, XREF_FILE, NULL);
-		if (CB_FILE (CB_VALUE (l))->record) {
-			(void)xref_fields (CB_FILE (CB_VALUE (l))->record);
+			 file->name, file->common.source_line);
+		xref_print (&file->xref, XREF_FILE, NULL);
+		if (file->record) {
+			(void)xref_fields (file->record);
 		}
 		print_program_data ("");
 	}
@@ -5930,15 +5937,14 @@ xref_fields_in_section (struct cb_field *first_field_in_section)
 }
 
 static int
-xref_labels (cb_tree label_list_p)
+xref_labels (cb_tree statements)
 {
-	cb_tree	l;
 	char	label_type = ' ';
-	struct cb_label *lab;
-
-	for (l = label_list_p; l; l = CB_CHAIN (l)) {
-		if (CB_LABEL_P(CB_VALUE(l))) {
-			lab = CB_LABEL (CB_VALUE (l));
+	cb_tree	l;
+	for (l = statements; l; l = CB_CHAIN (l)) {
+		cb_tree stmt = CB_VALUE (l);
+		if (CB_LABEL_P (stmt)) {
+			struct cb_label *lab = CB_LABEL (stmt);
 			if (lab->xref.skip) {
 				continue;
 			}
