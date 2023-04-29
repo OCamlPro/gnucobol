@@ -1161,8 +1161,8 @@ AT_CHECK([$COBCRUN_DIRECT ./unchecked_prog2], [0],
 [test over
 ], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog2], [1], [],
-[libcob: prog2.cob:13: error: 'X-NUM' (Type: PACKED-DECIMAL) not numeric: '0x000a123f'
-])
+[[libcob: prog2.cob:13: error: 'X-NUM' (Type: PACKED-DECIMAL (unsigned)) not numeric: '0x000a123f'
+]])
 
 AT_CLEANUP
 

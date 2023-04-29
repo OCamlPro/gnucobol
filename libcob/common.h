@@ -960,7 +960,7 @@ enum cob_open_mode {
 
 #define COB_STORE_MASK					\
 	(COB_STORE_ROUND | COB_STORE_KEEP_ON_OVERFLOW |	\
-	 COB_STORE_TRUNC_ON_OVERFLOW)
+	 COB_STORE_TRUNC_ON_OVERFLOW | COB_STORE_NO_SIZE_ERROR)
 
 /* Screen attribute defines */
 
@@ -1824,7 +1824,7 @@ struct cob_time
 
 /* note: these are internal (cobc/libcob -> libcob) only functions */
 COB_EXPIMP struct cob_time cob_get_current_date_and_time	(void);	/* returning datetime without nanos */
-COB_EXPIMP int cob_set_date_from_epoch		(struct cob_time *, const char *);
+COB_EXPIMP int cob_set_date_from_epoch		(struct cob_time *, unsigned const char *);
 
 /* Registration of external handlers */
 COB_EXPIMP void	cob_reg_sighnd	(void (*sighnd) (int));

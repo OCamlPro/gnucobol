@@ -1,8 +1,22 @@
 
+2023-04-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.c (explain_field_type): distinguish COMP-6 and unsigned packed
+	  from PACKED-DECIMAL
+	* (check_current_date): switched to iterating over COB_CURENT_DATE
+	  by pointer
+
 2023-04-27  Simon Sobisch <simonsobisch@gnu.org>
 
 	* move.c (cob_move_display_to_packed), numeric.c (cob_decimal_get_packed):
 	  simplify code, following idea by of Chuck Haatveet
+	* common.c (cob_is_numeric): speedup by using new macro IS_INVALID_BCD_DATA
+	  which uses the new lookup table b2i
+	* common.c: new macros IS_VALID_DIGIT_DATA / IS_INVALID_DIGIT_DATA added
+	  and used
+	* numeric.c (cob_decimal_do_round, cob_decimal_get_field): fix
+	  COB_STORE_PROHIBITED to not overwrite target data and always raise an
+	  exception if rounding would be necessary
 
 2023-04-26  Simon Sobisch <simonsobisch@gnu.org>
 

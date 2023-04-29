@@ -1321,11 +1321,11 @@ cob_decimal_get_packed (cob_decimal *d, cob_field *f, const int opt)
 	   we got from mpz_get_str above */
 	p = data + f->size - 1;
 	if (!COB_FIELD_HAVE_SIGN (f)) {
-		*p |= 0x0FU;
+		*p |= 0x0F;
 	} else if (sign == -1) {
-		*p |= 0x0DU;
+		*p |= 0x0D;
 	} else {
-		*p |= 0x0CU;
+		*p |= 0x0C;
 	}
 
 	return 0;
@@ -1772,7 +1772,10 @@ cob_decimal_get_binary (cob_decimal *d, cob_field *f, const int opt)
 	}
 
 overflow:
-	cob_set_exception (COB_EC_SIZE_OVERFLOW);
+	/* Overflow */
+	if ((opt & COB_STORE_NO_SIZE_ERROR) == 0) {
+		cob_set_exception (COB_EC_SIZE_OVERFLOW);
+	}
 	return cobglobptr->cob_exception_code;
 }
 
@@ -1881,7 +1884,9 @@ cob_print_realbin (const cob_field *f, FILE *fp, const int size)
 	}
 }
 
-static void
+/* do rounding on the decimal,
+   returns 1 if needed and PROHIBITED */
+static int
 cob_decimal_do_round (cob_decimal *d, cob_field *f, const int opt)
 {
 	cob_uli_t	adj;
@@ -1891,15 +1896,14 @@ cob_decimal_do_round (cob_decimal *d, cob_field *f, const int opt)
 	/* Nothing to do when value is 0 or when target has GE scale */
 	if (sign == 0
 	 || scale >= d->scale) {
-		return;
+		return 0;
 	}
 
 	switch (opt & ~(COB_STORE_MASK)) {
 	case COB_STORE_TRUNCATION:
-		return;
+		return 0;
 	case COB_STORE_PROHIBITED:
-		cob_set_exception (COB_EC_SIZE_TRUNCATION);
-		return;
+		return 1;
 	case COB_STORE_AWAY_FROM_ZERO:
 		adj = d->scale - scale;
 		cob_pow_10 (cob_mpzt, adj);
@@ -1912,7 +1916,7 @@ cob_decimal_do_round (cob_decimal *d, cob_field *f, const int opt)
 				mpz_add (d->value, d->value, cob_mpzt);
 			}
 		}
-		return;
+		return 0;
 	case COB_STORE_NEAR_TOWARD_ZERO:
 		adj = d->scale - scale - 1;
 		cob_pow_10 (cob_mpzt, adj);
@@ -1925,14 +1929,14 @@ cob_decimal_do_round (cob_decimal *d, cob_field *f, const int opt)
 			}
 		}
 		if (mpz_sgn (cob_mpzt2) == 0) {
-			return;
+			return 0;
 		}
 		if (sign == 1) {
 			mpz_add_ui (d->value, d->value, 5UL);
 		} else {
 			mpz_sub_ui (d->value, d->value, 5UL);
 		}
-		return;
+		return 0;
 	case COB_STORE_TOWARD_GREATER:
 		adj = d->scale - scale;
 		cob_pow_10 (cob_mpzt, adj);
@@ -1943,7 +1947,7 @@ cob_decimal_do_round (cob_decimal *d, cob_field *f, const int opt)
 				mpz_add (d->value, d->value, cob_mpzt);
 			}
 		}
-		return;
+		return 0;
 	case COB_STORE_TOWARD_LESSER:
 		adj = d->scale - scale;
 		cob_pow_10 (cob_mpzt, adj);
@@ -1954,7 +1958,7 @@ cob_decimal_do_round (cob_decimal *d, cob_field *f, const int opt)
 				mpz_sub (d->value, d->value, cob_mpzt);
 			}
 		}
-		return;
+		return 0;
 	case COB_STORE_NEAR_EVEN:
 		adj = d->scale - scale - 1;
 		cob_pow_10 (cob_mpzt, adj);
@@ -1974,7 +1978,7 @@ cob_decimal_do_round (cob_decimal *d, cob_field *f, const int opt)
 			case 45:
 			case 65:
 			case 85:
-				return;
+				return 0;
 			}
 		}
 		if (sign == 1) {
@@ -1982,7 +1986,7 @@ cob_decimal_do_round (cob_decimal *d, cob_field *f, const int opt)
 		} else {
 			mpz_sub_ui (d->value, d->value, 5UL);
 		}
-		return;
+		return 0;
 	case COB_STORE_NEAR_AWAY_FROM_ZERO:
 	default:
 		{
@@ -1996,7 +2000,7 @@ cob_decimal_do_round (cob_decimal *d, cob_field *f, const int opt)
 		} else {
 			mpz_sub_ui (d->value, d->value, 5UL);
 		}
-		return;
+		return 0;
 	}
 }
 
@@ -2026,7 +2030,10 @@ cob_decimal_get_field (cob_decimal *d, cob_field *f, const int opt)
 
 	/* Rounding */
 	if ((opt & COB_STORE_ROUND)) {
-		cob_decimal_do_round (d, f, opt);
+		if (cob_decimal_do_round (d, f, opt)) {
+			cob_set_exception (COB_EC_SIZE_TRUNCATION);
+			return cobglobptr->cob_exception_code;
+		}
 	}
 	if (!COB_FIELD_IS_FP (f)) {
 		/* Append or truncate decimal digits - useless for floating point */
