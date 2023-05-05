@@ -1,4 +1,9 @@
 
+2023-05-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	* field.c (cb_resolve_redefines): fix #881 wrong REDEFINES error on
+	  fields with redefinition
+
 2023-04-25  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c (output_so_load_version_check): new function to generate
