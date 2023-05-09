@@ -239,8 +239,9 @@ cob_load_collation (const char *col_name,
 unsigned char
 cob_toupper (const unsigned char c)
 {
-	if (lower_tab[c]) {
-		return lower_tab[c];
+	const unsigned char tab_entry = lower_tab[c];
+	if (tab_entry) {
+		return tab_entry;
 	}
 	return c;
 }
@@ -249,8 +250,9 @@ cob_toupper (const unsigned char c)
 unsigned char
 cob_tolower (const unsigned char c)
 {
-	if (upper_tab[c]) {
-		return upper_tab[c];
+	const unsigned char tab_entry = upper_tab[c];
+	if (tab_entry) {
+		return tab_entry;
 	}
 	return c;
 }
@@ -328,7 +330,7 @@ cob_field_to_string (const cob_field *f, void *str, const size_t maxsize,
 		break;
 	}
 	*s = 0;
-	return end - data;
+	return end + 1 - f->data;
 }
 
 
