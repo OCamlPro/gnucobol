@@ -477,9 +477,19 @@ COB_HIDDEN void		cob_add_exception (const int);
 COB_HIDDEN int		cob_check_env_true	(char*);
 COB_HIDDEN int		cob_check_env_false	(char*);
 COB_HIDDEN const char	*cob_get_last_exception_name	(void);
-COB_HIDDEN void		cob_field_to_string	(const cob_field *, void *,
-						 const size_t);
 COB_HIDDEN void		cob_parameter_check	(const char *, const int);
+
+enum cob_case_modifier {
+	CCM_NONE,
+	CCM_LOWER,
+	CCM_UPPER,
+	CCM_LOWER_LOCALE,
+	CCM_UPPER_LOCALE
+};
+COB_HIDDEN unsigned char	cob_toupper (const unsigned char);
+COB_HIDDEN unsigned char	cob_tolower (const unsigned char);
+COB_HIDDEN void		cob_field_to_string	(const cob_field *, void *,
+						 const size_t, const enum cob_case_modifier target_case);
 
 COB_HIDDEN cob_settings *cob_get_settings_ptr	(void);
 COB_HIDDEN char	*cob_strndup		(const char *, const size_t);

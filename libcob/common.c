@@ -2945,50 +2945,6 @@ cob_get_pointer (const void *srcptr)
 	return (cob_u8_ptr)tmptr;
 }
 
-/* stores the field's rtrimmed string content into the given buffer
-   with maxlength */
-void
-cob_field_to_string (const cob_field *f, void *str, const size_t maxsize)
-{
-	register unsigned char	*end, *data, *s;
-
-	if (unlikely (f == NULL)) {
-		snprintf (str, maxsize, "%s", ("NULL field"));
-		return;
-	}
-
-	if (unlikely (f->size == 0)) {
-		return;
-	}
-	data = f->data;
-	/* check if field has data assigned (may be a BASED / LINKAGE item) */
-	if (data == NULL) {
-		snprintf (str, maxsize, "%s", ("field with NULL address"));
-		return;
-	}
-	end = data + f->size - 1;
-	while (end > data) {
-		if (*end != ' ' && *end) {
-			break;
-		}
-		end--;
-	}
-	s = (unsigned char *)str;
-	if (*end == ' ' || *end == 0) {
-		*s = 0;
-		return;
-	}
-
-	/* note: the specified max does not contain the low-value */
-	if ((size_t)(end - data) > maxsize) {
-		end = data + maxsize;
-	}
-	while (data <= end) {
-		*s++ = *data++;
-	}
-	*s = 0;
-}
-
 static void
 call_exit_handlers_and_terminate (void)
 {
@@ -5493,9 +5449,9 @@ cob_display_environment (const cob_field *f)
 		}
 		cob_local_env = cob_malloc (cob_local_env_size + 1U);
 	}
-	cob_field_to_string (f, cob_local_env, cob_local_env_size);
+	i = cob_field_to_string (f, cob_local_env, cob_local_env_size, CCM_NONE);
 	if (unlikely (cobsetptr->cob_env_mangle)) {
-		const size_t len = strlen (cob_local_env);
+		const size_t len = i;
 		for (i = 0; i < len; ++i) {
 			if (!isalnum ((int)cob_local_env[i])) {
 				cob_local_env[i] = '_';
@@ -5507,21 +5463,23 @@ cob_display_environment (const cob_field *f)
 void
 cob_display_env_value (const cob_field *f)
 {
-	char	*env2;
 	int		ret;
 
-	if (!cob_local_env) {
+	if (!cob_local_env
+	 || !cob_local_env[0]) {
 		cob_set_exception (COB_EC_IMP_DISPLAY);
 		return;
 	}
-	if (!*cob_local_env) {
-		cob_set_exception (COB_EC_IMP_DISPLAY);
-		return;
+	{
+		char	buff[COB_MIDI_BUFF];
+		int 	flen = cob_field_to_string (f, buff,
+					COB_MIDI_MAX, CCM_NONE);
+		if (flen < 0) {
+			cob_set_exception (COB_EC_IMP_DISPLAY);
+			return;
+		}
+		ret = cob_setenv (cob_local_env, buff, 1);
 	}
-	env2 = cob_malloc (f->size + 1U);
-	cob_field_to_string (f, env2, f->size);
-	ret = cob_setenv (cob_local_env, env2, 1);
-	cob_free (env2);
 	if (ret != 0) {
 		cob_set_exception (COB_EC_IMP_DISPLAY);
 		return;
@@ -5541,7 +5499,8 @@ void
 cob_get_environment (const cob_field *envname, cob_field *envval)
 {
 	const char	*p;
-	char		*buff;
+	char	buff[COB_MIDI_BUFF];
+	int 	flen;
 	size_t		size;
 
 	if (envname->size == 0 || envval->size == 0) {
@@ -5549,11 +5508,15 @@ cob_get_environment (const cob_field *envname, cob_field *envval)
 		return;
 	}
 
-	buff = cob_malloc (envname->size + 1U);
-	cob_field_to_string (envname, buff, envname->size);
+	flen = cob_field_to_string (envname, buff,
+				COB_MIDI_MAX, CCM_NONE);
+	if (flen < 1) {
+		cob_set_exception (COB_EC_IMP_ACCEPT);
+		return;
+	}
+
 	if (unlikely (cobsetptr->cob_env_mangle)) {
-		const size_t len = strlen (buff);
-		for (size = 0; size < len; ++size) {
+		for (size = 0; size < flen; ++size) {
 			if (!isalnum ((int)buff[size])) {
 				buff[size] = '_';
 			}
@@ -5565,7 +5528,6 @@ cob_get_environment (const cob_field *envname, cob_field *envval)
 		p = " ";
 	}
 	cob_move_intermediate (envval, p, strlen (p));
-	cob_free (buff);
 }
 
 void
@@ -5586,13 +5548,11 @@ cob_accept_environment (cob_field *f)
 void
 cob_chain_setup (void *data, const size_t parm, const size_t size)
 {
-	size_t	len;
-
 	/* only set if given on command-line, otherwise use normal
 	   program internal initialization */
 	if (parm <= (size_t)cob_argc - 1) {
+		const size_t	len = strlen (cob_argv[parm]);
 		memset (data, ' ', size);
-		len = strlen (cob_argv[parm]);
 		if (len <= size) {
 			memcpy (data, cob_argv[parm], len);
 		} else {
@@ -7074,7 +7034,8 @@ cob_sys_getopt_long_long (void *so, void *lo, void *idx, const int long_only, vo
 	/* add 0-termination to strings */
 	shortoptions = cob_malloc (so_size + 1U);
 	if (COB_MODULE_PTR->cob_procedure_params[0]) {
-		cob_field_to_string (COB_MODULE_PTR->cob_procedure_params[0], shortoptions, so_size);
+		cob_field_to_string (COB_MODULE_PTR->cob_procedure_params[0],
+				shortoptions, so_size, CCM_NONE);
 	}
 
 	if (COB_MODULE_PTR->cob_procedure_params[1]) {
@@ -7299,43 +7260,43 @@ void
 cob_set_locale (cob_field *locale, const int category)
 {
 #ifdef	HAVE_SETLOCALE
+	char	buff[COB_MINI_BUFF];
 	char	*p;
-	char	*buff;
 
-	p = NULL;
 	if (locale) {
-		if (locale->size == 0) {
+		int 	flen = cob_field_to_string (locale, buff,
+					COB_MINI_MAX, CCM_NONE);
+		if (flen < 1) {
 			return;
 		}
-		buff = cob_malloc (locale->size + 1U);
-		cob_field_to_string (locale, buff, locale->size);
+		p = buff;
 	} else {
-		buff = NULL;
+		p = NULL;
 	}
 
 	switch (category) {
 	case COB_LC_COLLATE:
-		p = setlocale (LC_COLLATE, buff);
+		p = setlocale (LC_COLLATE, p);
 		break;
 	case COB_LC_CTYPE:
-		p = setlocale (LC_CTYPE, buff);
+		p = setlocale (LC_CTYPE, p);
 		break;
 #ifdef	LC_MESSAGES
 	case COB_LC_MESSAGES:
-		p = setlocale (LC_MESSAGES, buff);
+		p = setlocale (LC_MESSAGES, p);
 		break;
 #endif
 	case COB_LC_MONETARY:
-		p = setlocale (LC_MONETARY, buff);
+		p = setlocale (LC_MONETARY, p);
 		break;
 	case COB_LC_NUMERIC:
-		p = setlocale (LC_NUMERIC, buff);
+		p = setlocale (LC_NUMERIC, p);
 		break;
 	case COB_LC_TIME:
-		p = setlocale (LC_TIME, buff);
+		p = setlocale (LC_TIME, p);
 		break;
 	case COB_LC_ALL:
-		p = setlocale (LC_ALL, buff);
+		p = setlocale (LC_ALL, p);
 		break;
 	case COB_LC_USER:
 		if (cobglobptr->cob_locale_orig) {
@@ -7348,9 +7309,6 @@ cob_set_locale (cob_field *locale, const int category)
 			p = setlocale (LC_CTYPE, cobglobptr->cob_locale_ctype);
 		}
 		break;
-	}
-	if (buff) {
-		cob_free (buff);
 	}
 	if (!p) {
 		cob_set_exception (COB_EC_LOCALE_MISSING);
@@ -9999,6 +9957,7 @@ cob_init (const int argc, char **argv)
 	/* Call inits with cobsetptr to get the addresses of all */
 	/* Screen-IO might be needed for error outputs */
 	cob_init_screenio (cobglobptr, cobsetptr);
+	cob_init_cconv (cobglobptr);
 	cob_init_numeric (cobglobptr);
 	cob_init_strings (cobglobptr);
 	cob_init_move (cobglobptr, cobsetptr);

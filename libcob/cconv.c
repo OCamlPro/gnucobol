@@ -30,12 +30,76 @@
 #define	COB_LIB_EXPIMP
 #include "coblocal.h"
 
+#ifdef	HAVE_DESIGNATED_INITS
+static const unsigned char	lower_tab[256] = {
+	['a'] = 'A',
+	['b'] = 'B',
+	['c'] = 'C',
+	['d'] = 'D',
+	['e'] = 'E',
+	['f'] = 'F',
+	['g'] = 'G',
+	['h'] = 'H',
+	['i'] = 'I',
+	['j'] = 'J',
+	['k'] = 'K',
+	['l'] = 'L',
+	['m'] = 'M',
+	['n'] = 'N',
+	['o'] = 'O',
+	['p'] = 'P',
+	['q'] = 'Q',
+	['r'] = 'R',
+	['s'] = 'S',
+	['t'] = 'T',
+	['u'] = 'U',
+	['v'] = 'V',
+	['w'] = 'W',
+	['x'] = 'X',
+	['y'] = 'Y',
+	['z'] = 'Z'
+};
+static const unsigned char	upper_tab[256] = {
+	['A'] = 'a',
+	['B'] = 'b',
+	['C'] = 'c',
+	['D'] = 'd',
+	['E'] = 'e',
+	['F'] = 'f',
+	['G'] = 'g',
+	['H'] = 'h',
+	['I'] = 'i',
+	['J'] = 'j',
+	['K'] = 'k',
+	['L'] = 'l',
+	['M'] = 'm',
+	['N'] = 'n',
+	['O'] = 'o',
+	['P'] = 'p',
+	['Q'] = 'q',
+	['R'] = 'r',
+	['S'] = 's',
+	['T'] = 't',
+	['U'] = 'u',
+	['V'] = 'v',
+	['W'] = 'w',
+	['X'] = 'x',
+	['Y'] = 'y',
+	['Z'] = 'z'
+};
+#else
+static unsigned char		lower_tab[256];
+static unsigned char		upper_tab[256];
+static const unsigned char	plower_tab[] = "abcdefghijklmnopqrstuvwxyz";
+static const unsigned char	plower_val[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+#endif
+
 static int
 cob_convert_hex_digit (char h)
 {
-	if (h >= '0' && h <= '9') return h - '0';
-	else if (h >= 'A' && h <= 'F') return 10 + h - 'A';
-	else if (h >= 'a' && h <= 'f') return 10 + h - 'a';
+	if (h >= '0' && h <= '9') return COB_D2I (h);
+	h = cob_toupper (h);
+	if (h >= 'A' && h <= 'F') return 10 + h - 'A';
 	else return -1;
 }
 
@@ -169,4 +233,132 @@ cob_load_collation (const char *col_name,
 	}
 
 	return 0;
+}
+
+/* Upper-casing for internal words using efficient 7bit C locale table lookup. */
+unsigned char
+cob_toupper (const unsigned char c)
+{
+	if (lower_tab[c]) {
+		return lower_tab[c];
+	}
+	return c;
+}
+
+/* Lower-casing for internal words using efficient 7bit C locale table lookup. */
+unsigned char
+cob_tolower (const unsigned char c)
+{
+	if (upper_tab[c]) {
+		return upper_tab[c];
+	}
+	return c;
+}
+
+/* stores the field's rtrimmed string content into the given buffer
+   with maxlength, optionally doing upper-/lowercasing on the fly,
+   returns negative values on error, otherwise size of the data
+   processed */
+int
+cob_field_to_string (const cob_field *f, void *str, const size_t maxsize,
+	const enum cob_case_modifier target_case)
+{
+	register unsigned char	*end, *data, *s;
+
+	if (unlikely (f == NULL)) {
+		snprintf (str, maxsize, "%s", ("NULL field"));
+		return -1;
+	}
+
+	if (unlikely (f->size == 0)) {
+		return -2;
+	}
+	data = f->data;
+	/* check if field has data assigned (may be a BASED / LINKAGE item) */
+	if (data == NULL) {
+		snprintf (str, maxsize, "%s", ("field with NULL address"));
+		return -3;
+	}
+	end = data + f->size - 1;
+	while (end > data) {
+		if (*end != ' ' && *end) {
+			break;
+		}
+		end--;
+	}
+	s = (unsigned char *)str;
+	if (*end == ' ' || *end == 0) {
+		*s = 0;
+		return 0;
+	}
+
+	/* note: the specified max does not contain the low-value */
+	if ((size_t)(end - data) > maxsize) {
+#if 0	/* Simon: it is likely not a good idea to just ignore the data */
+		end = data + maxsize;
+#else
+		return -4;
+#endif
+	}
+	switch (target_case) {
+	case CCM_NONE:
+		while (data <= end) {
+			*s++ = *data++;
+		}
+		break;
+	case CCM_LOWER:
+		while (data <= end) {
+			*s++ = cob_tolower (*data++);
+		}
+		break;
+	case CCM_UPPER:
+		while (data <= end) {
+			*s++ = cob_toupper (*data++);
+		}
+		break;
+	case CCM_LOWER_LOCALE:
+		while (data <= end) {
+			*s++ = tolower (*data++);
+		}
+		break;
+	case CCM_UPPER_LOCALE:
+		while (data <= end) {
+			*s++ = toupper (*data++);
+		}
+		break;
+	}
+	*s = 0;
+	return end - data;
+}
+
+
+#ifndef	HAVE_DESIGNATED_INITS
+/* initialize the 7bit upper/lower table */
+static void
+init_upper_lower (void)
+{
+	const unsigned char *p, *v;
+
+	memset (lower_tab, 0, sizeof (lower_tab));
+	v = plower_val;
+	p = plower_tab;
+	for (; *p; ++p, ++v) {
+		lower_tab[*p] = *v;
+	}
+	memset (upper_tab, 0, sizeof (upper_tab));
+	p = plower_val;
+	v = plower_tab;
+	for (; *p; ++p, ++v) {
+		upper_tab[*p] = *v;
+	}
+}
+#endif
+
+
+void
+cob_init_cconv (cob_global *lptr)
+{
+#ifndef	HAVE_DESIGNATED_INITS
+	init_upper_lower ();
+#endif
 }

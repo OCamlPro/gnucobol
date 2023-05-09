@@ -6157,7 +6157,7 @@ cob_pre_open (cob_file *f)
 	} else
 	if (f->assign != NULL
 	 && f->assign->data != NULL) {
-		cob_field_to_string (f->assign, file_open_name, (size_t)COB_FILE_MAX);
+		cob_field_to_string (f->assign, file_open_name, (size_t)COB_FILE_MAX, CCM_NONE);
 	}
 }
 
@@ -6939,7 +6939,7 @@ cob_delete_file (cob_file *f, cob_field *fnstatus)
 	}
 
 	/* Obtain the file name */
-	cob_field_to_string (f->assign, file_open_name, (size_t)COB_FILE_MAX);
+	cob_field_to_string (f->assign, file_open_name, (size_t)COB_FILE_MAX, CCM_NONE);
 	cob_chk_file_mapping ();
 
 	if (f->organization != COB_ORG_INDEXED) {
@@ -8512,7 +8512,7 @@ cob_get_filename_print (cob_file* file, const int show_resolved_name)
 {
 	size_t offset = 0, len;
 	/* Obtain the file name */
-	cob_field_to_string (file->assign, file_open_env, (size_t)COB_FILE_MAX);
+	cob_field_to_string (file->assign, file_open_env, (size_t)COB_FILE_MAX, CCM_NONE);
 	if (show_resolved_name) {
 		strncpy (file_open_name, file_open_env, (size_t)COB_FILE_MAX);
 		file_open_name[COB_FILE_MAX] = 0;
@@ -8847,7 +8847,7 @@ copy_file_to_fcd (cob_file *f, FCD3 *fcd)
 		char	assign_to[COB_FILE_BUFF];
 		size_t	fnlen;
 		if (f->assign) {
-			cob_field_to_string (f->assign, assign_to, COB_FILE_MAX);
+			cob_field_to_string (f->assign, assign_to, COB_FILE_MAX, CCM_NONE);
 		} else if (f->select_name) {
 			strncpy (assign_to, f->select_name, COB_FILE_MAX);
 			assign_to[COB_FILE_MAX] = 0;
