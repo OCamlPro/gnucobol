@@ -1,4 +1,23 @@
 
+2023-05-09  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cconv.c (cob_field_to_string): moved from common.c
+	* cconv.c (cob_init_cconv), coblocal.h, common.c: added
+	* cconv.c (cob_toupper, cob_tolower, cob_init_cconv), coblocal.h:
+	  included (copy from cobc/reserved.c)
+	* coblocal.h (enum cob_case_modifier): new enum to select case-adjustment
+	* cconv.c (cob_field_to_string), coblocal.h: adjusted function signature,
+	  allowing for optional change of case during copy and returning the size
+	  to process or negative error values in case of "no data to process"
+	* cconv.c (cob_field_to_string): return error if truncating would be
+	  necessary
+	* reportio.c, intrinsic.c, fileio.c, common.c, call.c: adjusted for new
+	  signature of cob_field_to_string
+	* intrinsic.c (locale_time, cob_intr_locale_date, cob_intr_locale_compare):
+	  always use full locale string passed, error handling improved
+	* common.c (cob_set_locale, cob_get_environment, cob_display_env_value):
+	  use local buffer, error handling improved
+
 2023-04-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (explain_field_type): distinguish COMP-6 and unsigned packed
