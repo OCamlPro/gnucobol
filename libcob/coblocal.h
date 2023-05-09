@@ -426,6 +426,7 @@ struct config_tbl {
 
 /* Local function prototypes */
 COB_HIDDEN void		cob_init_numeric	(cob_global *);
+COB_HIDDEN void		cob_init_cconv		(cob_global *);
 COB_HIDDEN void		cob_init_termio		(cob_global *, cob_settings *);
 COB_HIDDEN void		cob_init_fileio		(cob_global *, cob_settings *);
 COB_HIDDEN char		*cob_get_filename_print	(cob_file *, const int);
@@ -488,7 +489,7 @@ enum cob_case_modifier {
 };
 COB_HIDDEN unsigned char	cob_toupper (const unsigned char);
 COB_HIDDEN unsigned char	cob_tolower (const unsigned char);
-COB_HIDDEN void		cob_field_to_string	(const cob_field *, void *,
+COB_HIDDEN int		cob_field_to_string	(const cob_field *, void *,
 						 const size_t, const enum cob_case_modifier target_case);
 
 COB_HIDDEN cob_settings *cob_get_settings_ptr	(void);
