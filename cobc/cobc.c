@@ -2218,14 +2218,15 @@ set_compile_date (void)
 {
 	static int sde_todo = 0;
 	if (sde_todo == 0) {
-		char  *s = getenv ("SOURCE_DATE_EPOCH");
+		unsigned char  *s = (unsigned char *) getenv ("SOURCE_DATE_EPOCH");
 		sde_todo = 1;
 		if (s && *s) {
 			if (cob_set_date_from_epoch (&current_compile_time, s) == 0) {
 				set_compile_date_tm ();
 				return;
 			}
-			cobc_err_msg (_("environment variable '%s' has invalid content"), "SOURCE_DATE_EPOCH");
+			cobc_err_msg (_("environment variable '%s' has invalid content"),
+				"SOURCE_DATE_EPOCH");
 			if (!cb_flag_syntax_only) {
 				cb_source_file = NULL;
 				cobc_abort_terminate (0);
