@@ -317,8 +317,8 @@ cob_add_fields(cob_field *op1, cob_field *op2, cob_field *rslt)
 	cob_move(op1, &fld1);
 
 #ifdef COB_DEBUG_LOG
-	if(DEBUG_ISON("rw")) {
-		cob_field_to_string(op1, wrk, sizeof(wrk)-1);
+	if (DEBUG_ISON("rw")) {
+		(void)cob_field_to_string (op1, wrk, sizeof(wrk)-1, CCM_NONE);
 		DEBUG_LOG("rw",("    Add '%s' ",wrk));
 	}
 #endif
@@ -332,8 +332,8 @@ cob_add_fields(cob_field *op1, cob_field *op2, cob_field *rslt)
 	cob_move(op2, &fld2);
 
 #ifdef COB_DEBUG_LOG
-	if(DEBUG_ISON("rw")) {
-		cob_field_to_string(op2, wrk, sizeof(wrk)-1);
+	if (DEBUG_ISON ("rw")) {
+		(void)cob_field_to_string (op2, wrk, sizeof (wrk) - 1, CCM_NONE);
 		DEBUG_LOG("rw",("TO '%s' ",wrk));
 	}
 #endif
@@ -343,11 +343,11 @@ cob_add_fields(cob_field *op1, cob_field *op2, cob_field *rslt)
 	cob_move(&fld1, rslt);			/* Copy SUM back to result field */
 
 #ifdef COB_DEBUG_LOG
-	if(DEBUG_ISON("rw")) {
-		cob_field_to_string(&fld1, wrk, sizeof(wrk)-1);
+	if (DEBUG_ISON("rw")) {
+		(void)cob_field_to_string (&fld1, wrk, sizeof(wrk)-1, CCM_NONE);
 		DEBUG_LOG("rw",("GIVING '%s' ",wrk));
 		DEBUG_LOG("rw",("  PIC 9(%d)",rslt->attr->digits));
-		if(rslt->attr->scale > 0)
+		if (rslt->attr->scale > 0)
 			DEBUG_LOG("rw",("V9(%d)",rslt->attr->scale));
 		DEBUG_LOG("rw",("\n"));
 	}
@@ -362,36 +362,36 @@ dumpFlags(int flags, int ln, char *name)
 		return;
 	}
 
-	if(name == NULL)
+	if (name == NULL)
 		name = (char*)"";
-	if(flags & COB_REPORT_HEADING)		DEBUG_LOG("rw",("REPORT HEADING "));
-	if(flags & COB_REPORT_FOOTING)		DEBUG_LOG("rw",("REPORT FOOTING "));
-	if(flags & COB_REPORT_PAGE_HEADING)	DEBUG_LOG("rw",("PAGE HEADING "));
-	if(flags & COB_REPORT_PAGE_FOOTING)	DEBUG_LOG("rw",("PAGE FOOTING "));
-	if(flags & COB_REPORT_CONTROL_HEADING)	DEBUG_LOG("rw",("CONTROL HEADING %s ",name));
-	if(flags & COB_REPORT_CONTROL_HEADING_FINAL) DEBUG_LOG("rw",("CONTROL HEADING FINAL "));
-	if(flags & COB_REPORT_CONTROL_FOOTING)	{
-		if(flags & COB_REPORT_ALL)
+	if (flags & COB_REPORT_HEADING)		DEBUG_LOG("rw",("REPORT HEADING "));
+	if (flags & COB_REPORT_FOOTING)		DEBUG_LOG("rw",("REPORT FOOTING "));
+	if (flags & COB_REPORT_PAGE_HEADING)	DEBUG_LOG("rw",("PAGE HEADING "));
+	if (flags & COB_REPORT_PAGE_FOOTING)	DEBUG_LOG("rw",("PAGE FOOTING "));
+	if (flags & COB_REPORT_CONTROL_HEADING)	DEBUG_LOG("rw",("CONTROL HEADING %s ",name));
+	if (flags & COB_REPORT_CONTROL_HEADING_FINAL) DEBUG_LOG("rw",("CONTROL HEADING FINAL "));
+	if (flags & COB_REPORT_CONTROL_FOOTING)	{
+		if (flags & COB_REPORT_ALL)
 						DEBUG_LOG("rw",("CONTROL FOOTING %s ",name));
 		else
 						DEBUG_LOG("rw",("CONTROL FOOTING ALL "));
 	}
-	if(flags & COB_REPORT_CONTROL_FOOTING_FINAL) DEBUG_LOG("rw",("CONTROL FOOTING FINAL "));
-	if(flags & COB_REPORT_DETAIL)		DEBUG_LOG("rw",("DETAIL "));
-	if(flags & COB_REPORT_LINE_PLUS)	{if(ln > 0) DEBUG_LOG("rw",("LINE PLUS %d ",ln));}
-	else if(flags & COB_REPORT_LINE)	DEBUG_LOG("rw",("LINE %d ",ln));
-	if(flags & COB_REPORT_LINE_NEXT_PAGE)	DEBUG_LOG("rw",("LINE NEXT PAGE "));
-	if(flags & COB_REPORT_NEXT_PAGE)	DEBUG_LOG("rw",("NEXT PAGE "));
-	if(flags & COB_REPORT_GROUP_INDICATE)	DEBUG_LOG("rw",("GROUP INDICATE "));
-	if(flags & COB_REPORT_COLUMN_PLUS)	DEBUG_LOG("rw",("COLUMN PLUS "));
-	if(flags & COB_REPORT_RESET_FINAL)	DEBUG_LOG("rw",("RESET FINAL "));
-	if(flags & COB_REPORT_COLUMN_LEFT)	DEBUG_LOG("rw",("LEFT "));
-	if(flags & COB_REPORT_COLUMN_RIGHT)	DEBUG_LOG("rw",("RIGHT "));
-	if(flags & COB_REPORT_COLUMN_CENTER)	DEBUG_LOG("rw",("CENTER "));
-	if(flags & COB_REPORT_GROUP_ITEM)	DEBUG_LOG("rw",("GROUP "));
-	if(flags & COB_REPORT_PRESENT)	{
-		if(flags & COB_REPORT_NEGATE)	{
-			if(flags & COB_REPORT_BEFORE) {
+	if (flags & COB_REPORT_CONTROL_FOOTING_FINAL) DEBUG_LOG("rw",("CONTROL FOOTING FINAL "));
+	if (flags & COB_REPORT_DETAIL)		DEBUG_LOG("rw",("DETAIL "));
+	if (flags & COB_REPORT_LINE_PLUS)	{if(ln > 0) DEBUG_LOG("rw",("LINE PLUS %d ",ln));}
+	else if (flags & COB_REPORT_LINE)	DEBUG_LOG("rw",("LINE %d ",ln));
+	if (flags & COB_REPORT_LINE_NEXT_PAGE)	DEBUG_LOG("rw",("LINE NEXT PAGE "));
+	if (flags & COB_REPORT_NEXT_PAGE)	DEBUG_LOG("rw",("NEXT PAGE "));
+	if (flags & COB_REPORT_GROUP_INDICATE)	DEBUG_LOG("rw",("GROUP INDICATE "));
+	if (flags & COB_REPORT_COLUMN_PLUS)	DEBUG_LOG("rw",("COLUMN PLUS "));
+	if (flags & COB_REPORT_RESET_FINAL)	DEBUG_LOG("rw",("RESET FINAL "));
+	if (flags & COB_REPORT_COLUMN_LEFT)	DEBUG_LOG("rw",("LEFT "));
+	if (flags & COB_REPORT_COLUMN_RIGHT)	DEBUG_LOG("rw",("RIGHT "));
+	if (flags & COB_REPORT_COLUMN_CENTER)	DEBUG_LOG("rw",("CENTER "));
+	if (flags & COB_REPORT_GROUP_ITEM)	DEBUG_LOG("rw",("GROUP "));
+	if (flags & COB_REPORT_PRESENT)	{
+		if (flags & COB_REPORT_NEGATE)	{
+			if (flags & COB_REPORT_BEFORE) {
 						DEBUG_LOG("rw",("ABSENT BEFORE "));
 			} else {
 						DEBUG_LOG("rw",("ABSENT AFTER "));
@@ -453,25 +453,25 @@ reportDumpOneLine(const cob_report *r, cob_report_line *fl, int indent, int dump
 		if(fl->report_flags & COB_REPORT_NEXT_GROUP_PAGE)	DEBUG_LOG("rw",("NEXT GROUP PAGE "));
 	}
 	if(fl->control) {
-		cob_field_to_string(fl->control, wrk, sizeof(wrk)-1);
-		if(wrk[0] >= ' ')
+		(void)cob_field_to_string (fl->control, wrk, sizeof(wrk) - 1, CCM_NONE);
+		if (wrk[0] >= ' ')
 			DEBUG_LOG("rw",("Line Control %d is '%s' ",sequence,wrk));
 	}
 	DEBUG_LOG("rw",("\n"));
 	if(!(fl->flags & COB_REPORT_DETAIL)) dumpdata = 1;
 	for(rf = fl->fields; rf; rf = rf->next) {
 		DEBUG_LOG("rw",("%s   %02d Field ",idnt,rf->level));
-		if(rf->line)		DEBUG_LOG("rw",("Line %2d ",rf->line));
-		if(rf->column)		DEBUG_LOG("rw",("Col %3d ",rf->column));
-		if(rf->step_count)	DEBUG_LOG("rw",("Step %3d ",rf->step_count));
-		if(rf->next_group_line)	DEBUG_LOG("rw",("NextGrp %d ",rf->next_group_line));
-		if(dumpdata) {
-			if(!(rf->flags & COB_REPORT_GROUP_ITEM)) {
-				if(rf->f) {
-					if(rf->litval) {
+		if (rf->line)		DEBUG_LOG("rw",("Line %2d ",rf->line));
+		if (rf->column)		DEBUG_LOG("rw",("Col %3d ",rf->column));
+		if (rf->step_count)	DEBUG_LOG("rw",("Step %3d ",rf->step_count));
+		if (rf->next_group_line)	DEBUG_LOG("rw",("NextGrp %d ",rf->next_group_line));
+		if (dumpdata) {
+			if (!(rf->flags & COB_REPORT_GROUP_ITEM)) {
+				if (rf->f) {
+					if (rf->litval) {
 						DEBUG_LOG("rw",("   \"%s\" ",rf->litval));
 					} else {
-						cob_field_to_string(rf->f, wrk, sizeof(wrk)-1);
+						(void)cob_field_to_string (rf->f, wrk, sizeof (wrk) - 1, CCM_NONE);
 						DEBUG_LOG("rw",("   '%s' ",wrk));
 					}
 				}
@@ -600,13 +600,13 @@ reportDump(const cob_report *r, const char *msg)
 		for(c=r->controls; c; c = c->next) {
 			DEBUG_LOG("rw",(" Control %s ",c->name));
 			if(c->f) {
-				cob_field_to_string(c->f, wrk, sizeof(wrk)-1);
-				if(wrk[0] >= ' ')
+				(void)cob_field_to_string (c->f, wrk, sizeof (wrk) - 1, CCM_NONE);
+				if (wrk[0] >= ' ')
 					DEBUG_LOG("rw",("has '%s' ",wrk));
 			}
 			if(c->val) {
-				cob_field_to_string(c->val, wrk, sizeof(wrk)-1);
-				if(wrk[0] >= ' ')
+				(void)cob_field_to_string (c->val, wrk, sizeof (wrk) - 1, CCM_NONE);
+				if (wrk[0] >= ' ')
 					DEBUG_LOG("rw",("Value '%s' ",wrk));
 			}
 			DEBUG_LOG("rw",("\n"));
@@ -1695,9 +1695,9 @@ PrintFirstHeading:
 #if defined(COB_DEBUG_LOG) 
 				DEBUG_LOG("rw",(" Control Break %s order %d changed from ",
 							rc->name,rc->sequence));
-				cob_field_to_string(rc->val, wrk, sizeof(wrk)-1);
+				(void)cob_field_to_string (rc->val, wrk, sizeof(wrk)-1, CCM_NONE);
 				DEBUG_LOG("rw",("'%s' to ",wrk));
-				cob_field_to_string(rc->f, wrk, sizeof(wrk)-1);
+				(void)cob_field_to_string (rc->f, wrk, sizeof(wrk)-1, CCM_NONE);
 				DEBUG_LOG("rw",("'%s'\n",wrk));
 #endif
 				cob_move(rc->f, rc->sf);	/* Save new CONTROL value */
