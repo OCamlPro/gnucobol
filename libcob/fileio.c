@@ -6157,7 +6157,7 @@ cob_pre_open (cob_file *f)
 	} else
 	if (f->assign != NULL
 	 && f->assign->data != NULL) {
-		cob_field_to_string (f->assign, file_open_name, (size_t)COB_FILE_MAX, CCM_NONE);
+		cob_field_to_string (f->assign, file_open_name, COB_FILE_MAX, CCM_NONE);
 	}
 }
 
@@ -6939,7 +6939,7 @@ cob_delete_file (cob_file *f, cob_field *fnstatus)
 	}
 
 	/* Obtain the file name */
-	cob_field_to_string (f->assign, file_open_name, (size_t)COB_FILE_MAX, CCM_NONE);
+	cob_field_to_string (f->assign, file_open_name, COB_FILE_MAX, CCM_NONE);
 	cob_chk_file_mapping ();
 
 	if (f->organization != COB_ORG_INDEXED) {
@@ -8512,9 +8512,9 @@ cob_get_filename_print (cob_file* file, const int show_resolved_name)
 {
 	size_t offset = 0, len;
 	/* Obtain the file name */
-	cob_field_to_string (file->assign, file_open_env, (size_t)COB_FILE_MAX, CCM_NONE);
+	cob_field_to_string (file->assign, file_open_env, COB_FILE_MAX, CCM_NONE);
 	if (show_resolved_name) {
-		strncpy (file_open_name, file_open_env, (size_t)COB_FILE_MAX);
+		strncpy (file_open_name, file_open_env, COB_FILE_MAX);
 		file_open_name[COB_FILE_MAX] = 0;
 		cob_chk_file_mapping ();
 	}

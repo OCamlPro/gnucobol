@@ -5440,7 +5440,7 @@ cob_putenv (char *name)
 void
 cob_display_environment (const cob_field *f)
 {
-	size_t	i;
+	int	ret;
 
 	if (cob_local_env_size < f->size) {
 		cob_local_env_size = f->size;
@@ -5449,9 +5449,13 @@ cob_display_environment (const cob_field *f)
 		}
 		cob_local_env = cob_malloc (cob_local_env_size + 1U);
 	}
-	i = cob_field_to_string (f, cob_local_env, cob_local_env_size, CCM_NONE);
+	ret = cob_field_to_string (f, cob_local_env, cob_local_env_size, CCM_NONE);
+	if (ret < 0) {
+		return;
+	}
 	if (unlikely (cobsetptr->cob_env_mangle)) {
-		const size_t len = i;
+		const size_t len = ret;
+		size_t i;
 		for (i = 0; i < len; ++i) {
 			if (!isalnum ((int)cob_local_env[i])) {
 				cob_local_env[i] = '_';
@@ -5460,6 +5464,7 @@ cob_display_environment (const cob_field *f)
 	}
 }
 
+/* DISPLAY ... UPON ENVIRONMENT VALUE */
 void
 cob_display_env_value (const cob_field *f)
 {
