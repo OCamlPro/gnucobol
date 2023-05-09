@@ -5471,9 +5471,9 @@ cob_display_env_value (const cob_field *f)
 		return;
 	}
 	{
-		char	buff[COB_MIDI_BUFF];
+		char	buff[COB_MEDIUM_BUFF];
 		int 	flen = cob_field_to_string (f, buff,
-					COB_MIDI_MAX, CCM_NONE);
+					COB_MEDIUM_MAX, CCM_NONE);
 		if (flen < 0) {
 			cob_set_exception (COB_EC_IMP_DISPLAY);
 			return;
@@ -5499,7 +5499,7 @@ void
 cob_get_environment (const cob_field *envname, cob_field *envval)
 {
 	const char	*p;
-	char	buff[COB_MIDI_BUFF];
+	char	buff[COB_MEDIUM_BUFF];
 	int 	flen;
 	size_t		size;
 
@@ -5509,7 +5509,7 @@ cob_get_environment (const cob_field *envname, cob_field *envval)
 	}
 
 	flen = cob_field_to_string (envname, buff,
-				COB_MIDI_MAX, CCM_NONE);
+				COB_MEDIUM_MAX, CCM_NONE);
 	if (flen < 1) {
 		cob_set_exception (COB_EC_IMP_ACCEPT);
 		return;
