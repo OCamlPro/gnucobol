@@ -1819,7 +1819,6 @@ locale_time (const int hours, const int minutes, const int seconds,
 	     cob_field *locale_field, char *buff)
 {
 	size_t		len;
-	unsigned char	*p;
 	LCID		localeid = LOCALE_USER_DEFAULT;
 	SYSTEMTIME	syst;
 
@@ -1837,6 +1836,7 @@ locale_time (const int hours, const int minutes, const int seconds,
 #if 0	/* re-null-terminate last char (first space/comma/...)
 		   of the locale string
 		   -> Simon: Why? We already have it rtrimmed */
+		unsigned char	*p;
 		for (p = (unsigned char *)locale_buff; *p; ++p) {
 			if (isalnum((int)*p) || *p == '_') {
 				continue;
@@ -5890,7 +5890,6 @@ cob_intr_locale_date (const int offset, const int length,
 	struct tm	tstruct;
 	char		buff2[128];
 #else
-	unsigned char	*p;
 	LCID		localeid = LOCALE_USER_DEFAULT;
 	SYSTEMTIME	syst;
 #endif
@@ -5904,6 +5903,7 @@ cob_intr_locale_date (const int offset, const int length,
 	if (COB_FIELD_IS_NUMERIC (srcfield)) {
 		indate = cob_get_int (srcfield);
 	} else {
+		unsigned char *p;
 		if (srcfield->size < 8) {
 			goto derror;
 		}
@@ -5964,6 +5964,7 @@ cob_intr_locale_date (const int offset, const int length,
 #if 0	/* re-null-terminate last char (first space/comma/...)
 		   of the locale string
 		   -> Simon: Why? We already have it rtrimmed */
+		unsigned char *p;
 		for (p = (unsigned char *)locale_buff; *p; ++p) {
 			if (isalnum((int)*p) || *p == '_') {
 				continue;
@@ -5973,7 +5974,7 @@ cob_intr_locale_date (const int offset, const int length,
 		*p = 0;
 #endif
 		if (flen < 1) {
-			return 1;
+			goto derror;
 		}
 		for (len = 0; len < WINLOCSIZE; ++len) {
 			if (!strcmp (locale_buff, wintable[len].winlocalename)) {
