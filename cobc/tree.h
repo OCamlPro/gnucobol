@@ -1806,8 +1806,7 @@ struct cb_program {
 							   when cb_correct_program_order is set */
 	const char		*program_name;		/* Internal program-name */
 	const char		*program_id;		/* Demangled external PROGRAM-ID */
-	char			*source_name;		/* Source name,
-										   only set in the first "real" program */
+	char			*source_name;		/* Source name */
 	char			*orig_program_id;	/* Original external PROGRAM-ID */
 	struct cb_word		**word_table;		/* Name hash table */
 	struct local_filename	*local_include;		/* Local include info */

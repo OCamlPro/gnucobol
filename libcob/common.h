@@ -1005,11 +1005,12 @@ typedef cob_s64_t cob_flags_t;
 #define COB_SCREEN_EMULATE_NL		((cob_flags_t)1 << 27)
 #define COB_SCREEN_UPPER		((cob_flags_t)1 << 28)
 #define COB_SCREEN_LOWER		((cob_flags_t)1 << 29)
-#define COB_SCREEN_GRID			((cob_flags_t)1 << 30)
+#define COB_SCREEN_CONV			((cob_flags_t)1 << 30)
 /*#define COB_SCREEN_reserved		((cob_flags_t)1 << 31) /+ reserved for next flag used in screenio */
 #define COB_SCREEN_TAB			((cob_flags_t)1 << 32) /* used for syntax checking */
 #define COB_SCREEN_NO_UPDATE		((cob_flags_t)1 << 33) /* used for syntax checking */
 #define COB_SCREEN_SCROLL_UP		((cob_flags_t)1 << 34) /* used for syntax checking */
+#define COB_SCREEN_GRID			((cob_flags_t)1 << 35) /* used for syntax checking */
 
 #define COB_SCREEN_TYPE_GROUP		0
 #define COB_SCREEN_TYPE_FIELD		1
@@ -1307,7 +1308,9 @@ struct cob_func_loc {
 	int			save_num_params;
 };
 
-/* File connector */
+
+/** File connector **/
+
 
 /* Key structure */
 
@@ -2103,6 +2106,8 @@ COB_EXPIMP void		cob_screen_display	(cob_screen *, cob_field *,
 COB_EXPIMP void		cob_screen_accept	(cob_screen *, cob_field *,
 					 cob_field *, cob_field *,
 					 const int);
+COB_EXPIMP void		cob_accept_field	(cob_field *, const cob_flags_t, const char *, ...);
+COB_EXPIMP void		cob_display_field	(cob_field *, const cob_flags_t, const char *, ...);
 COB_EXPIMP void		cob_field_display	(cob_field *, cob_field *, cob_field *,
 					 cob_field *, cob_field *, cob_field *,
 					 cob_field *, const cob_flags_t);

@@ -576,6 +576,13 @@ same_level:
 		if (f->level <= 66) {
 			f->flag_volatile = parent->flag_volatile;
 		}
+		if (f->storage == CB_STORAGE_SCREEN) {
+			f->screen_foreg   = parent->screen_foreg;
+			f->screen_backg   = parent->screen_backg;
+			f->screen_prompt  = parent->screen_prompt;
+			f->screen_control = parent->screen_control;
+			f->screen_color   = parent->screen_color;
+		}
 	}
 
 	return CB_TREE (f);
