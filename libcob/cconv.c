@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2005,2006,2022-2023 Free Software Foundation, Inc.
+   Copyright (C) 2005, 2006, 2013, 2022-2023 Free Software Foundation, Inc.
    Written by Roger While, Nicolas Berthier, Simon Sobisch, David Declerck
 
    This file is part of GnuCOBOL.
@@ -267,18 +267,22 @@ cob_field_to_string (const cob_field *f, void *str, const size_t maxsize,
 {
 	register unsigned char	*end, *data, *s;
 
+	s = (unsigned char *)str;
 	if (unlikely (f == NULL)) {
 		snprintf (str, maxsize, "%s", ("NULL field"));
+		*(s + maxsize - 1) = 0;
 		return -1;
 	}
 
 	if (unlikely (f->size == 0)) {
+		*s = 0;
 		return -2;
 	}
 	data = f->data;
 	/* check if field has data assigned (may be a BASED / LINKAGE item) */
 	if (data == NULL) {
 		snprintf (str, maxsize, "%s", ("field with NULL address"));
+		*(s + maxsize - 1) = 0;
 		return -3;
 	}
 	end = data + f->size - 1;
@@ -288,7 +292,6 @@ cob_field_to_string (const cob_field *f, void *str, const size_t maxsize,
 		}
 		end--;
 	}
-	s = (unsigned char *)str;
 	if (*end == ' ' || *end == 0) {
 		*s = 0;
 		return 0;
@@ -299,6 +302,7 @@ cob_field_to_string (const cob_field *f, void *str, const size_t maxsize,
 #if 0	/* Simon: it is likely not a good idea to just ignore the data */
 		end = data + maxsize;
 #else
+		*s = 0;
 		return -4;
 #endif
 	}

@@ -9336,13 +9336,13 @@ output_screen_definition (struct cb_field *p)
 static void
 output_screen_init (struct cb_field *p, struct cb_field *previous)
 {
-	int	type;
-
-	type = (p->children ? COB_SCREEN_TYPE_GROUP :
+	const int	type = (p->children ? COB_SCREEN_TYPE_GROUP :
 		p->values ? COB_SCREEN_TYPE_VALUE :
 		(p->size > 0) ? COB_SCREEN_TYPE_FIELD : COB_SCREEN_TYPE_ATTRIBUTE);
+
 	output_prefix ();
-	output ("cob_set_screen (&%s%d, ", CB_PREFIX_SCR_FIELD, p->id);
+	output ("COB_SET_SCREEN (%s%d, %d, 0x" CB_FMT_LLX ", ",
+		CB_PREFIX_SCR_FIELD, p->id, type, p->screen_flag);
 
 	if (p->sister && p->sister->level != 1) {
 		output ("&%s%d, ", CB_PREFIX_SCR_FIELD, p->sister->id);
@@ -9374,10 +9374,10 @@ output_screen_init (struct cb_field *p, struct cb_field *previous)
 
 	if (type == COB_SCREEN_TYPE_FIELD) {
 		output_param (cb_build_field_reference (p, NULL), -1);
-		output (", ");
 	} else {
-		output ("NULL, ");
+		output ("NULL");
 	}
+	output (", ");
 
 	output_newline ();
 	output_prefix ();
@@ -9386,24 +9386,24 @@ output_screen_init (struct cb_field *p, struct cb_field *previous)
 	if (type == COB_SCREEN_TYPE_VALUE) {
 		/* Need a field reference here */
 		output_param (cb_build_field_reference (p, NULL), -1);
-		output (", ");
 	} else {
-		output ("NULL, ");
+		output ("NULL");
 	}
+	output (", ");
 
 	if (p->screen_line) {
 		output_param (p->screen_line, 0);
-		output (", ");
 	} else {
-		output ("NULL, ");
+		output ("NULL");
 	}
+	output (", ");
 
 	if (p->screen_column) {
 		output_param (p->screen_column, 0);
-		output (", ");
 	} else {
-		output ("NULL, ");
+		output ("NULL");
 	}
+	output (", ");
 
 	output_newline ();
 	output_prefix ();
@@ -9411,28 +9411,26 @@ output_screen_init (struct cb_field *p, struct cb_field *previous)
 
 	if (p->screen_foreg) {
 		output_param (p->screen_foreg, 0);
-		output (", ");
 	} else {
-		output ("NULL, ");
+		output ("NULL");
 	}
+	output (", ");
 
 	if (p->screen_backg) {
 		output_param (p->screen_backg, 0);
-		output (", ");
 	} else {
-		output ("NULL, ");
+		output ("NULL");
 	}
+	output (", ");
 
 	if (p->screen_prompt) {
 		output_param (p->screen_prompt, 0);
-		output (", ");
 	} else {
-		output ("NULL, ");
+		output ("NULL");
 	}
+	output (", %d);", p->occurs_min);
 
 	output_newline ();
-	output_line ("\t\t  %d, %d, 0x" CB_FMT_LLX ");",
-		type, p->occurs_min, p->screen_flag);
 
 	if (p->children) {
 		output_screen_init (p->children, NULL);
@@ -12428,6 +12426,8 @@ output_internal_function (struct cb_program *prog, cb_tree parameter_list)
 		output_line ("/* Initialize SCREEN items */");
 		/* Initialize items with VALUE */
 		output_initial_values (prog->screen_storage);
+		/* output structure, note: this can be quite complex
+		   and nested, therefore this isn't done in the header */
 		output_screen_init (prog->screen_storage, NULL);
 		output_newline ();
 	}

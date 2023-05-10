@@ -1,4 +1,14 @@
 
+2023-05-10  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c (adjust_attr_from_color_field,
+	  adjust_attr_from_control_field): new functions to adjust screenio
+	  attributes during runtime via COLOR and CONTROL fields
+	  (later function mostly a stub with minimal "parsing" so far)
+	* screenio.c (cob_screen_attr): refactor to read colors first, allowing
+	  later override via new functions
+	* screenio.c (cob_screen_set_mode, cob_screen_line_col): minor refactoring
+
 2023-05-09  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cconv.c (cob_field_to_string): moved from common.c
@@ -17,6 +27,19 @@
 	  always use full locale string passed, error handling improved
 	* common.c (cob_set_locale, cob_get_environment, cob_display_env_value):
 	  use local buffer, error handling improved
+
+	FR #189 + FR #355 - runtime-adjustable attributes for extended screenio
+	* screenio.c (cob_accept_field, cob_display_field), common.h: new vararg
+	  functions to take variable attribute fields, including the new fields
+	  CONTROL, COLOR and CURSOR
+	* screenio.c (field_accept): added cursor parameter and handle it for both
+	  "initial cursor position" and - if it isn't a constant - also for "exit
+	  cursor position", count max-pos on input allowing position to last
+	  position if CURSOR is outside of the data
+	* screenio.c (field_accept, field_display, cob_screen_attr): added color
+	  and control parameters
+	* common.h: COB_SCREEN_CONV new attribute, moved "parsing only" attribute
+	  COB_SCREEN_GRID to higher number
 
 2023-04-28  Simon Sobisch <simonsobisch@gnu.org>
 
