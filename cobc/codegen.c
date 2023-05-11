@@ -8511,7 +8511,7 @@ output_label_as_c (const struct cb_label *lp)
 	unsigned char buff[COB_MINI_BUFF];
 	unsigned char *ptr = (unsigned char *)&buff;
 	cob_encode_program_id ((unsigned char*)lp->orig_name, ptr,
-		COB_MINI_MAX, lp->flag_entry ? COB_FOLD_NONE : COB_FOLD_UPPER);
+		COB_MINI_MAX, COB_FOLD_UPPER);
 	if (*ptr == '_') ptr++;
 	if (lp->flag_section) {
 		/* SECTION label */
@@ -12929,8 +12929,7 @@ output_entry_function (struct cb_program *prog, cb_tree entry,
 	}
 
 	/* For calling into a module, cob_call_params may not be known */
-	if (using_list
-	 && gencode > 0) {	// MORE OF thIS -> output to  wrapper
+	if (using_list) {
 		parmnum = 0;
 		for (l = using_list; l; l = CB_CHAIN (l)) {
 			parmnum++;
@@ -13327,48 +13326,10 @@ codegen (struct cb_program *prog, const char *translate_name)
 	codegen_finalize ();
 }
 
-static char *
-get_encoded_basename (const char *filename)
-{
-	const char *startp, *endp;
-	char *res;
-	size_t		len;
-
-	startp = strrchr (filename, '/');
-#if defined(_WIN32) || defined(__CYGWIN__)
-	{
-		const char *slash = strrchr (filename, '\\');
-		if (slash
-			&& (!startp || startp < slash)) {
-			startp = slash;
-		}
-	}
-#endif
-	if (startp) {
-		startp++;
-	} else {
-		startp = filename;
-	}
-	endp = strchr (startp, '.');
-	if (endp) {
-		len = endp - startp;
-	} else {
-		len = strlen (startp);
-	}
-
-	res = cobc_malloc (len + 1);
-	memcpy (res, startp, len);
-
-	return res;
-}
-
 void
 codegen_init (struct cb_program *prog, const char *translate_name)
 {
 	char timestamp_buffer[COB_MINI_BUFF];
-	struct cb_program *first_real_prog = NULL;
-	char *forward_entry_sourcename = NULL;
-	char *forward_entry_outputname = NULL;
 
 	current_program = prog;
 	current_section = NULL;
@@ -13416,15 +13377,6 @@ codegen_init (struct cb_program *prog, const char *translate_name)
 			if (cp->flag_prototype) {
 				continue;
 			}
-			if (!first_real_prog
-			 && cp->prog_type == COB_MODULE_TYPE_PROGRAM) {
-				first_real_prog = cp;
-				forward_entry_sourcename = get_encoded_basename (CB_TREE (cp)->source_file);
-				if (!strcmp (first_real_prog->program_id, forward_entry_sourcename)) {
-					cobc_free (forward_entry_sourcename);
-					forward_entry_sourcename = NULL;
-				}
-			}
 			output_target = cp->local_include->local_fp;
 			output_header (timestamp_buffer, cp);
 		}
@@ -13440,75 +13392,7 @@ codegen_init (struct cb_program *prog, const char *translate_name)
 	output_newline ();
 	output_newline ();
 
-	/* check for necessary wrapper functions, not created
-	   if already matching an existing entry name */
-	if (first_real_prog) {
-		forward_entry_outputname = get_encoded_basename (output_name);
-		if (forward_entry_sourcename
-		 && !strcmp (forward_entry_sourcename, forward_entry_outputname)) {
-			cobc_free (forward_entry_outputname);
-			forward_entry_outputname = NULL;
-		}
-		{
-			struct cb_program *cp;
-			for (cp = prog; cp; cp = cp->next_program) {
-				cb_tree		entry;
-				for (entry = cp->entry_list; entry; entry = CB_CHAIN (entry)) {
-					const char *entry_name = CB_LABEL (CB_PURPOSE (entry))->name;	/* already encoded */
-					if (forward_entry_outputname
-					 && !strcmp (entry_name, forward_entry_outputname)) {
-						cobc_free (forward_entry_outputname);
-						forward_entry_outputname = NULL;
-						if (!forward_entry_sourcename) {
-							break;
-						}
-					}
-					if (forward_entry_sourcename
-					 && !strcmp (entry_name, forward_entry_sourcename)) {
-						cobc_free (forward_entry_sourcename);
-						forward_entry_sourcename = NULL;
-						if (!forward_entry_outputname) {
-							break;
-						}
-					}
-				}
-				if (forward_entry_outputname == forward_entry_sourcename) {
-					/* only happens if both are NULL */
-					break;
-				}
-			}
-		}
-
-		/* generate wrapper */
-		//if (forward_entry_outputname) {
-		//	output_entry_function (first_real_prog, first_real_prog->entry_list,
-		//			first_real_prog->parameter_list, 0, forward_entry_outputname);
-		//}
-		//if (forward_entry_sourcename) {
-		//	output_entry_function (first_real_prog, first_real_prog->entry_list,
-		//			first_real_prog->parameter_list, 0, forward_entry_sourcename);
-		//}
-	}
-
 	output_function_prototypes (prog);
-
-	if (first_real_prog) {
-		// test: 0613 
-		/* generate wrapper */
-		if (forward_entry_outputname) {
-			//output_entry_function (first_real_prog, first_real_prog->entry_list,
-			//	first_real_prog->parameter_list, 1, forward_entry_outputname);
-			cobc_free (forward_entry_outputname);
-			forward_entry_outputname = NULL;
-		}
-		if (forward_entry_sourcename) {
-			//output_entry_function (first_real_prog, first_real_prog->entry_list,
-			//	first_real_prog->parameter_list, 1, forward_entry_sourcename);
-			cobc_free (forward_entry_sourcename);
-			forward_entry_sourcename = NULL;
-		}
-	}
-
 }
 
 /* Check matching version via constructor attribute / DllMain */
