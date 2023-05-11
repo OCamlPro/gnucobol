@@ -41,12 +41,61 @@
 	* common.h: COB_SCREEN_CONV new attribute, moved "parsing only" attribute
 	  COB_SCREEN_GRID to higher number
 
+2023-05-05  Simon Sobisch <simonsobisch@gnu.org>
+
+	cleanup for handling ASCII/EBCDIC sign overpunch
+	* common.c (cob_get_sign_ebcdic) [COB_EBCDIC_MACHINE]: direct check of
+	  sign nibble
+	* common.c (cob_get_sign_ebcdic) [!COB_EBCDIC_MACHINE]: adjusted handling
+	  of invalid data
+	* common.c (cob_real_get_sign), coblocal.h: additional argument to specify
+	  if data has to be always unpunched (old behavior) or only for systems
+	  not matching the sign (e. g. non-ebcdic machine with ebcdic-sign) where
+	  unpunch is needed to get the numeric data (otherwise we already get it
+	  by bit-masking); added new macros COB_GET_SIGN_ADJUST and
+	  COB_PUT_SIGN_ADJUSTED that use this to only overwrite data when necessary
+	* common.c (cob_cmp_all, cob_cmp_alnum),
+	  move.c (cob_move_display_to_packed, cob_move_display_to_binary,
+	  cob_display_get_int, display_get_long_long),
+	  numeric.c (cob_decimal_set_display, cob_display_add_int): use of
+	  COB_GET_SIGN_ADJUST / COB_PUT_SIGN_ADJUSTED for better performance and
+	  less "changing read-only source data"
+	* common.c (cob_cmp_all, cob_cmp_alnum): handle numeric fields with
+	  SIGN LEADING SEPARATE correctly, minor optimization by reading the
+	  data/size pointer only once
+
+2023-05-02  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_add, cob_addsub_optimized): also use (cob_add_bcd) if the
+	  added/subtracted field is one of the usages DISPLAY/COMP-5/BINARY as
+	  converting this to BCD and using this function is much faster than
+	  converting everything to cob_decimal first, then using the fast GMP
+	  compute, then converting the cob_decimal to BCD back
+	* move.c (cob_move_display_to_packed, cob_move_packed_to_display),
+	  coblocal.h: make functions accessible within libcob
+	* move.c (cob_move_display_to_packed): performance adjustment by moving a
+	  check out of a loop
+
+2023-04-29  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (cob_add_bcd): don't execute rounding if COB_STORE_TRUNCATION
+	  is requested
+	* numeric.c (cob_add_bcd): combined some code paths for less duplication
+	* numeric.c (handle_bcd_rounding): extracted from (cob_add_bcd) to remove
+	  code duplication and allow code flow to be followed easier
+
 2023-04-28  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.c (explain_field_type): distinguish COMP-6 and unsigned packed
 	  from PACKED-DECIMAL
 	* (check_current_date): switched to iterating over COB_CURENT_DATE
 	  by pointer
+	* numeric.c: integrated changes of Chuck Haatveet 2023-03-28 for BCD ADD
+	  with tuning for even more speed by using best matching types and
+	  refactoring, calling the new cob_add_bcd internally from
+	  (cob_add, cob_sub) if all fields are BCD
+	* numeric.c (cob_add_bcd, check_overflow_fix_final_sign): fix handling
+	  for COB_STORE_KEEP_ON_OVERFLOW and edge-case bugs
 
 2023-04-27  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -75,8 +124,9 @@
 
 2023-04-18  Simon Sobisch <simonsobisch@gnu.org>
 
-	* numeric.c: integrated changes of Chuck Haatveet 2023-03-28 with tuning
-	  for even more speed by using best matching types and refactoring
+	* numeric.c: integrated changes of Chuck Haatveet 2023-03-28 for BCD MOVE
+	  with tuning for even more speed by using best matching types and
+	  refactoring
 	* common.h: added cob_move_bcd as external function declaration
 	* move.c (cob_move): add call to cob_move_bcd for fields without negative
 	  scale
@@ -149,6 +199,9 @@
 	* numeric.c (cob_shift_left_nibble, cob_shift_right_nibble): variants of
 	  insert_packed_aligned for cob_move_bcd
 	* numeric.c (cob_move_bcd): added for highly improved BCD MOVE,
+	  saving more than 50% cpu cycles
+	* numeric.c (cob_add_bcd, check_overflow_fix_final_sign,
+	  count_leading_zeros): added for highly improved BCD ADD,
 	  saving more than 50% cpu cycles
 
 2023-03-28  Simon Sobisch <simonsobisch@gnu.org>

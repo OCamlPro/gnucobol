@@ -1668,7 +1668,7 @@ AT_DATA([prog.cob], [
                       LENGTH OF WRK-DS-LS-1P17-1 ".".
            DISPLAY "MOVE A-E : " WRK-AE-3 ".".
            IF WRK-AE-3 NOT EQUAL TO "1 000/000/000/000/000 00"
-             DISPLAY "MOVE 1P17 failed: " WRK-AE-3.
+              DISPLAY "MOVE 1P17 TO A-E failed".
            DISPLAY "INIT X-1 : " X-1 " .".
            DISPLAY "INIT X-2 : " X-2 " .".
            DISPLAY "INIT X-4 : " X-4 " .".
@@ -28527,7 +28527,7 @@ AT_DATA([prog.cob], [
        77  FLD0028B                       PIC S9(01)       COMP-3
            VALUE +0.
 
-       77  FLD0029A                       PIC  9(05)       COMP-6
+       77  FLD0029A                       PIC  9(05)       BINARY
            VALUE  13697.
        77  FLD0029B                       PIC  9(09)V9(17) COMP-3
            VALUE  684374480.18294422258378517.
@@ -28582,7 +28582,7 @@ AT_DATA([prog.cob], [
        77  FLD0039B                       PIC  9(06)V9(01) COMP-6
            VALUE  205344.3.
 
-       77  FLD0040A                       PIC S9(06)       COMP-3
+       77  FLD0040A                       PIC S9(06)       COMP-5
            VALUE -162227.
        77  FLD0040B                       PIC S9(03)       COMP-3
            VALUE +101.
@@ -28637,7 +28637,7 @@ AT_DATA([prog.cob], [
        77  FLD0050B                       PIC  9(09)V9(06) COMP-6
            VALUE  408790070.710566.
 
-       77  FLD0051A                       PIC  9(09)V9(15) COMP-3
+       77  FLD0051A                       PIC  9(09)V9(15)
            VALUE  643375703.689413991348544.
        77  FLD0051B                       PIC  9(04)V9(30) COMP-6
            VALUE  9064.871948640588206203005938732530.
@@ -28707,7 +28707,7 @@ AT_DATA([prog.cob], [
        77  FLD0064B                       PIC S9(04)       COMP-3
            VALUE +1113.
 
-       77  FLD0065A                       PIC  9(08)V9(02) COMP-6
+       77  FLD0065A                       PIC  9(08)V9(02) BINARY
            VALUE  26934154.73.
        77  FLD0065B                       PIC S9(04)       COMP-3
            VALUE +1223.
@@ -29747,7 +29747,7 @@ AT_DATA([prog.cob], [
        77  FLD0272B                       PIC S9(10)V9(08) COMP-3
            VALUE -4748492295.95657285.
 
-       77  FLD0273A                       PIC  9(10)V9(07) COMP-6
+       77  FLD0273A                       PIC  9(10)V9(07) BINARY
            VALUE  4698099460.5024867.
        77  FLD0273B                       PIC S9(10)V9(06) COMP-3
            VALUE +4338009792.593093.
@@ -30362,7 +30362,7 @@ AT_DATA([prog.cob], [
        77  FLD0395B                       PIC S9(01)       COMP-3
            VALUE +0.
 
-       77  FLD0396A                       PIC  9(09)V9(06) COMP-6
+       77  FLD0396A                       PIC  9(09)V9(06) BINARY
            VALUE  419939827.280791.
        77  FLD0396B                       PIC  9(09)V9(07) COMP-6
            VALUE  446487444.5871826.
@@ -30847,7 +30847,7 @@ AT_DATA([prog.cob], [
        77  FLD0492B                       PIC S9(09)V9(04) COMP-3
            VALUE +343135449.1145.
 
-       77  FLD0493A                       PIC S9(05)V9(01) COMP-3
+       77  FLD0493A                       PIC S9(05)V9(01) BINARY
            VALUE -18038.5.
        77  FLD0493B                       PIC  9(06)V9(24) COMP-6
            VALUE  808734.959278862186593528349476.
