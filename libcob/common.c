@@ -1426,7 +1426,9 @@ cob_set_signal (void)
 #endif
 }
 
-/* ASCII Sign
+/* ASCII Sign - Reading and undo the "overpunch";
+ * Note: if used on an EBCDIC machine this is actually _not_ an overpunch
+ * but a replacement!
  *   positive: 0123456789
  *   negative: pqrstuvwxy
  * returns one of: 1 = positive (non-negative), -1 = negative
@@ -1483,18 +1485,21 @@ cob_get_sign_ascii (unsigned char *p)
 	return 1;
 #else
 	if (*p >= (unsigned char)'p' && *p <= (unsigned char)'y') {
-		*p &= ~64U;
+		*p &= ~0x40;	/* 0x71 'q' -> 0x31 -> '1' */
 		return -1;
 	}
 	if (IS_VALID_DIGIT_DATA (*p)) {
 		/* already without sign */
-		return -1;
+		return 1;
 	}
 	*p = (unsigned char)'0';
 	return 1;
 #endif
 }
 
+/* overpunches the pointer 'p' with the sign
+ * Note: if used on an EBCDIC machine this is actually _not_ an overpunch
+ * but a replacement! */
 static void
 cob_put_sign_ascii (unsigned char *p)
 {
@@ -1546,19 +1551,49 @@ cob_put_sign_ascii (unsigned char *p)
 		*p = (unsigned char)'0';
 	}
 #else
-	*p |= 64U;
+	*p |= 0x40;
 #endif
 }
 
-/* EBCDIC Sign
+/* EBCDIC Sign - Reading and undo the "overpunch";
+ * Note: if used on an ASCII machine this is actually _not_ an overpunch
+ * but a replacement!
  *   positive: {ABCDEFGHI
+ *   unsigned: 0123456789
  *   negative: }JKLMNOPQR
- * returns one of: 1 = positive (non-negative), -1 = negative
+ * returns one of: 1 = positive (non-negative), -1 = negative, 0 = unsigned
  */
 
 static int
 cob_get_sign_ebcdic (unsigned char *p)
 {
+#ifdef	COB_EBCDIC_MACHINE
+	char sign_nibble = *p & 0xF0;
+	/* What to do here outside of 0 - 9? */
+	if ((*p & 0x0F) > 9) {
+		*p = sign_nibble;
+	}
+	switch (sign_nibble) {
+	/* negative */
+	case 0xC0:
+	/* negative, non-preferred */
+	case 0xA0:
+	case 0xE0:
+		return 1;
+	/* positive */
+	case 0xD0:
+	/* positive, non-preferred */
+	case 0xB0:
+		return -1;
+	/* unsigned  */
+	case 0xF0:
+		return 0;
+		return -1;
+	default:
+		/* What to do here outside of sign nibbles? */
+		return 1;
+	}
+#else
 	switch (*p) {
 	case '{':
 		*p = (unsigned char)'0';
@@ -1621,13 +1656,18 @@ cob_get_sign_ebcdic (unsigned char *p)
 		*p = (unsigned char)'9';
 		return -1;
 	default:
-		/* What to do here */
-		*p = (unsigned char)('0' + (*p & 0x0F));
-		if (*p > (unsigned char)'9') {
+		if (*p >= '0' && *p <= '9') {
+			return 0;
+		}
+		/* What to do here outside of 0 - 9? */
+		if ((*p & 0x0F) > 9) {
 			*p = (unsigned char)'0';
+		} else {
+			*p = (unsigned char)COB_I2D (COB_D2I (*p));
 		}
 		return 1;
 	}
+#endif
 }
 
 static void
@@ -1837,62 +1877,60 @@ static int
 cob_cmp_all (cob_field *f1, cob_field *f2)
 {
 	const unsigned char	*col = COB_MODULE_PTR->collating_sequence;
-	unsigned char		*data;
-	unsigned char		buff[COB_MAX_DIGITS + 1];
-
-	if (COB_FIELD_HAVE_SIGN (f1)) {
-		/* drop sign for comparision, using a copy to not change
-		   the field during comparision */
-		/* CHECKME: What should be returned if f1 is negative? */
-		unsigned char *real_data = f1->data;
-		f1->data = data = buff;
-		memcpy (buff, real_data, f1->size);
-		(void)cob_real_get_sign (f1);
-		f1->data = real_data;
-	} else {
-		data = f1->data;
-	}
+	const unsigned char	*data1 = COB_FIELD_DATA (f1);
+	const unsigned char	*data2 = f2->data;
+	const size_t		size1 = COB_FIELD_SIZE (f1);
+	const size_t		size2 = f2->size;
+	/* CHECKME: What should be returned if f1 is negative? */
+	/* CHECKME: Do we ever get here with f2 being numeric? */
+	const int	sign = COB_GET_SIGN_ADJUST (f1);
+	int ret = 0;
 
 	/* check without collation */
 	if (col == NULL) {
-		if (f2->size == 1) {
-			if (f2->data[0] == ' ') {
+		if (size2 == 1) {
+			if (*data2 == ' ') {
 				/* check for IF VAR = [ALL] SPACE[S] */
-				return compare_spaces (f1->data, f1->size);
-			}
-			if (f2->data[0] == '0') {
+				ret = compare_spaces (data1, size1);
+			} else
+			if (*data2 == '0') {
 				/* check for IF VAR = [ALL] ZERO[ES] */
-				return compare_zeroes (f1->data, f1->size);
+				ret = compare_zeroes (data1, size1);
+			} else {
+				/* check for IF VAR = ALL '5' / HIGH-VALUE / ... */
+				ret = compare_character (data1, size1, data2, 1);
 			}
-		}
-		/* check for IF VAR = ALL ... / HIGH-VALUE / ... */
-		if (f1->size > f2->size) {
-			return compare_character (f1->data, f1->size, f2->data, f2->size);
+		} else
+		/* check for IF VAR = ALL ... / ... */
+		if (size1 > size2) {
+			ret = compare_character (data1, size1, data2, size2);
 		} else {
-			return compare_character (f1->data, f1->size, f2->data, f1->size);
+			ret = compare_character (data1, size1, data2, size1);
+		}
+	} else
+	/* check with collation */
+	if (size2 == 1) {
+		/* check for IF VAR = ALL "9" / IF VAR = ZERO */
+		ret = common_cmpc (data1, *data2, size1, col);
+	} else {
+		/* check for IF VAR = ALL "AB" ... */
+		const size_t	chunk_size = size2;
+		size_t		size_loop = size1;
+		while (size_loop >= chunk_size) {
+			if ((ret = common_cmps (data1, data2, chunk_size, col)) != 0) {
+				break;
+			}
+			size_loop -= chunk_size;
+			data1 += chunk_size;
+		}
+		if (!ret
+		 && size1 > 0) {
+			ret = common_cmps (data1, data2, size_loop, col);
 		}
 	}
 
-	/* check with collation */
-	if (f2->size == 1) {
-		/* check for IF VAR = ALL "9" / IF VAR = ZERO */
-		return common_cmpc (data, f2->data[0], f1->size, col);
-	} else {
-		/* check for IF VAR = ALL "AB" ... */
-		size_t		size = f1->size;
-		int 		ret;
-		while (size >= f2->size) {
-			if ((ret = common_cmps (data, f2->data, f2->size, col)) != 0) {
-				return ret;
-			}
-			size -= f2->size;
-			data += f2->size;
-		}
-		if (size > 0) {
-			return common_cmps (data, f2->data, size, col);
-		}
-	}
-	return 0;
+	COB_PUT_SIGN_ADJUSTED (f1, sign);
+	return ret;
 }
 
 /* compare content of field 'f1' to content of 'f2', space padded,
@@ -1901,39 +1939,43 @@ static int
 cob_cmp_alnum (cob_field *f1, cob_field *f2)
 {
 	const unsigned char	*col = COB_MODULE_PTR->collating_sequence;
-	const size_t	min = (f1->size < f2->size) ? f1->size : f2->size;
+	const unsigned char	*data1 = COB_FIELD_DATA (f1);
+	const unsigned char	*data2 = COB_FIELD_DATA (f2);
+	const size_t		size1 = COB_FIELD_SIZE (f1);
+	const size_t		size2 = COB_FIELD_SIZE (f2);	
+	const size_t	min = (size1 < size2) ? size1 : size2;
 	int		ret;
 
 	if (col == NULL) {		/* check without collation */
 
 		/* Compare common substring */
-		if ((ret = memcmp (f1->data, f2->data, min)) != 0) {
+		if ((ret = memcmp (data1, data2, min)) != 0) {
 			return ret;
 		}
 
 		/* Compare the rest (if any) with spaces */
-		if (f1->size > f2->size) {
-			const size_t spaces_to_test = f1->size - min;
-			return compare_spaces (f1->data + min, spaces_to_test);
-		} else if (f1->size < f2->size) {
-			const size_t spaces_to_test = f2->size - min;
-			return -compare_spaces (f2->data + min, spaces_to_test);
+		if (size1 > size2) {
+			const size_t spaces_to_test = size1 - min;
+			return compare_spaces (data1 + min, spaces_to_test);
+		} else if (size1 < size2) {
+			const size_t spaces_to_test = size2 - min;
+			return -compare_spaces (data2 + min, spaces_to_test);
 		}
 	
 	} else {		/* check with collation */
 
 		/* Compare common substring */
-		if ((ret = common_cmps (f1->data, f2->data, min, col)) != 0) {
+		if ((ret = common_cmps (data1, data2, min, col)) != 0) {
 			return ret;
 		}
 
 		/* Compare the rest (if any) with spaces */
-		if (f1->size > f2->size) {
-			const size_t spaces_to_test = f1->size - min;
-			return common_cmpc (f1->data + min, ' ', spaces_to_test, col);
-		} else if (f1->size < f2->size) {
-			const size_t spaces_to_test = f2->size - min;
-			return -common_cmpc (f2->data + min, ' ', spaces_to_test, col);
+		if (size1 > size2) {
+			const size_t spaces_to_test = size1 - min;
+			return common_cmpc (data1 + min, ' ', spaces_to_test, col);
+		} else if (size1 < size2) {
+			const size_t spaces_to_test = size2 - min;
+			return -common_cmpc (data2 + min, ' ', spaces_to_test, col);
 		}
 
 	}
@@ -3638,11 +3680,18 @@ locate_sign (cob_field *f)
 	return f->data + f->size - 1;
 }
 
-/* get sign from DISPLAY/PACKED fields
-   returns one of: 1 = positive (non-negative), -1 = negative,
+/* get sign from DISPLAY/PACKED field 'f';
+
+   if 'adjust_ebcdic' is set then original DISPLAY data is "unpunched"
+   for `ebcdic_sign` and return adjusted;
+   that allows conversion without handling that afterwards
+   
+   returns one of: 1 = positive (non-negative); -1 = negative;
+                   2 = positive (non-negative), adjusted;
+				  -2 = negative, adjusted;
                    0 = neither DISPLAY nor PACKED */
 int
-cob_real_get_sign (cob_field *f)
+cob_real_get_sign (cob_field *f, const int adjust_ebcdic)
 {
 	unsigned char	*p;
 
@@ -3663,10 +3712,24 @@ cob_real_get_sign (cob_field *f)
 #endif
 			return 1;
 		}
-		if (unlikely (COB_MODULE_PTR->ebcdic_sign)) {
-			return cob_get_sign_ebcdic (p);
+		if (adjust_ebcdic) {
+#ifdef	COB_EBCDIC_MACHINE
+			if (COB_MODULE_PTR->ebcdic_sign) {
+				return cob_get_sign_ebcdic (p);
+			}
+			return cob_get_sign_ascii (p) < 0 ? -2 : 2;
+#else
+			if (COB_MODULE_PTR->ebcdic_sign) {
+				return cob_get_sign_ebcdic (p) < 0 ? -2 : 2;
+			}
+			return ((*p & 0xF0) == 0x70) ? -1 : 1;
+#endif
+		} else {
+			if (COB_MODULE_PTR->ebcdic_sign) {
+				return cob_get_sign_ebcdic (p);
+			}
+			return cob_get_sign_ascii (p);
 		}
-		return cob_get_sign_ascii (p);
 	case COB_TYPE_NUMERIC_PACKED:
 		if (COB_FIELD_NO_SIGN_NIBBLE (f)) {
 			return 1;
@@ -3827,23 +3890,14 @@ cob_cmp (cob_field *f1, cob_field *f2)
 		if (COB_FIELD_HAVE_SIGN (f1)) {
 			/* Note: if field is numeric then it is always
 			   USAGE DISPLAY here */
-
-			if (f1 != &field) {				
-				/* drop sign for comparision, using a copy to not change
-				   the field during comparision */
-				unsigned char buff2[COB_MAX_DIGITS + 10];
-				const size_t size = f1->size;
-				int		ret;
-				unsigned char	*real_data = f1->data;
-				memcpy (buff2, real_data, size);
-				f1->data = buff2;
-				(void)cob_real_get_sign (f1);
-				ret = cob_cmp_alnum (f1, f2);
-				f1->data = real_data;
+			if (f1 != &field) {
+				const int	sign = COB_GET_SIGN_ADJUST (f1);
+				int		ret = cob_cmp_alnum (f1, f2);
+				COB_PUT_SIGN_ADJUSTED (f1, sign);
 				return ret;
 			} else {
 				/* we operate on a buffer already, just go on */
-				(void)cob_real_get_sign (f1);
+				(void)cob_real_get_sign (f1, 0);
 				return cob_cmp_alnum (f1, f2);
 			}
 		}
@@ -3851,23 +3905,14 @@ cob_cmp (cob_field *f1, cob_field *f2)
 		if (COB_FIELD_HAVE_SIGN (f2)) {
 			/* Note: if field is numeric then it is always
 			   USAGE DISPLAY here */
-
 			if (f2 != &field) {
-				/* drop sign for comparision, using a copy to not change
-				   the field during comparision */
-				unsigned char buff2[COB_MAX_DIGITS + 10];
-				const size_t size = f2->size;
-				int		ret;
-				unsigned char	*real_data = f2->data;
-				memcpy (buff2, real_data, size);
-				f2->data = buff2;
-				(void)cob_real_get_sign (f2);
-				ret = cob_cmp_alnum (f1, f2);
-				f2->data = real_data;
+				const int	sign = COB_GET_SIGN_ADJUST (f2);
+				int		ret = cob_cmp_alnum (f1, f2);
+				COB_PUT_SIGN_ADJUSTED (f2, sign);
 				return ret;
 			} else {
 				/* we operate on a buffer already, just go on */
-				(void)cob_real_get_sign (f2);
+				(void)cob_real_get_sign (f2, 0);
 				return cob_cmp_alnum (f1, f2);
 			}
 		}

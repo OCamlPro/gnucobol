@@ -217,9 +217,14 @@ Note: also defined together with __clang__ in both frontends:
 	COB_ATTR_INIT_A(attr,u,v,x,y,z)
 
 #define COB_GET_SIGN(f)		\
-	(COB_FIELD_HAVE_SIGN (f) ? cob_real_get_sign (f) : 0)
+	(COB_FIELD_HAVE_SIGN (f) ? cob_real_get_sign (f, 0) : 0)
+#define COB_GET_SIGN_ADJUST(f)		\
+	(COB_FIELD_HAVE_SIGN (f) ? cob_real_get_sign (f, 1) : 0)
 #define COB_PUT_SIGN(f,s)	\
 	do { if (COB_FIELD_HAVE_SIGN (f)) cob_real_put_sign (f, s); } ONCE_COB
+#define COB_PUT_SIGN_ADJUSTED(f,s)	\
+	do { if (s == -2) cob_real_put_sign (f, -1); \
+	     else if (s == 2) cob_real_put_sign (f, 1); } ONCE_COB
 
 #ifdef	COB_PARAM_CHECK
 #define	COB_CHK_PARMS(x,z)	\
@@ -454,7 +459,7 @@ COB_HIDDEN void		cob_exit_mlio		(void);
 COB_HIDDEN FILE		*cob_create_tmpfile	(const char *);
 COB_HIDDEN int		cob_check_numval_f	(const cob_field *);
 
-COB_HIDDEN int		cob_real_get_sign	(cob_field *);
+COB_HIDDEN int		cob_real_get_sign	(cob_field *, const int);
 COB_HIDDEN void		cob_real_put_sign	(cob_field *, const int);
 
 #ifndef COB_WITHOUT_DECIMAL
@@ -465,6 +470,8 @@ COB_HIDDEN void		cob_decimal_get_mpf (mpf_t, const cob_decimal *);
 COB_HIDDEN void		cob_decimal_setget_fld	(cob_field *, cob_field *,
 						 const int);
 COB_HIDDEN void		cob_decimal_move_temp	(cob_field *, cob_field *);
+COB_HIDDEN void		cob_move_display_to_packed (cob_field *, cob_field *);
+COB_HIDDEN void		cob_move_packed_to_display (cob_field *, cob_field *);
 
 COB_HIDDEN void		cob_display_common	(const cob_field *, FILE *);
 COB_HIDDEN void		cob_print_ieeedec	(const cob_field *, FILE *);

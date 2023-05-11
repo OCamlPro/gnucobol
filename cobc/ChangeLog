@@ -55,6 +55,13 @@
 	* field.c (cb_resolve_redefines): fix #881 wrong REDEFINES error on
 	  fields with redefinition
 
+2023-05-04  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_build_move_literal): restore writing of negative zero
+	  (DISPLAY overpunched), that was removed undocumented with 2.0
+	* typeck.c (cb_build_move_literal): optimized output for literals to
+	  fields with BLANK WHEN ZERO and SIGN LEADING
+
 2023-04-25  Simon Sobisch <simonsobisch@gnu.org>
 
 	* codegen.c (output_so_load_version_check): new function to generate

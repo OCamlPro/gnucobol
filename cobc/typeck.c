@@ -11783,10 +11783,11 @@ cob_put_sign_ascii (unsigned char *p)
 }
 #endif
 
+/* does an EBCDIC overpunch with the expected character values */
 static void
 cob_put_sign_ebcdic (unsigned char *p, const int sign)
 {
-	if (sign < 0) {
+	if (sign == -1) {
 		switch (*p) {
 		case '0':
 			*p = (unsigned char)'}';
@@ -11819,7 +11820,7 @@ cob_put_sign_ebcdic (unsigned char *p, const int sign)
 			*p = (unsigned char)'R';
 			return;
 		default:
-			/* What to do here */
+			/* What to do here? */
 			*p = (unsigned char)'}';
 			return;
 		}
@@ -11865,20 +11866,15 @@ cob_put_sign_ebcdic (unsigned char *p, const int sign)
 static cb_tree
 cb_build_move_literal (cb_tree src, cb_tree dst)
 {
-	struct cb_literal	*l;
-	struct cb_field		*f;
+	const struct cb_literal	*l = CB_LITERAL (src);
+	const struct cb_field		*f = CB_FIELD_PTR (dst);
+	const enum cb_category	cat = CB_TREE_CATEGORY (dst);
+
 	unsigned char		*buff;
-	unsigned char		*p;
-	enum cb_category	cat;
+	unsigned char		bbyte;
 	int			i;
-	int			diff;
 	int			val;
 	int			n;
-	unsigned char		bbyte;
-
-	l = CB_LITERAL (src);
-	f = CB_FIELD_PTR (dst);
-	cat = CB_TREE_CATEGORY (dst);
 
 	if (f->flag_any_length) {
 		return CB_BUILD_FUNCALL_2 ("cob_move", src, dst);
@@ -11930,15 +11926,14 @@ cb_build_move_literal (cb_tree src, cb_tree dst)
 	if ((  cat == CB_CATEGORY_NUMERIC
 	    && f->usage == CB_USAGE_DISPLAY
 	    && f->pic->scale == l->scale
-	    && !f->flag_sign_leading
-	    && !f->flag_sign_separate
-	    && !f->flag_blank_zero)
+	    && !f->flag_sign_separate)
 	 || ( (cat == CB_CATEGORY_ALPHABETIC || cat == CB_CATEGORY_ALPHANUMERIC)
 		&& f->size < (int) (l->size + 16)
 		&& !cb_field_variable_size (f))) {
+		const int	diff = (int) (f->size - l->size);
 		buff = cobc_parse_malloc ((size_t)f->size);
-		diff = (int) (f->size - l->size);
 		if (cat == CB_CATEGORY_NUMERIC) {
+			unsigned char		*p;
 			if (diff <= 0) {
 				memcpy (buff, l->data - diff, (size_t)f->size);
 			} else {
@@ -11954,22 +11949,38 @@ cb_build_move_literal (cb_tree src, cb_tree dst)
 				}
 			}
 			if (f->pic->have_sign) {
-				p = &buff[f->size - 1];
+				if (f->flag_sign_leading) {
+					p = buff;
+				} else {
+					p = buff + f->size - 1;
+				}
+#if 0	/* Simon: negative zero back by disabling the following code
+´                 included without documentation by Roger in 2.0 */
 				if (!n) {
 					/* Zeros */
 					/* EBCDIC - store sign otherwise nothing */
 					if (cb_ebcdic_sign) {
 						cob_put_sign_ebcdic (p, 1);
 					}
-				} else if (cb_ebcdic_sign) {
+				} else 
+#endif
+				if (cb_ebcdic_sign) {
 					cob_put_sign_ebcdic (p, l->sign);
-				} else if (l->sign < 0) {
+				} else
+				if (l->sign == -1) {
 #ifdef	COB_EBCDIC_MACHINE
 					cob_put_sign_ascii (p);
 #else
 					*p += 0x40;
 #endif
 				}
+			}
+			if (f->flag_blank_zero && !n) {
+				cobc_parse_free (buff);
+				return CB_BUILD_FUNCALL_3 ("memset",
+						   CB_BUILD_CAST_ADDRESS (dst),
+						   cb_int (' '),
+						   CB_BUILD_CAST_LENGTH (dst));
 			}
 		} else {
 			if (f->flag_justified) {
@@ -12033,6 +12044,7 @@ cb_build_move_literal (cb_tree src, cb_tree dst)
 			val /= 10;
 		}
 		if (val == 0) {
+			/* binary cannot store negative zero */
 			return cb_build_move_num_zero (dst);
 		}
 		if (val < 0 && !f->pic->have_sign) {

@@ -5885,7 +5885,6 @@ cob_intr_locale_date (const int offset, const int length,
 	int		month;
 	int		year;
 #ifdef	HAVE_LANGINFO_CODESET
-	unsigned char	*p;
 	int 	deflocale = 0;
 	struct tm	tstruct;
 	char		buff2[128];
