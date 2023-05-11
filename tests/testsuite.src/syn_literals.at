@@ -1126,6 +1126,14 @@ prog.cob:10: error: invalid X literal: '1'
 prog.cob:10: note: literal does not have an even number of digits
 ])
 
+AT_CHECK([$COMPILE_ONLY -std=mf-strict prog.cob], [1], [],
+[prog.cob:9: error: invalid X literal: 'GH'
+prog.cob:9: note: literal contains invalid character 'G'
+prog.cob:9: note: literal contains invalid character 'H'
+prog.cob:10: warning: invalid X literal: '1'
+prog.cob:10: note: literal does not have an even number of digits
+])
+
 AT_CLEANUP
 
 

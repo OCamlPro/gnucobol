@@ -1505,7 +1505,7 @@ cobc_bcompare (const void *p1, const void *p2)
 enum name_error_reason {
 	INVALID_LENGTH = 1,
 	EMPTY_NAME,
-	SPACE_UNDERSCORE_FIRST_CHAR,
+	SPACE_HYPHEN_FIRST_CHAR,
 	GNUCOBOL_PREFIX,
 	C_KEYWORD,
 	CONTAINS_DIRECTORY_SEPARATOR
@@ -1525,8 +1525,8 @@ cobc_error_name (const char *name, const enum cobc_name_type type,
 	case EMPTY_NAME:
 		s = _(" - name cannot be empty");
 		break;
-	case SPACE_UNDERSCORE_FIRST_CHAR:
-		s = _(" - name cannot begin with space or underscore");
+	case SPACE_HYPHEN_FIRST_CHAR:
+		s = _(" - name cannot begin with space or hyphen");
 		break;
 	case GNUCOBOL_PREFIX:
 		s = _(" - name cannot begin with 'cob_' or 'COB_'");
@@ -1596,8 +1596,8 @@ cobc_check_valid_name (const char *name, const enum cobc_name_type prechk)
 	/* missing check (here): encoded length > internal buffer,
 	   see cob_encode_program_id */
 
-	if (*name == '_' || *name == ' ') {
-		cobc_error_name (name, prechk, SPACE_UNDERSCORE_FIRST_CHAR);
+	if (*name == '-' || *name == ' ') {
+		cobc_error_name (name, prechk, SPACE_HYPHEN_FIRST_CHAR);
 		return 1;
 	}
 

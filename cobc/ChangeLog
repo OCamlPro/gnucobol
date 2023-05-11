@@ -1,4 +1,15 @@
 
+2023-05-11  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (cobc_check_valid_name): allow leading underscore,
+	  prevent leading hyphen
+	* scanner.l (error_literal): change parameter literal_error to unsigned
+	  and raise only a warning for negative values, adjust callers
+	* scanner.l (scan_x): internally handle odd numbers of x'' literals,
+	  raise only a warning if the size is 1 and relaxed-syntax is active
+	* parser.y (data_description): improve error handling in DATA DIVISION
+	  to raise less errors and create "validated invalid" fields
+
 2023-05-10  Simon Sobisch <simonsobisch@gnu.org>
 
 	* field.c (cb_build_field_tree), parser.y: copy SCREEN SECTION

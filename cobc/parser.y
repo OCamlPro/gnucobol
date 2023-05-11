@@ -7024,8 +7024,10 @@ data_description:
 		description_field = current_field;
 	}
   }
-| level_number error TOK_DOT
+| level_number _entry_name error TOK_DOT
   {
+	/* note: this construct "eats" the error, the actual field
+	   definition (level + name) is already parsed and added to the tree */
 	yyerrok;
 	cb_unput_dot ();
 	check_pic_duplicate = 0;
@@ -7034,6 +7036,26 @@ data_description:
 	current_field = cb_get_real_field ();
 #endif
   }
+/* useful error handling, but needs either a hack to internally
+	  make DISPLAY in DATA DIVISION to USAGE DISPLAY, or need to
+	  drop "_usage_is usage" * /
+|
+  {
+	cb_tree filler = cb_build_filler ();
+	qualifier = NULL;
+	keys_list = NULL;
+	non_const_word = 0;
+	cb_error (_("missing %s"), "level number");
+	if (set_current_field (1, filler)) {
+		YYERROR;
+	}
+  }
+  data_description_clause_sequence TOK_DOT
+  {
+	check_pic_duplicate = 0;
+	check_duplicate = 0;
+  }
+*/
 ;
 
 level_number:
