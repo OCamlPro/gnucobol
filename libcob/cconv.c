@@ -364,6 +364,7 @@ init_upper_lower (void)
 void
 cob_init_cconv (cob_global *lptr)
 {
+	COB_UNUSED (lptr);
 #ifndef	HAVE_DESIGNATED_INITS
 	init_upper_lower ();
 #endif

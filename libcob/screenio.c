@@ -3823,7 +3823,7 @@ cob_display_field (cob_field *f, const cob_flags_t fattr, const char *parms, ...
 
 /* ACCEPT scr-item WITH/AT */
 void
-cob_accept_field (cob_field *f, cob_flags_t fattr, const char *parms, ...)
+cob_accept_field (cob_field *f, const cob_flags_t fattr, const char *parms, ...)
 {
 	cob_field *line = NULL;
 	cob_field *column = NULL;
@@ -4202,7 +4202,7 @@ cob_screen_accept (cob_screen *s, cob_field *line,
 
 /* DISPLAY scr-item WITH/AT */
 void
-cob_display_field (cob_field *f, cob_flags_t fattr, const char * parms, ...)
+cob_display_field (cob_field *f, const cob_flags_t fattr, const char * parms, ...)
 {
 	COB_UNUSED (f);
 	COB_UNUSED (fattr);
@@ -4212,7 +4212,7 @@ cob_display_field (cob_field *f, cob_flags_t fattr, const char * parms, ...)
 
 /* ACCEPT scr-item WITH/AT */
 void
-cob_accept_field (cob_field *f, cob_flags_t fattr, const char *parms, ...)
+cob_accept_field (cob_field *f, const cob_flags_t fattr, const char *parms, ...)
 {
 	static int first_accept = 1;
 	COB_UNUSED (f);

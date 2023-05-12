@@ -2274,13 +2274,12 @@ cob_addsub_optimized (cob_field *f1, cob_field *f2,
 			   && f2_digits <= COB_MAX_DIGITS)
 			 || f2_type == COB_TYPE_NUMERIC_BINARY
 			 || f2_type == COB_TYPE_NUMERIC_COMP5) {
-				cob_field_attr	attr = {
-					COB_TYPE_NUMERIC_PACKED,
-					f2_digits, COB_FIELD_SCALE (f2),
-					COB_FLAG_HAVE_SIGN, NULL
-				};
+				cob_field	field;
+				cob_field_attr	attr;
 				unsigned char buff[COB_MAX_DIGITS / 2 + 1];
-				cob_field	field = { f2_digits / 2 + 1, buff, &attr };
+				COB_FIELD_INIT (f2_digits / 2 + 1, buff, &attr);
+				COB_ATTR_INIT (COB_TYPE_NUMERIC_PACKED, f2_digits,
+					COB_FIELD_SCALE (f2), COB_FLAG_HAVE_SIGN, NULL);
 				if (f2_type == COB_TYPE_NUMERIC_DISPLAY) {
 					cob_move_display_to_packed (f2, &field);
 				} else {
@@ -3023,7 +3022,7 @@ cob_add_bcd (cob_field *fdst,
 		   also because there are 2 digits in every byte, before dividing by 2 we
 		   need to add 1 so that we find the byte number where the rounding digit
 		   exists; we finally subtract 1 to get to the C offzet (zero based) */
-		if (COB_STORE_EXACT_MATCH) {
+		if (opt & COB_STORE_EXACT_MATCH) {
 			check_all_zeros = 1;
 			all_zeros = 1;
 		}
@@ -4059,7 +4058,7 @@ cmp_packed_intern (cob_field *f, cob_u64_t n, const int both_are_negative)
 	{
 		register int		ret;
 		for (size = 0; size < sizeof(val1); size++) {
-			if ((ret = val1[size] - packed_value[size])) {
+			if ((ret = val1[size] - packed_value[size]) != 0) {
 				if (both_are_negative) {
 					return -ret;
 				} else {

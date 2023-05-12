@@ -7792,22 +7792,23 @@ _pic_locale_format_or_depending_on_or_byte_length:
 			      _("variable-length PICTURE"),
 			      enum_explain_storage (current_storage));
 	} else {
-		  /* Implicitly translate `PIC Lc... DEPENDING N` (where
-		     `c` may actually only be `X` or `A`) into a group
-		     with a single sub-field `PIC c OCCURS 1 TO N`. */
-		  const char pic[2] = { current_field->pic->orig[1], 0};
-		  struct cb_field * const chld =
-			  CB_FIELD (cb_build_field (cb_build_filler ()));
-		  chld->pic = cb_build_picture (pic);
-		  chld->storage = current_field->storage;
-		  chld->depending = depending;
-		  chld->flag_occurs = 1;
-		  chld->occurs_min = 1;
-		  chld->occurs_max = current_field->pic->size - 1;
-		  chld->parent = current_field;
-		  current_field->children = chld;
-		  cobc_parse_free (current_field->pic);
-		  current_field->pic = NULL;
+		/* Implicitly translate `PIC Lc... DEPENDING N` (where
+		   `c` may actually only be `X` or `A`) into a group
+		   with a single sub-field `PIC c OCCURS 1 TO N`. */
+		struct cb_field * const chld =
+			CB_FIELD (cb_build_field (cb_build_filler ()));
+		char pic[2] = { 0 };
+		pic[0] = current_field->pic->orig[1];
+		chld->pic = cb_build_picture (pic);
+		chld->storage = current_field->storage;
+		chld->depending = depending;
+		chld->flag_occurs = 1;
+		chld->occurs_min = 1;
+		chld->occurs_max = current_field->pic->size - 1;
+		chld->parent = current_field;
+		current_field->children = chld;
+		cobc_parse_free (current_field->pic);
+		current_field->pic = NULL;
 	}
 	/* Raise this flag in the error cases above, to avoid unrelated
 	   warning or error messages upon tentative validation of
