@@ -1248,7 +1248,7 @@ AT_DATA([prog.cob], [
                                       & "BGCOLOR=BLACK, ".
        77  CMAGENTA     PIC X(99) VALUE "FGCOLOR=MAGENTA, "
                                       & "BGCOLOR=BLACK,".
-       77  CYELLOW      PIC X(99) VALUE "FGCOLOR=YELLOW, "
+       77  CYELLOW      PIC X(99) VALUE "FGCOLOR = 6, "
                                       & "BGCOLOR=BLACK,".
        77  CWHITE       PIC X(99) VALUE "FGCOLOR=WHITE, "
                                       & "BGCOLOR=BLACK, ".

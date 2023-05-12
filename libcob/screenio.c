@@ -356,43 +356,6 @@ cob_move_to_beg_of_last_line (void)
 }
 #endif
 
-static short
-cob_to_curses_color (cob_field *f, const short default_color)
-{
-	if (!f) {
-		return default_color;
-	}
-	/* compat for MF/ACU/... only use first 3 bits -> 0-7,
-	   bit 4 is "included highlight/blink attribute" */
-	switch (cob_get_int (f) & 7) {
-	case COB_SCREEN_BLACK:
-		return COLOR_BLACK;
-	case COB_SCREEN_BLUE:
-		return COLOR_BLUE;
-	case COB_SCREEN_GREEN:
-		return COLOR_GREEN;
-	case COB_SCREEN_CYAN:
-		return COLOR_CYAN;
-	case COB_SCREEN_RED:
-		return COLOR_RED;
-	case COB_SCREEN_MAGENTA:
-		return COLOR_MAGENTA;
-	case COB_SCREEN_YELLOW:
-		return COLOR_YELLOW;
-	case COB_SCREEN_WHITE:
-		return COLOR_WHITE;
-	default:
-		return default_color;
-	}
-}
-
-/* compat for MF/ACU/... only use first 3 bits are colors -> 0-7,
-   bit 4 is "included highlight/blink attribute" -> an "extended" color */
-static int
-has_extended_color (cob_field* f)
-{
-	return f && (cob_get_int (f) & 8);
-}
 
 static short
 cob_get_color_pair (const short fg_color, const short bg_color)
@@ -447,6 +410,65 @@ cob_activate_color_pair (const short color_pair_number)
 	bkgdset (COLOR_PAIR(color_pair_number));
 
 	return ret;
+}
+
+
+static int
+cob_to_curses_color (const int cob_color, short *curses_color)
+{
+	if (cob_color < 0
+	 || cob_color > 15) {
+		/* "invalid" color - nothing to do */
+		return -1;
+	}
+
+	/* compat for MF/ACU/... only use first 3 bits -> 0-7,
+	   bit 4 is "included highlight/blink attribute" */
+	switch (cob_color & 7) {
+	case COB_SCREEN_BLACK:
+		*curses_color = COLOR_BLACK;
+		return 0;
+	case COB_SCREEN_BLUE:
+		*curses_color = COLOR_BLUE;
+		return 0;
+	case COB_SCREEN_GREEN:
+		*curses_color = COLOR_GREEN;
+		return 0;
+	case COB_SCREEN_CYAN:
+		*curses_color = COLOR_CYAN;
+		return 0;
+	case COB_SCREEN_RED:
+		*curses_color = COLOR_RED;
+		return 0;
+	case COB_SCREEN_MAGENTA:
+		*curses_color = COLOR_MAGENTA;
+		return 0;
+	case COB_SCREEN_YELLOW:
+		*curses_color = COLOR_YELLOW;
+		return 0;
+	case COB_SCREEN_WHITE:
+		*curses_color = COLOR_WHITE;
+		return 0;
+	default:
+		return -1;
+	}
+}
+
+/* compat for MF/ACU/... only first 3 bits are colors -> 0-7,
+   bit 4 is "included highlight/blink attribute" -> an "extended" color */
+static void
+adjust_attr_from_extended_color (cob_flags_t *attr, const int color,
+		const int handle_background)
+{
+	/* check for "valid" color and "extended attribute" set - return */
+	if  (color >= 0
+	 && (color & 8)) {
+		if (handle_background) {
+			*attr |= COB_SCREEN_BLINK;
+		} else {
+			*attr |= COB_SCREEN_HIGHLIGHT;
+		}
+	}
 }
 
 /* adjust screenio attributes and color values from numeric attributes
@@ -544,6 +566,85 @@ adjust_attr_from_color_field (cob_flags_t *attr, cob_field *color,
 	}
 }
 
+static int
+get_cob_color_from_color_value (const char *p)
+{
+	/* translate number */
+	{
+		char *endptr;
+		const int cob_color = strtol (p, &endptr, 10);
+		/* number parsed - return as is */
+		if (endptr != p) {
+			return cob_color;
+		}
+	}
+
+	/* text translation */
+	{
+		const size_t len = strlen (p);
+		if (len == 5) {
+			if (memcmp (p, "BLACK", 5) == 0) {
+				return COB_SCREEN_BLACK;
+			}
+			if (memcmp (p, "WHITE", 5) == 0) {
+				return COB_SCREEN_WHITE;
+			}
+			if (memcmp (p, "GREEN", 5) == 0) {
+				return COB_SCREEN_GREEN;
+			}
+			return -1;
+		}
+		if (len == 4) {
+			if (memcmp (p, "BLUE", 4) == 0) {
+				return COB_SCREEN_BLUE;
+			}
+			if (memcmp (p, "CYAN", 4) == 0) {
+				return COB_SCREEN_CYAN;
+			}
+			return -1;
+		}
+		if (len == 3) {
+			if (memcmp (p, "RED", 3) == 0) {
+				return COB_SCREEN_RED;
+			}
+			return -1;
+		}
+		if (len == 7) {
+			if (memcmp (p, "MAGENTA", 7) == 0) {
+				return COB_SCREEN_MAGENTA;
+			}
+			return -1;
+		}
+		if (len == 6 && memcmp (p, "YELLOW", 6) == 0) {
+			return COB_SCREEN_YELLOW;
+		}
+	}
+
+	return -1;
+}
+
+/* parse COBOL color name / number and set curses color number + attribute accordingly */
+static int
+handle_control_field_color (cob_flags_t *attr, const char *p,
+	short *curses_color, const int handle_background)
+{
+	const int cob_color = get_cob_color_from_color_value (p);
+	int short curses_color_val;
+
+	/* translate to curses, arly error return if not possible */
+	if (cob_to_curses_color (cob_color, &curses_color_val) < 0) {
+		return -1;
+	}
+
+	/* take over color */
+	*curses_color = curses_color_val;
+
+	/* attribute via renamed colors */
+	adjust_attr_from_extended_color (attr, cob_color, handle_background);
+
+	return 0;
+}
+
 /* adjust screenio attributes and color values from named attributes
    in CONTROL field */
 static void
@@ -555,17 +656,19 @@ adjust_attr_from_control_field (cob_flags_t *attr, cob_field *control,
 	buffer[COB_MEDIUM_MAX] = 0;	/* drop noise warning */
 
 	/* TODO: parse buffer here, adjusting attr, fg_color, bg_color
-	   just some examples...
+	   just some hard-coded examples...
 	   that needs a real parsing logic from left to right, alias, tokens,... */
 	if (strstr (buffer, "FGCOLOR=BLACK")) {
-		*fg_color = COLOR_BLACK;
+		handle_control_field_color (attr, "BLACK", fg_color, 0);
 	} else if (strstr (buffer, "FGCOLOR=RED")) {
-		*fg_color = COLOR_RED;
+		handle_control_field_color (attr, "RED", fg_color, 0);
+	} else if (strstr (buffer, "FGCOLOR = 6")) {
+		handle_control_field_color (attr, "6", fg_color, 0);
 	} else if (strstr (buffer, "FGCOLOR=MAGENTA")) {
-		*fg_color = COLOR_MAGENTA;
+		handle_control_field_color (attr, "MAGENTA", fg_color, 0);
 	}
 	if (strstr (buffer, "BGCOLOR=WHITE")) {
-		*bg_color = COLOR_WHITE;
+		handle_control_field_color (attr, "WHITE", bg_color, 1);
 	}
 	if (strstr (buffer, "NO-ECHO")) {
 		*attr |= COB_SCREEN_SECURE;
@@ -596,22 +699,19 @@ cob_screen_attr (cob_field *fgc, cob_field *bgc, cob_flags_t attr,
 {
 	int		line;
 	int		column;
+	const int	cob_fg_color = fgc ? cob_get_int (fgc) : -1;
+	const int	cob_bg_color = bgc ? cob_get_int (bgc) : -1;
 	short		fg_color = -1;
 	short		bg_color = -1;
 	chtype		styles = A_NORMAL;
 
 	/* pre-set color value */
-	if (cob_has_color) {
-		fg_color = cob_to_curses_color (fgc, fore_color);
-		bg_color = cob_to_curses_color (bgc, back_color);
-	}
+	cob_to_curses_color (cob_fg_color, &fg_color);
+	cob_to_curses_color (cob_bg_color, &bg_color);
+
 	/* attribute via renamed colors */
-	if (has_extended_color (fgc)) {
-		styles |= A_BOLD;
-	}
-	if (has_extended_color (bgc)) {
-		styles |= A_BLINK;
-	}
+	adjust_attr_from_extended_color (&attr, cob_fg_color, 0);
+	adjust_attr_from_extended_color (&attr, cob_bg_color, 1);
 
 	/* ACU / RM? extension that may override colors + some attributes */
 	if (color) {
@@ -647,8 +747,14 @@ cob_screen_attr (cob_field *fgc, cob_field *bgc, cob_flags_t attr,
 	}
 
 	/* apply colors */
-	if (fg_color != -1 || bg_color != -1) {
+	if (cob_has_color) {
 		short		color_pair_number;
+		if (fg_color == -1) {
+			fg_color = fore_color;
+		}
+		if (bg_color == -1) {
+			bg_color = back_color;
+		}
 		color_pair_number = cob_get_color_pair (fg_color, bg_color);
 		cob_activate_color_pair (color_pair_number);
 	}
