@@ -2472,6 +2472,10 @@ cob_shift_right_nibble (unsigned char *ptr_buff, unsigned char *ptr_start_data_b
 	   any changes to that function should probaby require that this function
 	   be examined for */
 
+# ifndef WORDS_BIGENDIAN
+	cob_u64_t chunk;
+# endif
+
 	/* note that the carry & move nibbles have to be 64 bit because we need
 	    to use binary OR the high order bits when shifting to the right !! */
 	cob_u64_t carry_nibble;
@@ -2489,10 +2493,6 @@ cob_shift_right_nibble (unsigned char *ptr_buff, unsigned char *ptr_start_data_b
 	do {
 		ptr_long--;
 	} while (ptr_long > (cob_u64_t *)ptr_start_data_byte);	/* we want to be there - or before! */
-
-# ifndef WORDS_BIGENDIAN
-	cob_u64_t chunk;
-# endif
 
 	do {
 # ifdef WORDS_BIGENDIAN

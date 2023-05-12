@@ -1,4 +1,17 @@
 
+2023-05-12  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c (cob_screen_attr): always parse COBOL and curses color value
+	* screenio.c (cob_to_curses_color): signature changed - operate on integer
+	  to be reusable for CONTROL handling,
+	  separate return value instead of setting the default color
+	* screenio.c (adjust_attr_from_extended_color): new function directly
+	  handling the attribute adjustment, replaced (has_extended_color)
+	* screenio.c (handle_control_field_color, get_cob_color_from_color_value):
+	  new functions to get COBOL color number from text and handling it
+	* common.h (cob_colors): changed color defines to enum
+	* move.c: fix some compiler warnings by explicit casts
+
 2023-05-10  Simon Sobisch <simonsobisch@gnu.org>
 
 	* screenio.c (adjust_attr_from_color_field,

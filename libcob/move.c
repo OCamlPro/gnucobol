@@ -486,7 +486,7 @@ cob_move_display_to_packed (cob_field *f1, cob_field *f2)
 		   the half-byte before setting the sign */
 
 		/* check for necessary loop (until we not need the p_end check) */
-		if (i_end - i < (p_end - p + 1) / 2) {
+		if (i_end - i < (unsigned int)(p_end - p + 1) / 2) {
 			while (i <= i_end) {
 				*q = (unsigned char) (*p << 4)	/* -> dropping the higher bits = no use in COB_D2I */
 					+ COB_D2I (*(p + 1));
@@ -1548,7 +1548,7 @@ cob_move (cob_field *src, cob_field *dst)
 							val /= cob_exp10_ll[diff_scale];
 						}
 						if (val >= INT_MIN && val <= INT_MAX) {
-							cob_set_packed_int (dst, val);
+							cob_set_packed_int (dst, (int)val);
 							return;
 						}
 					}

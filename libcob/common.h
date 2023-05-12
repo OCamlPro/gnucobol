@@ -964,14 +964,16 @@ enum cob_open_mode {
 
 /* Screen attribute defines */
 
-#define COB_SCREEN_BLACK		0
-#define COB_SCREEN_BLUE			1
-#define COB_SCREEN_GREEN		2
-#define COB_SCREEN_CYAN			3
-#define COB_SCREEN_RED			4
-#define COB_SCREEN_MAGENTA		5
-#define COB_SCREEN_YELLOW		6
-#define COB_SCREEN_WHITE		7
+enum cob_colors {
+	COB_SCREEN_BLACK	= 0,
+	COB_SCREEN_BLUE		= 1,
+	COB_SCREEN_GREEN	= 2,
+	COB_SCREEN_CYAN		= 3,
+	COB_SCREEN_RED		= 4,
+	COB_SCREEN_MAGENTA	= 5,
+	COB_SCREEN_YELLOW	= 6,
+	COB_SCREEN_WHITE	= 7
+};
 
 typedef cob_s64_t cob_flags_t;
 
