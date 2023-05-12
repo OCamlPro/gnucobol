@@ -23,9 +23,10 @@ SUBDIRS = cobol85
 
 TESTSUITE = $(srcdir)/testsuite
 TESTSUITE_MANUAL = $(srcdir)/testsuite_manual
+TESTSUITE_NIST = $(srcdir)/nistrun
 dist_check_SCRIPTS = listings-sed.sh
 
-dist_noinst_SCRIPTS = $(TESTSUITE) $(TESTSUITE_MANUAL)
+dist_noinst_SCRIPTS = $(TESTSUITE) $(TESTSUITE_MANUAL) $(TESTSUITE_NIST)
 
 testsuite_sources = \
 	testsuite.src/used_binaries.at \
@@ -69,10 +70,24 @@ testsuite_sources = \
 testsuite_manual_sources = \
 	testsuite.src/run_manual_screen.at
 
+testsuite_nist_sources = \
+	nistrun.src/run_DB.at \
+	nistrun.src/run_IC.at \
+	nistrun.src/run_IF.at \
+	nistrun.src/run_IX.at \
+	nistrun.src/run_NC.at \
+	nistrun.src/run_OB.at \
+	nistrun.src/run_RL.at \
+	nistrun.src/run_RW.at \
+	nistrun.src/run_SG.at \
+	nistrun.src/run_SM.at \
+	nistrun.src/run_SQ.at \
+	nistrun.src/run_ST.at
+
 EXTRA_DIST = $(srcdir)/package.m4 \
-	$(srcdir)/testsuite.at $(srcdir)/testsuite_manual.at \
+	$(srcdir)/testsuite.at $(srcdir)/testsuite_manual.at $(srrdir)/nistrun.at \
 	$(srcdir)/listings-sed.sh \
-	$(testsuite_sources) $(testsuite_manual_sources)
+	$(testsuite_sources) $(testsuite_manual_sources) $(testsuite_nist_sources)
 
 DISTCLEANFILES = atconfig
 
@@ -99,6 +114,9 @@ prereq-testsuite: $(TESTSUITE) atlocal
 prereq-manual: $(TESTSUITE_MANUAL) atlocal run_prog_manual.sh
 	@rm -rf testsuite_manual.dir
 
+prereq-nistrun: $(TESTSUITE_NIST) atlocal
+	@rm -rf nistrun.dir
+
 clean-local:
 	rm -rf *.dir *.log *.out valgrind
 
@@ -108,7 +126,7 @@ checkmanual: prereq-manual
 
 # targets that are only logical targets instead of files
 .PHONY: test checkall checkmanual localcheck \
-	prereq-check prereq-testsuite prereq-manual
+	prereq-check prereq-testsuite prereq-manual prereq-nistrun
 
 test: atlocal
 	@echo testing for perl && $(PERL) -v 1>/dev/null \
@@ -130,9 +148,13 @@ $(srcdir)/package.m4: $(top_srcdir)/configure.ac
 	} > $(srcdir)/package.m4
 
 $(TESTSUITE): $(testsuite_sources) $(srcdir)/package.m4 $(srcdir)/testsuite.at
-	autom4te --language=autotest -I $(srcdir) -I $(srcdir)/testsuite.src -o $(srcdir)/testsuite $(srcdir)/testsuite.at
+	autom4te --language=autotest -I $(srcdir) -I $(srcdir)/testsuite.src -I $(srcdir)/testsuite.src -o $(srcdir)/testsuite $(srcdir)/testsuite.at
 	chmod +x $(srcdir)/testsuite
 
 $(TESTSUITE_MANUAL): $(testsuite_manual_sources) $(srcdir)/package.m4 $(srcdir)/testsuite_manual.at
 	autom4te --language=autotest -I $(srcdir) -I $(srcdir)/testsuite.src -o $(srcdir)/testsuite_manual $(srcdir)/testsuite_manual.at
 	chmod +x $(srcdir)/testsuite_manual
+
+$(TESTSUITE_NIST): $(testsuite_nist_sources) $(srcdir)/package.m4 $(srcdir)/nistrun.at
+	autom4te --language=autotest -I $(srcdir) -I $(srcdir)/nistrun.src -o $(srcdir)/nistrun $(srcdir)/nistrun.at
+	chmod +x $(srcdir)/nistrun

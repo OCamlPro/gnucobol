@@ -1,0 +1,330 @@
+AT_SETUP([SM101A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([SM SM101A])
+AT_CHECK([mkdir -p copy], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/copy/* copy/], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SM/SM101A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 SM101A.CBL], [0], [], [copy/K1FDA:1: warning: LABEL RECORDS is obsolete in COBOL 85
+copy/K1FDA:2: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./SM101A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [008OF008TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([SM102A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([SM SM102A])
+AT_CHECK([mkdir -p copy], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/copy/* copy/], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SM/SM101A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 SM101A.CBL], [0], [], [copy/K1FDA:1: warning: LABEL RECORDS is obsolete in COBOL 85
+copy/K1FDA:2: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./SM101A], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SM/SM102A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 SM102A.SUB], [0], [], [SM102A.SUB:45: warning: LABEL RECORDS is obsolete in COBOL 85
+SM102A.SUB:46: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./SM102A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [004OF004TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([SM103A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([SM SM103A])
+AT_CHECK([mkdir -p copy], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/copy/* copy/], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SM/SM103A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 SM103A.CBL], [0], [], [SM103A.CBL:32: warning: SECURITY is obsolete in COBOL 85
+SM103A.CBL:108: warning: LABEL RECORDS is obsolete in COBOL 85
+SM103A.CBL:109: warning: DATA RECORDS is obsolete in COBOL 85
+SM103A.CBL:115: warning: LABEL RECORDS is obsolete in COBOL 85
+SM103A.CBL:116: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./SM103A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [006OF006TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([SM104A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([SM SM104A])
+AT_CHECK([mkdir -p copy], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/copy/* copy/], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SM/SM103A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 SM103A.CBL], [0], [], [SM103A.CBL:32: warning: SECURITY is obsolete in COBOL 85
+SM103A.CBL:108: warning: LABEL RECORDS is obsolete in COBOL 85
+SM103A.CBL:109: warning: DATA RECORDS is obsolete in COBOL 85
+SM103A.CBL:115: warning: LABEL RECORDS is obsolete in COBOL 85
+SM103A.CBL:116: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./SM103A], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SM/SM104A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 SM104A.SUB], [0], [], [SM104A.SUB:48: warning: LABEL RECORDS is obsolete in COBOL 85
+SM104A.SUB:49: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./SM104A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [007OF007TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([SM105A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([SM SM105A])
+AT_CHECK([mkdir -p copy], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/copy/* copy/], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SM/SM105A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 SM105A.CBL], [0], [], [copy/K5SDA:1: warning: DATA RECORDS is obsolete in COBOL 85
+SM105A.CBL:76: warning: LABEL RECORDS is obsolete in COBOL 85
+SM105A.CBL:77: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./SM105A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [009OF009TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([SM106A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([SM SM106A])
+AT_CHECK([mkdir -p copy], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/copy/* copy/], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SM/SM106A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 SM106A.CBL], [0], [], [])
+AT_CHECK([./SM106A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [000OF001TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+001TEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([SM107A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([SM SM107A])
+AT_CHECK([mkdir -p copy], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/copy/* copy/], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SM/SM107A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 SM107A.CBL], [0], [], [])
+AT_CHECK([./SM107A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [200OF200TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([SM201A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([SM SM201A])
+AT_CHECK([mkdir -p copy], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/copy/* copy/], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SM/SM201A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 SM201A.CBL], [0], [], [copy/K1FDA:1: warning: LABEL RECORDS is obsolete in COBOL 85
+copy/K1FDA:2: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./SM201A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [011OF011TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([SM202A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([SM SM202A])
+AT_CHECK([mkdir -p copy], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/copy/* copy/], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SM/SM201A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 SM201A.CBL], [0], [], [copy/K1FDA:1: warning: LABEL RECORDS is obsolete in COBOL 85
+copy/K1FDA:2: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./SM201A], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SM/SM202A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 SM202A.SUB], [0], [], [SM202A.SUB:48: warning: LABEL RECORDS is obsolete in COBOL 85
+SM202A.SUB:49: warning: DATA RECORDS is obsolete in COBOL 85
+copy/K2SEA: in section 'COPY-TEST-15':
+copy/K2SEA: in paragraph 'PARA-1':
+copy/K2SEA:2: warning: ALTER is obsolete in COBOL 85
+copy/K2PRA: in section 'COPY-PARA':
+copy/K2PRA: in paragraph 'COPY-TEST-17':
+copy/K2PRA:2: warning: value size exceeds data size
+copy/K2PRA:2: note: value size is 9
+SM202A.SUB:57: note: 'AREA-2' defined here as PIC XXXXB
+copy/K2PRA:4: warning: ignoring sign
+copy/K2PRA:4: warning: value size exceeds data size
+copy/K2PRA:4: note: value is 00000499
+SM202A.SUB:59: note: 'AREA-4' defined here as PIC ZZZZZ
+])
+AT_CHECK([./SM202A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [007OF007TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([SM203A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([SM SM203A])
+AT_CHECK([mkdir -p copy], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/copy/* copy/], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SM/SM203A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 SM203A.CBL], [0], [], [SM203A.CBL:75: warning: LABEL RECORDS is obsolete in COBOL 85
+SM203A.CBL:76: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./SM203A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [001OF001TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([SM204A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([SM SM204A])
+AT_CHECK([mkdir -p copy], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/copy/* copy/], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SM/SM203A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 SM203A.CBL], [0], [], [SM203A.CBL:75: warning: LABEL RECORDS is obsolete in COBOL 85
+SM203A.CBL:76: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./SM203A], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SM/SM204A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 SM204A.SUB], [0], [], [SM204A.SUB:48: warning: LABEL RECORDS is obsolete in COBOL 85
+SM204A.SUB:49: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./SM204A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [004OF004TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([SM205A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([SM SM205A])
+AT_CHECK([mkdir -p copy], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/copy/* copy/], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SM/SM205A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 SM205A.CBL], [0], [], [copy/K5SDB:1: warning: DATA RECORDS is obsolete in COBOL 85
+SM205A.CBL:81: warning: LABEL RECORDS is obsolete in COBOL 85
+SM205A.CBL:82: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./SM205A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [009OF009TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([SM206A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([SM SM206A])
+AT_CHECK([mkdir -p copy], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/copy/* copy/], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SM/SM206A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 SM206A.CBL], [0], [], [SM206A.CBL: in section 'SECT-SM206-0002':
+SM206A.CBL: in paragraph 'PST-WRITE-006':
+SM206A.CBL:550: warning: value size exceeds data size
+SM206A.CBL:550: note: value size is 21
+SM206A.CBL:76: note: 'FEATURE' defined here as PIC X(20)
+])
+AT_CHECK([./SM206A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [013OF016TESTSWEREEXECUTEDSUCCESSFULLY
+001TEST(S)FAILED
+002TEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([SM207A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([SM SM207A])
+AT_CHECK([mkdir -p copy], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/copy/* copy/], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SM/SM207A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 SM207A.CBL], [0], [], [SM207A.CBL:338: warning: copybook not found in library '../copyalt', library-name ignored
+])
+AT_CHECK([./SM207A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [002OF003TESTSWEREEXECUTEDSUCCESSFULLY
+001TEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([SM208A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([SM SM208A])
+AT_CHECK([mkdir -p copy], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/copy/* copy/], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SM/SM208A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 SM208A.CBL], [0], [], [])
+AT_CHECK([./SM208A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [009OF009TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([SM301M])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([SM SM301M])
+AT_CHECK([mkdir -p copy], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/copy/* copy/], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SM/SM301M.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 SM301M.CBL], [0], [], [])
+AT_CHECK([./SM301M], [0], [ 
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([SM401M])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([SM SM401M])
+AT_CHECK([mkdir -p copy], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/copy/* copy/], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/SM/SM401M.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 SM401M.CBL], [0], [], [])
+AT_CHECK([./SM401M], [0], [COW SHEEP PIG HORSE LAMB DOG CAT 
+], [])
+
+AT_CLEANUP
+

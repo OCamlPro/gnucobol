@@ -1,0 +1,786 @@
+AT_SETUP([ST101A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([ST ST101A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST101A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 ST101A.CBL], [0], [], [ST101A.CBL:41: warning: DATA RECORDS is obsolete in COBOL 85
+ST101A.CBL:53: warning: LABEL RECORDS is obsolete in COBOL 85
+ST101A.CBL:54: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST101A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [009OF009TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST102A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([ST ST102A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST102A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 ST102A.SUB], [0], [], [ST102A.SUB:39: warning: DATA RECORDS is obsolete in COBOL 85
+ST102A.SUB:50: warning: LABEL RECORDS is obsolete in COBOL 85
+ST102A.SUB:51: warning: DATA RECORDS is obsolete in COBOL 85
+ST102A.SUB:55: warning: LABEL RECORDS is obsolete in COBOL 85
+ST102A.SUB:56: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST102A], [0], [], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST103A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([ST ST103A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST102A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 ST102A.SUB], [0], [], [ST102A.SUB:39: warning: DATA RECORDS is obsolete in COBOL 85
+ST102A.SUB:50: warning: LABEL RECORDS is obsolete in COBOL 85
+ST102A.SUB:51: warning: DATA RECORDS is obsolete in COBOL 85
+ST102A.SUB:55: warning: LABEL RECORDS is obsolete in COBOL 85
+ST102A.SUB:56: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST102A], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST103A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 ST103A.SUB], [0], [], [ST103A.SUB:40: warning: LABEL RECORDS is obsolete in COBOL 85
+ST103A.SUB:41: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST103A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [000OF001TESTSWEREEXECUTEDSUCCESSFULLY
+001TEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST104A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([ST ST104A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST104A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 ST104A.CBL], [0], [], [ST104A.CBL:39: warning: LABEL RECORDS is obsolete in COBOL 85
+ST104A.CBL:40: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST104A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [001OF001TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST105A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([ST ST105A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST105A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 ST105A.SUB], [0], [], [ST105A.SUB:59: warning: LABEL RECORDS is obsolete in COBOL 85
+ST105A.SUB:60: warning: DATA RECORDS is obsolete in COBOL 85
+ST105A.SUB:64: warning: LABEL RECORDS is obsolete in COBOL 85
+ST105A.SUB:65: warning: DATA RECORDS is obsolete in COBOL 85
+ST105A.SUB:69: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST105A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [001OF002TESTSWEREEXECUTEDSUCCESSFULLY
+001TEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST106A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([ST ST106A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST106A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 ST106A.CBL], [0], [], [ST106A.CBL:72: warning: LABEL RECORDS is obsolete in COBOL 85
+ST106A.CBL:74: warning: DATA RECORDS is obsolete in COBOL 85
+ST106A.CBL:79: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST106A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [001OF001TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST107A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([ST ST107A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST106A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 ST106A.CBL], [0], [], [ST106A.CBL:72: warning: LABEL RECORDS is obsolete in COBOL 85
+ST106A.CBL:74: warning: DATA RECORDS is obsolete in COBOL 85
+ST106A.CBL:79: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST106A], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST107A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 ST107A.SUB], [0], [], [ST107A.SUB:39: warning: LABEL RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST107A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [006OF006TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST108A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([ST ST108A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST108A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 ST108A.CBL], [0], [], [ST108A.CBL:61: warning: DATA RECORDS is obsolete in COBOL 85
+ST108A.CBL: in section 'INPROC':
+ST108A.CBL: in paragraph 'BUILD-FILE':
+ST108A.CBL:253: warning: ignoring sign
+ST108A.CBL: in paragraph 'BUILD-RECORD':
+ST108A.CBL:266: warning: ignoring sign
+])
+AT_CHECK([./ST108A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [009OF009TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST109A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([ST ST109A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST109A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 ST109A.CBL], [0], [], [ST109A.CBL:52: warning: LABEL RECORDS is obsolete in COBOL 85
+ST109A.CBL:56: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST109A], [0], [], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST110A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([ST ST110A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST110A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 ST110A.SUB], [0], [], [ST110A.SUB:43: warning: LABEL RECORDS is obsolete in COBOL 85
+ST110A.SUB:47: warning: DATA RECORDS is obsolete in COBOL 85
+ST110A.SUB:56: warning: LABEL RECORDS is obsolete in COBOL 85
+ST110A.SUB:60: warning: DATA RECORDS is obsolete in COBOL 85
+ST110A.SUB:72: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST110A], [0], [], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST111A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([ST ST111A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST110A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 ST110A.SUB], [0], [], [ST110A.SUB:43: warning: LABEL RECORDS is obsolete in COBOL 85
+ST110A.SUB:47: warning: DATA RECORDS is obsolete in COBOL 85
+ST110A.SUB:56: warning: LABEL RECORDS is obsolete in COBOL 85
+ST110A.SUB:60: warning: DATA RECORDS is obsolete in COBOL 85
+ST110A.SUB:72: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST110A], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST111A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 ST111A.SUB], [0], [], [ST111A.SUB:52: warning: LABEL RECORDS is obsolete in COBOL 85
+ST111A.SUB:56: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST111A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [000OF001TESTSWEREEXECUTEDSUCCESSFULLY
+001TEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST112M])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([ST ST112M])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST112M.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 ST112M.CBL], [0], [], [ST112M.CBL:39: warning: LABEL RECORDS is obsolete in COBOL 85
+ST112M.CBL:40: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST112M], [0], [], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST113M])
+AT_KEYWORDS([ST ST113M])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST113M.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 ST113M.SUB], [0], [], [])
+AT_CHECK([./ST113M], [0], [], [])
+AT_CLEANUP
+
+AT_SETUP([ST114M])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([ST ST114M])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST113M.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 ST113M.SUB], [0], [], [])
+AT_CHECK([./ST113M], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST114M.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 ST114M.SUB], [0], [], [ST114M.SUB:39: warning: LABEL RECORDS is obsolete in COBOL 85
+ST114M.SUB:40: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST114M], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [000OF001TESTSWEREEXECUTEDSUCCESSFULLY
+001TEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST115A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([ST ST115A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST115A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 ST115A.CBL], [0], [], [ST115A.CBL:83: warning: LABEL RECORDS is obsolete in COBOL 85
+ST115A.CBL:86: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST115A], [0], [], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST116A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([ST ST116A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST116A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 ST116A.SUB], [0], [], [ST116A.SUB:106: warning: LABEL RECORDS is obsolete in COBOL 85
+ST116A.SUB:109: warning: DATA RECORDS is obsolete in COBOL 85
+ST116A.SUB:127: warning: LABEL RECORDS is obsolete in COBOL 85
+ST116A.SUB:130: warning: DATA RECORDS is obsolete in COBOL 85
+ST116A.SUB:149: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST116A], [0], [], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST117A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([ST ST117A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST116A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 ST116A.SUB], [0], [], [ST116A.SUB:106: warning: LABEL RECORDS is obsolete in COBOL 85
+ST116A.SUB:109: warning: DATA RECORDS is obsolete in COBOL 85
+ST116A.SUB:127: warning: LABEL RECORDS is obsolete in COBOL 85
+ST116A.SUB:130: warning: DATA RECORDS is obsolete in COBOL 85
+ST116A.SUB:149: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST116A], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST117A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 ST117A.SUB], [0], [], [ST117A.SUB:101: warning: LABEL RECORDS is obsolete in COBOL 85
+ST117A.SUB:104: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST117A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [001OF002TESTSWEREEXECUTEDSUCCESSFULLY
+001TEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST118A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([ST ST118A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST118A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 ST118A.CBL], [0], [], [ST118A.CBL:71: warning: DATA RECORDS is obsolete in COBOL 85
+ST118A.CBL: in section 'INPROC':
+ST118A.CBL: in paragraph 'BUILD-FILE':
+ST118A.CBL:263: warning: ignoring sign
+ST118A.CBL: in paragraph 'BUILD-RECORD':
+ST118A.CBL:276: warning: ignoring sign
+])
+AT_CHECK([./ST118A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [009OF009TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST119A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([ST ST119A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST119A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 ST119A.CBL], [0], [], [ST119A.CBL:41: warning: DATA RECORDS is obsolete in COBOL 85
+ST119A.CBL:53: warning: LABEL RECORDS is obsolete in COBOL 85
+ST119A.CBL:54: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST119A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [027OF027TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST120A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([ST ST120A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST120A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 ST120A.SUB], [0], [], [ST120A.SUB:39: warning: DATA RECORDS is obsolete in COBOL 85
+ST120A.SUB:50: warning: LABEL RECORDS is obsolete in COBOL 85
+ST120A.SUB:51: warning: DATA RECORDS is obsolete in COBOL 85
+ST120A.SUB:55: warning: LABEL RECORDS is obsolete in COBOL 85
+ST120A.SUB:56: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST120A], [0], [], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST121A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([ST ST121A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST120A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 ST120A.SUB], [0], [], [ST120A.SUB:39: warning: DATA RECORDS is obsolete in COBOL 85
+ST120A.SUB:50: warning: LABEL RECORDS is obsolete in COBOL 85
+ST120A.SUB:51: warning: DATA RECORDS is obsolete in COBOL 85
+ST120A.SUB:55: warning: LABEL RECORDS is obsolete in COBOL 85
+ST120A.SUB:56: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST120A], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST121A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 ST121A.SUB], [0], [], [ST121A.SUB:40: warning: LABEL RECORDS is obsolete in COBOL 85
+ST121A.SUB:41: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST121A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [000OF001TESTSWEREEXECUTEDSUCCESSFULLY
+001TEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST122A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([ST ST122A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST122A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 ST122A.CBL], [0], [], [ST122A.CBL:61: warning: LABEL RECORDS is obsolete in COBOL 85
+ST122A.CBL:65: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST122A], [0], [], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST123A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([ST ST123A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST123A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 ST123A.SUB], [0], [], [ST123A.SUB:59: warning: LABEL RECORDS is obsolete in COBOL 85
+ST123A.SUB:63: warning: DATA RECORDS is obsolete in COBOL 85
+ST123A.SUB:72: warning: LABEL RECORDS is obsolete in COBOL 85
+ST123A.SUB:76: warning: DATA RECORDS is obsolete in COBOL 85
+ST123A.SUB:88: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST123A], [0], [], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST124A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([ST ST124A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST123A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 ST123A.SUB], [0], [], [ST123A.SUB:59: warning: LABEL RECORDS is obsolete in COBOL 85
+ST123A.SUB:63: warning: DATA RECORDS is obsolete in COBOL 85
+ST123A.SUB:72: warning: LABEL RECORDS is obsolete in COBOL 85
+ST123A.SUB:76: warning: DATA RECORDS is obsolete in COBOL 85
+ST123A.SUB:88: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST123A], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST124A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 ST124A.SUB], [0], [], [ST124A.SUB:65: warning: LABEL RECORDS is obsolete in COBOL 85
+ST124A.SUB:69: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST124A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [000OF001TESTSWEREEXECUTEDSUCCESSFULLY
+001TEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST125A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([ST ST125A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST125A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 ST125A.CBL], [0], [], [ST125A.CBL:81: warning: LABEL RECORDS is obsolete in COBOL 85
+ST125A.CBL:86: warning: LABEL RECORDS is obsolete in COBOL 85
+ST125A.CBL:91: warning: LABEL RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST125A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [001OF001TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST126A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([ST ST126A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST125A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 ST125A.CBL], [0], [], [ST125A.CBL:81: warning: LABEL RECORDS is obsolete in COBOL 85
+ST125A.CBL:86: warning: LABEL RECORDS is obsolete in COBOL 85
+ST125A.CBL:91: warning: LABEL RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST125A], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST126A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 ST126A.SUB], [0], [], [ST126A.SUB:52: warning: LABEL RECORDS is obsolete in COBOL 85
+ST126A.SUB:59: warning: LABEL RECORDS is obsolete in COBOL 85
+ST126A.SUB:66: warning: LABEL RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST126A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [018OF018TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST127A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([ST ST127A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST127A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 ST127A.CBL], [0], [], [ST127A.CBL:74: warning: DATA RECORDS is obsolete in COBOL 85
+ST127A.CBL: in section 'INPROC':
+ST127A.CBL: in paragraph 'BUILD-FILE':
+ST127A.CBL:311: warning: ignoring sign
+ST127A.CBL: in paragraph 'BUILD-RECORD':
+ST127A.CBL:332: warning: ignoring sign
+])
+AT_CHECK([./ST127A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [027OF027TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST131A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([ST ST131A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST131A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 ST131A.CBL], [0], [], [ST131A.CBL:93: warning: DATA RECORDS is obsolete in COBOL 85
+ST131A.CBL:101: warning: DATA RECORDS is obsolete in COBOL 85
+ST131A.CBL:110: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST131A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [015OF015TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST132A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([ST ST132A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST132A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 ST132A.CBL], [0], [], [ST132A.CBL:62: warning: LABEL RECORDS is obsolete in COBOL 85
+ST132A.CBL:63: warning: DATA RECORDS is obsolete in COBOL 85
+ST132A.CBL:67: warning: DATA RECORDS is obsolete in COBOL 85
+ST132A.CBL:75: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST132A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [006OF006TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST133A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([ST ST133A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST133A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 ST133A.CBL], [0], [], [ST133A.CBL:83: warning: LABEL RECORDS is obsolete in COBOL 85
+ST133A.CBL:84: warning: DATA RECORDS is obsolete in COBOL 85
+ST133A.CBL:89: warning: LABEL RECORDS is obsolete in COBOL 85
+ST133A.CBL:90: warning: DATA RECORDS is obsolete in COBOL 85
+ST133A.CBL:95: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST133A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [018OF018TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST134A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([ST ST134A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST134A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 ST134A.CBL], [0], [], [ST134A.CBL:63: warning: DATA RECORDS is obsolete in COBOL 85
+ST134A.CBL:69: warning: LABEL RECORDS is obsolete in COBOL 85
+ST134A.CBL:70: warning: DATA RECORDS is obsolete in COBOL 85
+ST134A.CBL:76: warning: LABEL RECORDS is obsolete in COBOL 85
+ST134A.CBL:77: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST134A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [004OF004TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST135A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([ST ST135A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST135A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 ST135A.CBL], [0], [], [ST135A.CBL:67: warning: LABEL RECORDS is obsolete in COBOL 85
+ST135A.CBL:68: warning: DATA RECORDS is obsolete in COBOL 85
+ST135A.CBL:74: warning: LABEL RECORDS is obsolete in COBOL 85
+ST135A.CBL:75: warning: DATA RECORDS is obsolete in COBOL 85
+ST135A.CBL:81: warning: LABEL RECORDS is obsolete in COBOL 85
+ST135A.CBL:82: warning: DATA RECORDS is obsolete in COBOL 85
+ST135A.CBL:86: warning: LABEL RECORDS is obsolete in COBOL 85
+ST135A.CBL:87: warning: DATA RECORDS is obsolete in COBOL 85
+ST135A.CBL:90: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST135A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [009OF009TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST136A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([ST ST136A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST136A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 ST136A.CBL], [0], [], [ST136A.CBL:47: warning: LABEL RECORDS is obsolete in COBOL 85
+ST136A.CBL:48: warning: DATA RECORDS is obsolete in COBOL 85
+ST136A.CBL:54: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST136A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [005OF005TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST137A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([ST ST137A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST137A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 ST137A.CBL], [0], [], [ST137A.CBL:118: warning: LABEL RECORDS is obsolete in COBOL 85
+ST137A.CBL:137: warning: LABEL RECORDS is obsolete in COBOL 85
+ST137A.CBL:140: warning: DATA RECORDS is obsolete in COBOL 85
+ST137A.CBL:158: warning: DATA RECORDS is obsolete in COBOL 85
+ST137A.CBL: in section 'SECT-ST216-DEC':
+ST137A.CBL: in paragraph 'SRT-WRITE-DEC':
+ST137A.CBL:397: warning: value size exceeds data size
+ST137A.CBL:397: note: value size is 21
+ST137A.CBL:253: note: 'FEATURE' defined here as PIC X(20)
+])
+AT_CHECK([./ST137A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [006OF006TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST139A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([ST ST139A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST139A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 ST139A.CBL], [0], [], [ST139A.CBL:142: warning: LABEL RECORDS is obsolete in COBOL 85
+ST139A.CBL:157: warning: LABEL RECORDS is obsolete in COBOL 85
+ST139A.CBL:160: warning: DATA RECORDS is obsolete in COBOL 85
+ST139A.CBL:174: warning: LABEL RECORDS is obsolete in COBOL 85
+ST139A.CBL:177: warning: DATA RECORDS is obsolete in COBOL 85
+ST139A.CBL:195: warning: DATA RECORDS is obsolete in COBOL 85
+ST139A.CBL: in section 'SECT-ST209-DEC':
+ST139A.CBL: in paragraph 'MRG-WRITE-DEC':
+ST139A.CBL:430: warning: value size exceeds data size
+ST139A.CBL:430: note: value size is 21
+ST139A.CBL:286: note: 'FEATURE' defined here as PIC X(20)
+ST139A.CBL: in section 'SECT-ST209-0001':
+ST139A.CBL: in paragraph 'MRG-WRITE-003':
+ST139A.CBL:657: warning: value size exceeds data size
+ST139A.CBL:657: note: value size is 21
+ST139A.CBL:286: note: 'FEATURE' defined here as PIC X(20)
+ST139A.CBL: in paragraph 'MRG-WRITE-004':
+ST139A.CBL:677: warning: value size exceeds data size
+ST139A.CBL:677: note: value size is 21
+ST139A.CBL:286: note: 'FEATURE' defined here as PIC X(20)
+ST139A.CBL: in paragraph 'MRG-WRITE-005':
+ST139A.CBL:697: warning: value size exceeds data size
+ST139A.CBL:697: note: value size is 21
+ST139A.CBL:286: note: 'FEATURE' defined here as PIC X(20)
+ST139A.CBL: in paragraph 'MRG-WRITE-006':
+ST139A.CBL:717: warning: value size exceeds data size
+ST139A.CBL:717: note: value size is 21
+ST139A.CBL:286: note: 'FEATURE' defined here as PIC X(20)
+ST139A.CBL: in paragraph 'MRG-WRITE-007':
+ST139A.CBL:737: warning: value size exceeds data size
+ST139A.CBL:737: note: value size is 21
+ST139A.CBL:286: note: 'FEATURE' defined here as PIC X(20)
+ST139A.CBL: in paragraph 'MRG-WRITE-008':
+ST139A.CBL:757: warning: value size exceeds data size
+ST139A.CBL:757: note: value size is 21
+ST139A.CBL:286: note: 'FEATURE' defined here as PIC X(20)
+ST139A.CBL: in paragraph 'MRG-FAIL-010':
+ST139A.CBL:787: warning: alphanumeric value is expected
+ST139A.CBL:320: note: 'CR-18V0' defined here as a group of length 20
+])
+AT_CHECK([./ST139A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [010OF010TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST140A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([ST ST140A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST140A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 ST140A.CBL], [0], [], [ST140A.CBL:148: warning: MULTIPLE FILE TAPE is obsolete in COBOL 85
+ST140A.CBL:155: warning: LABEL RECORDS is obsolete in COBOL 85
+ST140A.CBL:158: warning: DATA RECORDS is obsolete in COBOL 85
+ST140A.CBL:175: warning: LABEL RECORDS is obsolete in COBOL 85
+ST140A.CBL:178: warning: DATA RECORDS is obsolete in COBOL 85
+ST140A.CBL:192: warning: LABEL RECORDS is obsolete in COBOL 85
+ST140A.CBL:195: warning: DATA RECORDS is obsolete in COBOL 85
+ST140A.CBL:209: warning: LABEL RECORDS is obsolete in COBOL 85
+ST140A.CBL:212: warning: DATA RECORDS is obsolete in COBOL 85
+ST140A.CBL:227: warning: DATA RECORDS is obsolete in COBOL 85
+ST140A.CBL: in section 'SECT-ST210-DEC':
+ST140A.CBL: in paragraph 'SRT-WRITE-DEC':
+ST140A.CBL:462: warning: value size exceeds data size
+ST140A.CBL:462: note: value size is 21
+ST140A.CBL:318: note: 'FEATURE' defined here as PIC X(20)
+ST140A.CBL: in section 'SECT-ST210-0001':
+ST140A.CBL: in paragraph 'SRT-FAIL-010':
+ST140A.CBL:848: warning: alphanumeric value is expected
+ST140A.CBL:352: note: 'CR-18V0' defined here as a group of length 20
+])
+AT_CHECK([./ST140A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [011OF011TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST144A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([ST ST144A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST144A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 ST144A.CBL], [0], [], [ST144A.CBL:150: warning: MULTIPLE FILE TAPE is obsolete in COBOL 85
+ST144A.CBL:157: warning: LABEL RECORDS is obsolete in COBOL 85
+ST144A.CBL:160: warning: DATA RECORDS is obsolete in COBOL 85
+ST144A.CBL:177: warning: LABEL RECORDS is obsolete in COBOL 85
+ST144A.CBL:180: warning: DATA RECORDS is obsolete in COBOL 85
+ST144A.CBL:194: warning: LABEL RECORDS is obsolete in COBOL 85
+ST144A.CBL:197: warning: DATA RECORDS is obsolete in COBOL 85
+ST144A.CBL:211: warning: LABEL RECORDS is obsolete in COBOL 85
+ST144A.CBL:214: warning: DATA RECORDS is obsolete in COBOL 85
+ST144A.CBL:229: warning: DATA RECORDS is obsolete in COBOL 85
+ST144A.CBL: in section 'SECT-ST214-DEC':
+ST144A.CBL: in paragraph 'SRT-WRITE-DEC':
+ST144A.CBL:464: warning: value size exceeds data size
+ST144A.CBL:464: note: value size is 21
+ST144A.CBL:320: note: 'FEATURE' defined here as PIC X(20)
+ST144A.CBL: in section 'SECT-ST214-0001':
+ST144A.CBL: in paragraph 'SRT-FAIL-010':
+ST144A.CBL:849: warning: alphanumeric value is expected
+ST144A.CBL:354: note: 'CR-18V0' defined here as a group of length 20
+])
+AT_CHECK([./ST144A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [011OF011TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST146A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([ST ST146A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST146A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 ST146A.CBL], [0], [], [ST146A.CBL:65: warning: LABEL RECORDS is obsolete in COBOL 85
+ST146A.CBL:70: warning: LABEL RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./ST146A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [004OF004TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST147A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([ST ST147A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST147A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 ST147A.CBL], [0], [], [ST147A.CBL:165: warning: LABEL RECORDS is obsolete in COBOL 85
+ST147A.CBL:180: warning: LABEL RECORDS is obsolete in COBOL 85
+ST147A.CBL:183: warning: DATA RECORDS is obsolete in COBOL 85
+ST147A.CBL:197: warning: LABEL RECORDS is obsolete in COBOL 85
+ST147A.CBL:200: warning: DATA RECORDS is obsolete in COBOL 85
+ST147A.CBL:214: warning: LABEL RECORDS is obsolete in COBOL 85
+ST147A.CBL:217: warning: DATA RECORDS is obsolete in COBOL 85
+ST147A.CBL:231: warning: LABEL RECORDS is obsolete in COBOL 85
+ST147A.CBL:234: warning: DATA RECORDS is obsolete in COBOL 85
+ST147A.CBL:249: warning: DATA RECORDS is obsolete in COBOL 85
+ST147A.CBL: in section 'SECT-ST209-DEC':
+ST147A.CBL: in paragraph 'MRG-WRITE-DEC':
+ST147A.CBL:484: warning: value size exceeds data size
+ST147A.CBL:484: note: value size is 21
+ST147A.CBL:340: note: 'FEATURE' defined here as PIC X(20)
+ST147A.CBL: in section 'SECT-ST417-001':
+ST147A.CBL: in paragraph 'MRG-FAIL-010':
+ST147A.CBL:842: warning: alphanumeric value is expected
+ST147A.CBL:374: note: 'CR-18V0' defined here as a group of length 20
+ST147A.CBL: in section 'READ-SQ-FS3':
+ST147A.CBL: in paragraph 'MRG-FAIL-018':
+ST147A.CBL:1010: warning: alphanumeric value is expected
+ST147A.CBL:374: note: 'CR-18V0' defined here as a group of length 20
+ST147A.CBL: in section 'READ-SQ-FS4':
+ST147A.CBL: in paragraph 'MRG-FAIL-026':
+ST147A.CBL:1178: warning: alphanumeric value is expected
+ST147A.CBL:374: note: 'CR-18V0' defined here as a group of length 20
+])
+AT_CHECK([./ST147A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [026OF026TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([ST301M])
+AT_KEYWORDS([ST ST301M])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/ST/ST301M.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 ST301M.CBL], [0], [], [])
+# AT_CHECK([./ST301M], [0], [], [])
+AT_CLEANUP
+

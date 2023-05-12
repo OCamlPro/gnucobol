@@ -1,0 +1,868 @@
+AT_SETUP([IX101A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([IX IX101A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX101A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX101A.CBL], [0], [], [])
+AT_CHECK([./IX101A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [002OF002TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX102A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([IX IX102A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX101A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX101A.CBL], [0], [], [])
+AT_CHECK([./IX101A], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX102A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 IX102A.SUB], [0], [], [IX102A.SUB: in section 'SECT-IX-02-001':
+IX102A.SUB: in paragraph 'READ-TEST-F2-01':
+IX102A.SUB:436: warning: value size exceeds data size
+IX102A.SUB:436: note: value size is 21
+IX102A.SUB:171: note: 'COMPUTED-A' defined here as PIC X(20)
+IX102A.SUB: in paragraph 'REWRITE-TEST-F2-01':
+IX102A.SUB:517: warning: value size exceeds data size
+IX102A.SUB:517: note: value size is 21
+IX102A.SUB:171: note: 'COMPUTED-A' defined here as PIC X(20)
+IX102A.SUB: in paragraph 'REWRITE-TEST-F2-03':
+IX102A.SUB:564: warning: value size exceeds data size
+IX102A.SUB:564: note: value size is 22
+IX102A.SUB:171: note: 'COMPUTED-A' defined here as PIC X(20)
+IX102A.SUB: in paragraph 'READ-TEST-F2-05':
+IX102A.SUB:583: warning: value size exceeds data size
+IX102A.SUB:583: note: value size is 21
+IX102A.SUB:171: note: 'COMPUTED-A' defined here as PIC X(20)
+])
+AT_CHECK([./IX102A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [011OF011TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX103A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([IX IX103A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX103A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 IX103A.SUB], [0], [], [])
+AT_CHECK([./IX103A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [002OF012TESTSWEREEXECUTEDSUCCESSFULLY
+010TEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX104A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([IX IX104A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX104A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX104A.CBL], [0], [], [])
+AT_CHECK([./IX104A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [013OF013TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX105A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([IX IX105A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX105A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX105A.CBL], [0], [], [])
+AT_CHECK([./IX105A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [009OF009TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX106A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([IX IX106A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX106A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX106A.CBL], [0], [], [IX106A.CBL: in section 'SECT-0004-RIS101':
+IX106A.CBL: in paragraph 'DELETE-TEST-GF-01':
+IX106A.CBL:1013: warning: alphanumeric value is expected
+IX106A.CBL:128: note: 'IX-FS1-KEY-11-13' defined here as PIC X(3)
+])
+AT_CHECK([./IX106A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [010OF010TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+OFFICIALCOBOLCOMPILERVALIDATIONSYSTEM
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX107A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([IX IX107A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX107A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX107A.CBL], [0], [], [IX107A.CBL: in section 'SECT-IX107A-001':
+IX107A.CBL: in paragraph 'READ-INIT-F1-02':
+IX107A.CBL:551: warning: value size exceeds data size
+IX107A.CBL:551: note: value size is 24
+IX107A.CBL:200: note: 'FEATURE' defined here as PIC X(20)
+IX107A.CBL: in section 'SECT-IX107A-002':
+IX107A.CBL: in paragraph 'READ-INIT-F2-08':
+IX107A.CBL:776: warning: value size exceeds data size
+IX107A.CBL:776: note: value size is 29
+IX107A.CBL:200: note: 'FEATURE' defined here as PIC X(20)
+IX107A.CBL: in paragraph 'READ-INIT-F2-09':
+IX107A.CBL:815: warning: value size exceeds data size
+IX107A.CBL:815: note: value size is 21
+IX107A.CBL:200: note: 'FEATURE' defined here as PIC X(20)
+IX107A.CBL: in paragraph 'READ-INIT-F2-10':
+IX107A.CBL:847: warning: value size exceeds data size
+IX107A.CBL:847: note: value size is 24
+IX107A.CBL:200: note: 'FEATURE' defined here as PIC X(20)
+])
+AT_CHECK([./IX107A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [014OF014TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX108A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([IX IX108A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX108A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX108A.CBL], [0], [], [IX108A.CBL: in section 'SECT-IX-04-001':
+IX108A.CBL: in paragraph 'WRITE-INIT-GF-01':
+IX108A.CBL:486: warning: value size exceeds data size
+IX108A.CBL:486: note: value size is 22
+IX108A.CBL:194: note: 'FEATURE' defined here as PIC X(20)
+IX108A.CBL: in paragraph 'READ-INIT-F1-02':
+IX108A.CBL:626: warning: value size exceeds data size
+IX108A.CBL:626: note: value size is 22
+IX108A.CBL:194: note: 'FEATURE' defined here as PIC X(20)
+IX108A.CBL: in paragraph 'READ-INIT-F1-03':
+IX108A.CBL:669: warning: value size exceeds data size
+IX108A.CBL:669: note: value size is 27
+IX108A.CBL:194: note: 'FEATURE' defined here as PIC X(20)
+IX108A.CBL: in paragraph 'READ-INIT-F2-02':
+IX108A.CBL:773: warning: value size exceeds data size
+IX108A.CBL:773: note: value size is 22
+IX108A.CBL:194: note: 'FEATURE' defined here as PIC X(20)
+IX108A.CBL: in paragraph 'READ-INIT-F2-03':
+IX108A.CBL:818: warning: value size exceeds data size
+IX108A.CBL:818: note: value size is 27
+IX108A.CBL:194: note: 'FEATURE' defined here as PIC X(20)
+IX108A.CBL: in paragraph 'DELETE-INIT-GF-02':
+IX108A.CBL:935: warning: value size exceeds data size
+IX108A.CBL:935: note: value size is 22
+IX108A.CBL:194: note: 'FEATURE' defined here as PIC X(20)
+IX108A.CBL: in paragraph 'DELETE-INIT-GF-03':
+IX108A.CBL:986: warning: value size exceeds data size
+IX108A.CBL:986: note: value size is 27
+IX108A.CBL:194: note: 'FEATURE' defined here as PIC X(20)
+IX108A.CBL: in paragraph 'REWRITE-INIT-GF-02':
+IX108A.CBL:1111: warning: value size exceeds data size
+IX108A.CBL:1111: note: value size is 23
+IX108A.CBL:194: note: 'FEATURE' defined here as PIC X(20)
+IX108A.CBL: in paragraph 'REWRITE-INIT-GF-03':
+IX108A.CBL:1163: warning: value size exceeds data size
+IX108A.CBL:1163: note: value size is 28
+IX108A.CBL:194: note: 'FEATURE' defined here as PIC X(20)
+IX108A.CBL: in paragraph 'RWR-SEQ-INIT-GF-02':
+IX108A.CBL:1293: warning: value size exceeds data size
+IX108A.CBL:1293: note: value size is 23
+IX108A.CBL:194: note: 'FEATURE' defined here as PIC X(20)
+IX108A.CBL: in paragraph 'RWR-SEQ-INIT-GF-03':
+IX108A.CBL:1343: warning: value size exceeds data size
+IX108A.CBL:1343: note: value size is 28
+IX108A.CBL:194: note: 'FEATURE' defined here as PIC X(20)
+])
+AT_CHECK([./IX108A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [032OF032TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX109A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([IX IX109A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX109A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX109A.CBL], [0], [], [])
+AT_CHECK([./IX109A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [013OF013TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+OFFICIALCOBOLCOMPILERVALIDATIONSYSTEM
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX110A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([IX IX110A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX110A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 IX110A.SUB], [0], [], [])
+AT_CHECK([./IX110A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [000OF004TESTSWEREEXECUTEDSUCCESSFULLY
+OFFICIALCOBOLCOMPILERVALIDATIONSYSTEM
+
+CCVS854.2COPY-NOTFORDISTRIBUTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX111A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([IX IX111A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX111A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 IX111A.SUB], [0], [], [IX111A.SUB: in section 'SECT-IX111-0001':
+IX111A.SUB: in paragraph 'INPUT-PROCESS':
+IX111A.SUB:230: warning: value size exceeds data size
+IX111A.SUB:230: note: value size is 64
+IX111A.SUB:88: note: 'RE-MARK' defined here as PIC X(61)
+])
+AT_CHECK([./IX111A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [001OF001TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX112A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([IX IX112A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX112A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX112A.CBL], [0], [], [])
+AT_CHECK([./IX112A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [007OF007TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX113A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([IX IX113A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX113A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX113A.CBL], [0], [], [])
+AT_CHECK([./IX113A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [004OF004TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX114A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([IX IX114A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX114A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 IX114A.SUB], [0], [], [])
+AT_CHECK([./IX114A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [001OF003TESTSWEREEXECUTEDSUCCESSFULLY
+002TEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX115A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([IX IX115A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX115A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 IX115A.SUB], [0], [], [])
+AT_CHECK([./IX115A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [001OF003TESTSWEREEXECUTEDSUCCESSFULLY
+002TEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX116A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([IX IX116A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX116A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 IX116A.SUB], [0], [], [])
+AT_CHECK([./IX116A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [001OF003TESTSWEREEXECUTEDSUCCESSFULLY
+002TEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX117A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([IX IX117A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX117A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 IX117A.SUB], [0], [], [])
+AT_CHECK([./IX117A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [001OF003TESTSWEREEXECUTEDSUCCESSFULLY
+002TEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX118A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([IX IX118A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX118A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 IX118A.SUB], [0], [], [])
+AT_CHECK([./IX118A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [000OF003TESTSWEREEXECUTEDSUCCESSFULLY
+003TEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX119A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([IX IX119A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX101A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX101A.CBL], [0], [], [])
+AT_CHECK([./IX101A], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX119A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 IX119A.SUB], [0], [], [IX119A.SUB: in section 'SECT-IX119A-0003':
+IX119A.SUB: in paragraph 'RWR-INIT-GF-01-0':
+IX119A.SUB:616: warning: alphanumeric value is expected
+IX119A.SUB:72: note: 'IX-FS3-KEY' defined here as PIC X(29)
+])
+AT_CHECK([./IX119A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [002OF003TESTSWEREEXECUTEDSUCCESSFULLY
+001TEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX120A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([IX IX120A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX101A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX101A.CBL], [0], [], [])
+AT_CHECK([./IX101A], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX120A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 IX120A.SUB], [0], [], [])
+AT_CHECK([./IX120A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [002OF002TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX121A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([IX IX121A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX121A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX121A.CBL], [0], [], [])
+AT_CHECK([./IX121A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [003OF003TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX201A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([IX IX201A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX201A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX201A.CBL], [0], [], [])
+AT_CHECK([./IX201A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [002OF002TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX202A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([IX IX202A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX201A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX201A.CBL], [0], [], [])
+AT_CHECK([./IX201A], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX202A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 IX202A.SUB], [0], [], [IX202A.SUB: in section 'SECT-IX-02-001':
+IX202A.SUB: in paragraph 'READ-TEST-F2-01-R':
+IX202A.SUB:426: warning: value size exceeds data size
+IX202A.SUB:426: note: value size is 21
+IX202A.SUB:163: note: 'COMPUTED-A' defined here as PIC X(20)
+IX202A.SUB: in paragraph 'RWRT-TEST-GF-01-R':
+IX202A.SUB:498: warning: value size exceeds data size
+IX202A.SUB:498: note: value size is 21
+IX202A.SUB:163: note: 'COMPUTED-A' defined here as PIC X(20)
+IX202A.SUB: in paragraph 'RWRT-TEST-GF-02-1':
+IX202A.SUB:541: warning: value size exceeds data size
+IX202A.SUB:541: note: value size is 22
+IX202A.SUB:163: note: 'COMPUTED-A' defined here as PIC X(20)
+IX202A.SUB: in paragraph 'READ-TEST-F2-02-R':
+IX202A.SUB:559: warning: value size exceeds data size
+IX202A.SUB:559: note: value size is 21
+IX202A.SUB:163: note: 'COMPUTED-A' defined here as PIC X(20)
+])
+AT_CHECK([./IX202A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [011OF011TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX203A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([IX IX203A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX201A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX201A.CBL], [0], [], [])
+AT_CHECK([./IX201A], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX203A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 IX203A.SUB], [0], [], [])
+AT_CHECK([./IX203A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [010OF012TESTSWEREEXECUTEDSUCCESSFULLY
+002TEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX204A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([IX IX204A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX204A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX204A.CBL], [0], [], [])
+AT_CHECK([./IX204A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [013OF013TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX205A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([IX IX205A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX205A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX205A.CBL], [0], [], [IX205A.CBL: in section 'SECT-IX-01-001':
+IX205A.CBL: in paragraph 'READ-TEST-F1-01-3':
+IX205A.CBL:530: warning: NEXT SENTENCE is archaic in COBOL 85
+IX205A.CBL: in paragraph 'READ-INIT-F2-02':
+IX205A.CBL:544: warning: value size exceeds data size
+IX205A.CBL:544: note: value size is 21
+IX205A.CBL:196: note: 'FEATURE' defined here as PIC X(20)
+IX205A.CBL: in paragraph 'READ-TEST-F1-02-5':
+IX205A.CBL:567: warning: NEXT SENTENCE is archaic in COBOL 85
+IX205A.CBL: in paragraph 'READ-INIT-GF-03':
+IX205A.CBL:582: warning: value size exceeds data size
+IX205A.CBL:582: note: value size is 21
+IX205A.CBL:196: note: 'FEATURE' defined here as PIC X(20)
+IX205A.CBL: in paragraph 'READ-TEST-F1-03':
+IX205A.CBL:617: warning: NEXT SENTENCE is archaic in COBOL 85
+IX205A.CBL: in paragraph 'READ-INIT-GF-04':
+IX205A.CBL:631: warning: value size exceeds data size
+IX205A.CBL:631: note: value size is 22
+IX205A.CBL:196: note: 'FEATURE' defined here as PIC X(20)
+IX205A.CBL: in paragraph 'READ-TEST-F1-04':
+IX205A.CBL:666: warning: NEXT SENTENCE is archaic in COBOL 85
+IX205A.CBL: in section 'SECT-IX-01-002':
+IX205A.CBL: in paragraph 'READ-TEST-F1-05-3':
+IX205A.CBL:747: warning: NEXT SENTENCE is archaic in COBOL 85
+IX205A.CBL: in paragraph 'READ-TEST-F1-06-5':
+IX205A.CBL:786: warning: NEXT SENTENCE is archaic in COBOL 85
+IX205A.CBL: in paragraph 'READ-TEST-F1-07-7':
+IX205A.CBL:836: warning: NEXT SENTENCE is archaic in COBOL 85
+])
+AT_CHECK([./IX205A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [012OF012TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX206A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([IX IX206A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX206A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX206A.CBL], [0], [], [IX206A.CBL: in section 'SECT-IX-01-001':
+IX206A.CBL: in paragraph 'READ-TEST-F2-02-5':
+IX206A.CBL:561: warning: NEXT SENTENCE is archaic in COBOL 85
+IX206A.CBL: in paragraph 'READ-TEST-F2-03-7':
+IX206A.CBL:612: warning: NEXT SENTENCE is archaic in COBOL 85
+IX206A.CBL: in section 'SECT-IX-01-002':
+IX206A.CBL: in paragraph 'READ-TEST-F1-04-3':
+IX206A.CBL:694: warning: NEXT SENTENCE is archaic in COBOL 85
+IX206A.CBL: in paragraph 'READ-TEST-F2-05-6':
+IX206A.CBL:747: warning: NEXT SENTENCE is archaic in COBOL 85
+])
+AT_CHECK([./IX206A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [010OF010TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX207A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([IX IX207A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX207A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX207A.CBL], [0], [], [])
+AT_CHECK([./IX207A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [008OF008TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX208A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([IX IX208A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX208A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX208A.CBL], [0], [], [IX208A.CBL: in section 'SECT-IX208A-0001':
+IX208A.CBL: in paragraph 'READ-TEST-F1-04':
+IX208A.CBL:688: warning: NEXT SENTENCE is archaic in COBOL 85
+IX208A.CBL: in paragraph 'START-TEST-GF-07-1':
+IX208A.CBL:1067: warning: value size exceeds data size
+IX208A.CBL:1067: note: value size is 22
+IX208A.CBL:212: note: 'FEATURE' defined here as PIC X(20)
+IX208A.CBL: in paragraph 'START-TEST-GF-11-1':
+IX208A.CBL:1176: warning: value size exceeds data size
+IX208A.CBL:1176: note: value size is 26
+IX208A.CBL:212: note: 'FEATURE' defined here as PIC X(20)
+IX208A.CBL: in paragraph 'START-TEST-GF-12-1':
+IX208A.CBL:1204: warning: value size exceeds data size
+IX208A.CBL:1204: note: value size is 21
+IX208A.CBL:212: note: 'FEATURE' defined here as PIC X(20)
+IX208A.CBL: in paragraph 'START-TEST-GF-13-1':
+IX208A.CBL:1232: warning: value size exceeds data size
+IX208A.CBL:1232: note: value size is 23
+IX208A.CBL:212: note: 'FEATURE' defined here as PIC X(20)
+IX208A.CBL: in paragraph 'START-TEST-GF-15-1':
+IX208A.CBL:1295: warning: value size exceeds data size
+IX208A.CBL:1295: note: value size is 21
+IX208A.CBL:212: note: 'FEATURE' defined here as PIC X(20)
+])
+AT_CHECK([./IX208A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [029OF029TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX209A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([IX IX209A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX209A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX209A.CBL], [0], [], [IX209A.CBL: in section 'SECT-0001-IX209A':
+IX209A.CBL: in paragraph 'READ-TEST-F1-01-R1':
+IX209A.CBL:819: warning: NEXT SENTENCE is archaic in COBOL 85
+])
+AT_CHECK([./IX209A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [056OF056TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX210A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([IX IX210A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX210A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX210A.CBL], [0], [], [IX210A.CBL: in section 'SECT-0001-IX210A':
+IX210A.CBL: in paragraph 'READ-TEST-F1-R1':
+IX210A.CBL:826: warning: NEXT SENTENCE is archaic in COBOL 85
+])
+AT_CHECK([./IX210A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [039OF039TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX211A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([IX IX211A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX211A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX211A.CBL], [0], [], [IX211A.CBL: in section 'SECT-0001-IX211A':
+IX211A.CBL: in paragraph 'READ-TEST-F1-01-1':
+IX211A.CBL:766: warning: NEXT SENTENCE is archaic in COBOL 85
+])
+AT_CHECK([./IX211A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [017OF017TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX212A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([IX IX212A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX212A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX212A.CBL], [0], [], [])
+AT_CHECK([./IX212A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [024OF024TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX213A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([IX IX213A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX213A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX213A.CBL], [0], [], [])
+AT_CHECK([./IX213A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [021OF021TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX214A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([IX IX214A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX214A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX214A.CBL], [0], [], [IX214A.CBL: in section 'SECT-0001-IX214A':
+IX214A.CBL: in paragraph 'WRITE-INT-GF-01':
+IX214A.CBL:761: warning: value size exceeds data size
+IX214A.CBL:761: note: value size is 6
+IX214A.CBL:467: note: 'XPROGRAM-NAME' defined here as PIC X(5)
+IX214A.CBL: in paragraph 'READ-TEST-F1-01-R1':
+IX214A.CBL:832: warning: NEXT SENTENCE is archaic in COBOL 85
+IX214A.CBL: in paragraph 'START-TEST-GF-10':
+IX214A.CBL:1350: warning: value size exceeds data size
+IX214A.CBL:1350: note: value size is 21
+IX214A.CBL:519: note: 'CORRECT-A' defined here as PIC X(20)
+IX214A.CBL: in paragraph 'START-TEST-GF-11':
+IX214A.CBL:1371: warning: value size exceeds data size
+IX214A.CBL:1371: note: value size is 21
+IX214A.CBL:519: note: 'CORRECT-A' defined here as PIC X(20)
+IX214A.CBL: in paragraph 'START-TEST-GF-12':
+IX214A.CBL:1390: warning: value size exceeds data size
+IX214A.CBL:1390: note: value size is 21
+IX214A.CBL:519: note: 'CORRECT-A' defined here as PIC X(20)
+IX214A.CBL: in paragraph 'START-TEST-GF-13':
+IX214A.CBL:1410: warning: value size exceeds data size
+IX214A.CBL:1410: note: value size is 21
+IX214A.CBL:519: note: 'CORRECT-A' defined here as PIC X(20)
+IX214A.CBL: in paragraph 'START-TEST-GF-14':
+IX214A.CBL:1430: warning: value size exceeds data size
+IX214A.CBL:1430: note: value size is 21
+IX214A.CBL:519: note: 'CORRECT-A' defined here as PIC X(20)
+IX214A.CBL: in paragraph 'START-TEST-GF-15':
+IX214A.CBL:1449: warning: value size exceeds data size
+IX214A.CBL:1449: note: value size is 21
+IX214A.CBL:519: note: 'CORRECT-A' defined here as PIC X(20)
+IX214A.CBL: in paragraph 'START-TEST-GF-16':
+IX214A.CBL:1469: warning: value size exceeds data size
+IX214A.CBL:1469: note: value size is 21
+IX214A.CBL:519: note: 'CORRECT-A' defined here as PIC X(20)
+IX214A.CBL: in paragraph 'START-TEST-GF-17':
+IX214A.CBL:1489: warning: value size exceeds data size
+IX214A.CBL:1489: note: value size is 21
+IX214A.CBL:519: note: 'CORRECT-A' defined here as PIC X(20)
+IX214A.CBL: in paragraph 'START-TEST-GF-18':
+IX214A.CBL:1509: warning: value size exceeds data size
+IX214A.CBL:1509: note: value size is 21
+IX214A.CBL:519: note: 'CORRECT-A' defined here as PIC X(20)
+IX214A.CBL: in paragraph 'START-TEST-GF-18A':
+IX214A.CBL:1528: warning: value size exceeds data size
+IX214A.CBL:1528: note: value size is 21
+IX214A.CBL:490: note: 'FEATURE' defined here as PIC X(20)
+IX214A.CBL: in paragraph 'START-TEST-GF-28':
+IX214A.CBL:2023: warning: value size exceeds data size
+IX214A.CBL:2023: note: value size is 21
+IX214A.CBL:519: note: 'CORRECT-A' defined here as PIC X(20)
+IX214A.CBL: in paragraph 'START-TEST-GF-29':
+IX214A.CBL:2043: warning: value size exceeds data size
+IX214A.CBL:2043: note: value size is 21
+IX214A.CBL:519: note: 'CORRECT-A' defined here as PIC X(20)
+IX214A.CBL: in paragraph 'START-TEST-GF-30':
+IX214A.CBL:2062: warning: value size exceeds data size
+IX214A.CBL:2062: note: value size is 21
+IX214A.CBL:519: note: 'CORRECT-A' defined here as PIC X(20)
+IX214A.CBL: in paragraph 'START-TEST-GF-31':
+IX214A.CBL:2082: warning: value size exceeds data size
+IX214A.CBL:2082: note: value size is 21
+IX214A.CBL:519: note: 'CORRECT-A' defined here as PIC X(20)
+IX214A.CBL: in paragraph 'START-TEST-GF-32':
+IX214A.CBL:2102: warning: value size exceeds data size
+IX214A.CBL:2102: note: value size is 21
+IX214A.CBL:519: note: 'CORRECT-A' defined here as PIC X(20)
+IX214A.CBL: in paragraph 'START-TEST-GF-33':
+IX214A.CBL:2122: warning: value size exceeds data size
+IX214A.CBL:2122: note: value size is 21
+IX214A.CBL:519: note: 'CORRECT-A' defined here as PIC X(20)
+IX214A.CBL: in paragraph 'START-TEST-GF-34':
+IX214A.CBL:2142: warning: value size exceeds data size
+IX214A.CBL:2142: note: value size is 21
+IX214A.CBL:519: note: 'CORRECT-A' defined here as PIC X(20)
+IX214A.CBL: in paragraph 'START-TEST-GF-35':
+IX214A.CBL:2162: warning: value size exceeds data size
+IX214A.CBL:2162: note: value size is 21
+IX214A.CBL:519: note: 'CORRECT-A' defined here as PIC X(20)
+IX214A.CBL: in paragraph 'START-TEST-GF-36':
+IX214A.CBL:2182: warning: value size exceeds data size
+IX214A.CBL:2182: note: value size is 21
+IX214A.CBL:519: note: 'CORRECT-A' defined here as PIC X(20)
+])
+AT_CHECK([./IX214A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [039OF039TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX215A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([IX IX215A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX215A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX215A.CBL], [0], [], [IX215A.CBL: in section 'SECT-0001-IX215A':
+IX215A.CBL: in paragraph 'READ-TEST-F1-01-R1':
+IX215A.CBL:868: warning: NEXT SENTENCE is archaic in COBOL 85
+IX215A.CBL: in paragraph 'READ-TEST-F1-02-R1':
+IX215A.CBL:1504: warning: NEXT SENTENCE is archaic in COBOL 85
+IX215A.CBL: in paragraph 'READ-TEST-F1-O3-R1':
+IX215A.CBL:2121: warning: NEXT SENTENCE is archaic in COBOL 85
+])
+AT_CHECK([./IX215A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [033OF033TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX216A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([IX IX216A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX216A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX216A.CBL], [0], [], [IX216A.CBL: in section 'SECT-IX-04-001':
+IX216A.CBL: in paragraph 'WRITE-TEST-GF-07':
+IX216A.CBL:610: warning: alphanumeric value is expected
+IX216A.CBL:121: note: 'IX-FS2-STATUS' defined here as PIC XX
+])
+AT_CHECK([./IX216A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [014OF015TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+001TEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX217A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([IX IX217A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX217A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX217A.CBL], [0], [], [])
+AT_CHECK([./IX217A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [006OF006TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX218A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([IX IX218A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX218A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX218A.CBL], [0], [], [IX218A.CBL: in section 'SECT-IX-01-001':
+IX218A.CBL: in paragraph 'REA-FAIL-GF-04':
+IX218A.CBL:547: warning: value size exceeds data size
+IX218A.CBL:547: note: value size is 63
+IX218A.CBL:136: note: 'RE-MARK' defined here as PIC X(61)
+])
+AT_CHECK([./IX218A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [006OF006TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX301M])
+AT_KEYWORDS([IX IX301M])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX301M.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX301M.CBL], [0], [], [])
+# AT_CHECK([./IX301M], [0], [], [])
+AT_CLEANUP
+
+AT_SETUP([IX302M])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([IX IX302M])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX302M.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX302M.CBL], [0], [], [IX302M.CBL:30: warning: MULTIPLE FILE TAPE is obsolete in COBOL 85
+IX302M.CBL:36: warning: LABEL RECORDS is obsolete in COBOL 85
+IX302M.CBL:42: warning: VALUE OF is obsolete in COBOL 85
+IX302M.CBL:45: warning: DATA RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./IX302M], [0], [THIS IS A DUMMY PARAGRAPH
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([IX401M])
+AT_KEYWORDS([IX IX401M])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/IX/IX401M.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 IX401M.CBL], [0], [], [])
+# AT_CHECK([./IX401M], [0], [], [])
+AT_CLEANUP
+

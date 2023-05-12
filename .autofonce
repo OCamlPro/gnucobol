@@ -24,8 +24,8 @@ file = "tests/testsuite.at"
 path = [ "tests/testsuite.src"]
 env = "testsuite"
 [testsuites.nist]
-file = "tests/cobol85/nist.at"
-path = [ "tests/cobol85/nistrun.src"]
+file = "tests/nistrun.at"
+path = [ "tests/nistrun.src"]
 env = "testsuite"
 
 [envs]

@@ -1,0 +1,289 @@
+AT_SETUP([OBIC2A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([OB OBIC2A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/OB/lib/OBIC2A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE_MODULE85 OBIC2A.CBL], [0], [], [OBIC2A.CBL:45: warning: DATA RECORDS is obsolete in COBOL 85
+OBIC2A.CBL: in section 'SECT-IC219-0001':
+OBIC2A.CBL:130: warning: section segments is obsolete in COBOL 85
+OBIC2A.CBL: in section 'SECT-IC219-0002':
+OBIC2A.CBL:144: warning: section segments is obsolete in COBOL 85
+OBIC2A.CBL: in section 'SECT-IC219-0003':
+OBIC2A.CBL:199: warning: section segments is obsolete in COBOL 85
+])
+
+AT_CLEANUP
+
+AT_SETUP([OBIC3A])
+AT_KEYWORDS([OB OBIC3A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/OB/lib/OBIC3A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE_MODULE85 OBIC3A.CBL], [0], [], [])
+AT_CLEANUP
+
+AT_SETUP([OBIC1A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([OB OBIC1A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/OB/lib/OBIC2A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE_MODULE85 OBIC2A.CBL], [0], [], [OBIC2A.CBL:45: warning: DATA RECORDS is obsolete in COBOL 85
+OBIC2A.CBL: in section 'SECT-IC219-0001':
+OBIC2A.CBL:130: warning: section segments is obsolete in COBOL 85
+OBIC2A.CBL: in section 'SECT-IC219-0002':
+OBIC2A.CBL:144: warning: section segments is obsolete in COBOL 85
+OBIC2A.CBL: in section 'SECT-IC219-0003':
+OBIC2A.CBL:199: warning: section segments is obsolete in COBOL 85
+])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/OB/lib/OBIC3A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE_MODULE85 OBIC3A.CBL], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/OB/OBIC1A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 OBIC1A.CBL], [0], [], [])
+AT_CHECK([./OBIC1A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [001OF001TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([OBNC1M])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([OB OBNC1M])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/OB/OBNC1M.CBL .], [0], [], [])
+AT_CHECK([printf '\n\n\n\n\n\n\n\n\003' > OBNC1M.DAT], [0], [], [])
+AT_CHECK([$COMPILE85 OBNC1M.CBL], [0], [], [OBNC1M.CBL:5: warning: AUTHOR is obsolete in COBOL 85
+OBNC1M.CBL:7: warning: INSTALLATION is obsolete in COBOL 85
+OBNC1M.CBL:15: warning: DATE-WRITTEN is obsolete in COBOL 85
+OBNC1M.CBL:19: warning: SECURITY is obsolete in COBOL 85
+OBNC1M.CBL:95: warning: MEMORY SIZE is obsolete in COBOL 85
+OBNC1M.CBL: in section 'SECT-NC107A-001':
+OBNC1M.CBL: in paragraph 'NUM-TEST-1':
+OBNC1M.CBL:535: warning: ALTER is obsolete in COBOL 85
+OBNC1M.CBL: in paragraph 'ALTER-TEST-1':
+OBNC1M.CBL:553: warning: ALTER is obsolete in COBOL 85
+OBNC1M.CBL: in paragraph 'ALTER-TEST-2':
+OBNC1M.CBL:569: warning: ALTER is obsolete in COBOL 85
+OBNC1M.CBL: in paragraph 'ALTER-TEST-3':
+OBNC1M.CBL:586: warning: ALTER is obsolete in COBOL 85
+OBNC1M.CBL: in paragraph 'ALTER-I':
+OBNC1M.CBL:602: warning: ALTER is obsolete in COBOL 85
+OBNC1M.CBL: in paragraph 'GO--TEST-1':
+OBNC1M.CBL:611: warning: ALTER is obsolete in COBOL 85
+OBNC1M.CBL: in paragraph 'GO--A':
+OBNC1M.CBL:619: warning: GO TO without procedure-name is obsolete in COBOL 85
+OBNC1M.CBL: in section 'SECT-NC180M-001':
+OBNC1M.CBL: in paragraph 'STOP-TEST-GF-1':
+OBNC1M.CBL:644: warning: STOP literal is obsolete in COBOL 85
+OBNC1M.CBL: in paragraph 'STOP-TEST-GF-2':
+OBNC1M.CBL:664: warning: STOP literal is obsolete in COBOL 85
+OBNC1M.CBL: in paragraph 'STOP-TEST-GF-3':
+OBNC1M.CBL:677: warning: STOP literal is obsolete in COBOL 85
+OBNC1M.CBL: in paragraph 'STOP-TEST-GF-4':
+OBNC1M.CBL:689: warning: STOP literal is obsolete in COBOL 85
+OBNC1M.CBL: in paragraph 'STOP-TEST-GF-5':
+OBNC1M.CBL:702: warning: STOP literal is obsolete in COBOL 85
+OBNC1M.CBL: in paragraph 'STOP-WRITE-GF-5':
+OBNC1M.CBL:713: warning: value size exceeds data size
+OBNC1M.CBL:716: note: value size is 160
+OBNC1M.CBL:103: note: 'PRINT-REC' defined here as PIC X(132)
+OBNC1M.CBL: in paragraph 'STOP-TEST-GF-6':
+OBNC1M.CBL:720: warning: STOP literal is obsolete in COBOL 85
+OBNC1M.CBL: in paragraph 'STOP-TEST-GF-7':
+OBNC1M.CBL:732: warning: STOP literal is obsolete in COBOL 85
+OBNC1M.CBL: in paragraph 'STOP-TEST-GF-8':
+OBNC1M.CBL:744: warning: STOP literal is obsolete in COBOL 85
+OBNC1M.CBL: in paragraph 'STOP-TEST-GF-9':
+OBNC1M.CBL:764: warning: STOP literal is obsolete in COBOL 85
+])
+AT_CHECK([./OBNC1M < OBNC1M.DAT], [130], [OPERATOR PLEASE EXECUTE RUN CONTINUATION
+A
+*
+"
+ *  5 * 10 * 15 * 20 * 25 * 30 * 35 * 40 * 45 * 50 * 55 * 60 * 65 * 70 * 75 * 80 * 85 * 90 * 95 *100 *105 *110 *115 *120 *125 *130 *135 *140 *145 *150 *155 *160
+7
+123456789987654321
+0
+OPERATOR KILL OBNC1
+], [
+OBNC1M.CBL:764: interrupt from keyboard (signal)
+
+])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [006OF006TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([OBNC2M])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([OB OBNC2M])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/OB/OBNC2M.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 OBNC2M.CBL], [0], [], [OBNC2M.CBL:25: warning: DATE-COMPILED is obsolete in COBOL 85
+OBNC2M.CBL:175: warning: SYNCHRONIZED LEFT/RIGHT is not implemented
+OBNC2M.CBL: in section 'SECT-OBNC2M-001':
+OBNC2M.CBL: in paragraph 'GO--TEST-1':
+OBNC2M.CBL:592: warning: ALTER is obsolete in COBOL 85
+OBNC2M.CBL: in paragraph 'GO--A':
+OBNC2M.CBL:600: warning: GO TO without procedure-name is obsolete in COBOL 85
+OBNC2M.CBL: in paragraph 'ALTER-TEST-1':
+OBNC2M.CBL:612: warning: ALTER is obsolete in COBOL 85
+OBNC2M.CBL: in paragraph 'ALTER-TESTTT-2':
+OBNC2M.CBL:679: warning: ALTER is obsolete in COBOL 85
+OBNC2M.CBL: in paragraph 'ALTER-TEST-3':
+OBNC2M.CBL:703: warning: ALTER is obsolete in COBOL 85
+OBNC2M.CBL: in section 'QUAL-SECTION-1':
+OBNC2M.CBL: in paragraph 'PARA-TEST-5':
+OBNC2M.CBL:875: warning: ALTER is obsolete in COBOL 85
+OBNC2M.CBL: in paragraph 'PARA-TEST-6':
+OBNC2M.CBL:893: warning: ALTER is obsolete in COBOL 85
+])
+AT_CHECK([./OBNC2M], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [016OF016TESTSWEREEXECUTEDSUCCESSFULLY
+FEATUREPASSPARAGRAPH-NAMEREMARKS
+TESTEDFAIL
+
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([OBSQ1A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([OB OBSQ1A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/OB/OBSQ1A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 OBSQ1A.CBL], [0], [], [OBSQ1A.CBL:65: warning: DATA RECORDS is obsolete in COBOL 85
+OBSQ1A.CBL:65: warning: LABEL RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./OBSQ1A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [006OF006TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([OBSQ3A])
+# promoted on 2023-02-10T08:52
+AT_KEYWORDS([OB OBSQ3A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/OB/OBSQ3A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 OBSQ3A.CBL], [0], [], [OBSQ3A.CBL:62: warning: MULTIPLE FILE TAPE is obsolete in COBOL 85
+OBSQ3A.CBL:65: warning: MULTIPLE FILE TAPE is obsolete in COBOL 85
+OBSQ3A.CBL:72: warning: LABEL RECORDS is obsolete in COBOL 85
+OBSQ3A.CBL:76: warning: LABEL RECORDS is obsolete in COBOL 85
+OBSQ3A.CBL:80: warning: LABEL RECORDS is obsolete in COBOL 85
+OBSQ3A.CBL:85: warning: LABEL RECORDS is obsolete in COBOL 85
+OBSQ3A.CBL:90: warning: LABEL RECORDS is obsolete in COBOL 85
+OBSQ3A.CBL:94: warning: LABEL RECORDS is obsolete in COBOL 85
+OBSQ3A.CBL:98: warning: LABEL RECORDS is obsolete in COBOL 85
+OBSQ3A.CBL:102: warning: LABEL RECORDS is obsolete in COBOL 85
+OBSQ3A.CBL: in section 'SECT-OBSQ3A-0001':
+OBSQ3A.CBL: in paragraph 'SEQ-INIT-002':
+OBSQ3A.CBL:427: warning: OPEN WITH NO REWIND is not implemented
+OBSQ3A.CBL: in paragraph 'SEQ-INIT-003':
+OBSQ3A.CBL:451: warning: OPEN WITH NO REWIND is not implemented
+OBSQ3A.CBL: in paragraph 'SEQ-INIT-004':
+OBSQ3A.CBL:475: warning: OPEN WITH NO REWIND is not implemented
+OBSQ3A.CBL: in paragraph 'BUILD-RECORD':
+OBSQ3A.CBL:594: warning: value size exceeds data size
+OBSQ3A.CBL:594: note: value size is 6
+OBSQ3A.CBL:138: note: 'XPROGRAM-NAME' defined here as PIC X(5)
+])
+AT_CHECK([./OBSQ3A], [0], [], [])
+
+AT_CLEANUP
+
+AT_SETUP([OBSQ4A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([OB OBSQ4A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/OB/OBSQ3A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 OBSQ3A.CBL], [0], [], [OBSQ3A.CBL:62: warning: MULTIPLE FILE TAPE is obsolete in COBOL 85
+OBSQ3A.CBL:65: warning: MULTIPLE FILE TAPE is obsolete in COBOL 85
+OBSQ3A.CBL:72: warning: LABEL RECORDS is obsolete in COBOL 85
+OBSQ3A.CBL:76: warning: LABEL RECORDS is obsolete in COBOL 85
+OBSQ3A.CBL:80: warning: LABEL RECORDS is obsolete in COBOL 85
+OBSQ3A.CBL:85: warning: LABEL RECORDS is obsolete in COBOL 85
+OBSQ3A.CBL:90: warning: LABEL RECORDS is obsolete in COBOL 85
+OBSQ3A.CBL:94: warning: LABEL RECORDS is obsolete in COBOL 85
+OBSQ3A.CBL:98: warning: LABEL RECORDS is obsolete in COBOL 85
+OBSQ3A.CBL:102: warning: LABEL RECORDS is obsolete in COBOL 85
+OBSQ3A.CBL: in section 'SECT-OBSQ3A-0001':
+OBSQ3A.CBL: in paragraph 'SEQ-INIT-002':
+OBSQ3A.CBL:427: warning: OPEN WITH NO REWIND is not implemented
+OBSQ3A.CBL: in paragraph 'SEQ-INIT-003':
+OBSQ3A.CBL:451: warning: OPEN WITH NO REWIND is not implemented
+OBSQ3A.CBL: in paragraph 'SEQ-INIT-004':
+OBSQ3A.CBL:475: warning: OPEN WITH NO REWIND is not implemented
+OBSQ3A.CBL: in paragraph 'BUILD-RECORD':
+OBSQ3A.CBL:594: warning: value size exceeds data size
+OBSQ3A.CBL:594: note: value size is 6
+OBSQ3A.CBL:138: note: 'XPROGRAM-NAME' defined here as PIC X(5)
+])
+AT_CHECK([./OBSQ3A], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/OB/OBSQ4A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 OBSQ4A.SUB], [0], [], [OBSQ4A.SUB:42: warning: MULTIPLE FILE TAPE is obsolete in COBOL 85
+OBSQ4A.SUB:49: warning: LABEL RECORDS is obsolete in COBOL 85
+OBSQ4A.SUB:53: warning: LABEL RECORDS is obsolete in COBOL 85
+OBSQ4A.SUB:57: warning: LABEL RECORDS is obsolete in COBOL 85
+OBSQ4A.SUB:62: warning: LABEL RECORDS is obsolete in COBOL 85
+])
+AT_CHECK([./OBSQ4A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [004OF004TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
+AT_SETUP([OBSQ5A])
+# promoted on 2023-02-10T08:53
+AT_KEYWORDS([OB OBSQ5A])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/OB/OBSQ3A.CBL .], [0], [], [])
+AT_CHECK([$COMPILE85 OBSQ3A.CBL], [0], [], [OBSQ3A.CBL:62: warning: MULTIPLE FILE TAPE is obsolete in COBOL 85
+OBSQ3A.CBL:65: warning: MULTIPLE FILE TAPE is obsolete in COBOL 85
+OBSQ3A.CBL:72: warning: LABEL RECORDS is obsolete in COBOL 85
+OBSQ3A.CBL:76: warning: LABEL RECORDS is obsolete in COBOL 85
+OBSQ3A.CBL:80: warning: LABEL RECORDS is obsolete in COBOL 85
+OBSQ3A.CBL:85: warning: LABEL RECORDS is obsolete in COBOL 85
+OBSQ3A.CBL:90: warning: LABEL RECORDS is obsolete in COBOL 85
+OBSQ3A.CBL:94: warning: LABEL RECORDS is obsolete in COBOL 85
+OBSQ3A.CBL:98: warning: LABEL RECORDS is obsolete in COBOL 85
+OBSQ3A.CBL:102: warning: LABEL RECORDS is obsolete in COBOL 85
+OBSQ3A.CBL: in section 'SECT-OBSQ3A-0001':
+OBSQ3A.CBL: in paragraph 'SEQ-INIT-002':
+OBSQ3A.CBL:427: warning: OPEN WITH NO REWIND is not implemented
+OBSQ3A.CBL: in paragraph 'SEQ-INIT-003':
+OBSQ3A.CBL:451: warning: OPEN WITH NO REWIND is not implemented
+OBSQ3A.CBL: in paragraph 'SEQ-INIT-004':
+OBSQ3A.CBL:475: warning: OPEN WITH NO REWIND is not implemented
+OBSQ3A.CBL: in paragraph 'BUILD-RECORD':
+OBSQ3A.CBL:594: warning: value size exceeds data size
+OBSQ3A.CBL:594: note: value size is 6
+OBSQ3A.CBL:138: note: 'XPROGRAM-NAME' defined here as PIC X(5)
+])
+AT_CHECK([./OBSQ3A], [0], [], [])
+AT_CHECK([cp -f ${abs_builddir}/cobol85/OB/OBSQ5A.SUB .], [0], [], [])
+AT_CHECK([$COMPILE85 OBSQ5A.SUB], [0], [], [OBSQ5A.SUB:44: warning: MULTIPLE FILE TAPE is obsolete in COBOL 85
+OBSQ5A.SUB:47: warning: MULTIPLE FILE TAPE is obsolete in COBOL 85
+OBSQ5A.SUB:54: warning: LABEL RECORDS is obsolete in COBOL 85
+OBSQ5A.SUB:59: warning: LABEL RECORDS is obsolete in COBOL 85
+OBSQ5A.SUB:63: warning: LABEL RECORDS is obsolete in COBOL 85
+OBSQ5A.SUB:67: warning: LABEL RECORDS is obsolete in COBOL 85
+OBSQ5A.SUB:71: warning: LABEL RECORDS is obsolete in COBOL 85
+OBSQ5A.SUB: in section 'SECT-OBSQ5A-0001':
+OBSQ5A.SUB: in paragraph 'SEQ-INIT-003':
+OBSQ5A.SUB:452: warning: OPEN WITH NO REWIND is not implemented
+OBSQ5A.SUB: in paragraph 'SEQ-INIT-004':
+OBSQ5A.SUB:494: warning: OPEN WITH NO REWIND is not implemented
+OBSQ5A.SUB: in paragraph 'SEQ-INIT-005':
+OBSQ5A.SUB:536: warning: OPEN WITH NO REWIND is not implemented
+])
+AT_CHECK([./OBSQ5A], [0], [], [])
+AT_CHECK([$GREP -A 3 SUCCESSFULLY REPORT | tr -d ' '], [0], [005OF005TESTSWEREEXECUTEDSUCCESSFULLY
+NOTEST(S)FAILED
+NOTEST(S)DELETED
+NOTEST(S)REQUIREINSPECTION
+], [])
+
+AT_CLEANUP
+
