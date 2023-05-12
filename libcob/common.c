@@ -5164,7 +5164,7 @@ cob_accept_date (cob_field *f)
 		+ (time.year % 100) * 10000;
 	cob_field	field;
 	cob_field_attr	attr;
-	const size_t	digits = 6;
+	const unsigned short	digits = 6;
 
 	COB_FIELD_INIT (sizeof (cob_u32_t), (unsigned char *)&val, &attr);
 	COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, digits, 0, 0, NULL);
@@ -5186,7 +5186,7 @@ cob_accept_date_yyyymmdd (cob_field *f)
 		+ time.year  * 10000;
 	cob_field	field;
 	cob_field_attr	attr;
-	const size_t	digits = 8;
+	const unsigned short	digits = 8;
 
 	COB_FIELD_INIT (sizeof (cob_u32_t), (unsigned char *)&val, &attr);
 	COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, digits, 0, 0, NULL);
@@ -5206,7 +5206,7 @@ cob_accept_day (cob_field *f)
 	const cob_u32_t	val = time.day_of_year + (time.year % 100) * 1000;
 	cob_field	field;
 	cob_field_attr	attr;
-	const size_t	digits = 5;
+	const unsigned short	digits = 5;
 
 	COB_FIELD_INIT (sizeof (cob_u32_t), (unsigned char *)&val, &attr);
 	COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, digits, 0, 0, NULL);
@@ -5226,7 +5226,7 @@ cob_accept_day_yyyyddd (cob_field *f)
 	const cob_u32_t	val = time.day_of_year + time.year * 1000;
 	cob_field	field;
 	cob_field_attr	attr;
-	const size_t	digits = 7;
+	const unsigned short	digits = 7;
 
 	COB_FIELD_INIT (sizeof (cob_u32_t), (unsigned char *)&val, &attr);
 	COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, digits, 0, 0, NULL);
@@ -5244,7 +5244,7 @@ cob_accept_day_of_week (cob_field *f)
 {
 	const struct cob_time		time = cob_get_current_datetime (DTR_DATE);
 	const unsigned char		day = (unsigned char)(time.day_of_week + '0');
-	const size_t		digits = 1;
+	const unsigned short		digits = 1;
 	cob_move_intermediate (f, &day, digits);
 }
 
@@ -5261,7 +5261,7 @@ cob_accept_time (cob_field *f)
 		+ time.hour   * 1000000;
 	cob_field	field;
 	cob_field_attr	attr;
-	const size_t	digits = 8;
+	const unsigned short	digits = 8;
 
 	COB_FIELD_INIT (sizeof (cob_u32_t), (unsigned char *)&val, &attr);
 	COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, digits, 0, 0, NULL);
@@ -5284,7 +5284,7 @@ cob_accept_microsecond_time (cob_field *f)
 		+ (cob_u64_t)time.hour   * 10000000000;
 	cob_field	field;
 	cob_field_attr	attr;
-	const size_t	digits = 12;
+	const unsigned short	digits = 12;
 
 	COB_FIELD_INIT (sizeof (cob_u64_t), (unsigned char *)&val, &attr);
 	COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, digits, 0, 0, NULL);
@@ -5358,7 +5358,7 @@ cob_display_arg_number (cob_field *f)
 	int		n;
 	cob_field	field;
 	cob_field_attr	attr;
-	const size_t	digits = 9;
+	const unsigned short	digits = 9;
 
 	COB_FIELD_INIT (4, (unsigned char *)&n, &attr);
 	COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, digits, 0, 0, NULL);
@@ -5376,7 +5376,7 @@ cob_accept_arg_number (cob_field *f)
 	const cob_u32_t		n = cob_argc - 1;
 	cob_field	field;
 	cob_field_attr	attr;
-	const size_t	digits = 9;
+	const unsigned short	digits = 9;
 
 	COB_FIELD_INIT (sizeof (cob_u32_t), (unsigned char *)&n, &attr);
 	COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, digits, 0, 0, NULL);
@@ -5548,10 +5548,9 @@ cob_set_environment (const cob_field *f1, const cob_field *f2)
 void
 cob_get_environment (const cob_field *envname, cob_field *envval)
 {
-	const char	*p;
 	char	buff[COB_MEDIUM_BUFF];
+	char	*p;
 	int 	flen;
-	size_t		size;
 
 	if (envname->size == 0 || envval->size == 0) {
 		cob_set_exception (COB_EC_IMP_ACCEPT);
@@ -5566,18 +5565,20 @@ cob_get_environment (const cob_field *envname, cob_field *envval)
 	}
 
 	if (unlikely (cobsetptr->cob_env_mangle)) {
-		for (size = 0; size < flen; ++size) {
-			if (!isalnum ((int)buff[size])) {
-				buff[size] = '_';
+		const char *p_end = buff + flen;
+		for (p = buff; p < p_end; ++p) {
+			if (!isalnum ((int)*p)) {
+				*p = '_';
 			}
 		}
 	}
 	p = getenv (buff);
-	if (!p) {
+	if (p) {
+		cob_move_intermediate (envval, p, strlen (p));
+	} else {
 		cob_set_exception (COB_EC_IMP_ACCEPT);
-		p = " ";
+		cob_move_intermediate (envval, " ", 1);
 	}
-	cob_move_intermediate (envval, p, strlen (p));
 }
 
 void
@@ -5588,11 +5589,12 @@ cob_accept_environment (cob_field *f)
 	if (cob_local_env) {
 		p = getenv (cob_local_env);
 	}
-	if (!p) {
+	if (p) {
+		cob_move_intermediate (f, p, strlen (p));
+	} else {
 		cob_set_exception (COB_EC_IMP_ACCEPT);
-		p = " ";
+		cob_move_intermediate (f, " ", 1);
 	}
-	cob_move_intermediate (f, p, strlen (p));
 }
 
 void

@@ -1417,6 +1417,7 @@ void xml_parse (cob_field *in, cob_field *encoding, cob_field *validation,
 	COB_UNUSED (in);
 	COB_UNUSED (encoding);
 	COB_UNUSED (validation);
+	COB_UNUSED (flags);
 	if (first_xml) {
 		first_xml = 0;
 		cob_runtime_warning (_("runtime is not configured to support %s"),

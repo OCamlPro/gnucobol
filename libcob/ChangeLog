@@ -11,6 +11,7 @@
 	  new functions to get COBOL color number from text and handling it
 	* common.h (cob_colors): changed color defines to enum
 	* move.c: fix some compiler warnings by explicit casts
+	* fix non-constant aggregate initializer for dynamic field/attr/pic
 
 2023-05-10  Simon Sobisch <simonsobisch@gnu.org>
 
@@ -134,6 +135,7 @@
 	* move.c (store_common_region): speedup by not re-validating data if caller
 	  already provides that; adjusted callers to specify that
 	* common.c (cob_sys_hosted): prefer memcmp over strncmp with known size
+	* common.c (, cob_sys_hosted): handling timezone functions
 
 2023-04-18  Simon Sobisch <simonsobisch@gnu.org>
 

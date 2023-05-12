@@ -689,10 +689,10 @@ cob_move_display_to_binary (cob_field *f1, cob_field *f2)
 			target_digits = scale > 0 ? digits : digits + scale;
 		}
 		if (target_digits > size) {
-			target_digits = size;
+			target_digits = (unsigned short)size;
 		}
 	} else {
-		target_digits = size;
+		target_digits = (unsigned short)size;
 	}
 
 	/* Skip leading zeros (and zero-like-data like space/low-value) */

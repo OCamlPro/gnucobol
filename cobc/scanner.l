@@ -1341,7 +1341,7 @@ scan_ebcdic_char (int c)
 #endif
 	unsigned int j = 0;
 	do {
-		buff[j++] = c;
+		buff[j++] = (char)c;
 	} while ((c = input ()) != EOF && '0' <= c && c <= '9' && j < 10);
 	unput (c);
 	buff[j++] = 0;
