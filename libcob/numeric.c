@@ -2932,12 +2932,6 @@ check_overflow_and_set_sign (cob_field *f, const int opt,
 
 }
 
-#define COB_STORE_EXACT_MATCH		\
-	  (COB_STORE_AWAY_FROM_ZERO |	\
-	   COB_STORE_PROHIBITED     |	\
-	   COB_STORE_TOWARD_GREATER |	\
-	   COB_STORE_TOWARD_LESSER)
-
 /* BCD (COMP-3/COMP-6) ADD / SUBTRACT with GIVING, where
    the GIVING field may be one of the source fields */
 static int
@@ -3017,15 +3011,20 @@ cob_add_bcd (cob_field *fdst,
 		check_all_zeros = 0;
 		all_zeros = 0;
 	} else {
+		/* for all those rounding options we need we need a check for
+		   the result being exactly between the two nearest values */
+		if (opt
+		  & ( COB_STORE_AWAY_FROM_ZERO | COB_STORE_PROHIBITED
+		    | COB_STORE_TOWARD_GREATER | COB_STORE_TOWARD_LESSER
+		    | COB_STORE_NEAR_TOWARD_ZERO)) {
+			check_all_zeros = 1;
+			all_zeros = 1;
+		}
 		/* note that when calculating the rounding digit it is 1 digit to the right
 		   of the last digit in the data which is kept;
 		   also because there are 2 digits in every byte, before dividing by 2 we
 		   need to add 1 so that we find the byte number where the rounding digit
 		   exists; we finally subtract 1 to get to the C offzet (zero based) */
-		if (opt & COB_STORE_EXACT_MATCH) {
-			check_all_zeros = 1;
-			all_zeros = 1;
-		}
 		rounding_digit = used_scale - dest_scale;
 		if (!COB_FIELD_NO_SIGN_NIBBLE (fdst)) {
 			rounding_digit += 1;

@@ -3821,7 +3821,7 @@ cob_cmp (cob_field *f1, cob_field *f2)
 	const int	f1_is_numeric = f1_type & COB_TYPE_NUMERIC;
 	const int	f2_is_numeric = f2_type & COB_TYPE_NUMERIC;
 
-	/* both numeric -> direct compare */
+	/* both numeric -> direct numeric compare */
 	if (f1_is_numeric && f2_is_numeric) {
 		return cob_numeric_cmp (f1, f2);
 	}
@@ -3857,17 +3857,16 @@ cob_cmp (cob_field *f1, cob_field *f2)
 	   only in test "Alphanumeric and binary numeric" */
 
 	if (f1_is_numeric || f2_is_numeric) {
-		/* CHECKME: What should be returned if field is negative?
-		   We suspicously change -12 to 12 here... */
+		/* Note: the standard explicit defines how to handle that:
+		   intermediate MOVE to a NUMERIC_DISPLAY with same amount
+		   of digits (= drop sign and implied decimal point), then
+		   compare that */
 		cob_field	field;
 		cob_field_attr	attr;
 		unsigned char	buff[COB_MAX_DIGITS + 10];
 
-		/* CHECKME: may need to abort if we ever get here with float data */
-
-		/* FIXME: must be converted to COB_TYPE_NUMERIC_EDITED with an
-		   internal PIC of COB_FIELD_DIGITS '9's and leading sign,
-		   otherwise we'll fail as soon as we enable COB_MAX_BINARY */
+		/* note: the standard explicit forbits floating-point numeric
+		   in this scenario */
 		if (f1_is_numeric
 		 && f1_type != COB_TYPE_NUMERIC_DISPLAY) {
 			COB_FIELD_INIT (COB_FIELD_DIGITS (f1), buff, &attr);
@@ -3891,9 +3890,9 @@ cob_cmp (cob_field *f1, cob_field *f2)
 			/* Note: if field is numeric then it is always
 			   USAGE DISPLAY here */
 			if (f1 != &field) {
-				const int	sign = COB_GET_SIGN_ADJUST (f1);
+				const int	sign = COB_GET_SIGN (f1);
 				int		ret = cob_cmp_alnum (f1, f2);
-				COB_PUT_SIGN_ADJUSTED (f1, sign);
+				COB_PUT_SIGN (f1, sign);
 				return ret;
 			} else {
 				/* we operate on a buffer already, just go on */
@@ -3906,9 +3905,9 @@ cob_cmp (cob_field *f1, cob_field *f2)
 			/* Note: if field is numeric then it is always
 			   USAGE DISPLAY here */
 			if (f2 != &field) {
-				const int	sign = COB_GET_SIGN_ADJUST (f2);
+				const int	sign = COB_GET_SIGN (f2);
 				int		ret = cob_cmp_alnum (f1, f2);
-				COB_PUT_SIGN_ADJUSTED (f2, sign);
+				COB_PUT_SIGN (f2, sign);
 				return ret;
 			} else {
 				/* we operate on a buffer already, just go on */
