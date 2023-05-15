@@ -1328,7 +1328,7 @@ setup_program (cb_tree id, cb_tree as_literal, const enum cob_module_type type, 
 		current_program->program_name = (char *)CB_LITERAL (id)->data;
 	} else {
 		current_program->program_name = CB_NAME (id);
-	}
+	}	
 
 	stack_progid[depth] = current_program->program_name;
 	current_program->prog_type = type;
@@ -11955,7 +11955,6 @@ accp_attr:
   {
 	check_repeated ("CONTROL", SYN_CLAUSE_31, &check_duplicate);
 	set_attribs (0, NULL, NULL, NULL, NULL, NULL, NULL, $3, NULL, NULL);
-	CB_UNFINISHED ("CONTROL clause");
   }
 | CONVERSION
   {
@@ -13589,7 +13588,6 @@ disp_attr:
   {
 	check_repeated ("CONTROL", SYN_CLAUSE_22, &check_duplicate);
 	set_attribs (0, NULL, NULL, NULL, NULL, NULL, NULL, $3, NULL, NULL);
-	CB_UNFINISHED ("CONTROL clause");
   }
 | CONVERSION
   {

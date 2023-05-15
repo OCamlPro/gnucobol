@@ -156,6 +156,15 @@ NEWS - user visible changes				-*- outline -*-
    of the color-number, leading to a previous value of 21 (which was ignored
    until now) being interpreted as 5, see FR #387
 
+** extended screen io with single-fields: runtime-adjustable attributes by
+   support of extension clauses COLOR and CONTROL for ACCEPT and DISPLAY
+   statements, see FR #189 + FR #355; note: while COLOR and CONTROL are parsed
+   for SCREEN SECTION they are ignored at runtime
+
+** extended screen io with single-fields: the ACCEPT statement now supports
+   the extension CURSOR clause, additional to the standard-defined
+   CONTROL phrase in SPECIAL-NAMES
+
 ** the programmable runtime switches "SWITCH A" through "SWITCH Z" internally
    used 1-26 and now use 11-36 to be able to combine then with switches 0-7;
    if you set those via COB_SWITCH environment variables you need to adjust

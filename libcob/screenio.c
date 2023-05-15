@@ -1,6 +1,7 @@
 /*
    Copyright (C) 2001-2012, 2014-2023 Free Software Foundation, Inc.
-   Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
+   Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart,
+   Chuck Haatvedt
 
    This file is part of GnuCOBOL.
 
@@ -567,7 +568,7 @@ adjust_attr_from_color_field (cob_flags_t *attr, cob_field *color,
 }
 
 static int
-get_cob_color_from_color_value (const char *p)
+get_cob_color_from_color_value (const char *p, const size_t len)
 {
 	/* translate number */
 	{
@@ -581,7 +582,6 @@ get_cob_color_from_color_value (const char *p)
 
 	/* text translation */
 	{
-		const size_t len = strlen (p);
 		if (len == 5) {
 			if (memcmp (p, "BLACK", 5) == 0) {
 				return COB_SCREEN_BLACK;
@@ -625,10 +625,10 @@ get_cob_color_from_color_value (const char *p)
 
 /* parse COBOL color name / number and set curses color number + attribute accordingly */
 static int
-handle_control_field_color (cob_flags_t *attr, const char *p,
+handle_control_field_color (cob_flags_t *attr, const char *p, size_t len,
 	short *curses_color, const int handle_background)
 {
-	const int cob_color = get_cob_color_from_color_value (p);
+	const int cob_color = get_cob_color_from_color_value (p, len);
 	int short curses_color_val;
 
 	/* translate to curses, arly error return if not possible */
@@ -645,51 +645,236 @@ handle_control_field_color (cob_flags_t *attr, const char *p,
 	return 0;
 }
 
+struct parse_control
+{
+	const char *keyword;
+	cob_flags_t     cobflag;
+};
+
+/* binary sorted list of known attribute names and their value */
+static struct parse_control control_attrs[] = {
+	{ "AUTO"                , COB_SCREEN_AUTO         } ,
+	{ "AUTO-SKIP"           , COB_SCREEN_AUTO         } ,
+	{ "BACKGROUND-COLOR"    , 0                       } ,
+	{ "BACKGROUND-COLOUR"   , 0                       } ,
+	{ "BCOLOR"              , 0                       } ,
+	{ "BEEP"                , COB_SCREEN_BELL         } ,
+	{ "BELL"                , COB_SCREEN_BELL         } ,
+	{ "BLANK LINE"          , COB_SCREEN_BLANK_LINE   } ,
+	{ "BLANK SCREEN"        , COB_SCREEN_BLANK_SCREEN } ,
+	{ "BLINK"               , COB_SCREEN_BLINK        } ,
+	{ "ECHO"                , COB_SCREEN_NO_ECHO      } ,
+	{ "EMPTY-CHECK"         , -1                      } ,
+	{ "ERASE EOL"           , COB_SCREEN_ERASE_EOL    } ,
+	{ "ERASE EOS"           , COB_SCREEN_ERASE_EOS    } ,
+	{ "FCOLOR"              , 0                       } ,
+	{ "FOREGROUND-COLOR"    , 0                       } ,
+	{ "FOREGROUND-COLOUR"   , 0                       } ,
+	{ "FULL"                , COB_SCREEN_FULL         } ,
+	{ "GRID"                , COB_SCREEN_GRID         } ,
+	{ "HIGH"                , COB_SCREEN_HIGHLIGHT    } ,
+	{ "HIGHLIGHT"           , COB_SCREEN_HIGHLIGHT    } ,
+	{ "JUST"                , -1                      } ,
+	{ "JUSTIFY"             , -1                      } ,
+	{ "LEFTLINE"            , COB_SCREEN_LEFTLINE     } ,
+	{ "LENGTH-CHECK"        , COB_SCREEN_FULL         } ,
+	{ "LOW"                 , COB_SCREEN_LOWLIGHT     } ,
+	{ "LOWER"               , COB_SCREEN_LOWER        } ,
+	{ "LOWLIGHT"            , COB_SCREEN_LOWLIGHT     } ,
+	{ "NO-ECHO"             , COB_SCREEN_SECURE       } ,
+	{ "OFF"                 , COB_SCREEN_SECURE       } ,
+	{ "OVERLINE"            , COB_SCREEN_OVERLINE     } ,
+	{ "PROMPT"              , COB_SCREEN_PROMPT       } ,
+	{ "PROTECT"             , COB_SCREEN_NO_UPDATE    } ,
+	{ "REQUIRED"            , COB_SCREEN_REQUIRED     } ,
+	{ "REVERSE"             , COB_SCREEN_REVERSE      } ,
+	{ "REVERSE-VIDEO"       , COB_SCREEN_REVERSE      } ,
+	{ "RIGHT-JUSTIFY"       , -1                      } ,
+	{ "SECURE"              , COB_SCREEN_SECURE       } ,
+	{ "TAB"                 , COB_SCREEN_TAB          } ,
+	{ "TRAILING"            , -1                      } ,
+	{ "TRAILING-SIGN"       , -1                      } ,
+	{ "UNDERLINE"           , COB_SCREEN_UNDERLINE    } ,
+	{ "UPDATE"              , COB_SCREEN_UPDATE       } ,
+	{ "UPPER"               , COB_SCREEN_UPPER        } ,
+	{ "ZERO-FILL"           , -1                      }
+};
+
+#define COB_NUM_PCTRLS	sizeof(control_attrs) / sizeof(control_attrs[0])
+
+static int
+screen_attr_cmp (const void *p1, const void *p2)
+{
+	return strcmp (p1, ((struct parse_control *)p2)->keyword);
+}
+
 /* adjust screenio attributes and color values from named attributes
    in CONTROL field */
 static void
 adjust_attr_from_control_field (cob_flags_t *attr, cob_field *control,
 	short *fg_color, short *bg_color)
 {
-	char buffer[COB_MEDIUM_BUFF];
-	cob_field_to_string (control, buffer, COB_MEDIUM_MAX, CCM_UPPER);
-	buffer[COB_MEDIUM_MAX] = 0;	/* drop noise warning */
+	const char *token[COB_MINI_BUFF] = { 0 };	/* token positions */
+	char buffer[COB_MEDIUM_BUFF];		/* token buffer */
+	unsigned int  max_tokens, i;
 
-	/* TODO: parse buffer here, adjusting attr, fg_color, bg_color
-	   just some hard-coded examples...
-	   that needs a real parsing logic from left to right, alias, tokens,... */
-	if (strstr (buffer, "FGCOLOR=BLACK")) {
-		handle_control_field_color (attr, "BLACK", fg_color, 0);
-	} else if (strstr (buffer, "FGCOLOR=RED")) {
-		handle_control_field_color (attr, "RED", fg_color, 0);
-	} else if (strstr (buffer, "FGCOLOR = 6")) {
-		handle_control_field_color (attr, "6", fg_color, 0);
-	} else if (strstr (buffer, "FGCOLOR=MAGENTA")) {
-		handle_control_field_color (attr, "MAGENTA", fg_color, 0);
+	/* load CONTROL attribute as upper-case into buffer, then tokenize */
+	{
+		const char *token_deli = ",; \n\r\t";
+		const char *p;
+		char *q;
+		cob_field_to_string (control, buffer, COB_LARGE_MAX, CCM_UPPER);
+
+		i = 0;
+		p = strtok (buffer, token_deli);
+		if (p == NULL) {
+			/* no token - early exit */
+			return;
+		}
+		while (p != NULL) {
+			if (i == COB_MINI_MAX) {
+				break;
+			}
+
+			/* if one "resolved token" contains an equal sign
+			   then push as multiple tokens */
+			if (p[1] != 0
+			 && (q = strchr (p, '=')) != NULL) {
+				if (p != q) {
+					/* not first entry - push first part */
+					token[i++] = p;
+					if (i == COB_MINI_MAX) {
+						break;
+					}
+					*q = 0;
+				}
+				/* push equal sign */
+				token[i++] = "=";
+
+				/* setup for next iteration by new start position */
+				p = q + 1;
+				if (*p == 0) {
+					p++;
+					if (*p == 0) {
+						break;
+					}
+				}
+				continue;
+			}
+
+			token[i++] = p;
+			p = strtok (NULL, token_deli);
+		}
+		max_tokens = i;
 	}
-	if (strstr (buffer, "BGCOLOR=WHITE")) {
-		handle_control_field_color (attr, "WHITE", bg_color, 1);
-	}
-	if (strstr (buffer, "NO-ECHO")) {
-		*attr |= COB_SCREEN_SECURE;
-	}
-	if (strstr (buffer, "NO REVERSE")) {
-		*attr &= ~COB_SCREEN_REVERSE;
-	} else if (strstr (buffer, "REVERSE")) {
-		*attr |= COB_SCREEN_REVERSE;
-	}
-	if (strstr (buffer, "NO ECHO")) {
-		*attr |= COB_SCREEN_NO_ECHO;
-	}
-	if (strstr (buffer, "NO HIGH")) {
-		*attr &= ~COB_SCREEN_HIGHLIGHT;
-	} else if (strstr (buffer, "HIGHLIGHT")) {
-		*attr |= COB_SCREEN_HIGHLIGHT;
-	}
-	if (strstr (buffer, "NO BLINK")) {
-		*attr &= ~COB_SCREEN_BLINK;
-	} else if (strstr (buffer, "BLINK")) {
-		*attr |= COB_SCREEN_BLINK;
+
+	/* now parse the tokens */
+	for (i = 0; i < max_tokens; i++) {
+		const char *keyword = token[i];
+		size_t len = strlen (keyword);
+
+		int  no_indicator = 0, bg_color_token = 0;
+
+		/* negation */
+		if (len == 2 && memcmp (keyword, "NO", 2) == 0) {
+			if (++i == max_tokens) {
+				break;
+			}
+			keyword = token[i];
+			len = strlen (keyword);
+			no_indicator = 1;
+		}
+
+		/* two-token keywords */
+		if (len == 5 && memcmp (keyword, "ERASE", 5) == 0) {
+			if (++i == max_tokens) {
+				break;
+			}
+			keyword = token[i];
+			len = strlen (keyword);
+			if (len == 3 && memcmp (keyword, "EOL", 3) == 0) {
+				keyword = "ERASE EOL";
+			} else
+			if (len == 3 && memcmp (keyword, "EOS", 3) == 0) {
+				keyword = "ERASE EOS";
+			} else {
+				continue;
+			}
+		}
+		if (len == 5 && memcmp (keyword, "BLANK", 5) == 0) {
+			if (++i == max_tokens) {
+				break;
+			}
+			keyword = token[i];
+			len = strlen (keyword);
+			if (len == 4 && memcmp (keyword, "LINE", 4) == 0) {
+				keyword = "BLANK LINE";
+			} else
+			if (len == 6 && memcmp (keyword, "SCREEN", 6) == 0) {
+				keyword = "BLANK SCREEN";
+			} else {
+				continue;
+			}
+		}
+
+		/* find token and get its attribute */
+		{
+
+			const struct parse_control *control_attr = bsearch (keyword,
+				control_attrs, COB_NUM_PCTRLS, sizeof (struct parse_control),
+				screen_attr_cmp);
+
+			/* skip unknown / not implemented control attributes */
+			if (control_attr == NULL
+			 || control_attr->cobflag == -1) {
+				continue;
+			}
+
+			/* normal attribute - apply and go on*/
+			if (control_attr->cobflag != 0) {
+				if (no_indicator == 0) {
+					*attr |= control_attr->cobflag;
+				} else {
+					*attr &= ~(control_attr->cobflag);
+				}
+				continue;
+			}
+
+		}
+
+		/* color attribute - check next token */
+		bg_color_token = *keyword == 'B';
+		if (++i == max_tokens) {
+			break;
+		}
+		keyword = token[i];
+		len = strlen (keyword);
+
+		/* skip optional IS / = token */
+		if ((len == 2 && memcmp (keyword, "IS", 2) == 0)
+		 || (len == 1 && *keyword == '=')) {
+			if (++i == max_tokens) {
+				break;
+			}
+			keyword = token[i];
+			len = strlen (keyword);
+		}
+
+		/* parse and handle color keyword */
+		{
+			int ret;
+			if (bg_color_token) {
+				ret = handle_control_field_color (attr, keyword, len, bg_color, 1);
+			} else {
+				ret = handle_control_field_color (attr, keyword, len, fg_color, 0);
+			}
+			/* if we could not parse the keyword as color value, then ignore
+			   the color setting and put the non-color keyword back on the stack */
+			if (ret != 0) {
+				i--;
+			}
+		}
+
 	}
 }
 
