@@ -1,4 +1,18 @@
 
+2023-05-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* screenio.c: integrated changes of Chuck Haatveet for CONTROL handling
+	  with adjusted tokenization and comparison, limiting struct parse_control
+	  to absolute necessary: name + attribute
+	* screenio.c (handle_control_field_color, get_cob_color_from_color_value):
+	  passing length parameter
+
+2023-05-14  Chuck Haatvedt <chuck.haatvedt@gmail.com>
+
+	* screenio.c (adjust_attr_from_control_field, control_attrs):
+	  replaced proof-of-concept by actual parsing function using new
+	  struct parse_control
+
 2023-05-12  Simon Sobisch <simonsobisch@gnu.org>
 
 	* screenio.c (cob_screen_attr): always parse COBOL and curses color value
