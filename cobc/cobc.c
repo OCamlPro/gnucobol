@@ -4373,7 +4373,7 @@ process_filename (const char *filename)
 #endif
 	}
 
-	cob_incr_temp_iteration();
+	cob_incr_temp_iteration ();
 	return fn;
 }
 
@@ -5425,7 +5425,7 @@ set_picture (struct cb_field *field, char *picture, size_t picture_len)
 }
 
 static void
-set_category_from_usage (int usage, char *type)
+set_category_from_usage (const enum cb_usage usage, char *type)
 {
 	switch (usage) {
 	case CB_USAGE_INDEX:
@@ -5451,7 +5451,8 @@ set_category_from_usage (int usage, char *type)
 }
 
 static void
-set_category (int category, int usage, char *type)
+set_category (const enum cb_category category, const enum cb_usage usage,
+	char *type)
 {
 	switch (category) {
 	case CB_CATEGORY_UNKNOWN:
@@ -5556,8 +5557,10 @@ print_fields (struct cb_field *top, int *found)
 		if (top->children) {
 			strcpy (type, "GROUP");
 			if (!top->external_definition) {
+				/* group never has a PICTURE ... */
 				got_picture = 0;
 			} else {
+				/* ...stilll output definitions for TYPEDEF / SAME AS */
 				got_picture = set_picture (top, picture, picture_len);
 			}
 		} else {

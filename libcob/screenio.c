@@ -663,6 +663,7 @@ static struct parse_control control_attrs[] = {
 	{ "BLANK LINE"          , COB_SCREEN_BLANK_LINE   } ,
 	{ "BLANK SCREEN"        , COB_SCREEN_BLANK_SCREEN } ,
 	{ "BLINK"               , COB_SCREEN_BLINK        } ,
+	{ "CONVERT"             , COB_SCREEN_CONV         } ,
 	{ "ECHO"                , COB_SCREEN_NO_ECHO      } ,
 	{ "EMPTY-CHECK"         , -1                      } ,
 	{ "ERASE EOL"           , COB_SCREEN_ERASE_EOL    } ,
@@ -671,6 +672,7 @@ static struct parse_control control_attrs[] = {
 	{ "FOREGROUND-COLOR"    , 0                       } ,
 	{ "FOREGROUND-COLOUR"   , 0                       } ,
 	{ "FULL"                , COB_SCREEN_FULL         } ,
+	{ "GRAPHICS"            , COB_SCREEN_GRAPHICS     } ,
 	{ "GRID"                , COB_SCREEN_GRID         } ,
 	{ "HIGH"                , COB_SCREEN_HIGHLIGHT    } ,
 	{ "HIGHLIGHT"           , COB_SCREEN_HIGHLIGHT    } ,
@@ -1576,6 +1578,7 @@ cob_screen_puts (cob_screen *s, cob_field *f, const cob_u32_t is_input,
 #if	0	/* RXWRXW - Attr */
 	cob_screen_attr (s->foreg, s->backg, s->attr, NULL, NULL, stmt);
 #endif
+	/* TODO: replace character by special "char" if s->attr & GRPAHICS */
 	if (s->attr & COB_SCREEN_INPUT) {
 		cob_screen_attr (s->foreg, s->backg, s->attr, NULL, NULL, stmt);
 		if (s->prompt) {
@@ -3127,6 +3130,7 @@ field_display (cob_field *f, cob_flags_t fattr, const int line, const int column
 				cob_addnstr ((char *)f->data, size_display % fsize);
 			}
 		} else {
+			/* TODO: replace character by special "char" if f->attr & GRPAHICS */
 			cob_addnstr ((char *)f->data, cob_min_int (size_display, fsize));
 			if (size_display > fsize) {
 				/* WITH SIZE larger than field displays trailing spaces */

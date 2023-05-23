@@ -1,4 +1,18 @@
 
+2023-05-23  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y (control_source): allow both an alphanumeric identifier or
+	  literal for use with CONTROL phrase
+	* parser.y: adjust a bunch of terminals to match the internal name with
+	  leading underscore as optional
+
+2023-05-15  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c (set_category, set_category_from_usage): changed argument types
+	  from int to their matching enum
+	* tree.c (cb_build_prototype), parser.y (setup_prototype),
+	  tree.h (struct cb_prototype): use matching enum
+
 2023-05-11  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c (cobc_check_valid_name): allow leading underscore,
@@ -254,6 +268,8 @@
 	* parser.y (usage_clause_screen_report), typeck.c (validate_usage): have
 	  REPORT and SCREEN section only expecting the possibly USAGEs instead all
 	  removing the need to check for bad USAGE later
+	* parser.y (display_erase, display_pos_specifier): pass display attributes
+	  to codegen
 
 2023-01-28  Simon Sobisch <simonsobisch@gnu.org>
 

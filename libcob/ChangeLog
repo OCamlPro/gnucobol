@@ -1,4 +1,10 @@
 
+2023-05-23  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.h: added COB_SCREEN_GRAPHICS attribute
+	* screenio.c (control_attrs): added currently not active attributes
+	  CONVERT and GRAPHICS
+
 2023-05-15  Simon Sobisch <simonsobisch@gnu.org>
 
 	* screenio.c: integrated changes of Chuck Haatveet for CONTROL handling

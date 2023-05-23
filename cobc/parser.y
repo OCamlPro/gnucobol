@@ -1567,7 +1567,7 @@ check_for_duplicate_prototype (const cb_tree prototype_name,
 
 static void
 setup_prototype (cb_tree prototype_name, cb_tree ext_name,
-		  const int type, const int is_current_element)
+		  const enum cob_module_type type, const int is_current_element)
 {
 	cb_tree	prototype;
 	int	name_redefinition_allowed;
@@ -2265,15 +2265,13 @@ error_if_different_display_type (struct cb_list *l, cb_tree local_upon_value,
 static void
 error_if_not_usage_display_or_nonnumeric_lit (cb_tree x)
 {
-	const int	is_numeric_literal = CB_NUMERIC_LITERAL_P (x);
-	const int	is_field_with_usage_not_display =
-		CB_REFERENCE_P (x) && CB_FIELD (cb_ref (x))
-		&& CB_FIELD (cb_ref (x))->usage != CB_USAGE_DISPLAY;
-
-	if (is_numeric_literal) {
+	if (CB_NUMERIC_LITERAL_P (x)) {
 		cb_error_x (x, _("%s is not an alphanumeric literal"), CB_LITERAL (x)->data);
-	} else if (is_field_with_usage_not_display) {
-		cb_error_x (x, _("'%s' is not USAGE DISPLAY"), cb_name (x));
+	} else if (CB_REFERENCE_P (x) && CB_FIELD_P (cb_ref (x))) {
+		const struct cb_field *f = CB_FIELD (cb_ref (x));
+		if (f->usage != CB_USAGE_DISPLAY) {
+			cb_error_x (x, _ ("'%s' is not USAGE DISPLAY"), cb_name (x));
+		}
 	}
 }
 
@@ -5333,8 +5331,8 @@ file_control_entry:
 ;
 
 _select_clauses_or_error:
-  _select_clause_sequence _dot_or_else_end_of_file_control
-| error _dot_or_else_end_of_file_control
+  _select_clause_sequence dot_or_else_end_of_file_control
+| error dot_or_else_end_of_file_control
   {
 	yyerrok;
   }
@@ -6180,8 +6178,8 @@ i_o_control_header:
 ;
 
 _i_o_control_entries:
-| i_o_control_list _dot_or_else_end_of_file_control
-| i_o_control_list error _dot_or_else_end_of_file_control
+| i_o_control_list dot_or_else_end_of_file_control
+| i_o_control_list error dot_or_else_end_of_file_control
   {
 	yyerrok;
   }
@@ -6441,8 +6439,8 @@ file_description_entry:
 		}
 	}
   }
-  _file_description_clause_sequence _dot_or_else_end_of_file_description
-| file_type error _dot_or_else_end_of_file_description
+  _file_description_clause_sequence dot_or_else_end_of_file_description
+| file_type error dot_or_else_end_of_file_description
   {
 	yyerrok;
   }
@@ -6870,7 +6868,7 @@ communication_description_entry:
 	check_duplicate = 0;
   }
   _communication_description_clause_sequence
-  _dot_or_else_end_of_communication_description
+  dot_or_else_end_of_communication_description
 ;
 
 _communication_description_clause_sequence:
@@ -6962,7 +6960,7 @@ unnamed_i_o_cd_clauses:
 working_storage: WORKING_STORAGE { check_area_a_of ("WORKING-STORAGE SECTION"); };
 _working_storage_section:
 | working_storage SECTION
-  _dot_or_else_end_of_record_description
+  dot_or_else_end_of_record_description
   {
 	check_headers_present (COBC_HD_DATA_DIVISION, 0, 0, 0);
 	header_check |= COBC_HD_WORKING_STORAGE_SECTION;
@@ -6995,8 +6993,8 @@ _record_description_list:
 ;
 
 record_description_list:
-  data_description _dot_or_else_end_of_record_description
-| record_description_list data_description _dot_or_else_end_of_record_description
+  data_description dot_or_else_end_of_record_description
+| record_description_list data_description dot_or_else_end_of_record_description
 ;
 
 data_description:
@@ -8443,7 +8441,7 @@ occurs_key_field:
 	for (l = $4; l; l = CB_CHAIN (l)) {
 		CB_PURPOSE (l) = $1;
 		ref = CB_VALUE (l);
-		if (CB_VALID_TREE(ref)) {
+		if (CB_VALID_TREE (ref)) {
 			CB_REFERENCE (ref)->chain = rchain;
 		}
 	}
@@ -9045,7 +9043,7 @@ report_description:
 	check_duplicate = 0;
   }
   _report_description_options
-  _dot_or_else_end_of_report_description
+  dot_or_else_end_of_report_description
   _report_group_description_list
   {
 	$$ = get_finalized_description_tree ();
@@ -9061,7 +9059,7 @@ report_description:
 
 _report_description_options:
 | _report_description_options report_description_option
-| error _dot_or_else_end_of_report_description
+| error dot_or_else_end_of_report_description
   {
 	yyerrok;
   }
@@ -9310,11 +9308,11 @@ report_group_description_entry:
 		description_field = current_field;
 	}
   }
-  _report_group_options _dot_or_else_end_of_report_group_description
+  _report_group_options dot_or_else_end_of_report_group_description
   {
 	  build_sum_counter (current_report, current_field);
   }
-| level_number error _dot_or_else_end_of_report_group_description
+| level_number error dot_or_else_end_of_report_group_description
   {
 	yyerrok;
 	check_pic_duplicate = 0;
@@ -10039,7 +10037,7 @@ screen_option:
 	current_field->screen_color = $3;
 	CB_PENDING ("COLOR clause (SCREEN)");	/* no place in cob_screen */
   }
-| CONTROL _is display_identifier
+| CONTROL _is control_source
   {
 	check_repeated ("CONTROL", SYN_CLAUSE_24, &check_duplicate);
 	current_field->screen_control = $3;
@@ -11951,7 +11949,7 @@ accp_attr:
 	check_repeated ("COLOR", SYN_CLAUSE_30, &check_duplicate);
 	set_attribs (0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, $3, NULL);
   }
-| CONTROL _is display_identifier
+| CONTROL _is control_source
   {
 	check_repeated ("CONTROL", SYN_CLAUSE_31, &check_duplicate);
 	set_attribs (0, NULL, NULL, NULL, NULL, NULL, NULL, $3, NULL, NULL);
@@ -13263,7 +13261,8 @@ display_erase:
   }
   _with_display_attr
   {
-	cb_emit_display (CB_LIST_INIT (cb_space), cb_null, cb_int1, line_column, NULL, 1, FIELD_ON_SCREEN_DISPLAY);
+	cb_emit_display (CB_LIST_INIT (cb_space), cb_null, cb_int1, line_column,
+		current_statement->attr_ptr, 1, FIELD_ON_SCREEN_DISPLAY);
   }
 ;
 
@@ -13272,7 +13271,8 @@ display_pos_specifier:
             would allow combination of multiple formats ...*/
   field_or_literal_or_erase_with_pos_specifier _with_display_attr
   {
-	cb_emit_display ($1, cb_null, cb_int1, line_column, NULL, 1, FIELD_ON_SCREEN_DISPLAY);
+	cb_emit_display ($1, cb_null, cb_int1, line_column,
+		current_statement->attr_ptr, 1, FIELD_ON_SCREEN_DISPLAY);
   }
 ;
 
@@ -13584,7 +13584,7 @@ disp_attr:
 	check_repeated ("COLOR", SYN_CLAUSE_21, &check_duplicate);
 	set_attribs (0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, $3, NULL);
   }
-| CONTROL _is display_identifier
+| CONTROL _is control_source
   {
 	check_repeated ("CONTROL", SYN_CLAUSE_22, &check_duplicate);
 	set_attribs (0, NULL, NULL, NULL, NULL, NULL, NULL, $3, NULL, NULL);
@@ -13687,6 +13687,11 @@ disp_attr:
 				   "SCROLL DOWN", COB_SCREEN_SCROLL_DOWN,
 				   "SCROLL UP", COB_SCREEN_SCROLL_UP);
   }
+;
+
+control_source:
+  display_identifier	{ $$ = $1; }
+| alphanumeric_literal	{ $$ = $1; }
 ;
 
 _end_display:
@@ -18941,6 +18946,18 @@ arith_nonzero_x:
   }
 ;
 
+alphanumeric_literal:
+  LITERAL
+  {
+	if (CB_TREE_CATEGORY ($1) != CB_CATEGORY_ALPHANUMERIC) {
+		cb_error_x ($1, _("an alphanumeric literal is expected here"));
+		$$ = cb_error_node;
+	} else {
+		$$ = $1;
+	}
+  }
+;
+
 numeric_literal:
   LITERAL
   {
@@ -20047,9 +20064,9 @@ _dot:
   }
 ;
 
-_dot_or_else_end_of_file_control:
+dot_or_else_end_of_file_control:
   TOK_DOT
-| _file_control_end_delimiter
+| file_control_end_delimiter
   {
 	if (! cb_verify (cb_missing_period, _("optional period"))) {
 		YYERROR;
@@ -20067,10 +20084,10 @@ level_number_in_area_a:
   }
 ;
 
-_dot_or_else_end_of_file_description:
+dot_or_else_end_of_file_description:
   TOK_DOT
-| level_number_in_area_a
-| _file_description_end_delimiter
+| level_number_in_area_a	/* repeats last token */
+| file_description_end_delimiter
   {
 	if (! cb_verify (cb_missing_period, _("optional period"))) {
 		YYERROR;
@@ -20079,19 +20096,19 @@ _dot_or_else_end_of_file_description:
   }
 ;
 
-_dot_or_else_end_of_communication_description:
-_dot_or_else_end_of_record_description;
+dot_or_else_end_of_communication_description:
+dot_or_else_end_of_record_description;
 
-_dot_or_else_end_of_report_description:
-_dot_or_else_end_of_record_description;
+dot_or_else_end_of_report_description:
+dot_or_else_end_of_record_description;
 
-_dot_or_else_end_of_report_group_description:
-_dot_or_else_end_of_record_description;
+dot_or_else_end_of_report_group_description:
+dot_or_else_end_of_record_description;
 
-_dot_or_else_end_of_record_description:
+dot_or_else_end_of_record_description:
   TOK_DOT
-| level_number_in_area_a
-| _record_description_end_delimiter
+| level_number_in_area_a	/* repeats last token */
+| record_description_end_delimiter
   {
 	if (! cb_verify (cb_missing_period, _("optional period"))) {
 		YYERROR;
@@ -20100,15 +20117,14 @@ _dot_or_else_end_of_record_description:
   }
 ;
 
-_file_control_end_delimiter:
+file_control_end_delimiter:
   SELECT | I_O_CONTROL | DATA | PROCEDURE;
 
-_file_description_end_delimiter:
-  LEVEL_NUMBER | TOK_FILE | PROCEDURE;
+file_description_end_delimiter:
+  TOK_FILE | PROCEDURE;
 
-_record_description_end_delimiter:
-  LEVEL_NUMBER | PROCEDURE | COMMUNICATION | LOCAL_STORAGE
-| LINKAGE | REPORT | SCREEN;
+record_description_end_delimiter:
+  PROCEDURE | COMMUNICATION | LOCAL_STORAGE | LINKAGE | REPORT | SCREEN;
 
 _dot_or_else_area_a:		/* in PROCEDURE DIVISION */
   TOK_DOT
