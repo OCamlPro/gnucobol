@@ -1925,7 +1925,7 @@ struct cb_prototype {
 	const char		*name;
 	/* External name of the prototype/definition */
 	const char		*ext_name;
-	int			type;
+	enum cob_module_type		type;
 };
 
 #define CB_PROTOTYPE(x)		(CB_TREE_CAST (CB_TAG_PROTOTYPE, struct cb_prototype, x))
@@ -2154,7 +2154,7 @@ extern cb_tree			cb_build_assign (const cb_tree, const cb_tree);
 extern cb_tree			cb_build_intrinsic (cb_tree, cb_tree,
 						    cb_tree, const int);
 extern cb_tree			cb_build_prototype (const cb_tree,
-						    const cb_tree, const int);
+						    const cb_tree, const enum cob_module_type);
 extern cb_tree			cb_build_any_intrinsic (cb_tree);
 
 extern cb_tree			cb_build_search (const int,

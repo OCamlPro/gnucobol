@@ -1008,7 +1008,7 @@ typedef cob_s64_t cob_flags_t;
 #define COB_SCREEN_UPPER		((cob_flags_t)1 << 28)
 #define COB_SCREEN_LOWER		((cob_flags_t)1 << 29)
 #define COB_SCREEN_CONV			((cob_flags_t)1 << 30)
-/*#define COB_SCREEN_reserved		((cob_flags_t)1 << 31) /+ reserved for next flag used in screenio */
+#define COB_SCREEN_GRAPHICS		((cob_flags_t)1 << 31)
 #define COB_SCREEN_TAB			((cob_flags_t)1 << 32) /* used for syntax checking */
 #define COB_SCREEN_NO_UPDATE		((cob_flags_t)1 << 33) /* used for syntax checking */
 #define COB_SCREEN_SCROLL_UP		((cob_flags_t)1 << 34) /* used for syntax checking */
