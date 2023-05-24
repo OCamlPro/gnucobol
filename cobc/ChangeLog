@@ -1,4 +1,9 @@
 
+2023-05-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* cobc.c: disable unreached code removement with -O0, but keep it
+	  unchanged for -g
+
 2023-05-23  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y (control_source): allow both an alphanumeric identifier or
