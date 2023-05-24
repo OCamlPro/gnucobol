@@ -455,8 +455,8 @@ cb_build_field_tree (const int level, cb_tree name, struct cb_field *last_field,
 		}
 	}
 	if (last_field) {
-		if (last_field->level == 77 && f->level != 01 &&
-			f->level != 77 && f->level != 66 && f->level != 88) {
+		if (last_field->level == 77 && f->level != 01
+		 && f->level != 77 && f->level != 66 && f->level != 88) {
 			cb_error_x (name, _("level number must begin with 01 or 77"));
 			return cb_error_node;
 		}
@@ -470,11 +470,12 @@ cb_build_field_tree (const int level, cb_tree name, struct cb_field *last_field,
 		} else {
 			for (l = r->word->items; l; l = CB_CHAIN (l)) {
 				x = CB_VALUE (l);
-				if (!CB_FIELD_P (x) ||
-				    CB_FIELD (x)->level == 01 ||
-				    CB_FIELD (x)->level == 77 ||
-				    (last_field && f->level == last_field->level &&
-				     CB_FIELD (x)->parent == last_field->parent)) {
+				if (!CB_FIELD_P (x)
+				 || CB_FIELD (x)->level == 01
+				 || CB_FIELD (x)->level == 77
+				 || ( last_field
+				   && f->level == last_field->level
+				   && CB_FIELD (x)->parent == last_field->parent)) {
 					redefinition_warning (name, x);
 					break;
 				}
@@ -575,6 +576,13 @@ same_level:
 		if (f->level <= 66) {
 			f->flag_volatile = parent->flag_volatile;
 		}
+		if (f->storage == CB_STORAGE_SCREEN) {
+			f->screen_foreg   = parent->screen_foreg;
+			f->screen_backg   = parent->screen_backg;
+			f->screen_prompt  = parent->screen_prompt;
+			f->screen_control = parent->screen_control;
+			f->screen_color   = parent->screen_color;
+		}
 	}
 
 	return CB_TREE (f);
@@ -632,7 +640,7 @@ cb_resolve_redefines (struct cb_field *field, cb_tree redefines)
 	         parent using strcasecmp */
 	for (items = r->word->items; items; items = CB_CHAIN (items)) {
 		const cb_tree value = CB_VALUE (items);
-		if (CB_FIELD_P (value)) {
+		if (value != x && CB_FIELD_P (value)) {
 			candidate = value;
 			/* we want to get the last, so no "break" here */
 		}
@@ -703,6 +711,8 @@ copy_children (struct cb_field *child, struct cb_field *target,
 		level_child = child->level;
 	} else {
 		level_child = level + 1;
+		/* ensure that we don't set the "virtual level number" to one of
+		   the "special" level numbers */
 		if (level_child == 66 || level_child == 78 || level_child == 88) {
 			level_child++;
 		} else if (level_child == 77) {
@@ -876,7 +886,7 @@ copy_into_field (struct cb_field *source, struct cb_field *target)
 			target->pic = cb_build_picture (source->pic->orig);
 		}
 	} else {
-		struct cb_picture* new_pic = NULL;
+		struct cb_picture *new_pic = NULL;
 		int modifier = cb_get_int (target->like_modifier);
 		if (modifier) {
 			switch (target->usage) {
@@ -3249,7 +3259,9 @@ cb_validate_88_item (struct cb_field *f)
 		for (l = f->values; l; l = CB_CHAIN (l)) {
 			cb_tree x = CB_VALUE (l);
 			/* for list A THRU C, X, Z we have another list */
-			if (CB_LIST_P (x)) x = CB_VALUE (x);
+			if (CB_LIST_P (x)) {
+				x = CB_VALUE (x);
+			}
 			if (CB_TREE_CLASS (x) != CB_CLASS_NUMERIC) {
 				if (CB_CONST_P (x)) x = CB_TREE (f);
 				cb_error_x (x, _("literal type does not match numeric data type"));

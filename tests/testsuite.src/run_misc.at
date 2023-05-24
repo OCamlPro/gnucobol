@@ -1046,10 +1046,8 @@ AT_DATA([prog.cob], [
        01 X             PIC X(6) VALUE "123   ".
        PROCEDURE        DIVISION.
            IF X(1:3) NUMERIC
-              STOP RUN
-           END-IF.
-           DISPLAY "NG" NO ADVANCING
-           END-DISPLAY.
+              STOP RUN.
+           DISPLAY "NG" NO ADVANCING.
            STOP RUN.
 ])
 
@@ -1071,9 +1069,7 @@ AT_DATA([prog.cob], [
          02 X           PIC X OCCURS 1 INDEXED BY I.
        PROCEDURE        DIVISION.
          IF I < (I + 2)
-           DISPLAY "OK" NO ADVANCING
-           END-DISPLAY
-         END-IF.
+           DISPLAY "OK" NO ADVANCING.
          STOP RUN.
 ])
 
@@ -1122,17 +1118,12 @@ AT_DATA([prog.cob], [
        PROCEDURE        DIVISION.
            MOVE x"0000" TO X (2:2)
            IF X-NUM NUMERIC
-              DISPLAY "low-value is numeric" UPON SYSERR
-              END-DISPLAY
-           END-IF
+              DISPLAY "low-value is numeric" UPON SYSERR.
            MOVE x"01" TO X (3:1)
            IF X-NUM NUMERIC
-              DISPLAY "SOH is numeric" UPON SYSERR
-              END-DISPLAY
-           END-IF
+              DISPLAY "SOH is numeric" UPON SYSERR.
            MOVE X-NUM TO NUM
            DISPLAY "test over"
-           END-DISPLAY
       *
            GOBACK.
 ])
@@ -1148,12 +1139,9 @@ AT_DATA([prog2.cob], [
        PROCEDURE        DIVISION.
            MOVE x"0A" TO X (2:1)
            IF X-NUM NUMERIC
-              DISPLAY "bad prog"
-              END-DISPLAY
-           END-IF
+              DISPLAY "bad prog".
            MOVE X-NUM TO NUM
            DISPLAY "test over"
-           END-DISPLAY
       *
            GOBACK.
 ])
@@ -1164,7 +1152,7 @@ AT_CHECK([$COBCRUN_DIRECT ./unchecked_prog], [0],
 [test over
 ], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
-[libcob: prog.cob:20: error: 'X-NUM' (Type: NUMERIC DISPLAY) not numeric: '0\000\001123'
+[libcob: prog.cob:16: error: 'X-NUM' (Type: NUMERIC DISPLAY) not numeric: '0\000\001123'
 ])
 
 AT_CHECK([$COMPILE prog2.cob], [0], [], [])
@@ -1173,8 +1161,8 @@ AT_CHECK([$COBCRUN_DIRECT ./unchecked_prog2], [0],
 [test over
 ], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog2], [1], [],
-[libcob: prog2.cob:15: error: 'X-NUM' (Type: PACKED-DECIMAL) not numeric: '0x000a123f'
-])
+[[libcob: prog2.cob:13: error: 'X-NUM' (Type: PACKED-DECIMAL (unsigned)) not numeric: '0x000a123f'
+]])
 
 AT_CLEANUP
 
@@ -11356,6 +11344,43 @@ S U B  GOT B
 [libcob: prog.cob:12: warning: ' SUB' literal includes leading spaces which are omitted
 libcob: prog.cob:16: warning: ' S U B' literal includes leading spaces which are omitted
 ])
+
+AT_CLEANUP
+
+
+AT_SETUP([PROGRAM-ID / CALL with hyphen and underscore])
+AT_KEYWORDS([runmisc])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       PROCEDURE DIVISION.
+       MAIN.
+           CALL "_SUB-PROG_NOW" USING 'X'.
+           STOP RUN.
+])
+
+AT_DATA([sub.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. "_SUB-PROG_NOW".
+
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01  x  PIC X.
+
+       PROCEDURE DIVISION USING x.
+       MAIN.
+            DISPLAY "SUB GOT " X.
+            GOBACK.
+])
+
+AT_CHECK([$COMPILE_MODULE sub.cob], [0], [], [])
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+
+AT_CHECK([COB_PRE_LOAD=sub $COBCRUN_DIRECT ./prog], [0], 
+[SUB GOT X
+], [])
 
 AT_CLEANUP
 

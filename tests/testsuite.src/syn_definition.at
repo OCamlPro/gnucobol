@@ -35,7 +35,9 @@ AT_CLEANUP
 
 
 AT_SETUP([Invalid PROGRAM-ID])
-AT_KEYWORDS([definition])
+AT_KEYWORDS([definition underscore hyphen ENTRY])
+
+# note: the name check is identical for the ENTRY statement
 
 AT_DATA([SHORT.cob], [
        IDENTIFICATION   DIVISION.
@@ -46,6 +48,39 @@ AT_DATA([SHORT.cob], [
 
 AT_CHECK([$COMPILE_ONLY SHORT.cob], [1], [],
 [SHORT.cob:3: error: invalid PROGRAM-ID 'short' - name duplicates a 'C' keyword
+])
+
+AT_DATA([SHORT2.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      "_short".
+       PROCEDURE        DIVISION.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY SHORT2.cob], [0], [], [])
+
+
+AT_DATA([SHORT3.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      _short.
+       PROCEDURE        DIVISION.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY SHORT3.cob], [1], [],
+[SHORT3.cob:3: error: invalid symbol '_' - skipping word
+SHORT3.cob:4: error: syntax error, unexpected DIVISION
+])
+
+AT_DATA([SHORT4.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      "-short".
+       PROCEDURE        DIVISION.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY SHORT4.cob], [1], [],
+[SHORT4.cob:3: error: invalid PROGRAM-ID '-short' - name cannot begin with space or hyphen
 ])
 
 AT_CLEANUP
@@ -423,7 +458,7 @@ AT_CLEANUP
 
 
 AT_SETUP([Redefinition of 02 items])
-AT_KEYWORDS([definition])
+AT_KEYWORDS([definition redefines])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
@@ -435,9 +470,21 @@ AT_DATA([prog.cob], [
          02 X           PIC X.
 ])
 
-AT_CHECK([$COMPILE_ONLY prog.cob], [0], [],
-[prog.cob:8: warning: redefinition of 'X'
-prog.cob:7: note: 'X' previously defined here
+# validation for #881 - error if redefinition on redefines
+AT_DATA([prog2.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog2.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 G.
+         02 X             PIC X.
+         02 X REDEFINES X PIC X.
+         02 Y             PIC 9.
+])
+
+AT_CHECK([$COMPILE_ONLY prog2.cob], [0], [],
+[prog2.cob:8: warning: redefinition of 'X'
+prog2.cob:7: note: 'X' previously defined here
 ])
 
 AT_CLEANUP

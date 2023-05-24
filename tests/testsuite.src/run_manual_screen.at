@@ -1,4 +1,4 @@
-## Copyright (C) 2014-2018,2020-2022 Free Software Foundation, Inc.
+## Copyright (C) 2014-2018,2020-2023 Free Software Foundation, Inc.
 ## Written by Edward Hart, Simon Sobisch
 ##
 ## This file is part of GnuCOBOL.
@@ -815,8 +815,9 @@ MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([BACKGROUND- / FOREGROUND-COLOUR])
-AT_KEYWORDS([BACKGROUND-COLOR BACKGROUND-COLOUR FOREGROUND-COLOR COLOR COLOUR])
+AT_SETUP([SCREEN BACKGROUND- / FOREGROUND-COLOUR])
+AT_KEYWORDS([BACKGROUND-COLOR BACKGROUND-COLOUR FOREGROUND-COLOR
+COLOR COLOUR HIGHLIGHT BLINK])
 
 AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
 
@@ -913,6 +914,409 @@ AT_DATA([prog.cob], [
                GOBACK RETURNING 1
            END-IF
            .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([SCREEN BACKGROUND- / FOREGROUND-COLOUR via COLOR])
+AT_KEYWORDS([BACKGROUND-COLOR BACKGROUND-COLOUR FOREGROUND-COLOR
+COLOR COLOUR REVERSED])
+
+# Currently not implemented
+AT_XFAIL_IF([true])
+
+AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  dummy        PIC X(10).
+       01  success-flag PIC X.
+           88  success  VALUE 'Y', 'y'.
+       77  CBLACK       PIC 9(05) VALUE 1.
+       77  CBLUE        PIC 9(05) VALUE 2.
+       77  CGREEN       PIC 9(05) VALUE 3.
+       77  CCYAN        PIC 9(05) VALUE 4.
+       77  CRED         PIC 9(05) VALUE 5.
+       77  CMAGENTA     PIC 9(05) VALUE 6.
+       77  CYELLOW      PIC 9(05) VALUE 7.
+       77  CWHITE       PIC 9(05) VALUE 8.
+
+       SCREEN           SECTION.
+       01  scr.
+           03  PIC X(80)
+               VALUE 'Enter "y" if the text below matches the colour '
+               & 'of the background/text.'.
+           03  LINE + 1, COL 1, PIC X(80)
+               VALUE 'Note: the black text is on white background/the '
+               & 'white background has black text'.
+           03  LINE + 1, COL 1, PIC X(80)
+               VALUE 'to make the text visible.'.
+
+           03  LINE + 1.
+             05  COL 1,   PIC X(08) VALUE 'Black'   COLOR CBLACK.
+             05  COL + 2, PIC X(08) VALUE 'Blue'    COLOR CBLUE.
+             05  COL + 2, PIC X(08) VALUE 'Green'   COLOR CGREEN.
+             05  COL + 2, PIC X(08) VALUE 'Cyan'    COLOR CCYAN.
+             05  COL + 2, PIC X(08) VALUE 'Red'     COLOR CRED.
+             05  COL + 2, PIC X(08) VALUE 'Magenta' COLOR CMAGENTA.
+             05  COL + 2, PIC X(15) VALUE 'Brown/Yellow'
+                                                    COLOR CYELLOW.
+             05  COL + 2, PIC X(08) VALUE 'White'   COLOR CWHITE.
+
+       01  scr2.
+           03  LINE 5.
+             05  COL 1,   PIC X(08) VALUE 'Black'   BACKGROUND-COLOR 0
+                                                    FOREGROUND-COLOR 7.
+             05  COL + 2, PIC X(08) VALUE 'Blue'    BACKGROUND-COLOR 1.
+             05  COL + 2, PIC X(08) VALUE 'Green'   BACKGROUND-COLOR 2.
+             05  COL + 2, PIC X(08) VALUE 'Cyan'    BACKGROUND-COLOR 3.
+             05  COL + 2, PIC X(08) VALUE 'Red'     BACKGROUND-COLOR 4.
+             05  COL + 2, PIC X(08) VALUE 'Magenta' BACKGROUND-COLOR 5.
+             05  COL + 2, PIC X(15) VALUE 'Brown/Yellow'
+                                                    BACKGROUND-COLOR 6.
+             05  COL + 2, PIC X(08) VALUE 'White'   BACKGROUND-COLOR 7
+                                                    FOREGROUND-COLOR 0.
+
+           03  success-field LINE + 2, COL 1, PIC X, REQUIRED,
+               TO success-flag FROM 'Y'.
+
+       PROCEDURE DIVISION.
+           ADD  256 TO CBLACK
+           DISPLAY scr
+           ADD 1024 TO CBLACK, CBLUE, CGREEN, CCYAN,
+                       CRED, CMAGENTA, CYELLOW, CWHITE
+           DISPLAY scr2
+           ACCEPT scr
+
+           IF success AND COB-CRT-STATUS = 0
+               GOBACK RETURNING 0
+           ELSE
+               GOBACK RETURNING 1
+           END-IF
+           .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([field BACKGROUND- / FOREGROUND-COLOUR])
+AT_KEYWORDS([BACKGROUND-COLOR BACKGROUND-COLOUR FOREGROUND-COLOR
+COLOR COLOUR HIGHLIGHT BLINK])
+
+AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  dummy        PIC X(10).
+       01  success-flag PIC X.
+           88  success  VALUE 'Y', 'y'.
+
+       SCREEN           SECTION.
+       01  scr.
+           03  PIC X(80)
+               VALUE 'Enter "y" if the text below matches the colour '
+               & 'of the background/text.'.
+           03  LINE + 1, COL 1, PIC X(80)
+               VALUE 'Note: the black text is on white background/the '
+               & 'white background has black text'.
+           03  LINE + 1, COL 1, PIC X(80)
+               VALUE 'to make the text visible.'.
+
+           03  LINE + 1.
+             05  COL 1,   PIC X(08) VALUE 'Black'   FOREGROUND-COLOR 0
+                                                    BACKGROUND-COLOR 7.
+             05  COL + 2, PIC X(08) VALUE 'Blue'    FOREGROUND-COLOR 1.
+             05  COL + 2, PIC X(08) VALUE 'Green'   FOREGROUND-COLOR 2.
+             05  COL + 2, PIC X(08) VALUE 'Cyan'    FOREGROUND-COLOR 3.
+             05  COL + 2, PIC X(08) VALUE 'Red'     FOREGROUND-COLOR 4.
+             05  COL + 2, PIC X(08) VALUE 'Magenta' FOREGROUND-COLOR 5.
+             05  COL + 2, PIC X(15) VALUE 'Brown/Yellow'
+                                                    FOREGROUND-COLOR 6.
+             05  COL + 2, PIC X(08) VALUE 'White'   FOREGROUND-COLOR 7.
+
+           03  LINE + 1.
+             05  COL 1,   PIC X(08) VALUE 'Black'   BACKGROUND-COLOR 0
+                                                    FOREGROUND-COLOR 7.
+             05  COL + 2, PIC X(08) VALUE 'Blue'    BACKGROUND-COLOR 1.
+             05  COL + 2, PIC X(08) VALUE 'Green'   BACKGROUND-COLOR 2.
+             05  COL + 2, PIC X(08) VALUE 'Cyan'    BACKGROUND-COLOR 3.
+             05  COL + 2, PIC X(08) VALUE 'Red'     BACKGROUND-COLOR 4.
+             05  COL + 2, PIC X(08) VALUE 'Magenta' BACKGROUND-COLOR 5.
+             05  COL + 2, PIC X(15) VALUE 'Brown/Yellow'
+                                                    BACKGROUND-COLOR 6.
+             05  COL + 2, PIC X(08) VALUE 'White'   BACKGROUND-COLOR 7
+                                                    FOREGROUND-COLOR 0.
+
+           03  LINE + 2.
+           03  PIC X(80)
+               VALUE 'The following is the same as above, '
+               & 'with "extended" attributes set;'.
+           03  LINE + 1, COL 1, PIC X(80)
+               VALUE 'this should have the same effect as otherwise '
+               & 'highlighted for the first line'.
+           03  LINE + 1, COL 1, PIC X(80)
+               VALUE 'and blinking for the second one.'.
+
+           03  LINE + 1.
+             05  COL 1,   PIC X(08) VALUE 'Black'   FOREGROUND-COLOR 8
+                                                    BACKGROUND-COLOR 0.
+             05  COL + 2, PIC X(08) VALUE 'Blue'    FOREGROUND-COLOR 9.
+             05  COL + 2, PIC X(08) VALUE 'Green'   FOREGROUND-COLOR 10.
+             05  COL + 2, PIC X(08) VALUE 'Cyan'    FOREGROUND-COLOR 11.
+             05  COL + 2, PIC X(08) VALUE 'Red'     FOREGROUND-COLOR 12.
+             05  COL + 2, PIC X(08) VALUE 'Magenta' FOREGROUND-COLOR 13.
+             05  COL + 2, PIC X(15) VALUE 'Brown/Yellow'
+                                                    FOREGROUND-COLOR 14.
+             05  COL + 2, PIC X(08) VALUE 'White'   FOREGROUND-COLOR 15.
+
+           03  LINE + 1.
+             05  COL 1,   PIC X(08) VALUE 'Black'   BACKGROUND-COLOR 8
+                                                    FOREGROUND-COLOR 15.
+             05  COL + 2, PIC X(08) VALUE 'Blue'    BACKGROUND-COLOR 9.
+             05  COL + 2, PIC X(08) VALUE 'Green'   BACKGROUND-COLOR 10.
+             05  COL + 2, PIC X(08) VALUE 'Cyan'    BACKGROUND-COLOR 11.
+             05  COL + 2, PIC X(08) VALUE 'Red'     BACKGROUND-COLOR 12.
+             05  COL + 2, PIC X(08) VALUE 'Magenta' BACKGROUND-COLOR 13.
+             05  COL + 2, PIC X(15) VALUE 'Brown/Yellow'
+                                                    BACKGROUND-COLOR 14.
+             05  COL + 2, PIC X(08) VALUE 'White'   BACKGROUND-COLOR 15
+                                                    FOREGROUND-COLOR 8.
+
+           03  success-field LINE + 2, COL 1, PIC X, REQUIRED,
+               TO success-flag FROM 'Y'.
+
+       PROCEDURE DIVISION.
+           DISPLAY scr
+           ACCEPT scr
+
+           IF success AND COB-CRT-STATUS = 0
+               GOBACK RETURNING 0
+           ELSE
+               GOBACK RETURNING 1
+           END-IF
+           .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([field BACKGROUND- / FOREGROUND-COLOUR via COLOR])
+AT_KEYWORDS([BACKGROUND-COLOR BACKGROUND-COLOUR FOREGROUND-COLOR
+COLOR COLOUR REVERSED HIGHLIGHT BLINK])
+
+AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  success-flag PIC X VALUE 'Y'.
+           88  success  VALUE 'Y', 'y'.
+
+       77  CBLACK       PIC 9(05) COMP-5 VALUE 1.
+       77  CBLUE        PIC 9(05) COMP-5 VALUE 2.
+       77  CGREEN       PIC 9(05) COMP-5 VALUE 3.
+       77  CCYAN        PIC 9(05) COMP-5 VALUE 4.
+       77  CRED         PIC 9(05) COMP-5 VALUE 5.
+       77  CMAGENTA     PIC 9(05) COMP-5 VALUE 6.
+       77  CYELLOW      PIC 9(05) COMP-5 VALUE 7.
+       77  CWHITE       PIC 9(05) COMP-5 VALUE 8.
+       
+       77  LIN          PIC 99    COMP-5.
+
+       01  scr1 PIC X(80)
+               VALUE 'Enter "y" if the text below matches the colour '
+               & 'of the background/text.'.
+       01  scr2 PIC X(80)
+               VALUE 'Note: the black text is on white background/the '
+               & 'white background has black text'.
+       01  scr3 PIC X(80)
+               VALUE 'to make the text visible.'.
+       01  scr8 PIC X(80)
+               VALUE 'following lines should be identical but '
+               & 'highlighted for the first line'.
+       01  scr9 PIC X(80)
+               VALUE 'and blinking for the second one.'.
+
+       01  scrblack PIC X(08) VALUE 'Black'.
+       01  scrblue  PIC X(08) VALUE 'Blue'.
+       01  scrgreen PIC X(08) VALUE 'Green'.
+       01  scrcyan  PIC X(08) VALUE 'Cyan'.
+       01  scrred   PIC X(08) VALUE 'Red'.
+       01  scrmaggy PIC X(08) VALUE 'Magenta'.
+       01  scryell  PIC X(14) VALUE 'Brown/Yellow'.
+       01  scrwhite PIC X(08) VALUE 'White'.
+
+       PROCEDURE DIVISION.
+       testme.
+           ADD  256 TO CBLACK
+           DISPLAY scr1 AT 0102
+           DISPLAY scr2 AT 0202
+           DISPLAY scr3 AT 0303
+           MOVE 5 TO LIN
+           PERFORM dspcol
+           ADD 1024 TO CBLACK, CBLUE, CGREEN, CCYAN,
+                       CRED, CMAGENTA, CYELLOW, CWHITE
+           MOVE 6 TO LIN
+           PERFORM dspcol
+           SUBTRACT 1024 FROM CBLACK, CBLUE, CGREEN, CCYAN,
+                       CRED, CMAGENTA, CYELLOW, CWHITE
+      *
+           DISPLAY scr8 AT 0802
+           DISPLAY scr9 AT 0903
+           ADD 4096 TO CBLACK, CBLUE, CGREEN, CCYAN,
+                       CRED, CMAGENTA, CYELLOW, CWHITE
+           MOVE 11 TO LIN
+           PERFORM dspcol
+           SUBTRACT 4096 FROM CBLACK, CBLUE, CGREEN, CCYAN,
+                       CRED, CMAGENTA, CYELLOW, CWHITE
+           ADD 1024, 16384 TO CBLACK, CBLUE, CGREEN, CCYAN,
+                       CRED, CMAGENTA, CYELLOW, CWHITE
+           MOVE 12 TO LIN
+           PERFORM dspcol
+      *
+           ACCEPT success-flag AT 1401 UPDATE REQUIRED
+
+           IF success AND COB-CRT-STATUS = 0
+               GOBACK RETURNING 0
+           ELSE
+               GOBACK RETURNING 1.
+
+       dspcol.
+           DISPLAY scrblack LINE LIN COL 1,  COLOR CBLACK.
+           DISPLAY scrblue  LINE LIN COL 11, COLOR CBLUE.
+           DISPLAY scrgreen LINE LIN COL 21, COLOR CGREEN.
+           DISPLAY scrcyan  LINE LIN COL 31, COLOR CCYAN.
+           DISPLAY scrred   LINE LIN COL 41, COLOR CRED.
+           DISPLAY scrmaggy LINE LIN COL 51, COLOR CMAGENTA.
+           DISPLAY scryell  LINE LIN COL 61, COLOR CYELLOW.
+           DISPLAY scrwhite LINE LIN COL 77, COLOR CWHITE.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([field BACKGROUND- / FOREGROUND-COLOUR via CONTROL])
+AT_KEYWORDS([BACKGROUND-COLOR BACKGROUND-COLOUR FOREGROUND-COLOR
+COLOR COLOUR REVERSED HIGHLIGHT BLINK])
+
+AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  success-flag PIC X VALUE 'Y'.
+           88  success  VALUE 'Y', 'y'.
+
+      * ACU: "=", names only
+       77  CBLACK       PIC X(99) VALUE "FCOLOR=BLACK, "
+                                      & "BCOLOR=WHITE,".
+       77  CBLUE        PIC X(99) VALUE "FCOLOR=BLUE  , "
+                                      & "BCOLOR=BLACK,".
+      * MF: "IS" or "=" or " ", also extended color numbers
+       77  CGREEN       PIC X(99) VALUE "FCOLOR IS GREEN, "
+                                      & "BCOLOR BLACK,".
+       77  CCYAN        PIC X(99) VALUE "FCOLOR  =CYAN, "
+                                      & "BCOLOR= BLACK, ".
+       77  CRED         PIC X(99) VALUE "FCOLOR=RED "
+                                      & "BCOLOR=BLACK, ".
+       77  CMAGENTA     PIC X(99) VALUE "FCOLOR=MAGENTA, "
+                                      & "BCOLOR=BLACK,".
+       77  CYELLOW      PIC X(99) VALUE "FCOLOR = 6, "
+                                      & "BCOLOR=BLACK,".
+       77  CWHITE       PIC X(99) VALUE "FCOLOR=WHITE, "
+                                      & "BCOLOR=BLACK, ".
+       
+       77  LIN          PIC 99    COMP-5.
+
+       01  scr1 PIC X(80)
+               VALUE 'Enter "y" if the text below matches the colour '
+               & 'of the background/text.'.
+       01  scr2 PIC X(80)
+               VALUE 'Note: the black text is on white background/the '
+               & 'white background has black text'.
+       01  scr3 PIC X(80)
+               VALUE 'to make the text visible.'.
+       01  scr8 PIC X(80)
+               VALUE 'following lines should be identical but '
+               & 'highlighted for the first line'.
+       01  scr9 PIC X(80)
+               VALUE 'and blinking for the second one.'.
+
+       01  scrblack PIC X(08) VALUE 'Black'.
+       01  scrblue  PIC X(08) VALUE 'Blue'.
+       01  scrgreen PIC X(08) VALUE 'Green'.
+       01  scrcyan  PIC X(08) VALUE 'Cyan'.
+       01  scrred   PIC X(08) VALUE 'Red'.
+       01  scrmaggy PIC X(08) VALUE 'Magenta'.
+       01  scryell  PIC X(14) VALUE 'Brown/Yellow'.
+       01  scrwhite PIC X(08) VALUE 'White'.
+
+       PROCEDURE DIVISION.
+       testme.
+           DISPLAY scr1 AT 0102
+           DISPLAY scr2 AT 0202
+           DISPLAY scr3 AT 0303
+           MOVE 5 TO LIN
+           PERFORM dspcol
+           MOVE "REVERSE," TO 
+               CBLACK (40:), CBLUE (40:), CGREEN (40:), CCYAN (40:),
+               CRED (40:), CMAGENTA (40:), CYELLOW (40:), CWHITE (40:)
+           MOVE 6 TO LIN
+           PERFORM dspcol
+      *
+           INSPECT CRED REPLACING ALL "=" BY " "
+           DISPLAY scr8 AT 0802
+           DISPLAY scr9 AT 0903
+           MOVE "HIGHLIGHT,NO REVERSE" TO 
+               CBLACK (50:), CBLUE (50:), CGREEN (50:), CCYAN (50:),
+               CRED (50:), CMAGENTA (50:), CYELLOW (50:), CWHITE (50:)
+           MOVE 11 TO LIN
+           PERFORM dspcol
+           MOVE "NO HIGH, BLINK" TO 
+               CBLACK (60:), CBLUE (60:), CGREEN (60:), CCYAN (60:),
+               CRED (60:), CMAGENTA (60:), CYELLOW (60:), CWHITE (60:)
+           MOVE 12 TO LIN
+           PERFORM dspcol
+      *
+           ACCEPT success-flag AT 1401 UPDATE REQUIRED
+
+           IF success AND COB-CRT-STATUS = 0
+               GOBACK RETURNING 0
+           ELSE
+               GOBACK RETURNING 1.
+
+       dspcol.
+           DISPLAY scrblack LINE LIN COL 1,  CONTROL CBLACK.
+           DISPLAY scrblue  LINE LIN COL 11, CONTROL CBLUE.
+           DISPLAY scrgreen LINE LIN COL 21, CONTROL CGREEN.
+           DISPLAY scrcyan  LINE LIN COL 31, CONTROL CCYAN.
+           DISPLAY scrred   LINE LIN COL 41, CONTROL CRED.
+           DISPLAY scrmaggy LINE LIN COL 51, CONTROL CMAGENTA.
+           DISPLAY scryell  LINE LIN COL 61, CONTROL CYELLOW.
+           DISPLAY scrwhite LINE LIN COL 77, CONTROL CWHITE.
 ])
 
 AT_CHECK([$COMPILE prog.cob], [0], [], [])
@@ -1845,6 +2249,357 @@ MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([SPECIAL-NAMES CURSOR phrase 6-digit with field])
+AT_KEYWORDS([position ACCEPT])
+
+AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       ENVIRONMENT      DIVISION.
+       CONFIGURATION    SECTION.
+       SPECIAL-NAMES.
+       CURSOR IS cur-pos.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       77  cur-pos      pic 9(06).
+       01  success-flag PIC X VALUE 'Y'.
+           88  success  VALUE 'Y', 'y'.
+       01  ws-x-20      PIC X(20).
+       PROCEDURE DIVISION.
+       testme.
+           set environment 'COB_SCREEN_EXCEPTIONS' to 'TRUE'
+           set environment 'COB_SCREEN_ESC'        to 'TRUE'
+
+           DISPLAY "If the cursor below is positioned at the 'C'"
+               LINE 1 COLUMN 1.
+           DISPLAY "(third column) below, then position it at the"
+               LINE 2 COLUMN 1.
+           DISPLAY "'E' (fifth column) and press ENTER."
+               LINE 3 COLUMN 1.
+
+           MOVE "ABCDEFG   " TO WS-X-20.
+           MOVE 005003       TO cur-pos.
+           ACCEPT WS-X-20
+               LINE 5 COLUMN 1
+               WITH
+                   AUTO-SKIP
+                   SIZE 10
+                   UPDATE.
+
+           IF cur-pos = 005005 AND COB-CRT-STATUS = 0
+               GOBACK RETURNING 0
+           ELSE
+               GOBACK RETURNING 1
+           END-IF
+           .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([SPECIAL-NAMES CURSOR phrase 4-digit with field])
+AT_KEYWORDS([position ACCEPT])
+
+AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       ENVIRONMENT      DIVISION.
+       CONFIGURATION    SECTION.
+       SPECIAL-NAMES.
+       CURSOR IS cur-pos.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       77  cur-pos      pic 9(04).
+       01  success-flag PIC X VALUE 'Y'.
+           88  success  VALUE 'Y', 'y'.
+       01  ws-x-20      PIC X(20).
+       PROCEDURE DIVISION.
+       testme.
+           set environment 'COB_SCREEN_EXCEPTIONS' to 'TRUE'
+           set environment 'COB_SCREEN_ESC'        to 'TRUE'
+
+           DISPLAY "If the cursor below is positioned at the 'C'"
+               LINE 1 COLUMN 1.
+           DISPLAY "(third column) below, then position it at the"
+               LINE 2 COLUMN 1.
+           DISPLAY "'E' (fifth column) and press ENTER."
+               LINE 3 COLUMN 1.
+
+           MOVE "ABCDEFG   " TO WS-X-20.
+           MOVE 0503         TO cur-pos.
+           ACCEPT WS-X-20
+               LINE 5 COLUMN 1
+               WITH
+                   AUTO-SKIP
+                   SIZE 10
+                   UPDATE.
+
+           IF cur-pos = 0505 AND COB-CRT-STATUS = 0
+               GOBACK RETURNING 0
+           ELSE
+               GOBACK RETURNING 1
+           END-IF
+           .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([ACCEPT field WITH CURSOR data-item])
+AT_KEYWORDS([position])
+
+AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       77  cur-pos      pic 9(04).
+       01  success-flag PIC X VALUE 'Y'.
+           88  success  VALUE 'Y', 'y'.
+       01  ws-x-20      PIC X(20).
+       PROCEDURE DIVISION.
+       testme.
+           set environment 'COB_SCREEN_EXCEPTIONS' to 'TRUE'
+           set environment 'COB_SCREEN_ESC'        to 'TRUE'
+
+           DISPLAY "If the cursor below is positioned at the 'C'"
+               LINE 1 COLUMN 1.
+           DISPLAY "(third column in field) below, then position it at"
+               LINE 2 COLUMN 1.
+           DISPLAY "the 'E' (fifth column) and press ENTER."
+               LINE 3 COLUMN 1.
+
+           MOVE "ABCDEFG   " TO WS-X-20.
+           MOVE 0003         TO cur-pos.
+           ACCEPT WS-X-20
+               LINE 5 COLUMN 3
+               WITH
+                   AUTO-SKIP
+                   SIZE 10
+                   CURSOR cur-pos
+                   UPDATE.
+
+           IF cur-pos = 0005 AND COB-CRT-STATUS = 0
+               GOBACK RETURNING 0
+           ELSE
+               GOBACK RETURNING 1
+           END-IF
+           .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([ACCEPT field WITH CURSOR size overflow])
+AT_KEYWORDS([position])
+
+AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       77  cur-pos      pic 9(04).
+       01  success-flag PIC X VALUE 'Y'.
+           88  success  VALUE 'Y', 'y'.
+       01  ws-x-20      PIC X(10).
+       PROCEDURE DIVISION.
+       testme.
+           set environment 'COB_SCREEN_EXCEPTIONS' to 'TRUE'
+           set environment 'COB_SCREEN_ESC'        to 'TRUE'
+
+           DISPLAY "If the cursor below is positioned at the last"
+               LINE 1 COLUMN 1.
+           DISPLAY "column in the field below, then position it at"
+               LINE 2 COLUMN 1.
+           DISPLAY "the 'C' (third column) and press ENTER."
+               LINE 3 COLUMN 1.
+
+           MOVE "ABCDEFGHIJ" TO WS-X-20.
+           MOVE 0012         TO cur-pos.
+           ACCEPT WS-X-20
+               LINE 5 COLUMN 3
+               WITH
+                   AUTO-SKIP
+                   SIZE 10
+                   CURSOR cur-pos
+                   UPDATE.
+
+           IF cur-pos = 0003 AND COB-CRT-STATUS = 0
+               GOBACK RETURNING 0
+           ELSE
+               GOBACK RETURNING 1
+           END-IF
+           .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([ACCEPT field WITH CURSOR data overflow I])
+AT_KEYWORDS([position])
+
+AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       77  cur-pos      pic 9(04).
+       01  success-flag PIC X VALUE 'Y'.
+           88  success  VALUE 'Y', 'y'.
+       01  ws-x-20      PIC X(20).
+       PROCEDURE DIVISION.
+       testme.
+           set environment 'COB_SCREEN_EXCEPTIONS' to 'TRUE'
+           set environment 'COB_SCREEN_ESC'        to 'TRUE'
+
+           DISPLAY "If the cursor below is positioned at the 'E'"
+               LINE 1 COLUMN 1.
+           DISPLAY "(fifth column in field) below, then position it at"
+               LINE 2 COLUMN 1.
+           DISPLAY "the 'C' (third column) and press ENTER."
+               LINE 3 COLUMN 1.
+
+           MOVE "ABCDE     " TO WS-X-20.
+           MOVE 0008         TO cur-pos.
+           ACCEPT WS-X-20
+               LINE 5 COLUMN 3
+               WITH
+                   AUTO-SKIP
+                   SIZE 10
+                   CURSOR cur-pos
+                   UPDATE.
+
+           IF cur-pos = 0003 AND COB-CRT-STATUS = 0
+               GOBACK RETURNING 0
+           ELSE
+               GOBACK RETURNING 1
+           END-IF
+           .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([ACCEPT field WITH CURSOR data overflow II])
+AT_KEYWORDS([position UNDERLINE])
+
+AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       77  cur-pos      pic 9(04).
+       01  success-flag PIC X VALUE 'Y'.
+           88  success  VALUE 'Y', 'y'.
+       01  ws-x-20      PIC X(20).
+       PROCEDURE DIVISION.
+       testme.
+           set environment 'COB_SCREEN_EXCEPTIONS' to 'TRUE'
+           set environment 'COB_SCREEN_ESC'        to 'TRUE'
+
+           DISPLAY "If the cursor below is positioned at the first"
+               LINE 1 COLUMN 1.
+           DISPLAY "column in the field below and it is empty, then"
+               LINE 2 COLUMN 1.
+           DISPLAY "enter 'AB', position after the 'B' and press ENTER."
+               LINE 3 COLUMN 1.
+
+           MOVE "ABCDE     " TO WS-X-20.
+           MOVE 0008         TO cur-pos.
+           ACCEPT WS-X-20
+               LINE 5 COLUMN 3
+               WITH
+                   SIZE 10
+                   UNDERLINE
+                   CURSOR cur-pos.
+
+           IF cur-pos = 0003 AND COB-CRT-STATUS = 0
+               GOBACK RETURNING 0
+           ELSE
+               GOBACK RETURNING 1
+           END-IF
+           .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
+AT_SETUP([ACCEPT field WITH CURSOR literal])
+AT_KEYWORDS([position])
+
+AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  success-flag PIC X VALUE 'Y'.
+           88  success  VALUE 'Y', 'y'.
+       01  ws-x-20      PIC X(20).
+       PROCEDURE DIVISION.
+       testme.
+           set environment 'COB_SCREEN_EXCEPTIONS' to 'TRUE'
+           set environment 'COB_SCREEN_ESC'        to 'TRUE'
+
+           DISPLAY "If the cursor below is positioned at the 'C'"
+               LINE 1 COLUMN 1.
+           DISPLAY "(third column in field) below, then press ENTER."
+               LINE 2 COLUMN 1.
+
+           MOVE "ABCDEFG   " TO WS-X-20.
+           ACCEPT WS-X-20
+               LINE 4 COLUMN 2
+               WITH
+                   AUTO-SKIP
+                   SIZE 10
+                   CURSOR 3
+                   UPDATE.
+
+           IF COB-CRT-STATUS = 0
+               GOBACK RETURNING 0
+           ELSE
+               GOBACK RETURNING 1
+           END-IF
+           .
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+MANUAL_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([HOME key])
 AT_KEYWORDS([HOME SIZE])
 
@@ -1989,15 +2744,20 @@ AT_CLEANUP
 
 
 AT_SETUP([BACKSPACE key])
-AT_KEYWORDS([BACKSPACE SIZE])
+AT_KEYWORDS([BACKSPACE SIZE CURSOR])
 
 AT_SKIP_IF([test "$COB_HAS_CURSES" != "yes"])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
+       ENVIRONMENT      DIVISION.
+       CONFIGURATION    SECTION.
+       SPECIAL-NAMES.
+       CURSOR IS cur-pos.
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
+       77  cur-pos      pic 9(06).
        01  success-flag PIC X VALUE 'Y'.
            88  success  VALUE 'Y', 'y'.
        01  ws-x-20      PIC X(20).
@@ -2012,6 +2772,7 @@ AT_DATA([prog.cob], [
                LINE 4 COLUMN 1.
 
            MOVE "ABCD      " TO WS-X-20.
+           MOVE 006002       TO cur-pos.
            ACCEPT WS-X-20
                LINE 6 COLUMN 1
                WITH

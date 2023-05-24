@@ -1388,8 +1388,8 @@ cb_tree_category (cb_tree x)
 	struct cb_reference	*r;
 	struct cb_field		*f;
 
-	if (x == cb_error_node) {
-		return (enum cb_category)0;
+	if (CB_INVALID_TREE (x)) {
+		return CB_CATEGORY_UNKNOWN;
 	}
 
 	/* LCOV_EXCL_START */
@@ -4140,6 +4140,7 @@ cb_field_size (const cb_tree x)
 	/* LCOV_EXCL_STOP */
 }
 
+/* returns the record field (level 01) of 'f' */
 struct cb_field *
 cb_field_founder (const struct cb_field * const f)
 {
@@ -4152,6 +4153,10 @@ cb_field_founder (const struct cb_field * const f)
 	return (struct cb_field *)ff;
 }
 
+/* returns the first field that has an ODO below 'f', if any
+   note: per standard there would be only 0 or 1 of those, but mind
+   the supported extensions that allow nested ODO as well as
+   the fact that 'f' may have an ODO on its own */
 struct cb_field *
 cb_field_variable_size (const struct cb_field *f)
 {
@@ -4430,7 +4435,7 @@ finalize_report (struct cb_report *r, struct cb_field *records)
 		}
 	}
 
-	/* Insure report record size is set large enough */
+	/* ensure report record size is set large enough */
 	for (k=0; k < 2; k++) {
 		for (p = records; p; p = p->sister) {
 			if (p->storage != CB_STORAGE_REPORT)
@@ -4441,14 +4446,16 @@ finalize_report (struct cb_report *r, struct cb_field *records)
 				}
 				if (k == 1
 				 && p->level == 1) {
-					if (p->size < r->rcsz)
+					if (p->size < r->rcsz) {
 						p->size = r->rcsz;
-					if (p->memory_size < r->rcsz)
+					}
+					if (p->memory_size < r->rcsz) {
 						p->memory_size = r->rcsz;
+					}
 				}
 			}
 			if (p->report_column > 0) {
-				if(p->report_column - 1 + p->size > r->rcsz) {
+				if (p->report_column - 1 + p->size > r->rcsz) {
 					r->rcsz = p->report_column - 1 + p->size;
 				}
 			}
@@ -6369,7 +6376,8 @@ cb_build_funcall (const char *name, const int argc,
 		  const cb_tree a1, const cb_tree a2, const cb_tree a3,
 		  const cb_tree a4, const cb_tree a5, const cb_tree a6,
 		  const cb_tree a7, const cb_tree a8, const cb_tree a9,
-		  const cb_tree a10, const cb_tree a11)
+		  const cb_tree a10, const cb_tree a11, const cb_tree a12,
+		  const cb_tree a13, const cb_tree a14)
 {
 	struct cb_funcall *p;
 
@@ -6390,6 +6398,9 @@ cb_build_funcall (const char *name, const int argc,
 	p->argv[8] = a9;
 	p->argv[9] = a10;
 	p->argv[10] = a11;
+	p->argv[11] = a12;
+	p->argv[12] = a13;
+	p->argv[13] = a14;
 	return CB_TREE (p);
 }
 
@@ -6851,7 +6862,7 @@ warn_if_no_definition_seen_for_prototype (const struct cb_prototype *proto)
 
 cb_tree
 cb_build_prototype (const cb_tree prototype_name, const cb_tree ext_name,
-		    const int type)
+		    const enum cob_module_type type)
 {
 	struct cb_prototype	*prototype;
 
@@ -6908,13 +6919,13 @@ get_category_from_arguments (const struct cb_intrinsic_table *cbp, cb_tree args,
 	cb_tree			arg;
 	int argnum = 0;
 
-	for (l = args; l; l = CB_CHAIN(l)) {
+	for (l = args; l; l = CB_CHAIN (l)) {
 
 		argnum++;
 		if (argnum < check_from) continue;
 		if (check_to && argnum > check_to) break;
 
-		arg = CB_VALUE(l);
+		arg = CB_VALUE (l);
 		arg_cat = cb_tree_category (arg);
 
 		if (arg_cat == CB_CATEGORY_NATIONAL_EDITED) {

@@ -7,7 +7,6 @@ NEWS - user visible changes				-*- outline -*-
 
  planned for final:
    * extending testsuite and documentation
-   * configure: minor checking to set TIME_T_IS_NON_ARITHMETIC
    * investigation of code analysis tools and user feedback
 
 
@@ -156,6 +155,15 @@ NEWS - user visible changes				-*- outline -*-
    attribute); only the three lower bits are now considered during evaluation
    of the color-number, leading to a previous value of 21 (which was ignored
    until now) being interpreted as 5, see FR #387
+
+** extended screen io with single-fields: runtime-adjustable attributes by
+   support of extension clauses COLOR and CONTROL for ACCEPT and DISPLAY
+   statements, see FR #189 + FR #355; note: while COLOR and CONTROL are parsed
+   for SCREEN SECTION they are ignored at runtime
+
+** extended screen io with single-fields: the ACCEPT statement now supports
+   the extension CURSOR clause, additional to the standard-defined
+   CONTROL phrase in SPECIAL-NAMES
 
 ** the programmable runtime switches "SWITCH A" through "SWITCH Z" internally
    used 1-26 and now use 11-36 to be able to combine then with switches 0-7;
@@ -351,6 +359,11 @@ NEWS - user visible changes				-*- outline -*-
 ** for PICTURE P several fixes were made, so results may vary compared with
    previous versions; sources with *leading* P never worked correct before,
    and *must* be recompiled after upgrading
+
+** since its addition to GnuCOBOL ROUNDING MODE PROHIBITED just prevented
+   rounding; its behaviour changed to match the specification by doing that,
+   raising EC-SIZE-TRUNCATION and changed: not adjust the target field if
+   rounding would be necessary to store the data
 
 * Listing changes
 

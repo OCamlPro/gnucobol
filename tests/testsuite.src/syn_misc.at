@@ -2487,7 +2487,6 @@ prog.cob:17: error: 'handle' is not defined, but is a reserved word in another d
 prog.cob:19: error: 'handle' is not defined, but is a reserved word in another dialect
 prog.cob:20: error: 'handle' is not defined, but is a reserved word in another dialect
 prog.cob:21: error: 'handle' is not defined, but is a reserved word in another dialect
-prog.cob:15: error: PICTURE clause required for 'unused-thread'
 prog.cob: in paragraph 'MAIN':
 prog.cob:35: error: 'handle IN mywindow' is not defined
 prog.cob:34: error: invalid expression
@@ -2654,12 +2653,11 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE_ONLY -std=acu-strict prog.cob], [0], [],
 [prog.cob:16: warning: GRAPHICAL CONTROL is not implemented
-prog.cob:21: warning: COLOR clause is not implemented
+prog.cob:21: warning: COLOR clause (SCREEN) is not implemented
 prog.cob:23: warning: LINES clause is not implemented
 prog.cob:26: warning: screen positions from data-item is not implemented
 prog.cob: in paragraph 'MAIN':
 prog.cob:36: warning: GRAPHICAL WINDOW is not implemented
-prog.cob:42: warning: COLOR is not implemented
 prog.cob:53: warning: GRAPHICAL WINDOW is not implemented
 ])
 

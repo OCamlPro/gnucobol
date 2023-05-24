@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2012, 2014-2022 Free Software Foundation, Inc.
+   Copyright (C) 2002-2012, 2014-2023 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Simon Sobisch, Ron Norman
 
    This file is part of GnuCOBOL.
@@ -160,9 +160,8 @@ static	vb_rtd_t *vbisam_rtd = NULL;
 
 #endif
 
-/* Force symbol exports */
+/* include internal and external libcob definitions, forcing exports */
 #define	COB_LIB_EXPIMP
-#include "common.h"
 #include "coblocal.h"
 
 #ifdef	WITH_ANY_ISAM
@@ -6158,7 +6157,7 @@ cob_pre_open (cob_file *f)
 	} else
 	if (f->assign != NULL
 	 && f->assign->data != NULL) {
-		cob_field_to_string (f->assign, file_open_name, (size_t)COB_FILE_MAX);
+		cob_field_to_string (f->assign, file_open_name, COB_FILE_MAX, CCM_NONE);
 	}
 }
 
@@ -6940,7 +6939,7 @@ cob_delete_file (cob_file *f, cob_field *fnstatus)
 	}
 
 	/* Obtain the file name */
-	cob_field_to_string (f->assign, file_open_name, (size_t)COB_FILE_MAX);
+	cob_field_to_string (f->assign, file_open_name, COB_FILE_MAX, CCM_NONE);
 	cob_chk_file_mapping ();
 
 	if (f->organization != COB_ORG_INDEXED) {
@@ -8513,9 +8512,9 @@ cob_get_filename_print (cob_file* file, const int show_resolved_name)
 {
 	size_t offset = 0, len;
 	/* Obtain the file name */
-	cob_field_to_string (file->assign, file_open_env, (size_t)COB_FILE_MAX);
+	cob_field_to_string (file->assign, file_open_env, COB_FILE_MAX, CCM_NONE);
 	if (show_resolved_name) {
-		strncpy (file_open_name, file_open_env, (size_t)COB_FILE_MAX);
+		strncpy (file_open_name, file_open_env, COB_FILE_MAX);
 		file_open_name[COB_FILE_MAX] = 0;
 		cob_chk_file_mapping ();
 	}
@@ -8848,7 +8847,7 @@ copy_file_to_fcd (cob_file *f, FCD3 *fcd)
 		char	assign_to[COB_FILE_BUFF];
 		size_t	fnlen;
 		if (f->assign) {
-			cob_field_to_string (f->assign, assign_to, COB_FILE_MAX);
+			cob_field_to_string (f->assign, assign_to, COB_FILE_MAX, CCM_NONE);
 		} else if (f->select_name) {
 			strncpy (assign_to, f->select_name, COB_FILE_MAX);
 			assign_to[COB_FILE_MAX] = 0;
@@ -9581,9 +9580,9 @@ cob_extfh_close (
 
 	COB_UNUSED (remfil);
 
-	fcd = find_fcd(f);
-	STCOMPX4(opt, fcd->opt);
-	STCOMPX2(OP_CLOSE, opcode);
+	fcd = find_fcd (f);
+	STCOMPX4 (opt, fcd->opt);
+	STCOMPX2 (OP_CLOSE, opcode);
 
 	/* Keep table of 'fcd' created */
 	(void)callfh (opcode, fcd);
@@ -9962,7 +9961,7 @@ EXTFH (unsigned char *opcode, FCD3 *fcd)
 	}
 #if !COB_64_BIT_POINTER
 	if (fcd->fcdVer == FCD2_VER) {
-		int		rtnsts;
+		int		rtnsts, opcd;
 		FCD2 *fcd2 = (FCD2 *) fcd;
 
 		fcd = fcd2_to_fcd3 (fcd2);
@@ -9975,7 +9974,13 @@ EXTFH (unsigned char *opcode, FCD3 *fcd)
 		/* Convert FCD3 back to FCD2 format */
 		fcd3_to_fcd2 (fcd, fcd2);
 
-		if (opcode[1] == OP_CLOSE) {
+		if (*opcode == 0xFA) {
+			opcd = 0xFA00 + opcode[1];
+		} else {
+			opcd = opcode[1];
+		}
+
+		if (opcd == OP_CLOSE) {
 			free_fcd2 (fcd2);
 		}
 

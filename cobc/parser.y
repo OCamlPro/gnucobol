@@ -1328,7 +1328,7 @@ setup_program (cb_tree id, cb_tree as_literal, const enum cob_module_type type, 
 		current_program->program_name = (char *)CB_LITERAL (id)->data;
 	} else {
 		current_program->program_name = CB_NAME (id);
-	}
+	}	
 
 	stack_progid[depth] = current_program->program_name;
 	current_program->prog_type = type;
@@ -1567,7 +1567,7 @@ check_for_duplicate_prototype (const cb_tree prototype_name,
 
 static void
 setup_prototype (cb_tree prototype_name, cb_tree ext_name,
-		  const int type, const int is_current_element)
+		  const enum cob_module_type type, const int is_current_element)
 {
 	cb_tree	prototype;
 	int	name_redefinition_allowed;
@@ -1734,18 +1734,24 @@ setup_external_definition_type (cb_tree x)
 static void
 inherit_external_definition (const int lvl)
 {
-	/* note: REDEFINES (clause 1) is allowed with RM/COBOL but not COBOL 2002+ */
-	static const cob_flags_t	allowed_clauses =
-		SYN_CLAUSE_1 | SYN_CLAUSE_2 | SYN_CLAUSE_3 | SYN_CLAUSE_7 | SYN_CLAUSE_12;
-	cob_flags_t	tested = check_pic_duplicate & ~(allowed_clauses);
-	if (tested != SYN_CLAUSE_30 && tested != SYN_CLAUSE_31
-	 && tested != 0 /* USAGE as TYPE TO */) {
-		struct cb_field *fld = CB_FIELD (current_field->external_definition);
-		cb_error_x (CB_TREE(current_field), _("illegal combination of %s with other clauses"),
-			fld->flag_is_typedef ? "TYPE TO" : "SAME AS");
-		current_field->flag_is_verified = 1;
-		current_field->flag_invalid = 1;
-	} else {
+	/* syntax checks */
+	{
+		/* note: REDEFINES (clause 1) is allowed with RM/COBOL but not COBOL 2002+ */
+		static const cob_flags_t	allowed_clauses =
+			SYN_CLAUSE_1 | SYN_CLAUSE_2 | SYN_CLAUSE_3 | SYN_CLAUSE_7 | SYN_CLAUSE_12;
+		cob_flags_t	tested = check_pic_duplicate & ~(allowed_clauses);
+		if (tested != SYN_CLAUSE_30 && tested != SYN_CLAUSE_31
+		 && tested != 0 /* USAGE as TYPE TO */) {
+			struct cb_field *fld = CB_FIELD (current_field->external_definition);
+			cb_error_x (CB_TREE(current_field), _("illegal combination of %s with other clauses"),
+				fld->flag_is_typedef ? "TYPE TO" : "SAME AS");
+			current_field->flag_is_verified = 1;
+			current_field->flag_invalid = 1;
+			return;
+		}
+	}
+	/* actual copy */
+	{
 		struct cb_field *fld = CB_FIELD (current_field->external_definition);
 		int new_level = lvl;
 		int old_level = current_field->level;
@@ -1874,8 +1880,8 @@ bit_set_attr (const cb_tree on_off, const cob_flags_t attr_val)
 }
 
 static void
-set_field_attribs (cb_tree fgc, cb_tree bgc, cb_tree scroll,
-		   cb_tree timeout, cb_tree prompt, cb_tree size_is)
+set_field_attribs (cb_tree fgc, cb_tree bgc, cb_tree scroll, cb_tree timeout,
+	cb_tree prompt, cb_tree size_is, cb_tree control, cb_tree color, cb_tree cursor)
 {
 	/* [WITH] FOREGROUND-COLOR [IS] */
 	if (fgc) {
@@ -1901,15 +1907,27 @@ set_field_attribs (cb_tree fgc, cb_tree bgc, cb_tree scroll,
 	if (size_is) {
 		current_statement->attr_ptr->size_is = size_is;
 	}
+	/* [WITH] CONTROL (variable named attributes) */
+	if (control) {
+		current_statement->attr_ptr->control = control;
+	}
+	/* [WITH] COLOR (variable numeric added attributes) */
+	if (color) {
+		current_statement->attr_ptr->color = color;
+	}
+	/* [WITH] CURSOR */
+	if (cursor) {
+		current_statement->attr_ptr->cursor = cursor;
+	}
 }
 
 static void
-set_attribs (cb_tree fgc, cb_tree bgc, cb_tree scroll,
+set_attribs (const cob_flags_t attrib, cb_tree fgc, cb_tree bgc, cb_tree scroll,
 	     cb_tree timeout, cb_tree prompt, cb_tree size_is,
-	     const cob_flags_t attrib)
+	     cb_tree control, cb_tree color, cb_tree cursor)
 {
 	attach_attrib_to_cur_stmt ();
-	set_field_attribs (fgc, bgc, scroll, timeout, prompt, size_is);
+	set_field_attribs (fgc, bgc, scroll, timeout, prompt, size_is, control, color, cursor);
 
 	current_statement->attr_ptr->dispattrs |= attrib;
 }
@@ -1921,7 +1939,7 @@ set_attribs_with_conflict  (cb_tree fgc, cb_tree bgc, cb_tree scroll,
 			    const char *confl_name, const cob_flags_t confl_attrib)
 {
 	attach_attrib_to_cur_stmt ();
-	set_field_attribs (fgc, bgc, scroll, timeout, prompt, size_is);
+	set_field_attribs (fgc, bgc, scroll, timeout, prompt, size_is, NULL, NULL, NULL);
 
 	set_dispattr_with_conflict (clause_name, attrib, confl_name,
 				    confl_attrib);
@@ -1954,6 +1972,54 @@ zero_conflicting_flags (const cob_flags_t screen_flag, cob_flags_t parent_flag)
 					     COB_SCREEN_LOWLIGHT);
 
 	return parent_flag;
+}
+
+static int
+has_relative_pos (struct cb_field const *field)
+{
+	return !!(field->screen_flag
+		  & ( COB_SCREEN_LINE_PLUS | COB_SCREEN_LINE_MINUS
+		    | COB_SCREEN_COLUMN_PLUS | COB_SCREEN_COLUMN_MINUS));
+}
+
+static void
+validate_screen_attributes (void)
+{
+	cob_flags_t	flags;
+
+	if (current_field->parent) {
+		flags = current_field->parent->screen_flag;
+		flags &= ~COB_SCREEN_BLANK_LINE;
+		flags &= ~COB_SCREEN_BLANK_SCREEN;
+		flags &= ~COB_SCREEN_ERASE_EOL;
+		flags &= ~COB_SCREEN_ERASE_EOS;
+		flags &= ~COB_SCREEN_LINE_PLUS;
+		flags &= ~COB_SCREEN_LINE_MINUS;
+		flags &= ~COB_SCREEN_COLUMN_PLUS;
+		flags &= ~COB_SCREEN_COLUMN_MINUS;
+
+		flags = zero_conflicting_flags (current_field->screen_flag, flags);
+
+		current_field->screen_flag |= flags;
+	}
+
+	if (current_field->screen_flag & COB_SCREEN_INITIAL) {
+		if (!(current_field->screen_flag & COB_SCREEN_INPUT)) {
+			cb_error (_("INITIAL specified on non-input field"));
+		}
+	}
+	if (!qualifier) {
+		current_field->flag_filler = 1;
+	}
+
+	if (!description_field) {
+		description_field = current_field;
+	}
+	if (current_field->flag_occurs
+	 && !has_relative_pos (current_field)) {
+		cb_error (_("relative LINE/COLUMN clause required with OCCURS"));
+	}
+	cobc_cs_check = CB_CS_SCREEN;
 }
 
 static void
@@ -2003,14 +2069,6 @@ check_preceding_tallying_phrases (const enum tallying_phrase phrase)
 	}
 
 	previous_tallying_phrase = phrase;
-}
-
-static int
-has_relative_pos (struct cb_field const *field)
-{
-	return !!(field->screen_flag
-		  & ( COB_SCREEN_LINE_PLUS | COB_SCREEN_LINE_MINUS
-		    | COB_SCREEN_COLUMN_PLUS | COB_SCREEN_COLUMN_MINUS));
 }
 
 static int
@@ -2207,15 +2265,13 @@ error_if_different_display_type (struct cb_list *l, cb_tree local_upon_value,
 static void
 error_if_not_usage_display_or_nonnumeric_lit (cb_tree x)
 {
-	const int	is_numeric_literal = CB_NUMERIC_LITERAL_P (x);
-	const int	is_field_with_usage_not_display =
-		CB_REFERENCE_P (x) && CB_FIELD (cb_ref (x))
-		&& CB_FIELD (cb_ref (x))->usage != CB_USAGE_DISPLAY;
-
-	if (is_numeric_literal) {
+	if (CB_NUMERIC_LITERAL_P (x)) {
 		cb_error_x (x, _("%s is not an alphanumeric literal"), CB_LITERAL (x)->data);
-	} else if (is_field_with_usage_not_display) {
-		cb_error_x (x, _("'%s' is not USAGE DISPLAY"), cb_name (x));
+	} else if (CB_REFERENCE_P (x) && CB_FIELD_P (cb_ref (x))) {
+		const struct cb_field *f = CB_FIELD (cb_ref (x));
+		if (f->usage != CB_USAGE_DISPLAY) {
+			cb_error_x (x, _ ("'%s' is not USAGE DISPLAY"), cb_name (x));
+		}
 	}
 }
 
@@ -5275,8 +5331,8 @@ file_control_entry:
 ;
 
 _select_clauses_or_error:
-  _select_clause_sequence _dot_or_else_end_of_file_control
-| error _dot_or_else_end_of_file_control
+  _select_clause_sequence dot_or_else_end_of_file_control
+| error dot_or_else_end_of_file_control
   {
 	yyerrok;
   }
@@ -6122,8 +6178,8 @@ i_o_control_header:
 ;
 
 _i_o_control_entries:
-| i_o_control_list _dot_or_else_end_of_file_control
-| i_o_control_list error _dot_or_else_end_of_file_control
+| i_o_control_list dot_or_else_end_of_file_control
+| i_o_control_list error dot_or_else_end_of_file_control
   {
 	yyerrok;
   }
@@ -6383,8 +6439,8 @@ file_description_entry:
 		}
 	}
   }
-  _file_description_clause_sequence _dot_or_else_end_of_file_description
-| file_type error _dot_or_else_end_of_file_description
+  _file_description_clause_sequence dot_or_else_end_of_file_description
+| file_type error dot_or_else_end_of_file_description
   {
 	yyerrok;
   }
@@ -6812,7 +6868,7 @@ communication_description_entry:
 	check_duplicate = 0;
   }
   _communication_description_clause_sequence
-  _dot_or_else_end_of_communication_description
+  dot_or_else_end_of_communication_description
 ;
 
 _communication_description_clause_sequence:
@@ -6904,7 +6960,7 @@ unnamed_i_o_cd_clauses:
 working_storage: WORKING_STORAGE { check_area_a_of ("WORKING-STORAGE SECTION"); };
 _working_storage_section:
 | working_storage SECTION
-  _dot_or_else_end_of_record_description
+  dot_or_else_end_of_record_description
   {
 	check_headers_present (COBC_HD_DATA_DIVISION, 0, 0, 0);
 	header_check |= COBC_HD_WORKING_STORAGE_SECTION;
@@ -6937,8 +6993,8 @@ _record_description_list:
 ;
 
 record_description_list:
-  data_description _dot_or_else_end_of_record_description
-| record_description_list data_description _dot_or_else_end_of_record_description
+  data_description dot_or_else_end_of_record_description
+| record_description_list data_description dot_or_else_end_of_record_description
 ;
 
 data_description:
@@ -6966,8 +7022,10 @@ data_description:
 		description_field = current_field;
 	}
   }
-| level_number error TOK_DOT
+| level_number _entry_name error TOK_DOT
   {
+	/* note: this construct "eats" the error, the actual field
+	   definition (level + name) is already parsed and added to the tree */
 	yyerrok;
 	cb_unput_dot ();
 	check_pic_duplicate = 0;
@@ -6976,6 +7034,26 @@ data_description:
 	current_field = cb_get_real_field ();
 #endif
   }
+/* useful error handling, but needs either a hack to internally
+	  make DISPLAY in DATA DIVISION to USAGE DISPLAY, or need to
+	  drop "_usage_is usage" * /
+|
+  {
+	cb_tree filler = cb_build_filler ();
+	qualifier = NULL;
+	keys_list = NULL;
+	non_const_word = 0;
+	cb_error (_("missing %s"), "level number");
+	if (set_current_field (1, filler)) {
+		YYERROR;
+	}
+  }
+  data_description_clause_sequence TOK_DOT
+  {
+	check_pic_duplicate = 0;
+	check_duplicate = 0;
+  }
+*/
 ;
 
 level_number:
@@ -7712,22 +7790,23 @@ _pic_locale_format_or_depending_on_or_byte_length:
 			      _("variable-length PICTURE"),
 			      enum_explain_storage (current_storage));
 	} else {
-		  /* Implicitly translate `PIC Lc... DEPENDING N` (where
-		     `c` may actually only be `X` or `A`) into a group
-		     with a single sub-field `PIC c OCCURS 1 TO N`. */
-		  const char pic[2] = { current_field->pic->orig[1], 0};
-		  struct cb_field * const chld =
-			  CB_FIELD (cb_build_field (cb_build_filler ()));
-		  chld->pic = cb_build_picture (pic);
-		  chld->storage = current_field->storage;
-		  chld->depending = depending;
-		  chld->flag_occurs = 1;
-		  chld->occurs_min = 1;
-		  chld->occurs_max = current_field->pic->size - 1;
-		  chld->parent = current_field;
-		  current_field->children = chld;
-		  cobc_parse_free (current_field->pic);
-		  current_field->pic = NULL;
+		/* Implicitly translate `PIC Lc... DEPENDING N` (where
+		   `c` may actually only be `X` or `A`) into a group
+		   with a single sub-field `PIC c OCCURS 1 TO N`. */
+		struct cb_field * const chld =
+			CB_FIELD (cb_build_field (cb_build_filler ()));
+		char pic[2] = { 0 };
+		pic[0] = current_field->pic->orig[1];
+		chld->pic = cb_build_picture (pic);
+		chld->storage = current_field->storage;
+		chld->depending = depending;
+		chld->flag_occurs = 1;
+		chld->occurs_min = 1;
+		chld->occurs_max = current_field->pic->size - 1;
+		chld->parent = current_field;
+		current_field->children = chld;
+		cobc_parse_free (current_field->pic);
+		current_field->pic = NULL;
 	}
 	/* Raise this flag in the error cases above, to avoid unrelated
 	   warning or error messages upon tentative validation of
@@ -8362,7 +8441,7 @@ occurs_key_field:
 	for (l = $4; l; l = CB_CHAIN (l)) {
 		CB_PURPOSE (l) = $1;
 		ref = CB_VALUE (l);
-		if (CB_VALID_TREE(ref)) {
+		if (CB_VALID_TREE (ref)) {
 			CB_REFERENCE (ref)->chain = rchain;
 		}
 	}
@@ -8964,7 +9043,7 @@ report_description:
 	check_duplicate = 0;
   }
   _report_description_options
-  _dot_or_else_end_of_report_description
+  dot_or_else_end_of_report_description
   _report_group_description_list
   {
 	$$ = get_finalized_description_tree ();
@@ -8980,7 +9059,7 @@ report_description:
 
 _report_description_options:
 | _report_description_options report_description_option
-| error _dot_or_else_end_of_report_description
+| error dot_or_else_end_of_report_description
   {
 	yyerrok;
   }
@@ -9229,11 +9308,11 @@ report_group_description_entry:
 		description_field = current_field;
 	}
   }
-  _report_group_options _dot_or_else_end_of_report_group_description
+  _report_group_options dot_or_else_end_of_report_group_description
   {
 	  build_sum_counter (current_report, current_field);
   }
-| level_number error _dot_or_else_end_of_report_group_description
+| level_number error dot_or_else_end_of_report_group_description
   {
 	yyerrok;
 	check_pic_duplicate = 0;
@@ -9733,49 +9812,10 @@ screen_description:
 	if (set_current_field (level, $2)) {
 		YYERROR;
 	}
-	if (current_field->parent) {
-		current_field->screen_foreg = current_field->parent->screen_foreg;
-		current_field->screen_backg = current_field->parent->screen_backg;
-		current_field->screen_prompt = current_field->parent->screen_prompt;
-	}
   }
   _screen_options
   {
-	cob_flags_t	flags;
-
-	if (current_field->parent) {
-		flags = current_field->parent->screen_flag;
-		flags &= ~COB_SCREEN_BLANK_LINE;
-		flags &= ~COB_SCREEN_BLANK_SCREEN;
-		flags &= ~COB_SCREEN_ERASE_EOL;
-		flags &= ~COB_SCREEN_ERASE_EOS;
-		flags &= ~COB_SCREEN_LINE_PLUS;
-		flags &= ~COB_SCREEN_LINE_MINUS;
-		flags &= ~COB_SCREEN_COLUMN_PLUS;
-		flags &= ~COB_SCREEN_COLUMN_MINUS;
-
-		flags = zero_conflicting_flags (current_field->screen_flag,
-						flags);
-
-		current_field->screen_flag |= flags;
-	}
-
-	if (current_field->screen_flag & COB_SCREEN_INITIAL) {
-		if (!(current_field->screen_flag & COB_SCREEN_INPUT)) {
-			cb_error (_("INITIAL specified on non-input field"));
-		}
-	}
-	if (!qualifier) {
-		current_field->flag_filler = 1;
-	}
-
-	if (!description_field) {
-		description_field = current_field;
-	}
-	if (current_field->flag_occurs
-	 && !has_relative_pos (current_field)) {
-		cb_error (_("relative LINE/COLUMN clause required with OCCURS"));
-	}
+	validate_screen_attributes ();
   }
   /* ACUCOBOL-GT control definition */
 | level_number _entry_name
@@ -9783,11 +9823,6 @@ screen_description:
 	const int level = cb_get_level ($1);
 	if (set_current_field (level, $2)) {
 		YYERROR;
-	}
-	if (current_field->parent) {
-		current_field->screen_foreg = current_field->parent->screen_foreg;
-		current_field->screen_backg = current_field->parent->screen_backg;
-		current_field->screen_prompt = current_field->parent->screen_prompt;
 	}
   }
   control_definition
@@ -9797,41 +9832,7 @@ screen_description:
   _control_attributes
   _screen_options	/* FIXME: must be included in control_attributes */
   {
-	cob_flags_t	flags;
-
-	if (current_field->parent) {
-		flags = current_field->parent->screen_flag;
-		flags &= ~COB_SCREEN_BLANK_LINE;
-		flags &= ~COB_SCREEN_BLANK_SCREEN;
-		flags &= ~COB_SCREEN_ERASE_EOL;
-		flags &= ~COB_SCREEN_ERASE_EOS;
-		flags &= ~COB_SCREEN_LINE_PLUS;
-		flags &= ~COB_SCREEN_LINE_MINUS;
-		flags &= ~COB_SCREEN_COLUMN_PLUS;
-		flags &= ~COB_SCREEN_COLUMN_MINUS;
-
-		flags = zero_conflicting_flags (current_field->screen_flag,
-						flags);
-
-		current_field->screen_flag |= flags;
-	}
-
-	if (current_field->screen_flag & COB_SCREEN_INITIAL) {
-		if (!(current_field->screen_flag & COB_SCREEN_INPUT)) {
-			cb_error (_("INITIAL specified on non-input field"));
-		}
-	}
-	if (!qualifier) {
-		current_field->flag_filler = 1;
-	}
-
-	if (!description_field) {
-		description_field = current_field;
-	}
-	if (current_field->flag_occurs
-	 && !has_relative_pos (current_field)) {
-		cb_error (_("relative LINE/COLUMN clause required with OCCURS"));
-	}
+	validate_screen_attributes ();
 	cobc_cs_check = CB_CS_SCREEN;
   }
   /* entry for error recovery */
@@ -10032,14 +10033,15 @@ screen_option:
   }
 | COLOR _is num_id_or_lit
   {
-#if 0 /* TODO: implement, and add reverse to BACKGROUND/FOREGROUND-COLOR */
-	check_repeated ("COLOR", SYN_CLAUSE_19, &check_pic_duplicate);
-	set_screen_attr_with_conflict ("COLOR", COB_SCREEN_COLOR,
-				       "BACKGROUND-COLOR", COB_SCREEN_BACKGROUND_COLOR);
-	set_screen_attr_with_conflict ("COLOR", COB_SCREEN_COLOR,
-				       "FOREGROUND-COLOR", FOREGROUND_COLOR);
-#endif
-	CB_PENDING ("COLOR clause");
+	check_repeated ("COLOR", SYN_CLAUSE_25, &check_pic_duplicate);
+	current_field->screen_color = $3;
+	CB_PENDING ("COLOR clause (SCREEN)");	/* no place in cob_screen */
+  }
+| CONTROL _is control_source
+  {
+	check_repeated ("CONTROL", SYN_CLAUSE_24, &check_duplicate);
+	current_field->screen_control = $3;
+	CB_PENDING ("CONTROL clause (SCREEN)");	/* no place in cob_screen */
   }
 | FOREGROUND_COLOR _is num_id_or_lit
   {
@@ -11824,7 +11826,7 @@ accept_clause:
   {
 	check_repeated (_("TIME-OUT or BEFORE TIME clauses"), SYN_CLAUSE_4,
 			&check_duplicate);
-	set_attribs (NULL, NULL, NULL, $3, NULL, NULL, 0);
+	set_attribs (0, NULL, NULL, NULL, $3, NULL, NULL, NULL, NULL, NULL);
   }
 ;
 
@@ -11941,22 +11943,39 @@ accp_attr:
 	check_repeated ("BLINK", SYN_CLAUSE_8, &check_duplicate);
 	set_dispattr (COB_SCREEN_BLINK);
   }
-| CONVERSION
-  {
-	check_repeated ("CONVERSION", SYN_CLAUSE_9, &check_duplicate);
-	CB_PENDING ("ACCEPT CONVERSION");
-  }
-| CURSOR _is positive_id_or_lit
+| COLOR _is num_id_or_lit
   {
 	/* FIXME: arithmetic expression should be possible, too! */
-	if (current_program->cursor_pos) {
-		emit_duplicate_clause_message ("CURSOR");
-	} else {
-		/* TODO: actually reasonable and easy extension: an
-		         *offset within the field* [auto-correct to 1/max]
-				 (when variable also stored back on return)
-		*/
-		CB_PENDING ("ACCEPT ... WITH CURSOR");
+	check_repeated ("COLOR", SYN_CLAUSE_30, &check_duplicate);
+	set_attribs (0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, $3, NULL);
+  }
+| CONTROL _is control_source
+  {
+	check_repeated ("CONTROL", SYN_CLAUSE_31, &check_duplicate);
+	set_attribs (0, NULL, NULL, NULL, NULL, NULL, NULL, $3, NULL, NULL);
+  }
+| CONVERSION
+  {
+	/* note: aliased by CONVERT */
+	check_repeated ("CONVERSION", SYN_CLAUSE_9, &check_duplicate);
+	set_dispattr (COB_SCREEN_CONV);
+	CB_PENDING ("ACCEPT CONVERSION");
+  }
+| CURSOR positive_id_or_lit
+  {
+	/* FIXME: arithmetic expression should be possible, too! */
+	struct cb_program *prog = current_program;
+	while (prog) {
+		if (!prog->nested_level) {
+			if (prog->cursor_pos) {
+				emit_duplicate_clause_message ("CURSOR");
+			} else {
+				check_repeated ("CURSOR", SYN_CLAUSE_32, &check_duplicate);
+				set_attribs (0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, $2);
+			}
+			break;
+		}
+		prog = prog->next_program;
 	}
   }
 | FULL
@@ -12030,7 +12049,7 @@ accp_attr:
   {
 	/* Note: CHARACTER optional in ACUCOBOL, required by others */
 	check_repeated ("PROMPT", SYN_CLAUSE_17, &check_duplicate);
-	set_attribs (NULL, NULL, NULL, NULL, $4, NULL, COB_SCREEN_PROMPT);
+	set_attribs (COB_SCREEN_PROMPT, NULL, NULL, NULL, NULL, $4, NULL, NULL, NULL, NULL);
   }
 | PROMPT
   {
@@ -12057,7 +12076,7 @@ accp_attr:
   {
 	/* FIXME: arithmetic expression should be possible, too! */
 	check_repeated ("SIZE", SYN_CLAUSE_21, &check_duplicate);
-	set_attribs (NULL, NULL, NULL, NULL, NULL, $4, 0);
+	set_attribs (0, NULL, NULL, NULL, NULL, NULL, $4, NULL, NULL, NULL);
   }
 | UNDERLINE
   {
@@ -12082,22 +12101,15 @@ accp_attr:
 	set_dispattr_with_conflict ("UPPER", COB_SCREEN_UPPER,
 				    "LOWER", COB_SCREEN_LOWER);
   }
-| COLOR _is num_id_or_lit
-  {
-	/* FIXME: arithmetic expression should be possible, too! */
-	check_repeated ("FOREGROUND-COLOR", SYN_CLAUSE_26, &check_duplicate);
-	check_repeated ("BACKGROUND-COLOR", SYN_CLAUSE_27, &check_duplicate);
-	CB_PENDING ("COLOR");
-  }
 | FOREGROUND_COLOR _is num_id_or_lit
   {
 	check_repeated ("FOREGROUND-COLOR", SYN_CLAUSE_26, &check_duplicate);
-	set_attribs ($3, NULL, NULL, NULL, NULL, NULL, 0);
+	set_attribs (0, $3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
   }
 | BACKGROUND_COLOR _is num_id_or_lit
   {
 	check_repeated ("BACKGROUND-COLOR", SYN_CLAUSE_27, &check_duplicate);
-	set_attribs (NULL, $3, NULL, NULL, NULL, NULL, 0);
+	set_attribs (0, NULL, $3, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
   }
 | SCROLL _up _scroll_lines
   {
@@ -12117,7 +12129,7 @@ accp_attr:
   {
 	check_repeated (_("TIME-OUT or BEFORE TIME clauses"), SYN_CLAUSE_4,
 			&check_duplicate);
-	set_attribs (NULL, NULL, NULL, $3, NULL, NULL, 0);
+	set_attribs (0, NULL, NULL, NULL, $3, NULL, NULL, NULL, NULL, NULL);
   }
 | _control KEY _in key_dest
 ;
@@ -13079,6 +13091,8 @@ display_body:
 | screen_or_device_display _common_exception_phrases
 | _with CONVERSION screen_or_device_display _common_exception_phrases
   {
+	/* note: aliased by CONVERT */
+	set_dispattr (COB_SCREEN_CONV);
 	CB_PENDING ("DISPLAY WITH CONVERSION");
   }
 | display_erase	/* note: may also be part of display_pos_specifier */
@@ -13247,7 +13261,8 @@ display_erase:
   }
   _with_display_attr
   {
-	cb_emit_display (CB_LIST_INIT (cb_space), cb_null, cb_int1, line_column, NULL, 1, FIELD_ON_SCREEN_DISPLAY);
+	cb_emit_display (CB_LIST_INIT (cb_space), cb_null, cb_int1, line_column,
+		current_statement->attr_ptr, 1, FIELD_ON_SCREEN_DISPLAY);
   }
 ;
 
@@ -13256,7 +13271,8 @@ display_pos_specifier:
             would allow combination of multiple formats ...*/
   field_or_literal_or_erase_with_pos_specifier _with_display_attr
   {
-	cb_emit_display ($1, cb_null, cb_int1, line_column, NULL, 1, FIELD_ON_SCREEN_DISPLAY);
+	cb_emit_display ($1, cb_null, cb_int1, line_column,
+		current_statement->attr_ptr, 1, FIELD_ON_SCREEN_DISPLAY);
   }
 ;
 
@@ -13563,10 +13579,22 @@ disp_attr:
 	check_repeated ("BLINK", SYN_CLAUSE_7, &check_duplicate);
 	set_dispattr (COB_SCREEN_BLINK);
   }
+| COLOR _is num_id_or_lit
+  {
+	check_repeated ("COLOR", SYN_CLAUSE_21, &check_duplicate);
+	set_attribs (0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, $3, NULL);
+  }
+| CONTROL _is control_source
+  {
+	check_repeated ("CONTROL", SYN_CLAUSE_22, &check_duplicate);
+	set_attribs (0, NULL, NULL, NULL, NULL, NULL, NULL, $3, NULL, NULL);
+  }
 | CONVERSION
   {
+	/* note: aliased by CONVERT */
 	check_repeated ("CONVERSION", SYN_CLAUSE_8, &check_duplicate);
-	cb_warning (COBC_WARN_FILLER, _("ignoring %s phrase"), "CONVERSION");
+	set_dispattr (COB_SCREEN_CONV);
+	CB_PENDING ("CONVERSION");
   }
 | ERASE eol
   {
@@ -13628,28 +13656,22 @@ disp_attr:
 | SIZE _is num_id_or_lit
   {
 	check_repeated ("SIZE", SYN_CLAUSE_15, &check_duplicate);
-	set_attribs (NULL, NULL, NULL, NULL, NULL, $3, 0);
+	set_attribs (0, NULL, NULL, NULL, NULL, NULL, $3, NULL, NULL, NULL);
   }
 | UNDERLINE
   {
 	check_repeated ("UNDERLINE", SYN_CLAUSE_16, &check_duplicate);
 	set_dispattr (COB_SCREEN_UNDERLINE);
   }
-| COLOR _is num_id_or_lit
-  {
-	check_repeated ("FOREGROUND-COLOR", SYN_CLAUSE_17, &check_duplicate);
-	check_repeated ("BACKGROUND-COLOR", SYN_CLAUSE_18, &check_duplicate);
-	CB_PENDING ("COLOR");
-  }
 | FOREGROUND_COLOR _is_equal num_id_or_lit
   {
 	check_repeated ("FOREGROUND-COLOR", SYN_CLAUSE_17, &check_duplicate);
-	set_attribs ($3, NULL, NULL, NULL, NULL, NULL, 0);
+	set_attribs (0, $3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
   }
 | BACKGROUND_COLOR _is_equal num_id_or_lit
   {
 	check_repeated ("BACKGROUND-COLOR", SYN_CLAUSE_18, &check_duplicate);
-	set_attribs (NULL, $3, NULL, NULL, NULL, NULL, 0);
+	set_attribs (0, NULL, $3, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
   }
 | SCROLL _up _scroll_lines
   {
@@ -13665,6 +13687,11 @@ disp_attr:
 				   "SCROLL DOWN", COB_SCREEN_SCROLL_DOWN,
 				   "SCROLL UP", COB_SCREEN_SCROLL_UP);
   }
+;
+
+control_source:
+  display_identifier	{ $$ = $1; }
+| alphanumeric_literal	{ $$ = $1; }
 ;
 
 _end_display:
@@ -18919,6 +18946,18 @@ arith_nonzero_x:
   }
 ;
 
+alphanumeric_literal:
+  LITERAL
+  {
+	if (CB_TREE_CATEGORY ($1) != CB_CATEGORY_ALPHANUMERIC) {
+		cb_error_x ($1, _("an alphanumeric literal is expected here"));
+		$$ = cb_error_node;
+	} else {
+		$$ = $1;
+	}
+  }
+;
+
 numeric_literal:
   LITERAL
   {
@@ -20025,9 +20064,9 @@ _dot:
   }
 ;
 
-_dot_or_else_end_of_file_control:
+dot_or_else_end_of_file_control:
   TOK_DOT
-| _file_control_end_delimiter
+| file_control_end_delimiter
   {
 	if (! cb_verify (cb_missing_period, _("optional period"))) {
 		YYERROR;
@@ -20045,10 +20084,10 @@ level_number_in_area_a:
   }
 ;
 
-_dot_or_else_end_of_file_description:
+dot_or_else_end_of_file_description:
   TOK_DOT
-| level_number_in_area_a
-| _file_description_end_delimiter
+| level_number_in_area_a	/* repeats last token */
+| file_description_end_delimiter
   {
 	if (! cb_verify (cb_missing_period, _("optional period"))) {
 		YYERROR;
@@ -20057,19 +20096,19 @@ _dot_or_else_end_of_file_description:
   }
 ;
 
-_dot_or_else_end_of_communication_description:
-_dot_or_else_end_of_record_description;
+dot_or_else_end_of_communication_description:
+dot_or_else_end_of_record_description;
 
-_dot_or_else_end_of_report_description:
-_dot_or_else_end_of_record_description;
+dot_or_else_end_of_report_description:
+dot_or_else_end_of_record_description;
 
-_dot_or_else_end_of_report_group_description:
-_dot_or_else_end_of_record_description;
+dot_or_else_end_of_report_group_description:
+dot_or_else_end_of_record_description;
 
-_dot_or_else_end_of_record_description:
+dot_or_else_end_of_record_description:
   TOK_DOT
-| level_number_in_area_a
-| _record_description_end_delimiter
+| level_number_in_area_a	/* repeats last token */
+| record_description_end_delimiter
   {
 	if (! cb_verify (cb_missing_period, _("optional period"))) {
 		YYERROR;
@@ -20078,15 +20117,14 @@ _dot_or_else_end_of_record_description:
   }
 ;
 
-_file_control_end_delimiter:
+file_control_end_delimiter:
   SELECT | I_O_CONTROL | DATA | PROCEDURE;
 
-_file_description_end_delimiter:
-  LEVEL_NUMBER | TOK_FILE | PROCEDURE;
+file_description_end_delimiter:
+  TOK_FILE | PROCEDURE;
 
-_record_description_end_delimiter:
-  LEVEL_NUMBER | PROCEDURE | COMMUNICATION | LOCAL_STORAGE
-| LINKAGE | REPORT | SCREEN;
+record_description_end_delimiter:
+  PROCEDURE | COMMUNICATION | LOCAL_STORAGE | LINKAGE | REPORT | SCREEN;
 
 _dot_or_else_area_a:		/* in PROCEDURE DIVISION */
   TOK_DOT

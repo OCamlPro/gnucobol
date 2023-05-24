@@ -114,9 +114,8 @@ lt_dlerror (void)
 
 #endif
 
-/* Force symbol exports */
+/* include internal and external libcob definitions, forcing exports */
 #define	COB_LIB_EXPIMP
-#include "common.h"
 #include "coblocal.h"
 
 #define	COB_MAX_COBCALL_PARMS	16
@@ -1140,7 +1139,7 @@ void *
 cob_call_field (const cob_field *f, const struct cob_call_struct *cs,
 		const unsigned int errind, const int fold_case)
 {
-	char		*buff, *entry, *dirent;
+	char		*name, *entry, *dirent;
 	void		*p;
 
 	/* LCOV_EXCL_START */
@@ -1149,23 +1148,23 @@ cob_call_field (const cob_field *f, const struct cob_call_struct *cs,
 	}
 	/* LCOV_EXCL_STOP */
 
-	buff = cob_get_buff (f->size + 1);
-	cob_field_to_string (f, buff, f->size);
+	name = cob_get_buff (f->size + 1);
+	cob_field_to_string (f, name, f->size, CCM_NONE);
 
 	/* check for uncommon leading space - trim it */
-	if (*buff == ' ') {
+	if (*name == ' ') {
 		size_t				len;
 		/* same warning as in cobc/typeck.c */
 		cob_runtime_warning (
-			_("'%s' literal includes leading spaces which are omitted"), buff);
-		len = strlen (buff);
-		while (*buff == ' ') {
-			memmove (buff, buff + 1, --len);
+			_("'%s' literal includes leading spaces which are omitted"), name);
+		len = strlen (name);
+		while (*name == ' ') {
+			memmove (name, name + 1, --len);
 		}
-		buff[len] = 0;
+		name[len] = 0;
 	}
 
-	entry = cob_chk_call_path (buff, &dirent);
+	entry = cob_chk_call_path (name, &dirent);
 
 	/* Check if contained program - which may override otherwise
 	   loaded programs */
@@ -1279,7 +1278,7 @@ cob_cancel_field (const cob_field *f, const struct cob_call_struct *cs)
 		return;
 	}
 	name = cob_get_buff (f->size + 1);
-	cob_field_to_string (f, name, f->size);
+	cob_field_to_string (f, name, f->size, CCM_NONE);
 	entry = cob_chk_dirp (name);
 
 	/* Check if contained program */
