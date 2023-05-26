@@ -87,6 +87,15 @@
 #define WITH_EXTENDED_SCREENIO
 #endif
 
+/* work around broken system headers or compile flags defining
+   NCURSES_WIDECHAR / PDC_WIDE but not including the actual definitions */
+#if defined (NCURSES_WIDECHAR) && !defined (WACS_HLINE)
+#undef NCURSES_WIDECHAR
+#endif
+#if defined (PDC_WIDE) && !defined (WACS_HLINE)
+#undef PDC_WIDE
+#endif
+
 /* include internal and external libcob definitions, forcing exports */
 #define	COB_LIB_EXPIMP
 #include "coblocal.h"
