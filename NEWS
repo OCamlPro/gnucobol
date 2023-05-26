@@ -427,6 +427,10 @@ NEWS - user visible changes				-*- outline -*-
 	  (implied with --debug and -fec), especially when many "simple"
 	  statements or lot of sections/paragraphs are used (re-compile needed)
 
+* New system functions
+
+  CBL_GC_SET_SCR_SIZE  option to resize extended screen
+
 * New build features
 
 ** configure now honors BDB_LIBS and BDB_CFLAGS

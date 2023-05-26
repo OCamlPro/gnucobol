@@ -651,7 +651,8 @@ struct parse_control
 	cob_flags_t     cobflag;
 };
 
-/* binary sorted list of known attribute names and their value */
+/* binary sorted list of known attribute names and their value,
+   note : the actual list is compiler specific, we support all */
 static struct parse_control control_attrs[] = {
 	{ "AUTO"                , COB_SCREEN_AUTO         } ,
 	{ "AUTO-SKIP"           , COB_SCREEN_AUTO         } ,
@@ -692,7 +693,7 @@ static struct parse_control control_attrs[] = {
 	{ "REVERSE"             , COB_SCREEN_REVERSE      } ,
 	{ "REVERSE-VIDEO"       , COB_SCREEN_REVERSE      } ,
 	{ "RIGHT-JUSTIFY"       , -1                      } ,
-	{ "SECURE"              , COB_SCREEN_SECURE       } ,
+	{ "RIGHTLINE"           , COB_SCREEN_RIGHTLINE    } ,	/* GC extension */
 	{ "TAB"                 , COB_SCREEN_TAB          } ,
 	{ "TRAILING"            , -1                      } ,
 	{ "TRAILING-SIGN"       , -1                      } ,
@@ -925,6 +926,15 @@ cob_screen_attr (cob_field *fgc, cob_field *bgc, cob_flags_t attr,
 	}
 	if (attr & COB_SCREEN_UNDERLINE) {
 		styles |= A_UNDERLINE;
+	}
+	if (attr & COB_SCREEN_OVERLINE) {
+		styles |= A_OVERLINE;
+	}
+	if (attr & COB_SCREEN_LEFTLINE) {
+		styles |= A_LEFTLINE;
+	}
+	if (attr & COB_SCREEN_RIGHTLINE) {
+		styles |= A_RIGHTLINE;
 	}
 
 	/* apply attributes */
@@ -4651,11 +4661,33 @@ cob_sys_get_scr_size (unsigned char *line, unsigned char *col)
 	/* TODO: when COBOL: set by C routines, to also work for > UCHARMAX values */
 	*line = (unsigned char)LINES;
 	*col = (unsigned char)COLS;
+	return 0;
 #else
 	*line = 24U;
 	*col = 80U;
+	cob_set_exception (COB_EC_IMP_FEATURE_DISABLED);
+	return -1;
 #endif
-	return 0;
+}
+
+/* set current screen size */
+int
+cob_sys_set_scr_size (unsigned char *line, unsigned char *col)
+{
+	COB_CHK_PARMS (CBL_SET_SCR_SIZE, 2);
+	init_cob_screen_if_needed ();
+
+#if !defined (WITH_EXTENDED_SCREENIO) || !defined (HAVE_RESIZE_TERM)
+	cob_set_exception (COB_EC_IMP_FEATURE_DISABLED);
+	return -1;
+#else
+	const int screen_row = (int)*line;
+	const int screen_col = (int)*col;
+	const int ret = resize_term (screen_row, screen_col);
+	if (ret == OK)
+		return 0;
+	return ret;
+#endif
 }
 
 int
