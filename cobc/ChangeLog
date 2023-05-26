@@ -1,4 +1,9 @@
 
+2023-05-26  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y, reserved.c: added RIGHTLINE - GC extension matching LEFLINE
+	* parser.y: drop PENDING from OVERLINE and LEFTLINE
+
 2023-05-24  Simon Sobisch <simonsobisch@gnu.org>
 
 	* cobc.c: disable unreached code removement with -O0, but keep it

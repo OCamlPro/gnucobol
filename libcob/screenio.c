@@ -911,7 +911,10 @@ cob_screen_attr (cob_field *fgc, cob_field *bgc, cob_flags_t attr,
 		adjust_attr_from_control_field (&attr, control, &fg_color, &bg_color);
 	}
 	
-	/* curses attributes from (possibly adjusted) COBOL attributes */
+	/* curses attributes from (possibly adjusted) COBOL attributes;
+	   note that several "may be ignored if not supported by the terminal"
+	   and that OVERLINE / LEFTLINE / RIGHTLINE is a curses extension
+	   in general */
 	if (attr & COB_SCREEN_REVERSE) {
 		styles |= A_REVERSE;
 	}
@@ -927,15 +930,21 @@ cob_screen_attr (cob_field *fgc, cob_field *bgc, cob_flags_t attr,
 	if (attr & COB_SCREEN_UNDERLINE) {
 		styles |= A_UNDERLINE;
 	}
+#if defined (A_OVERLINE)
 	if (attr & COB_SCREEN_OVERLINE) {
 		styles |= A_OVERLINE;
 	}
+#endif
+#if defined (A_LEFTLINE)
 	if (attr & COB_SCREEN_LEFTLINE) {
 		styles |= A_LEFTLINE;
 	}
+#endif
+#if defined (A_RIGHTLINE)
 	if (attr & COB_SCREEN_RIGHTLINE) {
 		styles |= A_RIGHTLINE;
 	}
+#endif
 
 	/* apply attributes */
 	attrset (A_NORMAL);
@@ -4650,7 +4659,7 @@ cob_sys_set_csr_pos (unsigned char *fld)
 #endif
 }
 
-/* get current screen size */
+/* CBL_GET_SCR_SIZE - get current screen size */
 int
 cob_sys_get_scr_size (unsigned char *line, unsigned char *col)
 {
@@ -4670,7 +4679,7 @@ cob_sys_get_scr_size (unsigned char *line, unsigned char *col)
 #endif
 }
 
-/* set current screen size */
+/* CBL_GC_SET_SCR_SIZE - set current screen size */
 int
 cob_sys_set_scr_size (unsigned char *line, unsigned char *col)
 {
@@ -4681,12 +4690,15 @@ cob_sys_set_scr_size (unsigned char *line, unsigned char *col)
 	cob_set_exception (COB_EC_IMP_FEATURE_DISABLED);
 	return -1;
 #else
-	const int screen_row = (int)*line;
-	const int screen_col = (int)*col;
-	const int ret = resize_term (screen_row, screen_col);
-	if (ret == OK)
-		return 0;
-	return ret;
+	{
+		const int screen_row = (int)*line;
+		const int screen_col = (int)*col;
+		const int ret = resize_term (screen_row, screen_col);
+		if (ret != OK) {
+			return ret;
+		}
+	}
+	return 0;
 #endif
 }
 
