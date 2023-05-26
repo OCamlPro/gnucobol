@@ -175,6 +175,7 @@ AH_TEMPLATE([COB_32_BIT_LONG], [long int is 32 bits])
 AH_TEMPLATE([COB_64_BIT_POINTER], [Pointers are longer than 32 bits])
 AH_TEMPLATE([WITH_CURSES], [curses library for extended SCREEN I/O])
 AH_TEMPLATE([HAVE_COLOR_SET], [curses has color_set function])
+AH_TEMPLATE([HAVE_RESIZE_TERM], [curses has resize_term function])
 AH_TEMPLATE([HAVE_DEFINE_KEY], [curses has define_key function])
 AH_TEMPLATE([HAVE_MOUSEINTERVAL], [curses has mouseinterval function])
 AH_TEMPLATE([HAVE_HAS_MOUSE], [curses has has_mouse function])
@@ -1442,6 +1443,27 @@ if test "$USE_CURSES" != no -a "$USE_CURSES" != "not_found"; then
 	color_set (0, NULL);
 	]])],
 	[AC_DEFINE([HAVE_COLOR_SET], [1]) AC_MSG_RESULT([yes])],
+	[AC_MSG_RESULT([no])],
+	[])
+
+	AC_MSG_CHECKING([for curses resize_term function])
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+	#ifdef HAVE_NCURSESW_NCURSES_H
+	#include <ncursesw/ncurses.h>
+	#elif defined (HAVE_NCURSESW_CURSES_H)
+	#include <ncursesw/curses.h>
+	#elif defined (HAVE_NCURSES_H)
+	#include <ncurses.h>
+	#elif defined (HAVE_NCURSES_NCURSES_H)
+	#include <ncurses/ncurses.h>
+	#elif defined (HAVE_PDCURSES_H)
+	#include <pdcurses.h>
+	#elif defined (HAVE_CURSES_H)
+	#include <curses.h>
+	#endif]], [[
+	resize_term (20,20);
+	]])],
+	[AC_DEFINE([HAVE_RESIZE_TERM], [1]) AC_MSG_RESULT([yes])],
 	[AC_MSG_RESULT([no])],
 	[])
 

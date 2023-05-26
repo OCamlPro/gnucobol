@@ -1,4 +1,12 @@
 
+2023-05-25  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
+
+	* screenio.c: added new function cob_sys_set_scr_size
+	  and changed cob_sys_get_scr_size to create exception if
+	  not supported
+	* common.h: added new export for cob_sys_set_scr_size
+	* system.def: added new CBL_GC_SET_SCR_SIZE definition
+
 2023-05-23  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.h: added COB_SCREEN_GRAPHICS attribute
@@ -13,7 +21,7 @@
 	* screenio.c (handle_control_field_color, get_cob_color_from_color_value):
 	  passing length parameter
 
-2023-05-14  Chuck Haatvedt <chuck.haatvedt@gmail.com>
+2023-05-14  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	* screenio.c (adjust_attr_from_control_field, control_attrs):
 	  replaced proof-of-concept by actual parsing function using new
@@ -229,7 +237,7 @@
 	* numeric.c (cob_set_packed_int, cob_decimal_get_packed): minor performance
 	  tuning
 
-2023-03-28  Chuck Haatvedt <chuck.haatvedt@gmail.com>
+2023-03-28  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
 	* numeric.c (cob_shift_left_nibble, cob_shift_right_nibble): variants of
 	  insert_packed_aligned for cob_move_bcd
