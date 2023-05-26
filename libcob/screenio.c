@@ -1448,174 +1448,174 @@ cob_addnstr_graph (const char *data, const int size)
 #if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
 			add_wch (WACS_LRCORNER);
 #else
-			add_wch (ACS_LRCORNER);
+			addch (ACS_LRCORNER);
 #endif
 			break;
 		case 'J':	/* lower-right corner, double */
 #if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
 			add_wch (WACS_D_LRCORNER);
 #elif defined (ACS_D_LRCORNER)
-			add_wch (ACS_D_LRCORNER);
+			addch (ACS_D_LRCORNER);
 #else
-			add_wch (ACS_LRCORNER);
+			addch (ACS_LRCORNER);
 #endif
 			break;
 		case 'k':	/* upper-right corner */
 #if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
 			add_wch (WACS_URCORNER);
 #else
-			add_wch (ACS_URCORNER);
+			addch (ACS_URCORNER);
 #endif
 			break;
 		case 'K':	/* upper-right corner, double */
 #if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
 			add_wch (WACS_D_URCORNER);
 #elif defined (ACS_D_URCORNER)
-			add_wch (ACS_D_URCORNER);
+			addch (ACS_D_URCORNER);
 #else
-			add_wch (ACS_URCORNER);
+			addch (ACS_URCORNER);
 #endif
 			break;
 		case 'm':	/* lower-left corner */
 #if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
 			add_wch (WACS_LLCORNER);
 #else
-			add_wch (ACS_LLCORNER);
+			addch (ACS_LLCORNER);
 #endif
 			break;
 		case 'M':	/* lower-left corner, double */
 #if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
 			add_wch (WACS_D_LLCORNER);
 #elif defined (ACS_D_LLCORNER)
-			add_wch (ACS_D_LLCORNER);
+			addch (ACS_D_LLCORNER);
 #else
-			add_wch (ACS_LLCORNER);
+			addch (ACS_LLCORNER);
 #endif
 			break;
 		case 'l':	/* upper-left corner */
 #if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
 			add_wch (WACS_ULCORNER);
 #else
-			add_wch (ACS_ULCORNER);
+			addch (ACS_ULCORNER);
 #endif
 			break;
 		case 'L':	/* upper-left corner, double */
 #if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
 			add_wch (WACS_D_ULCORNER);
 #elif defined (ACS_D_ULCORNER)
-			add_wch (ACS_D_ULCORNER);
+			addch (ACS_D_ULCORNER);
 #else
-			add_wch (ACS_ULCORNER);
+			addch (ACS_ULCORNER);
 #endif
 			break;
 		case 'n':	/* plus */
 #if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
 			add_wch (WACS_PLUS);
 #else
-			add_wch (ACS_PLUS);
+			addch (ACS_PLUS);
 #endif
 			break;
 		case 'N':	/* plus, double */
 #if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
 			add_wch (WACS_D_PLUS);
 #elif defined (ACS_D_PLUS)
-			add_wch (ACS_D_PLUS);
+			addch (ACS_D_PLUS);
 #else
-			add_wch (ACS_PLUS);
+			addch (ACS_PLUS);
 #endif
 			break;
 		case 'q':	/* horizontal line */
 #if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
 			add_wch (WACS_HLINE);
 #else
-			add_wch (ACS_HLINE);
+			addch (ACS_HLINE);
 #endif
 			break;
 		case 'Q':	/* horizontal line, double */
 #if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
 			add_wch (WACS_D_HLINE);
 #elif defined (ACS_D_HLINE)
-			add_wch (ACS_D_HLINE);
+			addch (ACS_D_HLINE);
 #else
-			add_wch (ACS_HLINE);
+			addch (ACS_HLINE);
 #endif
 			break;
 		case 'x':	/* vertical line */
 #if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
 			add_wch (WACS_VLINE);
 #else
-			add_wch (ACS_VLINE);
+			addch (ACS_VLINE);
 #endif
 			break;
 		case 'X':	/* vertical line, double */
 #if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
 			add_wch (WACS_D_VLINE);
 #elif defined (ACS_D_VLINE)
-			add_wch (ACS_D_VLINE);
+			addch (ACS_D_VLINE);
 #else
-			add_wch (ACS_VLINE);
+			addch (ACS_VLINE);
 #endif
 			break;
 		case 't':	/* left tee */
 #if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
 			add_wch (WACS_LTEE);
 #else
-			add_wch (ACS_LTEE);
+			addch (ACS_LTEE);
 #endif
 			break;
 		case 'T':	/* left tee , double */
 #if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
 			add_wch (WACS_D_LTEE);
 #elif defined (ACS_D_LTEE)
-			add_wch (ACS_D_LTEE);
+			addch (ACS_D_LTEE);
 #else
-			add_wch (ACS_LTEE);
+			addch (ACS_LTEE);
 #endif
 			break;
 		case 'u':	/* right tee */
 #if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
 			add_wch (WACS_RTEE);
 #else
-			add_wch (ACS_RTEE);
+			addch (ACS_RTEE);
 #endif
 			break;
 		case 'U':	/* right tee , double */
 #if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
 			add_wch (WACS_D_RTEE);
 #elif defined (ACS_D_RTEE)
-			add_wch (ACS_D_RTEE);
+			addch (ACS_D_RTEE);
 #else
-			add_wch (ACS_RTEE);
+			addch (ACS_RTEE);
 #endif
 			break;
 		case 'v':	/* bottom tee */
 #if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
 			add_wch (WACS_BTEE);
 #else
-			add_wch (ACS_BTEE);
+			addch (ACS_BTEE);
 #endif
 			break;
 		case 'V':	/* bottom tee , double */
 #if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
 			add_wch (WACS_D_BTEE);
 #elif defined (ACS_D_BTEE)
-			add_wch (ACS_D_BTEE);
+			addch (ACS_D_BTEE);
 #else
-			add_wch (ACS_BTEE);
+			addch (ACS_BTEE);
 #endif
 			break;
 		case 'w':	/* top tee */
 #if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
 			add_wch (WACS_TTEE);
 #else
-			add_wch (ACS_TTEE);
+			addch (ACS_TTEE);
 #endif
 			break;
 		case 'W':	/* top tee , double */
 #if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
 			add_wch (WACS_D_TTEE);
 #elif defined (ACS_D_TTEE)
-			add_wch (ACS_D_TTEE);
+			addch (ACS_D_TTEE);
 #else
 			addch (ACS_TTEE);
 #endif
