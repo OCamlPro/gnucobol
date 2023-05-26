@@ -1,11 +1,18 @@
 
+2023-05-26  Simon Sobisch <simonsobisch@gnu.org>
+
+	* common.h: added COB_SCREEN_RIGHTLINE, GC extension matching LEFTLINE
+	* screenio.c (cob_screen_attr): place curses extensions within #ifdef
+
 2023-05-25  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 
-	* screenio.c: added new function cob_sys_set_scr_size
-	  and changed cob_sys_get_scr_size to create exception if
-	  not supported
-	* common.h: added new export for cob_sys_set_scr_size
-	* system.def: added new CBL_GC_SET_SCR_SIZE definition
+	* screenio.c (cob_sys_set_scr_size), common.h, system.def: added as
+	  system library call CBL_GC_SET_SCR_SIZE
+	* screenio.c (cob_sys_get_scr_size): create exception and return -1
+	  if not supported
+	* screenio.c (control_attrs): handle RIGHTLINE (GC extension to CONTROL)
+	* screenio.c (cob_screen_attr): set attributes for OVERLINE, LEFTLINE,
+	  RIGHTLINE
 
 2023-05-23  Simon Sobisch <simonsobisch@gnu.org>
 

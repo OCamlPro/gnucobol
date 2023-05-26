@@ -3141,6 +3141,7 @@ set_record_size (cb_tree min, cb_tree max)
 %token RH
 %token RIGHT
 %token RIGHT_ALIGN		"RIGHT-ALIGN"
+%token RIGHTLINE
 %token RIMMED
 %token ROLLBACK
 %token ROUNDED
@@ -9953,7 +9954,6 @@ screen_option:
 | OVERLINE
   {
 	set_screen_attr ("OVERLINE", COB_SCREEN_OVERLINE);
-	CB_PENDING ("OVERLINE");
   }
 | GRID
   {
@@ -9963,7 +9963,10 @@ screen_option:
 | LEFTLINE
   {
 	set_screen_attr ("LEFTLINE", COB_SCREEN_LEFTLINE);
-	CB_PENDING ("LEFTLINE");
+  }
+| RIGHTLINE
+  {
+	set_screen_attr ("RIGHTLINE", COB_SCREEN_RIGHTLINE);
   }
 | AUTO
   {
@@ -11988,6 +11991,11 @@ accp_attr:
 	check_repeated ("LEFTLINE", SYN_CLAUSE_12, &check_duplicate);
 	set_dispattr (COB_SCREEN_LEFTLINE);
   }
+| RIGHTLINE
+  {
+	check_repeated ("RIGHTLINE", SYN_CLAUSE_12, &check_duplicate);
+	set_dispattr (COB_SCREEN_RIGHTLINE);
+  }
 | LOWER
   {
 	check_repeated ("LOWER", SYN_CLAUSE_13, &check_duplicate);
@@ -12045,6 +12053,11 @@ accp_attr:
 	check_repeated ("OVERLINE", SYN_CLAUSE_16, &check_duplicate);
 	set_dispattr (COB_SCREEN_OVERLINE);
   }
+| UNDERLINE
+  {
+	check_repeated ("UNDERLINE", SYN_CLAUSE_22, &check_duplicate);
+	set_dispattr (COB_SCREEN_UNDERLINE);
+  }
 | PROMPT _character _is id_or_lit
   {
 	/* Note: CHARACTER optional in ACUCOBOL, required by others */
@@ -12077,11 +12090,6 @@ accp_attr:
 	/* FIXME: arithmetic expression should be possible, too! */
 	check_repeated ("SIZE", SYN_CLAUSE_21, &check_duplicate);
 	set_attribs (0, NULL, NULL, NULL, NULL, NULL, $4, NULL, NULL, NULL);
-  }
-| UNDERLINE
-  {
-	check_repeated ("UNDERLINE", SYN_CLAUSE_22, &check_duplicate);
-	set_dispattr (COB_SCREEN_UNDERLINE);
   }
 | NO update_default
   {
