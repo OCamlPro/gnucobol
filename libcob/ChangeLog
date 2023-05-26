@@ -3,6 +3,11 @@
 
 	* common.h: added COB_SCREEN_RIGHTLINE, GC extension matching LEFTLINE
 	* screenio.c (cob_screen_attr): place curses extensions within #ifdef
+	* screenio.c (cob_screen_attr): return attr which may be adjusted by
+	  parsing COLOR / CONTROL attributes
+	* screenio.c (cob_addnstr_graph): variant of cob_addnstr for CONTROL
+	  GRAPHICS that outputs each character / WACS symbols separately
+	* screenio.c (cob_screen_puts, field_display): handle COB_SCREEN_GRAPHICS
 
 2023-05-25  Chuck Haatvedt <chuck.haatvedt+cobol@gmail.com>
 

@@ -881,7 +881,7 @@ adjust_attr_from_control_field (cob_flags_t *attr, cob_field *control,
 	}
 }
 
-static void
+static cob_flags_t
 cob_screen_attr (cob_field *fgc, cob_field *bgc, cob_flags_t attr,
 		 cob_field *control, cob_field *color, const enum screen_statement stmt)
 {
@@ -989,6 +989,7 @@ cob_screen_attr (cob_field *fgc, cob_field *bgc, cob_flags_t attr,
 	if (attr & COB_SCREEN_BELL) {
 		cob_beep ();
 	}
+	return attr;
 }
 
 static int
@@ -1423,6 +1424,199 @@ cob_addnstr (const char *data, const int size)
 	addnstr (data, size);
 }
 
+/* variant of cob_addnstr that outputs each character separately,
+   replacing special values by WACS symbols for CONTROL GRAPHICS */
+static void
+cob_addnstr_graph (const char *data, const int size)
+{
+	int	count;
+	raise_ec_on_truncation (size);
+	
+	for (count = 0; count < size; count++) {
+		const char c = *data++;
+		switch (c) {
+		case 'j':	/* lower-right corner */
+#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+			add_wch (WACS_LRCORNER);
+#else
+			add_wch (ACS_LRCORNER);
+#endif
+			break;
+		case 'J':	/* lower-right corner, double */
+#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+			add_wch (WACS_D_LRCORNER);
+#elif defined (ACS_D_LRCORNER)
+			add_wch (ACS_D_LRCORNER);
+#else
+			add_wch (ACS_LRCORNER);
+#endif
+			break;
+		case 'k':	/* upper-right corner */
+#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+			add_wch (WACS_URCORNER);
+#else
+			add_wch (ACS_URCORNER);
+#endif
+			break;
+		case 'K':	/* upper-right corner, double */
+#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+			add_wch (WACS_D_URCORNER);
+#elif defined (ACS_D_URCORNER)
+			add_wch (ACS_D_URCORNER);
+#else
+			add_wch (ACS_URCORNER);
+#endif
+			break;
+		case 'm':	/* lower-left corner */
+#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+			add_wch (WACS_LLCORNER);
+#else
+			add_wch (ACS_LLCORNER);
+#endif
+			break;
+		case 'M':	/* lower-left corner, double */
+#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+			add_wch (WACS_D_LLCORNER);
+#elif defined (ACS_D_LLCORNER)
+			add_wch (ACS_D_LLCORNER);
+#else
+			add_wch (ACS_LLCORNER);
+#endif
+			break;
+		case 'l':	/* upper-left corner */
+#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+			add_wch (WACS_ULCORNER);
+#else
+			add_wch (ACS_ULCORNER);
+#endif
+			break;
+		case 'L':	/* upper-left corner, double */
+#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+			add_wch (WACS_D_ULCORNER);
+#elif defined (ACS_D_ULCORNER)
+			add_wch (ACS_D_ULCORNER);
+#else
+			add_wch (ACS_ULCORNER);
+#endif
+			break;
+		case 'n':	/* plus */
+#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+			add_wch (WACS_PLUS);
+#else
+			add_wch (ACS_PLUS);
+#endif
+			break;
+		case 'N':	/* plus, double */
+#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+			add_wch (WACS_D_PLUS);
+#elif defined (ACS_D_PLUS)
+			add_wch (ACS_D_PLUS);
+#else
+			add_wch (ACS_PLUS);
+#endif
+			break;
+		case 'q':	/* horizontal line */
+#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+			add_wch (WACS_HLINE);
+#else
+			add_wch (ACS_HLINE);
+#endif
+			break;
+		case 'Q':	/* horizontal line, double */
+#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+			add_wch (WACS_D_HLINE);
+#elif defined (ACS_D_HLINE)
+			add_wch (ACS_D_HLINE);
+#else
+			add_wch (ACS_HLINE);
+#endif
+			break;
+		case 'x':	/* vertical line */
+#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+			add_wch (WACS_VLINE);
+#else
+			add_wch (ACS_VLINE);
+#endif
+			break;
+		case 'X':	/* vertical line, double */
+#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+			add_wch (WACS_D_VLINE);
+#elif defined (ACS_D_VLINE)
+			add_wch (ACS_D_VLINE);
+#else
+			add_wch (ACS_VLINE);
+#endif
+			break;
+		case 't':	/* left tee */
+#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+			add_wch (WACS_LTEE);
+#else
+			add_wch (ACS_LTEE);
+#endif
+			break;
+		case 'T':	/* left tee , double */
+#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+			add_wch (WACS_D_LTEE);
+#elif defined (ACS_D_LTEE)
+			add_wch (ACS_D_LTEE);
+#else
+			add_wch (ACS_LTEE);
+#endif
+			break;
+		case 'u':	/* right tee */
+#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+			add_wch (WACS_RTEE);
+#else
+			add_wch (ACS_RTEE);
+#endif
+			break;
+		case 'U':	/* right tee , double */
+#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+			add_wch (WACS_D_RTEE);
+#elif defined (ACS_D_RTEE)
+			add_wch (ACS_D_RTEE);
+#else
+			add_wch (ACS_RTEE);
+#endif
+			break;
+		case 'v':	/* bottom tee */
+#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+			add_wch (WACS_BTEE);
+#else
+			add_wch (ACS_BTEE);
+#endif
+			break;
+		case 'V':	/* bottom tee , double */
+#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+			add_wch (WACS_D_BTEE);
+#elif defined (ACS_D_BTEE)
+			add_wch (ACS_D_BTEE);
+#else
+			add_wch (ACS_BTEE);
+#endif
+			break;
+		case 'w':	/* top tee */
+#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+			add_wch (WACS_TTEE);
+#else
+			add_wch (ACS_TTEE);
+#endif
+			break;
+		case 'W':	/* top tee , double */
+#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+			add_wch (WACS_D_TTEE);
+#elif defined (ACS_D_TTEE)
+			add_wch (ACS_D_TTEE);
+#else
+			addch (ACS_TTEE);
+#endif
+			break;
+		default:
+			addch ((const chtype)c);
+		}
+	}
+}
+
 static void
 cob_addch (const chtype c)
 {
@@ -1597,7 +1791,6 @@ cob_screen_puts (cob_screen *s, cob_field *f, const cob_u32_t is_input,
 #if	0	/* RXWRXW - Attr */
 	cob_screen_attr (s->foreg, s->backg, s->attr, NULL, NULL, stmt);
 #endif
-	/* TODO: replace character by special "char" if s->attr & GRPAHICS */
 	if (s->attr & COB_SCREEN_INPUT) {
 		cob_screen_attr (s->foreg, s->backg, s->attr, NULL, NULL, stmt);
 		if (s->prompt) {
@@ -1617,8 +1810,12 @@ cob_screen_puts (cob_screen *s, cob_field *f, const cob_u32_t is_input,
 			}
 		}
 	} else if (!is_input) {
-		cob_screen_attr (s->foreg, s->backg, s->attr, NULL, NULL, stmt);
-		cob_addnstr ((char *)f->data, (int)f->size);
+		const cob_flags_t attr = cob_screen_attr (s->foreg, s->backg, s->attr, NULL, NULL, stmt);
+		if (attr & COB_SCREEN_GRAPHICS) {
+			cob_addnstr_graph ((char *)f->data, (int)f->size);
+		} else {
+			cob_addnstr ((char *)f->data, (int)f->size);
+		}
 	} else {
 		column += (int)f->size;
 		cob_move_cursor (line, column);
@@ -3132,7 +3329,7 @@ field_display (cob_field *f, cob_flags_t fattr, const int line, const int column
 		pending_accept = 1;
 	}
 
-	cob_screen_attr (fgc, bgc, fattr, control, color, DISPLAY_STATEMENT);
+	fattr = cob_screen_attr (fgc, bgc, fattr, control, color, DISPLAY_STATEMENT);
 
 	if (!(fattr & COB_SCREEN_NO_DISP)) {
 		/* figurative constant and WITH SIZE repeats the literal */
@@ -3149,8 +3346,11 @@ field_display (cob_field *f, cob_flags_t fattr, const int line, const int column
 				cob_addnstr ((char *)f->data, size_display % fsize);
 			}
 		} else {
-			/* TODO: replace character by special "char" if f->attr & GRPAHICS */
-			cob_addnstr ((char *)f->data, cob_min_int (size_display, fsize));
+			if (fattr & COB_SCREEN_GRAPHICS) {
+				cob_addnstr_graph ((char *)f->data, cob_min_int (size_display, fsize));
+			} else {
+				cob_addnstr ((char *)f->data, cob_min_int (size_display, fsize));
+			}
 			if (size_display > fsize) {
 				/* WITH SIZE larger than field displays trailing spaces */
 				cob_addnch (size_display - fsize, COB_CH_SP);
@@ -3173,7 +3373,7 @@ field_display (cob_field *f, cob_flags_t fattr, const int line, const int column
 static void
 field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolumn,
 		  cob_field *fgc, cob_field *bgc, cob_field *fscroll, cob_field *ftimeout,
-	      cob_field *prompt, cob_field *size_is, cob_field *cursor,
+		  cob_field *prompt, cob_field *size_is, cob_field *cursor,
 		  cob_field *control, cob_field *color)
 {
 	unsigned char	*p;
