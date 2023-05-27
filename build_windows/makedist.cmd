@@ -1,4 +1,4 @@
-:: Copyright (C) 2014-2022 Free Software Foundation, Inc.
+:: Copyright (C) 2014-2023 Free Software Foundation, Inc.
 :: Written by Simon Sobisch, Edward Hart
 ::
 :: This file is part of GnuCOBOL.
@@ -225,7 +225,12 @@ if exist "%ProgramFiles%\7-Zip\7z.exe" (
    goto :end
 )
 echo.
-echo %cob_build_path%%DIST_PACKAGE%.7z ready for distribution.
+
+if "%APPVEYOR%"=="True" (
+   appveyor AddMessage "%cob_build_path%%DIST_PACKAGE%.7z ready for distribution." -Category Information
+) else (
+   echo %cob_build_path%%DIST_PACKAGE%.7z ready for distribution.
+)
 
 goto :end
 
@@ -369,7 +374,8 @@ goto :eof
 setlocal
 call :set_platform_and_ext %1%
 set "stay_open="
-echo Using created GnuCOBOL distribution -%platform%- to compile extras...
+
+echo Setup using created GnuCOBOL distribution -%platform%-...
 pushd "%cob_dist_path%bin_%platform_ext%"
 call ..\set_env_vs_%platform_ext%.cmd
 if not [%VCPKG_EXPORT_DIR%]==[] (
@@ -379,6 +385,18 @@ if not [%VCPKG_EXPORT_DIR%]==[] (
 ) else (
    set "extra_include=."
 )
+
+cobcrun -vV | findstr /c:"GnuCOBOL " > vers1
+cobcrun -vV | findstr /c:MPIR /c:GMP > vers2
+set /p vers1=<vers1
+set /p vers2=<vers2
+erase /Q vers*
+if "%APPVEYOR%"=="True" (
+   appveyor AddMessage "Building extras with %vers1% %vers2%" -Category Information
+) else (
+   echo Building extras with %vers1% %vers2%
+)
+
 cobc -m -Wall -O2 -I "%extra_include%" ..\extras\CBL_OC_DUMP.cob
 if %errorlevel% neq 0 (
    echo.
