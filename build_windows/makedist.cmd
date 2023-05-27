@@ -391,11 +391,13 @@ cobcrun -vV | findstr /c:MPIR /c:GMP > vers2
 set /p vers1=<vers1
 set /p vers2=<vers2
 erase /Q vers*
-if "%APPVEYOR%"=="True" (
-   appveyor AddMessage "Building extras with %vers1% %vers2%" -Category Information
-) else (
-   echo Building extras with %vers1% %vers2%
-)
+if "%APPVEYOR%"=="True" goto :appveyor
+echo Building extras with %vers1% %vers2%
+goto :next
+:appveyor
+appveyor AddMessage "Building extras with %vers1% %vers2%" -Category Information
+goto :next
+:next
 
 cobc -m -Wall -O2 -I "%extra_include%" ..\extras\CBL_OC_DUMP.cob
 if %errorlevel% neq 0 (
