@@ -1,4 +1,9 @@
 
+2023-05-27  Simon Sobisch <simonsobisch@gnu.org>
+
+	* makedist.cmd: first addition for CI output
+	* version_cobc.rc, version_libcob.rc: updated date + rev
+
 2023-01-16  Simon Sobisch <simonsobisch@gnu.org>
 
 	* version_cobc.rc, version_libcob.rc: updated date + rev
