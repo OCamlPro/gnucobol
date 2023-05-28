@@ -404,7 +404,7 @@
 /* #undef HAVE_COLOR_SET */
 #endif
 
-/* ncurses has _nc_freeall function */
+/* curses provides function to free all memory */
 /* #undef HAVE_CURSES_FREEALL */
 
 /* Define to 1 if you have the <curses.h> header file. */
@@ -637,6 +637,9 @@
 #else
 /* #undef HAVE_REALPATH */
 #endif
+
+/* curses has resize_term function */
+#define HAVE_RESIZE_TERM 1
 
 /* Define to 1 if you have the `setenv' function. */
 /* MSC does *NOT* have `setenv' (!)
