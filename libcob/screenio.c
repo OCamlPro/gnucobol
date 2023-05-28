@@ -382,7 +382,7 @@ cob_get_color_pair (const short fg_color, const short bg_color)
 	{
 		/* some implementations (especially PDCursesMod 64-bit CHTYPE)
 		   provide more color pairs than we currently support, limit appropriate */
-		const short	max_clr_pairs = COLOR_PAIRS < SHRT_MAX ? COLOR_PAIRS : SHRT_MAX - 1;
+		const short	max_clr_pairs = COLOR_PAIRS < SHRT_MAX ? (short)COLOR_PAIRS : SHRT_MAX - 1;
 		short	color_pair_number;
 		short	fg_defined, bg_defined;
 
@@ -1095,7 +1095,7 @@ cob_screen_init (void)
 			{
 				/* some implementations (especially PDCursesMod 64-bit CHTYPE)
 				   provide more color pairs than we currently support, limit appropriate */
-				const short	max_clr_pairs = COLOR_PAIRS < SHRT_MAX ? COLOR_PAIRS : SHRT_MAX - 1;
+				const short	max_clr_pairs = COLOR_PAIRS < SHRT_MAX ? (short)COLOR_PAIRS : SHRT_MAX - 1;
 				short	color_pair_number;
 	
 				for (color_pair_number = 2; color_pair_number < max_clr_pairs; ++color_pair_number) {
@@ -1457,7 +1457,7 @@ cob_addnstr_graph (const char *data, const int size)
 #elif defined (ACS_D_LRCORNER)
 			addch (ACS_D_LRCORNER);
 #else
-			addch (ACS_LRCORNER);
+			addch ((const chtype)'+');
 #endif
 			break;
 		case 'k':	/* upper-right corner */
@@ -1473,7 +1473,7 @@ cob_addnstr_graph (const char *data, const int size)
 #elif defined (ACS_D_URCORNER)
 			addch (ACS_D_URCORNER);
 #else
-			addch (ACS_URCORNER);
+			addch ((const chtype)'+');
 #endif
 			break;
 		case 'm':	/* lower-left corner */
@@ -1489,7 +1489,7 @@ cob_addnstr_graph (const char *data, const int size)
 #elif defined (ACS_D_LLCORNER)
 			addch (ACS_D_LLCORNER);
 #else
-			addch (ACS_LLCORNER);
+			addch ((const chtype)'+');
 #endif
 			break;
 		case 'l':	/* upper-left corner */
@@ -1505,7 +1505,7 @@ cob_addnstr_graph (const char *data, const int size)
 #elif defined (ACS_D_ULCORNER)
 			addch (ACS_D_ULCORNER);
 #else
-			addch (ACS_ULCORNER);
+			addch ((const chtype)'+');
 #endif
 			break;
 		case 'n':	/* plus */
@@ -1521,7 +1521,7 @@ cob_addnstr_graph (const char *data, const int size)
 #elif defined (ACS_D_PLUS)
 			addch (ACS_D_PLUS);
 #else
-			addch (ACS_PLUS);
+			addch ((const chtype)'+');
 #endif
 			break;
 		case 'q':	/* horizontal line */
@@ -1537,7 +1537,7 @@ cob_addnstr_graph (const char *data, const int size)
 #elif defined (ACS_D_HLINE)
 			addch (ACS_D_HLINE);
 #else
-			addch (ACS_HLINE);
+			addch ((const chtype)'-');
 #endif
 			break;
 		case 'x':	/* vertical line */
@@ -1553,7 +1553,7 @@ cob_addnstr_graph (const char *data, const int size)
 #elif defined (ACS_D_VLINE)
 			addch (ACS_D_VLINE);
 #else
-			addch (ACS_VLINE);
+			addch ((const chtype)'|');
 #endif
 			break;
 		case 't':	/* left tee */
@@ -1569,7 +1569,7 @@ cob_addnstr_graph (const char *data, const int size)
 #elif defined (ACS_D_LTEE)
 			addch (ACS_D_LTEE);
 #else
-			addch (ACS_LTEE);
+			addch ((const chtype)'+');
 #endif
 			break;
 		case 'u':	/* right tee */
@@ -1585,7 +1585,7 @@ cob_addnstr_graph (const char *data, const int size)
 #elif defined (ACS_D_RTEE)
 			addch (ACS_D_RTEE);
 #else
-			addch (ACS_RTEE);
+			addch ((const chtype)'+');
 #endif
 			break;
 		case 'v':	/* bottom tee */
@@ -1601,7 +1601,7 @@ cob_addnstr_graph (const char *data, const int size)
 #elif defined (ACS_D_BTEE)
 			addch (ACS_D_BTEE);
 #else
-			addch (ACS_BTEE);
+			addch ((const chtype)'+');
 #endif
 			break;
 		case 'w':	/* top tee */
@@ -1617,7 +1617,7 @@ cob_addnstr_graph (const char *data, const int size)
 #elif defined (ACS_D_TTEE)
 			addch (ACS_D_TTEE);
 #else
-			addch (ACS_TTEE);
+			addch ((const chtype)'+');
 #endif
 			break;
 		default:
@@ -4081,8 +4081,6 @@ field_accept (cob_field *f, cob_flags_t fattr, const int sline, const int scolum
 	if (cursor) {
 		/* horizontal position stored in CURSOR clause */
 		if (!COB_FIELD_CONSTANT (cursor)) {
-			int		cline;
-			int		ccolumn;
 			getyx (stdscr, cline, ccolumn);
 			if (cline == sline) {
 				cob_set_int (cursor, ccolumn + 1 - scolumn);
@@ -4771,8 +4769,8 @@ cob_sys_get_csr_pos (unsigned char *fld)
 		/* group with sizes up to 64k (2 * 2 bytes)
 		   as used by Fujitsu (likely with a limit of
 		   254 which does _not_ apply to GnuCOBOL) */
-		const cob_u16_t bline = cline;
-		const cob_u16_t bcol = ccol;
+		const cob_u16_t bline = (cob_u16_t) cline;
+		const cob_u16_t bcol = (cob_u16_t) ccol;
 		memcpy (f->data, &bline, 2);
 		memcpy (f->data + 2, &bcol, 2);
 	} else {

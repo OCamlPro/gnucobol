@@ -11873,7 +11873,7 @@ at_line_column:
 				&check_line_col_duplicate);
 
 	if ((CB_LITERAL_P ($2) && cb_get_int ($2) == 0) || $2 == cb_zero) {
-		cb_verify (cb_accept_display_extensions, "COLUMN 0");
+		cb_verify_x ($2, cb_accept_display_extensions, "COLUMN 0");
 	}
 
 	if (!line_column) {
@@ -11895,17 +11895,15 @@ at_line_column:
 ;
 
 line_number:
-  LINE _number num_id_or_lit
+  LINE _number exp
   {
-	/* FIXME: arithmetic expression should be possible, too, only numeric literals! */
 	$$ = $3;
   }
 ;
 
 column_number:
-  column_or_col_or_position_or_pos _number num_id_or_lit
+  column_or_col_or_position_or_pos _number exp
   {
-	/* FIXME: arithmetic expression should be possible, too, only numeric literals! */
 	$$ = $3;
   }
 ;
@@ -11946,9 +11944,8 @@ accp_attr:
 	check_repeated ("BLINK", SYN_CLAUSE_8, &check_duplicate);
 	set_dispattr (COB_SCREEN_BLINK);
   }
-| COLOR _is num_id_or_lit
+| COLOR _is exp
   {
-	/* FIXME: arithmetic expression should be possible, too! */
 	check_repeated ("COLOR", SYN_CLAUSE_30, &check_duplicate);
 	set_attribs (0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, $3, NULL);
   }
@@ -13495,7 +13492,7 @@ display_window_clauses:
           SCREEN is optional(=implied) for ERASE here */
 display_window_clause:
   pop_up_or_handle	/* DISPLAY WINDOW actually only takes POP-UP */
-| LINES num_id_or_lit
+| LINES exp
   {
 	/* TODO: store */
   }
@@ -13661,7 +13658,7 @@ disp_attr:
 	check_repeated ("REVERSE-VIDEO", SYN_CLAUSE_14, &check_duplicate);
 	set_dispattr (COB_SCREEN_REVERSE);
   }
-| SIZE _is num_id_or_lit
+| SIZE _is exp
   {
 	check_repeated ("SIZE", SYN_CLAUSE_15, &check_duplicate);
 	set_attribs (0, NULL, NULL, NULL, NULL, NULL, $3, NULL, NULL, NULL);
