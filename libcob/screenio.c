@@ -95,6 +95,9 @@
 #if defined (PDC_WIDE) && !defined (WACS_HLINE)
 #undef PDC_WIDE
 #endif
+#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+#define WITH_WIDE_FUNCTIONS
+#endif
 
 /* include internal and external libcob definitions, forcing exports */
 #define	COB_LIB_EXPIMP
@@ -1445,14 +1448,14 @@ cob_addnstr_graph (const char *data, const int size)
 		const char c = *data++;
 		switch (c) {
 		case 'j':	/* lower-right corner */
-#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+#if defined (WITH_WIDE_FUNCTIONS)
 			add_wch (WACS_LRCORNER);
 #else
 			addch (ACS_LRCORNER);
 #endif
 			break;
 		case 'J':	/* lower-right corner, double */
-#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+#if defined (WACS_D_LRCORNER) && defined (WITH_WIDE_FUNCTIONS)
 			add_wch (WACS_D_LRCORNER);
 #elif defined (ACS_D_LRCORNER)
 			addch (ACS_D_LRCORNER);
@@ -1461,14 +1464,14 @@ cob_addnstr_graph (const char *data, const int size)
 #endif
 			break;
 		case 'k':	/* upper-right corner */
-#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+#if defined (WITH_WIDE_FUNCTIONS)
 			add_wch (WACS_URCORNER);
 #else
 			addch (ACS_URCORNER);
 #endif
 			break;
 		case 'K':	/* upper-right corner, double */
-#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+#if defined (WACS_D_URCORNER) && defined (WITH_WIDE_FUNCTIONS)
 			add_wch (WACS_D_URCORNER);
 #elif defined (ACS_D_URCORNER)
 			addch (ACS_D_URCORNER);
@@ -1477,14 +1480,14 @@ cob_addnstr_graph (const char *data, const int size)
 #endif
 			break;
 		case 'm':	/* lower-left corner */
-#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+#if defined (WITH_WIDE_FUNCTIONS)
 			add_wch (WACS_LLCORNER);
 #else
 			addch (ACS_LLCORNER);
 #endif
 			break;
 		case 'M':	/* lower-left corner, double */
-#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+#if defined (WACS_D_LLCORNER) && defined (WITH_WIDE_FUNCTIONS)
 			add_wch (WACS_D_LLCORNER);
 #elif defined (ACS_D_LLCORNER)
 			addch (ACS_D_LLCORNER);
@@ -1493,14 +1496,14 @@ cob_addnstr_graph (const char *data, const int size)
 #endif
 			break;
 		case 'l':	/* upper-left corner */
-#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+#if defined (WITH_WIDE_FUNCTIONS)
 			add_wch (WACS_ULCORNER);
 #else
 			addch (ACS_ULCORNER);
 #endif
 			break;
 		case 'L':	/* upper-left corner, double */
-#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+#if defined (WACS_D_ULCORNER) && defined (WITH_WIDE_FUNCTIONS)
 			add_wch (WACS_D_ULCORNER);
 #elif defined (ACS_D_ULCORNER)
 			addch (ACS_D_ULCORNER);
@@ -1509,14 +1512,14 @@ cob_addnstr_graph (const char *data, const int size)
 #endif
 			break;
 		case 'n':	/* plus */
-#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+#if defined (WITH_WIDE_FUNCTIONS)
 			add_wch (WACS_PLUS);
 #else
 			addch (ACS_PLUS);
 #endif
 			break;
 		case 'N':	/* plus, double */
-#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+#if defined (WACS_D_PLUS) && defined (WITH_WIDE_FUNCTIONS)
 			add_wch (WACS_D_PLUS);
 #elif defined (ACS_D_PLUS)
 			addch (ACS_D_PLUS);
@@ -1525,14 +1528,14 @@ cob_addnstr_graph (const char *data, const int size)
 #endif
 			break;
 		case 'q':	/* horizontal line */
-#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+#if defined (WITH_WIDE_FUNCTIONS)
 			add_wch (WACS_HLINE);
 #else
 			addch (ACS_HLINE);
 #endif
 			break;
 		case 'Q':	/* horizontal line, double */
-#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+#if defined (WACS_D_HLINE) && defined (WITH_WIDE_FUNCTIONS)
 			add_wch (WACS_D_HLINE);
 #elif defined (ACS_D_HLINE)
 			addch (ACS_D_HLINE);
@@ -1541,14 +1544,14 @@ cob_addnstr_graph (const char *data, const int size)
 #endif
 			break;
 		case 'x':	/* vertical line */
-#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+#if defined (WITH_WIDE_FUNCTIONS)
 			add_wch (WACS_VLINE);
 #else
 			addch (ACS_VLINE);
 #endif
 			break;
 		case 'X':	/* vertical line, double */
-#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+#if defined (WACS_D_VLINE) && defined (WITH_WIDE_FUNCTIONS)
 			add_wch (WACS_D_VLINE);
 #elif defined (ACS_D_VLINE)
 			addch (ACS_D_VLINE);
@@ -1557,14 +1560,14 @@ cob_addnstr_graph (const char *data, const int size)
 #endif
 			break;
 		case 't':	/* left tee */
-#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+#if defined (WITH_WIDE_FUNCTIONS)
 			add_wch (WACS_LTEE);
 #else
 			addch (ACS_LTEE);
 #endif
 			break;
 		case 'T':	/* left tee , double */
-#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+#if defined (WACS_D_LTEE) && defined (WITH_WIDE_FUNCTIONS)
 			add_wch (WACS_D_LTEE);
 #elif defined (ACS_D_LTEE)
 			addch (ACS_D_LTEE);
@@ -1573,14 +1576,14 @@ cob_addnstr_graph (const char *data, const int size)
 #endif
 			break;
 		case 'u':	/* right tee */
-#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+#if defined (WITH_WIDE_FUNCTIONS)
 			add_wch (WACS_RTEE);
 #else
 			addch (ACS_RTEE);
 #endif
 			break;
 		case 'U':	/* right tee , double */
-#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+#if defined (WACS_D_RTEE) && defined (WITH_WIDE_FUNCTIONS)
 			add_wch (WACS_D_RTEE);
 #elif defined (ACS_D_RTEE)
 			addch (ACS_D_RTEE);
@@ -1589,14 +1592,14 @@ cob_addnstr_graph (const char *data, const int size)
 #endif
 			break;
 		case 'v':	/* bottom tee */
-#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+#if defined (WITH_WIDE_FUNCTIONS)
 			add_wch (WACS_BTEE);
 #else
 			addch (ACS_BTEE);
 #endif
 			break;
 		case 'V':	/* bottom tee , double */
-#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+#if defined (WACS_D_BTEE) && defined (WITH_WIDE_FUNCTIONS)
 			add_wch (WACS_D_BTEE);
 #elif defined (ACS_D_BTEE)
 			addch (ACS_D_BTEE);
@@ -1605,14 +1608,14 @@ cob_addnstr_graph (const char *data, const int size)
 #endif
 			break;
 		case 'w':	/* top tee */
-#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+#if defined (WITH_WIDE_FUNCTIONS)
 			add_wch (WACS_TTEE);
 #else
 			addch (ACS_TTEE);
 #endif
 			break;
 		case 'W':	/* top tee , double */
-#if defined (NCURSES_WIDECHAR) || defined (PDC_WIDE)
+#if defined (WACS_D_TTEE) && defined (WITH_WIDE_FUNCTIONS)
 			add_wch (WACS_D_TTEE);
 #elif defined (ACS_D_TTEE)
 			addch (ACS_D_TTEE);
@@ -4894,6 +4897,8 @@ cob_sys_set_scr_size (unsigned char *line, unsigned char *col)
 	init_cob_screen_if_needed ();
 
 #if !defined (WITH_EXTENDED_SCREENIO) || !defined (HAVE_RESIZE_TERM)
+	COB_UNUSED (line);
+	COB_UNUSED (col);
 	cob_set_exception (COB_EC_IMP_FEATURE_DISABLED);
 	return -1;
 #else
