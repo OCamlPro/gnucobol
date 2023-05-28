@@ -1278,14 +1278,25 @@ AT_DATA([prog.cob], [[
        PROCEDURE DIVISION.
        testme.
            MOVE 2 TO LIN
-           DISPLAY scr1 AT LINE LIN COL 2
-              CONTROL "LEFTLINE OVERLINE  RIGHTLINE"
+           DISPLAY scr1 ( 1:1) AT LINE LIN COL 2
+              CONTROL "LEFTLINE OVERLINE"
+           DISPLAY scr1 ( 2:)  AT LINE LIN COL 2 + 1
+              CONTROL "OVERLINE"
+           DISPLAY scr1 (75:)  AT LINE LIN COL 2 + 75
+              CONTROL "OVERLINE  RIGHTLINE"
            ADD  1 TO LIN
-           DISPLAY scr2 AT LINE LIN COL 2
-              CONTROL "LEFTLINE           RIGHTLINE"
+           DISPLAY scr2 ( 1:1) AT LINE LIN COL 2
+              CONTROL "LEFTLINE"
+           DISPLAY scr2 ( 2:)  AT LINE LIN COL 2 + 1
+           DISPLAY scr2 (75:)  AT LINE LIN COL 2 + 75
+              CONTROL "RIGHTLINE"
            ADD  1 TO LIN
-           DISPLAY scr3 AT LINE LIN COL 2
-              CONTROL "LEFTLINE UNDERLINE RIGHTLINE"
+           DISPLAY scr3 ( 1:1) AT LINE LIN COL 2
+              CONTROL "LEFTLINE UNDERLINE"
+           DISPLAY scr3 ( 2:)  AT LINE LIN COL 2 + 1
+              CONTROL "UNDERLINE"
+           DISPLAY scr3 (75:)  AT LINE LIN COL 2 + 75
+              CONTROL "UNDERLINE  RIGHTLINE"
       *
            ADD  2 TO LIN
            PERFORM dspcol

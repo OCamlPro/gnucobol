@@ -1,4 +1,9 @@
 
+2023-05-28  Simon Sobisch <simonsobisch@gnu.org>
+
+	* parser.y: allow expressions for screen related clauses
+	  COL, LINE, LINES, SIZE, COLOR
+
 2023-05-26  Simon Sobisch <simonsobisch@gnu.org>
 
 	* parser.y, reserved.c: added RIGHTLINE - GC extension matching LEFLINE
