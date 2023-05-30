@@ -1,4 +1,4 @@
-## Copyright (C) 2003-2012, 2015-2019,2021-2022 Free Software Foundation, Inc.
+## Copyright (C) 2003-2012, 2015-2019,2021-2023 Free Software Foundation, Inc.
 ## Written by Keisuke Nishida, Roger While, Simon Sobisch, Edward Hart
 ##
 ## This file is part of GnuCOBOL.
@@ -183,6 +183,17 @@ AT_DATA([prog3.cob], [
        77 I             PIC 9.
 ])
 
+AT_DATA([prog4.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 G-1.
+         02 G-2         OCCURS 10.
+           03 X         PIC X(10) OCCURS 1 TO 4 DEPENDING ON I.
+       77 I             PIC X.
+])
+
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:7: error: 'G-2' cannot have an OCCURS clause due to 'X'
 ])
@@ -197,6 +208,15 @@ AT_CHECK([$COMPILE_ONLY -fodoslide prog2.cob], [0], [], [])
 AT_CHECK([$COMPILE_ONLY prog3.cob prog2.cob], [1], [],
 [prog2.cob:7: error: 'G-2' cannot have an OCCURS clause due to 'X'
 prog2.cob:8: error: 'X' cannot have nested OCCURS DEPENDING
+])
+
+AT_CHECK([$COMPILE_ONLY prog4.cob], [1], [],
+[prog4.cob:7: error: 'G-2' cannot have an OCCURS clause due to 'X'
+prog4.cob:8: error: 'I' is not numeric
+])
+
+AT_CHECK([$COMPILE_ONLY -fcomplex-odo prog4.cob], [1], [],
+[prog4.cob:8: error: 'I' is not numeric
 ])
 
 AT_CLEANUP

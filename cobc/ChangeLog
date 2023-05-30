@@ -13,6 +13,25 @@
 
 	* cobc.c: disable unreached code removement with -O0, but keep it
 	  unchanged for -g
+	* field.c (validate_field_1): moved check for duplicate report LINE and
+	  "OCCURS with multi COLUMNs" here, originally found in (compute_size)
+	* field.c (get_max_int_val): new function to get the highest algebraic
+	  integer value
+	* field.c (compute_size): limit internal computed maximum for UNBOUNDED
+	  item to the maximum value that can be stored in its DEPENDING on item
+	* field.c (compute_size): set items that are too big to a fixed value
+	  to return eraly on follow-up checks
+	* field.c (compute_size): disabled check for missing PIC for NATIONAL
+	  and BCD USAGE
+	* tree.c (cb_field_variable_address), tree.h: disabled unused function
+	* tree.c (cb_field_has_unbounded), tree.h: new function checking both
+	  field and any of the child elements to be UNBOUNDED
+	* typeck.c (cb_validate_program_data): validate DEPENDING ON to be numeric
+	* typeck.c (cb_build_identifier): skip compile-time checks for ref-mod
+	  on UNBOUNDED items as size is not known
+	* parser.y (occurs_clause): don't set flag_unbounded in parent
+	* cobc.c (print_fields): don't output (wrong) size for group items with
+	  OCCURS UNBOUNDED sub-fields
 
 2023-05-23  Simon Sobisch <simonsobisch@gnu.org>
 
