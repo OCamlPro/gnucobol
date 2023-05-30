@@ -384,6 +384,10 @@ NEWS - user visible changes				-*- outline -*-
 ** in 64-bit environments, the maximum field size was increased from
    268435456 bytes (999999998 bytes for OCCURS UNBOUNDED) to 2 GB
 
+** numeric DISPLAY can store and may contain a positive zero after arithmetic,
+   PACKED-DECIMAL may contain negative zero (x'0D') after arithmetic; as before
+   numeric comparisions to ZERO / 0 / +0 / -0 will all be identical
+
 ** quotes around filenames and parts that are resolved by environment variables
    are internally ignored
 

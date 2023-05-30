@@ -1,4 +1,14 @@
 
+2023-05-30  Simon Sobisch <simonsobisch@gnu.org>
+
+	* numeric.c (check_overflow_and_set_sign): disable "cleanup" of
+	  negative zero
+	* numeric.c (cob_addsub_optimized): include (disabled) internal
+	  use of BCD arithmetic for USAGE DISPLAY
+	* common.c (IS_INVALID_DIGIT_DATA, IS_VALID_DIGIT_DATA): minor optimization
+	* coblocal.h (COB_PUT_SIGN_ADJUSTED): optimize for most common case of
+	  "no adjustment needed"
+
 2023-05-26  Simon Sobisch <simonsobisch@gnu.org>
 
 	* common.h: added COB_SCREEN_RIGHTLINE, GC extension matching LEFTLINE
@@ -62,6 +72,8 @@
 	* screenio.c (cob_screen_attr): refactor to read colors first, allowing
 	  later override via new functions
 	* screenio.c (cob_screen_set_mode, cob_screen_line_col): minor refactoring
+	* move.c (cob_move_display_to_packed): prevent writing out of bounds
+	* move.c (cob_move_display_to_binary): prevent reading out of bounds
 
 2023-05-09  Simon Sobisch <simonsobisch@gnu.org>
 
