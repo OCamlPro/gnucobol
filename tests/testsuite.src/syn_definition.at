@@ -159,8 +159,7 @@ AT_DATA([prog.cob], [
        IDENTIFICATION   DIVISION.
        PROGRAM-ID.      prog.
        PROCEDURE        DIVISION.
-           DISPLAY X
-           END-DISPLAY.
+           DISPLAY X.
            STOP RUN.
 ])
 
@@ -181,8 +180,7 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE  SECTION.
        01 X             PIC X.
        PROCEDURE        DIVISION.
-           DISPLAY X IN G
-           END-DISPLAY.
+           DISPLAY X IN G.
            STOP RUN.
 ])
 
@@ -205,8 +203,7 @@ AT_DATA([prog.cob], [
          02 X           PIC X.
        01 Y             PIC X.
        PROCEDURE        DIVISION.
-           DISPLAY Y IN G
-           END-DISPLAY.
+           DISPLAY Y IN G.
            STOP RUN.
 ])
 
@@ -860,8 +857,7 @@ AT_DATA([prog.cob], [
        01 G2.
          02 X           PIC X.
        PROCEDURE        DIVISION.
-           DISPLAY X
-           END-DISPLAY.
+           DISPLAY X.
            STOP RUN.
 ])
 
@@ -886,8 +882,7 @@ AT_DATA([prog.cob], [
          02 X.
            03 X         PIC X.
        PROCEDURE        DIVISION.
-           DISPLAY X
-           END-DISPLAY.
+           DISPLAY X.
            STOP RUN.
 ])
 
@@ -915,8 +910,7 @@ AT_DATA([prog.cob], [
          02 X.
            03 Y         PIC X.
        PROCEDURE        DIVISION.
-           DISPLAY Y IN X
-           END-DISPLAY.
+           DISPLAY Y IN X.
            STOP RUN.
 ])
 
@@ -944,8 +938,7 @@ AT_DATA([prog.cob], [
          02 X.
            03 Z         PIC X VALUE "Z".
        PROCEDURE        DIVISION.
-           DISPLAY Z IN X NO ADVANCING
-           END-DISPLAY.
+           DISPLAY Z IN X NO ADVANCING.
            STOP RUN.
 ])
 
@@ -2082,7 +2075,7 @@ AT_DATA([prog.cob], [
            03  i       PIC X.
            03  j       OCCURS 5 TIMES.
                05  k   PIC X.
-               05  l   PIC X.
+               05  l   PIC 9.
            03  m       PIC 9.
            03  n       POINTER, SYNC.
            03  o.
@@ -2163,12 +2156,12 @@ AT_DATA([prog.cob], [
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
        01  MESSAGE-TEXT-2 EXTERNAL.
-         02 AUSGABE-FILE-NAME     PIC X(50).
+         02 AUSGABE-FILE-NAME   PIC X(50).
          02 FILLER REDEFINES AUSGABE-FILE-NAME.
-             05 FILLER PIC 9999.
+             05 FILLER          PIC 9999.
          02 AUSGABE-FILE-NAME-2.
-             05 FILLER PIC 9999.
-             05 DETAIL-NO PIC 9999.
+             05 FILLER          PIC 9999.
+             05 DETAIL-NO       PIC 9999.
          02 FILLER SAME AS AUSGABE-FILE-NAME.
       
        77 OUTPUT-NAME SAME AS DETAIL-NO GLOBAL.
@@ -2192,11 +2185,11 @@ AT_DATA([badprog.cob], [
        DATA             DIVISION.
        WORKING-STORAGE  SECTION.
        01  MESSAGE-TEXT-2.
-         02 AUSGABE-FILE-NAME     PIC X(50).
-         02 F1 SAME AS MESSAGE-TEXT-2.
-       01 MT2 SAME AS MESSAGE-TEXT-2.
-             05 FILLER PIC 9999.
-       01 MT3 SAME AS MESSAGE-TEXT-2 PIC X.
+         02 AUSGABE-FILE-NAME                 PIC X(50).
+         02 F1         SAME AS MESSAGE-TEXT-2.
+       01 MT2          SAME AS MESSAGE-TEXT-2.
+             05 FILLER                        PIC 9999.
+       01 MT3          SAME AS MESSAGE-TEXT-2 PIC X.
        77 OUTPUT-NAME  SAME AS MESSAGE-TEXT-2.
 ])
 

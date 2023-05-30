@@ -2242,7 +2242,7 @@ AT_CLEANUP
 
 
 AT_SETUP([Symbols: simple])
-AT_KEYWORDS([listing COMP])
+AT_KEYWORDS([listing symbols COMP])
 
 AT_CAPTURE_FILE([prog.lst])
 
@@ -2396,7 +2396,7 @@ AT_CLEANUP
 
 
 AT_SETUP([Symbols: pointer])
-AT_KEYWORDS([listing 64bit])
+AT_KEYWORDS([listing symbols 64bit])
 
 AT_CAPTURE_FILE([prog.lst])
 
@@ -2676,7 +2676,7 @@ AT_CLEANUP
 
 
 AT_SETUP([Symbols: multiple programs/functions])
-AT_KEYWORDS([listing program function])
+AT_KEYWORDS([listing symbols program function])
 
 AT_CAPTURE_FILE([prog.lst])
 
@@ -2802,8 +2802,8 @@ AT_CHECK([diff prog18.lst prog.lis], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([Symbols: OCCURS/REDEFINES])
-AT_KEYWORDS([listing])
+AT_SETUP([Symbols: OCCURS and REDEFINES])
+AT_KEYWORDS([listing symbols UNBOUNDED])
 
 AT_CAPTURE_FILE([prog.lst])
 
@@ -2836,49 +2836,22 @@ AT_DATA([prog.cob], [
                10  FILLER PIC X(01).
            05  FLD3      PIC X(3).
            05  FLD4      PIC X(4).
+       LINKAGE          SECTION.
+       01  O1  PIC X OCCURS UNBOUNDED DEPENDING ON FL4.
+       01  O2.
+           05  O-START   PIC X(42).
+           05  FILLER    OCCURS UNBOUNDED DEPENDING ON FL9.
+             07  O-ENTRY.
+               10  O-E1  PIC 9(24).
+               10  O-E2  PIC XXX.
        PROCEDURE        DIVISION.
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE_ONLY -fcomplex-odo -t prog.lst -ftsymbols prog.cob], [0], [], [])
+AT_CHECK([$COMPILE_ONLY -fcomplex-odo -t prog.lst -fno-tsource -ftsymbols prog.cob], [0], [], [])
 
 AT_DATA([prog19.lst],
 [GnuCOBOL V.R.P          prog.cob             DDD MMM dd HH:MM:SS YYYY  Page 0001
-
-LINE    PG/LN  A...B............................................................
-
-000001
-000002         IDENTIFICATION   DIVISION.
-000003         PROGRAM-ID.      prog.
-000004         ENVIRONMENT DIVISION.
-000005         CONFIGURATION SECTION.
-000006         DATA             DIVISION.
-000007         WORKING-STORAGE  SECTION.
-000008         78  I   VALUE 20.
-000009         78  J   VALUE 5000.
-000010         78  M   VALUE 5.
-000011         01  SETUP-REC.
-000012             05  FL1       PIC X(04).
-000013             05  FL2       PIC ZZZZZ.
-000014             05  FL3       PIC 9(04).
-000015             05  FL4       PIC 9(08) COMP.
-000016             05  FL5       PIC 9(04) COMP-4.
-000017             05  FL6       PIC Z,ZZZ.99.
-000018             05  FL7       PIC S9(05) SIGN LEADING SEPARATE.
-000019             05  FL8       PIC X(04).
-000020             05  FL9 REDEFINES FL8 PIC 9(04).
-000021             05  FLA.
-000022                 10  FLB OCCURS I TIMES.
-000023                     15  FLC PIC X(02).
-000024                 10  FLD   PIC X(20).
-000025             05  FLD1      PIC X(100).
-000026             05  FLD2 OCCURS M TO J TIMES DEPENDING ON FL5.
-000027                 10  FILLER PIC X(01).
-000028             05  FLD3      PIC X(3).
-000029             05  FLD4      PIC X(4).
-000030         PROCEDURE        DIVISION.
-000031             STOP RUN.
-GnuCOBOL V.R.P          prog.cob             DDD MMM dd HH:MM:SS YYYY  Page 0002
 
 SIZE  TYPE           LVL  NAME                           PICTURE
 
@@ -2903,6 +2876,17 @@ SIZE  TYPE           LVL  NAME                           PICTURE
 00001 ALPHANUMERIC   10   FILLER                         X(01)
 00003 ALPHANUMERIC   05   FLD3                           X(3)
 00004 ALPHANUMERIC   05   FLD4                           X(4)
+
+      LINKAGE SECTION
+
+????? ALPHANUMERIC   01   O1                             X, OCCURS 0 TO UNBOUNDED
+
+????? GROUP          01   O2
+00042 ALPHANUMERIC   05   O-START                        X(42)
+????? GROUP          05   FILLER                         OCCURS 0 TO UNBOUNDED
+00027 GROUP          07   O-ENTRY
+00024 NUMERIC        10   O-E1                           9(24)
+00003 ALPHANUMERIC   10   O-E2                           XXX
 
 
 0 warnings in compilation group

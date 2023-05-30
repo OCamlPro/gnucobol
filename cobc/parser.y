@@ -791,7 +791,7 @@ setup_occurs_min_max (cb_tree occurs_min, cb_tree occurs_max)
 				if (cb_syntax_check (_("TO phrase without DEPENDING phrase"))) {
 					cb_note (COBC_WARN_FILLER, 0,
 						 _("maximum number of occurrences assumed to be exact number"));
-					current_field->occurs_min = 1; /* CHECKME: why using 1 ? */
+					current_field->occurs_min = 1; /* as done by IBM + MF */
 				}
 			}
 			if (current_field->occurs_max <= current_field->occurs_min) {
@@ -802,7 +802,7 @@ setup_occurs_min_max (cb_tree occurs_min, cb_tree occurs_max)
 			current_field->occurs_max = 0;	/* UNBOUNDED */
 		}
 	} else {
-		current_field->occurs_min = 1; /* CHECKME: why using 1 ? */
+		current_field->occurs_min = 1; /* as done by IBM + MF */
 		current_field->occurs_max = cb_get_int (occurs_min);
 		if (current_field->depending) {
 			cb_verify (cb_odo_without_to, _("OCCURS DEPENDING ON without TO phrase"));
@@ -945,7 +945,7 @@ check_headers_present (const cob_flags_t lev1, const cob_flags_t lev2,
 }
 
 /*
-  TO-DO: Refactor header checks - have several header_checks: division_header,
+  TODO: Refactor header checks - have several header_checks: division_header,
   section_header, paragraph_header, sentence_type
 */
 static void
@@ -6860,7 +6860,7 @@ communication_description_entry:
 				 current_program->cd_list);
 	} else {
 		current_cd = NULL;
-		/* TO-DO: Is this necessary? */
+		/* TODO: Is this necessary? */
 		if (current_program->cd_list) {
 			current_program->cd_list
 				= CB_CHAIN (current_program->cd_list);
@@ -8326,9 +8326,12 @@ occurs_clause:
   DEPENDING _on reference _occurs_keys_and_indexed
   {
 	current_field->flag_unbounded = 1;
+#if 0 /* Why should we do this? If this is relevant then it likely needs to be done
+	   either to the field founder or to the complete list of parents up to it. */
 	if (current_field->parent) {
 		current_field->parent->flag_unbounded = 1;
 	}
+#endif
 	current_field->depending = $7;
 	/* most of the field attributes are set when parsing the phrases */;
 	setup_occurs ();
@@ -15693,7 +15696,7 @@ extended_with_lock:
   }
 | _with WAIT
   {
-	/* TO-DO: Merge with RETRY phrase */
+	/* TODO: Merge with RETRY phrase */
 	$$ = cb_int4;
   }
 ;
@@ -16308,7 +16311,7 @@ sort_body:
 
 	$$ = NULL;
 	if (CB_VALID_TREE (x)) {
-		if ($2 == NULL || CB_VALUE($2) == NULL) {
+		if ($2 == NULL || CB_VALUE ($2) == NULL) {
 			if (CB_FILE_P (x)) {
 				cb_error (_("file sort requires KEY phrase"));
 				$2 = cb_error_node;
@@ -16989,7 +16992,7 @@ use_file_exception:
 		current_section->flag_declarative_exit = 1;
 		current_section->flag_real_label = 1;
 		current_section->flag_skip_label = 0;
-		/* TO-DO: Use cobc_ec_turn? */
+		/* TODO: Use cobc_ec_turn? */
 		CB_EXCEPTION_ENABLE (COB_EC_I_O) = 1;
 		if (use_global_ind) {
 			current_section->flag_global = 1;
