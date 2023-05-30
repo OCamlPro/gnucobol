@@ -14477,7 +14477,7 @@ is_subordinate_to (cb_tree ref, cb_tree parent_ref)
 	const struct cb_field	*f = CB_FIELD_PTR (ref);
 	struct cb_field 	*parent = CB_FIELD_PTR (parent_ref);
 
-	for (; f; f = f->parent) {
+	for (f = f->parent; f; f = f->parent) {
 		if (f == parent) {
 			return 1;
 		}
@@ -14863,18 +14863,16 @@ static int
 syntax_check_ml_gen_type_list (cb_tree type_list, cb_tree input)
 {
 	cb_tree	l;
-	cb_tree	type_pair;
-        cb_tree	ref;
-	cb_tree	type;
-	int	error = 0;
+	int 	error = 0;
 
 	for (l = type_list; l; l = CB_CHAIN (l)) {
-		type_pair = CB_VALUE (l);
-	        ref = CB_PAIR_X (type_pair);
-		type = CB_PAIR_Y (type_pair);
+		cb_tree type_pair = CB_VALUE (l);
+		cb_tree ref = CB_PAIR_X (type_pair);
+		cb_tree type = CB_PAIR_Y (type_pair);
 		if (cb_validate_one (ref)
-		    || cb_validate_one (type)) {
-			return 1;
+		 || cb_validate_one (type)) {
+			error = 1;
+			continue;
 		}
 
 		error |= error_if_subscript_or_refmod (ref, _("TYPE OF item"));
@@ -14885,7 +14883,7 @@ syntax_check_ml_gen_type_list (cb_tree type_list, cb_tree input)
 			error = 1;
 		} else {
 			error |= error_if_ignored_in_ml_gen (ref, input,
-							      _("TYPE OF item"));
+							_("TYPE OF item"));
 		}
 	}
 
@@ -14924,10 +14922,10 @@ syntax_check_ml_gen_suppress_list (cb_tree suppress_list, cb_tree input)
 {
 	int	error = 0;
 	cb_tree	l;
-	struct cb_ml_suppress_clause	*suppress;
 
 	for (l = suppress_list; l; l = CB_CHAIN (l)) {
-		suppress = CB_ML_SUPPRESS (CB_VALUE (l));
+		const struct cb_ml_suppress_clause	*suppress
+				= CB_ML_SUPPRESS (CB_VALUE (l));
 		if (!suppress->identifier) {
 			continue;
 		}
@@ -14937,11 +14935,11 @@ syntax_check_ml_gen_suppress_list (cb_tree suppress_list, cb_tree input)
 		}
 
 		error |= error_if_subscript_or_refmod (suppress->identifier,
-						       _("SUPPRESS item"));
+							_("SUPPRESS item"));
 
 		if (suppress->when_list) {
 			error |= error_if_not_elementary (suppress->identifier,
-							  _("SUPPRESS item with WHEN clause"));
+							_("SUPPRESS item with WHEN clause"));
 		}
 
 		if (error_if_not_child_of_input_record (suppress->identifier, input,
@@ -14949,7 +14947,7 @@ syntax_check_ml_gen_suppress_list (cb_tree suppress_list, cb_tree input)
 			error = 1;
 		} else {
 			error |= error_if_ignored_in_ml_gen (suppress->identifier,
-							     input, _("SUPPRESS item"));
+							input, _("SUPPRESS item"));
 		}
 
 		error |= syntax_check_when_list (suppress);
