@@ -2900,7 +2900,7 @@ AT_CLEANUP
 
 
 AT_SETUP([Conditional compilation])
-AT_KEYWORDS([listing])
+AT_KEYWORDS([listing CDF])
 
 AT_CAPTURE_FILE([prog.lst])
 
@@ -3913,7 +3913,7 @@ AT_CLEANUP
 
 
 AT_SETUP([LISTING directive])
-AT_KEYWORDS([listing])
+AT_KEYWORDS([CDF])
 
 AT_CAPTURE_FILE([prog.lst])
 
@@ -3944,8 +3944,10 @@ AT_DATA([prog.cob], [
        COPY "copy.inc".
        COPY "copy2.inc".
        PROCEDURE        DIVISION.
+       >>LISTING OFF
            DISPLAY TEST1-VAR NO ADVANCING
            END-DISPLAY.
+       >> LISTING ON
            STOP RUN.
 ])
 
@@ -3974,9 +3976,9 @@ LINE    PG/LN  A...B............................................................
 000003C        >>LISTING
 000004C        01 TESTA-VAR PIC X(2) VALUE "OK".
 000008         PROCEDURE        DIVISION.
-000009             DISPLAY TEST1-VAR NO ADVANCING
-000010             END-DISPLAY.
-000011             STOP RUN.
+000009         >>LISTING OFF
+000012         >> LISTING ON
+000013             STOP RUN.
 
 SIZE  TYPE           LVL  NAME                           PICTURE
 
@@ -4014,7 +4016,7 @@ AT_CLEANUP
 
 
 AT_SETUP([LISTING directive free-form reference-format])
-AT_KEYWORDS([listing])
+AT_KEYWORDS([CDF])
 
 AT_CAPTURE_FILE([prog.lst])
 
@@ -4045,8 +4047,10 @@ AT_DATA([prog.cob], [
        COPY "copy.inc".
        COPY "copy2.inc".
        PROCEDURE        DIVISION.
+>>LISTING OFF
            DISPLAY TEST1-VAR NO ADVANCING
            END-DISPLAY.
+>> LISTING ON
            STOP RUN.
 ])
 
@@ -4075,9 +4079,9 @@ LINE    .....................SOURCE.............................................
 000003C >>LISTING
 000004C 01 TESTA-VAR PIC X(2) VALUE "OK".
 000008         PROCEDURE        DIVISION.
-000009             DISPLAY TEST1-VAR NO ADVANCING
-000010             END-DISPLAY.
-000011             STOP RUN.
+000009  >>LISTING OFF
+000012  >> LISTING ON
+000013             STOP RUN.
 
 SIZE  TYPE           LVL  NAME                           PICTURE
 
