@@ -14891,7 +14891,7 @@ syntax_check_ml_gen_type_list (cb_tree type_list, cb_tree input)
 }
 
 static int
-syntax_check_when_list (struct cb_ml_suppress_clause *suppress)
+syntax_check_when_list (const struct cb_ml_suppress_clause *suppress)
 {
 	cb_tree		l;
 	int		error = 0;
