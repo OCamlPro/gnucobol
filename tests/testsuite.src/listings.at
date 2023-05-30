@@ -4013,6 +4013,107 @@ AT_CHECK([diff prog17.lst prog.lis], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([LISTING directive free-form reference-format])
+AT_KEYWORDS([listing])
+
+AT_CAPTURE_FILE([prog.lst])
+
+AT_DATA([copy.inc], [
+>>LISTING OFF
+01 TEST1-VAR PIC X(2) VALUE "OK".
+01 TEST2-VAR PIC X(2) VALUE "OK".
+01 TEST3-VAR PIC X(2) VALUE "OK".
+01 TEST4-VAR PIC X(2) VALUE "OK".
+>>LISTING ON
+01 TEST5-VAR PIC X(2) VALUE "OK".
+01 TEST6-VAR PIC X(2) VALUE "OK".
+01 TEST7-VAR PIC X(2) VALUE "OK".
+01 TEST8-VAR PIC X(2) VALUE "OK".
+])
+
+AT_DATA([copy2.inc], [>> LISTING OFF
+01 TEST9-VAR PIC X(2) VALUE "OK".
+>>LISTING
+01 TESTA-VAR PIC X(2) VALUE "OK".
+])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       COPY "copy.inc".
+       COPY "copy2.inc".
+       PROCEDURE        DIVISION.
+           DISPLAY TEST1-VAR NO ADVANCING
+           END-DISPLAY.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY -t prog.lst -tlines=0 -ftsymbols -free prog.cob], [0], [], [])
+
+AT_DATA([prog17.lst],
+[GnuCOBOL V.R.P               prog.cob                   DDD MMM dd HH:MM:SS YYYY
+
+LINE    .....................SOURCE.............................................
+
+000001
+000002         IDENTIFICATION   DIVISION.
+000003         PROGRAM-ID.      prog.
+000004         DATA             DIVISION.
+000005         WORKING-STORAGE  SECTION.
+000006         COPY "copy.inc".
+000001C
+000002C >>LISTING OFF
+000007C >>LISTING ON
+000008C 01 TEST5-VAR PIC X(2) VALUE "OK".
+000009C 01 TEST6-VAR PIC X(2) VALUE "OK".
+000010C 01 TEST7-VAR PIC X(2) VALUE "OK".
+000011C 01 TEST8-VAR PIC X(2) VALUE "OK".
+000007         COPY "copy2.inc".
+000001C >> LISTING OFF
+000003C >>LISTING
+000004C 01 TESTA-VAR PIC X(2) VALUE "OK".
+000008         PROCEDURE        DIVISION.
+000009             DISPLAY TEST1-VAR NO ADVANCING
+000010             END-DISPLAY.
+000011             STOP RUN.
+
+SIZE  TYPE           LVL  NAME                           PICTURE
+
+      WORKING-STORAGE SECTION
+
+00002 ALPHANUMERIC   01   TEST1-VAR                      X(2)
+
+00002 ALPHANUMERIC   01   TEST2-VAR                      X(2)
+
+00002 ALPHANUMERIC   01   TEST3-VAR                      X(2)
+
+00002 ALPHANUMERIC   01   TEST4-VAR                      X(2)
+
+00002 ALPHANUMERIC   01   TEST5-VAR                      X(2)
+
+00002 ALPHANUMERIC   01   TEST6-VAR                      X(2)
+
+00002 ALPHANUMERIC   01   TEST7-VAR                      X(2)
+
+00002 ALPHANUMERIC   01   TEST8-VAR                      X(2)
+
+00002 ALPHANUMERIC   01   TEST9-VAR                      X(2)
+
+00002 ALPHANUMERIC   01   TESTA-VAR                      X(2)
+
+
+0 warnings in compilation group
+0 errors in compilation group
+])
+
+AT_CHECK([$UNIFY_LISTING prog.lst prog.lis once], [0], [], [])
+AT_CHECK([diff prog17.lst prog.lis], [0], [], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([Listing-directive statements])
 AT_KEYWORDS([listing directive EJECT SKIP1 SKIP2 SKIP3 TITLE])
 
