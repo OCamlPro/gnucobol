@@ -28,7 +28,8 @@
 	  field and any of the child elements to be UNBOUNDED
 	* typeck.c (cb_validate_program_data): validate DEPENDING ON to be numeric
 	* typeck.c (cb_build_identifier): skip compile-time checks for ref-mod
-	  on UNBOUNDED items as size is not known
+	  on UNBOUNDED items as size is not known; for runtime calculate the max.
+	  length for ref-mod using the ODO
 	* parser.y (occurs_clause): don't set flag_unbounded in parent
 	* cobc.c (print_fields): don't output (wrong) size for group items with
 	  OCCURS UNBOUNDED sub-fields
