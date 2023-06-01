@@ -1,4 +1,16 @@
 
+2023-06-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c: minor refactoring for SORT related functions,
+	  mostly reducing scope of variables
+	* fileio.c (cob_file_sort_using): early exit for errors during OPEN
+	* fileio.c (cob_file_sort_giving): one-time setting of WRITE options
+	  after OPEN instead of doing it before every WRITE
+	* fileio.c (cob_file_sort_giving): don't try to WRITE to or CLOSE files
+	  where OPEN OUTPUT was not successful
+	* fileio.c (cob_file_sort_giving): skip GIVING file on WRITE errors,
+	  early exit if no GIVING file left
+
 2023-05-30  Simon Sobisch <simonsobisch@gnu.org>
 
 	* numeric.c (check_overflow_and_set_sign): disable "cleanup" of
