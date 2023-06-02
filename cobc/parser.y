@@ -1604,7 +1604,7 @@ setup_prototype (cb_tree prototype_name, cb_tree ext_name,
 }
 
 static void
-error_if_record_delimiter_incompatible (const int organization,
+error_if_record_delimiter_incompatible (const enum cob_file_org organization,
 					const char *organization_name)
 {
 	int	is_compatible;
@@ -18709,7 +18709,7 @@ _reference:
 
 single_reference_list:
   single_reference			{ $$ = CB_LIST_INIT ($1); }
-| single_reference_list single_reference{ $$ = cb_list_add ($1, $2); }
+| single_reference_list single_reference { $$ = cb_list_add ($1, $2); }
 ;
 
 single_reference:

@@ -1,16 +1,14 @@
 
-2023-02-16  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+2023-06-02  Simon Sobisch <simonsobisch@gnu.org>
 
-	* flag.def (cb_diagnostics_show_caret), error.c
-	  (diagnostics_show_caret): add argument -fno-diagnostics-show-caret
-	  to disable the display of the source context of the error/warning,
-	  2 lines before and after the location; add argument
-	  -fno-diagnostics-show-line-numbers to disable printing of
-	  line numbers in carets; rename cb_diagnostic_show_option into
-	  cb_diagnostics_show_option to match the argument name.
-	* error.c (cb_error_kind): replace all occurrences of a
-	  error/warning/note string by a symbolic enum.
-	* cobc.c: new argument -fdiagnostics-plain-output to make
+	* tree.h (cb_file), parser.y: organization and access_mode as enums
+
+2023-06-01  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* flag.def (cb_diagnostics_show_line_numbers), error.c
+	  (diagnostics_show_caret): new flag -fno-diagnostics-show-line-numbers
+	  to disable printing of line numbers in carets
+	* cobc.c: new option -fdiagnostics-plain-output to make
 	  output as plain as possible (disabling carets for example)
 
 2023-05-31  Simon Sobisch <simonsobisch@gnu.org>
@@ -241,6 +239,11 @@
 	  of column 2 to fix terminal-format support and insert it before
 	  newlines are added to the beginning of the buffer
 
+2023-02-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* codegen.c, flag.def [COBC_HAS_CUTOFF_FLAG]: fix compile errors,
+	  output -fif-cutoff to help when available
+
 2023-02-20  Nicolas Berthier <nicolas.berthier@ocamlpro.com>
 
 	* scanner.l, config.def: Add support for EBCDIC symbolic characters in
@@ -249,17 +252,23 @@
 	* scanner.l, pplex.l: detect and issue a warning when EBCDIC
 	  symbolic character strings include extraneous separators
 
-2023-02-21  Simon Sobisch <simonsobisch@gnu.org>
-
-	* codegen.c, flag.def [COBC_HAS_CUTOFF_FLAG]: fix compile errors,
-	  output -fif-cutoff to help when available
-
 2023-02-20  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
 	* scanner.l (read_literal): refactor to use enum cb_literal_type
 	  instead of a char* for the type of literal
 	* pplex.l: allow REPLACE between Gcos CONTROL DIVISION and
 	  the IDENTIFICATION DIVISION
+
+2023-02-16  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* flag.def (cb_diagnostics_show_caret), error.c
+	  (diagnostics_show_caret): new -fdiagnostics-show-caret (enabled by
+	  default) to display source context of the error/warning, 2 lines
+	  before and after the location
+	* error.c (cb_error_kind): replace all occurrences of a
+	  error/warning/note string by a symbolic enum
+	* flag.def (cb_diagnostics_show_option), error.c: renamed from
+	  cb_diagnostic_show_option to match the argument name
 
 2023-02-10  Simon Sobisch <simonsobisch@gnu.org>
 

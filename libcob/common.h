@@ -800,21 +800,24 @@ enum cob_exception_id {
 
 #define COB_FILE_MODE		0666
 
-/* Organization, FIXME: change to enum */
+/* file ORGANIZATION IS */
+enum cob_file_org {
+	COB_ORG_SEQUENTIAL = 0,
+	COB_ORG_LINE_SEQUENTIAL = 1,
+	COB_ORG_RELATIVE = 2,
+	COB_ORG_INDEXED = 3,
+	COB_ORG_SORT = 4,
+	COB_ORG_MAX = 5,
+	COB_ORG_MESSAGE = 6 /* only for syntax checks */
+};
 
-#define COB_ORG_SEQUENTIAL	0
-#define COB_ORG_LINE_SEQUENTIAL	1
-#define COB_ORG_RELATIVE	2
-#define COB_ORG_INDEXED		3
-#define COB_ORG_SORT		4
-#define COB_ORG_MAX		5
-#define COB_ORG_MESSAGE	6 /* only for syntax checks */
-
-/* Access mode, FIXME: change to enum */
-
-#define COB_ACCESS_SEQUENTIAL	1
-#define COB_ACCESS_DYNAMIC	2
-#define COB_ACCESS_RANDOM	3
+/* file ACCESS MODE IS */
+enum cob_file_access_mode {
+	COB_ACCESS_UNDEFINED = 0,
+	COB_ACCESS_SEQUENTIAL = 1,
+	COB_ACCESS_DYNAMIC = 2,
+	COB_ACCESS_RANDOM = 3
+};
 
 /* SELECT features */
 
@@ -1358,12 +1361,12 @@ typedef struct __cob_file {
 	size_t			nkeys;			/* Number of keys */
 	int			fd;			/* File descriptor */
 
-	unsigned char		organization;		/* ORGANIZATION */
-	unsigned char		access_mode;		/* ACCESS MODE */
+	unsigned char		organization;		/* ORGANIZATION, read as cob_file_org */
+	unsigned char		access_mode;		/* ACCESS MODE, read as cob_file_access_mode  */
 	unsigned char		lock_mode;		/* LOCK MODE */
-	unsigned char		open_mode;		/* OPEN MODE: GC4: cob_open_mode */
+	unsigned char		open_mode;		/* OPEN MODE - GC4: cob_open_mode */
 	unsigned char		flag_optional;		/* OPTIONAL */
-	unsigned char		last_open_mode;		/* Mode given by OPEN: GC4: cob_open_mode */
+	unsigned char		last_open_mode;		/* Mode given by OPEN - GC4: cob_open_mode */
 	unsigned char		flag_operation;		/* File type specific */
 	unsigned char		flag_nonexistent;	/* Nonexistent file */
 

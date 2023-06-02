@@ -351,46 +351,47 @@ indexed_keycmp (struct keydesc *k1, struct keydesc *k2)
 	return 0;
 }
 
-/* Return index number for given key */
+#endif
+
+/* Return index number for given key and set length attributes */
 static int
-indexed_findkey (cob_file *f, cob_field *kf, int *fullkeylen, int *partlen)
+cob_findkey_attr (cob_file *f, cob_field *kf, int *fullkeylen, int *partlen)
 {
 	int 	k,part;
 	*fullkeylen = *partlen = 0;
+
 	for (k = 0; k < f->nkeys; ++k) {
-		if (f->keys[k].field
-		&&  f->keys[k].count_components <= 1
-		&&  f->keys[k].field->data == kf->data) {
-			*fullkeylen = f->keys[k].field->size;
+		cob_field *key = f->keys[k].field;
+		if (key
+		 && key->data == kf->data
+		 && f->keys[k].count_components <= 1) {
+			*fullkeylen = key->size;
 			*partlen = kf->size;
-			f->mapkey = k;
 			return k;
 		}
 	}
 	for (k = 0; k < f->nkeys; ++k) {
 		if (f->keys[k].count_components > 1) {
-			if ((f->keys[k].field
-			&&  f->keys[k].field->data == kf->data
-			&&  f->keys[k].field->size == kf->size)
-			||  (f->keys[k].component[0]->data == kf->data)) {
+			cob_field *key = f->keys[k].field;
+			if ((key
+			  && key->data == kf->data
+			  && key->size == kf->size)
+			 || (f->keys[k].component[0]->data == kf->data)) {
 				for (part=0; part < f->keys[k].count_components; part++) {
 					*fullkeylen += f->keys[k].component[part]->size;
 				}
-				if (f->keys[k].field
-				 && f->keys[k].field->data == kf->data) {
-					*partlen = kf->size;
+				if (key
+				 && key->data == kf->data) {
+					*partlen = key->size;
 				} else {
 					*partlen = *fullkeylen;
 				}
-				f->mapkey = k;
 				return k;
 			}
 		}
 	}
 	return -1;
 }
-
-#endif
 
 /* Define some characters for checking LINE SEQUENTIAL data content */
 #define COB_CHAR_CR	'\r'
@@ -714,43 +715,6 @@ struct indexed_file {
 	DB_LOCK		bdb_file_lock;
 	DB_LOCK		bdb_record_lock;
 };
-
-static int
-bdb_findkey (cob_file *f, cob_field *kf, int *fullkeylen, int *partlen)
-{
-	int 	k, part;
-
-	*fullkeylen = *partlen = 0;
-	for (k = 0; k < f->nkeys; ++k) {
-		if (f->keys[k].field
-		 && f->keys[k].count_components <= 1
-		 && f->keys[k].field->data == kf->data) {
-			*fullkeylen = f->keys[k].field->size;
-			*partlen = kf->size;
-			return k;
-		}
-	}
-	for (k = 0; k < f->nkeys; ++k) {
-		if (f->keys[k].count_components > 1) {
-			if ( (f->keys[k].field
-			   && f->keys[k].field->data == kf->data
-			   && f->keys[k].field->size == kf->size)
-			 ||  (f->keys[k].component[0]->data == kf->data)) {
-				for (part = 0; part < f->keys[k].count_components; part++) {
-					*fullkeylen += f->keys[k].component[part]->size;
-				}
-				if (f->keys[k].field
-				 && f->keys[k].field->data == kf->data) {
-					*partlen = kf->size;
-				} else {
-					*partlen = *fullkeylen;
-				}
-				return (int)k;
-			}
-		}
-	}
-	return -1;
-}
 
 /* Return total length of the key */
 static int
@@ -3864,9 +3828,8 @@ indexed_start_internal (cob_file *f, const int cond, cob_field *key,
 	dupno = 0;
 	ret = 0;
 	/* Look up for the key */
-	key_index = bdb_findkey (f, key, &fullkeylen, &partlen);
+	key_index = f->mapkey = cob_findkey_attr (f, key, &fullkeylen, &partlen);
 	if (key_index < 0) {
-		f->mapkey = -1;
 		return COB_STATUS_23_KEY_NOT_EXISTS;
 	}
 	p->key_index = key_index;
@@ -4871,10 +4834,11 @@ indexed_start (cob_file *f, const int cond, cob_field *key)
 	if (f->flag_nonexistent) {
 		return COB_STATUS_23_KEY_NOT_EXISTS;
 	}
-	k = indexed_findkey(f, key, &fullkeylen, &partlen);
-	if(k < 0) {
+	k = cob_findkey_attr (f, key, &fullkeylen, &partlen);
+	if (k < 0) {
 		return COB_STATUS_23_KEY_NOT_EXISTS;
 	}
+	f->mapkey = k;
 	/* Use size of data field; This may indicate a partial key */
 	klen = partlen;
 	if (klen < 1 || klen > fullkeylen) {
@@ -4981,10 +4945,11 @@ indexed_read (cob_file *f, cob_field *key, const int read_opts)
 	if (f->flag_nonexistent) {
 		return COB_STATUS_23_KEY_NOT_EXISTS;
 	}
-	k = indexed_findkey(f, key, &fullkeylen, &partlen);
-	if(k < 0) {
+	k = cob_findkey_attr (f, key, &fullkeylen, &partlen);
+	if (k < 0) {
 		return COB_STATUS_23_KEY_NOT_EXISTS;
 	}
+	f->mapkey = k;
 	if (f->curkey != (int)k) {
 		/* Switch to this index */
 		isstart (fh->isfd, &fh->key[k], 0,
@@ -6960,46 +6925,18 @@ cob_delete_file (cob_file *f, cob_field *fnstatus)
 	save_status (f, fnstatus, errno_cob_sts(COB_STATUS_00_SUCCESS));
 }
 
-/* Return index number for given key */
+/* Return index number for given key and set length attributes,
+   storing resulting key field in file's last_key */
 int
 cob_findkey (cob_file *f, cob_field *kf, int *fullkeylen, int *partlen)
 {
-	int 	k,part;
-	*fullkeylen = *partlen = 0;
-
-	for (k = 0; k < f->nkeys; ++k) {
-		if (f->keys[k].field
-		 && f->keys[k].count_components <= 1
-		 && f->keys[k].field->data == kf->data) {
+	int 	k = cob_findkey_attr (f, kf, fullkeylen, partlen);
 #if 0 /* pending merge of r1411 */
-			f->last_key = f->keys[k].field;
-#endif
-			*fullkeylen = f->keys[k].field->size;
-			*partlen = kf->size;
-			return k;
-		}
+	if (k >= 0) {
+		f->last_key = f->keys[k].field;
 	}
-	for (k = 0; k < f->nkeys; ++k) {
-		if (f->keys[k].count_components > 1) {
-			if ((f->keys[k].field
-			 &&  f->keys[k].field->data == kf->data
-			 &&  f->keys[k].field->size == kf->size)
-			 || (f->keys[k].component[0]->data == kf->data)) {
-#if 0 /* pending merge of r1411 */
-				f->last_key = f->keys[k].field;
 #endif
-				for (part=0; part < f->keys[k].count_components; part++)
-					*fullkeylen += f->keys[k].component[part]->size;
-				if (f->keys[k].field
-				 && f->keys[k].field->data == kf->data)
-					*partlen = kf->size;
-				else
-					*partlen = *fullkeylen;
-				return k;
-			}
-		}
-	}
-	return -1;
+	return k;
 }
 
 /* Copy key data and return length of data copied */
@@ -8693,7 +8630,6 @@ cob_exit_fileio (void)
 void
 cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 {
-
 	cobglobptr = lptr;
 	cobsetptr  = sptr;
 	file_cache = NULL;
