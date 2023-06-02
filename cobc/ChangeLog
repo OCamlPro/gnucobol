@@ -9,7 +9,8 @@
 	  code-emitter to parser
 	* tree.h (cb_statement), parser.y, typeck.c: drop flag_merge,
 	  instead check by "statement == STMT_MERGE"
-	* typeck.c (cb_emit_sort_init): generate call to cob_file_sort_options
+	* parser.y (_close_option): parse UNIT/REEL WITH NO REWIND,
+	  currently handled as if only UNIT/REEL would have been specified
 
 2023-06-01  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
@@ -18,6 +19,13 @@
 	  to disable printing of line numbers in carets
 	* cobc.c: new option -fdiagnostics-plain-output to make
 	  output as plain as possible (disabling carets for example)
+
+2023-06-01  Simon Sobisch <simonsobisch@gnu.org>
+
+	* typeck.c (cb_emit_sort_init): generate call to cob_file_sort_options
+	* typeck.c (cb_emit_sort_using, cb_emit_sort_giving): check if GIVING/USING
+	  files have an active EXTFH handler and generate calls to sort functions
+	  cob_file_sort_using_extfh / cob_file_sort_giving_extfh for those
 
 2023-05-31  Simon Sobisch <simonsobisch@gnu.org>
 

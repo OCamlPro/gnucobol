@@ -12858,10 +12858,11 @@ close_files:
 
 _close_option:
   /* empty */			{ $$ = cb_int (COB_CLOSE_NORMAL); }
-| reel_or_unit			{ $$ = cb_int (COB_CLOSE_UNIT); }
-| reel_or_unit _for REMOVAL	{ $$ = cb_int (COB_CLOSE_UNIT_REMOVAL); }
 | _with NO REWIND		{ $$ = cb_int (COB_CLOSE_NO_REWIND); }
 | _with LOCK			{ $$ = cb_int (COB_CLOSE_LOCK); }
+| reel_or_unit			{ $$ = cb_int (COB_CLOSE_UNIT); }
+| reel_or_unit _for REMOVAL	{ $$ = cb_int (COB_CLOSE_UNIT_REMOVAL); }
+| reel_or_unit _with NO REWIND		{ $$ = cb_int (COB_CLOSE_UNIT); }	/* PENDING */
 ;
 
 close_window:
