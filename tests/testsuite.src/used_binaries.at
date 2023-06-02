@@ -918,3 +918,65 @@ AT_CHECK([cat prog.cob | $COMPILE_MODULE -j -], [0], [job], [],
 )
 
 AT_CLEANUP
+
+
+AT_SETUP([cobc diagnostics show caret])
+# promoted on 2023-06-01T09:57
+AT_KEYWORDS([cobc diagnostics])
+AT_DATA([prog.cob],[
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 TEST-VAR PIC 9(2) VALUE 'A'.
+       COPY 'CRUD.CPY'.
+       PROCEDURE        DIVISION.
+           DISPLAY TEST-VAR NO ADVANCING
+           END-DISPLAY
+           MOVE 12 TO TEST-VAR
+           DISPLAY TEST-VAR NO ADVANCING
+           END-DISPLAY
+           STOP RUN.
+])
+AT_CHECK([$COBC -Wall -fsyntax-only prog.cob], [1], [],
+[prog.cob:7: error: CRUD.CPY: No such file or directory
+prog.cob:6: warning: numeric value is expected @<:@-Wothers@:>@
+])
+AT_CHECK([$COMPILE -fdiagnostics-show-caret -fdiagnostics-show-line-numbers -j prog.cob], [1], [],
+[prog.cob:7: error: CRUD.CPY: No such file or directory
+
+  0005          WORKING-STORAGE  SECTION.
+  0006          01 TEST-VAR PIC 9(2) VALUE 'A'.
+  0007 >        COPY 'CRUD.CPY'.
+  0008          PROCEDURE        DIVISION.
+  0009              DISPLAY TEST-VAR NO ADVANCING
+
+prog.cob:6: warning: numeric value is expected
+
+  0004          DATA             DIVISION.
+  0005          WORKING-STORAGE  SECTION.
+  0006 >        01 TEST-VAR PIC 9(2) VALUE 'A'.
+  0007          COPY 'CRUD.CPY'.
+  0008          PROCEDURE        DIVISION.
+
+])
+AT_CHECK([$COMPILE -fdiagnostics-show-caret -j prog.cob],[1], [],
+[prog.cob:7: error: CRUD.CPY: No such file or directory
+
+           WORKING-STORAGE  SECTION.
+           01 TEST-VAR PIC 9(2) VALUE 'A'.
+  >        COPY 'CRUD.CPY'.
+           PROCEDURE        DIVISION.
+               DISPLAY TEST-VAR NO ADVANCING
+
+prog.cob:6: warning: numeric value is expected
+
+           DATA             DIVISION.
+           WORKING-STORAGE  SECTION.
+  >        01 TEST-VAR PIC 9(2) VALUE 'A'.
+           COPY 'CRUD.CPY'.
+           PROCEDURE        DIVISION.
+
+])
+AT_CLEANUP
+
