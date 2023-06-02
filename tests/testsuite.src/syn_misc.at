@@ -6530,10 +6530,10 @@ AT_DATA([prog.cob], [
 
 AT_CHECK([$COMPILE_ONLY prog.cob], [1], [],
 [prog.cob:32: error: table SORT requires KEY phrase
-prog.cob:35: error: file sort requires USING or INPUT PROCEDURE
-prog.cob:35: error: file sort requires GIVING or OUTPUT PROCEDURE
-prog.cob:37: error: file sort requires KEY phrase
-prog.cob:38: error: file sort requires KEY phrase
+prog.cob:35: error: file SORT requires USING or INPUT PROCEDURE
+prog.cob:35: error: file SORT requires GIVING or OUTPUT PROCEDURE
+prog.cob:37: error: file SORT requires KEY phrase
+prog.cob:38: error: file SORT requires KEY phrase
 ])
 AT_CLEANUP
 

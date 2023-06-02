@@ -2273,7 +2273,7 @@ output_emit_field (cb_tree x, const char *cmt)
 		} else {
 			output ("static cob_field %s%d\t= ", CB_PREFIX_FIELD, f->id);
 			output_field (x);
-			output_local(";\t/* ");
+			output_local (";\t/* ");
 			if (f->report_column > 0) {
 				output_local ("col%3d ", f->report_column);
 			}
@@ -7839,8 +7839,9 @@ output_if (const struct cb_if *ip)
 		if (ip->test == cb_true
 		 && cb_flag_remove_unreachable) {
 			output_line ("/* WHEN is always TRUE */");
-		} else if (ip->test == cb_false
-			&& cb_flag_remove_unreachable) {
+		} else
+		if (ip->test == cb_false
+		 && cb_flag_remove_unreachable) {
 			output_line ("/* WHEN is always FALSE */");
 		} else
 		if (CB_TREE_TAG (ip->test) == CB_TAG_BINARY_OP) {
@@ -7867,7 +7868,8 @@ output_if (const struct cb_if *ip)
 			} else {
 				output_line ("/* WHEN */");
 			}
-		} else if (ip->test->source_line) {
+		} else
+		if (ip->test->source_line) {
 			output_source_reference (ip->test, STMT_WHEN);
 		} else {
 			output_line ("/* WHEN */");
@@ -9281,6 +9283,7 @@ output_file_initialization (struct cb_file *f)
 		}
 	}
 
+	/* TODO: generate enum values and flags as text */
 	output_line ("%s%s->organization = %d;", CB_PREFIX_FILE, f->cname,
 		     f->organization);
 	output_line ("%s%s->access_mode = %d;", CB_PREFIX_FILE, f->cname,
